@@ -5,7 +5,8 @@ asf_export
 </name>
 
 <synopsis>
-asf_export [-format <output_format>] [-size <max_dimension>] <in_base_name> <out_full_name>
+asf_export [-format <output_format>] [-size <max_dimension>] 
+           <in_base_name> <out_full_name>
 </synopsis>
 
 <description>
@@ -119,12 +120,28 @@ asf_convert, asf_import
 #include <asf_endian.h>
 #include <asf_meta.h>
 
+const char *program_name = "asf_export";
+
 /* Print invocation information.  */
 void usage()
 {
-	printf ("\n"
-		"USAGE:\n"
-        "   asf_export [-format <output_format>] [-size <max_dimension>] <in_base_name> <out_full_name>\n");
+  /* Form an indentation string of the same length as the program_name.  */
+  int name_length = strlen (program_name);
+  char *indentation_string = malloc (name_length + 1 * sizeof (char));
+  int ii;
+  for ( ii = 0 ; ii < name_length ; ii++ ) {
+    indentation_string[ii] = ' ';
+  }
+  indentation_string[name_length] = '\0';
+  
+  printf ("\n"
+     "USAGE:\n"
+     "   %s [-format <output_format>] [-size <max_dimension>]\n"
+     "   %s <in_base_name> <out_full_name>\n", program_name, 
+	  indentation_string);
+  
+  free (indentation_string);
+
   exit (EXIT_FAILURE);
 }
 
@@ -203,7 +220,8 @@ typedef enum {
   CLARKE1866,
   GEM10C,			/* Ellipsoid in GEM6 earth model.  */
   WGS84,			/* Ellipsoid in EGM96 earth model.  */
-  USER_DEFINED			/* Some unknown ellipsoid.  */
+  WGS66,			/* Ancient crummy ellipsoid.  */
+  USER_DEFINED			/* Some unknown user defined ellipsoid.  */
 } asf_export_ellipsoid_t;
 
 /* We don't have strncpy everywhere, so here is a substitude.  */
@@ -235,36 +253,40 @@ my_strnlen (const char *s, size_t max_len)
   return max_len;
 }
 
-/*Check to see if an option was supplied or not
-If it was found, return its argument number
-Otherwise, return FLAG_NOT_SET*/
-int checkForOption(char* key, int argc, char* argv[])
+// Check to see if an option was supplied or not If it was found,
+// return its argument number.  Otherwise, return FLAG_NOT_SET.
+int
+checkForOption (char *key, int argc, char *argv[])
 {
-	int ii = 0;
-	while(ii < argc)
-	{
-		if(strmatch(key, argv[ii]))
-			return(ii);
-		++ii;
-	}
-	return(FLAG_NOT_SET);
+  int ii = 0;
+  while ( ii < argc ) {
+    if ( strmatch(key, argv[ii]) )
+      return ii;
+    ++ii;
+  }
+  return FLAG_NOT_SET;
 }
 
-/*Print an error message. This is just here for circumventing check_return.
-Also, it makes it possible to reformat all the error messages at once.*/
-void print_error(char *msg)
+/* Print an error message. This is just here for circumventing
+   check_return.  Also, it makes it possible to reformat all the error
+   messages at once.  */
+void 
+print_error (char *msg)
 {
 	char* temp;
-	sprintf(temp, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);//I made "ERROR:" red...Yay! :D
-	printErr(temp);
-	exit(EXIT_FAILURE);
+	// I made "ERROR:" red...Yay! :D
+	sprintf (temp, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);
+	printErr (temp);
+	exit (EXIT_FAILURE);
 }
 
-/*Check the return value of a function and display an error message if it's a bad return*/
-void check_return(int ret, char *msg)
+// Check the return value of a function and display an error message
+// if it's a bad return.
+void 
+check_return (int ret, char *msg)
 {
-	if (ret != 0)
-		print_error(msg);
+  if ( ret != 0 )
+    print_error (msg);
 }
 
 
@@ -1187,6 +1209,11 @@ export_as_esri (const char *metadata_file_name,
   }
 }
 
+/* Return the average of all the kernel_size * kernel_size elements
+   centered around element i, j.  The i and j arguments must be within
+   the bounds of img, and the kernel_size must be odd.  The image is
+   reflected at the edges and corners for the purpose of determining
+   this average.  */
 static unsigned char
 averaging_kernel (gsl_matrix_uchar *img, int kernel_size, size_t i, size_t j)
 {
@@ -1197,6 +1224,8 @@ averaging_kernel (gsl_matrix_uchar *img, int kernel_size, size_t i, size_t j)
   int j_max = j + kernel_size / 2;
   int sum = 0;
   int average; /* Truncated average.  */
+
+  assert (kernel_size % 2 != 0); /* Odd-sized kernels only.  */
 
   for ( i_idx = i_min ; i_idx < i_max ; i_idx++ ) {
     /* The i index to use, adjusted in case we are off the edge of the
@@ -1227,7 +1256,7 @@ averaging_kernel (gsl_matrix_uchar *img, int kernel_size, size_t i, size_t j)
   return average;
 }
 
-/* Average together tiles of kernel_size pixels in the *width x
+/* Average together tiles of kernel_size pixels in the *width by
    *height image at pixels, reducing its size by a factor of about
    kernel size in each dimension.  The new image replaces the old in
    pixels (extra memory is freed) and a pointer to the possibly
@@ -1655,40 +1684,96 @@ export_as_geotiff (const char *metadata_file_name,
  
   /* Set the GeoTIFF extension image tags.  */
 
+  /* This constant is from the GeoTIFF spec.  It basically means that
+     the system which would normally be specified by the field
+     (projected coordinate system, datum, ellipsoid, whatever), in
+     instead going to be specified by more detailed low level
+     tags.  */
+  const int user_defined_value_code = 32767;
+
+  /* FIXME: its not good to say all our products are
+     RasterPixelIsArea, but for now that's what we do.  */
+  GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
+
+  /* Major and minor ellipse axis lengths.  This shows up in two
+     different places in our metadata, we want the projected one if
+     its available, otherwise the one from general.  */
+  double re_major, re_minor;
+  if ( md->sar->image_type == 'P' ) {
+    re_major = md->projection->re_major;
+    re_minor = md->projection->re_minor;
+  }
+  else {
+    re_major = md->general->re_major;
+    re_minor = md->general->re_minor;
+  }
+
+  /* Nail down which ellipsoid we are on exactly.  The ASF metadata
+     doesn't specify this though, so we take a look at the major and
+     minor axis values and try to find a matching ellipsoid.  */
+  asf_export_ellipsoid_t ellipsoid;
+  const double clarke1866_major_axis = 6378206.4;
+  const double clarke1866_minor_axis = 6356583.8;
+  const double gem10c_major_axis = 6378144;
+  const double gem10c_minor_axis = 6356759;
+  const double wgs66_major_axis = 6378145.0;
+  const double wgs66_minor_axis = 6356759.769356;
+  const double wgs84_major_axis = 6378137;
+  const double wgs84_flattening = 1.0 / 298.257223563;
+  const double wgs84_minor_axis = wgs84_major_axis * (1 - wgs84_flattening);
+  /* Insist that the minor axis match what we are expecting to within
+     this tolerance.  */
+  double axis_tolerance = 0.2;
+  if ( FLOAT_COMPARE_TOLERANCE (re_major, clarke1866_major_axis, 
+				axis_tolerance)
+       && FLOAT_COMPARE_TOLERANCE (re_minor, clarke1866_minor_axis, 
+				   axis_tolerance) ) {
+    ellipsoid = CLARKE1866;
+  }
+  else if ( FLOAT_COMPARE_TOLERANCE (re_major, wgs84_major_axis, 
+				     axis_tolerance) 
+	    && FLOAT_COMPARE_TOLERANCE (re_minor, wgs84_minor_axis, 
+					axis_tolerance) ) {
+    ellipsoid = WGS84;
+  }
+  else if ( FLOAT_COMPARE_TOLERANCE (re_major, gem10c_major_axis, 
+				     axis_tolerance) 
+	    && FLOAT_COMPARE_TOLERANCE (re_minor, gem10c_minor_axis, 
+					axis_tolerance) ) {
+    ellipsoid = GEM10C;
+  }
+  /* FIXME: I have some ellipsoid that looks slightly like this thing,
+     so in order to give us a datum to use for geotiffs we pretend its
+     this.  The geolocation is bad because of range migration
+     anyway.  */
+  else if ( FLOAT_COMPARE_TOLERANCE (re_major, wgs66_major_axis, 2)
+	    && FLOAT_COMPARE_TOLERANCE (re_minor, wgs66_minor_axis, 5) ) {
+    ellipsoid = WGS66;
+  }
+  else {
+    /* FIXME: we badly need to get the ellipsoid/datum mess sorted
+       out.  This problem goes deeper than asf_export, however.  */
+    fprintf (stderr, "%s: warning: couldn't conclude which ellipsoid is "
+	     "being used from ellipsoid axis dimensions in metadata, "
+	     "using user defined ellipsoid\n", program_name);
+    ellipsoid = USER_DEFINED;
+  }
+  
   /* If we have a map projected image, write the projection
      information into the GeoTIFF.  */
-  if ( md->sar->image_type == 'P' ) {
+  /* FIXME: this is a terrible hack to deal with scansar crap.  */
+  if ( md->sar->image_type == 'P' 
+       && md->projection->type != SCANSAR_PROJECTION) {
     /* Tie points for image corners.  There is space for four tie
        points, each consisting of three raster coordinates, followed
        by three geospatial coordinates.  */    
     double tie_points[4][6];
     double pixel_scale[3];
-    /* Nail down which ellipsoid we are on exactly.  The ASF metadata doesn't
-       specify this though, so we take a look at the major and minor axis
-       values and try to find a matching ellipsoid.  */
-    asf_export_ellipsoid_t ellipsoid;
-    const double clarke1866_major_axis = 6378206.4;
-    const double clarke1866_minor_axis = 6356583.8;
-    const double gem10c_major_axis = 6378144;
-    const double gem10c_minor_axis = 6356759;
-    const double wgs84_major_axis = 6378137;
-    const double wgs84_flattening = 1.0 / 298.257223563;
-    const double wgs84_e2 = 2 * wgs84_flattening - pow (wgs84_flattening, 2);
-    const double wgs84_minor_axis 
-      = sqrt (pow (wgs84_major_axis, 2) * (1 - wgs84_e2));
-    /* Insist that the minor axis match what we are expecting to
-       within this tolerance.  */
-    double axis_tolerance = 0.2;
     short projection_code;
     int max_citation_length = 500;
     char *citation;
     int citation_length;
-    /* This constant is from the GeoTIFF spec.  It basically means
-       that the system which would normally be specified by the field
-       (projected coordinate system, datum, ellipsoid, whatever), in
-       instead going to be specified by more detailed low level
-       tags.  */
-    const int user_defined_value_code = 32767;
+
     if ( FLOAT_COMPARE_TOLERANCE (md->projection->re_major,
 				  clarke1866_major_axis, axis_tolerance)
 	 && FLOAT_COMPARE_TOLERANCE (md->projection->re_minor,
@@ -1712,14 +1797,12 @@ export_as_geotiff (const char *metadata_file_name,
     else {
       /* FIXME: we badly need to get the ellipsoid/datum mess sorted
 	 out.  This problem goes deeper than asf_export, however.  */
-	  char* temp;
-	  sprintf(temp, "\n\nWARNING: Couldn't conclude which ellipsoid is "
+      const int max_error_string_length = 2000;
+      char *temp = malloc ((max_error_string_length + 1) * sizeof (char));
+      sprintf (temp, "\n\nWARNING: Couldn't conclude which ellipsoid is "
 	       "being used from ellipsoid axis dimensions in metadata, "
 	       "using user defined ellipsoid\n");
-	  printf(temp);
-/*	  fprintf (stderr, "%s: warning: couldn't conclude which ellipsoid is "
-	       "being used from ellipsoid axis dimensions in metadata, "
-	       "using user defined ellipsoid\n", program_name);*/
+      printf (temp);
       ellipsoid = USER_DEFINED;
     }
 
@@ -1752,29 +1835,28 @@ export_as_geotiff (const char *metadata_file_name,
     pixel_scale[2] = 0;
     TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
+    GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, 
+		ModelTypeProjected);
+
     switch ( md->projection->type ) {
       case UNIVERSAL_TRANSVERSE_MERCATOR:
-	GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, 
-		    RasterPixelIsArea);
-	GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, 
-		    ModelTypeProjected);
-
 	/* For now we only handle UTM data that is referenced to the
 	   WGS84 ellipsoid.  */
 	assert (ellipsoid == WGS84);
 
-	/* This weird assertion is because I remember once when we
-           couln't figure out how to set some datum code right, we set it
-           to -1.  */
+	/* This weird paranoid assertion is because I remember once
+           when we couln't figure out how to set some datum code
+           right, we set it to -1.  */
 	assert (md->projection->param.utm.zone != -1);
 
-	/* Here we use some funky arithmetic to get the correct geotiff
-	   coordinate system type key from our zone code.  There are a
-	   few assertions to try to ensure that the convention used for
-	   the libgeotiff constants is as expected.  Also note that we
-	   have already verified that we are on a WGS84 ellipsoid.  */
-	assert (PCS_WGS84_UTM_zone_1N == 32601);
-	assert (PCS_WGS84_UTM_zone_1S == 32701);
+	/* Here we use some funky arithmetic to get the correct
+	   geotiff coordinate system type key from our zone code.
+	   Here are a few assertions to try to ensure that the
+	   convention used for the libgeotiff constants is as
+	   expected.  Also note that we have already verified that we
+	   are on a WGS84 ellipsoid.  */
+	assert (PCS_WGS84_UTM_zone_60N - PCS_WGS84_UTM_zone_1N == 59);
+	assert (PCS_WGS84_UTM_zone_60S - PCS_WGS84_UTM_zone_1S== 59);
 
 	if ( md->projection->hem == 'N' ) {
 	  const int northern_utm_zone_base = PCS_WGS84_UTM_zone_1N - 1;
@@ -1805,10 +1887,6 @@ export_as_geotiff (const char *metadata_file_name,
 	free (citation);
 	break;
       case POLAR_STEREOGRAPHIC:
-	GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, 
-		    RasterPixelIsArea);
-	GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, 
-		    ModelTypeProjected);
 	GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
 		    user_defined_value_code);
 	GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
@@ -1816,21 +1894,14 @@ export_as_geotiff (const char *metadata_file_name,
 	GTIFKeySet (ogtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
 	GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1, 
 		    CT_PolarStereographic);
-	/* This is longitude which will point toward the top of the map.
-	   This is often called the reference or central longitude in
-	   the context of polar stereo map projections.  */
-	//	GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1, 
-	//		    md->projection->param.ps.slon);
-	/* Set the latitude of true scale, or reference latitude.  */
-	//	GTIFKeySet (ogtif, ProjStdParallelGeoKey, TYPE_DOUBLE, 1,
-	//		    md->projection->param.ps.slat);
-	/* Set the offsets easting and false northing to zero.  */
+	GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1, 
+		    md->projection->param.ps.slon);
 	GTIFKeySet (ogtif, ProjOriginLatGeoKey, TYPE_DOUBLE, 1, 
 		    md->projection->param.ps.slat);
-	GTIFKeySet (ogtif, ProjOriginLongGeoKey, TYPE_DOUBLE, 1,
-		    md->projection->param.ps.slon);
 	GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
 	GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+	GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, 
+		    Angular_Degree);
 
 	/* Fill in the details of the geographic coordinate system used.  */
 	switch ( ellipsoid ) {
@@ -1855,16 +1926,16 @@ export_as_geotiff (const char *metadata_file_name,
 	  GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1,
 		      user_defined_value_code);
 	  GTIFKeySet (ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1, 
-		      md->projection->re_major);
+		      re_major);
 	  GTIFKeySet (ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1, 
-		      md->projection->re_minor);
+		      re_minor);
 	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
 	  citation_length
 	    = snprintf (citation, max_citation_length + 1,
 			"Geographic coordinate system using reference "
 			"ellipsoid with semimajor axis of %f meters and "
 			"semiminor axis of %f meters", 
-			md->projection->re_major, md->projection->re_minor);
+			re_major, re_minor);
 	  GTIFKeySet (ogtif, GeogCitationGeoKey, TYPE_ASCII, 1, citation);
 	  free (citation);
 	  break;
@@ -1927,6 +1998,94 @@ export_as_geotiff (const char *metadata_file_name,
       default:
 	assert (FALSE);		/* Shouldn't be here.  */
     }
+  }
+
+  /* FIXME: this is a terrible hack to deal with scansar crap.  */
+  else if ( md->sar->image_type == 'G' 
+	    || (md->sar->image_type == 'P' 
+		&& md->projection->type == SCANSAR_PROJECTION) ) {
+    GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeGeographic);
+
+    //    if ( ellipsoid == WGS84 ) {
+      GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_WGS84);
+      //    }
+      //    else {
+      //      /* User defined geographic coordinate system.  */
+      //      GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 
+      //		  user_defined_value_code);
+      //      switch ( ellipsoid ) {
+      //      case CLARKE1866:
+      //	GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 
+      //		    DatumE_Clarke1866);
+      //	break;
+      //      case GEM10C:
+      //	GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1,
+      //		    DatumE_GEM10C);
+      //	break;
+      //      case WGS66:
+      //	/* Set to a newrby available ellipsoid.  We have far worse
+      //	   problems than the ellipsoid being a bit wrong.  */
+      //	GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1,
+      //		    DatumE_WGS84);
+      //	break;
+      //      case WGS84:
+      //	/* Shouldn't be here (this should have been handled using the
+      //	   non-user defined GeographicTypeGeoKey).  */
+      //	assert (FALSE);	
+      //	break;
+      //      default:
+      //	assert (FALSE);		/* Shouldn't be here.  */
+      //      }
+      //    }
+
+    GTIFKeySet (ogtif, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, PM_Greenwich);
+    GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, Angular_Degree);
+
+    /* Tie points for image corners.  There is space for four tie
+       points, each consisting of three raster coordinates, followed
+       by three geospatial coordinates.  */    
+    double tie_points[4][6];
+
+    /* Get the lat/longs of three image corners.  */
+    double c1_lat, c1_long, c2_lat, c2_long, c3_lat, c3_long;
+    meta_get_latLon (md, 0, 0, 0, &c1_lat, &c1_long);
+    meta_get_latLon (md, 0, md->general->sample_count, 0, &c2_lat, &c2_long);
+    meta_get_latLon (md, md->general->line_count, 0, 0, &c3_lat, &c3_long);
+
+    /* Put three tie points in the image, as described in 2.6.2 of the
+       geotiff spec..  */
+    tie_points[0][0] = 0.0;
+    tie_points[0][1] = 0.0;
+    tie_points[0][2] = 0.0;
+    tie_points[0][3] = c1_lat;
+    tie_points[0][4] = c1_long;
+    tie_points[0][5] = 0.0;
+    tie_points[1][0] = 0.0;
+    tie_points[1][1] = md->general->sample_count;
+    tie_points[1][2] = 0.0;
+    tie_points[1][4] = c2_lat;
+    tie_points[1][5] = c2_long;
+    tie_points[1][6] = 0.0;
+    tie_points[2][0] = md->general->line_count;
+    tie_points[2][1] = 0.0;
+    tie_points[2][2] = 0.0;
+    tie_points[2][4] = c3_lat;
+    tie_points[2][5] = c3_long;
+    tie_points[2][6] = 0.0;
+
+    /* Write the eighteen values that make up the three tie
+       points.  */
+    TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 18, tie_points);
+  }
+
+  else if ( md->sar->image_type == 'S' ) {
+    /* Slant range image conversion not implemented yet.  */
+    assert (FALSE);	
+  }
+
+  else {
+    /* Shouldn't be here (unrecognized image type). */
+    assert (FALSE);	
   }
 
   /* Write the actual image data.  */
