@@ -314,15 +314,15 @@ help_page (void)
 //       approximation compared to the results of the analytical
 //       transformation of a denser grid.
 //
-//   The steps don't necessarily occer in exactly this order in the code
-//   though.
+// The steps don't necessarily occer in exactly this order in the code
+// though.
 //
 ///////////////////////////////////////////////////////////////////////////////
         
        
 ///////////////////////////////////////////////////////////////////////////////
 
-// This is form of the input data we want to fit splines to.
+// This is the form of the input data we want to fit splines to.
 struct data_to_fit {
   size_t grid_size;		// Size of grid of points, in points on a side.
   size_t n;			// Number of transformed points (grid_size^2).
@@ -971,7 +971,7 @@ main (int argc, char **argv)
 	SET_PIXEL (oix, oiy, 
 		   float_image_sample 
 		     (iim, input_x_pixel, input_y_pixel,
-		      FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR));
+		      FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR));
       }
     }
     asfLineMeter(oiy, oiy_max + 1 );
