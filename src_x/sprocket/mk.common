@@ -1,0 +1,47 @@
+# Makefile for ASF Converter
+OS=Linux
+TOP=/ASF/dev
+INCLUDE=$(TOP)/include/
+LIBARY=$(TOP)/lib/$(OS)
+BIN=$(TOP)/bin/$(OS)
+SCRIPTS=$(TOP)/scripts/$(OS)
+JAVA=$(TOP)/java
+
+##
+##	Step code base paths
+##
+STEP_PATH=$(TOP)
+STEP_INC =$(STEP_PATH)/include
+STEP_LIB =$(STEP_PATH)/lib/Linux/asf_sar.a
+
+##
+##	Optimization settings
+##
+OPS_FULL = -O3 -mcpu=pentiumpro -march=pentiumpro -ffast-math -mieee-fp \
+ -fexpensive-optimizations -malign-loops=2 -malign-jumps=2 \
+ -malign-functions=2 -static
+
+OPS_ATHLON = -O3 -fexpensive-optimizations -mcpu=k6 -march=k6 
+OPS_LESSER = -O3 -ffast-math  -fexpensive-optimizations -march=pentium 
+OPS_NORMAL = -O2
+
+OPS = -Wall $(OPS_ATHLON)
+#OPS = -g -pg -Wall
+
+##
+## Comp and build flags
+##
+
+CC = gcc $(OPS)
+F77 = g77 $(OPS)
+STEP_COMP = $(CC) -I$(STEP_INC) -I$(INCLUDE) -c
+COMP = $(CC) -I$(INCLUDE) -c
+LINK = $(CC) -o 
+FLINK = $(F77) -o
+LINK_LIB = -L$(LIBARY) -lUtil -lm
+STEP_LINK_LIB = -L$(LIBARY) -lUtil $(STEP_LIB) -lm
+#BEAT =indent -npsl
+JAVAC=javac -O -deprecation -classpath $(JAVA):$(JAVA)/geotransform.jar:.
+
+
+FF = f77 -c

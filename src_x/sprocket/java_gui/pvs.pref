@@ -1,0 +1,7 @@
+imagedir	.
+maskdir	 	.
+helpdir		.
+logfile		/ASF/pvs.log
+
+xy_plotter	/ASF/current/bin/Linux/xy_plotter
+outputfile	output.txt
