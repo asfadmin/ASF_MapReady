@@ -19,17 +19,50 @@ show_execute_button(gboolean show)
   gtk_widget_set_sensitive(load_button, show);
 }
 
+void latitude_checkbutton_toggle()
+{
+  GtkWidget
+    *latitude_checkbutton,
+    *latitude_low_label,
+    *latitude_low_spinbutton,
+    *latitude_hi_label,
+    *latitude_hi_spinbutton;
+
+  gboolean is_checked;
+
+  latitude_checkbutton =
+    glade_xml_get_widget(glade_xml, "latitude_checkbutton");
+
+  latitude_low_label =
+    glade_xml_get_widget(glade_xml, "latitude_low_label");
+
+  latitude_low_spinbutton =
+    glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+
+  latitude_hi_label =
+    glade_xml_get_widget(glade_xml, "latitude_hi_label");
+
+  latitude_hi_spinbutton =
+    glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+
+  is_checked =
+    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(latitude_checkbutton));
+
+  gtk_widget_set_sensitive(latitude_low_label, is_checked);
+  gtk_widget_set_sensitive(latitude_low_spinbutton, is_checked);
+  gtk_widget_set_sensitive(latitude_hi_label, is_checked);
+  gtk_widget_set_sensitive(latitude_hi_spinbutton, is_checked);
+}
+
 void 
 input_data_format_combobox_changed()
 {
   GtkWidget *input_data_type_combobox,
     *input_data_type_label,
     *input_data_format_combobox,
-    *latitude_label,
-    *latitude_low_label,
-    *latitude_low_spinbutton,
-    *latitude_hi_label,
-    *latitude_hi_spinbutton,
+    *latitude_checkbutton,
+    *latitude_hbox,
+    *latitude_hbox2,
     *vbox_export;
 
   gint input_data_format;
@@ -39,10 +72,7 @@ input_data_format_combobox_changed()
 
   input_data_format_combobox =
     glade_xml_get_widget(glade_xml, "input_data_format_combobox");
-  /*
-  input_data_format =
-    gtk_combo_box_get_active(GTK_COMBO_BOX(input_data_format_combobox));
-  */
+
   input_data_format =
     gtk_option_menu_get_history(GTK_OPTION_MENU(input_data_format_combobox));
 
@@ -87,27 +117,26 @@ input_data_format_combobox_changed()
   gtk_widget_set_sensitive(input_data_type_combobox, show_data_type_combobox);
   gtk_widget_set_sensitive(input_data_type_label, show_data_type_combobox);
 
-  latitude_label =
-    glade_xml_get_widget(glade_xml, "latitude_label");
+  latitude_checkbutton =
+    glade_xml_get_widget(glade_xml, "latitude_checkbutton");
 
-  latitude_low_label =
-    glade_xml_get_widget(glade_xml, "latitude_low_label");
+  latitude_hbox =
+    glade_xml_get_widget(glade_xml, "latitude_hbox");
 
-  latitude_low_spinbutton =
-    glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+  latitude_hbox2 =
+    glade_xml_get_widget(glade_xml, "latitude_hbox2");
 
-  latitude_hi_label =
-    glade_xml_get_widget(glade_xml, "latitude_hi_label");
+  gtk_widget_set_sensitive(latitude_checkbutton, show_latitude_spinbuttons);
+  gtk_widget_set_sensitive(latitude_hbox, show_latitude_spinbuttons);
+  gtk_widget_set_sensitive(latitude_hbox2, show_latitude_spinbuttons);
 
-  latitude_hi_spinbutton =
-    glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+  if (!show_latitude_spinbuttons)
+  {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(latitude_checkbutton),
+				 FALSE);
+  }
 
-  /* I bet I could have disabled the hbox instead ... */
-  gtk_widget_set_sensitive(latitude_label, show_latitude_spinbuttons);
-  gtk_widget_set_sensitive(latitude_low_label, show_latitude_spinbuttons);
-  gtk_widget_set_sensitive(latitude_low_spinbutton, show_latitude_spinbuttons);
-  gtk_widget_set_sensitive(latitude_hi_label, show_latitude_spinbuttons);
-  gtk_widget_set_sensitive(latitude_hi_spinbutton, show_latitude_spinbuttons);
+  latitude_checkbutton_toggle();
 
   vbox_export =
     glade_xml_get_widget(glade_xml, "vbox_export");
@@ -333,6 +362,12 @@ SIGNAL_CALLBACK void
 on_scale_checkbutton_toggled(GtkWidget *widget)
 {
   scale_checkbutton_toggle();
+}
+
+SIGNAL_CALLBACK void
+on_latitude_checkbutton_toggled(GtkWidget *widget)
+{
+  latitude_checkbutton_toggle();
 }
 
 SIGNAL_CALLBACK void

@@ -70,19 +70,38 @@ settings_apply_to_gui(const Settings * s)
 
   if (settings_get_input_data_format_allows_latitude(s))
   {
-    GtkWidget *latitude_low_spinbutton, *latitude_hi_spinbutton;
+    GtkWidget 
+      *latitude_checkbutton,
+      *latitude_low_spinbutton,
+      *latitude_hi_spinbutton;
 
-    latitude_low_spinbutton =
-      glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+    latitude_checkbutton =
+      glade_xml_get_widget(glade_xml, "latitude_checkbutton");
 
-    latitude_hi_spinbutton =
-      glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+    if (s->latitude_checked)
+    {
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(latitude_checkbutton),
+				   TRUE);
 
-   gtk_spin_button_set_value(GTK_SPIN_BUTTON(latitude_low_spinbutton),
-			     s->latitude_low);
-   gtk_spin_button_set_value(GTK_SPIN_BUTTON(latitude_hi_spinbutton),
-			     s->latitude_hi);
+      latitude_low_spinbutton =
+	glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+
+      latitude_hi_spinbutton =
+	glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+
+      gtk_spin_button_set_value(GTK_SPIN_BUTTON(latitude_low_spinbutton),
+				s->latitude_low);
+      gtk_spin_button_set_value(GTK_SPIN_BUTTON(latitude_hi_spinbutton),
+				s->latitude_hi);
+    }
+    else
+    {
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(latitude_checkbutton),
+				   FALSE);
+    }
   }
+
+  input_data_format_combobox_changed();
 
   if (settings_get_output_format_requires_byte(s))
   {
@@ -102,6 +121,8 @@ settings_apply_to_gui(const Settings * s)
 
     set_combo_box_item(scaling_method_combobox, s->scaling_method);
   }        
+
+  output_format_combobox_changed();
 }
 
 Settings *
@@ -150,26 +171,36 @@ settings_get_from_gui()
 	    GTK_SPIN_BUTTON(longest_dimension_spinbutton));
   }
 
+  ret->latitude_low = -999;
+  ret->latitude_hi = -999;
+
   if (settings_get_input_data_format_allows_latitude(ret))
   {
-    GtkWidget *latitude_low_spinbutton, *latitude_hi_spinbutton;
+    GtkWidget 
+      *latitude_checkbutton,
+      *latitude_low_spinbutton,
+      *latitude_hi_spinbutton;
 
-    latitude_low_spinbutton =
-      glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+    latitude_checkbutton =
+      glade_xml_get_widget(glade_xml, "latitude_checkbutton");
 
-    latitude_hi_spinbutton =
-      glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+    ret->latitude_checked =
+      gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(latitude_checkbutton));
 
-    ret->latitude_low =
-      gtk_spin_button_get_value(GTK_SPIN_BUTTON(latitude_low_spinbutton));
+    if (ret->latitude_checked)
+    {
+      latitude_low_spinbutton =
+	glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+
+      latitude_hi_spinbutton =
+	glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+
+      ret->latitude_low =
+	gtk_spin_button_get_value(GTK_SPIN_BUTTON(latitude_low_spinbutton));
     
-    ret->latitude_hi =
-      gtk_spin_button_get_value(GTK_SPIN_BUTTON(latitude_hi_spinbutton));
-  }
-  else
-  {
-    ret->latitude_low = -999;
-    ret->latitude_hi = -999;
+      ret->latitude_hi =
+	gtk_spin_button_get_value(GTK_SPIN_BUTTON(latitude_hi_spinbutton));
+    }
   }
 
   if (settings_get_output_format_requires_byte(ret))
@@ -206,10 +237,10 @@ settings_get_latitude_argument(const Settings *s)
 {
   static gchar latitude_arg[128];
 
-  if (settings_get_input_data_format_allows_latitude(s))
+  if (settings_get_input_data_format_allows_latitude(s) && s->latitude_checked)
   {
     g_snprintf(latitude_arg, sizeof(latitude_arg),
-	       "-lat %d %d", (int) s->latitude_low, (int) s->latitude_hi);
+	       "-lat %g %g", s->latitude_low, s->latitude_hi);
   }
   else
   {

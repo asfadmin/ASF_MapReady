@@ -181,6 +181,10 @@ do_cmd(gchar *cmd, gchar *log_file_name)
 	  }
 	  fclose(output); 
 	}
+	else
+	{
+	  /* couldn't open ... */
+	}
       }
     }
 
@@ -214,6 +218,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
       gchar *p = fgets(buffer, sizeof(buffer), output);
       if (p)
       {
+	printf("Read: %s\n", p);
 	if (the_output)
         {
 	  the_output = (gchar *)g_realloc(the_output, sizeof(gchar) *
@@ -230,6 +235,13 @@ do_cmd(gchar *cmd, gchar *log_file_name)
     }
     fclose(output);
     remove(log_file_name);
+  }
+
+  if (!the_output)
+  {
+    /* Log file existed, but had immediate EOF */
+    /* This is most likely caused by a "Disk Full" situation... */
+    the_output = g_strdup("Error Opening Log File: Disk Full?\n");
   }
 
   return the_output;
