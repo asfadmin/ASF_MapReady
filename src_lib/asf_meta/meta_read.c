@@ -1,10 +1,10 @@
 #include "asf.h"
 #include "coniFetch.h"
 #include "asf_meta.h"
+#include "asf_nan.h" /* Needed for asf_meta's MAGIC_UNSET_DOUBLE */
 #include "err_die.h"
 #include "regex_wrapper.h"
 #include "metadata_parser.h"
-#include "asf_nan.h"
 #include "worgen.h"
 
 /* Local prototypes */
@@ -148,8 +148,8 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 /* Fields that cannot be filled from the old structures */
 	general->frame            = 0;
 	general->band_number      = 0;
-	general->center_latitude  = NAN;
-	general->center_longitude = NAN;
+	general->center_latitude  = MAGIC_UNSET_DOUBLE;
+	general->center_longitude = MAGIC_UNSET_DOUBLE;
 	general->missing_lines    = -999999999;
 
 /* Read old style meta file */
@@ -278,7 +278,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 		else if (0==strcmp(ddr.system,"cray-unicos"))
 			strcpy(meta->general->system,"cray_float");
 		else /* "ibm-mvs" or "other-msc" */
-			strcpy(meta->general->system,"???");
+			strcpy(meta->general->system,MAGIC_UNSET_STRING);
 		if (sar->image_type=='P')
 			{strcpy(meta->projection->units, ddr.proj_units);}
 		switch ( ddr.dtype ) {
@@ -300,7 +300,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	}
 
 /* Fields not yet filled */
-	general->orbit_direction  = '?';
+	general->orbit_direction  = MAGIC_UNSET_CHAR;
 	if (meta->state_vectors->vecs[0].vec.vel.z > 0)
 		general->orbit_direction  = 'A';
 	else if (meta->state_vectors->vecs[0].vec.vel.z < 0)
@@ -348,7 +348,7 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 	else if (strcmp(ddr.system,"cray-unicos")==0)
 		strcpy(meta->general->system,"cray_float");
 	else
-		strcpy(meta->general->system,"???");
+		strcpy(meta->general->system,MAGIC_UNSET_STRING);
 	if (ddr.valid[DDINCV] == VALID) {
 		meta->sar->line_increment = ddr.line_inc;
 		meta->sar->sample_increment = ddr.sample_inc;
@@ -362,9 +362,9 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 			strncpy(meta->projection->units, ddr.proj_units, 12);
 		else
 			strcpy(meta->projection->units, "meters");
-		meta->projection->hem = '?';
-		meta->projection->re_major = NAN;
-		meta->projection->re_minor = NAN;
+		meta->projection->hem = MAGIC_UNSET_CHAR;
+		meta->projection->re_major = MAGIC_UNSET_DOUBLE;
+		meta->projection->re_minor = MAGIC_UNSET_DOUBLE;
 		if (ddr.valid[DDPPV] == VALID) {
 		   switch (ddr.proj_code) {
 		     case LAMCC:
@@ -397,7 +397,7 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 		          meta->projection->param.utm.zone = -999999999;
 		        break;
 		     default:
-			meta->projection->type = '?';
+			meta->projection->type = MAGIC_UNSET_CHAR;
 		        printf("WARNING: DDR projection code '%d' not supported by meta file\n",ddr.proj_code);
 		        break;
 		   } /* End switch(ddr.proj_code) */
@@ -412,7 +412,7 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 	  } /* End if ((ddr->valid[ii]==VALID) && (ii!=DDINCV)) */
 	} /* End for (ii=0; ii<DDNVAL; ii++) */
     /* Make some guesses */
-	if (meta->projection && (meta->projection->type != '?'))
+	if (meta->projection && (meta->projection->type != MAGIC_UNSET_CHAR))
 		meta->sar->image_type = 'P';
 	
 } /* End function meta_read_only_ddr() */
@@ -447,13 +447,13 @@ void meta_new2old(meta_parameters *meta)
 	meta->geo->dopAz[2]    = meta->sar->azimuth_doppler_coefficients[2];
 
 /* Fill ifm_parameters structure */
-	if (meta->state_vectors->vecs) {
+	if (meta->state_vectors) {
 		meta->ifm->ht    = meta_get_sat_height(meta, meta->general->line_count/2, 0);
 		meta->ifm->er    = meta_get_earth_radius(meta, meta->general->line_count/2, 0);
 	}
 	else {
-		meta->ifm->ht    = NAN;
-		meta->ifm->er    = NAN;
+		meta->ifm->ht    = MAGIC_UNSET_DOUBLE;
+		meta->ifm->er    = MAGIC_UNSET_DOUBLE;
 	}
 	meta->ifm->nLooks        = meta->sar->look_count;
 	meta->ifm->orig_nLines   = meta->sar->original_line_count;
@@ -476,10 +476,10 @@ void meta_new2old(meta_parameters *meta)
 
 /* Calculated values for the old structure */
 	if (meta->sar->image_type!='P') /*Image not map projected-- compute look angle to beam center*/
-		if (meta->state_vectors->vecs)
+		if (meta->state_vectors)
 			meta->ifm->lookCenter = meta_look(meta, 0, meta->general->sample_count/2);
 		else
-			meta->ifm->lookCenter = NAN;
+			meta->ifm->lookCenter = MAGIC_UNSET_DOUBLE;
 	else 
 	{/*Image *is* map projected-- compute earth's eccentricity*/
 		double re = meta->general->re_major;
