@@ -89,9 +89,11 @@ int regex_match(matched_subexps_t *msubs, const char *string,
     fprintf(stderr, "libc function 'regexec' (called from function '%s') ran out of memory\n", __func__);
     exit(EXIT_FAILURE);
   case REG_NOMATCH:		      /* Pattern didn't match.  */
-    msubs->subexp_strings = NULL;     /* Set sentinel value.  */
     free(subexps);		/* Free array of libc regmatch_t.  */
     regfree(&compiled_regex);	/* Free libc compiled regex.  */
+    msubs->subexp_strings = NULL;     /* Set sentinel value.  */
+    msubs->subexp_count = 0;	/* Ensure subexp count is correct. */
+    msubs->is_dirty = 0;	/* Structure is not dirty.  */
     return 0;			/* Return false.  */
   }
 
