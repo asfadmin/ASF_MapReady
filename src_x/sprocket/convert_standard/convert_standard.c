@@ -226,7 +226,7 @@ void write_metadata (char *metafile, char *file)
     }
 
   /* Read faclity data record */
-  get_facdr (metafile, &facdr);
+  get_asf_facdr (metafile, &facdr);
 
   /* Read data set summury record */
   get_dssr (metafile, &dssr);
