@@ -73,7 +73,7 @@ typedef enum {
 // Form reduced resolution version of the model.  The scale_factor
 // must be positive and odd.  The new image will be
 // ceil (model->size_x / scale_factor) pixels by 
-// ceil (model->size_y / scale_factr) pixels.  Scaling is performed by 
+// ceil (model->size_y / scale_factor) pixels.  Scaling is performed by 
 // averaging blocks of pixels together, using odd pixel reflection
 // around the image edges (see the description of the apply_kernel
 // method).
@@ -100,7 +100,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 // original_size_x by original_size_y image in file.  The new image
 // will be size_x by size_y pixels.  This method is like new_from_file
 // method, but gets its data by sampling in each dimension using
-// bilinear interpolation.  This is a good way of forming quick
+// bilinear interpolation.  This is a decent way of forming quick
 // thumbnails of images, but not much else.
 FloatImage *
 float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y, 
