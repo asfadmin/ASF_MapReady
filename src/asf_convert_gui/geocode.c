@@ -389,6 +389,12 @@ void geocode_options_changed()
 		    enable_first_standard_parallel = TRUE;
 		    enable_false_northing = TRUE;
 		    enable_false_easting = TRUE;
+
+		    gtk_entry_set_text(
+			GTK_ENTRY(first_standard_parallel_entry), "");
+		    gtk_entry_set_text(
+			GTK_ENTRY(second_standard_parallel_entry), "");
+
 		    break;
 		    
 		case LAMBERT_CONFORMAL_CONIC:
@@ -405,6 +411,12 @@ void geocode_options_changed()
 		    enable_latitude_of_origin = TRUE;
 		    enable_false_northing = TRUE;
 		    enable_false_easting = TRUE;
+
+		    gtk_entry_set_text(
+			GTK_ENTRY(first_standard_parallel_entry), "");
+		    gtk_entry_set_text(
+			GTK_ENTRY(second_standard_parallel_entry), "");
+
 		    break;
 		    
 		case ALBERS_EQUAL_AREA:
