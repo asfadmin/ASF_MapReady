@@ -118,8 +118,10 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
     ii = get_meta_ddr_struct_index(hname);
     if ((ii>-1) && (ii<NUM_META_DDR_STRUCTS)) {
         if (meta_ddr_structs[ii].ddr != ddr) {
-                printf("\nSOMETHING THAT SHOULD NOT HAVE HAPPENED IN C_PUTDDR() DID;\n"
-                       " PLEASE CONTACT PATRICK DENNY (pdenny@asf.alaska.edu)!\n");
+            printf("\n"
+                   "Warning: Bad programming in the asf_meta library.\n"
+                   "         Something that should not have happened in c_putddr() did.\n"
+                   "         Please contact Patrick Denny (pdenny@asf.alaska.edu).\n");
         }
         if (meta_ddr_structs[ii].ddr == ddr) {
             meta_parameters *mds_meta;
