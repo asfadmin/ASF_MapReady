@@ -9,6 +9,8 @@ all: $(TARGETS)
 
 $(BINDIR)/list_ground_targets.sql: list_ground_targets.sql
 	cp list_ground_targets.sql $(BINDIR)
+	chmod 775 $(BINDIR)/list_ground_targets.sql
 
 $(BINDIR)/list_sites.sql: list_sites.sql
 	cp list_sites.sql $(BINDIR)
+	chmod 775 $(BINDIR)/list_sites.sql
