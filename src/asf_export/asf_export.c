@@ -31,7 +31,10 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 
-static char *program_name = "export";
+#define MICRON 0.00000001
+#define FLOAT_EQUIVALENT(a, b) (fabs(a - b) < MICRON ? 1 : 0)
+
+static char *program_name = "asf_export";
 
 /* Print invocation information.  */
 void 
@@ -72,7 +75,7 @@ typedef struct {
 } command_line_parameters_t;
 
 typedef enum {
-  ENVI,				/* ENVI GIS package.  */
+  ENVI,				/* ENVI software package.  */
   ESRI,				/* ESRI GIS package.  */
   GEOTIFF,			/* Geotiff.  */
   JPEG,				/* Joint Photographic Experts Group.  */
@@ -557,8 +560,349 @@ export_as_esri (const char *metadata_file_name,
   FCLOSE(fp);
 
   free (esri);
+
+  /* Write ESRI projection file */
+  char esri_prj_file_name[2 * MAX_IMAGE_NAME_LENGTH];
+  char projection[100], datum[100], spheroid_str[100]="", semimajor[25]="";
+  char flattening[25];  
+  double central_meridian, latitude_of_origin, standard_parallel_1, standard_parallel_2;
+  spheroid_type_t spheroid;
+  create_name (esri_prj_file_name, output_file_name, ".prj");
+
+  if (md->projection && md->projection->type < SCANSAR_PROJECTION) {
+
+    if (FLOAT_EQUIVALENT(md->general->re_major,6378137) && 
+        FLOAT_EQUIVALENT(md->general->re_minor,6356752.3143))
+        spheroid = WGS_1984;
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6378135.0) && 
+             FLOAT_EQUIVALENT(md->general->re_minor,6356750.519915)) 
+             spheroid = WGS_1972;
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6378206.4) && 
+             FLOAT_EQUIVALENT(md->general->re_minor,6356583.8))
+             spheroid = CLARKE_1866;
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6378249.145) && 
+             FLOAT_EQUIVALENT(md->general->re_minor,6356514.86955))
+             spheroid = CLARKE_1880;
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6377397.155) && 
+             FLOAT_EQUIVALENT(md->general->re_minor,6356078.9628))
+             spheroid = BESSEL_1841;
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6378157.5) && 
+             FLOAT_EQUIVALENT(md->general->re_minor,6356772.2))
+             spheroid = INTERNATIONAL_1967;
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6378137.0) && 
+             FLOAT_EQUIVALENT(md->general->re_minor,6356752.31414))
+             spheroid = GRS_1980;
+
+    switch (spheroid) {
+    case WGS_1984:
+      strcpy(spheroid_str,"WGS_1984");
+      strcpy(semimajor,"6378137");
+      strcpy(flattening,"298.257223563");
+      break;
+    case WGS_1972:
+      strcpy(spheroid_str,"WGS_1972");
+      strcpy(semimajor,"6378135");
+      strcpy(flattening,"298.26");
+      break;
+    case CLARKE_1866:
+      strcpy(spheroid_str,"CLARKE_1866");
+      strcpy(semimajor,"6378206.4");
+      strcpy(flattening,"294.9786982");
+      break;
+    case CLARKE_1880:
+      strcpy(spheroid_str,"CLARKE_1880");
+      strcpy(semimajor,"6378249.138");
+      strcpy(flattening,"293.466307656");
+      break;
+    case GRS_1967:
+      strcpy(spheroid_str,"GRS_1967_Truncated");
+      strcpy(semimajor,"6378160");
+      strcpy(flattening,"298.25");
+      break;
+    case GRS_1980:
+      strcpy(spheroid_str,"GRS_1980");
+      strcpy(semimajor,"6378137");
+      strcpy(flattening,"298.257222101");
+      break;
+    case BESSEL_1841:
+      strcpy(spheroid_str,"BESSEL_1841");
+      strcpy(semimajor,"6377397.155");
+      strcpy(flattening,"299.1528128");
+      break;
+    case INTERNATIONAL_1924:
+      strcpy(spheroid_str,"INTERNATIONAL_1924");
+      strcpy(semimajor,"6378388");
+      strcpy(flattening,"297");
+      break;
+    case INTERNATIONAL_1967:
+      strcpy(spheroid_str,"INTERNATIONAL_1967");
+      strcpy(semimajor,"6378160");
+      strcpy(flattening,"298.25");
+      break;
+    }
+
+    switch (md->projection->type) {
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      switch (spheroid) {
+      case WGS_1984:
+	strcpy(projection, "WGS_1984");
+	strcpy(datum, "WGS_1984");
+	break;
+      case WGS_1972:
+        strcpy(projection, "WGS_1972");
+        strcpy(datum, "WGS_1972");
+        break;
+      case GRS_1980:
+	strcpy(projection, "NAD_1983");
+	strcpy(datum, "North_American_1983");
+	break;
+      case CLARKE_1866:
+	strcpy(projection, "NAD_1927");
+	strcpy(datum, "North_American_1927");
+	break;
+      }
+      central_meridian = ((6 * abs(md->projection->param.utm.zone)) - 183);
+      fp = FOPEN(esri_prj_file_name, "w");
+      fprintf(fp, 
+	      "PROJCS[\"%s_UTM_Zone_%d%c\","
+	      "GEOGCS[\"GCS_%s\","
+	      "DATUM[\"D_%s\","
+	      "SPHEROID[\"%s\",%s,%s]],"
+	      "PRIMEM[\"Greenwich\",0],"
+	      "UNIT[\"Degree\",0.017453292519943295]],"
+	      "PROJECTION[\"Transverse_Mercator\"],"
+	      "PARAMETER[\"False_Easting\",500000],"
+	      "PARAMETER[\"False_Northing\",0],"
+	      "PARAMETER[\"Central_Meridian\",%.0f],"
+	      "PARAMETER[\"Scale_Factor\",0.9996],"
+	      "PARAMETER[\"Latitude_Of_Origin\",0],"
+	      "UNIT[\"Meter\",1]]",
+	      projection, md->projection->param.utm.zone, md->projection->hem, datum, 
+	      datum, spheroid_str, semimajor, flattening, central_meridian);
+      FCLOSE(fp);
+      break;
+    case POLAR_STEREOGRAPHIC:
+      if (md->projection->hem == 'N') strcpy(projection, "North_Pole_Stereographic");
+      else if (md->projection->hem == 'S') strcpy(projection, "South_Pole_Stereographic");
+      fp = FOPEN(esri_prj_file_name, "w");
+      fprintf(fp, 
+	      "PROJCS[\"%s\","
+	      "GEOGCS[\"GCS_WGS_1984\","
+	      "DATUM[\"D_WGS_1984\","
+	      "SPHEROID[\"%s\",%s,%s]],"
+	      "PRIMEM[\"Greenwich\",0],"
+	      "UNIT[\"Degree\",0.017453292519943295]],"
+	      "PROJECTION[\"Stereographic\"],"
+	      "PARAMETER[\"False_Easting\",0],"
+	      "PARAMETER[\"False_Northing\",0],"
+	      "PARAMETER[\"Central_Meridian\",%.0f],"
+	      "PARAMETER[\"Scale_Factor\",1],"
+	      "PARAMETER[\"Latitude_Of_Origin\",%.0f],"
+	      "UNIT[\"Meter\",1]]",
+	      projection, spheroid_str, semimajor, flattening,
+	      md->projection->param.ps.slon, md->projection->param.ps.slat);
+      FCLOSE(fp);
+      break;
+    case ALBERS_EQUAL_AREA:
+      if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,25) &&
+	  FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,20) &&
+	  FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,-23) &&
+	  FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,0)) {
+	strcpy(projection, "Africa_Albers_Equal_Area_Conic");
+	strcpy(datum, "WGS_1984");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,-154) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,55) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,65) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,50)) {
+	strcpy(projection, "Alaska_Albers_Equal_Area_Conic");
+	strcpy(datum, "North_American_1983");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,95) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,15) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,65) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,30)) {
+	strcpy(projection, "Asia_North_Albers_Equal_Area_Conic");
+	strcpy(datum, "WGS_1984");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,125) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,7) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,-32) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,-15)) {
+	strcpy(projection, "Asia_South_Albers_Equal_Area_Conic");
+	strcpy(datum, "WGS_1984");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,-96) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,50) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,70) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,40)) {
+	strcpy(projection, "Canada_Albers_Equal_Area_Conic");
+	strcpy(datum, "North_American_1983");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,10) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,43) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,62) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,30)) {
+	strcpy(projection, "Europe_Albers_Equal_Area_Conic");
+	strcpy(datum, "European_1950");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,-157) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,8) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,18) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,13)) {
+	strcpy(projection, "Hawaii_Albers_Equal_Area_Conic");
+	strcpy(datum, "North_American_1983");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,-96) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,20) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,60) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,40)) {
+	strcpy(projection, "North_America_Albers_Equal_Area_Conic");
+	strcpy(datum, "North_American_1983");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,-60) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,-5) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,-42) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,-32)) {
+	strcpy(projection, "South_America_Albers_Equal_Area_Conic");
+	strcpy(datum, "South_American_1969");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,-96) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,29.5) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,45.5) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,37.5)) {
+	strcpy(projection, "USA_Contiguous_Albers_Equal_Area_Conic");
+	strcpy(datum, "North_American_1983");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,-96) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,29.5) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,45.5) &&
+	       FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,23.0)) {
+	strcpy(projection, "USA_Contiguous_Albers_Equal_Area_Conic_USGS_version");
+	strcpy(datum, "North_American_1983");
+      }
+      fp = FOPEN(esri_prj_file_name, "w");
+      fprintf(fp,
+	      "PROJCS[\"%s\","
+	      "GEOGCS[\"GCS_%s\","
+	      "DATUM[\"D_%s\","
+	      "SPHEROID[\"%s\",%s,%s]],"
+	      "PRIMEM[\"Greenwich\",0],"
+	      "UNIT[\"Degree\",0.0174532925199432955]],"
+	      "PROJECTION[\"Albers\"],"
+	      "PARAMETER[\"False_Easting\",0],"
+	      "PARAMETER[\"False_Northing\",0],"
+	      "PARAMETER[\"Central_Meridian\",%.1f],"
+	      "PARAMETER[\"Standard_Parallel_1\",%.1f],"
+	      "PARAMETER[\"Standard_Parallel_2\",%.1f],"
+	      "PARAMETER[\"Latitude_Of_Origin\",%.1f],"
+	      "UNIT[\"Meter\",1]],",
+	      projection, datum, datum, spheroid_str, semimajor, flattening,
+	      md->projection->param.albers.center_meridian,
+	      md->projection->param.albers.std_parallel1,
+	      md->projection->param.albers.std_parallel2,
+	      md->projection->param.albers.orig_latitude);
+      FCLOSE(fp);
+     break;
+    case LAMBERT_CONFORMAL_CONIC:
+      if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,25) &&
+	  FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,20) &&
+	  FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,-23) &&
+	  FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,0)) {
+	strcpy(projection, "Africa_Lambert_Conformal_Conic");
+	strcpy(datum, "WGS_1984");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,105) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,30) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,62) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,0)) {
+	strcpy(projection, "Asia_Lambert_Conformal_Conic");
+	strcpy(datum, "WGS_1984");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,95) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,15) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,65) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,30)) {
+	strcpy(projection, "Asia_North_Lambert_Conformal_Conic");
+	strcpy(datum, "WGS_1984");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,125) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,7) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,-32) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,-15)) {
+	strcpy(projection, "Asia_South_Albers_Equal_Area_Conic");
+	strcpy(datum, "WGS_1984");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,-96) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,50) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,70) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,40)) {
+	strcpy(projection, "Canada_Lambert_Conformal_Conic");
+	strcpy(datum, "North_American_1983");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,10) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,43) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,62) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,30)) {
+	strcpy(projection, "Europe_Lambert_Conformal_Conic");
+	strcpy(datum, "European_1950");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,-96) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,20) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,60) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,40)) {
+	strcpy(projection, "North_America_Lambert_Conformal_Conic");
+	strcpy(datum, "North_American_1983");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,-60) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,-5) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,-42) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,-32)) {
+	strcpy(projection, "South_America_Lambert_Conformal_Conic");
+	strcpy(datum, "South_American_1969");
+      }
+      else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,-96) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,33) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,45) &&
+	       FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,39)) {
+	strcpy(projection, "USA_Contiguous_Lambert_Conformal_Conic");
+	strcpy(datum, "North_American_1983");
+      }
+      fp = FOPEN(esri_prj_file_name, "w");
+      fprintf(fp, 
+	      "PROJCS[\"%s\","
+	      "GEOGCS[\"GCS_%s\","
+	      "DATUM[\"D_%s\","
+	      "SPHEROID[\"%s\",%s,%s]],"
+	      "PRIMEM[\"Greenwich\",0],"
+	      "UNIT[\"Degree\",0.0174532925199432955]],"
+	      "PROJECTION[\"Lambert_Conformal_Conic\"],"
+	      "PARAMETER[\"False_Easting\",0],"
+	      "PARAMETER[\"False_Northing\",0],"
+	      "PARAMETER[\"Central_Meridian\",%.0f],"
+	      "PARAMETER[\"Standard_Parallel_1\",%.0f],"
+	      "PARAMETER[\"Standard_Parallel_2\",%.0f],"
+	      "PARAMETER[\"Latitude_Of_Origin\",%.0f],"
+	      "UNIT[\"Meter\",1]]",
+	      projection, datum, datum, spheroid_str, semimajor, flattening,
+	      md->projection->param.lamcc.lon0,
+	      md->projection->param.lamcc.plat1,
+	      md->projection->param.lamcc.plat2,
+	      md->projection->param.lamcc.lat0);
+      FCLOSE(fp);
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      break;
+    case STATE_PLANE:
+      break;
+    case SCANSAR_PROJECTION: 
+      break;
+    }
+  }
+
   meta_free(md);
 
+  /* Write ESRI data file */
   char esri_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
   strcpy (esri_data_file_name, output_file_name);
   strcat (esri_data_file_name, ".bil");
