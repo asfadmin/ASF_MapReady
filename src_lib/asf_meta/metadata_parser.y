@@ -579,7 +579,7 @@ int parse_metadata(meta_parameters *dest, char *file_name)
 
   meta_yyin = FOPEN(file_name, "r");
   if ( !(stack_top = malloc(sizeof(block_stack_node))) ) {
-    fprintf(stderr, "malloc failed in %s, giving up", __func__);
+    fprintf(stderr, "malloc failed in %s, giving up", "parse_metadata");
     exit(EXIT_FAILURE);
   }
   block_stack_push(&stack_top, "outermost_section", dest);

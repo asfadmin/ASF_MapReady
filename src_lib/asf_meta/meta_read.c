@@ -82,7 +82,8 @@ int meta_is_new_style(const char *file_name)
   double version;		/* Version as floating point.  */
   do {
     if ( fgets(line, MAX_METADATA_LINE, meta_file) == '\0' ) {
-      err_die("%s function: didn't find Meta version field\n", __func__);
+      err_die("%s function: didn't find Meta version field\n", 
+              "meta_is_new_style");
     }    
     /* Note: whitespace in a scanf conversion matches zero or more
        white space characters, %s matches non-white-space.  */
@@ -90,7 +91,8 @@ int meta_is_new_style(const char *file_name)
 				    version_string)) != 1 );
   version = strtod (version_string, &end_ptr);
   if ( *end_ptr != '\0' ) {
-    err_die ("%s function: error parsing Meta vesion field\n", __func__);
+    err_die ("%s function: error parsing Meta vesion field\n",
+             "meta_is_new_style");
   }
   if ( strtod(version_string, &end_ptr)
        < NEW_FORMAT_VERSION - 0.0002 /* <-- for sloppy float compare.  */ ) {

@@ -70,7 +70,7 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
 	break;
       default:
 	printf("ERROR! Unrecognized map projection code '%c' in function '%s'; program exitting.\n",
-		proj->type, __func__);
+		proj->type, "meta_write_old");
 	exit(EXIT_FAILURE);
     }
     meta_put_string(fp,"}","","end proj");
