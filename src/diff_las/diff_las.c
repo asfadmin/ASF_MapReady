@@ -74,87 +74,105 @@ int main(int argc, char **argv)
 {
 #define hist_bins 50
 	const float span=1.0;
-	int x,y;
-	float *line1,*line2,*outline;
-	double totalDiff,totalSqDiff,smallestDiff,largestDiff,npixels;
-	int *histogram;
-	char *f1,*f2,*f3=NULL;
-	FILE *fp1,*fp2,*fp3=NULL;
-	struct DDR ddr1,ddr2,outddr;
-	int ignored_pix_cnt;
-	extern char *optarg;
-	extern int optind;
-	int c;
-	float mask=-1.0;
+	int xx,yy;
+	float *line_buf1, *line_buf2;
+	float *diff_line_buf;
+	double totalDiff, totalSqDiff;          /* */
+	double smallestDiff, largestDiff;       /* Largest & smallest difference found between images */
+	double npixels;                         /* Number of pixels in each image           */
+	float mask = -1.0;                      /* Value to ignore while doing statistics   */
+	int ignored_pix_cnt;                    /* Number of pixels ignored when using mask */
+	int *histogram;                         /* Histogram pointer                        */
+	int line_count, sample_count;           /* Number of lines & samples for all images */
+	char *in_file_name1, *in_file_name2;    /* Name for images to be compared           */
+	char *diff_file_name = NULL;            /* Name for difference file                 */
+	FILE *fp1, *fp2;                        /* File pointers for images to be compared  */
+	FILE *diff_fp = NULL;                   /* File pointer for difference image        */
+	meta_parameters *meta1, *meta2;         /* Meta files for images to be compared     */
+	meta_parameters *diff_meta;             /* Meta file for difference image           */
+	extern int currArg;                     /* From cla.h in asf.h                      */
 
-	while ((c=getopt(argc, argv, "d:m:")) != EOF)
+/* Parse command line args */
+	while (currArg < (argc-2))
 	{
-		switch (c) {
-		 case 'd':
-			f3 = optarg;
-			break;
-		 case 'm':
-			mask = atof(optarg);
-			break;
-		 default:
-			usage(argv[0]);
+		char *key=argv[currArg++];
+		if (strmatch(key,"-d")) {
+			CHECK_ARG(1)
+			diff_file_name = GET_ARG(1);
 		}
+		else if (strmatch(key,"-m")) {
+			CHECK_ARG(1)
+			mask = atof(GET_ARG(1));
+		}
+		else {printf("\n**Invalid option:  %s\n\n",argv[currArg-1]);usage(argv[0]);}
 	}
-	
-	if (optind >= argc) 
-		usage(argv[0]);
+	if ((argc-currArg) < 2) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+	in_file_name1 = argv[currArg++];
+	in_file_name2 = argv[currArg];
 
-	f1=argv[optind];
-	f2=argv[optind+1];
+	meta1 = meta_read(in_file_name1);
+	meta2 = meta_read(in_file_name2);
 
-	if (0!=c_getddr(f1,&ddr1)) {printf("Couldn't open ddr file for %s.\n",f1);exit(1);}
-	if (0!=c_getddr(f2,&ddr2)) {printf("Couldn't open ddr file for %s.\n",f2);exit(1);}
-	if (ddr1.nl!=ddr2.nl)
-		{printf("The number of lines is different.\n");exit(1);}
-	if (ddr1.ns!=ddr2.ns)
-		{printf("The number of samples is different.\n");exit(1);}
-	if (ddr1.dtype!=ddr2.dtype)
-		{printf("The data types are different.\n");exit(1);}
-	if (ddr1.nbands!=ddr2.nbands)
-		{printf("The number of bands is different.\n");exit(1);}
-	if (ddr1.master_line!=ddr2.master_line)
-		printf("The master line fields do not match:%i vs %i\n",ddr1.master_line,ddr2.master_line);
-	if (ddr1.master_sample!=ddr2.master_sample)
-		printf("The master sample fields do not match:%i vs %i\n",ddr1.master_sample,ddr2.master_sample);
-	
-	outddr=ddr1;
-	if (outddr.dtype==DTYPE_BYTE)
-		outddr.dtype=DTYPE_SHORT;
-	if (f3)
-	{
-		c_putddr(f3,&outddr);
-		fp3=fopenImage(f3,"wb");
-		if (fp3==NULL)
-			printf("Cannot open %s for writing.  No output will be generated.\n",f3);
+/* Check for bad metadata differences */
+	if (meta1->general->line_count != meta2->general->line_count) {
+		printf("The number of lines is different.\n");
+		exit(EXIT_FAILURE);
 	}
-	fp1=fopenImage(f1,"rb");
-	fp2=fopenImage(f2,"rb");
-	line1=(float *)MALLOC(sizeof(float)*ddr1.ns);
-	line2=(float *)MALLOC(sizeof(float)*ddr2.ns);
-	outline=(float *)MALLOC(sizeof(float)*outddr.ns);
-	histogram=(int *)MALLOC((hist_bins+1)*sizeof(int));
-	for (x=0;x<=hist_bins;x++)
-		histogram[x]=0;
-	totalDiff=totalSqDiff=0.0;
-	smallestDiff=100000000000.0;
-	largestDiff=0;
-	npixels=(float)ddr1.nl*(float)ddr1.ns;
-	for (y=0;y<ddr1.nl;y++)
+	if (meta2->general->sample_count != meta2->general->sample_count) {
+		printf("The number of samples is different.\n");
+		exit(EXIT_FAILURE);
+	}
+	if (strncmp(meta1->general->data_type, meta2->general->data_type,FIELD_STRING_MAX)!=0) {
+		printf("The data types are different.\n");
+		exit(EXIT_FAILURE);
+	}
+	if (meta1->general->start_line != meta2->general->start_line)
+		printf("The start line fields do not match:%i vs %i\n",
+			meta1->general->start_line,
+			meta2->general->start_line);
+	if (meta1->general->start_sample != meta2->general->start_sample)
+		printf("The start sample fields do not match:%i vs %i\n",
+			meta1->general->start_sample,
+			meta2->general->start_sample);
+	
+/* If user wants a diff image, prepare it */
+	if (diff_file_name)
 	{
-		getFloatLine(fp1,&ddr1,y,line1);
-		getFloatLine(fp2,&ddr2,y,line2);
-		for (x=0;x<ddr1.ns;x++)
+		diff_meta = meta_copy(meta1);
+		if (strncmp(diff_meta->general->data_type, "BYTE", FIELD_STRING_MAX) == 0)
+			strncpy (diff_meta->general->data_type, "INTEGER*2", FIELD_STRING_MAX);
+		diff_fp = fopenImage(diff_file_name,"wb");
+		meta_write(diff_meta, diff_file_name);
+	}
+/* Prepare data for processing */
+	line_count    = meta1->general->line_count;
+	sample_count  = meta1->general->sample_count;
+	fp1           = fopenImage(in_file_name1,"rb");
+	fp2           = fopenImage(in_file_name2,"rb");
+	line_buf1     = (float *)MALLOC(sizeof(float)*sample_count);
+	line_buf2     = (float *)MALLOC(sizeof(float)*sample_count);
+	diff_line_buf = (float *)MALLOC(sizeof(float)*sample_count);
+	histogram     = (int *)MALLOC((hist_bins+1)*sizeof(int));
+	for (xx=0; xx<=hist_bins; xx++)
+		histogram[xx] = 0;
+	totalDiff    = 0.0;
+	totalSqDiff  = 0.0;
+	smallestDiff = 100000000000.0;
+	largestDiff  = 0.0;
+	npixels = (float)line_count * (float)sample_count;
+
+/* Do the processing */
+	for (yy=0; yy<line_count; yy++)
+	{
+		get_float_line(fp1,meta1,yy,line_buf1);
+		get_float_line(fp2,meta2,yy,line_buf2);
+		for (xx=0; xx<sample_count; xx++)
 		{
-			register float diff,l1=line1[x],l2=line2[x];
+			register float diff,l1=line_buf1[xx],l2=line_buf2[xx];
 			int histIndex;
 			if ((l1==mask) || (l2==mask))
 			{
-				diff = outline[x] = mask;
+				diff = diff_line_buf[xx] = mask;
 				ignored_pix_cnt++;
 				continue;
 			}
@@ -168,33 +186,32 @@ int main(int argc, char **argv)
 			if (histIndex>hist_bins) histIndex=hist_bins;
 			histogram[histIndex]++;
 			
-			diff=l1-l2;
-			outline[x]=diff;
-			totalDiff+=diff;
-			totalSqDiff+=diff*diff;
+			diff               = l1-l2;
+			diff_line_buf[xx]  = diff;
+			totalDiff         += diff;
+			totalSqDiff       += diff*diff;
 			if (diff<0) diff=-diff;
 			if (largestDiff<diff) largestDiff=diff;
 			if (smallestDiff>diff) smallestDiff=diff;
 		}
-		if (fp3)
-			putFloatLine(fp3,&outddr,y,outline);
-		if (y%100==0)
-			printf("\tComparing line %i...\n",y);
+		if (diff_fp)
+			put_float_line(diff_fp,diff_meta,yy,diff_line_buf);
+		if (yy%100==0)
+			printf("\tComparing line %i...\r",yy);
 	}
-	fclose(fp1);
-	fclose(fp2);
-	if (fp3)
-		fclose(fp3);
+	printf("\tCompared %i lines.     \n", yy);
+
+/* If files differ enough, write out histogram and other stats for user */
 	if (histogram[hist_bins/2]/npixels<0.995)
 	{
 		printf("Files differ by more than 0.5%%!\n");
 		printf("Relative Error Histogram:\n Diff:  Frequency:\n");
-		for (x=0;x<=hist_bins;x++)
-			if (histogram[x])
-				printf("%6.2f %7.4f%%\n",x/(50.0/2)*span-span,histogram[x]/npixels*100);
+		for (xx=0;xx<=hist_bins;xx++)
+			if (histogram[xx])
+				printf("%6.2f %7.4f%%\n",xx/(50.0/2)*span-span,histogram[xx]/npixels*100);
 		if (mask==-1.0)
 		{
-			printf("Comparing %s to %s:\n",f1,f2);
+			printf("Comparing %s to %s:\n",in_file_name1,in_file_name2);
 			printf("Average difference: %f\n",totalDiff/npixels);
 			printf("RMS difference: %f\n",sqrt(totalSqDiff/npixels));
 			printf("Largest Absolute Difference:%f\n",largestDiff);
@@ -202,7 +219,7 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			printf("Comparing %s to %s:\n",f1,f2);
+			printf("Comparing %s to %s:\n",in_file_name1,in_file_name2);
 			printf("Average difference: %f\n",totalDiff/(npixels-ignored_pix_cnt));
 			printf("RMS difference: %f\n",sqrt(totalSqDiff/(npixels-ignored_pix_cnt)));
 			printf("Largest Absolute Difference:%f\n",largestDiff);
@@ -213,24 +230,40 @@ int main(int argc, char **argv)
 			printf(" Actual pixels in each image: %d\n",(int)npixels);
 		}
 	}
+/* Clean up allocated memory */
+	meta_free(meta1);
+	FCLOSE(fp1);
+	meta_free(meta2);
+	FCLOSE(fp2);
+	if (diff_fp) {
+		meta_free(diff_meta);
+		FCLOSE(diff_fp);
+	}
+
 	printf("\n");
 	return(0);
 }
 
 void usage(char *name)
 {
-	printf("\nUsage:\n");
-	printf("   %s [-m mask_value] [-d difference.ext] <img1.ext> <img2.ext>\n",name);
-	printf("\nOptional Inputs:\n");
-	printf("   -m mask_value      Specify a value in the comparison images to be ignored\n");
-	printf("   -d difference.ext  Create an image with pixels numerically equal to:\n");
-	printf("                        difference.ext = img1.ext - img2.ext\n");
-	printf("Required Inputs:\n");
-	printf("   <img1.ext>   First comparison image (with extention)\n");
-	printf("   <img2.ext>   Second comparison image (with extention)\n");
-	printf("\nDescription:\n");
-	printf("   Compares two LAS 6.0 images.\n");
-	printf("   This is useful for debugging.\n");
-	printf("\nVersion %.2f, ASF SAR TOOLS\n\n", VERSION);
-  	exit(1);
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-m mask_value] [-d difference.ext] <img1.ext> <img2.ext>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   img1.ext  First comparison image (with extention)\n"
+	"   img2.ext  Second comparison image (with extention)\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -m mask_value  Specify a value in the comparison images to be ignored\n"
+	"   -d diff.ext    Create an image with pixels numerically equal to:\n"
+	"                        diff.ext = img1.ext - img2.ext\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Compares two LAS 6.0 images.\n"
+	"   This is useful for debugging.\n");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n", VERSION);
+ exit(1);
 }
