@@ -45,6 +45,8 @@
 #define SIGMA_EXT       ".sigma0"
 #define DATA_EXT        ".img"
 #define LOOK_EXT        ".look"
+#define LATITUDE_EXT    ".lat"
+#define LONGITUDE_EXT   ".lon"
 #define METADATA_EXT    ".metadata"
 #define COMPLEX_I_PLANE ".dataI"
 #define COMPLEX_Q_PLANE ".dataQ"
@@ -55,6 +57,3 @@
 #define STANDARD_FORMAT      "detected"
 #define SIZE_OF_ASF_COMPLEX  (4)
 
-/* Prototype for writing function */
-void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
-                         struct dataset_sum_rec *dssr);
