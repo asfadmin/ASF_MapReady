@@ -38,30 +38,6 @@ round (double arg)
 
 #define FLAG_NOT_SET -1
 
-
-
-/* Structure to hold elements of the command line.  */
-typedef struct {
-  /* Output format to use.  */
-  char format[MAX_FORMAT_STRING_LENGTH];
-  /* Maximum size of largest output dimension, in pixels, or
-     NO_MAXIMUM_OUTPUT_SIZE.  The output image will be scaled to honor
-     this value, if its maximum dimension is not already less than
-     this.  */
-  long size;
-  /* Name of data and metadata input files  */
-  char in_data_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
-  char in_meta_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
-  /* Output name to use.  */
-  char output_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
-  int verbose;                  /* Flag true if in verbose mode.  */
-  int quiet;                    /* True if quiet mode is active.  */
-  char leader_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
-  char cal_params_file[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
-  char cal_comment[MAX_COMMENT_LENGTH];
-  scale_t scale;
-} command_line_parameters_t;
-
 /* Output format to use.  */
 typedef enum {
   ENVI,                         /* ENVI software package.  */
@@ -82,6 +58,36 @@ typedef enum {
   USER_DEFINED                  /* Some unknown user defined ellipsoid.  */
 } asf_export_ellipsoid_t;
 
+/* Type describing how floating point values are to be mapped into
+   bytes.  */
+typedef enum {
+  SAMPLE_MAPPING_SIGMA,
+  SAMPLE_MAPPING_MINMAX,
+  SAMPLE_MAPPING_TRUNCATE
+} sample_mapping_t;
+
+/* Structure to hold elements of the command line.  */
+typedef struct {
+  /* Output format to use.  */
+  char format[MAX_FORMAT_STRING_LENGTH];
+  /* Maximum size of largest output dimension, in pixels, or
+     NO_MAXIMUM_OUTPUT_SIZE.  The output image will be scaled to honor
+     this value, if its maximum dimension is not already less than
+     this.  */
+  long size;
+  /* Name of data and metadata input files  */
+  char in_data_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+  char in_meta_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+  /* Output name to use.  */
+  char output_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+  int verbose;                  /* Flag true if in verbose mode.  */
+  int quiet;                    /* True if quiet mode is active.  */
+  char leader_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+  char cal_params_file[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+  char cal_comment[MAX_COMMENT_LENGTH];
+  sample_mapping_t sample_mapping;
+} command_line_parameters_t;
+
 /* Prototypes */
 void usage();
 void help_page();
@@ -91,7 +97,7 @@ void *get_image_data (meta_parameters *metadata, const char *image_data_file);
 unsigned char averaging_kernel (gsl_matrix_uchar *img, int kernel_size, size_t i, size_t j);
 unsigned char *average_unsigned_char_pixels (unsigned char *pixels, unsigned long *width, \
                               unsigned long *height, int kernel_size);
-unsigned char *scale_floats_to_unsigned_bytes (float *daf, size_t pixel_count);
+unsigned char *map_floats_to_unsigned_bytes (float *daf, size_t pixel_count);
 unsigned char *scale_unsigned_char_image_dimensions (unsigned char *pixels, \
                                       unsigned long max_large_dimension, \
                                       unsigned long *width, \
@@ -108,13 +114,13 @@ void export_as_geotiff (const char *metadata_file_name,
                         const char *image_data_file_name,
                         const char *output_file_name,
 			long max_size,
-                        scale_t scale);
+                        sample_mapping_t sample_mapping);
 
 void export_as_jpeg (const char *metadata_file_name,
                      const char *image_data_file_name,
                      const char *output_file_name,
                      long max_size,
-                     scale_t scale);
+                     sample_mapping_t sample_mapping);
 
 void export_as_ppm (const char *metadata_file_name,
                     const char *image_data_file_name,
@@ -132,4 +138,4 @@ void export_as_tiff (const char *metadata_file_name,
                      const char *image_data_file_name,
                      const char *output_file_name,
                      long max_size,
-                     scale_t scale);
+                     sample_mapping_t sample_mapping);

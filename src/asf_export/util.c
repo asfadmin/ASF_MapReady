@@ -221,7 +221,7 @@ unsigned char *average_unsigned_char_pixels (unsigned char *pixels,
    [max (minsample, mean - 3 * sigma), min (maxsample, mean + 3 * sigma)]
    into the unsigned char range, with input samples outside the above
    range clamped.  Return the data in new malloc()ed memory.  */
-unsigned char *scale_floats_to_unsigned_bytes (float *daf, size_t pixel_count)
+unsigned char *map_floats_to_unsigned_bytes (float *daf, size_t pixel_count)
 {
   unsigned char *pixels = malloc (pixel_count * sizeof (unsigned char));
 

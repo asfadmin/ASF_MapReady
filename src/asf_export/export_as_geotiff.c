@@ -94,7 +94,7 @@ export_as_geotiff (const char *metadata_file_name,
                    const char *image_data_file_name,
                    const char *output_file_name,
 		   long max_size,
-                   scale_t scale)
+                   sample_mapping_t sample_mapping)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
@@ -194,7 +194,7 @@ export_as_geotiff (const char *metadata_file_name,
   /* Scale float image down to bytes, if required.  This is currently
      done in a very memory intensive way and could stand to be
      rewritten to use float_image.  */
-  if (scale != NONE) {
+  if (sample_mapping != NONE) {
     if (md->general->image_data_type == SIGMA_IMAGE ||
       md->general->image_data_type == GAMMA_IMAGE ||
       md->general->image_data_type == BETA_IMAGE ||
@@ -218,7 +218,7 @@ export_as_geotiff (const char *metadata_file_name,
 		"Size of the unsigned char data type on this machine is "
 		"different than expected.\n");
 
-    if ( scale != SIGMA ) {
+    if ( sample_mapping != SIGMA ) {
       asfPrintWarning ("using two sigma method instead of requested method to "
 		       "convert floats to bytes");
     }
@@ -601,7 +601,8 @@ export_as_geotiff (const char *metadata_file_name,
       {
 	set_common_keys (ogtif);
 	GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
-		    CT_LambertConfConic_2SP);
+		    CT_LambertConfConic);
+		    //		    CT_LambertConfConic_2SP);
 	GTIFKeySet (ogtif, ProjFalseOriginLatGeoKey, TYPE_DOUBLE, 1,
 		    md->projection->param.lamcc.lat0);
 	GTIFKeySet (ogtif, ProjFalseOriginLongGeoKey, TYPE_DOUBLE, 1,
@@ -989,7 +990,7 @@ export_as_geotiff (const char *metadata_file_name,
   unsigned char *byte_line_buffer = g_new (unsigned char, si->size_x);
   for ( ii = 0 ; ii < si->size_y ; ii++ ) {
     float_image_get_row (si, ii, line_buffer);
-    if ( scale == NONE ) {
+    if ( sample_mapping == NONE ) {
       if ( TIFFWriteScanline (otif, line_buffer, ii, 0) < 0 ) {
         asfPrintError("Error writing to output geotiff file %s",
                       output_file_name);

@@ -34,7 +34,7 @@
 void
 export_as_jpeg (const char *metadata_file_name,
                 const char *image_data_file_name, const char *output_file_name,
-                long max_size, scale_t scale)
+                long max_size, sample_mapping_t sample_mapping)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);

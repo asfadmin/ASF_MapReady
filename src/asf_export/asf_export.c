@@ -21,9 +21,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_USAGE_STRING \
 "[-format <output_format>] [-size <max_dimension>]\n"\
-"              [-lut <leader file> <cal params file> <cal comment> ]\n"\
-"              [-byte <scale option> ] [-log <log_file>] [-quiet] [-help]\n"\
-"              <in_base_name> <out_full_name>"
+"              [-lut <leader file> <cal params file> <cal comment>]\n"\
+"              [-byte <sample mapping option> ] [-log <log_file>] [-quiet]\n"\
+"              [-help] <in_base_name> <out_full_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "   This program ingests ASF internal format data and exports said data to a\n"\
@@ -53,7 +53,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        Updates the original leader file with the calibration parameter\n"\
 "        file and the calibration comment. Exports image into CEOS format.\n"\
 "\n"\
-"   -byte <scale option>\n"\
+"   -byte <sample mapping option>\n"\
 "        Converts output image to byte using the following options:\n"\
 "             truncate - truncates the input values regardless of their\n"\
 "                        value range.\n"\
@@ -256,7 +256,7 @@ main (int argc, char *argv[])
   int formatFlag, sizeFlag, logFlag, quietFlag, lutFlag, byteFlag;
   int needed_args = 3;/*command & argument & argument*/
   int ii;
-  char scaleStr[25];
+  char sample_mapping_string[25];
 
   /*Check to see which options were specified*/
   if ( checkForOption ("-help", argc, argv) != -1
@@ -367,9 +367,9 @@ main (int argc, char *argv[])
   if ( strcmp (command_line.format, "TIFF") == 0 
        || strcmp (command_line.format, "TIF") == 0
        || strcmp (command_line.format, "JPEG") == 0)
-    command_line.scale = SIGMA;
+    command_line.sample_mapping = SIGMA;
   if ( strcmp (command_line.format, "GEOTIFF") == 0 )
-    command_line.scale = NONE;
+    command_line.sample_mapping = NONE;
 
   if ( sizeFlag != FLAG_NOT_SET )
     command_line.size = atol (argv[sizeFlag + 1]);
@@ -388,17 +388,17 @@ main (int argc, char *argv[])
     strcpy(command_line.cal_comment, argv[lutFlag + 3]);
   }
   if ( byteFlag != FLAG_NOT_SET ) {
-    strcpy (scaleStr, argv[byteFlag + 1]);
-    for ( ii = 0 ; ii < strlen (scaleStr) ; ii++)
-      scaleStr[ii] = toupper (scaleStr[ii]);
+    strcpy (sample_mapping_string, argv[byteFlag + 1]);
+    for ( ii = 0 ; ii < strlen (sample_mapping_string) ; ii++)
+      sample_mapping_string[ii] = toupper (sample_mapping_string[ii]);
 
     /* Set scaling mechanism */
-    if ( strcmp (scaleStr, "TRUNCATE") == 0 )
-      command_line.scale = TRUNCATE;
-    else if ( strcmp(scaleStr, "MINMAX") == 0 )
-      command_line.scale = MINMAX;
-    else if ( strcmp(scaleStr, "SIGMA") == 0 )
-      command_line.scale = SIGMA;
+    if ( strcmp (sample_mapping_string, "TRUNCATE") == 0 )
+      command_line.sample_mapping = TRUNCATE;
+    else if ( strcmp(sample_mapping_string, "MINMAX") == 0 )
+      command_line.sample_mapping = MINMAX;
+    else if ( strcmp(sample_mapping_string, "SIGMA") == 0 )
+      command_line.sample_mapping = SIGMA;
   }
 
   /*Grab/construct the data file name*/
@@ -466,17 +466,17 @@ main (int argc, char *argv[])
   else if ( format == TIF ) {
     export_as_tiff (command_line.in_meta_name, command_line.in_data_name,
 		    command_line.output_name, command_line.size,
-		    command_line.scale);
+		    command_line.sample_mapping);
   }
   else if ( format == GEOTIFF ) {
     export_as_geotiff (command_line.in_meta_name, command_line.in_data_name,
 		       command_line.output_name, command_line.size,
-		       command_line.scale);
+		       command_line.sample_mapping);
   }
   else if ( format == JPEG ) {
     export_as_jpeg (command_line.in_meta_name, command_line.in_data_name,
 		    command_line.output_name, command_line.size,
-		    command_line.scale);
+		    command_line.sample_mapping);
   }
   else if ( format == PPM ) {
     export_as_ppm (command_line.in_meta_name, command_line.in_data_name,
