@@ -1,5 +1,5 @@
 
-#define GM 3.9860045e+5		/* Gravitational constant.  */
+#define GM 3.9860045e+14	/* Gravitational constant [m^3 / s^2].  */
 
 typedef struct {
   double a;			/* Semi-major axis.  */
@@ -7,6 +7,7 @@ typedef struct {
   double i;			/* Inclination.  */
   double cap_omega;		/* Longitude of ascending node.  */
   double omega;			/* Argument of periapsis.  */
+  double anomaly;		/* Mean or eccentric anomaly.  */
 } keplerian_orbit_t;
 
 typedef struct {

@@ -240,7 +240,8 @@ C
       DO 40 I=2,L
       DO 40 J=0,I
       IF (J.GT.M) GO TO 40
-C     WRITE(*,5000)I,J,C(I+1,J+1),S(I+1,J+1)
+C     FIXME next line should be commented out again eventually.
+      WRITE(*,5000)I,J,C(I+1,J+1),S(I+1,J+1)
    40 CONTINUE
    50 CONTINUE
       AJ2=-C(3,1)

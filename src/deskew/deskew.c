@@ -38,11 +38,11 @@ BUGS:
 
 /******************************************************************************
 *                                                                             *
-*Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks    *
-*All rights reserved.                                                         *
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
 *                                                                             *
-*You should have received an ASF SOFTWARE License Agreement with this source  *
-*code. Please consult this agreement for license grant information.           *
+* You should have received an ASF SOFTWARE License Agreement with this source *
+* code. Please consult this agreement for license grant information.          *
 *                                                                             *
 *                                                                             *
 *       For more information contact us at:                                   *

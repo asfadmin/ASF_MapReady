@@ -18,55 +18,44 @@ VERSION         DATE   AUTHOR
 					   a template
 1.1		6/01	T. Logan	   Modified subroutines to make
 					   more reliable
-*******************************************************************/
-/***************** Copyright Notice ***********************
-                        English:
-         You can freely use, modify, and re-distribute
-this code and/or binaries as long as you don't sell them,
-and make sure to carry this notice along with them.
-However, if you want to sell them, you can contact the   
-University of Alaska Technology Corporation, below.
 
-
-                        Legalese:
-                 COPYRIGHT NOTIFICATION
-  
-(C) COPYRIGHT 2001 UNIVERSITY OF ALASKA. ALL RIGHTS RESERVED
-                                        
-This software discloses material protectable under copyright
-laws of the United States. Permission is hereby granted to
-use, reproduce, and prepare derivative works for noncommercial
-purposes at no charge, provided that this original copyright
-notice, and disclaimer are retained and any changes are
-clearly documented. Any entity desiring permission to
-incorporate this software or a work based on the software
-into a product for sale must contact the University of
-Alaska Technology Corporation.
-                                        
-  
-This software was authored by:
-
-Alaska SAR Facility, Geophysical Institute
-P.O. Box 757320, University of Alaska Fairbanks
-Fairbanks, Alaska 99775Ð7320
-FAX: (907)474-5195
-
-Any questions or comments on the software may be directed
-to one of the authors: Rick Guritz, Tom Logan, Mike Shindle,
-Rob Fatland, Orion Lawlor, and Dorothy Corbett; or to
-http://www.images.alaska.edu
-                        
-                 
-NEITHER THE UNIVERSITY OF ALASKA NOR ANY SUBUNIT THEREOF,
-NOR ANY OF THEIR EMPLOYEES MAKES ANY WARRANTY, EXPRESS
-OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR
-USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR
-PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD
-NOT INFRINGE PRIVATELY OWNED RIGHTS.
-LICENSING INQUIRES MAY BE DIRECTED TO THE UNIVERSITY   
-OF ALASKA TECHNOLOGY DEVELOPMENT CORPORATION AT (907)451-0718.
-************************************************************/
+*******************************************************************************
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* Redistribution and use in source and binary forms, with or without          *
+* modification, are permitted provided that the following conditions are met: *
+*                                                                             *
+*    * Redistributions of source code must retain the above copyright notice, *
+*      this list of conditions and the following disclaimer.                  *
+*    * Redistributions in binary form must reproduce the above copyright      *
+*      notice, this list of conditions and the following disclaimer in the    *
+*      documentation and/or other materials provided with the distribution.   *
+*    * Neither the name of the Geophysical Institute nor the names of its     *
+*      contributors may be used to endorse or promote products derived from   *
+*      this software without specific prior written permission.               *
+*                                                                             *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" *
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE   *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE  *
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE    *
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR         *
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF        *
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS    *
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN     *
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)     *
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE  *
+* POSSIBILITY OF SUCH DAMAGE.                                                 *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*       Alaska Satellite Facility                                             *
+*       Geophysical Institute                   http://www.asf.alaska.edu     *
+*       University of Alaska Fairbanks          uso@asf.alaska.edu            *
+*       P.O. Box 757320                                                       *
+*       Fairbanks, AK 99775-7320                                              *
+*                                                                             *
+******************************************************************************/
 #include "asf.h"
 #include "airsar_io.h"
 #include "asf_meta.h"

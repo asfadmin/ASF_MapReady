@@ -60,55 +60,24 @@ ALGORITHM REFERENCES:
 
 BUGS:
 
+*******************************************************************************
+*                                                                             *
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* You should have received an ASF SOFTWARE License Agreement with this source *
+* code. Please consult this agreement for license grant information.          *
+*                                                                             *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*	Alaska Satellite Facility	    	                              *
+*	Geophysical Institute			www.asf.alaska.edu            *
+*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
+*	P.O. Box 757320							      *
+*	Fairbanks, AK 99775-7320					      *
+*									      *
 ******************************************************************************/
-/***************** Copyright Notice ***********************
-                        English:
-         You can freely use, modify, and re-distribute 
-this code and/or binaries as long as you don't sell them,
-and make sure to carry this notice along with them.
-However, if you want to sell them, you can contact the 
-University of Alaska Technology Corporation, below.
-
-
-                        Legalese:
-                 COPYRIGHT NOTIFICATION
-
-(C) COPYRIGHT 1997 UNIVERSITY OF ALASKA. ALL RIGHTS RESERVED
-
-This software discloses material protectable under copyright 
-laws of the United States. Permission is hereby granted to 
-use, reproduce, and prepare derivative works for noncommercial 
-purposes at no charge, provided that this original copyright 
-notice, and disclaimer are retained and any changes are 
-clearly documented. Any entity desiring permission to 
-incorporate this software or a work based on the software 
-into a product for sale must contact the University of 
-Alaska Technology Corporation.
-
-
-This software was authored by:
-
-Alaska SAR Facility, Geophysical Institute
-P.O. Box 757320, University of Alaska Fairbanks
-Fairbanks, Alaska 99775Ð7320
-FAX: (907)474-5195
-
-Any questions or comments on the software may be directed 
-to one of the authors: Rick Guritz, Tom Logan, Mike Shindle,
-Rob Fatland, Orion Lawlor, and Dorothy Corbett; or to
-http://www.imagmages.alaska.edu
-
-
-NEITHER THE UNIVERSITY OF ALASKA NOR ANY SUBUNIT THEREOF, 
-NOR ANY OF THEIR EMPLOYEES MAKES ANY WARRANTY, EXPRESS 
-OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR 
-RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR 
-USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
-PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD 
-NOT INFRINGE PRIVATELY OWNED RIGHTS.
-LICENSING INQUIRES MAY BE DIRECTED TO THE UNIVERSITY 
-OF ALASKA TECHNOLOGY DEVELOPMENT CORPORATION AT (907)451-0718.
-************************************************************/
 
 #include "asf.h"
 #include <mpi.h>

@@ -1,18 +1,22 @@
 /****************************************************************************
 *								            *
 *   rmpatch.c --  Performs range migrations for a patch                     *
-*   Copyright (C) 1997  ASF STEP LAB 			   	    	    *
-*									    *
-
-Deskewing equations:
-
-     st=(freq-f0[i])/f_rate[i]; <- slow time
-     offset = xResampVec[i]+i-0.5*wavPerPix*(
-	     f0[i]*st+f_rate[i]*0.5*st*st);
-
-Taken from page 190 and 194, Curlander & McDonough SAR Bible. 
-*									    *
-****************************************************************************/
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* You should have received an ASF SOFTWARE License Agreement with this source *
+* code. Please consult this agreement for license grant information.          *
+*                                                                             *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*	Alaska Satellite Facility	    	                              *
+*	Geophysical Institute			www.asf.alaska.edu            *
+*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
+*	P.O. Box 757320							      *
+*	Fairbanks, AK 99775-7320					      *
+*									      *
+******************************************************************************/
 /************************************************************************
 FUNCTION NAME: rmpatch - perform range migration on a patch
 

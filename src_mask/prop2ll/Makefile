@@ -10,7 +10,6 @@ LIBS = -lm
 # Object libraries required to load the program
 #
 OBJLIB = \
-
 	$(LIBDIR)/asf.a 
 
 prop2ll : prop2ll.c

@@ -21,6 +21,7 @@ void StopWatch(void)
 {
   clock_t stopTime;
   float elapsed;
+
   /* The stopwatch must already have been started.  */
   assert (startTime != START_TIME_UNSET_SENTINEL);
   stopTime=clock();

@@ -1,19 +1,22 @@
 /****************************************************************************
 *								            *
 *   aisp_def.h - Global type, function, and constants definitions            *
-*   Copyright (C) 1997  ASF STEP LAB 			   	    	    *
-*									    *
-*   ASF STEP LAB Contacts:						    *
-*	Lab Coordinator   - Rick Guritz		rguritz@images.alaska.edu   *
-*	Software Engineer - Tom Logan		tlogan@images.alaska.edu    *
-* 									    *
-*	Alaska SAR Facility			STEP Lab Web Site:	    *	
-*	Geophysical Institute			www.images.alaska.edu	    *
-*       University of Alaska Fairbanks					    *
-*	P.O. Box 757320							    *
-*	Fairbanks, AK 99775-7320					    *
-*									    *
-****************************************************************************/
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* You should have received an ASF SOFTWARE License Agreement with this source *
+* code. Please consult this agreement for license grant information.          *
+*                                                                             *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*	Alaska Satellite Facility	    	                              *
+*	Geophysical Institute			www.asf.alaska.edu            *
+*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
+*	P.O. Box 757320							      *
+*	Fairbanks, AK 99775-7320					      *
+*									      *
+******************************************************************************/
 
 /*-----------------------------------------------------*/
 /* define complex variable type if not already defined */
