@@ -70,14 +70,6 @@ fi
 
 asfDir=`pwd`
 
-if [ $sys = "win32" ]; then
-    glib_inc=""
-    glib_lib="\$(LIBDIR)/libglib-2.0.dll.a"
-else
-    glib_inc="\$(shell pkg-config --cflags-only-I glib-2.0)"
-    glib_lib="\$(shell pkg-config --libs glib-2.0)"
-fi
-
 echo "########## Determining machine characteristics #############"
 cd make_support
 $cc -o endian endian.c
@@ -105,8 +97,6 @@ SYS     = $sys
 CC      = $cc
 RANLIB  = $ranlib
 OPTFLAG = $optFlag
-GLIB_INCLUDE = $glib_inc
-GLIB_LIB = $glib_lib
 EOF
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
 cat <<'EOF' >>system_rules
