@@ -73,7 +73,8 @@ stage_glib_stamp:
 	    gunzip --to-stdout $(GLIB_ZIPFILE) >$(GLIB_TARFILE) ; \
 	    tar xvf $(GLIB_TARFILE) ; \
 	    (cd $(GLIB_UNPACK_DIR) ; \
-                LDFLAGS="-L`pwd`/../$(ROOT_STAGEDIR)/lib" \
+                   export PATH=`cd $(BINDIR) ; pwd`:$(PATH) ; \
+                   LDFLAGS="-L`pwd`/../$(ROOT_STAGEDIR)/lib" \
                    CFLAGS="-I`pwd`/../$(ROOT_STAGEDIR)/include" \
 	           ./configure --enable-static=yes --enable-shared=no  \
 		   --with-libiconv=gnu --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
