@@ -5,72 +5,76 @@
 
 #include "asf.h"
 
-int extExists(const char *name,const char *newExt)
+int extExists(const char *name, const char *newExt)
 {
-	char *fName = appendExt(name,newExt);
-	int exists = fileExists(fName);
-	free( (void *) fName);
-	return exists;
+  char *fName = appendExt (name,newExt);
+  int exists = fileExists (fName);
+  free(fName);
+  return exists;
 }
 
 int fileExists(const char *name)
 {
-	FILE *f=fopen(name,"r");
-	if (f==NULL)
-		return 0;
-	fclose(f);
-	return 1;
+  FILE *f = fopen(name,"r");
+  if (f == NULL)
+    return 0;
+  fclose(f);
+  return 1;
 }
 
 char *findExt(char *name)
 {
-	int i;
-	i=strlen(name)-1;/*Start at end of name.*/
-	while ((i>0) && (name[i]!='.') && (name[i]!='/'))
-		i--;/*Work backwards until we hit a directory separator or extension separator.*/
-	
-	if ((i>0)&&(name[i]=='.'))
-	/*We found an extension!*/
-		return &name[i];
-	else
-	/*We couldn't find an extension.*/
-		return NULL;
+  int i;
+  i = strlen(name) -1;		/* Start at end of name.  */
+  while ( (i>0) && (name[i] != '.') && (name[i] != '/') ) {
+    /* Work backwards until we hit a directory separator or extension
+       separator.*/
+    i--;
+  }
+  if ( (i>0) && (name[i]=='.') )
+    /* We found an extension!  */
+    return &name[i];
+  else
+    /* We couldn't find an extension.  */
+    return NULL;
 }
 
-char *appendExt(const char *name,const char *newExt)
+char *appendExt(const char *name, const char *newExt)
 {
-	char *ext, *ret = (char *) MALLOC(sizeof(char) 
-	    * (MAX_APPENDEXT_RESULT_STRING_LENGTH + 1));
-
-	assert(strlen(name) <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
-	  
-	strcpy(ret,name);
+  char *ret = (char *) MALLOC (sizeof(char) 
+			       * (MAX_APPENDEXT_RESULT_STRING_LENGTH + 1));
+  assert (strlen (name) <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
+  strcpy (ret, name);
 	
-	if ( newExt == NULL )
-		return ret;
-	
-	ext=findExt(ret);
+  char *ext = findExt (ret);
 
-	if ( ext != NULL )
-		/* We found an existing extension...  */
-		*ext = 0;	/* Clip it off.  */
+  /* Weird semantics: if newExt is NULL, we just return a copy of name
+     without any clipping.  If nothing uses this it should be removed.  */
+  if ( newExt == NULL )
+    return ret;
 
-	assert(strlen(ret) + strlen(newExt) 
-	       <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
+  if ( ext != NULL )
+    /* We found an existing extension, clip it off.  */
+    *ext = '\0';	
 
-	strcat(ret, newExt);	/* Put new extension on the end.  */
-
-	return ret;
+  /* Put new extension on the end.  */
+  assert (strlen (ret) + strlen (newExt) 
+	  <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
+  strcat (ret, newExt);
+  
+  return ret;
 }
 
 void create_name(char *out,const char *in,const char *newExt)
 {
-	char *ext;
-	strcpy(out,in);
-	ext=findExt(out);
-	if (ext!=NULL)
-		*ext=0;
-	strcat(out,newExt);
+  char *ext;
+  strcpy (out,in);
+  /* If we find an existing extension, clip it off.  */
+  ext = findExt (out);
+  if ( ext != NULL )
+    *ext = '\0';
+  /* Append the new extension.  */
+  strcat (out, newExt);
 }
 
 /*******************************************************************************
