@@ -23,16 +23,7 @@ struct DATUMDEF
 	double recip_flat;	/* Reciprical of flattening of the spheroid */
 };
 
-#define MAX_DATUM 320		/* Maximum valid datum number */
-#define MINDTM 99               /* The minimum number that can define a datum */
-#define MINNAD27 223            /* The first number of the NAD 27 datums */
-#define MAXNAD27 242            /* The last number of the NAD 27 datums */
-#define NAD27 225            	/* The number that represents the mean NAD 27 */
-#define MINNAD83 217            /* The first number of the NAD 83 datums */
-#define MAXNAD83 222            /* The last number of the NAD 83 datums */
-#define NAD83 219            	/* The number that represents the mean NAD 83 */
-
-/* These are the values used by c_trans supports */
+/* These are the values used by c_trans */
 #define NO_TRANS 0		/* No datum transformation needed */
 #define MOLODENSKY 1		/* No NAD27 datum, so do Molodensky trans. */
 #define NAD27_TO_83 2		/* NAD 27 to NAD 83 transformation */
