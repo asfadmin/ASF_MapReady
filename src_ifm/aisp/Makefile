@@ -19,18 +19,11 @@ OBJLIB = aisp_libs.o \
 	 fft_dop.o \
 	 read_signal.o
 
-SPECLIB = specan.o \
-	specan_ml.o \
-	specan_patch.o \
-	specan_file.o \
-#	quicklook.o \
-#	my_mpi.o
-
 ASPLIB = patch.o \
 	 aisp_setup.o \
 	 rciq.o rmpatch.o acpatch.o calibration.o
 
-all: aisp calc_deltas spectra estavedop clean # quicklook
+all: aisp calc_deltas spectra estavedop clean
 
 aisp:	$(ASPLIB) $(OBJLIB) aisp.o $(LIBS)
 	$(CC) $(CFLAGS) -o aisp aisp.o $(ASPLIB) $(OBJLIB) $(LIBC)
@@ -46,16 +39,6 @@ estavedop: estavedop.o $(OBJLIB)
 	$(CC) $(CFLAGS) estavedop.o $(OBJLIB) -o estavedop $(LIBC)
 	mv estavedop$(BIN_POSTFIX) $(BINDIR)
 	cp estavedop.man ../../man/cat1/estavedop.1
-
-#quicklook: $(SPECLIB) $(OBJLIB)
-#	$(CC) $(CFLAGS) $(SPECLIB) $(OBJLIB) -o quicklook $(LIBC)
-#	mv quicklook$(BIN_POSTFIX) $(BINDIR)
-#	cp quicklook.man ../../man/cat1/quicklook.1
-#
-#quicklook_mpi: $(SPECLIB) $(OBJLIB)
-#	$(CC) $(CFLAGS) $(SPECLIB) $(OBJLIB) -o quicklook_mpi $(LIBC) -lmpi
-#	mv quicklook_mpi$(BIN_POSTFIX) $(BINDIR)
-#	cp quicklook.man ../../man/cat1/quicklook.1
 
 spectra: spectra.o $(OBJLIB)
 	$(CC) $(CFLAGS) spectra.o $(OBJLIB) -o spectra $(LIBC)
