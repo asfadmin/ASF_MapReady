@@ -34,11 +34,11 @@ void modifyLeader (int mode, int inputCeos, ceosLeader *data, struct DDR *ddr,
      strcpy(data->dssr.fac_id,"ASF-STEP");
     }
 
-   if (mode == CEOS_SIC)
+   if (mode == CEOS_SLC)
     {
 	if (inputCeos) 
           {
-	   /* The assumption made here is that when creating a SIC,
+	   /* The assumption made here is that when creating a SLC,
               the input CEOS leader file is from an ASF CCSD product
             -------------------------------------------------------*/
             char *strPtr;
@@ -63,7 +63,7 @@ void modifyLeader (int mode, int inputCeos, ceosLeader *data, struct DDR *ddr,
         data->dssr.bnd_azilok = data->dssr.bnd_azi / data->dssr.n_azilok;
         data->dssr.bnd_rnglok = data->dssr.bnd_rng / data->dssr.n_rnglok;
 	    
-    } /* end if mode is CEOS_SIC */
+    } /* end if mode is CEOS_SLC */
   
   if (mode == CEOS_LOW)
    {

@@ -151,7 +151,7 @@ void fill_name(meta_parameters *meta, struct DDR *ddr, ceosLeader *data, int mod
 
    /* Add processing mode */
    if (mode == CEOS_CCSD) strcat(name,"C");
-   else if (mode == CEOS_SIC) strcat(name,"X");
+   else if (mode == CEOS_SLC) strcat(name,"X");
    else strcat(name,"S");
 
    /* Add version number */ 

@@ -66,7 +66,7 @@ void writeAsfCeosData(int mode, ceosLeader *leader,struct DDR *ddr,
   /* Set processing options
    -----------------------*/  
   strcpy(infile,inFile);
-  if (mode == CEOS_SIC)
+  if (mode == CEOS_SLC)
     {
       strcat(infile,".cpx");
       floatBuf = (float *) MALLOC (ddr->ns*2*sizeof(float));
@@ -96,13 +96,13 @@ void writeAsfCeosData(int mode, ceosLeader *leader,struct DDR *ddr,
    ---------------------------------------*/
   prepare_pdhr(mode, leader, nl, ns);
   i = leader->pdhr.data;
-  if (mode == CEOS_SIC) { q = i->next; }
+  if (mode == CEOS_SLC) { q = i->next; }
 
   /* Determine size of output line, allocate buffers 
    ------------------------------------------------*/
   switch (mode)
    {
-     case CEOS_SIC: nbytes = ns * 4; break;
+     case CEOS_SLC: nbytes = ns * 4; break;
      case CEOS_LOW: nbytes = ns; break;
    }
   nbytes += H_SZ;
@@ -127,7 +127,7 @@ void writeAsfCeosData(int mode, ceosLeader *leader,struct DDR *ddr,
    ------------------------------------------------------*/
   for (line=0; line<nl; line++)
    {
-    if (mode == CEOS_SIC)
+    if (mode == CEOS_SLC)
      {
       FREAD(floatBuf,sizeof(float),ns*2,fpi);
       ofbuf = (short *)&buf[192];
@@ -137,8 +137,8 @@ void writeAsfCeosData(int mode, ceosLeader *leader,struct DDR *ddr,
 	short  iVal, qVal;
 	long   bigNum;
 
-	itmp = (double) (floatBuf[j] * (SIC_AVG / 10.0));
-	qtmp = (double) (floatBuf[j+1] * (SIC_AVG / 10.0));
+	itmp = (double) (floatBuf[j] * (SLC_AVG / 10.0));
+	qtmp = (double) (floatBuf[j+1] * (SLC_AVG / 10.0));
 
 	ofbuf[j]   = iVal = (short) (itmp);
 	ofbuf[j+1] = qVal = (short) (qtmp);
@@ -149,8 +149,8 @@ void writeAsfCeosData(int mode, ceosLeader *leader,struct DDR *ddr,
 	sumQval+=qVal;
 	sumsqQval += (double)(qVal*qVal);
 
-	bigNum = (iVal+SIC_AVG) / i->smp_inc; iVal = (short) (bigNum);
-	bigNum = (qVal+SIC_AVG) / q->smp_inc; qVal = (short) (bigNum);
+	bigNum = (iVal+SLC_AVG) / i->smp_inc; iVal = (short) (bigNum);
+	bigNum = (qVal+SLC_AVG) / q->smp_inc; qVal = (short) (bigNum);
 
 	i->data_values_hist[iVal]++;
         q->data_values_hist[qVal]++;
@@ -212,7 +212,7 @@ void writeAsfCeosData(int mode, ceosLeader *leader,struct DDR *ddr,
   vari = (sumsqIval-(dsum*dsum)/dtot)/(dtot-1.0);
   i->std_smp = sqrt(vari);
 
-  if (mode == CEOS_SIC)
+  if (mode == CEOS_SLC)
    {
     get_hist_stats(q,ns,nl); 
     dsum = (double) sumQval;
@@ -251,7 +251,7 @@ void prepare_pdhr(int mode, ceosLeader *leader, int nl, int ns)
         i->smp_inc = 1.0;
 	i->next = NULL;
       }
-    else if (mode == CEOS_SIC)
+    else if (mode == CEOS_SLC)
       {
 	leader->pdhr.ntab = 2;
 	strcpy(i->hist_desc,"REAL COMPONENT");

@@ -165,7 +165,7 @@ void writeAsfCeosLeader(int mode,ceosLeader *data,char *filename)
    nbytes = 1717;
    for (i=0; i<nbytes; i++) buf[i] = ' ';
    init_hdr(FACDR,nbytes,(struct HEADER *) buf);
-   Code_FACDR(buf,&(data->facdr),1,toASCII);
+   Code_ASF_FACDR(buf,&(data->facdr),1,toASCII);
    FWRITE(buf,nbytes,1,fpo);
    printf("Finished with facility related data record.\n");
    fflush(NULL);

@@ -145,7 +145,7 @@ int main(int argc,char *argv[])
    {
       case 'm': case 'M': leaderOnly = 1; mode = CEOS_CCSD; break;
       case 'c': case 'C': mode = CEOS_CCSD; break;
-      case 'x': case 'X': mode = CEOS_SIC; break;
+      case 'x': case 'X': mode = CEOS_SLC; break;
       case 'd': case 'D': mode = CEOS_LOW; break;
       default:  printf("Unknown mode %c\n",argv[optind][0]); usage(argv[0]);
    }		
@@ -159,7 +159,7 @@ int main(int argc,char *argv[])
 
    printf("\nCreating ASF ");
    if (mode == CEOS_CCSD) printf("CCSD product\n");
-   else if (mode == CEOS_SIC) printf("COMPLEX product\n");
+   else if (mode == CEOS_SLC) printf("COMPLEX product\n");
    else if (mode == CEOS_LOW) printf("DETECTED DATA product\n");
 
    /* Read metadata files into memory

@@ -30,14 +30,14 @@ int init_hdr(int type, int size, struct HEADER *h)
   h->rectyp[2] = '\22';
   h->rectyp[3] = '\24';
 
-  if (type != CEOS_CCSD && type != CEOS_SIC &&
+  if (type != CEOS_CCSD && type != CEOS_SLC &&
       type != CEOS_FUL  && type != CEOS_LOW && type != IOFDR) nxt_num++;
 
   bigInt32_out(nxt_num,&(h->recnum[0]));
 
   switch (type) {
    case CEOS_CCSD:
-   case CEOS_SIC:
+   case CEOS_SLC:
    case CEOS_FUL:
    case CEOS_LOW:
                 bigInt32_out(2,&(h->recnum[0]));
@@ -97,7 +97,7 @@ int init_rhdr(int type, ceosLeader *leader, int ns,
   r->sr_first      = leader->facdr.sltrngfp;
   r->sr_last       = leader->facdr.sltrnglp;
 
-  if (type == CEOS_SIC || type == CEOS_CCSD)
+  if (type == CEOS_SLC || type == CEOS_CCSD)
    {
      r->sr_mid = (r->sr_first+r->sr_last)/2.0; 
    }
@@ -260,14 +260,14 @@ void fill_iof_vfdr(int mode,struct IOF_VFDR *v,int nl,int ns,int nbytes, char *f
         strcpy(v->formatid,"COMPLEX INTEGER*2");
         strcpy(v->formcode,"CI*2");
         break;
-    case CEOS_SIC:
+    case CEOS_SLC:
         v->numofrec     = nl;
         v->sampdata     = 2;
         v->bytgroup     = 4;
         v->bitssamp     = 8 * sizeof(short int);
         v->linedata     = nl;
         v->datgroup     = ns;
-        v->maxidata     = SIC_AVG - 1;
+        v->maxidata     = SLC_AVG - 1;
         strcpy(v->formatid,"COMPLEX INTEGER*4");
         strcpy(v->formcode,"CI*4");
         break;
