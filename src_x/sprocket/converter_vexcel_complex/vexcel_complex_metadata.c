@@ -1,6 +1,5 @@
 /**********************************************************************************
-File Name:
-Orthanc:/ASF/dev/src/converter_vexcel_complex/vexcel_complex_metadata.c
+File Name: vexcel_complex_metadata.c
 
 Purpose:
 RSI CEOS to Sprocket format converter for metadata.
@@ -104,8 +103,8 @@ mmoore     07/11/02  Added comments and renamed some variables for clarity
 //#include <stdlib.h>
 
 
-#include "util.h"
-#include "metadata.h"
+#include "../util/util.h"
+#include "../util/metadata.h"
 #include "ceos_rd.h"
 
 #define INFO ( getenv("INFO") != NULL)

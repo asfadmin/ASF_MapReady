@@ -2,8 +2,8 @@
 
 #include <math.h>
 #include <errno.h>
-#include "util.h"
-#include "metadata.h"
+#include "../util/util.h"
+#include "../util/metadata.h"
 #include "ceos_rd.h"
 
 // globals defining image

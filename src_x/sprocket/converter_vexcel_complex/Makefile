@@ -1,23 +1,24 @@
-# Makefile for ASF Converter
-include ../mk.common
-TARGET1=vexcel_complex_metadata
-TARGET2=vexcel_complex_data_planes
+# Makefile for vexcel_complex_metadata and vexcel_complex_data_planes
 
-all: $(BIN)/$(TARGET1) $(BIN)/$(TARGET2)
+include ../Make_rules
 
-$(BIN)/$(TARGET1): $(TARGET1).o ceos_rd.c
-	$(LINK) $(BIN)/$(TARGET1) $(TARGET1).o ceos_rd.c $(LINK_LIB)
+LIBS  = $(LIBDIR)/libUtil.a \
+	-lm
 
-$(BIN)/$(TARGET2): $(TARGET2).o ceos_rd.c
-	$(LINK) $(BIN)/$(TARGET2) $(TARGET2).o ceos_rd.c $(LINK_LIB)
+META_OBJS = ceos_rd.o \
+	vexcel_complex_metadata.o
+DATA_OBJS  = ceos_rd.o \
+	vexcel_complex_data_planes.o
 
-$(TARGET1).o: $(TARGET1).c
-	$(COMP) $(TARGET1).c
-#	$(BEAT) $(TARGET1).c
+all: vexcel_complex_metadata vexcel_complex_data_planes clean
 
-$(TARGET2).o: $(TARGET2).c
-	$(COMP) $(TARGET2).c
-#	$(BEAT) $(TARGET2).c
+vexcel_complex_metadata: $(META_OBJS)
+	$(CC) $(CFLAGS) -o vexcel_complex_metadata $(META_OBJS) $(LIBS)
+	mv vexcel_complex_metadata$(BIN_POSTFIX) $(BINDIR)
+
+vexcel_complex_data_planes: $(DATA_OBJS)
+	$(CC) $(CFLAGS) -o vexcel_complex_data_planes $(DATA_OBJS) $(LIBS)
+	mv vexcel_complex_data_planes$(BIN_POSTFIX) $(BINDIR)
 
 clean:
-	rm -f *.o $(BIN)/$(TARGET1) $(BIN)/$(TARGET2)
+	rm -f *.o
