@@ -1,0 +1,6 @@
+# Each non-comment line is a comma-seperated pair of packages which
+# states explicitly that the first package does not depend on the
+# second.  Useful with the -independency_file option to
+# find_dependencies.perl
+geocode,sarin
+
