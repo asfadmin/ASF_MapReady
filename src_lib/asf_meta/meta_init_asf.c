@@ -127,6 +127,9 @@ void ceos_init_asf(char *fName,ceos_description *ceos,meta_parameters *meta)
 	meta->general->sample_count        = facdr.npixels;
 	meta->general->bit_error_rate      = facdr.biterrrt;
 	
+	meta->sar->original_line_count   = facdr.nlines;
+	meta->sar->original_sample_count = facdr.apixels;
+	
 	if (toupper(facdr.deskewf[0])=='Y')
 		meta->sar->deskewed=1;/*Image has been doppler deskewed.*/
 	else 
