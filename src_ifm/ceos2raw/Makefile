@@ -14,7 +14,6 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 OBJS  = aisp_params.o \
 	aisp_write.o \
 	missing.o \
-	propagate.o \
 	bin_state.o \
 	unpack.o \
 	frame.o \
