@@ -8,7 +8,17 @@
 
 include ../../make_support/system_rules
 
-FILES =\
+# Things used by makes implicit rules for lex and yacc.
+# Uncommend these to debug the parser.
+#YDEBUG_FLAGS = -t -v
+#LDEBUG_FLAGS = -d
+YFLAGS = $(YDEBUG_FLAGS) -d
+LFLAGS = $(LDEBUG_FLAGS)
+
+LEX_YACC_OBJS =  $(patsubst %.y, %.o, $(YACC_SOURCES)) \
+                 $(patsubst %.l, %.o, $(LEX_SOURCES))
+
+OBJS =  \
 	coniFetch.o \
 	getLatLong.o \
 	getLoc.o \
@@ -42,17 +52,17 @@ FILES =\
         meta_init_ceos.o \
         meta_init_stVec.o \
         set_era.o \
-        utc2gha.o
-
+        utc2gha.o \
+        $(LEX_YACC_OBJS)
 
 all: asf_meta clean
 
-asf_meta: $(FILES)
-	 ar rv asf_meta.a $(FILES)
+asf_meta: $(OBJS)
+	 ar rv asf_meta.a $(OBJS)
 	 $(RANLIB) asf_meta.a
 	 mv asf_meta.a $(LIBDIR)
 	 # Make a link obeying the usual naming convention.
 	 ln -s -f $(LIBDIR)/asf_meta.a $(LIBDIR)/libasf_meta.a
 
 clean:
-	- rm *.o
+	- rm $(OBJS)
