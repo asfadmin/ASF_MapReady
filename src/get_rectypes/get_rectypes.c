@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 	{
 		if (fread(&bufhdr,sizeof(bufhdr),1,fp)!=1)
 		{
-			printf("**End of file detected.\n");
+			/* No more records */
 			fclose(fp);
 			exit(0);
 		}
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 		{
 			printf("**Error scanning over data portion of record, exiting.\n");
 			fclose(fp);
-			exit(0);
+			exit(EXIT_FAILURE);
 		}
 	}
 	return 0; /* for whiny compilers */	
