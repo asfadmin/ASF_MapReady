@@ -61,7 +61,8 @@ orbital_state_vector_height_above_ellipsoid (OrbitalStateVector *self);
    piece, mixing the central force and the relatively small
    perturbations.  Both of these choices potentially cause lots of
    rounding error.  It all seems to work, but if there is a problem,
-   checking the propagator out first might be a good idea.  */
+   adding test cases appropriate to your particular application to the
+   propagator tests might be a good first step.  */
 void
 orbital_state_vector_propagate (OrbitalStateVector *self, double time);
 
@@ -76,6 +77,8 @@ orbital_state_vector_propagate_interpolate (OrbitalStateVector *self,
 					    double time, 
 					    OrbitalStateVector *other);
 
+/* Destroy self.  */
+void
+orbital_state_vector_free (OrbitalStateVector *self);
+
 #endif /* ORBITAL_STATE_VECTOR_H */
-
-
