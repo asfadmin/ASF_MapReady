@@ -461,8 +461,6 @@ if ( -e $graph_cache_file ) {
 	$dir =~ m{\/([^/]+)$};
 	my $pkg_name = $1;
 
-	&babble("\nComputing dependencies for package $pkg_name...\n");
-
         # If we are computing direct dependencies for a single package
         # skip ahead unless we are looking at that package.
         if ( $p{'package'} ) {
@@ -470,6 +468,8 @@ if ( -e $graph_cache_file ) {
 	        next;
   	    }
         }
+
+	&babble("\nComputing dependencies for package $pkg_name...\n");
 
         # Initialize reference to empty list, unless it has already
         # been initialized due to having been declared explicitly as a
