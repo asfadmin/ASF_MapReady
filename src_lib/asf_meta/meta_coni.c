@@ -478,7 +478,7 @@ meta_parameters *meta_read_old(const char *inName)
 	coniStruct *coni=coniOpen(meta_name,asciiIn);
 	meta_io_old(coni,meta,1);
 	coniClose(coni);
-	final_init(meta);
+	/*	final_init(meta); */
 	free(meta_name);
 	return meta;
 }

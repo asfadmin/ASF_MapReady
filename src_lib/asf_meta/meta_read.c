@@ -51,6 +51,8 @@ meta_parameters *meta_read(const char *inName)
   }
   matched_subexps_free(&version_subexps);   /* Done with matches.  */
   
+  printf("\n\n\n\nMADE IT MADE IT MADE IT!!!!!!!\n\n\n\n");
+
   /* Fill old structure parameters */
   meta_new2old(meta);
   
