@@ -1,9 +1,45 @@
-# Makefile for asf_export
-# Author Britton Kerin, June 2004
-#    mod Patrick Denny, June 2004
+PROGRAM := asf_export
 
 include ../../make_support/system_rules
 
+###############################################################################
+#
+# List of Sources
+#
+# Here are the variables that list all the things that need building.
+# When new source files are added, something in here will need to
+# change.
+#
+###############################################################################
+
+SOURCES := asf_export.c \
+	   ceos_util.c \
+	   export_as_ceos.c \
+	   export_as_envi.c \
+	   export_as_esri.c \
+	   export_as_geotiff.c \
+	   export_as_jpeg.c \
+	   export_as_ppm.c \
+	   export_as_tiff.c \
+	   util.c
+
+###############################################################################
+#
+# Libraries and Tools
+#
+# Here are variables which describe the libraries and tools needed by
+# this module, and the flags required to compile code which uses them.
+# If a new library or tool dependency is added, something in here will
+# need to change.
+#
+###############################################################################
+
+CC := gcc
+
+INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) \
+                 $(shell pkg-config --cflags-only-I glib-2.0)
+
+CPPFLAGS := $(INCLUDE_FLAGS)
 
 LIBS  = $(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_reporting.a \
@@ -16,22 +52,29 @@ LIBS  = $(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libgsl.a \
 	-lm
 
-OBJS  = asf_export.o \
-	ceos_util.o \
-	export_as_ceos.o \
-	export_as_envi.o \
-	export_as_esri.o \
-	export_as_geotiff.o \
-	export_as_jpeg.o \
-	export_as_ppm.o \
-	export_as_tiff.o \
-	util.o
+LDFLAGS := $(shell pkg-config --libs-only-L glib-2.0 \
+                   | perl -p -e 's/-L(.*)/-Wl,--rpath=\1/g')
+
+LDLIBS := $(shell pkg-config --libs glib-2.0) $(LIBS)
+
+###############################################################################
+#
+# Automaticly Computed Stuff
+#
+# The rest of this makefile fragment consists of stuff that uses the
+# above stuff in ways that are unlikely to change too much, and isn't
+# likely to need much modification.
+#
+###############################################################################
+
+OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
 all: asf_export
 
-asf_export: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o asf_export $(OBJS) $(LIBS) $(LDFLAGS)
+$(PROGRAM): $(OBJS)
+	$(CC) $(OBJS) $(LDLIBS) -o $@
 	mv asf_export$(BIN_POSTFIX) $(BINDIR)
 
+.PHONY: clean
 clean:
-	rm -f *.o core.* asf_export$(BIN_POSTFIX)
+	rm -f $(PROGRAM) $(OBJS) core.* core
