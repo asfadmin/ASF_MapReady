@@ -1364,6 +1364,7 @@ void   Code_PPDR (unsigned char *bf, struct pos_data_rec* q, codingDir dir);
 void   Code_ATDR(unsigned char *bf, struct att_data_rec *q, codingDir dir);
 int    Code_ATVR(unsigned char *bf, struct att_vect_rec *q, codingDir dir);
 void   Code_RADDR(unsigned char *bf, struct VRADDR* q,codingDir dir);
+void   Code_RSI_RADDR(unsigned char *bf, struct RSI_VRADDR* q,codingDir dir);
 void   Code_DQS(unsigned char* bf,struct qual_sum_rec* q,int era,codingDir dir);
 void   Code_DHR(unsigned char* bf, struct data_hist_rec* q, codingDir dir);
 void   Code_DH(unsigned char *bf, struct hist_dset* q, codingDir dir);
