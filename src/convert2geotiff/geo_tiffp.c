@@ -10,6 +10,8 @@
  *    anywhere else in this code.
  *
  **********************************************************************/
+
+#include <string.h>
  
 #include "geotiff.h"    /* public GTIFF interface */
 

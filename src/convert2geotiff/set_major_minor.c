@@ -10,6 +10,8 @@ COMPUTER HARDWARE AND/OR SOFTWARE LIMITATIONS:
 
 PROJECT:        LAS
 *****************************************************************************/
+#include <math.h>
+
 #include "ddr.h"
 #include "tiffio.h"
 #include "xtiffio.h"

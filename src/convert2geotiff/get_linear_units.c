@@ -9,6 +9,7 @@ COMPUTER HARDWARE AND/OR SOFTWARE LIMITATIONS:
 PROJECT:        LAS
 *****************************************************************************/
 
+#include <string.h>
 
 #include "ddr.h"
 #include "protos.h"
