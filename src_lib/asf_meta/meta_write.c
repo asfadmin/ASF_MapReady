@@ -15,17 +15,16 @@ void meta_write(meta_parameters *meta, const char *file_name)
 {
   /* Maximum file name length, including trailing null.  */
 #define FILE_NAME_MAX 1000
-  char file_name_with_extension[FILE_NAME_MAX];
+  char *file_name_with_extension = appendExt(file_name, ".meta");
+  FILE *fp = FOPEN(file_name_with_extension, "w");
 
-  appendExt(strcpy(file_name_with_extension, file_name), ".meta");
-
-  FILE *fp = FOPEN(file_name, "w");
+  FREE(file_name_with_extension);
 
   /* Write an 'about meta file' comment  */
   fprintf(fp,
   	"# This file contains the metadata for satellite capture file of the same base name.\n"
 	"#      '?' is likely an unknown single character value.\n"
-	"#      '???' is likely an unknown string of characters.\n"
+	"#      '??\?' is likely an unknown string of characters.\n"
 	"#      '-2147283648' is likely an unknown integer value.\n"
 	"#      'NaN' is likely an unknown Real value.\n\n");
 
