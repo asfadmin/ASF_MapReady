@@ -56,6 +56,8 @@ LIBS
 	asf_geolib
 	asf_odl
 	asf_fft
+	libproj
+	libasf_proj
 	libasf_raster
 	libasf_reporting
 	libjpeg
@@ -101,6 +103,7 @@ PROGRAMS
 
 @src_geo/
 	accum_offset { }
+        asf_geocode { }
 	concat { }
 	concat_dem { }
 	concatm { }
@@ -110,12 +113,6 @@ PROGRAMS
 #		Because makemake parses this file from top-to-bottom,
 #		you can't reference not-yet-listed programs.
 #		Hence the scripts are at the end.
-	geocode
-	{
-		PROGRAMS
-			remap
-			fit_quadratic
-	}
 
 # Down here because it depends on geocode
 # Also note: corner_coords, filter, geocode, and projprm are only used by
