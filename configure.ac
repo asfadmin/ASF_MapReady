@@ -106,8 +106,8 @@ if test -z "$PKG_CONFIG"; then
 fi
 if test "$PKG_CONFIG" = "no" ; then
    echo "*** pkg-config not found, can't build with gtk 2.0" 
-   $try_gtk="no"
-   $have_pkg_config="no"
+   try_gtk="no"
+   have_pkg_config="no"
 fi
 
 if test "$have_pkg_config" = "no" ; then
