@@ -4,10 +4,12 @@
 
 include ../../make_support/system_rules
 
+
 LIBS  = $(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libasf_reporting.a \
+	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libgeotiff.a \
 	$(LIBDIR)/libtiff.a \
 	$(LIBDIR)/libjpeg.a \
