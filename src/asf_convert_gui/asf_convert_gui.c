@@ -32,7 +32,6 @@ main(int argc, char **argv)
     if ( !g_thread_supported () ) {
       g_thread_init (NULL);
     }
-    gdk_threads_init ();
 #endif // THUMBNAILS
 
     /* select defaults for dropdowns */
