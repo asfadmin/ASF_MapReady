@@ -431,29 +431,31 @@ invalidate_progress()
   LSU;
 }
 
-#ifdef THUMBNAILS
 static void set_thumbnail(GtkTreeIter *iter, const gchar * file)
 {
-    LSL;
-
-    GError * err = NULL;
-    GdkPixbuf * pb;
-
-    pb = gdk_pixbuf_new_from_file_at_size(file, THUMB_SIZE, THUMB_SIZE, &err);
-
-    if (!err)
+    if (use_thumbnails)
     {
-	gtk_list_store_set(list_store, iter, COL_OUTPUT_THUMBNAIL, pb, -1);
-    }
-    else
-    {
-	g_warning("Couldn't load image '%s': %s\n", file, err->message);
-	g_error_free(err);
-    }
+	LSL;
+	
+	GError * err = NULL;
+	GdkPixbuf * pb;
+	
+	pb = gdk_pixbuf_new_from_file_at_size(file, THUMB_SIZE, THUMB_SIZE, 
+					      &err);
 
-    LSU;
+	if (!err)
+	{
+	    gtk_list_store_set(list_store, iter, COL_OUTPUT_THUMBNAIL, pb, -1);
+	}
+	else
+	{
+	    g_warning("Couldn't load image '%s': %s\n", file, err->message);
+	    g_error_free(err);
+	}
+	
+	LSU;
+    }
 }
-#endif
 
 static void
 process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
@@ -617,10 +619,11 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
       append_output(cmd_output);
 
-#ifdef THUMBNAILS
-      if (settings_get_output_format_can_be_thumbnailed(user_settings))
+      if (use_thumbnails &&
+	  settings_get_output_format_can_be_thumbnailed(user_settings))
+      {
 	  set_thumbnail(iter, out_full);
-#endif
+      }
 
       g_free(cmd_output);
 

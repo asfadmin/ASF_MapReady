@@ -138,4 +138,6 @@ extern gchar * output_directory;
 /* current naming scheme */
 extern NamingScheme * current_naming_scheme;
 
+/* are thumbnails supported ? */
+extern gboolean use_thumbnails;
 #endif

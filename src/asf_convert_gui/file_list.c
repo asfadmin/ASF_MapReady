@@ -3,6 +3,12 @@
 #include "asf_convert_gui.h"
 #include "ceos_thumbnail.h"
 
+int COL_DATA_FILE;
+int COL_INPUT_THUMBNAIL;
+int COL_OUTPUT_FILE;
+int COL_OUTPUT_THUMBNAIL;
+int COL_STATUS;
+
 static gchar *
 determine_default_output_file_name(const gchar * data_file_name)
 {
@@ -80,19 +86,19 @@ static gboolean file_is_valid(const gchar * data_file)
     }
 }
     
-#ifdef THUMBNAILS
-
 static void set_input_image_thumbnail(GtkTreeIter *iter, 
 				      const gchar *metadata_file,
 				      const gchar *data_file)
 {
-  LSU;
-  GdkPixbuf *pb = make_input_image_thumbnail_pixbuf (metadata_file, data_file,
-						     THUMB_SIZE);
-  LSL;
+    LSU;
 
-  if (pb)
-      gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
+    GdkPixbuf *pb = make_input_image_thumbnail_pixbuf (
+	metadata_file, data_file, THUMB_SIZE);
+
+    LSL;
+    
+    if (pb)
+	gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
 }
 
 static void
@@ -136,8 +142,6 @@ thumbnail_thread (GString *file, gpointer user_data)
   g_string_free (file, TRUE);
 }
 
-#endif
-
 gboolean
 add_to_files_list(const gchar * data_file)
 {
@@ -158,21 +162,22 @@ add_to_files_list(const gchar * data_file)
 			   COL_STATUS, "-", -1);
 	LSU;
 
-#ifdef THUMBNAILS
-	/* Thumbnail thread pool.  */
-	static GThreadPool *ttp = NULL;
-	GError *err = NULL;
-	/* Size of the threadpool we will use.  */
-	const gint max_thumbnail_threads = 4;
-	if ( ttp == NULL ) {
-	  if (!g_thread_supported ()) g_thread_init (NULL);
-	  ttp = g_thread_pool_new ((GFunc) thumbnail_thread, NULL,
-				   max_thumbnail_threads, TRUE, &err);
-	  g_assert (err == NULL);
+	if (use_thumbnails)
+	{
+	    /* Thumbnail thread pool.  */
+	    static GThreadPool *ttp = NULL;
+	    GError *err = NULL;
+	    /* Size of the threadpool we will use.  */
+	    const gint max_thumbnail_threads = 4;
+	    if ( ttp == NULL ) {
+		if (!g_thread_supported ()) g_thread_init (NULL);
+		ttp = g_thread_pool_new ((GFunc) thumbnail_thread, NULL,
+					 max_thumbnail_threads, TRUE, &err);
+		g_assert (err == NULL);
+	    }
+	    g_thread_pool_push (ttp, g_string_new (data_file), &err);
+	    g_assert (err == NULL);
 	}
-	g_thread_pool_push (ttp, g_string_new (data_file), &err);
-	g_assert (err == NULL);
-#endif /* THUMBNAILS */
 
         out_name_full = determine_default_output_file_name(data_file);
     
@@ -341,12 +346,6 @@ void render_output_name(GtkTreeViewColumn *tree_column,
     g_free(output_file);
     g_free(status);
 }
-
-#ifdef THUMBNAILS
-
-#  ifndef G_THREADS_ENABLED
-#    error "required glib thread support is missing"
-#  endif
 
 static GtkTreePath *
 thumbnail_path (GtkWidget *widget, GdkEventMotion *event)
@@ -885,8 +884,6 @@ files_list_scroll_event_handler (GtkWidget *widget, GdkEventScroll *event,
   return FALSE;
 }
 
-#endif /* THUMBNAILS */
-
 void
 setup_files_list(int argc, char *argv[])
 {
@@ -897,19 +894,36 @@ setup_files_list(int argc, char *argv[])
   GValue val = {0,};
 
   LSL;
-#ifdef THUMBNAILS
-  list_store = gtk_list_store_new(5, 
-				  G_TYPE_STRING, 
-				  GDK_TYPE_PIXBUF,
-				  G_TYPE_STRING, 
-				  GDK_TYPE_PIXBUF,
-				  G_TYPE_STRING);
-#else
-  list_store = gtk_list_store_new(3, 
-				  G_TYPE_STRING, 
-				  G_TYPE_STRING, 
-				  G_TYPE_STRING);
-#endif
+
+  if (use_thumbnails)
+  {
+      list_store = gtk_list_store_new(5, 
+				      G_TYPE_STRING, 
+				      GDK_TYPE_PIXBUF,
+				      G_TYPE_STRING, 
+				      GDK_TYPE_PIXBUF,
+				      G_TYPE_STRING);
+
+      COL_DATA_FILE = 0;
+      COL_INPUT_THUMBNAIL = 1;
+      COL_OUTPUT_FILE = 2;
+      COL_OUTPUT_THUMBNAIL = 3;
+      COL_STATUS = 4;
+  }
+  else
+  {
+      list_store = gtk_list_store_new(3, 
+				      G_TYPE_STRING, 
+				      G_TYPE_STRING, 
+				      G_TYPE_STRING);
+
+      COL_DATA_FILE = 0;
+      COL_INPUT_THUMBNAIL = -999;
+      COL_OUTPUT_FILE = 1;
+      COL_OUTPUT_THUMBNAIL = -999;
+      COL_STATUS = 2;
+  }
+
   LSU;
 
   for (i = 1; i < argc; ++i)
@@ -928,26 +942,29 @@ setup_files_list(int argc, char *argv[])
   g_object_set(renderer, "text", "?", NULL);
   gtk_tree_view_column_add_attribute(col, renderer, "text", COL_DATA_FILE);
 
-#ifdef THUMBNAILS
-  /* Next Column: thumbnail of input image.  */
-  col = gtk_tree_view_column_new ();
-  gtk_tree_view_column_set_title (col, "Input Thumbnail");
-  gtk_tree_view_column_set_resizable (col, FALSE);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (files_list), col);
-  renderer = gtk_cell_renderer_pixbuf_new ();
-  gtk_tree_view_column_pack_start (col, renderer, FALSE);
-  gtk_tree_view_column_add_attribute (col, renderer, "pixbuf",
-				      COL_INPUT_THUMBNAIL);
-  
-  g_signal_connect (files_list, "motion-notify-event",
-		    G_CALLBACK (files_list_motion_notify_event_handler), NULL);
-  g_signal_connect (files_list, "leave-notify-event",
-  		    G_CALLBACK (files_list_leave_notify_event_handler), 
-  		    files_list);
-  g_signal_connect (files_list, "scroll-event",
-		    G_CALLBACK (files_list_scroll_event_handler), NULL);
+  if (use_thumbnails)
+  {
+      /* Next Column: thumbnail of input image.  */
+      col = gtk_tree_view_column_new ();
+      gtk_tree_view_column_set_title (col, "Input Thumbnail");
+      gtk_tree_view_column_set_resizable (col, FALSE);
+      gtk_tree_view_append_column (GTK_TREE_VIEW (files_list), col);
+      renderer = gtk_cell_renderer_pixbuf_new ();
+      gtk_tree_view_column_pack_start (col, renderer, FALSE);
+      gtk_tree_view_column_add_attribute (col, renderer, "pixbuf",
+					  COL_INPUT_THUMBNAIL);
+      
+      g_signal_connect (files_list, "motion-notify-event",
+			G_CALLBACK (files_list_motion_notify_event_handler), 
+			NULL);
 
-#endif
+      g_signal_connect (files_list, "leave-notify-event",
+			G_CALLBACK (files_list_leave_notify_event_handler), 
+			files_list);
+
+      g_signal_connect (files_list, "scroll-event",
+			G_CALLBACK (files_list_scroll_event_handler), NULL);
+  }
 
   /* Next Column: Output File Name */
   col = gtk_tree_view_column_new();
@@ -972,17 +989,18 @@ setup_files_list(int argc, char *argv[])
   gtk_tree_view_column_set_cell_data_func(col, renderer,
             render_output_name, NULL, NULL);
 
-#ifdef THUMBNAILS
-  /* Next Column: Pixbuf of output image */
-  col = gtk_tree_view_column_new();
-  gtk_tree_view_column_set_title(col, "Output Thumbnail");
-  gtk_tree_view_column_set_resizable(col, FALSE);
-  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
-  renderer = gtk_cell_renderer_pixbuf_new();
-  gtk_tree_view_column_pack_start(col, renderer, FALSE);
-  gtk_tree_view_column_add_attribute(col, renderer, "pixbuf",
-				     COL_OUTPUT_THUMBNAIL);
-#endif
+  if (use_thumbnails)
+  {
+      /* Next Column: Pixbuf of output image */
+      col = gtk_tree_view_column_new();
+      gtk_tree_view_column_set_title(col, "Output Thumbnail");
+      gtk_tree_view_column_set_resizable(col, FALSE);
+      gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+      renderer = gtk_cell_renderer_pixbuf_new();
+      gtk_tree_view_column_pack_start(col, renderer, FALSE);
+      gtk_tree_view_column_add_attribute(col, renderer, "pixbuf",
+					 COL_OUTPUT_THUMBNAIL);
+  }
 
   /* Next Column: Current Status */
   col = gtk_tree_view_column_new();

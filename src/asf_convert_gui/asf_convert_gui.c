@@ -11,6 +11,7 @@ gboolean processing;
 Settings *settings_on_execute;
 gchar * output_directory = NULL;
 NamingScheme * current_naming_scheme = NULL;
+gboolean use_thumbnails = FALSE;
 
 int
 main(int argc, char **argv)
@@ -26,14 +27,24 @@ main(int argc, char **argv)
 
     g_free(glade_xml_file);
 
-#ifndef THUMBNAILS
-    printf("GTK Version < 2.4 -- output thumbnails disabled.\n");
+    /* thumbnails supported in GTK 2.4 or greater, also require threading */
+#ifdef G_THREADS_ENABLED
+    use_thumbnails = gtk_major_version >= 2 && gtk_minor_version >= 6;
 #else
-    // We will want to load thumbnails in other threads.
-    if ( !g_thread_supported () ) {
-      g_thread_init (NULL);
+    use_thumbnails = false;
+#endif
+
+    if (use_thumbnails)
+    {
+	printf("GTK Version < 2.4 -- output thumbnails disabled.\n");
     }
-#endif // THUMBNAILS
+    else
+    {
+	// We will want to load thumbnails in other threads.
+	if ( !g_thread_supported () ) {
+	    g_thread_init (NULL);
+	}
+    }
 
     /* add version number to window title */
     char title [256];

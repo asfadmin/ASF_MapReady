@@ -2,7 +2,7 @@
   Imporant: If you update the columns (reorder, or add new ones) you must
   also update the list store create call, in file_list.c:setup_files_list().
 */
-
+/*
 #ifdef THUMBNAILS
 enum FileListColumns
 {
@@ -20,6 +20,12 @@ enum FileListColumns
     COL_STATUS
 };
 #endif
+*/
+extern int COL_DATA_FILE;
+extern int COL_INPUT_THUMBNAIL;
+extern int COL_OUTPUT_FILE;
+extern int COL_OUTPUT_THUMBNAIL;
+extern int COL_STATUS;
 
 void setup_files_list(int, char **);
 gboolean add_to_files_list(const gchar *);
