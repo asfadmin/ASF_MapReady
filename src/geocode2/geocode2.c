@@ -141,8 +141,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     longitude and average height 466 meters into universal transverse\n"\
 "     mercator projection, with one pixel 50 meters on a side:\n"\
 "\n"\
-"     asf_project --projection utm --lon0 -147.0 --height 466\n"\
-"                 --pixel_size 50 input_image output_image\n"\
+"     asf_project --projection utm --central-meridian -147.0 --height 466\n"\
+"                 --pixel-size 50 input_image output_image\n"\
 ""
 
 #define ASF_LIMITATIONS_STRING \
