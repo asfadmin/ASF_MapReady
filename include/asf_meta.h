@@ -497,6 +497,12 @@ double meta_flat_phase(meta_parameters *sar,const baseline base,int y,int x);
 /*Return the "phase rate"-- the number of meters of elevation per radian of phase.*/
 double meta_phase_rate(meta_parameters *sar,const baseline base,int y,int x);
 
+/* Convert meta->general->data_type field from complex to polar and visa versa.
+ * If data is already in the correct format, leave it.*/
+int meta_polar2complex(int data_type);
+int meta_complex2polar(int data_type);
+
+
 /* Keep track of open meta and ddr structures, so that all updated
  * metadata can be written to the metafile, initialized in meta_init.c Nov '02 */
 typedef struct {
