@@ -153,58 +153,130 @@ FILE *fopenImage(const char *fName,const char *access)
  * line number to get.  The dest argument must be a pointer to existing memory.   */
 int get_float_line(FILE *file, meta_parameters *meta, int line_number, float *dest)
 {
-  int x_idx;            /* Sample index.  */
+  int ii;               /* Sample index.  */
   int samples_gotten;   /* Number of samples retrieved */
   size_t sample_size;   /* Sample size in bytes.  */
   void *temp_buffer;    /* Buffer for unconverted data.  */
+  int sample_count = meta->general->sample_count;
+  char *data_type  = meta->general->data_type;
 
   assert(line_number <= meta->general->line_count - 1);
 
   /* Determine sample size.  */
-  if ( !strcmp(meta->general->data_type, "BYTE") )
+  if ( !strcmp(data_type, "BYTE") )
     sample_size = 1;
-  if ( !strcmp(meta->general->data_type, "INTEGER*2") )
+  else if ( !strcmp(data_type, "INTEGER*2") )
     sample_size = 2;
-  if ( !strcmp(meta->general->data_type, "INTEGER*4") )
+  else if ( !strcmp(data_type, "INTEGER*4") )
     sample_size = 4;
-  if ( !strcmp(meta->general->data_type, "REAL*4") )
+  else if ( !strcmp(data_type, "REAL*4") )
     sample_size = 4;
-  if ( !strcmp(meta->general->data_type, "REAL*8") )
+  else if ( !strcmp(data_type, "REAL*8") )
     sample_size = 8;
+  else {
+    printf("get_float_line: unrecognized data type '%s'; exiting.\n",
+            data_type);
+    exit(EXIT_FAILURE);
+  }
 
   /* Scan to the beginning of the line.  */
-  FSEEK64(file, sample_size * meta->general->sample_count * line_number, 
-	  SEEK_SET);
+  FSEEK64(file, sample_size*sample_count*line_number, SEEK_SET);
 
-  temp_buffer = MALLOC( (size_t) sample_size * meta->general->sample_count);
+  temp_buffer = MALLOC( (size_t) sample_size * sample_count);
   
-  samples_gotten = FREAD(temp_buffer, sample_size, meta->general->sample_count, file);
+  samples_gotten = FREAD(temp_buffer, sample_size, sample_count, file);
 
   /* Fill in destination array.  */
-  if ( !strcmp(meta->general->data_type, "BYTE") )
-    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ )
-      dest[x_idx] = *( (uint8_t *) temp_buffer + x_idx);
-  else if ( !strcmp(meta->general->data_type, "INTEGER*2") )
-    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ ) {
-      big16(*((int16_t *)temp_buffer + x_idx));
-      dest[x_idx] = *( (int16_t *) temp_buffer + x_idx);
+  if ( !strcmp(data_type, "BYTE") )
+    for ( ii = 0 ; ii < sample_count ; ii++ )
+      dest[ii] = *( (uint8_t *) temp_buffer + ii);
+  else if ( !strcmp(data_type, "INTEGER*2") )
+    for ( ii = 0 ; ii < sample_count ; ii++ ) {
+      big16(*((int16_t *)temp_buffer + ii));
+      dest[ii] = *( (int16_t *) temp_buffer + ii);
     }
-  else if ( !strcmp(meta->general->data_type, "INTEGER*4") )
-    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ ) {
-      big32(*((int32_t *)temp_buffer + x_idx));
-      dest[x_idx] = *( (int32_t *) temp_buffer + x_idx);
+  else if ( !strcmp(data_type, "INTEGER*4") )
+    for ( ii = 0 ; ii < sample_count ; ii++ ) {
+      big32(*((int32_t *)temp_buffer + ii));
+      dest[ii] = *( (int32_t *) temp_buffer + ii);
     }
-  else if ( !strcmp(meta->general->data_type, "REAL*4") )
-    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ ) {
-      ieee_big32(*((float*)temp_buffer + x_idx));
-      dest[x_idx] = *( (float *) temp_buffer + x_idx);
+  else if ( !strcmp(data_type, "REAL*4") )
+    for ( ii = 0 ; ii < sample_count ; ii++ ) {
+      ieee_big32(*((float*)temp_buffer + ii));
+      dest[ii] = *( (float *) temp_buffer + ii);
     }
-  else if ( !strcmp(meta->general->data_type, "REAL*8") )
-    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ ) {
-      ieee_big64(*((double*)temp_buffer + x_idx));
-      dest[x_idx] = *( (double *) temp_buffer + x_idx);
+  else if ( !strcmp(data_type, "REAL*8") )
+    for ( ii = 0 ; ii < sample_count ; ii++ ) {
+      ieee_big64(*((double*)temp_buffer + ii));
+      dest[ii] = *( (double *) temp_buffer + ii);
     }
 
   FREE(temp_buffer);
   return samples_gotten;
+}
+
+/***********************************************************************************
+ * Put a single line of data in floating point format, performing rounding, padding,
+ * and endian conversion as needed.  The line_number argument is the zero-indexed
+ * line number to get.  The dest argument must be a pointer to existing memory.   */
+int put_float_line(FILE *file, meta_parameters *meta, int line_number, const float *source)
+{
+  int ii;               /* Sample index.                       */
+  int samples_put;      /* Number of samples written           */
+  size_t sample_size;   /* Sample size in bytes.               */
+  void *out_buffer;     /* Buffer of converted data to write.  */
+  int sample_count = meta->general->sample_count;
+  char *data_type  = meta->general->data_type;
+
+  assert(line_number <= meta->general->line_count - 1);
+
+  /* Determine sample size.  */
+  if ( !strcmp(data_type, "BYTE") )
+    sample_size = 1;
+  else if ( !strcmp(data_type, "INTEGER*2") )
+    sample_size = 2;
+  else if ( !strcmp(data_type, "INTEGER*4") )
+    sample_size = 4;
+  else if ( !strcmp(data_type, "REAL*4") )
+    sample_size = 4;
+  else if ( !strcmp(data_type, "REAL*8") )
+    sample_size = 8;
+  else {
+    printf("put_float_line: unrecognized data type '%s'; exiting.\n",
+            data_type);
+    exit(EXIT_FAILURE);
+  }
+
+  out_buffer = MALLOC( (size_t) sample_size * sample_count);
+
+  /* Fill in destination array.  */
+  if ( !strcmp(data_type, "BYTE") )
+    for ( ii = 0 ; ii < sample_count ; ii++ )
+      ((unsigned char *)out_buffer)[ii] = source[ii];
+  else if ( !strcmp(data_type, "INTEGER*2") )
+    for ( ii = 0 ; ii < sample_count ; ii++ ) {
+      ((short*)out_buffer)[ii] = source[ii];
+      big16( ((short*)out_buffer)[ii] );
+    }
+  else if ( !strcmp(data_type, "INTEGER*4") )
+    for ( ii = 0 ; ii < sample_count ; ii++ ) {
+      ((int*)out_buffer)[ii] = source[ii];
+      big32( ((int*)out_buffer)[ii] );
+    }
+  else if ( !strcmp(data_type, "REAL*4") )
+    for ( ii = 0 ; ii < sample_count ; ii++ ) {
+      ((float*)out_buffer)[ii] = source[ii];
+      ieee_big32( ((float*)out_buffer)[ii] );
+    }
+  else if ( !strcmp(data_type, "REAL*8") )
+    for ( ii = 0 ; ii < sample_count ; ii++ ) {
+      ((double*)out_buffer)[ii] = source[ii];
+      ieee_big64( ((double*)out_buffer)[ii] );
+    }
+
+  FSEEK64(file, sample_size*sample_count*line_number, SEEK_SET);
+  samples_put = FWRITE(out_buffer, sample_size, sample_count, file);
+
+  FREE(out_buffer);
+  return samples_put;
 }
