@@ -64,6 +64,7 @@ void StartWatch(void);
 void StopWatch(void);
 void StartWatchLog(FILE *fLog);
 void StopWatchLog(FILE *fLog);
+char* date_stamp(void);
 
 /*****************************************
  * FileUtil:
