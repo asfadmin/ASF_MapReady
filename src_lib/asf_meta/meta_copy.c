@@ -1,6 +1,11 @@
 #include "asf.h"
 #include "asf_meta.h"
 
+
+meta_state_vectors *meta_state_vectors_init(int vector_count);
+
+
+
 meta_parameters *meta_copy(meta_parameters *src)
 {
 	meta_parameters *ret = raw_init();
@@ -10,7 +15,7 @@ meta_parameters *meta_copy(meta_parameters *src)
 	strncpy (ret->general->sensor,   src->general->sensor, FIELD_STRING_MAX-1);
 	strncpy (ret->general->mode,     src->general->mode, MODE_FIELD_STRING_MAX-1);
 	strncpy (ret->general->processor, src->general->processor, FIELD_STRING_MAX-1);
-	strncpy (ret->general->data_type, src->general->data_type, FIELD_STRING_MAX-1);
+	ret->general->data_type        = src->general->data_type;
 	strncpy (ret->general->system,   src->general->system, FIELD_STRING_MAX-1);
 	ret->general->orbit            = src->general->orbit;
 	ret->general->orbit_direction  = src->general->orbit_direction;
@@ -64,6 +69,7 @@ meta_parameters *meta_copy(meta_parameters *src)
 		ret->projection->hem      = src->projection->hem;
 		ret->projection->re_major = src->projection->re_major;
 		ret->projection->re_minor = src->projection->re_minor;
+		ret->projection->ecc      = src->projection->ecc;
 		switch (ret->projection->type) {
 		    case 'A':/* Along-track/cross-track.*/
 			ret->projection->param.atct.rlocal = src->projection->param.atct.rlocal;
@@ -93,13 +99,12 @@ meta_parameters *meta_copy(meta_parameters *src)
 
 	if (src->state_vectors) {
 		int ii;
-                ret->state_vectors = (meta_state_vectors*)MALLOC(sizeof(meta_state_vectors));
+                ret->state_vectors = meta_state_vectors_init(src->state_vectors->vector_count);
 		ret->state_vectors->year         = src->state_vectors->year;
 		ret->state_vectors->julDay       = src->state_vectors->julDay;
 		ret->state_vectors->second       = src->state_vectors->second;
 		ret->state_vectors->vector_count = src->state_vectors->vector_count;
 		ret->state_vectors->num          = src->state_vectors->num;
-		ret->state_vectors->vecs = (state_loc*) MALLOC(sizeof(state_loc) * ret->state_vectors->vector_count);
 		for (ii = 0; ii < ret->state_vectors->vector_count; ii++ ) {
 			ret->state_vectors->vecs[ii].time      = src->state_vectors->vecs[ii].time;
 			ret->state_vectors->vecs[ii].vec.pos.x = src->state_vectors->vecs[ii].vec.pos.x;
