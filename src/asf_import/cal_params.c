@@ -22,7 +22,7 @@ calibrate.*/
 
 *********************************************/
 #include "noise_vectors.h"
-#define LOVAL -40.0
+#define LOVAL 0.0
 
 /**************************************************************************
 get_noise
@@ -196,19 +196,17 @@ float get_cal_dn(cal_params *p,double noiseValue,double invIncAngle,int inDn)
 {
 
 
-        double scaledPower,sigma0;
+        double scaledPower;
 
-        /*Convert (amplitude) data number to scaled, noise-removed power*/
+        /* Convert (amplitude) data number to scaled, noise-removed power */
         scaledPower=(p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
 
-        /*Convert power to dB */
+        /* We don't want to convert the scaled power image into dB values 
+	   since it messes up the statistics */
         if (scaledPower > 0.0 && inDn > 0)
-        {
-                sigma0=10.0*log10(scaledPower);
-                        return sigma0;
-        }
-        /*Otherwise, log undefined*/
-        return LOVAL;
+          return scaledPower;
+        else
+	  return LOVAL;
 }
 
 /*----------------------------------------------------------------------
