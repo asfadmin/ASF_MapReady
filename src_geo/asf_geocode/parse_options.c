@@ -1069,12 +1069,7 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 		}
 
 		if (!specified_slat)
-		{
-		    if (pps->ps.is_north_pole == 1)
-			pps->ps.slat = 90;
-		    else
-			pps->ps.slat = -90;
-		}
+		    pps->ps.slat = MAGIC_UNSET_DOUBLE;
 
 		if (!specified_slon)
 		    pps->ps.slon = MAGIC_UNSET_DOUBLE;
