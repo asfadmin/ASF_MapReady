@@ -45,7 +45,10 @@ typedef struct
 #define MATCHED_SUBEXPS_INITIALIZER {0, 0, NULL}
 
 /* Perform extended regular expression match of 'string' against
-   'regex'.  Returns one if the match succeeds, zero otherwise.  */
+   'regex'.  Returns one if the match succeeds, zero otherwise.  If
+   and only if zero is returned, the matched_subexps_t structure
+   pointed to by msubs may be immediately be reused without first
+   calling matched_subexps_free, */
 int regex_match(matched_subexps_t *msubs, const char *string, 
 		const char *regex);
 
