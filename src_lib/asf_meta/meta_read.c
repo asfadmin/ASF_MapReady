@@ -168,9 +168,25 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	coniIO_char(coni,"geo.","type:",&sar->image_type,"Image type: [S=slant range; G=ground range; P=map projected]");
 	if (sar->image_type=='P') {
 	/*Projection Parameters.*/
+		char projection_type[256];
 		meta_projection *projection = meta->projection = meta_projection_init();
 		coniIO_structOpen(coni,"proj {","Map Projection parameters");
-		coniIO_char  (coni,"geo.proj.","type:",  &projection->type,  "Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]");
+		coniIO_str  (coni,"geo.proj.","type:",  projection_type,  "Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]");
+		if ( !strcmp(projection_type, "UNIVERSAL_TRANSVERSE_MERCATOR") ) 
+			projection->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+		else if ( !strcmp(projection_type, "POLAR_STEREOGRAPHIC") ) 
+			projection->type = POLAR_STEREOGRAPHIC;
+		else if ( !strcmp(projection_type, "ALBERS_EQUAL_AREA") )
+			projection->type = ALBERS_EQUAL_AREA;
+		else if ( !strcmp(projection_type, "LAMBERT_CONFORMAL_CONIC") ) 
+			projection->type = LAMBERT_CONFORMAL_CONIC;
+		else if ( !strcmp(projection_type, "LAMBERT_AZIMUTHAL_EQUAL_AREA") ) 
+			projection->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
+		else if ( !strcmp(projection_type, "STATE_PLANE") ) 
+			projection->type = STATE_PLANE;
+		else if ( !strcmp(projection_type, "SCANSAR_PROJECTION") ) 
+			projection->type = SCANSAR_PROJECTION;
+		else  projection->type = -1;
 		coniIO_double(coni,"geo.proj.","startX:",&projection->startX,"Projection Coordinate at top-left, X direction");
 		coniIO_double(coni,"geo.proj.","startY:",&projection->startY,"Projection Coordinate at top-left, Y direction");
 		coniIO_double(coni,"geo.proj.","perX:",  &projection->perX,  "Projection Coordinate per pixel, X direction");
