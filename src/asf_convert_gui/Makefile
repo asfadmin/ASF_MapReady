@@ -19,7 +19,7 @@ INCLUDE = -I$(GTK_INC) -I$(GTK_INC)/glib-2.0 -I$(GTK_INC)/pango-1.0 -I$(GTK_INC)
 
 LIB = -L$(GTK_LIB) -L$(GTK_LIB)/glib-2.0 -L$(GTK_LIB)/gtk-2.0 -L$(GTK_LIB)/pango -L$(GTK_LIB)/libglade -lintl -liconv -lm -lgtk-win32-2.0 -lgobject-2.0 -llibglade-2.0 -lglib-2.0
 
-CFLAGS = -mms-bitfields -Dwin32 -g
+CFLAGS = -mms-bitfields -Dwin32 -g -Wall
 
 $(TARGET).exe: $(TARGET).c
 	if [ ! -f $(GTK_DIR)/README.txt ]; then\

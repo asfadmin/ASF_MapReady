@@ -1,14 +1,15 @@
+
+#include <unistd.h>
 #include "asf_convert_gui.h"
 
 /*
-#include <unistd.h>
 #include <fcntl.h>
 #include <sys/select.h>
-#include <time.h>
 */
 
 #include <errno.h>
 #include <sys/wait.h>
+#include <time.h>
 
 char *
 do_cmd(char *cmd, char *log_file_name)
@@ -117,7 +118,7 @@ do_cmd_does_not_work(char *cmd)
     }
     else
     {
-      /* no data * /
+      / * no data * /
       
     }
     
