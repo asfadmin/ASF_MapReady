@@ -8,7 +8,7 @@ make_input_image_thumbnail (char *input_metadata, char *input_data,
 			    size_t max_thumbnail_dimension, 
 			    char *output_jpeg)
 {
-  meta_parameters *imd = meta_read (input_metadata); // Input metadata.
+  meta_parameters *imd = meta_create (input_metadata); // Input metadata.
   CEOS_FILE *id = fopenCeos (input_data); // Input data file.
 
   // Vertical and horizontal scale factors required to meet the
@@ -33,7 +33,15 @@ make_input_image_thumbnail (char *input_metadata, char *input_data,
     readCeosLine(line, ii * sf, id);
     size_t jj;
     for ( jj = 0 ; jj < tsx ; jj++ ) {
-      float_image_set_pixel (ti, jj, ii, line[jj * sf]);
+      // Current sampled value.  We will average a couple pixels together.
+      int csv;		
+      if ( jj * sf < imd->general->line_count - 1 ) {
+	csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
+      }
+      else {
+	csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
+      }
+      float_image_set_pixel (ti, jj, ii, csv);
     }
   }
   g_free (line);

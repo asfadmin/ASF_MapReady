@@ -1,4 +1,7 @@
+#include <unistd.h>
+
 #include "asf_convert_gui.h"
+#include "ceos_thumbnail.h"
 
 static gchar *
 determine_default_output_file_name(const gchar * data_file_name)
@@ -77,6 +80,38 @@ static gboolean file_is_valid(const gchar * data_file)
     }
 }
     
+#ifdef THUMBNAILS
+
+static void set_input_image_thumbnail(GtkTreeIter *iter, 
+				      const gchar *metadata_file,
+				      const gchar *data_file)
+{
+  GError *err = NULL;
+  
+  gchar *tfn;
+  gint tfd = g_file_open_tmp ("thumbnail_jpg-XXXXXX", &tfn, &err);
+  if ( err != NULL ) {
+    g_error ("Couldn't opent temporary thumbnail image: %s\n", err->message);
+  }
+  g_assert (err == NULL);
+  int return_code = close (tfd);
+  g_assert (return_code == 0);
+
+  make_input_image_thumbnail (metadata_file, data_file, 256, tfn);
+
+  GdkPixbuf *pb = gdk_pixbuf_new_from_file_at_size (tfn, 48, 48, &err);
+
+  if ( !err ) {
+    gtk_list_store_set (list_store, iter, 4, pb, -1);	
+  }
+  else {
+    g_warning ("Couldn't load thumbnail image'%s': %s\n", tfn, err->message);
+    g_error_free (err);
+  }
+}
+
+#endif
+
 gboolean
 add_to_files_list(const gchar * data_file)
 {
@@ -93,7 +128,13 @@ add_to_files_list(const gchar * data_file)
     
         gtk_list_store_set(list_store, &iter,
                            0, data_file, 2, "-", -1);
-    
+
+#ifdef THUMBNAILS
+	gchar *metadata_file = meta_file_name (data_file);
+	set_input_image_thumbnail (&iter, metadata_file, data_file); 
+	g_free (metadata_file);
+#endif /* THUMBNAILS */
+
         out_name_full = determine_default_output_file_name(data_file);
     
         set_output_name(&iter, out_name_full);
@@ -269,10 +310,11 @@ setup_files_list(int argc, char *argv[])
   GValue val = {0,};
 
 #ifdef THUMBNAILS
-  list_store = gtk_list_store_new(4, 
+  list_store = gtk_list_store_new(5, 
                   G_TYPE_STRING, 
                   G_TYPE_STRING, 
                   G_TYPE_STRING,
+		  GDK_TYPE_PIXBUF,
 		  GDK_TYPE_PIXBUF);
 #else
   list_store = gtk_list_store_new(3, 
@@ -365,6 +407,15 @@ setup_files_list(int argc, char *argv[])
   renderer = gtk_cell_renderer_pixbuf_new();
   gtk_tree_view_column_pack_start(col, renderer, FALSE);
   gtk_tree_view_column_add_attribute(col, renderer, "pixbuf", 3);
+
+  /* Even newer last column: thumbnail of input image.  */
+  col = gtk_tree_view_column_new ();
+  gtk_tree_view_column_set_title (col, "Input Thumbnail");
+  gtk_tree_view_column_set_resizable (col, FALSE);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (files_list), col);
+  renderer = gtk_cell_renderer_pixbuf_new ();
+  gtk_tree_view_column_pack_start (col, renderer, FALSE);
+  gtk_tree_view_column_add_attribute (col, renderer, "pixbuf", 4);
 #endif
 
   gtk_tree_view_set_model(GTK_TREE_VIEW(files_list), 

@@ -44,9 +44,8 @@ message_box(const gchar * message)
   gtk_widget_show_all(dialog);
 }
 
-/* --- this appears to no longer be needed ---
 gchar *
-meta_file_name(gchar * data_file_name)
+meta_file_name(const gchar * data_file_name)
 {
   gchar * p = strrchr(data_file_name, '.');
   if (!p)
@@ -78,4 +77,3 @@ meta_file_name(gchar * data_file_name)
 
   return "";
 }
-*/
