@@ -31,10 +31,10 @@ PROGRAM HISTORY:
 				        with RAMP data.
 	1.6	P. Denny	9/01	Modified headerLen calculation to work
 					with RAMP and any ASF CEOS (hardcoded)
+	1.7	R. Gens		6/03	Modified number of sample calculation
 
 ****************************************************************************/
 #include "asf.h"
-#include "ddr.h"
 #include "ceos.h"
 #include "asf_endian.h"
 #include "proj.h"
@@ -55,18 +55,18 @@ int firstRecordLen(char *ceosIn)
 
 void ceos2ddr(char *ceosIn,struct DDR *ddrOut,int *headerLen,int *lineLen)
 {
-	int i;                  /* loop counter */
-	int dataSize;		/* Number of bytes per image pixel.*/
-	struct IOF_VFDR iof;    /* Imagery Options File, from CEOS.*/
-	struct VFDRECV facdr;	/* Facility related data record   */
-	struct VMPDREC mpdr;    /* Map Projection Data Record */
+	int i;                          /* loop counter */
+	int dataSize;		        /* Number of bytes per image pixel.*/
+	struct IOF_VFDR iof;            /* Imagery Options File, from CEOS.*/
+	struct dataset_sum_rec dssr;	/* Data Set Summary Record */
+	struct VMPDREC mpdr;            /* Map Projection Data Record */
 	meta_parameters *meta=meta_create(ceosIn);
 	int has_mpdr=0;
 	char dummy[255];
-	
+
 	/*Extract information about the CEOS image.*/
 	get_ifiledr(ceosIn,&iof);
-	get_facdr(ceosIn,&facdr);
+	get_dssr(ceosIn,&dssr);
 	if (-1!=get_mpdr(ceosIn,&mpdr))
 		has_mpdr=1;
 	
@@ -83,7 +83,10 @@ void ceos2ddr(char *ceosIn,struct DDR *ddrOut,int *headerLen,int *lineLen)
 	/* Set non-projection dependent records */
 	dataSize=(iof.bitssamp+7)/8;
 	ddrOut->nl = iof.numofrec;
-	ddrOut->ns = facdr.npixels;
+	if (((iof.reclen-iof.predata)/iof.bytgroup) == (dssr.sc_pix*2)) /* check number of samples */
+	  ddrOut->ns = (iof.reclen-iof.predata)/iof.bytgroup;
+	else
+	  ddrOut->ns = dssr.sc_pix*2;
 	ddrOut->nbands=iof.sampdata;
 	strcpy(ddrOut->system,"ieee-std");
 	switch (dataSize)/*switch on number of bytes per pixel.*/
