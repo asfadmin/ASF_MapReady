@@ -31,7 +31,7 @@
    input format = < CEOS | ASF >
    data type = < amplitude | power | sigma | gamma | beta >
    output file = < basename of the output file >
-   output format = < ASF | GEOTIFF | JPEG | ENVI | ESRI | PPM | PNG >
+   output format = < ASF | GEOTIFF | JPEG | ENVI | ESRI | PPM >
    resampling = < flag for subsampling: 0 | 1 >
    browse image = < flag for subsampling to browse image size: 0 | 1 >
    geocoding = < flag for geocoding: 0 | 1 >
@@ -482,8 +482,10 @@ int main(int argc, char *argv[])
 		   "exporting image to PPM format (asf_export)");
       break;
     case PNG:
+      /*
       check_return(asf_export(type_out, out, cfg->general->out_name),
 		   "exporting image to PNG format (asf_export)");
+      */
       break;
     case LAS: break;
     default:
