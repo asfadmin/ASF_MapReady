@@ -31,7 +31,7 @@ on_help_button_clicked(GtkWidget *widget)
 
   gtk_text_buffer_set_text(text_buffer, "", -1);
 
-  help_filename = (gchar *)find_in_path("asf_convert_gui_help.txt");
+  help_filename = (gchar *)find_in_path("asf_convert_gui.txt");
   help_file = fopen(help_filename, "rt");
   if (help_file)
   {

@@ -72,8 +72,8 @@ default: $(OBJS)
 doc: book1.html
 
 book1.html:
-	docbook2html asf_convert_gui.sgml
-	cp *.html $(BINDIR)
+	docbook2txt asf_convert_gui.sgml
+	cp $(TARGET).txt $(BINDIR)
 
 clean:
 	-rm *.o $(BINDIR)/$(TARGET)* *.html
