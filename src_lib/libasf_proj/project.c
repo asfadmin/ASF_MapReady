@@ -10,6 +10,8 @@
 #include "projects.h"
 #include "proj_api.h"
 
+static const double DEFAULT_AVERAGE_HEIGHT = 0.0
+
 #ifndef linux
 #ifndef win32
 static double
@@ -43,7 +45,7 @@ static const char * datum(project_parameters_t * pps)
     }
 }
 
-static double sHeight = 0.0;
+static double sHeight = DEFAULT_AVERAGE_HEIGHT;
 void project_set_avg_height(double h)
 {
     sHeight = h;
@@ -59,7 +61,7 @@ static double get_avg_height()
     if (height_was_set())
 	return sHeight;
     else
-	return 0.0;
+	return DEFAULT_AVERAGE_HEIGHT;
 }
 
 /*
