@@ -264,7 +264,11 @@
           standard parallels, the latitudes at which the projection
           cone intersects the Earth (and, so, at these latitudes the
           projection doesn't introduce any distortion), as well as the
-          location of the projection's origin.</para>
+          location of the projection's origin.  </para>
+
+          <para>You may omit the
+          origin (the image's center will be used as the origin), however
+          the standard parallels are required.</para>
       </listitem>
       <listitem><para>Lambert Conform Conic</para>
 
@@ -274,12 +278,20 @@
           projection doesn't introduce any distortion), as well as the
           location of the projection's origin.</para>
 
+          <para>You may omit the
+          origin (the image's center will be used as the origin), however
+          the standard parallels are required.</para>
+
       </listitem>
 
       <listitem><para>Lambert Azimuthal Equal Area</para>
 
 	<para>You need to specify the point of tangency, and may also
           specify False Easting and Northing.</para>
+
+          <para>You may omit the point of tangency
+          (the image's center will be used).
+          </para>
 
       </listitem>
     </orderedlist>
