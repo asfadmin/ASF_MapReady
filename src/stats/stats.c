@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 	}
 	if ( start_sample == -1 ) start_sample = 0;
 	if ( start_sample > num_samples ) {
-	  printf("error: startsample is larger than index of last sample in image\n"); 
+	  printf("error: -startsample argument is larger than index of last sample in image\n"); 
 	  exit(EXIT_FAILURE);
 	}
 	if ( window_width == -1 ) window_width = num_lines;
