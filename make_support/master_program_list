@@ -56,6 +56,7 @@ LIBS
 	asf_geolib
 	asf_odl
 	asf_fft
+	libasf_reporting
 	libjpeg
 	libtiff
 	libgeotiff
