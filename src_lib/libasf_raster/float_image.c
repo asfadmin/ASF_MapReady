@@ -1,15 +1,24 @@
 // Implementation of the interface in float_image.h.
 
+#include <errno.h>
 #include <limits.h>
 #include <math.h>
+#include <signal.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <glib.h>
 
 #include "float_image.h"
 
-// Default cache size to use is 20 megabytes.
-static const size_t default_cache_size = 20 * 1048576;
+// Default cache size to use is 16 megabytes.
+static const size_t default_cache_size = 16 * 1048576;
+// This class wide data element keeps track of the number of temporary
+// tile files opened by the current process, in order to give them
+// unique names.
+static unsigned long current_tile_file_number = 0;
 
 // This routine does the work common to several of the differenct
 // creation routines.  Basicly, it does everything but fill in the
@@ -17,6 +26,7 @@ static const size_t default_cache_size = 20 * 1048576;
 static FloatImage *
 initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
 {
+  // Allocate instance memory.
   FloatImage *self = g_new0 (FloatImage, 1);
 
   // Validate and remember image size.
@@ -88,8 +98,8 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   // The addresses in the cache of the start of each of the tiles.
   // This array contains flattened tile addresses in the same way that
   // image memory normally uses flattened pixel addresses, e.g. the
-  // address of tile 2, 4 is stored at self->tile_addresses[4 *
-  // self->tile_count_x + 2].  If a tile isn't in the cache, the
+  // address of tile x = 2, y = 4 is stored at self->tile_addresses[4
+  // * self->tile_count_x + 2].  If a tile isn't in the cache, the
   // address is NULL (meaning it will have to be loaded).
   self->tile_addresses = g_new0 (float *, self->tile_count);
   g_assert (NULL == 0x0);	// Ensure g_new0 effectively sets to NULL.
@@ -101,8 +111,29 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   // Create the temporary tile oriented storage file.  This gets
   // filled in in different ways depending on which creation routine
   // we are using.
-  self->tile_file = tmpfile ();
+  GString *tile_file_name = g_string_new ("");
+  gchar *current_dir = g_get_current_dir ();
+  g_string_append_printf (tile_file_name, 
+			  "%s/.float_image_tile_file_uNiQuIfY_nAmE_%d_%ld",
+			  current_dir, getpid (), current_tile_file_number);
+  g_free (current_dir);
+  // This hard coded limit on the current number used to uniqueify
+  // file names limits us to creating no more than ULONG_MAX instances
+  // during a process.
+  g_assert (current_tile_file_number < ULONG_MAX);
+  current_tile_file_number++;
+  // We block signals while we create and unlink this file, so we
+  // don't end up leaving a huge temporary file somewhere.
+  sigset_t all_signals, old_set;
+  int return_code = sigfillset (&all_signals);
+  g_assert (return_code == 0);
+  return_code = sigprocmask (SIG_SETMASK, &all_signals, &old_set);
+  self->tile_file = fopen (tile_file_name->str, "w+");
   g_assert (self->tile_file != NULL);
+  return_code = unlink (tile_file_name->str);
+  g_assert (return_code == 0);
+  return_code = sigprocmask (SIG_SETMASK, &old_set, NULL);
+  g_string_free (tile_file_name, TRUE);
 
   return self;
 }
@@ -127,7 +158,17 @@ float_image_new (size_t size_x, size_t size_y)
   for ( ii = 0 ; ii < total_height ; ii++ ) {
     size_t write_count = fwrite (zero_line, sizeof (float), total_width, 
 				 self->tile_file);
-    g_assert (write_count == total_width);
+    // If we wrote less than expected,
+    if ( write_count < total_width ) {
+      // it must have been a write error (probably no space left),
+      g_assert (ferror (self->tile_file));
+      // so print an error message,
+      fprintf (stderr, 
+	       "Error creating tile cache file for float_image instance: %s\n",
+	       strerror (errno));
+      // and exit.
+      exit (EXIT_FAILURE);
+    }
   }
 
   // Done with the line of zeros.
@@ -157,7 +198,17 @@ float_image_new_with_value (size_t size_x, size_t size_y, float value)
   for ( ii = 0 ; ii < total_height ; ii++ ) {
     size_t write_count = fwrite (value_line, sizeof (float), total_width, 
 				 self->tile_file);
-    g_assert (write_count == total_height);
+    // If we wrote less than expected,
+    if ( write_count < total_width ) {
+      // it must have been a write error (probably no space left),
+      g_assert (ferror (self->tile_file));
+      // so print an error message,
+      fprintf (stderr, 
+	       "Error creating tile cache file for float_image instance: %s\n",
+	       strerror (errno));
+      // and exit.
+      exit (EXIT_FAILURE);
+    }
   }
 
   // Done with the line full of values.
@@ -220,7 +271,7 @@ float_image_new_from_file (size_t size_x, size_t size_y, char *file,
     // fill up the extra part of the tile (which should never be
     // accessed).
     size_t effective_height;
-    if ( ii < self->tile_count_y - 1 ) {
+    if ( ii < self->tile_count_y - 1 || self->size_y % self->tile_size == 0 ) {
       effective_height = self->tile_size;
     }
     else {
@@ -249,14 +300,14 @@ float_image_new_from_file (size_t size_x, size_t size_y, char *file,
 	swap_bytes_32 ((unsigned char *)&(buffer[idx]));
       }
     }
-    
 
     // Write data from the strip into the tile store.
     size_t jj;
     for ( jj = 0 ; jj < self->tile_count_x ; jj++ ) {
       // This is roughly analogous to effective_height.
       size_t effective_width;
-      if ( jj < self->tile_count_x - 1 ) {
+      if ( jj < self->tile_count_x - 1 
+	   || self->size_x % self->tile_size == 0) {
 	effective_width = self->tile_size;
       }
       else {
@@ -268,21 +319,53 @@ float_image_new_from_file (size_t size_x, size_t size_y, char *file,
 	write_count 
 	  = fwrite (buffer + kk * self->size_x + jj * self->tile_size, 
 		    sizeof (float), effective_width, self->tile_file);
-	g_assert (write_count == effective_width);
+	// If we wrote less than expected,
+	if ( write_count < effective_width ) {
+	  // it must have been a write error (probably no space left),
+	  g_assert (ferror (self->tile_file));
+	  // so print an error message,
+	  fprintf (stderr, 
+		   "Error creating tile cache file for float_image instance: "
+		   "%s\n", strerror (errno));
+	  // and exit.
+	  exit (EXIT_FAILURE);
+	}
 	if ( effective_width < self->tile_size ) {
-	  write_count = fwrite (zero_line, sizeof (float), 
-				self->tile_size - effective_width, 
+	  // Amount we have left to write to fill out the last tile.
+	  size_t edge_width = self->tile_size - effective_width;
+	  write_count = fwrite (zero_line, sizeof (float), edge_width,
 				self->tile_file);
-	  g_assert (write_count == self->tile_size - effective_width);
+	  // If we wrote less than expected,
+	  if ( write_count < edge_width ) {
+	    // it must have been a write error (probably no space left),
+	    g_assert (ferror (self->tile_file));
+	    // so print an error message,
+	    fprintf (stderr, 
+		     "Error creating tile cache file for float_image "
+		     "instance: %s\n", strerror (errno));
+	    // and exit.
+	    exit (EXIT_FAILURE);
+	  }
 	}
       }
-      // Finish writing the bottom of tile for which there is no image
-      // data (should only happen if we are on the last strip of tiles).
+      // Finish writing the bottom of the tile for which there is no
+      // image data (should only happen if we are on the last strip of
+      // tiles).
       for ( ; kk < self->tile_size ; kk++ ) {
 	g_assert (ii == self->tile_count_y - 1);
 	write_count = fwrite (zero_line, sizeof (float), self->tile_size,
 			      self->tile_file);
-	g_assert (write_count == self->tile_size);
+	// If we wrote less than expected,
+	if ( write_count < self->tile_size ) {
+	  // it must have been a write error (probably no space left),
+	  g_assert (ferror (self->tile_file));
+	  // so print an error message,
+	  fprintf (stderr, 
+		   "Error creating tile cache file for float_image instance: "
+		   "%s\n", strerror (errno));
+	  // and exit.
+	  exit (EXIT_FAILURE);
+	}
       }
     }
   }
@@ -318,7 +401,7 @@ float_image_new_from_memory (size_t size_x, size_t size_y, float *buffer)
 // Flush the contents of tile with flattened offset tile_offset from
 // the memory cache to the disk file.  Its probably easiest to
 // understand this function by looking at how its used.
-static void
+void
 cached_tile_to_disk (FloatImage *self, size_t tile_offset)
 {
   int return_code 
@@ -334,7 +417,7 @@ cached_tile_to_disk (FloatImage *self, size_t tile_offset)
 
 // Do what is necessary to ensure that the tile containing pixel x, y
 // is loaded, and return the actual address of the pixel.  FIXME: not
-// sure we want to use this.  It avoids a lot of repitition in the
+// sure we want to use this.  It avoids a lot of repetition in the
 // code but requires an extra address-of/dreference pair per pixel,
 // and possibly another function call if the compiler doesn't inline
 // it.
@@ -397,8 +480,8 @@ float_image_get_pixel (FloatImage *self, ssize_t x, ssize_t y)
   g_assert (x >= 0 && (size_t)x <= self->size_x);
   g_assert (y >= 0 && (size_t)y <= self->size_y);
 
-  g_assert (sizeof (long int) >= sizeof (size_t));
   // Get the pixel coordinates, including tile and pixel-in-tile.
+  g_assert (sizeof (long int) >= sizeof (size_t));
   ldiv_t pc_x = ldiv (x, self->tile_size), pc_y = ldiv (y, self->tile_size);
   
   // Offset of tile x, y, where tiles are viewed as pixels normally are.
@@ -454,8 +537,8 @@ float_image_set_pixel (FloatImage *self, ssize_t x, ssize_t y, float value)
   g_assert (x >= 0 && (size_t)x <= self->size_x);
   g_assert (y >= 0 && (size_t)y <= self->size_y);
 
-  g_assert (sizeof (long int) >= sizeof (size_t));
   // Get the pixel coordinates, including tile and pixel-in-tile.
+  g_assert (sizeof (long int) >= sizeof (size_t));
   ldiv_t pc_x = ldiv (x, self->tile_size), pc_y = ldiv (y, self->tile_size);
   
   // Offset of tile x, y, where tiles are viewed as pixels normally are.
@@ -565,6 +648,16 @@ float_image_store (FloatImage *self, char *file,
     // Write the data.
     size_t write_count = fwrite (line_buffer, sizeof (float), self->size_x, 
 				 fp);			       
+    // If we wrote less than expected,
+    if ( write_count < self->size_x ) {
+      // it must have been a write error (probably no space left),
+      g_assert (ferror (self->tile_file));
+      // so print an error message,
+      fprintf (stderr, "Error writing file %s: %s\n", file, strerror (errno));
+      // and exit.
+      exit (EXIT_FAILURE);
+    }
+
     g_assert (write_count == self->size_x);
   }
   
@@ -598,12 +691,14 @@ float_image_set_cache_size (FloatImage *self, size_t size)
 void
 float_image_free (FloatImage *self)
 {
-  g_free (self->cache);
-  g_free (self->tile_addresses);
-  g_queue_free (self->tile_queue);
-
+  // Close and remove the tile file.
   int return_code = fclose (self->tile_file);
   g_assert (return_code == 0);
+
+  // Deallocate dynamic memory.
+  g_free (self->tile_addresses);
+  g_queue_free (self->tile_queue);
+  g_free (self->cache);
 
   g_free (self);
 }
