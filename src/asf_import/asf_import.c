@@ -195,7 +195,7 @@ void help_page()
 
   /* If we can, use less */
   sprintf (command, "echo '%s' | less --prompt='Type q to quit help, h for "
-	   "help with help browser", happy_string);
+	   "help with help browser'", happy_string);
   if(system(command) != -1)
     exit(EXIT_SUCCESS);
 
@@ -248,7 +248,8 @@ int main(int argc, char *argv[])
   flags[f_LAT_CONSTRAINT] = checkForOption("-lat", argc, argv);
   flags[f_PRC] = checkForOption("prc", argc, argv);
   flags[f_OLD_META] = checkForOption("-old", argc, argv);
-  flags[f_METADATA_FILE] = checkForOption("-metadata", argc, argv);
+  flags[f_METADATA_FILE] = FLAG_NOT_SET;
+         /* checkForOption("-metadata", argc, argv); */
   flags[f_LOG] = checkForOption("-log", argc, argv);
   flags[f_QUIET] = checkForOption("-quiet", argc, argv);
   flags[f_FORMAT] = checkForOption("-format", argc, argv);
