@@ -24,10 +24,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
   /* Write an 'about meta file' comment  */
   fprintf(fp,
   	"# This file contains the metadata for satellite capture file of the same base name.\n"
-	"#      '?' is likely an unknown single character value.\n"
-	"#      '??\?' is likely an unknown string of characters.\n"
-	"#      '-999999999' is likely an unknown integer value.\n"
-	"#      'NaN' is likely an unknown Real value.\n\n");
+	"#      '%c' is likely an unknown single character value.\n"
+	"#      '%s' is likely an unknown string of characters.\n"
+	"#      '%d' is likely an unknown integer value.\n"
+	"#      'NaN' is likely an unknown Real value.\n\n",
+	MAGIC_UNSET_CHAR, MAGIC_UNSET_STRING, MAGIC_UNSET_INT);
 
   /* We always write out files corresponding to the latest meta version.  */
   fprintf(fp, "meta_version: %.2f\n\n", META_VERSION);
@@ -104,26 +105,28 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_string(fp,"}","","End sar");
 
 /* State block.  */
-  meta_put_string(fp,"state {","","Begin list of state vectors for satellite, over image");
-  meta_put_int   (fp,"year:",meta->state_vectors->year,"Year of image start");
-  meta_put_int   (fp,"julDay:",meta->state_vectors->julDay,"Julian day of the year for image start");
-  meta_put_double(fp,"second:",meta->state_vectors->second,"Second of the day for image start");
-  meta_put_int   (fp,"vector_count:",meta->state_vectors->vector_count,"Number of state vectors below");
-  { 
-    int ii;
-    for (ii = 0; ii < meta->state_vectors->vector_count; ii++ ) {
-      meta_put_string(fp,"vector {","","Begin a single state vector");
-      meta_put_double(fp,"time:",meta->state_vectors->vecs[ii].time,"Time, relative to image start [s]");
-      meta_put_double(fp,"x:",meta->state_vectors->vecs[ii].vec.pos.x,"X Coordinate, earth-fixed [m]");
-      meta_put_double(fp,"y:",meta->state_vectors->vecs[ii].vec.pos.y,"Y Coordinate, earth-fixed [m]");
-      meta_put_double(fp,"z:",meta->state_vectors->vecs[ii].vec.pos.z,"Z Coordinate, earth-fixed [m]");
-      meta_put_double(fp,"vx:",meta->state_vectors->vecs[ii].vec.vel.x,"X Velocity, earth-fixed [m/s]");
-      meta_put_double(fp,"vy:",meta->state_vectors->vecs[ii].vec.vel.y,"Y Velocity, earth-fixed [m/s]");
-      meta_put_double(fp,"vz:",meta->state_vectors->vecs[ii].vec.vel.z,"Z Velocity, earth-fixed [m/s]");
-      meta_put_string(fp,"}","","End a single state vector");
+  if (meta->state_vectors) {
+    meta_put_string(fp,"state {","","Begin list of state vectors for satellite, over image");
+    meta_put_int   (fp,"year:",meta->state_vectors->year,"Year of image start");
+    meta_put_int   (fp,"julDay:",meta->state_vectors->julDay,"Julian day of the year for image start");
+    meta_put_double(fp,"second:",meta->state_vectors->second,"Second of the day for image start");
+    meta_put_int   (fp,"vector_count:",meta->state_vectors->vector_count,"Number of state vectors below");
+    { 
+      int ii;
+      for (ii = 0; ii < meta->state_vectors->vector_count; ii++ ) {
+	meta_put_string(fp,"vector {","","Begin a single state vector");
+	meta_put_double(fp,"time:",meta->state_vectors->vecs[ii].time,"Time, relative to image start [s]");
+	meta_put_double(fp,"x:",meta->state_vectors->vecs[ii].vec.pos.x,"X Coordinate, earth-fixed [m]");
+	meta_put_double(fp,"y:",meta->state_vectors->vecs[ii].vec.pos.y,"Y Coordinate, earth-fixed [m]");
+	meta_put_double(fp,"z:",meta->state_vectors->vecs[ii].vec.pos.z,"Z Coordinate, earth-fixed [m]");
+	meta_put_double(fp,"vx:",meta->state_vectors->vecs[ii].vec.vel.x,"X Velocity, earth-fixed [m/s]");
+	meta_put_double(fp,"vy:",meta->state_vectors->vecs[ii].vec.vel.y,"Y Velocity, earth-fixed [m/s]");
+	meta_put_double(fp,"vz:",meta->state_vectors->vecs[ii].vec.vel.z,"Z Velocity, earth-fixed [m/s]");
+	meta_put_string(fp,"}","","End a single state vector");
+      }
     }
+    meta_put_string(fp,"}","","End the list of state vectors");
   }
-  meta_put_string(fp,"}","","End the list of state vectors");
 
 /* Projection parameters block, if appropriate.  */
   if ( meta->sar->image_type == 'P' ) {
@@ -211,7 +214,7 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 	if (is_empty(value) && !strchr(name,'{') && !strchr(name,'}')){
 		value = (char*)MALLOC(sizeof(char)*4);
 		malloc_flag=1;
-		strcpy(value,"???");
+		strcpy(value,MAGIC_UNSET_STRING);
 	}
 	strcat(line,value);/*Append parameter value.*/
 	if (malloc_flag==1) {free(value);}
