@@ -300,12 +300,15 @@ meta_parameters *meta_read(const char *inName);
 /*In meta_read*/
 meta_parameters *meta_read(const char *inName);
 
-/* TO BE IN META_WRITE.C */
 void meta_write(meta_parameters *meta,const char *outName);
 
 /*Internal creation routines:*/
 meta_parameters *raw_init(void);
 meta_parameters *meta_create(const char *fName);
+
+/* Return true if the file base name given has a corresponding new
+   style .meta file.  */
+int meta_is_new_style(char *file_base_name);
 
 /*************************************************************
 These routines all return various parameters from the
