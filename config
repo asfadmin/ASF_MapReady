@@ -153,7 +153,7 @@ cd ..
 echo "########### Automatic configuration complete ###########"
 directory=$asfDir'/bin/'$sys'/'
 echo ""
-echo "The ASF-STEP tool Makefile is now fully prepared."
+echo "The ASF APD tool Makefile is now fully prepared."
 echo ""
 echo "To use the programs, you must add the binaries "
 echo "  directory to your path: " $directory " "
@@ -167,7 +167,7 @@ case $SHELL in
 	/bin/csh|/bin/tcsh)
 		addWhere=".cshrc"
 		addWhat1='setenv PATH '$directory':$PATH'
-		addWhat2='echo ASF-STEP Tool path set.'
+		addWhat2='echo ASF APD Tool path set.'
 		;;
 	/bin/ksh|/bin/sh)
 		addWhere=".profile" ;;
@@ -184,7 +184,7 @@ then
 	if [ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]
 	then
 		cd
-		echo "# Next two lines added by ASF-STEP Tools installer." >> $addWhere
+		echo "# Next two lines added by ASF APD Tools installer." >> $addWhere
 		echo $addWhat1 >> $addWhere
 		echo $addWhat2 >> $addWhere
 		cd $currDir
