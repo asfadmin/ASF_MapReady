@@ -1,49 +1,27 @@
 #!/bin/sh
 
+if [ $# != 2 ]
+then
+	echo "USAGE:"
+	echo "   make_tcltk.sh <C_compiler> <asf_lib_dir>"
+	echo ""
+	echo "   <asf_lib_dir>  Directory where the asf libraries are kept."
+	echo "   <C_compiler>   C language compiler being used (cc or gcc)."
+	echo ""
+	echo "   Builds the Tcl/Tk 8.1 libraries for SARview."
+	echo "   This program must be run in the sarview directory."
+	echo ""
+	exit 1
+fi
+
+c_compiler=$1
 sarviewDir=`pwd`
-osType=`uname`
-versMajor=`uname -r | awk -F. '{print $1}'`
-versMinor=`uname -r | awk -F. '{print $2}'`
- # perhaps a bit overdone, but it conforms with asf_tools/config
-case "${osType}:${versMajor}:${versMinor}" in
-	IRIX*:5:*)
-		sys="irix5x" ;;
-	IRIX*:*:*)
-		sys="irix"  ;;
-	SunOS:4:*)
-		sys="sunos" ;;
-	SunOS:*:*)
-		sys="solaris" ;;
-	AIX*:*:*)
-		sys="aix" ;;
-	ULTRIX:*:*)
-		sys="ultrix" ;;
-	OSF1:*:*)
-		sys="osf1" ;;
-	HP-UX:*:*)
-		sys="hpux" ;;
-	*BSD:*:*)
-		sys="bsd" ;;
-	GNU:*:*)
-		sys="gnu" ;;
-	Linux:*:*)
-		sys="linux" ;;
-	Mach:*:*)
-		sys="mach" ;;
-	CYGWIN*:*:*)
-		sys="win32" ;;
-	*:*:*)
-		sys=$osType ;;
-esac
-
-cd ../../lib/${sys}
+cd $2
+ #get absolute path
 libDir=`pwd`
-cd $sarviewDir
 
- # Figure if compiler is cc or gcc 
  # If compiler is gcc tell tcl/tk to use it
-compiler=`grep CC ../../make_support/system_rules | awk '{print $3}' | head -1`
-if [ ${compiler} = "gcc" ]
+if [ $c_compiler = "gcc" ]
 then
 	enable="--enable-gcc"
 else
@@ -53,24 +31,48 @@ fi
  # make tcl/tk if necessary
 if [ ! -d ${libDir}/tcltk81 ] 
 then
-	cp tcl8.1.1.tar.Z tk8.1.1.tar.Z $libDir
+	cp ${sarviewDir}/tcl8.1.1.tar.Z $libDir
 # Make tcl 8.1
-	cd $libDir
-	uncompress tcl8.1.1.tar.Z
-	tar xvf tcl8.1.1.tar
-	cd ./tcl8.1.1/unix
+	echo "Decompressing & untarring..."
+	if [ `which uncompress` ]
+	then
+		cd $libDir
+		uncompress tcl8.1.1.tar.Z
+	elif [ `which gunzip` ]
+	then
+		cd $libDir
+		gunzip tcl8.1.1.tar.Z
+	else
+		echo "Neither uncompress nor gunzip are available, cannot decompress data... exiting."
+		exit 1
+	fi
+	tar xf ${libDir}/tcl8.1.1.tar
+	cd ${libDir}/tcl8.1.1/unix
 	./configure --prefix=${libDir}/tcltk81 --disable-load $enable
 	make
 	make install
-	cd $libDir
-	rm -f tcl8.1.1.tar
+	rm -f ${libDir}/tcl8.1.1.tar
 # Make tk 8.1
-	uncompress tk8.1.1.tar.Z
-	tar xvf tk8.1.1.tar
-	cd ./tk8.1.1/unix
+	cp ${sarviewDir}/tk8.1.1.tar.Z $libDir
+	echo "Decompressing & untarring..."
+	if [ `which uncompress` ]
+	then
+		cd $libDir
+		uncompress tk8.1.1.tar.Z
+	else
+		cd $libDir
+		gunzip tk8.1.1.tar.Z
+	fi
+	tar xf ${libDir}/tk8.1.1.tar
+	cd ${libDir}/tk8.1.1/unix
 	./configure --prefix=${libDir}/tcltk81 --disable-load $enable
 	make 
 	make install
-	cd $libDir
-	rm -f tk8.1.1.tar
+	rm -f ${libDir}/tk8.1.1.tar
+# Cleanup temporary directories
+	echo "Removing temporary directories..."
+	rm -rf ${libDir}/tcl8.1.1
+	rm -rf ${libDir}/tk8.1.1
+
+	echo "Done installing Tcl/Tk 8.1.1!"
 fi
