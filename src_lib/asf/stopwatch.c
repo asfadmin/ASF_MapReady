@@ -38,7 +38,7 @@ void StartWatchLog(FILE *fLog)
   startTime = clock ();
   assert (startTime != (clock_t) -1);
   t = time (NULL);
-  *c = asctime (localtime (&t));
+  c = asctime (localtime (&t));
   fprintf (fLog, "Stopwatch started on date: %s", c);
 }
 
