@@ -41,13 +41,13 @@ char *findExt(char *name)
 
 char *appendExt(const char *name, const char *newExt)
 {
-  char *ret = (char *) MALLOC (sizeof(char) 
+  char *ret = (char *) MALLOC (sizeof(char)
 			       * (MAX_APPENDEXT_RESULT_STRING_LENGTH + 1));
   char *ext;
 
   assert (strlen (name) <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
   strcpy (ret, name);
-	
+
   ext = findExt (ret);
 
   /* Weird semantics: if newExt is NULL, we just return a copy of name
@@ -58,13 +58,13 @@ char *appendExt(const char *name, const char *newExt)
   if ( ext != NULL )
     /* We found an existing dot extension, clip it off (the dot itself
        it clipped).  */
-    *ext = '\0';	
+    *ext = '\0';
 
   /* Put new extension on the end.  */
-  assert (strlen (ret) + strlen (newExt) 
+  assert (strlen (ret) + strlen (newExt)
 	  <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
   strcat (ret, newExt);
-  
+
   return ret;
 }
 
@@ -187,7 +187,7 @@ FILE *fopenImage(const char *fName,const char *access)
 			openName=appendExt(fName,".img");/*Append .img*/
 		else /*There was an extension, so */
 			openName=appendExt(fName,NULL);/*Do nothing to the name.*/
-	} 
+	}
 	else
 	{/*We're opening for reading-- search many extensions for the image.*/
 		char *extTable[]={".img",".dem",".ht",".coh",NULL};
@@ -235,6 +235,29 @@ FILE *fopenImage(const char *fName,const char *access)
 }
 
 
+#define BUFFER_SIZE 16777216 /* 16 megabyte buffer */
+/******************************************************************************
+ * fileCopy:
+ * Copy the file specified by "src" to the file specified by "dst". Error
+ * checking is taken care of by the caplib functions (ie FOPEN, FWRITE, etc) */
+void fileCopy(const char *src, const char *dst)
+{
+   char buffer[BUFFER_SIZE];
+   FILE *srcFp;
+   FILE *dstFp;
+   unsigned int amount;
 
+   srcFp = FOPEN( src, "rb" );
+   dstFp = FOPEN( dst, "wb" );
 
+   do {
+      amount = FREAD( buffer, sizeof(char), BUFFER_SIZE, srcFp );
+      if (amount) {
+         FWRITE( buffer, sizeof(char), amount, dstFp );
+      }
+   /* when amount read is < BUFSZ, copy is done */
+   } while (amount == BUFFER_SIZE);
 
+   FCLOSE(srcFp);
+   FCLOSE(dstFp);
+}
