@@ -68,9 +68,10 @@ The interesting options available are:
 B<--check>=I<package_one>,I<package_two>
 
 Check if I<package_one> depends or indirectly on I<package_two>.  If
-there is dependency, print the relevant unique dependency path(s) in
-the dependency graph, if not, print a message saying there is no
-dependency.  Note that a space after the comma will foul things up.
+there is dependency, print some of the relevant unique dependency
+path(s) in the dependency graph, if not, print a message saying there
+is no dependency.  Note that not all unique dependency paths are
+necessarily shown.  A space after the comma will foul things up.
 
 For example,
 
