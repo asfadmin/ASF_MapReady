@@ -13,7 +13,8 @@ installed.
 
  2. Update include/asf_version.h to reflect correct package version numbers.
 
- 3. Commit all necessary changes to the CVS repository.
+ 3. Commit all necessary changes to the CVS repository.  Especially
+    important is committing the version number change!
 
  4. Apply cvs tags if so desired. Say you're packaging your brand spanking new
     version 2.5 of the convert package. Make sure you've removed that pesky
@@ -72,7 +73,12 @@ installed.
     we just edited and select 'compile NSIS script'.
 
     Create a tarball of the generated binary
+   
+    Currently we are using the naming scheme: 
+       tar czvf convert.<version_number>.bin.win32.tar.gz 
+           ASF_Convert_Setup.exe
 
+    However in the future we hope to start using this one:
        tar czvf convert.<version_number>.bin.win32.tar.gz 
            ASF_Convert_Setup.exe
 
