@@ -189,6 +189,34 @@ int checkForOption(char* key, int argc, char* argv[])
 }
 
 
+void replace_backslashes(char *msg)
+{
+	char *temp = malloc(sizeof(char) * strlen(msg));
+	int ii,jj;
+	/*Replace all \'s in msg with \\ in temp*/
+	for(ii = 0; ii < strlen(msg); ++ii, ++jj)
+	{
+		if(msg[ii] == '\\')
+		{
+			temp[jj] = '\\';
+			++jj;
+			temp[jj] = '\\';
+		}
+		else
+		{
+			temp[jj] = msg[ii];
+		}
+	}
+	/*Done replacing...now copy temp into msg*/
+	for(ii = 0; ii < strlen(msg); ++ii)
+	{
+		msg[ii] = temp[ii];
+	}
+	/*release temp*/
+	free(temp);
+}
+
+
 int main(int argc, char *argv[])
 {
 	FILE *fBatch;
@@ -311,6 +339,10 @@ int main(int argc, char *argv[])
 		strcpy(data_file, argv[argc - 3]);/*The first of the last three arguments*/
 		strcpy(meta_file, argv[argc - 2]);/*The second of the last three arguments*/
 		strcpy(out_file, argv[argc - 1]);/*The third of the last three arguments*/
+		/*Replace any \'s with \\'s*/
+		replace_backslashes(data_file);
+		replace_backslashes(meta_file);
+		replace_backslashes(out_file);
 		if(strchr(data_file, '.') != NULL)/*Make sure the file has an extension*/
 		{
 			if(!strcmp(".D", strrchr(data_file, '.')))/*If the file ends in .D*/
