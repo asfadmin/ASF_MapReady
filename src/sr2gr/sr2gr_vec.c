@@ -81,21 +81,21 @@ void sr2gr_vec(meta_parameters *meta,float srinc, float newSize,float *sr2gr)
 {
 	double rg,rg0;/*Ground range distances from nadir, along curve of earth.*/
 	double ht,re,sr;/*S/C height, earth radius, slant range [m]*/
-	int    i;
-	
-	ht = meta->ifm->ht;
-	re = meta->ifm->er;
+	int    ii;
+
+	ht = meta_get_sat_height(meta, 0, 0);
+	re = meta_get_earth_radius(meta, 0, 0);
 	sr = meta_get_slant(meta,0,0);
-	
+
 	/* calculate ground range to first point */
-	rg0=re*acos((ht*ht+re*re-sr*sr)/(2*ht*re));
+	rg0 = re * acos((ht*ht+re*re-sr*sr) / (2*ht*re));
 	
 	/* begin loop */
 	rg = rg0;
-	for (i = 0; i<MAX_IMG_SIZE; i++)
+	for (ii = 0; ii<MAX_IMG_SIZE; ii++)
 	{
-		double this_slant = sqrt(ht*ht+re*re-2*ht*re*cos(rg/re));
-		sr2gr[i] = (this_slant - sr) / srinc;
+		double this_slant = sqrt(ht*ht+re*re-2.0*ht*re*cos(rg/re));
+		sr2gr[ii] = (this_slant - sr) / srinc;
 		rg += newSize;
 	}
 }
