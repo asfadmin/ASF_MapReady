@@ -15,6 +15,8 @@ UNPACK_DIR := pkgconfig-0.15.0
 TARFILE := $(UNPACK_DIR).tar
 ZIPFILE := $(TARFILE).gz
 
+ifneq ($(SYS),win32)
+
 # Install from the staging area to the ASF binary location.
 install_pkgconfig: stage_pkgconfig_stamp
 	cp $(BIN_STAGEDIR)/pkg-config $(BINDIR)
@@ -31,6 +33,8 @@ stage_pkgconfig_stamp:
             make check ; \
             make install) ; \
         touch $@
+
+endif
 
 clean:
 	rm -rf $(ROOT_STAGEDIR) $(TARFILE) $(UNPACK_DIR) stage_pkgconfig_stamp
