@@ -45,8 +45,9 @@ int UTM_zone(double lon);
  * structure.  Calls the facility-specific decoders below. */
 void ceos_init(const char *in_fName,meta_parameters *meta)
 {
-   char fName[255],fac[50],sys[50],ver[50];
-   char frame_temp[33], dataName[255];
+   char dataName[255],leaderName[255];/* CEOS names, typically .D and .L      */
+   char fac[50],sys[50],ver[50];     /* Fields describing the SAR processor   */
+   char frame_temp[33];
    ceos_description *ceos=NULL;
    struct dataset_sum_rec *dssr=NULL;/* Data set summary record               */
    struct IOF_VFDR *iof=NULL;        /* Image File Descriptor Record          */
@@ -63,32 +64,32 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 
    /* Allocate & fetch CEOS records. If its not there, free & nullify pointer
       ----------------------------------------------------------------------*/
-   create_name(fName, in_fName, ".L");
-   ceos = get_ceos_description(fName);
+   get_ceos_names(in_fName, dataName, leaderName);
+   ceos = get_ceos_description(leaderName);
    dssr = &ceos->dssr;
    iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
-   if ( -1 == get_ifiledr(fName, iof))  { FREE(iof); iof = NULL; }
+   if ( -1 == get_ifiledr(dataName, iof))  { FREE(iof); iof = NULL; }
    mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
    /* Something funny about CDPF SLCs and map projection record: cheezy fix */
    if (strncmp(dssr->fac_id,"CDPF",4)!=0) {
-     if ( -1 == get_mpdr(fName, mpdr))    { FREE(mpdr); mpdr = NULL; }
+     if ( -1 == get_mpdr(leaderName, mpdr))    { FREE(mpdr); mpdr = NULL; }
    }
    else mpdr = NULL;
    fdr = (struct FDR*) MALLOC(sizeof(struct FDR));
-   if ( -1 == get_fdr(fName, fdr))      { FREE(fdr); fdr = NULL; }
+   if ( -1 == get_fdr(leaderName, fdr))      { FREE(fdr); fdr = NULL; }
    ppdr = (struct pos_data_rec*) MALLOC(sizeof(struct pos_data_rec));
-   if ( -1 == get_ppdr(fName, ppdr))    {FREE(ppdr); ppdr = NULL; }
+   if ( -1 == get_ppdr(leaderName, ppdr))    {FREE(ppdr); ppdr = NULL; }
    ppr = (struct PPREC*) MALLOC(sizeof(struct PPREC));
-   if ( -1 == get_ppr(fName, ppr))      { FREE(ppr); ppr = NULL; }
+   if ( -1 == get_ppr(leaderName, ppr))      { FREE(ppr); ppr = NULL; }
    /* Fill either asf_facdr or esa_facdr depending on which is there */
    if ((fdr!=NULL) && (fdr->l_facdr==1717)) {
       asf_facdr=(struct VFDRECV*)MALLOC(sizeof(struct VFDRECV));
-      if ( -1 == get_asf_facdr(fName, asf_facdr))
+      if ( -1 == get_asf_facdr(leaderName, asf_facdr))
          { FREE(asf_facdr); asf_facdr = NULL; }
    }
    else if ((fdr->l_facdr==12288) && (strncmp(dssr->fac_id,"CDPF",4)!=0)) {
       esa_facdr=(struct ESA_FACDR*)MALLOC(sizeof(struct ESA_FACDR));
-      if ( -1 == get_esa_facdr(fName, esa_facdr))
+      if ( -1 == get_esa_facdr(leaderName, esa_facdr))
          { FREE(esa_facdr); esa_facdr = NULL; }
    }
 
@@ -115,7 +116,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 /* probably need to check incidence angle to figure out what is going on */
       char beamname[32];
       int ii;
-      for (ii=0; ii<32; ii++) { beamname[ii] = NULL; }
+      for (ii=0; ii<32; ii++) { beamname[ii] = '\0'; }
       strcpy(meta->general->sensor,"RSAT-1");
       if (strncmp(dssr->product_type,"SCANSAR",7)==0) {
         if (strncmp(dssr->beam3,"WD3",3)==0) strcpy(beamname,"SWA");
@@ -149,7 +150,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    /* FOCUS data header is erroneous, hence the if statement */
    if ((iof->bitssamp*iof->sampdata)>(iof->bytgroup*8)) iof->bitssamp /= 2; 
    dataSize = (iof->bitssamp+7)/8 + (iof->sampdata-1)*5;
-   if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0)) dataSize += (10 - dataSize)/2;
+   if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0))
+      dataSize += (10 - dataSize)/2;
    switch (dataSize) {
       case 2:  meta->general->data_type = INTEGER16;         break;
       case 4:  meta->general->data_type = INTEGER32;         break;
@@ -265,7 +267,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
                                           / asf_facdr->swathvel;
    }
    else {
-      create_name(dataName, in_fName, ".D");
       firstTime = get_firstTime(dataName);
       if (esa_facdr && (ceos->facility != VEXCEL)) {
         date_dssr2time(dssr->az_time_first, &time);
@@ -344,7 +345,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 
  /* Fill meta->state_vectors structure. Call to ceos_init_proj requires that the
   * meta->state_vectors structure be filled */
-   ceos_init_stVec(fName,ceos,meta);
+   ceos_init_stVec(leaderName,ceos,meta);
 
    /* UK-PAF provides only one state vector with its raw data.
       Copy the contents over to create two other ones for the propagation */
@@ -361,7 +362,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 
    /* Propagate state vectors if they are covering more than frame size in case
     * you have raw or complex data. */
-    if (ceos->facility!=ESA) {
+   if (ceos->facility!=ESA) {
       int vector_count=3;
       double data_int = dssr->sc_lin * fabs(meta->sar->azimuth_time_per_pixel);
       get_timeDelta(ceos, ppdr, meta);
@@ -373,7 +374,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
         /* propagate three state vectors: start, center, end */
         propagate_state(meta, vector_count, data_int);
       }
-    }
+   }
 
    if (meta->sar->image_type=='P') {
       ceos_init_proj(meta, dssr, mpdr);
