@@ -170,8 +170,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     strcat(outDataName,TOOLS_IMAGE_EXT);
 
     if (check_cal(inMetaName)==0 &&
-        ( (flags[f_SIGMA]!=FLAG_NOT_SET) || (flags[f_SIGMA]!=FLAG_NOT_SET) ||
-          (flags[f_SIGMA]!=FLAG_NOT_SET) ) ) {
+        ( (flags[f_SIGMA]!=FLAG_NOT_SET) || (flags[f_GAMMA]!=FLAG_NOT_SET) ||
+          (flags[f_BETA]!=FLAG_NOT_SET) ) ) {
       asfPrintError("Unable to find calibration parameters in the metadata.\n");
     }
 

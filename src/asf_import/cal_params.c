@@ -242,7 +242,7 @@ int check_cal(char *filename)
           asfPrintStatus("   **********  UNCALIBRATED DATA  **********  \n");
           asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
           FREE(dqsr);
-          return(0);
+          return(1);
         }
         else if (strncmp(dqsr->cal_status,"INFERRE",7)==0)
         {
