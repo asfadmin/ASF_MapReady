@@ -35,10 +35,10 @@ meta_parameters *meta_read(const char *inName)
   /* Read file with appropriate reader for version.  */
   if ( !fileExists(meta_name) && fileExists(ddr_name)) {
     meta_read_only_ddr(meta, ddr_name);
-    printf("WARNING: * Unable to locate '%s';\n"
+/*    printf("WARNING: * Unable to locate '%s';\n"
            "         * Using only '%s' for meta data;\n"
            "         * Errors due to lack of meta data are very likely.\n",
-	   meta_name, ddr_name);
+	   meta_name, ddr_name);*/
   }
   else if ( !meta_is_new_style(meta_name) ) {
     meta_read_old(meta, meta_name);
@@ -303,11 +303,11 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 			exit(EXIT_FAILURE);
 		}
 	}
-	else {
+/*	else {
 		printf("\n"
 		       "WARNING: * Failed to get DDR file while reading old style metadata.\n"
 		       "         * Some meta fields will not be correctly initialized.\n");
-	}
+	}*/
 
 /* Fields not yet filled */
 	general->orbit_direction  = MAGIC_UNSET_CHAR;
@@ -382,8 +382,23 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 		meta->projection->re_minor = MAGIC_UNSET_DOUBLE;
 		if ((ddr.valid[DDPCV]==VALID) && (ddr.valid[DDPPV]==VALID)) {
 		   switch (ddr.proj_code) {
+		     case ALBERS:
+		        meta->projection->type = ALBERS_EQUAL_AREA;
+			if (ddr.proj_coef[2]) {
+				meta->projection->re_major = ddr.proj_coef[0];
+				meta->projection->re_minor = ddr.proj_coef[0];
+			}
+			else {
+				meta->projection->re_major = 6370997;
+				meta->projection->re_minor = 6370997;
+			}
+		        meta->projection->param.albers.std_parallel1 = unpacked_deg(ddr.proj_coef[2]);
+		        meta->projection->param.albers.std_parallel2 = unpacked_deg(ddr.proj_coef[3]);
+		        meta->projection->param.albers.center_meridian  = unpacked_deg(ddr.proj_coef[4]);
+		        meta->projection->param.albers.orig_latitude  = unpacked_deg(ddr.proj_coef[5]);
+		        break;
 		     case LAMCC:
-		        meta->projection->type = 'L';
+		        meta->projection->type = LAMBERT_CONFORMAL_CONIC;
 			if (ddr.proj_coef[2]) {
 				meta->projection->re_major = ddr.proj_coef[0];
 				meta->projection->re_minor = ddr.proj_coef[0];
@@ -398,14 +413,14 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 		        meta->projection->param.lamcc.lat0  = unpacked_deg(ddr.proj_coef[5]);
 		        break;
 		     case PS:
-		        meta->projection->type = 'P';
+		        meta->projection->type = POLAR_STEREOGRAPHIC;
 		        meta->projection->re_major      = ddr.proj_coef[0];
 		        meta->projection->re_minor      = ddr.proj_coef[1];
 		        meta->projection->param.ps.slon = unpacked_deg(ddr.proj_coef[4]);
 		        meta->projection->param.ps.slat = unpacked_deg(ddr.proj_coef[5]);
 		        break;
 		     case UTM:
-		        meta->projection->type = 'U';
+		        meta->projection->type = UNIVERSAL_TRANSVERSE_MERCATOR;
 		        if (ddr.valid[DDZCV] == VALID)
 		          meta->projection->param.utm.zone = ddr.zone_code;
 		        else
