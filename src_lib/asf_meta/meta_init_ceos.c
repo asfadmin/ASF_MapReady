@@ -56,7 +56,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    struct PPREC *ppr=NULL;           /* Processing Parameter Record           */
    struct VFDRECV *asf_facdr=NULL;   /* ASF facility data record              */
    struct ESA_FACDR *esa_facdr=NULL; /* ESA facility data record              */
-   int dataSize;
+   int dataSize, ii;
    ymd_date date;
    hms_time time;
    double firstTime, centerTime;
@@ -69,7 +69,11 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
    if ( -1 == get_ifiledr(fName, iof))  { FREE(iof); iof = NULL; }
    mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
-   if ( -1 == get_mpdr(fName, mpdr))    { FREE(mpdr); mpdr = NULL; }
+   /* Something funny about CDPF SLCs and map projection record: cheezy fix */
+   if (strncmp(dssr->fac_id,"CDPF",4)!=0) {
+     if ( -1 == get_mpdr(fName, mpdr))    { FREE(mpdr); mpdr = NULL; }
+   }
+   else mpdr = NULL;
    fdr = (struct FDR*) MALLOC(sizeof(struct FDR));
    if ( -1 == get_fdr(fName, fdr))      { FREE(fdr); fdr = NULL; }
    ppdr = (struct pos_data_rec*) MALLOC(sizeof(struct pos_data_rec));
@@ -142,6 +146,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    strcpy(sys,dssr->sys_id);strtok(sys," ");/*Remove spaces from field*/
    strcpy(ver,dssr->ver_id);strtok(ver," ");/*Remove spaces from field*/
    sprintf(meta->general->processor,"%s/%s/%s",fac,sys,ver);
+   /* FOCUS data header is erroneous, hence the if statement */
+   if ((iof->bitssamp*iof->sampdata)>(iof->bytgroup*8)) iof->bitssamp /= 2; 
    dataSize = (iof->bitssamp+7)/8 + (iof->sampdata-1)*5;
    if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0)) dataSize += (10 - dataSize)/2;
    switch (dataSize) {
@@ -339,6 +345,19 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
  /* Fill meta->state_vectors structure. Call to ceos_init_proj requires that the
   * meta->state_vectors structure be filled */
    ceos_init_stVec(fName,ceos,meta);
+
+   /* UK-PAF provides only one state vector with its raw data.
+      Copy the contents over to create two other ones for the propagation */
+   if (ceos->facility==UK) {
+     meta_state_vectors *s;
+     s = meta_state_vectors_init(3);
+     meta->state_vectors->vector_count = 3;
+     for (ii=0; ii<3; ii++) {
+       s->vecs[ii].vec = meta->state_vectors->vecs[0].vec;
+       s->vecs[ii].time = meta->state_vectors->vecs[0].time;
+     }
+     meta->state_vectors = s;
+   }
 
    /* Propagate state vectors if they are covering more than frame size in case
     * you have raw or complex data. */
@@ -542,7 +561,7 @@ ceos_description *get_ceos_description(char *fName)
       else if (0==strncmp(prodStr,"FUL",3)) ceos->product=HI_REZ;
       else if (0==strncmp(prodStr,"SCANSAR",7)) ceos->product=SCANSAR;
       else if (0==strncmp(prodStr,"CCSD",4)) ceos->product=CCSD;
-      else if (0==strncmp(prodStr,"COMPLEX",7)) ceos->product=CCSD;
+      else if (0==strncmp(prodStr,"COMPLEX",7)) ceos->product=SLC;
       /* Non-ASF data */
       else if (0==strncmp(prodStr,"SPECIAL PRODUCT(SINGL-LOOK COMP)",32))
          ceos->product=SLC;
@@ -572,7 +591,7 @@ ceos_description *get_ceos_description(char *fName)
       printf("   Data set processed by CDPF\n");
       ceos->facility=CDPF;
 
-                if (0==strncmp(prodStr,"SPECIAL PRODUCT(SINGL-LOOK COMP)",32)) ceos->product=SLC;
+      if (0==strncmp(prodStr,"SPECIAL PRODUCT(SINGL-LOOK COMP)",32)) ceos->product=SLC;
       else if (0==strncmp(prodStr,"SCANSAR WIDE",12)) ceos->product=SCANSAR;
       else {
          printf("Get_ceos_description Warning! Unknown CDPF product type '%s'!\n",prodStr);
@@ -591,6 +610,7 @@ ceos_description *get_ceos_description(char *fName)
    }
    else if (0==strncmp(ceos->dssr.fac_id,"UK-WFS",6)) {
       printf("   Data set processed by UK-WFS\n");
+      ceos->facility=UK;
    }
    else {
       printf( "****************************************\n"
