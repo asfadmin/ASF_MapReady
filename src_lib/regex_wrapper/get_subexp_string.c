@@ -5,6 +5,12 @@
 
 #include "regex_wrapper.h"
 
+
+#ifdef _ISOC99_SOURCE
+#define CURRENT_FUNC __func__
+#else
+#define CURRENT_FUNC "get_subexp_string"
+#endif
 /* Return pointer to a string in the matched_subexps_t structure
    corresponding to matched subexpression at position 'pos' (position
    0 holds the entire match).  This string is only usable until
@@ -16,24 +22,24 @@ char *get_subexp_string(matched_subexps_t *msubs, int pos)
 {
   /* Don't allow calls on structures not yet filled in.  */
   if ( !msubs->is_dirty ) {
-    fprintf(stderr, "'%s' called on a matched_subexps_t that hadn't been filled in (by 'regex_match')\n", __func__);
+    fprintf(stderr, "'%s' called on a matched_subexps_t that hadn't been filled in (by 'regex_match')\n", CURRENT_FUNC);
     exit(EXIT_FAILURE);
   }
   
   /* Can't return matching subexps if the regex failed to match.  */
   if ( msubs->subexp_strings == NULL ) {
-    fprintf(stderr, "'%s' function called on a matched_subexps_t that didn't match\n", __func__);
+    fprintf(stderr, "'%s' function called on a matched_subexps_t that didn't match\n", CURRENT_FUNC);
     exit(EXIT_FAILURE);
   }
   
   /* Complain and die if the index is out of range.  */
   if ( pos < 0 ) {
     fprintf(stderr, "'%s' function got bad (negative) pos argument value: %d\n"
-	    , __func__, pos);
+	    , CURRENT_FUNC, pos);
     exit(EXIT_FAILURE);
   }
   if ( pos >= msubs->subexp_count ) {
-    fprintf(stderr, "'%s' function got bad (out of range high) pos argument value: %d\n", __func__, pos);
+    fprintf(stderr, "'%s' function got bad (out of range high) pos argument value: %d\n", CURRENT_FUNC, pos);
     exit(EXIT_FAILURE);
   }
   

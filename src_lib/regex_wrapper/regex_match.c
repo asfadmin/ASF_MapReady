@@ -5,6 +5,11 @@
 
 #include "regex_wrapper.h"
 
+#ifdef _ISOC99_SOURCE
+#define CURRENT_FUNC __func__
+#else
+#define CURRENT_FUNC "regex_match"
+#endif
 /* Perform extended regular expression match of 'string' against 'regex'.  */
 int regex_match(matched_subexps_t *msubs, const char *string, 
 		const char *regex)
@@ -15,11 +20,8 @@ int regex_match(matched_subexps_t *msubs, const char *string,
 
   /* Don't allow refilling of already filled in structures.  */
   if ( msubs->is_dirty ) {
-#ifdef _ISOC99_SOURCE
-    fprintf(stderr, "'%s' called on a matched_subexps_t that had already been filled in (by '%s')\n", __func__, __func__);
-#else
-    fprintf(stderr, "'regex_match' called on a matched_subexps_t that had already been filled in (by 'regex_match')\n");
-#endif
+    fprintf(stderr, "'%s' called on a matched_subexps_t that had already been filled in (by '%s')\n",
+            CURRENT_FUNC, CURRENT_FUNC);
     exit(EXIT_FAILURE);
   }
   
@@ -37,13 +39,8 @@ int regex_match(matched_subexps_t *msubs, const char *string,
   /* Allocate memory for temporary storage of array of regmatch_t.  */
   if ( (subexps = calloc( (size_t) msubs->subexp_count, sizeof(regex_t))) 
        == NULL ) {
-#ifdef _ISOC99_SOURCE    
     fprintf(stderr, "libc function 'calloc' failed in function '%s\n'",
-	    __func__);
-#else
-    fprintf(stderr, 
-	    "libc function 'calloc' failed in function 'regex_match'\n");
-#endif
+	    CURRENT_FUNC);
     exit(EXIT_FAILURE);
   }
 
@@ -51,14 +48,12 @@ int regex_match(matched_subexps_t *msubs, const char *string,
   case 0:   	                /* Success.  */
     break;	
   case REG_ESPACE:		/* Not enough memory.  */
-    fprintf(stderr, "libc function 'regcomp' (called from function '%s') ran out of memory\n", __func__);
+    fprintf(stderr, "libc function 'regcomp' (called from function '%s') ran out of memory\n",
+            CURRENT_FUNC);
     exit(EXIT_FAILURE);
   default:			/* Malformed regex.  */
-#ifdef _ISOC99_SOURCE
-    fprintf(stderr, "libc function 'regcomp' (called from function '%s') failed due to badly formed regex argument '%s':", __func__, regex);
-#else
-    fprintf(stderr, "libc function 'regcomp' (called from function 'regex_match') failed due to badly formed regex argument '%s':", regex);
-#endif
+    fprintf(stderr, "libc function 'regcomp' (called from function '%s') failed due to badly formed regex argument '%s':",
+            CURRENT_FUNC, regex);
     /* This block prints the rest of the error message.  */
     {
       int err_code;		/* Error code returned by regcomp.  */
@@ -71,7 +66,8 @@ int regex_match(matched_subexps_t *msubs, const char *string,
       /* Funny way to get the length of the error message.  */
       err_len = regerror (err_code, &compiled_regex, NULL, 0);
       if ( (err_buf = (char *) malloc(err_len * sizeof(char))) == NULL ) {
-	fprintf(stderr, "\nlibc function 'malloc' failed in function '%s' while trying to get memory to report another error\n", __func__);
+	fprintf(stderr, "\nlibc function 'malloc' failed in function '%s' while trying to get memory to report another error\n",
+                CURRENT_FUNC);
 	exit(EXIT_FAILURE);
       }
       /* Get the actual error message.  */
@@ -86,7 +82,8 @@ int regex_match(matched_subexps_t *msubs, const char *string,
   case 0:			/* Success.  */
     break;
   case REG_ESPACE:		/* Not enouth memory.  */
-    fprintf(stderr, "libc function 'regexec' (called from function '%s') ran out of memory\n", __func__);
+    fprintf(stderr, "libc function 'regexec' (called from function '%s') ran out of memory\n",
+            CURRENT_FUNC);
     exit(EXIT_FAILURE);
   case REG_NOMATCH:		      /* Pattern didn't match.  */
     free(subexps);		/* Free array of libc regmatch_t.  */
@@ -101,7 +98,7 @@ int regex_match(matched_subexps_t *msubs, const char *string,
   if ( (msubs->subexp_strings = calloc( (size_t) msubs->subexp_count, 
 				       sizeof(char *))) == NULL ) {
     fprintf(stderr, "libc function 'calloc' failed in function '%s'\n",
-	    __func__);
+	    CURRENT_FUNC);
     exit(EXIT_FAILURE);
   }
 
@@ -117,7 +114,7 @@ int regex_match(matched_subexps_t *msubs, const char *string,
 	    = calloc( (size_t) (end_off - start_off + 1), sizeof(char))) 
 	   == NULL ) {
 	fprintf(stderr, "libc function 'calloc' failed in function '%s'\n",
-		__func__);
+		CURRENT_FUNC);
 	exit(EXIT_FAILURE);
       }
     }

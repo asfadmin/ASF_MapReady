@@ -5,6 +5,12 @@
 
 #include "regex_wrapper.h"
 
+
+#ifdef _ISOC99_SOURCE
+#define CURRENT_FUNC __func__
+#else
+#define CURRENT_FUNC "matched_subexps_free"
+#endif
 /* Free storage used by matched_subexps_t, make structure ready for
    possible reuse.  */
 void matched_subexps_free(matched_subexps_t *msubs)
@@ -13,7 +19,7 @@ void matched_subexps_free(matched_subexps_t *msubs)
   
   /* Don't allow freeing of already free structures.  */
   if ( !msubs->is_dirty ) {
-    fprintf(stderr, "'%s' called on a matched_subexps_t that hadn't been filled in (by 'regex_match')\n", __func__);
+    fprintf(stderr, "'%s' called on a matched_subexps_t that hadn't been filled in (by 'regex_match')\n", CURRENT_FUNC);
     exit(EXIT_FAILURE);
   }
 
