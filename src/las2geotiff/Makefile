@@ -3,16 +3,12 @@
 
 include ../../make_support/system_rules
 
-TEST = /3dsar1/swatts/mytools2/lib/irix
-TEST2 = /usr/lib32
-TEST3 = ../../lib/irix
-TEST4 = /usr/local/lib
+LIBS =	-L$(LIBDIR) \
+	-lasf_las -lasf \
+	-lgeotiff -ltiff \
+	-lm
 
-LIBS =  $(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf.a \
-	$(TEST4)/libgeotiff.a $(TEST3)/libtiff.so -lm
-
-OBJS = get_tiepoints.o \
+OBJS =	get_tiepoints.o \
 	c_decdeg.o \
 	c_getdatum.o \
 	upcase.o \
@@ -59,9 +55,12 @@ OBJS = get_tiepoints.o \
 	las2geotiff_IO.o \
 	las2geotiff.o 
 
+all: las2geotiff clean
+
 las2geotiff: $(OBJS)
 	$(CC) $(CFLAGS) -o las2geotiff $(OBJS) $(LIBS)
 	cp las2geotiff.1 ../../man/cat1
-	cp las2geotiff ../../bin/irix
-	rm *.o
+	mv las2geotiff ../../bin/$(SYS)
 
+clean:
+	rm -f $(OBJS)
