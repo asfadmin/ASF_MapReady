@@ -1,5 +1,5 @@
 /* Metadata keys */
-#define VERSION "converter_version"
+#define CONVERTER_VERSION "converter_version"
 #define PROCESSING_INFO "system_version"
 #define PROCESSING_DATE "date_of_processing"
 #define PLATFORM "platform"
@@ -31,11 +31,10 @@
 #define ELLIPS_MIN_AXIS "ellipsoid_minor_axis"
 #define REVOLUTION "revolution"
 #define FLIGHT_DIRECTION "ascending/descending"
-#define RANGE_REFERENCE_DOPPLER "range_reference"
-#define PRF                     "PRF"
-#define DOPPLER_POLY_A0         "doppler_poly_a0"
-#define DOPPLER_POLY_A1         "doppler_poly_a1"
-#define DOPPLER_POLY_A2         "doppler_poly_a2"
+#define PRF "PRF"
+#define DOPPLER_POLY_A0 "doppler_poly_a0"
+#define DOPPLER_POLY_A1 "doppler_poly_a1"
+#define DOPPLER_POLY_A2 "doppler_poly_a2"
 
 /* Vexcel "Unique" metadata keys */
 #define VEXCEL_BETA_OR_SIGMA    "vexcel_beta_or_sigma"
@@ -43,12 +42,12 @@
 
 
 /* File extentions */
-#define SIGMA_EXT            ".sigma0"
-#define DATA_EXT             ".img"
-#define LOOK_EXT             ".look"
-#define METADATA_EXT         ".metadata"
-#define COMPLEX_I_PLANE      ".dataI"
-#define COMPLEX_Q_PLANE      ".dataQ"
+#define SIGMA_EXT       ".sigma0"
+#define DATA_EXT        ".img"
+#define LOOK_EXT        ".look"
+#define METADATA_EXT    ".metadata"
+#define COMPLEX_I_PLANE ".dataI"
+#define COMPLEX_Q_PLANE ".dataQ"
 
 
 /* Consistent values */

@@ -59,9 +59,9 @@ static void write_metadata_item_string (FILE * f, char *item, char *value)
    str = (char *) malloc (sizeof (char) * strlen (value) + 2);
    strcpy (str, value);
    string_all_trim (str);
-   
+
    fprintf (f, "%-30s = \"%s\"\n", item, str);
-   
+
    free (str);
    fflush (f);
 }
@@ -97,7 +97,7 @@ int main (int argc, char **argv)
 static void write_metadata (char *metafile, char *datafile, char *volfile,
                             char *file)
 {
-   
+
    FILE *out;
    /*char buff1[1024];*/
    char output_file[1024];
@@ -108,11 +108,11 @@ static void write_metadata (char *metafile, char *datafile, char *volfile,
    /*double h;*/
    /*int npixels, nlines;*/
    char buff[512];
-   
+
    /* Create the metadata file */
    strcpy (output_file, file);
    strcat (output_file, METADATA_EXT);
-   
+
    /* Open it */
    out = fopen (output_file, "w");
    if (out == NULL)
@@ -121,10 +121,10 @@ static void write_metadata (char *metafile, char *datafile, char *volfile,
       sprintf (str,
          "Could not open the file \"%s\" for writing(%d:'%s').\n",
       file, errno, strerror (errno));
-      
+
       ERROR (CALLER, str, EXIT);
    }
-   
+
    fd = open (metafile, O_RDONLY);
    if (fd < 0)
    {
@@ -134,8 +134,8 @@ static void write_metadata (char *metafile, char *datafile, char *volfile,
       metafile, errno, strerror (errno));
       ERROR (CALLER, str, EXIT);
    }
-   
-   
+
+
    data_fd = open (datafile, O_RDONLY);
    if (data_fd < 0)
    {
@@ -145,7 +145,7 @@ static void write_metadata (char *metafile, char *datafile, char *volfile,
       datafile, errno, strerror (errno));
       ERROR (CALLER, str, EXIT);
    }
-   
+
    vol_fd = open (volfile, O_RDONLY);
    if (vol_fd < 0)
    {
@@ -155,25 +155,26 @@ static void write_metadata (char *metafile, char *datafile, char *volfile,
       datafile, errno, strerror (errno));
       ERROR (CALLER, str, EXIT);
    }
-   
-   
+
+
    /* Compute Radius of geoid at image center */
    Re = radius_of_earth (fd);
-   
+
    /* VERSION INFO */
-   write_metadata_item_string (out, VERSION, "ASF Vexcel Complex Converter");
-   
+   write_metadata_item_string (out, CONVERTER_VERSION,
+                               "ASF Vexcel Complex Converter");
+
    /* PROCESSING_INFO */
    processor_id_string (buff, fd);
    write_metadata_item_string (out, PROCESSING_INFO, buff);
-   
+
    /* PROCESSING_DATE */
    write_metadata_item_string (out, PROCESSING_DATE, "");
-   
+
    /* PLATFORM */
    ceos_read_char (fd, START_OF_PPR + 7274, 10, tmp_value);
    write_metadata_item_string (out, PLATFORM, tmp_value);
-    
+
    /* BEAM_MODE */
    ceos_read_char (fd, START_OF_PPR + 932, 3, tmp_value);
    write_metadata_item_string (out, BEAM_MODE, tmp_value);
@@ -181,11 +182,11 @@ static void write_metadata (char *metafile, char *datafile, char *volfile,
    /* FREQUENCY */
    frequency_string (buff, fd);
    write_metadata_item_string (out, FREQUENCY, buff);
-  
+
    /* POLARIZATION */
    polarization_string (buff, fd);
    write_metadata_item_string (out, POLARIZATION, buff);
-   
+
    /* TRACK_ANGLE */
    write_metadata_item_double (out, TRACK_ANGLE,
                                ceos_read_double (fd, START_OF_DSSR + 469, 8));
@@ -196,15 +197,15 @@ static void write_metadata (char *metafile, char *datafile, char *volfile,
 
    /* PROJECTION */
    write_metadata_item_string (out, PROJECTION, "GROUND");
-   
+
    /* NUMBER_OF_PIXELS */
    write_metadata_item_int (out, NUMBER_OF_PIXELS,
                             ceos_read_binary (data_fd, START_OF_PDR + 25, 4));
-   
+
    /* NUMBER_OF_LINES */
    write_metadata_item_int (out, NUMBER_OF_LINES,
                             ceos_read_int (data_fd, START_OF_IOF + 181, 6));
-   
+
    /* RNG_PIXEL_SPACING */
    write_metadata_item_double (out, RNG_PIXEL_SPACING,
                                ceos_read_double (fd, START_OF_DSSR + 1703, 16));
@@ -215,14 +216,14 @@ static void write_metadata (char *metafile, char *datafile, char *volfile,
 
    /* CENTER_GMT */
    write_metadata_item_string (out, CENTER_GMT, center_time (buff, vol_fd));
-   
+
    /* SLANT_RANGE_TO_FIRST_PIXEL */
    write_metadata_item_double (out, SLANT_RANGE_TO_FIRST_PIXEL,
             ((double)ceos_read_binary(data_fd, START_OF_PDR + 65, 4)) / 1000.0);
 
    /* EARTH_RADIUS_AT_IMAGE_CENTER */
    write_metadata_item_double (out, EARTH_RADIUS_AT_IMAGE_CENTER, Re / 1000.0);
-   
+
    /* EARTH_RADIUS_AT_IMAGE_NARIR */
    write_metadata_item_double (out, EARTH_RADIUS_AT_IMAGE_NARIR, Re / 1000.0);
 
@@ -275,50 +276,46 @@ static void write_metadata (char *metafile, char *datafile, char *volfile,
    /* ELLIPS_MAJ_AXIS (geoid stuff) */
    write_metadata_item_double (out, ELLIPS_MAJ_AXIS,
                                 ceos_read_double (fd, START_OF_DSSR + 181, 16));
-   
+
    /* ELLIPS_MIN_AXIS (geoid stuff) */
    write_metadata_item_double (out, ELLIPS_MIN_AXIS,
                                 ceos_read_double (fd, START_OF_DSSR + 197, 16));
-   
+
    /* REVOLUTION */
    write_metadata_item_int (out, REVOLUTION,
                             ceos_read_int (fd, START_OF_DSSR + 445, 8));
-   
+
    /* FLIGHT_DIRECTION */
    ceos_read_char (fd, START_OF_DSSR + 101, 16, tmp_value);
    write_metadata_item_string (out, FLIGHT_DIRECTION, tmp_value);
-   
+
    /* PRF */
    write_metadata_item_double (out, PRF,
                                ceos_read_double (fd, START_OF_DSSR + 935, 16));
-   
-   /* RANGE REFERENCE */
-   write_metadata_item_double (out, RANGE_REFERENCE_DOPPLER,
-                               ceos_read_double (fd, START_OF_DSSR + 2324, 16));
-   
+
    /* DOPPLER POLY_A0 */
    write_metadata_item_double (out, DOPPLER_POLY_A0,
                                ceos_read_double (fd, START_OF_DSSR + 1479, 16));
-   
+
    /* DOPPLER POLY_A1 */
    write_metadata_item_double (out, DOPPLER_POLY_A1,
                           ceos_read_double (fd, START_OF_DSSR + 1479 + 16, 16));
-   
+
    /* DOPPLER POLY_A2 */
    write_metadata_item_double (out, DOPPLER_POLY_A2,
                           ceos_read_double (fd, START_OF_DSSR + 1479 + 32, 16));
-   
-   
+
+
    /*========== Vexcel Unique stuff ==============*/
-   
+
    /* What file is being used for the antenna pattern */
    ceos_read_char (fd, START_OF_DSSR + 2020, 256, buff);
    write_metadata_item_string (out, VEXCEL_ANTENNA_PATTERN, buff);
-   
+
    /* If the image is generated in Sigma or Beta nought */
    ceos_read_char (fd, START_OF_DSSR + 2275, 32, buff);
    write_metadata_item_string (out, VEXCEL_BETA_OR_SIGMA, buff);
-   
+
    fclose (out);
 }
 
@@ -335,11 +332,11 @@ static double platform_height (int fd, int vol_fd)
    char date[256];
    time_t root;
    struct tm dt;
-   
+
    int address;
    int a;
-   
-   
+
+
    /* Read the state vectors */
    address = START_OF_PPDR + 387;
    for (a = 0; a < 15; a++, address += 22 * 6)
@@ -349,15 +346,15 @@ static double platform_height (int fd, int vol_fd)
       z = ceos_read_double (fd, address + 44, 22);
       height[a + 1] = sqrt (x * x + y * y + z * z);
    }
-   
+
    /*  Read the date of the first state vector  */
    year = ceos_read_int (fd, START_OF_PPDR + 145, 4);
    month = ceos_read_int (fd, START_OF_PPDR + 149, 4);
    day = ceos_read_int (fd, START_OF_PPDR + 153, 4);
    jday = ceos_read_int (fd, START_OF_PPDR + 157, 4);
    gmt_second = ceos_read_double (fd, START_OF_PPDR + 161, 22);
-   
-   
+
+
    /* Convert date to seconds from 1970 */
    dt.tm_mon = month - 1;
    dt.tm_mday = day;
@@ -368,54 +365,54 @@ static double platform_height (int fd, int vol_fd)
    dt.tm_isdst = -1;
    dt.tm_sec = gmt_second;
    root = mktime (&dt);
-   
+
    /* Read the time inc from one state vector to another */
    data_inc = ceos_read_double (fd, START_OF_PPDR + 183, 22);
-   
+
    /* Compute the time for each SV */
    for (a = 0; a < 15; a++)
       times[a + 1] = ((double) root) + (double) (a) * data_inc;
-   
+
    /* Read the  center time */
    ceos_read_char (vol_fd, 0x648 + 4, 21, date);
    string_all_trim (date);
-   
+
    /* Parse the date pieces */
-   
+
    /* Year */
    strcpy (buff, &(date[1]));
    buff[4] = 0;
    year = atoi (buff);
-   
+
    /* Month */
    strcpy (buff, &(date[5]));
    buff[2] = 0;
    month = atoi (buff);
-   
+
    /* Day */
    strcpy (buff, &(date[7]));
    buff[2] = 0;
    day = atoi (buff);
-   
+
    /* Hour */
    strcpy (buff, &(date[11]));
    buff[2] = 0;
    hour = atoi (buff);
-   
+
    /* Min */
    strcpy (buff, &(date[13]));
    buff[2] = 0;
    min = atoi (buff);
-   
+
    /* Second */
    strcpy (buff, &(date[15]));
    buff[2] = 0;
    gmt_second = (double) atoi (buff);
-   
+
    strcpy (buff, &(date[17]));
    buff[3] = 0;
    gmt_second += 1.0 / (double) atoi (buff);
-   
+
    dt.tm_mday = day;
    dt.tm_year = year - 1900;
    dt.tm_mon = month - 1;
@@ -424,19 +421,19 @@ static double platform_height (int fd, int vol_fd)
    dt.tm_sec = 0;
    dt.tm_yday = 0;
    dt.tm_isdst = -1;
-   
+
    /* Compute time from 1970 */
    root = mktime (&dt);
    z = root + gmt_second;
-   
+
    /* Figure out hieght for center time using 15 SV */
-   
-   
+
+
    polint (times, height, 15, z, &y, &derror);
    printf("Estimated platform altitude %g (km)\n",
           (y-radius_of_earth(fd))/1000.0);
    printf ("Estimated error in platform altitude = %g (km)\n", derror/1000.0);
-   
+
    if (getenv ("DEBUG") != NULL)
    {
       printf("\n");
@@ -444,11 +441,11 @@ static double platform_height (int fd, int vol_fd)
          printf ("SV # %2d \t %16f \t %16f\n", a, times[a], height[a]);
       printf("\n");
    }
-   
-   
+
+
    /* Return hieght in Km */
    return ((y - radius_of_earth (fd)) / 1000.0);
-   
+
 }
 
 /* Computes the radius of the earth at image center (nadir) */
@@ -461,31 +458,31 @@ static double radius_of_earth (int fd)
    /*double t, n_data_pixel, srgr_coef;*/
    double theta;
    double e;
-   
+
    ellip_major = ceos_read_double (fd, START_OF_DSSR + 181, 16);
    ellip_minor = ceos_read_double (fd, START_OF_DSSR + 197, 16);
    plat_lat = ceos_read_double (fd, START_OF_DSSR + 453, 8);
    pix_spacing = ceos_read_double (fd, START_OF_DSSR + 1703, 16);
    eph_orb_data = ceos_read_double (fd, START_OF_PPR + 4649, 16);
-   
+
    /* E is the excentricity of the earth */
    e =
    sqrt (ellip_major * ellip_major -
    ellip_minor * ellip_minor) / ellip_major;
-   
+
    /* Theta is the earth centric latitude */
    theta = atan (tan (plat_lat * M_PI / 180.0) * (1.0 - e * e));
-   
+
    return 1000.0 * (ellip_major * ellip_minor) /
    sqrt (pow (ellip_minor * cos (theta), 2.0) +
    pow (ellip_major * sin (theta), 2.0));
-   
-   
+
+
    /* Compute Radius of the earth at image center */
    /* Formula from RSI specs - not accurate!
    t = tan (plat_lat * 180.0 / M_PI);
     t = t * t; */
-   
+
    /*
    return (ellip_minor * 1000.0 * sqrt (1 + t)
    / sqrt ((ellip_minor * ellip_minor) / (ellip_major * ellip_major) +
@@ -496,17 +493,17 @@ static double radius_of_earth (int fd)
 static void processor_id_string (char *str, int fd)
 {
    char processor_id[60], file_id[60];
-   
+
    /* Read processor id */
    ceos_read_char (fd, 33, 11, processor_id);
-   
+
    /* Read file id */
    ceos_read_char (fd, 49, 16, file_id);
-   
+
    /* Remove spaces */
    string_all_trim (processor_id);
    string_all_trim (file_id);
-   
+
    sprintf (str, "%s/%s", processor_id, file_id);
 }
 
@@ -523,7 +520,7 @@ static void polarization_string (char *str, int fd)
 {
    char str2[256];
    ceos_read_char (fd, START_OF_DSSR + 413, 32, str2);
-   
+
    strcpy (str, &(str2[15]));
 }
 
@@ -536,46 +533,46 @@ static char *center_time (char *str, int vol_fd)
    int year, month, day, hour, min;
    double second;
    struct tm dt;
-   
+
    /* PROCESSING_DATE */
    ceos_read_char (vol_fd, 0x648 + 4, 21, date);
    string_all_trim (date);
-   
+
    /* Year */
    strcpy (buff, &(date[1]));
    buff[4] = 0;
    year = atoi (buff);
-   
+
    /* Month */
    strcpy (buff, &(date[5]));
    buff[2] = 0;
    month = atoi (buff);
-   
+
    /* Day */
    strcpy (buff, &(date[7]));
    buff[2] = 0;
    day = atoi (buff);
-   
+
    /* Hour */
    strcpy (buff, &(date[11]));
    buff[2] = 0;
    hour = atoi (buff);
-   
+
    /* Min */
    strcpy (buff, &(date[13]));
    buff[2] = 0;
    min = atoi (buff);
-   
+
    /* Second */
    strcpy (buff, &(date[15]));
    buff[2] = 0;
    second = (double) atoi (buff);
-   
+
    strcpy (buff, &(date[17]));
    buff[3] = 0;
    second += 1.0 / (double) atoi (buff);
-   
-   
+
+
    dt.tm_mday = day;
    dt.tm_year = year - 1900;
    dt.tm_mon = month - 1;
@@ -584,9 +581,9 @@ static char *center_time (char *str, int vol_fd)
    dt.tm_sec = 0;
    dt.tm_yday = 0;
    dt.tm_isdst = -1;
-   
+
    mktime (&dt);
-   
+
    /* Hack for improper handling of zero padding for %f arguements */
    if (second > 9.0)
    sprintf (str, "%04d-%03dT%02d:%02d:%02.3f", year, dt.tm_yday + 1, hour,
@@ -604,7 +601,7 @@ static int polint (double *xa, double *ya, int n, double x, double *y, double *d
    int i, m, ns = 1;
    float den, dif, dift, ho, hp, w;
    float *c, *d;
-   
+
    dif = fabs (x - xa[1]);
    /*
    if( (c=vector(1,n)) == NULL){ return(-1); }

@@ -235,7 +235,8 @@ void write_metadata (char *metafile, char *file)
    *-----------------------*/
 
   /* VERSION INFO */
-  write_metadata_item_string (out, VERSION, "ASF Standard Detected Converter");
+  write_metadata_item_string (out, CONVERTER_VERSION,
+                              "ASF Standard Detected Converter");
 
   /* PROCESSING_INFO */
   {
@@ -367,9 +368,6 @@ void write_metadata (char *metafile, char *file)
 
   /* FLIGHT_DIRECTION */
   write_metadata_item_string (out, FLIGHT_DIRECTION, dssr.asc_des);
-
-  /* RANGE_REFERENCE_DOPPLER */
-  write_metadata_item_string (out, RANGE_REFERENCE_DOPPLER, "");
 
   /* PRF */
   write_metadata_item_double (out, PRF, dssr.prf);
