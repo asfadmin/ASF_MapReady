@@ -465,7 +465,8 @@ void utm_test_13()
 	  "1", "2", "3", "4", "5" };
 
     p = opts; l = 7;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
 
     if (pps && pt == UNIVERSAL_TRANSVERSE_MERCATOR &&
 	l == 5 && strcmp(p[0], "1") == 0 &&
@@ -479,6 +480,114 @@ void utm_test_13()
     {
 	print_args(l, p);
 	printf("Fail: utm_test_13\n");
+	++nfail;
+    }
+}
+
+void utm_test_14()
+{
+    static char * opts [] =
+	{ "--projection", "utm",
+	  "1", "2", "3", "4", "5" };
+
+    p = opts; l = 7;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
+
+    if (pps && pt == UNIVERSAL_TRANSVERSE_MERCATOR &&
+	l == 5 && strcmp(p[0], "1") == 0 &&
+	strcmp(p[1], "2") == 0 && strcmp(p[2], "3") == 0 &&
+	strcmp(p[3], "4") == 0 && strcmp(p[4], "5") == 0 &&
+	logflag == 0 && quietflag == 0)
+    {
+	++nok;
+	test_file(pps, pt);
+    }
+    else
+    {
+	printf("Fail: utm_test_14\n");
+	print_args(l, p);
+	++nfail;
+    }
+}
+
+void utm_test_15()
+{
+    static char * opts [] =
+	{ "--projection", "utm",
+	  "1", "2", "3", "4", "-quiet", "5" };
+
+    p = opts; l = 8;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
+
+    if (pps && pt == UNIVERSAL_TRANSVERSE_MERCATOR &&
+	l == 5 && strcmp(p[0], "1") == 0 &&
+	strcmp(p[1], "2") == 0 && strcmp(p[2], "3") == 0 &&
+	strcmp(p[3], "4") == 0 && strcmp(p[4], "5") == 0 &&
+	logflag == 0 && quietflag == 1)
+    {
+	++nok;
+	test_file(pps, pt);
+    }
+    else
+    {
+	printf("Fail: utm_test_15\n");
+	print_args(l, p);
+	++nfail;
+    }
+}
+
+void utm_test_16()
+{
+    static char * opts [] =
+	{ "--projection", "utm",
+	  "1", "2", "3", "-log", "logfile", "4", "5" };
+
+    p = opts; l = 9;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
+
+    if (pps && pt == UNIVERSAL_TRANSVERSE_MERCATOR &&
+	l == 5 && strcmp(p[0], "1") == 0 &&
+	strcmp(p[1], "2") == 0 && strcmp(p[2], "3") == 0 &&
+	strcmp(p[3], "4") == 0 && strcmp(p[4], "5") == 0 &&
+	logflag == 1 && quietflag == 0 && strcmp(logFile, "logfile") == 0)
+    {
+	++nok;
+	test_file(pps, pt);
+    }
+    else
+    {
+	printf("Fail: utm_test_16\n");
+	print_args(l, p);
+	++nfail;
+    }
+}
+
+void utm_test_17()
+{
+    static char * opts [] =
+	{ "--projection", "utm",
+	  "1", "-quiet", "2", "3", "-log", "log.file", "4", "5" };
+
+    p = opts; l = 10;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
+
+    if (pps && pt == UNIVERSAL_TRANSVERSE_MERCATOR &&
+	l == 5 && strcmp(p[0], "1") == 0 &&
+	strcmp(p[1], "2") == 0 && strcmp(p[2], "3") == 0 &&
+	strcmp(p[3], "4") == 0 && strcmp(p[4], "5") == 0 &&
+	logflag == 1 && quietflag == 1 && strcmp(logFile, "log.file") == 0)
+    {
+	++nok;
+	test_file(pps, pt);
+    }
+    else
+    {
+	printf("Fail: utm_test_17\n");
+	print_args(l, p);
 	++nfail;
     }
 }
@@ -499,6 +608,10 @@ void test_utm_options()
     utm_test_11();
     utm_test_12();
     utm_test_13();
+    utm_test_14();
+    utm_test_15();
+    utm_test_16();
+    utm_test_17();
 }
 
 void ps_test_1()
@@ -1991,6 +2104,174 @@ void lamaz_test_7()
     }    
 }
 
+void lamaz_test_8()
+{
+    static char * opts [] =
+	{ "-p", "lamaz", "--center-latitude", "17.778",
+	  "--central-meridian", "45.001",
+	  "--false-northing", "7888", "--false-easting", "110000",
+	  "-log", "logfilename" };
+
+    p = opts; l = 12;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
+
+    if (within_tol(pps->lamaz.center_lon, 45.001) &&
+	within_tol(pps->lamaz.center_lat, 17.778) &&
+	within_tol(pps->lamaz.false_easting, 110000) &&
+	within_tol(pps->lamaz.false_northing, 7888) &&
+	strcmp(logFile, "logfilename") == 0 &&
+	logflag == 1)
+    {
+	++nok;
+	test_file(pps, pt);
+    }
+    else
+    {
+	printf("Fail: lamaz_test_8: %s\n", logFile);
+	++nfail;
+    }    
+}
+
+void lamaz_test_9()
+{
+    static char * opts [] =
+	{ "-p", "lamaz", "--center-latitude", "17.778",
+	  "--central-meridian", "45.001",
+	  "--false-northing", "7888", "--false-easting", "110000",
+	  "-log", "tmp123.log" };
+
+    p = opts; l = 12;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
+
+    if (within_tol(pps->lamaz.center_lon, 45.001) &&
+	within_tol(pps->lamaz.center_lat, 17.778) &&
+	within_tol(pps->lamaz.false_easting, 110000) &&
+	within_tol(pps->lamaz.false_northing, 7888) &&
+	strcmp(logFile, "tmp123.log") == 0 &&
+	logflag == 1)
+    {
+	++nok;
+	test_file(pps, pt);
+    }
+    else
+    {
+	printf("Fail: lamaz_test_9: %s\n", logFile);
+	++nfail;
+    }    
+}
+
+void lamaz_test_10()
+{
+    static char * opts [] =
+	{ "-p", "lamaz", "--center-latitude", "17.778",
+	  "--central-meridian", "45.001",
+	  "--false-northing", "7888", "--false-easting", "110000",
+	  "-log" };
+
+    p = opts; l = 11;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
+
+    if (within_tol(pps->lamaz.center_lon, 45.001) &&
+	within_tol(pps->lamaz.center_lat, 17.778) &&
+	within_tol(pps->lamaz.false_easting, 110000) &&
+	within_tol(pps->lamaz.false_northing, 7888))
+    {
+	++nok;
+    }
+    else
+    {
+	printf("Fail: lamaz_test_10\n");
+	++nfail;
+    }    
+}
+
+void lamaz_test_11()
+{
+    static char * opts [] =
+	{ "-p", "lamaz", "--center-latitude", "17.778",
+	  "--central-meridian", "45.001",
+	  "--false-northing", "7888", "--false-easting", "110000",
+	  "-quiet" };
+
+    p = opts; l = 11;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
+
+    if (within_tol(pps->lamaz.center_lon, 45.001) &&
+	within_tol(pps->lamaz.center_lat, 17.778) &&
+	within_tol(pps->lamaz.false_easting, 110000) &&
+	within_tol(pps->lamaz.false_northing, 7888) &&
+	quietflag == 1)
+    {
+	++nok;
+    }
+    else
+    {
+	printf("Fail: lamaz_test_11\n");
+	++nfail;
+    }    
+}
+
+void lamaz_test_12()
+{
+    static char * opts [] =
+	{ "-log" ,"mylogfile", "-p", "lamaz", "--center-latitude", "17.778",
+	  "--central-meridian", "45.001",
+	  "--false-northing", "7888", "--false-easting", "110000" };
+
+    p = opts; l = 12;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
+
+    if (within_tol(pps->lamaz.center_lon, 45.001) &&
+	within_tol(pps->lamaz.center_lat, 17.778) &&
+	within_tol(pps->lamaz.false_easting, 110000) &&
+	within_tol(pps->lamaz.false_northing, 7888) &&
+	logflag == 1 && strcmp(logFile, "mylogfile") == 0 &&
+	quietflag == 0)
+    {
+	++nok;
+    }
+    else
+    {
+	printf("Fail: lamaz_test_12 %s %d\n", logFile, logflag);
+	print_args(l,p);
+	++nfail;
+    }    
+}
+
+void lamaz_test_13()
+{
+    static char * opts [] =
+	{ "-log" ,"mylogfile", "-quiet",
+	  "-p", "lamaz", "--center-latitude", "17.778",
+	  "--central-meridian", "45.001",
+	  "--false-northing", "7888", "--false-easting", "110000" };
+
+    p = opts; l = 13;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
+
+    if (within_tol(pps->lamaz.center_lon, 45.001) &&
+	within_tol(pps->lamaz.center_lat, 17.778) &&
+	within_tol(pps->lamaz.false_easting, 110000) &&
+	within_tol(pps->lamaz.false_northing, 7888) &&
+	logflag == 1 && strcmp(logFile, "mylogfile") == 0 &&
+	quietflag == 1)
+    {
+	++nok;
+    }
+    else
+    {
+	printf("Fail: lamaz_test_13 %s %d %d\n", logFile, logflag, quietflag);
+	print_args(l,p);
+	++nfail;
+    }    
+}
+
 void test_lamaz_options()
 {
     lamaz_test_1();
@@ -2000,6 +2281,12 @@ void test_lamaz_options()
     lamaz_test_5();
     lamaz_test_6();
     lamaz_test_7();
+    lamaz_test_8();
+    lamaz_test_9();
+    lamaz_test_10();
+    lamaz_test_11();
+    lamaz_test_12();
+    lamaz_test_13();
 }
 
 void albers_test_1()

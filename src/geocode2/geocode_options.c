@@ -15,6 +15,9 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
     /* projection parameters obtained from the command line */
     project_parameters_t * pps;
 
+    /* must pull out logfile first, so we can log projection parsing errors */
+    parse_log_options(argc, argv);
+
     /* get the projection params out of the cmd line & remove from cmd line */
     pps = parse_projection_options(argc, argv, proj_type);
 

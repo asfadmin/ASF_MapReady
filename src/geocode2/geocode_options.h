@@ -26,8 +26,8 @@
     --central-meridian           : Center Longitude
     -n, --north_pole             : Center on North Pole (no argument)
     -s, --south_pole             : Center on South Pole (no argument)
-    --false_easting              : False Easting
-    --false_northing             : False Northing
+    --false-easting              : False Easting
+    --false-northing             : False Northing
 
     Examples:
        --projection ps --center-latitude <lat> --central-meridian <lon> -n
