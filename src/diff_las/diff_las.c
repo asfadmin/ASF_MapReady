@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 	{
 		diff_meta = meta_copy(meta1);
 		if (diff_meta->general->data_type == BYTE) {
-			diff_meta->general->data_type == INTEGER16;
+			diff_meta->general->data_type = INTEGER16;
 		}
 		diff_fp = fopenImage(diff_file_name,"wb");
 		meta_write(diff_meta, diff_file_name);
