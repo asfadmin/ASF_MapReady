@@ -3,7 +3,8 @@ import java.awt.event.*;
 import java.io.* ;
 import java.util.* ;
 
-public class SelectArea extends Dialog implements ActionListener {
+public class SelectArea extends Dialog implements ActionListener,
+                                                  WindowListener {
    protected String area;
    protected Vector area_list;
    protected java.awt.List area_list_wid;
@@ -54,27 +55,34 @@ public class SelectArea extends Dialog implements ActionListener {
 
    public void actionPerformed (ActionEvent actionEvt) {
       if (actionEvt.getSource() == cancelButton) {
-         setVisible(false);
-         this.dispose();
-         return;
+         // close the window
+         processEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
       }
-      if (actionEvt.getSource() == okButton) {
+      else if (actionEvt.getSource() == okButton) {
          int item = area_list_wid.getSelectedIndex();
          selected_item = (Area)area_list.elementAt(item);
          if (selected_item != null) {
-            setVisible(false);
-            this.dispose();
-            return;
+	    processEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
          }
       }
-      if (actionEvt.getSource() == area_list_wid) {
+      else if (actionEvt.getSource() == area_list_wid) {
          System.err.println("List selected.");
          int item = area_list_wid.getSelectedIndex();
          selected_item = (Area)area_list.elementAt(item);
          info_area.setText(selected_item.cs_desc);
-         return;
       }
    }
+
+  // What to do if the windowListener hears something
+   public void windowClosing(WindowEvent we) {
+      this.dispose(); 
+   }
+   public void windowActivated(WindowEvent we) { }
+   public void windowDeactivated(WindowEvent we) { }
+   public void windowDeiconified(WindowEvent we) { }
+   public void windowClosed(WindowEvent we) { }
+   public void windowIconified(WindowEvent we) { }
+   public void windowOpened(WindowEvent we) { }
 
 
    public static void main ( String [] args) {
