@@ -163,8 +163,8 @@ void ceos2ddr(char *ceosIn,struct DDR *ddrOut,int *headerLen,int *lineLen)
 			ddrOut->proj_coef[6] = 0.0;
 			ddrOut->proj_coef[7] = 0.0; 
 			break;
-		    case 'L':/*Lambert azimuthal equal area*/
-			ddrOut->proj_code = LAMAZ;	
+		    case 'L':/*Lambert Conformal Conic*/
+			ddrOut->proj_code = LAMCC;	
 			ddrOut->datum_code = 0;
 			ddrOut->zone_code = 62;
 			ddrOut->proj_coef[2] = packed_deg(p->param.lambert.plat1); /*standard parallel1*/
