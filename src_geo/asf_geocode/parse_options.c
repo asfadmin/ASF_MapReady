@@ -801,9 +801,45 @@ void parse_log_options(int *argc, char **argv[])
 	quietflag = 0;
 }
 
-void parse_other_options(int *argc, char **argv[],
-			 double *height, double *pixel_size)
+static datum_type_t parse_datum_option(int *argc, char **argv[])
 {
+    char datum[1024];
+    datum_type_t the_datum;
+
+    if (extract_string_options(argc, argv, datum, "--datum", NULL))
+    {
+	if (g_ascii_strcasecmp(datum, "WGS84") == 0)
+	{
+	    the_datum = WGS84_DATUM;
+	}
+	else if (g_ascii_strcasecmp(datum, "NAD27") == 0 ||
+		 g_ascii_strcasecmp(datum, "clrk66") == 0)
+	{
+	    the_datum = NAD27_DATUM;
+	}
+	else if (g_ascii_strcasecmp(datum, "NAD83") == 0)
+	{
+	    the_datum = NAD83_DATUM;
+	}
+	else
+	{
+	    asfPrintWarning("Unknown Datum: %s.  Using WGS84.\n", datum);
+	    the_datum = WGS84_DATUM;
+	}   
+    }
+    else
+    {
+	the_datum = WGS84_DATUM;
+    }
+
+    return the_datum;
+}
+
+void parse_other_options(int *argc, char **argv[],
+			 double *height, double *pixel_size,
+			 datum_type_t *datum)
+{
+    *datum = parse_datum_option(argc, argv);
     extract_double_options(argc, argv, height, "--height", "-h", NULL);
     extract_double_options(argc, argv, pixel_size,
 			   "--pixel-size", "-ps", NULL);

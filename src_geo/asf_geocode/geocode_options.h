@@ -57,7 +57,8 @@
 
 project_parameters_t * get_geocode_options(int *argc, char ***argv,
 					   projection_type_t * proj_type,
-					   double *height, double *pixel_size);
+					   double *height, double *pixel_size,
+					   datum_type_t *datum);
 
 /* Might want to make these static... they are called from get_geocode_options
    before it returns. */

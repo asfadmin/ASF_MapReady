@@ -10,7 +10,8 @@
 
 project_parameters_t * get_geocode_options(int *argc, char **argv[],
 					   projection_type_t * proj_type,
-					   double *height, double *pixel_size)
+					   double *height, double *pixel_size,
+					   datum_type_t *datum)
 {
     /* projection parameters obtained from the command line */
     project_parameters_t * pps;
@@ -24,7 +25,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
     if (pps)
     {
 	/* "other" options include: --height, --pixel-size */
-	parse_other_options(argc, argv, height, pixel_size);
+	parse_other_options(argc, argv, height, pixel_size, datum);
 
 	/* here the semantics of the projection parameters are applied */
 	apply_defaults(*proj_type, pps);

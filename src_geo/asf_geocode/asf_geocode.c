@@ -59,7 +59,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "\n"\
 "     UTM\n"\
 "     ---\n"\
-"          --zone,                     : Zone\n"\
+"          --zone                      : Zone\n"\
 "          --central-meridian          : Longitude of Central Meridian\n"\
 "	  \n"\
 "	  Either the zone or center_longitude must be specified.\n"\
@@ -124,7 +124,14 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "\n"\
 "     --pixel-size <size>\n"\
 "          Scale output image such that each pixel is <size> projection\n"\
-"          coordinates (i.e. meters) on a side."
+"          coordinates (i.e. meters) on a side.\n"\
+"\n"\
+"     --datum <datum> \n"\
+"          Specifies the datum that is used when projecting.  The datum\n"\
+"          applies to the target coordinate system.  Supported Datums:\n"\
+"            NAD27  (North American Datum 1927) (Clarke 1866)\n"\
+"            NAD83  (North American Datum 1983) (GRS 1980)\n"\
+"            WGS84  (World Geodetic System 1984) (default).\n"
 
 #define ASF_EXAMPLES_STRING \
 "     To map project an image with centerpoint at -147 degrees\n"\
@@ -487,9 +494,11 @@ main (int argc, char **argv)
   // units (presumably meters, but you never know when we might lose
   // our heads and decide to add some dumb projection).
   double pixel_size;
+  // Datum to use in the target projection
+  datum_type_t datum;
   project_parameters_t *pp 
     = get_geocode_options(&argc, &argv, &projection_type, &average_height, 
-			  &pixel_size);
+			  &pixel_size, &datum);
   // If help was requested, display it.
   { // Scoping block.				
     int ii;
@@ -509,6 +518,10 @@ main (int argc, char **argv)
 
   // Convert all angle measures in the project_parameters to radians.
   to_radians (projection_type, pp);
+
+  // Set Projection Datum & Average Height
+  project_set_datum(datum);
+  project_set_avg_height(average_height);
 
   // Assign our transformation function pointers to point to the
   // appropriate functions.
