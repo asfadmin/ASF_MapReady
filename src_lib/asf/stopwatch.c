@@ -6,10 +6,10 @@
 #include "asf.h"
 
 /* Start time to be set and remembered by the Start* routines.  We
-   initialize this to a sentinel value meaning which is to be
-   interpreted as meaning "Start* hasn't been run yet".  */
-static const clock_t start_time_unset_sentinel = (clock_t) -1;
-static clock_t startTime = start_time_unset_sentinel;
+   initialize this to a sentinel value which is to be interpreted as
+   meaning "Start* hasn't been run yet".  */
+#define START_TIME_UNSET_SENTINEL -1
+static clock_t startTime = (clock_t) START_TIME_UNSET_SENTINEL;
 
 void StartWatch(void) 
 {
@@ -20,12 +20,12 @@ void StartWatch(void)
 void StopWatch(void)
 {
   /* The stopwatch must already have been started.  */
-  assert (startTime != start_time_unset_sentinel);
+  assert (startTime != START_TIME_UNSET_SENTINEL);
   clock_t stopTime=clock();
   assert (stopTime != (clock_t) -1);
   float elapsed = stopTime - startTime;
   elapsed /= CLOCKS_PER_SEC;
-  printf ("Total CPU time = %f seconds.\n\n",elapsed);
+  printf ("Total CPU time = %f seconds.\n\n", elapsed);
 }
 
 void StartWatchLog(FILE *fLog)
@@ -39,7 +39,7 @@ void StartWatchLog(FILE *fLog)
 
 void StopWatchLog(FILE *fLog)
 {
-  assert (startTime != start_time_unset_sentinel);
+  assert (startTime != START_TIME_UNSET_SENTINEL);
   clock_t stopTime = clock ();
   assert (stopTime != (clock_t) -1);
   float elapsed = stopTime - startTime;
