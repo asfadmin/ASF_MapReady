@@ -307,7 +307,7 @@ meta_parameters *meta_create(const char *fName);
 
 /* Return true if the file base name given has a corresponding new
    style .meta file.  */
-int meta_is_new_style(char *file_base_name);
+int meta_is_new_style(const char *file_base_name);
 
 /*************************************************************
 These routines all return various parameters from the
