@@ -25,7 +25,7 @@ PROGRAM HISTORY:
 1.0 - Mike Shindle - Original Development, December 11, 1996.
 ****************************************************************/
 #include "ifm.h"
-#include "las2ppm.h"
+#include "convert2ppm.h"
 
 /* local constants */
 #define MAXENTRIES    256

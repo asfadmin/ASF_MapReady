@@ -1,17 +1,15 @@
 /****************************************************************
-NAME: las2ppm - Convert LAS byte files to PPM format.
+NAME: convert2ppm - Convert ASF tools byte files to PPM format.
 
-SYNOPSIS: las2ppm [-mask] [-pal palfile] <in> <out> 
+SYNOPSIS: convert2ppm [-mask] [-pal palfile] <in> <out> 
 
 DESCRIPTION:
+	Converts byte data into a PPM file using either built-in palette files
+	or a user specified palette file.
 
-	Las2ppm  converts  byte  data into a PPM file using either built-in
-	palette files or a user specified palette file.
-
-	The PPM file format is more common than the LAS file  for- mat  used 
-	by  our tools.  You can view PPM files with the program xv(1), or
-	convert them to yet more common  formats (gif, jpeg) using the NetPBM
-	package.
+	The PPM file format is more common than the ASF tools file format. You 
+	can view PPM files with the program xv(1), or convert them to yet more 
+	common  formats (gif, jpeg) using the NetPBM package.
 
 
 EXTERNAL ASSOCIATES:
@@ -31,7 +29,9 @@ PROGRAM HISTORY:
     1.2     6/97         O. Lawlor  - Get width and length from ddr.
     1.3     6/98         O. Lawlor  - Automatically determine if 3-banded.
     1.5    12/03         P. Denny     Bring command line parsing to current
-                                       standard. Use meta 1.1 instead of DDR.    
+                                       standard. Use meta 1.1 instead of DDR.
+    1.6     2/04         P. Denny     Change license to BSD, change name from
+                                       convert2ppm to convert2ppm    
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -41,40 +41,48 @@ ALGORITHM REFERENCES:
 
 BUGS:
 ****************************************************************/
-/****************************************************************************
-*								            *
-*   las2ppm - Convert LAS byte files to PPM format.			    *
-*   Copyright (C) 2001  ASF Advanced Product Development    	    	    *
-*									    *
-*   This program is free software; you can redistribute it and/or modify    *
-*   it under the terms of the GNU General Public License as published by    *
-*   the Free Software Foundation; either version 2 of the License, or       *
-*   (at your option) any later version.					    *
-*									    *
-*   This program is distributed in the hope that it will be useful,	    *
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
-*   GNU General Public License for more details.  (See the file LICENSE     *
-*   included in the asf_tools/ directory).				    *
-*									    *
-*   You should have received a copy of the GNU General Public License       *
-*   along with this program; if not, write to the Free Software		    *
-*   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
-*									    *
-*   ASF Advanced Product Development LAB Contacts:			    *
-*	APD E-mail:	apd@asf.alaska.edu 				    *
-* 									    *
-*	Alaska SAR Facility			APD Web Site:	            *	
-*	Geophysical Institute			www.asf.alaska.edu/apd	    *
-*       University of Alaska Fairbanks					    *
-*	P.O. Box 757320							    *
-*	Fairbanks, AK 99775-7320					    *
-*									    *
-****************************************************************************/
+/******************************************************************************
+*                                                                             *
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* Redistribution and use in source and binary forms, with or without          *
+* modification, are permitted provided that the following conditions are met: *
+*                                                                             *
+*    * Redistributions of source code must retain the above copyright notice, *
+*      this list of conditions and the following disclaimer.                  *
+*    * Redistributions in binary form must reproduce the above copyright      *
+*      notice, this list of conditions and the following disclaimer in the    *
+*      documentation and/or other materials provided with the distribution.   *
+*    * Neither the name of the Geophysical Institute nor the names of its     *
+*      contributors may be used to endorse or promote products derived from   *
+*      this software without specific prior written permission.               *
+*                                                                             *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" *
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE   *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE  *
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE    *
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR         *
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF        *
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS    *
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN     *
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)     *
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE  *
+* POSSIBILITY OF SUCH DAMAGE.                                                 *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*       Alaska Satellite Facility                                             *
+*       Geophysical Institute                   http://www.asf.alaska.edu     *
+*       University of Alaska Fairbanks          uso@asf.alaska.edu            *
+*       P.O. Box 757320                                                       *
+*       Fairbanks, AK 99775-7320                                              *
+*                                                                             *
+******************************************************************************/
 
 #include "asf.h"
 #include "ifm.h"
-#include "las2ppm.h"
+#include "convert2ppm.h"
 #include "asf_meta.h"
 #include <sys/types.h>  /* for fstat function */
 #include <sys/stat.h>   /* for fstat function */
@@ -205,7 +213,7 @@ void usage(char *name)
 	"   %s [-mask] [-pal <palfile>] <in> <out>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
-	"   <in>    Input file is a 1 or 3 banded LAS byte image.\n"
+	"   <in>    Input file is a 1 or 3 banded ASF tools byte image.\n"
 	"   <out>   Output file is a PPM image.\n");
  printf("\n"
 	"OPTIONAL ARGUMENTS:\n"
@@ -213,8 +221,8 @@ void usage(char *name)
 	"   -pal <palfile>  Apply palfile to input byte file.\n");
  printf("\n"
 	"DESCRIPTION:\n"
-	"   Converts 1- or 3-band LAS byte image into a PPM file. A PPM file can\n"
-	"   be viewed with many graphics programs, such as xv(1).\n");
+	"   Converts 1- or 3-band ASF tools byte image into a PPM file.\n"
+	"   A PPM file can be viewed with many graphics programs, such as xv(1).\n");
  printf("\n"
 	"Version %.2f, ASF SAR Tools\n"
 	"\n",VERSION);

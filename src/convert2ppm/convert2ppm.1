@@ -1,26 +1,25 @@
-.TH las2ppm 1 "December 2003"
+.TH convert2ppm 1 "February 2004"
 
 .SH NAME:
-las2ppm \- Convert LAS byte files to PPM format.
+convert2ppm \- Convert ASF tools byte files to PPM format.
 
 .SH SYNOPSIS:
-.B "las2ppm"
+.B "convert2ppm"
 [ options ]
 .BI "infile outfile"
 
 .SH DESCRIPTION:
-.B "Las2ppm"
-converts byte data into a PPM file using either built-in palette files or a
-user specified palette file. The PPM file format is more common than the LAS
-file format used by our tools.  You can view PPM files with the program xv(1),
-or convert them to yet more common formats (gif, jpeg) using the NetPBM
-package.
+.B "convert2ppm"
+converts byte data into a PPM file using either built-in palette files or a user 
+specified palette file. The PPM file format is more common than the ASF tools 
+file format. You can view PPM files with the program xv(1), or convert them to 
+yet more common formats (gif, jpeg) using the NetPBM package.
 
 .SH COMMAND LINE OPTIONS:
 .TP 8
 .B "-mask"
 Input file is an unwrapping mask file. Escher generates this file after it
-finishes unwrapping the phase file. Las2ppm converts the unwrapping bits to
+finishes unwrapping the phase file. convert2ppm converts the unwrapping bits to
 certain colors: white for non-integrated, black for grounding, purple for
 branch cut, red and green for singularities, and yellow for integrated. 
 .TP 8
@@ -35,24 +34,23 @@ that are not specified will be generated so that one color will run into the
 next.
 .TP 8
 .B "infile"
-Input file, a 1 or 3 banded LAS byte image. 
+Input file, a 1 or 3 banded ASF tools byte image. 
 .TP 8
 .B "outfile"
 Output PPM image.
 
 .SH EXAMPLES:
 .ce 1
-example% las2ppm -mask uwp12.phase.mask uwp12mask.ppm 
+example% convert2ppm -mask uwp12.phase.mask uwp12mask.ppm 
 .PP
 Create a PPM file from a mask file.
 .PP
 .ce 1
-example% las2ppm ml12amp.img ml12amp.ppm
+example% convert2ppm ml12amp.img ml12amp.ppm
 .PP
-Converts the byte LAS image ml12amp.img into the
-PPM image 
+Converts the ASF tools byte image ml12amp.img into the PPM image ml12amp.ppm.
 .ce 1
-example% las2ppm -pal revgrey.pal ml12amp.img ml12amp.ppm
+example% convert2ppm -pal revgrey.pal ml12amp.img ml12amp.ppm
 .PP
 Colorize a byte version of a multilooked amplitude file using the palette in
 revgrey.pal. In this case, revgrey.pal will apply an inverse greyscale to the
@@ -62,7 +60,7 @@ image. The palette file in this case would look like the following:
 .br
 255    0      0       0
 .PP
-Las2ppm will automatically calculate the inbetween values.
+convert2ppm will automatically calculate the inbetween values.
 
 .SH SEE ALSO:
 .BR escher (1), 
@@ -75,9 +73,11 @@ None known.
 None known.
 
 .SH AUTHOR:
-\tMike Shindle
+Mike Shindle, 11/1995
+.br
+Patrick Denny, 2/2004
 
 .SH CONTACT:
-\tapd@asf.alaska.edu
+uso@asf.alaska.edu
 .br
-\thttp://www.asf.alaska.edu/apd
+http://www.asf.alaska.edu
