@@ -248,10 +248,14 @@ ceos_description *get_ceos_description(char *fName)
 int has_mpdr(const char *ldr_name)
 {
 	FILE *fp;
+	char ldr_name_with_ext[2000];
 	int length;
 	struct HEADER bufhdr;
 
-	fp = FOPEN(ldr_name, "r");
+        /* set_era returns an era code, but we don't know what to do
+           with it, so we ignore it.  */
+	set_era(ldr_name, ldr_name_with_ext, 1);
+	fp = FOPEN(ldr_name_with_ext, "r");
 	while (1)
 	{
 		if (fread(&bufhdr,sizeof(bufhdr),1,fp)!=1)
