@@ -1,4 +1,5 @@
 asf_raster.h
+config.h
 cpl_csv.h
 cpl_serv.h
 defs.h
