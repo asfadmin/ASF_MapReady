@@ -2,9 +2,11 @@
 FileUtil:
 	A collection of file I/O utilities.
 */
+
+#include <assert.h>
+
 #include "asf.h"
-
-
+#include "asf_meta.h"
 
 int extExists(const char *name,const char *newExt)
 {
@@ -135,3 +137,59 @@ FILE *fopenImage(const char *fName,const char *access)
 	exit(102);
 	return NULL;
 }
+
+/* Get a single line of data in floating point format, performing
+   rounding, padding, and endian conversion as needed.  The line_number
+   argument is the zero-indexed line number to get.  The dest argument
+   must be a pointer to existing memory.  */
+void get_float_line(FILE *file, meta_parameters *meta, int line_number, 
+		    float *dest)
+{
+  int x_idx;			/* Sample index.  */
+  size_t sample_size;		/* Sample size in bytes.  */
+  void *temp_buffer;		/* Buffer for unconverted data.  */
+
+  assert(line_number <= meta->general->line_count - 1);
+
+  /* Determine sample size.  */
+  if ( !strcmp(meta->general->data_type, "BYTE") )
+    sample_size = 1;
+  if ( !strcmp(meta->general->data_type, "INTEGER*2") )
+    sample_size = 2;
+  if ( !strcmp(meta->general->data_type, "INTEGER*4") )
+    sample_size = 4;
+  if ( !strcmp(meta->general->data_type, "REAL*4") )
+    sample_size = 4;
+  if ( !strcmp(meta->general->data_type, "REAL*8") )
+    sample_size = 8;
+
+  /* Scan to the beginning of the line.  */
+  FSEEK64(file, sample_size * meta->general->sample_count * line_number, 
+	  SEEK_SET);
+
+  temp_buffer = MALLOC( (size_t) sample_size * meta->general->sample_count);
+  
+  FREAD(temp_buffer, sample_size, meta->general->sample_count, file);
+
+  /* Fill in destination array.  */
+  if ( !strcmp(meta->general->data_type, "BYTE") )
+    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ )
+      dest[x_idx] = *( (uint8_t *) temp_buffer + x_idx);
+  if ( !strcmp(meta->general->data_type, "INTEGER*2") )
+    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ )
+      dest[x_idx] = *( (int16_t *) temp_buffer + x_idx);
+  if ( !strcmp(meta->general->data_type, "INTEGER*4") )
+    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ )
+      dest[x_idx] = *( (int32_t *) temp_buffer + x_idx);
+  if ( !strcmp(meta->general->data_type, "REAL*4") )
+    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ )
+      dest[x_idx] = *( (float *) temp_buffer + x_idx);
+  if ( !strcmp(meta->general->data_type, "REAL*8") )
+    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ )
+      dest[x_idx] = *( (double *) temp_buffer + x_idx);
+}
+  
+
+
+
+
