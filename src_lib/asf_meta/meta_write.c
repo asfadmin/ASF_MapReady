@@ -9,8 +9,8 @@
 void meta_write(meta_parameters *meta, const char *file_name)
 {
   FILE *fp = FOPEN(file_name, "w");
-  
-  fprintf(fp, "Meta version: %f\n", meta->meta_version);
+
+  fprintf(fp, "meta_version: %f\n", meta->meta_version);
 
   /* General block.  */
   fprintf(fp, "general {\n");
@@ -26,8 +26,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   fprintf(fp, "    start_line: %d\n", meta->general->start_line);
   fprintf(fp, "    start_sample: %d\n", meta->general->start_sample);
   fprintf(fp, "    x_pixel_size: %f\n", meta->general->x_pixel_size);
-  fprintf(fp, "    y_pixel_size: %f\n", 
-	  meta->general->y_pixel_size);
+  fprintf(fp, "    y_pixel_size: %f\n", meta->general->y_pixel_size);
   fprintf(fp, "    center_latitude: %f\n", meta->general->center_latitude);
   fprintf(fp, "    center_longitude: %f\n", meta->general->center_longitude);
   fprintf(fp, "    re_major: %f\n", meta->general->re_major);
@@ -153,8 +152,13 @@ void meta_write(meta_parameters *meta, const char *file_name)
     default: 
       err_die("unknown projection type seen in function '%s'\n", __func__);
     }
-    fprintf(fp, "        }\n");
-    fprintf(fp, "    }\n");
-    fprintf(fp, "}\n");
   }
+
+  fprintf(fp, "        }\n");
+  fprintf(fp, "    }\n");
+  fprintf(fp, "}\n");
+  
+  FCLOSE(fp);
+  
+  return;
 }
