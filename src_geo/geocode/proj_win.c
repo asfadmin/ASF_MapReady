@@ -9,15 +9,16 @@ O. Lawlor, 3/99  Initial Creation
 #include "projectGeo.h"
 
 
-window *getUserWindow(int pointOfInterest,char *win)/*Read N S E W window*/
+window *getUserWindow(int pointOfInterest,char *win)/*Read N W S E window*/
 {
 	char s[5];
 	window *w=(window *)MALLOC(sizeof(window));
 	double tmp;
-	if (5!=sscanf(win,"%s %lg %lg %lg %lg",s,&w->maxY,&w->minY,&w->maxX,&w->minX))
+	if (5!=sscanf(win,"%s %lg %lg %lg %lg",s,&w->maxY,&w->minX,&w->minY,&w->maxX))
 	{/*Something went wrong*/
 		sprintf(errbuf, "   ERROR: Wrong window values\n"
-				"   %s %lg %lg %lg %lg.\n",s,w->maxY,w->minY,w->maxX,w->minX);
+				"   %s %lg %lg %lg %lg.\n",s,
+				w->maxY, w->minX, w->minY, w->maxX);
 		printErr(errbuf);
 	}
 	/*Otherwise, we read the window.  Check & return it*/
