@@ -3,7 +3,7 @@
 static int
 settings_get_input_data_format_allows_latitude(Settings *s)
 {
-  return s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 ||
+  return /*s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 ||*/
     s->input_data_format == INPUT_FORMAT_STF;
 }
 
@@ -161,7 +161,7 @@ settings_get_latitude_argument(Settings *s)
   if (settings_get_input_data_format_allows_latitude(s))
   {
     g_snprintf(latitude_arg, sizeof(latitude_arg),
-	       "-lat %.2f %.2f", s->latitude_low, s->latitude_hi);
+	       "-lat %d %d", (int) s->latitude_low, (int) s->latitude_hi);
   }
   else
   {

@@ -86,3 +86,16 @@ Then, when you are ready to resume processing, click "Load" after running the to
 
 Please note that if you change any options, clicking "Execute" will start processing over again from the first file.  You can exit without saving if you accidentally change an option, and then re-process any files that were erroneously processed with the new options.  (When you select "Process" from the right-click pop-up menu, the file will always be processed even if it has already been marked "Done".)
 
+(F) Contact Us!
+===============
+
+If you have any questions or comments about this software, we would love to hear from you!
+
+http://www.asf.alaska.edu
+usa@asf.alaska.edu
+
+Alaska Satellite Facility
+Geophysical Institute
+University of Alaska Fairbanks
+P.O. Box 757320
+Fairbanks, AK 99775-7320

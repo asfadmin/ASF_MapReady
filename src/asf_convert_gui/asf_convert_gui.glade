@@ -284,7 +284,7 @@ Power</property>
 			      <property name="update_policy">GTK_UPDATE_ALWAYS</property>
 			      <property name="snap_to_ticks">False</property>
 			      <property name="wrap">False</property>
-			      <property name="adjustment">0 -180 180 1 10 10</property>
+			      <property name="adjustment">0 -90 90 1 10 10</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -325,7 +325,7 @@ Power</property>
 			      <property name="update_policy">GTK_UPDATE_ALWAYS</property>
 			      <property name="snap_to_ticks">False</property>
 			      <property name="wrap">False</property>
-			      <property name="adjustment">180 -180 180 1 10 10</property>
+			      <property name="adjustment">90 -90 90 1 10 10</property>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
