@@ -86,12 +86,12 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 				   FILE *file_pointer, off_t offset,
 				   float_image_byte_order_t byte_order);
 
-// Form a reduced resolution version of the original_size_x by
-// original_size_y image in file.  The new image will be size_x by
-// size_y pixels.  This method is like new_from_file method, but gets
-// its data by sampling in each dimension using bilinear
-// interpolation.  This is a good way of forming quick thumbnails of
-// images.
+// Form a low quality reduced resolution version of the
+// original_size_x by original_size_y image in file.  The new image
+// will be size_x by size_y pixels.  This method is like new_from_file
+// method, but gets its data by sampling in each dimension using
+// bilinear interpolation.  This is a good way of forming quick
+// thumbnails of images.
 FloatImage *
 float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y, 
 				  ssize_t original_size_x, 
