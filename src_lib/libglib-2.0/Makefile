@@ -51,7 +51,7 @@ stage_glib_stamp:
 
 else
 
-# Copy an already build GLIB into the staging area, or build it there
+# Copy an already built GLIB into the staging area, or build it there
 # if a copy doesn't appear to be available.
 stage_glib_stamp:
 	mkdir -p $(LIB_STAGEDIR) $(INCLUDE_STAGEDIR)
