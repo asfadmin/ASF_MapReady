@@ -30,20 +30,20 @@ void RSAT_readNextPulse(bin_state *s,iqType *iqBuf, char *inName,
 	int bytesRead,dataStart;
 	int repLen=s->fs*replicaDur;/*Number of samples in pulse replica.*/
 /*	static unsigned int nLines=0;*/
-	
+
 /*Skip to next auxiliary frame (start of line)*/
 	while (RSAT_readNextFrame(s,&aux_frame)->is_aux!=1) {}
-	
+
 /*Check for AGC switch*/
 	RSAT_auxAGC_window(s,&aux_frame.aux);
-	
+
 /*Copy auxiliary record into next frame.*/
 	f=aux_frame;
 
 /*Check for the presence of a pulse replica.*/
 	if (aux_frame.hasReplica)
 		bytesToRead+=repLen;
-	
+
 	bytesRead=0;
 	dataStart=0;
 /*Skip over the auxiliary data record, and pulse replica, if present.*/
@@ -62,7 +62,7 @@ void RSAT_readNextPulse(bin_state *s,iqType *iqBuf, char *inName,
 	bytesToRead=s->nSamp;
 	iqBuf=RSAT_unpackBytes(&f.data[dataStart],RSAT_datPerFrame-dataStart,iqBuf);
 	bytesRead+=RSAT_datPerFrame-dataStart;
-	
+
 	while (bytesRead<bytesToRead)
 	{
 		int unpackThis=RSAT_datPerFrame;
@@ -72,7 +72,7 @@ void RSAT_readNextPulse(bin_state *s,iqType *iqBuf, char *inName,
 		iqBuf=RSAT_unpackBytes(f.data,unpackThis,iqBuf);
 		bytesRead+=unpackThis;
 	}
-	
+
 /* Every once in a while, write out a description of which line we're on.*/
 /*	if ((nLines++)%1000==0) {
  *		printf("   Line # %d\n",nLines);
@@ -96,7 +96,7 @@ void outputReplica(const char *replN,iqType *replica,int repLen,
 		(fabs(replica[2*sampleStart]-iBias)<1.0)&&
 		(fabs(replica[2*sampleStart+1]-qBias)<1.0))
 		sampleStart++;
-	
+
 /*Write out the pulse replica.*/
 	outFile=FOPEN(appendExt(replN,".replica"),"w");
 	fprintf(outFile,"%d   ! Number of samples in reference function; I and Q data follow.\n",repLen-sampleStart);
@@ -104,7 +104,7 @@ void outputReplica(const char *replN,iqType *replica,int repLen,
 		fprintf(outFile,"%f\t%f\n",
 			repScale*(replica[2*i]-iBias),repScale*(replica[2*i+1]-qBias));
 	FCLOSE(outFile);
-	
+
 }
 
 
@@ -118,27 +118,27 @@ void RSAT_writeReplica(bin_state *s,char *replN,float repScale)
 	iqType *replica=(iqType *)MALLOC(sizeof(iqType)*2*repLen);
 	iqType *repCurr=replica;
 	RSAT_frame f={{0}};
-	
+
 /*Seek to next pulse replica start.*/
 	while (f.hasReplica==0)
 		/*Seek to next auxiliary data record.*/
 		while (RSAT_readNextFrame(s,&f)->is_aux!=1) {}
-	
+
 /*Read in each chunk of the pulse replica.*/
-	repCurr=RSAT_unpackBytes(&f.data[RSAT_datPerAux],RSAT_datPerFrame-RSAT_datPerAux,repCurr);	
+	repCurr=RSAT_unpackBytes(&f.data[RSAT_datPerAux],RSAT_datPerFrame-RSAT_datPerAux,repCurr);
 	repRead+=RSAT_datPerFrame-RSAT_datPerAux;
-	
+
 	while (repRead<repLen)
 	{
 		int nRead=RSAT_datPerFrame;
 		if (repRead+nRead>repLen)
 			nRead=repLen-repRead;
 		RSAT_readNextFrame(s,&f);
-		
-		repCurr=RSAT_unpackBytes(f.data,nRead,repCurr);	
+
+		repCurr=RSAT_unpackBytes(f.data,nRead,repCurr);
 		repRead+=nRead;
 	}
-	
+
 /*Write out the pulse replica.*/
 	outputReplica(replN,replica,repLen,repScale,s->I_BIAS,s->Q_BIAS);
 }
@@ -152,7 +152,7 @@ void RSAT_init(bin_state *s)
 	strcpy(s->satName,"RSAT1");
 	CONF_RSAT_fields(s);
 	s->bytesPerFrame=RSAT_bytesPerFrame;
-	
+
 	/*These fields are filled out in aux_RSAT.c*/
 	s->nPulseInAir=0; /*Number of pulses in the air at one time.*/
 	s->nSamp=0; /*Number of samples in a line of data.*/
@@ -162,7 +162,7 @@ void RSAT_init(bin_state *s)
 	s->azres=0; /*Azimuth resolution for AISP (m).*/
 	s->prf=0;/*Pulse repetition frequency, in Hz.*/
 	s->slope=0.0; /*chirp slope, Hz/sec.*/
-	
+
 	/*I include reasonable defaults in case no state vector is available*/
 	s->re=6370000.0; /*approximate earth radius at scene center.*/
 	s->vel=7500; /*satellite velocity, m/s->*/
@@ -177,25 +177,25 @@ bin_state *RSAT_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 {
 	bin_state *s=new_bin_state();
 	RSAT_frame aux_frame;
-	
+
 	printf("   Initializing RSAT decoder...\n");
 	*reader=RSAT_readNextPulse;
-	
+
 	RSAT_init(s);
-	
+
 	openBinary(s,inN);
 	/*Seek to first valid auxiliary data record.*/
-	while (RSAT_readNextFrame(s,&aux_frame)->is_aux!=1 
+	while (RSAT_readNextFrame(s,&aux_frame)->is_aux!=1
 		|| 0==RSAT_auxIsImaging(&aux_frame.aux)) {}
-	
+
 	/*Update satellite parameters based on auxiliary data record.*/
 	RSAT_auxUpdate(&aux_frame.aux,s);
-	
+
 	/*Write pulse replica.*/
 	RSAT_writeReplica(s,outN,1.0);
-	
+
 	seekFrame(s,0);
-	
+
 	return s;
 }
 
@@ -211,17 +211,17 @@ void RSAT_readNextCeosPulse(bin_state *s,iqType *iqBuf, char *inN, char *outN)
 	signalType *sig=NULL;
 	RSAT_aux aux;
 /*	static unsigned int nLines=0;*/
-	
+
 /*Seek to next pulse start.*/
 	sig=getNextCeosLine(s->binary, s, inN, outN);
-	RSAT_decodeAux((RSAT_raw_aux *)sig,&aux);
+	RSAT_decodeAux(sig,&aux);
 	RSAT_auxAGC_window(s,&aux);
-	
+
 	if (RSAT_auxHasReplica(&aux))
 		RSAT_unpackCeosBytes(&sig[2*repLen+RSAT_datPerAux],2*s->nSamp,iqBuf);
 	else
 		RSAT_unpackCeosBytes(&sig[RSAT_datPerAux],2*s->nSamp,iqBuf);
-	
+
 /* Every once in a while, write out a description of which line we're on.*/
 /*	if ((nLines++)%1000==0) {
  *		printf("   Line # %d\n",nLines);
@@ -239,19 +239,18 @@ void RSAT_writeCeosReplica(bin_state *s,char *replN,float repScale, char *inN, c
 	iqType *replica=(iqType *)MALLOC(sizeof(iqType)*2*repLen);
 	signalType *sig=NULL;
 	RSAT_aux aux;
-	
+
 /*Seek to next pulse replica start.*/
 	sig=getNextCeosLine(s->binary, s, inN, outN);
-	RSAT_decodeAux((RSAT_raw_aux *)sig,&aux);
-	while (RSAT_auxHasReplica(&aux)==0)
-	   {
+	RSAT_decodeAux(sig,&aux);
+	while (RSAT_auxHasReplica(&aux)==0) {
 		sig=getNextCeosLine(s->binary, s, inN, outN);
-	 	RSAT_decodeAux((RSAT_raw_aux *)sig,&aux);
-	   }
-	
+		RSAT_decodeAux(sig,&aux);
+	}
+
 /*Read in each chunk of the pulse replica.*/
 	RSAT_unpackCeosBytes(&sig[RSAT_datPerAux],2*repLen,replica);
-	
+
 /*Write out the pulse replica.*/
 	outputReplica(replN,replica,repLen,repScale,s->I_BIAS,s->Q_BIAS);
 }
@@ -264,19 +263,19 @@ bin_state *RSAT_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	bin_state *s=new_bin_state();
 	signalType *sig=NULL;
 	RSAT_aux aux;
-	
+
 	printf("   Initializing RSAT decoder...\n");
 	*reader=RSAT_readNextCeosPulse;
-	
+
 	RSAT_init(s);
-	
+
 	s->binary=openCeos(inN, outN, s);
 	sig=getNextCeosLine(s->binary, s, inN, outN);
-	RSAT_decodeAux((RSAT_raw_aux *)sig,&aux);
+	RSAT_decodeAux(sig,&aux);
 	RSAT_auxUpdate(&aux,s);
 	RSAT_writeCeosReplica(s,outN,1.0,inN,outN);
 	FSEEK64(s->binary,0,0);
-	
+
 	return s;
 }
 
