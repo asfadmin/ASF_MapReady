@@ -207,7 +207,7 @@ float get_cal_dn(cal_params *p,double noiseValue,double invIncAngle,int inDn)
         {
                 sigma0=10.0*log10(scaledPower);
                 if (sigma0 > Dmin) 
-                        return ((sigma0 - Dmin) /(Dmax - Dmin)*255.0+0.5);
+                        return sigma0;
         }
         /*Otherwise, sigma-0 is too small*/
         return 0.0;/*Otherwise, return 0.*/
