@@ -72,7 +72,7 @@ void read_params(const char *pfile,struct AISP_PARAMS *gbla)
   if (0==strncmp("AISP",versionStr,4))
   {
   	sscanf(versionStr,"AISP%f",&version);
-  	if (!quietflag) printf("   Parsing AISP input file, version %.2f\n",version);
+/*  	if (!quietflag) printf("   Parsing AISP input file, version %.2f\n",version);*/
   	FILL(buf,255,fp);
   }
   
