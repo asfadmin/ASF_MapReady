@@ -50,7 +50,8 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libgslcblas.a \
 	$(LIBDIR)/libjpeg.a \
 	$(LIBDIR)/libproj.a \
-	$(LIBDIR)/libglib-2.0.a -liconv -lintl \
+	$(LIBDIR)/libglib-2.0.a \
+	$(LIBDIR)/libiconv.a \
 	-lm
 
 LDLIBS := $(LIBS)
