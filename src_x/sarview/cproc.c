@@ -67,7 +67,15 @@ void cproc_ne_arrows(char *canvas,double x,double y)
 		int ix=(int)x,iy=(int)y;
 		double lat,lon,time,slant,doppler;
 		double destX,destY;
-		meta_get_orig((void *)ddr,iy,ix,&iy,&ix);
+		if ( meta->meta_version 
+		     < 1.0 - 0.00002 /* <-- for sloppy float compare.  */ ) {
+		  /* We have old format data, so we should have filled
+                     in metadata.  */
+		  meta_get_orig((void *)ddr,iy,ix,&iy,&ix);
+		} else {
+		  /* We shold have new style metadata.  */
+		  meta_get_original_line_sample(meta, iy, ix, &iy, &ix);
+		}
 		meta_get_latLon(meta,iy,ix,0.0,&lat,&lon);
 		meta_get_timeSlantDop(meta,iy,ix,&time,&slant,&doppler);
 
