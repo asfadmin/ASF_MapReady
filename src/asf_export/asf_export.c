@@ -125,23 +125,10 @@ const char *program_name = "asf_export";
 /* Print invocation information.  */
 void usage()
 {
-  /* Form an indentation string of the same length as the program_name.  */
-  int name_length = strlen (program_name);
-  char *indentation_string = malloc (name_length + 1 * sizeof (char));
-  int ii;
-  for ( ii = 0 ; ii < name_length ; ii++ ) {
-    indentation_string[ii] = ' ';
-  }
-  indentation_string[name_length] = '\0';
-  
   printf ("\n"
      "USAGE:\n"
-     "   %s [-format <output_format>] [-size <max_dimension>]\n"
-     "   %s <in_base_name> <out_full_name>\n", program_name, 
-	  indentation_string);
-  
-  free (indentation_string);
-
+     "   asf_export [-format <output_format>] [-size <max_dimension>]\n"
+     "              <in_base_name> <out_full_name>\n");
   exit (EXIT_FAILURE);
 }
 
@@ -253,8 +240,8 @@ my_strnlen (const char *s, size_t max_len)
   return max_len;
 }
 
-// Check to see if an option was supplied or not If it was found,
-// return its argument number.  Otherwise, return FLAG_NOT_SET.
+/* Check to see if an option was supplied or not If it was found,
+   return its argument number.  Otherwise, return FLAG_NOT_SET. */
 int
 checkForOption (char *key, int argc, char *argv[])
 {
@@ -274,7 +261,7 @@ void
 print_error (char *msg)
 {
 	char tmp[255];
-	// I made "ERROR:" red...Yay! :D
+	/* I made "ERROR:" red...Yay! :D */
 	sprintf (tmp, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);
 	printErr (tmp);
 	sprintf(tmp, "\n   ERROR: %s\n\n", msg);
@@ -282,8 +269,8 @@ print_error (char *msg)
 	exit (EXIT_FAILURE);
 }
 
-// Check the return value of a function and display an error message
-// if it's a bad return.
+/* Check the return value of a function and display an error message
+   if it's a bad return.*/
 void 
 check_return (int ret, char *msg)
 {
@@ -369,6 +356,9 @@ main (int argc, char *argv[])
 		strcpy(command_line.format, argv[formatFlag + 1]);
 	else
 		strcpy(command_line.format, "geotiff");/*Default behavior: produce a geotiff*/
+	int ii;
+	for(ii = 0; ii < strlen(command_line.format); ++ii)//convert the string to upper case
+		command_line.format[ii] = toupper(command_line.format[ii]);
 
 	if(sizeFlag != FLAG_NOT_SET)
 		command_line.size = atol(argv[sizeFlag + 1]);
@@ -390,153 +380,31 @@ main (int argc, char *argv[])
 	strcpy(command_line.output_name, argv[argc - 1]);
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
-  /* Defaults for options.  These should all be considered immutable
-     after they are set here.  */
-//  char const_default_format[MAX_FORMAT_STRING_LENGTH + 1];
-//  const long default_size = NO_MAXIMUM_OUTPUT_SIZE;
-//  const int num_args = 1;
+
   output_format_t format;
-//  char image_data_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
-//  char metadata_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+
   meta_parameters *md;
-  /* Quiet mode is off by default.  */
-//  command_line.quiet = FALSE;
-  /* Produce geotiff output by default.  */
-//  my_strncpy (const_default_format, "geotiff", 
-//	      (size_t) (MAX_FORMAT_STRING_LENGTH + 1));
-  /* By default, construct the output base name from the input base
-     name.  */
 
-  /* Options are initialized with their default values.  */
-//  my_strncpy (command_line.format, const_default_format,
-//	      (size_t) (MAX_FORMAT_STRING_LENGTH + 1));
-//  command_line.size = default_size;
-  /* If the output_name is still an empty string after option
-     processing, we will conclude that it needs to be formed from the
-     input string.  */
-//  command_line.output_name[0] = '\0';
-
-/*  while ( currArg < (argc - num_args) ) {
-    char *key = argv[currArg++];
-    if ( strmatch (key, "-format") ) {
-      CHECK_ARG (1);		/* One string argument: format string.  */
-
-/*
-      strcpy (command_line.format, GET_ARG (1));
-      if ( !((strcmp (command_line.format, "CEOS") == 0) 
-	     || (strcmp (command_line.format, "envi") == 0) 
-	     || (strcmp (command_line.format, "esri") == 0)
-	     || (strcmp (command_line.format, "geotiff") == 0)
-	     || (strcmp (command_line.format, "jpeg") == 0)
-	     || (strcmp (command_line.format, "ppm") == 0)) ) {
-	print_error("Unknown format specified for output");
-	fprintf (stderr, "%s: bad format (-format argument): %s\n", 
-		 program_name, command_line.format);
-      }
-    }*/
-/*
-    else if ( strmatch (key, "-size") ) {
-      char *endptr;
-      int base = 10;		/* Size is a base 10 integer.  */
-/*
-      CHECK_ARG (1);
-      command_line.size = strtol (GET_ARG (1), &endptr, base);
-      for ( ; *endptr != '\0' ; endptr++ ) {
-	if ( !isspace (*endptr) ) {
-	  fprintf (stderr, "%s: bad size (-size argument): %s\n", program_name,
-		   GET_ARG (1));
-	  usage ();
-	}
-
-      }
-    }
-*/
-/*
-    else if ( strmatch (key, "-o") ) {
-      CHECK_ARG (1);
-      strcpy (command_line.output_name, GET_ARG (1));
-    }
-*/
-/*
-    else if ( strmatch (key, "-quiet") ) {
-	  command_line.quiet = TRUE;
-    }
-  }		
-*/
-
-  if ( strcmp (command_line.format, "envi") == 0 ) {
+  if ( strcmp (command_line.format, "ENVI") == 0 ) {
     format = ENVI;
   }
-  else if ( strcmp (command_line.format, "esri") == 0 ) {
+  else if ( strcmp (command_line.format, "ESRI") == 0 ) {
     format = ESRI;
   }
-  else if ( strcmp (command_line.format, "geotiff") == 0 ) {
+  else if ( strcmp (command_line.format, "GEOTIFF") == 0 ||
+    strcmp(command_line.format, "GEOTIF") == 0) {
     format = GEOTIFF;
   }
-  else if ( strcmp (command_line.format, "jpeg") == 0 ) {
+  else if ( strcmp (command_line.format, "JPEG") == 0 ||
+    strcmp(command_line.format, "JPG") == 0) {
     format = JPEG;
   }
-  else if ( strcmp (command_line.format, "ppm") == 0 ) {
+  else if ( strcmp (command_line.format, "PPM") == 0 ) {
     format = PPM;
   }
   else {
     print_error("Unrecognized output format specified");
   }
-
-
-  /* The only argument is the name of the input image.  This may be a
-     base name, or include either the .meta or .img extensions,
-     correct names for both constituent parts will then be deduced
-     automaticly.  We don't validate these much, since opening them is
-     the first thing this program attempts.  */
-/*  if ( argc - currArg != num_args ) {
-    fprintf (stderr, "%s: wrong number of arguments\n", program_name);
-    usage ();
-  }
-  if ( my_strnlen (argv[currArg], MAX_IMAGE_NAME_LENGTH + 1)
-       > MAX_IMAGE_NAME_LENGTH ) {
-    fprintf (stderr, "%s: input image name argument too long\n", program_name);
-    exit (EXIT_FAILURE);
-  }
-  my_strncpy (command_line.input_name, argv[currArg], 
-	      MAX_IMAGE_NAME_LENGTH + 1);
-*
-  /* Construct the actual file names from the names the user supplied.  */
-/*
-  strcpy (image_data_file_name, command_line.input_name);
-  if ( findExt (command_line.input_name) 
-       && strcmp (findExt (command_line.input_name), ".img") ) {
-    strcpy (image_data_file_name, command_line.input_name);
-    create_name (metadata_file_name, command_line.input_name, ".meta");
-  } else if ( findExt (command_line.input_name) 
-	      && strcmp (findExt (command_line.input_name), ".meta") ) {
-    create_name (image_data_file_name, command_line.input_name, ".img");
-    strcpy (metadata_file_name, command_line.input_name);
-  } else {
-    create_name (metadata_file_name, command_line.input_name, ".meta");
-    create_name (image_data_file_name, command_line.input_name, ".img");
-  }
-*/
-
-  /* If we didn't get an output file option, we construct the default
-     output name from the input name.  */
-/*
-  if ( command_line.output_name[0] == '\0' ) {
-    if ( format == GEOTIFF ) {
-      create_name (command_line.output_name, command_line.input_name, 
-		   ".tif");
-    } 
-    else if ( format == JPEG ) {
-      create_name (command_line.output_name, command_line.input_name, ".jpeg");
-    }
-    else if ( format == PPM ) {
-      create_name (command_line.output_name, command_line.input_name, ".ppm");
-    }
-    else {
-      assert (FALSE);
-    }
-  }
-*/
 
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
@@ -616,10 +484,6 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
   /* Read the image data itself.  */
   FILE *ifp = fopen (image_data_file, "r");
   if ( ifp == NULL ) {
-/*
-    fprintf (stderr, "%s: failed to open %s: %s\n", program_name, 
-	     image_data_file, strerror (errno));
-*/
 	char* temp;
 	sprintf(temp, "Failed to open %s: %s", image_data_file, strerror(errno));
 	print_error(temp);
@@ -634,15 +498,11 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
 	  char* temp;
 	  sprintf(temp, "Read wrong amoutn of data from %s", image_data_file);
 	  print_error(temp);
-/*      fprintf (stderr, "%s: read wrong amount of data from %s\n", program_name,
-	       image_data_file);*/
     }
     else if ( ferror (ifp) ) {
 	  char* temp;
 	  sprintf(temp, "Read of file %s failed: %s", image_data_file, strerror(errno));
 	  print_error(temp);
-/*      fprintf (stderr, "%s: read of file %s failed: %s\n", program_name, 
-	       image_data_file, strerror (errno));*/
     }
     else {
       assert (FALSE);		/* Shouldn't be here.  */
@@ -784,7 +644,6 @@ export_as_envi (const char *metadata_file_name,
     char* temp;
     sprintf(temp, "System command '%s' failed", command);
     print_error(temp);
-/*    fprintf (stderr, "%s: system command '%s' failed", program_name, command);*/
     exit (EXIT_FAILURE);
   }
 }
@@ -1206,7 +1065,6 @@ export_as_esri (const char *metadata_file_name,
     char* temp;
 	sprintf(temp, "System command '%s' failed", command);
 	print_error(temp);
-/*    fprintf (stderr, "%s: system command '%s' failed", program_name, command);*/
     exit (EXIT_FAILURE);
   }
 }
@@ -2096,8 +1954,6 @@ export_as_geotiff (const char *metadata_file_name,
 	  char* temp;
 	  sprintf(temp, "Error writing to output geotiff file %s", output_file_name);
 	  print_error(temp);
-/*      fprintf (stderr, "%s: error writing to output geotiff file %s\n", 
-	       program_name, output_file_name);*/
       exit (EXIT_FAILURE);
     }
   }
