@@ -24,7 +24,7 @@ const char * geocode_options_string(const Settings * settings)
 	    case POLAR_STEREOGRAPHIC:
 		strcpy(ret, "--projection ps");
 		enable_central_meridian = TRUE;
-		enable_latitude_of_origin = TRUE;
+		enable_first_standard_parallel = TRUE;
 		enable_false_northing = TRUE;
 		enable_false_easting = TRUE;
 		break;
@@ -59,7 +59,7 @@ const char * geocode_options_string(const Settings * settings)
 	    sprintf(ret, "%s --central-meridian %f ", ret, settings->lon0);
 
 	if (enable_latitude_of_origin)
-	    sprintf(ret, "%s --center-latitude %f ", ret, settings->lat0);
+	    sprintf(ret, "%s --latitude-of-origin %f ", ret, settings->lat0);
 
 	if (enable_first_standard_parallel)
 	    sprintf(ret, "%s --first-standard-parallel %f ", 
@@ -174,7 +174,7 @@ void geocode_options_changed()
 
 	    case POLAR_STEREOGRAPHIC:
 		enable_central_meridian = TRUE;
-		enable_latitude_of_origin = TRUE;
+		enable_first_standard_parallel = TRUE;
 		enable_false_northing = TRUE;
 		enable_false_easting = TRUE;
 		break;

@@ -509,7 +509,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     while (gtk_events_pending())
       gtk_main_iteration();
 
-    if (settings_get_run_geocode(user_settings))
+    if (!err && settings_get_run_geocode(user_settings))
     {
       gchar * cmd_output;
 
@@ -530,7 +530,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
            after_geocoding_basename);
 
       cmd_output = do_cmd(convert_cmd, log_file);
-      err = err || check_for_error(cmd_output);
+      err = check_for_error(cmd_output);
 
       append_output(cmd_output);
      
@@ -541,7 +541,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
       after_geocoding_basename = g_strdup(out_basename);
     }
 
-    if (settings_get_run_export(user_settings))
+    if (!err && settings_get_run_export(user_settings))
     {
       gchar * cmd_output;
     
@@ -559,15 +559,15 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
            out_full);
 
       cmd_output = do_cmd(convert_cmd, log_file);
-      err = err || check_for_error(cmd_output);
+      err = check_for_error(cmd_output);
 
       append_output(cmd_output);
-     
-      done = err ? "Error" : "Done"; 
-      gtk_list_store_set(list_store, iter, 2, done, -1);
-      
+           
       g_free(cmd_output);
     }
+
+    done = err ? "Error" : "Done"; 
+    gtk_list_store_set(list_store, iter, 2, done, -1);
 
     g_free(basename);
     g_free(after_geocoding_basename);
