@@ -38,8 +38,8 @@ void writeAsciiVector(void *v, char *fnm, data_t type, int n)
   short int *s1;
   float *f1;
   double *d1;
-  Complex *C1;
-  DComplex *D1;
+  complexFloat *C1;
+  complexDouble *D1;
 
 
   fp = FOPEN (fnm, "a");
@@ -81,12 +81,12 @@ void writeAsciiVector(void *v, char *fnm, data_t type, int n)
       fprintf(fp, "%f\n", (double)(*(d1+i))); 
   }
   else if (type == FLOAT_COMPLEX) {
-    C1 = (Complex *)(v);
+    C1 = (complexFloat *)(v);
     for (i = 0; i < n; i++)  
       fprintf(fp, "%f %f\n", (C1+i)->real, (C1+i)->imag); 
   }
   else if (type == COMPLEX || type == DOUBLE_COMPLEX) {
-    D1 = (DComplex *)(v);
+    D1 = (complexDouble *)(v);
     for (i = 0; i < n; i++)  
       fprintf(fp, "%f %f\n", (D1+i)->real, (D1+i)->imag); 
   }

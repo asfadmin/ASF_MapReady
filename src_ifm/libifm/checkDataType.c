@@ -33,9 +33,9 @@ int checkDataType(data_t type)
   if (type == DOUBLE            ) return sizeof(double);
   if (type == CHAR              ) return sizeof(char);
   if (type == UCHAR             ) return sizeof(Uchar);
-  if (type == COMPLEX           ) return sizeof(Complex);
-  if (type == FLOAT_COMPLEX     ) return sizeof(FComplex);
-  if (type == DOUBLE_COMPLEX    ) return sizeof(DComplex);
+  if (type == COMPLEX           ) return sizeof(complexFloat);
+  if (type == FLOAT_COMPLEX     ) return sizeof(complexFloat);
+  if (type == DOUBLE_COMPLEX    ) return sizeof(complexDouble);
 
   return(-1);
 }
