@@ -139,8 +139,8 @@ usage (char *program_name)
 	  program_name);
 }
 
-#define MICRON 0.00000001
-#define FLOAT_EQUIVALENT(a, b) (fabs(a - b) < MICRON ? 1 : 0)
+#define ASF_EXPORT_FLOAT_MICRON 0.000000001
+#define FLOAT_EQUIVALENT(a, b) (fabs(a - b) < ASF_EXPORT_FLOAT_MICRON ? 1 : 0)
 
 /* Maximum image name length we can accept from the user.  Since the
    user may enter a base name only, the actual file name strings need
@@ -720,7 +720,8 @@ export_as_esri (const char *metadata_file_name,
   char esri_prj_file_name[2 * MAX_IMAGE_NAME_LENGTH];
   char projection[100], datum[100], spheroid_str[100]="", semimajor[25]="";
   char flattening[25];  
-  double central_meridian, latitude_of_origin, standard_parallel_1, standard_parallel_2;
+  double central_meridian, latitude_of_origin, standard_parallel_1, 
+    standard_parallel_2;
   spheroid_type_t spheroid;
   create_name (esri_prj_file_name, output_file_name, ".prj");
 
@@ -814,6 +815,24 @@ export_as_esri (const char *metadata_file_name,
       case CLARKE_1866:
 	strcpy(projection, "NAD_1927");
 	strcpy(datum, "North_American_1927");
+	break;
+      case CLARKE_1880:
+	assert (FALSE);		/* Not implemented yet.  */
+	break;
+      case BESSEL_1841:
+	assert (FALSE);		/* Not implemented yet.  */
+	break;
+      case INTERNATIONAL_1924:
+	assert (FALSE);		/* Not implemented yet.  */
+	break;
+      case INTERNATIONAL_1967:
+	assert (FALSE);		/* Not implemented yet.  */
+	break;
+      case GRS_1967:
+	assert (FALSE);		/* Not implemented yet.  */
+	break;
+      default:
+	assert (FALSE);		/* Shouldn't be here.  */
 	break;
       }
       central_meridian = ((6 * abs(md->projection->param.utm.zone)) - 183);
@@ -1633,8 +1652,17 @@ export_as_geotiff (const char *metadata_file_name,
     pixel_scale[2] = 0;
     TIFFSetField(otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
-    /* This is the geotiff code values which means 'meters'.  */
-    const unsigned short meters_units_code = 9001;
+    /* At this point we need to nail down which ellipsoid we are on
+       exactly.  The ASF metadata doesn't specify this though, so we
+       take a look at the major and minor axis values and try to
+       ensure that they match WGS84.  */
+    const double wgs84_major_axis = 6378137;
+    const double wgs84_flattening = 1.0 / 298.257223563;
+    const double wgs84_e2 = 2 * wgs84_flattening - pow (wgs84_flattening, 2);
+    const double wgs84_minor_axis 
+      = sqrt (pow (wgs84_major_axis, 2) * (1 - pow (wgs84_e2, 2)));
+    assert (FLOAT_EQUIVALENT (md->general->re_major, 6378137));
+    assert (FLOAT_EQUIVALENT (md->general->re_minor, wgs84_minor_axis));
 
     switch ( md->projection->type ) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
@@ -1649,15 +1677,19 @@ export_as_geotiff (const char *metadata_file_name,
       /* Here we use some funky arithmetic to get the correct geotiff
 	 coordinate system type key from our zone code.  There are a
 	 few assertions to try to ensure that the convention used for
-	 the libgeotiff constants is as expected.  */
-      assert (Proj_UTM_zone_1N == 16001);
+	 the libgeotiff constants is as expected.  Also note that we
+	 have already verified that we are on a WGS84 ellipsoid.  */
+      assert (PCS_WGS84_UTM_zone_1N == 32601);
+      assert (PCS_WGS84_UTM_zone_1S == 32701);
       short projection_code;
-      assert (Proj_UTM_zone_1S == 16101);
+
       if ( md->projection->hem == 'N' ) {
-	projection_code = 16000;
+	const int northern_utm_zone_base = PCS_WGS84_UTM_zone_1N - 1;
+	projection_code = northern_utm_zone_base;
       }
       else if ( md->projection->hem == 'S' ) {
-	projection_code = 16100;
+	const int southern_utm_zone_base = PCS_WGS84_UTM_zone_1S - 1;
+	projection_code = southern_utm_zone_base;
       }
       else {
 	assert (FALSE);		/* Shouldn't be here.  */
@@ -1666,25 +1698,35 @@ export_as_geotiff (const char *metadata_file_name,
       
       GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
 		  projection_code);
-      GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, 
-		  meters_units_code);
-      GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1,
-		  "UTM projected Geotiff written by Alaska Satellite Facility "
-		  "tools");
+      GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
+      int max_citation_length = 100;
+      char *citation = malloc ((max_citation_length + 1) * sizeof (char));
+      int citation_length
+	= snprintf (citation, max_citation_length + 1,
+                    "UTM zone %d %c projected Geotiff written by Alaska "
+		    "Satellite Facility tools", md->projection->param.utm.zone,
+		    md->projection->hem);
+      assert (citation_length >= 0 && citation_length <= max_citation_length);
+      GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+
       break;
     case POLAR_STEREOGRAPHIC:
       GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
       GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
+
       /* This constant is from the geotiff spec.  */
       const int user_defined_projected_coordinate_system_type_code = 32767;
       GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
 		  user_defined_projected_coordinate_system_type_code);
+      
+
       /* This constant is from the geotiff spec.  */
       const int user_defined_projection_geo_key_type_code = 32767;
       GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
 		  user_defined_projection_geo_key_type_code); 
-      GTIFKeySet(ogtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, 
-		 meters_units_code);
+      GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1, 
+		  CT_PolarStereographic);
+      GTIFKeySet (ogtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
       /* This is longitude which will point toward the top of the map.
 	 This is often called the reference of central longitude in
 	 the context of polar stereo map projections.  */
@@ -1696,6 +1738,15 @@ export_as_geotiff (const char *metadata_file_name,
       /* Set the false easting and false northing to zero.  */
       GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0);
       GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0);
+
+      /* Fill in the details of the geographic coordinate system used.
+	 Note that we have already asserted that the ellipsoid appears
+	 to be WGS84.  */
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, Datum_WGS84);
+      GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, 
+		  Angular_Degree);
+      GTIFKeySet (ogtif, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, PM_Greenwich);
+
       GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1,
 		 "Polar stereographic projected Geotiff written by Alaska "
 		 "Satellite Facility tools");
