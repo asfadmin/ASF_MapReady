@@ -83,6 +83,7 @@ projection {
     startY: 50
     perX: 2
     perY: 3
+    units: meters
     hem: N # ['S'->southern; other northern]
     re_major: 2200
     re_minor: 231.412
