@@ -27,6 +27,8 @@ void init_asf_proj(meta_parameters *meta,ceos_description *ceos,
 	meta->sar->image_type = 'P';/*Map-Projected image.*/
 	meta->projection = projection;
 
+	meta->general->sample_count = mpdr->npixels;
+
 	if (strncmp(mpdr->mpdesig, "GROUND RANGE",12) == 0) {
 		projection->type='A';/*Along Track/Cross Track.*/
 	} 
@@ -109,6 +111,7 @@ void ceos_init_asf(char *fName,ceos_description *ceos,meta_parameters *meta)
 /*Fetch the facility-related data record.*/
 	get_facdr(fName,&facdr);
 
+	meta->general->sample_count = facdr.npixels;
   	meta->general->bit_error_rate = facdr.biterrrt;
 	
 	meta->sar->slant_range_first_pixel = facdr.sltrngfp*1000.0;
