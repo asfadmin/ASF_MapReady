@@ -65,7 +65,7 @@ if [ ! $cc = "gcc" -a ! $batch_mode = "true" ]; then
     fi
 else
     cc="gcc"
-    optFlag="-O"
+    optFlag="-O4"
 fi
 
 asfDir=`pwd`
