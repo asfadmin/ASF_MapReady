@@ -13,46 +13,16 @@
 ***************************************************************************/
 
 #ifndef __IFM_H     /* include only once */
-
 #define __IFM_H
 
-#include "asf.h"  /* for FILE * variable type */
-
-/* Complex Type declarations */
+#include "asf.h"          /* for FILE * variable type */
+#include "asf_complex.h"  /* for Complex Type declarations */
 
 typedef struct {
     unsigned char red;
     unsigned char green;
     unsigned char blue;
 } RGBDATA;
-
-#ifndef __fcomplex_var
-#define __fcomplex_var
-typedef struct {
-    float real;
-    float imag;
-} FComplex;
-
-typedef FComplex fcomplex;
-#endif
-
-#ifndef __dcomplex_var
-#define __dcomplex_var
-typedef struct {
-    double real;
-    double imag;
-} DComplex;
-
-typedef DComplex dcomplex;
-#endif
-
-#ifndef __complex_var
-#define __complex_var
-typedef struct {
-    float real;
-    float imag;
-} Complex;
-#endif
 
 #ifndef __bool_var
 #define __bool_var
@@ -137,17 +107,11 @@ void writeVector(void *,char *,data_t,int);
 /* empirical number of clock ticks / second, sun IPX */
 #define MY_CLK_TCK   470000
 
-/* general constants */
-#ifndef TRUE
-# define TRUE      1
-#endif
+/* general constants (TRUE/FALSE in asf.h) */
 #define YES        1
 #define ON         1
 #define ACTIVE     1
 #define DO_IT      1
-#ifndef FALSE
-# define FALSE     0
-#endif
 #define NO         0
 #define OFF        0
 #define INACTIVE   0
