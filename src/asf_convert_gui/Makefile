@@ -67,13 +67,15 @@ default: $(OBJS)
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(BINDIR)
+
+doc: book1.html
+
+book1.html:
+	docbook2html asf_convert_gui.sgml
 	cp *.html $(BINDIR)
 
-doc:
-	docbook2html asf_convert_gui.sgml
-
 clean:
-	rm *.o $(BINDIR)/$(TARGET)*
+	-rm *.o $(BINDIR)/$(TARGET)* *.html
 
 ### End Unix Section
 
