@@ -10,9 +10,8 @@
 
 int line_number = 1;		/* Position in source file.  */
 
-/* For some dumb reason it seems necessary to provide this, or else
-   you have to link with the lex library.  */
-int yywrap(void)
+/* Appropriately prefixed version of yywrap.  */
+int meta_yywrap(void)
 {
   return 1;
 }
@@ -36,13 +35,13 @@ FIELD_STRING       [^#\n]*[^#\n \t]
 \n        { line_number++; }
 
  /* Name tokens name blocks or fields.  */
-{ID_STRING}[ \t]*/[:{]     { int last_nonspace = yyleng - 1;
+{ID_STRING}[ \t]*/[:{]     { int last_nonspace = meta_yyleng - 1;
 
-                             while ( isspace(yytext[last_nonspace]) ) 
+                             while ( isspace(meta_yytext[last_nonspace]) ) 
                                last_nonspace--;
-                             strncpy(yylval.string_val, yytext, 
+                             strncpy(meta_yylval.string_val, meta_yytext, 
                                      last_nonspace + 1);
-                             yylval.string_val[last_nonspace + 1] = '\0'; 
+                             meta_yylval.string_val[last_nonspace + 1] = '\0'; 
                              return NAME; }
 
  /* Eat up spaces around field seperator , go to field state and return 
@@ -55,13 +54,14 @@ FIELD_STRING       [^#\n]*[^#\n \t]
 
  /* Return a numeric value.  FIXME: needs errno ERANGE check added.  */
 <FIELD_STATE>{DOUBLE_STRING}/[ \t]*[#\n]   { BEGIN INITIAL;
-                                             yylval.double_val 
-				               = strtod(yytext, NULL); 
+                                             meta_yylval.double_val 
+				               = strtod(meta_yytext, NULL); 
                                              return DOUBLE; }
 
  /* Return a pointer to a string.  FIXME: length check string.  */
 <FIELD_STATE>{FIELD_STRING}/[ \t]*[#\n]   { BEGIN INITIAL;
-                                            strcpy(yylval.string_val, yytext);
+                                            strcpy(meta_yylval.string_val, 
+                                                   meta_yytext);
                                             return STRING; }
 
 %%
