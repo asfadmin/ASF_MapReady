@@ -154,21 +154,25 @@ void ceos_init_asf(char *fName,ceos_description *ceos,meta_parameters *meta)
 	else if (strncmp(dssr.sensor_id,"ERS-2",5)==0) strcpy(meta->general->sensor,"ERS2");
 	else if (strncmp(dssr.sensor_id,"JERS-1",6)==0) strcpy(meta->general->sensor,"JERS1");
 	else if (strncmp(dssr.sensor_id,"RSAT-1",6)==0)
-	  {
+	{
 	    char beamname[32];
+	    int ii;
+	    for (ii=0; ii<32; ii++) {
+ 	        beamname[ii] = NULL;
+            }
 	    strcpy(meta->general->sensor,"RSAT-1");
             if (strncmp(dssr.product_type,"SCANSAR",7)==0)
-             {
+            {
               if (strncmp(dssr.beam3,"WD3",3)==0) strcpy(beamname,"SWA");
               else if (strncmp(dssr.beam3,"ST5",3)==0) strcpy(beamname,"SWB");
               else if (strncmp(dssr.beam3,"ST6",3)==0) strcpy(beamname,"SNA");
               else strcpy(beamname,"SNB");	
-             }
+            }
             else
-	     {
+	    {
 	      int beamnum = atoi(&(dssr.beam1[2]));
 	      switch(dssr.beam1[0])
-               {
+              {
                 case 'S': sprintf(beamname,"ST%i",beamnum); break;
                 case 'W': sprintf(beamname,"WD%i",beamnum); break;
                 case 'F': sprintf(beamname,"FN%i",beamnum); break;
@@ -178,8 +182,8 @@ void ceos_init_asf(char *fName,ceos_description *ceos,meta_parameters *meta)
 		  break;
                 default:
                  printf("Unknown Beam Name: %s\n",dssr.beam1);
-               }
-	     } 
+              }
+	    }
 	    strcpy(meta->general->mode,beamname);
-          }
+        }
 }
