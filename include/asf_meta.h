@@ -44,9 +44,84 @@ baseline read_baseline(char *fName);
     read values directly.
 ---------------------------------------------------------------*/
 
-/* Proj_parameters: These describe a map projection.  */
-/* Projection parameter components: one for each projection.  */
+/********************************************************************
+ * meta_general: General RAdio Detection And Ranging parameters
+ */
+typedef struct {
+  char sensor[256];	     /* Name of imaging sensor.                    */
+  char mode[5];		     /* Mode of imaging sensor.                    */
+  char processor[256];	     /* Name and version of SAR processor.         */
+  char data_type[256];	     /* Type of samples (e.g. "REAL*4").           */
+  char system[256];	     /* System of samples (e.g. "ieee-std").       */
+  int orbit;		     /* Orbit number of satellite.                 */
+  int frame;		     /* Frame for this image or -1 if inapplicable.*/
+  int band_number;           /* Band number; first band is 0               */
+  char orbit_direction;	     /* Ascending 'A', or descending 'D'.          */
+  int line_count;            /* Number of lines in image.                  */
+  int sample_count;          /* Number of samples in image.                */
+  int start_line;	     /* First line relative to original image.     */
+  int start_sample;          /* First sample relative to original image.   */
+  double xPix,yPix;          /* Range, azimuth pixel size, in m            */
+  double center_latitude;    /* Approximate image center latitude.         */
+  double center_longitude;   /* Approximage image center longitude.        */
+  double re_major;           /* Semimajor axis length (equator) (meters).  */
+  double re_minor;           /* Semiminor axis length (poles) (meters).    */
+  double bit_error_rate;     /* Fraction of bits which are in error.       */
+  int missing_lines;         /* Number of missing lines in data take       */
+} meta_general;
 
+
+/********************************************************************
+ * meta_sar: SAR specific parameters
+ */
+typedef struct {
+  char proj_type;                    /* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected.*/
+  char lookDir;                      /* 'L'-> Left Looking; 'R'-> Right Looking.*/
+  int look_count;                    /* Number of looks to take from SLC.       */
+  double look_angle;                 /* Angle SAR looks at earth [radians]      */
+  int deskewed;                      /* True if image moved to zero doppler.    */
+  double range_time_per_pixel;       /* Time per pixel in range.                */
+  double azimuth_time_per_pixel;     /* Time per pixel in azimuth.              */
+  double slantShift;                 /* Error correction factor, in slant range */
+  double timeShift;                  /* Error correction factor, in time        */
+  double slant_range_first_pixel;    /* Slant range to first pixel.             */
+  double wavelength;		     /* SAR carrier wavelength, in meters.      */
+  double prf;                        /* Pulse Repition Frequency.               */
+    /* Doppler centroid, doppler per pixel, and doppler per pixel squared.      */
+  double range_doppler_coefficients[3];
+    /* Doppler centroid, doppler per pixel, and doppler per pixel squared.      */
+  double azimuth_doppler_coefficients[3]; 
+  char satellite_binary_time[256];    /* Satellite binary time.                 */
+  char satellite_clock_time[256];     /* Satellite UTC clock time.              */
+} meta_sar;
+
+
+/********************************************************************
+ * meta_optical: paramenters specific to optical images
+ * NOT YET IN USE
+ */
+typedef struct {
+  double cloud_pct;                  /* Cloud cover percentage */
+  double sun_az_angle;               /* Sun azimuth angle      */
+  double sun_elev_angle;             /* Sun elevation angle    */
+} meta_optical;
+
+
+/********************************************************************
+ * meta_thermal: paramenters specific to thermal images
+ * NOT YET IN USE
+ */
+typedef struct {
+  double band_gain;                  /* band gain                   */
+  double band_gain_change;           /* band gain change            */
+  int day;                           /* Day/Night flag 1=day 0=night*/
+} meta_thermal;
+
+
+/********************************************************************
+ * meta_projection / proj_parameters: These describe a map projection.
+ * Projection parameter components: one for each projection.
+ */
 /* Along-track/cross-track.*/
 typedef struct {
   /* Radius of earth at scene center (meters).  */
@@ -54,159 +129,145 @@ typedef struct {
   /* Rotation angles, in degrees.  */
   double alpha1, alpha2, alpha3;
 } proj_atct;
-
 /* Lambert Conformal projection.*/
 typedef struct {
-  double plat1;			/* First standard parallel for Lambert.  */
-  double plat2;			/* Second standard parallel for Lambert.  */
-  double lat0;			/* Original lat for Lambert.  */
-  double lon0;			/* Original lon for Lambert.  */
+  double plat1;    /* First standard parallel for Lambert. */
+  double plat2;    /* Second standard parallel for Lambert.*/
+  double lat0;     /* Original lat for Lambert.            */
+  double lon0;     /* Original lon for Lambert.            */
 } proj_lambert;
-
 /* Polar Sterographic.  */
 typedef struct {
-  double slat;		    /* Reference latitude for polar stereographic.  */
-  double slon;              /* Reference longitude for polar stereographic.  */
+  double slat;    /* Reference latitude for polar stereographic. */
+  double slon;    /* Reference longitude for polar stereographic.*/
 } proj_ps;
-
 /* Universal Transverse Mercator.*/
 typedef struct {
   int zone;
 } proj_utm;
-	
 typedef struct {
-  char type;   /* 'A'->Along Track/Cross Track; 'P'->Polar Stereographic;
-	          'L'->Lambert Conformal; 
-		  'U'->Universal Transverse Mercator.  */
-  double startX,startY;  /* Projection coordinates of top, lefthand corner.  */
-  double perX,perY;      /* Projection coordinates per X and Y pixel.  */
-  char hem;              /* Hemisphere Code: 'S'->southern; other northern.  */
-  double re_major;       /* Semimajor axis length (equator) (meters).  */
-  double re_minor;       /* Semiminor axis length (poles) (meters).  */
+  char type;             /* 'A'->Along Track/Cross Track; 'P'->Polar Stereographic;
+                            'L'->Lambert Conformal; 'U'->Universal Transverse Mercator.*/
+  double startX,startY;  /* Projection coordinates of top, lefthand corner. */
+  double perX,perY;      /* Projection coordinates per X and Y pixel.       */
+  char units[12];        /* Units of projection (meters, arcsec)            */
+  char hem;              /* Hemisphere Code: 'S'->southern; other northern. */
+  double re_major;       /* Semimajor axis length (equator) (meters).       */
+  double re_minor;       /* Semiminor axis length (poles) (meters).         */
   /* Note: we compute ecc=sqrt(1-re_major^2/re_minor^2).  This field
-     is therefore redundant and should be eliminated.  DEPRECATED.  */
-  double ecc;            /* First eccentricity of earth ellipsoid.  */
-
-  /* Projection parameters for each projection.  */
+     is therefore redundant and should be eliminated.                       */
+  double ecc;            /* First eccentricity of earth ellipsoid.DEPRECATED*/
+    /* Projection parameters for each projection.                           */
   union {		     
-    proj_atct     atct;	      /* Along-track/cross-track.  */
-    proj_lambert  lambert;    /* Lambert Conformal projection.  */
-    proj_ps       ps;         /* Polar Sterographic.  */
-    proj_utm      utm;        /* Universal Transverse Mercator.  */
+    proj_atct     atct;	    /* Along-track/cross-track.                     */
+    proj_lambert  lambert;  /* Lambert Conformal projection.                */
+    proj_ps       ps;       /* Polar Sterographic.                          */
+    proj_utm      utm;      /* Universal Transverse Mercator.               */
   } param;
 } meta_projection;
-
-/* Compatibility alias.  proj_parameters is DEPRECATED.  */
+  /* Compatibility alias.  proj_parameters is DEPRECATED.  */
 typedef meta_projection proj_parameters;
 
-/* State_vectors: Some collection of fixed-earth state vectors around
-   the image.  These are always increasing in time; but beyond that,
-   have no assumptions.  */
+
+/********************************************************************
+ * meta_stats: statistical info about the image
+ */
 typedef struct {
-  double time;		/* Time of state vector, in seconds from the
-			   start of the image.  */
-  stateVector vec;	/* Fixed-earth state vector.  */
+  double max, min;           /* Maximum and minimum image values */
+  double mean;               /* Mean                             */
+  double rms;                /* Root mean squared                */
+  double std_deviation;      /* Standard deviation               */
+} meta_stats;  
+
+
+/********************************************************************
+ * meta_state_vectors: Some collection of fixed-earth state vectors
+ * around the image.  These are always increasing in time; but beyond
+ * that, have no assumptions.  */
+typedef struct {
+  double      time;  /* Time of state vector, in seconds from start of image.*/
+/*	typedef struct {
+ *		double x;
+ *		double y;
+ *		double z;
+ *	} vector;
+ *	typedef struct {
+ *		vector pos;
+ *		vector vel;
+ *	} stateVector;
+ */
+  stateVector vec;   /* Fixed-earth state vector.  */
 } state_loc;
 typedef struct {
-  int  year;		      /* Year for first state vector */
-  int  julDay;		      /* Julian day of year for first state vector.  */
-  double second;	      /* Seconds of day for first state vector.  */
-  int  num;		      /* Number of state vectors.  */
-  state_loc vecs[1];	      /* Array is sized at run-time.  */
+  int       year;     /* Year for first state vector               */
+  int       julDay;   /* Julian day of year for first state vector.*/
+  double    second;   /* Seconds of day for first state vector.    */
+  int       num;      /* Number of state vectors.                  */
+  state_loc vecs[1];  /* Array is sized at run-time.               */
 } meta_state_vectors;
 
-typedef struct {
-  char sensor[256];	     /* Name of imaging sensor.  */
-  char mode[5];		     /* Mode of imaging sensor.  */
-  char processor[256];	     /* Name and version of SAR processor.  */
-  char data_type[256];	     /* Type of samples (e.g. "REAL*4").  */
-  char system[256];	     /* System of samples (e.g. "iee-std").  */
-  int orbit;		     /* Orbit number of satellite.  */
-  int frame;		     /* Frame for this image or -1 if inapplicable.  */
-  char orbit_direction;	     /* Ascending 'A', or descending 'D'.  */
-  int original_line_count;   /* Number of lines in original image.  */
-  int original_sample_count; /* Number of samples in original image.  */
-  int start_line;	     /* First line relative to original image.  */
-  int start_sample;          /* First sample relative to original image.  */
-  double center_latitude;    /* Approximate image center latitude.  */
-  double center_longitude;   /* Approximage image center longitude.  */
-  double bit_error_rate;     /* Fraction of bits whish are in error.  */
-} meta_general;
 
+/********************************************************************
+ * DEPRECATED
+ * Geo_parameters: These are used in geolocating the image.*/
 typedef struct {
-  char image_type;		/* 'S'-> Slant Range; 'G'-> Ground Range; 
-				   'P'-> Map Projected.  */
-  char lookDir;			/* 'L'-> Left Looking; 'R'-> Right Looking.  */
-  int deskewed;			/* True if image moved to zero doppler.  */
-  double range_time_per_pixel;  /* Time per pixel in range.  */
-  double azimuth_time_per_pixel; /* Time per pixel in azimuth.  */
-  double slant_range_first_pixel; /* Slant range to first pixel.  */
-  double wavelength;		/* SAR carrier wavelength, in meters.*/
-  double pulse_repetition_frequency; /* Pulse Repition Frequency.  */
-  int look_count;		/* Number of looks to take from SLC.  */
-  /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
-  double azimuth_doppler_coefficients[3]; 
-  /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
-  double range_doppler_coefficients[3];
-  char satellite_binary_time[256]; /* Satellite binary time.  */
-  char satellite_clock_time[256];  /* Satellite UTC clock time.  */
-} meta_sar;
-
-/* DEPRECATED */
-/*Geo_parameters: These are used in geolocating the image.*/
-typedef struct {
-	char type;		/* 'S'-> Slant Range; 'G'-> Ground Range; 
-				   'P'-> Map Projected.*/
+	char type;		/* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected.*/
   	proj_parameters *proj;	/* Projection parameters, for map-projected images.*/
-	char lookDir;		/* 'L'-> Left Looking; 'R'-> Right Looking.*/
-	int deskew;		/* Image moved to zero-doppler? (1-> yes; 0->no)*/
-	double xPix,yPix;	/* Range, azimuth pixel size, in m*/
-	double rngPixTime,azPixTime;  /* Range, Azimuth pixel time, in s.*/
+	char lookDir;		/* 'L'-> Left Looking; 'R'-> Right Looking.        */
+	int deskew;		/* Image moved to zero-doppler? (1-> yes; 0->no)   */
+	double xPix,yPix;	/* Range, azimuth pixel size, in m                 */
+	double rngPixTime,azPixTime;  /* Range, Azimuth pixel time, in s.          */
 	double timeShift, slantShift; /* Image correction (fudge)
-					 factors in azimuth and range, in s and m.*/
-	double slantFirst;      /* Slant range to first pixel, in m.*/
+					 factors in azimuth and range, in s and m. */
+	double slantFirst;      /* Slant range to first pixel, in m.               */
 	double wavelen;         /* Satellite wavelength, in meters.*/
 	double dopRange[3], dopAz[3]; /* Doppler centroid constant, linear, and
                                          quadratic terms, in azimuth and range (Hz)*/
 } geo_parameters;
 
-/* DEPRECATED */
-/*Ifm_parameters: These are used only for interferometry.*/
+/********************************************************************
+ * DEPRECATED
+ * Ifm_parameters: These are used only for interferometry.*/
 typedef struct {
-	double er;  /* Earth radius at scene center.*/
-	double ht;  /* Satellite height from earth's center.*/
+	double er;  /* Earth radius at scene center.                            */
+	double ht;  /* Satellite height from earth's center.                    */
 	int nLooks; /* Number of looks to take on SLC data to make square pixels*/
 	int orig_nLines,orig_nSamples;
-	double lookCenter;/*Look angle to image center (CALCULATED).*/
+	double lookCenter;    /*Look angle to image center (CALCULATED).        */
 } ifm_parameters;
 
-/* DEPRECATED */
-/*extra_info: extra information needed to re-create CEOS files.*/
+/********************************************************************
+ * DEPRECATED
+ * extra_info: extra information needed to re-create CEOS files.*/
 typedef struct {
-	char	sensor[256];	   /* Name of imaging sensor.  */
-	char	mode[5];	   /* Mode of imaging sensor.  */
-	char    processor[256];    /* Name and version of SAR processor.  */
-	int     orbit;		   /* Orbit number of satellite.  */
-	double  bitErrorRate;      /* Exactly what it says.  */
-	char    satBinTime[256];   /* Satellite binary clock time.  */
-	char    satClkTime[256];   /* Satellite UTC time.  */
-	double  prf;		   /* Pulse Repition Frequency.  */
+	char	sensor[256];	   /* Name of imaging sensor.           */
+	char	mode[5];	   /* Mode of imaging sensor.           */
+	char    processor[256];    /* Name and version of SAR processor.*/
+	int     orbit;		   /* Orbit number of satellite.        */
+	double  bitErrorRate;      /* Exactly what it says.             */
+	char    satBinTime[256];   /* Satellite binary clock time.      */
+	char    satClkTime[256];   /* Satellite UTC time.               */
+	double  prf;		   /* Pulse Repition Frequency.         */
 } extra_info;
 
-/* General ASF metadta structure.  Collection of all above. */
+/********************************************************************
+ * General ASF metadta structure.  Collection of all above.
+ */
 typedef struct {
-  double meta_version;		/* Version of metadata format conformed to.  */
+  double meta_version;     /* Version of metadata format conformed to.  */
 
-  meta_general *general;
-  meta_sar *sar;
-  meta_projection *projection;
+  meta_general       *general;
+  meta_sar           *sar;
+  meta_optical       *optical;
+  meta_thermal       *thermal;
+  meta_projection    *projection;
+  meta_stats         *stats;
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
-
-  /* Deprecated elements from old metadata format.  */
-  meta_state_vectors *stVec;	/* Can be NULL (check!).  */
+    /* Deprecated elements from old metadata format.  */
+  meta_state_vectors *stVec;	       /* Can be NULL (check!).  */
   geo_parameters *geo;
   ifm_parameters *ifm;
-  extra_info     *info;		/* Can be NULL (check!).  */
+  extra_info     *info;		       /* Can be NULL (check!).  */
 } meta_parameters;
 
 
