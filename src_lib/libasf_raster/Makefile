@@ -8,11 +8,10 @@ OBJS = interpolate.o \
        scaling.o \
        stats.o
 
-CFLAGS += $(GLIB_INCLUDE)
-
 LIBS = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
+	$(LIBDIR)/libglib-2.0.a \
 	-lm
 
 all: build_only

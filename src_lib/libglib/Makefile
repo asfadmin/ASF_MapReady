@@ -59,11 +59,11 @@ stage_glib_stamp:
 	    gunzip --to-stdout $(ZIPFILE) >$(TARFILE) ; \
 	    tar xvf $(TARFILE) ; \
 	    (cd $(UNPACK_DIR) ; \
-                ./configure --enable-static=yes --enable-shared=no \
+                ./configure --enable-static=yes --enable-shared=no --with-libiconv=gnu \
 		   --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
 		make ; \
-	        make check ; \
                 make install) ; \
+	    cp $(ROOT_STAGEDIR)/lib/glib-2.0/include/*.h $(INCLUDE_STAGEDIR)/glib-2.0; \
         fi
 	touch $@
 
