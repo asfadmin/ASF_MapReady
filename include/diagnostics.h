@@ -61,7 +61,7 @@ require_function (const char *file, int line, int condition,
 
 /* This routine is used by the die macro.  It should never be used
    anywhere else.  */
-void die_function (const char *file, int line, const char *message...)
+void die_function (const char *file, int line, const char *message, ...)
 #ifdef __GNUC__
      __attribute__ ((format (printf, 3, 4), noreturn))
 #endif /* __GNUC__ */
