@@ -148,6 +148,7 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 	    /* false easting & false northing are fixed for utm */
 	    pps->utm.false_northing = pps->utm.lat0 > 0 ? 0 : 10000000;
 	    pps->utm.false_easting = 500000;
+	    pps->utm.scale_factor = 0.9996;
 
 	    break;
 
