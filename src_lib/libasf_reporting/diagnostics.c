@@ -3,6 +3,8 @@ assert type functions for reporting to programmer with a little bit of
 niftiness to make it possible to explain things to the user
 */
 
+#include <stdlib.h>
+
 #include "asf_reporting.h"
 
 
@@ -26,4 +28,7 @@ void die_function (const char *file, int line, const char *message, ...)
 
   sprintf (temp, "At source file %s line %d: %s", file, line, message);
   asfPrintError (temp, ap);
+  /* Reassure compiler that this noreturn fctn doesn't return (without
+     having to declare asfPrintError to be `noreturn'.  */
+  exit (EXIT_FAILURE); 
 }
