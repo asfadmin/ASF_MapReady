@@ -4,16 +4,12 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf.a \
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgeotiff.a \
 	$(LIBDIR)/libtiff.a \
 	$(LIBDIR)/libjpeg.a \
-        $(LIBDIR)/libpng.a \
-	-lz \
 	$(LIBDIR)/libgsl.a \
-	$(LIBDIR)/libgslcblas.a \
-	-L$(HOME)/local/lib \
 	-lm
 
 OBJS  = asf_export.o
