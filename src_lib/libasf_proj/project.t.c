@@ -833,7 +833,6 @@ void perf_test_ps()
 
     int i, n=0;
     struct timeval tv1, tv2;
-    struct timezone tz;
     int elapsed1, elapsed2;
 
     lat0 = 71 * DEG_TO_RAD;
@@ -861,18 +860,18 @@ void perf_test_ps()
 	y[i] = (double)rand() / (double)RAND_MAX * .707 + .707;
     }
 
-    gettimeofday(&tv1, &tz);    
+    gettimeofday(&tv1, NULL);
     project_ps_arr(&pps, x, y, &x1, &y1, N);
-    gettimeofday(&tv2, &tz);
+    gettimeofday(&tv2, NULL);
 
     elapsed1 = tv2.tv_sec - tv1.tv_sec;
 
-    gettimeofday(&tv1, &tz);    
+    gettimeofday(&tv1, NULL);
     for (i = 0; i < N; ++i)
     {
 	project_ps(&pps, x[i], y[i], &xo[i], &yo[i]); 
     }
-    gettimeofday(&tv2, &tz);
+    gettimeofday(&tv2, NULL);
     elapsed2 = tv2.tv_sec - tv1.tv_sec;
 
     /* do they agree? */
@@ -887,7 +886,7 @@ void perf_test_ps()
 	    ++n;
 	}
     }
-    
+
     if (n > 0)
     {
 	++nfail;

@@ -6,6 +6,22 @@
 /* test function only ... */
 int project_poly(double phi_deg, double lam_deg, double * xx, double *yy);
 
+/**************************************************************************
+   project_set_avg_height
+
+   The height parameter for the projection.  If this is not called prior
+   to projecting, the average height will be 0.
+****************************************************************************/
+void project_set_avg_height(double height);
+
+/**************************************************************************
+   project_set_datum
+
+   The height parameter for the projection.  If this is not called prior
+   to projecting, the average height will be 0.
+****************************************************************************/
+void project_set_datum(datum_type_t datum);
+
 /****************************************************************************
   Universal Transverse Mercator
   www.remotesensing.org/geotiff/proj_list/transverse_mercator.html

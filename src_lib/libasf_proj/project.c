@@ -18,29 +18,46 @@ round (double arg)
 }
 #endif // #ifndef linux
 
+static datum_type_t sDatum = MAGIC_UNSET_INT;
+void project_set_datum(datum_type_t datum)
+{
+    sDatum = datum;
+}
+
 static const char * datum(project_parameters_t * pps)
 {
-    /* for now we are hard-coded... */
-    return "WGS84";
+    if (sDatum == MAGIC_UNSET_INT)
+	return "WGS84";
+
+    switch (sDatum)
+    {
+	case NAD27_DATUM:    /* North American Datum 1927 (Clarke 1866) */
+	    return "NAD27";
+	case NAD83_DATUM:    /* North American Datum 1983 (GRS 1980)    */
+	    return "NAD83";
+	default:
+	case WGS84_DATUM:    /* World Geodetic System 1984 (WGS84)      */
+	    return "WGS84";
+    }
 }
 
-static double *pHeight = NULL;
-void set_avg_height(double h)
+static double sHeight = MAGIC_UNSET_DOUBLE;
+void project_set_avg_height(double h)
 {
-    *pHeight = h;
-}
-
-static double get_avg_height()
-{
-    if (pHeight && !ISNAN(*pHeight))
-	return *pHeight;
-    else
-	return 0.0;
+    sHeight = h;
 }
 
 static int height_was_set()
 {
-    return pHeight != NULL;
+    return !ISNAN(sHeight);
+}
+
+static double get_avg_height()
+{
+    if (height_was_set())
+	return sHeight;
+    else
+	return 0.0;
 }
 
 /*
