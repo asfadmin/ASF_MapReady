@@ -40,7 +40,7 @@ install_tcltk: install_tcl install_tk
 # Copy the static libraries and headers for tcl into the
 # appropriate places in the ASF directory structure.
 install_tcl: stage_tcl_stamp
-	chmod ug+w $(LIB_STAGEDIR)/libtcl$(MAIN_VERSION).a  $(LIB_STAGEDIR)tclConfig.sh /$(LIB_STAGEDIR)/tcl$(MAIN_VERSION) ; \
+	chmod ug+w $(LIB_STAGEDIR)/libtcl$(MAIN_VERSION).a  $(LIB_STAGEDIR)/tclConfig.sh /$(LIB_STAGEDIR)/tcl$(MAIN_VERSION) ; \
 	cp $(LIB_STAGEDIR)/libtcl$(MAIN_VERSION).a $(LIBDIR)
 	cp $(LIB_STAGEDIR)/tclConfig.sh $(LIBDIR)
 	cp -r $(LIB_STAGEDIR)/tcl$(MAIN_VERSION) $(LIBDIR)
@@ -51,7 +51,7 @@ install_tcl: stage_tcl_stamp
 # Copy the static libraries and headers for tk into the
 # appropriate places in the ASF directory structure.
 install_tk: stage_tk_stamp
-	chmod ug+w $(LIB_STAGEDIR)/libtk$(MAIN_VERSION).a  $(LIB_STAGEDIR)tkConfig.sh /$(LIB_STAGEDIR)/tk$(MAIN_VERSION) ; \
+	chmod ug+w $(LIB_STAGEDIR)/libtk$(MAIN_VERSION).a  $(LIB_STAGEDIR)/tkConfig.sh /$(LIB_STAGEDIR)/tk$(MAIN_VERSION) ; \
 	cp $(LIB_STAGEDIR)/libtk$(MAIN_VERSION).a $(LIBDIR)
 	cp $(LIB_STAGEDIR)/tkConfig.sh $(LIBDIR)
 	cp -r $(LIB_STAGEDIR)/tk$(MAIN_VERSION) $(LIBDIR)
