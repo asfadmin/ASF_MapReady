@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -74,7 +75,7 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   // and then decrement t iteratively until things work.
   self->tile_size = self->cache_area / (2 * largest_dimension);
   while ( (2 * pow (self->tile_size, 2.0) 
-	   * ceil ((double)largest_dimension / self->tile_size))
+	   * ceil ((double) largest_dimension / self->tile_size))
 	  > self->cache_area ) {
     self->tile_size--;
   }
@@ -84,14 +85,14 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
 
   // Number of tiles which will fit in image cache.
   self->cache_size_in_tiles = self->cache_area / self->tile_area;
-  // Can we fit as much as we intended in the cache?
+  // Can we fit at least as much as we intended in the cache?
   g_assert (self->cache_size_in_tiles 
-	    == 2 * (size_t) ceil ((double)largest_dimension 
+	    >= 2 * (size_t) ceil ((double) largest_dimension 
 				  / self->tile_size));
 
   // Number of tiles image has been split into in x and y directions.
-  self->tile_count_x = (size_t) ceil ((double)self->size_x / self->tile_size);
-  self->tile_count_y = (size_t) ceil ((double)self->size_y / self->tile_size);
+  self->tile_count_x = (size_t) ceil ((double) self->size_x / self->tile_size);
+  self->tile_count_y = (size_t) ceil ((double) self->size_y / self->tile_size);
 
   // Total number of tiles image tiles image has been split into.
   self->tile_count = self->tile_count_x * self->tile_count_y;
@@ -155,8 +156,10 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
 }
 
 FloatImage *
-float_image_new (size_t size_x, size_t size_y)
+float_image_new (ssize_t size_x, ssize_t size_y)
 {
+  g_assert (size_x > 0 && size_y > 0);
+
   FloatImage *self = initialize_float_image_structure (size_x, size_y);
 
   // The total width or height of all the tiles is probably greater
@@ -194,8 +197,10 @@ float_image_new (size_t size_x, size_t size_y)
 }
 
 FloatImage *
-float_image_new_with_value (size_t size_x, size_t size_y, float value)
+float_image_new_with_value (ssize_t size_x, ssize_t size_y, float value)
 {
+  g_assert (size_x > 0 && size_y > 0);
+
   FloatImage *self = initialize_float_image_structure (size_x, size_y);
 
   // The total width or height of all the tiles is probably greater
@@ -250,9 +255,39 @@ swap_bytes_32 (unsigned char *in)
 }
 
 FloatImage *
-float_image_new_from_file (size_t size_x, size_t size_y, const char *file, 
+float_image_new_from_memory (ssize_t size_x, ssize_t size_y, float *buffer)
+{
+  g_assert (size_x > 0 && size_y > 0);
+
+  g_assert_not_reached ();	// Stubbed out for now.
+  // Compiler reassurance.
+  size_x = size_x;
+  size_y = size_y;
+  buffer = buffer;
+  return NULL;
+}
+
+// Return true iff file is larger than size.
+static gboolean
+file_larger_than (const char *file, off_t size)
+{
+  struct stat stat_buffer;
+  int return_code = stat (file, &stat_buffer);
+  g_assert (return_code == 0);
+  return stat_buffer.st_size >= size;
+}
+
+FloatImage *
+float_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file, 
 			   off_t offset, float_image_byte_order_t byte_order)
 {
+  g_assert (size_x > 0 && size_y > 0);
+
+  // Check in advance if the source file looks big enough (we will
+  // still need to check return codes as we read() data, of course).
+  g_assert (file_larger_than (file, offset + (size_x * size_y
+					      * sizeof (float))));
+
   FloatImage *self = initialize_float_image_structure (size_x, size_y);
  
   // Open the file to read data from.
@@ -260,10 +295,58 @@ float_image_new_from_file (size_t size_x, size_t size_y, const char *file,
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
-  // Seek to the indicated offset in the file.
-  int return_code = fseeko (fp, offset, SEEK_SET);
+  self = float_image_new_from_file_pointer (size_x, size_y, fp, offset, 
+					    byte_order);
+  
+  // Close file we read image from.
+  int return_code = fclose (fp);
   g_assert (return_code == 0);
 
+  return self;
+}
+
+// Return true iff byte_order is not the native byte order on the
+// current platform.
+static gboolean
+non_native_byte_order (float_image_byte_order_t byte_order)
+{
+  return ((G_BYTE_ORDER == G_LITTLE_ENDIAN 
+	   && byte_order == FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN)
+	  || (G_BYTE_ORDER == G_BIG_ENDIAN
+	      && byte_order == FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN));
+}
+
+// Return true iff file referred to by file_pointer is larger than size.
+static gboolean
+file_pointed_to_larger_than (FILE *file_pointer, off_t size)
+{
+  struct stat stat_buffer;
+  int return_code = fstat (fileno (file_pointer), &stat_buffer);
+  g_assert (return_code == 0);
+  return stat_buffer.st_size >= size;
+}
+			   
+
+FloatImage *
+float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y, 
+				   FILE *file_pointer, off_t offset,
+				   float_image_byte_order_t byte_order)
+{
+  g_assert (size_x > 0 && size_y > 0);
+
+  // Check in advance if the source file looks big enough (we will
+  // still need to check return codes as we read() data, of course).
+  g_assert (file_pointed_to_larger_than (file_pointer, 
+					 offset + (size_x * size_y
+						   * sizeof (float))));
+
+  FloatImage *self = initialize_float_image_structure (size_x, size_y);
+
+  FILE *fp = file_pointer;	// Convenience alias.
+
+  // Seek to the indicated offset in the file.
+  int return_code = fseeko (fp, offset, SEEK_CUR);
+  g_assert (return_code == 0);  
   // We will read the input image data in horizontal stips one tile
   // high.  Note that we probably won't be able to entirely fill the
   // last tiles in each dimension with real data, since the image
@@ -305,15 +388,12 @@ float_image_new_from_file (size_t size_x, size_t size_y, const char *file,
     // apparently: major libraries don't seem to support it with their
     // macros, and the perl documentation says it can't be done in a
     // truly portable way... but it seems to work.
-    if ( (G_BYTE_ORDER == G_LITTLE_ENDIAN 
-	  && byte_order == FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN)
-	 || (G_BYTE_ORDER == G_BIG_ENDIAN
-	     && byte_order == FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN) ) {
+    if ( non_native_byte_order (byte_order) ) {
       // Floats better be four bytes for this to work.
       g_assert (sizeof (float) == 4);
       size_t idx;
       for ( idx = 0 ; idx < strip_area ; idx++ ) {
-	swap_bytes_32 ((unsigned char *)&(buffer[idx]));
+	swap_bytes_32 ((unsigned char *) &(buffer[idx]));
       }
     }
 
@@ -395,23 +475,212 @@ float_image_new_from_file (size_t size_x, size_t size_y, const char *file,
   // Free temporary buffers.
   g_free (buffer);
   g_free (zero_line);
-  
-  // Close file we read image from.
-  return_code = fclose (fp);
-  g_assert (return_code == 0);
 
   return self;
 }
 
-FloatImage *
-float_image_new_from_memory (size_t size_x, size_t size_y, float *buffer)
+// Bilinear interpolation for a point delta_x, delta_y from the lower
+// left corner between values ul (upper left), ur (upper right), etc.
+// The corner are considered to be corners of a unit square.
+static float
+bilinear_interpolate (double delta_x, double delta_y, float ul, float ur, 
+		      float ll, float lr)
 {
-  g_assert_not_reached ();	// Stubbed out for now.
-  // Compiler reassurance.
-  size_x = size_x;
-  size_y = size_y;
-  buffer = buffer;
-  return NULL;
+  float lv = ll + (lr - ll) * delta_x; // Lower value.
+  float uv = ul + (ur - ul) * delta_x; // Upper value.
+
+  return lv + (uv - lv) * delta_y;
+}
+
+FloatImage *
+float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y, 
+				  ssize_t original_size_x, 
+				  ssize_t original_size_y, 
+				  const char *file, off_t offset,
+				  float_image_byte_order_t byte_order)
+{
+  g_assert (size_x > 0 && size_y > 0);
+  g_assert (original_size_x > 0 && original_size_y > 0);
+
+  // Image can only be scaled down with this routine, not up.
+  g_assert (size_x < original_size_x);
+  g_assert (size_y < original_size_y);
+
+  // Check in advance if the source file looks big enough (we will
+  // still need to check return codes as we read() data, of course).
+  g_assert (file_larger_than (file, 
+			      offset + (original_size_x * original_size_y
+					* sizeof (float))));
+
+  // Find the stride that we need to use in each dimension to evenly
+  // cover the original image space.
+  double stride_x = (double) (original_size_x - 1) / (size_x - 1);
+  double stride_y = (double) (original_size_y - 1) / (size_y - 1);
+
+  // Open the file to read data from.
+  FILE *fp = fopen (file, "r");
+  // FIXME: we need some error handling and propagation here.
+  g_assert (fp != NULL);
+
+  // We will do a row at a time to save some possibly expensive
+  // seeking.  So here we have an entire row worth of upper lefts,
+  // upper rights, etc.
+  float *uls = g_new (float, size_x);
+  float *urs = g_new (float, size_x);
+  float *lls = g_new (float, size_x);
+  float *lrs = g_new (float, size_x);
+  
+  // Results of bilinear interpolation for the current row.
+  float *interpolated_values = g_new (float, size_x);
+
+  // We will write the reduced resolution version of the image into a
+  // temporary file so we can leverage the new_from_file method and
+  // avoid trying to stick the whold reduced resolution image in
+  // memory.
+  FILE *reduced_image = tmpfile ();
+
+  ssize_t ii, jj;
+  for ( ii = 0 ; ii < size_y ; ii++ ) {
+    size_t read_count;		// For fread calls.
+    int return_code;		// For fseeko calls.
+    // Input image y index of row above row of interest.
+    ssize_t in_ray = floor (ii * stride_y);   
+    // Due to the vagaries of floating point arithmetic, we might run
+    // past the index of our last pixel by a little bit, so we correct.
+    if ( in_ray >= original_size_y - 1 ) {
+      // We better not be much over the last index though.
+      g_assert (in_ray < original_size_y);
+      // The index should be an integer, so floor should fix us up.
+      in_ray = floor (in_ray);
+      g_assert (in_ray == original_size_y - 1);
+    }
+    g_assert (in_ray < original_size_y);
+    // Input image y index of row below row of interest.  If we would
+    // be off the image, we just take the last row a second time, and
+    // let the interpolation work things out.
+    ssize_t in_rby;
+    if ( in_ray == original_size_y - 1 ) {
+      in_rby = in_ray;
+    }
+    else {
+      in_rby = in_ray + 1;
+    }
+    // Fetch the row above.
+    for ( jj = 0 ; jj < size_x ; jj++ ) {
+      // Input image indicies of current upper left corner pixel.
+      ssize_t in_ul_x = floor (jj * stride_x);
+      // Watch for floating point inexactness (see comment above).
+      if ( G_UNLIKELY (in_ul_x >= original_size_x - 1) ) {
+	g_assert (in_ul_x < original_size_x);
+	in_ul_x = floor (in_ul_x);
+	g_assert (in_ul_x == original_size_x - 1);
+      }
+      g_assert (in_ul_x < original_size_x);
+      size_t in_ul_y = in_ray;
+      off_t sample_offset 
+	= offset + sizeof (float) * (in_ul_y * original_size_x + in_ul_x);
+      return_code 
+	= fseeko (fp, sample_offset, SEEK_SET);
+      g_assert (return_code == 0);
+      read_count = fread (&(uls[jj]), sizeof (float), 1, fp);
+      g_assert (read_count == 1);
+      // If the upper left pixel was the last pixel in the input image,
+      if ( in_ul_x == original_size_x - 1 ) {
+	// just treat it as the upper right as well,
+	urs[jj] = uls[jj];
+      }
+      // otherwise read the next pixel as the upper right pixel.
+      else {
+	read_count = fread (&(urs[jj]), sizeof (float), 1, fp);
+	g_assert (read_count == 1);
+      }
+    }
+    // Fetch the row below.
+    for ( jj = 0 ; jj < size_x ; jj++ ) {
+      // Input image indicies of hte lower left corner pixel.
+      ssize_t in_ll_x = floor (jj * stride_x);
+      // Watch for floating point inexactness (see comment above).
+      if ( G_UNLIKELY (in_ll_x >= original_size_y - 1) ) {
+	g_assert (in_ll_x < original_size_x);
+	in_ll_x = floor (in_ll_x);
+	g_assert (in_ll_x == original_size_x - 1);
+      }
+      g_assert (in_ll_x < original_size_x);      
+      size_t in_ll_y = in_rby;
+      off_t sample_offset
+	= offset + sizeof (float) * (in_ll_y * original_size_x + in_ll_x);
+      return_code 
+	= fseeko (fp, sample_offset, SEEK_SET);
+      g_assert (return_code == 0);
+      read_count = fread (&(lls[jj]), sizeof (float), 1, fp);
+      g_assert (read_count == 1);
+      // If the lower left pixel was the last pixel in the input image,
+      if ( in_ll_x == original_size_x - 1 ) {
+	// just treat it as the lower right as well,
+	lrs[jj] = lls[jj];
+      }
+      // otherwise read the next pixel as the lower right pixel.
+      else {
+	read_count = fread (&(lrs[jj]), sizeof (float), 1, fp);
+	g_assert (read_count == 1);
+      }
+    }
+    // If things aren't in the native byte order, we must byte swap them.
+    if ( non_native_byte_order (byte_order) ) {
+      for ( jj = 0 ; jj < size_x ; jj++ ) {
+	g_assert (sizeof (float) == 4);
+	swap_bytes_32 ((unsigned char *) &(uls[jj]));
+	swap_bytes_32 ((unsigned char *) &(urs[jj]));
+	swap_bytes_32 ((unsigned char *) &(lls[jj]));
+	swap_bytes_32 ((unsigned char *) &(lrs[jj]));
+      }
+    }
+    // Perform the interpolation.
+    for ( jj = 0 ; jj < size_x ; jj++ ) {
+      double delta_x = stride_x * jj - floor (stride_x * jj);
+      double delta_y = -(stride_y * ii - floor (stride_y * ii));
+      interpolated_values[jj] = bilinear_interpolate (delta_x, delta_y, 
+						      uls[jj], urs[jj], 
+						      lls[jj], lrs[jj]);
+    }
+    size_t write_count = fwrite (interpolated_values, sizeof (float), size_x,
+				 reduced_image);
+    g_assert (write_count == (size_t) size_x);
+  }
+
+  // We are done with the temporary buffers.
+  g_free (interpolated_values);
+  g_free (lrs);
+  g_free (lls);
+  g_free (urs);
+  g_free (uls);
+
+  // Reposition to the beginning of the temporary file to fit with
+  // operation of new_from_file_pointer method.
+  int return_code = fseeko (reduced_image, (off_t) 0, SEEK_SET);
+  g_assert (return_code == 0);
+
+  // The file we have written should be in host byte order, so we need
+  // to determine what that is so we can re-read it correctly.
+  float_image_byte_order_t host_byte_order;
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
+  host_byte_order = FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN;
+#elif G_BYTE_ORDER == G_BIG_ENDIAN
+  host_byte_order = FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
+#else
+#  error
+#endif
+
+  // Slurp the scaled file back in as an instance.
+  FloatImage *self
+    = float_image_new_from_file_pointer (size_x, size_y, reduced_image,
+					 (off_t) 0, host_byte_order);
+
+  // Now that we have an instantiated version of the image we are done
+  // with this temporary file.
+  return_code = fclose (reduced_image);
+
+  return self;
 }
 
 // Flush the contents of tile with flattened offset tile_offset from
@@ -875,15 +1144,12 @@ float_image_store (FloatImage *self, const char *file,
     // support it with their macros, and the perl documentation says
     // it can't be done in a truly portable way... but it seems to
     // work.
-    if ( (G_BYTE_ORDER == G_LITTLE_ENDIAN 
-	  && byte_order == FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN)
-	 || (G_BYTE_ORDER == G_BIG_ENDIAN
-	     && byte_order == FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN) ) {
+    if ( non_native_byte_order (byte_order) ) {
       // Floats better be four bytes for this to work.
       g_assert (sizeof (float) == 4);
       size_t idx;
       for ( idx = 0 ; idx < self->size_x ; idx++ ) {
-	swap_bytes_32 ((unsigned char *)&(line_buffer[idx]));
+	swap_bytes_32 ((unsigned char *) &(line_buffer[idx]));
       }
     }
     // Write the data.
@@ -977,6 +1243,11 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   // the output.
   float min, max, mean, standard_deviation;
   float_image_statistics (self, &min, &max, &mean, &standard_deviation);
+
+  // If the statistics don't work, something is beastly wrong and we
+  // don't want to deal with it.
+  g_assert (isfinite (min) && isfinite (max) && isfinite (mean) 
+	    && isfinite (standard_deviation));
 
   // If min == max, the pixel values are all the same.  There is no
   // reason to average or scale anything, so we don't.  There is a
