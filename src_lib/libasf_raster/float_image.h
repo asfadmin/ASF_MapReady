@@ -314,4 +314,4 @@ float_image_set_cache_size (FloatImage *self, size_t size);
 void
 float_image_free (FloatImage *self);
 
-#endif // FLOAT_IMAGE_H
+#endif // #ifndef FLOAT_IMAGE_H
