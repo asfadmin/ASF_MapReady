@@ -1,11 +1,6 @@
-# The existing build system had some good ideas but was complicated
-# and didn't gracefully handle things like libraries that need binary
-# modules to be built first in order to build themselves.  
-
 # This make file lists all the system components used by the latest
 # tools in one flat list, making no attempt to sort out the build
-# order automatically.  Since the old system didn't rebuild anything
-# on changes in dependencies anyway this isn't much of a loss.
+# order automatically.
 
 # Note that the order in which the modules are listed is critical!
 # Note also that this simplistic build scheme takes the traditional
