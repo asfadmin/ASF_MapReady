@@ -36,7 +36,7 @@ install_gsl: stage_gsl_stamp
 
 # Create the staging directories.
 staging_directories:
-	mkdir --parents $(LIB_STAGEDIR) $(INCLUDE_STAGEDIR)
+	mkdir -p $(LIB_STAGEDIR) $(INCLUDE_STAGEDIR)
 
 # Copy an already build GSL into the staging area, or build it there
 # if a copy doesn't appear to be available.
