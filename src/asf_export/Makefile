@@ -72,7 +72,7 @@ OBJS := $(patsubst %.c, %.o, $(SOURCES))
 all: asf_export
 
 $(PROGRAM): $(OBJS)
-	$(CC) $(OBJS) $(LDLIBS) -o $@
+	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
 	mv asf_export$(BIN_POSTFIX) $(BINDIR)
 
 .PHONY: clean
