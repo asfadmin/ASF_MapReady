@@ -11,10 +11,10 @@ LIBS  =	$(LIBDIR)/asf.a \
 	-lm
 
 OBJS =	albers.o \
+        lamazeqa.o \
 	plstereo.o \
 	utm.o \
 	wrlabtab.o
-# lamazeqa.o
 # geograph.o
 
  #-lm needed for solaris
