@@ -7,8 +7,8 @@ typedef struct
   /* transformations */
   int data_type;
   int latitude_checked;
-  float latitude_low;
-  float latitude_hi;
+  double latitude_low;
+  double latitude_hi;
 
   /* export */
   int output_format;
@@ -17,7 +17,22 @@ typedef struct
   int output_bytes;
   int scaling_method;
 
-} Settings;
+  /* geocode */
+  int geocode_is_checked;
+  int projection;
+  double plat1;
+  double plat2;
+  double lat0;
+  double lon0;
+  double false_easting;
+  double false_northing;
+
+  int specified_height;
+  double height;
+  int specified_pixel_size;
+  double pixel_size;
+}
+Settings;
 
 Settings * settings_get_from_gui();
 void settings_apply_to_gui();
@@ -31,7 +46,10 @@ const gchar * settings_get_data_type_arg_string(const Settings *);
 const gchar * settings_get_input_data_format_string(const Settings *);
 const gchar * settings_get_output_format_extension(const Settings *);
 const gchar * settings_get_output_format_string(const Settings *);
+const gchar * settings_get_geocode_options(const Settings *);
+const gchar * settings_get_projection_abbrev(const Settings *);
 int settings_get_run_import(const Settings *);
 int settings_get_run_export(const Settings *);
+int settings_get_run_geocode(const Settings *);
 void settings_delete(Settings *);
 

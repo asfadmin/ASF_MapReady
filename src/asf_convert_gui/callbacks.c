@@ -297,30 +297,35 @@ SIGNAL_CALLBACK void
 on_input_data_format_combobox_changed(GtkWidget *widget)
 {
   input_data_format_combobox_changed();
+  update_summary();
 }
 #else
 SIGNAL_CALLBACK void
 on_ceos_level_0_activate(GtkWidget *widget)
 {
   input_data_format_combobox_changed();
+  update_summary();
 }
 
 SIGNAL_CALLBACK void
 on_ceos_level_1_activate(GtkWidget *widget)
 {
   input_data_format_combobox_changed();
+  update_summary();
 }
 
 SIGNAL_CALLBACK void
 on_stf_activate(GtkWidget *widget)
 {
   input_data_format_combobox_changed();
+  update_summary();
 }
 
 SIGNAL_CALLBACK void
 on_complex_activate(GtkWidget *widget)
 {
   input_data_format_combobox_changed();
+  update_summary();
 }
 #endif
 
@@ -329,6 +334,7 @@ SIGNAL_CALLBACK void
 on_output_format_combobox_changed(GtkWidget *widget)
 {
   output_format_combobox_changed();
+  update_summary();
 }
 #else
 
@@ -336,24 +342,28 @@ SIGNAL_CALLBACK void
 on_jpeg_activate(GtkWidget *widget)
 {
   output_format_combobox_changed();
+  update_summary();
 }
 
 SIGNAL_CALLBACK void
 on_tiff_activate(GtkWidget *widget)
 {
   output_format_combobox_changed();
+  update_summary();
 }
 
 SIGNAL_CALLBACK void
 on_geotiff_activate(GtkWidget *widget)
 {
   output_format_combobox_changed();
+  update_summary();
 }
 
 SIGNAL_CALLBACK void
 on_ppm_activate(GtkWidget *widget)
 {
   output_format_combobox_changed();
+  update_summary();
 }
 
 #endif
@@ -362,16 +372,19 @@ SIGNAL_CALLBACK void
 on_scale_checkbutton_toggled(GtkWidget *widget)
 {
   scale_checkbutton_toggle();
+  update_summary();
 }
 
 SIGNAL_CALLBACK void
 on_latitude_checkbutton_toggled(GtkWidget *widget)
 {
   latitude_checkbutton_toggle();
+  update_summary();
 }
 
 SIGNAL_CALLBACK void
 on_output_bytes_checkbutton_toggled(GtkWidget *widget)
 {
   output_bytes_checkbutton_toggle();
+  update_summary();
 }

@@ -440,7 +440,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
   
   if (strcmp(status, "Done") != 0 || !skip_done)
   {
-    gchar *basename, *out_basename, *p, *done;
+    gchar *basename, *after_geocoding_basename, *out_basename, *p, *done;
     gchar convert_cmd[4096];
     gchar log_file[128];
     gboolean err;
@@ -466,21 +466,15 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
       gchar * cmd_output;
       gchar * out_name_full;
       
-      g_snprintf(log_file, sizeof(log_file), "tmp%d.log", pid);
+      gtk_list_store_set(list_store, iter, 2, "Importing...", -1);
+      g_snprintf(log_file, sizeof(log_file), "tmpi%d.log", pid);
 
-#ifdef win32
-      /* we probably should have this on all platforms, but use
-	 strcasecmp on win32 only, others would use strcmp.  For now
-	 skip on other platforms, since it will only come up on win32
-	 at the moment
-      */
       if (user_settings->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 &&
 	  strcasecmp(in_data, out_full) == 0)
       {
 	 /* should be enough room -- we chopped the extension */
 	 strcat(out_basename, "_out");
       }
-#endif
 
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
     "asf_import %s -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
@@ -515,19 +509,53 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     while (gtk_events_pending())
       gtk_main_iteration();
 
+    if (settings_get_run_geocode(user_settings))
+    {
+      gchar * cmd_output;
+
+      gtk_list_store_set(list_store, iter, 2, "Geocoding...", -1);
+
+      after_geocoding_basename =
+	  (gchar *)g_malloc(sizeof(gchar) * (strlen(out_basename) + 10));
+      sprintf(after_geocoding_basename, "%s_%s", out_basename,
+	      settings_get_projection_abbrev(user_settings));
+
+      g_snprintf(log_file, sizeof(log_file), "tmpg%d.log", pid);
+    
+      snprintf(convert_cmd, sizeof(convert_cmd),
+           "asf_geocode %s -log \"%s\" \"%s\" \"%s\" 2>&1",
+           settings_get_geocode_options(user_settings),
+           log_file,
+           out_basename,
+           after_geocoding_basename);
+
+      cmd_output = do_cmd(convert_cmd, log_file);
+      err = err || check_for_error(cmd_output);
+
+      append_output(cmd_output);
+     
+      g_free(cmd_output);
+    }
+    else
+    {
+      after_geocoding_basename = g_strdup(out_basename);
+    }
+
     if (settings_get_run_export(user_settings))
     {
       gchar * cmd_output;
     
-      g_snprintf(log_file, sizeof(log_file), "tmp%d.log", pid);
+      g_snprintf(log_file, sizeof(log_file), "tmpe%d.log", pid);
     
+      gtk_list_store_set(list_store, iter, 2, "Exporting...", -1);
+
       snprintf(convert_cmd, sizeof(convert_cmd),
            "asf_export -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
            settings_get_output_format_string(user_settings),
            settings_get_size_argument(user_settings),
            settings_get_output_bytes_argument(user_settings),
            log_file,
-           out_basename,
+           after_geocoding_basename,
            out_full);
 
       cmd_output = do_cmd(convert_cmd, log_file);
@@ -542,6 +570,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     }
 
     g_free(basename);
+    g_free(after_geocoding_basename);
     g_free(out_basename);
     /* g_free(in_meta); */
   }

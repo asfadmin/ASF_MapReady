@@ -51,6 +51,15 @@ enum ScalingMethod
     SCALING_METHOD_TRUNCATE = 2
 };
     
+enum ProjectionOptions
+{
+    UNIVERSAL_TRANSVERSE_MERCATOR = 0,
+    POLAR_STEREOGRAPHIC = 1,
+    LAMBERT_AZIMUTHAL_EQUAL_AREA = 2,
+    LAMBERT_CONFORMAL_CONIC = 3,
+    ALBERS_CONICAL_EQUAL_AREA = 4
+};
+
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
 #  if defined(win32)
@@ -74,6 +83,8 @@ enum ScalingMethod
 #include "state.h"
 #include "naming_scheme.h"
 #include "metadata.h"
+#include "summary.h"
+#include "geocode.h"
 
 extern const char DIR_SEPARATOR;
 extern const char PATH_SEPATATOR;

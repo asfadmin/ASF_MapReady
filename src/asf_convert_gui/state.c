@@ -3,8 +3,8 @@
 
 /* for now use a hard-coded file */
 const gchar *save_name = "asf_convert_gui.sav";
-const int save_major_ver = 1;
-const int save_minor_ver = 2;
+const int save_major_ver = 2;
+const int save_minor_ver = 0;
 
 static void readline(FILE * f, gchar * buffer, size_t n)
 {
@@ -48,8 +48,15 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
   /* first the user settings */
   fprintf(f, "%d.%d\n\n", save_major_ver, save_minor_ver);  
   fprintf(f, "[Import]\nFormat=%d\n\n", s->input_data_format);
-  fprintf(f, "[Transformations]\nType=%d\nUseLat=%d\nLatLo=%f\nLatHi=%f\n\n",
+  fprintf(f, "[Transformations]\nType=%d\nUseLat=%d\nLatLo=%lf\nLatHi=%lf\n\n",
       s->data_type, s->latitude_checked, s->latitude_low, s->latitude_hi);
+  fprintf(f, "[Geocode]\nGeocode=%d\nProjection=%d\nLat1=%lf\nLat2=%lf\n"
+	     "Lat0=%lf\nLon0=%lf\nFalseEasting=%lf\nFalseNorthing=%lf\n"
+	     "UseHeight=%d\nHeight=%lf\nUsePixelSize=%d\nPixelSize=%lf\n\n",
+	  s->geocode_is_checked, s->projection, s->plat1, s->plat2,
+	  s->lat0, s->lon0, s->false_easting, s->false_northing,
+	  s->specified_height, s->height, s->specified_pixel_size,
+	  s->pixel_size);
   fprintf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n"
           "OutputBytes=%d\nScalingMethod=%d\n\n",
           s->output_format, s->apply_scaling, s->longest_dimension,
@@ -98,7 +105,7 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
     }
   }
 
-  fprintf(f, "[End]");
+  fprintf(f, "[End]\n");
   fclose(f);
   settings_delete(s);
   
@@ -111,7 +118,7 @@ static void read_ver_1_0(FILE *f)
   GtkTreeIter iter;
 
   fscanf(f, "[Import]\nFormat=%d\n\n", &s.input_data_format);
-  fscanf(f, "[Transformations]\nType=%d\nLatLo=%f\nLatHi=%f\n\n",
+  fscanf(f, "[Transformations]\nType=%d\nLatLo=%lf\nLatHi=%lf\n\n",
      &s.data_type, &s.latitude_low, &s.latitude_hi);
   fscanf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n\n",
      &s.output_format, &s.apply_scaling, &s.longest_dimension);
@@ -213,7 +220,7 @@ static void read_ver_1_1(FILE *f)
   gchar *prefix, *suffix, *scheme;
 
   fscanf(f, "[Import]\nFormat=%d\n\n", &s.input_data_format);
-  fscanf(f, "[Transformations]\nType=%d\nLatLo=%f\nLatHi=%f\n\n",
+  fscanf(f, "[Transformations]\nType=%d\nLatLo=%lf\nLatHi=%lf\n\n",
      &s.data_type, &s.latitude_low, &s.latitude_hi);
   fscanf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n"
           "OutputBytes=%d\nScalingMethod=%d\n\n",
@@ -316,8 +323,118 @@ static void read_ver_1_2(FILE *f)
   gchar *prefix, *suffix, *scheme;
 
   fscanf(f, "[Import]\nFormat=%d\n\n", &s.input_data_format);
-  fscanf(f, "[Transformations]\nType=%d\nUseLat=%d\nLatLo=%f\nLatHi=%f\n\n",
+  fscanf(f, "[Transformations]\nType=%d\nUseLat=%d\nLatLo=%lf\nLatHi=%lf\n\n",
      &s.data_type, &s.latitude_checked, &s.latitude_low, &s.latitude_hi);
+  fscanf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n"
+          "OutputBytes=%d\nScalingMethod=%d\n\n",
+        &s.output_format, &s.apply_scaling, &s.longest_dimension,
+        &s.output_bytes, &s.scaling_method);
+
+  settings_apply_to_gui(&s);
+  settings_on_execute = settings_copy(&s);
+
+  /* read naming scheme */
+  fscanf(f, "[NamingScheme]\nPrefix=");
+  readline(f, line, sizeof(line));
+  prefix = g_strdup(line);
+    
+  fscanf(f, "Suffix=");
+  readline(f, line, sizeof(line));
+  suffix = g_strdup(line);
+
+  fscanf(f, "Scheme=");
+  readline(f, line, sizeof(line));
+  scheme = g_strdup(line);
+
+  if (current_naming_scheme)
+      naming_scheme_delete(current_naming_scheme);
+
+  current_naming_scheme = naming_scheme_new(prefix, suffix, scheme);
+
+  g_free(prefix);
+  g_free(suffix);
+  g_free(scheme);
+
+  /* output directory */
+  if (output_directory)
+      g_free(output_directory);
+
+  fscanf(f, "\n[OutputDirectory]\nDir=");
+  readline(f, line, sizeof(line));
+  output_directory = g_strdup(line);
+
+  fscanf(f, "\n");
+            
+  /* files */
+  gtk_list_store_clear(list_store);
+
+  fscanf(f, "[Files]\n");
+  while (!feof(f))
+  {
+    readline(f, line, sizeof(line));
+    if (strlen(line) > 0)
+    {
+      if (strcmp(line, "[End]") == 0)
+      {
+        break;
+      }
+      else
+      {
+        gchar *data_file, *output_file, *status;
+        gchar *data_file_p, *output_file_p, *status_p;
+
+        data_file = g_strdup(line);
+
+        data_file_p = strchr(data_file, '=');
+        if (!data_file_p)
+            continue;
+        ++data_file_p;
+
+        readline(f, line, sizeof(line));
+        output_file = g_strdup(line);
+
+        output_file_p = strchr(output_file, '=');
+        if (!output_file_p)
+            continue;
+        ++output_file_p;
+
+        readline(f, line, sizeof(line));
+        status = g_strdup(line);
+
+        status_p = strchr(status, '=');
+        if (!status_p)
+            continue;
+        ++status_p;
+
+        gtk_list_store_append(list_store, &iter);
+        gtk_list_store_set(list_store, &iter,
+               0, data_file_p, 1, output_file_p, 2, status_p, -1);
+
+        g_free(status);
+        g_free(output_file);
+        g_free(data_file);
+      }
+    }
+  }
+}
+
+static void read_ver_2_0(FILE *f)
+{
+  Settings s;
+  GtkTreeIter iter;
+  gchar line[1024];
+  gchar *prefix, *suffix, *scheme;
+
+  fscanf(f, "[Import]\nFormat=%d\n\n", &s.input_data_format);
+  fscanf(f, "[Transformations]\nType=%d\nUseLat=%d\nLatLo=%lf\nLatHi=%lf\n\n",
+     &s.data_type, &s.latitude_checked, &s.latitude_low, &s.latitude_hi);
+  fscanf(f, "[Geocode]\nGeocode=%d\nProjection=%d\nLat1=%lf\nLat2=%lf\n"
+	    "Lat0=%lf\nLon0=%lf\nFalseEasting=%lf\nFalseNorthing=%lf\n"
+	    "UseHeight=%d\nHeight=%lf\nUsePixelSize=%d\nPixelSize=%lf\n\n",
+	  &s.geocode_is_checked, &s.projection, &s.plat1, &s.plat2,
+	  &s.lat0, &s.lon0, &s.false_easting, &s.false_northing,
+	  &s.specified_height, &s.height, &s.specified_pixel_size,
+	  &s.pixel_size);
   fscanf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n"
           "OutputBytes=%d\nScalingMethod=%d\n\n",
         &s.output_format, &s.apply_scaling, &s.longest_dimension,
@@ -437,6 +554,10 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
     else if (major_ver == 1 && minor_ver == 2)
     {
         read_ver_1_2(f);
+    }
+    else if (major_ver == 2 && minor_ver == 0)
+    {
+        read_ver_2_0(f);
     }
     else
     {

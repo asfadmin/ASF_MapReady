@@ -126,6 +126,110 @@ settings_apply_to_gui(const Settings * s)
   }        
 
   output_format_combobox_changed();
+
+  if (s->geocode_is_checked)
+  {
+      gchar tmp[32];
+
+      GtkWidget * geocode_checkbutton;
+
+      geocode_checkbutton =
+	  glade_xml_get_widget(glade_xml, "geocode_checkbutton");
+
+      gtk_toggle_button_set_active(
+	  GTK_TOGGLE_BUTTON(geocode_checkbutton), s->geocode_is_checked);
+
+      if (s->geocode_is_checked)
+      {
+	  GtkWidget * projection_option_menu;
+	  GtkWidget * central_meridian_entry;
+	  GtkWidget * latitude_of_origin_entry;
+	  GtkWidget * first_standard_parallel_entry;
+	  GtkWidget * second_standard_parallel_entry;
+	  GtkWidget * false_northing_entry;
+	  GtkWidget * false_easting_entry;
+	  GtkWidget * average_height_checkbutton;
+	  GtkWidget * pixel_size_checkbutton;
+	  
+	  projection_option_menu =
+	      glade_xml_get_widget(glade_xml, "projection_option_menu");
+
+	  set_combo_box_item(projection_option_menu, s->projection);
+	  
+	  central_meridian_entry =
+	      glade_xml_get_widget(glade_xml, "central_meridian_entry");
+	  
+	  latitude_of_origin_entry =
+	      glade_xml_get_widget(glade_xml, "latitude_of_origin_entry");
+	  
+	  first_standard_parallel_entry =
+	      glade_xml_get_widget(glade_xml, "first_standard_parallel_entry");
+	  
+	  second_standard_parallel_entry =
+	      glade_xml_get_widget(glade_xml,
+				   "second_standard_parallel_entry");
+	  
+	  false_northing_entry =
+	      glade_xml_get_widget(glade_xml, "false_northing_entry");
+	  
+	  false_easting_entry =
+	      glade_xml_get_widget(glade_xml, "false_easting_entry");
+	  
+	  sprintf(tmp, "%f", s->lon0);
+	  gtk_entry_set_text(GTK_ENTRY(central_meridian_entry), tmp);
+	  
+	  sprintf(tmp, "%f", s->lat0);
+	  gtk_entry_set_text(GTK_ENTRY(latitude_of_origin_entry), tmp);
+	  
+	  sprintf(tmp, "%f", s->plat1);
+	  gtk_entry_set_text(GTK_ENTRY(first_standard_parallel_entry), tmp);
+	  
+	  sprintf(tmp, "%f", s->plat2);
+	  gtk_entry_set_text(GTK_ENTRY(second_standard_parallel_entry), tmp);
+	  
+	  sprintf(tmp, "%f", s->false_easting);
+	  gtk_entry_set_text(GTK_ENTRY(false_easting_entry), tmp);
+	  
+	  sprintf(tmp, "%f", s->false_northing);
+	  gtk_entry_set_text(GTK_ENTRY(false_northing_entry), tmp);
+      
+	  average_height_checkbutton =
+	      glade_xml_get_widget(glade_xml, "average_height_checkbutton");
+
+	  gtk_toggle_button_set_active(
+	      GTK_TOGGLE_BUTTON(average_height_checkbutton), 
+	      s->specified_height);
+
+	  if (s->specified_height)
+	  {
+	      GtkWidget * average_height_entry;
+	      
+	      average_height_entry =
+		  glade_xml_get_widget(glade_xml, "average_height_entry");
+	      
+	      sprintf(tmp, "%f", s->height);
+	      gtk_entry_set_text(GTK_ENTRY(average_height_entry), tmp);
+	  }
+
+	  pixel_size_checkbutton =
+	      glade_xml_get_widget(glade_xml, "pixel_size_checkbutton");
+
+	  gtk_toggle_button_set_active(
+	      GTK_TOGGLE_BUTTON(pixel_size_checkbutton), 
+	      s->specified_pixel_size);
+
+	  if (s->specified_pixel_size)
+	  {
+	      GtkWidget * pixel_size_entry;
+	      
+	      pixel_size_entry =
+		  glade_xml_get_widget(glade_xml, "pixel_size_entry");
+	      
+	      sprintf(tmp, "%f", s->pixel_size);
+	      gtk_entry_set_text(GTK_ENTRY(pixel_size_entry), tmp);
+	  }	  
+      }
+  }
 }
 
 Settings *
@@ -137,7 +241,8 @@ settings_get_from_gui()
     *output_format_combobox,
     *scale_checkbutton,
     *output_bytes_checkbutton,
-    *scaling_method_combobox;
+    *scaling_method_combobox,
+    *geocode_checkbutton;
 
   Settings *ret;
 
@@ -232,6 +337,98 @@ settings_get_from_gui()
       }
   }
   
+  geocode_checkbutton =
+      glade_xml_get_widget(glade_xml, "geocode_checkbutton");
+
+  ret->geocode_is_checked =
+      gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(geocode_checkbutton));
+
+  if (ret->geocode_is_checked)
+  {
+      GtkWidget 
+	  *projection_option_menu,
+	  *central_meridian_entry,
+	  *latitude_of_origin_entry,
+	  *first_standard_parallel_entry,
+	  *second_standard_parallel_entry,
+	  *false_northing_entry,
+	  *false_easting_entry, 
+	  *average_height_checkbutton,
+	  *pixel_size_checkbutton, 
+	  *average_height_entry,
+	  *pixel_size_entry;
+
+      projection_option_menu =
+	  glade_xml_get_widget(glade_xml, "projection_option_menu");
+
+      ret->projection =
+	  gtk_option_menu_get_history(
+	      GTK_OPTION_MENU(projection_option_menu));
+      
+      central_meridian_entry =
+	  glade_xml_get_widget(glade_xml, "central_meridian_entry");
+      
+      latitude_of_origin_entry =
+	  glade_xml_get_widget(glade_xml, "latitude_of_origin_entry");
+      
+      first_standard_parallel_entry =
+	  glade_xml_get_widget(glade_xml, "first_standard_parallel_entry");
+      
+      second_standard_parallel_entry =
+	  glade_xml_get_widget(glade_xml, "second_standard_parallel_entry");
+      
+      false_northing_entry =
+	  glade_xml_get_widget(glade_xml, "false_northing_entry");
+      
+      false_easting_entry =
+	  glade_xml_get_widget(glade_xml, "false_easting_entry");
+
+      ret->lon0 = atof(gtk_entry_get_text(
+			   GTK_ENTRY(central_meridian_entry)));
+      ret->lat0 = atof(gtk_entry_get_text(
+			   GTK_ENTRY(latitude_of_origin_entry)));
+      ret->plat1 = atof(gtk_entry_get_text(
+			    GTK_ENTRY(first_standard_parallel_entry)));
+      ret->plat2 = atof(gtk_entry_get_text(
+			    GTK_ENTRY(second_standard_parallel_entry)));
+      ret->false_northing = atof(gtk_entry_get_text(
+				     GTK_ENTRY(false_northing_entry)));
+      ret->false_easting = atof(gtk_entry_get_text(
+				    GTK_ENTRY(false_easting_entry)));
+
+      average_height_checkbutton =
+	  glade_xml_get_widget(glade_xml, "average_height_checkbutton");
+
+      pixel_size_checkbutton =
+	  glade_xml_get_widget(glade_xml, "pixel_size_checkbutton");
+
+      ret->specified_height = 
+	  gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+					   average_height_checkbutton));
+
+      ret->specified_pixel_size = 
+	  gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+					     pixel_size_checkbutton));
+
+      if (ret->specified_height)
+      {
+	  average_height_entry =
+	      glade_xml_get_widget(glade_xml, "average_height_entry");
+
+	  ret->height =
+	      atof(gtk_entry_get_text(GTK_ENTRY(average_height_entry)));
+      }
+      
+      if (ret->specified_pixel_size)
+      {
+	  pixel_size_entry =
+	      glade_xml_get_widget(glade_xml, "pixel_size_entry");
+
+	  ret->pixel_size =
+	      atof(gtk_entry_get_text(GTK_ENTRY(pixel_size_entry)));
+      }
+  }
+
   return ret;
 }
 
@@ -466,7 +663,19 @@ settings_equal(const Settings *s1, const Settings *s2)
 		  g_strdup(settings_get_output_bytes_argument(s2));
 
                 if (0 == strcmp(byt1, byt2))
-		  equal = TRUE;
+		{
+		    gchar * geo1 =
+			g_strdup(settings_get_geocode_options(s1));
+
+		    gchar * geo2 =
+			g_strdup(settings_get_geocode_options(s2));
+
+		    if (0 == strcmp(geo1, geo2))
+			equal = TRUE;
+
+		    g_free(geo1);
+		    g_free(geo2);
+		}
 
                 g_free(byt1);
                 g_free(byt2);
@@ -577,6 +786,38 @@ settings_get_output_format_string(const Settings *s)
   }
 
   return format_arg_to_export;
+}
+
+const gchar *
+settings_get_geocode_options(const Settings *s)
+{
+    return geocode_options_string(s);
+}
+
+const gchar *
+settings_get_projection_abbrev(const Settings *s)
+{
+    switch(s->projection)
+    {
+	default:
+	    return "";
+	case UNIVERSAL_TRANSVERSE_MERCATOR:
+	    return "utm";
+	case POLAR_STEREOGRAPHIC:
+	    return "ps";
+	case LAMBERT_CONFORMAL_CONIC:
+	    return "lamcc";
+	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	    return "lamaz";
+	case ALBERS_CONICAL_EQUAL_AREA:
+	    return "albers";
+    }
+}
+
+int
+settings_get_run_geocode(const Settings *s)
+{
+    return s->geocode_is_checked;
 }
 
 int

@@ -73,6 +73,8 @@ main(int argc, char **argv)
     processing = FALSE;
     settings_on_execute = NULL;
 
+    geocode_options_changed();
+
     gtk_main ();
 
     if (settings_on_execute)
