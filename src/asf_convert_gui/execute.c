@@ -544,9 +544,16 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 	output_dir[0] = '\0';
 
     if (strlen(output_dir) == 0)
-	cd_dir = ".";
+    {
+	cd_dir = g_strdup(".");
+    }
     else
-	cd_dir = output_dir;
+    {
+	cd_dir = g_strdup(output_dir);
+	p = strrchr(cd_dir, DIR_SEPARATOR);
+	if (p)
+	    *p = '\0';
+    }
 
     /* Ensure we have access to the output directory */
     if (!have_access_to_dir(output_dir, &err_string))
@@ -702,6 +709,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     g_free(before_geocoding_basename);
     g_free(out_basename);
     g_free(output_dir);
+    g_free(cd_dir);
   }
 
   g_free(status);
