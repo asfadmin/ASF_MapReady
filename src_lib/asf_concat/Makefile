@@ -43,4 +43,4 @@ asf_concat.a: $(OBJ)
 	$(RANLIB) asf_concat.a
 	mv asf_concat.a $(LIBDIR)
 # Link to library with conventional name (with 'lib' prefix).
-	ln -s $(LIBDIR)/asf_concat.a $(LIBDIR)/libasf_concat.a
+	-ln -s $(LIBDIR)/asf_concat.a $(LIBDIR)/libasf_concat.a
