@@ -77,7 +77,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     -----------------------\n"\
 "          --first-standard-parallel   : First Standard Parallel\n"\
 "          --second-standard-parallel  : Second Standard Parallel\n"\
-"          --latitude-of-origin        : Latitude at projection's origin\n"\
+"          --latitude-of-origin        : Latitude at projections origin\n"\
 "          --central-meridian          : Central Meridian\n"\
 "          --false-easting             : False Easting (optional)\n"\
 "          --false-northing            : False Northing (optional)\n"\
@@ -93,7 +93,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     -------------------------\n"\
 "          --first-standard-parallel   : First Standard Parallel\n"\
 "          --second-standard-parallel  : Second Standard Parallel\n"\
-"          --latitude-of-origin        : Latitude of projection's origin\n"\
+"          --latitude-of-origin        : Latitude of projections origin\n"\
 "          --central-meridian          : Central Meridian\n"\
 "          --false-easting             : False Easting (optional)\n"\
 "          --false-northing            : False Northing (optional)\n"\
@@ -104,11 +104,11 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     --write-proj-file <file>\n"\
 "          Save the specified projection information to a file with\n"\
 "          the given name.  The file may be used for subsequent projections\n"\
-"          with '--read-proj-file'.\n"\
+"          with --read-proj-file.\n"\
 "\n"\
 "     --read-proj-file <file>\n"\
 "          Read projection information from the given file.  The format of\n"\
-"          the file must match what is used with '--write-proj-file'.\n"\
+"          the file must match what is used with --write-proj-file.\n"\
 "\n"\
 "     Other Options\n"\
 "     =============\n"\
