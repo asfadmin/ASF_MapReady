@@ -43,10 +43,12 @@ char *appendExt(const char *name, const char *newExt)
 {
   char *ret = (char *) MALLOC (sizeof(char) 
 			       * (MAX_APPENDEXT_RESULT_STRING_LENGTH + 1));
+  char *ext;
+
   assert (strlen (name) <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
   strcpy (ret, name);
 	
-  char *ext = findExt (ret);
+  ext = findExt (ret);
 
   /* Weird semantics: if newExt is NULL, we just return a copy of name
      without any clipping.  If nothing uses this it should be removed.  */
