@@ -19,7 +19,6 @@ all: asf_export
 asf_export: $(OBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) -o asf_export  $(OBJS) $(LIBS) $(LDFLAGS)
 	cp asf_export$(BIN_POSTFIX) $(BINDIR)
-#	cp asf_export.1 ../../man/cat1
 
 clean:
-	rm -f *.o core.* asf_export
+	rm -f *.o core.* asf_export$(BIN_POSTFIX)
