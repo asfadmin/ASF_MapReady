@@ -240,7 +240,7 @@ my_strnlen (const char *s, size_t max_len)
 
 //Check to see if an option was supplied or not
 //If it was found, return its argument number
-//Otherwise, return -1
+//Otherwise, return FLAG_NOT_SET
 int checkForOption(char* key, int argc, char* argv[])
 {
 	int ii = 0;
@@ -327,16 +327,16 @@ main (int argc, char *argv[])
 		usage();//This exits with a failure
 
 	//We also need to make sure the last three options are close to what we expect
-	if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-' || argv[argc - 3][0] == '-')
+	if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-')
 		usage();//This exits with a failure
 
 	//Make sure any options that have parameters are followed by parameters (and not other options)
 	//Also make sure options' parameters don't bleed into required arguments
 	if(formatFlag != FLAG_NOT_SET)
-		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 4)
+		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3)
 			usage();
 	if(sizeFlag != FLAG_NOT_SET)
-		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 4)
+		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
 			usage();
 
 	//We're good enough at this point...print the splash screen and start filling in
@@ -359,10 +359,10 @@ main (int argc, char *argv[])
 	else
 		command_line.quiet = FALSE;
 
-	//Grab the data file name
+	//Grab/construct the data file name
 	strcpy(command_line.in_data_name, argv[argc - 2]);
 	strcat(command_line.in_data_name, ".img");
-	//Grab the meta file name
+	//Grab/construct the meta file name
 	strcpy(command_line.in_meta_name, argv[argc - 2]);
 	strcat(command_line.in_meta_name, ".meta");
 	//Grab the output name
