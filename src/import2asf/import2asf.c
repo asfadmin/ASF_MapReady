@@ -95,6 +95,7 @@ BUGS:
 #include "envi.h"
 #include "esri.h"
 #include "lzFetch.h"
+#include "metadata.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -156,11 +157,13 @@ int main(int argc, char *argv[])
   iqType *iqBuf;
   esri_header *esri=NULL;
   envi_header *envi=NULL;
+  struct DDR ddr;
   FILE *fpIn=NULL, *fpOut=NULL, *fp;;
   char in_type[25]="", out_type[25]="";
   char inDataName[256], inMetaName[256], outName[288], prcPath[255];
   char outBaseName[256], type[255]="", tmp[255], imgTimeStr[20]="";
   char *map_info_ptr=NULL, *proj_info_ptr, proj_info[255]="", map_info[255]="";
+  char ddrName[255];
   double fTmp1, fTmp2;
   int projection_key;
   int nl, ns=0, ii, kk, tableRes=MAX_tableRes, tablePix=0, headerBytes;
@@ -316,6 +319,10 @@ int main(int argc, char *argv[])
       }
       updateMeta(s,meta,NULL,0);
       meta_write(meta,outName);
+      /* Write .raw file for backwards compatibility */
+      sprintf(tmp, "ln -s %s_raw.img %s_raw.raw", outBaseName, outBaseName);
+      system(tmp);
+      /**********************************************/
       meta_free(meta);
       printf("Finished\n\n");
       exit(EXIT_SUCCESS);
@@ -341,6 +348,11 @@ int main(int argc, char *argv[])
       create_name(outName, outBaseName, "_cpx.img");
       meta->general->data_type=COMPLEX_REAL32;
       meta_write(meta,outName);
+      /* Write DDR file for backwards compatibility */
+      create_name(ddrName, outBaseName, "_cpx.ddr");
+      meta2ddr(meta, &ddr);
+      c_putddr(ddrName, &ddr);
+      /**********************************************/
       if (sprocketFlag) {
         create_name(sprocketName, outName, ".metadata");
         meta_write_sprocket(sprocketName, meta, NULL);
@@ -388,36 +400,42 @@ int main(int argc, char *argv[])
                   "   Input data type: level two data\n"
                   "   Output data type: geocoded amplitude image\n\n");
           create_name(outName, outBaseName, "_geo.img");
+	  create_name(ddrName, outBaseName, "_geo.ddr");
         }
       if (strcmp(out_type, "amp")==0) {
         sprintf(tmp,
                 "   Input data type: level one data\n"
                 "   Output data type: amplitude image\n\n");
         create_name(outName, outBaseName, "_amp.img");
+	create_name(ddrName, outBaseName, "_amp.ddr");
       }
       else if (strcmp(out_type, "power")==0) {
         sprintf(tmp,
                 "   Input data type: level one data\n"
                 "   Output data type: power image\n\n");
         create_name(outName, outBaseName, "_power.img");
+	create_name(ddrName, outBaseName, "_power.ddr");
       }
       else if (strcmp(out_type, "sigma")==0) {
         sprintf(tmp,
                 "   Input data type: level one data\n"
                 "   Output data type: calibrated image (sigma dB values)\n\n");
         create_name(outName, outBaseName, "_sigma.img");
+	create_name(ddrName, outBaseName, "_sigma.ddr");
       }
       else if (strcmp(out_type, "gamma")==0) {
         sprintf(tmp,
                 "   Input data type: level one data\n"
                 "   Output data type: calibrated image (gamma dB values)\n\n");
         create_name(outName, outBaseName, "_gamma.img");
+	create_name(ddrName, outBaseName, "_gamma.ddr");
       }
       else if (strcmp(out_type, "beta")==0) {
         sprintf(tmp,
                 "   Input data type: level one data\n"
                 "   Output data type: calibrated image (beta dB values)\n\n");
         create_name(outName, outBaseName, "_beta.img");
+	create_name(ddrName, outBaseName, "_beta.ddr");
       }
       else { /* no output type so far: default is amplitude */
         sprintf(out_type, "amp");
@@ -425,6 +443,7 @@ int main(int argc, char *argv[])
                 "   Input data type: level one data\n"
                 "   Output data type: amplitude image\n\n");
         create_name(outName, outBaseName, "_amp.img");
+	create_name(ddrName, outBaseName, "_amp.ddr");
       }
       printf(tmp);
       if (logflag) printLog(tmp);
@@ -458,6 +477,10 @@ int main(int argc, char *argv[])
       /* Handle output files */
       meta->general->data_type=REAL32;
       meta_write(meta,outName);
+      /* Write DDR file for backwards compatibility */
+      meta2ddr(meta, &ddr);
+      c_putddr(ddrName, &ddr);
+      /**********************************************/
       if (sprocketFlag) {
         create_name(sprocketName, outName, ".metadata");
         meta_write_sprocket(sprocketName, meta, NULL);
