@@ -57,7 +57,6 @@ OBJS =  $(LEX_YACC_OBJS) \
         ceos2ddr.o \
         ceos_io.o \
         dateUtil.o \
-        endian.o \
         get_ceos.o \
         heading.o \
 	coniFetch.o \
