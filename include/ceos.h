@@ -13,13 +13,14 @@ VERSION         DATE   AUTHOR
   1.2          10/93   T. Logan (ASF)   Added Radiometric Data Record
   1.3           2/94   M. Shindle <ASF> Added Map Projection Data Record
   2.0           5/96   T. Logan (ASF)   Added all the rest of the record types
-                                        Modified existing value structures to 
+                                        Modified existing value structures to
                                           include string values
   3.0           9/96   T. Logan (ASF)   Added all fields for post Radarsat CEOS
                                           structures
   3.1          11/97   T. Logan (ASF)   Made all records consistent with hdrs.
-  4.0           2/02   R. Gens          Added ESA facililty data record
-  
+  4.0           2/02   R. Gens          Added ESA facility data record
+  4.1           6/04   P. Denny         Added RSI radiometric data record
+
 *******************************************************************************/
 #ifndef __CEOS_H
 #define __CEOS_H        /* include ceos.h only once */
@@ -46,7 +47,7 @@ VERSION         DATE   AUTHOR
 #define SDHR      10011           /* Signal Data Histogram Record   */
 #define PDHR      10012           /* Processed Data Histogram       */
 #define RNSR      10013           /* Range Spectra Record           */
-#define DEMR      10014           /* Digital Elevation Model        */ 
+#define DEMR      10014           /* Digital Elevation Model        */
 #define FACDR     10015           /* Facility Data Record           */
 #define ASFFACDR  10015           /* ASF Facility Data Record       */
 #define ESAFACDR  10016           /* ESA Facility Data Record       */
@@ -153,14 +154,34 @@ struct VRADDR {
    short  datfield;     /* Number of radiometric data fields in this rec */
    int    setsize;      /* Radiometric data set size in bytes */
    char   sarchan[5];   /* SAR channel indicator */
-   char   spare[5]; 
+   char   spare[5];
    char   luttype[25];  /* Look Up Table Designator */
    int    nosample;     /* Number of samples in LUT */
    char   samptype[17]; /* Sample Type Designator */
    double a[3];         /* Calibration Coefficients */
-   char   spare2[5]; 
+   char   spare2[5];
    double noise[256];   /* noise values */
 };
+/* Values for the RSI format Radiometric Data Record */
+struct RSI_VRADDR {
+  short seq_num;          /* Record sequence number */
+  short n_data;           /* Number of data sets */
+  int field_size;         /* Data set size in bytes */
+  char chan_ind[4];       /* SAR channel indicator */
+  char spare1[4];         /* Unused */
+  char table_desig[24];   /* Table designator */
+  int n_samp;             /* Number of lookup table samples, generally 512 */
+  char samp_type[16];     /* Sample type designator */
+  short samp_inc;         /* Increment between table entries, range samples (pixels)*/
+  double lookup_tab[512]; /* Output scaling gain table */
+  char spare2[4];         /* Unused */
+  double noise_scale;     /* Thermal noise reference level (dB) */
+  double spare3;          /* Unused */
+  double offset;          /* Scaling offset A3 (linear, set to 0 for SLC products*/
+  double calib_const;     /* Calibration constant */
+  char spare4[1512];      /* Unused */
+};
+
 
 /* Imagery Options File -- File Descriptor Record */
 struct IOF_FDR {
@@ -183,17 +204,17 @@ struct IOF_FDR {
           rlen_len[4],
           spare2[4],
           spare3[64],
-          
+
           numofrec[6],  /* data records */
           reclen[6],    /* Record Length */
           blanks[24],   /* Reserved -- Blanks */
-          
+
           /* sample group data */
           bitssamp[4],  /* bits per sample */
           sampdata[4],  /* samples per data group */
           bytgroup[4],  /* bytes per group */
           justific[4],  /* Justification and order of samples in data group */
-          
+
           /* SAR related data in the record */
           sarchan[4],   /* SAR channels in this file */
           linedata[8],  /* lines per data set */
@@ -222,7 +243,7 @@ struct IOF_FDR {
           rigtfill[4],  /* Right fill bits per pixel */
           maxidata[8],  /* Maximum data range of pixel */
 
-          padding[588];          
+          padding[588];
 };
 
 /* Imagery Option File -- Values in File Descriptor Record */
@@ -1276,7 +1297,7 @@ struct VDREC {
         int vol_nrs;            /* Various volume numbers 4 x I2 */
         short vol_nr;           /* First referenced file number in this physical volume within the logical volume */
         short vol_volset;       /* Logical volume number within volume set */
-        short vol_phys_vol;     /* Logical volume number within physical volume */        
+        short vol_phys_vol;     /* Logical volume number within physical volume */
         char create_date[9];    /* Logical volume creation date (YYYYMMDD) */
         char create_time[9];    /* Logical volume creation time (hhmmssdd, dd-deci-seconds) */
         char country[13];       /* Logical volume generation country */
@@ -1372,6 +1393,7 @@ int get_esa_facdr(char *filename,struct ESA_FACDR *rec);
 int get_mpdr(char *filename,struct VMPDREC *rec);
 int get_ppdr(char *filename,struct pos_data_rec *rec);
 int get_raddr(char *filename,struct VRADDR *rec);
+int get_rsi_raddr(char *filename, struct RSI_VRADDR *rec);
 int get_rsr(char *filename,struct rng_spec_rec *rec);
 int get_ifiledr(char *filename,struct IOF_VFDR *vfdr);
 int get_fdr(char *filename,struct FDR *rec);
