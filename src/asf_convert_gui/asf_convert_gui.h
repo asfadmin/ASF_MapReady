@@ -48,6 +48,8 @@
 #include "dnd.h"
 #include "popup_menu.h"
 #include "file_list.h"
+#include "help.h"
+#include "rename_output.h"
 
 extern const char DIR_SEPARATOR;
 extern const char PATH_SEPATATOR;

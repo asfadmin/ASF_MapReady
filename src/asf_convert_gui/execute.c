@@ -137,6 +137,11 @@ append_output(char * txt)
   gtk_text_buffer_get_end_iter(text_buffer, &end);
   gtk_text_buffer_insert(text_buffer, &end, txt, -1);
   
+  /* taking this out... annoying to have the window scrolling all the time
+  gtk_text_buffer_get_end_iter(text_buffer, &end);
+  gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(textview_output),
+			       &end, 0, TRUE, 0.0, 1.0);
+  */
 }
 
 void
