@@ -12,7 +12,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "asf_meta.h"
-#include "asf_nan.h"
+#include "asf_nan.h" /* needed for MAGIC_UNSET_DOUBLE */
 
 META_DDR_STRUCT meta_ddr_structs[NUM_META_DDR_STRUCTS] = {
 	{ "", NULL, NULL},
@@ -35,27 +35,27 @@ meta_general *meta_general_init(void)
   meta_general *general = (meta_general *)MALLOC(sizeof(meta_general));
 
   /* Fill with ludicrous values.  */
-  strcpy(general->sensor, "???");
-  strcpy(general->mode, "???");
-  strcpy(general->processor, "???");
-  general->data_type = -999999999;
-  strcpy(general->system, "???");
-  general->orbit = -999999999;
-  general->orbit_direction = '?';
-  general->frame = -999999999;
-  general->band_number = -999999999;
-  general->line_count = -999999999;
-  general->sample_count = -999999999;
-  general->start_line = -999999999;
-  general->start_sample = -999999999;
-  general->x_pixel_size = NAN;
-  general->y_pixel_size = NAN;
-  general->center_latitude = NAN;
-  general->center_longitude = NAN;
-  general->re_major = NAN;
-  general->re_minor = NAN;
-  general->bit_error_rate = NAN;
-  general->missing_lines = -999999999;
+  strcpy(general->sensor, MAGIC_UNSET_STRING);
+  strcpy(general->mode, MAGIC_UNSET_STRING);
+  strcpy(general->processor, MAGIC_UNSET_STRING);
+  general->data_type = MAGIC_UNSET_INT;
+  strcpy(general->system, MAGIC_UNSET_STRING);
+  general->orbit = MAGIC_UNSET_INT;
+  general->orbit_direction = MAGIC_UNSET_CHAR;
+  general->frame = MAGIC_UNSET_INT;
+  general->band_number = MAGIC_UNSET_INT;
+  general->line_count = MAGIC_UNSET_INT;
+  general->sample_count = MAGIC_UNSET_INT;
+  general->start_line = MAGIC_UNSET_INT;
+  general->start_sample = MAGIC_UNSET_INT;
+  general->x_pixel_size = MAGIC_UNSET_DOUBLE;
+  general->y_pixel_size = MAGIC_UNSET_DOUBLE;
+  general->center_latitude = MAGIC_UNSET_DOUBLE;
+  general->center_longitude = MAGIC_UNSET_DOUBLE;
+  general->re_major = MAGIC_UNSET_DOUBLE;
+  general->re_minor = MAGIC_UNSET_DOUBLE;
+  general->bit_error_rate = MAGIC_UNSET_DOUBLE;
+  general->missing_lines = MAGIC_UNSET_INT;
 
   return general;
 }
@@ -69,29 +69,29 @@ meta_sar *meta_sar_init(void)
   meta_sar *sar = (meta_sar *)MALLOC(sizeof(meta_sar));
 
   /* Fill with ludicrous values.  */
-  sar->image_type = '?'; 
-  sar->look_direction = '?';
-  sar->look_count = -999999999;
-  sar->deskewed = -999999999;
-  sar->original_line_count = -999999999;
-  sar->original_sample_count = -999999999;
-  sar->line_increment = NAN;
-  sar->sample_increment = NAN;
-  sar->range_time_per_pixel = NAN;
-  sar->azimuth_time_per_pixel = NAN;
-  sar->slant_shift = NAN;
-  sar->time_shift = NAN;
-  sar->slant_range_first_pixel = NAN;
-  sar->wavelength = NAN;
-  sar->prf = NAN;
-  strcpy(sar->satellite_binary_time, "???");
-  strcpy(sar->satellite_clock_time, "???");
-  sar->range_doppler_coefficients[0] = NAN;
-  sar->range_doppler_coefficients[1] = NAN;
-  sar->range_doppler_coefficients[2] = NAN;
-  sar->azimuth_doppler_coefficients[0] = NAN; 
-  sar->azimuth_doppler_coefficients[1] = NAN; 
-  sar->azimuth_doppler_coefficients[2] = NAN; 
+  sar->image_type = MAGIC_UNSET_CHAR; 
+  sar->look_direction = MAGIC_UNSET_CHAR;
+  sar->look_count = MAGIC_UNSET_INT;
+  sar->deskewed = MAGIC_UNSET_INT;
+  sar->original_line_count = MAGIC_UNSET_INT;
+  sar->original_sample_count = MAGIC_UNSET_INT;
+  sar->line_increment = MAGIC_UNSET_DOUBLE;
+  sar->sample_increment = MAGIC_UNSET_DOUBLE;
+  sar->range_time_per_pixel = MAGIC_UNSET_DOUBLE;
+  sar->azimuth_time_per_pixel = MAGIC_UNSET_DOUBLE;
+  sar->slant_shift = MAGIC_UNSET_DOUBLE;
+  sar->time_shift = MAGIC_UNSET_DOUBLE;
+  sar->slant_range_first_pixel = MAGIC_UNSET_DOUBLE;
+  sar->wavelength = MAGIC_UNSET_DOUBLE;
+  sar->prf = MAGIC_UNSET_DOUBLE;
+  strcpy(sar->satellite_binary_time, MAGIC_UNSET_STRING);
+  strcpy(sar->satellite_clock_time, MAGIC_UNSET_STRING);
+  sar->range_doppler_coefficients[0] = MAGIC_UNSET_DOUBLE;
+  sar->range_doppler_coefficients[1] = MAGIC_UNSET_DOUBLE;
+  sar->range_doppler_coefficients[2] = MAGIC_UNSET_DOUBLE;
+  sar->azimuth_doppler_coefficients[0] = MAGIC_UNSET_DOUBLE; 
+  sar->azimuth_doppler_coefficients[1] = MAGIC_UNSET_DOUBLE; 
+  sar->azimuth_doppler_coefficients[2] = MAGIC_UNSET_DOUBLE; 
 
   return sar;
 }
@@ -103,16 +103,16 @@ meta_sar *meta_sar_init(void)
 meta_projection *meta_projection_init(void)
 {
   meta_projection *projection = (meta_projection *)MALLOC(sizeof(meta_projection));
-  projection->type = '?';
-  projection->startX = NAN;
-  projection->startY = NAN;
-  projection->perX = NAN;
-  projection->perY = NAN;
-  strcpy (projection->units, "???");
-  projection->hem = '?';
-  projection->re_major = NAN;
-  projection->re_minor = NAN;
-  projection->ecc = NAN;        /* DEPRECATED */
+  projection->type = MAGIC_UNSET_CHAR;
+  projection->startX = MAGIC_UNSET_DOUBLE;
+  projection->startY = MAGIC_UNSET_DOUBLE;
+  projection->perX = MAGIC_UNSET_DOUBLE;
+  projection->perY = MAGIC_UNSET_DOUBLE;
+  strcpy (projection->units, MAGIC_UNSET_STRING);
+  projection->hem = MAGIC_UNSET_CHAR;
+  projection->re_major = MAGIC_UNSET_DOUBLE;
+  projection->re_minor = MAGIC_UNSET_DOUBLE;
+  projection->ecc = MAGIC_UNSET_DOUBLE;        /* DEPRECATED */
 /* Can't really initalize projection->param to a dummy value, so just leave it.*/
   return projection;
 }
@@ -132,19 +132,19 @@ meta_state_vectors *meta_state_vectors_init(int vector_count)
                                                + vector_count * sizeof(state_loc)
                                               );
   /* Fill with ludicrous values.  */
-  state_vectors->year = -999999999;
-  state_vectors->julDay = -999999999;
-  state_vectors->second = NAN;
+  state_vectors->year = MAGIC_UNSET_INT;
+  state_vectors->julDay = MAGIC_UNSET_INT;
+  state_vectors->second = MAGIC_UNSET_DOUBLE;
   state_vectors->vector_count = vector_count;
   state_vectors->num = state_vectors->vector_count;
   for (ii=0; ii<state_vectors->vector_count; ii++) {
-    state_vectors->vecs[ii].time = NAN;
-    state_vectors->vecs[ii].vec.pos.x = NAN;
-    state_vectors->vecs[ii].vec.pos.y = NAN;
-    state_vectors->vecs[ii].vec.pos.z = NAN;
-    state_vectors->vecs[ii].vec.vel.x = NAN;
-    state_vectors->vecs[ii].vec.vel.y = NAN;
-    state_vectors->vecs[ii].vec.vel.z = NAN;
+    state_vectors->vecs[ii].time = MAGIC_UNSET_DOUBLE;
+    state_vectors->vecs[ii].vec.pos.x = MAGIC_UNSET_DOUBLE;
+    state_vectors->vecs[ii].vec.pos.y = MAGIC_UNSET_DOUBLE;
+    state_vectors->vecs[ii].vec.pos.z = MAGIC_UNSET_DOUBLE;
+    state_vectors->vecs[ii].vec.vel.x = MAGIC_UNSET_DOUBLE;
+    state_vectors->vecs[ii].vec.vel.y = MAGIC_UNSET_DOUBLE;
+    state_vectors->vecs[ii].vec.vel.z = MAGIC_UNSET_DOUBLE;
   }
   return state_vectors;
 }
@@ -186,12 +186,12 @@ meta_parameters *raw_init(void)
   meta->geo->timeShift = meta->geo->slantShift = 0;
   meta->geo->slantFirst = 800000.989;
   meta->geo->wavelen = 0.056989;
-  meta->geo->dopRange[0] = NAN;
-  meta->geo->dopRange[1] = NAN;
-  meta->geo->dopRange[2] = NAN;
-  meta->geo->dopAz[0] = NAN;
-  meta->geo->dopAz[1] = NAN;
-  meta->geo->dopAz[2] = NAN;
+  meta->geo->dopRange[0] = MAGIC_UNSET_DOUBLE;
+  meta->geo->dopRange[1] = MAGIC_UNSET_DOUBLE;
+  meta->geo->dopRange[2] = MAGIC_UNSET_DOUBLE;
+  meta->geo->dopAz[0] = MAGIC_UNSET_DOUBLE;
+  meta->geo->dopAz[1] = MAGIC_UNSET_DOUBLE;
+  meta->geo->dopAz[2] = MAGIC_UNSET_DOUBLE;
   
   meta->ifm->er = 6360000.989;
   meta->ifm->ht = meta->ifm->er+700000.0;
