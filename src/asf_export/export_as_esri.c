@@ -94,69 +94,71 @@ export_as_esri (const char *metadata_file_name,
 
     if (FLOAT_EQUIVALENT(md->general->re_major,6378137) &&
         FLOAT_EQUIVALENT(md->general->re_minor,6356752.3143))
-        spheroid = WGS_1984;
+        spheroid = WGS84_SPHEROID;
     else if (FLOAT_EQUIVALENT(md->general->re_major,6378135.0) &&
              FLOAT_EQUIVALENT(md->general->re_minor,6356750.519915))
-             spheroid = WGS_1972;
+             spheroid = WGS72_SPHEROID;
     else if (FLOAT_EQUIVALENT(md->general->re_major,6378206.4) &&
              FLOAT_EQUIVALENT(md->general->re_minor,6356583.8))
-             spheroid = CLARKE_1866;
+             spheroid = CLARKE1866_SPHEROID;
     else if (FLOAT_EQUIVALENT(md->general->re_major,6378249.145) &&
              FLOAT_EQUIVALENT(md->general->re_minor,6356514.86955))
-             spheroid = CLARKE_1880;
+             spheroid = CLARKE1880_SPHEROID;
     else if (FLOAT_EQUIVALENT(md->general->re_major,6377397.155) &&
              FLOAT_EQUIVALENT(md->general->re_minor,6356078.9628))
-             spheroid = BESSEL_1841;
+             spheroid = BESSEL_SPHEROID;
     else if (FLOAT_EQUIVALENT(md->general->re_major,6378157.5) &&
              FLOAT_EQUIVALENT(md->general->re_minor,6356772.2))
-             spheroid = INTERNATIONAL_1967;
+             spheroid = INTERNATIONAL1967_SPHEROID;
     else if (FLOAT_EQUIVALENT(md->general->re_major,6378137.0) &&
              FLOAT_EQUIVALENT(md->general->re_minor,6356752.31414))
-             spheroid = GRS_1980;
+             spheroid = GRS1980_SPHEROID;
 
     switch (spheroid) {
-    case WGS_1984:
-      strcpy(spheroid_str,"WGS_1984");
+    case WGS84_SPHEROID:
+      strcpy(spheroid_str,"WGS84_SPHEROID");
       strcpy(semimajor,"6378137");
       strcpy(flattening,"298.257223563");
       break;
-    case WGS_1972:
-      strcpy(spheroid_str,"WGS_1972");
+    case WGS72_SPHEROID:
+      strcpy(spheroid_str,"WGS72_SPHEROID");
       strcpy(semimajor,"6378135");
       strcpy(flattening,"298.26");
       break;
-    case CLARKE_1866:
-      strcpy(spheroid_str,"CLARKE_1866");
+    case CLARKE1866_SPHEROID:
+      strcpy(spheroid_str,"CLARKE1866_SPHEROID");
       strcpy(semimajor,"6378206.4");
       strcpy(flattening,"294.9786982");
       break;
-    case CLARKE_1880:
-      strcpy(spheroid_str,"CLARKE_1880");
+    case CLARKE1880_SPHEROID:
+      strcpy(spheroid_str,"CLARKE1880_SPHEROID");
       strcpy(semimajor,"6378249.138");
       strcpy(flattening,"293.466307656");
       break;
+/*
     case GRS_1967:
       strcpy(spheroid_str,"GRS_1967_Truncated");
       strcpy(semimajor,"6378160");
       strcpy(flattening,"298.25");
       break;
-    case GRS_1980:
-      strcpy(spheroid_str,"GRS_1980");
+*/
+    case GRS1980_SPHEROID:
+      strcpy(spheroid_str,"GRS1980_SPHEROID");
       strcpy(semimajor,"6378137");
       strcpy(flattening,"298.257222101");
       break;
-    case BESSEL_1841:
-      strcpy(spheroid_str,"BESSEL_1841");
+    case BESSEL_SPHEROID:
+      strcpy(spheroid_str,"BESSEL_SPHEROID");
       strcpy(semimajor,"6377397.155");
       strcpy(flattening,"299.1528128");
       break;
-    case INTERNATIONAL_1924:
-      strcpy(spheroid_str,"INTERNATIONAL_1924");
+    case INTERNATIONAL1924_SPHEROID:
+      strcpy(spheroid_str,"INTERNATIONAL1924_SPHEROID");
       strcpy(semimajor,"6378388");
       strcpy(flattening,"297");
       break;
-    case INTERNATIONAL_1967:
-      strcpy(spheroid_str,"INTERNATIONAL_1967");
+    case INTERNATIONAL1967_SPHEROID:
+      strcpy(spheroid_str,"INTERNATIONAL1967_SPHEROID");
       strcpy(semimajor,"6378160");
       strcpy(flattening,"298.25");
       break;
@@ -165,42 +167,43 @@ export_as_esri (const char *metadata_file_name,
     switch (md->projection->type) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
       switch (spheroid) {
-      case WGS_1984:
-        strcpy(projection, "WGS_1984");
-        strcpy(datum, "WGS_1984");
+      case WGS84_SPHEROID:
+        strcpy(projection, "WGS84_SPHEROID");
+        strcpy(datum, "WGS84_SPHEROID");
         break;
-      case WGS_1972:
-        strcpy(projection, "WGS_1972");
-        strcpy(datum, "WGS_1972");
+      case WGS72_SPHEROID:
+        strcpy(projection, "WGS72_SPHEROID");
+        strcpy(datum, "WGS72_SPHEROID");
         break;
-      case GRS_1980:
+      case GRS1980_SPHEROID:
         strcpy(projection, "NAD_1983");
         strcpy(datum, "North_American_1983");
         break;
-      case CLARKE_1866:
+      case CLARKE1866_SPHEROID:
         strcpy(projection, "NAD_1927");
         strcpy(datum, "North_American_1927");
         break;
-      case CLARKE_1880:
+      case CLARKE1880_SPHEROID:
         /* Not implemented yet.  */
         asfPrintError ("Cannot deal with CLARK_1880 datum.\n");
         break;
-      case BESSEL_1841:
+      case BESSEL_SPHEROID:
         /* Not implemented yet.  */
-        asfPrintError ("Cannot deal with BESSEL_1841 datum.\n");
+        asfPrintError ("Cannot deal with BESSEL_SPHEROID datum.\n");
         break;
-      case INTERNATIONAL_1924:
+      case INTERNATIONAL1924_SPHEROID:
         /* Not implemented yet.  */
-        asfPrintError ("Cannot deal with INTERNATIONAL_1924 datum.\n");
+        asfPrintError ("Cannot deal with INTERNATIONAL1924_SPHEROID datum.\n");
         break;
-      case INTERNATIONAL_1967:
+      case INTERNATIONAL1967_SPHEROID:
         /* Not implemented yet.  */
-        asfPrintError ("Cannot deal with INTERNATIONAL_1967 datum.\n");
+        asfPrintError ("Cannot deal with INTERNATIONAL1967_SPHEROID datum.\n");
         break;
+/*
       case GRS_1967:
-        /* Not implemented yet.  */
         asfPrintError ("Cannot deal with GRS_1967 datum.\n");
         break;
+*/
       default:
         asfPrintError ("Unknown datum.\n");
         break;
@@ -231,8 +234,8 @@ export_as_esri (const char *metadata_file_name,
       fp = FOPEN(esri_prj_file_name, "w");
       fprintf(fp,
               "PROJCS[\"%s\","
-              "GEOGCS[\"GCS_WGS_1984\","
-              "DATUM[\"D_WGS_1984\","
+              "GEOGCS[\"GCS_WGS84_SPHEROID\","
+              "DATUM[\"D_WGS84_SPHEROID\","
               "SPHEROID[\"%s\",%s,%s]],"
               "PRIMEM[\"Greenwich\",0],"
               "UNIT[\"Degree\",0.017453292519943295]],"
@@ -253,7 +256,7 @@ export_as_esri (const char *metadata_file_name,
           FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,-23) &&
           FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,0)) {
         strcpy(projection, "Africa_Albers_Equal_Area_Conic");
-        strcpy(datum, "WGS_1984");
+        strcpy(datum, "WGS84_SPHEROID");
       }
       else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,-154) &&
                FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,55) &&
@@ -267,14 +270,14 @@ export_as_esri (const char *metadata_file_name,
                FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,65) &&
                FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,30)) {
         strcpy(projection, "Asia_North_Albers_Equal_Area_Conic");
-        strcpy(datum, "WGS_1984");
+        strcpy(datum, "WGS84_SPHEROID");
       }
       else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,125) &&
                FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,7) &&
                FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel2,-32) &&
                FLOAT_EQUIVALENT(md->projection->param.albers.orig_latitude,-15)) {
         strcpy(projection, "Asia_South_Albers_Equal_Area_Conic");
-        strcpy(datum, "WGS_1984");
+        strcpy(datum, "WGS84_SPHEROID");
       }
       else if (FLOAT_EQUIVALENT(md->projection->param.albers.center_meridian,-96) &&
                FLOAT_EQUIVALENT(md->projection->param.albers.std_parallel1,50) &&
@@ -354,28 +357,28 @@ export_as_esri (const char *metadata_file_name,
           FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,-23) &&
           FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,0)) {
         strcpy(projection, "Africa_Lambert_Conformal_Conic");
-        strcpy(datum, "WGS_1984");
+        strcpy(datum, "WGS84_SPHEROID");
       }
       else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,105) &&
                FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,30) &&
                FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,62) &&
                FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,0)) {
         strcpy(projection, "Asia_Lambert_Conformal_Conic");
-        strcpy(datum, "WGS_1984");
+        strcpy(datum, "WGS84_SPHEROID");
       }
       else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,95) &&
                FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,15) &&
                FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,65) &&
                FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,30)) {
         strcpy(projection, "Asia_North_Lambert_Conformal_Conic");
-        strcpy(datum, "WGS_1984");
+        strcpy(datum, "WGS84_SPHEROID");
       }
       else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,125) &&
                FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,7) &&
                FLOAT_EQUIVALENT(md->projection->param.lamcc.plat2,-32) &&
                FLOAT_EQUIVALENT(md->projection->param.lamcc.lat0,-15)) {
         strcpy(projection, "Asia_South_Albers_Equal_Area_Conic");
-        strcpy(datum, "WGS_1984");
+        strcpy(datum, "WGS84_SPHEROID");
       }
       else if (FLOAT_EQUIVALENT(md->projection->param.lamcc.lon0,-96) &&
                FLOAT_EQUIVALENT(md->projection->param.lamcc.plat1,50) &&
