@@ -201,6 +201,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
     }
   }
 
+
   the_output = NULL;
 
   output = fopen(log_file_name, "rt");
@@ -552,6 +553,22 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
       append_output(cmd_output);
      
       g_free(cmd_output);
+
+      /* delete temporary .img/.meta pair generated before geocoding,
+         they are just eating up space ... */
+
+      gchar * fname;
+      fname = (gchar *) 
+          g_malloc(sizeof(gchar *) * 
+              (strlen(before_geocoding_basename) + 10));
+
+      sprintf(fname, "%s.img", before_geocoding_basename);
+      remove(fname);
+
+      sprintf(fname, "%s.meta", before_geocoding_basename);
+      remove(fname);
+
+      g_free(fname);
     }
 
     if (!err && settings_get_run_export(user_settings))
@@ -583,14 +600,6 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
       g_free(cmd_output);
 
-      if (settings_get_run_geocode(user_settings))
-      {
-	  /* delete temporary .img/.meta pair generated before geocoding,
-	     they are just eating up space ... */
-	  snprintf(convert_cmd, sizeof(convert_cmd), "rm -f %s.img %s.meta",
-		   before_geocoding_basename, before_geocoding_basename);
-	  system(convert_cmd);
-      }
     }
 
     done = err ? "Error" : "Done"; 
