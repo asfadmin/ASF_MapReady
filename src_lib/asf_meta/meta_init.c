@@ -161,21 +161,3 @@ void meta_free(meta_parameters *meta)
 {
 	meta_free_old(meta);
 }
-
-/*final_init:
-	This routine is called after all other parameters
-have been read in and filled out.  It computes cached
-values, etc.
-*/
-void final_init(meta_parameters *sar)
-{
-	if (sar->geo->type!='P') /*Image not map projected-- compute look angle to beam center*/
-		sar->ifm->lookCenter=meta_look(sar,
-			0,sar->ifm->orig_nSamples/2);
-	else 
-	{/*Image *is* map projected-- compute earth's eccentricity*/
-		double RE=sar->geo->proj->re_major;
-		double RP=sar->geo->proj->re_minor;
-		sar->geo->proj->ecc=sqrt(1.0-RP*RP/(RE*RE));
-	}
-}
