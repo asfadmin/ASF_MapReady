@@ -3,8 +3,8 @@ NAME:  eleverr
 	
 SYNOPSIS:  
 
-eleverr [-i init_err] [-log <file>] [-mask <file>] 
-		<coherence> <base> <meta> <outfile>
+eleverr [-i <init_err>] [-log <file>] [-mask <file>] 
+		<coherence> <base> <outfile>
 
 DESCRIPTION:
 
@@ -21,14 +21,16 @@ FILE REFERENCES:
     ---------------------------------------------------------------
 
 PROGRAM HISTORY:
-    VERS:   DATE:        PURPOSE:
+    VERS:   DATE:               PURPOSE:
     ---------------------------------------------------------------
-    .1      10/96        Original Creation
-    1.0     6/97         Read Image Size from DDR.
-            7/97   dc    updated version number
-    2.0     12/98  OL    New metadata routines.
-    2.1	    7/01   RG	 Added log file switch, made mask optional
-    2.11    10/01  SW	 Added additional check for command line args
+    0.1    10/96                Original Creation
+    1.0     6/97                Read Image Size from DDR.
+            7/97   D. Corbett   updated version number
+    2.0    12/98   O. Lawlor    New metadata routines.
+    2.1     7/01   R. Gens      Added log file switch, made mask optional
+    2.11   10/01   S. Watts     Added additional check for command line args
+    2.5    12/03   P. Denny     Update command line parsing & usage()
+                                  Update to meta1.1 from meta/ddr combo
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -71,10 +73,10 @@ BUGS:
 ****************************************************************************/
 #include "asf.h"
 #include "asf_meta.h"
-#include "ddr.h"
 
-#define DEFAULT_ERROR          0.0
-#define VERSION                2.11
+#define NUM_ARGS        3
+#define DEFAULT_ERROR   0.0
+#define VERSION         2.5
 
 /* local function declaration */
 void usage(char *name);
@@ -86,62 +88,53 @@ int main(int argc, char **argv)
 	unsigned char *mask;
 	double k;
 	double *phase2elevBase,*sinFlat,*cosFlat;
-	char *datafile, *basefile, *outfile;
-	char *maskfile;
-	char *ceos;
+	char datafile[256], basefile[256], outfile[256];
+	char maskfile[256];
 	int nrows,ncols; 
 	float *f_coh;
 	float *f_eleverr;
 	float percent=5.0;
 	double init_err=DEFAULT_ERROR;
-	FILE *fdata, *fmask, *fout/*, *fp*/;
-	int i, optind=1;
-	struct DDR ddr,newddr;
+	FILE *fdata, *fmask, *fout;
 	meta_parameters *meta;
 	baseline base;
 
-	logflag=0;	
 
-	if (argc==1 || argc>11) usage(argv[0]);
-
-	/* handle options */
-	for (i=1; i<argc; i++) {
-	  if (strncmp(argv[i], "-i", 2)==0) {
-	    init_err = atof(argv[i+1]);
-	    init_err *= init_err;
-	    i+=1;
-	    optind+=2;
-	  }
-	  else if (strncmp(argv[i], "-log", 4)==0) {
-	    sprintf(logFile, "%s", argv[i+1]);
-	    fLog = FOPEN(logFile, "a");
-	    logflag=1;
-	    i+=1;
-	    optind+=2;
-	  }
-	  else if (strncmp(argv[i], "-mask", 5)==0) {
-	    maskfile = argv[i+1];
-	    maskflag=1;
-	    i+=1;
-	    optind+=2;
-	  }
-	  else if (strncmp(argv[i], "-", 1)==0) {
-	    sprintf(errbuf, "   ERROR: %s is not a valid option!\n", argv[i]);
-	    printErr(errbuf);
-	  }
+/* Parse command line arguments */
+	logflag=FALSE;
+	while (currArg < (argc-NUM_ARGS)) {
+	   char *key = argv[currArg++];
+	   if (strmatch(key,"-log")) {
+	      CHECK_ARG(1);
+	      strcpy(logFile,GET_ARG(1));
+	      fLog = FOPEN(logFile, "a");
+	      logflag=TRUE;
+	   }
+	   else if (strmatch(key, "-mask")) {
+	      CHECK_ARG(1);
+	      strcpy(maskfile, GET_ARG(1));
+	      maskflag = TRUE;
+	   }
+	   else if (strmatch(key,"-i")) {
+	      CHECK_ARG(1);
+	      init_err = atof(GET_ARG(1));
+	      init_err *= init_err;
+	   }
+	   else {
+	      printf("\n**Invalid option:  %s\n",argv[currArg-1]);
+	      usage(argv[0]);
+	   }
+	}
+	if ((argc-currArg) < NUM_ARGS) {
+	   printf("Insufficient arguments.\n");
+	   usage(argv[0]);
 	}
 
-	/* handle required input */
-	i=optind;
+	create_name(datafile, argv[currArg], ".img");
+	strcpy(basefile, argv[currArg+1]);
+	strcpy(outfile, argv[currArg+2]);
 
-/* Check args again */
-        if (argc!=(i+4))usage(argv[0]);
-
-	datafile = appendExt(argv[i],".img");
-        basefile = argv[i+1];
-        ceos = argv[i+2];
-        outfile = argv[i+3];
-
+/* Start the program body! */
 	StartWatch();
 	system("date");
 	printf("Program: eleverr\n\n");
@@ -149,41 +142,36 @@ int main(int argc, char **argv)
 	  StartWatchLog(fLog);
 	  printLog("Program: eleverr\n\n");
 	}
-	
-	c_getddr(datafile,&ddr);
-	nrows=ddr.nl;
-	ncols=ddr.ns;
-	newddr=ddr;
-	newddr.dtype=4;
-	newddr.nbands=1;
-	c_putddr(outfile,&newddr);
-	
-	/* set program variables*/
-	meta=meta_init(ceos);
+
+/* Get appropriate metadata */
+	meta = meta_read(datafile);
+	nrows = meta->general->line_count;
+	ncols = meta->general->sample_count;
+	meta->general->data_type = REAL32;
+	meta_write(meta, outfile);
 	k  = meta_get_k(meta);    /* wave number*/
 	
-	/* allocate space for vectors and matricies*/
+/* Allocate space for vectors, matricies, and stuff*/
 	mask = (unsigned char *)MALLOC(sizeof(unsigned char)*ncols);
 	f_coh = (float *)MALLOC(sizeof(float)*ncols);
 	f_eleverr = (float *)MALLOC(sizeof(float)*ncols);
-	
-	/* open data file & get seed phase*/
-/*	printf("Opening files...\n");*/
-	fdata = fopenImage(datafile, "rb");
-	if (maskflag) fmask = fopenImage(maskfile,"rb");
-	fout = fopenImage(outfile,"wb");
-	
-	/* read in baseline values*/
-	base=read_baseline(basefile);
-	
-	/* obtain information from ceos metadata*/
 	sinFlat = (double *)MALLOC(sizeof(double)*ncols);
 	cosFlat = (double *)MALLOC(sizeof(double)*ncols);
 	phase2elevBase = (double *)MALLOC(sizeof(double)*ncols);
+
+/* Open data file & get seed phase*/
+	fdata = fopenImage(datafile, "rb");
+	fout = fopenImage(outfile,"wb");
+	if (maskflag) fmask = fopenImage(maskfile,"rb");
 	
+/* Read in baseline values*/
+	base = read_baseline(basefile);
+
+/* Obtain information from metadata*/
 	for (x=0;x<ncols;x++)
 	{
-		int img_x=x*newddr.sample_inc+newddr.master_sample-1;
+		int img_x = x * meta->sar->sample_increment
+		            + meta->general->start_sample;
 		double incid=meta_incid(meta,0,img_x);
 		double flat=meta_flat(meta,0,img_x);
 		sinFlat[x]=sin(flat);
@@ -191,16 +179,25 @@ int main(int argc, char **argv)
 		phase2elevBase[x]=meta_get_slant(meta,0,img_x)*sin(incid)/(2.0*k);
 	}
 	
-	/* loop through each row & calculate height*/
+/* Loop through each row & calculate height*/
 	for (y=0;y<nrows;y++) {
 		double Bn_y,Bp_y;
+
+		/* Report progress */
+		if ((y*100/nrows)>percent) {
+		  printf("\r   Completed %3.0f percent", percent);
+		  percent+=5.0;
+		}
+
 		/* read in data */
-		if (maskflag) FREAD(mask,sizeof(unsigned char),ncols,fmask);
-		FREAD(f_coh,sizeof(float),ncols,fdata);
+		if (maskflag)
+			FREAD(mask,sizeof(unsigned char),ncols,fmask);
+		get_float_line(fdata, meta, y, f_coh);
 		
 		/* calculate baseline for this row*/
-		meta_interp_baseline(meta,base,
-			y*newddr.line_inc+newddr.master_line,&Bn_y,&Bp_y);
+		meta_interp_baseline(meta, base,
+			y*meta->sar->line_increment+meta->general->start_line+1,
+			&Bn_y, &Bp_y);
 		
 		/* step through each pixel in row*/
 		for (x=0;x<ncols;x++) {
@@ -215,51 +212,58 @@ int main(int argc, char **argv)
 			else
 				f_eleverr[x] = -1.0;
 		}
-		FWRITE(f_eleverr,sizeof(float),ncols,fout);
-		if ((y*100/nrows)>percent) {
-		  printf("   Completed %3.0f percent\n", percent);
-		  percent+=5.0;
-		}
+		put_float_line(fout, meta, y, f_eleverr);
 	}
-	printf("   Completed 100 percent\n\n   Wrote %lld bytes of data\n\n", (long long)(nrows*ncols*4));
-	if (logflag) {
-	  sprintf(logbuf, "   Wrote %lld bytes of data\n\n", (long long)(nrows*ncols*4));
-	  printLog(logbuf);
-	}
+	printf("\r   Completed 100 percent\n\n");
+	sprintf(logbuf, "   Wrote %lld bytes of data\n\n",
+	        (long long)(nrows*ncols*4));
+	printf("%s", logbuf);
+	if (logflag) { printLog(logbuf); }
 	
 	/* free memory & scram*/
+	meta_free(meta);
+	FREE(mask);
 	FREE(f_coh);
 	FREE(f_eleverr);
-	FREE(mask);
+	FREE(sinFlat);
+	FREE(cosFlat);
+	FREE(phase2elevBase);
+	FCLOSE(fdata);
 	FCLOSE(fout);
 	if (maskflag) FCLOSE(fmask);
-	FCLOSE(fdata);
 
 	StopWatch();
 	if (logflag) {
 	  StopWatchLog(fLog);
 	}
-	return(0);
+
+	exit(EXIT_SUCCESS);
 }
 
 void usage(char *name)
 { 
-  printf("\n");
-  printf("Usage: %s [-i init_err] [-log <file>] [-mask <file>]\n"
-	 "\t\t<coherence> <base> <meta> <outfile>\n",name);
-  printf("\n");
-  printf("   -i init_err: error associated with seed elevation in meters."
-	 "\n                Default is 0.0 meters.\n");
-  printf("   -log <file>: allows the output to be written to a log file.\n");
-  printf("  -mask <file>: use the mask if you used escher for phase unwrapping.\n");
-  printf("   <coherence>: coherence file (from coh(1))\n");
-  printf("        <base>: file containing baseline parameterss.\n");
-  printf("                format:  Bn_c   dBn   Bp_c   dBp \n");
-  printf("        <meta>: the name of the file that contains the\n");
-  printf("                metadata for image 1 of the interferogram pair.\n");
-  printf("     <outfile>: output file containing one sigma errors.\n");
-  printf("\n");
-  printf("eleverr: generate DEM errors from coherence file\n");
-  printf("Version: %.2f, ASF SAR Tools\n\n",VERSION);
-  exit(1);
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-i <init_err>] [-log <file>] [-mask <file>]\n"
+	"            <coherence> <base> <outfile>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   coherence   Coherence file (from coh(1)).\n"
+	"   base        File containing baseline parameterss.\n"
+	"                  Format:  Bn_c   dBn   Bp_c	dBp\n"
+	"   outfile     Output file containing one sigma errors.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -i      Error <init_err> associated with seed elevation in meters.\n"
+	"             Default is %.1f meters.\n"
+	"   -log    Allows the output to be written to a log <file>.\n"
+	"   -mask   Use the mask <file> if you used escher for phase unwrapping.\n",
+	DEFAULT_ERROR);
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Generates DEM errors from coherence file\n");
+ printf("\n"
+	"Version: %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
