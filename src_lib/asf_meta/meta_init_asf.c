@@ -122,7 +122,8 @@ void ceos_init_asf(char *fName,ceos_description *ceos,meta_parameters *meta)
 	}
 
 	meta->sar->slant_range_first_pixel = facdr.sltrngfp*1000.0;
-	meta->sar->azimuth_time_per_pixel  = meta->general->y_pixel_size / facdr.swathvel;
+	meta->sar->azimuth_time_per_pixel  = meta->general->y_pixel_size 
+	                                     / facdr.swathvel;
 	meta->general->line_count          = facdr.alines;
 	meta->general->sample_count        = facdr.apixels;
 	meta->general->bit_error_rate      = facdr.biterrrt;
