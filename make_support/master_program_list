@@ -70,7 +70,9 @@ PROGRAMS
 {
 @src/
 	calibrate { }
-	ceosui2byte { }
+	stats { }
+	convert2byte { PROGRAMS stats }
+	deskew { }
 	diff_las {  }
 	dspddr { }
 	fftMatch { }
@@ -85,7 +87,7 @@ PROGRAMS
 	resample { }
 	sarin { }
 	sarout { }
-	sr2gr { BINS deskew ui2byte }
+	sr2gr { }
 	trim { }
 	
 @src_geo/
