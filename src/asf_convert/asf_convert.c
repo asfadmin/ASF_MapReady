@@ -215,27 +215,28 @@ int main(int argc, char *argv[])
 	if((configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET) && /*These...*/
 		(formatFlag != FLAG_NOT_SET || sizeFlag != FLAG_NOT_SET))/*...are mutually exclusive with these*/
 		usage();/*This exits with a failure*/
+	{
+	  /*So, at this point, we know our options don't conflict...now we need
+	  to know how many arguments we ought to have.*/
+	  int neededArgs = 1;/*command*/
+	  if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
+		  neededArgs += 2;/*option & parameter*/
+	  else
+		  neededArgs += 3;/*in_data_file, in_meta_file, out_file*/
+	  if(logflag != FLAG_NOT_SET)
+		  neededArgs += 2;/*option & parameter*/
+	  if(formatFlag != FLAG_NOT_SET)
+		  neededArgs += 2;/*option & parameter*/
+	  if(sizeFlag != FLAG_NOT_SET)
+		  neededArgs += 2;/*option & parameter*/
+	  if(quietFlag != FLAG_NOT_SET)
+		  neededArgs += 1;/*option*/
 
-	/*So, at this point, we know our options don't conflict...now we need
-	to know how many arguments we ought to have.*/
-	int neededArgs = 1;/*command*/
-	if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
-		neededArgs += 2;/*option & parameter*/
-	else
-		neededArgs += 3;/*in_data_file, in_meta_file, out_file*/
-	if(logflag != FLAG_NOT_SET)
-		neededArgs += 2;/*option & parameter*/
-	if(formatFlag != FLAG_NOT_SET)
-		neededArgs += 2;/*option & parameter*/
-	if(sizeFlag != FLAG_NOT_SET)
-		neededArgs += 2;/*option & parameter*/
-	if(quietFlag != FLAG_NOT_SET)
-		neededArgs += 1;/*option*/
+	  /*make sure we've got enough arguments*/
+	  if(argc != neededArgs)
+		  usage();/*This exits with a failure*/
+	}
 
-	/*make sure we've got enough arguments*/
-	if(argc != neededArgs)
-		usage();/*This exits with a failure*/
-printf("1");
 	/*We also need to make sure the last three options are close to what we expect*/
 	if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
 	{
@@ -245,7 +246,7 @@ printf("1");
 	else
 		if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-' || argv[argc - 3][0] == '-')
 			usage();/*This exits with a failure*/
-printf("2");
+
 	/*Next we're going to make sure the options are specified according to the usage
 	That is, -option <parameter> -option <parameter> and so on...if an option requires
 	a parameter, we need to make sure it's followed by a parameter! Also make sure
@@ -414,7 +415,8 @@ printf("2");
 	}
 	else
 	{
-
+		char command[255];
+		char temp[255];
 		/* Prepare processing */
 		if (configFlag == FLAG_NOT_SET)
 		{
@@ -425,8 +427,6 @@ printf("2");
 		}
 
 
-		char command[255];
-		char temp[255];
 		sprintf(command, "asf_import -log tmp%i_import.log -format %s", (int)getpid(), format_in);
 		if(quietFlag != FLAG_NOT_SET)
 			strcat(command, " -quiet");

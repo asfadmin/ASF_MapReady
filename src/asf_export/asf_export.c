@@ -309,11 +309,17 @@ export_as_ppm (const char *metadata_file_name,
 int 
 main (int argc, char *argv[])
 {
+
+  output_format_t format;
+  meta_parameters *md;
+
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
 	/* Command line input goes in it's own structure.  */
 	command_line_parameters_t command_line;
 	
 	int formatFlag, sizeFlag, logFlag, quietFlag;
+	int needed_args = 3;/*command & argument & argument*/
+	int ii;
 
 	/*Check to see which options were specified*/
 	formatFlag = checkForOption("-format", argc, argv);
@@ -321,7 +327,6 @@ main (int argc, char *argv[])
 	logFlag = checkForOption("-log", argc, argv);
 	quietFlag = checkForOption("-quiet", argc, argv);
 
-	int needed_args = 3;/*command & argument & argument*/
 	if(formatFlag != FLAG_NOT_SET)
 		needed_args += 2;/*option & parameter*/
 	if(sizeFlag != FLAG_NOT_SET)
@@ -356,7 +361,6 @@ main (int argc, char *argv[])
 		strcpy(command_line.format, argv[formatFlag + 1]);
 	else
 		strcpy(command_line.format, "geotiff");/*Default behavior: produce a geotiff*/
-	int ii;
 	for(ii = 0; ii < strlen(command_line.format); ++ii)//convert the string to upper case
 		command_line.format[ii] = toupper(command_line.format[ii]);
 
@@ -379,11 +383,6 @@ main (int argc, char *argv[])
 	/*Grab the output name*/
 	strcpy(command_line.output_name, argv[argc - 1]);
 /***********************END COMMAND LINE PARSING STUFF***********************/
-
-
-  output_format_t format;
-
-  meta_parameters *md;
 
   if ( strcmp (command_line.format, "ENVI") == 0 ) {
     format = ENVI;
@@ -1487,6 +1486,34 @@ export_as_geotiff (const char *metadata_file_name,
   size_t ii;
   int return_code;
 
+  /* This constant is from the GeoTIFF spec.  It basically means that
+     the system which would normally be specified by the field
+     (projected coordinate system, datum, ellipsoid, whatever), in
+     instead going to be specified by more detailed low level
+     tags.  */
+  const int user_defined_value_code = 32767;
+  /* Major and minor ellipse axis lengths.  This shows up in two
+     different places in our metadata, we want the projected one if
+     its available, otherwise the one from general.  */
+  double re_major, re_minor;
+  /* Nail down which ellipsoid we are on exactly.  The ASF metadata
+     doesn't specify this though, so we take a look at the major and
+     minor axis values and try to find a matching ellipsoid.  */
+  asf_export_ellipsoid_t ellipsoid;
+  const double clarke1866_major_axis = 6378206.4;
+  const double clarke1866_minor_axis = 6356583.8;
+  const double gem10c_major_axis = 6378144;
+  const double gem10c_minor_axis = 6356759;
+  const double wgs66_major_axis = 6378145.0;
+  const double wgs66_minor_axis = 6356759.769356;
+  const double wgs84_major_axis = 6378137;
+  const double wgs84_flattening = 1.0 / 298.257223563;
+  const double wgs84_minor_axis = wgs84_major_axis * (1 - wgs84_flattening);
+  /* Insist that the minor axis match what we are expecting to within
+     this tolerance.  */
+  double axis_tolerance = 0.2;
+
+
   assert (md->general->data_type == REAL32);
   assert (sizeof (unsigned short) == 2);
   assert (sizeof (unsigned int) == 4);
@@ -1541,24 +1568,13 @@ export_as_geotiff (const char *metadata_file_name,
   }
   TIFFSetField(otif, TIFFTAG_SAMPLEFORMAT, sample_format);
   TIFFSetField(otif, TIFFTAG_DATATYPE, sample_format);
- 
-  /* Set the GeoTIFF extension image tags.  */
 
-  /* This constant is from the GeoTIFF spec.  It basically means that
-     the system which would normally be specified by the field
-     (projected coordinate system, datum, ellipsoid, whatever), in
-     instead going to be specified by more detailed low level
-     tags.  */
-  const int user_defined_value_code = 32767;
+  /* Set the GeoTIFF extension image tags.  */
 
   /* FIXME: its not good to say all our products are
      RasterPixelIsArea, but for now that's what we do.  */
   GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
 
-  /* Major and minor ellipse axis lengths.  This shows up in two
-     different places in our metadata, we want the projected one if
-     its available, otherwise the one from general.  */
-  double re_major, re_minor;
   if ( md->sar->image_type == 'P' ) {
     re_major = md->projection->re_major;
     re_minor = md->projection->re_minor;
@@ -1568,22 +1584,6 @@ export_as_geotiff (const char *metadata_file_name,
     re_minor = md->general->re_minor;
   }
 
-  /* Nail down which ellipsoid we are on exactly.  The ASF metadata
-     doesn't specify this though, so we take a look at the major and
-     minor axis values and try to find a matching ellipsoid.  */
-  asf_export_ellipsoid_t ellipsoid;
-  const double clarke1866_major_axis = 6378206.4;
-  const double clarke1866_minor_axis = 6356583.8;
-  const double gem10c_major_axis = 6378144;
-  const double gem10c_minor_axis = 6356759;
-  const double wgs66_major_axis = 6378145.0;
-  const double wgs66_minor_axis = 6356759.769356;
-  const double wgs84_major_axis = 6378137;
-  const double wgs84_flattening = 1.0 / 298.257223563;
-  const double wgs84_minor_axis = wgs84_major_axis * (1 - wgs84_flattening);
-  /* Insist that the minor axis match what we are expecting to within
-     this tolerance.  */
-  double axis_tolerance = 0.2;
   if ( FLOAT_COMPARE_TOLERANCE (re_major, clarke1866_major_axis, 
 				axis_tolerance)
        && FLOAT_COMPARE_TOLERANCE (re_minor, clarke1866_minor_axis, 
@@ -1900,42 +1900,43 @@ export_as_geotiff (const char *metadata_file_name,
 
     GTIFKeySet (ogtif, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, PM_Greenwich);
     GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, Angular_Degree);
+    {
+      /* Tie points for image corners.  There is space for four tie
+	 points, each consisting of three raster coordinates, followed
+	 by three geospatial coordinates.  */    
+      double tie_points[4][6];
 
-    /* Tie points for image corners.  There is space for four tie
-       points, each consisting of three raster coordinates, followed
-       by three geospatial coordinates.  */    
-    double tie_points[4][6];
+      /* Get the lat/longs of three image corners.  */
+      double c1_lat, c1_long, c2_lat, c2_long, c3_lat, c3_long;
+      meta_get_latLon (md, 0, 0, 0, &c1_lat, &c1_long);
+      meta_get_latLon (md, 0, md->general->sample_count, 0, &c2_lat, &c2_long);
+      meta_get_latLon (md, md->general->line_count, 0, 0, &c3_lat, &c3_long);
 
-    /* Get the lat/longs of three image corners.  */
-    double c1_lat, c1_long, c2_lat, c2_long, c3_lat, c3_long;
-    meta_get_latLon (md, 0, 0, 0, &c1_lat, &c1_long);
-    meta_get_latLon (md, 0, md->general->sample_count, 0, &c2_lat, &c2_long);
-    meta_get_latLon (md, md->general->line_count, 0, 0, &c3_lat, &c3_long);
+      /* Put three tie points in the image, as described in 2.6.2 of the
+	 geotiff spec..  */
+      tie_points[0][0] = 0.0;
+      tie_points[0][1] = 0.0;
+      tie_points[0][2] = 0.0;
+      tie_points[0][3] = c1_lat;
+      tie_points[0][4] = c1_long;
+      tie_points[0][5] = 0.0;
+      tie_points[1][0] = 0.0;
+      tie_points[1][1] = md->general->sample_count;
+      tie_points[1][2] = 0.0;
+      tie_points[1][4] = c2_lat;
+      tie_points[1][5] = c2_long;
+      tie_points[1][6] = 0.0;
+      tie_points[2][0] = md->general->line_count;
+      tie_points[2][1] = 0.0;
+      tie_points[2][2] = 0.0;
+      tie_points[2][4] = c3_lat;
+      tie_points[2][5] = c3_long;
+      tie_points[2][6] = 0.0;
 
-    /* Put three tie points in the image, as described in 2.6.2 of the
-       geotiff spec..  */
-    tie_points[0][0] = 0.0;
-    tie_points[0][1] = 0.0;
-    tie_points[0][2] = 0.0;
-    tie_points[0][3] = c1_lat;
-    tie_points[0][4] = c1_long;
-    tie_points[0][5] = 0.0;
-    tie_points[1][0] = 0.0;
-    tie_points[1][1] = md->general->sample_count;
-    tie_points[1][2] = 0.0;
-    tie_points[1][4] = c2_lat;
-    tie_points[1][5] = c2_long;
-    tie_points[1][6] = 0.0;
-    tie_points[2][0] = md->general->line_count;
-    tie_points[2][1] = 0.0;
-    tie_points[2][2] = 0.0;
-    tie_points[2][4] = c3_lat;
-    tie_points[2][5] = c3_long;
-    tie_points[2][6] = 0.0;
-
-    /* Write the eighteen values that make up the three tie
-       points.  */
-    TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 18, tie_points);
+      /* Write the eighteen values that make up the three tie
+	 points.  */
+      TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 18, tie_points);
+    }
   }
 
   else if ( md->sar->image_type == 'S' ) {

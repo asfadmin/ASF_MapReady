@@ -312,55 +312,56 @@ int main(int argc, char *argv[])
   logflag = checkForOption("-log", argc, argv);
   quietFlag = checkForOption("-quiet", argc, argv);
   formatFlag = checkForOption("-format", argc, argv);
+  {  
+    /*Check for mutually exclusive options: we can only have one of these*/
+    int temp = 0;
+    if(ampFlag != FLAG_NOT_SET)
+      temp++;
+    if(sigmaFlag != FLAG_NOT_SET)
+      temp++;
+    if(betaFlag != FLAG_NOT_SET)
+      temp++;
+    if(gammaFlag != FLAG_NOT_SET)
+      temp++;
+    if(powerFlag != FLAG_NOT_SET)
+      temp++;
+    if(sprocketFlag != FLAG_NOT_SET)
+      temp++;
+    if(temp > 1)/*If more than one option was selected*/
+      usage();/*This exits with a failure*/
+  }
+  {
+    /*We need to make sure the user specified the proper number of arguments*/
+    int needed_args = 4;/*command & in_data & in_meta & out_base*/
+    if(ampFlag != FLAG_NOT_SET)
+      needed_args += 1;/*option*/
+    if(sigmaFlag != FLAG_NOT_SET)
+      needed_args += 1;/*option*/
+    if(betaFlag != FLAG_NOT_SET)
+      needed_args += 1;/*option*/
+    if(gammaFlag != FLAG_NOT_SET)
+      needed_args += 1;/*option*/
+    if(powerFlag != FLAG_NOT_SET)
+      needed_args += 1;/*option*/
+    if(sprocketFlag != FLAG_NOT_SET)
+      needed_args += 1;/*option*/
+    if(latConstraintFlag != FLAG_NOT_SET)
+      needed_args += 3;/*option & parameter & parameter*/
+    if(prcflag != FLAG_NOT_SET)
+      needed_args += 2;/*option & parameter*/
+    if(oldFlag != FLAG_NOT_SET)
+      needed_args += 1;/*option*/
+    if(logflag != FLAG_NOT_SET)
+      needed_args += 2;/*option & parameter*/
+    if(quietFlag != FLAG_NOT_SET)
+      needed_args += 1;/*option*/
+    if(formatFlag != FLAG_NOT_SET)
+      needed_args += 2;/*option & parameter*/
 
-  /*Check for mutually exclusive options: we can only have one of these*/
-  int temp = 0;
-  if(ampFlag != FLAG_NOT_SET)
-    temp++;
-  if(sigmaFlag != FLAG_NOT_SET)
-    temp++;
-  if(betaFlag != FLAG_NOT_SET)
-    temp++;
-  if(gammaFlag != FLAG_NOT_SET)
-    temp++;
-  if(powerFlag != FLAG_NOT_SET)
-    temp++;
-  if(sprocketFlag != FLAG_NOT_SET)
-    temp++;
-  if(temp > 1)/*If more than one option was selected*/
-    usage();/*This exits with a failure*/
-
-  /*We need to make sure the user specified the proper number of arguments*/
-  int needed_args = 4;/*command & in_data & in_meta & out_base*/
-  if(ampFlag != FLAG_NOT_SET)
-    needed_args += 1;/*option*/
-  if(sigmaFlag != FLAG_NOT_SET)
-    needed_args += 1;/*option*/
-  if(betaFlag != FLAG_NOT_SET)
-    needed_args += 1;/*option*/
-  if(gammaFlag != FLAG_NOT_SET)
-    needed_args += 1;/*option*/
-  if(powerFlag != FLAG_NOT_SET)
-    needed_args += 1;/*option*/
-  if(sprocketFlag != FLAG_NOT_SET)
-    needed_args += 1;/*option*/
-  if(latConstraintFlag != FLAG_NOT_SET)
-    needed_args += 3;/*option & parameter & parameter*/
-  if(prcflag != FLAG_NOT_SET)
-    needed_args += 2;/*option & parameter*/
-  if(oldFlag != FLAG_NOT_SET)
-    needed_args += 1;/*option*/
-  if(logflag != FLAG_NOT_SET)
-    needed_args += 2;/*option & parameter*/
-  if(quietFlag != FLAG_NOT_SET)
-    needed_args += 1;/*option*/
-  if(formatFlag != FLAG_NOT_SET)
-    needed_args += 2;/*option & parameter*/
-
-  /*Make sure we have enough arguments*/
-  if(argc != needed_args)
-    usage();/*This exits with a failure*/
-
+    /*Make sure we have enough arguments*/
+    if(argc != needed_args)
+      usage();/*This exits with a failure*/
+  }
   /*We also need to make sure any options that have parameters are specified correctly
   This includes: -lat, -prc, -log*/
   if(latConstraintFlag != FLAG_NOT_SET)
