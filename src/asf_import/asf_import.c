@@ -186,7 +186,7 @@ void print_progress(int current_line, int total_lines)
     if (current_line == total_lines) {
       printf("\n");
       if (logflag) {
-        sprintf(logbuf,"Wrote %5d of %5d lines.", current_line, total_lines);
+        sprintf(logbuf,"Wrote %5d of %5d lines.\n", current_line, total_lines);
         printLog(logbuf);
       }
     }
@@ -302,6 +302,16 @@ int main(int argc, char *argv[])
   if ((argc-currArg) < REQUIRED_ARGS) {
     printf("Insufficient arguments.\n");
     usage (program_name);
+  }
+
+  if (logflag) {
+    char command_line[2048];
+    strcpy(command_line,"Command line:");
+    for (ii=0; ii<argc; ii++) {
+      sprintf(command_line, "%s %s",command_line,argv[ii]);
+    }
+    strcat(command_line,"\n");
+    printLog(command_line);
   }
 
   /* Make sure the sprocket flag hasn't been declared with a calibration or
@@ -813,33 +823,32 @@ int main(int argc, char *argv[])
 
     openErrorLog(s,inDataName);
 
-    for (outLine=0;outLine<nTotal;outLine++)
-      {
-        if (s->curFrame >= s->nFrames) {
-          printf("   Reached end of file\n");
-          if (logflag) printLog("   Reached end of file\n");
-          break;
-        }
-
-        /* Now read the next pulse of data.
-           ---------------------------------*/
-        readNextPulse(s, iqBuf, inDataName, outName);
-
-        /* If the read status is good, write this data.
-           ---------------------------------------------*/
-        if (s->readStatus == 1) {
-          /* write some extra lines at the end for the SAR processing */
-         if (((outLine >= imgStart) && (outLine <= imgEnd+4096)) ||  /* descending */
-              ((outLine >= imgEnd) && (outLine <= imgStart+4096)))      /* ascending */
-            {
-              FWRITE(iqBuf,sizeof(iqType),s->nSamp*2,s->fpOut);
-              s->nLines++;
-            }
-        }
-        /* Write status information to screen.
-           ------------------------------------*/
-        print_progress(outLine,nTotal);
+    for (outLine=0;outLine<nTotal;outLine++) {
+      if (s->curFrame >= s->nFrames) {
+        printf("   Reached end of file\n");
+        if (logflag) printLog("   Reached end of file\n");
+        break;
       }
+
+      /* Now read the next pulse of data.
+         ---------------------------------*/
+      readNextPulse(s, iqBuf, inDataName, outName);
+
+      /* If the read status is good, write this data.
+         ---------------------------------------------*/
+      if (s->readStatus == 1) {
+        /* write some extra lines at the end for the SAR processing */
+        if (((outLine >= imgStart) && (outLine <= imgEnd+4096)) ||  /* descending */
+            ((outLine >= imgEnd) && (outLine <= imgStart+4096)))      /* ascending */
+        {
+          FWRITE(iqBuf,sizeof(iqType),s->nSamp*2,s->fpOut);
+          s->nLines++;
+        }
+      }
+      /* Write status information to screen.
+         ------------------------------------*/
+      print_progress(outLine,nTotal);
+    }
 
     if (latConstraintFlag) {
       s->nLines -= 4096; /* reduce the line number from extra padding */
@@ -919,10 +928,6 @@ int main(int argc, char *argv[])
 
     /* Write metadata file */
     meta_write(meta,outName);
-if (sprocketFlag) {
-  create_name(sprocketName, outName, ".metadata");
-  meta_write_sprocket(sprocketName, meta, NULL);
-}
 
     /* Write data file - currently no header, so just copying generic binary */
     fileCopy(inDataName, outName);
