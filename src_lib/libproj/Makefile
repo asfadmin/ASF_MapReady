@@ -20,12 +20,14 @@ install: stage_stamp
 	cp $(LIB_STAGEDIR)/*.a $(LIBDIR)
 	cp -r $(INCLUDE_STAGEDIR)/* $(ASF_INCLUDE_DIR)
 
-# Build the library into the staging dir.
+# Build the library into the staging dir, with a few slight tweaks for
+# some prototypes in the API header that don't include 'void'.
 stage_stamp:
 	mkdir -p $(LIB_STAGEDIR) $(INCLUDE_STAGEDIR)
 	gunzip --to-stdout $(ZIPFILE) >$(TARFILE); \
 	    tar xvf $(TARFILE) ; \
 	    (cd $(UNPACK_DIR) ; \
+		perl -p -i -e 's{\(\);}{(void);}' src/proj_api.h ; \
                 ./configure --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
 		make ; \
 	        make check ; \
