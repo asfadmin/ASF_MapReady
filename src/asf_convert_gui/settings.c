@@ -90,7 +90,7 @@ settings_get_from_gui()
 
   Settings *ret;
 
-  ret = (Settings *) malloc (sizeof(Settings));
+  ret = (Settings *) g_malloc0 (sizeof(Settings));
 
   input_data_type_combobox = 
     glade_xml_get_widget(glade_xml, "input_data_type_combobox");
@@ -153,14 +153,15 @@ settings_get_from_gui()
   return ret;
 }
 
-const char *
+const gchar *
 settings_get_latitude_argument(Settings *s)
 {
-  static char latitude_arg[128];
+  static gchar latitude_arg[128];
 
   if (settings_get_input_data_format_allows_latitude(s))
   {
-    sprintf(latitude_arg, "-lat %.2f %.2f", s->latitude_low, s->latitude_hi);
+    g_snprintf(latitude_arg, sizeof(latitude_arg),
+	       "-lat %.2f %.2f", s->latitude_low, s->latitude_hi);
   }
   else
   {
@@ -170,10 +171,10 @@ settings_get_latitude_argument(Settings *s)
   return latitude_arg;
 }
 
-const char *
+const gchar *
 settings_get_size_argument(Settings *s)
 {
-  static char size_arg[32];
+  static gchar size_arg[32];
 
   if (s->apply_scaling)
   {
@@ -186,7 +187,8 @@ settings_get_size_argument(Settings *s)
     d = gtk_spin_button_get_value(
 	    GTK_SPIN_BUTTON(longest_dimension_spinbutton));
     
-    sprintf(size_arg, "-size %d", (int)floor(d + 0.5));    
+    g_snprintf(size_arg, sizeof(size_arg), 
+	       "-size %d", (int)floor(d + 0.5));    
   }
   else
   {
@@ -196,10 +198,10 @@ settings_get_size_argument(Settings *s)
   return size_arg;
 }
 
-const char *
+const gchar *
 settings_get_data_type_string(Settings *s)
 {
-  const char * ret;
+  const gchar * ret;
 
   switch (s->data_type)
   {
@@ -228,10 +230,10 @@ settings_get_data_type_string(Settings *s)
   return ret;
 }
 
-const char *
+const gchar *
 settings_get_input_data_format_string(Settings *s)
 {
-  const char * format_arg_to_import;
+  const gchar * format_arg_to_import;
 
   switch (s->input_data_format)
   {
@@ -289,7 +291,7 @@ settings_copy(Settings *s)
 {
   Settings * ret;
 
-  ret = (Settings *)malloc(sizeof(Settings));
+  ret = (Settings *)g_malloc0(sizeof(Settings));
   memcpy(ret, s, sizeof(Settings));
 
   assert(settings_equal(s, ret));
@@ -297,10 +299,10 @@ settings_copy(Settings *s)
   return ret;
 }
 
-const char *
+const gchar *
 settings_get_output_format_extension(Settings *s)
 {
-  const char * out_extension;
+  const gchar * out_extension;
   switch (s->output_format)
   {
     case OUTPUT_FORMAT_ASF_INTERNAL:
@@ -308,11 +310,11 @@ settings_get_output_format_extension(Settings *s)
       break;
 
     case OUTPUT_FORMAT_CEOS:
-    default:
       out_extension = "D";
       break;
 
     case OUTPUT_FORMAT_JPEG:
+    default:
       out_extension = "jpg";
       break;
 
@@ -328,10 +330,10 @@ settings_get_output_format_extension(Settings *s)
   return out_extension;
 }
 
-const char *
+const gchar *
 settings_get_output_format_string(Settings *s)
 {
-  const char * format_arg_to_export;
+  const gchar * format_arg_to_export;
   switch (s->output_format)
   {
     case OUTPUT_FORMAT_ASF_INTERNAL:
@@ -339,11 +341,11 @@ settings_get_output_format_string(Settings *s)
       break;
 
     case OUTPUT_FORMAT_CEOS:
-    default:
       format_arg_to_export = "ceos";
       break;
 
     case OUTPUT_FORMAT_JPEG:
+    default:
       format_arg_to_export = "jpeg";
       break;
 

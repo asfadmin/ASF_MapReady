@@ -1,5 +1,10 @@
 Thank you for trying the ASF convert utility's graphical user interface.
 
+Overview
+========
+
+This program provides an easy way to run the two programs "asf_import" and "asf_export" on multiple files.
+
 (A) Choosing your files
 =======================
 
@@ -32,19 +37,52 @@ You can also click "Browse" to pull up a file selection dialog.  Use ctrl-click 
 
 You can drag and drop files from your file explorer program into the files list, and they will be added.
 
+This option is not supported on Windows.
+
 (B) Choose your conversion options
 ==================================
 
-TBD
+There are three sections at the top of the page that control the conversion.
+
+(1) Import
+
+In this section you must specify the format for your input data files.
+
+(2) Transformations
+
+Depending on the import data format, some of these options may be disabled.
+
+(3) Export
+
+This is where the output format is specified.
 
 (C) Change your output files names
 ==================================
 
-TBD
+By default, the "Output" names are given the same name as the input file, with a different extension.
+
+If you like, you can change the output name of a file.  There are two ways to do this:
+
+(1) Right-click, and select "Rename Output"
+(2) Left-click on the Output File column.  The first click will select the row, the second click will allow you edit the name of the file.
 
 (D) Convert your files
 ======================
 
-You can either do all of the files, or select the file you'd like to convert, and right-click, and select "Process" from the popup menu.
+You can either do all of the files, by clicking "Execute", or select the file you'd like to convert, and right-click, then select "Process" from the popup menu.
+
+Files marked as "Done" will not be processed again if you Stop and then click "Execute" again.  If you use the right-click menu option to process a file, then the file will always processed even if it has already been marked "Done".
 
 Clicking "Stop" will stop processing after the current conversion finishes.
+
+(E) Save and Load
+=================
+
+If you are processing a large number of files, you may wish to stop processing and resume it later.
+
+To do this, you should "Save" after you've processed the first batch of files, and then exit the program.
+
+Then, when you are ready to resume processing, click "Load" after running the tool.  When you click "Execute", processing will continue from where you left off.
+
+Please note that if you change any options, clicking "Execute" will start processing over again from the first file.  You can exit without saving if you accidentally change an option, and then re-process any files that were erroneously processed with the new options.  (When you select "Process" from the right-click pop-up menu, the file will always be processed even if it has already been marked "Done".)
+

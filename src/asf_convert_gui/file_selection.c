@@ -21,8 +21,8 @@ on_add_button_clicked(GtkWidget *widget)
 
   if (!g_file_test(in_data, G_FILE_TEST_EXISTS))
   {
-    char * message = (char *)malloc(strlen(in_data) + 1024);
-    sprintf(message, "Couldn't find the file \"%s\".", in_data);
+    gchar * message = (gchar *) g_malloc(strlen(in_data) + 256);
+    g_sprintf(message, "Couldn't find the file \"%s\".", in_data);
     message_box(message);
     return;
   }

@@ -27,11 +27,11 @@ message_box(gchar * message)
 gchar *
 meta_file_name(gchar * data_file_name)
 {
-  char * p = strrchr(data_file_name, '.');
+  gchar * p = strrchr(data_file_name, '.');
   if (!p)
   {
     /* no extension -- assume .L */
-    gchar * ret = (gchar *) malloc (strlen(data_file_name) + 3);
+    gchar * ret = (gchar *) g_malloc (strlen(data_file_name) + 3);
     strcpy(ret, data_file_name);
     strcat(ret, ".L");
     return ret;
@@ -39,14 +39,14 @@ meta_file_name(gchar * data_file_name)
 
   if (strcmp(p + 1, "D") == 0)
   {
-    gchar * ret = strdup(data_file_name);
+    gchar * ret = g_strdup(data_file_name);
     ret[strlen(data_file_name) - 1] = 'L';
     return ret;
   }
 
   if (strcmp(p + 1, ".img") == 0)
   {
-    gchar * ret = (gchar *) malloc (strlen(data_file_name) + 2);
+    gchar * ret = (gchar *) g_malloc (strlen(data_file_name) + 2);
     strcpy(ret, data_file_name);
     *(ret + (data_file_name - p + 1)) = '\0';
     strcat(ret, ".meta");    

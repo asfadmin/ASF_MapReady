@@ -15,8 +15,8 @@ change_output_name_dialog_hide()
 static void
 do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
 {
-  const char * ext;
-  char *user_ext, *basename, *name_without_path, *p, *fixed_name,
+  const gchar * ext;
+  gchar *user_ext, *basename, *name_without_path, *p, *fixed_name,
     *data_file_name, *path;
   Settings * user_settings;
 
@@ -32,7 +32,7 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
   else
   {
     int len = strlen(path);
-    path = (char *)realloc(path, len + 1);
+    path = (gchar *)g_realloc(path, len + 1);
     *(path + len) = DIR_SEPARATOR;
     *(path + len + 1) = '\0';	
   }
@@ -51,7 +51,7 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
   while (*p++);
     
   /* add appropriate extension if was not given by user */
-  basename = strdup(name_without_path);
+  basename = g_strdup(name_without_path);
   p = strrchr(basename, '.');
   if (p)
   {
@@ -65,34 +65,39 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
 
   if (user_ext == NULL)
   {
-    fixed_name = (char *)malloc(strlen(path) + strlen(basename) + 
-				strlen(ext) + 2);
+    fixed_name = (gchar *)g_malloc(strlen(path) + strlen(basename) + 
+				   strlen(ext) + 2);
 
-    sprintf(fixed_name, "%s%s.%s", path, basename, ext);
+    g_snprintf(fixed_name, sizeof(fixed_name),
+	       "%s%s.%s", path, basename, ext);
   }
   else if (strcmp(user_ext, ext) != 0)
   {
-    fixed_name = (char *)malloc(strlen(path) + strlen(name_without_path) + 
-				strlen(ext) + 2);
-    sprintf(fixed_name, "%s%s.%s", path, name_without_path, ext);
+    fixed_name = (gchar *)g_malloc(strlen(path) + strlen(name_without_path) + 
+				   strlen(ext) + 2);
+
+    g_snprintf(fixed_name, sizeof(fixed_name),
+	       "%s%s.%s", path, name_without_path, ext);
   }
   else
   {
-    fixed_name = (char *)malloc(strlen(path) + strlen(name_without_path));
-    sprintf(fixed_name, "%s%s", path, name_without_path);
+    fixed_name = (gchar *)g_malloc(strlen(path) + strlen(name_without_path));
+
+    g_snprintf(fixed_name, sizeof(fixed_name),
+	       "%s%s", path, name_without_path);
   }
 
-  free(basename);
-  free(name_without_path);
-  free(path);
+  g_free(basename);
+  g_free(name_without_path);
+  g_free(path);
     
   gtk_list_store_set(list_store, iter, 1, fixed_name, -1);
   
-  free(fixed_name);
+  g_free(fixed_name);
 }
 
 void
-do_rename_selected(char *new_name)
+do_rename_selected(gchar *new_name)
 {
   GtkTreeSelection * selection;
   GtkWidget * files_list;
@@ -150,7 +155,7 @@ rename_selected_output_filename()
 
     gtk_widget_grab_focus(entry_new_output_filename);
 
-    free(name_without_path);
+    g_free(name_without_path);
     gtk_widget_show(change_output_name_dialog);
   }
   

@@ -10,6 +10,8 @@
 #include <assert.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
+#include <glib.h>
+#include <glib/gprintf.h>
 
 /* make these enums once we've settled down */
 #define OUTPUT_FORMAT_JPEG 0

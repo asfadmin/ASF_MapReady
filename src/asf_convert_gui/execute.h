@@ -1,2 +1,2 @@
 void process_item(GtkTreeIter *, Settings *);
-void append_output(char *text);
+void append_output(gchar *text);

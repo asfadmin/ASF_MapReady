@@ -10,25 +10,25 @@ const char DIR_SEPARATOR = '/';
 
 /* used g_find_program_in_path from glib as a starting */
 /* point to implement this                             */
-char *
-find_in_path(char * file)
+gchar *
+find_in_path(gchar * file)
 {
-  char *path, *buf, *name, *p;
+  gchar *path, *buf, *name, *p;
   int len, pathlen;
 
   /* first see if file is in current directory */
   if (g_file_test(file, G_FILE_TEST_EXISTS))
   {
-    return strdup(file);
+    return g_strdup(file);
   }
 
-  path = (char *)g_getenv("PATH");
+  path = (gchar *)g_getenv("PATH");
 
   len = strlen(file) + 1;
   pathlen = strlen(path);
 
   /* work area */
-  buf = (char *)malloc(pathlen + len + 2); 
+  buf = (gchar *)g_malloc(pathlen + len + 2); 
 
   /* put separator + filename at the end of the buffer */
   name = buf + pathlen + 1;
@@ -39,8 +39,8 @@ find_in_path(char * file)
   p = path;
   do
   {
-    char * start;
-    char * q = strchr(p + 1, PATH_SEPARATOR);
+    gchar * start;
+    gchar * q = strchr(p + 1, PATH_SEPARATOR);
 
     /* if separator not found, point to the end */
     if ( !q ) 
@@ -53,8 +53,8 @@ find_in_path(char * file)
 
     if (g_file_test( start, G_FILE_TEST_EXISTS ))
     {
-      char * ret = strdup(start);
-      free(buf);
+      gchar * ret = g_strdup(start);
+      g_free(buf);
       return ret; 
     }
 
@@ -63,6 +63,6 @@ find_in_path(char * file)
   while (*p++ != '\0');
 
   /* not found! */ 
-  free(buf);
+  g_free(buf);
   return NULL;
 }

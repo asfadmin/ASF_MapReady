@@ -25,8 +25,8 @@ on_help_button_clicked(GtkWidget *widget)
   {
     while (!feof(help_file))
     {
-      char buffer[1024];
-      char *p = fgets(buffer, 1024, help_file);
+      gchar buffer[1024];
+      gchar *p = fgets(buffer, sizeof(buffer), help_file);
       if (p)
       {
 	GtkTextIter end;

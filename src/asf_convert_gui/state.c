@@ -2,7 +2,7 @@
 #include <errno.h>
 
 /* for now use a hard-coded file */
-const char *save_name = "asf_convert_gui.sav";
+const gchar *save_name = "asf_convert_gui.sav";
 const int save_major_ver = 1;
 const int save_minor_ver = 0;
 
@@ -18,8 +18,9 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
   assert(s);
   if (!f)
   {
-    char msg[1024];
-    sprintf(msg, "Couldn't open save file: %s", strerror(errno));
+    gchar msg[1024];
+    g_snprintf(msg, sizeof(msg),
+	       "Couldn't open save file: %s", strerror(errno));
     message_box(msg);
     return;
   }
@@ -93,9 +94,11 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
 
   if (major_ver != save_major_ver || minor_ver != save_minor_ver)
   {
-    char msg[64];
-    sprintf(msg, "Don't know how to load version %d.%d!",
-	    major_ver, minor_ver); 
+    gchar msg[64];
+    g_snprintf(msg, sizeof(msg),
+	       "Don't know how to load version %d.%d!",
+	       major_ver, minor_ver); 
+
     message_box(msg);
     return;
   }
@@ -115,10 +118,10 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
   fscanf(f, "[Files]\n");
   while (!feof(f))
   {
-    char line[1024];
-    char *p;
+    gchar line[1024];
+    gchar *p;
 
-    p = fgets(line, 1024, f);
+    p = fgets(line, sizeof(line), f);
     if (!p)
     {
       break;
@@ -131,11 +134,11 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
       }
       else
       {
-	char *data_file, *output_file, *status;
-	char *data_file_p, *output_file_p, *status_p;
-	char *newline;
+	gchar *data_file, *output_file, *status;
+	gchar *data_file_p, *output_file_p, *status_p;
+	gchar *newline;
 
-	data_file = strdup(line);
+	data_file = g_strdup(line);
 
 	data_file_p = strchr(data_file, '=');
 	if (!data_file_p)
@@ -146,11 +149,11 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
 	if (newline)
 	  *newline = '\0';
 
-	p = fgets(line, 1024, f);
+	p = fgets(line, sizeof(line), f);
 	if (!p)
 	  continue;
 
-	output_file = strdup(line);
+	output_file = g_strdup(line);
 
 	output_file_p = strchr(output_file, '=');
 	if (!output_file_p)
@@ -161,11 +164,11 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
 	if (newline)
 	  *newline = '\0';
 	
-	p = fgets(line, 1024, f);
+	p = fgets(line, sizeof(line), f);
 	if (!p)
 	  continue;
 
-	status = strdup(line);
+	status = g_strdup(line);
 
 	status_p = strchr(status, '=');
 	if (!status_p)
@@ -180,9 +183,9 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
 	gtk_list_store_set(list_store, &iter,
 			   0, data_file_p, 1, output_file_p, 2, status_p, -1);
 
-	free(status);
-	free(output_file);
-	free(data_file);
+	g_free(status);
+	g_free(output_file);
+	g_free(data_file);
       }
     }
   }

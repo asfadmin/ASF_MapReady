@@ -5,6 +5,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-char *find_in_path(char * file);
+gchar *find_in_path(gchar * file);
 
 #endif

@@ -1,2 +1,2 @@
 gboolean rename_selected_output_filename();
-void do_rename_selected(char *new_name);
+void do_rename_selected(gchar *new_name);

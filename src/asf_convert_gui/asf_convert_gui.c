@@ -15,6 +15,10 @@ main(int argc, char **argv)
     GtkWidget *widget;
     gchar *glade_xml_file;
 
+    /* I've tried to get rid of all mixed {g_}malloc/{g_}free operations,
+       but just in case let's see that it is okay on our supprted platforms */
+    assert(g_mem_is_system_malloc());
+
     gtk_init(&argc, &argv);
 
     glade_xml_file = (gchar *)find_in_path("asf_convert_gui.glade");
@@ -68,7 +72,7 @@ main(int argc, char **argv)
     gtk_main ();
 
     if (settings_on_execute)
-      free(settings_on_execute);
+      g_free(settings_on_execute);
 
     exit (EXIT_SUCCESS);
 }

@@ -1,25 +1,25 @@
 #include "asf_convert_gui.h"
 
-static char *
-determine_default_output_file_name(char * data_file_name)
+static gchar *
+determine_default_output_file_name(gchar * data_file_name)
 {
   Settings * user_settings;
-  const char * ext;
-  char * output_name_full;
-  char * basename;
-  char * p;
+  const gchar * ext;
+  gchar * output_name_full;
+  gchar * basename;
+  gchar * p;
 
-  basename = strdup(data_file_name);
+  basename = g_strdup(data_file_name);
   p = strrchr(basename, '.');
   if (p)
     *p = '\0';
   
   user_settings = settings_get_from_gui();
   ext = settings_get_output_format_extension(user_settings);
-  output_name_full = (char *)malloc(strlen(basename) + strlen(ext) + 2);
-  sprintf(output_name_full, "%s.%s", basename, ext);
+  output_name_full = (gchar *)g_malloc(strlen(basename) + strlen(ext) + 2);
+  g_sprintf(output_name_full, "%s.%s", basename, ext);
 
-  free(basename);
+  g_free(basename);
 
   return output_name_full;
 }
@@ -29,7 +29,7 @@ add_to_files_list(gchar * data_file, gchar * meta_file)
 {
   GtkWidget *files_list;
   GtkTreeIter iter;
-  char * out_name_full;
+  gchar * out_name_full;
 
   files_list =
     glade_xml_get_widget(glade_xml, "files_list");
@@ -41,14 +41,14 @@ add_to_files_list(gchar * data_file, gchar * meta_file)
   gtk_list_store_set(list_store, &iter, 
 		     0, data_file, 1, out_name_full, 2, "-", -1);
 
-  free(out_name_full);
+  g_free(out_name_full);
 }
 
 void
 update_all_extensions()
 {
   Settings * user_settings;
-  const char * ext;
+  const gchar * ext;
   gboolean valid;
   GtkTreeIter iter;
 
@@ -68,18 +68,18 @@ update_all_extensions()
       gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
 			 1, &current_output_name, -1);
       
-      basename = strdup(current_output_name);
+      basename = g_strdup(current_output_name);
       p = strrchr(basename, '.');
       if (p)
 	*p = '\0';
       
-      new_output_name = (gchar *)malloc(strlen(basename) + strlen(ext) + 1);
-      sprintf(new_output_name, "%s.%s", basename, ext);
+      new_output_name = (gchar *)g_malloc(strlen(basename) + strlen(ext) + 1);
+      g_sprintf(new_output_name, "%s.%s", basename, ext);
       
       gtk_list_store_set(list_store, &iter, 1, new_output_name, -1);
       
-      free(basename);
-      free(new_output_name);
+      g_free(basename);
+      g_free(new_output_name);
       
       valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
     }
@@ -111,14 +111,14 @@ setup_files_list(int argc, char *argv[])
 
   for (i = 1; i < argc; ++i)
   {
-    char * data_file = argv[i];
-    char * output_file = determine_default_output_file_name(data_file);
+    gchar * data_file = argv[i];
+    gchar * output_file = determine_default_output_file_name(data_file);
 
     gtk_list_store_append(list_store, &iter);
     gtk_list_store_set(list_store, &iter,
 		       0, data_file, 1, output_file, 2, "-", -1);
 
-    free(output_file);
+    g_free(output_file);
   }
 
   files_list =

@@ -11,10 +11,10 @@
 #include <sys/wait.h>
 #include <time.h>
 
-char *
-do_cmd(char *cmd, char *log_file_name)
+gchar *
+do_cmd(gchar *cmd, gchar *log_file_name)
 {
-  char *the_output;
+  gchar *the_output;
   FILE *output;
 
   int pid = fork();
@@ -41,27 +41,27 @@ do_cmd(char *cmd, char *log_file_name)
 
   if (!output)
   {
-    the_output = (char *)malloc(256);
-    sprintf(the_output, "Error Opening Log File: %s", strerror(errno));
+    the_output = (gchar *)g_malloc(256);
+    sprintf(the_output, "Error Opening Log File: %s\n", strerror(errno));
   }
   else
   {
     while (!feof(output))
     {
-      char buffer[4096];
-      char *p = fgets(buffer, 4096, output);
+      gchar buffer[4096];
+      gchar *p = fgets(buffer, sizeof(buffer), output);
       if (p)
       {
 	if (the_output)
         {
-	  the_output = (char *)realloc(the_output, 
+	  the_output = (gchar *)g_realloc(the_output, 
 				    strlen(the_output) + strlen(buffer) + 1);
 
 	  strcat(the_output, buffer);
 	}
 	else
 	{
-	  the_output = (char *)malloc(strlen(buffer) + 1);
+	  the_output = (gchar *)g_malloc(strlen(buffer) + 1);
 	  strcpy(the_output, buffer);
 	}
       }
@@ -132,7 +132,7 @@ do_cmd_does_not_work(char *cmd)
 */
 
 void
-append_output(char * txt)
+append_output(gchar * txt)
 {
   GtkWidget * textview_output;
   GtkTextBuffer * text_buffer;
@@ -184,11 +184,11 @@ process_item(GtkTreeIter *iter,
   {
     gchar *basename, *in_meta, *p;
     gchar convert_cmd[4096];
-    char log_file[128];
+    gchar log_file[128];
 
     in_meta = meta_file_name(in_data);
 
-    basename = strdup(in_data);
+    basename = g_strdup(in_data);
     p = strrchr(basename, '.');
     if (p)
       *p = '\0';
@@ -200,12 +200,12 @@ process_item(GtkTreeIter *iter,
   
     if (settings_get_run_import(user_settings))
     {
-      char * cmd_output;
+      gchar * cmd_output;
 
-      sprintf(log_file, "tmp_%d_%ld_import.log", pid, s);
+      g_snprintf(log_file, sizeof(log_file), "tmp_%d_%ld_import.log", pid, s);
 
-      snprintf(convert_cmd, 4096, 
-	       "asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" \"%s\"",
+      g_snprintf(convert_cmd, sizeof(convert_cmd), 
+       "asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" \"%s\" 2>&1",
 	       settings_get_data_type_string(user_settings),
 	       settings_get_input_data_format_string(user_settings),
 	       settings_get_latitude_argument(user_settings),
@@ -218,8 +218,8 @@ process_item(GtkTreeIter *iter,
 
       append_output(cmd_output);
 
-      char * out_name_full = (char *)malloc(strlen(basename) + 10);
-      sprintf(out_name_full, "%s.img", basename);
+      gchar * out_name_full = (char *)g_malloc(strlen(basename) + 10);
+      g_sprintf(out_name_full, "%s.img", basename);
       
       if (!settings_get_run_export(user_settings))
       {
@@ -227,8 +227,8 @@ process_item(GtkTreeIter *iter,
 	gtk_list_store_set(list_store, iter, 2, "Done", -1);
       }
 
-      free(out_name_full);
-      free(cmd_output);
+      g_free(out_name_full);
+      g_free(cmd_output);
     }
 
     while (gtk_events_pending())
@@ -236,12 +236,12 @@ process_item(GtkTreeIter *iter,
 
     if (settings_get_run_export(user_settings))
     {
-      char * cmd_output;
+      gchar * cmd_output;
     
-      sprintf(log_file, "tmp_%d_%ld_export.log", pid, s);
+      g_snprintf(log_file, sizeof(log_file), "tmp_%d_%ld_export.log", pid, s);
     
-      snprintf(convert_cmd, 4096,
-	       "asf_export -format %s %s -log \"%s\" \"%s\" \"%s\"",
+      snprintf(convert_cmd, sizeof(convert_cmd),
+	       "asf_export -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
 	       settings_get_output_format_string(user_settings),
 	       settings_get_size_argument(user_settings),
 	       log_file,
@@ -249,14 +249,15 @@ process_item(GtkTreeIter *iter,
 	       out_full);
       
       cmd_output = do_cmd(convert_cmd, log_file);
+      append_output(cmd_output);
       
       gtk_list_store_set(list_store, iter, 2, "Done", -1);
       
-      free(cmd_output);
+      g_free(cmd_output);
     }
 
-    free(basename);
-    free(in_meta);
+    g_free(basename);
+    g_free(in_meta);
   }
 
   g_free(status);
@@ -277,14 +278,12 @@ on_execute_button_clicked (GtkWidget *button)
 
   user_settings = settings_get_from_gui();
 
-  if (settings_on_execute)
+  if (settings_on_execute &&
+      !settings_equal(user_settings, settings_on_execute))
   {
-    if (!settings_equal(user_settings, settings_on_execute))
-    {
-      /* settings have changed since last time clicked execute,
-	 or loaded settings from a file - must clear progress so far */
-      invalidate_progress();
-    }
+    /* settings have changed since last time clicked execute,
+       or loaded settings from a file - must clear progress so far */
+    invalidate_progress();
   }
 
   settings_on_execute = settings_copy(user_settings);
@@ -314,7 +313,7 @@ on_execute_button_clicked (GtkWidget *button)
   }
 
   processing = FALSE;
-  free(user_settings);
+  g_free(user_settings);
   show_execute_button(TRUE);
 }
 
