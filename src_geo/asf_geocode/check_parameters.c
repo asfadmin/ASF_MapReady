@@ -46,7 +46,7 @@ void check_parameters(projection_type_t projection_type,
       if (meta->general->center_latitude >= 0.0 &&
           !FLOAT_EQUIVALENT(pp->utm.false_northing, 0))
         asfPrintError("False northing '%.1f' different from default value (0)\n",
-                      pp->utm.false_easting);
+                      pp->utm.false_northing);
       if (meta->general->center_latitude < 0.0 &&
           !FLOAT_EQUIVALENT(pp->utm.false_easting, 500000))
         asfPrintError("False easting '%.1f' different from default value (500000)\n",
@@ -54,7 +54,7 @@ void check_parameters(projection_type_t projection_type,
       if (meta->general->center_latitude < 0.0 &&
           !FLOAT_EQUIVALENT(pp->utm.false_northing, 10000000))
         asfPrintError("False northing '%.1f' different from default value (10000000)\n",
-                      pp->utm.false_easting);
+                      pp->utm.false_northing);
 
       // Zone test - only zones for coordinates within image permitted
       meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
