@@ -13,7 +13,7 @@ void meta_new2old(meta_parameters *meta);
  * Reads a meta file and returns a meta structure filled with
  * both old backward compatability and new fields filled in.
  * Note that the appropriate extension is appended to the given
- * base name automagically.  */
+ * base name automagically if needed.  */
 meta_parameters *meta_read(const char *inName)
 {
  /* Maximum line length.  */
