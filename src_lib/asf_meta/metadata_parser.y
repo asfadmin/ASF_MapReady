@@ -43,7 +43,7 @@ static void *block_stack_pop(block_stack_node **stack_top_p)
 
 /* Arrays of vectors are stored in the metadata structure, this keeps
    track of how many of them we have seen so far.  */
-int vector_count = 0;
+static int vector_count;
 
 char current_file[MAX_FILE_NAME];
 extern int line_number;		/* Line number of file being parsed.  */
@@ -421,6 +421,9 @@ int parse_metadata(meta_parameters *dest, char *file_name)
 
   /* Put file name in a global for error reporting.  */
   strncpy(current_file, file_name, MAX_FILE_NAME);
+
+  /* (Re)set file scope variable which counts number of vector blocks seen.  */
+  vector_count = 0;
 
   yyin = fopen(file_name, "r");
   if ( !(stack_top = malloc(sizeof(block_stack_node))) ) {
