@@ -20,7 +20,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   asf_import"
 
 #define ASF_USAGE_STRING \
-/************/"[-amplitude | -sigma | -gamma | -beta | -power]\n"\
+"[-amplitude | -sigma | -gamma | -beta | -power]\n"\
 "              [-prc] [-old] [-format <input_format>] [-lat <lower> <upper>]\n"\
 "              [-log <log_file>] [-quiet] [-help]\n"\
 "              <in_data_name> <in_meta_name> <out_base_name>"
@@ -122,7 +122,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "    0.6     7/04   G. Short    New command line parsing.\n"\
 "    0.7     7/04   G. Shrot    New usage/help style.\n"\
 "    1.0     8/04   P. Denny    Create functions to do each of the different\n"\
-"                                filetype imports... ready for release.\n"
+"                                filetype imports... ready for release."
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
@@ -158,7 +158,7 @@ void help_page()
 		"Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
 		"Input:\n" ASF_INPUT_STRING "\n\n\n"
 		"Output:\n"ASF_OUTPUT_STRING "\n\n\n"
-	"Options:\n" ASF_OPTIONS_STRING "\n\n\n"
+		"Options:\n" ASF_OPTIONS_STRING "\n\n\n"
 		"Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
 		"Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
 		"See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
