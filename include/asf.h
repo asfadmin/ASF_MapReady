@@ -74,8 +74,10 @@ int fileExists(const char *name);
 char *findExt(char *name);
 char *appendExt(const char *name,const char *newExt);
 FILE *fopenImage(const char *name,const char *accessType);
-int get_float_line(FILE *file, meta_parameters *meta, int line_number, 
-		    float *dest);
+int get_float_line(FILE *file, meta_parameters *meta, int line_number,
+		float *dest);
+int put_float_line(FILE *file, meta_parameters *meta, int line_number,
+		const float *source);
 void create_name(char *out,const char *in,const char *newExt);
 
 #endif
