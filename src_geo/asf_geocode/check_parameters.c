@@ -8,10 +8,12 @@
 
 // Prototypes
 int calc_utm_zone(double lon);
+void check_parameters(projection_type_t projection_type, 
+		      project_parameters_t *pp, meta_parameters *meta);
 
-// Checking routine for projection parameter input
-void check_parameters(projection_type_t projection_type, project_parameters_t *pp,
-		      meta_parameters *meta)
+// Checking routine for projection parameter input.
+void check_parameters(projection_type_t projection_type, 
+		      project_parameters_t *pp, meta_parameters *meta)
 {
   double lat, lon;
   int zone, min_zone=60, max_zone=1;
