@@ -50,6 +50,7 @@ LIBS  = $(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libtiff.a \
 	$(LIBDIR)/libjpeg.a \
 	$(LIBDIR)/libgsl.a \
+	$(LIBDIR)/libproj.a \
 	-lm
 
 LDFLAGS := $(shell pkg-config --libs-only-L glib-2.0 \
