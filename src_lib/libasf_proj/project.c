@@ -1,5 +1,6 @@
 #include "libasf_proj.h"
 #include "asf.h"
+#include "asf_nan.h"
 #include "asf_reporting.h"
 
 #include <stdio.h>
@@ -28,7 +29,7 @@ void set_avg_height(double h)
 
 static double get_avg_height()
 {
-    if (pHeight)
+    if (pHeight && !ISNAN(*pHeight))
 	return *pHeight;
     else
 	return 0.0;
