@@ -209,7 +209,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
 // Standard libraries.
+#include <execinfo.h>
 #include <math.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -297,6 +299,26 @@ help_page (void)
 // Factors for going between degrees and radians.
 #define RAD_TO_DEG	57.29577951308232
 #define DEG_TO_RAD	0.0174532925199432958
+
+// We want to trap segmentation faults (signal number 11,
+// i.e. SIGSEGV) and try to produce a backtrace.  Here is a signal
+// handler that does that.
+static void 
+sigsegv_handler (int signal_number)
+{
+  g_assert (signal_number == SIGSEGV);
+
+#define MAX_BACKTRACE_CALL_DEPTH 300
+  
+  void *array[MAX_BACKTRACE_CALL_DEPTH];
+  
+  size_t size = backtrace (array, MAX_BACKTRACE_CALL_DEPTH);
+  
+  fprintf (stderr, "SIGSEGV caught.  Backtrace:\n");
+  backtrace_symbols_fd (array, size, STDERR_FILENO);
+
+  abort ();
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // 
@@ -502,6 +524,19 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
 int
 main (int argc, char **argv)
 {
+  // Install handler to trap segmentation faults and print a backtrace.
+  sigset_t sigsegv_mask;
+  int return_code = sigemptyset(&sigsegv_mask);
+  g_assert (return_code == 0);
+  return_code = sigaddset(&sigsegv_mask, SIGSEGV);
+  g_assert (return_code == 0);
+  struct sigaction backtrace_action;
+  backtrace_action.sa_handler = sigsegv_handler;
+  backtrace_action.sa_mask = sigsegv_mask;
+  backtrace_action.sa_flags = 0;
+  return_code = sigaction (SIGSEGV, &backtrace_action, NULL);  
+  g_assert (return_code == 0);
+
   // Get the projection parameters from the command line.
   projection_type_t projection_type;
   // Terrain height to assume.  Defaults to 0.
@@ -698,9 +733,9 @@ main (int argc, char **argv)
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY - ipb->perY * jj;
-	int return_code = unproject_input (ipp, xpc, ypc, 
-					   &(lats[current_edge_point]),
-					   &(lons[current_edge_point]));
+	return_code = unproject_input (ipp, xpc, ypc, 
+				       &(lats[current_edge_point]),
+				       &(lons[current_edge_point]));
 	g_assert (return_code);
       }
       else {
@@ -716,9 +751,9 @@ main (int argc, char **argv)
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY - ipb->perY * jj;
-	int return_code = unproject_input (ipp, xpc, ypc,
-					   &(lats[current_edge_point]),
-					   &(lons[current_edge_point]));
+	return_code = unproject_input (ipp, xpc, ypc,
+				       &(lats[current_edge_point]),
+				       &(lons[current_edge_point]));
 	// FIXME: remove this debugging trap of the error return
 	// condition.
 	if ( !return_code ) {
@@ -741,9 +776,9 @@ main (int argc, char **argv)
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY - ipb->perY * jj;
-	int return_code = unproject_input (ipp, xpc, ypc,
-					   &(lats[current_edge_point]),
-					   &(lons[current_edge_point]));
+	return_code = unproject_input (ipp, xpc, ypc,
+				       &(lats[current_edge_point]),
+				       &(lons[current_edge_point]));
 	g_assert (return_code);
       }
       else {
@@ -759,9 +794,9 @@ main (int argc, char **argv)
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY - ipb->perY * jj;
-	int return_code = unproject_input (ipp, xpc, ypc,
-					   &(lats[current_edge_point]),
-					   &(lons[current_edge_point]));
+	return_code = unproject_input (ipp, xpc, ypc,
+				       &(lats[current_edge_point]),
+				       &(lons[current_edge_point]));
 	g_assert (return_code);
       }
       else {
@@ -779,7 +814,7 @@ main (int argc, char **argv)
     double *x = NULL, *y = NULL;
     x = y = NULL;
     // Project all the edge pixels.
-    int return_code = project_arr (pp, lats, lons, &x, &y, edge_point_count);
+    return_code = project_arr (pp, lats, lons, &x, &y, edge_point_count);
     g_assert (return_code == TRUE);
     // Find the extents of the image in projection coordinates.
     for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
@@ -852,7 +887,7 @@ main (int argc, char **argv)
       double cyproj = min_y + y_spacing * ii;
       // Corresponding latitude and longitude.
       double lat, lon;
-      gboolean return_code = unproject (pp, cxproj, cyproj, &lat, &lon);
+      return_code = unproject (pp, cxproj, cyproj, &lat, &lon);
       if ( !return_code ) {
 	// Details of the error should have already been printed.
 	asfPrintError ("Projection Error!\n");
@@ -1173,8 +1208,8 @@ main (int argc, char **argv)
   // Store the output image, and free image resources.
   GString *output_data_file = g_string_new (output_image->str);
   g_string_append (output_data_file, ".img");
-  int return_code = float_image_store (oim, output_data_file->str,
-				       FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  return_code = float_image_store (oim, output_data_file->str,
+				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   asfRequire (return_code == 0, "Error saving image.\n");
   float_image_free (oim);
   g_string_free (output_data_file, TRUE);
