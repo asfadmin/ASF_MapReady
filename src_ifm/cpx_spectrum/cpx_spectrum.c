@@ -50,6 +50,7 @@ PROGRAM HISTORY:
     1.5     6/03   P. Denny     Standardize usage()
                                   Use meta struct instead of DDR
                                   Use get_*_lines instead of FREAD
+                                  Use complexFloat type instead of FCMPLX
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
