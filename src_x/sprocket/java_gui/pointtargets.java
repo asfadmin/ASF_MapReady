@@ -46,7 +46,7 @@ class pointtargets {
 		resetvisible();
 	}
 	
-	public void importtargets() {
+	public void importTargets() {
 		try {
                         FileInputStream in = new FileInputStream(
                               new File (filename + Constants.ground_target_file_located));
@@ -78,7 +78,7 @@ class pointtargets {
 		resetvisible();
 	}
 	
-	public void exporttargets() {
+	public void exportTargets() {
 		String outfile = filename + ".ground_target_final";		
 			//filename extension for output will probably change.
 		String end = System.getProperty("line.separator");

@@ -1,3 +1,20 @@
+/* *****************************************************************************
+NAME: prefDialog.java
+
+DESCRIPTION:
+	Before opening an image, use this dialog to decipher a users preferences
+	on window size and image quality.
+
+PROGRAM HISTORY:
+    VERS:   DATE:  AUTHOR:      PURPOSE:
+    ---------------------------------------------------------------
+            07/03  P. Denny     Split bloated pvs.java up into
+                                 files named after their classes
+            07/03  P. Denny     Replaced depricated action and handleEvent
+                                 methods with appropriate Listeners
+
+***************************************************************************** */
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
@@ -7,10 +24,11 @@ import java.io.*;
 
 //IMAGE PREFERENCES
 
-class prefDialog extends Dialog {
+class prefDialog extends Dialog implements ActionListener, WindowListener {
 	CheckboxGroup cksize = new CheckboxGroup();
 	CheckboxGroup ckqual = new CheckboxGroup();
 	boolean cancelled = false;
+	Button okayButton;
 
 	prefDialog (Frame parent, int imagesize, int imagequality) {
 		super (parent, "image import preferences", true);
@@ -69,26 +87,32 @@ class prefDialog extends Dialog {
 		north.add("South", quality);
 		add ("North", north);
 		Panel south = new Panel();
-		south.add(new Button ("Okay"));
+		south.add(okayButton = new Button ("Okay"));
 		add ("South", south);
+		
+		// Listen for input
+		okayButton.addActionListener(this);
+		addWindowListener(this);
+
 		setResizable(true);
 		pack();
 	}
 		
-	public boolean handleEvent (Event e) {
-		if (e.id == Event.WINDOW_DESTROY) {
-			cancelled = true;
-			dispose();
-			return true;
-		}
-		return super.handleEvent(e);
+	public void actionPerformed (ActionEvent actEvent)
+	{
+		if (actEvent.getSource()==okayButton)
+			this.hide();
 	}
 
-	public boolean action (Event e, Object o) {
-		if ("Okay".equals(o)) {
-			hide();
-		}
-		return super.action(e, o);
-	}
+	public void windowClosing(WindowEvent e) { 
+		cancelled = true;
+		this.dispose(); 
+	} 
+	public void windowActivated(WindowEvent e) { }
+	public void windowDeactivated(WindowEvent e) { }
+	public void windowDeiconified(WindowEvent e) { }
+	public void windowClosed(WindowEvent e) { }
+	public void windowIconified(WindowEvent e) { }
+	public void windowOpened(WindowEvent e) { }  
 }
 

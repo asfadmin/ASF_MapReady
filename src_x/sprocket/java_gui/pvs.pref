@@ -1,7 +1,7 @@
-imagedir	.
-maskdir	 	.
-helpdir		.
-logfile		/ASF/pvs.log
+imagedir	./
+maskdir	 	./
+helpdir		/home/pdenny/asf_tools/src_x/sprocket/help_files/
+logfile		/home/pdenny/sprocket.log
 
-xy_plotter	/ASF/current/bin/Linux/xy_plotter
+xy_plotter	/home/pdenny/asf_tools/bin/linux/xy_plotter
 outputfile	output.txt

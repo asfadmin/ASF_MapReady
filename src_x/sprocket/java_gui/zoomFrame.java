@@ -1,3 +1,18 @@
+/* ****************************************************************************
+NAME: zoomFrame.java
+
+DESCRIPTION:
+	SProCKET Zoom window.
+
+PROGRAM HISTORY:
+    VERS:   DATE:  AUTHOR:      PURPOSE:
+    ---------------------------------------------------------------
+            07/03  P. Denny     Split bloated pvs.java up into
+                                 files named after their classes
+            07/03  P. Denny     Replaced depricated action and handleEvent
+                                 methods with appropriate Listeners
+
+**************************************************************************** */
 
 import java.awt.*;
 import java.awt.event.*;
@@ -8,335 +23,339 @@ import java.io.*;
 
 //ZOOM FRAME
 
-class zoomFrame extends Frame {
-	mask imagemask;
-	pvs mainFrame;
-	imageCanvas mainCanvas;
-	zoomCanvas myzoomer; 
-	pointtargets targets;
-	Label coordinates;
-	
-	Menu optionMenu;
-	Menu ratioMenu;
-	Menu smaskMenu;
-	
-	MenuItem r12MenuItem;
-	MenuItem r25MenuItem;
-	MenuItem r50MenuItem;
-	MenuItem r100MenuItem;
-	MenuItem r200MenuItem;
-	MenuItem r400MenuItem;
-	MenuItem r800MenuItem;
-	MenuItem r1600MenuItem;
-	
-	MenuItem enterMenuItem;
-	MenuItem beginMenuItem;
-	MenuItem exitMenuItem;
-	MenuItem importMenuItem;
-	
-	CheckboxMenuItem autoMenuItem;
-	CheckboxMenuItem flyMenuItem;
-	CheckboxMenuItem bestMenuItem;
-	
-	zoomFrame(pvs mainFrame) {
-	  super("zoomer");
-		this.mainCanvas = mainFrame.mainCanvas;
-	  this.mainFrame = mainFrame;
-		int locatex = mainFrame.locatex;
-		int locatey = mainFrame.locatey;
-		MenuBar mb = new MenuBar();
-		
-		optionMenu = new Menu("Option");
-		autoMenuItem = new CheckboxMenuItem("auto export");
-		flyMenuItem = new CheckboxMenuItem("fly through");
-		bestMenuItem = new CheckboxMenuItem("best quality");
-		optionMenu.add(new MenuItem("export image..."));
-		optionMenu.add(autoMenuItem);
-		optionMenu.add(flyMenuItem);
-		optionMenu.add(bestMenuItem);
-		optionMenu.add(new MenuItem("close window"));
+class zoomFrame extends Frame implements ActionListener, ItemListener,
+                                                          WindowListener {
+  mask imagemask;
+  pvs mainFrame;
+  imageCanvas mainCanvas;
+  zoomCanvas zoomedCanvas; 
+  pointtargets targets;
+  Label coordinates;
+  
+  Menu optionMenu;
+  Menu ratioMenu;
+  Menu smaskMenu;
+  
+  MenuItem r12MenuItem;
+  MenuItem r25MenuItem;
+  MenuItem r50MenuItem;
+  MenuItem r100MenuItem;
+  MenuItem r200MenuItem;
+  MenuItem r400MenuItem;
+  MenuItem r800MenuItem;
+  MenuItem r1600MenuItem;
+  
+  MenuItem enterMenuItem;
+  MenuItem beginMenuItem;
+  MenuItem exitMenuItem;
+  MenuItem importMenuItem;
+  
+  MenuItem exportImageMenuItem;
+  CheckboxMenuItem autoMenuItem;
+  CheckboxMenuItem flyMenuItem;
+  CheckboxMenuItem bestMenuItem;
+  MenuItem closeMenuItem;
 
-		autoMenuItem.addItemListener(new ItemListener() {
-			public void itemStateChanged(ItemEvent e) {
-				if(!myzoomer.auto) {	//do this first, because when the file dialog goes away
-															//the pvs will repaint the zoom canvas, and if auto is 
-															//already on your first filename will be null.
-					FileDialog f = new FileDialog(zoomFrame.this, "base export name", FileDialog.SAVE);
-					if(zoomFrame.this.mainFrame.imagedir != null)
-						f.setDirectory(zoomFrame.this.mainFrame.imagedir);
-					f.show();
-					f.dispose();
-					String filename = f.getFile();
-					if(filename != null) {
-						if(filename.lastIndexOf(".pgm") != -1)
-							filename = (filename.substring(0, filename.length() - 4));
-						filename = f.getDirectory() + filename;
-						myzoomer.autoname = filename;
-						myzoomer.autonumber = 0;
-					}
-				}
-				myzoomer.auto = !myzoomer.auto;
-			}
-		});
-		
-		flyMenuItem.addItemListener(new ItemListener() {
-			public void itemStateChanged(ItemEvent e) {
-				myzoomer.fly = !myzoomer.fly; 
-				smaskMenuEnabler(!myzoomer.fly);
-			}
-		});
-		
-		bestMenuItem.addItemListener(new ItemListener() {
-			public void itemStateChanged(ItemEvent e) {
-				myzoomer.best = !myzoomer.best; 
-				myzoomer.repaint();
-			}
-		});
-		
-		ratioMenu = new Menu("zoom ratio");
-		r12MenuItem = ratioMenu.add(new MenuItem("12.5%"));
-		r25MenuItem = ratioMenu.add(new MenuItem("25%"));
-		r50MenuItem = ratioMenu.add(new MenuItem("50%"));
-		r100MenuItem = ratioMenu.add(new MenuItem("100%"));
-		r200MenuItem = ratioMenu.add(new MenuItem("200%"));
-		r400MenuItem = ratioMenu.add(new MenuItem("400%"));
-		r800MenuItem = ratioMenu.add(new MenuItem("800%"));
-		r1600MenuItem = ratioMenu.add(new MenuItem("1600%"));
-		
-		smaskMenu = new Menu("smask");
-		enterMenuItem = smaskMenu.add(new MenuItem("enter smask mode", new MenuShortcut(KeyEvent.VK_S)));
-		beginMenuItem = smaskMenu.add(new MenuItem("begin smasking"));
-		exitMenuItem = smaskMenu.add(new MenuItem("exit smask mode"));
-		smaskMenu.addSeparator();
-		importMenuItem = smaskMenu.add(new MenuItem("import smask"));
-		
-		mb.add(optionMenu);
-		mb.add(ratioMenu);
-		mb.add(smaskMenu);
-		setMenuBar(mb);
-		
-		myzoomer = new zoomCanvas(this);
-		add("Center", myzoomer);
-		
-		coordinates = new Label("zoom window information bar");
-		coordinates.setBackground(Color.lightGray);
-		add("South", coordinates);
+  zoomFrame(pvs mainFrame) {
+    super("Zoomer");
+    this.mainCanvas = mainFrame.mainCanvas;
+    this.mainFrame = mainFrame;
+    int locatex = mainFrame.locatex;
+    int locatey = mainFrame.locatey;
+    MenuBar mb = new MenuBar();
 
-		smaskMenuEnabler(true);
-		smaskFunctionsMenuEnabler(false);
+    addWindowListener(this);
 
-	  setSize(260, 260);
-		if(locatex > 0 && locatey > 0)	{
-			if(locatex + mainFrame.getSize().width + getSize().width < getToolkit().getScreenSize().width)
-				setLocation(locatex + mainFrame.getSize().width, locatey + 60);
-			else
-				setLocation(locatex + 3, locatey + 41);
-		}
-		
-	  show();
-	}
+    //OPTION MENU
+    optionMenu = new Menu("Option");
+    optionMenu.add(exportImageMenuItem = new MenuItem("Export image..."));
+    optionMenu.add(autoMenuItem = new CheckboxMenuItem("Auto export"));
+    optionMenu.add(flyMenuItem = new CheckboxMenuItem("Fly through"));
+    optionMenu.add(bestMenuItem = new CheckboxMenuItem("Best quality"));
+    optionMenu.add(closeMenuItem = new MenuItem("Close window"));
+    exportImageMenuItem.addActionListener(this);
+    autoMenuItem.addItemListener(this);
+    flyMenuItem.addItemListener(this);
+    bestMenuItem.addItemListener(this);
+    closeMenuItem.addActionListener(this);
 
-	public void ratioMenuEnabler(boolean b) {
-		r12MenuItem.setEnabled(b);
-		r25MenuItem.setEnabled(b);
-		r50MenuItem.setEnabled(b);
-		r100MenuItem.setEnabled(b);
-		r200MenuItem.setEnabled(b);
-		r400MenuItem.setEnabled(b);
-		r800MenuItem.setEnabled(b);
-		r1600MenuItem.setEnabled(b);
-	}
+    // ZOOM RATIO MENU
+    ratioMenu = new Menu("zoom ratio");
+    ratioMenu.add(r12MenuItem   = new MenuItem("12.5%"));
+    ratioMenu.add(r25MenuItem   = new MenuItem("25%"));
+    ratioMenu.add(r50MenuItem   = new MenuItem("50%"));
+    ratioMenu.add(r100MenuItem  = new MenuItem("100%"));
+    ratioMenu.add(r200MenuItem  = new MenuItem("200%"));
+    ratioMenu.add(r400MenuItem  = new MenuItem("400%"));
+    ratioMenu.add(r800MenuItem  = new MenuItem("800%"));
+    ratioMenu.add(r1600MenuItem = new MenuItem("1600%"));
+    r12MenuItem.addActionListener(this);
+    r25MenuItem.addActionListener(this);
+    r50MenuItem.addActionListener(this);
+    r100MenuItem.addActionListener(this);
+    r200MenuItem.addActionListener(this);
+    r400MenuItem.addActionListener(this);
+    r800MenuItem.addActionListener(this);
+    r1600MenuItem.addActionListener(this);
 
-	public void smaskMenuEnabler(boolean b) {
-		enterMenuItem.setEnabled(b);
-		importMenuItem.setEnabled(b);
+    // SMASK MENU
+    smaskMenu = new Menu("smask");
+    enterMenuItem = smaskMenu.add(new MenuItem("enter smask mode", new MenuShortcut(KeyEvent.VK_S)));
+    beginMenuItem = smaskMenu.add(new MenuItem("begin smasking"));
+    exitMenuItem = smaskMenu.add(new MenuItem("exit smask mode"));
+    smaskMenu.addSeparator();
+    importMenuItem = smaskMenu.add(new MenuItem("import smask"));
+    enterMenuItem.addActionListener(this);
+    beginMenuItem.addActionListener(this);
+    exitMenuItem.addActionListener(this);
+    importMenuItem.addActionListener(this);
+    
+    // Construct zoom window's top bar of menus
+    mb.add(optionMenu);
+    mb.add(ratioMenu);
+    mb.add(smaskMenu);
+    setMenuBar(mb);
 
-		if(!b) {
-			smaskFunctionsMenuEnabler(b);
-		}
-		if(b && (myzoomer.simagemask != null)) {
-			smaskFunctionsMenuEnabler(b);
-		}
+    // Draw zoomed terrain
+    zoomedCanvas = new zoomCanvas(this);
+    add("Center", zoomedCanvas);
+    
+    // Tell user about selected coordinates below the canvas
+    coordinates = new Label("Zoom window information bar");
+    coordinates.setBackground(Color.lightGray);
+    add("South", coordinates);
 
-	}
+    smaskMenuEnabler(true);
+    smaskFunctionsMenuEnabler(false);
 
-	public void smaskFunctionsMenuEnabler(boolean b) {
-		beginMenuItem.setEnabled(b);
-		exitMenuItem.setEnabled(b);
-	}
+    setSize(260, 260);
+    if(locatex > 0 && locatey > 0)  {
+      if(locatex + mainFrame.getWidth() + getWidth() < getToolkit().getScreenSize().width)
+        setLocation(locatex + mainFrame.getWidth(), locatey + 60);
+      else
+        setLocation(locatex + 3, locatey + 41);
+    }
+    
+    setVisible(true);
+  }
 
-	public Dimension getPosition() {	//have mainCanvas call this to get the coords back.
-		int x = myzoomer.realx * myzoomer.im.imagesize;
-		int y = myzoomer.realy * myzoomer.im.imagesize;
-		x /= myzoomer.im.width;
-		y /= myzoomer.im.height;
-		return new Dimension(x, y);
-	}
+  public void ratioMenuEnabler(boolean b) {
+    r12MenuItem.setEnabled(b);
+    r25MenuItem.setEnabled(b);
+    r50MenuItem.setEnabled(b);
+    r100MenuItem.setEnabled(b);
+    r200MenuItem.setEnabled(b);
+    r400MenuItem.setEnabled(b);
+    r800MenuItem.setEnabled(b);
+    r1600MenuItem.setEnabled(b);
+  }
 
-	public Dimension getZoomSize() {	//have mainCanvas call this to get the size for the box.
-		int width  = myzoomer.getSize().width * myzoomer.im.imagesize;
-		int height = myzoomer.getSize().height * myzoomer.im.imagesize;
-		width  /= myzoomer.im.width;
-		height /= myzoomer.im.height;
-		width  /= myzoomer.ratio;
-		height /= myzoomer.ratio;
-		return new Dimension(width, height);
-	}
+  public void smaskMenuEnabler(boolean b) {
+    enterMenuItem.setEnabled(b);
+    importMenuItem.setEnabled(b);
 
-	public void updateMask (mask imagemask) {
-		this.imagemask = imagemask;
-		myzoomer.updateMask(imagemask);
-	}
-	
-	public void updateMask (mask imagemask, int pensize) {
-		this.imagemask = imagemask;
-//		myzoomer.updateMask(imagemask, pensize);     //for speed, but using the 'wait to refresh' right now.
-	}
-	
-	public void updateTargets (pointtargets targets) {
-		this.targets = targets;
-		myzoomer.updateTargets(targets);
-	}
-	
-	public void zoomImage(int x, int y, importImage im) {
-		if(this.isShowing()) {
-			int realx = x * im.width;			//use realx and realy from here on out.
-			int realy = y * im.height;		
-			realx /= im.imagesize;
-			realy /= im.imagesize;
-			myzoomer.zoomImage(realx, realy, im, imagemask);
-		}
-	}
-	
-	public boolean action(Event evt, Object obj) {
-		String label = (String)obj;
-		if (evt.target instanceof MenuItem) {
-		
-			//OPTIONS
-			
-			if (label.equals("export image...")) {
-				FileDialog f = new FileDialog(this, "export image as...", FileDialog.SAVE);
-				if(mainFrame.imagedir != null)
-					f.setDirectory(mainFrame.imagedir);
-				f.show();
-				f.dispose();
-				String filename = f.getFile();
-				if(filename != null) {
-					if(filename.lastIndexOf(".pgm") == -1)
-						filename += ".pgm";
-					filename = f.getDirectory() + filename;
-					myzoomer.im.exportImage(filename, myzoomer.km);
-				}
-				return true;
-			}
-			if (label.equals("close")) {
-				myzoomer.unsmasking();
-				mainCanvas.clearSmask();
-				this.setResizable(true);
-				mainFrame.maskMenuEnabler(true);
-				mainFrame.targetMenuEnabler(true);
-				flyMenuItem.setState(false);
-				smaskFunctionsMenuEnabler(false);
-				myzoomer.fly = false;
-				dispose();	//switched to dispose because of the magic minimizing window... 
-//			hide();			//but it might not be the best solution.
-				return true;
-			}
-			
-			//RATIO
-			
-			if (label.equals("12.5%")) {myzoomer.newRatio(.125);}
-			if (label.equals("25%")) {myzoomer.newRatio(.25);}
-			if (label.equals("50%")) {myzoomer.newRatio(.5);}
-			if (label.equals("100%")) {myzoomer.newRatio(1);}
-			if (label.equals("200%")) {myzoomer.newRatio(2);}
-			if (label.equals("400%")) {myzoomer.newRatio(4);}
-			if (label.equals("800%")) {myzoomer.newRatio(8);}
-			if (label.equals("1600%")) {myzoomer.newRatio(16);}
-			
-			//SMASKING
+    if(!b) {
+      smaskFunctionsMenuEnabler(b);
+    }
+    if(b && (zoomedCanvas.simagemask != null)) {
+      smaskFunctionsMenuEnabler(b);
+    }
+  }
 
-			if(myzoomer.im != null) {
-				if (label.equals("enter smask mode")) {			//enter smask mode & start drawing
-					if(myzoomer.simagemask == null) {
-						FileDialog f = new FileDialog(this, "new smask filename", FileDialog.SAVE);
-						if(mainFrame.maskdir != null) 
-							f.setDirectory(mainFrame.maskdir);
-						f.show();
-						f.dispose();
-						String filename = f.getFile();
-						
-						if(filename != null) {
-							this.setResizable(false);
-							flyMenuItem.setEnabled(false);
-							smaskFunctionsMenuEnabler(true);
-							mainFrame.maskMenuEnabler(false);
-							mainFrame.targetMenuEnabler(false);
-							filename = f.getDirectory() + filename;
-							myzoomer.simagemask = new smask(filename, mainCanvas.im.imagesize, myzoomer.im.width, myzoomer.im.height);
-							myzoomer.smasking();
-							return true;
-						}
-					}
-					else {
-						myzoomer.smasking();
-					}
-				}
-				if (label.equals("begin smasking")) {    //start drawing
-					if(myzoomer.im != null) {
-						if(myzoomer.simagemask != null)
-							myzoomer.smasking();
-						return true;
-					}
-				}			
-				if (label.equals("exit smask mode")) {    //exit mask mode & destroy mask
-					mainCanvas.clearSmask();
-					myzoomer.unsmasking();
-					smaskFunctionsMenuEnabler(false);
-					mainFrame.maskMenuEnabler(true);
-					mainFrame.targetMenuEnabler(true);
-					return true;
-				}
-				if (label.equals("import smask")) {    //import smask from bitmap
-					FileDialog f = new FileDialog(this, "import mask", FileDialog.LOAD);
-					if(mainFrame.maskdir != null) 
-						f.setDirectory(mainFrame.maskdir);
-					f.show();
-					f.dispose();
-					String filename = f.getFile();
-					
-					if(filename != null) {
-						smaskFunctionsMenuEnabler(true);
-						mainFrame.maskMenuEnabler(false);
-						mainFrame.targetMenuEnabler(false);
-						filename = f.getDirectory() + filename;
-						myzoomer.simagemask = new smask(filename, mainCanvas.im.imagesize, myzoomer.im.width, myzoomer.im.height, true);
+  public void smaskFunctionsMenuEnabler(boolean b) {
+    beginMenuItem.setEnabled(b);
+    exitMenuItem.setEnabled(b);
+  }
 
-						mainCanvas.updateSmask(myzoomer.simagemask);
-						myzoomer.repaint();
-						return true;
-					}
-					return false;
-				}
-			}
-		}
-		return false;
-	}
-	
-	public boolean handleEvent(Event evt) {
-		if (evt.id == Event.WINDOW_DESTROY) {
-			myzoomer.unsmasking();
-			mainCanvas.clearSmask();
-			mainFrame.maskMenuEnabler(true);
-			mainFrame.targetMenuEnabler(true);
-			flyMenuItem.setState(false);
-			smaskFunctionsMenuEnabler(false);
-			myzoomer.fly = false;
-			dispose();	//switched to dispose because of the magic minimizing window... 
-//			hide();		//but it might not be the best solution.
-			return true;
-		}
-		return super.handleEvent(evt);
-	}
+  // have mainCanvas call this to get the coords back.
+  public Dimension getPosition() {
+    int x = zoomedCanvas.realx * zoomedCanvas.im.imagesize;
+    int y = zoomedCanvas.realy * zoomedCanvas.im.imagesize;
+    x /= zoomedCanvas.im.width;
+    y /= zoomedCanvas.im.height;
+    return new Dimension(x, y);
+  }
+
+  //have mainCanvas call this to get the size for the box.
+  public Dimension getZoomSize() {
+    int width  = zoomedCanvas.getSize().width * zoomedCanvas.im.imagesize;
+    int height = zoomedCanvas.getSize().height * zoomedCanvas.im.imagesize;
+    width  /= zoomedCanvas.im.width;
+    height /= zoomedCanvas.im.height;
+    width  /= zoomedCanvas.ratio;
+    height /= zoomedCanvas.ratio;
+    return new Dimension(width, height);
+  }
+
+  public void updateMask (mask imagemask) {
+    this.imagemask = imagemask;
+    zoomedCanvas.updateMask(imagemask);
+  }
+  
+  public void updateMask (mask imagemask, int pensize) {
+    this.imagemask = imagemask;
+//  zoomedCanvas.updateMask(imagemask, pensize);  //for speed, but using the 'wait to refresh' right now.
+  }
+  
+  public void updateTargets (pointtargets targets) {
+    this.targets = targets;
+    zoomedCanvas.updateTargets(targets);
+  }
+  
+  public void zoomImage(int x, int y, importImage im) {
+    if (this.isVisible()) {
+      int realx = x * im.width; //use realx and realy from here on out.
+      int realy = y * im.height;    
+      realx /= im.imagesize;
+      realy /= im.imagesize;
+      zoomedCanvas.zoomImage(realx, realy, im, imagemask);
+    }
+  }
+
+  // What to do if the ActionListener hears something
+  public void actionPerformed (ActionEvent actEvent) {
+  // OPTION MENU ITEMS *****************
+    if (actEvent.getSource() == exportImageMenuItem) {
+      FileDialog f = new FileDialog(this, "export image as...", FileDialog.SAVE);
+      if (mainFrame.imagedir != null)
+        f.setDirectory(mainFrame.imagedir);
+      f.setVisible(true);
+      f.dispose();
+      String filename = f.getFile();
+      if(filename != null) {
+        if(filename.lastIndexOf(".pgm") == -1)
+          { filename += ".pgm"; }
+        filename = f.getDirectory() + filename;
+        zoomedCanvas.im.exportImage(filename, zoomedCanvas.km);
+      }
+    }
+    if (actEvent.getSource() == closeMenuItem) {
+      zoomedCanvas.unsmasking();
+      mainCanvas.clearSmask();
+      this.setResizable(true);
+      mainFrame.maskMenuEnabler(true);
+      mainFrame.targetMenuEnabler(true);
+      flyMenuItem.setState(false);
+      smaskFunctionsMenuEnabler(false);
+      zoomedCanvas.fly = false;
+      processEvent(new WindowEvent(this,WindowEvent.WINDOW_CLOSING));
+    }
+  // RATIO MENU ITEMS ******************
+    if (actEvent.getSource() == r12MenuItem)   {zoomedCanvas.newRatio(.125);}
+    if (actEvent.getSource() == r25MenuItem)   {zoomedCanvas.newRatio(.25);}
+    if (actEvent.getSource() == r50MenuItem)   {zoomedCanvas.newRatio(.5);}
+    if (actEvent.getSource() == r100MenuItem)  {zoomedCanvas.newRatio(1);}
+    if (actEvent.getSource() == r200MenuItem)  {zoomedCanvas.newRatio(2);}
+    if (actEvent.getSource() == r400MenuItem)  {zoomedCanvas.newRatio(4);}
+    if (actEvent.getSource() == r800MenuItem)  {zoomedCanvas.newRatio(8);}
+    if (actEvent.getSource() == r1600MenuItem) {zoomedCanvas.newRatio(16);}
+  // SMASK MENU ITEMS ******************
+    if(zoomedCanvas.im != null) {
+      // Enter smask mode & start drawing
+      if (actEvent.getSource() == enterMenuItem ) {
+        if(zoomedCanvas.simagemask == null) {
+          FileDialog f = new FileDialog(this, "new smask filename", FileDialog.SAVE);
+          if(mainFrame.maskdir != null) 
+            f.setDirectory(mainFrame.maskdir);
+          f.setVisible(true);
+          f.dispose();
+          String filename = f.getFile();
+          if(filename != null) {
+            this.setResizable(false);
+            flyMenuItem.setEnabled(false);
+            smaskFunctionsMenuEnabler(true);
+            mainFrame.maskMenuEnabler(false);
+            mainFrame.targetMenuEnabler(false);
+            filename = f.getDirectory() + filename;
+            zoomedCanvas.simagemask = new smask(filename, mainCanvas.im.imagesize, zoomedCanvas.im.width, zoomedCanvas.im.height);
+            zoomedCanvas.smasking();
+          }
+        }
+        else { zoomedCanvas.smasking(); }
+      }
+      // Start drawing
+      if (actEvent.getSource() == beginMenuItem) {
+        if(zoomedCanvas.im != null) {
+          if(zoomedCanvas.simagemask != null)   { zoomedCanvas.smasking(); }
+        }
+      }
+      // Exit mask mode & destroy mask
+      if (actEvent.getSource() == exitMenuItem) {
+        mainCanvas.clearSmask();
+        zoomedCanvas.unsmasking();
+        smaskFunctionsMenuEnabler(false);
+        mainFrame.maskMenuEnabler(true);
+        mainFrame.targetMenuEnabler(true);
+      }
+      // Import smask from bitmap
+      if (actEvent.getSource() == importMenuItem) {
+        FileDialog f = new FileDialog(this, "import mask", FileDialog.LOAD);
+        if(mainFrame.maskdir != null) 
+          f.setDirectory(mainFrame.maskdir);
+        f.setVisible(true);
+        f.dispose();
+        String filename = f.getFile();
+        if(filename != null) {
+          smaskFunctionsMenuEnabler(true);
+          mainFrame.maskMenuEnabler(false);
+          mainFrame.targetMenuEnabler(false);
+          filename = f.getDirectory() + filename;
+          zoomedCanvas.simagemask = new smask(filename, mainCanvas.im.imagesize, zoomedCanvas.im.width, zoomedCanvas.im.height, true);
+          mainCanvas.updateSmask(zoomedCanvas.simagemask);
+          zoomedCanvas.repaint();
+        }
+      }
+    } // END SMASK MENU ITEMS
+  }      
+
+  // What to do if the ItemListener hears something
+  public void itemStateChanged (ItemEvent itemEvt) {
+    if(itemEvt.getSource() == autoMenuItem) {
+      if(!zoomedCanvas.auto) {//Do this first because when the file dialog goes
+                          //away,SProCKET will repaint the zoom canvas. If
+                          //auto is on, your first filename will be null.
+        FileDialog f = new FileDialog(zoomFrame.this, "base export name", FileDialog.SAVE);
+        if(zoomFrame.this.mainFrame.imagedir != null)
+          f.setDirectory(zoomFrame.this.mainFrame.imagedir);
+        f.setVisible(true);
+        f.dispose();
+        String filename = f.getFile();
+        if(filename != null) {
+          if(filename.lastIndexOf(".pgm") != -1)
+            filename = (filename.substring(0, filename.length() - 4));
+          filename = f.getDirectory() + filename;
+          zoomedCanvas.autoname = filename;
+          zoomedCanvas.autonumber = 0;
+        }
+      }
+      zoomedCanvas.auto = !zoomedCanvas.auto;
+    }
+    if(itemEvt.getSource() == flyMenuItem) {
+      zoomedCanvas.fly = !zoomedCanvas.fly; 
+      smaskMenuEnabler(!zoomedCanvas.fly);
+    }
+    if(itemEvt.getSource() == bestMenuItem) {
+      zoomedCanvas.best = !zoomedCanvas.best; 
+      zoomedCanvas.repaint();
+    }
+  }
+
+  // What to do if the windowListener hears something
+  public void windowClosing(WindowEvent we) { 
+    zoomedCanvas.unsmasking();
+    mainCanvas.clearSmask();
+    mainFrame.maskMenuEnabler(true);
+    mainFrame.targetMenuEnabler(true);
+    flyMenuItem.setState(false);
+    smaskFunctionsMenuEnabler(false);
+    zoomedCanvas.fly = false;
+    this.dispose(); 
+  } 
+  public void windowActivated(WindowEvent we) { }
+  public void windowDeactivated(WindowEvent we) { }
+  public void windowDeiconified(WindowEvent we) { }
+  public void windowClosed(WindowEvent we) { }
+  public void windowIconified(WindowEvent we) { }
+  public void windowOpened(WindowEvent we) { }
 }
 
