@@ -1,4 +1,0 @@
-#!/bin/bash
-
-CLASSPATH=/ASF/current/java; export CLASSPATH
-java pvs
