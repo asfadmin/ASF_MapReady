@@ -14,7 +14,7 @@ LIBS  = $(LIBDIR)/asf.a \
 
 OBJS  = asf_export.o
 
-all: asf_export clean
+all: asf_export
 
 asf_export: $(OBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) -o asf_export  $(OBJS) $(LIBS) $(LDFLAGS)
@@ -22,4 +22,4 @@ asf_export: $(OBJS)
 #	cp asf_export.1 ../../man/cat1
 
 clean:
-	rm -f *.o
+	rm -f *.o core.* asf_export
