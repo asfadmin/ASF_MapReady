@@ -19,9 +19,9 @@ all: concat_dem
 	rm *.o
 
 concat_dem: $(OBJS)
-	${CC} ${CFLAGS} ${LDFLAGS} -o concat_dem $(OBJS) ${LIBS}
-	mv concat_dem $(BINDIR)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o concat_dem $(OBJS) $(LIBS)
+	mv concat_dem$(BIN_POSTFIX) $(BINDIR)
 	cp concat_dem.1 ../../man/cat1/concat_dem.1
 
 clean:
-	rm -f core ${OBJS} *.o
+	rm -f core $(OBJS) *.o
