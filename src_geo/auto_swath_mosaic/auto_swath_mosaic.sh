@@ -36,7 +36,10 @@
 #       - added resample capability.
 #   1.2 - handles new resample and .tlr files
 #   1.21 - Modified to use the new metadata routine, T. Logan 5/96
-#   2.0 - Moved to Bourne Shell	
+#   2.0 - Moved to Bourne Shell
+#   2.1 - Since the .meta is replacing the DDR but hasn't quite yet entirely
+#         replaced it, I added some if statements to watch for both the
+#         .meta and .ddr when moving or deleting -- P. Denny 02/2004
 #
 # HARDWARE/SOFTWARE LIMITATIONS:
 #
@@ -100,16 +103,22 @@ check_error ()
 
 print_usage()
 { 
-  echo ;
-  echo "Usage: auto_swath_mosaic [-c] [-r sample_size] <output_file> <input images...>" ;
-  echo "\t-c\t\tdo not calibrate files" ;
-  echo "\t-r\t\tresample mosaic to sample_size" ;
-  echo "\toutput_file\tmosaic image file name" ;
-  echo "\tinput files..\tCEOS SAR images" ;
-  echo ;
-  echo "Auto_swath_mosaic assembles SAR frames from a single swath ";
-  echo "into one long image."
-  echo "Version 2.00, ASF SAR TOOLS" ;
+  echo ""
+  echo "USAGE:"
+  echo "   auto_swath_mosaic [-c] [-r sample_size] <output_file> <input images...>"
+  echo ""
+  echo "OPTIONAL ARGUMENTS:"
+  echo "   -c   do not calibrate files"
+  echo "   -r   resample mosaic to sample_size"
+  echo ""
+  echo "REQUIRED ARGUMENTS:"
+  echo "   output_file     mosaic image file name"
+  echo "   input files...  CEOS SAR images (do not include extensions)"
+  echo ""
+  echo "DESCRIPTION:"
+  echo "   Assembles SAR frames from a single swath into one long image."
+  echo ""
+  echo "Version 2.10, ASF SAR Tools"
   echo ""
   exit 1 ;
 }
@@ -183,18 +192,47 @@ check_error
 # free up some disk space before resample
 for i in  $file_list
 do
-  rm $i.img $i.ddr
+  to_remove="${i}.img"
+  if [ -r ${i}.meta ]
+  then
+     to_remove="${to_remove} ${i}.meta"
+  fi
+  if [ -r ${i}.ddr ]
+  then
+     to_remove="${to_remove} ${i}.ddr"
+  fi
+  rm ${to_remove}
 done
 
 # preform resample on ingested images
 if [ $sample_size -ne 0 ]
 then
    echo "Resampling mosaic to $sample_size meters per pixel."
-   mv $out_mosaic.ddr rs$out_mosaic.ddr
-   mv $out_mosaic.img rs$out_mosaic.img
-   resample rs$out_mosaic $out_mosaic $sample_size 
+
+   if [ -r ${out_mosaic}.meta ]
+   then
+      mv ${out_mosaic}.meta rs${out_mosaic}.meta
+   fi
+   if [ -r ${i}.ddr ]
+   then
+      mv ${out_mosaic}.ddr rs${out_mosaic}.ddr
+   fi
+   mv ${out_mosaic}.img rs${out_mosaic}.img
+
+   resample rs${out_mosaic} ${out_mosaic} ${sample_size }
    check_error
-   rm rs$out_mosaic.ddr rs$out_mosaic.img
+   
+   to_remove="rs${out_mosaic}.img"
+   if [ -r rs${out_mosaic}.meta ]
+   then
+      to_remove="${to_remove} rs${out_mosaic}.meta"
+   fi
+   if [ -r rs${out_mosaic}.ddr ]
+   then
+      to_remove="${to_remove} rs${out_mosaic}.ddr"
+   fi
+   rm ${to_remove}
+
 fi
 
 # Cleanup & exit
