@@ -335,13 +335,13 @@ void ll_utm(meta_projection *proj,double tlat, double tlon, double *p1, double *
 	double   yadj, xadj = 500000.0;
 	double   e4, e6, c1, c2, c3, c4;
 	double   x,y;
-	
+
 	epsq = ecc2/(1.0 - ecc2);
 	lon0 = (double)(proj->param.utm.zone-1)*6.0 + 3.0 - 180.0;   /* zone from proj constants */
 	if (proj->hem=='N') yadj = 0.0; else yadj = 1.0E7; /* Ref pt Southern Hemisphere */
-	
+
 	lat = tlat * D2R; /*lon = tlon * D2R;*/
-	
+
 	rn =  RE / sqrt(1.0 - ecc2*SQR(sin(lat)));
 	tanlat = tan(lat);
 	t = SQR(tanlat);
@@ -349,9 +349,9 @@ void ll_utm(meta_projection *proj,double tlat, double tlon, double *p1, double *
 	a1 = cos(lat) * ((tlon-lon0)*D2R);
 	a2 = (1.0 - t + c) * (a1*a1*a1) / 6.0;
 	a3 = (5.0 - 18.0*t + t*t + 72.0*c - 58.0*epsq) * ((a1*a1*a1*a1*a1) / 120.0);
-	
+
 	x = k0 * rn * (a1+a2+a3) + xadj;
-	
+
 	e4 = ecc2 * ecc2;
 	e6 = e4 * ecc2;
 	c1 = 1.0 - ecc2/4.0 - 3.0*e4/64.0 - 5.0*e6/256.0;
@@ -362,9 +362,9 @@ void ll_utm(meta_projection *proj,double tlat, double tlon, double *p1, double *
 	rm0 = 0.0;
 	b1 = (SQR(a1))/2.0 + (5.0 - t + 9.0*c + 4.0 *SQR(c)) * (a1*a1*a1*a1) / 24.0;
 	b2 = (61.0-58.0*t+SQR(t)+600.0*c+330.0*epsq) * (a1*a1*a1*a1*a1*a1) / 720.0;
-	
+
 	y = k0 * (rm - rm0 + rn*tanlat*(b1 + b2)) + yadj;
-	
+
 	*p1 = x;
 	*p2 = y;
 }
@@ -428,12 +428,12 @@ void cross(double x1, double y1, double z1, double x2, double y2, double z2,
 void rotate_z(vector *v,double theta);
 void rotate_y(vector *v,double theta);
 
-/*atct_init calculates alpha1,alpha2, and alpha3,
-which are some sort of coordinate rotation amounts,
-in degrees.  This creates a latitude/longitude-style
-coordinate system centered under the satellite at
-the start of imaging.  You must pass it a state vector
-from the start of imaging.*/
+/**************************************************************************
+ * atct_init:
+ * calculates alpha1, alpha2, and alpha3, which are some sort of coordinate
+ * rotation amounts, in degrees.  This creates a latitude/longitude-style
+ * coordinate system centered under the satellite at the start of imaging.
+ * You must pass it a state vector from the start of imaging.            */
 void atct_init(meta_projection *proj,stateVector st)
 {
 	vector up={0.0,0.0,1.0};
@@ -476,21 +476,21 @@ void ac_ll(meta_projection *proj, char look_dir, double c1, double c2, double *l
 	vector pos;
 	
 	if (look_dir=='R')
-		qlat = -c2/proj->param.atct.rlocal; /* Right looking sar*/
+		qlat = -c2/proj->param.atct.rlocal; /* Right looking sar */
 	else
-		qlat =  c2/proj->param.atct.rlocal;   /* Left looking sar  */
+		qlat =  c2/proj->param.atct.rlocal; /* Left looking sar */
 	qlon = c1/(proj->param.atct.rlocal*cos(qlat));
 	
-	sph2cart(proj->param.atct.rlocal,qlat,qlon,&pos);
+	sph2cart(proj->param.atct.rlocal, qlat, qlon, &pos);
 	
 	rotate_z(&pos,-proj->param.atct.alpha3);
 	rotate_y(&pos,-proj->param.atct.alpha2);
 	rotate_z(&pos,-proj->param.atct.alpha1);
 	
 	cart2sph(pos,&radius,&lat,lon);
-	*lon *=R2D;
-	lat*=R2D;
-	*lat_d= atand(tand(lat)/(1 - ecc2));
+	*lon *= R2D;
+	lat *= R2D;
+	*lat_d = atand(tand(lat) / (1-ecc2));
 }
 
 void ll_ac(meta_projection *proj, char look_dir, double lat_d, double lon, double *c1, double *c2)
