@@ -70,17 +70,19 @@
 #
 if [ ! $# -eq "2" ]
 then
-  echo ""
-  echo "Usage: $0 <inVectfile> <outVectfile>"
-  echo ""
-  echo "Propagates state vectors using gen_oe and ASAP."
-  echo "Version 1.00, ASF SAR TOOLS" 
-  echo ""
-  exit 1
+        echo ""
+        echo "Usage: $0 <inVectfile> <outVectfile>"
+        echo ""
+        echo "Propagates state vectors using gen_oe and ASAP."
+        echo "Version 1.00, ASF SAR TOOLS" 
+        echo ""
+        exit 1
 fi
 
-if [ -e "./propagate_lock_file" ]; then
-    cat <<EOF
+
+if [ -r "./propagate_lock_file" ]
+then
+	cat <<EOF
 propagate_lock_file found in '`pwd`'.
 
 It is possible that ths lock file is stale, and that no competing
@@ -89,23 +91,25 @@ process is trying to create or use new temporary files in
 If this is the case, delete the lock file and try again.
 EOF
 	>&2
-    exit 1
+  	exit 1
 else
-    touch ./propagate_lock_file
+	touch ./propagate_lock_file
 fi
 
 
-#echo "Generating ASAP input file"
+echo "Generating ASAP input file"
 gen_oe $1
-#echo " "
-#echo "Running ASAP"
-#echo " "
+
+echo " "
+echo "Running ASAP"
+echo " "
 asap
 /bin/mv fort.7 $2
 /bin/rm ./temp_file_formerly_known_as_5
-#echo " "
-#echo "Propagate:  Created output file $2"
-#echo " "
+
+echo " "
+echo "Propagate:  Created output file $2"
+echo " "
 
 rm ./propagate_lock_file
 
