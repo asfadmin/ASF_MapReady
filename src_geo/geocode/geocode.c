@@ -1,10 +1,10 @@
 /*************************************************************************
  NAME:	geocode
  
- SYNOPSIS:  geocode [-h ht] [-p pix] [ [-o|-l] N S E W ]  [-i lat lon nl ns ]
+ SYNOPSIS:  geocode [-h ht] [-p pix] [ [-o|-l] N W S E ]  [-i lat lon nl ns ]
                     [-r [-nearest | -bilinear |-sinc | '-kernel x y' ] ]
              	    [-background <fill> ] [-x <file>]
-                    in_meta in_img projfile projkey outfile
+                    <in_img> <projfile> <projkey> <outfile>
 
  DESCRIPTION:
 	Performs automatic geocoding of SAR files.
@@ -14,7 +14,7 @@
  EXTERNAL ASSOCIATES:
      NAME:                USAGE:
      ---------------------------------------------------------------
-     geoLatLon            Maps input image points to lat,lon
+     geoLatLon            Maps input image points to lat, lon
      projectGeo           Map-projects lat,lon to output image points
      fit_quadratic        Fits a quadratic function to map input to output
      remap                Remaps input image to output projection
@@ -24,7 +24,7 @@
      -----------------------------------------------------------------------
      geo_1_$$.tie         ASCII file of (lat,lon,inX,inY)       geoLatLon
      geo_2_$$.tie         ASCII file of (outX,outY,inX,inY)     projectGeo
-     geo_3_$$.ddr         Output DDR with projection info.      projectGeo
+     geo_3_$$.meta        Output meta with projection info.     projectGeo
      geo_4_$$.map         Mapping function for remap.           fit_quadratic
  
  PROGRAM HISTORY:
@@ -33,6 +33,7 @@
      1.0     3/99   O. Lawlor	Total Re-Write of geocoding software
      1.1     7/01   R. Gens	Converted into program, added log file switch
      1.25    3/02   P. Denny    Update commandline parsing & usage()
+     1.5     3/03   P. Denny    Remove DDR dependency... use only new meta
 
  HARDWARE/SOFTWARE LIMITATIONS:
  	A projection file must be created before running this program. Use the
@@ -80,13 +81,14 @@
 
 #define VERSION 1.25
 
-int projectGeo(double pixSize, char *in_meta, char *in_proj, char *in_key, char *in_tie,
-               char *out_tie, char *out_meta, char *out_ddr, char win_type, char *win);
-int geoLatLon(double eleva, char *in_meta, char *in_ddr, char *out_tps);
+int projectGeo(double pixSize, char *metaName, char *in_proj, char *in_key,
+               char *in_tie, char *out_tie, char *out_meta, char win_type,
+	       char *win);
+void geoLatLon(double eleva, char *metaName, char *out_tps);
 
 int main(int argc, char *argv[])
 {
-	char in_meta[255], in_img[255], projfile[255], projkey[255], outfile[255], outWindow[255]="", cmd[255];
+	char in_img[255], projfile[255], projkey[255], outfile[255], outWindow[255]="", cmd[255];
 	char resample[15]="-nearest", background[20]="";
 	float height=0.0, pixel_size=0.0;
 	char win_type;
@@ -94,8 +96,8 @@ int main(int argc, char *argv[])
 
 	logflag=0;
 
-	/* Parse command line args */
-	while (currArg < (argc-5))
+    /* Parse command line args */
+	while (currArg < (argc-4))
 	{
 		char *key=argv[currArg++];
 		if (strmatch(key,"-log")) {
@@ -121,7 +123,7 @@ int main(int argc, char *argv[])
 			strcpy(resample,GET_ARG(1));
 		}
 		else if (strmatch(key,"-o")) {
-			CHECK_ARG(5);  /* N S E W projection coordinates */
+			CHECK_ARG(5);  /* N W S E projection coordinates */
 			win_type='o';
 			sprintf(outWindow, "%s %s %s %s %s", GET_ARG(5), GET_ARG(4), GET_ARG(3),
 								GET_ARG(2), GET_ARG(1));
@@ -140,14 +142,13 @@ int main(int argc, char *argv[])
 		}
 		else {printf("\n*****Invalid option:  %s\n\n",argv[currArg-1]);usage(argv[0]);}
 	}
-	if ((argc-currArg) < 5) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+	if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 
-	/* Nab required arguments */
-	strcpy(in_meta, argv[currArg  ]);
-	strcpy(in_img,  argv[currArg+1]);
-	strcpy(projfile,argv[currArg+2]);
-	strcpy(projkey, argv[currArg+3]);
-	strcpy(outfile, argv[currArg+4]);
+    /* Nab required arguments */
+	strcpy(in_img,  argv[currArg]);
+	strcpy(projfile,argv[currArg+1]);
+	strcpy(projkey, argv[currArg+2]);
+	strcpy(outfile, argv[currArg+3]);
 
 	StartWatch();
 	system("date");
@@ -157,17 +158,16 @@ int main(int argc, char *argv[])
 	  printLog("Program: geocode\n\n");
 	}
 
-	/* Creating tiepoint file from image metadata */
-	geoLatLon(height, in_meta, in_img, "tmp.geo");
+    /* Creating tiepoint file from image metadata */
+	geoLatLon(height, in_img, "tmp.geo");
 
-	/* Projecting tie points */
-	projectGeo(pixel_size, in_meta, projfile, projkey, "tmp.geo", "tmp.tie", 
-			outfile, "tmp.ddr", win_type, outWindow);
+    /* Projecting tie points */
+	projectGeo(pixel_size, in_img, projfile, projkey, "tmp.geo", "tmp.tie",
+	           outfile, win_type, outWindow);
 
 	if (logflag) FCLOSE(fLog);
 
-	/* Finding least-squares polynomial fit of tie points */
-
+    /* Finding least-squares polynomial fit of tie points */
 	sprintf(cmd, "fit_quadratic tmp.tie tmp.map"); 
         if (logflag) {
           fLog = FOPEN(logFile, "a");
@@ -179,12 +179,13 @@ int main(int argc, char *argv[])
         printf("\nCommand line: %s\nDate: ", cmd);
         system(cmd);
 
-	/* Remapping image */
-
-        sprintf(cmd, "remap %s %s -quadratic tmp.map -asDDR tmp.ddr %s %s", resample, background, in_img, outfile);
+    /* Remapping image */
+        sprintf(cmd, "remap %s %s -quadratic tmp.map -asDDR tmp %s %s", resample,
+	        background, in_img, outfile);
         if (logflag) {
           fLog = FOPEN(logFile, "a");
-          sprintf(cmd, "remap %s %s -quadratic tmp.map -asDDR tmp.ddr -log %s %s %s", resample, background, logFile, in_img, outfile);
+          sprintf(cmd, "remap %s %s -quadratic tmp.map -asDDR tmp -log %s %s %s",
+	          resample, background, logFile, in_img, outfile);
           sprintf(logbuf,"\nCommand line: %s\n", cmd);
           printLog(logbuf);
           FCLOSE(fLog);
@@ -193,7 +194,7 @@ int main(int argc, char *argv[])
         system(cmd);
 
 	/* clean up and exit gracefully */
- 	system("rm tmp.geo tmp.tie tmp.ddr tmp.map");
+ 	system("rm tmp.geo tmp.tie tmp.meta tmp.map");
 
 	StopWatch();
 	if (logflag) {
@@ -202,7 +203,7 @@ int main(int argc, char *argv[])
 	  FCLOSE(fLog);
 	}
 
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 
 
@@ -211,17 +212,16 @@ void usage(char *name)
 {
  printf("\n"
 	"USAGE:\n"
-	"   %s [-h ht] [-p pix] [ [-o|-l] N S E W ][-i lat lon nl ns ]\n"
+	"   %s [-h ht] [-p pix] [ [-o|-l] N W S E ][-i lat lon nl ns ]\n"
 	"           [-r <nearest | bilinear | sinc | 'kernel x y'> ]\n"
 	"           [-background <fill> ] [-log <file>]\n"
-	"           <in_meta> <in_img> <projfile> <projkey> <outfile>\n",name);
+	"           <in_img> <projfile> <projkey> <outfile>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
-	"   in_meta   input SAR metadata (e.g. .L, or .meta)\n"
-	"   in_img    input LAS image (.ddr and .img) [from sarin]\n"
+	"   in_img    input image (.meta and .img) [from sarin]\n"
 	"   projfile  projection definition file name [from projprm]\n"
 	"   projkey   projection key name [as passed to projprm]\n"
-	"   outfile   output LAS 6.0 image (makes .img, .ddr)\n");
+	"   outfile   output image (.meta and .img)\n");
  printf("\n"
 	"OPTIONAL ARGUMENTS:\n"
 	"   -h <ht>      Set average input elevation to ht meters.\n" 
@@ -235,17 +235,17 @@ void usage(char *name)
 	"    Windowing Modes: -o, -l, or -i set the size of the output image.\n" 
 	"    The default is just big enough to contain the input image.\n"
 	"\n"
-	"   -o  Means N S E W are projection coordinates:\n"
-	"       N  Y projection coordinate of top edge\n"
-	"       S  Y projection coordinate of bottom edge\n"
-	"       E  X projection coordinate of right edge\n"
+	"   -o  Means N W S E are projection coordinates:\n"
+	"       N  Y projection coordinate of upper edge\n"
 	"       W  X projection coordinate of left edge\n"
+	"       S  Y projection coordinate of lower edge\n"
+	"       E  X projection coordinate of right edge\n"
 	"\n"
 	"   -l  Means N S are latitude, and E W are longitude:\n"
 	"       N  Latitude of north edge of output\n"
+	"       W  Longitude of west edge of output\n"
 	"       S  Latitude of south edge of output\n"
 	"       E  Longitude of east edge of output\n"
-	"       W  Longitude of west edge of output\n"
 	"\n"
 	"   -i  Means write a nl x ns output image with:\n" 
 	"       lat  Latitude of center of output\n"
@@ -257,7 +257,7 @@ void usage(char *name)
 	"   %s projects the given SAR image into the given map projection\n"
 	"   at the given pixel size. This process is called geocoding.\n",name);
  printf("\n"
-	"Version %.2f, ASF SAR TOOLS\n"
+	"Version %.2f, ASF SAR Tools\n"
 	"\n", VERSION);
  exit(1);
 }
