@@ -136,6 +136,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "    1.0     8/04   P. Denny    Create functions to do each of the different\n"\
 "                                filetype imports... ready for release."
 
+#define ASF_VERSION_MAJOR_STRING \
+"1.0"
+
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
 #define VERSION 1.0
