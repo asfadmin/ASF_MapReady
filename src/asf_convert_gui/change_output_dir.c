@@ -57,7 +57,8 @@ void do_change_output_directory(const gchar * new_dir )
 
         g_sprintf(new_output_name, "%s%s", new_dir_fixed, basename);
 
-        gtk_list_store_set(list_store, &iter, 1, new_output_name, -1);
+        gtk_list_store_set(list_store, &iter, 
+			   COL_OUTPUT_FILE, new_output_name, -1);
 
         g_free(basename);
         g_free(new_output_name);
@@ -107,7 +108,7 @@ prepare_change_output_directory_dialog()
             gchar * path;
       
             gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-                               1, &current_output_name, -1);
+                               COL_OUTPUT_FILE, &current_output_name, -1);
 
             path = g_path_get_dirname(current_output_name);
       
@@ -125,7 +126,8 @@ prepare_change_output_directory_dialog()
             g_free(path);
             g_free(current_output_name);
       
-            valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+            valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), 
+					     &iter);
         }
 
         if (first_path)
