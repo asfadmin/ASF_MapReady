@@ -42,7 +42,7 @@
 
 <limitations>
    Currently only supports ingest of ASF format floating point data.
-   Geotiffs will not be scaled.
+   GeoTIFF imagess will not be scaled.
 </limitations>
 
 <see_also>
@@ -368,7 +368,7 @@ main (int argc, char *argv[])
   if ( command_line.output_name[0] == '\0' ) {
     if ( format == GEOTIFF ) {
       create_name (command_line.output_name, command_line.input_name, 
-		   ".geotiff");
+		   ".tiff");
     } 
     else if ( format == JPEG ) {
       create_name (command_line.output_name, command_line.input_name, ".jpeg");
@@ -1622,28 +1622,33 @@ export_as_geotiff (const char *metadata_file_name,
   TIFFSetField(otif, TIFFTAG_SAMPLEFORMAT, sample_format);
   TIFFSetField(otif, TIFFTAG_DATATYPE, sample_format);
  
-  /* Set the GeoTiff extension image tags.  */
+  /* Set the GeoTIFF extension image tags.  */
 
   /* If we have a map projected image, write the projection
-     information into the GeoTiff.  */
+     information into the GeoTIFF.  */
   if ( md->sar->image_type == 'P' ) {
-    double tie_points[4][6];	/* Tie points for image corners.  */
-    /* Some applications (e.g., ArcView) won't handle geoTIFF images
-       with more than one tie point pair.  Therefore, only the upper
-       left corner is being written to the geoTIFF file.  In order to
-       write all computed tie points to the geoTIFF, change the 6 to
-       size in the line below.  */  
-    tie_points[0][0] = 0;
-    tie_points[0][1] = 0;
-    tie_points[0][2] = 0;
-  /* need the actual corner of the image, not the center of the
-     corner pixel
-     ---------------------------------------------------------- */
+    /* Tie points for image corners.  There is space for four tie
+       points, each consisting of three raster coordinates, followed
+       by three geospatial coordinates.  */    
+    double tie_points[4][6];
+    /* We will tie down the corner of the image (which has raster coordinates 
+       0, 0, 0).  */
+    tie_points[0][0] = 0.0;
+    tie_points[0][1] = 0.0;
+    tie_points[0][2] = 0.0;
+    /* FIXME: we should be getting the actual corner of the image
+       here, not the center of the corner pixel, and I'm not sure that
+       startX and startY are what we want (verify and fix if
+       needed.  */
     tie_points[0][3] = md->projection->startX;
     tie_points[0][4] = md->projection->startY;
     tie_points[0][5] = 0.0;
+    /* Some applications (e.g., ArcView) won't handle GeoTIFF images
+       with more than one tie point pair.  Therefore, only the upper
+       left corner is being written to the GeoTIFF file.  In order to
+       write all computed tie points to the GeoTIFF, change the 6 to
+       size in the line below.  */  
     TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_points);
-
 
     /* Set the scale of the pixels, in projection coordinates.  */
     double pixel_scale[3];
@@ -1703,7 +1708,7 @@ export_as_geotiff (const char *metadata_file_name,
       char *citation = malloc ((max_citation_length + 1) * sizeof (char));
       int citation_length
 	= snprintf (citation, max_citation_length + 1,
-                    "UTM zone %d %c projected Geotiff written by Alaska "
+                    "UTM zone %d %c projected GeoTIFF written by Alaska "
 		    "Satellite Facility tools", md->projection->param.utm.zone,
 		    md->projection->hem);
       assert (citation_length >= 0 && citation_length <= max_citation_length);
@@ -1714,7 +1719,7 @@ export_as_geotiff (const char *metadata_file_name,
       GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
       GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
 
-      /* This constant is from the geotiff spec.  */
+      /* This constant is from the GeoTIFF spec.  */
       const int user_defined_projected_coordinate_system_type_code = 32767;
       GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
 		  user_defined_projected_coordinate_system_type_code);
