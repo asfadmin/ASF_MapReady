@@ -13,11 +13,13 @@ void asfSplashScreen(int argc, char* argv[])
   for (ii = 0; ii < argc; ii++) {
     sprintf(logbuf, "%s %s",logbuf, argv[ii]);
   }
+  char *date_time = date_time_stamp ();
   asfPrintStatus("%s\n"
                 "\n"
                 "Date: %s\n"
                 "PID:  %i\n"
                 "\n",
-                logbuf, date_time_stamp(), (int)getpid());
+                logbuf, date_time, (int)getpid());
+  free (date_time);
 }
 
