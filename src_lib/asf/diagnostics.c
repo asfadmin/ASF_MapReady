@@ -29,11 +29,7 @@ static void initialize_asf_log_if_needed (void) {
     home_ptr = strstr (elfn, "$HOME");
     if ( home_ptr != NULL ) {
       home_string = getenv ("HOME");
-      if ( home_string == NULL ) {
-	fprintf (stderr, "environment variable HOME not found at source file "
-		 "%s line %d\n", __FILE__, __LINE__);
-	exit (EXIT_FAILURE);
-      }
+      assert (home_string != NULL);
       home_length = strlen (home_string);
       home_index = home_ptr - elfn;
       if ( home_length > strlen ("$HOME") ) {
@@ -57,7 +53,7 @@ static void initialize_asf_log_if_needed (void) {
     asf_log_file = fopen (elfn, "a");
     if ( asf_log_file == NULL ) {
 #ifdef _GNU_SOURCE
-      /* If we have the reentrant version of strerror, use it.  */
+      /* If we have the reentrant version of strerror, use it,  */
       const size_t max_error_string_length = 2000;
       char *error_string 
 	= malloc ((max_error_string_length + 1) * sizeof (char));
@@ -92,7 +88,8 @@ asf_log (const char *message, ...)
 }
 
 void 
-require (int condition, const char *message, const char *file, int line, ...)
+require_function (const char *file, int line, int condition, 
+		  const char *message, ...)
 {
   if ( !condition ) {
     initialize_asf_log_if_needed();
@@ -100,13 +97,13 @@ require (int condition, const char *message, const char *file, int line, ...)
     va_list ap;			/* Variadic arguments pointer.  */
 
     /* Print to log file.  */
-    va_start (ap, line);
+    va_start (ap, message);
     vfprintf (asf_log_file, message, ap);
     va_end (ap);
     fprintf (asf_log_file, " at source file %s line %d\n", file, line);
 
     /* Print to standard error.  */
-    va_start (ap, line);
+    va_start (ap, message);
     vfprintf (stderr, message, ap);
     va_end (ap);
     fprintf (stderr, " at source file %s line %d\n", file, line);
@@ -116,20 +113,20 @@ require (int condition, const char *message, const char *file, int line, ...)
 }
 
 void
-die (const char *message, const char *file, int line, ...)
+die_function (const char *file, int line, const char *message, ...)
 {
   va_list ap;			/* Variadic arguments pointer.  */
  
   initialize_asf_log_if_needed();
  
   /* Print to log file.  */
-  va_start (ap, line);
+  va_start (ap, message);
   vfprintf (asf_log_file, message, ap);
   va_end (ap);
   fprintf (asf_log_file, " at source file %s line %d\n", file, line);
   
   /* Print to standard error.  */
-  va_start (ap, line);
+  va_start (ap, message);
   vfprintf (stderr, message, ap);
   va_end (ap);
   fprintf (stderr, " at source file %s line %d\n", file, line);
