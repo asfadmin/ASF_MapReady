@@ -1,9 +1,11 @@
-#!/ASF/current/bin/Linux/sqsh -i
-	/* Use the PVS database */
+
+/* This sql script requires that you use sqsh version 1.7 */
+
+ /* Use the PVS database */
 use pvsdb
 go
 
-	/* List all the relevant point targets */
+ /* List all the relevant point targets */
 select 
         "'"+rtrim(cs_id)+"'",
         "'"+rtrim(cs_dev_id)+"'",
