@@ -165,7 +165,7 @@ cd make_support
 $CC -o endian endian.c
 ./endian
 
-echo "########### Building the make_support/system_rules file ###############"
+#echo "########### Building the make_support/system_rules file ###############"
 
 # write make_support/system_rules file header
 cat <<EOF >system_rules
@@ -206,11 +206,11 @@ FLAGS   = -D_ISOC99_SOURCE $(LARGEFILE_FLAGS) $(INCLUDE) $(OPTFLAG) -D$(SYS) $(E
 ifeq ($(CC),gcc)
   ifeq ($(DEBUG_BUILD),1)
     OPTFLAG    =
-    DEBUGFLAGS = -Wall -g3
+    DEBUGFLAGS = -Wall -g3 -O0
   endif
   ifeq ($(DEBUG_BUILD),2)
     OPTFLAG    =
-    DEBUGFLAGS = -Wall -g3
+    DEBUGFLAGS = -Wall -g3 -O0
     DEBUGLIBS  = -lefence
   endif
 endif
@@ -275,6 +275,17 @@ if test "${prefix}" = "NONE" ; then
 fi
 AC_DEFINE_UNQUOTED(ASF_INSTALL_PREFIX, "${prefix}")
 
+SHAREDIR="$prefix/share"
+AC_SUBST(SHAREDIR)
+
+BINDIR="$prefix/bin"
+AC_SUBST(BINDIR)
+
+AC_OUTPUT([
+Makefile
+include/config.h
+])
+
 echo "########### Automatic configuration complete ###########"
 directory=$asfDir'/bin/'$sys'/'
 echo ""
@@ -286,12 +297,4 @@ echo ""
 echo "The tools will be installed in this location:"
 echo "  "$prefix" "
 echo ""
-echo "If you do not do a 'make install', to use the programs, "
-echo "you must add the binaries directory to your path: "
-echo "  "$directory" "
-echo ""
 echo "########### Build system is now configured  ############"
-
-AC_OUTPUT([Makefile])
-
-

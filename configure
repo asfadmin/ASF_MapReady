@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG ASF_PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB GTK_CFLAGS GTK_LIBS LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG ASF_PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB GTK_CFLAGS GTK_LIBS LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI SHAREDIR BINDIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -3689,7 +3689,7 @@ cd make_support
 $CC -o endian endian.c
 ./endian
 
-echo "########### Building the make_support/system_rules file ###############"
+#echo "########### Building the make_support/system_rules file ###############"
 
 # write make_support/system_rules file header
 cat <<EOF >system_rules
@@ -3730,17 +3730,19 @@ FLAGS   = -D_ISOC99_SOURCE $(LARGEFILE_FLAGS) $(INCLUDE) $(OPTFLAG) -D$(SYS) $(E
 ifeq ($(CC),gcc)
   ifeq ($(DEBUG_BUILD),1)
     OPTFLAG    =
-    DEBUGFLAGS = -Wall -g3
+    DEBUGFLAGS = -Wall -g3 -O0
   endif
   ifeq ($(DEBUG_BUILD),2)
     OPTFLAG    =
-    DEBUGFLAGS = -Wall -g3
+    DEBUGFLAGS = -Wall -g3 -O0
     DEBUGLIBS  = -lefence
   endif
 endif
 
 LIBDIR  = ../../lib/$(SYS)
 BINDIR  = ../../bin/$(SYS)
+SHAREDIR = ../../share
+DOCDIR = $(SHAREDIR)/doc
 JAVADIR = ../../java
 
 EOF
@@ -3791,19 +3793,22 @@ done
 #./makemake $sys
 cd ..
 
-echo "########### Automatic configuration complete ###########"
-directory=$asfDir'/bin/'$sys'/'
-echo ""
-echo "The ASF tools Makefile is now fully prepared."
-echo ""
-echo "To use the programs, you must add the binaries "
-echo "  directory to your path: "$directory" "
-echo ""
-echo "To build the tools, type 'make'."
-echo ""
-echo "########### Build system is now configured  ############"
+# determine installation prefix
+if test "${prefix}" = "NONE" ; then
+   prefix="/usr/local"
+fi
+cat >>confdefs.h <<_ACEOF
+#define ASF_INSTALL_PREFIX "${prefix}"
+_ACEOF
 
-          ac_config_files="$ac_config_files Makefile"
+
+SHAREDIR="$prefix/share"
+
+
+BINDIR="$prefix/bin"
+
+
+                    ac_config_files="$ac_config_files Makefile include/config.h"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -4355,6 +4360,7 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+  "include/config.h" ) CONFIG_FILES="$CONFIG_FILES include/config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
@@ -4462,6 +4468,8 @@ s,@GTK_LIBS@,$GTK_LIBS,;t t
 s,@LIBGLADE_CFLAGS@,$LIBGLADE_CFLAGS,;t t
 s,@LIBGLADE_LIBS@,$LIBGLADE_LIBS,;t t
 s,@ASF_GUI@,$ASF_GUI,;t t
+s,@SHAREDIR@,$SHAREDIR,;t t
+s,@BINDIR@,$BINDIR,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
@@ -4728,4 +4736,15 @@ if test "$no_create" != yes; then
 fi
 
 
-
+echo "########### Automatic configuration complete ###########"
+directory=$asfDir'/bin/'$sys'/'
+echo ""
+echo "The ASF tools Makefile is now fully prepared."
+echo ""
+echo "To build the tools, type 'make'."
+echo "To install the tools, type 'make install'."
+echo ""
+echo "The tools will be installed in this location:"
+echo "  "$prefix" "
+echo ""
+echo "########### Build system is now configured  ############"

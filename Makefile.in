@@ -41,12 +41,12 @@ all:
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE);)
 
 install:
-	mkdir -p @prefix@/bin @prefix@/lib @prefix@/share
-	cp -R bin/@sys@/* @prefix@/bin
+	mkdir -p @BINDIR@ @prefix@/lib @SHAREDIR@
+	cp bin/@sys@/* @BINDIR@
 	cp -R lib/@sys@/* @prefix@/lib
-#	cp -R share/* @prefix@/share
-	chmod 755 @prefix@/bin/*
-#	chmod 644 @prefix@/share/*
+	cp -R share/* @SHAREDIR@
+#	chmod 755 @BINDIR@/*
+#	chmod -R 644 @SHAREDIR@/*
 
 clean:
 	rm -rf bin/@sys@/* lib/@sys@/*
