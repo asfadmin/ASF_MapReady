@@ -79,6 +79,15 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 		ddr->zone_code = (proj->type==UNIVERSAL_TRANSVERSE_MERCATOR) ? 
                   proj->param.utm.zone : 62;
 		ddr->valid[DDZCV] = VALID;
+		
+		/* If the projection block perX and perY are
+		   available, we should use them for the pixel
+		   sizes.  */
+		if ( meta->projection->type != SCANSAR_PROJECTION ) {
+		  ddr->pdist_x = meta->projection->perX;
+		  ddr->pdist_y = meta->projection->perY;
+		}
+
 	/* Projection type; int
 	 * AND
 	 * Projection coefficients array; double[15]
