@@ -128,8 +128,8 @@ class mask {
 
       //process meter stuff
       procDialog pd = new procDialog(mainFrame, "exporting mask...");   
-      int locatex = mainFrame.getLocation().x;   //get from above...   
-      int locatey = mainFrame.getLocation().y;
+      int locatex = mainFrame.getX();   //get from above...   
+      int locatey = mainFrame.getY();
       if(locatex > 0 && locatey > 0)
          pd.setLocation(locatex + 3, locatey + 41);
       pd.show();
