@@ -41,11 +41,11 @@ int get_data_lines(FILE *file, meta_parameters *meta, int line_number,
     case INTEGER32: sample_size = sizeof(int);           break;
     case REAL32:    sample_size = sizeof(float);         break;
     case REAL64:    sample_size = sizeof(double);        break;
-    case COMPLEX_BYTE:      sample_size = sizeof(unsigned char)*2; break;
-    case COMPLEX_INTEGER16: sample_size = sizeof(short int)*2;     break;
-    case COMPLEX_INTEGER32: sample_size = sizeof(int)*2;           break;
-    case COMPLEX_REAL32:    sample_size = sizeof(float)*2;         break;
-    case COMPLEX_REAL64:    sample_size = sizeof(double)*2;        break;
+    case COMPLEX_BYTE:      sample_size = sizeof(complexByte);     break;
+    case COMPLEX_INTEGER16: sample_size = sizeof(complexShortInt); break;
+    case COMPLEX_INTEGER32: sample_size = sizeof(complexInt);      break;
+    case COMPLEX_REAL32:    sample_size = sizeof(complexFloat);    break;
+    case COMPLEX_REAL64:    sample_size = sizeof(complexDouble);   break;
    default:
       printf("\nget_data_lines: Unrecognized data type. Exiting program.\n");
       exit(EXIT_FAILURE);
@@ -283,11 +283,11 @@ int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
     case INTEGER32: sample_size = sizeof(int);           break;
     case REAL32:    sample_size = sizeof(float);         break;
     case REAL64:    sample_size = sizeof(double);        break;
-    case COMPLEX_BYTE:      sample_size = sizeof(unsigned char)*2; break;
-    case COMPLEX_INTEGER16: sample_size = sizeof(short int)*2;     break;
-    case COMPLEX_INTEGER32: sample_size = sizeof(int)*2;           break;
-    case COMPLEX_REAL32:    sample_size = sizeof(float)*2;         break;
-    case COMPLEX_REAL64:    sample_size = sizeof(double)*2;        break;
+    case COMPLEX_BYTE:      sample_size = sizeof(complexByte);     break;
+    case COMPLEX_INTEGER16: sample_size = sizeof(complexShortInt); break;
+    case COMPLEX_INTEGER32: sample_size = sizeof(complexInt);      break;
+    case COMPLEX_REAL32:    sample_size = sizeof(complexFloat);    break;
+    case COMPLEX_REAL64:    sample_size = sizeof(complexDouble);   break;
     default:
       printf("\nput_data_lines: Unrecognized data type. Exiting program.\n");
       exit(EXIT_FAILURE);
