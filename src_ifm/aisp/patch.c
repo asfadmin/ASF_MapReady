@@ -93,8 +93,8 @@ void debugWritePatch(const patch *p,char *basename)
 	fp = fopenImage(name,"wb");
 	FWRITE(p->trans,sizeof(FCMPLX),p->n_az*p->n_range,fp);
 	FCLOSE(fp);
-	meta->general->sample_count = p->n_range;
-	meta->general->line_count   = p->n_az;
+	meta->general->line_count = p->n_range;
+	meta->general->sample_count   = p->n_az;
 	meta->general->data_type    = REAL32;
 	meta_write(meta, outname);
 	meta_free(meta);
