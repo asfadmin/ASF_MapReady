@@ -5,8 +5,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := -I$(LIBDIR)/tcltk81/include $(CFLAGS)
-LDFLAGS := -L$(LIBDIR)/tcltk81/lib -L$(XHOME) $(LDFLAGS)
+LDFLAGS := -L$(XHOME) $(LDFLAGS)
 
  # ldl, lsocket, and lnsl are necessary for Solaris, but break sarview on irix
 OTHER = -ldl -lsocket -lnsl
@@ -15,7 +14,8 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/libjpeg.a \
-	-ltcl8.1 -ltk8.1 \
+	$(LIBDIR)/libtcl8.1.a \
+	$(LIBDIR)/libtk8.1.a \
 	-lX11 -lm
 
 OBJS = \
@@ -26,19 +26,20 @@ OBJS = \
 	poly.o \
 	tkAppInit.o tkCommand.o
 
-all: tcltk sarview clean
+all: sarview clean
 
-tcltk:
-	./make_tcltk.sh $(CC) $(LIBDIR)
-
-# if system is solaris include extra libraries; test looks wrong, but it's right
+# if system is solaris include extra libraries
 sarview: $(OBJS)
-	test $(SYS) != solaris || $(CC) $(CFLAGS) $(LDFLAGS) -o sarview_bin $(OBJS) $(LIBS) $(OTHER)
-	test $(SYS) = solaris || $(CC) $(CFLAGS) $(LDFLAGS) -o sarview_bin $(OBJS) $(LIBS)
-	mv sarview_bin ../../bin/$(SYS)/sarview_bin
-	cp sarview.sh ../../bin/$(SYS)/sarview
-	-rm -r ../../bin/$(SYS)/support
-	-cp -r ./support ../../bin/$(SYS)/
+	if [ "$(SYS)" = "solaris" ] ; then \
+		$(CC) $(CFLAGS) $(LDFLAGS) -o sarview_bin $(OBJS) $(LIBS) $(OTHER) ; \
+	else \
+		$(CC) $(CFLAGS) $(LDFLAGS) -o sarview_bin $(OBJS) $(LIBS) ; \
+	fi
+	mv sarview_bin$(BIN_POSTFIX) $(BINDIR)
+	cp sarview.sh $(BINDIR)/sarview
+	chmod 775 $(BINDIR)/sarview
+	-rm -r $(BINDIR)/support
+	-cp -r ./support $(BINDIR)
 
 clean:
 	rm -f $(OBJS)
