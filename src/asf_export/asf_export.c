@@ -80,7 +80,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        example> asf_export -format jpeg -size 800 file1 file3"
 
 #define ASF_LIMITATIONS_STRING \
-"   Currently only supports ingest of ASF format floating point data.\n\n"\
+"   Currently only supports ingest of ASF format floating point data.\\n\n"\
 "   Floating-point image formats (i.e., geotiff) are not generally\n"\
 "   supported in many image viewing programs."
 
