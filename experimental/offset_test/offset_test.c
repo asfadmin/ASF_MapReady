@@ -310,18 +310,10 @@ bool findPeak(int x1, int y1, char *szImg1, int x2, int y2, char *szImg2,
     {
       srcIndex=y*srcSize;
       for(x=0;x<srcSize;x++) {
-	aveChip+=s[x+srcIndex];
+	sum += s[x+srcIndex];
       }
     }
-  aveChip/=-(float)srcSize*srcSize;
-
-  /* Compute standard deviation for background fill test */
-  for(y=0;y<srcSize;y++) {
-    srcIndex=y*srcSize;
-    for(x=0;x<srcSize;x++) {
-      sum+=s[x+srcIndex];
-    }
-  }
+  aveChip = sum/(float)srcSize*srcSize;
   stdDev = sqrt(sum/(srcSize*srcSize-1));
   if (stdDev < 0.1) return FALSE;
 
@@ -330,7 +322,7 @@ bool findPeak(int x1, int y1, char *szImg1, int x2, int y2, char *szImg2,
     {
       srcIndex=y*srcSize;
       for(x=0;x<srcSize;x++)
-	t[x+srcIndex]=(t[x+srcIndex]+aveChip)*scaleFact;
+	t[x+srcIndex]=(t[x+srcIndex]-aveChip)*scaleFact;
     }
   
   /* Add average brightness to chip 1 */
@@ -338,7 +330,7 @@ bool findPeak(int x1, int y1, char *szImg1, int x2, int y2, char *szImg2,
     {
       srcIndex=y*srcSize;
       for(x=0;x<srcSize;x++)
-	s[x+srcIndex]=s[x+srcIndex]+aveChip;
+	s[x+srcIndex]=s[x+srcIndex]-aveChip;
     }
   
   /* Do the FFT and back */
