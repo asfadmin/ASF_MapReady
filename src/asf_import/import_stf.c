@@ -33,6 +33,10 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   iqType *iqBuf;             /* Buffer containing the complex i & q channels */
   readPulseFunc readNextPulse; /* Pointer to function that reads the next line of CEOS Data */
 
+  if (flags[f_SPROCKET] != FLAG_NOT_SET) {
+    print_error("Data is level 0, sprocket can not use this.");
+    exit(EXIT_FAILURE);
+  }
 
   /* Handle output file name */
   strcpy(outDataName,outBaseName);
@@ -133,7 +137,7 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
         }
       }
       /* Write status information to screen. */
-      if(flags[f_QUIET] == FLAG_NOT_SET) print_progress(outLine,nTotal);
+      line_meter(outLine,nTotal);
   }
 
   if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
