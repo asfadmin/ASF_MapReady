@@ -310,6 +310,7 @@ main (int argc, char **argv)
     g_assert (current_edge_point == edge_point_count);
     // Pointers to arrays of projected coordinates to be filled in.
     double *x, *y;
+    x = y = NULL;
     // Project all the edge pixels.
     int return_code = project_arr (pp, lats, lons, &x, &y, edge_point_count);
     g_assert (return_code == TRUE);
@@ -568,11 +569,11 @@ main (int argc, char **argv)
   double lr_x_pix_approx = evaluate_quadratic (x_pix_model_coefficients, 
 					       lr_x - x_proj_mean, 
 					       lr_y - y_proj_mean);
-  g_assert (fabs (lr_x_pix_approx - ixdim - 1) < max_corner_error);
+  g_assert (fabs (lr_x_pix_approx - (ixdim - 1)) < max_corner_error);
   double lr_y_pix_approx = evaluate_quadratic (y_pix_model_coefficients, 
 					       lr_x - x_proj_mean, 
 					       lr_y - y_proj_mean);
-  g_assert (fabs (lr_y_pix_approx - iydim - 1) < max_corner_error);
+  g_assert (fabs (lr_y_pix_approx - (iydim - 1)) < max_corner_error);
 
   // Ok, we now have quadratic functions we are happy with.  Make some
   // convenience macros for using them.
