@@ -17,9 +17,10 @@ PROGRAM HISTORY:
 #include "asf_meta.h"
 
 
-/* Creates and initializes a meta_parameters structure, guessing at
-   conceivable values.  These bogus values always end in "989", so you
-   can tell them from real values.  */
+/****************************************************
+ * raw_init:
+ * Allocate memory for structures that always exist and
+ * fill with initial bogus value */
 meta_parameters *raw_init(void)
 {
   meta_parameters *meta = MALLOC(sizeof(meta_parameters));
@@ -30,21 +31,22 @@ meta_parameters *raw_init(void)
   meta->projection      = NULL;  /* Allocated later if geocoded */
   meta->stats           = NULL;  /* Not yet in use */
   meta->state_vectors   = MALLOC(sizeof(meta_state_vectors));
-  meta->state_vectors->vecs = NULL;
+  
+  meta->meta_version = META_VERSION;
 
   /* Fill with ludicrous values.  */
-  meta->general->sensor[0] = '\0';
-  meta->general->mode[0] = '\0';
-  meta->general->processor[0] = '\0';
-  meta->general->data_type[0] = '\0';
-  meta->general->system[0] = '\0';
-  meta->general->orbit = -1;
-  meta->general->frame = -1;
-  meta->general->orbit_direction = '\0';
-  meta->general->line_count = -1;
-  meta->general->sample_count = -1;
-  meta->general->start_line = -1;
-  meta->general->start_sample = -1;
+  strcpy(meta->general->sensor, "???");
+  strcpy(meta->general->mode, "???");
+  strcpy(meta->general->processor, "???");
+  strcpy(meta->general->data_type, "???");
+  strcpy(meta->general->system, "???");
+  meta->general->orbit = -2147283648;
+  meta->general->orbit_direction = '?';
+  meta->general->frame = -2147283648;
+  meta->general->line_count = -2147283648;
+  meta->general->sample_count = -2147283648;
+  meta->general->start_line = -2147283648;
+  meta->general->start_sample = -2147283648;
   meta->general->x_pixel_size = NAN;
   meta->general->y_pixel_size = NAN;
   meta->general->center_latitude = NAN;
@@ -52,7 +54,36 @@ meta_parameters *raw_init(void)
   meta->general->re_major = NAN;
   meta->general->re_minor = NAN;
   meta->general->bit_error_rate = NAN;
-  meta->general->missing_lines = -1;
+  meta->general->missing_lines = -2147283648;
+
+  meta->sar->image_type = '?'; 
+  meta->sar->look_direction = '?';
+  meta->sar->look_count = -2147283648;
+  meta->sar->deskewed = -2147283648;
+  meta->sar->line_increment = NAN;
+  meta->sar->sample_increment = NAN;
+  meta->sar->range_time_per_pixel = NAN;
+  meta->sar->azimuth_time_per_pixel = NAN;
+  meta->sar->slant_shift = NAN;
+  meta->sar->time_shift = NAN;
+  meta->sar->slant_range_first_pixel = NAN;
+  meta->sar->wavelength = NAN;
+  meta->sar->prf = NAN;
+  strcpy(meta->sar->satellite_binary_time, "???");
+  strcpy(meta->sar->satellite_clock_time, "???");
+  meta->sar->range_doppler_coefficients[0] = NAN;
+  meta->sar->range_doppler_coefficients[1] = NAN;
+  meta->sar->range_doppler_coefficients[2] = NAN;
+  meta->sar->azimuth_doppler_coefficients[0] = NAN; 
+  meta->sar->azimuth_doppler_coefficients[1] = NAN; 
+  meta->sar->azimuth_doppler_coefficients[2] = NAN; 
+
+  meta->state_vectors->year = -2147283648;
+  meta->state_vectors->julDay = -2147283648;
+  meta->state_vectors->second = NAN;
+  meta->state_vectors->vector_count = -2147283648;
+  meta->state_vectors->num = -2147283648;
+  meta->state_vectors->vecs = NULL;
 
 /* Initialize deprecated structure elements: Creates and initializes a
    meta_parameters structure, guessing at conceivable values.  These
