@@ -2,6 +2,7 @@
 #define GEOCODE_OPTIONS_H
 
 #include "asf_meta.h"
+#include "parse_options.h"
 
 /*
   Pass the argc,argv pair to get_geocode_options.

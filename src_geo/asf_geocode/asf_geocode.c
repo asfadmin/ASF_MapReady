@@ -497,23 +497,28 @@ main (int argc, char **argv)
   double pixel_size;
   // Datum to use in the target projection
   datum_type_t datum;
+
+  // Detect & Process logging arguments
+  if ((logflag = detect_string_options(argc, argv, logFile,
+				      "-log", "--log", NULL))) {
+      fLog = FOPEN(logFile, "w");
+  }
+  quietflag = detect_flag_options(argc, argv, "-quiet", "--quiet", NULL);
+
+  asfSplashScreen(argc, argv);
+
   project_parameters_t *pp 
     = get_geocode_options(&argc, &argv, &projection_type, &average_height, 
 			  &pixel_size, &datum);
   // If help was requested, display it.
-  { // Scoping block.				
-    int ii;
-    for ( ii = 0 ; ii < argc ; ii++ ) {
-      if ( strncmp (argv[ii], "-help", strlen ("-help")) == 0
-	   || strncmp (argv[ii], "--help", strlen ("--help")) == 0 ) {
-	help_page ();
-      }
-    }
+  if (detect_flag_options(argc, argv, "-help", "--help", NULL)) {
+    help_page ();
   }
   // Get non-option command line arguments.
   if ( argc != 3 ) {
     usage ();
   }
+
   GString *input_image = g_string_new (argv[1]);
   GString *output_image = g_string_new (argv[2]);
 
@@ -980,6 +985,10 @@ main (int argc, char **argv)
   // Done with the file name arguments.
   g_string_free (input_image, TRUE);
   g_string_free (output_image, TRUE);
+
+  // Close Log, if needed
+  if (logflag)
+      FCLOSE (fLog);
 
   exit (EXIT_SUCCESS);
 }

@@ -714,8 +714,8 @@ static void extract_double_options(int *argc, char **argv[],
     while (arg);
 }
 
-static void extract_string_option(int *argc, char **argv[], char *val,
-				  char *arg, int *found)
+static void handle_string_option(int *argc, char **argv[], char *val,
+				  char *arg, int *found, int remove_arg)
 {
     int i;
 
@@ -725,10 +725,25 @@ static void extract_string_option(int *argc, char **argv[], char *val,
 	{
 	    if (parse_string_option(&i, *argc, *argv, found, val))
 	    {
-		remove_args(i-1, i, argc, argv);
+		if (remove_arg)
+		{
+		    remove_args(i-1, i, argc, argv);
+		}
 	    }
 	}
     }
+}
+
+static void detect_string_option(int argc, char *argv[], char *val,
+				  char *arg, int *found)
+{
+    handle_string_option(&argc, &argv, val, arg, found, FALSE);
+}
+
+static void extract_string_option(int *argc, char **argv[], char *val,
+				  char *arg, int *found)
+{
+    handle_string_option(argc, argv, val, arg, found, TRUE);
 }
 
 /* assumes the space has been allocated by caller */
@@ -754,6 +769,28 @@ static int extract_string_options(int *argc, char **argv[],
     return found;
 }
 
+/* assumes the space has been allocated by caller */
+int detect_string_options(int argc, char *argv[], char *val, ... )
+{
+    va_list ap;
+    char * arg = NULL;
+    int found = FALSE;
+
+    *val = '\0';
+
+    va_start(ap, val);
+    do
+    {
+	arg = va_arg(ap, char *);
+
+	if (arg)
+	    detect_string_option(argc, argv, val, arg, &found);
+    }
+    while (arg);
+
+    return found;
+}
+
 static void extract_flag(int *argc, char **argv[],
 			 char *arg, int *found)
 {
@@ -767,6 +804,39 @@ static void extract_flag(int *argc, char **argv[],
 	    remove_args(i, i, argc, argv);
 	}
     }
+}
+
+static void detect_flag_option(int argc, char *argv[], char *arg, int *found)
+{
+    int i;
+
+    for (i = 0; i < argc; ++i)
+    {
+	if (strcmp(argv[i], arg) == 0)
+	{
+	    *found = TRUE;
+	    return;
+	}
+    }
+}
+
+int detect_flag_options(int argc, char *argv[], ...)
+{
+    va_list ap;
+    char * arg = NULL;
+    int found = FALSE;
+
+    va_start(ap, argv);
+    do
+    {
+	arg = va_arg(ap, char *);
+
+	if (arg)
+	    detect_flag_option(argc, argv, arg, &found);
+    }
+    while (arg);
+
+    return found;
 }
 
 static int extract_flags(int *argc, char **argv[], ... )
@@ -791,10 +861,7 @@ static int extract_flags(int *argc, char **argv[], ... )
 void parse_log_options(int *argc, char **argv[])
 {
     if (extract_string_options(argc, argv, logFile, "-log", NULL))
-    {
 	logflag = 1;
-	fLog = FOPEN(logFile, "wt");
-    }
     else
 	logflag = 0;
 
