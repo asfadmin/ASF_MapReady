@@ -8,7 +8,7 @@
  *   valid) otherwise return TRUE (valid) */
 int meta_is_valid_char(char value)
 {
-	return (value==MAGIC_UNSET_CHAR) ? FALSE : TRUE;
+	return (value!=MAGIC_UNSET_CHAR);
 }
 
 /*******************************************************************************
@@ -17,7 +17,7 @@ int meta_is_valid_char(char value)
  *   valid) otherwise return TRUE (valid) */
 int meta_is_valid_string(char *value)
 {
-	return (!strcmp(value,MAGIC_UNSET_STRING)) ? FALSE : TRUE;
+	return strcmp(value,MAGIC_UNSET_STRING);
 }
 
 /*******************************************************************************
@@ -26,7 +26,7 @@ int meta_is_valid_string(char *value)
  *   valid) otherwise return TRUE (valid) */
 int meta_is_valid_int(int value)
 {
-	return (value==MAGIC_UNSET_INT) ? FALSE : TRUE;
+	return (value!=MAGIC_UNSET_INT);
 }
 
 
@@ -36,5 +36,5 @@ int meta_is_valid_int(int value)
  *   therefore invalid. Returns TRUE for valid, FALSE for invalid */
 int meta_is_valid_double(double value)
 {
-	return (value==MAGIC_UNSET_DOUBLE) ? FALSE : TRUE;
+	return !(ISNAN(value));
 }
