@@ -40,6 +40,7 @@ void updateLutLeader(char *leaderIn, char *leaderOut,
   struct dataset_sum_rec dssr;
   struct qual_sum_rec dqsr;
   unsigned char *buf;
+  int ii;
 
   /* Open leader files */
   fpIn = FOPEN(leaderIn, "r");
@@ -63,18 +64,30 @@ void updateLutLeader(char *leaderIn, char *leaderOut,
       switch (itype) 
 	{
 	case CEOS_DSSR:
-	  /* Here is the calibration parameter file we want to change */
+	  /* Here is the calibration parameter file we want to change *
 	  era = getCeosRecord(leaderIn, 10, 1, &buf);
 	  Code_DSSR(buf, &dssr, era, fromASCII);
 	  strcpy(dssr.cal_params_file, cal_params_file);
-	  Code_DSSR(buf, &dssr, era, toASCII);
+	  Code_DSSR(buf, &dssr, era, toASCII);*/
+	  for (ii=0; ii<32; ii++) {
+	    if (ii < strlen(cal_params_file))
+	      buf[1872+ii] = cal_params_file[ii];
+	    else 
+	      buf[1872+ii] = ' ';
+	  }
 	  break;
 	case CEOS_DQSR:
-	  /* Here is the calibration comment we want to change */
+	  /* Here is the calibration comment we want to change *
 	  era = getCeosRecord(leaderIn, 60, 1, &buf);
 	  Code_DQS(buf, &dqsr, era, fromASCII);
 	  strcpy(dqsr.cal_comment, cal_comment);
-	  Code_DQS(buf, &dqsr, era, toASCII);
+	  Code_DQS(buf, &dqsr, era, toASCII);*/
+	  for (ii=0; ii<200; ii++) {
+	    if (ii < strlen(cal_comment))
+	      buf[1420+ii] = cal_comment[ii];
+	    else 
+	      buf[1420+ii] = ' ';
+	  }
 	  break;
       }
 
