@@ -1,4 +1,4 @@
-/*******************************************************************************
+/******************************************************************************
 <documentation>
 <name>
    asf_export
@@ -20,13 +20,13 @@
 
 <output>
    The converted data in the output file. This file can be specified explicitly
-   with the -o option, or the base name from the input file will be used with an
-   appropriate extension.
+   with the -o option, or the base name from the input file will be used with 
+   an appropriate extension.
 </output>
 
 <options>
    -f             Format to export to. Must be one of the following:
-                      CEOS, envi, esri, geotiff, jpeg, png, ppm
+                      CEOS, envi, esri, geotiff, jpeg, ppm
    -s             Scale image so that its largest dimension is, at most, size.
    -o             Name of the output file.
 </options>
@@ -91,12 +91,7 @@
 </copyright>
 </documentation>
 
-PROGRAM HISTORY:
-	VERS:   DATE:   AUTHOR:
-	----------------------------------------------------------------------
-	?
-
-*******************************************************************************/
+******************************************************************************/
 
 #include <assert.h>
 #include <ctype.h>
@@ -119,7 +114,6 @@ PROGRAM HISTORY:
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_statistics.h>
 #include <jpeglib.h>
-#include <png/png.h>
 #include <tiff.h>
 #include <tiffio.h>
 #include <xtiffio.h>
@@ -139,8 +133,16 @@ usage (char *program_name)
 	  program_name);
 }
 
+/* Evaluate to true iff floats are within tolerance of each other.  */
+#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
+
+/* Default tolerance used for many floating point comparisons in this
+   program.  */
 #define ASF_EXPORT_FLOAT_MICRON 0.000000001
-#define FLOAT_EQUIVALENT(a, b) (fabs(a - b) < ASF_EXPORT_FLOAT_MICRON ? 1 : 0)
+
+/* Compare floats using the default tolerance for this program.  */
+#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
+                                (a, b, ASF_EXPORT_FLOAT_MICRON))
 
 /* Maximum image name length we can accept from the user.  Since the
    user may enter a base name only, the actual file name strings need
@@ -176,7 +178,6 @@ typedef enum {
   ESRI,				/* ESRI GIS package.  */
   GEOTIFF,			/* Geotiff.  */
   JPEG,				/* Joint Photographic Experts Group.  */
-  PNG,				/* Portable Network Graphics.  */
   PPM				/* Portable PixMap.  */
 } output_format_t;
 
@@ -231,11 +232,6 @@ export_as_jpeg (const char *metadata_file_name,
 		long max_size);
 
 void
-export_as_png (const char *metadata_file_name,
-	       const char *image_data_file_name, const char *output_file_name,
-	       long max_size);
-
-void
 export_as_ppm (const char *metadata_file_name,
 	       const char *image_data_file_name, const char *output_file_name,
 	       long max_size);
@@ -277,7 +273,6 @@ main (int argc, char *argv[])
 	     || (strcmp (command_line.format, "esri") == 0)
 	     || (strcmp (command_line.format, "geotiff") == 0)
 	     || (strcmp (command_line.format, "jpeg") == 0)
-	     || (strcmp (command_line.format, "png") == 0)
 	     || (strcmp (command_line.format, "ppm") == 0)) ) {
 	fprintf (stderr, "%s: bad format (-f argument): %s\n", program_name, 
 		 command_line.format);
@@ -317,9 +312,6 @@ main (int argc, char *argv[])
   }
   else if ( strcmp (command_line.format, "jpeg") == 0 ) {
     format = JPEG;
-  }
-  else if ( strcmp (command_line.format, "png") == 0 ) {
-    format = PNG;
   }
   else if ( strcmp (command_line.format, "ppm") == 0 ) {
     format = PPM;
@@ -368,13 +360,10 @@ main (int argc, char *argv[])
   if ( command_line.output_name[0] == '\0' ) {
     if ( format == GEOTIFF ) {
       create_name (command_line.output_name, command_line.input_name, 
-		   ".tiff");
+		   ".tif");
     } 
     else if ( format == JPEG ) {
       create_name (command_line.output_name, command_line.input_name, ".jpeg");
-    }
-    else if ( format == PNG ) {
-      create_name (command_line.output_name, command_line.input_name, ".png");
     }
     else if ( format == PPM ) {
       create_name (command_line.output_name, command_line.input_name, ".ppm");
@@ -410,10 +399,6 @@ main (int argc, char *argv[])
     export_as_jpeg (metadata_file_name, image_data_file_name,
 		    command_line.output_name, command_line.size);
   } 
-  else if ( format == PNG ) {
-    export_as_png (metadata_file_name, image_data_file_name,
-		   command_line.output_name, command_line.size);
-  }
   else if ( format == PPM ) {
     export_as_ppm (metadata_file_name, image_data_file_name,
 		   command_line.output_name, command_line.size);
@@ -1358,105 +1343,6 @@ export_as_jpeg (const char *metadata_file_name,
 }
 
 void
-export_as_png (const char *metadata_file_name,
-	       const char *image_data_file_name, const char *output_file_name,
-	       long max_size)
-{
-  /* Get the image metadata.  */
-  meta_parameters *md = meta_read (metadata_file_name);
-
-  int line_count = md->general->line_count;
-  int sample_count = md->general->sample_count;
-  /* Maximum large dimension to allow in the output.  */
-  unsigned long max_large_dimension;
-  if ( (max_size > line_count && max_size > sample_count) 
-       || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
-    max_large_dimension = GSL_MAX (line_count, sample_count);
-  } 
-  else {
-    max_large_dimension = max_size;
-  }
-
-  size_t pixel_count = (size_t) line_count * sample_count;
-
-  /* Get the image data.  */
-  assert (md->general->data_type == REAL32);
-  float *daf = get_image_data (md, image_data_file_name);
-  /* It supposed to be big endian data, this converts to host byte
-     order.  */
-  int jj;
-  for ( jj = 0 ; jj < pixel_count ; jj++ ) {
-    ieee_big32 (daf[jj]);
-  }
-
-  /* This space is resized later (with realloc) if the image is
-     scaled.  */
-  unsigned char *pixels = scale_floats_to_unsigned_bytes (daf, pixel_count);
-
-  /* We want to scale the image st the long dimesion is less than or
-     equal to this value the prescribed maximum.  */
-  /* Current size of the image.  */
-  unsigned long width = sample_count, height = line_count;
-  /* Scale the image, modifying width and height to reflect the new
-     image size.  */
-  pixels = scale_unsigned_char_image_dimensions (pixels, max_large_dimension,
-						 &width, &height);
-
-  /* Open the output file to be used.  */
-  FILE *ofp = fopen (output_file_name, "w");
-  if ( ofp == NULL ) {
-    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
-	     output_file_name, strerror (errno));
-    exit (EXIT_FAILURE);
-  }
-
-  /* Initialize libpng structures and error handling.  */
-  png_structp png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING, 
-						 (png_voidp) NULL, NULL, NULL);
-  assert (png_ptr != NULL);
-  png_infop info_ptr = png_create_info_struct (png_ptr);
-  assert (png_ptr != NULL);
-  if ( setjmp (png_jmpbuf (png_ptr)) ) {
-    fprintf (stderr, "%s: some libpng call failed somehow or other\n", 
-	     program_name);
-    exit (EXIT_FAILURE);
-  }
-  
-  /* Write the png.  */
-  png_init_io (png_ptr, ofp);
-  const int bit_depth = 8;		/* We are writing a byte image.  */
-  png_set_IHDR (png_ptr, info_ptr, width, height, bit_depth, 
-		PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE, 
-		PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-  const int text_fields_count = 1; /* We write only one field of text.  */
-  /* FIXME: confirm: I guess we have to malloc our own png_text blocks?  */
-  png_text *text_ptr = malloc (text_fields_count * sizeof (png_text));
-  text_ptr[0].key = "Description";
-  text_ptr[0].text = "Alaska Satellite Facility Image";
-  text_ptr[0].compression = PNG_TEXT_COMPRESSION_NONE;
-  png_set_text (png_ptr, info_ptr, text_ptr, 1);
-  png_write_info (png_ptr, info_ptr);
-  png_uint_32 ii;
-  png_bytep row_pointers[height];
-  for ( ii = 0 ; ii < height ; ii++ ) {
-    const int bytes_per_pixel = 1; /* We are writing a byte image.  */
-    row_pointers[ii] = pixels + ii * width * bytes_per_pixel;
-  }
-  png_write_image (png_ptr, row_pointers);
-  png_write_end (png_ptr, info_ptr);
-
-  png_destroy_write_struct (&png_ptr, &info_ptr);
-
-  int return_code = fclose (ofp); /* Close png file.  */
-  assert (return_code == 0);
-
-  free (pixels);
-  free (daf);
-  meta_free (md);
-
-}
-
-void
 export_as_ppm (const char *metadata_file_name, 
 	       const char *image_data_file_name, const char *output_file_name,
 	       long max_size)
@@ -1653,9 +1539,13 @@ export_as_geotiff (const char *metadata_file_name,
     /* Set the scale of the pixels, in projection coordinates.  */
     double pixel_scale[3];
     pixel_scale[0] = md->projection->perX;
-    pixel_scale[1] = md->projection->perY;
+    /* Note: we take -perY here because our tools treat the upper left
+       as startX, startY, and then count down in the y direction with
+       lower scan lines of the image.  The GeoTIFF world uses
+       increasing y coordinates in the downward direction.  */
+    pixel_scale[1] = -md->projection->perY;
     pixel_scale[2] = 0;
-    TIFFSetField(otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
+    TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
     /* At this point we need to nail down which ellipsoid we are on
        exactly.  The ASF metadata doesn't specify this though, so we
@@ -1665,9 +1555,13 @@ export_as_geotiff (const char *metadata_file_name,
     const double wgs84_flattening = 1.0 / 298.257223563;
     const double wgs84_e2 = 2 * wgs84_flattening - pow (wgs84_flattening, 2);
     const double wgs84_minor_axis 
-      = sqrt (pow (wgs84_major_axis, 2) * (1 - pow (wgs84_e2, 2)));
-    assert (FLOAT_EQUIVALENT (md->general->re_major, 6378137));
-    assert (FLOAT_EQUIVALENT (md->general->re_minor, wgs84_minor_axis));
+      = sqrt (pow (wgs84_major_axis, 2) * (1 - wgs84_e2));
+    assert (FLOAT_EQUIVALENT (md->projection->re_major, 6378137));
+    /* Insist that the minor axis match what we are expecting to
+       within this tolerance.  */
+    double minor_axis_tolerance = 0.2;
+    assert (FLOAT_COMPARE_TOLERANCE (md->projection->re_minor, 
+				     wgs84_minor_axis, minor_axis_tolerance));
 
     switch ( md->projection->type ) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
