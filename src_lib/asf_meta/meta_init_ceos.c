@@ -18,6 +18,9 @@ PROGRAM HISTORY:
 #include "meta_init.h"
 #include "asf_nan.h"
 
+
+int has_mpdr(const char *ldr_name);
+
 /************************************************************
  * ceos_init:
  * Reads SAR structure parameters from CEOS into existing
@@ -83,7 +86,11 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	meta->general->bit_error_rate   = 0.0;
 
     /* Fill meta->sar structure */
-/**/	meta->sar->image_type = '?';
+/* Later figured in ceos_init_asf() if ASF is the facility */
+	if (has_mpdr(in_fName))          { meta->sar->image_type = 'P'; }
+	else if (ceos->product==CCSD)    { meta->sar->image_type = 'S'; }
+	else if (ceos->product==LOW_REZ
+	       || ceos->product==HI_REZ) { meta->sar->image_type = 'G'; }
 	meta->sar->look_direction = (dssr.clock_ang>=0.0) ? 'R' : 'L';
 /*	meta->sar->look_count = -2147283648;  found below */
 /**/	meta->sar->deskewed = -2147283648;
@@ -97,8 +104,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	    meta->sar->original_line_count   = -2147283648;
 	    meta->sar->original_sample_count = -2147283648;
 	}
-    }	meta->sar->line_increment = NAN;
-	meta->sar->sample_increment = NAN;
+/**/}	meta->sar->line_increment   = 1.0; /* There is probably a better way to set this */
+/**/	meta->sar->sample_increment = 1.0; /* There is probably a better way to set this */
 	meta->sar->range_time_per_pixel   = dssr.n_rnglok
 		/ (dssr.rng_samp_rate * get_units(dssr.rng_samp_rate,EXPECTED_FS));
 	meta->sar->azimuth_time_per_pixel = dssr.n_azilok/dssr.prf;
@@ -234,3 +241,35 @@ ceos_description *get_ceos_description(char *fName)
 	return ceos;
 }
 
+/**************************************
+ * has_mpdr:
+ * Returns 1 if it does have a map
+ * projection data record, 0 if not.*/
+int has_mpdr(const char *ldr_name)
+{
+	FILE *fp;
+	int length;
+	struct HEADER bufhdr;
+
+	fp = FOPEN(ldr_name, "r");
+	while (1)
+	{
+		if (fread(&bufhdr,sizeof(bufhdr),1,fp)!=1)
+		{
+			fclose(fp);
+			return 0;
+		}
+		if (bufhdr.rectyp[1] == 20) {
+			fclose(fp);
+			return 1;
+		}
+
+		length = bigInt32(bufhdr.recsiz) - 12;
+		if((fseek(fp, length, 1)) != 0) 
+		{
+			fclose(fp);
+			return 0;
+		}
+	}
+	return 0;
+}
