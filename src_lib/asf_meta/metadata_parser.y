@@ -98,10 +98,8 @@ void select_current_block(char *block_name)
     { current_block = &(MPROJ->param); goto MATCHED; }
   if ( !strcmp(block_name, "atct") )
     { current_block = &((*( (param_t *) current_block)).atct); goto MATCHED; }
-  if ( !strcmp(block_name, "lambert") ) { 
-    current_block = &((*( (param_t *) current_block)).lambert); 
-    goto MATCHED; 
-  }
+  if ( !strcmp(block_name, "lambert") )
+    { current_block = &((*( (param_t *) current_block)).lambert); goto MATCHED; }
   if ( !strcmp(block_name, "ps") )
     { current_block = &((*( (param_t *) current_block)).ps); goto MATCHED; }
   if ( !strcmp(block_name, "utm") )
@@ -363,7 +361,7 @@ void fill_structure_field(char *field_name, void *valp)
   }
 
   /* Fields that go in the (proj->param).lambert block.  */
-  if ( !strcmp(stack_top->block_name, "lambert") ) {    
+  if ( !strcmp(stack_top->block_name, "lambert") ) {
     if ( !strcmp(field_name, "plat1") )
       { (*MPARAM).lambert.plat1 = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "plat2") )
@@ -376,9 +374,9 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields that go in the (proj->param).ps block.  */
   if ( !strcmp(stack_top->block_name, "ps") ) {    
-    if ( !strcmp(field_name, "lat") )
+    if ( !strcmp(field_name, "slat") )
       { (*MPARAM).ps.slat = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "lon") )
+    if ( !strcmp(field_name, "slon") )
       { (*MPARAM).ps.slon = VALP_AS_DOUBLE; return; }
   }
 
