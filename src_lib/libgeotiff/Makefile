@@ -26,7 +26,7 @@ VERSION_POINT = 4
 #	epsg_ellipse.inc epsg_pcs.inc epsg_proj.inc epsg_vertcs.inc geokeys.inc
 
 # '-I../libtiff' is for a slew of .h files that are needed from libtiff
-CFLAGS = $(OPTFLAG) $(INCLUDE) -I../libtiff
+CFLAGS = -g -Wall $(OPTFLAG) $(INCLUDE) -I../libtiff
 
 OBJS  = ${XTIFF} \
 	geo_free.o \
@@ -45,8 +45,10 @@ OBJS  = ${XTIFF} \
 	cpl_csv.o
 
 HEADERS = geo_config.h geo_keyp.h geo_normalize.h geo_tiffp.h geokeys.h \
-          geonames.h geotiff.h geotiffio.h geovalues.h geokeys.inc \
-          $(LIB_XTIFF)/xtiffio.h
+          geonames.h geotiff.h geotiffio.h geovalues.h epsg_datum.inc \
+	  epsg_gcs.inc epsg_pm.inc epsg_units.inc geo_ctrans.inc \
+          epsg_ellipse.inc  epsg_pcs.inc epsg_proj.inc epsg_vertcs.inc \
+          geokeys.inc cpl_serv.h $(LIB_XTIFF)/xtiffio.h
 
 all: libgeotiff.a
 	mv libgeotiff.a $(LIBDIR)
