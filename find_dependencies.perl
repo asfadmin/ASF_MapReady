@@ -446,7 +446,7 @@ if ( -e $graph_cache_file ) {
     }
 }
 
-# Validity check and apply independencies.
+# Validate and apply independencies.
 if ( %pkg_independencies ) {
     &babble("\nValidating and applying independencies...\n");
     foreach my $pkg ( keys %pkg_independencies ) {
@@ -462,16 +462,15 @@ if ( %pkg_independencies ) {
 	    die "$progname: unknown package name '$pkg' in independency\n";
 	}
         foreach my $other_pkg ( @{$pkg_independencies{$pkg}} ) {
-	    unless ( exists($pkg_deps{$other_pkg}) ) {
+	    unless ( $p{'package'} or exists($pkg_deps{$other_pkg}) ) {
                 die "$progname: unknown package name '$other_pkg' in independency\n";
             }
             my @new_deps = (); # Post-independency dependency list.
             foreach my $dependency ( @{$pkg_deps{$pkg}} ) {
                 unless ( $dependency eq $other_pkg ) { 
                     push(@new_deps, $dependency);
-		    print wrap('', '', "\nIgnoring declared independency of $pkg on $other_pkg, since no dependency was believed to exist anyway...\n");
                 } else {
-		    print wrap('', '', "\nRemoving detected direct dependency of $pkg on $other_pkg from dependency graph due to declared independency...\n");
+		    print wrap('', '', "\nRemoving detected direct dependency of $pkg on $dependency from dependency graph due to declared independency...\n");
 		}
             }
             @{$pkg_deps{$pkg}} = @new_deps;
