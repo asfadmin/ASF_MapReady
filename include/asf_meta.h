@@ -80,9 +80,9 @@ typedef struct {
  *   cray_float       cray-unicos    Cray Y-MP Unicos                      *
  *      ???           other-msc      Misc. Other systems not covered       */
   int orbit;                 /* Orbit number of satellite.                 */
+  char orbit_direction;	     /* Ascending 'A', or descending 'D'.          */
   int frame;                 /* Frame for this image or -1 if inapplicable.*/
   int band_number;           /* Band number; first band is 0               */
-  char orbit_direction;	     /* Ascending 'A', or descending 'D'.          */
   int line_count;            /* Number of lines in image.                  */
   int sample_count;          /* Number of samples in image.                */
   int start_line;            /* First line relative to original image.     */
@@ -170,14 +170,14 @@ typedef struct {
     double slat;      /* Reference latitude for polar stereographic */
     double slon;      /* Reference longitude for polar stereographic*/
   } proj_ps;
-/* Universal Transverse Mercator.*/
+ /* Universal Transverse Mercator.*/
   typedef struct {
     int zone;
   } proj_utm;
  /* Projection parameters for the projection in use.  */
   typedef union {		     
-    proj_lambert  lambert;  /* Lambert Conformal projection */
     proj_atct     atct;     /* Along-track/cross-track      */
+    proj_lambert  lambert;  /* Lambert Conformal projection */
     proj_ps       ps;       /* Polar Sterographic           */
     proj_utm      utm;      /* Universal Transverse Mercator*/
   } param_t;
@@ -261,14 +261,14 @@ typedef struct {
 /* DEPRECATED */
 /*extra_info: extra information needed to re-create CEOS files.*/
 typedef struct {
-  char   sensor[256];      /* Name of imaging sensor.          */
-  char   mode[5];          /* Mode of imaging sensor.          */
-  char   processor[256];   /* Name and version of SAR processor*/
-  int    orbit;            /* Orbit number of satellite.       */
-  double bitErrorRate;     /* Exactly what it says.            */
-  char   satBinTime[256];  /* Satellite binary clock time.     */
-  char   satClkTime[256];  /* Satellite UTC time.              */
-  double prf;              /* Pulse Repition Frequency.        */
+  char   sensor[FIELD_STRING_MAX];      /* Name of imaging sensor.          */
+  char   mode[MODE_FIELD_STRING_MAX];   /* Mode of imaging sensor.          */
+  char   processor[FIELD_STRING_MAX];   /* Name and version of SAR processor*/
+  int    orbit;                         /* Orbit number of satellite.       */
+  double bitErrorRate;                  /* Exactly what it says.            */
+  char   satBinTime[FIELD_STRING_MAX];  /* Satellite binary clock time.     */
+  char   satClkTime[FIELD_STRING_MAX];  /* Satellite UTC time.              */
+  double prf;                           /* Pulse Repition Frequency.        */
 } extra_info;
 
 /********************************************************************
@@ -307,10 +307,13 @@ meta_parameters *meta_read_old(const char *inName);
 void meta_write(meta_parameters *meta,const char *outName);
 meta_parameters *meta_read(const char *inName);
 */
-/*In meta_read*/
+/* In meta_read.c */
 meta_parameters *meta_read(const char *inName);
 
-/* In meta_write */
+/* In meta_copy.c */
+meta_parameters *meta_copy(meta_parameters *src);
+
+/* In meta_write.c */
 void meta_write(meta_parameters *meta,const char *outName);
 
 /* in meta_new2old */
