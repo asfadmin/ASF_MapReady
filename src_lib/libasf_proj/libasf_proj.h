@@ -11,9 +11,11 @@ int project_poly(double phi_deg, double lam_deg, double * xx, double *yy);
   www.remotesensing.org/geotiff/proj_list/transverse_mercator.html
 ****************************************************************************/
 
-/* project_utm
+/*--------------------------------------------------------------------------
+   project_utm
 
-   lon_0 : Longitude of natural origin (radians)
+   pps : projection parameters structure with the "utm" union member
+         populated with the "zone" to use.
 
    lat, lon : Latitude, Longitude of point to transform (radians)
    x, y : Projected point [output]
@@ -21,42 +23,75 @@ int project_poly(double phi_deg, double lam_deg, double * xx, double *yy);
    return value: TRUE if point projected ok, FALSE if not.
                  In this situation, *x and *y will be HUGE_VAL
 
+   Please see project.t.c for usage examples
 */
 int project_utm(project_parameters_t * pps, double lat, double lon,
 		double *x, double *y);
 
-/* project_utm_arr
+/*--------------------------------------------------------------------------
+   project_utm_arr
 
-   lon_0 : Longitude of natural origin (radians)
+   pps : projection parameters structure with the "utm" union member
+         populated with the "zone" to use.
 
    lat, lon : Array of points to transform (radians).
    projected_x, projected_y : the projected points.
 
+      NOTE: If these (projected_x and projected_y) are NULL, they
+            will be allocated and the caller must free.  If non-null,
+            it is assumed that the caller has pre-allocated enough
+            storage to hold the projected points.
+
    length : Number of points in the arrays.
 
    return value: TRUE if point projected ok, FALSE if not.
+
+   Please see project.t.c for usage examples
 */
 
 int project_utm_arr (project_parameters_t * pps,
 		     double *lat, double *lon, 
-		     double *projected_x, double *projected_y,
+		     double **projected_x, double **projected_y,
 		     long length);
 
-/* project_utm_inv
+/*--------------------------------------------------------------------------
+   project_utm_inv
 
-   lon_0 : Longitude of natural origin (radians)
+   pps : projection parameters structure with the "utm" union member
+         populated with the "zone" to use.
 
    x, y: Point to (inverse) project
    lat, lon: (Inverse) projected point [output] (radians)
 
    return value: TRUE if point projected ok, FALSE if not.
+                 In this situation, *lat and *lon will be HUGE_VAL
+
+   Please see project.t.c for usage examples
 */
 int project_utm_inv (project_parameters_t * pps, double x, double y,
 		     double *lat, double *lon);
 
+/*--------------------------------------------------------------------------
+   project_utm_arr_inv
+
+   pps : projection parameters structure with the "utm" union member
+         populated with the "zone" to use.
+
+   x, y: Array of points to (inverse) project
+   lat, lon: (Inverse) projected points [output] (radians)
+
+      NOTE: If these (lat and lon) are NULL, they
+            will be allocated and the caller must free.  If non-null,
+            it is assumed that the caller has pre-allocated enough
+            storage to hold the projected points.
+
+   return value: TRUE if point projected ok, FALSE if not.
+
+   Please see project.t.c for usage examples
+*/
 int project_utm_arr_inv (project_parameters_t * pps, 
 			 double *x, double *y,
-			 double *lat, double *lon,
+			 double **lat, double **lon,
 			 long length);
 
 /****************************************************************************
@@ -64,10 +99,14 @@ int project_utm_arr_inv (project_parameters_t * pps,
   www.remotesensing.org/geotiff/proj_list/polar_stereographic.html
 ****************************************************************************/
 
-/* project_ps
+/*--------------------------------------------------------------------------
+   project_ps
 
-   pps : structure containing the latitude, longitude of the natural origin
-         in radians.
+   pps : projection parameters structure with the "ps" union member
+         populated, containing the latitude, longitude of the natural
+	 origin (ps.slat, ps.slon) in radians, and ps.is_north_pole set
+	 to 1 if the projection is centered on the north pole, 0 if
+         the south pole.
 
    lat : latitude of point to project (radians)
    lon : longitude of point to project (radians)
@@ -75,44 +114,62 @@ int project_utm_arr_inv (project_parameters_t * pps,
 
    return value: TRUE if point projected ok, FALSE if not.
                  In this situation, *x and *y will be HUGE_VAL
+
+   Please see project.t.c for usage examples
 */ 
 int project_ps(project_parameters_t * pps,
 	       double lat, double lon,
 	       double *x, double *y);
 
-/* project_ps_arr
+/*--------------------------------------------------------------------------
+   project_ps_arr
 
-   lat_ts : Latitude at natural origin (radians)
-   lon_0 : Longitude at natural origin (radians)
-   is_north_pole: 1 if projecting from North Pole, 0 if South Pole
+   pps : projection parameters structure with the "ps" union member
+         populated, containing the latitude, longitude of the natural
+	 origin (ps.slat, ps.slon) in radians, and ps.is_north_pole set
+	 to 1 if the projection is centered on the north pole, 0 if
+         the south pole.
 
-   x, y : Array of points to transform in-place.  Input values are
-         latitude (x), longitude (y) pairs (both in radians),
-         outputs are the projected points
+   lat, lon : Array of points to transform.  Radians.
+   projected_x, projected_y : Projected points.
+
+      NOTE: If these (projected_x and projected_y) are NULL, they
+            will be allocated and the caller must free.  If non-null,
+            it is assumed that the caller has pre-allocated enough
+            storage to hold the projected points.
+
    len : Number of points in the x, y arrays.
 
    return value: TRUE if point projected ok, FALSE if not.
+
+   Please see project.t.c for usage examples
 */ 
 int project_ps_arr(project_parameters_t * pps,
 		   double *lat, double *lon,
-		   double *x, double *y,
+		   double **projected_x, double **projected_y,
 		   long length);
 
-/* project_ps_inv
+/*--------------------------------------------------------------------------
+   project_ps_inv
 
-   lat_ts : Latitude at natural origin (radians)
-   lon_0 : Longitude at natural origin (radians)
-   is_north_pole: 1 if projecting from North Pole, 0 if South Pole
+   pps : projection parameters structure with the "ps" union member
+         populated, containing the latitude, longitude of the natural
+	 origin (ps.slat, ps.slon) in radians, and ps.is_north_pole set
+	 to 1 if the projection is centered on the north pole, 0 if
+         the south pole.
 
    x, y: Point to (inverse) project
    lat, lon: (Inverse) projected point [output] (radians)
 
    return value: TRUE if point projected ok, FALSE if not.
+
+   Please see project.t.c for usage examples
 */
 int project_ps_inv(project_parameters_t * pps,
 		   double x, double y, double *lat, double *lon);
 
-/* project_ps_inv
+/*--------------------------------------------------------------------------
+   project_ps_arr_inv
 
    lat_ts : Latitude at natural origin (radians)
    lon_0 : Longitude at natural origin (radians)
@@ -120,11 +177,20 @@ int project_ps_inv(project_parameters_t * pps,
 
    x, y: Array of points to (inverse) project.  On output, latitude
          is in x, longitude in y, both in radians.
-   len : Number of points in the x,y arrays.
+   lat, lon: (Inverse) projected points [output] (radians)
+
+      NOTE: If these (lat and lon) are NULL, they
+            will be allocated and the caller must free.  If non-null,
+            it is assumed that the caller has pre-allocated enough
+            storage to hold the projected points.
+
+   len : Number of points in the arrays.
+
+   Please see project.t.c for usage examples
 */
 int project_ps_arr_inv(project_parameters_t * pps,
 		       double *x, double *y,
-		       double *lat, double *lon,
+		       double **lat, double **lon,
 		       long length);
 
 /****************************************************************************

@@ -67,12 +67,72 @@ void test_poly()
 }
 
 /************************************** Universal Transverse Mercator Tests */
+int testa_utm_arr(project_parameters_t * pps,  char * name,
+		  double lat, double lon,
+		  double x_correct, double y_correct,
+		  int we_allocate)
+{
+    double *xarr, *yarr;
+    double *xarr_out, *yarr_out;
+    int i, ok;
+    
+    xarr = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+    yarr = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+    
+    if (we_allocate)
+    {
+	xarr_out = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+	yarr_out = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+    }
+    else
+    {
+	xarr_out = NULL;
+	yarr_out = NULL;
+    }
+
+    for (i = 0; i < ARR_TEST_SIZE; ++i)
+    {
+	xarr[i] = lat;
+	yarr[i] = lon;
+    }
+    
+    project_utm_arr(pps, xarr, yarr, &xarr_out, &yarr_out, ARR_TEST_SIZE);
+
+    ok = 1;
+    for (i = 1; i < ARR_TEST_SIZE; ++i)
+    {
+	if (!within_tol(xarr_out[i], xarr_out[0]) ||
+	    !within_tol(yarr_out[i], yarr_out[0]))
+	{
+	    ok = 0;
+	    printf("Fail: %s. Result [%d] (%f,%f) "
+		   "disagrees with [0] (%f,%f).\n",
+		   name, i, xarr_out[i], yarr_out[i], 
+		   xarr_out[0], yarr_out[0]);
+	    ++nfail;
+	    break;
+	}
+    }
+    
+    if (ok) ++nok;
+    check(name, xarr_out[0], yarr_out[0], x_correct, y_correct);
+    
+    free(yarr_out);
+    free(xarr_out);
+    
+    free(yarr);
+    free(xarr);
+
+    return ok;
+}
+
 void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
 	       double x_correct, double y_correct)
 {
     char name[256];
     double lon0, lat, lon;
     project_parameters_t pps;
+    int ok;
 
     lon0 = lon0_deg * DEG_TO_RAD;
     lat = lat_deg * DEG_TO_RAD;
@@ -84,7 +144,6 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
     {
 	double x, y;
 	double lat_out, lon_out;
-	int ok;
 
 	sprintf(name, "project_utm(%f,%f,%f)",
 		lon0_deg, lat_deg, lon_deg);
@@ -105,53 +164,18 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
 	}
     }
 
-    /* passing as an array function call check */
+    /* passing as an array function call check -- 2 ways */
+    sprintf(name, "project_utm_arr(%f,%f,%f) - preallocated\n",
+	    lon0_deg, lat_deg, lon_deg);
+
+    ok = testa_utm_arr(&pps, name, lat, lon, x_correct, y_correct, TRUE);
+
+    if (ok)
     {
-	double *xarr, *yarr;
-	double *xarr_out, *yarr_out;
-	int i, ok;
-
-	sprintf(name, "project_utm_arr(%f,%f,%f)",
+	sprintf(name, "project_utm_arr(%f,%f,%f) - NULLed\n",
 		lon0_deg, lat_deg, lon_deg);
-
-	xarr = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
-	yarr = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
-
-	xarr_out = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
-	yarr_out = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
-
-	for (i = 0; i < ARR_TEST_SIZE; ++i)
-	{
-	    xarr[i] = lat;
-	    yarr[i] = lon;
-	}
 	
-	project_utm_arr(&pps, xarr, yarr, xarr_out, yarr_out, ARR_TEST_SIZE);
-
-	ok = 1;
-	for (i = 1; i < ARR_TEST_SIZE; ++i)
-	{
-	    if (!within_tol(xarr_out[i], xarr_out[0]) ||
-		!within_tol(yarr_out[i], yarr_out[0]))
-	    {
-		ok = 0;
-		printf("Fail: %s. Result [%d] (%f,%f) "
-		       "disagrees with [0] (%f,%f).\n",
-		       name, i, xarr_out[i], yarr_out[i], 
-		       xarr_out[0], yarr_out[0]);
-		++nfail;
-		break;
-	    }
-	}
-
-	if (ok) ++nok;
-	check(name, xarr_out[0], yarr_out[0], x_correct, y_correct);
-
-	free(yarr_out);
-	free(xarr_out);
-
-	free(yarr);
-	free(xarr);
+	testa_utm_arr(&pps, name, lat, lon, x_correct, y_correct, FALSE);
     }
 }
 
@@ -176,8 +200,8 @@ void testa_random_utm()
     xp = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
     yp = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
 
-    xa = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
-    ya = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+    xa = NULL;
+    ya = NULL;
 
     srand(102);
 
@@ -198,7 +222,7 @@ void testa_random_utm()
 	    ( (double)rand() / (double)RAND_MAX * 1 - .5 ) );
     }
 
-    project_utm_arr(&pps, x, y, xa, ya, ARR_TEST_SIZE);
+    project_utm_arr(&pps, x, y, &xa, &ya, ARR_TEST_SIZE);
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
@@ -257,7 +281,7 @@ void testa_random_utm()
 	yp[i] = ya[i];
     }
 
-    project_utm_arr_inv(&pps, xp, yp, xa, ya, ARR_TEST_SIZE);
+    project_utm_arr_inv(&pps, xp, yp, &xa, &ya, ARR_TEST_SIZE);
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
@@ -296,6 +320,62 @@ void test_utm()
 }
 
 /************************************* Polar Stereographic Projection Tests */
+int testa_ps_arr(project_parameters_t * pps, char * name,
+		 double lat, double lon,
+		 double x_correct, double y_correct,
+		 int we_allocate)		  
+{
+    double *xarr_in, *yarr_in;
+    double *xarr, *yarr;
+    int i, ok;
+    
+    xarr_in = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+    yarr_in = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+    
+    if (we_allocate)
+    {
+	xarr = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+	yarr = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+    }
+    else
+    {
+	xarr = NULL;
+	yarr = NULL;
+    }
+
+    for (i = 0; i < ARR_TEST_SIZE; ++i)
+    {
+	xarr_in[i] = lat;
+	yarr_in[i] = lon;
+    }
+    
+    project_ps_arr(pps, xarr_in, yarr_in, &xarr, &yarr, ARR_TEST_SIZE);
+    
+    ok = 1;
+    for (i = 1; i < ARR_TEST_SIZE; ++i)
+    {
+	if (!within_tol(xarr[i], xarr[0]) || 
+	    !within_tol(yarr[i], yarr[0]))
+	{
+	    ok = 0;
+	    printf("Fail: %s. Result [%d] (%f,%f) "
+		   "disagrees with [0] (%f,%f).\n",
+		   name, i, xarr[i], yarr[i], xarr[0], yarr[0]);
+	    
+	    ++nfail;
+	    break;
+	}
+    }
+
+    if (ok) ++nok;
+    check(name, xarr[0], yarr[0], x_correct, y_correct);
+    
+    free(yarr);
+    free(xarr);
+
+    return ok;
+}
+
 void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
 	      double x_correct, double y_correct)
 {
@@ -303,6 +383,7 @@ void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
 
     double lat0, lon0, lat, lon;
     project_parameters_t pps;
+    int ok;
 
     lat0 = lat0_deg * DEG_TO_RAD;
     lon0 = lon0_deg * DEG_TO_RAD;
@@ -317,7 +398,6 @@ void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
     {
 	double x, y;
 	double lat_out, lon_out;
-	int ok;
 
 	sprintf(name, "project_ps(%f,%f,%f,%f)",
 		lat0_deg, lon0_deg, lat_deg, lon_deg);
@@ -339,50 +419,18 @@ void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
 	}
     }
 
-    /* passing as an array function call check */
-    {
-	double *xarr_in, *yarr_in;
-	double *xarr, *yarr;
-	int i, ok;
-
-	sprintf(name, "project_ps_arr(%f,%f,%f,%f)",
+    /* array function call tests */
+    sprintf(name, "project_ps_arr(%f,%f,%f,%f) - preallocated",
 		lat0_deg, lon0_deg, lat_deg, lon_deg);
 
-	xarr_in = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
-	yarr_in = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+    ok = testa_ps_arr(&pps, name, lat, lon, x_correct, y_correct, TRUE);
 
-	xarr = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
-	yarr = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
-
-	for (i = 0; i < ARR_TEST_SIZE; ++i)
-	{
-	    xarr_in[i] = lat;
-	    yarr_in[i] = lon;
-	}
+    if (ok)
+    {
+	sprintf(name, "project_ps_arr(%f,%f,%f,%f) - NULLed",
+		lat0_deg, lon0_deg, lat_deg, lon_deg);
 	
-	project_ps_arr(&pps, xarr_in, yarr_in, xarr, yarr, ARR_TEST_SIZE);
-
-	ok = 1;
-	for (i = 1; i < ARR_TEST_SIZE; ++i)
-	{
-	    if (!within_tol(xarr[i], xarr[0]) || 
-		!within_tol(yarr[i], yarr[0]))
-	    {
-		ok = 0;
-		printf("Fail: %s. Result [%d] (%f,%f) "
-		       "disagrees with [0] (%f,%f).\n",
-		       name, i, xarr[i], yarr[i], xarr[0], yarr[0]);
-
-		++nfail;
-		break;
-	    }
-	}
-
-	if (ok) ++nok;
-	check(name, xarr[0], yarr[0], x_correct, y_correct);
-
-	free(yarr);
-	free(xarr);
+	testa_ps_arr(&pps, name, lat, lon, x_correct, y_correct, FALSE);
     }
 }
 
@@ -430,7 +478,7 @@ void testa_random_ps()
     pps.ps.slon = reference_lon * DEG_TO_RAD;
     pps.ps.is_north_pole = 1;
 
-    project_ps_arr(&pps, x, y, xa, ya, ARR_TEST_SIZE);
+    project_ps_arr(&pps, x, y, &xa, &ya, ARR_TEST_SIZE);
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
@@ -490,7 +538,7 @@ void testa_random_ps()
 	yp[i] = ya[i];
     }
 
-    project_ps_arr_inv(&pps, xp, yp, xa, ya, ARR_TEST_SIZE);
+    project_ps_arr_inv(&pps, xp, yp, &xa, &ya, ARR_TEST_SIZE);
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
@@ -583,7 +631,7 @@ void perf_test_ps()
     }
 
     gettimeofday(&tv1, &tz);    
-    project_ps_arr(&pps, x, y, x1, y1, N);
+    project_ps_arr(&pps, x, y, &x1, &y1, N);
     gettimeofday(&tv2, &tz);
 
     elapsed1 = tv2.tv_sec - tv1.tv_sec;

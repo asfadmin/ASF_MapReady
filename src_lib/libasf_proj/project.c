@@ -53,17 +53,34 @@ int project_poly(double phi_deg, double lam_deg, double * xx, double *yy)
 
 static int project_worker_arr(char * projection_description,
 			      double *lat, double *lon,
-			      double *projected_x, double *projected_y,
+			      double **projected_x, double **projected_y,
 			      long length)
 {
   double * tmp3;
   projPJ geographic_projection, output_projection;
   int i, ok = TRUE;
 
+  if (!(*projected_x))
+  {
+      /* user should either pre-allocate both, or want us to allocate
+	 both -- to preallocate one and not the other is weird and
+	 probably a mistake */
+      assert(!(*projected_y));
+
+      *projected_x = (double *) MALLOC (sizeof(double) * length);
+      *projected_y = (double *) MALLOC (sizeof(double) * length);
+  }
+
+  double *px = *projected_x;
+  double *py = *projected_y;
+
+  assert(px);
+  assert(py);
+
   for (i = 0; i < length; ++i)
   {
-      projected_x[i] = lon[i];
-      projected_y[i] = lat[i];
+      px[i] = lon[i];
+      py[i] = lat[i];
   }
 
   geographic_projection
@@ -95,7 +112,7 @@ static int project_worker_arr(char * projection_description,
 	  memset(tmp3, 0, sizeof(double) * length);
 
 	  pj_transform (geographic_projection, output_projection, length, 1, 
-			projected_x, projected_y, tmp3);
+			px, py, tmp3);
 	  
 	  if (pj_errno != 0)
 	  {
@@ -115,17 +132,34 @@ static int project_worker_arr(char * projection_description,
 
 static int project_worker_arr_inv(char * projection_description,
 				  double *x, double *y,
-				  double *lat, double *lon,
+				  double **lat, double **lon,
 				  long length)
 {
   double * tmp3;
   projPJ geographic_projection, output_projection;
   int i, ok = TRUE;
 
+  if (!(*lat))
+  {
+      /* user should either pre-allocate both, or want us to allocate
+	 both -- to preallocate one and not the other is weird and
+	 probably a mistake */
+      assert(!(*lat));
+
+      *lat = (double *) MALLOC (sizeof(double) * length);
+      *lon = (double *) MALLOC (sizeof(double) * length);
+  }
+
+  double *plat = *lat;
+  double *plon = *lon;
+
+  assert(plat);
+  assert(plon);
+
   for (i = 0; i < length; ++i)
   {
-      lat[i] = x[i];
-      lon[i] = y[i];
+      plat[i] = x[i];
+      plon[i] = y[i];
   }
 
   geographic_projection
@@ -157,7 +191,7 @@ static int project_worker_arr_inv(char * projection_description,
 	  memset(tmp3, 0, sizeof(double) * length);
 	  
 	  pj_transform (output_projection, geographic_projection, length, 1, 
-			lat, lon, tmp3);
+			plat, plon, tmp3);
 	  	  
 	  if (pj_errno != 0)
 	  {
@@ -169,9 +203,9 @@ static int project_worker_arr_inv(char * projection_description,
 	  {	  
 	      for (i = 0; i < length; ++i)
 	      {
-		  double t = lat[i];
-		  lat[i] = lon[i];
-		  lon[i] = t;
+		  double t = plat[i];
+		  plat[i] = plon[i];
+		  plon[i] = t;
 	      }
 	  }
 
@@ -226,13 +260,13 @@ project_utm (project_parameters_t * pps,
 {
   return project_worker_arr(
       utm_projection_description(utm_nudge(pps->utm.zone)),
-      &lat, &lon, x, y, 1);
+      &lat, &lon, &x, &y, 1);
 }
 
 int
 project_utm_arr (project_parameters_t * pps, 
 		 double *lat, double *lon, 
-		 double *projected_x, double *projected_y,
+		 double **projected_x, double **projected_y,
 		 long length)
 {
   return project_worker_arr(
@@ -246,13 +280,13 @@ project_utm_inv (project_parameters_t * pps,
 {
   return project_worker_arr_inv(
       utm_projection_description(utm_nudge(pps->utm.zone)),
-      &x, &y, lat, lon, 1);
+      &x, &y, &lat, &lon, 1);
 }
 
 int
 project_utm_arr_inv (project_parameters_t * pps,
 		     double *x, double *y,
-		     double *lat, double *lon,
+		     double **lat, double **lon,
 		     long length)
 {
     /* it is natural to call this function with latitude in x,
@@ -288,7 +322,7 @@ project_ps_imp (double lat_ts, double lon_0, int is_north_pole,
 {
     return  project_worker_arr(
 	ps_projection_desc(lat_ts, lon_0, is_north_pole),
-	&lat, &lon, x, y, 1);
+	&lat, &lon, &x, &y, 1);
 }
 
 int
@@ -303,7 +337,7 @@ project_ps(project_parameters_t * pps,
 static int
 project_ps_arr_imp(double lat_ts, double lon_0, int is_north_pole,
 		   double *lat, double *lon,
-		   double *x, double *y,
+		   double **x, double **y,
 		   long length)
 {
     return project_worker_arr(ps_projection_desc(lat_ts, lon_0, is_north_pole),
@@ -313,12 +347,12 @@ project_ps_arr_imp(double lat_ts, double lon_0, int is_north_pole,
 int
 project_ps_arr(project_parameters_t * pps,
 	       double *lat, double *lon,
-	       double *x, double *y,
+	       double **projected_x, double **projected_y,
 	       long length)
 {
     return project_ps_arr_imp(
 	pps->ps.slat, pps->ps.slon, pps->ps.is_north_pole,
-	lat, lon, x, y, length);
+	lat, lon, projected_x, projected_y, length);
 }
 
 static int
@@ -327,7 +361,7 @@ project_ps_inv_imp(double lat_ts, double lon_0, int is_north_pole,
 {
     return project_worker_arr_inv(
 	ps_projection_desc(lat_ts, lon_0, is_north_pole),
-	&x, &y, lat, lon, 1);
+	&x, &y, &lat, &lon, 1);
 }
 
 int
@@ -342,7 +376,7 @@ project_ps_inv(project_parameters_t * pps,
 static int
 project_ps_arr_inv_imp(double lat_ts, double lon_0, int is_north_pole,
 		       double *x, double *y,
-		       double *lat, double *lon,
+		       double **lat, double **lon,
 		       long length)
 {
   return project_worker_arr_inv(
@@ -353,7 +387,7 @@ project_ps_arr_inv_imp(double lat_ts, double lon_0, int is_north_pole,
 int
 project_ps_arr_inv(project_parameters_t * pps,
 		   double *x, double *y,
-		   double *lat, double *lon,
+		   double **lat, double **lon,
 		   long length)
 {
   return project_ps_arr_inv_imp(
@@ -416,7 +450,7 @@ project_lamaz_arr(double lat_0, double lon_0, double *x, double *y, int length)
 	  "+proj=laea +lat_0=%f +lon_0=%f +datum=WGS84",
 	  lat_0, lon_0);
 
-  return project_worker_arr(lamaz_projection_description, x, y, x,y, length);
+  return project_worker_arr(lamaz_projection_description, x, y, &x,&y, length);
 }
 
 /*
@@ -461,7 +495,7 @@ project_lamcc_arr(double lat_1, double lat_2, double lat_0, double lon_0,
 	  "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=WGS84",
 	  lat_1, lat_2, lat_0, lon_0);
 
-  return project_worker_arr(lamcc_projection_description, x, y,x,y, length);
+  return project_worker_arr(lamcc_projection_description, x, y,&x,&y, length);
 }
 
 /*
@@ -510,5 +544,5 @@ project_albers_arr(double lat_1, double lat_2, double lat_0, double lon_0,
 	  "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=WGS84",
 	  lat_1, lat_2, lat_0, lon_0);
 
-  return project_worker_arr(aea_projection_description, x, y,x,y, length);
+  return project_worker_arr(aea_projection_description, x, y,&x,&y, length);
 }
