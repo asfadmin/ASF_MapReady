@@ -196,7 +196,7 @@ void generate_data_planes (char *infile, char *base)
    /* Close the output files */
    close (f_data);
    close (f_look);
-   close (f_sigma); 
+   close (f_sigma);
 }
 
 void write_metadata (char *metafile, char *file)
@@ -210,20 +210,12 @@ void write_metadata (char *metafile, char *file)
   struct dataset_sum_rec dssr;
   int a;
 
-
   /* Create the metadata file */
   strcpy (output_file, file);
   strcat (output_file, METADATA_EXT);
 
   /* Open it */
-  out = fopen (output_file, "w");
-  if (out == NULL)
-    {
-      char str[256];
-      sprintf (str,
-          "Could not open the file \"%s\" for writing(%d:'%s').\n",
-          file, errno, strerror (errno));
-    }
+  out = FOPEN (output_file, "w");
 
   /* Read faclity data record */
   get_asf_facdr (metafile, &facdr);
@@ -237,8 +229,13 @@ void write_metadata (char *metafile, char *file)
   /* Read the radiometric data record */
   get_raddr (metafile, &dr);
 
-  /* Version info */
-  write_metadata_item_string (out, VERSION, "ASF Converter BETA");
+
+  /*-----------------------*
+   * WRITE THIS STUFF OUT! *
+   *-----------------------*/
+
+  /* VERSION INFO */
+  write_metadata_item_string (out, VERSION, "ASF Standard Detected Converter");
 
   /* PROCESSING_INFO */
   {
@@ -269,18 +266,14 @@ void write_metadata (char *metafile, char *file)
     write_metadata_item_string (out, PROCESSING_DATE, buff);
   }
 
-  /* Center GMT  */
-  {
-    char buff[256];
-    strcpy (buff, facdr.imgyear);
-    buff[4] = '-';
-    strcat (buff, facdr.imgtime);
-    buff[8] = 'T';
-    write_metadata_item_string (out, CENTER_GMT, buff);
-  }
-
   /* PLATFORM */
   write_metadata_item_string (out, PLATFORM, dssr.mission_id);
+
+  /* BEAM_MODE */
+  if (strncmp(dssr.sensor_id,"ERS",3)==0 || strncmp(dssr.sensor_id,"JERS",4)==0)
+     write_metadata_item_string (out, BEAM_MODE, "STD");
+  else
+     write_metadata_item_string (out, BEAM_MODE, "");
 
   /* FREQUENCY */
   {
@@ -304,8 +297,8 @@ void write_metadata (char *metafile, char *file)
   /* CLOCK_ANGLE */
   write_metadata_item_double (out, CLOCK_ANGLE, dssr.clock_ang);
 
-  /* MAP_PROJECTION */
-  /* Leave out -- un-needed. */
+  /* PROJECTION */
+  write_metadata_item_string (out, PROJECTION, facdr.grndslnt);
 
   /* NUMBER_OF_PIXELS */
   write_metadata_item_int (out, NUMBER_OF_PIXELS, facdr.apixels);
@@ -319,11 +312,15 @@ void write_metadata (char *metafile, char *file)
   /* AZ_PIXEL_SPACING */
   write_metadata_item_double (out, AZ_PIXEL_SPACING, dssr.pixel_spacing);
 
-  /* PLATFORM_ALITITUDE */
-  write_metadata_item_double (out, PLATFORM_ALITITUDE, facdr.scalt);
-
-  /* PROJECTION */
-  write_metadata_item_string (out, PROJECTION, facdr.grndslnt);
+  /* CENTER_GMT  */
+  {
+    char buff[256];
+    strcpy (buff, facdr.imgyear);
+    buff[4] = '-';
+    strcat (buff, facdr.imgtime);
+    buff[8] = 'T';
+    write_metadata_item_string (out, CENTER_GMT, buff);
+  }
 
   /* SLANT_RANGE_TO_FIRST_PIXEL */
   write_metadata_item_double (out, SLANT_RANGE_TO_FIRST_PIXEL,
@@ -337,23 +334,72 @@ void write_metadata (char *metafile, char *file)
   write_metadata_item_double (out, EARTH_RADIUS_AT_IMAGE_NARIR,
                facdr.eradnadr);
 
+  /* PLATFORM_ALITITUDE */
+  write_metadata_item_double (out, PLATFORM_ALITITUDE, facdr.scalt);
 
+  /* IMAGE_FORMAT */
   write_metadata_item_string (out, IMAGE_FORMAT, STANDARD_FORMAT);
 
+  /* UPPER RIGHT CORNER LOCATION */
+  write_metadata_item_double (out, TOP_RIGHT_CORNER_LAT, facdr.farslat);
+  write_metadata_item_double (out, TOP_RIGHT_CORNER_LONG, facdr.farslon);
 
-  /* Save parameters neccissary for converting image */
+  /* UPPER LEFT CORNER LOCATION */
+  write_metadata_item_double (out, TOP_LEFT_CORNER_LAT, facdr.nearslat);
+  write_metadata_item_double (out, TOP_LEFT_CORNER_LONG, facdr.nearslon);
+
+  /* LOWER RIGHT CORNER LOCATION */
+  write_metadata_item_double (out, BOTTOM_RIGHT_CORNER_LAT, facdr.farelat);
+  write_metadata_item_double (out, BOTTOM_RIGHT_CORNER_LONG, facdr.farelon);
+
+  /* LOWER LEFT CORNER LOCATION */
+  write_metadata_item_double (out, BOTTOM_LEFT_CORNER_LAT, facdr.nearelat);
+  write_metadata_item_double (out, BOTTOM_LEFT_CORNER_LONG, facdr.nearelon);
+
+  /* ELLIPS_MAJ_AXIS */
+  write_metadata_item_double (out, ELLIPS_MAJ_AXIS, 6378.144);
+
+  /* ELLIPS_MIN_AXIS */
+  write_metadata_item_double (out, ELLIPS_MIN_AXIS, 6356.755);
+
+  /* REVOLUTION */
+  write_metadata_item_int (out, REVOLUTION, atoi(dssr.revolution));
+
+  /* FLIGHT_DIRECTION */
+  write_metadata_item_string (out, FLIGHT_DIRECTION, dssr.asc_des);
+
+  /* RANGE_REFERENCE_DOPPLER */
+  write_metadata_item_string (out, RANGE_REFERENCE_DOPPLER, "");
+
+  /* PRF */
+  write_metadata_item_double (out, PRF, dssr.prf);
+
+  /* DOPPLER_POLY_A0 */
+  write_metadata_item_double (out, DOPPLER_POLY_A0, dssr.crt_dopcen[0]);
+
+  /* DOPPLER_POLY_A1 */
+  write_metadata_item_double (out, DOPPLER_POLY_A1, dssr.crt_dopcen[1]);
+
+  /* DOPPLER_POLY_A2 */
+  write_metadata_item_double (out, DOPPLER_POLY_A2, dssr.crt_dopcen[2]);
+
+  /* CLOSE THE METADATA FILE */
+  fclose (out);
+
+
+  /*------------------------------------------------*
+   * SAVE PARAMETERS NECESSARY FOR CONVERTING IMAGE *
+   *------------------------------------------------*/
 
   /* Image size numbers */
   number_of_samples = facdr.apixels;
   number_of_lines = facdr.alines;
 
-  /*
-     left_pad = vfdr.lbrdrpxl;
-     right_pad = vfdr.rbrdrpxl;
-     top_pad = vfdr.topbrdr;
-     bottom_pad = vfdr.botbrdr;
-   */
-
+/*  left_pad = vfdr.lbrdrpxl;
+ *  right_pad = vfdr.rbrdrpxl;
+ *  top_pad = vfdr.topbrdr;
+ *  bottom_pad = vfdr.botbrdr;
+ */
 
   /* Pixel size information */
   pixel_size_range = dssr.line_spacing;
@@ -390,43 +436,23 @@ void write_metadata (char *metafile, char *file)
   else
     projection = SLANT;
 
-  /* Corner locations */
 
-  /* Upper Right */
-  write_metadata_item_double (out, TOP_RIGHT_CORNER_LAT, facdr.farslat);
-  write_metadata_item_double (out, TOP_RIGHT_CORNER_LONG, facdr.farslon);
-
-  /* Upper left */
-  write_metadata_item_double (out, TOP_LEFT_CORNER_LAT, facdr.nearslat);
-  write_metadata_item_double (out, TOP_LEFT_CORNER_LONG, facdr.nearslon);
-
-  /* Lower Right */
-  write_metadata_item_double (out, BOTTOM_RIGHT_CORNER_LAT, facdr.farelat);
-  write_metadata_item_double (out, BOTTOM_RIGHT_CORNER_LONG, facdr.farelon);
-
-  /* Lower Left */
-  write_metadata_item_double (out, BOTTOM_LEFT_CORNER_LAT, facdr.nearelat);
-  write_metadata_item_double (out, BOTTOM_LEFT_CORNER_LONG, facdr.nearelon);
-  write_metadata_item_double (out, ELLIP_MAJOR, 6378.144);
-  write_metadata_item_double (out, ELLIP_MIN, 6356.755);
-  fclose (out);
-
-  if (INFO)
-    {
-      write_metadata_item_int (stdout, "number_of_samples",
-                number_of_samples);
-      write_metadata_item_int (stdout, "number_of_lines", number_of_lines);
-      write_metadata_item_int (stdout, "left_pad", left_pad);
-      write_metadata_item_int (stdout, "right_pad", right_pad);
-      write_metadata_item_int (stdout, "top_pad", top_pad);
-      write_metadata_item_int (stdout, "bottom_pad", bottom_pad);
-      write_metadata_item_double (stdout, "pixel_size_range",
-              pixel_size_range);
-      write_metadata_item_double (stdout, "pixel_size_az", pixel_size_az);
-      write_metadata_item_double (stdout, "slant_range_to_first_pixel",
-              slant_range_to_first_pixel);
-      write_metadata_item_double (stdout, "platform_alt", platform_alt);
-      write_metadata_item_double (stdout, "Re", Re);
-      write_metadata_item_int (stdout, "Size of iof", iof_size);
-    }
+  /*-----------------------------------------------------------*
+   * BLATHER AT USER IF THEIR ENVIRONMENT SAYS THEY WANT US TO *
+   *-----------------------------------------------------------*/
+  if (INFO) {
+    write_metadata_item_int (stdout, "number_of_samples", number_of_samples);
+    write_metadata_item_int (stdout, "number_of_lines", number_of_lines);
+    write_metadata_item_int (stdout, "left_pad", left_pad);
+    write_metadata_item_int (stdout, "right_pad", right_pad);
+    write_metadata_item_int (stdout, "top_pad", top_pad);
+    write_metadata_item_int (stdout, "bottom_pad", bottom_pad);
+    write_metadata_item_double (stdout, "pixel_size_range",pixel_size_range);
+    write_metadata_item_double (stdout, "pixel_size_az", pixel_size_az);
+    write_metadata_item_double (stdout, "slant_range_to_first_pixel",
+                                slant_range_to_first_pixel);
+    write_metadata_item_double (stdout, "platform_alt", platform_alt);
+    write_metadata_item_double (stdout, "Re", Re);
+    write_metadata_item_int (stdout, "Size of iof", iof_size);
+  }
 }

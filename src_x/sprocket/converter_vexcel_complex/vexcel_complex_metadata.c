@@ -1,107 +1,19 @@
-/**********************************************************************************
+/*******************************************************************************
 File Name: vexcel_complex_metadata.c
 
+Usage:
+  convert_complex <DATA FILE> <METADATAFILE> <VOLFILE> <BASE>
+
 Purpose:
-RSI CEOS to Sprocket format converter for metadata.
-
-Usage:  convert_complex <DATA FILE> <METADATAFILE> <VOLFILE> <BASE>
-
-
-Inputs
-
-Parameters:
-
-<DATA FILE>
-<METADATAFILE>
-<VOLFILE>
-<BASE>
-
-
-Globals:
-
-
-Files:
-
-
-Outputs
-
-Parameters:
-
-
-Globals:
-
-
-Files:
-
-
-Return Values:
-
-
-Global Functions:
-
-int main ( int argc, char** argv )
-
-
-Local Functions:
-
-char* center_time ( char* str, int vol_fd )
-
-void frequency_string ( char* str, int fd )
-
-double platform_height ( int fd, int vol_fd )
-
-void polarization_string ( char* str, int fd )
-
-void processor_id_string ( char* str, int fd )
-
-double radius_of_earth ( int fd )
-
-void usage ( void )
-
-void write_metadata ( char* metafile, char* datafile, char* volfile, char* file )
-
-void write_metadata_item_double ( FILE* f, char* item, double value )
-
-void write_metadata_item_int ( FILE* f, char* item, int value )
-
-void write_metadata_item_string ( FILE* f, char* item, char* value )
-
-
-Calls:
-
-atan(), atoi(), cos(), __errno_location(), exit(), fabs(), fclose(),
-fflush(), fopen(), fprintf(), free(), getenv(), malloc(), mktime(),
-open(), pow(), printf(), sin(), sprintf(), sqrt(), strcat(), strcpy(),
-strerror(), strlen(), tan()
-
-
-Called By:
-
-
-Author:  Jay Cable
-
-
-Creation Date:  ???
-
+  RSI CEOS to Sprocket format converter for metadata.
 
 Revision History:
-
-Initials   Date      Description
-
---------   --------  -----------------------------------------------------
-
-mmoore     07/11/02  Added comments and renamed some variables for clarity
-
- **********************************************************************************/
-
-
-//#include <errno.h>
-//#include <netinet/in.h>
-//#include <math.h>
-//#include <stdio.h>
-//#include <string.h>
-//#include <stdlib.h>
-
+  Author     Date      Description
+  --------   --------  -----------------------------------------------------
+  Jay Cable  ??/??/??  Initial creation
+  mmoore     07/11/02  Added comments and renamed some variables for clarity
+  P. Denny   ??/??/??  Changed headers to fit with asf_tools
+*******************************************************************************/
 
 #include "../util/util.h"
 #include "../util/metadata.h"
@@ -116,12 +28,8 @@ mmoore     07/11/02  Added comments and renamed some variables for clarity
 #define NOT_SLANT (6)
 
 
-/* prototypes for reading Vexcel's ceos stuff */
+/* prototypes */
 int main (int argc, char **argv);
-//static double ceos_read_double (int fd, int position, int length);
-//static int ceos_read_int (int fd, int position, int length);
-//static void ceos_read_char (int fd, int position, int length, char *str);
-//static int ceos_read_binary (int fd, int position, int lenght);
 
 static void write_metadata (char *metafile, char *datafile, char *volfile, char *file);
 static void write_metadata_item_double (FILE * f, char *item, double value);
@@ -173,7 +81,7 @@ static void write_metadata_item_int (FILE * f, char *item, int value)
 static void usage ()
 {
    printf ("convert_complex <DATA FILE> <METADATAFILE> <VOLFILE> <BASE>\n");
-   exit (0);
+   exit (EXIT_FAILURE);
 }
 
 int main (int argc, char **argv)
@@ -187,18 +95,18 @@ int main (int argc, char **argv)
 #undef CALLER
 #define CALLER "write_metadata"
 static void write_metadata (char *metafile, char *datafile, char *volfile,
-char *file)
+                            char *file)
 {
    
    FILE *out;
-   //char buff1[1024];
+   /*char buff1[1024];*/
    char output_file[1024];
    char tmp_value[256];
    int fd, data_fd, vol_fd;
-   //int a;
+   /*int a;*/
    double Re;
-   //double h;
-   //int npixels, nlines;
+   /*double h;*/
+   /*int npixels, nlines;*/
    char buff[512];
    
    /* Create the metadata file */
@@ -252,184 +160,154 @@ char *file)
    /* Compute Radius of geoid at image center */
    Re = radius_of_earth (fd);
    
-   /* Version info */
-   write_metadata_item_string (out, VERSION, "ASF Converter BETA");
+   /* VERSION INFO */
+   write_metadata_item_string (out, VERSION, "ASF Vexcel Complex Converter");
    
    /* PROCESSING_INFO */
    processor_id_string (buff, fd);
    write_metadata_item_string (out, PROCESSING_INFO, buff);
    
+   /* PROCESSING_DATE */
+   write_metadata_item_string (out, PLATFORM, "");
+   
    /* PLATFORM */
    ceos_read_char (fd, START_OF_PPR + 7274, 10, tmp_value);
    write_metadata_item_string (out, PLATFORM, tmp_value);
-   
-   /* REVOLUTION */
-   write_metadata_item_int (out, REVOLUTION,
-   ceos_read_int (fd, START_OF_DSSR + 445, 8));
-   
+    
    /* BEAM_MODE */
    ceos_read_char (fd, START_OF_PPR + 932, 3, tmp_value);
    write_metadata_item_string (out, BEAM_MODE, tmp_value);
-   
-   /* FLIGHT_DIRECTION */
-   ceos_read_char (fd, START_OF_DSSR + 101, 16, tmp_value);
-   write_metadata_item_string (out, FLIGHT_DIRECTION, tmp_value);
-   
+
    /* FREQUENCY */
    frequency_string (buff, fd);
    write_metadata_item_string (out, FREQUENCY, buff);
-   
+  
+   /* POLARIZATION */
    polarization_string (buff, fd);
    write_metadata_item_string (out, POLARIZATION, buff);
    
    /* TRACK_ANGLE */
    write_metadata_item_double (out, TRACK_ANGLE,
-   ceos_read_double (fd, START_OF_DSSR + 469, 8));
+                               ceos_read_double (fd, START_OF_DSSR + 469, 8));
+
    /* CLOCK_ANGLE */
    write_metadata_item_double (out, CLOCK_ANGLE,
-   ceos_read_double (fd, START_OF_DSSR + 477, 8));
-   /* MAP_PROJECTION */
-   /* Leave out -- un-needed. */
-   
-   /* NUMBER_OF_PIXELS */
-   write_metadata_item_int (out, NUMBER_OF_PIXELS,
-   ceos_read_binary (data_fd, START_OF_PDR + 25, 4));
-   
-   /* NUMBER_OF_LINES */
-   write_metadata_item_int (out, NUMBER_OF_LINES,
-   ceos_read_int (data_fd, START_OF_IOF + 181, 6));
-   
-   /* RNG_PIXEL_SPACING */
-   write_metadata_item_double (out, RNG_PIXEL_SPACING,
-      ceos_read_double (fd, START_OF_DSSR + 1703,
-   16));
-   /* AZ_PIXEL_SPACING */
-   write_metadata_item_double (out, AZ_PIXEL_SPACING,
-      ceos_read_double (fd, START_OF_DSSR + 1687,
-   16));
+                               ceos_read_double (fd, START_OF_DSSR + 477, 8));
+
    /* PROJECTION */
    write_metadata_item_string (out, PROJECTION, "GROUND");
    
-   /* SLANT_RANGE_TO_FIRST_PIXEL */
-   write_metadata_item_double (out, SLANT_RANGE_TO_FIRST_PIXEL,
-      ((double)
-         ceos_read_binary (data_fd, START_OF_PDR + 65,
-   4)) / 1000.0);
+   /* NUMBER_OF_PIXELS */
+   write_metadata_item_int (out, NUMBER_OF_PIXELS,
+                            ceos_read_binary (data_fd, START_OF_PDR + 25, 4));
    
+   /* NUMBER_OF_LINES */
+   write_metadata_item_int (out, NUMBER_OF_LINES,
+                            ceos_read_int (data_fd, START_OF_IOF + 181, 6));
+   
+   /* RNG_PIXEL_SPACING */
+   write_metadata_item_double (out, RNG_PIXEL_SPACING,
+                               ceos_read_double (fd, START_OF_DSSR + 1703, 16));
+
+   /* AZ_PIXEL_SPACING */
+   write_metadata_item_double (out, AZ_PIXEL_SPACING,
+                               ceos_read_double (fd, START_OF_DSSR + 1687, 16));
+
    /* CENTER_GMT */
    write_metadata_item_string (out, CENTER_GMT, center_time (buff, vol_fd));
    
-   
+   /* SLANT_RANGE_TO_FIRST_PIXEL */
+   write_metadata_item_double (out, SLANT_RANGE_TO_FIRST_PIXEL,
+            ((double)ceos_read_binary(data_fd, START_OF_PDR + 65, 4)) / 1000.0);
+
    /* EARTH_RADIUS_AT_IMAGE_CENTER */
    write_metadata_item_double (out, EARTH_RADIUS_AT_IMAGE_CENTER, Re / 1000.0);
    
    /* EARTH_RADIUS_AT_IMAGE_NARIR */
    write_metadata_item_double (out, EARTH_RADIUS_AT_IMAGE_NARIR, Re / 1000.0);
-   
+
+   /* PLATFORM_ALTITUDE (Detemined) */
+   write_metadata_item_double (out, PLATFORM_ALITITUDE,
+                               platform_height (fd, vol_fd));
+
+   /* IMAGE_FORMAT */
    write_metadata_item_string (out, IMAGE_FORMAT, COMPLEX_FORMAT);
-   
-   
-   /* PRF */
-   write_metadata_item_double (out, PRF,
-   ceos_read_double (fd, START_OF_DSSR + 935, 16));
-   
-   /* Range reference */
-   write_metadata_item_double (out, RANGE_REFERENCE_DOPPLER,
-      ceos_read_double (fd, START_OF_DSSR + 2324,
-   16));
-   
-   /* Doppler Poly */
-   write_metadata_item_double (out, DOPPLER_POLY_A0,
-      ceos_read_double (fd, START_OF_DSSR + 1479,
-   16));
-   write_metadata_item_double (out, DOPPLER_POLY_A1,
-      ceos_read_double (fd, START_OF_DSSR + 1479 + 16,
-   16));
-   write_metadata_item_double (out, DOPPLER_POLY_A2,
-      ceos_read_double (fd, START_OF_DSSR + 1479 + 32,
-   16));
-   
-   /* read the lat and longs of the image corners */
-   
+
+   /* GET THE IMAGE CORNERS */
    {
       int number_of_lines;
       int number_of_samples;
       double ONE_MILL = 1000000;
-      
-      
-      number_of_samples = ceos_read_binary (data_fd, START_OF_PDR + 9, 4);
+
+      number_of_samples = ceos_read_double(data_fd, START_OF_DSSR + 332, 8);
       number_of_lines = ceos_read_int (data_fd, START_OF_IOF + 181, 6);
-      
-      
-      /*
-      write_metadata_item_int (out, NUMBER_OF_PIXELS,
-      ceos_read_binary (data_fd, START_OF_PDR + 25, 4));
-      
-      write_metadata_item_int (out, NUMBER_OF_LINES,
-      ceos_read_int (data_fd, START_OF_IOF + 181, 6));
-       */
-      
-      
-      
-      
-      /* Upper left */
-      write_metadata_item_double (out, TOP_LEFT_CORNER_LAT,
-         ceos_read_binary (data_fd, START_OF_PDR + 133,
-      4) / ONE_MILL);
-      write_metadata_item_double (out, TOP_LEFT_CORNER_LONG,
-         ceos_read_binary (data_fd, START_OF_PDR + 145,
-      4) / ONE_MILL);
-      /* Upper right */
+
+      /* TOP_RIGHT_CORNER_LAT/LONG */
       write_metadata_item_double (out, TOP_RIGHT_CORNER_LAT,
-         ceos_read_binary (data_fd,
-            START_OF_PDR +
-      141, 4) / ONE_MILL);
+         ceos_read_binary (data_fd, START_OF_PDR + 141, 4) / ONE_MILL);
       write_metadata_item_double (out, TOP_RIGHT_CORNER_LONG,
-         ceos_read_binary (data_fd,
-            START_OF_PDR +
-      153, 4) / ONE_MILL);
-      
-      /* Lower left */
-      write_metadata_item_double (out, BOTTOM_LEFT_CORNER_LAT,
-         ceos_read_binary (data_fd,
-            16252 + number_of_samples
-            * (number_of_lines - 2) +
-      133, 4) / ONE_MILL);
-      
-      write_metadata_item_double (out, BOTTOM_LEFT_CORNER_LONG,
-         ceos_read_binary (data_fd,
-            START_OF_PDR +
-            number_of_samples *
-            (number_of_lines - 2) + 145,
-      4) / ONE_MILL);
-      /* Lower right */
+         ceos_read_binary (data_fd, START_OF_PDR + 153, 4) / ONE_MILL);
+      /* TOP_LEFT_CORNER_LAT/LONG */
+      write_metadata_item_double (out, TOP_LEFT_CORNER_LAT,
+         ceos_read_binary (data_fd, START_OF_PDR + 133, 4) / ONE_MILL);
+      write_metadata_item_double (out, TOP_LEFT_CORNER_LONG,
+         ceos_read_binary (data_fd, START_OF_PDR + 145, 4) / ONE_MILL);
+      /* BOTTOM_RIGHT_CORNER_LAT/LONG */
       write_metadata_item_double (out, BOTTOM_RIGHT_CORNER_LAT,
          ceos_read_binary (data_fd,
-            START_OF_PDR +
-            number_of_samples *
-            (number_of_lines - 1) + 141,
-      4) / ONE_MILL);
-      
+            START_OF_PDR + number_of_samples * (number_of_lines - 1) + 141, 4)
+         / ONE_MILL);
       write_metadata_item_double (out, BOTTOM_RIGHT_CORNER_LONG,
          ceos_read_binary (data_fd,
-            START_OF_PDR +
-            number_of_samples *
-            (number_of_lines - 1) + 153,
-      4) / ONE_MILL);
-      
-      
+            START_OF_PDR + number_of_samples * (number_of_lines - 1) + 153, 4)
+         / ONE_MILL);
+      /* BOTTOM_LEFT_CORNER_LAT/LONG */
+      write_metadata_item_double (out, BOTTOM_LEFT_CORNER_LAT,
+         ceos_read_binary (data_fd,
+            16252 + number_of_samples * (number_of_lines - 2) + 133, 4)
+         / ONE_MILL);
+      write_metadata_item_double (out, BOTTOM_LEFT_CORNER_LONG,
+         ceos_read_binary (data_fd,
+            START_OF_PDR + number_of_samples * (number_of_lines - 2) + 145, 4)
+         / ONE_MILL);
    }
-   
-   /* Determine Geoid stuff here */
+
+   /* ELLIPS_MAJ_AXIS (geoid stuff) */
    write_metadata_item_double (out, ELLIPS_MAJ_AXIS,
-   ceos_read_double (fd, START_OF_DSSR + 181, 16));
+                                ceos_read_double (fd, START_OF_DSSR + 181, 16));
    
+   /* ELLIPS_MIN_AXIS (geoid stuff) */
    write_metadata_item_double (out, ELLIPS_MIN_AXIS,
-   ceos_read_double (fd, START_OF_DSSR + 197, 16));
+                                ceos_read_double (fd, START_OF_DSSR + 197, 16));
    
-   /* Determine the plaform hieght */
-   write_metadata_item_double (out, PLATFORM_ALITITUDE,
-   platform_height (fd, vol_fd));
+   /* REVOLUTION */
+   write_metadata_item_int (out, REVOLUTION,
+                            ceos_read_int (fd, START_OF_DSSR + 445, 8));
+   
+   /* FLIGHT_DIRECTION */
+   ceos_read_char (fd, START_OF_DSSR + 101, 16, tmp_value);
+   write_metadata_item_string (out, FLIGHT_DIRECTION, tmp_value);
+   
+   /* PRF */
+   write_metadata_item_double (out, PRF,
+                               ceos_read_double (fd, START_OF_DSSR + 935, 16));
+   
+   /* RANGE REFERENCE */
+   write_metadata_item_double (out, RANGE_REFERENCE_DOPPLER,
+                               ceos_read_double (fd, START_OF_DSSR + 2324, 16));
+   
+   /* DOPPLER POLY_A0 */
+   write_metadata_item_double (out, DOPPLER_POLY_A0,
+                               ceos_read_double (fd, START_OF_DSSR + 1479, 16));
+   
+   /* DOPPLER POLY_A1 */
+   write_metadata_item_double (out, DOPPLER_POLY_A1,
+                          ceos_read_double (fd, START_OF_DSSR + 1479 + 16, 16));
+   
+   /* DOPPLER POLY_A2 */
+   write_metadata_item_double (out, DOPPLER_POLY_A2,
+                          ceos_read_double (fd, START_OF_DSSR + 1479 + 32, 16));
+   
    
    /*========== Vexcel Unique stuff ==============*/
    
@@ -450,10 +328,8 @@ static double platform_height (int fd, int vol_fd)
    double times[16];
    double derror;
    double x, y, z;
-   //double ret;
    char buff[512];
    int month, day, year, jday, hour, min;
-   //int second, inc;
    double gmt_second;
    double data_inc;
    char date[256];
@@ -500,7 +376,7 @@ static double platform_height (int fd, int vol_fd)
    for (a = 0; a < 15; a++)
       times[a + 1] = ((double) root) + (double) (a) * data_inc;
    
-   /* Read the  center time (PROCESSING_DATE) */
+   /* Read the  center time */
    ceos_read_char (vol_fd, 0x648 + 4, 21, date);
    string_all_trim (date);
    
@@ -557,15 +433,16 @@ static double platform_height (int fd, int vol_fd)
    
    
    polint (times, height, 15, z, &y, &derror);
-   printf ("Estimated platform alititude %g (km)\n",
-   (y - radius_of_earth (fd)) / 1000.0);
-   printf ("Estimated error in platform altitude = %g (m)\n", derror);
+   printf("Estimated platform altitude %g (km)\n",
+          (y-radius_of_earth(fd))/1000.0);
+   printf ("Estimated error in platform altitude = %g (km)\n", derror/1000.0);
    
    if (getenv ("DEBUG") != NULL)
    {
+      printf("\n");
       for (a = 1; a < 16; a++)
-         printf ("SV # %d \t %16f \t %16f\n", a, times[a], height[a]);
-      
+         printf ("SV # %2d \t %16f \t %16f\n", a, times[a], height[a]);
+      printf("\n");
    }
    
    
@@ -581,7 +458,7 @@ static double radius_of_earth (int fd)
 {
    double ellip_major, ellip_minor, plat_lat, pix_spacing;
    double eph_orb_data;
-   //double t, n_data_pixel, srgr_coef;
+   /*double t, n_data_pixel, srgr_coef;*/
    double theta;
    double e;
    
