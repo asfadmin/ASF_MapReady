@@ -71,8 +71,10 @@ asf_meta: $(OBJS)
 # Small independent testing program for the parser itself.
 parser_tester: $(OBJS) parser_tester.o
 
-# Rebuild everything if makefile or any ASF header has changed.
-$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h)
+# Rebuild everything if makefile or any ASF header or any lex or yacc
+# file has changed.
+$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) \
+         $(YACC_SOURCES) $(LEX_SOURCES)
 
 clean:
 	rm -f $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
