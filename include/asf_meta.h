@@ -231,7 +231,7 @@ typedef struct {
   double re_minor;       /* Semiminor axis length (poles) (meters).        */
   /* Note: we compute ecc=sqrt(1-re_major^2/re_minor^2).  This field
      is therefore redundant and should be eliminated.  DEPRECATED.         */
-  double ecc;            /* First eccentricity of earth ellipsoid.         */
+/*  double ecc;           * First eccentricity of earth ellipsoid.         */
   param_t param;         /* Projection parameters for each projection.     */
 } meta_projection;
  /* Compatibility alias.  proj_parameters is DEPRECATED.  */
@@ -291,11 +291,11 @@ typedef struct {
 /* DEPRECATED */
 /*Ifm_parameters: These are used only for interferometry.*/
 typedef struct {
-  double er;  /* Earth radius at scene center.                            */
-  double ht;  /* Satellite height from earth's center.                    */
-  int nLooks; /* Number of looks to take on SLC data to make square pixels*/
+  double er;  /* Earth radius at scene center.                               */
+  double ht;  /* Satellite height from earth's center.                       */
+  int nLooks; /* Number of looks to take on SLC data to make square pixels   */
   int orig_nLines,orig_nSamples;
-  double lookCenter;/* Look angle to image center (CALCULATED).           */
+/*  double lookCenter; * Look angle to image center (CALCULATED but not used)*/
 } ifm_parameters;
 
 /* DEPRECATED */
@@ -356,8 +356,8 @@ meta_parameters *meta_copy(meta_parameters *src);
 /* In meta_write.c */
 void meta_write(meta_parameters *meta,const char *outName);
 
-/* in meta_new2old */
-void meta_new2ddr(meta_parameters *meta, struct DDR *ddr);
+/* in meta2ddr */
+void meta2ddr(meta_parameters *meta, struct DDR *ddr);
 
 /*Initialize meta struct & stub structs to dummy values*/
 meta_general *meta_general_init(void);
@@ -502,6 +502,9 @@ double meta_phase_rate(meta_parameters *sar,const baseline base,int y,int x);
 int meta_polar2complex(int data_type);
 int meta_complex2polar(int data_type);
 
+/*Propagate the state vectors in the given meta_parameters structure so they
+ * start at the image start. Make nStVec of them, data_int seconds apart.*/
+void propagate_state(meta_parameters *meta,int nStVec,double data_int);
 
 /* Keep track of open meta and ddr structures, so that all updated
  * metadata can be written to the metafile, initialized in meta_init.c Nov '02 */
