@@ -13,7 +13,9 @@
 #include <unistd.h>
 
 #include <glib.h>
-#include <glib/gstdio.h>
+#if GLIB_CHECK_VERSION (2, 6, 0)
+#  include <glib/gstdio.h>
+#endif
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_histogram.h>
 
