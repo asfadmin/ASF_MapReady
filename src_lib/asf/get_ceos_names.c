@@ -9,8 +9,8 @@
 #include "get_ceos_names.h"
 
 
-const char ceos_metadata_extensions[][8] = {"",".L",".LDR","lea."};
-const char ceos_data_extensions[][8]     = {"",".D",".RAW","dat."};
+const char ceos_metadata_extensions[][8] = {"",".L",".LDR",".ldr","LEA.","lea."};
+const char ceos_data_extensions[][8]     = {"",".D",".RAW",".raw","DAT.","dat."};
 
 
 /******************************************************************************
@@ -252,7 +252,6 @@ ceos_data_ext_t require_ceos_data(const char *ceosName, char *dataName)
 ceos_file_pairs_t get_ceos_names(const char *ceosName, char *dataName,
                                  char *metaName)
 {
-
   if (   get_ceos_data_name(ceosName, dataName)     == CEOS_D
       && get_ceos_metadata_name(ceosName, metaName) == CEOS_L)
     return CEOS_D_L_PAIR;
@@ -275,49 +274,63 @@ ceos_file_pairs_t get_ceos_names(const char *ceosName, char *dataName,
 ceos_file_pairs_t require_ceos_pair(const char *ceosName, char *dataName,
                                     char *metaName)
 {
-  ceos_file_pairs_t ret = get_ceos_names(ceosName, dataName, metaName);
+  char extensionList[128];
+  int andFlag=TRUE;
+  int begin=NO_CEOS_FILE_PAIR+1, end=NUM_CEOS_FILE_PAIRS;
+  int ii;
 
-  /* If we didn't find anything, report & leave */
-  if (ret == NO_CEOS_FILE_PAIR) {
-    char extensionList[128];
-    int andFlag=TRUE;
-    int begin=NO_CEOS_FILE_PAIR+1, end=NUM_CEOS_FILE_PAIRS;
-    int ii;
+  if (   require_ceos_data(ceosName, dataName)     == CEOS_D
+      && require_ceos_metadata(ceosName, metaName) == CEOS_L)
+    return CEOS_D_L_PAIR;
 
-    /* Prepare a very readable list of possible extension pairs */
-    sprintf(extensionList,"(%s %s)",ceos_data_extensions[begin],
-                                    ceos_metadata_extensions[begin]);
-    begin++;
-    if (end-begin == 0)
-      andFlag=FALSE;
-    else
-      end--;
-    for (ii=begin; ii<end; ii++) {
-      sprintf(extensionList,"%s, (%s %s)",extensionList,
-                                          ceos_data_extensions[ii],
-                                          ceos_metadata_extensions[ii]);
-    }
-    if (andFlag)
-      sprintf(extensionList,"%s, and (%s %s)",extensionList,
-                                              ceos_data_extensions[ii],
-                                              ceos_metadata_extensions[ii]);
+  if (   require_ceos_data(ceosName, dataName)     == CEOS_RAW
+      && require_ceos_metadata(ceosName, metaName) == CEOS_LDR)
+    return CEOS_RAW_LDR_PAIR;
 
-    /* Report to user & exit */
-    sprintf(logbuf,
-            "**************************** ERROR! ****************************\n"
-            "*   This program was looking for the CEOS style SAR files,\n"
-            "*   %s and its associated file.\n"
-            "*   One or both files either do not exist or cannot be read.\n"
-            "*   Expected fileset extensions are:\n"
-            "*   %s\n"
-            "****************************************************************\n",
-            ceosName, extensionList);
-    if (logflag)   {printLog(logbuf);}
-    printf(logbuf);
-    exit(EXIT_FAILURE);
-  }
+  if (   require_ceos_data(ceosName, dataName)     == CEOS_raw
+      && require_ceos_metadata(ceosName, metaName) == CEOS_ldr)
+    return CEOS_raw_ldr_PAIR;
 
-  /* If we found a file, return its extension type! */
+  if (   require_ceos_data(ceosName, dataName)     == CEOS_DAT
+      && require_ceos_metadata(ceosName, metaName) == CEOS_LEA)
+    return CEOS_DAT_LEA_PAIR;
+
+  if (   require_ceos_data(ceosName, dataName)     == CEOS_dat
+      && require_ceos_metadata(ceosName, metaName) == CEOS_lea)
+    return CEOS_dat_lea_PAIR;
+
+/****** We should never actually get here. The above code should either ******
+ ****** return or exit with an error message, BUT... just in case       ******/
+
+  /* Prepare a very readable list of possible extension pairs */
+  sprintf(extensionList,"(%s %s)",ceos_data_extensions[begin],
+                                  ceos_metadata_extensions[begin]);
+  begin++;
+  if (end-begin == 0)
+    andFlag=FALSE;
   else
-    return ret;
+    end--;
+  for (ii=begin; ii<end; ii++) {
+    sprintf(extensionList,"%s, (%s %s)",extensionList,
+                                        ceos_data_extensions[ii],
+                                        ceos_metadata_extensions[ii]);
+  }
+  if (andFlag)
+    sprintf(extensionList,"%s, and (%s %s)",extensionList,
+                                            ceos_data_extensions[ii],
+                                            ceos_metadata_extensions[ii]);
+
+  /* Report to user & exit */
+  sprintf(logbuf,
+          "**************************** ERROR! ****************************\n"
+          "*   This program was looking for the CEOS style SAR files,\n"
+          "*   %s and its associated file.\n"
+          "*   One or both files either do not exist or cannot be read.\n"
+          "*   Expected fileset extensions are:\n"
+          "*   %s\n"
+          "****************************************************************\n",
+          ceosName, extensionList);
+  if (logflag)   {printLog(logbuf);}
+  printf(logbuf);
+  exit(EXIT_FAILURE);
 }
