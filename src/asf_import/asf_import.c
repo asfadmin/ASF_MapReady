@@ -22,17 +22,17 @@ FILE REFERENCES:
 PROGRAM HISTORY:
     VERS:   DATE:  AUTHOR:     PURPOSE:
     ---------------------------------------------------------------
-    1.0    12/03   R. Gens     Combined sarin, calibrate, trim_slc and
+    0.1    12/03   R. Gens     Combined sarin, calibrate, trim_slc and
                                 ceos2raw into one program
-    1.1     4/04   P. Denny    Allowed for RSI naming scheme as well as
+    0.2     4/04   P. Denny    Allowed for RSI naming scheme as well as
                                 our typical CEOS naming scheme
-    1.2     5/04   R. Gens     Added stf2raw and external ESRI and ENVI
+    0.3     5/04   R. Gens     Added stf2raw and external ESRI and ENVI
                                 formats; renamed the tool to import2asf
-    1.3     5/04   J. Nicoll   Fixed sign issue when converting 8 bit
+    0.4     5/04   J. Nicoll   Fixed sign issue when converting 8 bit
                                 data to calibrated amplitude data
-    1.31    5/04   P. Denny    Made format of input data a required
+    0.41    5/04   P. Denny    Made format of input data a required
                                 argument (CEOS,STF,ESRI,ENVI)
-    1.4     5/04   P. Denny    Added hidden option to write out sprocket
+    0.5     5/04   P. Denny    Added hidden option to write out sprocket
                                 style metadata.
 
 HARDWARE/SOFTWARE LIMITATIONS:
@@ -98,7 +98,7 @@ BUGS:
 #include <ctype.h>
 #include <string.h>
 
-#define VERSION 1.31
+#define VERSION 0.5
 #define MAX_tableRes 512
 #define REQUIRED_ARGS 4
 
