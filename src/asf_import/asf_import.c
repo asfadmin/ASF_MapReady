@@ -4,7 +4,7 @@
 </name>
 
 <synopsis>
-    import2asf [-amplitude] [-sigma] [-gamma] [-beta] [-power]
+    asf_import [-amplitude] [-sigma] [-gamma] [-beta] [-power]
                [-log <file>] [-quiet] [-lat <lower> <upper>]
                <CEOS|STF|ESRI|ENVI> <inData> <inMeta> <outBase>
 </synopsis>
@@ -37,6 +37,9 @@
    -log           ?
    -quiet         ?
    -lat           ?
+   -sprocket      ?
+   -old           ?
+   -prc           ?
 </options>
 
 <limitations>
@@ -312,10 +315,10 @@ int main(int argc, char *argv[])
 
   /* Lets get started */
   system("date");
-  printf("Program: import2asf\n\n");
+  printf("Program: asf_import\n\n");
   if (logflag) {
     StartWatchLog(fLog);
-    printLog("Program: import2asf\n\n");
+    printLog("Program: asf_import\n\n");
   }
 
   /* Check whether options are chosen correctly */
