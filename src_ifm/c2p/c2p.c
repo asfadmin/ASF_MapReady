@@ -22,10 +22,14 @@ FILE REFERENCES:
 PROGRAM HISTORY:
     VERS:   DATE:        PURPOSE:
     ---------------------------------------------------------------
-    1.0     9/96        M. Shindle
-    			 & R. Fatland - Original Development
-    1.05    5/00	P. Denny      - output a .ddr file
-
+    1.0     9/96   M. Shindle
+                    & R. Fatland - Original Development
+    1.05    5/00   P. Denny      - output a .ddr file
+    1.25    6/03   P. Denny      - Forget about the DDR file, use meta
+                                    Don't let input & output name be the same
+                                    Use get/put_*_line routines instead of
+                                     FREAD/FWRITE 
+  
 HARDWARE/SOFTWARE LIMITATIONS:
 
 ALGORITHM DESCRIPTION:
@@ -66,83 +70,113 @@ BUGS:
 *									    *
 ****************************************************************************/
 #include "asf.h"
+#include "asf_meta.h"
+#include "asf_complex.h"
 #include "ifm.h"
 
-#define VERSION 1.05
-#define BSZ	1024*64    /* buffer size */
-#define BUF     255
-#define SAME	0
+#define VERSION		1.25
+#define CHUNK_OF_LINES	512
+#define BUF		255
+#define SAME		0
 
 void usage(char *name);
 
 int main (int argc, char *argv[])
 {
-  char cpxfile[BUF], ampfile[BUF], phsfile[BUF], command[BUF];
-  FILE *fdCpx, *fdAmp, *fdPhase;
-  int i, j, loops;
-  float *amp, *aP, *phase, *pP;
-  FComplex *cpx, *cP;
+  char cpxfile[BUF], ampfile[BUF], phsfile[BUF]; /* File Names                */
+  FILE *fdCpx, *fdAmp, *fdPhase;          /* File Pointers                    */
+  int line, sample;                       /* Line & sample indices for looping*/
+  int percentComplete;                    /* Percent of data processed        */
+  int blockSize;                          /* Number of samples gotten         */
+  float *amp, *aP, *phase, *pP;           /* Output data buffers              */
+  complexFloat *cpx, *cP;                 /* Input data buffers               */
+  meta_parameters *inMeta, *outMeta;      /* In/Out meta structs              */
 
-  /* work with args */
-  if (argc < 3) {
-    usage(argv[0]);
+/* Make sure there are the correct number of args in the command line */
+  if (argc != 3) { usage(argv[0]); }
+  
+/* Make sure input and output names are different */
+  if (strcmp(argv[1],argv[2])==SAME) {
+    printf("c2p: Input and output names cannot be the same. Exiting.\n");
+    exit(EXIT_FAILURE);
   }
   
-  /* malloc buffers, check and open files, initialize counter */
-  cpx = (FComplex *)MALLOC(sizeof(FComplex)*BSZ);
-  amp = (float *)MALLOC(sizeof(float)*BSZ);
-  phase = (float *)MALLOC(sizeof(float)*BSZ);
+/* Get commandline args */
+  create_name (cpxfile, argv[1], ".cpx");
+  create_name (ampfile, argv[2], ".amp"); 
+  create_name (phsfile, argv[2], ".phase"); 
+
+/* Read the input meta data. Assume data_type is COMPLEX_* & make it so. */
+  inMeta = meta_read(argv[1]);
+  if (inMeta->general->data_type < COMPLEX_BYTE) {
+   switch (inMeta->general->data_type) {
+     case BYTE:      inMeta->general->data_type=COMPLEX_BYTE;      break;
+     case INTEGER16: inMeta->general->data_type=COMPLEX_INTEGER16; break;
+     case INTEGER32: inMeta->general->data_type=COMPLEX_INTEGER32; break;
+     case REAL32:    inMeta->general->data_type=COMPLEX_REAL32;    break;
+     case REAL64:    inMeta->general->data_type=COMPLEX_REAL64;    break;
+    }
+  }
   
-  sprintf(cpxfile,"%s.cpx",argv[1]);
-  sprintf(ampfile,"%s.amp",argv[2]); 
-  sprintf(phsfile,"%s.phase",argv[2]); 
-
-  /* Copy .meta file for output if necessary */
-  if (strcmp(argv[1],argv[2])!=SAME)
-   {
-    sprintf(command,"cp %s.meta %s.meta",argv[1],argv[2]);
-    system(command);
-   }
-
+/* Create & write a meta file for the output images */
+  outMeta = meta_copy(inMeta);
+  switch (inMeta->general->data_type) {
+    case COMPLEX_BYTE:      outMeta->general->data_type=BYTE;      break;
+    case COMPLEX_INTEGER16: outMeta->general->data_type=INTEGER16; break;
+    case COMPLEX_INTEGER32: outMeta->general->data_type=INTEGER32; break;
+    case COMPLEX_REAL32:    outMeta->general->data_type=REAL32;    break;
+    case COMPLEX_REAL64:    outMeta->general->data_type=REAL64;    break;
+  }
+  meta_write(outMeta,argv[2]);
+  
+/* malloc buffers, check and open files */
+  cpx = (complexFloat *) MALLOC (sizeof(complexFloat)
+                         * inMeta->general->sample_count * CHUNK_OF_LINES);
+  amp = (float *) MALLOC (sizeof(float) * outMeta->general->sample_count
+                  * CHUNK_OF_LINES);
+  phase = (float *) MALLOC (sizeof(float) * outMeta->general->sample_count
+                    * CHUNK_OF_LINES);
   fdCpx = fopenImage(cpxfile, "rb");
   fdAmp = fopenImage(ampfile, "wb");  
   fdPhase = fopenImage(phsfile, "wb");
 
-  loops = 0;
-
-  /*
-   * stream while loop 
-   * read in block of input data from input file 
-   * set i = to number of var's read
-   */
-  while ((i=fread(cpx,1,BSZ*sizeof(FComplex),fdCpx)) > 0)
-    {
-      /* loop over buffers; fill up the output */
-      i /= sizeof(FComplex);
-      for (j=0, cP=cpx, aP=amp, pP=phase; j < i; j++, cP++, aP++, pP++)
-        if (cP->real != 0.0 || cP->imag != 0.0)
-         {
-          *aP = sqrt((cP->real)*(cP->real) + (cP->imag)*(cP->imag));
-          *pP = atan2(cP->imag, cP->real);
-         }
-        else { *aP = 0.0; *pP = 0.0; }
-    
-      /* write output */
-      i *= sizeof(float);
-      FWRITE(amp, 1, i, fdAmp);
-      FWRITE(phase, 1, i, fdPhase);
-      if (!(loops%100)) printf("   bytes read = %i\n",loops*BSZ*sizeof(FComplex));
-      loops++;
-    } /* end of main do-while */
+/* Run thru the complex file, writing real data to amp and imag data to phase */
   printf("\n");
-
-  /* close, free, halt */
+  percentComplete = 0;
+  for (line=0; line<inMeta->general->line_count; line+=CHUNK_OF_LINES) {
+    if ((line*100/inMeta->general->line_count == percentComplete)) {
+      printf("\rConverting complex to amp and phase: %3d%% complete.",
+             percentComplete++);
+      fflush(NULL);
+    }
+    blockSize = get_complexFloat_lines(fdCpx,inMeta,line,CHUNK_OF_LINES,cpx);
+    cP = cpx;
+    aP = amp;
+    pP = phase;
+    for (sample=0; sample<blockSize; sample++) {
+      if (cP->real!=0.0 || cP->imag!=0.0) {
+        *aP = sqrt((cP->real)*(cP->real) + (cP->imag)*(cP->imag));
+        *pP = atan2(cP->imag, cP->real);
+      }
+      else { *aP = 0.0; *pP = 0.0; }
+      cP++;
+      aP++;
+      pP++;
+    }
+    put_float_lines(fdAmp,   outMeta, line, CHUNK_OF_LINES, amp);
+    put_float_lines(fdPhase, outMeta, line, CHUNK_OF_LINES, phase);
+  }
+  printf("\rConverted complex to amp and phase:  100%% complete.\n\n");
+  
+/* close, free, halt */
   FCLOSE(fdCpx);
   FCLOSE(fdAmp);
   FCLOSE(fdPhase);
   FREE(cpx);
   FREE(amp);
   FREE(phase);
+  meta_free(inMeta);
+  meta_free(outMeta);
   
   return 0;
 }
@@ -155,11 +189,11 @@ void usage(char *name)
 	"   %s <in> <out>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
-	"   <in> is the input file, assumed to be complex valued.\n"
-	"         will add .cpx extension to create <in>.cpx\n"
-	"   <out> is the base file name for the output;\n"
-	"         c2p writes out files named <out>.amp,\n"
-	"         <out>.phase, and <out>.meta\n");
+	"   <in>  The input file, assumed to be complex data.\n"
+	"          will add .cpx extension to create <in>.cpx\n"
+	"   <out> The base file name for the output;\n"
+	"          Writes out files named <out>.amp, <out>.phase,\n"
+	"          and <out>.meta\n");
  printf("\n"
 	"DESCRIPTION:\n"
 	"   Converts a complex image file to polar image files (amp + phase)\n");
