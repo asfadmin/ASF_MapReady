@@ -136,7 +136,7 @@ void meta_free(meta_parameters *meta)
 
   /* Dispose of deprecated structure elements, if they were ever
      allocated.  */
-  if (meta->geo->proj!=NULL)
+  if (meta->geo->proj != NULL)
     free(meta->geo->proj);
   free(meta->geo);
   free(meta->ifm);
