@@ -92,10 +92,10 @@ int main(int argc, char **argv)
   /* Read .meta and fill meta structures */ 
   meta = meta_read(meta_name);
 
-  /* Fill ESRI header struct with valid data */
+  /* Fill ENVI header struct with valid data */
   envi = meta2envi(meta);
   
-  /* Write ESRI header file */
+  /* Write ENVI header file */
   fp = FOPEN(envi_name, "w");
   fprintf(fp, "ENVI\n");
   fprintf(fp, "description = {\n"
