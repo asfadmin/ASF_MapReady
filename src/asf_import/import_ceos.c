@@ -262,6 +262,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       double incid[MAX_tableRes], old, new;
       char line[255];
       int nLut=0, n, tableRes=MAX_tableRes, tablePix=0, ll;
+      int incid_is_increasing;
 
       /**** Read look up table ****/
       fpLut = FOPEN(lutName, "r");
@@ -271,6 +272,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       }
       while(fgets(line, 255, fpLut)) {
 	sscanf(line, "%lf\t%lf", &incid_table[nLut], &scale_table[nLut]);
+	incid_table[nLut] *= D2R;
 	nLut++;
       }
 
@@ -293,24 +295,45 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	    for (kk=0;kk<tableRes;kk++)
 	      incid[kk] = meta_incid(meta, kk*tablePix, ii);
 
+	  incid_is_increasing = incid[0] < incid[50];
+
 	  /* Calculate output values */
-          for (kk=0; kk<ns; kk++) {
-            if (short_buf[kk]) {
+	  n= incid_is_increasing ? 0 : nLut-1;
+	  for (kk=0; kk<ns; kk++) {
+	    if (short_buf[kk]) {
+              double index=(double)kk/tablePix;
+              int    base=(int)index;
+              double frac=index-base;
+	      double interp = incid[base]+frac*(incid[base+1]-incid[base]);
 	      big16(short_buf[kk]);
 	      old = 10000000;
-	      for (ll=0; ll<nLut; ll++) {
-		new = incid[kk]*R2D - incid_table[ll];
-		if (fabs(new) < fabs(old)) {
-		  old = new;
-		  n++;
+
+	      if (incid_is_increasing) {
+		for (ll=n; ll<nLut; ll++) {
+		  new = interp - incid_table[ll];
+		  if (fabs(new) < fabs(old)) {
+		    old = new;
+		    n++;
+		  }
+		  else break;
 		}
-		else break;
+		out_buf[kk] = short_buf[kk] * scale_table[n];
+	      } else {
+		for (ll=n; ll>=0; ll--) {
+		  new = interp - incid_table[ll];
+		  if (fabs(new) < fabs(old)) {
+		    old = new;
+		    n--;
+		  }
+		  else break;
+		}
+		out_buf[kk] = short_buf[kk] * scale_table[n];
 	      }
-	      out_buf[kk] = short_buf[kk] * scale_table[n];
 	    }
 	    else
 	      out_buf[kk] = 0;
 	  }
+
           put_float_line(fpOut, meta, ii, out_buf);
           asfLineMeter(ii,nl);
 	}
@@ -335,26 +358,40 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	    for (kk=0;kk<tableRes;kk++)
 	      incid[kk] = meta_incid(meta, ii, kk*tablePix);
 
+	  incid_is_increasing = incid[0] < incid[50];
+
 	  /* Calculate output values */
+	  n= incid_is_increasing ? 0 : nLut-1;
           for (kk=0; kk<ns; kk++) {
             if (byte_buf[kk]) {
               /* Interpolate incidence */
-              double index=(float)kk/tablePix;
+              double index=(double)kk/tablePix;
               int    base=(int)index;
               double frac=index-base;
+	      double interp= incid[base]+frac*(incid[base+1]-incid[base]);
 
 	      old = 10000000;
-	      n = 0;
-	      for (ll=0; ll<nLut; ll++) {
-		new = (incid[base]+frac*(incid[base+1]-incid[base]))*R2D
-		       - incid_table[ll];
-		if (fabs(new) < fabs(old)) {
-		  old = new;
-		  n++;
+	      if (incid_is_increasing) {
+		for (ll=n; ll<nLut; ll++) {
+		  new = interp - incid_table[ll];
+		  if (fabs(new) < fabs(old)) {
+		    old = new;
+		    n++;
+		  }
+		  else break;
 		}
-		else break;
+		out_buf[kk] = byte_buf[kk] * scale_table[n];
+	      } else {
+		for (ll=n; ll>=0; ll--) {
+		  new = interp - incid_table[ll];
+		  if (fabs(new) < fabs(old)) {
+		    old = new;
+		    n--;
+		  }
+		  else break;
+		}
+		out_buf[kk] = byte_buf[kk] * scale_table[n];
 	      }
-	      out_buf[kk] = byte_buf[kk] * scale_table[n];
 	    }
 	    else
 	      out_buf[kk] = 0;
