@@ -85,6 +85,8 @@ meta_sar *meta_sar_init(void)
   sar->slant_range_first_pixel = MAGIC_UNSET_DOUBLE;
   sar->wavelength = MAGIC_UNSET_DOUBLE;
   sar->prf = MAGIC_UNSET_DOUBLE;
+  sar->earth_radius = MAGIC_UNSET_DOUBLE;
+  sar->satellite_height = MAGIC_UNSET_DOUBLE;
   strcpy(sar->satellite_binary_time, MAGIC_UNSET_STRING);
   strcpy(sar->satellite_clock_time, MAGIC_UNSET_STRING);
   sar->range_doppler_coefficients[0] = MAGIC_UNSET_DOUBLE;

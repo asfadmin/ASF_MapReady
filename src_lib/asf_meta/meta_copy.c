@@ -49,6 +49,8 @@ meta_parameters *meta_copy(meta_parameters *src)
 	ret->sar->slant_range_first_pixel = src->sar->slant_range_first_pixel;
 	ret->sar->wavelength              = src->sar->wavelength;
 	ret->sar->prf                     = src->sar->prf;
+	ret->sar->earth_radius            = src->sar->earth_radius;
+	ret->sar->satellite_height        = src->sar->satellite_height;
 	strncpy (ret->sar->satellite_binary_time,   src->sar->satellite_binary_time, FIELD_STRING_MAX-1);
 	strncpy (ret->sar->satellite_clock_time,    src->sar->satellite_clock_time, FIELD_STRING_MAX-1);
 	ret->sar->range_doppler_coefficients[0]   = src->sar->range_doppler_coefficients[0];

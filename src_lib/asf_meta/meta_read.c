@@ -227,6 +227,8 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 
 /*Interferometry parameters:*/
 	coniIO_structOpen(coni,"ifm {","begin interferometry-related parameters");
+	coniIO_double(coni,"ifm.","er:",&sar->earth_radius,"Local earth radius [m]");
+	coniIO_double(coni,"ifm.","ht:",&sar->satellite_height,"Satellite height, from center of earth [m]");
 	if (meta->meta_version>0.6)
 		coniIO_int(coni,"ifm.","nLooks:",&sar->look_count,           "Number of looks to take from SLC");
 	coniIO_int(coni,"ifm.","orig_lines:",    &sar->original_line_count,  "Number of lines in original image");
@@ -456,17 +458,20 @@ void meta_new2old(meta_parameters *meta)
 	meta->geo->dopAz[2]    = meta->sar->azimuth_doppler_coefficients[2];
 
 /* Fill ifm_parameters structure */
-	if (meta->state_vectors) {
-   /* Commented out because when there is only a ddr that doesn't have the image
-    * type (slant, ground, map projected), these functions fail.
-		meta->ifm->ht    = meta_get_sat_height(meta, meta->general->line_count/2, 0);
-		meta->ifm->er    = meta_get_earth_radius(meta, meta->general->line_count/2, 0);
-   */
-	}
-	else {
-		meta->ifm->ht    = MAGIC_UNSET_DOUBLE;
-		meta->ifm->er    = MAGIC_UNSET_DOUBLE;
-	}
+/** Do this when meta->sar->earth_radius & meta->sar->satellite_height go away**
+ *	if (meta->state_vectors && meta_is_valid_char(meta->sar->image_type)) {
+ *	    meta->ifm->ht = meta_get_sat_height(meta,
+ *                                              meta->general->line_count/2, 0);
+ *	    meta->ifm->er = meta_get_earth_radius(meta,
+ *                                              meta->general->line_count/2, 0);
+ *	}
+ *	else {
+ *	    meta->ifm->ht = MAGIC_UNSET_DOUBLE;
+ *	    meta->ifm->er = MAGIC_UNSET_DOUBLE;
+ *	}
+ */
+	meta->ifm->ht            = meta->sar->satellite_height;
+	meta->ifm->er            = meta->sar->earth_radius;
 	meta->ifm->nLooks        = meta->sar->look_count;
 	meta->ifm->orig_nLines   = meta->sar->original_line_count;
 	meta->ifm->orig_nSamples = meta->sar->original_sample_count;
