@@ -282,7 +282,7 @@ void makeMakefile(char *platform)
 	char makefileName[255];
 	FILE *make;
 
-	strcpy(makefileName,"../Makefile");
+	strcpy(makefileName,"../Makefile.old");
 
 	sprintf(command,"rm -f %s\n",makefileName);
 	system(command);
