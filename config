@@ -1,15 +1,23 @@
-#!/bin/sh
+#!/bin/bash
 # ASF/STEP Software Automatic Configuration script:
 # Sets system variables, creates Makefile.
+
+set -e
+
+# If given --batch command line option, try to run noninteractively.
+if [ "$1" = "--batch" ]; then
+    batch_mode="true"
+else
+    batch_mode="false"
+fi
 
 echo "############ Determining operating system ###############"
 cc="cc"
 osType=`uname`
-if [ -z $osType ]
-then
-# No uname!  Must ask user.
+if [ -z $osType ]; then
+	# No uname!  Must ask user.
 	echo "Could not match your system automatically..."
-# Could be Linux, or Next:
+	# Could be Linux, or Next:
 	echo "Please enter your system type (linux, next, etc.):"
 	read sys
 	echo "Configuring for " $sys .
@@ -57,23 +65,32 @@ case "${osType}:${versMajor}:${versMinor}" in
 esac
 
 # Make the install directories for the libraries and binaries.
-mkdir lib
-mkdir lib/$sys
-mkdir bin/
-mkdir bin/$sys
+if [ ! -d lib ]; then
+    mkdir lib
+fi
+if [ ! -d lib/$sys ]; then
+    mkdir lib/$sys
+fi
+if [ ! -d bin ]; then
+    mkdir bin/
+fi
+if [ ! -d bin/$sys ]; then
+    mkdir bin/$sys
+fi
 
 ######## Ask about GCC ############
-
-if [ ! $cc = "gcc" ]
-then
-	echo "Would you like to use the GNU C Compiler "gcc" (y/n)? \c"
-	read resp
-	if [ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]
-	then
-		cc="gcc"
-		optFlag="-O"
-	fi
-fi
+echo "$batch_mode"
+echo "$cc"
+if [ ! $cc = "gcc" -a ! $batch_mode = "true" ]; then
+    echo "Would you like to use the GNU C Compiler 'gcc' (y/n)? "
+    read resp
+    if [ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]; then
+        cc="gcc"
+	optFlag="-O"
+    fi
+else
+    cc="gcc"
+fi     
 
 asfDir=`pwd`
 
