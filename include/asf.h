@@ -46,9 +46,16 @@ void bail(const char *message, ...)/* ; is coming, don't worry.  */
      __attribute__ ((format (printf, 1, 2), noreturn))
 #endif 
 ; /* <-- Semicolon for bail prototype.  */
+
+/* These routines allow programs to be timed easily.  Call
+   StartWatch(Log) at the beginning, and then call StopWatch(Log) at
+   the end to automaticly print out some information about how much
+   CPU time the program took to standard output or to a log file.  If
+   the program takes more than 72 minutes, the reported time may be
+   totally wrong on some systems, due to clock wrap around.  */
 void StartWatch(void);
-void StartWatchLog(FILE *fLog);
 void StopWatch(void);
+void StartWatchLog(FILE *fLog);
 void StopWatchLog(FILE *fLog);
 
 /*****************************************
