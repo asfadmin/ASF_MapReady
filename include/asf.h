@@ -7,10 +7,12 @@
 #include <string.h>
 #include <math.h>
 #include "caplib.h"
-#include "asf_meta.h"
+#include "asf_meta.h"    /* For get_(data)_line(s) and put_(data)_line(s) */
 #include "error.h"
 #include "log.h"
 #include "cla.h"
+#include "asf_complex.h" /* For get_complexFloat_line(s) and
+                          * put_complexFloat_line(s) */
 
 #ifndef PI
 # define PI 3.14159265358979323846
@@ -62,15 +64,31 @@ FILE *fopenImage(const char *name,const char *accessType);
 
 /*****************************************
  * ioLine:
- * Grab a a line of any data type and fill a buffer of _type_ data. Puts data in
+ * Grab  any data type and fill a buffer of _type_ data. Puts data in
  * correct endian order. Implemented in asf.a/ioLine.c */
 int get_float_line(FILE *file, meta_parameters *meta, int line_number,
 		float *dest);
-int put_float_line(FILE *file, meta_parameters *meta, int line_number,
-		const float *source);
+int get_float_lines(FILE *file, meta_parameters *meta, int line_number,
+		int num_lines_to_get, float *dest);
 int get_double_line(FILE *file, meta_parameters *meta, int line_number,
 		double *dest);
+int get_double_lines(FILE *file, meta_parameters *meta, int line_number,
+		int num_lines_to_get, double *dest);
+int get_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
+		complexFloat *dest);
+int get_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
+		int num_lines_to_get, complexFloat *dest);
+int put_float_line(FILE *file, meta_parameters *meta, int line_number,
+		const float *source);
+int put_float_lines(FILE *file, meta_parameters *meta, int line_number,
+		int num_lines_to_put, const float *source);
 int put_double_line(FILE *file, meta_parameters *meta, int line_number,
 		const double *source);
+int put_double_lines(FILE *file, meta_parameters *meta, int line_number,
+		int num_lines_to_put, const double *source);
+int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
+		const complexFloat *source);
+int put_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
+		int num_lines_to_put, const complexFloat *source);
 
 #endif
