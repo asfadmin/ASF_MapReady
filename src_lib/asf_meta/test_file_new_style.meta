@@ -1,0 +1,95 @@
+# Sample meta file with silly fields, for testing parser.
+
+Meta version : 1.1
+
+# Test comment.
+
+general {
+# Test comment.
+    sensor: Fred the satellite
+    mode: silly mode
+    processor: Funky proc. version 1.23
+    data_type: ieeeee-type
+    # Test comment.
+    system: hmmnow # Test comment. # <-- useless but harmless pound sign
+    orbit: 123#Tets comment. 
+    frame: 23
+    line_count : 1200
+    sample_count: 500
+    start_line: 22
+    start_sample: 100
+    x_pixel_size: 5
+    y_pixel_size: 5
+    center_latitude: 63.5
+    center_longitude: 22.2
+    re_major: 6000
+    re_minor: 4000
+    bit_error_rate: 0.22
+    missing_lines: 42
+}
+
+sar{
+    proj_type: G [S=slant range; G=ground range; P=map projected]
+    look_direction: R # (normally R) [R=right; L=left]
+    look_count: 5
+    look_angle: 2.23
+    deskewed: 0 # [ 1 => deskewed, 0 => not deskewed ]
+    range_time_per_pixel: 0.000032
+    azimuth_time_per_pixel: 0.00546
+    slant_range_first_pixel: 30000
+    slant_shift: 2
+    time_shift: 23
+    wavelength: 23.4
+    prf: 222
+    doppler range center frequency: 22
+    doppler range linear coefficient: 2 
+    doppler range quadratic coefficient: 1.5
+    doppler azimuth center frequency: 33
+    doppler azimuth linear coefficient: 23
+    doppler azimuth quadratic coefficient: 12.1
+    satellite_binary_time: 23121
+    satellite_clock_time: 2124
+}
+
+state { 
+    year: 1999
+    julDay: 222
+    second: 23.42
+    vector_count: 2
+    vector {
+        Time relative to image start: 11.1
+	X coordinate, earth-fixed [m]: 22222
+	Y coordinate, earth-fixed [m]: 33333
+	Z coordinate, earth-fixed [m]: 44444
+	X velocity, earth-fixed [m]: 55555
+	Y velocity, earth-fixed [m]: 66666
+	Z velocity, earth-fixed [m]: 77777
+    }
+    vector {
+        Time relative to image start: 2211.1
+	X coordinate, earth-fixed [m]: 22222
+	Y coordinate, earth-fixed [m]: 22333
+	Z coordinate, earth-fixed [m]: 22444
+	X velocity, earth-fixed [m]: 22555
+	Y velocity, earth-fixed [m]: 22666
+	Z velocity, earth-fixed [m]: 22777
+}
+
+projection {
+    type: A
+    startX: 24
+    startY: 50
+    perX: 2
+    perY: 3
+    hem: N # ['S'->southern; other northern]
+    re_major: 2200
+    re_minor: 231.412
+    param {
+        atct {
+	    rlocal: 6000000
+            alpha1: 0.6
+            alpha2: 0.44
+            alpha3: 0.7
+        }
+    }
+}
