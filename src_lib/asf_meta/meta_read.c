@@ -275,6 +275,8 @@ void meta_new2old(meta_parameters *meta)
 	meta->geo->dopAz[1]    = meta->sar->azimuth_doppler_coefficients[1];
 	meta->geo->dopAz[2]    = meta->sar->azimuth_doppler_coefficients[2];
 
+        meta->stVec = meta->state_vectors;
+
 /* Fill ifm_parameters structure */
     { /* Estimate satellite height and Earth radius */
 	int line = meta->general->line_count / 2;
