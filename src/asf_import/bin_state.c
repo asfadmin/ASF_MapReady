@@ -36,6 +36,7 @@ PROGRAM HISTORY:
 #include "decoder.h"
 #include "missing.h"
 #include "lzFetch.h"
+#include "get_stf_names.h"
 #include "asf_reporting.h"
 
 /*********************************************************************
@@ -139,7 +140,7 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN,int stfFlag)
   sprintf(meta->sar->satellite_binary_time,"%f",s->time_code);
 
   if (stfFlag) {
-    strcat(strcpy(parN,inN),".par");
+    get_stf_metadata_name(inN, parN);
     strcpy(meta->general->processor, "ASF/IMPORT2ASF");
     meta->general->data_type = COMPLEX_REAL32;
     meta->general->image_data_type = RAW_IMAGE;
