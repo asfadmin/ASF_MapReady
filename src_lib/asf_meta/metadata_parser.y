@@ -214,8 +214,6 @@ void fill_structure_field(char *field_name, void *valp)
       yyerror("bad look_direction field in metadata file");
       exit(EXIT_FAILURE);
     }
-    if ( !strcmp(field_name, "look_angle") )
-      { MSAR->look_angle = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "look_count") )
       { MSAR->look_count = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "deskewed") )
