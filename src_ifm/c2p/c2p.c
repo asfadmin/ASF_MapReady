@@ -75,9 +75,9 @@ BUGS:
 #include "ifm.h"
 
 #define VERSION		1.25
-#define CHUNK_OF_LINES	512
-#define BUF		255
+#define BUF		256
 #define SAME		0
+/* #define CHUNK_OF_LINES -- defined in ../../include/asf.h */
 
 void usage(char *name);
 
@@ -108,25 +108,11 @@ int main (int argc, char *argv[])
 
 /* Read the input meta data. Assume data_type is COMPLEX_* & make it so. */
   inMeta = meta_read(argv[1]);
-  if (inMeta->general->data_type < COMPLEX_BYTE) {
-   switch (inMeta->general->data_type) {
-     case BYTE:      inMeta->general->data_type=COMPLEX_BYTE;      break;
-     case INTEGER16: inMeta->general->data_type=COMPLEX_INTEGER16; break;
-     case INTEGER32: inMeta->general->data_type=COMPLEX_INTEGER32; break;
-     case REAL32:    inMeta->general->data_type=COMPLEX_REAL32;    break;
-     case REAL64:    inMeta->general->data_type=COMPLEX_REAL64;    break;
-    }
-  }
+  inMeta->general->data_type = meta_polar2complex(inMeta->general->data_type);
   
 /* Create & write a meta file for the output images */
   outMeta = meta_copy(inMeta);
-  switch (inMeta->general->data_type) {
-    case COMPLEX_BYTE:      outMeta->general->data_type=BYTE;      break;
-    case COMPLEX_INTEGER16: outMeta->general->data_type=INTEGER16; break;
-    case COMPLEX_INTEGER32: outMeta->general->data_type=INTEGER32; break;
-    case COMPLEX_REAL32:    outMeta->general->data_type=REAL32;    break;
-    case COMPLEX_REAL64:    outMeta->general->data_type=REAL64;    break;
-  }
+  outMeta->general->data_type = meta_complex2polar(inMeta->general->data_type);
   meta_write(outMeta,argv[2]);
   
 /* malloc buffers, check and open files */
