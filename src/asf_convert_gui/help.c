@@ -6,7 +6,14 @@ static const int max_line_len = 2048;
 
 SIGNAL_CALLBACK void
 on_help_button_clicked(GtkWidget *widget)
-{
+{ 
+#ifdef win32
+  if (fork() == 0)
+  {
+     system("hh.exe htmlhelp.chm");
+     exit(0);
+  }
+#else
   GtkWidget *help_dialog;
   GtkWidget *help_text;
   GtkTextBuffer * text_buffer;
@@ -56,6 +63,7 @@ on_help_button_clicked(GtkWidget *widget)
 
   g_free(help_filename);
   gtk_widget_show(help_dialog);
+#endif
 }
 
 void
