@@ -8,6 +8,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+static const double DEFAULT_POLAR_STERO_NORTH_CENTRAL_MERIDIAN = -45; 
+static const double DEFAULT_POLAR_STERO_SOUTH_CENTRAL_MERIDIAN = -90;
+
+static const double DEFAULT_POLAR_STERO_NORTH_STANDARD_PARALLEL = 70; 
+static const double DEFAULT_POLAR_STERO_SOUTH_STANDARD_PARALLEL = -70;
+
 project_parameters_t * get_geocode_options(int *argc, char **argv[],
 					   projection_type_t * proj_type,
 					   double *height, double *pixel_size,
@@ -28,7 +34,6 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 	parse_other_options(argc, argv, height, pixel_size, datum);
 
 	/* here the semantics of the projection parameters are applied */
-	apply_defaults(*proj_type, pps);
 	sanity_check(*proj_type, pps);
     }
 
@@ -118,33 +123,47 @@ void sanity_check(projection_type_t pt, project_parameters_t * pps)
     }
 }
 
-void apply_defaults(projection_type_t pt, project_parameters_t * pps)
+void apply_defaults(projection_type_t pt, project_parameters_t * pps,
+		    meta_parameters * meta, double * average_height,
+		    double * pixel_size)
 {
+    if (ISNAN(*average_height))
+	*average_height = 0.0;
+
+    if (ISNAN(*pixel_size))
+	*pixel_size = meta->general->x_pixel_size;
+
     switch (pt)
     {
 	case UNIVERSAL_TRANSVERSE_MERCATOR:
+	    if (ISNAN(pps->utm.lon0))
+		pps->utm.lon0 = meta->general->center_longitude;
+	    if (ISNAN(pps->utm.lat0))
+		pps->utm.lat0 = meta->general->center_latitude;
+
 	    /* set the zone based on the specified longitude */
-	    if (!ISNAN(pps->utm.lon0))
-	    {
-		if (pps->utm.zone == MAGIC_UNSET_INT)
-		    pps->utm.zone = calc_utm_zone(pps->utm.lon0);
-	    }
+	    if (pps->utm.zone == MAGIC_UNSET_INT)
+		pps->utm.zone = calc_utm_zone(pps->utm.lon0);
 
 	    /* false easting & false northing are fixed for utm */
-	    if (!ISNAN(pps->utm.lat0))
-	    {
-		pps->utm.false_northing = pps->utm.lat0 > 0 ? 0 : 10000000;
-		pps->utm.false_easting = 500000;
-	    }
-	    else
-	    {
-		pps->utm.false_easting = MAGIC_UNSET_DOUBLE;
-		pps->utm.false_northing = MAGIC_UNSET_DOUBLE;
-	    }
+	    pps->utm.false_northing = pps->utm.lat0 > 0 ? 0 : 10000000;
+	    pps->utm.false_easting = 500000;
 
 	    break;
 
 	case POLAR_STEREOGRAPHIC:
+	    /* SMMI standard values */
+	    if (ISNAN(pps->ps.slon))
+		pps->ps.slon = pps->ps.is_north_pole ?
+		    DEFAULT_POLAR_STERO_NORTH_CENTRAL_MERIDIAN : 
+		    DEFAULT_POLAR_STERO_SOUTH_CENTRAL_MERIDIAN; 
+
+	    /* default standard parallels are +/- 70 */
+	    if (ISNAN(pps->ps.slat))
+		pps->ps.slat = pps->ps.is_north_pole ?
+		    DEFAULT_POLAR_STERO_NORTH_STANDARD_PARALLEL :
+		    DEFAULT_POLAR_STERO_SOUTH_STANDARD_PARALLEL;
+
 	    if (ISNAN(pps->ps.false_easting))
 		pps->ps.false_easting = 0;
 	    if (ISNAN(pps->ps.false_northing))

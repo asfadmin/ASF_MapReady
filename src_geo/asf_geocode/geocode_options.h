@@ -64,7 +64,9 @@ project_parameters_t * get_geocode_options(int *argc, char ***argv,
 /* Might want to make these static... they are called from get_geocode_options
    before it returns. */
 void sanity_check(projection_type_t proj_type, project_parameters_t * pps);
-void apply_defaults(projection_type_t proj_type, project_parameters_t * pps);
+void apply_defaults(projection_type_t proj_type, project_parameters_t * pps,
+		    meta_parameters * meta, double *average_height,
+		    double *pixel_size);
 
 void to_radians(projection_type_t proj_type, project_parameters_t * pps);
 void to_degrees(projection_type_t proj_type, project_parameters_t * pps);

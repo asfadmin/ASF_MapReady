@@ -490,7 +490,7 @@ main (int argc, char **argv)
   // Get the projection parameters from the command line.
   projection_type_t projection_type;
   // Terrain height to assume.  Defaults to 0.
-  double average_height = 0;	// FIXME: Put this default in docs
+  double average_height;	// FIXME: Put this default in docs
   // Pixel size to use for output image, in projection coordinate
   // units (presumably meters, but you never know when we might lose
   // our heads and decide to add some dumb projection).
@@ -521,6 +521,25 @@ main (int argc, char **argv)
 
   GString *input_image = g_string_new (argv[1]);
   GString *output_image = g_string_new (argv[2]);
+
+  // Input metadata.
+  meta_parameters *imd = meta_read (input_image->str);
+
+  // Ensure not already projected
+  if ( imd->sar->image_type == 'P' ) {
+      if (imd->projection->type != SCANSAR_PROJECTION)
+	  asfPrintError ("Expected SCANSAR projection type but got %d!\n"
+			 "This image appears to already be projected.\n",
+			 imd->projection->type);
+  }
+  else {
+      if (imd->projection != NULL)
+	  asfPrintError ("This image is already projected! "
+			 "Cannot re-project.\n");
+  }
+
+  // Set items in the projection parameters not on command-line
+  apply_defaults(projection_type, pp, imd, &average_height, &pixel_size);
 
   // Convert all angle measures in the project_parameters to radians.
   to_radians (projection_type, pp);
@@ -571,9 +590,6 @@ main (int argc, char **argv)
     g_assert_not_reached ();
     break;
   }
-
-  // Input metadata.
-  meta_parameters *imd = meta_read (input_image->str);
 
   // Input image dimensions in pixels in x and y directions.
   size_t ii_size_x = imd->general->sample_count;
@@ -930,16 +946,6 @@ main (int argc, char **argv)
   // start with the metadata from the input image and add the
   // geocoding parameters.
   meta_parameters *omd = meta_read (input_image->str);
-  if ( omd->sar->image_type == 'P' ) {
-      if (omd->projection->type != SCANSAR_PROJECTION)
-	  asfPrintError ("Expected SCANSAR projection type but got %d!\n",
-			 omd->projection->type);
-  }
-  else {
-      if (omd->projection != NULL)
-	  asfPrintError ("This image is already projected! "
-			 "Cannot re-project.\n");
-  }
   omd->sar->image_type = 'P';
   omd->projection = g_new0 (meta_projection, 1);
   omd->projection->type = projection_type;
