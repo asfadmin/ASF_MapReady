@@ -1,12 +1,18 @@
 /* The position and velocity of an earth orbiting (FIXME: define orbit
    type more precisely) satellite in geocentric equitorial inertial
-   (GEI) form.  This is also called the space fixed form, and it
-   records the satellite's position in a reference system defined by
-   axes through the earth's pole, equator, and a line pointing off in
-   a direction defined relative to a bunch of quasars and other
-   distant space gunk.  All algorithms used in this class are from
-   Chapters 1 through 3 of the book "Satellite Geodesy", 2nd edition,
-   by Gunter Seeber.  */
+   (GEI) form.  This is also sometimes confusingly called the space
+   fixed form, and it records the satellite's position in a reference
+   system defined by axes through the earth's pole, equator, and a
+   line pointing off in a direction defined relative to a bunch of
+   quasars and other distant space gunk.  Note that THIS SYSTEM IS NOT
+   THE SAME as the International Celestial Reference System (ICRS),
+   which doesn't force the Z axis to follow he precession and nutation
+   or the earth's pole.  The only thing this system is independent of
+   is short time day to day rotation of the earth.  All algorithms
+   used in this class are from Chapters 1 through 3 of the book
+   "Satellite Geodesy", 2nd edition, by Gunter Seeber.  This reference
+   doesn't mention GEI explicitly, but the "equatorial system"
+   mentioned is the GEI system.  */
 
 #ifndef ORBITAL_STATE_VECTOR_H
 #define ORBITAL_STATE_VECTOR_H
