@@ -73,7 +73,7 @@ stage_tcl_stamp:
 	    gunzip -c $(TCL_ZIPFILE) > $(TCL_TARFILE) ; \
 	    tar xvf $(TCL_TARFILE) ; \
 	    (cd $(TCL_UNPACK_DIR)/unix ; \
-                ./configure --prefix=`pwd`/../../$(ROOT_STAGEDIR) \
+                ./configure --enable-gcc --prefix=`pwd`/../../$(ROOT_STAGEDIR) \
 		            --disable-load ; \
 		make ; \
 	        make check ; \
@@ -95,7 +95,7 @@ stage_tk_stamp:
 	    gunzip -c $(TK_ZIPFILE) > $(TK_TARFILE) ; \
 	    tar xvf $(TK_TARFILE) ; \
 	    (cd $(TK_UNPACK_DIR)/unix ; \
-                ./configure --prefix=`pwd`/../../$(ROOT_STAGEDIR) \
+                ./configure --enable-gcc --prefix=`pwd`/../../$(ROOT_STAGEDIR) \
 		            --disable-load ; \
 		make ; \
 	        make check ; \
