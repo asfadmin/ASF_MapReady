@@ -8,9 +8,11 @@
 # the directory hierarchy.
 
 file asf_geocode
-#set args --projection utm --zone 18test_data/joanne_recode_attempts/from_geocoded_ceos/R141507213U3S006 rcfagc
+set args --projection albers --first-standard-parallel 55 --second-standard-parallel 65 --latitude-of-origin 50 --central-meridian -150 test_data/joanne_basic/test_sfc test_sfc_albers
 
-set args --projection utm --zone 15 test_data/joanne_recode_attempts/from_not_geocoded_ceos/R129975207G3S010 ncfngc
+#set args --projection utm --zone 18 test_data/joanne_recode_attempts/from_geocoded_ceos/R141507213U3S006 rcfagc
+
+#set args --projection utm --zone 15 test_data/joanne_recode_attempts/from_not_geocoded_ceos/R129975207G3S010 ncfngc
 
 
 
