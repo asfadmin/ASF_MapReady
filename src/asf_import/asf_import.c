@@ -56,7 +56,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        Output will be written to a specified log file.\n"\
 "   -quiet\n"\
 "        Supresses all non-essential output.\n"\
-"   -lat Specify lower and upper latitude contraints.\n"\
+"   -lat Specify lower and upper latitude contraints. (STF only)\n"\
 "   -old Output in old style ASF internal format.\n"\
 "   -metadata\n"\
 "        Use a different name for the metadata file. Requires only the base\n"\
