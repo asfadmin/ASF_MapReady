@@ -1,121 +1,119 @@
-/*************************************************************************
-<documentation>
-<name>
-asf_import
-</name>
+/*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
+/*
+ABOUT EDITING THIS DOCUMENTATION:
+If you wish to edit the documentation for this program, you need to change the
+following defines. For the short ones (like ASF_NAME_STRING) this is no big
+deal. However, for some of the longer ones, such as ASF_COPYRIGHT_STRING, it
+can be a daunting task to get all the newlines in correctly, etc. In order to
+help you with this task, there is a tool, edit_man_header.pl. The tool *only*
+works with this portion of the code, so fear not. It will scan in defines of
+the format #define ASF_<something>_STRING between the two auto-generated
+documentation markers, format them for a text editor, run that editor, allow
+you to edit the text in a clean manner, and then automatically generate these
+defines, formatted appropriately. The only warning is that any text between
+those two markers and not part of one of those defines will not be preserved,
+and that all of this auto-generated code will be at the top of the source
+file. Save yourself the time and trouble, and use edit_man_header.pl. :)
+*/
 
-<synopsis>
-asf_import [-amplitude | -sigma | -gamma | -beta | -power]
-           [-lat <lower> <upper>] [-format <input_format>]
-           <in_data_name> <in_meta_name> <out_base_name>
-</synopsis>
+#define ASF_NAME_STRING \
+"asf_import"
 
-<description>
-Ingests all varieties of CEOS and STF data formats as well as the external
-ESRI and ENVI data formats and outputs ASF internal format metadata
-and data files.
-</description>
+#define ASF_USAGE_STRING \
+"[-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>] [-format <input_format>] <in_data_name> <in_meta_name> <out_base_name>"
 
-<input>
-The format of the input file must be specified as CEOS, STF, ESRI, or ENVI.
-The data file name must be provided seperately from the meta file name.
-The output file provided should only be a base name, by which the created
-files will be named, with appropriate extensions.
-</input>
+#define ASF_DESCRIPTION_STRING \
+"Ingests all varieties of CEOS and STF data formats as well as the external ESRI and ENVI data formats and outputs ASF internal format metadata and data files."
 
-<output>
-Outputs data and metadata files with the user-provided base name and
-appropriate extensions.
-</output>
+#define ASF_INPUT_STRING \
+"The format of the input file must be specified as CEOS, STF, ESRI, or ENVI. The data file name must be provided seperately from the meta file name. The output file provided should only be a base name, by which the created files will be named, with appropriate extensions."
 
-<options>
-   -amplitude     Create an amplitude image. This is the default behavior.
-   -sigma         Create a calibrated image (sigma dB values).
-   -gamma         Create a calibrated image (gamma dB values).
-   -beta          Create a calibrated image (beta dB values).
-   -power         Create a power image.
-   -format        Force input data to be read as the given format type
-                    Valid options are ceos, stf, esri, and envi
-   -log           Output will be written to a specified log file.
-   -quiet         Supresses all non-essential output.
-   -lat           Specify lower and upper latitude contraints.
-   -old           Output in old style ASF internal format.
-   -prc           Replace the restituted state vectors from the original raw
-                  data acquired by the ERS satellites with preceision state
-                  vectors from DLR.
-</options>
+#define ASF_OUTPUT_STRING \
+"Outputs data and metadata files with the user-provided base name and appropriate extensions."
 
-<examples>
-asf_import -format CEOS file1.D file1.L file2
-</examples>
+#define ASF_OPTIONS_STRING \
+"   -amplitude     Create an amplitude image. This is the default behavior.\n"\
+"   -sigma         Create a calibrated image (sigma dB values).\n"\
+"   -gamma         Create a calibrated image (gamma dB values).\n"\
+"   -beta          Create a calibrated image (beta dB values).\n"\
+"   -power         Create a power image.\n"\
+"   -format        Force input data to be read as the given format type\n"\
+"                    Valid options are ceos, stf, esri, and envi\n"\
+"   -log           Output will be written to a specified log file.\n"\
+"   -quiet         Supresses all non-essential output.\n"\
+"   -lat           Specify lower and upper latitude contraints.\n"\
+"   -old           Output in old style ASF internal format.\n"\
+"   -prc           Replace the restituted state vectors from the original raw\n"\
+"                  data acquired by the ERS satellites with preceision state\n"\
+"                  vectors from DLR."
 
-<limitations>
-None known.
-</limitations>
+#define ASF_EXAMPLES_STRING \
+"asf_import -format CEOS file1.D file1.L file2"
 
-<see_also>
-asf_convert, asf_export
-</see_also>
+#define ASF_LIMITATIONS_STRING \
+"None known."
 
-<copyright>
-*******************************************************************************
-*                                                                             *
-* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
-* All rights reserved.                                                        *
-*                                                                             *
-* Redistribution and use in source and binary forms, with or without          *
-* modification, are permitted provided that the following conditions are met: *
-*                                                                             *
-*    * Redistributions of source code must retain the above copyright notice, *
-*      this list of conditions and the following disclaimer.                  *
-*    * Redistributions in binary form must reproduce the above copyright      *
-*      notice, this list of conditions and the following disclaimer in the    *
-*      documentation and/or other materials provided with the distribution.   *
-*    * Neither the name of the Geophysical Institute nor the names of its     *
-*      contributors may be used to endorse or promote products derived from   *
-*      this software without specific prior written permission.               *
-*                                                                             *
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" *
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE   *
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE  *
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE    *
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR         *
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF        *
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS    *
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN     *
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)     *
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE  *
-* POSSIBILITY OF SUCH DAMAGE.                                                 *
-*                                                                             *
-*       For more information contact us at:                                   *
-*                                                                             *
-*       Alaska Satellite Facility                                             *
-*       Geophysical Institute                   http://www.asf.alaska.edu     *
-*       University of Alaska Fairbanks          uso@asf.alaska.edu            *
-*       P.O. Box 757320                                                       *
-*       Fairbanks, AK 99775-7320                                              *
-*                                                                             *
-*******************************************************************************
-</copyright>
-</documentation>
+#define ASF_SEE_ALSO_STRING \
+"asf_convert, asf_export"
 
-PROGRAM HISTORY:
-    VERS:   DATE:  AUTHOR:     PURPOSE:
-    ---------------------------------------------------------------
-    0.1    12/03   R. Gens     Combined sarin, calibrate, trim_slc and
-                                ceos2raw into one program
-    0.2     4/04   P. Denny    Allowed for RSI naming scheme as well as
-                                our typical CEOS naming scheme
-    0.3     5/04   R. Gens     Added stf2raw and external ESRI and ENVI
-                                formats; renamed the tool to import2asf
-    0.4     5/04   J. Nicoll   Fixed sign issue when converting 8 bit
-                                data to calibrated amplitude data
-    0.41    5/04   P. Denny    Made format of input data a required
-                                argument (CEOS,STF,ESRI,ENVI)
-    0.5     5/04   P. Denny    Added hidden option to write out sprocket
-                                style metadata.
+#define ASF_COPYRIGHT_STRING \
+"*******************************************************************************\n"\
+"*                                                                             *\n"\
+"* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *\n"\
+"* All rights reserved.                                                        *\n"\
+"*                                                                             *\n"\
+"* Redistribution and use in source and binary forms, with or without          *\n"\
+"* modification, are permitted provided that the following conditions are met: *\n"\
+"*                                                                             *\n"\
+"*    * Redistributions of source code must retain the above copyright notice, *\n"\
+"*      this list of conditions and the following disclaimer.                  *\n"\
+"*    * Redistributions in binary form must reproduce the above copyright      *\n"\
+"*      notice, this list of conditions and the following disclaimer in the    *\n"\
+"*      documentation and/or other materials provided with the distribution.   *\n"\
+"*    * Neither the name of the Geophysical Institute nor the names of its     *\n"\
+"*      contributors may be used to endorse or promote products derived from   *\n"\
+"*      this software without specific prior written permission.               *\n"\
+"*                                                                             *\n"\
+"* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" *\n"\
+"* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE   *\n"\
+"* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE  *\n"\
+"* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE    *\n"\
+"* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR         *\n"\
+"* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF        *\n"\
+"* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS    *\n"\
+"* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN     *\n"\
+"* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)     *\n"\
+"* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE  *\n"\
+"* POSSIBILITY OF SUCH DAMAGE.                                                 *\n"\
+"*                                                                             *\n"\
+"*       For more information contact us at:                                   *\n"\
+"*                                                                             *\n"\
+"*       Alaska Satellite Facility                                             *\n"\
+"*       Geophysical Institute                   http://www.asf.alaska.edu     *\n"\
+"*       University of Alaska Fairbanks          uso@asf.alaska.edu            *\n"\
+"*       P.O. Box 757320                                                       *\n"\
+"*       Fairbanks, AK 99775-7320                                              *\n"\
+"*                                                                             *\n"\
+"*******************************************************************************"
 
-*******************************************************************************/
+#define ASF_PROGRAM_HISTORY_STRING \
+"PROGRAM HISTORY:\n"\
+"    VERS:   DATE:  AUTHOR:     PURPOSE:\n"\
+"    ---------------------------------------------------------------\n"\
+"    0.1    12/03   R. Gens     Combined sarin, calibrate, trim_slc and\n"\
+"                                ceos2raw into one program\n"\
+"    0.2     4/04   P. Denny    Allowed for RSI naming scheme as well as\n"\
+"                                our typical CEOS naming scheme\n"\
+"    0.3     5/04   R. Gens     Added stf2raw and external ESRI and ENVI\n"\
+"                                formats; renamed the tool to import2asf\n"\
+"    0.4     5/04   J. Nicoll   Fixed sign issue when converting 8 bit\n"\
+"                                data to calibrated amplitude data\n"\
+"    0.41    5/04   P. Denny    Made format of input data a required\n"\
+"                                argument (CEOS,STF,ESRI,ENVI)\n"\
+"    0.5     5/04   P. Denny    Added hidden option to write out sprocket\n"\
+"                                style metadata."
+
+/*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
 
 #include "asf.h"
@@ -139,6 +137,7 @@ PROGRAM HISTORY:
 
 /* PROTOTYPES */
 void usage(void);
+void help_page();
 
 void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart,
                   long *imgEnd, char *imgTimeStr, int *nVec,
@@ -300,6 +299,8 @@ int main(int argc, char *argv[])
   int ampFlag, sigmaFlag, betaFlag, gammaFlag, powerFlag, sprocketFlag, latConstraintFlag, prcflag;
   int quietFlag, formatFlag;
   /*Check to see if any options were provided*/
+  if(checkForOption("-help", argc, argv) != -1)/*Most important*/
+    help_page();
   ampFlag = checkForOption("-amplitude", argc, argv);
   sigmaFlag = checkForOption("-sigma", argc, argv);
   betaFlag = checkForOption("-beta", argc, argv);
@@ -424,7 +425,7 @@ int main(int argc, char *argv[])
 
   /* Deal with input format type */
   if(formatFlag != FLAG_NOT_SET) {
-    strcpy(type, argv[formatFlag + 1]);
+    strcpy(type, uc(argv[formatFlag + 1]));
     for (ii=0; ii<strlen(type); ii++) {
       type[ii] = (char)toupper(type[ii]);
     }
@@ -1235,12 +1236,64 @@ if (sprocketFlag != FLAG_NOT_SET) {
 
 
 /* usage - enter here on command-line usage error*/
-void usage(void)
+void usage()
 {
- printf("\n"
-  "USAGE:\n"
-  "   asf_import [-amplitude | -sigma | -gamma | -beta | -power]\n"
-  "              [-lat <lower> <upper>] [-format <input_format>]\n"
-  "              <in_data_name> <in_meta_name> <out_base_name>\n");
- exit(EXIT_FAILURE);
+	printf("\n"
+		"USAGE:\n"
+		ASF_NAME_STRING
+		" "
+		ASF_USAGE_STRING
+		"\n\n");
+	exit (EXIT_FAILURE);
+}
+
+
+void help_page()
+{
+	if(system("echo '"
+		"\n\n\n"
+		"Tool name: " ASF_NAME_STRING "\n\n\n"
+		"Usage: " ASF_USAGE_STRING "\n\n\n"
+		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
+		"Input: " ASF_INPUT_STRING "\n\n\n"
+		"Output: "ASF_OUTPUT_STRING "\n\n\n"
+		"Options: " ASF_OPTIONS_STRING "\n\n\n"
+		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
+		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
+		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
+		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
+		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
+		"' | less") != -1)
+		exit(EXIT_SUCCESS);
+
+	else if(system("echo '"
+		"\n\n\n"
+		"Tool name: " ASF_NAME_STRING "\n\n\n"
+		"Usage: " ASF_USAGE_STRING "\n\n\n"
+		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
+		"Input: " ASF_INPUT_STRING "\n\n\n"
+		"Output: "ASF_OUTPUT_STRING "\n\n\n"
+		"Options: " ASF_OPTIONS_STRING "\n\n\n"
+		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
+		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
+		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
+		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
+		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
+		"' | more") != -1)
+		exit(EXIT_SUCCESS);
+
+	else
+		printf("\n\n\n"
+		"Tool name: " ASF_NAME_STRING "\n\n\n"
+		"Usage: " ASF_USAGE_STRING "\n\n\n"
+		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
+		"Input: " ASF_INPUT_STRING "\n\n\n"
+		"Output: "ASF_OUTPUT_STRING "\n\n\n"
+		"Options: " ASF_OPTIONS_STRING "\n\n\n"
+		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
+		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
+		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
+		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
+		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n");
+		exit(EXIT_SUCCESS);
 }

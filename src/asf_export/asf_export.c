@@ -1,95 +1,101 @@
-/******************************************************************************
-<documentation>
-<name>
-asf_export
-</name>
+/*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
+/*
+ABOUT EDITING THIS DOCUMENTATION:
+If you wish to edit the documentation for this program, you need to change the
+following defines. For the short ones (like ASF_NAME_STRING) this is no big
+deal. However, for some of the longer ones, such as ASF_COPYRIGHT_STRING, it
+can be a daunting task to get all the newlines in correctly, etc. In order to
+help you with this task, there is a tool, edit_man_header.pl. The tool *only*
+works with this portion of the code, so fear not. It will scan in defines of
+the format #define ASF_<something>_STRING between the two auto-generated
+documentation markers, format them for a text editor, run that editor, allow
+you to edit the text in a clean manner, and then automatically generate these
+defines, formatted appropriately. The only warning is that any text between
+those two markers and not part of one of those defines will not be preserved,
+and that all of this auto-generated code will be at the top of the source
+file. Save yourself the time and trouble, and use edit_man_header.pl. :)
+*/
 
-<synopsis>
-asf_export [-format <output_format>] [-size <max_dimension>] 
-           <in_base_name> <out_full_name>
-</synopsis>
+#define ASF_NAME_STRING \
+"asf_export"
 
-<description>
-This program ingests ASF internal format data and exports said data to
-a number of output formats. If the input data was geocoded and the ouput
-format supports geocoding, that information will be included.
-</description>
+#define ASF_USAGE_STRING \
+"[-format <output_format>] [-size <max_dimension>] <in_base_name> <out_full_name>"
 
-<input>
-This must be an ASF internal format data file.
-</input>
+#define ASF_DESCRIPTION_STRING \
+"This program ingests ASF internal format data and exports said data to a number of output formats. If the input data was geocoded and the ouput format supports geocoding, that information will be included."
 
-<output>
-The converted data in the output file.
-</output>
+#define ASF_INPUT_STRING \
+"This must be an ASF internal format data file."
 
-<options>
--format <format>  Format to export to. Must be one of the following:
-                     CEOS, envi, esri, geotiff, jpeg, ppm
--size <size>      Scale image so that its largest dimension is, at most, size.
-</options>
+#define ASF_OUTPUT_STRING \
+"The converted data in the output file."
 
-<examples>
-To export to the default geotiff format from file1:
-   asf_export file1
-To export file1 to the jpeg format:
-   asf_export -format jpeg file1
-To export file1 to a jpeg no larger than 800x800:
-   asf_export -format jpeg -size 800 file1
-</examples>
+#define ASF_OPTIONS_STRING \
+"-format <format>  Format to export to. Must be one of the following:\n"\
+"                     CEOS, envi, esri, geotiff, jpeg, ppm\n"\
+"-size <size>      Scale image so that its largest dimension is, at most, size."
 
-<limitations>
-Currently only supports ingest of ASF format floating point data.
-GeoTIFF imagess will not be scaled.
-</limitations>
+#define ASF_EXAMPLES_STRING \
+"To export to the default geotiff format from file1:\n"\
+"   asf_export file1\n"\
+"To export file1 to the jpeg format:\n"\
+"   asf_export -format jpeg file1\n"\
+"To export file1 to a jpeg no larger than 800x800:\n"\
+"   asf_export -format jpeg -size 800 file1"
 
-<see_also>
-asf_convert, asf_import
-</see_also>
+#define ASF_LIMITATIONS_STRING \
+"Currently only supports ingest of ASF format floating point data.\n"\
+"GeoTIFF images will not be scaled."
 
-<copyright>
-*******************************************************************************
-*                                                                             *
-* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
-* All rights reserved.                                                        *
-*                                                                             *
-* Redistribution and use in source and binary forms, with or without          *
-* modification, are permitted provided that the following conditions are met: *
-*                                                                             *
-*    * Redistributions of source code must retain the above copyright notice, *
-*      this list of conditions and the following disclaimer.                  *
-*    * Redistributions in binary form must reproduce the above copyright      *
-*      notice, this list of conditions and the following disclaimer in the    *
-*      documentation and/or other materials provided with the distribution.   *
-*    * Neither the name of the Geophysical Institute nor the names of its     *
-*      contributors may be used to endorse or promote products derived from   *
-*      this software without specific prior written permission.               *
-*                                                                             *
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" *
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE   *
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE  *
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE    *
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR         *
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF        *
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS    *
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN     *
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)     *
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE  *
-* POSSIBILITY OF SUCH DAMAGE.                                                 *
-*                                                                             *
-*       For more information contact us at:                                   *
-*                                                                             *
-*       Alaska Satellite Facility                                             *
-*       Geophysical Institute                   http://www.asf.alaska.edu     *
-*       University of Alaska Fairbanks          uso@asf.alaska.edu            *
-*       P.O. Box 757320                                                       *
-*       Fairbanks, AK 99775-7320                                              *
-*                                                                             *
-*******************************************************************************
-</copyright>
-</documentation>
+#define ASF_SEE_ALSO_STRING \
+"asf_convert, asf_import"
 
-******************************************************************************/
+#define ASF_COPYRIGHT_STRING \
+"*******************************************************************************\n"\
+"*                                                                             *\n"\
+"* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *\n"\
+"* All rights reserved.                                                        *\n"\
+"*                                                                             *\n"\
+"* Redistribution and use in source and binary forms, with or without          *\n"\
+"* modification, are permitted provided that the following conditions are met: *\n"\
+"*                                                                             *\n"\
+"*    * Redistributions of source code must retain the above copyright notice, *\n"\
+"*      this list of conditions and the following disclaimer.                  *\n"\
+"*    * Redistributions in binary form must reproduce the above copyright      *\n"\
+"*      notice, this list of conditions and the following disclaimer in the    *\n"\
+"*      documentation and/or other materials provided with the distribution.   *\n"\
+"*    * Neither the name of the Geophysical Institute nor the names of its     *\n"\
+"*      contributors may be used to endorse or promote products derived from   *\n"\
+"*      this software without specific prior written permission.               *\n"\
+"*                                                                             *\n"\
+"* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" *\n"\
+"* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE   *\n"\
+"* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE  *\n"\
+"* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE    *\n"\
+"* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR         *\n"\
+"* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF        *\n"\
+"* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS    *\n"\
+"* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN     *\n"\
+"* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)     *\n"\
+"* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE  *\n"\
+"* POSSIBILITY OF SUCH DAMAGE.                                                 *\n"\
+"*                                                                             *\n"\
+"*       For more information contact us at:                                   *\n"\
+"*                                                                             *\n"\
+"*       Alaska Satellite Facility                                             *\n"\
+"*       Geophysical Institute                   http://www.asf.alaska.edu     *\n"\
+"*       University of Alaska Fairbanks          uso@asf.alaska.edu            *\n"\
+"*       P.O. Box 757320                                                       *\n"\
+"*       Fairbanks, AK 99775-7320                                              *\n"\
+"*                                                                             *\n"\
+"*******************************************************************************"
+
+#define ASF_PROGRAM_HISTORY_STRING \
+"No history."
+
+/*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
+
 
 #include <assert.h>
 #include <ctype.h>
@@ -120,17 +126,21 @@ asf_convert, asf_import
 #include <asf_endian.h>
 #include <asf_meta.h>
 
-const char *program_name = "asf_export";
 
 /* Print invocation information.  */
 void usage()
 {
   printf ("\n"
-     "USAGE:\n"
-     "   asf_export [-format <output_format>] [-size <max_dimension>]\n"
-     "              <in_base_name> <out_full_name>\n");
+    "USAGE:\n"
+    ASF_NAME_STRING
+    " "
+    ASF_USAGE_STRING
+    "\n\n");
   exit (EXIT_FAILURE);
 }
+
+
+void help_page();
 
 
 void print_splash_screen(int argc, char* argv[])
@@ -322,6 +332,8 @@ main (int argc, char *argv[])
 	int ii;
 
 	/*Check to see which options were specified*/
+	if(checkForOption("-help", argc, argv) != -1)/*Most important*/
+		help_page();
 	formatFlag = checkForOption("-format", argc, argv);
 	sizeFlag = checkForOption("-size", argc, argv);
 	logFlag = checkForOption("-log", argc, argv);
@@ -1321,8 +1333,6 @@ export_as_jpeg (const char *metadata_file_name,
     char *temp;
 	sprintf(temp, "Open of %s for writing failed: %s", output_file_name, strerror(errno));
 	print_error(temp);
-/*    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
-  	     output_file_name, strerror (errno));*/
     exit (EXIT_FAILURE);
   }
 
@@ -1433,8 +1443,6 @@ export_as_ppm (const char *metadata_file_name,
     char* temp;
 	sprintf(temp, "Open of %s for writing failed: %s", output_file_name, strerror(errno));
 	print_error(temp);
-/*    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
-  	     output_file_name, strerror (errno));*/
     exit (EXIT_FAILURE);
   }
 
@@ -1615,7 +1623,7 @@ export_as_geotiff (const char *metadata_file_name,
        out.  This problem goes deeper than asf_export, however.  */
     fprintf (stderr, "%s: warning: couldn't conclude which ellipsoid is "
 	     "being used from ellipsoid axis dimensions in metadata, "
-	     "using user defined ellipsoid\n", program_name);
+	     "using user defined ellipsoid\n", ASF_NAME_STRING);
     ellipsoid = USER_DEFINED;
   }
   
@@ -1966,4 +1974,55 @@ export_as_geotiff (const char *metadata_file_name,
   XTIFFClose (otif);
   free (daf);
   meta_free (md);
+}
+
+
+void help_page()
+{
+	if(system("echo '"
+		"\n\n\n"
+		"Tool name: " ASF_NAME_STRING "\n\n\n"
+		"Usage: " ASF_USAGE_STRING "\n\n\n"
+		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
+		"Input: " ASF_INPUT_STRING "\n\n\n"
+		"Output: "ASF_OUTPUT_STRING "\n\n\n"
+		"Options: " ASF_OPTIONS_STRING "\n\n\n"
+		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
+		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
+		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
+		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
+		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
+		"' | less") != -1)
+		exit(EXIT_SUCCESS);
+
+	else if(system("echo '"
+		"\n\n\n"
+		"Tool name: " ASF_NAME_STRING "\n\n\n"
+		"Usage: " ASF_USAGE_STRING "\n\n\n"
+		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
+		"Input: " ASF_INPUT_STRING "\n\n\n"
+		"Output: "ASF_OUTPUT_STRING "\n\n\n"
+		"Options: " ASF_OPTIONS_STRING "\n\n\n"
+		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
+		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
+		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
+		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
+		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
+		"' | more") != -1)
+		exit(EXIT_SUCCESS);
+
+	else
+		printf("\n\n\n"
+		"Tool name: " ASF_NAME_STRING "\n\n\n"
+		"Usage: " ASF_USAGE_STRING "\n\n\n"
+		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
+		"Input: " ASF_INPUT_STRING "\n\n\n"
+		"Output: "ASF_OUTPUT_STRING "\n\n\n"
+		"Options: " ASF_OPTIONS_STRING "\n\n\n"
+		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
+		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
+		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
+		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
+		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n");
+		exit(EXIT_SUCCESS);
 }
