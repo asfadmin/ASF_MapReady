@@ -235,9 +235,9 @@ my_strnlen (const char *s, size_t max_len)
   return max_len;
 }
 
-//Check to see if an option was supplied or not
-//If it was found, return its argument number
-//Otherwise, return FLAG_NOT_SET
+/*Check to see if an option was supplied or not
+If it was found, return its argument number
+Otherwise, return FLAG_NOT_SET*/
 int checkForOption(char* key, int argc, char* argv[])
 {
 	int ii = 0;
@@ -250,8 +250,8 @@ int checkForOption(char* key, int argc, char* argv[])
 	return(FLAG_NOT_SET);
 }
 
-//Print an error message. This is just here for circumventing check_return.
-//Also, it makes it possible to reformat all the error messages at once.
+/*Print an error message. This is just here for circumventing check_return.
+Also, it makes it possible to reformat all the error messages at once.*/
 void print_error(char *msg)
 {
 	char* temp;
@@ -260,7 +260,7 @@ void print_error(char *msg)
 	exit(EXIT_FAILURE);
 }
 
-//Check the return value of a function and display an error message if it's a bad return
+/*Check the return value of a function and display an error message if it's a bad return*/
 void check_return(int ret, char *msg)
 {
 	if (ret != 0)
@@ -304,47 +304,47 @@ main (int argc, char *argv[])
 	
 	int formatFlag, sizeFlag, logFlag, quietFlag;
 
-	//Check to see which options were specified
+	/*Check to see which options were specified*/
 	formatFlag = checkForOption("-format", argc, argv);
 	sizeFlag = checkForOption("-size", argc, argv);
 	logFlag = checkForOption("-log", argc, argv);
 	quietFlag = checkForOption("-quiet", argc, argv);
 
-	int needed_args = 3;//command & argument & argument
+	int needed_args = 3;/*command & argument & argument*/
 	if(formatFlag != FLAG_NOT_SET)
-		needed_args += 2;//option & parameter
+		needed_args += 2;/*option & parameter*/
 	if(sizeFlag != FLAG_NOT_SET)
-		needed_args += 2;//option & parameter
+		needed_args += 2;/*option & parameter*/
 	if(quietFlag != FLAG_NOT_SET)
-		needed_args += 1;//option
+		needed_args += 1;/*option*/
 	if(logFlag != FLAG_NOT_SET)
-		needed_args += 2;//option & parameter
+		needed_args += 2;/*option & parameter*/
 
 	if(argc != needed_args)
-		usage();//This exits with a failure
+		usage();/*This exits with a failure*/
 
-	//We also need to make sure the last three options are close to what we expect
+	/*We also need to make sure the last three options are close to what we expect*/
 	if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-')
-		usage();//This exits with a failure
+		usage();/*This exits with a failure*/
 
-	//Make sure any options that have parameters are followed by parameters (and not other options)
-	//Also make sure options' parameters don't bleed into required arguments
+	/*Make sure any options that have parameters are followed by parameters (and not other options)
+	Also make sure options' parameters don't bleed into required arguments*/
 	if(formatFlag != FLAG_NOT_SET)
 		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3)
 			usage();
 	if(sizeFlag != FLAG_NOT_SET)
 		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
-			usage();//This exits with a failure
+			usage();/*This exits with a failure*/
 
-	//We're good enough at this point...print the splash screen and start filling in
-	//whatever needs to be filled in.
+	/*We're good enough at this point...print the splash screen and start filling in
+	whatever needs to be filled in.*/
 	if(quietFlag == FLAG_NOT_SET)
 		print_splash_screen(argc, argv);
 
 	if(formatFlag != FLAG_NOT_SET)
 		strcpy(command_line.format, argv[formatFlag + 1]);
 	else
-		strcpy(command_line.format, "geotiff");//Default behavior: produce a geotiff
+		strcpy(command_line.format, "geotiff");/*Default behavior: produce a geotiff*/
 
 	if(sizeFlag != FLAG_NOT_SET)
 		command_line.size = atol(argv[sizeFlag + 1]);
@@ -356,13 +356,13 @@ main (int argc, char *argv[])
 	else
 		command_line.quiet = FALSE;
 
-	//Grab/construct the data file name
+	/*Grab/construct the data file name*/
 	strcpy(command_line.in_data_name, argv[argc - 2]);
 	strcat(command_line.in_data_name, ".img");
-	//Grab/construct the meta file name
+	/*Grab/construct the meta file name*/
 	strcpy(command_line.in_meta_name, argv[argc - 2]);
 	strcat(command_line.in_meta_name, ".meta");
-	//Grab the output name
+	/*Grab the output name*/
 	strcpy(command_line.output_name, argv[argc - 1]);
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
@@ -592,8 +592,10 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
   /* Read the image data itself.  */
   FILE *ifp = fopen (image_data_file, "r");
   if ( ifp == NULL ) {
-//    fprintf (stderr, "%s: failed to open %s: %s\n", program_name, 
-//	     image_data_file, strerror (errno));
+/*
+    fprintf (stderr, "%s: failed to open %s: %s\n", program_name, 
+	     image_data_file, strerror (errno));
+*/
 	char* temp;
 	sprintf(temp, "Failed to open %s: %s", image_data_file, strerror(errno));
 	print_error(temp);
@@ -608,15 +610,15 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
 	  char* temp;
 	  sprintf(temp, "Read wrong amoutn of data from %s", image_data_file);
 	  print_error(temp);
-//      fprintf (stderr, "%s: read wrong amount of data from %s\n", program_name,
-//	       image_data_file);
+/*      fprintf (stderr, "%s: read wrong amount of data from %s\n", program_name,
+	       image_data_file);*/
     }
     else if ( ferror (ifp) ) {
 	  char* temp;
 	  sprintf(temp, "Read of file %s failed: %s", image_data_file, strerror(errno));
 	  print_error(temp);
-//      fprintf (stderr, "%s: read of file %s failed: %s\n", program_name, 
-//	       image_data_file, strerror (errno));
+/*      fprintf (stderr, "%s: read of file %s failed: %s\n", program_name, 
+	       image_data_file, strerror (errno));*/
     }
     else {
       assert (FALSE);		/* Shouldn't be here.  */
@@ -758,7 +760,7 @@ export_as_envi (const char *metadata_file_name,
     char* temp;
     sprintf(temp, "System command '%s' failed", command);
     print_error(temp);
-//    fprintf (stderr, "%s: system command '%s' failed", program_name, command);
+/*    fprintf (stderr, "%s: system command '%s' failed", program_name, command);*/
     exit (EXIT_FAILURE);
   }
 }
@@ -1180,7 +1182,7 @@ export_as_esri (const char *metadata_file_name,
     char* temp;
 	sprintf(temp, "System command '%s' failed", command);
 	print_error(temp);
-//    fprintf (stderr, "%s: system command '%s' failed", program_name, command);
+/*    fprintf (stderr, "%s: system command '%s' failed", program_name, command);*/
     exit (EXIT_FAILURE);
   }
 }
@@ -1431,8 +1433,8 @@ export_as_jpeg (const char *metadata_file_name,
     char *temp;
 	sprintf(temp, "Open of %s for writing failed: %s", output_file_name, strerror(errno));
 	print_error(temp);
-//    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
-//  	     output_file_name, strerror (errno));
+/*    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
+  	     output_file_name, strerror (errno));*/
     exit (EXIT_FAILURE);
   }
 
@@ -1543,8 +1545,8 @@ export_as_ppm (const char *metadata_file_name,
     char* temp;
 	sprintf(temp, "Open of %s for writing failed: %s", output_file_name, strerror(errno));
 	print_error(temp);
-//    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
-//  	     output_file_name, strerror (errno));
+/*    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
+  	     output_file_name, strerror (errno));*/
     exit (EXIT_FAILURE);
   }
 
@@ -1715,9 +1717,9 @@ export_as_geotiff (const char *metadata_file_name,
 	       "being used from ellipsoid axis dimensions in metadata, "
 	       "using user defined ellipsoid\n");
 	  printf(temp);
-//	  fprintf (stderr, "%s: warning: couldn't conclude which ellipsoid is "
-//	       "being used from ellipsoid axis dimensions in metadata, "
-//	       "using user defined ellipsoid\n", program_name);
+/*	  fprintf (stderr, "%s: warning: couldn't conclude which ellipsoid is "
+	       "being used from ellipsoid axis dimensions in metadata, "
+	       "using user defined ellipsoid\n", program_name);*/
       ellipsoid = USER_DEFINED;
     }
 
@@ -1933,8 +1935,8 @@ export_as_geotiff (const char *metadata_file_name,
 	  char* temp;
 	  sprintf(temp, "Error writing to output geotiff file %s", output_file_name);
 	  print_error(temp);
-//      fprintf (stderr, "%s: error writing to output geotiff file %s\n", 
-//	       program_name, output_file_name);
+/*      fprintf (stderr, "%s: error writing to output geotiff file %s\n", 
+	       program_name, output_file_name);*/
       exit (EXIT_FAILURE);
     }
   }
