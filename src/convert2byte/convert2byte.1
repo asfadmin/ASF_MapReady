@@ -1,0 +1,97 @@
+.TH convert2byte 1 "April 2003"
+
+.SH NAME:
+convert2byte \- convert any ASF image file into a byte image.
+
+.SH SYNOPSIS:
+.B convert2byte
+.BI "[-multilook] [-look lxs] [-step lxs]"
+.in 18
+.BI "[-log <logFile>] [-quiet]"
+.B "<inFile> <outFile>"
+.in -18
+
+.SH DESCRIPTION:
+.B "Convert2byte"
+converts an ASF image file from any non-complex data type to a byte image. It is
+a replacement for the former ASF tools amp2img and ui2byte. Use the
+\-\f multilook\FP option to immitate amp2img's behavior. You do not need to use
+any option to accomplish that which ui2byte used to do.
+.PP
+When the -multilook, -look, or -step options are used,
+.B "convert2byte"
+also decreases the image dimensions by performing a box average on some number
+of pixels. For ERS-1 the box is often some multiple of 5x1 in order to produce
+multilooked pixels with near-unity aspect ratio. Whereas
+.B "ml(1)"
+turns an interferogram (both amplitude and phase) into an image, 
+.B "convert2byte"
+creates an image that resembles the landscape. This image can give the 
+user an idea of the ground/area in the interferogram.
+
+.SH COMMAND LINE OPTIONS:
+.TP 8
+.B "-multilook"
+Multilook the data as it is converted to byte. This option uses look_count from
+the meta file to figure the number of look and step lines (only if the data has
+not already been multilooked). The number of look and step samples defaults to
+1.
+.TP 8
+.B "-look\f lxs\fP"
+Change number of look lines and samples. (-multilook is implied.) If \-step is
+specified, but \-look is not, then \-look defaults to the same values as \-step
+is set to.
+.TP 8
+.B "-step\f lxs\fP"
+Change number of step lines and samples. (-multilook is implied.) If \-look is
+specified, but \-step is not, then \-step defaults to the same values as \-look
+is set to.
+.TP
+.B "-log\f logFile\fP"
+Copies the terminal output and appends it to file\f logFile\fP.
+.TP
+.B "-quiet"
+Suppresses the terminal output to the essential.
+.TP
+.B "inFile"
+Input SAR file, extension included. Usually the output of igram(1).
+.TP 8
+.B "outFile"
+Output image, without extension (although you may include it if you like).
+
+.SH EXAMPLES:
+Convert real.img to byte.img.
+.PP
+.ce 1
+example% convert2byte real.img byte.img
+.PP
+Convert the amplitude file ifm1.amp into an image file named fred.img. Do so
+using look lines equivalent to the ifm1.meta file's look_count field and a look
+sample of 1. Step line and sample are the same as look line and sample.
+.PP
+.ce 1
+example% convert2byte \-multilook ifm1.amp fred
+.PP
+Same as above except change the look area to 10 rows and 2 cols. Since \-step is
+not specified, it is set to the same thing as \-look is.
+.PP
+.ce 1
+example% convert2byte \-look 10x2 ifm1.amp fred
+.PP
+Say you have some noisy SAR data. You may want to try using a larger look area
+while keeping the stepping distance normal as follows:
+.PP
+.ce 1
+example% convert2byte \-look 10x2 \-step 5x1 ifm1.amp fred
+
+.SH NOTES:
+None.
+
+.SH BUGS:
+None known.
+
+.SH CONTACT:
+E-Mail:  apd@asf.alaska.edu
+.RE
+Website: http://www.asf.alaska.edu/apd
+
