@@ -132,17 +132,18 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   // we are using.
   GString *tile_file_name = g_string_new ("");
   gchar *current_dir = g_get_current_dir ();
-  g_assert (sizeof (long) >= sizeof (pid_t));
-  // Here we do a slightly weird thing: we create a temporary file in
-  // the current directory.  We do this because the temporary file
-  // could well be pretty big and /tmp often maps to a small file
-  // system.  The idea is that the directory the user is in is more
-  // likely to have the extra space required to hold the temporary
-  // file.  Of course, if they have been carefully calculating their
-  // space requirements, they may be disappointed.  We use a weird
-  // name that no sane user would ever use for one of their files, we
-  // hope.
+
+  // Here we do a slightly weird thing: if the current directory is
+  // writable, we create a temporary file in the current directory.
+  // We do this because the temporary file could well be pretty big
+  // and /tmp often maps to a small file system.  The idea is that the
+  // directory the user is in is more likely to have the extra space
+  // required to hold the temporary file.  Of course, if they have
+  // been carefully calculating their space requirements, they may be
+  // disappointed.  We use a weird name that no sane user would ever
+  // use for one of their files, we hope.
   G_LOCK (current_tile_file_number);
+  g_assert (sizeof (long) >= sizeof (pid_t));
   g_string_append_printf (tile_file_name, 
 			  "%s/.float_image_tile_file_uNiQuIfY_nAmE_%ld_%lu",
 			  current_dir, (long) getpid (), 
@@ -164,9 +165,25 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   // everywhere, or at least for the big transfers.  I'm not sure its
   // worth the trouble though.
   self->tile_file = fopen (tile_file_name->str, "w+");
+  if ( self->tile_file == NULL ) {
+    if ( errno != EACCES ) {
+      g_warning ("couldn't create file in current directory, and it wasn't"
+		 "just a permissions problem");
+    }
+    else {
+      // Couldn't open in current directory, so try using tmpfile,
+      // which opens the file in the standardish place for the system.
+      // See the comment above about why opening in /tmp or the like
+      // is potentially bad.
+      self->tile_file = tmpfile ();
+      g_assert (self->tile_file != NULL);
+    }
+  }
+  else {
+    return_code = unlink (tile_file_name->str);
+    g_assert (return_code == 0);
+  }  
   g_assert (self->tile_file != NULL);
-  return_code = unlink (tile_file_name->str);
-  g_assert (return_code == 0);
   return_code = sigprocmask (SIG_SETMASK, &old_set, NULL);
   g_string_free (tile_file_name, TRUE);
 
