@@ -68,6 +68,8 @@ default: $(OBJS)
 	cp $(TARGET).glade $(BINDIR)
 	cp $(TARGET).ico $(BINDIR)
 
+%.c: %.h
+
 doc: asf_convert_gui.txt
 
 asf_convert_gui.txt:

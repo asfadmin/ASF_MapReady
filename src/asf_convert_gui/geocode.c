@@ -57,7 +57,8 @@ const char * geocode_options_string(const Settings * settings)
 	{
 	    case UNIVERSAL_TRANSVERSE_MERCATOR:
 		strcpy(ret, "--projection utm");
-		enable_utm_zone = TRUE;
+		enable_utm_zone =
+		    entry_has_text("utm_zone_entry");
 		break;
 
 	    case POLAR_STEREOGRAPHIC:
