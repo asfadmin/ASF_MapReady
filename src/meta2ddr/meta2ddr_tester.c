@@ -45,17 +45,17 @@ START_TEST(test_ddr2meta)
   fail_unless( !system(cmd), "test_ddr2meta: meta2ddr returned non-zero exit code.");
 
 /* Diff the out put */
-  sprintf(cmd,"diff %s/ddr2meta_out.meta %s/ddr2meta_good.meta > diff_ddr2meta_meta",
+  sprintf(cmd,"diff %s/ddr2meta_good.meta %s/ddr2meta_out.meta > diff_ddr2meta_meta",
           _TEST_DATA_DIR,_TEST_DATA_DIR);
-  fail_unless( !system(cmd), "test_ddr2meta: diff between out and good .meta file.");
+  fail_unless( !system(cmd), "test_ddr2meta: diff between good and out .meta file.");
 /* Clean up */
   diff_clean ("diff_ddr2meta_meta");
 }
 END_TEST
 
 /**********************************************
- * Test making meta -> las.                  */
-START_TEST(test_meta2ddr)
+ * Test making meta -> las. (old meta file)  */
+START_TEST(test_meta2ddr_oldmeta)
 {
   char cmd[256];
   printf("\n");
@@ -63,27 +63,43 @@ START_TEST(test_meta2ddr)
 /* Run program for testing */
   sprintf(cmd,"meta2ddr %s/new_style %s/meta2ddr_out",_TEST_DATA_DIR,_TEST_DATA_DIR);
   printf("%s\n",cmd);  
-  fail_unless( !system(cmd), "test_meta2ddr: meta2ddr returned non-zero exit code.");
+  fail_unless( !system(cmd), "test_meta2ddr_oldmeta: meta2ddr returned non-zero exit code.");
 
-/* Prepare easily comparable text version of DDRs */
-  sprintf(cmd,"dspddr %s/meta2ddr_out.ddr | grep -v -i IMAGE > meta2ddr_out.txt",
-          _TEST_DATA_DIR);
-  system(cmd);
-  sprintf(cmd,"dspddr %s/meta2ddr_good.ddr | grep -v -i IMAGE > meta2ddr_good.txt",
-          _TEST_DATA_DIR);
-  system(cmd);
-
-/* Diff metas & DDRs */
-  sprintf(cmd,"diff %s/meta2ddr_out.meta %s/meta2ddr_good.meta > diff_meta2ddr_meta",
+/* Diff metas */
+  sprintf(cmd,"diff %s/meta2ddr_good.meta %s/meta2ddr_out.meta > diff_meta2ddr_oldmeta",
           _TEST_DATA_DIR,_TEST_DATA_DIR);
-  fail_unless( !system(cmd), "test_meta2ddr: diff between out and good .meta file");
-  fail_unless( !system("diff meta2ddr_out.txt meta2ddr_good.txt > diff_meta2ddr_ddr"),
-               "test_meta2ddr: diff between out and good .ddr file");
+  fail_unless( !system(cmd), "test_meta2ddr_oldmeta: diff between good and out .meta file");
 
 /* Clean up */
-  remove ("meta2ddr_good.txt");
-  remove ("meta2ddr_out.txt");
-  diff_clean ("diff_meta2ddr_meta");
+  diff_clean ("diff_meta2ddr_oldmeta");
+}
+END_TEST
+
+/**********************************************
+ * Test making meta -> las. (DDR file)       */
+START_TEST(test_meta2ddr_ddr)
+{
+  char cmd[256];
+  printf("\n");
+
+/* Run program for testing */
+  sprintf(cmd,"meta2ddr %s/new_style %s/meta2ddr_out",_TEST_DATA_DIR,_TEST_DATA_DIR);
+  printf("%s\n",cmd);  
+  fail_unless( !system(cmd), "test_meta2ddr_ddr: meta2ddr returned non-zero exit code.");
+
+/* Prepare easily comparable text version of DDRs & diff them */
+  sprintf(cmd,"dspddr %s/meta2ddr_good.ddr | grep -v -i IMAGE > meta2ddr_good_ddr.txt",
+          _TEST_DATA_DIR);
+  system(cmd);
+  sprintf(cmd,"dspddr %s/meta2ddr_out.ddr | grep -v -i IMAGE > meta2ddr_out_ddr.txt",
+          _TEST_DATA_DIR);
+  system(cmd);
+  fail_unless( !system("diff meta2ddr_good_ddr.txt meta2ddr_out_ddr.txt > diff_meta2ddr_ddr"),
+               "test_meta2ddr_ddr: diff between out and good .ddr file");
+
+/* Clean up */
+  remove ("meta2ddr_good_ddr.txt");
+  remove ("meta2ddr_out_ddr.txt");
   diff_clean ("diff_meta2ddr_ddr");
 }
 END_TEST
@@ -96,9 +112,10 @@ Suite *meta2ddr_suite(void)
   TCase *tc_core = tcase_create("Core");
   
   suite_add_tcase(suite, tc_core);
- 
+
   tcase_add_test(tc_core, test_ddr2meta);
-  tcase_add_test(tc_core, test_meta2ddr);
+  tcase_add_test(tc_core, test_meta2ddr_oldmeta);
+  tcase_add_test(tc_core, test_meta2ddr_ddr);
 
   return suite;
 }
