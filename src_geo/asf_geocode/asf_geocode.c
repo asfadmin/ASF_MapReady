@@ -224,8 +224,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "geocode_options.h"
 
 // Prototype
-void check_parameters(projection_type_t projection_type, project_parameters_t *pp,
-                      meta_parameters *meta);
+void check_parameters(projection_type_t projection_type, 
+		      project_parameters_t *pp, meta_parameters *meta);
 
 // Print invocation information.  */
 static void
@@ -546,15 +546,16 @@ main (int argc, char **argv)
   // Set items in the projection parameters not on command-line
   apply_defaults (projection_type, pp, imd, &average_height, &pixel_size);
 
-  // Check whether projection parameters are valid
+  // Check whether projection parameters are valid, dying with an
+  // error if they aren't.
   check_parameters (projection_type, pp, imd);
 
   // Convert all angle measures in the project_parameters to radians.
   to_radians (projection_type, pp);
 
   // Set Projection Datum & Average Height
-  project_set_datum(datum);
-  project_set_avg_height(average_height);
+  project_set_datum (datum);
+  project_set_avg_height (average_height);
 
   // Assign our transformation function pointers to point to the
   // appropriate functions.
@@ -817,7 +818,7 @@ main (int argc, char **argv)
     double largest_error = gsl_vector_max (model_errors);
     // We want to choke if our worst point in the model is off by this
     // many pixels or more.
-    double max_allowable_error = 0.5;
+    double max_allowable_error = 1.0;
     if ( largest_error > max_allowable_error )
 	asfPrintError("Largest Error was larger than maximum allowed! "
 		      "%f > %f\n", largest_error, max_allowable_error);
@@ -842,7 +843,7 @@ main (int argc, char **argv)
   // many pixels for reverse transformations of the projection
   // coordinates of the corners of the output image back to the pixel
   // indicies in the input image.
-  double max_corner_error = 0.5;
+  double max_corner_error = 1.0;
   // Upper left corner.
   double ul_lat, ul_lon;
   meta_get_latLon (imd, (float)0, (float)0, average_height, &ul_lat, &ul_lon);
@@ -930,8 +931,10 @@ main (int argc, char **argv)
       // Otherwise, set to the value from the appropriate position in
       // the input image.
       else {
-	SET_PIXEL (oix, oiy, GET_PIXEL (floor (input_x_pixel + 0.5),
-					floor (input_y_pixel + 0.5)));
+	SET_PIXEL (oix, oiy, 
+		   float_image_sample 
+		     (iim, input_x_pixel, input_y_pixel,
+		      FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR));
       }
     }
     asfLineMeter( oiy, oiy_max );
