@@ -63,7 +63,7 @@ void check_parameters(projection_type_t projection_type,
       // somehow if the input is an already geocoded image which we
       // want to recode.
 
-      // Zone test - only zones for coordinates within image permitted
+      // Zone test - The zone must contain some dirt in image.
       meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
@@ -81,10 +81,11 @@ void check_parameters(projection_type_t projection_type,
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
-      if (pp->utm.zone < min_zone || pp->utm.zone > max_zone)
-        asfPrintError("Zone '%i' outside the range of corresponding image coordinates "
-                      "(%i to %i)\n", pp->utm.zone, min_zone, max_zone);
-
+      if (pp->utm.zone < min_zone || pp->utm.zone > max_zone + 1) {
+        asfPrintError("Zone '%i' outside the range of corresponding image "
+		      "coordinates (%i to %i)\n", pp->utm.zone, min_zone, 
+		      max_zone);
+      }
       break;
 
     case POLAR_STEREOGRAPHIC:

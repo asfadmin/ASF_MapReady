@@ -147,8 +147,19 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 		pps->utm.lat0 = meta->general->center_latitude;
 
 	    /* set the zone based on the specified longitude */
-	    if (pps->utm.zone == MAGIC_UNSET_INT)
-		pps->utm.zone = calc_utm_zone(pps->utm.lon0);
+	    if (pps->utm.zone == MAGIC_UNSET_INT) {
+	      // The only sane thing to do is refuse to operate if we
+	      // get a longitude that puts us on a zone boundry --
+	      // such an argument is essentially ambiguous, and the
+	      // user must resolve it.
+	      if ( pps->utm.lon0 / 6.0 - floor (pps->utm.lon0 / 6.0) == 0.0 ) {
+		asfPrintError ("Longitude %.6f lies on a UTM zone boundry, "
+			       "(i.e. is ambiguous as to which UTM zone "
+			       "should be used for geocoding)\n", 
+			       pps->utm.lon0);
+	      }
+	      pps->utm.zone = calc_utm_zone(pps->utm.lon0);
+	    }
 
 	    /* false easting & false northing are fixed for utm */
 	    pps->utm.false_northing = pps->utm.lat0 >= 0 ? 0 : 10000000;
