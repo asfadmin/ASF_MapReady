@@ -85,7 +85,7 @@ ALGORITHM DESCRIPTION:
 #include <stdlib.h>
 
 #include "asf.h"
-#include "ddr.h"
+#include "asf_meta.h"
 #include "calibrate.h"
 #include "ceos_io.h"
 
@@ -98,11 +98,13 @@ int check_cal(char*);
 void usage(char*);
 
 
+#define MAX_tableRes 512 /*Num. of noise table entries, across one image line.*/
+
 int main(int argc, char **argv)
 {
 	char 	      *inSAR,	/* Input image name */
 		      *outLAS;	/* Output image name */
-	int	      *ibuff;	
+	int	      *ibuff;
 	unsigned char *obuff;	/* Input and output buffers	*/
 	CEOS_FILE     *fpIn;
 	FILE          *fpOut;	/* output file pointers	*/
@@ -110,55 +112,39 @@ int main(int argc, char **argv)
 	int	      x,y; 	/* loop counters */ 
         int	      ns, nl;	/* num lines and samples in input and output */
 	int           override_flag=0,gamma_flag=0;
- 	struct DDR    outddr;
-
-#define MAX_tableRes 512 /*Num. of noise table entries, across one image line.*/
-
 	double noise_table[MAX_tableRes];/*Table of noise vs. x pixel.*/
 	int tableRes=MAX_tableRes;
 	double incidence[MAX_tableRes];  /* Table of incidence vs pixel */
-	extern char *optarg;	/* for getopt (to parse command line) */
-	extern int optind;	/* for getopt */
-	int c;			/* for getopt */
+	extern int currArg; /* from cla.h which is in asf.h */
 
 	StartWatch();
-	while ((c=getopt(argc,argv,"mg")) != EOF)
+	/* Parse command line args */
+	while (currArg < (argc-2))
 	{
-		switch (c) {
-		 case 'm':/*manually overide calibration coefficients*/
+		char *key=argv[currArg++];
+		if (strmatch(key,"-m")) {
 			override_flag=1;
-			break;
-		 case 'g':/*create gamma0 output instead of sigma0*/
-			gamma_flag=1;
-			break;
-		 default:
-			usage(argv[0]);
 		}
+		else if (strmatch(key,"-g")) {
+			gamma_flag=1;
+		}
+		else {printf("\n**Invalid option:  %s\n\n",argv[currArg-1]);usage(argv[0]);}
 	}
+	if ((argc-currArg) < 2) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 	
-	/* There are supposed to be exactly two non-option arguments.  */
-	if (argc - optind != 2) 
-		usage(argv[0]);
-	
-	inSAR=argv[optind];
-	outLAS=argv[optind+1];
+	inSAR=argv[currArg++];
+	outLAS=argv[currArg];
 	
 	check_cal(inSAR);	/* Make sure file is calibrated */
 
         /* Open input files, create output files.  */
 	fpIn=fopenCeos(inSAR);
-	nl=fpIn->ddr.nl;
-	ns=fpIn->ddr.ns;
+	nl = fpIn->meta->general->line_count;
+	ns = fpIn->meta->general->sample_count;
 	
 	fpOut=fopenImage(outLAS,"wb");
-	outddr=fpIn->ddr;
-	outddr.dtype=1;
-	c_putddr(outLAS,&outddr);
-	{
-		meta_parameters *meta=meta_create(inSAR);
-		meta_write(meta,outLAS);
-		meta_free(meta);
-	}
+	fpIn->meta->general->data_type = BYTE;
+	meta_write(fpIn->meta,outLAS);
 	
 	printf("Output-Sigma0-FILE : %s\n", outLAS);
 
@@ -185,6 +171,7 @@ int main(int argc, char **argv)
 	ibuff = (int *) MALLOC(ns * sizeof(int));
 	obuff = (unsigned char *) MALLOC(ns * sizeof(unsigned char));
 
+	printf("\n");
 	/* Read input file, convert, and write to output file  */
 	for (y = 0; y < nl; y++ ) 
 	  {
@@ -227,13 +214,16 @@ int main(int argc, char **argv)
 		/*Write it out.*/
 		FWRITE(obuff, (unsigned)ns, 1, fpOut);
 		
-		if ((y%100)==0) printf(" Now Processing Line No = %d \n", y);
+		if ((y%100)==0) {
+			printf(" Now Processing Line No = %d\r", y);
+			fflush(NULL);
+		}
 	  }
-	printf("Wrote %i lines of %i samples\n", nl, ns);
+	printf("Wrote %i lines of %i samples                \n", nl, ns);
 	closeCeos(fpIn);
 	FCLOSE(fpOut);
 	
-	printf("\7\n\n Calibration is complete! \n\n");
+	printf("\n Calibration is complete!\n\n");
 	StopWatch();
 
 	return(0);
@@ -322,18 +312,23 @@ int check_cal(char *filename)
 
 void usage(char *name)
 {
-	printf( "\nUsage:\n"
-		"   %s [-m] [-g] inSAR out\n", name);
-	printf( "\nOptional Input:\n"
-		"   -m     manually overide calibration coefficients\n"
-		"   -g     create gamma0 output <default is sigma0>\n");
-	printf( "Required Input:\n"
-		"   inSAR  uncalibrated CEOS image\n");
-	printf( "Output:\n"
-		"   out    calibrated LAS 6.0 image\n");
-	printf( "\nDescription:\n"
-		"   Performs radiometric calibration of SAR images to create\n"
-		"   output images whose values are in sigma-0 (or gamma-0).\n");
-	printf("\nVersion %.2f,  ASF SAR TOOLS\n\n", VERSION);
-	exit(1);
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-m] [-g] <inSAR> <out>\n", name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   inSAR   uncalibrated CEOS image (input)\n"
+	"   out     calibrated LAS 6.0 image (output)\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -m   manually overide calibration coefficients\n"
+	"   -g   create gamma0 output <default is sigma0>\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Performs radiometric calibration of SAR images to create\n"
+	"   output images whose values are in sigma-0 (or gamma-0).\n");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n", VERSION);
+ exit(EXIT_FAILURE);
 }
