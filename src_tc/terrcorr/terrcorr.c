@@ -159,6 +159,7 @@ OF ALASKA TECHNOLOGY DEVELOPMENT CORPORATION AT (907)451-0718.
 #include "ddr.h"
 #define  VERSION 2.3
 
+void meta_or_ddr(char *whichOne, char *fileName);
 void display(char *text);
 void execute(char *cmd);
 void bye(void);
@@ -170,7 +171,7 @@ int main(argc, argv)
 char cmd[255], temp[255], SAR[255], SARtrl[255], DEM[255],
      cSAR[255], pSAR[255], mSAR[255], rSAR[255],
      SIM[255], fSIM[255], COR[255], rCOR[255];
-char *DDr=".meta", *IMG=".img";
+char DDr[255], *IMG=".img";
  
 /*char    ascdesc;                 Ascending/Descending pass flag            */
 float   pixsiz;                 /* Processing pixel size in meters           */
@@ -261,7 +262,7 @@ if (error)
    printf("   -s          Skip the SAR preprocessing steps\n");
    printf("\n");
    printf(" Version %.2f,  ASF STEP TOOLS\n\n",VERSION);
-   exit(1);
+   exit(EXIT_FAILURE);
   }
 
 strcat(strcpy(SIM,"s"),SAR);
@@ -286,7 +287,7 @@ if (rtcf)
 /* Read DEM and SAR image metadata
  --------------------------------*/
 if (c_getddr(DEM, &ddr)!= 0)
-  { printf("Unable to get ddr file for image %s\n",DEM); exit(1); }
+  { printf("Unable to get ddr file for image %s\n",DEM); exit(EXIT_FAILURE); }
 pixsiz = ddr.pdist_x;
 
 era = set_era(SAR,SARtrl,2);
@@ -377,11 +378,15 @@ printf("Preprocessing the SAR image\n");
   if (rtcf)
     {
      sprintf(cmd,"mv %s_rtc%s %s%s\n",SIM,IMG,rSAR,IMG); execute(cmd);
+     meta_or_ddr(DDr, SIM);
+     meta_or_ddr(DDr, rSAR);
      sprintf(cmd,"mv %s_rtc%s %s%s\n",SIM,DDr,rSAR,DDr); execute(cmd);
     }
   if (mask)  /* Fix Mask Image File Name */
     {
      sprintf(cmd,"mv %s_mask%s %s_mask%s\n",pSAR,IMG,SAR,IMG); execute(cmd);
+     meta_or_ddr(DDr, pSAR);
+     meta_or_ddr(DDr, SAR);
      sprintf(cmd,"mv %s_mask%s %s_mask%s\n",pSAR,DDr,SAR,DDr); execute(cmd);
     }
 
@@ -411,6 +416,8 @@ printf("Preprocessing the SAR image\n");
    {
      display("Creating Radiometrically Terrain Corrected Image");
      sprintf(cmd,"rtc_add %s %s %s\n",COR,rSAR,rCOR); execute(cmd);
+     meta_or_ddr(DDr, COR);
+     meta_or_ddr(DDr, rCOR);
      sprintf(cmd,"cp %s%s %s%s\n",COR,DDr,rCOR,DDr); execute(cmd);
    }
 
@@ -422,12 +429,14 @@ printf("Preprocessing the SAR image\n");
   if (!leave)
    {
     /* sprintf(cmd,"rm -f *.tpl\n"); execute(cmd); */
+    meta_or_ddr(DDr, SIM);
     sprintf(cmd,"rm -f %s%s %s%s\n",SIM,IMG,SIM,DDr); execute(cmd);
     sprintf(cmd,"rm -f cor_sar?.??? cor_sim?.???\n"); execute(cmd);
 
     if (clip)
      {
       sprintf(cmd,"rm -f %s%s\n",DEM,IMG); execute(cmd);
+      meta_or_ddr(DDr, DEM);
       sprintf(cmd,"rm -f %s%s\n",DEM,DDr); execute(cmd);
      }
    }
@@ -435,6 +444,7 @@ printf("Preprocessing the SAR image\n");
   if (rtcf)
    {
      sprintf(cmd,"rm -f %s%s\n",rSAR,IMG); execute(cmd);
+     meta_or_ddr(DDr, rSAR);
      sprintf(cmd,"rm -f %s%s\n",rSAR,DDr); execute(cmd);
    }
 
@@ -462,6 +472,27 @@ printf("\n\n");
 return(0);
 }
 
+
+
+void meta_or_ddr(char *whichOne, char *fileName)
+{
+  char metaName[255], ddrName[255];
+  
+  create_name(metaName, fileName, ".meta");
+  create_name(ddrName,  fileName, ".ddr");
+
+  if (fileExists(metaName)) {
+    strcpy (whichOne, ".meta");
+  }
+  else if (fileExists(ddrName)) {
+    strcpy (whichOne, ".ddr");
+  }
+  else { /* Default to .meta */
+    strcpy (whichOne, ".meta");
+  }
+}
+    
+
 void display(char *text)
 {
   printf("\n-----------------------------------------------------------\n");
@@ -477,7 +508,7 @@ void execute(char *cmd)
 		bye(); 
 }
 
-void bye(void) { printf("Program Aborted\n"); exit(1); }
+void bye(void) { printf("Program Aborted.\n"); exit(EXIT_FAILURE); }
 
 void make_zero(void)
 {
