@@ -599,7 +599,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   else meta_write(meta,outMetaName);
   meta_free(meta);
 
-  FCLOSE(fpIn);
+  if (fpIn) /* CEOS L0 doesn't set fpIn, will still be NULL */
+      FCLOSE(fpIn);
   FCLOSE(fpOut);
 
   asfPrintStatus("Finished.\n\n");
