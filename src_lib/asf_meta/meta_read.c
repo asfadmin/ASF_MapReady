@@ -38,7 +38,7 @@ int meta_is_new_style(const char *file_name)
   }
 
   if ( strtod(get_subexp_string(&version_subexps, 1), NULL) 
-       < NEW_FORMAT_VERSION ) {
+       < NEW_FORMAT_VERSION - 0.0002 /* <-- for sloppy float compare.  */ ) {
     return_value = 0;
   } else {
     return_value = 1;
