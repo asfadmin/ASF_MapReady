@@ -16,7 +16,7 @@ int yylex(void);
 /* Node type for stack of pointers to structure subelements.  */
 typedef struct block_stack_node_struct {
   char block_name[MAX_SYMBOL_STRING]; /* Name of block.  */
-  void *block;			/* Pointer to corresponding (sub)structure.  */
+  void *block;                  /* Pointer to corresponding (sub)structure.  */
   struct block_stack_node_struct *next;
 } block_stack_node;
 
@@ -26,8 +26,8 @@ block_stack_node *stack_top;
 /* Global pointer to meta structure getting read in */
 meta_parameters *global_meta;
 
-static void block_stack_push(block_stack_node **stack_top_p, 
-			     const char *block_name, void *new_block)
+static void block_stack_push(block_stack_node **stack_top_p,
+                             const char *block_name, void *new_block)
 {
   block_stack_node *new_node = malloc(sizeof(block_stack_node));
   strncpy(new_node->block_name, block_name, MAX_SYMBOL_STRING);
@@ -53,7 +53,7 @@ meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
 
 
 char current_file[MAX_FILE_NAME];
-extern int line_number;		/* Line number of file being parsed.  */
+extern int line_number;         /* Line number of file being parsed.  */
 
 /* Help parser handle errors.  */
 int yyerror(char *s)
@@ -65,7 +65,7 @@ int yyerror(char *s)
             current_file, line_number);
     exit(EXIT_FAILURE);
   }
-  return -1;			/* No error codes yet.  */
+  return -1;                    /* No error codes yet.  */
 }
 
 
@@ -79,7 +79,7 @@ void warning_message(const char *warn_msg, ...)
   char temp2[MAX_MESSAGE_LENGTH];
   int ii;
 
-/* Format string for pretty terminal display */  
+/* Format string for pretty terminal display */
   strncpy (message_to_print, warn_msg, MAX_MESSAGE_LENGTH);
   message_to_print[MAX_MESSAGE_LENGTH-1] = '\0';
   for (ii=0; ii<MAX_MESSAGE_LENGTH || message_to_print[ii]=='\0'; ii++) {
@@ -141,18 +141,18 @@ void select_current_block(char *block_name)
     current_block = MTL->state_vectors;
     goto MATCHED;
   }
-  if ( !strcmp(block_name, "vector") ) { 
+  if ( !strcmp(block_name, "vector") ) {
     global_meta->state_vectors = realloc( global_meta->state_vectors,
                      sizeof(meta_state_vectors) + (vector_count+1)*sizeof(state_loc));
-    current_block = &( global_meta->state_vectors->vecs[vector_count++]); 
-    goto MATCHED; 
+    current_block = &( global_meta->state_vectors->vecs[vector_count++]);
+    goto MATCHED;
   }
 
-  if ( !strcmp(block_name, "projection") ) { 
+  if ( !strcmp(block_name, "projection") ) {
     if (MTL->projection == NULL)
       { MTL->projection = meta_projection_init(); }
     current_block = MTL->projection;
-    goto MATCHED; 
+    goto MATCHED;
   }
   if ( !strcmp(block_name, "param") )
     { current_block = &(MPROJ->param); goto MATCHED; }
@@ -171,17 +171,17 @@ void select_current_block(char *block_name)
   if ( !strcmp(block_name, "state") )
     { current_block = &((*( (param_t *) current_block)).state); goto MATCHED; }
 
-  if ( !strcmp(block_name, "stats") ) { 
+  if ( !strcmp(block_name, "stats") ) {
     if (MTL->stats == NULL)
        { MTL->stats = meta_stats_init(); }
     current_block = MTL->stats;
-    goto MATCHED; 
+    goto MATCHED;
   }
 
-  /* Got an unknown block name, so report & choke.  */
-  error_message("unknown block name: %s", block_name);
+  /* Got an unknown block name, so report.  */
+  warning_message("unknown block name: %s", block_name);
 
-MATCHED: 
+MATCHED:
   block_stack_push(&stack_top, block_name, current_block);
   return;
 }
@@ -193,87 +193,89 @@ MATCHED:
 
 void fill_structure_field(char *field_name, void *valp)
 {
-  /* Pointer to substructure corresponding to current block.  */ 
+  /* Pointer to substructure corresponding to current block.  */
   void *current_block = stack_top->block;
 
 #ifdef DEBUG_METADATA_PARSER
     extern int yydebug;
-    yydebug = 1; 
+    yydebug = 1;
 #endif
 
   /* Top-level fields (these normally go outside all blocks).  */
   if ( !strcmp(field_name, "meta_version") ) {
-    MTL->meta_version = VALP_AS_DOUBLE; 
+    MTL->meta_version = VALP_AS_DOUBLE;
     return;
   }
 
   /* Fields which normally go in the general block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "general") ) {
-    if ( !strcmp(field_name, "sensor") ) 
+    if ( !strcmp(field_name, "sensor") )
       { !strcpy(MGENERAL->sensor, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "mode") ) {
       if ( strlen(VALP_AS_CHAR_POINTER) > MODE_FIELD_STRING_MAX - 1 ) {
-				          /* (-1 for trailing null)  */
-	error_message("mode = '%s'; string should not exceed %d characters.",
-	              VALP_AS_CHAR_POINTER, MODE_FIELD_STRING_MAX-1);
-     }	
-      strncpy(MGENERAL->mode, VALP_AS_CHAR_POINTER, MODE_FIELD_STRING_MAX); 
-      return; 
+                                          /* (-1 for trailing null)  */
+        error_message("mode = '%s'; string should not exceed %d characters.",
+                      VALP_AS_CHAR_POINTER, MODE_FIELD_STRING_MAX-1);
+     }
+      strncpy(MGENERAL->mode, VALP_AS_CHAR_POINTER, MODE_FIELD_STRING_MAX);
+      return;
     }
     if ( !strcmp(field_name, "processor") )
       { strcpy(MGENERAL->processor, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "data_type") ) {
       if ( !strcmp(VALP_AS_CHAR_POINTER, "BYTE") )
-	MGENERAL->data_type = BYTE;
+        MGENERAL->data_type = BYTE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTEGER16") )
-	MGENERAL->data_type = INTEGER16;
+        MGENERAL->data_type = INTEGER16;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTEGER32") )
-	MGENERAL->data_type = INTEGER32;
+        MGENERAL->data_type = INTEGER32;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "REAL32") )
-	MGENERAL->data_type = REAL32;
+        MGENERAL->data_type = REAL32;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "REAL64") )
-	MGENERAL->data_type = REAL64;
+        MGENERAL->data_type = REAL64;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_BYTE") )
-	MGENERAL->data_type = COMPLEX_BYTE;
+        MGENERAL->data_type = COMPLEX_BYTE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_INTEGER16") )
-	MGENERAL->data_type = COMPLEX_INTEGER16;
+        MGENERAL->data_type = COMPLEX_INTEGER16;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_INTEGER32") )
-	MGENERAL->data_type = COMPLEX_INTEGER32;
+        MGENERAL->data_type = COMPLEX_INTEGER32;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_REAL32") )
-	MGENERAL->data_type = COMPLEX_REAL32;
+        MGENERAL->data_type = COMPLEX_REAL32;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_REAL64") )
-	MGENERAL->data_type = COMPLEX_REAL64;
+        MGENERAL->data_type = COMPLEX_REAL64;
       else {
         warning_message("Unrecognized data_type (%s).\n",VALP_AS_CHAR_POINTER);
         MGENERAL->data_type = MAGIC_UNSET_INT;
       }
       return;
-    }    
+    }
     if ( !strcmp(field_name, "image_data_type") ) {
       if ( !strcmp(VALP_AS_CHAR_POINTER, "RAW_IMAGE") )
-	MGENERAL->image_data_type = RAW_IMAGE;
+        MGENERAL->image_data_type = RAW_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_IMAGE") )
-	MGENERAL->image_data_type = COMPLEX_IMAGE;
+        MGENERAL->image_data_type = COMPLEX_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "AMPLITUDE_IMAGE") )
-	MGENERAL->image_data_type = AMPLITUDE_IMAGE;
+        MGENERAL->image_data_type = AMPLITUDE_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "POWER_IMAGE") )
-	MGENERAL->image_data_type = POWER_IMAGE;
+        MGENERAL->image_data_type = POWER_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "PHASE_IMAGE") )
-	MGENERAL->image_data_type = PHASE_IMAGE;
+        MGENERAL->image_data_type = PHASE_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "SIGMA_IMAGE") )
-	MGENERAL->image_data_type = SIGMA_IMAGE;
+        MGENERAL->image_data_type = SIGMA_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "GAMMA_IMAGE") )
-	MGENERAL->image_data_type = GAMMA_IMAGE;
+        MGENERAL->image_data_type = GAMMA_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "BETA_IMAGE") )
-	MGENERAL->image_data_type = BETA_IMAGE;
+        MGENERAL->image_data_type = BETA_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "COHERENCE_IMAGE") )
-	MGENERAL->image_data_type = COHERENCE_IMAGE;
+        MGENERAL->image_data_type = COHERENCE_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEOCODED_IMAGE") )
-	MGENERAL->image_data_type = GEOCODED_IMAGE;
+        MGENERAL->image_data_type = GEOCODED_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ELEVATION_IMAGE") )
+        MGENERAL->image_data_type = ELEVATION_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "DEM") )
-	MGENERAL->image_data_type = DEM;
+        MGENERAL->image_data_type = DEM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "IMAGE") )
-	MGENERAL->image_data_type = IMAGE;
+        MGENERAL->image_data_type = IMAGE;
       else {
         warning_message("Unrecognized image_data_type (%s).\n",VALP_AS_CHAR_POINTER);
         MGENERAL->image_data_type = MAGIC_UNSET_INT;
@@ -285,23 +287,23 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "orbit") )
       { MGENERAL->orbit = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "orbit_direction") ) {
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "A") ) { 
-	MGENERAL->orbit_direction = 'A'; 
-	return; 
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "A") ) {
+        MGENERAL->orbit_direction = 'A';
+        return;
       }
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "D") ) { 
-	MGENERAL->orbit_direction = 'D'; 
-	return; 
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "D") ) {
+        MGENERAL->orbit_direction = 'D';
+        return;
       }
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "?") ) {
       /* if its a question mark don't bother the user with a warning, this happens often with DDRs */
-	MGENERAL->orbit_direction = '?'; 
-	return;
+        MGENERAL->orbit_direction = '?';
+        return;
       }
       else {
-	warning_message("Bad value: orbit_direction = '%s'.",VALP_AS_CHAR_POINTER);
-	return;
-      }      
+        warning_message("Bad value: orbit_direction = '%s'.",VALP_AS_CHAR_POINTER);
+        return;
+      }
     }
     if ( !strcmp(field_name, "frame") )
       { MGENERAL->frame = VALP_AS_INT; return; }
@@ -335,23 +337,23 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields which normally go in the sar block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "sar") ) {
-    if ( !strcmp(field_name, "image_type") ) { 
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { 
-	MSAR->image_type = 'S'; 
-	return; 
+    if ( !strcmp(field_name, "image_type") ) {
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) {
+        MSAR->image_type = 'S';
+        return;
       }
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "G") ) { 
-	MSAR->image_type = 'G'; 
-	return; 
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "G") ) {
+        MSAR->image_type = 'G';
+        return;
       }
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) { 
-	MSAR->image_type = 'P'; 
-	return; 
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) {
+        MSAR->image_type = 'P';
+        return;
       }
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "?") ) { 
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "?") ) {
        /* if its a question mark don't bother the user with a warning, this happens often with DDRs */
-	MSAR->image_type = '?'; 
-	return; 
+        MSAR->image_type = '?';
+        return;
       }
       else {
         warning_message("Bad value: image_type = '%s'.",VALP_AS_CHAR_POINTER);
@@ -360,14 +362,14 @@ void fill_structure_field(char *field_name, void *valp)
     }
     if ( !strcmp(field_name, "look_direction") ) {
       if ( !strcmp(VALP_AS_CHAR_POINTER, "R") ) {
-	MSAR->look_direction = 'R'; return; 
+        MSAR->look_direction = 'R'; return;
       }
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) {
-	MSAR->look_direction = 'L'; return; 
+        MSAR->look_direction = 'L'; return;
       }
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "?") ) {
        /* if its a question mark don't bother the user with a warning, this happens often with DDRs */
- 	MSAR->look_direction = '?'; return; 
+        MSAR->look_direction = '?'; return;
       }
       warning_message("Bad value: look_direction = '%c'.",VALP_AS_CHAR_POINTER[0]);
       return;
@@ -428,15 +430,15 @@ void fill_structure_field(char *field_name, void *valp)
       { MSTATE->julDay = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "second") )
       { MSTATE->second = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "vector_count") ) 
+    if ( !strcmp(field_name, "vector_count") )
       { /* This field will be compared to the counted the number of
          * state vector blocks that we actually see.  */
-	MSTATE->vector_count = VALP_AS_INT;
-	MSTATE->num = VALP_AS_INT; /* Compatability alias */
-	return;
+        MSTATE->vector_count = VALP_AS_INT;
+        MSTATE->num = VALP_AS_INT; /* Compatability alias */
+        return;
       }
   }
-    
+
     /* Fields which normally go in a vector block.  */
   if ( !strcmp(stack_top->block_name, "vector") ) {
     if ( !strcmp(field_name, "time") )
@@ -460,24 +462,24 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields which normaly go in the projection block of the metadata file.  */
 
-  if ( !strcmp(stack_top->block_name, "projection") ) {    
+  if ( !strcmp(stack_top->block_name, "projection") ) {
     if ( !strcmp(field_name, "type") ) {
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "UNIVERSAL_TRANSVERSE_MERCATOR") ) 
-	MPROJ->type = UNIVERSAL_TRANSVERSE_MERCATOR;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLAR_STEREOGRAPHIC") ) 
-	MPROJ->type = POLAR_STEREOGRAPHIC;
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "UNIVERSAL_TRANSVERSE_MERCATOR") )
+        MPROJ->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLAR_STEREOGRAPHIC") )
+        MPROJ->type = POLAR_STEREOGRAPHIC;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ALBERS_EQUAL_AREA") )
-	MPROJ->type = ALBERS_EQUAL_AREA;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAMBERT_CONFORMAL_CONIC") ) 
-	MPROJ->type = LAMBERT_CONFORMAL_CONIC;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAMBERT_AZIMUTHAL_EQUAL_AREA") ) 
-	MPROJ->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "STATE_PLANE") ) 
-	MPROJ->type = STATE_PLANE;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SCANSAR_PROJECTION") ) 
-	MPROJ->type = SCANSAR_PROJECTION;
-      else { 
-	warning_message("Bad value: type = '%c'.",VALP_AS_CHAR_POINTER[0]); 
+        MPROJ->type = ALBERS_EQUAL_AREA;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAMBERT_CONFORMAL_CONIC") )
+        MPROJ->type = LAMBERT_CONFORMAL_CONIC;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAMBERT_AZIMUTHAL_EQUAL_AREA") )
+        MPROJ->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "STATE_PLANE") )
+        MPROJ->type = STATE_PLANE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SCANSAR_PROJECTION") )
+        MPROJ->type = SCANSAR_PROJECTION;
+      else {
+        warning_message("Bad value: type = '%c'.",VALP_AS_CHAR_POINTER[0]);
       }
       return;
     }
@@ -502,7 +504,7 @@ void fill_structure_field(char *field_name, void *valp)
   }
 
   /* Fields that go in the (proj->param).atct block.  */
-  if ( !strcmp(stack_top->block_name, "atct") ) {    
+  if ( !strcmp(stack_top->block_name, "atct") ) {
     if ( !strcmp(field_name, "rlocal") )
       { (*MPARAM).atct.rlocal = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "alpha1") )
@@ -549,7 +551,7 @@ void fill_structure_field(char *field_name, void *valp)
   }
 
   /* Fields that go in the (proj->param).ps block.  */
-  if ( !strcmp(stack_top->block_name, "ps") ) {    
+  if ( !strcmp(stack_top->block_name, "ps") ) {
     if ( !strcmp(field_name, "slat") )
       { (*MPARAM).ps.slat = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "slon") )
@@ -557,19 +559,19 @@ void fill_structure_field(char *field_name, void *valp)
   }
 
   /* Fields that go in the (proj->param).utm block.  */
-  if ( !strcmp(stack_top->block_name, "utm") ) {    
+  if ( !strcmp(stack_top->block_name, "utm") ) {
     if ( !strcmp(field_name, "zone") )
       { (*MPARAM).utm.zone = VALP_AS_INT; return; }
   }
 
   /* Fields that go in the (proj->param).state block.  */
-  if ( !strcmp(stack_top->block_name, "state") ) {    
+  if ( !strcmp(stack_top->block_name, "state") ) {
     if ( !strcmp(field_name, "zone") )
       { (*MPARAM).state.zone = VALP_AS_INT; return; }
   }
 
   /* Fields which normally go in the statistics block of the metadata file. */
-  if ( !strcmp(stack_top->block_name, "stats") ) {    
+  if ( !strcmp(stack_top->block_name, "stats") ) {
     if ( !strcmp(field_name, "min") )
       { (MSTATS)->min = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "max") )
@@ -592,7 +594,7 @@ void fill_structure_field(char *field_name, void *valp)
 
 %start element_seq
 
-%union {			   /* Define parser stack type.  */
+%union {                           /* Define parser stack type.  */
   double double_val;
   char string_val[MAX_SYMBOL_STRING + 1];   /* Null terminated so +1.  */
   void *var_type;
@@ -610,27 +612,27 @@ element_seq:   element
              | element_seq element
              ;
 
-element:   field 
+element:   field
          | block
          ;
 
 field:   NAME ':' field_value
-             { fill_structure_field($1, $3); 
-	       free($3); }
+             { fill_structure_field($1, $3);
+               free($3); }
        ;
 
 field_value:   DOUBLE { double *tmp = (double *) malloc(sizeof(double));
-            	        *tmp = $1;
-			$$ = tmp; }
+                        *tmp = $1;
+                        $$ = tmp; }
              | STRING { $$ = strdup($1); }
-             ; 
+             ;
 
 block:   block_start element_seq '}'
              { block_stack_pop(&stack_top); }
        | block_start '}'
              { block_stack_pop(&stack_top); }
        ;
-block_start:   NAME '{' 
+block_start:   NAME '{'
                    { select_current_block($1); }
              ;
 
@@ -670,7 +672,7 @@ int parse_metadata(meta_parameters *dest, char *file_name)
     warning_message("Said number of vectors in state vector block (%d)\n"
                     "differs from the actual amount of vectors (%d)...\n"
                     "Using actual number of vectors for vector_count.",
-		    dest->state_vectors->vector_count, vector_count);
+                    dest->state_vectors->vector_count, vector_count);
     dest->state_vectors->vector_count = vector_count;
     dest->state_vectors->num = vector_count; /* Backward compat alias.  */
   }
