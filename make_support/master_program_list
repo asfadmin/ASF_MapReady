@@ -129,6 +129,12 @@ PROGRAMS
 			asf_import
 			asf_geocode
 	}
+# These programs are only used by asf_convert's hidden options and we
+# don't want to include them in the release
+#			corner_coords
+#			filter
+#			geocode
+#			projprm
 
 
 @src_ifm/
