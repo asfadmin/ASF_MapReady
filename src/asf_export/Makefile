@@ -50,12 +50,10 @@ LIBS  = $(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libjpeg.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/libglib-2.0.a -liconv -lintl \
 	-lm
 
-LDFLAGS := $(shell pkg-config --libs-only-L glib-2.0 \
-                   | perl -p -e 's/-L(.*)/-Wl,--rpath=\1/g')
-
-LDLIBS := $(LIBS) $(GLIB_LIB) 
+LDLIBS := $(LIBS)
 
 ###############################################################################
 #
