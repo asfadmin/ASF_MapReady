@@ -228,7 +228,7 @@ void create_mock_ddr(char *inFile, struct DDR *ddr,meta_parameters *meta)
 
   strcat(strcpy(infile,inFile),".raw");
   fpi = FOPEN(infile,"rb");
-  fseek(fpi,0,SEEK_END);
+  FSEEK64(fpi,0,SEEK_END);
   ddr->nl = ftell(fpi)/inbytes;
   FCLOSE(fpi);
 
