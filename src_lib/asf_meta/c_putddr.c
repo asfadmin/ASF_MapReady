@@ -163,7 +163,7 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
                     break;
             }
  	    if (open_flag) {
-                meta_write(mds_meta, meta_ddr_structs[ii].meta);
+                meta_write(mds_meta, meta_ddr_structs[ii].base_name);
                 meta_free(mds_meta);
             }
        }
