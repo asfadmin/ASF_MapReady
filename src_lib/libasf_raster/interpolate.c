@@ -93,13 +93,13 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
 
     case BILINEAR:
       assert (xSample >= 0.0 && xSample >= 0.0);
-      assert (xSample <= nSamples - 1 && xSample <= nLines - 1);
+      assert (xSample <= nSamples - 1 && xLine <= nLines - 1);
       // If we fall on the right or lower edge of the image, we cheat
       // by nudging the requested line sample down just slightly, to
       // keep the below interpolation algorithm simple.
-      const float cheat_nudge = 1e-6;
-      if ( xSample >= nSamples - 1 ) { xSample - cheat_nudge ;}
-      if ( xLine >=  nLines - 1 ) { xLine - cheat_nudge; }
+      //      const float cheat_nudge = 1e-6;
+      //      if ( xSample >= nSamples - 1 ) { xSample - cheat_nudge ;}
+      //      if ( xLine >=  nLines - 1 ) { xLine - cheat_nudge; }
       ix = floor(xSample);
       iy = floor(xLine);
       
@@ -110,7 +110,7 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
       a11 = (inbuf[base] - inbuf[base+1] - inbuf[base+nSamples] 
 	     + inbuf[base+nSamples+1]);
       value = (a00 + a10 * (xSample - ix) + a01 * (xLine - iy) 
-	       + a11 * (xSample - ix) * (xLine - iy);
+	       + a11 * (xSample - ix) * (xLine - iy));
       break;
 
     case BICUBIC:
