@@ -217,7 +217,7 @@ PROGRAMS
 @experimental/
 #	cpx_spectrum { }
 #	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
-#	stf2raw { PROGRAMS propagate }
+	stf2raw { PROGRAMS propagate }
 
 # Down here because it needs propagate
 @src_ifm/
@@ -256,7 +256,6 @@ CATEGORIES
 		refine_offset trim_slc zeroify
 		2dmap demimg demclip despike greycorr sargeom sarsim rtc_add
 		tpl_mult tpl_search correlate terrcorr
+		stf2raw
 	}
-#		stf2raw
-#	}
 }
