@@ -3,9 +3,11 @@
 
 include ../../make_support/system_rules
 
-LIBS =	-L$(LIBDIR) \
-	-lasf_las -lasf \
-	-lgeotiff -ltiff \
+
+LIBS =	$(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_las.a \
+	$(LIBDIR)/libgeotiff.a \
+	$(LIBDIR)/libtiff.a \
 	-lm
 
 OBJS =	get_tiepoints.o \
