@@ -248,30 +248,35 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->data_type = MAGIC_UNSET_INT;
       }
       return;
-   }    if ( !strcmp(field_name, "data_type") ) {
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "BYTE") )
-	MGENERAL->data_type = BYTE;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTEGER16") )
-	MGENERAL->data_type = INTEGER16;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTEGER32") )
-	MGENERAL->data_type = INTEGER32;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "REAL32") )
-	MGENERAL->data_type = REAL32;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "REAL64") )
-	MGENERAL->data_type = REAL64;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_BYTE") )
-	MGENERAL->data_type = COMPLEX_BYTE;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_INTEGER16") )
-	MGENERAL->data_type = COMPLEX_INTEGER16;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_INTEGER32") )
-	MGENERAL->data_type = COMPLEX_INTEGER32;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_REAL32") )
-	MGENERAL->data_type = COMPLEX_REAL32;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_REAL64") )
-	MGENERAL->data_type = COMPLEX_REAL64;
+    }    
+    if ( !strcmp(field_name, "image_data_type") ) {
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "RAW_IMAGE") )
+	MGENERAL->image_data_type = RAW_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_IMAGE") )
+	MGENERAL->image_data_type = COMPLEX_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "AMPLITUDE_IMAGE") )
+	MGENERAL->image_data_type = AMPLITUDE_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POWER_IMAGE") )
+	MGENERAL->image_data_type = POWER_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "PHASE_IMAGE") )
+	MGENERAL->image_data_type = PHASE_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SIGMA_IMAGE") )
+	MGENERAL->image_data_type = SIGMA_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GAMMA_IMAGE") )
+	MGENERAL->image_data_type = GAMMA_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "BETA_IMAGE") )
+	MGENERAL->image_data_type = BETA_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COHERENCE_IMAGE") )
+	MGENERAL->image_data_type = COHERENCE_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEOCODED_IMAGE") )
+	MGENERAL->image_data_type = GEOCODED_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "DEM") )
+	MGENERAL->image_data_type = DEM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "IMAGE") )
+	MGENERAL->image_data_type = IMAGE;
       else {
-        warning_message("Unrecognized data_type (%s).\n",VALP_AS_CHAR_POINTER);
-        MGENERAL->data_type = MAGIC_UNSET_INT;
+        warning_message("Unrecognized image_data_type (%s).\n",VALP_AS_CHAR_POINTER);
+        MGENERAL->image_data_type = MAGIC_UNSET_INT;
       }
       return;
    }

@@ -40,6 +40,7 @@ meta_general *meta_general_init(void)
   strcpy(general->mode, MAGIC_UNSET_STRING);
   strcpy(general->processor, MAGIC_UNSET_STRING);
   general->data_type = MAGIC_UNSET_INT;
+  general->image_data_type = MAGIC_UNSET_INT;
   strcpy(general->system, MAGIC_UNSET_STRING);
   general->orbit = MAGIC_UNSET_INT;
   general->orbit_direction = MAGIC_UNSET_CHAR;

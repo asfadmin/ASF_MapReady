@@ -73,6 +73,47 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"data_type:","???","Type of samples (e.g. REAL64)");
       break;
   }
+  switch (meta->general->image_data_type) {
+    case RAW_IMAGE:
+      meta_put_string(fp,"image_data_type:","RAW_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    case COMPLEX_IMAGE:
+      meta_put_string(fp,"image_data_type:","COMPLEX_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    case AMPLITUDE_IMAGE:
+      meta_put_string(fp,"image_data_type:","AMPLITUDE_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    case PHASE_IMAGE:
+      meta_put_string(fp,"image_data_type:","PHASE_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    case POWER_IMAGE:
+      meta_put_string(fp,"image_data_type:","POWER_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    case SIGMA_IMAGE:
+      meta_put_string(fp,"image_data_type:","SIGMA_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    case GAMMA_IMAGE:
+      meta_put_string(fp,"image_data_type:","GAMMA_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    case BETA_IMAGE:
+      meta_put_string(fp,"image_data_type:","BETA_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    case COHERENCE_IMAGE:
+      meta_put_string(fp,"image_data_type:","COHERENCE_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    case GEOCODED_IMAGE:
+      meta_put_string(fp,"image_data_type:","GEOCODED_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    case DEM:
+      meta_put_string(fp,"image_data_type:","DEM","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    case IMAGE:
+      meta_put_string(fp,"image_data_type:","IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+    default:
+      meta_put_string(fp,"image_data_type:","???","Image data type (e.g. AMPLITUDE_IMAGE)");
+      break;
+  }
   meta_put_string(fp,"system:", meta->general->system,"System of samples (e.g. big_ieee)");
   meta_put_int   (fp,"orbit:", meta->general->orbit,"Orbit Number for this datatake");
   meta_put_char  (fp,"orbit_direction:", meta->general->orbit_direction,"Ascending 'A', or descending 'D'");
