@@ -59,7 +59,7 @@ LIBS
 	libjpeg
 	libtiff
 	libgeotiff
-        libproj
+	tclTk
 @src_ifm/
 	libifm
 @src_tc/
