@@ -1,83 +1,22 @@
-/******************************************************************************
-NAME: stf2raw
-
-DESCRIPTION:
-  Converts the given VEXCEL Level-0 signal data file into an AISP-
-  compatible raw format. It extracts the necessary processing parameters
-  (slant range, prf, satellite mode) from the satellite headers, which it
-  copiously outputs during processing. It extracts state vectors from the
-  VEXCEL .par file.
-
-  The currently supported satellites are:
-    -ERS-1 and ERS-2
-    -JERS
-    -RADARSAT, all beams & modes (excluding SCANSAR)
-
-  Also checks for and corrects missing and truncated lines in ERS data.
-  Note: this is ONLY FOR ERS DATA.
-
-PROGRAM HISTORY:
-    VERS:   DATE:  AUTHOR:      PURPOSE:
-    ---------------------------------------------------------------
-    0.8  Orion Lawlor, 8/3/98
-    1.0  Orion Lawlor, 3/99
-    1.1  Orion Lawlor, 3/99
-    2.2  Dave Koster,  6/00     Modified to read files larger than 2GB
-    3.0  T. Logan,     2/01     Modified to check for and fill missing data
-    3.01 R. Gens,      7/01     Added logfile and quiet switch
-    3.02 S. Watts,     10/01    Write ACTUAL # lines to <out>.meta
-    3.5  P. Denny      1/03     Incorporated Rudi's latitude constraints
-                                 Use new meta structures
-                                 Update commandline parsing routine
-                                 Estimate doppler or grab it from par file
-
-HARDWARE/SOFTWARE LIMITATIONS:
-
-ALGORITHM DESCRIPTION:
-
-ALGORITHM REFERENCES:
-
-BUGS:
-  Does not compensate for skipped lines for JERS or RSAT.
-  Output is very inefficient for SCANSAR images.
-  SCANSAR images cannot be quicklooked.
-
-
-******************************************************************************/
-/******************************************************************************
-*                                                                             *
-* stf2raw -- Decodes the input data into AISP-compatible raw data             *
-*                                                                             *
-* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
-* All rights reserved.                                                        *
-*                                                                             *
-* You should have received an ASF SOFTWARE License Agreement with this source *
-* code. Please consult this agreement for license grant information.          *
-*                                                                             *
-*                                                                             *
-*       For more information contact us at:                                   *
-*                                                                             *
-*       Alaska Satellite Facility                                             *
-*       Geophysical Institute                   www.asf.alaska.edu            *
-*       University of Alaska Fairbanks          uso@asf.alaska.edu            *
-*       P.O. Box 757320                                                       *
-*       Fairbanks, AK 99775-7320                                              *
-*                                                                             *
-******************************************************************************/
-
 #include "asf.h"
 #include "lzFetch.h"
 #include "decoder.h"
 #include "dateUtil.h"
 
-#define VERSION 3.5
 
 /* allocation routine for meta_state_vectors */
 meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
+/* Initializes base meta structure */
+meta_parameters *raw_init(void);
+void propagate_state(meta_parameters *meta, int nStVec, double data_int);
+/* In (local_directory)/fetch_prc_stvec.c */
+int fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime,
+  stateVector *retVec, ymd_date *retDate, hms_time *retTime, int orbit);
 
-/*Utility routine:
-  Convert LZ-state vector-style date to structure:
-  YYYY-MM-DD hh:mm:ss.ttt*/
+
+/******************************************************************************
+ * lzStateTime:
+ * Convert LZ-state vector-style date to structure: YYYY-MM-DD hh:mm:ss.ttt*/
 void lzStateTime(const char *lzStr,ymd_date *date,hms_time *time)
 {
   char month[100];/*3-letter, all-caps description of the month*/
@@ -109,13 +48,7 @@ void lzStateTime(const char *lzStr,ymd_date *date,hms_time *time)
   date->month=monthNo+1;
 }
 
-/* Initializes base meta structure (asf_meta.a)*/
-meta_parameters *raw_init(void);
-void propagate_state(meta_parameters *meta, int nStVec, double data_int);
-/* In (local_directory)/fetch_prc_stvec.c */
-int fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime,
-  stateVector *retVec, ymd_date *retDate, hms_time *retTime, int orbit);
-/*********************************
+/******************************************************************************
  * createMeta_lz:
  * Acquire, figure, & write our fancy dancy .meta and .in files from the
  * .par file. */
@@ -216,11 +149,10 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
   meta_free(meta);
 }
 
-/********************************
-convertMetadata:
-  Creates AISP .in and .fmt files, as well as determining the number of
-  lines in the level-0 file, by reading the granule (.gran) file.
-*/
+/******************************************************************************
+ * convertMetadata_lz:
+ * Creates AISP .in and .fmt files, as well as determining the number of
+ * lines in the level-0 file, by reading the granule (.gran) file. */
 #include <ctype.h>
 bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
             readPulseFunc *readNextPulse,
@@ -268,19 +200,3 @@ bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
 
   return s;
 }
-
-int openErrorLog(bin_state *s, char *inN)
-{
-  char errName[256];
-  strcat(strcpy(errName,inN),".errlog");
-  s->fperr = FOPEN(errName,"w");
-
-  return 1;
-}
-
-/*Prototypes*/
-void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart,
-      long *imgEnd, char *imgTimeStr, int *nVec,
-      float *fd, float *fdd, float *fddd);
-void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd);
-
