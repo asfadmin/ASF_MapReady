@@ -42,10 +42,18 @@ static void *block_stack_pop(block_stack_node **stack_top_p)
    track of how many of them we have seen so far.  */
 int vector_count = 0;
 
+char current_file[MAX_FILE_NAME];
+extern int line_number;		/* Line number of file being parsed.  */
+
 /* Help parser handle errors.  */
 int yyerror(char *s)
 {
-  fprintf(stderr, "%s\n", s);
+  fprintf(stderr, "error parsing %s around line %d: %s\n", current_file,
+	  line_number, s);
+  if ( !strcmp(s, "parse error\n") ){
+    fprintf(stderr, "untrapped parse error, dying in yyerror\n");
+    exit(EXIT_FAILURE);
+  }
   return -1;			/* No error codes yet.  */
 }
 
@@ -179,7 +187,7 @@ void fill_structure_field(char *field_name, void *valp)
       MSAR->proj_type = 'P'; 
       return; 
     }
-    yyerror("bad Image type field in metadata file");
+    yyerror("bad proj_type field in metadata file");
     exit(EXIT_FAILURE);
   }
   if ( !strcmp(field_name, "look_direction") ) { 
@@ -189,7 +197,7 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) { 
       MSAR->look_direction = 'L'; return; 
     }
-    yyerror("bad Satellite look direction field in metadata file");
+    yyerror("bad look_direction field in metadata file");
     exit(EXIT_FAILURE);
   }
   if ( !strcmp(field_name, "look_angle") )
@@ -267,7 +275,7 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) { MPROJ->type = 'P'; return; }
     if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) { MPROJ->type = 'L'; return; }
     if ( !strcmp(VALP_AS_CHAR_POINTER, "U") ) { MPROJ->type = 'U'; return; }
-    yyerror("bad Projection type field in metadata file");
+    yyerror("bad type field in metadata file");
     exit(EXIT_FAILURE);
   }
   if ( !strcmp(field_name, "startX") )
@@ -326,10 +334,6 @@ void fill_structure_field(char *field_name, void *valp)
     yyerror(err_string);
     exit(EXIT_FAILURE);
   }
-
-
-  /* Got an unknown field name, so report a parse error.  */
-  yyerror("unknown field name");
 }
 
 %}
@@ -386,9 +390,12 @@ int parse_metadata(meta_parameters *dest, char *file_name)
   extern FILE *yyin;
   int ret_val;
 
+  /* Put file name in a global for error reporting.  */
+  strncpy(current_file, file_name, MAX_FILE_NAME);
+
   yyin = fopen(file_name, "r");
   if ( !(stack_top = malloc(sizeof(block_stack_node))) ) {
-    fprintf(stderr, "malloc failed");
+    fprintf(stderr, "malloc failed in %s, giving up", __func__);
     exit(EXIT_FAILURE);
   }
   block_stack_push(&stack_top, dest);
@@ -398,7 +405,7 @@ int parse_metadata(meta_parameters *dest, char *file_name)
 
   /* Fill in number of state vectors seen.  */
   dest->state_vectors->vector_count = vector_count;
-  dest->state_vectors->num = vector_count; /* Backward compar alias.  */
+  dest->state_vectors->num = vector_count; /* Backward compat alias.  */
 
   return ret_val;
 }
