@@ -1,29 +1,9 @@
-#include <ctype.h>
-#include <errno.h>
-#include <setjmp.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <limits.h>
 
-#include <cla.h>
-#include <envi.h>
-#include <esri.h>
-#include <geokeys.h>
-#include <geotiff.h>
-#include <geotiffio.h>
 #include <gsl/gsl_math.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_statistics.h>
-#include <jpeglib.h>
-/*#include <proj_api.h>*/
 #include <tiff.h>
 #include <tiffio.h>
 #include <xtiffio.h>
 
-#include <asf.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include <asf_nan.h>
@@ -53,11 +33,11 @@ export_as_tiff (const char *metadata_file_name,
   size_t ii;
 
   /* Get the image data.  */
-  asfRequire(md->general->data_type == REAL32,
+  asfRequire (md->general->data_type == REAL32,
              "Can only ingest ASF format floating point data.");
   daf = get_image_data (md, image_data_file_name);
 
-  asfPrintStatus("Processing...\n");
+  asfPrintStatus ("Processing...\n");
 
   /* It supposed to be big endian data, this converts to host byte
      order.  */
@@ -67,21 +47,23 @@ export_as_tiff (const char *metadata_file_name,
 
   /* Open output tiff file */
   otif = XTIFFOpen (output_file_name, "w");
-  asfRequire(otif != NULL, "Error opening output tiff file.\n");
+  asfRequire (otif != NULL, "Error opening output tiff file.\n");
 
   /* Scale float image down to bytes */
-  if (md->general->image_data_type == SIGMA_IMAGE ||
-      md->general->image_data_type == GAMMA_IMAGE ||
-      md->general->image_data_type == BETA_IMAGE ||
-      strcmp(md->general->mode, "SNA") == 0 ||
-      strcmp(md->general->mode, "SNB") == 0 ||
-      strcmp(md->general->mode, "SWA") == 0 ||
-      strcmp(md->general->mode, "SWB") == 0)
+  if ( md->general->image_data_type == SIGMA_IMAGE ||
+       md->general->image_data_type == GAMMA_IMAGE ||
+       md->general->image_data_type == BETA_IMAGE ||
+       strcmp(md->general->mode, "SNA") == 0 ||
+       strcmp(md->general->mode, "SNB") == 0 ||
+       strcmp(md->general->mode, "SWA") == 0 ||
+       strcmp(md->general->mode, "SWB") == 0 ) {
     mask = 0.0;
-  else
+  }
+  else {
     mask = NAN;
+  }
 
-  asfPrintStatus("Scaling...\n");
+  asfPrintStatus ("Scaling...\n");
   pixels = floats_to_bytes (daf, pixel_count, mask, scale);
 
   /* Scale the image, modifying width and height to reflect the new
@@ -106,21 +88,21 @@ export_as_tiff (const char *metadata_file_name,
   TIFFSetField(otif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
   TIFFSetField(otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
   TIFFSetField(otif, TIFFTAG_SAMPLESPERPIXEL, 1);
-  TIFFSetField(otif, TIFFTAG_ROWSPERSTRIP,1);
-  TIFFSetField(otif, TIFFTAG_XRESOLUTION,1);
-  TIFFSetField(otif, TIFFTAG_YRESOLUTION,1);
+  TIFFSetField(otif, TIFFTAG_ROWSPERSTRIP, 1);
+  TIFFSetField(otif, TIFFTAG_XRESOLUTION, 1.0);
+  TIFFSetField(otif, TIFFTAG_YRESOLUTION, 1.0);
   TIFFSetField(otif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
   TIFFSetField(otif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
   TIFFSetField(otif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
   TIFFSetField(otif, TIFFTAG_DATATYPE, SAMPLEFORMAT_UINT);
 
   /* Write the actual image data.  */
-  asfPrintStatus("Writing Output File...\n");
+  asfPrintStatus ("Writing Output File...\n");
   for ( ii = 0 ; ii < height ; ii++ ) {
     if ( TIFFWriteScanline (otif, pixels + width * ii, ii, 0) < 0 ) {
-      asfPrintError("Error writing to output tiff file %s", output_file_name);
+      asfPrintError ("Error writing to output tiff file %s", output_file_name);
     }
-    asfLineMeter(ii, height);
+    asfLineMeter (ii, height);
   }
 
   XTIFFClose (otif);
