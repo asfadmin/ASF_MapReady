@@ -11,6 +11,7 @@ include ../../make_support/system_rules
 
 OBJS  = caplib.o \
 	cla.o \
+	diagnostics.o \
 	endian.o \
 	error.o \
 	fileUtil.o \
