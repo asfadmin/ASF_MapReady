@@ -31,7 +31,7 @@ LEX_SOURCES = metadata_lexer.l
 LEX_YACC_OBJS =  $(patsubst %.y, %.o, $(YACC_SOURCES)) \
                  $(patsubst %.l, %.o, $(LEX_SOURCES))
 
-OBJS =  coniFetch.o \
+OBJS =  $(LEX_YACC_OBJS) \
 	getLatLong.o \
 	getLoc.o \
 	err_die.o \
@@ -66,9 +66,7 @@ OBJS =  coniFetch.o \
 	meta_read.o \
 	meta_write.o \
         set_era.o \
-        utc2gha.o \
-	meta_read.o \
-        $(LEX_YACC_OBJS)
+        utc2gha.o
 
 all: asf_meta clean
 
@@ -90,19 +88,23 @@ cook_libs: $(addprefix $(LIBDIR)/, $(LIBS)) library_cooking_pot
 library_cooking_pot:
 	mkdir library_cooking_pot
 
-# Rebuild everything if makefile or any ASF header or any lex or yacc
-# file has changed.
-$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) \
-         $(YACC_SOURCES) $(LEX_SOURCES)
-
+# Rebuild everything if makefile or any local or ASF header or any lex
+# or yacc file has changed.  The line commented out uses a target
+# local variable to keep track of the local headers which are not
+# automaticly generated, useful to prevent make from rebuilding
+# everything if the lex and yacc objects aren't first in the object
+# list.
+#$(OBJS): LOCAL_HEADERS = $(subst y.tab.h, , $(wildcard *.h))
+$(OBJS): Makefile $(LOCAL_HEADERS) $(wildcard ../../include/*.h) \
+	 $(YACC_SOURCES) $(LEX_SOURCES)
 
 check: unit_tests.c build_only
+	make --version
 	$(CC) $(CFLAGS) -I/export/home/bkerin/local/include $< \
-	      -L/export/home/bkerin/local/lib asf_meta.a -lm -lfl -lcheck \
+	      -L/export/home/bkerin/local/lib asf_meta.a -lm -lcheck \
 	      $(LDFLAGS) -o asf_meta_tester 
 	./asf_meta_tester
 
 clean:
 	rm -f $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
               $(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h
-
