@@ -217,8 +217,9 @@ PROGRAMS
 	asf_convert_gui
 	{
 		PROGRAMS
-			asf_import
+			asf_convert
 			asf_export
+			asf_import
 	}
 
 }
@@ -231,11 +232,12 @@ CATEGORIES
 {
 # Convert package (BSD license) - get data from asf ceos to whatever you want!
 #                                 (that we can convert to)
-#                                 asf_export asf_import are automatically
-#                                 included by asf_convert
   convert
   {
+  	asf_convert_gui
   	asf_convert
+	asf_export
+	asf_import
   }
 
 # Open - Anybody can get this stuff (BSD license)
