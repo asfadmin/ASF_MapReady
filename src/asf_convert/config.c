@@ -21,7 +21,7 @@ char *read_param(char *line)
   int i, k;
   char *value=(char *)MALLOC(sizeof(char)*255);
   
-  sprintf(value, "");
+  strcpy(value, "");
   i=strindex(line, "]");
   k=strindex(line, "=");
   if (i>0) strncpy(value, line, i+1);
