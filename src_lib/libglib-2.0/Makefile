@@ -45,6 +45,7 @@ stage_glib_stamp:
 	mkdir -p $(LIB_STAGEDIR) $(INCLUDE_STAGEDIR)
 	for f in *.zip; do (yes|unzip $$f -d glib); done;
 	cp glib/lib/libglib-2.0.dll.a $(LIB_STAGEDIR)/libglib-2.0.a;
+	cp glib/lib/libiconv.a $(LIB_STAGEDIR);
 	cp -r glib/include/glib-2.0 $(INCLUDE_STAGEDIR);
 	cp glib/lib/glib-2.0/include/*.h $(INCLUDE_STAGEDIR)/glib-2.0;
 
@@ -86,7 +87,7 @@ endif
 
 clean:
 	rm -rf $(ROOT_STAGEDIR) $(GLIB_TARFILE) $(GLIB_UNPACK_DIR) \
-	   stage_glib_stamp \
+	   stage_glib_stamp glib \
 	   $(ASF_INCLUDE_DIR)/glib-2.0 $(LIBDIR)/libglib-2.0.a \
 	   $(ICONV_TARFILE) $(ICONV_UNPACK_DIR) \
 	   $(LIBDIR)/libiconv.a $(LIBDIR)/libcharset.a
