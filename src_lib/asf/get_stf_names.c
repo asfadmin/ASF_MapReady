@@ -8,9 +8,12 @@
 #include "asf.h"
 #include "get_stf_names.h"
 
-
-const char stf_metadata_extensions[][8] = {"",".PAR",".par"};
-const char stf_data_extensions[][8]     = {"",    "",    ""};
+/* Arrays with the extensions that will be checked for.
+   Make sure that the data & metadata extension indices match up with eachother.
+   Long list, but tried not go crazy, and still look for a couple of .00X 'extensions'
+   Don't forget to update the header file structures when you update these arrays!  */
+const char stf_metadata_extensions[][16] = {"",".PAR",".par",".000.PAR",".000.par",".001.PAR",".001.par"};
+const char stf_data_extensions[][16]     = {"",    "",    "",    ".000",    ".000",    ".001",    ".001"};
 
 
 /******************************************************************************
@@ -32,25 +35,23 @@ stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char *metaName)
   /* Separate the filename from the path (if there's a path there) */
   split_dir_and_file(stfName, dirName, fileName);
 
+  /* FYI: We're assuming that the potential extension is appended */
   for (ii=begin; ii<end; ii++) {
-    /* Check for suffix style extensions */
-    if (stf_metadata_extensions[ii][0] == EXTENSION_SEPARATOR) {
-      /* Assume stfName came to the function as a base name */
-      sprintf(metaTemp,"%s%s%s",dirName,fileName,stf_metadata_extensions[ii]);
-      if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
-        fclose(metaFP);
-        strcpy(metaName,metaTemp);
-        return ii;
-      }
-      /* Hmmm, didn't work, maybe it's got an extension on there already,
-       * nix it and try again */
-      split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
-      sprintf(metaTemp,"%s%s%s",dirName,baseName,stf_metadata_extensions[ii]);
-      if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
-        fclose(metaFP);
-        strcpy(metaName,metaTemp);
-        return ii;
-      }
+    /* Assume stfName came to the function as a base name */
+    sprintf(metaTemp,"%s%s%s",dirName,fileName,stf_metadata_extensions[ii]);
+    if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
+      fclose(metaFP);
+      strcpy(metaName,metaTemp);
+      return ii;
+    }
+    /* Hmmm, didn't work, maybe it's got an extension on there already,
+     * nix it and try again */
+    split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
+    sprintf(metaTemp,"%s%s%s",dirName,baseName,stf_metadata_extensions[ii]);
+    if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
+      fclose(metaFP);
+      strcpy(metaName,metaTemp);
+      return ii;
     }
   }
   /* If we haven't returned yet there ain't no metadata file */
@@ -117,39 +118,36 @@ stf_data_ext_t get_stf_data_name(const char *stfName, char *dataName)
   char dirName[256], fileName[256];
   char dataTemp[1024];
   char baseName[256];
-  char ext[256];
+  char ext[128];
   FILE *dataFP;
-  stf_data_ext_t ii=STF_BLANK;
-  stf_metadata_ext_t jj;
-  stf_metadata_ext_t metaBegin=NO_STF_METADATA+1, metaEnd=NUM_STF_METADATA_EXTS;
+  stf_data_ext_t ii;
+  stf_data_ext_t begin=NO_STF_DATA+1, end=NUM_STF_DATA_EXTS;
 
   /* Separate the filename from the path (if there's a path there) */
   split_dir_and_file(stfName, dirName, fileName);
 
-  /* First & foremost make sure the stfName isn't a metafile, if it is, prune
-   * the extension (so we don't mistakenly open it, and think its a datafile */
+  /* HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK:
+   * Lop off any .par extension. So we open the datafile, not the meta file */
   split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
-  for (jj=metaBegin; jj<metaEnd; jj++) {
-    if (strcmp(ext,stf_metadata_extensions[jj])==0) {
-      strcpy(fileName,baseName);
-      break;
-    }
-  }
+  if      (0==strcmp(ext,".PAR")) { strcpy(fileName, baseName); }
+  else if (0==strcmp(ext,".par")) { strcpy(fileName, baseName); }
 
-  /* Assume the FILENAME is the base name (so just tack the extension on) */
-  sprintf(dataTemp,"%s%s%s",dirName,fileName,stf_data_extensions[ii]);
-  if ((dataFP=fopen(stfName,"r"))!=NULL) {
-    fclose(dataFP);
-    strcpy(dataName,dataTemp);
-    return ii;
-  }
-  /* Mokay, the given filename didn't work. Lets try the filename minus any
-   * extention it may have had (ie BASENAME).  */
-  sprintf(dataTemp,"%s%s%s",dirName,baseName,stf_data_extensions[ii]);
-  if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
-    fclose(dataFP);
-    strcpy(dataName,dataTemp);
-    return ii;
+  for (ii=begin; ii<end; ii++) {
+    /* Assume the FILENAME is the base name (so just tack the extension on) */
+    sprintf(dataTemp,"%s%s%s",dirName,fileName,stf_data_extensions[ii]);
+    if ((dataFP=fopen(stfName,"r"))!=NULL) {
+      fclose(dataFP);
+      strcpy(dataName,dataTemp);
+      return ii;
+    }
+    /* Mokay, the given filename didn't work. Lets try the filename minus any
+     * extention it may have had (ie BASENAME).  */
+    sprintf(dataTemp,"%s%s%s",dirName,baseName,stf_data_extensions[ii]);
+    if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
+      fclose(dataFP);
+      strcpy(dataName,dataTemp);
+      return ii;
+    }
   }
 
   /* If we haven't returned yet there ain't no data file */
@@ -223,6 +221,22 @@ stf_file_pairs_t get_stf_names(const char *stfName, char *dataName,
       && get_stf_metadata_name(stfName, metaName) == STF_par)
     return STF_par_PAIR;
 
+  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_000_PAR)
+    return STF_000_PAR_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_000_par)
+    return STF_000_par_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_001_PAR)
+    return STF_001_PAR_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_001_par)
+    return STF_001_par_PAIR;
+
   return NO_STF_FILE_PAIR;
 }
 
@@ -245,6 +259,22 @@ stf_file_pairs_t require_stf_pair(const char *stfName, char *dataName,
   if (   require_stf_data(stfName, dataName)     == STF_BLANK
       && require_stf_metadata(stfName, metaName) == STF_par)
     return STF_par_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_000_PAR)
+    return STF_000_PAR_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_000_par)
+    return STF_000_par_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_001_PAR)
+    return STF_001_PAR_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_001_par)
+    return STF_001_par_PAIR;
 
 /****** We should never actually get here. The above code should either ******
  ****** return or exit with an error message, BUT... just in case       ******/
