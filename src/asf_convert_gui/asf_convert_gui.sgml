@@ -426,6 +426,11 @@
 	<para>By default, the tool stores the generated files in the
           same directory as the input files.  Here you may specify a
           different directory if you prefer.</para>
+
+	<para>By default, the output files are put into the same
+          directory as the input files.  If this is a read-only
+          directory (such as a CD), you will need to change the
+          output directory!)</para>
       </listitem>
       <listitem>
 	<para>Change Output Naming Scheme</para>
