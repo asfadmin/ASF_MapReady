@@ -105,7 +105,6 @@ BUGS:
 #include "asf.h"
 #include "aisp_defs.h"
 #include "specan.h"
-#include "ddr.h"
 
 
 /*Default Parameters:
@@ -124,7 +123,7 @@ bandwidth to keep, FFT lengths.*/
 #define RLEN_INIT 32
 #define ALEN_INIT 32
 
-void usage(char *mess1,char *mess2);
+void quick_usage(char *mess1,char *mess2);
 
 void prep_specan_file(int nLooks,int quality,double aspect,
 	struct AISP_PARAMS *g,meta_parameters *meta)
@@ -171,12 +170,12 @@ image, better quality.*/
 	printf("Estimate Doppler\n");
 	az.iSamp=1.0/g->prf;/*Sample size, azimuth (s)=1.0/sample freqency (Hz)*/
 	
-	if (meta->stVec==NULL)
+	if (meta->state_vectors==NULL)
 		{printf("Can only quicklook scenes with state vectors!\n");exit(1);}
 	else {  /*Find doppler rate (Hz/sec) <=> azimuth chirp slope*/
 		double dopRate,yaw=0.0;
-		GEOLOCATE_REC *g=init_geolocate_meta(&meta->stVec->vecs[0].vec,meta);
-		double look=getLook(g,meta->geo->slantFirst,yaw);
+		GEOLOCATE_REC *g=init_geolocate_meta(&meta->state_vectors->vecs[0].vec,meta);
+		double look=getLook(g,meta->sar->slant_range_first_pixel,yaw);
 		getDoppler(g,look,yaw,NULL,&dopRate,NULL,NULL);
 		az.chirpSlope=dopRate;
 		free_geolocate(g);
@@ -198,22 +197,13 @@ image, better quality.*/
 	specan_file(inFile,nLooks,outFile,&rng,&az,&outLines,&outSamples);
 	FCLOSE(outFile);
 	freeGetRec(inFile);
-	
-/*Create DDR for output file.*/
-	{
-		struct DDR ddr;/*Output DDR*/
-		c_intddr(&ddr);
-		ddr.dtype=DTYPE_FLOAT;
-		ddr.nbands=1;
-		ddr.nl=outLines;
-		ddr.ns=outSamples;
-		ddr.sample_inc=rng.oSamp/rng.iSamp;
-		ddr.line_inc=az.oSamp/az.iSamp;
-		c_putddr(g->out,&ddr);
-	}
+
 /*Copy over metadata*/
-	if (meta->info)
-		sprintf(meta->info->processor,"ASF/QUICKLOOK/%.2f",VERSION);
+	sprintf(meta->general->processor,"ASF/QUICKLOOK/%.2f",VERSION);
+	meta->general->line_count   = outLines;
+	meta->general->sample_count = outSamples;
+	meta->sar->line_increment   = az.oSamp/az.iSamp;
+	meta->sar->sample_increment = rng.oSamp/rng.iSamp;
 	meta_write(meta,g->out);
 }
 
@@ -230,7 +220,7 @@ int main(int argc,char *argv[])
 	mpi_init(&argc,&argv);
 /*Check CLA's.*/
 	if (argc<2)
-		usage("No command line arguments given\n",NULL);
+		quick_usage("No command line arguments given\n",NULL);
 	
 	while (argNo<argc)
 	{
@@ -252,14 +242,14 @@ int main(int argc,char *argv[])
 				break;
 			default:/*Unrecognized option-pass on to parse-cla*/
 				if (0==parse_cla(argc-argNo+1,&argv[argNo-1],&g,&meta))
-					usage("Error in command-line options\n",NULL);
+					quick_usage("Error in command-line options\n",NULL);
 				else
 					argNo=argc;/*parse_cla sucess-- get out of loop*/
 				break;
 		} else
 		{ /*Not a command-line option*/
 			if (0==parse_cla(argc-argNo+1,&argv[argNo-1],&g,&meta))
-				usage("Error in command-line arguments\n",NULL);
+				quick_usage("Error in command-line arguments\n",NULL);
 			else
 				argNo=argc;/*parse_cla sucess-- get out of loop*/
 		}
@@ -270,7 +260,7 @@ int main(int argc,char *argv[])
 	return 0;
 }
 
-void usage(char *mess1,char *mess2)
+void quick_usage(char *mess1,char *mess2)
 {
 	printf("\nUsage:\n"
 		"   quicklook [ -k <nLooks> ] [ -q <quality> ] [-a <aspect ratio>]\n"
