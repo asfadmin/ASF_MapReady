@@ -19,10 +19,10 @@ find_in_path(char * file)
   path = (char *)g_getenv("PATH");
 
   len = strlen(file) + 1;
-  pathlen = strlen(path) + 1;
+  pathlen = strlen(path);
 
   /* work area */
-  buf = (char *)malloc(pathlen + len); 
+  buf = (char *)malloc(pathlen + len + 2); 
 
   /* put separator + filename at the end of the buffer */
   name = buf + pathlen + 1;
@@ -44,7 +44,7 @@ find_in_path(char * file)
 
     /* copy path portion to the work area */
     memcpy( start, p, q - p );
- 
+
     if (g_file_test( start, G_FILE_TEST_EXISTS ))
     {
       char * ret;

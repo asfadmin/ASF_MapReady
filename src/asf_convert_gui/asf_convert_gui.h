@@ -8,6 +8,8 @@
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 
+#include "find_in_path.h"
+
 #define JPEG 0
 #define PPM 1
 #define GEOTIFF 2
