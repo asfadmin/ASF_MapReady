@@ -472,7 +472,7 @@ class pvs extends Frame implements ActionListener, ComponentListener,
 
    //  *************************************************************************
    public void commander(String commanddirectory, String commandfilename) {   //(this is stupid.)
-      String imagefile = imageObject.filename;
+      String imagefile = imageObject.fileName;
       String maskfile;
       String outputfilename;
       String outputdirectory;
@@ -913,7 +913,7 @@ class pvs extends Frame implements ActionListener, ComponentListener,
       if (actionEvt.getSource() == enterTargetsMenuItem) {
          if (imageObject != null && zf != null) {
             if (targetframe != null && targetframe.isVisible()) {return;}
-            pointtargets targets = new pointtargets(imageObject.filename.substring(0, imageObject.filename.length() - 6));
+            pointtargets targets = new pointtargets(imageObject.baseFileName);
             targetframe = new targetFrame(this, targets, mainCanvas,  zf);   //show the target thing.
             targetframe.setVisible(true);
             zf.smaskMenuEnabler(false);
