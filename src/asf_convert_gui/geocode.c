@@ -15,7 +15,7 @@ const char * datum_string(int datum)
     }
 }
 
-const char * resample_method_string(ResampleMethod resample_method)
+const char * resample_method_string(int resample_method)
 {
   switch (resample_method) {
   case RESAMPLE_NEAREST_NEIGHBOR:
