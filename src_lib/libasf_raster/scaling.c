@@ -1,3 +1,5 @@
+#include <asf_reporting.h>
+
 #include "asf_nan.h"
 #include "asf_raster.h"
 
@@ -84,8 +86,7 @@ unsigned char *floats_to_bytes (float *data, long long pixel_count, float mask,
       }
       break;
     default:
-      printf("   Undefined scaling mechanism!\n");
-      exit(0);
+      asfPrintError("Undefined scaling mechanism!");
       break;
       
     }
