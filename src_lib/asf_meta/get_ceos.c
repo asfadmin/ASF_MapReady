@@ -38,9 +38,9 @@ int getCeosRecord(char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	char dataName[256], leaderName[256];
 	struct HEADER  bufhdr;
 	int nOccurences=0, era=1;
-	
+
 	get_ceos_names(inName, dataName, leaderName);
-	
+
 	if (recordType==CEOS_IFILEDR)
 		strcpy(metaRecordName, dataName);
 	else {
@@ -59,7 +59,7 @@ int getCeosRecord(char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 		*buff=(unsigned char *)MALLOC(length);
 		*(struct HEADER *)*buff=bufhdr;
 		FREAD((*buff)+12, length-12, 1, fp);
-		
+
 		if ((itype==recordType)||
 			(itype==CEOS_FACDR && recordType==CEOS_ASFFACDR) ||
 			(itype==CEOS_FACDR && recordType==CEOS_ESAFACDR))
@@ -67,8 +67,8 @@ int getCeosRecord(char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 			nOccurences++;
 			if (nOccurences==recordNo)
 			{ /*This is the correct occurence! Clean up and return.*/
-				FCLOSE(fp); 
-				return era; 
+				FCLOSE(fp);
+				return era;
 			}
 			else /*Move on.*/
 				FREE(*buff);
@@ -76,9 +76,9 @@ int getCeosRecord(char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 		else /*Move on.*/
 			FREE(*buff);
 	}
-	
-	FCLOSE(fp); 
-	if (recordType==CEOS_MPDR || recordType==CEOS_DQSR || recordType==CEOS_DHR || recordType==CEOS_PPR) 
+
+	FCLOSE(fp);
+	if (recordType==CEOS_MPDR || recordType==CEOS_DQSR || recordType==CEOS_DHR || recordType==CEOS_PPR)
 		return -1;/*It's OK if the MPDR, DQSR, or DHR are missing.*/
 	return -99;
 }
@@ -99,7 +99,7 @@ int get_dhr(char *filename,struct data_hist_rec *rec)
 	unsigned char *buff;
 	int era;
 	if ((era = getCeosRecord(filename,CEOS_DHR,2,&buff)) != -1) {
-		Code_DHR(buff,rec,fromASCII); 
+		Code_DHR(buff,rec,fromASCII);
 		free(buff);
 	}
 	return era;
@@ -110,8 +110,8 @@ int get_sdhr(char *filename,struct data_hist_rec *rec)
 	unsigned char *buff;
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_DHR,1,&buff)) != -1) {
-		Code_DHR(buff,rec,fromASCII); 
-		free(buff); 
+		Code_DHR(buff,rec,fromASCII);
+		free(buff);
 	}
 	return era;
 }
@@ -189,6 +189,16 @@ int get_raddr(char *filename,struct VRADDR *rec)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_RADDR,1,&buff)) != -1) {
 		Code_RADDR(buff,rec,fromASCII);
+		free(buff);
+	}
+	return era;
+}
+int get_rsi_raddr(char *filename, struct RSI_VRADDR *rec)
+{
+	unsigned char *buff;
+	int era;
+	if ( (era = getCeosRecord(filename,CEOS_RADDR,1,&buff)) != -1) {
+		Code_RSI_RADDR(buff,rec,fromASCII);
 		free(buff);
 	}
 	return era;
