@@ -25,18 +25,6 @@ typedef struct {
   int nodata;        /* no data value */
 } esri_header;
 
-typedef enum {
-  CLARKE_1866,
-  CLARKE_1880,
-  BESSEL_1841,
-  INTERNATIONAL_1924,
-  INTERNATIONAL_1967,
-  WGS_1972,
-  WGS_1984,
-  GRS_1967,
-  GRS_1980
-} spheroid_type_t;
-
 /* Prototypes for functions */
 esri_header* meta2esri(meta_parameters *meta);
 meta_parameters* esri2meta(esri_header *esri);
