@@ -176,12 +176,13 @@ void help_page()
           "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n");
 
   /* If we can, use less */
-  sprintf(command,"echo '%s' | less",happy_string);
-  if(system(command) != -1)
-    exit(EXIT_SUCCESS);
+  sprintf (command, "echo '%s' | less --prompt='Type q to quit help, h for "
+	   "help with help browser", happy_string);
+  if ( system(command) != -1 )
+    exit (EXIT_SUCCESS);
 
   /* Hmmm, less didn't work cause we got here, try using more */
-  sprintf(command,"echo '%s' | more",happy_string);
+  sprintf (command,"echo '%s' | more", happy_string);
   if(system(command) != -1)
     exit(EXIT_SUCCESS);
 
