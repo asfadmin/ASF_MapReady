@@ -446,7 +446,7 @@ void atct_init(meta_projection *proj,stateVector st)
 	
 	vecCross(y_axis,z_orbit,&a);vecNormalize(&a);
 	
-	printf("ALPHA123 new x-vector: %.3f,%.3f,%.3f\n",a.x,a.y,a.z);
+/*	printf("ALPHA123 new x-vector: %.3f,%.3f,%.3f\n",a.x,a.y,a.z);*/
 	
 	alpha1 = atan2_check(a.y,a.x)*R2D;
 	alpha2 = -1.0 * asind(a.z);
@@ -462,7 +462,7 @@ void atct_init(meta_projection *proj,stateVector st)
 	if (alpha3_sign<0.0) 
 		alpha3 *= -1.0;
 	
-	printf("alpha1, alpha2, alpha3  %f %f %f\n",alpha1,alpha2,alpha3);
+/*	printf("alpha1, alpha2, alpha3  %f %f %f\n",alpha1,alpha2,alpha3);*/
 	proj->param.atct.alpha1=alpha1;
 	proj->param.atct.alpha2=alpha2;
 	proj->param.atct.alpha3=alpha3;
