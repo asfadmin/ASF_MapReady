@@ -530,7 +530,8 @@ static int parse_center_latitude_option(int *i, int argc,
 					char *argv[], int *specified,
 					double *value, int *ok)
 {
-    if (strcmp(argv[*i], "--center-latitude") == 0)
+    if (strcmp(argv[*i], "--center-latitude") == 0 ||
+	strcmp(argv[*i], "--latitude-of-origin") == 0)
     {
 	*ok = parse_double_option(i, argc, argv, specified, value);
 	return TRUE;

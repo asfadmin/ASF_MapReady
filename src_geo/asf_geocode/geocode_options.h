@@ -11,52 +11,47 @@
   --projection <name> <<projection specific options>>
   -p <name> <<projection specific options>>
 
-  UTM
-  ===
-     --zone, -z                  : Zone
-     --center-latitude           : Latitude
-     --central-meridian          : Longitude
+     UTM 
+     --- 
+          --zone,                     : Zone 
+          --central-meridian          : Longitude of Central Meridian 
+	   
+	  Either the zone or center_longitude must be specified. 
+ 
+     POLAR STEREO 
+     ------------ 
+          --first-standard-parallel    : Latitude of True Scale 
+          --central-meridian           : Longitude of Central Meridian 
+          -n, --north-pole             : Center on North Pole (no argument) 
+          -s, --south-pole             : Center on South Pole (no argument) 
+          --false-easting              : False Easting (optional) 
+          --false-northing             : False Northing (optional) 
+ 
+     LAMBERT CONFORMAL CONIC 
+     ----------------------- 
+          --first-standard-parallel   : First Standard Parallel 
+          --second-standard-parallel  : Second Standard Parallel 
+          --latitude-of-origin        : Latitude at projection's origin 
+          --central-meridian          : Central Meridian 
+          --false-easting             : False Easting (optional) 
+          --false-northing            : False Northing (optional) 
+ 
+     LAMBERT AZIMUTHAL EQUAL AREA 
+     ---------------------------- 
+          --latitude-of-origin        : Latitude at center of projection 
+          --central-meridian          : Longitude at center of projection 
+          --false-easting             : False Easting (optional) 
+          --false-northing            : False Northing (optional) 
+ 
+     ALBERS CONICAL EQUAL AREA 
+     ------------------------- 
+          --first-standard-parallel   : First Standard Parallel 
+          --second-standard-parallel  : Second Standard Parallel 
+          --latitude-of-origin        : Latitude of projection's origin 
+          --central-meridian          : Central Meridian 
+          --false-easting             : False Easting (optional) 
+          --false-northing            : False Northing (optional) 
 
-    The zone will be determined from the longitude if the zone is not
-    otherwise specified.
-
-  POLAR STEREO
-  ============
-    --center-latitude            : Center Latitude
-    --central-meridian           : Center Longitude
-    -n, --north-pole             : Center on North Pole (no argument)
-    -s, --south-pole             : Center on South Pole (no argument)
-    --false-easting              : False Easting
-    --false-northing             : False Northing
-
-    Examples:
-       --projection ps --center-latitude <lat> --central-meridian <lon> -n
-       -p ps --center-latitude <lat> --central-meridian <lon> --south-pole
-
-   LAMBERT CONFORMAL CONIC
-   =======================
-     --first-standard-parallel   : First Standard Parallel
-     --second-standard-parallel  : Second Standard Parallel
-     --center-latitude           : Original lat
-     --central-meridian          : Original lon
-     --false-easting             : False Easting
-     --false-northing            : False Northing
-
-   LAMBERT AZIMUTHAL EQUAL AREA
-   ============================
-     --center-latitude           : Original lat
-     --central-meridian          : Original lon
-     --false-easting             : False Easting
-     --false-northing            : False Northing
-
-   ALBERS CONICAL EQUAL AREA
-   =========================
-     --first-standard-parallel   : First Standard Parallel
-     --second-standard-parallel  : Second Standard Parallel
-     --center-latitude           : Original lat
-     --central-meridian          : Original lon
-     --false-easting             : False Easting
-     --false-northing            : False Northing
 
 */
 

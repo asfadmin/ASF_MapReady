@@ -60,52 +60,43 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     UTM\n"\
 "     ---\n"\
 "          --zone,                     : Zone\n"\
-"          --central-meridian          : Longitude\n"\
+"          --central-meridian          : Longitude of Central Meridian\n"\
 "	  \n"\
 "	  Either the zone or center_longitude must be specified.\n"\
 "\n"\
-"          Example:\n"\
-"               --projection utm --zone <zone>\n"\
-"\n"\
-"\n"\
 "     POLAR STEREO\n"\
 "     ------------\n"\
-"          --center-latitude            : Center Latitude\n"\
-"          --central-meridian           : Center Longitude\n"\
+"          --first-standard-parallel    : Latitude of True Scale\n"\
+"          --central-meridian           : Longitude of Central Meridian\n"\
 "          -n, --north-pole             : Center on North Pole (no argument)\n"\
 "          -s, --south-pole             : Center on South Pole (no argument)\n"\
-"          --false-easting              : False Easting\n"\
-"          --false-northing             : False Northing\n"\
-"\n"\
-"        Examples:\n"\
-"          --projection ps --center-latitude <lat> --central-meridian <lon> -n\n"\
-"          -p ps --center-latitude <lat> --central-meridian <lon> --south-pole\n"\
+"          --false-easting              : False Easting (optional)\n"\
+"          --false-northing             : False Northing (optional)\n"\
 "\n"\
 "     LAMBERT CONFORMAL CONIC\n"\
 "     -----------------------\n"\
 "          --first-standard-parallel   : First Standard Parallel\n"\
 "          --second-standard-parallel  : Second Standard Parallel\n"\
-"          --center-latitude           : Original lat\n"\
-"          --central-meridian          : Original lon\n"\
-"          --false-easting             : False Easting\n"\
-"          --false-northing            : False Northing\n"\
+"          --latitude-of-origin        : Latitude at projection's origin\n"\
+"          --central-meridian          : Central Meridian\n"\
+"          --false-easting             : False Easting (optional)\n"\
+"          --false-northing            : False Northing (optional)\n"\
 "\n"\
 "     LAMBERT AZIMUTHAL EQUAL AREA\n"\
 "     ----------------------------\n"\
-"          --center-latitude           : Original lat\n"\
-"          --central-meridian          : Original lon\n"\
-"          --false-easting             : False Easting\n"\
-"          --false-northing            : False Northing\n"\
+"          --latitude-of-origin        : Latitude at center of projection\n"\
+"          --central-meridian          : Longitude at center of projection\n"\
+"          --false-easting             : False Easting (optional)\n"\
+"          --false-northing            : False Northing (optional)\n"\
 "\n"\
 "     ALBERS CONICAL EQUAL AREA\n"\
 "     -------------------------\n"\
 "          --first-standard-parallel   : First Standard Parallel\n"\
 "          --second-standard-parallel  : Second Standard Parallel\n"\
-"          --center-latitude           : Original lat\n"\
-"          --central-meridian          : Original lon\n"\
-"          --false-easting             : False Easting\n"\
-"          --false-northing            : False Northing\n"\
-"          --scale-factor              : Scale Factor\n"\
+"          --latitude-of-origin        : Latitude of projection's origin\n"\
+"          --central-meridian          : Central Meridian\n"\
+"          --false-easting             : False Easting (optional)\n"\
+"          --false-northing            : False Northing (optional)\n"\
 "\n"\
 "     Using a Projection Parameters File\n"\
 "     ==================================\n"\

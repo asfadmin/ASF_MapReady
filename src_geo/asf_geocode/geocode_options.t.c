@@ -1826,7 +1826,8 @@ void lamcc_test_29()
 	  "--false-northing", "7888" };
 
     p = opts; l =  14;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
 
     if (within_tol(pps->lamcc.plat1, -1.123) &&
 	within_tol(pps->lamcc.lon0, -111.111) &&
@@ -1855,7 +1856,8 @@ void lamcc_test_30()
 	  "--center-latitude", "17.778"  };
 
     p = opts; l =  14;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size);
 
     if (within_tol(pps->lamcc.plat1, -1.123) &&
 	within_tol(pps->lamcc.lon0, -111.111) &&
