@@ -84,49 +84,30 @@ BUGS:
 
 int main(int argc, char **argv)
 {
-	char *inSAR,*outLAS;
-	int	*ibuff;
-	float *obuff;	/* Input and output buffers	*/
+	char  *inSAR, *outLAS;      /* Input & output file names              */
+	int   *ibuff;               /* Input buffer                           */
+	int    x, y;                /* loop counters                          */
+	int    ns, nl;              /* number lines/samples in input & output */
+	float *obuff;               /* Output buffer                          */
+	FILE  *fpOut;               /* input and output file ptrs             */
+	CEOS_FILE     *fpIn;
 	unsigned char *obuff_char;
-	CEOS_FILE   * fpIn;
-	FILE *fpOut;		/* input and output file ptrs	*/
-	meta_parameters *meta;
-	int	x,y; 	/* loop counters */
-	int	ns, nl;		/* number lines and samples in input and output	*/
-	struct DDR outddr;
 
 	StartWatch();
-	if (argc != 3 ) {
-		fprintf(stderr,"\nUsage:  %s inSARfile outLASfile\n",
-			argv[0]);
-		fprintf(stderr,"\tinput: inSARfile, a CEOS SAR image\n");
-		fprintf(stderr,"\toutput: outLASfile, a LAS image (.img and .ddr)\n"
-			"\t\tand metadata (.meta)\n"
-			"\n"
-			"Sarin reads a CEOS SAR image, and converts it \n"
-			"to the LAS format used by our other tools.\n"
-			"This is often the first step in analysing a SAR image.\n");
-		fprintf(stderr,"\nVersion %.2f, ASF SAR TOOLS\n\n",VERSION);
-		exit(1);
-	}
-	
-	inSAR=argv[1];
-	outLAS=argv[2];
+
+/* Parse command line */
+	if (argc != 3 ) usage(argv[0]);
+	inSAR  = argv[1];
+	outLAS = argv[2];
 
 /*Open input image.*/
-	fpIn=fopenCeos(inSAR);
-	nl=fpIn->ddr.nl;
-	ns=fpIn->ddr.ns;
+	fpIn = fopenCeos(inSAR);
+	nl = fpIn->meta->general->line_count;
+	ns = fpIn->meta->general->sample_count;
 	
-/*Copy over metadata.*/
-	meta=meta_create(inSAR);
-	meta_write(meta,outLAS);
-
-/*Open and create output DDR*/
-
-	fpOut=fopenImage(outLAS,"wb");
-	outddr=fpIn->ddr;
-	c_putddr(outLAS,&outddr);
+/*Open file for output image & write metadata*/
+	fpOut = fopenImage(outLAS,"wb");
+	meta_write(fpIn->meta,outLAS);
 	
 	printf("Input and output nl=%i, ns=%i\n", nl, ns);
 
@@ -141,29 +122,49 @@ int main(int argc, char **argv)
 		readCeosLine(ibuff,y,fpIn);
 
 		/*Convert data.*/
-		if (outddr.dtype==DTYPE_BYTE)
+		if (strcmp(fpIn->meta->general->data_type,"BYTE")==0)
 		{/*For byte data, we have a special case*/
 			for (x = 0; x < ns; x++)
 				obuff_char[x]=(unsigned char)ibuff[x];
-			
 			FWRITE(obuff_char, ns, 1, fpOut);
 		} 
 		else 
 		{/*For non-byte data, we use floats as a middle ground*/
 			for (x = 0; x < ns; x++)
 				obuff[x]=(float)ibuff[x];
-		
-			putFloatLine(fpOut, &outddr, y, obuff);
+			put_float_line(fpOut, fpIn->meta, y, obuff);
+/*			putFloatLine(fpOut, &outddr, y, obuff);*/
 		}
 		
 		if ((y % 100) == 0) 
-			printf(" Now Processing Line No = %d \n", y);
+			printf(" Now Processing Line %d      \r", y);
 	}
+	printf(" Processed %d Lines                     \n",y);
 	closeCeos(fpIn);
 	FCLOSE(fpOut);
 	
-	printf("Sarin is complete! \n\n");
+	printf("Sarin is complete!\n\n");
 	StopWatch();
 
 	return(0);
+}
+
+void usage (char *name)
+{
+ printf("\n"
+	"Usage:\n"
+	"   %s <inSARfile> <outLASfile>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   inSARfile    CEOS SAR image (input)\n"
+	"   outLASfile   LAS image (.img and .meta) (output)\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Reads a CEOS SAR image, and converts it to the\n"
+	"   LAS format used by our other tools. This is often\n"
+	"   the first step in analysing a SAR image.\n");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n",VERSION);
+ exit(1);
 }
