@@ -31,10 +31,34 @@ my $output_file = $ARGV[1];
 my @bulletin_bs;
 my @files_in_input_dir = readdir(INPUT_DIR);
 foreach ( @files_in_input_dir ) {
-    if ( m/^bulletinb\.\d\d\d$/ ) {
+    if ( m/^bulletinb\.\d?\d\d$/ ) {
 	push(@bulletin_bs, "$input_dir/$_");
     }
 }
+
+# Given three capital letters that form one of the usual month
+# abbreviations, return the number of that month (1-12).
+sub month_number
+{
+    @_ == 1 or die;
+    my $arg = shift;
+
+    if ( $arg eq 'JAN' ) { return 1; }
+    if ( $arg eq 'FEB' ) { return 2; }
+    if ( $arg eq 'MAR' ) { return 3; }
+    if ( $arg eq 'APR' ) { return 4; }
+    if ( $arg eq 'MAY' ) { return 5; }
+    if ( $arg eq 'JUN' ) { return 6; }
+    if ( $arg eq 'JUL' ) { return 7; }
+    if ( $arg eq 'AUG' ) { return 8; }
+    if ( $arg eq 'SEP' ) { return 9; }
+    if ( $arg eq 'OCT' ) { return 10; }
+    if ( $arg eq 'NOV' ) { return 11; }
+    if ( $arg eq 'DEC' ) { return 12; }
+
+    die;			# Shouldn't be here.
+}
+
 
 # Assuming @bulletin_bs has been accurately populated, work with all
 # the files it refers to and scan them for data we want.  Put the
@@ -46,6 +70,11 @@ foreach ( @bulletin_bs )
     open(CUR_FILE, $_) or die "Couldn't open \"$_\": $!\n\t";
     @file_data = <CUR_FILE>;    #read the file
     close(CUR_FILE) or die;    #close the file
+
+    # Hash of different TAI minus UTC offsets of the entries in this
+    # Bulletin B issue, indexed by capitol three letter abbreviation
+    # for month.  TAI minus UTC offsets don't change within months.
+    my %tai_minus_utc;
 
     # End of the time span for this file.
     my ($end_month, $end_day);
@@ -62,16 +91,29 @@ foreach ( @bulletin_bs )
             {
                 # This is ugly, but all it does is grab the month and
                 # day, along with UT1R-UTC, and UT1R-TAI
-                if ( $file_data[$ii] =~ /(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\ *(\d+)\ +(-?\d*\.?\d*)\ +(-?\d*\.?\d*)\ +(-?\d*\.?\d*)\ +(-?\d*\.?\d*)\ +(-?\d*\.?\d*)\ +/ )
-                {
+                if ( $file_data[$ii] =~ / (JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP
+					   |OCT|NOV|DEC)\s* # Month
+		                           (\d+)\s+         # Day of month
+                                           (-?\d*\.?\d*)\s+ # Unused
+                                           (-?\d*\.?\d*)\s+ # Unused
+                                           (-?\d*\.?\d*)\s+ # Unused
+		                           (-?\d*\.?\d*)\s+ # UT1R-UTC
+                                           (-?\d*\.?\d*)\s+ # UT1R-TAI
+                                        /x ) {
+
+                    # We also need an offset, TAI - UTC, which is
+                    # equal to (UT1R-UTC)-(UT1R-TAI).  This is usually
+                    # constant within a given bulletin B issue, but
+                    # can change between months if the product spans
+                    # time containing a leap second.  So we have an
+                    # hash of TAI to UTC offsets for the different
+                    # months abbreviations.
+		    $tai_minus_utc{$1} ||= $6 - $7;
+
                     # Save the last month listed in this section for later,
                     $end_month = $1;
                     # and the same for the day, plus one.
                     $end_day = $2 + 1;
-
-                    # We also need an offset, TAI - UTC, which is
-                    # equal to (UT1R-UTC)-(UT1R-TAI).
-                    $offset = $6 - $7;
                 }
                 ++$ii;
             }
@@ -94,15 +136,29 @@ foreach ( @bulletin_bs )
                 }
                 # Is it a valid line in this section?
                 # Month, Day, MJD, x, y, UT1-UTC, UT1-UT1R, D, dPsi, dEpsilon
-                if ( $file_data[$ii] =~ /(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\ +(\d+)\ +(\d+)\ +(-?\d*\.?\d*)\ +(-?\d*\.?\d*)\ +(-?\d*\.?\d*)\ +(-?\d*\.?\d*)\ +(-?\d*\.?\d*)\ +(-?\d*\.?\d*)\ +(-?\d*\.?\d*)/ )
+                if ( $file_data[$ii] =~ / (JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP
+                                           |OCT|NOV|DEC)\s+
+                                          (\d+)\s+ # Day of month.
+                                          (\d+)\s+ # Modified julian day.
+                                          (-?\d*\.?\d*)\s+ # x pole offset.
+                                          (-?\d*\.?\d*)\s+ # y pole offset.
+                                          (-?\d*\.?\d*)\s+ # UT1-UTC
+                                          (-?\d*\.?\d*)\s+ # UT1-UT1R
+                                          (-?\d*\.?\d*)\s+ # unused
+                                          (-?\d*\.?\d*)\s+ # unused
+                                          (-?\d*\.?\d*) # unused
+                                       /x )
                 {
                     # If it is, save the data we want for later.
+
+		    # Find the 
+
 		    # Convert from milliseconds to seconds.
                     $converted = $7 / 1000.0;  
                     # Tie all the data together in our order:
                     # MJD, Year, Month, Day, UT1-UTC, UT1-UT1R
 		    push(@final_data, $3."\t".$current_year."\t".$1."\t".$2
-                                      ."\t".$6."\t".$converted."\t".$offset
+			 ."\t".$6."\t".$converted."\t".$tai_minus_utc{$1}
                                       ."\n");
                     # Need to adjust the year after December 31
                     if ( $1 eq "DEC" && $2 == 31 )
