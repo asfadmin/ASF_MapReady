@@ -6,18 +6,18 @@
 #include "../util/metadata.h"
 #include "ceos_rd.h"
 
-// globals defining image
+/* globals defining image */
 
 
 static int left_pad, top_pad, right_pad, bottom_pad;
 static int number_of_samples;
 static int number_of_lines;
 static double pixel_size_range;
-// static double pixel_size_az;
+/* static double pixel_size_az;*/
 static double slant_range_to_first_pixel;
 static double platform_alt;
 static double Re;
-// int projection;
+/* int projection;*/
 static double noise_array[512];
 static double offset;
 static double noise_scale;
@@ -79,7 +79,7 @@ static void obtain_metadata (char *data, /*+ Name of data file +*/
   FILE *metadata, *fF;
   int fd;
   int a;
-  //int ret;
+  /*int ret;*/
 
 	/*** Values to be read ****
 		int number_of_samples;
@@ -183,8 +183,8 @@ static float sigma_nought (float dn2, float j, float look_angle, float inc, floa
   return sigma;
 }
 
-//#undef CALLER
-//#define CALLER "sigma_nought_DESCENDING"
+/*#undef CALLER*/
+/*#define CALLER "sigma_nought_DESCENDING"*/
 /*******************************************************************
 *   sigma_nought_DESCENDING
 *    Computes sigma0 for a DESCENDING image.
@@ -407,11 +407,11 @@ static int generate_data_planes (char *inDataName, char *base)
       FWRITE(sigmaBuf,    sizeof(float), number_of_samples, outSigmaFile);
 
       if (ii%100 == 0) {
-         printf ("Completed: % 3d%%\r",(100*ii)/number_of_lines);
+         printf ("Completed: %3d%%\r",(100*ii)/number_of_lines);
          fflush (stdout);
       }
    }
-   printf ("Completed: % 3d\n%%",(100*ii)/number_of_lines);
+   printf ("Completed: %3d%%\n",(100*ii)/number_of_lines);
 
 /* Free malloc'd memory */
    FREE(inBuf);
