@@ -8,7 +8,7 @@
 void alaskakeyset
 (
 struct DDR ddr,            /* I: LAS image file descriptor record    */
-GTIF *gtif                 /* I/O: GeoKey-level descriptor            */
+GTIF *gtif                 /* I/O: GeoKey-level descriptor           */
 );
 
 void alberskeyset
@@ -21,6 +21,13 @@ void azmeqdkeyset
 (       
 struct DDR ddr,            /* I: LAS image file descriptor record    */
 GTIF *gtif                 /* I/O: GeoKey-level descriptor           */
+);
+
+int c_decdeg
+(
+double *angle,             /* Input and output of degrees            */
+char *coform,              /* Type of angle being inputted           */
+char *type                 /* Limits output angle is tested against  */
 );
 
 void eqrectkeyset
