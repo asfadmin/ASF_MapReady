@@ -238,6 +238,10 @@ void fill_structure_field(char *field_name, void *valp)
       { MSAR->look_count = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "deskewed") )
       { MSAR->deskewed = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "original_line_count") )
+      { MSAR->original_line_count = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "original_sample_count") )
+      { MSAR->original_sample_count = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "line_increment") )
       { MSAR->line_increment = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "sample_increment") )
