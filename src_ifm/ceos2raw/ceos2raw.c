@@ -108,7 +108,7 @@ int ceosLen(char *inN)
 	get_ifiledr(inN,&viof);
 	return viof.numofrec;
 }
-/*Internal Metadata creation routines (asf_ceos.a)*/
+/*Internal Metadata creation routines */
 meta_parameters *raw_init(void);
 void ceos_init(const char *in_fName,meta_parameters *sar);
 
@@ -122,7 +122,8 @@ void createMeta_ceos(bin_state *s,struct dataset_sum_rec *dssr,char *inN,char *o
 	
 	ceos_init(inN,meta);
 	s->lookDir = meta->sar->look_direction;
-	
+	s->nLines = meta->general->line_count;
+
         /* Check for VEXCEL LZP Data-- has odd state vectors
          --------------------------------------------------*/
 	if (0==strncmp(dssr->sys_id,"SKY",3))
@@ -149,7 +150,7 @@ void createMeta_ceos(bin_state *s,struct dataset_sum_rec *dssr,char *inN,char *o
 	
 	/* Update s-> fields with new state vector
          ----------------------------------------*/
-/*	addStateVector(s,&meta->state_vectors->vecs[0].vec);*/
+	addStateVector(s,&meta->state_vectors->vecs[0].vec);
 
 	/* Update fields for which we have decoded header info.
 	 -----------------------------------------------------*/
