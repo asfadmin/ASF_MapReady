@@ -1,261 +1,246 @@
 #include "asf_convert_gui.h"
 
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/select.h>
+#include <sys/wait.h>
+#include <time.h>
+
+char *
+do_cmd(char *cmd, char *log_file_name)
+{
+  char *the_output;
+  FILE *output;
+
+  int pid = fork();
+
+  if (pid == 0)
+  {
+    system(cmd);
+    exit(EXIT_SUCCESS);
+  }
+  else
+  {
+    while (waitpid(-1, NULL, WNOHANG) == 0)
+    {
+      while (gtk_events_pending())
+	gtk_main_iteration();    
+
+      /* sleep ? */
+    }
+  }
+
+  the_output = NULL;
+
+  output = fopen(log_file_name, "rt");
+
+  if (!output)
+  {
+    the_output = (char *)malloc(256);
+    sprintf(the_output, "Error Opening Log File: %s", strerror(errno));
+  }
+  else
+  {
+    while (!feof(output))
+    {
+      char buffer[4096];
+      char *p = fgets(buffer, 4096, output);
+      if (p)
+      {
+	if (the_output)
+        {
+	  the_output = (char *)realloc(the_output, 
+				    strlen(the_output) + strlen(buffer) + 1);
+
+	  strcat(the_output, buffer);
+	}
+	else
+	{
+	  the_output = (char *)malloc(strlen(buffer) + 1);
+	  strcpy(the_output, buffer);
+	}
+      }
+    }
+    fclose(output);
+  }
+
+  return the_output;
+}
+
+void
+do_cmd_does_not_work(char *cmd)
+{
+  FILE *f;
+  char buffer[4096];
+  int fd;
+
+  f = popen(cmd, "r");
+  fd = fileno(f);
+
+  fd_set rfds;
+  struct timeval tv;
+  int retval;
+  
+  FD_ZERO(&rfds);
+  FD_SET(fd, &rfds);
+  
+  while (waitpid(-1, NULL, WNOHANG) == 0)
+  {
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    
+    retval = select(fd + 1, &rfds, NULL, NULL, &tv);
+
+    if (retval == -1)
+      perror(NULL);
+    else if (retval)
+    {
+      int count = read(fd, buffer, 4096);
+
+      if (count == -1 && errno != EAGAIN)
+      {
+	perror(NULL);
+	break;
+      }
+
+      buffer[count] = '\0';
+
+      printf("%s\n", buffer);
+
+      if (count == 0)
+	break;
+    }
+    else
+    {
+      /* no data */
+      
+    }
+    
+    while (gtk_events_pending())
+      gtk_main_iteration();
+
+  }
+
+  pclose(f); 
+}
+
+void
+process_item(GtkTreeIter *iter,
+	     Settings *user_settings)
+{
+  gchar *in_data, *in_meta, *out_full, *basename, *p;
+  gchar convert_cmd[4096];
+  char log_file[128];
+  int pid;
+  time_t s;
+
+  pid = getpid();
+  s = time(NULL);
+
+  gtk_tree_model_get(GTK_TREE_MODEL(list_store), iter, 
+		     0, &in_data, 1, &out_full, -1);
+  
+  in_meta = meta_file_name(in_data);
+
+  basename = strdup(in_data);
+  p = strrchr(basename, '.');
+  if (p)
+    *p = '\0';
+  
+  gtk_list_store_set(list_store, iter, 2, "Processing...", -1);
+  
+  while (gtk_events_pending())
+    gtk_main_iteration();
+  
+  if (settings_get_run_import(user_settings))
+  {
+    char * cmd_output;
+
+    sprintf(log_file, "tmp_%d_%ld_import.log", pid, s);
+
+    snprintf(convert_cmd, 4096, 
+	     "asf_import -%s -format %s %s -log %s %s %s %s",
+	     settings_get_data_type_string(user_settings),
+	     settings_get_input_data_format_string(user_settings),
+	     settings_get_latitude_argument(user_settings),
+	     log_file,
+	     in_data,
+	     in_meta,
+	     basename);
+    
+    cmd_output = do_cmd(convert_cmd, log_file);
+
+    char * out_name_full = (char *)malloc(strlen(basename) + 10);
+    sprintf(out_name_full, "%s.img", basename);
+    
+    if (!settings_get_run_export(user_settings))
+    {
+      gtk_list_store_set(list_store, iter, 1, out_name_full, -1);
+      gtk_list_store_set(list_store, iter, 2, "Done", -1);
+    }
+
+    free(out_name_full);
+    free(cmd_output);
+  }
+
+  while (gtk_events_pending())
+    gtk_main_iteration();
+
+  if (settings_get_run_export(user_settings))
+  {
+    char * cmd_output;
+    char * out_name_full = (char *)malloc(strlen(basename) + 20);
+
+    sprintf(log_file, "tmp_%d_%ld_export.log", pid, s);
+
+    sprintf(out_name_full, "%s.%s", basename,
+	    settings_get_output_format_extension(user_settings));
+    
+    snprintf(convert_cmd, 4096, "asf_export -format %s %s -log %s %s %s",
+	     settings_get_output_format_string(user_settings),
+	     settings_get_size_argument(user_settings),
+	     log_file,
+	     basename,
+	     out_name_full);
+    
+    cmd_output = do_cmd(convert_cmd, log_file);
+    
+    gtk_list_store_set(list_store, iter, 1, out_name_full, -1);
+    gtk_list_store_set(list_store, iter, 2, "Done", -1);
+
+    free(out_name_full);
+    free(cmd_output);
+  }
+
+  free(basename);
+  free(in_meta);
+}
+
 SIGNAL_CALLBACK void
 on_execute_button_clicked (GtkWidget *button)
 {
-  GtkWidget
-    *input_data_type_combobox,
-    *input_data_format_combobox,
-    *output_format_combobox,
-    *scale_checkbutton,
-    *longest_dimension_spinbutton;
-
-  gint input_data_type,
-    input_data_format,
-    output_format;
-
-  gchar *format_arg_to_import,
-    *format_arg_to_export,
-    *input_type_arg,
-    *out_extension;
-
-  gchar convert_cmd[4096], size_arg[32], latitude_arg[64];
-
   GtkTreeIter iter;
-  gboolean valid,
-    run_import,
-    run_export,
-    include_latitude,
-    include_size;
+  gboolean valid;
+  Settings * user_settings;
 
-  input_data_type_combobox = 
-    glade_xml_get_widget(glade_xml, "input_data_type_combobox");
+  /* gui should prevent this from happening */
+  if (processing)
+    return;
 
-  input_data_type =
-    gtk_combo_box_get_active(GTK_COMBO_BOX(input_data_type_combobox));
-
-  input_data_format_combobox = 
-    glade_xml_get_widget(glade_xml, "input_data_format_combobox");
-
-  input_data_format =
-    gtk_combo_box_get_active(GTK_COMBO_BOX(input_data_format_combobox));
-
-  output_format_combobox = 
-    glade_xml_get_widget(glade_xml, "output_format_combobox");
-
-  output_format =
-    gtk_combo_box_get_active(GTK_COMBO_BOX(output_format_combobox));
-
-  scale_checkbutton = 
-    glade_xml_get_widget(glade_xml, "scale_checkbutton");
-
-  longest_dimension_spinbutton =
-    glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
-
-  /* defaults */
-  size_arg[0] = '\0';
-  latitude_arg[0] = '\0';
-  run_import = TRUE;
-  run_export = TRUE;
-  include_size = FALSE;
-  include_latitude = FALSE;
-
-  switch (input_data_type)
-    {
-    case INPUT_TYPE_SIGMA:
-      input_type_arg = "sigma";
-      break;
-
-    case INPUT_TYPE_BETA:
-      input_type_arg = "beta";
-      break;
-
-    case INPUT_TYPE_GAMMA:
-      input_type_arg = "gamma";
-      break;
-
-    default:
-    case INPUT_TYPE_AMP:
-      input_type_arg = "amplitude";
-      break;
-
-    case INPUT_TYPE_POWER:
-      input_type_arg = "power";
-      break;
-    }
-
-  switch (input_data_format)
-    {
-    case INPUT_FORMAT_CEOS_LEVEL0:
-      format_arg_to_import = "ceos";
-      include_latitude = TRUE;
-      break;
-
-    default:
-    case INPUT_FORMAT_CEOS_LEVEL1:
-      format_arg_to_import = "ceos";
-      break;
-
-    case INPUT_FORMAT_STF:
-      format_arg_to_import = "stf";
-      include_latitude = TRUE;
-      break;
-
-    case INPUT_FORMAT_ESRI:
-      format_arg_to_import = "esri";
-      break;
-
-    case INPUT_FORMAT_ENVI:
-      format_arg_to_import = "envi";
-      break;
-
-    case INPUT_FORMAT_COMPLEX:
-      format_arg_to_import = "ceos";  /* FIXME: is this correct? */
-      break;
-
-    case INPUT_FORMAT_ASF_INTERNAL:
-      run_import = FALSE;
-      break;
-    }
-
-  switch (output_format)
-    {
-    case OUTPUT_FORMAT_ASF_INTERNAL:
-      run_export = FALSE;
-      include_size = FALSE;
-      break;
-
-    case OUTPUT_FORMAT_CEOS:
-    default:
-      format_arg_to_export = "ceos";
-      out_extension = "D";
-      include_size = FALSE;
-      break;
-
-    case OUTPUT_FORMAT_JPEG:
-      format_arg_to_export = "jpeg";
-      out_extension = "jpg";
-      include_size = TRUE;
-      break;
-
-    case OUTPUT_FORMAT_PPM:
-      format_arg_to_export = "ppm";
-      out_extension = "ppm";
-      include_size = TRUE;
-      break;
-
-    case OUTPUT_FORMAT_GEOTIFF:
-      format_arg_to_export = "geotiff";
-      out_extension = "tif";
-      include_size = FALSE;
-      break;
-    }
-
-  if (include_size)
-  {
-    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(scale_checkbutton)))
-    {
-      gdouble d = 
-	gtk_spin_button_get_value(
-		       GTK_SPIN_BUTTON(longest_dimension_spinbutton));
-      sprintf(size_arg, "-size %d", (int)floor(d + 0.5));
-    }
-  }
-
-  if (include_latitude)
-  {
-    gdouble low, hi;
-    GtkWidget *latitude_low_spinbutton, *latitude_hi_spinbutton;
-
-    latitude_low_spinbutton =
-      glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
-
-    latitude_hi_spinbutton =
-      glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
-
-    low = gtk_spin_button_get_value(GTK_SPIN_BUTTON(latitude_low_spinbutton));
-    hi = gtk_spin_button_get_value(GTK_SPIN_BUTTON(latitude_hi_spinbutton));
-
-    sprintf(latitude_arg, "-lat %.2f %.2f", low, hi);
-  }
+  user_settings = settings_get_from_gui();
 
   show_execute_button(FALSE);
   valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
   keep_going = TRUE;  
+  processing = TRUE;
 
   while (valid && keep_going)
   {
-    gchar *in_data, *in_meta, *basename, *p;
-
-    gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-		       0, &in_data, 1, &in_meta, -1);
-    
-    basename = strdup(in_data);
-    p = strrchr(basename, '.');
-    if (p)
-      *p = '\0';
-
-    gtk_list_store_set(list_store, &iter, 2, "Processing...", -1);
+    process_item(&iter, user_settings);
 
     while (gtk_events_pending())
       gtk_main_iteration();
-
-    if (run_import)
-    {
-      snprintf(convert_cmd, 4096, 
-	       "asf_import -quiet -%s -format %s %s %s %s %s",
-	       input_type_arg,
-	       format_arg_to_import,
-	       latitude_arg,
-	       in_data,
-	       in_meta,
-	       basename);
-
-      system(convert_cmd);
-
-      char * out_name_full = (char *)malloc(strlen(basename) + 10);
-      sprintf(out_name_full, "%s.img", basename);
-
-      if (!run_export)
-	gtk_list_store_set(list_store, &iter, 2, out_name_full, -1);
-
-      free(out_name_full);
-    }
-
-    while (gtk_events_pending())
-      gtk_main_iteration();
-
-    if (run_export)
-    {
-      char * out_name_full = (char *)malloc(strlen(basename) + 20);
-      sprintf(out_name_full, "%s.%s", basename, out_extension);
-
-      snprintf(convert_cmd, 4096, "asf_export -format %s %s %s %s",
-	       format_arg_to_export,
-	       size_arg,
-	       basename,
-	       out_name_full);
-      
-      system(convert_cmd);
-
-      gtk_list_store_set(list_store, &iter, 2, out_name_full, -1);
-      free(out_name_full);
-    }
-    /* printf("data: %s meta: %s\n", in_data, in_meta); */
-    /* snprintf (convert_cmd, 1024, "asf_convert -format %s %s %s %s %s",
-	    format,
-	    size_arg,
-	    in_data,
-	    in_meta,
-	    out_full);
-
-    system(convert_cmd);
-    */
-
-    while (gtk_events_pending())
-      gtk_main_iteration();
-
-    free(basename);
 
     if (!keep_going)
       gtk_list_store_set(list_store, &iter,
@@ -264,6 +249,8 @@ on_execute_button_clicked (GtkWidget *button)
     valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
   }
 
+  processing = FALSE;
+  free(user_settings);
   show_execute_button(TRUE);
 }
 

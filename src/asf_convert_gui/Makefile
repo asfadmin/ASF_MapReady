@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = asf_convert_gui
-SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c
+SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c popup_menu.c settings.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
@@ -19,7 +19,7 @@ INCLUDE = -I$(GTK_INC) -I$(GTK_INC)/glib-2.0 -I$(GTK_INC)/pango-1.0 -I$(GTK_INC)
 
 LIB = -L$(GTK_LIB) -L$(GTK_LIB)/glib-2.0 -L$(GTK_LIB)/gtk-2.0 -L$(GTK_LIB)/pango -L$(GTK_LIB)/libglade -lintl -liconv -lm -lgtk-win32-2.0 -lgobject-2.0 -llibglade-2.0 -lglib-2.0
 
-CFLAGS = -mms-bitfields -Dwin32
+CFLAGS = -mms-bitfields -Dwin32 -g
 
 $(TARGET).exe: $(TARGET).c
 	if [ ! -f $(GTK_DIR)/README.txt ]; then\

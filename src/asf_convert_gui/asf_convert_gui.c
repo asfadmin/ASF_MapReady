@@ -6,6 +6,7 @@
 GladeXML *glade_xml;
 GtkListStore *list_store;
 gboolean keep_going;
+gboolean processing;
 
 void
 setup_files_list(int argc, char *argv[])
@@ -24,16 +25,9 @@ setup_files_list(int argc, char *argv[])
   for (i = 1; i < argc; ++i)
   {
     char * data_file = argv[i];
-    char * meta_file = meta_file_name(data_file);
-
-    if (strlen(meta_file) > 0)
-    {
-      gtk_list_store_append(list_store, &iter);
-
-      gtk_list_store_set(list_store, &iter,
-		     0, data_file, 1, meta_file, 2, "", -1);
-      free(meta_file);
-    }
+    gtk_list_store_append(list_store, &iter);
+    gtk_list_store_set(list_store, &iter,
+		       0, data_file, 1, "", 2, "-", -1);
   }
 
   files_list =
@@ -50,6 +44,7 @@ setup_files_list(int argc, char *argv[])
   gtk_tree_view_column_add_attribute(col, renderer, "text", 0);
 
   /* Second Column */
+  /* -- this was the "meta" column -- removed
   col = gtk_tree_view_column_new();
   gtk_tree_view_column_set_title(col, "Meta File");
   gtk_tree_view_column_set_resizable(col, TRUE);
@@ -57,10 +52,20 @@ setup_files_list(int argc, char *argv[])
   renderer = gtk_cell_renderer_text_new();
   gtk_tree_view_column_pack_start(col, renderer, TRUE);
   gtk_tree_view_column_add_attribute(col, renderer, "text", 1);
+  */
 
-  /* Third Column */
+  /* Third (now 2nd) Column */
   col = gtk_tree_view_column_new();
   gtk_tree_view_column_set_title(col, "Output File");
+  gtk_tree_view_column_set_resizable(col, TRUE);
+  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+  renderer = gtk_cell_renderer_text_new();
+  gtk_tree_view_column_pack_start(col, renderer, TRUE);
+  gtk_tree_view_column_add_attribute(col, renderer, "text", 1);
+
+  /* Last Column: Current Status */
+  col = gtk_tree_view_column_new();
+  gtk_tree_view_column_set_title(col, "Status");
   gtk_tree_view_column_set_resizable(col, TRUE);
   gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
   renderer = gtk_cell_renderer_text_new();
@@ -74,7 +79,7 @@ setup_files_list(int argc, char *argv[])
 
   gtk_tree_selection_set_mode(
       gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list)),
-      GTK_SELECTION_NONE);
+      GTK_SELECTION_SINGLE);
 }
 
 int
@@ -112,8 +117,13 @@ main(int argc, char **argv)
     /* drag-n-drop setup */
     setup_dnd();
 
+    /* right-click menu setup */
+    setup_popup_menu();
+
     /* Connect signal handlers.  */
     glade_xml_signal_autoconnect (glade_xml);
+
+    processing = FALSE;
 
     gtk_main ();
 

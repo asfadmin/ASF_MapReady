@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 
@@ -39,14 +40,17 @@
 #  endif
 #endif
 
+#include "settings.h"
 #include "find_in_path.h"
 #include "execute.h"
 #include "callbacks.h"
 #include "utility.h"
 #include "dnd.h"
+#include "popup_menu.h"
 
 extern GladeXML *glade_xml;
 extern GtkListStore *list_store;
 extern gboolean keep_going;
+extern gboolean processing;
 
 #endif

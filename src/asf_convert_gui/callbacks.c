@@ -12,7 +12,7 @@ add_to_files_list(gchar * data_file, gchar * meta_file)
   gtk_list_store_append(list_store, &iter);
 
   gtk_list_store_set(list_store, &iter, 
-		     0, data_file, 1, meta_file, 2, "", -1);
+		     0, data_file, 1, "", 2, "-", -1);
 }
 
 void
@@ -54,10 +54,14 @@ input_data_format_combobox_changed()
 
   switch (input_data_format)
   {
-    case INPUT_FORMAT_CEOS_LEVEL0:
     case INPUT_FORMAT_STF:
-      show_data_type_combobox = TRUE;
+      show_data_type_combobox = FALSE;
       show_latitude_spinbuttons = TRUE;
+      break;
+    case INPUT_FORMAT_COMPLEX:
+    case INPUT_FORMAT_CEOS_LEVEL0:
+      show_data_type_combobox = FALSE;
+      show_latitude_spinbuttons = FALSE;
       break;
     default:
     case INPUT_FORMAT_CEOS_LEVEL1:
