@@ -60,6 +60,8 @@ void meta_io(coniStruct *coni,meta_parameters *meta,int reading)
 	/* Read meta files predating version 1.0 fill meta structure 1.0 as best as possible*/
 		meta_sar *sar = meta->sar = (meta_sar *)MALLOC(sizeof(meta_sar));
 
+	/*Geolocation parameters.*/
+		coniIO_structOpen(coni,"geo {","begin parameters used in geolocating the image.");
 		coniIO_char(coni,"geo.","type:",&sar->proj_type,"Image type: [S=slant range; G=ground range; P=map projected]");
 		if (sar->proj_type=='P') {
 		/*Projection Parameters.*/
