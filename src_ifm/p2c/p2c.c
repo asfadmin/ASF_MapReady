@@ -73,8 +73,8 @@ BUGS:
 #include "asf_complex.h"
 
 #define VERSION 1.25
-#define CHUNK_OF_LINES	256
 #define BUF     256
+/* #define CHUNK_OF_LINES 256 -- gotten from asf.h */
 
 void usage(char *name);
 
@@ -106,13 +106,7 @@ int main (int argc, char *argv[])
 /* Read the meta data. Write output meta with COMPLEX_* data type. */
   inMeta = meta_read(argv[1]);
   outMeta = meta_copy(inMeta);
-  switch (inMeta->general->data_type) {
-    case BYTE:      outMeta->general->data_type=COMPLEX_BYTE;      break;
-    case INTEGER16: outMeta->general->data_type=COMPLEX_INTEGER16; break;
-    case INTEGER32: outMeta->general->data_type=COMPLEX_INTEGER32; break;
-    case REAL32:    outMeta->general->data_type=COMPLEX_REAL32;    break;
-    case REAL64:    outMeta->general->data_type=COMPLEX_REAL64;    break;
-  }
+  outMeta->general->data_type = meta_polar2complex(inMeta->general->data_type);
   meta_write(outMeta,argv[2]);
 
 /* malloc buffers, check and open files */
