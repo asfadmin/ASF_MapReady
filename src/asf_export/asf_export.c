@@ -134,7 +134,7 @@ void usage(char *program_name)
   exit (EXIT_FAILURE);
 }
 
-/* Evaluate to true iff floats are within tolerance of each other.  */
+/* Evaluate to true if floats are within tolerance of each other.  */
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 
 /* Default tolerance used for many floating point comparisons in this
@@ -171,7 +171,8 @@ typedef struct {
   char input_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   /* Output name to use.  */
   char output_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
-  int verbose;			/* Flag true iff in verbose mode.  */
+  int verbose;			/* Flag true if in verbose mode.  */
+  int quiet;			/* True if quiet mode is active.  */
 } command_line_parameters_t;
 
 /* Output format to use.  */
@@ -262,6 +263,8 @@ main (int argc, char *argv[])
   char image_data_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   char metadata_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   meta_parameters *md;
+  /* Quiet mode is off by default.  */
+  command_line.quiet = FALSE;
   /* Produce geotiff output by default.  */
   my_strncpy (const_default_format, "geotiff", 
 	      (size_t) (MAX_FORMAT_STRING_LENGTH + 1));
@@ -309,6 +312,9 @@ main (int argc, char *argv[])
     else if ( strmatch (key, "-o") ) {
       CHECK_ARG (1);
       strcpy (command_line.output_name, GET_ARG (1));
+    }
+    else if ( strmatch (key, "-quiet") ) {
+	  command_line.quiet = TRUE;
     }
   }		
 
