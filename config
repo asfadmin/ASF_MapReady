@@ -137,15 +137,21 @@ fi
 
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
 cat <<'EOF' >>system_rules
-# If <make 'DEBUG_BUILD=whatever'> (i.e. DEBUG_BUILD defined) and compiler 
-# is gcc then set DEBUGFLAGS and DEBUGLIBS
-ifdef DEBUG_BUILD
-  ifeq ($(CC),gcc)
+# If compiler is gcc we're going to add some debugging flags/libraries
+#   if <make 'DEBUG_BUILD=1'>  apply debugging tags and show all compiler warnings
+#   if <make 'DEBUG_BUILD=2'>  do the same and add the electric fence library
+ifeq ($(CC),gcc)
+  ifeq ($(DEBUG_BUILD),1)
+    OPTFLAG    =
+    DEBUGFLAGS = -Wall -g
+  endif
+  ifeq ($(DEBUG_BUILD),2)
     OPTFLAG    =
     DEBUGFLAGS = -Wall -g
     DEBUGLIBS  = -lefence
   endif
 endif
+
 CFLAGS  = $(FLAGS) $(DEBUGFLAGS)
 LDFLAGS = $(DEBUGLIBS)
 LIBDIR  = ../../lib/$(SYS)
