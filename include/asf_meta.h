@@ -1,8 +1,8 @@
-/*************************************************************************** 
+/***************************************************************************
    NAME:  asf_meta.h
 
    Header file for the asf_meta.a library's meta_get* routines.
-   
+
    These routines are intended as a higher-level SAR image metadata
    extraction layer.  By using these routines, we can add support for
    new CEOS formats, CEOS bug fixes, and other data types in *one*
@@ -12,7 +12,7 @@
    our own metadata format, and a seperate package for import/export
    from other formats.  So the CEOS/other format reading/writing code
    should be refactored.
-   
+
    This library is intended to completely replace the asf_sar.a and
    geolocate.a libraries.
 
@@ -25,6 +25,7 @@
 
 #include "ddr.h"
 #include "geolocate.h"		/* For stateVector.  */
+#include "ceos.h"
 
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
@@ -140,7 +141,7 @@ typedef struct {
  */
 typedef struct {
   /* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected.  */
-  char image_type; 
+  char image_type;
   char look_direction;            /* 'L'-> Left Looking; 'R'-> Right Looking*/
   int look_count;                 /* Number of looks to take from SLC.      */
   int deskewed;                   /* True if image moved to zero doppler.   */
@@ -162,7 +163,7 @@ typedef struct {
     /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
   double range_doppler_coefficients[3];
     /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
-  double azimuth_doppler_coefficients[3]; 
+  double azimuth_doppler_coefficients[3];
 } meta_sar;
 
 
@@ -265,7 +266,7 @@ typedef struct {
   double rmse;               /* Root mean squared error               */
   double std_deviation;      /* Standard deviation                    */
   double mask;               /* Value ignored while taking statistics */
-} meta_stats;  
+} meta_stats;
 
 
 /********************************************************************
@@ -354,17 +355,18 @@ typedef struct {
  * meta_init: in meta_init.c
  *	Extracts and returns SAR parameters from CEOS metadata.
 */
-/*In meta_init.c.  
+/*In meta_init.c.
  * These are the routines to use, generally.*/
 meta_parameters *meta_init(const char *fName);
 void meta_free(meta_parameters *meta);
 
-/*In meta_coni.c*//*
-void meta_write_old(meta_parameters *meta,const char *outName);
-meta_parameters *meta_read_old(const char *inName);
-void meta_write(meta_parameters *meta,const char *outName);
-meta_parameters *meta_read(const char *inName);
-*/
+/*In meta_coni.c*/
+/*
+ * void meta_write_old(meta_parameters *meta,const char *outName);
+ * meta_parameters *meta_read_old(const char *inName);
+ * void meta_write(meta_parameters *meta,const char *outName);
+ * meta_parameters *meta_read(const char *inName);
+ */
 /* In meta_read.c */
 meta_parameters *meta_read(const char *inName);
 
@@ -373,6 +375,10 @@ meta_parameters *meta_copy(meta_parameters *src);
 
 /* In meta_write.c */
 void meta_write(meta_parameters *meta,const char *outName);
+
+/* Write  sprocket style metadata */
+void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
+                         struct dataset_sum_rec *dssr);
 
 /* in meta2ddr */
 void meta2ddr(meta_parameters *meta, struct DDR *ddr);
@@ -407,7 +413,7 @@ char *meta_get_system(void);
 
 /* Convert a line, sample pair to a time, slant-range pair.
 These only use the geo_parameters structure, and work
-for all images.  They apply the time and slant range 
+for all images.  They apply the time and slant range
 correction fudge factors. Returns seconds and meters.
 */
 double meta_get_time(meta_parameters *sar,double yLine,double xSample);
@@ -437,8 +443,8 @@ Here, latitude and longitude are always in degrees.*/
 
 /* Converts a given line and sample to that for the non-multilooked,
    non-windowed, equivalent image.*/
-void meta_get_original_line_sample(meta_parameters *meta, int line, 
-				   int sample, int *original_line, 
+void meta_get_original_line_sample(meta_parameters *meta, int line,
+				   int sample, int *original_line,
 				   int *original_sample);
 
 /* DEPRECATED.  You probably want meta_get_original_line_sample.  */
@@ -458,7 +464,7 @@ void meta_get_lineSamp(meta_parameters *meta,
 
 /* Converts a given line and sample in image into time,
 slant-range, and doppler.  Works with all image types.
-*/  
+*/
 void meta_get_timeSlantDop(meta_parameters *sar,
 	double yLine,double xSample,
 	double *time,double *slant,double *dop);
