@@ -96,6 +96,44 @@ BUGS: None known
 stat_parameters calc_hist(stat_parameters stats, char *sar_name, meta_parameters *meta,
                           double sum_of_samples, long samples_counted, int mask_flag);
 
+static void 
+usage(char *name)
+{
+  printf("\n"
+	 "USAGE:\n"
+	 "   %s [-mask <value>] [-log <logFile>] [-quiet]\n"
+	 "         [-overmeta] [-nometa] [-overstat] [-nostat]\n"
+	 "         [-startline <line>] [-startsample <sample>]\n"
+	 "         [-width <width>] [-height <height>]\n"
+	 "         [-trim <fraction>] <sar_name>\n", name);
+  printf("\n"
+	 "REQUIRED ARGUMENTS:\n"
+	 "   sar_name   Name of input image file (including extension)\n");
+  printf("\n"
+	 "OPTIONAL ARGUMENTS:\n"
+	 "   -mask         Value to ignore while taking statistics.\n"
+	 "   -log          Copy terminal output to <logFile>.\n"
+	 "   -quiet        Supress terminal output.\n"
+	 "   -overmeta     Force overwrite of existing .meta file.\n"
+	 "   -nometa       Do not write a .meta file.\n"
+	 "   -overstat     Force overwrite of existing .stat file.\n"
+	 "   -nostat       Do not write a .stat file.\n"
+	 "   -startline    Start counting at image line <line> (implies -nometa).\n"
+	 "   -startsample  Start counting at image sample <sample> (implies -nometa).\n"
+	 "   -height       Only process <height> lines (implies -nometa).\n"
+	 "   -width        Only process <width> samples per line (implies -nometa).\n"
+	 "   -trim         Fraction used to trim the histogram.\n");
+  printf("\n"
+	 "DESCRIPTION:\n"
+	 "   This program takes statistics on a SAR data file and writes them\n"
+	 "   with a histogram out to a .stat file. It also inserts a stats block\n"
+	 "   in the .meta file.\n");
+  printf("\n"
+	 "Version %.2f, ASF SAR Tools\n"
+	 "\n",VERSION);
+  exit(EXIT_FAILURE);
+}
+
 int main(int argc, char **argv)
 {
 	double min, max;             /* Minimum & maximum sample values       */
@@ -558,41 +596,4 @@ stat_parameters calc_hist(stat_parameters stats, char *sar_name, meta_parameters
 		sqrt( fabs( diff_squared_sum / (double)(samples_counted-1) ) );
 
         return stats;
-}
-
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-mask <value>] [-log <logFile>] [-quiet]\n"
-	"         [-overmeta] [-nometa] [-overstat] [-nostat]\n"
-	"         [-startline <line>] [-startsample <sample>]\n"
-	"         [-width <width>] [-height <height>]\n"
-        "         [-trim <fraction>] <sar_name>\n", name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   sar_name   Name of input image file (including extension)\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"   -mask         Value to ignore while taking statistics.\n"
-	"   -log          Copy terminal output to <logFile>.\n"
-	"   -quiet        Supress terminal output.\n"
-	"   -overmeta     Force overwrite of existing .meta file.\n"
-	"   -nometa       Do not write a .meta file.\n"
-	"   -overstat     Force overwrite of existing .stat file.\n"
-	"   -nostat       Do not write a .stat file.\n"
-	"   -startline    Start counting at image line <line> (implies -nometa).\n"
-	"   -startsample  Start counting at image sample <sample> (implies -nometa).\n"
-	"   -height       Only process <height> lines (implies -nometa).\n"
-	"   -width        Only process <width> samples per line (implies -nometa).\n"
-        "   -trim         Fraction used to trim the histogram.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   This program takes statistics on a SAR data file and writes them\n"
-	"   with a histogram out to a .stat file. It also inserts a stats block\n"
-	"   in the .meta file.\n");
- printf("\n"
-	"Version %.2f, ASF SAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
 }
