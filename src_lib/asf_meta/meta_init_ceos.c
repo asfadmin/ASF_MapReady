@@ -194,9 +194,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
  /* Fill meta->sar structure */
    if (mpdr) {
       meta->sar->image_type = 'P';
-      /* fetch stVecs for earth radius calc in ceos_init_proj */
-      ceos_init_stVec(fName,ceos,meta);
-      ceos_init_proj(meta, dssr, mpdr);
    }
    else if (asf_facdr) {
      if (0==strncmp(asf_facdr->grndslnt,"GROUND",6))
@@ -339,26 +336,35 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    strcpy(meta->sar->satellite_clock_time, dssr->sat_clktim);
    strtok(meta->sar->satellite_clock_time, " ");/*Remove spaces from field*/
 
-   /* Fetch state vectors */
+ /* Fill meta->state_vectors structure... done now because call to
+  * ceos_init_proj requires that the meta->state_vectors structure be filled */
    ceos_init_stVec(fName,ceos,meta);
 
-   /* Propagate state vectors if they are covering more than frame size in case you have raw or complex data */
-   if (ceos->facility!=ESA) {
-     int vector_count=3;
-     double data_int = dssr->sc_lin * fabs(meta->sar->azimuth_time_per_pixel);
-     get_timeDelta(ceos, ppdr, meta);
-     if (data_int>15.0 && meta->general->data_type>=6) { 
-       while (data_int > 15.0) {
-         data_int /= 2;
-         vector_count = vector_count*2-1;
-       }
-       /* propagate three state vectors: start, center, end */
-       propagate_state(meta, vector_count, data_int);
-     }
+   /* Propagate state vectors if they are covering more than frame size in case
+    * you have raw or complex data. **
+*   **not done because the call to propagate requires asap and gen_oe binaries**
+*   **will be resurrected when we have a legal propagator**
+*   if (ceos->facility!=ESA) {
+*     int vector_count=3;
+*     double data_int = dssr->sc_lin * fabs(meta->sar->azimuth_time_per_pixel);
+*     get_timeDelta(ceos, ppdr, meta);
+*     if (data_int>15.0 && meta->general->data_type>=6) { 
+*       while (data_int > 15.0) {
+*         data_int /= 2;
+*         vector_count = vector_count*2-1;
+*       }
+*       ** propagate three state vectors: start, center, end **
+*       propagate_state(meta, vector_count, data_int);
+*     }
+*   }
+*/
+
+   if (meta->sar->image_type=='P') {
+      ceos_init_proj(meta, dssr, mpdr);
    }
 
    FREE(ceos);
-/* FREE(dssr); Don't free dssr because it points to the ceos struct (ceos->dssr) */
+/* FREE(dssr); Don't free dssr; it points to the ceos struct (ceos->dssr) */
    FREE(iof);
    FREE(mpdr);
    FREE(fdr);
