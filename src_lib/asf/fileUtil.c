@@ -80,6 +80,83 @@ void create_name(char *out,const char *in,const char *newExt)
   strcat (out, newExt);
 }
 
+
+/****************************************************************************
+ * split_dir_and_file:
+ * Takes a string and fills one pre-allocated array with any path prior to
+ * the file name, and fills another pre-allocated array with the file name */
+void split_dir_and_file(const char *inString, char *dirName, char *fileName)
+{
+  int ii;
+
+   /* Start at end of inString. */
+  ii = strlen(inString) - 1;
+
+  /* Work backwards until we hit a directory separator. */
+  while ((ii>0) && (inString[ii]!=DIR_SEPARATOR)) {
+    ii--;
+  }
+
+  if (inString[ii]==DIR_SEPARATOR) {
+    ii++;
+  }
+
+  strcpy(dirName, inString);
+  dirName[ii] = '\0';
+
+  strcpy(fileName, &inString[ii]);
+}
+
+
+/*****************************************************************************
+ * split_base_and_ext:
+ * Fills 'extension' with the file's extension and returns TRUE if there is
+ * indeed an extension. Otherwise it returns FALSE and fills 'extension' with
+ * an empty string. If 'side' is PREPENDED_EXTENSION, then it looks for the
+ * extension at the front of the file name. If 'side' is APPENDED_EXTENSION, it
+ * looks for the extension at the end of the file name. Otherwise it returns
+ * FALSE and fills 'extension' with an empty string. The extension separator
+ * is a '.' It assumes 'fileName' is only the file name (no path included) */
+int split_base_and_ext(char *fileName, int side, char *baseName,
+                       char *extension)
+{
+   int ii;
+
+   if (side == APPENDED_EXTENSION) {
+      /* Work backwards until we hit an extension separator. ('.') */
+      for (ii=strlen(fileName)-1; (ii>0) && (fileName[ii]!='.'); ii--) ;
+   }
+   else if (side == PREPENDED_EXTENSION) {
+      /* Work forwards until we hit an extension separator. ('.') */
+      for (ii=0; (ii<strlen(fileName)) && (fileName[ii]!='.'); ii++) ;
+   }
+   else {
+      strcpy(baseName,fileName);
+      strcpy(extension, "");
+      return FALSE;
+   }
+
+   if ((fileName[ii]=='.') && (side==APPENDED_EXTENSION)) {
+      strcpy(baseName, fileName);
+      baseName[ii] = '\0';
+      strcpy(extension, &fileName[ii]);
+      return TRUE;
+   }
+   if ((fileName[ii]=='.') && (side==PREPENDED_EXTENSION)) {
+      strcpy(baseName, &fileName[ii+1]);
+      strcpy(extension, fileName);
+      extension[ii+1] = '\0';
+      return TRUE;
+   }
+   else {
+      /* We couldn't find an extension. */
+      strcpy(baseName,fileName);
+      strcpy(extension, "");
+      return FALSE;
+   }
+}
+
+
 /*******************************************************************************
  * fopenImage:
  * first tries to open the given image name, then appends ".img" and tries again
