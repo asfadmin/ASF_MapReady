@@ -50,7 +50,7 @@ BUGS:
 *   ASF APD Contacts:						    	    *
 *	Lead Software Engineer - Tom Logan	tlogan@asf.alaska.edu       *
 * 									    *
-*	Alaska SAR Facility			ASF APD Web Site:	    *	
+*	Alaska SAR Facility			ASF APD Web Site:	    *
 *	Geophysical Institute			www.asf.alaska.edu	    *
 *       University of Alaska Fairbanks					    *
 *	P.O. Box 757320							    *
@@ -69,7 +69,7 @@ void find_closest_prc_rec(char *file, ymd_date *seekDate, hms_time *seekTime,
 				stateVector *vec, float *offset_time);
 void find_prc_file(char *prc_path,int requested_date, int orbit, char *prc_file);
 
-int fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime, 
+int fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime,
 	stateVector *retVec, ymd_date *retDate, hms_time *retTime, int orbit)
 {
 	char 		prc_file[256];
@@ -78,7 +78,7 @@ int fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime,
 	int		requested_date;
 
 	if (!quietflag) printf("   Seek Date/Time: %.4i%.2i%.2iT%.2i%.2i%5.3f\n",seekDate->year,
-		 seekDate->month,seekDate->day,seekTime->hour, seekTime->min,seekTime->sec);	
+		 seekDate->month,seekDate->day,seekTime->hour, seekTime->min,seekTime->sec);
 
 	requested_date = seekDate->year - (seekDate->year/100)*100;
 	requested_date = requested_date*100+seekDate->month;
@@ -87,7 +87,7 @@ int fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime,
 	find_prc_file(prc_path,requested_date,orbit,prc_file);
 
 	find_closest_prc_rec(prc_file, seekDate, seekTime, &vec, &offset_time);
- 
+
 	retVec->pos.x = vec.pos.x;
 	retVec->pos.y = vec.pos.y;
 	retVec->pos.z = vec.pos.z;
@@ -99,7 +99,7 @@ int fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime,
 	*retTime = *seekTime;
 
 	add_time(offset_time,retDate,retTime);
- 
+
 	return(1);
 }
 
@@ -112,8 +112,8 @@ void find_prc_file(char *prc_path,int requested_date, int orbit, char *prc_file)
   int    minDiff = 1000000;
   char   saveName[256];
 
-  /* Make sure given path is valid 
-   ------------------------------*/ 
+  /* Make sure given path is valid
+   ------------------------------*/
   if (stat(prc_path, &buf)==-1) {
 	perror("stat");
   	exit(1);
@@ -124,7 +124,7 @@ void find_prc_file(char *prc_path,int requested_date, int orbit, char *prc_file)
 	printErr(errbuf);
   }
 
-  /* Open the directory structure 
+  /* Open the directory structure
    -----------------------------*/
   if ((dirp = opendir(prc_path))==NULL) {
  	perror("opendir");
@@ -234,7 +234,7 @@ void find_closest_prc_rec(char *prc_file, ymd_date *seekDate, hms_time *seekTime
 		  sprintf(logbuf, "   Closest state vector to requested time (offset = %lf):\n",*offset_time);
 		  printLog(logbuf);
 		}
-       		display_prc_rec_mod(rec1,header->tdtutc);                          
+       		display_prc_rec_mod(rec1,header->tdtutc);
 		vec->pos.x = rec1->xsat / 1000.0;
 		vec->pos.y = rec1->ysat / 1000.0;
 		vec->pos.z = rec1->zsat / 1000.0;
@@ -250,7 +250,7 @@ void find_closest_prc_rec(char *prc_file, ymd_date *seekDate, hms_time *seekTime
 		  sprintf(logbuf, "   Closest state vector to requested time (offset = %lf):\n",*offset_time);
 		  printLog(logbuf);
 		}
-       		display_prc_rec_mod(rec2,header->tdtutc);                          
+       		display_prc_rec_mod(rec2,header->tdtutc);
 		vec->pos.x = rec2->xsat / 1000.0;
 		vec->pos.y = rec2->ysat / 1000.0;
 		vec->pos.z = rec2->zsat / 1000.0;
@@ -258,7 +258,7 @@ void find_closest_prc_rec(char *prc_file, ymd_date *seekDate, hms_time *seekTime
 		vec->vel.y = rec2->ydsat / 1000000.0;
 		vec->vel.z = rec2->zdsat / 1000000.0;
 	  }
-}	
+}
 
 PRC_REC *fetch_prc_rec(char *file, int recnum)
 {
@@ -279,48 +279,47 @@ PRC_REC *fetch_prc_rec(char *file, int recnum)
 	/* Open file, skip id and header, seek to recnum record */
 	fp = FOPEN(file,"r");
 	offset = 130 + 130 + 130 * recnum;
-	if (fseek(fp,offset,0)!=0) 
-	  {
+	if (fseek(fp,offset,0)!=0) {
 		fprintf(stderr,"==============================================\n");
 		fprintf(stderr,"No state vector found - read past end of file \n");
 		fprintf(stderr,"==============================================\n");
 		exit(1);
-	  }
+	}
 
 	/* Read the current record */
 	FREAD(buf,130,1,fp);
 
 	FCLOSE(fp);
-	
-	/* Convert the buffer */	
+
+	/* Convert the buffer */
 	sscanf(buf,"%6c%7c%c%6c%11c%12c%12c%12c%11c%11c%11c%6c%6c%6c%2c%3c%c%4c%2c",
-	    tmp->reckey, tmpbuf[0], &tmp->orbtyp, tmpbuf[1],tmpbuf[2],	
+	    tmp->reckey, tmpbuf[0], &tmp->orbtyp, tmpbuf[1],tmpbuf[2],
     	    tmpbuf[3], tmpbuf[4], tmpbuf[5], tmpbuf[6], tmpbuf[7], tmpbuf[8],
 	    tmpbuf[9], tmpbuf[10], tmpbuf[11], tmpbuf[12], tmpbuf[13], &tmp->quali,
 	    tmpbuf[14], tmp->spare);
 
 	/* Convert tmpbuf strings into numeric values */
-	tmp->satid = atoi(tmpbuf[0]);
-	tmp->ttagd = atof(tmpbuf[1]) / 10.0;	/* Units are 0.1 days */
-	tmp->ttagms = atoll(tmpbuf[2]);
-	tmp->xsat = atoll(tmpbuf[3]);
-	tmp->ysat = atoll(tmpbuf[4]);
-	tmp->zsat = atoll(tmpbuf[5]);
-	tmp->xdsat = atoll(tmpbuf[6]);
-	tmp->ydsat = atoll(tmpbuf[7]);
-	tmp->zdsat = atoll(tmpbuf[8]);
-	tmp->roll = atof(tmpbuf[9])/1000.0; 	/* Units are 0.001 degrees */
-	tmp->pitch = atof(tmpbuf[10])/1000.0;	/* Units are 0.001 degrees */
-	tmp->yaw = atof(tmpbuf[11])/1000.0; 	/* Units are 0.001 degrees */
+	tmp->satid  = atoi(tmpbuf[0]);
+	tmp->ttagd  = atof(tmpbuf[1]) / 10.0;	/* Units are 0.1 days */
+	tmp->ttagms = strtoll(tmpbuf[2], (char **)NULL, 10);
+	tmp->xsat   = strtoll(tmpbuf[3], (char **)NULL, 10);
+	tmp->ysat   = strtoll(tmpbuf[4], (char **)NULL, 10);
+	tmp->zsat   = strtoll(tmpbuf[5], (char **)NULL, 10);
+	tmp->xdsat  = strtoll(tmpbuf[6], (char **)NULL, 10);
+	tmp->ydsat  = strtoll(tmpbuf[7], (char **)NULL, 10);
+	tmp->zdsat  = strtoll(tmpbuf[8], (char **)NULL, 10);
+	tmp->roll   = atof(tmpbuf[9])/1000.0; 	/* Units are 0.001 degrees */
+	tmp->pitch  = atof(tmpbuf[10])/1000.0;	/* Units are 0.001 degrees */
+	tmp->yaw    = atof(tmpbuf[11])/1000.0; 	/* Units are 0.001 degrees */
 	tmp->ascarc = atoi(tmpbuf[12]);
-	tmp->check = atoi(tmpbuf[13]);
+	tmp->check  = atoi(tmpbuf[13]);
 	tmp->radcor = atoi(tmpbuf[14]);
 
 	return(tmp);
 }
 
 
-void display_prc_rec(PRC_REC *tmp) 
+void display_prc_rec(PRC_REC *tmp)
 {
 	printf("Record Key            : %s\n",tmp->reckey);
 	printf("Satellite Id          : %i\n",tmp->satid);
@@ -347,10 +346,10 @@ void display_prc_rec_mod(PRC_REC *tmp, float tdtutc_offset)
 {
 	double 		dtmp;
 	hms_time   	tmp_time;
-	ymd_date   	tmp_date;	
+	ymd_date   	tmp_date;
 	double		offset;
 
-	/* tmp_time to hold 1/1/2000 12h 
+	/* tmp_time to hold 1/1/2000 12h
 	 ------------------------------*/
 	tmp_time.hour = 12;
 	tmp_time.min = 0;
@@ -360,25 +359,25 @@ void display_prc_rec_mod(PRC_REC *tmp, float tdtutc_offset)
 	tmp_date.month = 1;
 	tmp_date.day = 1;
 
-	/* offset by given julian days 
+	/* offset by given julian days
 	 ----------------------------*/
 	offset = tmp->ttagd * 86400.0;
 	if (offset < 0.0)	sub_time(-1.0*offset,&tmp_date,&tmp_time);
 	else if (offset > 0.0) 	add_time(offset,&tmp_date,&tmp_time);
 
-	/* offset by given second of day 
+	/* offset by given second of day
 	 ------------------------------*/
 	offset = tmp->ttagms/1000000.0;
 	if (offset < 0.0)	sub_time(-1.0*offset,&tmp_date,&tmp_time);
 	else if (offset > 0.0) 	add_time(offset,&tmp_date,&tmp_time);
 
-	sub_time(tdtutc_offset,&tmp_date,&tmp_time); 
+	sub_time(tdtutc_offset,&tmp_date,&tmp_time);
 
 	printf("   Date/Time of state vector: %.4i%.2i%.2iT%.2i%.2i%5.3f\n",tmp_date.year,
-		 tmp_date.month,tmp_date.day,tmp_time.hour, tmp_time.min,tmp_time.sec);	
+		 tmp_date.month,tmp_date.day,tmp_time.hour, tmp_time.min,tmp_time.sec);
 	if (logflag) {
 	  printf(logbuf, "   Date/Time of state vector: %.4i%.2i%.2iT%.2i%.2i%5.3f\n",tmp_date.year,
-		   tmp_date.month,tmp_date.day,tmp_time.hour, tmp_time.min,tmp_time.sec);	
+		   tmp_date.month,tmp_date.day,tmp_time.hour, tmp_time.min,tmp_time.sec);
 	  printLog(logbuf);
 	}
 
@@ -399,10 +398,10 @@ void display_prc_rec_mod(PRC_REC *tmp, float tdtutc_offset)
 void prc_date_time(PRC_REC *tmp,float tdtutc_offset, ymd_date *date, hms_time *time)
 {
 	hms_time   	tmp_time;
-	ymd_date   	tmp_date;	
+	ymd_date   	tmp_date;
 	double		offset;
 
-	/* tmp_time to hold 1/1/2000 12h 
+	/* tmp_time to hold 1/1/2000 12h
 	 ------------------------------*/
 	tmp_time.hour = 12;
 	tmp_time.min = 0;
@@ -412,14 +411,14 @@ void prc_date_time(PRC_REC *tmp,float tdtutc_offset, ymd_date *date, hms_time *t
 	tmp_date.month = 1;
 	tmp_date.day = 1;
 
-	/* offset by given julian days 
+	/* offset by given julian days
 	 ----------------------------*/
 	offset = tmp->ttagd * 86400.0;
 
 	if (offset < 0.0)	sub_time(-1.0*offset,&tmp_date,&tmp_time);
 	else if (offset > 0.0) 	add_time(offset,&tmp_date,&tmp_time);
 
-	/* offset by given second of day 
+	/* offset by given second of day
 	 ------------------------------*/
 	offset = tmp->ttagms/1000000.0;
 
@@ -427,10 +426,10 @@ void prc_date_time(PRC_REC *tmp,float tdtutc_offset, ymd_date *date, hms_time *t
 	else if (offset > 0.0) 	add_time(offset,&tmp_date,&tmp_time);
 /*
 	printf("Date/Time of state vector: %.4i%.2i%.2iT%.2i%.2i%5.3f\n",tmp_date.year,
-		 tmp_date.month,tmp_date.day,tmp_time.hour, tmp_time.min,tmp_time.sec);	
+		 tmp_date.month,tmp_date.day,tmp_time.hour, tmp_time.min,tmp_time.sec);
 */
 
-	sub_time(tdtutc_offset,&tmp_date,&tmp_time); 
+	sub_time(tdtutc_offset,&tmp_date,&tmp_time);
 
 	date->year = tmp_date.year;
 	date->month = tmp_date.month;
@@ -485,7 +484,7 @@ STATE *fetch_prc_header(char *file)
 	return(tmp);
 }
 
-void display_prc_header(STATE *tmp) 
+void display_prc_header(STATE *tmp)
 {
 	printf("Record Key            : %s\n",tmp->reckey);
 	printf("Start Date            : %f\n",tmp->startDate);
@@ -523,7 +522,7 @@ DSIDP *fetch_prc_id(char *file)
 	sscanf(buf,"%6c%15c%6c%103c",tmp->reckey, tmp->prodid, tmp->dattyp, tmp->spare);
 
 	return(tmp);
-}	
+}
 
 void display_prc_id(DSIDP *tmp)
 {
@@ -531,4 +530,4 @@ void display_prc_id(DSIDP *tmp)
 	printf("Product Id            : %s\n",tmp->prodid);
 	printf("Data Type             : %s\n",tmp->dattyp);
 	printf("Spare                 : %s\n",tmp->spare);
-}	
+}
