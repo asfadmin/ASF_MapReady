@@ -232,9 +232,9 @@ output_format_combobox_changed()
     case OUTPUT_FORMAT_JPEG:
     case OUTPUT_FORMAT_PPM:
     case OUTPUT_FORMAT_TIFF:
+    case OUTPUT_FORMAT_GEOTIFF:
       show = TRUE;
       break;
-    case OUTPUT_FORMAT_GEOTIFF:
     case OUTPUT_FORMAT_ASF_INTERNAL:
     case OUTPUT_FORMAT_CEOS:  
       show = FALSE;
