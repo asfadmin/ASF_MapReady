@@ -1,6 +1,8 @@
 
 Creating a tool package
 
+Note that for any of this to work on windows, you must have cygwin
+installed.
 
  1. If you want to meddle with what the package will include you'll need to
     edit asf_tools/make_support/master_program_list. That is where all the
@@ -41,7 +43,9 @@ Creating a tool package
  9.  Now that the tools are built, cd to the release/autotar directory
     /base/dir/asf_tools> cd ../release/autotar
 
-10. This directory has been populated with several binary.* and source.* files.
+10. For Unix: 
+
+    This directory has been populated with several binary.* and source.* files.
     They were written by the config script which uses the program makemake (in
     asf_tools/make_support). There are also a couple of scripts; tarfile and
     tarallsource. Tarallsource does exactly as its name implies. The tarfile
@@ -51,3 +55,38 @@ Creating a tool package
     the convert package on linux you'd create the file convert.linux.bin.tar.gz
     in /base/dir/release/tar/convert by doing:
     /base/dir/release/autotar> ./tarfile bin /base/dir convert
+
+    For windows:
+
+    You must have the Nullsoft installer system installed on the
+    build machine for this build step.
+
+    Edit 
+
+      /base/dir/release/windows_installer/convert_package/ConvertPackageInstall
+
+    and update the locations of the tool binaries and the cygwin
+    binaries directories.
+
+    In a widows file manager thingy window, right click on the script
+    we just edited and select 'compile NSIS script'.
+
+    Create a tarball of the generated binary
+
+       tar czvf convert.<version_number>.bin.win32.tar.gz 
+           ASF_Convert_Setup.exe
+
+11. The current procedure for delivery onto the web (this procedure
+    could easily change while leaving the rest of this document mostly
+    correct) is to upload to the machine 'seth'.  Login with username
+    'asfsw' and password '[web_g00nz]'.  Then do:
+  
+       cd Incoming/
+       mkdir v<version_number>
+
+    Now log back out and do:
+
+       scp <tarball> asfsw@seth.asf.alaska.edu:/Incoming/v<version_number>/
+
+    Now be sure to tell the web monkey (currently Charley Slater) that
+    its there and waiting for him!
