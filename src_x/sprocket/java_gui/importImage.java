@@ -694,15 +694,12 @@ class importImage {
 
 // *****************************************************************************
    public Dimension brightest(int evtx, int evty, int realx, int realy, int range) {   //returns the brightest value within range pixels
-//      boolean firstFLAG;
       long charlie = 0;
       long max = Long.MIN_VALUE;
       Dimension etarget = null;
 
       realx -= zwidth/2;      //to put x in the middle of the zwidth*zheight block.
       realy -= zheight/2;
-//      x--;
-//      y--;
 
       int ymin = evty - range;
       if (ymin < 0) {ymin = 0;}
@@ -718,7 +715,6 @@ class importImage {
 
       int first = (width*realy + realx) * 4;
       if (first < 0)  {
-//         firstFLAG = true;
          if (realx < 0) {first = 0;}
          else {first = realx * 4;}
       }
@@ -735,13 +731,13 @@ class importImage {
                rafFLAG = true;
             }
             catch(Exception e) {
-               logger.log("error opening file: " + fileName + " for brightest.");
+               logger.log("Error opening file: " + fileName + " for importImage.brightest.");
             }
          }
       }
 
       try {
-         //okay, get the proper starting place
+         //Get to the proper starting place
          //read in one line
          //convert to int's
          //save the position of the maxest
@@ -752,37 +748,32 @@ class importImage {
          int now = first;
 
          for (int i=ymin; i < ymax; i++) {
-         //   if (!firstFLAG)
-         //      raf.skipBytes(start*4);         //what?! why?
             raf.read(newline);
 
-            for (int j=0; j < (xmax - xmin); j++) {
-
-               if (newline[j*4] < 0)
-                  charlie =   (256 + newline[j*4]) * 16777216;
-               else
-                  charlie =   newline[j*4] * 16777216;
-
-               if (newline[j*4+1] < 0)
-                  charlie +=   (256 + newline[j*4+1]) * 65536;
-               else
-                  charlie +=   newline[j*4+1] * 65536;
-
-               if (newline[j*4+2] < 0)
-                  charlie +=   (256 + newline[j*4+2]) * 256;
-               else
-                  charlie +=   newline[j*4+2] * 256;
-
-               if (newline[j*4+3] < 0)
-                  charlie +=   (256 + newline[j*4+3]);
-               else
-                  charlie +=   newline[j*4+3];
-
+            for (int jj=0; jj < (xmax - xmin); jj++) {
+               // convert the 4 bytes to an integer with bitwise ops
+               charlie = (((newline[jj*4  ]&0xff)<<24)
+                        | ((newline[jj*4+1]&0xff)<<16)
+                        | ((newline[jj*4+2]&0xff)<<8)
+                        |  (newline[jj*4+3]&0xff));
+/*
+               if (newline[jj*4] < 0)
+                    charlie = (256 + newline[jj*4]) * 16777216;
+               else charlie =        newline[jj*4]  * 16777216;
+               if (newline[jj*4+1] < 0)
+                    charlie += (256 + newline[jj*4+1]) * 65536;
+               else charlie +=        newline[jj*4+1]  * 65536;
+               if (newline[jj*4+2] < 0)
+                    charlie +=   (256 + newline[jj*4+2]) * 256;
+               else charlie +=          newline[jj*4+2]  * 256;
+               if (newline[jj*4+3] < 0)
+                    charlie +=   (256 + newline[jj*4+3]);
+               else charlie +=          newline[jj*4+3];
+*/
                if (charlie > max) {
                   max = charlie;
-                  etarget = new Dimension(j+xmin, i);
+                  etarget = new Dimension(jj+xmin, i);
                }
-
             }
             now += width*4;
             raf.seek(now);
