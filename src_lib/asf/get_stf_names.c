@@ -30,21 +30,18 @@ int has_stf_metadata_extension(const char *stfName)
   split_dir_and_file(stfName, dirName, fileName);
 
   for (ii=begin; ii<end; ii++) {
-    int strEnd = strlen(stf_metadata_extensions[ii]) - 1;
-
-    /* First check for suffix style extensions */
+    /* Check for suffix style extensions */
     if (stf_metadata_extensions[ii][0] == EXTENSION_SEPARATOR) {
-      split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
-      sprintf(metaTemp,"%s%s%s",dirName,baseName,stf_metadata_extensions[ii]);
+      /* Assume stfName came to the function as a base name */
+      sprintf(metaTemp,"%s%s%s",dirName,fileName,stf_metadata_extensions[ii]);
       if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
         fclose(metaFP);
         return TRUE;
       }
-    }
-    /* Second look for prefix style extensions */
-    else if (stf_metadata_extensions[ii][strEnd] == EXTENSION_SEPARATOR) {
-      split_base_and_ext(fileName, PREPENDED_EXTENSION, baseName, ext);
-      sprintf(metaTemp,"%s%s%s",dirName,stf_metadata_extensions[ii],baseName);
+      /* Hmmm, didn't work, maybe it's got an extension on there already,
+       * nix it and try again */
+      split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
+      sprintf(metaTemp,"%s%s%s",dirName,baseName,stf_metadata_extensions[ii]);
       if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
         fclose(metaFP);
         return TRUE;
@@ -78,14 +75,23 @@ stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char *metaName)
   char ext[256];
   FILE *metaFP;
   int begin=NO_STF_METADATA+1, end=NUM_STF_METADATA_EXTS;
-  int ii;
+  stf_metadata_ext_t ii;
 
   /* Separate the filename from the path (if there's a path there) */
   split_dir_and_file(stfName, dirName, fileName);
 
   for (ii=begin; ii<end; ii++) {
-    /* First check for suffix style extensions */
+    /* Check for suffix style extensions */
     if (stf_metadata_extensions[ii][0] == EXTENSION_SEPARATOR) {
+      /* Assume stfName came to the function as a base name */
+      sprintf(metaTemp,"%s%s%s",dirName,fileName,stf_metadata_extensions[ii]);
+      if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
+        fclose(metaFP);
+        strcpy(metaName,metaTemp);
+        return ii;
+      }
+      /* Hmmm, didn't work, maybe it's got an extension on there already,
+       * nix it and try again */
       split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
       sprintf(metaTemp,"%s%s%s",dirName,baseName,stf_metadata_extensions[ii]);
       if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
@@ -94,19 +100,6 @@ stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char *metaName)
         return ii;
       }
     }
-/* Keep this in case STF naming pulls prefix extensions on us **
- *  ** Second look for prefix style extensions (you can thank RSI) **
- *  int strEnd = strlen(stf_metadata_extensions[ii]) - 1;
- *  else if (stf_metadata_extensions[ii][strEnd] == EXTENSION_SEPARATOR) {
- *    split_base_and_ext(fileName, PREPENDED_EXTENSION, baseName, ext);
- *    sprintf(metaTemp,"%s%s%s",dirName,stf_metadata_extensions[ii],baseName);
- *    if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
- *      fclose(metaFP);
- *      strcpy(metaName,metaTemp);
- *      return ii;
- *    }
- *  }
- */
   }
   /* If we haven't returned yet there ain't no metadata file */
   return NO_STF_METADATA;
@@ -129,7 +122,7 @@ stf_metadata_ext_t require_stf_metadata(const char *stfName, char *metaName)
 
     /* Prepare a very readable list of possible extensions */
     sprintf(extensionList,"%s",stf_metadata_extensions[begin++]);
-    if (end-begin == 1)
+    if (end-begin == 0)
       andFlag=FALSE;
     else
       end--;
@@ -142,7 +135,8 @@ stf_metadata_ext_t require_stf_metadata(const char *stfName, char *metaName)
                                          stf_metadata_extensions[ii]);
 
     /* Report to user & exit */
-    printf("**************************** ERROR! ****************************\n"
+   sprintf(logbuf,
+           "**************************** ERROR! ****************************\n"
            "*   This program was looking for the STF style metadata file,\n"
            "*   %s\n"
            "*   That file either does not exist or cannot be read.\n"
@@ -150,6 +144,8 @@ stf_metadata_ext_t require_stf_metadata(const char *stfName, char *metaName)
            "*   %s\n"
            "****************************************************************\n",
            stfName, extensionList);
+    if (logflag)   {printLog(logbuf);}
+    printf(logbuf);
     exit(EXIT_FAILURE);
   }
 
@@ -162,17 +158,37 @@ stf_metadata_ext_t require_stf_metadata(const char *stfName, char *metaName)
 /******************************************************************************
  * get_stf_data_name:
  * This one sort of cheats, since currently the STF data file represents the
- * base name. We just copy stfName into dataName if fopen is succesful opening
- * the given STF name. */
+ * base name. The stf_data_ext_t enum is sort of buggered up since its only two
+ * extensions are the same, always return STF_BLANK on success.  */
 stf_data_ext_t get_stf_data_name(const char *stfName, char *dataName)
 {
+  char dirName[256], fileName[256];
+  char dataTemp[1024];
+  char baseName[256];
+  char ext[256];
   FILE *dataFP;
+  int begin=NO_STF_DATA+1, end=NUM_STF_DATA_EXTS;
+  stf_data_ext_t ii=STF_BLANK;
 
+  /* Separate the filename from the path (if there's a path there) */
+  split_dir_and_file(stfName, dirName, fileName);
+
+  /* First assume we've got the base name */
+  sprintf(dataTemp,"%s%s%s",dirName,baseName,stf_data_extensions[ii]);
   if ((dataFP=fopen(stfName,"r"))!=NULL) {
     fclose(dataFP);
     strcpy(dataName,stfName);
-    return NO_STF_DATA+1;
+    return ii;
   }
+  /* Hmmm, guess its not a base name, lets try pruning off that extension */
+  split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
+  sprintf(dataTemp,"%s%s%s",dirName,baseName,stf_data_extensions[ii]);
+  if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
+    fclose(dataFP);
+    strcpy(dataName,dataTemp);
+    return ii;
+  }
+
   /* If we haven't returned yet there ain't no data file */
   return NO_STF_DATA;
 }
@@ -194,7 +210,7 @@ stf_data_ext_t require_stf_data(const char *stfName, char *dataName)
 
     /* Prepare a very readable list of possible extensions */
     sprintf(extensionList,"%s",stf_data_extensions[begin++]);
-    if (end-begin == 1)
+    if (end-begin == 0)
       andFlag=FALSE;
     else
       end--;
@@ -207,7 +223,8 @@ stf_data_ext_t require_stf_data(const char *stfName, char *dataName)
                                          stf_data_extensions[ii]);
 
     /* Report to user & exit */
-    printf("**************************** ERROR! ****************************\n"
+   sprintf(logbuf,
+           "**************************** ERROR! ****************************\n"
            "*   This program was looking for the STF style data file,\n"
            "*   %s\n"
            "*   That file either does not exist or cannot be read.\n"
@@ -215,6 +232,8 @@ stf_data_ext_t require_stf_data(const char *stfName, char *dataName)
            "*   %s\n"
            "****************************************************************\n",
            stfName, extensionList);
+    if (logflag)   {printLog(logbuf);}
+    printf(logbuf);
     exit(EXIT_FAILURE);
   }
 
@@ -237,7 +256,7 @@ stf_file_pairs_t get_stf_names(const char *stfName, char *dataName,
       && get_stf_metadata_name(stfName, metaName) == STF_PAR)
     return STF_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_blank
+  if (   get_stf_data_name(stfName, dataName)     == STF_BLANK
       && get_stf_metadata_name(stfName, metaName) == STF_par)
     return STF_par_PAIR;
 
@@ -251,7 +270,7 @@ stf_file_pairs_t get_stf_names(const char *stfName, char *dataName,
 stf_file_pairs_t require_stf_pair(const char *stfName, char *dataName,
                                     char *metaName)
 {
-  stf_file_pairs_t ret = require_stf_pair(stfName, dataName, metaName);
+  stf_file_pairs_t ret = get_stf_names(stfName, dataName, metaName);
 
   /* If we didn't find anything, report & leave */
   if (ret == NO_STF_FILE_PAIR) {
@@ -264,7 +283,7 @@ stf_file_pairs_t require_stf_pair(const char *stfName, char *dataName,
     sprintf(extensionList,"('%s' '%s')",stf_data_extensions[begin],
                                         stf_metadata_extensions[begin]);
     begin++;
-    if (end-begin == 1)
+    if (end-begin == 0)
       andFlag=FALSE;
     else
       end--;
@@ -279,7 +298,8 @@ stf_file_pairs_t require_stf_pair(const char *stfName, char *dataName,
                                                   stf_metadata_extensions[ii]);
 
     /* Report to user & exit */
-    printf("**************************** ERROR! ****************************\n"
+   sprintf(logbuf,
+           "**************************** ERROR! ****************************\n"
            "*   This program was looking for the STF style SAR files,\n"
            "*   %s and its associated file.\n"
            "*   One or both files either do not exist or cannot be read.\n"
@@ -287,6 +307,8 @@ stf_file_pairs_t require_stf_pair(const char *stfName, char *dataName,
            "*   %s\n"
            "****************************************************************\n",
            stfName, extensionList);
+    if (logflag)   {printLog(logbuf);}
+    printf(logbuf);
     exit(EXIT_FAILURE);
   }
 
