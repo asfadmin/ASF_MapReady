@@ -8,8 +8,16 @@
 # the directory hierarchy.
 
 file asf_geocode
-set args --projection utm --central-meridian -66.000000 --latitude-of-origin -8.000000 --datum WGS84 -log tmpg1676.log R125344879G4S034 R125344879G4S034_utm
-cd test_data/phil_amazon
+#set args --projection utm --zone 18test_data/joanne_recode_attempts/from_geocoded_ceos/R141507213U3S006 rcfagc
+
+set args --projection utm --zone 15 test_data/joanne_recode_attempts/from_not_geocoded_ceos/R129975207G3S010 ncfngc
+
+
+
+
+
+#set args --projection utm /home/bkerin/asf/asf_tools/src_geo/asf_geocode/test_data/R133387290G1U002 R133387290G1U002_utm
+#set args --projection utm --central-meridian -66.000000 --latitude-of-origin -8.000000 --datum WGS84 -log tmpg1676.log R125344879G4S034 R125344879G4S034_utm
 #set args --projection ps --first-standard-parallel 70 --central-meridian -45 test_data/R133387290G1U002 ps_direct
 #set args --projection ps --first-standard-parallel 70 --central-meridian -45 --north-pole speed_test recoded
 # set args --resample-method nearest_neighbor --projection utm test_data/R133387290G1U002 speed_test

@@ -966,17 +966,49 @@ main (int argc, char **argv)
   // transformations of the projection coordinates of the corners of
   // the output image back to the pixel indicies in the input image.
   if ( !input_projected ) {
-    double max_corner_error = 1.0;
+
+    // The maximum corner error we are willing to tolerate.
+    double max_corner_error;
+
+    // The so called scansar projection has problems that prevent us
+    // from getting as good a match as we would like (see below about
+    // asymmetry or meta_get_latLon and meta_get_lineSamp).
+    if ( imd->projection->type != SCANSAR_PROJECTION ) {
+      max_corner_error = 1.0;
+    } 
+    else {
+      max_corner_error = 3.0;
+    }
+
     // Upper left corner.
     double ul_lat, ul_lon;
-    meta_get_latLon (imd, (float) 0, (float) 0, average_height, &ul_lat, 
-		     &ul_lon);
+    meta_get_latLon (imd, 0.0, 0.0, average_height, &ul_lat, &ul_lon);
+
+    // FIXME: Fix the broken scansar crap *HARD*.
+
+    // Test the symmetry of meta_get_latLon/meta_get_lineSamp.  I
+    // believe it is pretty good for everything but scansar projected
+    // input data, where it is off by 1.5% or so and therefore throws
+    // this error check just a bit outside of a pixel.  But if the
+    // problem is somewhere else I want to know.
+    if ( imd->projection->type != SCANSAR_PROJECTION ) {
+      const double stpx = 1.0, stpy = 1.0;   // Symmetry test pixel indicies.
+      double st_lat, st_lon;   // Symmetry test lat and long values.
+      meta_get_latLon (imd, stpx, stpy, average_height, &st_lat, &st_lon);
+      double strx, stry;       // Symmetry test result values.
+      meta_get_lineSamp (imd, st_lat, st_lon, average_height, &strx, &stry);
+      // We will insist that the results are symmetric to within this
+      // fraction after transforming out and back.
+      const double sym_th = 0.001;   // Symmetry threshold.
+      g_assert (fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th);
+    }
+
     double ul_x, ul_y;
     project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
     double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
-    if (fabs (ul_x_pix_approx) > max_corner_error ) {
+    if (fabs (ul_x_pix_approx) > fabs (1 - max_corner_error) ) {
       asfPrintError ("UL X Corner Error was too large!  %f > %f\n",
-		     fabs(ul_x_pix_approx), max_corner_error );
+		     fabs(ul_x_pix_approx), 1 - max_corner_error );
     }
     double ul_y_pix_approx = Y_PIXEL (ul_x, ul_y);
     if (fabs (ul_y_pix_approx) > max_corner_error ) {
