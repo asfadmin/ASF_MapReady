@@ -40,7 +40,7 @@ Vers	Date	Author		Description
 
 int set_era(const char *inname, char *onm, int opflag)
 {
-  char n_L[BUFFER], n_D[BUFFER], n_trl[BUFFER], n_tlr[BUFFER], n_ldr[BUFFER], 
+  char n_L[BUFFER], n_D[BUFFER], n_trl[BUFFER], n_tlr[BUFFER], n_ldr[BUFFER],
        n_dat[BUFFER];
   char *fileType="bad opflag";
   FILE *fp;
