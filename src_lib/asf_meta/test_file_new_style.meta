@@ -28,7 +28,7 @@ general {
     missing_lines: 42
 }
 
-sar{
+sar {
     proj_type: G  # [S=slant range; G=ground range; P=map projected]
     look_direction: R # (normally R) [R=right; L=left]
     look_count: 5
@@ -73,6 +73,7 @@ state {
 	X velocity, earth-fixed [m]: 22555
 	Y velocity, earth-fixed [m]: 22666
 	Z velocity, earth-fixed [m]: 22777
+    }
 }
 
 projection {
