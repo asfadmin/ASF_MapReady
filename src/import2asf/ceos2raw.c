@@ -22,11 +22,10 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
                      char *outN)
 {
 	meta_parameters *meta=raw_init();
-	extern int sprocketFlag;
-		
+
 	ceos_init(inN,meta);
 	s->lookDir = meta->sar->look_direction;
-	
+
         /* Check for VEXCEL LZP Data-- has odd state vectors
          --------------------------------------------------*/
 	if (0==strncmp(dssr->sys_id,"SKY",3))
@@ -56,7 +55,7 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
 		propagate_state(meta, 3, (s->nLines / s->prf / 2.0) );
 		if (!quietflag) printf("Done.\n");
 	}
-	
+
 	/* Update s-> fields with new state vector
          ----------------------------------------*/
 	addStateVector(s,&meta->state_vectors->vecs[0].vec);
@@ -68,11 +67,6 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
         /* Write out and free the metadata structure
          ------------------------------------------*/
 	meta_write(meta,outN);
-	if (sprocketFlag) {
-		char sprocketName[256];
-		create_name(sprocketName,outN,".metadata");
-		meta_write_sprocket(sprocketName,meta,dssr);
-	}
 }
 
 /******************************************************************************
@@ -85,11 +79,11 @@ bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
 	bin_state *s;
 	struct dataset_sum_rec dssr;
 	char *satName;
-	
+
 /*Figure out what kind of SAR data we have, and initialize the appropriate decoder.*/
 	get_dssr(inN,&dssr);
 	satName=dssr.mission_id;
-	
+
 	if (0==strncmp(satName,"E",1))
 		s=ERS_ceos_decoder_init(inN,outN,readNextPulse);
 	else if (0==strncmp(satName,"J",1))
@@ -101,12 +95,12 @@ bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
 		exit(EXIT_FAILURE);
 	}
 	createMeta_ceos(s,&dssr,inN,outN);
-	
+
 /*Write out AISP input parameter files.*/
 	writeAISPparams(s,outN,dssr.crt_dopcen[0],dssr.crt_dopcen[1],dssr.crt_dopcen[2]);
 	writeAISPformat(s,outN);
 
 	*nLines=s->nLines;
-	
+
 	return s;
 }
