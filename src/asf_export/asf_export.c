@@ -22,6 +22,7 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_statistics.h>
 #include <jpeglib.h>
+#include <png/png.h>
 #include <tiff.h>
 #include <tiffio.h>
 #include <xtiffio.h>
@@ -71,11 +72,12 @@ typedef struct {
 } command_line_parameters_t;
 
 typedef enum {
-  ENVI,
-  ESRI,
-  GEOTIFF,
-  JPEG,
-  PPM
+  ENVI,				/* ENVI GIS package.  */
+  ESRI,				/* ESRI GIS package.  */
+  GEOTIFF,			/* Geotiff.  */
+  JPEG,				/* Joint Photographic Experts Group.  */
+  PNG,				/* Portable Network Graphics.  */
+  PPM				/* Portable PixMap.  */
 } output_format_t;
 
 /* We don't have strncpy everywhere, so here is a substitude.  */
@@ -129,6 +131,11 @@ export_as_jpeg (const char *metadata_file_name,
 		long max_size);
 
 void
+export_as_png (const char *metadata_file_name,
+	       const char *image_data_file_name, const char *output_file_name,
+	       long max_size);
+
+void
 export_as_ppm (const char *metadata_file_name,
 	       const char *image_data_file_name, const char *output_file_name,
 	       long max_size);
@@ -170,6 +177,7 @@ main (int argc, char *argv[])
 	     || (strcmp (command_line.format, "esri") == 0)
 	     || (strcmp (command_line.format, "geotiff") == 0)
 	     || (strcmp (command_line.format, "jpeg") == 0)
+	     || (strcmp (command_line.format, "png") == 0)
 	     || (strcmp (command_line.format, "ppm") == 0)) ) {
 	fprintf (stderr, "%s: bad format (-f argument): %s\n", program_name, 
 		 command_line.format);
@@ -209,6 +217,9 @@ main (int argc, char *argv[])
   }
   else if ( strcmp (command_line.format, "jpeg") == 0 ) {
     format = JPEG;
+  }
+  else if ( strcmp (command_line.format, "png") == 0 ) {
+    format = PNG;
   }
   else if ( strcmp (command_line.format, "ppm") == 0 ) {
     format = PPM;
@@ -262,6 +273,9 @@ main (int argc, char *argv[])
     else if ( format == JPEG ) {
       create_name (command_line.output_name, command_line.input_name, ".jpeg");
     }
+    else if ( format == PNG ) {
+      create_name (command_line.output_name, command_line.input_name, ".png");
+    }
     else if ( format == PPM ) {
       create_name (command_line.output_name, command_line.input_name, ".ppm");
     }
@@ -296,6 +310,10 @@ main (int argc, char *argv[])
     export_as_jpeg (metadata_file_name, image_data_file_name,
 		    command_line.output_name, command_line.size);
   } 
+  else if ( format == PNG ) {
+    export_as_png (metadata_file_name, image_data_file_name,
+		   command_line.output_name, command_line.size);
+  }
   else if ( format == PPM ) {
     export_as_ppm (metadata_file_name, image_data_file_name,
 		   command_line.output_name, command_line.size);
@@ -370,56 +388,6 @@ get_image_data (meta_parameters *metadata, const char *image_data_file_name)
   
   return data;
 }
-
-//void
-//export_as_png (const char *metadata_file_name,
-//	       const char *image_data_file_name,
-//	       const char *output_file_name)
-//{
-//  /* Get the image metadata.  */
-//  meta_parameters *md = meta_read (metadata_file_name);
-//
-//  /* Complex data generally can't be output into meaningful images, so
-//     we refuse to deal with it.  */
-//  assert (md->general->data_type == BYTE
-//	  || md->general->data_type == INTEGER16
-//	  || md->general->data_type == INTEGER32
-//	  || md->general->data_type == REAL32
-//	  || md->general->data_type == REAL64);
-//
-//  void *data = get_image_data (md, image_data_file_name);
-//  
-//  /* Open the output file to be used.  */
-//  FILE *ofp = fopen (output_file_name, "w");
-//  if ( ofp == NULL ) {
-//    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
-//	     output_file_name, strerror (errno));
-//    exit (EXIT_FAILURE);
-//  }
-//
-//  /* Initialize libpng structures and error handling.  */
-//  png_structp png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING, 
-//						 (png_voidp) NULL, NULL, NULL);
-//  assert (png_ptr != NULL);
-//  png_infop info_ptr = png_create_info_struct (png_ptr);
-//  assert (png_ptr != NULL);
-//  if ( setjmp (png_jmpbuf (png_ptr)) ) {
-//    fprintf (stderr, "%s: some libpng call failed somehow or other\n", 
-//	     program_name);
-//    exit (EXIT_FAILURE);
-//  }
-//
-//  /* Write the png.  */
-//  png_init_io (png_ptr, ofp);
-//  png_set_IHDR (png_ptr, info_ptr, md->general->line_count, 
-//		md->general->sample_count, bit_depth, PNG_COLOR_TYPE_GRAY,
-//		PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, 
-//		PNG_FILTER_TYPE_DEFAULT);
-//  png_write_info (png_ptr, info_ptr);
-//  png_uint_32 k, height, width;
-// 
-//  assert (FALSE);		/* Not finished yet.  */
-//}
 
 void
 export_as_envi (const char *metadata_file_name,
@@ -786,12 +754,8 @@ export_as_jpeg (const char *metadata_file_name,
   size_t pixel_count = (size_t) line_count * sample_count;
 
   /* Get the image data.  */
-  void *data = get_image_data (md, image_data_file_name);
-  /* It supposed to be big endian data, this converts to host byte
-     order.  */
-  /* Input better be float data.  */
   assert (md->general->data_type == REAL32);
-  float *daf = data;
+  float *daf = get_image_data (md, image_data_file_name);
   /* It supposed to be big endian data, this converts to host byte
      order.  */
   int jj;
@@ -865,8 +829,107 @@ export_as_jpeg (const char *metadata_file_name,
   jpeg_destroy_compress (&cinfo);
 
   free (pixels);
-  free (data);
+  free (daf);
   meta_free (md);
+}
+
+void
+export_as_png (const char *metadata_file_name,
+	       const char *image_data_file_name, const char *output_file_name,
+	       long max_size)
+{
+  /* Get the image metadata.  */
+  meta_parameters *md = meta_read (metadata_file_name);
+
+  int line_count = md->general->line_count;
+  int sample_count = md->general->sample_count;
+  /* Maximum large dimension to allow in the output.  */
+  unsigned long max_large_dimension;
+  if ( (max_size > line_count && max_size > sample_count) 
+       || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
+    max_large_dimension = GSL_MAX (line_count, sample_count);
+  } 
+  else {
+    max_large_dimension = max_size;
+  }
+
+  size_t pixel_count = (size_t) line_count * sample_count;
+
+  /* Get the image data.  */
+  assert (md->general->data_type == REAL32);
+  float *daf = get_image_data (md, image_data_file_name);
+  /* It supposed to be big endian data, this converts to host byte
+     order.  */
+  int jj;
+  for ( jj = 0 ; jj < pixel_count ; jj++ ) {
+    ieee_big32 (daf[jj]);
+  }
+
+  /* This space is resized later (with realloc) if the image is
+     scaled.  */
+  unsigned char *pixels = scale_floats_to_unsigned_bytes (daf, pixel_count);
+
+  /* We want to scale the image st the long dimesion is less than or
+     equal to this value the prescribed maximum.  */
+  /* Current size of the image.  */
+  unsigned long width = sample_count, height = line_count;
+  /* Scale the image, modifying width and height to reflect the new
+     image size.  */
+  pixels = scale_unsigned_char_image_dimensions (pixels, max_large_dimension,
+						 &width, &height);
+
+  /* Open the output file to be used.  */
+  FILE *ofp = fopen (output_file_name, "w");
+  if ( ofp == NULL ) {
+    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
+	     output_file_name, strerror (errno));
+    exit (EXIT_FAILURE);
+  }
+
+  /* Initialize libpng structures and error handling.  */
+  png_structp png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING, 
+						 (png_voidp) NULL, NULL, NULL);
+  assert (png_ptr != NULL);
+  png_infop info_ptr = png_create_info_struct (png_ptr);
+  assert (png_ptr != NULL);
+  if ( setjmp (png_jmpbuf (png_ptr)) ) {
+    fprintf (stderr, "%s: some libpng call failed somehow or other\n", 
+	     program_name);
+    exit (EXIT_FAILURE);
+  }
+  
+  /* Write the png.  */
+  png_init_io (png_ptr, ofp);
+  const int bit_depth = 8;		/* We are writing a byte image.  */
+  png_set_IHDR (png_ptr, info_ptr, width, height, bit_depth, 
+		PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE, 
+		PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+  const int text_fields_count = 1; /* We write only one field of text.  */
+  /* FIXME: confirm: I guess we have to malloc our own png_text blocks?  */
+  png_text *text_ptr = malloc (text_fields_count * sizeof (png_text));
+  text_ptr[0].key = "Description";
+  text_ptr[0].text = "Alaska Satellite Facility Image";
+  text_ptr[0].compression = PNG_TEXT_COMPRESSION_NONE;
+  png_set_text (png_ptr, info_ptr, text_ptr, 1);
+  png_write_info (png_ptr, info_ptr);
+  png_uint_32 ii;
+  png_bytep row_pointers[height];
+  for ( ii = 0 ; ii < height ; ii++ ) {
+    const int bytes_per_pixel = 1; /* We are writing a byte image.  */
+    row_pointers[ii] = pixels + ii * width * bytes_per_pixel;
+  }
+  png_write_image (png_ptr, row_pointers);
+  png_write_end (png_ptr, info_ptr);
+
+  png_destroy_write_struct (&png_ptr, &info_ptr);
+
+  int return_code = fclose (ofp); /* Close png file.  */
+  assert (return_code == 0);
+
+  free (pixels);
+  free (daf);
+  meta_free (md);
+
 }
 
 void
