@@ -166,8 +166,10 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN,int stfFlag)
       meta->general->re_major = 6378144.0;
       meta->general->re_minor = 6356754.9;
     }
-    meta->sar->earth_radius     = s->re;
-    meta->sar->satellite_height = s->re+s->ht;
+    if (!meta_is_valid_double(meta->sar->earth_radius))
+      meta->sar->earth_radius     = s->re;
+    if (!meta_is_valid_double(meta->sar->satellite_height))
+      meta->sar->satellite_height = s->re+s->ht;
     if (!meta_is_valid_string(meta->sar->satellite_clock_time)) {
       strcpy (meta->sar->satellite_clock_time, "0");
     }
