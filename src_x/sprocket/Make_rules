@@ -11,4 +11,8 @@ CFLAGS  = $(FLAGS) $(DEBUGFLAGS)
 LIBDIR  = ../../../lib/$(SYS)
 BINDIR  = ../../../bin/$(SYS)
 JAVADIR = ../../../java
-JAVAC   = javac -O -deprecation -classpath $(JAVADIR):$(JAVADIR)/geotransform.jar:.
+ifdef DEBUG_BUILD
+  JAVAC = javac -g -classpath $(JAVADIR):$(JAVADIR)/geotransform.jar:.
+else
+  JAVAC = javac -O -classpath $(JAVADIR):$(JAVADIR)/geotransform.jar:.
+endif
