@@ -97,19 +97,19 @@ else
 fi
 
 
-echo "Generating ASAP input file"
+#echo "Generating ASAP input file"
 gen_oe $1
 
-echo " "
-echo "Running ASAP"
-echo " "
+#echo " "
+#echo "Running ASAP"
+#echo " "
 asap
 /bin/mv fort.7 $2
 /bin/rm ./temp_file_formerly_known_as_5
 
-echo " "
-echo "Propagate:  Created output file $2"
-echo " "
+#echo " "
+#echo "Propagate:  Created output file $2"
+#echo " "
 
 rm ./propagate_lock_file
 
