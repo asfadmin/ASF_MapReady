@@ -253,6 +253,7 @@ typedef struct {
   typedef struct {
     double slat;      /* Reference latitude for polar stereographic */
     double slon;      /* Reference longitude for polar stereographic*/
+    int is_north_pole;/* 1 if centered on North Pole, 0 if South    */
   } proj_ps;
  /* Universal Transverse Mercator.*/
   typedef struct {
