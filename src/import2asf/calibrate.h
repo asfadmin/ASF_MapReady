@@ -1,6 +1,9 @@
 /*Calibration header file.
 
 */
+#ifndef _calibrate_h_
+#define _calibrate_h_
+
 #include "asf_meta.h"
 
 typedef enum {
@@ -39,7 +42,7 @@ typedef struct {
 	meta_parameters *meta;   /*Used to extract look and incidence angles.*/
 			         /*Used if noise_index==by_look  or
 					if noise_index==by_geo or
-					if  output_type==gamma_naught or 
+					if  output_type==gamma_naught or
 						output_type==beta_naught */
 
 	output_correction_type output_type;
@@ -53,7 +56,9 @@ int slantRange2groundPixel(meta_parameters *sar,double slant);
 double get_noise(cal_params *p,int x,int y);
 double get_invCosIncAngle(cal_params *p,int x, int y);
 double get_invSinIncAngle(cal_params *p,int x, int y);
-cal_params *create_cal_params(char *inSAR);
+cal_params *create_cal_params(const char *inSAR);
 float get_cal_dn(cal_params*,double,double,int);
+float sprocket_get_cal_dn(cal_params*,double,double,int);
 int check_cal(char*);
 
+#endif
