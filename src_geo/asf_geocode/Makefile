@@ -70,7 +70,7 @@ OBJS := $(patsubst %.c, %.o, $(SOURCES))
 $(PROGRAM): $(OBJS)
 	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
 	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
-	cp -R projections/ $(BINDIR)
+	cp -R projections/ $(SHAREDIR)
 
 .PHONY: clean
 clean:
