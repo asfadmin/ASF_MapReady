@@ -17,11 +17,11 @@ PROGRAM HISTORY:
 #include "meta_init.h"
 #include "aisp_params.h"
 
-/*aisp_init:
-	Reads additional SAR structure parameters from
-AISP input file into meta_parameters structure.
-*/
-void aisp_init(const char *fName,meta_parameters *sar)
+/************************************************************
+ * aisp_init:
+ * Reads additional SAR structure parameters from AISP input
+ * file into meta_parameters structure. */
+void aisp_init(const char *fName,meta_parameters *meta)
 {
 	struct AISP_PARAMS g;
 /*Check to see if the AISP input file exists.*/
@@ -30,30 +30,33 @@ void aisp_init(const char *fName,meta_parameters *sar)
 		return;/*If the AISP input file does not exist, just bail.*/
 
 /*If the AISP input file exists, read parameters from it.*/
-	inputFileName=appendExt(fName,".in");
+	inputFileName = appendExt(fName,".in");
 	read_params(inputFileName,&g);
 	free(inputFileName);
 
 /*Now sift these AISP globals into SAR parameters.*/
-	sar->ifm->er=g.re;
-	sar->ifm->ht=g.re+g.ht;
-	sar->geo->wavelen=g.wavl;
-	
-	sar->geo->deskew=g.deskew;
-	sar->geo->dopRange[0]=g.fd;
-	sar->geo->dopRange[1]=g.fdd;
-	sar->geo->dopRange[2]=g.fddd;
-	sar->geo->dopAz[0]=g.fd;
-	sar->geo->dopAz[1]=0.0;
-	sar->geo->dopAz[2]=0.0;
-	sar->geo->slantFirst=g.r00;
-	sar->geo->rngPixTime=1.0/g.fs;
-	sar->geo->xPix=sar->geo->rngPixTime*speedOfLight/2.0;
-	sar->geo->azPixTime=1.0/g.prf;
-	sar->geo->yPix=sar->geo->azPixTime*g.vel*
-		sar->ifm->er/sar->ifm->ht;
+/* DEPRICATED FIELDS
+ *	meta->ifm->er = g.re;
+ *	meta->ifm->ht = g.re+g.ht;
+ */
+ 	meta->sar->look_count              = g.nlooks;
+	meta->sar->deskewed                = g.deskew;
+	meta->sar->range_time_per_pixel    = 1.0/g.fs;
+	meta->sar->azimuth_time_per_pixel  = 1.0/g.prf;
+	meta->sar->slant_shift             = g.slantOff;
+	meta->sar->time_shift              = g.timeOff;
+	meta->sar->slant_range_first_pixel = g.r00;
+	meta->sar->wavelength              = g.wavl;
+	meta->sar->prf                     = g.prf;
+	meta->sar->range_doppler_coefficients[0] = g.fd;
+	meta->sar->range_doppler_coefficients[1] = g.fdd;
+	meta->sar->range_doppler_coefficients[2] = g.fddd;
+	meta->sar->azimuth_doppler_coefficients[0] = g.fd;
+	meta->sar->azimuth_doppler_coefficients[1] = 0.0;
+	meta->sar->azimuth_doppler_coefficients[2] = 0.0;
 
-	sar->geo->timeShift=g.timeOff;
-	sar->geo->slantShift=g.slantOff;
+	meta->general->x_pixel_size = meta->sar->range_time_per_pixel*speedOfLight/2.0;
+	meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel*g.vel
+		* g.re / (g.re+g.ht);
 
 }
