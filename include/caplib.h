@@ -4,7 +4,10 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
+
+#ifndef win32
 #include <unistd.h>
+#endif
 
 #include "asf.h"
 
