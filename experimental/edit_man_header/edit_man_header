@@ -1,0 +1,218 @@
+#!/usr/bin/perl -w
+
+#This tool pulls the manual header chunk from an editable source file, opens the
+#user's prefered text editor, and returns the edited text to the header portion
+#of the source file, formatted with #defines, etc.
+
+#This program will read and produce defines for any section you define using the
+##define ASF_<something>_STRING \ format, so if you wish to add some other section,
+#that is acceptable. Just make sure you at least have the sections defined below.
+
+#The following code block reads in a file and checks for the man page strings,
+#of the following format:
+
+#   #define ASF_<section_name>_STRING \
+#   "Some text pertaining to this section, such as the tool name\n"\
+#   "Another line of text, but this is part of the same define\n"\
+#   "because we remembered to end the previous line with a back-\n"\
+#   "slash.\n\n"\
+#   "That previous line put an extra newline in our documentation,\n"\
+#   "as only the last newline, followed by a quote, and a backslash\n"\
+#   "is recognized. This is the last line of our define."
+
+#The ending sequence \n"\ is stripped, putting it all in one long string.
+#The name of the section is printed to a file, followed by a newline, and
+#then the text of that define is printed.
+
+#The sections you should define are as follows (these would fill in <section_name>
+#from above.
+#NAME         The command name of the tool: my_tool
+#USAGE        The basic usage of the tool: [-option <parameter>] <required_argument>
+#DESCRIPTION  What the tool does: This tool produces widgets (green or red only)
+#INPUT        What the input needs to be, be it files (and their formats) or user input
+#OUTPUT       What the output is, where it will go, etc.
+#EXAMPLES     Some (simple!) examples of command-lines for this tool
+#LIMITATIONS  Any limitations your tool may have
+#SEE_ALSO     Other tools that are related or may provide more information
+#COPYRIGHT    The copyright used by this tool (yes, the whole copyright)
+
+use Env;
+
+$source_file = $ARGV[0];
+$backup_file = "$ARGV[0]~";
+$temp_file = "temp.txt";
+{
+    print STDOUT "Opening $source_file for read and $temp_file for write...\n";
+    open SOURCE_FILE, "<$source_file" or die "Couldn't open source file $source_file: $!";
+    open TEMP_FILE, ">$temp_file" or die "Couldn't open temp file $temp_file: $!";
+
+    $edit_section = FALSE;
+    $continued_define = FALSE;
+    $section_name = 0;
+    
+    while(<SOURCE_FILE>)
+    {
+        print STDOUT "\rScanning line $.";
+        if(/BEGIN\sASF\sAUTO\-GENERATED\sDOCUMENTATION/)
+        {
+            $edit_section = TRUE;
+        }
+        elsif(/END\sASF\sAUTO\-GENERATED\sDOCUMENTATION/)
+        {
+            $edit_section = FALSE;
+        }
+        elsif($edit_section eq TRUE)
+        {
+            if(/^(\#define\sASF\_)(.*)(\_STRING\s\\)$/)   #Matches: #define ASF_<something>_STRING \
+            {
+                $section_name = $2;
+                print TEMP_FILE "$section_name\_START\n";
+                $continued_define = TRUE;
+            }
+            elsif(/^(")(.*)(\\n"\\)$/ && $continued_define eq TRUE)
+            {
+                $temp = $2;
+                $temp =~ s/'/"/g;
+                $temp =~ s/\\"/"/g; #replace incoming \" with "
+                $temp =~ s/\\\\/\\/g; #replace incoming \\ with \
+                print TEMP_FILE "$temp\n";
+                $continued_define = TRUE;
+            }
+            elsif(/^(\")(.*)(\")$/ && $continued_define eq TRUE)
+            {
+                $temp = $2;
+                $temp =~ s/'/"/g;
+                $temp =~ s/\\"/"/g; #replace incoming \" with "
+                $temp =~ s/\\\\/\\/g; #replace incoming \\ with \
+                print TEMP_FILE "$temp\n";
+                print TEMP_FILE "$section_name\_END\n\n";
+                $continued_define = FALSE;
+            }
+        }
+    }
+    
+    close TEMP_FILE;
+    close SOURCE_FILE;
+    
+    print STDOUT "...Done scanning file.\n";
+}
+
+#perform some editing thingie on $temp_file
+{
+    print STDOUT "Opening file $temp_file for editing...\n";
+    if(defined $EDITOR)
+    {
+        print STDOUT "Using $EDITOR\n";
+        system("$EDITOR $temp_file");
+    }
+    else
+    {
+        print STDOUT "Using vi\n";
+        system("vi $temp_file");
+    }
+    print STDOUT "...Done editing file.\n";
+}
+
+#create a backup file of the original source and paste the new header in to the original file.
+{
+    print STDOUT "Opening $backup_file for write and $source_file for read...\n";
+    open BACKUP_FILE, ">$backup_file" or die "Couldn't open backup file $backup_file: $!";
+    open SOURCE_FILE, "<$source_file" or die "Couldn't open source file $source_file: $!";
+    while(<SOURCE_FILE>)
+    {
+        print STDOUT "\rWriting line $.";
+        print BACKUP_FILE;
+    }
+    close SOURCE_FILE;
+    close BACKUP_FILE;
+    print STDOUT "...Done creating backup.\n";
+    
+    print STDOUT "Opening $backup_file for read, $source_file for write, and $temp_file for read...\n";
+    open BACKUP_FILE, "<$backup_file" or die "Couldn't open backup file $backup_file: $!";
+    open SOURCE_FILE, ">$source_file" or die "Couldn't open source file $source_file: $!";
+    open TEMP_FILE, "<$temp_file" or die "Couldn't open temp file $temp_file: $!";
+    
+    print SOURCE_FILE "/*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/\n";
+    print SOURCE_FILE "/*\n";
+    print SOURCE_FILE "ABOUT EDITING THIS DOCUMENTATION:\n";
+    print SOURCE_FILE "If you wish to edit the documentation for this program, you need to change the\n";
+    print SOURCE_FILE "following defines. For the short ones (like ASF_NAME_STRING) this is no big\n";
+    print SOURCE_FILE "deal. However, for some of the longer ones, such as ASF_COPYRIGHT_STRING, it\n";
+    print SOURCE_FILE "can be a daunting task to get all the newlines in correctly, etc. In order to\n";
+    print SOURCE_FILE "help you with this task, there is a tool, edit_man_header.pl. The tool *only*\n";
+    print SOURCE_FILE "works with this portion of the code, so fear not. It will scan in defines of\n";
+    print SOURCE_FILE "the format #define ASF_<something>_STRING between the two auto-generated\n";
+    print SOURCE_FILE "documentation markers, format them for a text editor, run that editor, allow\n";
+    print SOURCE_FILE "you to edit the text in a clean manner, and then automatically generate these\n";
+    print SOURCE_FILE "defines, formatted appropriately. The only warning is that any text between\n";
+    print SOURCE_FILE "those two markers and not part of one of those defines will not be preserved,\n";
+    print SOURCE_FILE "and that all of this auto-generated code will be at the top of the source\n";
+    print SOURCE_FILE "file. Save yourself the time and trouble, and use edit_man_header.pl. :)\n";
+    print SOURCE_FILE "*/\n\n";
+
+    $def_line = 0;
+    $active = 0;
+    while(<TEMP_FILE>)
+    {
+        print STDOUT "\rWriting header line $.";
+        if(/^(.*)\_START/)
+        {
+            $def_line = 1;
+            $active = 1;
+            print SOURCE_FILE "#define ASF_$1_STRING "
+        }
+        elsif(/^(.*)\_END/)
+        {
+            $def_line = 0;
+            $active = 0;
+            print SOURCE_FILE "\"\n\n";
+        }
+        elsif($active == 1)
+        {
+            if($def_line == 1)
+            {
+                print SOURCE_FILE "\\\n";
+            }
+            else
+            {
+                print SOURCE_FILE "\\n\"\\\n";
+            }
+            $def_line = 0;
+            chomp;
+            s/\\/\\\\/g; #replace any outgoing \ with \\
+            s/"/\\"/g; #replace any outgoing " with \"
+            s/'/\\"/g; #replace any outgoing ' with \"
+            print SOURCE_FILE "\"$_";
+        }
+    }
+    print SOURCE_FILE "/*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/\n";
+    
+    $edit_section = FALSE;
+    while(<BACKUP_FILE>)
+    {
+        if(/BEGIN\sASF\sAUTO\-GENERATED\sDOCUMENTATION/)
+        {
+            $edit_section = TRUE;
+        }
+        elsif(/END\sASF\sAUTO\-GENERATED\sDOCUMENTATION/)
+        {
+            $edit_section = FALSE;
+        }
+        elsif($edit_section eq FALSE)
+        {
+            print STDOUT "\rWriting source line $.";
+            print SOURCE_FILE;
+        }
+    }
+    close TEMP_FILE;
+    close SOURCE_FILE;
+    close BACKUP_FILE;
+    print STDOUT "...Done writing source.\n";
+}
+
+{
+    print STDOUT "Removing temporary files...";
+    system("rm $temp_file*");
+    print STDOUT "Done removing temporary files.\n";
+    print STDOUT "\nA backup of the original $source_file can be found in $backup_file\n\n";
+}
