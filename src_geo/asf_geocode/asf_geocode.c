@@ -527,6 +527,7 @@ main (int argc, char **argv)
   }
   // Get non-option command line arguments.
   if ( argc != 3 ) {
+    fprintf (stderr, "wrong number of arguments\n");
     usage ();
   }
 
