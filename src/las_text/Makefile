@@ -5,7 +5,7 @@
 include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf.a \
-	$(LIBDIR)/asf_las.a \
+	$(LIBDIR)/asf_meta.a \
 	-lm
 
 OBJS= main.o

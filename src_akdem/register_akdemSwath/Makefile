@@ -8,8 +8,6 @@ include ../../make_support/system_rules
 CFLAGS  = $(FLAGS) -DDECODE_CEOS
 LIBS    = $(LIBDIR)/asf.a 
 
-#	  $(LIBDIR)/asf_las.a -lm
-
 OBJLIB	= swath_bound.o \
 	  register_lzraw_inc.o \
 	  aisp_params.o

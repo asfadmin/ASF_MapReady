@@ -3,10 +3,11 @@
 # Makefile date: 5/24/99
 
 include ../../make_support/system_rules
-LIBS=$(LIBDIR)/asf.a $(LIBDIR)/asf_las.a 
 
-OBJS = \
-        usgs2las.o
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a 
+
+OBJS  = usgs2las.o
 
 all: usgs2las usgs_ingest clean
 

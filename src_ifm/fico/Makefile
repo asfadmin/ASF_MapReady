@@ -3,10 +3,11 @@
 
 include ../../make_support/system_rules
 
-LIBS =  $(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf.a \
+LIBS =  $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libifm.a \
-	$(LIBDIR)/asf_fft.a -lm
+	$(LIBDIR)/asf_fft.a \
+	-lm
 
 OBJS=	fft_corr.o \
 	coherence.o \

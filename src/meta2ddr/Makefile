@@ -8,7 +8,6 @@ LIBS  = $(LIBDIR)/asf.a \
 	-lm
 
 OBJS_M2D = meta_write_old.o \
-	meta_new2ddr.o \
 	meta2ddr.o
 
 OBJS_D2M = ddr2meta.o

@@ -3,7 +3,10 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(LIBDIR)/asf_las.a $(LIBDIR)/libifm.a $(LIBDIR)/asf.a -lm
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libifm.a \
+	-lm
 OBJS = cuts.o \
 	debug.o \
 	integrate.o \

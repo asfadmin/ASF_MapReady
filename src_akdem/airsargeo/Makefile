@@ -3,11 +3,10 @@
 
 include ../../make_support/system_rules
 
-OLIBS = $(LIBDIR)/asf_lt.a \
+OLIBS = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_geolib.a \
-	$(LIBDIR)/asf_las.a \
+	$(LIBDIR)/asf_lt.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libifm.a
 LIBS = $(OLIBS) -lm
 

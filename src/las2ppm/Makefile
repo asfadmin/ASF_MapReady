@@ -3,9 +3,12 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(LIBDIR)/asf_las.a  $(LIBDIR)/asf.a -lm
-OBJS = las2ppm.o \
-       colortable.o 
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	-lm
+
+OBJS  = las2ppm.o \
+	colortable.o 
 
 las2ppm: $(OBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) -o las2ppm $(OBJS) $(LIBS)

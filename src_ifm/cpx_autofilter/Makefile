@@ -3,10 +3,9 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(LIBDIR)/asf_meta.a \
-       $(LIBDIR)/asf_las.a \
-       $(LIBDIR)/asf.a \
-       $(LIBDIR)/asf_fft.a -lm
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf_fft.a -lm
 
 CPXOBJS = cpx_filter.o \
           cfft1d_risc.o

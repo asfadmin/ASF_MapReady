@@ -3,9 +3,9 @@
 
 include ../../make_support/system_rules
 
-LIBS=	$(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf.a \
-	$(LIBDIR)/asf_meta.a -lm
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	-lm
 
 OBJS= amp2img.o \
       get_hist.o \

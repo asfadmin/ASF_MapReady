@@ -4,7 +4,9 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(LIBDIR)/asf_las.a $(LIBDIR)/asf.a -lm
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	-lm
 
 tpl_search: tpl_search.c
 	$(CC) $(CFLAGS) -o tpl_search tpl_search.c $(LIBS)

@@ -6,11 +6,11 @@
 
 include ../../make_support/system_rules
  
-LIBS =	$(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf.a
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a
 
-OBJS =	ceosui2byte.o create_ddr.o
+OBJS =	ceosui2byte.o \
+	create_ddr.o
 
 all: ceosui2byte clean
 

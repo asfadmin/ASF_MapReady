@@ -4,20 +4,16 @@
  
 include ../../make_support/system_rules
 
-LIBS = -lm
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/sarmodel.a \
+	$(LIBDIR)/tcobj.a \
+	$(LIBDIR)/asf_meta.a \
+	-lm
+
+OBJS  = sim_init.o 
  
-#
-# Object libraries required to load the program
-#
-OBJLIB = $(LIBDIR)/sarmodel.a \
-	   $(LIBDIR)/tcobj.a \
-	   $(LIBDIR)/asf_las.a \
-	   $(LIBDIR)/asf_meta.a \
-	   $(LIBDIR)/asf.a \
-	   sim_init.o 
- 
-sarsim : sarsim.c $(CINCFIL) $(OBJLIB) 
-	$(CC) $(CFLAGS) -o sarsim sarsim.c $(OBJLIB) $(LIBS)
+sarsim : sarsim.c $(CINCFIL) $(OBJS) 
+	$(CC) $(CFLAGS) -o sarsim sarsim.c $(OBJS) $(LIBS)
 	mv sarsim$(BIN_POSTFIX) $(BINDIR)
 	rm *.o
 	cp sarsim.man ../../man/cat1/sarsim.1

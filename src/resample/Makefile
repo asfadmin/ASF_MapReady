@@ -3,7 +3,8 @@
 
 include ../../make_support/system_rules
 
-OLIBS = $(LIBDIR)/asf_las.a $(LIBDIR)/asf.a
+OLIBS = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a
 LIBS = $(OLIBS) -lm
 OBJS = 	filter.o 
 

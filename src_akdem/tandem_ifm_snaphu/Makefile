@@ -4,12 +4,11 @@
 
 include ../../make_support/system_rules
 
-LIBS =$(LIBDIR)/asf.a
-# $(LIBDIR)/asf_las.a -lm
+LIBS  = $(LIBDIR)/asf.a
 
-OBJLIB =	 check_refinement.o \
+OBJLIB = check_refinement.o \
 	 tandem_ifm_snaphu.o
-OBJLIB2 =	 check_refinement.o \
+OBJLIB2 = check_refinement.o \
 	 tandem_ifm_snaphu_v2.o
 
 # all: tandem_ifm_snaphu zeroify

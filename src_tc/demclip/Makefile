@@ -4,8 +4,10 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(LIBDIR)/asf_geolib.a $(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_las.a $(LIBDIR)/asf.a -lm
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf_geolib.a \
+	-lm
 
 demclip: demclip.c
 	$(CC) $(CFLAGS) -o demclip demclip.c $(LIBS)

@@ -3,8 +3,10 @@
 
 include ../../make_support/system_rules
 
-LIBS = 	$(LIBDIR)/asf_meta.a $(LIBDIR)/asf_las.a \
-	$(LIBDIR)/libifm.a $(LIBDIR)/asf.a -lm  
+LIBS = 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libifm.a \
+	$(LIBDIR)/asf.a \
+	-lm  
 OBJS = ml.o \
        c2i.o \
        colortable.o

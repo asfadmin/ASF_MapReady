@@ -3,9 +3,8 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf.a \
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libifm.a \
 	-lm
 OBJS = coh.o

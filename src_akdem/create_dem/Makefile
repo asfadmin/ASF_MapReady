@@ -4,19 +4,19 @@
 include ../../make_support/system_rules
 
 CFLAGS  = $(FLAGS) -DDECODE_CEOS
-LIBS    = $(LIBDIR)/asf_las.a \
+LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf.a -lm
+	-lm
 
-OBJLIB	= config.o \
+OBJS  = config.o \
 	functions.o \
 	swath_bound.o \
 	check_refinement.o
 
 all:    create_dem clean
 
-create_dem: create_dem.c $(OBJLIB)
-	${CC} ${CFLAGS} ${LDFLAGS} -o create_dem create_dem.c $(OBJLIB) ${LIBS}
+create_dem: create_dem.c $(OBJS)
+	${CC} ${CFLAGS} ${LDFLAGS} -o create_dem create_dem.c $(OBJS) ${LIBS}
 	mv create_dem $(BINDIR)
 #	cp create_dem.1 ../../man/cat1
 clean:

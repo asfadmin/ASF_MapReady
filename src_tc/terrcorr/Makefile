@@ -4,10 +4,9 @@
 
 include ../../make_support/system_rules
 
-LIBS = \
+LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf.a  -lm
+	-lm
 
 terrcorr :  terrcorr.c 
 	$(CC) $(CFLAGS) -o terrcorr terrcorr.c $(LIBS) $(CFLAGS)

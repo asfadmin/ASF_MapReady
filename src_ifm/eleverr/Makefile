@@ -3,8 +3,10 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(LIBDIR)/asf_meta.a $(LIBDIR)/asf_las.a $(LIBDIR)/asf.a -lm
-OBJS = eleverr.o 
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	-lm
+OBJS  = eleverr.o 
 
 eleverr: $(OBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) -o eleverr $(OBJS) $(LIBS)

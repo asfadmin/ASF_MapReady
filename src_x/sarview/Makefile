@@ -10,9 +10,8 @@ LDFLAGS := -L$(LIBDIR)/tcltk81/lib $(LDFLAGS)
 
  # ldl, lsocket, and lnsl are necessary for Solaris, but break sarview on irix
 OTHER = -ldl -lsocket -lnsl
-LIBS =	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf.a \
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/libjpeg.a \
 	-ltcl8.1 -ltk8.1 \

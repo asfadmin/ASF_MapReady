@@ -1,4 +1,4 @@
-# Makefile for          :  asf_las.a
+# Makefile for          :  asf_concat.a
 # Module Author         :  Tom Logan & Mike Shindle
 # Module Version        :  1.2
 # Line used to convert .c files into .o list:

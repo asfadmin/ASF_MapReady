@@ -3,12 +3,15 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(LIBDIR)/asf_las.a  $(LIBDIR)/asf.a $(LIBDIR)/libjpeg.a -lm
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libjpeg.a \
+	-lm
 COBJS = las2jpeg.o \
-       colortable.o  \
-       code_jpeg.o 
-
-DOBJS =  jpeg2las.o decode_jpeg.o 
+	colortable.o  \
+	code_jpeg.o 
+DOBJS = jpeg2las.o \
+	decode_jpeg.o 
 
 all: las2jpeg jpeg2las
 	rm *.o

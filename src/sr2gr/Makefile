@@ -4,11 +4,11 @@
 
 include ../../make_support/system_rules
 
-LIBS   = $(LIBDIR)/asf_meta.a \
-	 $(LIBDIR)/asf_las.a \
-	 $(LIBDIR)/asf.a \
-	 -lm
-OBJS = sr2gr.o \
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	-lm
+
+OBJS  = sr2gr.o \
 	sr2gr_vec.o 
 
 all: sr2gr deskew ui2byte

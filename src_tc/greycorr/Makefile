@@ -7,24 +7,19 @@
  
 include ../../make_support/system_rules
 
-LIBS   = -lm
-
-#
-# Object libraries required to load the program
-#
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf_fft.a \
+	-lm
  
 OBJS  = greycorr.o \
 	eval.o \
 	grey.o \
-	fitreg.o \
-	$(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf_fft.a \
-	$(LIBDIR)/asf.a 
+	fitreg.o 
  
 # Make the executable file for program "greycorr".
 #
-all: greycorr
-	rm *.o
+all: greycorr clean
 
 greycorr:       $(OBJS) 
 	$(CC) $(CFLAGS) $(LFLAGS) -o greycorr $(OBJS) $(LIBS)

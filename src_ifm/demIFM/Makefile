@@ -3,17 +3,12 @@
 
 include ../../make_support/system_rules
 
-LIBS_C = $(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_las.a \
-        $(LIBDIR)/asf_geolib.a \
-        $(LIBDIR)/asf.a \
+LIBS_C = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_geolib.a \
+	$(LIBDIR)/asf_meta.a \
 	-lm
-LIBS_P = $(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf.a \
-	-lm
-LIBS  = $(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf.a \
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
 	-lm
 
 OBJS_C = create_dem_grid.o
@@ -35,7 +30,7 @@ create_dem_grid: $(OBJS_C)
 	cp create_dem_grid.1 ../../man/cat1
 
 dem2phase: $(OBJS_P)
-	$(CC) $(CFLAGS) -o dem2phase $(OBJS_P) $(LIBS_P)
+	$(CC) $(CFLAGS) -o dem2phase $(OBJS_P) $(LIBS)
 	mv dem2phase$(BIN_POSTFIX) $(BINDIR)
 	cp dem2phase.1 ../../man/man1
 

@@ -3,9 +3,12 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(LIBDIR)/asf_meta.a $(LIBDIR)/asf_las.a $(LIBDIR)/asf.a  $(LIBDIR)/asf_fft.a -lm
-OBJS = cpx_spectrum.o \
-       cfft1d_risc.o
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf_fft.a \
+	-lm
+OBJS  = cpx_spectrum.o \
+	cfft1d_risc.o
 
 cpx_spectrum: $(OBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) -o cpx_spectrum $(OBJS) $(LIBS)

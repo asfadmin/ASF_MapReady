@@ -3,9 +3,9 @@
 
 include ../../make_support/system_rules
 
-LIBS =  $(LIBDIR)/asf_las.a \
+LIBS =  $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_geolib.a \
-	$(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
 	-lm
 
 OBJS = dspddr.o \

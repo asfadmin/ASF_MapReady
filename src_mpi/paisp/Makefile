@@ -7,8 +7,9 @@
 include ../../make_support/system_rules
 
 LIBS =   $(LIBDIR)/asf_fft.a \
-         $(LIBDIR)/asf_meta.a $(LIBDIR)/asf_las.a \
- 	 $(LIBDIR)/asf.a $(LIBDIR)/asf_odl.a
+         $(LIBDIR)/asf.a \
+ 	 $(LIBDIR)/asf_meta.a \
+	 $(LIBDIR)/asf_odl.a
 LIBC =   $(LIBS) -lmpi -lm 
 
 OBJLIB = paisp_libs.o \

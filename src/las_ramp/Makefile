@@ -4,10 +4,13 @@
 
 include ../../make_support/system_rules
 
-LIBS    =  $(LIBDIR)/asf_las.a $(LIBDIR)/asf.a -lm
-OBJS= main.o
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	-lm
 
-las_ramp:	$(OBJS)
+OBJS  = main.o
+
+las_ramp: $(OBJS)
 	${CC} ${CFLAGS} ${LDFLAGS} -o las_ramp $(OBJS) ${LIBS}
 	mv las_ramp$(BIN_POSTFIX) $(BINDIR)
 	rm *.o

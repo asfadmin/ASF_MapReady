@@ -4,18 +4,17 @@
  
 include ../../make_support/system_rules
 
-LIBS   = -lm
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/sarmodel.a \
+	$(LIBDIR)/tcobj.a \
+	$(LIBDIR)/asf_meta.a \
+	-lm
 
 #
 # Object libraries required to load the program
 #
 OBJLIB = demimg.o \
-	 init_meta.o \
-	 $(LIBDIR)/sarmodel.a \
-	 $(LIBDIR)/tcobj.a \
-	 $(LIBDIR)/asf_las.a \
-	 $(LIBDIR)/asf_meta.a \
-	 $(LIBDIR)/asf.a 
+	 init_meta.o
  
 demimg : $(OBJLIB) 
 	$(CC) $(CFLAGS) $(LFLAGS) -o demimg $(OBJLIB) $(LIBS)

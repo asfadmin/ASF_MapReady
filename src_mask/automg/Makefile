@@ -4,17 +4,10 @@
  
 include ../../make_support/system_rules
 
-LIBS = -lm
+LIBS  = $(LIBDIR)/asf.a \
+	-lm
  
-#
-# Object libraries required to load the program
-#
-OBJLIB = \
-#	$(LIBDIR)/asf_meta.a \
-#	$(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf.a 
-
 automg : automg.c
-	$(CC) $(CFLAGS) -o automg automg.c $(OBJLIB) $(LIBS)
+	$(CC) $(CFLAGS) -o automg automg.c $(LIBS)
 	cp automg$(BIN_POSTFIX) $(BINDIR)
 	mv automg$(BIN_POSTFIX) ../bin/

@@ -4,10 +4,12 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(LIBDIR)/asf_meta.a $(LIBDIR)/asf.a $(LIBDIR)/asf_las.a -lm
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	-lm
 
-OBJLIB =	 check_refinement.o \
-	 tandem_ifm.o
+OBJLIB = check_refinement.o \
+	tandem_ifm.o
 
 all: tandem_ifm zeroify
 	rm *.o
