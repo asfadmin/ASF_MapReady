@@ -25,9 +25,9 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // 
-// We want to find two 2D quadratics that that map points in the
-// output space to x and y values of points in the input space.
-// In equations, we want:
+// We want to find two 2D quadratics that map points in the output
+// space to x and y pixel indicies of points in the input space.  In
+// equations, we want:
 // 
 //      X(x, y) = ax^2 + by^2 + cxy + dx + ey + g
 //      Y(x, y) = hx^2 + iy^2 + jxy + kx + ly + m
@@ -37,7 +37,7 @@
 // corresponding pixel indicies (X, Y) in the input image.
 //
 // This is a simple case of the general method described in "Map
-// Projections a Reference Manual", section 10.3, by Lev
+// Projections a Reference Manual", section 10.2.2, by Lev
 // M. Bugayevskiy and John P. Snyder.
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -66,11 +66,29 @@ static const size_t d_index = 3;
 static const size_t e_index = 4;
 static const size_t g_index = 5;
 
+static const size_t h_index = 6;
+static const size_t i_index = 7;
+static const size_t j_index = 8;
+static const size_t k_index = 9;
+
 // Evalutate quadratic ax^2 + by^2 + cxy + dx + ey + g at x, y, where
 // a, b, c, d, e, and g are the first six elements of the coefficients
 // vector.
+//static double
+//evaluate_quadratic (const gsl_vector *coefficients, double x, double y)
+//{
+//  double a = gsl_vector_get (coefficients, a_index);
+//  double b = gsl_vector_get (coefficients, b_index);
+//  double c = gsl_vector_get (coefficients, c_index);
+//  double d = gsl_vector_get (coefficients, d_index);
+//  double e = gsl_vector_get (coefficients, e_index);
+//  double g = gsl_vector_get (coefficients, g_index);
+//  
+//  return a * pow (x, 2.0) + b * pow (y, 2.0) + c * x * y + d * x + e * y + g;
+//}
+
 static double
-evaluate_quadratic (const gsl_vector *coefficients, double x, double y)
+evaluate_cubic (const gsl_vector *coefficients, double x, double y)
 {
   double a = gsl_vector_get (coefficients, a_index);
   double b = gsl_vector_get (coefficients, b_index);
@@ -78,8 +96,14 @@ evaluate_quadratic (const gsl_vector *coefficients, double x, double y)
   double d = gsl_vector_get (coefficients, d_index);
   double e = gsl_vector_get (coefficients, e_index);
   double g = gsl_vector_get (coefficients, g_index);
-  
-  return a * pow (x, 2.0) + b * pow (y, 2.0) + c * x * y + d * x + e * y + g;
+  double h = gsl_vector_get (coefficients, h_index);
+  double i = gsl_vector_get (coefficients, i_index);
+  double j = gsl_vector_get (coefficients, j_index);
+  double k = gsl_vector_get (coefficients, k_index);
+
+  return (a * pow (x, 3.0) + b * pow (y, 3.0) + c * pow (x, 2.0) * y
+	  + d * pow (y, 2.0) * x + e * pow (x, 2.0) + g * pow (y, 2.0)
+	  + h * x * y + i * x + j * y + k);
 }
 
 // To get the best fit, we will perform least squares minimization on
@@ -91,8 +115,26 @@ evaluate_quadratic (const gsl_vector *coefficients, double x, double y)
 // has nothing to do with an x coordinate.  The parameter names used
 // were chosen for consistency with the GSL types and examples in the
 // GSL documentation.
+//static int
+//fit_x_coordinates_f (const gsl_vector *x, void *params, gsl_vector *f)
+//{
+//  struct data_to_fit *dtfs = (struct data_to_fit *)params;
+//  size_t n = dtfs->n;
+//  double *x_proj = dtfs->x_proj;
+//  double *y_proj = dtfs->y_proj;
+//  double *x_pix = dtfs->x_pix;
+//
+//  size_t i;
+//  for ( i = 0 ; i < n ; i++ ) {
+//    double x_pix_modeled = evaluate_quadratic (x, x_proj[i], y_proj[i]);
+//    gsl_vector_set (f, i, x_pix_modeled - x_pix[i]);
+//  }
+
+//  return GSL_SUCCESS;
+//}
+
 static int
-fit_x_coordinates_f (const gsl_vector *x, void *params, gsl_vector *f)
+fit_x_coordinates_cubic_f (const gsl_vector *x, void *params, gsl_vector *f)
 {
   struct data_to_fit *dtfs = (struct data_to_fit *)params;
   size_t n = dtfs->n;
@@ -102,7 +144,7 @@ fit_x_coordinates_f (const gsl_vector *x, void *params, gsl_vector *f)
 
   size_t i;
   for ( i = 0 ; i < n ; i++ ) {
-    double x_pix_modeled = evaluate_quadratic (x, x_proj[i], y_proj[i]);
+    double x_pix_modeled = evaluate_cubic (x, x_proj[i], y_proj[i]);
     gsl_vector_set (f, i, x_pix_modeled - x_pix[i]);
   }
 
@@ -110,8 +152,26 @@ fit_x_coordinates_f (const gsl_vector *x, void *params, gsl_vector *f)
 }
 
 // Function to minimize to determine coefficients for the Y coordinate model.
+//static int
+//fit_y_coordinates_f (const gsl_vector *x, void *params, gsl_vector *f)
+//{
+//  struct data_to_fit *dtfs = (struct data_to_fit *)params;
+//  size_t n = dtfs->n;
+//  double *x_proj = dtfs->x_proj;
+//  double *y_proj = dtfs->y_proj;
+//  double *y_pix = dtfs->y_pix;
+//
+//  size_t i;
+//  for ( i = 0 ; i < n ; i++ ) {
+//    double y_pix_modeled = evaluate_quadratic (x, x_proj[i], y_proj[i]);
+//    gsl_vector_set (f, i, y_pix_modeled - y_pix[i]);
+//  }
+//
+//  return GSL_SUCCESS;
+//}
+
 static int
-fit_y_coordinates_f (const gsl_vector *x, void *params, gsl_vector *f)
+fit_y_coordinates_cubic_f (const gsl_vector *x, void *params, gsl_vector *f)
 {
   struct data_to_fit *dtfs = (struct data_to_fit *)params;
   size_t n = dtfs->n;
@@ -121,20 +181,45 @@ fit_y_coordinates_f (const gsl_vector *x, void *params, gsl_vector *f)
 
   size_t i;
   for ( i = 0 ; i < n ; i++ ) {
-    double y_pix_modeled = evaluate_quadratic (x, x_proj[i], y_proj[i]);
+    double y_pix_modeled = evaluate_cubic (x, x_proj[i], y_proj[i]);
     gsl_vector_set (f, i, y_pix_modeled - y_pix[i]);
   }
 
   return GSL_SUCCESS;
 }
 
+
 // We also need routines to compute the jacobian matrices of the
 // fitting functions with respect to the quadratic coefficients.  The
-// Jacobians of the X and Y approxomating functions are the same, so
+// Jacobians of the X and Y approximating functions are the same, so
 // we don't need seperate jocobian computers for the X and Y
 // quadratics.
+//static int 
+//fit_coordinates_df (const gsl_vector *x, void *params, gsl_matrix *J)
+//{
+//  // Reassure compiler that we know we don't use x.
+//  x = x;		
+//
+//  struct data_to_fit *dtfs = (struct data_to_fit *)params;
+//  size_t n = dtfs->n;
+//  double *x_proj = dtfs->x_proj;
+//  double *y_proj = dtfs->y_proj;
+//
+//  size_t i;
+//  for ( i = 0 ; i < n ; i++ ) {
+//    gsl_matrix_set (J, i, a_index, pow (x_proj[i], 2.0));
+//    gsl_matrix_set (J, i, b_index, pow (y_proj[i], 2.0));
+//    gsl_matrix_set (J, i, c_index, x_proj[i] * y_proj[i]);
+//    gsl_matrix_set (J, i, d_index, x_proj[i]);
+//    gsl_matrix_set (J, i, e_index, y_proj[i]);
+//    gsl_matrix_set (J, i, g_index, 1.0);
+//  }
+//
+//  return GSL_SUCCESS;
+//}
+
 static int 
-fit_coordinates_df (const gsl_vector *x, void *params, gsl_matrix *J)
+fit_coordinates_cubic_df (const gsl_vector *x, void *params, gsl_matrix *J)
 {
   // Reassure compiler that we know we don't use x.
   x = x;		
@@ -146,12 +231,16 @@ fit_coordinates_df (const gsl_vector *x, void *params, gsl_matrix *J)
 
   size_t i;
   for ( i = 0 ; i < n ; i++ ) {
-    gsl_matrix_set (J, i, a_index, pow (x_proj[i], 2.0));
-    gsl_matrix_set (J, i, b_index, pow (y_proj[i], 2.0));
-    gsl_matrix_set (J, i, c_index, x_proj[i] * y_proj[i]);
-    gsl_matrix_set (J, i, d_index, x_proj[i]);
-    gsl_matrix_set (J, i, e_index, y_proj[i]);
-    gsl_matrix_set (J, i, g_index, 1.0);
+    gsl_matrix_set (J, i, a_index, pow (x_proj[i], 3.0));
+    gsl_matrix_set (J, i, b_index, pow (y_proj[i], 3.0));
+    gsl_matrix_set (J, i, c_index, pow (x_proj[i], 2.0) * y_proj[i]);
+    gsl_matrix_set (J, i, d_index, pow (y_proj[i], 2.0) * x_proj[i]);
+    gsl_matrix_set (J, i, e_index, pow (x_proj[i], 2.0));
+    gsl_matrix_set (J, i, g_index, pow (y_proj[i], 2.0));
+    gsl_matrix_set (J, i, h_index, x_proj[i] * y_proj[i]);
+    gsl_matrix_set (J, i, i_index, x_proj[i]);
+    gsl_matrix_set (J, i, j_index, y_proj[i]);
+    gsl_matrix_set (J, i, k_index, 1.0);
   }
 
   return GSL_SUCCESS;
@@ -161,23 +250,43 @@ fit_coordinates_df (const gsl_vector *x, void *params, gsl_matrix *J)
 // us fill in a function-and-jacobian routine even if we haven't done
 // any optimizations to simultaneoiusly compute the minimization
 // function and the jacobian.  So here we have those routines.
+//static int
+//fit_x_coordinates_fdf (const gsl_vector *x, void *params, gsl_vector *f, 
+//		       gsl_matrix *J)
+//{
+//  fit_x_coordinates_f (x, params, f);
+//  fit_coordinates_df (x, params, J);
+//
+//  return GSL_SUCCESS;
+//}
+
+// This routine is analogous to fit_x_coordinates_fdf.
+//static int
+//fit_y_coordinates_fdf (const gsl_vector *x, void *params, gsl_vector *f, 
+//		       gsl_matrix *J)
+//{
+//  fit_y_coordinates_f (x, params, f);
+//  fit_coordinates_df (x, params, J);
+//
+//  return GSL_SUCCESS;
+//}
+
 static int
-fit_x_coordinates_fdf (const gsl_vector *x, void *params, gsl_vector *f, 
-		       gsl_matrix *J)
+fit_x_coordinates_cubic_fdf (const gsl_vector *x, void *params, gsl_vector *f,
+			     gsl_matrix *J)
 {
-  fit_x_coordinates_f (x, params, f);
-  fit_coordinates_df (x, params, J);
+  fit_x_coordinates_cubic_f (x, params, f);
+  fit_coordinates_cubic_df (x, params, J);
 
   return GSL_SUCCESS;
 }
 
-// This routine is analogous to fit_x_coordinates_fdf.
 static int
-fit_y_coordinates_fdf (const gsl_vector *x, void *params, gsl_vector *f, 
-		       gsl_matrix *J)
+fit_y_coordinates_cubic_fdf (const gsl_vector *x, void *params, gsl_vector *f,
+			     gsl_matrix *J)
 {
-  fit_y_coordinates_f (x, params, f);
-  fit_coordinates_df (x, params, J);
+  fit_y_coordinates_cubic_f (x, params, f);
+  fit_coordinates_cubic_df (x, params, J);
 
   return GSL_SUCCESS;
 }
@@ -200,16 +309,45 @@ solver_print_state (gsl_multifit_fdfsolver *s, size_t iter)
   return GSL_SUCCESS;
 }
 
+static int
+solver_print_state_cubic (gsl_multifit_fdfsolver *s, size_t iter)
+{
+  printf ("iteration: %3u Coefficients: %.9e %.9e %.9e %.9e %.9e %.9e %.9e "
+	  "%.9e %.9e %.9e"
+	  "|Minimization Criteria| = %g\n",
+	  iter,
+	  gsl_vector_get (s->x, a_index),
+	  gsl_vector_get (s->x, b_index),
+	  gsl_vector_get (s->x, c_index),
+	  gsl_vector_get (s->x, d_index),
+	  gsl_vector_get (s->x, e_index),
+	  gsl_vector_get (s->x, g_index),
+	  gsl_vector_get (s->x, h_index),
+	  gsl_vector_get (s->x, i_index),
+	  gsl_vector_get (s->x, j_index),	  
+	  gsl_vector_get (s->x, k_index),
+	  gsl_blas_dnrm2 (s->f));
+
+  return GSL_SUCCESS;
+}
+
 // Main routine.
 int
 main (int argc, char **argv)
 {
   // Get the projection parameters from the command line.
   projection_type_t projection_type;
-  project_parameters_t *pp = get_geocode_options(&argc, &argv, 
-						 &projection_type);
+  // Height to 
+  double average_height;
+  // Pixel size to use for output image, in projection coordinate
+  // units (presumably meters, but you never know when we might lose
+  // our heads and decide to add some dumb projection).
+  double pixel_size;
+  project_parameters_t *pp 
+    = get_geocode_options(&argc, &argv, &projection_type, &average_height, 
+			  &pixel_size);
   // Convert all angle measures in the project_parameters to radians.
-  to_radians(projection_type, pp);
+  to_radians (projection_type, pp);
 
   // Assign our transformation function pointers to point to the
   // appropriate functions.
@@ -260,7 +398,8 @@ main (int argc, char **argv)
 
   // The latitude and longitude of the center of the image.
   double lat_0, lon_0;
-  meta_get_latLon (imd, ii_size_y / 2.0, ii_size_x / 2.0, 466, &lat_0, &lon_0);
+  meta_get_latLon (imd, ii_size_y / 2.0, ii_size_x / 2.0, average_height, 
+		   &lat_0, &lon_0);
 
   // First we march around the entire outside of the image and compute
   // projection coordinates for every pixel, keeping track of the
@@ -282,7 +421,7 @@ main (int argc, char **argv)
     size_t current_edge_point = 0;
     size_t ii = 0, jj = 0;
     for ( ; ii < ii_size_x - 1 ; ii++ ) {
-      meta_get_latLon (imd, (double)jj, (double)ii, 466, 
+      meta_get_latLon (imd, (double)jj, (double)ii, average_height, 
 		       &(lats[current_edge_point]), 
 		       &(lons[current_edge_point]));
       lats[current_edge_point] *= DEG_TO_RAD;
@@ -290,7 +429,7 @@ main (int argc, char **argv)
       current_edge_point++;
     }
     for ( ; jj < ii_size_y - 1 ; jj++ ) {
-      meta_get_latLon (imd, (double)jj, (double)ii, 466,
+      meta_get_latLon (imd, (double)jj, (double)ii, average_height,
 		       &(lats[current_edge_point]), 
 		       &(lons[current_edge_point]));
       lats[current_edge_point] *= DEG_TO_RAD;
@@ -298,7 +437,7 @@ main (int argc, char **argv)
       current_edge_point++;
     }
     for ( ; ii > 0 ; ii-- ) {
-      meta_get_latLon (imd, (double)jj, (double)ii, 466, 
+      meta_get_latLon (imd, (double)jj, (double)ii, average_height, 
 		       &(lats[current_edge_point]), 
 		       &(lons[current_edge_point]));
       lats[current_edge_point] *= DEG_TO_RAD;
@@ -306,7 +445,7 @@ main (int argc, char **argv)
       current_edge_point++;
     }
     for ( ; jj > 0 ; jj-- ) {
-      meta_get_latLon (imd, (double)jj, (double)ii, 466, 
+      meta_get_latLon (imd, (double)jj, (double)ii, average_height, 
 		       &(lats[current_edge_point]), 
 		       &(lons[current_edge_point]));
       lats[current_edge_point] *= DEG_TO_RAD;
@@ -368,7 +507,8 @@ main (int argc, char **argv)
       g_assert (ypc < ii_size_y);
       // Corresponding latitude and longitude.
       double lat, lon;
-      meta_get_latLon (imd, (double)ypc, (double)xpc, 466, &lat, &lon);
+      meta_get_latLon (imd, (double)ypc, (double)xpc, average_height, &lat, 
+		       &lon);
       // Corresponding projection coordinates.  */
       lat *= DEG_TO_RAD;
       lon *= DEG_TO_RAD;
@@ -410,46 +550,52 @@ main (int argc, char **argv)
 	  "function of output image pixel projection coordinates using\n"
 	  "nonlinear least-squares fitting...\n");
   const size_t n = mapping_count;
-  const size_t p = 6;		// 2D quadratics have six parameters.
+  const size_t p = 10;		// 2D cubics have six parameters.
   gsl_matrix *covariance = gsl_matrix_alloc (p, p);
-  // We don't have a good initial guess at the moment.
-  double x_init[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  // We don't have a good initial guess at the moment, so we try 0.
+  double *x_init = g_new0 (double, p);
+  for ( ii = 0 ; ii < p ; ii++ ) {
+    g_assert (x_init[ii] == 0.0);
+  }
   gsl_vector_view x = gsl_vector_view_array (x_init, p);
   const gsl_multifit_fdfsolver_type *T = gsl_multifit_fdfsolver_lmsder;
   gsl_multifit_fdfsolver *s = gsl_multifit_fdfsolver_alloc (T, n, p);
   gsl_multifit_function_fdf x_f;
-  x_f.f = fit_x_coordinates_f;
-  x_f.df = fit_coordinates_df;
-  x_f.fdf = fit_x_coordinates_fdf;
+  x_f.f = fit_x_coordinates_cubic_f;
+  x_f.df = fit_coordinates_cubic_df;
+  x_f.fdf = fit_x_coordinates_cubic_fdf;
   x_f.n = n;
   x_f.p = p;
   x_f.params = &dtf;
   gsl_multifit_function_fdf y_f;
-  y_f.f = fit_y_coordinates_f;
-  y_f.df = fit_coordinates_df;
-  y_f.fdf = fit_y_coordinates_fdf;
+  y_f.f = fit_y_coordinates_cubic_f;
+  y_f.df = fit_coordinates_cubic_df;
+  y_f.fdf = fit_y_coordinates_cubic_fdf;
   y_f.n = n;
   y_f.p = p;
   y_f.params = &dtf;
   int status;			// Status of the fit.
-  size_t iter = 0;		// Current iteration of the fit.
+  size_t iteration = 0;		// Current iteration of the fit.
   // Find the X model of interest.
   gsl_multifit_fdfsolver_set (s, &x_f, &x.vector);
-  solver_print_state (s, iter);
+  solver_print_state_cubic (s, iteration);
   // If we haven't converged after this many iterations, we give up.
   size_t maximum_iterations = 500;
   do {
-    iter++;
+    iteration++;
     status = gsl_multifit_fdfsolver_iterate (s);
+    if ( status == GSL_ETOLF ) { printf ("GSL_ETOLF\n"); }
+    if ( status == GSL_ETOLX ) { printf ("GSL_ETOLX\n"); }
+    if ( status == GSL_ETOLG ) { printf ("GSL_ETOLG\n"); } 
     printf ("iteration status = %s\n", gsl_strerror (status));
-    solver_print_state (s, iter);
+    solver_print_state_cubic (s, iteration);
     if ( status != GSL_SUCCESS ) {
       break;
     }
     // There's nothing particularly insightful about these termination
     // conditions, but they seem to work...
-    status = gsl_multifit_test_delta (s->dx, s->x, 1e-4, 1e-4);
-  } while ( status == GSL_CONTINUE && iter < maximum_iterations );
+    status = gsl_multifit_test_delta (s->dx, s->x, 1e-2, 1e-2);
+  } while ( status == GSL_CONTINUE && iteration < maximum_iterations );
   gsl_multifit_covar (s->J, 0.0, covariance);
 	  
 #define FIT(i) gsl_vector_get (s->x, i)
@@ -499,19 +645,23 @@ main (int argc, char **argv)
   s = gsl_multifit_fdfsolver_alloc (T, n, p);
   gsl_vector_set_zero (&x.vector); // Set initial guess back to zero.
   gsl_multifit_fdfsolver_set (s, &y_f, &x.vector);
-  solver_print_state (s, iter);
+  iteration = 0;		// Reset iteration counter to zero.
+  solver_print_state (s, iteration);
   do {
-    iter++;
+    iteration++;
     status = gsl_multifit_fdfsolver_iterate (s);
+    if ( status == GSL_ETOLF ) { printf ("GSL_ETOLF\n"); }
+    if ( status == GSL_ETOLX ) { printf ("GSL_ETOLX\n"); }
+    if ( status == GSL_ETOLG ) { printf ("GSL_ETOLG\n"); } 
     printf ("iteration status = %s\n", gsl_strerror (status));
-    solver_print_state (s, iter);
+    solver_print_state_cubic (s, iteration);
     if ( status != GSL_SUCCESS ) {
       break;
     }
     // There's nothing particularly insightful about these termination
     // conditions, but they seem to work...
     status = gsl_multifit_test_delta (s->dx, s->x, 1e-4, 1e-4);
-  } while ( status == GSL_CONTINUE && iter < 500 );
+  } while ( status == GSL_CONTINUE && iteration < 500 );
   gsl_multifit_covar (s->J, 0.0, covariance);
 
   printf ("Quadratic coefficients: ax^2 + by^2 + cxy + dx + ey + g: \n");
@@ -531,7 +681,7 @@ main (int argc, char **argv)
     double largest_error = gsl_vector_max (s->f);
     // We want to choke if it our worst point in the quadratic model
     // is off by this many pixels or more.
-    double max_allowable_error = 3.0;
+    double max_allowable_error = 4.0;
     g_assert (largest_error < max_allowable_error);
     printf ("For the differences between quadratic model values and projected "
 	    "values:\n");
@@ -561,30 +711,30 @@ main (int argc, char **argv)
   double max_corner_error = 2.0;
   // Upper left corner.
   double ul_lat, ul_lon;
-  meta_get_latLon (imd, (float)0, (float)0, 466, &ul_lat, &ul_lon);
+  meta_get_latLon (imd, (float)0, (float)0, average_height, &ul_lat, &ul_lon);
   double ul_x, ul_y;
   project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
-  double ul_x_pix_approx = evaluate_quadratic (x_pix_model_coefficients, 
+  double ul_x_pix_approx = evaluate_cubic (x_pix_model_coefficients, 
 					       ul_x - x_proj_mean, 
 					       ul_y - y_proj_mean);
   g_assert (fabs (ul_x_pix_approx) < max_corner_error);
-  double ul_y_pix_approx = evaluate_quadratic (y_pix_model_coefficients, 
+  double ul_y_pix_approx = evaluate_cubic (y_pix_model_coefficients, 
 					       ul_x - x_proj_mean, 
 					       ul_y - y_proj_mean);
   g_assert (fabs (ul_y_pix_approx) < max_corner_error);
   // Lower right corner.
   double lr_lat, lr_lon;
-  meta_get_latLon (imd, (float)(ii_size_y - 1), (float)(ii_size_x - 1), 466, 
-		   &lr_lat, &lr_lon);
+  meta_get_latLon (imd, (float)(ii_size_y - 1), (float)(ii_size_x - 1), 
+		   average_height, &lr_lat, &lr_lon);
   double lr_x, lr_y;
   project (pp, DEG_TO_RAD * lr_lat, DEG_TO_RAD * lr_lon, &lr_x, &lr_y);
-  double lr_x_pix_approx = evaluate_quadratic (x_pix_model_coefficients, 
-					       lr_x - x_proj_mean, 
-					       lr_y - y_proj_mean);
+  double lr_x_pix_approx = evaluate_cubic (x_pix_model_coefficients, 
+					   lr_x - x_proj_mean, 
+					   lr_y - y_proj_mean);
   g_assert (fabs (lr_x_pix_approx - (ii_size_x - 1)) < max_corner_error);
-  double lr_y_pix_approx = evaluate_quadratic (y_pix_model_coefficients, 
-					       lr_x - x_proj_mean, 
-					       lr_y - y_proj_mean);
+  double lr_y_pix_approx = evaluate_cubic (y_pix_model_coefficients, 
+					   lr_x - x_proj_mean, 
+					   lr_y - y_proj_mean);
   g_assert (fabs (lr_y_pix_approx - (ii_size_y - 1)) < max_corner_error);
 
   // Done with the input metadata.
@@ -592,10 +742,10 @@ main (int argc, char **argv)
 
   // Ok, we now have quadratic functions we are happy with.  Make some
   // convenience macros for using them.
-#define X_PIXEL(x, y) evaluate_quadratic (x_pix_model_coefficients, \
-					  x - x_proj_mean, y - y_proj_mean)
-#define Y_PIXEL(x, y) evaluate_quadratic (y_pix_model_coefficients, \
-					  x - x_proj_mean, y - y_proj_mean)
+#define X_PIXEL(x, y) evaluate_cubic (x_pix_model_coefficients, \
+				      x - x_proj_mean, y - y_proj_mean)
+#define Y_PIXEL(x, y) evaluate_cubic (y_pix_model_coefficients, \
+				      x - x_proj_mean, y - y_proj_mean)
 
   printf ("\n");
 
@@ -676,8 +826,13 @@ main (int argc, char **argv)
   // start with the metadata from the input image and add the
   // geocoding parameters.
   meta_parameters *omd = meta_read (input_image->str);
+  if ( omd->sar->image_type == 'P' ) {
+    g_assert (omd->projection->type == SCANSAR_PROJECTION);
+  }
+  else {
+    g_assert (omd->projection == NULL);
+  }
   omd->sar->image_type = 'P';
-  g_assert (omd->projection == NULL);
   omd->projection = g_new0 (meta_projection, 1);
   omd->projection->type = projection_type;
   omd->projection->startX = min_x;
@@ -702,9 +857,7 @@ main (int argc, char **argv)
   omd->projection->re_major = wgs84_semimajor_axis;
   omd->projection->re_minor = wgs84_semiminor_axis;
   // We need to convert things in this structure back to degrees.
-  // There should be a call to_degrees() that corresponds to
-  // to_radians.
-  pp->utm.lon0 *= RAD_TO_DEG;
+  to_degrees (projection_type, pp);
   omd->projection->param = *pp;
   meta_write (omd, output_image->str);
   meta_free (omd);
