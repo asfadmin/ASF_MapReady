@@ -141,6 +141,7 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN,int stfFlag)
     strcat(strcpy(parN,inN),".par");
     strcpy(meta->general->processor, "ASF/IMPORT2ASF");
     meta->general->data_type = COMPLEX_REAL32;
+    meta->general->image_data_type = RAW_IMAGE;
     strcpy(meta->general->system, meta_get_system());
     meta->general->orbit = lzInt(parN,"prep_block.OrbitNr:",NULL);
     if (meta->state_vectors->vecs[0].vec.vel.z > 0)
