@@ -1,17 +1,13 @@
 #include "asf.h"
 #include "asf_meta.h"
 
-extern int logflag;
-extern char logbuf[255];
-extern char errbuf[255];
-
 
 baseline read_baseline(char *fName)
 {
 	baseline b;
 	FILE *fbase;
 	fbase = FOPEN(fName,"r");
-/*	printf("Reading in baseline values from '%s'...\n",fName);*/
+
 	if (4!=fscanf(fbase, "%lf %lf %lf %lf", &b.Bn, &b.dBn,
 									 &b.Bp, &b.dBp))
 	{
