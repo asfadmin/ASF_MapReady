@@ -212,8 +212,8 @@ do
     	sarin $infile las_tmp
     fi
     check_error
-    echo "Doing "geocode $fillGeocode $pixFlag $resampFlag las_tmp las_tmp $projfile $projkey $outfile
-    geocode $fillGeocode $pixFlag $resampFlag las_tmp las_tmp $projfile $projkey $outfile
+    echo "Doing "geocode $fillGeocode $pixFlag $resampFlag las_tmp $projfile $projkey $outfile
+    geocode $fillGeocode $pixFlag $resampFlag las_tmp $projfile $projkey $outfile
     check_error
     rm las_tmp.*
 done
