@@ -3,7 +3,6 @@
 #include "asf_meta.h"
 #include "asf_nan.h" /* Needed for asf_meta's MAGIC_UNSET_DOUBLE */
 #include "err_die.h"
-#include "regex_wrapper.h"
 #include "metadata_parser.h"
 #include "worgen.h"
 
@@ -74,23 +73,26 @@ int meta_is_new_style(const char *file_name)
   char *meta_name = appendExt(file_name, ".meta");
   FILE *meta_file = FOPEN(meta_name, "r");
   char              line[MAX_METADATA_LINE]; /* Metadata line.  */
-  /* For pattern matching for version string.  */
-  matched_subexps_t version_subexps = MATCHED_SUBEXPS_INITIALIZER;
-	
-  
-  /* Scan for the version string.  */
-  if ( fgets(line, MAX_METADATA_LINE, meta_file) == '\0' ) {
-    err_die("%s function: metadata file is empty\n", __func__);
-  }
-  while ( !regex_match(&version_subexps, line,
-		       "^[[:space:]]*meta_version[[:space:]]*:[[:space:]]*([[:digit:]]+(\\.[[:digit:]]+)?)"
-		       ) ) {
+  char version_string[MAX_METADATA_LINE]; /* Actual version string.  */
+
+  /* Scan to the version field and read the actual version number,
+     then return the appropriate response.  */
+  int return_count = 0;
+  char *end_ptr;		/* Used by strtod.  */
+  double version;		/* Version as floating point.  */
+  do {
     if ( fgets(line, MAX_METADATA_LINE, meta_file) == '\0' ) {
       err_die("%s function: didn't find Meta version field\n", __func__);
-    }
+    }    
+    /* Note: whitespace in a scanf conversion matches zero or more
+       white space characters, %s matches non-white-space.  */
+  } while ( (return_count = sscanf (line, " meta_version: %s \n", 
+				    version_string)) != 1 );
+  version = strtod (version_string, &end_ptr);
+  if ( *end_ptr != '\0' ) {
+    err_die ("%s function: error parsing Meta vesion field\n", __func__);
   }
-
-  if ( strtod(get_subexp_string(&version_subexps, 1), NULL)
+  if ( strtod(version_string, &end_ptr)
        < NEW_FORMAT_VERSION - 0.0002 /* <-- for sloppy float compare.  */ ) {
     return_value = 0;
   } else {
@@ -98,7 +100,6 @@ int meta_is_new_style(const char *file_name)
   }
 
   FCLOSE(meta_file);            /* Done using meta file directly.  */
-  matched_subexps_free(&version_subexps); /* Done with subexpressions.  */
   free(meta_name);		/* Done with file name with extension.  */
 
   return return_value;
