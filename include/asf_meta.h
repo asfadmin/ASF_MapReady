@@ -145,6 +145,8 @@ typedef struct {
   double slant_range_first_pixel; /* Slant range to first pixel.            */
   double wavelength;              /* SAR carrier wavelength, in meters.     */
   double prf;                     /* Pulse Repition Frequency.              */
+  double earth_radius;            /* Earth radius at scene center.          */
+  double satellite_height;        /* Satellite height from earth's center.  */
   char satellite_binary_time[FIELD_STRING_MAX];  /* Satellite binary time   */
   char satellite_clock_time[FIELD_STRING_MAX];   /* Satellite UTC clock time*/
     /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
@@ -501,6 +503,15 @@ double meta_phase_rate(meta_parameters *sar,const baseline base,int y,int x);
  * If data is already in the correct format, leave it.*/
 int meta_polar2complex(int data_type);
 int meta_complex2polar(int data_type);
+
+/* meta_is_valid_*:
+ * Tests to see if the value is MAGIC_UNSET_*. If so return FALSE (not valid)
+ * otherwise return TRUE (valid) */
+int meta_is_valid_char(char value);
+int meta_is_valid_string(char *value);
+int meta_is_valid_int(int value);
+int meta_is_valid_double(double value);
+
 
 /*Propagate the state vectors in the given meta_parameters structure so they
  * start at the image start. Make nStVec of them, data_int seconds apart.*/
