@@ -11,7 +11,7 @@ IMAGE_CONVERTER=image2pgm
 # Check for no args
 if [ $# -ne "2" ]
 then
-   echo  "Usage: vexcel_complex.zsh <vexcel_suffix> <output root>"
+   echo  "Usage: vexcel_complex <vexcel_suffix> <output root>"
    exit 1
 fi
 
@@ -73,18 +73,18 @@ echo "Finished conversion."
 ##   Convert image to pgm
 ##
 
-echo "Generating pgm from image."
+#echo "Generating pgm from image."
 
-$IMAGE_CONVERTER $2.data1 $2.metadata $2.pgm
+#$IMAGE_CONVERTER $2.img $2.metadata $2.pgm
 
 ##
 ##  Convert pgm to gif
 ##
 
-echo "Converting pgm to gif."
-rm -f $2.gif
-cat $2.pgm | pgmtoppm .9,.9,.9| ppmtogif > $2.gif
-rm -f $2.pgm
+#echo "Converting pgm to gif."
+#rm -f $2.gif
+#cat $2.pgm | pgmtoppm .9,.9,.9| ppmtogif > $2.gif
+#rm -f $2.pgm
 
-echo "Finished."
+#echo "Finished."
 echo
