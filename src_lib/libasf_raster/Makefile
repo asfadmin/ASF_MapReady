@@ -8,8 +8,8 @@ OBJS = interpolate.o \
 	stats.o
 
 all: build_only
-	mv libasf_raster.a $(LIBDIR)
-	rm *.o
+	cp libasf_raster.a $(LIBDIR)
+	cp asf_raster.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f libasf_raster.a
