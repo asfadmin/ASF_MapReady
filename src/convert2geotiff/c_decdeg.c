@@ -40,6 +40,8 @@ ALGORITHM:
 ALGORITHM REFERENCES: None
 ******************************************************************************/
 
+#include <string.h>
+
 #include "ddr.h"
 
 
