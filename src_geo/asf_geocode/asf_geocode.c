@@ -530,17 +530,27 @@ main (int argc, char **argv)
   // Input metadata.
   meta_parameters *imd = meta_read (input_image->str);
 
+  // We can't handle slant range images at the moment.  Happily, there
+  // are only a very small number of these products around.
+  if ( imd->sar->image_type == 'S' ) {
+    asfPrintError ("Can't handle slant range images (i.e. almost certainly \n"
+		   "left-looking AMM-1 era images) at present.\n");
+    
+  }
+
   // Ensure not already projected
   if ( imd->sar->image_type == 'P' ) {
-      if (imd->projection->type != SCANSAR_PROJECTION)
-	  asfPrintError ("Expected SCANSAR projection type but got %d!\n"
-			 "This image appears to already be projected.\n",
-			 imd->projection->type);
+    if ( imd->projection->type != SCANSAR_PROJECTION ) {
+      asfPrintError ("Expected SCANSAR projection type but got %d!\n"
+		     "This image appears to already be projected.\n",
+		     imd->projection->type);
+    }
   }
   else {
-      if (imd->projection != NULL)
-	  asfPrintError ("This image is already projected! "
-			 "Cannot re-project.\n");
+    if (imd->projection != NULL) {
+      asfPrintError ("This image is already projected! "
+		     "Cannot re-project.\n");
+    }
   }
 
   // Set items in the projection parameters not on command-line
@@ -683,6 +693,17 @@ main (int argc, char **argv)
     g_free (lats);
   }
 
+  // The pixel size requested by the user better not imply a higher
+  // resolution than is available in the input image.
+  if ( imd->general->x_pixel_size > pixel_size 
+       || imd->general->y_pixel_size > pixel_size ) {
+    asfPrintError 
+      ("Requested pixel size %lf is smaller then the minimum implied by the \n"
+       "input image resolution (%le meters), this is not allowed.\n", 
+       pixel_size, GSL_MAX (imd->general->x_pixel_size, 
+			    imd->general->y_pixel_size));
+  }
+
   asfPrintStatus ("done.\n\n");
 
   // Generate some mappings between output image projection
@@ -723,6 +744,9 @@ main (int argc, char **argv)
   for ( ii = 0 ; ii < grid_size ; ii++ ) {
     size_t jj;
     for ( jj = 0 ; jj < grid_size ; jj++ ) {
+      g_assert (sizeof (long int) >= sizeof (size_t));
+      // FIXME: remove debuggins schlop:      
+      // printf ("ii: %ld, jj: %ld\n", (long int) ii, (long int) jj);
       // Projection coordinates for the current grid point.
       double cxproj = min_x + x_spacing * jj;
       double cyproj = min_y + y_spacing * ii;
@@ -739,7 +763,6 @@ main (int argc, char **argv)
       // Corresponding pixel indicies in input image.
       double x_pix, y_pix;
       meta_get_lineSamp (imd, lat, lon, average_height, &y_pix, &x_pix);
-
       dtf.x_proj[current_mapping] = cxproj;
       dtf.y_proj[current_mapping] = cyproj;
       dtf.x_pix[current_mapping] = x_pix;
@@ -819,9 +842,10 @@ main (int argc, char **argv)
     // We want to choke if our worst point in the model is off by this
     // many pixels or more.
     double max_allowable_error = 1.0;
-    if ( largest_error > max_allowable_error )
+    if ( largest_error > max_allowable_error ) {
 	asfPrintError("Largest Error was larger than maximum allowed! "
 		      "%f > %f\n", largest_error, max_allowable_error);
+    }
     asfPrintStatus ("For the differences between spline model values and "
 		    "projected values\nfor the analytically projected "
 		    "control points:\n");
@@ -850,14 +874,15 @@ main (int argc, char **argv)
   double ul_x, ul_y;
   project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
   double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
-  if (fabs (ul_x_pix_approx) > max_corner_error )
+  if (fabs (ul_x_pix_approx) > max_corner_error ) {
       asfPrintError ("UL X Corner Error was too large!  %f > %f\n",
 		     fabs(ul_x_pix_approx), max_corner_error );
-
+  }
   double ul_y_pix_approx = Y_PIXEL (ul_x, ul_y);
-  if (fabs (ul_y_pix_approx) > max_corner_error )
+  if (fabs (ul_y_pix_approx) > max_corner_error ) {
       asfPrintError ("UL Y Corner Error was too large! %f > %f\n",
 		     fabs (ul_y_pix_approx), max_corner_error );
+  }
 
   // Lower right corner.
   double lr_lat, lr_lon;
@@ -866,16 +891,17 @@ main (int argc, char **argv)
   double lr_x, lr_y;
   project (pp, DEG_TO_RAD * lr_lat, DEG_TO_RAD * lr_lon, &lr_x, &lr_y);
   double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
-  if (fabs (lr_x_pix_approx - (ii_size_x - 1)) > max_corner_error )
+  if (fabs (lr_x_pix_approx - (ii_size_x - 1)) > max_corner_error ) {
       asfPrintError ("LR X Corner Error was too large! %f > %f\n",
 		     fabs (lr_x_pix_approx - (ii_size_x - 1)),
 		     max_corner_error);
-
+  }
   double lr_y_pix_approx = Y_PIXEL (lr_x, lr_y);
-  if (fabs (lr_y_pix_approx - (ii_size_y - 1)) > max_corner_error )
+  if (fabs (lr_y_pix_approx - (ii_size_y - 1)) > max_corner_error ) {
       asfPrintError ("LR Y Corner Error was too large! %f > %f\n",
 		     fabs (lr_y_pix_approx - (ii_size_y - 1)), 
 		     max_corner_error);
+  }
 
   // Done with the input metadata.
   meta_free (imd);
@@ -886,11 +912,13 @@ main (int argc, char **argv)
   asfPrintStatus ("Resampling input image into output image "
 		  "coordinate space...\n");
 
-  // Maximum output image pixel indicies.
-  size_t oix_max = ii_size_x - 1, oiy_max = ii_size_y - 1;
   // Projection coordinates per pixel in output image.
-  double pc_per_x = (max_x - min_x) / oix_max;
-  double pc_per_y = (max_y - min_y) / oiy_max;
+  double pc_per_x = pixel_size;
+  double pc_per_y = pixel_size;
+
+  // Maximum pixel indicies in output image.
+  size_t oix_max = ceil ((max_x - min_x) / pc_per_x);
+  size_t oiy_max = ceil ((max_y - min_y) / pc_per_y);
 
   // Input image.
   GString *input_data_file = g_string_new (input_image->str);
@@ -901,7 +929,7 @@ main (int argc, char **argv)
   g_string_free (input_data_file, TRUE);
 
   // Output image.
-  FloatImage *oim = float_image_new (ii_size_x, ii_size_y);
+  FloatImage *oim = float_image_new (oix_max + 1, oiy_max + 1);
 
   // Convenience macros for getting and setting pixels.
 #define GET_PIXEL(x, y) float_image_get_pixel (iim, x, y)
@@ -924,9 +952,11 @@ main (int argc, char **argv)
       const float fill_value = 0.0;
       g_assert (ii_size_x <= SSIZE_MAX);
       g_assert (ii_size_y <= SSIZE_MAX);
-      if ( input_x_pixel < 0 || input_x_pixel >= (ssize_t)oix_max
-	   || input_y_pixel < 0 || input_y_pixel >= (ssize_t)oix_max ) {
-	SET_PIXEL (oix, oiy, (float)fill_value);
+      if ( input_x_pixel < 0 
+	   || input_x_pixel > (ssize_t) ii_size_x - 1.0
+	   || input_y_pixel < 0 
+	   || input_y_pixel > (ssize_t) ii_size_y - 1.0 ) {
+	SET_PIXEL (oix, oiy, (float) fill_value);
       }
       // Otherwise, set to the value from the appropriate position in
       // the input image.
@@ -937,7 +967,7 @@ main (int argc, char **argv)
 		      FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR));
       }
     }
-    asfLineMeter( oiy, oiy_max + 1 );
+    asfLineMeter(oiy, oiy_max + 1 );
   }
 
   asfPrintStatus ("\nDone resampling image.\n\n");
@@ -957,6 +987,8 @@ main (int argc, char **argv)
   // start with the metadata from the input image and add the
   // geocoding parameters.
   meta_parameters *omd = meta_read (input_image->str);
+  omd->general->line_count = oiy_max + 1;
+  omd->general->sample_count = oix_max + 1;
   omd->sar->image_type = 'P';
   omd->projection = g_new0 (meta_projection, 1);
   omd->projection->type = projection_type;
@@ -981,7 +1013,7 @@ main (int argc, char **argv)
   meta_write (omd, output_image->str);
   meta_free (omd);
 
-  // Done with the data being modeled.  Can't call rever_map_*
+  // Done with the data being modeled.  Can't call revers_map_*
   // functions anymore after this (so can't use *_PIXEL macros
   // either).
   g_free (dtf.sparse_y_pix);
