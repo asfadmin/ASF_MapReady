@@ -4,7 +4,6 @@ satellite.
 
 */
 #include "asf.h"
-#include "lzFetch.h"
 #include "decoder.h"
 #include "aux.h"
 
