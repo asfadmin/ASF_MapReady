@@ -14,7 +14,6 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "meta_init.h"
-#include "meta_init_ceos.h"
 #include "ceos.h"
 #include "dateUtil.h"
 
