@@ -54,10 +54,11 @@ int getCeosRecord(char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	fp=FOPEN(metaRecordName, "r");
 	while (1==fread(&bufhdr, 12, 1, fp))
 	{
-		int itype,length;
+		int itype,length,mallocBytes;
 		itype = bufhdr.rectyp[1];
 		length=bigInt32(bufhdr.recsiz);
-		*buff=(unsigned char *)MALLOC(length);
+		mallocBytes = (length>16384) ? length : 16384;
+		*buff=(unsigned char *)MALLOC(mallocBytes);
 		*(struct HEADER *)*buff=bufhdr;
 		FREAD((*buff)+12, length-12, 1, fp);
 
