@@ -1,0 +1,41 @@
+
+NAME:  creat_dem_grid
+
+SYNOPSIS: 
+
+    create_dem_grid [-log <file>] <las DEM> <las SAR> <SAR Ceos> <out_grid>
+	
+DESCRIPTION:
+	
+	During interferometry, it is necessary to clip out a piece of
+	a map-registered DEM so the DEM is lined up with the SAR image.  This
+	program is the first step in lining up the DEM.
+
+	The program outputs a file containing pixel offsets for
+	each input point.  This file can be read by the fit_plane(1) program,
+	and that program's output used to move the image with remap(1).
+
+	<las DEM> A LAS 6.0 DEM to create a grid upon
+	<las SAR> a LAS 6.0 SAR file for which to create the grid
+	<SAR Ceos> the ASF metadata file for the SAR file
+	<out_grid> a mapping grid, for use with fit_plane-
+	
+OPTIONS:
+	-log <file> allows the output to be written to a log file
+
+
+EXAMPLES:
+
+SEE ALSO:
+	demIFM(1), fit_plane(1), remap(1)
+	
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR: Orion Lawlor, 8/97
+
+CONTACT:  apd@asf.alaska.edu
+	  or visit http://www.asf.alaska.edu/apd
+
+
