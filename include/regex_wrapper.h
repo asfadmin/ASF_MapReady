@@ -22,10 +22,10 @@
    into the matched_subexps_t (in this case my_subexps) and so are
    only usable until matched_subexps_free is called.  */
 
-#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <regex.h>
 
 /* Structure for holding matched (improper) subexpressions.  Define
    and initialeze with MATCHED_SUBEXPS_INITIALIZER, but otherwise
