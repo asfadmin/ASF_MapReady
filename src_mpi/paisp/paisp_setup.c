@@ -118,7 +118,7 @@ in a structure based on the globals above.
 satellite *newSatellite(void)
 {
 	float slantToLast;
-	int err=0; // Error codes for the ODL interface 
+	int err=0; /* Error codes for the ODL interface */
         char errC=0;
         int cols; /* Dummy Variable to hold the number of columns in the antenna pattern correction vector */
         satellite *s=(satellite *)MALLOC(sizeof(satellite));
