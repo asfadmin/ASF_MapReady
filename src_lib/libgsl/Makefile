@@ -45,7 +45,7 @@ stage_gsl_stamp:
                $(LIB_STAGEDIR) ; \
             cp -r $(EXISTING_GSL_ROOT)/include/gsl $(INCLUDE_STAGEDIR) ; \
 	else \
-	    gunzip $(ZIPFILE) ; \
+	    gunzip --to-stdout $(ZIPFILE) >$(TARFILE) ; \
 	    tar xvf $(TARFILE) ; \
 	    (cd $(UNPACK_DIR) ; \
                 ./configure --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
@@ -56,4 +56,4 @@ stage_gsl_stamp:
 	touch $@
 
 clean:
-	rm -rf $(UNPACK_DIR) $(ROOT_STAGEDIR) stage_gsl_stamp
+	rm -rf $(ROOT_STAGEDIR) $(TARFILE) $(UNPACK_DIR) stage_gsl_stamp
