@@ -418,7 +418,7 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 	  } /* End if ((ddr->valid[ii]==VALID) && (ii!=DDINCV)) */
 	} /* End for (ii=0; ii<DDNVAL; ii++) */
     /* Make some guesses */
-	if (meta->projection->type != '?')
+	if (meta->projection && (meta->projection->type != '?'))
 		meta->sar->image_type = 'P';
 	
 } /* End function meta_read_only_ddr() */
