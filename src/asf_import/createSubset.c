@@ -353,7 +353,7 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
 	lat2time(locVec, loc_sec, upperLat, range, *fd, &upperTime);
 	line = (upperTime - imgTime) / azPixTime;
 	*imgStart = (long)line;
-	sprintf(logbuf,"   Starting line of subset: %ld (%lf)\n", *imgStart, upperTime);
+	sprintf(logbuf,"   Starting line of subset: %ld (time: %lf)\n", *imgStart, upperTime);
 	printf(logbuf);
 	if (logflag) printLog(logbuf);
 	
@@ -365,7 +365,7 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
 	lat2time(locVec, loc_sec, lowerLat, range, *fd, &lowerTime);
 	line = (lowerTime - imgTime) / azPixTime;
 	*imgEnd = (long)line;
-	sprintf(logbuf, "   End line of subset: %ld (%lf)\n", *imgEnd, lowerTime);
+	sprintf(logbuf, "   End line of subset: %ld (time:%lf)\n", *imgEnd, lowerTime);
 	printf(logbuf);
 	if (logflag) printLog(logbuf);
 
