@@ -118,7 +118,7 @@ OF ALASKA TECHNOLOGY DEVELOPMENT CORPORATION AT (907)451-0718.
 ************************************************************/
 #include <math.h>
 #include "correlate.h"
-#include "ddr.h"
+#include "asf_meta.h"
 
 #define VERSION     9.5
 
