@@ -12,7 +12,7 @@ PARAMETERS:
 
 DESCRIPTION:
     Keeps track of when a program starts and stops. Stopwatch will print out
-    the elapsed time.
+    the elapsed CPU time.
 
 RETURN VALUE:
     None.
@@ -47,7 +47,7 @@ PROGRAM HISTORY:
 	  }
 	  elapsed = stopTime-startTime;
 	  elapsed /= CLOCKS_PER_SEC;
-	  printf("Total wall clock time = %f seconds.\n\n",elapsed);
+	  printf("Total system clock time = %f seconds.\n\n",elapsed);
 	}
 
 	void StartWatchLog(FILE *fLog)
@@ -55,18 +55,28 @@ PROGRAM HISTORY:
 	  time_t t;
 	  char *c;
 
+	  startTime=clock();
+	  if ( startTime == (clock_t) -1 ) {
+	    bail ("clock() returned (clock_t) -1 in file " __FILE__ 
+		  ", line number %d\n", __LINE__ - 2);
+	  }
+
 	  t = time(NULL);
 	  c = asctime(localtime(&t));
-	  fprintf(fLog, "Date: %s", c);
+	  fprintf(fLog, "Stopwatch started on date: %s", c);
 	}
 
 	void StopWatchLog(FILE *fLog)
 	{
 	  float elapsed;
 	  clock_t stopTime=clock();
+	  if ( stopTime == (clock_t) -1 ) {
+	    bail ("clock() returned (clock_t) -1 in file " __FILE__ 
+		  ", line number %d\n", __LINE__ - 2);
+	  }
 	  elapsed = stopTime-startTime;
-	  elapsed/=CLOCKS_PER_SEC;
-	  fprintf(fLog, "Total wall clock time = %f seconds.\n\n",elapsed);
+	  elapsed /= CLOCKS_PER_SEC;
+	  fprintf(fLog, "Total CPU clock time = %f seconds.\n\n",elapsed);
 	}
 
 /*
