@@ -40,8 +40,7 @@ CPPFLAGS := -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 \
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
 CFLAGS := -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
           -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
-          -Wwrite-strings -Wnested-externs -fno-common -g -O4 \
-          $(shell pkg-config --cflags-only-other glib-2.0)
+          -Wwrite-strings -Wnested-externs -fno-common -g -O4
 
 LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
