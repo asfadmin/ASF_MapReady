@@ -2,10 +2,14 @@
 
 include ../../make_support/system_rules
 
+CC := /home/bkerin/local/gcc_3_4/bin/gcc
+
 OBJS = interpolate.o \
-	kernel.o \
-	scaling.o \
-	stats.o
+       kernel.o \
+       scaling.o \
+       stats.o
+
+CFLAGS += $(shell pkg-config --cflags-only-I glib-2.0)
 
 all: build_only
 	cp libasf_raster.a $(LIBDIR)

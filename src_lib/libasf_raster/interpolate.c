@@ -14,6 +14,8 @@ INPUT: interpolation  - interpolation method (nearest neighbor, bilinear, sinc)
 #include <assert.h>
 #include <math.h>
 
+#include <glib.h>
+
 #include "asf.h"
 #include "asf_raster.h"
 
@@ -32,6 +34,43 @@ INPUT: interpolation  - interpolation method (nearest neighbor, bilinear, sinc)
 // interpolate a value for 1.2, we choose the (1.2 - 1.0) * (2 - 1) *
 // NUM_SINCS sinc function to evaluate the result.
 #define NUM_SINCS 512 // Number of since functions to compute.
+
+// Fetch pixel ii, jj from inbuf, where inbuf is taken to be an image
+// nSamples wide and nLines high.  If ii, jj is outside the image, a
+// "reflected" value is returned.  For example, these two calls will
+// return the same pixel:
+//
+//     get_pixel_with_reflection (inbuf, sample_count, line_count, -1, -2) 
+//     get_pixel_with_reflection (inbuf, sample_count, line_count, 1, 2);
+//
+// If the reflected indicies are still outside the image, an exception
+// is triggered.
+static float
+get_pixel_with_reflection (float *inbuf, int nSamples, int nLines, int sample,
+			   int line)
+{
+  int ii = sample;		// Convenience alias.
+  int jj = line;		// Convenience alias.
+  // Handle reflection at image edges.
+  if ( G_UNLIKELY (ii < 0) ) { 
+    ii = -ii; 
+  }
+  else if ( G_UNLIKELY (ii >= nSamples) ) { 
+    ii = ii - (ii - nSamples + 1) - 1; 
+  }
+  if ( G_UNLIKELY (jj < 0) ) { 
+    jj = -jj; 
+  }
+  else if ( G_UNLIKELY (jj >= nLines) ) { 
+    jj = jj - (jj - nLines + 1) - 1; 
+  }
+  // Now we better be in the image.
+  assert (ii >= 0 && ii < nSamples);
+  assert (jj >= 0 && jj < nLines);
+
+  return inbuf[nSamples * jj + ii];
+}
+
 
 
 float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines, 
@@ -53,18 +92,29 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
       break;
 
     case BILINEAR:
+      assert (xSample >= 0.0 && xSample >= 0.0);
+      assert (xSample <= nSamples - 1 && xSample <= nLines - 1);
+      // If we fall on the right or lower edge of the image, we cheat
+      // by nudging the requested line sample down just slightly, to
+      // keep the below interpolation algorithm simple.
+      const float cheat_nudge = 1e-6;
+      if ( xSample >= nSamples - 1 ) { xSample - cheat_nudge ;}
+      if ( xLine >=  nLines - 1 ) { xLine - cheat_nudge; }
       ix = floor(xSample);
       iy = floor(xLine);
+      
       base = ix + iy*nSamples;
       a00 = inbuf[base];
       a10 = inbuf[base+1] - inbuf[base];
       a01 = inbuf[base+nSamples] - inbuf[base];
       a11 = (inbuf[base] - inbuf[base+1] - inbuf[base+nSamples] 
 	     + inbuf[base+nSamples+1]);
-      value = a00 + a10*xSample + a01*xLine + a11*xSample*xLine;
+      value = (a00 + a10 * (xSample - ix) + a01 * (xLine - iy) 
+	       + a11 * (xSample - ix) * (xLine - iy);
       break;
 
     case BICUBIC:
+      assert (FALSE);		/* Not implemented yet.  */
       break;
 
     case SINC:
@@ -103,8 +153,8 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
 	// Apply sinc interpolation in two dimensions.
 	value = 0.0;
 	// Integer parts of x and y to interpolate.
-	int ix = floor (xLine), iy = floor (xSample);
-	float x_fraction = xLine - ix, y_fraction = xSample - iy;
+	int ix = floor (xSample), iy = floor (xLine);
+	float x_fraction = xSample - ix, y_fraction = xLine - iy;
 	float *x_sinc_func 
 	  = &sinc_funcs[((int)(x_fraction * NUM_SINCS)) * sinc_points];
 	float *y_sinc_func
@@ -117,8 +167,9 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
 	for ( ii = y_start_sinc ; ii < y_end_sinc ; ii++ ) {
 	  int jj;
 	  for ( jj = x_start_sinc ; jj < x_end_sinc ; jj++ ) {
-	    value += x_sinc_func[jj-x_start_sinc] 
-	      * y_sinc_func[ii - y_start_sinc] * inbuf[ix * nSamples + iy];
+	    value += x_sinc_func[jj - x_start_sinc] 
+	      * y_sinc_func[ii - y_start_sinc] 
+	      * get_pixel_with_reflection (inbuf, nSamples, nLines, ii, jj);
 	  }
 	}
       }
