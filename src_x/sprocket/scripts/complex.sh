@@ -1,12 +1,12 @@
-#!/bin/bash
-CONVERTER=convert_standard
-IMAGE_CONVERTER=image2pgm
+#!/bin/sh
 
+CONVERTER=convert_complex
+IMAGE_CONVERTER=image2pgm
 
 # Check for no args
 if [ $# -ne "1" ]
 then
-   echo  "Usage: standard.zsh <root>"
+   echo  "Usage: complex.zsh <root>"
    exit 1
 fi
 
@@ -24,7 +24,8 @@ then
    exit 1
 fi
 
-echo "Converting standard ASF ASP or PP image " "'" $1 "'"
+
+echo "Converting complex ASF ASP or PP image " "'" $1 "'"
 echo 
 
 ##

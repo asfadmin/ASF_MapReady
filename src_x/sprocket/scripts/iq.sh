@@ -1,5 +1,6 @@
-#!/bin/bash
-CLASSPATH=/ASF/dev/java:.; export CLASSPATH
+#!/bin/sh
+
+export CLASSPATH=/home/pdenny/asf_tools/java
 
 # Check for no args
 if [ $# -ne "1" ]

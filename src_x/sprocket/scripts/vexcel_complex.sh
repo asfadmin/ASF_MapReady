@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+
 CONVERTER_STAGE1=vexcel_complex_metadata
 CONVERTER_STAGE2=vexcel_complex_data_planes
 IMAGE_CONVERTER=image2pgm
