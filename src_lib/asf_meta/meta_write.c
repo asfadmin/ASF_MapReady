@@ -26,7 +26,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   	"# This file contains the metadata for satellite capture file of the same base name.\n"
 	"#      '?' is likely an unknown single character value.\n"
 	"#      '??\?' is likely an unknown string of characters.\n"
-	"#      '-2147283648' is likely an unknown integer value.\n"
+	"#      '-999999999' is likely an unknown integer value.\n"
 	"#      'NaN' is likely an unknown Real value.\n\n");
 
   /* We always write out files corresponding to the latest meta version.  */
