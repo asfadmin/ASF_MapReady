@@ -12,93 +12,6 @@
 const char ceos_metadata_extensions[][8] = {"",".L",".LDR","lea."};
 const char ceos_data_extensions[][8]     = {"",".D",".RAW","dat."};
 
-/*****************************************************************************
- * has_ceos_metadata_extension:
- * Returns TRUE if the file exists and has an accepted ASF CEOS metadata file
- * extension  */
-int has_ceos_metadata_extension(const char *ceosName)
-{
-  char dirName[256], fileName[256];
-  char metaTemp[1024];
-  char baseName[256];
-  char ext[256];
-  FILE *metaFP;
-  int begin=NO_CEOS_METADATA+1, end=NUM_CEOS_METADATA_EXTS;
-  int ii;
-
-  /* Separate the filename from the path (if there's a path there) */
-  split_dir_and_file(ceosName, dirName, fileName);
-
-  for (ii=begin; ii<end; ii++) {
-    int strEnd = strlen(ceos_metadata_extensions[ii]) - 1;
-
-    /* First check for suffix style extensions */
-    if (ceos_metadata_extensions[ii][0] == EXTENSION_SEPARATOR) {
-      split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
-      sprintf(metaTemp,"%s%s%s",dirName,baseName,ceos_metadata_extensions[ii]);
-      if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
-        fclose(metaFP);
-        return TRUE;
-      }
-    }
-    /* Second look for prefix style extensions (you can thank RSI) */
-    else if (ceos_metadata_extensions[ii][strEnd] == EXTENSION_SEPARATOR) {
-      split_base_and_ext(fileName, PREPENDED_EXTENSION, baseName, ext);
-      sprintf(metaTemp,"%s%s%s",dirName,ceos_metadata_extensions[ii],baseName);
-      if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
-        fclose(metaFP);
-        return TRUE;
-      }
-    }
-  }
-  /* If we haven't returned yet there ain't no metadata file */
-  return FALSE;
-}
-
-
-/*****************************************************************************
- * has_ceos_data_extension:
- * Returns TRUE if the file exists and has an accepted ASF CEOS data file
- * extension  */
-int has_ceos_data_extension(const char *ceosName)
-{
-  char dirName[256], fileName[256];
-  char dataTemp[1024];
-  char baseName[256];
-  char ext[256];
-  FILE *dataFP;
-  int begin=NO_CEOS_DATA+1, end=NUM_CEOS_DATA_EXTS;
-  int ii;
-
-  /* Separate the filename from the path (if there's a path there) */
-  split_dir_and_file(ceosName, dirName, fileName);
-
-  for (ii=begin; ii<end; ii++) {
-    int strEnd = strlen(ceos_data_extensions[ii]) - 1;
-
-    /* First check for suffix style extensions */
-    if (ceos_data_extensions[ii][0] == EXTENSION_SEPARATOR) {
-      split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
-      sprintf(dataTemp,"%s%s%s",dirName,baseName,ceos_data_extensions[ii]);
-      if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
-        fclose(dataFP);
-        return TRUE;
-      }
-    }
-    /* Second look for prefix style extensions (you can thank RSI) */
-    else if (ceos_data_extensions[ii][strEnd] == EXTENSION_SEPARATOR) {
-      split_base_and_ext(fileName, PREPENDED_EXTENSION, baseName, ext);
-      sprintf(dataTemp,"%s%s%s",dirName,ceos_data_extensions[ii],baseName);
-      if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
-        fclose(dataFP);
-        return TRUE;
-      }
-    }
-  }
-  /* If we haven't returned yet there ain't no data file */
-  return FALSE;
-}
-
 
 /******************************************************************************
  * get_ceos_metadata_name:
@@ -124,6 +37,15 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName, char *metaName)
 
     /* First check for suffix style extensions */
     if (ceos_metadata_extensions[ii][0] == EXTENSION_SEPARATOR) {
+      /* Assume ceosName came to the function as a base name */
+      sprintf(metaTemp,"%s%s%s",dirName,fileName,ceos_metadata_extensions[ii]);
+      if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
+        fclose(metaFP);
+        strcpy(metaName,metaTemp);
+        return ii;
+      }
+      /* Hmmm, didn't work, maybe it's got an extension on there already,
+       * nix it and try again */
       split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
       sprintf(metaTemp,"%s%s%s",dirName,baseName,ceos_metadata_extensions[ii]);
       if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
@@ -134,6 +56,15 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName, char *metaName)
     }
     /* Second look for prefix style extensions (you can thank RSI) */
     else if (ceos_metadata_extensions[ii][strEnd] == EXTENSION_SEPARATOR) {
+      /* Assume ceosName came to the function as a base name */
+      sprintf(metaTemp,"%s%s%s",dirName,ceos_metadata_extensions[ii],fileName);
+      if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
+        fclose(metaFP);
+        strcpy(metaName,metaTemp);
+        return ii;
+      }
+      /* Hmmm, didn't work, maybe it's got an extension on there already,
+       * nix it and try again */
       split_base_and_ext(fileName, PREPENDED_EXTENSION, baseName, ext);
       sprintf(metaTemp,"%s%s%s",dirName,ceos_metadata_extensions[ii],baseName);
       if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
@@ -177,14 +108,17 @@ ceos_metadata_ext_t require_ceos_metadata(const char *ceosName, char *metaName)
                                          ceos_metadata_extensions[ii]);
 
     /* Report to user & exit */
-    printf("**************************** ERROR! ****************************\n"
-           "*   This program was looking for the CEOS style metadata file,\n"
-           "*   %s\n"
-           "*   That file either does not exist or cannot be read.\n"
-           "*   Expected metadata file extensions are:\n"
-           "*   %s\n"
-           "****************************************************************\n",
-           ceosName, extensionList);
+    sprintf(logbuf,
+            "**************************** ERROR! ****************************\n"
+            "*   This program was looking for the CEOS style metadata file,\n"
+            "*   %s\n"
+            "*   That file either does not exist or cannot be read.\n"
+            "*   Expected metadata file extensions are:\n"
+            "*   %s\n"
+            "****************************************************************\n",
+            ceosName, extensionList);
+    if (logflag)   {printLog(logbuf);}
+    printf(logbuf);
     exit(EXIT_FAILURE);
   }
 
@@ -218,6 +152,15 @@ ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *dataName)
 
     /* First check for suffix style extensions */
     if (ceos_data_extensions[ii][0] == EXTENSION_SEPARATOR) {
+      /* Assume ceosName came to the function as a base name */
+      sprintf(dataTemp,"%s%s%s",dirName,fileName,ceos_data_extensions[ii]);
+      if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
+        fclose(dataFP);
+        strcpy(dataName,dataTemp);
+        return ii;
+      }
+      /* Hmmm, didn't work, maybe it's got an extension on there already,
+       * nix it and try again */
       split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
       sprintf(dataTemp,"%s%s%s",dirName,baseName,ceos_data_extensions[ii]);
       if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
@@ -228,6 +171,15 @@ ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *dataName)
     }
     /* Second look for prefix style extensions (you can thank RSI) */
     else if (ceos_data_extensions[ii][strEnd] == EXTENSION_SEPARATOR) {
+      /* Assume ceosName came to the function as a base name */
+      sprintf(dataTemp,"%s%s%s",dirName,ceos_data_extensions[ii],baseName);
+      if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
+        fclose(dataFP);
+        strcpy(dataName,dataTemp);
+        return ii;
+      }
+      /* Hmmm, didn't work, maybe it's got an extension on there already,
+       * nix it and try again */
       split_base_and_ext(fileName, PREPENDED_EXTENSION, baseName, ext);
       sprintf(dataTemp,"%s%s%s",dirName,ceos_data_extensions[ii],baseName);
       if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
@@ -271,7 +223,8 @@ ceos_data_ext_t require_ceos_data(const char *ceosName, char *dataName)
                                          ceos_data_extensions[ii]);
 
     /* Report to user & exit */
-    printf("**************************** ERROR! ****************************\n"
+    sprintf(logbuf,
+           "**************************** ERROR! ****************************\n"
            "*   This program was looking for the CEOS style data file,\n"
            "*   %s\n"
            "*   That file either does not exist or cannot be read.\n"
@@ -279,6 +232,8 @@ ceos_data_ext_t require_ceos_data(const char *ceosName, char *dataName)
            "*   %s\n"
            "****************************************************************\n",
            ceosName, extensionList);
+    if (logflag)   {printLog(logbuf);}
+    printf(logbuf);
     exit(EXIT_FAILURE);
   }
 
@@ -348,14 +303,17 @@ ceos_file_pairs_t require_ceos_pair(const char *ceosName, char *dataName,
                                               ceos_metadata_extensions[ii]);
 
     /* Report to user & exit */
-    printf("**************************** ERROR! ****************************\n"
-           "*   This program was looking for the CEOS style SAR files,\n"
-           "*   %s and its associated file.\n"
-           "*   One or both files either do not exist or cannot be read.\n"
-           "*   Expected fileset extensions are:\n"
-           "*   %s\n"
-           "****************************************************************\n",
-           ceosName, extensionList);
+    sprintf(logbuf,
+            "**************************** ERROR! ****************************\n"
+            "*   This program was looking for the CEOS style SAR files,\n"
+            "*   %s and its associated file.\n"
+            "*   One or both files either do not exist or cannot be read.\n"
+            "*   Expected fileset extensions are:\n"
+            "*   %s\n"
+            "****************************************************************\n",
+            ceosName, extensionList);
+    if (logflag)   {printLog(logbuf);}
+    printf(logbuf);
     exit(EXIT_FAILURE);
   }
 
