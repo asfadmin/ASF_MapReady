@@ -154,11 +154,11 @@ export_as_tiff (const char *metadata_file_name,
   g_free (byte_row);
   g_free (float_row);
 
+  XTIFFClose (otif);
+
   float_image_free (si);
  
   float_image_free (iim);
-
-  XTIFFClose (otif);
 
   meta_free (md);
 }
