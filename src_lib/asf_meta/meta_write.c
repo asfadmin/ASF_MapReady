@@ -109,6 +109,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
       case GEOCODED_IMAGE:
 	meta_put_string(fp,"image_data_type:","GEOCODED_IMAGE",comment);
 	break;
+      case LUT_IMAGE:
+	meta_put_string(fp,"image_data_type:","LUT_IMAGE",comment);
+	break;
       case ELEVATION:
 	meta_put_string(fp,"image_data_type:","ELEVATION",comment);
 	break;
