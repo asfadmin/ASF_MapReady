@@ -70,12 +70,15 @@ typedef enum {
   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN
 } float_image_byte_order_t;
 
-// Form a low quality reduced resolution version of the model.  The
-// new image will be size_x by size_y pixels.  The image is formed by
-// sampling in each dimension using bilinear interpolation.
+// Form reduced resolution version of the model.  The scale_factor
+// must be positive and odd.  The new image will be
+// ceil (model->size_x / scale_factor) pixels by 
+// ceil (model->size_y / scale_factr) pixels.  Scaling is performed by 
+// averaging blocks of pixels together, using odd pixel reflection
+// around the image edges (see the description of the apply_kernel
+// method).
 FloatImage *
-float_image_new_from_model_scaled (FloatImage *model, ssize_t size_x, 
-				   ssize_t size_y);
+float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor);
 
 // Create a new image from data at byte offset in file.  The pixel
 // layout in the file is assumed to be the same as for the
@@ -98,7 +101,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 // will be size_x by size_y pixels.  This method is like new_from_file
 // method, but gets its data by sampling in each dimension using
 // bilinear interpolation.  This is a good way of forming quick
-// thumbnails of images.
+// thumbnails of images, but not much else.
 FloatImage *
 float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y, 
 				  ssize_t original_size_x, 
