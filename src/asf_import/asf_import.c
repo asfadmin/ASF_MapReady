@@ -426,17 +426,6 @@ int main(int argc, char *argv[])
 	strcpy(inMetaName,argv[argc - 2]);
 	strcpy(outBaseName,argv[argc - 1]);
 
-	if(strchr(inDataName, '.') != NULL)/*Make sure the file has an extension*/
-	{
-		if(!strcmp(".D", strrchr(inDataName, '.')))/*If the file ends in .D*/
-			strcpy(in_type, "CEOS");/*It must be a CEOS image*/
-		else if(!strcmp(".img", strrchr(inDataName, '.')))/*If the file ends in .img*/
-			strcpy(in_type, "ASF");/*It must be an ASF internal format file*/
-		else
-			print_error("Unrecognized input file format");/*Unrecognized file extension*/
-	}
-	else
-		print_error("Unrecognized input file format");/*No file extension*/
 
 
 /*Back to lame formatting... :P     -G */
