@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include <glib.h>
+#include <glib/gstdio.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_histogram.h>
 
