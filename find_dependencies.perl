@@ -418,7 +418,7 @@ if ( -e $graph_cache_file ) {
 	}
 
         # If in verbose mode, print dependency summary for this package.
-        unless ( not $p{verbose} ) {
+        if ( $p{verbose} ) {
 	    print "\n$pkg_name\n";
     	    if ( @{$pkg_deps{$pkg_name}} ) {
 	        print "   |\n";	# Print cute little downward ASCII art line.
