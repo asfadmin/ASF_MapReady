@@ -7,22 +7,22 @@ SYNOPSIS:     metadata [-f] rectypes infile
 		m  		Map Projection Data Record
 		l  		Platform Position Data Record
 		a  		Attitude Data Record
-		r  		Radiometric Data Record 
+		r  		Radiometric Data Record
 		o  		Radiometric Compensation Record
 		q  		Data Quality Summary Record
-		p		Processed Data Histogram Record 
+		p		Processed Data Histogram Record
 		h  		Signal Data Histograms Record
 		s  		Range Spectra Record
-		e  		Digital Elevation Model Descriptor Record 
+		e  		Digital Elevation Model Descriptor Record
 		n  		Annotation Data Record
-		d  		Detailed Parameter Processing Record 
-		c  		Calibration Data Record 
+		d  		Detailed Parameter Processing Record
+		c  		Calibration Data Record
 		g  		Ground Control Points Record
 		f  		Facility Related Data Record
-		i  		Image File Descriptor Record	
+		i  		Image File Descriptor Record
 		b		Leader File Descriptor Record
-		
-	infile                  the base name of the SAR image 
+
+	infile                  the base name of the SAR image
 	-f                      specifies writing the data to an output file
 
  NOTE: NOT ALL OF THESE OPTIONS ARE INCLUDED IN THIS RELEASE. SEE USAGE.
@@ -48,7 +48,7 @@ FILE REFERENCES:
 PROGRAM HISTORY:
 VERSION         DATE   AUTHOR
 -------         ----   ------
-  1.0           3/96   T. Logan (ASF) 
+  1.0           3/96   T. Logan (ASF)
   1.01          7/96   M. Shindle (ASF) - Corrected minor bug
   2.00	        8/96   T. Logan (ASF)   - Expanded to access RADARSAT data
   2.01	       12/96   T. Logan (ASF)   - Added check_cal() call
@@ -117,7 +117,9 @@ BUGS:
 #include <math.h>
 #include "ceos.h"
 #include "asf.h"
+#include "get_ceos_names.h"
 #include "metadisplay.h"
+
 #define VERSION 2.3
 
 int main(int argc, char **argv)
@@ -142,7 +144,7 @@ int main(int argc, char **argv)
   struct data_hist_rec   *dhr;
   struct rng_spec_rec    *rsr;
   struct qual_sum_rec    *dqsr;
-  
+
 
   /* process command line */
   while ((c=getopt(argc,argv,"f")) != EOF)
@@ -155,7 +157,7 @@ int main(int argc, char **argv)
       default:
 	printf("\n\nInvalid Option: %s\n",argv[optind-1]);
 	usage(argv[0]);
-	break;	
+	break;
      }
   }
 
@@ -172,7 +174,7 @@ int main(int argc, char **argv)
              * Now we don't support pre-RADARSAT, so era is always 1 (post) */
 
   get_ceos_names(argv[optind+1], dataName, leaderName);
- 
+
   nrecs = (int) strlen(argv[optind]);
   for (j = 0; j < nrecs; j++)
   {
@@ -233,12 +235,12 @@ int main(int argc, char **argv)
      case (71): dhr=(struct data_hist_rec*)malloc(sizeof(struct data_hist_rec));
 		if (get_sdhr(leaderName,dhr) >= 0) { prn_dhr(dhr); }
 		else printf("\nNo Signal Data Histograms Record Found\n");
-		free(dhr); 
+		free(dhr);
 		break;
      case (80):	rsr=(struct rng_spec_rec*) malloc (sizeof(struct rng_spec_rec));
                 if (get_rsr(leaderName,rsr) >= 0) { prn_rsr(rsr); }
 		else printf("\nNo Range Spectra Record Found\n");
-		free(rsr); 
+		free(rsr);
 		break;
      case (192): vfdr=(struct IOF_VFDR *) malloc (sizeof(struct IOF_VFDR));
                  get_ifiledr(dataName,vfdr);prn_ifiledr(vfdr);free(vfdr);break;
@@ -263,19 +265,19 @@ int main(int argc, char **argv)
  *** case (11):  printf("Data Record.\n");				 ***
  ***		 printf("\n...UNDER CONSTRUCTION...\n\n"); break;	 ***
  *** case (90):	 printf("Digital Elevation Model Descriptor Rec.\n");    ***
- ***             printf("\n...UNDER CONSTRUCTION...\n\n"); break;        ***	
+ ***             printf("\n...UNDER CONSTRUCTION...\n\n"); break;        ***
  *** case (100): printf("Radar Parameter Data Update Record.\n");        ***
  ***             printf("\n...UNDER CONSTRUCTION...\n\n"); break;        ***
  *** case (110): printf("Annotation Data Record.\n");                    ***
- ***             printf("\n...UNDER CONSTRUCTION...\n\n"); break;        *** 
+ ***             printf("\n...UNDER CONSTRUCTION...\n\n"); break;        ***
  *** case (140): printf("Ground Control Points Record.\n");              ***
- ***		 printf("\n...UNDER CONSTRUCTION...\n\n"); break;        *** 
+ ***		 printf("\n...UNDER CONSTRUCTION...\n\n"); break;        ***
  *** case (201): printf("GPS Metadata Record.\n"); 			 ***
  ***		 printf("\n...UNDER CONSTRUCTION...\n\n"); break;        ***
  *** case (210): printf("Facility Related Data Record (RADARSAT).\n"):	 ***
  ***		 printf("\n\n...UNDER CONSTRUCTION...\n\n"); break;      ***/
 
-     default:    printf("Not Valid Record Type: %d\n",itype); 
+     default:    printf("Not Valid Record Type: %d\n",itype);
     }  /* End SWITCH reqrec */
   } /* End FOR j < nrecs */
   return 0;
@@ -350,13 +352,13 @@ void write_to_file(char *exe, char *rectypes, char *infile)
       case ('s') : reqrec =  80; strcat(outfile,".rsr");     break;
       case ('i') : reqrec = 192; strcat(outfile,".ifiledr"); break;
       case ('f') : reqrec = 200; strcat(outfile,".facdr");   break;
-      case ('b') : reqrec = 300; strcat(outfile,".fdr");     break;  
+      case ('b') : reqrec = 300; strcat(outfile,".fdr");     break;
    /* case ('o') : reqrec =  51; strcat(outfile,".rcr");     break; */
    /* case ('e') : reqrec =  90; strcat(outfile,".demdr");   break; */
    /* case ('p') : reqrec = 100; strcat(outfile,".rpdur");   break; */
    /* case ('n') : reqrec = 110; strcat(outfile,".andr");    break; */
    /* case ('d') : reqrec = 120; strcat(outfile,".dppr");    break; */
-   /* case ('c') : reqrec = 130; strcat(outfile,".cdr");     break; */ 
+   /* case ('c') : reqrec = 130; strcat(outfile,".cdr");     break; */
    /* case ('g') : reqrec = 140; strcat(outfile,".gcpr");    break; */
       default: printf("Invalid record type: %c\n",rectypes[j]); reqrec=-1;
     }
@@ -367,4 +369,4 @@ void write_to_file(char *exe, char *rectypes, char *infile)
     }
   }
   exit(0);
-} 
+}
