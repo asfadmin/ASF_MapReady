@@ -1,25 +1,29 @@
-/*decode routine:
-	This file ingests VEXCEL Level-0 products from the RADARSAT
-satellite.
+/**************
+decode routine:
 
-*/
+This file ingests VEXCEL Level-0 products from the RADARSAT satellite.
+
+**************/
+
 #include "asf.h"
 #include "lzFetch.h"
 #include "decoder.h"
 #include "auxiliary.h"
 
+
 /*Satellite-specific Parameters:*/
 /*Private:*/
 #define replicaDur 44.559E-06 /*Radarsat chirp replica length, in sec.*/
 
+
 /********************************
-RSAT_readNextPulse:
-	Fetches the next echo from the
-signal data, and unpacks it into iqBuf.
-Skips over any blank lines.
-Updates nFrames with number of frames read.
-*/
-void RSAT_readNextPulse(bin_state *s,iqType *iqBuf)
+ * RSAT_readNextPulse:
+ * Fetches the next echo from the signal data, and unpacks it into iqBuf. Skips
+ * over any blank lines. Updates nFrames with number of frames read. Currently
+ * the 'inName' and 'outName' function parameters only exist so as to match this
+ * function up with the readPulseFunc function pointer   */
+void RSAT_readNextPulse(bin_state *s,iqType *iqBuf, char *inName,
+                        char *outName)
 {
 	RSAT_frame aux_frame,f;
 	int bytesToRead=RSAT_datPerAux;/*Just skip auxiliary data file.*/
@@ -71,19 +75,19 @@ void RSAT_readNextPulse(bin_state *s,iqType *iqBuf)
 		bytesRead+=unpackThis;
 	}
 	
-/*Every once in a while, write out a description of which line we're on.
-	if (nLines%50==0)
-	{
-		printf("   Line # %d\n",nLines);
-		RSAT_auxPrint(&aux_frame.aux,stdout);
-	}*/
+/* Every once in a while, write out a description of which line we're on.*/
+/*	if (nLines%50==0) {
+ *		printf("   Line # %d\n",nLines);
+ *		RSAT_auxPrint(&aux_frame.aux,stdout);
+ *	}
+ */
 }
 
 /*********************************
-outputReplica: writes the given replica to the given file.
-*/
+ * outputReplica:
+ * writes the given replica to the given file.  */
 void outputReplica(const char *replN,iqType *replica,int repLen,
-	float repScale,double iBias,double qBias)
+                   float repScale,double iBias,double qBias)
 {
 	int i,sampleStart;
 	FILE *outFile;
@@ -107,9 +111,8 @@ void outputReplica(const char *replN,iqType *replica,int repLen,
 
 
 /*********************************
-WriteReplica:
-	Write a pulse replica to the given file.
-*/
+ * WriteReplica:
+ * Write a pulse replica to the given file.  */
 void RSAT_writeReplica(bin_state *s,char *replN,float repScale)
 {
 	int repLen=(int)(s->fs*replicaDur);
@@ -144,8 +147,8 @@ void RSAT_writeReplica(bin_state *s,char *replN,float repScale)
 
 
 /*********************************
-Satellite information routine.
-*/
+ * RSAT_init:
+ * Satellite information routine.  */
 void RSAT_init(bin_state *s)
 {
 	strcpy(s->satName,"RSAT1");
@@ -170,14 +173,14 @@ void RSAT_init(bin_state *s)
 }
 
 /*********************************
-Decoder initialization routine.
-*/
+ * RSAT_decoder_init:
+ * Decoder initialization routine.  */
 bin_state *RSAT_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 {
 	bin_state *s=new_bin_state();
 	RSAT_frame aux_frame;
 	
-	/*printf("   Initializing RSAT decoder...\n");*/
+	printf("   Initializing RSAT decoder...\n");
 	*reader=RSAT_readNextPulse;
 	
 	RSAT_init(s);
@@ -197,11 +200,13 @@ bin_state *RSAT_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	
 	return s;
 }
+
+
 #ifdef DECODE_CEOS
 
 /**********************************
-RSAT_readNextCEOSPulse:
-*/
+ * RSAT_readNextCEOSPulse:
+ * blah */
 void RSAT_readNextCeosPulse(bin_state *s,iqType *iqBuf, char *inN, char *outN)
 {
 	int repLen=(int)(s->fs*replicaDur);
@@ -219,17 +224,16 @@ void RSAT_readNextCeosPulse(bin_state *s,iqType *iqBuf, char *inN, char *outN)
 	else
 		RSAT_unpackCeosBytes(&sig[RSAT_datPerAux],2*s->nSamp,iqBuf);
 	
-/*	if ((nLines++)%1000==0)
-	{
-		printf("   Line # %d\n",nLines);
-		RSAT_auxPrint(&aux,stdout);
-	}*/
-	
+/*	if ((nLines++)%1000==0) {
+ *		printf("   Line # %d\n",nLines);
+ * 		RSAT_auxPrint(&aux,stdout);
+ *	}
+ */
 }
+
 /*********************************
-WriteCeosReplica:
-	Writes a pulse replica to the given file.
-*/
+* RSAT_writeCeosReplica:
+* Writes a pulse replica to the given file.  */
 void RSAT_writeCeosReplica(bin_state *s,char *replN,float repScale, char *inN, char *outN)
 {
 	int repLen=(int)(s->fs*replicaDur);
@@ -254,8 +258,8 @@ void RSAT_writeCeosReplica(bin_state *s,char *replN,float repScale, char *inN, c
 }
 
 /*************************************
-CEOS Decoder initialization routine.
-*/
+ * RSAT_ceos_decoder_init:
+ * CEOS Decoder initialization routine.  */
 bin_state *RSAT_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 {
 	bin_state *s=new_bin_state();

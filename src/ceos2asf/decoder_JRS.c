@@ -1,21 +1,23 @@
-/*decode routine:
-	This file ingests VEXCEL Level-0 products from the JERS
-satellite.
-*/
+/**************
+decode routine:
+
+This file ingests VEXCEL Level-0 products from the JERS satellite.
+
+**************/
 
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
 
+
 /*Satellite-specific Parameters:*/
 #define samplesPerFrame 6144
 #define framesPerLine 1
 
+
 /********************************
-decodePulse:
-	Extracts valid signal data from packed
-pulse structure, stripping headers.
-*/
+ * decodePulse:
+ * Extracts valid signal data from packed pulse structure, stripping headers.*/
 void decodePulse(signalType *pulse,iqType *iqBuf)
 {
 	signalType alignedBuf[2*1536/8];
@@ -31,16 +33,17 @@ void decodePulse(signalType *pulse,iqType *iqBuf)
 }
 
 /*******************************
-JERS_stcCompensate:
-	Compensates the given data for JRS' 
-Sensitivity Time Control, a range-dependant attenuation.
-*/
+ * JERS_stcCompensate:
+ * Compensates the given data for JRS' Sensitivity Time Control, a
+ * range-dependant attenuation.  */
 void JRS_stcCompensate(bin_state *s,int stcOff,int len,iqType *iqBuf)
 {
-/*These variables compensate for the "Sensitivity Time Control":
-a range-timing dependant attenuation JERS applies to the signal.*/
-	double stcTime[12]={0,50,60,80,110,150,260,300,330,350,370,500};/*Period beginning (microseconds).*/
-	double stcGain[12]={0, 1, 2, 3,  4,  5,  4,  3,  2,  1,  0,  0};/*Compensation during period (dB).*/
+	/* These variables compensate for the "Sensitivity Time Control":
+	 * a range-timing dependant attenuation JERS applies to the signal.*/
+ 	   /*Period beginning (microseconds).*/
+	double stcTime[12]={0,50,60,80,110,150,260,300,330,350,370,500};
+	   /*Compensation during period (dB).*/
+	double stcGain[12]={0, 1, 2, 3,  4,  5,  4,  3,  2,  1,  0,  0};
 	int stcNo;
 	
 #define DO_STC_COMP 1
@@ -59,13 +62,14 @@ a range-timing dependant attenuation JERS applies to the signal.*/
 	}
 #endif
 }
+
 /********************************
-JRS_readNextPulse:
-	Fetches the next echo from the
-signal data, and unpacks it into iqBuf.
-Skips over any blank lines.
-*/
-void JRS_readNextPulse(bin_state *s,iqType *iqBuf)
+ * JRS_readNextPulse:
+ * Fetches the next echo from the signal data, and unpacks it into iqBuf. Skips
+ * over any blank lines. Currently the 'inName' and 'outName' function
+ * parameters only exist so as to match this function up with the readPulseFunc
+ * function pointer   */
+void JRS_readNextPulse(bin_state *s,iqType *iqBuf, char *inName, char *outName)
 {
 	JRS_frame f;
 	
@@ -80,12 +84,13 @@ void JRS_readNextPulse(bin_state *s,iqType *iqBuf)
 	
 	if (nFrames%100==0)
 	{/*Compute and print out I and Q mean values*/
-		/*double iAve,qAve;
-		int i;
-		double iAve=0.0,qAve=0.0;
-		for (i=0;i<samplesPerFrame;i++)
-			{iAve+=iqBuf[2*i];qAve+=iqBuf[2*i+1];}
-		printf("iAve=%f; qAve=%f\n",iAve/samplesPerFrame,qAve/samplesPerFrame);*/
+/*		double iAve,qAve;
+ *		int i;
+ *		double iAve=0.0,qAve=0.0;
+ *		for (i=0;i<samplesPerFrame;i++)
+ *			{iAve+=iqBuf[2*i];qAve+=iqBuf[2*i+1];}
+ *		printf("iAve=%f; qAve=%f\n",iAve/samplesPerFrame,qAve/samplesPerFrame);
+ */
 		
 		/* JRS_auxPrint(&f.aux,stdout); */
 	}
@@ -94,8 +99,8 @@ void JRS_readNextPulse(bin_state *s,iqType *iqBuf)
 }
 
 /*********************************
-Satellite hardcoded parameters routine.
-*/
+ * JRS_init:
+ * Satellite hardcoded parameters routine.  */
 void JRS_init(bin_state *s)
 {
 	strcpy(s->satName,"JERS1");
@@ -109,8 +114,8 @@ void JRS_init(bin_state *s)
 }
 
 /*********************************
-Decoder initialization routine.
-*/
+ * JRS_decoder_init:
+ * Decoder initialization routine.  */
 bin_state *JRS_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 {
 	bin_state *s=new_bin_state();
@@ -130,18 +135,21 @@ bin_state *JRS_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	return s;
 }
 
+
 #ifdef DECODE_CEOS
 #define datPerAux 400
+
 /*********************************
-CEOS JRS Pulse reader
-*/
-void JRS_readNextCeosPulse(bin_state *s,iqType *iqBuf, char *inN, char *outN)
+ * JRS_readNextCeosPulse
+ * CEOS JRS Pulse reader  */
+void JRS_readNextCeosPulse(bin_state *s, iqType *iqBuf, char *inName,
+                           char *outName)
 {
 	int i;
 	signalType *sig=NULL;
 	JRS_raw_aux raux;
 	JRS_aux aux;
-	sig=getNextCeosLine(s->binary, s, inN, outN);
+	sig=getNextCeosLine(s->binary, s, inName, outName);
 	for (i=0;i<2*samplesPerFrame;i++)
 		iqBuf[i]=125+sig[datPerAux+i];
 
@@ -152,9 +160,10 @@ void JRS_readNextCeosPulse(bin_state *s,iqType *iqBuf, char *inN, char *outN)
 }
 
 /*******************************
-*/
-
-bin_state *JRS_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader)
+ * JRS_ceos_decoder_init:
+ * blah  */
+bin_state *JRS_ceos_decoder_init(char *inName, char *outName,
+                                 readPulseFunc *reader)
 {
 	bin_state *s=new_bin_state();
 	signalType *sig=NULL;
@@ -165,8 +174,8 @@ bin_state *JRS_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	
 	JRS_init(s);
 	
-	s->binary=openCeos(inN, outN, s);
-	sig=getNextCeosLine(s->binary, s, inN, outN);
+	s->binary=openCeos(inName, outName, s);
+	sig=getNextCeosLine(s->binary, s, inName, outName);
 	JRS_auxCeosUnpack(sig,&raux);
 	JRS_auxDecode(&raux,&aux);
 	JRS_auxUpdate(&aux,s);
@@ -174,6 +183,7 @@ bin_state *JRS_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	
 	return s;
 }
+
 #endif
 
 

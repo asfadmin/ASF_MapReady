@@ -1,21 +1,23 @@
-/*decode routine:
-	This file ingests VEXCEL Level-0 products from the ERS
-satellite.
-*/
+/**************
+decode routine:
+
+This file ingests VEXCEL Level-0 products from the ERS satellite.
+
+**************/
+
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
 
 
 /********************************
-ERS_readNextPulse:
-	Fetches the next echo from the
-signal data, and unpacks it into iqBuf.
-Skips over any blank lines.
-Updates nFrames with number of frames read.
-*/
+ * ERS_readNextPulse:
+ * Fetches the next echo from the signal data, and unpacks it into iqBuf. Skips
+ * over any blank lines. Updates nFrames with number of frames read. Currently
+ * the 'inName' and 'outName' function parameters only exist so as to match this
+ * function up with the readPulseFunc function pointer   */
 int nLines=0;
-void ERS_readNextPulse(bin_state *s,iqType *iqBuf)
+void ERS_readNextPulse(bin_state *s,iqType *iqBuf, char *inName, char *outName)
 {
 	int i;
 	iqType *iqCurr=iqBuf;
@@ -53,8 +55,8 @@ void ERS_readNextPulse(bin_state *s,iqType *iqBuf)
 
 
 /*********************************
-Raw satellite initialization routine.
-*/
+ * ERS_init:
+ * Raw satellite initialization routine.  */
 void ERS_init(bin_state *s)
 {
 	strcpy(s->satName,"ERS-?");/*Filled out in ERS_auxUpdate*/
@@ -63,8 +65,8 @@ void ERS_init(bin_state *s)
 }
 
 /*********************************
-Decoder initialization routine.
-*/
+ * ERS_decoder_init:
+ * Decoder initialization routine.  */
 bin_state *ERS_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 {
 	bin_state *s=new_bin_state();
@@ -81,16 +83,19 @@ bin_state *ERS_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	
 	return s;
 }
+
+
 #ifdef DECODE_CEOS
 /************************
-CEOS Echo decoder
-*/
-void ERS_readNextCeosPulse(bin_state *s,iqType *iqBuf, char *inN, char *outN)
+ * ERS_readNextCeosPulse:
+ * CEOS Echo decoder  */
+void ERS_readNextCeosPulse(bin_state *s,iqType *iqBuf, char *inName,
+                           char *outName)
 {
 	int i;
 	signalType *sig=NULL;
 	ERS_aux aux;
-	sig=getNextCeosLine(s->binary, s, inN, outN);
+	sig=getNextCeosLine(s->binary, s, inName, outName);
 	for (i=0;i<2*s->nSamp;i++)
 		iqBuf[i]=sig[220+i];
 	ERS_decodeAux((ERS_raw_aux *)sig,&aux);
@@ -98,9 +103,10 @@ void ERS_readNextCeosPulse(bin_state *s,iqType *iqBuf, char *inN, char *outN)
 }
 
 /***********************
-CEOS Decoder inititalization routine
-*/
-bin_state *ERS_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader)
+ * ERS_ceos_decoder_init:
+ * CEOS Decoder inititalization routine  */
+bin_state *ERS_ceos_decoder_init(char *inName, char *outName,
+                                 readPulseFunc *reader)
 {
 	bin_state *s=new_bin_state();
 	signalType *sig=NULL;
@@ -110,8 +116,8 @@ bin_state *ERS_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	
 	ERS_init(s);
 	
-	s->binary=openCeos(inN, outN, s);
-	sig=getNextCeosLine(s->binary, s, inN, outN);
+	s->binary=openCeos(inName, outName, s);
+	sig=getNextCeosLine(s->binary, s, inName, outName);
 	ERS_decodeAux((ERS_raw_aux *)sig,&aux);
         ERS_auxUpdate(&aux,s);
 
@@ -120,7 +126,6 @@ bin_state *ERS_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	
 	return s;
 }
-
 
 #endif
 
