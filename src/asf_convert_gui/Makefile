@@ -31,6 +31,7 @@ $(TARGET).exe: $(TARGET).c doc
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe ../../bin/win32
 	cp $(TARGET).glade ../../bin/win32
+	cp $(TARGET).ico $(BINDIR)
 	cp htmlhelp.chm ../../bin/win32/asf_convert_gui.chm
 
 doc:
