@@ -62,18 +62,18 @@ state {
 	X coordinate, earth-fixed [m]: 22222
 	Y coordinate, earth-fixed [m]: 33333
 	Z coordinate, earth-fixed [m]: 44444
-	X velocity, earth-fixed [m]: 55555
-	Y velocity, earth-fixed [m]: 66666
-	Z velocity, earth-fixed [m]: 77777
+	X velocity, earth-fixed [m/s]: 55555
+	Y velocity, earth-fixed [m/s]: 66666
+	Z velocity, earth-fixed [m/s]: 77777
     }
     vector {
         time: 2211.1
 	X coordinate, earth-fixed [m]: 22222
 	Y coordinate, earth-fixed [m]: 22333
 	Z coordinate, earth-fixed [m]: 22444
-	X velocity, earth-fixed [m]: 22555
-	Y velocity, earth-fixed [m]: 22666
-	Z velocity, earth-fixed [m]: 22777
+	X velocity, earth-fixed [m/s]: 22555
+	Y velocity, earth-fixed [m/s]: 22666
+	Z velocity, earth-fixed [m/s]: 22777
     }
 }
 
