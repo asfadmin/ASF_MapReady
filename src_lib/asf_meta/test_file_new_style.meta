@@ -10,11 +10,13 @@ general {
     sensor: Fred the satellite
     mode: silly mode
     processor: Funky proc. version 1.23
-    data_type: ieeeee-type
+    data_type: INTEGER*4
     # Test comment.
-    system: hmmnow # Test comment. # <-- useless but harmless pound sign
+    system: ieee-std # Test comment. # <-- useless but harmless pound sign
     orbit: 123#Test comment. 
+    orbit_direction: A #Test comment. 
     frame: 23
+    band_number: 0
     line_count : 1200
     sample_count: 500
     start_line: 22
@@ -41,12 +43,12 @@ sar {
     time_shift: 23
     wavelength: 23.4
     prf: 222
-    doppler range center frequency: 22
-    doppler range linear coefficient: 2 
-    doppler range quadratic coefficient: 1.5
-    doppler azimuth center frequency: 33
-    doppler azimuth linear coefficient: 23
-    doppler azimuth quadratic coefficient: 12.1
+    dopRangeCen: 22
+    dopRangeLin: 2 
+    dopRangeQuad: 1.5
+    dopAzCen: 33
+    dopAzLin: 23
+    dopAzQuad: 12.1
     satellite_binary_time: 23121
     satellite_clock_time: 2124
 }
@@ -58,21 +60,21 @@ state {
     vector_count: 2
     vector {
         time: 11.1
-	X coordinate, earth-fixed [m]: 22222
-	Y coordinate, earth-fixed [m]: 33333
-	Z coordinate, earth-fixed [m]: 44444
-	X velocity, earth-fixed [m/s]: 55555
-	Y velocity, earth-fixed [m/s]: 66666
-	Z velocity, earth-fixed [m/s]: 77777
+	x: 22222
+	y: 33333
+	z: 44444
+	vx: 55555
+	vy: 66666
+	vz: 77777
     }
     vector {
         time: 2211.1
-	X coordinate, earth-fixed [m]: 22222
-	Y coordinate, earth-fixed [m]: 22333
-	Z coordinate, earth-fixed [m]: 22444
-	X velocity, earth-fixed [m/s]: 22555
-	Y velocity, earth-fixed [m/s]: 22666
-	Z velocity, earth-fixed [m/s]: 22777
+	x: 22222
+	y: 22333
+	z: 22444
+	vx: 22555
+	vy: 22666
+	vz: 22777
     }
 }
 
