@@ -34,7 +34,7 @@ static int nok = 0;
                        } else { ++nok; } \
 		       }
 
-static const double tol = 0.001;
+static const double tol = 0.00005;
 int within_tol(double a, double b)
 {
     return fabs(b) < tol ? fabs(a) < tol : fabs((a-b)/b) < tol;
@@ -395,7 +395,6 @@ void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
     pps.ps.is_north_pole = 1;
     pps.ps.false_easting = 0;
     pps.ps.false_northing = 0;
-    pps.ps.scale_factor = 1;
 
     /* normal function call check */
     {
@@ -785,7 +784,6 @@ void testa_random_ps2()
     pps.ps.is_north_pole = 1;
     pps.ps.false_easting = 0;
     pps.ps.false_northing = 0;
-    pps.ps.
     sprintf(name, "ps(%d,%d)", slat, slon);
 
     testa_random(name, &pps,
