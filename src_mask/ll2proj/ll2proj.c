@@ -85,7 +85,7 @@ OF ALASKA TECHNOLOGY DEVELOPMENT CORPORATION AT (907)451-0718.
 
 #define RPD 0.017453293		/* Radians per Degree */
 
-main (int argc, char *argv[]) {
+int main (int argc, char *argv[]) {
     int	    i, n, cnt;	    /* counter and number of pts */
     double  lat1, lon1,	    /* near edge lat/lon coordinates */
 	    lat2, lon2,	    /* far edge lat/lon coordinates */
@@ -169,4 +169,5 @@ main (int argc, char *argv[]) {
     printf("\nNumber of lines written to file: %i\n", cnt);
     fclose(fpi);
     fclose(fpo);
+    return 0;
 }
