@@ -26,6 +26,11 @@
 #include "geolocate.h"		/* For stateVector.  */
 #include "ddr.h"
 
+/* There are some different versions of the metadata files around.
+   This token defines the current version, which this header is
+   designed to correspond with.  */
+#define META_VERSION 1.1
+
 /******************Baseline Utilities******************/
 typedef struct {
 	double Bn;	 /* Normal Baseline: perpendicular to look direction.*/
