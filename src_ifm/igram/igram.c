@@ -245,7 +245,8 @@ int main(int argc, char *argv[])
   else
   {
   	printf("\n");
-  	sprintf(cmd,"cp %s.meta %s.meta\n",argv[currArg-2],argv[currArg]);
+  	sprintf(cmd,"cp %s.meta %s_amp.meta\n",argv[currArg-2],argv[currArg]);
+  	sprintf(cmd,"cp %s.meta %s_phase.meta\n",argv[currArg-2],argv[currArg]);
   	system(cmd);
   }
 
