@@ -96,17 +96,16 @@ require_function (const char *file, int line, int condition,
 
     va_list ap;			/* Variadic arguments pointer.  */
 
-    /* Print to log file.  */
+    /* Print to log file, prefixing source file and line information.  */
+    fprintf (asf_log_file, "At source file %s line %d: ", file, line);
     va_start (ap, message);
     vfprintf (asf_log_file, message, ap);
     va_end (ap);
-    fprintf (asf_log_file, " at source file %s line %d\n", file, line);
 
     /* Print to standard error.  */
     va_start (ap, message);
     vfprintf (stderr, message, ap);
     va_end (ap);
-    fprintf (stderr, " at source file %s line %d\n", file, line);
 
     exit (EXIT_FAILURE);
   }
@@ -119,17 +118,16 @@ die_function (const char *file, int line, const char *message, ...)
  
   initialize_asf_log_if_needed();
  
-  /* Print to log file.  */
+  /* Print to log file, prefixing source file and line information.  */
+  fprintf (asf_log_file, "At source file %s line %d: ", file, line);
   va_start (ap, message);
   vfprintf (asf_log_file, message, ap);
   va_end (ap);
-  fprintf (asf_log_file, " at source file %s line %d\n", file, line);
   
   /* Print to standard error.  */
   va_start (ap, message);
   vfprintf (stderr, message, ap);
   va_end (ap);
-  fprintf (stderr, " at source file %s line %d\n", file, line);
 
   exit (EXIT_FAILURE);
 }
