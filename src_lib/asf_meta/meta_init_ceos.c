@@ -16,14 +16,17 @@ PROGRAM HISTORY:
                                       And merged this with meta_init_asf.c
 *******************************************************************************/
 #include "asf.h"
+#include "asf_nan.h"
 #include <ctype.h>
 #include "meta_init.h"
 #include "asf_endian.h"
+#include "dateUtil.h"
 
 /* Internal Prototypes */
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr);
 ceos_description *get_ceos_description(char *fName);
+double get_firstTime(char *fName);
 
 /* Prototypes from ceos_init_stVec.c */
 void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *sar);
@@ -43,8 +46,8 @@ int UTM_zone(double lon);
 void ceos_init(const char *in_fName,meta_parameters *meta)
 {
    char fName[255],fac[50],sys[50],ver[50];
-   char frame_temp[33];
-   ceos_description *ceos;
+   char frame_temp[33], dataName[255];
+   ceos_description *ceos=NULL;
    struct dataset_sum_rec *dssr=NULL;/* Data set summary record               */
    struct IOF_VFDR *iof=NULL;        /* Image File Descriptor Record          */
    struct VMPDREC *mpdr=NULL;        /* Map Projection Data Record            */
@@ -53,11 +56,14 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    struct PPREC *ppr=NULL;           /* Processing Parameter Record           */
    struct VFDRECV *asf_facdr=NULL;   /* ASF facility data record              */
    struct ESA_FACDR *esa_facdr=NULL; /* ESA facility data record              */
-   int dataSize;                     /* Number of bytes per image pixel       */
+   int dataSize, vector_count=3;
+   ymd_date date;
+   hms_time time;
+   double firstTime, centerTime, data_int;
 
    /* Allocate & fetch CEOS records. If its not there, free & nullify pointer
       ----------------------------------------------------------------------*/
-   strcpy(fName,in_fName);
+   create_name(fName, in_fName, ".L");
    ceos = get_ceos_description(fName);
    dssr = &ceos->dssr;
    iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
@@ -89,11 +95,11 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    if (strlen(dssr->beam1) <= (MODE_FIELD_STRING_MAX)) {
       strcpy(meta->general->mode, dssr->beam1);
    }
-   if (strncmp(dssr->sensor_id,"ERS-1",5)==0) {
+   if ((strncmp(dssr->sensor_id,"ERS-1",5)==0) || (strncmp(dssr->mission_id,"ERS1",4)==0)) {
       strcpy(meta->general->sensor,"ERS1");
       strcpy(meta->general->mode, "STD");
    }
-   else if (strncmp(dssr->sensor_id,"ERS-2",5)==0) {
+   else if ((strncmp(dssr->sensor_id,"ERS-2",5)==0) || (strncmp(dssr->mission_id,"ERS2",4)==0)) {
       strcpy(meta->general->sensor,"ERS2");
       strcpy(meta->general->mode, "STD");
    }
@@ -102,6 +108,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       strcpy(meta->general->mode, "STD");
    }
    else if (strncmp(dssr->sensor_id,"RSAT-1",6)==0) {
+/* probably need to check incidence angle to figure out what is going on */
       char beamname[32];
       int ii;
       for (ii=0; ii<32; ii++) { beamname[ii] = NULL; }
@@ -135,11 +142,14 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    strcpy(sys,dssr->sys_id);strtok(sys," ");/*Remove spaces from field*/
    strcpy(ver,dssr->ver_id);strtok(ver," ");/*Remove spaces from field*/
    sprintf(meta->general->processor,"%s/%s/%s",fac,sys,ver);
-   dataSize = (iof->bitssamp+7)/8;
+   dataSize = (iof->bitssamp+7)/8 + (iof->sampdata-1)*5;
+   if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0)) dataSize += 4;
    switch (dataSize) {
-      case 2:  meta->general->data_type = INTEGER16; break;
-      case 4:  meta->general->data_type = INTEGER32; break;
-      default: meta->general->data_type = BYTE;      break;
+      case 2:  meta->general->data_type = INTEGER16;         break;
+      case 4:  meta->general->data_type = INTEGER32;         break;
+      case 6:  meta->general->data_type = COMPLEX_BYTE;      break;
+      case 7:  meta->general->data_type = COMPLEX_INTEGER16; break;
+      default: meta->general->data_type = BYTE;              break;
    }
    strcpy(meta->general->system, meta_get_system());
    meta->general->orbit = atoi(dssr->revolution);
@@ -153,13 +163,15 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
    meta->general->band_number      = 0;
    meta->general->orbit_direction  = dssr->asc_des[0];
+   if (meta->general->orbit_direction==' ')
+     meta->general->orbit_direction = (meta->general->frame>=1791 && meta->general->frame<=5391) ? 'D' : 'A';
    meta->general->line_count       = iof->numofrec;
    if (asf_facdr)
       meta->general->sample_count  = asf_facdr->npixels;
    else if (((iof->reclen-iof->predata)/iof->bytgroup) == (dssr->sc_pix*2))
       meta->general->sample_count  = (iof->reclen-iof->predata)/iof->bytgroup;
    else
-      meta->general->sample_count  = dssr->sc_pix*2;
+      meta->general->sample_count  = iof->sardata/iof->bytgroup;
    meta->general->start_line       = 0;
    meta->general->start_sample     = 0;
    if (asf_facdr && ceos->product!=CCSD) {
@@ -190,6 +202,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
  /* Fill meta->sar structure */
    if (mpdr) {
       meta->sar->image_type = 'P';
+      ceos_init_stVec(fName,ceos,meta);
       ceos_init_proj(meta, dssr, mpdr);
    }
    else if (asf_facdr) {
@@ -199,10 +212,10 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
        meta->sar->image_type='S';
    }
    else {
-      if (ceos->product==CCSD || ceos->product==SLC) {
+      if (ceos->product==CCSD || ceos->product==SLC || ceos->product==RAW) {
          meta->sar->image_type = 'S';
       }
-      else if (ceos->product==LOW_REZ || ceos->product==HI_REZ) {
+      else if (ceos->product==LOW_REZ || ceos->product==HI_REZ || ceos->product==SGF) {
          meta->sar->image_type = 'G';
       }
    }
@@ -256,7 +269,15 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
                                           / asf_facdr->swathvel;
    }
    else {
-      meta->sar->azimuth_time_per_pixel = dssr->n_azilok / dssr->prf;
+      create_name(dataName, in_fName, ".D");
+      firstTime = get_firstTime(dataName);
+      if (esa_facdr) {
+        date_dssr2time(dssr->az_time_first, &time);
+        firstTime = date_hms2sec(&time);
+      }
+      date_dssr2date(dssr->inp_sctim, &date, &time);
+      centerTime = date_hms2sec(&time);
+      meta->sar->azimuth_time_per_pixel = (centerTime - firstTime) / dssr->sc_lin;
    }
    /* CEOS data does not account for slant_shift and time_shift errors so far as
     * we can tell.  Other ASF tools may later set these fields based on more
@@ -292,7 +313,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    /* D-PAF and I-PAF give Doppler centroid values in Hz/sec */
       meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
       meta->sar->range_doppler_coefficients[1] = /*two-way range time*/
-                                          dssr->crt_dopcen[1] / speedOfLight * 2;    
+                                          dssr->crt_dopcen[1] / (speedOfLight * 2);
       meta->sar->range_doppler_coefficients[2] = /*two-way range time*/
                          dssr->crt_dopcen[2] / (speedOfLight * speedOfLight * 4);
    }
@@ -304,6 +325,17 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    meta->sar->azimuth_doppler_coefficients[0] = dssr->alt_dopcen[0];
    meta->sar->azimuth_doppler_coefficients[1] = dssr->alt_dopcen[1];
    meta->sar->azimuth_doppler_coefficients[2] = dssr->alt_dopcen[2];
+   /* check Doppler number whether they make sense, otherwise set to 'NaN' */
+   if (fabs(meta->sar->range_doppler_coefficients[0])>=15000) {
+     meta->sar->range_doppler_coefficients[0]=MAGIC_UNSET_DOUBLE;
+     meta->sar->range_doppler_coefficients[1]=MAGIC_UNSET_DOUBLE;
+     meta->sar->range_doppler_coefficients[2]=MAGIC_UNSET_DOUBLE;
+   }
+   if (fabs(meta->sar->azimuth_doppler_coefficients[0])>=15000) {
+     meta->sar->azimuth_doppler_coefficients[0]=MAGIC_UNSET_DOUBLE;
+     meta->sar->azimuth_doppler_coefficients[1]=MAGIC_UNSET_DOUBLE;
+     meta->sar->azimuth_doppler_coefficients[2]=MAGIC_UNSET_DOUBLE;
+   }
    strcpy(meta->sar->satellite_binary_time,dssr->sat_bintim);
    strtok(meta->sar->satellite_binary_time," ");/*Remove spaces from field*/
    strcpy(meta->sar->satellite_clock_time, dssr->sat_clktim);
@@ -312,25 +344,21 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    /* Fetch state vectors */
    ceos_init_stVec(fName,ceos,meta);
 
-   /* Propagate state vectors if they are covering more than frame size */
-   if (ceos->facility==ASF) {
-      double data_int;
-      int vector_count = 3;
-       /* adjust starting time of state vectors */
-      get_timeDelta(ceos, ppdr, meta);
-       /* calculate time interval */
-      data_int = dssr->sc_lin * fabs(meta->sar->azimuth_time_per_pixel);
-      while (data_int > 15.0) {
+   /* Propagate state vectors if they are covering more than frame size in case you have raw or complex data */
+   if (ceos->facility!=ESA) {
+     get_timeDelta(ceos, ppdr, meta);
+     data_int = dssr->sc_lin * fabs(meta->sar->azimuth_time_per_pixel);
+     if (data_int>15.0 && meta->general->data_type>=6) { 
+       while (data_int > 15.0) {
          data_int /= 2;
          vector_count = vector_count*2-1;
-      }
-
-      /* propagate three state vectors: start, center, end */
-      propagate_state(meta, vector_count, data_int);
+       }
+       /* propagate three state vectors: start, center, end */
+       propagate_state(meta, vector_count, data_int);
+     }
    }
 
    FREE(ceos);
-   FREE(dssr);
    FREE(iof);
    FREE(mpdr);
    FREE(fdr);
@@ -490,6 +518,10 @@ ceos_description *get_ceos_description(char *fName)
          ceos->product=CCSD;
          return ceos;
       }   
+      else if (0==strncmp(procStr, "PC", 2)) {
+        if (0==strncmp(prodStr,"SCANSAR",7)) ceos->processor=SP3;
+	else if (0==strncmp(prodStr,"FUL",3)) ceos->processor=PREC;
+      }
       else {
          printf("get_ceos_description Warning! Unknown ASF processor '%s'!\n",procStr);
          ceos->processor=unknownProcessor;
@@ -506,6 +538,7 @@ ceos_description *get_ceos_description(char *fName)
          ceos->product=SLC;
       else if (0==strncmp(prodStr, "SLANT RANGE COMPLEX",19)) ceos->product=SLC;
       else if (0==strncmp(prodStr, "SAR PRECISION IMAGE",19)) ceos->product=PRI;
+      else if (0==strncmp(prodStr, "SAR GEOREF FINE",15)) ceos->product=SGF;
       else {
          printf("get_ceos_description Warning! Unknown ASF product type '%s'!\n",prodStr);
          ceos->product=unknownProduct;
@@ -517,7 +550,7 @@ ceos_description *get_ceos_description(char *fName)
       printf("   Data set processed by ESA\n");
       ceos->facility=ESA;
       
-      if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=CCSD;
+      if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=RAW;
       else {
          printf("Get_ceos_description Warning! Unknown ESA product type '%s'!\n",prodStr);
          ceos->product=unknownProduct;
@@ -537,9 +570,13 @@ ceos_description *get_ceos_description(char *fName)
    }
    else if (0==strncmp(ceos->dssr.fac_id,"D-PAF",5)) {
       printf("   Data set processed by D-PAF\n");
+      ceos->facility=ESA;
+      if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=RAW;
    }
    else if (0==strncmp(ceos->dssr.fac_id,"I-PAF",5)) {
       printf("   Data set processed by I-PAF\n");
+      ceos->facility=ESA;
+      if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=RAW;
    }
    else if (0==strncmp(ceos->dssr.fac_id,"UK-WFS",6)) {
       printf("   Data set processed by UK-WFS\n");
@@ -554,3 +591,28 @@ ceos_description *get_ceos_description(char *fName)
 
    return ceos;
 }
+
+/*---------------------------------
+function extracts the acquisition time of the first line
+out of the line header 
+-----------------------------------*/
+double get_firstTime (char *fName) 
+{
+        FILE *fp;
+        struct HEADER hdr;
+        struct RHEADER linehdr;
+        int era, length;
+        char dataName[255], buff[25600];
+
+        fp = FOPEN(fName, "r");
+        FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+        FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
+        length = bigInt32(hdr.recsiz) - (sizeof(struct RHEADER) + sizeof(struct HEADER));
+        FREAD (buff, length, 1, fp);
+        FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+        FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
+        FCLOSE(fp);
+
+        return (double)linehdr.acq_msec/1000;
+}
+
