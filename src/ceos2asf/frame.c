@@ -30,7 +30,7 @@ RSAT frames are 323 bytes, 4 sync bytes, and 311 bytes of payload.
 
 #include "asf.h"
 #include "decoder.h"
-#include "aux.h"
+#include "auxiliary.h"
 
 /*Open the given binary file, and make it s' current file*/
 void openBinary(bin_state *s,const char *fName)

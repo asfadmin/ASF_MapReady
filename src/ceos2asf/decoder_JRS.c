@@ -5,7 +5,7 @@ satellite.
 
 #include "asf.h"
 #include "decoder.h"
-#include "aux.h"
+#include "auxiliary.h"
 
 /*Satellite-specific Parameters:*/
 #define samplesPerFrame 6144
