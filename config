@@ -169,7 +169,7 @@ case $SHELL in
 	/bin/bash)
 		addWhere=".bashrc" ;;
 esac
-if [ ! addWhere = '/dev/null' ]
+if [ ! $addWhere = '/dev/null' ]
 then
 	echo "Would you like this script to automatically add these lines:"
 	echo "  --> "$addWhat1
