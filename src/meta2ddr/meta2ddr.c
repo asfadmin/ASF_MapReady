@@ -6,9 +6,6 @@
 
 void meta_write_old(meta_parameters *meta, const char *file_name);
 
-/* This prototype needs a .h home, function is in src_lib/asf_meta/meta_new2ddr.c */
-void meta_new2ddr(meta_parameters *meta, struct DDR *ddr);
-
 int main(int argc, char **argv)
 {
 	char las_name[256];
@@ -29,7 +26,7 @@ int main(int argc, char **argv)
 	meta = meta_read(meta_name);
 
 /* Fill ddr struct with valid data */
-	meta_new2ddr(meta,&ddr);
+	meta2ddr(meta,&ddr);
 
 /* Write stuff out old style */
 	c_putddr(las_name, &ddr);
