@@ -418,7 +418,7 @@ block_start:   NAME '{'
    true if the parse succeeded, false otherwise.  */
 int parse_metadata(meta_parameters *dest, char *file_name)
 {
-  extern FILE *yyin;
+  extern FILE *meta_yyin;
   int ret_val;
 
   /* Put file name in a global for error reporting.  */
@@ -427,7 +427,7 @@ int parse_metadata(meta_parameters *dest, char *file_name)
   /* (Re)set file scope variable which counts number of vector blocks seen.  */
   vector_count = 0;
 
-  yyin = fopen(file_name, "r");
+  meta_yyin = fopen(file_name, "r");
   if ( !(stack_top = malloc(sizeof(block_stack_node))) ) {
     fprintf(stderr, "malloc failed in %s, giving up", __func__);
     exit(EXIT_FAILURE);
