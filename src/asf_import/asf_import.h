@@ -30,7 +30,6 @@ typedef enum {
 
 /* Prototypes from utilities.c */
 int firstRecordLen(char *ceosName);
-void print_splash_screen(int argc, char* argv[]);
 int checkForOption(char* key, int argc, char* argv[]);
 void pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName);
 
@@ -39,10 +38,10 @@ void create_sprocket_layers(const char *asfName, const char *importName);
 
 /* import_*() function prototypes */
 void import_ceos(char *inDataName,char *inMetaName,char *lutName,
-		 char *outBaseName,flag_indices_t flags[]);
-void import_envi(char *inDataName,char *inMetaName,char *outBaseName,flag_indices_t flags[]);
-void import_esri(char *inDataName,char *inMetaName,char *outBaseName,flag_indices_t flags[]);
-void import_stf (char *inDataName,char *inMetaName,char *outBaseName,flag_indices_t flags[],
+                 char *outBaseName,int flags[]);
+void import_envi(char *inDataName,char *inMetaName,char *outBaseName,int flags[]);
+void import_esri(char *inDataName,char *inMetaName,char *outBaseName,int flags[]);
+void import_stf (char *inDataName,char *inMetaName,char *outBaseName,int flags[],
                  double lowerLat, double upperLat, char *prcPath);/*this last line of parameters are extra from the rest of the import_*() functions */
 
 #endif
