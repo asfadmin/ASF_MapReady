@@ -51,6 +51,7 @@ import java.awt.event.*;
 import java.awt.image.*;
 import java.util.*;
 import java.io.*;
+import javax.swing.*;
 
 
 class pvs extends Frame implements ActionListener, ComponentListener,
@@ -471,14 +472,14 @@ class pvs extends Frame implements ActionListener, ComponentListener,
 
    //  *************************************************************************
    public void commander(String commanddirectory, String commandfilename) {   //(this is stupid.)
-       //cut of the .img part
-      String imagefile = imageObject.filename.substring(0, imageObject.filename.length() - 4);
+      String imagefile = imageObject.filename;
       String maskfile;
       String outputfilename;
       String outputdirectory;
       procDialog pd = null;
+      boolean success=false;
       
-      if(outputfile != null) {
+      if (outputfile != null) {
          outputdirectory = outputfile.substring(0, outputfile.lastIndexOf(System.getProperty("file.separator")) + 1);
          outputfilename = outputfile.substring(outputfile.lastIndexOf(System.getProperty("file.separator")) + 1);      
       }
@@ -487,104 +488,110 @@ class pvs extends Frame implements ActionListener, ComponentListener,
          outputfilename = "output.txt";
       }
       
-      if(!maskdir.endsWith(System.getProperty("file.separator")))
+      if (!maskdir.endsWith(System.getProperty("file.separator")))
           maskdir = maskdir + System.getProperty("file.separator");
       maskfile = maskdir + "default.mask";
       
-      if(imagemask != null)
+      if (imagemask != null)
          maskfile = imagemask.filename;
-      else if((zf != null) && (zf.zoomedCanvas.simagemask != null))
+      else if ((zf != null) && (zf.zoomedCanvas.simagemask != null))
          maskfile = zf.zoomedCanvas.simagemask.filename;
       
-      commDialog comm = new commDialog(this, maskfile, imageObject.filename, outputfile);
-      if(getToolkit().getScreenSize().width  - comm.getWidth()  > 0 &&
+      commDialog comm = new commDialog(this, maskfile, imagefile, outputfile);
+      if (getToolkit().getScreenSize().width  - comm.getWidth()  > 0 &&
          getToolkit().getScreenSize().height - comm.getHeight() > 0) {
          comm.setLocation((getToolkit().getScreenSize().width  - comm.getWidth())/2, 
                           (getToolkit().getScreenSize().height - comm.getHeight())/2);
       }
       comm.setVisible(true);
-      comm.dispose();
-      
-      if(comm.cancelled) {return;}
-               
-      //use the return from comm here
-      String args[] = new String[8];  //the number should be from commDialog
 
-      if(commanddirectory != null) {args[0] = commanddirectory + commandfilename;}
+   // Main window waits until commDialog is finished
+
+      if (comm.cancelled) {return;}
+               
+   // Should use a return from comm here
+      String args[] = new String[5];  //the number should be from commDialog
+
+      if (commanddirectory != null) {
+         args[0] = commanddirectory + commandfilename;
+      }
       else {args[0] = commandfilename;}
 
-      if(comm.imagefile != null) {args[1] = comm.imagefile.substring(0, comm.imagefile.length() - 6);}
+      if (comm.imagefile != null) {
+         args[1] = comm.imagefile.substring(0, comm.imagefile.length());
+      }
       else {args[1] = imagefile;}
       
-      if(comm.xthing != null) {args[2] = comm.xthing;}
-      else {args[2] = "look";}
+      if (comm.maskThing != null) {args[2] = comm.maskThing;}
+      else {args[2] = "on";}
       
-      if(comm.ything != null) {args[3] = comm.ything;}
-      else {args[3] = "power";}
+      if (comm.maskfile != null) {args[3] = comm.maskfile;}
+      else {args[3] = maskfile;}
       
-      if(comm.mthing != null) {args[4] = comm.mthing;}
-      else {args[4] = "on";}
-      
-      args[5] = Integer.toString(comm.bin);
-      
-      if(comm.maskfile != null) {args[6] = comm.maskfile;}
-      else {args[6] = maskfile;}
-      
-      if(comm.outputfile != null) {
-         args[7] = comm.outputfile;
-         outputdirectory = comm.outputfile.substring(0, comm.outputfile.lastIndexOf(System.getProperty("file.separator")) + 1);
-         outputfilename = comm.outputfile.substring(comm.outputfile.lastIndexOf(System.getProperty("file.separator")) + 1);
+      if (comm.outputfile != null) {
+         args[4] = comm.outputfile;
+         outputdirectory = comm.outputfile.substring(0,
+           comm.outputfile.lastIndexOf(System.getProperty("file.separator"))+1);
+         outputfilename = comm.outputfile.substring(
+           comm.outputfile.lastIndexOf(System.getProperty("file.separator"))+1);
       }
-      else {args[7] = outputfilename;}
-            
+      else {args[4] = outputfilename;}
+
       setCursor(new Cursor(Cursor.WAIT_CURSOR));
-      
+
+      Process proc;
       try {
          Runtime run = Runtime.getRuntime();
-         Process pr = run.exec(args);
+         proc = run.exec(args);
 
-         //process meter stuff
+      // Process meter stuff
          pd = new procDialog(this, "running " + commandfilename + "...");   
-         if(locatex > 0 && locatey > 0)
+         if (locatex > 0 && locatey > 0)
             pd.setLocation(locatex + 3, locatey + 41);   //arbitrary... yuck.
          pd.setVisible(true);
-         int done = 0;
 
-         Reader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+         int done = 0;
+         Reader reader = new BufferedReader(new InputStreamReader(
+                                                        proc.getInputStream()));
          StreamTokenizer st = new StreamTokenizer(reader);
-         try {
-            while(done < 99) {
-               if(st.nextToken() == st.TT_NUMBER) {
-                  if((int) st.nval > done) {
-                     done = (int) st.nval;
-                     pd.process(done);
-                  }
+
+         while (st.nextToken() != st.TT_EOF) {
+            if (st.nextToken() == st.TT_NUMBER) {
+               if ((int) st.nval > done) {
+                  done = (int) st.nval;
+                  pd.process(done);
                }
             }
          }
-         catch(IOException e) {
-            System.out.println("stupid." + e);
-            pr.waitFor();      //uhm. . . right.            
-         }
-         pr.waitFor(); 
+         proc.waitFor();
+         success=true;
       }
-      catch(Exception e) {
-         logger.log("error running command: " + args[0]);
+      catch (Exception e) {
+         if (pd != null)
+            pd.dispose();
+         logger.log("Error running command: " + args[0]);
+         logger.log(e.toString());
+         JOptionPane.showMessageDialog(this, e.toString(),
+                                       "Error running command: "+args[0],
+                                       JOptionPane.WARNING_MESSAGE);
+         success=false;
       }
       finally {
-         if(pd != null)
+         if (pd != null)
             pd.dispose();
          setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
       }
       
-      textFrame text = new textFrame(outputdirectory, outputfilename);
-      text.pack();
-      if(getToolkit().getScreenSize().width  - text.getWidth()  > 0 &&
-         getToolkit().getScreenSize().height - text.getHeight() > 0) {
-            text.setLocation((getToolkit().getScreenSize().width  - text.getWidth())/2, 
-                             (getToolkit().getScreenSize().height - text.getHeight())/2);
+      if (success) {
+         textFrame text = new textFrame(outputdirectory, outputfilename);
+         text.pack();
+         if (getToolkit().getScreenSize().width  - text.getWidth()  > 0
+             && getToolkit().getScreenSize().height - text.getHeight() > 0) {
+            text.setLocation((getToolkit().getScreenSize().width-text.getWidth())/2,
+                             (getToolkit().getScreenSize().height-text.getHeight())/2);
+         }
+         text.setVisible(true);
       }
-      text.setVisible(true);
    }
       
    // ACTION LISTENER ROUTINE **************************************************
@@ -1113,4 +1120,3 @@ class pvs extends Frame implements ActionListener, ComponentListener,
       pvs tf = new pvs();
    }
 }
-
