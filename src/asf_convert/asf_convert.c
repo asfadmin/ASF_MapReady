@@ -469,7 +469,7 @@ int main(int argc, char *argv[])
 		}
 
 
-		sprintf(command, "asf_import -log tmp%i_import.log -format %s", (int)getpid(), format_in);
+		sprintf(command, "asf_import -log %s -format %s", logFile, format_in);
 		if(quietFlag != FLAG_NOT_SET)
 			strcat(command, " -quiet");
 		sprintf(temp, " -%s %s %s tmp%i",
@@ -479,59 +479,6 @@ int main(int argc, char *argv[])
 		(int)getpid());
 		strcat(command, temp);
 		check_return(system(command), "Importing data (asf_import)");
-		
-		
-		/* Ingest CEOS image */
-/*
-		switch (type_in)
-		{
-			case CEOS:
-				sprintf(in, "tmp%i", (int)getpid());
-				if (strncmp(cfg->general->data_type, "amplitude", 9) == 0)
-				{
-					check_return(asf_import(cfg->general->in_data_name,
-						cfg->general->in_meta_name, "-amplitude", in),
-						"Importing CEOS data (asf_import)");
-					sprintf(out, "tmp%i_amp", (int)getpid());
-				}
-				else if (strncmp(cfg->general->data_type, "power", 5) == 0)
-				{
-					check_return(asf_import(cfg->general->in_data_name,
-						cfg->general->in_meta_name, "-power", in),
-						"Importing CEOS data (asf_import)");
-					sprintf(out, "tmp%i_power", (int)getpid());
-				}
-				else if (strncmp(cfg->general->data_type, "sigma", 5) == 0)
-				{
-					check_return(asf_import(cfg->general->in_data_name,
-						cfg->general->in_meta_name, "-sigma", in),
-						"Importing CEOS data (asf_import)");
-					sprintf(out, "tmp%i_sigma", (int)getpid());
-				}
-				else if (strncmp(cfg->general->data_type, "gamma", 5) == 0)
-				{
-					check_return(asf_import(cfg->general->in_data_name,
-						cfg->general->in_meta_name, "-gamma", in),
-						"Importing CEOS data (asf_import)");
-					sprintf(out, "tmp%i_gamma", (int)getpid());
-				}
-				else if (strncmp(cfg->general->data_type, "beta", 4) == 0)
-				{
-					check_return(asf_import(cfg->general->in_data_name,
-						cfg->general->in_meta_name, "-beta", in),
-						"Importing CEOS data (asf_import)");
-					sprintf(out, "tmp%i_beta", (int)getpid());
-				}
-				sprintf(cmd, "cp %s.meta %s.meta", out, cfg->general->out_name);
-				system(cmd);
-				break;
-			case ASF:
-				strcpy(out, cfg->general->in_data_name);
-				break;
-			default: print_error("Unsupported input format type");
-				break;
-		}
-*/
 
 		/* Determine the corner coordinates of the image */
 		if (cfg->general->browse)
@@ -614,7 +561,7 @@ int main(int argc, char *argv[])
 		}
 		
 
-		sprintf(command, "asf_export -log tmp%i_export.log", (int)getpid());
+		sprintf(command, "asf_export -log %s", logFile);
 		if(quietFlag != FLAG_NOT_SET)
 			strcat(command, " -quiet");
 		if(sizeFlag != FLAG_NOT_SET)
@@ -622,63 +569,32 @@ int main(int argc, char *argv[])
 			sprintf(temp, " -size %i", size_out);
 			strcat(command, temp);
 		}
-		sprintf(temp, " -format %s tmp%i_amp %s",
+		sprintf(temp, " -format %s tmp%i %s",
 		format_out,
 		(int)getpid(),
 		cfg->general->out_name);
 		strcat(command, temp);
 		check_return(system(command), "Exporting data (asf_export)");
-
-		/* Exporting image */
-		/*
-		switch (type_out)
-		{
-			case CEOS:
-				break;
-			case ASF:
-				sprintf(cmd, "mv %s.img %s.img", out, cfg->general->out_name);
-				system(cmd);
-				sprintf(cmd, "mv %s.meta %s.meta", out, cfg->general->out_name);
-				break;
-			case GEOTIFF:
-				check_return(asf_export(type_out, out, cfg->general->out_name),
-					"exporting image to GEOTIFF format (asf_export)");
-				break;
-			case JPEG:
-				check_return(asf_export(type_out, out, cfg->general->out_name),
-					"exporting image to JPEG format (asf_export)");
-				break;
-			case ENVI:
-				check_return(asf_export(type_out, out, cfg->general->out_name),
-					"exporting image to ENVI format (asf_export)");
-				break;
-			case ESRI:
-				check_return(asf_export(type_out, out, cfg->general->out_name),
-					"exporting image to ESRI format (asf_export)");
-				break;
-			case PPM:
-				check_return(asf_export(type_out, out, cfg->general->out_name),
-					"exporting image to PPM format (asf_export)");
-				break;
-			case PNG:
-				/*
-				check_return(asf_export(type_out, out, cfg->general->out_name),
-					"exporting image to PNG format (asf_export)");
-				*/
-				/*
-				break;
-			case LAS: break;
-			default:
-				check_return(1, "Unsupported output format!");
-				break;
-				
-		}
-		*/
 	}
 
-	/* Remove temporary files */
-	sprintf(cmd, "rm -f tmp%i*", (int)getpid());
-	system(cmd);
+	{
+		char temp[256];
+		/* Remove temporary files */
+		if(logflag == FLAG_NOT_SET)
+			remove(logFile);
+		sprintf(temp, "tmp%i.config", (int)getpid());
+		remove(temp);
+		sprintf(temp, "tmp%i.img", (int)getpid());
+		remove(temp);
+		sprintf(temp, "tmp%i.meta", (int)getpid());
+		remove(temp);
+		sprintf(temp, "tmp%i_small", (int)getpid());
+		remove(temp);
+		sprintf(temp, "tmp%i.proj", (int)getpid());
+		remove(temp);
+		sprintf(temp, "tmp%i_geo", (int)getpid());
+		remove(temp);
+	}
 	return(0);
 }
 
