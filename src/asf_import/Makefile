@@ -6,8 +6,6 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := $(CFLAGS) -DDECODE_CEOS
-
 LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/asf.a \
@@ -44,7 +42,6 @@ all: asf_import
 asf_import: $(OBJS)
 	$(CC) $(CFLAGS) -o asf_import $(OBJS) $(LIBS) $(LDFLAGS)
 	mv asf_import$(BIN_POSTFIX) $(BINDIR)
-#	cp asf_import.1 ../../man/cat1/
 
 clean:
 	rm -f core $(OBJS) *.o

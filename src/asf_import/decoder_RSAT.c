@@ -199,9 +199,6 @@ bin_state *RSAT_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	return s;
 }
 
-
-#ifdef DECODE_CEOS
-
 /**********************************
  * RSAT_readNextCEOSPulse:
  * blah */
@@ -278,9 +275,3 @@ bin_state *RSAT_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 
 	return s;
 }
-
-#endif
-
-
-
-

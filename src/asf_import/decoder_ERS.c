@@ -89,8 +89,6 @@ bin_state *ERS_decoder_init(char *inN,char *outN,readPulseFunc *reader)
   return s;
 }
 
-
-#ifdef DECODE_CEOS
 /************************
  * ERS_readNextCeosPulse:
  * CEOS Echo decoder  */
@@ -131,7 +129,3 @@ bin_state *ERS_ceos_decoder_init(char *inName, char *outName,
 
   return s;
 }
-
-#endif
-
-

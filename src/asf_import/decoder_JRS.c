@@ -23,7 +23,7 @@ void decodePulse(signalType *pulse,iqType *iqBuf)
 	signalType alignedBuf[2*1536/8];
 	int i;
 	iqType *iqCurr=iqBuf;
-	
+
 	for (i=0;i<12;i++)
 	{/*We have to skip the sync, h/k data, frame count, and first PCM block.
 	  We then get 1536 bits from each channel, skip 3 bits, etc..*/
@@ -45,7 +45,7 @@ void JRS_stcCompensate(bin_state *s,int stcOff,int len,iqType *iqBuf)
 	   /*Compensation during period (dB).*/
 	double stcGain[12]={0, 1, 2, 3,  4,  5,  4,  3,  2,  1,  0,  0};
 	int stcNo;
-	
+
 #define DO_STC_COMP 1
 #if DO_STC_COMP
 	for (stcNo=0;stcNo<11;stcNo++)
@@ -72,16 +72,16 @@ void JRS_stcCompensate(bin_state *s,int stcOff,int len,iqType *iqBuf)
 void JRS_readNextPulse(bin_state *s,iqType *iqBuf, char *inName, char *outName)
 {
 	JRS_frame f;
-	
+
 	static int nFrames=0;
 	nFrames++;
-	
+
 	JRS_readNextFrame(s,&f);
-	
+
 	JRS_auxAGC_window(s,&f.aux);
-	
+
 	decodePulse(f.data,iqBuf);
-	
+
 	if (nFrames%100==0)
 	{/*Compute and print out I and Q mean values*/
 /*		double iAve,qAve;
@@ -91,10 +91,10 @@ void JRS_readNextPulse(bin_state *s,iqType *iqBuf, char *inName, char *outName)
  *			{iAve+=iqBuf[2*i];qAve+=iqBuf[2*i+1];}
  *		printf("iAve=%f; qAve=%f\n",iAve/samplesPerFrame,qAve/samplesPerFrame);
  */
-		
+
 		/* JRS_auxPrint(&f.aux,stdout); */
 	}
-	
+
 	JRS_stcCompensate(s,JRS_auxStc(&f.aux),samplesPerFrame,iqBuf);
 }
 
@@ -106,7 +106,7 @@ void JRS_init(bin_state *s)
 	strcpy(s->satName,"JERS1");
 	CONF_JRS_fields(s);
 	s->bytesPerFrame=JRS_bytesPerFrame;
-	
+
 	/*I include reasonable defaults in case no state vector is available*/
 	s->re=6363490.0; /*approximate earth radius at scene center.*/
 	s->vel=7576.869; /*satellite velocity, m/s->*/
@@ -122,21 +122,20 @@ bin_state *JRS_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	JRS_frame f;
 	printf("   Initializing JERS decoder...\n");
 	*reader=JRS_readNextPulse;
-	
+
 	JRS_init(s);
-	
+
 	openBinary(s,inN);
-	
+
 	JRS_readNextFrame(s,&f);
 	JRS_auxUpdate(&f.aux,s);
-	
+
 	seekFrame(s,0);
-	
+
 	return s;
 }
 
 
-#ifdef DECODE_CEOS
 #define datPerAux 400
 
 /*********************************
@@ -171,21 +170,15 @@ bin_state *JRS_ceos_decoder_init(char *inName, char *outName,
 	JRS_aux aux;
 	printf("   Initializing JRS CEOS decoder...\n");
 	*reader=JRS_readNextCeosPulse;
-	
+
 	JRS_init(s);
-	
+
 	s->binary=openCeos(inName, outName, s);
 	sig=getNextCeosLine(s->binary, s, inName, outName);
 	JRS_auxCeosUnpack(sig,&raux);
 	JRS_auxDecode(&raux,&aux);
 	JRS_auxUpdate(&aux,s);
 	FSEEK64(s->binary,0,0);
-	
+
 	return s;
 }
-
-#endif
-
-
-
-
