@@ -9,131 +9,18 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_multifit_nlin.h>
 #include <gsl/gsl_statistics_double.h>
-#include <proj_api.h>
 
 // Libraries developed at ASF.
 #include <asf_meta.h>
+#include <libasf_proj.h>
 #include <asf_raster.h>
 
-// Find the universal transverse mercator zone in which longitude lon falls.
-static int
-utm_zone_for_lon (double lon)
-{
-  // Nudge cases which are marginal in terms of which utm zone they
-  // fall in towards zero a bit.  The proj documentation tells us we
-  // should avoid the marginal cases.
-  const double degrees_per_zone = 6.0;
-  double tiny_value = 1e-5;	// Random small number of degrees.
-  if ( fabs(round(lon / degrees_per_zone) - lon / degrees_per_zone) 
-       < tiny_value ) {
-    if ( lon > 0 ) {
-      lon -= tiny_value;
-    }
-    else {
-      lon += tiny_value;
-    }
-  }
+// Headers used by this program.
+#include "geocode_options.h"
 
-  return (int) ceil (((lon + 180.0) / degrees_per_zone));
-}
-
-// Project point at lat, lon degrees into utm projection with zone
-// appropriate for central longitude lon_0 into coordinates x, y.
-// Returne true on success, false otherwise.
-static gboolean
-utm_project (double lon_0, double lat, double lon, double *x, double *y)
-{
-  // Establish description of geographic pseudo-projection.
-  GString *geographic_projection_description
-    = g_string_new ("+proj=latlong +a=6378136.3 +b=6356751.600563");
-  projPJ geographic_projection
-    = pj_init_plus (geographic_projection_description->str);
-  g_assert (geographic_projection != NULL);
-
-  int zone = utm_zone_for_lon (lon_0);
-
-  // Establish description of utm projection.
-  GString *utm_wgs84_projection_description = g_string_new ("+proj=utm ");
-  g_string_append_printf (utm_wgs84_projection_description,
-			  "+zone=%d +datum=WGS84", zone);
-  projPJ utm_wgs84_projection
-    = pj_init_plus (utm_wgs84_projection_description->str);
-  g_assert (utm_wgs84_projection != NULL);
-
-  double tmp1 = DEG_TO_RAD * lon, tmp2 = DEG_TO_RAD * lat, tmp3 = 0;
-  int return_code = pj_transform (geographic_projection, utm_wgs84_projection,
-				  1, 1, &tmp1, &tmp2, &tmp3);
-  if ( return_code != 0 ) {
-    fprintf (stderr, "pj_transform routine from the proj library failed: %s\n",
-	     pj_strerrno (return_code));
-    exit (EXIT_FAILURE);
-  }
-  *x = tmp1;
-  *y = tmp2;
-  /* Height difference from small datum change is expected to be minimal.  */
-  g_assert (tmp3 < 5.0);
-
-  pj_free (utm_wgs84_projection);
-  g_string_free (utm_wgs84_projection_description, TRUE);
-  pj_free (geographic_projection);
-  g_string_free (geographic_projection_description, TRUE);
-
-  return TRUE;    
-}
-
-// Find the lat, lon in degrees given utm projection coordinates x, y,
-// and utm zone appropriate for central longitude lon_0.
-static gboolean
-utm_unproject (double lon_0, double x, double y, double *lat, double *lon)
-{
-  // Nudge cases which are marginal in terms of which utm zone they
-  // fall in towards zero a bit.  The proj documentation tells us we
-  // should avoid the marginal cases.
-  double tiny_value = 1e-5;	// Random small number of degrees.
-  if ( fabs(round(lon_0 / 6.0) - lon_0 / 6.0) < tiny_value ) {
-    if ( lon_0 > 0 ) {
-      lon_0 -= tiny_value;
-    }
-    else {
-      lon_0 += tiny_value;
-    }
-  }
-
-  // Establish description of utm projection.
-  GString *utm_wgs84_projection_description = g_string_new ("+proj=utm ");
-  g_string_append_printf (utm_wgs84_projection_description,
-			  "+zone=%d +datum=WGS84", 6);
-  projPJ utm_wgs84_projection
-    = pj_init_plus (utm_wgs84_projection_description->str);
-  g_assert (utm_wgs84_projection != NULL);
-
-  // Establish description of geographic pseudo-projection.
-  GString *geographic_projection_description
-    = g_string_new ("+proj=latlong +a=6378136.3 +b=6356751.600563");
-  projPJ geographic_projection
-    = pj_init_plus (geographic_projection_description->str);
-  g_assert (geographic_projection != NULL);
-
-  double tmp1 = x, tmp2 = y, tmp3 = 0;
-  int return_code = pj_transform (utm_wgs84_projection, geographic_projection,
-				  1, 1, &tmp1, &tmp2, &tmp3);
-  if ( return_code != 0 ) {
-    fprintf (stderr, "pj_transform routine from the proj library failed: %s\n",
-	     pj_strerrno (return_code));
-    exit (EXIT_FAILURE);
-  }
-  *lon = tmp1;
-  *lat = tmp2;
-  /* Height difference from small datum change is expected to be minimal.  */
-  g_assert (tmp3 < 5.0);
-
-  pj_free (geographic_projection);
-  g_string_free (geographic_projection_description, TRUE);
-  pj_free (utm_wgs84_projection);
-  g_string_free (utm_wgs84_projection_description, TRUE);
-
-  return TRUE;    
-}
+// Factors for going between degrees and radians.
+#define RAD_TO_DEG	57.29577951308232
+#define DEG_TO_RAD	0.0174532925199432958
 
 ///////////////////////////////////////////////////////////////////////////////
 // 
@@ -179,7 +66,8 @@ static const size_t e_index = 4;
 static const size_t g_index = 5;
 
 // Evalutate quadratic ax^2 + by^2 + cxy + dx + ey + g at x, y, where
-// a, b, c, d, e, and g are the elements of the coefficients vector.
+// a, b, c, d, e, and g are the first six elements of the coefficients
+// vector.
 static double
 evaluate_quadratic (const gsl_vector *coefficients, double x, double y)
 {
@@ -311,14 +199,49 @@ solver_print_state (gsl_multifit_fdfsolver *s, size_t iter)
   return GSL_SUCCESS;
 }
 
-
 // Main routine.
 int
 main (int argc, char **argv)
 {
-  //  int (*my_proj)(param_t project_params_t, double lat, double lon, double *x, 
-  //	 double *y);
-//  my_proj = project_lamaz_s;
+  // Get the projection parameters from the command line.
+  projection_type_t projection_type;
+  project_parameters_t *pp = get_geocode_options(&argc, &argv, 
+						 &projection_type);
+
+  // Assign our transformation function pointers to point to the
+  // appropriate functions.
+  int (*project) (project_parameters_t *pps, double lat, double lon, double *x,
+		  double *y);
+  int (*project_arr) (project_parameters_t *pps, double *lat, double *lon,
+		      double **projected_x, double ** projected_y, 
+		      long length);
+  project = NULL;		// Silence compiler warnings.
+  project_arr = NULL;		// Silence compiler warnings.
+  switch ( projection_type ) {
+  case UNIVERSAL_TRANSVERSE_MERCATOR: 
+    project = project_utm;
+    project_arr = project_utm_arr;
+    break;
+  case POLAR_STEREOGRAPHIC:
+    project = project_ps;
+    project_arr = project_ps_arr;
+    break;
+  case ALBERS_EQUAL_AREA:
+    project = project_albers;
+    project_arr = project_albers_arr;
+    break;
+  case LAMBERT_CONFORMAL_CONIC:
+    project = project_lamcc;
+    project_arr = project_lamcc_arr;
+    break;
+  case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+    project = project_lamaz;
+    project_arr = project_lamaz_arr;
+    break;
+  default:
+    g_assert_not_reached ();
+    break;
+  }
 
   g_assert (argc == 3);
   GString *input_image = g_string_new (argv[1]);
@@ -344,59 +267,65 @@ main (int argc, char **argv)
   double max_x = - DBL_MAX;
   double min_y = DBL_MAX;
   double max_y = - DBL_MAX;
+
   { // Scoping block.
-    double lat, lon;	  // Lattitude and longitude of a given pixel.
-    double x, y;	  // Projection coordinates of a given pixel.
-    size_t ii, jj = 0;
-    for ( ii = 0 ; ii < ixdim - 1 ; ii++ ) {
-      meta_get_latLon (imd, (double)ii, (double)jj, 0.0, &lat, &lon);
-      // Corresponding projection coordinates.  */
-      gboolean return_code = utm_project (lon_0, lat, lon, &x, &y);
-      g_assert (return_code);
-      if ( x < min_x ) { min_x = x; }
-      if ( x > max_x ) { max_x = x; }
-      if ( y < min_y ) { min_y = y; }
-      if ( y > max_y ) { max_y = y; }
-      // This is a speed hack to make things go faster when developing.
-      ii = ixdim - 2;
+    // Number of pixels in the edge of the image.
+    size_t edge_point_count = 2 * ixdim + 2 * iydim - 4;
+    double *lats = g_new (double, edge_point_count);
+    double *lons = g_new (double, edge_point_count);
+    size_t current_edge_point = 0;
+    size_t ii = 0, jj = 0;
+    for ( ; ii < ixdim - 1 ; ii++ ) {
+      meta_get_latLon (imd, (double)ii, (double)jj, 0.0, 
+		       &(lats[current_edge_point]), 
+		       &(lons[current_edge_point]));
+      lats[current_edge_point] *= DEG_TO_RAD;
+      lons[current_edge_point] *= DEG_TO_RAD;
+      current_edge_point++;
     }
-    for ( jj = 0 ; jj < iydim - 1; jj++ ) {
-      meta_get_latLon (imd, (double)ii, (double)jj, 0.0, &lat, &lon);
-      // Corresponding projection coordinates.  */
-      gboolean return_code = utm_project (lon_0, lat, lon, &x, &y);
-      g_assert (return_code);
-      if ( x < min_x ) { min_x = x; }
-      if ( x > max_x ) { max_x = x; }
-      if ( y < min_y ) { min_y = y; }
-      if ( y > max_y ) { max_y = y; }
-      // This is a speed hack to make things go faster when developing.
-      jj = iydim - 2;
+    for ( ; jj < iydim - 1 ; jj++ ) {
+      meta_get_latLon (imd, (double)ii, (double)jj, 0.0,
+		       &(lats[current_edge_point]), 
+		       &(lons[current_edge_point]));
+      lats[current_edge_point] *= DEG_TO_RAD;
+      lons[current_edge_point] *= DEG_TO_RAD;
+      current_edge_point++;
     }
     for ( ; ii > 0 ; ii-- ) {
-      meta_get_latLon (imd, (double)ii, (double)jj, 0.0, &lat, &lon);
-      // Corresponding projection coordinates.  */
-      gboolean return_code = utm_project (lon_0, lat, lon, &x, &y);
-      g_assert (return_code);
-      if ( x < min_x ) { min_x = x; }
-      if ( x > max_x ) { max_x = x; }
-      if ( y < min_y ) { min_y = y; }
-      if ( y > max_y ) { max_y = y; }
-      // This is a speed hack to make things go faster when developing.
-      ii = 1;
+      meta_get_latLon (imd, (double)ii, (double)jj, 0.0, 
+		       &(lats[current_edge_point]), 
+		       &(lons[current_edge_point]));
+      lats[current_edge_point] *= DEG_TO_RAD;
+      lons[current_edge_point] *= DEG_TO_RAD;
+      current_edge_point++;
     }
     for ( ; jj > 0 ; jj-- ) {
-      meta_get_latLon (imd, (double)ii, (double)jj, 0.0, &lat, &lon);
-      // Corresponding projection coordinates.  */
-      gboolean return_code = utm_project (lon_0, lat, lon, &x, &y);
-      g_assert (return_code);
-      if ( x < min_x ) { min_x = x; }
-      if ( x > max_x ) { max_x = x; }
-      if ( y < min_y ) { min_y = y; }
-      if ( y > max_y ) { max_y = y; }
-      // This is a speed hack to make things go faster when developing.
-      jj = 1;
+      meta_get_latLon (imd, (double)ii, (double)jj, 0.0, 
+		       &(lats[current_edge_point]), 
+		       &(lons[current_edge_point]));
+      lats[current_edge_point] *= DEG_TO_RAD;
+      lons[current_edge_point] *= DEG_TO_RAD;
+      current_edge_point++;
     }
-  }    
+    g_assert (current_edge_point == edge_point_count);
+    // Pointers to arrays of projected coordinates to be filled in.
+    double *x, *y;
+    // Project all the edge pixels.
+    int return_code = project_arr (pp, lats, lons, &x, &y, edge_point_count);
+    g_assert (return_code == TRUE);
+    // Find the extents of the image in projection coordinates.
+    for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
+      if ( x[ii] < min_x ) { min_x = x[ii]; }
+      if ( x[ii] > max_x ) { max_x = x[ii]; }
+      if ( y[ii] < min_y ) { min_y = y[ii]; }
+      if ( y[ii] > max_y ) { max_y = y[ii]; }
+    }
+
+    g_free (y);
+    g_free (x);
+    g_free (lons);
+    g_free (lats);
+  }
 
   printf ("\n");
 
@@ -433,8 +362,10 @@ main (int argc, char **argv)
       double lat, lon;
       meta_get_latLon (imd, (double)xpc, (double)ypc, 0.0, &lat, &lon);
       // Corresponding projection coordinates.  */
+      lat *= DEG_TO_RAD;
+      lon *= DEG_TO_RAD;
       double x, y;
-      gboolean return_code = utm_project (lon_0, lat, lon, &x, &y);
+      gboolean return_code = project (pp, lat, lon, &x, &y);
       g_assert (return_code);
       dtf.x_proj[current_mapping] = x;
       dtf.y_proj[current_mapping] = y;
@@ -609,8 +540,6 @@ main (int argc, char **argv)
   gsl_multifit_fdfsolver_free (s);
   gsl_matrix_free (covariance);
 
-  printf ("\n");
-
   // Check correctness of reverse mappings of some corners.
   // We insist on the quadratic model being within this many pixels
   // for reverse transformations of the projection coordinates of the
@@ -621,11 +550,7 @@ main (int argc, char **argv)
   double ul_lat, ul_lon;
   meta_get_latLon (imd, (float)0, (float)0, 0.0, &ul_lat, &ul_lon);
   double ul_x, ul_y;
-  utm_project (lon_0, ul_lat, ul_lon, &ul_x, &ul_y);
-  double unprojected_ul_lat, unprojected_ul_lon;
-  utm_unproject (lon_0, ul_x, ul_y, &unprojected_ul_lat, &unprojected_ul_lon);
-  unprojected_ul_lat *= RAD_TO_DEG;
-  unprojected_ul_lon *= RAD_TO_DEG;
+  project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
   double ul_x_pix_approx = evaluate_quadratic (x_pix_model_coefficients, 
 					       ul_x - x_proj_mean, 
 					       ul_y - y_proj_mean);
@@ -639,11 +564,7 @@ main (int argc, char **argv)
   meta_get_latLon (imd, (float)(ixdim - 1), (float)(iydim - 1), 0.0, &lr_lat, 
 		   &lr_lon);
   double lr_x, lr_y;
-  utm_project (lon_0, lr_lat, lr_lon, &lr_x, &lr_y);
-  double unprojected_lr_lat, unprojected_lr_lon;
-  utm_unproject (lon_0, lr_x, lr_y, &unprojected_lr_lat, &unprojected_lr_lon);
-  unprojected_lr_lat *= RAD_TO_DEG;
-  unprojected_lr_lon *= RAD_TO_DEG;
+  project (pp, DEG_TO_RAD * lr_lat, DEG_TO_RAD * lr_lon, &lr_x, &lr_y);
   double lr_x_pix_approx = evaluate_quadratic (x_pix_model_coefficients, 
 					       lr_x - x_proj_mean, 
 					       lr_y - y_proj_mean);
@@ -659,8 +580,10 @@ main (int argc, char **argv)
 					  x - x_proj_mean, y - y_proj_mean)
 #define Y_PIXEL(x, y) evaluate_quadratic (y_pix_model_coefficients, \
 					  x - x_proj_mean, y - y_proj_mean)
+  printf ("\n");
 
   // Now we are ready to produce our output image.  
+  printf ("Resampling input image into output image coordinate space...\n");
 
   // Maximum output image pixel indicies.
   size_t oix_max = ixdim - 1, oiy_max = iydim - 1;
@@ -710,15 +633,16 @@ main (int argc, char **argv)
       // Otherwise, set to the value from the appropriate position in
       // the input image.
       else {
+	// If the GSL is inserting extra padding into our matricies,
+	// we are in trouble, and will need to do something more
+	// complicated.
 	g_assert (iim->tda == iim->size2);
-	SET_PIXEL (oix, oiy, interpolate (SINC, iim->data, iim->size1,
+	SET_PIXEL (oix, oiy, interpolate (NEAREST, iim->data, iim->size1,
 					  iim->size2, input_x_pixel,
 					  input_y_pixel, NO_WEIGHT, 8));
-		   //	SET_PIXEL (oix, oiy, GET_PIXEL ((size_t)input_x_pixel, 
-		   //		(size_t)input_y_pixel));
       }
     }
-    if ( oiy % 100 == 0 ) {
+    if ( oiy % 100 == 0 || oiy == oiy_max ) {
       printf ("Finished output image line %d\n", oiy);
     }
   }
@@ -736,13 +660,13 @@ main (int argc, char **argv)
   g_string_free (output_data_file, TRUE);
 
   // Now we need some metadata for the output image.  We will just
-  // start with the metadata from the input image and munge it into
-  // something appropriate for a geocoded image.
+  // start with the metadata from the input image and add the
+  // geocoding parameters.
   meta_parameters *omd = meta_read (input_image->str);
   omd->sar->image_type = 'P';
   g_assert (omd->projection == NULL);
   omd->projection = g_new0 (meta_projection, 1);
-  omd->projection->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+  omd->projection->type = projection_type;
   omd->projection->startX = min_x;
   omd->projection->startY = min_y;
   omd->projection->perX = pc_per_x;
@@ -764,7 +688,7 @@ main (int argc, char **argv)
     = sqrt (wgs84_semimajor_axis * wgs84_parameter_of_ellipse);
   omd->projection->re_major = wgs84_semimajor_axis;
   omd->projection->re_minor = wgs84_semiminor_axis;
-  omd->projection->param.utm.zone = utm_zone_for_lon (lon_0);
+  omd->projection->param = *pp;
   meta_write (omd, output_image->str);
 
   // FIXME: Free stuff and close files and such in case this ever
