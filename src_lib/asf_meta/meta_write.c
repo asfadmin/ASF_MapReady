@@ -22,7 +22,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_string(fp,"general {", "","Begin parameters generally used in remote sensing");
   meta_put_string(fp,"sensor:", meta->general->sensor, "Imaging sensor");
   meta_put_string(fp,"mode:",meta->general->mode,"Imaging mode");
-  meta_put_string(fp,"processor:", meta->general->processor,"Name  Version of Processor");
+  meta_put_string(fp,"processor:", meta->general->processor,"Name and Version of Processor");
   meta_put_string(fp,"data_type:", meta->general->data_type,"Type of samples (e.g. REAL*4)");
   meta_put_string(fp,"system:", meta->general->system,"System of samples (e.g. ieee-std)");
   meta_put_int   (fp,"orbit:", meta->general->orbit,"Orbit Number for this datatake");
@@ -96,7 +96,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_double(fp,"startY:",meta->projection->startY,"Projection Coordinate at top-left, Y direction");
     meta_put_double(fp,"perX:",meta->projection->perX,"Projection Coordinate per pixel, X direction");
     meta_put_double(fp,"perY:",meta->projection->perY,"Projection Coordinate per pixel, Y direction");
-    meta_put_string(fp,"units:",meta->projection->units,"Units of projection [meters, arcsec]");
+    meta_put_string(fp,"units:",meta->projection->units,"Units of projection [meters, seconds]");
     meta_put_char  (fp,"hem:",meta->projection->hem,"Hemisphere: [N=northern hemisphere; S=southern hemisphere]");
     meta_put_double(fp,"re_major:",meta->projection->re_major,"Major Axis (equator) of earth [m]");
     meta_put_double(fp,"re_minor:",meta->projection->re_minor,"Minor Axis (polar) of earth [m]");
