@@ -144,8 +144,8 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN)
 	meta->general->missing_lines = lzDouble(parN,"prep_block.missing_lines:",NULL);
 	
 /* temporary fix for earth radius and satellite height */
-	s->re = meta_get_earth_radius(meta, s->nLines, 0);
-	s->ht = meta_get_sat_height(meta, s->nLines, 0) - s->re;
+	s->re = meta_get_earth_radius(meta, s->nLines/2, s->nSamp/2);
+	s->ht = meta_get_sat_height(meta, s->nLines/2, s->nSamp/2) - s->re;
 }
 
 /********************************
@@ -155,47 +155,26 @@ velocity, etc. using the given state vector.
 Format:
 	stVec[0-2]: Earth-Fixed position, in meters.
 	stVec[3-5]: Earth-Fixed velocity, in meters/second.
-*/
 
+*/
+/*** THIS FUNCTION IS PROBABLY NOT NEEDED AND NEEDS TO BE LOOKED AT ***********/
 void addStateVector(bin_state *s,stateVector *stVec)
 {
-	double latCen;/*Geocentric latitude of state vector, in radians.*/
-	double er;/*Radius of earth under state vector, in m.*/
-	
-        /* Use state vector to estimate latitude.
-	 ---------------------------------------*/
-	latCen=atan(stVec->pos.z/
-		sqrt(stVec->pos.x*stVec->pos.x+stVec->pos.y*stVec->pos.y));
-
-        /* Use the latitude to determine earth's (ellipsoidal) radius.
-	 -----------------------------------------------------------*/
-	er=er_polar/sqrt(1-ecc2/(1+tan(latCen)*tan(latCen)));
-
-        /* Now write all these parameters into satellite structure.
-         --------------------------------------------------------*/
-	s->re=er;
-	s->ht=vecMagnitude(stVec->pos)-er;
-	s->vel=vecMagnitude(stVec->vel);
-	
-	if (!quietflag) printf("   Updating for more accurate earth radius (%.2f), \n"
-		"   height (%.2f), and velocity (%.2f).\n",
-		s->re,s->ht,s->vel);
-	
-	/* Estimate the doppler value at beam center
-         ------------------------------------------*/
-        if (!s->zeroDopSteered)
-	{
-	  GEOLOCATE_REC *g=init_geolocate(stVec);
-	  g->side=s->lookDir;
-	  g->lambda=speedOfLight/s->frequency;
-	  s->estDop=yaw2doppler(g,s->range_gate*speedOfLight/2.0,1.10)/s->prf;
-	  printf("   Estimated doppler: %f PRF\n",s->estDop);
-	  if (logflag) {
-	    sprintf(logbuf,"   Estimated doppler: %f PRF\n",s->estDop);
-	    printLog(logbuf);
-	  }
-	  free_geolocate(g);
-	}
+   /* Estimate the doppler value at beam center
+    ------------------------------------------*/
+   if (!s->zeroDopSteered)
+   {
+     GEOLOCATE_REC *g=init_geolocate(stVec);
+     g->side=s->lookDir;
+     g->lambda=speedOfLight/s->frequency;
+     s->estDop=yaw2doppler(g,s->range_gate*speedOfLight/2.0,1.10)/s->prf;
+     printf("   Estimated doppler: %f PRF\n",s->estDop);
+     if (logflag) {
+       sprintf(logbuf,"   Estimated doppler: %f PRF\n",s->estDop);
+       printLog(logbuf);
+     }
+     free_geolocate(g);
+   }
 }
 
 /********************************
