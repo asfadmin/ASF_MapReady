@@ -31,7 +31,6 @@ nad83sp			LAS Zone list
 pixman.h		LAS Pixel management
 proj.h			LAS Projection definitions 
 ptio.h			LAS Tie Point files 
-resolve.h		Header file for the resolve program
 sarsim.h		Header file for the sarmodel code
 sysdef.h		LAS Defines valid systems
 typlim.h		LAS Data type limits 
