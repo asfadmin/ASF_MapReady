@@ -24,7 +24,7 @@
 #define __ASF_META_H__
 
 #include "geolocate.h"		/* For stateVector.  */
-#include "ddr.h"
+/* #include "ddr.h" */
 
 /******************Baseline Utilities******************/
 typedef struct {
@@ -44,15 +44,22 @@ baseline read_baseline(char *fName);
     read values directly.
 ---------------------------------------------------------------*/
 
+/* Maximum length of most string fields, including trailing null.  */
+#define FIELD_STRING_MAX 256
+
+/* Maximum length of mode field, including trailing null.  In case its
+   so short for some good reason.  */
+#define MODE_FIELD_STRING_MAX 5
+
 /********************************************************************
  * meta_general: General RAdio Detection And Ranging parameters
  */
 typedef struct {
-  char sensor[256];	     /* Name of imaging sensor.                    */
-  char mode[5];		     /* Mode of imaging sensor.                    */
-  char processor[256];	     /* Name and version of SAR processor.         */
-  char data_type[256];	     /* Type of samples (e.g. "REAL*4").           */
-  char system[256];	     /* System of samples (e.g. "ieee-std").       */
+  char sensor[FIELD_STRING_MAX];     /* Name of imaging sensor.            */
+  char mode[MODE_FIELD_STRING_MAX];  /* Mode of imaging sensor.            */
+  char processor[FIELD_STRING_MAX];  /* Name and version of SAR processor. */
+  char data_type[FIELD_STRING_MAX];  /* Type of samples (e.g. "REAL*4").   */
+  char system[FIELD_STRING_MAX];     /* System of samples (e.g. "iee-std") */
   int orbit;		     /* Orbit number of satellite.                 */
   int frame;		     /* Frame for this image or -1 if inapplicable.*/
   int band_number;           /* Band number; first band is 0               */
@@ -131,43 +138,45 @@ typedef struct {
 } proj_atct;
 /* Lambert Conformal projection.*/
 typedef struct {
-  double plat1;    /* First standard parallel for Lambert. */
-  double plat2;    /* Second standard parallel for Lambert.*/
-  double lat0;     /* Original lat for Lambert.            */
-  double lon0;     /* Original lon for Lambert.            */
+  double plat1;			/* First standard parallel for Lambert.  */
+  double plat2;			/* Second standard parallel for Lambert.  */
+  double lat0;			/* Original lat for Lambert.  */
+  double lon0;			/* Original lon for Lambert.  */
 } proj_lambert;
 /* Polar Sterographic.  */
 typedef struct {
-  double slat;    /* Reference latitude for polar stereographic. */
-  double slon;    /* Reference longitude for polar stereographic.*/
+  double slat;		    /* Reference latitude for polar stereographic.  */
+  double slon;              /* Reference longitude for polar stereographic.  */
 } proj_ps;
 /* Universal Transverse Mercator.*/
 typedef struct {
   int zone;
 } proj_utm;
+/* Projection parameters for the projection in use.  */
+typedef union {		     
+  proj_atct     atct;	      /* Along-track/cross-track.  */
+  proj_lambert  lambert;    /* Lambert Conformal projection.  */
+  proj_ps       ps;         /* Polar Sterographic.  */
+  proj_utm      utm;        /* Universal Transverse Mercator.  */
+} param_t;
 typedef struct {
-  char type;             /* 'A'->Along Track/Cross Track; 'P'->Polar Stereographic;
-                            'L'->Lambert Conformal; 'U'->Universal Transverse Mercator.*/
-  double startX,startY;  /* Projection coordinates of top, lefthand corner. */
-  double perX,perY;      /* Projection coordinates per X and Y pixel.       */
-  char units[12];        /* Units of projection (meters, arcsec)            */
-  char hem;              /* Hemisphere Code: 'S'->southern; other northern. */
-  double re_major;       /* Semimajor axis length (equator) (meters).       */
-  double re_minor;       /* Semiminor axis length (poles) (meters).         */
+  char type;   /* 'A'->Along Track/Cross Track; 'P'->Polar Stereographic;
+	          'L'->Lambert Conformal; 
+		  'U'->Universal Transverse Mercator.  */
+  double startX,startY;  /* Projection coordinates of top, lefthand corner.  */
+  double perX,perY;      /* Projection coordinates per X and Y pixel.  */
+  char hem;              /* Hemisphere Code: 'S'->southern; other northern.  */
+  double re_major;       /* Semimajor axis length (equator) (meters).  */
+  double re_minor;       /* Semiminor axis length (poles) (meters).  */
   /* Note: we compute ecc=sqrt(1-re_major^2/re_minor^2).  This field
-     is therefore redundant and should be eliminated.                       */
-  double ecc;            /* First eccentricity of earth ellipsoid.DEPRECATED*/
-    /* Projection parameters for each projection.                           */
-  union {		     
-    proj_atct     atct;	    /* Along-track/cross-track.                     */
-    proj_lambert  lambert;  /* Lambert Conformal projection.                */
-    proj_ps       ps;       /* Polar Sterographic.                          */
-    proj_utm      utm;      /* Universal Transverse Mercator.               */
-  } param;
-} meta_projection;
-  /* Compatibility alias.  proj_parameters is DEPRECATED.  */
-typedef meta_projection proj_parameters;
+     is therefore redundant and should be eliminated.  DEPRECATED.  */
+  double ecc;            /* First eccentricity of earth ellipsoid.  */
 
+  /* Projection parameters.  */
+  param_t param;
+} meta_projection;
+ /* Compatibility alias.  proj_parameters is DEPRECATED.  */
+typedef meta_projection proj_parameters;
 
 /********************************************************************
  * meta_stats: statistical info about the image
@@ -180,74 +189,61 @@ typedef struct {
 } meta_stats;  
 
 
-/********************************************************************
- * meta_state_vectors: Some collection of fixed-earth state vectors
- * around the image.  These are always increasing in time; but beyond
- * that, have no assumptions.  */
+/* State_vectors: Some collection of fixed-earth state vectors around
+   the image.  These are always increasing in time; but beyond that,
+   have no assumptions.  */
 typedef struct {
-  double      time;  /* Time of state vector, in seconds from start of image.*/
-/*	typedef struct {
- *		double x;
- *		double y;
- *		double z;
- *	} vector;
- *	typedef struct {
- *		vector pos;
- *		vector vel;
- *	} stateVector;
- */
-  stateVector vec;   /* Fixed-earth state vector.  */
+  double time;		/* Time of state vector, in seconds from the
+			   start of the image.  */
+  stateVector vec;	/* Fixed-earth state vector.  */
 } state_loc;
 typedef struct {
-  int       year;     /* Year for first state vector               */
-  int       julDay;   /* Julian day of year for first state vector.*/
-  double    second;   /* Seconds of day for first state vector.    */
-  int       num;      /* Number of state vectors.                  */
-  state_loc vecs[1];  /* Array is sized at run-time.               */
+  int  year;		      /* Year for first state vector */
+  int  julDay;		      /* Julian day of year for first state vector.  */
+  double second;	      /* Seconds of day for first state vector.  */
+  int  num;		      /* Number of state vectors.  */
+  state_loc *vecs;	      /* Array sized at run-time.  */
 } meta_state_vectors;
 
-
-/********************************************************************
- * DEPRECATED
- * Geo_parameters: These are used in geolocating the image.*/
+/* DEPRECATED */
+/*Geo_parameters: These are used in geolocating the image.*/
 typedef struct {
-	char type;		/* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected.*/
+	char type;		/* 'S'-> Slant Range; 'G'-> Ground Range; 
+				   'P'-> Map Projected.*/
   	proj_parameters *proj;	/* Projection parameters, for map-projected images.*/
-	char lookDir;		/* 'L'-> Left Looking; 'R'-> Right Looking.        */
-	int deskew;		/* Image moved to zero-doppler? (1-> yes; 0->no)   */
-	double xPix,yPix;	/* Range, azimuth pixel size, in m                 */
-	double rngPixTime,azPixTime;  /* Range, Azimuth pixel time, in s.          */
+	char lookDir;		/* 'L'-> Left Looking; 'R'-> Right Looking.*/
+	int deskew;		/* Image moved to zero-doppler? (1-> yes; 0->no)*/
+	double xPix,yPix;	/* Range, azimuth pixel size, in m*/
+	double rngPixTime,azPixTime;  /* Range, Azimuth pixel time, in s.*/
 	double timeShift, slantShift; /* Image correction (fudge)
-					 factors in azimuth and range, in s and m. */
-	double slantFirst;      /* Slant range to first pixel, in m.               */
+					 factors in azimuth and range, in s and m.*/
+	double slantFirst;      /* Slant range to first pixel, in m.*/
 	double wavelen;         /* Satellite wavelength, in meters.*/
 	double dopRange[3], dopAz[3]; /* Doppler centroid constant, linear, and
                                          quadratic terms, in azimuth and range (Hz)*/
 } geo_parameters;
 
-/********************************************************************
- * DEPRECATED
- * Ifm_parameters: These are used only for interferometry.*/
+/* DEPRECATED */
+/*Ifm_parameters: These are used only for interferometry.*/
 typedef struct {
-	double er;  /* Earth radius at scene center.                            */
-	double ht;  /* Satellite height from earth's center.                    */
+	double er;  /* Earth radius at scene center.*/
+	double ht;  /* Satellite height from earth's center.*/
 	int nLooks; /* Number of looks to take on SLC data to make square pixels*/
 	int orig_nLines,orig_nSamples;
-	double lookCenter;    /*Look angle to image center (CALCULATED).        */
+	double lookCenter;/*Look angle to image center (CALCULATED).*/
 } ifm_parameters;
 
-/********************************************************************
- * DEPRECATED
- * extra_info: extra information needed to re-create CEOS files.*/
+/* DEPRECATED */
+/*extra_info: extra information needed to re-create CEOS files.*/
 typedef struct {
-	char	sensor[256];	   /* Name of imaging sensor.           */
-	char	mode[5];	   /* Mode of imaging sensor.           */
-	char    processor[256];    /* Name and version of SAR processor.*/
-	int     orbit;		   /* Orbit number of satellite.        */
-	double  bitErrorRate;      /* Exactly what it says.             */
-	char    satBinTime[256];   /* Satellite binary clock time.      */
-	char    satClkTime[256];   /* Satellite UTC time.               */
-	double  prf;		   /* Pulse Repition Frequency.         */
+	char	sensor[256];	   /* Name of imaging sensor.  */
+	char	mode[5];	   /* Mode of imaging sensor.  */
+	char    processor[256];    /* Name and version of SAR processor.  */
+	int     orbit;		   /* Orbit number of satellite.  */
+	double  bitErrorRate;      /* Exactly what it says.  */
+	char    satBinTime[256];   /* Satellite binary clock time.  */
+	char    satClkTime[256];   /* Satellite UTC time.  */
+	double  prf;		   /* Pulse Repition Frequency.  */
 } extra_info;
 
 /********************************************************************
