@@ -133,44 +133,54 @@ BUGS:
 
 void give_usage(char *name)
 {
-	printf("\nUsage:    %s [options] ifile ofile\n",name);
-	printf("      ifile            input signal data file (.D & .L or .raw & .in)\n");
-	printf("      ofile            output file name\n\n");
-	printf("   This program creates a SAR image from SAR signal data.\n\n");
-	printf("   The optional switches provide the ability to\n");
-	printf("   override any or all of:\n\n");
-	printf("        1) the default values given below,\n");
-	printf("        2) parameters read from metadata (.D & .L),\n");
-	printf("        3) parameters read from a parameter file (.raw and .in)\n\n");
-	printf("   Argument     Default  Description\n");
-	printf("   ----------------------------------------------------------------\n");
-	printf("   -l first_line   1     First line to process (from 0)\n");
-	printf("   -p patches      8     Number of patches to process (@ 4K lines)\n");
-	printf("   -v valid_lines  3000  Valid output lines per patch\n");
-	printf("   -s skip_samp    0     range samples to skip (of INVALID samps)\n");
-	printf("   -f first_samp   0     1st range samp to process (of VALID samps)\n");
-	printf("   -e 1            0     remove doppler skew from image (flag).\n");
-	printf("   -n num_samps    META  Number of range samples to process\n");
-	printf("                         (Default is read from metadata)\n");
-	printf("   -r output_res   8.0   Desired output azimuth resolution (m)\n");
-	printf("   -d dbg_flg      1     Debug: 1=amplitude,2=ref_fcn,4=rangemig\n");
-	printf("                                8=rangecomp,16=rangespecs,64=acpatch\n");
-	printf("   -c dfile        NO    Read doppler centroid from dfile\n");
-	printf("   -o off_file     NO    Read resampling coeg.fs from off_file\n");
-	printf("   -hamming 	   NO    Use a Hamming window instead of a rectangular one\n");
-	printf("                         for the azimuth reference function weighting\n");
-/*	printf("   -kaiser	   NO    Use a Kaiser window instead of a rectangular one\n");
-	printf("                         for the azimuth reference function weighting\n"); */
-	printf("   -m CAL_PARAMS   NO    Read the Elevation Angle and Gain vectors from the\n");
-	printf("			 CAL_PARAMS file to correct for the antenna gain\n");
-	printf("   -log logfile	   NO	 Allows output to be written to a log file\n");
-	printf("   -quiet	   NO	 Suppresses the output to the essential\n");
-	printf("   -power	   NO	 Creates a power image\n");
-	printf("   -sigma	   NO	 Creates a sigma image\n");
-	printf("   -gamma	   NO	 Creates a gamma image\n");
-	printf("   -beta	   NO	 Creates a beta image\n");
-	printf("\nVersion %3.1f, ASF SAR TOOL\n\n",VERSION);
-	exit(1);
+ printf("\n"
+	"USAGE:\n"
+	"   %s [options] <ifile> <ofile>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"      ifile   input signal data file (.D & .L or .raw & .in)\n"
+	"      ofile   output file name\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   Argument     Default  Description\n"
+	"   ----------------------------------------------------------------\n"
+	"   -l first_line   1     First line to process (from 0)\n"
+	"   -p patches      8     Number of patches to process (@ 4K lines)\n"
+	"   -v valid_lines  3000  Valid output lines per patch\n"
+	"   -s skip_samp    0     range samples to skip (of INVALID samps)\n"
+	"   -f first_samp   0     1st range samp to process (of VALID samps)\n"
+	"   -e 1            0     remove doppler skew from image (flag).\n"
+	"   -n num_samps    META  Number of range samples to process\n"
+	"                         (Default is read from metadata)\n"
+	"   -r output_res   8.0   Desired output azimuth resolution (m)\n"
+	"   -d dbg_flg      1     Debug: 1=amplitude,2=ref_fcn,4=rangemig\n"
+	"                                8=rangecomp,16=rangespecs,64=acpatch\n"
+	"   -c dfile        NO    Read doppler centroid from dfile\n"
+	"   -o off_file     NO    Read resampling coeg.fs from off_file\n"
+	"   -hamming 	   NO    Use a Hamming window instead of a rectangular one\n"
+	"                         for the azimuth reference function weighting\n"
+/*	"   -kaiser	   NO    Use a Kaiser window instead of a rectangular one\n"
+ *	"                         for the azimuth reference function weighting\n" */
+	"   -m CAL_PARAMS   NO    Read the Elevation Angle and Gain vectors from the\n"
+	"			 CAL_PARAMS file to correct for the antenna gain\n"
+	"   -log logfile	   NO	 Allows output to be written to a log file\n"
+	"   -quiet	   NO	 Suppresses the output to the essential\n"
+	"   -power	   NO	 Creates a power image\n"
+	"   -sigma	   NO	 Creates a sigma image\n"
+	"   -gamma	   NO	 Creates a gamma image\n"
+	"   -beta	   NO	 Creates a beta image\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   This program creates a SAR image from SAR signal data.\n\n"
+	"   The optional switches provide the ability to\n"
+	"   override any or all of:\n"
+	"        1) the default values given above,\n"
+	"        2) parameters read from metadata (.D & .L),\n"
+	"        3) parameters read from a parameter file (.raw and .in)\n");
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
 
 int main (int argc, char *argv [])
