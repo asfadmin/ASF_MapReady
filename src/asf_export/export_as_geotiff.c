@@ -337,8 +337,9 @@ export_as_geotiff (const char *metadata_file_name,
                       "Satellite Facility tools",
                       md->projection->param.utm.zone,
                       md->projection->hem);
-        asfRequire((   (citation_length >= 0)
-                    && (citation_length <= max_citation_length) ) );
+        asfRequire((citation_length >= 0)
+		   && (citation_length <= max_citation_length),
+		   "geotiff citation too long" );
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
         free (citation);
         break;
