@@ -23,10 +23,10 @@ given an ASF map projection data record.*/
 void init_asf_proj(meta_parameters *meta,ceos_description *ceos,
 	struct VFDRECV *facdr,struct VMPDREC *mpdr)
 {
-	meta_projection *projection=(meta_projection *)MALLOC(sizeof(meta_projection));
-	meta->sar->image_type = 'P';/*Map-Projected image.*/
-	meta->projection = projection;
+	meta_projection *projection = meta->projection = 
+        	(meta_projection *)MALLOC(sizeof(meta_projection));
 
+	meta->sar->image_type = 'P';/*Map-Projected image.*/
 	meta->general->sample_count = mpdr->npixels;
 
 	if (strncmp(mpdr->mpdesig, "GROUND RANGE",12) == 0) {
@@ -99,35 +99,33 @@ void init_asf_proj(meta_parameters *meta,ceos_description *ceos,
 
 
 
-/*ceos_init_asf:
-	Called to read all ASF-specific fields from CEOS.
-This is amounts to the facility-related data record.*/
+/**************************************************************************
+ * ceos_init_asf:
+ * Called to read all ASF-specific fields from CEOS.  This is amounts to
+ * the facility-related data record.                                      */
 void ceos_init_asf(char *fName,ceos_description *ceos,meta_parameters *meta)
 {
 	struct VFDRECV facdr;
 	struct VMPDREC mpdr;
 	struct dataset_sum_rec dssr;
-	/*int has_mpdr=0;*/
+
 /*Fetch the facility-related data record.*/
 	get_facdr(fName,&facdr);
 
-	meta->general->sample_count = facdr.npixels;
-  	meta->general->bit_error_rate = facdr.biterrrt;
-	
-	meta->sar->slant_range_first_pixel = facdr.sltrngfp*1000.0;
-
 	/* For ASF SLC, the spacings are incorrect in the FACDR - TL 3/01 */
 	if (ceos->product != CCSD)
-	 {
-  	  if (facdr.rapixspc>0.0)
+	{
+  	    if (facdr.rapixspc>0.0)
 		meta->general->x_pixel_size = facdr.rapixspc;
-	  if (facdr.azpixspc>0.0)
+	    if (facdr.azpixspc>0.0)
 		meta->general->y_pixel_size = facdr.azpixspc;
-	 }
+	}
 
-	meta->sar->azimuth_time_per_pixel = meta->general->y_pixel_size / facdr.swathvel;
-	meta->general->line_count   = facdr.nlines;
-	meta->general->sample_count = facdr.apixels;
+	meta->sar->slant_range_first_pixel = facdr.sltrngfp*1000.0;
+	meta->sar->azimuth_time_per_pixel  = meta->general->y_pixel_size / facdr.swathvel;
+	meta->general->line_count          = facdr.alines;
+	meta->general->sample_count        = facdr.apixels;
+	meta->general->bit_error_rate      = facdr.biterrrt;
 	
 	if (toupper(facdr.deskewf[0])=='Y')
 		meta->sar->deskewed=1;/*Image has been doppler deskewed.*/
