@@ -24,7 +24,6 @@ import java.io.*;
 //COMMAND OUTPUT WINDOW
 
 class textFrame extends Frame implements ActionListener, WindowListener {
-   String directory;
    TextArea textarea;
    Button closeButton;
    
@@ -55,7 +54,6 @@ class textFrame extends Frame implements ActionListener, WindowListener {
          else directory = System.getProperty("user.dir");
       }
       
-      this.directory = directory;
       setFile(directory, filename);
    }
    
