@@ -28,6 +28,7 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include "asf_nan.h"
+#include "asf_reporting.h"
 #include <asf_export.h>
 #include "asf_raster.h"
 
@@ -69,6 +70,9 @@ export_as_jpeg (const char *metadata_file_name,
   /* Get the image data.  */
   assert (md->general->data_type == REAL32);
   daf = get_image_data (md, image_data_file_name);
+
+  asfPrintStatus("Processing...\n");
+
   /* It supposed to be big endian data, this converts to host byte
      order.  */
   for ( jj = 0 ; jj < pixel_count ; jj++ ) {
@@ -96,6 +100,8 @@ export_as_jpeg (const char *metadata_file_name,
     mask = 0.0;
   else
     mask = NAN;
+
+  asfPrintStatus("Scaling...\n");
   pixels = floats_to_bytes (daf, pixel_count, mask, scale);
 
   /* We want to scale the image st the long dimesion is less than or
@@ -105,12 +111,15 @@ export_as_jpeg (const char *metadata_file_name,
   height = line_count;
   /* Scale the image, modifying width and height to reflect the new
   image size.  */
+
   pixels = scale_unsigned_char_image_dimensions (pixels, max_large_dimension,
                                                  &width, &height);
 
   /* Initializae libjpg structures.  */
   cinfo.err = jpeg_std_error (&jerr);
   jpeg_create_compress (&cinfo);
+
+  asfPrintStatus("Writing Output File...\n");
 
   /* Open the output file to be used.  */
   ofp = fopen (output_file_name, "w");
@@ -143,6 +152,7 @@ export_as_jpeg (const char *metadata_file_name,
     row_pointer[0] = &(pixels[cinfo.next_scanline * width]);
     rows_written = jpeg_write_scanlines (&cinfo, row_pointer, rows_to_write);
     assert (rows_written == rows_to_write);
+    asfLineMeter(cinfo.next_scanline, cinfo.image_height);
   }
 
   /* Finsh compression and close the jpeg.  */

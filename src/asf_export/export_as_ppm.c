@@ -27,6 +27,7 @@
 #include <asf.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
+#include <asf_reporting.h>
 #include <asf_export.h>
 
 #define PPM_MAGIC_NUMBER "P6"
@@ -70,6 +71,9 @@ export_as_ppm (const char *metadata_file_name,
   /* Get the image data.  */
   assert (md->general->data_type == REAL32);
   daf = get_image_data (md, image_data_file_name);
+
+  asfPrintStatus("Processing...\n");
+
   /* Input is supposed to be big endian data, this converts to host
      byte order.  */
   for ( jj = 0 ; jj < pixel_count ; jj++ ) {
@@ -93,8 +97,11 @@ export_as_ppm (const char *metadata_file_name,
   height = line_count;
   /* Scale the image, modifying width and height to reflect the new
      image size.  */
+
+  asfPrintStatus("Scaling...\n");
   pixels = scale_unsigned_char_image_dimensions (pixels, max_large_dimension,
                                                  &width, &height);
+  asfPrintStatus("Writing Output File...\n");
 
   /* Open the output file to be used.  */
   ofp = fopen (output_file_name, "w");
@@ -124,6 +131,7 @@ export_as_ppm (const char *metadata_file_name,
       fwrite (&pixels[ii * width + jj], 1, 1, ofp);
       fwrite (&pixels[ii * width + jj], 1, 1, ofp);
     }
+    asfLineMeter(ii, height);
   }
 
   return_code = fclose (ofp);

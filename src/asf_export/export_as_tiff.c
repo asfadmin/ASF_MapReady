@@ -28,6 +28,7 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include "asf_nan.h"
+#include "asf_reporting.h"
 #include "asf_raster.h"
 #include "asf_export.h"
 
@@ -55,6 +56,9 @@ export_as_tiff (const char *metadata_file_name,
   /* Get the image data.  */
   assert (md->general->data_type == REAL32);
   daf = get_image_data (md, image_data_file_name);
+
+  asfPrintStatus("Processing...\n");
+
   /* It supposed to be big endian data, this converts to host byte
      order.  */
   for ( jj = 0 ; jj < pixel_count ; jj++ ) {
@@ -76,6 +80,8 @@ export_as_tiff (const char *metadata_file_name,
     mask = 0.0;
   else
     mask = NAN;
+
+  asfPrintStatus("Scaling...\n");
   pixels = floats_to_bytes (daf, pixel_count, mask, scale);
 
   /* Scale the image, modifying width and height to reflect the new
@@ -109,6 +115,7 @@ export_as_tiff (const char *metadata_file_name,
   TIFFSetField(otif, TIFFTAG_DATATYPE, SAMPLEFORMAT_UINT);
 
   /* Write the actual image data.  */
+  asfPrintStatus("Writing Output File...\n");
   for ( ii = 0 ; ii < height ; ii++ ) {
     if ( TIFFWriteScanline (otif, pixels + width * ii, ii, 0) < 0 ) {
           char* temp;
@@ -117,6 +124,7 @@ export_as_tiff (const char *metadata_file_name,
           print_error(temp);
       exit (EXIT_FAILURE);
     }
+    asfLineMeter(ii, height);
   }
 
   XTIFFClose (otif);

@@ -358,6 +358,8 @@ main (int argc, char *argv[])
 	if ( quietFlag == FLAG_NOT_SET )
 		print_splash_screen(argc, argv);
 
+	quietflag = quietFlag != FLAG_NOT_SET;
+
 	if(formatFlag != FLAG_NOT_SET)
 		strcpy(command_line.format, argv[formatFlag + 1]);
 	else

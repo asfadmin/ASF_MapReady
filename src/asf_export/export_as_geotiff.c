@@ -28,6 +28,7 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include "asf_nan.h"
+#include "asf_reporting.h"
 #include "asf_export.h"
 
 #define ASF_NAME_STRING "asf_export"
@@ -89,6 +90,9 @@ export_as_geotiff (const char *metadata_file_name,
   /* Get the image data.  */
   assert (md->general->data_type == REAL32);
   daf = get_image_data (md, image_data_file_name);
+
+  asfPrintStatus("Processing...\n");
+
   /* It supposed to be big endian data, this converts to host byte
      order.  */
   for ( jj = 0 ; jj < pixel_count ; jj++ ) {
@@ -113,6 +117,9 @@ export_as_geotiff (const char *metadata_file_name,
       mask = 0.0;
     else
       mask = NAN;
+
+    asfPrintStatus("Scaling...\n");
+
     pixels = floats_to_bytes (daf, pixel_count, mask, scale);
     sample_size = 1;
   }
@@ -594,6 +601,8 @@ export_as_geotiff (const char *metadata_file_name,
     assert (FALSE);
   }
 
+  asfPrintStatus("Writing Output File...\n");
+
   /* Write the actual image data.  */
   for ( ii = 0 ; ii < line_count ; ii++ ) {
     if (scale == NONE) {
@@ -612,6 +621,8 @@ export_as_geotiff (const char *metadata_file_name,
 	exit (EXIT_FAILURE);
       }
     }
+
+    asfLineMeter(ii, line_count);
   }
 
   return_code = GTIFWriteKeys (ogtif);
