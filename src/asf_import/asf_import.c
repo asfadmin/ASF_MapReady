@@ -22,17 +22,17 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_USAGE_STRING \
 "[-amplitude | -sigma | -gamma | -beta | -power]\n"\
 "              [-prc] [-old] [-format <inputFormat>] [-lat <lower> <upper>]\n"\
-"              [-metadata <inMetaFile>] [-lut <file> ] [-log <logFile>] \n"\
-"              [-quiet] [-help] <inBaseName> <outBaseName>"
+"              [-lut <file> ] [-log <logFile>] [-quiet] [-help] \n"\
+"	      <inBaseName> <outBaseName>"
 
 #define ASF_DESCRIPTION_STRING \
-"   Ingests all varieties of CEOS and STF data formats as well as the\n"\
-"   external ESRI and ENVI data formats and outputs ASF internal format\n"\
-"   metadata and data files."
+"   Ingests all varieties of CEOS and STF data formats and outputs ASF\n"\
+"   internal format metadata and data files. When the calibration\n"\
+"   parameters are applied using the -sigma, -gamma, or the -beta\n"\
+"   option the resulting image will have power scale values."
 
 #define ASF_INPUT_STRING \
-"   The format of the input file must be specified as CEOS, STF, ESRI, or\n"\
-"   ENVI."
+"   The format of the input file must be specified as CEOS or STF."
 
 #define ASF_OUTPUT_STRING \
 "   Outputs data and metadata files with the user-provided base name and\n"\
@@ -42,25 +42,23 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   -amplitude\n"\
 "        Create an amplitude image. This is the default behavior.\n"\
 "   -sigma\n"\
-"        Create a calibrated image (sigma dB values).\n"\
+"        Create a calibrated image (sigma power scale values).\n"\
 "   -gamma\n"\
-"        Create a calibrated image (gamma dB values).\n"\
+"        Create a calibrated image (gamma power scale values).\n"\
 "   -beta\n"\
-"        Create a calibrated image (beta dB values).\n"\
+"        Create a calibrated image (beta power scale values).\n"\
 "   -power\n"\
 "        Create a power image.\n"\
 "   -format\n"\
 "        Force input data to be read as the given format type. Valid options\n"\
-"        are:  ceos, stf, esri, and envi. \"ceos\" is the default behavior.\n"\
+"        are:  ceos and stf. \"ceos\" is the default behavior.\n"\
 "   -log <logFile>\n"\
 "        Output will be written to a specified log file.\n"\
 "   -quiet\n"\
 "        Supresses all non-essential output.\n"\
-"   -lat Specify lower and upper latitude contraints. (STF only)\n"\
+"   -lat Specify lower and upper latitude contraints (only available\n"\
+"	for STF)\n"\
 "   -old Output in old style ASF internal format.\n"\
-"   -metadata\n"\
-"        Use a different name for the metadata file. Requires only the base\n"\
-"        name.\n"\
 "   -prc Replace the restituted state vectors from the original raw data\n"\
 "        acquired by the ERS satellites with preceision\n"\
 "   -lut Applies a user defined look up table to the data. Look up contains\n"\
@@ -143,12 +141,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "    1.0     8/04   P. Denny    Create functions to do each of the different\n"\
 "                                filetype imports... ready for release."
 
-/*
 #define ASF_VERSION_MAJOR_STRING \
-"   0.30"
-
-#define VERSION 0.3
-*/
+"   0.40"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
