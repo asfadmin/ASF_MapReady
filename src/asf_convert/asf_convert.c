@@ -276,6 +276,8 @@ printf("2");
 		strcpy(format_out, argv[formatFlag + 1]);
 	else
 		strcpy(format_out, "geotiff");/*default behavior is geotiff*/
+	for(ii = 0; ii < strlen(format_out); ++ii)
+		format_out[ii] = toupper(format_out[ii]);//convert to upper case
 	if(sizeFlag != FLAG_NOT_SET)
 		size_out = atol(argv[sizeFlag + 1]);
 	if(logflag != FLAG_NOT_SET)
