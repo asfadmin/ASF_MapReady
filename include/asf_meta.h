@@ -296,6 +296,7 @@ typedef struct {
     double false_northing;    /* False Northing                             */
     double lat0;              /* Latitude                                   */
     double lon0;              /* Longitude                                  */
+    double scale_factor;      /* Scale factor: 0.9996 by definition         */
   } proj_utm;
  /* State Plane. */
   typedef struct {
