@@ -98,6 +98,9 @@ int fileExists(const char *name);
    newExt)) would produce. */
 int extExists(const char *name,const char *newExt);
 
+void append_ext_if_needed(char *file_name, const char *newExt, 
+                          const char *alsoAllowedExt);
+
 /* Creates name out by clipping off the rightmost dot extension, if
    any, of in, and then appending newExt.  out must point to existing
    memory large enough to store the result.  */
