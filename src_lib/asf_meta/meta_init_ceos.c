@@ -73,8 +73,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	meta->general->y_pixel_size     = dssr.line_spacing;
 	meta->general->center_latitude  = dssr.pro_lat;
 	meta->general->center_longitude = dssr.pro_long;
-	meta->general->re_major         = dssr.ellip_maj / 1000.0;
-	meta->general->re_minor         = dssr.ellip_min / 1000.0;
+	meta->general->re_major         = dssr.ellip_maj * 1000.0;
+	meta->general->re_minor         = dssr.ellip_min * 1000.0;
 	meta->general->bit_error_rate   = 0.0;
 
     /* Fill meta->sar structure */
