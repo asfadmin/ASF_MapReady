@@ -1,52 +1,205 @@
-# Makefile for ASF Converter
-include mk.common
+# Makefile for Sprocket
+# Order things are compiled in MATTERS
 
-build: clean pass1 pass2
+include ../../make_support/system_rules
 
-pass1:  bin include java lib scripts
-	cd  util; make all;
 
-pass2:
-	cd image2pgm; make all;
-#	cd converter_standard; make all;
-	cd scripts; make all;
-	cd xy_plotter; make all;
-	cd converter_vexcel_complex; make all;
-	cd image_masker; make all
-	cd java_util; make all;
-	cd java_gui; make all;
-	cd point_target_selection; make all;
-	cd locater; make all;
-	cd pt_anal; make all;
-	cd pvs_db; make all;
+PROGRAM=$(LIBDIR)/libUtil.a \
+	$(BINDIR)/java_util \
+	$(BINDIR)/convert_standard \
+	$(BINDIR)/converter_vexcel_complex \
+	$(BINDIR)/image2pgm \
+	$(BINDIR)/image_mask \
+	$(BINDIR)/xy_plotter \
+	$(BINDIR)/java_gui \
+	$(BINDIR)/locater \
+	$(BINDIR)/measure_geo \
+	$(BINDIR)/point_target_selection \
+	$(BINDIR)/pt_anal \
+	$(BINDIR)/pvs_db \
+	$(BINDIR)/scripts
 
-clean:
-	cd util; make clean;
-	cd converter_standard; make clean;
-	cd scripts; make clean;
-	cd image2pgm ; make clean;
-	cd xy_plotter; make clean;
-	cd converter_vexcel_complex ; make clean;
-	cd image_masker; make clean
-	cd java_gui; make clean;
-	cd java_util; make clean;
-	cd point_target_selection; make clean;
-	cd locater; make clean;
-	cd pt_anal; make clean;
-	cd pvs_db; make clean;
 
-TOP =..
+all: $(PROGRAM)
 
-SRC_DIRS = 				\
-	image_masker			\
-	image2pgm			\
-	xy_plotter			\
-	converter_vexcel_complex	\
+clean: clean_message clean_libUtil clean_java_util clean_convert_standard \
+	clean_converter_vexcel_complex clean_image2pgm clean_image_mask \
+	clean_xy_plotter clean_java_gui clean_locater clean_measure_geo \
+	clean_point_target_selection clean_pt_anal clean_pvs_db \
+	clean_scripts
+
+clean_message:
+	@ echo ""
+	@ echo XXXXXXXX   REMOVING ENTIRE SPROCKET PROGRAM   XXXXXXXX
+
+##################################################
+### Utility source that MUST be compiled first ###
+##################################################
+
+####################### Library libUtil.a  ######################
+$(LIBDIR)/libUtil.a:
+	@ echo ""
+	@ echo "XXXXXXXX  Compiling Sprocket library libUtil.a... XXXXXXXX"
+	cd util; $(MAKE)
+
+clean_libUtil:
+	- rm -f $(LIBDIR)/libUtil.a
+
+####################### Classes in java_util ######################
+$(BINDIR)/java_util:
+	@ echo ""
+	@ echo "XXXXXXXX Compiling Sprocket classes in java_util... XXXXXXXX"
+	cd java_util; $(MAKE)
+
+clean_java_util:
+	- rm -f $(JAVADIR)/*.class
+
+
+##################################################
+####### C source which depends on libUtil ########
+##################################################
+
+####################### Program convert_standard ######################
+$(BINDIR)/convert_standard:
+	@ echo ""
+	@ echo "XXXXXXXX Compiling Sprocket program convert_standard... XXXXXXXX"
+	cd convert_standard; $(MAKE)
+
+clean_convert_standard:
+	- rm -f $(BINDIR)/convert_standard
+
+####################### Program converter_vexcel_complex ######################
+$(BINDIR)/converter_vexcel_complex:
+	@ echo ""
+	@ echo "XXXXXXXX Compiling Sprocket converter_vexcel_complex programs... XXXXXXXX"
+	cd converter_vexcel_complex; $(MAKE)
+
+clean_converter_vexcel_complex:
+	- rm -f $(BINDIR)/vexcel_complex_metadata
+	- rm -f $(BINDIR)/vexcel_complex_data_planes
+
+####################### Program image2pgm ######################
+$(BINDIR)/image2pgm:
+	@ echo ""
+	@ echo "XXXXXXXX Compiling Sprocket program image2pgm... XXXXXXXX"
+	cd image2pgm; $(MAKE)
+
+clean_image2pgm:
+	- rm -f $(BINDIR)/image2pgm
+
+####################### Program image_mask ######################
+$(BINDIR)/image_mask:
+	@ echo ""
+	@ echo "XXXXXXXX Compiling Sprocket program image_mask... XXXXXXXX"
+	cd image_mask; $(MAKE)
+
+clean_image_mask:
+	- rm -f $(BINDIR)/image_mask
+
+####################### Program xy_plotter ######################
+$(BINDIR)/xy_plotter:
+	@ echo ""
+	@ echo "XXXXXXXX Compiling Sprocket program xy_plotter... XXXXXXXX"
+	cd xy_plotter; $(MAKE)
+
+clean_xy_plotter:
+	- rm -f $(BINDIR)/xy_plotter
+
+
+##################################################
+#### Java source which depends on java_util ######
+##################################################
+
+####################### Classes in java_gui ######################
+$(BINDIR)/java_gui:
+	@ echo ""
+	@ echo "XXXXXXXX Compiling Sprocket classes in java_gui... XXXXXXXX"
+	cd java_gui; $(MAKE)
+
+clean_java_gui:
+	- rm -f $(JAVADIR)/*.class $(JAVADIR)/pvs.pref
+
+####################### Classes in locater ######################
+$(BINDIR)/locater:
+	@ echo ""
+	@ echo "XXXXXXXX Compiling Sprocket classes in locater... XXXXXXXX"
+	cd locater; $(MAKE)
+
+clean_locater:
+	- rm -f $(JAVADIR)/Locater.class $(JAVADIR)/geotransform.jar
+
+####################### Classes in measure_geo ######################
+$(BINDIR)/measure_geo:
+	@ echo ""
+	@ echo "XXXXXXXX Compiling Sprocket classes in measure_geo... XXXXXXXX"
+	cd measure_geo; $(MAKE)
+
+clean_measure_geo:
+	- rm -f $(JAVADIR)/MeasureGeoLocationErrors.class
+
+####################### Classes in point_target_selection ######################
+$(BINDIR)/point_target_selection:
+	@ echo ""
+	@ echo "XXXXXXXX Compiling Sprocket classes in point_target_selection... XXXXXXXX"
+	cd point_target_selection; $(MAKE)
+
+clean_point_target_selection:
+	- rm -f $(JAVADIR)/*.class
+
+####################### Classes in pt_anal ######################
+$(BINDIR)/pt_anal:
+	@ echo ""
+	@ echo "XXXXXXXX Compiling Sprocket classes in pt_anal... XXXXXXXX"
+	cd pt_anal; $(MAKE)
+
+clean_pt_anal:
+	- rm -f $(JAVADIR)/*.class
+
+
+##################################################
+###### SQL Database stuff that uses .sqsh ########
+##################################################
+
+####################### Database pvs_db ######################
+$(BINDIR)/pvs_db:
+	@ echo ""
+	@ echo "XXXXXXXX Sprocket database pvs_db... XXXXXXXX"
+	cd pvs_db; $(MAKE)
+
+clean_pvs_db:
+	- rm -f $(BINDIR)/list_ground_targets.sql
+	- rm -f $(BINDIR)/list_sites.sql
+
+
+##################################################
+#### Scripts that run programs in proper env #####
+##################################################
+
+####################### Scripts ######################
+$(BINDIR)/scripts:
+	@ echo ""
+	@ echo "XXXXXXXX Sprocket scripts... XXXXXXXX"
+	cd scripts; $(MAKE)
+
+clean_scripts:
+	- rm -f $(BINDIR)/standard.zsh
+	- rm -f $(BINDIR)/complex.zsh
+	- rm -f $(BINDIR)/pvs_gui
+	- rm -f $(BINDIR)/vexcel_complex.zsh
+	- rm -f $(BINDIR)/target_selector.zsh
+	- rm -f $(BINDIR)/iq.zsh
+	- rm -f $(BINDIR)/geo.zsh
+
+
+
+#### OLD STUFF #################################################################
+SRC_DIRS=\
+	image_masker \
+	image2pgm \
+	xy_plotter \
+	convert_standard \
+	converter_vexcel_complex \
 	util
-
-#	converter_standard		\
-
-########
 
 doc:
 #
@@ -72,46 +225,3 @@ doc:
 #
 	@echo Indexing ; \
 	cxref -index-all -O../doc -html32
-
-
-########
-#	Create bin directories
-##
-bin: $(TOP)/bin $(TOP)/bin/Linux
-$(TOP)/bin:
-	mkdir $(TOP)/bin
-$(TOP)/bin/Linux:
-	mkdir $(TOP)/bin/Linux
-
-##
-# 	Create include directories 
-##
-include: $(TOP)/include
-$(TOP)/include:
-	mkdir $(TOP)/include
-
-
-##
-#       Create java directories
-##
-java: $(TOP)/java $(TOP)/java
-$(TOP)/java:
-	mkdir $(TOP)/java
-
-##
-#       Create lib directories
-##
-lib: $(TOP)/lib $(TOP)/lib/Linux
-$(TOP)/lib:
-	mkdir $(TOP)/lib
-$(TOP)/lib/Linux:
-	mkdir $(TOP)/lib/Linux
-
-##
-#       Create scripts directories
-##
-scripts: $(TOP)/scripts $(TOP)/scripts/Linux
-$(TOP)/scripts:
-	mkdir $(TOP)/scripts
-$(TOP)/scripts/Linux:
-	mkdir $(TOP)/scripts/Linux
