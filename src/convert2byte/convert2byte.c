@@ -123,8 +123,8 @@ int main(int argc, char **argv)
 			}
 			if (stepLine==-1 || stepSample==-1) {
 				stepLine = lookLine;
-				stepSample = stepSample;
-			}				
+				stepSample = lookSample;
+			}
 			multilook_flag=TRUE;
        			defaultLookStep_flag=FALSE;
 		}
@@ -261,24 +261,27 @@ int main(int argc, char **argv)
 	outMeta->general->data_type = BYTE;
 
 /* Figure multilooking parameters if necessary */
-	if (multilook_flag && defaultLookStep_flag) {
+	if (multilook_flag) {
+	    if (defaultLookStep_flag) {
 		/* We don't want to multilook any image twice */
-		if (inMeta->sar->line_increment==inMeta->sar->look_count)
+		if (inMeta->sar->line_increment==inMeta->sar->look_count) {
 			stepLine=stepSample=lookLine=lookSample=1;
+		}
 		else {
 			stepLine = inMeta->sar->look_count;
 			stepSample = 1;
 			lookLine = WINDOW_SIZE_MULTIPLIER * stepLine;
 			lookSample = WINDOW_SIZE_MULTIPLIER * stepSample;
-			outMeta->general->sample_count = 
-				inMeta->general->sample_count / stepSample;
-			outMeta->general->line_count = 
-				inMeta->general->line_count / stepLine;
-			outMeta->sar->line_increment *= stepLine;
-			outMeta->sar->sample_increment *= stepSample;
-			outMeta->general->x_pixel_size *= stepSample;
-			outMeta->general->y_pixel_size *= stepLine;
 		}
+	    }
+	    outMeta->general->sample_count = 
+		    inMeta->general->sample_count / stepSample;
+	    outMeta->general->line_count = 
+		    inMeta->general->line_count / stepLine;
+	    outMeta->sar->line_increment *= stepLine;
+	    outMeta->sar->sample_increment *= stepSample;
+	    outMeta->general->x_pixel_size *= stepSample;
+	    outMeta->general->y_pixel_size *= stepLine;
 	}
 
 /* Read data and convert it to byte data */
