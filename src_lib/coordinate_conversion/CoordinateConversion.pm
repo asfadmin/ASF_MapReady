@@ -71,6 +71,8 @@ Convert given geocentric latitude in radians to geodetic latitude in
 radians using WGS84 ellipsoid earth model.  See I<Calculation of ASF
 CEOS Metadata Values>, Tom Logan and Rudiger Gens, Appendix C.
 
+=cut
+
 sub geocentric2geodetic {
     my ($geocentric_lat) = validate_pos(@_, 1);
 
@@ -134,7 +136,9 @@ sub xyz2llr {
 
 # Convenience functions to compute values used to translate between
 # sch and global cartesian coordinates.  These values are used in both
-# the forward and reverse transform functions.
+# the forward and reverse transform functions.  The function names are
+# taken from the variable names in 'Geocoding of AIRSAR/TOPSAR SAR
+# Data', Holecz et al., see that paper for the meaning of all this.
 {
     # Earth model facts (in closure for convenience functions in this block). 
     my $a = 6378137;		# semi-major axis length of WGS84 ellipsoid
@@ -166,8 +170,7 @@ sub xyz2llr {
 	return  $re * $rn / ($re * (cos($headr))**2 + $rn * (sin($headr))**2);
     }
 
-    # Transformation matrices.  From 'Geocoding of AIRSAR/TOPSAR SAR
-    # Data', Holecz et al.
+    # Transformation matrices.
 
     sub M1 {
 	my ($pp_lat, $pp_lon) = validate_pos(@_, 1 x (2));
@@ -192,8 +195,7 @@ sub xyz2llr {
     }
      
 
-    # Translation vector.  From 'Geocoding of AIRSAR/TOPSAR SAR
-    # Data', Holecz et al.
+    # Translation vector.
     sub O {
 	my ($pp_lat, $pp_lon, $pp_head) = validate_pos(@_, (1) x 3);
 
@@ -213,6 +215,8 @@ sub xyz2llr {
 Given a set of sch coordinates and a peg point and aircraft heading,
 return the corresponding global cartesian coordinates.  See 'Geocoding
 of AIRSAR/TOPSAR SAR Data', Holecz et al.
+
+=cut
 
 sub sch2xyz {
     my ($s, $c, $h_r, $pp_lat, $pp_lon, $pp_head) = validate_pos(@_, (1) x 6);
