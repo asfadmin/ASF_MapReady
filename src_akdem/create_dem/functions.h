@@ -12,6 +12,8 @@ int lz2raw_flywheel(char *inFile, char *outFile, char *prcOrbits, int prcFlag, d
 int ceos2raw(char *inFile, char *outFile);
 int trim_slc(char *inFile, char *outFile, int line, int sample, int length, int width);
 int avg_in_dop(char *inFile1, char *inFile2, char *outFile1);
+int doppler_per_patch(char *parFile1, char *parFile2, char *metaFile1, char *metaFile2, char *deltaFile, 
+			char *outFile1, char *outFile2);
 int aisp(char *options, int startLineNum, int numPatches, char *inFile, char *outFile);
 int paisp(char *options, int startLineNum, int numPatches, int numProcessors, char *inFile, char *outFile);
 int c2p(char *inFile, char *outFile);
