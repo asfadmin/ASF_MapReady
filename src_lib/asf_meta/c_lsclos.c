@@ -96,7 +96,7 @@ switch (*action)
 	break;
 
     case 1:					/***  crunch file     ***/
-	FSEEK(*fd, (int)0, 0);
+	FSEEK64(*fd, (int)0, 0);
 
 	strcpy(tempfile,hostname);
 	strcat(tempfile,"_temp");
