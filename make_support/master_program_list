@@ -94,6 +94,7 @@ PROGRAMS
 	makeddr { }
 	meta2ddr { BINS ddr2meta }
 	metadata { }
+	pkgconfig { }
 	raster_calc { }
 	raster_diff { }
 	remap { }
