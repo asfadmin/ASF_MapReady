@@ -923,7 +923,6 @@ main (int argc, char **argv)
   FloatImage *iim 
     = float_image_new_from_file (ii_size_x, ii_size_y, input_data_file->str, 0,
 				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  // FIXME: remve this free after debugging.
   g_string_free (input_data_file, TRUE);
 
   // Output image.
@@ -938,7 +937,9 @@ main (int argc, char **argv)
     for ( oix = 0 ; oix <= oix_max ; oix++ ) {
       // Projection coordinates for the center of this pixel.    
       double oix_pc = ((double) oix / oix_max) * (max_x - min_x) + min_x;
-      double oiy_pc = ((double) oiy / oiy_max) * (max_y - min_y) + min_y;
+      // We want projection coordinates to increase as we move from
+      // the bottom of the image to the top, so that north ends up up.
+      double oiy_pc = (1.0 - (double) oiy / oiy_max) * (max_y - min_y) + min_y;
       // Determine pixel of interest in input image.  The fractional
       // part is desired, we will use some sampling method to
       // interpolate between pixel values.
@@ -990,9 +991,9 @@ main (int argc, char **argv)
   omd->projection = g_new0 (meta_projection, 1);
   omd->projection->type = projection_type;
   omd->projection->startX = min_x;
-  omd->projection->startY = min_y;
+  omd->projection->startY = max_y;
   omd->projection->perX = pc_per_x;
-  omd->projection->perY = -pc_per_y;
+  omd->projection->perY = pc_per_y;
   strcpy (omd->projection->units, "meters");
   if ( lat_0 > 0.0 ) {
     omd->projection->hem = 'N';
