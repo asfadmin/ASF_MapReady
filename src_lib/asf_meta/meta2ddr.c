@@ -67,7 +67,7 @@ int earth_radius2datum(double re_major, double re_minor)
 	return (-1);
 }
 
-void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
+void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 {
 	int ii;
 	int proj_invalid = 0;
@@ -147,7 +147,7 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 		    case 'A': /* Along-track/cross-track... ddr has no atct projection, default to UTM */
 			/*Can't do anything here until we add AT/CT to asf_geolib.*/
 			proj_invalid=1;
-	        	printf("Warning in asf_meta library function meta_new2ddr:\n"
+	        	printf("Warning in asf_meta library function meta2ddr:\n"
 			       "    DDR files do not support JPL's along-track/cross-track projection.\n"
 			       "    For valid DDR data, you should geocode your data under a different\n"
 			       "    projection (use ASF tool 'geocode').\n");
@@ -185,7 +185,7 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
 			break;
 		    default:/*Der?*/
-			printf("Unrecognized map projection type '%c' passed to meta_new2ddr!\n",proj->type);
+			printf("Unrecognized map projection type '%c' passed to meta2ddr!\n",proj->type);
 			printf("Continuing...\n");
 			proj_invalid=1;
 			ddr->proj_code = -1;
