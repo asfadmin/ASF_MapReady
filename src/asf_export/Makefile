@@ -36,8 +36,7 @@ SOURCES := asf_export.c \
 
 CC := gcc
 
-INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) \
-                 $(shell pkg-config --cflags-only-I glib-2.0)
+INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) $(GLIB_INCLUDE)
 
 CPPFLAGS := $(INCLUDE_FLAGS)
 
@@ -56,7 +55,7 @@ LIBS  = $(LIBDIR)/libasf_raster.a \
 LDFLAGS := $(shell pkg-config --libs-only-L glib-2.0 \
                    | perl -p -e 's/-L(.*)/-Wl,--rpath=\1/g')
 
-LDLIBS := $(shell pkg-config --libs glib-2.0) $(LIBS)
+LDLIBS := $(LIBS) $(GLIB_LIB) 
 
 ###############################################################################
 #
