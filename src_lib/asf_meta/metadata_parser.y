@@ -124,6 +124,7 @@ void error_message(const char *err_mes, ...)
 #define MVECTOR ( (state_loc *) current_block)
 #define MPROJ ( (meta_projection *) current_block)
 #define MPARAM ( (param_t *) current_block)
+#define MSTATS ( (meta_stats *) current_block)
 
 void select_current_block(char *block_name)
 {
@@ -134,9 +135,8 @@ void select_current_block(char *block_name)
   if ( !strcmp(block_name, "sar") )
     { current_block = MTL->sar; goto MATCHED; }
   if ( !strcmp(block_name, "state") ) {
-    if (MTL->state_vectors == NULL) {
-      MTL->state_vectors = meta_state_vectors_init(vector_count);
-    }
+    if (MTL->state_vectors == NULL)
+      { MTL->state_vectors = meta_state_vectors_init(vector_count); }
     current_block = MTL->state_vectors;
     goto MATCHED;
   }
@@ -148,9 +148,10 @@ void select_current_block(char *block_name)
   }
 
   if ( !strcmp(block_name, "projection") ) { 
-    MTL->projection 
-      = (meta_projection *) malloc(sizeof(meta_projection));
-    current_block = MTL->projection; goto MATCHED; 
+    if (MTL->projection == NULL)
+      { MTL->projection = meta_projection_init(); }
+    current_block = MTL->projection;
+    goto MATCHED; 
   }
   if ( !strcmp(block_name, "param") )
     { current_block = &(MPROJ->param); goto MATCHED; }
@@ -162,6 +163,13 @@ void select_current_block(char *block_name)
     { current_block = &((*( (param_t *) current_block)).ps); goto MATCHED; }
   if ( !strcmp(block_name, "utm") )
     { current_block = &((*( (param_t *) current_block)).utm); goto MATCHED; }
+
+  if ( !strcmp(block_name, "stats") ) { 
+    if (MTL->stats == NULL)
+       { MTL->stats = meta_stats_init(); }
+    current_block = MTL->stats;
+    goto MATCHED; 
+  }
 
   /* Got an unknown block name, so report & choke.  */
   error_message("unknown block name: %s", block_name);
@@ -219,9 +227,7 @@ void fill_structure_field(char *field_name, void *valp)
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "REAL64") )
 	MGENERAL->data_type = REAL64;
       else {
-        warning_message("Unrecognized data_type (%s).\n"
-                        "Legit values are: BYTE, INTEGER16,INTEGER32, REAL32, and REAL64.",
-                        VALP_AS_CHAR_POINTER);
+        warning_message("Unrecognized data_type (%s).\n",VALP_AS_CHAR_POINTER);
         MGENERAL->data_type = MAGIC_UNSET_INT;
       }
       return;
@@ -452,7 +458,21 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).utm.zone = VALP_AS_INT; return; }
   }
 
-  /* Code for dealing with statistics block(s) could be added here.  */
+  /* Fields which normally go in the statistics block of the metadata file. */
+  if ( !strcmp(stack_top->block_name, "stats") ) {    
+    if ( !strcmp(field_name, "min") )
+      { (MSTATS)->min = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "max") )
+      { (MSTATS)->max = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "mean") )
+      { (MSTATS)->mean = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "rmse") )
+      { (MSTATS)->rmse = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "std_deviation") )
+      { (MSTATS)->std_deviation = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "mask") )
+      { (MSTATS)->mask = VALP_AS_DOUBLE; return; }
+  }
 
   /* Got an unknown field name, so report & choke */
   error_message("Unknown field name: %s", field_name);
