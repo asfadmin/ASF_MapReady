@@ -326,7 +326,7 @@ void meta_new2old(meta_parameters *meta)
 
 /* Calculated values for the old structure */
 	if (meta->sar->image_type!='P') /*Image not map projected-- compute look angle to beam center*/
-		meta->ifm->lookCenter = meta_look(meta, 0, meta->ifm->orig_nSamples/2);
+		meta->ifm->lookCenter = meta_look(meta, 0, meta->general->sample_count/2);
 	else 
 	{/*Image *is* map projected-- compute earth's eccentricity*/
 		double re = meta->general->re_major;
