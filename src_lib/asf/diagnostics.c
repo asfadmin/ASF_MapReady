@@ -78,10 +78,11 @@ static void initialize_asf_log_if_needed (void) {
 void
 asf_log (const char *message, ...)
 {
+  va_list ap;			/* Argument pointer.  */
+
   initialize_asf_log_if_needed ();
 
   /* Write printf()-style arguments to the log.  */
-  va_list ap;			/* Argument pointer.  */
   va_start (ap, message);
   vfprintf (asf_log_file, message, ap);
   va_end (ap);
@@ -92,9 +93,9 @@ require_function (const char *file, int line, int condition,
 		  const char *message, ...)
 {
   if ( !condition ) {
-    initialize_asf_log_if_needed();
-
     va_list ap;			/* Variadic arguments pointer.  */
+
+    initialize_asf_log_if_needed();
 
     /* Print to log file, prefixing source file and line information.  */
     fprintf (asf_log_file, "At source file %s line %d: ", file, line);
