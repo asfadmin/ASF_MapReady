@@ -37,6 +37,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        it will default to geotiff)."
 
 #define ASF_OPTIONS_STRING \
+"   -size <size>\n"\
+"        Scale image so that its largest dimension is, at most,\n"\
+"        <size> pixels.  Not supported for geotiff. \n"\
 "   -help\n"\
 "        Displays the documentation for this tool\n"\
 "   -format <format>\n"\
@@ -177,7 +180,7 @@ void help_page()
 
   /* If we can, use less */
   sprintf (command, "echo '%s' | less --prompt='Type q to quit help, h for "
-	   "help with help browser", happy_string);
+	   "help with help browser'", happy_string);
   if ( system(command) != -1 )
     exit (EXIT_SUCCESS);
 
