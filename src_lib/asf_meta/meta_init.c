@@ -45,13 +45,13 @@ meta_parameters *raw_init(void)
   strcpy(meta->general->processor, "???");
   strcpy(meta->general->data_type, "???");
   strcpy(meta->general->system, "???");
-  meta->general->orbit = -2147283648;
+  meta->general->orbit = -999999999;
   meta->general->orbit_direction = '?';
-  meta->general->frame = -2147283648;
-  meta->general->line_count = -2147283648;
-  meta->general->sample_count = -2147283648;
-  meta->general->start_line = -2147283648;
-  meta->general->start_sample = -2147283648;
+  meta->general->frame = -999999999;
+  meta->general->line_count = -999999999;
+  meta->general->sample_count = -999999999;
+  meta->general->start_line = -999999999;
+  meta->general->start_sample = -999999999;
   meta->general->x_pixel_size = NAN;
   meta->general->y_pixel_size = NAN;
   meta->general->center_latitude = NAN;
@@ -59,12 +59,12 @@ meta_parameters *raw_init(void)
   meta->general->re_major = NAN;
   meta->general->re_minor = NAN;
   meta->general->bit_error_rate = NAN;
-  meta->general->missing_lines = -2147283648;
+  meta->general->missing_lines = -999999999;
 
   meta->sar->image_type = '?'; 
   meta->sar->look_direction = '?';
-  meta->sar->look_count = -2147283648;
-  meta->sar->deskewed = -2147283648;
+  meta->sar->look_count = -999999999;
+  meta->sar->deskewed = -999999999;
   meta->sar->line_increment = NAN;
   meta->sar->sample_increment = NAN;
   meta->sar->range_time_per_pixel = NAN;
@@ -83,11 +83,11 @@ meta_parameters *raw_init(void)
   meta->sar->azimuth_doppler_coefficients[1] = NAN; 
   meta->sar->azimuth_doppler_coefficients[2] = NAN; 
 
-  meta->state_vectors->year = -2147283648;
-  meta->state_vectors->julDay = -2147283648;
+  meta->state_vectors->year = -999999999;
+  meta->state_vectors->julDay = -999999999;
   meta->state_vectors->second = NAN;
-  meta->state_vectors->vector_count = -2147283648;
-  meta->state_vectors->num = -2147283648;
+  meta->state_vectors->vector_count = -999999999;
+  meta->state_vectors->num = -999999999;
   meta->state_vectors->vecs = NULL;
 
 /* Initialize deprecated structure elements: Creates and initializes a
@@ -97,7 +97,7 @@ meta_parameters *raw_init(void)
   meta->geo   = MALLOC(sizeof(geo_parameters));
   meta->ifm   = MALLOC(sizeof(ifm_parameters));
   meta->stVec = meta->state_vectors; /* Compatability alias.  */
-  meta->info = MALLOC(sizeof(extra_info));
+  meta->info  = NULL;
   
   /* Guess at conceivable values for deprecated elements.  */
   meta->geo->type = 'G';
@@ -206,21 +206,32 @@ int get_meta_ddr_struct_index(const char *name)
  * Disposes of a given metadata parameters record.  */
 void meta_free(meta_parameters *meta)
 {
-  free(meta->general);
-  free(meta->sar);
-  if ( meta->projection != NULL ) 
-    free(meta->projection);
-  /* If any state vectors were allocated, free them.  */
-  if ( meta->state_vectors->vector_count ) 
-    free(meta->state_vectors->vecs);
-  free(meta->state_vectors);
+  if (meta != NULL) {
+    free(meta->general);
+    meta->general = NULL;
+    free(meta->sar);
+    meta->sar = NULL;
+    if ( meta->projection != NULL ) {
+      free(meta->projection);
+      meta->projection = NULL;
+    }
+    /* If any state vectors were allocated, free them.  */
+    if ( meta->state_vectors->vector_count ) {
+      free(meta->state_vectors->vecs);
+      meta->state_vectors->vecs = NULL;
+    }
+    free(meta->state_vectors);
+    meta->state_vectors = NULL;
 
-  /* Dispose of deprecated structure elements that are not alias for
-     new elements.  */
-  free(meta->geo);
-  free(meta->ifm);
-  meta->geo=NULL;
-  meta->ifm=NULL;
-  meta->stVec=NULL;
-  free(meta);
+/* Dispose of deprecated structure elements that are not alias for
+       new elements.  */
+    free(meta->geo);
+    meta->geo=NULL;
+    free(meta->ifm);
+    meta->ifm=NULL;
+    meta->stVec=NULL;
+
+    free(meta);
+    meta = NULL;
+  }
 }
