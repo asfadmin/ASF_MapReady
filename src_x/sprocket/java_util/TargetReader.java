@@ -16,7 +16,7 @@ public class TargetReader {
          st.whitespaceChars('-','-');
          st.whitespaceChars(' ',' ');
          while (st.ttype != st.TT_EOF)
-            v.add (new Target (st) ;
+            v.add (new Target (st));
          v.remove(v.size()-1);
       }
       catch (IOException e) {
