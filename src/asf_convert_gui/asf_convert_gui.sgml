@@ -1,0 +1,579 @@
+<!doctype book PUBLIC "-//Davenport//DTD DocBook V3.0//EN" [
+]>
+<book>
+  <bookinfo>
+    <date>2005-01-07</date>
+    <title>The ASF Data Conversion Tool</title>
+  </bookinfo>
+  <toc></toc>
+  <chapter id="obtaining">
+    <title>Obtaining and Installing the Tool</title>
+    <para>The latest ASF Data Conversion Tool can be downloaded from: 
+       https://software.asf.alaska.edu.  Select the "Download Page"
+       link for the Convert Tool, and download the latest stable
+       version.
+    </para>
+  </chapter>
+  <chapter id="getting-started">
+    <title>Getting Started</title>
+    <para>This section is a basic walk through the tool, containing
+       the steps needed to do some common tasks.
+    </para>
+    <sect1 id="ex1">
+      <title>Converting Data to JPG</title>
+      <simplelist>
+	<member>
+	  What You Have: .D and .L files.
+	</member>
+	<member>
+	  What You Want: JPEG files.
+	</member>
+      </simplelist>
+      <orderedlist>
+	<listitem>
+	  <para>Run the ASF Convert Tool.</para>
+	</listitem>
+	<listitem>
+	  <para>Click the "Browse" button, and find the location of your .D
+	  files.  You may use ctrl-click or shift-click to select
+	  multiple .D files to convert.</para>
+	</listitem>
+	<listitem>
+	  <para>Click "Execute".</para>
+	</listitem>
+	<listitem>
+	  <para>After processing is complete, you can right-click on a
+          file's entry, and select "View Output" to pull up the
+          generated .JPG file.  You can do this for any completed
+          file, even if processing is still going on for other
+          files.</para>
+	</listitem>
+      </orderedlist>
+      <para>In this example, we didn't have to change any of the
+      options, we were able to go with all of the defaults.</para>
+    </sect1>
+    <sect1 id="ex2">
+      <title>Converting Data to GeoTIFF</title>
+      <simplelist>
+	<member>
+	  What You Have: .D and .L files.
+	</member>
+	<member>
+	  What You Want: GeoTIFF files.
+	</member>
+      </simplelist>
+      <orderedlist>
+	<listitem>
+	  <para>Run the ASF Convert Tool.</para>
+	</listitem>
+	<listitem>
+	  <para>Click the "Browse" button, and find the location of your .D
+	  files.  You may use ctrl-click or shift-click to select
+	  multiple .D files to convert.</para>
+	</listitem>
+	<listitem>
+	  <para>Click on the "Export" tab, and select "GeoTIFF" from 
+          the "Format" dropdown list.</para>
+	</listitem>
+	<listitem>
+	  <para>Click "Execute".</para>
+	</listitem>
+	<listitem>
+	  <para>In this case, the "View Output" option is not
+	  available.</para>
+	</listitem>
+      </orderedlist>
+    </sect1>
+    <sect1 id="ex3">
+      <title>Converting Data to GeoTIFF, geocoding with an Albers
+      projection</title>
+      <simplelist>
+	<member>
+	  What You Have: .D and .L files.
+	</member>
+	<member>
+	  What You Want: GeoTIFF files, geocoded using an Albers projection.
+	</member>
+      </simplelist>
+      <orderedlist>
+	<listitem>
+	  <para>Run the ASF Convert Tool.</para>
+	</listitem>
+	<listitem>
+	  <para>Click the "Browse" button, and find the location of your .D
+	  files.  You may use ctrl-click or shift-click to select
+	  multiple .D files to convert.</para>
+	</listitem>
+	<listitem>
+	  <para>Click on the "Geocode" tab:</para>
+	  <orderedlist>
+	    <listitem>
+	      <para>Check the box to turn on geocoding.</para>
+	    </listitem>
+	    <listitem>
+	      <para>Select the "Albers" projection from the list of
+	      available projections.</para>
+	    </listitem>
+	    <listitem>
+	      <para>A few predefined projections are available, which
+	      use good projection parameters for different parts of
+	      the world.  If none of the predefined projections suit
+	      your needs, you'll need to specify your projection
+	      parameters mansually.</para>
+	    </listitem>
+	  </orderedlist>
+	</listitem>
+	<listitem>
+	  <para>Click on the "Export" tab, and select "GeoTIFF" from 
+          the "Format" dropdown list.</para>
+	</listitem>
+	<listitem>
+	  <para>Click "Execute".</para>
+	</listitem>
+      </orderedlist>
+    </sect1>
+  </chapter>
+  <chapter id="input-files">
+    <title>Choosing Input Files</title>
+    <para>There several ways you can add files to the utility.</para>
+    <para>At this time, your data files must have the same basename as
+    the meta-data files.  So, you won't be specifying the names of the 
+    meta-data files -- just the data files.  The meta-data files
+    should be located in the same directory as the data file, and use 
+    the same base name.</para>
+    <orderedlist>
+      <listitem>
+	<para>Specify the source files on the command line.</para>
+
+	<para>When you run the utility, you can put a list of files as
+           arguments on the command line.  For example:</para>
+
+	<para>Select the file "file1.D":</para>
+	<para>asf_convert_gui file1.D</para>
+
+	<para>Select all .D files in the current directory:</para>
+	<para>asf_convert_gui *.D</para>
+
+	<para>Select all .D files in the "data" directory:</para>
+	<para>asf_convert_gui data/*.D</para>
+      </listitem>
+      <listitem>
+	<para>Use the "Add" button.</para
+	<para>After you've run the utility, you can add additional 
+        files by typing the name in the textbox next to the "Add" 
+        button, and clicking "Add".</para>
+      </listitem>
+      <listitem>
+	<para>Use the "Browse" button.</para>
+	<para>You can also click "Browse" to pull up a file
+        selection dialog.  Use ctrl-click or shift-click to select 
+        more than one file.</para>
+      </listitem>
+    </orderedlist>
+  </chapter>
+  <chapter id="import-options">
+    <title>Import Options</title>
+    <para>There are 4 tabs of options.  The first specifies the
+      options to use during Import, when the data is converted from
+      the source format to an ASF internal format.</para>
+    
+    <orderedlist>
+      <listitem>
+	<para>Data Format</para>
+	<para>This is where you select the type of data that you have.
+          The default, "CEOS (Level 1)" is the most common format.
+          For the STF format, you have the option of restricting 
+          the import to a subset of the latitude range in the source 
+          data.</para>
+      </listitem>
+      <listitem>
+	<para>Latitude</para>
+	<para>This option is only available for the "STF" data format.  
+          Here you may specify a range of latitudes that is smaller
+          than that of the original data.  Please make sure that both
+          the Low and Hi values are actually contained in the image.</para>
+      </listitem>
+    </orderedlist>
+  </chapter>
+<chapter id="radiometry">
+    <title>Radiometry</title>
+    <para>The only option here is "Data type":</para>
+    <simplelist>
+	<member>amplitude: Create an amplitude image. This is the
+          default behavior.</member>
+	<member>sigma: Create a calibrated image (sigma power scale 
+          values).</member>
+	<member>gamma: Create a calibrated image (gamma power scale 
+          values).</member>
+	<member>beta: Create a calibrated image (beta power scale 
+          values).</member>
+	<member>power: Create a power image.</member>
+    </simplelist>
+  </chapter>
+  <chapter id="geocode">
+    <title>Geocode</title>
+
+    <para>Turning Geocoding on will invoke the "asf_geocode" utility
+      before exporting.  The checkbox next to the "Projection" selection
+      list will turn on/off geocoding.</para>
+
+    <para>Each projection has a "User Defined" option, where the
+      parameters for the projection are specified manually.  Some
+      projections have some built-in parameters selections.  You can
+      either choose one of the built-in parameters specifications, or
+      enter them yourself.</para>
+
+    <para>There are 5 projections:  UTM, Polar Stereographic, Albers
+      Conical Equal Area, Lambert Conformal Conic, and Lambert
+      Azimuthal Equal Area.  Each projection requires one or more
+      additional items:</para>
+
+    <orderedlist>
+      <listitem><para>UTM</para>
+ 
+	<para>Here the only additional parameter  is the UTM Zone.
+          The globe is divided into 60 north and south zones, each
+          spanning 6 degrees of longitude.  Zones 1 to 60 are northern
+          zones, and -1 to -60 are the southern zones.</para>
+
+	<para>Be sure that your data does lie in (or near) the
+          specified zone -- an error will occur if you've specified a
+          zone that is more than one zone away from the zone in which
+          your data lies.</para>
+      </listitem>
+      <listitem><para>Polar Stereographic</para>
+
+	<para>Here the two parameters are a Central Meridian, and a
+          First Standard Parallel.  (You can also optionally specify
+          False Easting and Northing values.)</para>
+
+	<para>Central Meridian:  This is the longitude that extends 
+          vertically down from the center pole.</para>
+
+	<para>First Standard Parallel:  This is the "latitude of true
+          scale".  At this latitude, the projection does not introduce
+          any distortion.</para>
+
+	<para>An error will occur if you try to use this projection
+          for data that is not near either the north or south pole.</para>
+      </listitem>
+      <listitem><para>Albers Conical Equal Area</para>
+
+	<para>This is a conical projection.  You must specify two
+          standard parallels, the latitudes at which the projection
+          cone intersects the Earth (and, so, at these latitudes the
+          projection doesn't introduce any distortion), as well as the
+          location of the projection's origin.</para>
+      </listitem>
+      <listitem><para>Lambert Conform Conic</para>
+
+	<para>This is a conical projection.  You must specify two
+          standard parallels, the latitudes at which the projection
+          cone intersects the Earth (and, so, at these latitudes the
+          projection doesn't introduce any distortion), as well as the
+          location of the projection's origin.</para>
+
+      </listitem>
+
+      <listitem><para>Lambert Azimuthal Equal Area</para>
+
+	<para>You need to specify the point of tangency, and may also
+          specify False Easting and Northing.</para>
+
+      </listitem>
+    </orderedlist>
+
+    <para>Also, on this tab:</para>
+
+    <orderedlist>
+      <listitem><para>Specify Height</para>
+
+	<para>Assume that terrain in the image is the specified height
+          (in meters) above the reference GEM6 ellipsoid.  Optimal
+          geolocation accuracy will then be achieved for pixels on
+          terrain at this height.  The geolocation of terrain at other
+          heights will be off by about the height difference between
+          the terrain and the given height, assuming a satellite look
+          angle 45 degrees from horizontal.</para>
+      </listitem>
+      <listitem><para>Specify Pixel Size</para>
+
+	<para>Scales the output image such that each pixel is the
+          specified size, in projection coordinates (i.e. meters) on a
+          side.</para>
+
+      </listitem>
+      <listitem><para>Datum</para>
+
+	<para>Specifies the datum that is used when projecting.  The
+          datum applies to the target coordinate system.</para>
+
+      </listitem>
+    </orderedlist>
+  </chapter>
+  <chapter id="export">
+    <title>Export</title>
+
+    <para>The options here configure how the conversion from the ASF
+      internal format to the output format is done.</para>
+
+    <orderedlist>
+      <listitem><para>Format</para>
+
+	<para>This is the format you want your output data in.  The
+          default is JPEG, but you may also select GeoTIFF, TIFF or
+          PPM.</para>
+
+      </listitem>
+
+      <listitem><para>Output Bytes</para>
+
+	<para>When the "Output Bytes" option is turned off, the output
+          image is generated using float-point values for each pixel.
+          Some formats (all except GeoTIFF) do not support
+          floating-point pixel values, and so you must map the values
+          to bytes (i.e., a 0-255 value for each pixel).  Even if you
+          are exporting to GeoTIFF, you may wish to use bytes anyway,
+          since this can result in substantially smaller files (on
+          most systems, the files will be approximately 4 times
+          smaller).</para>
+
+	<para>When "Output Bytes" is checked, you'll need to pick how
+          the mapping from floating point to bytes is done:</para>
+
+	<orderedlist>
+	  <listitem>
+	    <para>truncate: truncates the input values regardless of
+              their value range.</para>
+	  </listitem>
+	  <listitem>
+	    <para>minmax: determines the minimum and maximum values of
+              the input image and maps those values to the byte range
+              of 0 to 255.</para>
+	  </listitem>
+	  <listitem>
+	    <para>sigma: determines the mean and standard deviation of
+              the image and applies a buffer of 2 sigma around the
+              mean value (it adjusts this buffer if the 2 sigma buffer
+              is outside the value range).</para>
+	  </listitem>
+	</orderedlist>
+	<para>The default is "sigma".</para>
+
+      </listitem>
+      <listitem>
+	<para>Scale output image</para>
+
+	<para>Will reduce the size of the output image, so that its
+          largest dimension is at most the given size.  This option
+          isn't available when exporting to GeoTIFF.</para>
+      </listitem>
+    </orderedlist>
+  </chapter>
+  <chapter id="files">
+    <title>The "Files" Section</title>
+
+    <para>This section lists all of the file you've selected (as
+      described above in Section 3).</para>
+
+    <orderedlist>
+      <listitem><para>Thumbnails</para>
+
+	<para>If possible, thumbnails of the input images are
+          generated and put into the "Input Thumbnail" column.  These
+          are generated in the background, so if you have many files
+          it can take some time for the input thumbnails to appear for
+          all input files.</para>
+
+	<para>If you hover with your mouse over an input thumbnail
+          image, you'll get an enlarged view of the input data.</para>
+
+	<para>The output image, for all types except GeoTIFF, will
+          also produce a thumbnail, and you can view an enlarged
+          version by right-clicking and selecting "View Image".
+          Generally the input thumbnail and the output thumbnail won't
+          differ significantly. (However, when geocoding the image
+          will likely be rotated, and if poor projection parameters
+          are chosen some distortion could occur.)</para>
+
+      </listitem>
+      <listitem>
+	<para>Change Output Directory</para>
+
+	<para>By default, the tool stores the generated files in the
+          same directory as the input files.  Here you may specify a
+          different directory if you prefer.</para>
+      </listitem>
+      <listitem>
+	<para>Change Output Naming Scheme</para>
+
+	<para>This is a useful option if you're going to be generating
+          more than one output file, each using different
+          parameters.</para>
+
+	<para>For example, you may wish to generate Amplitude and
+          Power images for each of your input files.  Or, you may want
+          to project each file into more than one projection.</para>
+
+	<para>The "Prefix" and "Suffix" strings are applied to each
+          output filename (except those you've changed manually).  So,
+          you can process the data once with your first set of
+          settings (e.g., "Amplitude" selected in the Radiometry
+          section) using the suffix "_amp", and then a second time
+          with another set of settings (i.e., "Power" selected in the
+          Radiometry section) using the suffix "_pwr".</para>
+      </listitem>
+
+      <listitem>
+	<para>"Save" and "Load" Buttons</para>
+
+	<para>If you are processing a large number of files, you may
+          wish to stop processing and resume it later.</para>
+
+	<para>To do this, you should "Save" after you've processed the
+          first batch of files, and then exit the program.</para>
+
+	<para>Then, when you are ready to resume processing, click
+          "Load" after running the tool.  When you click "Execute",
+          processing will continue from where you left off.</para>
+
+	<para>Please note that if you change any options, clicking
+          "Execute" will start processing over again from the first
+          file.  You can exit without saving if you accidentally
+          change an option, and then re-process any files that were
+          erroneously processed with the new options.  (When you
+          select "Process" from the right-click pop-up menu, the file
+          will always be processed even if it has already been marked
+          "Done".  In this situation, the word "Done" will appear in
+          gray instead of black.)</para>
+	
+      </listitem>
+    </orderedlist>
+  </chapter>
+  
+  <chapter id="execute">
+    <title>Execute</title>
+
+    <para>The "Execute" button starts the processing.</para>
+
+    <para>The processing starts with the first file in the list, and
+      processes each in turn until the last file in the list.</para>
+
+    <para>Files marked as "Done" will not be processed again if you
+      click "Stop" and then click "Execute" again.  In other words,
+      clicking "Execute" picks up processing from where it left off.
+      However, if you've changed any settings (specifically, anything
+      that appears in the "Summary" section) the processing will again
+      start from the beginning.</para>
+
+    <para>If you use the right-click menu option to process a file
+      (See Section 10), then the file will always be processed even if
+      it has already been marked "Done".</para>
+
+    <para>Clicking "Stop" will stop processing after the current
+      conversion finishes.</para>
+
+    <para>If any of the output files already exist (i.e., they are
+      shown in red in the files list), you will need to confirm that
+      you don't mind overwriting those files.  If you do mind, please
+      change the output file name before starting processing.</para>
+
+    <para>As the processing proceeds, the asf_import, asf_geocode (if
+      appropriate), and asf_export tools are invoked for each file.
+      These tools generate output messages which are captured by the
+      tool and placed in the output window.  (On some systems, this
+      window is completely collapsed on startup -- use the mouse to
+      grab the bar right above the row of buttons at the bottom, and
+      move it up to reveal the output window.)</para>
+
+    <para>If an error occurs during the processing of a file, instead
+      of "Done" in the status column, you'll see "Error".  You can
+      then right-click and select "Jump To Log", to read the details
+      of the error.</para>
+
+  </chapter>
+  <chapter>
+    <title>Right-Click Menu</title>
+
+    <para>If you right-click on a row in the files grid, a menu will
+      appear with some options.  These options will apply to the file
+      in the row that is selected.  Some options may be disabled, in
+      some circumstances.</para>
+
+    <orderedlist>
+      <listitem>
+	<para>Remove</para>
+
+	<para>This will remove the entry from the files grid.  The
+          files on disk are not affected.</para>
+      </listitem>
+
+      <listitem>
+	<para>Process</para>
+
+	<para>This processes the file, just as if you'd click execute 
+          with only this file in the grid.</para>
+      </listitem>
+
+      <listitem>
+	<para>Rename Output</para>
+
+	<para>Change the name of the output file.  You can't change
+          the directory, use the "Change Output Directory" option (see
+          Section 8) to do that.</para>
+
+	<para>You can also change the name of the output file by
+          double-clicking on the "Output File" column.</para>
+      </listitem>
+
+      <listitem>
+	<para>Jump To Log</para>
+
+	<para>This option will move the scrollbar in the output
+          messages window (See Section 9) to the messages for the
+          selected row's file.</para>
+	
+      </listitem>
+
+      <listitem>
+	<para>Display Metadata</para>
+
+	<para>Open up a new window, containing the Metadata for the
+          selected file.  The metadata file is generated by the import
+          procedure, so if the file hasn't been processed yet, the
+          metadata file won't have been generated.</para>
+
+      </listitem>
+      <listitem>
+	<para>View Output</para>
+
+	<para>Open up a new window, containing the generated output
+          file.  This option is not yet able to display GeoTIFF data,
+          so if this Format has been selected, the right-click option
+          will not be available.</para>
+
+      </listitem>
+    </orderedlist>
+  </chapter>
+
+  <chapter id="contacting-us">
+    <title>Contacting Us</title>
+
+    <para>If you have any questions or comments about this software,
+      we would love to hear from you!</para>
+
+    <address>
+      http://www.asf.alaska.edu
+      <email>uso@asf.alaska.edu</email>
+    </address>
+
+    <address>
+      Alaska Satellite Facility
+      Geophysical Institute
+      University of Alaska Fairbanks
+      P.O. Box 757320
+      Fairbanks, AK 99775-7320
+    </address>
+
+  </chapter>
+</book>
