@@ -13,7 +13,7 @@ void matched_subexps_free(matched_subexps_t *msubs)
   
   /* Don't allow freeing of already free structures.  */
   if ( !msubs->is_dirty ) {
-    fprintf(stderr, "'" __func__ "' called on a matched_subexps_t that hadn't been filled in (by 'regex_match')\n");
+    fprintf(stderr, "'%s' called on a matched_subexps_t that hadn't been filled in (by 'regex_match')\n", __func__);
     exit(EXIT_FAILURE);
   }
 
