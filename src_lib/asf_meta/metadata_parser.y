@@ -10,6 +10,17 @@
 #include "caplib.h"
 #include "lex_yacc.h"
 
+/* We don't always have strdup() around.  */
+static char *
+strdup (const char *s)
+{
+  size_t ii = 0;
+  while ( s[ii] != '\0' ) ii++;
+
+  char *ret = malloc ((ii + 1) * sizeof (char));
+  return strcpy (ret, s);
+}
+
 /* Lex provides this parser function.  */
 int yylex(void);
 
@@ -587,7 +598,9 @@ void fill_structure_field(char *field_name, void *valp)
   }
 
   /* Got an unknown field name, so report & choke */
-  error_message("Unknown field name: %s", field_name);
+  fprintf (stderr, "Warning: Unknown field name: %s\n", field_name);
+  return;
+  // error_message("Unknown field name: %s", field_name);
 }
 
 %}
