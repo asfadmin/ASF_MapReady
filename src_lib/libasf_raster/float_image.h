@@ -5,8 +5,13 @@
 // spatially correlated.  A variety of useful methods are implemented
 // (filtering, subsetting, interpolating, etc.)
 
+#ifndef FLOAT_IMAGE_H
+#define FLOAT_IMAGE_H
+
 #include <stdio.h>
 #include <sys/types.h>
+
+#include <glib.h>
 
 // Instance structure.  Everything here is private and need not be
 // used or understood by client code.
@@ -170,3 +175,5 @@ float_image_set_cache_size (FloatImage *self, size_t size);
 // Destroy self.
 void
 float_image_free (FloatImage *self);
+
+#endif // FLOAT_IMAGE_H
