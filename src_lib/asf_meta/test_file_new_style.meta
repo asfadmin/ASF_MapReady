@@ -8,7 +8,7 @@ meta_version: 1.1
 general {
 # Test comment.
     sensor: Fred the satellite
-    mode: silly mode
+    mode: sily
     processor: Funky proc. version 1.23
     data_type: INTEGER*4
     # Test comment.
