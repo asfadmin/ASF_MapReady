@@ -72,8 +72,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     ------------\n"\
 "          --center-latitude            : Center Latitude\n"\
 "          --central-meridian           : Center Longitude\n"\
-"          -n, --north_pole             : Center on North Pole (no argument)\n"\
-"          -s, --south_pole             : Center on South Pole (no argument)\n"\
+"          -n, --north-pole             : Center on North Pole (no argument)\n"\
+"          -s, --south-pole             : Center on South Pole (no argument)\n"\
 "          --false-easting              : False Easting\n"\
 "          --false-northing             : False Northing\n"\
 "\n"\
@@ -89,7 +89,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          --central-meridian          : Original lon\n"\
 "          --false-easting             : False Easting\n"\
 "          --false-northing            : False Northing\n"\
-"          --scale-factor              : Scale Factor\n"\
 "\n"\
 "     LAMBERT AZIMUTHAL EQUAL AREA\n"\
 "     ----------------------------\n"\

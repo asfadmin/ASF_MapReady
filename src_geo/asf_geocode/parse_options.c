@@ -267,10 +267,12 @@ void write_args(projection_type_t proj_type, project_parameters_t *pps,
 	    fprintf(fp, "Latitude of Origin=%.10f\n", pps->lamcc.lat0);
 	    fprintf(fp, "False Easting=%.10f\n", pps->lamcc.false_easting);
 	    fprintf(fp, "False Northing=%.10f\n", pps->lamcc.false_northing);
+/*
 	    fprintf(fp, "Scale Factor=%.10f\n",
 		    ISNAN(pps->lamcc.scale_factor) ? 
 		        1.0 : 
 		        pps->lamcc.scale_factor);
+*/
 	    break;
 
 	default:
@@ -330,7 +332,7 @@ static void parse_proj_args_file(char * file, project_parameters_t * pps,
 		   "Latitude of Origin", &pps->lamcc.lat0,
 		   "False Easting", &pps->lamcc.false_easting,
 		   "False Northing", &pps->lamcc.false_northing,
-		   "Scale Factor", &pps->lamcc.scale_factor,
+		   /* "Scale Factor", &pps->lamcc.scale_factor, */
 		   NULL);
     }
     else if (strcmp(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
@@ -1030,12 +1032,12 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 			    &i, *argc, *argv, &specified_false_northing,
 			    &pps->lamcc.false_northing, &ok))
 			continue;
-
+/*
 		    if (parse_scale_factor_option(
 			    &i, *argc, *argv, &specified_scale_factor,
 			    &pps->lamcc.scale_factor, &ok))
 			continue;
-
+*/
 		    break;
 		}
 

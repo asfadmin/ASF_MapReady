@@ -24,8 +24,8 @@
   ============
     --center-latitude            : Center Latitude
     --central-meridian           : Center Longitude
-    -n, --north_pole             : Center on North Pole (no argument)
-    -s, --south_pole             : Center on South Pole (no argument)
+    -n, --north-pole             : Center on North Pole (no argument)
+    -s, --south-pole             : Center on South Pole (no argument)
     --false-easting              : False Easting
     --false-northing             : False Northing
 
@@ -41,7 +41,6 @@
      --central-meridian          : Original lon
      --false-easting             : False Easting
      --false-northing            : False Northing
-     --scale-factor              : Scale Factor
 
    LAMBERT AZIMUTHAL EQUAL AREA
    ============================
