@@ -219,6 +219,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	strcpy( general->system,  ddr.system);
 	general->start_line     = ddr.master_line;
 	general->start_sample   = ddr.master_sample;
+/* FIXME: UNITS TO PROJECTION */
 	switch ( ddr.dtype ) {
 	    case 0: /* BYTE */
 	    case 1: strcpy(general->data_type, "BYTE"); break;
