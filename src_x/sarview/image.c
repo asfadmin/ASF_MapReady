@@ -78,6 +78,20 @@ int image_loadCeos(char *fileName)
 	return 1;
 }
 
+int image_loadNewMeta(char *fileName)
+{
+  type=image_new_meta;
+  meta_parameters *meta = meta_read(fileName);
+
+  strcpy(image.fName, fileName); /* Set image name.  */
+
+  /* Set the image size; based on the metadata.  */
+  image.width = meta->general->sample_count;
+  image.height = meta->general->line_count;
+  
+  return 1;
+}
+
 /*Extract the entire given line from the current image.
 Dest must be link_imagewidth floats long.*/
 void image_readLine(float *dest,int lineY,int bandNo)
@@ -95,6 +109,8 @@ void image_readLine(float *dest,int lineY,int bandNo)
 			dest[x]=(float)iBuf[x];
 		FREE(iBuf);
 		break;
+	case image_new_meta:
+	  
 	default:
 		abort();/*Unknown image type*/
 		break;
