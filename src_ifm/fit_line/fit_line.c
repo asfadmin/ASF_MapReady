@@ -1,7 +1,7 @@
 /******************************************************************************
 NAME: fit_Line
 
-SYNOPSIS: fit_line <in> <out> [-log <file>] [-quiet]
+SYNOPSIS: fit_line [-log <file>] [-quiet] <in> <out>
 
 DESCRIPTION:
 
@@ -18,9 +18,10 @@ PROGRAM HISTORY:
     1.0	    1/97   T. Logan	To collate output of fico
     2.0     6/97   O. Lawlor	Total rewrite, allow reverse correlation, 
     				weighting of input points (+more general).
-    2.1     10/97   O. Lawlor	Check for not enough points in fit.
-    2.2     5/98    O. Lawlor	Updated for new fico.
-    2.21    7/01    R. Gens     Added logfile and quiet switch
+    2.1    10/97   O. Lawlor	Check for not enough points in fit.
+    2.2     5/98   O. Lawlor	Updated for new fico.
+    2.21    7/01   R. Gens      Added logfile and quiet switch
+    2.5    12/03   P. Denny     Standardize command line parsing & usage
 
 HARDWARE/SOFTWARE LIMITATIONS: none
 
@@ -79,8 +80,9 @@ Input and Output:
 
 #include "asf.h"
 
+#define VERSION 2.5
 
-float version=2.21;
+
 FILE *pointOutput=NULL;
 
 void usage(char *name);
@@ -279,25 +281,40 @@ int main(int argc,char **argv)
 {
 	char lineForward[255];
 	FILE *inForward,*out;
-	int i, totalPoints=0;
+	int totalPoints=0;
 	fit_line f;
-	if (argc<3) usage(argv[0]);
+
 	fit_init(&f);
-        for (i=3; i<argc; i++) {
-	  /*Process extra argument: either c (coefficents) or p (points)*/
-	  if (argv[3][0]=='c')
-	    f.coeffList=FOPEN(argv[4],"w");
-	  if (argv[3][0]=='p')
-	    pointOutput=FOPEN(argv[4],"w");
-          if(strncmp(argv[i],"-log", 4)==0) {
-            sscanf(argv[i+1], "%s", logFile);
-            logflag=1;
-            fLog = FOPEN(logFile, "a");
-          }
-          if(strncmp(argv[i],"-quiet", 6)==0) quietflag=1;
-        }
-	inForward=FOPEN(argv[1],"r");
-	out=FOPEN(argv[2],"w");
+
+/* Parse command line arguments */
+	logflag=quietflag=FALSE;
+	while (currArg < (argc-2)) {
+	   char *key = argv[currArg++];
+	   if (strmatch(key,"-log")) {
+	      CHECK_ARG(1);
+	      strcpy(logFile,GET_ARG(1));
+	      fLog = FOPEN(logFile, "a");
+	      logflag=TRUE;
+	   }
+	   else if (strmatch(key,"-quiet")) {
+	      quietflag=TRUE;
+	   }
+	/*** Begin hidden arguments: c (coefficents) or p (points) ***/
+	   else if (strmatch(key,"c")) {
+	      CHECK_ARG(1);
+	      f.coeffList = FOPEN(GET_ARG(1),"w");
+	   }
+	   else if (strmatch(key,"p")) {
+	      CHECK_ARG(1);
+	      pointOutput=FOPEN(GET_ARG(1),"w");
+	   }
+	/*** End hidden arguments: c (coefficents) or p (points) ***/
+ 	   else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
+	}
+	if ((argc-currArg) < 2) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+
+	inForward = FOPEN(argv[currArg++],"r");
+	out       = FOPEN(argv[currArg],"w");
 
 /*add points to fitline*/
 	while (NULL!=(fgets(lineForward,255,inForward)))
@@ -341,15 +358,24 @@ int main(int argc,char **argv)
 
 void usage(char *name)
 {
-		printf("\n\
-Usage: %s <in> <out> [-log <file>] [-quiet]\n\
-\n\t<in> input: forward correlation point file (from fico)\n\
-\t<out> output: correlation coefficients, derived from a\n\
-\t      least-squares fit, with point elimination.\n\
-\t-log <file> allows the output to be written to a log file\n\
-\t-quiet suppresses the output to the essential\n\
-\nFit_line takes, as an input, correlation points from fico and produces\n\
-as output correlation coefficients for use by calc_deltas. \n\
-\nVersion %4.2f, ASF SAR Tools\n\n",name,version);
-		exit(1);
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <file>] [-quiet] <in> <out>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <in>   forward correlation point file (from fico)\n"
+	"   <out>  correlation coefficients, derived from a least-squares fit,\n"
+	"            with point elimination.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -log <file>  allows the output to be written to a log file\n"
+	"   -quiet       suppresses the output to the essential\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Takes correlation points from fico as an input and produces correlation\n"
+	"   coefficients as output. The output is for use by calc_deltas.\n");
+ printf("\n"
+	"Version %4.2f, ASF SAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
