@@ -88,9 +88,6 @@ BUGS:
 #include "stc123.h"
 #include "asf.h"
 
-#define TRUE 1
-#define FALSE 0
-
 int status;              /* status returned by FIPS library routines */
 
 #define check(x) check_func(x,__LINE__)
