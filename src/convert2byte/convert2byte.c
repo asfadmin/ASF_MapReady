@@ -1,8 +1,8 @@
 /****************************************************************
 NAME: convert2byte
 
-SYNOPSIS: convert2byte [-look lxs] [-step lxs] [-log <log file>] [-quiet]
-                       <infile> <outfile>
+SYNOPSIS: convert2byte [-multilook] [-look lxs] [-step lxs] [-log <log file>]
+                       [-quiet] <infile> <outfile>
 
 DESCRIPTION:
 	Convert any ASF image into a viewable byte image.  Allows for
@@ -265,13 +265,26 @@ int main(int argc, char **argv)
 	    if (defaultLookStep_flag) {
 		/* We don't want to multilook any image twice */
 		if (inMeta->sar->line_increment==inMeta->sar->look_count) {
-			stepLine=stepSample=lookLine=lookSample=1;
+		    stepLine = stepSample = lookLine = lookSample = 1;
 		}
 		else {
+		    if (inMeta->sar->look_count == MAGIC_UNSET_INT) {
+			printf( "Bad look_count value in %s. Unable to determine multilooking values.\n"
+				"You can use the -look option to set the number of looks yourself. Exiting.\n" ,
+				inMetaFileName);
+			if (logflag) {
+			    fprintf( fLog,
+				"Bad look_count value in %s. Unable to determine multilooking values.\n"
+				"You can use the -look option to set the number of looks yourself. Exiting.\n" ,
+				inMetaFileName);
+			}
+			exit(EXIT_FAILURE);
+		    }
+		    else
 			stepLine = inMeta->sar->look_count;
-			stepSample = 1;
-			lookLine = WINDOW_SIZE_MULTIPLIER * stepLine;
-			lookSample = WINDOW_SIZE_MULTIPLIER * stepSample;
+		    stepSample = 1;
+		    lookLine = WINDOW_SIZE_MULTIPLIER * stepLine;
+		    lookSample = WINDOW_SIZE_MULTIPLIER * stepSample;
 		}
 	    }
 	    outMeta->general->sample_count = 
@@ -311,7 +324,7 @@ int main(int argc, char **argv)
 void usage(char *name) {
  printf("\n"
 	"USAGE:\n"
-	"   %s [-look lxs] [-step lxs] [-log log_file] [-quiet]\n"
+	"   %s [-multilook] [-look lxs] [-step lxs] [-log log_file] [-quiet]\n"
 	"                <infile> <outfile>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
