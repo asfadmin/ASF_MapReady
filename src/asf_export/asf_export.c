@@ -221,35 +221,6 @@ typedef enum {
   USER_DEFINED			/* Some unknown user defined ellipsoid.  */
 } asf_export_ellipsoid_t;
 
-/* We don't have strncpy everywhere, so here is a substitude.  */
-static char *
-my_strncpy (char *dest, const char *src, size_t n)
-{
-  size_t ii;
-  for ( ii = 0 ; ii < n ; ii++ ) {
-    dest[ii] = src[ii];
-    if ( dest[ii] == '\0' ) {
-      return dest;
-    }
-  }
-
-  return dest;
-}
-
-/* We don't have strnlen everywhere, so here is a substitute.  */
-static size_t
-my_strnlen (const char *s, size_t max_len)
-{
-  size_t ii;
-  for ( ii = 0 ; ii < max_len ; ii++ ) {
-    if ( s[ii] == '\0' ) {
-      return ii;
-    }
-  }
-
-  return max_len;
-}
-
 /* Check to see if an option was supplied or not If it was found,
    return its argument number.  Otherwise, return FLAG_NOT_SET. */
 int
@@ -364,9 +335,9 @@ main (int argc, char *argv[])
 		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
 			usage();/*This exits with a failure*/
 
-	/*We're good enough at this point...print the splash screen and start filling in
-	whatever needs to be filled in.*/
-	if(quietFlag == FLAG_NOT_SET)
+	/* We're good enough at this point... print the splash screen
+	   and start filling in whatever needs to be filled in.  */
+	if ( quietFlag == FLAG_NOT_SET )
 		print_splash_screen(argc, argv);
 
 	if(formatFlag != FLAG_NOT_SET)
@@ -1768,7 +1739,8 @@ export_as_geotiff (const char *metadata_file_name,
 		    md->projection->param.ps.slat);
 	GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
 	GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
-	GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1,
+	GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
+	GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, 
 		    Angular_Degree);
 
 	/* Fill in the details of the geographic coordinate system used.  */
@@ -1781,7 +1753,7 @@ export_as_geotiff (const char *metadata_file_name,
 	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_GEM10C);
 	  break;
 	case WGS84:
-	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_WGS84);
+	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_84);
 	  break;
 	case USER_DEFINED:
 	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1,
