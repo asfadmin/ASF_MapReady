@@ -204,8 +204,8 @@ void
 float_image_approximate_statistics (FloatImage *self, size_t stride,
                                     float *mean, float *standard_deviation);
 
-// Creates a gsl_histogram with 'num_bins' bins evenly spaced between 'min' and
-// 'max'.  This function considers every pixel in the image.
+// Creates a gsl_histogram with 'num_bins' bins evenly spaced between
+// 'min' and 'max'.  This function considers every pixel in the image.
 gsl_histogram *
 float_image_histogram (FloatImage *self, float min, float max,
                        size_t num_bins);
