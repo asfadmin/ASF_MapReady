@@ -35,9 +35,9 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
 
   /* Handle output file name */
   strcpy(outDataName,outBaseName);
-  strcat(outDataName,TOOLS_IMAGE_EXT);
+  strcat(outDataName,TOOLS_RAW_EXT);
   strcpy(outMetaName,outBaseName);
-  strcat(outMetaName,TOOLS_IMAGE_EXT);
+  strcat(outMetaName,TOOLS_META_EXT);
 
   if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
     /* Determine start and end line for latitude constraint */
