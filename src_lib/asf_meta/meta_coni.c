@@ -193,7 +193,7 @@ void meta_io(coniStruct *coni,meta_parameters *meta,int reading)
 		coniIO_structClose(coni, "end general");
 
 	/*SAR parameters*/
-		if ( ((!reading)&&(meta->sar!=NULL)) || (reading)&&(/*SAR STRUCT IS IN META FILE*/ 1 ) )
+		if ( ((!reading)&&(meta->sar!=NULL)) || ((reading)&&(/*SAR STRUCT IS IN META FILE*/ 1 )) )
 		{
 			meta_sar *sar = meta->sar;
 			if (reading)
