@@ -81,6 +81,7 @@ BUGS:
 
 #include "asf.h"
 #include "asf_meta.h"
+#include "ddr.h"
 
 #define VERSION 2.7
 

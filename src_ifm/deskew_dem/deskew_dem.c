@@ -82,6 +82,7 @@ BUGS:
 ****************************************************************************/
 
 #include "deskew_dem.h"
+#include "ddr.h"
 
 void usage(char *name);
 

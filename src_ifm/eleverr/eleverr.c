@@ -71,6 +71,7 @@ BUGS:
 ****************************************************************************/
 #include "asf.h"
 #include "asf_meta.h"
+#include "ddr.h"
 
 #define DEFAULT_ERROR          0.0
 #define VERSION                2.11

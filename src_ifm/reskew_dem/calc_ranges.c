@@ -1,4 +1,5 @@
 #include "deskew.h"
+#include "ddr.h"
 
 double calc_ranges(const struct DDR *ddr)
 {
