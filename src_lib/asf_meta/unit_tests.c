@@ -17,7 +17,7 @@
 #define UNIT_TESTS_MICRON 0.00001
 #define UNIT_TESTS_FLOAT_COMPARE(a, b) (abs(a - b) < UNIT_TESTS_MICRON ? 1 : 0)
 
-/* Test part of meta_read that parses new files.  */
+/* Test the part of meta_read that parses new files.  */
 START_TEST(test_meta_read_new_format)
 {
   meta_parameters *meta = meta_read("test_file_new_style.meta");
