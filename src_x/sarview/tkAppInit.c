@@ -9,22 +9,8 @@ This file registers the shared variables between Tcl and C,
 registers the Tcl-callable C routines, and calls the Tcl
 scripts	support/init.tcl
  */
-#if defined(win32)
-	#include <direct.h> /*for _getcwd() for link_cwd */
-#else
-	#include <unistd.h> /*for getcwd() for link_cwd */
-#endif	
-
-#include <stdlib.h>
-
 #include "main.h"
-
-/* The following variable is a special hack that is needed in order for
- * Sun shared libraries to be used for Tcl.
-extern int matherr();
-int *tclDummyMathPtr = (int *) matherr;
- */
-
+#include <unistd.h> /*for getcwd() for link_cwd */
 
 char *link_path;/*Absolute path to the "support" directory*/
 char *link_cwd;/*Absolute path to current working directory*/
@@ -32,15 +18,18 @@ int link_screenx,link_screeny;/*Screen width and height, pixels*/
 double link_zoom;/*Main window zoom-out factor*/
 
 
-/* SetSupportPath: sets the "link_path" shared variable from an
-   environment variable, or based on the location of the application
-   binary if the environment variable isn't found.  */
+/****************************************************************
+ * SetSupportPath:
+ * sets the "link_path" shared variable from an environment
+ * variable, or based on the location of the application binary
+ * if the environment variable isn't found.
+ */
 void setSupportPath(const char *appLoc)
 {
-  char sarview_support_dir[2048];	/* From environment variable.  */
-  int i;			        /* String traversal index. */
-  
-  link_path=Tcl_Alloc(1024);	/* Space for the link path name.  */
+  char sarview_support_dir[2048]; /* From environment variable.  */
+  int i;                          /* String traversal index. */
+
+  link_path=Tcl_Alloc(1024);      /* Space for the link path name.  */
   
   if ( getenv("SARVIEW_SUPPORT_DIR") != NULL ) {
     strncpy(sarview_support_dir, getenv("SARVIEW_SUPPORT_DIR"), 2048);
@@ -58,13 +47,14 @@ void setSupportPath(const char *appLoc)
   /*Find the directory separator*/
   i = strlen(appLoc)-1;
   while ((i>0)&&(appLoc[i]!='\\')&&
-	 (appLoc[i]!=':')&&
-	 (appLoc[i]!='/'))
+                (appLoc[i]!=':' )&&
+                (appLoc[i]!='/' ))
     i--;/*Move backwards until we hit a directory separator*/
   /*Clip off the executable's name from the path*/
   if (i<=0) {
     link_path[0]=0;
-  } else {
+  }
+  else {
     strncpy(link_path,appLoc,++i);
     link_path[i++]=0;
   }
@@ -72,27 +62,30 @@ void setSupportPath(const char *appLoc)
   strcat(link_path,"support");
 }
 
-/*Application main routine: just passes control off to Tcl/Tk,
-which will return the favor immediately by calling Tcl_AppInit.*/
+/******************************************************************
+ * Application main routine: just passes control off to Tcl/Tk,
+ * which will return the favor immediately by calling Tcl_AppInit.
+ */
 char *firstArg=NULL;
-int main(int argc,			/* Number of command-line arguments. */
-    char *argv[])		/* Values of command-line arguments. */
+int main(int argc, char *argv[])
 {
-        /* Set the "support" directory path, based on the application
-           location or environment variable.  */
-	setSupportPath(argv[0]);
+	/* Set the "support" directory path, based on the application
+	 * location or environment variable.*/
+	setSupportPath(argv[0]); 
+
 	if (argc>1)
 		firstArg=argv[1];
-	argc=1;/*Hide our arguments from Tcl*/
+	argc=1;    /* Hide our arguments from Tcl                   */
 	
-    Tk_Main(argc, argv, Tcl_AppInit);
-    return 0;			/* Needed only to prevent compiler warning. */
+	Tk_Main(argc, argv, Tcl_AppInit);
+	return 0;  /* Needed only to prevent compiler warning.      */
 }
 
-/*Application Initialization routine.  Loads up linked 
-variables, registers Tcl-callable C routines, and
-runs the initialization and main TCL scripts.
-*/
+/*****************************************************************
+ * Application Initialization routine.  Loads up linked variables,
+ * registers Tcl-callable C routines, and runs the initialization
+ * and main TCL scripts.
+ */
 Tcl_Interp *interp=NULL;
 int Tcl_AppInit(Tcl_Interp *loc_interp)		/* Interpreter for application. */
 {
@@ -100,18 +93,16 @@ int Tcl_AppInit(Tcl_Interp *loc_interp)		/* Interpreter for application. */
 	char *cwd;
 /*Initialize the Tcl libraries we'll use*/
 	interp=loc_interp;
-    if (Tcl_Init(interp) == TCL_ERROR)  return TCL_ERROR;
-    if (Tk_Init(interp) == TCL_ERROR)  return TCL_ERROR;
-    Tcl_StaticPackage(interp, "Tk", Tk_Init, Tk_SafeInit);
+	if (Tcl_Init(interp) == TCL_ERROR)  return TCL_ERROR;
+	if (Tk_Init(interp) == TCL_ERROR)  return TCL_ERROR;
+	Tcl_StaticPackage(interp, "Tk", Tk_Init, Tk_SafeInit);
 
-    link_cwd=Tcl_Alloc(1024);
-#if defined(win32)
-	if (NULL == (cwd = _getcwd (link_cwd, 1024)))
-		Tcl_Free (cwd);
-	strcat(link_cwd,"\\");
-#else
+	link_cwd=Tcl_Alloc(1024);
 	if (NULL == (cwd = getcwd (link_cwd, 1024)))
 		Tcl_Free (cwd);
+#if defined(win32)
+	strcat(link_cwd,"\\");
+#else
 	strcat(link_cwd,"/");
 #endif
 
