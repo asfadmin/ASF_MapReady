@@ -1,0 +1,100 @@
+# Meta file with mostly silly fields, for testing get_float_line
+# function.  Relevant (non-silly) fields include: data_type,
+# line_count, sample_count.
+
+meta_version: 1.1
+
+# Test comment.
+
+general {
+# Test comment.
+    sensor: Fred the satellite
+    mode: sily
+    processor: Funky proc. version 1.23
+    data_type: INTEGER*2
+    # Test comment.
+    system: ieee-std # Test comment. # <-- useless but harmless pound sign
+    orbit: 123#Test comment. 
+    orbit_direction: A #Test comment. 
+    frame: 23
+    band_number: 0
+    line_count : 10
+    sample_count: 90
+    start_line: 22
+    start_sample: 100
+    x_pixel_size: 5
+    y_pixel_size: 5
+    center_latitude: 63.5
+    center_longitude: 22.2
+    re_major: 6000
+    re_minor: 4000
+    bit_error_rate: 0.22
+    missing_lines: 42
+}
+
+sar {
+    image_type: P  # [S=slant range; G=ground range; P=map projected]
+    look_direction: R # (normally R) [R=right; L=left]
+    look_count: 5
+    deskewed: 0 # [ 1 => deskewed, 0 => not deskewed ]
+    range_time_per_pixel: 0.000032
+    azimuth_time_per_pixel: 0.00546
+    slant_range_first_pixel: 30000
+    slant_shift: 2
+    time_shift: 23
+    wavelength: 23.4
+    prf: 222
+    dopRangeCen: 22
+    dopRangeLin: 2 
+    dopRangeQuad: 1.5
+    dopAzCen: 33
+    dopAzLin: 23
+    dopAzQuad: 12.1
+    satellite_binary_time: 23121
+    satellite_clock_time: 2124
+}
+
+state { 
+    year: 1999
+    julDay: 222
+    second: 23.42
+    vector_count: 2
+    vector {
+        time: 11.1
+	x: 22222
+	y: 33333
+	z: 44444
+	vx: 55555
+	vy: 66666
+	vz: 77777
+    }
+    vector {
+        time: 2211.1
+	x: 22222
+	y: 22333
+	z: 22444
+	vx: 22555
+	vy: 22666
+	vz: 22777
+    }
+}
+
+projection {
+    type: A
+    startX: 24
+    startY: 50
+    perX: 2
+    perY: 3
+    units: meters
+    hem: N # ['S'->southern; other northern]
+    re_major: 2200
+    re_minor: 231.412
+    param {
+        atct {
+	    rlocal: 6000000
+            alpha1: 0.6
+            alpha2: 0.44
+            alpha3: 0.7
+        }
+    }
+}
