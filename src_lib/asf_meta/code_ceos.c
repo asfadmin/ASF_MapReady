@@ -137,17 +137,18 @@ void str2asc(char *inString,unsigned char *outBuf,int len,codingDir dir)
   int i;
   if (dir==toASCII)
   {
-	for (i=0;inString[i]&&i<len;i++)
-		outBuf[i]=inString[i];
-	for (;i<len;i++)
-		outBuf[i]=' ';
-     /* right_justify((char *)outBuf,len); */
-  } else /*dir==fromASCII*/
-   {
-   	for (i=0;i<len;i++)
-   		inString[i]=outBuf[i];
-   	inString[len]=0;
-   }
+    for (i=0;inString[i]&&i<len;i++)
+      outBuf[i]=inString[i];
+    for (;i<len;i++)
+      outBuf[i]=' ';
+    /* right_justify((char *)outBuf,len); */
+  }
+  else /*dir==fromASCII*/
+  {
+    for (i=0;i<len;i++)
+      inString[i]=outBuf[i];
+    inString[len]=0;
+  }
 }
 
 
@@ -361,7 +362,7 @@ void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
 	fltV(a11,off,20);
 	fltV(a12,off,20);
 	fltV(a13,off,20);
-	fltV(a14,off,20);
+fltV(a14,off,20);
 	fltV(a21,off,20);
 	fltV(a22,off,20);
 	fltV(a23,off,20);
