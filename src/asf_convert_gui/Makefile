@@ -38,7 +38,7 @@ doc:
 	xsltproc --nonet /usr/share/docbook-xsl/htmlhelp/htmlhelp.xsl asf_convert_gui.sgml
 	/cygdrive/c/Program\ Files\HTML\ Help\ Workshop\hhc.exe htmlhelp.hhp
 
-	
+
 clean:
 	rm -rf $(GTK_DIR) $(TARGET).exe core.* *.html *.hhc *.hhp *.chm
 
