@@ -15,7 +15,11 @@ int regex_match(matched_subexps_t *msubs, const char *string,
 
   /* Don't allow refilling of already filled in structures.  */
   if ( msubs->is_dirty ) {
-    fprintf(stderr, "'" __func__ "' called on a matched_subexps_t that had already been filled in (by 'regex_match')\n");
+#ifdef _ISOC99_SOURCE
+    fprintf(stderr, "'%s' called on a matched_subexps_t that had already been filled in (by '%s')\n", __func__, __func__);
+#else
+    fprintf(stderr, "'regex_match' called on a matched_subexps_t that had already been filled in (by 'regex_match')\n");
+#endif
     exit(EXIT_FAILURE);
   }
   
@@ -33,8 +37,13 @@ int regex_match(matched_subexps_t *msubs, const char *string,
   /* Allocate memory for temporary storage of array of regmatch_t.  */
   if ( (subexps = calloc( (size_t) msubs->subexp_count, sizeof(regex_t))) 
        == NULL ) {
-    fprintf(stderr, "libc function 'calloc' failed in function '" __func__ 
-	    "'\n");
+#ifdef _ISOC99_SOURCE    
+    fprintf(stderr, "libc function 'calloc' failed in function '%s\n'",
+	    __func__);
+#else
+    fprintf(stderr, 
+	    "libc function 'calloc' failed in function 'regex_match'\n");
+#endif
     exit(EXIT_FAILURE);
   }
 
@@ -42,10 +51,14 @@ int regex_match(matched_subexps_t *msubs, const char *string,
   case 0:   	                /* Success.  */
     break;	
   case REG_ESPACE:		/* Not enough memory.  */
-    fprintf(stderr, "libc function 'regcomp' (called from function '" __func__ "') ran out of memory\n");
+    fprintf(stderr, "libc function 'regcomp' (called from function '%s') ran out of memory\n", __func__);
     exit(EXIT_FAILURE);
   default:			/* Malformed regex.  */
-    fprintf(stderr, "libc function 'regcomp' (called from function '" __func__ "') failed due to a badly formed regex argument: ");
+#ifdef _ISOC99_SOURCE
+    fprintf(stderr, "libc function 'regcomp' (called from function '%s') failed due to badly formed regex argument '%s':", __func__, regex);
+#else
+    fprintf(stderr, "libc function 'regcomp' (called from function 'regec_match') failed due to badly formed regex argument '%s':", regex);
+#endif
     /* This block prints the rest of the error message.  */
     {
       int err_code;		/* Error code returned by regcomp.  */
@@ -58,9 +71,7 @@ int regex_match(matched_subexps_t *msubs, const char *string,
       /* Funny way to get the length of the error message.  */
       err_len = regerror (err_code, &compiled_regex, NULL, 0);
       if ( (err_buf = (char *) malloc(err_len * sizeof(char))) == NULL ) {
-	fprintf(stderr, "\nlibc function 'malloc' failed in function '" 
-		__func__ "' while trying to get memory to report another " 
-		"error\n");
+	fprintf(stderr, "\nlibc function 'malloc' failed in function '%s' while trying to get memory to report another error\n", __func__);
 	exit(EXIT_FAILURE);
       }
       /* Get the actual error message.  */
@@ -75,7 +86,7 @@ int regex_match(matched_subexps_t *msubs, const char *string,
   case 0:			/* Success.  */
     break;
   case REG_ESPACE:		/* Not enouth memory.  */
-    fprintf(stderr, "libc function 'regexec' (called from function '" __func__ "') ran out of memory\n");
+    fprintf(stderr, "libc function 'regexec' (called from function '%s') ran out of memory\n", __func__);
     exit(EXIT_FAILURE);
   case REG_NOMATCH:		      /* Pattern didn't match.  */
     msubs->subexp_strings = NULL;     /* Set sentinel value.  */
@@ -87,8 +98,8 @@ int regex_match(matched_subexps_t *msubs, const char *string,
   /* Allocate memory for array of strings.  */
   if ( (msubs->subexp_strings = calloc( (size_t) msubs->subexp_count + 1, 
 				       sizeof(char *))) == NULL ) {
-    fprintf(stderr, "libc function 'calloc' failed in function '" __func__ 
-	    "'\n");
+    fprintf(stderr, "libc function 'calloc' failed in function '%s'\n",
+	    __func__);
     exit(EXIT_FAILURE);
   }
 
@@ -103,8 +114,8 @@ int regex_match(matched_subexps_t *msubs, const char *string,
       if ( (msubs->subexp_strings[idx] 
 	    = calloc( (size_t) (end_off - start_off + 1), sizeof(char))) 
 	   == NULL ) {
-	fprintf(stderr, "libc function 'calloc' failed in function '" __func__ 
-		"'\n");
+	fprintf(stderr, "libc function 'calloc' failed in function '%s'\n",
+		__func__);
 	exit(EXIT_FAILURE);
       }
     }
