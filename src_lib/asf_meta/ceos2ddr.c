@@ -60,7 +60,7 @@ void ceos2ddr(char *ceosIn,struct DDR *ddrOut,int *headerLen,int *lineLen)
 	struct IOF_VFDR iof;    /* Imagery Options File, from CEOS.*/
 	struct VFDRECV facdr;	/* Facility related data record   */
 	struct VMPDREC mpdr;    /* Map Projection Data Record */
-	meta_parameters *meta=meta_init(ceosIn);
+	meta_parameters *meta=meta_create(ceosIn);
 	int has_mpdr=0;
 	char dummy[255];
 	
