@@ -211,7 +211,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include <glib.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_spline.h>
-#include <gsl/gsl_multifit.h>
 #include <gsl/gsl_statistics_double.h>
 
 // Libraries developed at ASF.
