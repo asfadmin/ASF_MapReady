@@ -1,9 +1,7 @@
 #include "asf.h"
-#include "ddr.h"
 #include "asf_meta.h"
 #include "proj.h"
 
-double ex_pix_size(char *metaname); /*(proj_pix.c)*/
 
 extern double aLat,aLon;/*First lat/lon point in grid (for zone calculations)*/
 
@@ -27,7 +25,7 @@ typedef struct {
 	double minY,maxY;
 } window;/*Projection window*/
 
-window *getUserWindow(int pointOfInterest,char *win);/*Read N S E W window*/
+window *getUserWindow(int pointOfInterest,char *win);/*Read N W S E window*/
 
 /*Map-project the given output window, 
 taking min/max X->lon; min/max Y->lat*/
@@ -41,9 +39,11 @@ void window_expand(double pixSize,window *w);
 
 /******************* Metadata Routines (proj.c) **************/
 
-/*Write the given projection parameters into the given DDR*/
-void write_proj_ddr(double pixSize,const proj_prm *proj,const window *w,
-	struct DDR *ddr);
+/* DEPRICATED
+ **Write the given projection parameters into the given DDR*
+ *void write_proj_ddr(double pixSize,const proj_prm *proj,const window *w,
+ *	struct DDR *ddr);
+ */
 
 /*Write_proj_meta: updates the given meta_parameters structure
 to the new projection.  Returns 0 on error.*/
