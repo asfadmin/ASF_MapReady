@@ -48,7 +48,7 @@ static void bad_arg(char * option, char * arg)
 			option, arg);
 }
 
-static void pole_arg()
+static void pole_arg(void)
 {
     if (print_warn)
 	asfPrintWarning("Pole specified twice.\n"); 
@@ -67,7 +67,7 @@ static void missing_arg(const char * option)
 	    "Projection requires option that was not specified: %s\n", option);
 }
 
-void set_options_testing(int is_testing)
+static void set_options_testing(int is_testing)
 {
     print_warn = !is_testing;
 }
