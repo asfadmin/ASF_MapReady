@@ -24,18 +24,16 @@ setup_files_list(int argc, char *argv[])
   for (i = 1; i < argc; ++i)
   {
     char * data_file = argv[i];
-    char * meta_file = strdup(argv[i]);
+    char * meta_file = meta_file_name(data_file);
+
     if (strlen(meta_file) > 0)
     {
-      meta_file[strlen(meta_file) - 1] = 'L';
-
       gtk_list_store_append(list_store, &iter);
 
       gtk_list_store_set(list_store, &iter,
 		     0, data_file, 1, meta_file, 2, "", -1);
+      free(meta_file);
     }
-
-    free(meta_file);
   }
 
   files_list =
@@ -93,11 +91,11 @@ main(int argc, char **argv)
 
     /* select defaults for dropdowns */
     widget = glade_xml_get_widget (glade_xml, "input_data_type_combobox");
-    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), 3);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), INPUT_TYPE_AMP);
     widget = glade_xml_get_widget (glade_xml, "input_data_format_combobox");
-    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), 0);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), INPUT_FORMAT_CEOS_LEVEL1);
     widget = glade_xml_get_widget (glade_xml, "output_format_combobox");
-    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), 0);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), OUTPUT_FORMAT_JPEG);
 
     /* fire handlers for hiding/showing stuff */
     output_format_combobox_changed();
@@ -106,6 +104,13 @@ main(int argc, char **argv)
 
     /* build columns in the files section */
     setup_files_list(argc, argv);
+
+    /* allow multiple selects */
+    widget = glade_xml_get_widget(glade_xml, "input_file_selection");
+    gtk_file_selection_set_select_multiple(GTK_FILE_SELECTION(widget), TRUE);
+
+    /* drag-n-drop setup */
+    setup_dnd();
 
     /* Connect signal handlers.  */
     glade_xml_signal_autoconnect (glade_xml);

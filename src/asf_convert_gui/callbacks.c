@@ -35,16 +35,16 @@ input_data_format_combobox_changed()
 {
   GtkWidget *input_data_type_combobox,
     *input_data_type_label,
-    *input_data_format_combobox;
+    *input_data_format_combobox,
+    *latitude_label,
+    *latitude_low_label,
+    *latitude_low_spinbutton,
+    *latitude_hi_label,
+    *latitude_hi_spinbutton;
 
   gint input_data_format;
-  gboolean show;
-
-  input_data_type_combobox =
-    glade_xml_get_widget(glade_xml, "input_data_type_combobox");
-
-  input_data_type_label =
-    glade_xml_get_widget(glade_xml, "input_data_type_label");
+  gboolean show_data_type_combobox;
+  gboolean show_latitude_spinbuttons;
 
   input_data_format_combobox =
     glade_xml_get_widget(glade_xml, "input_data_format_combobox");
@@ -54,20 +54,54 @@ input_data_format_combobox_changed()
 
   switch (input_data_format)
   {
-    default:
-    case INPUT_FORMAT_CEOS:
+    case INPUT_FORMAT_CEOS_LEVEL0:
     case INPUT_FORMAT_STF:
+      show_data_type_combobox = TRUE;
+      show_latitude_spinbuttons = TRUE;
+      break;
+    default:
+    case INPUT_FORMAT_CEOS_LEVEL1:
     case INPUT_FORMAT_ESRI:
     case INPUT_FORMAT_ENVI:
-      show = TRUE;
+      show_data_type_combobox = TRUE;
+      show_latitude_spinbuttons = FALSE;
       break;
     case INPUT_FORMAT_ASF_INTERNAL:
-      show = FALSE;
+      show_data_type_combobox = FALSE;
+      show_latitude_spinbuttons = FALSE;
       break;
   }
 
-  gtk_widget_set_sensitive(input_data_type_combobox, show);
-  gtk_widget_set_sensitive(input_data_type_label, show);
+  input_data_type_combobox =
+    glade_xml_get_widget(glade_xml, "input_data_type_combobox");
+
+  input_data_type_label =
+    glade_xml_get_widget(glade_xml, "input_data_type_label");
+
+  gtk_widget_set_sensitive(input_data_type_combobox, show_data_type_combobox);
+  gtk_widget_set_sensitive(input_data_type_label, show_data_type_combobox);
+
+  latitude_label =
+    glade_xml_get_widget(glade_xml, "latitude_label");
+
+  latitude_low_label =
+    glade_xml_get_widget(glade_xml, "latitude_low_label");
+
+  latitude_low_spinbutton =
+    glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+
+  latitude_hi_label =
+    glade_xml_get_widget(glade_xml, "latitude_hi_label");
+
+  latitude_hi_spinbutton =
+    glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+
+  /* I bet I could have disabled the hbox instead ... */
+  gtk_widget_set_sensitive(latitude_label, show_latitude_spinbuttons);
+  gtk_widget_set_sensitive(latitude_low_label, show_latitude_spinbuttons);
+  gtk_widget_set_sensitive(latitude_low_spinbutton, show_latitude_spinbuttons);
+  gtk_widget_set_sensitive(latitude_hi_label, show_latitude_spinbuttons);
+  gtk_widget_set_sensitive(latitude_hi_spinbutton, show_latitude_spinbuttons);
 }
 
 void
@@ -148,6 +182,7 @@ on_add_button_clicked(GtkWidget *widget)
 {
   GtkWidget *input_entry;
   G_CONST_RETURN gchar *in_data;
+  gchar *data, *meta;
 
   input_entry = 
     glade_xml_get_widget(glade_xml, "input_entry");
@@ -170,12 +205,15 @@ on_add_button_clicked(GtkWidget *widget)
   }
 
   /* add file & meta to the list */
-  gchar * data = g_strdup(in_data);
-  gchar * meta = g_strdup(in_data);
-  meta[strlen(meta) - 1] = 'L'; /* gotta fix this */
+  data = g_strdup(in_data);
+  meta = meta_file_name(data);
 
-  add_to_files_list(data, meta);
-  g_free(meta);
+  if (strlen(meta) > 0)
+  {
+    add_to_files_list(data, meta);
+    g_free(meta);
+  }
+   
   g_free(data);
 }
 
@@ -200,21 +238,31 @@ on_input_file_selection_cancel_button_clicked(GtkWidget *widget)
 SIGNAL_CALLBACK void
 on_input_file_selection_ok_button_clicked(GtkWidget *widget)
 {
-  GtkWidget *file_selection_dialog =
+  GtkWidget *file_selection_dialog;
+  gchar **selections;
+
+  file_selection_dialog =
     glade_xml_get_widget(glade_xml, "input_file_selection");
 
-  gchar **selections = gtk_file_selection_get_selections(
+  selections = gtk_file_selection_get_selections(
 			 GTK_FILE_SELECTION(file_selection_dialog));
 
-  /* only allow selection of 1 file currently */
-  gchar *selected_file_name = selections[0];
+  gchar ** current = selections;
 
-  gchar * meta = g_strdup(selected_file_name);
-  meta[strlen(meta) - 1] = 'L'; /* gotta fix this */
+  while (*current)
+  {
+    gchar * meta = meta_file_name(*current);
 
-  add_to_files_list(selected_file_name, meta);
+    if (strlen(meta) > 0)
+    {
+      add_to_files_list(*current, meta);
+      g_free(meta);
+    }
 
-  g_free(meta);
+    ++current;
+  }
+
+  g_strfreev(selections);
   gtk_widget_hide(file_selection_dialog);
 }
 

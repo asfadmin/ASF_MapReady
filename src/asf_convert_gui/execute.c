@@ -19,12 +19,14 @@ on_execute_button_clicked (GtkWidget *button)
     *input_type_arg,
     *out_extension;
 
-  gchar convert_cmd[4096], size_arg[30];
+  gchar convert_cmd[4096], size_arg[32], latitude_arg[64];
 
   GtkTreeIter iter;
   gboolean valid,
     run_import,
-    run_export;
+    run_export,
+    include_latitude,
+    include_size;
 
   input_data_type_combobox = 
     glade_xml_get_widget(glade_xml, "input_data_type_combobox");
@@ -52,8 +54,11 @@ on_execute_button_clicked (GtkWidget *button)
 
   /* defaults */
   size_arg[0] = '\0';
+  latitude_arg[0] = '\0';
   run_import = TRUE;
   run_export = TRUE;
+  include_size = FALSE;
+  include_latitude = FALSE;
 
   switch (input_data_type)
     {
@@ -81,13 +86,19 @@ on_execute_button_clicked (GtkWidget *button)
 
   switch (input_data_format)
     {
+    case INPUT_FORMAT_CEOS_LEVEL0:
+      format_arg_to_import = "ceos";
+      include_latitude = TRUE;
+      break;
+
     default:
-    case INPUT_FORMAT_CEOS:
+    case INPUT_FORMAT_CEOS_LEVEL1:
       format_arg_to_import = "ceos";
       break;
 
     case INPUT_FORMAT_STF:
       format_arg_to_import = "stf";
+      include_latitude = TRUE;
       break;
 
     case INPUT_FORMAT_ESRI:
@@ -111,36 +122,62 @@ on_execute_button_clicked (GtkWidget *button)
     {
     case OUTPUT_FORMAT_ASF_INTERNAL:
       run_export = FALSE;
+      include_size = FALSE;
       break;
 
     case OUTPUT_FORMAT_CEOS:
     default:
       format_arg_to_export = "ceos";
       out_extension = "D";
+      include_size = FALSE;
       break;
 
     case OUTPUT_FORMAT_JPEG:
       format_arg_to_export = "jpeg";
       out_extension = "jpg";
-      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(scale_checkbutton)))
-	{
-	  gdouble d = 
-	    gtk_spin_button_get_value(
-	       GTK_SPIN_BUTTON(longest_dimension_spinbutton));
-	  sprintf(size_arg, "-size %d", (int)floor(d + 0.5));
-	}
+      include_size = TRUE;
       break;
 
     case OUTPUT_FORMAT_PPM:
       format_arg_to_export = "ppm";
       out_extension = "ppm";
+      include_size = TRUE;
       break;
 
     case OUTPUT_FORMAT_GEOTIFF:
       format_arg_to_export = "geotiff";
       out_extension = "tif";
+      include_size = FALSE;
       break;
     }
+
+  if (include_size)
+  {
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(scale_checkbutton)))
+    {
+      gdouble d = 
+	gtk_spin_button_get_value(
+		       GTK_SPIN_BUTTON(longest_dimension_spinbutton));
+      sprintf(size_arg, "-size %d", (int)floor(d + 0.5));
+    }
+  }
+
+  if (include_latitude)
+  {
+    gdouble low, hi;
+    GtkWidget *latitude_low_spinbutton, *latitude_hi_spinbutton;
+
+    latitude_low_spinbutton =
+      glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+
+    latitude_hi_spinbutton =
+      glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+
+    low = gtk_spin_button_get_value(GTK_SPIN_BUTTON(latitude_low_spinbutton));
+    hi = gtk_spin_button_get_value(GTK_SPIN_BUTTON(latitude_hi_spinbutton));
+
+    sprintf(latitude_arg, "-lat %.2f %.2f", low, hi);
+  }
 
   show_execute_button(FALSE);
   valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
@@ -165,15 +202,17 @@ on_execute_button_clicked (GtkWidget *button)
 
     if (run_import)
     {
-      snprintf(convert_cmd, 4096, "asf_import -%s -format %s %s %s %s",
+      snprintf(convert_cmd, 4096, 
+	       "asf_import -quiet -%s -format %s %s %s %s %s",
 	       input_type_arg,
 	       format_arg_to_import,
+	       latitude_arg,
 	       in_data,
 	       in_meta,
 	       basename);
-      /*printf("%s\n", convert_cmd);*/
+
       system(convert_cmd);
-     
+
       char * out_name_full = (char *)malloc(strlen(basename) + 10);
       sprintf(out_name_full, "%s.img", basename);
 
@@ -196,8 +235,9 @@ on_execute_button_clicked (GtkWidget *button)
 	       size_arg,
 	       basename,
 	       out_name_full);
-      /*printf("%s\n", convert_cmd);*/
+      
       system(convert_cmd);
+
       gtk_list_store_set(list_store, &iter, 2, out_name_full, -1);
       free(out_name_full);
     }

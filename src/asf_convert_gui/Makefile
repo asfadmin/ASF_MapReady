@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = asf_convert_gui
-SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c
+SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
