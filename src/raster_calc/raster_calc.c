@@ -86,6 +86,32 @@ BUGS:
 #define MAXIMGS 20
 #define VERSION 1.5
 
+static
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <file>] <out.ext> \"exp\" <inA.ext> [<inB.ext> [...]]\n",
+	name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <out.ext>        ASF tools format image with extension to be created.\n"
+	"   <exp>            Expression.\n"
+	"   <inA.ext>        First input image with extension.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   [<inB.ext>]      Optional second input image with extension.\n"
+	"   [...]            Optional additional images with extension.\n"
+	"   [-log <file>]    Option to have output written to a log file.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Creates an output ASF tools format image based upon the\n"
+	"   mathematical expression you give it.\n");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
+}
 
 int main(int argc,char **argv)
 {
@@ -182,30 +208,4 @@ int main(int argc,char **argv)
   StopWatchLog(fLog);
 
   exit(EXIT_SUCCESS);
-}
-
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-log <file>] <out.ext> \"exp\" <inA.ext> [<inB.ext> [...]]\n",
-	name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   <out.ext>        ASF tools format image with extension to be created.\n"
-	"   <exp>            Expression.\n"
-	"   <inA.ext>        First input image with extension.\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"   [<inB.ext>]      Optional second input image with extension.\n"
-	"   [...]            Optional additional images with extension.\n"
-	"   [-log <file>]    Option to have output written to a log file.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Creates an output ASF tools format image based upon the\n"
-	"   mathematical expression you give it.\n");
- printf("\n"
-	"Version %.2f, ASF SAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
 }
