@@ -108,11 +108,9 @@ OF ALASKA TECHNOLOGY DEVELOPMENT CORPORATION AT (907)451-0718.
 /* 
  *  Buffer Size
  */
-#define  BSZ     65536 
+#define BSZ      65536 
 #define VERSION  4.11
 
-/* function declaration */
-void usage(int);
 
 int main(int argc, char *argv[])
 {
@@ -152,7 +150,7 @@ int main(int argc, char *argv[])
   StartWatch(); 
   if (argc<4)
    {
-    if (my_pe == 0) usage(argc);
+    if (my_pe == 0) usage(argv[0]);
     MPI_Finalize();
     exit(1);
    }
@@ -323,18 +321,26 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-void usage(int argc)
+void usage(char *name)
 {
-  /* print usage if argc is less than 4 */ 
-    printf("\nigram:  create <a x b*> from two source files:\n");
-    printf("  <a>.cpx, <b>.cpx.\n");
-    printf("  this version uses stream-type i/o\n");
-    printf("  it creates two output files; amplitude and phase\n\n");
-    printf("\nUSAGE:\n\tigram <a> <b> <ab*> [-log <file>]\n\n");
-    printf("<a> means there are two files:  a.cpx and a.ddr\n");
-    printf("<b> means there are two files:  b.cpx and b.ddr\n");
-    printf("-log <file> allows the output to be written to a log file\n");
-    printf("Program will create <ab*>.amp and <ab*>.phase output files.\n\n");
-    printf("Version %.2f, ASF IFSAR Tools\n",VERSION);
+ printf("\n"
+	"USAGE:\n"
+	"   %s <a> <b> <ab*> [-log <file>]\n", name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <a>    input:  a.cpx and a.ddr\n"
+	"   <b>    input:  b.cpx and b.ddr\n"
+	"   <ab*>  output: ab*.amp, ab*.phase, and ab*.ddr\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -log <file> allows the output to be written to a log file\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Creates <a x b*> from two source files: <a>.cpx, <b>.cpx.\n"
+	"   This version uses stream-type i/o.  It creates two output\n"
+	"   files: amplitude (<ab*>.amp) and phase (<ab*>.phase).\n");
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
 }
 
