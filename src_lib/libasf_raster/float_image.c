@@ -1121,9 +1121,10 @@ void
 float_image_approximate_statistics (FloatImage *self, size_t stride, 
 				    float *mean, float *standard_deviation)
 {
-  // Rows and columns of sample that fit in image given stride stride.
-  size_t sample_columns = 1 + floor (self->size_x / stride);
-  size_t sample_rows = 1 + floor (self->size_y / stride);
+  // Rows and columns of samples that fit in image given stride
+  // stride.
+  size_t sample_columns = ceil (self->size_x / stride);
+  size_t sample_rows = ceil (self->size_y / stride);
   // Total number of samples.
   size_t sample_count = sample_columns * sample_rows;
 
