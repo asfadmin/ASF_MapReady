@@ -110,6 +110,31 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
 				  const char *file, off_t offset,
 				  float_image_byte_order_t byte_order);
 
+// Sample type of an image that is to be used to create a float_image
+// instance.  For example, floating point image can be created from
+// signed sixteen bit integer data.
+typedef enum {
+  FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER,
+} float_image_sample_type;
+
+// Form a new image by reading a data file full of sample_type
+// samples.  The integer sample type are converted to floating point
+// values by simple assignment (i.e. C assignment semantics apply,
+// which for the smaller integer types should mean than an exact
+// floating point representation is possible).  The other arguments
+// are like those of the new_from_file method.
+FloatImage *
+float_image_new_from_file_with_sample_type 
+  (ssize_t size_x, ssize_t size_y, const char *file, off_t offset,
+   float_image_byte_order_t byte_order, float_image_sample_type sample_type);
+
+// This method is to new_from_file_with_sample_type as
+// new_from_file_pointer is to new_from_file.
+FloatImage *
+float_image_new_from_file_pointer_with_sample_type
+  (ssize_t size_x, ssize_t size_y, FILE *file_pointer, off_t offset,
+   float_image_byte_order_t byte_order, float_image_sample_type sample_type);
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Getting and Setting Image Pixels and Regions
