@@ -180,6 +180,11 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 	    if (ISNAN(pps->albers.false_northing))
 		pps->albers.false_northing = 0;
 
+	    if (ISNAN(pps->albers.orig_latitude))
+		pps->albers.orig_latitude = meta->general->center_latitude;
+	    if (ISNAN(pps->albers.center_meridian))
+		pps->albers.center_meridian = meta->general->center_longitude;
+
 	    break;
 
 	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
@@ -188,6 +193,11 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 	    if (ISNAN(pps->lamaz.false_northing))
 		pps->lamaz.false_northing = 0;
 
+	    if (ISNAN(pps->lamaz.center_lat))
+		pps->lamaz.center_lat = meta->general->center_latitude;
+	    if (ISNAN(pps->lamaz.center_lon))
+		pps->lamaz.center_lon = meta->general->center_longitude;
+
 	    break;
 
 	case LAMBERT_CONFORMAL_CONIC:
@@ -195,6 +205,11 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 		pps->lamcc.false_easting = 0;
 	    if (ISNAN(pps->lamcc.false_northing))
 		pps->lamcc.false_northing = 0;
+
+	    if (ISNAN(pps->lamcc.lat0))
+		pps->lamcc.lat0 = meta->general->center_latitude;
+	    if (ISNAN(pps->lamcc.lon0))
+		pps->lamcc.lon0 = meta->general->center_longitude;
 
 	    break;
 
