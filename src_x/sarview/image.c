@@ -84,8 +84,8 @@ int image_loadCeos(char *fileName)
 	meta= (ceos->meta);
 
 /*Set the image size */
-	image.width  = meta->general->line_count;
-	image.height = meta->general->sample_count;
+	image.width  = meta->general->sample_count;
+	image.height = meta->general->line_count;
 
 	return 1;
 }
