@@ -401,22 +401,16 @@ main (int argc, char *argv[])
   }
   else if ( strcmp (command_line.format, "GEOTIFF") == 0 ||
     strcmp(command_line.format, "GEOTIF") == 0) {
-    char * name_with_ext = appendExt(command_line.output_name, ".tif");
-    strcpy(command_line.output_name, name_with_ext);
-    FREE(name_with_ext);
+    append_ext_if_needed(command_line.output_name, ".tif", ".tiff");
     format = GEOTIFF;
   }
   else if ( strcmp (command_line.format, "JPEG") == 0 ||
     strcmp(command_line.format, "JPG") == 0) {
-    char * name_with_ext = appendExt(command_line.output_name, ".jpg");
-    strcpy(command_line.output_name, name_with_ext);
-    FREE(name_with_ext);
+    append_ext_if_needed(command_line.output_name, ".jpg", ".jpeg");
     format = JPEG;
   }
   else if ( strcmp (command_line.format, "PPM") == 0 ) {
-    char * name_with_ext = appendExt(command_line.output_name, ".ppm");
-    strcpy(command_line.output_name, name_with_ext);
-    FREE(name_with_ext);
+    append_ext_if_needed(command_line.output_name, ".ppm", NULL);
     format = PPM;
   }
   else {
