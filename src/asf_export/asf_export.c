@@ -1,5 +1,91 @@
-/* Export an image from the ASF tools internal format to one of a variety
-   of supported external formats.  */
+/********************************************************************************
+<name>
+   asf_export
+</name>
+
+<synopsis>
+   asf_export [ -f <format> ] [ -s <size> ] [ -o <outFile> ] <inFile>
+</synopsis>
+
+<description>
+   This program ingests ASF internal format data and exports said data to
+   a number of output formats. If the input data was geocoded and the ouput
+   format supports geocoding, that information will be included.
+</description>
+
+<input>
+   This must be an ASF internal format data file.
+</input>
+
+<output>
+   The converted data in the output file. This file can be specified explicitly
+   with the -o option, or the base name from the input file will be used with an
+   appropriate extension.
+</output>
+
+<options>
+   -f             Format to export to. Must be one of the following:
+                      CEOS, envi, esri, geotiff, jpeg, png, ppm
+   -s             Scale image so that its largest dimension is, at most, size.
+   -o             Name of the output file.
+</options>
+
+<limitations>
+   Currently only supports ingest of ASF format floating point data.
+   Geotiffs will not be scaled.
+</limitations>
+
+<see_also>
+   asf_convert, asf_import
+</see_also>
+
+<copyright>
+*******************************************************************************
+*                                                                             *
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* Redistribution and use in source and binary forms, with or without          *
+* modification, are permitted provided that the following conditions are met: *
+*                                                                             *
+*    * Redistributions of source code must retain the above copyright notice, *
+*      this list of conditions and the following disclaimer.                  *
+*    * Redistributions in binary form must reproduce the above copyright      *
+*      notice, this list of conditions and the following disclaimer in the    *
+*      documentation and/or other materials provided with the distribution.   *
+*    * Neither the name of the Geophysical Institute nor the names of its     *
+*      contributors may be used to endorse or promote products derived from   *
+*      this software without specific prior written permission.               *
+*                                                                             *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" *
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE   *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE  *
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE    *
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR         *
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF        *
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS    *
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN     *
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)     *
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE  *
+* POSSIBILITY OF SUCH DAMAGE.                                                 *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*       Alaska Satellite Facility                                             *
+*       Geophysical Institute                   http://www.asf.alaska.edu     *
+*       University of Alaska Fairbanks          uso@asf.alaska.edu            *
+*       P.O. Box 757320                                                       *
+*       Fairbanks, AK 99775-7320                                              *
+*                                                                             *
+*******************************************************************************
+</copyright>
+
+PROGRAM HISTORY:
+	VERS:   DATE:   AUTHOR:
+	----------------------------------------------------------------------
+	?
+
+*********************************************************************************/
 
 #include <assert.h>
 #include <ctype.h>

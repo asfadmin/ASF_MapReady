@@ -1,50 +1,54 @@
 /*************************************************************************
-NAME:
-    import2asf
+<name>
+    asf_import
+</name>
 
-SYNOPSIS:
+<synopsis>
     import2asf [-amplitude] [-sigma] [-gamma] [-beta] [-power]
                [-log <file>] [-quiet] [-lat <lower> <upper>]
                <CEOS|STF|ESRI|ENVI> <inData> <inMeta> <outBase>
+</synopsis>
 
-DESCRIPTION:
-    Ingests the complete variety of CEOS data, STF data as well as the
-    external ESRI and ENVI data into ASF internal format
+<description>
+    Ingests all varieties of CEOS and STF data formats as well as the external
+    ESRI and ENVI data formats and outputs ASF internal format metadata
+    and data files.
+</description>
 
-DESCRIPTION:
-    Ingests the complete variety of CEOS data into ASF tools internal
-    format
+<input>
+   The format of the input file must be specified as CEOS, STF, ESRI, or ENVI.
+   The data file name must be provided seperately from the meta file name.
+   The output file provided should only be a base name, by which the created
+   files will be named, with appropriate extensions.
+   
+</input>
 
-EXTERNAL ASSOCIATES:
+<output>
+   Outputs metadata and data files with the user-provided base name and
+   appropriate extensions.
+</output>
 
-FILE REFERENCES:
+<options>
+   -amplitude     ?
+   -sigma         ?
+   -gamma         ?
+   -beta          ?
+   -power         ?
+   -log           ?
+   -quiet         ?
+   -lat           ?
+</options>
 
-PROGRAM HISTORY:
-    VERS:   DATE:  AUTHOR:     PURPOSE:
-    ---------------------------------------------------------------
-    0.1    12/03   R. Gens     Combined sarin, calibrate, trim_slc and
-                                ceos2raw into one program
-    0.2     4/04   P. Denny    Allowed for RSI naming scheme as well as
-                                our typical CEOS naming scheme
-    0.3     5/04   R. Gens     Added stf2raw and external ESRI and ENVI
-                                formats; renamed the tool to import2asf
-    0.4     5/04   J. Nicoll   Fixed sign issue when converting 8 bit
-                                data to calibrated amplitude data
-    0.41    5/04   P. Denny    Made format of input data a required
-                                argument (CEOS,STF,ESRI,ENVI)
-    0.5     5/04   P. Denny    Added hidden option to write out sprocket
-                                style metadata.
+<limitations>
+   None known.
+</limitations>
 
-HARDWARE/SOFTWARE LIMITATIONS:
+<see_also>
+   asf_convert, asf_export
+</see_also>
 
-ALGORITHM DESCRIPTION:
-
-ALGORITHM REFERENCES:
-
-BUGS:
-
-*************************************************************************/
-/******************************************************************************
+<copyright>
+*******************************************************************************
 *                                                                             *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
@@ -81,7 +85,27 @@ BUGS:
 *       P.O. Box 757320                                                       *
 *       Fairbanks, AK 99775-7320                                              *
 *                                                                             *
-******************************************************************************/
+*******************************************************************************
+</copyright>
+
+PROGRAM HISTORY:
+    VERS:   DATE:  AUTHOR:     PURPOSE:
+    ---------------------------------------------------------------
+    0.1    12/03   R. Gens     Combined sarin, calibrate, trim_slc and
+                                ceos2raw into one program
+    0.2     4/04   P. Denny    Allowed for RSI naming scheme as well as
+                                our typical CEOS naming scheme
+    0.3     5/04   R. Gens     Added stf2raw and external ESRI and ENVI
+                                formats; renamed the tool to import2asf
+    0.4     5/04   J. Nicoll   Fixed sign issue when converting 8 bit
+                                data to calibrated amplitude data
+    0.41    5/04   P. Denny    Made format of input data a required
+                                argument (CEOS,STF,ESRI,ENVI)
+    0.5     5/04   P. Denny    Added hidden option to write out sprocket
+                                style metadata.
+
+*******************************************************************************/
+
 
 #include "asf.h"
 #include "asf_endian.h"

@@ -54,7 +54,7 @@
 </options>
 
 <limitations>
-   None.
+   None known.
 </limitations>
 
 <see_also>
@@ -112,7 +112,7 @@ PROGRAM HISTORY:
         1.4     06/04   R. Gens, renamed to asf_convert, added alternative
                                  command line
 
-*********************************************************************************/
+*******************************************************************************/
 
 #include "asf.h"
 #include "ceos.h"
