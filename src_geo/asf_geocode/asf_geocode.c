@@ -929,7 +929,7 @@ main (int argc, char **argv)
     asfLineMeter( oiy, oiy_max );
   }
 
-  asfPrintStatus ("Done resampling image.\n\n");
+  asfPrintStatus ("\nDone resampling image.\n\n");
 
   float_image_free (iim);
 
