@@ -16,7 +16,7 @@
 START_TEST(test_meta_read_new_format)
 {
   meta_parameters *meta = meta_read("test_file_new_style.meta");
-  
+
   /* Check a random fields to make sure things are working.  */
   fail_unless(meta->general->orbit == 123, 
 	      "orbit field from general block not read correctly");
@@ -45,11 +45,11 @@ END_TEST
 START_TEST(test_meta_read_write_new_format)
 {
   /* Get something to write.  */
-  meta_parameters *meta_in = meta_read("test_file_new_style.meta");
+  meta_parameters *meta = meta_read("test_file_new_style.meta");
   meta_parameters *meta_reread;	/* For re-read structure.  */
   
   meta_write(meta, "test_output_file.meta");
-  meta_read(meta_reread, "test_output_file.meta");
+  meta_reread = meta_read("test_output_file.meta");
   
   /* Test a few random or not-so-random fields for equality.  */
   fail_unless(!strcmp(meta->general->sensor, meta_reread->general->sensor),
@@ -58,7 +58,8 @@ START_TEST(test_meta_read_write_new_format)
 	      "projection->type fields from original and written-then-reread metadata structures not equal");
   fail_unless(UNIT_TESTS_FLOAT_COMPARE(meta->projection->param.atct.rlocal,
 				       meta_reread->projection
-				                    ->param.atct.rlocal));
+				                    ->param.atct.rlocal),
+	      "projection->param.atct.rlocal fields from original and written-then-reread metadata structures not equal");
 }
 END_TEST
 
@@ -71,6 +72,7 @@ Suite *asf_meta_suite(void)
   suite_add_tcase(s, tc_core);
   
   tcase_add_test(tc_core, test_meta_read_new_format);
+  tcase_add_test(tc_core, test_meta_read_write_new_format);
 
   return s;
 }
