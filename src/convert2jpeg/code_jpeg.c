@@ -1,15 +1,7 @@
-/****************************************************************
-NAME: ifm2ppm
-
-SYNOPSIS:  ifm2ppm [crap] infile outfile
-
-****************************************************************/
 #include "asf.h"
 #include "ifm.h"
 #include "ifm2ppm.h"
-
 #include "jpeglib.h"
-/* global & local function declaration */
 
 void write_image(FILE *fout,Uchar *buf,int wid,int len)
 {

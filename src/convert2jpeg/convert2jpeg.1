@@ -1,16 +1,16 @@
-.TH las2jpeg 1 "December 2003"
+.TH convert2jpeg 1 "December 2003"
 
 .SH NAME:
-las2jpeg \- Convert LAS byte images to JPEG format.
+convert2jpeg \- Convert ASF tools byte images to JPEG format.
 
 .SH SYNOPSIS:
-.B "las2jpeg"
+.B "convert2jpeg"
 [ options ]
 .BI "infile outfile"
 
 .SH DESCRIPTION
-.B "Las2jpeg"
-converts a 1- or 3- banded LAS byte image into a JPEG image using either
+.B "convert2jpeg"
+converts a 1- or 3- banded ASF tools byte image into a JPEG image using either
 built-in palette files or a user specified palette file. JPEG images are usually
 much smaller, and can be read in many other software packages.
 
@@ -18,7 +18,7 @@ much smaller, and can be read in many other software packages.
 .TP 8
 .B "-mask"
 Input file is an unwrapping mask file. Escher generates this file after it
-finishes unwrapping the phase file. las2jpeg converts the unwrapping bits to
+finishes unwrapping the phase file. convert2jpeg converts the unwrapping bits to
 certain colors: white for non-integrated, black for grounding, purple for
 branch cut, red and green for singularities, and yellow for integrated. 
 .TP 8
@@ -33,19 +33,19 @@ that are not specified will be generated so that one color will run into the
 next. 
 .TP 8
 .B "infile"
-Input file, a LAS 1- or 3- banded byte image. 
+Input file, an ASF tools 1- or 3- banded byte image. 
 .TP 8
 .B "outfile"
 Output JPEG/JFIF image.
 
 .SH EXAMPLES:
 .ce 1
-example% las2jpeg e1amp.img amp.jpg 
+example% convert2jpeg e1amp.img amp.jpg 
 .PP
 Create a JPEG image from the given amplitude image.
 .PP
 .ce 1
-example% las2jpeg -pal revgrey.pal ml12amp.byte ml12amp.jpg
+example% convert2jpeg -pal revgrey.pal ml12amp.byte ml12amp.jpg
 .PP
 Colorize a byte version of a multilooked amplitude file using the palette in
 revgrey.pal. In this case, revgrey.pal will apply an inverse greyscale to the
@@ -55,11 +55,12 @@ image. The palette file in this case would look like the following:
 .br
 255    0      0       0
 .PP
-las2jpeg will automatically calculate the inbetween values.
+convert2jpeg will automatically calculate the inbetween values.
 
 .SH SEE ALSO:
-.BR las2ppm (1), 
-.BR ml (1)
+.BR convert2ppm (1), 
+.BR ml (1),
+.BR escher (1)
 
 .SH HARDWARE/SOFTWARE LIMITATIONS:
 None known.
@@ -68,11 +69,13 @@ None known.
 None known.
 
 .SH AUTHOR:
-\tOrion Lawlor
+Orion Lawlor,  3/1999
 .br
-\tUses libjpeg routines from IJG (the Independent JPEG Group).
+Patrick Denny, 2/2004
+.br
+Uses libjpeg routines from IJG (the Independent JPEG Group).
 
 .SH CONTACT:
-\tapd@asf.alaska.edu
+uso@asf.alaska.edu
 .br
-\thttp://www.asf.alaska.edu/apd
+http://www.asf.alaska.edu
