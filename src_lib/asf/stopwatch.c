@@ -22,32 +22,28 @@ SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY:
      1.0 - Mike Shindle    4/96  Original Creation
 ****************************************************************/
+#include <assert.h>
+#include <time.h>
+
 #include "asf.h"
 
 /*#ifdef __MWERKS__ */
-#include <time.h>
+
 	clock_t startTime;
 
 	void StartWatch(void)
 	{
 	  startTime=clock();
-	  if ( startTime == (clock_t) -1 ) {
-	    bail ("clock() returned (clock_t) -1 in file " __FILE__ 
-		  ", line number %d\n", __LINE__ - 2);
-	  }
+	  assert (startTime != (clock_t) -1);
 	}
 
 	void StopWatch(void)
 	{
-	  float elapsed;
 	  clock_t stopTime=clock();
-	  if ( stopTime == (clock_t) -1 ) {
-	    bail ("clock() returned (clock_t) -1 in file " __FILE__ 
-		  ", line number %d\n", __LINE__ - 2);
-	  }
-	  elapsed = stopTime-startTime;
+	  assert (stopTime != (clock_t) -1);
+	  float elapsed = stopTime-startTime;
 	  elapsed /= CLOCKS_PER_SEC;
-	  printf("Total system clock time = %f seconds.\n\n",elapsed);
+	  printf("Total CPU time = %f seconds.\n\n",elapsed);
 	}
 
 	void StartWatchLog(FILE *fLog)
@@ -56,10 +52,7 @@ PROGRAM HISTORY:
 	  char *c;
 
 	  startTime=clock();
-	  if ( startTime == (clock_t) -1 ) {
-	    bail ("clock() returned (clock_t) -1 in file " __FILE__ 
-		  ", line number %d\n", __LINE__ - 2);
-	  }
+	  assert (startTime != (clock_t) -1);
 
 	  t = time(NULL);
 	  c = asctime(localtime(&t));
@@ -68,15 +61,11 @@ PROGRAM HISTORY:
 
 	void StopWatchLog(FILE *fLog)
 	{
-	  float elapsed;
 	  clock_t stopTime=clock();
-	  if ( stopTime == (clock_t) -1 ) {
-	    bail ("clock() returned (clock_t) -1 in file " __FILE__ 
-		  ", line number %d\n", __LINE__ - 2);
-	  }
-	  elapsed = stopTime-startTime;
+	  assert (stopTime != (clock_t) -1);
+	  float elapsed = stopTime-startTime;
 	  elapsed /= CLOCKS_PER_SEC;
-	  fprintf(fLog, "Total CPU clock time = %f seconds.\n\n",elapsed);
+	  fprintf(fLog, "Total CPU time = %f seconds.\n\n",elapsed);
 	}
 
 /*
