@@ -1,38 +1,32 @@
 /******************************************************************************
 NAME: refine_offset
 
-SYNOPSIS:  refine_offset metadata ddr_file [ DJ# | locSpec ] y x
+SYNOPSIS:  refine_offset <metadata> <DJ# | locSpec> <y> <x>
                                 [ [ DJ# | locSpec ] y x ] [...]
 DESCRIPTION:
-    Refine_offset takes as input a set of points in a SAR image
-    whose latitude and longitude are known.  Using this, the
-    program refines the slant range and timing offset in
-    the .meta file, which improves the geolocation of the image.
-    (for example, in demIFM(1) or geocode(1))
+    Refine_offset takes as input a set of points in a SAR image whose latitude
+    and longitude are known.  Using this, the program refines the slant range
+    and timing offset in the .meta file, which improves the geolocation of the
+    image. (for example, in demIFM(1) or geocode(1))
 
-          We have to do this because the CEOS timing information is
-    inaccurate, often by a large fraction of a second, in the
-    along-track (azimuth) direction.
+    We have to do this because the CEOS timing information is inaccurate, often
+    by a large fraction of a second, in the along-track (azimuth) direction.
 
-        The timing and slant range compensations are written to
-    the the given .meta file as "timeShift" and "slantShift",
-    in seconds and meters.  Typically, the slant range values
-    are very good, and the shift is only a few dozen meters.
-    The timing offset is less predictable-- this value is
-    nominally about 0.25 seconds (half the synthetic aperture
-    time), but can vary by as much as a half second
-    (corresponding to 3 kilometers of geolocation error).
+    The timing and slant range compensations are written to the the given .meta
+    file as "timeShift" and "slantShift", in seconds and meters. Typically,
+    the slant range values are very good, and the shift is only a few dozen
+    meters. The timing offset is less predictable-- this value is nominally
+    about 0.25 seconds (half the synthetic aperture time), but can vary by as
+    much as a half second (corresponding to 3 kilometers of geolocation error).
 
-        When the image point and latitude and longitude are
-    accurate, you can expect sub-pixel geolocation accuracy
-    (<10m).  If you pick the point incorrectly, or mis-type
-    the latitude or longitude, the geolocations of the image
-    will be correspondingly shifted.
+    When the image point and latitude and longitude are accurate, you can
+    expect sub-pixel geolocation accuracy (<10m).  If you pick the point
+    incorrectly, or mis-type the latitude or longitude, the geolocations of the
+    image will be correspondingly shifted.
 
-        It is not necessary, but may help to enter multiple
-    points.  Using multiple points helps cancel out any
-    random error that may be present in the latitudes and
-    longitudes, or uncertainty in location.
+    It is not necessary, but may help to enter multiple points. Using multiple
+    points helps cancel out any random error that may be present in the
+    latitudes and longitudes, or uncertainty in location.
 
 EXTERNAL ASSOCIATES:
     NAME:               USAGE:
@@ -51,7 +45,9 @@ PROGRAM HISTORY:
     1.3	   6/98   O. Lawlor	Corrected typo in list of DJs.
     2.0	   6/98   O. Lawlor	Added non-changing version, check_offset
     2.1	   7/98   O. Lawlor	Added multiple points, across-track offset.
-    2.2	   6/99   O. Lawlor	Added the DJR array locations.	
+    2.2	   6/99   O. Lawlor	Added the DJR array locations
+    2.5   12/03   P. Denny      Standardize command line parsing & usage
+                                  Use meta 1.1+ instead of meta/ddr
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -97,30 +93,27 @@ BUGS:
 
 #include "asf.h"
 #include <unistd.h>
-#include "ddr.h"
-#include "geolocate.h"
 #include "asf_meta.h"
 #include "offset.h"
 
-#define VERSION 2.2
+#define VERSION 2.5
 
 void usage(char *name);
 
 #include "corner_reflectors.list"
 
-/*
-	Insert_time_offset searches the given AISP input
-file for the state vector timing offset, then writes the
-given timing and across-track offset to it.
-*/
 
-void insert_time_offset(double t_offset,double x_offset,char *ceos)
+/* insert_time_offset:
+ * searches the given AISP input file for the state vector timing offset, then
+ * writes the given timing and across-track offset to it. */
+void insert_time_offset(double t_offset,double x_offset,char *metaName)
 {
 	meta_parameters *meta;
-	meta=meta_init(ceos);
-	meta->geo->timeShift=t_offset;
-	meta->geo->slantShift=x_offset;
-	meta_write(meta,ceos);
+	meta = meta_read(metaName);
+	meta->sar->time_shift=t_offset;
+	meta->sar->slant_shift=x_offset;
+	meta_write(meta,metaName);
+	meta_free(meta);
 }
 
 
@@ -130,26 +123,23 @@ int main(int argc,char *argv[])
 	int argStart;
 	meta_parameters *meta;
 	double t_offset,x_offset;
-	char *ceos,*ddrFile;
-	struct DDR ddr;
+	char *metaName;
 	void *offset;
-/*Parse initial Command Line Arguments, add points to */
-	if (argc<6) usage(argv[0]);
-	ceos=argv[1];
-	ddrFile=argv[2];
+
+/*Parse initial Command Line Argument, add points to */
+	if (argc<5) usage(argv[0]);
+	metaName=argv[1];
 	
 /*Extract parameter structures from file.*/
-	c_getddr(ddrFile,&ddr);
-	meta=meta_init(ceos);
-	offset=init_offset(ceos,meta,&ddr);
+	meta=meta_read(metaName);
+	offset=init_offset(metaName,meta);
 
 /*Add each point to offset structure.*/
-	argStart=3;
+	argStart=2;
 	while (argStart+3<=argc)
 	{
 		double x,y,lat,lon,elev;
-		if (3!=sscanf(argv[argStart],"%lf/%lf/%lf",
-				&lat,&lon,&elev))
+		if (3!=sscanf(argv[argStart],"%lf/%lf/%lf",&lat,&lon,&elev))
 		{/*Must be a corner reflector: search djArr for it.*/
 			int djNum;
 			char *inDj=argv[argStart];
@@ -182,10 +172,12 @@ int main(int argc,char *argv[])
 /*Dump timing offset to file.*/
 #ifndef CHECK_OFFSET
 	if (t_offset==t_offset) /*"Self ==" actually fails for NAN's.*/
-		insert_time_offset(t_offset,x_offset,ceos);
+		insert_time_offset(t_offset,x_offset,metaName);
 	else
 		printf("Error: Timing offset is not a number!!\n");
 #endif
+
+	meta_free(meta);
 
 	return (0);
 }
@@ -193,24 +185,25 @@ int main(int argc,char *argv[])
 void usage(char *name)
 {
  printf("\n"
-	"Usage: %s metadata ddr_file  [ DJ# | locSpec ] y x \\\n"
-	"                       [ [ DJ# | locSpec ] y x ] \\\n"
-	"                       [ ... ]\n"
-	"\n"
-	"     metdata: image metadata, either .meta or .L\n"
-	"     ddr_file: Image from which the coordinates were taken\n"
-	"     DJ#: the name of a DJ-series corner reflector (e.g. 'DJ3')\n"
-	"     locSpec: a latitude, longitude, and elevation (meters),\n"
-	"             as lat/lon/elev (e.g. '65.23/-145.72/0.0')\n"
-	"     y: line position of point (pixels)\n"
-	"     x: sample position of point (pixels)\n"
-	"\n"
-	"Refine_offset takes as input a set of points in a SAR image \n"
-	"whose latitudes and longitudes are known.  Using this, the \n"
-	"program refines the timing offset estimate in the .in file,\n"
-	"as well as an across-track offset estimate,\n"
-	"which improves the geolocation of the image.\n",
+	"USAGE:\n"
+	"   %s <metadata> <DJ#|locSpec> <y> <x> [<DJ#|locSpec> <y> <x>] [...]\n",
 	name);
- printf("\nVersion %.2f, ASF SAR Tools\n\n", VERSION);
- exit(1);
+ printf("\n"
+	"ARGUMENTS:\n"
+	"   metdata   Image metadata\n"
+	"   DJ#       The name of a DJ-series corner reflector (e.g. 'DJ3')\n"
+	"   locSpec   A latitude, longitude, and elevation (meters),\n"
+	"               as lat/lon/elev (e.g. '65.23/-145.72/0.0')\n"
+	"   y         Line position of point (pixels)\n"
+	"   x         Sample position of point (pixels)\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Takes as input a set of points in a SAR image whose latitudes and longitudes\n"
+	"   are known.  Using this, the program refines the timing offset estimate in\n"
+	"   the .in file, as well as an across-track offset estimate, which improves the\n"
+	"   geolocation of the image.\n");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n", VERSION);
+ exit(EXIT_FAILURE);
 }
