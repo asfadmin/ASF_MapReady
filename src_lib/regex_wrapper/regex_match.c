@@ -57,7 +57,7 @@ int regex_match(matched_subexps_t *msubs, const char *string,
 #ifdef _ISOC99_SOURCE
     fprintf(stderr, "libc function 'regcomp' (called from function '%s') failed due to badly formed regex argument '%s':", __func__, regex);
 #else
-    fprintf(stderr, "libc function 'regcomp' (called from function 'regec_match') failed due to badly formed regex argument '%s':", regex);
+    fprintf(stderr, "libc function 'regcomp' (called from function 'regex_match') failed due to badly formed regex argument '%s':", regex);
 #endif
     /* This block prints the rest of the error message.  */
     {
