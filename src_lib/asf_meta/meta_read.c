@@ -262,8 +262,8 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	general->re_minor = (meta->projection) ? meta->projection->re_minor : 6356754.9;
 	
 /* Fields that cannot be filled from the old structures */
-	general->frame            = -1;
-	general->band_number      = -1;
+	general->frame            = 0;
+	general->band_number      = 0;
 	general->orbit_direction  = '\0';
 	general->center_latitude  = NAN;
 	general->center_longitude = NAN;
