@@ -451,6 +451,14 @@ if ( -e $graph_cache_file ) {
 if ( %pkg_independencies ) {
     &babble("\nValidating and applying independencies...\n");
     foreach my $pkg ( keys %pkg_independencies ) {
+        # If in single package  mode...
+        if ( $p{'package'} ) {
+	    # Don't try to apply independencies except to the package
+	    # being dealt with
+	    unless ( $pkg eq $p{'package'} ) {
+		next;
+	    }
+	}
 	unless ( exists($pkg_deps{$pkg}) ) {
 	    die "$progname: unknown package name '$pkg' in independency\n";
 	}
@@ -462,6 +470,7 @@ if ( %pkg_independencies ) {
             foreach my $dependency ( @{$pkg_deps{$pkg}} ) {
                 unless ( $dependency eq $other_pkg ) { 
                     push(@new_deps, $dependency);
+		    print wrap('', '', "\nIgnoring declared independency of $pkg on $other_pkg, since no dependency was believed to exist anyway...\n");
                 } else {
 		    print wrap('', '', "\nRemoving detected direct dependency of $pkg on $other_pkg from dependency graph due to declared independency...\n");
 		}
