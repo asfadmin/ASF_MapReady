@@ -49,11 +49,12 @@ void acpatch(patch *p,const satellite *s)
 {
 #define sinCosTableEntries 4096
 #define sinCosTableBitmask 0x0fff
+
+
 	static FCMPLX *sinCosTable=NULL;
 	float sinCosTableConv=1.0/pi2*sinCosTableEntries;
 #define sinCos(phase) (sinCosTable[((int)((phase)*sinCosTableConv))&sinCosTableBitmask])
 
-	FILE *dbg_az_time=NULL,*dbg_az_fft=NULL;
 	float  r, y, f0, f_rate;
 	int    np/*, ind*/;
 	FCMPLX *ref=(FCMPLX *)MALLOC(sizeof(FCMPLX)*p->n_az);
@@ -64,13 +65,12 @@ void acpatch(patch *p,const satellite *s)
 	FCMPLX cZero=Czero();
 	float pixel2time=1.0/s->prf;
 	float *win;
+	patch *d_t=NULL, *d_f=NULL, *d_x=NULL;
 	/*float alpha;*/
 
-	if (s->debugFlag & 64)
-	{
-		dbg_az_fft=fopenImage("az_fft.cpx","wb");
-		dbg_az_time=fopenImage("az_time.cpx","wb");
-	}
+	if (s->debugFlag & AZ_REF_F) d_f=copyPatch(p);
+	if (s->debugFlag & AZ_REF_T) d_t=copyPatch(p);
+	if (s->debugFlag & AZ_X_F) d_x=copyPatch(p);
 	
 	if (sinCosTable==NULL)
 	{
@@ -93,7 +93,7 @@ void acpatch(patch *p,const satellite *s)
 		f_rate=getDopplerRate(r,f0,p->g);
 		np = (int)(r*s->refPerRange)/2;
 
-		/*printf("Col %d:  f0=%f, f_rate=%f\n",lineNo,f0,f_rate);*/
+// printf("Col %d:  f0=%f, f_rate=%f\n",lineNo,f0,f_rate);
 
 		/*Compute the pixel shift for this line.*/
 		/*az_resamp=Pixel shift caused by resampling function*/
@@ -109,6 +109,8 @@ void acpatch(patch *p,const satellite *s)
 		ref[0] = sinCos(phase);
 		
 		/* Check to see if we are going to truncate the bandwidth in azimuth */
+/* Jeremy Made a big change here!
+		s->pctbwaz=0.5; */
 		if (s->pctbwaz!=0)
 			np=np*(1-s->pctbwaz);
 
@@ -180,40 +182,46 @@ void acpatch(patch *p,const satellite *s)
                                 free(win);
                 } */
 
-		if (dbg_az_time)
-			fwrite(ref,sizeof(FCMPLX),p->n_az,dbg_az_time);
+		if (d_t) {for (k = 0; k<p->n_az; k++) d_t->trans[lineOffset+k] = ref[k];}
 		
 		/* forward transform the reference */
 		cfft1d(p->n_az,ref,-1);
 		
-		if (dbg_az_fft)
-			fwrite(ref,sizeof(FCMPLX),p->n_az,dbg_az_fft);
+		if (d_f) {for (k = 0; k<p->n_az; k++) d_f->trans[lineOffset+k] = ref[k];}
 		
 		/* multiply the reference by the data */
-		n = NINT(f0/s->prf);
-		nf0 = p->n_az*(f0-n*s->prf)/s->prf;
-		nfc = nf0 + p->n_az/2;
-		if (nfc > p->n_az) nfc = nfc - p->n_az;
-		phase = - y * nf0;
-		for (k = 0; k<nfc; k++)
+		if (!(s->debugFlag & NO_AZIMUTH))
 		{
-			p->trans[lineOffset+k] =
-			    Cmul(Cmul(p->trans[lineOffset+k],Cconj(ref[k])),sinCos(phase));
-			phase += y;
-		} 
-		phase = - y * nf0;
-		for (k = p->n_az-1; k>= nfc; k--)
-		{
-			p->trans[lineOffset+k]  =
-			    Cmul(Cmul(p->trans[lineOffset+k],Cconj(ref[k])),sinCos(phase));
-			phase -= y;
+	
+			n = NINT(f0/s->prf);
+			nf0 = p->n_az*(f0-n*s->prf)/s->prf;
+			nfc = nf0 + p->n_az/2;
+			if (nfc > p->n_az) nfc = nfc - p->n_az;
+			phase = - y * nf0;
+			for (k = 0; k<nfc; k++)
+			{
+				p->trans[lineOffset+k] =
+				    Cmul(Cmul(p->trans[lineOffset+k],Cconj(ref[k])),sinCos(phase));
+				phase += y;
+			} 
+			phase = - y * nf0;
+			for (k = p->n_az-1; k>= nfc; k--)
+			{
+				p->trans[lineOffset+k]  =
+			    	Cmul(Cmul(p->trans[lineOffset+k],Cconj(ref[k])),sinCos(phase));
+				phase -= y;
+			}
 		}
-
+		if (d_x) {for (k = 0; k<p->n_az; k++) d_x->trans[lineOffset+k] = p->trans[lineOffset+k];}
 		/* inverse transform the product */
 		cfft1d(p->n_az,&(p->trans[lineOffset]),1);
 
 		if (!quietflag && (lineNo%1024 == 0)) printf("   ...Processing Line %i\n",lineNo);
 	}
 	FREE((void *)ref);
+	if (d_t) {debugWritePatch(d_t,"az_ref_t"); destroyPatch(d_t);}
+	if (d_f) {debugWritePatch(d_f,"az_ref_f"); destroyPatch(d_f);}
+	if (d_x) {debugWritePatch(d_x,"az_X_f"); destroyPatch(d_x);}
+	if (s->debugFlag & AZ_X_T) debugWritePatch(p,"az_X_t");
 }
 
