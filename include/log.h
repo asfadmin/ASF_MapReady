@@ -12,6 +12,5 @@ extern char logbuf[4096];   /* buffer for log file output */
 extern FILE *fLog;          /* file pointer for log file */
 
 void printLog(char *msg);
-void printAndLog(char *format, ...);
 
 #endif
