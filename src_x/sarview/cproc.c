@@ -5,24 +5,26 @@ These are called by the "routing" routines in tkCommand.c.
 #include "main.h"
 #include "image.h"
 
-int cproc_loadimage(char * imageName)/*  TCL asks C to load up the given
-   image.  Returns 0 on failure; 1 on success, stashing the image
-   name and any relevant data in C global storage.
-   Sets the link_imagewidth and link_imageheight variables.*/
+/*************************************************************
+ * cproc_loadimage:
+ * TCL asks C to load up the given image. Returns 0 on failure;
+ * 1 on success, stashing the image name and any relevant data
+ * in C global storage. Sets the link_imagewidth and
+ * link_imageheight variables.*/
+int cproc_loadimage(char * imageName)
 {
 /*Blow away the old image*/
 	image_delete();
 
 /*Determine the type of the image, and read it in*/
-	if ( extExists(imageName,".ddr") ) {
-	  /* Is a LAS image.  */
-	  if ( 0 == image_loadLas(imageName) ) return 0;
-	} else if ( extExists(imageName, ".meta") 
-		    && meta_is_new_style(imageName) ) {
-	  if ( 0 == image_loadNewMeta(imageName) ) return 0;
-	} else {
-	  /* Is a CEOS image.  */
-	  if (0==image_loadCeos(imageName)) return 0;
+	if ( extExists(imageName,".ddr") ) { /* Is a LAS image.  */
+		if ( 0 == image_loadLas(imageName) ) return 0;
+	}
+	else if ( extExists(imageName, ".meta") && meta_is_new_style(imageName) ) {
+		if ( 0 == image_loadNewMeta(imageName) ) return 0;
+	}
+	else { /* Is a CEOS image.  */
+		if (0==image_loadCeos(imageName)) return 0;
 	}
 
 /*Set the zoom factor based on the image and screen sizes--
@@ -39,7 +41,9 @@ int cproc_loadimage(char * imageName)/*  TCL asks C to load up the given
 	return 1;
 }
 
-/*Draw a single arrow from 0,0 to dirX,dirY; and print "Label"*/
+/*************************************************************
+ * drawArrow:
+ * Draw a single arrow from 0,0 to dirX,dirY; and print "Label"*/
 void drawArrow(char *canvas,char *label,double dirX,double dirY)
 {
 	char buf[1024];
@@ -54,9 +58,10 @@ void drawArrow(char *canvas,char *label,double dirX,double dirY)
 	sprintf(buf,"%s create text %f %f -tag arrows -anchor center -text %s",canvas,dirX,dirY,label);
 	Tcl_GlobalEval(interp,buf);
 }
-/* TCL asks C to 
-	draw arrows pointing north and east from the image point (x,y) in the image
-	into the given canvas.*/
+/*************************************************************
+ * cproc_ne_arrows:
+ * TCL asks C to draw arrows pointing north and east from the
+ * image point (x,y) in the image into the given canvas.*/
 void cproc_ne_arrows(char *canvas,double x,double y)
 {
 	char buf[1024];
@@ -67,15 +72,8 @@ void cproc_ne_arrows(char *canvas,double x,double y)
 		int ix=(int)x,iy=(int)y;
 		double lat,lon,time,slant,doppler;
 		double destX,destY;
-		if ( meta->meta_version 
-		     < 1.0 - 0.00002 /* <-- for sloppy float compare.  */ ) {
-		  /* We have old format data, so we should have filled
-                     in metadata.  */
-		  meta_get_orig((void *)ddr,iy,ix,&iy,&ix);
-		} else {
-		  /* We shold have new style metadata.  */
-		  meta_get_original_line_sample(meta, iy, ix, &iy, &ix);
-		}
+
+		meta_get_original_line_sample(meta, iy, ix, &iy, &ix);
 		meta_get_latLon(meta,iy,ix,0.0,&lat,&lon);
 		meta_get_timeSlantDop(meta,iy,ix,&time,&slant,&doppler);
 
@@ -89,7 +87,7 @@ void cproc_ne_arrows(char *canvas,double x,double y)
 		meta_get_lineSamp(meta,lat,lon,0.0,&destY,&destX);
 		drawArrow(canvas,"Illum",destX-ix,destY-iy);
 
-		meta_timeSlantDop2latLon(meta,time+500*meta->geo->azPixTime,slant,doppler,0.0,&lat,&lon);
+		meta_timeSlantDop2latLon(meta,time+500*meta->sar->azimuth_time_per_pixel,slant,doppler,0.0,&lat,&lon);
 		meta_get_lineSamp(meta,lat,lon,0.0,&destY,&destX);
 		drawArrow(canvas,"Flight",destX-ix,destY-iy);
 	}
@@ -106,17 +104,19 @@ void cproc_log(const char *fName,const char *writeThis)/*Log writeThis to fName*
 describe the coordinate transformation for a given canvas.*/
 typedef struct {
 	double startx,starty;/*Starting location of the canvas' image on the original image*/
-	double zoom;/*Amount by which the image on this canvas is zoomed out*/
-/*image->canvas:(val-start)/zoom*/
-/*canvas->image:val*zoom+start*/
+	double zoom;         /*Amount by which the image on this canvas is zoomed out*/
+	/*image->canvas:(val-start)/zoom*/
+	/*canvas->image:val*zoom+start*/
 } canvasType;
 
 static canvasType *c[100]={NULL,NULL,NULL/*,...*/};
 
 
-/*Canvas coordinate system routines*/
-void cproc_initCanvas(int canvNo,double startx,double starty,double zoom)/*Save given
-	coordinate system under canvasNo*/
+/*************************************************************
+ * cproc_initCanvas:
+ * Canvas coordinate system routines. Save given coordinate
+ * system under canvasNo */
+void cproc_initCanvas(int canvNo,double startx,double starty,double zoom)
 {
 	if (c[canvNo]==NULL)
 		c[canvNo]=(canvasType *)malloc(sizeof(canvasType));
@@ -125,8 +125,10 @@ void cproc_initCanvas(int canvNo,double startx,double starty,double zoom)/*Save 
 	c[canvNo]->zoom=zoom;
 }
 
-int cproc_fromCanvas(int canvNo,double *x,double *y)/*Map given point from canvas
-	coordinates to image coordinates*/
+/*************************************************************
+ * cproc_fromCanvas:
+ * Map given point from canvas coordinates to image coordinates*/
+int cproc_fromCanvas(int canvNo,double *x,double *y)
 {
 	if (c[canvNo]==NULL) return 0;
 	*x=(*x)*c[canvNo]->zoom+c[canvNo]->startx+0.00001;
@@ -134,8 +136,10 @@ int cproc_fromCanvas(int canvNo,double *x,double *y)/*Map given point from canva
 	return 1;
 }
 
-int cproc_toCanvas(int canvNo,double *x,double *y)/*Map given point from image
-	coordinates to canvas coordinates*/
+/*************************************************************
+ * cproc_toCanvas:
+ * Map given point from image coordinates to canvas coordinates*/
+int cproc_toCanvas(int canvNo,double *x,double *y)
 {
 	if (c[canvNo]==NULL) return 0;
 	*x=((*x)-c[canvNo]->startx)/c[canvNo]->zoom;

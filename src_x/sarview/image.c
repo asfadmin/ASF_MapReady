@@ -20,11 +20,11 @@ histogram *data_hist=NULL;  /* used for histogram display */
 /*Throw away cached image info.*/
 void image_delete(void)
 {
-	if (type==image_ddr) 
-	{
+	if (type==image_ddr) {
 		free(ddr);
 		fclose(ddr_file);
-	} else if (type==image_ceos)
+	}
+	else if (type==image_ceos)
 		closeCeos(ceos);
 	if (meta!=NULL)
 		meta_free(meta);
