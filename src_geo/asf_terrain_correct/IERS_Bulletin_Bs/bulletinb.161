@@ -1,0 +1,279 @@
+                                                                BULLETIN B 161
+                                                            02 July 2001        
+
+    Contents are described in the Explanatory Supplement available at
+    http://hpiers.obspm.fr/eop-pc/
+      
+ 1 - EARTH ORIENTATION PARAMETERS (IERS evaluation).
+     The values in this section are samplings of section 2 given at five-day 
+     intervals. 
+
+    Date    MJD       x       y    UT1R-UTC    UT1R-TAI    dPsi dEpsilon
+    2001              "       "        s           s     0.001"   0.001"
+   (0h UTC)
+  
+ Final Bulletin B values.
+          
+  MAY   5  52034   .17171  .45849  -.004197  -32.004197   -49.6    -6.2   
+  MAY  10  52039   .18385  .44787  -.009352  -32.009352   -50.4    -6.2   
+  MAY  15  52044   .19497  .43862  -.014442  -32.014442   -49.5    -6.3   
+  MAY  20  52049   .20511  .42518  -.019273  -32.019273   -50.9    -5.9   
+  MAY  25  52054   .21335  .41312  -.022689  -32.022689   -51.2    -6.4   
+          
+  MAY  30  52059   .22093  .39922  -.024581  -32.024581   -50.9    -6.2   
+  JUN   4  52064   .22870  .38552  -.025417  -32.025417   -53.3    -5.6   
+  
+ Preliminary extension, to be updated weekly in Bulletin A and monthly
+  in Bulletin B.
+  
+  JUN   9  52069   .23797  .37245  -.025357  -32.025357   -51.5    -6.1   
+  JUN  14  52074   .24322  .35848  -.025563  -32.025563   -52.2    -5.3   
+  JUN  19  52079   .24852  .34355  -.025409  -32.025409   -54.7    -5.5   
+          
+  JUN  24  52084   .24884  .32869  -.025518  -32.025518   -53.4    -5.4   
+  JUN  29  52089   .25249  .31391  -.025911  -32.025911   -55.0    -4.7   
+  JUL   4  52094   .25442  .29898  -.026386  -32.026386   -54.9    -5.5   
+  JUL   9  52099   .25412  .28585  -.026814  -32.026814   -53.3    -5.5   
+  JUL  14  52104   .25249  .27299  -.027226  -32.027226   -55.5    -5.0   
+          
+  JUL  19  52109   .24965  .26033  -.027622  -32.027622   -56.8    -5.6   
+  JUL  24  52114   .24568  .24790  -.028034  -32.028034   -55.6    -4.9   
+  JUL  29  52119   .24061  .23577  -.028477  -32.028477   -58.8    -5.0   
+  AUG   3  52124   .23449  .22402  -.029018  -32.029018   -57.6    -5.5   
+  AUG   8  52129   .22733  .21273  -.029697  -32.029697   -57.6    -4.9   
+          
+  AUG  13  52134   .21919  .20196  -.030544  -32.030544   -59.8    -5.1   
+  AUG  18  52139   .21010  .19181  -.031635  -32.031635   -58.7    -5.2   
+  AUG  23  52144   .20011  .18233  -.033009  -32.033009   -59.7    -4.4   
+  AUG  28  52149   .18928  .17359  -.034672  -32.034672   -60.9    -5.3   
+                                                            
+ Note. In UT1R, the effects of zonal tides with periods shorter than 35 days
+ are removed ; UT1-UT1R (smaller than 0.0025s in absolute value) should be  
+ added after quadratic interpolation of UT1R. Section 2 of this Bulletin gives 
+ the daily interpolation of x, y, UT1, duration of day, dPsi, and dEpsilon.
+  
+                                                             IERS, B 161 (2)
+ 2 - SMOOTHED VALUES OF X, Y, UT1, D, DPSI, DEPSILON (IERS EVALUATION)
+ at one-day intervals. For smoothing characteristics, see Table2 in the
+ explanatory supplement. The reference system is described in the 1999
+ IERS Annual Report.
+    2001     MJD       x        y     UT1-UTC UT1-UT1R   D    dPsi dEpsilon
+    (0 h UTC)          "        "        s       ms     ms  0.001"  0.001"
+  MAY   5   52034   .17171   .45849  -.004617  -.420  1.578  -49.6   -6.2  
+  MAY   6   52035   .17366   .45656  -.006166  -.900  1.479  -49.8   -5.9  
+  MAY   7   52036   .17575   .45443  -.007552 -1.261  1.299  -50.2   -5.9  
+  MAY   8   52037   .17840   .45230  -.008750 -1.437  1.100  -50.4   -5.9  
+  MAY   9   52038   .18119   .45011  -.009752 -1.407   .891  -50.5   -6.1  
+  MAY  10   52039   .18385   .44787  -.010544 -1.192   .707  -50.4   -6.2  
+  MAY  11   52040   .18652   .44578  -.011184  -.839   .596  -50.3   -6.3  
+  MAY  12   52041   .18913   .44406  -.011758  -.411   .558  -50.0   -6.4  
+  MAY  13   52042   .19138   .44254  -.012321   .030   .590  -49.8   -6.4  
+  MAY  14   52043   .19324   .44074  -.012956   .424   .692  -49.6   -6.4  
+  MAY  15   52044   .19497   .43862  -.013718   .724   .812  -49.5   -6.3  
+  MAY  16   52045   .19688   .43633  -.014587   .902   .905  -49.5   -6.3  
+  MAY  17   52046   .19868   .43365  -.015528   .944  1.016  -49.8   -6.1  
+  MAY  18   52047   .20076   .43071  -.016613   .858  1.111  -50.2   -6.0  
+  MAY  19   52048   .20318   .42789  -.017741   .666  1.133  -50.5   -5.9  
+  MAY  20   52049   .20511   .42518  -.018862   .411  1.109  -50.9   -5.9  
+  MAY  21   52050   .20691   .42259  -.019938   .147  1.034  -51.2   -5.9  
+  MAY  22   52051   .20885   .42025  -.020908  -.059   .886  -51.4   -6.0  
+  MAY  23   52052   .21041   .41804  -.021694  -.151   .672  -51.4   -6.1  
+  MAY  24   52053   .21189   .41563  -.022249  -.100   .452  -51.3   -6.3  
+  MAY  25   52054   .21335   .41312  -.022610   .079   .279  -51.2   -6.4  
+  MAY  26   52055   .21462   .41037  -.022833   .327   .186  -50.9   -6.5  
+  MAY  27   52056   .21588   .40735  -.023012   .557   .200  -50.6   -6.5  
+  MAY  28   52057   .21732   .40448  -.023258   .685   .305  -50.5   -6.4  
+  MAY  29   52058   .21903   .40180  -.023635   .650   .446  -50.6   -6.3  
+  MAY  30   52059   .22093   .39922  -.024148   .433   .570  -50.9   -6.2  
+  MAY  31   52060   .22286   .39666  -.024758   .065   .630  -51.4   -6.0  
+  JUN   1   52061   .22442   .39405  -.025381  -.390   .637  -52.0   -5.9  
+  JUN   2   52062   .22579   .39134  -.026001  -.842   .580  -52.7   -5.8  
+  JUN   3   52063   .22720   .38848  -.026514 -1.205   .422  -53.1   -5.7  
+  JUN   4   52064   .22870   .38552  -.026828 -1.411   .198  -53.3   -5.6  
+  JUN   5   52065   .23048   .38258  -.026905 -1.426  -.038  -52.8   -5.3  
+  JUN   6   52066   .23244   .37990  -.026758 -1.257  -.252  -52.7   -5.6  
+  JUN   7   52067   .23444   .37728  -.026418  -.938  -.418  -52.4   -5.9  
+  JUN   8   52068   .23642   .37476  -.025943  -.524  -.502  -51.9   -6.1  
+  JUN   9   52069   .23797   .37245  -.025435  -.078  -.485  -51.5   -6.1  
+  JUN  10   52070   .23913   .37008  -.024992   .341  -.385  -51.2   -6.1  
+  JUN  11   52071   .24016   .36746  -.024680   .682  -.241  -51.1   -6.0  
+  JUN  12   52072   .24102   .36464  -.024520   .910  -.092  -51.2   -5.8  
+  JUN  13   52073   .24197   .36165  -.024499  1.007   .035  -51.6   -5.4  
+  JUN  14   52074   .24322   .35848  -.024586   .977   .117  -52.2   -5.3  
+  JUN  15   52075   .24480   .35531  -.024724   .838   .154  -52.7   -5.1  
+  JUN  16   52076   .24623   .35231  -.024882   .621   .190  -53.4   -5.2  
+  JUN  17   52077   .24735   .34951  -.025088   .373   .214  -54.0   -5.2  
+  JUN  18   52078   .24818   .34652  -.025290   .148   .167  -54.4   -5.3  
+  JUN  19   52079   .24852   .34355  -.025404   .005   .053  -54.7   -5.5  
+  JUN  20   52080   .24836   .34068  -.025386  -.013  -.041  -54.7   -5.6  
+  JUN  21   52081   .24825   .33775  -.025328   .103  -.097  -54.6   -5.6  
+  JUN  22   52082   .24846   .33488  -.025213   .311  -.182  -54.2   -5.6  
+  JUN  23   52083   .24866   .33186  -.024996   .530  -.195  -53.8   -5.5  
+  JUN  24   52084   .24884   .32869  -.024854   .664  -.064  -53.4   -5.4  
+  JUN  25   52085   .24943   .32568  -.024885   .635   .146  -53.3   -5.2  
+  JUN  26   52086   .25051   .32271  -.025145   .418   .380  -53.4   -5.1  
+  JUN  27   52087   .25133   .31967  -.025618   .039   .552  -53.6   -4.9  
+  JUN  28   52088   .25208   .31684  -.026218  -.430   .515  -54.2   -4.8  
+  JUN  29   52089   .25249   .31391  -.026809  -.898   .494  -55.0   -4.7  
+  JUN  30   52090   .25306   .31080  -.027291 -1.278   .378  -55.7   -4.8  
+                                                             IERS, B 161 (3)
+  
+  
+ 3 - NORMAL VALUES OF THE EARTH ORIENTATION PARAMETERS AT FIVE-DAY INTERVALS 
+       (IERS evaluation).
+  
+                        Raw normal values                     Uncertainties
+  
+  
+   2001   MJD      x       y     UT1-UTC   dPsi  dEps    x    y   UT1 dPsi dEps
+    (0 h UTC)      "       "        s       0.001"       0.001" 0.0001s  0.001"
+          
+ MAY  5 52034   .17171  .45851  -.004625    -     -     .05  .05  .04  -    -  
+ MAY 10 52039   .18385  .44786  -.010548 -50.43 -6.14   .04  .04  .03  .09  .05
+ MAY 15 52044   .19498  .43862  -.013721 -49.54 -6.31   .04  .04  .04  .10  .06
+ MAY 20 52049   .20510  .42518  -.018865    -     -     .05  .05  .04  -    -  
+ MAY 25 52054   .21336  .41312  -.022614 -51.14 -6.41   .04  .03  .03  .09  .05
+          
+ MAY 30 52059   .22094  .39923  -.024152 -50.89 -6.15   .04  .04  .04  .11  .06
+ JUN  4 52064   .22870  .38552  -.026840    -     -     .05  .05  .11  -    -  
+ JUN  9 52069   .23797  .37246  -.025443    -     -     .05  .05  .05  -    -  
+ JUN 14 52074   .24321  .35848  -.024591    -     -     .05  .05  .04  -    -  
+ JUN 19 52079   .24851  .34355  -.025410    -     -     .05  .06  .05  -    -  
+          
+ JUN 24 52084   .24884  .32870  -.024858    -     -     .07  .06  .05  -    -  
+ JUN 29 52089   .25248  .31391       -      -     -     .06  .05  -    -    -  
+  
+  
+ 4 - DURATION OF THE DAY AND ANGULAR VELOCITY OF THE EARTH (IERS evaluation).
+     The data of this section are smoothed, with the same characteristics as 
+ UT1R in section 1. They are corrected for the effects of zonal tides  with 
+ periods up to 35 days. Section 2 gives the daily interpolation of D.
+  
+        Date (0h UTC)              DR              OmegaR   
+        2001    MJD                s            (microrad/s)
+                             
+          
+      MAY  5   52034             .00107         72.921  15056
+      MAY 10   52039             .00100                 15062
+      MAY 15   52044             .00106                 15057
+      MAY 20   52049             .00084                 15075
+      MAY 25   52054             .00051                 15104
+          
+      MAY 30   52059             .00027                 15124
+      JUN  4   52064             .00009                 15139
+   
+   
+  
+  5 - INFORMATION ON TIME SCALES                                                
+
+      No leap second will be introduced in UTC on 31 December 2001.
+
+      All information concerning time scales : announcements of the             
+      leap seconds (Bulletin C) and of the value of DUT1 (Bulletin D)           
+      can be found in our web/ftp site :                                        
+                                                                                
+      World Wide Web : http://hpiers.obspm.fr                                   
+      Anonymous ftp  : hpiers.obspm.fr or 145.238.100.28                        
+                                                                                
+                                                                                
+                                                                                
+                                                             IERS, B 161 (4)
+       6 - SUMMARY OF CONTRIBUTED EARTH ORIENTATION PARAMETERS SERIES
+     This section gives the average precision of the individual series contri-
+ buting to the combination and their average agreement with it. The periods
+ covered start at  the beginning of the first month in Section 1 and end with 
+ the last available value in the individual series considered.
+     The complete list of measurements is  available in the electronic-mailed
+ version of Bulletin B in section 7.
+    Units : 0.001" for x,y , 0.0001s for UT1, 0.001" for dPsi, dEpsi.
+--------------------------------------------------------------------------------
+  EOP series                      Mean  formal  uncertainty
+  Periods covered                 Weighted RMS agreement with Bulletin B
+--------------------------------------------------------------------------------
+                                   x     y     UT    D   dPsi  dEps  Data Number
+ VLBI      
+   EOP(GSFC)  1 R 04              .09   .07   .04   -     .15   .07       4
+   52038.25 to 52059.25           .03   .01   .03   -     .12   .05 
+
+   EOP(GSFC)  1 R 03              -     -     .11   -     -     -        28
+   52036.80 to 52085.79           -     -     .09   -     -     -   
+
+   EOP(IAA)   1 R 03              -     -     .09   -     -     -        27
+   52036.80 to 52082.79           -     -     .11   -     -     -   
+
+   EOP(IAA)   1 R 04              .08   .07   .03   -     .15   .06       4
+   52038.25 to 52059.25           .05   .09   .05   -     .14   .08 
+
+   EOP(SPBU)  0 R 03              .09   .07   .05   -     .15   .06       4
+   52038.25 to 52059.25           .10   .16   .07   -     .14   .08 
+
+   EOP(SPBU) 99 R 01              -     -     .09   -     -     -        27
+   52036.80 to 52082.79           -     -     .17   -     -     -   
+
+   EOP(BKG)   0 R 02              .08   .06   .04   -     .23   .10       4
+   52038.00 to 52059.00           .15   .09   .08   -     .19   .07 
+
+   EOP(BKG)   0 R 01              -     -     .10   -     -     -        28
+   52036.80 to 52085.79           -     -     .15   -     -     -   
+
+ GPS       
+   EOP(CODE) 98 P 01              .01   .01   -     .23   -     -        56
+   52034.50 to 52089.50           .20   .07   -     .31   -     -   
+
+   EOP(EMR)  96 P 03              .05   .05   -     .08   -     -        50
+   52034.50 to 52083.50           .09   .09   -     .20   -     -   
+
+   EOP(ESOC) 96 P 01              .04   .03   -     .04   -     -        55
+   52034.50 to 52088.50           .18   .12   -     .21   -     -   
+
+   EOP(GFZ)  96 P 02              .01   .01   -     .01   -     -        56
+   52034.50 to 52089.50           .08   .10   -     .23   -     -   
+
+   EOP(JPL)  96 P 03              .04   .04   -     .12   -     -        56
+   52034.50 to 52089.50           .17   .11   -     .20   -     -   
+
+   EOP(NOAA) 96 P 01              .03   .03   -     .19   -     -        48
+   52034.50 to 52081.50           .20   .27   -     .42   -     -   
+
+   EOP(SIO)  96 P 01              .07   .08   -     .19   -     -        56
+   52034.50 to 52089.50           .08   .12   -     .34   -     -   
+
+   EOP(IGS)  95 P 02              .07   .04   .11   .06   -     -        43
+   52034.50 to 52076.50           .08   .07   .24   .14   -     -   
+
+   EOP(IGS)  96 P 02              .07   .07   .23   .10   -     -        56
+   52034.50 to 52089.50           .10   .16   .89   .30   -     -   
+
+   EOP(IERS) 97 P 01              .07   .06   .20   .12   -     -        56
+   52034.50 to 52089.50           .03   .02   .30   .22   -     -   
+
+ SLR       
+   EOP(CGS)  97 L 02              .13   .13   .48   -     -     -        50
+   52034.00 to 52083.00           .45   .47  5.30   -     -     -   
+
+   EOP(CSR)  95 L 01              .26   .27  6.91   -     -     -        13
+   52035.15 to 52070.94           .63   .47  3.46   -     -     -   
+
+   EOP(DUT)  98 L 01              .10   .09   -     -     -     -        16
+   52035.00 to 52080.00           .37   .27   -     -     -     -   
+
+   EOP(IAA)  98 L 02              .06   .05   .04   .04   -     -        56
+   52034.00 to 52089.00           .18   .19   .50   .28   -     -   
+
+   EOP(MCC)  97 L 01              .04   .04   -     .03   -     -        48
+   52034.00 to 52081.00           .16   .17   -     .35   -     -   
+
+ Bulletin A
+   EOP(NEOS) 97 C 01              .07   .06   .12   -     -     -        55
+   52034.00 to 52088.00           .12   .09   .11   -     -     -   
+
+   
+   
+ 7 - INDIVIDUAL SERIES OF EARTH ORIENTATION PARAMETERS
+
+        Operational series used for Bulletin B completion are now available
+     on our web ftp site:
+     http://hpiers.obspm.fr/eop-pc/products/operational.html
+     
+        For this reason, section 7 has been removed.
+     We hope there is no inconvenience.
