@@ -1,23 +1,9 @@
-#include <ctype.h>
-#include <errno.h>
-#include <setjmp.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <limits.h>
 
-#include <cla.h>
-#include <envi.h>
-#include <esri.h>
 #include <geokeys.h>
 #include <geotiff.h>
 #include <geotiffio.h>
-#include <gsl/gsl_math.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_statistics.h>
-#include <jpeglib.h>
 #include <proj_api.h>
 #include <tiff.h>
 #include <tiffio.h>
@@ -52,7 +38,7 @@ export_as_geotiff (const char *metadata_file_name,
   int jj;
   TIFF *otif;
   GTIF *ogtif;
-  size_t ii;
+  ssize_t ii;
   int return_code;
 
   /* This constant is from the GeoTIFF spec.  It basically means that
@@ -214,9 +200,9 @@ export_as_geotiff (const char *metadata_file_name,
   else {
     /* FIXME: we badly need to get the ellipsoid/datum mess sorted
        out.  This problem goes deeper than asf_export, however.  */
-    fprintf (stderr, "%s: warning: couldn't conclude which ellipsoid is "
-             "being used from ellipsoid axis dimensions in metadata, "
-             "using user defined ellipsoid\n", ASF_NAME_STRING);
+    asfPrintWarning ("couldn't conclude which ellipsoid is being used from "
+		     "ellipsoid axis dimensions in metadata, using user "
+		     "defined ellipsoid\n");
     ellipsoid = USER_DEFINED;
   }
 
@@ -258,17 +244,14 @@ export_as_geotiff (const char *metadata_file_name,
     else {
       /* FIXME: we badly need to get the ellipsoid/datum mess sorted
          out.  This problem goes deeper than asf_export, however.  */
-      const int max_error_string_length = 2000;
-      char *temp = malloc ((max_error_string_length + 1) * sizeof (char));
-      sprintf (temp, "\n\nWARNING: Couldn't conclude which ellipsoid is "
-               "being used from ellipsoid axis dimensions in metadata, "
-               "assuming WGS84 ellipsoid\n");
-      printf (temp);
+      asfPrintWarning ("couldn't conclude which ellipsoid is being used from "
+		       "being used from ellipsoid axis dimensions in "
+		       "metadata, assuming WGS84 ellipsoid\n");
       ellipsoid = WGS84;
     }
 
-    /* We will tie down the corner of the image (which has raster coordinates
-       0, 0, 0).  */
+    /* We will tie down the top left corner of the image (which has
+       TIFF raster coordinates 0, 0, 0).  */
     tie_points[0][0] = 0.0;
     tie_points[0][1] = 0.0;
     tie_points[0][2] = 0.0;
@@ -288,11 +271,9 @@ export_as_geotiff (const char *metadata_file_name,
 
     /* Set the scale of the pixels, in projection coordinates.  */
     pixel_scale[0] = md->projection->perX;
-    /* Note: we take -perY here because our tools treat the upper left
-       as startX, startY, and then count down in the y direction with
-       lower scan lines of the image.  The GeoTIFF world uses
-       increasing y coordinates in the downward direction.  */
-    pixel_scale[1] = -md->projection->perY;
+    /* Note: we take -perY here because we intend to flip our image in
+       the Y direction to get a north up image.  */
+    pixel_scale[1] = md->projection->perY;
     pixel_scale[2] = 0;
     TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
@@ -422,16 +403,16 @@ export_as_geotiff (const char *metadata_file_name,
           datum from the one in the metadata to the WGS84 datum moves
           the projection corner point by this amount or more in
           projection coordinates, an exception is triggered.  This
-          value was chosen based ona seat-of-the-pants feel which
+          value was chosen based on a seat-of-the-pants feel which
           accounts for the various error sources: range migration,
           etc.  If the geolocation process is anywhere near this
           accurate, we are doing really good. */
 	const double max_allowable_projection_error = 30.0;
-	asfRequire(sqrt (pow (fabs (tmp1 - md->projection->startX), 2)
-			 + pow (fabs (tmp2 - md->projection->startY), 2))
-		   < max_allowable_projection_error,
-		   "using the WGS84 datum to represent data with a \n"
-		   "datum resulted in too much error");
+	asfRequire (sqrt (pow (fabs (tmp1 - md->projection->startX), 2)
+			  + pow (fabs (tmp2 - md->projection->startY), 2))
+		    < max_allowable_projection_error,
+		    "using the WGS84 datum to represent data with a \n"
+		    "datum resulted in too much error");
 	free (tmp);
 	
 
@@ -663,6 +644,7 @@ export_as_geotiff (const char *metadata_file_name,
   GTIFFree (ogtif);
   XTIFFClose (otif);
   free (daf);
+  float_image_free (iim);
   meta_free (md);
 }
 
