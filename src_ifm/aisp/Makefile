@@ -23,15 +23,14 @@ SPECLIB = specan.o \
 	specan_ml.o \
 	specan_patch.o \
 	specan_file.o \
-	#quicklook.o \
-	my_mpi.o
+#	quicklook.o \
+#	my_mpi.o
 
 ASPLIB = patch.o \
 	 aisp_setup.o \
 	 rciq.o rmpatch.o acpatch.o calibration.o
 
-all: aisp calc_deltas spectra estavedop # quicklook
-	rm *.o
+all: aisp calc_deltas spectra estavedop clean # quicklook
 
 aisp:	$(ASPLIB) $(OBJLIB) aisp.o $(LIBS)
 	$(CC) $(CFLAGS) -o aisp aisp.o $(ASPLIB) $(OBJLIB) $(LIBC)
@@ -88,3 +87,5 @@ dop_prf: $(ASPLIB) $(OBJLIB) dop_prf.c $(LIBS)
 	$(CC) $(CFLAGS) -o dop_prf dop_prf.c $(ASPLIB) $(OBJLIB) $(LIBC)
 	mv dop_prf$(BIN_POSTFIX) $(BINDIR)
 
+clean:
+	rm -f core *.o
