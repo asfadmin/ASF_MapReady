@@ -143,8 +143,8 @@ do_cmd(gchar *cmd, gchar *log_file_name)
       {
 	if (the_output)
         {
-	  the_output = (gchar *)g_realloc(the_output, 
-				    strlen(the_output) + strlen(buffer) + 1);
+	  the_output = (gchar *)g_realloc(the_output, sizeof(gchar) *
+				    (strlen(the_output) + strlen(buffer) + 1));
 
 	  strcat(the_output, buffer);
 	}

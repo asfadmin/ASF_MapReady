@@ -32,7 +32,7 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
   else
   {
     int len = strlen(path);
-    path = (gchar *)g_realloc(path, len + 1);
+    path = (gchar *) g_realloc(path, sizeof(gchar) * (len + 2));
     *(path + len) = DIR_SEPARATOR;
     *(path + len + 1) = '\0';	
   }
