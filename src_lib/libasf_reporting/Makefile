@@ -2,7 +2,8 @@
 
 include ../../make_support/system_rules
 
-OBJS  = print_alerts.o \
+OBJS  = diagnostics.o \
+	print_alerts.o \
 	progress_meters.o \
 	splash_screen.o
 
