@@ -197,6 +197,9 @@ $(DEPEND_FILES): %.d: %.c
 $(OBJS): %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+# Delete files which produced by commands that return non-zero.
+.DELETE_ON_ERROR:
+
 # Remove the dependency files, object files, dumped cores, the library
 # archive itself, the test program or programs, and all stamps.
 .PHONY: clean
