@@ -5,8 +5,9 @@
 </name>
 
 <synopsis>
-asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]
-           [-format <format>] <in_data> <in_meta> <out_base_name>
+asf_import [-amplitude | -sigma | -gamma | -beta | -power]
+           [-lat <lower> <upper>] [-format <format>]
+           <in_data> <in_meta> <out_base_name>
 </synopsis>
 
 <description>
@@ -33,6 +34,8 @@ asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>
    -gamma         Create a calibrated image (gamma dB values).
    -beta          Create a calibrated image (beta dB values).
    -power         Create a power image.
+   -format        Force input data to be read as the given format type
+                    Valid options are ceos, stf, esri, and envi
    -log           Output will be written to a specified log file.
    -quiet         Supresses all non-essential output.
    -lat           Specify lower and upper latitude contraints.
@@ -43,11 +46,11 @@ asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>
 </options>
 
 <examples>
-   asf_import CEOS file1.img file1.meta file2
+   asf_import -format CEOS file1.D file1.L file2
 </examples>
 
 <limitations>
-   None.
+   None known.
 </limitations>
 
 <see_also>
@@ -132,9 +135,10 @@ PROGRAM HISTORY:
 
 #define VERSION 0.5
 #define MAX_tableRes 512
-#define REQUIRED_ARGS 4
 
 /* PROTOTYPES */
+void usage(void);
+
 void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart,
                   long *imgEnd, char *imgTimeStr, int *nVec,
                   float *fd, float *fdd, float *fddd);
@@ -246,7 +250,6 @@ void check_return(int ret, char *msg)
 long imgStart, imgEnd;
 int outLine;
 int oldFlag=FALSE;
-
 
 /* Lets go! */
 int main(int argc, char *argv[])
@@ -418,120 +421,11 @@ int main(int argc, char *argv[])
 	else
 		strcpy(type, "CEOS");
 
-	/* Parse command line args */
-/*	while (currArg < (argc-REQUIRED_ARGS))*/
-	{
-
-
-/*
-		else if (strmatch(key,"-log"))
-		{
-			CHECK_ARG(1); //one string argument: log file
-			strcpy(logFile,GET_ARG(1));
-			fLog = FOPEN(logFile,"a");
-			logflag=TRUE;
-		}
-*/
-/*
-		else if (strmatch(key,"-prc"))
-		{
-			CHECK_ARG(1);
-			strcpy(prcPath, GET_ARG(1));
-			prcflag=TRUE;
-		}
-*/
-/*
-		else if (strmatch(key,"-lat"))
-		{
-			CHECK_ARG(2);
-			lowerLat = strtod(GET_ARG(2),NULL);
-			upperLat = strtod(GET_ARG(1),NULL);
-			if(lowerLat>upperLat)
-			{
-				float tmp=upperLat;
-				upperLat = lowerLat;
-				lowerLat = tmp;
-			}
-			if (   lowerLat<-90.0 || lowerLat>90.0
-				|| upperLat<-90.0 || upperLat>90.0)
-			{
-				printf("Invalid latitude constraint (must be between -90 and 90).\n");
-				printf("Exiting...\n");
-				exit(EXIT_FAILURE);
-			}
-			latConstraintFlag=TRUE;
-		}
-*/
-/*
-		else if (strmatch(key,"-amplitude"))
-		sprintf(out_type,"amp"); // create amplitude image
-*/
-/*
-		else if (strmatch(key,"-sigma"))
-		{
-			sprintf(out_type, "sigma");  // create calibrated image (sigma dB values)
-			sigmaFlag=TRUE;
-		}
-*/
-/*
-		else if (strmatch(key,"-gamma"))
-		{
-			sprintf(out_type, "gamma");  // create calibrated image (gamma dB values)
-			gammaFlag=TRUE;
-		}
-*/
-/*
-		else if (strmatch(key,"-beta"))
-		{
-			sprintf(out_type, "beta");  // create calibrated image (beta dB values)
-			betaFlag=TRUE;
-		}
-*/
-/*
-		else if (strmatch(key,"-power"))
-		{
-			sprintf(out_type, "power");  // create power image
-			powerFlag=TRUE;
-		}
-*/
-/*
-		else
-		{
-			printf("\n** Invalid option:  %s\n\n",argv[currArg-1]);
-			usage ();
-		}
-*/
-	}
-/*
-	if ((argc-currArg) < REQUIRED_ARGS)
-	{
-		printf("Insufficient arguments.\n");
-		usage ();
-	}
-*/
-	/* Make sure the sprocket flag hasn't been declared with a calibration or
-	* power flag */
-/*
-	if (sprocketFlag && (sigmaFlag||gammaFlag||betaFlag||powerFlag))
-	{
-		printf(" * Silly calibration engineer, you can't declare -sigma, -beta, -gamma,\n"
-			" * or -power with the all powerful -sprocket option!  Try again. Exiting...\n");
-		exit(EXIT_FAILURE);
-	}
-*/
-
-	/* Read required arguments */
-/*
-	strcpy(type,argv[currArg++]);
-	for (ii=0; ii<strlen(type); ii++)
-	{
-		type[ii] = (char)toupper(type[ii]);
-	}
-*/
+  /* Fetch required arguments */
 	strcpy(inDataName,argv[argc - 3]);
 	strcpy(inMetaName,argv[argc - 2]);
 	strcpy(outBaseName,argv[argc - 1]);
-	
+
 	if(strchr(inDataName, '.') != NULL)/*Make sure the file has an extension*/
 	{
 		if(!strcmp(".D", strrchr(inDataName, '.')))/*If the file ends in .D*/
@@ -557,7 +451,6 @@ int main(int argc, char *argv[])
     strcat(command_line,"\n");
     printLog(command_line);
   }
-
 
   /* Lets get started */
   StartWatchLog(fLog);
@@ -978,7 +871,7 @@ int main(int argc, char *argv[])
   }
 
   /* Ingest Vexcel Sky Telemetry Format (STF) data */
-  else if (strncmp(type, "STF", 4)==0) {
+  else if (strncmp(type, "STF", 3)==0) {
 
     if (sprocketFlag != -1) {
       print_error("Data is level 0, sprocket can not use this.");
@@ -1093,6 +986,7 @@ int main(int argc, char *argv[])
 
   /* Ingest ESRI format data */
   else if (strncmp(type, "ESRI", 4)==0) {
+
     char line[255]="", key[25]="", value[25]="";
 
     sprintf(tmp,"   Data format: ESRI\n");
@@ -1153,10 +1047,6 @@ int main(int argc, char *argv[])
 
     /* Write metadata file */
     meta_write(meta,outName);
-if (sprocketFlag != -1) {
-  create_name(sprocketName, outName, ".metadata");
-  meta_write_sprocket(sprocketName, meta, NULL);
-}
 
     /* Write data file - currently no header, so just copying generic binary */
     fileCopy(inDataName, outName);
@@ -1173,6 +1063,7 @@ if (sprocketFlag != -1) {
 
   /* Ingest ENVI format data */
   else if (strncmp(type, "ENVI", 4)==0) {
+
     char line[255]="", key[25]="", value[25]="", bla[25];
 
     sprintf(tmp,"   Data format: ENVI\n");
@@ -1347,9 +1238,8 @@ if (sprocketFlag != -1) {
 
 
 /* usage - enter here on command-line usage error*/
-void usage()
+void usage(void)
 {
-
  printf("\n"
 	"USAGE:\n"
 	"   asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]\n"
