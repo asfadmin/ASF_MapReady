@@ -251,7 +251,13 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    meta->sar->sample_increment = 1.0;
    meta->sar->range_time_per_pixel = dssr->n_rnglok 
            / (dssr->rng_samp_rate * get_units(dssr->rng_samp_rate,EXPECTED_FS));
-   meta->sar->azimuth_time_per_pixel = dssr->n_azilok / dssr->prf;
+   if (asf_facdr) {
+      meta->sar->azimuth_time_per_pixel = meta->general->y_pixel_size
+                                          / asf_facdr->swathvel;
+   }
+   else {
+      meta->sar->azimuth_time_per_pixel = dssr->n_azilok / dssr->prf;
+   }
    /* CEOS data does not account for slant_shift and time_shift errors so far as
     * we can tell.  Other ASF tools may later set these fields based on more
     * precise orbit data.  */
@@ -318,6 +324,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
          data_int /= 2;
          vector_count = vector_count*2-1;
       }
+
       /* propagate three state vectors: start, center, end */
       propagate_state(meta, vector_count, data_int);
    }
@@ -358,15 +365,16 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
       projection->type='A';/*Along Track/Cross Track.*/
    }
    else if (strncmp(mpdr->mpdesig, "LAMBERT", 7) == 0) {
-      projection->type='L';/*Lambert Conformal.*/
-      printf("WARNING: Lambert-geocoded images may not be\n"
-         "accurately geocoded!\n");
-      projection->param.lambert.plat1=mpdr->nsppara1;
-      projection->param.lambert.plat2=mpdr->nsppara2;
-      projection->param.lambert.lat0=mpdr->blclat+0.023;/*<-- Note: This line is a hack*/
-      projection->param.lambert.lon0=mpdr->blclong+2.46;/*<-- Note: This line is a hack, too*/
-      /*We have to hack the lambert projection because the true lat0
-      and lon0, as far as we can tell, are never stored in the CEOS*/
+      projection->type='L';/*Lambert Conformal Conic.*/
+      printf("WARNING: * Images geocoded with the Lambert Conformal Conic projection may not\n"
+             "         * be accurately geocoded!\n");
+      projection->param.lamcc.plat1=mpdr->nsppara1;
+      projection->param.lamcc.plat2=mpdr->nsppara2;
+      projection->param.lamcc.lat0=mpdr->blclat+0.023;/*NOTE: This line is a hack.*/
+      projection->param.lamcc.lon0=mpdr->blclong+2.46;/*NOTE: This line is a hack, too.*/
+   /* NOTE: We have to hack the lamcc projection because the true lat0 and lon0,
+    * as far as we can tell, are never stored in the CEOS
+    */
    }
    else if (strncmp(mpdr->mpdesig, "UPS", 3) == 0) {
       projection->type='P';/*Polar Stereographic: pre-radarsat era*/
