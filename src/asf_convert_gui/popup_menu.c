@@ -103,14 +103,14 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 		gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
 				   COL_STATUS, &status, -1);
 		    
+		gtk_tree_path_free(path);
+
 		if (strstr(status, "...") != NULL)
 		{
-		    gtk_tree_path_free(path);
+		    /* right-clicked on what is currently being processed */
 		    LSU;
 		    return FALSE;
 		}
-
-		gtk_tree_path_free(path);
 
 		if (strcmp(status, "Done") == 0)
 		{
