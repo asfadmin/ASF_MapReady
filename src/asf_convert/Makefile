@@ -12,7 +12,7 @@ OBJS  = config.o \
 all:    asf_convert clean
 
 asf_convert: $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o asf_convert $(OBJs) $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o asf_convert $(OBJS) $(LIBS)
 	mv asf_convert $(BINDIR)
 #	cp asf_convert.1 ../../man/cat1
 
