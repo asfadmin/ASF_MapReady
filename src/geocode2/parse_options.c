@@ -371,19 +371,13 @@ static void parse_proj_args_file(char * file, project_parameters_t * pps,
 static int matches_write_proj_file(char * param)
 {
     return
-	strcmp(param, "--write-proj-file") == 0 ||
-	strcmp(param, "--write_proj_file") == 0 ||
-	strcmp(param, "--wpf") == 0 ||
-	strcmp(param, "-wpf") == 0;
+	strcmp(param, "--write-proj-file") == 0;
 }
 
 static int matches_read_proj_file(char * param)
 {
     return
-	strcmp(param, "--read-proj-file") == 0 ||
-	strcmp(param, "--read_proj_file") == 0 ||
-	strcmp(param, "--rpf") == 0 ||
-	strcmp(param, "-rpf") == 0;
+	strcmp(param, "--read-proj-file") == 0;
 }
 
 static int parse_double_option(int *i, int argc, char *argv[], int *specified,
@@ -476,10 +470,7 @@ static int parse_first_standard_parallel_option(int *i, int argc,
 						char *argv[], int *specified,
 						double *value, int *ok)
 {
-    if (strcmp(argv[*i], "--plat1") ==0 ||
-	strcmp(argv[*i], "--lat_1") ==0 ||
-	strcmp(argv[*i], "--first-standard-parallel") == 0 ||
-	strcmp(argv[*i], "--first_standard_parallel") == 0)
+    if (strcmp(argv[*i], "--first-standard-parallel") == 0)
     {
 	*ok = parse_double_option(i, argc, argv, specified, value);
 	return TRUE;
@@ -494,10 +485,7 @@ static int parse_second_standard_parallel_option(int *i, int argc,
 						 char *argv[], int *specified,
 						 double *value, int *ok)
 {
-    if (strcmp(argv[*i], "--plat2") ==0 ||
-	strcmp(argv[*i], "--lat_2") ==0 ||
-	strcmp(argv[*i], "--second-standard-parallel") == 0 ||
-	strcmp(argv[*i], "--second_standard_parallel") == 0)
+    if (strcmp(argv[*i], "--second-standard-parallel") == 0)
     {
 	*ok = parse_double_option(i, argc, argv, specified, value);
 	return TRUE;
@@ -512,12 +500,7 @@ static int parse_center_latitude_option(int *i, int argc,
 					char *argv[], int *specified,
 					double *value, int *ok)
 {
-    if (strcmp(argv[*i], "--lat0") == 0 ||
-	strcmp(argv[*i], "-lat0") == 0 ||
-	strcmp(argv[*i], "--center_latitude") == 0 ||
-	strcmp(argv[*i], "--slat") == 0 ||
-	strcmp(argv[*i], "-slat") == 0 ||
-	strcmp(argv[*i], "--lat_0") == 0)
+    if (strcmp(argv[*i], "--center-latitude") == 0)
     {
 	*ok = parse_double_option(i, argc, argv, specified, value);
 	return TRUE;
@@ -532,15 +515,7 @@ static int parse_central_meridian_option(int *i, int argc,
 					 char *argv[], int *specified,
 					 double *value, int *ok)
 {
-    if (strcmp(argv[*i], "--lon0") == 0 ||
-	strcmp(argv[*i], "-lon0") == 0 ||
-	strcmp(argv[*i], "--center_longitude") == 0 ||
-	strcmp(argv[*i], "--center-longitude") == 0 ||
-	strcmp(argv[*i], "--central_meridian") == 0 ||
-	strcmp(argv[*i], "--central-meridian") == 0 ||
-	strcmp(argv[*i], "--slon") == 0 ||
-	strcmp(argv[*i], "-slon") == 0 ||
-	strcmp(argv[*i], "--lon_0") == 0)
+    if (strcmp(argv[*i], "--central-meridian") == 0)
     {
 	*ok = parse_double_option(i, argc, argv, specified, value);
 	return TRUE;
@@ -555,8 +530,7 @@ static int parse_false_easting_option(int *i, int argc,
 				      char *argv[], int *specified,
 				      double *value, int *ok)
 {
-    if (strcmp(argv[*i], "--false_easting") == 0 ||
-	strcmp(argv[*i], "-fe") == 0)
+    if (strcmp(argv[*i], "--false-easting") == 0)
     {
 	*ok = parse_double_option(i, argc, argv, specified, value);
 	return TRUE;
@@ -571,8 +545,7 @@ static int parse_false_northing_option(int *i, int argc,
 				      char *argv[], int *specified,
 				      double *value, int *ok)
 {
-    if (strcmp(argv[*i], "--false_northing") == 0 ||
-	strcmp(argv[*i], "-fn") == 0)
+    if (strcmp(argv[*i], "--false-northing") == 0)
     {
 	*ok = parse_double_option(i, argc, argv, specified, value);
 	return TRUE;
@@ -587,9 +560,7 @@ static int parse_scale_factor_option(int *i, int argc,
 				     char *argv[], int *specified,
 				     double *value, int *ok)
 {
-    if (strcmp(argv[*i], "--scale-factor") == 0 ||
-	strcmp(argv[*i], "--scale_factor") == 0 ||
-	strcmp(argv[*i], "-sf") == 0)
+    if (strcmp(argv[*i], "--scale-factor") == 0)
     {
 	*ok = parse_double_option(i, argc, argv, specified, value);
 	return TRUE;
@@ -716,7 +687,7 @@ void parse_other_options(int *argc, char **argv[],
 			 double *height, double *pixel_size)
 {
     extract_double_options(argc, argv, height, "--height", "-h", NULL);
-    extract_double_options(argc, argv, pixel_size, "--pixel_size", 
+    extract_double_options(argc, argv, pixel_size,
 			   "--pixel-size", "-ps", NULL);
 }
 
@@ -840,10 +811,9 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 			    &pps->ps.false_northing, &ok))
 			continue;
 
-		    if (strcmp((*argv)[i], "--north_pole") == 0 ||
+		    if (strcmp((*argv)[i], "--north-pole") == 0 ||
 			strcmp((*argv)[i], "-n") == 0)
 		    {
-
 			if (specified_pole)
 			{
 			    double_arg((*argv)[i]);
@@ -856,7 +826,7 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 			continue;
 		    }
 
-		    if (strcmp((*argv)[i], "--south_pole") == 0 ||
+		    if (strcmp((*argv)[i], "--south-pole") == 0 ||
 			strcmp((*argv)[i], "-s") == 0)
 		    {
 			if (specified_pole)

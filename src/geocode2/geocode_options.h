@@ -13,60 +13,51 @@
 
   UTM
   ===
-     --zone, -z   : Zone
-     --lat0, --center_latitude, --slat, -slat, --lat_0  : Latitude
-     --lon0, --center_longitude, --slon, -slon, --lon_0  : Longitude
+     --zone, -z                  : Zone
+     --center-latitude           : Latitude
+     --central-meridian          : Longitude
 
     The zone will be determined from the longitude if the zone is not
     otherwise specified.
 
-    Examples:
-      --projection utm --zone <zone>
-      --projection utm -z <zone>
-
-      -p utm --zone <zone>
-      -p utm -z <zone>
-
   POLAR STEREO
   ============
-    --slat, -slat, --center_latitude, --lat_ts  : Center Latitude
-    --slon, -slon, --center_longitude, --lon_0  : Center Longitude
-    -n, --north_pole : Center on North Pole (no argument)
-    -s, --south_pole : Center on South Pole (no argument)
-    --false_easting, -fe : False Easting
-    --false_northing, -fn : False Northing
+    --center-latitude            : Center Latitude
+    --central-meridian           : Center Longitude
+    -n, --north_pole             : Center on North Pole (no argument)
+    -s, --south_pole             : Center on South Pole (no argument)
+    --false_easting              : False Easting
+    --false_northing             : False Northing
 
     Examples:
-       -p ps -slat <slat> -slon <slon> -n
-       -p ps --slat <slat> -slon <slon> --north_pole
-       -p ps --center_latitude <slat> --center_longitude <slon> -n
-       -p ps -slat <slat> -slon <slon> -s
+       --projection ps --center-latitude <lat> --central-meridian <lon> -n
+       -p ps --center-latitude <lat> --central-meridian <lon> --south-pole
 
    LAMBERT CONFORMAL CONIC
    =======================
-     --plat1, --lat_1  : First Standard Parallel
-     --plat2, --lat_2  : Second Standard Parallel
-     --lat0, --center_latitude, --slat, -slat, --lat_0  : Original lat
-     --lon0, --center_longitude, --slon, -slon, --lon_0  : Original lon
-     --false_easting, -fe : False Easting
-     --false_northing, -fn : False Northing
-     --scale_factor, -sf : Scale Factor
+     --first-standard-parallel   : First Standard Parallel
+     --second-standard-parallel  : Second Standard Parallel
+     --center-latitude           : Original lat
+     --central-meridian          : Original lon
+     --false-easting             : False Easting
+     --false-northing            : False Northing
+     --scale-factor              : Scale Factor
 
    LAMBERT AZIMUTHAL EQUAL AREA
    ============================
-     --lat0, --center_latitude, --slat, -slat, --lat_0  : Center lat
-     --lon0, --center_longitude, --slon, -slon, --lon_0  : Center lon
-     --false_easting, -fe : False Easting
-     --false_northing, -fn : False Northing
+     --center-latitude           : Original lat
+     --central-meridian          : Original lon
+     --false-easting             : False Easting
+     --false-northing            : False Northing
 
    ALBERS CONICAL EQUAL AREA
    =========================
-     --plat1, --lat_1  : First Standard Parallel
-     --plat2, --lat_2  : Second Standard Parallel
-     --lat0, --center_latitude, --slat, -slat, --lat_0  : Latitude of origin
-     --lon0, --center_longitude, --slon, -slon, --lon_0 : Longitude of meridian
-     --false_easting, -fe : False Easting
-     --false_northing, -fn : False Northing
+     --first-standard-parallel   : First Standard Parallel
+     --second-standard-parallel  : Second Standard Parallel
+     --center-latitude           : Original lat
+     --central-meridian          : Original lon
+     --false-easting             : False Easting
+     --false-northing            : False Northing
 
 */
 
