@@ -795,10 +795,10 @@ main (int argc, char **argv)
   }
 
   // Done with the data being modeled.
-  g_free (dtf.y_pix_sparse);
-  g_free (dtf.x_pix_sparse);
-  g_free (dtf.y_proj_sparse);
-  g_free (dtf.x_proj_sparse);
+  g_free (dtf.sparse_y_pix);
+  g_free (dtf.sparse_x_pix);
+  g_free (dtf.sparse_y_proj);
+  g_free (dtf.sparse_x_proj);
   g_free (dtf.y_pix);
   g_free (dtf.x_pix);
   g_free (dtf.y_proj);
