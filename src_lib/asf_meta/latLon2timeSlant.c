@@ -1,37 +1,4 @@
-/******************************************************************************
-NAME: cal_ssar
-
-SYNOPSIS: calculates a look angle given a lat,lon for a geocoded
-scansar image.  Uses a simple, 0 degree squint angle.
-
-
-DESCRIPTION:
-
-EXTERNAL ASSOCIATES:
-    NAME:               USAGE:
-    ---------------------------------------------------------------
-
-FILE REFERENCES:
-    NAME:               USAGE:
-    ---------------------------------------------------------------
-
-PROGRAM HISTORY:
-    VERS:   DATE:  AUTHOR:      PURPOSE:
-    ---------------------------------------------------------------
-    1.0	
-
-HARDWARE/SOFTWARE LIMITATIONS:
-
-ALGORITHM DESCRIPTION:
-
-ALGORITHM REFERENCES:
-BUGS:
-
-******************************************************************************/
 #include "asf.h"
- 
-
- 
 #include "asf_meta.h"
 #include "jpl_proj.h"
 
@@ -39,21 +6,19 @@ BUGS:
 #define time_err 0.00001  	/* error bound for position (in seconds) */
 #define SQR(x) ((x)*(x))
 
-
-
 /* FUNCTION DECLARARIONS */
-double fd(meta_parameters *sar,stateVector sat,stateVector target);
-double time_of_radar(meta_parameters *sar,double t_guess,vector targ);
+double fd(meta_parameters *meta,stateVector sat,stateVector target);
+double time_of_radar(meta_parameters *meta,double t_guess,vector targ);
 stateVector get_tv(double RE,double RP,double lat,double lon);
-
 double angle_anb(vector a,vector b);
 double dist(vector a, vector b);
 
 
-
-/*Convert given latitude and longitude to time, slant
-range, and doppler, using state vectors.*/
-void latLon2timeSlant(meta_parameters *sar,
+/******************************************************
+ * latLon2timeSlant:
+ * Convert given latitude and longitude to time, slant
+ * range, and doppler, using state vectors.*/
+void latLon2timeSlant(meta_parameters *meta,
 	double lat,double lon,
 	double *time,double *slant,double *dop)
 {
@@ -62,10 +27,10 @@ void latLon2timeSlant(meta_parameters *sar,
 	int    iterations = 0;
 	double RE,RP;/*Radius of earth at equator and poles*/
 	
-	if (sar->geo->type=='P')
+	if (meta->sar->image_type=='P')
 	{/*Map projected image has earth polar and equatorial radii*/
-		RE=sar->geo->proj->re_major;
-		RP=sar->geo->proj->re_minor;
+		RE=meta->projection->re_major;
+		RP=meta->projection->re_minor;
 	} else {/*Use WGS-84 ellipsoid*/
 		RE=6378137.0;
 		RP=6356752.314;
@@ -74,40 +39,44 @@ void latLon2timeSlant(meta_parameters *sar,
 	t = 0.0;
 	while ((fabs(dt) > time_err)&&(iterations<40))
 	{
-		dt=time_of_radar(sar,t,targ.pos);
+		dt=time_of_radar(meta,t,targ.pos);
 		t += dt;
 		iterations ++;
 	}
-	sat=meta_get_stVec(sar,t);
+	sat=meta_get_stVec(meta,t);
 	r = dist(sat.pos,targ.pos);/*r: slant range to target.*/
 	vecSub(targ.pos,sat.pos,&targ.pos);
 	*time=t;
 	*slant=r;
 	if (dop!=NULL)
-		*dop=fd(sar,sat,targ);
+		*dop=fd(meta,sat,targ);
 }
 
-/*fd returns the doppler freqency, in Hz, between the
-given satellite and the given point on the ground.*/
-double fd(meta_parameters *sar,stateVector st,stateVector targ)
+/******************************************************
+ * fd:
+ * Returns the doppler freqency, in Hz, between the
+ * given satellite and the given point on the ground.*/
+double fd(meta_parameters *meta,stateVector st,stateVector targ)
 {
 	vector relPos,relVel;
 	vecSub(st.vel,targ.vel,&relVel);
 	vecSub(st.pos,targ.pos,&relPos);
 	return -2*vecDot(relVel,relPos)/
-		(sar->geo->wavelen*vecMagnitude(relPos));
+		(meta->sar->wavelength*vecMagnitude(relPos));
 }
-/*Time_of_radar refines an estimate of the time 
-the given target was in the SAR's field of view.
-It returns the difference between the new time and
-the old time.*/
-double time_of_radar(meta_parameters *sar,double t_guess,vector targ)
+
+/******************************************************
+ * time_of_radar:
+ * Refines an estimate of the time the given target was
+ * in the SAR's field of view.  It returns the difference
+ * between the new time and the old time.*/
+double time_of_radar(meta_parameters *meta,double t_guess,vector targ)
 {
 	stateVector sat;
 	vector targ2sat;
 	double vs, d_dis, ang;
 	
-	sat=meta_get_stVec(sar,t_guess);
+	sat=meta_get_stVec(meta,t_guess);
 	vecSub(sat.pos,targ,&targ2sat);
 	ang = angle_anb(sat.vel,targ2sat);
 	d_dis = vecMagnitude(targ2sat)*cosd(ang);
@@ -115,9 +84,11 @@ double time_of_radar(meta_parameters *sar,double t_guess,vector targ)
 	return -d_dis/vs;
 }
 
-/*Get_tv returns a "target state vector", 
-containing the position and velocity of the 
-given point on the earth's surface.*/
+/******************************************************
+ * get_tv:
+ * Returns a "target state vector", containing the
+ * position and velocity of the given point on the
+ * earth's surface.*/
 stateVector get_tv(double RE,double RP,double lat,double lon)
 {
   double Rn;
@@ -135,7 +106,9 @@ stateVector get_tv(double RE,double RP,double lat,double lon)
   return v;
 }
 
-/* Calculate angle between A and B, in degrees.*/
+/******************************************************
+ * angle_anb:
+ * Calculate angle between A and B, in degrees.*/
 double angle_anb(vector a,vector b)
 {
   double ang;
@@ -144,7 +117,9 @@ double angle_anb(vector a,vector b)
   return(ang);
 }
 
-/*Calculate the distance between A and B*/
+/******************************************************
+ * dist:
+ * Calculate the distance between A and B */
 double dist(vector a, vector b)
 {
 	vector c;
