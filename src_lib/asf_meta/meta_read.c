@@ -5,14 +5,14 @@
 #include "regex_wrapper.h"
 #include "metadata_parser.h"
 
-void meta_read_old(char *fileName, meta_parameters *meta);
+void meta_read_old(meta_parameters *meta, char *fileName);
 
 /***************************************************************
  * meta_read:
  * Reads a meta file and returns a meta structure filled with
  * both old backward compatability and new fields filled in.
  * Note that the appropriate extension is appended to the given
- * base name automagicly.  */
+ * base name automagically.  */
 meta_parameters *meta_read(const char *inName)
 {
 #define MAX_LINE             1024	  /* Maximum line length.  */
@@ -43,10 +43,12 @@ meta_parameters *meta_read(const char *inName)
 	/* Read file with appropriate reader for version.  */
 	if ( strtod(get_subexp_string(&version_subexps, 1), NULL)
 	     < NEW_FORMAT_VERSION ) {
-	  meta_read_old(meta_name, meta);
+	  meta_read_old(meta, meta_name);
 	} else {
-	  parse_metadata(meta_name, meta);
+	  parse_metadata(meta, meta_name);
 	}
+
+	/* Fill old structure parameters */
 
 	free(meta_name);
 
@@ -86,7 +88,7 @@ void meta_io_state(coniStruct *coni, meta_state_vectors *state)
  * Reads in old style meta file and fills new style meta struct
  * Note that the appropriate extension is appended to the given
  * base name automagically.  */
-void meta_read_old(char *fileName, meta_parameters *meta)
+void meta_read_old(meta_parameters *meta, char *fileName)
 {
 	int reading = 1;
 	char *ddrName = appendExt(fileName,".ddr");
@@ -153,8 +155,8 @@ void meta_read_old(char *fileName, meta_parameters *meta)
 	coniIO_double(coni,"geo.","y_pixel_size:",&general->y_pixel_size,       "Pixel size in Y direction [m]");
 	coniIO_double(coni,"geo.","rngPixTime:",  &sar->range_time_per_pixel,   "Time/pixel, range (xPix/(c/2.0), or 1/fs) [s]");
 	coniIO_double(coni,"geo.","azPixTime:",   &sar->azimuth_time_per_pixel, "Time/pixel, azimuth (yPix/swathVel, or 1/prf) [s]");
-	coniIO_double(coni,"geo.","slantShift:",  &sar->slantShift,             "Error correction factor, in slant range [m]");
-	coniIO_double(coni,"geo.","timeShift:",   &sar->timeShift,              "Error correction factor, in time [s]");
+	coniIO_double(coni,"geo.","slantShift:",  &sar->slant_shift,            "Error correction factor, in slant range [m]");
+	coniIO_double(coni,"geo.","timeShift:",   &sar->time_shift,             "Error correction factor, in time [s]");
 	coniIO_double(coni,"geo.","slantFirst:",  &sar->slant_range_first_pixel,"Slant range to first image pixel [m]");
 	coniIO_double(coni,"geo.","wavelength:",  &sar->wavelength,             "SAR Carrier Wavelength [m]");
 	coniIO_double(coni,"geo.","dopRangeCen:", &sar->range_doppler_coefficients[0],  "Doppler centroid [Hz]");

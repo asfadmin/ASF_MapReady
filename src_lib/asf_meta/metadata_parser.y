@@ -381,7 +381,7 @@ block_start:   NAME '{'
 /* Main parser interface function.  Gets passed in a pointer to a
    structure to be filled in and a file name to fill it from.  Returns
    true if the parse succeeded, false otherwise.  */
-void parse_metadata(char *file_name, meta_parameters *dest)
+void parse_metadata(meta_parameters *dest, char *file_name)
 {
   extern FILE *yyin;
   yyin = fopen(file_name, "r");
