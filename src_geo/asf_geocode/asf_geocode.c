@@ -54,7 +54,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "               utm    - Universal Transverse Mercator\n"\
 "               ps     - Polar stereo\n"\
 "               lamcc  - Lambert conformal conic\n"\
-"	        lamaz  - Lambert azimuthal equal area\n"\
+"               lamaz  - Lambert azimuthal equal area\n"\
 "               albers - Albers conical equal area\n"\
 "\n"\
 "     UTM\n"\
