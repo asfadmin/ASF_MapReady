@@ -47,46 +47,46 @@ BUGS:
 #define ecc_e (proj->ecc) /*Extract first eccentricity*/
 
 /*Projection Prototypes;*/
-void ll_ac(geo_parameters *geo,double lat, double lon, double *c1, double *c2);
-void ll_lambert(proj_parameters *proj,double lat,double lon,double *x,double *y);
-void ll_ps(proj_parameters *proj,double lat, double lon, double *x, double *y);
-void ll_utm(proj_parameters *proj,double tlat, double tlon, double *p1, double *p2);
+void ll_ac(meta_projection *proj, char look_dir, double lat, double lon, double *c1, double *c2);
+void ll_lambert(meta_projection *proj,double lat,double lon,double *x,double *y);
+void ll_ps(meta_projection *proj,double lat, double lon, double *x, double *y);
+void ll_utm(meta_projection *proj,double tlat, double tlon, double *p1, double *p2);
 
-void ac_ll(geo_parameters *geo,double c1, double c2,double *lat_d, double *lon);
-void lambert_ll(proj_parameters *proj,double x,double y,double *lat_d,double *lon);
-void ps_ll(proj_parameters *proj,double xx,double yy,double *alat,double *alon);
-void utm_ll(proj_parameters *proj,double x,double y,double *lat_d,double *lon);
+void ac_ll(meta_projection *proj, char look_dir, double c1, double c2,double *lat_d, double *lon);
+void lambert_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon);
+void ps_ll(meta_projection *proj,double xx,double yy,double *alat,double *alon);
+void utm_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon);
 
 /*Convert projection units (meters) from geodetic latitude and longitude (degrees).*/
-void ll_to_proj(geo_parameters *geo,double lat_d,double lon,double *p1,double *p2)
+void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,double *p1,double *p2)
 {
-	if (geo->proj==NULL)
+	if (proj==NULL)
 		bail("NULL projection parameter structure passed to ll_to_proj!\n");
-	switch (geo->proj->type)
+	switch (proj->type)
 	{
-		case 'A': ll_ac(geo,lat_d,lon,p2,p1); break;
-		case 'L': ll_lambert(geo->proj,lat_d,lon,p1,p2); break;
-		case 'P': ll_ps(geo->proj,lat_d,lon,p1,p2); break;
-		case 'U': ll_utm(geo->proj,lat_d,lon,p1,p2); break;
+		case 'A': ll_ac(proj,look_dir,lat_d,lon,p2,p1); break;
+		case 'L': ll_lambert(proj,lat_d,lon,p1,p2); break;
+		case 'P': ll_ps(proj,lat_d,lon,p1,p2); break;
+		case 'U': ll_utm(proj,lat_d,lon,p1,p2); break;
 		default:
-			printf("Unrecognized map projection '%c' passed to ll_to_proj!\n",geo->proj->type);
+			printf("Unrecognized map projection '%c' passed to ll_to_proj!\n",proj->type);
 			exit(1);
 	}
 }
 
 /*Convert projection units (meters) to geodetic latitude and longitude (degrees).*/
-void proj_to_ll(geo_parameters *geo,double p1, double p2, double *lat_d, double *lon)
+void proj_to_ll(meta_projection *proj, char look_dir, double p1, double p2, double *lat_d, double *lon)
 {
-	if (geo==NULL)
+	if (proj==NULL)
 		bail("NULL projection parameter structure passed to ll_to_proj!\n");
-	switch(geo->proj->type)
+	switch(proj->type)
 	{
-		case 'A': ac_ll(geo,p2,p1,lat_d,lon); break;
-		case 'L': lambert_ll(geo->proj,p1,p2,lat_d,lon); break;
-		case 'P': ps_ll(geo->proj,p1,p2,lat_d,lon); break;
-		case 'U': utm_ll(geo->proj,p1,p2,lat_d,lon); break;
+		case 'A': ac_ll(proj,look_dir,p2,p1,lat_d,lon); break;
+		case 'L': lambert_ll(proj,p1,p2,lat_d,lon); break;
+		case 'P': ps_ll(proj,p1,p2,lat_d,lon); break;
+		case 'U': utm_ll(proj,p1,p2,lat_d,lon); break;
 		default:
-			printf("Unrecognized map projection '%c' passed to proj_to_ll!\n",geo->proj->type);
+			printf("Unrecognized map projection '%c' passed to proj_to_ll!\n",proj->type);
 			exit(1);
 	}
 }
@@ -135,7 +135,7 @@ void lambert_init(proj_lambert *l,double e,
 	else 
 		*n = sind(l->plat1);
 }
-void ll_lambert(proj_parameters *proj,double lat,double lon,double *x,double *y)
+void ll_lambert(meta_projection *proj,double lat,double lon,double *x,double *y)
 {
 	double F, rho_0, t, rho, theta;
 	double m1, m2, t0, t1, t2, n;
@@ -173,7 +173,7 @@ void ll_lambert(proj_parameters *proj,double lat,double lon,double *x,double *y)
              geological survey(bulletin 1532)
  
 ***********************************************************************/
-void lambert_ll(proj_parameters *proj,double x,double y,double *lat_d,double *lon)
+void lambert_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon)
 {
 	double F, rho_0, t, rho, theta, chi;
 	double m1, m2, t0, t1, t2, n;
@@ -235,7 +235,7 @@ void lambert_ll(proj_parameters *proj,double x,double y,double *lat_d,double *lo
   add re, e2, slat and slon to the calling sequence.  ssp  Mar 1989.
   convert to c					      ASF  1/98
 *****************************************************************************/
-void ll_ps(proj_parameters *proj,double lat, double lon, double *x, double *y)
+void ll_ps(meta_projection *proj,double lat, double lon, double *x, double *y)
 {
 	double re=RE;     /* radius of earth */
 	double e=ecc_e,e2=ecc2;  /* eccentricities of earth*/
@@ -286,7 +286,7 @@ void ll_ps(proj_parameters *proj,double lat, double lon, double *x, double *y)
   Written by C. S. Morris - April 29, 1985
 ******************************************************************************/
 
-void ps_ll(proj_parameters *proj,double x,double y,double *alat,double *alon)
+void ps_ll(meta_projection *proj,double x,double y,double *alat,double *alon)
 {
 	double re=RE;     /* radius of earth  */
 	double e=ecc_e,e2=ecc2;  /* eccentricities of earth */
@@ -326,7 +326,7 @@ void ps_ll(proj_parameters *proj,double x,double y,double *alat,double *alon)
 /**********************UTM Conversion Routines.*******************/
 int UTM_zone(double lon) {return(((180.0+lon)/6.0+1.0));} 
 
-void ll_utm(proj_parameters *proj,double tlat, double tlon, double *p1, double *p2)
+void ll_utm(meta_projection *proj,double tlat, double tlon, double *p1, double *p2)
 {
 	double   k0 = 0.9996;       /* Center meridian scale factor */
 	double   epsq, lat, /*lon,*/ lon0, a1, a2, a3, rn;
@@ -368,7 +368,7 @@ void ll_utm(proj_parameters *proj,double tlat, double tlon, double *p1, double *
 	*p1 = x;
 	*p2 = y;
 }
-void utm_ll(proj_parameters *proj,double x,double y,double *lat_d,double *lon)
+void utm_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon)
 {
 	double esq = ecc2;        /* Earth eccentricity squared */
 	double k0  = 0.9996;      /* Center meridian scale factor */
@@ -434,7 +434,7 @@ in degrees.  This creates a latitude/longitude-style
 coordinate system centered under the satellite at
 the start of imaging.  You must pass it a state vector
 from the start of imaging.*/
-void atct_init(geo_parameters *geo,stateVector st)
+void atct_init(meta_projection *proj,stateVector st)
 {
 	vector up={0.0,0.0,1.0};
 	vector z_orbit, y_axis, a, nd;
@@ -464,55 +464,55 @@ void atct_init(geo_parameters *geo,stateVector st)
 		alpha3 *= -1.0;
 	
 	printf("alpha1, alpha2, alpha3  %f %f %f\n",alpha1,alpha2,alpha3);
-	geo->proj->param.atct.alpha1=alpha1;
-	geo->proj->param.atct.alpha2=alpha2;
-	geo->proj->param.atct.alpha3=alpha3;
+	proj->param.atct.alpha1=alpha1;
+	proj->param.atct.alpha2=alpha2;
+	proj->param.atct.alpha3=alpha3;
 }
 
-void ac_ll(geo_parameters *geo,double c1, double c2, double *lat_d, double *lon)
+void ac_ll(meta_projection *proj, char look_dir, double c1, double c2, double *lat_d, double *lon)
 {
 	double qlat, qlon;
 	double lat,radius;
 	vector pos;
 	
-	if (geo->lookDir=='R')
-		qlat = -c2/geo->proj->param.atct.rlocal; /* Right looking sar*/
+	if (look_dir=='R')
+		qlat = -c2/proj->param.atct.rlocal; /* Right looking sar*/
 	else
-		qlat =  c2/geo->proj->param.atct.rlocal;   /* Left looking sar  */
-	qlon = c1/(geo->proj->param.atct.rlocal*cos(qlat));
+		qlat =  c2/proj->param.atct.rlocal;   /* Left looking sar  */
+	qlon = c1/(proj->param.atct.rlocal*cos(qlat));
 	
-	sph2cart(geo->proj->param.atct.rlocal,qlat,qlon,&pos);
+	sph2cart(proj->param.atct.rlocal,qlat,qlon,&pos);
 	
-	rotate_z(&pos,-geo->proj->param.atct.alpha3);
-	rotate_y(&pos,-geo->proj->param.atct.alpha2);
-	rotate_z(&pos,-geo->proj->param.atct.alpha1);
+	rotate_z(&pos,-proj->param.atct.alpha3);
+	rotate_y(&pos,-proj->param.atct.alpha2);
+	rotate_z(&pos,-proj->param.atct.alpha1);
 	
 	cart2sph(pos,&radius,&lat,lon);
 	*lon *=R2D;
 	lat*=R2D;
-	*lat_d= atand(tand(lat)/(1-geo->proj->ecc*geo->proj->ecc));
+	*lat_d= atand(tand(lat)/(1 - ecc2));
 }
 
-void ll_ac(geo_parameters *geo,double lat_d, double lon, double *c1, double *c2)
+void ll_ac(meta_projection *proj, char look_dir, double lat_d, double lon, double *c1, double *c2)
 {
 	double qlat, qlon;
 	double lat,radius;
 	vector pos;
 	
-	lat= atand(tand(lat_d)*(1-geo->proj->ecc*geo->proj->ecc));
-	sph2cart(geo->proj->param.atct.rlocal,lat*D2R,lon*D2R,&pos);
+	lat= atand(tand(lat_d)*(1 - ecc2));
+	sph2cart(proj->param.atct.rlocal,lat*D2R,lon*D2R,&pos);
 	
-	rotate_z(&pos,geo->proj->param.atct.alpha1);
-	rotate_y(&pos,geo->proj->param.atct.alpha2);
-	rotate_z(&pos,geo->proj->param.atct.alpha3);
+	rotate_z(&pos,proj->param.atct.alpha1);
+	rotate_y(&pos,proj->param.atct.alpha2);
+	rotate_z(&pos,proj->param.atct.alpha3);
 	
 	cart2sph(pos,&radius,&qlat,&qlon);
 	
-	*c1 = qlon*geo->proj->param.atct.rlocal*cos(qlat);
-	if (geo->lookDir=='R')
-		*c2 = -1.0*qlat*geo->proj->param.atct.rlocal;  /* right looking */
+	*c1 = qlon*proj->param.atct.rlocal*cos(qlat);
+	if (look_dir=='R')
+		*c2 = -1.0*qlat*proj->param.atct.rlocal;  /* right looking */
 	else
-		*c2 = qlat * geo->proj->param.atct.rlocal;   /* left looking */
+		*c2 = qlat * proj->param.atct.rlocal;   /* left looking */
 }
 
 void rotate_z(vector *v,double theta)
