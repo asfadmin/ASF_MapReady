@@ -3,8 +3,21 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <sys/time.h>
+#include <assert.h>
+#include <stdlib.h>
 
 #define DEG_TO_RAD 0.0174532925199432958
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+static const int ARR_TEST_SIZE = 250;
 
 static int nfail = 0;
 static int nok = 0;
@@ -33,34 +46,6 @@ static int nok = 0;
                        } else { ++nok; } \
 		       }
 
-#define TEST_PS(lat0, lon0, lat, lon, outx, outy) { \
-                       double x, y; \
-                       project_ps(lat0, lon0, 1, \
-                                   lat * DEG_TO_RAD, \
-                                   lon * DEG_TO_RAD, &x, &y); \
-                       if (!within_tol(x,outx) || !within_tol(y, outy)) { \
-                         printf("Fail: project_ps(" #lat0 "," #lon0 "," \
-                                #lat "," #lon "," #outx "," #outy \
-                                "): got (%f,%f)\n", \
-                                x, y); \
-                         ++nfail; \
-                       } else { ++nok; } \
-		       } { \
-                       double x, y; \
-                       proj_ps ps; \
-                       ps.slat = lat0; \
-                       ps.slon = lon0; \
-                       project_ps_s(&ps, 1, \
-                                   lat * DEG_TO_RAD, \
-                                   lon * DEG_TO_RAD, &x, &y); \
-                       if (!within_tol(x,outx) || !within_tol(y, outy)) { \
-                         printf("Fail: project_ps_s(" #lat0 "," #lon0 "," \
-                                #lat "," #lon "," #outx "," #outy \
-                                "): got (%f,%f)\n", \
-                                x, y); \
-                         ++nfail; \
-                       } else { ++nok; } \
-                       }
 
 #define TEST_LAMAZ(lat0, lon0, lat, lon, outx, outy) { \
                        double x, y; \
@@ -91,14 +76,14 @@ static int nok = 0;
                        } else { ++nok; } \
 		       }
 
-#define TEST_LAMCC(lat1, lat2, lat0, lon0, lat, lon, outx, outy) { \
+#define TEST_LAMCC(lat1, lat2, lat_0, lon_0, lat, lon, outx, outy) { \
                        double x, y; \
-                       project_lamcc(lat1, lat2, lat0, lon0, \
+                       project_lamcc(lat1, lat2, lat_0, lon_0, \
                                    lat * DEG_TO_RAD, \
                                    lon * DEG_TO_RAD, &x, &y); \
                        if (!within_tol(x,outx) || !within_tol(y, outy)) { \
                          printf("Fail: project_lamcc(" #lat1 "," #lat2 "," \
-                                #lat0 "," #lon0 "," \
+                                #lat_0 "," #lon_0 "," \
                                 #lat "," #lon "," #outx "," #outy \
                                 "): got (%f,%f)\n", \
                                 x, y); \
@@ -109,14 +94,14 @@ static int nok = 0;
                        proj_lamcc lamcc; \
                        lamcc.plat1 = lat1; \
                        lamcc.plat2 = lat2; \
-                       lamcc.lat0 = lat0; \
-                       lamcc.lon0 = lon0; \
+                       lamcc.lat0 = lat_0; \
+                       lamcc.lon0 = lon_0; \
                        project_lamcc_s(&lamcc, \
                                    lat * DEG_TO_RAD, \
                                    lon * DEG_TO_RAD, &x, &y); \
                        if (!within_tol(x,outx) || !within_tol(y, outy)) { \
                          printf("Fail: project_lamcc_s(" #lat1 "," #lat2 "," \
-                                #lat0 "," #lon0 "," \
+                                #lat_0 "," #lon_0 "," \
                                 #lat "," #lon "," #outx "," #outy \
                                 "): got (%f,%f)\n", \
                                 x, y); \
@@ -163,6 +148,25 @@ int within_tol(double a, double b)
     return fabs(b) < tol ? fabs(a) < tol : fabs((a-b)/b) < tol;
 }
 
+int check(char * name, double x, double y, double x_correct, double y_correct)
+{
+    if (!within_tol(x, x_correct) || !within_tol(y, y_correct))
+    {
+	printf("Fail: %s.  Expected: (%f,%f) Got: (%f,%f)\n",
+	       name, x_correct, y_correct, x, y);
+
+	++nfail;
+
+	return FALSE;
+    }
+    else
+    {
+	++nok;
+
+	return TRUE;
+    }
+}
+
 void test_poly()
 {
     TEST_POLY(0, -90, 0, 0);
@@ -170,29 +174,298 @@ void test_poly()
     TEST_POLY(77, -86, 100412.759, 8553464.807);
 }
 
+/************************************* Polar Stereographic Projection Tests */
+void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
+	      double x_correct, double y_correct)
+{
+    char name[256];
+
+    double lat0, lon0, lat, lon;
+
+    lat0 = lat0_deg * DEG_TO_RAD;
+    lon0 = lon0_deg * DEG_TO_RAD;
+    lat = lat_deg * DEG_TO_RAD;
+    lon = lon_deg * DEG_TO_RAD;
+
+    /* normal function call check */
+    {
+	double x, y;
+	double lat_out, lon_out;
+	int ok;
+
+	sprintf(name, "project_ps(%f,%f,%f,%f)",
+		lat0_deg, lon0_deg, lat_deg, lon_deg);
+	
+	project_ps(lat0, lon0, 1, lat, lon, &x, &y);
+	
+	ok = check(name, x, y, x_correct, y_correct);
+
+	/* inverse call should result in original point */
+	/* skip if forward test did not pass */
+	if (ok)
+	{
+	    sprintf(name, "project_ps_inv(%f,%f,%f,%f)",
+		    lat0_deg, lon0_deg, x, y);
+	    
+	    project_ps_inv(lat0, lon0, 1, x, y, &lat_out, &lon_out);
+
+	    check(name, lat, lon, lat_out, lon_out);
+	}
+    }
+
+    /* passing as a structure function call check */
+    {
+	proj_ps ps;
+	double x, y;
+
+	sprintf(name, "project_ps_s(%f,%f,%f,%f)",
+		lat0_deg, lon0_deg, lat_deg, lon_deg);
+	
+	ps.slat = lat0;
+	ps.slon = lon0;
+	
+	project_ps_s(&ps, 1, lat, lon, &x, &y);
+
+	check(name, x, y, x_correct, y_correct);
+    }
+    
+    /* passing as an array function call check */
+    {
+	double *xarr, *yarr;
+	int i, ok;
+
+	sprintf(name, "project_ps_arr(%f,%f,%f,%f)",
+		lat0_deg, lon0_deg, lat_deg, lon_deg);
+
+	xarr = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+	yarr = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+
+	for (i = 0; i < ARR_TEST_SIZE; ++i)
+	{
+	    xarr[i] = lon;
+	    yarr[i] = lat;
+	}
+	
+	project_ps_arr(lat0, lon0, 1, xarr, yarr, ARR_TEST_SIZE);
+
+	ok = 1;
+	for (i = 1; i < ARR_TEST_SIZE; ++i)
+	{
+	    if (!within_tol(xarr[i], xarr[0]) || !within_tol(yarr[i], yarr[0]))
+	    {
+		ok = 0;
+		printf("Fail: %s. Result [%d] (%f,%f) "
+		       "disagrees with [0] (%f,%f).\n",
+		       name, i, xarr[i], yarr[i], xarr[0], yarr[0]);
+
+		++nfail;
+		break;
+	    }
+	}
+
+	if (ok) ++nok;
+	check(name, xarr[0], yarr[0], x_correct, y_correct);
+    }
+}
+
+void test_random_ps()
+{
+    /* check that randomly generated values agree between array
+       version and by-point version */
+
+    double *x, *xp, *xa;
+    double *y, *yp, *ya;
+
+    int i, ok=1;
+
+    int reference_lat;
+    int reference_lon;
+
+    x = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+    y = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+
+    xp = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+    yp = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+
+    xa = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+    ya = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
+
+    srand(101);
+
+    for (i = 0; i < ARR_TEST_SIZE; ++i)
+    {
+	/* latitude: between pi/4 and pi/2 (northern latitudes) */
+	x[i] = ya[i] = (double)rand() / (double)RAND_MAX * .7 + .7;
+
+	/* longitude: between -pi and pi */
+	y[i] = xa[i] = (double)rand() / (double)RAND_MAX * 6.26 - 3.14;
+    }
+
+    /* should be able to use any reference latitude > 45 and any ref lon */
+    reference_lat = rand() % 45 + 45;
+    reference_lon = rand() % 360 - 180;
+
+    project_ps_arr(reference_lat * DEG_TO_RAD, reference_lon * DEG_TO_RAD,
+		   1, xa, ya, ARR_TEST_SIZE);
+
+    for (i = 0; i < ARR_TEST_SIZE; ++i)
+    {
+	project_ps(reference_lat * DEG_TO_RAD, reference_lon * DEG_TO_RAD, 1, 
+		   x[i], y[i], &xp[i], &yp[i]); 
+    }
+
+    /* do they agree? */
+    for (i = 0; i < ARR_TEST_SIZE; ++i)
+    {
+	if (!within_tol(xa[i], xp[i]) || !within_tol(ya[i], yp[i]))
+	{
+	    printf("Fail: project_ps{_arr} - Random[%d] (%d,%d,%f,%f)"
+		   " Array Result: (%f, %f) Point Result: (%f,%f)\n",
+		   i, reference_lat, reference_lon,
+		   x[i], y[i], xa[i], ya[i], xp[i], yp[i]);
+	    ++nfail;
+	    ok = 0;
+	    break;
+	}
+    }
+    
+    if (ok)
+	++nok;
+
+    /* now reverse-transform via both methods.  First by-point */
+    ok = 1;
+
+    for (i = 0; i < ARR_TEST_SIZE; ++i)
+    {
+	project_ps_inv(reference_lat * DEG_TO_RAD, 
+		       reference_lon * DEG_TO_RAD, 1,
+		       xp[i], yp[i], &xp[i], &yp[i]);
+    }
+
+    /* agrees with original values ? */
+    for (i = 0; i < ARR_TEST_SIZE; ++i)
+    {
+	if (!within_tol(xp[i], x[i]) || !within_tol(yp[i], y[i]))
+	{
+	    printf("Fail: project_ps/project_ps_inv doesn't match."
+		   " Random[%d] (%d,%d,%f,%f) Got: (%f,%f)\n",
+		   i, reference_lat, reference_lon,
+		   x[i], y[i], xp[i], yp[i]);
+	    ++nfail;
+	    ok = 0;
+	    break;
+	}
+    }
+
+    if (ok)
+	++nok;
+
+}
+
+void test_ps()
+{
+    testa_ps(71, -96, 39.101252222, -121.33955, -2529570, -5341800); 
+
+    test_random_ps();
+}
+
+/******************************************** Universal Transverse Mercator  */
 void test_utm()
 {
     TEST_UTM(-112, 45.25919444, -111.5, 460769.27, 5011648.45); 
 }
 
-void test_ps()
-{
-    TEST_PS(71, -96, 39.101252222, -121.33955, -2529570, -5341800); 
-}
-
+/********************************************* Lambert Azimuthal Equal Area  */
 void test_lamaz()
 {
     TEST_LAMAZ(0, 0, 0, 0, 0, 0);
 }
 
+/************************************************** Lambert Conformal Conic  */
 void test_lamcc()
 {
-    /* TEST_LAMCC(18, 77, 17.9321667, 0, 0, 0); */
+    /*TEST_LAMCC(28.3833333, 30.2833333, 27.833333, -99, 28.5, -96, 0, 0);*/
 }
 
+/************************************************** Albers Equal-Area Conic  */
 void test_alb()
 {
     TEST_ALB(5, 10, 0, 0, 0, 0, 0, 0);
+}
+
+void perf_test2()
+{
+    const int N = 10000;
+    double *x, *xo;
+    double *y, *yo;
+
+    int i, n=0;
+    struct timeval tv1, tv2;
+    struct timezone tz;
+    int elapsed1, elapsed2;
+
+    x = (double *) malloc(sizeof(double) * N);
+    y = (double *) malloc(sizeof(double) * N);
+
+    xo = (double *) malloc(sizeof(double) * N);
+    yo = (double *) malloc(sizeof(double) * N);
+
+    /* use same seed each time */
+    srand(10101);
+
+    for (i = 0; i < N; ++i)
+    {
+	x[i] = xo[i] = (double)rand() / (double)RAND_MAX * .707 + .707;
+	y[i] = yo[i] = (double)rand() / (double)RAND_MAX * .707 + .707;
+    }
+
+    gettimeofday(&tv1, &tz);    
+    project_ps_arr(71, -96, 1, x, y, N);
+    gettimeofday(&tv2, &tz);
+
+    elapsed1 = tv2.tv_sec - tv1.tv_sec;
+
+    gettimeofday(&tv1, &tz);    
+    for (i = 0; i < N; ++i)
+    {
+	project_ps(71, -96, 1, yo[i], xo[i], &xo[i], &yo[i]); 
+    }
+    gettimeofday(&tv2, &tz);
+    elapsed2 = tv2.tv_sec - tv1.tv_sec;
+
+    /* do they agree? */
+    for (i = 0; i < N; ++i)
+    {
+	if (!within_tol(x[i], xo[i]) || !within_tol(y[i], yo[i]))
+	{
+/*
+	    printf("x[%d] = %f, xo[%d] = %f, y[%d] = %f, yo[%d] = %f\n",
+		   i, x[i], i, xo[i], i, y[i], i, yo[i]);
+*/
+	    ++n;
+	}
+    }
+    
+    printf("This Should Be 0 : %d\n", n);
+    printf("Elapsed #1 (array): %d sec\n", elapsed1);
+    printf("Elapsed #2 (point): %d sec\n", elapsed2);
+}
+
+void perf_test()
+{
+    double x, y;
+    int i;
+    struct timeval tv1, tv2;
+    struct timezone tz;
+    
+    gettimeofday(&tv1, &tz);    
+    for (i = 0; i < 1000000; ++i)
+    {
+	project_lamaz(46, -112, .765, -1.1305, &x, &y);
+    }
+    gettimeofday(&tv2, &tz);
+
+    printf("Elapsed: %d sec\n", tv2.tv_sec - tv1.tv_sec);
 }
 
 int main(int argc, char * argv [])
@@ -203,6 +476,8 @@ int main(int argc, char * argv [])
     test_lamaz();
     test_lamcc();
     test_alb();
+
+    perf_test2();
 
     if (nfail == 0)
 	printf("%d tests passed!\n", nok);
