@@ -116,7 +116,7 @@ else
 	echo 'FLAGS   = $(INCLUDE) $(OPTFLAG) -D'$sys' $(ENDIAN_FLAGS)' >> system_rules
 fi
 
-cat <<EOF >>system_rules
+cat <<'EOF' >>system_rules
 ifeq ($(shell if test -n '$(DEBUG_BUILD)' -a '$(DEBUG_BUILD)' -ne 0 -a '$(CC)' = gcc; then echo 'true'; fi), true)
   DEBUGFLAGS = -Wall -g
   DEBUGLIBS = -lefence
@@ -125,8 +125,8 @@ CFLAGS  = $(FLAGS) $(DEBUGFLAGS)
 LDFLAGS = $(DEBUGLIBS)
 LIBDIR  = ../../lib/$(SYS)
 BINDIR  = ../../bin/$(SYS)
-$makeExtra
 EOF
+echo $makeExtra >> system_rules
 
 # Look for the X-Windows directory
 for xdir in `echo /usr /usr/openwin /usr/X /usr/X11 /usr/X11R6`
