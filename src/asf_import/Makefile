@@ -20,8 +20,6 @@ OBJS  = aisp_params.o \
 	aux_RSAT.o \
 	bin_state.o \
 	cal_params.o \
-	ceos2raw.o \
-	ceosUtil.o \
 	createSubset.o \
 	decoder_ERS.o \
 	decoder_JRS.o \
@@ -29,12 +27,18 @@ OBJS  = aisp_params.o \
 	decoder_utils.o \
 	fetch_prc_stvec.o \
 	frame.o \
+	import_ceos.o \
+	import_envi.o \
+	import_esri.o \
+	import_stf.o \
 	least_squares.o \
 	matrix.o \
 	missing.o \
 	sprocket_layers.o \
-	stf2raw.o \
-	unpack.o
+	unpack.o \
+	utilities.o \
+	utilities_ceos.o \
+	utilities_stf.o
 
 all: asf_import
 	-rm *.o
