@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <sys/stat.h>
 
 static gboolean keep_going = TRUE;
 
@@ -459,6 +460,47 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * file)
     }
 }
 
+static gboolean
+have_access_to_dir(const gchar * dir, gchar ** err_string)
+{
+    struct stat buf;
+    int result;
+
+    if (strlen(dir) == 0)
+	dir = ".";
+
+    result = stat (dir, &buf);
+
+    if (result == -1)
+    {
+	*err_string = (gchar *) g_malloc (sizeof(gchar) * 512);
+	snprintf(*err_string, 512, "%s: %s", dir, strerror(errno));
+	return FALSE;
+    }
+    else
+    {
+	/* Try opening a file in that dir */
+	FILE * tmp;
+	gchar fname [4096];
+	sprintf(fname, "%s/tmp00%li", dir, time(NULL));
+	tmp = fopen(fname, "wt");
+	if (!tmp)
+	{
+	    *err_string = (gchar *) g_malloc (sizeof(gchar) * 512);
+	    if (strcmp(dir, ".") == 0 && errno == EACCES)
+		sprintf(*err_string, "Cannot write to output directory!");
+	    else
+		snprintf(*err_string, 512, "%s: %s", dir, strerror(errno));
+
+	    return FALSE;
+	}
+	fclose(tmp);
+	unlink(fname);
+    }
+
+    return TRUE;
+}
+
 static void
 process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 {
@@ -479,7 +521,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
   if (strcmp(status, "Done") != 0 || !skip_done)
   {
     gchar *basename, *before_geocoding_basename, *output_dir,
-	*out_basename, *p, *done;
+	*out_basename, *p, *done, *err_string;
     gchar convert_cmd[4096];
     gchar log_file[1024];
     gboolean err;
@@ -500,6 +542,20 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 	*(p+1) = '\0';
     else
 	output_dir[0] = '\0';
+
+    /* Ensure we have access to the output directory */
+    if (!have_access_to_dir(output_dir, &err_string))
+    {
+	/* We don't -- issue a message in the "Status" column. */
+	gtk_list_store_set(list_store, iter, COL_STATUS, err_string, -1);
+
+	g_free(err_string);
+	g_free(basename);
+	g_free(out_basename);
+	g_free(output_dir);
+
+	return;
+    }
 
     if (settings_get_run_geocode(user_settings))
     {
