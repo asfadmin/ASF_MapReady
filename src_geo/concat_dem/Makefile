@@ -8,24 +8,20 @@ include ../../make_support/system_rules
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	-lm
+
 OBJS  = open_dem.o \
 	extents.o \
-	projection.o
+	projection.o \
+	concat_dem.o
 
-COBJS= main.o $(OBJS)
-POBJS= profile.o $(OBJS)
 
-all: concat_dem profile
+all: concat_dem
 	rm *.o
 
-concat_dem:	$(COBJS)
-	${CC} ${CFLAGS} ${LDFLAGS} -o concat_dem $(COBJS) ${LIBS}
+concat_dem: $(OBJS)
+	${CC} ${CFLAGS} ${LDFLAGS} -o concat_dem $(OBJS) ${LIBS}
 	mv concat_dem $(BINDIR)
 	cp concat_dem.1 ../../man/cat1/concat_dem.1
-
-profile:	$(POBJS)
-	${CC} ${CFLAGS} ${LDFLAGS} -o profile $(POBJS) ${LIBS}
-	mv profile$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f core ${OBJS} *.o
