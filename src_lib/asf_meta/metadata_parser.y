@@ -256,8 +256,13 @@ void fill_structure_field(char *field_name, void *valp)
 	MGENERAL->orbit_direction = 'D'; 
 	return; 
       }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "?") ) {
+      /* if its a question mark don't bother the user with a warning, this happens often with DDRs */
+	MGENERAL->orbit_direction = '?'; 
+	return;
+      }
       else {
-	warning_message("Bad value: orbit_direction = '%c'.",VALP_AS_CHAR_POINTER[0]);
+	warning_message("Bad value: orbit_direction = '%s'.",VALP_AS_CHAR_POINTER);
 	return;
       }      
     }
@@ -294,27 +299,38 @@ void fill_structure_field(char *field_name, void *valp)
   /* Fields which normally go in the sar block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "sar") ) {
     if ( !strcmp(field_name, "image_type") ) { 
-       if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { 
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { 
 	MSAR->image_type = 'S'; 
 	return; 
       }
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "G") ) { 
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "G") ) { 
 	MSAR->image_type = 'G'; 
 	return; 
       }
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) { 
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) { 
 	MSAR->image_type = 'P'; 
 	return; 
       }
-      warning_message("Bad value: image_type = '%c'.",VALP_AS_CHAR_POINTER[0]);
-      return;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "?") ) { 
+       /* if its a question mark don't bother the user with a warning, this happens often with DDRs */
+	MSAR->image_type = '?'; 
+	return; 
+      }
+      else {
+        warning_message("Bad value: image_type = '%s'.",VALP_AS_CHAR_POINTER);
+        return;
+      }
     }
-    if ( !strcmp(field_name, "look_direction") ) { 
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "R") ) { 
+    if ( !strcmp(field_name, "look_direction") ) {
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "R") ) {
 	MSAR->look_direction = 'R'; return; 
       }
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) { 
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) {
 	MSAR->look_direction = 'L'; return; 
+      }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "?") ) {
+       /* if its a question mark don't bother the user with a warning, this happens often with DDRs */
+ 	MSAR->look_direction = '?'; return; 
       }
       warning_message("Bad value: look_direction = '%c'.",VALP_AS_CHAR_POINTER[0]);
       return;
