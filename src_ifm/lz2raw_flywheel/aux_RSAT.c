@@ -49,8 +49,7 @@ void RSAT_decodeAux(RSAT_raw_aux *in,RSAT_aux *out)
 		case 2:
 			out->timeBase=10.0/CONF_RSAT_SMO;break;
 		case 3:
-			printf("   Error! Unrecognized ADC conversion rate %d!\n",in->ADCSamplingRate);
-			exit(1);
+			fprintf(stderr, "   Error! Unrecognized ADC conversion rate %d!\n",in->ADCSamplingRate);
 	}
 	
 	out->prf_code=(((int)in->PRFBeam1)<<5)|(in->PRFBeam2);
