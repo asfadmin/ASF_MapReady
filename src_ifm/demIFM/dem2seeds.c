@@ -67,10 +67,9 @@ BUGS:
 *									    *
 ****************************************************************************/
 
-
+#include "asf.h"
 #include "ddr.h"
-void getFloatLine(FILE *f,const struct DDR *ddr,int yLine,float *dest); /*Read line from file.*/
-void putFloatLine(FILE *f,const struct DDR *ddr,int yLine,const float *source); /*Write line to file.*/
+
 #define size 4
 #define gridRes 100
 #define boxRes 15
