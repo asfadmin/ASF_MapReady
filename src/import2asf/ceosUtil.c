@@ -13,7 +13,10 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inName,
  * file pointer  */
 FILE *openCeos(char *fName, char *outN, bin_state *s)
 {
-  FILE *ret=FOPEN(fName,"rb");
+  char dataName[256], metaName[256];
+  FILE *ret;
+  get_ceos_names(fName,dataName,metaName);
+  ret=FOPEN(dataName,"rb");
   FSEEK64(ret,0,0);/*Seek to beginning of file*/
   getNextCeosLine(ret, s, fName, outN);/*Skip over first line of file*/
   return ret;
