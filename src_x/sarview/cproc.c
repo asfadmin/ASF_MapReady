@@ -64,7 +64,7 @@ void cproc_ne_arrows(char *canvas,double x,double y)
 	char buf[1024];
 	sprintf(buf,"catch \"%s delete arrows\"",canvas);Tcl_GlobalEval(interp,buf);
 
-	if (meta!=NULL)
+	if ((meta!=NULL) && (meta->state_vectors->vector_count>2))
 	{/*We have metadata for this image-- figure out which way north is.*/
 		int ix=(int)x,iy=(int)y;
 		double lat,lon,time,slant,doppler;
