@@ -243,9 +243,9 @@ int main(int argc, char *argv[])
   flags[f_LOG] = checkForOption("-log", argc, argv);
   flags[f_QUIET] = checkForOption("-quiet", argc, argv);
 
-  /* Make sure to set log & quiet flags (for use in our libraries) */
-  logflag = (flags[f_LOG]!=FLAG_NOT_SET) ? TRUE : FALSE;
+  /* Make sure to set old school log & quiet flags (for use in our libraries) */
   quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
+  logflag = TRUE; /* Since we always log set the oldschool logflag to true */
 
   /*Check for mutually exclusive options: we can only have one of these*/
   int temp = 0;
@@ -379,12 +379,6 @@ int main(int argc, char *argv[])
   strcpy(inBaseName, argv[argc - 2]);
   strcpy(outBaseName,argv[argc - 1]);
 /***********************END COMMAND LINE PARSING STUFF***********************/
-
-  /* Get the data & meta names; deal with the extensions later */
-  strcpy(inDataName,inBaseName);
-  if (flags[f_METADATA_FILE] == FLAG_NOT_SET) {
-    strcpy(inMetaName,inBaseName);
-  }
 
 /*  if (flags[f_LOG])*/ {
     char command_line[2048];
