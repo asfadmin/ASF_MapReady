@@ -26,7 +26,7 @@ VERSION_POINT = 4
 #	epsg_ellipse.inc epsg_pcs.inc epsg_proj.inc epsg_vertcs.inc geokeys.inc
 
 # '-I../libtiff' is for a slew of .h files that are needed from libtiff
-CFLAGS = -g -Wall $(OPTFLAG) $(INCLUDE) -I../libtiff
+CFLAGS := -I../libtiff $(CFLAGS)
 
 OBJS  = ${XTIFF} \
 	geo_free.o \
