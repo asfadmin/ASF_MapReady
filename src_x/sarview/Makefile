@@ -6,7 +6,7 @@
 include ../../make_support/system_rules
 
 CFLAGS := -I$(LIBDIR)/tcltk81/include $(CFLAGS)
-LDFLAGS := -L$(LIBDIR)/tcltk81/lib $(LDFLAGS)
+LDFLAGS := -L$(LIBDIR)/tcltk81/lib -L$(XHOME) $(LDFLAGS)
 
  # ldl, lsocket, and lnsl are necessary for Solaris, but break sarview on irix
 OTHER = -ldl -lsocket -lnsl
