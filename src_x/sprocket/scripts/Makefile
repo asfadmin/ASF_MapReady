@@ -2,33 +2,40 @@
 
 include ../Make_rules
 
-SOURCE= $(BINDIR)/standard.zsh \
-	$(BINDIR)/complex.zsh \
-	$(BINDIR)/pvs_gui \
-	$(BINDIR)/vexcel_complex.zsh \
-	$(BINDIR)/target_selector.zsh \
-	$(BINDIR)/iq.zsh \
-	$(BINDIR)/geo.zsh
 
-all: $(SOURCE)
+all: standard  complex  sprocket  vexcel_complex  target_selector  iq  geo
 
-$(BINDIR)/standard.zsh: standard.zsh
-	cp standard.zsh $(BINDIR)/standard.zsh
+standard: standard.sh
+	@ echo ""
+	cp standard.sh $(BINDIR)/standard
+	chmod 775 $(BINDIR)/standard
 
-$(BINDIR)/complex.zsh: complex.zsh
-	cp complex.zsh $(BINDIR)/complex.zsh
+complex: complex.sh
+	@ echo ""
+	cp complex.sh $(BINDIR)/complex
+	chmod 775 $(BINDIR)/complex
 
-$(BINDIR)/pvs_gui: pvs_gui
-	cp pvs_gui $(BINDIR)/pvs_gui
+sprocket: sprocket.sh
+	@ echo ""
+	cp sprocket.sh $(BINDIR)/sprocket
+	chmod 775 $(BINDIR)/sprocket
 
-$(BINDIR)/vexcel_complex.zsh: vexcel_complex.zsh
-	cp vexcel_complex.zsh $(BINDIR)/vexcel_complex.zsh
+vexcel_complex: vexcel_complex.sh
+	@ echo ""
+	cp vexcel_complex.sh $(BINDIR)/vexcel_complex
+	chmod 775 $(BINDIR)/vexcel_complex
 
-$(BINDIR)/target_selector.zsh:target_selector.zsh
-	cp target_selector.zsh $(BINDIR)/target_selector.zsh
+target_selector: target_selector.sh
+	@ echo ""
+	cp target_selector.sh $(BINDIR)/target_selector
+	chmod 775 $(BINDIR)/target_selector
 
-$(BINDIR)/iq.zsh:iq.zsh
-	cp iq.zsh $(BINDIR)/iq.zsh
+iq: iq.sh
+	@ echo ""
+	cp iq.sh $(BINDIR)/iq
+	chmod 775 $(BINDIR)/iq
 
-$(BINDIR)/geo.zsh:geo.zsh
-	cp geo.zsh $(BINDIR)/geo.zsh
+geo: geo.sh
+	@ echo ""
+	cp geo.sh $(BINDIR)/geo
+	chmod 775 $(BINDIR)/geo
