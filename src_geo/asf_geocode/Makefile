@@ -27,17 +27,7 @@ SOURCES := geocode_options.c parse_options.c check_parameters.c asf_geocode.c
 
 CC := gcc
 
-ifeq ($(SYS),win32)
-
-# Windows has the glib headers in ASF_INCLUDE_DIR
-INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) 
-
-else
-
-INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) \
-                 $(shell pkg-config --cflags-only-I glib-2.0)
-
-endif
+INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) $(GLIB_INCLUDE)
 
 CPPFLAGS := $(INCLUDE_FLAGS)
 
@@ -63,14 +53,9 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
 
-ifeq ($(SYS),win32)
+LDLIBS := $(LIBS) $(GLIB_LIB)
 
-# On Windows, we link with static glib.
-LDLIBS := $(LIBS) $(LIBDIR)/libglib-2.0.dll.a
-
-else
-
-LDLIBS := $(shell pkg-config --libs glib-2.0) $(LIBS)
+ifneq ($(SYS),win32)
 
 # We want to add the directory with the glib library to the run time
 # search path to be compiled into the executable.  The glib pkg-config
@@ -97,6 +82,7 @@ OBJS := $(patsubst %.c, %.o, $(SOURCES))
 $(PROGRAM): $(OBJS)
 	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
 	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
+	cp -R projections/ $(BINDIR)
 
 .PHONY: clean
 clean:
