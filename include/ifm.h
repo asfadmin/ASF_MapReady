@@ -138,12 +138,16 @@ void writeVector(void *,char *,data_t,int);
 #define MY_CLK_TCK   470000
 
 /* general constants */
-#define TRUE       1
+#ifndef TRUE
+# define TRUE      1
+#endif
 #define YES        1
 #define ON         1
 #define ACTIVE     1
 #define DO_IT      1
-#define FALSE      0
+#ifndef FALSE
+# define FALSE     0
+#endif
 #define NO         0
 #define OFF        0
 #define INACTIVE   0
