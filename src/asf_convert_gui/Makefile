@@ -67,6 +67,7 @@ default: $(OBJS)
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(BINDIR)
+	cp $(TARGET).ico $(BINDIR)
 
 doc: book1.html
 
