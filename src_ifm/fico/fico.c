@@ -130,7 +130,7 @@ int wid, len;			/*Width and length of source images.*/
 int intOffsetX, intOffsetY;	/*Image offset estimates from resolve.*/
 int srcSize=32, trgSize;
 float xMEP=4.1,yMEP=6.1;	/*Maximum Error Pixel values.*/
-FComplex cZero;
+complexFloat cZero;
 
 /*Function declarations */
 void usage(char *name);
@@ -142,8 +142,8 @@ bool outOfBounds(int x1, int y1, int x2, int y2, int srcSize, int trgSize);
 
 void getPeak(int x1,int y1,char *szImg1,int x2,int y2,char *szImg2,float *dx,float *dy, float *snr,int fft_flag);
 void topOffPeak(float *peaks,int i, int j, int maxI, int maxJ,float *dx,float *dy);
-float getPhaseCoherence(FComplex *igram,int sizeX,int sizeY);
-float getFFTCorrelation(FComplex *igram,int sizeX,int sizeY);
+float getPhaseCoherence(complexFloat *igram,int sizeX,int sizeY);
+float getFFTCorrelation(complexFloat *igram,int sizeX,int sizeY);
 
 
 /* Start of main progam */
@@ -362,7 +362,7 @@ the two given images at the given points.
 void getPeak(int x1,int y1,char *szImg1,int x2,int y2,char *szImg2,float *peakX,float *peakY, float *snr,int fft_flag)
 {
 	static float *peaks;
-	static FComplex *s=NULL, *t, *product; /*Keep working arrays around between calls.*/
+	static complexFloat *s=NULL, *t, *product; /*Keep working arrays around between calls.*/
 	int peakMaxX, peakMaxY, x,y,xOffset,yOffset,count;
 	int xOffsetStart, yOffsetStart, xOffsetEnd, yOffsetEnd;
 	float dx,dy,accel1 = (float)(trgSize/2 - srcSize/2);
@@ -384,9 +384,9 @@ void getPeak(int x1,int y1,char *szImg1,int x2,int y2,char *szImg2,float *peakX,
 	/*Allocate working arrays if we haven't already done so.*/
 	if (s==NULL)
 	{
-		s = (FComplex *)(MALLOC(srcSize*srcSize*sizeof(FComplex)));
-		t = (FComplex *)(MALLOC(trgSize*trgSize*sizeof(FComplex)));
-		product = (FComplex *)(MALLOC(srcSize*srcSize*sizeof(FComplex)));
+		s = (complexFloat *)(MALLOC(srcSize*srcSize*sizeof(complexFloat)));
+		t = (complexFloat *)(MALLOC(trgSize*trgSize*sizeof(complexFloat)));
+		product = (complexFloat *)(MALLOC(srcSize*srcSize*sizeof(complexFloat)));
 		peaks=(float *)MALLOC(sizeof(float)*trgSize*trgSize);
 	}
 	

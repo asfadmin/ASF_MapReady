@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 	float avg, percent=5.0;
 	RGBDATA *table, *imgData;
 	Uchar *redPtr, *grnPtr, *bluPtr;
-	FComplex z;
+	complexFloat z;
 	struct DDR ddr,newddr;
 	register float tmp,zImag,zReal,ampI;
 	register int index,offset;

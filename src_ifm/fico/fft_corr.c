@@ -3,23 +3,23 @@
 #include "ifm.h"
 #include <math.h>
 
-float getFFTCorrelation(FComplex *igram,int sizeX,int sizeY);
+float getFFTCorrelation(complexFloat *igram,int sizeX,int sizeY);
 
 
-float getFFTCorrelation(FComplex *igram,int sizeX,int sizeY)
+float getFFTCorrelation(complexFloat *igram,int sizeX,int sizeY)
 {
 
 	int line, samp;
 	int fftpowr;
 	float ampTmp=0;
 	float maxAmp=0;
-	FComplex *fftBuf;
-	FComplex *fftTemp;
-	FComplex *fft;
+	complexFloat *fftBuf;
+	complexFloat *fftTemp;
+	complexFloat *fft;
 
-/*	fftBuf=(FComplex *)MALLOC(sizeof(FComplex)*sizeX);*/
-	fft=(FComplex *)MALLOC(sizeof(FComplex)*sizeX*sizeX);
-	fftTemp=(FComplex *)MALLOC(sizeof(FComplex)*sizeX*sizeX);
+/*	fftBuf=(complexFloat *)MALLOC(sizeof(complexFloat)*sizeX);*/
+	fft=(complexFloat *)MALLOC(sizeof(complexFloat)*sizeX*sizeX);
+	fftTemp=(complexFloat *)MALLOC(sizeof(complexFloat)*sizeX*sizeX);
 
 	fftpowr=(log(sizeX)/log(2));
 	

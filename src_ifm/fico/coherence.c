@@ -8,7 +8,7 @@
 #ifndef TWOPI
 # define TWOPI (2*PI)
 #endif
-float getPhaseCoherence(FComplex *igram,int sizeX,int sizeY);
+float getPhaseCoherence(complexFloat *igram,int sizeX,int sizeY);
 
 /*Returns x in the range (-pi, pi] */
 double topi(double x);
@@ -21,7 +21,7 @@ double topi(double x)
 		return x+TWOPI;
 	return x;
 }
-float getPhaseCoherence(FComplex *igram,int sizeX,int sizeY)
+float getPhaseCoherence(complexFloat *igram,int sizeX,int sizeY)
 {
 	register double phaseErr=0;
 	register int npixels=0;
@@ -38,7 +38,7 @@ float getPhaseCoherence(FComplex *igram,int sizeX,int sizeY)
 		{
 			register int y;
 			register double sum_imag,sum_real;
-			register FComplex *src=&igram[sourceIndex];
+			register complexFloat *src=&igram[sourceIndex];
 			sum_imag=sum_real=0;
 			for (y=0;y<boxY;y++)
 			{
