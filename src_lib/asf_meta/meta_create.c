@@ -26,12 +26,16 @@ void meta_new2old(meta_parameters *meta);
 meta_parameters *meta_create(const char *fName)
 {
 	meta_parameters *meta=NULL;
+	int success=FALSE;
 	meta=raw_init();
-	if (extExists(fName,".L")
-	  ||extExists(fName,".ldr"))
+	if (has_ceos_leader_extension(fName)) {
 		ceos_init(fName,meta);
-	if (extExists(fName,".in"))
+		success=TRUE;
+	}
+	if (extExists(fName,".in")) {
 		aisp_init(fName,meta);
-	meta_new2old(meta);
+		success=TRUE;
+	}
+	if (success) meta_new2old(meta);
 	return meta;
 }
