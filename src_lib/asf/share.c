@@ -5,14 +5,42 @@ char * strdup(const char *);
 
 static char * s_share_dir = 0;
 
+#if defined(win32)
+#include <windows.h>
+static const char * s_asf_application_key = "Software\\ASF\\";
+#endif
+
 const char * 
 get_asf_share_dir()
 {
   if (!s_share_dir) {
-#ifdef win32
-    s_share_dir = strdup("???");
+
+#if defined(win32)
+
+      /* on windows, pull the share dir from the registry */
+
+    HKEY Hkey;
+    char str_value[512];
+    unsigned long read_size;
+
+    RegCreateKeyEx(HKEY_LOCAL_MACHINE, s_asf_application_key, 0, 0,
+		   REG_OPTION_NON_VOLATILE, KEY_QUERY_VALUE, 0,
+		   &HKey, 0);
+
+    read_size = sizeof(str_value);
+    RegQueryValueEx(HKey, "ShareDir", 0, 0, (BYTE*)str_value, &read_size);
+
+    RegCloseKey(HKey);
+
+    s_share_dir = strdup(str_value);
+
 #else
+
+      /* on UNIX, assume ASF_SHARE_DIR has been set by the configure */
+      /* script -- in config.h                                       */
+
     s_share_dir = strdup(ASF_SHARE_DIR);
+
 #endif
 
     /* remove trailing path separator, if one is present */
