@@ -1,19 +1,26 @@
 // Placeholder file for the moment.
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include <glib.h>
+#include <gsl/gsl_blas.h>
 #include <gsl/gsl_errno.h>
+#include <gsl/gsl_matrix.h>
 #include <gsl/gsl_min.h>
+#include <gsl/gsl_vector.h>
 
+#include "ITRS_platform_path.h"
+#include "ITRS_point.h"
 #include <asf_meta.h>
-
+#include "earth_constants.h"
 #include "orbital_state_vector.h"
 #include "platform_path.h"
 
 typedef struct {
   Vector *target;
-  PlatformPath *pp;
+  ITRSPlatformPath *pp;
+  //  ITRSPlatformPath *pp;
 } target_distance_params;
 
 // Range function we want to minimize.
@@ -21,10 +28,10 @@ static double
 target_distance (double time, void *params)
 {
   Vector *target = ((target_distance_params *) params)->target;
-  PlatformPath *pp = ((target_distance_params *) params)->pp;
+  ITRSPlatformPath *pp = ((target_distance_params *) params)->pp;
 
   static Vector platform_position;
-  platform_path_position_at_time (pp, time, &platform_position);
+  ITRS_platform_path_position_at_time (pp, time, &platform_position);
 
   static Vector difference;
   vector_set (&difference, platform_position.x, platform_position.y, 
@@ -38,8 +45,7 @@ target_distance (double time, void *params)
 int
 main (int argc, char **argv)
 {
-  argc = argc;
-  argv = argv;
+  assert (argc == 4);
 
   GString *reference_dem = g_string_new (argv[argc - 3]);
   reference_dem = reference_dem; /* Remove this compiler reassurance.  */
@@ -52,39 +58,185 @@ main (int argc, char **argv)
   meta_parameters *imd = meta_read (input_meta_file->str);
 
   int svc = imd->state_vectors->vector_count;   // State vector count.
+  g_assert (svc >= 3);
 
   double *observation_times = g_new (double, svc);
   OrbitalStateVector **observations = g_new (OrbitalStateVector *, svc);
+  
+  // Load the observation times, positions, and velocities from the
+  // metadata, converting the latter into Geocentric equitorial
+  // inertial coordinates.
   int ii;
+  // International terrestrial reference system (ITRS) coordinates of
+  // state vector (the form they come in in the metadata).
+  gsl_vector *itrs_pos = gsl_vector_alloc (3);
+  gsl_vector *itrs_vel = gsl_vector_alloc (3);
+  // Corresponding geocentric equitorial inertial (GEI) coordinates of
+  // state vector (the form we need in order to propagate them).
+  gsl_vector *gei_pos = gsl_vector_alloc (3);
+  gsl_vector *gei_vel = gsl_vector_alloc (3);
+  // Earth angle rotation matrix (see below for details).
+  gsl_matrix *earm = gsl_matrix_alloc (3,3);
+  // Temporary vector.
+  gsl_vector *tmp = gsl_vector_alloc (3);
+  DateTime *observation_date = NULL;
   for ( ii = 0 ; ii < svc ; ii++ ) {
+
     observation_times[ii] = imd->state_vectors->vecs[ii].time;
-    observations[ii] 
-      = orbital_state_vector_new (imd->state_vectors->vecs[ii].vec.pos.x,
-				  imd->state_vectors->vecs[ii].vec.pos.y,
-				  imd->state_vectors->vecs[ii].vec.pos.z,
-				  imd->state_vectors->vecs[ii].vec.vel.x,
-				  imd->state_vectors->vecs[ii].vec.vel.y,
-				  imd->state_vectors->vecs[ii].vec.vel.z);
+
+    // If the observation date isn't set yet (because this is our
+    // first iteration of this loop), load the date and time from the
+    // metadata.
+    if ( observation_date == NULL ) {
+      // Note that the 'julDay' field of imd->state_vectors is badly
+      // misnamed (it is actually the day of year).
+      observation_date = date_time_new (imd->state_vectors->year,
+					imd->state_vectors->julDay,
+					imd->state_vectors->second, UTC);
+    }
+    // Otherwise, just add thee difference in observations times to
+    // the previous date.
+    else {
+      date_time_add_seconds (observation_date, (observation_times[ii] 
+						- observation_times[ii - 1]));
+    }
+
+    // Indicies of x, y, and z vector components in gsl_vector type.
+    const size_t xi = 0, yi = 1, zi = 2;
+
+    // Load position and velocity vectors in earth fixed form into
+    // vectors which we can rotate.
+    gsl_vector_set (itrs_pos, xi, imd->state_vectors->vecs[ii].vec.pos.x);
+    gsl_vector_set (itrs_pos, yi, imd->state_vectors->vecs[ii].vec.pos.y);
+    gsl_vector_set (itrs_pos, zi, imd->state_vectors->vecs[ii].vec.pos.z);
+    gsl_vector_set (itrs_vel, xi, imd->state_vectors->vecs[ii].vec.vel.x);
+    gsl_vector_set (itrs_vel, yi, imd->state_vectors->vecs[ii].vec.vel.y);
+    gsl_vector_set (itrs_vel, zi, imd->state_vectors->vecs[ii].vec.vel.z);
+
+    // Get the angle of the earth during this observation.
+    double theta = date_time_earth_angle (observation_date);
+
+    // Create sidereal time (earth angle) rotation matrix as described
+    // in "Satellite Geodesy, 2nd Edition" by Gunter Seeber, section
+    // 2.1.2, except with the angle reversed, since we are going from
+    // earth fixed back to geocentric equitorial inertial (GEI)
+    // coordinates.
+    gsl_matrix_set (earm, 0, 0, cos (-theta));
+    gsl_matrix_set (earm, 0, 1, sin (-theta));
+    gsl_matrix_set (earm, 0, 2, 0.0);
+    gsl_matrix_set (earm, 1, 0, -sin (-theta));
+    gsl_matrix_set (earm, 1, 1, cos (-theta));
+    gsl_matrix_set (earm, 1, 2, 0.0);
+    gsl_matrix_set (earm, 2, 0, 0.0);
+    gsl_matrix_set (earm, 2, 1, 0.0);
+    gsl_matrix_set (earm, 2, 2, 1.0);
+
+    // Perform rotation from earth fixed back to GEI coordinates.
+    gsl_vector_set_zero (gei_pos);
+    int return_code = gsl_blas_dgemv (CblasNoTrans, 1.0, earm, itrs_pos, 0.0, 
+				      gei_pos);
+    g_assert (return_code == GSL_SUCCESS);
+
+
+    // The fixed earth velocity vectors are affected by the rotation
+    // of the earth itself, so first we have to subtract this term
+    // out.
+    gsl_vector_set (tmp, xi, (gsl_vector_get (itrs_vel, xi) 
+			      - (EARTH_ROTATION_RATE 
+				 * gsl_vector_get (itrs_pos, yi))));
+    gsl_vector_set (tmp, yi, (gsl_vector_get (itrs_vel, yi) 
+			      + (EARTH_ROTATION_RATE 
+				 * gsl_vector_get (itrs_pos, xi))));
+    gsl_vector_set (tmp, zi, gsl_vector_get (itrs_vel, zi));
+
+    // Now we can rotate the remaining velocity back into the GEI
+    // system.  FIXME: all this rotating is probably a bad idea.
+    // asf_meta does it so for now we have now choice, but in undoing
+    // the GE==>fixed transform done there we end up changing the
+    // velocity by about 10 m/s -- generally not an issue for a 15
+    // second frame but bad practice nevertheless.  I think this is
+    // due to the notorious instability of rotation operations using
+    // euler angles and sines and cosines.  If we must rotation things
+    // back and forth we should probably use quaternians, or at least
+    // see if long double helps dodge the problem.
+    return_code = gsl_blas_dgemv (CblasNoTrans, 1.0, earm, tmp, 0.0, 
+				  gei_vel);
+    g_assert (return_code == GSL_SUCCESS);
+
+    // Store the result as an OrbitalStateVector instance.
+    observations[ii] = orbital_state_vector_new (gsl_vector_get (gei_pos, 0),
+						 gsl_vector_get (gei_pos, 1),
+						 gsl_vector_get (gei_pos, 2),
+						 gsl_vector_get (gei_vel, 0),
+						 gsl_vector_get (gei_vel, 1),
+						 gsl_vector_get (gei_vel, 2));
   }
+  date_time_free (observation_date);
+  gsl_vector_free (tmp);
+  gsl_matrix_free (earm);
+  gsl_vector_free (gei_vel);
+  gsl_vector_free (gei_pos);
+  gsl_vector_free (itrs_vel);
+  gsl_vector_free (itrs_pos);
+
+  // By using this explicitly set batch of vectors from the .D which
+  // are in the right coordinate system.
+  /*
+  observations[0] = orbital_state_vector_new (-1071.730468750000000e3,
+					      3053.727050781250000e3,
+					      6390.152832031250000e3,
+					      243.932998657226562,
+					      6744.739257812500000,
+					      -3175.534912109375000);
+  observations[1] = orbital_state_vector_new (-1069.806762695312500e3,
+					      3105.852783203125000e3,
+					      6365.356445312500000e3,
+					      252.925354003906250,
+					      6718.875000000000000,
+					      -3229.095458984375000);
+  observations[2] = orbital_state_vector_new (-1067.813598632812500e3,
+					      3157.776855468750000e3,
+					      6340.146484375000000e3,
+					      261.901123046875000,
+					      6692.574218750000000,
+					      -3282.445312500000000);
+  */
 
   // Number of control points to use for the cubic splines that
-  // approximate the satellite motion in the PlatformPath.
-  const int cpc = 10000;
+  // approximate the satellite motion in the ITRSPlatformPath.
+  const int cpc = 1000;
   // Guard time in seconds to add on either side of the first and last
   // observations.  This will save us in case the point of closest
   // approach to some pixel is actually outside the time window for
   // which we are provided state vectors. (though cleanup of some sort
   // will still have to be done).
   const double gt = 2.0;
-  PlatformPath *pp = platform_path_new (cpc, observation_times[0] - gt,
-					observation_times[svc - 1] + gt,
-					svc, observation_times, observations);
-					
-  // FIXME: remove this crud which is only meant to get us to the
-  // point where things compile.
-  double tx = 1.0, ty = 1.0, tz = 1.0;
+  DateTime *base_date = date_time_new (imd->state_vectors->year,
+				       imd->state_vectors->julDay,
+				       imd->state_vectors->second,
+				       UTC);
 
-  Vector *target = vector_new (tx, ty, tz);
+  ITRSPlatformPath *pp_fixed 
+    = ITRS_platform_path_new (cpc, observation_times[0] - gt,
+  			      observation_times[svc - 1] + gt,
+  			      svc, base_date, observation_times, observations);
+
+
+  // FIXME: This is a test point for a single location in delta
+  // junction.  Eventually a computation like this will have to be
+  // done for evey pixel in the image.
+  ITRSPoint *target_point 
+    = ITRS_point_new_from_geodetic_lat_long_height (63.80514 * M_PI / 180.0,
+						    -145.006 * M_PI / 180.0,
+						    448.4);
+  Vector *target = vector_new (target_point->x, target_point->y, 
+			       target_point->z);
+
+  ITRSPoint *tp
+    = ITRS_point_new_from_geodetic_lat_long_height ((M_PI / 180) * 45, 
+						    M_PI / 4, 0);
+  Vector *tpt = vector_new (tp->x, tp->y, tp->z);
+  tpt = tpt;
   
   // Find the time of the point of closest approach for this pixel.
   int status;   // Status of the solver.
@@ -96,7 +248,7 @@ main (int argc, char **argv)
   distance_function.function = &target_distance;
   target_distance_params tdp;
   tdp.target = target;
-  tdp.pp = pp;
+  tdp.pp = pp_fixed;
   distance_function.params = &tdp;
 
   // Start and end of range in which to search for minimum, and
@@ -109,13 +261,13 @@ main (int argc, char **argv)
   gsl_min_fminimizer_set (minimizer, &distance_function, min, sor, eor);
 
   printf ("using %s method\n",
-          gsl_min_fminimizer_name (minimizer));
-
+	  gsl_min_fminimizer_name (minimizer));
+  
   printf ("%5s [%9s, %9s] %9s %9s\n",
-          "iter", "lower", "upper", "min", "err(est)");
-
+	  "iter", "lower", "upper", "min", "err(est)");
+  
   printf ("%5d [%.7f, %.7f] %.7f %.7f\n",
-          iteration, sor, eor, min, eor - sor);
+	  iteration, sor, eor, min, eor - sor);
 
   do {
     iteration++;
@@ -131,12 +283,39 @@ main (int argc, char **argv)
       printf ("Converged:\n");
     
     printf ("%5d [%.7f, %.7f] %.7f %.7f\n",
-	    iteration, sor, eor, min, eor - sor);
+    	    iteration, sor, eor, min, eor - sor);
   }
   while (status == GSL_CONTINUE && iteration < max_iterations);
   
-  return status;
+  // We need to have the convergence work.  
+  assert (status == GSL_SUCCESS);
 
+  printf ("Imaging time for CR1: %lf +/- %lf\n", (sor + eor) / 2.0,
+	  (eor - sor) / 2.0);
   
+  double time_of_cr_pixel = meta_get_time (imd, 4293, 1933);
+  printf ("Solved time: %lf,  meta_get_time: %lf\n", min, time_of_cr_pixel);
+
+  Vector poca;
+  ITRS_platform_path_position_at_time (pp_fixed, min, &poca);
+  Vector *poca_to_target = vector_copy (&poca);
+  vector_subtract (poca_to_target, target);
+  double solved_sr = vector_magnitude (poca_to_target);
+  double slant_range_of_cr_pixel = meta_get_slant (imd, 4293, 1933);
+  printf ("Solved slant range: %lf, meta_get_slant: %lf\n",
+	  solved_sr, slant_range_of_cr_pixel);
+
+  DateTime *sos = date_time_new (2000, 266, 58976.7734375, UTC);
+  printf ("Earth angle sos: %.10lf\n", 
+	  (180 / M_PI) * date_time_earth_angle (sos));
+
+  DateTime *mos = date_time_new (2000, 266, 58976.7734375 + 7.74317932128906,
+				 UTC);
+  printf ("Earth angle mos: %.10lf\n", 
+	  (180 / M_PI) * date_time_earth_angle (mos));
+
+  DateTime *t_time = date_time_new_from_mjd (51241.00000751426, UT1R);
+  printf ("Earth angle t_time: %.10lf\n", date_time_earth_angle (t_time));
+
   exit (EXIT_SUCCESS);
 }
