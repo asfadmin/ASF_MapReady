@@ -24,7 +24,7 @@ public class MainTargetSelection {
       /* Create a "root" frame */
       Frame f = new Frame();
 
-      SelectArea sa = new SelectArea ("Area Selection", f);
+      SelectArea sa = new SelectArea ("Site selection", f);
       sa.setSize(200,300);
       sa.setLocation(200,200);
       sa.show();
@@ -48,7 +48,8 @@ public class MainTargetSelection {
          l.add(v.elementAt(a));
       }
 
-      SelectTargets foo = new SelectTargets("foo!", m, 
+      SelectTargets foo = new SelectTargets("Target Selection", m,
+                                          meta.center_gmt,
                                           args[0]+Constants.ground_target_file);
       foo.setSize(400,400);
       foo.setLocation(200,200);
