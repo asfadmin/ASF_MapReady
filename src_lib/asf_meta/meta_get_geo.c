@@ -31,9 +31,10 @@ void meta_get_original_line_sample(meta_parameters *meta,
 				int line, int sample,
 				int *original_line, int *original_sample)
 {
-  *original_line   = line * meta->sar->look_count + meta->general->start_line;
-  *original_sample = sample * (meta->sar->look_count/5 + 0.999999) /* to avoid 0 */
-			+ meta->general->start_sample;
+  *original_line   = line   * meta->sar->line_increment
+				+ meta->general->start_line;
+  *original_sample = sample * meta->sar->sample_increment
+				+ meta->general->start_sample;
 }
 
 /*******************************************************************
