@@ -177,14 +177,14 @@ int init_projection_config(char *configFile)
   fprintf(fConfig, "pixel spacing = < pixel spacing of geocoded image >\n");
   fprintf(fConfig, "height = < average height of the data (default: 0) >\n");
   fprintf(fConfig, "background fill = < pixel value for the background >\n\n");
+  fprintf(fConfig, "[UTM]\n");
+  fprintf(fConfig, "datum = < datum code >\n");
+  fprintf(fConfig, "zone number = < UTM zone number >\n");
+  fprintf(fConfig, "units = < meters | degrees >\n\n");
   fprintf(fConfig, "[Polar Stereographic]\n");
   fprintf(fConfig, "datum = < datum code >\n");
   fprintf(fConfig, "center latitude = < decimal degrees >\n");
   fprintf(fConfig, "center longitude = < decimal degrees >\n");
-  fprintf(fConfig, "units = < meters | degrees >\n\n");
-  fprintf(fConfig, "[UTM]\n");
-  fprintf(fConfig, "datum = < datum code >\n");
-  fprintf(fConfig, "zone number = < UTM zone number >\n");
   fprintf(fConfig, "units = < meters | degrees >\n\n");
   fprintf(fConfig, "[Albers Conic Equal Area]\n");
   fprintf(fConfig, "datum = < datum code >\n");
@@ -193,11 +193,13 @@ int init_projection_config(char *configFile)
   fprintf(fConfig, "central meridian = < decimal degrees >");
   fprintf(fConfig, "latitude of origin = < decimal degrees >\n");
   fprintf(fConfig, "units = < meters | degrees >\n\n");
+  /* Temporarily out until we fix geocode *
   fprintf(fConfig, "[Lambert Azimuthal Equal Area]\n");
   fprintf(fConfig, "datum = < datum code >\n");
   fprintf(fConfig, "center latitude = < decimal degrees >\n");
   fprintf(fConfig, "center longitude = < decimal degrees >\n");
   fprintf(fConfig, "units = < meters | degrees >\n\n");
+  ******************************************************/
   fprintf(fConfig, "[Lambert Conformal Conic]\n");
   fprintf(fConfig, "datum = < datum code >\n");
   fprintf(fConfig, "first standard parallel = < decimal degrees >\n");

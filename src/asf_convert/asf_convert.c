@@ -316,8 +316,8 @@ int main(int argc, char *argv[])
     }
   }
 
-  /* We must be good enough at this point... log & quiet flags set */
-  asfSplashScreen(argc, argv);/*display splash screen if not quiet*/
+  /* We must be good enough at this point... log & quiet flags set *
+  asfSplashScreen(argc, argv);*display splash screen if not quiet*/
 
   if(formatFlag != FLAG_NOT_SET)
     if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3)
@@ -487,6 +487,7 @@ int main(int argc, char *argv[])
   /*Output types:*/
   if (strncmp(str2upper(format_out),"ASF",3) == 0) type_out = ASF;
   else if (strncmp(str2upper(format_out),"CEOS",4) == 0) type_out = CEOS;
+  else if (strncmp(str2upper(format_out),"TIFF",4) == 0) type_out = TIFF;
   else if (strncmp(str2upper(format_out),"GEOTIFF",3) == 0) type_out = GEOTIFF;
   else if (strncmp(str2upper(format_out),"JPEG",3) == 0) type_out = JPEG;
   else if (strncmp(str2upper(format_out),"ENVI",3) == 0) type_out = ENVI;

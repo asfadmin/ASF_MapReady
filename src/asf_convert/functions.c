@@ -52,9 +52,11 @@ int filter(char *options, char *inFile, char *outFile)
 int asf_export(int format, char *inFile, char *outFile)
 {
   char command[256],format_str[10]="";
-  switch (format) {
+  switch (format) 
+    {
     case CEOS: break;
     case ASF: break;
+    case TIFF: strcpy(format_str, "tiff "); break;
     case GEOTIFF: strcpy(format_str,"geotiff "); break;
     case JPEG: strcpy(format_str,"jpeg "); break;
     case ENVI: strcpy(format_str,"envi "); break;
@@ -62,7 +64,7 @@ int asf_export(int format, char *inFile, char *outFile)
     case PPM: strcpy(format_str,"ppm "); break;
     case PNG: break;
     case LAS: break;
-  }
+    }
   sprintf(command, "asf_export -f %s-o %s %s", format_str, outFile, inFile);
   asfPrintStatus("\nCommand line:\n %s\n", command);
   return system(command);

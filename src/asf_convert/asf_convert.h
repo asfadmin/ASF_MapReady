@@ -78,6 +78,7 @@ typedef enum
 {
     CEOS=1,
     ASF,
+    TIFF,
     GEOTIFF,
     JPEG,
     ENVI,
