@@ -20,18 +20,18 @@ int firstRecordLen(char *ceosName)
    This function should be called first in the "we're good enough" part of command line parsing */
 void print_splash_screen(int argc, char* argv[])
 {
-  char temp1[255];
-  char temp2[255];
   int ii;
-  sprintf(temp1, "\nCommand line:");
-  for (ii = 0; ii < argc; ii++)
-  {
-    sprintf(temp2, " %s",argv[ii]);
-    strcat(temp1, temp2);
+
+  sprintf(logbuf, "\nCommand line:\n");
+  for (ii = 0; ii < argc; ii++) {
+    sprintf(logbuf, "%s %s",logbuf, argv[ii]);
   }
-  printf("%s\n", temp1);
-  printf("Date: %s\n",date_time_stamp());
-  printf("PID: %i\n\n", (int)getpid());
+  printAndLog("%s\n"
+              "\n"
+              "Date: %s\n"
+              "PID:  %i\n"
+              "\n",
+              logbuf, date_time_stamp(), (int)getpid());
 }
 
 
