@@ -127,7 +127,14 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          applies to the target coordinate system.  Supported Datums:\n"\
 "            NAD27  (North American Datum 1927) (Clarke 1866)\n"\
 "            NAD83  (North American Datum 1983) (GRS 1980)\n"\
-"            WGS84  (World Geodetic System 1984) (default).\n"
+"            WGS84  (World Geodetic System 1984) (default).\\n\n"\
+"\n"\
+"     --resample-method <method>\n"\
+"          Specifies which interpolation method to use when resampling\n"\
+"          images into projection geometry.  Available choices are:\n"\
+"            nearest_neighbor\n"\
+"            bilinear\n"\
+"	    bicubic "
 
 #define ASF_EXAMPLES_STRING \
 "     To map project an image with centerpoint at -147 degrees\n"\
@@ -498,6 +505,8 @@ main (int argc, char **argv)
   double pixel_size;
   // Datum to use in the target projection
   datum_type_t datum;
+  // Method to use to resample images.
+  resample_method_t resample_method;
 
   // Detect & Process logging arguments
   if ((logflag = detect_string_options(argc, argv, logFile,
@@ -515,7 +524,7 @@ main (int argc, char **argv)
 
   project_parameters_t *pp 
     = get_geocode_options(&argc, &argv, &projection_type, &average_height, 
-			  &pixel_size, &datum);
+			  &pixel_size, &datum, &resample_method);
   // If help was requested, display it.
   if (detect_flag_options(argc, argv, "-help", "--help", NULL)) {
     help_page ();
@@ -539,18 +548,41 @@ main (int argc, char **argv)
     
   }
 
-  // Ensure not already projected
-  if ( imd->sar->image_type == 'P' ) {
-    if ( imd->projection->type != SCANSAR_PROJECTION ) {
-      asfPrintError ("Expected SCANSAR projection type but got %d!\n"
-		     "This image appears to already be projected.\n",
-		     imd->projection->type);
-    }
-  }
-  else {
-    if (imd->projection != NULL) {
-      asfPrintError ("This image is already projected! "
-		     "Cannot re-project.\n");
+
+  // If we have an already projected image as input, we will need to
+  // be able to unproject its coordinates back to lat long before we
+  // can reproject them into the desired projection, so here we select
+  // a fnction that can do that.
+
+  // Flag true iff input image not map projected.
+  gboolean input_projected = FALSE;
+  // Convenience alias (valid iff input_projected).
+  project_parameters_t *ipp = &imd->projection->param;
+  // FIXME: remove this compiler reassurance:
+  ipp = ipp;
+  int (*unproject_input) (project_parameters_t *pps, double x, double y, 
+			  double *lat, double *lon);
+  if ( imd->sar->image_type == 'P' 
+       && imd->projection->type != SCANSAR_PROJECTION ) {
+    input_projected = TRUE;
+    switch ( imd->projection->type) {
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      unproject_input = project_utm_inv;
+      break;
+    case POLAR_STEREOGRAPHIC:
+      unproject_input = project_ps_inv;
+      break;
+    case ALBERS_EQUAL_AREA:
+      unproject_input = project_albers_inv;
+      break;
+    case LAMBERT_CONFORMAL_CONIC:
+      unproject_input = project_lamcc_inv;
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      unproject_input = project_lamaz_inv;
+      break;
+    default:
+      g_assert_not_reached ();
     }
   }
 
@@ -573,7 +605,7 @@ main (int argc, char **argv)
   int (*project) (project_parameters_t *pps, double lat, double lon, double *x,
 		  double *y);
   int (*project_arr) (project_parameters_t *pps, double *lat, double *lon,
-		      double **projected_x, double ** projected_y, 
+		      double **projected_x, double **projected_y, 
 		      long length);
   int (*unproject) (project_parameters_t *pps, double x, double y, double *lat,
 		    double *lon);
@@ -629,9 +661,9 @@ main (int argc, char **argv)
 		  "space... ");
 
   double min_x = DBL_MAX;
-  double max_x = - DBL_MAX;
+  double max_x = -DBL_MAX;
   double min_y = DBL_MAX;
-  double max_y = - DBL_MAX;
+  double max_y = -DBL_MAX;
 
   { // Scoping block.
     // Number of pixels in the edge of the image.
@@ -940,6 +972,25 @@ main (int argc, char **argv)
   // Convenience macros for getting a pixel.
 #define SET_PIXEL(x, y, value) float_image_set_pixel (oim, x, y, value)
 
+  // Translate the command line notion of the resampling method into
+  // the lingo known by the float_image class.  The compiler is
+  // reassured with a default.
+  float_image_sample_method_t float_image_sample_method
+    = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
+  switch ( resample_method ) {
+  case RESAMPLE_NEAREST_NEIGHBOR:
+    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
+    break;
+  case RESAMPLE_BILINEAR:
+    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;    
+    break;
+  case RESAMPLE_BICUBIC:
+    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;    
+    break;
+  default:
+    g_assert_not_reached ();
+  }
+
   // Set the pixels of the output image.
   size_t oix, oiy;		// Output image pixel indicies.
   for ( oiy = 0 ; oiy <= oiy_max ; oiy++ ) {
@@ -959,7 +1010,7 @@ main (int argc, char **argv)
       const float fill_value = 0.0;
       g_assert (ii_size_x <= SSIZE_MAX);
       g_assert (ii_size_y <= SSIZE_MAX);
-      if ( input_x_pixel < 0 
+      if (    input_x_pixel < 0 
 	   || input_x_pixel > (ssize_t) ii_size_x - 1.0
 	   || input_y_pixel < 0 
 	   || input_y_pixel > (ssize_t) ii_size_y - 1.0 ) {
@@ -971,7 +1022,7 @@ main (int argc, char **argv)
 	SET_PIXEL (oix, oiy, 
 		   float_image_sample 
 		     (iim, input_x_pixel, input_y_pixel,
-		      FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR));
+		      float_image_sample_method));
       }
     }
     asfLineMeter(oiy, oiy_max + 1 );
