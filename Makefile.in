@@ -41,4 +41,4 @@ all:
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE);)
 
 clean:
-	rm -f bin/@sys@/* lib/@sys@/*
+	rm -rf bin/@sys@/* lib/@sys@/*
