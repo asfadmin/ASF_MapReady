@@ -64,7 +64,7 @@ baseline read_baseline(char *fName);
 #define MODE_FIELD_STRING_MAX 5
 
 /* general->data_type values */
-enum {
+typedef enum {
   BYTE=1,
   INTEGER16,
   INTEGER32,
@@ -74,8 +74,18 @@ enum {
   COMPLEX_INTEGER16,
   COMPLEX_INTEGER32,
   COMPLEX_REAL32,
-  COMPLEX_REAL64,
-};
+  COMPLEX_REAL64
+} data_type_t;
+
+typedef enum {
+  UNIVERSAL_TRANSVERSE_MERCATOR,
+  POLAR_STEREOGRAPHIC,
+  ALBERS_EQUAL_AREA,
+  LAMBERT_CONFORMAL_CONIC,
+  LAMBERT_AZIMUTHAL_EQUAL_AREA,
+  STATE_PLANE,
+  SCANSAR_PROJECTION, /* along-track/across-track is ScanSAR specific projection */
+} projection_type_t;
 
 /********************************************************************
  * meta_general: General RAdio Detection And Ranging parameters
@@ -84,7 +94,7 @@ typedef struct {
   char sensor[FIELD_STRING_MAX];    /* Name of imaging sensor.             */
   char mode[MODE_FIELD_STRING_MAX]; /* Mode of imaging sensor.             */
   char processor[FIELD_STRING_MAX]; /* Name and version of SAR processor.  */
-  int data_type;                    /* Type of samples (e.g. "REAL4").     */
+  data_type_t data_type;            /* Type of samples (e.g. "REAL4").     */
 /*  Possible values for data_type:                                         *
  *   META STRING          WHAT IT IS                 DATA TYPE             *
  *    BYTE                1 byte                   = unsigned char         *
@@ -215,6 +225,10 @@ typedef struct {
   typedef struct {
     int zone;
   } proj_utm;
+ /* State Plane. */
+  typedef struct {
+    int zone;
+  } proj_state;
  /* Projection parameters for the projection in use.  */
   typedef union {
     proj_albers   albers;   /* Albers Conical Equal Area     */
@@ -223,10 +237,10 @@ typedef struct {
     proj_lamcc    lamcc;    /* Lambert Conformal Conic       */
     proj_ps       ps;       /* Polar Sterographic            */
     proj_utm      utm;      /* Universal Transverse Mercator */
+    proj_state    state;    /* State Plane                   */
   } param_t;
 typedef struct {
-  char type;  /*'A'->Along Track/Cross Track; 'P'->Polar Stereographic;    *
-               *'L'->Lambert Conformal Conic; 'U'->Universal Transverse Mercator*/
+  projection_type_t type;  /* Projection types */
   double startX,startY;  /* Projection coordinates of top, lefthand corner.*/
   double perX,perY;      /* Projection coordinates per X and Y pixel.      */
   char units[12];        /* Units of projection (meters, arcsec)           */
