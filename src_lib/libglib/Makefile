@@ -35,6 +35,16 @@ install_glib: stage_glib_stamp
 	cp $(LIB_STAGEDIR)/*.a $(LIBDIR)
 	cp -r $(INCLUDE_STAGEDIR)/glib-2.0 $(ASF_INCLUDE_DIR)
 
+ifeq ($(SYS),win32)
+
+stage_glib_stamp:
+	mkdir -p $(LIB_STAGEDIR) $(INCLUDE_STAGEDIR)
+	for f in *.zip; do (yes|unzip $$f -d glib); done;
+	cp glib/lib/libglib-2.0.dll.a $(LIB_STAGEDIR);
+	cp -r glib/include/glib-2.0 $(INCLUDE_STAGEDIR);
+
+else
+
 # Copy an already build GSL into the staging area, or build it there
 # if a copy doesn't appear to be available.
 stage_glib_stamp:
@@ -54,6 +64,8 @@ stage_glib_stamp:
                 make install) ; \
         fi
 	touch $@
+
+endif
 
 clean:
 	rm -rf $(ROOT_STAGEDIR) $(TARFILE) $(UNPACK_DIR) stage_glib_stamp \
