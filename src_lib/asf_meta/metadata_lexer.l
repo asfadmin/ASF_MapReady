@@ -8,6 +8,8 @@
 #include "lex_yacc.h"   /* Must precede y.tab.h include.  */
 #include "y.tab.h"
 
+int line_number = 1;		/* Position in source file.  */
+
 /* For some dumb reason it seems necessary to provide this, or else
    you have to link with the lex library.  */
 int yywrap(void)
@@ -28,10 +30,10 @@ FIELD_STRING       [^#\n]*[^#\n \t]
 %%
 
  /* Eat up shell style comments.  */
-\#.*\n ;
+\#.*      { ; }
 
- /* Eat up blank lines.  */
-\n ;
+ /* Eat up new lines.  */
+\n        { line_number++; }
 
  /* Name tokens name blocks or fields.  */
 {ID_STRING}[ \t]*/[:{]         { int last_nonspace = yyleng - 1;
