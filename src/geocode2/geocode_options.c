@@ -1221,9 +1221,12 @@ void sanity_check(projection_type_t pt, project_parameters_t * pps)
     {
 	case UNIVERSAL_TRANSVERSE_MERCATOR:
 
-	    if ((abs(pps->utm.zone) < 1) || (abs(pps->utm.zone) > 60))
+	    if (pps->utm.zone != MAGIC_UNSET_INT)
 	    {
-		asfPrintError("Illegal zone number: %d\n", pps->utm.zone);
+		if ((abs(pps->utm.zone) < 1) || (abs(pps->utm.zone) > 60))
+		{
+		    asfPrintError("Illegal zone number: %d\n", pps->utm.zone);
+		}
 	    }
 
 	    verify_valid_latitude(pps->utm.lat0);
