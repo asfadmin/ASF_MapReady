@@ -88,8 +88,11 @@ void select_current_block(char *block_name)
     goto MATCHED; 
   }
 
-  if ( !strcmp(block_name, "projection") )
-    { current_block = MTL->projection; goto MATCHED; }
+  if ( !strcmp(block_name, "projection") ) { 
+    MTL->projection 
+      = (meta_projection *) malloc(sizeof(meta_projection));;
+    current_block = MTL->projection; goto MATCHED; 
+  }
   if ( !strcmp(block_name, "param") )
     { current_block = &(MPROJ->param); goto MATCHED; }
   if ( !strcmp(block_name, "atct") )
