@@ -3,6 +3,7 @@
 #include "asf_nan.h"
 #include "asf_meta.h"
 #include "asf_reporting.h"
+#include "proj_api.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -149,3 +150,59 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps)
     }
 }
 
+void to_radians(projection_type_t pt, project_parameters_t * pps)
+{
+    switch (pt)
+    {
+	case UNIVERSAL_TRANSVERSE_MERCATOR:
+	    if (!ISNAN(pps->utm.lon0))
+		pps->utm.lon0 *= DEG_TO_RAD;
+	    if (!ISNAN(pps->utm.lat0))
+		pps->utm.lat0 *= DEG_TO_RAD;
+
+	    break;
+
+	case POLAR_STEREOGRAPHIC:
+	    if (!ISNAN(pps->ps.slon))
+		pps->ps.slon *= DEG_TO_RAD;
+	    if (!ISNAN(pps->ps.slat))
+		pps->ps.slat *= DEG_TO_RAD;
+
+	    break;
+
+	case ALBERS_EQUAL_AREA:
+	    if (!ISNAN(pps->albers.center_meridian))
+		pps->albers.center_meridian *= DEG_TO_RAD;
+	    if (!ISNAN(pps->albers.orig_latitude))
+		pps->albers.orig_latitude *= DEG_TO_RAD;
+	    if (!ISNAN(pps->albers.std_parallel1))
+		pps->albers.std_parallel1 *= DEG_TO_RAD;
+	    if (!ISNAN(pps->albers.std_parallel2))
+		pps->albers.std_parallel2 *= DEG_TO_RAD;
+
+	    break;
+
+	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	    if (!ISNAN(pps->lamaz.center_lat))
+		pps->lamaz.center_lat *= DEG_TO_RAD;
+	    if (!ISNAN(pps->lamaz.center_lon))
+		pps->lamaz.center_lon *= DEG_TO_RAD;
+
+	    break;
+
+	case LAMBERT_CONFORMAL_CONIC:
+	    if (!ISNAN(pps->lamcc.plat1))
+		pps->lamcc.plat1 *= DEG_TO_RAD;
+	    if (!ISNAN(pps->lamcc.plat2))
+		pps->lamcc.plat2 *= DEG_TO_RAD;
+	    if (!ISNAN(pps->lamcc.lat0))
+		pps->lamcc.lat0 *= DEG_TO_RAD;
+	    if (!ISNAN(pps->lamcc.lon0))
+		pps->lamcc.lon0 *= DEG_TO_RAD;
+
+	    break;
+
+	default:
+	    asfPrintError("to_radians: illegal projection type!");
+    }
+}

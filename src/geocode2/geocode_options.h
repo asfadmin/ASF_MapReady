@@ -77,7 +77,7 @@ project_parameters_t * get_geocode_options(int *argc, char ***argv,
    before it returns. */
 void sanity_check(projection_type_t proj_type, project_parameters_t * pps);
 void apply_defaults(projection_type_t proj_type, project_parameters_t * pps);
-
+void to_radians(projection_type_t proj_type, project_parameters_t * pps);
 
 /* this allows testing failure cases without seeing a lot of error
    messages go by.  Kind of a hack I guess */
