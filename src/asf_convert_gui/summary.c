@@ -121,6 +121,8 @@ void update_summary()
 
 	if (s->specified_pixel_size)
 	    sprintf(text, "%s   Pixel Size: %f\n", text, s->pixel_size);
+
+	sprintf(text, "%s   Datum: %s\n", text, datum_string(s->datum));
     }
     else
     {

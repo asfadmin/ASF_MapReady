@@ -1,5 +1,18 @@
 #include "asf_convert_gui.h"
 
+const char * datum_string(int datum)
+{
+    switch (datum)
+    {
+	default:
+	case DATUM_WGS84:
+	    return "WGS84";
+	case DATUM_NAD27:
+	    return "NAD27";
+	case DATUM_NAD83:
+	    return "NAD83";
+    }
+}
 
 const char * geocode_options_string(const Settings * settings)
 {
@@ -83,7 +96,7 @@ const char * geocode_options_string(const Settings * settings)
 	if (settings->specified_pixel_size)
 	    sprintf(ret, "%s --pixel-size %f ", ret, settings->pixel_size);
 
-	strcat(ret, " ");
+	sprintf(ret, "%s --datum %s ", ret, datum_string(settings->datum));
     }
     else
     {
@@ -122,6 +135,8 @@ void geocode_options_changed()
     GtkWidget * hbox_average_height;
     GtkWidget * hbox_pixel_size;
 
+    GtkWidget * datum_hbox;
+
     gboolean geocode_projection_is_checked;
     gboolean average_height_is_checked;
     gboolean pixel_size_is_checked;
@@ -142,6 +157,8 @@ void geocode_options_changed()
     gboolean enable_pixel_size_checkbutton = FALSE;
     gboolean enable_pixel_size_entry = FALSE;
 
+    gboolean enable_datum_hbox = FALSE;
+
     geocode_checkbutton =
 	glade_xml_get_widget(glade_xml, "geocode_checkbutton");
 
@@ -160,6 +177,7 @@ void geocode_options_changed()
     if (geocode_projection_is_checked)
     {	
 	enable_projection_option_menu = TRUE;
+	enable_datum_hbox = TRUE;
 
 	projection =
 	    gtk_option_menu_get_history(
@@ -268,6 +286,9 @@ void geocode_options_changed()
     hbox_pixel_size =
 	glade_xml_get_widget(glade_xml, "hbox_pixel_size");
 
+    datum_hbox =
+	glade_xml_get_widget(glade_xml, "datum_hbox");
+
     gtk_widget_set_sensitive(central_meridian_entry, 
 			     enable_central_meridian);
 
@@ -316,6 +337,9 @@ void geocode_options_changed()
     gtk_widget_set_sensitive(hbox_pixel_size,
 			     enable_pixel_size_entry);
 
+    gtk_widget_set_sensitive(datum_hbox,
+			     enable_datum_hbox);
+
     update_summary();
 }
 
@@ -363,6 +387,24 @@ on_height_checkbutton_toggled(GtkWidget * widget)
 
 SIGNAL_CALLBACK void
 on_pixel_size_checkbutton_toggled(GtkWidget * widget)
+{
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_wgs84_activate(GtkWidget * widget)
+{
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_nad27_activate(GtkWidget * widget)
+{
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_nad83_activate(GtkWidget * widget)
 {
     geocode_options_changed();
 }

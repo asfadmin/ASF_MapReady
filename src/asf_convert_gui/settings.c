@@ -150,7 +150,8 @@ settings_apply_to_gui(const Settings * s)
 	  GtkWidget * false_easting_entry;
 	  GtkWidget * average_height_checkbutton;
 	  GtkWidget * pixel_size_checkbutton;
-	  
+	  GtkWidget * datum_option_menu;
+
 	  projection_option_menu =
 	      glade_xml_get_widget(glade_xml, "projection_option_menu");
 
@@ -227,7 +228,12 @@ settings_apply_to_gui(const Settings * s)
 	      
 	      sprintf(tmp, "%f", s->pixel_size);
 	      gtk_entry_set_text(GTK_ENTRY(pixel_size_entry), tmp);
-	  }	  
+	  }
+
+	  datum_option_menu =
+	      glade_xml_get_widget(glade_xml, "datum_option_menu");
+
+	  set_combo_box_item(datum_option_menu, s->datum);
       }
   }
 }
@@ -356,7 +362,8 @@ settings_get_from_gui()
 	  *average_height_checkbutton,
 	  *pixel_size_checkbutton, 
 	  *average_height_entry,
-	  *pixel_size_entry;
+	  *pixel_size_entry,
+	  *datum_option_menu;
 
       projection_option_menu =
 	  glade_xml_get_widget(glade_xml, "projection_option_menu");
@@ -427,6 +434,14 @@ settings_get_from_gui()
 	  ret->pixel_size =
 	      atof(gtk_entry_get_text(GTK_ENTRY(pixel_size_entry)));
       }
+
+      datum_option_menu =
+	  glade_xml_get_widget(glade_xml, "datum_option_menu");
+
+      ret->datum =
+	  gtk_option_menu_get_history(
+	      GTK_OPTION_MENU(datum_option_menu));
+      
   }
 
   return ret;

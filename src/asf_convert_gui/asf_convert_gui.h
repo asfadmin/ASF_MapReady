@@ -60,6 +60,13 @@ enum ProjectionOptions
     ALBERS_CONICAL_EQUAL_AREA = 4
 };
 
+enum Datums
+{
+    DATUM_WGS84 = 0,
+    DATUM_NAD27 = 1,
+    DATUM_NAD83 = 2
+};
+
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
 #  if defined(win32)
@@ -85,6 +92,7 @@ enum ProjectionOptions
 #include "metadata.h"
 #include "summary.h"
 #include "geocode.h"
+#include "win_font.h"
 
 extern const char DIR_SEPARATOR;
 extern const char PATH_SEPATATOR;
