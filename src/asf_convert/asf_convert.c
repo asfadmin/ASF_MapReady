@@ -191,10 +191,10 @@ int checkForOption(char* key, int argc, char* argv[])
 
 void replace_backslashes(char *msg)
 {
-	char *temp = malloc(sizeof(char) * strlen(msg));
+	char temp[256];
 	int ii,jj;
 	/*Replace all \'s in msg with \\ in temp*/
-	for(ii = 0; ii < strlen(msg); ++ii, ++jj)
+	for(ii = 0, jj = 0; ii < 256 && jj < 256; ++ii, ++jj)
 	{
 		if(msg[ii] == '\\')
 		{
@@ -207,13 +207,12 @@ void replace_backslashes(char *msg)
 			temp[jj] = msg[ii];
 		}
 	}
+	temp[jj] = '\0';
 	/*Done replacing...now copy temp into msg*/
-	for(ii = 0; ii < strlen(msg); ++ii)
+	for(ii = 0; ii < 256; ++ii)
 	{
 		msg[ii] = temp[ii];
 	}
-	/*release temp*/
-	free(temp);
 }
 
 
