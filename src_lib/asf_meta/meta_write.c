@@ -38,7 +38,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
 
   /* SAR block.  */
   fprintf(fp, "sar {\n");
-  fprintf(fp, "    proj_type: %c\n", meta->sar->proj_type);
+  fprintf(fp, "    proj_type: %c  #[S=slant range; G=ground range; P=map projected]\n", meta->sar->proj_type);
   fprintf(fp, "    look_direction: %c\n", meta->sar->look_direction);
   fprintf(fp, "    look_count: %d\n", meta->sar->look_count);
   fprintf(fp, "    look_angle: %f\n", meta->sar->look_angle);
