@@ -1,6 +1,6 @@
 #include "asf_convert_gui.h"
 
-static gint
+gint
 popup_handler(GtkWidget *widget, GdkEvent *event)
 {
   GtkMenu *menu;
@@ -51,7 +51,7 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
   return FALSE;
 }
 
-static SIGNAL_CALLBACK gint
+SIGNAL_CALLBACK gint
 popup_menu_remove(GtkWidget *widget, GdkEvent *event)
 {
   GtkWidget *files_list;
@@ -72,7 +72,7 @@ popup_menu_remove(GtkWidget *widget, GdkEvent *event)
   return TRUE;
 }
 
-static SIGNAL_CALLBACK gint
+SIGNAL_CALLBACK gint
 popup_menu_process(GtkWidget *widget, GdkEvent *event)
 {
   GtkWidget *files_list;
@@ -101,7 +101,7 @@ popup_menu_process(GtkWidget *widget, GdkEvent *event)
   return TRUE;
 }
 
-static SIGNAL_CALLBACK gint
+SIGNAL_CALLBACK gint
 popup_menu_rename(GtkWidget *widget, GdkEvent *event)
 {
   return (gint) rename_selected_output_filename();

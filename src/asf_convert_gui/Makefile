@@ -29,6 +29,7 @@ $(TARGET).exe: $(TARGET).c
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe ../../bin/win32
 	cp $(TARGET).glade ../../bin/win32
+	cp $(TARGET)_help.txt ../../bin/win32
 
 clean:
 	rm -rf $(GTK_DIR) $(TARGET).exe core.*
@@ -51,6 +52,7 @@ default: $(OBJS)
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(BINDIR)
+	cp $(TARGET)_help.txt $(BINDIR)
 
 clean:
 	rm *.o $(TARGET)

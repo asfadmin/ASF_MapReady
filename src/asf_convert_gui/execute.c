@@ -1,11 +1,14 @@
 #include "asf_convert_gui.h"
 
+/*
 #include <unistd.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <sys/select.h>
-#include <sys/wait.h>
 #include <time.h>
+*/
+
+#include <errno.h>
+#include <sys/wait.h>
 
 char *
 do_cmd(char *cmd, char *log_file_name)
@@ -68,6 +71,7 @@ do_cmd(char *cmd, char *log_file_name)
   return the_output;
 }
 
+/*
 void
 do_cmd_does_not_work(char *cmd)
 {
@@ -113,7 +117,7 @@ do_cmd_does_not_work(char *cmd)
     }
     else
     {
-      /* no data */
+      /* no data * /
       
     }
     
@@ -124,6 +128,7 @@ do_cmd_does_not_work(char *cmd)
 
   pclose(f); 
 }
+*/
 
 void
 append_output(char * txt)
@@ -179,7 +184,7 @@ process_item(GtkTreeIter *iter,
     sprintf(log_file, "tmp_%d_%ld_import.log", pid, s);
 
     snprintf(convert_cmd, 4096, 
-	     "asf_import -%s -format %s %s -log %s %s %s %s",
+	     "asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" \"%s\"",
 	     settings_get_data_type_string(user_settings),
 	     settings_get_input_data_format_string(user_settings),
 	     settings_get_latitude_argument(user_settings),
@@ -214,7 +219,8 @@ process_item(GtkTreeIter *iter,
     
     sprintf(log_file, "tmp_%d_%ld_export.log", pid, s);
     
-    snprintf(convert_cmd, 4096, "asf_export -format %s %s -log %s %s %s",
+    snprintf(convert_cmd, 4096,
+             "asf_export -format %s %s -log \"%s\" \"%s\" \"%s\"",
 	     settings_get_output_format_string(user_settings),
 	     settings_get_size_argument(user_settings),
 	     log_file,
