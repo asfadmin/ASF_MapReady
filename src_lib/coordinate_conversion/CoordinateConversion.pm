@@ -8,8 +8,9 @@ package ASF::CoordinateConversion;
 use Exporter ();
 @ISA = qw(Exporter);
 
-@EXPORT = qw(earth_radius_at_geodetic_lat geodetic2geocentric llr2xyz 
-	     sch2line_sample xyz2sch);
+@EXPORT = qw(earth_radius_at_geodetic_lat geocentric2geodetic
+	     geodetic2geocentric llr2xyz xyz2llr xyz2sch sch2xyz 
+	     line_sample2sc sc2line_sample);
 
 use strict;
 
@@ -30,7 +31,7 @@ ASF::CoordinateConversion;
 =head1 DESCRIPTION
 
 This is a library of routines useful for converting between different
-radar-related coordinate systems.  Units are radians or SI base units
+radar-related coordinate systems.  Units are degrees or SI base units
 unless otherwise noted.
 
 =head1 FUNCTIONS
@@ -64,21 +65,32 @@ sub earth_radius_at_geodetic_lat {
 			       + ($re * sin($geocentric_latr))**2));
 }
 
-=item $geodetic_lat_radians = B<geodetic2geocentric>($geocentric_lat_radians);
+=item $geodetic_lat_radians = B<geocentric2geodetic>($geocentric_lat_radians);
 
-Convert given geodetic lattitude in radians to geocentric lattitude in
-radians using ellipsoid model.  See I<Calculation of ASF CEOS Metadata
-Values>, Tom Logan and Rudiger Gens, Appendix C.
+Convert given geocentric latitude in radians to geodetic latitude in
+radians using WGS84 ellipsoid earth model.  See I<Calculation of ASF
+CEOS Metadata Values>, Tom Logan and Rudiger Gens, Appendix C.
+
+sub geocentric2geodetic {
+    my ($geocentric_lat) = validate_pos(@_, 1);
+
+    my $e2 = 0.00669437999014;   # Ellipticity of the WGS84 earth squared.
+
+    return atan(tan($geocentric_lat)/(1 - *e2));
+}
+
+=item $geocentic_lat_radians = B<geodetic2geocentric>($geodetic_lat_radians);
+
+Convert given geodetic latitude in radians to geocentric latitude in
+radians using WGS84 ellipsoid earth model.  See I<Calculation of ASF
+CEOS Metadata Values>, Tom Logan and Rudiger Gens, Appendix C.
 
 =cut
 
 sub geodetic2geocentric {
     my ($geodetic_lat) = validate_pos(@_, 1);
 
-    # Ellipsoidal earth facts.
-    my $re = 6378137;   # Equatorial earth radius.
-    my $rp = 6356752.3;   # Polar earth radius.
-    my $e2 = 0.00669437999014;   # Ellipticity of the earth squared.
+    my $e2 = 0.00669437999014;   # Ellipticity of the WGS84 earth squared.
 
     return atan(tan($geodetic_lat) * (1 - $e2));
 }
@@ -86,7 +98,7 @@ sub geodetic2geocentric {
 =item ($x, $y, $z) = B<llr2xyz>($lat, $lon, $radius)
 
 Given geodetic latitude and longitude in degrees, and geocentric
-radius, return global cartesian xyz.
+radius, return global cartesian coordinates.
 
 =cut
 
@@ -105,12 +117,132 @@ sub llr2xyz {
     return ($x, $y, $z);
 }
 
+=item ($lat, $lon, $radius) = B<xyz2llr>($x, $y, $z)
+
+Given global cartesian coordinates in meters, return geodeodetic
+latitude and longitude in degrees, and geocentric radius in meters.
+
+=cut
+
+sub xyz2llr {
+    my ($x, $y, $z) = validate_pos(@_, (1) x 3);
+
+    return (rad2deg(&geocentric2geodetic(atan($y/$x))), 
+	    rad2deg(atan(sqrt($x**2 + $y**2)/$z)), 
+	    sqrt($x**2 + $y**2 + $z**2));
+}
+
+# Convenience functions to compute values used to translate between
+# sch and global cartesian coordinates.  These values are used in both
+# the forward and reverse transform functions.
+{
+    # Earth model facts (in closure for convenience functions in this block). 
+    my $a = 6378137;		# semi-major axis length of WGS84 ellipsoid
+    my $e2 = 0.00669437999015;	# ellipticity of WGS84 ellipsoid
+
+    # East radius of curvature at the peg point.
+    sub re {
+	my ($pp_latitude) = validate_pos(@_, 1);
+	
+	return $a / sqrt(1 - $e2 * (sin(deg2rad($pp_latitude)))**2);
+    }
+
+    # North radius of curvature at the peg point.
+    sub rn {
+	my ($pp_latitude) = validate_pos(@_, 1);
+
+        return ($a * (1 - $e2)) 
+	       / (1 - $e2 * (sin(deg2rad($pp_latitude)))**2)**(3/2);
+    }
+
+    # Along track radius of curvature at the peg point.
+    sub ra {
+	my ($pp_lat, $pp_head) = validate_pos(@_, (1) x 2);
+
+	my $re = &re($pp_lat);
+	my $rn = &rn($pp_lat);
+	my $headr = deg2rad($pp_head);
+
+	return  $re * $rn / ($re * (cos($headr))**2 + $rn * (sin($headr))**2);
+    }
+
+    # Transformation matrices.  From 'Geocoding of AIRSAR/TOPSAR SAR
+    # Data', Holecz et al.
+
+    sub M1 {
+	my ($pp_lat, $pp_lon) = validate_pos(@_, 1 x (2));
+ 
+	my $latr = deg2rad($pp_lat);
+	my $lonr = deg2rad($pp_lon);
+
+        return pdl 
+	    [[-sin($lonr) , -sin($latr)*cos($lonr) , cos($latr)*cos($lonr)],
+	     [ cos($lonr) , -sin($latr)*sin($lonr) , cos($latr)*sin($lonr)],
+	     [     0      ,       cos($latr)       ,      sin($latr)      ]];
+    }
+
+    sub M2 {
+	my ($pp_head) = validate_pos(@_, 1);
+	
+	my $headr = deg2rad($pp_head);
+
+	return pdl [[ 0 , sin($headr) , -cos($headr) ],
+		    [ 0 , cos($headr) ,  sin($headr) ],
+		    [ 1 ,     0       ,      0       ]]; 
+    }
+     
+
+    # Translation vector.  From 'Geocoding of AIRSAR/TOPSAR SAR
+    # Data', Holecz et al.
+    sub O {
+	my ($pp_lat, $pp_lon, $pp_head) = validate_pos(@_, (1) x 3);
+
+	my $re = &re($pp_lat);
+	my $ra = &ra($pp_lat, $pp_head);
+	my $latr = deg2rad($pp_lat);
+	my $lonr = deg2rad($pp_lon);
+
+	return pdl [[ $re*cos($latr)*cos($lonr) - $ra*cos($latr)*cos($lonr) ],
+		    [ $re*cos($latr)*sin($lonr) - $ra*cos($latr)*sin($lonr) ],
+		    [        $re*(1-$e2)*sin($latr) - $ra*sin($latr)        ]];
+    }
+}
+
+=item ($x, $y, $z) = B<sch2xyz>($s, $c, $h, $pp_lat, $pp_lon, $pp_head);
+
+Given a set of sch coordinates and a peg point and aircraft heading,
+return the corresponding global cartesian coordinates.  See 'Geocoding
+of AIRSAR/TOPSAR SAR Data', Holecz et al.
+
+sub sch2xyz {
+    my ($s, $c, $h_r, $pp_lat, $pp_lon, $pp_head) = validate_pos(@_, (1) x 6);
+
+    my $ra = &ra($pp_lat, $pp_head); # Along track earth curvature.
+    my $c_phi = $c/$ra;		# Normalized cross track arc length.
+    my $s_lambda = $s/$ra;	# Normalized along track arc length.
+
+    # Transformation matrices.
+    my $M1 = &M1($pp_lat, $pp_lon);
+    my $M2 = &M2($pp_head);
+
+    # Holecz paper isn't exactly a full explanation of things...
+    my $Unnamed_matrix = pdl [[ ($ra + $h_r)*cos($c_phi)*cos($s_lambda) ]
+			      [ ($ra + $h_r)*cos($c_phi)*sin($s_lambda) ]
+			      [        ($ra + $h_r)*sin($c_phi)         ]];
+
+    # Translation vector.
+    my $O = &O($pp_lat, $pp_lon, $pp_head);    
+    
+    my $XYZ = $M1 x $M2 x $Unnamed_matrix + $O;
+
+    return ($XYZ->at(0), $XYZ->at(1), $XYZ->at(2));
+}
+
 =item ($s, $c, $h_r) = B<xyz2sch>($x, $y, $z, $pp_lat, $pp_lon, $pp_head);
 
 Given a global cartesian coordinate and an sch peg point and aircraft
 heading, return the sch coordinates corresponding to the given
-cartesian coordinate.  The pp_lat, pp_lon, and pp_head arguments
-should be in degrees.  See 'Geocoding of AIRSAR/TOPSAR SAR Data',
+cartesian coordinate.  See 'Geocoding of AIRSAR/TOPSAR SAR Data',
 Holecz et al.
 
 =cut
@@ -118,44 +250,17 @@ Holecz et al.
 sub xyz2sch {
     my ($x, $y, $z, $pp_lat, $pp_lon, $pp_head) = validate_pos(@_, (1) x 6);
     
-    # Peg point lattitude, longitude, and heading in radians.
-    my $latr = deg2rad($pp_lat);
-    my $lonr = deg2rad($pp_lon);
-    my $headr = deg2rad($pp_head);
-
-    my $a = 6378137;   # semi-major axis length of WGS84 ellipsoid
-    my $e2 = 0.00669437999015;   # ellipticity of WGS84 ellipsoid
-
-    # east radius of curvature at peg point
-    my $re = $a / sqrt(1 - $e2 * (sin($latr))**2);
-    # north radius of curvature at peg point
-    my $rn = ($a * (1 - $e2)) / (1 - $e2 * (sin($latr))**2)**(3/2);
-
-    # radius of curvature of approximating sphere.
-    my $ra = $re * $rn / ($re * (cos($headr))**2 + $rn * (sin($headr))**2);
-
     # Cartesian coordinates as a column vector.
     my $XYZ = pdl [[ $x ],
 		   [ $y ],
 		   [ $z ]];
 
-    # Transformation matrices.  From 'Geocoding of AIRSAR/TOPSAR SAR
-    # Data', Holecz et al.
+    # Transformation matrices.
+    my $M1 = &M1($pp_lat, $pp_lon);
+    my $M2 = &M2($pp_head);
 
-    my 
-    $M1 = pdl [[-sin($lonr) , -sin($latr)*cos($lonr) , cos($latr)*cos($lonr)],
-	       [ cos($lonr) , -sin($latr)*sin($lonr) , cos($latr)*sin($lonr)],
-	       [     0      ,       cos($latr)       ,      sin($latr)      ]];
-
-    my $M2 = pdl [[ 0 , sin($headr) , -cos($headr) ],
-	          [ 0 , cos($headr) ,  sin($headr) ],
-	          [ 1 ,     0       ,      0       ]]; 
-     
-    # Translation vector.  From 'Geocoding of AIRSAR/TOPSAR SAR
-    # Data', Holecz et al.
-    my $O = pdl [[ $re*cos($latr)*cos($lonr) - $ra*cos($latr)*cos($lonr) ],
-	         [ $re*cos($latr)*sin($lonr) - $ra*cos($latr)*sin($lonr) ],
-	         [        $re*(1-$e2)*sin($latr) - $ra*sin($latr)        ]];
+    # Translation vector.
+    my $O = &O($pp_lat, $pp_lon, $pp_head);
 
     # Intermediate result, a constant vector of a system of equations
     # containing the sch coordinates as variables.
@@ -176,17 +281,37 @@ sub xyz2sch {
     return ($s, $c, $h_r);
 }
 
-=item ($line, $sample) = B<sch2line_sample>($s, $c, $h_r, $azimuth_pixel_size,
+=item ($s, $c) = B<line_sample2sc>($line, $sample, $azimuth_pixel_size,
  $range_pixel_size, $azimuth_offset, $range_offset);
 
-Given s and c from a set of sch coordinates, azimuth and range pixel
-sizes, and azimuth and range offsets to the first image pixel, returns
-the 1-based line and sample coodinates of the pixel at the given
-coordinates.
+Given 1-based line and sample coordinates of a pixel, azimuth and
+range pixel sizes, and azimuth and range offsets from the peg point to
+the first image pixel, (which point in the first image pixel the
+offset refers to is unclear), returns the s and c coordinates of the
+pixel.
 
 =cut
 
-sub sch2line_sample {
+sub line_sample2sc {
+    my ($line, $sample, $azimuth_pixel_size, $range_pixel_size, 
+	$azimuth_offset, $range_offset) = validate_pos(@_, (1) x 6);
+    
+    return ($line * $azimuth_pixel_size + $azimuth_pixel_size,
+	    $sample * $range_pixel_size + $range_pixel_size);
+}
+
+=item ($line, $sample) = B<sc2line_sample>($s, $c, $azimuth_pixel_size,
+ $range_pixel_size, $azimuth_offset, $range_offset);
+
+Given s and c from a set of sch coordinates, azimuth and range pixel
+sizes, and azimuth and range offsets from the peg point to the first
+image pixel in meters (which point in the first image pixel the offset
+refers to is unclear), returns the 1-based line and sample coodinates
+of the pixel at the given coordinates.
+
+=cut
+
+sub sc2line_sample {
     my ($s, $c, $azimuth_pixel_size, $range_pixel_size, $azimuth_offset,
 	        $range_offset) = validate_pos(@_, (1) x 6);
     
