@@ -21,7 +21,7 @@ int yywrap(void)
 
 DOUBLE_STRING      (-?([0-9]+)|(([0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?)?)
 ID_STRING          [a-zA-Z]("["|"]"|[-a-zA-Z0-9'>=(),;/_ \t])*
-FIELD_STRING       [^#\n]*
+FIELD_STRING       [^#\n]*[^#\n \t]
 
 %x FIELD_STATE
 
@@ -52,14 +52,15 @@ FIELD_STRING       [^#\n]*
 [ \t]*\}[ \t]*                { return '}'; }
 
  /* Return a numeric value.  FIXME: needs errno ERANGE check added.  */
-<FIELD_STATE>{DOUBLE_STRING}/[#\n]   { BEGIN INITIAL;
-                                       yylval.double_val 
-				         = strtod(yytext, NULL); 
-                                       return DOUBLE; }
+<FIELD_STATE>{DOUBLE_STRING}/[ \t]*[#\n]   { BEGIN INITIAL;
+                                             yylval.double_val 
+				               = strtod(yytext, NULL); 
+                                             return DOUBLE; }
 
  /* Return a pointer to a string.  FIXME: length check string.  */
-<FIELD_STATE>{FIELD_STRING}/[#\n]   { BEGIN INITIAL;
-                                      strcpy(yylval.string_val, yytext);
-                                      return STRING; }
+<FIELD_STATE>{FIELD_STRING}/[ \t]*[#\n]   { BEGIN INITIAL;
+                                            strcpy(yylval.string_val, yytext);
+                                            return STRING; }
+
 %%
 
