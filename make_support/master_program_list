@@ -71,7 +71,6 @@ PROGRAMS
 @src/
 	calibrate { }
 	stats { }
-	ceos2asf { }
 	convert2byte { PROGRAMS stats }
 	convert2geotiff { }
 # 		jpeg2asf can be compiled if explicitly told to by the
