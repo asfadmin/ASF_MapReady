@@ -67,8 +67,8 @@ void bail(const char *message, ...)/* ; is coming, don't worry.  */
  * (consider them deprecated).  */
 void StartWatch(void);
 void StopWatch(void);
-void StartWatchLog(FILE *fLog);
-void StopWatchLog(FILE *fLog);
+void StartWatchLog(FILE *log_fp);
+void StopWatchLog(FILE *log_fp);
 char* date_stamp(void);
 char* date_time_stamp(void);
 

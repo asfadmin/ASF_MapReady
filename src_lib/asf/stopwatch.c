@@ -31,7 +31,7 @@ void StopWatch(void)
   printf ("Total CPU time = %f seconds.\n\n", elapsed);
 }
 
-void StartWatchLog(FILE *fLog)
+void StartWatchLog(FILE *log_fp)
 {
   char *c;
   time_t t;
@@ -42,7 +42,7 @@ void StartWatchLog(FILE *fLog)
   fprintf (fLog, "Stopwatch started on date: %s", c);
 }
 
-void StopWatchLog(FILE *fLog)
+void StopWatchLog(FILE *log_fp)
 {
   clock_t stopTime;
   float elapsed;
