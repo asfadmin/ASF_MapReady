@@ -124,9 +124,11 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   // we are using.
   GString *tile_file_name = g_string_new ("");
   gchar *current_dir = g_get_current_dir ();
+  g_assert (sizeof (long) >= sizeof (pid_t));
   g_string_append_printf (tile_file_name, 
-			  "%s/.float_image_tile_file_uNiQuIfY_nAmE_%d_%ld",
-			  current_dir, getpid (), current_tile_file_number);
+			  "%s/.float_image_tile_file_uNiQuIfY_nAmE_%ld_%lu",
+			  current_dir, (long) getpid (), 
+			  current_tile_file_number);
   g_free (current_dir);
   // This hard coded limit on the current number used to uniqueify
   // file names limits us to creating no more than ULONG_MAX instances
