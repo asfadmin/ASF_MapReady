@@ -1072,7 +1072,7 @@
 				    <widget class="GtkEntry" id="pixel_size_entry">
 				      <property name="width_request">120</property>
 				      <property name="visible">True</property>
-				      <property name="tooltip" translatable="yes">Size, in meters, of each pixel in the projected image.</property>
+				      <property name="tooltip" translatable="yes">Size, in meters, of each pixel edge in the projected image.</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
