@@ -11,7 +11,6 @@ include ../../make_support/system_rules
 # libraries used by this library and give some semblance of modularity
 # to this benighted C language.
 LIBS = asf.a \
-       asf_las.a \
        regex_wrapper.a
 
 # Things used/needed by make's implicit rules for lex and yacc.
@@ -33,6 +32,48 @@ LEX_SOURCES = metadata_lexer.l
 
 LEX_YACC_OBJS =  $(patsubst %.y, %.o, $(YACC_SOURCES)) \
                  $(patsubst %.l, %.o, $(LEX_SOURCES))
+
+LAS_OBJS = allocbuf.o \
+        c_calcor.o \
+        c_comsys.o \
+        c_dkcre.o \
+        c_dkdel.o \
+        c_dkfree.o \
+        c_dkresv.o \
+        c_dkrspac.o \
+        c_errmsg.o \
+        c_getbdr.o \
+        c_getddr.o \
+        c_getsys.o \
+        c_gettyp.o \
+        c_intbdr.o \
+        c_intddr.o \
+        c_low2up.o \
+        c_lsclos.o \
+        c_lsmknm.o \
+        c_lsopen.o \
+        c_lsread.o \
+        c_lsrepl.o \
+        c_lsstat.o \
+        c_lswrit.o \
+        c_ptio.o \
+        c_ptopen.o \
+        c_putbdr.o \
+        c_putddr.o \
+        c_pxconv.o \
+        c_pxcopy.o \
+        c_pxfill.o \
+        c_pxswap.o \
+        c_pxsys.o \
+        c_rotcor.o \
+        c_rtcoef.o \
+        c_sysset.o \
+        c_up2low.o \
+        convInt.o \
+        doopen.o \
+        lasIO.o  \
+        packed_deg.o \
+        squeeze.o 
 
 OBJS =  $(LEX_YACC_OBJS) \
 	getLatLong.o \
@@ -67,8 +108,10 @@ OBJS =  $(LEX_YACC_OBJS) \
         meta_init_stVec.o \
 	meta_read.o \
 	meta_write.o \
+	meta_new2ddr.o \
         set_era.o \
-        utc2gha.o
+        utc2gha.o \
+	$(LAS_OBJS)
 
 all: asf_meta
 
@@ -106,9 +149,8 @@ clean:
                $(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
 	       library_cooking_pot asf_meta_tester meta_update asf_meta.a
 
-check: unit_tests.c build_only
-	$(CC) $(CFLAGS) $< asf_meta.a -lm -lcheck $(LDFLAGS) \
-              -o asf_meta_tester 
+check: asf_meta_tester.c build_only
+	$(CC) $(CFLAGS) $< asf_meta.a -lm -lcheck $(LDFLAGS) -o asf_meta_tester
 	./asf_meta_tester
 
 meta_update: meta_update.c build_only
