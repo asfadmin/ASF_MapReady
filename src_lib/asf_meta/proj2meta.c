@@ -54,7 +54,8 @@ void proj2meta(struct DDR *ddr, meta_parameters *meta)
 	}
 
 	/* Datum Code */
-	datum2earth_radius(ddr->datum_code, proj->re_major, proj->re_minor);
+	datum2earth_radius(ddr->datum_code,
+                           &(proj->re_major), &(proj->re_minor));
 
 	/* Starting Coordinates */
 	proj->startY = ddr->upleft[0];
