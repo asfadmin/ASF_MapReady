@@ -51,7 +51,7 @@ void readCeosLine(int *dest,int y,CEOS_FILE *c)
 	int lineLen=ns*dtype2dsize(c->ddr.dtype,NULL);
 	unsigned char *buf=(unsigned char *)MALLOC(lineLen);
 	int i;
-	FSEEK(c->f_in,c->headerBytes+y*c->lineBytes,0);
+	FSEEK64(c->f_in,(long long)c->headerBytes+y*c->lineBytes,0);
 	FREAD(buf,1,lineLen,c->f_in);
 	if (c->ddr.dtype==DTYPE_BYTE)
 		for (i=0;i<ns;i++)
