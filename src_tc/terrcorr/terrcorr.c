@@ -172,6 +172,7 @@ char cmd[255], temp[255], SAR[255], SARtrl[255], DEM[255],
      cSAR[255], pSAR[255], mSAR[255], rSAR[255],
      SIM[255], fSIM[255], COR[255], rCOR[255];
 char DDr[255], *IMG=".img";
+char SIM_rtc[259], pSAR_mask[260];
  
 /*char    ascdesc;                 Ascending/Descending pass flag            */
 float   pixsiz;                 /* Processing pixel size in meters           */
@@ -261,7 +262,7 @@ if (error)
    printf("               coefficients, and noise vs. range LUT\n");
    printf("   -s          Skip the SAR preprocessing steps\n");
    printf("\n");
-   printf(" Version %.2f,  ASF STEP TOOLS\n\n",VERSION);
+   printf(" Version %.2f,  ASF SAR Tools\n\n",VERSION);
    exit(EXIT_FAILURE);
   }
 
@@ -321,8 +322,9 @@ printf("Preprocessing the SAR image\n");
       } 
     else if (asf_facdr.rapixspc == pixsiz)
       {
-	sprintf(cmd,"mv %s.img %s.img\n",cSAR,pSAR); execute(cmd);	
-	sprintf(cmd,"mv %s.meta %s.meta\n",cSAR,pSAR); execute(cmd);	
+      	meta_or_ddr(DDr,cSAR);
+	sprintf(cmd,"mv %s%s %s%s\n",cSAR,IMG,pSAR,IMG); execute(cmd);	
+	sprintf(cmd,"mv %s%s %s%s\n",cSAR,DDr,pSAR,DDr); execute(cmd);	
       }
     else
       {
@@ -377,17 +379,17 @@ printf("Preprocessing the SAR image\n");
 
   if (rtcf)
     {
-     sprintf(cmd,"mv %s_rtc%s %s%s\n",SIM,IMG,rSAR,IMG); execute(cmd);
-     meta_or_ddr(DDr, SIM);
-     meta_or_ddr(DDr, rSAR);
-     sprintf(cmd,"mv %s_rtc%s %s%s\n",SIM,DDr,rSAR,DDr); execute(cmd);
+     strcat(strcpy(SIM_rtc,SIM),"_rtc");
+     sprintf(cmd,"mv %s%s %s%s\n",SIM_rtc,IMG,rSAR,IMG); execute(cmd);
+     meta_or_ddr(DDr, SIM_rtc);
+     sprintf(cmd,"mv %s%s %s%s\n",SIM_rtc,DDr,rSAR,DDr); execute(cmd);
     }
   if (mask)  /* Fix Mask Image File Name */
     {
-     sprintf(cmd,"mv %s_mask%s %s_mask%s\n",pSAR,IMG,SAR,IMG); execute(cmd);
-     meta_or_ddr(DDr, pSAR);
-     meta_or_ddr(DDr, SAR);
-     sprintf(cmd,"mv %s_mask%s %s_mask%s\n",pSAR,DDr,SAR,DDr); execute(cmd);
+     strcat(strcpy(pSAR_mask,pSAR),"_mask");
+     sprintf(cmd,"mv %s%s %s%s\n",pSAR_mask,IMG,SAR,IMG); execute(cmd);
+     meta_or_ddr(DDr, pSAR_mask);
+     sprintf(cmd,"mv %s%s %s%s\n",pSAR_mask,DDr,SAR,DDr); execute(cmd);
     }
 
 
@@ -417,7 +419,6 @@ printf("Preprocessing the SAR image\n");
      display("Creating Radiometrically Terrain Corrected Image");
      sprintf(cmd,"rtc_add %s %s %s\n",COR,rSAR,rCOR); execute(cmd);
      meta_or_ddr(DDr, COR);
-     meta_or_ddr(DDr, rCOR);
      sprintf(cmd,"cp %s%s %s%s\n",COR,DDr,rCOR,DDr); execute(cmd);
    }
 
@@ -431,7 +432,7 @@ printf("Preprocessing the SAR image\n");
     /* sprintf(cmd,"rm -f *.tpl\n"); execute(cmd); */
     meta_or_ddr(DDr, SIM);
     sprintf(cmd,"rm -f %s%s %s%s\n",SIM,IMG,SIM,DDr); execute(cmd);
-    sprintf(cmd,"rm -f cor_sar?.??? cor_sim?.???\n"); execute(cmd);
+    sprintf(cmd,"rm -f cor_sar?.* cor_sim?.*\n"); execute(cmd);
 
     if (clip)
      {
