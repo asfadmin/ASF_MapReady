@@ -7,7 +7,7 @@ IMAGE_CONVERTER=image2pgm
 # Check for no args
 if [ $# -ne "1" ]
 then
-   echo  "Usage: standard.zsh <root>"
+   echo  "Usage: standard <root>"
    exit 1
 fi
 
