@@ -158,12 +158,18 @@ void select_current_block(char *block_name)
     { current_block = &(MPROJ->param); goto MATCHED; }
   if ( !strcmp(block_name, "atct") )
     { current_block = &((*( (param_t *) current_block)).atct); goto MATCHED; }
+  if ( !strcmp(block_name, "lamaz") )
+    { current_block = &((*( (param_t *) current_block)).lamaz); goto MATCHED; }
   if ( !strcmp(block_name, "lamcc") )
     { current_block = &((*( (param_t *) current_block)).lamcc); goto MATCHED; }
+  if ( !strcmp(block_name, "albers") )
+    { current_block = &((*( (param_t *) current_block)).albers); goto MATCHED; }
   if ( !strcmp(block_name, "ps") )
     { current_block = &((*( (param_t *) current_block)).ps); goto MATCHED; }
   if ( !strcmp(block_name, "utm") )
     { current_block = &((*( (param_t *) current_block)).utm); goto MATCHED; }
+  if ( !strcmp(block_name, "state") )
+    { current_block = &((*( (param_t *) current_block)).state); goto MATCHED; }
 
   if ( !strcmp(block_name, "stats") ) { 
     if (MTL->stats == NULL)
@@ -217,6 +223,32 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "processor") )
       { strcpy(MGENERAL->processor, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "data_type") ) {
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "BYTE") )
+	MGENERAL->data_type = BYTE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTEGER16") )
+	MGENERAL->data_type = INTEGER16;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTEGER32") )
+	MGENERAL->data_type = INTEGER32;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "REAL32") )
+	MGENERAL->data_type = REAL32;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "REAL64") )
+	MGENERAL->data_type = REAL64;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_BYTE") )
+	MGENERAL->data_type = COMPLEX_BYTE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_INTEGER16") )
+	MGENERAL->data_type = COMPLEX_INTEGER16;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_INTEGER32") )
+	MGENERAL->data_type = COMPLEX_INTEGER32;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_REAL32") )
+	MGENERAL->data_type = COMPLEX_REAL32;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_REAL64") )
+	MGENERAL->data_type = COMPLEX_REAL64;
+      else {
+        warning_message("Unrecognized data_type (%s).\n",VALP_AS_CHAR_POINTER);
+        MGENERAL->data_type = MAGIC_UNSET_INT;
+      }
+      return;
+   }    if ( !strcmp(field_name, "data_type") ) {
       if ( !strcmp(VALP_AS_CHAR_POINTER, "BYTE") )
 	MGENERAL->data_type = BYTE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTEGER16") )
@@ -422,13 +454,26 @@ void fill_structure_field(char *field_name, void *valp)
      added here.  */
 
   /* Fields which normaly go in the projection block of the metadata file.  */
+
   if ( !strcmp(stack_top->block_name, "projection") ) {    
     if ( !strcmp(field_name, "type") ) {
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "A") ) { MPROJ->type = 'A'; return; }
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) { MPROJ->type = 'P'; return; }
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) { MPROJ->type = 'L'; return; }
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "U") ) { MPROJ->type = 'U'; return; }
-      warning_message("Bad value: type = '%c'.",VALP_AS_CHAR_POINTER[0]);
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "UNIVERSAL_TRANSVERSE_MERCATOR") ) 
+	MPROJ->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLAR_STEREOGRAPHIC") ) 
+	MPROJ->type = POLAR_STEREOGRAPHIC;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ALBERS_EQUAL_AREA") )
+	MPROJ->type = ALBERS_EQUAL_AREA;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAMBERT_CONFORMAL_CONIC") ) 
+	MPROJ->type = LAMBERT_CONFORMAL_CONIC;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAMBERT_AZIMUTHAL_EQUAL_AREA") ) 
+	MPROJ->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "STATE_PLANE") ) 
+	MPROJ->type = STATE_PLANE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SCANSAR_PROJECTION") ) 
+	MPROJ->type = SCANSAR_PROJECTION;
+      else { 
+	warning_message("Bad value: type = '%c'.",VALP_AS_CHAR_POINTER[0]); 
+      }
       return;
     }
     if ( !strcmp(field_name, "startX") )
@@ -463,6 +508,28 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).atct.alpha3 = VALP_AS_DOUBLE; return; }
   }
 
+  /* Fields that go in the (proj->param).albers block.  */
+  /* Check for both lamcc and lambert for backwards compatibility */
+  if ( !strcmp(stack_top->block_name, "albers")) {
+    if ( !strcmp(field_name, "std_parallel1") )
+      { (*MPARAM).albers.std_parallel1 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "std_parallel2") )
+      { (*MPARAM).albers.std_parallel2 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "center_meridian") )
+      { (*MPARAM).albers.center_meridian = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "orig_latitude") )
+      { (*MPARAM).albers.orig_latitude = VALP_AS_DOUBLE; return; }
+  }
+
+  /* Fields that go in the (proj->param).lamaz block.  */
+  /* Check for both lamcc and lambert for backwards compatibility */
+  if ( !strcmp(stack_top->block_name, "lamaz")) {
+    if ( !strcmp(field_name, "center_lon") )
+      { (*MPARAM).lamaz.center_lon = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "center_lat") )
+      { (*MPARAM).lamaz.center_lat = VALP_AS_DOUBLE; return; }
+  }
+
   /* Fields that go in the (proj->param).lamcc block.  */
   /* Check for both lamcc and lambert for backwards compatibility */
   if ( !strcmp(stack_top->block_name, "lamcc") ||  !strcmp(stack_top->block_name, "lambert")) {
@@ -488,6 +555,12 @@ void fill_structure_field(char *field_name, void *valp)
   if ( !strcmp(stack_top->block_name, "utm") ) {    
     if ( !strcmp(field_name, "zone") )
       { (*MPARAM).utm.zone = VALP_AS_INT; return; }
+  }
+
+  /* Fields that go in the (proj->param).state block.  */
+  if ( !strcmp(stack_top->block_name, "state") ) {    
+    if ( !strcmp(field_name, "zone") )
+      { (*MPARAM).state.zone = VALP_AS_INT; return; }
   }
 
   /* Fields which normally go in the statistics block of the metadata file. */
