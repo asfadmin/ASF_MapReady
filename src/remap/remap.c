@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
 	/* Write a metadata file for output */
 	meta->general->line_count = outDDR.nl;
 	meta->general->sample_count = outDDR.ns;
-	proj2meta(outDDR,meta); /* temporary fix to populate the projection fields in the metadata file with DDR information */
+	proj2meta(&outDDR,meta); /* temporary fix to populate the projection fields in the metadata file with DDR information */
 	meta_write(meta,outfile);
 	
 /*Now we just call Perform_mapping, which does the actual I/O and the remapping.*/
