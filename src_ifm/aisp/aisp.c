@@ -230,9 +230,8 @@ main (int argc, char *argv [])
 	struct AISP_PARAMS params;
 	meta_parameters *meta;
 	
-	StartWatch();
 	system("date");
-	printf("Program: aisp\n");
+	printf("Program: aisp\n\n");
 
 	logflag=quietflag=0;
 
@@ -242,7 +241,7 @@ main (int argc, char *argv [])
 
 	if (logflag) {
 	  StartWatchLog(fLog);
-	  printLog("Program: aisp\n");
+	  printLog("Program: aisp\n\n");
 	}
 	aisp_setup(&params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
 	if (!quietflag) {
@@ -288,6 +287,6 @@ all of the input data.
 	  }
 	  StopWatchLog(fLog);
 	}
-	StopWatch();
+
 	return(0);
 }
