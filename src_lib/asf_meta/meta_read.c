@@ -140,7 +140,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	struct DDR ddr;
 	char *metaName = appendExt(fileName,".meta");
 	meta_general *general = meta->general;
-	meta_sar     *sar     = meta->sar = (meta_sar *)MALLOC(sizeof(meta_sar));
+	meta_sar     *sar     = meta->sar;
 /*	meta_stats   *stats   = meta->stats;*/
 	coniStruct   *coni    = coniOpen(metaName, asciiIn);
 
