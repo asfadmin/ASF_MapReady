@@ -106,6 +106,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta_init_aisp.o \
 	meta_init_ceos.o \
 	meta_init_stVec.o \
+	meta_is_valid.o \
 	meta2ddr.o \
 	meta_read.o \
 	meta_write.o \
