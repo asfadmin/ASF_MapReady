@@ -13,6 +13,7 @@ SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY:
   1.0 - O. Lawlor.  9/10/98.  CEOS Independance.
   1.5 - P. Denny    08/02     Update to new metadate structs
+  1.6 - P. Denny    01/03     Added meta_get_system
 ****************************************************************/
 #include "asf.h"
 #include "asf_meta.h"
@@ -22,6 +23,24 @@ PROGRAM HISTORY:
 #endif
 
 /*General Calls:*/
+
+/*********************************************************
+ * meta_get_system: Figures byte ordering system
+ * straight copy of c_getsys "algorithm" for DDR */
+char *meta_get_system(void)
+{
+#if defined(big_ieee)
+	return "big_ieee";
+#elif defined(lil_ieee)
+	return "lil_ieee";
+#elif defined(cray_float)
+	return "cray_float";
+#else
+	return MAGIC_UNSET_STRING;
+#endif 
+}
+
+/* SAR calls */
 /************************************************************
  * meta_get_time:
  * Convert a line, sample pair to a time, slant-range pair.
@@ -93,7 +112,7 @@ double meta_get_dop(meta_parameters *meta,double yLine, double xSample)
 	       meta->sar->azimuth_doppler_coefficients[2]*yLine*yLine;
 }
 
-
+/*State Vector calls */
 /**********************************************************
  * meta_get_stVec:
  * Return fixed-earth state vector for the given time.
@@ -105,21 +124,22 @@ stateVector meta_get_stVec(meta_parameters *meta,double time)
 	stateVector ret;
 	if (meta->state_vectors==NULL)
 	{
-		printf("Error! Requested a state vector, but"
-			"no state vectors exist in the file!\n");
-		exit(1);
+		printf( "* ERROR in meta library function meta_get_stVec:\n"
+			"* Requested a state vector, but no state vectors exist in the meta file!\n");
+		exit(EXIT_FAILURE);
 	}
 	if (meta->state_vectors->vector_count<2)
 	{
-		printf("Error! Only %d state vector exist in file!\n",
-			meta->state_vectors->vector_count);
-		exit(1);
+		printf( "* ERROR in meta library function meta_get_stVec:\n"
+			"* Only %d state vector%s exist in file!\n",
+			meta->state_vectors->vector_count,
+			(meta->state_vectors->vector_count != 1) ? "s" : "");
+		exit(EXIT_FAILURE);
 	}
 	stVecNo=0;
 	while (stVecNo < meta->state_vectors->vector_count - 2
 		&& meta->state_vectors->vecs[stVecNo+1].time<time)
 		stVecNo++;
-	
 	interp_stVec(&meta->state_vectors->vecs[stVecNo].vec,
 			 meta->state_vectors->vecs[stVecNo].time,
 			&meta->state_vectors->vecs[stVecNo+1].vec,
@@ -127,6 +147,8 @@ stateVector meta_get_stVec(meta_parameters *meta,double time)
 			&ret,time);
 	return ret;
 }
+
+/* Calculation calls */
 /**********************************************************
  * meta_incid:  Returns the incidence angle
  * This is the angle measured by the target between straight
