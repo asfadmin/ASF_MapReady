@@ -59,7 +59,8 @@ void set_options_testing(int is_testing)
     print_warn = !is_testing;
 }
 
-project_parameters_t * get_geocode_options(int argc, char *argv[])
+project_parameters_t * get_geocode_options(int argc, char *argv[],
+					   projection_type_t * proj_type)
 {
     int i;
     project_parameters_t *pps = malloc(sizeof(project_parameters_t));
@@ -79,6 +80,7 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 	    if (strcmp(argv[i], "utm") == 0)
 	    {
 		pps->utm.zone = -1;
+		*proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
 
 		++i;
 
@@ -111,6 +113,7 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 		int specified_false_easting = 0;
 
 		pps->ps.is_north_pole = 1;
+		*proj_type = POLAR_STEREOGRAPHIC;
 
 		while (1)
 		{
@@ -316,6 +319,7 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 		int specified_false_easting = 0;
 		int specified_false_northing = 0;
 		int specified_scale_factor = 0;
+		*proj_type = LAMBERT_CONFORMAL_CONIC;
 
 		while (1)
 		{
@@ -596,6 +600,8 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 		int specified_false_easting = 0;
 		int specified_false_northing = 0;
 
+		*proj_type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
+
 		while (1)
 		{
 		    ++i;
@@ -768,6 +774,8 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 		int specified_lon0 = 0;
 		int specified_false_easting = 0;
 		int specified_false_northing = 0;
+
+		*proj_type = ALBERS_EQUAL_AREA;
 
 		while (1)
 		{
