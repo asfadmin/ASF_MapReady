@@ -86,17 +86,17 @@ void warning_message(const char *warn_msg, ...)
     if (message_to_print[ii] == '\n') {
       strncpy (temp1, message_to_print, ii);
       temp1[ii] = '\0';
-      strncat(temp1, "\n **          ", ii+15);
+      strncat(temp1, "\n         * ", ii+13);
       strncpy(temp2, (message_to_print+ii+1), MAX_MESSAGE_LENGTH);
       strncat(temp1, temp2, MAX_MESSAGE_LENGTH);
       strncpy(message_to_print, temp1, MAX_MESSAGE_LENGTH);
-      ii += 14;
+      ii += 12;
     }
   }
 
 /* Print warning with some diagnostics */
-  printf(" ** Warning: Parsing %s around line %d:\n"
-         " **          ", current_file, line_number);
+  printf("WARNING: * Parsing %s around line %d:\n"
+         "         * ", current_file, line_number);
   va_start(ap, message_to_print);
   vprintf(message_to_print, ap);
   va_end(ap);
