@@ -88,6 +88,17 @@ typedef enum
     LAS
 } file_format_t;
 
+/* Index keys for all flags used in this program via a 'flags' array */
+typedef enum {
+    f_FORMAT=1,
+    f_SIZE,
+    f_CONFIG,
+    f_CONFIG_INIT,
+    f_LOG,
+    f_QUIET,
+    NUM_FLAGS
+} flag_indices_t;
+
 /* checking return values in the main program */
 void check_return(int ret, char *msg);
 
