@@ -125,26 +125,26 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,"alpha1:",meta->projection->param.atct.alpha1,"First rotation angle [degrees]");
       meta_put_double(fp,"alpha2:",meta->projection->param.atct.alpha2,"Second rotation angle [degrees]");
       meta_put_double(fp,"alpha3:",meta->projection->param.atct.alpha3,"Third rotation angle [degrees]");
-      meta_put_string(fp,"}","","End long-track/cross-track projection");
+      meta_put_string(fp,"}","","End atct");
       break;
-    case'B':/*Lambert conformal conic projection.*/
+    case'L':/*Lambert conformal conic projection.*/
       meta_put_string(fp,"lambert {","","Begin Lambert Conformal Conic projection");
       meta_put_double(fp,"plat1:",meta->projection->param.lambert.plat1,"First standard parallel");
       meta_put_double(fp,"plat2:",meta->projection->param.lambert.plat2,"Second standard parallel");
       meta_put_double(fp,"lat0:",meta->projection->param.lambert.lat0,"Original latitude");
       meta_put_double(fp,"lon0:",meta->projection->param.lambert.lon0,"Original longitude");
-      meta_put_string(fp,"}","","End Lambert Conformal Conic projection");
+      meta_put_string(fp,"}","","End lambert");
       break;
-    case'P':/*Polarstereographicprojection.*/
+    case'P':/*Polar stereographic projection.*/
       meta_put_string(fp,"ps {","","Begin Polar Stereographic Projection");
-      meta_put_double(fp,"lat:",meta->projection->param.ps.slat,"Reference Latitude");
-      meta_put_double(fp,"lon:",meta->projection->param.ps.slon,"Reference Longitude");
-      meta_put_string(fp,"}","","End Polar Stereographic Projection");
+      meta_put_double(fp,"slat:",meta->projection->param.ps.slat,"Reference Latitude");
+      meta_put_double(fp,"slon:",meta->projection->param.ps.slon,"Reference Longitude");
+      meta_put_string(fp,"}","","End ps");
       break;
-    case'U':/*Universaltransversemercatorprojection.*/
+    case'U':/*Universal transverse mercator projection.*/
       meta_put_string(fp,"utm {","","Begin Universal Transverse Mercator Projection");
       meta_put_int   (fp,"zone:",meta->projection->param.utm.zone,"Zone Code");
-      meta_put_string(fp,"}","","End Universal Transverse Mercator Projection");
+      meta_put_string(fp,"}","","End utm");
       break;
    default: 
       err_die("unknown projection type seen in function '%s'\n", __func__);
@@ -159,9 +159,18 @@ void meta_write(meta_parameters *meta, const char *file_name)
   return;
 }
 
+int is_empty(char *string)
+{
+	int ii;
+	for (ii=0; ii<strlen(string); ii++) {
+		if (!isspace(string[ii])) return 0;
+	}
+	return 1;
+}
 void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 {
 	int ii;
+	int malloc_flag=0;
 	char line[255];/*The line to be written to the file.*/
 	static int depth=0;
 	strcpy(line,"");
@@ -178,8 +187,15 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 /*Append parameter and value.*/
 	strcat(line,name);/*Append parameter name*/
 	strcat(line," ");
+	if (is_empty(value) && !strchr(name,'{') &&!strchr(name,'}')){
+		value = (char*)malloc(sizeof(char)*4);
+		malloc_flag=1;
+		strcpy(value,"???");
+	}
 	strcat(line,value);/*Append parameter value.*/
+	if (malloc_flag==1) {free(value);}
 
+/* Append comment if applicable */
 	if (comment!=NULL)
 	{
 	/*Space over to the comment section.*/
@@ -193,7 +209,7 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 		strcat(line,comment);   /*Append comment.*/
 	}
 
-	/*If the string has a closing brace, append newline*/
+/*If the string has a closing brace, append newline*/
 	if (strchr(name,'}') && (depth==0))
 		strcat(line,"\n");
 
@@ -227,8 +243,4 @@ void meta_put_char(FILE *meta_file,char *name,char value,char *comment)
 	sprintf(param,"%c",value);
 	meta_put_string(meta_file,name,param,comment);
 }
-
-
-
-
 
