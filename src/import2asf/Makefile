@@ -6,7 +6,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := $(CFLAGS) -DDECODE_CEOS
+CFLAGS := $(CFLAGS) -DDECODE_CEOS -Wall -g
 
 LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
