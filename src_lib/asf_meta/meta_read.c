@@ -6,6 +6,7 @@
 #include "metadata_parser.h"
 
 void meta_read_old(meta_parameters *meta, char *fileName);
+void meta_new2old(meta_parameters *meta);
 
 /***************************************************************
  * meta_read:
@@ -15,8 +16,9 @@ void meta_read_old(meta_parameters *meta, char *fileName);
  * base name automagically.  */
 meta_parameters *meta_read(const char *inName)
 {
-#define MAX_LINE             1024	  /* Maximum line length.  */
-/* Version where new metadata was adopted.  */
+ /* Maximum line length.  */
+#define MAX_LINE             1024 
+ /* Version where new metadata was adopted.  */
 #define NEW_FORMAT_VERSION   1.0 
 
 	char              *meta_name      = appendExt(inName,".meta");
@@ -49,6 +51,7 @@ meta_parameters *meta_read(const char *inName)
 	}
 
 	/* Fill old structure parameters */
+	meta_new2old(meta);
 
 	free(meta_name);
 
@@ -242,3 +245,77 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	coniClose(coni);
 
 } /* End pre-1.0 version read */
+
+
+/***************************************************************
+ * meta_new2old:
+ * Fills in old meta structures using existing new structures
+ * so that both old and new structures are populated. */
+void meta_new2old(meta_parameters *meta)
+{
+/* Fill geo_parameters structure */
+	meta->geo->type        = meta->sar->proj_type;
+	/* Projection structure is the same for both old and new */
+	meta->geo->proj        = meta->projection;
+	meta->geo->lookDir     = meta->sar->look_direction;
+	meta->geo->deskew      = meta->sar->deskewed;
+	meta->geo->xPix        = meta->general->x_pixel_size;
+	meta->geo->yPix        = meta->general->y_pixel_size;
+	meta->geo->rngPixTime  = meta->sar->range_time_per_pixel;
+	meta->geo->azPixTime   = meta->sar->azimuth_time_per_pixel;
+	meta->geo->timeShift   = meta->sar->time_shift;
+	meta->geo->slantShift  = meta->sar->slant_shift;
+	meta->geo->slantFirst  = meta->sar->slant_range_first_pixel;
+	meta->geo->wavelen     = meta->sar->wavelength;
+	meta->geo->dopRange[0] = meta->sar->range_doppler_coefficients[0];
+	meta->geo->dopRange[1] = meta->sar->range_doppler_coefficients[1];
+	meta->geo->dopRange[2] = meta->sar->range_doppler_coefficients[2];
+	meta->geo->dopAz[0]    = meta->sar->azimuth_doppler_coefficients[0];
+	meta->geo->dopAz[1]    = meta->sar->azimuth_doppler_coefficients[1];
+	meta->geo->dopAz[2]    = meta->sar->azimuth_doppler_coefficients[2];
+
+/* Fill ifm_parameters structure */
+    { /* Estimate satellite height and Earth radius */
+	int line = meta->general->line_count / 2;
+	int sample = 0;
+	double lat, time;
+	double re=meta->general->re_major,   rp=meta->general->re_minor;
+	stateVector stVec;
+
+	/* ht */
+	time = meta_get_time(meta, line, sample);
+	stVec = meta_get_stVec(meta, time);
+	meta->ifm->ht = sqrt(stVec.pos.x * stVec.pos.x + stVec.pos.y * stVec.pos.y + stVec.pos.z * stVec.pos.z);
+
+	/* er */
+	lat = asin(stVec.pos.z / meta->ifm->ht);
+	meta->ifm->er = (double) (re*rp)/sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+    }
+	meta->ifm->nLooks        = meta->sar->look_count;
+	meta->ifm->orig_nLines   = meta->general->line_count;
+	meta->ifm->orig_nSamples = meta->general->sample_count;
+
+/* Fill extra_info structure */
+	strcpy( meta->info->sensor,     meta->general->sensor);
+	strcpy( meta->info->mode,       meta->general->mode);
+	strcpy( meta->info->processor,  meta->general->processor);
+	meta->info->orbit             = meta->general->orbit;
+	meta->info->bitErrorRate      = meta->general->bit_error_rate;
+	strcpy( meta->info->satBinTime, meta->sar->satellite_binary_time);
+	strcpy( meta->info->satClkTime, meta->sar->satellite_clock_time);
+	meta->info->prf               = meta->sar->prf;
+
+/* State vectors are the same for both meta structures */
+	meta->stVec = meta->state_vectors;
+
+	if (meta->sar->proj_type!='P') /*Image not map projected-- compute look angle to beam center*/
+		meta->ifm->lookCenter = meta_look(meta, 0, meta->ifm->orig_nSamples/2);
+	else 
+	{/*Image *is* map projected-- compute earth's eccentricity*/
+		double re = meta->general->re_major;
+		double rp = meta->general->re_minor;
+		meta->geo->proj->ecc = sqrt(1.0-rp*rp/(re*re));
+	}
+
+	return;
+}
