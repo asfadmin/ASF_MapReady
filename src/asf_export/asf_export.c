@@ -470,7 +470,8 @@ main (int argc, char *argv[])
   }
   else if ( format == GEOTIFF ) {
     export_as_geotiff (command_line.in_meta_name, command_line.in_data_name,
-		       command_line.output_name, command_line.scale);
+		       command_line.output_name, command_line.size,
+		       command_line.scale);
   }
   else if ( format == JPEG ) {
     export_as_jpeg (command_line.in_meta_name, command_line.in_data_name,

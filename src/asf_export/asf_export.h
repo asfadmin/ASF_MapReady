@@ -107,6 +107,7 @@ void export_as_esri (const char *metadata_file_name,
 void export_as_geotiff (const char *metadata_file_name,
                         const char *image_data_file_name,
                         const char *output_file_name,
+			long max_size,
                         scale_t scale);
 
 void export_as_jpeg (const char *metadata_file_name,

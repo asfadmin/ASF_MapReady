@@ -93,10 +93,13 @@ void
 export_as_geotiff (const char *metadata_file_name,
                    const char *image_data_file_name,
                    const char *output_file_name,
+		   long max_size,
                    scale_t scale)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
+  /* Scale factor needed to satisfy max_size argument.  */
+  size_t scale_factor;    
   unsigned short sample_size = 4;
   unsigned short sample_format;
   double mask;
@@ -147,6 +150,25 @@ export_as_geotiff (const char *metadata_file_name,
 				 image_data_file_name, start_of_file,
 				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
+  /* We want to scale the image st the long dimension is less than or
+     equal to the prescribed maximum, if any.  */
+  if ( (max_size > iim->size_x && max_size > iim->size_y)
+       || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
+    scale_factor = 1;
+  }
+  else {
+    scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y) 
+			 / max_size);
+    /* The scaling code we intend to use needs odd scale factors.  */
+    if ( scale_factor % 2 != 1 ) {
+      scale_factor++;
+    }
+  }
+
+  /* Generate the scaled image.  */
+  asfPrintStatus ("Scaling...\n");
+  FloatImage *si = float_image_new_from_model_scaled (iim, scale_factor);
+
   /* Open output tiff file and GeoKey file descriptor.  */
   otif = XTIFFOpen (output_file_name, "w");
   asfRequire(otif != NULL, "Error opening output tiff file.\n");
@@ -163,7 +185,7 @@ export_as_geotiff (const char *metadata_file_name,
   const int default_sampling_stride = 30;
   const int minimum_samples_in_direction = 10;
   int sampling_stride = GSL_MIN (default_sampling_stride, 
-				 GSL_MIN (iim->size_x, iim->size_y) 
+				 GSL_MIN (si->size_x, si->size_y) 
 				 / minimum_samples_in_direction);
   /* Lower and upper extents of the range of float values which are to
      be mapped linearly into the output space.  */
@@ -202,7 +224,7 @@ export_as_geotiff (const char *metadata_file_name,
     }
     
     /* Gather some statistics to help with the mapping.  */
-    float_image_approximate_statistics (iim, sampling_stride, &mean, 
+    float_image_approximate_statistics (si, sampling_stride, &mean, 
 					&standard_deviation);
     
     /* Compute the limits of the interval which will be mapped
@@ -217,8 +239,8 @@ export_as_geotiff (const char *metadata_file_name,
 
   /* Set the normal TIFF image tags.  */
   TIFFSetField(otif, TIFFTAG_SUBFILETYPE, 0);
-  TIFFSetField(otif, TIFFTAG_IMAGEWIDTH, iim->size_x);
-  TIFFSetField(otif, TIFFTAG_IMAGELENGTH, iim->size_y);
+  TIFFSetField(otif, TIFFTAG_IMAGEWIDTH, si->size_x);
+  TIFFSetField(otif, TIFFTAG_IMAGELENGTH, si->size_y);
   TIFFSetField(otif, TIFFTAG_BITSPERSAMPLE, sample_size * 8);
   TIFFSetField(otif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
   TIFFSetField(otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
@@ -254,9 +276,13 @@ export_as_geotiff (const char *metadata_file_name,
 
   /* Set the GeoTIFF extension image tags.  */
 
-  /* FIXME: its not good to say all our products are
-     RasterPixelIsArea, but for now that's what we do.  */
-  GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
+  /* Calling the observations from which SAR image pixels are derived
+     may seem a bit weird.  However, nobody seems to know exactly how
+     observation pixels relate to the geolocation information
+     associated with the image anyway, and using PixelIsPoint will let
+     scaling work right when we average together blocks of pixels with
+     the first block at pixel 0,0.  */
+  GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsPoint);
 
   if ( md->sar->image_type == 'P' ) {
     re_major = md->projection->re_major;
@@ -366,10 +392,8 @@ export_as_geotiff (const char *metadata_file_name,
     TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_points);
 
     /* Set the scale of the pixels, in projection coordinates.  */
-    pixel_scale[0] = md->projection->perX;
-    /* Note: we take -perY here because we intend to flip our image in
-       the Y direction to get a north up image.  */
-    pixel_scale[1] = md->projection->perY;
+    pixel_scale[0] = md->projection->perX * scale_factor;
+    pixel_scale[1] = md->projection->perY * scale_factor;
     pixel_scale[2] = 0;
     TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
@@ -930,12 +954,12 @@ export_as_geotiff (const char *metadata_file_name,
       tie_points[0][4] = c1_long;
       tie_points[0][5] = 0.0;
       tie_points[1][0] = 0.0;
-      tie_points[1][1] = iim->size_x;
+      tie_points[1][1] = si->size_x;
       tie_points[1][2] = 0.0;
       tie_points[1][4] = c2_lat;
       tie_points[1][5] = c2_long;
       tie_points[1][6] = 0.0;
-      tie_points[2][0] = iim->size_y;
+      tie_points[2][0] = si->size_y;
       tie_points[2][1] = 0.0;
       tie_points[2][2] = 0.0;
       tie_points[2][4] = c3_lat;
@@ -958,20 +982,13 @@ export_as_geotiff (const char *metadata_file_name,
     asfPrintError("Unrecognized image type.\n");
   }
 
-typedef enum {
-  TRUNCATE=1,
-  MINMAX,
-  SIGMA,
-  NONE
-} scale_t;
-
   asfPrintStatus("Writing Output File...\n");
 
   /* Write the actual image data.  */
-  float *line_buffer = g_new (float, iim->size_x);
-  unsigned char *byte_line_buffer = g_new (unsigned char, iim->size_x);
-  for ( ii = 0 ; ii < iim->size_y ; ii++ ) {
-    float_image_get_row (iim, ii, line_buffer);
+  float *line_buffer = g_new (float, si->size_x);
+  unsigned char *byte_line_buffer = g_new (unsigned char, si->size_x);
+  for ( ii = 0 ; ii < si->size_y ; ii++ ) {
+    float_image_get_row (si, ii, line_buffer);
     if ( scale == NONE ) {
       if ( TIFFWriteScanline (otif, line_buffer, ii, 0) < 0 ) {
         asfPrintError("Error writing to output geotiff file %s",
@@ -979,9 +996,9 @@ typedef enum {
       }
     }
     else {
-      for ( jj = 0 ; jj < iim->size_x ; jj++ ) {
+      for ( jj = 0 ; jj < si->size_x ; jj++ ) {
 	/* Pixel as floatl.  */
-	double paf = float_image_get_pixel (iim, jj, ii);
+	double paf = float_image_get_pixel (si, jj, ii);
 	unsigned char pab;	/* Pixel as byte.  */
 	if ( paf < omin ) {
 	  pab = 0;
@@ -999,7 +1016,7 @@ typedef enum {
                       output_file_name);
       }
     }
-    asfLineMeter(ii, iim->size_y);
+    asfLineMeter(ii, si->size_y);
   }
   g_free (byte_line_buffer);
   g_free (line_buffer);  
@@ -1009,6 +1026,7 @@ typedef enum {
 
   GTIFFree (ogtif);
   XTIFFClose (otif);
+  float_image_free (si);
   float_image_free (iim);
   meta_free (md);
 }
