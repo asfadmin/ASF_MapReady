@@ -1,5 +1,8 @@
 Makefile
 bin
+config.log
+config.status
 java
 lib
 man
+share
