@@ -15,16 +15,6 @@ int firstRecordLen(char *ceosName)
   return bigInt32(h.recsiz); /*put recsiz in proper endian format & return*/
 }
 
-char *uc(char *string)
-{
-  char *out=(char *)MALLOC(sizeof(char)*strlen(string));
-  int i;
-
-  for (i=0; i<strlen(string); i++) out[i]=toupper(string[i]);
-  out[i]='\0';
-
-  return out;
-}
 
 /* Default splash screen, the same for all the tools
    This function should be called first in the "we're good enough" part of command line parsing */
@@ -49,7 +39,7 @@ void print_progress(int current_line, int total_lines)
 {
   current_line++;
 
-  if ((current_line%256==0) || (current_line==total_lines)) {
+  if ((current_line%128==0) || (current_line==total_lines)) {
     printf("\rWrote %5d of %5d lines.", current_line, total_lines);
     fflush(NULL);
     if (current_line == total_lines) {
