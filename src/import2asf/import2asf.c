@@ -145,6 +145,7 @@ long imgStart, imgEnd;
 int outLine;
 /* needed to handle writing out of sprocket metadata file correctly */
 int sprocketFlag=FALSE;
+int oldFlag=FALSE;
 
 /* Lets go! */
 int main(int argc, char *argv[])
@@ -186,6 +187,9 @@ int main(int argc, char *argv[])
     char *key = argv[currArg++];
     if (strmatch(key,"-sprocket")) {
       sprocketFlag=TRUE;
+    }
+    if (strmatch(key,"-old")) {
+      oldFlag=TRUE;
     }
     else if (strmatch(key,"-log")) {
       CHECK_ARG(1); /*one string argument: log file */
@@ -318,11 +322,17 @@ int main(int argc, char *argv[])
         s->nLines++;
       }
       updateMeta(s,meta,NULL,0);
-      meta_write(meta,outName);
+      if (oldFlag) {
+	meta_new2old(meta);
+	meta_write_old(meta, outName);
+      }
+      else meta_write(meta,outName);
+
       /* Write .raw file for backwards compatibility */
       sprintf(tmp, "ln -s %s_raw.img %s_raw.raw", outBaseName, outBaseName);
       system(tmp);
       /**********************************************/
+
       meta_free(meta);
       printf("Finished\n\n");
       exit(EXIT_SUCCESS);
@@ -347,12 +357,14 @@ int main(int argc, char *argv[])
       /* Handle output files */
       create_name(outName, outBaseName, "_cpx.img");
       meta->general->data_type=COMPLEX_REAL32;
-      meta_write(meta,outName);
-      /* Write DDR file for backwards compatibility */
-      create_name(ddrName, outBaseName, "_cpx.ddr");
-      meta2ddr(meta, &ddr);
-      c_putddr(ddrName, &ddr);
-      /**********************************************/
+
+      if (oldFlag) {
+	create_name(ddrName, outBaseName, "_cpx.ddr");
+	meta2ddr(meta, &ddr);
+	c_putddr(ddrName, &ddr);
+      }
+      else meta_write(meta,outName);
+
       if (sprocketFlag) {
         create_name(sprocketName, outName, ".metadata");
         meta_write_sprocket(sprocketName, meta, NULL);
@@ -476,11 +488,13 @@ int main(int argc, char *argv[])
 
       /* Handle output files */
       meta->general->data_type=REAL32;
-      meta_write(meta,outName);
-      /* Write DDR file for backwards compatibility */
-      meta2ddr(meta, &ddr);
-      c_putddr(ddrName, &ddr);
-      /**********************************************/
+
+      if(oldFlag) {
+	meta2ddr(meta, &ddr);
+	c_putddr(ddrName, &ddr);
+      }
+      else meta_write(meta,outName);
+
       if (sprocketFlag) {
         create_name(sprocketName, outName, ".metadata");
         meta_write_sprocket(sprocketName, meta, NULL);
