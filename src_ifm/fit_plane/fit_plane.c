@@ -1,7 +1,7 @@
 /******************************************************************************
 NAME: fit_plane
 
-SYNOPSIS: fit_plane <in> <out> [k <keepFraction] [-log <file>]
+SYNOPSIS: fit_plane [-k <keepFraction] [-log <file>] <in> <out>
 
 DESCRIPTION:
     	fit_plane is used during complex interferometry to clean up
@@ -27,12 +27,14 @@ PROGRAM HISTORY:
     VERS:   DATE:  AUTHOR:      PURPOSE:
     ---------------------------------------------------------------
     1.0     6/97   O. Lawlor	Modified from my fit_line, to allow
-    				more generality in remap than
-    				calc_deltas and asp would allow.
-     "      7/97   D.Corbett   updated version number
-    1.1     10/97   O. Lawlor	Added check for enough correlation points.
+    				 more generality in remap than
+    				 calc_deltas and asp would allow.
+     "      7/97   D.Corbett	updated version number
+    1.1    10/97   O. Lawlor	Added check for enough correlation points.
     1.2     5/98   O. Lawlor	Updated input for new fico.
     1.21    7/01   R. Gens	Added logfile switch
+    1.5    12/03   P. Denny	Bring commandline parsing & usage up to
+				 our current standard
 
 HARDWARE/SOFTWARE LIMITATIONS: none
 
@@ -89,7 +91,9 @@ Input and Output:
 
 #include "asf.h"
 
-float version=1.21;
+#define VERSION 1.5
+
+
 FILE *pointOutput=NULL;
 
 void usage(char *name);
@@ -365,28 +369,40 @@ int main(int argc,char **argv)
 	int totalPoints=0;
 	double keepFraction=0.8;
 	fit_line f;
-	int i;
 
-	if (argc<3) usage(argv[0]);
 	fit_init(&f);
-        for (i=3; i<argc; i++) {
-          /*Process extra argument: either c (coefficents) or p (points)*/
-          if (argv[3][0]=='c')
-            f.coeffList=FOPEN(argv[4],"w");
-          if (argv[3][0]=='p')
-            pointOutput=FOPEN(argv[4],"w");
-          if (argv[3][0]=='k')
-            sscanf(argv[4],"%lf",&keepFraction);
-	  if(strncmp(argv[i],"-log", 4)==0) {
-            sscanf(argv[i+1], "%s", logFile);
-            logflag=1;
-            fLog = FOPEN(logFile, "a");
-          }
-        }
 
-	inForward=FOPEN(argv[1],"r");
-	out=FOPEN(argv[2],"w");
-		
+/* Parse command line arguments */
+	logflag=quietflag=FALSE;
+	while (currArg < (argc-2)) {
+	   char *key = argv[currArg++];
+	   if (strmatch(key,"-log")) {
+	      CHECK_ARG(1);
+	      strcpy(logFile,GET_ARG(1));
+	      fLog = FOPEN(logFile, "a");
+	      logflag=TRUE;
+	   }
+	   else if (strmatch(key,"-k")) {
+	      CHECK_ARG(1);
+	      keepFraction = strtod(GET_ARG(1),NULL);
+	   }
+	/*** Begin hidden arguments: c (coefficents) or p (points) ***/
+	   else if (strmatch(key,"-c")) {
+	      CHECK_ARG(1);
+	      f.coeffList = FOPEN(GET_ARG(1),"w");
+	   }
+	   else if (strmatch(key,"-p")) {
+	      CHECK_ARG(1);
+	      pointOutput = FOPEN(GET_ARG(1),"w");
+	   }
+	/*** End hidden arguments: c (coefficents) or p (points) ***/
+ 	   else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
+	}
+	if ((argc-currArg) < 2) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+
+	inForward = FOPEN(argv[currArg++],"r");
+	out       = FOPEN(argv[currArg],"w");
+
 /*add points to fitline*/
 	while (NULL!=(fgets(lineForward,255,inForward)))
 	{
@@ -431,19 +447,27 @@ int main(int argc,char **argv)
 
 void usage(char *name)
 {
-		printf("\n\
-USAGE: %s <in> <out> [ k <keepFraction> ] [-log <file>]\n\
-\n\t<in> input: a correlation point file (from fico)\n\
-\t<out> output: a remap-compatible matrixFile, derived from a \n\
-\t      least-squares fit of the input data, with point elimination.\n\
-\tk <keepFraction>: specifies some fraction of points to not throw away.\n\
-\t              The default is 0.8 (keep 80%% of the points).\n\
-\t-log <file>:  Option to have the output written to a log file.\n\n\
-Fit_plane takes, as an input, correlation points from fico and \n\
-produces as output correlation coefficients in <out>. \n\
-This coefficient matrix can be used with the -matrix option of remap\n\
-to map image 2 to line up with image 1.\n\
-\nVersion %4.2f, ASF SAR TOOLS\n\n",name,version);
-		exit(1);
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-k <keepFraction>] [-log <file>] <in> <out>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <in>   a correlation point file (from fico)\n"
+	"   <out>  a remap-compatible matrixFile, derived from a least-squares\n"
+	"           fit of the input data, with point elimination.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -k <keepFraction> Specifies some fraction of points to not throw away.\n"
+	"                       The default is 0.8 (keep 80%% of the points).\n"
+	"   -log <file>       Option to have the output written to a log file.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Takes correlation points from fico as an input and produces correlation\n"
+	"   coefficients in <out>. This coefficient matrix can be used with the -matrix\n"
+	"   option of remap to map image 2 to line up with image 1.\n");
+ printf("\n"
+	"Version %4.2f, ASF SAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
 
