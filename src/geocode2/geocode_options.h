@@ -13,9 +13,12 @@
 
   UTM
   ===
-    --zone, -z   : Zone
-    --latitude, --lat, -lat : Latitude
-    --longitude, --lon, -lon : Longitude
+     --zone, -z   : Zone
+     --lat0, --center_latitude, --slat, -slat, --lat_0  : Latitude
+     --lon0, --center_longitude, --slon, -slon, --lon_0  : Longitude
+
+    The zone will be determined from the longitude if the zone is not
+    otherwise specified.
 
     Examples:
       --projection utm --zone <zone>
@@ -70,7 +73,14 @@
 project_parameters_t * get_geocode_options(int *argc, char ***argv,
 					   projection_type_t * proj_type);
 
+/* Might want to make these static... they are called from get_geocode_options
+   before it returns. */
 void sanity_check(projection_type_t proj_type, project_parameters_t * pps);
 void apply_defaults(projection_type_t proj_type, project_parameters_t * pps);
+
+
+/* this allows testing failure cases without seeing a lot of error
+   messages go by.  Kind of a hack I guess */
+void set_options_testing(int is_testing);
 
 #endif

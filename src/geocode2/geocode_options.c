@@ -67,7 +67,7 @@ static void missing_arg(const char * option)
 	    "Projection requires option that was not specified: %s\n", option);
 }
 
-static void set_options_testing(int is_testing)
+void set_options_testing(int is_testing)
 {
     print_warn = !is_testing;
 }
@@ -1220,11 +1220,12 @@ void sanity_check(projection_type_t pt, project_parameters_t * pps)
     switch (pt)
     {
 	case UNIVERSAL_TRANSVERSE_MERCATOR:
-/*	    if ((abs(pps->utm.zone) < 1) || (abs(pps->utm.zone) > 60))
+
+	    if ((abs(pps->utm.zone) < 1) || (abs(pps->utm.zone) > 60))
 	    {
 		asfPrintError("Illegal zone number: %d\n", pps->utm.zone);
 	    }
-*/
+
 	    verify_valid_latitude(pps->utm.lat0);
 	    verify_valid_longitude(pps->utm.lon0);
 
@@ -1272,8 +1273,25 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps)
     switch (pt)
     {
 	case UNIVERSAL_TRANSVERSE_MERCATOR:
-	    if (pps->utm.zone == MAGIC_UNSET_INT)
-		pps->utm.zone = calc_utm_zone(pps->utm.lon0);
+	    /* set the zone based on the specified longitude */
+	    if (!ISNAN(pps->utm.lon0))
+	    {
+		if (pps->utm.zone == MAGIC_UNSET_INT)
+		    pps->utm.zone = calc_utm_zone(pps->utm.lon0);
+	    }
+
+	    /* false easting & false northing are fixed for utm */
+	    if (!ISNAN(pps->utm.lat0))
+	    {
+		pps->utm.false_northing = pps->utm.lat0 > 0 ? 0 : 10000000;
+		pps->utm.false_easting = 500000;
+	    }
+	    else
+	    {
+		pps->utm.false_easting = MAGIC_UNSET_DOUBLE;
+		pps->utm.false_northing = MAGIC_UNSET_DOUBLE;
+	    }
+
 	    break;
 
 	case POLAR_STEREOGRAPHIC:
