@@ -288,15 +288,13 @@ float_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
   g_assert (file_larger_than (file, offset + (size_x * size_y
 					      * sizeof (float))));
 
-  FloatImage *self = initialize_float_image_structure (size_x, size_y);
- 
   // Open the file to read data from.
   FILE *fp = fopen (file, "r");
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
-  self = float_image_new_from_file_pointer (size_x, size_y, fp, offset, 
-					    byte_order);
+  FloatImage *self = float_image_new_from_file_pointer (size_x, size_y, fp, 
+							offset, byte_order);
   
   // Close file we read image from.
   int return_code = fclose (fp);
