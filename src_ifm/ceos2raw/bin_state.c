@@ -107,7 +107,7 @@ void updateMeta(bin_state *s,meta_parameters *meta)
 	meta->sar->look_direction = s->lookDir;
 	meta->sar->look_count = s->nLooks;
 	meta->sar->deskewed = 0;
-	if (meta->sar->original_line_count == MAGIC_UNSET_INT) {
+	if (!meta_is_valid_int(meta->sar->original_line_count)) {
 		meta->sar->original_line_count = meta->general->line_count;
 	}
 	meta->sar->original_sample_count = s->nSamp;
@@ -116,8 +116,14 @@ void updateMeta(bin_state *s,meta_parameters *meta)
 	meta->sar->slant_range_first_pixel = s->range_gate*speedOfLight/2.0;
 	meta->sar->wavelength = speedOfLight/s->frequency;
 	meta->sar->prf = s->prf;
-	sprintf(meta->sar->satellite_binary_time, "%f", s->time_code);
-	strcpy (meta->sar->satellite_clock_time, "0");
+	meta->sar->earth_radius = s->re;
+	meta->sar->satellite_height = s->re+s->ht;
+	if (!meta_is_valid_string(meta->sar->satellite_binary_time)) {
+		sprintf(meta->sar->satellite_binary_time, "%f", s->time_code);
+	}
+	if (!meta_is_valid_string(meta->sar->satellite_clock_time)) {
+		strcpy (meta->sar->satellite_clock_time, "0");
+	}
 
 	strcpy(meta->general->sensor, s->satName);
 	strcpy(meta->general->mode, s->beamMode);
@@ -132,9 +138,15 @@ void updateMeta(bin_state *s,meta_parameters *meta)
 /* Set the number of lines to process to the right number */
 	s->nLines = meta->general->line_count;
 
-/* earth radius and satellite height */
+/* earth radius and satellite height **
+calculated previously at
+  main
+    convertMetadata_ceos
+      createMeta_ceos
+        addStateVector
 	s->re = meta_get_earth_radius(meta, s->nLines/2, s->nSamp/2);
 	s->ht = meta_get_sat_height(meta, s->nLines/2, s->nSamp/2) - s->re;
+*/
 }
 
 /********************************
@@ -146,20 +158,41 @@ Format:
 	stVec[3-5]: Earth-Fixed velocity, in meters/second.
 
 */
-/*** THIS FUNCTION IS PROBABLY NOT NEEDED AND NEEDS TO BE LOOKED AT ***********/
 void addStateVector(bin_state *s,stateVector *stVec)
 {
-   /* Estimate the doppler value at beam center
-    ------------------------------------------*/
-   if (!s->zeroDopSteered)
-   {
-     GEOLOCATE_REC *g=init_geolocate(stVec);
-     g->side=s->lookDir;
-     g->lambda=speedOfLight/s->frequency;
-     s->estDop=yaw2doppler(g,s->range_gate*speedOfLight/2.0,1.10)/s->prf;
-     printf("   Estimated doppler: %f PRF\n",s->estDop);
-     free_geolocate(g);
-   }
+	double latCen;/*Geocentric latitude of state vector, in radians.*/
+	double er;/*Radius of earth under state vector, in m.*/
+	
+        /* Use state vector to estimate latitude.
+	 ---------------------------------------*/
+	latCen=atan(stVec->pos.z/
+		sqrt(stVec->pos.x*stVec->pos.x+stVec->pos.y*stVec->pos.y));
+
+        /* Use the latitude to determine earth's (ellipsoidal) radius.
+	 -----------------------------------------------------------*/
+	er=er_polar/sqrt(1-ecc2/(1+tan(latCen)*tan(latCen)));
+
+        /* Now write all these parameters into satellite structure.
+         --------------------------------------------------------*/
+	s->re=er;
+	s->ht=vecMagnitude(stVec->pos)-er;
+	s->vel=vecMagnitude(stVec->vel);
+	
+	printf("Updating for more accurate earth radius (%.2f), \n"
+		"height (%.2f), and velocity (%.2f).\n",
+		s->re,s->ht,s->vel);
+
+	/* Estimate the doppler value at beam center
+	  ------------------------------------------*/
+	if (!s->zeroDopSteered)
+	{
+	   GEOLOCATE_REC *g=init_geolocate(stVec);
+	   g->side=s->lookDir;
+	   g->lambda=speedOfLight/s->frequency;
+	   s->estDop=yaw2doppler(g,s->range_gate*speedOfLight/2.0,1.10)/s->prf;
+	   printf("   Estimated doppler: %f PRF\n",s->estDop);
+	   free_geolocate(g);
+	}
 }
 
 /********************************
