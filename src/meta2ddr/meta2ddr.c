@@ -8,19 +8,21 @@ void meta_write_old(meta_parameters *meta, const char *file_name);
 
 int main(int argc, char **argv)
 {
-	char las_name[256];
+	char las_nameDDR[256];
+	char las_nameMeta[256];
 	char meta_name[256];
 	meta_parameters *meta;
 	struct DDR ddr;
+	extern int currArg; /* from cla.h in asf.h... initialized to 1 */
 	
 /* Parse command line */
-	currArg=1;
 	if (argc-currArg < 2)
 		{printf("Insufficient arguments.\n"); usage(argv[0]);}
 	if (argc-currArg > 2)
 		{printf("Excessive arguments.\n"); usage(argv[0]);}
-	strcpy(meta_name,argv[currArg]);
-	strcpy(las_name, argv[currArg+1]);
+	create_name(meta_name, argv[currArg], ".meta");
+	create_name(las_nameMeta, argv[currArg+1], ".meta");
+	create_name(las_nameDDR, argv[currArg+1], ".ddr");
 
 /* Read .meta and fill meta structures */ 
 	meta = meta_read(meta_name);
@@ -29,13 +31,13 @@ int main(int argc, char **argv)
 	meta2ddr(meta,&ddr);
 
 /* Write stuff out old style */
-	c_putddr(las_name, &ddr);
-	meta_write_old(meta, las_name);
+	c_putddr(las_nameDDR, &ddr);
+	meta_write_old(meta, las_nameMeta);
 
 /* Clean and report */
 	meta_free(meta);
-	printf("***Wrote %s.ddr and %s.meta from %s.meta.\n",
-	       las_name,las_name,meta_name);
+	printf("***Wrote %s and %s from %s.\n",
+	       las_nameDDR, las_nameMeta, meta_name);
 
 	return 0;
 }
