@@ -157,9 +157,8 @@ double get_look_angle(double er, double ht, double sr)
 /******************************************************************************
 * Gets radiometric info from the leader file and creates a lookup table the
  * width of a data line. Allocates memory that needs to be freed */
-float *create_rsi_scaling_table(char *leaderName, int direction, int ns)
+float *create_rsi_scaling_table(struct RSI_VRADDR rdr, int direction, int ns)
 {
-  struct RSI_VRADDR rdr; /* RSI CEOS radiometric data record */
   int lut_end;           /* 0 indexed end of the radiometric lookup table */
   float *scalingGain;    /* Scaling gain array */
   double A2;             /* Scaling gain value for iith pixel */
@@ -167,7 +166,6 @@ float *create_rsi_scaling_table(char *leaderName, int direction, int ns)
   int Iu;                /* Index at upper end of lookup table */
   int ii;                /* Sample index */
 
-  get_rsi_raddr(leaderName,&rdr);
   lut_end = rdr.n_samp-1;
   scalingGain = (float*)MALLOC(sizeof(float)*ns);
 
@@ -672,9 +670,13 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
     /* What to do if it's in RSI CEOS format */
     else /*if (rsiCeos)*/ {
       int dir = (metaIn->general->orbit_direction=='A') ? ASC : DESC;
-      float *scalingGain = create_rsi_scaling_table(leaderName, dir, ns);
+      float *scalingGain;
       double ht = meta_get_sat_height(metaIn, nl/2, ns/2);
       double Re = meta_get_earth_radius(metaIn, nl/2, ns/2);
+      struct RSI_VRADDR rdr;
+
+      get_rsi_raddr(leaderName, &rdr);
+      scalingGain = create_rsi_scaling_table(rdr, dir, ns);
 
       for (chunk=0; chunk<nl; chunk+=size) {
         if ((nl-chunk)<CHUNK_OF_LINES)
@@ -689,12 +691,13 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
             float sinIncid = ht * sin((D2R*lookLayerBuf[xx])/Re);
             /* How we got this sigma0 equation for RSI detected data:
              * Start with equation in Document number RSI-GS-026 Section 5.4
-             * beta0 (dB) = 10*log ( dn^2 / scalingGain)      [A3 is disregarded because it is 0]
+             * beta0 (dB) = 10*log ( (dn^2+offset) / scalingGain)
              * sigma0 (pow) = 10^[(beta0 + 10*log(sin(incidAngle))) / 10]
-             * sigma0 (pow) = 10^[(10*log(dn^2/scalingGain) + 10*log(sin(incidAngle))) / 10]
-             * sigma0 (pow) = 10^[log(dn^2/scalingGain) + log(sin(incidAngle))]
-             * sigma0 (pow) = dn^2/scalingGain * sin(incidAngle) */
-            sigmaBuf[bufInd] = SQR(ampBuf[bufInd]) / scalingGain[xx] * sinIncid;
+             * sigma0 (pow) = 10^[(10*log((dn^2+offset)/scalingGain) + 10*log(sin(incidAngle))) / 10]
+             * sigma0 (pow) = 10^[log((dn^2+offset)/scalingGain) + log(sin(incidAngle))]
+             * sigma0 (pow) = (dn^2+offset)/scalingGain * sin(incidAngle) */
+            sigmaBuf[bufInd] = ( SQR(ampBuf[bufInd])+rdr.offset )
+                               / scalingGain[xx] * sinIncid;
           }
         }
         put_float_lines(sigmaFp, metaOut, chunk, size, sigmaBuf);
