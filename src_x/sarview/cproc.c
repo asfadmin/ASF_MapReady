@@ -17,11 +17,11 @@ int cproc_loadimage(char * imageName)
 	image_delete();
 
 /*Determine the type of the image, and read it in*/
-	if ( extExists(imageName,".ddr") ) { /* Is a LAS image.  */
+	if ( extExists(imageName,".ddr") || extExists(imageName,".meta") ) { /* Is a LAS image.  */
 		if ( 0 == image_loadLas(imageName) ) return 0;
 	}
 	else { /* Is a CEOS image. */
-		if (0 == image_loadCeos(imageName)) return 0;
+		if ( 0 == image_loadCeos(imageName) ) return 0;
 	}
 
 /*Set the zoom factor based on the image and screen sizes--
