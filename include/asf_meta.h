@@ -231,6 +231,8 @@ typedef struct {
     double std_parallel2;     /* Second standard parallel          */
     double center_meridian;   /* Longitude of center meridian      */
     double orig_latitude;     /* Latitude of the projection origin */
+    double false_easting;     /* False Easting                     */
+    double false_northing;    /* False Northing                    */
   } proj_albers;
  /* Along-track/cross-track.*/
   typedef struct {
@@ -239,25 +241,36 @@ typedef struct {
   } proj_atct;
  /* Lambert Azimuthal Equal Area. */
   typedef struct {
-    double center_lon;   /* Longitude at center of projection */
-    double center_lat;   /* Latitude at center of projection  */
+    double center_lon;        /* Longitude at center of projection */
+    double center_lat;        /* Latitude at center of projection  */
+    double false_easting;     /* False Easting                     */
+    double false_northing;    /* False Northing                    */
   } proj_lamaz;
  /* Lambert Conformal Conic.*/
   typedef struct {
-    double plat1;     /* First standard parallel  */
-    double plat2;     /* Second standard parallel */
-    double lat0;      /* Original lat             */
-    double lon0;      /* Original lon             */
+    double plat1;             /* First standard parallel  */
+    double plat2;             /* Second standard parallel */
+    double lat0;              /* Latitude of Origin       */
+    double lon0;              /* Center Meridian          */
+    double false_easting;     /* False Easting            */
+    double false_northing;    /* False Northing           */
+    double scale_factor;      /* Scale Factor             */
   } proj_lamcc;
  /* Polar Sterographic.  */
   typedef struct {
-    double slat;      /* Reference latitude for polar stereographic */
-    double slon;      /* Reference longitude for polar stereographic*/
-    int is_north_pole;/* 1 if centered on North Pole, 0 if South    */
+    double slat;              /* Standard Parallel 1                        */
+    double slon;              /* Center Meridian                            */
+    int is_north_pole;        /* 1 if centered on North Pole, 0 if South    */
+    double false_easting;     /* False Easting                              */
+    double false_northing;    /* False Northing                             */
   } proj_ps;
  /* Universal Transverse Mercator.*/
   typedef struct {
-    int zone;
+    int zone;                 /* Zone                                       */
+    double false_easting;     /* False Easting                              */
+    double false_northing;    /* False Northing                             */
+    double lat0;              /* Latitude                                   */
+    double lon0;              /* Longitude                                  */
   } proj_utm;
  /* State Plane. */
   typedef struct {
