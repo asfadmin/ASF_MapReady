@@ -7,7 +7,7 @@ void err_die(const char *error_message, ...)
 {
   va_list ap;
 
-  fprintf(stderr, "%s: ", progname);
+  fprintf(stderr, "in asf_meta library call: ");
   va_start(ap, error_message);
   vfprintf(stderr, error_message, ap);
   va_end(ap);
