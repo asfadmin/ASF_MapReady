@@ -1,16 +1,2 @@
-# Default ignore list
-#    RCS     SCCS    CVS     CVS.adm
-#    RCSLOG  cvslog.*
-#    tags    TAGS
-#    .make.state     .nse_depinfo
-#    *~      #*      .#*     ,*      _$*     *$
-#    *.old   *.bak   *.BAK   *.orig  *.rej   .del-*
-#    *.a     *.olb   *.o     *.obj   *.so    *.exe
-#    *.Z     *.elc   *.ln
-#    core
-#
-# List to append to ignore list
-
- # Automatically generated files
 mkg3states
 tif_fax3sm.c
