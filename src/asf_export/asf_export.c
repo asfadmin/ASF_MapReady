@@ -273,10 +273,12 @@ checkForOption (char *key, int argc, char *argv[])
 void 
 print_error (char *msg)
 {
-	char* temp;
+	char tmp[255];
 	// I made "ERROR:" red...Yay! :D
-	sprintf (temp, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);
-	printErr (temp);
+	sprintf (tmp, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);
+	printErr (tmp);
+	sprintf(tmp, "\n   ERROR: %s\n\n", msg);
+	printLog(tmp);
 	exit (EXIT_FAILURE);
 }
 
