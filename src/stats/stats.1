@@ -26,7 +26,23 @@ fills a stats block in the .meta file of the same base name as \fIimage_name\fP.
 .RE
 -overmeta  Force overwrite of existing .meta file.
 .RE
+-nometa    Do not generate output in a .meta file.
+.RE
 -overstat  Force overwrite of existing .stat file.
+.RE
+-nostat    Do not generate output in a .stat file.
+.RE
+-startline <line>      Generate statistics for window starting at <line>.
+                       (implies -nometa)
+.RE
+-startsample <sample>  Generate statistics for window starting at <sample>.
+                       (implies -nometa)
+.RE
+-width <width>         Generate statistics for window of <width> lines.
+                       (implies -nometa)
+.RE
+-height <height>       Generate statistics for window of <height> samples.
+                       (implies -nometa)
 .RE
 image_name Name of input image file (including extension).
 
