@@ -10,13 +10,14 @@
 include ../../make_support/system_rules
 
 OBJS  = caplib.o \
-	endian.o \
-	fileUtil.o \
-	ioLine.o \
-	stopwatch.o \
 	cla.o \
+	endian.o \
+	error.o \
+	fileUtil.o \
+	get_ceos_names.o \
+	ioLine.o \
 	log.o \
-	error.o
+	stopwatch.o
 
 all: build_only
 	mv asf.a $(LIBDIR)
