@@ -14,6 +14,8 @@ LIBS = $(OLIBS) -lm
 OBJS = airsargeo.o
 POBJS = proj_pix.o proj_win.o proj_prm.o proj.o proj_grid.o projectGeo.o
 
+all: projectGeo airsargeo
+
 projectGeo: $(POBJS) $(OLIBS)
 	$(CC) $(CFLAGS) -o projectGeo $(POBJS) $(LIBS)
 	mv projectGeo$(BIN_POSTFIX) $(BINDIR)
