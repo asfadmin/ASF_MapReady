@@ -95,7 +95,6 @@ BUGS:
 #include "envi.h"
 #include "esri.h"
 #include "lzFetch.h"
-#include "metadata.h"
 #include <ctype.h>
 #include <string.h>
 
@@ -116,6 +115,9 @@ bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
                               int prcflag, char *prcPath);
 bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
                                 readPulseFunc *readNextPulse);
+/* in sprocket_layers.c */
+void create_sprocket_layers(const char *asfName, const char *importName);
+
 
 /* Helpful functions */
 int firstRecordLen(char *ceosName)
@@ -140,12 +142,29 @@ char *uc(char *string)
   return out;
 }
 
+void print_progress(int current_line, int total_lines)
+{
+  current_line++;
+
+  if ((current_line%256==0) || (current_line==total_lines)) {
+    printf("\rWrote %5d of %5d lines.", current_line, total_lines);
+    fflush(NULL);
+    if (current_line == total_lines) {
+      printf("\n");
+      if (logflag) {
+        sprintf(logbuf,"Wrote %5d of %5d lines.", current_line, total_lines);
+        printLog(logbuf);
+      }
+    }
+  }
+}
+
+
 /* Global variables - needed to handle missing lines properly */
 long imgStart, imgEnd;
 int outLine;
-/* needed to handle writing out of sprocket metadata file correctly */
-int sprocketFlag=FALSE;
 int oldFlag=FALSE;
+
 
 /* Lets go! */
 int main(int argc, char *argv[])
@@ -158,26 +177,27 @@ int main(int argc, char *argv[])
   iqType *iqBuf;
   esri_header *esri=NULL;
   envi_header *envi=NULL;
-  struct DDR ddr;
   FILE *fpIn=NULL, *fpOut=NULL, *fp;;
   char in_type[25]="", out_type[25]="";
   char inDataName[256], inMetaName[256], outName[288], prcPath[255];
-  char outBaseName[256], type[255]="", tmp[255], imgTimeStr[20]="";
+  char outBaseName[256], sprocketName[256];
+  char type[255]="", tmp[255], imgTimeStr[20]="";
   char *map_info_ptr=NULL, *proj_info_ptr, proj_info[255]="", map_info[255]="";
-  char ddrName[255];
   double fTmp1, fTmp2;
   int projection_key;
   int nl, ns=0, ii, kk, tableRes=MAX_tableRes, tablePix=0, headerBytes;
   int latConstraintFlag=FALSE, prcflag=FALSE, nTotal, nVec=1;
+  int sprocketFlag=FALSE;
+  int sigmaFlag=FALSE, betaFlag=FALSE, gammaFlag=FALSE, powerFlag=FALSE;
   long offset;
   unsigned short *short_buf=NULL, *cpx_buf=NULL;
   unsigned char *byte_buf=NULL;
-  float *out_buf=NULL, percent=5.0;
+  float *out_buf=NULL;
+  complexFloat *out_cpx_buf;
   float fd, fdd, fddd, lowerLat=NAN, upperLat=NAN;
   double noise_table[MAX_tableRes];
   double incid_cos[MAX_tableRes], incid_sin[MAX_tableRes];
   extern int currArg; /* from cla.h in asf.h */
-  char sprocketName[256];
 
   logflag=FALSE;
   quietflag=FALSE;
@@ -188,7 +208,7 @@ int main(int argc, char *argv[])
     if (strmatch(key,"-sprocket")) {
       sprocketFlag=TRUE;
     }
-    if (strmatch(key,"-old")) {
+    else if (strmatch(key,"-old")) {
       oldFlag=TRUE;
     }
     else if (strmatch(key,"-log")) {
@@ -223,14 +243,22 @@ int main(int argc, char *argv[])
     }
     else if (strmatch(key,"-amplitude"))
       sprintf(out_type,"amp"); /* create amplitude image */
-    else if (strmatch(key,"-sigma"))
+    else if (strmatch(key,"-sigma")) {
       sprintf(out_type, "sigma");  /* create calibrated image (sigma dB values) */
-    else if (strmatch(key,"-gamma"))
+      sigmaFlag=TRUE;
+    }
+    else if (strmatch(key,"-gamma")) {
       sprintf(out_type, "gamma");  /* create calibrated image (gamma dB values) */
-    else if (strmatch(key,"-beta"))
+      gammaFlag=TRUE;
+    }
+    else if (strmatch(key,"-beta")) {
       sprintf(out_type, "beta");  /* create calibrated image (beta dB values) */
-    else if (strmatch(key,"-power"))
+      betaFlag=TRUE;
+    }
+    else if (strmatch(key,"-power")) {
       sprintf(out_type, "power");  /* create power image */
+      powerFlag=TRUE;
+    }
     else {
       printf("\n** Invalid option:  %s\n\n",argv[currArg-1]);
       usage(argv[0]);
@@ -239,6 +267,14 @@ int main(int argc, char *argv[])
   if ((argc-currArg) < REQUIRED_ARGS) {
     printf("Insufficient arguments.\n");
     usage(argv[0]);
+  }
+
+  /* Make sure the sprocket flag hasn't been declared with a calibration or
+   * power flag */
+  if (sprocketFlag && (sigmaFlag||gammaFlag||betaFlag||powerFlag)) {
+    printf(" * Silly calibration engineer, you can't declare -sigma, -beta, -gamma,\n"
+           " * or -power with the all powerful -sprocket option!  Try again. Exiting...\n");
+    exit(EXIT_FAILURE);
   }
 
   /* Read required arguments */
@@ -288,6 +324,11 @@ int main(int argc, char *argv[])
     if (meta->general->data_type==COMPLEX_BYTE) { /* raw data */
       int trash;
 
+      if (sprocketFlag) {
+        printf("Data is level 0, SProCKET can not use it. Exiting...\n");
+        exit(EXIT_FAILURE);
+      }
+
       /* Let the user know what format we are working on */
       if (strcmp(out_type, "")!=0)
         sprintf(tmp,
@@ -296,7 +337,7 @@ int main(int argc, char *argv[])
                 "   Output data type: complex byte raw data\n\n");
       else
         sprintf(tmp,
-                "   Input data type: level zero raw data\n"
+               "   Input data type: level zero raw data\n"
                 "   Output data type: complex byte raw data\n\n");
       printf(tmp);
       if (logflag) printLog(tmp);
@@ -313,29 +354,27 @@ int main(int argc, char *argv[])
       for (ii=0; ii<nl; ii++) {
         readNextPulse(s, iqBuf, inDataName, outName);
         FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
-        if (((ii+1)%256==0) || ((ii+1)==nl)) {
-	  printf("\rWrote %5d of %5d lines",ii+1,nl);
-          fflush(NULL);
-          if ((ii+1) == nl)
-            printf("\n");
-        }
-        s->nLines++;
+        print_progress(ii,nl);
+       s->nLines++;
       }
       updateMeta(s,meta,NULL,0);
       if (oldFlag) {
-	meta_new2old(meta);
-	meta_write_old(meta, outName);
+        meta_new2old(meta);
+        meta_write_old(meta, outName);
       }
       else meta_write(meta,outName);
 
       /* Write .raw file for backwards compatibility */
-      sprintf(tmp, "ln -s %s_raw.img %s_raw.raw", outBaseName, outBaseName);
-      system(tmp);
-      /**********************************************/
+      {
+        char img[256], raw[256];
+        sprintf(img,"%s_raw.img",outBaseName);
+        sprintf(raw,"%s_raw.raw",outBaseName);
+        link(img,raw);
+      }
 
       meta_free(meta);
-      printf("Finished\n\n");
-      exit(EXIT_SUCCESS);
+      FCLOSE(fpOut);
+      printf("Finished.\n\n");
     }
 
     /* complex data */
@@ -359,44 +398,44 @@ int main(int argc, char *argv[])
       meta->general->data_type=COMPLEX_REAL32;
 
       if (oldFlag) {
-	create_name(ddrName, outBaseName, "_cpx.ddr");
-	meta2ddr(meta, &ddr);
-	c_putddr(ddrName, &ddr);
+        char ddrName[256];
+        struct DDR ddr;
+        create_name(ddrName, outBaseName, "_cpx.ddr");
+        meta2ddr(meta, &ddr);
+        c_putddr(ddrName, &ddr);
       }
       else meta_write(meta,outName);
-
-      if (sprocketFlag) {
-        create_name(sprocketName, outName, ".metadata");
-        meta_write_sprocket(sprocketName, meta, NULL);
-      }
 
       /* Take care of image files and memory */
       fpIn  = fopenImage(inDataName,"rb");
       fpOut = fopenImage(outName,"wb");
       nl = meta->general->line_count;
       ns = meta->general->sample_count;
-      cpx_buf = (short *) MALLOC(2*ns * sizeof(short));
-      out_buf = (float *) MALLOC(2*ns * sizeof(float));
+      cpx_buf = (unsigned short *) MALLOC(2*ns * sizeof(unsigned short));
+      out_cpx_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat));
 
       /* Read single look complex data */
       get_ifiledr(inDataName,&image_fdr);
       /* file + line header */
       headerBytes = firstRecordLen(inDataName)
-        + (image_fdr.reclen - ns * image_fdr.bytgroup);
+                    + (image_fdr.reclen - ns * image_fdr.bytgroup);
       for (ii=0; ii<nl; ii++) {
         offset = headerBytes+ii*image_fdr.reclen;
-        FSEEK(fpIn, offset, 0);
+        FSEEK64(fpIn, offset, SEEK_SET);
         FREAD(cpx_buf, sizeof(short), 2*ns, fpIn);
-        for (kk=0; kk<ns*2; kk++)
-          out_buf[kk]=(float)cpx_buf[kk];
-        FWRITE(out_buf, sizeof(float), 2*ns, fpOut);
-        if ((ii*100/nl)>percent) {
-          printf("   Completed %3.0f percent\n",percent);
-          percent+=5.0;
+        for (kk=0; kk<ns*2; kk+=2) {
+          /* Put read in data in proper endian format */
+          big16(cpx_buf[kk]);
+          big16(cpx_buf[kk+1]);
+          /* Now do our stuff */
+          out_cpx_buf[kk].real=(float)cpx_buf[kk];
+          out_cpx_buf[kk].imag=(float)cpx_buf[kk+1];
         }
+        put_complexFloat_line(fpOut, meta, ii, out_cpx_buf);
+        print_progress(ii,nl);
       }
-      printf("   Completed 100 percent\n\n");
       FCLOSE(fpOut);
+      printf("Finished.\n\n");
     }
 
     else { /* some kind of amplitude data */
@@ -412,42 +451,36 @@ int main(int argc, char *argv[])
                   "   Input data type: level two data\n"
                   "   Output data type: geocoded amplitude image\n\n");
           create_name(outName, outBaseName, "_geo.img");
-	  create_name(ddrName, outBaseName, "_geo.ddr");
         }
       if (strcmp(out_type, "amp")==0) {
         sprintf(tmp,
                 "   Input data type: level one data\n"
                 "   Output data type: amplitude image\n\n");
         create_name(outName, outBaseName, "_amp.img");
-	create_name(ddrName, outBaseName, "_amp.ddr");
       }
       else if (strcmp(out_type, "power")==0) {
         sprintf(tmp,
                 "   Input data type: level one data\n"
                 "   Output data type: power image\n\n");
         create_name(outName, outBaseName, "_power.img");
-	create_name(ddrName, outBaseName, "_power.ddr");
       }
       else if (strcmp(out_type, "sigma")==0) {
         sprintf(tmp,
                 "   Input data type: level one data\n"
                 "   Output data type: calibrated image (sigma dB values)\n\n");
         create_name(outName, outBaseName, "_sigma.img");
-	create_name(ddrName, outBaseName, "_sigma.ddr");
       }
       else if (strcmp(out_type, "gamma")==0) {
         sprintf(tmp,
                 "   Input data type: level one data\n"
                 "   Output data type: calibrated image (gamma dB values)\n\n");
         create_name(outName, outBaseName, "_gamma.img");
-	create_name(ddrName, outBaseName, "_gamma.ddr");
       }
       else if (strcmp(out_type, "beta")==0) {
         sprintf(tmp,
                 "   Input data type: level one data\n"
                 "   Output data type: calibrated image (beta dB values)\n\n");
         create_name(outName, outBaseName, "_beta.img");
-	create_name(ddrName, outBaseName, "_beta.ddr");
       }
       else { /* no output type so far: default is amplitude */
         sprintf(out_type, "amp");
@@ -455,7 +488,6 @@ int main(int argc, char *argv[])
                 "   Input data type: level one data\n"
                 "   Output data type: amplitude image\n\n");
         create_name(outName, outBaseName, "_amp.img");
-	create_name(ddrName, outBaseName, "_amp.ddr");
       }
       printf(tmp);
       if (logflag) printLog(tmp);
@@ -469,18 +501,18 @@ int main(int argc, char *argv[])
       ns=meta->general->sample_count;
       get_ifiledr(inDataName,&image_fdr);
       headerBytes = firstRecordLen(inDataName)
-        + (image_fdr.reclen - ns * image_fdr.bytgroup);
+                    + (image_fdr.reclen - ns * image_fdr.bytgroup);
 
       /* Allocate memory for 16 bit amplitude data */
       if (meta->general->data_type==INTEGER16) { /* 16 bit amplitude data */
         sprintf(in_type, "int16");
-        short_buf = (short *) MALLOC(ns * sizeof(short));
+        short_buf = (unsigned short *) MALLOC(ns * sizeof(unsigned short));
         out_buf = (float *) MALLOC(ns * sizeof(float));
       }
       /* Allocate memory for 8 bit amplitude data */
       else if (meta->general->data_type==BYTE) { /* 8 bit amplitude data */
         sprintf(in_type, "byte");
-        byte_buf = (char *) MALLOC(ns * sizeof(char));
+        byte_buf = (unsigned char *) MALLOC(ns * sizeof(unsigned char));
         out_buf = (float *) MALLOC(ns * sizeof(float));
       }
       else
@@ -490,15 +522,12 @@ int main(int argc, char *argv[])
       meta->general->data_type=REAL32;
 
       if(oldFlag) {
-	meta2ddr(meta, &ddr);
-	c_putddr(ddrName, &ddr);
+        char ddrName[256];
+        struct DDR ddr;
+        meta2ddr(meta, &ddr);
+        c_putddr(ddrName, &ddr);
       }
       else meta_write(meta,outName);
-
-      if (sprocketFlag) {
-        create_name(sprocketName, outName, ".metadata");
-        meta_write_sprocket(sprocketName, meta, NULL);
-      }
 
       /* Read calibration parameters if required */
       if (strcmp(out_type, "sigma")==0 || strcmp(out_type, "gamma")==0
@@ -529,9 +558,14 @@ int main(int argc, char *argv[])
            || strcmp(out_type, "beta")==0) && (strcmp(in_type, "int16")==0)) {
 
         for (ii=0; ii<nl; ii++) {
+          /* Can't use get_float_line() for CEOS data, so we have to use FSEEK,
+           * FREAD, and then put the bytes in proper endian order manually  */
           offset = headerBytes+ii*image_fdr.reclen;
-          FSEEK(fpIn, offset, 0);
-          FREAD(short_buf, sizeof(short), ns, fpIn);
+          FSEEK64(fpIn, offset, SEEK_SET);
+          FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
+          for (kk=0; kk<ns; kk++) {
+            big16(short_buf[kk]);
+          }
 
           /*Allocate noise table entries and/or update if needed.*/
           if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
@@ -568,13 +602,10 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          if ((ii*100/nl)>percent) {
-            printf("   Completed %3.0f percent\n",percent);
-            percent+=5.0;
-          }
+          print_progress(ii,nl);
         }
-        printf("   Completed 100 percent\n\n");
         FCLOSE(fpOut);
+        printf("Finished.\n\n");
       }
 
       /* Read 8 bit data and convert to calibrated amplitude data */
@@ -583,8 +614,8 @@ int main(int argc, char *argv[])
 
         for (ii=0; ii<nl; ii++) {
           offset = headerBytes+ii*image_fdr.reclen;
-          FSEEK(fpIn, offset, 0);
-          FREAD(byte_buf, sizeof(char), ns, fpIn);
+          FSEEK64(fpIn, offset, SEEK_SET);
+          FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
 
           /*Allocate noise table entries and/or update if needed.*/
           if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
@@ -621,13 +652,10 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          if ((ii*100/nl)>percent) {
-            printf("   Completed %3.0f percent\n",percent);
-            percent+=5.0;
-          }
+          print_progress(ii,nl);
         }
-        printf("   Completed 100 percent\n\n");
         FCLOSE(fpOut);
+        printf("Finished.\n\n");
       }
 
       /* Read 16 bit amplitude data */
@@ -635,10 +663,12 @@ int main(int argc, char *argv[])
 
         for (ii=0; ii<nl; ii++) {
           offset = headerBytes+ii*image_fdr.reclen;
-          FSEEK(fpIn, offset, 0);
-          FREAD(short_buf, sizeof(short), ns, fpIn);
-
+          FSEEK64(fpIn, offset, SEEK_SET);
+          FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
           for (kk=0; kk<ns; kk++) {
+            /* Put the data in proper endian order before we do anything */
+            big16(short_buf[kk]);
+            /* Now do our stuff */
             if (strcmp(out_type, "power")==0)
               out_buf[kk]=(float)(short_buf[kk]*short_buf[kk]);
             else
@@ -647,13 +677,10 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          if ((ii*100/nl)>percent) {
-            printf("   Completed %3.0f percent\n",percent);
-            percent+=5.0;
-          }
+          print_progress(ii,nl);
         }
-        printf("   Completed 100 percent\n\n");
         FCLOSE(fpOut);
+        printf("Finished.\n\n");
       }
 
       /* Read 8 bit amplitde data */
@@ -661,8 +688,8 @@ int main(int argc, char *argv[])
 
         for (ii=0; ii<nl; ii++) {
           offset = headerBytes+ii*image_fdr.reclen;
-          FSEEK(fpIn, offset, 0);
-          FREAD(byte_buf, 1, ns, fpIn);
+          FSEEK64(fpIn, offset, SEEK_SET);
+          FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
 
           for (kk=0; kk<ns; kk++) {
             if (strcmp(out_type, "power")==0)
@@ -673,19 +700,21 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          if ((ii*100/nl)>percent) {
-            printf("   Completed %3.0f percent\n",percent);
-            percent+=5.0;
-          }
+          print_progress(ii,nl);
         }
-        printf("   Completed 100 percent\n\n");
         FCLOSE(fpOut);
+        printf("Finished.\n\n");
       }
     }
   }
 
   /* Ingest Vexcel Sky Telemetry Format (STF) data */
   else if (strncmp(type, "STF", 4)==0) {
+
+    if (sprocketFlag) {
+      printf("Data is level 0, sprocket can not use this. Exiting...\n");
+      exit(EXIT_FAILURE);
+    }
 
     sprintf(tmp,"   Data format: STF\n");
     printf(tmp);
@@ -765,7 +794,7 @@ int main(int argc, char *argv[])
            ---------------------------------------------*/
         if (s->readStatus == 1) {
           /* write some extra lines at the end for the SAR processing */
-          if (((outLine >= imgStart) && (outLine <= imgEnd+4096)) ||  /* descending */
+         if (((outLine >= imgStart) && (outLine <= imgEnd+4096)) ||  /* descending */
               ((outLine >= imgEnd) && (outLine <= imgStart+4096)))      /* ascending */
             {
               FWRITE(iqBuf,sizeof(iqType),s->nSamp*2,s->fpOut);
@@ -774,10 +803,7 @@ int main(int argc, char *argv[])
         }
         /* Write status information to screen.
            ------------------------------------*/
-        if ((outLine*100/nTotal) == percent) {
-          printf("   Completed %3.0f percent\n", percent);
-          percent += 5.0;
-        }
+        print_progress(outLine,nTotal);
       }
 
     if (latConstraintFlag) {
@@ -794,15 +820,6 @@ int main(int argc, char *argv[])
     FCLOSE(s->fpOut);
     FCLOSE(s->fperr);
     delete_bin_state(s);
-
-    /* Report & finish
-       ----------------*/
-    printf("   Completed 100 percent\n\n");
-    printf("   Wrote %i lines of raw signal data.\n\n",s->nLines);
-    if (logflag) {
-      sprintf(logbuf,"   Wrote %i lines of raw signal data.\n\n",s->nLines);
-      printLog(logbuf);
-    }
   }
 
   /* Ingest ESRI format data */
@@ -846,7 +863,7 @@ int main(int argc, char *argv[])
           sprintf(errbuf, "\n   ERROR: metadata do not support data other than BIL format\n\n");
           printErr(errbuf);
         }
-      }
+     }
       else if (strncmp(key, "SKIPBYTES", 9)==0) {
         esri->skipbytes = atoi(value);
         if (esri->skipbytes > 0) {
@@ -867,14 +884,13 @@ int main(int argc, char *argv[])
 
     /* Write metadata file */
     meta_write(meta,outName);
-    if (sprocketFlag) {
-      create_name(sprocketName, outName, ".metadata");
-      meta_write_sprocket(sprocketName, meta, NULL);
-    }
+if (sprocketFlag) {
+  create_name(sprocketName, outName, ".metadata");
+  meta_write_sprocket(sprocketName, meta, NULL);
+}
 
     /* Write data file - currently no header, so just copying generic binary */
-    sprintf(tmp, "cp %s %s", inDataName, outName);
-    system(tmp);
+    fileCopy(inDataName, outName);
 
     /* Clean and report */
     meta_free(meta);
@@ -1028,15 +1044,14 @@ int main(int argc, char *argv[])
 
     /* Write metadata file */
     meta_write(meta,outName);
-    if (sprocketFlag) {
-      create_name(sprocketName, outName, ".metadata");
-      meta_write_sprocket(sprocketName, meta, NULL);
-    }
+if (sprocketFlag) {
+  create_name(sprocketName, outName, ".metadata");
+  meta_write_sprocket(sprocketName, meta, NULL);
+}
 
 
     /* Write data file - currently no header, so just copying generic binary */
-    sprintf(tmp, "cp %s %s", inDataName, outName);
-    system(tmp);
+    fileCopy(inDataName, outName);
 
     /* Clean and report */
     meta_free(meta);
@@ -1056,6 +1071,10 @@ int main(int argc, char *argv[])
         if (logflag) printLog(tmp);
         usage(argv[0]);
         exit(EXIT_FAILURE);
+  }
+
+  if (sprocketFlag) {
+    create_sprocket_layers(outName, inMetaName);
   }
 
   exit(EXIT_SUCCESS);
