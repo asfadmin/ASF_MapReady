@@ -1,6 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = asf_convert_gui
+SRCS = asf_convert_gui.c find_in_path.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
@@ -16,7 +17,7 @@ GTK_LIB = $(GTK_DIR)/lib
 
 INCLUDE = -I$(GTK_INC) -I$(GTK_INC)/glib-2.0 -I$(GTK_INC)/pango-1.0 -I$(GTK_INC)/gtk-2.0 -I$(GTK_INC)/freetype2/freetype -I$(GTK_LIB)/glib-2.0/include -I$(GTK_LIB)/gtk-2.0/include -I$(GTK_INC)/atk-1.0 -I$(GTK_INC)/libglade-2.0
 
-LIB = -L$(GTK_LIB) -L$(GTK_LIB)/glib-2.0 -L$(GTK_LIB)/gtk-2.0 -L$(GTK_LIB)/pango -L$(GTK_LIB)/libglade -lintl -liconv -lm -lgtk-win32-2.0 -lgobject-2.0 -llibglade-2.0
+LIB = -L$(GTK_LIB) -L$(GTK_LIB)/glib-2.0 -L$(GTK_LIB)/gtk-2.0 -L$(GTK_LIB)/pango -L$(GTK_LIB)/libglade -lintl -liconv -lm -lgtk-win32-2.0 -lgobject-2.0 -llibglade-2.0 -lglib-2.0
 
 CFLAGS = -mms-bitfields -Dwin32
 
@@ -25,8 +26,8 @@ $(TARGET).exe: $(TARGET).c
 	  for f in $(GTK_ZIP)/*.zip; do( yes| unzip $$f -d $(GTK_DIR) ); done;\
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
 	fi
-	$(GCC) -o $(TARGET).exe $(TARGET).c $(INCLUDE) $(LIB) $(CFLAGS)
-	mv $(TARGET).exe ../../bin/win32
+	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
+	cp $(TARGET).exe ../../bin/win32
 	cp $(TARGET).glade ../../bin/win32
 
 clean:
@@ -42,8 +43,6 @@ CFLAGS = -Wall -O0 -g $(shell pkg-config --cflags libgtk+-2.0) \
 
 LDLIBS = $(shell pkg-config --libs gtk+-2.0) \
 	 $(shell pkg-config --libs libglade-2.0)
-
-SRCS = asf_convert_gui.c
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 
