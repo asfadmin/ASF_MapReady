@@ -38,11 +38,13 @@ void meta_write(meta_parameters *meta, const char *file_name)
 
   /* SAR block.  */
   fprintf(fp, "sar {\n");
-  fprintf(fp, "    proj_type: %c  #[S=slant range; G=ground range; P=map projected]\n", meta->sar->proj_type);
-  fprintf(fp, "    look_direction: %c\n", meta->sar->look_direction);
-  fprintf(fp, "    look_count: %d\n", meta->sar->look_count);
+  fprintf(fp, "    proj_type: %c  # [S=slant range; G=ground range; P=map projected]\n", meta->sar->proj_type);
+  fprintf(fp, "    look_direction: %c  # (normally R) [R=right; L=left]\n", 
+	  meta->sar->look_direction);
+  fprintf(fp, "    look_count: %d  # Number of looks from SLC\n", 
+	  meta->sar->look_count);
   fprintf(fp, "    look_angle: %f\n", meta->sar->look_angle);
-  fprintf(fp, "    deskewed: %d\n", meta->sar->deskewed);
+  fprintf(fp, "    deskewed: %d  # [1=yes, 0=no]\n", meta->sar->deskewed);
   fprintf(fp, "    range_time_per_pixel: %f\n", 
 	  meta->sar->range_time_per_pixel);
   fprintf(fp, "    azimuth_time_per_pixel: %f\n", 
@@ -67,7 +69,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	  meta->sar->azimuth_doppler_coefficients[2]);
   fprintf(fp, "    satellite_binary_time: %s\n", 
 	  meta->sar->satellite_binary_time);
-  fprintf(fp, "    satellite_clock_time: %s\n", 
+  fprintf(fp, "    satellite_clock_time: %s  # (UTC)\n", 
 	  meta->sar->satellite_clock_time);
   fprintf(fp, "}\n");
 
@@ -108,37 +110,40 @@ void meta_write(meta_parameters *meta, const char *file_name)
   fprintf(fp, "    perX: %f\n", meta->projection->perX);
   fprintf(fp, "    perY: %f\n", meta->projection->perY);
   fprintf(fp, "    units: %s\n", meta->projection->units);
-  fprintf(fp, "    hem: %c\n", meta->projection->hem);
+  fprintf(fp, "    hem: %c  # S=>southern, other=>northern\n", 
+	  meta->projection->hem);
   fprintf(fp, "    re_major: %f\n", meta->projection->re_major);
   fprintf(fp, "    re_minor: %f\n", meta->projection->re_minor);
   fprintf(fp, "    param {\n");
   switch ( meta->projection->type ) {
   case 'A': /* Along-track/cross-track projection.  */
     fprintf(fp, "        atct {\n");
-    fprintf(fp, "            rlocal: %f\n", 
+    fprintf(fp, "            rlocal: %f  # Earth radius at scene center\n", 
 	    meta->projection->param.atct.rlocal);
-    fprintf(fp, "            alpha1: %f\n", 
+    fprintf(fp, "            alpha1: %f  # Rotation angle 1\n", 
 	    meta->projection->param.atct.alpha1);
-    fprintf(fp, "            alpha2: %f\n", 
+    fprintf(fp, "            alpha2: %f  # Rotation angle 2\n", 
 	    meta->projection->param.atct.alpha2);
-    fprintf(fp, "            alpha3: %f\n", 
+    fprintf(fp, "            alpha3: %f  # Rotation angle 3\n", 
 	    meta->projection->param.atct.alpha3);
     break;
   case 'B': /* Lambert conformal conic projection.  */
     fprintf(fp, "        lambert {\n");
-    fprintf(fp, "            plat1: %f\n", 
+    fprintf(fp, "            plat1: %f  # First standard parallel\n", 
 	    meta->projection->param.lambert.plat1);
-    fprintf(fp, "            plat2: %f\n", 
+    fprintf(fp, "            plat2: %f  # Second standard parallel\n", 
 	    meta->projection->param.lambert.plat2);
-    fprintf(fp, "            lat0: %f\n", 
+    fprintf(fp, "            lat0: %f  # Original latitude\n", 
 	    meta->projection->param.lambert.lat0);
-    fprintf(fp, "            lon0: %f\n", 
+    fprintf(fp, "            lon0: %f  # Original longitude\n", 
 	    meta->projection->param.lambert.lon0);
     break;
   case 'P': /* Polar stereographic projection.  */
     fprintf(fp, "        polar stereographic {\n");
-    fprintf(fp, "            lat: %f\n", meta->projection->param.ps.slat);
-    fprintf(fp, "            lon: %f\n", meta->projection->param.ps.slon);
+    fprintf(fp, "            lat: %f  # Reference latitude\n",
+	    meta->projection->param.ps.slat);
+    fprintf(fp, "            lon: %f  # Regerence longitude\n", 
+	    meta->projection->param.ps.slon);
     break;
   case 'U': /* Universal transverse mercator projection.  */
     fprintf(fp, "        utm {\n");

@@ -1,6 +1,6 @@
 # Sample meta file with silly fields, for testing parser.
 
-Meta version : 1.1
+meta_version: 1.1
 
 # Test comment.
 
@@ -12,7 +12,7 @@ general {
     data_type: ieeeee-type
     # Test comment.
     system: hmmnow # Test comment. # <-- useless but harmless pound sign
-    orbit: 123#Tets comment. 
+    orbit: 123#Test comment. 
     frame: 23
     line_count : 1200
     sample_count: 500
