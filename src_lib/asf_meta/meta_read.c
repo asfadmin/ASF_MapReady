@@ -264,6 +264,10 @@ void meta_read_old(meta_parameters *meta, char *fileName)
  * so that both old and new structures are populated. */
 void meta_new2old(meta_parameters *meta)
 {
+  /* 'meta->stVec is now 'meta->state_vectors, but some code still
+     looks for the old name. */
+  meta->stVec = meta->state_vectors;
+
 /* Fill geo_parameters structure */
 	meta->geo->type        = meta->sar->image_type;
 	/* Projection structure is the same for both old and new */
@@ -303,9 +307,6 @@ void meta_new2old(meta_parameters *meta)
 	strcpy( meta->info->satBinTime, meta->sar->satellite_binary_time);
 	strcpy( meta->info->satClkTime, meta->sar->satellite_clock_time);
 	meta->info->prf               = meta->sar->prf;
-
-/* State vectors are the same for both meta structures */
-	meta->stVec      = meta->state_vectors;
 
 /* Calculated values for the old structure */
 	if (meta->sar->image_type!='P') /*Image not map projected-- compute look angle to beam center*/
