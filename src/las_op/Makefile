@@ -10,7 +10,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	
 OBJS  = tokenizer.o \
 	expression.o \
-	main.o
+	las_op.o
 
 las_op:	$(OBJS)
 	${CC} ${CFLAGS} ${LDFLAGS} -o las_op $(OBJS) ${LIBS}
