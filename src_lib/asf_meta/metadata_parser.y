@@ -175,8 +175,10 @@ void select_current_block(char *block_name)
     { current_block = &((*( (param_t *) current_block)).lamaz); goto MATCHED; }
   if ( !strcmp(block_name, "lamcc") )
     { current_block = &((*( (param_t *) current_block)).lamcc); goto MATCHED; }
-  if ( !strcmp(block_name, "albers") )
-    { current_block = &((*( (param_t *) current_block)).albers); goto MATCHED; }
+  if ( !strcmp(block_name, "albers") ){ 
+    current_block = &((*( (param_t *) current_block)).albers); 
+    goto MATCHED; 
+  }
   if ( !strcmp(block_name, "ps") )
     { current_block = &((*( (param_t *) current_block)).ps); goto MATCHED; }
   if ( !strcmp(block_name, "utm") )
@@ -308,13 +310,15 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->orbit_direction = 'D';
         return;
       }
+      /* If its a question mark don't bother the user with a warning,
+	 this happens often with DDRs.  */
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "?") ) {
-      /* if its a question mark don't bother the user with a warning, this happens often with DDRs */
         MGENERAL->orbit_direction = '?';
         return;
       }
       else {
-        warning_message("Bad value: orbit_direction = '%s'.",VALP_AS_CHAR_POINTER);
+        warning_message("Bad value: orbit_direction = '%s'.",
+			VALP_AS_CHAR_POINTER);
         return;
       }
     }
@@ -384,7 +388,8 @@ void fill_structure_field(char *field_name, void *valp)
        /* if its a question mark don't bother the user with a warning, this happens often with DDRs */
         MSAR->look_direction = '?'; return;
       }
-      warning_message("Bad value: look_direction = '%c'.",VALP_AS_CHAR_POINTER[0]);
+      warning_message("Bad value: look_direction = '%c'.",
+		      VALP_AS_CHAR_POINTER[0]);
       return;
     }
     if ( !strcmp(field_name, "look_count") )
@@ -492,7 +497,7 @@ void fill_structure_field(char *field_name, void *valp)
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "SCANSAR_PROJECTION") )
         MPROJ->type = SCANSAR_PROJECTION;
       else {
-        warning_message("Bad value: type = '%c'.",VALP_AS_CHAR_POINTER[0]);
+        warning_message("Bad value: type = '%s'.",VALP_AS_CHAR_POINTER);
       }
       return;
     }
@@ -510,10 +515,60 @@ void fill_structure_field(char *field_name, void *valp)
       if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { MPROJ->hem = 'S'; return; }
       else { MPROJ->hem = 'N'; return; }
     }
+    if ( !strcmp(field_name, "spheroid") ) {
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "BESSEL") )
+        MPROJ->spheroid = BESSEL_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "CLARKE1866") )
+        MPROJ->spheroid = CLARKE1866_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "CLARKE1880") )
+        MPROJ->spheroid = CLARKE1880_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEM6") )
+        MPROJ->spheroid = GEM6_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEM10C") )
+        MPROJ->spheroid = GEM10C_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GRS1980") )
+        MPROJ->spheroid = GRS1980_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTERNATIONAL1924") )
+        MPROJ->spheroid = INTERNATIONAL1924_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTERNATIONAL1967") )
+        MPROJ->spheroid = INTERNATIONAL1967_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS72") )
+        MPROJ->spheroid = WGS72_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS84") )
+        MPROJ->spheroid = WGS84_SPHEROID;
+      else {
+        warning_message("Bad value: spheroid = '%s'.",VALP_AS_CHAR_POINTER);
+      }
+      return;
+    }
     if ( !strcmp(field_name, "re_major") )
       { MPROJ->re_major = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "re_minor") )
       { MPROJ->re_minor = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "datum") ) {
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "EGM96") )
+	MPROJ->datum = EGM96_DATUM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ED50") )
+	MPROJ->datum = ED50_DATUM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ETRF89") )
+	MPROJ->datum = ETRF89_DATUM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ETRS89") )
+	MPROJ->datum = ETRS89_DATUM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ITRF") )
+	MPROJ->datum = ITRF_DATUM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "NAD27") )
+	MPROJ->datum = NAD27_DATUM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "NAD83") )
+	MPROJ->datum = NAD83_DATUM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS72") )
+	MPROJ->datum = WGS72_DATUM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS84") )
+	MPROJ->datum = WGS84_DATUM;
+      else {
+	warning_message("Bad value: datum = '%s'.", VALP_AS_CHAR_POINTER);
+      }
+      return;
+    }
   }
 
   /* Fields that go in the (proj->param).atct block.  */
@@ -539,6 +594,10 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).albers.center_meridian = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "orig_latitude") )
       { (*MPARAM).albers.orig_latitude = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_easting") )
+      { (*MPARAM).albers.false_easting = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_northing") )
+      { (*MPARAM).albers.false_northing = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields that go in the (proj->param).lamaz block.  */
@@ -548,6 +607,10 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).lamaz.center_lon = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "center_lat") )
       { (*MPARAM).lamaz.center_lat = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_easting") )
+      { (*MPARAM).lamaz.false_easting = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_northing") )
+      { (*MPARAM).lamaz.false_northing = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields that go in the (proj->param).lamcc block.  */
@@ -561,6 +624,12 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).lamcc.lat0 = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "lon0") )
       { (*MPARAM).lamcc.lon0 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_easting") )
+      { (*MPARAM).lamcc.false_easting = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_northing") )
+      { (*MPARAM).lamcc.false_northing = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "scale_factor") )
+      { (*MPARAM).lamcc.scale_factor = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields that go in the (proj->param).ps block.  */
@@ -569,12 +638,22 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).ps.slat = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "slon") )
       { (*MPARAM).ps.slon = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_easting") )
+      { (*MPARAM).ps.false_easting = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_northing") )
+      { (*MPARAM).ps.false_northing = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields that go in the (proj->param).utm block.  */
   if ( !strcmp(stack_top->block_name, "utm") ) {
     if ( !strcmp(field_name, "zone") )
       { (*MPARAM).utm.zone = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "false_easting") )
+      { (*MPARAM).utm.false_easting = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "false_northing") )
+      { (*MPARAM).utm.false_northing = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "scale_factor") )
+      { (*MPARAM).utm.scale_factor = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields that go in the (proj->param).state block.  */
