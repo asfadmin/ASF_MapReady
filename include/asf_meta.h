@@ -83,24 +83,27 @@ typedef struct {
  * meta_sar: SAR specific parameters
  */
 typedef struct {
-  char image_type;                   /* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected.*/
-  char look_direction;               /* 'L'-> Left Looking; 'R'-> Right Looking.*/
-  int look_count;                    /* Number of looks to take from SLC.       */
-  double look_angle;                 /* Angle SAR looks at earth [radians]      */
-  int deskewed;                      /* True if image moved to zero doppler.    */
-  double range_time_per_pixel;       /* Time per pixel in range.                */
-  double azimuth_time_per_pixel;     /* Time per pixel in azimuth.              */
-  double slant_shift;                /* Error correction factor, in slant range */
-  double time_shift;                 /* Error correction factor, in time        */
-  double slant_range_first_pixel;    /* Slant range to first pixel.             */
-  double wavelength;		     /* SAR carrier wavelength, in meters.      */
-  double prf;                        /* Pulse Repition Frequency.               */
-    /* Doppler centroid, doppler per pixel, and doppler per pixel squared.      */
+  /* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected.  */
+  char image_type; 
+  char look_direction;            /* 'L'-> Left Looking; 'R'-> Right Looking.*/
+  int look_count;                 /* Number of looks to take from SLC.       */
+  double look_angle;              /* Angle SAR looks at earth [radians]      */
+  int deskewed;                   /* True if image moved to zero doppler.    */
+  double range_time_per_pixel;    /* Time per pixel in range.                */
+  double azimuth_time_per_pixel;  /* Time per pixel in azimuth.              */
+  double slant_shift;             /* Error correction factor, in slant range */
+  double time_shift;                 /* Error correction factor, in time.    */
+  double slant_range_first_pixel;    /* Slant range to first pixel.          */
+  double wavelength;		     /* SAR carrier wavelength, in meters.   */
+  double prf;                        /* Pulse Repition Frequency.            */
+  /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
   double range_doppler_coefficients[3];
-    /* Doppler centroid, doppler per pixel, and doppler per pixel squared.      */
+  /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
   double azimuth_doppler_coefficients[3]; 
-  char satellite_binary_time[256];    /* Satellite binary time.                 */
-  char satellite_clock_time[256];     /* Satellite UTC clock time.              */
+  /* Satellite binary time.  */
+  char satellite_binary_time[FIELD_STRING_MAX];
+  /* Satellite UTC clock time.  */
+  char satellite_clock_time[FIELD_STRING_MAX];
 } meta_sar;
 
 
