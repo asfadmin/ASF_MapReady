@@ -742,12 +742,12 @@ prepare_pixel (FloatImage *self, size_t x, size_t y)
     // the load order queue.
     self->tile_addresses[tile_offset] = tile_address;
     g_queue_push_head (self->tile_queue, 
-		       GINT_TO_POINTER ((int)tile_offset));
+		       GINT_TO_POINTER ((int) tile_offset));
 
     // Load the tile data.
     int return_code 
       = fseeko (self->tile_file, 
-		(off_t)tile_offset * self->tile_area * sizeof (float),
+		(off_t) tile_offset * self->tile_area * sizeof (float),
 		SEEK_SET);
     g_assert (return_code == 0);
     size_t read_count = fread (tile_address, sizeof (float), self->tile_area, 
@@ -799,12 +799,12 @@ float_image_get_pixel (FloatImage *self, ssize_t x, ssize_t y)
     // the load order queue.
     self->tile_addresses[tile_offset] = tile_address;
     g_queue_push_head (self->tile_queue, 
-		       GINT_TO_POINTER ((int)tile_offset));
+		       GINT_TO_POINTER ((int) tile_offset));
 
     // Load the tile data.
     int return_code 
       = fseeko (self->tile_file, 
-		(off_t)tile_offset * self->tile_area * sizeof (float),
+		(off_t) tile_offset * self->tile_area * sizeof (float),
 		SEEK_SET);
     g_assert (return_code == 0);
     size_t read_count = fread (tile_address, sizeof (float), self->tile_area, 
@@ -822,8 +822,8 @@ void
 float_image_set_pixel (FloatImage *self, ssize_t x, ssize_t y, float value)
 {
   // Are we at a valid image pixel?
-  g_assert (x >= 0 && (size_t)x <= self->size_x);
-  g_assert (y >= 0 && (size_t)y <= self->size_y);
+  g_assert (x >= 0 && (size_t) x <= self->size_x);
+  g_assert (y >= 0 && (size_t) y <= self->size_y);
 
   // Get the pixel coordinates, including tile and pixel-in-tile.
   g_assert (sizeof (long int) >= sizeof (size_t));
@@ -859,12 +859,12 @@ float_image_set_pixel (FloatImage *self, ssize_t x, ssize_t y, float value)
     // the load order queue.
     self->tile_addresses[tile_offset] = tile_address;
     g_queue_push_head (self->tile_queue, 
-		       GINT_TO_POINTER ((int)tile_offset));
+		       GINT_TO_POINTER ((int) tile_offset));
 
     // Load the tile data.
     int return_code 
       = fseeko (self->tile_file, 
-		(off_t)tile_offset * self->tile_area * sizeof (float),
+		(off_t) tile_offset * self->tile_area * sizeof (float),
 		SEEK_SET);
     g_assert (return_code == 0);
     size_t read_count = fread (tile_address, sizeof (float), self->tile_area, 
@@ -1359,7 +1359,8 @@ float_image_set_cache_size (FloatImage *self, size_t size)
 void
 float_image_free (FloatImage *self)
 {
-  // Close and remove the tile file.
+  // Close the tile file (which should remove it since its already
+  // unlinked).
   int return_code = fclose (self->tile_file);
   g_assert (return_code == 0);
 
