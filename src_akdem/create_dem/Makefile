@@ -10,8 +10,7 @@ LIBS  = $(LIBDIR)/asf.a \
 
 OBJS  = config.o \
 	functions.o \
-	check_refinement.o \
-	lzFetch.o
+	check_refinement.o
 
 all:    create_dem clean
 
