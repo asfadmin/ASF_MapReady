@@ -107,8 +107,12 @@ SYS     = $sys
 CC      = $cc
 RANLIB  = $ranlib
 OPTFLAG = $optFlag
-INCLUDE = -I. -I../../include
+ASF_INCLUDE_DIR = ../../include
 EOF
+cat <<'EOF'
+INCLUDE = -I. -I$(ASF_INCLUDE_DIR)
+EOF
+
 
 if [ $sys = linux ]
 then
