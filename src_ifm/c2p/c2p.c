@@ -66,7 +66,6 @@ BUGS:
 *									    *
 ****************************************************************************/
 #include "asf.h"
-#include "ddr.h"
 #include "ifm.h"
 
 #define VERSION 1.05
@@ -98,10 +97,10 @@ int main (int argc, char *argv[])
   sprintf(ampfile,"%s.amp",argv[2]); 
   sprintf(phsfile,"%s.phase",argv[2]); 
 
-  /* Copy .ddr file for output if necessary */
+  /* Copy .meta file for output if necessary */
   if (strcmp(argv[1],argv[2])!=SAME)
    {
-    sprintf(command,"cp %s.ddr %s.ddr",argv[1],argv[2]);
+    sprintf(command,"cp %s.meta %s.meta",argv[1],argv[2]);
     system(command);
    }
 
@@ -158,9 +157,9 @@ void usage(char *name)
 	"REQUIRED ARGUMENTS:\n"
 	"   <in> is the input file, assumed to be complex valued.\n"
 	"         will add .cpx extension to create <in>.cpx\n"
-	"   <out> is the base file name for the output; c2p creates\n"
-	"         output files called <out>.amp, <out>.phase,\n"
-	"         and, if necessary, <out>.ddr\n");
+	"   <out> is the base file name for the output;\n"
+	"         c2p writes out files named <out>.amp,\n"
+	"         <out>.phase, and <out>.meta\n");
  printf("\n"
 	"DESCRIPTION:\n"
 	"   Converts a complex image file to polar image files (amp + phase)\n");
