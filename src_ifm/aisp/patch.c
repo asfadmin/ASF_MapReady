@@ -24,6 +24,11 @@ BUGS:
 #include <unistd.h>
 #include "aisp_defs.h"
 
+/* Functions in calibration.c (date: Jan 2003) */
+void calculateRCS(int projectionFlag, meta_parameters *meta, float *DNsquared,
+                  float *radarCrossSection, int curLine,int numSamples, const satellite *s);
+void intensity(int n_range,float *pwrs,float *amps);
+
 #define SIGMA_0 2
 #define GAMMA_0 3
 #define BETA_0 4
@@ -218,8 +223,7 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const fi
 		if(s->vecLen==0)
                         if(!quietflag && (outLine % 1024 == 0)) printf("   ...Writing Line %i\n",outLine);
                 if(s->vecLen!=0)
-                        if(!quietflag && (outLine % 1024 == 0)) printf("   ...Writing Line %i and applying Antenna Pattern \
-Correction\n",outLine);
+                        if(!quietflag && (outLine % 1024 == 0)) printf("   ...Writing Line %i and applying Antenna Pattern Correction\n",outLine);
 		
 		/* Fill up the buffers */
 		for (j=0; j<p->n_range; j++,base+=p->n_az)
@@ -264,9 +268,7 @@ Correction\n",outLine);
 		/* Multilook takes f->nlooks lines of data and averages them together, and writes one line on return */
 		if(mlCount==f->nlooks)
                 {
-
 /* multilook on the power image, then use the power image to generate an amplitude, and all other detected images from the command line. Be careful because I recycle amps after writing out the line of amplitude data, and it gets used as the sigma_0, beta_0, and gamma_0 line. It my be confusing, but it uses less memory.*/
-
 			multilook(mlBuf,p->n_range,f->nlooks,pwrs);
 			intensity(p->n_range,pwrs,amps);
 			FWRITE(amps,sizeof(float),p->n_range,fp_amp);
@@ -294,17 +296,17 @@ Correction\n",outLine);
                 }
 	}
 	FCLOSE(fp_cpx);
-	save_ddr(f->out_cpx,f->n_az_valid*patchNo,p->n_range,
+	save_meta(meta,f->out_cpx,f->n_az_valid*patchNo,p->n_range,
 		 f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
 		 f->rngpix,f->azpix,1);
 	FCLOSE(fp_amp);
-	save_ddr(f->out_amp,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
+	save_meta(meta,f->out_amp,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
                  f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
                  f->rngpix,f->azpix,f->nlooks);
 	if (s->imageType.power) 
 	{
 	  FCLOSE(fp_pwr);
-	  save_ddr(f->out_pwr,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
+	  save_meta(meta,f->out_pwr,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
                  f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
                  f->rngpix,f->azpix,f->nlooks);
 	}
@@ -312,7 +314,7 @@ Correction\n",outLine);
 	if (s->imageType.sigma) 
 	{
 	  FCLOSE(fp_sig);
-	  save_ddr(f->out_sig,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
+	  save_meta(meta,f->out_sig,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
                  f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
                  f->rngpix,f->azpix,f->nlooks);
 	}
@@ -320,13 +322,13 @@ Correction\n",outLine);
 	if (s->imageType.gamma) 
 	{
 	  FCLOSE(fp_gam);
-	  save_ddr(f->out_gam,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
+	  save_meta(meta,f->out_gam,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
                  f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
                  f->rngpix,f->azpix,f->nlooks);
 	}if (s->imageType.beta) 
 	{
 	  FCLOSE(fp_bet);
-	  save_ddr(f->out_bet,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
+	  save_meta(meta,f->out_bet,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
                  f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
                  f->rngpix,f->azpix,f->nlooks);
 	}
