@@ -482,7 +482,12 @@ if ( -e $graph_cache_file ) {
         foreach my $other_node ( @other_nodes ) {
 
 	    # No need to worry about nodes depending on themselves.
-  	    if ( $dir eq $other_node ) {
+	    # If $other_node was explicitly declared (via -w,
+	    # --with_node, or --with_node_file), it probably won't
+	    # have a directory part, so we also check if $other_node
+	    # matches the non-directory part of the current package
+	    # path.
+            if ( $dir eq $other_node or $dir =~ m/.*\/$other_node$/ ) {
 	        next;
 	    }
 	
@@ -696,7 +701,7 @@ sub path_search
     # to current node.
     my ($node, $path) = @_;
 
-    $visited{$node} = 1;	# Set visited flag for not to true.
+    $visited{$node} = 1;	# Set visited flag for node to true.
 
     foreach my $adjacent_node ( @{$node_deps{$node}} ) {
 	if ( $visited{$adjacent_node} ) {
