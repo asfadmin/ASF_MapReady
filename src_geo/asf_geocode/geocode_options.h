@@ -68,6 +68,12 @@ void apply_defaults(projection_type_t proj_type, project_parameters_t * pps,
 		    meta_parameters * meta, double *average_height,
 		    double *pixel_size);
 
+/* Get the UTM zone number in which a given longitude falls.  Puts
+   longitudes that fall on zone thresholds into the higher numbered
+   UTM zone.  */
+int calc_utm_zone (double lon);
+
+/* Convert all the angle measures in pps between radians and degree.  */
 void to_radians(projection_type_t proj_type, project_parameters_t * pps);
 void to_degrees(projection_type_t proj_type, project_parameters_t * pps);
 
