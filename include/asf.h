@@ -48,7 +48,7 @@ void bail(const char *message, ...)/* ; is coming, don't worry.  */
         attribute noreturn says function doesn't return.  */
      __attribute__ ((format (printf, 1, 2), noreturn))
 #endif 
-; /* <-- Semicolon for err_die prototype.  */
+; /* <-- Semicolon for bail prototype.  */
 void StartWatch(void);
 void StartWatchLog(FILE *fLog);
 void StopWatch(void);
