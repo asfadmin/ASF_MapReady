@@ -125,17 +125,19 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
             meta_parameters *mds_meta;
             struct DDR *mds_ddr  = meta_ddr_structs[ii].ddr;
             int open_flag = 0;
-            char *meta_name = appendExt(meta_ddr_structs[ii].base_name, ".meta");
+            char meta_name[512];
 
-            /* Get the meta structure */
-            if (meta_ddr_structs[ii].meta == NULL) {
+            create_name(meta_name, meta_ddr_structs[ii].base_name, ".meta");
+
+            /* Get the meta structure if its never been gotten (meta=NULL)
+             * or its been free'd (meta->general==NULL) */
+            if (meta_ddr_structs[ii].meta==NULL
+	       || meta_ddr_structs[ii].meta->general==NULL) {
 	        if (fileExists(meta_name)) {
-                    mds_meta = meta_read(meta_ddr_structs[ii].base_name);
-                    FREE(meta_name);
+                    mds_meta = meta_read(meta_name);
                     open_flag = 1;
 		}
 		else /* No meta struct/file */ {
-                    FREE(meta_name);
 		    return(E_SUCC);
 		}
             }
