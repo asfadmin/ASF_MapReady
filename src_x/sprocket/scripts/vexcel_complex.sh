@@ -17,7 +17,6 @@ fi
 
 DATAFILE='dat.'$1
 LEADER_FILE='lea.'$1
-TRA_FILE='tra.'$1
 VOL_FILE='vol.'$1
 
 echo $DATAFILE 
@@ -34,13 +33,6 @@ fi
 if [ ! -f $LEADER_FILE ]
 then
    echo "The leader file $LEADER_FILE cannot be found."
-   exit 1
-fi
-
-#Check to see if metadata file exists
-if [ ! -f $TRA_FILE ]
-then
-   echo "The leader file $TRA_FILE cannot be found."
    exit 1
 fi
 
