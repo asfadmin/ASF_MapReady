@@ -7,23 +7,24 @@
 
 int lz2raw_flywheel(char *inFile, char *outFile, char *prcOrbits, int prcFlag, double lat_begin, double lat_end)
 {
-        char command[255];
+	char command[255];
 	int ret;
 
-        sprintf(command, "lz2raw_flywheel %s %s", inFile, outFile);
+	sprintf(command, "lz2raw_flywheel ");
 	if (prcFlag == 1) sprintf (command, "%s -prc %s", command, prcOrbits); 
-        if (logflag) sprintf(command, "%s -log %s", command, logFile);
+	if (logflag) sprintf(command, "%s -log %s", command, logFile);
 	if (quietflag) strcat(command, " -quiet");
-/*	if (lat_begin!=-99.0 && lat_end!=99.0) sprintf(command, "%s -lat %lf %lf", command, lat_begin, lat_end);*/
+	if (lat_begin!=-99.0 && lat_end!=99.0) sprintf(command, "%s -lat %lf %lf", command, lat_begin, lat_end);
+	sprintf(command, "%s %s %s", command, inFile, outFile);
 
         printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
-        ret = system(command);
+	ret = system(command);
 
 	return ret;
 }
@@ -33,9 +34,10 @@ int ceos2raw(char *inFile, char *outFile)
         char command[255];
 	int ret;
 
-        sprintf(command, "ceos2raw %s %s", inFile, outFile);        
-	/* if (logflag) sprintf(command, "%s -log %s", command, logFile); */
-	/* if (quietflag) strcat(command, " -quiet"); */
+        sprintf(command, "ceos2raw ");        
+	if (logflag) sprintf(command, "%s -log %s", command, logFile);
+	if (quietflag) strcat(command, " -quiet");
+        sprintf(command, "%s %s %s", command, inFile, outFile);        
 
         printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
@@ -56,7 +58,7 @@ int trim_slc(char *inFile, char *outFile, int line, int sample, int length, int 
 
         sprintf(command, "trim_slc %s %s %d %d %d %d", inFile, outFile, line, sample, length, width);        
 /*	if (logflag) sprintf(command, "%s -log %s", command, logFile);
-	if (quietflag) strcat(command, " -quiet"); */
+	if (quietflag) strcat(command, " -quiet");*/
 
         printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
@@ -70,89 +72,13 @@ int trim_slc(char *inFile, char *outFile, int line, int sample, int length, int 
 	return ret;
 }
 
-int fix_in_fromraw(char *inFile, char *outFile)
-{
-	char command[255];
-	int ret;
-
-	sprintf(command, "fix_in_fromraw %s.par %s.meta %s.in", inFile, outFile, outFile);
-	if (logflag) sprintf(command, "fix_in_fromraw %s.par %s.meta %s.in 100 -log %s", 
-				inFile, outFile, outFile, logFile);
-	if (quietflag) sprintf(command, "fix_in_fromraw %s.par %s.meta %s.in 100 -quiet", inFile, outFile, outFile);
-	if (logflag && quietflag) sprintf(command, "fix_in_fromraw %s.par %s.meta %s.in 100 -log %s -quiet", inFile,
-						outFile, outFile, logFile);
-
-	printf("\nCommand line: %s\nDate: ", command);
-	if (logflag) {
-	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-	  printLog(logbuf);
-	  FCLOSE(fLog);
-	}
-	ret = system(command);
-
-	return ret;
-}
-
-int swath_offset( char *inMeta1, char *inMeta2, char *inPar1, char *inPar2, char *latBounds)
-{
-	char command[255];
-	int ret;
-
-	sprintf(command, "swath_offset %s.meta %s.meta %s.par %s.par boundlines", inMeta1, inMeta2, inPar1, inPar2);
-	if (logflag) sprintf(command, "%s -log %s", command, logFile);
-/*	if (quietflag) strcat(command, " -quiet");*/
-	if(strlen(latBounds) > 0) strcat(command, latBounds);
-
-	printf("\nCommand line: %s\nDate: ", command);
-	if (logflag) {
-	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-	  printLog(logbuf);
-	  FCLOSE(fLog);
-	}
-	ret = system(command);
-
-	return ret;
-}
-
-int water_mask(char *demName, char *boundFileName, float rangePercent)
-{
-	char command[255];
-	int ret;
-
-	sprintf(command, "water_mask %s %s", demName, boundFileName);
-	if (logflag) sprintf(command, "%s -log %s", command, logFile);
-	if (quietflag) strcat(command, " -quiet");
-/*	if(rangePercent != 100.0)
-	{
-		char tmp[100];
-
-		sprintf(tmp, " -r %f", rangePercent);
-		strcat(command, tmp);
-	}*/
-
-	printf("\nCommand line: %s\nDate: ", command);
-	if (logflag) {
-	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-	  printLog(logbuf);
-	  FCLOSE(fLog);
-	}
-	ret = system(command);
-
-	return ret;
-}
-
 int avg_in_dop(char *inFile1, char * inFile2, char *outFile)
 {
 	char command[255];
 	int ret;
 
-	sprintf(command, "avg_in_dop %s %s %s", inFile1, 
-		inFile2, outFile);
-	if (logflag) sprintf(command, "avg_in_dop -log %s %s %s %s", logFile, 
-			     inFile1, inFile2, outFile);
+	sprintf(command, "avg_in_dop %s %s %s", inFile1, inFile2, outFile);
+	if (logflag) sprintf(command, "avg_in_dop -log %s %s %s %s", logFile, inFile1, inFile2, outFile);
 
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
@@ -177,8 +103,8 @@ int aisp(char *options, int startLineNum, int numPatches, char *inFile, char *ou
 		 AISP_VALID_PATCH_LENGTH, options, startLineNum, logFile, inFile, outFile);
 	if (quietflag) sprintf(command, "aisp -p %i -v %i %s -l %i -quiet %s %s", numPatches,
 		 AISP_VALID_PATCH_LENGTH, options, startLineNum, inFile, outFile);
-	if (logflag && quietflag) sprintf(command, "aisp -p %i -v %i %s -l %i %s %s",
-		 numPatches,AISP_VALID_PATCH_LENGTH, options, startLineNum, inFile, outFile);
+	if (logflag && quietflag) sprintf(command, "aisp -p %i -v %i %s -l %i -log %s -quiet %s %s",
+		 numPatches,AISP_VALID_PATCH_LENGTH, options, startLineNum, logFile, inFile, outFile);
 
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
@@ -199,21 +125,21 @@ int paisp(char *options, int startLineNum, int numPatches, int numProcessors, ch
 
 	sprintf(command, "mpirun -np %i paisp -p %i -v %i %s -l %i %s %s", numProcessors, numPatches,
 		 AISP_VALID_PATCH_LENGTH, options, startLineNum, inFile, outFile);
-	if (logflag) sprintf(command, "mpirun -np %i paisp -p %i -v %i %s -l %i -x %s %s %s",
+	if (logflag) sprintf(command, "mpirun -np %i paisp -p %i -v %i %s -l %i -log %s %s %s",
 		 numProcessors, numPatches, AISP_VALID_PATCH_LENGTH, options, startLineNum, logFile, inFile, outFile);
-	if (quietflag) sprintf(command, "mpirun -np %i paisp -p %i -v %i %s -l %i -q 1 %s %s",
+	if (quietflag) sprintf(command, "mpirun -np %i paisp -p %i -v %i %s -l %i -quiet %s %s",
 		 numProcessors, numPatches, AISP_VALID_PATCH_LENGTH, options, startLineNum, inFile, outFile);
-	if (logflag && quietflag) sprintf(command, "mpirun -np %i paisp -p %i -v %i %s -l %i -x %s -q 1 %s %s",
+	if (logflag && quietflag) sprintf(command, "mpirun -np %i paisp -p %i -v %i %s -l %i -log %s -quiet %s %s",
 		 numProcessors, numPatches, AISP_VALID_PATCH_LENGTH, options, startLineNum, logFile, inFile, outFile);
 
 	if (numPatches == -1) {
 	  sprintf(command, "mpirun -np %i paisp -v %i %s %s %s", numProcessors,
 		 AISP_VALID_PATCH_LENGTH, options, inFile, outFile);
-	  if (logflag) sprintf(command, "mpirun -np %i paisp -v %i %s -x %s %s %s",
+	  if (logflag) sprintf(command, "mpirun -np %i paisp -v %i %s -log %s %s %s",
 		 numProcessors, AISP_VALID_PATCH_LENGTH, options, logFile, inFile, outFile);
-	  if (quietflag) sprintf(command, "mpirun -np %i paisp -v %i %s -q 1 %s %s",
+	  if (quietflag) sprintf(command, "mpirun -np %i paisp -v %i %s -quiet %s %s",
 		 numProcessors, AISP_VALID_PATCH_LENGTH, options, inFile, outFile);
-	  if (logflag && quietflag) sprintf(command, "mpirun -np %i paisp -v %i %s -x %s -q 1 %s %s",
+	  if (logflag && quietflag) sprintf(command, "mpirun -np %i paisp -v %i %s -log %s -quiet %s %s",
 		 numProcessors, AISP_VALID_PATCH_LENGTH, options, logFile, inFile, outFile);
 	}
 
@@ -299,7 +225,7 @@ int resolve(char *inFile1, char *inFile2, char *outFile)
 
 	sprintf(command, "resolve %s %s base.00 %s", inFile1, inFile2, outFile);
 	if (logflag) sprintf(command, "%s -log %s", command, logFile);
-/*	if (quietflag) strcat(command, " -quiet");*/
+	if (quietflag) strcat(command, " -quiet");
 
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
@@ -729,6 +655,7 @@ int deramp(char *demFile, char *metaFile, char *baseFile, char *outFile, int bac
         sprintf(command, "deramp %s %s %s %s", demFile, metaFile, baseFile, outFile);
 	if (back) sprintf(command, "deramp -backward %s %s %s %s", demFile, metaFile, baseFile, outFile);
         if (logflag) sprintf(command, "deramp -log %s %s %s %s %s", logFile, demFile, metaFile, baseFile, outFile);
+/*        if (logflag) sprintf(command, "deramp %s %s %s %s -log %s", demFile, metaFile, baseFile, outFile, logFile);*/
         if (logflag && back) sprintf(command, "deramp -backward -log %s %s %s %s %s", 
 						logFile, demFile, metaFile, baseFile, outFile);
         
@@ -745,14 +672,15 @@ int deramp(char *demFile, char *metaFile, char *baseFile, char *outFile, int bac
 }         
 
 
-int snaphu_v2(char *phaseFile, char *ampFile, char *pwrFile1, char *pwrFile2, char *config, char *outFile, 
-			int nAzimuth, int nRange, int nProcs)
+int snaphu(char *snaphu_version, char *phaseFile, char *ampFile, char *pwrFile1, char *pwrFile2, char *config, char *outFile, 
+			int nAzimuth, int nRange, int nOverAzi, int nOverRng, int nProcs)
 {       
         char command[255];
         int ret;
         
-        sprintf(command, "snaphu_v2 --tile %d %d 400 400 --nproc %d %s 4800 -m %s --AA %s %s -f %s -o %s", 
-				nAzimuth, nRange, nProcs, phaseFile, ampFile, pwrFile1, pwrFile2, config, outFile);        
+        sprintf(command, "%s --tile %d %d %d %d --nproc %d %s 4800 -m %s --AA %s %s -f %s -o %s", 
+				snaphu_version, nAzimuth, nRange, nOverAzi, nOverRng, nProcs, phaseFile, ampFile, 
+				pwrFile1, pwrFile2, config, outFile);        
         
         printf("\nCommand line: %s\nDate: ", command);
         if (logflag) {
@@ -774,11 +702,11 @@ int refine_base(char *phaseFile, char *seeds, char *metaFile, char *oldBase, cha
         sprintf(command, "refine_base %s %s %s %s %s\n", phaseFile, seeds, metaFile, oldBase, newBase);
 	if (logflag) 
 	  sprintf(command, "refine_base -log %s %s %s %s %s %s\n", logFile, phaseFile, seeds, metaFile, oldBase, newBase);
-/*	if (quietflag) 
+	if (quietflag) 
 	  sprintf(command, "refine_base -quiet %s %s %s %s %s\n", phaseFile, seeds, metaFile, oldBase, newBase);
 	if (logflag && quietflag) 
 	  sprintf(command, "refine_base -quiet -log %s %s %s %s %s %s\n", 
-				logFile, phaseFile, seeds, metaFile, oldBase, newBase);*/
+				logFile, phaseFile, seeds, metaFile, oldBase, newBase);
 
         printf("\nCommand line: %s\nDate: ", command);
         if (logflag) {
@@ -798,7 +726,7 @@ int las_op(char *outFile, char *operation)
 	int ret;
 
         sprintf(command, "las_op %s %s", outFile, operation);
-        if (logflag) sprintf(command, "las_op %s -log %s %s", outFile, logFile, operation);
+        if (logflag) sprintf(command, "las_op -log %s %s %s", logFile, outFile, operation);
 
         printf("\nCommand line: %s\nDate: ", command);
         if (logflag) {
@@ -939,17 +867,20 @@ int eleverr(char *cohFile, char *baseFile, char *metaFile, char *maskFile, char 
         return ret;
 }
           
-int deskew_dem(char *inFile1, char *metaFile, char *outFile, char *inFile2)
+int deskew_dem(char *inFile1, char *metaFile, char *outFile, char *inFile2, int radiometric)
 {
         char command[255];
         int ret;
 
-	if (strcmp(inFile2,"")==0)
-		sprintf(command, "deskew_dem %s %s %s", inFile1, metaFile, outFile);
-	else
-	        sprintf(command, "deskew_dem -i %s 1 %s %s %s", inFile2, inFile1, metaFile, outFile);
-        if (logflag) sprintf(command, "-log %s %s", logFile, command);
-          
+        if (strcmp(inFile2,"")==0)   
+                sprintf(command, "deskew_dem %s %s %s", inFile1, metaFile, outFile);
+        else
+                sprintf(command, "deskew_dem -i %s %d %s %s %s", inFile2, radiometric, inFile1, metaFile, outFile);
+        if (logflag) sprintf(command, "deskew_dem -i %s  1 -log %s %s %s %s", 
+		inFile2, radiometric, logFile, inFile1, metaFile, outFile);
+        if (logflag && strcmp(inFile2,"")==0)
+		sprintf(command, "deskew_dem -log %s %s %s %s", logFile, inFile1, metaFile, outFile);
+         
         printf("\nCommand line: %s\nDate: ", command);
         if (logflag) {
           fLog = FOPEN(logFile, "a");
@@ -989,7 +920,7 @@ int geocode(char *metaFile, char *inFile, char *projFile, char *projkey, int pix
         int ret;
         
         sprintf(command, "geocode -p %d %s %s %s %s %s", pix_size, metaFile, inFile, projFile, projkey, outFile);
-	if (logflag) sprintf(command, "geocode -p %d -x %s %s %s %s %s %s", 
+	if (logflag) sprintf(command, "geocode -p %d -log %s %s %s %s %s %s", 
 					pix_size, logFile, metaFile, inFile, projFile, projkey, outFile);
 
         printf("\nCommand line: %s\nDate: ", command);

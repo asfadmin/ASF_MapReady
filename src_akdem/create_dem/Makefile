@@ -3,15 +3,15 @@
 
 include ../../make_support/system_rules
 
-CFLAGS  = $(FLAGS) -DDECODE_CEOS
+CFLAGS := $(CFLAGS) -DDECODE_CEOS
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	-lm
 
 OBJS  = config.o \
 	functions.o \
-	swath_bound.o \
-	check_refinement.o
+	check_refinement.o \
+	lzFetch.o
 
 all:    create_dem clean
 

@@ -11,9 +11,6 @@ int exit_code;
 int lz2raw_flywheel(char *inFile, char *outFile, char *prcOrbits, int prcFlag, double lat_begin, double lat_end);
 int ceos2raw(char *inFile, char *outFile);
 int trim_slc(char *inFile, char *outFile, int line, int sample, int length, int width);
-int fix_in_fromraw(char *inFile, char *outFile);
-int swath_offset( char *inMeta1, char *inMeta2, char *inPar1, char *inPar2, char *latBounds);
-int water_mask(char *demName, char *boundFileName, float rangePercent);
 int avg_in_dop(char *inFile1, char *inFile2, char *outFile1);
 int aisp(char *options, int startLineNum, int numPatches, char *inFile, char *outFile);
 int paisp(char *options, int startLineNum, int numPatches, int numProcessors, char *inFile, char *outFile);
@@ -42,8 +39,8 @@ int fftMatch(char *inFile1, char *inFile2, char *outFile);
 int dem2phase(char *demFile, char *metaFile, char *baseFile, char *phaseFile);
 int dem2seeds(char *demFile, char *ampFile, char *seedsFile, int fft);
 int deramp(char *demFile, char *metaFile, char *baseFile, char *outFile, int back);
-int snaphu_v2(char *phaseFile, char *ampFile, char *pwrFile1, char *pwrFile2, char *config, char *outFile, 
-                        int nAzimuth, int nRange, int nProcs);
+int snaphu(char *snaphu_version, char *phaseFile, char *ampFile, char *pwrFile1, char *pwrFile2, char *config, char *outFile, 
+                        int nAzimuth, int nRange, int nOverAzi, int nOverRng, int nProcs);
 int refine_base(char *phaseFile, char *seeds, char *metaFile, char *oldBase, char *newBase);
 int las_op(char *outFile,char *operation);
 int las2ppm(char *inFile, char *outFile);
@@ -52,7 +49,7 @@ int zeroify(char *phaseFile1, char *phaseFile2, char *outFile);
 int escher(char *inFile, char *outFile);
 int elev(char *phaseFile, char *baseFile, char *metaFile, char *outFile, char *seeds);
 int eleverr(char *cohFile, char *baseFile, char *metaFile, char *maskFile, char *outFile);
-int deskew_dem(char *inFile1, char *metaFile, char *outFile, char *inFile2);
+int deskew_dem(char *inFile1, char *metaFile, char *outFile, char *inFile2, int radiometric);
 int projprm(char *projection, char *projkey, char *outFile, char *options);
 int geocode(char *metaFile, char *inFile, char *projFile, char *projkey, int pix_size, char *outFile);
 

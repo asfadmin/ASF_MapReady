@@ -1,0 +1,64 @@
+NAME:  create_dem - 
+
+SYNOPSIS: tandem_ifm igram meta seeds [-s start] [-d dem_phase]
+                        [-f <strength>] [-x <x> -y <y>]
+
+     igram        Non-multilooked Interferogram (.amp, .phase, .ddr)
+     meta         Interferogram metadata (.meta file)
+     seeds        Tie point elevation seed file name
+
+     -s start     If specified, baseline iteration will
+                  start at base.<start> instead of base.0
+
+     -d dem_phase A LAS phase image, probably created by
+                  the demIFM(1) script.  This is used for dem-guided
+                  phase unwrapping.
+
+     -f strength  Filter the image (using phase_filter(1))
+                  with the specified power (1.2 to 1.7).
+
+     -x x, -y y: Specify an alternate phase unwrapping start location.
+                 The default is the image center.
+
+DESCRIPTION:
+
+OPTIONS:
+
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+-------------------------------------------------------------------
+
+EXAMPLES:
+
+	AKDEM project: Configuration file
+
+	[General]
+	base name = 329_23363_3690
+	default values = /3dsar2/akdem/default_values
+	lat begin = 63.5
+	lat end = 64.5
+	status = new
+
+	[Master image]
+	path = /3dsar2/akdem/tracks/329
+	data file = e2_3690.000
+	metadata file = e2_3690.000.par
+
+	[Slave image]
+	path = /3dsar2/akdem/tracks/329
+	data file = e1_23363.000
+	metadata file = e1_23363.000.par
+
+SEE ALSO:
+	amp2img(1), register_sic(1), register_ccsd(1), trim(1), resolve(1),
+	demIFM(1)
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR: R. Gens
+
+CONTACT: apd@asf.alaska.edu
+	 http://www.asf.alaska.edu/apd
+       
