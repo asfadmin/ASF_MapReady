@@ -358,7 +358,7 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
             }
          }
          catch (InterruptedException e){
-            System.out.println("SProCKET: Zoom window flythrough failure.");
+            System.out.println("SProcKET: Zoom window flythrough failure.");
          }
          repaint();
       }
@@ -416,8 +416,9 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
    public synchronized void mousePressed(MouseEvent mouseEvt) {
    // Fly through
       if (fly) {
-         if(!targetting)
-            { myFrame.coordinates.setText("ratio: " + ratio); }
+         if (!targetting) {
+            myFrame.coordinates.setText("ratio: " + ratio);
+         }
          System.out.print("");  // It just needs to be here, okay??
          mousex = mouseEvt.getX();
          mousey = mouseEvt.getY();
@@ -425,10 +426,10 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
          flyy = mouseEvt.getY();
          mouseEvt.consume();
          start_animation();
-         if(!targetting)
+         if (!targetting)
             return;
       }
-      
+
    // Smasking
       if (nowsmasking) {
          myFrame.coordinates.setText("Smasking");
@@ -440,11 +441,8 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
          oldy = mouseEvt.getY();
       }
 
-   // Bright
+   // Get the brightest pixel
       if (targetting && bright) {
-//         Dimension d = im.brightest((int)(mouseEvt.getX()/ratio),
-//                                    (int)(mouseEvt.getY()/ratio),
-//                                    x, y, range);
          Dimension d = im.brightest((int)(mouseEvt.getX()/ratio),
                                     (int)(mouseEvt.getY()/ratio),
                                     realx, realy, range);
