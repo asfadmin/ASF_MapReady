@@ -668,6 +668,7 @@ main (int argc, char **argv)
     x = y = NULL;
     // Project all the edge pixels.
     int return_code = project_arr (pp, lats, lons, &x, &y, edge_point_count);
+
     g_assert (return_code == TRUE);
     // Find the extents of the image in projection coordinates.
     for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
@@ -937,7 +938,7 @@ main (int argc, char **argv)
 		      FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR));
       }
     }
-    asfLineMeter( oiy, oiy_max );
+    asfLineMeter( oiy, oiy_max + 1 );
   }
 
   asfPrintStatus ("\nDone resampling image.\n\n");
