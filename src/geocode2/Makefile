@@ -25,7 +25,7 @@ SOURCES := geocode_options.c parse_options.c geocode2.c
 #
 ###############################################################################
 
-CC := gcc
+CC := /home/bkerin/local/gcc_3_4/bin/gcc
 
 INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) -I$(HOME)/local/include \
                   $(shell pkg-config --cflags-only-I glib-2.0)
@@ -40,7 +40,7 @@ CPPFLAGS := -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 \
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
 CFLAGS := -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
           -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
-          -Wwrite-strings -Wnested-externs -fno-common -g -O4
+          -Wwrite-strings -Wnested-externs -fno-common -g -O0
 
 LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
@@ -50,6 +50,7 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libgslcblas.a \
+	$(LIBDIR)/libjpeg.a \
 	$(LIBDIR)/libproj.a \
 	-lm
 
