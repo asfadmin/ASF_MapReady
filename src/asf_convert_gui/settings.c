@@ -143,6 +143,7 @@ settings_apply_to_gui(const Settings * s)
       if (s->geocode_is_checked)
       {
 	  GtkWidget * projection_option_menu;
+	  GtkWidget * utm_zone_entry;
 	  GtkWidget * central_meridian_entry;
 	  GtkWidget * latitude_of_origin_entry;
 	  GtkWidget * first_standard_parallel_entry;
@@ -158,6 +159,9 @@ settings_apply_to_gui(const Settings * s)
 
 	  set_combo_box_item(projection_option_menu, s->projection);
 	  
+	  utm_zone_entry =
+	      glade_xml_get_widget(glade_xml, "utm_zone_entry");
+
 	  central_meridian_entry =
 	      glade_xml_get_widget(glade_xml, "central_meridian_entry");
 	  
@@ -177,6 +181,16 @@ settings_apply_to_gui(const Settings * s)
 	  false_easting_entry =
 	      glade_xml_get_widget(glade_xml, "false_easting_entry");
 	  
+	  if (s->projection == UNIVERSAL_TRANSVERSE_MERCATOR)
+	  {
+	      sprintf(tmp, "%d", s->zone);
+	      gtk_entry_set_text(GTK_ENTRY(utm_zone_entry), tmp);
+	  }
+	  else
+	  {
+	      gtk_entry_set_text(GTK_ENTRY(utm_zone_entry), "");
+	  }
+
 	  sprintf(tmp, "%f", s->lon0);
 	  gtk_entry_set_text(GTK_ENTRY(central_meridian_entry), tmp);
 	  
@@ -354,6 +368,7 @@ settings_get_from_gui()
   {
       GtkWidget 
 	  *projection_option_menu,
+	  *utm_zone_entry,
 	  *central_meridian_entry,
 	  *latitude_of_origin_entry,
 	  *first_standard_parallel_entry,
@@ -373,6 +388,9 @@ settings_get_from_gui()
 	  gtk_option_menu_get_history(
 	      GTK_OPTION_MENU(projection_option_menu));
       
+      utm_zone_entry =
+	  glade_xml_get_widget(glade_xml, "utm_zone_entry");
+
       central_meridian_entry =
 	  glade_xml_get_widget(glade_xml, "central_meridian_entry");
       
@@ -391,6 +409,8 @@ settings_get_from_gui()
       false_easting_entry =
 	  glade_xml_get_widget(glade_xml, "false_easting_entry");
 
+      ret->zone = atoi(gtk_entry_get_text(
+			   GTK_ENTRY(utm_zone_entry)));
       ret->lon0 = atof(gtk_entry_get_text(
 			   GTK_ENTRY(central_meridian_entry)));
       ret->lat0 = atof(gtk_entry_get_text(

@@ -28,6 +28,7 @@ const char * geocode_options_string(const Settings * settings)
 
     if (settings->geocode_is_checked)
     {
+	gboolean enable_utm_zone = FALSE;
 	gboolean enable_central_meridian = FALSE;
 	gboolean enable_latitude_of_origin = FALSE;
 	gboolean enable_first_standard_parallel = FALSE;
@@ -39,10 +40,7 @@ const char * geocode_options_string(const Settings * settings)
 	{
 	    case UNIVERSAL_TRANSVERSE_MERCATOR:
 		strcpy(ret, "--projection utm");
-		enable_central_meridian =
-		    entry_has_text("central_meridian_entry");
-		enable_latitude_of_origin =
-		    entry_has_text("latitude_of_origin_entry");
+		enable_utm_zone = TRUE;
 		break;
 
 	    case POLAR_STEREOGRAPHIC:
@@ -102,6 +100,9 @@ const char * geocode_options_string(const Settings * settings)
 		break;
 	}
 
+	if (enable_utm_zone)
+	    sprintf(ret, "%s --zone %d ", ret, settings->zone);
+
 	if (enable_central_meridian)
 	    sprintf(ret, "%s --central-meridian %f ", ret, settings->lon0);
 
@@ -158,6 +159,11 @@ void geocode_options_changed()
     GtkWidget * geocode_checkbutton;
     GtkWidget * predefined_projection_option_menu;
 
+    GtkWidget * table_nonutm_projection_options;
+    GtkWidget * table_utm_projection_options;
+
+    GtkWidget * utm_zone_entry;
+
     GtkWidget * central_meridian_entry;
     GtkWidget * central_meridian_label;
 
@@ -193,6 +199,8 @@ void geocode_options_changed()
     gboolean enable_projection_option_menu = FALSE;
     gboolean enable_predefined_projection_option_menu = FALSE;
 
+    gboolean enable_table_utm_projection_options = FALSE;
+
     gboolean enable_central_meridian = FALSE;
     gboolean enable_latitude_of_origin = FALSE;
     gboolean enable_first_standard_parallel = FALSE;
@@ -207,6 +215,12 @@ void geocode_options_changed()
     gboolean enable_pixel_size_entry = FALSE;
 
     gboolean enable_datum_hbox = FALSE;
+
+    table_utm_projection_options =
+	glade_xml_get_widget(glade_xml, "table_utm_projection_options");
+
+    table_nonutm_projection_options =
+	glade_xml_get_widget(glade_xml, "table_nonutm_projection_options");
 
     geocode_checkbutton =
 	glade_xml_get_widget(glade_xml, "geocode_checkbutton");
@@ -225,6 +239,9 @@ void geocode_options_changed()
 
     predefined_projection_option_menu =
 	glade_xml_get_widget(glade_xml, "predefined_projection_option_menu");
+
+    utm_zone_entry =
+	glade_xml_get_widget(glade_xml, "utm_zone_entry");
 
     central_meridian_entry =
 	glade_xml_get_widget(glade_xml, "central_meridian_entry");
@@ -257,6 +274,9 @@ void geocode_options_changed()
 	    gtk_option_menu_get_history(
 		GTK_OPTION_MENU(projection_option_menu));
 
+	enable_table_utm_projection_options =
+	    projection == UNIVERSAL_TRANSVERSE_MERCATOR;
+
 	if (predefined_projection_is_selected)
 	{
 	    /* all widgets remain disabled -- load settings from file */
@@ -269,6 +289,8 @@ void geocode_options_changed()
 	    }
 	    else
 	    {
+		gtk_entry_set_text(
+		    GTK_ENTRY(utm_zone_entry), "");
 		gtk_entry_set_text(
 		    GTK_ENTRY(central_meridian_entry), "");
 		gtk_entry_set_text(
@@ -285,20 +307,9 @@ void geocode_options_changed()
 		switch (projection)
 		{
 		    case UNIVERSAL_TRANSVERSE_MERCATOR:
-			gtk_entry_set_text(
-			    GTK_ENTRY(central_meridian_entry),
-			    double_to_string(pps->utm.lon0));
-			gtk_entry_set_text(
-			    GTK_ENTRY(latitude_of_origin_entry),
-			    double_to_string(pps->utm.lat0));
-			gtk_entry_set_text(
-			    GTK_ENTRY(first_standard_parallel_entry), "");
-			gtk_entry_set_text(
-			    GTK_ENTRY(second_standard_parallel_entry), "");
-			gtk_entry_set_text(
-			    GTK_ENTRY(false_northing_entry), "");
-			gtk_entry_set_text(
-			    GTK_ENTRY(false_easting_entry), "");
+			/* no UTM predefined projections -- better to use
+			   the "zone" entry */
+			assert(FALSE);
 			break;
 			
 		    case POLAR_STEREOGRAPHIC:
@@ -438,6 +449,17 @@ void geocode_options_changed()
 	    enable_pixel_size_entry = TRUE;
 
 	set_predefined_projections(projection);
+    }
+
+    if (enable_table_utm_projection_options)
+    {
+	gtk_widget_show(table_utm_projection_options);
+	gtk_widget_hide(table_nonutm_projection_options);
+    }
+    else
+    {
+	gtk_widget_show(table_nonutm_projection_options);
+	gtk_widget_hide(table_utm_projection_options);
     }
 
     gtk_widget_set_sensitive(projection_option_menu,

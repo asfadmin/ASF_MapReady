@@ -20,6 +20,7 @@ typedef struct
   /* geocode */
   int geocode_is_checked;
   int projection;
+  int zone;
   double plat1;
   double plat2;
   double lat0;

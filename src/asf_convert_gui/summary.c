@@ -1,9 +1,11 @@
 #include "asf_convert_gui.h"
 
+/*
 int zone(float lon)
 {
     return((int)(((lon + 180.0) / 6.0) + 1.0));
 }
+*/
 
 SIGNAL_CALLBACK
 void update_summary()
@@ -75,8 +77,8 @@ void update_summary()
 	switch (s->projection)
 	{
 	    case UNIVERSAL_TRANSVERSE_MERCATOR:
-		sprintf(text, "%sUTM\n   Center: (%f, %f)\n   Zone: %d\n",
-			text, s->lat0, s->lon0, zone(s->lon0));
+		sprintf(text, "%sUTM\n   Zone: %d\n",
+			text, s->zone);
 		break;
 
 	    case POLAR_STEREOGRAPHIC:
