@@ -33,7 +33,6 @@ sar {
     image_type: P  # [S=slant range; G=ground range; P=map projected]
     look_direction: R # (normally R) [R=right; L=left]
     look_count: 5
-    look_angle: 2.23
     deskewed: 0 # [ 1 => deskewed, 0 => not deskewed ]
     range_time_per_pixel: 0.000032
     azimuth_time_per_pixel: 0.00546

@@ -92,7 +92,6 @@ typedef struct {
   char image_type; 
   char look_direction;            /* 'L'-> Left Looking; 'R'-> Right Looking.*/
   int look_count;                 /* Number of looks to take from SLC.       */
-  double look_angle;              /* Angle SAR looks at earth [radians]      */
   int deskewed;                   /* True if image moved to zero doppler.    */
   double range_time_per_pixel;    /* Time per pixel in range.                */
   double azimuth_time_per_pixel;  /* Time per pixel in azimuth.              */
