@@ -32,7 +32,6 @@ export_as_geotiff (const char *metadata_file_name,
   unsigned int line_count = md->general->line_count;
   unsigned int sample_count = md->general->sample_count;
   size_t pixel_count = line_count * sample_count;
-  float *daf;
   unsigned char *pixels;
   double mask;
   int jj;
@@ -84,23 +83,18 @@ export_as_geotiff (const char *metadata_file_name,
 				 md->general->line_count, 
 				 image_data_file_name, start_of_file,
 				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  daf = get_image_data (md, image_data_file_name);
 
-  asfPrintStatus("Processing...\n");
-
-  /* It supposed to be big endian data, this converts to host byte
-     order.  */
-  for ( jj = 0 ; jj < pixel_count ; jj++ ) {
-    ieee_big32 (daf[jj]);
-  }
+  asfPrintStatus ("Processing...\n");
 
   /* Open output tiff file and GeoKey file descriptor.  */
   otif = XTIFFOpen (output_file_name, "w");
   asfRequire(otif != NULL, "Error opening output tiff file.\n");
   ogtif = GTIFNew (otif);
-  asfRequire(ogtif != NULL, "Error opening output GeoKey file descriptor.\n");
+  asfRequire (ogtif != NULL, "Error opening output GeoKey file descriptor.\n");
 
-  /* Scale float image down to bytes, if required */
+  /* Scale float image down to bytes, if required.  This is currently
+     done in a very memory intensive way and could stand to be
+     rewritten to use float_image.  */
   if (scale != NONE) {
     if (md->general->image_data_type == SIGMA_IMAGE ||
       md->general->image_data_type == GAMMA_IMAGE ||
@@ -115,7 +109,21 @@ export_as_geotiff (const char *metadata_file_name,
 
     asfPrintStatus("Scaling...\n");
 
+    /* Slurp in all the floating point data.  */
+    float *daf = get_image_data (md, image_data_file_name);
+    /* It supposed to be big endian data, this converts to host byte
+       order.  */
+    for ( jj = 0 ; jj < pixel_count ; jj++ ) {
+      ieee_big32 (daf[jj]);
+    }
+
+    /* Get a byte form of the floating point data.  */
     pixels = floats_to_bytes (daf, pixel_count, mask, scale);
+
+    /* Done with the data as floating point.  */
+    free (daf);
+
+    /* Its a byte image, so the sample_size is one.  */
     sample_size = 1;
   }
 
@@ -643,7 +651,6 @@ export_as_geotiff (const char *metadata_file_name,
 
   GTIFFree (ogtif);
   XTIFFClose (otif);
-  free (daf);
   float_image_free (iim);
   meta_free (md);
 }
