@@ -48,8 +48,7 @@ OBJ= \
         doopen.o \
         lasIO.o  \
         packed_deg.o \
-        squeeze. o 
-
+        squeeze.o 
 
 all: asf_las.a
 	rm *.o
