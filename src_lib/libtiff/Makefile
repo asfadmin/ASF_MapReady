@@ -53,6 +53,7 @@ endif
 
 # To enable JPEG support include -DJPEG_SUPPORT here.
 # To enable Deflate support add a -DZIP_SUPPORT here.
+# The ISOC99_SOURCE define causes some trouble so we filter it out.
 CFLAGS := $(COMPILE_POS_INDEP) $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
 
 OBJS  = tif_aux.o \

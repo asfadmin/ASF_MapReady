@@ -25,7 +25,9 @@ VERSION_POINT = 4
 #	epsg_datum.inc epsg_gcs.inc epsg_pm.inc epsg_units.inc geo_ctrans.inc\
 #	epsg_ellipse.inc epsg_pcs.inc epsg_proj.inc epsg_vertcs.inc geokeys.inc
 
-# '-I../libtiff' is for a slew of .h files that are needed from libtiff
+# '-I../libtiff' is for a slew of .h files that are needed from
+# libtiff.  THE _ISOC99_SOURCE flag causes some trouble so we filter
+# it out.
 CFLAGS := -I../libtiff $(patsubst -D_ISOC99_SOURCE, ,$(CFLAGS))
 
 OBJS  = ${XTIFF} \
