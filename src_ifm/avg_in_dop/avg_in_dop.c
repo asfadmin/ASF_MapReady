@@ -116,6 +116,8 @@ int main(int argc, char *argv[])
 	fprintf(fptr, "%e %e %e", avg_t1, avg_t2, avg_t3);
 
 	FCLOSE(fptr); 
+
+	return(0);
 }
 
 void usage(char *name)
