@@ -168,7 +168,7 @@ static void write_metadata (char *metafile, char *datafile, char *volfile,
    write_metadata_item_string (out, PROCESSING_INFO, buff);
    
    /* PROCESSING_DATE */
-   write_metadata_item_string (out, PLATFORM, "");
+   write_metadata_item_string (out, PROCESSING_DATE, "");
    
    /* PLATFORM */
    ceos_read_char (fd, START_OF_PPR + 7274, 10, tmp_value);
@@ -239,7 +239,7 @@ static void write_metadata (char *metafile, char *datafile, char *volfile,
       int number_of_samples;
       double ONE_MILL = 1000000;
 
-      number_of_samples = ceos_read_double(data_fd, START_OF_DSSR + 332, 8);
+      number_of_samples = ceos_read_binary (data_fd, START_OF_PDR + 9, 4);
       number_of_lines = ceos_read_int (data_fd, START_OF_IOF + 181, 6);
 
       /* TOP_RIGHT_CORNER_LAT/LONG */
