@@ -1,4 +1,5 @@
-#include "asf_convert_gui.h"
+//#include "asf_convert_gui.h"
+#include <gtk/gtk.h>
 
 #ifdef G_OS_WIN32
 #include <pango/pango.h>

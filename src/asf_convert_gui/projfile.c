@@ -1,5 +1,6 @@
 #include "asf_convert_gui.h"
 #include <ctype.h>
+#include "asf_nan.h"
 
 static GtkWidget * utm_menu = NULL;
 static GtkWidget * ps_menu = NULL;
@@ -351,7 +352,7 @@ static int parse_val(char * inbuf, char * key, double * val)
 
     while (isspace((int)(*p)))
 	*p-- = '\0';
- 
+
     if (g_ascii_strcasecmp(buf, key) == 0)
     {
 	p = eq + 1;
@@ -372,8 +373,8 @@ static int parse_val(char * inbuf, char * key, double * val)
 	    }
 	}
     }
-
-    free(buf);
+    
+    g_free(buf);
     return match;
 }
 
