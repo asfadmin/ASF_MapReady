@@ -327,7 +327,7 @@ if ( -e $graph_cache_file ) {
         # If we are computing direct dependencies for a single package
         # skip ahead unless we are looking at that package.
         if ( $p{'package'} ) {
-            unless ( $pkg_name eq $ARGV[0] ) {
+            unless ( $pkg_name eq $p{'package'} ) {
 	        next;
   	    }
         }
