@@ -67,11 +67,14 @@ The interesting options available are:
 =item B<-c> I<package_one>,I<package_two>, 
 B<--check>=I<package_one>,I<package_two>
 
-Check if I<package_one> depends or indirectly on I<package_two>.  If
-there is dependency, print some of the relevant unique dependency
-path(s) in the dependency graph, if not, print a message saying there
-is no dependency.  Note that not all unique dependency paths are
-necessarily shown.  A space after the comma will foul things up.
+Check if I<package_one> depends directly or indirectly on
+I<package_two>.  If there is dependency, print some of the relevant
+unique dependency path(s) in the dependency graph, if not, print a
+message saying there is no dependency.  Note that not all unique
+dependency paths are necessarily shown, because the dependency graph
+of ASF software packages is cyclic in places and I do not have an
+algorithm for finding unique paths in cyclic graphs.  A space after
+the comma will foul things up.
 
 For example,
 
@@ -81,8 +84,8 @@ find_dependences.perl -c create_dem,asf_meta
 
 =back
 
-will show all the ways in which the create_dem package depends on the
-asf_meta package.
+will show some of the ways in which the create_dem package depends on
+the asf_meta package.
 
 =item B<-i> I<package_one>,I<package_two>, 
 B<--independency>=I<package_one>,I<package_two>
