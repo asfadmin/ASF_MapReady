@@ -42,9 +42,10 @@ RM      = rm -f
 # are located.  Note that recent versions 
 #
 
+# Tell compiler to write position independent code (PIC)
 ifeq ($(SYS),solaris)
  ifeq ($(CC),cc)
-   COMPILE_POS_INDEP = -K PIC
+   COMPILE_POS_INDEP = -KPIC
  else
    COMPILE_POS_INDEP = -fpic
  endif
