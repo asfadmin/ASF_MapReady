@@ -9,10 +9,14 @@ YACC_SOURCES = metadata_parser.y
 LEX_SOURCES = metadata_lexer.l
 
 # Things used/needed by makes implicit rules for lex and yacc.
+# Need the GNU flex and bison, others are broken in variety of ways.
+LEX = flex
+YACC = bison -y			# -y means use yacc file name conventions.
 #YDEBUG_FLAGS = -t -v   # Uncomment this line to debug parser
 #LDEBUG_FLAGS = -d      # Uncomment this line to debug lexer
 YFLAGS = $(YDEBUG_FLAGS) -d
 LFLAGS = $(LDEBUG_FLAGS)
+LDLIBS = -lfl
 
 LEX_YACC_OBJS =  $(patsubst %.y, %.o, $(YACC_SOURCES)) \
                  $(patsubst %.l, %.o, $(LEX_SOURCES))
@@ -62,5 +66,13 @@ asf_meta: $(OBJS)
 	 # Make a link obeying the usual naming convention.
 	 ln -s -f $(LIBDIR)/asf_meta.a $(LIBDIR)/libasf_meta.a
 
+# Small independent testing program for the parser itself.
+parser_tester: $(OBJS) parser_tester.o
+
+# Rebuild everything if makefile or any ASF header changes.
+$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h)
+
 clean:
 	- rm $(OBJS)
+
+
