@@ -15,10 +15,10 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include "asf_meta.h"
 
-void meta_get_orig_img_dimensions(meta_parameters *sar, long *lines, long *samples)
+void meta_get_orig_img_dimensions(meta_parameters *meta, long *lines, long *samples)
 {
-  *lines = sar->ifm->orig_nLines;
-  *samples = sar->ifm->orig_nSamples;
+  *lines   = meta->general->line_count;
+  *samples = meta->general->sample_count;
 }
 
 /*Interferometry calls:*/
@@ -48,45 +48,45 @@ double meta_get_earth_radius(meta_parameters *meta, long line, long sample)
 	return er;
 }
 
-void meta_get_slants(meta_parameters *sar,double *slantFirst, double *slantPer)
+void meta_get_slants(meta_parameters *meta,double *slantFirst, double *slantPer)
 {
-	*slantFirst=sar->geo->slantFirst;
-	*slantPer=sar->geo->xPix;
+	*slantFirst = meta->sar->slant_range_first_pixel;
+	*slantPer   = meta->general->x_pixel_size;
 }
 
-double meta_get_k(meta_parameters *sar)
+double meta_get_k(meta_parameters *meta)
 {
-	return 2*PI/sar->geo->wavelen;
+	return 2*PI/meta->sar->wavelength;
 }
-double meta_scene_frac(meta_parameters *sar,int y)
+double meta_scene_frac(meta_parameters *meta,int y)
 {
-	return (double)(y - sar->ifm->orig_nLines/2)/(double)sar->ifm->orig_nLines;
+	return (double)(y - meta->general->line_count/2)/(double)meta->general->line_count;
 }
-void meta_interp_baseline(meta_parameters *sar,const baseline base,int y,double *Bn_y,double *Bp_y)
+void meta_interp_baseline(meta_parameters *meta,const baseline base,int y,double *Bn_y,double *Bp_y)
 {
-	double frac=meta_scene_frac(sar,y);
+	double frac=meta_scene_frac(meta,y);
 	*Bn_y = base.Bn + base.dBn*frac;
 	*Bp_y = base.Bp + base.dBp*frac;
 }
-double meta_flat(meta_parameters *sar,double y,double x)
+double meta_flat(meta_parameters *meta,double y,double x)
 {
-	return meta_look(sar,y,x)-sar->ifm->lookCenter;
+	return meta_look(meta,y,x) - meta_look(meta, 0, meta->general->sample_count/2);
 }
-double meta_flat_phase(meta_parameters *sar,const baseline base,int y,int x)
+double meta_flat_phase(meta_parameters *meta,const baseline base,int y,int x)
 {
-	double flat=meta_flat(sar,y,x);
+	double flat=meta_flat(meta,y,x);
 	double Bn_y,Bp_y;
-	meta_interp_baseline(sar,base,y,&Bn_y,&Bp_y);
-	return 2.0*meta_get_k(sar)*(Bp_y*cos(flat)-Bn_y*sin(flat));
+	meta_interp_baseline(meta,base,y,&Bn_y,&Bp_y);
+	return 2.0*meta_get_k(meta)*(Bp_y*cos(flat)-Bn_y*sin(flat));
 }
-double meta_phase_rate(meta_parameters *sar,const baseline base,int y,int x)
+double meta_phase_rate(meta_parameters *meta,const baseline base,int y,int x)
 {
-	double sr=meta_get_slant(sar,y,x);
-	double flat=meta_flat(sar,y,x);
-	double incid=meta_incid(sar,y,x);
+	double sr=meta_get_slant(meta,y,x);
+	double flat=meta_flat(meta,y,x);
+	double incid=meta_incid(meta,y,x);
 	double Bn_y,Bp_y;
-	meta_interp_baseline(sar,base,y,&Bn_y,&Bp_y);
+	meta_interp_baseline(meta,base,y,&Bn_y,&Bp_y);
 /*Note: this is the slant range times sin of the incidence angle, 
 	divided by the derivative of meta_flat_phase.*/
-	return (sr*sin(incid))/(2.0*meta_get_k(sar)*(-Bp_y*sin(flat)-Bn_y*cos(flat)));
+	return (sr*sin(incid))/(2.0*meta_get_k(meta)*(-Bp_y*sin(flat)-Bn_y*cos(flat)));
 }
