@@ -277,11 +277,11 @@ void fill_structure_field(char *field_name, void *valp)
       { MVECTOR->vec.pos.y = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "Z coordinate, earth-fixed [m]") )
       { MVECTOR->vec.pos.z = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "X velocity, earth-fixed [m]") )
+    if ( !strcmp(field_name, "X velocity, earth-fixed [m/s]") )
       { MVECTOR->vec.vel.x = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "Y velocity, earth-fixed [m]") )
+    if ( !strcmp(field_name, "Y velocity, earth-fixed [m/s]") )
       { MVECTOR->vec.vel.y = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "Z velocity, earth-fixed [m]") )
+    if ( !strcmp(field_name, "Z velocity, earth-fixed [m/s]") )
       { MVECTOR->vec.vel.z = VALP_AS_DOUBLE; return; }
   }
 
