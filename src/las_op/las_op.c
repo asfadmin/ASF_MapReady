@@ -170,7 +170,12 @@ int main(int argc,char **argv)
 			outbuf[x]=evaluate(cookie,variables);
 		}
 		putFloatLine(outF,&outDDR,y,outbuf);
+		if ((y%100)==0) {
+			printf(" Now Processing Line %d\r",y);
+			fflush(NULL);
+		}
 	}
+	printf("Processed %d Lines.          \n",y);
 	return 0;
 }
 
