@@ -117,20 +117,17 @@ void meta_free(meta_parameters *meta)
 {
   free(meta->general);
   free(meta->sar);
-  free(meta->projection);
+  if ( meta->projection != NULL ) 
+    free(meta->projection);
   /* If any state vectors were allocated, free them.  */
   if ( meta->state_vectors->num ) 
     free(meta->state_vectors->vecs);
   free(meta->state_vectors);
 
-  /* Dispose of deprecated structure elements, if they were ever
-     allocated.  */
-  if (meta->geo->proj != NULL)
-    free(meta->geo->proj);
+  /* Dispose of deprecated structure elements that are not alias for
+     new elements.  */
   free(meta->geo);
   free(meta->ifm);
-  if (meta->stVec!=NULL)
-    free(meta->stVec);
   meta->geo=NULL;
   meta->ifm=NULL;
   meta->stVec=NULL;
