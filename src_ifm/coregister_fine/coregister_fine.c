@@ -1,48 +1,65 @@
-/****************************************************************
-NAME: fico
+/******************************************************************************
+*                                                                             *
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* You should have received an ASF SOFTWARE License Agreement with this source *
+* code. Please consult this agreement for license grant information.          *
+*                                                                             *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*	Alaska Satellite Facility	    	                              *
+*	Geophysical Institute			http://www.asf.alaska.edu     *
+*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
+*	P.O. Box 757320							      *
+*	Fairbanks, AK 99775-7320					      *
+*									      *
+******************************************************************************/
+/*******************************************************************************
+NAME: coregister_fine
 
-SYNOPSIS:   fico <file1> <file2> <control> <out> 
-		[<grid resolution>] [-f] [-log <file>] [-quiet]
+SYNOPSIS:
+	coregister_fine [<grid resolution>] [-f] [-log <file>] [-quiet]
+	                <file1> <file2> <control> <out>
 
-DESCRIPTION: faster interferometric correlation offset estimator
-        Fico is a program used to perform sub-pixel
-    correlation during the process of interferometry.
-    It only works with complex images.
+DESCRIPTION:
+	Coregister_fine is a program used to perform sub-pixel correlation 
+	during the process of interferometry. It only works with complex images.
 
-        The way fico works is it correlates (that is,
-    match up) two images at various points in the image.  The
-    points it matches up are arranged in a grid.  The number of
-    points in this grid can be set by the command line.
+	The way coregister_fine works is it correlates (that is, match up) two 
+	images at various points in the image.  The points it matches up are 
+	arranged in a grid.  The number of points in this grid can be set by the 
+	command line.
 
-        Fico needs an gross estimate (to a single pixel) of the
-    offset between the two images; it gets this offset from its
-    control file.  For each grid point, Fico computes the phase
-    coherence of several offsets near the gross offset, and
-    searches for the highest coherence offset.  It then refines
-    this offset by performing a parabolic interpolation on the
-    nearby coherence values.
+	Coregister_fine needs an gross estimate (to a single pixel) of the 
+	offset between the two images; it gets this offset from its control 
+	file.  For each grid point, coregister_fine computes the phase coherence 
+	of several offsets near the gross offset, and searches for the highest 
+	coherence offset.  It then refines this offset by performing a parabolic 
+	interpolation on the nearby coherence values.
 
-        Fico now double-checks its result by running the same
-    calculation with the images reversed.  If the two results
-    agree, the point is "good" and is output.  If the results
-    disagree, the correlation is "bad" and is not output.
+	Coregister_fine now double-checks its result by running the same 
+	calculation with the images reversed.  If the two results agree, the 
+	point is "good" and is output.  If the results disagree, the correlation 
+	is "bad" and is not output.
 
-        In addition to the offset, fico also calculates the SNR
-    (Signal-to-Noise Ratio) at each point.  This can be used as
-    a measure of the quality of the correlation.  Correlation
-    points with a low SNR are bad.
+	In addition to the offset, coregister_fine also calculates the SNR 
+	(Signal-to-Noise Ratio) at each point.  This can be used as a measure of 
+	the quality of the correlation.  Correlation points with a low SNR are 
+	bad.
 
-        If fico does not find many good points, you may not
-    get an interferogram when you interfere the two images.
-    This can be the result of several things: your interferometric
-    baseline might be too big, and there will never be an
-    interferogram between the images; the initial offset
-    in the fico control file is incorrect, and fico cannot
-    find anything that looks like interferometric phase.
+	If coregister_fine does not find many good points, you may not get an 
+	interferogram when you interfere the two images. This can be the result 
+	of several things: your interferometric baseline might be too big, and 
+	there will never be an interferogram between the images; the initial 
+	offset in the coregister_fine control file is incorrect, and 
+	coregister_fine cannot find anything that looks like interferometric 
+	phase.
 
-        Increasing the number of grid points
-    slows the program down, but generates more output for
-    fit_line or fit_plane, which then improves the coherence.
+	Increasing the number of grid points slows the program down, but 
+	generates more output for fit_line or fit_plane, which then improves the 
+	coherence.
 
 EXTERNAL ASSOCIATES:
     NAME:                USAGE:
@@ -59,14 +76,13 @@ PROGRAM HISTORY:
     1.1     10/95        M. Shindle - Revised & cleaned
 			 T. Logan   - Port to Solaris, modified form
     1.2      4/96        M. Shindle - Apply ASF standards
-    2.0      8/96        M. Shindle - Implement modifications from Rob
-				      Fatland. No longer 
-    3.0	     2/97	 T. Logan   - modified to work on float complex
-				      output patches from ASP code
+    2.0      8/96        M. Shindle - Implement modifications from Rob Fatland.
+    3.0	     2/97	 T. Logan   - Modified to work on float complex output
+                                       patches from ASP code
     4.0      5/97	 O. Lawlor  - Modified to allow reverse correlation
-					(to check the first correlation)
-					and grid resolution, and do
-					a trilinear peak interpolation.
+					(to check the first correlation) and 
+					grid resolution, and do a trilinear peak 
+					interpolation.
     5.0      9/97	O. Lawlor   - Optimization-- replaced FFT with
 					much faster phase coherence method.
     5.1      5/98	O. Lawlor   - Perform forward and reverse correlation,
@@ -75,7 +91,10 @@ PROGRAM HISTORY:
                                         estimation
     5.21     7/01	R. Gens     - Added logfile and quiet switch
     5.5     10/03       P. Denny    - Standardize commandline parsing & order
-                                      Use meta 1.1 instead of DDR
+                                        Use meta v1.1 instead of DDR
+    5.6      2/04       P. Denny    - Change license from GPL to ASF. Change
+                                        name from fico to coregister_fine.
+
 HARDWARE/SOFTWARE LIMITATIONS:
 
 ALGORITHM DESCRIPTION:
@@ -84,38 +103,7 @@ ALGORITHM REFERENCES:
 
 BUGS:
 
-****************************************************************/
-/****************************************************************************
-*								            *
-*   Fico is used to perform sub-pixel co-registration on two images, to     *
-*   form an interferogram						    *
-*   Copyright (C) 2001  ASF Advanced Product Development    	    	    *
-*									    *
-*   This program is free software; you can redistribute it and/or modify    *
-*   it under the terms of the GNU General Public License as published by    *
-*   the Free Software Foundation; either version 2 of the License, or       *
-*   (at your option) any later version.					    *
-*									    *
-*   This program is distributed in the hope that it will be useful,	    *
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
-*   GNU General Public License for more details.  (See the file LICENSE     *
-*   included in the asf_tools/ directory).				    *
-*									    *
-*   You should have received a copy of the GNU General Public License       *
-*   along with this program; if not, write to the Free Software		    *
-*   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
-*									    *
-*   ASF Advanced Product Development LAB Contacts:			    *
-*	APD E-mail:	apd@asf.alaska.edu 				    *
-* 									    *
-*	Alaska SAR Facility			APD Web Site:	            *	
-*	Geophysical Institute			www.asf.alaska.edu/apd	    *
-*       University of Alaska Fairbanks					    *
-*	P.O. Box 757320							    *
-*	Fairbanks, AK 99775-7320					    *
-*									    *
-****************************************************************************/
+*******************************************************************************/
 
 #include "asf.h"
 #include "asf_meta.h"
@@ -125,11 +113,11 @@ BUGS:
 #define borderY 80
 #define minSNR 0.30	/*SNR's below this will be deleted.*/
 #define maxDisp 1.8	/*Forward and reverse correlations which differ by more than this will be deleted.*/
-#define VERSION 5.5
+#define VERSION 5.6
 
 /*Read-only, informational globals:*/
 int wid, len;			/*Width and length of source images.*/
-int intOffsetX, intOffsetY;	/*Image offset estimates from resolve.*/
+int intOffsetX, intOffsetY;	/*Image offset estimates from coregister_coarse.*/
 int srcSize=32, trgSize;
 float xMEP=4.1,yMEP=6.1;	/*Maximum Error Pixel values.*/
 complexFloat cZero;
@@ -190,13 +178,13 @@ int main(int argc, char *argv[])
 	strcpy(szOut,argv[currArg]);
 	
 	system("date");
-	printf("Program: fico\n\n");
+	printf("Program: coregister_fine\n\n");
 
-	if (!quietflag) printf("   Fico is correlating '%s' to '%s'.\n",szImg2,szImg1);
+	if (!quietflag) printf("   coregister_fine is correlating '%s' to '%s'.\n",szImg2,szImg1);
 
 	if (logflag) {
 	  StartWatchLog(fLog);
-          printLog("Program: fico\n\n");
+          printLog("Program: coregister_fine\n\n");
 	  if (fft_flag) 
 	    printLog("   Using Complex FFT instead of coherence for matching\n");
 	}
@@ -257,51 +245,23 @@ int main(int argc, char *argv[])
 	if (goodPoints<20)
 	{
 		sprintf(errbuf,"   *************** ERROR! ************\n"
-			"   **    fico was only able to find %i points which\n"
+			"   **    coregister_fine was only able to find %i points which\n"
 			"   ** correlated the same backwards and forwards.  This\n"
 			"   ** is not enough for a planar map!\n"
-			"   **    Problems with fico can usually be traced back to fico's\n"
+			"   **    Problems with coregister_fine can usually be traced back to coregister_fine's\n"
 			"   ** control file, which MUST have a good estimate of the \n"
 			"   ** single-pixel offset between the two images.\n"
 			"   **      Exiting with error!\n",goodPoints);
 		printErr(errbuf);
 	} 
 	else 
-		printf("   Fico attempted %d correlations, %d succeeded.\n\n",attemptedPoints,goodPoints);
+		printf("   coregister_fine attempted %d correlations, %d succeeded.\n\n",attemptedPoints,goodPoints);
 		if (logflag) {
-		  sprintf(logbuf,"   Fico attempted %d correlations, %d succeeded.\n\n",attemptedPoints,goodPoints);
+		  sprintf(logbuf,"   coregister_fine attempted %d correlations, %d succeeded.\n\n",attemptedPoints,goodPoints);
 		  printLog(logbuf);
 		}
 
 	exit(EXIT_SUCCESS);
-}
-
-void usage(char *name)
-{	
- printf("\n"
-	"USAGE:\n"
-	"   %s [-g <grid res>] [<-f>] [-log <file>] [-quiet]\n"
-	"        <file1> <file2> <control> <out>\n", name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   file1    First raw float complex base file name (.cpx & .meta)\n"
-	"   file2    Second raw float complex base file name (.cpx & .meta)\n"
-	"   control  Parameter file. This file is created by resolve.\n"
-	"   out      Ouput ASCII file of offset points.\n");
- printf("\n"
-	"OPTIONAL ARGUMETNS:\n"
-	"   -g <grid_res>   Number of grid points per axis\n"
-	"   -f              Use of complex FFT instead of coherence\n"
-	"   -log <file>     Allows the output to be written to a log file\n"
-	"   -quiet          Suppress the output to the essential\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Fico is used to perform sub-pixel co-registration on\n"
-	"   two images, to form an interferogram\n");
- printf("\n"
-	"Version: %.2f, ASF InSAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
 }
 
 bool outOfBounds(int x1, int y1, int x2, int y2, int srcSize, int trgSize)
@@ -506,3 +466,30 @@ void topOffPeak(float *peaks,int i, int j, int maxI, int maxJ,float *dx,float *d
 	else *dy=0;
 }
 
+void usage(char *name)
+{	
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-g <grid res>] [<-f>] [-log <file>] [-quiet]\n"
+	"                   <file1> <file2> <control> <out>\n", name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   file1    First raw float complex base file name (.cpx & .meta)\n"
+	"   file2    Second raw float complex base file name (.cpx & .meta)\n"
+	"   control  Parameter file. This file is created by coregister_coarse.\n"
+	"   out      Ouput ASCII file of offset points.\n");
+ printf("\n"
+	"OPTIONAL ARGUMETNS:\n"
+	"   -g <grid_res>   Number of grid points per axis\n"
+	"   -f              Use of complex FFT instead of coherence\n"
+	"   -log <file>     Allows the output to be written to a log file\n"
+	"   -quiet          Suppress the output to the essential\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Used to perform sub-pixel co-registration on two images, to form\n"
+	"   an interferogram\n");
+ printf("\n"
+	"Version: %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
+}
