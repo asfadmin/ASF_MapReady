@@ -147,7 +147,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"}","","End Universal Transverse Mercator Projection");
       break;
    default: 
-      err_die("unknown projection type seen in function '%s'", __func__);
+      err_die("unknown projection type seen in function '%s'\n", __func__);
     }
     meta_put_string(fp,"}","","End param");
     meta_put_string(fp,"}","","End projection");
