@@ -34,7 +34,7 @@ void meta_get_original_line_sample(meta_parameters *meta, int line,
                      + meta_parameters->general->start_line;
 }
 
-/* DEPRECATED.  You probably want meta_get_original_line_sample.*/
+/* DEPRECATED.  You probably want meta_get_original_line_sample.  */
 void meta_get_orig(void *fake_ddr, int y, int x,int *yOrig,int *xOrig)
 {
 	struct DDR *ddr=(struct DDR *)fake_ddr;
