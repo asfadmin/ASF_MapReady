@@ -48,7 +48,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 {
    char dataName[255],leaderName[255];/* CEOS names, typically .D and .L      */
    char fac[50],sys[50],ver[50];     /* Fields describing the SAR processor   */
-   char frame_temp[33];
    ceos_description *ceos=NULL;
    struct dataset_sum_rec *dssr=NULL;/* Data set summary record               */
    struct IOF_VFDR *iof=NULL;        /* Image File Descriptor Record          */
@@ -189,7 +188,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    meta->general->center_longitude = dssr->pro_long;
 
    /* Calculate ASF frame number from latitude considering the orbit direction */
-   meta->general->frame = 
+   meta->general->frame =
      asf_frame_calc(meta->general->sensor, meta->general->center_latitude, meta->general->orbit_direction);
 
    meta->general->re_major         = (dssr->ellip_maj < 10000.0) ? dssr->ellip_maj*1000.0 : dssr->ellip_maj;
@@ -368,7 +367,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       int vector_count=3;
       double data_int = dssr->sc_lin * fabs(meta->sar->azimuth_time_per_pixel);
       get_timeDelta(ceos, ppdr, meta);
-      if (data_int>15.0 && meta->general->data_type>=6) {
+      if (meta->general->data_type>=COMPLEX_BYTE) {
         while (data_int > 15.0) {
           data_int /= 2;
           vector_count = vector_count*2-1;
