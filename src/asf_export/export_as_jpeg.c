@@ -47,9 +47,9 @@ export_as_jpeg (const char *metadata_file_name,
   struct jpeg_error_mgr jerr;
   FILE *ofp;
 
-  asfRequire(md->general->data_type == REAL32,
-             "Input data type must be in big endian 32-bit floating point "
-	     "format.\n");
+  asfRequire (md->general->data_type == REAL32,
+	      "Input data type must be in big endian 32-bit floating point "
+	      "format.\n");
 
   /* Get the image data.  */
   const off_t start_of_file_offset = 0;
