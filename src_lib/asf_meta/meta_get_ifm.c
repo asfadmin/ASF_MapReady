@@ -36,9 +36,11 @@ double meta_get_sat_height(meta_parameters *meta, long line, long sample)
 
 double meta_get_earth_radius(meta_parameters *meta, long line, long sample)
 {
-	double re=6378144.0, rp=6356754.9, lat, ht, er, time;
+	double re, rp, lat, ht, er, time;
 	stateVector stVec;
 
+	re = meta->general->re_major;
+	rp = meta->general->re_minor;
 	time = meta_get_time(meta, line, sample);
         stVec = meta_get_stVec(meta, time);
         ht = sqrt(stVec.pos.x*stVec.pos.x+stVec.pos.y*stVec.pos.y+stVec.pos.z*stVec.pos.z);
