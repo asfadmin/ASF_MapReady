@@ -7,7 +7,7 @@ metadata files and meta_parameters structure.
    Internal-only routine.
 
 RETURN VALUE:
-   
+
 SPECIAL CONSIDERATIONS:
 
 PROGRAM HISTORY:
@@ -15,7 +15,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "meta_init.h"
-
+#include "get_ceos_names.h"
 
 void meta_new2old(meta_parameters *meta);
 
@@ -28,7 +28,7 @@ meta_parameters *meta_create(const char *fName)
 	meta_parameters *meta=NULL;
 	int success=FALSE;
 	meta=raw_init();
-	if (has_ceos_leader_extension(fName)) {
+	if (has_ceos_metadata_extension(fName)) {
 		ceos_init(fName,meta);
 		success=TRUE;
 	}
