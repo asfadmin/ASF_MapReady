@@ -67,6 +67,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
       }
     }
     fclose(output);
+    remove(log_file_name);
   }
 
   return the_output;
@@ -172,10 +173,10 @@ process_item(GtkTreeIter *iter,
 {
   gchar *in_data, *out_full, *status;
   int pid;
-  time_t s;
+  /* time_t s; */
 
   pid = getpid();
-  s = time(NULL);
+  /* s = time(NULL); */
 
   gtk_tree_model_get(GTK_TREE_MODEL(list_store), iter, 
 		     0, &in_data, 1, &out_full, 2, &status, -1);
@@ -202,7 +203,7 @@ process_item(GtkTreeIter *iter,
     {
       gchar * cmd_output;
 
-      g_snprintf(log_file, sizeof(log_file), "tmp_%d_%ld_import.log", pid, s);
+      g_snprintf(log_file, sizeof(log_file), "tmp%d.log", pid);
 
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
        "asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" \"%s\" 2>&1",
@@ -238,7 +239,7 @@ process_item(GtkTreeIter *iter,
     {
       gchar * cmd_output;
     
-      g_snprintf(log_file, sizeof(log_file), "tmp_%d_%ld_export.log", pid, s);
+      g_snprintf(log_file, sizeof(log_file), "tmp%d.log", pid);
     
       snprintf(convert_cmd, sizeof(convert_cmd),
 	       "asf_export -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
