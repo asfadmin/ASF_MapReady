@@ -10,7 +10,7 @@ dirs="/usr/local /usr $HOME/local"
 # dirs="/usr/local"
 
 for dir in $dirs; do
-    if [ -r $dir/lib/libglib-2.0.a \
+    if [ -r $dir/lib/libglib-2.0.a -a -r $dir/lib/libiconv.a \
          -a -r $dir/include/glib-2.0/glib.h ] ; then
 	echo "$dir"
         exit 0

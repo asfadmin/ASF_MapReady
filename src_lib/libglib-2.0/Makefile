@@ -25,9 +25,13 @@ EXISTING_GLIB_ROOT := $(strip $(shell ./find_glib.sh))
 
 # If we find we have to build GLIB, these variables specify the
 # tarball and what it unpacks into.
-UNPACK_DIR := glib-2.4.7
-TARFILE := $(UNPACK_DIR).tar
-ZIPFILE := $(TARFILE).gz
+GLIB_UNPACK_DIR := glib-2.4.7
+GLIB_TARFILE := $(GLIB_UNPACK_DIR).tar
+GLIB_ZIPFILE := $(GLIB_TARFILE).gz
+
+ICONV_UNPACK_DIR := libiconv-1.9.1
+ICONV_TARFILE := $(ICONV_UNPACK_DIR).tar
+ICONV_ZIPFILE := $(ICONV_TARFILE).gz
 
 # Copy the static libraries and headers for GLIB into the
 # appropriate places in the ASF directory structure.
@@ -54,21 +58,35 @@ stage_glib_stamp:
 	    cp $(EXISTING_GLIB_ROOT)/lib/libglib-2.0.a \
                $(LIB_STAGEDIR) ; \
             cp -r $(EXISTING_GLIB_ROOT)/include/glib-2.0 $(INCLUDE_STAGEDIR); \
-	    cp $(EXISTING_GLIB_ROOT)/lib/glib-2.0/include/glibconfig.h $(INCLUDE_STAGEDIR)/glib-2.0; \
+	    cp $(EXISTING_GLIB_ROOT)/lib/glib-2.0/include/glibconfig.h \
+	       $(INCLUDE_STAGEDIR)/glib-2.0; \
 	else \
-	    gunzip --to-stdout $(ZIPFILE) >$(TARFILE) ; \
-	    tar xvf $(TARFILE) ; \
-	    (cd $(UNPACK_DIR) ; \
-                ./configure --enable-static=yes --enable-shared=no --with-libiconv=gnu \
-		   --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
+	    gunzip --to-stdout $(ICONV_ZIPFILE) >$(ICONV_TARFILE) ; \
+	    tar xvf $(ICONV_TARFILE) ; \
+	    (cd $(ICONV_UNPACK_DIR) ; \
+                ./configure --enable-static=yes --enable-shared=yes \
+		   --enable-relocatable --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
 		make ; \
                 make install) ; \
-	    cp $(ROOT_STAGEDIR)/lib/glib-2.0/include/*.h $(INCLUDE_STAGEDIR)/glib-2.0; \
+	    gunzip --to-stdout $(GLIB_ZIPFILE) >$(GLIB_TARFILE) ; \
+	    tar xvf $(GLIB_TARFILE) ; \
+	    (cd $(GLIB_UNPACK_DIR) ; \
+                LDFLAGS="-L`pwd`/../$(ROOT_STAGEDIR)/lib" \
+                   CFLAGS="-I`pwd`/../$(ROOT_STAGEDIR)/include" \
+	           ./configure --enable-static=yes --enable-shared=no  \
+		   --with-libiconv=gnu --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
+		make ; \
+                make install) ; \
+	    cp $(ROOT_STAGEDIR)/lib/glib-2.0/include/*.h \
+	       $(INCLUDE_STAGEDIR)/glib-2.0; \
         fi
 	touch $@
 
 endif
 
 clean:
-	rm -rf $(ROOT_STAGEDIR) $(TARFILE) $(UNPACK_DIR) stage_glib_stamp \
-	   $(ASF_INCLUDE_DIR)/glib-2.0 $(LIBDIR)/libglib-2.0.a
+	rm -rf $(ROOT_STAGEDIR) $(GLIB_TARFILE) $(GLIB_UNPACK_DIR) \
+	   stage_glib_stamp \
+	   $(ASF_INCLUDE_DIR)/glib-2.0 $(LIBDIR)/libglib-2.0.a \
+	   $(ICONV_TARFILE) $(ICONV_UNPACK_DIR) \
+	   $(LIBDIR)/libiconv.a $(LIBDIR)/libcharset.a
