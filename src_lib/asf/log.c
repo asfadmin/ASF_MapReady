@@ -14,14 +14,3 @@ void printLog(char *msg)
 {
   fprintf(fLog, "%s", msg);
 }
-
-void printAndLog(char *format, ...)
-{
-  va_list ap;
-  va_start(ap, format);
-  if (!quietflag)
-    vprintf(format, ap);
-  if (logflag)
-    vfprintf(fLog, format, ap);
-  va_end(ap);
-}
