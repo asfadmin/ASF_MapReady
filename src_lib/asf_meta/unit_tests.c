@@ -60,7 +60,7 @@ START_TEST(test_meta_read_write_new_format)
 				       meta_reread->projection
 				                    ->param.atct.rlocal));
 }
-ENT_TEST
+END_TEST
 
 /* Machinery for running the 'check' tests.  */
 Suite *asf_meta_suite(void)
