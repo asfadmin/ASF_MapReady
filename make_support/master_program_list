@@ -220,6 +220,11 @@ PROGRAMS
 			asf_export
 			asf_import
 			asf_geocode
+		BINS
+			projections/albers_equal_area_conic/
+			projections/lambert_conformal_conic/
+			projections/polar_stereographic/
+			projections/utm/
 	}
 
 }
