@@ -20,7 +20,7 @@
 #endif
 #ifndef M_PI
 # define M_PI PI
-#endif 
+#endif
 #define D2R (PI/180.0)
 #define R2D (180.0/PI)
 
@@ -47,7 +47,7 @@ void bail(const char *message, ...)/* ; is coming, don't worry.  */
         first optional argument corresponding to the spec.  Function
         attribute noreturn says function doesn't return.  */
      __attribute__ ((format (printf, 1, 2), noreturn))
-#endif 
+#endif
 ; /* <-- Semicolon for bail prototype.  */
 
 /*****************************************
@@ -66,7 +66,7 @@ void StartWatchLog(FILE *fLog);
 void StopWatchLog(FILE *fLog);
 
 /*****************************************
- * FileUtil: 
+ * FileUtil:
  * A collection of file name and I/O utilities. Implemented * in
  * asf.a/fileUtil.c */
 
@@ -116,6 +116,8 @@ int split_base_and_ext(char *fileName,int side,char *baseName,char *extension);
    It returns a pointer to the opened file.*/
 FILE *fopenImage(const char *name,const char *accessType);
 
+/* Copy the file specified by "src" to the file specified by "dst". */
+void fileCopy(const char *src, const char *dst);
 
 /*****************************************
  * get_ceos_names: Functions that match CEOS files with each other using their
