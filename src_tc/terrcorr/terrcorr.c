@@ -184,7 +184,7 @@ int     leave,                  /* Flag -- Leave temporary processing files? */
 	skip;			/* Flag -- Skip SAR preprocessing?	     */
 int     error;                  /* Return status -- error checking           */
 int     i, j;                   /* A humble little loop counter              */
-struct  VFDRECV  facdr;         /* Value of Facility Data Record             */
+struct  VFDRECV  asf_facdr;     /* Value of Facility Data Record             */
 struct  DDR	 ddr;		/* LAS Data Descriptor Record		     */
 /*****************************************************************************
                   S E T    U P    P R O C E S S I N G
@@ -290,8 +290,8 @@ if (c_getddr(DEM, &ddr)!= 0)
 pixsiz = ddr.pdist_x;
 
 era = set_era(SAR,SARtrl,2);
-get_facdr(SARtrl,&facdr);
-/*ascdesc = facdr.ascdesc[0];*/
+get_asf_facdr(SARtrl,&asf_facdr);
+/*ascdesc = asf_facdr.ascdesc[0];*/
 
 printf("Preprocessing the SAR image\n"); 
 /*------------------------------------------------------------------------
@@ -308,7 +308,7 @@ printf("Preprocessing the SAR image\n");
 
     /* Resample Image / Strip CEOS Header 
      -------------------------------------*/
-    if (facdr.rapixspc < pixsiz)
+    if (asf_facdr.rapixspc < pixsiz)
       {
 	display("Resampling and Low-Pass Filtering SAR Image");
         sprintf(cmd,"resample %s %s %f\n",cSAR,pSAR,pixsiz);
@@ -318,7 +318,7 @@ printf("Preprocessing the SAR image\n");
         sprintf(cmd,"rm -f %s*\n",cSAR);
         if (system(cmd)==-1) bye();
       } 
-    else if (facdr.rapixspc == pixsiz)
+    else if (asf_facdr.rapixspc == pixsiz)
       {
 	sprintf(cmd,"mv %s.img %s.img\n",cSAR,pSAR); execute(cmd);	
 	sprintf(cmd,"mv %s.meta %s.meta\n",cSAR,pSAR); execute(cmd);	
