@@ -8,7 +8,9 @@ OBJS = interpolate.o \
        scaling.o \
        stats.o
 
+ifneq ($(SYS),win32)
 CFLAGS += $(shell pkg-config --cflags-only-I glib-2.0)
+endif
 
 LIBS = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
