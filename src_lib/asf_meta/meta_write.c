@@ -111,7 +111,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"}","","End long-track/cross-track projection");
       break;
     case'B':/*Lambert conformal conic projection.*/
-      meta_put_string(fp,"Lambert {","","Begin Lambert Conformal Conic projection");
+      meta_put_string(fp,"lambert {","","Begin Lambert Conformal Conic projection");
       meta_put_double(fp,"plat1:",meta->projection->param.lambert.plat1,"First standard parallel");
       meta_put_double(fp,"plat2:",meta->projection->param.lambert.plat2,"Second standard parallel");
       meta_put_double(fp,"lat0:",meta->projection->param.lambert.lat0,"Original latitude");
@@ -119,13 +119,13 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"}","","End Lambert Conformal Conic projection");
       break;
     case'P':/*Polarstereographicprojection.*/
-      meta_put_string(fp,"Polar_Stereographic {","","Begin Polar Stereographic Projection");
+      meta_put_string(fp,"ps {","","Begin Polar Stereographic Projection");
       meta_put_double(fp,"lat:",meta->projection->param.ps.slat,"Reference Latitude");
       meta_put_double(fp,"lon:",meta->projection->param.ps.slon,"Reference Longitude");
       meta_put_string(fp,"}","","End Polar Stereographic Projection");
       break;
     case'U':/*Universaltransversemercatorprojection.*/
-      meta_put_string(fp,"UTM {","","Begin Universal Transverse Mercator Projection");
+      meta_put_string(fp,"utm {","","Begin Universal Transverse Mercator Projection");
       meta_put_int   (fp,"zone:",meta->projection->param.utm.zone,"Zone Code");
       meta_put_string(fp,"}","","End Universal Transverse Mercator Projection");
       break;
