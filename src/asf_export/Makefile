@@ -10,8 +10,10 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libtiff.a \
 	$(LIBDIR)/libjpeg.a \
         $(LIBDIR)/libpng.a \
+	-lz \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libgslcblas.a \
+	-L$(HOME)/local/lib \
 	-lm
 
 OBJS  = asf_export.o
