@@ -1,8 +1,7 @@
-#include "util.h"
-#include "metadata.h"
+#include "../util/util.h"
+#include "../util/metadata.h"
 #include "ceos.h"
-#include "asf_sar.h"
-//#include "errno.h"
+#include "errno.h"
 #include <netinet/in.h>
 
 #define INFO ( getenv("INFO") != NULL)
@@ -33,7 +32,7 @@ int projection;
 
 
 /* Proto types */
-int generate_data_planes (char *infile, char *base);
+void generate_data_planes (char *infile, char *base);
 void write_metadata (char *metafile, char *file);
 
 void ussage ()
@@ -76,7 +75,7 @@ int main (int argc, char **argv)
 
 #undef CALLER
 #define CALLER "generate_data_planes"
-int generate_data_planes (char *infile, char *base)
+void generate_data_planes (char *infile, char *base)
 {
   int f_in, f_data, f_look, f_sigma;
   int mask = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
@@ -210,26 +209,18 @@ int generate_data_planes (char *infile, char *base)
   /* Close the output files */
   close (f_data);
   close (f_look);
-  close (f_sigma);
-};
+  close (f_sigma); 
+}
 
 void write_metadata (char *metafile, char *file)
 {
 
   FILE *out;
-  char buff1[1024];
   char output_file[1024];
-  int era;
   struct VFDRECV facdr;
   struct VRADDR dr;
   struct IOF_VFDR vfdr;
-  struct VMPDREC *mpdrec;
   struct dataset_sum_rec dssr;
-  struct pos_data_rec *ppdr;
-  struct att_data_rec *atdr;
-  struct data_hist_rec *dhr;
-  struct rng_spec_rec *rsr;
-  struct qual_sum_rec *dqsr;
   int a;
 
 
@@ -247,7 +238,6 @@ void write_metadata (char *metafile, char *file)
 	       file, errno, strerror (errno));
     }
 
-  /*era = set_era (argv[1], metafile, -1); */
   /* Read faclity data record */
   get_facdr (metafile, &facdr);
 
@@ -362,18 +352,6 @@ void write_metadata (char *metafile, char *file)
 
 
   write_metadata_item_string (out, IMAGE_FORMAT, STANDARD_FORMAT);
-
-/***************************************
-/* Things that where left out, but need to be included
-#define UPPER_LEFT_LAT "upper_left_lat"
-#define UPPER_LEFT_LONG "upper_left_long"
-#define UPPER_RIGHT_LAT "upper_left_lat"
-#define UPPER_RIGHT_LONG "upper_left_long"
-#define LOWER_LEFT_LAT "lower_left_lat"
-#define LOWER_LEFT_LONG "lower_left_long"
-#define LOWER_RIGHT_LAT "lower_right_lat"
-#define LOWER_RIGHT_LONG "lower_right_long"
-*****************************************/
 
 
   /* Save parameters neccissary for converting image */
