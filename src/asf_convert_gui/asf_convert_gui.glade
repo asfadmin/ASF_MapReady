@@ -1460,7 +1460,7 @@
 		      <child>
 			<widget class="GtkLabel" id="scaling_method_label">
 			  <property name="visible">True</property>
-			  <property name="label" translatable="yes">     Scaling Method: </property>
+			  <property name="label" translatable="yes">     Sample mapping method: </property>
 			  <property name="use_underline">False</property>
 			  <property name="use_markup">False</property>
 			  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -1481,7 +1481,7 @@
 		      <child>
 			<widget class="GtkOptionMenu" id="scaling_method_combobox">
 			  <property name="visible">True</property>
-			  <property name="tooltip" translatable="yes">How should the floating point values be scaled to byte range?</property>
+			  <property name="tooltip" translatable="yes">How should the floating point values be mapped to bytes?</property>
 			  <property name="can_focus">True</property>
 			  <property name="history">0</property>
 			  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:29:43 GMT"/>
