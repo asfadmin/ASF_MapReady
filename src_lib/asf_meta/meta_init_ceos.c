@@ -174,21 +174,13 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       meta->general->sample_count  = iof->sardata/iof->bytgroup;
    meta->general->start_line       = 0;
    meta->general->start_sample     = 0;
+   meta->general->x_pixel_size     = dssr->pixel_spacing;
+   meta->general->y_pixel_size     = dssr->line_spacing;
    if (asf_facdr && ceos->product!=CCSD) {
    /* For ASF SLC, the spacings are incorrect in the ASFFACDR - Tom Logan 3/01*/
       if (asf_facdr->rapixspc > 0.0)
          meta->general->x_pixel_size = asf_facdr->rapixspc;
       if (asf_facdr->azpixspc > 0.0)
-         meta->general->y_pixel_size = asf_facdr->azpixspc;
-   }
-   else {
-      meta->general->x_pixel_size  = dssr->pixel_spacing;
-      meta->general->y_pixel_size  = dssr->line_spacing;
-   }
-   if (ceos->product != CCSD) {
-      if ((asf_facdr) && (asf_facdr->rapixspc>0.0))
-         meta->general->x_pixel_size = asf_facdr->rapixspc;
-      if ((asf_facdr) && (asf_facdr->azpixspc>0.0))
          meta->general->y_pixel_size = asf_facdr->azpixspc;
    }
    meta->general->center_latitude  = dssr->pro_lat;
