@@ -18,7 +18,7 @@ if [ -z $osType ]; then
 	# No uname!  Must ask user.
 	echo "Could not match your system automatically..."
 	# Could be Linux, or Next:
-	echo "Please enter your system type (linux, next, etc.): \c"
+	echo -n "Please enter your system type (linux, next, etc.): "
 	read sys
 	echo "Configuring for " $sys .
 	osType=$sys
@@ -77,10 +77,13 @@ fi
 if [ ! -d bin/$sys ]; then
     mkdir bin/$sys
 fi
+if [ ! -d java ]; then
+    mkdir java/
+fi
 
 ######## Ask about GCC ############
 if [ ! $cc = "gcc" -a ! $batch_mode = "true" ]; then
-    echo "Would you like to use the GNU C Compiler 'gcc' (y/n)? \c"
+    echo -n "Would you like to use the GNU C Compiler 'gcc' (y/n)? "
     read resp
     if [ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]; then
         cc="gcc"
@@ -147,7 +150,9 @@ CFLAGS  = $(FLAGS) $(DEBUGFLAGS)
 LDFLAGS = $(DEBUGLIBS)
 LIBDIR  = ../../lib/$(SYS)
 BINDIR  = ../../bin/$(SYS)
+JAVADIR = ../../java
 EOF
+
 echo "$makeExtra" >>system_rules
 
 # Look for the X-Windows directory
@@ -194,7 +199,7 @@ then
 	echo "Would you like this script to automatically add these lines:"
 	echo "  --> "$addWhat1
 	echo "  --> "$addWhat2
-	echo "to your "$addWhere" file (y/n)? \c"
+	echo -n "to your "$addWhere" file (y/n)? "
 	read resp
 	if [ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]
 	then
