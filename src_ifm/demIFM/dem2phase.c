@@ -112,7 +112,7 @@ int main(int argc, char **argv)
 			strcpy(logFile, GET_ARG(1));
 			fLog = FOPEN(logFile, "a");
 			StartWatchLog(fLog);
-			printLog("Program: create_dem_grid\n\n");
+			printLog("Program: dem2phase\n\n");
  		}
 		else {printf("\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
 	}
