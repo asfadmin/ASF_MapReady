@@ -8,8 +8,7 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	-lm
 
-OBJS  = lzFetch.o \
-	least_squares.o \
+OBJS  = least_squares.o \
 	matrix.o
 
 all: image_layers clean
