@@ -214,6 +214,8 @@ int main(int argc, char *argv[])
   if (checkForOption("-help", argc, argv) != -1) /* Most important */
     help_page();
 
+  if (argc != 4) usage();
+
   /* Make sure to set log & quiet flags (for use in our libraries) */
   logflag = (flags[f_LOG]!=FLAG_NOT_SET) ? TRUE : FALSE;
   quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
