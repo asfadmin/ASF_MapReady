@@ -89,6 +89,32 @@ int qsorter(const seedRec **a,const seedRec **b)
 	return 0;
 }
 
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-b] [-log <file>] <inDEM> <inAmp> <outSeeds>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   inDEM     The input DEM image.\n"
+	"   inAmp     The input SAR amplitude image.  The seed points\n"
+	"               are written relative to this image.\n"
+	"   outSeeds  Output list of seed points (x, y, height) found in DEM.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"    -b    seed points will be selected on the\n"
+	"            basis of *maximal* local slope\n"
+	"    -log  Option to have output written to a log <file>.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   %s searches a slant-range LAS 6.0 DEM for good\n"
+	"   seed point locations.\n",name);
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n", VERSION);
+ exit(1);
+}
+
 int main(int argc, char **argv)
 {
 	int xCount,yCount,x,y,seedNo;
@@ -225,28 +251,3 @@ int main(int argc, char **argv)
 	return(0);
 }
 
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-b] [-log <file>] <inDEM> <inAmp> <outSeeds>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   inDEM     The input DEM image.\n"
-	"   inAmp     The input SAR amplitude image.  The seed points\n"
-	"               are written relative to this image.\n"
-	"   outSeeds  Output list of seed points (x, y, height) found in DEM.\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"    -b    seed points will be selected on the\n"
-	"            basis of *maximal* local slope\n"
-	"    -log  Option to have output written to a log <file>.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   %s searches a slant-range LAS 6.0 DEM for good\n"
-	"   seed point locations.\n",name);
- printf("\n"
-	"Version %.2f, ASF SAR Tools\n"
-	"\n", VERSION);
- exit(1);
-}

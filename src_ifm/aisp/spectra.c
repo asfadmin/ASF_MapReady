@@ -78,6 +78,32 @@ BUGS:
 #define FFT_LENGTH 1024
 #define NUM_ARGS 1
 
+
+
+void usage (char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-x <startX>]  [-y <startY>] <raw>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENT:\n"
+	"   <raw>   Raw complex signal data file.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -x   sample <startX> (Default is 0)\n"
+	"   -y   line <startY> (Default is 0)\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Computes the range and azimuth power spectra of a complex signal data file.\n"
+	"   These spectra are written to files 'spectra_range' and 'spectra_az' and are\n"
+	"   both %d points long.\n", FFT_LENGTH);
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n", VERSION);
+ exit(EXIT_FAILURE);
+}
+
+
 int main(int argc,char **argv)
 {
 	int startX=0,startY=0;
@@ -153,28 +179,5 @@ int main(int argc,char **argv)
 	return 0;
 }
 
-
-void usage (char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-x <startX>]  [-y <startY>] <raw>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENT:\n"
-	"   <raw>   Raw complex signal data file.\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"   -x   sample <startX> (Default is 0)\n"
-	"   -y   line <startY> (Default is 0)\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Computes the range and azimuth power spectra of a complex signal data file.\n"
-	"   These spectra are written to files 'spectra_range' and 'spectra_az' and are\n"
-	"   both %d points long.\n", FFT_LENGTH);
- printf("\n"
-	"Version %.2f, ASF InSAR Tools\n"
-	"\n", VERSION);
- exit(EXIT_FAILURE);
-}
 
 

@@ -85,6 +85,29 @@ BUGS:
 
 int getNextSarPt(struct DDR *ddr,int gridNo,int *x,int *y);
 
+static
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <file>] <las DEM> <las SAR> <SAR Ceos> <out_grid>\n",name);
+ printf("\n"
+	"ARGUMENTS:\n"
+	"   <las DEM>   A LAS 6.0 DEM to create a grid upon.\n"
+	"   <las SAR>   A LAS 6.0 SAR file for which to create the grid\n"
+	"   <SAR Ceos>  The ASF metadata file for the SAR file\n"
+	"   <out_grid>  A mapping grid, for use with fit_plane\n"
+	"   -log <file> Allows the output to be written to a log file (optional)\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   %s creates a grid which can be used to extract a\n"
+	"   portion of a DEM to fit a given SAR image.\n",name);
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n",VERSION);
+ exit(1);
+}
+
 int main(int argc,char *argv[])
 {
 	int iflg=0;
@@ -187,26 +210,4 @@ int getNextSarPt(struct DDR *ddr,int gridNo,int *x,int *y)
 	*y = 1 + (float) ytmp / (float) (gridResY-1) * (ddr->nl-1);
 
 	return 1;
-}
-
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-log <file>] <las DEM> <las SAR> <SAR Ceos> <out_grid>\n",name);
- printf("\n"
-	"ARGUMENTS:\n"
-	"   <las DEM>   A LAS 6.0 DEM to create a grid upon.\n"
-	"   <las SAR>   A LAS 6.0 SAR file for which to create the grid\n"
-	"   <SAR Ceos>  The ASF metadata file for the SAR file\n"
-	"   <out_grid>  A mapping grid, for use with fit_plane\n"
-	"   -log <file> Allows the output to be written to a log file (optional)\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   %s creates a grid which can be used to extract a\n"
-	"   portion of a DEM to fit a given SAR image.\n",name);
- printf("\n"
-	"Version %.2f, ASF SAR Tools\n"
-	"\n",VERSION);
- exit(1);
 }

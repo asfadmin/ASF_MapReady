@@ -131,6 +131,39 @@ int doConcat=1;		/* Copy data?          */
 int colorConcat=0;	/* Create color image? */
 int colorCur=0;		/* Current color band  */
 
+static
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-c] [-m msk][-v ovr] <outfile> <outfile_nl> <outfile_ns>\n" 
+	"                 <infile1> <infile1_sl> <infile1_ss>\n"
+	"                 <infile2> <infile2_sl> <infile2_ss>\n"
+	"                 [<infileN> <infileN_sl> <infileN_ss>] [...]\n", name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   outfile     Output file name\n"
+	"   outfile_nl  Number of line in output image\n"
+	"   outfile_ns  Number of samples in the output image\n"
+	"   infileN     Input file name #N\n"
+	"   infileN_sl  Starting line in output image to place fileN\n"
+	"   infileN_ss  Starting samp in output image to place fileN\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"	
+	"   -c      do color concatenation (first image-> red; second -> green...)\n"
+	"   -m msk  mask value for background pixels (0-255)\n"
+	"   -v ovr  Overlap pixel option.  Can be REPLAC, LEAVE, or AVER\n"
+	"              <default REPLAC>\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   concatm -- Creates an output image by overlaying each input\n" 
+	"   image into the output space at the user specified locations.\n");
+ printf("\n"
+	"Version %.2f, ASF SAR TOOLS\n"
+	"\n", VERSION);
+ exit(1);
+}                                     /*ASF*/
+
 int main(int argc,char **argv)
 {
  double line_inc;		 /* increment value in line direction	      */
@@ -376,34 +409,3 @@ int main(int argc,char **argv)
 }
 
 
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-c] [-m msk][-v ovr] <outfile> <outfile_nl> <outfile_ns>\n" 
-	"                 <infile1> <infile1_sl> <infile1_ss>\n"
-	"                 <infile2> <infile2_sl> <infile2_ss>\n"
-	"                 [<infileN> <infileN_sl> <infileN_ss>] [...]\n", name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   outfile     Output file name\n"
-	"   outfile_nl  Number of line in output image\n"
-	"   outfile_ns  Number of samples in the output image\n"
-	"   infileN     Input file name #N\n"
-	"   infileN_sl  Starting line in output image to place fileN\n"
-	"   infileN_ss  Starting samp in output image to place fileN\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"	
-	"   -c      do color concatenation (first image-> red; second -> green...)\n"
-	"   -m msk  mask value for background pixels (0-255)\n"
-	"   -v ovr  Overlap pixel option.  Can be REPLAC, LEAVE, or AVER\n"
-	"              <default REPLAC>\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   concatm -- Creates an output image by overlaying each input\n" 
-	"   image into the output space at the user specified locations.\n");
- printf("\n"
-	"Version %.2f, ASF SAR TOOLS\n"
-	"\n", VERSION);
- exit(1);
-}                                     /*ASF*/

@@ -88,7 +88,34 @@ int genab(char *datafile, char *basefile, char *metaName, char *matfile,
 int bp(char *matfile, char *vecfile, char *newbase);
 int test_base(char *basefile, char *matfile, char *vecfile);
 
-
+static
+void usage (char *name) {
+ printf("\n"
+ 	"USAGE:\n"
+	"   %s [-keep <iter>] [-log <file>] [-quiet]\n"
+	"            <phase> <tie_points> <meta> <old_base> <new_base>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   phase        Unwrapped interferogram phase file\n"
+	"   tie_points   Tie-point location file.\n"
+	"   meta         Filename containing interferogram's metadata.\n"
+	"   old_base     Baseline file containg four parameters:\n"
+	"                  Bn delta_Bn Bp delta_Bp\n"
+	"   new_base     Refined baseline file containg four parameters:\n"
+	"                  Bn delta_Bn Bp delta_Bp\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -keep <iter>  Keep intermediate products.  Iterations=<iter>\n"
+	"   -log <file>   Allows the output to be written to a log file\n"
+	"   -quiet	  Suppresses the output to the essential\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Corrects a given baseline for an interferogram using tie points.\n");
+ printf("\n"
+	"Version: %.2f, ASF SAR Tools\n"
+	"\n", VERSION);
+ exit(EXIT_FAILURE);
+}
 
 int main(int argc,char *argv[])
 {
@@ -154,33 +181,4 @@ int main(int argc,char *argv[])
   
   return(0);
 }
-
-void usage (char *name) {
- printf("\n"
- 	"USAGE:\n"
-	"   %s [-keep <iter>] [-log <file>] [-quiet]\n"
-	"            <phase> <tie_points> <meta> <old_base> <new_base>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   phase        Unwrapped interferogram phase file\n"
-	"   tie_points   Tie-point location file.\n"
-	"   meta         Filename containing interferogram's metadata.\n"
-	"   old_base     Baseline file containg four parameters:\n"
-	"                  Bn delta_Bn Bp delta_Bp\n"
-	"   new_base     Refined baseline file containg four parameters:\n"
-	"                  Bn delta_Bn Bp delta_Bp\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"   -keep <iter>  Keep intermediate products.  Iterations=<iter>\n"
-	"   -log <file>   Allows the output to be written to a log file\n"
-	"   -quiet	  Suppresses the output to the essential\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Corrects a given baseline for an interferogram using tie points.\n");
- printf("\n"
-	"Version: %.2f, ASF SAR Tools\n"
-	"\n", VERSION);
- exit(EXIT_FAILURE);
-}
-
 
