@@ -30,9 +30,6 @@ PROGRAM HISTORY:
 #include <unistd.h>
 #include <fcntl.h>
 
-#define TRUE  1
-#define FALSE 0
-
 int fileExist(char *f)
 {
   int fd;
