@@ -10,6 +10,7 @@ DESCRIPTION:
 ******************************************************************************/
 
 #include "asf_meta.h"
+#include "float_image.h"
 
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 #define ASF_EXPORT_FLOAT_MICRON 0.000000001
@@ -45,6 +46,7 @@ typedef enum {
   NEAREST=1,
   BILINEAR,
   BICUBIC,
+  SPLINES,
   SINC
 } interpolate_type_t;
 
@@ -72,8 +74,7 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
 	     int nLooks);
 
 /* Prototypes from interpolate.c *********************************************/
-float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines, 
-		  int nSamples, float yLine, float xSample, 
-		  weighting_type_t weighting, int sinc_points);
+float interpolate(interpolate_type_t interpolation, FloatImage *inbuf, float yLine, 
+		  float xSample, weighting_type_t weighting, int sinc_points);
 
 #endif
