@@ -3,7 +3,8 @@ NAME: stats
 
 SYNOPSIS: stats [-mask <value>] [-log <logFile>] [-quiet]
                 [-overmeta] [-nometa] [-overstat] [-nostat]
-		<sar_name>
+		[-startline <line>] [-startsample <sample>
+                [-width <width>] [-height <height>] <sar_name>
 
 DESCRIPTION:
 	Takes statistics on an image file and prints them out to
@@ -24,6 +25,7 @@ PROGRAM HISTORY:
     ---------------------------------------------------------------
     1.0     3/03     P. Denny     Put sar image file statistics into
                                    meta file and stats file
+    1.1     4/23     B. Kerin     Added windowing functionality.
 
 HARDWARE/SOFTWARE LIMITATIONS:
 	None known
@@ -69,7 +71,7 @@ BUGS: None known
 #include "asf_meta.h"
 #include "asf_nan.h"
 
-#define VERSION 1.0
+#define VERSION 1.1
 
 /* For floating point comparisons.  */
 #define MICRON 0.00000001
@@ -105,6 +107,12 @@ int main(int argc, char **argv)
 	FILE *sar_file;              /* SAR data file pointer to take stats on*/
 	FILE *stat_file;             /* File pointer in which to put stats    */
 	char stat_name[261];         /* Stats file name                       */
+	/* We initialize these to a magic number for checking.  */
+	int start_line = -1;	/* Window starting line.  */
+	int start_sample = -1;	/* Window starting sample.  */
+	int window_width = -1;	/* Window width in lines.  */
+	int window_height = -1;	/* Window height in samples.  */
+
 	extern int currArg;          /* Pre-initialized to 1                  */
 
 /* parse command line */
@@ -137,8 +145,48 @@ int main(int argc, char **argv)
 		else if (strmatch(key,"-nostat")) {
 			nostat_flag=TRUE;
 		}
+		else if (strmatch(key,"-startline")) {
+			CHECK_ARG(1);
+			nometa_flag=TRUE; /* Implied.  */
+			start_line = atol(GET_ARG(1));
+			if ( start_line < 0 ) {
+			  printf("error: -startline argument must be greater than or equal to zero\n");
+			  usage(argv[0]);
+			}
+
+		}
+		else if (strmatch(key,"-startsample")) {
+			CHECK_ARG(1);
+			nometa_flag=TRUE; /* Implied.  */
+			start_sample = atol(GET_ARG(1));
+			if ( start_sample < 0 ) {
+			  printf("error: -startsample argument must be greater than or equal to zero\n");
+			  usage(argv[0]);
+			}
+
+		}
+		else if (strmatch(key,"-width")) {
+			CHECK_ARG(1);
+			nometa_flag=TRUE; /* Implied.  */
+			window_width = atol(GET_ARG(1));
+			if ( window_width < 0 ) {
+			  printf("error: -width argument must be greater than or equal to zero\n");
+			  usage(argv[0]);
+			}
+		}
+		else if (strmatch(key,"-height")) {
+			CHECK_ARG(1);
+			nometa_flag=TRUE; /* Implied.  */
+			window_height = atol(GET_ARG(1));
+			if ( window_height < 0 ) {
+			  printf("error: -height argument must be greater than or equal to zero\n");
+			  usage(argv[0]);
+			}
+		}
+
 		else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
 	}
+
 	if ((argc-currArg)<1) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 	strcpy (sar_name, argv[currArg]);
 	create_name(meta_name, sar_name, ".meta");
@@ -148,6 +196,27 @@ int main(int argc, char **argv)
 	meta = meta_read(meta_name);
 	num_lines = meta->general->line_count;
 	num_samples = meta->general->sample_count;
+
+	if ( start_line == -1 ) start_line = 0;
+	if ( start_line > num_lines ) {
+	  printf("error: -startline argument is larger than index of last line in image\n"); 
+	  exit(EXIT_FAILURE);
+	}
+	if ( start_sample == -1 ) start_sample = 0;
+	if ( start_sample > num_samples ) {
+	  printf("error: startsample is larger than index of last sample in image\n"); 
+	  exit(EXIT_FAILURE);
+	}
+	if ( window_width == -1 ) window_width = num_lines;
+	if ( start_line + window_width > num_lines ) {
+	  printf("warning: window specified with -startline, -width options doesn't fit in image\n");
+	}
+	if ( window_height == -1 ) window_height = num_samples;
+	if ( start_sample + window_height > num_lines ) {
+	  printf("warning: window specified with -startsample, -height options doesn't fit in image\n");
+	}
+
+
 
 /* Make sure we don't over write any files that we don't want to */
 	if (meta->stats && !overmeta_flag && !nometa_flag) {
@@ -185,14 +254,15 @@ int main(int argc, char **argv)
 	sum_of_samples=0.0;
 	sum_of_squared_samples=0.0;
 	percent_complete=0;
-	for (line=0; line<num_lines; line++) {
+	for (line=start_line; line<start_line+window_width; line++) {
 		if ((line*100/num_lines==percent_complete) && !quietflag) {
 			printf("\rFirst data sweep: %3d%% complete.",
 				percent_complete++);
 			fflush(NULL);
 		}
 		get_double_line(sar_file, meta, line, data_line);
-		for (sample=0; sample<num_samples; sample++) {
+		for (sample=start_sample; sample<start_sample+window_height-1; 
+		     sample++) {
 			if ( mask_flag && FLOAT_EQUIVALENT(data_line[sample],mask) )
 				continue;
 			if (data_line[sample] < min) min=data_line[sample];
@@ -222,14 +292,15 @@ int main(int argc, char **argv)
 	diff_squared_sum=0.0;
 	mean = sum_of_samples / (double)samples_counted;
 	percent_complete=0;
-	for (line=0; line<num_lines; line++) {
+	for (line=start_line; line<start_line+window_width; line++) {
 		if ((line*100/num_lines==percent_complete) && !quietflag) {
 			printf("\rSecond data sweep: %3d%% complete.",
 				percent_complete++);
 			fflush(NULL);
 		}
 		get_double_line(sar_file, meta, line, data_line);
-		for (sample=0; sample<num_samples; sample++) {
+		for (sample=start_sample; sample<start_sample+window_height; 
+		     sample++) {
 			int bin = (meta->general->data_type == BYTE)
 				? (int)data_line[sample]
 				: (int)(slope*data_line[sample]+offset);
@@ -243,16 +314,19 @@ int main(int argc, char **argv)
 	FREE(data_line);
 	FCLOSE(sar_file);
 
-/* Populate meta stats structure for writing */
+	/* Populate meta stats structure for writing.  */
 	if (!meta->stats)
-		meta->stats = meta_stats_init();
+	  meta->stats = meta_stats_init();
 	meta->stats->min = min;
 	meta->stats->max = max;
 	meta->stats->mean = mean;
 	meta->stats->rmse = sqrt( fabs(
-		diff_squared_sum / (double)samples_counted ) );
+				       diff_squared_sum 
+				       / (double)samples_counted ) );
 	meta->stats->std_deviation = sqrt( fabs(
-		diff_squared_sum / (double)(samples_counted-1) ) );
+						diff_squared_sum 
+						/ (double)(samples_counted
+							   -1) ) );
 	meta->stats->mask = mask;
 
 /* Write out .meta and .stat files */
@@ -328,7 +402,12 @@ void usage(char *name)
 	"   -overmeta  Force overwrite of existing .meta file.\n"
 	"   -nometa    Do not write out a .meta file.\n"
 	"   -overstat  Force overwrite of existing .stat file.\n"
-	"   -nostat    Do not write out a .stat file.\n");
+	"   -nostat    Do not write out a .stat file.\n"
+        "   -startline <line> start counting at image line line (implies -nometa)\n"
+        "   -startsample <sample> start counting at image sample sample (implies -nometa)\n"
+	"   -width <width> only process width lines (implies -nometa)\n"
+	"   -height <height> only process height samples per line (implies -nometa)\n");
+
  printf("\n"
 	"DESCRIPTION:\n"
 	"   This program takes statistics on a SAR data file and writes them\n"
