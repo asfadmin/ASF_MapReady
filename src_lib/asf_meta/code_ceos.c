@@ -41,7 +41,9 @@ VERSION         DATE	AUTHOR
   1.4		6/01	P. Denny (ASF)		fixed flt2asc & long2asc
 						 to deal with blank input
   1.5 		9/01	S. Watts (ASF)		fixed code_dqs to find
-						all valid values.  
+						 all valid values.
+  2.0		9/03    R. Gens / P. Denny      Added new code functions
+						 for more CEOS records
 *********************************************************************/
 
 void right_justify(char buf[], int len)
@@ -165,7 +167,16 @@ SYNTAX:
   Code_DHR(unsigned char* bf, struct data_hist_rec* q, codingDir dir)
   Code_DH(unsigned char *bf, struct hist_dset* q, codingDir dir)
   Code_RSR(unsigned char *bf, struct rng_spec_rec *q, codingDir dir)
-  Code_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir)
+  Code_ASF_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir)
+  Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
+  Code_PPR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
+
+  Code_VDR(unsigned char *bf, struct VDR *q, codingDir dir)
+  Code_LFPR(unsigned char *bf, struct FPR *q, codingDir dir)
+  Code_DFPR(unsigned char *bf, struct FPR *q, codingDir dir)
+  Code_TR(unsigned char *bf, struct TR *q, codingDir dir)
+
+  Code_NVDR(unsigned char *bf, struct VDR *q, codingDir dir)
 
 DESCRIPTION:
   These procedures convert ASF metadata structures to and from their 
@@ -408,28 +419,39 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
 	strV(line_cont,1670,8); strV(clutterlock_flg,1678,4);
 	strV(auto_focus,1682,4); fltV(line_spacing,1686,16);
 	fltV(pixel_spacing,1702,16); strV(rngcmp_desg,1718,16);
-	if (era==0) { int i;
- 	  intV(annot_pts,2006,8);
- 	  if (q->annot_pts>=64)
- 	  	q->annot_pts=63;
-	  for (i=0,off=2022; i< q->annot_pts; i++) {
-   	    intV(annot_line[i],off,8); intV(annot_pixel[i],off,8);
-	    strV(annot_text[i],off,16);
+	if (strncmp(q->fac_id, "ASF", 3)==0) {
+	  if (era==0) {
+	    int i;
+ 	    intV(annot_pts,2006,8);
+ 	    if (q->annot_pts>=64)
+ 	  	  q->annot_pts=63;
+	    for (i=0,off=2022; i< q->annot_pts; i++) {
+   	      intV(annot_line[i],off,8); intV(annot_pixel[i],off,8);
+	      strV(annot_text[i],off,16);
+	    }
 	  }
-	} else {
-  	  intV(no_beams,1766,2);
-	  strV(beam1,1768,4); strV(beam2,1772,4); 
-	  strV(beam3,1776,4); strV(beam4,1780,4);
-	  sngV(prf1,1784,8); sngV(prf2,1792,8);
-	  sngV(prf3,1800,8); sngV(prf4,1808,8);
-	  sngV(rng_gate1,1816,8); sngV(rng_gate2,1824,8);
-	  sngV(rng_gate3,1832,8); sngV(rng_gate4,1840,8);
-	  intV(tot_pls_burst,1848,4); intV(val_pls_burst,1852,4);
-	  intV(az_ovlp_nxt_img,1856,8); intV(rg_off_nxt_img,1864,8);
-          strV(cal_params_file,1872,32);
-          strV(scan_results_file,1904,32);
-          strV(scanner_version,1936,16);
-          strV(decode_version,1952,16);
+	  else {
+  	    intV(no_beams,1766,2);
+	    strV(beam1,1768,4); strV(beam2,1772,4); 
+	    strV(beam3,1776,4); strV(beam4,1780,4);
+	    sngV(prf1,1784,8); sngV(prf2,1792,8);
+	    sngV(prf3,1800,8); sngV(prf4,1808,8);
+	    sngV(rng_gate1,1816,8); sngV(rng_gate2,1824,8);
+	    sngV(rng_gate3,1832,8); sngV(rng_gate4,1840,8);
+	    intV(tot_pls_burst,1848,4); intV(val_pls_burst,1852,4);
+	    intV(az_ovlp_nxt_img,1856,8); intV(rg_off_nxt_img,1864,8);
+	    strV(cal_params_file,1872,32);
+	    strV(scan_results_file,1904,32);
+	    strV(scanner_version,1936,16);
+	    strV(decode_version,1952,16);
+	  }
+	}
+	if (strncmp(q->fac_id, "ES", 2)==0) {
+	  int i;
+	  for (i=0; i<3; i++) fltV(rng_time[i],1766+i*16,16);
+	  strV(az_time_first,1814,24);
+	  strV(az_time_center,1838,24);
+	  strV(az_time_last,1862,24);
 	}
 }
 
@@ -467,7 +489,7 @@ void Code_PPDR (unsigned char *bf, struct pos_data_rec* q, codingDir dir)
         fltV(pos_vec[i][j],off,22);
        }
      }
-    strV(spare_ppr_1,off,242);
+/*  strV(spare_ppr_1,off,242); - caused CDPF data some grief & is not required */
 }
 
 void Code_ATDR(unsigned char *bf, struct att_data_rec *q, codingDir dir)
@@ -667,7 +689,7 @@ void Code_RSR(unsigned char *bf, struct rng_spec_rec *q, codingDir dir)
     strV(spare_rsr_3,off,1052);
 }
 
-void Code_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir)
+void Code_ASF_FACDR(unsigned char *bf,struct VFDRECV *q,int era,codingDir dir)
 {
     int off=12;
 
@@ -719,4 +741,209 @@ void Code_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir)
 	strV(comment,off,100);
     }
     else strV(comment,off,100);
+}
+
+void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
+{
+    int off=12, i;
+
+    strV(seq_num,off,64);
+    strV(qc_release,off,6); strV(spare1,off,2); strV(cal_update,off,6);
+    shrtV(qa_flag,off,4); shrtV(prf_flag,off,4); shrtV(samp_flag,off,4);
+    shrtV(cal_flag,off,4); shrtV(chirp_flag,off,4); shrtV(dop_conf_flag,off,4);
+    shrtV(dop_val,off,4); shrtV(dop_amb_conf_flag,off,4); shrtV(out_flag,off,4);
+    shrtV(range_flag,off,4);
+    shrtV(n_prf_changes,off,4); shrtV(n_samp_changes,off,4); shrtV(n_gain_changes,off,4);
+    shrtV(n_miss_lines,off,4); shrtV(n_rec_gain_changes,off,4);
+    fltV(width_ccf,off,17); fltV(lobe_ccf,off,17); fltV(islr,off,17);
+    fltV(dop_cent_conf,off,17); fltV(dop_amb_conf,off,17);
+    fltV(main_i,off,17); fltV(main_q,off,17);
+    fltV(stddev_i,off,17); fltV(stddev_q,off,17);
+    fltV(cal_gain,off,17); fltV(rec_gain,off,17);
+    fltV(dop_amb,off,17); strV(spare2,off,16);
+    fltV(bias_i,off,17); fltV(bias_q,off,17);
+    fltV(gain_i,off,17); fltV(gain_q,off,17);
+    fltV(non_ortho,off,17); strV(spare3,off,16);
+    fltV(noise_pow,off,17); strV(pulse_delay,off,17);
+    shrtV(n_cal_pulses,off,4); shrtV(n_noise_pulses,off,4); shrtV(n_rep_pulses,off,4);
+    fltV(f_samp_rep,off,17); fltV(cal_pulse_pow,off,4); fltV(noise_pulse_pow,off,17);
+    fltV(range_comp,off,17); fltV(rep_pulse_pow,off,4);
+    fltV(inc_first_pix,off,17); fltV(inc_center_pix,off,4); fltV(inc_last_pix,off,14);
+    fltV(sl_range_ref,off,17); strV(spare4,off,12);
+    shrtV(ant_pattern_flag,off,4);
+    fltV(abs_cal_const,off,17); fltV(up_cal_const,off,17); fltV(low_cal_const,off,17);
+    fltV(sigma_0,off,17);
+    strV(k_gen,off,6); strV(k_ver,off,4);
+    shrtV(dup_lines,off,4);
+    fltV(ber,off,17);
+    strV(spare5,off,12);
+    fltV(img_mean,off,17); fltV(img_std_dev,off,17); fltV(img_max,off,17);
+    strV(t_first_line,off,24); strV(t_asc_node,off,24);
+    fltV(x_asc_pos,off,23); fltV(y_asc_pos,off,23); fltV(z_asc_pos,off,23);
+    fltV(x_asc_vel,off,23); fltV(y_asc_vel,off,23); fltV(z_asc_vel,off,23);
+    shrtV(out_bits,off,4);
+    fltV(gain1,off,17); fltV(gain2,off,17); fltV(gain3,off,17);
+    shrtV(peak_loc_first,off,4);
+    fltV(width_ccf2,off,17); fltV(f_lobe,off,17); fltV(islr_ccf,off,17);
+    shrtV(peak_loc_last,off,4);
+    shrtV(roll_flag,off,4); shrtV(raw_data_flag,off,4); shrtV(look_flag,off,4);
+    shrtV(dop_amb_flag,off,4); shrtV(az_base_flag,off,4);
+    shrtV(samp_per_line,off,4); shrtV(lines_skip,off,4);
+    strV(t_in_stvec,off,24);
+    fltV(x_in_pos,off,23); fltV(y_in_pos,off,23); fltV(z_in_pos,off,23);
+    fltV(x_in_vel,off,23); fltV(y_in_vel,off,23); fltV(z_in_vel,off,23);
+    shrtV(in_stvec_flag,off,4);
+    fltV(range_filt,off,17); fltV(az_filt,off,17); shrtV(update_filt,off,4);
+    for (i=0; i<8; i++) fltV(look_gains[i],off,17);
+    shrtV(samp_win_bias,off,4);
+    fltV(dop_cube_coef,off,23);
+    shrtV(prf_first_line,off,4); shrtV(prf_last_line,off,4);
+    shrtV(win_first_line,off,4); shrtV(win_last_line,off,4);
+    shrtV(cal_gain_last_line,off,4); shrtV(rec_gain_last_line,off,4);
+    shrtV(first_range_samp,off,4);
+    shrtV(fft_ratio,off,4);
+    shrtV(n_az_blocks,off,4); intV(n_in_lines,off,8);
+    shrtV(ini_dop_amb,off,4);
+    for (i=0; i<3; i++) fltV(chirp_quality[i],off,17);
+    for (i=0; i<5; i++) fltV(in_data_stats[i],off,17);
+    for (i=0; i<2; i++) fltV(dop_amb_thres[i],off,17);
+    for (i=0; i<2; i++) fltV(out_data_stats[i],off,17);
+    strV(t_sat_first_line,off,17);
+    shrtV(n_val_pix,off,4); shrtV(n_range_samp,off,4);
+    fltV(gain_low,off,17); fltV(gain_up,off,17);
+    fltV(quad_low,off,17); fltV(quad_up,off,17);
+    fltV(look_bw,off,17); fltV(dop_bw,off,17);
+    shrtV(range_spread,off,4); strV(more_flags,off,17);
+    shrtV(max_look,off,14); shrtV(rep_norm_flag,off,4);
+    for (i=0; i<4; i++) fltV(gr2sr_poly[i],off,21);
+    for (i=0; i<5; i++) fltV(ant_elev_poly[i],off,21);
+    fltV(range_time_poly,off,17);
+    strV(spare6,off,10238);
+}
+
+void Code_PPR(unsigned char *bf, struct PPREC *q, codingDir dir)
+{
+    int off=12;
+
+    strV(beam_type,931,3);
+}
+
+void Code_NVDR(unsigned char *bf, struct VDREC *q, codingDir dir)
+{
+    int off=12;
+
+    strV(flag1,off,3); 
+    strV(blank,off,3);
+    strV(format_doc,off,13);
+    strV(super_doc,off,3);
+    strV(super_doc_rev,off,3);
+    strV(sw_release,off,13);
+    strV(id,off,17);
+    strV(vol_id,off,17);
+    strV(vol_set_id,off,17);
+    intV(vol_nrs,off,8);
+    shrtV(vol_nr,off,4);
+    shrtV(vol_volset,off,4);
+    shrtV(vol_phys_vol,off,4);
+    strV(create_date,off,9);
+    strV(create_time,off,9);
+    strV(country,off,13);
+    strV(agency,off,9);
+    strV(paf,off,13);
+    shrtV(fprs,off,4);
+    shrtV(rec_nr,off,4);
+    strV(spare,off,93);
+    strV(local,off,101);
+}
+
+void Code_VDR(unsigned char *bf, struct VDREC *q, codingDir dir)
+{
+    int off=12;
+
+    strV(flag1,off,3);
+    strV(blank,off,3);
+    strV(format_doc,off,13);
+    strV(super_doc,off,3);
+    strV(super_doc_rev,off,3);
+    strV(sw_release,off,13);
+    strV(id,off,17);
+    strV(vol_id,off,17);
+    strV(vol_set_id,off,17);
+    intV(vol_nrs,off,8);
+    shrtV(vol_nr,off,4);
+    shrtV(vol_volset,off,4);
+    shrtV(vol_phys_vol,off,4);
+    strV(create_date,off,9);
+    strV(create_time,off,9);
+    strV(country,off,13);
+    strV(agency,off,9);
+    strV(paf,off,13);
+    shrtV(fprs,off,4);
+    shrtV(rec_nr,off,4);
+    strV(spare,off,93);
+    strV(local,off,101);
+
+}
+
+void Code_LFPR(unsigned char *bf, struct FPREC *q, codingDir dir)
+{
+    int off=12;
+
+    strV(flag1,off,3);
+    strV(blank,off,3);
+    shrtV(nr,off,4);
+    strV(name,off,17);
+    strV(class,off,29);
+    strV(class_code,off,5);
+    strV(data_type,off,29);
+    strV(type_code,off,5);
+    intV(records,off,8);
+    intV(first_rec,off,8);
+    intV(max_rec,off,8);
+    strV(rec_type,off,13);
+    strV(rec_type_code,off,5);
+    shrtV(vol_nrs,off,4);
+    intV(start,off,8);
+    intV(end,off,8);
+    strV(spare,off,101);
+    strV(local,off,101);
+}
+
+void Code_DFPR(unsigned char *bf, struct FPREC *q, codingDir dir)
+{
+    int off=12;
+
+    strV(flag1,off,3);
+    strV(blank,off,3);
+    shrtV(nr,off,4);  
+    strV(name,off,17); 
+    strV(class,off,29);
+    strV(class_code,off,5);
+    strV(data_type,off,29);
+    strV(type_code,off,5); 
+    intV(records,off,8);  
+    intV(first_rec,off,8);
+    intV(max_rec,off,8);
+    strV(rec_type,off,13);
+    strV(rec_type_code,off,5);
+    shrtV(vol_nrs,off,4);
+    intV(start,off,8);   
+    intV(end,off,8);    
+    strV(spare,off,101);
+    strV(local,off,101);
+}
+
+void Code_TR(unsigned char *bf, struct TREC *q, codingDir dir)
+{
+    int off=12;
+
+    strV(flag1,off,3);
+    strV(flag2,off,3);
+    strV(prod_type,off,41);
+    strV(location,off,61);
+    strV(vol_phys_id,off,41);
+    strV(scene_id,off,41);
+    strV(scene_loc,off,41);
+    strV(spare1,off,21);
+    strV(spare2,off,105);
 }
