@@ -51,7 +51,7 @@ void writeAsfCeosData(int mode, ceosLeader *leader,struct DDR *ddr,
 
   char   infile[256], outfile[256];
   FILE   *fpi, *fpo;
-  int    nbytes, nl, ns, j, line;
+  int    nbytes, nl, ns, ii, line;
   float  *floatBuf;
   short  *ofbuf;
   unsigned char *buf;
@@ -115,6 +115,9 @@ void writeAsfCeosData(int mode, ceosLeader *leader,struct DDR *ddr,
   init_hdr(IOFDR,nbytes,(struct HEADER *) buf);
   fill_iof_vfdr(mode,&vfdr,nl,ns,nbytes,leader->dssr.product_id);
   Code_IOF(buf,&vfdr,toASCII);
+  for (ii=448; ii<nbytes; ii++) {    /*fill IOF_VFDR to the end with spaces*/
+    buf[ii] = ' ';
+  }
   FWRITE(buf,nbytes,1,fpo);
 
   /* Initialize header structures 
@@ -131,17 +134,17 @@ void writeAsfCeosData(int mode, ceosLeader *leader,struct DDR *ddr,
      {
       FREAD(floatBuf,sizeof(float),ns*2,fpi);
       ofbuf = (short *)&buf[192];
-      for (j=0; j<ns*2; j+=2)
+      for (ii=0; ii<ns*2; ii+=2)
        {
  	double itmp, qtmp;
 	short  iVal, qVal;
 	long   bigNum;
 
-	itmp = (double) (floatBuf[j] * (SLC_AVG / 10.0));
-	qtmp = (double) (floatBuf[j+1] * (SLC_AVG / 10.0));
+	itmp = (double) (floatBuf[ii] * (SLC_AVG / 10.0));
+	qtmp = (double) (floatBuf[ii+1] * (SLC_AVG / 10.0));
 
-	ofbuf[j]   = iVal = (short) (itmp);
-	ofbuf[j+1] = qVal = (short) (qtmp);
+	ofbuf[ii]   = iVal = (short) (itmp);
+	ofbuf[ii+1] = qVal = (short) (qtmp);
 
         sumIval+=iVal;
 	sumsqIval += (double)(iVal*iVal);
@@ -160,28 +163,28 @@ void writeAsfCeosData(int mode, ceosLeader *leader,struct DDR *ddr,
      {
       FREAD(floatBuf,sizeof(float),ns,fpi);
 
-      for (j=192; j<nbytes; j++)
+      for (ii=192; ii<nbytes; ii++)
        {
         int tmp;
 
-	if (floatBuf[j-192] < 0.0)
+	if (floatBuf[ii-192] < 0.0)
 	  {
-	    buf[j] = 0;
+	    buf[ii] = 0;
 	    belowZeroCnt+=1.0;
 	  }
 	else 
 	  {
-	    floatBuf[j-192]*=scale;
+	    floatBuf[ii-192]*=scale;
 
-	    if (floatBuf[j-192] > 255.0) 
+	    if (floatBuf[ii-192] > 255.0) 
 	     {
-	       buf[j] = 255;
+	       buf[ii] = 255;
 	       above255Cnt+=1.0;
 	     }
-	    else buf[j] = (unsigned char) floatBuf[j-192]+0.5;
+	    else buf[ii] = (unsigned char) floatBuf[ii-192]+0.5;
 	  }
 
-	tmp = (int) buf[j];
+	tmp = (int) buf[ii];
 	sumIval += tmp;
         sumsqIval += (double) (tmp*tmp);
         if (i->data_values_hist == NULL) printf("MALLOC PROBLEM\n");
