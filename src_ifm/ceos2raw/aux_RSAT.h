@@ -4,43 +4,6 @@ pulse replicas and has a SCANSAR mode, so this is the most complex
 auxiliary data.
 */
 
-/*RADARSAT auxiliary data is 50 bytes long, and starts
-10 bytes into frame.
-*/
-typedef struct {             /*REV F S. 17 */
-               Uchar AuxSyncMarker[4]; /*Code: 0x352EF853*/
-               Uchar ImageReferenceIdentifier[4];
-               struct SAT_USHORT PayloadStatus;
-               Uchar ReplicaAGC:6;
-               Uchar Spare1:2;
-               Uchar CALNAttenuatorSetting;
-               Uchar PulseWaveformNo:4;
-               Uchar Spare2:4;
-               Uchar Spare3:8;
-               struct SAT_ULONG Temperature;
-               struct SAT_USHORT BeamSequence;
-               struct SAT_USHORT Ephemeris;
-               Uchar NoOfBeams:2;
-               Uchar ADCSamplingRate:2;
-               Uchar Spare4:4;
-               Uchar PulseCount1;
-               Uchar PulseCount2;
-               Uchar PRFBeam1;
-               Uchar PRFBeam2:5;
-               Uchar BeamSelect:2;
-               Uchar Spare5:1;
-               Uchar RxWindowStartTime1;
-               Uchar RxWindowStartTime2:4;
-               Uchar Spare6:4;
-               Uchar RxWindowDuration1;
-               Uchar RxWindowDuration2:4;
-               Uchar Spare7:4;
-               Uchar Attitude[12];
-               Uchar Time[6];
-               Uchar SCTO2Defaults:1;
-               Uchar ReplicaPresent:1;
-               Uchar RxAGCSetting:6;
-} RSAT_raw_aux;
 
 /*This decoded auxiliary data structure is created by decodeAux,
 called by readNextFrame.
@@ -65,7 +28,7 @@ typedef struct {
 	double seconds;/*Seconds since midnight GMT*/
 } RSAT_aux;
 
-void RSAT_decodeAux(RSAT_raw_aux *in,RSAT_aux *out);
+void RSAT_decodeAux(unsigned char *in,RSAT_aux *out);
 
 
 #define RSAT_bytesPerFrame 323
@@ -89,8 +52,8 @@ typedef struct {
 	int hasReplica;/*Line contains valid pulse replica.*/
 
 /*These fields are only valid if this is an auxiliary frame,
-and are set by readNextFrame*/
-	RSAT_raw_aux *raw;/*Pointer into data array above*/
+  and are set by readNextFrame*/
+	unsigned char raw[RSAT_datPerAux]; /*RSAT auxiliary raw data block*/
 	RSAT_aux aux;/*Decoded auxiliary data*/
 } RSAT_frame;
 RSAT_frame * RSAT_readNextFrame(bin_state *s,RSAT_frame *f);

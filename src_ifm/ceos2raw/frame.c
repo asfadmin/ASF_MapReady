@@ -130,16 +130,20 @@ RSAT_frame * RSAT_readNextFrame(bin_state *s,RSAT_frame *f)
 		f->is_aux=1;
 	else if ((f->id[1]&6)==2)/*Check echo data bit.*/
 		f->is_echo=1;
-/*	else
-		{printf("Error!  Unknown RSAT frame type '%d'\n",(int)f->id[1]);exit(1);}
+/*	else {
+		printf("Error!  Unknown RSAT frame type '%d'\n",(int)f->id[1]);
+		exit(1);
+	}
 */	
 	
-	if (f->is_aux)
-	{
-		f->raw=(RSAT_raw_aux *)f->data;
-		RSAT_decodeAux(f->raw,&f->aux);
-		f->beam=RSAT_auxGetBeam(&f->aux);
-		f->hasReplica=RSAT_auxHasReplica(&f->aux);
+	if (f->is_aux) {
+		int ii;
+		for (ii=0; (ii<RSAT_datPerAux) && (ii<RSAT_datPerFrame); ii++) {
+			f->raw[ii] = f->data[ii];
+		}
+		RSAT_decodeAux(f->raw, &f->aux);
+		f->beam = RSAT_auxGetBeam(&f->aux);
+		f->hasReplica = RSAT_auxHasReplica(&f->aux);
 	}
 	
 	return f;

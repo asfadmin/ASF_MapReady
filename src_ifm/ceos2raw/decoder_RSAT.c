@@ -210,7 +210,7 @@ void RSAT_readNextCeosPulse(bin_state *s,iqType *iqBuf)
 	
 /*Seek to next pulse start.*/
 	sig=getNextCeosLine(s->binary);
-	RSAT_decodeAux((RSAT_raw_aux *)sig,&aux);
+	RSAT_decodeAux(sig,&aux);
 	RSAT_auxAGC_window(s,&aux);
 	
 	if (RSAT_auxHasReplica(&aux))
@@ -238,11 +238,11 @@ void RSAT_writeCeosReplica(bin_state *s,char *replN,float repScale)
 	
 /*Seek to next pulse replica start.*/
 	sig=getNextCeosLine(s->binary);
-	RSAT_decodeAux((RSAT_raw_aux *)sig,&aux);
+	RSAT_decodeAux(sig,&aux);
 	while (RSAT_auxHasReplica(&aux)==0)
 	   {
 		sig=getNextCeosLine(s->binary);
-	 	RSAT_decodeAux((RSAT_raw_aux *)sig,&aux);
+	 	RSAT_decodeAux(sig,&aux);
 	   }
 	
 /*Read in each chunk of the pulse replica.*/
@@ -268,7 +268,7 @@ bin_state *RSAT_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	
 	s->binary=openCeos(inN);
 	sig=getNextCeosLine(s->binary);
-	RSAT_decodeAux((RSAT_raw_aux *)sig,&aux);
+	RSAT_decodeAux(sig,&aux);
 	RSAT_auxUpdate(&aux,s);
 	RSAT_writeCeosReplica(s,outN,1.0);
 	FSEEK64(s->binary,0,0);
