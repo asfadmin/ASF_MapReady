@@ -1128,17 +1128,17 @@ float_image_approximate_statistics (FloatImage *self, size_t stride,
   // Total number of samples.
   size_t sample_count = sample_columns * sample_rows;
 
-  // Load the sample values.
   // Create an image holding the sample values.
-  FloatImage *sample_image = float_image_new (sample_rows, sample_columns);
+  FloatImage *sample_image = float_image_new (sample_columns, sample_rows);
 
+  // Load the sample values.
   size_t current_sample = 0;
   size_t ii;
-  for ( ii = 0 ; ii < self->size_y ; ii += stride ) {
+  for ( ii = 0 ; ii < sample_columns ; ii++ ) {
     size_t jj;
-    for ( jj = 0 ; jj < self->size_x ; jj += stride ) {
-      float_image_set_pixel (sample_image, jj / stride, ii / stride,
-			     float_image_get_pixel (self, jj, ii));
+    for ( jj = 0 ; jj < sample_rows ; jj++ ) {
+      double sample = float_image_get_pixel (self, ii * stride, jj * stride);
+      float_image_set_pixel (sample_image, ii, jj, sample);
       current_sample++;
     }
   }
@@ -1152,6 +1152,8 @@ float_image_approximate_statistics (FloatImage *self, size_t stride,
   // inaccurate).
   float min, max;		
   float_image_statistics (sample_image, &min, &max, mean, standard_deviation);
+
+  float_image_free (sample_image);
 }
 
 float
