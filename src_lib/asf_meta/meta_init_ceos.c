@@ -26,13 +26,17 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 {
 	char fName[255],fac[50],sys[50],ver[50];
 	ceos_description *ceos;
+	int dataSize;		    /* Number of bytes per image pixel.*/
 
         /* Fetch the Data Set Summary Record and Image File Descriptor
 	   record, which are always present.
          ------------------------------------------------------------*/
-	struct dataset_sum_rec dssr;
+	struct dataset_sum_rec dssr;/* Data set summary record */
+	struct IOF_VFDR iof;        /* Image File Descriptor Record */
 	strcpy(fName,in_fName);
 	get_dssr(fName,&dssr);
+	strcpy(fName,in_fName);
+	get_ifiledr(fName, &iof);
 	
 	ceos = get_ceos_description(fName);
 
@@ -46,43 +50,53 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	strcpy(sys,dssr.sys_id);strtok(sys," ");/*Remove spaces from field*/
 	strcpy(ver,dssr.ver_id);strtok(ver," ");/*Remove spaces from field*/
 	sprintf(meta->general->processor,"%s/%s/%s",fac,sys,ver);
-    {	struct IOF_VFDR ifdr;   /* Image File Descriptor Record */
-	int dataSize;		/* Number of bytes per image pixel.*/
-	strcpy(fName,in_fName);
-	get_ifiledr(fName, &ifdr);
-	dataSize = (ifdr.bitssamp+7)/8;
+	dataSize = (iof.bitssamp+7)/8;
 	switch (dataSize) {
 	    case 2:strcpy(meta->general->data_type,"INTEGER*2");break;
 	    case 4:strcpy(meta->general->data_type,"INTEGER*4");break;
 	    default:strcpy(meta->general->data_type,"BYTE");    break;
 	}
-    }	strcpy(meta->general->system,"");
-	meta->general->orbit = atoi(dssr.revolution);
-/**/	meta->general->frame = 0; /*TEMPORARY SETTING, WILL EVENTUALLY CACLUATE FROM CENTER LAT*/
-	meta->general->band_number = 0;
-	meta->general->orbit_direction = dssr.asc_des[0];
-    {	struct data_hist_rec pdhr;
-	strcpy(fName,in_fName);
-	if ( get_dhr(fName, &pdhr) != -1 ) {
-	    meta->general->line_count   = (pdhr.data)->ns_lin;
-	    meta->general->sample_count = (pdhr.data)->ns_pix;
-	}
-    }	meta->general->start_line       = 0;
+#if defined(big_ieee)
+	strcpy(meta->general->system,     "big_ieee");
+#elif defined(lil_ieee)
+	strcpy(meta->general->system,     "lil_ieee");
+#elif defined(cray_float)
+	strcpy(meta->general->system,     "cray_float");
+#else
+	strcpy(meta->general->system,     "???");
+#endif
+	meta->general->orbit            = atoi(dssr.revolution);
+/**/	meta->general->frame            = 0; /*TEMPORARY SETTING, WILL EVENTUALLY CACLUATE FROM CENTER LAT*/
+	meta->general->band_number      = 0;
+	meta->general->orbit_direction  = dssr.asc_des[0];
+	meta->general->line_count       = iof.numofrec;
+	meta->general->sample_count     = -2147283648; /* Retrieved below by ceos_init_asf() */
+	meta->general->start_line       = 0;
 	meta->general->start_sample     = 0;
 	meta->general->x_pixel_size     = dssr.pixel_spacing;
 	meta->general->y_pixel_size     = dssr.line_spacing;
 	meta->general->center_latitude  = dssr.pro_lat;
 	meta->general->center_longitude = dssr.pro_long;
-	meta->general->re_major         = dssr.ellip_maj * 1000.0;
-	meta->general->re_minor         = dssr.ellip_min * 1000.0;
+	meta->general->re_major         = (dssr.ellip_maj < 10000.0) ? dssr.ellip_maj*1000.0 : dssr.ellip_maj;
+	meta->general->re_minor         = (dssr.ellip_min < 10000.0) ? dssr.ellip_min*1000.0 : dssr.ellip_min;
 	meta->general->bit_error_rate   = 0.0;
 
     /* Fill meta->sar structure */
 /**/	meta->sar->image_type = '?';
 	meta->sar->look_direction = (dssr.clock_ang>=0.0) ? 'R' : 'L';
-/*	meta->sar->look_count = -1;  found below */
-/**/	meta->sar->deskewed = -1;
-	meta->sar->line_increment = NAN;
+/*	meta->sar->look_count = -2147283648;  found below */
+/**/	meta->sar->deskewed = -2147283648;
+    {	struct data_hist_rec pdhr;
+	strcpy(fName,in_fName);
+	if ( get_dhr(fName, &pdhr) != -1 ) {
+	    meta->sar->original_line_count   = (pdhr.data)->ns_lin;
+	    meta->sar->original_sample_count = (pdhr.data)->ns_pix;
+	}
+	else {
+	    meta->sar->original_line_count   = -2147283648;
+	    meta->sar->original_sample_count = -2147283648;
+	}
+    }	meta->sar->line_increment = NAN;
 	meta->sar->sample_increment = NAN;
 	meta->sar->range_time_per_pixel   = dssr.n_rnglok
 		/ (dssr.rng_samp_rate * get_units(dssr.rng_samp_rate,EXPECTED_FS));
@@ -97,7 +111,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	meta->sar->range_doppler_coefficients[1]   = dssr.crt_dopcen[1];
 	meta->sar->range_doppler_coefficients[2]   = dssr.crt_dopcen[2];
 	meta->sar->azimuth_doppler_coefficients[0] = dssr.alt_dopcen[0];
-	strtok(meta->general->sensor," ");/*Remove spaces from field.*/
 	meta->sar->azimuth_doppler_coefficients[1] = dssr.alt_dopcen[1];
 	meta->sar->azimuth_doppler_coefficients[2] = dssr.alt_dopcen[2];
 	strcpy(meta->sar->satellite_binary_time,dssr.sat_bintim);
