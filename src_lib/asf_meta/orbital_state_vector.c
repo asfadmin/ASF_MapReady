@@ -201,13 +201,21 @@ orbital_state_vector_propagate (OrbitalStateVector *self, double time)
   double mae = 0.000001;
   gsl_odeiv_control *ode_control = gsl_odeiv_control_y_new (mae, 0.0);
   gsl_odeiv_evolve *ode_evolve = gsl_odeiv_evolve_alloc (dimension);
-  gsl_odeiv_system ode_system = {func, NULL, dimension, NULL};
+  gsl_odeiv_system ode_system;
   double t0 = 0.0, t1 = time;	/* Start and end times.  */
  /* Initial guess for step size.  */
   const double initial_step_size = GSL_SIGN (t1) * 1.0;
   double step_size = initial_step_size;
   double *y = malloc (dimension * sizeof (double));
   double t = t0;		/* Current time.  */
+#ifdef __GNUC__
+  ode_system = {func, NULL, dimension, NULL};
+#else
+  ode_system.function = func;
+  ode_system.jacobian = NULL;
+  ode_system.dimension = dimension;
+  ode_system.params = NULL;
+#endif
   y[0] = self->position->x;
   y[1] = self->position->y;
   y[2] = self->position->z;
