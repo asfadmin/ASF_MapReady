@@ -21,6 +21,7 @@ PROGRAM HISTORY:
 #include "meta_init.h"
 #include "asf_endian.h"
 #include "dateUtil.h"
+#include "get_ceos_names.h"
 
 /* Internal Prototypes */
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
@@ -64,7 +65,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 
    /* Allocate & fetch CEOS records. If its not there, free & nullify pointer
       ----------------------------------------------------------------------*/
-   get_ceos_names(in_fName, dataName, leaderName);
+   require_ceos_pair(in_fName, dataName, leaderName);
    ceos = get_ceos_description(leaderName);
    dssr = &ceos->dssr;
    iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));

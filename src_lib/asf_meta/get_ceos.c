@@ -9,6 +9,7 @@ get_*:
 #include "asf.h"
 #include <ctype.h>
 #include "ceos.h"
+#include "get_ceos_names.h"
 #include "asf_endian.h"
 
 /*Enumeration of the numeric types of various CEOS fields.*/
@@ -39,7 +40,7 @@ int getCeosRecord(char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	struct HEADER  bufhdr;
 	int nOccurences=0, era=1;
 
-	get_ceos_names(inName, dataName, leaderName);
+	require_ceos_pair(inName, dataName, leaderName);
 
 	if (recordType==CEOS_IFILEDR)
 		strcpy(metaRecordName, dataName);
