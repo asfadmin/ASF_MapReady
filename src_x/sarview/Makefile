@@ -6,7 +6,7 @@
 include ../../make_support/system_rules
 
 CFLAGS := -I$(LIBDIR)/tcltk81/include $(CFLAGS)
-LDFLAGS := -L$(LIBDIR) -L$(LIBDIR)/tcltk81/lib $(LDFLAGS)
+LDFLAGS := -L$(LIBDIR)/tcltk81/lib $(LDFLAGS)
 
  # ldl, lsocket, and lnsl are necessary for Solaris, but break sarview on irix
 OTHER = -ldl -lsocket -lnsl
@@ -26,10 +26,10 @@ OBJS = \
 	poly.o \
 	tkAppInit.o tkCommand.o
 
-all: tcltk sarview
+all: tcltk sarview clean
 
 tcltk:
-	./make_tcltk.sh
+	./make_tcltk.sh $(CC) $(LIBDIR)
 
 # if system is solaris include extra libraries; test looks wrong, but it's right
 sarview: $(OBJS)
