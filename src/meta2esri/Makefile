@@ -7,7 +7,7 @@ include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
-	-lm
+	-L$(LIBDIR) -lgsl -lgslcblas -lm
 
 OBJS_M2E = meta2esri.o
 OBJS_E2M = esri2meta.o
