@@ -18,7 +18,7 @@
 #endif
 
 static const int ARR_TEST_SIZE = 50;
-static const int NUM_REPS = 2;
+static const int NUM_REPS = 3;
 
 static int nfail = 0;
 static int nok = 0;
@@ -139,6 +139,7 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
     lon = lon_deg * DEG_TO_RAD;
 
     pps.utm.lon0 = lon0;
+    pps.utm.zone = MAGIC_UNSET_INT;
 
     /* normal function call check */
     {
@@ -210,6 +211,7 @@ void testa_random_utm()
     reference_lat = rand() % 120 - 60;
 
     pps.utm.lon0 = reference_lon * DEG_TO_RAD;
+    pps.utm.zone = MAGIC_UNSET_INT;
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
@@ -799,7 +801,8 @@ void testa_random_utm2()
     int slon;
 
     slon = gen_utm_lon();
-    pps.utm.zone = slon;
+    pps.utm.zone = MAGIC_UNSET_INT;
+    pps.utm.lon0 = slon * DEG_TO_RAD;
 
     sprintf(name, "utm(%d)", slon);
 
@@ -850,6 +853,8 @@ void perf_test_ps()
     pps.ps.slat = lat0;
     pps.ps.slon = lon0;
     pps.ps.is_north_pole = 1;
+    pps.ps.false_easting = 0;
+    pps.ps.false_northing = 0;
 
     /* use same seed each time */
     srand(10101);
@@ -879,10 +884,10 @@ void perf_test_ps()
     {
 	if (!within_tol(x1[i], xo[i]) || !within_tol(y1[i], yo[i]))
 	{
-/*
 	    printf("x[%d] = %f, xo[%d] = %f, y[%d] = %f, yo[%d] = %f\n",
 		   i, x[i], i, xo[i], i, y[i], i, yo[i]);
-*/
+	    printf("x[%d] = %f, x1[%d] = %f, y[%d] = %f, y1[%d] = %f\n",
+		   i, x[i], i, x1[i], i, y[i], i, y1[i]);
 	    ++n;
 	}
     }
