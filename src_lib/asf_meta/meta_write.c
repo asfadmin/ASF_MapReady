@@ -15,8 +15,16 @@ void meta_write(meta_parameters *meta, const char *file_name)
 {
   FILE *fp = FOPEN(file_name, "w");
 
+  /* Write an 'about meta file' comment  */
+  fprintf(fp,
+  	"# This file contains the metadata for satellite capture file of the same base name.\n"
+	"#      '?' is likely an unknown single character value.\n"
+	"#      '???' is likely an unknown string of characters.\n"
+	"#      '-2147283648' is likely an unknown integer value.\n"
+	"#      'NaN' is likely an unknown Real value.\n\n");
+
   /* We always write out files corresponding to the latest meta version.  */
-  fprintf(fp, "meta_version: %.2f\n", META_VERSION);
+  fprintf(fp, "meta_version: %.2f\n\n", META_VERSION);
 
 /* General block.  */
   meta_put_string(fp,"general {", "","Begin parameters generally used in remote sensing");
@@ -24,7 +32,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_string(fp,"mode:",meta->general->mode,"Imaging mode");
   meta_put_string(fp,"processor:", meta->general->processor,"Name and Version of Processor");
   meta_put_string(fp,"data_type:", meta->general->data_type,"Type of samples (e.g. REAL*4)");
-  meta_put_string(fp,"system:", meta->general->system,"System of samples (e.g. ieee-std)");
+  meta_put_string(fp,"system:", meta->general->system,"System of samples (e.g. big_ieee)");
   meta_put_int   (fp,"orbit:", meta->general->orbit,"Orbit Number for this datatake");
   meta_put_char  (fp,"orbit_direction:", meta->general->orbit_direction,"Ascending 'A', or descending 'D'");
   meta_put_int   (fp,"frame:", meta->general->frame,"Frame for this image [-1 if n/a]");
@@ -49,6 +57,10 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_char  (fp,"look_direction:",meta->sar->look_direction,"SAR Satellite look direction [R=right; L=left]");
   meta_put_int   (fp,"look_count:",meta->sar->look_count,"Number of looks to take from SLC");
   meta_put_int   (fp,"deskewed:",meta->sar->deskewed,"Image moved to zero doppler? [1=yes; 0=no]");
+  meta_put_int   (fp,"original_line_count:",meta->sar->original_line_count,"Number of lines in original image");
+  meta_put_int   (fp,"original_sample_count:",meta->sar->original_sample_count,"Number of samples in original image");
+  meta_put_double(fp,"line_increment:",meta->sar->line_increment,"Line increment for sampling");
+  meta_put_double(fp,"sample_increment:",meta->sar->sample_increment,"Sample increment for sampling");
   meta_put_double(fp,"range_time_per_pixel:",meta->sar->range_time_per_pixel,"Time per pixel in range [s]");
   meta_put_double(fp,"azimuth_time_per_pixel:",meta->sar->azimuth_time_per_pixel,"Time per pixel in azimuth [s]");
   meta_put_double(fp,"slant_range_first_pixel:",meta->sar->slant_range_first_pixel,"Slant range to first pixel [m]");
@@ -56,14 +68,14 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_double(fp,"time_shift:",meta->sar->time_shift,"Error correction factor, in time [s]");
   meta_put_double(fp,"wavelength:",meta->sar->wavelength,"SAR carrier wavelength [m]");
   meta_put_double(fp,"prf:",meta->sar->prf,"Pulse Repition Frequency");
+  meta_put_string(fp,"satellite_binary_time:",meta->sar->satellite_binary_time,"Satellite Binary Time");
+  meta_put_string(fp,"satellite_clock_time:",meta->sar->satellite_clock_time,"Satellite Clock Time (UTC)");
   meta_put_double(fp,"dopRangeCen:",meta->sar->range_doppler_coefficients[0],"Range doppler centroid [Hz]");
   meta_put_double(fp,"dopRangeLin:",meta->sar->range_doppler_coefficients[1],"Range doppler per range pixel [Hz/pixel]");
   meta_put_double(fp,"dopRangeQuad:",meta->sar->range_doppler_coefficients[2],"Range doppler per range pixel sq. [Hz/(pixel^2)]");
   meta_put_double(fp,"dopAzCen:",meta->sar->azimuth_doppler_coefficients[0],"Azimuth doppler centroid [Hz]");
   meta_put_double(fp,"dopAzLin:",meta->sar->azimuth_doppler_coefficients[1],"Azimuth doppler per azimuth pixel [Hz/pixel]");
   meta_put_double(fp,"dopAzQuad:",meta->sar->azimuth_doppler_coefficients[2],"Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]");
-  meta_put_string(fp,"satellite_binary_time:",meta->sar->satellite_binary_time,"Satellite Binary Time");
-  meta_put_string(fp,"satellite_clock_time:",meta->sar->satellite_clock_time,"Satellite Clock Time (UTC)");
   meta_put_string(fp,"}","","End sar");
 
 /* State block.  */
@@ -167,7 +179,7 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 	{
 	/*Space over to the comment section.*/
 		ii=strlen(line);
-		while (ii < 32+depth*4) /*Fill spaces out to about column 40.*/
+		while (ii < 42+depth*4) /*Fill spaces out to about column 50.*/
 			line[ii++]=' ';
 		line[ii++]='\0';        /*Append trailing NULL.*/
 	
@@ -175,6 +187,10 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 		strcat(line," # ");     /*Signal beginning of comment.*/
 		strcat(line,comment);   /*Append comment.*/
 	}
+
+	/*If the string has a closing brace, append newline*/
+	if (strchr(name,'}') && (depth==0))
+		strcat(line,"\n");
 
 /*More indentation.*/	
 	if (strchr(name,'{'))/*If the string has an opening brace, indent more.*/
