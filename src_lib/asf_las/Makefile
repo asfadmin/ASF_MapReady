@@ -6,7 +6,7 @@
 
 include ../../make_support/system_rules
 
-OBJ= \
+OBJS= \
         allocbuf.o \
         c_calcor.o \
         c_comsys.o \
@@ -44,17 +44,18 @@ OBJ= \
         c_sysset.o \
         c_up2low.o \
         convInt.o \
-        diskio.h \
         doopen.o \
         lasIO.o  \
         packed_deg.o \
         squeeze.o 
 
-all: asf_las.a
-	rm *.o
-	cp asf_las.man ../../man/cat1/asf_las.1
+all: asf_las.a clean
 
-asf_las.a: $(OBJ)
-	ar rv asf_las.a $(OBJ)
+asf_las.a: $(OBJS)
+	ar rv asf_las.a $(OBJS)
 	$(RANLIB) asf_las.a
 	mv asf_las.a $(LIBDIR)
+	cp asf_las.man ../../man/cat1/asf_las.1
+
+clean:
+	rm -f $(OBJS)
