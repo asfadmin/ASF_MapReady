@@ -23,6 +23,7 @@ PROGRAM HISTORY:
 	????/??		Orion Lawlor - Original Creation
 	10/2000		R. Gens      - Modified updateAGC_window
 				       to allow for bit errors
+	1/2003		P. Denny     - Updated to new meta structures
 
 ****************************************************************/
 
@@ -103,36 +104,35 @@ Writes the satellite * fields into the given meta_parameters
 void updateMeta(bin_state *s,meta_parameters *meta)
 {
 /*Update fields for which we have decoded header info.*/
-	meta->ifm->er=s->re;
-	meta->ifm->ht=s->re+s->ht;
-	meta->ifm->nLooks=s->nLooks;
-	meta->ifm->orig_nLines=30000;/*Guess 30K lines- doesn't really matter.*/
-	meta->ifm->orig_nSamples=s->nSamp;
-	
-	meta->geo->type='S';/*Slant range product*/
-	meta->geo->deskew=0;/*Not doppler deskewed*/
-	meta->geo->lookDir=s->lookDir;
-	meta->geo->rngPixTime=1.0/s->fs;
-	meta->geo->azPixTime=1.0/s->prf;
-	meta->geo->xPix=meta->geo->rngPixTime*(speedOfLight/2.0);
-	meta->geo->yPix=meta->geo->azPixTime*s->vel* /*Orbital velocity*/
-		(meta->ifm->er/meta->ifm->ht);/*Swath velocity*/
-	meta->geo->timeShift=meta->geo->slantShift=0.0;
-	meta->geo->slantFirst=s->range_gate*speedOfLight/2.0;
-	meta->geo->wavelen=speedOfLight/s->frequency;
-
-	if (meta->info==NULL)
-	{
-		meta->info=(extra_info *)MALLOC(sizeof(extra_info));
-		meta->info->orbit=-1;
-		meta->info->bitErrorRate=-1;
-		sprintf(meta->info->satBinTime,"%f",s->time_code);
-		sprintf(meta->info->satClkTime,"0");
+	meta->sar->look_direction = s->lookDir;
+	meta->sar->look_count = s->nLooks;
+	meta->sar->deskewed = 0;
+	if (meta->sar->original_line_count == MAGIC_UNSET_INT) {
+		meta->sar->original_line_count = meta->general->line_count;
 	}
-	strcpy(meta->info->sensor,s->satName);
-	strcpy(meta->info->mode,s->beamMode);
-	strcpy(meta->info->processor,"ASF Lz/ceos2raw");
-	meta->info->prf = s->prf;
+	meta->sar->original_sample_count = s->nSamp;
+	meta->sar->slant_range_first_pixel = s->range_gate*speedOfLight/2.0;
+	meta->sar->wavelength = speedOfLight/s->frequency;
+	meta->sar->prf = s->prf;
+	sprintf(meta->sar->satellite_binary_time, "%f", s->time_code);
+	strcpy (meta->sar->satellite_clock_time, "0");
+
+	strcpy(meta->general->sensor, s->satName);
+	strcpy(meta->general->mode, s->beamMode);
+	strcpy(meta->general->processor, "ASF/CEOS2RAW");
+	meta->general->sample_count = s->nSamp;
+/* If the major & minor earth radii aren't set, set them to GEM84 */
+	if (meta->general->re_major != meta->general->re_major) /* See if its NaN */
+		meta->general->re_major = 6378137.0;
+	if (meta->general->re_minor != meta->general->re_minor) /* See if its NaN */
+		meta->general->re_minor = 6356752.31414;
+
+/* Set the number of lines to process to the right number */
+	s->nLines = meta->general->line_count;
+
+/* temporary fix for earth radius and satellite height */
+	s->re = meta_get_earth_radius(meta, s->nLines, 0);
+	s->ht = meta_get_sat_height(meta, s->nLines, 0) - s->re;
 }
 
 /********************************
@@ -190,9 +190,13 @@ the .fmt file. Called by decoding routines.
 */
 void updateAGC_window(bin_state *s,float amplify,float startOff)
 {
-	static float sto_amp=-1000.0,sto_off=-1000.0,diff=5.0;
+	static float	sto_amp=-1000.0,
+			sto_off=-1000.0,
+			diff=5.0;
+
 	diff=abs((10*log(sto_amp*sto_amp)/log(10))-(10*log(amplify*amplify)/log(10)));
 	if (s->dotFMT==NULL) return;/*Skip it if no .fmt file exists*/
+
 	if (((sto_amp!=amplify)&&(diff<3))||(sto_off!=startOff))
 	{/*Amplification factor or window position has changed! Update .fmt*/
 		sto_amp=amplify;
