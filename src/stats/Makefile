@@ -12,7 +12,7 @@ OBJS  = statIO.o \
 all: stats clean
 
 stats: $(OBJS)
-	$(CC) $(CFLAGS) -o stats $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o stats $(OBJS) $(LIBS) $(LDFLAGS)
 	mv stats$(BIN_POSTFIX) $(BINDIR)
 	cp stats.1 ../../man/man1/.
 

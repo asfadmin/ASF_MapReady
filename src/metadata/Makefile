@@ -26,7 +26,7 @@ all: metadata
 	rm *.o
  
 metadata: $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o metadata $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o metadata $(OBJS) $(LIBS) $(LDFLAGS)
 	mv  metadata$(BIN_POSTFIX) $(BINDIR)
 	cp metadata.man ../../man/cat1/metadata.1 
 

@@ -19,7 +19,7 @@ all: concat_dem
 	rm *.o
 
 concat_dem: $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o concat_dem $(OBJS) $(LIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o concat_dem $(OBJS) $(LIBS) $(LDFLAGS)
 	mv concat_dem$(BIN_POSTFIX) $(BINDIR)
 	cp concat_dem.1 ../../man/cat1/concat_dem.1
 
