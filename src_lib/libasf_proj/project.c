@@ -10,10 +10,6 @@
 #include "projects.h"
 #include "proj_api.h"
 
-static double round(double d)
-{
-    return floor(d + 0.5);
-}
 
 static const char * datum(project_parameters_t * pps)
 {
