@@ -20,7 +20,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_convert"
 
 #define ASF_USAGE_STRING \
-"asf_convert [-format <output_format>] [-size <output_size>] <in_data> <in_meta> <out_full>"
+"[-format <output_format>] [-size <output_size>] <in_data> <in_meta> <out_full>\n"\
+"Additional options: -help, -log <log_file>, -quiet"
 
 #define ASF_DESCRIPTION_STRING \
 "This program ingests level one CEOS data, geocodes and resamples them (both optional) and exports them to a variety of output formats."

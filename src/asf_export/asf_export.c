@@ -20,7 +20,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_export"
 
 #define ASF_USAGE_STRING \
-"[-format <output_format>] [-size <max_dimension>] <in_base_name> <out_full_name>"
+"[-format <output_format>] [-size <max_dimension>] <in_base_name> <out_full_name>\n"\
+"Additional options: -help, -log <log_file>, -quiet"
 
 #define ASF_DESCRIPTION_STRING \
 "This program ingests ASF internal format data and exports said data to a number of output formats. If the input data was geocoded and the ouput format supports geocoding, that information will be included."

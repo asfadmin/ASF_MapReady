@@ -20,7 +20,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_import"
 
 #define ASF_USAGE_STRING \
-"[-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>] [-format <input_format>] <in_data_name> <in_meta_name> <out_base_name>"
+"[-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>] [-format <input_format>] [-old] [-prc] <in_data_name> <in_meta_name> <out_base_name>\n"\
+"Additional options: -help, -log <log_file>, -quiet"
 
 #define ASF_DESCRIPTION_STRING \
 "Ingests all varieties of CEOS and STF data formats as well as the external ESRI and ENVI data formats and outputs ASF internal format metadata and data files."
