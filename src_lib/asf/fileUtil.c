@@ -41,18 +41,25 @@ char *findExt(char *name)
 }
 char *appendExt(const char *name,const char *newExt)
 {
-	char *ext,*ret=(char *)MALLOC(sizeof(char)*255);
+	char *ext, *ret = (char *) MALLOC(sizeof(char) 
+	    * (MAX_APPENDEXT_RESULT_STRING_LENGTH + 1));
+
+	assert(strlen(name) <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
+	  
 	strcpy(ret,name);
 	
-	if (newExt==NULL)
+	if ( newExt == NULL )
 		return ret;
 	
 	ext=findExt(ret);
-	
-	if (ext!=NULL)
+
+	if ( ext != NULL )
 		/*We found an existing extension!*/
 		*ext=0;/*Clip it off.*/
-	strcat(ret,newExt);/*Put new extension on the end.*/
+
+	assert(strlen(ret) + strlen(newExt) 
+	       <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
+	strcat(ret, newExt);/*Put new extension on the end.*/
 	return ret;
 }
 void create_name(char *out,const char *in,const char *newExt)
