@@ -32,10 +32,7 @@ int main(argc,argv)
 	
 	if (writeRules)
 	{
-		printf("############### System_rules: ###############\n");
-		printf("# Contains information about the current machine.\n");
-		printf("# Is written by 'endian.c', and included by each program's Makefile.\n");
-		printf("\n");
+		printf("# ENDIAN_FLAGS variable determined by endian.c\n");
 		printf("ENDIAN_FLAGS = -D%s_endian ",littleEndian?"lil":"big");
 	}
 	else
@@ -83,7 +80,7 @@ int main(argc,argv)
 		ieee=0;
 	if (writeRules)
 	{/*This is a continuation of the "ENDIAN_FLAGS" line from the previous write*/
-		printf(" %s\n",
+		printf("%s\n",
 			ieee?(littleEndian?"-Dlil_ieee":  "-Dbig_ieee"):
 			          (is_cray?"-Dcray_float":"-Dnon_ieee "));
 	}
