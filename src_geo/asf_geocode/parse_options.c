@@ -585,7 +585,7 @@ static int parse_false_northing_option(int *i, int argc,
 	return FALSE;
     }
 }
-
+/*
 static int parse_scale_factor_option(int *i, int argc,
 				     char *argv[], int *specified,
 				     double *value, int *ok)
@@ -600,7 +600,7 @@ static int parse_scale_factor_option(int *i, int argc,
 	return FALSE;
     }
 }
-
+*/
 static int parse_write_proj_file_option(int *i, int argc, char *argv[],
 					char **write_file, int *ok)
 {
