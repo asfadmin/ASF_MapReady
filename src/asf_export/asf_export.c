@@ -193,7 +193,7 @@ typedef struct {
      NO_MAXIMUM_OUTPUT_SIZE.  The output image will be scaled to honor
      this value, if its maximum dimension is not already less than
      this.  */
-  long size;			
+  long size;
   /* Name of data and metadata input files  */
   char in_data_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   char in_meta_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
@@ -232,7 +232,7 @@ my_strncpy (char *dest, const char *src, size_t n)
       return dest;
     }
   }
-  
+
   return dest;
 }
 
@@ -246,7 +246,7 @@ my_strnlen (const char *s, size_t max_len)
       return ii;
     }
   }
-  
+
   return max_len;
 }
 
@@ -267,7 +267,7 @@ checkForOption (char *key, int argc, char *argv[])
 /* Print an error message. This is just here for circumventing
    check_return.  Also, it makes it possible to reformat all the error
    messages at once.  */
-void 
+void
 print_error (char *msg)
 {
 	char tmp[255];
@@ -281,7 +281,7 @@ print_error (char *msg)
 
 /* Check the return value of a function and display an error message
    if it's a bad return.*/
-void 
+void
 check_return (int ret, char *msg)
 {
   if ( ret != 0 )
@@ -292,17 +292,17 @@ check_return (int ret, char *msg)
 /* Forward declarations.  */
 void
 export_as_envi (const char *metadata_file_name,
-		const char *image_data_file_name, 
+		const char *image_data_file_name,
 		const char *output_file_name);
 
 void
-export_as_esri (const char *metadata_file_name, 
+export_as_esri (const char *metadata_file_name,
 		const char *image_data_file_name,
 		const char *output_file_name);
 
 void
 export_as_geotiff (const char *metadata_file_name,
-		   const char *image_data_file_name, 
+		   const char *image_data_file_name,
 		   const char *output_file_name);
 
 void
@@ -316,7 +316,7 @@ export_as_ppm (const char *metadata_file_name,
 	       long max_size);
 
 /* Main program body. */
-int 
+int
 main (int argc, char *argv[])
 {
 
@@ -326,7 +326,7 @@ main (int argc, char *argv[])
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
 	/* Command line input goes in it's own structure.  */
 	command_line_parameters_t command_line;
-	
+
 	int formatFlag, sizeFlag, logFlag, quietFlag;
 	int needed_args = 3;/*command & argument & argument*/
 	int ii;
@@ -373,7 +373,7 @@ main (int argc, char *argv[])
 		strcpy(command_line.format, argv[formatFlag + 1]);
 	else
 		strcpy(command_line.format, "geotiff");/*Default behavior: produce a geotiff*/
-	for(ii = 0; ii < strlen(command_line.format); ++ii)//convert the string to upper case
+	for(ii = 0; ii < strlen(command_line.format); ++ii)/*convert the string to upper case*/
 		command_line.format[ii] = toupper(command_line.format[ii]);
 
 	if(sizeFlag != FLAG_NOT_SET)
@@ -427,21 +427,21 @@ main (int argc, char *argv[])
 	  || md->general->data_type == REAL64);
   meta_free (md);
   if ( format == ENVI ) {
-    export_as_envi (command_line.in_meta_name, command_line.in_data_name, 
+    export_as_envi (command_line.in_meta_name, command_line.in_data_name,
 		    command_line.output_name);
   }
   else if ( format == ESRI ) {
     export_as_esri (command_line.in_meta_name, command_line.in_data_name,
-		    command_line.output_name);    
+		    command_line.output_name);
   }
   else if ( format == GEOTIFF ) {
     export_as_geotiff (command_line.in_meta_name, command_line.in_data_name,
 		       command_line.output_name);
-  } 
+  }
   else if ( format == JPEG ) {
     export_as_jpeg (command_line.in_meta_name, command_line.in_data_name,
 		    command_line.output_name, command_line.size);
-  } 
+  }
   else if ( format == PPM ) {
     export_as_ppm (command_line.in_meta_name, command_line.in_data_name,
 		   command_line.output_name, command_line.size);
@@ -475,7 +475,7 @@ get_sample_size (meta_parameters *metadata)
   default:
     assert (FALSE);		/* Other types aren't handled.  */
     break;
-  }  
+  }
 
   return sample_size;
 }
@@ -523,7 +523,7 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
 
   return_code = fclose (ifp);
   assert (return_code == 0);
-  
+
   return data;
 }
 
@@ -572,70 +572,70 @@ export_as_envi (const char *metadata_file_name,
   if (md->projection) {
     switch (md->projection->type) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
-      fprintf(fp, 
-	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %i, %s}\n", 
-	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
+      fprintf(fp,
+	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %i, %s}\n",
+	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y,
 	      envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 	      envi->proj_dist_y, envi->projection_zone, envi->hemisphere);
-      fprintf(fp, 
-	      "projection info = {3, %.4f, %.4f, %.4f, %.4f, " 
-	      "0.0, 0.0, 0.99996, %s}\n", 
+      fprintf(fp,
+	      "projection info = {3, %.4f, %.4f, %.4f, %.4f, "
+	      "0.0, 0.0, 0.99996, %s}\n",
 	      envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
 	      envi->center_lon, envi->projection);
       break;
     case POLAR_STEREOGRAPHIC:
-      fprintf(fp, 
-	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
-	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
+      fprintf(fp,
+	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n",
+	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y,
 	      envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 	      envi->proj_dist_y, envi->hemisphere);
-      fprintf(fp, 
-	      "projection info = {31, %.4f, %.4f, %.4f, %.4f, " 
-	      "0.0, 0.0, %s}\n", 
+      fprintf(fp,
+	      "projection info = {31, %.4f, %.4f, %.4f, %.4f, "
+	      "0.0, 0.0, %s}\n",
 	      envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
 	      envi->center_lon, envi->projection);
       break;
     case ALBERS_EQUAL_AREA:
-      fprintf(fp, 
-	      "map info = {%s, %i, %i  , %.4f, %.4f, %.4f, %.4f, %s}\n", 
-	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
+      fprintf(fp,
+	      "map info = {%s, %i, %i  , %.4f, %.4f, %.4f, %.4f, %s}\n",
+	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y,
 	      envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 	      envi->proj_dist_y, envi->hemisphere);
-      fprintf(fp, 
-	      "projection info = {9, %.4f, %.4f, %.4f, %.4f, " 
-                "0.0, 0.0, %.4f, %.4f, %s}\n", 
+      fprintf(fp,
+	      "projection info = {9, %.4f, %.4f, %.4f, %.4f, "
+                "0.0, 0.0, %.4f, %.4f, %s}\n",
 	      envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
-	      envi->center_lon, envi->standard_parallel1, 
+	      envi->center_lon, envi->standard_parallel1,
 	      envi->standard_parallel2, envi->projection);
       break;
     case LAMBERT_CONFORMAL_CONIC:
-      fprintf(fp, 
-	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
-	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
+      fprintf(fp,
+	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n",
+	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y,
 	      envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 	      envi->proj_dist_y, envi->hemisphere);
-      fprintf(fp, 
-	      "projection info = {4, %.4f, %.4f, %.4f, %.4f, " 
-	      "0.0, 0.0, %.4f, %.4f, %s}\n", 
+      fprintf(fp,
+	      "projection info = {4, %.4f, %.4f, %.4f, %.4f, "
+	      "0.0, 0.0, %.4f, %.4f, %s}\n",
 	      envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
 	      envi->center_lon, envi->standard_parallel1,
 	      envi->standard_parallel2, envi->projection);
       break;
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      fprintf(fp, 
-	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
-	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
+      fprintf(fp,
+	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n",
+	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y,
 	      envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 	      envi->proj_dist_y, envi->hemisphere);
-      fprintf(fp, 
-	      "projection info = {11, %.4f, %.4f, %.4f, %.4f, " 
-	      "0.0, 0.0, %s}\n", 
+      fprintf(fp,
+	      "projection info = {11, %.4f, %.4f, %.4f, %.4f, "
+	      "0.0, 0.0, %s}\n",
 	      envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
 	      envi->center_lon, envi->projection);
       break;
     case STATE_PLANE:
       break;
-    case SCANSAR_PROJECTION: 
+    case SCANSAR_PROJECTION:
       break;
     }
   }
@@ -649,7 +649,7 @@ export_as_envi (const char *metadata_file_name,
 
   strcpy (envi_data_file_name, output_file_name);
   strcat (envi_data_file_name, ".bil");
-  sprintf (command, "cp %s %s\n", image_data_file_name, envi_data_file_name); 
+  sprintf (command, "cp %s %s\n", image_data_file_name, envi_data_file_name);
   return_code = system (command);
   if ( return_code != 0 ) {
     char* temp;
@@ -673,7 +673,7 @@ export_as_esri (const char *metadata_file_name,
   char t_stamp[15];
   char esri_prj_file_name[2 * MAX_IMAGE_NAME_LENGTH];
   char projection[100], datum[100], spheroid_str[100]="", semimajor[25]="";
-  char flattening[25];  
+  char flattening[25];
   double central_meridian;
   spheroid_type_t spheroid;
   char esri_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
@@ -718,25 +718,25 @@ export_as_esri (const char *metadata_file_name,
 
   if (md->projection && md->projection->type < SCANSAR_PROJECTION) {
 
-    if (FLOAT_EQUIVALENT(md->general->re_major,6378137) && 
+    if (FLOAT_EQUIVALENT(md->general->re_major,6378137) &&
         FLOAT_EQUIVALENT(md->general->re_minor,6356752.3143))
         spheroid = WGS_1984;
-    else if (FLOAT_EQUIVALENT(md->general->re_major,6378135.0) && 
-             FLOAT_EQUIVALENT(md->general->re_minor,6356750.519915)) 
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6378135.0) &&
+             FLOAT_EQUIVALENT(md->general->re_minor,6356750.519915))
              spheroid = WGS_1972;
-    else if (FLOAT_EQUIVALENT(md->general->re_major,6378206.4) && 
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6378206.4) &&
              FLOAT_EQUIVALENT(md->general->re_minor,6356583.8))
              spheroid = CLARKE_1866;
-    else if (FLOAT_EQUIVALENT(md->general->re_major,6378249.145) && 
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6378249.145) &&
              FLOAT_EQUIVALENT(md->general->re_minor,6356514.86955))
              spheroid = CLARKE_1880;
-    else if (FLOAT_EQUIVALENT(md->general->re_major,6377397.155) && 
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6377397.155) &&
              FLOAT_EQUIVALENT(md->general->re_minor,6356078.9628))
              spheroid = BESSEL_1841;
-    else if (FLOAT_EQUIVALENT(md->general->re_major,6378157.5) && 
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6378157.5) &&
              FLOAT_EQUIVALENT(md->general->re_minor,6356772.2))
              spheroid = INTERNATIONAL_1967;
-    else if (FLOAT_EQUIVALENT(md->general->re_major,6378137.0) && 
+    else if (FLOAT_EQUIVALENT(md->general->re_major,6378137.0) &&
              FLOAT_EQUIVALENT(md->general->re_minor,6356752.31414))
              spheroid = GRS_1980;
 
@@ -828,7 +828,7 @@ export_as_esri (const char *metadata_file_name,
       }
       central_meridian = ((6 * abs(md->projection->param.utm.zone)) - 183);
       fp = FOPEN(esri_prj_file_name, "w");
-      fprintf(fp, 
+      fprintf(fp,
 	      "PROJCS[\"%s_UTM_Zone_%d%c\","
 	      "GEOGCS[\"GCS_%s\","
 	      "DATUM[\"D_%s\","
@@ -842,7 +842,7 @@ export_as_esri (const char *metadata_file_name,
 	      "PARAMETER[\"Scale_Factor\",0.9996],"
 	      "PARAMETER[\"Latitude_Of_Origin\",0],"
 	      "UNIT[\"Meter\",1]]",
-	      projection, md->projection->param.utm.zone, md->projection->hem, datum, 
+	      projection, md->projection->param.utm.zone, md->projection->hem, datum,
 	      datum, spheroid_str, semimajor, flattening, central_meridian);
       FCLOSE(fp);
       break;
@@ -850,7 +850,7 @@ export_as_esri (const char *metadata_file_name,
       if (md->projection->hem == 'N') strcpy(projection, "North_Pole_Stereographic");
       else if (md->projection->hem == 'S') strcpy(projection, "South_Pole_Stereographic");
       fp = FOPEN(esri_prj_file_name, "w");
-      fprintf(fp, 
+      fprintf(fp,
 	      "PROJCS[\"%s\","
 	      "GEOGCS[\"GCS_WGS_1984\","
 	      "DATUM[\"D_WGS_1984\","
@@ -1034,7 +1034,7 @@ export_as_esri (const char *metadata_file_name,
 	strcpy(datum, "North_American_1983");
       }
       fp = FOPEN(esri_prj_file_name, "w");
-      fprintf(fp, 
+      fprintf(fp,
 	      "PROJCS[\"%s\","
 	      "GEOGCS[\"GCS_%s\","
 	      "DATUM[\"D_%s\","
@@ -1060,7 +1060,7 @@ export_as_esri (const char *metadata_file_name,
       break;
     case STATE_PLANE:
       break;
-    case SCANSAR_PROJECTION: 
+    case SCANSAR_PROJECTION:
       break;
     }
   }
@@ -1070,7 +1070,7 @@ export_as_esri (const char *metadata_file_name,
   /* Write ESRI data file */
   strcpy (esri_data_file_name, output_file_name);
   strcat (esri_data_file_name, ".bil");
-  sprintf (command, "cp %s %s\n", image_data_file_name, esri_data_file_name); 
+  sprintf (command, "cp %s %s\n", image_data_file_name, esri_data_file_name);
   return_code = system (command);
   if ( return_code != 0 ) {
     char* temp;
@@ -1102,18 +1102,18 @@ averaging_kernel (gsl_matrix_uchar *img, int kernel_size, size_t i, size_t j)
     /* The i index to use, adjusted in case we are off the edge of the
        image.  This choice (and the corresponding choice for j)
        implement a kernel that pretends that a mirror image of the
-       image exists at the image edges (and corners). */          
+       image exists at the image edges (and corners). */
     int itu = i_idx;
-    if ( itu < 0 ) 
+    if ( itu < 0 )
       itu = -itu - 1;
-    else if ( itu >= img->size1 ) 
+    else if ( itu >= img->size1 )
       itu = img->size1 - (itu - img->size1) - 1;
     for ( j_idx = j_min ; j_idx < j_max ; j_idx++ ) {
       /* See the comment for variable itu above.  */
       int jtu = j_idx;
-      if ( jtu < 0 ) 
+      if ( jtu < 0 )
 	jtu = -jtu - 1;
-      else if ( jtu >= img->size2 ) 
+      else if ( jtu >= img->size2 )
 	jtu = img->size2 - (jtu - img->size2) - 1;
       sum += gsl_matrix_uchar_get (img, itu, jtu);
     }
@@ -1134,7 +1134,7 @@ averaging_kernel (gsl_matrix_uchar *img, int kernel_size, size_t i, size_t j)
    relocated pixel data is returned.  The new image width and height
    replace the input width and height arguments.  */
 static unsigned char *
-average_unsigned_char_pixels (unsigned char *pixels, unsigned long *width, 
+average_unsigned_char_pixels (unsigned char *pixels, unsigned long *width,
 			      unsigned long *height, int kernel_size)
 {
   /* Input width and height.  */
@@ -1164,9 +1164,9 @@ average_unsigned_char_pixels (unsigned char *pixels, unsigned long *width,
   oimg = gsl_matrix_uchar_alloc (oheight, owidth);
   for ( ii = 0 ; ii < oheight ; ii++ ) {
     for ( jj = 0 ; jj < owidth ; jj++ ) {
-      gsl_matrix_uchar_set 
-	(oimg, ii, jj, averaging_kernel (iimg, kernel_size, 
-					 ii * kernel_size + kernel_size / 2, 
+      gsl_matrix_uchar_set
+	(oimg, ii, jj, averaging_kernel (iimg, kernel_size,
+					 ii * kernel_size + kernel_size / 2,
 					 jj * kernel_size + kernel_size / 2));
     }
   }
@@ -1192,7 +1192,7 @@ average_unsigned_char_pixels (unsigned char *pixels, unsigned long *width,
 }
 
 /* Given a block of pixel_count floats, map them linearly from range
-   [max (minsample, mean - 3 * sigma), min (maxsample, mean + 3 * sigma)] 
+   [max (minsample, mean - 3 * sigma), min (maxsample, mean + 3 * sigma)]
    into the unsigned char range, with input samples outside the above
    range clamped.  Return the data in new malloc()ed memory.  */
 static unsigned char *
@@ -1238,9 +1238,9 @@ scale_floats_to_unsigned_bytes (float *daf, size_t pixel_count)
    location being returned.  The new image width and height are
    returned in *width and *height.  */
 static unsigned char *
-scale_unsigned_char_image_dimensions (unsigned char *pixels, 
+scale_unsigned_char_image_dimensions (unsigned char *pixels,
 				      unsigned long max_large_dimension,
-				      unsigned long *width, 
+				      unsigned long *width,
 				      unsigned long *height)
 {
   /* This assertion is pretty obvious, but since the algorithm needs
@@ -1281,10 +1281,10 @@ export_as_jpeg (const char *metadata_file_name,
 
   assert (md->general->data_type == REAL32);
 
-  if ( (max_size > line_count && max_size > sample_count) 
+  if ( (max_size > line_count && max_size > sample_count)
        || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
     max_large_dimension = GSL_MAX (line_count, sample_count);
-  } 
+  }
   else {
     max_large_dimension = max_size;
   }
@@ -1373,7 +1373,7 @@ export_as_jpeg (const char *metadata_file_name,
 #define PPM_MAGIC_NUMBER "P6"
 
 void
-export_as_ppm (const char *metadata_file_name, 
+export_as_ppm (const char *metadata_file_name,
 	       const char *image_data_file_name, const char *output_file_name,
 	       long max_size)
 {
@@ -1391,17 +1391,17 @@ export_as_ppm (const char *metadata_file_name,
   unsigned long width,height;
   FILE *ofp;
   const char *ppm_magic_number = PPM_MAGIC_NUMBER;
-  int print_count; 
+  int print_count;
   const int max_color_value = 255;
   size_t ii;
   int return_code;
 
   assert (md->general->data_type == REAL32);
 
-  if ( (max_size > line_count && max_size > sample_count) 
+  if ( (max_size > line_count && max_size > sample_count)
        || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
     max_large_dimension = GSL_MAX (line_count, sample_count);
-  } 
+  }
   else {
     max_large_dimension = max_size;
   }
@@ -1447,7 +1447,7 @@ export_as_ppm (const char *metadata_file_name,
   }
 
   /* Write the ppm header.  */
-  print_count = fprintf (ofp, PPM_MAGIC_NUMBER); 
+  print_count = fprintf (ofp, PPM_MAGIC_NUMBER);
   /* After this we will assume that writing to the new file will work
      correctly.  */
   assert (print_count == strlen (ppm_magic_number));
@@ -1475,9 +1475,9 @@ export_as_ppm (const char *metadata_file_name,
   meta_free (md);
 }
 
-void 
-export_as_geotiff (const char *metadata_file_name, 
-		   const char *image_data_file_name, 
+void
+export_as_geotiff (const char *metadata_file_name,
+		   const char *image_data_file_name,
 		   const char *output_file_name)
 {
   /* Get the image metadata.  */
@@ -1592,21 +1592,21 @@ export_as_geotiff (const char *metadata_file_name,
     re_minor = md->general->re_minor;
   }
 
-  if ( FLOAT_COMPARE_TOLERANCE (re_major, clarke1866_major_axis, 
+  if ( FLOAT_COMPARE_TOLERANCE (re_major, clarke1866_major_axis,
 				axis_tolerance)
-       && FLOAT_COMPARE_TOLERANCE (re_minor, clarke1866_minor_axis, 
+       && FLOAT_COMPARE_TOLERANCE (re_minor, clarke1866_minor_axis,
 				   axis_tolerance) ) {
     ellipsoid = CLARKE1866;
   }
-  else if ( FLOAT_COMPARE_TOLERANCE (re_major, wgs84_major_axis, 
-				     axis_tolerance) 
-	    && FLOAT_COMPARE_TOLERANCE (re_minor, wgs84_minor_axis, 
+  else if ( FLOAT_COMPARE_TOLERANCE (re_major, wgs84_major_axis,
+				     axis_tolerance)
+	    && FLOAT_COMPARE_TOLERANCE (re_minor, wgs84_minor_axis,
 					axis_tolerance) ) {
     ellipsoid = WGS84;
   }
-  else if ( FLOAT_COMPARE_TOLERANCE (re_major, gem10c_major_axis, 
-				     axis_tolerance) 
-	    && FLOAT_COMPARE_TOLERANCE (re_minor, gem10c_minor_axis, 
+  else if ( FLOAT_COMPARE_TOLERANCE (re_major, gem10c_major_axis,
+				     axis_tolerance)
+	    && FLOAT_COMPARE_TOLERANCE (re_minor, gem10c_minor_axis,
 					axis_tolerance) ) {
     ellipsoid = GEM10C;
   }
@@ -1626,15 +1626,15 @@ export_as_geotiff (const char *metadata_file_name,
 	     "using user defined ellipsoid\n", ASF_NAME_STRING);
     ellipsoid = USER_DEFINED;
   }
-  
+
   /* If we have a map projected image, write the projection
      information into the GeoTIFF.  */
   /* FIXME: this is a terrible hack to deal with scansar crap.  */
-  if ( md->sar->image_type == 'P' 
+  if ( md->sar->image_type == 'P'
        && md->projection->type != SCANSAR_PROJECTION) {
     /* Tie points for image corners.  There is space for four tie
        points, each consisting of three raster coordinates, followed
-       by three geospatial coordinates.  */    
+       by three geospatial coordinates.  */
     double tie_points[4][6];
     double pixel_scale[3];
     short projection_code;
@@ -1645,20 +1645,20 @@ export_as_geotiff (const char *metadata_file_name,
     if ( FLOAT_COMPARE_TOLERANCE (md->projection->re_major,
 				  clarke1866_major_axis, axis_tolerance)
 	 && FLOAT_COMPARE_TOLERANCE (md->projection->re_minor,
-				     clarke1866_minor_axis, 
+				     clarke1866_minor_axis,
 				     axis_tolerance) ) {
       ellipsoid = CLARKE1866;
     }
-    else if ( FLOAT_COMPARE_TOLERANCE (md->projection->re_major, 
-				       wgs84_major_axis, axis_tolerance) 
-	      && FLOAT_COMPARE_TOLERANCE (md->projection->re_minor, 
+    else if ( FLOAT_COMPARE_TOLERANCE (md->projection->re_major,
+				       wgs84_major_axis, axis_tolerance)
+	      && FLOAT_COMPARE_TOLERANCE (md->projection->re_minor,
 					  wgs84_minor_axis, axis_tolerance) ) {
       ellipsoid = WGS84;
     }
-    else if ( FLOAT_COMPARE_TOLERANCE (md->projection->re_major, 
-				       gem10c_major_axis, axis_tolerance) 
-	      && FLOAT_COMPARE_TOLERANCE (md->projection->re_minor, 
-					  gem10c_minor_axis, 
+    else if ( FLOAT_COMPARE_TOLERANCE (md->projection->re_major,
+				       gem10c_major_axis, axis_tolerance)
+	      && FLOAT_COMPARE_TOLERANCE (md->projection->re_minor,
+					  gem10c_minor_axis,
 					  axis_tolerance) ) {
       ellipsoid = GEM10C;
     }
@@ -1674,7 +1674,7 @@ export_as_geotiff (const char *metadata_file_name,
       ellipsoid = USER_DEFINED;
     }
 
-    /* We will tie down the corner of the image (which has raster coordinates 
+    /* We will tie down the corner of the image (which has raster coordinates
        0, 0, 0).  */
     tie_points[0][0] = 0.0;
     tie_points[0][1] = 0.0;
@@ -1690,7 +1690,7 @@ export_as_geotiff (const char *metadata_file_name,
        with more than one tie point pair.  Therefore, only the upper
        left corner is being written to the GeoTIFF file.  In order to
        write all computed tie points to the GeoTIFF, change the 6 to
-       size in the line below.  */  
+       size in the line below.  */
     TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_points);
 
     /* Set the scale of the pixels, in projection coordinates.  */
@@ -1703,7 +1703,7 @@ export_as_geotiff (const char *metadata_file_name,
     pixel_scale[2] = 0;
     TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
-    GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, 
+    GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1,
 		ModelTypeProjected);
 
     switch ( md->projection->type ) {
@@ -1739,42 +1739,42 @@ export_as_geotiff (const char *metadata_file_name,
 	}
 	projection_code += md->projection->param.utm.zone;
 
-	GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
+	GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
 		    projection_code);
 	GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
 	citation = MALLOC ((max_citation_length + 1) * sizeof (char));
 	citation_length
 	  = snprintf (citation, max_citation_length + 1,
                       "UTM zone %d %c projected GeoTIFF written by Alaska "
-		      "Satellite Facility tools", 
+		      "Satellite Facility tools",
 		      md->projection->param.utm.zone,
 		      md->projection->hem);
-	assert (citation_length >= 0 
+	assert (citation_length >= 0
 		&& citation_length <= max_citation_length);
 	GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
 	free (citation);
 	break;
       case POLAR_STEREOGRAPHIC:
-	GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
+	GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
 		    user_defined_value_code);
 	GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
-		    user_defined_value_code); 
+		    user_defined_value_code);
 	GTIFKeySet (ogtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
-	GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1, 
+	GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
 		    CT_PolarStereographic);
-	GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1, 
+	GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1,
 		    md->projection->param.ps.slon);
-	GTIFKeySet (ogtif, ProjOriginLatGeoKey, TYPE_DOUBLE, 1, 
+	GTIFKeySet (ogtif, ProjOriginLatGeoKey, TYPE_DOUBLE, 1,
 		    md->projection->param.ps.slat);
 	GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
 	GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
-	GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, 
+	GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1,
 		    Angular_Degree);
 
 	/* Fill in the details of the geographic coordinate system used.  */
 	switch ( ellipsoid ) {
 	case CLARKE1866:
-	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 
+	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1,
 		      GCSE_Clarke1866);
 	  break;
 	case GEM10C:
@@ -1793,16 +1793,16 @@ export_as_geotiff (const char *metadata_file_name,
 	     The GeogCitation key will be filled in later.  */
 	  GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1,
 		      user_defined_value_code);
-	  GTIFKeySet (ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1, 
+	  GTIFKeySet (ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1,
 		      re_major);
-	  GTIFKeySet (ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1, 
+	  GTIFKeySet (ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1,
 		      re_minor);
 	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
 	  citation_length
 	    = snprintf (citation, max_citation_length + 1,
 			"Geographic coordinate system using reference "
 			"ellipsoid with semimajor axis of %f meters and "
-			"semiminor axis of %f meters", 
+			"semiminor axis of %f meters",
 			re_major, re_minor);
 	  GTIFKeySet (ogtif, GeogCitationGeoKey, TYPE_ASCII, 1, citation);
 	  free (citation);
@@ -1822,43 +1822,43 @@ export_as_geotiff (const char *metadata_file_name,
 	    += snprintf (citation + citation_length,
 			 max_citation_length - citation_length + 1,
 			 "CLARKE1866");
-	  assert (citation_length >= 0 
-		  && citation_length <= max_citation_length);	
+	  assert (citation_length >= 0
+		  && citation_length <= max_citation_length);
 	  break;
 	case GEM10C:
-	  citation_length 
-	    += snprintf (citation + citation_length, 
+	  citation_length
+	    += snprintf (citation + citation_length,
 			 max_citation_length - citation_length + 1,
 			 "GEM10C ");
-	  assert (citation_length >= 0 
-		  && citation_length <= max_citation_length);	
+	  assert (citation_length >= 0
+		  && citation_length <= max_citation_length);
 	  break;
 	case WGS84:
 	  citation_length
-	    += snprintf (citation + citation_length, 
+	    += snprintf (citation + citation_length,
 			 max_citation_length - citation_length + 1,
 			 "WGS84 ");
-	  assert (citation_length >= 0 
-		  && citation_length <= max_citation_length);	
+	  assert (citation_length >= 0
+		  && citation_length <= max_citation_length);
 	  break;
 	case USER_DEFINED:
 	  citation_length
 	    += snprintf (citation + citation_length,
 			 max_citation_length - citation_length + 1,
 			 "user defined ");
-	  assert (citation_length >= 0 
+	  assert (citation_length >= 0
 		  && citation_length <= max_citation_length);
 	  break;
 	default:
 	  assert (FALSE);	/* Shouldn't be here.  */
 	}
-	citation_length 
-	  += snprintf (citation + citation_length, 
+	citation_length
+	  += snprintf (citation + citation_length,
 		       max_citation_length - citation_length + 1,
 		       "ellipsoid datum written by Alaska Satellite Facility "
 		       "tools");
-	assert (citation_length >= 0 
-		&& citation_length <= max_citation_length);	
+	assert (citation_length >= 0
+		&& citation_length <= max_citation_length);
 	GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
 	free (citation);
 
@@ -1874,44 +1874,44 @@ export_as_geotiff (const char *metadata_file_name,
 		&& md->projection->type == SCANSAR_PROJECTION) ) {
     GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeGeographic);
 
-    //    if ( ellipsoid == WGS84 ) {
+    /*    if ( ellipsoid == WGS84 ) {*/
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_WGS84);
-      //    }
-      //    else {
-      //      /* User defined geographic coordinate system.  */
-      //      GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 
-      //		  user_defined_value_code);
-      //      switch ( ellipsoid ) {
-      //      case CLARKE1866:
-      //	GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, 
-      //		    DatumE_Clarke1866);
-      //	break;
-      //      case GEM10C:
-      //	GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1,
-      //		    DatumE_GEM10C);
-      //	break;
-      //      case WGS66:
-      //	/* Set to a newrby available ellipsoid.  We have far worse
-      //	   problems than the ellipsoid being a bit wrong.  */
-      //	GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1,
-      //		    DatumE_WGS84);
-      //	break;
-      //      case WGS84:
-      //	/* Shouldn't be here (this should have been handled using the
-      //	   non-user defined GeographicTypeGeoKey).  */
-      //	assert (FALSE);	
-      //	break;
-      //      default:
-      //	assert (FALSE);		/* Shouldn't be here.  */
-      //      }
-      //    }
-
+      /*    }
+       *    else {
+       *      ** User defined geographic coordinate system.  **
+       *      GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1,
+       *		  user_defined_value_code);
+       *      switch ( ellipsoid ) {
+       *      case CLARKE1866:
+       *	GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1,
+       *		    DatumE_Clarke1866);
+       *	break;
+       *      case GEM10C:
+       *	GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1,
+       *		    DatumE_GEM10C);
+       *	break;
+       *      case WGS66:
+       *	** Set to a newrby available ellipsoid.  We have far worse
+       *	   problems than the ellipsoid being a bit wrong.  **
+       *	GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1,
+       *		    DatumE_WGS84);
+       *	break;
+       *      case WGS84:
+       *	** Shouldn't be here (this should have been handled using the
+       *	   non-user defined GeographicTypeGeoKey).  **
+       *	assert (FALSE);
+       *	break;
+       *      default:
+       *	assert (FALSE);		** Shouldn't be here.  **
+       *      }
+       *    }
+       */
     GTIFKeySet (ogtif, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, PM_Greenwich);
     GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, Angular_Degree);
     {
       /* Tie points for image corners.  There is space for four tie
 	 points, each consisting of three raster coordinates, followed
-	 by three geospatial coordinates.  */    
+	 by three geospatial coordinates.  */
       double tie_points[4][6];
 
       /* Get the lat/longs of three image corners.  */
@@ -1949,12 +1949,12 @@ export_as_geotiff (const char *metadata_file_name,
 
   else if ( md->sar->image_type == 'S' ) {
     /* Slant range image conversion not implemented yet.  */
-    assert (FALSE);	
+    assert (FALSE);
   }
 
   else {
     /* Shouldn't be here (unrecognized image type). */
-    assert (FALSE);	
+    assert (FALSE);
   }
 
   /* Write the actual image data.  */
