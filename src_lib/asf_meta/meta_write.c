@@ -177,7 +177,18 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_string(fp,"}","","End projection");
   }
 
-  
+/* Write out statistics block */
+  if (meta->stats) {
+    meta_put_string(fp,"stats {","","Block containing basic image statistics");
+    meta_put_double(fp,"min:",meta->stats->min,"Minimum sample value");
+    meta_put_double(fp,"max:",meta->stats->max,"Maximum sample value");
+    meta_put_double(fp,"mean:",meta->stats->mean,"Mean average of sample values");
+    meta_put_double(fp,"rmse:",meta->stats->rmse,"Root mean squared error");
+    meta_put_double(fp,"std_deviation:",meta->stats->std_deviation,"Standard deviation");
+    meta_put_double(fp,"mask:",meta->stats->mask,"Value ignored while taking statistics");
+    meta_put_string(fp,"}","","End stats");
+  }
+
   FCLOSE(fp);
   
   return;
