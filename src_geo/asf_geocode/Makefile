@@ -50,10 +50,10 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libgslcblas.a \
 	$(LIBDIR)/libjpeg.a \
 	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/libglib-2.0.a \
 	-lm
 
-
-LDLIBS := $(LIBS) $(GLIB_LIB)
+LDLIBS := $(LIBS)
 
 ifneq ($(SYS),win32)
 
