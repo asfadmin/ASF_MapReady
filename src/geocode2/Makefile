@@ -58,10 +58,6 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 
 LDLIBS := $(shell pkg-config --libs glib-2.0) $(LIBS)
 
-parse_test: geocode_options.t.c
-	$(CC) -DTEST_PARSE_OPTIONS $(INCLUDE_FLAGS) geocode_options.t.c \
-	$(LIBDIR)/geocode_options.a $(LIBS) -o geocode_options.t
-
 ###############################################################################
 #
 # Automaticly Computed Stuff
@@ -81,6 +77,10 @@ $(PROGRAM): $(OBJS)
 .PHONY: clean
 clean:
 	rm -rf $(PROGRAM) $(OBJS) core.* core *~ $(PROGRAM)
+
+parse_test: geocode_options.t.c
+	$(CC) -DTEST_PARSE_OPTIONS $(INCLUDE_FLAGS) geocode_options.t.c \
+	$(LIBDIR)/geocode_options.a $(LIBS) -o geocode_options.t
 
 # If any command responsible for producing a target exits with a
 # nonzero exit status, delete that target.
