@@ -18,10 +18,14 @@ LIBS = asf.a \
 LEX = flex
 YACC = bison -y			# -y means use yacc file name conventions.
 
-# Uncomment next line and yydebug lines in .y file to debug parser.
-#YDEBUG_FLAGS = -t -v   
-# Uncomment next line to debug lexer.
-#LDEBUG_FLAGS = -d
+# Build with this defined to enable parser diagnostics.  Note that
+# this doesn't automaticly clean or otherwise force a rebuild.
+ifdef DEBUG_METADATA_PARSER
+  YDEBUG_FLAGS = -t -v   
+  LDEBUG_FLAGS = -d
+  CC_PARSER_DEBUG_FLAGS = -DDEBUG_METADATA_PARSER
+  CFLAGS += $(CC_PARSER_DEBUG_FLAGS)
+endif
 
 # All global lexer and parser symbols are preceded by 'meta_' namespace hack.
 YFLAGS = $(YDEBUG_FLAGS) -d -p meta_yy
