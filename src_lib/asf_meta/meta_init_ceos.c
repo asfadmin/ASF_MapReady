@@ -168,8 +168,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    meta->general->line_count       = iof->numofrec;
    if (asf_facdr)
       meta->general->sample_count  = asf_facdr->npixels;
-   else if (((iof->reclen-iof->predata)/iof->bytgroup) == (dssr->sc_pix*2))
-      meta->general->sample_count  = (iof->reclen-iof->predata)/iof->bytgroup;
+   else if (((iof->reclen-iof->predata-iof->sufdata)/iof->bytgroup) == (dssr->sc_pix*2))
+      meta->general->sample_count  = (iof->reclen-iof->predata-iof->sufdata)/iof->bytgroup;
    else
       meta->general->sample_count  = iof->sardata/iof->bytgroup;
    meta->general->start_line       = 0;
@@ -248,7 +248,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
    else {
       meta->sar->original_line_count   = iof->numofrec;
-      meta->sar->original_sample_count = (iof->reclen-iof->predata)
+      meta->sar->original_sample_count = (iof->reclen-iof->predata-iof->sufdata)
                                          / iof->bytgroup;
       if ( meta->sar->original_line_count==0
           || meta->sar->original_sample_count==0) {
@@ -388,6 +388,13 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
       /* FOCUS processor populates map projection record for slant range! */
       /* ESA (I-PAF) apparently does the same */
       meta->sar->image_type='S';
+      projection->type=MAGIC_UNSET_CHAR;
+   }
+   else if ((strncmp(mpdr->mpdesc, "GROUND RANGE", 12) == 0) ||
+      (strncmp(mpdr->mpdesc, "Ground range", 12) == 0)) {
+      /* ESA populates map projection record also for ground range! */
+      meta->sar->image_type='G';
+      projection->type=MAGIC_UNSET_CHAR;
    }
    else if (strncmp(mpdr->mpdesig, "GROUND RANGE",12) == 0) {
       projection->type='A';/*Along Track/Cross Track.*/
@@ -551,6 +558,7 @@ ceos_description *get_ceos_description(char *fName)
       ceos->facility=ESA;
       
       if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=RAW;
+      if (0==strncmp(prodStr,"SAR PRECISION IMAGE",19)) ceos->product=PRI;
       else {
          printf("Get_ceos_description Warning! Unknown ESA product type '%s'!\n",prodStr);
          ceos->product=unknownProduct;
