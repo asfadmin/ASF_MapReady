@@ -67,12 +67,12 @@ meta_parameters *meta_read(const char *inName)
 void meta_io_state(coniStruct *coni, meta_state_vectors *state)
 {
 	int ii;
-printf("ENTERED meta_io_state\n");
 	coniIO_structOpen(coni,"state {","begin list of state vectors for satellite, over image");
 	coniIO_int   (coni,"state.","year:",  &state->year,        "Year of image start");
 	coniIO_int   (coni,"state.","day:",   &state->julDay,      "Julian day of the year for image start");
 	coniIO_double(coni,"state.","second:",&state->second,      "Second of the day for image start");
 	coniIO_int   (coni,"state.","number:",&state->vector_count,"Number of state vectors below");
+/* Fill state->num for backwards compatibility */
 	state->num = state->vector_count;
 	for (ii=0; ii<state->vector_count; ii++)
 	{
@@ -87,7 +87,6 @@ printf("ENTERED meta_io_state\n");
 		coniIO_structClose(coni,"end vector");
 	}
 	coniIO_structClose(coni,"end of list of state vectors\n");
-printf("LEFT meta_io_state\n");
 }
 
 /***************************************************************
@@ -158,8 +157,8 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	}
 	coniIO_char(coni,"geo.","lookDir:",       &sar->look_direction,         "SAR Satellite look direction (normally R) [R=right; L=left]");
 	coniIO_int(coni,"geo.","deskew:",         &sar->deskewed,               "Image moved to zero doppler? [1=yes; 0=no]");
-	coniIO_double(coni,"geo.","x_pixel_size:",&general->x_pixel_size,       "Pixel size in X direction [m]");
-	coniIO_double(coni,"geo.","y_pixel_size:",&general->y_pixel_size,       "Pixel size in Y direction [m]");
+	coniIO_double(coni,"geo.","xPix:",        &general->x_pixel_size,       "Pixel size in X direction [m]");
+	coniIO_double(coni,"geo.","yPix:",        &general->y_pixel_size,       "Pixel size in Y direction [m]");
 	coniIO_double(coni,"geo.","rngPixTime:",  &sar->range_time_per_pixel,   "Time/pixel, range (xPix/(c/2.0), or 1/fs) [s]");
 	coniIO_double(coni,"geo.","azPixTime:",   &sar->azimuth_time_per_pixel, "Time/pixel, azimuth (yPix/swathVel, or 1/prf) [s]");
 	coniIO_double(coni,"geo.","slantShift:",  &sar->slant_shift,            "Error correction factor, in slant range [m]");
@@ -189,7 +188,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	    coniReopen(coni);/*Seek back to beginning of file.*/
 	    if (err==CONI_OK && nVec!=0) {
 	    /*We have state vectors!*/
-		    meta->state_vectors = raw_init_state(nVec);/*Allocate state vectors.*/
+		    meta->state_vectors->vecs=(state_loc *)MALLOC(nVec * sizeof(state_loc)); /*Allocate state vectors.*/
 		    meta_io_state(coni, meta->state_vectors);  /*And initialize them.*/
 	    }
 	}
@@ -232,6 +231,13 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 		exit(1);
 	}
 
+/* stats structure is not yet in use */
+/*	stats->max                = NAN;
+ *	stats->min                = NAN;
+ *	stats->mean               = NAN;
+ *	stats->rms                = NAN;
+ *	stats->std_deviation      = NAN; */
+
 /* Fields that cannot be filled from the old structures */
 	general->frame            = -1;
 	general->band_number      = -1;
@@ -239,11 +245,6 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	general->center_latitude  = NAN;
 	general->center_longitude = NAN;
 	sar->look_angle           = NAN;
-	stats->max                = NAN;
-	stats->min                = NAN;
-	stats->mean               = NAN;
-	stats->rms                = NAN;
-	stats->std_deviation      = NAN;
 
 /* Close coni structure */
 	coniClose(coni);
@@ -299,7 +300,9 @@ void meta_new2old(meta_parameters *meta)
 	meta->ifm->orig_nLines   = meta->general->line_count;
 	meta->ifm->orig_nSamples = meta->general->sample_count;
 
-/* Fill extra_info structure */
+/* Allocate and fill extra_info structure */
+	if (meta->info == NULL)
+		{meta->info = MALLOC(sizeof(extra_info));}
 	strcpy( meta->info->sensor,     meta->general->sensor);
 	strcpy( meta->info->mode,       meta->general->mode);
 	strcpy( meta->info->processor,  meta->general->processor);
