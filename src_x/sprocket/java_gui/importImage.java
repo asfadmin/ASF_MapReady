@@ -221,6 +221,9 @@ class importImage {
          if (max-min != 0) {
             int fit2byte;
             for (int ii=0; ii < imagesize*imagesize; ii++) {
+               if (imageInFloats[ii] < min) {
+                  imageInFloats[ii] = min; // Shouldn't have to do this >:(
+               }
                fit2byte = (int)(255 * (imageInFloats[ii]-min) / (max-min));
                byteImageArray[ii] = (byte)fit2byte;
                histogram[fit2byte]++;
