@@ -1,65 +1,62 @@
-NAME:  deskew_dem
+NAME:
+    deskew_dem
 
-SYNOPSIS:  deskew_dem [-i <inSARfile> <bit>] [-log <file>]
-                      <inDEMfile> <ceos> <outfile>
+SYNOPSIS:
+    deskew_dem [-i <inSARfile> <bit>] [-log <file>] <inDEMfile> <outfile>
 
 DESCRIPTION:
+    This program removes incidence-angle skew and maps from slant range to
+    ground range. It will do this to a DEM or SAR image. If the -i option is not
+    specified, the input DEM will be converted from slant range to ground range
+    and output to outfile. If the -i option is specified, deskew_dem will remove
+    the height distortion from the SAR image inSARfile. If the <bit> is 1, the
+    image will be both radiometrically and geometrically corrected for local
+    slope. This behavior can be eliminated by using 0 for <bit>, which will only
+    be corrected geometrically.
 
-  This program removes incidence-angle skew and maps from slant range
-  to ground range. It will do this to a DEM or SAR image. If the -i option
-  is not specified, the input DEM will be converted from slant range
-  to ground range and output to outfile. If the -i option is specified,
-  deskew_dem will remove the height distortion from the LAS image inSARfile.
-  If the <bit> is 1, the image will be both radiometrically and geometrically
-  corrected for local slope. This behavior can be eliminated by using 0 for
-  <bit>, which will only be corrected geometrically .
-
-     <inDEMfile>  IEEE float slant-range dem, with extension .ht or .dem.
-     <ceos>       Original image ceos metadata.
-     <outfile>    Output LAS image.  If <outfile> has the extension .dem or
-                   .ht, deskew_dem will convert the input slant-range DEM
-		   to ground range.
+      <inDEMfile>  IEEE float slant-range dem, with extension .ht or .dem.
+      <outfile>    Output image. If <outfile> has the extension .dem or .ht,
+                    deskew_dem will convert the input slant-range DEM to ground
+                    range.
 
 OPTIONS:
+    -i <inSARfile> <bit>
+       If the <inSARfile> has the extension of .img or .amp, deskew_dem will
+       output a terrain-corrected amplitude image, based on the input file
+       <inDEMfile>.  If <bit> is 0, then the terrain correction is only
+       geometric-- no radiometric incidence angle normalization will occur.
+       Enter <bit> as 1 for this to happen.
 
-  -i <inSARfile> <bit>
-      If the <inSARfile> has the extension of .img or .amp, deskew_dem
-      will output a terrain-corrected amplitude image, based on the input
-      file <inDEMfile>.  If <bit> is 0, then the terrain correction is
-      only geometric-- no radiometric incidence angle normalization will
-      occur.  Enter <bit> as 1 for this to happen.
-
-  -log <file>
-      This switch copies the standard output to a log file.
-
+    -log <file>
+       This switch copies the standard output to a log file.
 
 EXAMPLES:
-     deskew_dem elevation_sr.ht ceos elevation.dem
-     
-     This will remap the input LAS file elevation_sr.ht to
-  the ground range LAS DEM elevation.dem.
-    
-  deskew_dem -i input.amp elevation.dem ceos out.amp
-    
-     This will remove radiometric and geometric distortion
-  from the input slant range LAS image input.amp and create
-  out.amp.
-    
-  deskew_dem -i input.amp 0 elevation.dem ceos out.amp
-    
-     Same as above, but only geometric distortion is removed
-  (no radiometric distortion is removed-- hence the front
-  slopes of mountains will be brighter than the back slopes).
-    
+    > deskew_dem elevation_sr.ht elevation.dem
+       This will remap the input file elevation_sr.ht to the ground range DEM
+       elevation.dem.
+
+    > deskew_dem -i input.amp 1 elevation.dem out.amp
+       This will remove radiometric and geometric distortion from the input
+       slant range image input.amp and create out.amp.
+
+    > deskew_dem -i input.amp 0 elevation.dem out.amp
+       Same as above, but only geometric distortion is removed (no radiometric
+       distortion is removed-- hence the front slopes of mountains will be
+       brighter than the back slopes).
+
 SEE ALSO:
 
 HARDWARE/SOFTWARE LIMITATIONS:
+    None known.
 
 BUGS:
+    None known.
 
-AUTHOR: 7/97  Orion Lawlor
-	ASF SAR Tools, 1997
+AUTHOR:
+   7/97  Orion Lawlor
+   2/04  Patrick Denny
+   ASF SAR Tools, 1997
 
-CONTACT: apd@asf.alaska.edu
-	 or http://www.asf.alaska.edu/apd
-	
+CONTACT:
+    uso@asf.alaska.edu
+    http://www.asf.alaska.edu/software
