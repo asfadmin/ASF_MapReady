@@ -3,8 +3,8 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
-	$(LIBDIR)/libasf_reporting.a
+LIBS  = $(LIBDIR)/libasf_reporting.a \
+	$(LIBDIR)/asf.a
 
 OBJS  = asf_convert.o \
 	config.o \
