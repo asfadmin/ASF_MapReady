@@ -37,7 +37,6 @@
    -log           Output will be written to a specified log file.
    -quiet         Supresses all non-essential output.
    -lat           Specify lower and upper latitude contraints.
-   -sprocket      Do not use this option.
    -old           Output in old style ASF internal format.
    -prc           Replace the restituted state vectors from the original raw
                   data acquired by the ERS satellites with preceision state
@@ -49,7 +48,7 @@
 </examples>
 
 <limitations>
-   Don't use the -sprocket option.
+   None.
 </limitations>
 
 <see_also>
