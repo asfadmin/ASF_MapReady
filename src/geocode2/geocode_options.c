@@ -134,15 +134,35 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps)
 	    break;
 
 	case POLAR_STEREOGRAPHIC:
+	    if (ISNAN(pps->ps.false_easting))
+		pps->ps.false_easting = 0;
+	    if (ISNAN(pps->ps.false_northing))
+		pps->ps.false_northing = 0;
+
 	    break;
 
 	case ALBERS_EQUAL_AREA:
+	    if (ISNAN(pps->albers.false_easting))
+		pps->albers.false_easting = 0;
+	    if (ISNAN(pps->albers.false_northing))
+		pps->albers.false_northing = 0;
+
 	    break;
 
 	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	    if (ISNAN(pps->lamaz.false_easting))
+		pps->lamaz.false_easting = 0;
+	    if (ISNAN(pps->lamaz.false_northing))
+		pps->lamaz.false_northing = 0;
+
 	    break;
 
 	case LAMBERT_CONFORMAL_CONIC:
+	    if (ISNAN(pps->lamcc.false_easting))
+		pps->lamcc.false_easting = 0;
+	    if (ISNAN(pps->lamcc.false_northing))
+		pps->lamcc.false_northing = 0;
+
 	    break;
 
 	default:
