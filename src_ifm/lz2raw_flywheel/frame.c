@@ -74,9 +74,9 @@ ERS_frame * ERS_readNextFrame(bin_state *s,ERS_frame *f)
 	else
 	  {
 	     f->is_echo =1;
-	     printf("   ***** ERROR at frame %i - Unknown frame type (%i); assumed to be bit error \n",
+	     if (!quietflag) printf("   ***** ERROR at frame %i - Unknown frame type (%i); assumed to be bit error \n",
 			s->curFrame, f->type);
-	     if (logflag) {
+	     if (logflag && !quietflag) {
 	       sprintf(logbuf,"   ***** ERROR at frame %i - Unknown frame type (%i); assumed to be bit error \n",
 			s->curFrame, f->type);
 	       printLog(logbuf);
