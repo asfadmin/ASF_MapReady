@@ -15,25 +15,25 @@ void meta_write(meta_parameters *meta, const char *file_name)
 
   /* General block.  */
   fprintf(fp, "general {\n");
-  fprintf(fp, "    sensor: %s\n", meta->general->sensor);
-  fprintf(fp, "    mode: %s\n", meta->general->sensor);
-  fprintf(fp, "    processor: %s\n", meta->general->processor);
-  fprintf(fp, "    data_type: %s\n", meta->general->data_type);
-  fprintf(fp, "    system: %s\n", meta->general->system);
-  fprintf(fp, "    orbit: %d\n", meta->general->orbit);
-  fprintf(fp, "    frame: %d\n", meta->general->frame);
-  fprintf(fp, "    line_count: %d\n", meta->general->line_count);
-  fprintf(fp, "    sample_count: %d\n", meta->general->sample_count);
-  fprintf(fp, "    start_line: %d\n", meta->general->start_line);
-  fprintf(fp, "    start_sample: %d\n", meta->general->start_sample);
-  fprintf(fp, "    x_pixel_size: %f\n", meta->general->x_pixel_size);
-  fprintf(fp, "    y_pixel_size: %f\n", meta->general->y_pixel_size);
-  fprintf(fp, "    center_latitude: %f\n", meta->general->center_latitude);
-  fprintf(fp, "    center_longitude: %f\n", meta->general->center_longitude);
-  fprintf(fp, "    re_major: %f\n", meta->general->re_major);
-  fprintf(fp, "    re_minor: %f\n", meta->general->re_minor);
-  fprintf(fp, "    bit_error_rate: %f\n", meta->general->bit_error_rate);
-  fprintf(fp, "    missing_lines: %d\n", meta->general->missing_lines);
+  fprintf(fp, "    sensor:             %s\n", meta->general->sensor);
+  fprintf(fp, "    mode:               %s\n", meta->general->sensor);
+  fprintf(fp, "    processor:          %s\n", meta->general->processor);
+  fprintf(fp, "    data_type:          %s\n", meta->general->data_type);
+  fprintf(fp, "    system:             %s\n", meta->general->system);
+  fprintf(fp, "    orbit:              %d\n", meta->general->orbit);
+  fprintf(fp, "    frame:              %d\n", meta->general->frame);
+  fprintf(fp, "    line_count:         %d\n", meta->general->line_count);
+  fprintf(fp, "    sample_count:       %d\n", meta->general->sample_count);
+  fprintf(fp, "    start_line:         %d\n", meta->general->start_line);
+  fprintf(fp, "    start_sample:       %d\n", meta->general->start_sample);
+  fprintf(fp, "    x_pixel_size:       %f\n", meta->general->x_pixel_size);
+  fprintf(fp, "    y_pixel_size:       %f\n", meta->general->y_pixel_size);
+  fprintf(fp, "    center_latitude:    %f\n", meta->general->center_latitude);
+  fprintf(fp, "    center_longitude:   %f\n", meta->general->center_longitude);
+  fprintf(fp, "    re_major:           %f\n", meta->general->re_major);
+  fprintf(fp, "    re_minor:           %f\n", meta->general->re_minor);
+  fprintf(fp, "    bit_error_rate:     %f\n", meta->general->bit_error_rate);
+  fprintf(fp, "    missing_lines:      %d\n", meta->general->missing_lines);
   fprintf(fp, "}\n");
 
   /* SAR block.  */
@@ -43,7 +43,6 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	  meta->sar->look_direction);
   fprintf(fp, "    look_count: %d  # Number of looks from SLC\n", 
 	  meta->sar->look_count);
-  fprintf(fp, "    look_angle: %f\n", meta->sar->look_angle);
   fprintf(fp, "    deskewed: %d  # [1=yes, 0=no]\n", meta->sar->deskewed);
   fprintf(fp, "    range_time_per_pixel: %f\n", 
 	  meta->sar->range_time_per_pixel);
