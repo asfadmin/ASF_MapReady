@@ -266,6 +266,7 @@ then
     if [ -r ${i}.ddr ]
     then
       to_remove="${to_remove} ${i}.ddr"
+    fi
     rm ${to_remove}
   done
 fi
