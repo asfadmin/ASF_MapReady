@@ -48,10 +48,9 @@ LIBS  = $(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libgeotiff.a \
 	$(LIBDIR)/libtiff.a \
 	$(LIBDIR)/libjpeg.a \
-	$(LIBDIR)/libgsl.a \
-	$(LIBDIR)/libproj.a \
-	$(LIBDIR)/libglib-2.0.a \
-	$(LIBDIR)/libiconv.a \
+	$(GSL_LIBS) \
+	$(PROJ_LIBS) \
+	$(GLIB_LIBS) \
 	-lm
 
 LDLIBS := $(LIBS)
