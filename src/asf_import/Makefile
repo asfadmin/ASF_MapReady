@@ -1,6 +1,6 @@
-# import2asf
+# asf_import
 # by Rudi Gens, ASF, 2004
-#    Patrick Denny, 2004
+#    Patrick Denny, June, 2004
 # A program to ingest the complete variety of CEOS data, STF data
 #    as well as the external ESRI and ENVI data into ASF internal format
 
@@ -41,7 +41,7 @@ OBJS  = aisp_params.o \
 all: asf_import
 	-rm *.o
 
-asf_import: $(OBJS) asf_import.c
+asf_import: $(OBJS)
 	$(CC) $(CFLAGS) -o asf_import $(OBJS) $(LIBS) $(LDFLAGS)
 	mv asf_import$(BIN_POSTFIX) $(BINDIR)
 #	cp asf_import.1 ../../man/cat1/
