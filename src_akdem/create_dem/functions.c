@@ -7,24 +7,23 @@
 
 int lz2raw_flywheel(char *inFile, char *outFile, char *prcOrbits, int prcFlag, double lat_begin, double lat_end)
 {
-	char command[255];
+        char command[255];
 	int ret;
 
-	sprintf(command, "lz2raw_flywheel ");
+        sprintf(command, "lz2raw_flywheel %s %s", inFile, outFile);
 	if (prcFlag == 1) sprintf (command, "%s -prc %s", command, prcOrbits); 
-	if (logflag) sprintf(command, "%s -log %s", command, logFile);
+        if (logflag) sprintf(command, "%s -log %s", command, logFile);
 	if (quietflag) strcat(command, " -quiet");
 	if (lat_begin!=-99.0 && lat_end!=99.0) sprintf(command, "%s -lat %lf %lf", command, lat_begin, lat_end);
-	sprintf(command, "%s %s %s", command, inFile, outFile);
 
         printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-	  sprintf(logbuf,"\nCommand line: %s\n", command);
+          sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
-	ret = system(command);
+        ret = system(command);
 
 	return ret;
 }
@@ -34,10 +33,9 @@ int ceos2raw(char *inFile, char *outFile)
         char command[255];
 	int ret;
 
-        sprintf(command, "ceos2raw ");        
+        sprintf(command, "ceos2raw %s %s", inFile, outFile);        
 	if (logflag) sprintf(command, "%s -log %s", command, logFile);
 	if (quietflag) strcat(command, " -quiet");
-        sprintf(command, "%s %s %s", command, inFile, outFile);        
 
         printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
@@ -79,6 +77,33 @@ int avg_in_dop(char *inFile1, char * inFile2, char *outFile)
 
 	sprintf(command, "avg_in_dop %s %s %s", inFile1, inFile2, outFile);
 	if (logflag) sprintf(command, "avg_in_dop -log %s %s %s %s", logFile, inFile1, inFile2, outFile);
+/* for updated Doppler
+	sprintf(command, "avg_in_dop %s %s %s %s", inFile1, inFile2, outFile1, outFile2);
+	if (logflag) sprintf(command, "avg_in_dop -log %s %s %s %s %s", logFile, inFile1, inFile2, outFile1, outFile2);
+*/
+
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+
+	return ret;
+}
+
+int doppler_per_patch(char *parFile1, char * parFile2, char *metaFile1, char *metaFile2, char *deltaFile, 
+	char *outFile1, char *outFile2)
+{
+	char command[255];
+	int ret;
+
+	sprintf(command, "doppler_per_patch -line 1000 %s %s %s %s %s %s %s", 
+				parFile1, parFile2, metaFile1, metaFile2, deltaFile, outFile1, outFile2);
+	if (logflag) sprintf(command, "doppler_per_patch -log %s -line 1000 %s %s %s %s %s %s %s", 
+				logFile, parFile1, parFile2, metaFile1, metaFile2, deltaFile, outFile1, outFile2);
 
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
@@ -872,13 +897,13 @@ int deskew_dem(char *inFile1, char *metaFile, char *outFile, char *inFile2, int 
         char command[255];
         int ret;
 
-        if (strcmp(inFile2,"")==0)   
+        if (strcmp(inFile2,"")==0) 
                 sprintf(command, "deskew_dem %s %s %s", inFile1, metaFile, outFile);
-        else
+        else 
                 sprintf(command, "deskew_dem -i %s %d %s %s %s", inFile2, radiometric, inFile1, metaFile, outFile);
-        if (logflag) sprintf(command, "deskew_dem -i %s  1 -log %s %s %s %s", 
+        if (logflag) sprintf(command, "deskew_dem -i %s %d -log %s %s %s %s", 
 		inFile2, radiometric, logFile, inFile1, metaFile, outFile);
-        if (logflag && strcmp(inFile2,"")==0)
+        if (logflag && strcmp(inFile2,"")==0) 
 		sprintf(command, "deskew_dem -log %s %s %s %s", logFile, inFile1, metaFile, outFile);
          
         printf("\nCommand line: %s\nDate: ", command);
