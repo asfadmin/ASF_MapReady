@@ -59,6 +59,7 @@ PROGRAM HISTORY:
 				<name>.raw if *.D is invalid. 
     3.0	    10/02   J. Nicoll	Made calibrateable, added beta, sigma, gamma 
     				products. Fixed deskew to exclude data wedges.
+    3.1     6/03    J. Nicoll   Expanded debug options and change debug flags.			
 
 HARDWARE/SOFTWARE LIMITATIONS:
     This program requires large amounts of memory to run.  The main
@@ -153,8 +154,6 @@ void give_usage(char *name)
 	"   -n num_samps    META  Number of range samples to process\n"
 	"                         (Default is read from metadata)\n"
 	"   -r output_res   8.0   Desired output azimuth resolution (m)\n"
-	"   -d dbg_flg      1     Debug: 1=amplitude,2=ref_fcn,4=rangemig\n"
-	"                                8=rangecomp,16=rangespecs,64=acpatch\n"
 	"   -c dfile        NO    Read doppler centroid from dfile\n"
 	"   -o off_file     NO    Read resampling coeg.fs from off_file\n"
 	"   -hamming 	   NO    Use a Hamming window instead of a rectangular one\n"
@@ -163,6 +162,7 @@ void give_usage(char *name)
  *	"                         for the azimuth reference function weighting\n" */
 	"   -m CAL_PARAMS   NO    Read the Elevation Angle and Gain vectors from the\n"
 	"			 CAL_PARAMS file to correct for the antenna gain\n"
+	"   -debug dbg_flg  1     Debug: for options enter -debug 0\n"
 	"   -log logfile	   NO	 Allows output to be written to a log file\n"
 	"   -quiet	   NO	 Suppresses the output to the essential\n"
 	"   -power	   NO	 Creates a power image\n"
@@ -183,7 +183,49 @@ void give_usage(char *name)
  exit(EXIT_FAILURE);
 }
 
-int main (int argc, char *argv [])
+
+/* If debug flag is set to 0, then show debug usage */
+
+void give_debug_usage(void)
+{
+	printf("\n\n\n\n"
+	"   Welcome to DEBUG!\n\n"
+	"   You have entered '-debug 0', which shows the usage for the\n"
+	"   debug option. The debug option has been expanded to help\n"
+	"   you learn the inner workings of Range-Doppler processing.\n" 
+	"   \n"
+	"   You use the debugger by entering '-debug dbg_flg'.\n"
+	"   'dbg_flg' is any combination of the flags listed below.\n"
+	"   As an example, if you want to output a patch of the azimuth \n"
+	"   reference function (time domain) and a patch of the raw data, \n"
+	"   'dbg_flg' would be 16 + 8192 = 8208\n"
+	"   \n"
+	"   \n"
+	"   Flag  Output ext.    Description\n"
+	"   ---- -------------  ------------------------------------------------\n");
+	printf("   %i	 *_range_raw_t	Raw data after ingestion but before processing\n",RANGE_RAW_T);
+	printf("   %i	 *_range_raw_f	Raw data after range FFT\n",RANGE_RAW_F);
+	printf("   %i	 *_range_ref_t	Range reference function in time domain\n",RANGE_REF_T);
+	printf("   %i	 *_range_ref_f	Range reference function in freq domain\n",RANGE_REF_F);
+	printf("   %i	 *_range_X_f	Data after range compression in freq domain\n",RANGE_X_F);
+	printf("   %i	 n/a		If used, *_range_ref_map will be a patch,\n",RANGE_REF_MAP);
+	printf("   			if not, *_range_ref_f will be a LUT\n"); 
+	printf("   %i	 *_az_raw_t	Data after range compression in time domain\n",AZ_RAW_T);
+	printf("   %i	 *_az_raw_f	Data after azimuth FFT in frequency domain\n",AZ_RAW_F);
+	printf("   %i	 *_az_mig_f	Data after range cell migration in freq domain\n",AZ_MIG_F);
+	printf("   %i	 *_az_ref_t	Azimuth reference function in time domain\n",AZ_REF_T);
+	printf("   %i	 *_az_ref_f	Azimuth reference function in freq domain\n",AZ_REF_F);
+	printf("   %i	 *_az_X_f	Data after azimuth compression in freq domain\n",AZ_X_F);
+	printf("   %i	 *_az_X_t 	Data after azimuth compression in time domain\n",AZ_X_T);
+
+	printf("   %i  n/a		No range compression\n",NO_RANGE);
+	printf("   %i  n/a		No range cell migration\n",NO_RCM);
+	printf("   %i  n/a		No azimuth compression\n",NO_AZIMUTH);
+	printf("   ----	 -------------  ------------------------------------------------\n");
+	exit(EXIT_FAILURE);
+}
+
+main (int argc, char *argv [])
 {
 /*Structures: these are passed to the sub-routines which need them.*/
 	patch *p;
@@ -194,6 +236,7 @@ int main (int argc, char *argv [])
 /*Variables.*/
 	int n_az,n_range;/*Region to be processed.*/
 	int patchNo;/*Loop counter.*/
+	int give_usage_action=0;
 	struct AISP_PARAMS params;
 	meta_parameters *meta;
 	
@@ -203,8 +246,9 @@ int main (int argc, char *argv [])
 
 	logflag=quietflag=0;
 
-	if (!parse_cla(argc,argv,&params,&meta))
-		give_usage(argv[0]);
+	give_usage_action=parse_cla(argc,argv,&params,&meta);
+	if (give_usage_action==0) give_usage(argv[0]);
+	if (give_usage_action==-1) give_debug_usage();
 
 	if (logflag) {
 	  StartWatchLog(fLog);

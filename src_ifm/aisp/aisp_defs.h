@@ -62,12 +62,33 @@ void cfft1d(int n, FCMPLX *c, int dir);
 /*-----------------------*/
 /* Constants Definitions */
 /*-----------------------*/
-#define   VERSION       3.0
+#define   VERSION       3.1
 #define   default_n_az 4096
 
 #define   speedOfLight 299792458.0 /*Speed of light in vacuum, m/s */
 #define   pi      	3.14159265358979323
 #define   pi2     	(2*pi)
+/* Flags for calibration */
+#define SIGMA_0 2
+#define GAMMA_0 3
+#define BETA_0 4
+/* Flags for debugging */
+#define AZ_X_T 2
+#define AZ_X_F 4
+#define AZ_REF_F 8
+#define AZ_REF_T 16
+#define AZ_MIG_F 32
+#define AZ_RAW_F 64
+#define AZ_RAW_T 128
+#define RANGE_REF_MAP 256
+#define RANGE_X_F 512
+#define RANGE_REF_F 1024
+#define RANGE_REF_T 2048
+#define RANGE_RAW_F 4096
+#define RANGE_RAW_T 8192
+#define NO_RANGE 16384
+#define NO_RCM 32768
+#define NO_AZIMUTH 65536
 
 
 /*--------------*/
@@ -156,6 +177,7 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
 void aisp_setup(struct AISP_PARAMS *g,meta_parameters *meta,int *N_az,int *N_range,
 	satellite **s,rangeRef **r,file **f,getRec **signalGetRec);
 patch *newPatch(int n_az,int n_range);
+patch *copyPatch(patch *oldPatch);
 double getDopplerRate(double r,double f0,GEOLOCATE_REC *g);
 
 /*---------Global-free Patch Routines:--------*/

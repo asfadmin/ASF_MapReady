@@ -57,28 +57,27 @@ g-- Geolocation record, initialized with appropriate
 From equation B.1.16, p. 569, Curlander & McDonough SAR Bible
 by Orion Lawlor, olawlor@acm.org, 7/21/2000
 */
-double getDopplerRate(double r,double f0,GEOLOCATE_REC *g)
+double getDopplerRate(double r,double f0,GEOLOCATE_REC *my_g)
 {
   /*Get inertial coordinates vectors for everything (satellite and target)*/
   vector Rs,Vs,As;/*Spacecraft position, velocity, accelleration*/
   vector Rt,We={0,0,0};/*Target position, rotation vector of earth (rad/s)*/
 
-  double Rvel=-0.5*f0*g->lambda; /*Slant range velocity of target (m/s)*/
+  double Rvel=-0.5*f0*g.wavl; /*Slant range velocity of target (m/s)*/
   double Racc;/*Slant range accelleration of target, (m/s^2)*/
   vector Rs_m_Rt,Vs_c_Rt,We_c_Rt,We_c_Rs;/*Temporary vectors*/
   double look,yaw,accMag;
-
   /*Find spacecraft, target position and velocity*/
-  Rs=g->stVec.pos;Vs=g->stVec.vel;
-  getLookYaw(g,r,f0,&look,&yaw);
-  getDoppler(g,look,yaw,NULL,NULL,&Rt,NULL);
+  Rs=my_g->stVec.pos;Vs=my_g->stVec.vel;
+  getLookYaw(my_g,r,f0,&look,&yaw);
+  getDoppler(my_g,look,yaw,NULL,NULL,&Rt,NULL);
 
   /*Spacecraft orbital acceleration is g*Me/r^2 toward center of earth*/
-  accMag=-g->gxMe/vecDot(Rs,Rs);
+  accMag=-my_g->gxMe/vecDot(Rs,Rs);
   As=Rs;
   vecNormalize(&As);
   vecScale(&As,accMag);
-  We.z=g->angularVelocity;
+  We.z=my_g->angularVelocity;
 
   /*Compute the terms for Racc*/
   vecSub(Rs,Rt,&Rs_m_Rt);
@@ -87,7 +86,7 @@ double getDopplerRate(double r,double f0,GEOLOCATE_REC *g)
   vecCross(We,Rs,&We_c_Rs);
   Racc=(vecDot(As,Rs_m_Rt) + vecDot(Vs,Vs) + 2*vecDot(We,Vs_c_Rt)
 	+vecDot(We_c_Rt,We_c_Rs) - Rvel*Rvel) / r;
-  return -2*Racc/g->lambda;
+  return -2*Racc/g.wavl;
 }
 
 
@@ -327,6 +326,22 @@ patch *newPatch(int num_az,int num_range)
 	return p;
 }
 
+/*
+copyPatch:
+Copies a patch of data.  Sets relevant parameters from globals, 
+and allocates memory for a patch of the given size.
+*/
+patch *copyPatch(patch *oldPatch)
+{
+        FCMPLX *old_trans = oldPatch->trans;
+	patch *p=(patch *)MALLOC(sizeof(patch));
+	*p = *oldPatch;
+	p->trans =(FCMPLX *) MALLOC (p->n_range*p->n_az*sizeof(FCMPLX));
+	memcpy(p->trans,old_trans,p->n_range*p->n_az*sizeof(FCMPLX));
+	return p;
+}
+
+
 /*Find all other patch routines in patch.c*/
 
 
@@ -469,9 +484,9 @@ void calc_range_ref(FCMPLX *ref,int rangeFFT,int chirpSamples)
 	if (!quietflag) printf("\n   Range reference function calculated in time domain\n");
 	
 /*Output the reference function (for debugging)*/
-	if (g.iflag&2)
+	if (g.iflag & RANGE_REF_T)
 	{
-		refFP=FOPEN("reference_time","w");
+		refFP=FOPEN("range_ref_t","w");
 		for (i=0;i<chirpSamples;i++)
 			fprintf(refFP,"%i  %f %f  %f %f\n",i,Cabs(ref[i]),atan2(ref[i].i,ref[i].r),
 				ref[i].r,ref[i].i);
@@ -501,9 +516,9 @@ void calc_range_ref(FCMPLX *ref,int rangeFFT,int chirpSamples)
 	}
 
 /*Output the FFT'd reference function (for debugging)*/
-	if (g.iflag&2)
+	if (g.iflag & RANGE_REF_F)
 	{
-		refFP=FOPEN("reference_freq","w");
+		refFP=FOPEN("range_ref_f","w");
 		for (i=0;i<rangeFFT;i++)
 			fprintf(refFP,"%i  %f %f  %f %f\n",i,Cabs(ref[i]),atan2(ref[i].i,ref[i].r),
 			    ref[i].r,ref[i].i);

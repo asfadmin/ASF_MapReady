@@ -64,9 +64,14 @@ void acpatch(patch *p,const satellite *s)
 	FCMPLX cZero=Czero();
 	float pixel2time=1.0/s->prf;
 	   
-	if (s->debugFlag & 64)
+	if (s->debugFlag & 8)
 	{
 		dbg_az_fft=fopenImage("az_fft.cpx","wb");
+		
+	}
+	if (s->debugFlag & 16)
+	{
+		
 		dbg_az_time=fopenImage("az_time.cpx","wb");
 	}
 	

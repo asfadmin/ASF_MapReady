@@ -41,9 +41,10 @@ void get_params(char *,struct AISP_PARAMS *,meta_parameters **);
 Parse_cla:
 	Parses AISP command-line options to
 determine SAR processing parameters.  Returns
-0 on user command-line error, 1 on sucess, or
-not at all on other errors.  Meta_out will
-contain a pointer to the metadata for this scene.
+0 on user command-line error, 1 on success, 2 
+on debug help, or not at all on other errors.  
+Meta_out will contain a pointer to the metadata 
+for this scene.
 
 ******************************************/
 
@@ -53,6 +54,7 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
 	int read_offset = 0,   /* Flag - Read resampling offsets from file? */
 	read_dopplr = 0;       /* Flag - Read doppler constant from file?   */
 	int cal_check=0;       /* checks to see if output file needs input cal file */
+	int debug_help=-1;      /* If -debug 0 used, give debug usage */ 
 	char fName_slope[256], /* Input slope,intercept (offsets) file */
 	fName_doppler[256];    /* Input doppler constant file          */
 	FILE  *fp;
@@ -94,6 +96,7 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
 	/*Create AISP_PARAMS struct as well as meta_parameters.*/
 	if (extExists(g->in1,".in"))
 	{/*Read parameters from AISP parameter file*/
+
 		read_params(g->in1,g);
 		if (extExists(g->in1,".meta"))
 		/*Input file has .meta attached: read it*/
@@ -104,6 +107,7 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
 	else
 	/*Read parameters & .meta from CEOS.*/
 		get_params(g->in1,g,&meta);
+g->iflag = 0;
 
 
 /* this define is a hack to avoid calling usage() as done in cla.h */	
@@ -112,11 +116,15 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
   else currArg+=num_args;
 	currArg = 1;	/* from cla.h in asf.h */
 /* Parse command line args */
-	
+
 	while (currArg < (argc-2)) {
 		char *key=argv[currArg++];
 		if      (strmatch(key,"-log"))   {CHK_ARG_ASP(1); strcpy(logFile, GET_ARG(1));
 						  logflag = 1; fLog = FOPEN(logFile, "a");}
+		else if (strmatch(key,"-debug")) {
+			CHK_ARG_ASP(1);
+			g->iflag    = atoi(GET_ARG(1)); 
+			if (g->iflag==0) return debug_help; }
 		else if (strmatch(key,"-quiet")) {quietflag = 1;}
 		else if (strmatch(key,"-power")) {g->pwrFlag=1;}
 		else if (strmatch(key,"-sigma")) {g->sigmaFlag=1; cal_check=1;}
@@ -131,9 +139,8 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
 		else if (strmatch(key,"-s")) {CHK_ARG_ASP(1); g->ifirst  += atoi(GET_ARG(1));}
 		else if (strmatch(key,"-n")) {CHK_ARG_ASP(1); g->nla      = atoi(GET_ARG(1));}
 		else if (strmatch(key,"-r")) {CHK_ARG_ASP(1); g->azres    = atof(GET_ARG(1));}
-		else if (strmatch(key,"-d")) {CHK_ARG_ASP(1); g->iflag    = atoi(GET_ARG(1));}
-		else if (strmatch(key,"-e")) {CHK_ARG_ASP(1); g->deskew   = atoi(GET_ARG(1)); 
-					      g->na_valid = -99;printf("made it to na_valid=-99\n");}
+		else if (strmatch(key,"-e")) {CHK_ARG_ASP(1); g->deskew   = atoi(GET_ARG(1));
+		 			      g->na_valid =-99;}
 	/* If you use the -e flag, then a deskew wedge in the data will need to be removed. Override  
 	internal measurement of the number of valid azimuth lines with the -v option flag */
 		else if (strmatch(key,"-v")) {CHK_ARG_ASP(1); g->na_valid = atoi(GET_ARG(1));}

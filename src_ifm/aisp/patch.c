@@ -24,14 +24,13 @@ BUGS:
 #include <unistd.h>
 #include "aisp_defs.h"
 
+
 /* Functions in calibration.c (date: Jan 2003) */
 void calculateRCS(int projectionFlag, meta_parameters *meta, float *DNsquared,
                   float *radarCrossSection, int curLine,int numSamples, const satellite *s);
 void intensity(int n_range,float *pwrs,float *amps);
 
-#define SIGMA_0 2
-#define GAMMA_0 3
-#define BETA_0 4
+extern struct AISP_PARAMS g;/*AISP Globals, defined in aisp_params.h*/
 
 /*
 setPatchLoc: 
@@ -75,6 +74,7 @@ void setPatchLoc(patch *p,satellite *s,meta_parameters *meta,int leftFile,int le
 }
 
 
+meta_parameters *raw_init(void);
 /*
 DebugWritePatch:
 Outputs the current patch trans array, and
@@ -83,17 +83,23 @@ converts it to amplitude and phase.
 void debugWritePatch(const patch *p,char *basename)
 {
 	FILE *fp;
-	char name[255];
-	printf("   Outputting Debugging image '%s'...\n",basename);
-	strcat(strcpy(name,basename),".cpx");
-printf("patch.c:debugWritePatch:\n");
+	char name[255],outname[255];
+	meta_parameters *meta = raw_init();
+
+	strcpy(outname,g.out);
+	strcat(strcat(outname,"_"),basename);
+	printf("   Outputting Debugging image '%s'...\n",outname);
+	strcat(strcpy(name,outname),".cpx");
 	fp = fopenImage(name,"wb");
 	FWRITE(p->trans,sizeof(FCMPLX),p->n_az*p->n_range,fp);
 	FCLOSE(fp);
-	sprintf(name,"makeddr %s %i %i float\n",basename,p->n_range,p->n_az);
-	system(name);
-	printf("   Converting Debugging image '%s' to polar form...\n",basename);
-	sprintf(name,"c2p %s %s\n",basename,basename);
+	meta->general->sample_count = p->n_range;
+	meta->general->line_count   = p->n_az;
+	meta->general->data_type    = REAL32;
+	meta_write(meta, outname);
+	meta_free(meta);
+	printf("   Converting Debugging image '%s' to polar form...\n",outname);
+	sprintf(name,"c2p %s %s\n",outname,outname);
 	system(name);
 }
 
@@ -117,21 +123,22 @@ void processPatch(patch *p,const getRec *signalGetRec,const rangeRef *r,
 	elapse(0); 
 	rciq(p,signalGetRec,r);
 	if (!quietflag) elapse(1);
-	if (s->debugFlag & 8) debugWritePatch(p,"rangecomp");
+	if (s->debugFlag & AZ_RAW_T) debugWritePatch(p,"az_raw_t");
 
 	printf("   TRANSFORMING LINES...\n");
 	elapse(0);
 	cfft1d(p->n_az,NULL,0);
 	for (i=0; i<p->n_range; i++) cfft1d(p->n_az,&p->trans[i*p->n_az],-1);
 	if (!quietflag) elapse(1);
-	if (s->debugFlag & 8) debugWritePatch(p,"rangefft");
-
-	printf("   START RANGE MIGRATION CORRECTION...\n");
-	elapse(0);
-	rmpatch(p,s);
-	if (!quietflag) elapse(1);
-	if (s->debugFlag & 4) debugWritePatch(p,"migfft");
-
+	if (s->debugFlag & AZ_RAW_F) debugWritePatch(p,"az_raw_f");
+        if (!(s->debugFlag & NO_RCM))
+	{
+		printf("   START RANGE MIGRATION CORRECTION...\n");
+		elapse(0);
+		rmpatch(p,s);
+		if (!quietflag) elapse(1);
+		if (s->debugFlag & AZ_MIG_F) debugWritePatch(p,"az_mig_f");
+	}
 	printf("   INVERSE TRANSFORMING LINES...\n");
 	elapse(0);
 	acpatch(p,s);
