@@ -54,7 +54,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "               utm    - Universal Transverse Mercator\n"\
 "               ps     - Polar stereo\n"\
 "               lamcc  - Lambert conformal conic\n"\
-"	       lamaz  - Lambert azimuthal equal area\n"\
+"	        lamaz  - Lambert azimuthal equal area\n"\
 "               albers - Albers conical equal area\n"\
 "\n"\
 "     UTM\n"\
@@ -210,7 +210,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 // Libraries from packages outside ASF.
 #include <glib.h>
 #include <gsl/gsl_blas.h>
-#include <gsl/gsl_multifit_nlin.h>
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_multifit.h>
 #include <gsl/gsl_statistics_double.h>
 
 // Libraries developed at ASF.
@@ -286,203 +287,201 @@ help_page (void)
 
 ///////////////////////////////////////////////////////////////////////////////
 // 
-// We want to find two 2D cubics that map points in the output space
-// to x and y pixel indicies of points in the input space.  In
-// equations, we want:
+// We want to find natural cubic splines to form approximating
+// functions X and Y st
+//
+//      X(x, y) = input image x pixel coordinate of projection coordinates x, y
+//      Y(x, y) = input image y pixel coordinate of projection coordinates x, y
+//
+// The basic steps are:
 // 
-//      X(x, y) = ax^3 + by^3 + cx^2y + dy^2x + ex^2 + gy^2 + hxy + ix + jy + k
-//      Y(x, y) = lx^3 + my^3 + nx^2y + oy^2x + px^2 + qy^2 + rxy + sx + ty + u
+//   1.  Find the extent of the input image in projection coordinate
+//       space, i.e. the minimum and maximum x and y projection
+//       coordinates of all the pixels in the input image.
 //
-// We need to find model coefficients a through u, excluding f.  Then
-// we will be able to take projection coordinates x, y and find the
-// corresponding pixel indicies (X, Y) in the input image.
+//   2.  Find the pairs of input image pixel coordinates corresponding
+//       to the points of an evenly distributed grid in the output
+//       projection space.
 //
-// This is a simple case of the general method described in "Map
-// Projections a Reference Manual", section 10.2.2, by Lev
-// M. Bugayevskiy and John P. Snyder.
+//   3.  Construct interpolating cubic splines for each column of points
+//       in the grid.
+//
+//   4.  For each row in the output image, construct an interpolating
+//       spline over the values which result from evaluating the column
+//       splines at that y position.
+//
+//   5.  Verify that the splines aren't introducing too much error away
+//       from the control points by examing the errors in the spline
+//       approximation compared to the results of the analytical
+//       transformation of a denser grid.
+//
+//   The steps don't necessarily occer in exactly this order in the code
+//   though.
 //
 ///////////////////////////////////////////////////////////////////////////////
+        
+       
+///////////////////////////////////////////////////////////////////////////////
 
-// This is the input data we want to fit curves to.
+// This is the input data we want to fit splines to.
 struct data_to_fit {
-  size_t n;			// Number of transformed points.
+  size_t grid_size;		// Size of grid of points, in points on a side.
+  size_t n;			// Number of transformed points (grid_size^2).
   double *x_proj;		// Projection x coordinates.
   double *y_proj;		// Projection y coordinates.
   // Input image pixel coordinates put 0, 0 at the top left.
   double *x_pix;		// Input image pixel x coordinate.
   double *y_pix;		// Input image pixel y coordinate.
+
+  // These values are like the above ones, and should form a grid
+  // covering the same area, but are considerably more sparse.
+  size_t sparse_grid_size;
+  size_t sparse_n;
+  double *sparse_x_proj;
+  double *sparse_y_proj;
+  double *sparse_x_pix;
+  double *sparse_y_pix;
 };
 
-// The GNU Scientific Library (GSL) needs functions that take vectors
-// of the model parameters as arguments.  The mapping of cubic
-// coefficients for a cubic of the form 
-//
-//      ax^3 + by^3 + cx^2y + dy^2x + ex^2 + gy^2 + hxy + ix + jy + k 
-//
-// to vector positions is shown below.  Note that all cubic
-// coefficient offsets are refered to with these offsets, including
-// those for cubic Y(x, y) (for which different coefficients were
-// shown in above comments).
-static const size_t a_index = 0;
-static const size_t b_index = 1;
-static const size_t c_index = 2;
-static const size_t d_index = 3;
-static const size_t e_index = 4;
-static const size_t g_index = 5;
-static const size_t h_index = 6;
-static const size_t i_index = 7;
-static const size_t j_index = 8;
-static const size_t k_index = 9;
-
-// Evalutate cubic 
-//
-//      ax^3 + by^3 + cx^2y + dy^2x + ex^2 + gy^2 + hxy + ix + jy + k 
-//
-// where a, b, c, d, e, g, h, i, j, and k are the first ten elements
-// of the coefficients vector.
+// Reverse map from projection coordinates x, y to input pixel
+// coordinate X.  This function only looks at the data to fit on the
+// first time through, in order to set up vertical splines, after
+// which this argument is ignored.  Mapping is efficient only if the y
+// coordinates are usually identical between calls, since when y
+// changes a new spline between splines has to be created.
 static double
-evaluate_cubic (const gsl_vector *coefficients, double x, double y)
+reverse_map_x (struct data_to_fit *dtf, double x, double y) 
 {
-  double a = gsl_vector_get (coefficients, a_index);
-  double b = gsl_vector_get (coefficients, b_index);
-  double c = gsl_vector_get (coefficients, c_index);
-  double d = gsl_vector_get (coefficients, d_index);
-  double e = gsl_vector_get (coefficients, e_index);
-  double g = gsl_vector_get (coefficients, g_index);
-  double h = gsl_vector_get (coefficients, h_index);
-  double i = gsl_vector_get (coefficients, i_index);
-  double j = gsl_vector_get (coefficients, j_index);
-  double k = gsl_vector_get (coefficients, k_index);
+  // True iff this is our first time through this routine.
+  static gboolean first_time_through = TRUE;
+  // Accelerators and interpolators for the all the vertical columns
+  // of sample points.  Filled in first time through routine.
+  static gsl_interp_accel **y_accel;
+  static gsl_spline **y_spline;
+  // Current accelerator and interpolator.  Updated when y argument is
+  // different between calls.
+  static gsl_interp_accel *crnt_accel;
+  static gsl_spline *crnt;
+  // Value of y for which current interpolator works.
+  static double last_y;	
 
-  return (a * pow (x, 3.0) + b * pow (y, 3.0) + c * pow (x, 2.0) * y
-	  + d * pow (y, 2.0) * x + e * pow (x, 2.0) + g * pow (y, 2.0)
-	  + h * x * y + i * x + j * y + k);
-}
+  // Convenience aliases.
+  size_t sgs = dtf->sparse_grid_size;
+  double *xprojs = dtf->sparse_x_proj;
+  double *yprojs = dtf->sparse_y_proj;
+  double *xpixs = dtf->sparse_x_pix;
 
-// To get the best fit, we will perform least squares minimization on
-// the difference between modeled coordinates and a batch of
-// "measured" (actually transformed with libproj) ones.  This function
-// is to be called by the minimization routines in the GSL.  The first
-// parameter (named x) is a vector of the set of cubic coefficients
-// currently under consideration by the minimizer, and has nothing to
-// do with an x coordinate.  The parameter names used were chosen for
-// consistency with the GSL types and examples in the GSL
-// documentation.
-static int
-fit_x_coordinates_cubic_f (const gsl_vector *x, void *params, gsl_vector *f)
-{
-  struct data_to_fit *dtfs = (struct data_to_fit *)params;
-  size_t n = dtfs->n;
-  double *x_proj = dtfs->x_proj;
-  double *y_proj = dtfs->y_proj;
-  double *x_pix = dtfs->x_pix;
-
-  size_t i;
-  for ( i = 0 ; i < n ; i++ ) {
-    double x_pix_modeled = evaluate_cubic (x, x_proj[i], y_proj[i]);
-    gsl_vector_set (f, i, x_pix_modeled - x_pix[i]);
+  if ( G_UNLIKELY (first_time_through || y != last_y) ) {
+    if ( !first_time_through ) {
+      // Free the spline from the last line.
+      gsl_interp_accel_free (crnt_accel);
+      gsl_spline_free (crnt);
+    } else {
+      // Its our first time through, so set up the splines for the
+      // grid point columns.
+      y_accel = g_new (gsl_interp_accel *, sgs);
+      y_spline = g_new (gsl_spline *, sgs);
+      size_t ii;
+      for ( ii = 0 ; ii < sgs ; ii++ ) {
+	gsl_vector *cypv = gsl_vector_alloc (sgs);
+	gsl_vector *cxpixv = gsl_vector_alloc (sgs);
+	size_t jj;
+	for ( jj = 0 ; jj < sgs ; jj++ ) {
+	  gsl_vector_set (cypv, jj, yprojs[jj * sgs + ii]);
+	  gsl_vector_set (cxpixv, jj, xpixs[jj * sgs + ii]);
+	}
+	y_accel[ii] = gsl_interp_accel_alloc ();
+	y_spline[ii] = gsl_spline_alloc (gsl_interp_cspline, sgs);
+	gsl_spline_init (y_spline[ii], cypv->data, cxpixv->data, sgs);
+	gsl_vector_free (cxpixv);
+	gsl_vector_free (cypv);
+      }
+      first_time_through = FALSE;
+    }
+    // Set up the spline that runs horizontally, between the column
+    // splines.
+    crnt_accel = gsl_interp_accel_alloc ();
+    crnt = gsl_spline_alloc (gsl_interp_cspline, sgs);
+    double *crnt_points = g_new (double, sgs);
+    size_t ii;
+    for ( ii = 0 ; ii < sgs ; ii++ ) {
+      crnt_points[ii] = gsl_spline_eval (y_spline[ii], y, y_accel[ii]);
+    }      
+    gsl_spline_init (crnt, xprojs, crnt_points, sgs);
+    g_free (crnt_points);
+    last_y = y;
   }
 
-  return GSL_SUCCESS;
+  return gsl_spline_eval (crnt, x, crnt_accel);
 }
 
-// Function to minimize to determine coefficients for the Y coordinate model.
-static int
-fit_y_coordinates_cubic_f (const gsl_vector *x, void *params, gsl_vector *f)
+// This routine is analagous to reverse_map_x, including the same
+// caveats and confusing behavior.
+static double
+reverse_map_y (struct data_to_fit *dtf, double x, double y) 
 {
-  struct data_to_fit *dtfs = (struct data_to_fit *)params;
-  size_t n = dtfs->n;
-  double *x_proj = dtfs->x_proj;
-  double *y_proj = dtfs->y_proj;
-  double *y_pix = dtfs->y_pix;
+  // True iff this is our first time through this routine.
+  static gboolean first_time_through = TRUE;
+  // Accelerators and interpolators for the all the vertical columns
+  // of sample points.  Filled in first time through routine.
+  static gsl_interp_accel **y_accel;
+  static gsl_spline **y_spline;
+  // Current accelerator and interpolator.  Updated when y argument is
+  // different between calls.
+  static gsl_interp_accel *crnt_accel;
+  static gsl_spline *crnt;
+  // Value of y for which current interpolator works.
+  static double last_y;	
 
-  size_t i;
-  for ( i = 0 ; i < n ; i++ ) {
-    double y_pix_modeled = evaluate_cubic (x, x_proj[i], y_proj[i]);
-    gsl_vector_set (f, i, y_pix_modeled - y_pix[i]);
+  size_t sgs = dtf->sparse_grid_size;
+  double *xprojs = dtf->sparse_x_proj;
+  double *yprojs = dtf->sparse_y_proj;
+  double *ypixs = dtf->sparse_y_pix;
+
+  if ( G_UNLIKELY (first_time_through || y != last_y) ) {
+    if ( !first_time_through ) {
+      // Free the spline from the last line.
+      gsl_interp_accel_free (crnt_accel);
+      gsl_spline_free (crnt);
+    } else {
+      // Its our first time through, so set up the splines for the
+      // grid point columns.
+      y_accel = g_new (gsl_interp_accel *, sgs);
+      y_spline = g_new (gsl_spline *, sgs);
+      size_t ii;
+      for ( ii = 0 ; ii < sgs ; ii++ ) {
+	// Current y projection value.
+	gsl_vector *cypv = gsl_vector_alloc (sgs);
+	// Current y pixel value.
+	gsl_vector *cypixv = gsl_vector_alloc (sgs);
+	size_t jj;
+	for ( jj = 0 ; jj < sgs ; jj++ ) {
+	  gsl_vector_set (cypv, jj, yprojs[jj * sgs + ii]);
+	  gsl_vector_set (cypixv, jj, ypixs[jj * sgs + ii]);
+	}
+	y_accel[ii] = gsl_interp_accel_alloc ();
+	y_spline[ii] = gsl_spline_alloc (gsl_interp_cspline, sgs);
+	gsl_spline_init (y_spline[ii], cypv->data, cypixv->data, sgs);
+	gsl_vector_free (cypixv);
+	gsl_vector_free (cypv);
+      }
+      first_time_through = FALSE;
+    }
+    // Set up the spline that runs horizontally, between the column
+    // splines.
+    crnt_accel = gsl_interp_accel_alloc ();
+    crnt = gsl_spline_alloc (gsl_interp_cspline, sgs);
+    double *crnt_points = g_new (double, sgs);
+    size_t ii;
+    for ( ii = 0 ; ii < sgs ; ii++ ) {
+      crnt_points[ii] = gsl_spline_eval (y_spline[ii], y, y_accel[ii]);
+    }      
+    gsl_spline_init (crnt, xprojs, crnt_points, sgs);
+    g_free (crnt_points);
+    last_y = y;
   }
 
-  return GSL_SUCCESS;
-}
-
-// We also need routines to compute the jacobian matrices of the
-// fitting functions with respect to the cubic coefficients.  The
-// Jacobians of the X and Y approximating functions are the same, so
-// we don't need seperate jacobian computers for the X and Y
-// cubics.
-static int 
-fit_coordinates_cubic_df (const gsl_vector *x, void *params, gsl_matrix *J)
-{
-  // Reassure compiler that we know we don't use x.
-  x = x;		
-
-  struct data_to_fit *dtfs = (struct data_to_fit *)params;
-  size_t n = dtfs->n;
-  double *x_proj = dtfs->x_proj;
-  double *y_proj = dtfs->y_proj;
-
-  size_t i;
-  for ( i = 0 ; i < n ; i++ ) {
-    gsl_matrix_set (J, i, a_index, pow (x_proj[i], 3.0));
-    gsl_matrix_set (J, i, b_index, pow (y_proj[i], 3.0));
-    gsl_matrix_set (J, i, c_index, pow (x_proj[i], 2.0) * y_proj[i]);
-    gsl_matrix_set (J, i, d_index, pow (y_proj[i], 2.0) * x_proj[i]);
-    gsl_matrix_set (J, i, e_index, pow (x_proj[i], 2.0));
-    gsl_matrix_set (J, i, g_index, pow (y_proj[i], 2.0));
-    gsl_matrix_set (J, i, h_index, x_proj[i] * y_proj[i]);
-    gsl_matrix_set (J, i, i_index, x_proj[i]);
-    gsl_matrix_set (J, i, j_index, y_proj[i]);
-    gsl_matrix_set (J, i, k_index, 1.0);
-  }
-
-  return GSL_SUCCESS;
-}
-
-// For reasons I don't quite understand, it looks like the GSL makes
-// us fill in a function-and-jacobian routine even if we haven't done
-// any optimizations to simultaneoiusly compute the minimization
-// function and the jacobian.  So here we have those routines.
-static int
-fit_x_coordinates_cubic_fdf (const gsl_vector *x, void *params, gsl_vector *f,
-			     gsl_matrix *J)
-{
-  fit_x_coordinates_cubic_f (x, params, f);
-  fit_coordinates_cubic_df (x, params, J);
-
-  return GSL_SUCCESS;
-}
-
-static int
-fit_y_coordinates_cubic_fdf (const gsl_vector *x, void *params, gsl_vector *f,
-			     gsl_matrix *J)
-{
-  fit_y_coordinates_cubic_f (x, params, f);
-  fit_coordinates_cubic_df (x, params, J);
-
-  return GSL_SUCCESS;
-}
-
-// Print out information about the state of the solver.
-static int
-solver_print_state (gsl_multifit_fdfsolver *s, size_t iter)
-{
-  printf ("iteration: %3u Coefficients: %.9e %.9e %.9e %.9e %.9e %.9e %.9e "
-	  "%.9e %.9e %.9e"
-	  "|Minimization Criteria| = %g\n",
-	  iter,
-	  gsl_vector_get (s->x, a_index),
-	  gsl_vector_get (s->x, b_index),
-	  gsl_vector_get (s->x, c_index),
-	  gsl_vector_get (s->x, d_index),
-	  gsl_vector_get (s->x, e_index),
-	  gsl_vector_get (s->x, g_index),
-	  gsl_vector_get (s->x, h_index),
-	  gsl_vector_get (s->x, i_index),
-	  gsl_vector_get (s->x, j_index),	  
-	  gsl_vector_get (s->x, k_index),
-	  gsl_blas_dnrm2 (s->f));
-
-  return GSL_SUCCESS;
+  return gsl_spline_eval (crnt, x, crnt_accel);
 }
 
 // Main routine.
@@ -527,28 +526,36 @@ main (int argc, char **argv)
   int (*project_arr) (project_parameters_t *pps, double *lat, double *lon,
 		      double **projected_x, double ** projected_y, 
 		      long length);
+  int (*unproject) (project_parameters_t *pps, double x, double y, double *lat,
+		    double *lon);
   project = NULL;		// Silence compiler warnings.
   project_arr = NULL;		// Silence compiler warnings.
+  unproject = NULL;		// Silence compiler warnings.
   switch ( projection_type ) {
   case UNIVERSAL_TRANSVERSE_MERCATOR: 
     project = project_utm;
     project_arr = project_utm_arr;
+    unproject = project_utm_inv;
     break;
   case POLAR_STEREOGRAPHIC:
     project = project_ps;
     project_arr = project_ps_arr;
+    unproject = project_ps_inv;
     break;
   case ALBERS_EQUAL_AREA:
     project = project_albers;
     project_arr = project_albers_arr;
+    unproject = project_albers_inv;
     break;
   case LAMBERT_CONFORMAL_CONIC:
     project = project_lamcc;
     project_arr = project_lamcc_arr;
+    unproject = project_lamcc_inv;
     break;
   case LAMBERT_AZIMUTHAL_EQUAL_AREA:
     project = project_lamaz;
     project_arr = project_lamaz_arr;
+    unproject = project_lamaz_inv;
     break;
   default:
     g_assert_not_reached ();
@@ -642,261 +649,170 @@ main (int argc, char **argv)
 
   printf ("\n");
 
-  // Generate some mappings between input image pixel coordinates and
-  // output projection coordinates, using proj.  For fun and tradition,
-  // we compute transformation for points on a grid_size * grid_size
-  // grid.
-  printf ("Performing analytical projection of a spacially distributed\n"
+  // Generate some mappings between output image projection
+  // coordinates and input image pixel coordinates, using proj.  We
+  // compute transformations for points on a grid_size * grid_size
+  // grid and a sparse_grid_size * sparse_grid_size grid.
+  printf ("Performing analytical projection of a spatially distributed\n"
 	  "subset of input image pixels...\n");
-  const size_t grid_size = 10;
-  size_t mapping_count = pow ((double)grid_size, 2.0);
+  double x_range_size = max_x - min_x, y_range_size = max_y - min_y;
+  const size_t grid_size = 131;
+  g_assert (grid_size % 2 == 1);
+  size_t mapping_count = pow ((double) grid_size, 2.0);
   struct data_to_fit dtf;
+  dtf.grid_size = grid_size;
   dtf.n = mapping_count;
   dtf.x_proj = g_new0 (double, mapping_count);
   dtf.y_proj = g_new0 (double, mapping_count);
   dtf.x_pix = g_new0 (double, mapping_count);
   dtf.y_pix = g_new0 (double, mapping_count);
-  // Given the grid size and the image dimensions, how many pixels
-  // between points we want to get the "truth" about from proj?
-  double x_pix_stride = ii_size_x / (grid_size - 1);
-  double y_pix_stride = ii_size_y / (grid_size - 1);
+  // Determine the density and stride for the sparse grid.
+  const size_t sparse_grid_sample_stride = 2;
+  const size_t sparse_grid_size = grid_size / 2 + 1;
+  size_t sparse_mapping_count = pow ((double) sparse_grid_size, 2.0);
+  dtf.sparse_grid_size = sparse_grid_size;
+  dtf.sparse_n = sparse_mapping_count;
+  dtf.sparse_x_proj = g_new0 (double, sparse_mapping_count);
+  dtf.sparse_y_proj = g_new0 (double, sparse_mapping_count);
+  dtf.sparse_x_pix = g_new0 (double, sparse_mapping_count);
+  dtf.sparse_y_pix = g_new0 (double, sparse_mapping_count);
+  // Spacing between grid points, in projection coordinates.
+  double x_spacing = x_range_size / (grid_size - 1);
+  double y_spacing = y_range_size / (grid_size - 1);
   // Index into the flattened list of mappings we want to produce.
-  int current_mapping = 0;	
+  size_t current_mapping = 0;	
+  size_t current_sparse_mapping = 0;
   size_t ii;
   for ( ii = 0 ; ii < grid_size ; ii++ ) {
     size_t jj;
     for ( jj = 0 ; jj < grid_size ; jj++ ) {
-      // Input image x and y pixel coordinates.
-      size_t xpc = floor (jj * x_pix_stride);
-      g_assert (xpc < ii_size_x);
-      size_t ypc = floor (ii * y_pix_stride);
-      g_assert (ypc < ii_size_y);
+      // Projection coordinates for the current grid point.
+      double cxproj = min_x + x_spacing * jj;
+      double cyproj = min_y + y_spacing * ii;
       // Corresponding latitude and longitude.
       double lat, lon;
-      meta_get_latLon (imd, (double)ypc, (double)xpc, average_height, &lat, 
-		       &lon);
-      // Corresponding projection coordinates.  */
-      lat *= DEG_TO_RAD;
-      lon *= DEG_TO_RAD;
-      double x, y;
-      gboolean return_code = project (pp, lat, lon, &x, &y);
+      gboolean return_code = unproject (pp, cxproj, cyproj, &lat, &lon);
       g_assert (return_code);
-      dtf.x_proj[current_mapping] = x;
-      dtf.y_proj[current_mapping] = y;
-      dtf.x_pix[current_mapping] = xpc;
-      dtf.y_pix[current_mapping] = ypc;
+      lat *= RAD_TO_DEG;
+      lon *= RAD_TO_DEG;
+      // Corresponding pixel indicies in input image.
+      double x_pix, y_pix;
+      meta_get_lineSamp (imd, lat, lon, average_height, &y_pix, &x_pix);
+
+      dtf.x_proj[current_mapping] = cxproj;
+      dtf.y_proj[current_mapping] = cyproj;
+      dtf.x_pix[current_mapping] = x_pix;
+      dtf.y_pix[current_mapping] = y_pix;
+      
+      if ( ii % sparse_grid_sample_stride == 0 
+	   && jj % sparse_grid_sample_stride == 0 ) {
+	dtf.sparse_x_proj[current_sparse_mapping] = cxproj;
+	dtf.sparse_y_proj[current_sparse_mapping] = cyproj;
+	dtf.sparse_x_pix[current_sparse_mapping] = x_pix;
+	dtf.sparse_y_pix[current_sparse_mapping] = y_pix;
+	current_sparse_mapping++;
+      }
       current_mapping++;
     }
   }
 
   printf ("\n");
-  
-  // Many projections have huge constants offsets for most areas
-  // (unless weird parameters like false easting/false northing are
-  // used), which make life tough for least squares fitting
-  // algorithms.  So we find the mean value of the transformed
-  // coordinates in each dimension and subtract it from all the data
-  // points, in effect doing our own generalized false easting/false
-  // northing without requiring the user to know about it.  We have to
-  // remember to undo this on the way out!
-  double x_proj_mean = gsl_stats_mean (dtf.x_proj, 1, dtf.n);
-  for ( ii = 0 ; ii < dtf.n ; ii++ ) {
-    dtf.x_proj[ii] -= x_proj_mean;
-  }
-  double y_proj_mean = gsl_stats_mean (dtf.y_proj, 1, dtf.n);
-  for ( ii = 0 ; ii < dtf.n ; ii++ ) {
-    dtf.y_proj[ii] -= y_proj_mean;
-  }  
 
-  // Here we find our cubic models for input pixel coorinates x_pix,
-  // y_pix in term of projection coordinates x, y.  For easy
-  // reference, we put some variables in the terms used in the GSL
-  // documentation.
-  printf ("Trying to fit input image x pixel indicies to 2-D cubic\n"
-	  "function of output image pixel projection coordinates using\n"
-	  "nonlinear least-squares fitting...\n");
-  const size_t n = mapping_count;
-  const size_t p = 10;		// 2D cubics have six parameters.
-  gsl_matrix *covariance = gsl_matrix_alloc (p, p);
-  // We don't have a good initial guess at the moment, so we try 0.
-  double *x_init = g_new0 (double, p);
-  for ( ii = 0 ; ii < p ; ii++ ) {
-    g_assert (x_init[ii] == 0.0);
-  }
-  gsl_vector_view x = gsl_vector_view_array (x_init, p);
-  const gsl_multifit_fdfsolver_type *T = gsl_multifit_fdfsolver_lmsder;
-  gsl_multifit_fdfsolver *s = gsl_multifit_fdfsolver_alloc (T, n, p);
-  gsl_multifit_function_fdf x_f;
-  x_f.f = fit_x_coordinates_cubic_f;
-  x_f.df = fit_coordinates_cubic_df;
-  x_f.fdf = fit_x_coordinates_cubic_fdf;
-  x_f.n = n;
-  x_f.p = p;
-  x_f.params = &dtf;
-  gsl_multifit_function_fdf y_f;
-  y_f.f = fit_y_coordinates_cubic_f;
-  y_f.df = fit_coordinates_cubic_df;
-  y_f.fdf = fit_y_coordinates_cubic_fdf;
-  y_f.n = n;
-  y_f.p = p;
-  y_f.params = &dtf;
-  int status;			// Status of the fit.
-  size_t iteration = 0;		// Current iteration of the fit.
-  // Find the X model of interest.
-  gsl_multifit_fdfsolver_set (s, &x_f, &x.vector);
-  solver_print_state (s, iteration);
-  // If we haven't converged after this many iterations, we give up.
-  size_t maximum_iterations = 500;
-  do {
-    iteration++;
-    status = gsl_multifit_fdfsolver_iterate (s);
-    if ( status == GSL_ETOLF ) { printf ("GSL_ETOLF\n"); }
-    if ( status == GSL_ETOLX ) { printf ("GSL_ETOLX\n"); }
-    if ( status == GSL_ETOLG ) { printf ("GSL_ETOLG\n"); } 
-    printf ("iteration status = %s\n", gsl_strerror (status));
-    solver_print_state (s, iteration);
-    if ( status != GSL_SUCCESS ) {
-      break;
-    }
-    // There's nothing particularly insightful about these termination
-    // conditions, but they seem to work...
-    status = gsl_multifit_test_delta (s->dx, s->x, 1e-8, 1e-8);
-  } while ( status == GSL_CONTINUE && iteration < maximum_iterations );
-  gsl_multifit_covar (s->J, 0.0, covariance);
-	  
-#define FIT(i) gsl_vector_get (s->x, i)
-#define ERR(i) sqrt (gsl_matrix_get (covariance, i, i))
-
-  printf ("Cubicic coefficients: \n"
-	  "ax^3 + by^3 + cx^2y + dy^2x + ex^2 + gy^2 + hxy + ix + jy + k: \n");
-  printf ("a = %12.5e +/-%12.5e\n", FIT (a_index), ERR (a_index));
-  printf ("b = %12.5e +/-%12.5e\n", FIT (b_index), ERR (b_index));
-  printf ("c = %12.5e +/-%12.5e\n", FIT (c_index), ERR (c_index));
-  printf ("d = %12.5e +/-%12.5e\n", FIT (d_index), ERR (d_index));
-  printf ("e = %12.5e +/-%12.5e\n", FIT (e_index), ERR (e_index));
-  printf ("g = %12.5e +/-%12.5e\n", FIT (g_index), ERR (g_index));
-  printf ("h = %12.5e +/-%12.5e\n", FIT (h_index), ERR (g_index));
-  printf ("i = %12.5e +/-%12.5e\n", FIT (i_index), ERR (g_index));
-  printf ("j = %12.5e +/-%12.5e\n", FIT (j_index), ERR (g_index));
-  printf ("k = %12.5e +/-%12.5e\n", FIT (k_index), ERR (g_index));
+  // Here are some convenience macros for the spline model.
+#define X_PIXEL(x, y) reverse_map_x (&dtf, x, y) 
+#define Y_PIXEL(x, y) reverse_map_y (&dtf, x, y)
   
-  // Check the health of the fit.
+  // Check the health of the our spline model by comparing the input
+  // image pixel coordinates predicted by the model for each point
+  // with the known values.
   {
+    // Here is a small map that shows a visual of the distribution of
+    // errors in the output grid.
+    FloatImage *error_map = float_image_new (grid_size, grid_size);
+
+    gsl_vector *model_x_errors = gsl_vector_alloc (dtf.n);
+    gsl_vector *model_y_errors = gsl_vector_alloc (dtf.n);
+    gsl_vector *model_errors = gsl_vector_alloc (dtf.n);
+    for ( ii = 0 ; ii < dtf.n ; ii++ ) {
+      // x pixel index in input image as predicted by model.
+      double xpfm = X_PIXEL (dtf.x_proj[ii], dtf.y_proj[ii]);
+      double ypfm = Y_PIXEL (dtf.x_proj[ii], dtf.y_proj[ii]);
+      double x_error = xpfm - dtf.x_pix[ii];
+      double y_error = ypfm - dtf.y_pix[ii];
+      double error_distance = sqrt (pow (x_error, 2) + pow (y_error, 2));
+      float_image_set_pixel (error_map, ii % grid_size, ii / grid_size,
+			     error_distance);
+      printf ("x_error: %lf, y_error %lf, error_distance: %lf\n",
+	      x_error, y_error, error_distance);
+      gsl_vector_set (model_x_errors, ii, x_error);
+      gsl_vector_set (model_y_errors, ii, y_error);
+      gsl_vector_set (model_errors, ii, error_distance);
+    }
+    float_image_export_as_jpeg (error_map, "error_map.jpeg", grid_size);
     double mean_error 
-      = gsl_stats_mean (s->f->data, s->f->stride, s->f->size);
+      = gsl_stats_mean (model_errors->data, model_errors->stride, 
+			model_errors->size);
     double error_standard_deviation 
-      = gsl_stats_sd_m (s->f->data, s->f->stride, s->f->size, mean_error);
-    double largest_error = gsl_vector_max (s->f);
+      = gsl_stats_sd_m (model_errors->data, model_errors->stride, 
+			model_errors->size, mean_error);
+    double max_x_error = gsl_vector_max (model_x_errors);
+    double min_x_error = gsl_vector_min (model_x_errors);
+    double largest_x_error;
+    if ( fabs (max_x_error) > fabs (min_x_error) ) {
+      largest_x_error = max_x_error;
+    }
+    else {
+      largest_x_error = min_x_error;
+    }
+    double max_y_error = gsl_vector_max (model_y_errors);
+    double min_y_error = gsl_vector_min (model_y_errors);
+    double largest_y_error;
+    if ( fabs (max_y_error) > fabs (min_y_error) ) {
+      largest_y_error = max_y_error;
+    }
+    else {
+      largest_y_error = min_y_error;
+    }
+    double largest_error = gsl_vector_max (model_errors);
     // We want to choke if our worst point in the model is off by this
     // many pixels or more.
-    double max_allowable_error = 3.0;
+    double max_allowable_error = 0.5;
     g_assert (largest_error < max_allowable_error);
     printf ("For the differences between cubic model values and projected "
-	    "values:\n");
+	    "values for the regression control points:\n");
     printf ("Mean: %g\n", mean_error);
     printf ("Standard deviation: %g\n", error_standard_deviation); 
-    printf ("Maximum (Worst observed error in x pixel index): %g\n", 
+    printf ("Maximum (Worst observed error in pixel index distance): %g\n", 
 	    largest_error);
+    printf ("Maximum x error (worst observed error in x pixel index): %g\n",
+	    largest_x_error);
+    printf ("Maximum y error (worst observed error in y pixel index): %g\n",
+	    largest_y_error);
+    gsl_vector_free (model_errors);
+    gsl_vector_free (model_y_errors);
+    gsl_vector_free (model_x_errors);
   }
 
-  // Save our results for the x pixel model.
-  gsl_vector *x_pix_model_coefficients = gsl_vector_alloc (s->x->size);
-  gsl_vector_memcpy (x_pix_model_coefficients, s->x);
-
-  printf ("\n");
-
-  // Find the Y model of interest.
-  printf ("Trying to fit input image y pixel indicies to 2-D cubic\n"
-	  "function of output image pixel projection coordinates using\n"
-	  "nonlinear least-squares fitting...\n");
-  // Out of caution, we free and reallocat some stuff.
-  gsl_matrix_free (covariance);
-  covariance = gsl_matrix_alloc (p, p);
-  gsl_multifit_fdfsolver_free (s);
-  s = gsl_multifit_fdfsolver_alloc (T, n, p);
-  gsl_vector_set_zero (&x.vector); // Set initial guess back to zero.
-  gsl_multifit_fdfsolver_set (s, &y_f, &x.vector);
-  iteration = 0;		// Reset iteration counter to zero.
-  solver_print_state (s, iteration);
-  do {
-    iteration++;
-    status = gsl_multifit_fdfsolver_iterate (s);
-    if ( status == GSL_ETOLF ) { printf ("GSL_ETOLF\n"); }
-    if ( status == GSL_ETOLX ) { printf ("GSL_ETOLX\n"); }
-    if ( status == GSL_ETOLG ) { printf ("GSL_ETOLG\n"); } 
-    printf ("iteration status = %s\n", gsl_strerror (status));
-    solver_print_state (s, iteration);
-    if ( status != GSL_SUCCESS ) {
-      break;
-    }
-    // There's nothing particularly insightful about these termination
-    // conditions, but they seem to work...
-    status = gsl_multifit_test_delta (s->dx, s->x, 1e-8, 1e-8);
-  } while ( status == GSL_CONTINUE && iteration < 500 );
-  gsl_multifit_covar (s->J, 0.0, covariance);
-
-  printf ("Cubicic coefficients: \n"
-	  "ax^3 + by^3 + cx^2y + dy^2x + ex^2 + gy^2 + hxy + ix + jy + k: \n");
-  printf ("a = %12.5e +/-%12.5e\n", FIT (a_index), ERR (a_index));
-  printf ("b = %12.5e +/-%12.5e\n", FIT (b_index), ERR (b_index));
-  printf ("c = %12.5e +/-%12.5e\n", FIT (c_index), ERR (c_index));
-  printf ("d = %12.5e +/-%12.5e\n", FIT (d_index), ERR (d_index));
-  printf ("e = %12.5e +/-%12.5e\n", FIT (e_index), ERR (e_index));
-  printf ("g = %12.5e +/-%12.5e\n", FIT (g_index), ERR (g_index));
-  printf ("h = %12.5e +/-%12.5e\n", FIT (h_index), ERR (g_index));
-  printf ("i = %12.5e +/-%12.5e\n", FIT (i_index), ERR (g_index));
-  printf ("j = %12.5e +/-%12.5e\n", FIT (j_index), ERR (g_index));
-  printf ("k = %12.5e +/-%12.5e\n", FIT (k_index), ERR (g_index));
-  
-  // Check the health of the fit.
-  {
-    double mean_error 
-      = gsl_stats_mean (s->f->data, s->f->stride, s->f->size);
-    double error_standard_deviation 
-      = gsl_stats_sd_m (s->f->data, s->f->stride, s->f->size, mean_error);
-    double largest_error = gsl_vector_max (s->f);
-    // We want to choke if it our worst point in the model is off by
-    // this many pixels or more.
-    double max_allowable_error = 4.0;
-    g_assert (largest_error < max_allowable_error);
-    printf ("For the differences between cubic model values and projected "
-	    "values:\n");
-    printf ("Mean: %g\n", mean_error);
-    printf ("Standard deviation: %g\n", error_standard_deviation); 
-    printf ("Maximum (worst observed error in y pixel index): %g\n", 
-	    largest_error);
-  }
-
-  // Save our results for the y pixel model.
-  gsl_vector *y_pix_model_coefficients = gsl_vector_alloc (s->x->size);
-  gsl_vector_memcpy (y_pix_model_coefficients, s->x);
-
-  // Done with the solver and the data being modeled.
-  gsl_multifit_fdfsolver_free (s);
-  gsl_matrix_free (covariance);
-  g_free (dtf.y_pix);
-  g_free (dtf.x_pix);
-  g_free (dtf.y_proj);
-  g_free (dtf.x_proj);
+  // Done with the data being modeled.
+  //g_free (dtf.y_pix);
+  //g_free (dtf.x_pix);
+  //g_free (dtf.y_proj);
+  //g_free (dtf.x_proj);
 
   // Check correctness of reverse mappings of some corners, as an
   // extra paranoid check.  We insist on the model being within this
   // many pixels for reverse transformations of the projection
   // coordinates of the corners of the output image back to the pixel
   // indicies in the input image.
-  double max_corner_error = 2.0;
+  double max_corner_error = 0.5;
   // Upper left corner.
   double ul_lat, ul_lon;
   meta_get_latLon (imd, (float)0, (float)0, average_height, &ul_lat, &ul_lon);
   double ul_x, ul_y;
   project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
-  double ul_x_pix_approx = evaluate_cubic (x_pix_model_coefficients, 
-					       ul_x - x_proj_mean, 
-					       ul_y - y_proj_mean);
+  double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
   g_assert (fabs (ul_x_pix_approx) < max_corner_error);
-  double ul_y_pix_approx = evaluate_cubic (y_pix_model_coefficients, 
-					       ul_x - x_proj_mean, 
-					       ul_y - y_proj_mean);
+  double ul_y_pix_approx = Y_PIXEL (ul_x, ul_y);
   g_assert (fabs (ul_y_pix_approx) < max_corner_error);
   // Lower right corner.
   double lr_lat, lr_lon;
@@ -904,24 +820,13 @@ main (int argc, char **argv)
 		   average_height, &lr_lat, &lr_lon);
   double lr_x, lr_y;
   project (pp, DEG_TO_RAD * lr_lat, DEG_TO_RAD * lr_lon, &lr_x, &lr_y);
-  double lr_x_pix_approx = evaluate_cubic (x_pix_model_coefficients, 
-					   lr_x - x_proj_mean, 
-					   lr_y - y_proj_mean);
+  double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
   g_assert (fabs (lr_x_pix_approx - (ii_size_x - 1)) < max_corner_error);
-  double lr_y_pix_approx = evaluate_cubic (y_pix_model_coefficients, 
-					   lr_x - x_proj_mean, 
-					   lr_y - y_proj_mean);
+  double lr_y_pix_approx = Y_PIXEL (lr_x, lr_y);
   g_assert (fabs (lr_y_pix_approx - (ii_size_y - 1)) < max_corner_error);
 
   // Done with the input metadata.
   meta_free (imd);
-
-  // Ok, we now have model functions we are happy with.  Make some
-  // convenience macros for using them.
-#define X_PIXEL(x, y) evaluate_cubic (x_pix_model_coefficients, \
-				      x - x_proj_mean, y - y_proj_mean)
-#define Y_PIXEL(x, y) evaluate_cubic (y_pix_model_coefficients, \
-				      x - x_proj_mean, y - y_proj_mean)
 
   printf ("\n");
 
@@ -954,8 +859,8 @@ main (int argc, char **argv)
   for ( oiy = 0 ; oiy <= oiy_max ; oiy++ ) {
     for ( oix = 0 ; oix <= oix_max ; oix++ ) {
       // Projection coordinates for the center of this pixel.    
-      double oix_pc = ((double)oix / oix_max) * (max_x - min_x) + min_x;
-      double oiy_pc = ((double)oiy / oiy_max) * (max_y - min_y) + min_y;
+      double oix_pc = ((double) oix / oix_max) * (max_x - min_x) + min_x;
+      double oiy_pc = ((double) oiy / oiy_max) * (max_y - min_y) + min_y;
       // Determine pixel of interest in input image.  The fractional
       // part is desired, we will use some sampling method to
       // interpolate between pixel values.
@@ -966,8 +871,8 @@ main (int argc, char **argv)
       const float fill_value = 0.0;
       g_assert (ii_size_x <= SSIZE_MAX);
       g_assert (ii_size_y <= SSIZE_MAX);
-      if ( input_x_pixel < 0 || input_x_pixel >= (ssize_t)ii_size_x
-	   || input_y_pixel < 0 || input_y_pixel >= (ssize_t)ii_size_y ) {
+      if ( input_x_pixel < 0 || input_x_pixel >= (ssize_t)oix_max
+	   || input_y_pixel < 0 || input_y_pixel >= (ssize_t)oix_max ) {
 	SET_PIXEL (oix, oiy, (float)fill_value);
       }
       // Otherwise, set to the value from the appropriate position in
@@ -985,11 +890,9 @@ main (int argc, char **argv)
     }
   }
 
-  // Done with the models and the input image data.
   float_image_free (iim);
-  gsl_vector_free (y_pix_model_coefficients);
-  gsl_vector_free (x_pix_model_coefficients);
 
+  // Store the output image, and free image resources.
   GString *output_data_file = g_string_new (output_image->str);
   g_string_append (output_data_file, ".img");
   int return_code = float_image_store (oim, output_data_file->str,
