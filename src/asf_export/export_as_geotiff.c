@@ -102,7 +102,6 @@ export_as_geotiff (const char *metadata_file_name,
   size_t scale_factor;    
   unsigned short sample_size = 4;
   unsigned short sample_format;
-  double mask;
   int jj;
   TIFF *otif;
   GTIF *ogtif;
@@ -165,9 +164,15 @@ export_as_geotiff (const char *metadata_file_name,
     }
   }
 
-  /* Generate the scaled image.  */
-  asfPrintStatus ("Scaling...\n");
-  FloatImage *si = float_image_new_from_model_scaled (iim, scale_factor);
+  /* Generate the scaled version of the image, if needed.  */
+  FloatImage *si;
+  if ( scale_factor != 1 ) {
+    asfPrintStatus ("Scaling...\n");
+    si = float_image_new_from_model_scaled (iim, scale_factor);
+  }
+  else {
+    si = iim;
+  }
 
   /* Open output tiff file and GeoKey file descriptor.  */
   otif = XTIFFOpen (output_file_name, "w");
@@ -178,63 +183,74 @@ export_as_geotiff (const char *metadata_file_name,
   /* We may need this if exporting in byte form.  */
   const int max_color_value = 255;
 
-
-  /* If we will be putting the image in byte form, we will need these
-     values to be filled in.  */ 
-  float mean, standard_deviation;
-  const int default_sampling_stride = 30;
-  const int minimum_samples_in_direction = 10;
-  int sampling_stride = GSL_MIN (default_sampling_stride, 
-				 GSL_MIN (si->size_x, si->size_y) 
-				 / minimum_samples_in_direction);
   /* Lower and upper extents of the range of float values which are to
-     be mapped linearly into the output space.  */
+     be mapped linearly into the output space.  Needed for if output
+     will be bytes.  */
   float omin, omax;
 
   /* Scale float image down to bytes, if required.  This is currently
      done in a very memory intensive way and could stand to be
      rewritten to use float_image.  */
   if (sample_mapping != NONE) {
-    if (md->general->image_data_type == SIGMA_IMAGE ||
-      md->general->image_data_type == GAMMA_IMAGE ||
-      md->general->image_data_type == BETA_IMAGE ||
-      strcmp(md->general->mode, "SNA") == 0 ||
-      strcmp(md->general->mode, "SNB") == 0 ||
-      strcmp(md->general->mode, "SWA") == 0 ||
-      strcmp(md->general->mode, "SWB") == 0)
-      mask = 0.0;
-    else
-      mask = NAN;
 
-    asfPrintStatus("Gathering image statistics...\n");
+
+  /* We might someday want to mask out certain valus for some type of
+     images, so they don't corrupt the statistics used for mapping
+     floats to JSAMPLEs.  Eanbling this will require changes to the
+     statistics routines and the code that does the mapping from
+     floats to JSAMPLEs.  */
+  /* 
+   * double mask;
+   * if ( md->general->image_data_type == SIGMA_IMAGE
+   *      || md->general->image_data_type == GAMMA_IMAGE
+   *      || md->general->image_data_type == BETA_IMAGE
+   *      || strcmp(md->general->mode, "SNA") == 0.0
+   *      || strcmp(md->general->mode, "SNB") == 0.0
+   *      || strcmp(md->general->mode, "SWA") == 0.0
+   *      || strcmp(md->general->mode, "SWB") == 0.0 )
+   *   mask = 0.0;
+   * else
+   *   mask = NAN;
+   */
+
 
     /* We need a version of the data in byte form, so we have to map
-       floats into bytes.  We do this by defining a region 2 sigma on
-       either side of the mean to be mapped in the range of unsigned
-       char linearly, and clamping everything outside this range at the
-       limits of the unsigned char range.  */
+       floats into bytes.  */
+
     /* Make sure the unsigned char is the size we expect.  */
     asfRequire (sizeof(unsigned char) == 1,
 		"Size of the unsigned char data type on this machine is "
 		"different than expected.\n");
 
-    if ( sample_mapping != SIGMA ) {
-      asfPrintWarning ("using two sigma method instead of requested method to "
-		       "convert floats to bytes");
+    /* Gather some statistics to help with the mapping.  Note that if
+       min_sample and max_sample will actually get used for anything
+       they will be set to some better values than this.  */
+    asfPrintStatus("Gathering image statistics...\n");
+    float mean, standard_deviation;
+    const int default_sampling_stride = 30;
+    const int minimum_samples_in_direction = 10;
+    int sampling_stride = GSL_MIN (default_sampling_stride, 
+				   GSL_MIN (si->size_x, si->size_y) 
+				   / minimum_samples_in_direction);
+    float min_sample = -1.0, max_sample = -1.0;
+    if ( sample_mapping == SIGMA ) {
+      float_image_approximate_statistics (si, sampling_stride, &mean, 
+					  &standard_deviation);
+      omin = mean - 2 * standard_deviation;
+      omax = mean + 2 * standard_deviation;
     }
-    
-    /* Gather some statistics to help with the mapping.  */
-    float_image_approximate_statistics (si, sampling_stride, &mean, 
-					&standard_deviation);
-    
-    /* Compute the limits of the interval which will be mapped
-       linearly into the byte values for output.  Values outside this
-       interval will be clamped.  */
-    omin = mean - 2 * standard_deviation;
-    omax = mean + 2 * standard_deviation;
+    else if ( sample_mapping == MINMAX ) {
+      float_image_statistics (si, &min_sample, &max_sample, &mean,
+			      &standard_deviation);
+      omin = min_sample;
+      omax = max_sample;
+    }
     
     /* Its a byte image, so the sample_size is one.  */
     sample_size = 1;
+  }
+  else {
+    g_assert_not_reached ();
   }
 
   /* Set the normal TIFF image tags.  */
@@ -611,6 +627,8 @@ export_as_geotiff (const char *metadata_file_name,
 		    md->projection->param.lamcc.plat1);
 	GTIFKeySet (ogtif, ProjStdParallel2GeoKey, TYPE_DOUBLE, 1,
 		    md->projection->param.lamcc.plat2);
+	//	GTIFKeySet (ogtif, ProjFalseOriginEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+	//	GTIFKeySet (ogtif, ProjFalseOriginNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
 	set_false_easting_and_northing (ogtif, 0.0, 0.0);
 	
 	///////////////////////////////////////////////////////////////////////
@@ -1001,14 +1019,27 @@ export_as_geotiff (const char *metadata_file_name,
 	/* Pixel as floatl.  */
 	double paf = float_image_get_pixel (si, jj, ii);
 	unsigned char pab;	/* Pixel as byte.  */
-	if ( paf < omin ) {
-	  pab = 0;
-	}
-	else if ( paf > omax ) {
-	  pab = max_color_value;
-	}
-	else {
-	  pab = round (((paf - omin) / (omax - omin)) * max_color_value);
+	switch ( sample_mapping ) {
+	case TRUNCATE:
+	  if ( paf <= 0.0 ) { pab = 0; }
+	  else if ( paf >= 255.0 ) { pab = 255; }
+	  else { pab = (unsigned char) paf; }
+	  break;
+	case MINMAX:
+	case SIGMA:
+	  if ( paf < omin ) {
+	    pab = 0;
+	  }
+	  else if ( paf > omax ) {
+	    pab = max_color_value;
+	  }
+	  else {
+	    pab = round (((paf - omin) / (omax - omin)) * max_color_value);
+	  }
+	  break;
+	default:
+	  g_assert_not_reached ();
+	  break;
 	}
 	byte_line_buffer[jj] = pab;
       }
@@ -1027,7 +1058,14 @@ export_as_geotiff (const char *metadata_file_name,
 
   GTIFFree (ogtif);
   XTIFFClose (otif);
-  float_image_free (si);
+
+  // If the scale factor wasn't one, the scaled version of the image
+  // will be different from the original and so will need to be freed
+  // seperately.
+  if ( si != iim) {
+    float_image_free (si);
+  }
+
   float_image_free (iim);
   meta_free (md);
 }

@@ -35,9 +35,9 @@
 
 
 void
-export_as_ppm (const char *metadata_file_name,
-               const char *image_data_file_name, const char *output_file_name,
-               long max_size)
+export_as_ppm (const char *metadata_file_name, 
+	       const char *image_data_file_name,const char *output_file_name,
+               long max_size, sample_mapping_t sample_mapping)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
@@ -80,9 +80,15 @@ export_as_ppm (const char *metadata_file_name,
     }
   }
 
-  /* Generate the scaled image.  */
-  asfPrintStatus("Scaling...\n");
-  FloatImage *si = float_image_new_from_model_scaled (iim, scale_factor);
+  /* Generate the scaled version of the image, if needed.  */
+  FloatImage *si;
+  if ( scale_factor != 1 ) {
+    asfPrintStatus ("Scaling...\n");
+    si = float_image_new_from_model_scaled (iim, scale_factor);
+  }
+  else {
+    si = iim;
+  }
 
   /* We need a version of the data in byte form, so we have to map
      floats into bytes.  We do this by defining a region 2 sigma on
@@ -94,21 +100,31 @@ export_as_ppm (const char *metadata_file_name,
               "Size of the unsigned char data type on this machine is "
 	      "different than expected.\n");
 
-  /* Gather some statistics to help with the mapping.  */
+  /* Gather some statistics to help with the mapping.  Note that if
+     min_sample and max_sample will actually get used for anything
+     they will be set to some better values than this.  */
   float mean, standard_deviation;
   const int default_sampling_stride = 30;
   const int minimum_samples_in_direction = 10;
   int sampling_stride = GSL_MIN (default_sampling_stride, 
 				 GSL_MIN (si->size_x, si->size_y) 
 				 / minimum_samples_in_direction);
-  float_image_approximate_statistics (si, sampling_stride, &mean, 
-				      &standard_deviation);
-
-  /* Compute the limits of the interval which will be mapped linearly
-     into the byte values for output.  Values outside this interval
-     will be clamped.  */
-  float omin = mean - 2 * standard_deviation;
-  float omax = mean + 2 * standard_deviation;
+  float min_sample = -1.0, max_sample = -1.0;  
+  /* Lower and upper extents of the range of float values which are to
+     be mapped linearly into the output space.  */
+  float omin, omax;
+  if ( sample_mapping == SIGMA ) {
+    float_image_approximate_statistics (si, sampling_stride, &mean, 
+					&standard_deviation);
+    omin = mean - 2 * standard_deviation;
+    omax = mean + 2 * standard_deviation;
+  }
+  else if ( sample_mapping == MINMAX ) {
+    float_image_statistics (si, &min_sample, &max_sample, &mean,
+			    &standard_deviation);
+    omin = min_sample;
+    omax = max_sample;
+  }
 
   asfPrintStatus ("Writing output file...\n");
 
@@ -135,12 +151,29 @@ export_as_ppm (const char *metadata_file_name,
   for ( ii = 0 ; ii < si->size_y ; ii++ ) {
     size_t jj;
     for ( jj = 0 ; jj < si->size_x ; jj++ ) {
-      double paf = float_image_get_pixel (si, jj, ii); /* Pixes as float.  */
+      double paf = float_image_get_pixel (si, jj, ii); /* Pixels as float.  */
       unsigned char pab;	/* Pixel as byte.  */
-      if ( paf < omin ) { pab = 0; }
-      else if ( paf > omax ) { pab = max_color_value; }
-      else {
-	pab = round (((paf - omin) / (omax - omin)) * max_color_value);
+      switch ( sample_mapping ) {
+      case TRUNCATE:
+	if ( paf <= 0.0 ) { pab = 0; }
+	else if ( paf >= 255.0 ) { pab = 255; }
+	else { pab = (unsigned char) paf; }
+	break;
+      case MINMAX:
+      case SIGMA:
+	if ( paf < omin ) {
+	  pab = 0;
+	}
+	  else if ( paf > omax ) {
+	    pab = max_color_value;
+	  }
+	else {
+	  pab = round (((paf - omin) / (omax - omin)) * max_color_value);
+	}
+	break;
+      default:
+	g_assert_not_reached ();
+	break;
       }
       /* Write red, green, and blue the same to get grey scale.  */
       fwrite (&pab, 1, 1, ofp);
@@ -152,8 +185,13 @@ export_as_ppm (const char *metadata_file_name,
 
   FCLOSE (ofp);
 
-  float_image_free (si);
-  
+  // If the scale factor wasn't one, the scaled version of the image
+  // will be different from the original and so will need to be freed
+  // seperately.
+  if ( si != iim) {
+    float_image_free (si);
+  }
+
   float_image_free (iim);
 
   meta_free (md);

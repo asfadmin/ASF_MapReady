@@ -41,7 +41,6 @@ export_as_jpeg (const char *metadata_file_name,
   /* Scale factor needed to satisfy max_size argument.  */
   size_t scale_factor;
   int jj;
-  JSAMPLE test_jsample;
 
   struct jpeg_compress_struct cinfo;
   struct jpeg_error_mgr jerr;
@@ -75,9 +74,15 @@ export_as_jpeg (const char *metadata_file_name,
     }
   }
 
-  /* Generate the scaled image.  */
-  asfPrintStatus ("Scaling...\n");
-  FloatImage *si = float_image_new_from_model_scaled (iim, scale_factor);
+  /* Generate the scaled version of the image, if needed.  */
+  FloatImage *si;
+  if ( scale_factor != 1 ) {
+    asfPrintStatus ("Scaling...\n");
+    si = float_image_new_from_model_scaled (iim, scale_factor);
+  }
+  else {
+    si = iim;
+  }
 
   /* We might someday want to mask out certain valus for some type of
      images, so they don't corrupt the statistics used for mapping
@@ -111,27 +116,38 @@ export_as_jpeg (const char *metadata_file_name,
   asfRequire(sizeof(unsigned char) == sizeof (JSAMPLE),
              "Size of unsigned char data type on this machine is different "
 	     "than JPEG byte size.\n");
-  test_jsample = 0;
+  JSAMPLE test_jsample = 0;
   test_jsample--;
   asfRequire(test_jsample == UCHAR_MAX,
              "Something wacky happened, like data overflow.\n");
   const int jsample_max = UCHAR_MAX;
 
-  /* Gather some statistics to help with the mapping.  */
+  /* Gather some statistics to help with the mapping.  Note that if
+     min_sample and max_sample will actually get used for anything
+     they will be set to some better values than this.  */
+  asfPrintStatus("Gathering image statistics...\n");
+  float min_sample = -1.0, max_sample = -1.0;
   float mean, standard_deviation;
   const int default_sampling_stride = 30;
   const int minimum_samples_in_direction = 10;
   int sampling_stride = GSL_MIN (default_sampling_stride, 
 				 GSL_MIN (si->size_x, si->size_y) 
 				 / minimum_samples_in_direction);
-  float_image_approximate_statistics (si, sampling_stride, &mean, 
-				      &standard_deviation);
-
-  /* Compute the limits of the interval which will be mapped linearly
-     into the byte values for output.  Values outside this interval
-     will be clamped.  */
-  float omin = mean - 2 * standard_deviation;
-  float omax = mean + 2 * standard_deviation;
+  /* Lower and upper extents of the range of float values which are to
+     be mapped linearly into the output space.  */
+  float omin, omax;
+  if ( sample_mapping == SIGMA ) {
+    float_image_approximate_statistics (si, sampling_stride, &mean, 
+					&standard_deviation);
+    omin = mean - 2 * standard_deviation;
+    omax = mean + 2 * standard_deviation;
+  }
+  else if ( sample_mapping == MINMAX ) {
+    float_image_statistics (si, &min_sample, &max_sample, &mean,
+			    &standard_deviation);
+    omin = min_sample;
+    omax = max_sample;
+  }
 
   asfPrintStatus("Writing Output File...\n");
 
@@ -168,17 +184,36 @@ export_as_jpeg (const char *metadata_file_name,
     JSAMPROW *row_pointer = MALLOC (rows_to_write * sizeof (JSAMPROW));
     float_image_get_row (si, cinfo.next_scanline, float_row);
     for ( jj = 0 ; jj < si->size_x ; jj++ ) {
-      if ( float_row[jj] < omin ) { jsample_row[jj] = 0; }
-      else if ( float_row[jj] > omax ) { jsample_row[jj] = jsample_max; }
-      else {
-	jsample_row[jj] = round (((float_row[jj] - omin) / (omax - omin)) 
-				 * jsample_max);
+      double paf = float_row[jj];
+      JSAMPLE pajs;		/* Pixel as jsample.  */
+      switch ( sample_mapping ) {
+      case TRUNCATE:
+	if ( paf <= 0.0 ) { pajs = 0; }
+	else if ( paf >= jsample_max ) { pajs = jsample_max; }
+	else { pajs = (JSAMPLE) paf;}
+	break;
+      case MINMAX:
+      case SIGMA:
+	if ( paf < omin ) { 
+	  pajs = 0; 
+	}
+	else if ( paf > omax ) {
+	  pajs = jsample_max;
+	}
+	else {
+	  pajs = round (((paf - omin) / (omax - omin)) * jsample_max);
+	}
+	break;
+      default:
+	g_assert_not_reached ();
+	break;
       }
+      jsample_row[jj] = pajs;
     }
     row_pointer[0] = jsample_row;
     rows_written = jpeg_write_scanlines (&cinfo, row_pointer, rows_to_write);
     asfRequire(rows_written == rows_to_write,
-               "Failed to capture the correct number of lines.\n");
+               "Failed to write the correct number of lines.\n");
     FREE (row_pointer);
     asfLineMeter(cinfo.next_scanline, cinfo.image_height);
   }
@@ -191,7 +226,12 @@ export_as_jpeg (const char *metadata_file_name,
   g_free (jsample_row);
   g_free (float_row);
 
-  float_image_free (si);
+  // If the scale factor wasn't one, the scaled version of the image
+  // will be different from the original and so will need to be freed
+  // seperately.
+  if ( si != iim) {
+    float_image_free (si);
+  }
 
   float_image_free (iim);
 

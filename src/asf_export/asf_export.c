@@ -480,7 +480,8 @@ main (int argc, char *argv[])
   }
   else if ( format == PPM ) {
     export_as_ppm (command_line.in_meta_name, command_line.in_data_name,
-		   command_line.output_name, command_line.size);
+		   command_line.output_name, command_line.size,
+		   command_line.sample_mapping);
   }
   else if ( format == CEOS ) {
     export_as_ceos (command_line.in_meta_name, command_line.in_data_name,
