@@ -217,7 +217,7 @@ PROGRAMS
 @experimental/
 #	cpx_spectrum { }
 #	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
-	stf2raw { PROGRAMS propagate }
+#	stf2raw { PROGRAMS propagate }
 
 # Down here because it needs propagate
 @src_ifm/
@@ -226,8 +226,9 @@ PROGRAMS
 }
 
 
-#The categories have no directories or source, but are valid
-#  autotar and makefile targets.
+# The categories have no directories or source, but are valid autotar and 
+# makefile targets.
+
 CATEGORIES
 {
 # Open - Anybody can get this stuff (BSD license)
@@ -239,11 +240,13 @@ CATEGORIES
 		propagate
 		accum_offset concat concat_dem concatm fit_quadratic idimage
 		projprm geocode auto_sar_mosaic auto_swath_mosaic 
-		sarview
 	}
 
+# Sarview needs to be its own category because of its tcl/tk dependency.
+# Just use the prior sarview PROGRAM declaration for autotar or make.
+
 # Restricted - open + ASF controlled + gov't restricted (BSD/ASF license)
-#              src, src_geo, src_ifm, & src_tc
+#              src, src_geo, src_ifm, & src_tc (stf2raw in experimental)
 	restricted {
 		open
 		aisp avg_in_dop c2p ceos2raw coh coregister_coarse
@@ -254,4 +257,6 @@ CATEGORIES
 		2dmap demimg demclip despike greycorr sargeom sarsim rtc_add
 		tpl_mult tpl_search correlate terrcorr
 	}
+#		stf2raw
+#	}
 }
