@@ -5,8 +5,8 @@
 // spatially correlated.  A variety of useful methods are implemented
 // (filtering, subsetting, interpolating, etc.)
 //
-// Don't try to access the same instance concurrently.  Use course
-// parallelism: one instance per thread.
+// Don't try to access the same instance concurrently.  Split your
+// images up into separate instances if you must parallelize things.
 //
 // For many methods, arguments of type ssize_t are used, but are not
 // allowed to be negative.  This is to help prevent people from
