@@ -125,12 +125,13 @@ asf_export [-format <format>] [-size <max_dimension>] <in_base_name> <out_full_n
 static char *program_name = "asf_export";
 
 /* Print invocation information.  */
-void usage()
+void usage(char *program_name)
 {
   printf ("\n"
      "USAGE:\n"
-     "   asf_export [-format <format>] [-size <max_dimension>] <in_base_name> <out_full_name>\n");
-  exit(EXIT_FAILURE);
+     "   %s [-format <format>] [-size <max_dimension>] "
+     "      <in_base_name> <out_full_name>\n", program_name);
+  exit (EXIT_FAILURE);
 }
 
 /* Evaluate to true iff floats are within tolerance of each other.  */
@@ -173,6 +174,7 @@ typedef struct {
   int verbose;			/* Flag true iff in verbose mode.  */
 } command_line_parameters_t;
 
+/* Output format to use.  */
 typedef enum {
   ENVI,				/* ENVI software package.  */
   ESRI,				/* ESRI GIS package.  */
@@ -180,6 +182,14 @@ typedef enum {
   JPEG,				/* Joint Photographic Experts Group.  */
   PPM				/* Portable PixMap.  */
 } output_format_t;
+
+/* Ellipsoid used for the data.  */
+typedef enum {
+  CLARKE1866,
+  GEM10C,			/* Ellipsoid in GEM6 earth model.  */
+  WGS84,			/* Ellipsoid in EGM96 earth model.  */
+  USER_DEFINED			/* Some unknown ellipsoid.  */
+} asf_export_ellipsoid_t;
 
 /* We don't have strncpy everywhere, so here is a substitude.  */
 static char *
@@ -278,9 +288,9 @@ main (int argc, char *argv[])
 	     || (strcmp (command_line.format, "geotiff") == 0)
 	     || (strcmp (command_line.format, "jpeg") == 0)
 	     || (strcmp (command_line.format, "ppm") == 0)) ) {
-	fprintf (stderr, "%s: bad format (-format argument): %s\n", program_name, 
-		 command_line.format);
-	usage();
+	fprintf (stderr, "%s: bad format (-format argument): %s\n", 
+		 program_name, command_line.format);
+	usage (program_name);
       }
     }
     else if ( strmatch (key, "-size") ) {
@@ -290,9 +300,9 @@ main (int argc, char *argv[])
       command_line.size = strtol (GET_ARG (1), &endptr, base);
       for ( ; *endptr != '\0' ; endptr++ ) {
 	if ( !isspace (*endptr) ) {
-	  fprintf (stderr, "%s: bad size (-size argument): %s\n", program_name, 
+	  fprintf (stderr, "%s: bad size (-size argument): %s\n", program_name,
 		   GET_ARG (1));
-	  usage();
+	  usage (program_name);
 	}
       }
     }
@@ -328,7 +338,7 @@ main (int argc, char *argv[])
      the first thing this program attempts.  */
   if ( argc - currArg != num_args ) {
     fprintf (stderr, "%s: wrong number of arguments\n", program_name);
-    usage();
+    usage (program_name);
   }
   if ( my_strnlen (argv[currArg], MAX_IMAGE_NAME_LENGTH + 1)
        > MAX_IMAGE_NAME_LENGTH ) {
@@ -624,8 +634,7 @@ export_as_esri (const char *metadata_file_name,
   char esri_prj_file_name[2 * MAX_IMAGE_NAME_LENGTH];
   char projection[100], datum[100], spheroid_str[100]="", semimajor[25]="";
   char flattening[25];  
-  double central_meridian, latitude_of_origin;
-  double standard_parallel_1, standard_parallel_2;
+  double central_meridian;
   spheroid_type_t spheroid;
   char esri_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
   char command[10000];
@@ -1434,7 +1443,6 @@ export_as_geotiff (const char *metadata_file_name,
   size_t ii;
   int return_code;
 
-
   assert (md->general->data_type == REAL32);
   assert (sizeof (unsigned short) == 2);
   assert (sizeof (unsigned int) == 4);
@@ -1502,7 +1510,12 @@ export_as_geotiff (const char *metadata_file_name,
     double pixel_scale[3];
     /* Nail down which ellipsoid we are on exactly.  The ASF metadata doesn't
        specify this though, so we take a look at the major and minor axis
-       values and try to ensure that they match WGS84.  */
+       values and try to find a matching ellipsoid.  */
+    asf_export_ellipsoid_t ellipsoid;
+    const double clarke1866_major_axis = 6378206.4;
+    const double clarke1866_minor_axis = 6356583.8;
+    const double gem10c_major_axis = 6378144;
+    const double gem10c_minor_axis = 6356759;
     const double wgs84_major_axis = 6378137;
     const double wgs84_flattening = 1.0 / 298.257223563;
     const double wgs84_e2 = 2 * wgs84_flattening - pow (wgs84_flattening, 2);
@@ -1510,20 +1523,46 @@ export_as_geotiff (const char *metadata_file_name,
       = sqrt (pow (wgs84_major_axis, 2) * (1 - wgs84_e2));
     /* Insist that the minor axis match what we are expecting to
        within this tolerance.  */
-    double minor_axis_tolerance = 0.2;
+    double axis_tolerance = 0.2;
     short projection_code;
-    int max_citation_length = 100;
+    int max_citation_length = 500;
     char *citation;
     int citation_length;
-    /* This constant is from the GeoTIFF spec.  */
-    const int user_defined_projected_coordinate_system_type_code = 32767;
-    /* This constant is from the geotiff spec.  */
-    const int user_defined_projection_geo_key_type_code = 32767;
+    /* This constant is from the GeoTIFF spec.  It basically means
+       that the system which would normally be specified by the field
+       (projected coordinate system, datum, ellipsoid, whatever), in
+       instead going to be specified by more detailed low level
+       tags.  */
+    const int user_defined_value_code = 32767;
+    if ( FLOAT_COMPARE_TOLERANCE (md->projection->re_major,
+				  clarke1866_major_axis, axis_tolerance)
+	 && FLOAT_COMPARE_TOLERANCE (md->projection->re_minor,
+				     clarke1866_minor_axis, 
+				     axis_tolerance) ) {
+      ellipsoid = CLARKE1866;
+    }
+    else if ( FLOAT_COMPARE_TOLERANCE (md->projection->re_major, 
+				       wgs84_major_axis, axis_tolerance) 
+	      && FLOAT_COMPARE_TOLERANCE (md->projection->re_minor, 
+					  wgs84_minor_axis, axis_tolerance) ) {
+      ellipsoid = WGS84;
+    }
+    else if ( FLOAT_COMPARE_TOLERANCE (md->projection->re_major, 
+				       gem10c_major_axis, axis_tolerance) 
+	      && FLOAT_COMPARE_TOLERANCE (md->projection->re_minor, 
+					  gem10c_minor_axis, 
+					  axis_tolerance) ) {
+      ellipsoid = GEM10C;
+    }
+    else {
+      /* FIXME: we badly need to get the ellipsoid/datum mess sorted
+	 out.  This problem goes deeper than asf_export, however.  */
+      fprintf (stderr, "%s: warning: couldn't conclude which ellipsoid is "
+	       "being used from ellipsoid axis dimensions in metadata, "
+	       "using user defined ellipsoid\n", program_name);
+      ellipsoid = USER_DEFINED;
+    }
 
-
-    assert (FLOAT_EQUIVALENT (md->projection->re_major, 6378137));
-    assert (FLOAT_COMPARE_TOLERANCE (md->projection->re_minor, 
-				     wgs84_minor_axis, minor_axis_tolerance));
     /* We will tie down the corner of the image (which has raster coordinates 
        0, 0, 0).  */
     tie_points[0][0] = 0.0;
@@ -1553,11 +1592,16 @@ export_as_geotiff (const char *metadata_file_name,
     pixel_scale[2] = 0;
     TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
-
     switch ( md->projection->type ) {
       case UNIVERSAL_TRANSVERSE_MERCATOR:
-	GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
-	GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
+	GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, 
+		    RasterPixelIsArea);
+	GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, 
+		    ModelTypeProjected);
+
+	/* For now we only handle UTM data that is referenced to the
+	   WGS84 ellipsoid.  */
+	assert (ellipsoid == WGS84);
 
 	/* This weird assertion is because I remember once when we
            couln't figure out how to set some datum code right, we set it
@@ -1592,48 +1636,133 @@ export_as_geotiff (const char *metadata_file_name,
 	citation_length
 	  = snprintf (citation, max_citation_length + 1,
                       "UTM zone %d %c projected GeoTIFF written by Alaska "
-		      "Satellite Facility tools", md->projection->param.utm.zone,
+		      "Satellite Facility tools", 
+		      md->projection->param.utm.zone,
 		      md->projection->hem);
-	assert (citation_length >= 0 && citation_length <= max_citation_length);
+	assert (citation_length >= 0 
+		&& citation_length <= max_citation_length);
 	GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
-
+	free (citation);
 	break;
       case POLAR_STEREOGRAPHIC:
-	GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
-	GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
-
+	GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, 
+		    RasterPixelIsArea);
+	GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, 
+		    ModelTypeProjected);
 	GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
-		    user_defined_projected_coordinate_system_type_code);
-
-
+		    user_defined_value_code);
 	GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
-		    user_defined_projection_geo_key_type_code); 
+		    user_defined_value_code); 
+	GTIFKeySet (ogtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
 	GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1, 
 		    CT_PolarStereographic);
-	GTIFKeySet (ogtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
 	/* This is longitude which will point toward the top of the map.
-	   This is often called the reference of central longitude in
+	   This is often called the reference or central longitude in
 	   the context of polar stereo map projections.  */
-	GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1, 
-		    md->projection->param.ps.slon);
+	//	GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1, 
+	//		    md->projection->param.ps.slon);
 	/* Set the latitude of true scale, or reference latitude.  */
-	GTIFKeySet (ogtif, ProjOriginLatGeoKey, TYPE_DOUBLE, 1,
+	//	GTIFKeySet (ogtif, ProjStdParallelGeoKey, TYPE_DOUBLE, 1,
+	//		    md->projection->param.ps.slat);
+	/* Set the offsets easting and false northing to zero.  */
+	GTIFKeySet (ogtif, ProjOriginLatGeoKey, TYPE_DOUBLE, 1, 
 		    md->projection->param.ps.slat);
-	/* Set the false easting and false northing to zero.  */
-	GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0);
-	GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0);
+	GTIFKeySet (ogtif, ProjOriginLongGeoKey, TYPE_DOUBLE, 1,
+		    md->projection->param.ps.slon);
+	GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+	GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
 
-	/* Fill in the details of the geographic coordinate system used.
-	   Note that we have already asserted that the ellipsoid appears
-	   to be WGS84.  */
-	GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, Datum_WGS84);
-	GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, 
-		    Angular_Degree);
-	GTIFKeySet (ogtif, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, PM_Greenwich);
+	/* Fill in the details of the geographic coordinate system used.  */
+	switch ( ellipsoid ) {
+	case CLARKE1866:
+	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 
+		      GCSE_Clarke1866);
+	  break;
+	case GEM10C:
+	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_GEM10C);
+	  break;
+	case WGS84:
+	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_WGS84);
+	  break;
+	case USER_DEFINED:
+	  GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1,
+		      user_defined_value_code);
+	  GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1,
+		      user_defined_value_code);
+	  /* The angular units are degrees and the meridian is
+	     Greenwitch, so we don't need to define them explicitly.
+	     The GeogCitation key will be filled in later.  */
+	  GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1,
+		      user_defined_value_code);
+	  GTIFKeySet (ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1, 
+		      md->projection->re_major);
+	  GTIFKeySet (ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1, 
+		      md->projection->re_minor);
+	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+	  citation_length
+	    = snprintf (citation, max_citation_length + 1,
+			"Geographic coordinate system using reference "
+			"ellipsoid with semimajor axis of %f meters and "
+			"semiminor axis of %f meters", 
+			md->projection->re_major, md->projection->re_minor);
+	  GTIFKeySet (ogtif, GeogCitationGeoKey, TYPE_ASCII, 1, citation);
+	  free (citation);
+	  break;
+	default:
+	  assert (FALSE);	/* Shouldn't be here.  */
+	}
 
-	GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1,
-		   "Polar stereographic projected Geotiff written by Alaska "
-		   "Satellite Facility tools");
+	/* Set the citation key.  */
+	citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+	citation_length
+	  = snprintf (citation, max_citation_length + 1,
+                      "Polar stereographic projected GeoTIFF using ");
+	switch ( ellipsoid ) {
+	case CLARKE1866:
+	  citation_length
+	    += snprintf (citation + citation_length,
+			 max_citation_length - citation_length + 1,
+			 "CLARKE1866");
+	  assert (citation_length >= 0 
+		  && citation_length <= max_citation_length);	
+	  break;
+	case GEM10C:
+	  citation_length 
+	    += snprintf (citation + citation_length, 
+			 max_citation_length - citation_length + 1,
+			 "GEM10C ");
+	  assert (citation_length >= 0 
+		  && citation_length <= max_citation_length);	
+	  break;
+	case WGS84:
+	  citation_length
+	    += snprintf (citation + citation_length, 
+			 max_citation_length - citation_length + 1,
+			 "WGS84 ");
+	  assert (citation_length >= 0 
+		  && citation_length <= max_citation_length);	
+	  break;
+	case USER_DEFINED:
+	  citation_length
+	    += snprintf (citation + citation_length,
+			 max_citation_length - citation_length + 1,
+			 "user defined ");
+	  assert (citation_length >= 0 
+		  && citation_length <= max_citation_length);
+	  break;
+	default:
+	  assert (FALSE);	/* Shouldn't be here.  */
+	}
+	citation_length 
+	  += snprintf (citation + citation_length, 
+		       max_citation_length - citation_length + 1,
+		       "ellipsoid datum written by Alaska Satellite Facility "
+		       "tools");
+	assert (citation_length >= 0 
+		&& citation_length <= max_citation_length);	
+	GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+	free (citation);
+
 	break;
       default:
 	assert (FALSE);		/* Shouldn't be here.  */
