@@ -192,7 +192,7 @@ void ll_to_proj(double lat_d,double lon,double *op1,double *op2)
         llssmi(lat_d,lon,op1,op2);
   else if (strcmp(proj_id,"atct")==0)    ll_ac(lat_d,lon,op2,op1);
   else {
-    printf("Unrecognized map projection '%s' passed to proj_to_ll!\n",proj_id);
+    printf("Unrecognized map projection '%s' passed to ll_to_proj!\n",proj_id);
     exit(1);
   }
 }
