@@ -1,6 +1,7 @@
 #include "asf.h"
 #include "asf_import.h"
 #include "esri.h"
+#include <ctype.h>
 
 
 /******************************************************************************
@@ -45,8 +46,12 @@ void import_esri(char *inDataName, char *inMetaName, char *outBaseName,
     }
     else if (strncmp(key, "BYTEORDER", 9)==0) esri->byteorder = value[0];
     else if (strncmp(key, "LAYOUT", 6)==0) {
+      char layout_in_caps[256];
+      int ii;
       sprintf(esri->layout, "%s", value);
-      if (strncmp(uc(esri->layout), "BIL", 3)!=0) {
+      for (ii=0; ii<strlen(esri->layout); ii++)
+        layout_in_caps[ii] = toupper(esri->layout[ii]);
+      if (strncmp(layout_in_caps, "BIL", 3)!=0) {
         sprintf(errbuf, "metadata do not support data other than BIL format");
         print_error(errbuf);
       }
