@@ -16,6 +16,8 @@ B. Ailts	      Apr. 1988		Replaced newlas.h with las.h
 D. Akkerman	      Jan. 1990		Installed code to ensure that
 					required parameters are specified.
 B. Ailts	      Dec. 1990		Updeated error messages
+P. Denny              Jan. 2003         Add metadata interaction for phasing
+                                         out of DDRs
 
 PROJECT       LAS
 
@@ -111,26 +113,36 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
 	    }
     }
 
-    /* Find corresponding meta structure to fill necessary values to */
+    /* Find corresponding meta structure to fill necessary values to
+    ----------------------------------------------------------------*/
     ii = get_meta_ddr_struct_index(hname);
-    if (ii > -1 && ii < NUM_META_DDR_STRUCTS) {
-        char ddr_code[2];
+    if ((ii>-1) && (ii<NUM_META_DDR_STRUCTS)) {
         if (meta_ddr_structs[ii].ddr != ddr) {
-                printf("\nSOMETHING THAT SHOULDN't HAVE HAPPENED IN C_PUTDDR() DID;\n"
-                       " REPORT TO PATRICK DENNY IMMEDIATELY!!\n");
+                printf("\nSOMETHING THAT SHOULD NOT HAVE HAPPENED IN C_PUTDDR() DID;\n"
+                       " PLEASE CONTACT PATRICK DENNY (pdenny@asf.alaska.edu)!\n");
         }
         if (meta_ddr_structs[ii].ddr == ddr) {
             meta_parameters *mds_meta;
-            struct DDR      *mds_ddr  = meta_ddr_structs[ii].ddr;
+            struct DDR *mds_ddr  = meta_ddr_structs[ii].ddr;
             int open_flag = 0;
+            char *meta_name = appendExt(meta_ddr_structs[ii].base_name, ".meta");
 
-	    if (meta_ddr_structs[ii].meta == NULL) {
-                /* ASSUMING META FILE EXISTS */
-                mds_meta = meta_read(meta_ddr_structs[ii].base_name);
-                open_flag = 1;
+            /* Get the meta structure */
+            if (meta_ddr_structs[ii].meta == NULL) {
+	        if (fileExists(meta_name)) {
+                    mds_meta = meta_read(meta_ddr_structs[ii].base_name);
+                    FREE(meta_name);
+                    open_flag = 1;
+		}
+		else /* No meta struct/file */ {
+                    FREE(meta_name);
+		    return(E_SUCC);
+		}
             }
             else
                 {mds_meta = meta_ddr_structs[ii].meta;}
+
+            /* Fill the meta structure with updated values */
             mds_meta->general->line_count     = mds_ddr->nl;
             mds_meta->general->sample_count   = mds_ddr->ns;
             mds_meta->general->start_line     = mds_ddr->master_line - 1;
@@ -148,6 +160,7 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
             if (mds_meta->sar->image_type=='P')
                     {strcpy(mds_meta->projection->units, mds_ddr->proj_units);}
             switch ( mds_ddr->dtype ) {
+              char ddr_code[2];
               case 0: /* BYTE */
               case 1: strcpy(mds_meta->general->data_type,"BYTE");      break;
               case 2: strcpy(mds_meta->general->data_type,"INTEGER*2"); break;
@@ -166,7 +179,7 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
                 meta_write(mds_meta, meta_ddr_structs[ii].base_name);
                 meta_free(mds_meta);
             }
-       }
+        }
     }
     return(E_SUCC);
 }
