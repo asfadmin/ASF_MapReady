@@ -1,7 +1,7 @@
 #include "cla.h"
 
 
-int currArg;		/* Points to current command line arg */
+int currArg=1;   /* Points to current command line arg */
 
 /*strmatch is like strcmp, but it permits partial matching (e.g. "-rot" matches "-rotate"),
    and returns a one if the strings match, 0 otherwise.*/
