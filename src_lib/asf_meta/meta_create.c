@@ -22,13 +22,13 @@ from CEOS, AISP inputs, etc-- whatever it can find.
 */
 meta_parameters *meta_create(const char *fName)
 {
-	meta_parameters *sar=NULL;
-	sar=raw_init();
+	meta_parameters *meta=NULL;
+	meta=raw_init();
 	if (extExists(fName,".L")
 	  ||extExists(fName,".ldr"))
-		ceos_init(fName,sar);
+		ceos_init(fName,meta);
 	if (extExists(fName,".in"))
-		aisp_init(fName,sar);
-	final_init(sar);
-	return sar;
+		aisp_init(fName,meta);
+	final_init(meta);
+	return meta;
 }
