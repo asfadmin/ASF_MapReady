@@ -306,7 +306,7 @@ help_page (void)
 //
 //   4.  For each row in the output image, construct an interpolating
 //       spline over the values which result from evaluating the column
-//       splines at that y position.
+//       splines at that y position.  
 //
 //   5.  Verify that the splines aren't introducing too much error away
 //       from the control points by examing the errors in the spline
