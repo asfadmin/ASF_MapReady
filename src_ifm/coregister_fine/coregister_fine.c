@@ -162,7 +162,6 @@ int main(int argc, char *argv[])
 	   }
 	   else if (strmatch(key,"-f")) {
 	      fft_flag=1;
-	      printf("   Using Complex FFT instead of coherence for matching\n");
 	   }
 	   else if (strmatch(key,"-g")) {
 	      CHECK_ARG(1);
@@ -179,6 +178,8 @@ int main(int argc, char *argv[])
 	
 	system("date");
 	printf("Program: coregister_fine\n\n");
+	if (fft_flag)
+	  printf("   Using Complex FFT instead of coherence for matching\n");
 
 	if (!quietflag) printf("   coregister_fine is correlating '%s' to '%s'.\n",szImg2,szImg1);
 
