@@ -3,8 +3,9 @@ import java.io.* ;
 import java.awt.* ;
 import java.awt.event.* ;
 
-public class SelectTargets extends Frame implements ActionListener {
-   TextField comments;
+public class SelectTargets extends Frame implements ActionListener,
+                                                    WindowListener {
+   TextField db_comments;
    Button okButton, cancelButton;
    ArrayList targets, target_boxes;
    PrintStream printer;
@@ -46,9 +47,11 @@ public class SelectTargets extends Frame implements ActionListener {
 
       try   { printer = new PrintStream( new FileOutputStream (bing) ); }
       catch ( IOException  e) {
-         System.err.println("A error occurred while reading from the file \""
+         System.err.println("An error occurred while reading from the file \""
                             + bing +"\" (" + e +")");
       }
+      
+      addWindowListener(this);
    }
 
    /* Builds the lower pane with comment field and ok/cancel buttons */
@@ -56,16 +59,19 @@ public class SelectTargets extends Frame implements ActionListener {
       Panel tt = new Panel();
       okButton = new Button("Ok");
       cancelButton = new Button("Cancel");
-      comments = new TextField();
+      db_comments = new TextField();
 
       Panel tmp= new Panel();
-      //tmp.setLayout(new GridLayout(1,2));
       tmp.add(cancelButton);
       tmp.add(okButton);
 
       tt.setLayout(new GridLayout(2,1));
-      tt.add(comments);
+      db_comments.setEditable(false);
+      tt.add(db_comments);
       tt.add(tmp);
+
+      cancelButton.addActionListener(this);
+      okButton.addActionListener(this);
       return (tt);
    }
 
@@ -79,25 +85,32 @@ public class SelectTargets extends Frame implements ActionListener {
 
    public void actionPerformed (ActionEvent actionEvt) {
       if (actionEvt.getSource() == cancelButton) {
-         setVisible(false);
-         this.dispose();
-         return;
+         // close the window
+         processEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
       }
-      if (actionEvt.getSource() == okButton) {
-         setVisible(false);
-         this.dispose();
+      else if (actionEvt.getSource() == okButton) {
+         processEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
          WriteAndQuit();
          System.exit(0);
-         return;
       }
       /* Check to see if it was one of the check boxes.
        * If so, print the comments */
-      if (target_boxes.contains(actionEvt.getSource())) {
+      else if (target_boxes.contains(actionEvt.getSource())) {
          int targInd = target_boxes.indexOf(actionEvt.getSource());
-         comments.setText(((Target)targets.get(targInd)).cs_cmnts);
-         return;
+         db_comments.setText(((Target)targets.get(targInd)).cs_cmnts);
       }
    }
+
+  // What to do if the windowListener hears something
+   public void windowClosing(WindowEvent we) {
+      this.dispose(); 
+   }
+   public void windowActivated(WindowEvent we) { }
+   public void windowDeactivated(WindowEvent we) { }
+   public void windowDeiconified(WindowEvent we) { }
+   public void windowClosed(WindowEvent we) { }
+   public void windowIconified(WindowEvent we) { }
+   public void windowOpened(WindowEvent we) { }
 }
 
 
@@ -152,3 +165,4 @@ class TargetPanel extends Panel {
       add(target_list, BorderLayout.CENTER);
    }
 }
+
