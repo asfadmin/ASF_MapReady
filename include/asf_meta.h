@@ -512,6 +512,9 @@ int meta_is_valid_string(char *value);
 int meta_is_valid_int(int value);
 int meta_is_valid_double(double value);
 
+/* Propagate state vector source from time sourceSec to time destSec,
+   returning the new propagated state vector.  */
+stateVector propagate(stateVector source, double sourceSec, double destSec);
 
 /*Propagate the state vectors in the given meta_parameters structure so they
  * start at the image start. Make nStVec of them, data_int seconds apart.*/

@@ -1,15 +1,22 @@
 /****************************************************************************
 *								            *
 *   aisp_params.h   Parameters needed to run AISP                           *
-*   Copyright (C) 1997  Alaska SAR Facility		   	    	    *
-*									    *
-*	Alaska SAR Facility			APD Lab Web Site:	    *	
-*	Geophysical Institute			www.asf.alaska.edu/apd	    *
-*       University of Alaska Fairbanks					    *
-*	P.O. Box 757320				APD Email:		    *
-*	Fairbanks, AK 99775-7320		apd@asf.alaska.edu	    *
-*									    *
-****************************************************************************/
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* You should have received an ASF SOFTWARE License Agreement with this source *
+* code. Please consult this agreement for license grant information.          *
+*                                                                             *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*	Alaska Satellite Facility	    	                              *
+*	Geophysical Institute			www.asf.alaska.edu            *
+*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
+*	P.O. Box 757320							      *
+*	Fairbanks, AK 99775-7320					      *
+*									      *
+******************************************************************************/
 
 /*-------------------------------------------------------------------------*/
 /*   This structure contains all of the parameters needed to run asp.c     */
