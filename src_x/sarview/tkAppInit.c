@@ -1,4 +1,4 @@
-/* 
+/*
 tkAppInit.c --
 
   Main file for SARview application: initializes Tcl/Tk.
@@ -30,7 +30,7 @@ void setSupportPath(const char *appLoc)
   int i;                          /* String traversal index. */
 
   link_path=Tcl_Alloc(1024);      /* Space for the link path name.  */
-  
+
   if ( getenv("SARVIEW_SUPPORT_DIR") != NULL ) {
     strncpy(sarview_support_dir, getenv("SARVIEW_SUPPORT_DIR"), 2048);
     if ( strlen(sarview_support_dir) >= 1024 ) {
@@ -43,7 +43,7 @@ void setSupportPath(const char *appLoc)
 
   /* Didn't find an environment variable, try looking at the
      invocation name.  */
-  
+
   /*Find the directory separator*/
   i = strlen(appLoc)-1;
   while ((i>0)&&(appLoc[i]!='\\')&&
@@ -71,12 +71,12 @@ int main(int argc, char *argv[])
 {
 	/* Set the "support" directory path, based on the application
 	 * location or environment variable.*/
-	setSupportPath(argv[0]); 
+	setSupportPath(argv[0]);
 
 	if (argc>1)
 		firstArg=argv[1];
 	argc=1;    /* Hide our arguments from Tcl                   */
-	
+
 	Tk_Main(argc, argv, Tcl_AppInit);
 	return 0;  /* Needed only to prevent compiler warning.      */
 }
@@ -100,11 +100,8 @@ int Tcl_AppInit(Tcl_Interp *loc_interp)		/* Interpreter for application. */
 	link_cwd=Tcl_Alloc(1024);
 	if (NULL == (cwd = getcwd (link_cwd, 1024)))
 		Tcl_Free (cwd);
-#if defined(win32)
-	strcat(link_cwd,"\\");
-#else
-	strcat(link_cwd,"/");
-#endif
+
+	sprintf(link_cwd,"%s%c",link_cwd,DIR_SEPARATOR);
 
 /*Link the Tcl-to-C shared variables */
 	Tcl_LinkVar(interp,"link_path",(char *)&link_path,TCL_LINK_STRING|TCL_LINK_READ_ONLY);
@@ -118,7 +115,7 @@ int Tcl_AppInit(Tcl_Interp *loc_interp)		/* Interpreter for application. */
 	Tcl_LinkVar(interp,"link_screenx",(char *)&link_screenx,TCL_LINK_INT);
 	Tcl_LinkVar(interp,"link_screeny",(char *)&link_screeny,TCL_LINK_INT);
 	Tcl_LinkVar(interp,"link_zoom",(char *)&link_zoom,TCL_LINK_DOUBLE);
-	
+
 /*Create Tcl-callable C commands*/
 	Tcl_CreateObjCommand(interp,"cproc_loadimage",Cmd_loadimage,0,NULL);
 	Tcl_CreateObjCommand(interp,"cproc_saveimage",Cmd_saveimage,0,NULL);
@@ -135,7 +132,7 @@ int Tcl_AppInit(Tcl_Interp *loc_interp)		/* Interpreter for application. */
 	Tcl_CreateObjCommand(interp,"cproc_toCanvas",Cmd_toCanvas,0,NULL);
 
 /*Run the init.tcl script in the support directory to begin the program*/
-	sprintf(buf,"%s%cinit.tcl",link_path,DIRSEP);
+	sprintf(buf,"%s%cinit.tcl",link_path,DIR_SEPARATOR);
 	Tcl_EvalFile(interp,buf);
 
 /*Load up command-line image if possible*/
