@@ -57,7 +57,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   -quiet\n"\
 "        Supresses all non-essential output.\n"\
 "   -lat Specify lower and upper latitude contraints (only available\n"\
-"	for STF)\n"\
+"	for STF). Note that the program is not able to verify whether\n"\
+"	the chosen latitude constraint is within the image.\n"\
 "   -old Output in old style ASF internal format.\n"\
 "   -prc Replace the restituted state vectors from the original raw data\n"\
 "        acquired by the ERS satellites with preceision\n"\
