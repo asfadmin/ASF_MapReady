@@ -86,7 +86,7 @@ FIELD_STRING       [^#\n]*[^#\n \t]
 				 }
 
  /* Return a numeric value as string.  FIXME: length check string.  */
-<NUMERIC_STRING_STATE>{DOUBLE_STRING}/[ \t]*[#\n]  { 
+<NUMERIC_STRING_STATE>{FIELD_STRING}/[ \t]*[#\n]  { 
                                  BEGIN INITIAL;
                                  strcpy(meta_yylval.string_val, meta_yytext);
                                  return STRING;
