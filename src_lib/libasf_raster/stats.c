@@ -11,12 +11,13 @@ void calc_stats(float *data, long long pixel_count, double mask, double *min,
 		double *max, double *mean, double *stdDev)
 {
   long long ii, pix;
-  
-  /* Initialize return values */
+
+  /* Initialize values */
   *min = 99999;
   *max = -99999;
   *mean = 0.0;
   *stdDev = 0.0;
+  pix = 0;
 
   for (ii=0; ii<pixel_count; ii++) {
     if (!ISNAN(mask)) {

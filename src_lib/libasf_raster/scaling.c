@@ -64,18 +64,12 @@ unsigned char *floats_to_bytes (float *data, long long pixel_count, float mask,
       /* Apply 2 sigma to calculate new minimum and maximum */
       diff_min = imean - 2*isdev;
       diff_max = imean + 2*isdev;
-      if (imin < diff_min && imax > diff_max) {
-	omin = diff_min;
-	omax = diff_max;
-      }
-      else if (diff_min < diff_max) {
-	omin = imin;
-	omax = imin + 2*(imean-imin);
-      }
-      else {
-	omin = imax - 2*(imax-imean);
-	omax = imax;
-      }
+
+      omin = diff_min;
+      omax = diff_max;
+      
+      if (diff_min < imin) omin = imin;
+      if (diff_max > imax) omax = imax;
       
       /* Computing output pixels applying the sigma mapping */
       slope = 255 / (omax-omin);
