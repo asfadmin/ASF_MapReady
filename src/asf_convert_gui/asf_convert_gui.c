@@ -4,146 +4,79 @@
 #include "asf_convert_gui.h"
 
 GladeXML *glade_xml;
+GtkListStore *list_store;
+gboolean keep_going;
 
-SIGNAL_CALLBACK void
-on_browse_input_files_button_clicked(GtkWidget *widget)
+void
+setup_files_list(int argc, char *argv[])
 {
-  GtkWidget *file_selection_dialog =
-    glade_xml_get_widget(glade_xml, "input_file_selection");
+  gint i;
+  GtkWidget *files_list;
+  GtkTreeViewColumn *col;
+  GtkCellRenderer *renderer;
+  GtkTreeIter iter;
 
-  gtk_widget_show(file_selection_dialog);
-}
+  list_store = gtk_list_store_new(3, 
+				  G_TYPE_STRING, 
+				  G_TYPE_STRING, 
+				  G_TYPE_STRING);
 
-SIGNAL_CALLBACK void
-on_input_file_selection_cancel_button_clicked(GtkWidget *widget)
-{
-  GtkWidget *file_selection_dialog =
-    glade_xml_get_widget(glade_xml, "input_file_selection");
-
-  gtk_widget_hide(file_selection_dialog);
-}
-
-SIGNAL_CALLBACK void
-on_input_file_selection_ok_button_clicked(GtkWidget *widget)
-{
-  GtkWidget *file_selection_dialog =
-    glade_xml_get_widget(glade_xml, "input_file_selection");
-
-  gchar **selections = gtk_file_selection_get_selections(
-			 GTK_FILE_SELECTION(file_selection_dialog));
-
-  /* only allow selection of 1 file currently */
-  gchar *selected_file_name = selections[0];
-
-  GtkWidget *input_entry = glade_xml_get_widget(glade_xml, "input_entry");
-
-  gtk_entry_set_text(GTK_ENTRY(input_entry), selected_file_name);
-
-  gtk_widget_hide(file_selection_dialog);
-}
-
-SIGNAL_CALLBACK void
-on_asf_convert_destroy(GtkWidget *widget, gpointer data)
-{
-  gtk_main_quit();
-}
-
-SIGNAL_CALLBACK void
-on_execute_button_clicked (GtkWidget *button)
-{
-  GtkWidget *input_entry, 
-    *output_entry,
-    *input_data_type_combobox,
-    *input_data_format_combobox,
-    *output_format_combobox,
-    *scale_checkbutton,
-    *longest_dimension_spinbutton;
-
-  gint input_data_type,
-    input_data_format,
-    output_format;
-
-  gchar *format,
-    *in_meta;
-
-  G_CONST_RETURN gchar *in_data,
-    *out_full;
-
-  gchar convert_cmd[1024], size_arg[30];
-
-  input_entry = 
-    glade_xml_get_widget(glade_xml, "input_entry");
-
-  in_data =
-    gtk_entry_get_text(GTK_ENTRY(input_entry));
-
-  /* FIXME */
-  in_meta = g_strdup(in_data);
-  if (strlen(in_meta) > 0)
-    in_meta[strlen(in_meta) - 1] = 'L';
-
-  output_entry = 
-    glade_xml_get_widget(glade_xml, "output_entry");
-
-  out_full =
-    gtk_entry_get_text(GTK_ENTRY(output_entry));
-
-  input_data_type_combobox = 
-    glade_xml_get_widget(glade_xml, "input_data_type_combobox");
-
-  input_data_type =
-    gtk_combo_box_get_active(GTK_COMBO_BOX(input_data_type_combobox));
-
-  input_data_format_combobox = 
-    glade_xml_get_widget(glade_xml, "input_data_format_combobox");
-
-  input_data_format =
-    gtk_combo_box_get_active(GTK_COMBO_BOX(input_data_format_combobox));
-
-  output_format_combobox = 
-    glade_xml_get_widget(glade_xml, "output_format_combobox");
-
-  output_format =
-    gtk_combo_box_get_active(GTK_COMBO_BOX(output_format_combobox));
-
-  scale_checkbutton = 
-    glade_xml_get_widget(glade_xml, "scale_checkbutton");
-
-  longest_dimension_spinbutton =
-    glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
-
-  size_arg[0] = '\0';
-  switch (output_format)
+  for (i = 1; i < argc; ++i)
+  {
+    char * data_file = argv[i];
+    char * meta_file = strdup(argv[i]);
+    if (strlen(meta_file) > 0)
     {
-    default:
-    case JPEG:
-      format = "jpeg";
-      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(scale_checkbutton)))
-	{
-	  gdouble d = 
-	    gtk_spin_button_get_value(
-	       GTK_SPIN_BUTTON(longest_dimension_spinbutton));
-	  sprintf(size_arg, "-size %d", (int)floor(d + 0.5));
-	}
-      break;
-    case PPM:
-      format = "ppm";
-      break;
-    case GEOTIFF:
-      format = "geotiff";
-      break;
+      meta_file[strlen(meta_file) - 1] = 'L';
+
+      gtk_list_store_append(list_store, &iter);
+
+      gtk_list_store_set(list_store, &iter,
+		     0, data_file, 1, meta_file, 2, "", -1);
     }
 
-  snprintf (convert_cmd, 1024, "asf_convert -format %s %s %s %s %s",
-	    format,
-	    size_arg,
-	    in_data,
-	    in_meta,
-	    out_full);
+    free(meta_file);
+  }
 
-  system(convert_cmd);
+  files_list =
+    glade_xml_get_widget(glade_xml, "files_list");
 
-  g_free(in_meta);
+  /* First Column */
+  col = gtk_tree_view_column_new();
+  gtk_tree_view_column_set_title(col, "Data File");
+  gtk_tree_view_column_set_resizable(col, TRUE);
+  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+  renderer = gtk_cell_renderer_text_new();
+  gtk_tree_view_column_pack_start(col, renderer, TRUE);
+  g_object_set(renderer, "text", "?", NULL);
+  gtk_tree_view_column_add_attribute(col, renderer, "text", 0);
+
+  /* Second Column */
+  col = gtk_tree_view_column_new();
+  gtk_tree_view_column_set_title(col, "Meta File");
+  gtk_tree_view_column_set_resizable(col, TRUE);
+  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+  renderer = gtk_cell_renderer_text_new();
+  gtk_tree_view_column_pack_start(col, renderer, TRUE);
+  gtk_tree_view_column_add_attribute(col, renderer, "text", 1);
+
+  /* Third Column */
+  col = gtk_tree_view_column_new();
+  gtk_tree_view_column_set_title(col, "Output File");
+  gtk_tree_view_column_set_resizable(col, TRUE);
+  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+  renderer = gtk_cell_renderer_text_new();
+  gtk_tree_view_column_pack_start(col, renderer, TRUE);
+  gtk_tree_view_column_add_attribute(col, renderer, "text", 2);
+
+  gtk_tree_view_set_model(GTK_TREE_VIEW(files_list), 
+			  GTK_TREE_MODEL(list_store));  
+
+  g_object_unref(list_store);
+
+  gtk_tree_selection_set_mode(
+      gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list)),
+      GTK_SELECTION_NONE);
 }
 
 int
@@ -165,6 +98,14 @@ main(int argc, char **argv)
     gtk_combo_box_set_active(GTK_COMBO_BOX(widget), 0);
     widget = glade_xml_get_widget (glade_xml, "output_format_combobox");
     gtk_combo_box_set_active(GTK_COMBO_BOX(widget), 0);
+
+    /* fire handlers for hiding/showing stuff */
+    output_format_combobox_changed();
+    input_data_format_combobox_changed();
+    show_execute_button(TRUE);
+
+    /* build columns in the files section */
+    setup_files_list(argc, argv);
 
     /* Connect signal handlers.  */
     glade_xml_signal_autoconnect (glade_xml);
