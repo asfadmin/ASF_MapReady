@@ -51,20 +51,20 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
    int autonumber = 0;
    int autorealx = 0;
    int autorealy = 0;
-   int memtarx = -1;   //the old target position
+   int memtarx = -1;  // The old target position
    int memtary = -1; 
-   int targetx = 0;   //position of new target.
+   int targetx = 0;   // Position of new target.
    int targety = 0;
-   int startx = 0;   //position of MOUSE_DOWN event in smasking mode
+   int startx = 0;    // Position of mousePressed event in smasking mode
    int starty = 0;
-   int mousex = 0;   //current position of the mouse in flythrough mode;
+   int mousex = 0;    // Current position of the mouse in flythrough mode
    int mousey = 0;
    int range = 30;
    int flyx;
    int flyy;
-   int memx = 0;   //last zoom position on main window, to keep from repainting multiple times.
-   int memy = 0;
-   int oldx = 0;      //need to change all this too...
+   int memx = 0;      // Last zoom position on main window, to keep from
+   int memy = 0;      //   repainting multiple times.
+   int oldx = 0;
    int oldy = 0;
    int realx = 0;
    int realy = 0;
@@ -72,8 +72,6 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
    zoomCanvas(zoomFrame myFrame) {
       this.myFrame = myFrame;
       flyThread = new Thread(this);
-      
-     
       addKeyListener(this);
       addMouseListener(this);
       addMouseMotionListener(this);
@@ -84,13 +82,13 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
       this.im = im;
       
       int zwidth = (int) (this.getWidth()/(2*ratio));
-      if(realx < zwidth) {realx = zwidth;}      
-      if(realx > im.width - zwidth) {realx = im.width - zwidth;}
+      if (realx < zwidth) {realx = zwidth;}      
+      if (realx > im.width - zwidth) {realx = im.width - zwidth;}
       this.realx = realx;
       
       int zheight = (int) (this.getHeight()/(2*ratio));
-      if(realy < zheight) {realy = zheight;}
-      if(realy > im.height - zheight) {realy = im.height - zheight;}
+      if (realy < zheight) {realy = zheight;}
+      if (realy > im.height - zheight) {realy = im.height - zheight;}
       this.realy = realy;
 
       repaint();
@@ -131,7 +129,7 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
    }
    
    public void updateTargets (pointtargets targets) {
-      if(targets != null)
+      if (targets != null)
          targetting = true;
       else
          targetting = false;
@@ -143,66 +141,82 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
    public void paint(Graphics g) {
       km = createImage(getWidth(), getHeight());
       Graphics ga = km.getGraphics();
-      
-      
+
       //error correction code...probably shouldn't go here, but this is the only spot right now.
-      if(realx < getWidth()/(2*ratio))  {realx = (int) (getWidth()/(2*ratio));}
-      if(realy < getHeight()/(2*ratio)) {realy = (int) (getHeight()/(2*ratio));}
-      if(realx > im.width - getWidth()/(2*ratio))
-         {realx = im.width - (int) (getWidth()/(2*ratio));}
-      if(realy > im.height - getHeight()/(2*ratio))
-         {realy = im.height - (int) (getHeight()/(2*ratio));}
+      if (realx < getWidth()/(2*ratio))
+         { realx = (int) (getWidth()/(2*ratio)); }
+      if (realy < getHeight()/(2*ratio))
+         { realy = (int) (getHeight()/(2*ratio)); }
+      if (realx > im.width - getWidth()/(2*ratio))
+         { realx = im.width - (int) (getWidth()/(2*ratio)); }
+      if (realy > im.height - getHeight()/(2*ratio))
+         { realy = im.height - (int) (getHeight()/(2*ratio)); }
 
       //draw zoomed image
-      if(im != null) {
-         if(best) {
-            if(ratio <= 1)   {
-               AreaAveragingScaleFilter asf = new AreaAveragingScaleFilter(getWidth(), getHeight());
-               Image sz = createImage(new FilteredImageSource(im.eatImage(realx, realy, (int) (getWidth()/ratio),
-                                                (int) (getHeight()/ratio)).getSource(), asf));
+      if (im != null) {
+         if (best) {
+            if (ratio <= 1)   {
+               AreaAveragingScaleFilter asf = new AreaAveragingScaleFilter(
+                                                       getWidth(), getHeight());
+               Image sz = createImage(
+                                  new FilteredImageSource(im.eatImage(
+                                  realx, realy, (int) (getWidth()/ratio),
+                                  (int) (getHeight()/ratio)).getSource(), asf));
                ga.drawImage(sz, 0, 0, null);
             }
             else {
-               if(ratio <= 3) {
-                  AreaAveragingScaleFilter asf = new AreaAveragingScaleFilter(getWidth(), getHeight());
-                  Image sz = createImage(new FilteredImageSource(im.eatImage(realx, realy, (int) (getWidth()/ratio),
-                                                   (int) (getHeight()/ratio)).getSource(), asf));
-                  Image bz = createImage(new FilteredImageSource(sz.getSource(), new BlurFilter()));
+               if (ratio <= 3) {
+                  AreaAveragingScaleFilter asf = new AreaAveragingScaleFilter(
+                                                       getWidth(), getHeight());
+                  Image sz = createImage(
+                              new FilteredImageSource(im.eatImage(realx, realy,
+                              (int)(getWidth()/ratio),
+                              (int)(getHeight()/ratio)).getSource(), asf));
+                  Image bz = createImage(new FilteredImageSource(
+                                             sz.getSource(), new BlurFilter()));
                   ga.drawImage(bz, 0, 0, null);
                }
                else {
                   Image bz = im.eatImage(realx, realy, (int) (getWidth()/ratio), (int) (getHeight()/ratio));
-                  for(double spazio = ratio; spazio > 1; spazio /= 3) {
-                     bz = createImage(new FilteredImageSource(bz.getSource(), new ReplicateScaleFilter(bz.getWidth(null)*3, bz.getHeight(null)*3)));
-                     bz = createImage(new FilteredImageSource(bz.getSource(), new BlurFilter()));
+                  for (double spazio = ratio; spazio > 1; spazio /= 3) {
+                     bz = createImage(new FilteredImageSource(
+                                   bz.getSource(), new ReplicateScaleFilter(
+                                   bz.getWidth(null)*3, bz.getHeight(null)*3)));
+                     bz = createImage(new FilteredImageSource(
+                                             bz.getSource(), new BlurFilter()));
                   }
-                  bz = createImage(new FilteredImageSource(bz.getSource(), new AreaAveragingScaleFilter(getWidth(), getHeight())));
-                  bz = createImage(new FilteredImageSource(bz.getSource(), new BlurFilter()));
+                  bz = createImage(new FilteredImageSource(bz.getSource(),
+                        new AreaAveragingScaleFilter(getWidth(), getHeight())));
+                  bz = createImage(new FilteredImageSource(bz.getSource(),
+                                                             new BlurFilter()));
                   ga.drawImage(bz, 0, 0, null);
                }
             }
          }
          else {
-            ReplicateScaleFilter rsf = new ReplicateScaleFilter(getWidth(), getHeight());
-            ga.drawImage(createImage(new FilteredImageSource(im.eatImage(realx, realy, (int) (getWidth()/ratio), 
-                                                (int) (getHeight()/ratio)).getSource(), rsf)), 0, 0, null); 
+            ReplicateScaleFilter rsf = new ReplicateScaleFilter(getWidth(),
+                                                                getHeight());
+            ImageProducer eatenImageSource = im.eatImage(realx, realy,
+                 (int)(getWidth()/ratio), (int)(getHeight()/ratio)).getSource();
+            ga.drawImage(createImage(
+                   new FilteredImageSource(eatenImageSource, rsf)), 0, 0, null);
          }
       }
       
    // Draw zoomed mask
-      if(imagemask != null)
+      if (imagemask != null)
          ga.drawImage(imagemask.display(realx, realy,
                       (int) (getWidth()/ratio),
                       (int) (getHeight()/ratio)),  
                       0, 0, getWidth(), getHeight(), null);
 
    // Draw zoomed smask
-      if(simagemask != null)
+      if (simagemask != null)
          ga.drawImage(simagemask.display(realx, realy, (int) (getWidth()/ratio), (int) (getHeight()/ratio)),  
                            0, 0, getWidth(), getHeight(), null);
    
    // Draw zoomed targets
-      if(targets != null) {
+      if (targets != null) {
          int sizex;
          int sizey;
          sizex = (int) (getWidth()/ratio);
@@ -210,16 +224,16 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
          
          Vector zoomtargets = targets.zoompoints(realx - sizex/2, realy - sizey/2, sizex, sizey);
          
-         for(int i=0; i < zoomtargets.size(); i++) {
+         for (int i=0; i < zoomtargets.size(); i++) {
             pt now = (pt) zoomtargets.elementAt(i);
-            if(now.actualized) {
+            if (now.actualized) {
                ga.setColor(Color.red);
                ga.setFont(new Font("SansSerif", Font.BOLD, 12));
                
                int nowx;
                int nowy;
                
-               if(ratio < 90) {
+               if (ratio < 90) {
                   nowx = (int) ((now.actualx - realx)*ratio);   //relative position
                   nowy = (int) ((now.actualy - realy)*ratio);
                }
@@ -228,9 +242,9 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
                   nowy = (int) ((now.actualy - realy)*(getHeight()/sizey));
                }
 
-               if(sizex/2 == sizex/2.0)      //keeps it centered even when realx is off.
+               if (sizex/2 == sizex/2.0)      //keeps it centered even when realx is off.
                   nowx += getWidth()/(sizex*2);
-               if(sizey/2 == sizey/2.0) 
+               if (sizey/2 == sizey/2.0) 
                   nowy += getHeight()/(sizey*2);
 
                nowx += getWidth()/2;   //center it
@@ -246,7 +260,7 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
                int nowx;
                int nowy;
                
-               if(ratio < 90) {
+               if (ratio < 90) {
                   nowx = (int) ((now.potentialx - realx)*ratio);   //relative position
                   nowy = (int) ((now.potentialy - realy)*ratio);
                }
@@ -255,9 +269,9 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
                   nowy = (int) ((now.potentialy - realy)*(getHeight()/sizey));
                }
 
-               if(sizex/2 == sizex/2.0)      //keeps it centered even when realx is off.
+               if (sizex/2 == sizex/2.0)      //keeps it centered even when realx is off.
                   nowx += getWidth()/(sizex*2);
-               if(sizey/2 == sizey/2.0) 
+               if (sizey/2 == sizey/2.0) 
                   nowy += getHeight()/(sizey*2);
 
                nowx += getWidth()/2;   //center it
@@ -290,8 +304,8 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
    // Make the zoomie box glow.
       myFrame.mainCanvas.clearZoom();
       myFrame.mainCanvas.updateZoom(myFrame.getPosition(),
-                                    myFrame.getZoomSize().width,
-                                    myFrame.getZoomSize().height);      
+                                    myFrame.getZoomWidth(),
+                                    myFrame.getZoomHeight());      
    }
 
    //this is for mouse control flying around.
@@ -299,7 +313,7 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
    //you are actually *moving* the mouse, 
    //which is kind of uncool.
 
-   public synchronized void start_animation() {
+    public synchronized void start_animation() {
       threadSuspended = false;
       if (flyThread.isAlive()) { notify(); }
       else                     { flyThread.start(); }
@@ -336,12 +350,12 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
          try {
             Thread.currentThread().sleep(10);
 
-//            if (threadSuspended) {
+            if (threadSuspended) {
                synchronized (this) {
                   while (threadSuspended)
                      wait();
-                }
-//            }
+               }
+            }
          }
          catch (InterruptedException e){
             System.out.println("SProCKET: Zoom window flythrough failure.");
@@ -362,7 +376,7 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
    public void keyTyped    (KeyEvent keyEvt) { }
    public void keyPressed (KeyEvent keyEvt) {
       if (fly) {
-         if(!targetting)
+         if (!targetting)
             { myFrame.coordinates.setText("ratio: " + ratio); }
          System.out.print("");  // It just needs to be here, okay??
 
@@ -427,7 +441,7 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
       }
 
    // Bright
-      if(targetting && bright) {
+      if (targetting && bright) {
 //         Dimension d = im.brightest((int)(mouseEvt.getX()/ratio),
 //                                    (int)(mouseEvt.getY()/ratio),
 //                                    x, y, range);
@@ -456,8 +470,8 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
          g.setColor(Color.yellow);
          int xratio = getWidth() /(int)(getWidth() /ratio);
          int yratio = getHeight()/(int)(getHeight()/ratio);
-         if(xratio < 2) {xratio = 2;}
-         if(yratio < 2) {yratio = 2;}
+         if (xratio < 2) {xratio = 2;}
+         if (yratio < 2) {yratio = 2;}
          g.fillRect(evtx, evty, xratio, yratio);
 
          myFrame.coordinates.setText("x: " + targetx + " " + "y: " + targety
@@ -541,18 +555,18 @@ class zoomCanvas extends Canvas implements Runnable, KeyListener,
          int tempMouseX = mouseEvt.getX();
          int tempMouseY = mouseEvt.getY();
 
-         if(tempMouseX >= simagemask.zwidth*ratio)
+         if (tempMouseX >= simagemask.zwidth*ratio)
             tempMouseX = (int) ((simagemask.zwidth-1)*ratio);
-         if(tempMouseX < 0)
+         if (tempMouseX < 0)
             tempMouseX = 0;
 
-         if(tempMouseY >= simagemask.zheight*ratio)
+         if (tempMouseY >= simagemask.zheight*ratio)
             tempMouseY = (int) ((simagemask.zheight-1)*ratio);
-         if(tempMouseY < 0)
+         if (tempMouseY < 0)
             tempMouseY = 0;
 
          if (oldy != mouseEvt.getY()) {
-            if(memFLAG == true) {
+            if (memFLAG == true) {
                simagemask.addLine((int)(memx/ratio), (int)(memy/ratio),
                                   (int)(oldx/ratio), (int)(oldy/ratio));
                memFLAG = false;
