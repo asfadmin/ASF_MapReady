@@ -32,12 +32,12 @@ These now live in the proj_parameters structure:
 
 /*Initialize Along-Track/Cross-Track projection with
 given fixed-earth state vector.*/
-void atct_init(geo_parameters *geo,stateVector stVec);
+void atct_init(meta_projection *proj,stateVector stVec);
 
 /*Convert given longitude (degrees) to UTM zone code.*/
 int UTM_zone(double longitude);
 
 /*Convert projection units (meters) to geodetic latitude and longitude (degrees).*/
-void ll_to_proj(geo_parameters *geo,double lat_d,double lon,double *p1,double *p2);
-void proj_to_ll(geo_parameters *geo,double p1, double p2, double *lat_d, double *lon);
+void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,double *p1,double *p2);
+void proj_to_ll(meta_projection *proj,char look_dir,double p1, double p2, double *lat_d, double *lon);
 #endif
