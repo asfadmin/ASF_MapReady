@@ -246,8 +246,11 @@ if ( $p{'independency_file'} ) {
 	unless ( $_ ) {
 	    next;
 	}
-	unless ( (my @new_independency = split(/,/)) == 2 ) {
-	    die "$progname: malformed independency at line $line_number of file $p{'independency_file'}\n"
+        unless ( (my @new_independency = split(/,/)) == 2 ) {
+            die "$progname: malformed independency at line $line_number of file $p{'independency_file'}\n";
+        } elsif ( $new_independency[0] =~ m/^\s.*\s/
+                   or $new_independency[1] =~ m/^\s.*\s/ ) {
+            die "$progname: malformed independency at line $line_number of file $p{'independency_file'}, maybe illegal whitespace around comma?\n";
         } else {
             $pkg_independencies{$new_independency[0]} ||= [];
             push(@{$pkg_independencies{$new_independency[0]}}, 
@@ -452,8 +455,8 @@ if ( %pkg_independencies ) {
 	    die "$progname: unknown package name '$pkg' in independency\n";
 	}
         foreach my $other_pkg ( @{$pkg_independencies{$pkg}} ) {
-	    unless ( exists($pkg_deps{$pkg}) ) {
-                die "$progname: unknown package name '$pkg' in independency\n";
+	    unless ( exists($pkg_deps{$other_pkg}) ) {
+                die "$progname: unknown package name '$other_pkg' in independency\n";
             }
             my @new_deps = (); # Post-independency dependency list.
             foreach my $dependency ( @{$pkg_deps{$pkg}} ) {
