@@ -70,9 +70,9 @@ class pvs extends Frame implements ActionListener, ComponentListener,
    boolean unmask = false;
    private int zoommaskcount = 0;
    targetFrame targetframe;
-   
-   //preferences and whatnot...
-   
+   boolean mouseListenerOn = false;   // Turn mouse listeners on & off
+
+// Preferences and whatnot...
    String preffile = "pvs.pref";   //echoed in logger class...
    String imagedir = null;
    String maskdir = null;
@@ -87,7 +87,7 @@ class pvs extends Frame implements ActionListener, ComponentListener,
 
    String outputfile = null;
    
-   //menuing-ing-ing
+// Menuing-ing-ing
    
    Menu fileMenu;
    Menu optionMenu;
@@ -471,8 +471,8 @@ class pvs extends Frame implements ActionListener, ComponentListener,
 
    //  *************************************************************************
    public void commander(String commanddirectory, String commandfilename) {   //(this is stupid.)
-       //cut of the .data1 part
-      String imagefile = imageObject.filename.substring(0, imageObject.filename.length() - 6);
+       //cut of the .img part
+      String imagefile = imageObject.filename.substring(0, imageObject.filename.length() - 4);
       String maskfile;
       String outputfilename;
       String outputdirectory;
@@ -628,11 +628,11 @@ class pvs extends Frame implements ActionListener, ComponentListener,
 
             //close it if it's already there.
             if(imageObject instanceof importImage) {
-               boolean done = imageObject.closeImage(); //use this value for something. . . 
+               imageObject.closeImage(); // returns boolean
                imageObject = null;
             }
 
-            imageObject = new importImage(this, filename, imagesize, imagequality);
+            imageObject = new importImage(this,filename,imagesize,imagequality);
             if (imageObject.im == null) {
                setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                return;
@@ -697,15 +697,30 @@ class pvs extends Frame implements ActionListener, ComponentListener,
       if (actionEvt.getSource() == zoomMenuItem) {
          if (zf instanceof zoomFrame) {
             if (zf.isVisible()) {
+               if (imagemask == null && mouseListenerOn) {
+                  mainCanvas.removeMouseListener(this);
+                  mainCanvas.removeMouseMotionListener(this);
+                  mouseListenerOn = false;
+               }
                zf.dispose();
             }
             else {
+               if (imagemask == null && !mouseListenerOn) {
+                  mainCanvas.addMouseListener(this);
+                  mainCanvas.addMouseMotionListener(this);
+                  mouseListenerOn = true;
+               }
                zf.setVisible(true);
             }
          }
          else {
             if (mainCanvas.im != null) {
                zf = new zoomFrame(this);
+               if (imagemask == null && !mouseListenerOn) {
+                  mainCanvas.addMouseListener(this);
+                  mainCanvas.addMouseMotionListener(this);
+                  mouseListenerOn = true;
+               }
                if (mainCanvas.x != -1 && mainCanvas.y != -1) {
                   zf.zoomImage(mainCanvas.x, mainCanvas.y, imageObject);
                }
@@ -723,10 +738,10 @@ class pvs extends Frame implements ActionListener, ComponentListener,
       }
       if (actionEvt.getSource() == contrastMenuItem) {  //display contrast controls
          if (imageObject != null) {
-            contDialog cont = new contDialog(this, imageObject.contrastlow,
-                                             imageObject.contrasthigh, 
-                                             imageObject.defaultcontrastlow,
-                                             imageObject.defaultcontrasthigh);
+            contDialog cont = new contDialog(this, imageObject.contrastLow,
+                                             imageObject.contrastHigh, 
+                                             imageObject.defaultContrastLow,
+                                             imageObject.defaultContrastHigh);
             if (locatex > 0 && locatey > 0)  {
                if (locatey + this.getHeight() + cont.getHeight() < getToolkit().getScreenSize().height)
                   cont.setLocation(locatex, locatey + this.getHeight());
@@ -765,10 +780,13 @@ class pvs extends Frame implements ActionListener, ComponentListener,
          return;
       }
       if (actionEvt.getSource() == startMaskMenuItem) {  // Start drawing mask
-         if(imageObject != null) {
+         if (imageObject != null) {
             if (imagemask != null) {
-               mainCanvas.addMouseListener(this);
-               mainCanvas.addMouseMotionListener(this);
+               if ( !(zf instanceof zoomFrame) && !mouseListenerOn ) {
+                  mainCanvas.addMouseListener(this);
+                  mainCanvas.addMouseMotionListener(this);
+                  mouseListenerOn = true;
+               }
                imagemask.drawing = true;
             }
          }
@@ -776,8 +794,11 @@ class pvs extends Frame implements ActionListener, ComponentListener,
       }
       if (actionEvt.getSource() == stopMaskMenuItem) {  // Stop drawing mask
          if (imagemask != null) {
-            mainCanvas.removeMouseListener(this);
-            mainCanvas.removeMouseMotionListener(this);
+            if ( !(zf instanceof zoomFrame) && mouseListenerOn  ) {
+               mainCanvas.removeMouseListener(this);
+               mainCanvas.removeMouseMotionListener(this);
+               mouseListenerOn = false;
+            }
             imagemask.drawing = false;
          }
          if (zf != null)
@@ -999,21 +1020,17 @@ class pvs extends Frame implements ActionListener, ComponentListener,
          { unmask = !unmask; }
    }
 
-   // MOUSE LISTENER ROUTINES **************************************************
-   public void mouseClicked(MouseEvent mouseEvt) { }
-   public void mouseEntered(MouseEvent mouseEvt) { }
-   public void mouseExited(MouseEvent mouseEvt) { }
-// Don't forget to do the same thing in the mouseDragged method
-   public void mousePressed(MouseEvent mouseEvt) { 
+   // What to do if the mouse is pressed or dragged ****************************
+   public void mousePressedOrDragged(MouseEvent mouseEvt) {
    // If we're masking
-      if(imagemask != null && imagemask.drawing) {
+      if (imagemask != null && imagemask.drawing) {
          imagemask.updateImage(mainCanvas.x-pensize, mainCanvas.y-pensize,
                                mainCanvas.x+pensize, mainCanvas.y+pensize,
                                unmask);
          mainCanvas.updateMask(imagemask, pensize, unmask);
       // Decide if the mask pen was inside the zoom window
       //   - makes redrawing scads quicker.
-/*         if(zf != null) {
+         if (zf != null) {
             int tx = mainCanvas.x;
             int ty = mainCanvas.y;
             int offx; int offy;
@@ -1021,28 +1038,37 @@ class pvs extends Frame implements ActionListener, ComponentListener,
                        / imageObject.width;
             offy = (int)(zf.getHeight()/zf.zoomedCanvas.ratio * imagesize)
                        / imageObject.height;
-            int zx1 = zf.getPosition().width - offx/2;      
-            int zy1 = zf.getPosition().height - offy/2;   
-            int zx2 = zf.getPosition().width + offx/2;                                   
-            int zy2 = zf.getPosition().height + offy/2;
+            int zx1 = zf.getWidth()  - offx/2;      
+            int zy1 = zf.getHeight() - offy/2;   
+            int zx2 = zf.getWidth()  + offx/2;                                   
+            int zy2 = zf.getHeight() + offy/2;
 
             // Heck, this will work for now. I mean have you ever seen an uglier if statement?!
-            if((((((zx1 < tx-pensize) && (tx-pensize < zx2)) || ((zx1 < tx+pensize) && (tx+pensize < zx2))) &&
-                 (((zy1 < ty-pensize) && (ty-pensize < zy2)) || ((zy1 < ty+pensize) && (ty+pensize < zy2)))) ||
-                ((((tx-pensize < zx1) && (zx1 < tx+pensize)) || ((tx-pensize < zx2) && (zx2 < tx+pensize))) &&
-                 (((ty-pensize < zy1) && (zy1 < ty+pensize)) || ((ty-pensize < zy2) && (zy2 < ty+pensize))))) &&
-                   (zoommaskcount%6 == 1)) {
+            if ((((((zx1 < tx-pensize) && (tx-pensize < zx2)) || ((zx1 < tx+pensize) && (tx+pensize < zx2))) &&
+                  (((zy1 < ty-pensize) && (ty-pensize < zy2)) || ((zy1 < ty+pensize) && (ty+pensize < zy2)))) ||
+                 ((((tx-pensize < zx1) && (zx1 < tx+pensize)) || ((tx-pensize < zx2) && (zx2 < tx+pensize))) &&
+                  (((ty-pensize < zy1) && (zy1 < ty+pensize)) || ((ty-pensize < zy2) && (zy2 < ty+pensize))))) &&
+                    (zoommaskcount%6 == 0)) {
                zf.updateMask(imagemask);
                zoommaskcount = 0;
             }
             zoommaskcount++;
          }
-*/         return;
+         return;
       }
    // If nothing else is happening...
       if (zf instanceof zoomFrame) {
          zf.zoomImage(mainCanvas.x, mainCanvas.y, imageObject);
+         return;
       }
+   }
+
+   // MOUSE LISTENER ROUTINES **************************************************
+   public void mouseClicked(MouseEvent mouseEvt) { }
+   public void mouseEntered(MouseEvent mouseEvt) { }
+   public void mouseExited(MouseEvent mouseEvt) { }
+   public void mousePressed(MouseEvent mouseEvt) { 
+      mousePressedOrDragged(mouseEvt);
    }
    public void mouseReleased(MouseEvent mouseEvt) {
       if(zf instanceof zoomFrame) {
@@ -1050,47 +1076,13 @@ class pvs extends Frame implements ActionListener, ComponentListener,
       }
    }
 
-
    // MOUSE MOTION LISTENER ROUTINES *******************************************
    public void mouseMoved(MouseEvent mouseEvt) { }
    public void mouseDragged(MouseEvent mouseEvt) {
-      if(imagemask != null && imagemask.drawing) {
-         imagemask.updateImage(mainCanvas.x-pensize, mainCanvas.y-pensize,
-                               mainCanvas.x+pensize, mainCanvas.y+pensize,
-                               unmask);
-         mainCanvas.updateMask(imagemask, pensize, unmask);
-      }
-      // Decide if the mask pen was inside the zoom window
-      //   - makes redrawing scads quicker.
-/*         if(zf != null) {
-            int tx = mainCanvas.x;
-            int ty = mainCanvas.y;
-            int offx; int offy;
-            offx = (int)(zf.getWidth()/zf.zoomedCanvas.ratio * imagesize)
-                       / imageObject.width;
-            offy = (int)(zf.getHeight()/zf.zoomedCanvas.ratio * imagesize)
-                       / imageObject.height;
-            int zx1 = zf.getPosition().width - offx/2;      
-            int zy1 = zf.getPosition().height - offy/2;   
-            int zx2 = zf.getPosition().width + offx/2;                                   
-            int zy2 = zf.getPosition().height + offy/2;
-
-            // Heck, this will work for now. I mean have you ever seen an uglier if statement?!
-            if((((((zx1 < tx-pensize) && (tx-pensize < zx2)) || ((zx1 < tx+pensize) && (tx+pensize < zx2))) &&
-                 (((zy1 < ty-pensize) && (ty-pensize < zy2)) || ((zy1 < ty+pensize) && (ty+pensize < zy2)))) ||
-                ((((tx-pensize < zx1) && (zx1 < tx+pensize)) || ((tx-pensize < zx2) && (zx2 < tx+pensize))) &&
-                 (((ty-pensize < zy1) && (zy1 < ty+pensize)) || ((ty-pensize < zy2) && (zy2 < ty+pensize))))) &&
-                   (zoommaskcount%6 == 1)) {
-               zf.updateMask(imagemask);
-               zoommaskcount = 0;
-            }
-            zoommaskcount++;
-         }
-*/   // If nothing else is happening...
-      if (zf instanceof zoomFrame) {
-         zf.zoomImage(mainCanvas.x, mainCanvas.y, imageObject);
-      }
+      mousePressedOrDragged(mouseEvt);
    }
+
+
    // COMPONENT LISTENER ROUTINES **********************************************
    public void componentHidden(ComponentEvent compEvt) { }
    public void componentMoved(ComponentEvent compEvt) {
@@ -1102,17 +1094,18 @@ class pvs extends Frame implements ActionListener, ComponentListener,
    public void componentResized(ComponentEvent compEvt) { }
    public void componentShown(ComponentEvent compEvt) { }
 
+
    // WINDOW LISTENER ROUTINES *************************************************
-   public void windowClosing(WindowEvent we) { 
+   public void windowClosing(WindowEvent windowEvt) { 
       this.dispose();
       System.exit(0);
    } 
-   public void windowActivated(WindowEvent we) { }
-   public void windowDeactivated(WindowEvent we) { }
-   public void windowDeiconified(WindowEvent we) { }
-   public void windowClosed(WindowEvent we) { }
-   public void windowIconified(WindowEvent we) { }
-   public void windowOpened(WindowEvent we) { }
+   public void windowActivated(WindowEvent windowEvt) { }
+   public void windowDeactivated(WindowEvent windowEvt) { }
+   public void windowDeiconified(WindowEvent windowEvt) { }
+   public void windowClosed(WindowEvent windowEvt) { }
+   public void windowIconified(WindowEvent windowEvt) { }
+   public void windowOpened(WindowEvent windowEvt) { }
 
 
    // MAIN *********************************************************************
