@@ -16,10 +16,11 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include "meta_init.h"
 
-/*meta_create:
-	Constructs a new meta_parameters record
-from CEOS, AISP inputs, etc-- whatever it can find.
-*/
+
+/***********************************************************
+ * meta_create:
+ * Constructs a new meta_parameters record from CEOS, AISP
+ * inputs, etc-- whatever it can find.*/
 meta_parameters *meta_create(const char *fName)
 {
 	meta_parameters *meta=NULL;
@@ -29,5 +30,6 @@ meta_parameters *meta_create(const char *fName)
 		ceos_init(fName,meta);
 	if (extExists(fName,".in"))
 		aisp_init(fName,meta);
+	meta_new2old(meta);
 	return meta;
 }
