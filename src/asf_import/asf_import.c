@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
       printf("Finished.\n\n");
     }
 
-    /* complex data */
+    /* complex (level 1) data */
     else if (meta->general->data_type==COMPLEX_INTEGER16) {
 
       /* Let the user know what format we are working on */
@@ -459,8 +459,8 @@ int main(int argc, char *argv[])
         FREAD(cpx_buf, sizeof(short), 2*ns, fpIn);
         for (kk=0; kk<ns; kk++) {
           /* Put read in data in proper endian format */
-          big16(cpx_buf[kk]);
-          big16(cpx_buf[kk+1]);
+          big16(cpx_buf[kk*2]);
+          big16(cpx_buf[kk*2+1]);
           /* Now do our stuff */
           out_cpx_buf[kk].real=(float)cpx_buf[kk*2];
           out_cpx_buf[kk].imag=(float)cpx_buf[kk*2+1];
