@@ -109,7 +109,7 @@ RANLIB  = $ranlib
 OPTFLAG = $optFlag
 ASF_INCLUDE_DIR = ../../include
 EOF
-cat <<'EOF'
+cat <<'EOF' >>system_rules
 INCLUDE = -I. -I$(ASF_INCLUDE_DIR)
 EOF
 
