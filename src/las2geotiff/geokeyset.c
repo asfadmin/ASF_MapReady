@@ -23,14 +23,12 @@ PROGRAM HISTORY:
     1.0     8/01   S. Watts     Removed TAE dependencies.
 
 ****************************************************************/
+#include "asf.h"
 #include "ddr.h"
 #include "tiffio.h"
 #include "xtiffio.h"
 #include "geotiffio.h"
 #include "protos.h"
-
-
-#define FALSE 0
 
 
 void geokeyset

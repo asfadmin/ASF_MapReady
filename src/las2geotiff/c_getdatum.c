@@ -44,9 +44,6 @@ PROGRAM HISTORY:
 
 #define E_SUCC 0
 #define E_FAIL -1
-#define TRUE 1
-#define FALSE 0
-
 
 int c_getdatum
 (
