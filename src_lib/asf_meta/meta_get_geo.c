@@ -24,8 +24,7 @@ PROGRAM HISTORY:
  * Converts a given line and sample to that for the non-multilooked,
  * non-windowed, equivalent image.  This function shows how
  * gracelessly our metadata represents the different types of images
- * we have to cope with.
- * NOT READY FOR PRODUCTION CODE!!!  */
+ * we have to cope with. */
 void meta_get_original_line_sample(meta_parameters *meta,
 				int line, int sample,
 				int *original_line, int *original_sample)
@@ -62,13 +61,13 @@ void meta_get_latLon(meta_parameters *meta,
 			time,slant,doppler,elev,
 			lat,lon);
 	} else if (meta->sar->image_type=='P')
-	{	/*Map-Projected. Use projection information to calculate lat & lon.*/
+	{ /*Map-Projected. Use projection information to calculate lat & lon.*/
 		double px,py;
 		px = meta->projection->startX + meta->projection->perX * xSample;
 		py = meta->projection->startY + meta->projection->perY * yLine;
 		proj_to_ll(meta->projection,meta->sar->look_direction,px,py,lat,lon);
 	} else
-	{	/*Bogus image type.*/
+	{ /*Bogus image type.*/
 		printf("Error! Invalid image type '%c' passed to meta_get_latLon!\n",
 			meta->sar->image_type);
 		exit(1);
