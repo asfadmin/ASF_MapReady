@@ -344,8 +344,11 @@
 
 	<orderedlist>
 	  <listitem>
-	    <para>truncate: truncates the input values regardless of
-              their value range.</para>
+	    <para>statistical 2 sigma: determines the mean and
+              standard deviation of
+              the image and applies a buffer of 2 sigma around the
+              mean value (it adjusts this buffer if the 2 sigma buffer
+              is outside the value range).</para>
 	  </listitem>
 	  <listitem>
 	    <para>minmax: determines the minimum and maximum values of
@@ -353,10 +356,8 @@
               of 0 to 255.</para>
 	  </listitem>
 	  <listitem>
-	    <para>sigma: determines the mean and standard deviation of
-              the image and applies a buffer of 2 sigma around the
-              mean value (it adjusts this buffer if the 2 sigma buffer
-              is outside the value range).</para>
+	    <para>truncate: truncates the input values regardless of
+              their value range.</para>
 	  </listitem>
 	</orderedlist>
 	<para>The default is "sigma".</para>

@@ -6,7 +6,7 @@
 
 #include "ceos_thumbnail.h"
 
-void
+gboolean
 make_input_image_thumbnail (const char *input_metadata, const char *input_data,
 			    size_t max_thumbnail_dimension, 
 			    const char *output_jpeg)
@@ -15,6 +15,17 @@ make_input_image_thumbnail (const char *input_metadata, const char *input_data,
   /* Make a copy of one of the arguments so the compilers doesn't
      complain about us ignoring the const qualifier when we pass it fo
      fopenCeos().  */
+
+  if (imd->general->data_type != BYTE &&
+      imd->general->data_type != INTEGER16 &&
+      imd->general->data_type != INTEGER32 &&
+      imd->general->data_type != REAL32 &&
+      imd->general->data_type != REAL64)
+  {
+      /* don't know how to make a thumbnail for this type ... */
+      return FALSE;
+  }
+
   gchar *tmp = g_strdup (input_data);
   g_assert (tmp != NULL);
   CEOS_FILE *id = fopenCeos (tmp); // Input data file.
@@ -63,6 +74,8 @@ make_input_image_thumbnail (const char *input_metadata, const char *input_data,
 						ti->size_x : ti->size_y));
 
   float_image_free (ti);
+
+  return TRUE;
 }
 
 GdkPixbuf *
@@ -93,26 +106,31 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
      code in gdk_pixbuf_new_from_file_at_size do the remaining
      resizing if any, since it probably does a better job.  */
   const size_t decent_sampled_thumbnail_size = 256;
+  gboolean ok;
 
   if ( max_thumbnail_dimension < decent_sampled_thumbnail_size ) {
-    make_input_image_thumbnail (input_metadata, input_data, 
-				decent_sampled_thumbnail_size, tfn);    
+    ok = make_input_image_thumbnail (input_metadata, input_data, 
+				     decent_sampled_thumbnail_size, tfn);    
   }
   else {
-    make_input_image_thumbnail (input_metadata, input_data, 
-				max_thumbnail_dimension, tfn);
+    ok = make_input_image_thumbnail (input_metadata, input_data, 
+				     max_thumbnail_dimension, tfn);
   }
 
-  GdkPixbuf *result 
-    = gdk_pixbuf_new_from_file_at_size (tfn, max_thumbnail_dimension,
-					max_thumbnail_dimension, &err);
+  GdkPixbuf *result = NULL;
 
-  return_code = unlink (tfn);
-  g_assert (return_code == 0);
+  if (ok)
+  {
+     result = gdk_pixbuf_new_from_file_at_size (tfn, max_thumbnail_dimension,
+						max_thumbnail_dimension, &err);
 
-  if ( err != NULL ) {
-    g_error ("Couldn't load thumbnail popup image '%s': %s", tfn, 
-	     err->message);
+     return_code = unlink (tfn);
+     g_assert (return_code == 0);
+     
+     if ( err != NULL ) {
+      g_error ("Couldn't load thumbnail popup image '%s': %s", tfn, 
+	       err->message);
+     }
   }
 
   g_free (tfn);

@@ -25,12 +25,12 @@ void do_change_output_directory(const gchar * new_dir )
     assert(list_store);
 
     sep[0] = DIR_SEPARATOR;
-    sep[1] = 0;
+    sep[1] = '\0';
     
     if (!g_str_has_suffix(new_dir, sep))
     {
         new_dir_fixed =
-            (gchar *) g_malloc( sizeof(gchar) * (strlen(new_dir) + 1));
+            (gchar *) g_malloc( sizeof(gchar) * (strlen(new_dir) + 5));
 
         strcpy(new_dir_fixed, new_dir);
         strcat(new_dir_fixed, sep);
@@ -54,7 +54,7 @@ void do_change_output_directory(const gchar * new_dir )
 
         new_output_name =
                 (gchar *) g_malloc( sizeof(gchar) *
-                    (strlen(basename) + strlen(new_dir_fixed) + 2) );
+                    (strlen(basename) + strlen(new_dir_fixed) + 5) );
 
         g_sprintf(new_output_name, "%s%s", new_dir_fixed, basename);
 

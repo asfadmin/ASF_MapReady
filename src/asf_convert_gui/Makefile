@@ -63,11 +63,11 @@ LDLIBS = $(LIBDIR)/asf_meta.a \
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 
-default: $(OBJS) doc
+default: $(OBJS)
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(BINDIR)
-	cp $(TARGET)_help.txt $(BINDIR)
+	cp *.html $(BINDIR)
 
 doc:
 	docbook2html asf_convert_gui.sgml

@@ -17,7 +17,7 @@ determine_default_output_file_name(const gchar * data_file_name)
   if (p)
     *p = '\0';
 
-  if (output_directory)
+  if (output_directory && strlen(output_directory) > 0)
   {
       gchar * filename;
       
@@ -30,7 +30,7 @@ determine_default_output_file_name(const gchar * data_file_name)
       
       g_free(filename);
   }
-  
+
   user_settings = settings_get_from_gui();
   ext = settings_get_output_format_extension(user_settings);
 
@@ -91,7 +91,8 @@ static void set_input_image_thumbnail(GtkTreeIter *iter,
 						     THUMB_SIZE);
   LSL;
 
-  gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);	
+  if (pb)
+      gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
 }
 
 static void
@@ -618,22 +619,29 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
   g_free (metadata_file);
   g_free (data_file);
 
-  gdk_window_show (popup_image_window);
+  if (popup_image_pixbuf)
+  {
+      gdk_window_show (popup_image_window);
 
-  /* Magic number understood by gdk_draw_pixbuf to mean "use pixbuf
-     width".  */
-  const gint use_pixbuf_width = -1;
-  gdk_draw_pixbuf (GDK_DRAWABLE (popup_image_window),
-		   NULL,
-		   popup_image_pixbuf,
-		   0, 0, 0, 0,
-		   use_pixbuf_width, use_pixbuf_width,
-		   GDK_RGB_DITHER_NONE,
-		   0, 0);
+      /* Magic number understood by gdk_draw_pixbuf to mean "use pixbuf
+	 width".  */
+      const gint use_pixbuf_width = -1;
+      gdk_draw_pixbuf (GDK_DRAWABLE (popup_image_window),
+		       NULL,
+		       popup_image_pixbuf,
+		       0, 0, 0, 0,
+		       use_pixbuf_width, use_pixbuf_width,
+		       GDK_RGB_DITHER_NONE,
+		       0, 0);
+      
+      g_object_unref (popup_image_pixbuf);
 
-  g_object_unref (popup_image_pixbuf);
-
-  return popup_image_window;
+      return popup_image_window;
+  }
+  else
+  {
+      return NULL;
+  }
 }
 
 typedef struct {
@@ -777,36 +785,40 @@ update_thumbnail_popup_process (GtkWidget *widget, GdkEventMotion *event)
 	/* We don't want continuous redrawing of the popup, so we
 	   disable the handler that triggers it until the popup is
 	   removed.  */
-	guint signal_id = g_signal_lookup ("motion-notify-event",
-					   GTK_WIDGET_TYPE (widget));
-        gulong handler_id 
-	  = g_signal_handler_find (widget,
-				   G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_FUNC
-				   | G_SIGNAL_MATCH_DATA,
-				   signal_id,
-				   (GQuark) 0,
-				   NULL,
-				   files_list_motion_notify_event_handler,
-				   NULL);
-	g_assert (handler_id != 0);
-	g_signal_handler_block (widget, handler_id);
-	/* We want to get rid of the popup window as soon as the user
-	   moves the mouse outside of the original thumbnail
-	   space.  */
-	maybe_clear_popup_image_args.popup = popup_window;
-	maybe_clear_popup_image_args.tree_view = GTK_TREE_VIEW (widget);
-	if ( maybe_clear_popup_image_args.thumbnail_region != NULL ) {
-	  gdk_region_destroy (maybe_clear_popup_image_args.thumbnail_region);
+
+	if (popup_window)
+	{
+	  guint signal_id = g_signal_lookup ("motion-notify-event",
+					     GTK_WIDGET_TYPE (widget));
+	  gulong handler_id 
+	      = g_signal_handler_find (widget,
+				       G_SIGNAL_MATCH_ID | G_SIGNAL_MATCH_FUNC
+				       | G_SIGNAL_MATCH_DATA,
+				       signal_id,
+				       (GQuark) 0,
+				       NULL,
+				       files_list_motion_notify_event_handler,
+				       NULL);
+	  g_assert (handler_id != 0);
+	  g_signal_handler_block (widget, handler_id);
+	  /* We want to get rid of the popup window as soon as the user
+	     moves the mouse outside of the original thumbnail
+	     space.  */
+	  maybe_clear_popup_image_args.popup = popup_window;
+	  maybe_clear_popup_image_args.tree_view = GTK_TREE_VIEW (widget);
+	  if ( maybe_clear_popup_image_args.thumbnail_region != NULL ) {
+	    gdk_region_destroy (maybe_clear_popup_image_args.thumbnail_region);
+	  }
+	  //g_message ("in_thumbnail: %d", in_thumbnail (widget, event));
+	  maybe_clear_popup_image_args.thumbnail_region = tr;
+	  g_signal_connect (widget, "motion-notify-event", 
+			    G_CALLBACK (maybe_clear_popup_image), 
+			    &maybe_clear_popup_image_args);
+	  //g_message ("in_thumbnail: %d", in_thumbnail (widget, event));
 	}
-	//g_message ("in_thumbnail: %d", in_thumbnail (widget, event));
-	maybe_clear_popup_image_args.thumbnail_region = tr;
-	g_signal_connect (widget, "motion-notify-event", 
-			  G_CALLBACK (maybe_clear_popup_image), 
-			  &maybe_clear_popup_image_args);
-	//g_message ("in_thumbnail: %d", in_thumbnail (widget, event));
       } 
       else {
-	gtk_tree_path_free (ctp);
+	  gtk_tree_path_free (ctp);
       }
     }
     else {
