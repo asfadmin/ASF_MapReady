@@ -11,14 +11,17 @@ include ../../make_support/system_rules
 # libraries used by this library and give some semblance of modularity
 # to this benighted C language.
 LIBS = asf.a \
+       asf_las.a \
        regex_wrapper.a
 
 # Things used/needed by make's implicit rules for lex and yacc.
 # Need the GNU flex and bison, others are broken in variety of ways.
 LEX = flex
 YACC = bison -y			# -y means use yacc file name conventions.
-#YDEBUG_FLAGS = -t -v   # Uncomment this line to debug parser
-#LDEBUG_FLAGS = -d      # Uncomment this line to debug lexer
+# Uncomment next line and yydebug lines in .y file to debug parser.
+#YDEBUG_FLAGS = -t -v   
+# Uncomment next line to debug lexer.
+#LDEBUG_FLAGS = -d     
 YFLAGS = $(YDEBUG_FLAGS) -d
 LFLAGS = $(LDEBUG_FLAGS)
 
@@ -95,7 +98,7 @@ $(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) \
 
 check: unit_tests.c build_only
 	$(CC) $(CFLAGS) -I/export/home/bkerin/local/include $< \
-	      -L/export/home/bkerin/local/lib asf_meta.a -lm -lcheck \
+	      -L/export/home/bkerin/local/lib asf_meta.a -lm -lfl -lcheck \
 	      $(LDFLAGS) -o asf_meta_tester 
 	./asf_meta_tester
 
