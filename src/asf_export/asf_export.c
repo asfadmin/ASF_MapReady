@@ -1640,9 +1640,9 @@ export_as_geotiff (const char *metadata_file_name,
       char *temp = malloc ((max_error_string_length + 1) * sizeof (char));
       sprintf (temp, "\n\nWARNING: Couldn't conclude which ellipsoid is "
 	       "being used from ellipsoid axis dimensions in metadata, "
-	       "using user defined ellipsoid\n");
+	       "assuming WGS84 ellipsoid\n");
       printf (temp);
-      ellipsoid = USER_DEFINED;
+      ellipsoid = WGS84;
     }
 
     /* We will tie down the corner of the image (which has raster coordinates
