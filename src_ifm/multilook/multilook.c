@@ -182,11 +182,11 @@ int main(int argc, char *argv[])
   
 	inWid=ddr.ns;
   	inLen=ddr.nl;
-  	create_name(fnm1,argv[currArg],".amp");
-  	create_name(fnm2,argv[currArg],".phase");
+  	create_name(fnm1,argv[currArg],"_amp.img");
+  	create_name(fnm2,argv[currArg],"_phase.img");
   	strcpy(outname,argv[currArg++]);
-  	create_name(fnm3,argv[currArg],".amp");
-  	create_name(fnm4,argv[currArg],".phase");
+  	create_name(fnm3,argv[currArg],"_amp.img");
+  	create_name(fnm4,argv[currArg],"_phase.img");
   	create_name(imgfile,argv[currArg],"_rgb.img");
  	
   	outWid  = inWid/ss;
