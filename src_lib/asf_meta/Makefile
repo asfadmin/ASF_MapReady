@@ -104,6 +104,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	get_ceos.o \
 	heading.o \
 	coniFetch.o \
+        meta_complex2polar.o \
 	meta_create.o \
 	meta_init_aisp.o \
 	meta_init_asf.o \
