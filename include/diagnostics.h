@@ -23,33 +23,46 @@ void
 asf_log (const char *message, ...) /* The ';' is coming, don't worry.  */
 #ifdef __GNUC__
      /* Hint compiler that function is variadic a la printf, and
-	should give warning s in the same circumstances.  */
+	should give warnings in the same circumstances.  */
      __attribute__ ((format (printf, 1, 2)))
 #endif /* __GNUC__ */
 ; /* <-- Semicolon for prototype.  */
 
-/* Require that condition be true.  If it isn't, log and print message
-   together with file and line information, and exit with non-zero
-   exit status.  It is expected that __FILE__ and __LINE will be used
-   for the file and line arguments to this routine.  The message
-   argument works like printf, looking for variadic arguments after
-   the line argument.  The file and line information and a trailing
-   newline are automaticly appended to the formatted message.  */
+
+/* Given a condition, a printf()-style message string, and additional
+   variadic arguments for the message string, in that order, this
+   macro will print message to stderr, and log message prefixed with
+   source file and line information to the ASF log file, iff condition
+   is false.  For example:
+
+        require (a > b, "a not greater than b: a = %d, b = %d", a, b)
+
+   Sounds complicated, but it does what you want, hopefully.  */
+#define require(...) (require_function (__FILE__, __LINE__, __VA_ARGS__))
+
+/* This routine is used by the require macro.  It should never be used
+   anywhere else.  */
 void
-require (int condition, const char *message, const char *file, int line, ...)
+require_function (const char *file, int line, int condition, 
+		  const char *message, ...)
 #ifdef __GNUC__
-     __attribute__ ((format (printf, 2, 5)))
+     __attribute__ ((format (printf, 4, 5)))
 #endif /* __GNUC__ */
 ;
 
-/* Die with message, printing and logging the error to have been found
-   at file, line.  It is expected that __FILE__ and __LINE__ will be
-   used for the file and line arguments to this routine.  The message
-   argument works like printf, looking for variadic arguments after
-   the line argument.  The file and line information and a trailing
-   newline are automaticly appended to the formatted message.  */
-void die (const char *message, const char *file, int line, ...)
+/* Given a printf()-style message string and additional variadic
+   arguments for the message string, in that order, this macro will
+   print message to stderr, and log message prefixed with source file
+   and line information to the ASF log file.  For example:
+
+        die ("bad some_value: %d\n", some_value);
+*/
+#define die(...) (die_function (__FILE__, __LINE__, __VA_ARGS__))
+
+/* This routine is used by the die macro.  It should never be used
+   anywhere else.  */
+void die_function (const char *file, int line, const char *message...)
 #ifdef __GNUC__
-     __attribute__ ((format (printf, 1, 4), noreturn))
+     __attribute__ ((format (printf, 3, 4), noreturn))
 #endif /* __GNUC__ */
 ;
