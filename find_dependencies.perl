@@ -247,8 +247,8 @@ if ( $p{'independency_file'} ) {
 	}
         unless ( (my @new_independency = split(/,/)) == 2 ) {
             die "$progname: malformed independency at line $line_number of file $p{'independency_file'}\n";
-        } elsif ( $new_independency[0] =~ m/^\s.*\s/
-                   or $new_independency[1] =~ m/^\s.*\s/ ) {
+        } elsif ( $new_independency[0] =~ m/^(\s.*)|(.*\s)$/
+                   or $new_independency[1] =~ m/^(\s.*)|(.*\s)$/ ) {
             die "$progname: malformed independency at line $line_number of file $p{'independency_file'}, maybe illegal whitespace around comma?\n";
         } else {
             $pkg_independencies{$new_independency[0]} ||= [];
