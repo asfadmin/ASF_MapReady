@@ -2,6 +2,7 @@
 
 %{
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,7 +27,7 @@ int yylex(void);
 
 /* Node type for stack of pointers to structure subelements.  */
 typedef struct block_stack_node_struct {
-  char block_name[MAX_SYMBOL_STRING]; /* Name of block.  */
+  char block_name[MAX_SYMBOL_STRING + 1]; /* Name of block.  */
   void *block;                  /* Pointer to corresponding (sub)structure.  */
   struct block_stack_node_struct *next;
 } block_stack_node;
@@ -41,7 +42,8 @@ static void block_stack_push(block_stack_node **stack_top_p,
                              const char *block_name, void *new_block)
 {
   block_stack_node *new_node = malloc(sizeof(block_stack_node));
-  strncpy(new_node->block_name, block_name, MAX_SYMBOL_STRING);
+  assert (strnlen (block_name, MAX_SYMBOL_STRING + 1) <= MAX_SYMBOL_SRING);
+  strncpy(new_node->block_name, block_name, MAX_SYMBOL_STRING + 1);
   new_node->block = new_block;
   new_node->next = *stack_top_p;
   *stack_top_p = new_node;
