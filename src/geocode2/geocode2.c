@@ -346,7 +346,8 @@ struct data_to_fit {
 // Reverse map from projection coordinates x, y to input pixel
 // coordinate X.  This function only looks at the data to fit on the
 // first time through, in order to set up vertical splines, after
-// which this argument is ignored.  Mapping is efficient only if the y
+// which this argument is mostly ignored.  But not entirely, so you
+// can't free or change the dtf.  Mapping is efficient only if the y
 // coordinates are usually identical between calls, since when y
 // changes a new spline between splines has to be created.
 static double
@@ -580,7 +581,7 @@ main (int argc, char **argv)
   // This lets us determine the exact extent of the projected image in
   // projection coordinates.
   printf ("Determining input image extents in projection coordinate "
-	  "space...\n");
+	  "space... ");
   double min_x = DBL_MAX;
   double max_x = - DBL_MAX;
   double min_y = DBL_MAX;
@@ -647,14 +648,15 @@ main (int argc, char **argv)
     g_free (lats);
   }
 
-  printf ("\n");
+  printf ("done.\n\n");
 
   // Generate some mappings between output image projection
   // coordinates and input image pixel coordinates, using proj.  We
   // compute transformations for points on a grid_size * grid_size
   // grid and a sparse_grid_size * sparse_grid_size grid.
   printf ("Performing analytical projection of a spatially distributed\n"
-	  "subset of input image pixels...\n");
+	  "subset of input image pixels... ");
+  fflush (stdout);
   double x_range_size = max_x - min_x, y_range_size = max_y - min_y;
   const size_t grid_size = 131;
   g_assert (grid_size % 2 == 1);
@@ -716,7 +718,7 @@ main (int argc, char **argv)
     }
   }
 
-  printf ("\n");
+  printf ("done.\n\n");
 
   // Here are some convenience macros for the spline model.
 #define X_PIXEL(x, y) reverse_map_x (&dtf, x, y) 
@@ -779,8 +781,8 @@ main (int argc, char **argv)
     // many pixels or more.
     double max_allowable_error = 0.5;
     g_assert (largest_error < max_allowable_error);
-    printf ("For the differences between cubic model values and projected "
-	    "values for the regression control points:\n");
+    printf ("For the differences between spline model values and projected "
+	    "values\nfor the analytically projected control points:\n");
     printf ("Mean: %g\n", mean_error);
     printf ("Standard deviation: %g\n", error_standard_deviation); 
     printf ("Maximum (Worst observed error in pixel index distance): %g\n", 
@@ -793,16 +795,6 @@ main (int argc, char **argv)
     gsl_vector_free (model_y_errors);
     gsl_vector_free (model_x_errors);
   }
-
-  // Done with the data being modeled.
-  g_free (dtf.sparse_y_pix);
-  g_free (dtf.sparse_x_pix);
-  g_free (dtf.sparse_y_proj);
-  g_free (dtf.sparse_x_proj);
-  g_free (dtf.y_pix);
-  g_free (dtf.x_pix);
-  g_free (dtf.y_proj);
-  g_free (dtf.x_proj);
 
   // Check correctness of reverse mappings of some corners, as an
   // extra paranoid check.  We insist on the model being within this
@@ -885,15 +877,14 @@ main (int argc, char **argv)
       else {
 	SET_PIXEL (oix, oiy, GET_PIXEL (floor (input_x_pixel + 0.5),
 					floor (input_y_pixel + 0.5)));
-	//SET_PIXEL (oix, oiy, interpolate (NEAREST, iim->data, iim->size1,
-	//		                    iim->size2, input_x_pixel,
-	//			            input_y_pixel, NO_WEIGHT, 8));
       }
     }
-    if ( (oiy != 0 && oiy % 100 == 0) || oiy == oiy_max ) {
-      printf ("Finished output image line %d\n", oiy);
+    if ( (oiy != 0 && (oiy + 1) % 100 == 0) || oiy + 1 == oiy_max ) {
+      printf ("Finished output image line %d\n", oiy + 1);
     }
   }
+
+  printf ("Done resampling image.\n\n");
 
   float_image_free (iim);
 
@@ -945,6 +936,18 @@ main (int argc, char **argv)
   omd->projection->param = *pp;
   meta_write (omd, output_image->str);
   meta_free (omd);
+
+  // Done with the data being modeled.  Can't call rever_map_*
+  // functions anymore after this (so can't use *_PIXEL macros
+  // either).
+  g_free (dtf.sparse_y_pix);
+  g_free (dtf.sparse_x_pix);
+  g_free (dtf.sparse_y_proj);
+  g_free (dtf.sparse_x_proj);
+  g_free (dtf.y_pix);
+  g_free (dtf.x_pix);
+  g_free (dtf.y_proj);
+  g_free (dtf.x_proj);
 
   // Done with the file name arguments.
   g_string_free (input_image, TRUE);
