@@ -214,7 +214,7 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
 	addStateVector(s,&meta->state_vectors->vecs[0].vec);
 
 /*Update fields for which we have decoded header info.*/
-	updateMeta(s,meta);
+	updateMeta(s,meta,inN,1);
 
 /*Put some finishing touches on the updated Meta */
 	meta->sar->range_doppler_coefficients[0] = fd;

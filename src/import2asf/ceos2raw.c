@@ -56,7 +56,7 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
 
 	/* Update fields for which we have decoded header info.
 	 -----------------------------------------------------*/
-	updateMeta(s,meta);
+	updateMeta(s,meta,NULL,0);
 
         /* Write out and free the metadata structure
          ------------------------------------------*/

@@ -31,6 +31,7 @@ PROGRAM HISTORY:
 
 #include "decoder.h"
 #include "missing.h"
+#include "lzFetch.h"
 
 /*********************************
 new_bin_state:
@@ -103,11 +104,12 @@ void delete_bin_state(bin_state *s)
 /************************
 Writes the satellite * fields into the given meta_parameters
 */
-void updateMeta(bin_state *s,meta_parameters *meta)
+void updateMeta(bin_state *s,meta_parameters *meta,char *inN,int stfFlag)
 {
 /*Update fields for which we have decoded header info.*/
 /*        meta->sar->earth_radius=s->re;
         meta->sar->satellite_height=s->re+s->ht;*/
+        char parN[255],*ellipsoid;
 
 	strcpy(meta->general->sensor,s->satName);
 	strcpy(meta->general->mode,s->beamMode);
@@ -128,6 +130,39 @@ void updateMeta(bin_state *s,meta_parameters *meta)
 	meta->sar->wavelength=speedOfLight/s->frequency;
 	sprintf(meta->sar->satellite_binary_time,"%f",s->time_code);
 	meta->sar->prf = s->prf;
+
+	if (stfFlag) {
+	  strcat(strcpy(parN,inN),".par");
+	  strcpy(meta->general->processor, "ASF/IMPORT2ASF");
+	  meta->general->data_type = COMPLEX_REAL32;
+	  strcpy(meta->general->system, meta_get_system());
+	  meta->general->orbit = lzInt(parN,"prep_block.OrbitNr:",NULL);
+	  if (meta->state_vectors->vecs[0].vec.vel.z > 0)
+	    meta->general->orbit_direction  = 'A';
+	  else if (meta->state_vectors->vecs[0].vec.vel.z < 0)
+	    meta->general->orbit_direction  = 'D';
+	  meta->general->band_number = 0;
+	  meta->general->start_line = 0;
+	  meta->general->start_sample = 0;
+	  meta->general->bit_error_rate = 
+	    lzDouble(parN,"prep_block.bit_error_rate:",NULL);
+	  meta->general->missing_lines = 
+	    lzDouble(parN,"prep_block.missing_lines:",NULL);
+	  meta->sar->original_line_count = s->nLines;
+	  meta->sar->original_sample_count = s->nSamp;
+	  meta->sar->line_increment = 1.0;
+	  meta->sar->sample_increment = 1.0;
+	  ellipsoid = lzStr(parN,"prep_block.ellipsoid_name:",NULL);
+	  if (strncmp(ellipsoid,"GEM6", 4)==0) {
+	    meta->general->re_major = 6378144.0;
+	    meta->general->re_minor = 6356754.9;
+	  }
+	  meta->sar->earth_radius = s->re;
+	  meta->sar->satellite_height = s->re+s->ht;
+	  if (!meta_is_valid_string(meta->sar->satellite_clock_time)) {
+	    strcpy (meta->sar->satellite_clock_time, "0");
+	  }
+	}
 }
 
 /********************************
