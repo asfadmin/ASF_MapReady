@@ -401,13 +401,13 @@ int main(int argc, char *argv[])
   /* Make sure STF specific options are not used with other data types */
   if (strcmp(format_type, "STF")!=0) {
     if (flags[f_PRC] != FLAG_NOT_SET) {
-      printAndLog("WARNING: Precision state vectors only work with STF data\n"
-                  "         and will not be used with this data set!\n");
+      asfPrintWarning("Precision state vectors only work with STF data\n"
+                      "and will not be used with this data set!\n");
       flags[f_PRC]=FLAG_NOT_SET;
     }
     if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
-      printAndLog("WARNING: No latitude constraints only work with STF data\n"
-                  "         and will not be used with this data set!\n");
+      asfPrintWarning("No latitude constraints only work with STF data\n"
+                      "and will not be used with this data set!\n");
       flags[f_LAT_CONSTRAINT]=FLAG_NOT_SET;
     }
   }
@@ -439,7 +439,7 @@ int main(int argc, char *argv[])
 
   /* Ingest all sorts of flavors of CEOS data */
   if (strncmp(format_type, "CEOS", 4) == 0) {
-    printAndLog("   Data format: %s\n", format_type);
+    asfPrintStatus("   Data format: %s\n", format_type);
     if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
       require_ceos_pair(inBaseName, inDataName, inMetaName);
     else {
@@ -451,17 +451,17 @@ int main(int argc, char *argv[])
   }
   /* Ingest ENVI format data */
   else if (strncmp(format_type, "ENVI", 4) == 0) {
-    printAndLog("   Data format: %s\n", format_type);
+    asfPrintStatus("   Data format: %s\n", format_type);
     import_envi(inDataName, inMetaName, outBaseName, flags);
   }
   /* Ingest ESRI format data */
   else if (strncmp(format_type, "ESRI", 4) == 0) {
-    printAndLog("   Data format: %s\n", format_type);
+    asfPrintStatus("   Data format: %s\n", format_type);
     import_esri(inDataName, inMetaName, outBaseName, flags);
   }
   /* Ingest Vexcel Sky Telemetry Format (STF) data */
   else if (strncmp(format_type, "STF", 3) == 0) {
-    printAndLog("   Data format: %s\n", format_type);
+    asfPrintStatus("   Data format: %s\n", format_type);
     if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
       require_stf_pair(inBaseName, inDataName, inMetaName);
     else {
