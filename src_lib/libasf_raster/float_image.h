@@ -70,6 +70,13 @@ typedef enum {
   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN
 } float_image_byte_order_t;
 
+// Form a low quality reduced resolution version of the model.  The
+// new image will be size_x by size_y pixels.  The image is formed by
+// sampling in each dimension using bilinear interpolation.
+FloatImage *
+float_image_new_from_model_scaled (FloatImage *model, ssize_t size_x, 
+				   ssize_t size_y);
+
 // Create a new image from data at byte offset in file.  The pixel
 // layout in the file is assumed to be the same as for the
 // float_image_new_from_memory method.  The byte order of individual
