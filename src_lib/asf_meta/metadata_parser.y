@@ -237,6 +237,10 @@ void fill_structure_field(char *field_name, void *valp)
       { MSAR->look_count = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "deskewed") )
       { MSAR->deskewed = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "line_increment") )
+      { MSAR->line_increment = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "sample_increment") )
+      { MSAR->sample_increment = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "range_time_per_pixel") )
       { MSAR->range_time_per_pixel = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "azimuth_time_per_pixel") )
@@ -251,6 +255,10 @@ void fill_structure_field(char *field_name, void *valp)
       { MSAR->wavelength = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "prf") )
       { MSAR->prf = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "satellite_binary_time") )
+      { strcpy(MSAR->satellite_binary_time, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "satellite_clock_time") )
+      { strcpy(MSAR->satellite_clock_time, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "dopRangeCen") )
       { MSAR->range_doppler_coefficients[0] = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "dopRangeLin") )
@@ -263,11 +271,7 @@ void fill_structure_field(char *field_name, void *valp)
       { MSAR->azimuth_doppler_coefficients[1] = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "dopAzQuad") )
       { MSAR->azimuth_doppler_coefficients[2] = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "satellite_binary_time") )
-      { strcpy(MSAR->satellite_binary_time, VALP_AS_CHAR_POINTER); return; }
-    if ( !strcmp(field_name, "satellite_clock_time") )
-      { strcpy(MSAR->satellite_clock_time, VALP_AS_CHAR_POINTER); return; }
-  }
+ }
 
   /* Fields which normally go in the state block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "state") ) {
