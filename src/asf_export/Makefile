@@ -4,7 +4,8 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = $(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libgeotiff.a \
@@ -21,6 +22,7 @@ OBJS  = asf_export.o \
 	export_as_geotiff.o \
 	export_as_jpeg.o \
 	export_as_ppm.o \
+	export_as_tiff.o \
 	util.o
 
 all: asf_export

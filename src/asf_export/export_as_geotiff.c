@@ -34,7 +34,8 @@
 void
 export_as_geotiff (const char *metadata_file_name,
                    const char *image_data_file_name,
-                   const char *output_file_name)
+                   const char *output_file_name,
+		   scale_t scale)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
@@ -44,6 +45,7 @@ export_as_geotiff (const char *metadata_file_name,
   unsigned int sample_count = md->general->sample_count;
   size_t pixel_count = line_count * sample_count;
   float *daf;
+  unsigned char *pixels;
   int jj;
   TIFF *otif;
   GTIF *ogtif;
@@ -96,6 +98,12 @@ export_as_geotiff (const char *metadata_file_name,
   assert (otif != NULL);
   ogtif = GTIFNew (otif);
   assert (ogtif != NULL);
+
+  /* Scale float image down to bytes, if required */
+  if (scale != NONE) {
+    pixels = floats_to_bytes (daf, pixel_count, 0.0, scale);
+    sample_size = 1;
+  }
 
   /* Set the normal TIFF image tags.  */
   TIFFSetField(otif, TIFFTAG_SUBFILETYPE, 0);
@@ -576,11 +584,21 @@ export_as_geotiff (const char *metadata_file_name,
 
   /* Write the actual image data.  */
   for ( ii = 0 ; ii < line_count ; ii++ ) {
-    if ( TIFFWriteScanline (otif, daf + sample_count * ii, ii, 0) < 0 ) {
-          char* temp;
-          sprintf(temp, "Error writing to output geotiff file %s", output_file_name);
-          print_error(temp);
-      exit (EXIT_FAILURE);
+    if (scale == NONE) {
+      if ( TIFFWriteScanline (otif, daf + sample_count * ii, ii, 0) < 0 ) {
+	char* temp;
+	sprintf(temp, "Error writing to output geotiff file %s", output_file_name);
+	print_error(temp);
+	exit (EXIT_FAILURE);
+      }
+    }
+    else {
+      if ( TIFFWriteScanline (otif, pixels + sample_count * ii, ii, 0) < 0 ) {
+	char* temp;
+	sprintf(temp, "Error writing to output geotiff file %s", output_file_name);
+	print_error(temp);
+	exit (EXIT_FAILURE);
+      }
     }
   }
 

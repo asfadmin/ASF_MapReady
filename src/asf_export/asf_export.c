@@ -21,7 +21,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_USAGE_STRING \
 "[-format <output_format>] [-size <max_dimension>] [-lut <leader file>\n"\
-"<cal params file> <cal comment> ] <in_base_name> <out_full_name>\n"\
+"<cal params file> <cal comment> ] [-byte <scale option> ]\n"\
+"<in_base_name> <out_full_name>\n"\
 "Additional options: -help, -log <log_file>, -quiet"
 
 #define ASF_DESCRIPTION_STRING \
@@ -35,13 +36,27 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_OPTIONS_STRING \
 "-format <format>  Format to export to. Must be one of the following:\n"\
-"                     CEOS, envi, esri, geotiff, jpeg, ppm\n"\
+"                     CEOS, envi, esri, tiff, geotiff, jpeg, ppm\n"\
 "-size <size>      Scale image so that its largest dimension is, at\n"\
 "		  most, size.\n"\
 "-lut <leader file> <cal params file> <cal comment>\n"\
 "		  Updates the original leader file with the\n"\
 "		  calibration parameter file and the calibration\n"\
-"		  comment. Exports image into CEOS format."
+"		  comment. Exports image into CEOS format.\n"\
+"-byte <scale option>\n"\
+"                  Converts output image to byte using the following\n"\
+"		  options:\n"\
+"		  truncate - truncates the input values regardless of\n"\
+"		             their value range.\n"\
+"	          minmax   - determines the minimum and maximum values\n"\
+"	                     of the input image and maps those values\n"\
+"			     to the byte range of 0 to 255.\n"\
+"                  sigma    - determines the mean and standard\n"\
+"		             deviation of an image and applies a\n"\
+"			     buffer of 2 sigma around the mean value\n"\
+"                             (it adjusts this buffer if the 2 sigma\n"\
+"			     buffer is outside the value range).\n"\
+""
 
 #define ASF_EXAMPLES_STRING \
 "To export to the default geotiff format from file1.img and file1.meta\n"\
@@ -278,9 +293,10 @@ main (int argc, char *argv[])
 	/* Command line input goes in it's own structure.  */
 	command_line_parameters_t command_line;
 
-	int formatFlag, sizeFlag, logFlag, quietFlag, lutFlag;
+	int formatFlag, sizeFlag, logFlag, quietFlag, lutFlag, byteFlag;
 	int needed_args = 3;/*command & argument & argument*/
 	int ii;
+	char scaleStr[25];
 
 	/*Check to see which options were specified*/
 	if(checkForOption("-help", argc, argv) != -1)/*Most important*/
@@ -290,6 +306,7 @@ main (int argc, char *argv[])
 	logFlag = checkForOption("-log", argc, argv);
 	quietFlag = checkForOption("-quiet", argc, argv);
 	lutFlag = checkForOption("-lut", argc, argv);
+	byteFlag = checkForOption("-byte", argc, argv);
 
 	if(formatFlag != FLAG_NOT_SET)
 		needed_args += 2;/*option & parameter*/
@@ -301,6 +318,8 @@ main (int argc, char *argv[])
 		needed_args += 2;/*option & parameter*/
 	if(lutFlag != FLAG_NOT_SET)
 	  needed_args += 4;/*option & parameters */
+	if(byteFlag != FLAG_NOT_SET)
+	  needed_args += 2;/*option & parameter*/
 
 	if(argc != needed_args)
 		usage();/*This exits with a failure*/
@@ -316,7 +335,14 @@ main (int argc, char *argv[])
 			usage();
 	if(sizeFlag != FLAG_NOT_SET)
 		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
-			usage();/*This exits with a failure*/
+			usage();
+	if(lutFlag != FLAG_NOT_SET)
+	  if(argv[lutFlag + 1][0] == '-' || argv[lutFlag + 2][0] == '-' ||
+	     argv[lutFlag + 3][0] == '-' || lutFlag >= argc - 5)
+	    usage();
+	if(byteFlag != FLAG_NOT_SET)
+	  if(argv[byteFlag + 1][0] == '-' || byteFlag >= argc -3)
+	    usage();
 	if(logFlag != FLAG_NOT_SET)
 	  if(argv[logFlag + 1][0] == '-' || logFlag >= argc - 3)
 	    usage();
@@ -340,6 +366,13 @@ main (int argc, char *argv[])
 	for(ii = 0; ii < strlen(command_line.format); ++ii)/*convert the string to upper case*/
 		command_line.format[ii] = toupper(command_line.format[ii]);
 
+	/* Set the default byte scaling mechanisms */
+	if (strcmp(command_line.format, "TIFF") == 0 ||
+	    strcmp(command_line.format, "JPEG") == 0) 
+	  command_line.scale = SIGMA;
+	if (strcmp(command_line.format, "GEOTIFF") == 0)
+	  command_line.scale = NONE;
+	    
 	if(sizeFlag != FLAG_NOT_SET)
 		command_line.size = atol(argv[sizeFlag + 1]);
 	else
@@ -356,7 +389,19 @@ main (int argc, char *argv[])
           strcpy(command_line.cal_params_file, argv[lutFlag + 2]);
           strcpy(command_line.cal_comment, argv[lutFlag + 3]);
         }
+	if(byteFlag != FLAG_NOT_SET) {
+	  strcpy(scaleStr, argv[byteFlag + 1]);
+	  for(ii=0; ii<strlen(scaleStr); ii++)
+	    scaleStr[ii] = toupper(scaleStr[ii]);
 
+	  /* Set scaling mechanism */
+	  if(strcmp(scaleStr, "TRUNCATE") == 0)
+	    command_line.scale = TRUNCATE;
+	  else if(strcmp(scaleStr, "MINMAX") == 0)
+	    command_line.scale = MINMAX;
+	  else if(strcmp(scaleStr, "SIGMA") == 0)
+	    command_line.scale = SIGMA;
+	}
 
 	/*Grab/construct the data file name*/
 	strcpy(command_line.in_data_name, argv[argc - 2]);
@@ -379,6 +424,11 @@ main (int argc, char *argv[])
     strcmp(command_line.format, "GEOTIF") == 0) {
     append_ext_if_needed(command_line.output_name, ".tif", ".tiff");
     format = GEOTIFF;
+  }
+  else if ( strcmp (command_line.format, "TIFF") == 0 ||
+	    strcmp(command_line.format, "TIF") == 0) {
+    append_ext_if_needed(command_line.output_name, ".tif", ".tiff");
+    format = TIF;
   }
   else if ( strcmp (command_line.format, "JPEG") == 0 ||
     strcmp(command_line.format, "JPG") == 0) {
@@ -413,13 +463,19 @@ main (int argc, char *argv[])
     export_as_esri (command_line.in_meta_name, command_line.in_data_name,
 		    command_line.output_name);
   }
+  else if ( format == TIF ) {
+    export_as_tiff (command_line.in_meta_name, command_line.in_data_name,
+		    command_line.output_name, command_line.size, 
+		    command_line.scale);
+  }
   else if ( format == GEOTIFF ) {
     export_as_geotiff (command_line.in_meta_name, command_line.in_data_name,
-		       command_line.output_name);
+		       command_line.output_name, command_line.scale);
   }
   else if ( format == JPEG ) {
     export_as_jpeg (command_line.in_meta_name, command_line.in_data_name,
-		    command_line.output_name, command_line.size);
+		    command_line.output_name, command_line.size,
+		    command_line.scale);
   }
   else if ( format == PPM ) {
     export_as_ppm (command_line.in_meta_name, command_line.in_data_name,

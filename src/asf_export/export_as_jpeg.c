@@ -28,11 +28,12 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include <asf_export.h>
+#include "asf_raster.h"
 
 void
 export_as_jpeg (const char *metadata_file_name,
                 const char *image_data_file_name, const char *output_file_name,
-                long max_size)
+                long max_size, scale_t scale)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
@@ -83,15 +84,15 @@ export_as_jpeg (const char *metadata_file_name,
   assert (test_jsample == UCHAR_MAX); /* Did we wrap?  */
   /* This space is resized later (with realloc) if the image is
      scaled.  */
-  pixels = scale_floats_to_unsigned_bytes (daf, pixel_count);
+  pixels = floats_to_bytes (daf, pixel_count, 0.0, scale);
 
   /* We want to scale the image st the long dimesion is less than or
-     equal to this value the prescribed maximum.  */
-  /* Current size of the image.  */
+     equal to this value the prescribed maximum.
+     Current size of the image.  */
   width = sample_count;
   height = line_count;
   /* Scale the image, modifying width and height to reflect the new
-     image size.  */
+  image size.  */
   pixels = scale_unsigned_char_image_dimensions (pixels, max_large_dimension,
                                                  &width, &height);
 
@@ -103,7 +104,8 @@ export_as_jpeg (const char *metadata_file_name,
   ofp = fopen (output_file_name, "w");
   if ( ofp == NULL ) {
     char *temp;
-        sprintf(temp, "Open of %s for writing failed: %s", output_file_name, strerror(errno));
+        sprintf(temp, "Open of %s for writing failed: %s", 
+		output_file_name, strerror(errno));
         print_error(temp);
     exit (EXIT_FAILURE);
   }

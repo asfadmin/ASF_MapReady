@@ -28,7 +28,8 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include <asf_export.h>
-
+#include "asf_nan.h"
+#include "asf_raster.h"
 
 /* Get sample size in bytes of the data types represented by the
    meta_parameters_t.  */
@@ -81,6 +82,7 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
 	print_error(temp);
     exit (EXIT_FAILURE);
   }
+
   /* Total number of samples in image.  */
   pixel_count = metadata->general->line_count * metadata->general->sample_count;
   data = MALLOC (pixel_count * sample_size);
@@ -88,7 +90,7 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
   if ( read_count != pixel_count ) {
     if ( feof (ifp) ) {
 	  char* temp;
-	  sprintf(temp, "Read wrong amoutn of data from %s", image_data_file);
+	  sprintf(temp, "Read wrong amount of data from %s", image_data_file);
 	  print_error(temp);
     }
     else if ( ferror (ifp) ) {
@@ -261,6 +263,7 @@ unsigned char *scale_floats_to_unsigned_bytes (float *daf, size_t pixel_count)
 
   return pixels;
 }
+
 
 /* Scale the *width x *height image at pixels st its large dimension
    is less than or equal to max_large_dimension.  The memory pointed

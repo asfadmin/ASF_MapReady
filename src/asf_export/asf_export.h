@@ -1,3 +1,5 @@
+#include "asf_raster.h"
+
 /* Evaluate to true if floats are within tolerance of each other.  */
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 
@@ -26,6 +28,8 @@
 
 #define FLAG_NOT_SET -1
 
+
+
 /* Structure to hold elements of the command line.  */
 typedef struct {
   /* Output format to use.  */
@@ -45,6 +49,7 @@ typedef struct {
   char leader_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   char cal_params_file[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   char cal_comment[MAX_COMMENT_LENGTH];
+  scale_t scale;
 } command_line_parameters_t;
 
 /* Output format to use.  */
@@ -52,6 +57,7 @@ typedef enum {
   ENVI,				/* ENVI software package.  */
   ESRI,				/* ESRI GIS package.  */
   GEOTIFF,			/* Geotiff.  */
+  TIF,                          /* Tiff. */  
   JPEG,				/* Joint Photographic Experts Group.  */
   PPM,				/* Portable PixMap.  */
   CEOS                          /* CEOS format */
@@ -82,27 +88,38 @@ unsigned char *scale_unsigned_char_image_dimensions (unsigned char *pixels, \
                                       unsigned long *width, \
                                       unsigned long *height);
 void export_as_envi (const char *metadata_file_name,
-                const char *image_data_file_name,
-                const char *output_file_name);
+		     const char *image_data_file_name,
+		     const char *output_file_name);
 
 void export_as_esri (const char *metadata_file_name,
-                const char *image_data_file_name,
-                const char *output_file_name);
+		     const char *image_data_file_name,
+		     const char *output_file_name);
 
 void export_as_geotiff (const char *metadata_file_name,
-                   const char *image_data_file_name,
-                   const char *output_file_name);
+			const char *image_data_file_name,
+			const char *output_file_name,
+			scale_t scale);
 
 void export_as_jpeg (const char *metadata_file_name,
-                const char *image_data_file_name, const char *output_file_name,
-                long max_size);
+		     const char *image_data_file_name, 
+		     const char *output_file_name,
+		     long max_size,
+		     scale_t scale);
 
 void export_as_ppm (const char *metadata_file_name,
-               const char *image_data_file_name, const char *output_file_name,
-               long max_size);
+		    const char *image_data_file_name, 
+		    const char *output_file_name,
+		    long max_size);
 
-void export_as_ceos (const char *metadata_file_name, const char *image_data_file_name,
-                const char *output_file_name, const char *leader_file_name,
-                const char *calibration_parameter_file, 
-                const char *calibration_comment);
+void export_as_ceos (const char *metadata_file_name, 
+		     const char *image_data_file_name,
+		     const char *output_file_name, 
+		     const char *leader_file_name,
+		     const char *calibration_parameter_file, 
+		     const char *calibration_comment);
 
+void export_as_tiff (const char *metadata_file_name,
+		     const char *image_data_file_name,
+		     const char *output_file_name, 
+		     long max_size,
+		     scale_t scale);
