@@ -205,15 +205,19 @@ int main(int argc,char **argv)
      prjunits = 2; /* meters */
      utm(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
  }
- /**********************************************
  else if (strcmp(subcmd,"LAMAZEQA") == 0){
-     prjunits = 2; ** meters **
-     lamazeqa(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
+   prjunits = 2; /* meters */
+   lamazeqa(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
  }
- **********************************************/
+ /**************************************
+ else if (strcmp(subcmd,"LAMCC") == 0){
+   prjunits = 2; ** meters **
+   lamcc(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
+ } 
+************************************/
  else if (strcmp(subcmd,"ALBERS") == 0){
-     prjunits = 2; /* meters */
-     albers(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
+   prjunits = 2; /* meters */
+   albers(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
  }
 /*
 else if (strcmp(subcmd,"STATEPLN") == 0)
@@ -312,7 +316,8 @@ void usage(char *name)
 	"REQUIRED ARGUMENTS:\n"
 /*	"   projection   Designate a map style.  Can be: GEOGRAPH,\n"
 	"                  PLSTEREO, UTM, LAMAZEQA, or ALBERS\n"
-*/	"   projection   Designate a map style.  Can be: PLSTEREO or UTM\n"
+*/	"   projection   Designate a map style.  Can be: PLSTEREO, UTM,\n"
+	"                  LAMAEQA or ALBERS.\n"
 	"   prjkey       Key sting to identify this projection in your\n"
 	"                  projection file.\n"
 	"   outfile      Output file name.\n"
