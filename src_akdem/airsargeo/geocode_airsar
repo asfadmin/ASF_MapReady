@@ -37,6 +37,9 @@
 # 
 #############################################################################
 
+# Terminate script if any command fails or returns non-zero.
+set -e
+
 # Change this alias to keep geocode from deleting intermetiate files.
 rm="rm"
 
