@@ -36,14 +36,14 @@ FIELD_STRING       [^#\n]*[^#\n \t]
 \n        { line_number++; }
 
  /* Name tokens name blocks or fields.  */
-{ID_STRING}[ \t]*/[:{]         { int last_nonspace = yyleng - 1;
+{ID_STRING}[ \t]*/[:{]     { int last_nonspace = yyleng - 1;
 
-                                 while ( isspace(yytext[last_nonspace]) ) 
-                                   last_nonspace--;
-                                 strncpy(yylval.string_val, yytext,
-                                         last_nonspace + 1);
-                                 yylval.string_val[last_nonspace + 1] = '\0'; 
-                                 return NAME; }
+                             while ( isspace(yytext[last_nonspace]) ) 
+                               last_nonspace--;
+                             strncpy(yylval.string_val, yytext, 
+                                     last_nonspace + 1);
+                             yylval.string_val[last_nonspace + 1] = '\0'; 
+                             return NAME; }
 
  /* Eat up spaces around field seperator , go to field state and return 
     seperator.  */
