@@ -83,7 +83,6 @@
 int projectGeo(double pixSize, char *in_meta, char *in_proj, char *in_key, char *in_tie,
                char *out_tie, char *out_meta, char *out_ddr, char win_type, char *win);
 int geoLatLon(double eleva, char *in_meta, char *in_ddr, char *out_tps);
-void usage(char *name);
 
 int main(int argc, char *argv[])
 {
@@ -91,10 +90,9 @@ int main(int argc, char *argv[])
 	char resample[15]="-nearest", background[20]="";
 	float height=0.0, pixel_size=0.0;
 	char win_type;
+	extern int currArg; /* from cla.h which is in asf.h */
 
-	
 	logflag=0;
-	currArg=1;	/* from cla.h which is in asf.h */
 
 	/* Parse command line args */
 	while (currArg < (argc-5))
