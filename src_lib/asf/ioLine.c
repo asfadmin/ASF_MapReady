@@ -75,7 +75,7 @@ int get_data_lines(FILE *file, meta_parameters *meta, int line_number,
   }
 
   /* Scan to the beginning of the line.  */
-  FSEEK64(file, sample_size*sample_count*line_number, SEEK_SET);
+  FSEEK64(file, (long long)sample_size*sample_count*line_number, SEEK_SET);
 
   temp_buffer = MALLOC( sample_size * num_samples_to_get );
 
