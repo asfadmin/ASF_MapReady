@@ -25,10 +25,11 @@ void meta_new2old(meta_parameters *meta);
  * inputs, etc-- whatever it can find.*/
 meta_parameters *meta_create(const char *fName)
 {
-	meta_parameters *meta=NULL;
+	meta_parameters *meta = raw_init();
 	int success=FALSE;
-	meta=raw_init();
-	if (has_ceos_metadata_extension(fName)) {
+	char junk[256];
+
+	if (get_ceos_metadata_name(fName,junk) != NO_CEOS_METADATA) {
 		ceos_init(fName,meta);
 		success=TRUE;
 	}
