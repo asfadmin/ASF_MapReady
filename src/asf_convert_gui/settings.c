@@ -847,6 +847,14 @@ settings_get_run_export(const Settings *s)
   return s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1;
 }
 
+int 
+settings_get_output_format_can_be_thumbnailed(const Settings *s)
+{
+  return s->output_format == OUTPUT_FORMAT_JPEG ||
+      s->output_format == OUTPUT_FORMAT_TIFF ||
+      s->output_format == OUTPUT_FORMAT_PPM;
+}
+
 void
 settings_delete(Settings * s)
 {

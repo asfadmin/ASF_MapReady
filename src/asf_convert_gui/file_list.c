@@ -268,10 +268,18 @@ setup_files_list(int argc, char *argv[])
   GtkTreeIter iter;
   GValue val = {0,};
 
+#ifdef THUMBNAILS
+  list_store = gtk_list_store_new(4, 
+                  G_TYPE_STRING, 
+                  G_TYPE_STRING, 
+                  G_TYPE_STRING,
+		  GDK_TYPE_PIXBUF);
+#else
   list_store = gtk_list_store_new(3, 
                   G_TYPE_STRING, 
                   G_TYPE_STRING, 
-                  G_TYPE_STRING);
+		  G_TYPE_STRING);
+#endif
 
   for (i = 1; i < argc; ++i)
   {
@@ -347,6 +355,17 @@ setup_files_list(int argc, char *argv[])
   /* add our custom renderer (turns stale "Done" entries gray) */
   gtk_tree_view_column_set_cell_data_func(col, renderer,
             render_status, NULL, NULL);
+
+#ifdef THUMBNAILS
+  /* New Last Column: Pixbuf */
+  col = gtk_tree_view_column_new();
+  gtk_tree_view_column_set_title(col, " ");
+  gtk_tree_view_column_set_resizable(col, FALSE);
+  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+  renderer = gtk_cell_renderer_pixbuf_new();
+  gtk_tree_view_column_pack_start(col, renderer, FALSE);
+  gtk_tree_view_column_add_attribute(col, renderer, "pixbuf", 3);
+#endif
 
   gtk_tree_view_set_model(GTK_TREE_VIEW(files_list), 
               GTK_TREE_MODEL(list_store));  

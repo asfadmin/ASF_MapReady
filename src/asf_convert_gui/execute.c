@@ -404,8 +404,6 @@ append_begin_processing_tag(const gchar * input_filename)
 
     gtk_text_buffer_apply_tag(text_buffer, tt, &line_begin, &end);
 
-    printf("Iter: :%s:\n", gtk_text_iter_get_slice(&line_begin, &end));
-
     g_free(txt);
 }
 
@@ -424,6 +422,26 @@ invalidate_progress()
     valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
   }
 }
+
+#ifdef THUMBNAILS
+static void set_thumbnail(GtkTreeIter *iter, const gchar * file)
+{
+    GError * err = NULL;
+    GdkPixbuf * pb;
+
+    pb = gdk_pixbuf_new_from_file_at_size(file, 48, 48, &err);
+
+    if (!err)
+    {
+	gtk_list_store_set(list_store, iter, 3, pb, -1);	
+    }
+    else
+    {
+	g_warning("Couldn't load image '%s': %s\n", file, err->message);
+	g_error_free(err);
+    }
+}
+#endif
 
 static void
 process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
@@ -562,7 +580,12 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
       err = check_for_error(cmd_output);
 
       append_output(cmd_output);
-           
+
+#ifdef THUMBNAILS
+      if (settings_get_output_format_can_be_thumbnailed(user_settings))
+	  set_thumbnail(iter, out_full);
+#endif
+
       g_free(cmd_output);
     }
 

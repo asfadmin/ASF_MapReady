@@ -52,5 +52,6 @@ const gchar * settings_get_projection_abbrev(const Settings *);
 int settings_get_run_import(const Settings *);
 int settings_get_run_export(const Settings *);
 int settings_get_run_geocode(const Settings *);
+int  settings_get_output_format_can_be_thumbnailed(const Settings *s);
 void settings_delete(Settings *);
 

@@ -24,6 +24,10 @@ main(int argc, char **argv)
 
     g_free(glade_xml_file);
 
+#ifndef THUMBNAILS
+    printf("GTK Version < 2.4 -- output thumbnails disabled.\n");
+#endif
+
     /* select defaults for dropdowns */
     widget = glade_xml_get_widget (glade_xml, "scaling_method_combobox");
     set_combo_box_item(widget, SCALING_METHOD_SIGMA);

@@ -14,6 +14,10 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 
+#if ( GLIB_MAJOR_VERSION >= 2 && GLIB_MINOR_VERSION >= 4 )
+#define THUMBNAILS
+#endif
+
 enum OutputFormat
 {
     OUTPUT_FORMAT_JPEG = 0,
