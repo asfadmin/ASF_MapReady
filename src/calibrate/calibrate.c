@@ -82,6 +82,8 @@ ALGORITHM DESCRIPTION:
 *									    *
 ****************************************************************************/
 
+#include <stdlib.h>
+
 #include "asf.h"
 #include "ddr.h"
 #include "calibrate.h"
@@ -142,7 +144,7 @@ int main(int argc, char **argv)
 	
 	check_cal(inSAR);	/* Make sure file is calibrated */
 
-        /*Open input files, create output files.*/
+        /* Open input files, create output files.  */
 	fpIn=fopenCeos(inSAR);
 	nl=fpIn->ddr.nl;
 	ns=fpIn->ddr.ns;
@@ -154,6 +156,7 @@ int main(int argc, char **argv)
 	{
 		meta_parameters *meta=meta_create(inSAR);
 		meta_write(meta,outLAS);
+		meta_free(meta);
 	}
 	
 	printf("Output-Sigma0-FILE : %s\n", outLAS);
