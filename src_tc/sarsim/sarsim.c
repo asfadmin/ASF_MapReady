@@ -154,6 +154,7 @@ OF ALASKA TECHNOLOGY DEVELOPMENT CORPORATION AT (907)451-0718.
  
 void bye(char *message);
 int init_support(double  *line_off,double *samp_off,int *zone_code,char *file);
+void meta_or_ddr(char *whichOne, char *fileName);
 
 /*******************************************************/
 int     in_block_sl;  /* simulation start line         */
@@ -220,6 +221,7 @@ int	all_out=1,		/* Test to see if all points outside  */
 				/* 4 - sim w/ mask and RTC	      */
 struct  DDR ddr;                /* Data descriptor - image metadata   */
 struct  VFDRECV ofdr;           /* Define value of fac. data record   */
+char    metaExt[6];             /* .meta or .ddr extention to use     */
 /**********************************************************************/
 
 StartWatch();
@@ -458,8 +460,9 @@ PHS {
    fwrite(phsbuf,sizeof(float),nl*ns,phs_fp);
    fclose(phs_fp);
 
-   strcat(strcpy(tempfile,argv[3]),"_phs.meta");
-   strcat(strcpy(tmp2file,argv[1]),".meta");
+   meta_or_ddr(metaExt,argv[1]);
+   strcat(strcat(strcpy(tempfile,argv[3]),"_phs"),metaExt);
+   strcat(strcpy(tmp2file,argv[1]),metaExt);
    sprintf(cmd,"cp %s %s\n",tmp2file,tempfile);
    if (system(cmd) != 0)
     { printf("Failure copying metadata: Program Exited\n\n"); exit(1); }
@@ -468,15 +471,17 @@ PHS {
 
 /* Copy image metadata for output files
  -------------------------------------*/
-strcat(strcpy(tempfile,argv[3]),".meta");
-strcat(strcpy(tmp2file,argv[1]),".meta");
+meta_or_ddr(metaExt,argv[1]);
+strcat(strcpy(tempfile,argv[3]),metaExt);
+strcat(strcpy(tmp2file,argv[1]),metaExt);
 sprintf(cmd,"cp %s %s\n",tmp2file,tempfile);
 if (system(cmd) != 0)
   { printf("Failure copying metadata: Program Exited\n\n"); exit(1); }
 
 MSK {
-   strcat(strcpy(tempfile,argv[1]),"_mask.meta");
-   strcat(strcpy(tmp2file,argv[2]),".meta");
+   meta_or_ddr(metaExt,argv[2]);
+   strcat(strcat(strcpy(tempfile,argv[1]),"_mask"),metaExt);
+   strcat(strcpy(tmp2file,argv[2]),metaExt);
    sprintf(cmd,"cp %s %s\n",tmp2file,tempfile);
    if (system(cmd) != 0)
      { printf("Failure copying metadata: Program Exited\n\n"); exit(1); }
@@ -484,8 +489,9 @@ MSK {
  }
 
 RTC {
-   strcat(strcpy(tempfile,argv[3]),"_rtc.meta");
-   strcat(strcpy(tmp2file,argv[2]),".meta");
+   meta_or_ddr(metaExt,argv[2]);
+   strcat(strcat(strcpy(tempfile,argv[3]),"_rtc"),metaExt);
+   strcat(strcpy(tmp2file,argv[2]),metaExt);
    sprintf(cmd,"cp %s %s\n",tmp2file,tempfile);
    if (system(cmd) != 0)
      { printf("Failure copying metadata: Program Exited\n\n"); exit(1); }
@@ -513,3 +519,28 @@ void bye(char *message)
    printf("%s",message);
    exit(1);
  }
+ 
+ 
+/****************************************************************
+ * meta_or_ddr:
+ * Fill 'whichOne' variable with ".meta" if there is a .meta file,
+ * ".ddr" if there is only a .ddr file, and ".meta" if both checks
+ * fail. */
+void meta_or_ddr(char *whichOne, char *fileName)
+{
+  char metaName[255], ddrName[255];
+  
+  create_name(metaName, fileName, ".meta");
+  create_name(ddrName,  fileName, ".ddr");
+
+  if (fileExists(metaName)) {
+    strcpy (whichOne, ".meta");
+  }
+  else if (fileExists(ddrName)) {
+    strcpy (whichOne, ".ddr");
+  }
+  else { /* Default to .meta */
+    strcpy (whichOne, ".meta");
+  }
+}
+    
