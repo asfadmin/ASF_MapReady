@@ -153,7 +153,7 @@ $html_file = "$source_file.html";
     print SOURCE_FILE "*/\n\n";
 
     #Prep the html help file
-    print HTML_FILE "<html>\n<body>\n";
+    print HTML_FILE "<html>\n<body>\n<table width=\"100%\" border=0 cellpadding=0>\n<tr>\n<td>\n<pre>\n";
 
     $def_line = 0;
     $active = 0;
@@ -172,7 +172,6 @@ $html_file = "$source_file.html";
             $def_line = 0;
             $active = 0;
             print SOURCE_FILE "\"\n\n";
-            print HTML_FILE "<p>\n";
         }
         elsif($active == 1)
         {
@@ -194,7 +193,7 @@ $html_file = "$source_file.html";
         }
     }
     print SOURCE_FILE "/*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/\n";
-    print HTML_FILE "<hr width=70%>\n</body>\n</html>\n";
+    print HTML_FILE "<hr width=70%>\n</pre>\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
     
     $edit_section = FALSE;
     while(<BACKUP_FILE>)
