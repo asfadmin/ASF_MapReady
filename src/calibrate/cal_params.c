@@ -16,6 +16,7 @@ calibrate.*/
         double sspswb013_noise_vec[256];
         double sspswb014_noise_vec[256];
         double sspswb015_noise_vec[256];
+	double sspswb016_noise_vec[256]; (identical to 15)
 
 *********************************************/
 #include "noise_vectors.h"
@@ -168,6 +169,10 @@ cal_params *create_cal_params(char *inSAR)
         } else if (strncmp(dssr.cal_params_file,"SSPSWB015.CALPARMS",18)==0) {
           printf("\nSubstituting hardcoded noise vector sspswb015\n");
           noise_vector = sspswb015_noise_vec;
+	} else if (strncmp(dssr.cal_params_file,"SSPSWB016.CALPARMS",18)==0) {
+          printf("\nSubstituting hardcoded noise vector sspswb016\n");
+          noise_vector = sspswb015_noise_vec;
+	/* 16 and 15 were identical antenna patterns, only metadata fields were changed, so the noise vector for 16 is the same and that for 15. JBN */
         } else noise_vector = rdr.noise;
 
  	for (i=0;i<p->noise_len;i++) p->noise[i]=noise_vector[i];

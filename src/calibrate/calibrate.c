@@ -45,6 +45,7 @@ PROGRAM HISTORY:
 			     Added gamma-0 calculation 
    4.2	 6/01	  P. Denny - Added check_cal call to check if image is calibrated
    4.5   2/02     P. Denny - Updated commandline parsing
+   5.0   10/02	  J. Nicoll - Updated to deal with SWB antenna pattern 16.
 
 ALGORITHM DESCRIPTION:
 
@@ -87,7 +88,7 @@ ALGORITHM DESCRIPTION:
 #include "ceos_io.h"
 
 /* constants */
-#define VERSION 4.5
+#define VERSION 5.0
 
 /* Prototypes */
 int get_cal_dn(cal_params*,double,double,int);
