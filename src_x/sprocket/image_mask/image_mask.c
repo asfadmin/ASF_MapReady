@@ -1,7 +1,5 @@
-//#include <stdlib.h>
-//#include <stdio.h>
-#include "util.h"
-#include "metadata.h"
+#include "../util/util.h"
+#include "../util/metadata.h"
 
 static void usage (void);
 int main (int argc, char **argv);
