@@ -267,15 +267,25 @@ done
 #./makemake $sys
 cd ..
 
+# determine installation prefix
+if test "${prefix}" = "NONE" ; then
+   prefix="/usr/local"
+fi
+AC_DEFINE_UNQUOTED(ASF_INSTALL_PREFIX, "${prefix}")
+
 echo "########### Automatic configuration complete ###########"
 directory=$asfDir'/bin/'$sys'/'
 echo ""
 echo "The ASF tools Makefile is now fully prepared."
 echo ""
+echo "To build the tools, type 'make'."
+echo "To install the tools, type 'make install'."
+echo ""
+echo "The tools will be installed in this location:"
+echo "  "$prefix"
+echo ""
 echo "To use the programs, you must add the binaries "
 echo "  directory to your path: "$directory" "
-echo ""
-echo "To build the tools, type 'make'."
 echo ""
 echo "########### Build system is now configured  ############"
 

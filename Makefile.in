@@ -40,5 +40,13 @@ MODULES = src_lib/asf \
 all:
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE);)
 
+install:
+	mkdir -p @prefix@/bin @prefix@/lib @prefix@/share
+	cp -R bin/@sys@/* @prefix@/bin
+	cp -R lib/@sys@/* @prefix@/lib
+#	cp -R share/* @prefix@/share
+	chmod 755 @prefix@/bin/*
+#	chmod 644 @prefix@/share/*
+
 clean:
 	rm -rf bin/@sys@/* lib/@sys@/*
