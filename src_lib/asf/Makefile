@@ -18,7 +18,8 @@ OBJS  = caplib.o \
 	get_stf_names.o \
 	ioLine.o \
 	log.o \
-	stopwatch.o
+	stopwatch.o \
+	share.o
 
 all: build_only
 	mv asf.a $(LIBDIR)

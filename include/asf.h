@@ -163,4 +163,9 @@ int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
 int put_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
 		int num_lines_to_put, const complexFloat *source);
 
+/***************************************************************************
+ * Get the location of the ASF Share Directory */
+const char * get_asf_share_dir();
+FILE * fopen_share_file(const char * filename, const char * mode);
+
 #endif
