@@ -27,27 +27,24 @@
 #define   MIN(a,b)      (((a) < (b)) ? (a) : (b))                    /* minimum     */
 #define   MAX(a,b)      (((a) > (b)) ? (a) : (b))                    /* maximum     */
 
-
-
-float  Cabs(FCMPLX); 
-FCMPLX Cadd (FCMPLX,FCMPLX);
-FCMPLX Cconj(FCMPLX);
-FCMPLX Cmplx(float,float);
-FCMPLX Czero();
-FCMPLX Csmul(float,FCMPLX);
-FCMPLX Cmul (FCMPLX,FCMPLX);
+float        Cabs(complexFloat); 
+complexFloat Cadd (complexFloat,complexFloat);
+complexFloat Cconj(complexFloat);
+complexFloat Cmplx(float,float);
+complexFloat Czero();
+complexFloat Csmul(float,complexFloat);
+complexFloat Cmul (complexFloat,complexFloat);
 
 /*cfft1d: Perform FFT, 1 dimentional:
 	dir=0 -> init; 
 	dir<0 -> forward; 
 	dir>0 -> backward*/
-void cfft1d(int n, FCMPLX *c, int dir);
+void cfft1d(int n, complexFloat *c, int dir);
 
 /*-----------------------*/
 /* Constants Definitions */
 /*-----------------------*/
 #define   default_n_az 4096
-
 #define   speedOfLight 299792458.0 /*Speed of light in vacuum, m/s */
 #define   pi      	3.14159265358979323
 #define   pi2     	(2*pi)
