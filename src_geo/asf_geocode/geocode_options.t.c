@@ -441,12 +441,14 @@ void utm_test_12()
 	  "--central-meridian", "-146", "dork!" };
 
     p = opts; l = 7;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size, &datum);
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height,
+						     &pixel_size, &datum);
 
-    if (pps->utm.zone == 6 && 
+    if (pps->utm.zone == MAGIC_UNSET_INT && 
 	pt == UNIVERSAL_TRANSVERSE_MERCATOR &&
 	within_tol(pps->utm.lon0, -146) &&
 	within_tol(pps->utm.lat0, 10.101) &&
+	ISNAN(height) &&
 	l == 1 && strcmp(p[0], "dork!") == 0)
     {
 	++nok;
@@ -876,10 +878,13 @@ void ps_test_13()
 	{ "-p", "ps", "--central-meridian", "-101", "-s"  };
 
     p = opts; l =  5;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size, &datum);
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
+						     &height, &pixel_size,
+						     &datum);
 
-    if (pps->ps.slon == -101 && pps->ps.slat == -90 && 
-	pps->ps.is_north_pole == -1 && pt == POLAR_STEREOGRAPHIC)
+    if (pps->ps.slon == -101 && ISNAN(pps->ps.slat) && 
+	pps->ps.is_north_pole == -1 && pt == POLAR_STEREOGRAPHIC &&
+	ISNAN(height))
     {
 	++nok;
 	test_file(pps, pt);
@@ -897,9 +902,10 @@ void ps_test_14()
 	{ "-p", "ps", "--central-meridian", "-101", "-n"  };
 
     p = opts; l =  5;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size, &datum);
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height,
+						     &pixel_size, &datum);
 
-    if (pps->ps.slon == -101 && pps->ps.slat == 90 && 
+    if (pps->ps.slon == -101 && ISNAN(pps->ps.slat) && 
 	pps->ps.is_north_pole == 1 && pt == POLAR_STEREOGRAPHIC)
     {
 	++nok;
@@ -1087,16 +1093,18 @@ void ps_test_23()
     static char * opts [] =
 	{ "hey", "-p", "ps", "-n",
 	  "--false-easting", "81000000",
-	  "--first-standard-parallel", "51.101", "--central-meridian", "60"  };
+	  "--first-standard-parallel", "51.101",
+	  "--central-meridian", "60"  };
 
     p = opts; l = 10;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size, &datum);
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height,
+						     &pixel_size, &datum);
 
     if (within_tol(pps->ps.slat, 51.101) &&
 	within_tol(pps->ps.slon, 60) && 
 	pps->ps.is_north_pole == 1 &&
 	within_tol(pps->ps.false_easting, 81000000) && 
-	within_tol(pps->ps.false_northing, 0) &&
+	ISNAN(pps->ps.false_northing) &&
 	l == 1 && strcmp(p[0], "hey") == 0 &&
 	pt == POLAR_STEREOGRAPHIC)
     {
@@ -1117,17 +1125,20 @@ void ps_test_24()
     static char * opts [] =
 	{ "-p", "ps", "-n",
 	  "--false-northing", "81000000",
-	  "--first-standard-parallel", "1.101", "--central-meridian", "60", "phat"  };
+	  "--first-standard-parallel", "1.101", "--central-meridian", "60",
+	  "phat"  };
 
     p = opts; l =  10;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size, &datum);
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height,
+						     &pixel_size, &datum);
 
     if (within_tol(pps->ps.slat, 1.101) &&
 	within_tol(pps->ps.slon, 60) && 
 	pps->ps.is_north_pole == 1 &&
 	within_tol(pps->ps.false_northing, 81000000) && 
-	within_tol(pps->ps.false_easting, 0) && pt == POLAR_STEREOGRAPHIC &&
-	l == 1 && strcmp(p[0], "phat") == 0)
+	ISNAN(pps->ps.false_easting) && pt == POLAR_STEREOGRAPHIC &&
+	l == 1 && strcmp(p[0], "phat") == 0 &&
+	ISNAN(pixel_size) && ISNAN(height))
     {
 	++nok;
 	test_file(pps, pt);
@@ -1669,19 +1680,26 @@ void lamcc_test_23()
 void lamcc_test_24()
 {
     static char * opts [] =
-	{ "-p", "lamcc", "--center-latitude", "17.778", "--second-standard-parallel", "45.001",
-	  "--first-standard-parallel", "-1.123", "--central-meridian", "-111.111",
-	  "--false-easting", "7888" };
+	{ "-p", "lamcc", "--center-latitude", "17.778",
+	  "--second-standard-parallel", "45.001",
+	  "--first-standard-parallel", "-1.123",
+	  "--central-meridian", "-111.111",
+	  "--false-easting", "7888",
+	  "--datum", "WGS84" };
 
-    p = opts; l =  12;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size, &datum);
+    p = opts; l =  14;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height,
+						     &pixel_size, &datum);
 
     if (within_tol(pps->lamcc.plat1, -1.123) &&
 	within_tol(pps->lamcc.lon0, -111.111) &&
 	within_tol(pps->lamcc.plat2, 45.001) &&
 	within_tol(pps->lamcc.lat0, 17.778) &&
 	within_tol(pps->lamcc.false_easting, 7888) &&
-	within_tol(pps->lamcc.false_northing, 0))
+	ISNAN(pps->lamcc.false_northing) &&
+	ISNAN(height) &&
+	ISNAN(pixel_size) &&
+	datum == WGS84_DATUM)
     {
 	++nok;
 	test_file(pps, pt);
@@ -1696,19 +1714,27 @@ void lamcc_test_24()
 void lamcc_test_25()
 {
     static char * opts [] =
-	{ "-p", "lamcc", "--center-latitude", "17.778", "--second-standard-parallel", "45.001",
-	  "--first-standard-parallel", "-1.123", "--central-meridian", "-111.111",
-	  "--false-northing", "-7888" };
+	{ "-p", "lamcc", "--center-latitude", "17.778",
+	  "--second-standard-parallel", "45.001",
+	  "--first-standard-parallel", "-1.123",
+	  "--central-meridian", "-111.111",
+	  "--false-northing", "-7888",
+	  "--datum", "nad27", 
+	  "--height", "466" };
 
-    p = opts; l =  12;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size, &datum);
+    p = opts; l =  16;
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height,
+						     &pixel_size, &datum);
 
     if (within_tol(pps->lamcc.plat1, -1.123) &&
 	within_tol(pps->lamcc.lon0, -111.111) &&
 	within_tol(pps->lamcc.plat2, 45.001) &&
 	within_tol(pps->lamcc.lat0, 17.778) &&
 	within_tol(pps->lamcc.false_northing, -7888) &&
-	within_tol(pps->lamcc.false_easting, 0))
+	ISNAN(pps->lamcc.false_easting) &&
+	within_tol(height, 466) &&
+	ISNAN(pixel_size) &&
+	datum == NAD27_DATUM)
     {
 	++nok;
 	test_file(pps, pt);
@@ -2048,12 +2074,13 @@ void lamaz_test_6()
 	  "stuff", "at", "the", "end" };
 
     p = opts; l =  14;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size, &datum);
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height,
+						     &pixel_size, &datum);
 
     if (within_tol(pps->lamaz.center_lon, 45.001) &&
 	within_tol(pps->lamaz.center_lat, 17.778) &&
-	within_tol(pps->lamaz.false_easting, 0) &&
-	within_tol(pps->lamaz.false_northing, 0) &&
+	ISNAN(pps->lamaz.false_easting) &&
+	ISNAN(pps->lamaz.false_northing) &&
 	l == 8 &&
 	pt == LAMBERT_AZIMUTHAL_EQUAL_AREA &&
 	strcmp(p[0], "stuff") == 0 &&
@@ -2085,8 +2112,8 @@ void lamaz_test_7()
 
     if (ISNAN(pps->lamaz.center_lon) &&
 	ISNAN(pps->lamaz.center_lat) &&
-	within_tol(pps->lamaz.false_easting, 0) &&
-	within_tol(pps->lamaz.false_northing, 0) &&
+	ISNAN(pps->lamaz.false_easting) &&
+	ISNAN(pps->lamaz.false_northing) &&
 	l == 4 &&
 	pt == LAMBERT_AZIMUTHAL_EQUAL_AREA &&
 	strcmp(p[0], "--log") == 0 &&
@@ -2295,12 +2322,13 @@ void albers_test_1()
 	{ "-p", "albers"  };
 
     p = opts; l =  2;
-    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size, &datum);
+    project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height,
+						     &pixel_size, &datum);
 
     if (ISNAN(pps->albers.center_meridian) &&
 	ISNAN(pps->albers.orig_latitude) &&
-	within_tol(pps->albers.false_easting, 0) &&
-	within_tol(pps->albers.false_northing, 0) &&
+	ISNAN(pps->albers.false_easting) &&
+	ISNAN(pps->albers.false_northing) &&
 	pt == ALBERS_EQUAL_AREA &&
 	l == 0)
     {
@@ -2797,7 +2825,8 @@ void albers_test_13()
 
     p = opts; l = 46;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt,
-						     &height, &pixel_size, &datum);
+						     &height, &pixel_size,
+						     &datum);
 
     if (within_tol(pps->albers.std_parallel1, -11.123) &&
 	within_tol(pps->albers.center_meridian, 111.111) &&

@@ -298,7 +298,8 @@ static void parse_proj_args_file(char * file, project_parameters_t * pps,
 
     readline(fp, buf, sizeof(buf));
 
-    if (strcmp(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0)
+    if (strcmp(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
+	strcmp(buf, "[Albers Equal Area Conic]") == 0)
     {
 	*proj_type = ALBERS_EQUAL_AREA;
 	get_fields(fp,
