@@ -11,7 +11,7 @@ on_help_button_clicked(GtkWidget *widget)
 #ifdef win32
   if (fork() == 0)
   {
-     system("hh.exe htmlhelp.chm");
+     system("hh.exe asf_convert_gui.chm");
      exit(0);
   }
 #else
