@@ -1158,19 +1158,21 @@ project_parameters_t * parse_options(int *argc, char **argv[],
 	}
     }
 
-    end_arg = i;
+    end_arg = i - 1;
 
     if (start_arg == end_arg)
     {
-	asfPrintWarning("No projection Specified");
+	asfPrintWarning("No projection specified\n");
 	return NULL;
     }
     else
     {
-	i = start_arg;
-	j = end_arg;
+	int nargs = end_arg - start_arg + 1;
 
-	while (j < *argc && i < end_arg)
+	i = start_arg;
+	j = start_arg + nargs;
+
+	while (j < *argc)
 	{
 	    char * tmp = (*argv)[i];
 	    (*argv)[i] = (*argv)[j];
@@ -1180,7 +1182,7 @@ project_parameters_t * parse_options(int *argc, char **argv[],
 	    ++j;
 	}
 
-	*argc -= end_arg - start_arg;
+	*argc -= nargs;
 
 	return pps;
     }
