@@ -57,10 +57,11 @@ LIBS
 	asf_odl
 	asf_fft
 	libjpeg
+	libpng
 	libtiff
 	libgeotiff
-        libz
-        libpng
+	libz
+	libpng
 @src_ifm/
 	libifm
 @src_tc/
@@ -72,6 +73,8 @@ LIBS
 PROGRAMS
 {
 @src/
+  asf_convert { }
+	asf_export { }
 	asf_import { }
 	stats { }
 	convert2byte { PROGRAMS stats }
@@ -200,15 +203,21 @@ PROGRAMS
 
 CATEGORIES
 {
+# Convert package (BSD license) - get data from asf ceos to whatever you want!
+#                                 (that we can convert to)
+  convert
+  {
+  	asf_convert asf_export asf_import
+  }
+
 # Open - Anybody can get this stuff (BSD license)
 #        src & src_geo
 	open
 	{
-		asf_import stats convert2byte convert2geotiff convert2jpeg
-		convert2ppm deskew dspddr fftMatch makeddr meta2ddr metadata
-		raster_calc raster_diff remap resample sarout sr2gr trim
-		accum_offset concat concat_dem concatm fit_quadratic idimage
-		projprm geocode
+		asf_convert asf_export asf_import stats convert2byte convert2geotiff
+		convert2jpeg convert2ppm deskew dspddr fftMatch makeddr meta2ddr metadata
+		raster_calc raster_diff remap resample sarout sr2gr trim accum_offset
+		concat concat_dem concatm fit_quadratic idimage projprm geocode
 	}
 
 # Sarview needs to be its own category because of its tcl/tk dependency.
