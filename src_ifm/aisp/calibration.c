@@ -152,7 +152,7 @@ double lookUpGain(meta_parameters *meta,int line, int sample, const satellite *s
   if(lookAngle>s->ang_vec[s->vecLen-1] || lookAngle<s->ang_vec[0])
   {
     	printErr("   Look angle outside of valid range\n");
-	return NULL;
+	return 0.0;
   }
 
   if (ind>s->vecLen-1) ind=0;
