@@ -1446,14 +1446,14 @@ float_image_approximate_statistics (FloatImage *self, size_t stride,
 gsl_histogram *
 float_image_histogram (FloatImage *self, float min, float max, size_t num_bins)
 {
-  // Initialize the histogram
-  gsl_histogram *hist = gsl_histogram_alloc(num_bins);
-  gsl_histogram_set_ranges_uniform(hist, min, max);
+  // Initialize the histogram.
+  gsl_histogram *hist = gsl_histogram_alloc (num_bins);
+  gsl_histogram_set_ranges_uniform (hist, min, max);
 
   // Buffer for one row of samples.
   float *row_buffer = g_new (float, self->size_x);
 
-  // Populate the histogram over every sample in the image
+  // Populate the histogram over every sample in the image.
   size_t ii, jj;
   for (ii = 0 ; ii < self->size_y ; ii++ ) {
     float_image_get_row (self, ii, row_buffer);
@@ -1462,8 +1462,8 @@ float_image_histogram (FloatImage *self, float min, float max, size_t num_bins)
     }
   }
 
-  // Clean & return
   g_free (row_buffer);
+
   return hist;
 }
 
