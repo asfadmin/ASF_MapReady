@@ -77,15 +77,16 @@ int image_loadCeos(char *fileName)
 {
 	type=image_ceos;
 	ceos=fopenCeos(fileName);
-	ddr=&(ceos->ddr);
-
 	strcpy(image.fName,fileName);
-/*Set the image size; based on the DDR*/
-	image.width=ddr->ns;
-	image.height=ddr->nl;
 
-/*Read in the metadata*/
-	meta=meta_create(fileName);
+/*Get metadata*/
+	ddr=&(ceos->ddr);
+	meta= (ceos->meta);
+
+/*Set the image size */
+	image.width  = meta->general->line_count;
+	image.height = meta->general->sample_count;
+
 	return 1;
 }
 
