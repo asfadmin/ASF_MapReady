@@ -31,10 +31,10 @@ void check_parameters(projection_type_t projection_type,
       if (pp->utm.zone < 1 || pp->utm.zone > 60)
 	asfPrintError("Zone '%i' outside the defined range (1 to 60)\n", pp->utm.zone);
       if (pp->utm.lat0 < -90 || pp->utm.lat0 > 90)
-	asfPrintError("Central meridian '%.4f' outside the defined range "
+	asfPrintError("Latitude of origin '%.4f' outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->utm.lat0);
       if (pp->utm.lon0 < -180 || pp->utm.lon0 > 180)
-	asfPrintError("Latitude of origin '%.4f' outside the defined range "
+	asfPrintError("Central meridian '%.4f' outside the defined range "
 		      "(-180 deg to 180 deg)\n", pp->utm.lon0);
       if (!FLOAT_EQUIVALENT(pp->utm.scale_factor, 0.9996))
 	asfPrintError("Scale factor '%.4f' different from default value (0.9996)\n", 
@@ -89,10 +89,10 @@ void check_parameters(projection_type_t projection_type,
 
       // Outside range tests
       if (pp->ps.slat < -90 || pp->ps.slat > 90)
-	asfPrintError("Central meridian '%.4f' outside the defined range "
+	asfPrintError("Latitude of origin '%.4f' outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->ps.slat);
       if (pp->ps.slon < -180 || pp->ps.slon > 180)
-	asfPrintError("Latitude of origin '%.4f' outside the defined range "
+	asfPrintError("Central meridian '%.4f' outside the defined range "
 		      "(-180 deg to 180 deg)\n", pp->ps.slon);
 
       // Distortion test - only areas with a latitude above 60 degrees North or 
