@@ -21,6 +21,7 @@ typedef enum {
   TRUNCATE=1,
   MINMAX,
   SIGMA,
+  HISTOGRAM_EQUALIZE,
   NONE
 } scale_t;
 
@@ -64,17 +65,17 @@ unsigned char *floats_to_bytes (float *data, long long pixel_count, float mask,
 /* Prototypes from stats.c ***************************************************/
 void calc_stats(float *data, long long pixel_count, double mask, double *min,
 		double *max, double *mean, double *stdDev);
-void estimate_stats(FILE *fpIn, meta_parameters *meta, int lines, int samples, 
-		    double mask, double *min, double *max, double *mean, 
+void estimate_stats(FILE *fpIn, meta_parameters *meta, int lines, int samples,
+		    double mask, double *min, double *max, double *mean,
 		    double *stdDev);
 
 /* Prototypes from kernel.c **************************************************/
-float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples, 
-	     int xLine, int xSample, int kernel_size, float damping_factor, 
+float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
+	     int xLine, int xSample, int kernel_size, float damping_factor,
 	     int nLooks);
 
 /* Prototypes from interpolate.c *********************************************/
-float interpolate(interpolate_type_t interpolation, FloatImage *inbuf, float yLine, 
+float interpolate(interpolate_type_t interpolation, FloatImage *inbuf, float yLine,
 		  float xSample, weighting_type_t weighting, int sinc_points);
 
 #endif
