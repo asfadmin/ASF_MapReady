@@ -4,83 +4,9 @@
 #include "asf_convert_gui.h"
 
 GladeXML *glade_xml;
-GtkListStore *list_store;
+GtkListStore *list_store = NULL;
 gboolean keep_going;
 gboolean processing;
-
-void
-setup_files_list(int argc, char *argv[])
-{
-  gint i;
-  GtkWidget *files_list;
-  GtkTreeViewColumn *col;
-  GtkCellRenderer *renderer;
-  GtkTreeIter iter;
-
-  list_store = gtk_list_store_new(3, 
-				  G_TYPE_STRING, 
-				  G_TYPE_STRING, 
-				  G_TYPE_STRING);
-
-  for (i = 1; i < argc; ++i)
-  {
-    char * data_file = argv[i];
-    gtk_list_store_append(list_store, &iter);
-    gtk_list_store_set(list_store, &iter,
-		       0, data_file, 1, "", 2, "-", -1);
-  }
-
-  files_list =
-    glade_xml_get_widget(glade_xml, "files_list");
-
-  /* First Column */
-  col = gtk_tree_view_column_new();
-  gtk_tree_view_column_set_title(col, "Data File");
-  gtk_tree_view_column_set_resizable(col, TRUE);
-  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
-  renderer = gtk_cell_renderer_text_new();
-  gtk_tree_view_column_pack_start(col, renderer, TRUE);
-  g_object_set(renderer, "text", "?", NULL);
-  gtk_tree_view_column_add_attribute(col, renderer, "text", 0);
-
-  /* Second Column */
-  /* -- this was the "meta" column -- removed
-  col = gtk_tree_view_column_new();
-  gtk_tree_view_column_set_title(col, "Meta File");
-  gtk_tree_view_column_set_resizable(col, TRUE);
-  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
-  renderer = gtk_cell_renderer_text_new();
-  gtk_tree_view_column_pack_start(col, renderer, TRUE);
-  gtk_tree_view_column_add_attribute(col, renderer, "text", 1);
-  */
-
-  /* Third (now 2nd) Column */
-  col = gtk_tree_view_column_new();
-  gtk_tree_view_column_set_title(col, "Output File");
-  gtk_tree_view_column_set_resizable(col, TRUE);
-  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
-  renderer = gtk_cell_renderer_text_new();
-  gtk_tree_view_column_pack_start(col, renderer, TRUE);
-  gtk_tree_view_column_add_attribute(col, renderer, "text", 1);
-
-  /* Last Column: Current Status */
-  col = gtk_tree_view_column_new();
-  gtk_tree_view_column_set_title(col, "Status");
-  gtk_tree_view_column_set_resizable(col, TRUE);
-  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
-  renderer = gtk_cell_renderer_text_new();
-  gtk_tree_view_column_pack_start(col, renderer, TRUE);
-  gtk_tree_view_column_add_attribute(col, renderer, "text", 2);
-
-  gtk_tree_view_set_model(GTK_TREE_VIEW(files_list), 
-			  GTK_TREE_MODEL(list_store));  
-
-  g_object_unref(list_store);
-
-  gtk_tree_selection_set_mode(
-      gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list)),
-      GTK_SELECTION_SINGLE);
-}
 
 int
 main(int argc, char **argv)
@@ -119,6 +45,17 @@ main(int argc, char **argv)
 
     /* right-click menu setup */
     setup_popup_menu();
+
+    /* set initial vpanel setting */
+    widget = glade_xml_get_widget(glade_xml, "vertical_pane");
+
+    /* not sure why this doesn't work
+    gtk_widget_style_get_property(widget, "max-position", &val);
+    p = (gint) floor (0.75 * (double) ((gint) g_value_get_uint(&val)));
+    printf("%d\n", p);
+    gtk_paned_set_position(GTK_PANED(widget), p);
+    */
+    gtk_paned_set_position(GTK_PANED(widget), 360);
 
     /* Connect signal handlers.  */
     glade_xml_signal_autoconnect (glade_xml);

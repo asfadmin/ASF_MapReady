@@ -47,6 +47,7 @@
 #include "utility.h"
 #include "dnd.h"
 #include "popup_menu.h"
+#include "file_list.h"
 
 extern GladeXML *glade_xml;
 extern GtkListStore *list_store;

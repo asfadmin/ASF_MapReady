@@ -1,21 +1,6 @@
 #include "asf_convert_gui.h"
 
 void
-add_to_files_list(gchar * data_file, gchar * meta_file)
-{
-  GtkWidget *files_list;
-  GtkTreeIter iter;
-
-  files_list =
-    glade_xml_get_widget(glade_xml, "files_list");
-
-  gtk_list_store_append(list_store, &iter);
-
-  gtk_list_store_set(list_store, &iter, 
-		     0, data_file, 1, "", 2, "-", -1);
-}
-
-void
 show_execute_button(gboolean show)
 {
   GtkWidget *execute_button, *stop_button;
@@ -179,6 +164,8 @@ output_format_combobox_changed()
 
   if (show)
     scale_checkbutton_toggle();
+
+  update_all_extensions();
 }
 
 SIGNAL_CALLBACK void

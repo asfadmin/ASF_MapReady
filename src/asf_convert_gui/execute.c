@@ -27,7 +27,7 @@ do_cmd(char *cmd, char *log_file_name)
       while (gtk_events_pending())
 	gtk_main_iteration();    
 
-      /* sleep ? */
+      g_usleep(50);
     }
   }
 
@@ -126,6 +126,20 @@ do_cmd_does_not_work(char *cmd)
 }
 
 void
+append_output(char * txt)
+{
+  GtkWidget * textview_output;
+  GtkTextBuffer * text_buffer;
+  GtkTextIter end;
+
+  textview_output = glade_xml_get_widget(glade_xml, "textview_output");
+  text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
+  gtk_text_buffer_get_end_iter(text_buffer, &end);
+  gtk_text_buffer_insert(text_buffer, &end, txt, -1);
+  
+}
+
+void
 process_item(GtkTreeIter *iter,
 	     Settings *user_settings)
 {
@@ -171,6 +185,8 @@ process_item(GtkTreeIter *iter,
     
     cmd_output = do_cmd(convert_cmd, log_file);
 
+    append_output(cmd_output);
+
     char * out_name_full = (char *)malloc(strlen(basename) + 10);
     sprintf(out_name_full, "%s.img", basename);
     
@@ -190,26 +206,20 @@ process_item(GtkTreeIter *iter,
   if (settings_get_run_export(user_settings))
   {
     char * cmd_output;
-    char * out_name_full = (char *)malloc(strlen(basename) + 20);
-
+    
     sprintf(log_file, "tmp_%d_%ld_export.log", pid, s);
-
-    sprintf(out_name_full, "%s.%s", basename,
-	    settings_get_output_format_extension(user_settings));
     
     snprintf(convert_cmd, 4096, "asf_export -format %s %s -log %s %s %s",
 	     settings_get_output_format_string(user_settings),
 	     settings_get_size_argument(user_settings),
 	     log_file,
 	     basename,
-	     out_name_full);
+	     out_full);
     
     cmd_output = do_cmd(convert_cmd, log_file);
     
-    gtk_list_store_set(list_store, iter, 1, out_name_full, -1);
     gtk_list_store_set(list_store, iter, 2, "Done", -1);
-
-    free(out_name_full);
+    
     free(cmd_output);
   }
 
@@ -243,8 +253,13 @@ on_execute_button_clicked (GtkWidget *button)
       gtk_main_iteration();
 
     if (!keep_going)
+    {
+      append_output("Processing stopped by user.");
+      /*
       gtk_list_store_set(list_store, &iter,
 			 2, "Processing stopped by user.", -1);
+      */
+    }
 
     valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
   }
@@ -257,5 +272,6 @@ on_execute_button_clicked (GtkWidget *button)
 SIGNAL_CALLBACK void
 on_stop_button_clicked(GtkWidget * widget)
 {
+  append_output("Stopping...\n");
   keep_going = FALSE;
 }
