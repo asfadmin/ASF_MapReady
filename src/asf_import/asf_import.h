@@ -17,6 +17,7 @@ typedef enum {
     f_GAMMA,
     f_POWER,
     f_SPROCKET,
+    f_LUT,
     f_LAT_CONSTRAINT,
     f_PRC,
     f_FORMAT,
@@ -43,7 +44,8 @@ void pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName);
 void create_sprocket_layers(const char *asfName, const char *importName);
 
 /* import_*() function prototypes */
-void import_ceos(char *inDataName,char *inMetaName,char *outBaseName,flag_indices_t flags[]);
+void import_ceos(char *inDataName,char *inMetaName,char *lutName, 
+		 char *outBaseName,flag_indices_t flags[]);
 void import_envi(char *inDataName,char *inMetaName,char *outBaseName,flag_indices_t flags[]);
 void import_esri(char *inDataName,char *inMetaName,char *outBaseName,flag_indices_t flags[]);
 void import_stf (char *inDataName,char *inMetaName,char *outBaseName,flag_indices_t flags[],

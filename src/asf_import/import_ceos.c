@@ -17,8 +17,8 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
 /******************************************************************************
  * Import a wide variety for CEOS flavors (hopefully all) to our very own ASF
  * Tools format */
-void import_ceos(char *inDataName, char *inMetaName, char *outBaseName,
-                 flag_indices_t flags[])
+void import_ceos(char *inDataName, char *inMetaName, char *lutName,
+		 char *outBaseName, flag_indices_t flags[])
 {
   char outDataName[256], outMetaName[256];              /* Output file names */
   char user_message[256];                  /* Let user know what's happening */
@@ -212,6 +212,12 @@ void import_ceos(char *inDataName, char *inMetaName, char *outBaseName,
               "   Output data type: calibrated image (beta dB values)\n\n");
       meta->general->image_data_type = BETA_IMAGE;
     }
+    else if (flags[f_LUT] != FLAG_NOT_SET) {
+      sprintf(user_message,
+              "   Input data type: level one data\n"
+              "   Output data type: user defined LUT image\n\n");
+      meta->general->image_data_type = LUT_IMAGE;
+    }
     else { /* No chosen output type: default to amplitude */
       flags[f_AMP] = FLAG_SET;
       sprintf(user_message,
@@ -250,9 +256,125 @@ void import_ceos(char *inDataName, char *inMetaName, char *outBaseName,
 
     meta->general->data_type=REAL32;
 
+
+
+  /**** Take care of LUT images ****/
+    if (flags[f_LUT]!=FLAG_NOT_SET) {
+      FILE *fpLut;
+      double incid_table[MAX_tableRes];                  /* Incidence angle */
+      double scale_table[MAX_tableRes];                   /* Scaling factor */
+      double incid[MAX_tableRes], old, new;
+      char line[255];
+      int nLut=0, n, tableRes=MAX_tableRes, tablePix=0, ll;
+
+      /**** Read look up table ****/
+      fpLut = FOPEN(lutName, "r");
+      for (ii=0; ii<MAX_tableRes; ii++) {
+	incid_table[ii] = 0.0;
+	scale_table[ii] = 0.0;
+      }
+      while(fgets(line, 255, fpLut)) {
+	sscanf(line, "%lf\t%lf", &incid_table[nLut], &scale_table[nLut]);
+	nLut++;
+      }	
+
+      /**** Read 16 bit data and apply look up table ****/
+      if (ceos_data_type == INTEGER16) {
+
+	if (nl<1500) tableRes=128;
+	else if (nl<3000) tableRes=256;
+	tablePix=((ns+(tableRes-1))/tableRes);
+
+        for (ii=0; ii<nl; ii++) {
+          /* Can't use get_float_line() for CEOS data, so we have to use FSEEK,
+           * FREAD, and then put the bytes in proper endian order manually  */
+          offset = headerBytes+ii*image_fdr.reclen;
+          FSEEK64(fpIn, offset, SEEK_SET);
+          FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
+
+	  /* Allocate incidence table entries or update */
+	  if (ii==0 || (ii%(nl/tableRes)==0 && meta->projection != NULL))
+	    for (kk=0;kk<tableRes;kk++) 
+	      incid[kk] = meta_incid(meta, kk*tablePix, ii);
+
+	  /* Calculate output values */
+          for (kk=0; kk<ns; kk++) {
+            if (short_buf[kk]) {
+	      big16(short_buf[kk]);
+	      old = 10000000;
+	      for (ll=0; ll<nLut; ll++) {
+		new = incid[kk]*R2D - incid_table[ll];
+		if (fabs(new) < fabs(old)) {
+		  old = new;
+		  n++;
+		}
+		else break;
+	      }
+	      out_buf[kk] = short_buf[kk] * scale_table[n];
+	    }
+	    else
+	      out_buf[kk] = 0;
+	  }
+          put_float_line(fpOut, meta, ii, out_buf);
+          if(flags[f_QUIET] == FLAG_NOT_SET) print_progress(ii,nl);
+	}
+
+      } /**** End processing of 16 bit input data ****/
+
+      /**** Read 8 bit data and apply look up table ****/
+      else if (ceos_data_type == BYTE) {
+
+	if (nl<1500) tableRes=128;
+	else if (nl<3000) tableRes=256;
+	tablePix=((ns+(tableRes-1))/tableRes);
+
+        for (ii=0; ii<nl; ii++) {
+	  /* Read image line */
+          offset = headerBytes+ii*image_fdr.reclen;
+          FSEEK64(fpIn, offset, SEEK_SET);
+          FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
+
+	  /* Allocate incidence table entries or update */
+	  if (ii==0 || (ii%(nl/tableRes)==0 && meta->projection != NULL))
+	    for (kk=0;kk<tableRes;kk++)
+	      incid[kk] = meta_incid(meta, ii, kk*tablePix);
+
+	  /* Calculate output values */
+          for (kk=0; kk<ns; kk++) {
+            if (byte_buf[kk]) {
+              /* Interpolate incidence */
+              double index=(float)kk/tablePix;
+              int    base=(int)index;
+              double frac=index-base;
+
+	      old = 10000000;
+	      n = 0;
+	      for (ll=0; ll<nLut; ll++) {
+		new = (incid[base]+frac*(incid[base+1]-incid[base]))*R2D 
+		       - incid_table[ll];
+		if (fabs(new) < fabs(old)) {
+		  old = new;
+		  n++;
+		}
+		else break;
+	      }
+	      out_buf[kk] = byte_buf[kk] * scale_table[n];
+	    }
+	    else 
+	      out_buf[kk] = 0;
+	  }
+          put_float_line(fpOut, meta, ii, out_buf);
+          if(flags[f_QUIET] == FLAG_NOT_SET) print_progress(ii,nl);
+	}
+
+      } /**** End processing of byte input data ****/
+    } /**** End LUT output section ****/
+
+
+
   /**** Create calibrated (sigma, gamma, or beta naught) dB image ****/
-    if ( (flags[f_SIGMA]!=FLAG_NOT_SET) || (flags[f_GAMMA]!=FLAG_NOT_SET)
-        || (flags[f_BETA]!=FLAG_NOT_SET) ) {
+    else if ( (flags[f_SIGMA]!=FLAG_NOT_SET) || (flags[f_GAMMA]!=FLAG_NOT_SET)
+	      || (flags[f_BETA]!=FLAG_NOT_SET) ) {
       int tableRes=MAX_tableRes, tablePix=0;        /* Calibration variables */
       double noise_table[MAX_tableRes];       /* Noise table for calibration */
       double incid_cos[MAX_tableRes];       /* Cosine of the incidence angle */
