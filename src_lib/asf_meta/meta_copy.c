@@ -69,7 +69,7 @@ meta_parameters *meta_copy(meta_parameters *src)
 		ret->projection->hem      = src->projection->hem;
 		ret->projection->re_major = src->projection->re_major;
 		ret->projection->re_minor = src->projection->re_minor;
-		ret->projection->ecc      = src->projection->ecc;
+/*		ret->projection->ecc      = src->projection->ecc;*/
 		switch (ret->projection->type) {
 		    case 'A':/* Along-track/cross-track.*/
 			ret->projection->param.atct.rlocal = src->projection->param.atct.rlocal;
@@ -164,7 +164,7 @@ meta_parameters *meta_copy(meta_parameters *src)
 	ret->ifm->nLooks        = src->ifm->nLooks;
 	ret->ifm->orig_nLines   = src->ifm->orig_nLines;
 	ret->ifm->orig_nSamples = src->ifm->orig_nSamples;
-	ret->ifm->lookCenter    = src->ifm->lookCenter;
+/*	ret->ifm->lookCenter    = src->ifm->lookCenter;*/
 
 	if (src->info) {
 		ret->info = (extra_info*)MALLOC(sizeof(extra_info));
