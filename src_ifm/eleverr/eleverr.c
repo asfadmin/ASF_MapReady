@@ -31,6 +31,8 @@ PROGRAM HISTORY:
     2.11   10/01   S. Watts     Added additional check for command line args
     2.5    12/03   P. Denny     Update command line parsing & usage()
                                   Update to meta1.1 from meta/ddr combo
+    2.6    2/04    P. Denny     Added check for really close to 0 in a
+                                  denominator (avoids inf)
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -41,9 +43,8 @@ ALGORITHM REFERENCES:
 BUGS:
 
 ****************************************************************/
-/****************************************************************************
-*								            *
-*   eleverr: generate DEM errors from coherence file			    *
+/******************************************************************************
+*                                                                             *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -53,12 +54,12 @@ BUGS:
 *                                                                             *
 *       For more information contact us at:                                   *
 *                                                                             *
-*	Alaska Satellite Facility	    	                              *
-*	Geophysical Institute			www.asf.alaska.edu            *
-*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
-*	P.O. Box 757320							      *
-*	Fairbanks, AK 99775-7320					      *
-*									      *
+*       Alaska Satellite Facility                                             *
+*       Geophysical Institute                  www.asf.alaska.edu             *
+*       University of Alaska Fairbanks          uso@asf.alaska.edu            *
+*       P.O. Box 757320                                                       *
+*       Fairbanks, AK 99775-7320                                              *
+*                                                                             *
 ******************************************************************************/
 #include "asf.h"
 #include "asf_meta.h"
@@ -66,6 +67,8 @@ BUGS:
 #define NUM_ARGS        3
 #define DEFAULT_ERROR   0.0
 #define VERSION         2.5
+
+#define FLOAT_EQUALS_ZERO(X) (X<0.000000000001 && X>-0.000000000001)
 
 /* local function declaration */
 void usage(char *name);
@@ -82,7 +85,7 @@ int main(int argc, char **argv)
 	int nrows,ncols; 
 	float *f_coh;
 	float *f_eleverr;
-	float percent=5.0;
+	float percent=0.0;
 	double init_err=DEFAULT_ERROR;
 	FILE *fdata, *fmask, *fout;
 	meta_parameters *meta;
@@ -167,7 +170,7 @@ int main(int argc, char **argv)
 		cosFlat[x]=cos(flat);
 		phase2elevBase[x]=meta_get_slant(meta,0,img_x)*sin(incid)/(2.0*k);
 	}
-	
+
 /* Loop through each row & calculate height*/
 	for (y=0;y<nrows;y++) {
 		double Bn_y,Bp_y;
@@ -175,6 +178,7 @@ int main(int argc, char **argv)
 		/* Report progress */
 		if ((y*100/nrows)>percent) {
 		  printf("\r   Completed %3.0f percent", percent);
+		  fflush(NULL);
 		  percent+=5.0;
 		}
 
@@ -193,7 +197,8 @@ int main(int argc, char **argv)
 			if ((mask[x] == 0x10 && maskflag) || (!maskflag)) {
 				double tmp,tmp1,sigma_height;
 				tmp = phase2elevBase[x]/(-Bp_y*sinFlat[x]-Bn_y*cosFlat[x]);
-				tmp1 = sqrt( (1-f_coh[x])/f_coh[x] );
+				tmp1 = (FLOAT_EQUALS_ZERO(f_coh[x])) 
+					    ? 0.0 : sqrt((1-f_coh[x])/f_coh[x]);
 				sigma_height = tmp*tmp1;
 				f_eleverr[x] = (float)sqrt( init_err +
 					sigma_height*sigma_height );
