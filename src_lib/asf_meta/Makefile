@@ -83,7 +83,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	code_ceos.o \
 	coniFetch.o \
 	dateUtil.o \
-        earth_radius2datum.o \
+	earth_radius2datum.o \
 	err_die.o \
 	fixed2gei.o \
 	gei2fixed.o \
@@ -108,9 +108,10 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta_init_stVec.o \
 	meta_is_valid.o \
 	meta2ddr.o \
+	meta2esri.o \
 	meta_read.o \
 	meta_write.o \
-        proj2meta.o \
+	proj2meta.o \
 	propagate.o \
 	read_baseline.o \
 	set_era.o \
@@ -124,9 +125,9 @@ OBJS =  $(LEX_YACC_OBJS) \
 all: asf_meta
 
 asf_meta: build_only
-	 mv asf_meta.a $(LIBDIR)
-	 # Make a link obeying the usual naming convention.
-	 ln -s -f $(LIBDIR)/asf_meta.a $(LIBDIR)/libasf_meta.a
+	mv asf_meta.a $(LIBDIR)
+	# Make a link obeying the usual naming convention.
+	ln -s -f $(LIBDIR)/asf_meta.a $(LIBDIR)/libasf_meta.a
 
 build_only: $(OBJS) cook_libs
 	rm -rf asf_meta.a	# Get rid of all stale symbols.
@@ -150,7 +151,7 @@ library_cooking_pot:
 # list.
 #$(OBJS): LOCAL_HEADERS = $(subst y.tab.h, , $(wildcard *.h))
 $(OBJS): Makefile $(LOCAL_HEADERS) $(wildcard ../../include/*.h) \
-	 $(YACC_SOURCES) $(LEX_SOURCES) $(addprefix $(LIBDIR)/, $(LIBS))
+	$(YACC_SOURCES) $(LEX_SOURCES) $(addprefix $(LIBDIR)/, $(LIBS))
 
 clean:
 	rm -rf $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
