@@ -50,15 +50,13 @@ void	yaxb(float[], float[], int, float*, float*)
 void	yax2bxc(float[], float[], int, float*, float*, float*)
         --Finds quadratic fit of input data using least squares regression.
 
-void 	save_ddr(fname, nl, ns, sl, ss, pdx, pdy, li)
-	--Creates a valid ddr with windowing information
+void 	save_meta(meta, fname, nl, ns, sl, ss, pdx, pdy, li)
+	--Creates a valid meta file with windowing information
 
 SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY:  Ver 1.0  T. Logan - Most routines are new
 ****************************************************************************/
 #include "asf.h"
-
-
 #include <sys/time.h>
 #include "aisp_defs.h"
 #include "las.h"
@@ -146,7 +144,7 @@ void yaxb(float x_vec[], float y_vec[], int n, float *a, float *b)
 
    return;
   }
-
+
 /******************************************************************************
 NAME: 		yax2bxc.c
 DESCRIPTION:	Computes a, b, and c for y = ax^2 + bx + c using quadratic
@@ -202,24 +200,21 @@ void yax2bxc(float x_vec[],float y_vec[],int n,float *a,float *b,float *c)
 
  return;
 }
-
-/***************************************************************************
-FUNCTION NAME:  save_ddr -- make a LAS 6.0 ddr metadata file
 
-PARAMETERS: 	fname	 char *	  Name of file to create a ddr for
+/***************************************************************************
+FUNCTION NAME:  save_meta -- make a metadata file
+
+PARAMETERS: 	meta_parameters meta  Metadata structure pointer
+		fname	 char *	  Name of file to create a .meta for
 		nl, ns	 int	  Number of lines and samples in file
 		sl, ss   int	  Master file start line and sample (windowing)
 		pdx, pdy float	  Projection distance in x and y 
 		li	 int	  Line Increment
 DESCRIPTION:
-    This functions creates a LAS ddr structure and save it to a file. The
- purpose here is to retain the image metadata in a convenient fashion.  The
- ddr file is initialized with the size of the image (nl,ns), image data type,
- the coordinates of the window from the original image (sl,ss), and the size
- of the image pixels.
+    The purpose here is to retain the image metadata.
 
 SPECIAL CONSIDERATIONS:
-    Sets data type to REAL (4) which is not actually correct for cpx files.
+    Sets data type to REAL32 (float) which is not actually correct for cpx files.
 
 PROGRAM HISTORY:
   VERSION   DATE   AUTHOR       PURPOSE
@@ -228,32 +223,23 @@ PROGRAM HISTORY:
    1.1      6/95   T. Logan     Validate DDR fields that are valid
    1.2     10/95   M. Shindle   Now accepts data type as a parameter
    2.0      4/97   T. Logan     Copied from create_ddr
+   2.5      1/03   P. Denny     Changed to .meta format in effort to NUKE
+                                  the DDR
 ***************************************************************************/
-void save_ddr(const char *fname,int nl,int ns,int sl,int ss,
-	      double pdx,double pdy, int li)
+void save_meta(meta_parameters *meta, const char *fname,
+               int nl,int ns,int sl,int ss,
+               double pdx,double pdy, int li)
 {
-  struct DDR ddr;
-  int stati;
-  char system[40];
-
-  c_intddr(&ddr);
-  ddr.nl = (int) nl;
-  ddr.ns = (int) ns;
-  ddr.master_line = (int) sl;
-  ddr.master_sample = (int) ss;
-  ddr.pdist_x = (double) pdx;
-  ddr.pdist_y = (double) pdy;
-  ddr.nbands = 1;
-  ddr.dtype = 4;
-  ddr.line_inc = (int) li;
-  ddr.sample_inc = 1.0;
-  strcpy(ddr.proj_units,"METERS");
-  ddr.valid[4] = VALID;          /* Projection Units    */
-  ddr.valid[5] = VALID;          /* Projection Distance */
-  ddr.valid[7] = VALID;          /* Increment           */
-  strcpy(ddr.system,system);
-  stati = c_putddr(fname, &ddr);
-  if (stati!=E_SUCC) { printf("Error returned from putddr\n"); exit(1); }
+  meta->general->line_count = nl;
+  meta->general->sample_count = ns;
+  meta->general->start_line = sl;
+  meta->general->start_sample = ss;
+  meta->general->x_pixel_size = pdx;
+  meta->general->y_pixel_size = pdy;
+  meta->general->data_type = REAL32;
+  meta->sar->line_increment = (double) li;
+  meta->sar->sample_increment = 1.0;
+  meta_write(meta, fname);
 
   return;
 }
