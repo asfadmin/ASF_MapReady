@@ -259,9 +259,9 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       FILE *fpLut;
       double incid_table[MAX_tableRes];                  /* Incidence angle */
       double scale_table[MAX_tableRes];                   /* Scaling factor */
-      double incid[MAX_tableRes], old, new;
+      double incid[MAX_tableRes], old, new, min_incid=100.0, max_incid=0.0, tmpIncid;
       char line[255];
-      int nLut=0, n, tableRes=MAX_tableRes, tablePix=0, ll;
+      int nLut=0, n, tableRes=MAX_tableRes, tablePix=0, ll, min, max;
       int incid_is_increasing;
 
       /**** Read look up table ****/
@@ -272,10 +272,46 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       }
       while(fgets(line, 255, fpLut)) {
 	sscanf(line, "%lf\t%lf", &incid_table[nLut], &scale_table[nLut]);
-	incid_table[nLut] *= D2R;
 	nLut++;
       }
 
+      /* Calculate minimum and maximum incidence angle */
+      min_incid = meta_incid(meta, 0, 0);
+      min_incid *= R2D;
+      max_incid = meta_incid(meta, nl, ns);
+      max_incid *= R2D;
+      if (min_incid > max_incid) {
+	tmpIncid = min_incid;
+	min_incid = max_incid;
+	max_incid = tmpIncid;
+      }
+      
+      /* Look up the index for the minimum in the LUT */
+      n = 0;
+      old = 100000000;
+      for (ii=0; ii<nLut; ii++) {
+	new = min_incid - incid_table[ii];
+	if (fabs(new) < fabs(old)) {
+	  old = new;
+	  n++;
+	}
+	else break;
+      }
+      min = n;
+      
+      /* Look up the index for the maximum in the LUT */
+      n = 0;
+      old = 100000000;
+      for (ii=0; ii<nLut; ii++) {
+	new = max_incid - incid_table[ii];
+	if (fabs(new) < fabs(old)) {
+	  old = new;
+	  n++;
+	}
+	else break;
+      }
+      max = n;
+      
       /**** Read 16 bit data and apply look up table ****/
       if (ceos_data_type == INTEGER16) {
 
@@ -295,10 +331,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	    for (kk=0;kk<tableRes;kk++)
 	      incid[kk] = meta_incid(meta, kk*tablePix, ii);
 
-	  incid_is_increasing = incid[0] < incid[50];
-
 	  /* Calculate output values */
-	  n= incid_is_increasing ? 0 : nLut-1;
 	  for (kk=0; kk<ns; kk++) {
 	    if (short_buf[kk]) {
               double index=(double)kk/tablePix;
@@ -308,27 +341,15 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	      big16(short_buf[kk]);
 	      old = 10000000;
 
-	      if (incid_is_increasing) {
-		for (ll=n; ll<nLut; ll++) {
-		  new = interp - incid_table[ll];
-		  if (fabs(new) < fabs(old)) {
-		    old = new;
-		    n++;
-		  }
-		  else break;
+	      for (ll=min; ll<max; ll++) {
+		new = interp - incid_table[ll];
+		if (fabs(new) < fabs(old)) {
+		  old = new;
+		  n++;
 		}
-		out_buf[kk] = short_buf[kk] * scale_table[n];
-	      } else {
-		for (ll=n; ll>=0; ll--) {
-		  new = interp - incid_table[ll];
-		  if (fabs(new) < fabs(old)) {
-		    old = new;
-		    n--;
-		  }
-		  else break;
-		}
-		out_buf[kk] = short_buf[kk] * scale_table[n];
+		else break;
 	      }
+	      out_buf[kk] = short_buf[kk] * scale_table[n];
 	    }
 	    else
 	      out_buf[kk] = 0;
@@ -342,10 +363,10 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
       /**** Read 8 bit data and apply look up table ****/
       else if (ceos_data_type == BYTE) {
-
 	if (nl<1500) tableRes=128;
 	else if (nl<3000) tableRes=256;
 	tablePix=((ns+(tableRes-1))/tableRes);
+
 
         for (ii=0; ii<nl; ii++) {
 	  /* Read image line */
@@ -358,21 +379,18 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	    for (kk=0;kk<tableRes;kk++)
 	      incid[kk] = meta_incid(meta, ii, kk*tablePix);
 
-	  incid_is_increasing = incid[0] < incid[50];
-
 	  /* Calculate output values */
-	  n= incid_is_increasing ? 0 : nLut-1;
           for (kk=0; kk<ns; kk++) {
             if (byte_buf[kk]) {
               /* Interpolate incidence */
               double index=(double)kk/tablePix;
               int    base=(int)index;
               double frac=index-base;
-	      double interp= incid[base]+frac*(incid[base+1]-incid[base]);
+	      double interp= (incid[base]+frac*(incid[base+1]-incid[base]))*R2D;
 
 	      old = 10000000;
-	      if (incid_is_increasing) {
-		for (ll=n; ll<nLut; ll++) {
+	      n = min;
+	      for (ll=min; ll<=max; ll++) {
 		  new = interp - incid_table[ll];
 		  if (fabs(new) < fabs(old)) {
 		    old = new;
@@ -380,18 +398,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 		  }
 		  else break;
 		}
-		out_buf[kk] = byte_buf[kk] * scale_table[n];
-	      } else {
-		for (ll=n; ll>=0; ll--) {
-		  new = interp - incid_table[ll];
-		  if (fabs(new) < fabs(old)) {
-		    old = new;
-		    n--;
-		  }
-		  else break;
-		}
-		out_buf[kk] = byte_buf[kk] * scale_table[n];
-	      }
+	      out_buf[kk] = byte_buf[kk] * scale_table[n];
 	    }
 	    else
 	      out_buf[kk] = 0;
