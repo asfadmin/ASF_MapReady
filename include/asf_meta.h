@@ -376,6 +376,7 @@ void meta_write(meta_parameters *meta,const char *outName);
 
 /* in meta2ddr */
 void meta2ddr(meta_parameters *meta, struct DDR *ddr);
+void proj2meta(struct DDR *ddr, meta_parameters *meta);
 
 /*Initialize meta struct & stub structs to dummy values*/
 meta_general *meta_general_init(void);
