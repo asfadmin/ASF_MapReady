@@ -16,6 +16,12 @@ find_in_path(char * file)
   char *path, *buf, *name, *p;
   int len, pathlen;
 
+  /* first see if file is in current directory */
+  if (g_file_test(file, G_FILE_TEST_EXISTS))
+  {
+    return strdup(file);
+  }
+
   path = (char *)g_getenv("PATH");
 
   len = strlen(file) + 1;
@@ -47,8 +53,7 @@ find_in_path(char * file)
 
     if (g_file_test( start, G_FILE_TEST_EXISTS ))
     {
-      char * ret;
-      ret = strdup(start);
+      char * ret = strdup(start);
       free(buf);
       return ret; 
     }

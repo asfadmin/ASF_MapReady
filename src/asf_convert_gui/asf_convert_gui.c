@@ -64,13 +64,12 @@ on_execute_button_clicked (GtkWidget *button)
     output_format;
 
   gchar *format,
-    *in_meta,
-    *size_arg;
+    *in_meta;
 
   G_CONST_RETURN gchar *in_data,
     *out_full;
 
-  gchar convert_cmd[1024];
+  gchar convert_cmd[1024], size_arg[30];
 
   input_entry = 
     glade_xml_get_widget(glade_xml, "input_entry");
@@ -79,10 +78,9 @@ on_execute_button_clicked (GtkWidget *button)
     gtk_entry_get_text(GTK_ENTRY(input_entry));
 
   /* FIXME */
-  in_meta =
-    (char *)malloc(strlen(in_data) + 1);
-  strcpy(in_meta, in_data);
-  in_meta[strlen(in_data) - 1] = 'L';
+  in_meta = g_strdup(in_data);
+  if (strlen(in_meta) > 0)
+    in_meta[strlen(in_meta) - 1] = 'L';
 
   output_entry = 
     glade_xml_get_widget(glade_xml, "output_entry");
@@ -114,7 +112,7 @@ on_execute_button_clicked (GtkWidget *button)
   longest_dimension_spinbutton =
     glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
 
-  size_arg = "";
+  size_arg[0] = '\0';
   switch (output_format)
     {
     default:
@@ -122,14 +120,10 @@ on_execute_button_clicked (GtkWidget *button)
       format = "jpeg";
       if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(scale_checkbutton)))
 	{
-	  gint s;
 	  gdouble d = 
 	    gtk_spin_button_get_value(
 	       GTK_SPIN_BUTTON(longest_dimension_spinbutton));
-	  s = (int)floor(d+0.5);
-	  printf("%g %d\n", d, s);
-	  size_arg = (char *)malloc(30);
-	  sprintf(size_arg, "-size %ud", s);
+	  sprintf(size_arg, "-size %d", (int)floor(d + 0.5));
 	}
       break;
     case PPM:
@@ -147,15 +141,15 @@ on_execute_button_clicked (GtkWidget *button)
 	    in_meta,
 	    out_full);
 
-  printf("%s\n", convert_cmd);
-
   system(convert_cmd);
+
+  g_free(in_meta);
 }
 
 int
 main(int argc, char **argv)
 {
-    /* GtkWidget *widget; */
+    GtkWidget *widget;
 
     gtk_init(&argc, &argv);
 
@@ -164,8 +158,13 @@ main(int argc, char **argv)
 
     g_free(glade_xml_file);
 
-    /* get a widget (useful if you want to change something) */
-    /* widget = glade_xml_get_widget (xml, "widgetname"); */
+    /* select defaults for dropdowns */
+    widget = glade_xml_get_widget (glade_xml, "input_data_type_combobox");
+    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), 3);
+    widget = glade_xml_get_widget (glade_xml, "input_data_format_combobox");
+    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), 0);
+    widget = glade_xml_get_widget (glade_xml, "output_format_combobox");
+    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), 0);
 
     /* Connect signal handlers.  */
     glade_xml_signal_autoconnect (glade_xml);
