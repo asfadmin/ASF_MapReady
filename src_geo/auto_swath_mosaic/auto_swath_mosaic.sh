@@ -220,7 +220,7 @@ then
    then
       mv ${out_mosaic}.meta rs${out_mosaic}.meta
    fi
-   if [ -r ${i}.ddr ]
+   if [ -r ${out_mosaic}.ddr ]
    then
       mv ${out_mosaic}.ddr rs${out_mosaic}.ddr
    fi
