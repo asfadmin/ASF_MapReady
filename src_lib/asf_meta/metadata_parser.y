@@ -23,6 +23,9 @@ typedef struct block_stack_node_struct {
 /* Top of the push down stack.  */
 block_stack_node *stack_top;
 
+/* Global pointer to meta structure getting read in */
+meta_parameters *global_meta;
+
 static void block_stack_push(block_stack_node **stack_top_p, 
 			     const char *block_name, void *new_block)
 {
@@ -45,6 +48,9 @@ static void *block_stack_pop(block_stack_node **stack_top_p)
 /* Arrays of vectors are stored in the metadata structure, this keeps
    track of how many of them we have seen so far.  */
 static int vector_count;
+/* allocation routine for meta_state_vectors */
+meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
+
 
 char current_file[MAX_FILE_NAME];
 extern int line_number;		/* Line number of file being parsed.  */
@@ -52,20 +58,63 @@ extern int line_number;		/* Line number of file being parsed.  */
 /* Help parser handle errors.  */
 int yyerror(char *s)
 {
-  fprintf(stderr, "error parsing %s around line %d: %s\n", current_file,
-	  line_number, s);
-  if ( !strcmp(s, "parse error\n") ){
-    fprintf(stderr, "untrapped parse error, dying in yyerror\n");
+  if ( !strcmp(s, "parse error") ){
+    fprintf(stderr,
+            " ** Error parsing %s around line %d:\n"
+            " ** Untrapped parse error, dying in yyerror\n",
+            current_file, line_number);
     exit(EXIT_FAILURE);
   }
   return -1;			/* No error codes yet.  */
 }
 
+
 /* Allow parser to spit out warnings about metadata values.  */
-void warning_message(char *s)
+void warning_message(const char *warn_msg, ...)
 {
-  printf("Warning: In %s around line %d: %s\n", current_file, line_number, s);
+#define MAX_MESSAGE_LENGTH 4096
+  va_list ap;
+  char message_to_print[MAX_MESSAGE_LENGTH];
+  char temp1[MAX_MESSAGE_LENGTH];
+  char temp2[MAX_MESSAGE_LENGTH];
+  int ii;
+
+/* Format string for pretty terminal display */  
+  strncpy (message_to_print, warn_msg, MAX_MESSAGE_LENGTH);
+  message_to_print[MAX_MESSAGE_LENGTH-1] = '\0';
+  for (ii=0; ii<MAX_MESSAGE_LENGTH || message_to_print[ii]=='\0'; ii++) {
+    if (message_to_print[ii] == '\n') {
+      strncpy (temp1, message_to_print, ii);
+      temp1[ii] = '\0';
+      strncat(temp1, "\n **          ", ii+15);
+      strncpy(temp2, (message_to_print+ii+1), MAX_MESSAGE_LENGTH);
+      strncat(temp1, temp2, MAX_MESSAGE_LENGTH);
+      strncpy(message_to_print, temp1, MAX_MESSAGE_LENGTH);
+      ii += 14;
+    }
+  }
+
+/* Print warning with some diagnostics */
+  printf(" ** Warning: Parsing %s around line %d:\n"
+         " **          ", current_file, line_number);
+  va_start(ap, message_to_print);
+  vprintf(message_to_print, ap);
+  va_end(ap);
+  printf("\n");
 }
+
+/* Have parser choke on bad metadata values.  */
+void error_message(const char *err_mes, ...)
+{
+  va_list ap;
+  fprintf(stderr, " ** Error: Parsing %s around line %d: ", current_file, line_number);
+  va_start(ap, err_mes);
+  vfprintf(stderr, err_mes, ap);
+  va_end(ap);
+  fprintf(stderr, "\n");
+  exit(EXIT_FAILURE);
+}
+
 
 /* Casting shorthand macros for metadata structure subelements.  */
 #define MTL ( (meta_parameters *) current_block)
@@ -84,14 +133,17 @@ void select_current_block(char *block_name)
     { current_block = MTL->general; goto MATCHED; }
   if ( !strcmp(block_name, "sar") )
     { current_block = MTL->sar; goto MATCHED; }
-  if ( !strcmp(block_name, "state") )
-    { current_block = MTL->state_vectors; goto MATCHED; }
+  if ( !strcmp(block_name, "state") ) {
+    if (MTL->state_vectors == NULL) {
+      MTL->state_vectors = meta_state_vectors_init(vector_count);
+    }
+    current_block = MTL->state_vectors;
+    goto MATCHED;
+  }
   if ( !strcmp(block_name, "vector") ) { 
-    ( (meta_state_vectors *) current_block)->vecs 
-      = realloc(( (meta_state_vectors *) current_block)->vecs, 
-		(vector_count + 1) * sizeof(state_loc));
-    current_block = &( ((meta_state_vectors *) current_block)
-		       ->vecs[vector_count++]); 
+    global_meta->state_vectors = realloc( global_meta->state_vectors,
+                     sizeof(meta_state_vectors) + (vector_count+1)*sizeof(state_loc));
+    current_block = &( global_meta->state_vectors->vecs[vector_count++]); 
     goto MATCHED; 
   }
 
@@ -111,13 +163,8 @@ void select_current_block(char *block_name)
   if ( !strcmp(block_name, "utm") )
     { current_block = &((*( (param_t *) current_block)).utm); goto MATCHED; }
 
-  /* Got an unknown block name, so report a parse error.  */
-  { 
-    char err_string[MAX_ERROR_STRING + 1] = "unknown block name: ";
-    strncat(err_string, block_name, MAX_ERROR_STRING - strlen(err_string));
-    yyerror(err_string);
-    exit(EXIT_FAILURE);
-  }
+  /* Got an unknown block name, so report & choke.  */
+  error_message("unknown block name: %s", block_name);
 
 MATCHED: 
   block_stack_push(&stack_top, block_name, current_block);
@@ -152,17 +199,34 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "mode") ) {
       if ( strlen(VALP_AS_CHAR_POINTER) > MODE_FIELD_STRING_MAX - 1 ) {
 				          /* (-1 for trailing null)  */
-	yyerror("mode field string too long");
-	exit(EXIT_FAILURE);
-      }	
+	error_message("mode = '%s'; string should not exceed %d characters.",
+	              VALP_AS_CHAR_POINTER, MODE_FIELD_STRING_MAX-1);
+     }	
       strncpy(MGENERAL->mode, VALP_AS_CHAR_POINTER, MODE_FIELD_STRING_MAX); 
       return; 
     }
     if ( !strcmp(field_name, "processor") )
       { strcpy(MGENERAL->processor, VALP_AS_CHAR_POINTER); return; }
-    if ( !strcmp(field_name, "data_type") )
-      { strcpy(MGENERAL->data_type, VALP_AS_CHAR_POINTER); return; }
-    if ( !strcmp(field_name, "system") )
+    if ( !strcmp(field_name, "data_type") ) {
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "BYTE") )
+	MGENERAL->data_type = BYTE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTEGER16") )
+	MGENERAL->data_type = INTEGER16;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTEGER32") )
+	MGENERAL->data_type = INTEGER32;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "REAL32") )
+	MGENERAL->data_type = REAL32;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "REAL64") )
+	MGENERAL->data_type = REAL64;
+      else {
+        warning_message("Unrecognized data_type (%s).\n"
+                        "Legit values are: BYTE, INTEGER16,INTEGER32, REAL32, and REAL64.",
+                        VALP_AS_CHAR_POINTER);
+        MGENERAL->data_type = MAGIC_UNSET_INT;
+      }
+      return;
+   }
+   if ( !strcmp(field_name, "system") )
       { strcpy(MGENERAL->system, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "orbit") )
       { MGENERAL->orbit = VALP_AS_INT; return; }
@@ -176,11 +240,7 @@ void fill_structure_field(char *field_name, void *valp)
 	return; 
       }
       else {
-	char tmp[2], msg[256];
-	strncpy (tmp, VALP_AS_CHAR_POINTER, 1);
-	MGENERAL->orbit_direction = tmp[0];
-	sprintf(msg, "Bad value: orbit_direction = '%c'.",tmp[0]);
-	warning_message(msg);
+	warning_message("Bad value: orbit_direction = '%c'.",VALP_AS_CHAR_POINTER[0]);
 	return;
       }      
     }
@@ -217,7 +277,6 @@ void fill_structure_field(char *field_name, void *valp)
   /* Fields which normally go in the sar block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "sar") ) {
     if ( !strcmp(field_name, "image_type") ) { 
-       char tmp[2], msg[256];
        if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { 
 	MSAR->image_type = 'S'; 
 	return; 
@@ -230,24 +289,17 @@ void fill_structure_field(char *field_name, void *valp)
 	MSAR->image_type = 'P'; 
 	return; 
       }
-      strncpy (tmp, VALP_AS_CHAR_POINTER, 1);
-      MSAR->image_type = tmp[0];
-      sprintf(msg, "Bad value: image_type = '%c'.",tmp[0]);
-      warning_message(msg);
+      warning_message("Bad value: image_type = '%c'.",VALP_AS_CHAR_POINTER[0]);
       return;
     }
     if ( !strcmp(field_name, "look_direction") ) { 
-      char tmp[2], msg[256];
       if ( !strcmp(VALP_AS_CHAR_POINTER, "R") ) { 
 	MSAR->look_direction = 'R'; return; 
       }
       if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) { 
 	MSAR->look_direction = 'L'; return; 
       }
-      strncpy (tmp, VALP_AS_CHAR_POINTER, 1);
-      MSAR->look_direction = tmp[0];
-      sprintf(msg, "Bad value: look_direction = '%c'.",tmp[0]);
-      warning_message(msg);
+      warning_message("Bad value: look_direction = '%c'.",VALP_AS_CHAR_POINTER[0]);
       return;
     }
     if ( !strcmp(field_name, "look_count") )
@@ -303,8 +355,10 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "second") )
       { MSTATE->second = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "vector_count") ) 
-      { /* This field is allowed but ignored, we count the number of state
-	   vector blocks that we actually see.  */ 
+      { /* This field will be compared to the counted the number of
+         * state vector blocks that we actually see.  */
+	MSTATE->vector_count = VALP_AS_INT;
+	MSTATE->num = VALP_AS_INT; /* Compatability alias */
 	return;
       }
   }
@@ -337,8 +391,8 @@ void fill_structure_field(char *field_name, void *valp)
       if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) { MPROJ->type = 'P'; return; }
       if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) { MPROJ->type = 'L'; return; }
       if ( !strcmp(VALP_AS_CHAR_POINTER, "U") ) { MPROJ->type = 'U'; return; }
-      yyerror("bad type field in metadata file");
-      exit(EXIT_FAILURE);
+      warning_message("Bad value: type = '%c'.",VALP_AS_CHAR_POINTER[0]);
+      return;
     }
     if ( !strcmp(field_name, "startX") )
       { MPROJ->startX = VALP_AS_DOUBLE; return; }
@@ -398,15 +452,10 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).utm.zone = VALP_AS_INT; return; }
   }
 
-  /* Code for dealing with statistics blocks could be added here.  */
+  /* Code for dealing with statistics block(s) could be added here.  */
 
-  /* Got an unknown field name, so report a parse error.  */
-  { 
-    char err_string[MAX_ERROR_STRING + 1] = "unknown field name: ";
-    strncat(err_string, field_name, MAX_ERROR_STRING - strlen(err_string));
-    yyerror(err_string);
-    exit(EXIT_FAILURE);
-  }
+  /* Got an unknown field name, so report & choke */
+  error_message("Unknown field name: %s", field_name);
 }
 
 %}
@@ -448,6 +497,8 @@ field_value:   DOUBLE { double *tmp = (double *) malloc(sizeof(double));
 
 block:   block_start element_seq '}'
              { block_stack_pop(&stack_top); }
+       | block_start '}'
+             { block_stack_pop(&stack_top); }
        ;
 block_start:   NAME '{' 
                    { select_current_block($1); }
@@ -462,6 +513,8 @@ int parse_metadata(meta_parameters *dest, char *file_name)
 {
   extern FILE *meta_yyin;
   int ret_val;
+
+  global_meta = dest;
 
   /* Put file name in a global for error reporting.  */
   strncpy(current_file, file_name, MAX_FILE_NAME);
@@ -483,8 +536,13 @@ int parse_metadata(meta_parameters *dest, char *file_name)
   ret_val = yyparse();
 
   /* Fill in number of state vectors seen.  */
-  dest->state_vectors->vector_count = vector_count;
-  dest->state_vectors->num = vector_count; /* Backward compat alias.  */
-
+  if ((dest->state_vectors) && (dest->state_vectors->vector_count != vector_count)) {
+    warning_message("Said number of vectors in state vector block (%d)\n"
+                    "differs from the actual amount of vectors (%d)...\n"
+                    "Using actual number of vectors for vector_count.",
+		    dest->state_vectors->vector_count, vector_count);
+    dest->state_vectors->vector_count = vector_count;
+    dest->state_vectors->num = vector_count; /* Backward compat alias.  */
+  }
   return ret_val;
 }
