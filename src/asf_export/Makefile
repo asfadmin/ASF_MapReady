@@ -22,7 +22,7 @@ all: asf_export clean
 
 asf_export: $(OBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) -o asf_export  $(OBJS) $(LIBS) $(LDFLAGS)
-	mv asf_export$(BIN_POSTFIX) $(BINDIR)
+	cp asf_export$(BIN_POSTFIX) $(BINDIR)
 #	cp asf_export.1 ../../man/cat1
 
 clean:
