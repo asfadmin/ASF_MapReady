@@ -252,6 +252,7 @@ int main(int argc, char *argv[])
 	int bandNo;
 	struct DDR inDDR,outDDR;
 	struct DDR *asDDR=NULL;/*DDR to copy projection info & size from.*/
+	meta_parameters *meta;
 	FILE *in,*out=NULL;
 	mappingFunction map;
 	sampleFunction samp;
@@ -272,7 +273,6 @@ int main(int argc, char *argv[])
 	out=fopenImage(outfile,"r+b");/*Re-Open for append (this lets us read & write).*/
 /*	printf("Remap input image: '%s'.  Output image: '%s'.\n",infile,outfile);*/
 
-	StartWatch();
 	system("date");
 	printf("Program: remap\n\n");
 	logflag=0;
@@ -285,7 +285,8 @@ int main(int argc, char *argv[])
 	}
   
   /*Now we read in the input DDR.*/
-	c_getddr(infile,&inDDR);
+	meta = meta_read(infile);
+	meta2ddr(meta,&inDDR); /* keep the current DDR implementation happy - should be gone in a while */
   
   /*We now calculate the correct values for the output DDR.*/
   	if (asDDR!=NULL)
@@ -312,8 +313,13 @@ int main(int argc, char *argv[])
 	if (outPixelType)/*Set the output pixel type*/
 		outDDR.dtype=outPixelType;
 	
-   /*Now we write out the new DDR.*/
-  	c_putddr(outfile,&outDDR);
+   /*Now we write out the new DDR.
+  	c_putddr(outfile,&outDDR); */
+	/* Write a metadata file for output */
+	meta->general->line_count = outDDR.nl;
+	meta->general->sample_count = outDDR.ns;
+	proj2meta(outDDR,meta); /* temporary fix to populate the projection fields in the metadata file with DDR information */
+	meta_write(meta,outfile);
 	
 /*Now we just call Perform_mapping, which does the actual I/O and the remapping.*/
 	for (bandNo=0;bandNo<outDDR.nbands;bandNo++)
@@ -335,7 +341,6 @@ int main(int argc, char *argv[])
 		}
 	}
 /*	printf("Remap completed sucessfully!\n\n");*/
-	StopWatch();
 	if (logflag) StopWatchLog(fLog);
   
   	killMap(map);
