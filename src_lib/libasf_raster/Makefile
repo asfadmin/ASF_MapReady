@@ -24,6 +24,13 @@ build_only: $(OBJS)
 	ar r libasf_raster.a $(OBJS)
 	$(RANLIB) libasf_raster.a
 
+# This class is the source file corresponding to this target has lots
+# of tricky stuff, so I get some extra help from compiler warnings.
+float_image.o: CFLAGS := $(CFLAGS) -Werror -Wall -W -Wmissing-prototypes \
+                         -Wstrict-prototypes -Wshadow -Wpointer-arith \
+                         -Wcast-qual -Wcast-align -Wwrite-strings \
+                         -Wnested-externs -fno-common
+
 # Test program useful for verifying that the float_image class works
 # as expected.
 brighten_float_image: brighten_float_image.o
