@@ -12,6 +12,7 @@ SPECIAL CONSIDERATIONS:
 
 PROGRAM HISTORY:
   1.0 - O. Lawlor.  9/10/98.  CEOS Independance.
+  1.5 - P. Denny    08/02     Update to new metadate structs
 ****************************************************************/
 #include "asf.h"
 #include "asf_meta.h"
@@ -24,9 +25,9 @@ PROGRAM HISTORY:
 /************************************************************
  * meta_get_time:
  * Convert a line, sample pair to a time, slant-range pair.
- * These only use the geo_parameters structure, and only work 
- * for SR and GR images.  They apply the time and slant range 
- * correction fudge factors. Returns seconds and meters.*/
+ * These only work for SR and GR images.  They apply the time
+ * and slant range correction fudge factors. Returns seconds
+ * and meters.*/
 double meta_get_time(meta_parameters *meta,double yLine, double xSample)
 {
     /*Slant or ground range -- easy.*/
