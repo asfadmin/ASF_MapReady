@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
   iqType *iqBuf;
   esri_header *esri=NULL;
   envi_header *envi=NULL;
-  FILE *fpIn=NULL, *fpOut=NULL, *fp;;
+  FILE *fpIn=NULL, *fpOut=NULL, *fp;
   char in_type[25]="", out_type[25]="";
   char inDataName[256], inMetaName[256], outName[288], prcPath[255];
   char outBaseName[256], sprocketName[256];
