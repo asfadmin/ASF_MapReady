@@ -971,15 +971,9 @@ main (int argc, char **argv)
   else {
     omd->projection->hem = 'S';
   }
-  const double wgs84_semimajor_axis = WGS84_SEMIMAJOR;
-  const double wgs84_earth_flattening = 1.0 / WGS84_INV_FLATTENING;
-  double wgs84_eccentricity 
-    = 2 * wgs84_earth_flattening - pow (wgs84_earth_flattening, 2.0);
-  double wgs84_parameter_of_ellipse 
-    = wgs84_semimajor_axis * (1.0 - pow (wgs84_eccentricity, 2.0));
-  double wgs84_semiminor_axis 
-    = sqrt (wgs84_semimajor_axis * wgs84_parameter_of_ellipse);
-  omd->projection->re_major = wgs84_semimajor_axis;
+  const double wgs84_semiminor_axis 
+    = WGS84_SEMIMAJOR * (1 - (1 / WGS84_INV_FLATTENING));
+  omd->projection->re_major = WGS84_SEMIMAJOR;
   omd->projection->re_minor = wgs84_semiminor_axis;
   // We need to convert things in this structure back to degrees.
   to_degrees (projection_type, pp);
