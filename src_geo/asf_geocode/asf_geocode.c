@@ -61,6 +61,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     ---\n"\
 "          --zone                      : Zone\n"\
 "          --central-meridian          : Longitude of Central Meridian\n"\
+"          --latitude-of-origin        : Latitude at projection\"s origin\n"\
 "	  \n"\
 "	  Either the zone or center_longitude must be specified.\n"\
 "\n"\
@@ -77,7 +78,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     -----------------------\n"\
 "          --first-standard-parallel   : First Standard Parallel\n"\
 "          --second-standard-parallel  : Second Standard Parallel\n"\
-"          --latitude-of-origin        : Latitude at projections origin\n"\
+"          --latitude-of-origin        : Latitude at projection\"s origin\n"\
 "          --central-meridian          : Central Meridian\n"\
 "          --false-easting             : False Easting (optional)\n"\
 "          --false-northing            : False Northing (optional)\n"\
@@ -93,7 +94,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     -------------------------\n"\
 "          --first-standard-parallel   : First Standard Parallel\n"\
 "          --second-standard-parallel  : Second Standard Parallel\n"\
-"          --latitude-of-origin        : Latitude of projections origin\n"\
+"          --latitude-of-origin        : Latitude of projection\"s origin\n"\
 "          --central-meridian          : Central Meridian\n"\
 "          --false-easting             : False Easting (optional)\n"\
 "          --false-northing            : False Northing (optional)\n"\
