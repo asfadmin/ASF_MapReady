@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <limits.h>
 
+#include <cla.h>
 #include <envi.h>
 #include <esri.h>
 #include <geokeys.h>
@@ -32,11 +33,10 @@
 #include <asf_meta.h>
 
 static char *program_name = "export";
-static char *program_version = "0.1.0";
 
 /* Print invocation information.  */
-static void 
-my_usage (void)
+void 
+usage (char *program_name)
 {
   printf ("\nUsage:\n"
 	  "%s: [-f FORMAT] [-s size] [-o OUTPUT_FILE] INPUT_FILE\n", 
@@ -112,7 +112,7 @@ my_strnlen (const char *s, size_t max_len)
 /* Some forward declarations.  */
 void
 export_as_envi (const char *metadata_file_name,
-		const char *image_data_file_name,
+		const char *image_data_file_name, 
 		const char *output_file_name);
 
 void
@@ -124,6 +124,7 @@ void
 export_as_geotiff (const char *metadata_file_name,
 		   const char *image_data_file_name,
 		   const char *output_file_name);
+
 void
 export_as_jpeg (const char *metadata_file_name,
 		const char *image_data_file_name, const char *output_file_name,
@@ -141,26 +142,6 @@ main (int argc, char *argv[])
   /* Command line input goes in it's own structure.  */
   command_line_parameters_t command_line;
 
-  /* getopt() related variables.  */
-  int optc;
-  /* The --version flag is handled a bit differenty.  If we see it
-     getopt_long stops processing options and sets this flag, which we
-     must then check when we exit the getopt loop.  */
-  int version_flag = 0;
-  struct option long_options[] 
-    = {
-        /* Interesting options.  */
-        {"format", required_argument, NULL, 'f'},
-	{"size", required_argument, NULL, 's'},
-        {"output", required_argument, NULL, 'o'},
-
-	/* Standard options.  */
-	{"verbose", no_argument, NULL, 'v'},
-	{"version", no_argument, &version_flag, 1},
-	{"help", no_argument, NULL, '?'},
-	{0, 0, 0, 0}		/* Sentinel for end of option description.  */
-      };
-
   /* Defaults for options.  These should all be considered immutable
      after they are set here.  */
   char const_default_format[MAX_FORMAT_STRING_LENGTH + 1];
@@ -170,7 +151,6 @@ main (int argc, char *argv[])
   const long default_size = NO_MAXIMUM_OUTPUT_SIZE;
   /* By default, construct the output base name from the input base
      name.  */
-  const int default_verbosity = 0; /* Default is false.  */
 
   /* Options are initialized with their default values.  */
   my_strncpy (command_line.format, const_default_format,
@@ -180,92 +160,44 @@ main (int argc, char *argv[])
      processing, we will conclude that it needs to be formed from the
      input string.  */
   command_line.output_name[0] = '\0';
-  command_line.verbose = default_verbosity;
 
-  /* Parse command line.  */
-  while ( (optc = getopt_long (argc, argv, "f:s:o:v?", long_options, NULL)) 
-	  != EOF ) {
-    switch (optc) {
-    case 'f':
-      if ( (strcmp (optarg, "CEOS") == 0) 
-	   || (strcmp (optarg, "envi") == 0) 
-	   || (strcmp (optarg, "esri") == 0)
-	   || (strcmp (optarg, "geotiff") == 0)
-	   || (strcmp (optarg, "jpeg") == 0)
-	   || (strcmp (optarg, "ppm") == 0) ) {
-	my_strncpy (command_line.format, optarg, 
-		    (size_t) (MAX_FORMAT_STRING_LENGTH + 1));
-      } else {
-	fprintf (stderr, "%s: bad format (-f or --format argument): %s\n",
-		 program_name, optarg);
-	my_usage ();
+  const int num_args = 1;
+  while ( currArg < (argc - num_args) ) {
+    char *key = argv[currArg++];
+    if ( strmatch (key, "-f") ) {
+      CHECK_ARG (1);		/* One string argument: format string.  */
+      strcpy (command_line.format, GET_ARG (1));
+      if ( !((strcmp (command_line.format, "CEOS") == 0) 
+	     || (strcmp (command_line.format, "envi") == 0) 
+	     || (strcmp (command_line.format, "esri") == 0)
+	     || (strcmp (command_line.format, "geotiff") == 0)
+	     || (strcmp (command_line.format, "jpeg") == 0)
+	     || (strcmp (command_line.format, "ppm") == 0)) ) {
+	fprintf (stderr, "%s: bad format (-f argument): %s\n", program_name, 
+		 command_line.format);
+	usage (program_name);
 	exit (EXIT_FAILURE);
       }
-      break;
-    case 's':
-      {
-	char *endptr;
-	int base = 10;		/* Size is a base 10 integer.  */
-	command_line.size = strtol (optarg, &endptr, base);
-	for ( ; *endptr != '\0' ; endptr++ ) {
-	  if ( !isspace (*endptr) ) {
-	    fprintf (stderr, "%s: bad size (-s or --size argument): %s\n",
-		     program_name, optarg);
-	    my_usage ();
-	    exit (EXIT_FAILURE);
-	  }
+    }
+    else if ( strmatch (key, "-s") ) {
+      char *endptr;
+      int base = 10;		/* Size is a base 10 integer.  */
+      CHECK_ARG (1);
+      command_line.size = strtol (GET_ARG (1), &endptr, base);
+      for ( ; *endptr != '\0' ; endptr++ ) {
+	if ( !isspace (*endptr) ) {
+	  fprintf (stderr, "%s: bad size (-s argument): %s\n", program_name, 
+		   GET_ARG (1));
+	  usage (program_name);
+	  exit (EXIT_FAILURE);
 	}
       }
-      break;
-    case 'o':
-      /* Ensure file name isn't too long.  */
-      if ( my_strnlen(optarg, MAX_IMAGE_NAME_LENGTH + 1) 
-	   > MAX_IMAGE_NAME_LENGTH ) {
-        fprintf (stderr, 
-		 "%s: output file name (-o or --output argument) too long\n", 
-		 program_name);
-	exit (EXIT_FAILURE);
-      }
-      /* Open the file to be sure we can, and to create a file system
-         place holder for other programs to respect if they want to.  */
-      FILE *output_file = fopen (optarg, "w");
-      if ( output_file == NULL ) {
-	fprintf (stderr, "%s: couldn't open file %s for writing\n", 
-		 program_name, optarg);
-	exit (EXIT_FAILURE);
-      } else {
-	int return_code = fclose (output_file);
-	assert (return_code == 0);
-	strcpy (command_line.output_name, optarg);
-      }
-      break;
-    case 'v':
-      command_line.verbose = 1;	/* Set flag true.  */
-      break;
-    case '?':
-      my_usage ();
-      exit (EXIT_SUCCESS);	/* my_usage() was called deliberately.  */
-      break;
-    case 0:
-      /* In this case, we have had getopt_long use the alternate form
-         of long option processing and a flag has been set.  We only
-         do this for flags which cause option processing to stop.  */
-      break;
-    default:
-      my_usage ();
-      exit (EXIT_FAILURE);	/* my_usage() called due to user error.  */
-      break;
     }
-  }
-  /* If getopt_long() saw the --version flag, version_flag got set.  */
-  if ( version_flag ) {
-    printf(
-"%s version %s\n"
-"\n"
-"Copyright (C) 2004 Alaska Satellite Facility\n"
-           , program_name, program_version);
-    exit (EXIT_SUCCESS);
-  }
+    else if ( strmatch (key, "-o") ) {
+      CHECK_ARG (1);
+      strcpy (command_line.output_name, GET_ARG (1));
+    }
+  }		
 
   output_format_t format;
   if ( strcmp (command_line.format, "envi") == 0 ) {
@@ -292,17 +224,17 @@ main (int argc, char *argv[])
      correct names for both constituent parts will then be deduced
      automaticly.  We don't validate these much, since opening them is
      the first thing this program attempts.  */
-  if ( optind != argc - 1 ) {
+  if ( argc - currArg != num_args ) {
     fprintf (stderr, "%s: wrong number of arguments\n", program_name);
-    my_usage ();
+    usage (program_name);
     exit (EXIT_FAILURE);
   }
-  if ( my_strnlen (argv[optind], MAX_IMAGE_NAME_LENGTH + 1)
+  if ( my_strnlen (argv[currArg], MAX_IMAGE_NAME_LENGTH + 1)
        > MAX_IMAGE_NAME_LENGTH ) {
     fprintf (stderr, "%s: input image name argument too long\n", program_name);
     exit (EXIT_FAILURE);
   }
-  my_strncpy (command_line.input_name, argv[optind], 
+  my_strncpy (command_line.input_name, argv[currArg], 
 	      MAX_IMAGE_NAME_LENGTH + 1);
 
   /* Construct the actual file names from the names the user supplied.  */
