@@ -3,14 +3,19 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(LIBDIR)/asf_lt.a \
+LIBS  = $(LIBDIR)/asf_lt.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	-lm
 
-OBJS = geoLatLon.o geocode.o \
-	proj_pix.o proj_win.o proj_prm.o proj.o proj_grid.o projectGeo.o
+OBJS  = geoLatLon.o \
+	geocode.o \
+	proj.o \
+	proj_grid.o \
+	proj_prm.o \
+	proj_win.o \
+	projectGeo.o
 
 all: geocode
 	-rm *.o
