@@ -40,7 +40,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
     return pps;
 }
 
-static int calc_utm_zone(double lon)
+int calc_utm_zone(double lon)
 {
     return((int)(((lon + 180.0) / 6.0) + 1.0));
 }

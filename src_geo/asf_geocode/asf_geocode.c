@@ -218,9 +218,14 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include <asf_reporting.h>
 #include "float_image.h"
 #include <libasf_proj.h>
+#include <spheroids.h>
 
 // Headers used by this program.
 #include "geocode_options.h"
+
+// Prototype
+void check_parameters(projection_type_t projection_type, project_parameters_t *pp,
+                      meta_parameters *meta);
 
 // Print invocation information.  */
 static void
@@ -540,6 +545,9 @@ main (int argc, char **argv)
 
   // Set items in the projection parameters not on command-line
   apply_defaults (projection_type, pp, imd, &average_height, &pixel_size);
+
+  // Check whether projection parameters are valid
+  check_parameters (projection_type, pp, imd);
 
   // Convert all angle measures in the project_parameters to radians.
   to_radians (projection_type, pp);
@@ -960,8 +968,8 @@ main (int argc, char **argv)
   else {
     omd->projection->hem = 'S';
   }
-  const double wgs84_semimajor_axis = 6378137.0;
-  const double wgs84_earth_flattening = 1.0 / 298.257223563;
+  const double wgs84_semimajor_axis = WGS84_SEMIMAJOR;
+  const double wgs84_earth_flattening = 1.0 / WGS84_INV_FLATTENING;
   double wgs84_eccentricity 
     = 2 * wgs84_earth_flattening - pow (wgs84_earth_flattening, 2.0);
   double wgs84_parameter_of_ellipse 

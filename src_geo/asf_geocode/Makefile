@@ -12,7 +12,7 @@ include ../../make_support/system_rules
 #
 ###############################################################################
 
-SOURCES := geocode_options.c parse_options.c asf_geocode.c
+SOURCES := geocode_options.c parse_options.c check_parameters.c asf_geocode.c
 
 ###############################################################################
 #
@@ -46,9 +46,9 @@ CPPFLAGS := $(INCLUDE_FLAGS)
 # take type float (still get a complaint about argument being passed
 # as float due to prototype rather than double.
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
-CFLAGS := $(CFLAGS) -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
-          -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
-          -Wwrite-strings -Wnested-externs -fno-common -g -O4
+#CFLAGS := $(CFLAGS) -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
+#          -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
+#          -Wwrite-strings -Wnested-externs -fno-common -g -O4
 
 LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
