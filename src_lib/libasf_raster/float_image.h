@@ -4,6 +4,13 @@
 // accessed and written efficiently, provided subsequent accesses are
 // spatially correlated.  A variety of useful methods are implemented
 // (filtering, subsetting, interpolating, etc.)
+//
+// For many methods, arguments of type ssize_t are used, but are not
+// allowed to be negative.  This is to help prevent people from
+// shooting themselves in the foor by accidently passing negative
+// values which don't yield warnings and can't be caught with
+// assertions.
+
 
 #ifndef FLOAT_IMAGE_H
 #define FLOAT_IMAGE_H
@@ -41,17 +48,17 @@ typedef struct {
 
 // Create a new image filled with zero pixel values.
 FloatImage *
-float_image_new (size_t size_x, size_t size_y);
+float_image_new (ssize_t size_x, ssize_t size_y);
 
 // Create a new image with pixels initialized to value.
 FloatImage *
-float_image_new_with_value (size_t size_x, size_t size_y, float value);
+float_image_new_with_value (ssize_t size_x, ssize_t size_y, float value);
 
 // Create a new image from memory.  This pixels are assumed to be
 // layed out in memory in the usual way, i.e. contiguous rows of
 // pixels in the x direction are contiguous in memory.
 FloatImage *
-float_image_new_from_memory (size_t size_x, size_t size_y, float *buffer);
+float_image_new_from_memory (ssize_t size_x, ssize_t size_y, float *buffer);
 
 // Type used to specify whether disk files should be in big or little
 // endian byte order.
@@ -65,8 +72,29 @@ typedef enum {
 // float_image_new_from_memory method.  The byte order of individual
 // pixels in the file should be byte_order.
 FloatImage *
-float_image_new_from_file (size_t size_x, size_t size_y, const char *file,
+float_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
 			   off_t offset, float_image_byte_order_t byte_order);
+
+// The method is like new_from_file, but takes a file pointer instead
+// of a file name, and the offset argument is with respect to the
+// current position in the file_pointer stream.
+FloatImage *
+float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y, 
+				   FILE *file_pointer, off_t offset,
+				   float_image_byte_order_t byte_order);
+
+// Form a reduced resolution version of the original_size_x by
+// original_size_y image in file.  The new image will be size_x by
+// size_y pixels.  This method is like new_from_file method, but gets
+// its data by sampling in each dimension using bilinear
+// interpolation.  This is a good way of forming quick thumbnails of
+// images.
+FloatImage *
+float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y, 
+				  ssize_t original_size_x, 
+				  ssize_t original_size_y,
+				  const char *file, off_t offset, 
+				  float_image_byte_order_t byte_order);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -209,7 +237,7 @@ float_image_store (FloatImage *self, const char *file,
 // values inside two standard deviations of the mean pixel value are
 // mapped linearly into this range; image pixel values outside two
 // standard are clamped at the appropriate limit.  If all image pixels
-// have the same value, the output if is made black if the pixels have
+// have the same value, the output is made black if the pixels have
 // value 0.0, and white otherwise.  This routine slurps the whole
 // image into memory, so beware.  Returns 0 on success, nonzero on
 // error.
