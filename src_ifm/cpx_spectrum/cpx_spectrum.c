@@ -13,7 +13,7 @@ DESCRIPTION:
 
   This program is used to generate an azimuthal spectrum of
   a complex  SAR image  product.   Its  main use is for bandpass filtering
-  of complex image data (see cpx_autofilter) .It takes a processed complex
+  of complex image data (see cpx_autofilter). It takes a processed complex
   image and calculates an average azimuthal spectrum over all the range
   samples.  It uses a simple one-dimensional FFT to calculate the
   spectrum and outputs the frequency, amplitude, and phase an ASCII
@@ -46,7 +46,10 @@ FILE REFERENCES:
 PROGRAM HISTORY:
     VERS:   DATE:  AUTHOR:      PURPOSE:
     ---------------------------------------------------------------
-    1.0	   5-2000  M. Ayers
+    1.0	    5/00   M. Ayers
+    1.5     6/03   P. Denny     Standardize usage()
+                                  Use meta struct instead of DDR
+                                  Use get_*_lines instead of FREAD
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -92,162 +95,131 @@ BUGS:
 #include <math.h>
 #include "asf.h"
 #include "aisp_defs.h"
-#include "ddr.h"
 #include "asf_meta.h"
 
-#define fftLen 2048
+#define FFT_LEN 2048
 #define VERSION 1.10
 
-main(int argc,char **argv)
+int main(int argc,char **argv)
 {
-	
-/* Define all the variables that we'll be using */
-	
-	int lines,samps,start_line;			/* Number of image lines, samples*/
-	int x,y,i;					/* Counters and the filter frequency indicies */
-	struct DDR inDDR;				/* DDR structures to figure out info about the images */
-	char *infile, *outfile;				/* Input filename */
-	char *metafile;
-	FCMPLX *inBuf;					/* Input/Output Image Buffers */
-	FCMPLX *fftBuf;					/* FFT Buffer for the image */
-	float *ampBuf,*phsBuf;				/* Amplitude and Phase Buffers */
-	float df, freq[fftLen], f_s;				/* Frequency Vector */
-	FILE *inF,*outF1;				/* Input and Output file pointers */
-	meta_parameters *meta;				/* Meta-file data pointer */
+  int lines,samps,start_line;   /* Number of image lines and samples          */
+  int x,y,ii;                   /* Counters and the filter frequency indicies */
+  char *inName, *outName;       /* Input filename                             */
+  char metaName[256];           /* Name of meta file                          */
+  complexFloat *inBuf;          /* Input/Output Image Buffers                 */
+  complexFloat *fftBuf;         /* FFT Buffer for the image                   */
+  float *ampBuf,*phsBuf;        /* Amplitude and Phase Buffers                */
+  float df, freq[FFT_LEN], f_s; /* Frequency Vector                           */
+  FILE *inF,*outF1;             /* Input and Output file pointers             */
+  meta_parameters *meta;        /* Meta-file data pointer                     */
 
-/* Usage is shown if the user doesn't give input and output arguements */
-	if(argc!=4)
-	{
-	  printf("\nUsage:\n");
-	  printf("%s <cpx img_in> <azimuthal spectrum file>"
-	         " <start_line>\n\n",argv[0]);
-	printf( "	     <cpx img_in>     Input Complex Image\n"
-		"<azimuthal spectrum file>     ASCII file containing the spectrum\n"
-		"	     <start_line>     Line to begin processing at.\n");
-	  printf("\ncpx_spectrum - An Azimuthal Spectrum Calculator for Complex Images\n");
-	  printf("Version %.2f, ASF SAR TOOLS\n\n",VERSION);
-	  exit(0);	
-	}
+/* Usage is shown if the user doesn't give correct number of arguments */
+  if(argc!=4) { usage(argv[0]); }
 
-	StartWatch();
-	
+  StartWatch();
 
 /* Get the filename and filter start and end frequencies from the command line */ 
-	infile=argv[1];
-	outfile=argv[2];
-	sscanf(argv[3],"%d",&start_line);
-	metafile=appendExt(infile,".meta");	
+  inName  = argv[1];
+  outName = argv[2];
+  start_line = atoi(argv[3]);
+  create_name(metaName, inName, ".meta");
 
-/* Get the number of lines and samples from the input DDR */
-	c_getddr(infile,&inDDR);
-	lines=fftLen;
-	samps=inDDR.ns;
-
-/* Get the PRF from the meta-file */
-	meta=meta_init(metafile);
-	f_s=1/(meta->geo->azPixTime);
-	printf("Sampling Frequency is %f\n",f_s);
+/* Get the PRF and number of samples from the meta-file */
+  meta = meta_read(metaName);
+  lines = FFT_LEN;
+  samps = meta->general->sample_count;
+  f_s   = 1/(meta->sar->azimuth_time_per_pixel);
+  printf("Sampling Frequency is %f\n",f_s);
 
 /* Compute the FFT length based on the number of lines. Must be a power of 2 */
-
-	printf("FFT Length is %d\n",fftLen);
-	cfft1d(fftLen,NULL,0);
-
-	printf("Allocating Memory\n");
+  printf("FFT Length is %d\n",FFT_LEN);
+  cfft1d(FFT_LEN,NULL,0);
 
 /* Allocate the memory for all the buffers */
-          
-        inBuf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*samps*fftLen);
-	fftBuf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*fftLen);
+  inBuf  = (complexFloat *)MALLOC(sizeof(complexFloat)*samps*FFT_LEN);
+  fftBuf = (complexFloat *)MALLOC(sizeof(complexFloat)*FFT_LEN);
+  ampBuf = (float *)MALLOC(sizeof(float)*FFT_LEN);
+  phsBuf = (float *)MALLOC(sizeof(float)*FFT_LEN);
 
-	ampBuf=(float *)MALLOC(sizeof(float)*fftLen);
-        phsBuf=(float *)MALLOC(sizeof(float)*fftLen);
-	
-
-	df=f_s/fftLen;
-	for(i=0;i<fftLen;i++)
-		freq[i]=df*i;
+  df = f_s/FFT_LEN;
+  for(ii=0; ii<FFT_LEN; ii++)   freq[ii] = df*ii;
 
 /* Open the Complex Image File */
-	
-	if((inF=FOPEN(infile,"rb"))==NULL)
-	{	
-		printf("Complex Image file %s could not be opened\n",infile);
-		exit(0);
-	}
-	
-        strcat(outfile,".spectra"); 
+  if((inF=FOPEN(inName,"rb"))==NULL) {	
+    printf("Complex Image file %s could not be opened\n",inName);
+    exit(EXIT_FAILURE);
+  }
 
-	if((outF1=FOPEN(outfile,"w"))==NULL)
-        {
-                printf("Unable to write output %s\n",outfile);
-                exit(0);
-        }
-	
-                
 /* Zero out all the arrays and begin processing data */
-
-	for(i=0;i<fftLen;i++)
-	{
-		ampBuf[i]=0;
-		phsBuf[i]=0;
-	}
-	
+  for(ii=0; ii<FFT_LEN; ii++) {
+    ampBuf[ii]=0;
+    phsBuf[ii]=0;
+  }
 
 /* Read in the data chunk */
-	printf("Reading Data Starting at Line %d\n",start_line);
-	fseek(inF,sizeof(FCMPLX)*samps*start_line,SEEK_SET);
-	fread(inBuf,sizeof(FCMPLX)*samps*fftLen,1,inF);
+  printf("Reading Data Starting at Line %d\n",start_line);
+  get_complexFloat_lines(inF, meta, start_line, FFT_LEN, inBuf);
 
 /* Process the each column, take the average at the end */
-	
-	printf("Performing the FFT\n");
-	for(x=0;x<samps;x++) 
-	{
-		if(x%500 == 0)  printf("Processing Column %d\n",x);
+  printf("Performing the FFT\n");
+  for(x=0; x<samps; x++) {
+    if(x%500 == 0)  printf("Processing Column %d\n",x);
 
-		for(y=0;y<fftLen;y++)
-		{
-			fftBuf[y].r=0;
-			fftBuf[y].i=0;
-		}
-		
-		for(y=0;y<lines;y++)
-		{
-			fftBuf[y].r=inBuf[y*samps+x].r;
-			fftBuf[y].i=inBuf[y*samps+x].i;
-		}
+    for(y=0; y<FFT_LEN; y++) {
+      fftBuf[y].real=0;
+      fftBuf[y].imag=0;
+    }
 
-		cfft1d(fftLen,fftBuf,-1);
+    for(y=0; y<lines; y++) {
+      fftBuf[y].real=inBuf[y*samps+x].real;
+      fftBuf[y].imag=inBuf[y*samps+x].imag;
+    }
 
-		for (i=0;i<fftLen;i++) 
-		{
-			ampBuf[i]+=sqrt(fftBuf[i].r*fftBuf[i].r+fftBuf[i].i*fftBuf[i].i);	
+    cfft1d(FFT_LEN,fftBuf,-1);
 
-			if(fftBuf[i].i!=0.0 || fftBuf[i].r!=0.0)
-				phsBuf[i]+=atan2(fftBuf[i].i,fftBuf[i].r);
-			else
-				phsBuf[i]+=0;
+    for (ii=0; ii<FFT_LEN; ii++) {
+      ampBuf[ii] += sqrt(fftBuf[ii].real*fftBuf[ii].real
+                         + fftBuf[ii].imag*fftBuf[ii].imag);	
+      if(fftBuf[ii].imag!=0.0 || fftBuf[ii].real!=0.0)
+        phsBuf[ii] += atan2(fftBuf[ii].imag, fftBuf[ii].real);
+    }
+  }
+  printf("Finished the FFT\n");
 
-		}
-		
-		
-	}
-	
-	printf("Finished the FFT\n");
-	
+/* Open and write output file */
+  strcat(outName,".spectra"); 
+  if((outF1=FOPEN(outName,"w"))==NULL) {
+    printf("Unable to write output %s\n",outName);
+    exit(EXIT_FAILURE);
+  }
+  for (ii=0; ii<FFT_LEN; ii++) {
+    ampBuf[ii] /= samps;
+    phsBuf[ii] /= samps;
+    fprintf(outF1,"%f %f %f\n",freq[ii],ampBuf[ii],phsBuf[ii]);
+  }
 
-	for (i=0;i<fftLen;i++)
-	{
-		ampBuf[i]/=samps;
-		phsBuf[i]/=samps;
-		fprintf(outF1,"%f %f %f\n",freq[i],ampBuf[i],phsBuf[i]);
-		
-	}
-
-
-	FCLOSE(outF1);
-	StopWatch();
-	return 0;
+/* Close up & leave */
+  meta_free(meta);
+  FCLOSE(outF1);
+  StopWatch();
+  return 0;
 }
 
+void usage (char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+ 	"   %s <in_cpx> <az_specs> <start_line>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <in_cpx>      Input Complex Image\n"
+	"   <az_specs>    ASCII file containing the azimuthal spectrum\n"
+	"   <start_line>  Line to begin processing at.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   An Azimuthal Spectrum Calculator for Complex Images\n");
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);	
+}
