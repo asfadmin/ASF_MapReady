@@ -17,40 +17,50 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 */
 
 #define ASF_NAME_STRING \
-"asf_convert"
+"   asf_convert"
 
 #define ASF_USAGE_STRING \
 "[-format <output_format>] [-size <output_size>] [-log <logFile>]\n"\
-"            [-quiet] [-help] <inBaseName> <outBaseName>\n"
+"               [-quiet] [-help] <inBaseName> <outBaseName>"
 
 #define ASF_DESCRIPTION_STRING \
-"This program ingests level one CEOS data, geocodes and resamples them (both optional) and exports them to a variety of output formats."
+"   This program ingests level one CEOS data and exports it to a variety of\n"\
+"   output formats."
 
 #define ASF_INPUT_STRING \
-"This needs to be a CEOS data/metadata set."
+"   inBaseName\n"\
+"        A CEOS data/metadata set."
 
 #define ASF_OUTPUT_STRING \
-"The imported CEOS data converted to the specified format (or geotiff if none was specified)."
+"   outBaseName\n"\
+"        The CEOS data in the specified format (If no format is specified,\n"\
+"        it will default to geotiff)."
 
 #define ASF_OPTIONS_STRING \
-"-help             Displays the documentation for this tool\n"\
-"-format <format>  Specifies the output format. Must be one of the following:\n"\
-"                     jpeg, geotiff. Default behavior is geotiff.\n"\
-"-log              Allows setting the location of the log file. Default\n"\
-"                     behavior is to log to tmp<pid>.log\n"\
-"-quiet            Suppresses all non-essential output to stdout"
+"   -help\n"\
+"        Displays the documentation for this tool\n"\
+"   -format <format>\n"\
+"        Specifies the output format. Must be one of the following:\n"\
+"        jpeg, tiff, or geotiff. (Default is geotiff).\n"\
+"   -log <logFile>\n"\
+"        Set the name and location of the log file. Default behavior is to\n"\
+"        log to tmp<processIDnumber>.log\n"\
+"   -quiet\n"\
+"        Suppresses all non-essential output to stdout"
 
 #define ASF_EXAMPLES_STRING \
-"To convert the CEOS format file1 to the default format (geotiff) file2.tif\n"\
-"   asf_convert file1 file2\n"\
-"To convert the CEOS format file1 to a jpeg format in file2.jpg\n"\
-"   asf_convert -format jpeg file1 file2"
+"   To convert CEOS format file1 to geotiff format file2.tif (this is the\n"\
+"   default behavior), do this:\n"\
+"      example> asf_convert file1 file2\n"\
+"\n"\
+"   To convert the CEOS format file1 to a jpeg format in file2.jpg\n"\
+"      example> asf_convert -format jpeg file1 file2"
 
 #define ASF_LIMITATIONS_STRING \
-"None known."
+"   None known."
 
 #define ASF_SEE_ALSO_STRING \
-"asf_import, asf_export"
+"   asf_import, asf_export"
 
 #define ASF_COPYRIGHT_STRING \
 "Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks\n"\
@@ -101,7 +111,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "    0.5     06/04   R. Gens   Renamed to asf_convert, added alternative\n"\
 "                              command line"
 
-#define ASF_VERSION_MAJOR_STRING "0.30"
+#define ASF_VERSION_MAJOR_STRING \
+"   0.30"
+
 #define VERSION 0.3
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
@@ -158,8 +170,8 @@ void help_page()
           "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
           "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
           "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
-          "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
-          "Version: " ASF_VERSION_MAJOR_STRING "\n\n\n");
+          "Version:\n" ASF_VERSION_MAJOR_STRING "\n\n\n"
+          "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n");
 
   /* If we can, use less */
   sprintf(command,"echo '%s' | less",happy_string);
@@ -235,11 +247,10 @@ int main(int argc, char *argv[])
   char proj[25], line[255], fileName[255], batchConfig[255];
   char format_in[255], format_out[255];
   char out_file[255], data_file[255], meta_file[255];
-/*  int inFlag = FALSE, outFlag = FALSE, formatFlag = FALSE, configFlag = FALSE, configInitFlag = FALSE;*/
-  int formatFlag, sizeFlag, configFlag, configInitFlag, quietFlag;
+  int flags[NUM_FLAGS];
   int size_out;
-  file_format_t type_in, type_out;
   int found;
+  file_format_t type_in, type_out;
 
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
   /*Super-secret hidden options :)*/
@@ -253,34 +264,38 @@ int main(int argc, char *argv[])
   if(checkForOption("-help", argc, argv) != -1 ||
     checkForOption("--help", argc, argv) != -1)
     help_page();
-  formatFlag = checkForOption("-format", argc, argv);
-  sizeFlag = checkForOption("-size", argc, argv);
-  configFlag = checkForOption("-config", argc, argv);
-  configInitFlag = checkForOption("-init_config", argc, argv);
-  logflag = checkForOption("-log", argc, argv);
-  quietFlag = checkForOption("-quiet", argc, argv);
+  flags[f_FORMAT] = checkForOption("-format", argc, argv);
+  flags[f_SIZE] = checkForOption("-size", argc, argv);
+  flags[f_CONFIG] = checkForOption("-config", argc, argv);
+  flags[f_CONFIG_INIT] = checkForOption("-init_config", argc, argv);
+  flags[f_LOG] = checkForOption("-log", argc, argv);
+  flags[f_QUIET] = checkForOption("-quiet", argc, argv);
 
+  /* Set the old school quietflag accoringly (for library use) */
+  quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
+  /* old school logflag must be FALSE until we've opened the log file */
+  logflag = FALSE;
 
-  if(configFlag != FLAG_NOT_SET && configInitFlag != FLAG_NOT_SET)/*One or the other is fine, but not both*/
+  if(flags[f_CONFIG] != FLAG_NOT_SET && flags[f_CONFIG_INIT] != FLAG_NOT_SET)/*One or the other is fine, but not both*/
     usage();/*This exits with a failure*/
-  if((configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET) && /*These...*/
-    (formatFlag != FLAG_NOT_SET || sizeFlag != FLAG_NOT_SET))/*...are mutually exclusive with these*/
+  if((flags[f_CONFIG] != FLAG_NOT_SET || flags[f_CONFIG_INIT] != FLAG_NOT_SET) && /*These...*/
+    (flags[f_FORMAT] != FLAG_NOT_SET || flags[f_SIZE] != FLAG_NOT_SET))/*...are mutually exclusive with these*/
     usage();/*This exits with a failure*/
   {
     /*So, at this point, we know our options don't conflict...now we need
     to know how many arguments we ought to have.*/
     int neededArgs = 1;/*command*/
-    if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
+    if(flags[f_CONFIG] != FLAG_NOT_SET || flags[f_CONFIG_INIT] != FLAG_NOT_SET)
       neededArgs += 2;/*option & parameter*/
     else
       neededArgs += 2;/*in_data_file, in_meta_file (no longer!), out_file*/
-    if(logflag != FLAG_NOT_SET)
+    if(flags[f_LOG] != FLAG_NOT_SET)
       neededArgs += 2;/*option & parameter*/
-    if(formatFlag != FLAG_NOT_SET)
+    if(flags[f_FORMAT] != FLAG_NOT_SET)
       neededArgs += 2;/*option & parameter*/
-    if(sizeFlag != FLAG_NOT_SET)
+    if(flags[f_SIZE] != FLAG_NOT_SET)
       neededArgs += 2;/*option & parameter*/
-    if(quietFlag != FLAG_NOT_SET)
+    if(flags[f_QUIET] != FLAG_NOT_SET)
       neededArgs += 1;/*option*/
 
     /*make sure we've got enough arguments*/
@@ -289,7 +304,7 @@ int main(int argc, char *argv[])
   }
 
   /*We also need to make sure the last three options are close to what we expect*/
-  if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
+  if(flags[f_CONFIG] != FLAG_NOT_SET || flags[f_CONFIG_INIT] != FLAG_NOT_SET)
   {
     if(argv[argc - 1][0] == '-')
       usage();
@@ -304,50 +319,47 @@ int main(int argc, char *argv[])
   That is, -option <parameter> -option <parameter> and so on...if an option requires
   a parameter, we need to make sure it's followed by a parameter! Also make sure
   an option's parameters don't bleed into the command's required arguments*/
-  if(logflag != FLAG_NOT_SET)
+  if(flags[f_LOG] != FLAG_NOT_SET)
   {
-    if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET) {
-      if(argv[logflag + 1][0] == '-' || logflag >= argc - 3)
+    if(flags[f_CONFIG] != FLAG_NOT_SET || flags[f_CONFIG_INIT] != FLAG_NOT_SET) {
+      if(argv[flags[f_LOG] + 1][0] == '-' || flags[f_LOG] >= argc - 3)
         usage();
     }
     else {
-      if(argv[logflag + 1][0] == '-' || logflag >= argc - 3)
+      if(argv[flags[f_LOG] + 1][0] == '-' || flags[f_LOG] >= argc - 3)
         usage();/*This exits with a failure*/
     }
   }
-
-  /* We must be good enough at this point... log & quiet flags set *
-  asfSplashScreen(argc, argv);*display splash screen if not quiet*/
-
-  if(formatFlag != FLAG_NOT_SET)
-    if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3)
-      usage();/*This exits with a failure*/
-  if(sizeFlag != FLAG_NOT_SET)
-    if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
-      usage();/*This exits with a failure*/
-
-  if(formatFlag != FLAG_NOT_SET)
-    strcpy(format_out, argv[formatFlag + 1]);
-  else
-    strcpy(format_out, "geotiff");/*default behavior is geotiff*/
-  str2upper(format_out);//convert to upper case
-  if(sizeFlag != FLAG_NOT_SET)
-    size_out = atol(argv[sizeFlag + 1]);
-  if(logflag != FLAG_NOT_SET)
-    strcpy(logFile, argv[logflag + 1]);
+  if(flags[f_LOG] != FLAG_NOT_SET)
+    strcpy(logFile, argv[flags[f_LOG] + 1]);
   else
     sprintf(logFile, "tmp%i.log", (int)getpid());/*default behavior: log to tmp<pid>.log*/
 
-  if(configFlag != FLAG_NOT_SET)
-    strcpy(configFile, argv[configFlag + 1]);
+  if(flags[f_FORMAT] != FLAG_NOT_SET)
+    if(argv[flags[f_FORMAT] + 1][0] == '-' || flags[f_FORMAT] >= argc - 3)
+      usage();/*This exits with a failure*/
+  if(flags[f_SIZE] != FLAG_NOT_SET)
+    if(argv[flags[f_SIZE] + 1][0] == '-' || flags[f_SIZE] >= argc - 3)
+      usage();/*This exits with a failure*/
+
+  if(flags[f_FORMAT] != FLAG_NOT_SET)
+    strcpy(format_out, argv[flags[f_FORMAT] + 1]);
+  else
+    strcpy(format_out, "geotiff");/*default behavior is geotiff*/
+  str2upper(format_out);
+  if(flags[f_SIZE] != FLAG_NOT_SET)
+    size_out = atol(argv[flags[f_SIZE] + 1]);
+
+  if(flags[f_CONFIG] != FLAG_NOT_SET)
+    strcpy(configFile, argv[flags[f_CONFIG] + 1]);
   else
     sprintf(configFile, "tmp%i.config", (int)getpid());/*default behavior: config to tmp<pid>.config*/
 
-  if(configInitFlag != FLAG_NOT_SET)
-    strcpy(configFile, argv[configInitFlag + 1]);
+  if(flags[f_CONFIG_INIT] != FLAG_NOT_SET)
+    strcpy(configFile, argv[flags[f_CONFIG_INIT] + 1]);
 
   /*Get files from command line if we're not doing a config file*/
-  if(configFlag == FLAG_NOT_SET && configInitFlag == FLAG_NOT_SET)
+  if(flags[f_CONFIG] == FLAG_NOT_SET && flags[f_CONFIG_INIT] == FLAG_NOT_SET)
   {
     strcpy(data_file, argv[argc - 2]);/*The first of the last two arguments*/
     /*strcpy(meta_file, argv[argc - 2]);*/ /*The second of the last three arguments*/
@@ -414,7 +426,7 @@ int main(int argc, char *argv[])
       }
     }
   }
-  if(configInitFlag != FLAG_NOT_SET)
+  if(flags[f_CONFIG_INIT] != FLAG_NOT_SET)
   {
     if(fileExists(configFile))
       asfPrintError("config file already exits");
@@ -425,37 +437,38 @@ int main(int argc, char *argv[])
   }
 
   /* If we're working from a config file, read configuration file */
-  if (configFlag != FLAG_NOT_SET)/*configFlag has been set*/
+  if (flags[f_CONFIG] != FLAG_NOT_SET)/*flags[f_CONFIG] has been set*/
   {
     /*Does the specific config file already exist? If not...*/
     if (!fileExists(configFile))
     {
       check_return(init_config(configFile),
                    "Basic configuration file could not be initialized.\n");
-      exit(EXIT_SUCCESS);
+      exit(EXIT_FAILURE);
     }
     /*config init has been set*/
-    else if (check_resample_flag(configFile) && (configInitFlag!=FLAG_NOT_SET))
+    else if (check_resample_flag(configFile) && (flags[f_CONFIG_INIT]!=FLAG_NOT_SET))
     {
       check_return(init_resample_config(configFile),
                    "Extended resampling configuration file could not be initialized.\n");
-      exit(EXIT_SUCCESS);
+      exit(EXIT_FAILURE);
     }
     /*config init has been set*/
-    else if (check_geocode_flag(configFile) && configInitFlag != FLAG_NOT_SET)
+    else if (check_geocode_flag(configFile) && flags[f_CONFIG_INIT] != FLAG_NOT_SET)
     {
       check_return(init_projection_config(configFile),
                    "Extended geocoding configuration file could not be initialized.\n");
-      exit(EXIT_SUCCESS);
+      exit(EXIT_FAILURE);
     }
     /*Nab stuff out of the config File*/
     cfg = read_config(configFile);
     strcpy(format_in, str2upper(cfg->general->in_format));
     strcpy(format_out, str2upper(cfg->general->out_format));
-    if (strcmp(cfg->general->logFile, "") != 0)
+    if (strcmp(cfg->general->logFile, "") != 0) {
+      flags[f_LOG] = (flags[f_LOG]==FLAG_NOT_SET)
+                     ? !FLAG_NOT_SET : flags[f_LOG];
       strcpy(logFile, cfg->general->logFile);
-    fLog = FOPEN(logFile, "a");
-    asfPrintStatus(logbuf);
+    }
   }
   /* If there's not a config file, get input from command line arguments */
   else
@@ -477,6 +490,15 @@ int main(int argc, char *argv[])
                  "Writing a temporary configuration file.\n");
   }
 
+  /* At long last we are sure that logFile has been specified open it & set
+     old school logflag to true */
+  fLog = FOPEN(logFile, "a");
+  logflag = TRUE;
+
+  /* We are FINALLY good enough at this point... log & quiet flags set */
+  asfSplashScreen(argc, argv);/*display splash screen if not quiet*/
+
+
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
   /* Handle data types */
@@ -487,7 +509,6 @@ int main(int argc, char *argv[])
   /*Output types:*/
   if (strncmp(str2upper(format_out),"ASF",3) == 0) type_out = ASF;
   else if (strncmp(str2upper(format_out),"CEOS",4) == 0) type_out = CEOS;
-  else if (strncmp(str2upper(format_out),"TIFF",4) == 0) type_out = TIFF;
   else if (strncmp(str2upper(format_out),"GEOTIFF",3) == 0) type_out = GEOTIFF;
   else if (strncmp(str2upper(format_out),"JPEG",3) == 0) type_out = JPEG;
   else if (strncmp(str2upper(format_out),"ENVI",3) == 0) type_out = ENVI;
@@ -521,7 +542,7 @@ int main(int argc, char *argv[])
     char asf_internal_basename[255];
 
     /* Prepare processing */
-    if (configFlag == FLAG_NOT_SET)
+    if (flags[f_CONFIG] == FLAG_NOT_SET)
     {
       if (!fileExists(cfg->general->in_data_name))
         asfPrintError("Input data file does not exist");
@@ -535,7 +556,7 @@ int main(int argc, char *argv[])
     {
       sprintf(asf_internal_basename, "tmp%i", (int)getpid());
       sprintf(command, "asf_import -log %s -format %s", logFile, format_in);
-      if(quietFlag != FLAG_NOT_SET)
+      if(flags[f_QUIET] != FLAG_NOT_SET)
         strcat(command, " -quiet");
       sprintf(temp, " -%s %s %s",
         cfg->general->data_type,
@@ -634,9 +655,9 @@ int main(int argc, char *argv[])
 
 
     sprintf(command, "asf_export -log %s", logFile);
-    if(quietFlag != FLAG_NOT_SET)
+    if(flags[f_QUIET] != FLAG_NOT_SET)
       strcat(command, " -quiet");
-    if(sizeFlag != FLAG_NOT_SET)
+    if(flags[f_SIZE] != FLAG_NOT_SET)
     {
       sprintf(temp, " -size %i", size_out);
       strcat(command, temp);
@@ -652,7 +673,7 @@ int main(int argc, char *argv[])
   {
     char temp[256];
     /* Remove temporary files */
-    if(logflag == FLAG_NOT_SET)
+    if(flags[f_LOG] == FLAG_NOT_SET)
       remove(logFile);
     sprintf(temp, "tmp%i.config", (int)getpid());
     remove(temp);
