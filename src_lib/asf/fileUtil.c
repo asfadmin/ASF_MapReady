@@ -1,15 +1,10 @@
-/*****************************************
-FileUtil:
-	A collection of file I/O utilities.
-	Primarily deals with file naming.
-*/
+/* A collection of file I/O utilities.  Primarily deals with file
+   naming.  */
 
 #include <assert.h>
+
 #include "asf.h"
 
-/*******************************************************************************
- * extExists:
- * returns whether the given file basename and extension exist and are readable.*/
 int extExists(const char *name,const char *newExt)
 {
 	char *fName = appendExt(name,newExt);
@@ -18,9 +13,6 @@ int extExists(const char *name,const char *newExt)
 	return exists;
 }
 
-/*******************************************************************************
- * fileExists:
- * returns whether the given file name exists and is readable.*/
 int fileExists(const char *name)
 {
 	FILE *f=fopen(name,"r");
@@ -30,10 +22,6 @@ int fileExists(const char *name)
 	return 1;
 }
 
-/*******************************************************************************
- * findExt:
- * returns a pointer to the beginning (the period) of the given name's first
- * extension, or NULL if none exists.*/
 char *findExt(char *name)
 {
 	int i;
@@ -49,11 +37,6 @@ char *findExt(char *name)
 		return NULL;
 }
 
-/*******************************************************************************
- * appendExt:
- * allocates its return string on the heap, so it must be free'd, or memory will
- * leak.  It can take a NULL extension, whereupon it just allocates a copy of
- * the given string, and returns it.*/
 char *appendExt(const char *name,const char *newExt)
 {
 	char *ext, *ret = (char *) MALLOC(sizeof(char) 
@@ -80,12 +63,6 @@ char *appendExt(const char *name,const char *newExt)
 	return ret;
 }
 
-/*******************************************************************************
- * create_name:
- * Does the same basic thing as appendExt but without dangerously allocating 
- * new memory. Takes an input name, lops of any extention and puts on a new
- * extention filling a pre-allocated output string which it's been provided with
- */
 void create_name(char *out,const char *in,const char *newExt)
 {
 	char *ext;
@@ -172,4 +149,8 @@ FILE *fopenImage(const char *fName,const char *access)
 	exit(102);
 	return NULL;
 }
+
+
+
+
 
