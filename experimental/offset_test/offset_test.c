@@ -205,13 +205,13 @@ int main(int argc, char *argv[])
 		(fabs(dyFW-dyBW) < maxDisp))
 	      {
 		goodPoints++;
-		dx = (dxFW+dxBW)/2;
-		dy = (dyFW+dyBW)/2;
-		snr = snrFW*snrBW;
-		fprintf(fp_output,"%6d %6d %8.5f %8.5f %4.2f\n",
-			x1, y1, x2+dx, y2+dy, snr);
-		fflush(fp_output);
 	      }
+	    dx = (dxFW+dxBW)/2;
+	    dy = (dyFW+dyBW)/2;
+	    snr = snrFW*snrBW;
+	    fprintf(fp_output,"%6d %6d %8.5f %8.5f %4.2f\n",
+		    x1, y1, x2+dx, y2+dy, snr);
+	    fflush(fp_output);
 	  }
 	}
       }
