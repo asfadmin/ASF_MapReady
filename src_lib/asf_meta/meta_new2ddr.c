@@ -1,6 +1,13 @@
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <ctype.h>
 #include "asf_meta.h"
 #include "ddr.h"
 #include "proj.h"
+
+#define MICRON 0.00001
+#define FLOAT_COMPARE(a, b) (abs(a - b) < MICRON ? 1 : 0)
 
 /***********Arrays taken from asf_geolib's sphdz.c (Sept 2002)************
 CODE     DATUM NAME                 EQUITORIAL RADIUS       POLAR RADIUS
@@ -40,21 +47,22 @@ int earth_radius2datum(double re_major, double re_minor)
 	int major_index, minor_index;
 
 	for (major_index=0; major_index<20; major_index++) {
-		if (major[major_index] == re_major) {
+		if ( FLOAT_COMPARE(major[major_index],re_major) ) {
 			for (minor_index=0; minor_index<20; minor_index++) {
-				if (minor[minor_index] == re_minor) {
-					if (major_index == minor_index) {
+				if ( FLOAT_COMPARE(minor[minor_index],re_minor) ) {
+					if ( FLOAT_COMPARE(major_index,minor_index) ) {
 					 	return major_index;
 					}
 				}
 			}
 		}
 	}
-	if (major[minor_index] == re_major) {
+	if ( FLOAT_COMPARE(major[minor_index],re_major) ) {
 		return minor_index;
 	}
 
-	printf("Warning: Unable to figure supported datum... setting code to -1\n");
+	printf("\nWarning: Function earth_radius2datum was unable to figure\n"
+	       "         supported datum... setting DDR datum code to -1\n");
 	return (-1);
 }
 
@@ -85,7 +93,8 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 	else {
 		printf("** meta.general.data_type is '%s'; it must be:\n"
 		       "** BYTE, INTEGER*2, INTEGER*4, REAL*4, or REAL*8\n"
-		       "** Setting ddr.data_type value to -1.\n");
+		       "** Setting ddr.data_type value to -1.\n",
+		       meta->general->data_type);
 		ddr->dtype = -1;
 	}
 /* Worthless date & time fields; both char[12] */
