@@ -104,17 +104,23 @@
 
 if [ $# -ne 4 ]
 then
-        echo "\nUsage: cpx_autoFilter <.cpx in 1> <.cpx in 2> <.cpx out 1> <.cpx out 2>"
-        echo ""
-        echo "<.cpx in 1> a complex image file (.cpx, .ddr, AND .meta)"
-        echo "<.cpx in 2> a complex image file (.cpx, .ddr, AND .meta)"
-        echo "<.cpx out 1> a complex image file (.cpx, .ddr)"
-        echo "<.cpx out 2> a complex image file (.cpx, .ddr)"
-        echo ""
-	echo "cpx_autoFilter will attempt to improve interferogram coherence"
-        echo "by filtering the complex images in azimuth."
-	echo "Version 1.1, ASF SAR TOOLS\n"
-        exit 1
+	echo ""
+	echo "USAGE:"
+	echo "   cpx_autofilter <.cpx in 1> <.cpx in 2> <.cpx out 1> <.cpx out 2>"
+	echo ""
+	echo "REQUIRED ARGUMENTS:"
+	echo "   <.cpx in 1> a complex image file (.cpx and .meta)"
+	echo "   <.cpx in 2> a complex image file (.cpx and .meta)"
+	echo "   <.cpx out 1> a complex image file (.cpx and .meta)"
+	echo "   <.cpx out 2> a complex image file (.cpx and .meta)"
+	echo ""
+	echo "DESCRIPTION:"
+	echo "   Attempts to improve interferogram coherence by filtering the"
+	echo "   complex images in azimuth."
+	echo ""
+	echo "Version 1.1, ASF InSAR Tools"
+	echo ""
+	exit 1
 fi
 
 echo "Performing the complex fft to determine the azimuthal spectrum"
