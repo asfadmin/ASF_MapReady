@@ -284,11 +284,12 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 			{strcpy(meta->projection->units, ddr.proj_units);}
 		switch ( ddr.dtype ) {
 		    case 0: /* BYTE */
-		    case 1: general->data_type = BYTE;      break;
-		    case 2: general->data_type = INTEGER16; break;
-		    case 3: general->data_type = INTEGER32; break;
-		    case 4: general->data_type = REAL32;    break;
-		    case 5: general->data_type = REAL64;    break;
+		    case DTYPE_BYTE:    general->data_type = BYTE;      break;
+		    case DTYPE_SHORT:   general->data_type = INTEGER16; break;
+		    case DTYPE_LONG:    general->data_type = INTEGER32; break;
+		    case DTYPE_FLOAT:   general->data_type = REAL32;    break;
+		    case DTYPE_DOUBLE:  general->data_type = REAL64;    break;
+		    case DTYPE_COMPLEX: general->data_type = COMPLEX_REAL32; break;
 		    default:
 	        	printf("ERROR in meta_read_old(): Unrecognized DDR data type: (code %d)... Exit program.\n",ddr.dtype);
 			exit(EXIT_FAILURE);
@@ -333,13 +334,14 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 	meta->general->start_sample = ddr.master_sample - 1;
 	switch (ddr.dtype) {
 	  case 0:/*Equivalent to DTYPE_BYTE*/
-	  case DTYPE_BYTE:   meta->general->data_type = BYTE;      break;
-	  case DTYPE_SHORT:  meta->general->data_type = INTEGER16; break;
-	  case DTYPE_LONG:   meta->general->data_type = INTEGER32; break;
-	  case DTYPE_FLOAT:  meta->general->data_type = REAL32;    break;
-	  case DTYPE_DOUBLE: meta->general->data_type = REAL64;    break;
+	  case DTYPE_BYTE:    meta->general->data_type = BYTE;      break;
+	  case DTYPE_SHORT:   meta->general->data_type = INTEGER16; break;
+	  case DTYPE_LONG:    meta->general->data_type = INTEGER32; break;
+	  case DTYPE_FLOAT:   meta->general->data_type = REAL32;    break;
+	  case DTYPE_DOUBLE:  meta->general->data_type = REAL64;    break;
+	  case DTYPE_COMPLEX: meta->general->data_type = COMPLEX_REAL32; break;
 	  default:
-		printf("ERROR in meta_read_only_ddr(): Unrecognized data type (%d)... Exit program.\n",ddr.dtype);
+		printf("ERROR in meta_read_only_ddr(): Unrecognized DDR data type (%d)... Exit program.\n",ddr.dtype);
 		exit (EXIT_FAILURE);
 	}
 	if (strcmp(ddr.system,"ieee-std")==0)

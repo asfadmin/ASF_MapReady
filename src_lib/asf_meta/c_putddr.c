@@ -162,12 +162,14 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
             if (mds_meta->sar->image_type=='P')
                     {strcpy(mds_meta->projection->units, mds_ddr->proj_units);}
             switch ( mds_ddr->dtype ) {
-              case 0: /* BYTE */
-              case 1: mds_meta->general->data_type = BYTE;      break;
-              case 2: mds_meta->general->data_type = INTEGER16; break;
-              case 3: mds_meta->general->data_type = INTEGER32; break;
-              case 4: mds_meta->general->data_type = REAL32;    break;
-              case 5: mds_meta->general->data_type = REAL64;    break;
+              case 0: /* DTYPE_BYTE */
+              case DTYPE_BYTE:  mds_meta->general->data_type = BYTE;      break;
+              case DTYPE_SHORT: mds_meta->general->data_type = INTEGER16; break;
+              case DTYPE_LONG:  mds_meta->general->data_type = INTEGER32; break;
+              case DTYPE_FLOAT: mds_meta->general->data_type = REAL32;    break;
+              case DTYPE_DOUBLE:mds_meta->general->data_type = REAL64;    break;
+              case DTYPE_COMPLEX:
+                           mds_meta->general->data_type = COMPLEX_REAL32; break;
               default:
 	            printf("WARNING: c_putddr: Unrecognized meta/DDR data type (%d).\n",
 		           mds_ddr->dtype);

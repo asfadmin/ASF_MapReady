@@ -54,6 +54,21 @@ void meta_write(meta_parameters *meta, const char *file_name)
     case REAL64:
       meta_put_string(fp,"data_type:","REAL64","Type of samples (e.g. REAL64)");
       break;
+    case COMPLEX_BYTE:
+      meta_put_string(fp,"data_type:","COMPLEX_BYTE","Type of samples (e.g. REAL64)");
+      break;
+    case COMPLEX_INTEGER16:
+      meta_put_string(fp,"data_type:","COMPLEX_INTEGER16","Type of samples (e.g. REAL64)");
+      break;
+    case COMPLEX_INTEGER32:
+      meta_put_string(fp,"data_type:","COMPLEX_INTEGER32","Type of samples (e.g. REAL64)");
+      break;
+    case COMPLEX_REAL32:
+      meta_put_string(fp,"data_type:","COMPLEX_REAL32","Type of samples (e.g. REAL64)");
+      break;
+    case COMPLEX_REAL64:
+      meta_put_string(fp,"data_type:","COMPLEX_REAL64","Type of samples (e.g. REAL64)");
+      break;
     default:
       meta_put_string(fp,"data_type:","???","Type of samples (e.g. REAL64)");
       break;

@@ -226,6 +226,16 @@ void fill_structure_field(char *field_name, void *valp)
 	MGENERAL->data_type = REAL32;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "REAL64") )
 	MGENERAL->data_type = REAL64;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_BYTE") )
+	MGENERAL->data_type = COMPLEX_BYTE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_INTEGER16") )
+	MGENERAL->data_type = COMPLEX_INTEGER16;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_INTEGER32") )
+	MGENERAL->data_type = COMPLEX_INTEGER32;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_REAL32") )
+	MGENERAL->data_type = COMPLEX_REAL32;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "COMPLEX_REAL64") )
+	MGENERAL->data_type = COMPLEX_REAL64;
       else {
         warning_message("Unrecognized data_type (%s).\n",VALP_AS_CHAR_POINTER);
         MGENERAL->data_type = MAGIC_UNSET_INT;

@@ -82,17 +82,17 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 	ddr->nbands = 1;
 /* Data type; int */
 	switch (meta->general->data_type) {
-	  case BYTE:      ddr->dtype = DTYPE_BYTE;   break;
-	  case INTEGER16: ddr->dtype = DTYPE_SHORT;  break;
-	  case INTEGER32: ddr->dtype = DTYPE_LONG;   break;
-	  case REAL32:    ddr->dtype = DTYPE_FLOAT;  break;
-	  case REAL64:    ddr->dtype = DTYPE_DOUBLE; break;
+	  case BYTE:           ddr->dtype = DTYPE_BYTE;    break;
+	  case INTEGER16:      ddr->dtype = DTYPE_SHORT;   break;
+	  case INTEGER32:      ddr->dtype = DTYPE_LONG;    break;
+	  case REAL32:         ddr->dtype = DTYPE_FLOAT;   break;
+	  case REAL64:         ddr->dtype = DTYPE_DOUBLE;  break;
+	  case COMPLEX_REAL32: ddr->dtype = DTYPE_COMPLEX; break;
 	  default:
-		printf("** Invalid meta.general.data_type; it must be:\n"
-		       "** BYTE, INTEGER16, INTEGER32, REAL32, or REAL64\n"
-		       "** Setting ddr.data_type value to -1.\n");
-		ddr->dtype = -1;
-		break;
+	    printf("WARNING * There is not a direct conversion from meta.general.data_type\n"
+	           "        * to ddr.dtype. Setting ddr.dtype value to -1.\n");
+	    ddr->dtype = -1;
+	    break;
 	}
 /* Worthless date & time fields; both char[12] */
 	strcpy (ddr->last_used_date,"");
