@@ -20,12 +20,12 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "detect_cr"
 
 #define ASF_USAGE_STRING \
-"<image> <corner reflector locations> <peak search file>\n"\
+"[ -chip ] [ -text ] <image> <corner reflector locations> <peak search file>\n"\
 "\n"\
 "Additional option: -help"
 
 #define ASF_DESCRIPTION_STRING \
-"Detect_cr takes the geolocation information of corner reflectors are\n"\
+"Detect_cr takes the geolocation information of corner reflectors and\n"\
 "searches in the image for the location of an amplitude peak in comparison\n"\
 "to the estimate from the metadata."
 
@@ -42,7 +42,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "determined offset from the amplitude peak search."
 
 #define ASF_OPTIONS_STRING \
-"-chip	Stores the image chip used for determination of amplitude peaks."
+"-chip	Stores the image chip used for determination of amplitude peaks.\n"\
+"-text  Stores the image chip as a tab delimated text file."
 
 #define ASF_EXAMPLES_STRING \
 "detect_cr rsat.img cr.txt reflector.test"
@@ -102,7 +103,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "asf_meta.h"
 #include "fft.h"
 #include "fft2d.h"
-#include "ifm.h"
 #include "detect_cr.h"
 
 #define borderX 80	/* Distances from edge of image to start correlating.*/
@@ -203,6 +203,7 @@ int main(int argc, char *argv[])
   if(checkForOption("-help", argc, argv) != -1) /* Most important */
     help_page();
   flags[f_CHIP] = checkForOption("-chip", argc, argv);
+  flags[f_TEXT] = checkForOption("-text", argc, argv);
 
   /* Make sure to set log & quiet flags (for use in our libraries) */
   logflag = (flags[f_LOG]!=FLAG_NOT_SET) ? TRUE : FALSE;
@@ -211,6 +212,7 @@ int main(int argc, char *argv[])
   { /* We need to make sure the user specified the proper number of arguments */
     int needed_args = 4;/*command & in_data & in_meta & out_base */
     if(flags[f_CHIP] != FLAG_NOT_SET) needed_args += 1; /* option */
+    if(flags[f_TEXT] != FLAG_NOT_SET) needed_args += 1; /* option */
 
     /*Make sure we have enough arguments*/
     if(argc != needed_args)
@@ -254,10 +256,14 @@ int main(int argc, char *argv[])
     if (!(outOfBounds(posX, posY, srcSize)))
       {
 	/* Find peak */
-	if(flags[f_CHIP] != FLAG_NOT_SET) 
-	  findPeak(posX+0.5, posY+0.5, szImg, &dx, &dy, crID);
+	if((flags[f_CHIP] != FLAG_NOT_SET) && (flags[f_TEXT] != FLAG_NOT_SET)) 
+	  findPeak(posX+0.5, posY+0.5, szImg, &dx, &dy, crID, crID);
+	else if ((flags[f_CHIP] != FLAG_NOT_SET) && (flags[f_TEXT] == FLAG_NOT_SET))
+	  findPeak(posX+0.5, posY+0.5, szImg, &dx, &dy, crID, NULL);
+	else if ((flags[f_CHIP] == FLAG_NOT_SET) && (flags[f_TEXT] != FLAG_NOT_SET))
+	  findPeak(posX+0.5, posY+0.5, szImg, &dx, &dy, NULL, crID);
 	else 
-	  findPeak(posX+0.5, posY+0.5, szImg, &dx, &dy, NULL);
+	  findPeak(posX+0.5, posY+0.5, szImg, &dx, &dy, NULL, NULL);
 	fprintf(fpOut,"%s %.4lf %.4lf %.0lf %.1f %.1f %.2f %.2f\n",
 		crID, lat, lon, elev, posX, posY, dx, dy);
 	fflush(fpOut);
@@ -287,13 +293,14 @@ bool outOfBounds(int x, int y, int srcSize)
   This version of findPeak just determines the maxium amplitude value and checks
   whether it is actually the peak for the neighborhood.
 */
-bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY, char *crID)
+bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY, 
+	      char *chip, char *text)
 {
-  FILE *fpChip;
-  meta_parameters *meta, *metaChip;
+  FILE *fpChip, *fpText;
+  meta_parameters *meta, *metaChip, *metaText;
   static float *s=NULL;
   float max=-10000000.0;
-  char szChip[255];
+  char szChip[255], szText[255];
   int size, ii, kk, bestX, bestY;
   float bestLocX, bestLocY;
   
@@ -307,17 +314,32 @@ bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY, char *crID)
   /* At each corner reflector location read in a chunk of the image */
   readSubset(szImg, srcSize, srcSize, x-srcSize/2+1, y-srcSize/2+1, s);
   
-  /* Write out chip if reflector ID is given */
-  if (crID) {
+  /* Write out chip if name is given */
+  if (chip) {
     metaChip = meta_copy(meta);
     metaChip->general->line_count = srcSize;
     metaChip->general->sample_count = srcSize;
-    meta_write(metaChip, crID);
-    sprintf(szChip, "%s.img", crID);
+    meta_write(metaChip, chip);
+    sprintf(szChip, "%s.img", chip);
     fpChip = FOPEN(szChip, "wb");
     size = srcSize*srcSize*sizeof(float);
     FWRITE(s, size, 1, fpChip);
     FCLOSE(fpChip);
+  }
+  /* Write out text file for chip if name is given */
+  if (text) {
+    metaText = meta_copy(meta);
+    metaText->general->line_count = srcSize;
+    metaText->general->sample_count = srcSize;
+    meta_write(metaText, text);
+    sprintf(szText, "%s.txt", text);
+    fpText = FOPEN(szText, "w");
+    for (ii=0; ii<srcSize; ii++) {
+      for (kk=0; kk<srcSize; kk++)
+	fprintf(fpText, "%12.4f\t", s[ii*srcSize+kk]);
+      fprintf(fpText, "\n");
+    }
+    FCLOSE(fpText);
   }
 
   /* Search for the amplitude peak */
