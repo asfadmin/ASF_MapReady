@@ -346,7 +346,7 @@ void create_sprocket_layers(const char *asfName, const char *importName)
       if ((nl-chunk)<CHUNK_OF_LINES)
         size = nl-chunk;
       for (yy=0; yy<size; yy++) {
-        print_layer_progress("Creating look & sigma0 layers",
+        print_layer_progress("Creating look layer",
                              chunk+yy, nl, &percent_done);
         for (xx=0; xx<ns; xx++) {
           px = metaIn->projection->startX
