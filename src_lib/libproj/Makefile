@@ -37,7 +37,8 @@ stage_stamp:
 	tar xvf $(TARFILE)
 	cd $(UNPACK_DIR) ; \
            perl -p -i -e 's{\(\);}{(void);}' src/proj_api.h ; \
-           CFLAGS="$(PROJ_CFLAGS)" ./configure --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
+           CFLAGS="$(PROJ_CFLAGS)" \
+                  ./configure --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
 	   make ; \
 	   make check ; \
            make install
