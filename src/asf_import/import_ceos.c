@@ -179,7 +179,18 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     if (meta->projection!=NULL && meta->projection->type!=MAGIC_UNSET_CHAR) {
       /* This must be ScanSAR */
       if (meta->projection->type!=SCANSAR_PROJECTION) {
-        /* This is actually geocoded */
+        /* This is actually geocoded.  We don't trust any
+	   already-geocoded products other than polar stereo in the
+	   northern hemisphere (because of the RGPS Ice tracking
+	   project, these have been tested a lot and actually work
+	   correctly). */
+	if ( meta->projection->type != POLAR_STEREOGRAPHIC
+	     || meta->projection->hem == 'S' ) {
+	  asfPrintError("Import of map projected (Level 2) CEOS images other "
+			"than northern hemisphere polar stereo images is "
+			"prohibitd, because these products are broken.  Don't "
+			"use them.\n");
+	}
         sprintf(logbuf,
                 "   Input data type: level two data\n"
                 "   Output data type: geocoded amplitude image\n\n");
