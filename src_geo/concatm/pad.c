@@ -104,8 +104,7 @@ if ( thebuf == NULL)
 
 /* open output image to full size
 ---------------------------------*/
-/*opt[0] = opt[2] = 0;*/
-/*opt [1] = 0;*/
+opt[0] = opt [1] = opt[2] = 0;
 fdesc[1] = 0;
 c_eopenr(&fdesc[0],hostout,totbnd,&one,&one,nl,ns,
    	          &access,dtype,opt,&one);
