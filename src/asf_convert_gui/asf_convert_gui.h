@@ -2,6 +2,7 @@
 #define __ASF_CONVERT_GUI_H
 
 #define _GNU_SOURCE
+#define USE_GTK_22
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -28,9 +29,9 @@ enum InputFormat
     INPUT_FORMAT_CEOS_LEVEL0 = 0,
     INPUT_FORMAT_CEOS_LEVEL1 = 1,
     INPUT_FORMAT_STF = 2,
-    INPUT_FORMAT_ESRI = 3,
-    INPUT_FORMAT_ENVI = 4,
-    INPUT_FORMAT_COMPLEX = 5,
+    INPUT_FORMAT_COMPLEX = 3,
+    INPUT_FORMAT_ESRI = 4,
+    INPUT_FORMAT_ENVI = 5,
     INPUT_FORMAT_ASF_INTERNAL = 6
 };
 

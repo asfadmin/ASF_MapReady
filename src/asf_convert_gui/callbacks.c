@@ -37,9 +37,12 @@ input_data_format_combobox_changed()
 
   input_data_format_combobox =
     glade_xml_get_widget(glade_xml, "input_data_format_combobox");
-
+  /*
   input_data_format =
     gtk_combo_box_get_active(GTK_COMBO_BOX(input_data_format_combobox));
+  */
+  input_data_format =
+    gtk_option_menu_get_history(GTK_OPTION_MENU(input_data_format_combobox));
 
   switch (input_data_format)
   {
@@ -165,8 +168,7 @@ output_format_combobox_changed()
   output_format_combobox = 
     glade_xml_get_widget(glade_xml, "output_format_combobox");
 
-  output_format =
-    gtk_combo_box_get_active(GTK_COMBO_BOX(output_format_combobox));
+  output_format = get_combo_box_item(output_format_combobox);
 
   switch (output_format)
   {
@@ -219,8 +221,7 @@ output_format_combobox_changed()
           gtk_toggle_button_set_active(
                   GTK_TOGGLE_BUTTON(output_bytes_checkbutton), TRUE);
 
-          gtk_combo_box_set_active(
-                  GTK_COMBO_BOX(scaling_method_combobox), SCALING_METHOD_SIGMA);
+	  set_combo_box_item(scaling_method_combobox, SCALING_METHOD_SIGMA);
 
           gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
           gtk_widget_set_sensitive(scaling_method_combobox, TRUE);
@@ -245,17 +246,71 @@ on_asf_convert_destroy(GtkWidget *widget, gpointer data)
   gtk_main_quit();
 }
 
+#ifndef USE_GTK_22
 SIGNAL_CALLBACK void
 on_input_data_format_combobox_changed(GtkWidget *widget)
 {
   input_data_format_combobox_changed();
 }
+#else
+SIGNAL_CALLBACK void
+on_ceos_level_0_activate(GtkWidget *widget)
+{
+  input_data_format_combobox_changed();
+}
 
+SIGNAL_CALLBACK void
+on_ceos_level_1_activate(GtkWidget *widget)
+{
+  input_data_format_combobox_changed();
+}
+
+SIGNAL_CALLBACK void
+on_stf_activate(GtkWidget *widget)
+{
+  input_data_format_combobox_changed();
+}
+
+SIGNAL_CALLBACK void
+on_complex_activate(GtkWidget *widget)
+{
+  input_data_format_combobox_changed();
+}
+#endif
+
+#ifndef USE_GTK_22
 SIGNAL_CALLBACK void
 on_output_format_combobox_changed(GtkWidget *widget)
 {
   output_format_combobox_changed();
 }
+#else
+
+SIGNAL_CALLBACK void
+on_jpeg_activate(GtkWidget *widget)
+{
+  output_format_combobox_changed();
+}
+
+SIGNAL_CALLBACK void
+on_tiff_activate(GtkWidget *widget)
+{
+  output_format_combobox_changed();
+}
+
+SIGNAL_CALLBACK void
+on_geotiff_activate(GtkWidget *widget)
+{
+  output_format_combobox_changed();
+}
+
+SIGNAL_CALLBACK void
+on_ppm_activate(GtkWidget *widget)
+{
+  output_format_combobox_changed();
+}
+
+#endif
 
 SIGNAL_CALLBACK void
 on_scale_checkbutton_toggled(GtkWidget *widget)

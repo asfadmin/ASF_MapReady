@@ -8,28 +8,21 @@ const int save_minor_ver = 1;
 
 static void readline(FILE * f, gchar * buffer, size_t n)
 {
-    size_t n0;
-    ssize_t read;
-    gchar * p;
-    gchar * newline;
-    
-    p = NULL;
-    read = getline(&p, &n0, f);
+  gchar * p;
+  gchar * newline;
 
-    if (read == -1)
-    {
-        strcpy(buffer, "");
-    }
-    else
-    {
-        strncpy(buffer, p, n - 1);
-    
-        newline = strrchr(buffer, '\n');
-        if (newline)
-            *newline = '\0';
-    }
+  p = fgets(buffer, n, f);
 
-    free(p);
+  if (!p)
+  {
+    strcpy(buffer, "");
+  }
+  else
+  {
+    newline = strrchr(buffer, '\n');
+    if (newline)
+      *newline = '\0';
+  }
 }
                         
 SIGNAL_CALLBACK void

@@ -90,24 +90,58 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkComboBox" id="input_data_format_combobox">
-			      <property name="width_request">124</property>
+			    <widget class="GtkOptionMenu" id="input_data_format_combobox">
 			      <property name="visible">True</property>
-			      <property name="items" translatable="yes">CEOS (Level 0)
-CEOS (Level 1)
-STF
-ESRI
-ENVI
-Complex
-</property>
-			      <signal name="changed" handler="on_input_data_format_combobox_changed" last_modification_time="Tue, 10 Aug 2004 20:37:10 GMT"/>
+			      <property name="can_focus">True</property>
+			      <property name="history">0</property>
+
+			      <child>
+				<widget class="GtkMenu" id="menu1">
+
+				  <child>
+				    <widget class="GtkMenuItem" id="ceos_level_0">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">CEOS (Level 0)</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_ceos_level_0_activate" last_modification_time="Wed, 08 Sep 2004 19:45:09 GMT"/>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="ceos_level_1">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">CEOS (Level 1)</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_ceos_level_1_activate" last_modification_time="Wed, 08 Sep 2004 19:45:09 GMT"/>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="stf">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">STF</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_stf_activate" last_modification_time="Wed, 08 Sep 2004 19:31:17 GMT"/>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="complex">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">Complex</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_complex_activate" last_modification_time="Wed, 08 Sep 2004 19:31:17 GMT"/>
+				    </widget>
+				  </child>
+				</widget>
+			      </child>
 			    </widget>
 			    <packing>
 			      <property name="left_attach">1</property>
 			      <property name="right_attach">2</property>
 			      <property name="top_attach">0</property>
 			      <property name="bottom_attach">1</property>
-			      <property name="x_options"></property>
+			      <property name="x_options">fill</property>
 			      <property name="y_options"></property>
 			    </packing>
 			  </child>
@@ -200,25 +234,6 @@ Complex
 			  <property name="bottom_attach">1</property>
 			  <property name="x_options">fill</property>
 			  <property name="y_options"></property>
-			</packing>
-		      </child>
-
-		      <child>
-			<widget class="GtkComboBox" id="input_data_type_combobox">
-			  <property name="width_request">124</property>
-			  <property name="visible">True</property>
-			  <property name="items" translatable="yes">Sigma
-Beta
-Gamma
-Amplitude
-Power</property>
-			</widget>
-			<packing>
-			  <property name="left_attach">1</property>
-			  <property name="right_attach">2</property>
-			  <property name="top_attach">0</property>
-			  <property name="bottom_attach">1</property>
-			  <property name="y_options">fill</property>
 			</packing>
 		      </child>
 
@@ -343,6 +358,67 @@ Power</property>
 			  <property name="y_options">fill</property>
 			</packing>
 		      </child>
+
+		      <child>
+			<widget class="GtkOptionMenu" id="input_data_type_combobox">
+			  <property name="visible">True</property>
+			  <property name="can_focus">True</property>
+			  <property name="history">0</property>
+
+			  <child>
+			    <widget class="GtkMenu" id="menu2">
+
+			      <child>
+				<widget class="GtkMenuItem" id="sigma">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Sigma</property>
+				  <property name="use_underline">True</property>
+				</widget>
+			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="beta">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Beta</property>
+				  <property name="use_underline">True</property>
+				</widget>
+			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="gamma">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Gamma</property>
+				  <property name="use_underline">True</property>
+				</widget>
+			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="amplitude">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Amplitude</property>
+				  <property name="use_underline">True</property>
+				</widget>
+			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="power">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Power</property>
+				  <property name="use_underline">True</property>
+				</widget>
+			      </child>
+			    </widget>
+			  </child>
+			</widget>
+			<packing>
+			  <property name="left_attach">1</property>
+			  <property name="right_attach">2</property>
+			  <property name="top_attach">0</property>
+			  <property name="bottom_attach">1</property>
+			  <property name="x_options">fill</property>
+			  <property name="y_options"></property>
+			</packing>
+		      </child>
 		    </widget>
 		  </child>
 
@@ -428,19 +504,56 @@ Power</property>
 			  </child>
 
 			  <child>
-			    <widget class="GtkComboBox" id="output_format_combobox">
-			      <property name="width_request">172</property>
+			    <widget class="GtkOptionMenu" id="output_format_combobox">
 			      <property name="visible">True</property>
-			      <property name="items" translatable="yes">JPEG (.jpg)
-Portable PixMap (.ppm)
-TIFF (.tif)
-GeoTIFF (.tif)</property>
-			      <signal name="changed" handler="on_output_format_combobox_changed" last_modification_time="Tue, 10 Aug 2004 20:36:51 GMT"/>
+			      <property name="can_focus">True</property>
+			      <property name="history">0</property>
+
+			      <child>
+				<widget class="GtkMenu" id="menu3">
+
+				  <child>
+				    <widget class="GtkMenuItem" id="jpeg">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">JPEG (.jpg)</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_jpeg_activate" last_modification_time="Wed, 08 Sep 2004 20:18:12 GMT"/>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="ppm">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">PPM (.ppm)</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_ppm_activate" last_modification_time="Wed, 08 Sep 2004 20:18:12 GMT"/>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="tiff">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">TIFF (.tif)</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_tiff_activate" last_modification_time="Wed, 08 Sep 2004 20:18:12 GMT"/>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="geotiff">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">GeoTIFF (.tif)</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_geotiff_activate" last_modification_time="Wed, 08 Sep 2004 20:18:12 GMT"/>
+				    </widget>
+				  </child>
+				</widget>
+			      </child>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
 			      <property name="expand">False</property>
-			      <property name="fill">True</property>
+			      <property name="fill">False</property>
 			    </packing>
 			  </child>
 			</widget>
@@ -499,17 +612,44 @@ GeoTIFF (.tif)</property>
 			  </child>
 
 			  <child>
-			    <widget class="GtkComboBox" id="scaling_method_combobox">
+			    <widget class="GtkOptionMenu" id="scaling_method_combobox">
 			      <property name="visible">True</property>
-			      <property name="items" translatable="yes">Sigma
-Min/Max
-Truncate
-</property>
+			      <property name="can_focus">True</property>
+			      <property name="history">0</property>
+
+			      <child>
+				<widget class="GtkMenu" id="menu4">
+
+				  <child>
+				    <widget class="GtkMenuItem" id="scale_sigma">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">Sigma</property>
+				      <property name="use_underline">True</property>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="minmax">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">MinMax</property>
+				      <property name="use_underline">True</property>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="truncate">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">Truncate</property>
+				      <property name="use_underline">True</property>
+				    </widget>
+				  </child>
+				</widget>
+			      </child>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
-			      <property name="expand">True</property>
-			      <property name="fill">True</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
 			    </packing>
 			  </child>
 			</widget>

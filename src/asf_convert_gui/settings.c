@@ -45,14 +45,9 @@ settings_apply_to_gui(const Settings * s)
   scale_checkbutton = 
     glade_xml_get_widget(glade_xml, "scale_checkbutton");
 
-  gtk_combo_box_set_active(GTK_COMBO_BOX(input_data_format_combobox),
-			   s->input_data_format);
-
-  gtk_combo_box_set_active(GTK_COMBO_BOX(input_data_type_combobox),
-			   s->data_type);
-
-  gtk_combo_box_set_active(GTK_COMBO_BOX(output_format_combobox),
-			   s->output_format);
+  set_combo_box_item(input_data_format_combobox, s->input_data_format);
+  set_combo_box_item(input_data_type_combobox, s->data_type);
+  set_combo_box_item(output_format_combobox, s->output_format);
 
   if (settings_get_output_format_allows_size(s))
   {
@@ -104,9 +99,7 @@ settings_apply_to_gui(const Settings * s)
     scaling_method_combobox =
             glade_xml_get_widget(glade_xml, "scaling_method_combobox");
 
-    gtk_combo_box_set_active(
-            GTK_COMBO_BOX(scaling_method_combobox),
-            s->scaling_method);
+    set_combo_box_item(scaling_method_combobox, s->scaling_method);
   }        
 }
 
@@ -137,14 +130,9 @@ settings_get_from_gui()
   scale_checkbutton = 
     glade_xml_get_widget(glade_xml, "scale_checkbutton");
 
-  ret->data_type =
-    gtk_combo_box_get_active(GTK_COMBO_BOX(input_data_type_combobox));
-
-  ret->input_data_format =
-    gtk_combo_box_get_active(GTK_COMBO_BOX(input_data_format_combobox));
-
-  ret->output_format =
-    gtk_combo_box_get_active(GTK_COMBO_BOX(output_format_combobox));
+  ret->data_type = get_combo_box_item(input_data_type_combobox);
+  ret->input_data_format = get_combo_box_item(input_data_format_combobox);
+  ret->output_format = get_combo_box_item(output_format_combobox);
 
   ret->apply_scaling =
     settings_get_output_format_allows_size(ret) &&
@@ -189,8 +177,7 @@ settings_get_from_gui()
               glade_xml_get_widget(glade_xml, "scaling_method_combobox");
 
       ret->output_bytes = TRUE;
-      ret->scaling_method =
-          gtk_combo_box_get_active(GTK_COMBO_BOX(scaling_method_combobox));
+      ret->scaling_method = get_combo_box_item(scaling_method_combobox);
   }
   else
   {
@@ -206,9 +193,7 @@ settings_get_from_gui()
           scaling_method_combobox =
                   glade_xml_get_widget(glade_xml, "scaling_method_combobox");
 
-          ret->scaling_method =                 
-                  gtk_combo_box_get_active(
-                    GTK_COMBO_BOX(scaling_method_combobox));
+          ret->scaling_method = get_combo_box_item(scaling_method_combobox);
       }
   }
   

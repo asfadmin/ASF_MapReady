@@ -24,14 +24,17 @@ main(int argc, char **argv)
     g_free(glade_xml_file);
 
     /* select defaults for dropdowns */
-    widget = glade_xml_get_widget (glade_xml, "input_data_type_combobox");
-    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), INPUT_TYPE_AMP);
-    widget = glade_xml_get_widget (glade_xml, "input_data_format_combobox");
-    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), INPUT_FORMAT_CEOS_LEVEL1);
-    widget = glade_xml_get_widget (glade_xml, "output_format_combobox");
-    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), OUTPUT_FORMAT_JPEG);
     widget = glade_xml_get_widget (glade_xml, "scaling_method_combobox");
-    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), SCALING_METHOD_SIGMA);
+    set_combo_box_item(widget, SCALING_METHOD_SIGMA);
+
+    widget = glade_xml_get_widget (glade_xml, "input_data_format_combobox");
+    set_combo_box_item(widget, INPUT_FORMAT_CEOS_LEVEL1);
+
+    widget = glade_xml_get_widget (glade_xml, "input_data_type_combobox");
+    set_combo_box_item(widget, INPUT_TYPE_AMP);
+
+    widget = glade_xml_get_widget (glade_xml, "output_format_combobox");
+    set_combo_box_item(widget, OUTPUT_FORMAT_JPEG);
 
     /* fire handlers for hiding/showing stuff */
     output_format_combobox_changed();

@@ -1,6 +1,26 @@
 #include "asf_convert_gui.h"
 
 void
+set_combo_box_item(GtkWidget * drop_down_list, gint index)
+{
+#ifdef USE_GTK_22
+  gtk_option_menu_set_history(GTK_OPTION_MENU(drop_down_list), index);
+#else
+  gtk_combo_box_set_active(GTK_COMBO_BOX(drop_down_list), index);
+#endif
+}
+
+gint
+get_combo_box_item(GtkWidget * drop_down_list)
+{
+#ifdef USE_GTK_22
+  return gtk_option_menu_get_history(GTK_OPTION_MENU(drop_down_list));
+#else
+  return gtk_combo_box_get_active(GTK_COMBO_BOX(drop_down_list));
+#endif
+}
+
+void
 message_box(const gchar * message)
 {
   GtkWidget *dialog, *label;
