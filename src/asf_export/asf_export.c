@@ -426,73 +426,74 @@ export_as_envi (const char *metadata_file_name,
   fprintf(fp, "sensor type = %s\n", envi->sensor_type);
   fprintf(fp, "byte order = %i\n", envi->byte_order);
   if (md->projection) {
-    switch (md->projection->type)
-      {
-      case UNIVERSAL_TRANSVERSE_MERCATOR:
-	fprintf(fp, 
-		"map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %i, %s}\n", 
-		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
-		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
-		envi->proj_dist_y, envi->projection_zone, envi->hemisphere);
-	fprintf(fp, 
-		"projection info = {3, %.4f, %.4f, %.4f, %.4f, " 
-                "0.0, 0.0, 0.99996, %s}\n", 
-		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
-		envi->center_lon, envi->projection);
-	break;
-      case POLAR_STEREOGRAPHIC:
-	fprintf(fp, 
-		"map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
-		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
-		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
-		envi->proj_dist_y, envi->hemisphere);
-	fprintf(fp, 
-		"projection info = {31, %.4f, %.4f, %.4f, %.4f, " 
-                "0.0, 0.0, %s}\n", 
-		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
-		envi->center_lon, envi->projection);
-	break;
-      case ALBERS_EQUAL_AREA:
-	fprintf(fp, 
-		"map info = {%s, %i, %i  , %.4f, %.4f, %.4f, %.4f, %s}\n", 
-		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
-		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
-		envi->proj_dist_y, envi->hemisphere);
-	fprintf(fp, 
-		"projection info = {9, %.4f, %.4f, %.4f, %.4f, " 
+    switch (md->projection->type) {
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      fprintf(fp, 
+	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %i, %s}\n", 
+	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
+	      envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
+	      envi->proj_dist_y, envi->projection_zone, envi->hemisphere);
+      fprintf(fp, 
+	      "projection info = {3, %.4f, %.4f, %.4f, %.4f, " 
+	      "0.0, 0.0, 0.99996, %s}\n", 
+	      envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
+	      envi->center_lon, envi->projection);
+      break;
+    case POLAR_STEREOGRAPHIC:
+      fprintf(fp, 
+	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
+	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
+	      envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
+	      envi->proj_dist_y, envi->hemisphere);
+      fprintf(fp, 
+	      "projection info = {31, %.4f, %.4f, %.4f, %.4f, " 
+	      "0.0, 0.0, %s}\n", 
+	      envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
+	      envi->center_lon, envi->projection);
+      break;
+    case ALBERS_EQUAL_AREA:
+      fprintf(fp, 
+	      "map info = {%s, %i, %i  , %.4f, %.4f, %.4f, %.4f, %s}\n", 
+	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
+	      envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
+	      envi->proj_dist_y, envi->hemisphere);
+      fprintf(fp, 
+	      "projection info = {9, %.4f, %.4f, %.4f, %.4f, " 
                 "0.0, 0.0, %.4f, %.4f, %s}\n", 
-		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
-		envi->center_lon, envi->standard_parallel1, 
-		envi->standard_parallel2, envi->projection);
-	break;
-      case LAMBERT_CONFORMAL_CONIC:
-	fprintf(fp, 
-		"map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
-		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
-		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
-		envi->proj_dist_y, envi->hemisphere);
-	fprintf(fp, 
-		"projection info = {4, %.4f, %.4f, %.4f, %.4f, " 
-                "0.0, 0.0, %.4f, %.4f, %s}\n", 
-		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
-		envi->center_lon, envi->standard_parallel1,
-		envi->standard_parallel2, envi->projection);
-	break;
-      case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-	fprintf(fp, 
-		"map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
-		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
-		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
-		envi->proj_dist_y, envi->hemisphere);
-	fprintf(fp, 
-		"projection info = {11, %.4f, %.4f, %.4f, %.4f, " 
-                "0.0, 0.0, %s}\n", 
-		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
-		envi->center_lon, envi->projection);
-	break;
-      case STATE_PLANE:
-      case SCANSAR_PROJECTION: break;
-      }
+	      envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
+	      envi->center_lon, envi->standard_parallel1, 
+	      envi->standard_parallel2, envi->projection);
+      break;
+    case LAMBERT_CONFORMAL_CONIC:
+      fprintf(fp, 
+	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
+	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
+	      envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
+	      envi->proj_dist_y, envi->hemisphere);
+      fprintf(fp, 
+	      "projection info = {4, %.4f, %.4f, %.4f, %.4f, " 
+	      "0.0, 0.0, %.4f, %.4f, %s}\n", 
+	      envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
+	      envi->center_lon, envi->standard_parallel1,
+	      envi->standard_parallel2, envi->projection);
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      fprintf(fp, 
+	      "map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
+	      envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
+	      envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
+	      envi->proj_dist_y, envi->hemisphere);
+      fprintf(fp, 
+	      "projection info = {11, %.4f, %.4f, %.4f, %.4f, " 
+	      "0.0, 0.0, %s}\n", 
+	      envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
+	      envi->center_lon, envi->projection);
+      break;
+    case STATE_PLANE:
+      break;
+    case SCANSAR_PROJECTION: 
+      break;
+    }
   }
   fprintf(fp, "wavelength units = %s\n", envi->wavelength_units);
   /*** wavelength, data ignore and default stretch currently not used ***/
