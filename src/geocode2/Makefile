@@ -32,7 +32,6 @@ INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) -I$(HOME)/local/include \
 
 CPPFLAGS := -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 \
 	    $(INCLUDE_FLAGS)
-#            $(INCLUDE_FLAGS) -DG_DISABLE_ASSERT -DNDEBUG
 
 # I'd like to use -Wconversion as advised by the GSL, but it seems to
 # make it impossible to pass arguments of type float to functions that
@@ -41,9 +40,8 @@ CPPFLAGS := -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 \
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
 CFLAGS := -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
           -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
-          -Wwrite-strings -Wnested-externs -fno-common -g -O0 \
+          -Wwrite-strings -Wnested-externs -fno-common -g -O4 \
           $(shell pkg-config --cflags-only-other glib-2.0)
-# FIXME: change -O0 above back to -O4 for speed
 
 LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
