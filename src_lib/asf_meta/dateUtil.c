@@ -448,6 +448,22 @@ void date_dssr2date(const char *inStr,ymd_date *date,hms_time *time)
 	subStr(14,3,&msec);
 	time->sec=sec+msec/1000.0;
 }
+
+/*Extract second DSSR-style date from the given string:
+instr="DD-MMM-YYYY hh:mm:ss.ttt"
+index  012345678901234567890123
+*/
+void date_dssr2time(const char *inStr,hms_time *time)
+{
+	char buf[100];
+	int sec,msec;
+#define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
+	subStr(12,2,&time->hour);
+	subStr(15,2,&time->min);
+	subStr(18,2,&sec);
+	subStr(21,3,&msec);
+	time->sec=sec+msec/1000.0;
+}
 /*
 WriteInt: Internal call.
 	Write the N low-order decimal digits of the given
