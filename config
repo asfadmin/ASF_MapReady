@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # ASF/STEP Software Automatic Configuration script:
 # Sets system variables, creates Makefile.
 
@@ -18,7 +18,7 @@ if [ -z $osType ]; then
 	# No uname!  Must ask user.
 	echo "Could not match your system automatically..."
 	# Could be Linux, or Next:
-	echo "Please enter your system type (linux, next, etc.):"
+	echo "Please enter your system type (linux, next, etc.): \c"
 	read sys
 	echo "Configuring for " $sys .
 	osType=$sys
@@ -80,7 +80,7 @@ fi
 
 ######## Ask about GCC ############
 if [ ! $cc = "gcc" -a ! $batch_mode = "true" ]; then
-    echo "Would you like to use the GNU C Compiler 'gcc' (y/n)? "
+    echo "Would you like to use the GNU C Compiler 'gcc' (y/n)? \c"
     read resp
     if [ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]; then
         cc="gcc"
@@ -101,6 +101,7 @@ echo "########### Building the make_support/system_rules file ###############"
 ./endian -r > system_rules
 rm -f ./endian
 
+# EOF (without quotes) makes cat print out strings with expanded variables
 cat <<EOF >>system_rules
 SYS     = $sys
 CC      = $cc
@@ -116,7 +117,9 @@ else
 	echo 'FLAGS   = $(INCLUDE) $(OPTFLAG) -D'$sys' $(ENDIAN_FLAGS)' >> system_rules
 fi
 
+# 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
 cat <<'EOF' >>system_rules
+# If <make 'DEBUG_BUILD=[anything but 0]'> then set DEBUGFLAGS and DEBUGLIBS
 ifeq ($(shell if test -n '$(DEBUG_BUILD)' -a '$(DEBUG_BUILD)' -ne 0 -a '$(CC)' = gcc; then echo 'true'; fi), true)
   DEBUGFLAGS = -Wall -g
   DEBUGLIBS = -lefence
