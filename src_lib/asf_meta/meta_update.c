@@ -39,7 +39,8 @@ int main(int argc, char **argv)
       switch(opt_char) {
       case 'o':
 	if ( strlen(optarg) > MAX_FILE_NAME_LENGTH )
-	  fprintf(stderr, "%s: argument to -o option too long\n", program_name);
+	  fprintf(stderr, "%s: argument to -o option too long\n", 
+		  program_name);
 	strncpy(out_name, optarg, MAX_FILE_NAME_LENGTH + 1);
 	out_name_specified = 1;	/* Set flag true.  */
 	break;
@@ -59,7 +60,7 @@ int main(int argc, char **argv)
 
   if ( argc  - optind + 1 != 2 ) {
     fprintf(stderr, "%s: wrong number of arguments\n", program_name);
-    fprintf(stderr, "Usage: %s meta_file_basename\n", program_name);
+    meta_update_usage();
     exit(EXIT_FAILURE);
   }
   
@@ -83,3 +84,5 @@ int main(int argc, char **argv)
   
   exit(EXIT_SUCCESS);
 }
+
+
