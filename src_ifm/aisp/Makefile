@@ -31,7 +31,7 @@ ASPLIB = patch.o \
 	 rciq.o rmpatch.o acpatch.o calibration.o
 
 all: aisp calc_deltas spectra estavedop # quicklook
-#	rm *.o
+	rm *.o
 
 aisp:	$(ASPLIB) $(OBJLIB) aisp.o $(LIBS)
 	$(CC) $(CFLAGS) -o aisp aisp.o $(ASPLIB) $(OBJLIB) $(LIBC)
