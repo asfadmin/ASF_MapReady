@@ -107,7 +107,8 @@ check: unit_tests.c build_only
 
 clean:
 	rm -f $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
-              $(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output
+              $(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
+	      library_cooking_pot
 
 distclean:
-	rm -f core *~ TAGS
+	rm -f core *~ TAGS gdb_init.com
