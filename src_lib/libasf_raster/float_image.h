@@ -12,6 +12,7 @@
 #include <sys/types.h>
 
 #include <glib.h>
+#include <gsl/gsl_matrix.h>
 
 // Instance structure.  Everything here is private and need not be
 // used or understood by client code.
@@ -63,7 +64,7 @@ typedef enum {
 // float_image_new_from_memory method.  The byte order of individual
 // pixels in the file should be byte_order.
 FloatImage *
-float_image_new_from_file (size_t size_x, size_t size_y, char *file,
+float_image_new_from_file (size_t size_x, size_t size_y, const char *file,
 			   off_t offset, float_image_byte_order_t byte_order);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -105,6 +106,47 @@ float_image_set_region (FloatImage *self, size_t x, size_t y, size_t size_x,
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Image Analysis and Statistics
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Finds the minimum and maximum pixel values in the image, and the
+// mean and standard deviation of all pixels.  This function sucks
+// every pixel in the image into memory at the moment (this needs
+// fixing).
+void
+float_image_statistics (FloatImage *self, float *min, float *max, float *mean, 
+			float *standard_deviation);
+
+// Compute an efficient estimate of the mean and standard deviation of
+// the pixels in the image, by sampling every stride th pixel in each
+// dimension.  The whole array of sample pixels ends up in memory, so
+// stride probably needs to be something other than one or some other
+// low number for large images.
+void
+float_image_approximate_statistics (FloatImage *self, size_t stride, 
+				    float *mean, float *standard_deviation);
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Kernels, Interpolation, and Sampling
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Apply kernel centerd at pixel x, y and return the value.  The
+// kernel matrix must be have equal odd dimensions.  The values in the
+// kernel are multiplied by the pixels, and the sum of the products
+// returned.  When part of the kernel would fall outside the image
+// extents, the values used for the out-of-image pixels are the mirror
+// images of the corresponding in-image pixels, with the edge pixels
+// not duplicated, i.e. reflection about the middle of the edge pixels
+// is used.
+float
+float_image_apply_kernel (FloatImage *self, ssize_t x, ssize_t y, 
+			  gsl_matrix_float *kernel);
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Storing Images in Files
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -114,8 +156,34 @@ float_image_set_region (FloatImage *self, size_t x, size_t y, size_t size_x,
 // contiguously in memory.  Individual pixels are stored in byte order
 // byte_order.  Returns 0 on success, nonzero on error.
 int
-float_image_store (FloatImage *self, char *file, 
+float_image_store (FloatImage *self, const char *file, 
 		   float_image_byte_order_t byte_order);
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Exporting Images in Various Image File Formats
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Export image to fila as a gray scaled jpeg image, with largest
+// dimension no larger than max_dimension.  The max_dimension argument
+// must be less than or equal to the largest dimension of the image.
+// The image may be scaled st its largest dimension is considerably
+// less than max_dimension.  Scaling is performed by averaging blocks
+// of pixels together, using odd pixel reflection around the image
+// edges (see the description of the apply_kernel method).  The JPEG
+// format uses byte-valued gray scale samples, so the dynamic range of
+// gray scale output pixels is limited to [0, 255].  Image pixel
+// values inside two standard deviations of the mean pixel value are
+// mapped linearly into this range; image pixel values outside two
+// standard are clamped at the appropriate limit.  If all image pixels
+// have the same value, the output if is made black if the pixels have
+// value 0.0, and white otherwise.  This routine slurps the whole
+// image into memory, so beware.  Returns 0 on success, nonzero on
+// error.
+int
+float_image_export_as_jpeg (FloatImage *self, const char *file, 
+			    size_t max_dimension);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
