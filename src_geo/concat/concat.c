@@ -169,6 +169,34 @@ int	doConcat=1;		/* Actually copy data?			*/
 int	colorConcat=0;		/* Create color image?			*/
 int	colorCur=0;		/* Current color band.			*/
 
+static
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	" %s [-m mask][-v ovrlp] [-c] [-n] <outfile> <file1> <file2> [...]\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"      outfile   Output LAS 6.0 format file, without extension\n"
+ 	"  file1 file2   Input file names, without extensions\n"
+        "        [...]   Additional input file names\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"        -n   Set everything up, but do not copy data.\n"
+	"        -c   output a color mosaic-- each image goes in a separate band.\n"
+	"   -m mask   mask value for pixel fill value\n"
+	"  -v ovrlp   pixel overlap option: REPLAC, LEAVE or AVER\n"
+	"                    (default is REPLAC)\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   This program creates an output image by overlaying each input\n"
+	"   image into the output at the specified locations\n");
+ printf("\n"
+	"Version %.2f, ASF SAR TOOLS\n"
+	"\n",VERSION);
+   exit(1);
+}					/*ASF*/
+
 int main(int argc,char **argv)  /* ASF */
 {
  struct DDR *ddr;		/* pointer to the input DDR structure	*/
@@ -414,30 +442,3 @@ int main(int argc,char **argv)  /* ASF */
 }
 
 
-
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	" %s [-m mask][-v ovrlp] [-c] [-n] <outfile> <file1> <file2> [...]\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"      outfile   Output LAS 6.0 format file, without extension\n"
- 	"  file1 file2   Input file names, without extensions\n"
-        "        [...]   Additional input file names\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"        -n   Set everything up, but do not copy data.\n"
-	"        -c   output a color mosaic-- each image goes in a separate band.\n"
-	"   -m mask   mask value for pixel fill value\n"
-	"  -v ovrlp   pixel overlap option: REPLAC, LEAVE or AVER\n"
-	"                    (default is REPLAC)\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   This program creates an output image by overlaying each input\n"
-	"   image into the output at the specified locations\n");
- printf("\n"
-	"Version %.2f, ASF SAR TOOLS\n"
-	"\n",VERSION);
-   exit(1);
-}					/*ASF*/
