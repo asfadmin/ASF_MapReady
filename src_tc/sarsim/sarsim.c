@@ -306,7 +306,7 @@ init_support(&line_off,&sample_off,&zone,demfile);
 printf("  SAR file  %s\t  nl,ns = %i\t%i\n",sarfile,nl,ns);
 printf("  DEM file  %s\t  nl,ns = %i\t%i\n\n",demfile,dem_nl,dem_ns);
 
-get_facdr(sarfile,&ofdr);
+get_asf_facdr(sarfile,&ofdr);
 if (strncmp(ofdr.grndslnt,"GROUN",5) == 0) GROUND_RANGE = 1;
 else  GROUND_RANGE = 0;
 
