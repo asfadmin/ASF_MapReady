@@ -49,7 +49,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     aid recognition, since there is much confusion of map projection\n"\
 "     terminology).\n"\
 "\n"\
-"     --projection , -p : Projection\n"\
+"     --projection, -p : Projection\n"\
 "          Projection to use.  Argument must be one of the following:\n"\
 "               utm    - Universal Transverse Mercator\n"\
 "               ps     - Polar stereo\n"\
@@ -63,7 +63,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          --central-meridian          : Longitude of Central Meridian\n"\
 "          --latitude-of-origin        : Latitude at projection\"s origin\n"\
 "	  \n"\
-"	  Either the zone or center_longitude must be specified.\n"\
+"	  Either the zone or center_longitude must be specified.  The\n"\
+"	  center_longitude may not be an exact multiple of 6 (i.e. may\n"\
+"	  not lie on a UTM zone boundry).\n"\
 "\n"\
 "     POLAR STEREO\n"\
 "     ------------\n"\
