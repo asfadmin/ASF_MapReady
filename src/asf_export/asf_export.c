@@ -149,6 +149,9 @@ void print_splash_screen(int argc, char* argv[])
 	char temp1[255];
 	char temp2[255];
 	int ii;
+	struct tm *ptr;
+	time_t tm;
+
 	sprintf(temp1, "\nCommand line:");
 	for (ii = 0; ii < argc; ii++)
 	{
@@ -158,7 +161,13 @@ void print_splash_screen(int argc, char* argv[])
 	strcat(temp1, "\n");
 	printf("%s", temp1);
 	printLog(temp1);
-	system("date");
+
+	tm = time(NULL);
+	ptr = localtime(&tm);
+	printf(asctime(ptr));
+	printLog(asctime(ptr));
+
+	/*system("date");*/
 	printf("PID: %i\n", (int)getpid());
 }
 
