@@ -259,8 +259,10 @@ main (int argc, char *argv[])
   char scaleStr[25];
 
   /*Check to see which options were specified*/
-  if(checkForOption("-help", argc, argv) != -1)/*Most important*/
+  if ( checkForOption ("-help", argc, argv) != -1
+       || checkForOption ("--help", argc, argv) != -1 ) {
     help_page();
+  }
   formatFlag = checkForOption("-format", argc, argv);
   sizeFlag = checkForOption("-size", argc, argv);
   logFlag = checkForOption("-log", argc, argv);
