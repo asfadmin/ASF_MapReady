@@ -20,7 +20,7 @@ JRS frames are 4660 bytes, 7.5 sync bytes, and 6144*2*3 bits of payload.
 	The frames are bit-interleaved for the I and Q "streams"
 	(one bit I, one bit Q).  Each stream contains 30 bits of sync,
 	69 bits of housekeeping data (which is identical in both
-	streams) a 24-bit frame counter, and 12 sets of 
+	streams) a 24-bit frame counter, and 12 sets of
 	1539 bits of data/3 bits of PCM code.  Needless to say, it's ugly.
 
 RSAT frames are 323 bytes, 4 sync bytes, and 311 bytes of payload.
@@ -38,7 +38,7 @@ void openBinary(bin_state *s,const char *fName)
 	s->binary=FOPEN(fName,"rb");
 	FSEEK64(s->binary,0,SEEK_END);/*Seek to EOF*/
 	s->bytesInFile=FTELL64(s->binary);/*Save file size*/
-	
+
 	/*Seek back to start of file, setting curFrame*/
 	seekFrame(s,0);
 }
@@ -62,7 +62,7 @@ ERS_frame * ERS_readNextFrame(bin_state *s,ERS_frame *f)
 /*Read next frame in file.*/
 	FREAD(f->sync,ERS_bytesPerFrame,1,s->binary);
 	s->curFrame++;
-	
+
 /*Determine frame type:*/
 	f->is_aux=f->is_zero=f->is_echo=0;
 	if (f->type==128)/*Check auxiliary data bit.*/
@@ -79,9 +79,11 @@ ERS_frame * ERS_readNextFrame(bin_state *s,ERS_frame *f)
 	  }
 
 /*Extract & decode auxiliary data*/
-	if (f->is_aux)
-	{/*Extract & decode auxiliary data*/
-		f->raw=(ERS_raw_aux *)f->data;
+	if (f->is_aux) {
+		int ii;
+		for (ii=0; (ii<ERS_datPerAux) && (ii<ERS_datPerFrame); ii++) {
+			f->raw[ii] = f->data[ii];
+		}
 		ERS_decodeAux(f->raw,&f->aux);
 	}
 
@@ -99,11 +101,11 @@ JRS_frame * JRS_readNextFrame(bin_state *s,JRS_frame *f)
 /*Read next frame in file.*/
 	FREAD(f->data,1,JRS_bytesPerFrame,s->binary);
 	s->curFrame++;
-	
+
 /*Extract & decode auxiliary data*/
 	JRS_auxUnpack(f->data,&f->raw);
 	JRS_auxDecode(&f->raw,&f->aux);
-	
+
 	return f;
 }
 
@@ -118,12 +120,12 @@ RSAT_frame * RSAT_readNextFrame(bin_state *s,RSAT_frame *f)
 /*Read next frame in file.*/
 	FREAD(f,RSAT_bytesPerFrame,1,s->binary);
 	s->curFrame++;
-	
+
 /*Determine frame type:*/
 	f->is_aux=f->is_zero=f->is_echo=0;
 	f->beam=-1;
 	f->hasReplica=0;
-	
+
 	if ((f->status[1]&1)==0)/*Check zero bit.*/
 		f->is_zero=1;
 	else if ((f->id[1]&6)==0)/*Check auxiliary data bit.*/
@@ -132,16 +134,19 @@ RSAT_frame * RSAT_readNextFrame(bin_state *s,RSAT_frame *f)
 		f->is_echo=1;
 /*	else
 		{printf("Error!  Unknown RSAT frame type '%d'\n",(int)f->id[1]);exit(1);}
-*/	
-	
+*/
+
 	if (f->is_aux)
 	{
-		f->raw=(RSAT_raw_aux *)f->data;
+		int ii;
+		for (ii=0; (ii<RSAT_datPerAux) && (ii<RSAT_datPerFrame); ii++) {
+			f->raw[ii] = f->data[ii];
+		}
 		RSAT_decodeAux(f->raw,&f->aux);
-		f->beam=RSAT_auxGetBeam(&f->aux);
-		f->hasReplica=RSAT_auxHasReplica(&f->aux);
+		f->beam = RSAT_auxGetBeam(&f->aux);
+		f->hasReplica = RSAT_auxHasReplica(&f->aux);
 	}
-	
+
 	return f;
 }
 
