@@ -279,15 +279,20 @@ process_item(GtkTreeIter *iter,
   
   if (strcmp(status, "Done") != 0)
   {
-    gchar *basename, *in_meta, *p, *done;
+    gchar *basename, *out_basename, *p, *done;
     gchar convert_cmd[4096];
     gchar log_file[128];
     gboolean err;
 
-    in_meta = meta_file_name(in_data);
+    /* gchar * in_meta = meta_file_name(in_data); */
 
     basename = g_strdup(in_data);
     p = strrchr(basename, '.');
+    if (p)
+      *p = '\0';
+
+    out_basename = g_strdup(out_full);
+    p = strrchr(out_basename, '.');
     if (p)
       *p = '\0';
   
@@ -310,7 +315,7 @@ process_item(GtkTreeIter *iter,
 		 settings_get_latitude_argument(user_settings),
 		 log_file,
 		 basename,
-		 basename);
+		 out_basename);
 
       /* for now we use this version: 
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
@@ -359,7 +364,7 @@ process_item(GtkTreeIter *iter,
 	       settings_get_output_format_string(user_settings),
 	       settings_get_size_argument(user_settings),
 	       log_file,
-	       basename,
+	       out_basename,
 	       out_full);
       
       cmd_output = do_cmd(convert_cmd, log_file);
@@ -374,7 +379,8 @@ process_item(GtkTreeIter *iter,
     }
 
     g_free(basename);
-    g_free(in_meta);
+    g_free(out_basename);
+    /* g_free(in_meta); */
   }
 
   g_free(status);
