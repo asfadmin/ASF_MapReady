@@ -15,6 +15,8 @@
 #include "asf_complex.h" /* For get_complexFloat_line(s) and
                           * put_complexFloat_line(s) */
 
+#include "asf_version.h"
+
 #ifndef PI
 # define PI 3.14159265358979323846
 #endif
