@@ -21,6 +21,7 @@ PROGRAM HISTORY:
 #include "jpl_proj.h"
 #include "least_squares.h"
 #include "calibrate.h"
+#include "get_ceos_names.h"
 
 #ifndef PI
 # define PI 3.14159265358979323846
@@ -254,7 +255,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
 /*Calibration stuff*/
   double noise_table[MAX_tableRes];
 
-  if (FOCUS_CEOS_DAT_LEA_PAIR==get_ceos_names(leaderName, junk1, junk2)) {
+  if (CEOS_dat_lea_PAIR==get_ceos_names(leaderName, junk1, junk2)) {
     rsiCeos=TRUE;
   }
 
@@ -286,7 +287,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
 
   /* We can get some useful stuff from the CEOS leader file, like the
    * calibration parameters */
-  if (has_ceos_leader_extension(leaderName)) {
+  if (has_ceos_metadata_extension(leaderName)) {
     char tmp[256];
     cal_param = create_cal_params(leaderName);
     dssr = (struct dataset_sum_rec*) MALLOC (sizeof(struct dataset_sum_rec));
