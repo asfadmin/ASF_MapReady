@@ -110,8 +110,8 @@ void meta_io(coniStruct *coni,meta_parameters *meta,int reading)
 		}
 		coniIO_char(coni,"geo.","lookDir:",&sar->look_direction,"SAR Satellite look direction (normally R) [R=right; L=left]");
 		coniIO_int(coni,"geo.","deskew:",&sar->deskewed,"Image moved to zero doppler? [1=yes; 0=no]");
-		coniIO_double(coni,"geo.","xPix:",&general->xPix,"Pixel size in X direction [m]");
-		coniIO_double(coni,"geo.","yPix:",&general->yPix,"Pixel size in Y direction [m]");
+		coniIO_double(coni,"geo.","xPix:",&geo->xPix,"Pixel size in X direction [m]");
+		coniIO_double(coni,"geo.","yPix:",&geo->yPix,"Pixel size in Y direction [m]");
 		coniIO_double(coni,"geo.","rngPixTime:",&sar->range_time_per_pixel,"Time/pixel, range (xPix/(c/2.0), or 1/fs) [s]");
 		coniIO_double(coni,"geo.","azPixTime:",&sar->azimuth_time_per_pixel,"Time/pixel, azimuth (yPix/swathVel, or 1/prf) [s]");
 		coniIO_double(coni,"geo.","slantShift:",&sar->slantShift,"Error correction factor, in slant range [m]");
