@@ -307,8 +307,5 @@ setup_files_list(int argc, char *argv[])
 void
 set_output_name(GtkTreeIter *iter, const gchar *name)
 {
-    printf("Tree: %s\n", name);
-//    gtk_list_store_set(list_store, iter, 1, NULL, -1);
     gtk_list_store_set(list_store, iter, 1, name, -1);
-    printf("--\n");
 }
