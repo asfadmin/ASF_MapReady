@@ -101,6 +101,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "    0.5     06/04   R. Gens   Renamed to asf_convert, added alternative\n"\
 "                              command line"
 
+#define ASF_VERSION_MAJOR_STRING "0.30"
+#define VERSION 0.3
+
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
 
@@ -110,67 +113,75 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "asf_convert.h"
 #include "functions.h"
 #include "proj.h"
+#include "asf_reporting.h"
 #include <unistd.h>
 
 
-#define VERSION 0.5
 #define REQUIRED_ARGS 1
 #define FLAG_NOT_SET -1
 
+
 void usage()
 {
-	printf ("\n"
-		"USAGE:\n"
-		ASF_NAME_STRING
-		" "
-		ASF_USAGE_STRING
-		"\n\n");
-	exit (EXIT_FAILURE);
+  printf ("\n"
+    "USAGE:\n"
+    ASF_NAME_STRING
+    " "
+    ASF_USAGE_STRING
+    "\n\n");
+  exit (EXIT_FAILURE);
 }
-
-
-void help_page();
-
-/*Default splash screen, the same for all the tools
-This function should be called first in the "we're good enough" part of command line parsing*/
-void print_splash_screen(int argc, char* argv[])
-{
-	char temp1[255];
-	char temp2[255];
-	int ii;
-	sprintf(temp1, "\nCommand line:");
-	for (ii = 0; ii < argc; ii++)
-	{
-		sprintf(temp2, " %s",argv[ii]);
-		strcat(temp1, temp2);
-	}
-	printf("%s\n", temp1);
-	system("date");
-	printf("PID: %i\n", (int)getpid());
-}
-
 
 void config_usage()
 {
-	printf(
-		"BATCH USAGE:\n"
-		"   asf_convert -config <config_file> |\n"
-		"               -init_config <config_file>\n");
+  printf(
+    "BATCH USAGE:\n"
+    "   asf_convert -config <config_file> |\n"
+    "               -init_config <config_file>\n");
 }
 
 
-void print_error(char *msg)
+void help_page()
 {
-	sprintf(errbuf, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);/*I made "ERROR:" red...Yay! :D*/
-	printErr(errbuf);
-	exit(EXIT_FAILURE);
+  char happy_string[4066];
+  char command[4096];
+
+  /* What to print out for help */
+  sprintf(happy_string,
+          "\n\n\n"
+          "Tool name:\n" ASF_NAME_STRING "\n\n\n"
+          "Usage:\n" ASF_NAME_STRING " " ASF_USAGE_STRING "\n\n\n"
+          "Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
+          "Input:\n" ASF_INPUT_STRING "\n\n\n"
+          "Output:\n"ASF_OUTPUT_STRING "\n\n\n"
+          "Options:\n" ASF_OPTIONS_STRING "\n\n\n"
+          "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
+          "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
+          "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
+          "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
+          "Version: " ASF_VERSION_MAJOR_STRING "\n\n\n");
+
+  /* If we can, use less */
+  sprintf(command,"echo '%s' | less",happy_string);
+  if(system(command) != -1)
+    exit(EXIT_SUCCESS);
+
+  /* Hmmm, less didn't work cause we got here, try using more */
+  sprintf(command,"echo '%s' | more",happy_string);
+  if(system(command) != -1)
+    exit(EXIT_SUCCESS);
+
+  /* Okay, neither less or more work (obviously if we made it here),
+   * just print the info straight to stdout and exit */
+  printf(happy_string);
+  exit(EXIT_SUCCESS);
 }
 
 
 void check_return(int ret, char *msg)
 {
-	if (ret != 0)
-		print_error(msg);
+  if (ret != 0)
+    asfPrintError(msg);
 }
 
 /*Check to see if an option was supplied or not
@@ -178,543 +189,482 @@ If it was found, return its argument number
 Otherwise, return FLAG_NOT_SET*/
 int checkForOption(char* key, int argc, char* argv[])
 {
-	int ii = 0;
-	while(ii < argc)
-	{
-		if(strmatch(key, argv[ii]))
-			return(ii);
-		++ii;
-	}
-	return(FLAG_NOT_SET);
+  int ii = 0;
+  while(ii < argc)
+  {
+    if(strmatch(key, argv[ii]))
+      return(ii);
+    ++ii;
+  }
+  return(FLAG_NOT_SET);
 }
 
 
 void replace_backslashes(char *msg)
 {
-	char temp[256];
-	int ii,jj;
-	/*Replace all \'s in msg with \\ in temp*/
-	for(ii = 0, jj = 0; ii < 256 && jj < 256; ++ii, ++jj)
-	{
-		if(msg[ii] == '\\')
-		{
-			temp[jj] = '\\';
-			++jj;
-			temp[jj] = '\\';
-		}
-		else
-		{
-			temp[jj] = msg[ii];
-		}
-	}
-	temp[jj] = '\0';
-	/*Done replacing...now copy temp into msg*/
-	for(ii = 0; ii < 256; ++ii)
-	{
-		msg[ii] = temp[ii];
-	}
+  char temp[256];
+  int ii,jj;
+  /*Replace all \'s in msg with \\ in temp*/
+  for(ii = 0, jj = 0; ii < 256 && jj < 256; ++ii, ++jj)
+  {
+    if(msg[ii] == '\\')
+    {
+      temp[jj] = '\\';
+      ++jj;
+      temp[jj] = '\\';
+    }
+    else
+    {
+      temp[jj] = msg[ii];
+    }
+  }
+  temp[jj] = '\0';
+  /*Done replacing...now copy temp into msg*/
+  for(ii = 0; ii < 256; ++ii)
+  {
+    msg[ii] = temp[ii];
+  }
 }
 
 
 int main(int argc, char *argv[])
 {
-	FILE *fBatch;
-	s_config *cfg;
-	char configFile[255], cmd[255], options[255], in[25], out[25];
-	char proj[25], line[255], fileName[255], batchConfig[255];
-	char format_in[255], format_out[255];
-	char out_file[255], data_file[255], meta_file[255];
-/*	int inFlag = FALSE, outFlag = FALSE, formatFlag = FALSE, configFlag = FALSE, configInitFlag = FALSE;*/
-	int formatFlag, sizeFlag, configFlag, configInitFlag, quietFlag;
-	int ii, size_out;
-	file_format_t type_in, type_out;
-	int found;
+  FILE *fBatch;
+  s_config *cfg;
+  char configFile[255], cmd[255], options[255], in[25], out[25];
+  char proj[25], line[255], fileName[255], batchConfig[255];
+  char format_in[255], format_out[255];
+  char out_file[255], data_file[255], meta_file[255];
+/*  int inFlag = FALSE, outFlag = FALSE, formatFlag = FALSE, configFlag = FALSE, configInitFlag = FALSE;*/
+  int formatFlag, sizeFlag, configFlag, configInitFlag, quietFlag;
+  int size_out;
+  file_format_t type_in, type_out;
+  int found;
 
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
-	/*Super-secret hidden options :)*/
-	if(checkForOption("-batch", argc, argv) != FLAG_NOT_SET)
-	{
-		config_usage();
-		exit(0);
-	}
+  /*Super-secret hidden options :)*/
+  if(checkForOption("-batch", argc, argv) != FLAG_NOT_SET)
+  {
+    config_usage();
+    exit(EXIT_SUCCESS);
+  }
 
-	/*Normal options*/
-	if(checkForOption("-help", argc, argv) != -1 ||
-		checkForOption("--help", argc, argv) != -1)
-		help_page();
-	formatFlag = checkForOption("-format", argc, argv);
-	sizeFlag = checkForOption("-size", argc, argv);
-	configFlag = checkForOption("-config", argc, argv);
-	configInitFlag = checkForOption("-init_config", argc, argv);
-	logflag = checkForOption("-log", argc, argv);
-	quietFlag = checkForOption("-quiet", argc, argv);
+  /*Normal options*/
+  if(checkForOption("-help", argc, argv) != -1 ||
+    checkForOption("--help", argc, argv) != -1)
+    help_page();
+  formatFlag = checkForOption("-format", argc, argv);
+  sizeFlag = checkForOption("-size", argc, argv);
+  configFlag = checkForOption("-config", argc, argv);
+  configInitFlag = checkForOption("-init_config", argc, argv);
+  logflag = checkForOption("-log", argc, argv);
+  quietFlag = checkForOption("-quiet", argc, argv);
 
 
-	if(configFlag != FLAG_NOT_SET && configInitFlag != FLAG_NOT_SET)/*One or the other is fine, but not both*/
-		usage();/*This exits with a failure*/
-	if((configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET) && /*These...*/
-		(formatFlag != FLAG_NOT_SET || sizeFlag != FLAG_NOT_SET))/*...are mutually exclusive with these*/
-		usage();/*This exits with a failure*/
-	{
-	  /*So, at this point, we know our options don't conflict...now we need
-	  to know how many arguments we ought to have.*/
-	  int neededArgs = 1;/*command*/
-	  if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
-		  neededArgs += 2;/*option & parameter*/
-	  else
-		  neededArgs += 2;/*in_data_file, in_meta_file (no longer!), out_file*/
-	  if(logflag != FLAG_NOT_SET)
-		  neededArgs += 2;/*option & parameter*/
-	  if(formatFlag != FLAG_NOT_SET)
-		  neededArgs += 2;/*option & parameter*/
-	  if(sizeFlag != FLAG_NOT_SET)
-		  neededArgs += 2;/*option & parameter*/
-	  if(quietFlag != FLAG_NOT_SET)
-		  neededArgs += 1;/*option*/
+  if(configFlag != FLAG_NOT_SET && configInitFlag != FLAG_NOT_SET)/*One or the other is fine, but not both*/
+    usage();/*This exits with a failure*/
+  if((configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET) && /*These...*/
+    (formatFlag != FLAG_NOT_SET || sizeFlag != FLAG_NOT_SET))/*...are mutually exclusive with these*/
+    usage();/*This exits with a failure*/
+  {
+    /*So, at this point, we know our options don't conflict...now we need
+    to know how many arguments we ought to have.*/
+    int neededArgs = 1;/*command*/
+    if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
+      neededArgs += 2;/*option & parameter*/
+    else
+      neededArgs += 2;/*in_data_file, in_meta_file (no longer!), out_file*/
+    if(logflag != FLAG_NOT_SET)
+      neededArgs += 2;/*option & parameter*/
+    if(formatFlag != FLAG_NOT_SET)
+      neededArgs += 2;/*option & parameter*/
+    if(sizeFlag != FLAG_NOT_SET)
+      neededArgs += 2;/*option & parameter*/
+    if(quietFlag != FLAG_NOT_SET)
+      neededArgs += 1;/*option*/
 
-	  /*make sure we've got enough arguments*/
-	  if(argc != neededArgs)
-		  usage();/*This exits with a failure*/
-	}
+    /*make sure we've got enough arguments*/
+    if(argc != neededArgs)
+      usage();/*This exits with a failure*/
+  }
 
-	/*We also need to make sure the last three options are close to what we expect*/
-	if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
-	{
-		if(argv[argc - 1][0] == '-')
-			usage();
-	}
-	else
-	  if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-')
-			usage();/*This exits with a failure*/
+  /*We also need to make sure the last three options are close to what we expect*/
+  if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
+  {
+    if(argv[argc - 1][0] == '-')
+      usage();
+  }
+  else
+  {
+    if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-')
+      usage();/*This exits with a failure*/
+  }
 
-	/*Next we're going to make sure the options are specified according to the usage
-	That is, -option <parameter> -option <parameter> and so on...if an option requires
-	a parameter, we need to make sure it's followed by a parameter! Also make sure
-	an option's parameters don't bleed into the command's required arguments*/
-	if(logflag != FLAG_NOT_SET)
-	{
-		if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
-			if(argv[logflag + 1][0] == '-' || logflag >= argc - 3)
-				usage();
-		else
-			if(argv[logflag + 1][0] == '-' || logflag >= argc - 3)
-				usage();/*This exits with a failure*/
-	}
-	if(formatFlag != FLAG_NOT_SET)
-		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3)
-			usage();/*This exits with a failure*/
-	if(sizeFlag != FLAG_NOT_SET)
-		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
-			usage();/*This exits with a failure*/
+  /*Next we're going to make sure the options are specified according to the usage
+  That is, -option <parameter> -option <parameter> and so on...if an option requires
+  a parameter, we need to make sure it's followed by a parameter! Also make sure
+  an option's parameters don't bleed into the command's required arguments*/
+  if(logflag != FLAG_NOT_SET)
+  {
+    if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET) {
+      if(argv[logflag + 1][0] == '-' || logflag >= argc - 3)
+        usage();
+    }
+    else {
+      if(argv[logflag + 1][0] == '-' || logflag >= argc - 3)
+        usage();/*This exits with a failure*/
+    }
+  }
 
-	/*We must be good enough at this point...start processing with assumptions that are
-	*supposedly* guaranteed from above :)*/
-	if(quietFlag == FLAG_NOT_SET)
-		print_splash_screen(argc, argv);/*display splash screen if not quiet*/
-	
-	
-	if(formatFlag != FLAG_NOT_SET)
-		strcpy(format_out, argv[formatFlag + 1]);
-	else
-		strcpy(format_out, "geotiff");/*default behavior is geotiff*/
-	for(ii = 0; ii < strlen(format_out); ++ii)
-		format_out[ii] = toupper(format_out[ii]);//convert to upper case
-	if(sizeFlag != FLAG_NOT_SET)
-		size_out = atol(argv[sizeFlag + 1]);
-	if(logflag != FLAG_NOT_SET)
-		strcpy(logFile, argv[logflag + 1]);
-	else
-		sprintf(logFile, "tmp%i.log", (int)getpid());/*default behavior: log to tmp<pid>.log*/
-		
-	if(configFlag != FLAG_NOT_SET)
-		strcpy(configFile, argv[configFlag + 1]);
-	else
-		sprintf(configFile, "tmp%i.config", (int)getpid());/*default behavior: config to tmp<pid>.config*/
-		
-	if(configInitFlag != FLAG_NOT_SET)
-		strcpy(configFile, argv[configInitFlag + 1]);
+  /* We must be good enough at this point... log & quiet flags set */
+  asfSplashScreen(argc, argv);/*display splash screen if not quiet*/
 
-	/*Get files from command line if we're not doing a config file*/
-	if(configFlag == FLAG_NOT_SET && configInitFlag == FLAG_NOT_SET)
-	{
-		strcpy(data_file, argv[argc - 2]);/*The first of the last two arguments*/
-		/*strcpy(meta_file, argv[argc - 2]);*/ /*The second of the last three arguments*/
-		strcpy(out_file, argv[argc - 1]);/*The second of the last two arguments*/
-		/*Replace any \'s with \\'s*/
-		replace_backslashes(data_file);
-		/*replace_backslashes(meta_file);*/
-		replace_backslashes(out_file);
+  if(formatFlag != FLAG_NOT_SET)
+    if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3)
+      usage();/*This exits with a failure*/
+  if(sizeFlag != FLAG_NOT_SET)
+    if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
+      usage();/*This exits with a failure*/
 
-		found = FALSE;
-		if(strchr(data_file, '.') != NULL)/* If file has an extension, see if we know it*/
-		{
-			if(!strcmp(".D", strrchr(data_file, '.')))/*If the file ends in .D*/
-			  {                                       /*It must be a CEOS image*/
-				strcpy(format_in, "CEOS");
-				strcpy(meta_file, data_file);
-				meta_file[ strlen(meta_file) - 1 ] = 'L';
-				found = TRUE;
-			  }
-			else if(!strcmp(".img", strrchr(data_file, '.')))/*If the file ends in .img*/
-			  {                                /*It must be an ASF internal format file*/
-			        char *ext;
-				strcpy(format_in, "ASF");
-				strcpy(meta_file, data_file);
-				ext = strrchr(meta_file, '.');
-				strcpy(ext + 1, "meta");
-				found = TRUE;
-			  }
-		}
+  if(formatFlag != FLAG_NOT_SET)
+    strcpy(format_out, argv[formatFlag + 1]);
+  else
+    strcpy(format_out, "geotiff");/*default behavior is geotiff*/
+  str2upper(format_out);//convert to upper case
+  if(sizeFlag != FLAG_NOT_SET)
+    size_out = atol(argv[sizeFlag + 1]);
+  if(logflag != FLAG_NOT_SET)
+    strcpy(logFile, argv[logflag + 1]);
+  else
+    sprintf(logFile, "tmp%i.log", (int)getpid());/*default behavior: log to tmp<pid>.log*/
 
-		if (!found)
-		{
-		  /* see if <basename>.D exists */
-		  char file_test[255];
-		  strcpy(file_test, data_file);
-		  strcat(file_test, ".D");
-		  if (fileExists(file_test))
-		    {
-		      strcpy(format_in, "CEOS");
-		      strcpy(data_file, file_test);
-		      strcpy(meta_file, data_file);
-		      meta_file[ strlen(meta_file) - 1 ] = 'L';
-		    }
-		  else
-		    {
-		      /* try <basename>.img */
-		      strcpy(file_test, data_file);
-		      strcat(file_test, ".img");
-		      if (fileExists(file_test))
-			{
-			  char *ext;
-			  strcpy(format_in, "ASF");
-			  strcpy(data_file, file_test);
-			  strcpy(meta_file, data_file);
-			  ext = strrchr(meta_file, '.');
-			  strcpy(ext + 1, "meta");
-			}
-		      else
-			{
-			  /* can't find the file! */
-			  snprintf(file_test, sizeof(file_test),
-				   "Couldn't find input file %s.D", 
-				   data_file, data_file);
+  if(configFlag != FLAG_NOT_SET)
+    strcpy(configFile, argv[configFlag + 1]);
+  else
+    sprintf(configFile, "tmp%i.config", (int)getpid());/*default behavior: config to tmp<pid>.config*/
 
-			  print_error(file_test); /*Otherwise, we have no idea*/
-			}
-		    }
-		}
-	}
+  if(configInitFlag != FLAG_NOT_SET)
+    strcpy(configFile, argv[configInitFlag + 1]);
+
+  /*Get files from command line if we're not doing a config file*/
+  if(configFlag == FLAG_NOT_SET && configInitFlag == FLAG_NOT_SET)
+  {
+    strcpy(data_file, argv[argc - 2]);/*The first of the last two arguments*/
+    /*strcpy(meta_file, argv[argc - 2]);*/ /*The second of the last three arguments*/
+    strcpy(out_file, argv[argc - 1]);/*The second of the last two arguments*/
+    /*Replace any \'s with \\'s*/
+    replace_backslashes(data_file);
+    /*replace_backslashes(meta_file);*/
+    replace_backslashes(out_file);
+
+    found = FALSE;
+    if(strchr(data_file, '.') != NULL)/* If file has an extension, see if we know it*/
+    {
+      if(!strcmp(".D", strrchr(data_file, '.')))/*If the file ends in .D*/
+      {                                         /*It must be a CEOS image*/
+        strcpy(format_in, "CEOS");
+        strcpy(meta_file, data_file);
+        meta_file[ strlen(meta_file) - 1 ] = 'L';
+        found = TRUE;
+      }
+      else if(!strcmp(".img", strrchr(data_file, '.')))/*If the file ends in .img*/
+      {                                  /*It must be an ASF internal format file*/
+              char *ext;
+        strcpy(format_in, "ASF");
+        strcpy(meta_file, data_file);
+        ext = strrchr(meta_file, '.');
+        strcpy(ext + 1, "meta");
+        found = TRUE;
+        }
+    }
+
+    if (!found)
+    {
+      /* see if <basename>.D exists */
+      char file_test[255];
+      strcpy(file_test, data_file);
+      strcat(file_test, ".D");
+      if (fileExists(file_test))
+      {
+          strcpy(format_in, "CEOS");
+          strcpy(data_file, file_test);
+          strcpy(meta_file, data_file);
+          meta_file[ strlen(meta_file) - 1 ] = 'L';
+      }
+      else
+      {
+        /* try <basename>.img */
+        strcpy(file_test, data_file);
+        strcat(file_test, ".img");
+        if (fileExists(file_test))
+        {
+          char *ext;
+          strcpy(format_in, "ASF");
+          strcpy(data_file, file_test);
+          strcpy(meta_file, data_file);
+          ext = strrchr(meta_file, '.');
+          strcpy(ext + 1, "meta");
+        }
+        else
+        { /* can't find the file! */
+          snprintf(file_test, sizeof(file_test),"Couldn't find input file %s.D",
+                   data_file);
+          asfPrintError(file_test); /*Otherwise, we have no idea*/
+        }
+      }
+    }
+  }
+  if(configInitFlag != FLAG_NOT_SET)
+  {
+    if(fileExists(configFile))
+      asfPrintError("config file already exits");
+    else
+      check_return(init_config(configFile),
+                   "Basic configuration file could not be initialized.\n");
+    exit(EXIT_SUCCESS);
+  }
+
+  /* If we're working from a config file, read configuration file */
+  if (configFlag != FLAG_NOT_SET)/*configFlag has been set*/
+  {
+    /*Does the specific config file already exist? If not...*/
+    if (!fileExists(configFile))
+    {
+      check_return(init_config(configFile),
+                   "Basic configuration file could not be initialized.\n");
+      exit(EXIT_SUCCESS);
+    }
+    /*config init has been set*/
+    else if (check_resample_flag(configFile) && (configInitFlag!=FLAG_NOT_SET))
+    {
+      check_return(init_resample_config(configFile),
+                   "Extended resampling configuration file could not be initialized.\n");
+      exit(EXIT_SUCCESS);
+    }
+    /*config init has been set*/
+    else if (check_geocode_flag(configFile) && configInitFlag != FLAG_NOT_SET)
+    {
+      check_return(init_projection_config(configFile),
+                   "Extended geocoding configuration file could not be initialized.\n");
+      exit(EXIT_SUCCESS);
+    }
+    /*Nab stuff out of the config File*/
+    cfg = read_config(configFile);
+    strcpy(format_in, str2upper(cfg->general->in_format));
+    strcpy(format_out, str2upper(cfg->general->out_format));
+    if (strcmp(cfg->general->logFile, "") != 0)
+      strcpy(logFile, cfg->general->logFile);
+    fLog = FOPEN(logFile, "a");
+    asfPrintStatus(logbuf);
+  }
+  /* If there's not a config file, get input from command line arguments */
+  else
+  {
+    cfg = init_cfg();
+    strcpy(cfg->comment, "asf_convert temporary configuration file");
+    strcpy(cfg->general->in_data_name, data_file);
+    strcpy(cfg->general->in_meta_name, meta_file);
+    strcpy(cfg->general->in_format, str2upper(format_in));
+    strcpy(cfg->general->data_type, "amplitude");
+    strcpy(cfg->general->out_name, out_file);
+    strcpy(cfg->general->out_format, str2upper(format_out));
+    cfg->general->resample = 0;
+    cfg->general->browse = 0;
+    cfg->general->batch = 0;
+    strcpy(cfg->general->batchFile, "");
+    strcpy(cfg->general->logFile, logFile);
+    check_return(write_config(configFile, cfg),
+                 "Writing a temporary configuration file.\n");
+  }
+
 /***********************END COMMAND LINE PARSING STUFF***********************/
-	if(configInitFlag != FLAG_NOT_SET)
-	{
-		if(fileExists(configFile))
-			print_error("config file already exits");
-		else
-			check_return(init_config(configFile), "Basic configuration file could not be initialized");
-		exit(0);
-	}
 
-	/* If we're working from a config file, read configuration file */
-	if (configFlag != FLAG_NOT_SET)/*configFlag has been set*/
-	{
-		if (!fileExists(configFile))/*Does the specific config file already exist? If not...*/
-		{
-			check_return(init_config(configFile),
-			"basic configuration file could not be initialized");
-			exit(0);
-    	}
-		else if (check_resample_flag(configFile) && configInitFlag != FLAG_NOT_SET)/*config init has been set*/
-		{
-			check_return(init_resample_config(configFile),
-				"extended resampling configuration file "
-				"could not be initialized");
-			exit(0);
-		}
-		else if (check_geocode_flag(configFile) && configInitFlag != FLAG_NOT_SET)/*config init has been set*/
-		{
-			check_return(init_projection_config(configFile),
-				"extended geocoding configuration file "
-				"could not be initialized");
-			exit(0);
-		}
-		/*if everything else succeeded, do this...*/
-		cfg = read_config(configFile);
-		strcpy(format_in, uc(cfg->general->in_format));
-		strcpy(format_out, uc(cfg->general->out_format));
-		if (strcmp(cfg->general->logFile, "") != 0)
-			strcpy(logFile, cfg->general->logFile);
-		fLog = FOPEN(logFile, "a");
-		printLog(logbuf);
-	}
+  /* Handle data types */
+  /*Input types:*/
+  if (strncmp(str2upper(format_in),"CEOS",4) == 0) type_in = CEOS;
+  else if (strncmp(str2upper(format_in),"ASF",3) == 0) type_in = ASF;
+  else asfPrintError("Unrecognized input format");
+  /*Output types:*/
+  if (strncmp(str2upper(format_out),"ASF",3) == 0) type_out = ASF;
+  else if (strncmp(str2upper(format_out),"CEOS",4) == 0) type_out = CEOS;
+  else if (strncmp(str2upper(format_out),"GEOTIFF",3) == 0) type_out = GEOTIFF;
+  else if (strncmp(str2upper(format_out),"JPEG",3) == 0) type_out = JPEG;
+  else if (strncmp(str2upper(format_out),"ENVI",3) == 0) type_out = ENVI;
+  else if (strncmp(str2upper(format_out),"ESRI",3) == 0) type_out = ESRI;
+  else if (strncmp(str2upper(format_out),"PPM",3) == 0) type_out = PPM;
+  else if (strncmp(str2upper(format_out),"PNG",3) == 0) type_out = PNG;
+  else if (strncmp(str2upper(format_out),"LAS",3) == 0) type_out = LAS;
+  else asfPrintError("Unrecognized output format");
 
-	/* Get input from command line arguments */
-	else
-	{
-		cfg = init_cfg();
-		strcpy(cfg->comment, "asf_convert temporary configuration file");
-		strcpy(cfg->general->in_data_name, data_file);
-		strcpy(cfg->general->in_meta_name, meta_file);
-		strcpy(cfg->general->in_format, uc(format_in));
-		strcpy(cfg->general->data_type, "amplitude");
-		strcpy(cfg->general->out_name, out_file);
-		strcpy(cfg->general->out_format, uc(format_out));
-		cfg->general->resample = 0;
-		cfg->general->browse = 0;
-		cfg->general->batch = 0;
-		strcpy(cfg->general->batchFile, "");
-		strcpy(cfg->general->logFile, logFile);
-		check_return(write_config(configFile, cfg),
-			"writing a temporary configuration file");
-	}
+  /* Batch mode processing */
+  if (cfg->general->batch != 0)
+  {
+    fBatch = FOPEN(cfg->general->batchFile, "r");
+    while (fgets(line, 255, fBatch) != NULL)
+    {
+      sscanf(line, "%s", fileName);
+      sprintf(cfg->general->in_data_name, "%s.D", fileName);
+      sprintf(cfg->general->in_meta_name, "%s.L", fileName);
+      strcpy(cfg->general->out_name, fileName);
+      sprintf(batchConfig, "%s.config", fileName);
+      check_return(write_config(batchConfig, cfg),
+                   "Could not write individual configuration file for batch mode processing.\n");
+      check_return(asf_convert(batchConfig),
+                   "Processing image in batch mode (asf_convert).\n");
+    }
+  }
+  else
+  {
+    char command[255];
+    char temp[255];
+    char asf_internal_basename[255];
 
-	/* Handle data types */
-	/*Input types:*/
-	if (strncmp(uc(format_in),"CEOS",4) == 0) type_in = CEOS;
-	else if (strncmp(uc(format_in),"ASF",3) == 0) type_in = ASF;
-	else print_error("Unrecognized input format");
-	/*Output types:*/
-	if (strncmp(uc(format_out),"ASF",3) == 0) type_out = ASF;
-	else if (strncmp(uc(format_out),"CEOS",4) == 0) type_out = CEOS;
-	else if (strncmp(uc(format_out),"GEOTIFF",3) == 0) type_out = GEOTIFF;
-	else if (strncmp(uc(format_out),"JPEG",3) == 0) type_out = JPEG;
-	else if (strncmp(uc(format_out),"ENVI",3) == 0) type_out = ENVI;
-	else if (strncmp(uc(format_out),"ESRI",3) == 0) type_out = ESRI;
-	else if (strncmp(uc(format_out),"PPM",3) == 0) type_out = PPM;
-	else if (strncmp(uc(format_out),"PNG",3) == 0) type_out = PNG;
-	else if (strncmp(uc(format_out),"LAS",3) == 0) type_out = LAS;
-	else print_error("Unrecognized output format");
-
-	/* Batch mode processing */
-	if (cfg->general->batch != 0)
-	{
-/*		cfg->general->batch = 0;
-		logflag = 0;*/
-		fBatch = FOPEN(cfg->general->batchFile, "r");
-		while (fgets(line, 255, fBatch) != NULL)
-		{
-			sscanf(line, "%s", fileName);
-			sprintf(cfg->general->in_data_name, "%s.D", fileName);
-			sprintf(cfg->general->in_meta_name, "%s.L", fileName);
-			strcpy(cfg->general->out_name, fileName);
-			sprintf(batchConfig, "%s.config", fileName);
-			check_return(write_config(batchConfig, cfg),
-				"Could not write individual configuration file "
-				"for batch mode processing");
-			check_return(asf_convert(batchConfig),
-				"Processing image in batch mode (asf_convert)");
-		}
-	}
-	else
-	{
-		char command[255];
-		char temp[255];
-		char asf_internal_basename[255];
-
-		/* Prepare processing */
-		if (configFlag == FLAG_NOT_SET)
-		{
-			if (!fileExists(cfg->general->in_data_name))
-				print_error("input data file does not exist");
-			if (!fileExists(cfg->general->in_meta_name))
-				print_error("input metadata file does not exist");
-		}
+    /* Prepare processing */
+    if (configFlag == FLAG_NOT_SET)
+    {
+      if (!fileExists(cfg->general->in_data_name))
+        asfPrintError("Input data file does not exist");
+      if (!fileExists(cfg->general->in_meta_name))
+        asfPrintError("Input metadata file does not exist");
+    }
 
 
-		/* skip asf_import if given an img file */
-		if (strcmp(uc(format_in), "ASF"))
-		  {
-		    sprintf(asf_internal_basename, "tmp%i", (int)getpid());
-		    sprintf(command, "asf_import -log %s -format %s", logFile, format_in);
-		    if(quietFlag != FLAG_NOT_SET)
-		      strcat(command, " -quiet");
-		    sprintf(temp, " -%s %s %s",
-			    cfg->general->data_type,
-			    cfg->general->in_data_name,
-			    /* cfg->general->in_meta_name, */
-			    asf_internal_basename);
-		    strcat(command, temp);
-		    check_return(system(command), "Importing data (asf_import)");
-		  }
-		else
-		  {
-		    char *p;
+    /* skip asf_import if given an img file */
+    if (strcmp(str2upper(format_in), "ASF"))
+    {
+      sprintf(asf_internal_basename, "tmp%i", (int)getpid());
+      sprintf(command, "asf_import -log %s -format %s", logFile, format_in);
+      if(quietFlag != FLAG_NOT_SET)
+        strcat(command, " -quiet");
+      sprintf(temp, " -%s %s %s",
+        cfg->general->data_type,
+        cfg->general->in_data_name,
+        /* cfg->general->in_meta_name, */
+        asf_internal_basename);
+      strcat(command, temp);
+      check_return(system(command), "Importing data (asf_import).\n");
+    }
+    else
+    {
+      char *p;
+      strcpy(asf_internal_basename, cfg->general->in_data_name);
+      p = strrchr(asf_internal_basename, '.');
+      if (strcmp(p, ".img") == 0)
+        *p = '\0';
+    }
 
-		    strcpy(asf_internal_basename, cfg->general->in_data_name);
-		    p = strrchr(asf_internal_basename, '.');
-		    if (strcmp(p, ".img") == 0)
-		      *p = '\0';
-		  }
+    /* Determine the corner coordinates of the image */
+    if (cfg->general->browse)
+    {
+      check_return(corner_coords(out),
+        "Determining geographic coordinates of corner points (corner_coords).\n");
+      sprintf(cmd, "mv %s.corners %s.corners", out, cfg->general->out_name);
+      system(cmd);
+    }
 
-		/* Determine the corner coordinates of the image */
-		if (cfg->general->browse)
-		{
-			check_return(corner_coords(out),
-				"determining geographic coordinates of corner points "
-				"(corner_coords)");
-			sprintf(cmd, "mv %s.corners %s.corners", out, cfg->general->out_name);
-			system(cmd);
-		}
+    /* Resampling */
+    if (cfg->general->resample || cfg->general->browse)
+    {
+      sprintf(in, "%s", out);
+      sprintf(out, "tmp%i_small", (int)getpid());
+      if (cfg->general->browse)
+        sprintf(options, "-browse");
+      else
+        sprintf(options, "-resample %d", cfg->resampling->kernel);
+      check_return(filter(options, in, out), "Subsampling image (filter)\n.");
+    }
 
-		/* Resampling */
-		if (cfg->general->resample || cfg->general->browse)
-		{
-			sprintf(in, "%s", out);
-			sprintf(out, "tmp%i_small", (int)getpid());
-			if (cfg->general->browse)
-				sprintf(options, "-browse");
-			else
-				sprintf(options, "-resample %d", cfg->resampling->kernel);
-			check_return(filter(options, in, out),
-				"subsampling image (filter)");
-		}
+    /* Geocoding */
+    if (cfg->general->geocoding) {
 
-		/* Geocoding */
-		if (cfg->general->geocoding) {
+      /* Creating projection parameter file */
+      sprintf(proj, "tmp%i.proj", (int)getpid());
 
-		/* Creating projection parameter file */
-		sprintf(proj, "tmp%i.proj", (int)getpid());
+      /*** Polar Stereographic ***/
+      if (strncmp(str2upper(cfg->geocoding->projection), "POLAR", 5) == 0)
+      {
+        sprintf(options, "-l %lf -p %lf -g %s -d %d",
+                cfg->polar->center_lon, cfg->polar->center_lat,
+                cfg->polar->units, cfg->polar->datum);
+        check_return(projprm("plstereo", "key", proj, options),
+                     "Generating projection parameter file (projprm).\n");
+      }
+      /*** Universal Transverse Mercator ***/
+      if (strncmp(str2upper(cfg->geocoding->projection), "UTM", 3) == 0)
+      {
+        sprintf(options, "-d %i -z %i", cfg->utm->datum, cfg->utm->zone);
+        check_return(projprm("utm", "key", proj, options),
+                     "Generating projection parameter file (projprm).\n");
+      }
 
-		/*** Polar Stereographic ***/
-		if (strncmp(uc(cfg->geocoding->projection), "POLAR", 5) == 0)
-		{
-			sprintf(options, "-l %lf -p %lf -g %s -d %d",
-				cfg->polar->center_lon, cfg->polar->center_lat,
-				cfg->polar->units, cfg->polar->datum);
-			check_return(projprm("plstereo", "key", proj, options),
-				"generating projection parameter file (projprm)");
-		}
-		/*** Universal Transverse Mercator ***/
-		if (strncmp(uc(cfg->geocoding->projection), "UTM", 3) == 0)
-		{
-			sprintf(options, "-d %i -z %i", cfg->utm->datum, cfg->utm->zone);
-			check_return(projprm("utm", "key", proj, options),
-				"generating projection parameter file (projprm)");
-		}
+      /*** Albers Conic Equal Area ***/
+      if (strncmp(str2upper(cfg->geocoding->projection), "ALBERS", 6) == 0)
+      {
+        sprintf(options, "-a %lf -b %lf -c %lf -o %lf -g %s -d %d",
+                cfg->albers->first_parallel, cfg->albers->second_parallel,
+                cfg->albers->center_meridian, cfg->albers->orig_latitude,
+                cfg->albers->units, cfg->albers->datum);
+        check_return(projprm("albers", "key", proj, options),
+                     "Generating projection parameter file (projprm).\n");
+      }
 
-		/*** Albers Conic Equal Area ***/
-		if (strncmp(uc(cfg->geocoding->projection), "ALBERS", 6) == 0)
-		{
-			sprintf(options, "-a %lf -b %lf -c %lf -o %lf -g %s -d %d",
-				cfg->albers->first_parallel, cfg->albers->second_parallel,
-				cfg->albers->center_meridian, cfg->albers->orig_latitude,
-				cfg->albers->units, cfg->albers->datum);
-			check_return(projprm("albers", "key", proj, options),
-				"generating projection parameter file (projprm)");
-		}
+      /*** Lambert Conformal Conic ***
+      if (strncmp(uc(cfg->geocoding->projection), "LAMBERT_CC", ) == 0)
+      {
+        sprintf(options, "-x %lf -y %lf -g %s -d %d",
+                cfg->lambert1->latitude, cfg->lambert1->longitude,
+                cfg->lambert1->units, cfg->lambert1->datum);
+        check_return(projprm("lambert", "key", proj, options),
+                     "Generating projection parameter file (projprm).\n");
+      } ***/
 
-		/*** Lambert Conformal Conic ***
-		if (strncmp(uc(cfg->geocoding->projection), "LAMBERT_CC", ) == 0)
-		{
-			sprintf(options, "-x %lf -y %lf -g %s -d %d",
-				cfg->lambert1->latitude, cfg->lambert1->longitude,
-				cfg->lambert1->units, cfg->lambert1->datum);
-			check_return(projprm("lambert", "key", proj, options),
-				"generating projection parameter file (projprm)");
-		} ***/
+      /*** Lambert Azimuthal Equal Area ***
+      if (strncmp(uc(cfg->geocoding->projection), "LAMBERT2", 8) == 0)
+      {
+      *** still needs to be figured out ***
+      } ***/
 
-		/*** Lambert Azimuthal Equal Area ***
-		if (strncmp(uc(cfg->geocoding->projection), "LAMBERT2", 8) == 0)
-		{
-		*** still needs to be figured out ***
-		} ***/
+      sprintf(in, "%s", out);
+      sprintf(out, "tmp%i_geo", (int)getpid());
+      check_return(geocode(in, proj, "key", cfg->geocoding->pixel,
+                   cfg->geocoding->height, out),
+                   "Geocoding image (geocode).\n");
+    }
 
-		sprintf(in, "%s", out);
-		sprintf(out, "tmp%i_geo", (int)getpid());
-		check_return(geocode(in, proj, "key", cfg->geocoding->pixel,
-			cfg->geocoding->height, out),
-			"geocoding image (geocode)");
-		}
-		
 
-		sprintf(command, "asf_export -log %s", logFile);
-		if(quietFlag != FLAG_NOT_SET)
-			strcat(command, " -quiet");
-		if(sizeFlag != FLAG_NOT_SET)
-		{
-			sprintf(temp, " -size %i", size_out);
-			strcat(command, temp);
-		}
-		sprintf(temp, " -format %s %s %s",
-		format_out,
-		asf_internal_basename,
-		cfg->general->out_name);
-		strcat(command, temp);
-		check_return(system(command), "Exporting data (asf_export)");
-	}
+    sprintf(command, "asf_export -log %s", logFile);
+    if(quietFlag != FLAG_NOT_SET)
+      strcat(command, " -quiet");
+    if(sizeFlag != FLAG_NOT_SET)
+    {
+      sprintf(temp, " -size %i", size_out);
+      strcat(command, temp);
+    }
+    sprintf(temp, " -format %s %s %s",
+    format_out,
+    asf_internal_basename,
+    cfg->general->out_name);
+    strcat(command, temp);
+    check_return(system(command), "Exporting data (asf_export).\n");
+  }
 
-	{
-		char temp[256];
-		/* Remove temporary files */
-		if(logflag == FLAG_NOT_SET)
-			remove(logFile);
-		sprintf(temp, "tmp%i.config", (int)getpid());
-		remove(temp);
-		sprintf(temp, "tmp%i.img", (int)getpid());
-		remove(temp);
-		sprintf(temp, "tmp%i.meta", (int)getpid());
-		remove(temp);
-		sprintf(temp, "tmp%i_small", (int)getpid());
-		remove(temp);
-		sprintf(temp, "tmp%i.proj", (int)getpid());
-		remove(temp);
-		sprintf(temp, "tmp%i_geo", (int)getpid());
-		remove(temp);
-	}
-	return(0);
+  {
+    char temp[256];
+    /* Remove temporary files */
+    if(logflag == FLAG_NOT_SET)
+      remove(logFile);
+    sprintf(temp, "tmp%i.config", (int)getpid());
+    remove(temp);
+    sprintf(temp, "tmp%i.img", (int)getpid());
+    remove(temp);
+    sprintf(temp, "tmp%i.meta", (int)getpid());
+    remove(temp);
+    sprintf(temp, "tmp%i_small", (int)getpid());
+    remove(temp);
+    sprintf(temp, "tmp%i.proj", (int)getpid());
+    remove(temp);
+    sprintf(temp, "tmp%i_geo", (int)getpid());
+    remove(temp);
+  }
+  return(0);
 }
-
-
-void help_page()
-{
-	if(system("echo '"
-		"\n\n\n"
-		"Tool name: " ASF_NAME_STRING "\n\n\n"
-		"Usage: " ASF_USAGE_STRING "\n\n\n"
-		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
-		"Input: " ASF_INPUT_STRING "\n\n\n"
-		"Output: "ASF_OUTPUT_STRING "\n\n\n"
-		"Options: " ASF_OPTIONS_STRING "\n\n\n"
-		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
-		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
-		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
-		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
-		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
-		"' | less") != -1)
-		exit(EXIT_SUCCESS);
-
-	else if(system("echo '"
-		"\n\n\n"
-		"Tool name: " ASF_NAME_STRING "\n\n\n"
-		"Usage: " ASF_USAGE_STRING "\n\n\n"
-		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
-		"Input: " ASF_INPUT_STRING "\n\n\n"
-		"Output: "ASF_OUTPUT_STRING "\n\n\n"
-		"Options: " ASF_OPTIONS_STRING "\n\n\n"
-		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
-		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
-		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
-		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
-		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
-		"' | more") != -1)
-		exit(EXIT_SUCCESS);
-
-	else
-		printf("\n\n\n"
-		"Tool name: " ASF_NAME_STRING "\n\n\n"
-		"Usage: " ASF_USAGE_STRING "\n\n\n"
-		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
-		"Input: " ASF_INPUT_STRING "\n\n\n"
-		"Output: "ASF_OUTPUT_STRING "\n\n\n"
-		"Options: " ASF_OPTIONS_STRING "\n\n\n"
-		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
-		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
-		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
-		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
-		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n");
-		exit(EXIT_SUCCESS);
-}
-
-
-
-

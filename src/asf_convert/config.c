@@ -1,12 +1,14 @@
 #include "asf.h"
 #include "asf_convert.h"
+#include "asf_reporting.h"
+#include <ctype.h>
 
 int warnFlag = FALSE;
 
 int strindex(char s[], char t[])
 {
   int i, j, k;
-  
+
   for (i=0; s[i]!='\0'; i++) {
     for (j=i, k=0; t[k]!='\0' && s[j]==t[k]; j++, k++)
       ;
@@ -20,7 +22,7 @@ char *read_param(char *line)
 {
   int i, k;
   char *value=(char *)MALLOC(sizeof(char)*255);
-  
+
   strcpy(value, "");
   i=strindex(line, "]");
   k=strindex(line, "=");
@@ -31,14 +33,13 @@ char *read_param(char *line)
 
 char *read_str(char *line, char *block, char *param)
 {
-  char tmp[255], msg[255], *start;
+  char tmp[255], *start;
   char *value=(char *)MALLOC(sizeof(char)*255);
-  
+
   start = strchr(line, '<');
   if (start) {
-    sprintf(msg, "   \033[33;1mWARNING:\033[0m Invalid value for parameter '%s'"
-	    " in block [%s]\n", param, block);
-    printf(msg);
+    asfPrintWarning("Invalid value for parameter '%s' in block [%s]\n",
+                    param, block);
     warnFlag = TRUE;
     strcpy(value, "");
     return value;
@@ -52,14 +53,13 @@ char *read_str(char *line, char *block, char *param)
 
 int read_int(char *line, char *block, char *param)
 {
-  char *tmp=NULL, msg[255];
+  char *tmp=NULL;
   int value;
-  
+
   tmp = read_str(line, block, param);
   if (!sscanf(tmp, "%i", &value)) {
-    sprintf(msg, "   \033[33;1mWARNING:\033[0m Invalid value for parameter '%s'"
-	    " in block [%s]\n", param, block);
-    printf(msg);
+    asfPrintWarning("Invalid value for parameter '%s' in block [%s]\n",
+                    param, block);
     warnFlag = TRUE;
     return 0;
   }
@@ -68,28 +68,27 @@ int read_int(char *line, char *block, char *param)
 
 double read_double(char *line, char *block, char *param)
 {
-  char *tmp=NULL, msg[255];
+  char *tmp=NULL;
   double value;
-  
+
   tmp = read_str(line, block, param);
   if (!sscanf(tmp, "%lf", &value)) {
-    sprintf(msg, "   \033[33;1mWARNING:\033[0m Invalid value for parameter '%s'"
-	    " in block [%s]\n", param, block);
-    printf(msg);
+    asfPrintWarning("Invalid value for parameter '%s' in block [%s]\n",
+                    param, block);
     warnFlag = TRUE;
     return 0.0;
   }
   else return value;
 }
 
-char *uc(char *string)
+char *str2upper(char *string)
 {
   char *out=(char *)MALLOC(sizeof(char)*strlen(string));
   int i;
-  
+
   for (i=0; i<strlen(string); i++) out[i]=toupper(string[i]);
   out[i]='\0';
-  
+
   return out;
 }
 
@@ -101,19 +100,19 @@ int init_config(char *configFile)
 
   fprintf(fConfig, "asf_convert configuration file\n\n");
   fprintf(fConfig, "[General]\n");
-  fprintf(fConfig, 
-	  "input data file = < name of input data file (with extension) >\n");
+  fprintf(fConfig,
+          "input data file = < name of input data file (with extension) >\n");
   fprintf(fConfig, "input metadata file = < name of input metadata file "
-	  "(with extension) >\n");
+          "(with extension) >\n");
   fprintf(fConfig, "input format = < CEOS | ASF >\n");
   fprintf(fConfig, "data type = < amplitude | power | sigma | gamma | "
           "beta >\n");
   fprintf(fConfig, "output file = < basename of the output file >\n");
   fprintf(fConfig, "output format = < ASF | GEOTIFF | JPEG | ENVI | ESRI "
-	  "| PPM | PNG >\n");
+          "| PPM | PNG >\n");
   fprintf(fConfig, "resampling = < flag for subsampling: 0 | 1 >\n");
   fprintf(fConfig, "browse image = < flag for subsampling to browse image size: "
-	  "0 | 1 >\n");
+          "0 | 1 >\n");
   fprintf(fConfig, "geocoding = < flag for geocoding: 0 | 1 >\n");
   fprintf(fConfig, "batch mode = < flag for batch mode processing: 0 | 1 >\n");
   fprintf(fConfig, "batch file = < batch file name >\n");
@@ -121,7 +120,7 @@ int init_config(char *configFile)
 
   FCLOSE(fConfig);
 
-  printf("   Initialized basic configuration file\n\n");
+  asfPrintStatus("   Initialized basic configuration file\n\n");
 
   return(0);
 }
@@ -131,7 +130,7 @@ int check_geocode_flag(char *configFile)
   FILE *fConfig;
   int geocode_flag=0;
   char line[255], *test;
-  
+
   test=(char *)MALLOC(sizeof(char)*255);
   fConfig = FOPEN(configFile, "r");
   while (fgets(line, 255, fConfig) != NULL) {
@@ -151,7 +150,7 @@ int check_resample_flag(char *configFile)
   FILE *fConfig;
   int resample_flag=0;
   char line[255], *test;
-  
+
   test=(char *)MALLOC(sizeof(char)*255);
   fConfig = FOPEN(configFile, "r");
   while (fgets(line, 255, fConfig) != NULL) {
@@ -174,7 +173,7 @@ int init_projection_config(char *configFile)
 
   fprintf(fConfig, "[Geocoding]\n");
   fprintf(fConfig, "projection = < UTM | Polar Sterographic | "
-	  "Albers Conic Equal Area | Lambert Conformal Conic >\n");
+          "Albers Conic Equal Area | Lambert Conformal Conic >\n");
   fprintf(fConfig, "pixel spacing = < pixel spacing of geocoded image >\n");
   fprintf(fConfig, "height = < average height of the data (default: 0) >\n");
   fprintf(fConfig, "background fill = < pixel value for the background >\n\n");
@@ -222,7 +221,7 @@ int init_resample_config(char *configFile)
 
   fprintf(fConfig, "[Resampling]\n");
   fprintf(fConfig, "subsampling factor = < factor for reducing the output file "
-	  "dimensions >\n\n");
+          "dimensions >\n\n");
 
   FCLOSE(fConfig);
 
@@ -234,7 +233,7 @@ int init_resample_config(char *configFile)
 s_config *init_cfg(void)
 {
 #define newStruct(type) (type *)MALLOC(sizeof(type))
-  
+
   /* Create structure */
   s_config *cfg = newStruct(s_config);
   cfg->general = newStruct(s_general);
@@ -248,7 +247,7 @@ s_config *init_cfg(void)
 
   /* initialize structure */
   strcpy(cfg->comment, "asf_convert configuration file");
-  
+
   cfg->general->in_data_name = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->general->in_data_name, "");
   cfg->general->in_meta_name = (char *)MALLOC(sizeof(char)*255);
@@ -275,7 +274,7 @@ s_config *init_cfg(void)
   cfg->geocoding->background = 0;
   cfg->geocoding->pixel = 12.5;
   cfg->geocoding->height = 0.0;
-  
+
   cfg->resampling->kernel = 3;
 
   cfg->polar->datum = 0;
@@ -283,13 +282,13 @@ s_config *init_cfg(void)
   cfg->polar->center_lat = 0.0;
   cfg->polar->units = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->polar->units, "");
-  
+
   cfg->utm->datum = 0;
   cfg->utm->zone = 0;
 
   cfg->utm->units = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->utm->units, "");
-  
+
   cfg->albers->datum = 0;
   cfg->albers->first_parallel = 0.0;
   cfg->albers->second_parallel = 0.0;
@@ -297,13 +296,13 @@ s_config *init_cfg(void)
   cfg->albers->orig_latitude = 0.0;
   cfg->albers->units = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->albers->units, "");
-  
+
   cfg->lambert_az->datum = 0;
   cfg->lambert_az->center_lat = 0.0;
   cfg->lambert_az->center_lon = 0.0;
   cfg->lambert_az->units = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->lambert_az->units, "");
-  
+
   cfg->lambert_cc->datum = 0;
   cfg->lambert_cc->first_parallel = 0.0;
   cfg->lambert_cc->second_parallel = 0.0;
@@ -313,7 +312,7 @@ s_config *init_cfg(void)
   strcpy(cfg->lambert_cc->units, "");
 
   return cfg;
-}  
+}
 
 s_config *init_fill_config(char *configFile)
 {
@@ -322,42 +321,42 @@ s_config *init_fill_config(char *configFile)
   int i;
   char line[255], block[50];
   char *test=(char *)MALLOC(sizeof(char)*255);
-    
-  cfg = init_cfg();  
+
+  cfg = init_cfg();
 
   fConfig = FOPEN(configFile, "r");
   i=0;
   while (fgets(line, 255, fConfig) != NULL) {
-    if (i==0) strcpy(cfg->comment, line); 
+    if (i==0) strcpy(cfg->comment, line);
     i++;
-    
+
     if (strncmp(line, "[General]", 9)==0) {
       strcpy(block, "General");
       test = read_param(line);
-      if (strncmp(test, "input data file", 15)==0) 
-	cfg->general->in_data_name = read_str(line, block, "input data file"); 
-      if (strncmp(test, "input metadata file", 19)==0) 
-	cfg->general->in_meta_name = read_str(line, block, "input metadata file"); 
-      if (strncmp(test, "input format", 12)==0) 
-	cfg->general->in_format = read_str(line, block, "input format"); 
-      if (strncmp(test, "data type", 9)==0) 
-	cfg->general->data_type = read_str(line, block, "data type"); 
-      if (strncmp(test, "output file", 11)==0) 
-	cfg->general->out_name = read_str(line, block, "output file");
-      if (strncmp(test, "output format", 13)==0) 
-	cfg->general->out_format = read_str(line, block, "output format");
-      if (strncmp(test, "resampling", 10)==0) 
-	cfg->general->resample = read_int(line, block, "resampling");
-      if (strncmp(test, "browse image", 12)==0) 
-	cfg->general->browse = read_int(line, block, "browse image");
+      if (strncmp(test, "input data file", 15)==0)
+        cfg->general->in_data_name = read_str(line, block, "input data file");
+      if (strncmp(test, "input metadata file", 19)==0)
+        cfg->general->in_meta_name = read_str(line, block, "input metadata file");
+      if (strncmp(test, "input format", 12)==0)
+        cfg->general->in_format = read_str(line, block, "input format");
+      if (strncmp(test, "data type", 9)==0)
+        cfg->general->data_type = read_str(line, block, "data type");
+      if (strncmp(test, "output file", 11)==0)
+        cfg->general->out_name = read_str(line, block, "output file");
+      if (strncmp(test, "output format", 13)==0)
+        cfg->general->out_format = read_str(line, block, "output format");
+      if (strncmp(test, "resampling", 10)==0)
+        cfg->general->resample = read_int(line, block, "resampling");
+      if (strncmp(test, "browse image", 12)==0)
+        cfg->general->browse = read_int(line, block, "browse image");
       if (strncmp(test, "geocoding", 9)==0)
-	cfg->general->geocoding = read_int(line, block, "geocoding");
-      if (strncmp(test, "log file", 8)==0) 
-	cfg->general->logFile = read_str(line, block, "log file");
+        cfg->general->geocoding = read_int(line, block, "geocoding");
+      if (strncmp(test, "log file", 8)==0)
+        cfg->general->logFile = read_str(line, block, "log file");
     }
   }
   FCLOSE(fConfig);
-  
+
   return cfg;
 }
 
@@ -367,12 +366,12 @@ s_config *read_config(char *configFile)
   s_config *cfg=NULL;
   char line[255], block[50];
   char *test=(char *)MALLOC(sizeof(char)*255);
-  
+
   cfg = init_fill_config(configFile);
-  if (cfg == NULL) check_return(1, "creating configuration structure");
+  if (cfg == NULL) check_return(1, "Creating configuration structure.\n");
   fConfig = FOPEN(configFile, "r");
   while (fgets(line, 255, fConfig) != NULL) {
-    
+
     if (strncmp(line, "[General]", 9)==0) strcpy(block, "General");
     if (strncmp(block, "General", 7)==0) {
       test = read_param(line);
@@ -401,7 +400,7 @@ s_config *read_config(char *configFile)
       if (strncmp(test, "log file", 8)==0)
         cfg->general->logFile = read_str(line, block, "log file");
     }
-	
+
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(block, "Geocoding");
     if (strncmp(block, "Geocoding", 9)==0) {
       test = read_param(line);
@@ -415,110 +414,110 @@ s_config *read_config(char *configFile)
         cfg->geocoding->height = read_double(line, block, "height");
     }
 
-    if (strncmp(line, "[Polar Stereographic]", 21)==0) 
+    if (strncmp(line, "[Polar Stereographic]", 21)==0)
       strcpy(block, "Polar Stereographic");
     if (strncmp(block, "Polar Stereographic", 19)==0) {
       test = read_param(line);
-      if (strncmp(test, "datum", 5)==0) 
-	cfg->polar->datum = read_int(line, block, "datum");
-      if (strncmp(test, "center latitude", 16)==0) 
-	cfg->polar->center_lat = read_double(line, block, "center latitude"); 
-      if (strncmp(test, "center longitude", 17)==0) 
-	cfg->polar->center_lon = read_double(line, block, "center longitude");
-      if (strncmp(test, "units", 5)==0) 
-	cfg->polar->units = read_str(line, block, "units");
+      if (strncmp(test, "datum", 5)==0)
+        cfg->polar->datum = read_int(line, block, "datum");
+      if (strncmp(test, "center latitude", 16)==0)
+        cfg->polar->center_lat = read_double(line, block, "center latitude");
+      if (strncmp(test, "center longitude", 17)==0)
+        cfg->polar->center_lon = read_double(line, block, "center longitude");
+      if (strncmp(test, "units", 5)==0)
+        cfg->polar->units = read_str(line, block, "units");
     }
-    
+
     if (strncmp(line, "[UTM]", 5)==0) strcpy(block, "UTM");
     if (strncmp(block, "UTM", 3)==0) {
       test = read_param(line);
-      if (strncmp(test, "datum", 5)==0) 
-	cfg->utm->datum = read_int(line, block, "datum");
-      if (strncmp(test, "zone number", 11)==0) 
-	cfg->utm->zone = read_int(line, block, "zone number");
-      if (strncmp(test, "units", 5)==0) 
-	cfg->utm->units = read_str(line, block, "units");
+      if (strncmp(test, "datum", 5)==0)
+        cfg->utm->datum = read_int(line, block, "datum");
+      if (strncmp(test, "zone number", 11)==0)
+        cfg->utm->zone = read_int(line, block, "zone number");
+      if (strncmp(test, "units", 5)==0)
+        cfg->utm->units = read_str(line, block, "units");
     }
-    
+
     if (strncmp(line, "[Albers Conic Equal Area]", 25)==0)
       strcpy(block, "Albers Conic Equal Area");
     if (strncmp(block, "Albers Conic Equal Area", 23)==0) {
       test = read_param(line);
-      if (strncmp(test, "datum", 5)==0) 
-	cfg->albers->datum = read_int(line, block, "datum");
-      if (strncmp(test, "first standard parallel", 23)==0) 
-	cfg->albers->first_parallel = 
-	  read_double(line, block, "first standard parallel");
-      if (strncmp(test, "second standard parallel", 24)==0) 
-	cfg->albers->second_parallel = 
-	  read_double(line, block, "second standard parallel");
-      if (strncmp(test, "central meridian", 16)==0) 
-	cfg->albers->center_meridian = read_double(line, block, "central meridian");
-      if (strncmp(test, "latitude of origin", 18)==0) 
-	cfg->albers->orig_latitude = read_double(line, block, "latitude of origin");
-      if (strncmp(test, "units", 5)==0) 
-	cfg->polar->units = read_str(line, block, "units");
+      if (strncmp(test, "datum", 5)==0)
+        cfg->albers->datum = read_int(line, block, "datum");
+      if (strncmp(test, "first standard parallel", 23)==0)
+        cfg->albers->first_parallel =
+          read_double(line, block, "first standard parallel");
+      if (strncmp(test, "second standard parallel", 24)==0)
+        cfg->albers->second_parallel =
+          read_double(line, block, "second standard parallel");
+      if (strncmp(test, "central meridian", 16)==0)
+        cfg->albers->center_meridian = read_double(line, block, "central meridian");
+      if (strncmp(test, "latitude of origin", 18)==0)
+        cfg->albers->orig_latitude = read_double(line, block, "latitude of origin");
+      if (strncmp(test, "units", 5)==0)
+        cfg->polar->units = read_str(line, block, "units");
     }
-    
+
     if (strncmp(line, "[Lambert Azimuthal Equal Area]", 30)==0)
       strcpy(block, "Lambert Azimuthal Equal Area");
     if (strncmp(block, "Lambert Azimuthal Equal Area", 28)==0) {
       test = read_param(line);
-      if (strncmp(test, "datum", 5)==0) 
-	cfg->lambert_az->datum = read_int(line, block, "datum");
-      if (strncmp(test, "center latitude", 15)==0) 
-	cfg->lambert_az->center_lat = read_double(line, block, "center latitude");
-      if (strncmp(test, "center longitude", 16)==0) 
-	cfg->lambert_az->center_lon = read_double(line, block, "center longitude");
-      if (strncmp(test, "units", 5)==0) 
-	cfg->lambert_az->units = read_str(line, block, "units");
+      if (strncmp(test, "datum", 5)==0)
+        cfg->lambert_az->datum = read_int(line, block, "datum");
+      if (strncmp(test, "center latitude", 15)==0)
+        cfg->lambert_az->center_lat = read_double(line, block, "center latitude");
+      if (strncmp(test, "center longitude", 16)==0)
+        cfg->lambert_az->center_lon = read_double(line, block, "center longitude");
+      if (strncmp(test, "units", 5)==0)
+        cfg->lambert_az->units = read_str(line, block, "units");
     }
-    
+
     if (strncmp(line, "[Lambert Conformal Conic]", 25)==0)
       strcpy(block, "Lambert Conformal Conic");
     if (strncmp(block, "Lambert Conformal Conic", 23)==0) {
       test = read_param(line);
-      if (strncmp(test, "datum", 5)==0) 
-	cfg->lambert_cc->datum = read_int(line, block, "datum");
-      if (strncmp(test, "first standard parallel", 23)==0) 
-	cfg->lambert_cc->first_parallel = 
-	  read_double(line, block, "first standard parallel");
-      if (strncmp(test, "second standard parallel", 24)==0) 
-	cfg->lambert_cc->second_parallel = 
-	  read_double(line, block, "second standard parallel");
-      if (strncmp(test, "central meridian", 16)==0) 
-	cfg->lambert_cc->center_meridian = 
-	  read_double(line, block, "central meridian");
-      if (strncmp(test, "latitude of origin", 18)==0) 
-	cfg->lambert_cc->orig_latitude = 
-	  read_double(line, block, "latitude of origin");
-      if (strncmp(test, "units", 5)==0) 
-	cfg->lambert_cc->units = read_str(line, block, "units");
+      if (strncmp(test, "datum", 5)==0)
+        cfg->lambert_cc->datum = read_int(line, block, "datum");
+      if (strncmp(test, "first standard parallel", 23)==0)
+        cfg->lambert_cc->first_parallel =
+          read_double(line, block, "first standard parallel");
+      if (strncmp(test, "second standard parallel", 24)==0)
+        cfg->lambert_cc->second_parallel =
+          read_double(line, block, "second standard parallel");
+      if (strncmp(test, "central meridian", 16)==0)
+        cfg->lambert_cc->center_meridian =
+          read_double(line, block, "central meridian");
+      if (strncmp(test, "latitude of origin", 18)==0)
+        cfg->lambert_cc->orig_latitude =
+          read_double(line, block, "latitude of origin");
+      if (strncmp(test, "units", 5)==0)
+        cfg->lambert_cc->units = read_str(line, block, "units");
     }
-    
+
     if (strncmp(line, "[Resampling]", 12)==0) strcpy(block, "Resampling");
     if (strncmp(block, "Resampling", 10)==0) {
       test = read_param(line);
-      if (strncmp(test, "subsampling factor", 18)==0) 
+      if (strncmp(test, "subsampling factor", 18)==0)
         cfg->resampling->kernel = read_int(line, block, "subsampling factor");
     }
   }
-  
+
   FCLOSE(fConfig);
   if (warnFlag)
-    check_return(1, "invalid values in configuration file");
-  
-  return cfg;	
-  
+    check_return(1, "Invalid values in configuration file.\n");
+
+  return cfg;
 }
 
 int write_config(char *configFile, s_config *cfg)
 {
   FILE *fConfig;
-  
-  if (cfg == NULL) check_return(1, "not configuration structure to write");
+
+  if (cfg == NULL)
+    check_return(1, "No configuration structure available for writing.\n");
   fConfig = FOPEN(configFile, "w");
-  
+
   fprintf(fConfig, "%s\n", cfg->comment);
   fprintf(fConfig, "[General]\n");
   fprintf(fConfig, "input data file = %s\n", cfg->general->in_data_name);
@@ -539,50 +538,50 @@ int write_config(char *configFile, s_config *cfg)
     fprintf(fConfig, "background fill = %i\n", cfg->geocoding->background);
     fprintf(fConfig, "pixel spacing = %.2f\n", cfg->geocoding->pixel);
     fprintf(fConfig, "height = %.3f\n\n", cfg->geocoding->height);
-    if (strncmp(uc(cfg->geocoding->projection), "POLAR", 5)==0) {
+    if (strncmp(str2upper(cfg->geocoding->projection), "POLAR", 5)==0) {
       fprintf(fConfig, "[Polar Stereographic]\n");
       fprintf(fConfig, "datum = %i\n", cfg->polar->datum);
       fprintf(fConfig, "center latitude = %.6f\n", cfg->polar->center_lat);
       fprintf(fConfig, "center longitude = %.6f\n", cfg->polar->center_lon);
       fprintf(fConfig, "units = %s\n\n", cfg->polar->units);
     }
-    else if (strncmp(uc(cfg->geocoding->projection), "UTM", 3)==0) {
+    else if (strncmp(str2upper(cfg->geocoding->projection), "UTM", 3)==0) {
       fprintf(fConfig, "[UTM]\n");
       fprintf(fConfig, "datum = %i\n", cfg->utm->datum);
       fprintf(fConfig, "zone number = %i\n", cfg->utm->zone);
       fprintf(fConfig, "units = %s\n\n", cfg->utm->units);
     }
-    else if (strncmp(uc(cfg->geocoding->projection), "ALBERS", 6)==0) {
+    else if (strncmp(str2upper(cfg->geocoding->projection), "ALBERS", 6)==0) {
       fprintf(fConfig, "[Albers Conic Equal Area]\n");
       fprintf(fConfig, "datum = %i\n", cfg->albers->datum);
-      fprintf(fConfig, "first standard parallel = %.6f\n", 
-	      cfg->albers->first_parallel);
-      fprintf(fConfig, "second standard parallel = %.6f\n", 
-	      cfg->albers->second_parallel);
-      fprintf(fConfig, "central meridian = %.6f\n", 
-	      cfg->albers->center_meridian);
-      fprintf(fConfig, "latitude of origin = %.6f\n", 
-	      cfg->albers->orig_latitude);
+      fprintf(fConfig, "first standard parallel = %.6f\n",
+              cfg->albers->first_parallel);
+      fprintf(fConfig, "second standard parallel = %.6f\n",
+              cfg->albers->second_parallel);
+      fprintf(fConfig, "central meridian = %.6f\n",
+              cfg->albers->center_meridian);
+      fprintf(fConfig, "latitude of origin = %.6f\n",
+              cfg->albers->orig_latitude);
       fprintf(fConfig, "units = %s\n\n", cfg->albers->units);
     }
-    else if (strncmp(uc(cfg->geocoding->projection), "LAMBERT_AZ", 10)==0) {
+    else if (strncmp(str2upper(cfg->geocoding->projection), "LAMBERT_AZ", 10)==0) {
       fprintf(fConfig, "[Lambert Azimuthal Equal Area]\n");
       fprintf(fConfig, "datum = %i\n", cfg->lambert_az->datum);
       fprintf(fConfig, "center latitude = %.6f\n", cfg->lambert_az->center_lat);
       fprintf(fConfig, "center longitude = %.6f\n", cfg->lambert_az->center_lon);
       fprintf(fConfig, "units = %s\n\n", cfg->lambert_az->units);
     }
-    else if (strncmp(uc(cfg->geocoding->projection), "LAMBERT_CC", 10)==0) {
+    else if (strncmp(str2upper(cfg->geocoding->projection), "LAMBERT_CC", 10)==0) {
       fprintf(fConfig, "[Lambert Conformal Conic]\n");
       fprintf(fConfig, "datum = %i\n", cfg->lambert_cc->datum);
-      fprintf(fConfig, "first standard parallel = %.6f\n", 
-	      cfg->lambert_cc->first_parallel);
-      fprintf(fConfig, "second standard parallel = %.6f\n", 
-	      cfg->lambert_cc->second_parallel);
-      fprintf(fConfig, "central meridian = %.6f\n", 
-	      cfg->lambert_cc->center_meridian);
-      fprintf(fConfig, "latitude of origin = %.6f\n", 
-	      cfg->lambert_cc->orig_latitude);
+      fprintf(fConfig, "first standard parallel = %.6f\n",
+              cfg->lambert_cc->first_parallel);
+      fprintf(fConfig, "second standard parallel = %.6f\n",
+              cfg->lambert_cc->second_parallel);
+      fprintf(fConfig, "central meridian = %.6f\n",
+              cfg->lambert_cc->center_meridian);
+      fprintf(fConfig, "latitude of origin = %.6f\n",
+              cfg->lambert_cc->orig_latitude);
       fprintf(fConfig, "units = %s\n\n", cfg->lambert_cc->units);
     }
   }
@@ -590,8 +589,8 @@ int write_config(char *configFile, s_config *cfg)
     fprintf(fConfig, "[Resampling]\n");
     fprintf(fConfig, "subsampling factor = %i\n", cfg->resampling->kernel);
   }
-  
+
   FCLOSE(fConfig);
-  
+
   return(0);
 }
