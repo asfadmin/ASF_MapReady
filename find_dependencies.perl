@@ -85,7 +85,7 @@ will show all the ways in which the create_dem package depends on the
 asf_meta package.
 
 =item B<-i> I<package_one>,I<package_two>, 
-B<--independency> I<package_one>,I<package_two>
+B<--independency>=I<package_one>,I<package_two>
 
 Explicity declare that I<package_one> does not directly depend on
 I<package_two>.  Note that one or more indirect dependencies may still
