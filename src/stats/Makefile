@@ -6,14 +6,19 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	-lm
 
-OBJS  = stats.o
+OBJS  = statIO.o \
+	stats.o
 
 all: stats clean
 
 stats: $(OBJS)
-	${CC} ${CFLAGS} -o stats $(OBJS) ${LIBS}
+	$(CC) $(CFLAGS) -o stats $(OBJS) $(LIBS)
 	mv stats$(BIN_POSTFIX) $(BINDIR)
 	cp stats.1 ../../man/man1/.
 
+check: stats_tester.c statIO.o
+	$(CC) $(CFLAGS) -o stats_tester $< statIO.o -lm -lcheck $(LDFLAGS) $(LIBS)
+	./stats_tester
+
 clean:
-	rm -f ${OBJS}
+	rm -f stats_tester $(OBJS)
