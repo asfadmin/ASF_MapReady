@@ -107,18 +107,6 @@ An airsar .demi2 or .vvi2 file from the JPL processor.
 
 =back
 
-=item B<--peg-point-lat-delta=DELTA>
-
-Only applicable to airsar data.  Attempts to work around a data issue
-in which some peg points appear to be wrong in the airsar metadata.
-The true peg point is taken to be the value given in the metadata plus
-DELTA degrees.  Omitting this option is the same as specifying a DELTA
-of zero.
-
-=item B<--peg-point-long-delta=DELTA>
-
-Analagous to --peg-point-lat-delta option, for longitude.
-
 =item B<-t LAT, --lat=LAT>
 
 LAT is the center lattitude coordinate of the window to be extracted.
@@ -148,6 +136,18 @@ window centering for some image types.
 NIMG is the name to use for the new '.img' file.  Defaults to
 './out_image.img'.  The '.ddr' file gets the same name except for the
 different extension.
+
+=item B<--peg-point-lat-delta=DELTA>
+
+Only applicable to airsar data.  Attempts to work around a data issue
+in which some peg points appear to be wrong in the airsar metadata.
+The true peg point is taken to be the value given in the metadata plus
+DELTA degrees.  Omitting this option is the same as specifying a DELTA
+of zero.
+
+=item B<--peg-point-long-delta=DELTA>
+
+Analagous to --peg-point-lat-delta option, for longitude.
 
 =item B<-v, --verbose>
 
