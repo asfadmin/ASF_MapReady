@@ -890,7 +890,7 @@ main (int argc, char **argv)
 	//			            input_y_pixel, NO_WEIGHT, 8));
       }
     }
-    if ( oiy % 100 == 0 || oiy == oiy_max ) {
+    if ( (oiy != 0 && oiy % 100 == 0) || oiy == oiy_max ) {
       printf ("Finished output image line %d\n", oiy);
     }
   }
