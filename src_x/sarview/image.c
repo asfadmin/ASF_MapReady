@@ -4,16 +4,14 @@ information, and update routines.
 Currently, LAS and CEOS images are supported.
 */
 #include "main.h"
-image_info image;/*Global image info structure*/
-
 #include "image.h"
 
+image_info image;/*Global image info structure*/
 image_type type=image_none;
 struct DDR *ddr=NULL;
 FILE *ddr_file=NULL;
 CEOS_FILE *ceos=NULL;
 meta_parameters *meta=NULL;
-
 histogram *data_hist=NULL;  /* used for histogram display */
 
 
@@ -48,22 +46,24 @@ void image_delete(void)
 int image_loadLas(char *fileName)
 {
 	type=image_ddr;
+
+/* Get DDR structure (will created from meta if there is no DDR) */
 	ddr=(struct DDR *)malloc(sizeof(struct DDR));
 	c_getddr(fileName,ddr);
 
+/* Get a meta structure (will be created from ddr if there's not a .meta */
+	meta = meta_read(fileName);
+
 	strcpy(image.fName,fileName);
-/*Set the image size; based on the DDR*/
-	image.width=ddr->ns;
-	image.height=ddr->nl;
+
+/*Set the image size; based on the meta */
+	image.width  = meta->general->sample_count;
+	image.height = meta->general->line_count;
 
 /*Open the image*/
-	ddr_file=fopenImage(fileName,"rb");
+	ddr_file = fopenImage(fileName,"rb");
 	if (ddr_file==NULL)
 		return 0;
-
-/*Try to read in the metadata*/
-	if (extExists(fileName,".meta"))
-		meta=meta_read(fileName);
 
 	return 1;
 }
@@ -97,10 +97,13 @@ int image_loadCeos(char *fileName)
 void image_readLine(float *dest,int lineY,int bandNo)
 {
 	int *iBuf,x;
+        int bandLine;
+
 	switch (type)
 	{
 	case image_ddr:
-		getFloatLine_mb(ddr_file,ddr,lineY,bandNo,dest);
+		bandLine = (bandNo * meta->general->line_count + lineY);
+		get_float_line(ddr_file, meta, bandLine, dest);
 		break;
 	case image_ceos:
 		iBuf=(int *)MALLOC(sizeof(int)*image.width);
