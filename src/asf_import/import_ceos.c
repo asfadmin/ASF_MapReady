@@ -23,10 +23,10 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 {
   char outDataName[256], outMetaName[256];              /* Output file names */
   int nl=MAGIC_UNSET_INT, ns=MAGIC_UNSET_INT;     /* Number of lines/samples */
-  int ii, kk;                                                /* loop indices */
+  long long ii, kk;                                               /* loop indices */
   int headerBytes;                       /* Number of bytes in a CEOS header */
   int tempFlag=FALSE;             /* Flag on whether or not to print warning */
-  long offset;
+  long long offset;
   meta_parameters *meta=NULL;                         /* Meta data structure */
   cal_params *cal_param=NULL;                  /* Calibration info structure */
   struct IOF_VFDR image_fdr;                  /* CEOS File Descriptor Record */
@@ -144,7 +144,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     headerBytes = firstRecordLen(inDataName)
                   + (image_fdr.reclen - ns * image_fdr.bytgroup);
     for (ii=0; ii<nl; ii++) {
-      offset = headerBytes+ii*image_fdr.reclen;
+      offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
       FSEEK64(fpIn, offset, SEEK_SET);
       FREAD(cpx_buf, sizeof(short), 2*ns, fpIn);
       for (kk=0; kk<ns; kk++) {
@@ -350,7 +350,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         for (ii=0; ii<nl; ii++) {
           /* Can't use get_float_line() for CEOS data, so we have to use FSEEK,
            * FREAD, and then put the bytes in proper endian order manually  */
-          offset = headerBytes+ii*image_fdr.reclen;
+          offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
           FSEEK64(fpIn, offset, SEEK_SET);
           FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
 
@@ -396,7 +396,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
         for (ii=0; ii<nl; ii++) {
 	  /* Read image line */
-          offset = headerBytes+ii*image_fdr.reclen;
+          offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
           FSEEK64(fpIn, offset, SEEK_SET);
           FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
 
@@ -463,7 +463,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         for (ii=0; ii<nl; ii++) {
           /* Can't use get_float_line() for CEOS data, so we have to use FSEEK,
            * FREAD, and then put the bytes in proper endian order manually  */
-          offset = headerBytes+ii*image_fdr.reclen;
+          offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
           FSEEK64(fpIn, offset, SEEK_SET);
           FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
           for (kk=0; kk<ns; kk++) {
@@ -510,7 +510,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       else if (ceos_data_type == BYTE) {
 
         for (ii=0; ii<nl; ii++) {
-          offset = headerBytes+ii*image_fdr.reclen;
+          offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
           FSEEK64(fpIn, offset, SEEK_SET);
           FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
 
@@ -554,7 +554,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     else if (ceos_data_type == INTEGER16) {
 
       for (ii=0; ii<nl; ii++) {
-        offset = headerBytes+ii*image_fdr.reclen;
+        offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
         FSEEK64(fpIn, offset, SEEK_SET);
         FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
         for (kk=0; kk<ns; kk++) {
@@ -577,7 +577,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     else {
 
       for (ii=0; ii<nl; ii++) {
-        offset = headerBytes+ii*image_fdr.reclen;
+        offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
         FSEEK64(fpIn, offset, SEEK_SET);
         FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
 
