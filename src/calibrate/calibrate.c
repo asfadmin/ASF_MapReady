@@ -215,11 +215,12 @@ int main(int argc, char **argv)
 		FWRITE(obuff, (unsigned)ns, 1, fpOut);
 		
 		if ((y%100)==0) {
-			printf(" Now Processing Line No = %d\r", y);
+			printf(" Now Processing Line: %d\r", y);
 			fflush(NULL);
 		}
 	  }
-	printf("Wrote %i lines of %i samples                \n", nl, ns);
+	printf("Number of lines processed: %d.                \n", y);
+	printf("Wrote %i lines of %i samples\n", nl, ns);
 	closeCeos(fpIn);
 	FCLOSE(fpOut);
 	
