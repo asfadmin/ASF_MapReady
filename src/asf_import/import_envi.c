@@ -13,7 +13,7 @@
 /******************************************************************************
  * Import the ENVI format into our ASF Tools file format */
 void import_envi(char *inDataName, char *inMetaName, char *outBaseName,
-                 flag_indices_t flags[])
+                 int flags[])
 {
   char line[256]="", key[25]="", value[25]="", bla[25];
   char outDataName[256], outMetaName[256];
