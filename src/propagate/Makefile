@@ -22,7 +22,7 @@ OBJS  =  asap.o angles.o anomly.o coord.o delm.o \
 BUILD_WITH_F2C = false
 
 all:  gen_oe asap
-	cp propagate $(BINDIR)
+	cp propagate.sh $(BINDIR)/propagate
 	-chmod 775 $(BINDIR)/propagate
 	cp propagate.man ../../man/cat1/propagate.1
 	rm *.o
