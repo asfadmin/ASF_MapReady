@@ -16,6 +16,14 @@
 
 #include "float_image.h"
 
+#ifndef linux
+static double
+round (double arg)
+{
+  return floor (arg + 0.5);
+}
+#endif // #ifndef linux
+
 // Default cache size to use is 16 megabytes.
 static const size_t default_cache_size = 16 * 1048576;
 // This class wide data element keeps track of the number of temporary
