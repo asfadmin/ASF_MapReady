@@ -42,6 +42,9 @@
 #   4.0 - Replace calls to sarautoreg with calls to geocode
 #   4.1 - Added fill option
 #
+#   Britton Kerin
+#   4.2 - Added check that we have at least two image arguments.
+#
 # HARDWARE/SOFTWARE LIMITATIONS:
 #	A projection file must be created before running  this  pro-
 #    	gram.  Use the projprm(1) program to create such a file.
@@ -129,7 +132,7 @@ print_usage ()
       echo "Auto_sar_mosaic assembles a set of SAR CEOS input files into";
       echo "a large mosaic, in LAS format.";
       echo ;
-      echo "Version 4.1, ASF SAR TOOLS\n" ;
+      echo "Version 4.2\n" ;
       exit 1 ;
 } 
 
@@ -172,10 +175,13 @@ done
 
 # make sure they did everything right
 # if date-time string & out_mosaic are not passed, exit.
-if [ $# -lt 4 ]
+if [ $# -lt 5 ]
 then
-  echo "Not enough required parameters passed."
+  echo "Not enough command line parameters passed."
   echo "I see only "$#" non-flag parameters."
+  if [ $# -eq 4 ]; then
+    echo "Maybe you were trying to make a mosaic out of only one image?"
+  fi
   print_usage
 fi
 
