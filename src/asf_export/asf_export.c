@@ -17,62 +17,63 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 */
 
 #define ASF_NAME_STRING \
-"asf_export"
+"   asf_export"
 
 #define ASF_USAGE_STRING \
-"[-format <output_format>] [-size <max_dimension>] [-lut <leader file>\n"\
-"<cal params file> <cal comment> ] [-byte <scale option> ]\n"\
-"<in_base_name> <out_full_name>\n"\
-"Additional options: -help, -log <log_file>, -quiet"
+"[-format <output_format>] [-size <max_dimension>]\n"\
+"              [-lut <leader file> <cal params file> <cal comment> ]\n"\
+"              [-byte <scale option> ] [-log <log_file>] [-quiet] [-help]\n"\
+"              <in_base_name> <out_full_name>"
 
 #define ASF_DESCRIPTION_STRING \
-"This program ingests ASF internal format data and exports said data to a number of output formats. If the input data was geocoded and the ouput format supports geocoding, that information will be included."
+"   This program ingests ASF internal format data and exports said data to a\n"\
+"   number of output formats. If the input data was geocoded and the ouput\n"\
+"   format supports geocoding, that information will be included."
 
 #define ASF_INPUT_STRING \
-"This must be an ASF internal format data file."
+"   This must be an ASF internal format data file."
 
 #define ASF_OUTPUT_STRING \
-"The converted data in the output file."
+"   The converted data in the output file."
 
 #define ASF_OPTIONS_STRING \
-"-format <format>  Format to export to. Must be one of the following:\n"\
-"                     CEOS, envi, esri, tiff, geotiff, jpeg, ppm\n"\
-"-size <size>      Scale image so that its largest dimension is, at\n"\
-"		  most, size.\n"\
-"-lut <leader file> <cal params file> <cal comment>\n"\
-"		  Updates the original leader file with the\n"\
-"		  calibration parameter file and the calibration\n"\
-"		  comment. Exports image into CEOS format.\n"\
-"-byte <scale option>\n"\
-"                  Converts output image to byte using the following\n"\
-"		  options:\n"\
-"		  truncate - truncates the input values regardless of\n"\
-"		             their value range.\n"\
-"	          minmax   - determines the minimum and maximum values\n"\
-"	                     of the input image and maps those values\n"\
-"			     to the byte range of 0 to 255.\n"\
-"                  sigma    - determines the mean and standard\n"\
-"		             deviation of an image and applies a\n"\
-"			     buffer of 2 sigma around the mean value\n"\
-"                             (it adjusts this buffer if the 2 sigma\n"\
-"			     buffer is outside the value range).\n"\
-""
+"   -format <format>\n"\
+"        Format to export to. Must be one of the following:\n"\
+"        CEOS, envi, esri, tiff, geotiff, jpeg, ppm\n"\
+"   -size <size>\n"\
+"        Scale image so that its largest dimension is, at most, size.\n"\
+"   -lut <leader file> <cal params file> <cal comment>\n"\
+"        Updates the original leader file with the calibration parameter\n"\
+"        file and the calibration comment. Exports image into CEOS format.\n"\
+"   -byte <scale option>\n"\
+"        Converts output image to byte using the following options:\n"\
+"            truncate - truncates the input values regardless of their\n"\
+"                       value range.\n"\
+"            minmax   - determines the minimum and maximum values of the\n"\
+"                       input image and maps those values to the byte range\n"\
+"                       of 0 to 255.\n"\
+"            sigma    - determines the mean and standard deviation of an\n"\
+"                       image and applies a buffer of 2 sigma around the\n"\
+"                       mean value (it adjusts this buffer if the 2 sigma\n"\
+"                       buffer is outside the value range)."
+
 
 #define ASF_EXAMPLES_STRING \
-"To export to the default geotiff format from file1.img and file1.meta\n"\
-"to file1.jpg:\n"\
-"   asf_export file1 file1\n"\
-"To export to file2.jpg in the jpeg format:\n"\
-"   asf_export -format jpeg file1 file2\n"\
-"To export file1 to a jpeg called file3.jpg no larger than 800x800:\n"\
-"   asf_export -format jpeg -size 800 file1 file3"
+"   To export to the default geotiff format from file1.img and file1.meta\n"\
+"   to file1.jpg:\n"\
+"       example> asf_export file1 file1\n"\
+"\n"\
+"   To export to file2.jpg in the jpeg format:\n"\
+"       example> asf_export -format jpeg file1 file2\n"\
+"\n"\
+"   To export file1 to a jpeg called file3.jpg no larger than 800x800:\n"\
+"       example> asf_export -format jpeg -size 800 file1 file3"
 
 #define ASF_LIMITATIONS_STRING \
-"Currently only supports ingest of ASF format floating point data.\n"\
-"GeoTIFF images will not be scaled."
+"   Currently only supports ingest of ASF format floating point data."
 
 #define ASF_SEE_ALSO_STRING \
-"asf_convert, asf_import"
+"   asf_convert, asf_import"
 
 #define ASF_COPYRIGHT_STRING \
 "Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks\n"\
@@ -114,12 +115,16 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "       uso@asf.alaska.edu"
 
 #define ASF_PROGRAM_HISTORY_STRING \
-"No history."
+"   No history."
+
+#define ASF_VERSION_MAJOR_STRING \
+"0.30"
+
+#define VERSION 0.3
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
 
-#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <setjmp.h>
@@ -149,6 +154,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include <asf_export.h>
+#include <asf_reporting.h>
 
 
 /* Print invocation information.  */
@@ -164,33 +170,42 @@ void usage()
 }
 
 
-
-void print_splash_screen(int argc, char* argv[])
+void help_page()
 {
-	char temp1[255];
-	char temp2[255];
-	int ii;
-	struct tm *ptr;
-	time_t tm;
+  char happy_string[4066];
+  char command[4096];
 
-	sprintf(temp1, "\nCommand line:");
-	for (ii = 0; ii < argc; ii++)
-	{
-		sprintf(temp2, " %s",argv[ii]);
-		strcat(temp1, temp2);
-	}
-	strcat(temp1, "\n");
-	printf("%s", temp1);
-	printLog(temp1);
+  /* What to print out for help */
+  sprintf(happy_string,
+          "\n\n\n"
+          "Tool name:\n" ASF_NAME_STRING "\n\n\n"
+          "Usage:\n" ASF_NAME_STRING " " ASF_USAGE_STRING "\n\n\n"
+          "Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
+          "Input:\n" ASF_INPUT_STRING "\n\n\n"
+          "Output:\n"ASF_OUTPUT_STRING "\n\n\n"
+          "Options:\n" ASF_OPTIONS_STRING "\n\n\n"
+          "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
+          "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
+          "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
+          "Version:\n" ASF_VERSION_MAJOR_STRING "\n\n\n"
+          "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n");
 
-	tm = time(NULL);
-	ptr = localtime(&tm);
-	printf(asctime(ptr));
-	printLog(asctime(ptr));
+  /* If we can, use less */
+  sprintf(command,"echo '%s' | less",happy_string);
+  if(system(command) != -1)
+    exit(EXIT_SUCCESS);
 
-	/*system("date");*/
-	printf("PID: %i\n", (int)getpid());
+  /* Hmmm, less didn't work cause we got here, try using more */
+  sprintf(command,"echo '%s' | more",happy_string);
+  if(system(command) != -1)
+    exit(EXIT_SUCCESS);
+
+  /* Okay, neither less or more work (obviously if we made it here),
+   * just print the info straight to stdout and exit */
+  printf(happy_string);
+  exit(EXIT_SUCCESS);
 }
+
 
 int
 checkForOption (char *key, int argc, char *argv[])
@@ -204,20 +219,6 @@ checkForOption (char *key, int argc, char *argv[])
   return FLAG_NOT_SET;
 }
 
-/* Print an error message. This is just here for circumventing
-   check_return.  Also, it makes it possible to reformat all the error
-   messages at once.  */
-void
-print_error (char *msg)
-{
-	char tmp[255];
-	/* I made "ERROR:" red...Yay! :D */
-	sprintf (tmp, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);
-	printErr (tmp);
-	sprintf(tmp, "\n   ERROR: %s\n\n", msg);
-	printLog(tmp);
-	exit (EXIT_FAILURE);
-}
 
 /* Check the return value of a function and display an error message
    if it's a bad return.*/
@@ -225,60 +226,8 @@ void
 check_return (int ret, char *msg)
 {
   if ( ret != 0 )
-    print_error (msg);
+    asfPrintError (msg);
 }
-
-
-void help_page()
-{
-	if(system("echo '"
-		"\n\n\n"
-		"Tool name: " ASF_NAME_STRING "\n\n\n"
-		"Usage: " ASF_USAGE_STRING "\n\n\n"
-		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
-		"Input: " ASF_INPUT_STRING "\n\n\n"
-		"Output: "ASF_OUTPUT_STRING "\n\n\n"
-		"Options: " ASF_OPTIONS_STRING "\n\n\n"
-		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
-		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
-		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
-		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
-		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
-		"' | less") != -1)
-		exit(EXIT_SUCCESS);
-
-	else if(system("echo '"
-		"\n\n\n"
-		"Tool name: " ASF_NAME_STRING "\n\n\n"
-		"Usage: " ASF_USAGE_STRING "\n\n\n"
-		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
-		"Input: " ASF_INPUT_STRING "\n\n\n"
-		"Output: "ASF_OUTPUT_STRING "\n\n\n"
-		"Options: " ASF_OPTIONS_STRING "\n\n\n"
-		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
-		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
-		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
-		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
-		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
-		"' | more") != -1)
-		exit(EXIT_SUCCESS);
-
-	else
-		printf("\n\n\n"
-		"Tool name: " ASF_NAME_STRING "\n\n\n"
-		"Usage: " ASF_USAGE_STRING "\n\n\n"
-		"Description: " ASF_DESCRIPTION_STRING "\n\n\n"
-		"Input: " ASF_INPUT_STRING "\n\n\n"
-		"Output: "ASF_OUTPUT_STRING "\n\n\n"
-		"Options: " ASF_OPTIONS_STRING "\n\n\n"
-		"Examples: " ASF_EXAMPLES_STRING "\n\n\n"
-		"Limitations: " ASF_LIMITATIONS_STRING "\n\n\n"
-		"See also: " ASF_SEE_ALSO_STRING "\n\n\n"
-		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
-		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n");
-		exit(EXIT_SUCCESS);
-}
-
 
 
 /* Main program body. */
@@ -290,129 +239,130 @@ main (int argc, char *argv[])
   meta_parameters *md;
 
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
-	/* Command line input goes in it's own structure.  */
-	command_line_parameters_t command_line;
+  /* Command line input goes in it's own structure.  */
+  command_line_parameters_t command_line;
 
-	int formatFlag, sizeFlag, logFlag, quietFlag, lutFlag, byteFlag;
-	int needed_args = 3;/*command & argument & argument*/
-	int ii;
-	char scaleStr[25];
+  int formatFlag, sizeFlag, logFlag, quietFlag, lutFlag, byteFlag;
+  int needed_args = 3;/*command & argument & argument*/
+  int ii;
+  char scaleStr[25];
 
-	/*Check to see which options were specified*/
-	if(checkForOption("-help", argc, argv) != -1)/*Most important*/
-		help_page();
-	formatFlag = checkForOption("-format", argc, argv);
-	sizeFlag = checkForOption("-size", argc, argv);
-	logFlag = checkForOption("-log", argc, argv);
-	quietFlag = checkForOption("-quiet", argc, argv);
-	lutFlag = checkForOption("-lut", argc, argv);
-	byteFlag = checkForOption("-byte", argc, argv);
+  /*Check to see which options were specified*/
+  if(checkForOption("-help", argc, argv) != -1)/*Most important*/
+    help_page();
+  formatFlag = checkForOption("-format", argc, argv);
+  sizeFlag = checkForOption("-size", argc, argv);
+  logFlag = checkForOption("-log", argc, argv);
+  quietFlag = checkForOption("-quiet", argc, argv);
+  lutFlag = checkForOption("-lut", argc, argv);
+  byteFlag = checkForOption("-byte", argc, argv);
 
-	if(formatFlag != FLAG_NOT_SET)
-		needed_args += 2;/*option & parameter*/
-	if(sizeFlag != FLAG_NOT_SET)
-		needed_args += 2;/*option & parameter*/
-	if(quietFlag != FLAG_NOT_SET)
-		needed_args += 1;/*option*/
-	if(logFlag != FLAG_NOT_SET)
-		needed_args += 2;/*option & parameter*/
-	if(lutFlag != FLAG_NOT_SET)
-	  needed_args += 4;/*option & parameters */
-	if(byteFlag != FLAG_NOT_SET)
-	  needed_args += 2;/*option & parameter*/
+  if(formatFlag != FLAG_NOT_SET)
+    needed_args += 2;/*option & parameter*/
+  if(sizeFlag != FLAG_NOT_SET)
+    needed_args += 2;/*option & parameter*/
+  if(quietFlag != FLAG_NOT_SET)
+    needed_args += 1;/*option*/
+  if(logFlag != FLAG_NOT_SET)
+    needed_args += 2;/*option & parameter*/
+  if(lutFlag != FLAG_NOT_SET)
+    needed_args += 4;/*option & parameters */
+  if(byteFlag != FLAG_NOT_SET)
+    needed_args += 2;/*option & parameter*/
 
-	if(argc != needed_args)
-		usage();/*This exits with a failure*/
+  if(argc != needed_args)
+    usage();/*This exits with a failure*/
 
-	/*We also need to make sure the last three options are close to what we expect*/
-	if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-')
-		usage();/*This exits with a failure*/
+  /*We also need to make sure the last three options are close to what we expect*/
+  if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-')
+    usage();/*This exits with a failure*/
 
-	/*Make sure any options that have parameters are followed by parameters (and not other options)
-	Also make sure options' parameters don't bleed into required arguments*/
-	if(formatFlag != FLAG_NOT_SET)
-		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3)
-			usage();
-	if(sizeFlag != FLAG_NOT_SET)
-		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
-			usage();
-	if(lutFlag != FLAG_NOT_SET)
-	  if(argv[lutFlag + 1][0] == '-' || argv[lutFlag + 2][0] == '-' ||
-	     argv[lutFlag + 3][0] == '-' || lutFlag >= argc - 5)
-	    usage();
-	if(byteFlag != FLAG_NOT_SET)
-	  if(argv[byteFlag + 1][0] == '-' || byteFlag >= argc -3)
-	    usage();
-	if(logFlag != FLAG_NOT_SET)
-	  if(argv[logFlag + 1][0] == '-' || logFlag >= argc - 3)
-	    usage();
+  /*Make sure any options that have parameters are followed by parameters (and not other options)
+  Also make sure options' parameters don't bleed into required arguments*/
+  if(formatFlag != FLAG_NOT_SET)
+    if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3)
+      usage();
+  if(sizeFlag != FLAG_NOT_SET)
+    if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
+      usage();
+  if(lutFlag != FLAG_NOT_SET)
+    if(argv[lutFlag + 1][0] == '-' || argv[lutFlag + 2][0] == '-' ||
+       argv[lutFlag + 3][0] == '-' || lutFlag >= argc - 5)
+      usage();
+  if(byteFlag != FLAG_NOT_SET)
+    if(argv[byteFlag + 1][0] == '-' || byteFlag >= argc -3)
+      usage();
+  if(logFlag != FLAG_NOT_SET)
+    if(argv[logFlag + 1][0] == '-' || logFlag >= argc - 3)
+      usage();
 
-	if (logFlag != FLAG_NOT_SET)
-	  strcpy(logFile, argv[logFlag + 1]);
-	else
-	  sprintf(logFile, "tmp%i.log", (int)getpid());
-	fLog = FOPEN(logFile, "a");
+  if (logFlag != FLAG_NOT_SET)
+    strcpy(logFile, argv[logFlag + 1]);
+  else
+    sprintf(logFile, "tmp%i.log", (int)getpid());
+  logflag = TRUE; /* Since we always log, set the old school logflag to true */
+  fLog = FOPEN(logFile, "a");
 
-	/* We're good enough at this point... print the splash screen
-	   and start filling in whatever needs to be filled in.  */
-	if ( quietFlag == FLAG_NOT_SET )
-		print_splash_screen(argc, argv);
+  /* Set old school quiet flag (for use in our libraries) */
+  quietflag = (quietFlag!=FLAG_NOT_SET) ? TRUE : FALSE;
 
-	quietflag = quietFlag != FLAG_NOT_SET;
+  /* We're good enough at this point... print the splash screen */
+  asfSplashScreen(argc, argv);
 
-	if(formatFlag != FLAG_NOT_SET)
-		strcpy(command_line.format, argv[formatFlag + 1]);
-	else
-		strcpy(command_line.format, "geotiff");/*Default behavior: produce a geotiff*/
+  if(formatFlag != FLAG_NOT_SET)
+    strcpy(command_line.format, argv[formatFlag + 1]);
+  else
+    strcpy(command_line.format, "geotiff");/*Default behavior: produce a geotiff*/
 
-	for(ii = 0; ii < strlen(command_line.format); ++ii)/*convert the string to upper case*/
-		command_line.format[ii] = toupper(command_line.format[ii]);
+  for(ii = 0; ii < strlen(command_line.format); ++ii)/*convert the string to upper case*/
+    command_line.format[ii] = toupper(command_line.format[ii]);
 
-	/* Set the default byte scaling mechanisms */
-	if (strcmp(command_line.format, "TIFF") == 0 ||
-	    strcmp(command_line.format, "JPEG") == 0) 
-	  command_line.scale = SIGMA;
-	if (strcmp(command_line.format, "GEOTIFF") == 0)
-	  command_line.scale = NONE;
-	    
-	if(sizeFlag != FLAG_NOT_SET)
-		command_line.size = atol(argv[sizeFlag + 1]);
-	else
-		command_line.size = NO_MAXIMUM_OUTPUT_SIZE;
+  /* Set the default byte scaling mechanisms */
+  if (strcmp(command_line.format, "TIFF") == 0 ||
+      strcmp(command_line.format, "JPEG") == 0)
+    command_line.scale = SIGMA;
+  if (strcmp(command_line.format, "GEOTIFF") == 0)
+    command_line.scale = NONE;
 
-	if(quietFlag != FLAG_NOT_SET)
-		command_line.quiet = TRUE;
-	else
-	        command_line.quiet = FALSE;
+  if(sizeFlag != FLAG_NOT_SET)
+    command_line.size = atol(argv[sizeFlag + 1]);
+  else
+    command_line.size = NO_MAXIMUM_OUTPUT_SIZE;
 
-        if(lutFlag != FLAG_NOT_SET) {
-          strcpy(command_line.format, "CEOS");
-          strcpy(command_line.leader_name, argv[lutFlag + 1]);
-          strcpy(command_line.cal_params_file, argv[lutFlag + 2]);
-          strcpy(command_line.cal_comment, argv[lutFlag + 3]);
-        }
-	if(byteFlag != FLAG_NOT_SET) {
-	  strcpy(scaleStr, argv[byteFlag + 1]);
-	  for(ii=0; ii<strlen(scaleStr); ii++)
-	    scaleStr[ii] = toupper(scaleStr[ii]);
+  if(quietFlag != FLAG_NOT_SET)
+    command_line.quiet = TRUE;
+  else
+    command_line.quiet = FALSE;
 
-	  /* Set scaling mechanism */
-	  if(strcmp(scaleStr, "TRUNCATE") == 0)
-	    command_line.scale = TRUNCATE;
-	  else if(strcmp(scaleStr, "MINMAX") == 0)
-	    command_line.scale = MINMAX;
-	  else if(strcmp(scaleStr, "SIGMA") == 0)
-	    command_line.scale = SIGMA;
-	}
+  if(lutFlag != FLAG_NOT_SET) {
+    strcpy(command_line.format, "CEOS");
+    strcpy(command_line.leader_name, argv[lutFlag + 1]);
+    strcpy(command_line.cal_params_file, argv[lutFlag + 2]);
+    strcpy(command_line.cal_comment, argv[lutFlag + 3]);
+  }
+  if(byteFlag != FLAG_NOT_SET) {
+    strcpy(scaleStr, argv[byteFlag + 1]);
+    for(ii=0; ii<strlen(scaleStr); ii++)
+      scaleStr[ii] = toupper(scaleStr[ii]);
 
-	/*Grab/construct the data file name*/
-	strcpy(command_line.in_data_name, argv[argc - 2]);
-	strcat(command_line.in_data_name, ".img");
-	/*Grab/construct the meta file name*/
-	strcpy(command_line.in_meta_name, argv[argc - 2]);
-	strcat(command_line.in_meta_name, ".meta");
-	/*Grab the output name*/
-	strcpy(command_line.output_name, argv[argc - 1]);
+    /* Set scaling mechanism */
+    if(strcmp(scaleStr, "TRUNCATE") == 0)
+      command_line.scale = TRUNCATE;
+    else if(strcmp(scaleStr, "MINMAX") == 0)
+      command_line.scale = MINMAX;
+    else if(strcmp(scaleStr, "SIGMA") == 0)
+      command_line.scale = SIGMA;
+  }
+
+  /*Grab/construct the data file name*/
+  strcpy(command_line.in_data_name, argv[argc - 2]);
+  strcat(command_line.in_data_name, ".img");
+  /*Grab/construct the meta file name*/
+  strcpy(command_line.in_meta_name, argv[argc - 2]);
+  strcat(command_line.in_meta_name, ".meta");
+  /*Grab the output name*/
+  strcpy(command_line.output_name, argv[argc - 1]);
+
 
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
@@ -428,7 +378,7 @@ main (int argc, char *argv[])
     format = GEOTIFF;
   }
   else if ( strcmp (command_line.format, "TIFF") == 0 ||
-	    strcmp(command_line.format, "TIF") == 0) {
+      strcmp(command_line.format, "TIF") == 0) {
     append_ext_if_needed(command_line.output_name, ".tif", ".tiff");
     format = TIF;
   }
@@ -445,43 +395,44 @@ main (int argc, char *argv[])
     format = CEOS;
   }
   else {
-    print_error("Unrecognized output format specified");
+    asfPrintError("Unrecognized output format specified");
   }
 
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
   md = meta_read (command_line.in_meta_name);
-  assert (md->general->data_type == BYTE
-  	  || md->general->data_type == INTEGER16
-  	  || md->general->data_type == INTEGER32
-  	  || md->general->data_type == REAL32
-  	  || md->general->data_type == REAL64);
+  asfRequire (   md->general->data_type == BYTE
+              || md->general->data_type == INTEGER16
+              || md->general->data_type == INTEGER32
+              || md->general->data_type == REAL32
+              || md->general->data_type == REAL64,
+              "Cannot cope with complex data, exiting...\n");
   meta_free (md);
   if ( format == ENVI ) {
     export_as_envi (command_line.in_meta_name, command_line.in_data_name,
-		    command_line.output_name);
+        command_line.output_name);
   }
   else if ( format == ESRI ) {
     export_as_esri (command_line.in_meta_name, command_line.in_data_name,
-		    command_line.output_name);
+        command_line.output_name);
   }
   else if ( format == TIF ) {
     export_as_tiff (command_line.in_meta_name, command_line.in_data_name,
-		    command_line.output_name, command_line.size, 
-		    command_line.scale);
+        command_line.output_name, command_line.size,
+        command_line.scale);
   }
   else if ( format == GEOTIFF ) {
     export_as_geotiff (command_line.in_meta_name, command_line.in_data_name,
-		       command_line.output_name, command_line.scale);
+           command_line.output_name, command_line.scale);
   }
   else if ( format == JPEG ) {
     export_as_jpeg (command_line.in_meta_name, command_line.in_data_name,
-		    command_line.output_name, command_line.size,
-		    command_line.scale);
+        command_line.output_name, command_line.size,
+        command_line.scale);
   }
   else if ( format == PPM ) {
     export_as_ppm (command_line.in_meta_name, command_line.in_data_name,
-		   command_line.output_name, command_line.size);
+       command_line.output_name, command_line.size);
   }
   else if ( format == CEOS ) {
     export_as_ceos (command_line.in_meta_name, command_line.in_data_name,
