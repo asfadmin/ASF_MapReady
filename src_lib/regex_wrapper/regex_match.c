@@ -98,19 +98,19 @@ int regex_match(matched_subexps_t *msubs, const char *string,
   }
 
   /* Allocate memory for array of strings.  */
-  if ( (msubs->subexp_strings = calloc( (size_t) msubs->subexp_count + 1, 
+  if ( (msubs->subexp_strings = calloc( (size_t) msubs->subexp_count, 
 				       sizeof(char *))) == NULL ) {
     fprintf(stderr, "libc function 'calloc' failed in function '%s'\n",
 	    __func__);
     exit(EXIT_FAILURE);
   }
 
-  for ( idx = 0 ; idx < msubs->subexp_count + 1 ; idx++ ) {
+  for ( idx = 0 ; idx < msubs->subexp_count ; idx++ ) {
     int start_off, end_off;   /* Offsets of substring endpoints in 'string'. */
 
     start_off = subexps[idx].rm_so;
     end_off = subexps[idx].rm_eo;
-    if  ( start_off == -1 ) {	/* libc magic meaning unused subexp.  */
+    if  ( start_off == -1 ) {	/* -1 is libc magic meaning unused subexp.  */
       msubs->subexp_strings[idx] = NULL;
     } else {
       if ( (msubs->subexp_strings[idx] 
