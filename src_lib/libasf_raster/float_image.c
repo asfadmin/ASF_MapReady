@@ -34,6 +34,10 @@ static const size_t default_cache_size = 16 * 1048576;
 // tile files opened by the current process, in order to give them
 // unique names.
 static unsigned long current_tile_file_number = 0;
+// We need to ensure that multiple threads trying to create their own
+// images concurently don't end up with the sampe temporary file
+// names.
+G_LOCK_DEFINE_STATIC (current_tile_file_number);
 
 // This routine does the work common to several of the differenct
 // creation routines.  Basicly, it does everything but fill in the
@@ -129,6 +133,16 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   GString *tile_file_name = g_string_new ("");
   gchar *current_dir = g_get_current_dir ();
   g_assert (sizeof (long) >= sizeof (pid_t));
+  // Here we do a slightly weird thing: we create a temporary file in
+  // the current directory.  We do this because the temporary file
+  // could well be pretty big and /tmp often maps to a small file
+  // system.  The idea is that the directory the user is in is more
+  // likely to have the extra space required to hold the temporary
+  // file.  Of course, if they have been carefully calculating their
+  // space requirements, they may be disappointed.  We use a weird
+  // name that no sane user would ever use for one of their files, we
+  // hope.
+  G_LOCK (current_tile_file_number);
   g_string_append_printf (tile_file_name, 
 			  "%s/.float_image_tile_file_uNiQuIfY_nAmE_%ld_%lu",
 			  current_dir, (long) getpid (), 
@@ -139,6 +153,7 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   // during a process.
   g_assert (current_tile_file_number < ULONG_MAX);
   current_tile_file_number++;
+  G_UNLOCK (current_tile_file_number);
   // We block signals while we create and unlink this file, so we
   // don't end up leaving a huge temporary file somewhere.
   sigset_t all_signals, old_set;
