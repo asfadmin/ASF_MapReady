@@ -186,7 +186,7 @@ satellite *newSatellite(void)
 	if(s->pctbw<1 && s->pctbw>0) {
 		if (!quietflag) printf("   Truncating range bandwidth by %.1f percent\n",s->pctbw*100);
 		if (logflag) {
-		  sprintf(logbuf,"\n   Truncating range bandwidth by %.1f percent\n",s->pctbw*100);
+		  sprintf(logbuf,"   Truncating range bandwidth by %.1f percent\n",s->pctbw*100);
 		  printLog(logbuf);
 		}
 	}
@@ -196,7 +196,7 @@ satellite *newSatellite(void)
 	if(s->pctbwaz<1 && s->pctbwaz>0) {
 		if (!quietflag) printf("   Truncating azimuthal bandwidth by %.1f percent\n",s->pctbwaz*100);
 		if (logflag) {
-		  sprintf(logbuf,"\n   Truncating azimuthal bandwidth by %.1f percent\n",s->pctbwaz*100);
+		  sprintf(logbuf,"   Truncating azimuthal bandwidth by %.1f percent\n",s->pctbwaz*100);
 		  printLog(logbuf);
 		}
 	}
