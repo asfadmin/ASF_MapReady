@@ -110,13 +110,13 @@ static int parse_val(char * inbuf, char * key, double * val)
     *eq = '\0';
     --p;
 
-    while (isspace(*p))
+    while (isspace((int)(*p)))
 	*p-- = '\0';
  
     if (strcasecmp(buf, key) == 0)
     {
 	p = eq + 1;
-	while (isspace(*p))
+	while (isspace((int)(*p)))
 	    ++p;
 
 	if (*p)
