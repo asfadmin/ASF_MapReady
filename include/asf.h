@@ -38,6 +38,9 @@
 #define DIR_SEPARATOR '/'
 #endif
 
+#define EXTENSION_SEPARATOR '.'
+
+
 /* Print an error with printf-style formatting codes and args, then die.  */
 void bail(const char *message, ...)/* ; is coming, don't worry.  */
 /* The GNU C compiler can give us some special help if compiling with
@@ -51,7 +54,7 @@ void bail(const char *message, ...)/* ; is coming, don't worry.  */
 #endif
 ; /* <-- Semicolon for bail prototype.  */
 
-/*****************************************
+/******************************************************************************
  * Deprecated program timing routines.  There are better ways (like
  * looking at yor watch even) to time programs than using these
  * routines.  Call StartWatch(Log) at the beginning, and then call
@@ -68,7 +71,7 @@ void StopWatchLog(FILE *fLog);
 char* date_stamp(void);
 char* date_time_stamp(void);
 
-/*****************************************
+/******************************************************************************
  * FileUtil:
  * A collection of file name and I/O utilities. Implemented * in
  * asf.a/fileUtil.c */
@@ -122,39 +125,8 @@ FILE *fopenImage(const char *name,const char *accessType);
 /* Copy the file specified by "src" to the file specified by "dst". */
 void fileCopy(const char *src, const char *dst);
 
-/*****************************************
- * get_ceos_names: Functions that match CEOS files with each other using their
- * extensions and testing to see if the files actually exist*/
 
-/* Returns TRUE if the file exists and has an accepted ASF CEOS leader file
-   extension  */
-int has_ceos_leader_extension(const char *ceosName);
-
-/* Returns TRUE if the file exists and has an accepted ASF CEOS data file
-   extension  */
-int has_ceos_data_extension(const char *ceosName);
-
-/* Checks to see if the file extension of each ceos file name is an accepted
-   one, and if it has the correct pairing (ie a .D has a matching .L) */
-int has_legit_ceos_extensions(const char *dataName, const char *metaName);
-
-/* Enum for pairs of ceos extensions */
-typedef enum {
-   ASF_CEOS_D_L_PAIR=1,     /* .D   data and .L   meta */
-   ASF_CEOS_RAW_LDR_PAIR,   /* .RAW data and .LDR meta */
-   FOCUS_CEOS_DAT_LEA_PAIR  /* DAT. data and LEA. meta */
-} ceos_file_pairs_t;
-
-/* Given the name of a file (potentially with path in front of it), determine if
-   it is one of a CEOS file pair (depending on our accepted CEOS file
-   extensions). If so populate dataName & metaName with the appropriate names
-   and return the appropriate ENUM ceos_file_pairs_t value. Otherwise exit the
-   program with a failure.  */
-ceos_file_pairs_t get_ceos_names(const char *ceosName, char *dataName,
-                                 char *metaName);
-
-
-/*****************************************
+/******************************************************************************
  * ioLine: Grab any data type and fill a buffer of _type_ data.
  * Assumes that the datae file contains data in big endian order and
  * returns data in host byte order. Implemented in asf.a/ioLine.c */
