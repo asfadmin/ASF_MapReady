@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
   int latConstraintFlag=FALSE, prcflag=FALSE, nTotal, nVec=1;
   long offset;
   short *short_buf=NULL, *cpx_buf=NULL;
-  char *byte_buf=NULL;
+  unsigned char *byte_buf=NULL;
   float *out_buf=NULL, percent=5.0;
   float fd, fdd, fddd, lowerLat=NAN, upperLat=NAN;
   double noise_table[MAX_tableRes];
@@ -510,12 +510,12 @@ int main(int argc, char *argv[])
 		int    base=(int)index;
 		double frac=index-base;
 		double noise=noise_table[base]+frac*(noise_table[base+1]-noise_table[base]);
-		double incid=0.0;
+		double incid=1.0;
 		if (cal_param->output_type==gamma_naught)
 		  incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
 		if (cal_param->output_type==beta_naught)
 		  incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
-		out_buf[kk]=get_cal_dn(cal_param,noise,incid,short_buf[kk]);
+		out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
 	      }
 	    else 
 	      out_buf[kk]=0;
@@ -563,12 +563,12 @@ int main(int argc, char *argv[])
 	      int    base=(int)index;
 	      double frac=index-base;
 	      double noise=noise_table[base]+frac*(noise_table[base+1]-noise_table[base]);
-	      double incid=0.0;
+	      double incid=1.0;
 	      if (cal_param->output_type==gamma_naught)
 		incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
 	      if (cal_param->output_type==beta_naught)
 		incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
-	      out_buf[kk]=get_cal_dn(cal_param,noise,incid,byte_buf[kk]);
+	      out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)byte_buf[kk]);
 	    }
 	    else 
 	      out_buf[kk]=0;

@@ -2,6 +2,8 @@
 	Fetches noise and scaling factors from
 input CEOS image, and returns them to 
 calibrate.*/
+
+
 #include "asf.h"
 #include "ddr.h"
 #include "ceos.h"
@@ -190,27 +192,21 @@ cal_params *create_cal_params(char *inSAR)
 ----------------------------------------------------------------------*/
 float get_cal_dn(cal_params *p,double noiseValue,double invIncAngle,int inDn)
 {
+
+
         double scaledPower,sigma0;
-        double Dmin=p->Dmin,Dmax=p->Dmax;
         
         /*Convert (amplitude) data number to scaled, noise-removed power*/
-        scaledPower=p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2;
+        scaledPower=(p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
 
-        /*Apply gamma-0 correction if needed*/
-        if (p->output_type==gamma_naught) scaledPower *= invIncAngle;
-        if (p->output_type==beta_naught) scaledPower *= invIncAngle;
-
-        /*Convert power to sigma-0 */
-        if (1.0<=scaledPower)
-                return 255.0;/*Sigma-0 would be greater than 0.*/
+        /*Convert power to dB */
         if (scaledPower > 0.0) 
         {
                 sigma0=10.0*log10(scaledPower);
-                if (sigma0 > Dmin) 
                         return sigma0;
         }
-        /*Otherwise, sigma-0 is too small*/
-        return 0.0;/*Otherwise, return 0.*/
+        /*Otherwise, log undefined*/
+        return -30.0;
 }
 
 /*----------------------------------------------------------------------
