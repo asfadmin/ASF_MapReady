@@ -1,5 +1,6 @@
-# Makefile for 		:  las2geotiff
-# Module Author 	:  Sherman Watts (used tae code as referenced)
+# Makefile for:  convert2geotiff
+# Module Author:  Sherman Watts (used tae code as referenced), 09/2001
+#                 Patrick Denny, 02/2004
 
 include ../../make_support/system_rules
 
@@ -54,15 +55,15 @@ OBJS =	get_tiepoints.o \
 	wagviikeyset.o \
 	obeqakeyset.o \
 	get_geocode.o \
-	las2geotiff_IO.o \
-	las2geotiff.o 
+	convert2geotiff_IO.o \
+	convert2geotiff.o 
 
-all: las2geotiff clean
+all: convert2geotiff clean
 
-las2geotiff: $(OBJS)
-	$(CC) $(CFLAGS) -o las2geotiff $(OBJS) $(LIBS)
-	cp las2geotiff.1 ../../man/cat1
-	mv las2geotiff ../../bin/$(SYS)
+convert2geotiff: $(OBJS)
+	$(CC) $(CFLAGS) -o convert2geotiff $(OBJS) $(LIBS)
+	cp convert2geotiff.1 ../../man/man1
+	mv convert2geotiff ../../bin/$(SYS)
 
 clean:
-	rm -f $(OBJS)
+	rm -f core *.o

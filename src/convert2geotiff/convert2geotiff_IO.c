@@ -13,7 +13,7 @@ PARAMETERS:
     NAME:	TYPE:		PURPOSE:
     --------------------------------------------------------
     out		TIFF*		write LAS buffer to this file
-    fpin	FILE*		LAS file to read into buffer
+    fpin	FILE*		ASF image file to read into buffer
     gtif	GTIF*	  	write geotiff keys and free gtif 
     imagewidth	int		Number of samp to read into buffer per line
     imagelength int		Number of lines to read into buffer
@@ -38,15 +38,15 @@ PROGRAM HISTORY:
     ---------------------------------------------------------------
     0.0	 8/01   	     Function part of las2geotiff program.
     1.0  8/01	S. Watts     Function moved to seperate file.  Added 
-			     additional functions to handle LAS 
+			     additional functions to handle ASF 
 		  	     images of data type short, integer, and float.
 ****************************************************************/
 
-#include "las2geotiff_IO.h"
+#include "convert2geotiff_IO.h"
 
 void byte_IO(TIFF *out, FILE *fpin, GTIF *gtif, int imagewidth, int imagelength, char outfile[])
   {
-  Uchar *lasbuf;                /* input line buffer from LAS image */
+  Uchar *lasbuf;                /* input line buffer from ASF image */
   Uchar *tiffbuf;       	/* line buffer for tiff image */
   int samp = 0, line = 0;       /* Counter variables */
 
@@ -84,7 +84,7 @@ for (line = 0; line < imagelength; line++)
 
 void short_IO(TIFF *out, FILE *fpin, GTIF *gtif, int imagewidth, int imagelength, char outfile[])
   {
-  short *lasbuf;                /* input line buffer from LAS image */
+  short *lasbuf;                /* input line buffer from ASF image */
   short *tiffbuf;       	/* line buffer for tiff image */
   int samp = 0, line = 0;       /* Counter variables */
 
@@ -120,7 +120,7 @@ for (line = 0; line < imagelength; line++)
 
 void integer_IO(TIFF *out, FILE *fpin, GTIF *gtif, int imagewidth, int imagelength, char outfile[])
   {
-  int *lasbuf;                /* input line buffer from LAS image */
+  int *lasbuf;                /* input line buffer from ASF image */
   int *tiffbuf;       	/* line buffer for tiff image */
   int samp = 0, line = 0;       /* Counter variables */
 
@@ -156,7 +156,7 @@ void integer_IO(TIFF *out, FILE *fpin, GTIF *gtif, int imagewidth, int imageleng
   }
 void float_IO(TIFF *out, FILE *fpin, GTIF *gtif, int imagewidth, int imagelength, char outfile[])
   {
-  float *lasbuf;                /* input line buffer from LAS image */
+  float *lasbuf;                /* input line buffer from ASF image */
   float *tiffbuf;       	/* line buffer for tiff image */
   int samp = 0, line = 0;       /* Counter variables */
 
@@ -198,7 +198,7 @@ void three_band_byte(TIFF *out, FILE *fpin, GTIF *gtif, int imagewidth, int imag
 {
   int line, bcount, samp, i;
 
-  Uchar *lasbuf;                /* input line buffer from LAS image */
+  Uchar *lasbuf;                /* input line buffer from ASF image */
   Uchar *tiffbuf;       	/* line buffer for tiff image */
   Uchar *tempbuf;
 

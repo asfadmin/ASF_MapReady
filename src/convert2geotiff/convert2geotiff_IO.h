@@ -41,11 +41,11 @@ PROGRAM HISTORY:
 			     additional functions to handle LAS 
 		  	     images of data type short, integer, and float.
 ****************************************************************/
-#ifndef _LAS2GEOTIFF_IO_H_
-#define _LAS2GEOTIFF_IO_H_
+#ifndef _CONVERT2GEOTIFF_IO_H_
+#define _CONVERT2GEOTIFF_IO_H_
 
 
-#include "ddr.h"
+#include "asf_meta.h"
 #include "ifm.h"
 #include "proj.h"
 #include "geotiffio.h"
