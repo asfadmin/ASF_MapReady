@@ -65,19 +65,14 @@ meta_parameters *raw_init(void)
   meta->general->bit_error_rate = NAN;
   meta->general->missing_lines = -1;
 
-  meta->geo  = NULL; /* DEPRECATED */
-  meta->ifm  = NULL; /* DEPRECATED */
-  meta->info = NULL; /* DEPRECATED */
-
 /* Initialize deprecated structure elements: Creates and initializes a
    meta_parameters structure, guessing at conceivable values.  These
    bogus values always end in "989", so you can tell them from real
    values.  */
-
-  meta->geo = MALLOC(sizeof(geo_parameters));
-  meta->ifm = MALLOC(sizeof(ifm_parameters));
-  meta->stVec=NULL;
-  meta->info=NULL;
+  meta->geo   = MALLOC(sizeof(geo_parameters));
+  meta->ifm   = MALLOC(sizeof(ifm_parameters));
+  meta->stVec = NULL;
+  meta->info = MALLOC(sizeof(extra_info));
   
   /* Guess at conceivable values for deprecated elements.  */
   meta->geo->type = 'G';
