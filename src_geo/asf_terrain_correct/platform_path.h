@@ -1,4 +1,4 @@
-// A satellite path modelled in geocentric equitorial inertial
+// A satellite path modelled in Geocentric Equitorial Inertial (GEI)
 // coordinates using cubic splines.  An orbit propagator is used to
 // fill in the blanks at a number of position along the orbital path,
 // and then splines are fit to these known positions to allow fast

@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
 
+use Math::Trig qw( pi );
+
 # This script processes a bunch of issues of International Earth
 # Rotation Service (IERS) Bulletin B and generates a data file
 # containing a lookup table which can be used to relate various time
@@ -35,30 +37,6 @@ foreach ( @files_in_input_dir ) {
 	push(@bulletin_bs, "$input_dir/$_");
     }
 }
-
-# Given three capital letters that form one of the usual month
-# abbreviations, return the number of that month (1-12).
-sub month_number
-{
-    @_ == 1 or die;
-    my $arg = shift;
-
-    if ( $arg eq 'JAN' ) { return 1; }
-    if ( $arg eq 'FEB' ) { return 2; }
-    if ( $arg eq 'MAR' ) { return 3; }
-    if ( $arg eq 'APR' ) { return 4; }
-    if ( $arg eq 'MAY' ) { return 5; }
-    if ( $arg eq 'JUN' ) { return 6; }
-    if ( $arg eq 'JUL' ) { return 7; }
-    if ( $arg eq 'AUG' ) { return 8; }
-    if ( $arg eq 'SEP' ) { return 9; }
-    if ( $arg eq 'OCT' ) { return 10; }
-    if ( $arg eq 'NOV' ) { return 11; }
-    if ( $arg eq 'DEC' ) { return 12; }
-
-    die;			# Shouldn't be here.
-}
-
 
 # Assuming @bulletin_bs has been accurately populated, work with all
 # the files it refers to and scan them for data we want.  Put the
@@ -145,21 +123,23 @@ foreach ( @bulletin_bs )
                                           (-?\d*\.?\d*)\s+ # UT1-UTC
                                           (-?\d*\.?\d*)\s+ # UT1-UT1R
                                           (-?\d*\.?\d*)\s+ # unused
-                                          (-?\d*\.?\d*)\s+ # unused
+                                          (-?\d*\.?\d*)\s+ # Delta psi
                                           (-?\d*\.?\d*) # unused
                                        /x )
                 {
                     # If it is, save the data we want for later.
 
-		    # Find the 
-
 		    # Convert from milliseconds to seconds.
                     $converted = $7 / 1000.0;  
+
+		    # Convert from hundredths of arc seconds to radians.
+		    my $delta_psi = ($9 / (1000.0 * 60.0 * 60.0)) * (pi / 180.0);
+
                     # Tie all the data together in our order:
-                    # MJD, Year, Month, Day, UT1-UTC, UT1-UT1R
+                    # MJD, Year, Month, Day, UT1-UTC, UT1-UT1R, delta psi
 		    push(@final_data, $3."\t".$current_year."\t".$1."\t".$2
-			 ."\t".$6."\t".$converted."\t".$tai_minus_utc{$1}
-                                      ."\n");
+			 ."\t".$6."\t".$converted."\t".$tai_minus_utc{$1}."\t"
+			 .$delta_psi."\n");
                     # Need to adjust the year after December 31
                     if ( $1 eq "DEC" && $2 == 31 )
                     {
@@ -200,7 +180,7 @@ for ( my $ii = 0 ; $ii < @final_data ; ++$ii ) # Loop through the data.
 
 # First, print a one-line header, for examination purposes.
 print OUTPUT_FILE "MJD\tYear\tMonth\tDay\tUT1-UTC(s)\tUT1-UT1R(s)\t"
-                  ."TAI-UTC(s)\n" 
+                  ."TAI-UTC(s)\tdelta_psi (radians)\n" 
     or die "can't write to $output_file: $!";
 # Print each line to the file. If anything goes wrong, freak out.
 foreach my $line (@final_data)

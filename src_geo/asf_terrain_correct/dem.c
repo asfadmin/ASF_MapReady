@@ -31,7 +31,7 @@ static Dem *
 dem_new_from_file_gridfloat(const char * file);
 
 static Dem *
-dem_new();
+dem_new (void);
 
 /* Public Methods */
 

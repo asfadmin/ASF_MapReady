@@ -38,6 +38,15 @@
 /* Equivalent UT1R time, calculated in the same way as
    BASE_EQUIVALENT_UTC.  */
 #define BASE_EQUIVALENT_UT1R 50136.48540150729476L
+/* Equivalent earth angle as derived from UT1R, in radians.  This
+   value comes out of the software provided with "Satellite Orbits:
+   Models, Methods, and Applications" by Oliver Montenbruck and
+   Everhard Gill, Exercise 5.1 (in the GHAMatrix routine, the
+   Greenwich apparent sidereal time (GAST) is computed).  */
+#define BASE_EARTH_ANGLE -0.56895895073910019
+/* FIXME: we need a test case for the earth angle from an epoch
+   *after* the change in definition of UT1 (i.e. after January
+   2003.  */
 
 #define APPROXIMATE_DAYS_PER_MONTH 30
 /* Date after addition of about a month of time.  */
@@ -121,7 +130,11 @@ main (void)
   
   DateTime *dt2 = date_time_copy (dt);
   assert_base_values (dt2);
-  
+
+  /* Test earch angle method.  We don't do pole position correction,
+     so we may be a few microdegrees off.  */
+  assert (fabs (date_time_earth_angle (dt) - BASE_EARTH_ANGLE) < 1e-6);
+
   /* Test date arithmetic.  */
   
   date_time_add_seconds (dt2, APPROXIMATE_DAYS_PER_MONTH * SECONDS_PER_DAY);

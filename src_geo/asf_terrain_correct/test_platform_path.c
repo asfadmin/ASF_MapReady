@@ -12,10 +12,16 @@
 // propagation from the nearest observation match the values returned
 // from the path spline to within these magnitudes.
 #define POSITION_TOLERANCE 5.0
-#define VELOCITY_TOLERANCE 300.0
+// This relatively low velocity accuracy is probably due to the way
+// the results of forward and backward propagations are averaged.
+// Exponential mixing is used in order to give positional preference
+// to the nearer state vector, but this introduces a fairly sharp
+// wiggle around the point midway between the observations.
+#define VELOCITY_TOLERANCE 150.0
 
 // Three observations taken from a Radarsat product (i.e. probably not
-// that accurate but will do for testing this class).
+// that accurate but will do for testing this class).  Better state
+// vectors might well allow the above tolerances to be tightened.
 
 #define OBSERVATION_COUNT 3
 
@@ -100,20 +106,16 @@ main (void)
   double time_span = END_TIME - START_TIME;
   // Control point spacing.
   double cp_spacing = time_span / (CONTROL_POINT_COUNT - 1);
-
+  
   // Places to store the results of position and velocity lookups.
   Vector position, velocity;
-  
+
   // For holding the results of propagations which can be compared
   // against the results given by the path interpolator.
   OrbitalStateVector *tmp;
 
   // Test some positions before the first control point for agreement
   // with the results of the propagator.
-
-  // FIXME: REMOVE THIS DEBUGGING SCHLOP.
-  platform_path_position_at_time (pp, observation_times[0], &position);
-  platform_path_velocity_at_time (pp, observation_times[0], &velocity);
 
   // A time before the first observation.
   double tbfo = (START_TIME 
@@ -161,8 +163,6 @@ main (void)
 
   OrbitalStateVector *tmp2 = orbital_state_vector_copy (observations[1]);
   orbital_state_vector_propagate (tmp2, tnmos - observation_times[1]);
-
-
   assert (compare_vectors (&position, tmp->position, POSITION_TOLERANCE));
   assert (compare_vectors (&velocity, tmp->velocity, VELOCITY_TOLERANCE));
   orbital_state_vector_free (tmp);

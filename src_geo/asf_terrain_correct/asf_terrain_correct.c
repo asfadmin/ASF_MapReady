@@ -13,9 +13,12 @@
 #include "ITRS_platform_path.h"
 #include "ITRS_point.h"
 #include <asf_meta.h>
+#include "dem.h"
 #include "earth_constants.h"
+#include "libasf_proj.h"
 #include "orbital_state_vector.h"
 #include "platform_path.h"
+#include "slant_range_image.h"
 
 typedef struct {
   Vector *target;
@@ -54,6 +57,43 @@ main (int argc, char **argv)
   g_string_append_printf (input_meta_file, ".meta");
   GString *input_data_file = g_string_new (argv[argc - 2]);
   g_string_append_printf (input_data_file, ".img");
+
+  // A small test DEM custom made by Joanne.  The number from the LAS
+  // data descriptor record are wired in here.
+  const size_t tdsx = 700, tdsy = 220; /* Test DEM size x and size y.  */
+  FloatImage *td 
+    = (float_image_new_from_file_with_sample_type 
+       (700, 220, "test_data/dem_over_delta/cut1.img",
+	0, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN,
+	FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER));
+  float_image_export_as_jpeg (td, "test_dem.jpg", 4000);
+  // Test DEM ul x and y projection coordinates.
+  const double td_ul_x = 1.57235253300000E+06;
+  const double td_ul_y = 4.00632767000000E+05;
+  // Test DEM per x and per y projection coordinates per pixel.
+  const double td_px = 60;
+  const double td_py = -60;
+  project_parameters_t projection_parameters;
+  g_assert_not_reached ();	/* Coordinates belore aren't filled in yet.  */
+  projection_parameters.albers.std_parallel1 = -42;
+  projection_parameters.albers.std_parallel2 = -42;
+  projection_parameters.albers.center_meridian = -42;
+  projection_parameters.albers.orig_latitude = -42;
+  projection_parameters.albers.false_easting = -42;
+  projection_parameters.albers.false_northing = -42;
+
+  // Load the reference DEM.
+  Dem *dem = dem_new_from_file (reference_dem->str);
+  float_image_export_as_jpeg (dem->float_image, "dem_view.jpg",
+			      GSL_MAX (dem->float_image->size_x,
+				       dem->float_image->size_y));
+  dem = dem;			/* FIXME: remove compiler reassurance.  */
+
+  // We will need a slant range version of the image being terrain
+  // corrected.
+  SlantRangeImage *sri 
+    = slant_range_image_new_from_ground_range_image (input_meta_file->str,
+						     input_data_file->str);
 
   meta_parameters *imd = meta_read (input_meta_file->str);
 
@@ -137,7 +177,6 @@ main (int argc, char **argv)
 				      gei_pos);
     g_assert (return_code == GSL_SUCCESS);
 
-
     // The fixed earth velocity vectors are affected by the rotation
     // of the earth itself, so first we have to subtract this term
     // out.
@@ -150,15 +189,12 @@ main (int argc, char **argv)
     gsl_vector_set (tmp, zi, gsl_vector_get (itrs_vel, zi));
 
     // Now we can rotate the remaining velocity back into the GEI
-    // system.  FIXME: all this rotating is probably a bad idea.
-    // asf_meta does it so for now we have now choice, but in undoing
-    // the GE==>fixed transform done there we end up changing the
-    // velocity by about 10 m/s -- generally not an issue for a 15
-    // second frame but bad practice nevertheless.  I think this is
-    // due to the notorious instability of rotation operations using
-    // euler angles and sines and cosines.  If we must rotation things
-    // back and forth we should probably use quaternians, or at least
-    // see if long double helps dodge the problem.
+    // system.  FIXME: we use a slightly different (by ~10
+    // microdegrees) earth angle than the code in asf_meta, so the
+    // velocity ends up being different by as much as 10 m/s in some
+    // components -- generally not an issue for a 15 second frame but
+    // bad practice nevertheless.  We ought to change things so the
+    // correct values are used everywhere.
     return_code = gsl_blas_dgemv (CblasNoTrans, 1.0, earm, tmp, 0.0, 
 				  gei_vel);
     g_assert (return_code == GSL_SUCCESS);
@@ -179,15 +215,7 @@ main (int argc, char **argv)
   gsl_vector_free (itrs_vel);
   gsl_vector_free (itrs_pos);
 
-  // By using this explicitly set batch of vectors from the .D which
-  // are in the right coordinate system.
   /*
-  observations[0] = orbital_state_vector_new (-1071.730468750000000e3,
-					      3053.727050781250000e3,
-					      6390.152832031250000e3,
-					      243.932998657226562,
-					      6744.739257812500000,
-					      -3175.534912109375000);
   observations[1] = orbital_state_vector_new (-1069.806762695312500e3,
 					      3105.852783203125000e3,
 					      6365.356445312500000e3,
@@ -201,6 +229,22 @@ main (int argc, char **argv)
 					      6692.574218750000000,
 					      -3282.445312500000000);
   */
+
+  // Quick hack to check how differenc propagation is from linear
+  // interpolation.
+  double dt = observation_times[2] - observation_times[1];
+  Vector *sv = vector_copy (observations[2]->position);
+  vector_subtract (sv, observations[1]->position);
+  vector_multiply (sv, 0.5);
+  Vector *mpbi = vector_copy (observations[1]->position);
+  vector_add (mpbi, sv);
+  OrbitalStateVector *tmp2 = orbital_state_vector_copy (observations[1]);
+  orbital_state_vector_propagate (tmp2, dt / 2.0);
+  Vector *ev = vector_copy (mpbi);
+  vector_subtract (ev, tmp2->position);
+  double error_magnitude = vector_magnitude (ev);
+  printf ("error magnitude (linear interpolation versus propagation): %lf\n",
+	  error_magnitude);
 
   // Number of control points to use for the cubic splines that
   // approximate the satellite motion in the ITRSPlatformPath.
@@ -216,11 +260,11 @@ main (int argc, char **argv)
 				       imd->state_vectors->second,
 				       UTC);
 
+  // Create orbital arc model.
   ITRSPlatformPath *pp_fixed 
     = ITRS_platform_path_new (cpc, observation_times[0] - gt,
   			      observation_times[svc - 1] + gt,
   			      svc, base_date, observation_times, observations);
-
 
   // FIXME: This is a test point for a single location in delta
   // junction.  Eventually a computation like this will have to be
@@ -229,6 +273,10 @@ main (int argc, char **argv)
     = ITRS_point_new_from_geodetic_lat_long_height (63.80514 * M_PI / 180.0,
 						    -145.006 * M_PI / 180.0,
 						    448.4);
+  double target_height_according_to_dem 
+    = dem_get_height (dem, 63.80514 * M_PI / 180.0, -145.006 * M_PI / 180.0);
+  printf ("target height according to dem: %lf\n",
+	  target_height_according_to_dem);
   Vector *target = vector_new (target_point->x, target_point->y, 
 			       target_point->z);
 
@@ -290,8 +338,7 @@ main (int argc, char **argv)
   // We need to have the convergence work.  
   assert (status == GSL_SUCCESS);
 
-  printf ("Imaging time for CR1: %lf +/- %lf\n", (sor + eor) / 2.0,
-	  (eor - sor) / 2.0);
+  printf ("Imaging time for CR1: %lf +/- %lf\n", min, eor - sor);
   
   double time_of_cr_pixel = meta_get_time (imd, 4293, 1933);
   printf ("Solved time: %lf,  meta_get_time: %lf\n", min, time_of_cr_pixel);
@@ -305,17 +352,45 @@ main (int argc, char **argv)
   printf ("Solved slant range: %lf, meta_get_slant: %lf\n",
 	  solved_sr, slant_range_of_cr_pixel);
 
-  DateTime *sos = date_time_new (2000, 266, 58976.7734375, UTC);
-  printf ("Earth angle sos: %.10lf\n", 
-	  (180 / M_PI) * date_time_earth_angle (sos));
+  double cr_reflectivity
+    = slant_range_image_sample (sri, time_of_cr_pixel, slant_range_of_cr_pixel,
+				FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR);
+  printf ("cr_reflectivity: %lf\n", cr_reflectivity);
 
-  DateTime *mos = date_time_new (2000, 266, 58976.7734375 + 7.74317932128906,
-				 UTC);
-  printf ("Earth angle mos: %.10lf\n", 
-	  (180 / M_PI) * date_time_earth_angle (mos));
 
-  DateTime *t_time = date_time_new_from_mjd (51241.00000751426, UT1R);
-  printf ("Earth angle t_time: %.10lf\n", date_time_earth_angle (t_time));
+  // Here we take a crack at actually painting a DEM.
+
+  FloatImage *cd = float_image_new (tdsx, tdsy);   // Backscatter colored DEM.
+  cd = cd;			/* FIXME: remove. */
+  double *x_buffer = g_new (double, tdsx);
+  double *y_buffer = g_new (double, tdsx);
+  double *lats = g_new (double, tdsx);
+  double *lons = g_new (double, tdsx);
+  for ( ii = 0 ; (size_t) ii < tdsy ; ii++ ) {
+
+    // Get the latitude and longitude of each pixel in this row.
+    size_t jj;
+    for ( jj = 0 ; jj < tdsx ; jj++ ) {
+      x_buffer[jj] = td_ul_x + jj * td_px;
+      y_buffer[jj] = td_ul_y + ii * td_py;
+      g_assert (tdsx < LONG_MAX);
+      int return_code = project_utm_arr_inv (&projection_parameters,
+					     x_buffer, y_buffer, &lats, &lons,
+					     tdsx);
+      g_assert (return_code == TRUE);
+    }
+
+    // Find the closest point of approach for each DEM pixel, look up
+    // the corresponding backscatter value from the slant range image,
+    // and use it to paint the DEM.
+    Vector cp_target;
+    cp_target = cp_target;	/* FIXME: remvoe.  */
+    for ( jj = 0 ; jj < tdsx ; jj++ ) {
+      g_assert_not_reached ();	/* Not finished yet.  */
+    }
+
+    
+  }
 
   exit (EXIT_SUCCESS);
 }

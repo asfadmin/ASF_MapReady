@@ -60,11 +60,12 @@ datafile_path (const char *relative_path)
   if ( first_time_through ) {
     fprintf (stderr, "Note: Looking for data file %s in './' instead of '"
 	     ASF_SHAREDIR "' ... ", relative_path);
-    first_time_through = FALSE;
   }
   path = g_strdup_printf ("./%s", relative_path);
   if ( g_file_test (path, G_FILE_TEST_EXISTS) ) {
-    fprintf (stderr, "found it.\n");
+    if ( first_time_through ) {
+      fprintf (stderr, "found it.\n");
+    }
     return path;
   } else {
     /* Look for just the file name in the current directory.  */
@@ -74,15 +75,23 @@ datafile_path (const char *relative_path)
     file_name_part++;
     gchar *file_name = g_strdup (file_name_part);
     free (path);
-    fprintf (stderr, "couldn't find it,  looking for ./%s ... ", file_name);
+    if ( first_time_through ) {
+      fprintf (stderr, "couldn't find it,  looking for ./%s ... ", file_name);
+    }
     if ( g_file_test (file_name, G_FILE_TEST_EXISTS) ) {
-      fprintf (stderr, "found it.\n");
+      if ( first_time_through) {
+	fprintf (stderr, "found it.\n");
+      }
       return file_name;
     } else {
-      fprintf (stderr, "failed, giving up.\n");
+      if ( first_time_through ) {
+	fprintf (stderr, "failed, giving up.\n");
+      }
       assert (FALSE);		/* Shouldn't be here.  */
     }
   }
+
+  first_time_through = FALSE;
 }
 
 size_t

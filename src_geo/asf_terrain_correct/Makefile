@@ -19,14 +19,16 @@ PROGRAM_C_SOURCE = $(addsuffix .c, $(PROGRAM))
 
 # Classes.  Each entry here has a corresponding .h and .c file.
 CLASSES := date_time \
+	   dem \
            orbital_state_vector \
 	   platform_path \
-	   vector
-# Disabled for now
-#	   dem
+           slant_range_image \
+	   vector \
+           ITRS_platform_path \
+           ITRS_point
 
 # Non-main, non-class source files that need building.
-OTHER_C_SOURCES := utilities.c
+OTHER_C_SOURCES := utilities.c gei2fixed.c
 
 # We have a special little program which we run to mash a bunch of
 # International Earth Rotation Service Bulletin B issues together.
@@ -47,8 +49,6 @@ STATIC_DATA_FILE_SOURCES = IERS_Bulletin_Bs
 #
 ###############################################################################
 
-#CC := /home/bkerin/local/gcc-3.4.3/bin/gcc
-
 INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR)
 
 CPPFLAGS := $(INCLUDE_FLAGS)
@@ -58,14 +58,17 @@ CPPFLAGS := $(INCLUDE_FLAGS)
 # take type float (still get a complaint about argument being passed
 # as float due to prototype rather than double.
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
-CFLAGS += -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
+# FIXME: remove -O0 here once configure system doesn't put -O2 in in debug mode
+CFLAGS += -O0 -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
           -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
           -Wwrite-strings -Wnested-externs -fno-common
 
 # Libraries needed by this program.
-LDLIBS := $(LIBDIR)/libasf_reporting.a \
-	  $(LIBDIR)/asf.a \
+LDLIBS := $(LIBDIR)/asf.a \
 	  $(LIBDIR)/asf_meta.a \
+	  $(LIBDIR)/libasf_proj.a \
+	  $(LIBDIR)/libproj.a \
+          $(LIBDIR)/libasf_reporting.a \
 	  $(LIBDIR)/libasf_raster.a \
 	  $(LIBDIR)/asf.a \
 	  $(LIBDIR)/libgsl.a \
@@ -99,6 +102,7 @@ TEST_PREREQUISITES := build_stamp
 test_stamp: test_orbital_state_vector_stamp \
             test_platform_path_stamp \
             test_date_time_stamp
+	touch $@
 
 # Build and run the date_time class test.
 test_date_time_stamp: test_date_time.c $(TEST_PREREQUISITES)
@@ -109,7 +113,7 @@ test_date_time_stamp: test_date_time.c $(TEST_PREREQUISITES)
 
 # Build and run the orbital_state_vector class test.
 test_orbital_state_vector_stamp: test_orbital_state_vector.c \
-                                       $(TEST_PREREQUISITES)
+                                 $(TEST_PREREQUISITES)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(NONMAIN_OBJS) $(LDLIBS) \
               -o test_orbital_state_vector
 	./test_orbital_state_vector;
@@ -157,8 +161,10 @@ NONMAIN_OBJS := $(patsubst %.c, %.o, $(OTHER_C_SOURCES) \
 build_stamp: $(OBJS) $(LIBS) static_data_file_build_stamp
 	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $(PROGRAM)
 	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
+	touch $@
 
 static_data_file_build_stamp: time_scale_offsets
+	touch $@
 
 # Script which concatenates International Earth Rotation Service
 # Bulletin B issues into a data file.

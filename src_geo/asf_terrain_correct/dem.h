@@ -5,15 +5,15 @@
 
 typedef struct
 {
-    FloatImage * float_image;
-
-    int ncols;
-    int nrows;
-    double xllcorner;
-    double yllcorner;
-    double cellsize;
-    double nodata_value;
-    int byte_order;
+  FloatImage * float_image;
+  
+  int ncols;
+  int nrows;
+  double xllcorner;
+  double yllcorner;
+  double cellsize;
+  double nodata_value;
+  float_image_byte_order_t byte_order;
 } Dem;
 
 Dem * 

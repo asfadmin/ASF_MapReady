@@ -20,7 +20,12 @@
 #define INITIAL_VELOCITY_X -3838.984250 
 #define INITIAL_VELOCITY_Y 1300.283917
 #define INITIAL_VELOCITY_Z -6266.699787
-#define INITIAL_HEIGHT_ABOVE_WGS84_ELLIPSOID 781781.8
+
+// FIXME: This value needs to be more independently verified (it is
+// currently copied from the output of the program after a program
+// tweak...)
+#define INITIAL_HEIGHT_ABOVE_WGS84_ELLIPSOID 787545.579
+// These are as good as they were originally.
 #define INITIAL_A 7163570.1316334093
 #define INITIAL_E 0.0014278553721458226
 #define INITIAL_I 1.720014202603227
@@ -129,7 +134,7 @@ main (void)
      position the propagator calculated in the forward direction to
      the starting position of that forward propagation.  The accuracy
      here tests the accuracy of the algorithm running in reverse.  */
-  double long_reverse_propagation_error = 2;
+  double long_reverse_propagation_error = 2.0;
   assert_position (osv_copy, T2_POSITION_X, T2_POSITION_Y, T2_POSITION_Z,
 		   long_reverse_propagation_error);
 

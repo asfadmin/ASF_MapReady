@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <gsl/gsl_math.h>
+
 #include "basic_types.h"
 #include "date_time.h"
 #include "utilities.h"
@@ -142,7 +144,8 @@ mjd_to_year_day_second (long double mjd, int *year, int *day_of_year,
 typedef enum {
   UT1_MINUS_UTC,
   UT1_MINUS_UT1R,
-  TAI_MINUS_UTC
+  TAI_MINUS_UTC,
+  DELTA_PSI
 } lookup_table_column_t;
 
 /* Interpolate between entries in the lookup table to find the offset
@@ -160,20 +163,22 @@ lookup_time_offset (const char *lookup_table_file,
 		    long double mjd) 
 {
   /* Properties of the lookup table.  */
-  
-  static const int table_columns = 3;
+  static const int table_columns = 4;
   static const int ut1_minus_utc_column_index = 0; 
   static const int ut1_minus_ut1r_column_index = 1; 
   static const int tai_minus_utc_column_index = 2;
- /* We will grow this as we read the file.  */
+  static const int delta_psi_column_index = 3;
+
+  /* We will grow this as we read the file.  */
   static int table_lines = 0;
+
   /* Table entries are keyed by modified julian day.  */
   static int *table_mjd_keys = NULL;	
   static double **table = NULL;	/* Lookup table.  */
 
   /* If the lookup table file has changed, throw out the existing
      table data so it will get reloaded.  */
-  static time_t old_modification_time = ( (time_t) -1);
+  static time_t old_modification_time = ((time_t) -1);
   struct stat file_stats;
   int return_code = stat (lookup_table_file, &file_stats);
   assert (return_code == 0);
@@ -209,13 +214,14 @@ lookup_time_offset (const char *lookup_table_file,
 	int cl = table_lines - 1; /* Current line of the table.  */
 	table[cl] = malloc (table_columns * sizeof (double));
 	/* Number of table columns we care about.  */
-	const int columns_of_interest = 4;
+	const int columns_of_interest = 5;
 	int assigned_field_count 
-	  = sscanf (line_buffer, "%d %*d %*s %*d %lf %lf %lf\n", 
-		    &table_mjd_keys[cl], 
-		    &table[cl][ut1_minus_utc_column_index], 
-		    &table[cl][ut1_minus_ut1r_column_index], 
-		    &table[cl][tai_minus_utc_column_index]);
+	  = sscanf (line_buffer, "%d %*d %*s %*d %lf %lf %lf %lf\n", 
+		    &(table_mjd_keys[cl]), 
+		    &(table[cl][ut1_minus_utc_column_index]), 
+		    &(table[cl][ut1_minus_ut1r_column_index]), 
+		    &(table[cl][tai_minus_utc_column_index]),
+		    &(table[cl][delta_psi_column_index]));
 	assert (assigned_field_count == columns_of_interest);
       }
     }
@@ -225,7 +231,9 @@ lookup_time_offset (const char *lookup_table_file,
 
   /* Do a binary search for the closest thing to the mjd of interest
      which we have.  */
-  assert (mjd < INT_MAX);
+  if ( mjd >= INT_MAX ) {
+    assert (mjd < INT_MAX);
+  }
   int mjd_int = lround (mjd);
   int min_index = 0;
   int max_index = table_lines - 1;
@@ -272,11 +280,17 @@ lookup_time_offset (const char *lookup_table_file,
   int column_index;	
   if ( lookup_table_column == UT1_MINUS_UTC ) {
     column_index = ut1_minus_utc_column_index;
-  } else if ( lookup_table_column == UT1_MINUS_UT1R ) {
+  } 
+  else if ( lookup_table_column == UT1_MINUS_UT1R ) {
     column_index = ut1_minus_ut1r_column_index;
-  } else if ( lookup_table_column == TAI_MINUS_UTC ) {
+  } 
+  else if ( lookup_table_column == TAI_MINUS_UTC ) {
     column_index = tai_minus_utc_column_index;
-  } else {
+  }
+  else if (lookup_table_column == DELTA_PSI ) {
+    column_index = delta_psi_column_index;
+  } 
+  else {
     assert (FALSE);		/* Shouldn't get here.  */
   }
 
@@ -302,33 +316,24 @@ convert_to_terrestrial_dynamical_time (long double mjd,
 
   /* Offsets between various time scales.  Converting involves solving
      some equations involving these differences.  */
-  const double tdt_minus_tai = 32.184;
-  double ut1_minus_utc = lookup_time_offset (lookup_table_file,
-					     UT1_MINUS_UTC, mjd);
-  double ut1_minus_ut1r = lookup_time_offset (lookup_table_file,
-					      UT1_MINUS_UT1R, mjd);
-  double tai_minus_utc = lookup_time_offset (lookup_table_file, 
-					     TAI_MINUS_UTC, mjd);
+  const long double tdt_minus_tai = 32.184;
+  long double ut1_minus_utc = lookup_time_offset (lookup_table_file,
+						  UT1_MINUS_UTC, mjd);
+  long double ut1_minus_ut1r = lookup_time_offset (lookup_table_file,
+						   UT1_MINUS_UT1R, mjd);
+  long double tai_minus_utc = lookup_time_offset (lookup_table_file, 
+						  TAI_MINUS_UTC, mjd);
   if ( time_scale == TDT ) {
     return mjd;
   } else if ( time_scale == UT1R ) {
-    // FIXME: this method is currently broken.  It needs to be fixed
-    // in the ways that he corresponding convert_from method was
-    // fixed.
-    assert (0);
-    double ut1r_minus_tai = ut1_minus_utc - ut1_minus_ut1r - tai_minus_utc;
-    double ut1r_minus_tdt = ut1r_minus_tai - tdt_minus_tai;
-    /* We should maybe in theory be dividing by the astronomical
-       seconds per day here, but the variation is only a couple of
-       milliseconds, which would make only a tiny difference in an
-       already small adjustment.  */
+    // FIXME: these methods don't have test cases.
+    long double ut1r_minus_tai 
+      = ut1_minus_utc - ut1_minus_ut1r - tai_minus_utc;
+    long double ut1r_minus_tdt = ut1r_minus_tai - tdt_minus_tai;
     return mjd - ( (long double) ut1r_minus_tdt / SECONDS_PER_DAY);
   } else if ( time_scale == UTC ) {
-    // FIXME: this method is currently broken.  It needs to be fixed
-    // in the ways that he corresponding convert_from method was
-    // fixed.
-    assert (0);
-    double tdt_minus_utc = tdt_minus_tai + tai_minus_utc;
+    // FIXME: these methods don't have test cases.
+    long double tdt_minus_utc = tdt_minus_tai + tai_minus_utc;
     return mjd + ( (long double) tdt_minus_utc / SECONDS_PER_DAY);
     assert (FALSE);
   } else {
@@ -345,8 +350,6 @@ convert_from_terrestrial_dynamical_time (long double mjd,
 {
   static char *lookup_table_file = NULL;
   if ( lookup_table_file == NULL ) {
-    /* When testing we want to load local copies of datafile, for
-       installed code we want the installed datafile.  */
     lookup_table_file = datafile_path (time_scale_lookup_table_file);
   }
 
@@ -459,6 +462,11 @@ mjd_tdt_to_year_month_day (long double mjd_tdt, int *year, int *month,
   year_day_of_year_to_year_month_day (*year, day_of_year, month, day_of_month);
 }
 
+// FIXME: all the methods may run into troube when UTC time scale
+// results are requested that fall on leap seconds -- wrongful
+// arbitrary choice of one of the two possible values at the
+// discontinuity is the least bad possibility.
+
 int
 date_time_year (DateTime *self, time_scale_t time_scale)
 {
@@ -558,6 +566,284 @@ date_time_jds (DateTime *self, time_scale_t time_scale)
 	  + MJD_OFFSET - JDS_OFFSET);
 }
 
+/* Compute the mean obliquity of the ecliptic for a given time, in
+   radians.  See "Satellite Orbits: Models, Methods, and
+   Applications", section 5.3.2, by Oliver Montenbruck and Eberhard
+   Gill for details.  */
+static double
+mean_obliquity (double long mjd_tt)
+{
+  static DateTime *standard_epoch = NULL;
+  if ( standard_epoch == NULL ) {
+    standard_epoch = date_time_new (2000, 1, 12 * SECONDS_PER_HOUR, TDT);
+  }
+
+  const double julian_century = 36525.0;
+
+  long double T = ((mjd_tt - date_time_mjd (standard_epoch, TDT)) 
+		   / julian_century);
+
+  return (M_PI / 180.0) * (23.43929111 
+			   - ((46.8150 + (0.00059 - 0.001813 * T) * T) 
+			      * T/3600.0));
+}
+
+// Fractional part of a number.
+static double 
+fractional_part (double x)
+{ 
+  return fmod (x, 1.0);
+}
+
+// The floating point remainder of x / y.
+static double 
+float_modulo (double x, double y)
+{ 
+  return y * fractional_part (x / y);
+}
+
+/* Determine the nutation in longitude counted in the ecliptic.  This
+   uses the 1980 International Astronomical Union (IAU) nutation
+   theory.  See "Satellite Geodesy 2nd Edition" by Gunter Seeber.  */
+static double
+delta_psi (long double mjd_tt)
+{
+  static DateTime *standard_epoch = NULL;
+  if ( standard_epoch == NULL ) {
+    standard_epoch = date_time_new (2000, 1, 12 * SECONDS_PER_HOUR, TDT);
+  }
+
+  // Length of one julian century in days.
+  const double one_julian_century = 36525.0;
+
+  // Constants
+  const double t  = ((mjd_tt - date_time_mjd (standard_epoch, TDT)) 
+		     / one_julian_century);
+  const double t2 = t *t;
+  const double t3 = t2 * t;
+  const double asprev = 360.0 * 3600.0;  // Arcseconds per revolution.
+
+  // Number of coefficients in series.
+#define COEFFICIENT_COUNT 106
+
+  // Series coefficients.
+  const long int c[COEFFICIENT_COUNT][9] =
+  {
+    //
+    // l  l' F  D Om    dpsi    *T     deps     *T      #
+    //
+    {  0, 0, 0, 0, 1,-1719960,-1742,  920250,   89 },   //   1
+    {  0, 0, 0, 0, 2,   20620,    2,   -8950,    5 },   //   2
+    { -2, 0, 2, 0, 1,     460,    0,    -240,    0 },   //   3
+    {  2, 0,-2, 0, 0,     110,    0,       0,    0 },   //   4
+    { -2, 0, 2, 0, 2,     -30,    0,      10,    0 },   //   5
+    {  1,-1, 0,-1, 0,     -30,    0,       0,    0 },   //   6
+    {  0,-2, 2,-2, 1,     -20,    0,      10,    0 },   //   7
+    {  2, 0,-2, 0, 1,      10,    0,       0,    0 },   //   8
+    {  0, 0, 2,-2, 2, -131870,  -16,   57360,  -31 },   //   9
+    {  0, 1, 0, 0, 0,   14260,  -34,     540,   -1 },   //  10
+    {  0, 1, 2,-2, 2,   -5170,   12,    2240,   -6 },   //  11
+    {  0,-1, 2,-2, 2,    2170,   -5,    -950,    3 },   //  12
+    {  0, 0, 2,-2, 1,    1290,    1,    -700,    0 },   //  13
+    {  2, 0, 0,-2, 0,     480,    0,      10,    0 },   //  14
+    {  0, 0, 2,-2, 0,    -220,    0,       0,    0 },   //  15
+    {  0, 2, 0, 0, 0,     170,   -1,       0,    0 },   //  16
+    {  0, 1, 0, 0, 1,    -150,    0,      90,    0 },   //  17
+    {  0, 2, 2,-2, 2,    -160,    1,      70,    0 },   //  18
+    {  0,-1, 0, 0, 1,    -120,    0,      60,    0 },   //  19
+    { -2, 0, 0, 2, 1,     -60,    0,      30,    0 },   //  20
+    {  0,-1, 2,-2, 1,     -50,    0,      30,    0 },   //  21
+    {  2, 0, 0,-2, 1,      40,    0,     -20,    0 },   //  22
+    {  0, 1, 2,-2, 1,      40,    0,     -20,    0 },   //  23
+    {  1, 0, 0,-1, 0,     -40,    0,       0,    0 },   //  24
+    {  2, 1, 0,-2, 0,      10,    0,       0,    0 },   //  25
+    {  0, 0,-2, 2, 1,      10,    0,       0,    0 },   //  26
+    {  0, 1,-2, 2, 0,     -10,    0,       0,    0 },   //  27
+    {  0, 1, 0, 0, 2,      10,    0,       0,    0 },   //  28
+    { -1, 0, 0, 1, 1,      10,    0,       0,    0 },   //  29
+    {  0, 1, 2,-2, 0,     -10,    0,       0,    0 },   //  30
+    {  0, 0, 2, 0, 2,  -22740,   -2,    9770,   -5 },   //  31
+    {  1, 0, 0, 0, 0,    7120,    1,     -70,    0 },   //  32
+    {  0, 0, 2, 0, 1,   -3860,   -4,    2000,    0 },   //  33
+    {  1, 0, 2, 0, 2,   -3010,    0,    1290,   -1 },   //  34
+    {  1, 0, 0,-2, 0,   -1580,    0,     -10,    0 },   //  35
+    { -1, 0, 2, 0, 2,    1230,    0,    -530,    0 },   //  36
+    {  0, 0, 0, 2, 0,     630,    0,     -20,    0 },   //  37
+    {  1, 0, 0, 0, 1,     630,    1,    -330,    0 },   //  38
+    { -1, 0, 0, 0, 1,    -580,   -1,     320,    0 },   //  39
+    { -1, 0, 2, 2, 2,    -590,    0,     260,    0 },   //  40
+    {  1, 0, 2, 0, 1,    -510,    0,     270,    0 },   //  41
+    {  0, 0, 2, 2, 2,    -380,    0,     160,    0 },   //  42
+    {  2, 0, 0, 0, 0,     290,    0,     -10,    0 },   //  43
+    {  1, 0, 2,-2, 2,     290,    0,    -120,    0 },   //  44
+    {  2, 0, 2, 0, 2,    -310,    0,     130,    0 },   //  45
+    {  0, 0, 2, 0, 0,     260,    0,     -10,    0 },   //  46
+    { -1, 0, 2, 0, 1,     210,    0,    -100,    0 },   //  47
+    { -1, 0, 0, 2, 1,     160,    0,     -80,    0 },   //  48
+    {  1, 0, 0,-2, 1,    -130,    0,      70,    0 },   //  49
+    { -1, 0, 2, 2, 1,    -100,    0,      50,    0 },   //  50
+    {  1, 1, 0,-2, 0,     -70,    0,       0,    0 },   //  51
+    {  0, 1, 2, 0, 2,      70,    0,     -30,    0 },   //  52
+    {  0,-1, 2, 0, 2,     -70,    0,      30,    0 },   //  53
+    {  1, 0, 2, 2, 2,     -80,    0,      30,    0 },   //  54
+    {  1, 0, 0, 2, 0,      60,    0,       0,    0 },   //  55
+    {  2, 0, 2,-2, 2,      60,    0,     -30,    0 },   //  56
+    {  0, 0, 0, 2, 1,     -60,    0,      30,    0 },   //  57
+    {  0, 0, 2, 2, 1,     -70,    0,      30,    0 },   //  58
+    {  1, 0, 2,-2, 1,      60,    0,     -30,    0 },   //  59
+    {  0, 0, 0,-2, 1,     -50,    0,      30,    0 },   //  60
+    {  1,-1, 0, 0, 0,      50,    0,       0,    0 },   //  61
+    {  2, 0, 2, 0, 1,     -50,    0,      30,    0 },   //  62
+    {  0, 1, 0,-2, 0,     -40,    0,       0,    0 },   //  63
+    {  1, 0,-2, 0, 0,      40,    0,       0,    0 },   //  64
+    {  0, 0, 0, 1, 0,     -40,    0,       0,    0 },   //  65
+    {  1, 1, 0, 0, 0,     -30,    0,       0,    0 },   //  66
+    {  1, 0, 2, 0, 0,      30,    0,       0,    0 },   //  67
+    {  1,-1, 2, 0, 2,     -30,    0,      10,    0 },   //  68
+    { -1,-1, 2, 2, 2,     -30,    0,      10,    0 },   //  69
+    { -2, 0, 0, 0, 1,     -20,    0,      10,    0 },   //  70
+    {  3, 0, 2, 0, 2,     -30,    0,      10,    0 },   //  71
+    {  0,-1, 2, 2, 2,     -30,    0,      10,    0 },   //  72
+    {  1, 1, 2, 0, 2,      20,    0,     -10,    0 },   //  73
+    { -1, 0, 2,-2, 1,     -20,    0,      10,    0 },   //  74
+    {  2, 0, 0, 0, 1,      20,    0,     -10,    0 },   //  75
+    {  1, 0, 0, 0, 2,     -20,    0,      10,    0 },   //  76
+    {  3, 0, 0, 0, 0,      20,    0,       0,    0 },   //  77
+    {  0, 0, 2, 1, 2,      20,    0,     -10,    0 },   //  78
+    { -1, 0, 0, 0, 2,      10,    0,     -10,    0 },   //  79
+    {  1, 0, 0,-4, 0,     -10,    0,       0,    0 },   //  80
+    { -2, 0, 2, 2, 2,      10,    0,     -10,    0 },   //  81
+    { -1, 0, 2, 4, 2,     -20,    0,      10,    0 },   //  82
+    {  2, 0, 0,-4, 0,     -10,    0,       0,    0 },   //  83
+    {  1, 1, 2,-2, 2,      10,    0,     -10,    0 },   //  84
+    {  1, 0, 2, 2, 1,     -10,    0,      10,    0 },   //  85
+    { -2, 0, 2, 4, 2,     -10,    0,      10,    0 },   //  86
+    { -1, 0, 4, 0, 2,      10,    0,       0,    0 },   //  87
+    {  1,-1, 0,-2, 0,      10,    0,       0,    0 },   //  88
+    {  2, 0, 2,-2, 1,      10,    0,     -10,    0 },   //  89
+    {  2, 0, 2, 2, 2,     -10,    0,       0,    0 },   //  90
+    {  1, 0, 0, 2, 1,     -10,    0,       0,    0 },   //  91
+    {  0, 0, 4,-2, 2,      10,    0,       0,    0 },   //  92
+    {  3, 0, 2,-2, 2,      10,    0,       0,    0 },   //  93
+    {  1, 0, 2,-2, 0,     -10,    0,       0,    0 },   //  94
+    {  0, 1, 2, 0, 1,      10,    0,       0,    0 },   //  95
+    { -1,-1, 0, 2, 1,      10,    0,       0,    0 },   //  96
+    {  0, 0,-2, 0, 1,     -10,    0,       0,    0 },   //  97
+    {  0, 0, 2,-1, 2,     -10,    0,       0,    0 },   //  98
+    {  0, 1, 0, 2, 0,     -10,    0,       0,    0 },   //  99
+    {  1, 0,-2,-2, 0,     -10,    0,       0,    0 },   // 100
+    {  0,-1, 2, 0, 1,     -10,    0,       0,    0 },   // 101
+    {  1, 1, 0,-2, 1,     -10,    0,       0,    0 },   // 102
+    {  1, 0,-2, 2, 0,     -10,    0,       0,    0 },   // 103
+    {  2, 0, 0, 2, 0,      10,    0,       0,    0 },   // 104
+    {  0, 0, 2, 4, 2,     -10,    0,       0,    0 },   // 105
+    {  0, 1, 0, 1, 0,      10,    0,       0,    0 }    // 106
+  };
+
+  // Mean arguments of luni-solar motion
+
+  double l;			// Mean anomaly of the moon.
+  double lp;			// Mean anomaly of the sun.
+  double F;			// Mean argument of latitude.
+  // Mean longitude elongation fo the moon from the sun.
+  double D;
+  double Om;			// Mean longitude of the ascending node.
+  
+  l  = float_modulo (485866.733 + (1325.0 * asprev +  715922.633) * t    
+		     + 31.310 * t2 + 0.064 * t3, asprev);
+  lp = float_modulo (1287099.804 + (  99.0 * asprev + 1292581.224) * t
+		     - 0.577 * t2 - 0.012 * t3, asprev);
+  F  = float_modulo (335778.877 + (1342.0 * asprev +  295263.137) * t    
+		     - 13.257 * t2 + 0.011 * t3, asprev);
+  D  = float_modulo (1072261.307 + (1236.0 * asprev + 1105601.328) * t    
+		     - 6.891 * t2 + 0.019 * t3, asprev);
+  Om = float_modulo (450160.280 - (   5.0 * asprev +  482890.539) * t    
+		     + 7.455 * t2 + 0.008 * t3, asprev);
+
+  double asprad = 3600.0 * 180.0 / M_PI;     // Arcseconds per radian.
+
+  // Nutation in longitude, in radians, to be returned.
+  double result = 0.0;
+
+  int ii;
+  for ( ii = 0;  ii < COEFFICIENT_COUNT ; ii++ ) {
+    // Angle argument.
+    double arg  
+      = (c[ii][0] * l + c[ii][1] * lp + c[ii][2] * F + c[ii][3] * D 
+	 + c[ii][4] * Om ) / asprad;
+    result += ( c[ii][5] + c[ii][6] * t ) * sin (arg);
+    // We don't need delta_epsilon at the moment.
+    // deps += ( c[ii][7] + c[ii][8] * t ) * cos (arg);
+  };
+      
+  result = 1.0E-5 * result / asprad;
+
+  return result;
+}
+  
+/* Evaluate the so-called equation of equinoxes, which is equal to the
+   Greenwich Mean Sidereal Time minus the Greenwich actual sidereal
+   Time, for a given time.  The result is in seconds.  See "Satellite
+   Geodesy Second Edition", Section 2.2.2 for details. */
+static double
+equation_of_equinoxes (long double mjd_tt)
+{
+  return delta_psi (mjd_tt) * cos (mean_obliquity (mjd_tt));
+}
+
+double
+date_time_earth_angle (DateTime *self)
+{
+  /* The official relationship between UT1 and UTC changed on this
+     date.  */
+  static DateTime *change_over_date = NULL;
+  if (change_over_date == NULL ) {
+    change_over_date = date_time_new (2003, 1, 0, UTC);
+  }
+
+  if ( date_time_is_before (self, change_over_date) ) {
+    static DateTime *standard_epoch = NULL;
+    if ( standard_epoch == NULL ) {
+      standard_epoch = date_time_new (2000, 1, 12 * SECONDS_PER_HOUR, UT1R);
+    }
+    /* Here we trust the magic in "Satellite Geodesy 2nd Edition",
+       section 2.2.2.  */
+    /* Julian century length in days. */
+    const double one_julian_century = 36525.0;
+    /* Current modified julian day in sidereal time.  */
+    double cmjd = date_time_mjd (self, UT1R);
+    /* Sidereal time of start of current day in julian centuries from
+       standard epoch.  */
+    double t0 = ((floor (cmjd) - date_time_mjd (standard_epoch, UT1R)) 
+		 / one_julian_century);
+    /* Current sidereal time in julian centuries from standard
+       epoch.  */
+    double tu = ((cmjd - date_time_mjd (standard_epoch, UT1R)) 
+		 / one_julian_century);
+    /* Greenwich mean sidereal time in radians.  */
+    double gmst = (6 * SECONDS_PER_HOUR + 41 * SECONDS_PER_MINUTE + 50.54841
+		   + (1.002737909350795 * (cmjd - floor (cmjd)) 
+		      * SECONDS_PER_DAY)
+		   + 8640184.812866 * t0 + 0.093104 * pow (tu, 2.0) 
+		   - 6.2e-6 * pow (tu, 3.0));
+    gmst = 2 * M_PI * fractional_part (gmst / SECONDS_PER_DAY);
+
+    double gast = fmod (gmst 
+			+ equation_of_equinoxes (date_time_mjd (self, TDT)),
+			2 * M_PI);
+
+    return gast;
+  }
+  else {
+    /* Here we use the new relationship, described in International
+       Earth Rotation Service (IERS) section Technical Note No. 32,
+       section 5.4.4.  */  
+    double tu = date_time_jd (self, UT1R) - 2451545.0;
+    return fmod (2 * M_PI * (0.7790572732640 + 1.00273781191135448 * tu),
+		 2 * M_PI);
+  }
+}
+
 double
 date_time_difference (DateTime *self, DateTime *other)
 {
@@ -581,6 +867,20 @@ date_time_subtract_seconds (DateTime *self, double seconds)
   assert (self->mjd >= 0);
   mjd_to_year_day_second (self->mjd, &(self->year), &(self->day_of_year), 
 			  &(self->second_of_day));
+}
+
+/* Return true iff self is before other.  */
+int
+date_time_is_before (DateTime *self, DateTime *other)
+{
+  return date_time_difference (self, other) < 0.0;
+}
+
+/* Return true iff self is after other.  */
+int
+date_time_is_after (DateTime *self, DateTime *other)
+{
+  return date_time_difference (self, other) > 0.0;
 }
 
 /* Free a dynamicly allocated DateTime object.  */

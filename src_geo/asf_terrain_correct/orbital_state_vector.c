@@ -4,9 +4,12 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include <gsl/gsl_blas.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>
+#include <gsl/gsl_matrix.h>
 #include <gsl/gsl_odeiv.h>
+#include <gsl/gsl_vector.h>
 
 #include "basic_types.h"
 #include "earth_constants.h"
@@ -44,6 +47,7 @@ orbital_state_vector_get_keplerian_elements
   /* Shorthand.  */
   static const double gm = EARTH_GRAVITATIONAL_CONSTANT;
 
+  /* FIXME: improve reference.  */
   /* Fundamental vectors as described in "Satellite Geodesy".  */
   Vector *h = vector_cross (self->position, self->velocity);
   Vector *X = vector_new (1.0, 0.0, 0.0);
@@ -89,11 +93,45 @@ orbital_state_vector_get_itrs_coordinates (OrbitalStateVector *self,
 					   double theta,
 					   double *x, double *y, double *z)
 {
-  // Compiler reassurance.
-  self = self;
-  theta = theta;
-  x = x ; y = y ; z = z;
-  assert (0);			/* Unfinished.  */
+  /* The current GEI coordinates in GNU Scientific Library vector
+     form.  */
+  gsl_vector *gei_pos = gsl_vector_alloc (3);
+  gsl_vector_set (gei_pos, 0, self->position->x);
+  gsl_vector_set (gei_pos, 1, self->position->y);
+  gsl_vector_set (gei_pos, 2, self->position->z);
+
+  /* FIXME: improve reference.  */
+  /* Sidereal time (earth angle) rotation matrix as described in
+     "Satellite Geodesy".  */
+  gsl_matrix *earm = gsl_matrix_alloc (3, 3);
+  gsl_matrix_set (earm, 0, 0, cos (theta));
+  gsl_matrix_set (earm, 0, 1, sin (theta));
+  gsl_matrix_set (earm, 0, 2, 0.0);
+  gsl_matrix_set (earm, 1, 0, -sin (theta));
+  gsl_matrix_set (earm, 1, 1, cos (theta));
+  gsl_matrix_set (earm, 1, 2, 0.0);
+  gsl_matrix_set (earm, 2, 0, 0.0);
+  gsl_matrix_set (earm, 2, 1, 0.0);
+  gsl_matrix_set (earm, 2, 2, 1.0);
+  
+  /* Equivalent position in desired itrs reference frame.  */
+  gsl_vector *itrs_pos = gsl_vector_alloc (3);
+  gsl_vector_set_zero (itrs_pos);
+
+  /* Perform the rotation.  */
+  int return_code = gsl_blas_dgemv (CblasNoTrans, 1.0, earm, gei_pos, 0.0, 
+				    itrs_pos);
+  assert (return_code == GSL_SUCCESS);
+  
+  // Assign results into object.
+  *x = gsl_vector_get (itrs_pos, 0);
+  *y = gsl_vector_get (itrs_pos, 1);
+  *z = gsl_vector_get (itrs_pos, 2);
+
+  // Free intermediate objects.
+  gsl_vector_free (itrs_pos);
+  gsl_matrix_free (earm);
+  gsl_vector_free (gei_pos);
 }
 
 double
@@ -107,7 +145,7 @@ orbital_state_vector_height_above_ellipsoid (OrbitalStateVector *self)
   double eq_angle = M_PI / 2 - vector_angle (self->position, &z_unit);
   double ae = EARTH_SEMIMAJOR_AXIS;
   /* Earth semiminor axis.  */
-  double be = sqrt (pow (ae, 2) * (1 - pow (EARTH_ECCENTRICITY, 2)));
+  double be = sqrt (pow (ae, 2) * (1 - EARTH_ECCENTRICITY_SQUARED));
   /* Radius of ellipsoid at point under satellite.  */
   double ellipsoid_radius = sqrt (pow (ae * cos (eq_angle), 2)
 				  + pow (be * sin (eq_angle), 2));

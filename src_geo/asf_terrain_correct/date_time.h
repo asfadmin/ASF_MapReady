@@ -1,5 +1,6 @@
-/* An exact Terrestrial Dynamical Time (TDT) date and time class.  TDT
-   relates to other prominent time scales as follows:
+/* An exact Terrestrial Time (TT) (formerly Terrestrial Dynamical Time
+   (TDT)) date and time class.  TDT relates to other prominent time
+   scales as follows:
 
         TDT = TAI + 32.184 s
 	UTC = TAI - n * 1 s
@@ -161,6 +162,11 @@ date_time_jd (DateTime *self, time_scale_t time_scale);
 long double
 date_time_jds (DateTime *self, time_scale_t time_scale);
 
+/* Get the rotation angle in radians of the earth relative to the
+   International Celestial Reference System (ICRS).  */
+double
+date_time_earth_angle (DateTime *self);
+
 /* Find the time difference from other to self, in seconds.  */
 double
 date_time_difference (DateTime *self, DateTime *other);
@@ -176,6 +182,14 @@ date_time_add_seconds (DateTime *self, double seconds);
    date_time_add_seconds method.  */
 void
 date_time_subtract_seconds (DateTime *self, double seconds);
+
+/* Return true iff self is before other.  */
+int
+date_time_is_before (DateTime *self, DateTime *other);
+
+/* Return true iff self is after other.  */
+int
+date_time_is_after (DateTime *self, DateTime *other);
 
 /* Free DateTime object.  */
 void
