@@ -148,7 +148,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"}","","End utm");
       break;
    default: 
-      err_die("unknown projection type seen in function '%s'\n", __func__);
+      printf("Warning in asf_meta library function '%s': unknown projection type '%c'.\n",
+             __func__, meta->projection->type);
     }
     meta_put_string(fp,"}","","End param");
     meta_put_string(fp,"}","","End projection");
