@@ -474,9 +474,10 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
   
   if (strcmp(status, "Done") != 0 || !skip_done)
   {
-    gchar *basename, *before_geocoding_basename, *out_basename, *p, *done;
+    gchar *basename, *before_geocoding_basename, *output_dir,
+	*out_basename, *p, *done;
     gchar convert_cmd[4096];
-    gchar log_file[128];
+    gchar log_file[1024];
     gboolean err;
 
     basename = g_strdup(in_data);
@@ -488,6 +489,13 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     p = strrchr(out_basename, '.');
     if (p)
       *p = '\0';
+
+    output_dir = g_strdup(out_basename);
+    p = strrchr(output_dir, DIR_SEPARATOR);
+    if (p)
+	*(p+1) = '\0';
+    else
+	output_dir[0] = '\0';
 
     if (settings_get_run_geocode(user_settings))
     {
@@ -512,7 +520,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
       gchar * cmd_output;
       
       gtk_list_store_set(list_store, iter, COL_STATUS, "Importing...", -1);
-      g_snprintf(log_file, sizeof(log_file), "tmpi%d.log", pid);
+      g_snprintf(log_file, sizeof(log_file), "%stmpi%d.log", output_dir, pid);
 
       if (user_settings->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 &&
 	  strcasecmp(in_data, out_full) == 0)
@@ -554,7 +562,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
       gtk_list_store_set(list_store, iter, COL_STATUS, "Geocoding...", -1);
 
-      g_snprintf(log_file, sizeof(log_file), "tmpg%d.log", pid);
+      g_snprintf(log_file, sizeof(log_file), "%stmpg%d.log", output_dir, pid);
     
       snprintf(convert_cmd, sizeof(convert_cmd),
            "asf_geocode %s -log \"%s\" \"%s\" \"%s\" 2>&1",
@@ -591,7 +599,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     {
       gchar * cmd_output;
     
-      g_snprintf(log_file, sizeof(log_file), "tmpe%d.log", pid);
+      g_snprintf(log_file, sizeof(log_file), "%stmpe%d.log", output_dir, pid);
     
       gtk_list_store_set(list_store, iter, COL_STATUS, "Exporting...", -1);
 
@@ -624,6 +632,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     g_free(basename);
     g_free(before_geocoding_basename);
     g_free(out_basename);
+    g_free(output_dir);
   }
 
   g_free(status);
