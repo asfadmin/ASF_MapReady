@@ -411,16 +411,12 @@ runge_kutta (cartesian_orbit_t *co, double *t, double tout)
 stateVector propagate(stateVector source,double sourceSec,double destSec)
 {
 	stateVector ret;
-	char inBuf[256];
-	double ignored;
-	int i;
-	FILE *asapIn,*asapOut;
+	OrbitalStateVector *osv;
 /*Convert input state vector to inertial coordinates*/
 	fixed2gei(&source,sec2gha(sourceSec));
-	OrbitalStateVector *osv 
-	  = orbital_state_vector_new (source.pos.x, source.pos.y, 
-				      source.pos.z, source.vel.x, 
-				      source.vel.y, source.vel.z);
+	osv = orbital_state_vector_new (source.pos.x, source.pos.y, 
+					source.pos.z, source.vel.x, 
+					source.vel.y, source.vel.z);
 	orbital_state_vector_propagate (osv, destSec - sourceSec);
 	ret.pos.x = osv->position->x;
 	ret.pos.y = osv->position->y;
@@ -436,80 +432,6 @@ stateVector propagate(stateVector source,double sourceSec,double destSec)
 	gei2fixed(&ret,sec2gha(destSec));
 	return ret;
 }
-/*******************************************************************************
- * FANCY C VERSION OF PROPAGATE (DON'T HAVE TO CALL THE SCRIPT PROPAGATE WHICH
- * USES FORTRAN77 COMPILED PROGRAM 'ASAP')... NOT YET IN WORKING ORDER
-********************************************************************************
- * Propagate the given (fixed-earth) state vector from the given time to the
- * next given time.*
-*stateVector propagate(stateVector source,double sourceSec,double destSec)
-*{
-*	stateVector ret;
-*	cartesian_orbit_t co[1];
-*	keplerian_orbit_t ko[1];
-*	double mean_anomaly;
-*	static const double d2r = M_PI / 180.0;
-*	double ecc_anomaly;
-*	double t_step;
-*	double t_current;
-*	double t_next;
-*
-*	** Convert input state vector to inertial coordinates.  **
-*	fixed2gei(&source,sec2gha(sourceSec));
-*
-*	** Recompute the cartesian elements, replacing the mean
-*           anomaly with the eccentric anomaly.  **
-*	co->x  = source.pos.x;
-*	co->y  = source.pos.y;
-*	co->z  = source.pos.z;
-*	co->vx = source.vel.x / 1000.0;
-*	co->vy = source.vel.y / 1000.0;
-*	co->vz = source.vel.z / 1000.0;
-*
-*	** Convert cartesian coordinates to Keplerian elements. **
-*	cartesian_to_keplerian (co, ko, &mean_anomaly);
-*	co->x /= 1000;
-*	co->y /= 1000;
-*	co->z /= 1000;
-*
-*	** Convert to radians.  **
-*	ko->i *= d2r;
-*	ko->cap_omega *= d2r;
-*	ko->omega *= d2r;
-*	mean_anomaly *= d2r;
-*
-*	** Calculate eccentric anomaly using the Kepler equation. **
-*	ecc_anomaly = kepler_equation (mean_anomaly, ko->e);
-*
-*	** Convert Keplerian elements to cartesian coordinates. **
-*	keplerian_to_cartesian (ko, ecc_anomaly, co);
-*
-*	t_step = destSec - sourceSec;
-*	t_current = sourceSec;
-*	do {
-*	  t_next = t_current + t_step;
-*
-*	  if ( (t_step > 0) && (t_next > destSec) ) {
-*	    t_next = destSec;
-*	  }
-*	  else if ( (t_step < 0) && (t_next < destSec) ) {
-*	    t_next = destSec;
-*	  }
-*	  runge_kutta (co, &t_current, t_next);
-*	}
-*	while ( t_next != destSec ); 
-*	   
-*	ret.pos.x = co->x * 1000;
-*	ret.pos.y = co->y * 1000;
-*	ret.pos.z = co->z * 1000;
-*	ret.vel.x = co->vx * 1000;
-*	ret.vel.y = co->vy * 1000;
-*	ret.vel.z = co->vz * 1000;
-*
-*	gei2fixed(&ret,sec2gha(destSec));
-*	return ret;
-*}
-*******************************************************************************/
 
 /*******************************************************************************
  * Propagate the state vectors in the given meta_parameters structure so they
