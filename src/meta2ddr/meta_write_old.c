@@ -56,10 +56,10 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
 	meta_put_double(fp,"atct_alpha3:",proj->param.atct.alpha3,"at/ct projection parameter");
 	break;
       case 'L':/*Lambert Conformal Conic projection.*/
-	meta_put_double(fp,"lam_plat1:",proj->param.lambert.plat1,"Lambert first standard parallel");
-	meta_put_double(fp,"lam_plat2:",proj->param.lambert.plat2,"Lambert second standard parallel");
-	meta_put_double(fp,"lam_lat:",proj->param.lambert.lat0,"Lambert original latitude");
-	meta_put_double(fp,"lam_lon:",proj->param.lambert.lon0,"Lambert original longitude");
+	meta_put_double(fp,"lam_plat1:",proj->param.lamcc.plat1,"Lambert first standard parallel");
+	meta_put_double(fp,"lam_plat2:",proj->param.lamcc.plat2,"Lambert second standard parallel");
+	meta_put_double(fp,"lam_lat:",proj->param.lamcc.lat0,"Lambert original latitude");
+	meta_put_double(fp,"lam_lon:",proj->param.lamcc.lon0,"Lambert original longitude");
 	break;
       case 'P':/*Polar Stereographic Projection.*/
 	meta_put_double(fp,"ps_lat:",proj->param.ps.slat,"Polar Stereographic reference Latitude");

@@ -330,10 +330,10 @@ void fill_mpdr(meta_parameters *meta, struct DDR *ddr, ceosLeader *data)
       {
 	strcpy(data->mpdr.mpdesig,"LAMBERT");
 	strcpy(data->mpdr.upsdesc,"LAMBERT");
-	data->mpdr.nsplong = p->param.lambert.lon0;
-	data->mpdr.nsplat  = p->param.lambert.lat0;
-        data->mpdr.nsppara1 = p->param.lambert.plat1;
-        data->mpdr.nsppara2 = p->param.lambert.plat2;
+	data->mpdr.nsplong = p->param.lamcc.lon0;
+	data->mpdr.nsplat  = p->param.lamcc.lat0;
+        data->mpdr.nsppara1 = p->param.lamcc.plat1;
+        data->mpdr.nsppara2 = p->param.lamcc.plat2;
       }
     else if (p->type == 'U')
       {
