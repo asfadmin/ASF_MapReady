@@ -12,9 +12,8 @@
    Make sure that the data & metadata extension indices match up with eachother.
    Long list, but tried not go crazy, and still look for a couple of .00X 'extensions'
    Don't forget to update the header file structures when you update these arrays!  */
-const char stf_metadata_extensions[][16] = {"",".PAR",".par",".000.PAR",".000.par",".001.PAR",".001.par"};
-const char stf_data_extensions[][16]     = {"",    "",    "",    ".000",    ".000",    ".001",    ".001"};
-
+const char stf_metadata_extensions[][16] = {"",".PAR",".par",".000.PAR",".000.par",".001.PAR",".001.par","_000.PAR","_000.par","_001.PAR","_001.par"};
+const char stf_data_extensions[][16]     = {"",    "",    "",    ".000",    ".000",    ".001",    ".001",    ".000",    ".000",    ".001",    ".001"};
 
 /******************************************************************************
  * get_stf_metadata_name:
@@ -213,6 +212,9 @@ stf_data_ext_t require_stf_data(const char *stfName, char *dataName)
 stf_file_pairs_t get_stf_names(const char *stfName, char *dataName,
                                  char *metaName)
 {
+    printf("stfName = %s, get_stf_metadata_name = %s, metaName = %s\n",
+	   stfName, get_stf_metadata_name(stfName, metaName), metaName);
+
   if (   get_stf_data_name(stfName, dataName)     == STF_BLANK
       && get_stf_metadata_name(stfName, metaName) == STF_PAR)
     return STF_PAR_PAIR;
@@ -228,6 +230,22 @@ stf_file_pairs_t get_stf_names(const char *stfName, char *dataName,
   if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
       && require_stf_metadata(stfName, metaName) == STF_000_par)
     return STF_000_par_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_U_000_PAR)
+    return STF_U_000_PAR_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_U_000_par)
+    return STF_U_000_par_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_U_001_PAR)
+    return STF_U_001_PAR_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_U_001_par)
+    return STF_U_001_par_PAIR;
 
   if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
       && require_stf_metadata(stfName, metaName) == STF_001_PAR)
@@ -247,7 +265,7 @@ stf_file_pairs_t get_stf_names(const char *stfName, char *dataName,
 stf_file_pairs_t require_stf_pair(const char *stfName, char *dataName,
                                     char *metaName)
 {
-  char extensionList[128];
+  char extensionList[256];
   int andFlag=TRUE;
   int begin=NO_STF_FILE_PAIR+1, end=NUM_STF_FILE_PAIRS;
   int ii;
@@ -267,6 +285,22 @@ stf_file_pairs_t require_stf_pair(const char *stfName, char *dataName,
   if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
       && require_stf_metadata(stfName, metaName) == STF_000_par)
     return STF_000_par_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_U_000_PAR)
+    return STF_U_000_PAR_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_U_000_par)
+    return STF_U_000_par_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_U_001_PAR)
+    return STF_U_001_PAR_PAIR;
+
+  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_U_001_par)
+    return STF_U_001_par_PAIR;
 
   if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
       && require_stf_metadata(stfName, metaName) == STF_001_PAR)
