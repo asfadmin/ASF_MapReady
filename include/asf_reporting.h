@@ -30,5 +30,9 @@ void asfPrintWarning(const char *format, ...);
 /* Report to user & logfile, then die  */
 void asfPrintError(const char *format, ...);
 
+/* Prototype from splash_screen.c ********************************************/
+/* Print the commandline captured, date, and PID to screen & logfile */
+void asfSplashScreen(int argc, char **argv);
+
 
 #endif
