@@ -602,16 +602,35 @@ sub depth_first_traversal
     
     print wrap('', '', "\nPackages with direct dependencies on $p{'reverse_dependencies'}:\n");
 
-    foreach my $pkg ( @{$reverse_deps{$p{'reverse_dependencies'}}} ) {
-	# So we don't hear about package again under indirect dependencies...
-	delete($visited{$pkg});
-	print "  $pkg\n";
+    # If we have no direct dependencies...
+    unless ( @{$reverse_deps{$p{'reverse_dependencies'}}} ) {
+	# print special message,
+        print "  (none)\n";
+    } else {
+	# otherwise, print the indirect dependencies.
+	foreach my $pkg ( @{$reverse_deps{$p{'reverse_dependencies'}}} ) {
+	    # So we don't hear about package again under indirect
+	    # dependencies...
+	    delete($visited{$pkg});
+	    print "  $pkg\n";
+	}
     }
+
+    # We don't generally think of packages indirectly depending on
+    # themselves.
+    delete($visited{$p{'reverse_dependencies'}});
 
     print wrap('', '', "\nPackages with indirect dependencies on $p{'reverse_dependencies'}:\n");
 
-    foreach my $pkg ( keys %visited ) {
-	print "  $pkg\n";
+    # If we have no indirect dependencies...
+    unless ( keys %visited ) {
+	# print special message,
+        print "  (none)\n";
+    } else {
+	# otherwise, print the indirect dependencies.
+	foreach my $pkg ( keys %visited ) {
+	    print "  $pkg\n";
+	}
     }
 }
 
