@@ -6,7 +6,7 @@ DESCRIPTION:
    Internal-only routine.
 
 RETURN VALUE:
-   
+
 SPECIAL CONSIDERATIONS:
 
 PROGRAM HISTORY:
@@ -57,7 +57,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    struct PPREC *ppr=NULL;           /* Processing Parameter Record           */
    struct VFDRECV *asf_facdr=NULL;   /* ASF facility data record              */
    struct ESA_FACDR *esa_facdr=NULL; /* ESA facility data record              */
-   int dataSize, ii;
+   int dataSize;
    ymd_date date;
    hms_time time;
    double firstTime, centerTime;
@@ -122,7 +122,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
         if (strncmp(dssr->beam3,"WD3",3)==0) strcpy(beamname,"SWA");
         else if (strncmp(dssr->beam3,"ST5",3)==0) strcpy(beamname,"SWB");
         else if (strncmp(dssr->beam3,"ST6",3)==0) strcpy(beamname,"SNA");
-        else strcpy(beamname,"SNB");	
+        else strcpy(beamname,"SNB");
       }
       else {
         int beamnum = atoi(&(dssr->beam1[2]));
@@ -148,7 +148,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    strcpy(ver,dssr->ver_id);strtok(ver," ");/*Remove spaces from field*/
    sprintf(meta->general->processor,"%s/%s/%s",fac,sys,ver);
    /* FOCUS data header is erroneous, hence the if statement */
-   if ((iof->bitssamp*iof->sampdata)>(iof->bytgroup*8)) iof->bitssamp /= 2; 
+   if ((iof->bitssamp*iof->sampdata)>(iof->bytgroup*8)) iof->bitssamp /= 2;
    dataSize = (iof->bitssamp+7)/8 + (iof->sampdata-1)*5;
    if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0))
       dataSize += (10 - dataSize)/2;
@@ -221,7 +221,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    switch (ceos->satellite) {
       case  ERS: meta->sar->look_count = 5; break;
       case JERS: meta->sar->look_count = 3; break;
-      case RSAT: 
+      case RSAT:
          dssr->rng_samp_rate *= get_units(dssr->rng_samp_rate,EXPECTED_RSR);
          dssr->rng_gate *= get_units(dssr->rng_gate,EXPECTED_RANGEGATE);
          if (dssr->rng_samp_rate < 20.0) /* split finebeam from the rest */
@@ -233,7 +233,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    if (asf_facdr) {
       if (toupper(asf_facdr->deskewf[0])=='Y')
          meta->sar->deskewed = 1;
-      else 
+      else
          meta->sar->deskewed = 0;
    }
    else if (esa_facdr)
@@ -260,7 +260,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
    meta->sar->line_increment   = 1.0;
    meta->sar->sample_increment = 1.0;
-   meta->sar->range_time_per_pixel = dssr->n_rnglok 
+   meta->sar->range_time_per_pixel = dssr->n_rnglok
            / (dssr->rng_samp_rate * get_units(dssr->rng_samp_rate,EXPECTED_FS));
    if (asf_facdr) {
       meta->sar->azimuth_time_per_pixel = meta->general->y_pixel_size
@@ -351,6 +351,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       Copy the contents over to create two other ones for the propagation */
 /* This functionality is not yet implemented.
  * if (ceos->facility==UK) {
+ *   int ii;
  *   meta_state_vectors *s;
  *   s = meta_state_vectors_init(3);
  *   meta->state_vectors->vector_count = 3;
@@ -368,7 +369,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       int vector_count=3;
       double data_int = dssr->sc_lin * fabs(meta->sar->azimuth_time_per_pixel);
       get_timeDelta(ceos, ppdr, meta);
-      if (data_int>15.0 && meta->general->data_type>=6) { 
+      if (data_int>15.0 && meta->general->data_type>=6) {
         while (data_int > 15.0) {
           data_int /= 2;
           vector_count = vector_count*2-1;
@@ -402,7 +403,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr)
 {
-   meta_projection *projection = meta->projection = 
+   meta_projection *projection = meta->projection =
            (meta_projection *)MALLOC(sizeof(meta_projection));
 
    meta->sar->image_type = 'P';/*Map-Projected image.*/
@@ -447,22 +448,22 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
       projection->param.ps.slon=mpdr->upslong;
       if (projection->param.ps.slat>0 && projection->param.ps.slon==0.0)
         projection->param.ps.slon=-45.0;/*Correct reference longitude bug*/
-   } 
+   }
    else if (strncmp(mpdr->mpdesig, "UTM", 3) == 0) {
       projection->type=UNIVERSAL_TRANSVERSE_MERCATOR;/*Universal Transverse Mercator*/
       projection->param.utm.zone=UTM_zone(mpdr->utmpara1);
-   } 
-   else { 
+   }
+   else {
       printf("Cannot match projection '%s',\n"
-         "in map projection data record.\n",mpdr->mpdesig); 
-      exit(EXIT_FAILURE); 
+         "in map projection data record.\n",mpdr->mpdesig);
+      exit(EXIT_FAILURE);
    }
 
     /* The Along-Track/Cross-Track projection requires special initialization*/
-   if (projection->type==SCANSAR_PROJECTION) 
+   if (projection->type==SCANSAR_PROJECTION)
    {
       stateVector st_start;
-      
+
       projection->param.atct.rlocal = meta_get_earth_radius(meta,
                                       meta->general->line_count/2, 0);
       st_start=meta_get_stVec(meta,0.0);
@@ -506,7 +507,7 @@ ceos_description *get_ceos_description(char *fName)
    ceos_description *ceos=(ceos_description *)MALLOC(sizeof(ceos_description));
 /*Fetch DSSR*/
    get_dssr(fName,&ceos->dssr);
-   
+
 /*Determine the sensor.*/
    satStr=ceos->dssr.mission_id;
    if (0==strncmp(satStr,"E",1)) ceos->satellite=ERS;
@@ -516,7 +517,7 @@ ceos_description *get_ceos_description(char *fName)
       printf("get_ceos_description Warning! Unknown sensor '%s'!\n",satStr);
       ceos->satellite=unknownSatellite;
    }
-   
+
 /*Determine the processor version.*/
    ceos->version=0.0;/*Default is zero.*/
    versPtr=ceos->dssr.ver_id;
@@ -528,7 +529,7 @@ ceos_description *get_ceos_description(char *fName)
    prodStr=ceos->dssr.product_type;
    ceos->processor=unknownProcessor;
    ceos->product=unknownProduct;
-   
+
 /*Determine the facility that processed the data.*/
    if (0==strncmp(ceos->dssr.fac_id,"ASF",3))
    {/*Alaska SAR Facility Image*/
@@ -549,7 +550,7 @@ ceos_description *get_ceos_description(char *fName)
          ceos->processor=LZP;
          ceos->product=CCSD;
          return ceos;
-      }   
+      }
       else if (0==strncmp(procStr, "PC", 2)) {
         if (0==strncmp(prodStr,"SCANSAR",7)) ceos->processor=SP3;
 	else if (0==strncmp(prodStr,"FUL",3)) ceos->processor=PREC;
@@ -575,20 +576,20 @@ ceos_description *get_ceos_description(char *fName)
          printf("get_ceos_description Warning! Unknown ASF product type '%s'!\n",prodStr);
          ceos->product=unknownProduct;
       }
-      
+
    }
    else if (0==strncmp(ceos->dssr.fac_id,"ES",2))
    {/*European Space Agency Image*/
       printf("   Data set processed by ESA\n");
       ceos->facility=ESA;
-      
+
       if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=RAW;
       if (0==strncmp(prodStr,"SAR PRECISION IMAGE",19)) ceos->product=PRI;
       else {
          printf("Get_ceos_description Warning! Unknown ESA product type '%s'!\n",prodStr);
          ceos->product=unknownProduct;
       }
-   } 
+   }
    else if (0==strncmp(ceos->dssr.fac_id,"CDPF",4))
    {
       printf("   Data set processed by CDPF\n");
@@ -630,25 +631,25 @@ ceos_description *get_ceos_description(char *fName)
 
 /*---------------------------------
 function extracts the acquisition time of the first line
-out of the line header 
+out of the line header
 -----------------------------------*/
-double get_firstTime (char *fName) 
+double get_firstTime (char *fName)
 {
-        FILE *fp;
-        struct HEADER hdr;
-        struct RHEADER linehdr;
-        int length;
-        char buff[25600];
+   FILE *fp;
+   struct HEADER hdr;
+   struct RHEADER linehdr;
+   int length;
+   char buff[25600];
 
-        fp = FOPEN(fName, "r");
-        FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-        FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
-        length = bigInt32(hdr.recsiz) - (sizeof(struct RHEADER) + sizeof(struct HEADER));
-        FREAD (buff, length, 1, fp);
-        FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-        FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
-        FCLOSE(fp);
+   fp = FOPEN(fName, "r");
+   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
+   length = bigInt32(hdr.recsiz) - (sizeof(struct RHEADER)
+            + sizeof(struct HEADER));
+   FREAD (buff, length, 1, fp);
+   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
+   FCLOSE(fp);
 
-        return (double)linehdr.acq_msec/1000;
+   return (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0;
 }
-
