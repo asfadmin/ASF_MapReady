@@ -18,7 +18,7 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_statistics.h>
 #include <jpeglib.h>
-/*#include <proj_api.h>*/
+#include <proj_api.h>
 #include <tiff.h>
 #include <tiffio.h>
 #include <xtiffio.h>
@@ -29,6 +29,7 @@
 #include <asf_nan.h>
 #include <asf_reporting.h>
 #include <asf_export.h>
+#include <float_image.h>
 
 #define ASF_NAME_STRING "asf_export"
 
@@ -82,14 +83,21 @@ export_as_geotiff (const char *metadata_file_name,
      this tolerance.  */
   double axis_tolerance = 0.2;
 
-  asfRequire(md->general->data_type == REAL32,
-             "Can only ingest ASF format floating point data.");
-  asfRequire(sizeof(unsigned short) == 2,
-             "Short integer data type size is different than expected.\n");
-  asfRequire(sizeof(unsigned int) == 4,
-             "Integer default size is different than expected.\n");
-
+  asfRequire (md->general->data_type == REAL32,
+              "Can only ingest ASF format floating point data.");
+  asfRequire (sizeof (unsigned short) == 2,
+	      "Unsigned short integer data type size is different than "
+	      "expected.\n");
+  asfRequire (sizeof (unsigned int) == 4,
+	      "Unsigned integer data type size is different than expected.\n");
+  
   /* Get the image data.  */
+  const off_t start_of_file = 0;
+  FloatImage *iim 
+    = float_image_new_from_file (md->general->sample_count, 
+				 md->general->line_count, 
+				 image_data_file_name, start_of_file,
+				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   daf = get_image_data (md, image_data_file_name);
 
   asfPrintStatus("Processing...\n");
@@ -155,7 +163,8 @@ export_as_geotiff (const char *metadata_file_name,
     asfPrintError("Don't know what to do with 64 bit floating point data.\n");
     break;
   default: /* Shouldn't get to this point */
-    asfPrintError("Unknown input data type, there is likely something wrong with the metadata.\n");
+    asfPrintError("Unknown input data type, there is likely something wrong "
+		  "with the metadata.\n");
     break;
   }
   TIFFSetField(otif, TIFFTAG_SAMPLEFORMAT, sample_format);
@@ -295,7 +304,7 @@ export_as_geotiff (const char *metadata_file_name,
         /* For now we only handle UTM data that is referenced to the
            WGS84 ellipsoid.  */
         asfRequire(ellipsoid == WGS84,
-                   "UTM data must be in the WGS84 ellipsoid.\n");
+                   "UTM data must be relative to the WGS84 ellipsoid.\n");
 
         /* This weird paranoid assertion is because I remember once
            when we couln't figure out how to set some datum code
@@ -334,7 +343,7 @@ export_as_geotiff (const char *metadata_file_name,
         citation_length
           = snprintf (citation, max_citation_length + 1,
                       "UTM zone %d %c projected GeoTIFF written by Alaska "
-                      "Satellite Facility tools",
+                      "Satellite Facility tools.",
                       md->projection->param.utm.zone,
                       md->projection->hem);
         asfRequire((citation_length >= 0)
@@ -360,106 +369,121 @@ export_as_geotiff (const char *metadata_file_name,
         GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
         GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1,
                     Angular_Degree);
-/*
-*        ///////////////////////////////////////////////////////////////////
-*       //
-*       // Here we emplay a slightly weird strategy: we always use a
-*       // WGS84 datum, no matter what the ASF metadata for the
-*       // product we are exporting says.  This is ok because the
-*       // error introduced is very small compared to other error
-*       // sources, and the geotiff viewers handle WGS84 datums
-*       // much better than user defined ones.
-*       //
-*       ///////////////////////////////////////////////////////////////////
-*
-*       ** Maximum lenght of coordinate system description strings
-*          used with the proj library. **
-*       const size_t max_coordinate_system_description_length = 1000;
-*       ** The coordinate system as described by the ASF metadata. **
-*       char *tmp = malloc (max_coordinate_system_description_length + 1);
-*       int write_count
-*         = snprintf (tmp, max_coordinate_system_description_length + 1,
-*                     "+proj=stere +a=%lf +b=%lf +lat_0=%lf +lon_0=%lf "
-*                     "+lat_ts=%lf", re_major, re_minor,
-*                     (md->projection->param.ps.slat > 0.0 ? 90.0 : -90.0),
-*                     md->projection->param.ps.slon,
-*                     md->projection->param.ps.slat);
-*       asfRequire(write_count < max_coordinate_system_description_length + 1);
-*       projPJ input_coordinate_system = pj_init_plus (tmp);
-*       asfRequire(input_coordinate_system != NULL);
-*       ** The coordinate system to be used for the output geotiff.  **
-*       write_count
-*         = snprintf (tmp, max_coordinate_system_description_length + 1,
-*                     "+proj=stere +datum=WGS84 +lat_0=%lf +lon_0=%lf "
-*                     "+lat_ts=%lf",
-*                     (md->projection->param.ps.slat > 0.0 ? 90.0 : -90.0),
-*                     md->projection->param.ps.slon,
-*                     md->projection->param.ps.slat);
-*       asfRequire(write_count < max_coordinate_system_description_length + 1);
-*       projPJ geotiff_coordinate_system = pj_init_plus (tmp);
-*       asfRequire(geotiff_coordinate_system != NULL);
-*       double tmp1 = md->projection->startX;
-*       double tmp2 = md->projection->startY;
-*       double tmp3 = 0;
-*       return_code = pj_transform (input_coordinate_system,
-*                                   geotiff_coordinate_system, 1, 1, &tmp1,
-*                                   &tmp2, &tmp3);
-*       asfRequire(return_code == 0);
-*       ** The maximum allowable projection error.  If changing the
-*          datum from the one in the metadata to the WGS84 datum moves
-*          the projection corner point by this amount or more in
-*          projection coordinates, an exception is triggered.  This
-*          value was chosen based ona seat-of-the-pants feel which
-*          accounts for the various error sources: range migration,
-*          etc.  If the geolocation process is anywhere near this
-*          accurate, we are doing really good. **
-*       const double max_allowable_projection_error = 30.0;
-*       asfRequire(sqrt (pow (fabs (tmp1 - md->projection->startX), 2)
-*                     + pow (fabs (tmp2 - md->projection->startY), 2))
-*               < max_allowable_projection_error);
-*       free (tmp);
-*
-*        ///////////////////////////////////////////////////////////////////
-*/
-        /* Fill in the details of the geographic coordinate system used.  */
-        switch ( ellipsoid ) {
-        case CLARKE1866:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1,
-                      GCSE_Clarke1866);
-          break;
-        case GEM10C:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_GEM10C);
-          break;
-        case WGS84:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_84);
-          break;
-        case USER_DEFINED:
-          GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1,
-                      user_defined_value_code);
-          GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1,
-                      user_defined_value_code);
-          /* The angular units are degrees and the meridian is
-             Greenwitch, so we don't need to define them explicitly.
-             The GeogCitation key will be filled in later.  */
-          GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1,
-                      user_defined_value_code);
-          GTIFKeySet (ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1,
-                      re_major);
-          GTIFKeySet (ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1,
-                      re_minor);
-          citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-          citation_length
-            = snprintf (citation, max_citation_length + 1,
-                        "Geographic coordinate system using reference "
-                        "ellipsoid with semimajor axis of %f meters and "
-                        "semiminor axis of %f meters",
-                        re_major, re_minor);
-          GTIFKeySet (ogtif, GeogCitationGeoKey, TYPE_ASCII, 1, citation);
-          free (citation);
-          break;
-        default:  /* Shouldn't be here.  */
-          asfPrintError("Unable to cope with given ellipsoid.\n");
-        }
+
+        ///////////////////////////////////////////////////////////////////////
+        //
+        // Here we emplay a slightly weird strategy: we always use a
+        // WGS84 datum, no matter what the ASF metadata for the
+        // product we are exporting says.  This is ok because the
+        // error introduced is very small compared to other error
+        // sources, and the geotiff viewers handle WGS84 datums much
+        // better than user defined ones. 
+	//
+        ///////////////////////////////////////////////////////////////////////
+
+	/* Maximum lenght of coordinate system description strings
+	   used with the proj library. **/
+	const size_t max_coordinate_system_description_length = 1000;
+	/* The coordinate system as described by the ASF metadata. */
+	char *tmp = malloc (max_coordinate_system_description_length + 1);
+	int write_count
+	  = snprintf (tmp, max_coordinate_system_description_length + 1,
+		      "+proj=stere +a=%lf +b=%lf +lat_0=%lf +lon_0=%lf "
+		      "+lat_ts=%lf", re_major, re_minor,
+		      (md->projection->param.ps.slat > 0.0 ? 90.0 : -90.0),
+		      md->projection->param.ps.slon,
+		      md->projection->param.ps.slat);
+	asfRequire (write_count < max_coordinate_system_description_length + 1,
+		    "problem forming projection description for proj library");
+	projPJ input_coordinate_system = pj_init_plus (tmp);
+	asfRequire (input_coordinate_system != NULL, 
+		    "problem initializing projection description for proj");
+	/* The coordinate system to be used for the output geotiff.  */
+	write_count
+	  = snprintf (tmp, max_coordinate_system_description_length + 1,
+		      "+proj=stere +datum=WGS84 +lat_0=%lf +lon_0=%lf "
+		      "+lat_ts=%lf",
+		      (md->projection->param.ps.slat > 0.0 ? 90.0 : -90.0),
+		      md->projection->param.ps.slon,
+		      md->projection->param.ps.slat);
+	asfRequire (write_count < max_coordinate_system_description_length + 1,
+		    "problem forming projection description for proj library");
+	projPJ geotiff_coordinate_system = pj_init_plus (tmp);
+ 	asfRequire (geotiff_coordinate_system != NULL,
+		    "problem initializing projection description for proj");
+	double tmp1 = md->projection->startX;
+	double tmp2 = md->projection->startY;
+	double tmp3 = 0;
+	return_code = pj_transform (input_coordinate_system,
+				    geotiff_coordinate_system, 1, 1, &tmp1,
+				    &tmp2, &tmp3);
+	asfRequire (return_code == 0, "pj_transform signalled an error");
+	/* The maximum allowable projection error.  If changing the
+          datum from the one in the metadata to the WGS84 datum moves
+          the projection corner point by this amount or more in
+          projection coordinates, an exception is triggered.  This
+          value was chosen based ona seat-of-the-pants feel which
+          accounts for the various error sources: range migration,
+          etc.  If the geolocation process is anywhere near this
+          accurate, we are doing really good. */
+	const double max_allowable_projection_error = 30.0;
+	asfRequire(sqrt (pow (fabs (tmp1 - md->projection->startX), 2)
+			 + pow (fabs (tmp2 - md->projection->startY), 2))
+		   < max_allowable_projection_error,
+		   "using the WGS84 datum to represent data with a \n"
+		   "datum resulted in too much error");
+	free (tmp);
+	
+
+	GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_84);
+
+        ///////////////////////////////////////////////////////////////////////
+
+        /* Fill in the details of the geographic coordinate system
+	   used.  At the moment, we always use WGS84 (see above), so
+	   this code is out.  */
+        // switch ( ellipsoid ) {
+        // case CLARKE1866:
+	// GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1,
+	// GCSE_Clarke1866);
+        //   break;
+        // case GEM10C:
+        //   GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 
+        //               GCSE_GEM10C);
+	//   break;
+        // case WGS84:
+	//   GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, 
+	//               GCS_WGS_84);
+	//   break;
+        // case USER_DEFINED:
+	//   GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1,
+        //               user_defined_value_code);
+        //   GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1,
+        //               user_defined_value_code);
+        //   /* The angular units are degrees and the meridian is
+        //      Greenwitch, so we don't need to define them
+        //      explicitly.  The GeogCitation key will be filled in
+        //      later.  */
+        //   GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1,
+        //               user_defined_value_code);
+        //   GTIFKeySet (ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1,
+        //               re_major);
+        //   GTIFKeySet (ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1,
+        //               re_minor);
+        //   citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+        //   citation_length
+        //     = snprintf (citation, max_citation_length + 1,
+        //                 "Geographic coordinate system using reference "
+        //                 "ellipsoid with semimajor axis of %f meters and "
+        //                 "semiminor axis of %f meters",
+        //                 re_major, re_minor);
+        //   GTIFKeySet (ogtif, GeogCitationGeoKey, TYPE_ASCII, 1, citation);
+        //   free (citation);
+        //   break;
+        // default:  /* Shouldn't be here.  */
+        //   asfPrintError("Unable to cope with given ellipsoid.\n");
+	//   break;
+        // }
 
         /* Set the citation key.  */
         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
@@ -472,28 +496,36 @@ export_as_geotiff (const char *metadata_file_name,
             += snprintf (citation + citation_length,
                          max_citation_length - citation_length + 1,
                          "CLARKE1866");
-          asfRequire(citation_length>=0 && citation_length<=max_citation_length);
+          asfRequire (citation_length >= 0 
+		      && citation_length <= max_citation_length, 
+		      "bad citation length");
           break;
         case GEM10C:
           citation_length
             += snprintf (citation + citation_length,
                          max_citation_length - citation_length + 1,
                          "GEM10C ");
-          asfRequire(citation_length>=0 && citation_length<=max_citation_length);
+          asfRequire (citation_length >= 0 
+		      && citation_length<=max_citation_length,
+		      "bad citation length");
           break;
         case WGS84:
           citation_length
             += snprintf (citation + citation_length,
                          max_citation_length - citation_length + 1,
                          "WGS84 ");
-          asfRequire(citation_length>=0 && citation_length<=max_citation_length);
+          asfRequire (citation_length >= 0 
+		      && citation_length <= max_citation_length,
+		      "bad citation length");
           break;
         case USER_DEFINED:
           citation_length
             += snprintf (citation + citation_length,
                          max_citation_length - citation_length + 1,
                          "user defined ");
-          asfRequire(citation_length>=0 && citation_length<=max_citation_length);
+          asfRequire (citation_length >= 0 
+		      && citation_length <= max_citation_length,
+		      "bad citation length");
           break;
         default:  /* Shouldn't be here.  */
           asfPrintError("Unable to cope with given ellipsoid.\n");
@@ -502,8 +534,10 @@ export_as_geotiff (const char *metadata_file_name,
           += snprintf (citation + citation_length,
                        max_citation_length - citation_length + 1,
                        "ellipsoid datum written by Alaska Satellite Facility "
-                       "tools");
-        asfRequire(citation_length>=0 && citation_length<=max_citation_length);
+                       "tools.");
+        asfRequire (citation_length >= 0 
+		    && citation_length <= max_citation_length,
+		    "bad citation length");
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
         free (citation);
         break;
@@ -605,9 +639,11 @@ export_as_geotiff (const char *metadata_file_name,
   asfPrintStatus("Writing Output File...\n");
 
   /* Write the actual image data.  */
+  float *line_buffer = malloc (sizeof (float) * iim->size_x);
   for ( ii = 0 ; ii < line_count ; ii++ ) {
-    if (scale == NONE) {
-      if ( TIFFWriteScanline (otif, daf + sample_count * ii, ii, 0) < 0 ) {
+    float_image_get_row (iim, ii, line_buffer);
+    if ( scale == NONE ) {
+      if ( TIFFWriteScanline (otif, line_buffer, ii, 0) < 0 ) {
         asfPrintError("Error writing to output geotiff file %s",
                       output_file_name);
       }
@@ -622,7 +658,7 @@ export_as_geotiff (const char *metadata_file_name,
   }
 
   return_code = GTIFWriteKeys (ogtif);
-  asfRequire(return_code, "Error writing geotiff keys.\n");
+  asfRequire (return_code, "Error writing geotiff keys.\n");
 
   GTIFFree (ogtif);
   XTIFFClose (otif);
