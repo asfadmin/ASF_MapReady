@@ -60,6 +60,10 @@ void linear_conversion(FILE *fpin, FILE *fpout, meta_parameters *inMeta,
 		get_double_line(fpin, inMeta, line, inBuffer);
 		for (sample=0; sample<num_samples; sample++) {
 			outBuffer[sample] = slope*inBuffer[sample] + offset;
+			if (outMeta->general->data_type == BYTE &&
+			    outBuffer[sample] < 0) outBuffer[sample] = 0.0;
+			if (outMeta->general->data_type == BYTE &&
+			    outBuffer[sample] > 255) outBuffer[sample] = 255.0;
 		}
 		put_double_line(fpout, outMeta, line, outBuffer);
 	}
