@@ -1,0 +1,53 @@
+
+Creating a tool package
+
+
+ 1. If you want to meddle with what the package will include you'll need to
+    edit asf_tools/make_support/master_program_list. That is where all the
+    tools to be compiled are listed with other tools that they depend on.
+    There's also a CATEGORIES category. You can make special groupings of tools
+    in CATEGORIES section (eg convert which includes asf_convert,
+    asf_convert_gui, asf_export, and asf_import).
+
+ 2. Update include/asf_version.h to reflect correct package version numbers.
+
+ 3. Commit all necessary changes to the CVS repository.
+
+ 4. Apply cvs tags if so desired. Say you're packaging your brand spanking new
+    version 2.5 of the convert package. Make sure you've removed that pesky
+    asf_tools/unsupported directory, then do:
+    /dir/that/asf_tools/resides/in> cvs rtag convert_v2-5 asf_tools
+
+ 5. Now, on every platform that you want to create a package for, grab the
+    tools from CVS. You'll need to do this in a directory where the the
+    'release' directory resides. If you tagged stuff do:
+    /base/dir> cvs export -r convert_v2-5 asf_tools
+    if you didn't tag stuff (which you should have done!):
+    /base/dir> cvs export -D now asf_tools
+
+ 6. Remember, you want to have the tools in the same directory that the release
+    tree is in (so you've got /base/dir/asf_tools and /base/dir/release). With
+    that in mind cd into asf_tools and run the config script.
+    /base/dir> cd asf_tools
+    /base/dir/asf_tools> ./config
+
+ 7. Since we're making a release here, you want and optimized version, not a
+    debugging version.
+    /base/dir/asf_tools> unset DEBUG_BUILD
+
+ 8. Okay we're ready to build:
+    /base/dir/asf_tools> make
+
+ 9.  Now that the tools are built, cd to the release/autotar directory
+    /base/dir/asf_tools> cd ../release/autotar
+
+10. This directory has been populated with several binary.* and source.* files.
+    They were written by the config script which uses the program makemake (in
+    asf_tools/make_support). There are also a couple of scripts; tarfile and
+    tarallsource. Tarallsource does exactly as its name implies. The tarfile
+    script uses the binary.* and source.* files to figure out what each package
+    needs to be complete. It creates the <package>.<platform>.<bin|src>.tar.gz
+    file for web distribution. For example, to make the binary distribution of
+    the convert package on linux you'd create the file convert.linux.bin.tar.gz
+    in /base/dir/release/tar/convert by doing:
+    /base/dir/release/autotar> ./tarfile bin /base/dir convert
