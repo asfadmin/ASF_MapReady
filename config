@@ -56,6 +56,12 @@ case "${osType}:${versMajor}:${versMinor}" in
 		sys=$osType ;;
 esac
 
+# Make the install directories for the libraries and binaries.
+mkdir lib
+mkdir lib/$sys
+mkdir bin/
+mkdir bin/$sys
+
 ######## Ask about GCC ############
 
 if [ ! $cc = "gcc" ]
