@@ -6,9 +6,11 @@
    file.  */
 
 /* System headers.  */
+#include <stdlib.h>
 #include <unistd.h>
 
 /* ASF headers.  */
+#include <asf.h>
 #include <asf_meta.h>
 
 #include <check.h>		/* For unit check functions.  */
@@ -128,7 +130,7 @@ int main(void)
   Suite *s = asf_meta_suite();
   SRunner *sr = srunner_create(s);
  
-  srunner_run_all(sr, CK_NORMAL);
+  srunner_run_all(sr, CK_VERBOSE);
 
   nf = srunner_ntests_failed(sr);
 
