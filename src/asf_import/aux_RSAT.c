@@ -195,7 +195,6 @@ void RSAT_decodeAux(unsigned char *in, RSAT_aux *out)
       default:
          printf("Error! Unrecognized ADC conversion rate %d!\n",
             ADCSamplingRate);
-         exit(EXIT_FAILURE);
    }
 
    out->prf_code       = (PRFBeam1<<5) | PRFBeam2;
