@@ -125,6 +125,13 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 	ddr->master_line   = meta->general->start_line + 1;
 	ddr->master_sample = meta->general->start_sample + 1;
 
+/* Projection distance per pixel; both double (pixel size)*/
+	ddr->pdist_y = meta->general->y_pixel_size;
+	ddr->pdist_x = meta->general->x_pixel_size;
+	ddr->valid[DDPDV] = ((meta->general->y_pixel_size == meta->general->y_pixel_size)
+	                   &&(meta->general->x_pixel_size == meta->general->x_pixel_size))
+	                ? VALID : INVAL;
+
 /* Projection dependent stuff */
 	if (meta->sar->image_type=='P') {
 		meta_projection *proj = meta->projection;
@@ -199,13 +206,6 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 		ddr->valid[DDCCV] = ((proj->startY == proj->startY)
 	                	   &&(proj->startX == proj->startX))
 	                	? VALID : INVAL;
-	/* Projection distance per pixel; both double */
-		ddr->pdist_y = fabs(proj->perY);
-		ddr->pdist_x = fabs(proj->perX);
-		ddr->valid[DDPDV] = ((proj->perY == proj->perY)
-	                	   &&(proj->perX == proj->perX))
-	                	? VALID : INVAL;
-
 		if (proj_invalid)
 		{
 			for (ii=0;ii<4;ii++) 
