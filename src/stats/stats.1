@@ -1,0 +1,58 @@
+.PU
+
+.TH stats 1 "March 2003"
+
+.SH NAME:
+stats \- Get basic statistics on a SAR image file
+
+.SH SYNOPSIS:
+.B stats
+.BI "<\fIimage_name\fP>"
+
+.SH DESCRIPTION:
+The 
+.B "stats"
+command figures the statistics for the given \fIimage_name\fP data file (you
+must include the file extention eg "data_file.img"). It then dumps the
+statistics into a .stat file of the same base name as \fIimage_name\fP. It also
+fills a stats block in the .meta file of the same base name as \fIimage_name\fP.
+
+.SH COMMAND LINE OPTIONS:
+-mask      Value to ignore while taking statistics.
+.RE
+-log       Copy terminal output to <logFile>.
+.RE
+-quiet     Supress terminal output.
+.RE
+-overmeta  Force overwrite of existing .meta file.
+.RE
+-overstat  Force overwrite of existing .stat file.
+.RE
+image_name Name of input image file (including extension).
+
+.SH EXAMPLES:
+Assume you have the file 'data_file.img' in your working directory. In order to
+create 'data_file.stat' and populate 'data_file.meta' with a stats block, you
+would run the command:
+.in +8
+.B "stats data_file.img"
+.in -8
+
+.PP
+
+Say 'data_file.stat' already exists and 'data_file.meta' already has a stats
+block, but you want to update both sets of statistics information, then run:
+.in +8
+.B "stats -overstat -overmeta data_file.img"
+.in -8
+
+.SH NOTES:
+None.
+
+.SH BUGS:
+None known.
+
+.SH CONTACT:
+E-Mail:  apd@asf.alaska.edu
+.RE
+Website: http://www.asf.alaska.edu/apd
