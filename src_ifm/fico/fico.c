@@ -63,17 +63,19 @@ PROGRAM HISTORY:
 				      Fatland. No longer 
     3.0	     2/97	 T. Logan   - modified to work on float complex
 				      output patches from ASP code
-    4.0      5/97	 O. Lawlor - Modified to allow reverse correlation
+    4.0      5/97	 O. Lawlor  - Modified to allow reverse correlation
 					(to check the first correlation)
 					and grid resolution, and do
 					a trilinear peak interpolation.
-    5.0      9/97	O. Lawlor - Optimization-- replaced FFT with
+    5.0      9/97	O. Lawlor   - Optimization-- replaced FFT with
 					much faster phase coherence method.
-    5.1      5/98	O. Lawlor - Perform forward and reverse correlation,
+    5.1      5/98	O. Lawlor   - Perform forward and reverse correlation,
                                         delete suspect points.
-    5.2      6/00	M. Ayers - Add Complex FFT matching option to offset estimation
-    5.21     7/01	R. Gens - Added logfile and quiet switch
-
+    5.2      6/00	M. Ayers    - Add Complex FFT matching option to offset
+                                        estimation
+    5.21     7/01	R. Gens     - Added logfile and quiet switch
+    5.5     10/03       P. Denny    - Standardize commandline parsing & order
+                                      Use meta 1.1 instead of DDR
 HARDWARE/SOFTWARE LIMITATIONS:
 
 ALGORITHM DESCRIPTION:
@@ -116,14 +118,14 @@ BUGS:
 ****************************************************************************/
 
 #include "asf.h"
-#include "las.h"
+#include "asf_meta.h"
 #include "ifm.h"
 
 #define borderX 80	/*Distances from edge of image to start correlating.*/
 #define borderY 80
 #define minSNR 0.30	/*SNR's below this will be deleted.*/
 #define maxDisp 1.8	/*Forward and reverse correlations which differ by more than this will be deleted.*/
-#define VERSION 5.21
+#define VERSION 5.5
 
 /*Read-only, informational globals:*/
 int wid, len;			/*Width and length of source images.*/
@@ -151,43 +153,44 @@ int main(int argc, char *argv[])
 {
 	char szOut[MAXNAME], szCtrl[MAXNAME], szImg1[MAXNAME], szImg2[MAXNAME];
 	int fft_flag=0;
-	int x1, x2, y1, y2, i;
+	int x1, x2, y1, y2;
 	int goodPoints,attemptedPoints;
 	FILE *fp_output;
-	struct DDR ddr;
 	char gridRes[256];
+	meta_parameters *meta;
 
-	/* start watch and check command line args */
-	if (argc < 5) usage(argv[0]);
+/* parse command line */
+	logflag=quietflag=FALSE;
+	while (currArg < (argc-4)) {
+	   char *key = argv[currArg++];
+	   if (strmatch(key,"-log")) {
+	      CHECK_ARG(1);
+	      strcpy(logFile,GET_ARG(1));
+	      fLog = FOPEN(logFile, "a");
+	      logflag=TRUE;
+	   }
+	   else if (strmatch(key,"-quiet")) {
+	      quietflag=TRUE;
+	   }
+	   else if (strmatch(key,"-f")) {
+	      fft_flag=1;
+	      printf("   Using Complex FFT instead of coherence for matching\n");
+	   }
+	   else if (strmatch(key,"-g")) {
+	      CHECK_ARG(1);
+	      strcpy(gridRes,GET_ARG(1));
+	   }
+	   else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
+	}
+	if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 
-        system("date");
-        printf("Program: fico\n\n");
-
-	strcat(strcpy(szImg1,argv[1]),".cpx");
-	strcat(strcpy(szImg2,argv[2]),".cpx");
-	strcpy(szCtrl,argv[3]);
-	strcpy(szOut,argv[4]);
+	create_name(szImg1, argv[currArg++], ".cpx");
+	create_name(szImg2, argv[currArg++], ".cpx");
+	strcpy(szCtrl,argv[currArg++]);
+	strcpy(szOut,argv[currArg]);
 	
-	logflag=quietflag=0;
-	/* Figure out if we'll be using the Complex FFT for matching */
-        for (i=5; i<argc; i++) {
-	  if(strncmp(argv[i],"-f", 2)==0) {
-	    fft_flag=1;
-	    printf("   Using Complex FFT instead of coherence for matching\n");
-	  }
-          else if(strncmp(argv[i],"-log", 4)==0) {
-            sscanf(argv[i+1], "%s", logFile);
-            logflag=1;
-            fLog = FOPEN(logFile, "a");
-	    i+=1;
-          }
-          else if(strncmp(argv[i],"-quiet", 6)==0) quietflag=1;
-	  else if (isdigit(argv[i][0])) strcpy(gridRes,argv[i]);
-	  else {
-	    sprintf(errbuf,"   ERROR: '%s' is not a valid option\n", argv[i]);
-	    printErr(errbuf);
-	  }
-        }
+	system("date");
+	printf("Program: fico\n\n");
 
 	if (!quietflag) printf("   Fico is correlating '%s' to '%s'.\n",szImg2,szImg1);
 
@@ -204,12 +207,10 @@ int main(int argc, char *argv[])
 	trgSize = 2*srcSize;
 
 	/* determine size of input files */
-	if (c_getddr(szImg1,&ddr)!=E_SUCC) {
-		sprintf(errbuf,"   ERROR: Can't open DDR file '%s'. Exiting.\n",szImg1);
-		printErr(errbuf);
-	}
-	wid = ddr.ns;
-	len = ddr.nl;
+	meta = meta_read(szImg1);
+	wid = meta->general->sample_count;
+	len = meta->general->line_count;
+	meta_free(meta);
 
 	/* initialize params before looping */
 	cZero = Czero();
@@ -272,29 +273,35 @@ int main(int argc, char *argv[])
 		  printLog(logbuf);
 		}
 
-	return(0);
+	exit(EXIT_SUCCESS);
 }
 
 void usage(char *name)
 {	
-	printf("\nUsage: %s <file1> <file2> <control> <out> \n"
-	       "           [<grid resolution>] [<-f>] [-log <file>] [-quiet]\n\n",name);
-	printf("\t<file1> and <file2> are raw float complex files (.cpx)\n");
-	printf("\t        You do not need to specify the extension.\n");
-	printf("\t<control> is a parameter file. This file is created by resolve.\n");
-	printf("\t<out> is an ouput ASCII file of offset points.\n\
-\t<grid resolution> is the number of grid points per axis.  \n\
-\t        The default is 20, meaning the program runs a 20x20 grid \n\
-\t        (or a total of 400 points).\n\
-\t<-f> specifies the use of a complex FFT instead of coherence\n\
-\t-log <file> allows the output to be written to a log file\n\
-\t-quiet suppresses the output to the essential\n");
-
-	printf("\n"
-"Fico is used to perform sub-pixel co-registration on\n"
-"two images, to form an interferogram\n");
-	printf("\nVersion: %.2f, ASF SAR Tools\n\n",VERSION);
-	exit(1);
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-g <grid res>] [<-f>] [-log <file>] [-quiet]\n"
+	"        <file1> <file2> <control> <out>\n", name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   file1    First raw float complex base file name (.cpx & .meta)\n"
+	"   file2    Second raw float complex base file name (.cpx & .meta)\n"
+	"   control  Parameter file. This file is created by resolve.\n"
+	"   out      Ouput ASCII file of offset points.\n");
+ printf("\n"
+	"OPTIONAL ARGUMETNS:\n"
+	"   -g <grid_res>   Number of grid points per axis\n"
+	"   -f              Use of complex FFT instead of coherence\n"
+	"   -log <file>     Allows the output to be written to a log file\n"
+	"   -quiet          Suppress the output to the essential\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Fico is used to perform sub-pixel co-registration on\n"
+	"   two images, to form an interferogram\n");
+ printf("\n"
+	"Version: %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
 
 bool outOfBounds(int x1, int y1, int x2, int y2, int srcSize, int trgSize)
