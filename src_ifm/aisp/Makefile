@@ -24,6 +24,9 @@ ASPLIB = patch.o \
 	 aisp_setup.o \
 	 rciq.o rmpatch.o acpatch.o calibration.o
 
+# Filter out the ISOC99 FLAGS which causes some problems.
+CFLAGS := $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
+
 all: aisp calc_deltas spectra clean
 
 aisp:	$(ASPLIB) $(OBJLIB) aisp.o $(LIBS)
