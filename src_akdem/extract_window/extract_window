@@ -330,34 +330,54 @@ if ( $p{type} eq 'gr' ) {
     open(TOPSAR, $p{image})
         or die "failed to open $p{image} for reading: $!";
 
-    my $param_os;   # Offset of start of parameter header.
-    seek(TOPSAR, 13*50 + 42, SEEK_SET) 
-        or die "seek in $p{image} failed: $!";
-    unless ( read(TOPSAR, $param_os, 8) == 8 ) {
-	die "read in $p{image} failed or read less than expected";
-    }
-
     # Get peg point information from header.  See AIRSAR Integrated
     # Processor Documentation, DATA FORMATS, Anhua Chu.  There is a C
     # library which does this but it didn't seem worth wrapping for
     # this small application.
+
+    my $field_width = 50;	# Width of AIRSAR metadata field.
+
+    my $dem_os;   # Offset of start of DEM header.
+    # Field number in metadata catalogue of DEM header offset field.
+    my $dem_header_offset_field_number = 17;
+    # Width in characters of DEM header offset value.
+    my $dem_header_offset_value_width = 8;
+    seek(TOPSAR, ($dem_header_offset_field_number - 1) * $field_width 
+	         + ($field_width - $dem_header_offset_value_width), SEEK_SET) 
+        or die "seek in $p{image} failed: $!";
+    unless ( read(TOPSAR, $dem_os, 8) == 8 ) {
+	die "read in $p{image} failed or read less than expected";
+    }
+    if ( $dem_os == 0 ) {
+	die "got 0 for DEM header offset, this supposedly means no DEM section exists";
+    }
+
     my ($pp_lat, $pp_lon, $pp_head);   # Peg point lat/lon/aircraft heading.
     # Offsets of first swath pixel from peg point.
     my ($azimuth_offset, $range_offset);  
-    seek(TOPSAR, $param_os + 93*50 + 38, SEEK_SET) &&
-                 read(TOPSAR, $pp_lat, 12) == 12 &&
-                 seek(TOPSAR, 38, SEEK_CUR) &&
-                 read(TOPSAR, $pp_lon, 12) == 12 &&
-                 seek(TOPSAR, 38, SEEK_CUR) &&
-                 read(TOPSAR, $pp_head, 12) == 12 &&
-		 seek(TOPSAR, 138, SEEK_CUR) &&
-		 read(TOPSAR, $azimuth_offset, 12) == 12 &&
-		 seek(TOPSAR, 38, SEEK_CUR) &&
-                 read(TOPSAR, $range_offset, 12) == 12
+    # Field number in DEM header of first peg point related field.
+    # The peg point fields are then assumed to be together.
+    my $first_pp_field_number = 17;
+    # Width in characters of pp related values.
+    my $pp_values_width = 11;
+    # Non-value width in characters of a pp related field. 
+    my $pp_non_value_width = $field_width - $pp_values_width;
+    seek(TOPSAR, $dem_os + ($first_pp_field_number - 1) * $field_width
+	         + ($pp_non_value_width), SEEK_SET)
+    && read(TOPSAR, $pp_lat, $pp_values_width) == $pp_values_width 
+    && seek(TOPSAR, $pp_non_value_width, SEEK_CUR) 
+    && read(TOPSAR, $pp_lon, $pp_values_width) == $pp_values_width 
+    && seek(TOPSAR, $pp_non_value_width, SEEK_CUR) 
+    && read(TOPSAR, $pp_head, $pp_values_width) == $pp_values_width 
+    && seek(TOPSAR, $pp_non_value_width, SEEK_CUR) 
+    && read(TOPSAR, $azimuth_offset, $pp_values_width) == $pp_values_width 
+    && seek(TOPSAR, $pp_non_value_width, SEEK_CUR) 
+    && read(TOPSAR, $range_offset, $pp_values_width) == $pp_values_width
         or die "read or seek in $p{image} failed or read less than expected";
     close(TOPSAR) or die "close failed: $!";
 
-    # Move peg point to compensate for bad airsar metadata.
+    # Move peg point to compensate for bad airsar metadata according
+    # to command line option.
     $pp_lat += $p{'peg-point-lat-delta'};
     $pp_lon += $p{'peg-point-long-delta'};
 
