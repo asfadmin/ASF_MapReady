@@ -30,16 +30,18 @@ typedef enum {
 
 int getCeosRecord(char *inName,CEOS_RECORD_TYPE recordType,int recordNo,unsigned char **buff)
 {
-	FILE 	*fp;
-	char  leaderName[256];
-	struct  HEADER  bufhdr;
+	FILE *fp;
+	char leaderName[256];
+	struct HEADER  bufhdr;
         int nOccurences=0,era;
 	
-	if (recordType==CEOS_FACDR)
+	if (recordType==CEOS_FACDR) {
 		era=set_era(inName,leaderName,2);/*Facility-related data record (in .trl).*/
-	else if (recordType==CEOS_IFILEDR)
+}
+	else if (recordType==CEOS_IFILEDR) {
 		era=set_era(inName,leaderName,0);/*Imagery options file (in .D)*/
-	else{
+}
+	else {
 		if (recordType==CEOS_FDR){
 		recordType=CEOS_IFILEDR;/*If looking for FDR record type, set it to IFILEDR type*/
 		}
@@ -102,8 +104,8 @@ int get_atdr(char *filename,struct att_data_rec *rec)
 int get_dhr(char *filename,struct data_hist_rec *rec)
 {
 	unsigned char *buff;
-        int era=getCeosRecord(filename,CEOS_DHR,2,&buff);
-	if (era!=-1)
+        int era;
+	if ((era=getCeosRecord(filename,CEOS_DHR,2,&buff)) != -1)
         {
 		Code_DHR(buff,rec,fromASCII); 
 	 	free(buff);
@@ -125,9 +127,8 @@ int get_sdhr(char *filename,struct data_hist_rec *rec)
 int get_dqsr(char *filename,struct qual_sum_rec *rec)
 {
 	unsigned char *buff;
-	int era=getCeosRecord(filename,CEOS_DQSR,1,&buff);
-	if (era!=-1)
-	{
+	int era;
+	if ((era=getCeosRecord(filename,CEOS_DQSR,1,&buff)) != -1) {
 		Code_DQS(buff,rec,era,fromASCII);
 		free(buff);
 	}
