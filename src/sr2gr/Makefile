@@ -14,7 +14,7 @@ OBJS  = sr2gr.o \
 all: sr2gr clean
 
 sr2gr : $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o sr2gr $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o sr2gr $(OBJS) $(LIBS) $(LDFLAGS)
 	mv sr2gr$(BIN_POSTFIX) $(BINDIR)
 	cp sr2gr.1 ../../man/cat1
 
