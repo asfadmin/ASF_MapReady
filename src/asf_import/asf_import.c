@@ -130,6 +130,8 @@ PROGRAM HISTORY:
 #include <ctype.h>
 #include <string.h>
 
+char *program_name = "asf_import";
+
 #define VERSION 0.5
 #define MAX_tableRes 512
 #define REQUIRED_ARGS 4
@@ -294,12 +296,12 @@ int main(int argc, char *argv[])
     }
     else {
       printf("\n** Invalid option:  %s\n\n",argv[currArg-1]);
-      usage();
+      usage (program_name);
     }
   }
   if ((argc-currArg) < REQUIRED_ARGS) {
     printf("Insufficient arguments.\n");
-    usage();
+    usage (program_name);
   }
 
   /* Make sure the sprocket flag hasn't been declared with a calibration or
@@ -1102,7 +1104,7 @@ if (sprocketFlag) {
         sprintf(tmp,"Unrecognized data format: '%s'\n\n",type);
         printf(tmp);
         if (logflag) printLog(tmp);
-        usage();
+        usage (program_name);
   }
 
   if (sprocketFlag) {
@@ -1114,12 +1116,12 @@ if (sprocketFlag) {
 
 
 /* usage - enter here on command-line usage error*/
-void usage()
+void usage(char *program_name)
 {
 
  printf("\n"
 	"USAGE:\n"
-	"   asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]\n"
-	"              <in_base_name> <out_base_name>\n");
+	"   %s [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]\n"
+	"              <in_base_name> <out_base_name>\n", program_name);
  exit(EXIT_FAILURE);
 }
