@@ -8,6 +8,32 @@ io_util:
 #include "asf_endian.h"
 #include "asf_complex.h"
 
+
+/*******************************************************************************
+ * Return the number of bytes that a data_type is made of, kill program on
+ * failure to figure the size of the data type. */
+int data_type2sample_size(int data_type)
+{
+  /* Determine sample size.  */
+  switch (data_type) {
+    case BYTE:      return sizeof(unsigned char);
+    case INTEGER16: return sizeof(short int);
+    case INTEGER32: return sizeof(int);
+    case REAL32:    return sizeof(float);
+    case REAL64:    return sizeof(double);
+    case COMPLEX_BYTE:      return sizeof(complexByte);
+    case COMPLEX_INTEGER16: return sizeof(complexShortInt);
+    case COMPLEX_INTEGER32: return sizeof(complexInt);
+    case COMPLEX_REAL32:    return sizeof(complexFloat);
+    case COMPLEX_REAL64:    return sizeof(complexDouble);
+    default:
+      printf("\ndata_type2sample_size(): Unrecognized data type. Exiting program.\n");
+      exit(EXIT_FAILURE);
+  }
+  return 0;
+}
+
+
 /*******************************************************************************
  * Get x number of lines of data (any data type) and fill a pre-allocated array
  * with it. The data is assumed to be in big endian format and will be converted
@@ -35,21 +61,7 @@ int get_data_lines(FILE *file, meta_parameters *meta, int line_number,
   }
 
   /* Determine sample size.  */
-  switch (data_type) {
-    case BYTE:      sample_size = sizeof(unsigned char); break;
-    case INTEGER16: sample_size = sizeof(short int);     break;
-    case INTEGER32: sample_size = sizeof(int);           break;
-    case REAL32:    sample_size = sizeof(float);         break;
-    case REAL64:    sample_size = sizeof(double);        break;
-    case COMPLEX_BYTE:      sample_size = sizeof(complexByte);     break;
-    case COMPLEX_INTEGER16: sample_size = sizeof(complexShortInt); break;
-    case COMPLEX_INTEGER32: sample_size = sizeof(complexInt);      break;
-    case COMPLEX_REAL32:    sample_size = sizeof(complexFloat);    break;
-    case COMPLEX_REAL64:    sample_size = sizeof(complexDouble);   break;
-   default:
-      printf("\nget_data_lines: Unrecognized data type. Exiting program.\n");
-      exit(EXIT_FAILURE);
-  }
+  sample_size = data_type2sample_size(data_type);
 
   /* Make sure not to go past the end of file */
   if (line_number > meta->general->line_count) {
@@ -277,21 +289,7 @@ int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
   }
 
   /* Determine sample size.  */
-  switch (data_type) {
-    case BYTE:      sample_size = sizeof(unsigned char); break;
-    case INTEGER16: sample_size = sizeof(short int);     break;
-    case INTEGER32: sample_size = sizeof(int);           break;
-    case REAL32:    sample_size = sizeof(float);         break;
-    case REAL64:    sample_size = sizeof(double);        break;
-    case COMPLEX_BYTE:      sample_size = sizeof(complexByte);     break;
-    case COMPLEX_INTEGER16: sample_size = sizeof(complexShortInt); break;
-    case COMPLEX_INTEGER32: sample_size = sizeof(complexInt);      break;
-    case COMPLEX_REAL32:    sample_size = sizeof(complexFloat);    break;
-    case COMPLEX_REAL64:    sample_size = sizeof(complexDouble);   break;
-    default:
-      printf("\nput_data_lines: Unrecognized data type. Exiting program.\n");
-      exit(EXIT_FAILURE);
-  }
+  sample_size = data_type2sample_size(data_type);
 
   /* Make sure not to make file bigger than meta says it should be */
   if (line_number > meta->general->line_count) {
