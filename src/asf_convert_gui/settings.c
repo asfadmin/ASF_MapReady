@@ -280,34 +280,61 @@ settings_get_output_bytes_argument(const Settings *s)
 
     return byte_arg;
 }
-        
+
+const gchar *
+settings_get_data_type_arg_string(const Settings *s)
+{
+  static gchar buf[32];
+
+  const gchar * type_arg = settings_get_data_type_string(s);
+
+  if (strlen(type_arg) > 0)
+  {
+    strcpy(buf, "-");
+    strcat(buf, type_arg);
+  }
+  else
+  {
+    strcpy(buf, "");
+  }
+
+  return buf;
+}
+
 const gchar *
 settings_get_data_type_string(const Settings *s)
 {
   const gchar * ret;
 
-  switch (s->data_type)
+  if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
   {
-    case INPUT_TYPE_SIGMA:
-      ret = "sigma";
-      break;
+    switch (s->data_type)
+    {
+      case INPUT_TYPE_SIGMA:
+	ret = "sigma";
+	break;
 
-    case INPUT_TYPE_BETA:
-      ret = "beta";
-      break;
+      case INPUT_TYPE_BETA:
+	ret = "beta";
+	break;
 
-    case INPUT_TYPE_GAMMA:
-      ret = "gamma";
-      break;
+      case INPUT_TYPE_GAMMA:
+	ret = "gamma";
+	break;
 
-    default:
-    case INPUT_TYPE_AMP:
-      ret = "amplitude";
-      break;
+      default:
+      case INPUT_TYPE_AMP:
+	ret = "amplitude";
+	break;
 
-    case INPUT_TYPE_POWER:
-      ret = "power";
-      break;
+      case INPUT_TYPE_POWER:
+	ret = "power";
+	break;
+    }
+  }
+  else
+  {
+    ret = "";
   }
 
   return ret;
@@ -383,6 +410,7 @@ settings_equal(const Settings *s1, const Settings *s2)
     {
         gchar * lat1 =
                 g_strdup(settings_get_latitude_argument(s1));
+
         gchar * lat2 =
                 g_strdup(settings_get_latitude_argument(s2));
 
@@ -390,6 +418,7 @@ settings_equal(const Settings *s1, const Settings *s2)
         {
             gchar * siz1 =
                     g_strdup(settings_get_size_argument(s1));
+
             gchar * siz2 =
                     g_strdup(settings_get_size_argument(s2));
 
@@ -397,6 +426,7 @@ settings_equal(const Settings *s1, const Settings *s2)
             {
                 gchar * byt1 =
                  g_strdup(settings_get_output_bytes_argument(s1));
+
                 gchar * byt2 =
                  g_strdup(settings_get_output_bytes_argument(s2));
 
@@ -436,28 +466,43 @@ const gchar *
 settings_get_output_format_extension(const Settings *s)
 {
   const gchar * out_extension;
-  switch (s->output_format)
+
+  switch (s->input_data_format)
   {
-    case OUTPUT_FORMAT_ASF_INTERNAL:
-      out_extension = "";
+    case INPUT_FORMAT_CEOS_LEVEL1:
+      switch (s->output_format)
+      {
+        case OUTPUT_FORMAT_ASF_INTERNAL:
+	  out_extension = "";
+	  break;
+
+        case OUTPUT_FORMAT_CEOS:
+	  out_extension = "D";
+	  break;
+
+        default:
+        case OUTPUT_FORMAT_JPEG:
+	  out_extension = "jpg";
+	  break;
+
+        case OUTPUT_FORMAT_PPM:
+	  out_extension = "ppm";
+	  break;
+
+        case OUTPUT_FORMAT_GEOTIFF:
+        case OUTPUT_FORMAT_TIFF:
+	  out_extension = "tif";
+	  break;
+      }
       break;
 
-    case OUTPUT_FORMAT_CEOS:
-      out_extension = "D";
+    case INPUT_FORMAT_COMPLEX:
+      out_extension = "cpx";
       break;
 
-    case OUTPUT_FORMAT_JPEG:
-    default:
-      out_extension = "jpg";
-      break;
-
-    case OUTPUT_FORMAT_PPM:
-      out_extension = "ppm";
-      break;
-
-    case OUTPUT_FORMAT_GEOTIFF:
-    case OUTPUT_FORMAT_TIFF:
-      out_extension = "tif";
+    case INPUT_FORMAT_STF:
+    case INPUT_FORMAT_CEOS_LEVEL0:
+      out_extension = "raw";
       break;
   }
 
@@ -508,7 +553,7 @@ settings_get_run_import(const Settings *s)
 int 
 settings_get_run_export(const Settings *s)
 {
-  return s->input_data_format != INPUT_FORMAT_ASF_INTERNAL;
+  return s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1;
 }
 
 void

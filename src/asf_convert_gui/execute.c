@@ -25,7 +25,8 @@ static gboolean confirm_overwrite()
     user_settings = settings_get_from_gui();
     if (settings_on_execute)
     {
-        settings_different = !settings_equal(user_settings, settings_on_execute);
+        settings_different = !settings_equal(user_settings, 
+					     settings_on_execute);
     }
 
     valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
@@ -110,76 +111,76 @@ do_cmd(gchar *cmd, gchar *log_file_name)
 
       if (!g_file_test(log_file_name, G_FILE_TEST_EXISTS))
       {
-    output = fopen(log_file_name, "wt");
-    if (output)
-    {
-      if (saved_errno > 0)
-      {
-        fprintf(output,
-            "*** Error! Could not run command. ***\n"
-            "Command: %s\n"
-            "Error: %s\n",
-            cmd, strerror(saved_errno));
-      }
-      else
-      {
-        gchar *p;
-        gboolean have_import = FALSE, have_export = FALSE;
+	output = fopen(log_file_name, "wt");
+	if (output)
+	{
+	  if (saved_errno > 0)
+	  {
+	    fprintf(output,
+		    "*** Error! Could not run command. ***\n"
+		    "Command: %s\n"
+		    "Error: %s\n",
+		    cmd, strerror(saved_errno));
+	  }
+	  else
+	  {
+	    gchar *p;
+	    gboolean have_import = FALSE, have_export = FALSE;
 
-        /* one possibility is that they haven't got asf_import
-           or asf_export.  Check for that. */
-        p = find_in_path("asf_import");
-        if (!p)
-        {
-          p = find_in_path("asf_import.exe");
-          if (p)
-          {
-        have_import = TRUE;
-        g_free(p);
-          }
-        }
-        else
-        {
-          have_import = TRUE;
-          g_free(p);
-        }
+	    /* one possibility is that they haven't got asf_import
+	       or asf_export.  Check for that. */
+	    p = find_in_path("asf_import");
+	    if (!p)
+	    {
+	      p = find_in_path("asf_import.exe");
+	      if (p)
+	      {
+		have_import = TRUE;
+		g_free(p);
+	      }
+	    }
+	    else
+	    {
+	      have_import = TRUE;
+	      g_free(p);
+	    }
 
-        p = find_in_path("asf_export");
-        if (!p)
-        {
-          p = find_in_path("asf_export.exe");
-          if (p)
-          {
-        have_export = TRUE;
-        g_free(p);
-          }
-        }
-        else
-        {
-          have_export = TRUE;
-          g_free(p);
-        }
+	    p = find_in_path("asf_export");
+	    if (!p)
+	    {
+	      p = find_in_path("asf_export.exe");
+	      if (p)
+	      {
+		have_export = TRUE;
+		g_free(p);
+	      }
+	    }
+	    else
+	    {
+	      have_export = TRUE;
+	      g_free(p);
+	    }
 
-        if (have_import && have_export)
-        {
-          /* found the executable(s)... not sure what went wrong. */
-          fprintf(output, "Unknown Error trying to run command:\n%s\n",
-              cmd);
-        }
-        else
-        {
-          fprintf(output,
-              "*** ERROR! ***\n"
-              "Couldn't find one, or both, of asf_import or "
-              "asf_export!\n"
-              "Please ensure that these programs are installed, "
-              "and are in your PATH.\n"
-              "Was trying to run the command:\n%s\n",
-              cmd);
-        }
-      }
-      fclose(output); 
-    }
+	    if (have_import && have_export)
+	    {
+	      /* found the executable(s)... not sure what went wrong. */
+	      fprintf(output, "Unknown Error trying to run command:\n%s\n",
+		      cmd);
+	    }
+	    else
+	    {
+	      fprintf(output,
+		      "*** ERROR! ***\n"
+		      "Couldn't find one, or both, of asf_import or "
+		      "asf_export!\n"
+		      "Please ensure that these programs are installed, "
+		      "and are in your PATH.\n"
+		      "Was trying to run the command:\n%s\n",
+		      cmd);
+	    }
+	  }
+	  fclose(output); 
+	}
       }
     }
 
@@ -190,7 +191,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
     while (waitpid(-1, NULL, WNOHANG) == 0)
     {
       while (gtk_events_pending())
-    gtk_main_iteration();    
+	gtk_main_iteration();    
 
       g_usleep(50);
     }
@@ -213,18 +214,18 @@ do_cmd(gchar *cmd, gchar *log_file_name)
       gchar *p = fgets(buffer, sizeof(buffer), output);
       if (p)
       {
-    if (the_output)
+	if (the_output)
         {
-      the_output = (gchar *)g_realloc(the_output, sizeof(gchar) *
-                    (strlen(the_output) + strlen(buffer) + 1));
+	  the_output = (gchar *)g_realloc(the_output, sizeof(gchar) *
+				   (strlen(the_output) + strlen(buffer) + 1));
 
-      strcat(the_output, buffer);
-    }
-    else
-    {
-      the_output = (gchar *)g_malloc(sizeof(gchar) * (strlen(buffer) + 1));
-      strcpy(the_output, buffer);
-    }
+	  strcat(the_output, buffer);
+	}
+	else
+	{
+	  the_output = (gchar *)g_malloc(sizeof(gchar) * (strlen(buffer) + 1));
+	  strcpy(the_output, buffer);
+	}
       }
     }
     fclose(output);
@@ -379,8 +380,8 @@ process_item(GtkTreeIter *iter,
       g_snprintf(log_file, sizeof(log_file), "tmp%d.log", pid);
 
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
-    "asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
-         settings_get_data_type_string(user_settings),
+    "asf_import %s -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
+         settings_get_data_type_arg_string(user_settings),
          settings_get_input_data_format_string(user_settings),
          settings_get_latitude_argument(user_settings),
          log_file,
@@ -399,9 +400,9 @@ process_item(GtkTreeIter *iter,
       
       if (!settings_get_run_export(user_settings))
       {
-    done = err ? "Error" : "Done";
-    gtk_list_store_set(list_store, iter, 1, out_name_full, -1);
-    gtk_list_store_set(list_store, iter, 2, done, -1);
+	done = err ? "Error" : "Done";
+	gtk_list_store_set(list_store, iter, 1, out_name_full, -1);
+	gtk_list_store_set(list_store, iter, 2, done, -1);
       }
 
       g_free(out_name_full);

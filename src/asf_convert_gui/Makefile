@@ -55,7 +55,7 @@ default: $(OBJS)
 	cp $(TARGET)_help.txt $(BINDIR)
 
 clean:
-	rm *.o $(TARGET)
+	rm *.o $(BINDIR)/$(TARGET)*
 
 ### End Unix Section
 

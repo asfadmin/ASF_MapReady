@@ -26,6 +26,7 @@ const gchar * settings_get_size_argument(const Settings *);
 const gchar * settings_get_latitude_argument(const Settings *);
 const gchar * settings_get_output_bytes_argument(const Settings *s);
 const gchar * settings_get_data_type_string(const Settings *);
+const gchar * settings_get_data_type_arg_string(const Settings *);
 const gchar * settings_get_input_data_format_string(const Settings *);
 const gchar * settings_get_output_format_extension(const Settings *);
 const gchar * settings_get_output_format_string(const Settings *);
