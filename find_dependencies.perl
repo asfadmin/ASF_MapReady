@@ -433,11 +433,14 @@ if ( -e $graph_cache_file ) {
 
     chdir "$top_level_dir";
 
-    # Store package dependency graph in file for later use.
-    unless ( nstore(\%pkg_deps, $graph_cache_file) ) {
-	die "$progname: failed to correctly store dependency graph in $graph_cache_file\n";
-    } else {
-	print wrap('', '', "\nGenerated package dependency graph cache file\n'$graph_cache_file'.\n");
+    # Unless we have an incomplete graph due to use of the -p option,
+    # store package dependency graph in file for later use.
+    unless ( $p{'package'} ) {  
+        unless ( nstore(\%pkg_deps, $graph_cache_file) ) {
+	    die "$progname: failed to correctly store dependency graph in $graph_cache_file\n";
+	} else {
+	    print wrap('', '', "\nGenerated package dependency graph cache file\n'$graph_cache_file'.\n");
+	}
     }
 }
 
