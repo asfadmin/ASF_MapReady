@@ -2,7 +2,9 @@
 
 include ../../make_support/system_rules
 
-OBJS =  scaling.o \
+OBJS = interpolate.o \
+	kernel.o \
+	scaling.o \
 	stats.o
 
 all: build_only
