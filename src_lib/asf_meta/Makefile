@@ -45,7 +45,6 @@ OBJS =  $(LEX_YACC_OBJS) \
 	latLon2timeSlant.o \
 	meta_get.o\
 	meta_get_geo.o \
-	meta_get_geo2.o \
 	meta_get_ifm.o \
 	meta_get_util.o \
 	meta_init.o \
