@@ -247,36 +247,37 @@ int main(int argc, char *argv[])
   quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
   logflag = TRUE; /* Since we always log set the oldschool logflag to true */
 
-  /*Check for mutually exclusive options: we can only have one of these*/
-  int temp = 0;
-  if(flags[f_AMP] != FLAG_NOT_SET)      temp++;
-  if(flags[f_SIGMA] != FLAG_NOT_SET)    temp++;
-  if(flags[f_BETA] != FLAG_NOT_SET)     temp++;
-  if(flags[f_GAMMA] != FLAG_NOT_SET)    temp++;
-  if(flags[f_POWER] != FLAG_NOT_SET)    temp++;
-  if(flags[f_SPROCKET] != FLAG_NOT_SET) temp++;
-  if(temp > 1)/*If more than one option was selected*/
-    usage();/*This exits with a failure*/
+  { /*Check for mutually exclusive options: we can only have one of these*/
+    int temp = 0;
+    if(flags[f_AMP] != FLAG_NOT_SET)      temp++;
+    if(flags[f_SIGMA] != FLAG_NOT_SET)    temp++;
+    if(flags[f_BETA] != FLAG_NOT_SET)     temp++;
+    if(flags[f_GAMMA] != FLAG_NOT_SET)    temp++;
+    if(flags[f_POWER] != FLAG_NOT_SET)    temp++;
+    if(flags[f_SPROCKET] != FLAG_NOT_SET) temp++;
+    if(temp > 1)/*If more than one option was selected*/
+      usage();/*This exits with a failure*/
+  }
+  { /*We need to make sure the user specified the proper number of arguments*/
+    int needed_args = REQUIRED_ARGS+1;/*command & in_base & out_base*/
+    if(flags[f_AMP] != FLAG_NOT_SET)      needed_args += 1;/*option*/
+    if(flags[f_SIGMA] != FLAG_NOT_SET)    needed_args += 1;/*option*/
+    if(flags[f_BETA] != FLAG_NOT_SET)     needed_args += 1;/*option*/
+    if(flags[f_GAMMA] != FLAG_NOT_SET)    needed_args += 1;/*option*/
+    if(flags[f_POWER] != FLAG_NOT_SET)    needed_args += 1;/*option*/
+    if(flags[f_SPROCKET] != FLAG_NOT_SET) needed_args += 1;/*option*/
+    if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) needed_args += 3;/*option & parameter & parameter*/
+    if(flags[f_PRC] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
+    if(flags[f_OLD_META] != FLAG_NOT_SET) needed_args += 1;/*option*/
+    if(flags[f_METADATA_FILE] != FLAG_NOT_SET)  needed_args += 2;/*option & parameter*/
+    if(flags[f_LOG] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
+    if(flags[f_QUIET] != FLAG_NOT_SET)    needed_args += 1;/*option*/
+    if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
 
-  /*We need to make sure the user specified the proper number of arguments*/
-  int needed_args = REQUIRED_ARGS+1;/*command & in_base & out_base*/
-  if(flags[f_AMP] != FLAG_NOT_SET)      needed_args += 1;/*option*/
-  if(flags[f_SIGMA] != FLAG_NOT_SET)    needed_args += 1;/*option*/
-  if(flags[f_BETA] != FLAG_NOT_SET)     needed_args += 1;/*option*/
-  if(flags[f_GAMMA] != FLAG_NOT_SET)    needed_args += 1;/*option*/
-  if(flags[f_POWER] != FLAG_NOT_SET)    needed_args += 1;/*option*/
-  if(flags[f_SPROCKET] != FLAG_NOT_SET) needed_args += 1;/*option*/
-  if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) needed_args += 3;/*option & parameter & parameter*/
-  if(flags[f_PRC] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
-  if(flags[f_OLD_META] != FLAG_NOT_SET) needed_args += 1;/*option*/
-  if(flags[f_METADATA_FILE] != FLAG_NOT_SET)  needed_args += 2;/*option & parameter*/
-  if(flags[f_LOG] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
-  if(flags[f_QUIET] != FLAG_NOT_SET)    needed_args += 1;/*option*/
-  if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
-
-  /*Make sure we have enough arguments*/
-  if(argc != needed_args)
-    usage();/*This exits with a failure*/
+    /*Make sure we have enough arguments*/
+    if(argc != needed_args)
+      usage();/*This exits with a failure*/
+  }
 
   /*We also need to make sure any options that have parameters are specified correctly
   This includes: -lat, -prc, -log*/
