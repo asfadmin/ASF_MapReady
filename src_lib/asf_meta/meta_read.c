@@ -240,6 +240,11 @@ void meta_read_old(meta_parameters *meta, char *fileName)
  *	stats->rms                = NAN;
  *	stats->std_deviation      = NAN; */
 
+/* Fields not yet filled */
+	general->re_major = (meta->projection) ? meta->projection->re_major : 6378144.0;
+	general->re_minor = (meta->projection) ? meta->projection->re_minor : 6356754.9;
+	
+
 /* Fields that cannot be filled from the old structures */
 	general->frame            = -1;
 	general->band_number      = -1;
