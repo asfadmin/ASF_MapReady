@@ -134,7 +134,8 @@ fi
 
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
 cat <<'EOF' >>system_rules
-# If <make 'DEBUG_BUILD=[anything but 0]'> and compiler is gcc then set DEBUGFLAGS and DEBUGLIBS
+# If <make 'DEBUG_BUILD=whatever'> (i.e. DEBUG_BUILD defined) and compiler 
+# is gcc then set DEBUGFLAGS and DEBUGLIBS
 ifdef DEBUG_BUILD
   ifeq ($(CC),gcc)
     OPTFLAG    =
