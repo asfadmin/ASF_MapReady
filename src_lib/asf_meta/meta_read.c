@@ -10,6 +10,7 @@
 /* Local prototypes */
 void meta_read_old(meta_parameters *meta, char *fileName);
 void meta_new2old(meta_parameters *meta);
+void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name);
 int meta_is_new_style(const char *file_name);
 
 /* PROTOTYPE from meta_init.c */
@@ -24,12 +25,21 @@ void add_meta_ddr_struct(const char *name, meta_parameters *meta, struct DDR *dd
 meta_parameters *meta_read(const char *inName)
 {
   char              *meta_name      = appendExt(inName,".meta");
+  char              *ddr_name       = appendExt(inName,".ddr");
   meta_parameters   *meta           = raw_init(); /* Allocate and initialize basic structs */
 
   /* Read file with appropriate reader for version.  */
-  if ( !meta_is_new_style(meta_name) ) {
+  if ( !fileExists(meta_name) && fileExists(ddr_name)) {
+    meta_read_only_ddr(meta, ddr_name);
+    printf("WARNING: * Unable to locate '%s';\n"
+           "         * Using only '%s' for meta data;\n"
+           "         * Errors due to lack of meta data are very likely.\n",
+	   meta_name, ddr_name);
+  }
+  else if ( !meta_is_new_style(meta_name) ) {
     meta_read_old(meta, meta_name);
-  } else {
+  }
+  else {
     parse_metadata(meta, meta_name);
   }
   
@@ -39,7 +49,7 @@ meta_parameters *meta_read(const char *inName)
   /* Remember the name and location of the meta struct */
   add_meta_ddr_struct(inName, meta, NULL);
 
-  free(meta_name);
+  FREE(meta_name);
   
   return meta;
 }
@@ -71,7 +81,7 @@ int meta_is_new_style(const char *file_name)
 		       "^[[:space:]]*meta_version[[:space:]]*:[[:space:]]*([[:digit:]]+(\\.[[:digit:]]+)?)"
 		       ) ) {
     if ( fgets(line, MAX_METADATA_LINE, meta_file) == '\0' ) {
-      err_die("meta_read function: didn't find Meta version field\n");
+      err_die("%s function: didn't find Meta version field\n", __func__);
     }
   }
 
@@ -139,7 +149,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	general->band_number      = 0;
 	general->center_latitude  = NAN;
 	general->center_longitude = NAN;
-	general->missing_lines    = -2147283648;
+	general->missing_lines    = -999999999;
 
 /* Read old style meta file */
 	coniIO_double(coni,"","meta_version:",&meta->meta_version,"ASF APD Metadata File.\n");
@@ -284,8 +294,8 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	}
 	else {
 		printf("\n"
-		       "WARNING: Failed to get DDR file while reading old style metadata.\n"
-		       "         Some meta fields will not be correctly initialized.\n");
+		       "WARNING: * Failed to get DDR file while reading old style metadata.\n"
+		       "         * Some meta fields will not be correctly initialized.\n");
 	}
 
 /* Fields not yet filled */
@@ -300,7 +310,119 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 /* Close coni structure */
 	coniClose(coni);
 
-} /* End pre-1.0 version read */
+} /* End pre-1.1 version read */
+
+
+#include "proj.h"
+/***************************************************************
+ * meta_read_only_ddr:
+ * Fills all possible fields that ddr can fill. All other fields
+ * remain in their 'invalid' state */
+void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
+{
+	int ii=0;
+	struct DDR ddr;
+	c_getddr(ddr_name, &ddr);
+	
+	meta->general->line_count = ddr.nl;
+	meta->general->sample_count = ddr.ns;
+	meta->general->band_number = 0;
+	meta->general->start_line = ddr.master_line - 1;
+	meta->general->start_sample = ddr.master_sample - 1;
+	switch (ddr.dtype) {
+	  case DTYPE_BYTE: case 0:
+		strcpy(meta->general->data_type, "BYTE");
+		break;
+	  case DTYPE_SHORT:
+		strcpy(meta->general->data_type, "INTEGER*2");
+		break;
+	  case DTYPE_LONG:
+		strcpy(meta->general->data_type, "INTEGER*4");
+		break;
+	  case DTYPE_FLOAT:
+		strcpy(meta->general->data_type, "REAL*4");
+		break;
+	  case DTYPE_DOUBLE:
+		strcpy(meta->general->data_type, "REAL*8");
+	  default:
+		printf("ERROR: Unrecognized data type (code %d)... program exiting.\n",ddr.dtype);
+		exit (EXIT_FAILURE);
+	}
+	if (strcmp(ddr.system,"ieee-std")==0)
+		strcpy(meta->general->system,"big_ieee");
+	else if (strcmp(ddr.system,"ieee-lil")==0)
+		strcpy(meta->general->system,"lil_ieee");
+	else if (strcmp(ddr.system,"cray-unicos")==0)
+		strcpy(meta->general->system,"cray_float");
+	else
+		strcpy(meta->general->system,"???");
+	if (ddr.valid[DDINCV] == VALID) {
+		meta->sar->line_increment = ddr.line_inc;
+		meta->sar->sample_increment = ddr.sample_inc;
+	}
+    /* Projection stuff */
+	for (ii=0; ii<DDNVAL; ii++) {
+	  if ((ddr.valid[ii]==VALID) && (ii!=DDINCV)) {
+		meta->projection = (meta_projection*)MALLOC(sizeof(meta_projection));
+		/* Projection units */
+		if (ddr.valid[DDPUV] == VALID)
+			strncpy(meta->projection->units, ddr.proj_units, 12);
+		else
+			strcpy(meta->projection->units, "meters");
+		meta->projection->hem = '?';
+		meta->projection->re_major = NAN;
+		meta->projection->re_minor = NAN;
+		if (ddr.valid[DDPPV] == VALID) {
+		   switch (ddr.proj_code) {
+		     case LAMAZ:
+		        meta->projection->type = 'L';
+			if (ddr.proj_coef[2]) {
+				meta->projection->re_major = ddr.proj_coef[0];
+				meta->projection->re_minor = ddr.proj_coef[0];
+			}
+			else {
+				meta->projection->re_major = 6370997;
+				meta->projection->re_minor = 6370997;
+			}
+		        meta->projection->param.lambert.plat1 = ddr.proj_coef[2];
+		        meta->projection->param.lambert.plat2 = ddr.proj_coef[3];
+		        meta->projection->param.lambert.lon0  = ddr.proj_coef[4];
+		        meta->projection->param.lambert.lat0  = ddr.proj_coef[5];
+		        break;
+		     case PS:
+		        meta->projection->type = 'P';
+		        meta->projection->re_major      = ddr.proj_coef[0];
+		        meta->projection->re_minor      = ddr.proj_coef[1];
+		        meta->projection->param.ps.slon = ddr.proj_coef[4];
+		        meta->projection->param.ps.slat = ddr.proj_coef[5];
+		        break;
+		     case UTM:
+		        meta->projection->type = 'U';
+		        if (ddr.valid[DDZCV] == VALID)
+		          meta->projection->param.utm.zone = ddr.zone_code;
+		        else
+		          meta->projection->param.utm.zone = -999999999;
+		        break;
+		     default:
+		        printf("WARNING: * DDR projection code '%d' not supported by meta file\n",ddr.proj_code);
+		        break;
+		   } /* End switch(ddr.proj_code) */
+		} /* End if (ddr.valid[DDPPV] == VALID) */
+		if (ddr.valid[DDCCV] == VALID) {
+			meta->projection->startY = ddr.upleft[0];
+			meta->projection->startX = ddr.upleft[1];
+			meta->projection->perY = (ddr.loright[0] - ddr.upleft[0]) / (double)ddr.nl;
+			meta->projection->perX = (ddr.loright[1] - ddr.upleft[1]) / (double)ddr.ns;
+		}
+		break;
+	  } /* End if ((ddr->valid[ii]==VALID) && (ii!=DDINCV)) */
+	} /* End for (ii=0; ii<DDNVAL; ii++) */
+    /* Make some guesses */
+	if (meta->projection->type != '?')
+		meta->sar->image_type = 'P';
+	
+} /* End function meta_read_only_ddr() */
+
 
 
 /***************************************************************
@@ -331,8 +453,14 @@ void meta_new2old(meta_parameters *meta)
 	meta->geo->dopAz[2]    = meta->sar->azimuth_doppler_coefficients[2];
 
 /* Fill ifm_parameters structure */
-	meta->ifm->ht            = meta_get_sat_height(meta, meta->general->line_count/2, 0);
-	meta->ifm->er            = meta_get_earth_radius(meta, meta->general->line_count/2, 0);
+	if (meta->state_vectors->vecs) {
+		meta->ifm->ht    = meta_get_sat_height(meta, meta->general->line_count/2, 0);
+		meta->ifm->er    = meta_get_earth_radius(meta, meta->general->line_count/2, 0);
+	}
+	else {
+		meta->ifm->ht    = NAN;
+		meta->ifm->er    = NAN;
+	}
 	meta->ifm->nLooks        = meta->sar->look_count;
 	meta->ifm->orig_nLines   = meta->sar->original_line_count;
 	meta->ifm->orig_nSamples = meta->sar->original_sample_count;
@@ -354,7 +482,10 @@ void meta_new2old(meta_parameters *meta)
 
 /* Calculated values for the old structure */
 	if (meta->sar->image_type!='P') /*Image not map projected-- compute look angle to beam center*/
-		meta->ifm->lookCenter = meta_look(meta, 0, meta->general->sample_count/2);
+		if (meta->state_vectors->vecs)
+			meta->ifm->lookCenter = meta_look(meta, 0, meta->general->sample_count/2);
+		else
+			meta->ifm->lookCenter = NAN;
 	else 
 	{/*Image *is* map projected-- compute earth's eccentricity*/
 		double re = meta->general->re_major;
