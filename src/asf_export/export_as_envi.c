@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <setjmp.h>
@@ -27,6 +26,7 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include <asf_export.h>
+#include <asf_reporting.h>
 
 
 void
@@ -47,11 +47,14 @@ export_as_envi (const char *metadata_file_name,
 
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
-  assert (md->general->data_type == BYTE
-          || md->general->data_type == INTEGER16
-          || md->general->data_type == INTEGER32
-          || md->general->data_type == REAL32
-          || md->general->data_type == REAL64);
+  if (   md->general->data_type == BYTE
+      || md->general->data_type == INTEGER16
+      || md->general->data_type == INTEGER32
+      || md->general->data_type == REAL32
+      || md->general->data_type == REAL64)
+  {
+    asfPrintError("Input data cannot be complex.\n");
+  }
 
   create_name (envi_file_name, output_file_name, ".hdr");
   envi = meta2envi (md);
@@ -153,11 +156,7 @@ export_as_envi (const char *metadata_file_name,
   strcat (envi_data_file_name, ".bil");
   sprintf (command, "cp %s %s\n", image_data_file_name, envi_data_file_name);
   return_code = system (command);
-  if ( return_code != 0 ) {
-    char* temp;
-    sprintf(temp, "System command '%s' failed", command);
-    print_error(temp);
-    exit (EXIT_FAILURE);
-  }
-}
 
+  if ( return_code != 0 )
+    asfPrintError("System command '%s' failed", command);
+}
