@@ -18,8 +18,6 @@ satellite and point on earth's surface.
 #define grX2phi(gr) (minPhi+(gr)/phiMul)
 
 extern double minPhi,maxPhi,phiMul,grPixelSize;
-extern meta_parameters *meta;
-extern int ns;
 
 /*Array[ns] indexed by ground range pixel.*/
 extern double *slantGR;/*Slant range pixel #*/
@@ -30,16 +28,13 @@ extern double *heightShiftSR;
 extern double *groundSR;/*Ground range pixel #*/
 extern double *slantRangeSqr,*slantRange,*heightShift;
 extern double *incidAng,*sinIncidAng,*cosIncidAng;
-extern struct DDR ddrDEM,outddr,inddr;
 
-double calc_ranges(const struct DDR *ddr);
+double calc_ranges(meta_parameters *meta);
 
 void geo_compensate(float *srDEM,float *in,float *out,int ns);
 void radio_compensate(float *grDEM, float *grDEMprev,float *inout,int ns);
 void dem_sr2gr(float *inBuf,float *outBuf,int ns);
 void dem_interp_col(float *buf,int ns,int nl);
-
-void set_ddr_corners(char *ceos,struct DDR *outddr);
 
 float sr2gr(float srX,float height);
 float gr2sr(float grX,float height);
