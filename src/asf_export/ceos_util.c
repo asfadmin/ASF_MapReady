@@ -1,7 +1,7 @@
 #include "asf.h"
 #include "ceos.h"
 #include "asf_endian.h"
-
+#include "asf_reporting.h"
 
 /* Copied this function unchecked from writeAsfCeosData.c as part of 'sarout' */
 void fill_fdr_common(struct FDR *v)
