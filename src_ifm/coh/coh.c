@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   int cnt;                              /* Histogram counter                  */
   float	bin_high, bin_low;              /* Histogram ranges                   */
   float	average;                        /* Average Correlation                */
-  double hist_sum;                      /* Histogram sum                      */
+  double hist_sum=0.0;                  /* Histogram sum                      */
   double percent, percent_sum;          /* Percent of correlation levels      */
   long long hist_val[HIST_SIZE];        /* Histogram value table              */
   long long hist_cnt = 0;               /* Histogram count                    */
@@ -181,10 +181,6 @@ int main(int argc, char *argv[])
   outMeta->sar->line_increment   *= stepLine;
   outMeta->sar->sample_increment *= stepSample;
   meta_write (outMeta, outName);
-
-  printf("\n");
-  printf("Calculating interferogram coherence for %s and %s\n",
-         inName1, inName2);
 
   /* create buffers */
   rho     = (float*)MALLOC(sizeof(float)*num_samples/stepSample);
