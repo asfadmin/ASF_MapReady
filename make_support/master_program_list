@@ -57,6 +57,9 @@ LIBS
 	asf_odl
 	asf_fft
 	libproj
+# pkgconfig is actually a program, not a library, but glib needs it to
+# build, so we trick the build system by putting it here.
+	pkgconfig
 	libglib-2.0
 	libasf_proj
 	libasf_raster
@@ -94,7 +97,6 @@ PROGRAMS
 	makeddr { }
 	meta2ddr { BINS ddr2meta }
 	metadata { }
-	pkgconfig { }
 	raster_calc { }
 	raster_diff { }
 	remap { }
