@@ -21,7 +21,96 @@ do_cmd(gchar *cmd, gchar *log_file_name)
 
   if (pid == 0)
   {
-    system(cmd);
+    int ret;
+
+    ret = system(cmd);
+    if (ret == -1 || ret > 0)
+    {
+      int saved_errno;
+      /* Problem running the command... if we got a log file assume the
+	 error is logged in there, and user will see it through that.
+
+	 Otherwise, see if errno can give us anything useful. 
+	 Put this into the log file that parent expects to see.
+      */
+
+      saved_errno = errno;
+
+      if (!g_file_test(log_file_name, G_FILE_TEST_EXISTS))
+      {
+	output = fopen(log_file_name, "wt");
+	if (output)
+	{
+	  if (saved_errno > 0)
+	  {
+	    fprintf(output,
+		    "*** Error! Could not run command. ***\n"
+		    "Command: %s\n"
+		    "Error: %s\n",
+		    cmd, strerror(saved_errno));
+	  }
+	  else
+	  {
+	    gchar *p;
+	    gboolean have_import = FALSE, have_export = FALSE;
+
+	    /* one possibility is that they haven't got asf_import
+	       or asf_export.  Check for that. */
+	    p = find_in_path("asf_import");
+	    if (!p)
+	    {
+	      p = find_in_path("asf_import.exe");
+	      if (p)
+	      {
+		have_import = TRUE;
+		g_free(p);
+	      }
+	    }
+	    else
+	    {
+	      have_import = TRUE;
+	      g_free(p);
+	    }
+
+	    p = find_in_path("asf_export");
+	    if (!p)
+	    {
+	      p = find_in_path("asf_export.exe");
+	      if (p)
+	      {
+		have_export = TRUE;
+		g_free(p);
+	      }
+	    }
+	    else
+	    {
+	      have_export = TRUE;
+	      g_free(p);
+	    }
+
+	    if (have_import && have_export)
+	    {
+	      /* found the executable(s)... not sure what went wrong. */
+	      fprintf(output, "Unknown Error trying to run command:\n%s\n",
+		      cmd);
+	    }
+	    else
+	    {
+	      fprintf(output,
+		      "*** ERROR! ***\n"
+		      "Couldn't find one, or both, of asf_import or "
+		      "asf_export!\n"
+		      "Please ensure that these programs are installed, "
+		      "and are in your PATH.\n"
+		      "Was trying to run the command:\n%s\n",
+		      cmd);
+	    }
+	  }
+	  fclose(output); 
+	}
+      }
+    }
+
     exit(EXIT_SUCCESS);
   }
   else
