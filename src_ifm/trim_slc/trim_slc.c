@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
   int era;
   int in_bytes_per_line,line_header,swflag;
   struct IOF_VFDR vfdr;
-  struct VFDRECV facdr;
+  struct VFDRECV asf_facdr;
   int pixelSize=8;
   int x,y,startX,startY,endX,endY,inMaxX,inMaxY,outMaxX,outMaxY;
   int lastReadY,firstReadX,numInX;
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
   era=set_era(infileData,infile,1);
 
   get_ifiledr(infile,&vfdr);
-  get_facdr(infile,&facdr);
+  get_asf_facdr(infile,&asf_facdr);
   
 
   outfileData=appendExt(argv[2],".cpx");
@@ -140,8 +140,8 @@ int main(int argc, char *argv[])
     meta_write(meta,outfileData);
   } 
 
-  inMaxX=facdr.apixels;
-  inMaxY=facdr.alines;
+  inMaxX=asf_facdr.apixels;
+  inMaxY=asf_facdr.alines;
   
   if (era==0) /*pre-RADARSAT data-- vfdr invalid, 12 byte header per line always.*/
   	line_header=12;
@@ -170,7 +170,7 @@ This data file is ('%s').\n",vfdr.formatid);exit(1);}
   printf("\tOutput image size: Lines=%i, Samples=%i\n",outMaxY,outMaxX);
   
 /*Write out our outDDR*/
-  create_good_ddr(outfileDDR,outMaxY,outMaxX,startY+1,startX+1,facdr.azpixspc,facdr.rapixspc,4);
+  create_good_ddr(outfileDDR,outMaxY,outMaxX,startY+1,startX+1,asf_facdr.azpixspc,asf_facdr.rapixspc,4);
     
 /*If everything's OK, then allocate an input and output buffer big enough for */
  /*one line of input and output data, respectively.*/
