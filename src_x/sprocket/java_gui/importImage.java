@@ -11,15 +11,16 @@ PROGRAM HISTORY:
                                  files named after their classes
             07/03  P. Denny     Replaced depricated action and handleEvent
                                  methods with appropriate Listeners
+            08/03  P. Denny     Read .img (32-bit big endian float) instead of
+                                 .data1 (32-bit host endian int). Done for both
+                                 main canvas and zoom canvas.
 
 ***************************************************************************** */
 
 import java.awt.*;
-import java.awt.event.*;
 import java.awt.image.*;
 import java.util.*;
 import java.io.*;
-
 
 //IMAGE
 
@@ -37,12 +38,12 @@ class importImage {
    int imagesize;
    int imagequality;
    int asfpadding = 192;
-   int contrastlow = 0;
-   int contrasthigh = 55;
-   int defaultcontrastlow = 0;
-   int defaultcontrasthigh = 55;
-   long fullhigh;  
-   long fulllow;
+   int contrastLow = 0;
+   int contrastHigh = 55;
+   int defaultContrastLow = 0;
+   int defaultContrastHigh = 55;
+   float fullmax;  
+   float fullmin;
    pvs mainFrame;
    String filename;
    String metafilename;
@@ -50,8 +51,8 @@ class importImage {
    boolean newcontrast;
    boolean rafFLAG = false;
    byte[] greyarray = new byte[256];
-   int[] averagearray = new int[256];
-   byte[] indexarray;
+   int[] histogram = new int[256];
+   byte[] byteImageArray;
    IndexColorModel cm; 
    
    //sends the file to the right reader based on it's name.   
@@ -62,57 +63,53 @@ class importImage {
 
       //grab the right files
 
-      if(filename.endsWith("metadata")) {
+      if (filename.endsWith("metadata")) {
          metafilename = filename;
-         filename = filename.substring(0,filename.length() - 8) + "data1";
+         filename = filename.substring(0,filename.length() - 8) + "img";
          this.filename = filename;    
          this.metafilename = metafilename;
          readpvsImage();    
       }
-      else if(filename.endsWith("data1")) {
-         metafilename = filename.substring(0,filename.length() - 5) + "metadata";
+      else if (filename.endsWith("img")) {
+         metafilename = filename.substring(0,filename.length() - 3) + "metadata";
          this.filename = filename;    
          this.metafilename = metafilename;
          readpvsImage();    
       }
-      else if(filename.endsWith("D")) {
+      else if (filename.endsWith("D")) {
          metafilename = filename.substring(0,filename.length() - 1) + "L";
 //         metafilename = filename.substring(0,filename.length() - 1) + "converted.metadata";
          this.filename = filename;    
          this.metafilename = metafilename;
          readasfImage();    
       }
-      else if(filename.endsWith("L")) {
+      else if (filename.endsWith("L")) {
          metafilename = filename;
-//         metafilename = filename.substring(0,filename.length() - 1) + "converted.metadata";  
+//         metafilename = filename.substring(0,filename.length() - 1) + "converted.metadata";
          filename = filename.substring(0,filename.length() - 1) + "D";
          this.filename = filename;    
          this.metafilename = metafilename;
          readasfImage();    
       }
       else {  //put a dialog here, or something...
-         logger.log("improper filename format.");
+         logger.log("Improper filename format.");
          return;
       }
    }
    
-   //reads pvs image files.
+// Read pvs image files ********************************************************
    public void readpvsImage() {
-      int array[];
-      long high = 0;
-      long low = 2147483647;
 
-      //parse out metadata
-      
+   // Parse metadata
       try {
          FileReader fr = new FileReader(metafilename);
          LineNumberReader in = new LineNumberReader(fr);
 
          boolean numpixels = false;
-         while(!numpixels) {
+         while (!numpixels) {
             StringTokenizer s = new StringTokenizer(in.readLine());
-            while(s.hasMoreTokens())
-               if(s.nextToken().equalsIgnoreCase("number_of_pixels")) {
+            while (s.hasMoreTokens())
+               if (s.nextToken().equalsIgnoreCase("number_of_pixels")) {
                   String equalsign = s.nextToken();  //this takes care of the equals sign.
                   String quotednumber = s.nextToken();
                   String number = quotednumber.substring(1,quotednumber.length()-1);
@@ -121,12 +118,11 @@ class importImage {
                   break;
                }
          }
-
          boolean numlines = false;
-         while(!numlines) {
+         while (!numlines) {
             StringTokenizer s = new StringTokenizer(in.readLine());
-            while(s.hasMoreTokens())
-               if(s.nextToken().equalsIgnoreCase("number_of_lines")) {
+            while (s.hasMoreTokens())
+               if (s.nextToken().equalsIgnoreCase("number_of_lines")) {
                   String equalsign = s.nextToken();  //here's that equals sign again...
                   String quotednumber = s.nextToken();
                   String number = quotednumber.substring(1,quotednumber.length()-1);
@@ -137,190 +133,185 @@ class importImage {
          }
          fr.close();
       }
-      catch (IOException e){
-         logger.log("error parsing the metadata.");
+      catch (IOException e) {
+         logger.log("Error parsing the metadata.");
       }
       
-      //now we've got what we needed.
-
-      if(imagequality >= height/imagesize)
+   // Now we've got the metadata we need; lets do some image stuff!
+      if (imagequality >= height/imagesize)
          imagequality = 0;
-      double fwidth = width;
-      double fheight = height;
-      double wratio = fwidth/imagesize;   
-      double hratio = fheight/imagesize;
-      long[] longarray = new long[imagesize];
-      int[] countarray = new int[imagesize];
-      int oldi = 0;
          
-      //process meter stuff
-      procDialog pd = new procDialog(mainFrame, "opening image...");
-      int locatex = mainFrame.getLocation().x;   //get from above...   
-      int locatey = mainFrame.getLocation().y;
-      if(locatex > 0 && locatey > 0)
-         pd.setLocation(locatex + 3, locatey + 41);   
+   // Process meter stuff
+      procDialog pd = new procDialog(mainFrame, "Opening image...");
+      int locatex = mainFrame.getX();
+      int locatey = mainFrame.getY();
+      if (locatex > 0 && locatey > 0)
+         pd.setLocation(locatex+3, locatey+41);   
       pd.setVisible(true);
       int done = 0;
-         
+
+   // Read & decode image data file
       try {
          FileInputStream fis = new FileInputStream(filename);
          BufferedInputStream bis = new BufferedInputStream(fis);
          DataInputStream from = new DataInputStream(bis);
-         
-         array = new int[imagesize*imagesize];
+         double widthRatio = (double)width/(double)imagesize;   
+         double heightRatio = (double)height/(double)imagesize;
+         float[] imageLineInFloats = new float[imagesize];
+         float[] imageInFloats = new float[imagesize*imagesize];
+         int[] countArray = new int[imagesize];
+         int oldii = 0;
+         float max = Float.MIN_VALUE;
+         float min = Float.MAX_VALUE;
 
-         byte[] section = new byte[width*4];
-         for(int i=0; i < height; i++) {
-            //process meter stuff
-            if((i*100)/height > done) {
-               done = (i*100)/height;
+      // Actual reading part
+         for (int ii=0; ii<height; ii++) {
+
+         // Process meter stuff
+            if ((ii*100)/height > done) {
+               done = (ii*100)/height;
                pd.process(done);
             }
-
-            if((int) (i/hratio) > oldi || i == height-1) {
-               for(int j=0; j < imagesize; j++) {
-                  array[oldi*imagesize+j] = (int) (longarray[j]/countarray[j]);
-                  if(high * countarray[j] < longarray[j]) {high = longarray[j]/countarray[j];}
-                  if(low  * countarray[j] > longarray[j]) {low  = longarray[j]/countarray[j];}
-               }
-               longarray = new long[imagesize];
-               countarray = new int[imagesize];
-            }
-
-            if ( (imagequality==0) 
-              || ( (int)((i+imagequality)/hratio)>oldi || i>(height-imagequality) ) ) {
-               from.read(section);
-               for(int j=0; j < width; j++) {
-                  countarray[(int) (j/wratio)]++;
-                  int part1 = section[4*j];
-                  int part2 = section[4*j+1];
-                  int part3 = section[4*j+2];
-                  int part4 = section[4*j+3];
-                  if(part1 < 0)   {part1 += 256;}
-                  if(part2 < 0)   {part2 += 256;}
-                  if(part3 < 0)   {part3 += 256;}
-                  if(part4 < 0)   {part4 += 256;}
-                  longarray[(int) (j/wratio)] +=   part1*16777216 + 
-                              part2*65536 +
-                              part3*256 +
-                              part4;
+         // Read data values into an array
+            if ((imagequality==0) || (int)((ii+imagequality)/heightRatio)>oldii
+                                                  || ii>(height-imagequality)) {
+               for (int jj=0; jj<width; jj++) {
+                  imageLineInFloats[(int)(jj/widthRatio)] += from.readFloat();
+                  countArray[(int)(jj/widthRatio)]++;
                }
             }
             else {
                from.skipBytes(width*4);
             }
-            oldi = (int) (i/hratio);
+         // Fill the image with floats and get max & min as we process lines
+            if ((int)(ii/heightRatio) > oldii || ii == height-1) {
+               int index;
+               for (int jj=0; jj<imagesize; jj++) {
+                  index = oldii*imagesize+jj;
+                  imageInFloats[index] = imageLineInFloats[jj]/countArray[jj];
+                  if ((int)max*countArray[jj] < (int)imageLineInFloats[jj])
+                     { max = imageInFloats[index]; }
+                  if ((int)min*countArray[jj] > (int)imageLineInFloats[jj])
+                     { min = imageInFloats[index]; }
+               }
+               imageLineInFloats = new float[imagesize];
+               countArray = new int[imagesize];
+            }
+            oldii = (int)(ii/heightRatio);
          }
-         
-         pd.dispose();      //process meter stuff
-                        
-         fullhigh = high;
-         fulllow = low;
-         from.close();
+         from.close();   // Close data file stream
+         pd.dispose();   // Destroy process meter
+
+      // Done reading, figure statistics now
+         fullmax = max;
+         fullmin = min;
          int stddev = 0;
          int mean = 0;
          double sum = 0;
-         indexarray = new byte[imagesize*imagesize];
+         byteImageArray = new byte[imagesize*imagesize];
 
-         if(high-low != 0)      //avoid division by zero errors.
-            for(int i=0; i < imagesize*imagesize; i++) {
-               if(array[i] < low) {array[i] = (int) low;}
-               indexarray[i] = (byte) (255*(array[i] - low)/(high-low));
-               averagearray[(int) (255*(array[i] - low)/(high-low))]++;
-               mean += (int) (255*(array[i] - low)/(high-low));
+      // Fit freshly read binary data to byte range & get some stats
+         if (max-min != 0) {
+            int fit2range;
+            for (int ii=0; ii < imagesize*imagesize; ii++) {
+               fit2range = (int)(255 * (imageInFloats[ii]-min) / (max-min));
+               byteImageArray[ii] = (byte)fit2range;
+               histogram[fit2range]++;
+               mean += fit2range;
             }
-         else
-            for(int i=0; i < imagesize*imagesize; i++) {
-               indexarray[i] = (byte) 0;
-               averagearray[0]++;
+         }
+         else {
+            for (int ii=0; ii < imagesize*imagesize; ii++) {
+               byteImageArray[ii] = (byte) 0;
+               histogram[0]++;
             }
-         
-         mean = (int) (mean/(imagesize*imagesize));         
-         for(int i=0; i < 256; i++) {
-            sum += averagearray[i]*(i - mean)*(i-mean);
+         }
+
+      // Get mean & standard deviation (to set default constrast levels)
+         mean = (int) (mean/(imagesize*imagesize));
+         for (int ii=0; ii<256; ii++) {
+            sum += histogram[ii] * (ii-mean) * (ii-mean);
          }
          stddev = (int) java.lang.Math.sqrt(sum/(imagesize*imagesize));
                
-         defaultcontrastlow = mean - (2*stddev);
-         defaultcontrasthigh = mean + (2*stddev);
-
-         if(defaultcontrastlow < 0)
-            defaultcontrastlow = 0;
-         if(defaultcontrastlow > 255)
-            defaultcontrastlow = 255;
-         if(defaultcontrasthigh < 0)
-            defaultcontrasthigh = 0;
-         if(defaultcontrasthigh > 255)
-            defaultcontrasthigh = 255;
-
-         contrastlow = defaultcontrastlow;
-         contrasthigh = defaultcontrasthigh;
+      // Set image contrast values (to make it pretty)
+         defaultContrastLow = mean - (2*stddev);
+         defaultContrastHigh = mean + (2*stddev);
+         if (defaultContrastLow < 0)
+            defaultContrastLow = 0;
+         if (defaultContrastLow > 255)
+            defaultContrastLow = 255;
+         if (defaultContrastHigh < 0)
+            defaultContrastHigh = 0;
+         if (defaultContrastHigh > 255)
+            defaultContrastHigh = 255;
+         contrastLow = defaultContrastLow;
+         contrastHigh = defaultContrastHigh;
          
-         colourarray(contrastlow, contrasthigh);
-               
+         colourarray(contrastLow, contrastHigh);
       }
       catch(Exception e) {
-         indexarray = new byte[imagesize*imagesize];  //eck. do something nice here.
+      // Create a fake fuzzy image and let the user know things got hosed
+         byteImageArray = new byte[imagesize*imagesize];
          Random ran = new Random();
-         ran.nextBytes(indexarray);
-         logger.log("error creating image.");
+         ran.nextBytes(byteImageArray);
+         logger.log("Error creating image... exception: " + e.toString());
+         pd.dispose(); // Blow away process meter
       }   
-               
-      im = Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(imagesize, imagesize, 
-               cm, indexarray, 0, imagesize)); 
+
+   // Everything is prepared, let java draw the image
+      MemoryImageSource mis = new MemoryImageSource(imagesize, imagesize, cm,
+                                                    byteImageArray, 0,
+                                                    imagesize);
+      im = Toolkit.getDefaultToolkit().createImage(mis);
    }
    
-   //reads asf image files.
+// Read ASF image files ********************************************************
    public void readasfImage() {
       byte cwidth;
       byte cheight;
       int array[];
-      long high = 0;
-      long low = 2147483647;
+      long max = 0;
+      long min = 2147483647;
 
-      //parse out metadata
-      
+   // Parse out metadata (.L file)
       try {
          FileInputStream metaread = new FileInputStream(metafilename);
          metaread.skip(27436);
-         
-         for(int i = 100000000; i >= 1; i /= 10) {
+         for (int i = 100000000; i >= 1; i /= 10) {
             cwidth = (byte) metaread.read();
-            if(48 <= cwidth && cwidth <= 57) {
+            if (48 <= cwidth && cwidth <= 57) {
                width += i*(cwidth-48);
             }
          }
-         
-         for(int i = 100000000; i >= 1; i /= 10) {
+         for (int i = 100000000; i >= 1; i /= 10) {
             cheight = (byte) metaread.read();
-            if(48 <= cheight && cheight <= 57) {
+            if (48 <= cheight && cheight <= 57) {
                height += i*(cheight-48);
             }
          }
-
          metaread.close();
       }
       catch (IOException e){
-         logger.log("error parsing the metadata.");
+         logger.log("Error parsing the metadata.");
       }
       
-      //now we've got what we needed.
-
-      if(imagequality >= height/imagesize)
+   // Now we've got what we needed.
+      if (imagequality >= height/imagesize)
          imagequality = 0;
       double fwidth = width;
       double fheight = height;
       double wratio = fwidth/imagesize;   
-      double hratio = fheight/imagesize;
-      long[] longarray = new long[imagesize];
-      int[] countarray = new int[imagesize];
+      double heightRatio = fheight/imagesize;
+      long[] longArray = new long[imagesize];
+      int[] countArray = new int[imagesize];
       int oldi = 0;
          
-      //process meter stuff
+   // Process meter stuff
       procDialog pd = new procDialog(mainFrame, "opening image...");
-      int locatex = mainFrame.getLocation().x;   //get from above...   
-      int locatey = mainFrame.getLocation().y;
-      if(locatex > 0 && locatey > 0)
+      int locatex = mainFrame.getX();
+      int locatey = mainFrame.getY();
+      if (locatex > 0 && locatey > 0)
          pd.setLocation(locatex + 3, locatey + 41);   
       pd.setVisible(true);
       int done = 0;
@@ -335,189 +326,193 @@ class importImage {
 
          array = new int[imagesize*imagesize];
 
-         if(imagequality == 0) {
-            for(int i=0; i < height; i++) {
+         if (imagequality == 0) {
+            for (int i=0; i < height; i++) {
                //process meter stuff
-               if((i*100)/height > done) {
+               if ((i*100)/height > done) {
                   done = (i*100)/height;
                   pd.process(done);
                }
                
-               if((int) (i/hratio) > oldi || i == height-1) {
-                  for(int j=0; j < imagesize; j++) {
-                     array[oldi*imagesize+j] = (int) (longarray[j]/countarray[j]);
-                     if(high * countarray[j] < longarray[j]) {high = longarray[j]/countarray[j];}
-                     if(low  * countarray[j] > longarray[j]) {low  = longarray[j]/countarray[j];}
+               if ((int) (i/heightRatio) > oldi || i == height-1) {
+                  for (int j=0; j < imagesize; j++) {
+                     array[oldi*imagesize+j] = (int) (longArray[j]/countArray[j]);
+                     if (max * countArray[j] < longArray[j])
+                        { max = longArray[j]/countArray[j]; }
+                     if (min  * countArray[j] > longArray[j])
+                        { min  = longArray[j]/countArray[j]; }
                   }
-                  longarray = new long[imagesize];
-                  countarray = new int[imagesize];
+                  longArray = new long[imagesize];
+                  countArray = new int[imagesize];
                }
                
                from.read(section);
-               for(int j=0; j < width; j++) {
-                  countarray[(int) (j/wratio)]++;
-                  longarray[(int) (j/wratio)] += section[j + asfpadding];
+               for (int j=0; j < width; j++) {
+                  countArray[(int) (j/wratio)]++;
+                  longArray[(int) (j/wratio)] += section[j + asfpadding];
                }
 
-               oldi = (int) (i/hratio);
+               oldi = (int) (i/heightRatio);
             }
          }
          else {
-            for(int i=0; i < height; i++) {
+            for (int i=0; i < height; i++) {
                //process meter stuff
-               if((i*100)/height > done) {
+               if ((i*100)/height > done) {
                   done = (i*100)/height;
                   pd.process(done);
                }
             
-               if((int) (i/hratio) > oldi || i == height-1) {
-                  for(int j=0; j < imagesize; j++) {
-                     array[oldi*imagesize+j] = (int) (longarray[j]/countarray[j]);
-                     if(high * countarray[j] < longarray[j]) {high = longarray[j]/countarray[j];}
-                     if(low  * countarray[j] > longarray[j]) {low  = longarray[j]/countarray[j];}
+               if ((int) (i/heightRatio) > oldi || i == height-1) {
+                  for (int j=0; j < imagesize; j++) {
+                     array[oldi*imagesize+j] = (int) (longArray[j]/countArray[j]);
+                     if (max * countArray[j] < longArray[j])
+                        { max = longArray[j]/countArray[j]; }
+                     if (min  * countArray[j] > longArray[j])
+                        { min  = longArray[j]/countArray[j]; }
                   }
-                  longarray = new long[imagesize];
-                  countarray = new int[imagesize];
+                  longArray = new long[imagesize];
+                  countArray = new int[imagesize];
                }
                
-               if((int) ((i+imagequality)/hratio) > oldi || i > height - imagequality) {
+               if ((int) ((i+imagequality)/heightRatio) > oldi || i > height - imagequality) {
                   from.read(section);      
-                  for(int j=0; j < width; j++) {
-                     countarray[(int) (j/wratio)]++;
-                     longarray[(int) (j/wratio)] += section[j + asfpadding];
+                  for (int j=0; j < width; j++) {
+                     countArray[(int) (j/wratio)]++;
+                     longArray[(int) (j/wratio)] += section[j + asfpadding];
                   }
                }
                else
                   from.skipBytes(width + asfpadding);
                
-               oldi = (int) (i/hratio);
+               oldi = (int) (i/heightRatio);
             }
          }
          
          pd.dispose();      //process meter stuff
                         
-         fullhigh = high;
-         fulllow = low;
+         fullmax = (float)max;
+         fullmin = (float)min;
          from.close();
          int stddev = 0;
          int mean = 0;
          double sum = 0;
-         indexarray = new byte[imagesize*imagesize];
+         byteImageArray = new byte[imagesize*imagesize];
 
-         if(high-low != 0)      //avoid division by zero errors.
-            for(int i=0; i < imagesize*imagesize; i++) {
-               if(array[i] < low) {array[i] = (int) low;}
-               indexarray[i] = (byte) (255*(array[i] - low)/(high-low));
-               averagearray[(int) (255*(array[i] - low)/(high-low))]++;
-               mean += (int) (255*(array[i] - low)/(high-low));
+         if (max-min != 0)      //avoid division by zero errors.
+            for (int i=0; i < imagesize*imagesize; i++) {
+               if (array[i] < min) {array[i] = (int) min;}
+               byteImageArray[i] = (byte) (255*(array[i] - min)/(max-min));
+               histogram[(int) (255*(array[i] - min)/(max-min))]++;
+               mean += (int) (255*(array[i] - min)/(max-min));
             }
          else
-            for(int i=0; i < imagesize*imagesize; i++) {
-               indexarray[i] = (byte) 0;
-               averagearray[0]++;
+            for (int i=0; i < imagesize*imagesize; i++) {
+               byteImageArray[i] = (byte) 0;
+               histogram[0]++;
             }
          
          mean = (int) (mean/(imagesize*imagesize));         
-         for(int i=0; i < 256; i++) {
-            sum += averagearray[i]*(i - mean)*(i-mean);
+         for (int i=0; i < 256; i++) {
+            sum += histogram[i]*(i - mean)*(i-mean);
          }
          stddev = (int) java.lang.Math.sqrt(sum/(imagesize*imagesize));
                
-         defaultcontrastlow = mean - (2*stddev);
-         defaultcontrasthigh = mean + (2*stddev);
+         defaultContrastLow = mean - (2*stddev);
+         defaultContrastHigh = mean + (2*stddev);
 
-         if(defaultcontrastlow < 0)
-            defaultcontrastlow = 0;
-         if(defaultcontrastlow > 255)
-            defaultcontrastlow = 255;
-         if(defaultcontrasthigh < 0)
-            defaultcontrasthigh = 0;
-         if(defaultcontrasthigh > 255)
-            defaultcontrasthigh = 255;
+         if (defaultContrastLow < 0)
+            defaultContrastLow = 0;
+         if (defaultContrastLow > 255)
+            defaultContrastLow = 255;
+         if (defaultContrastHigh < 0)
+            defaultContrastHigh = 0;
+         if (defaultContrastHigh > 255)
+            defaultContrastHigh = 255;
 
-         contrastlow = defaultcontrastlow;
-         contrasthigh = defaultcontrasthigh;
+         contrastLow = defaultContrastLow;
+         contrastHigh = defaultContrastHigh;
          
-         colourarray(contrastlow, contrasthigh);
+         colourarray(contrastLow, contrastHigh);
                
       }
       catch(Exception e) {
-         indexarray = new byte[imagesize*imagesize];  //eck. do something nice here.
+         byteImageArray = new byte[imagesize*imagesize];  //eck. do something nice here.
          Random ran = new Random();
-         ran.nextBytes(indexarray);
+         ran.nextBytes(byteImageArray);
          logger.log("error creating image.");
       }   
                
       im = Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(imagesize, imagesize, 
-               cm, indexarray, 0, imagesize)); 
+               cm, byteImageArray, 0, imagesize)); 
    }
 
+// *****************************************************************************
    public Image eatImage() {
       return im;
    }
 
-   public Image eatImage(int x, int y, int pensize) {  //called by updateMask.
+// Called by updateMask ********************************************************
+   public Image eatImage(int x, int y, int pensize) {
       int starter = (y-pensize)*imagesize + (x-pensize);
       int xsize = pensize*2;
       int ysize = pensize*2;
       
-      //eh, some junk for boundary conditions.
-      
-      if(starter < 0) {starter = x - pensize;}  
-      if(starter < 0) {starter = 0;}
-      if(y - pensize < 0) {ysize += y - pensize;}
-      if(y + pensize >= imagesize) {ysize = imagesize + pensize - y;}
-      if(x - pensize < 0) {xsize += x - pensize; if(starter > 0) {starter -= x-pensize;}}
-      if(x + pensize >= imagesize) {xsize = imagesize + pensize - x;}
-      if((ysize > 0) && (xsize > 0))
+   // eh, some junk for boundary conditions.
+      if (starter < 0) {starter = x - pensize;}  
+      if (starter < 0) {starter = 0;}
+      if (y - pensize < 0) {ysize += y - pensize;}
+      if (y + pensize >= imagesize) {ysize = imagesize + pensize - y;}
+      if (x - pensize < 0) {xsize += x - pensize; if (starter > 0) {starter -= x-pensize;}}
+      if (x + pensize >= imagesize) {xsize = imagesize + pensize - x;}
+      if ((ysize > 0) && (xsize > 0))
          return Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(xsize, ysize, 
-                    cm, indexarray, starter, imagesize)); 
+                    cm, byteImageArray, starter, imagesize)); 
       else   
          return Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(0, 0, 
-                    cm, indexarray, starter, imagesize));   //idiot value
+                    cm, byteImageArray, starter, imagesize));   //idiot value
    }
 
-   public Image eatImage(Dimension position, int width, int height) {  //called by updateMask.
+// Called by updateMask ********************************************************
+   public Image eatImage(Dimension position, int width, int height) {
       int x = position.width;
       int y = position.height;
       int starter = (y-height)*imagesize + (x-width);
       int xsize = width*2;
       int ysize = height*2;
       
-      //eh, some junk for boundary conditions.
-      
-      if(starter < 0) {starter = x - width;}  
-      if(starter < 0) {starter = 0;}
-      if(y - height < 0) {ysize += y - height;}
-      if(y + height >= imagesize) {ysize = imagesize + height - y;}
-      if(x - width < 0) {xsize += x - width; if(starter > 0) {starter -= x-width;}}
-      if(x + width >= imagesize) {xsize = imagesize + width - x;}
+   // eh, some junk for boundary conditions.
+      if (starter < 0) {starter = x - width;}  
+      if (starter < 0) {starter = 0;}
+      if (y - height < 0) {ysize += y - height;}
+      if (y + height >= imagesize) {ysize = imagesize + height - y;}
+      if (x - width < 0) {xsize += x - width; if (starter > 0) {starter -= x-width;}}
+      if (x + width >= imagesize) {xsize = imagesize + width - x;}
       
       Image i;
       
-      if((ysize > 0) && (xsize > 0))
+      if ((ysize > 0) && (xsize > 0))
          i = Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(xsize, ysize, 
-                    cm, indexarray, starter, imagesize)); 
+                    cm, byteImageArray, starter, imagesize)); 
       else   
          i = Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(0, 0, 
-                    cm, indexarray, starter, imagesize));   //idiot value
+                    cm, byteImageArray, starter, imagesize));   //idiot value
 
       return i;
    }
 
+// *****************************************************************************
    public Image eatImage(int realx, int realy, int zwidth, int zheight) {
-      realx -= zwidth/2;      //to put x in the middle of the zwidth*zheight block.
+      realx -= zwidth/2;    // Put x in the middle of the zwidth*zheight block
       realy -= zheight/2;
-//      x--;      //eck. don't know if i still need this.
-//      y--;
       boolean targetting = mainFrame.zf.zoomedCanvas.targetting;
 
       //check to see if we really need to refresh.
-      if((memx != realx) || (memy != realy) || newcontrast || targetting) {
-         if(filename.endsWith("data1")) {
+      if ((memx != realx) || (memy != realy) || newcontrast || targetting) {
+         if (filename.endsWith("img")) {
             newpvszoom(realx, realy, zwidth, zheight);    
          }
-         else if(filename.endsWith("D")) {
+         else if (filename.endsWith("D")) {
             newasfzoom(realx, realy, zwidth, zheight);    
          }
       }
@@ -529,82 +524,94 @@ class importImage {
       return zm;
    }
    
+// *****************************************************************************
    protected void newpvszoom(int realx, int realy, int zwidth, int zheight) {
       boolean firstFLAG = false;
       int first = (width*realy + realx) * 4;
-      if(first < 0)  {
+      if (first < 0)  {
          firstFLAG = true;
-         if(realx < 0) {first = 0;}
+         if (realx < 0) {first = 0;}
          else {first = realx * 4;}
       }
-      if(first > 4*width*height) {first = 0;} //should do something nicer here. . . 
+      if (first > 4*width*height) {first = 0;} //should do something nicer here. . . 
       int now = first;
       
-      if(!rafFLAG) {
-         if(filename != null) {
+      if (!rafFLAG) {
+         if (filename != null) {
             try {
                raf = new RandomAccessFile(filename, "r");
                rafFLAG = true;
             }
             catch(Exception e) {
-               logger.log("error opening file: " + filename);
-            }   
+               logger.log("Error opening file: " + filename);
+            }
          }
       }
 
-      long[] zoomarray = new long[zwidth * zheight]; //zoom window image array
-      byte[] indexzoomarray = new byte[zwidth * zheight];
-      if(filename != null) {      
+      float[] zoomArray = new float[zwidth * zheight];     //zoom image array
+      byte[] zoomImageArray = new byte[zwidth * zheight];
+      if (filename != null) {
          try {
-            raf.seek(first);    //seeks in bytes...four byte integer. 
-            int start = 0;         //only needs to be done once
+            int start = 0;         // Only needs to be done once
             int end = zwidth;
-            if(realx < 0) {start = 0 - realx;}
-            if(realx > width - zwidth) {end = width - realx;}
+            if (realx < 0) {start = 0 - realx;}
+            if (realx > width-zwidth) {end = width - realx;}
             int sizer = end - start;
             int index;
             
-            if(sizer > 0) {
+            raf.seek(first);       // Seeks in bytes...four byte float. 
+            if (sizer > 0) {
                byte[] newline = new byte[sizer*4];
-               for(int i=0; i < zheight; i++) {
-                  if((realy+i < 0) || (realy+i >= height)) {;}
+               for (int ii=0; ii<zheight; ii++) {
+                  if ((realy+ii < 0) || (realy+ii >= height)) {
+                     /*nuthin*/;
+                  }
                   else {
-                     if(!firstFLAG) 
+                     if (!firstFLAG) {
                         raf.skipBytes(start*4);         
+                     }
+                     for (int jj=0; jj<sizer; jj++) {
+                        index = ii*zwidth + jj + start;
+                        zoomArray[index] = raf.readFloat();
+                     }
+                     now += width*4;
+                     raf.seek(now);
+                  }
+/*
                      raf.read(newline);
-                     for(int j = 0; j < sizer; j++) {
+                     for (int j = 0; j < sizer; j++) {
                         index = i*zwidth + j + start;
                                           
                         //could loop these . . .   ...maybe later.
                         
-                        if(newline[j*4] < 0) 
+                        if (newline[j*4] < 0) 
                            zoomarray[index] =   (256 + newline[j*4]) * 16777216;
                         else
                            zoomarray[index] =   newline[j*4] * 16777216;
                         
-                        if(newline[j*4+1] < 0) 
+                        if (newline[j*4+1] < 0) 
                            zoomarray[index] +=   (256 + newline[j*4+1]) * 65536;
                         else
                            zoomarray[index] +=   newline[j*4+1] * 65536;
                         
-                        if(newline[j*4+2] < 0) 
+                        if (newline[j*4+2] < 0) 
                            zoomarray[index] +=   (256 + newline[j*4+2]) * 256;
                         else
                            zoomarray[index] +=   newline[j*4+2] * 256;
                         
-                        if(newline[j*4+3] < 0)
+                        if (newline[j*4+3] < 0)
                            zoomarray[index] +=   (256 + newline[j*4+3]);
                         else
                            zoomarray[index] +=   newline[j*4+3];
                      }
                      now += width*4;
                      raf.seek(now);
-                  }
+*/
                }
-               float divisor = (fullhigh-fulllow);      //test version;
-               for(int i=0; i < zwidth * zheight; i++) {
-                  if(zoomarray[i] > fullhigh) {zoomarray[i] = fullhigh;}
-                  indexzoomarray[i] = (byte) ((float)(255*(zoomarray[i] - fulllow))/divisor);
+               float divisor = fullmax-fullmin;      //test version;
+               for (int ii=0; ii < zwidth*zheight; ii++) {
+                  if (zoomArray[ii] > fullmax) {zoomArray[ii] = fullmax;}
+                  zoomImageArray[ii] = (byte) ((255*(zoomArray[ii]-fullmin))/divisor);
                }
             }
          }
@@ -614,26 +621,27 @@ class importImage {
       }
       
       zm = Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(zwidth, zheight,
-              cm, indexzoomarray, 0, zwidth));
+              cm, zoomImageArray, 0, zwidth));
 
       memx = realx;
       memy = realy;
    }
    
+// *****************************************************************************
    protected void newasfzoom(int realx, int realy, int zwidth, int zheight) {
       boolean firstFLAG = false;
       int first = ((width + asfpadding)*realy + realx);
-      if(first < 0)  {
+      if (first < 0)  {
          firstFLAG = true;
-         if(realx < 0) {first = 0;}
+         if (realx < 0) {first = 0;}
          else {first = realx;}
       }
-      if(first > (width + asfpadding)*height) {first = asfpadding;} //should do something nicer here. . . 
+      if (first > (width + asfpadding)*height) {first = asfpadding;} //should do something nicer here. . . 
       first += (width + asfpadding);
       int now = first;
       
-      if(!rafFLAG) {
-         if(filename != null) {
+      if (!rafFLAG) {
+         if (filename != null) {
             try {
                raf = new RandomAccessFile(filename, "r");
                rafFLAG = true;
@@ -645,28 +653,28 @@ class importImage {
       }
 
       long[] zoomarray = new long[zwidth * zheight]; //zoom window image array
-      byte[] indexzoomarray = new byte[zwidth * zheight];
-      if(filename != null) {      
+      byte[] zoomImageArray = new byte[zwidth * zheight];
+      if (filename != null) {      
          try {
             raf.seek(first);       //seeks in bytes...four byte integer. 
             int start = 0;         //only needs to be done once
             int end = zwidth;
-            if(realx < 0) {start = 0 - realx;}
-            if(realx > width - zwidth) {end = width - realx;}
+            if (realx < 0) {start = 0 - realx;}
+            if (realx > width - zwidth) {end = width - realx;}
             int sizer = end - start;
             int index;
             
-            if(sizer > 0) {
+            if (sizer > 0) {
                byte[] newline = new byte[sizer];
-               for(int i=0; i < zheight; i++) {
-                  if((realy+i < 0) || (realy+i >= height)) {;}
+               for (int i=0; i < zheight; i++) {
+                  if ((realy+i < 0) || (realy+i >= height)) {;}
                   else {
-                     if(!firstFLAG) 
+                     if (!firstFLAG) 
                         raf.skipBytes(start+asfpadding);         
                      raf.read(newline);
-                     for(int j = 0; j < sizer; j++) {
+                     for (int j = 0; j < sizer; j++) {
                         index = i*zwidth + j + start;
-                        if(newline[j] < 0) 
+                        if (newline[j] < 0) 
                            zoomarray[index] =   (256 + newline[j]);
                         else
                            zoomarray[index] =   newline[j];
@@ -675,10 +683,10 @@ class importImage {
                      raf.seek(now);
                   }
                }
-               float divisor = (fullhigh-fulllow);      //test version;
-               for(int i=0; i < zwidth * zheight; i++) {
-                  if(zoomarray[i] > fullhigh) {zoomarray[i] = fullhigh;}
-                  indexzoomarray[i] = (byte) ((float)(255*(zoomarray[i] - fulllow))/divisor);
+               float divisor = (fullmax-fullmin);      //test version;
+               for (int i=0; i < zwidth * zheight; i++) {
+                  if (zoomarray[i] > (long)fullmax) {zoomarray[i] = (long)fullmax;}
+                  zoomImageArray[i] = (byte) ((float)(255*(zoomarray[i] - fullmin))/divisor);
                }
             }
          }
@@ -688,21 +696,23 @@ class importImage {
       }
       
       zm = Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(zwidth, zheight,
-              cm, indexzoomarray, 0, zwidth));
+              cm, zoomImageArray, 0, zwidth));
 
       memx = realx;
       memy = realy;
    }
 
+// *****************************************************************************
    public void recolour() {
       im = Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(imagesize, imagesize,
-               cm, indexarray, 0, imagesize));
+               cm, byteImageArray, 0, imagesize));
    }
 
+// *****************************************************************************
    public Dimension brightest(int evtx, int evty, int realx, int realy, int range) {   //returns the brightest value within range pixels
 //      boolean firstFLAG;
       long charlie = 0;
-      long high = Long.MIN_VALUE;
+      long max = Long.MIN_VALUE;
       Dimension etarget = null;
 
       realx -= zwidth/2;      //to put x in the middle of the zwidth*zheight block.
@@ -710,31 +720,31 @@ class importImage {
 //      x--;
 //      y--;
 
-      int ylow = evty - range;
-      if(ylow < 0) {ylow = 0;}
-      int xlow = evtx - range;
-      if(xlow < 0) {xlow = 0;}
-      int yhigh = evty + range;
-      if(yhigh >= zheight) {yhigh = zheight - 1;}
-      int xhigh = evtx + range;
-      if(xhigh >= zwidth) {xhigh = zwidth - 1;}
+      int ymin = evty - range;
+      if (ymin < 0) {ymin = 0;}
+      int xmin = evtx - range;
+      if (xmin < 0) {xmin = 0;}
+      int ymax = evty + range;
+      if (ymax >= zheight) {ymax = zheight - 1;}
+      int xmax = evtx + range;
+      if (xmax >= zwidth) {xmax = zwidth - 1;}
       
-      if(xhigh - xlow < 1) {return new Dimension(-1,-1);}
-      if(yhigh - ylow < 1) {return new Dimension(-1,-1);}
+      if (xmax - xmin < 1) {return new Dimension(-1,-1);}
+      if (ymax - ymin < 1) {return new Dimension(-1,-1);}
       
       int first = (width*realy + realx) * 4;
-      if(first < 0)  {
+      if (first < 0)  {
 //         firstFLAG = true;
-         if(realx < 0) {first = 0;}
+         if (realx < 0) {first = 0;}
          else {first = realx * 4;}
       }
-      first += width * ylow * 4;
-      first += xlow * 4;
+      first += width * ymin * 4;
+      first += xmin * 4;
       
-      byte[] newline = new byte[(xhigh-xlow) * 4];   //yep, it's the four byte thing again.
+      byte[] newline = new byte[(xmax-xmin) * 4];   //yep, it's the four byte thing again.
 
-      if(!rafFLAG) {
-         if(filename != null) {
+      if (!rafFLAG) {
+         if (filename != null) {
             try {
                System.out.println("grrr.");
                raf = new RandomAccessFile(filename, "r");
@@ -750,43 +760,43 @@ class importImage {
          //okay, get the proper starting place
          //read in one line
          //convert to int's
-         //save the position of the highest
+         //save the position of the maxest
          //skip the right amount
          //do it over.
          
          raf.seek(first); 
          int now = first;
          
-         for(int i=ylow; i < yhigh; i++) {
-         //   if(!firstFLAG) 
+         for (int i=ymin; i < ymax; i++) {
+         //   if (!firstFLAG) 
          //      raf.skipBytes(start*4);         //what?! why?
             raf.read(newline);
 
-            for(int j=0; j < (xhigh - xlow); j++) {
+            for (int j=0; j < (xmax - xmin); j++) {
 
-               if(newline[j*4] < 0)
+               if (newline[j*4] < 0)
                   charlie =   (256 + newline[j*4]) * 16777216;
                else
                   charlie =   newline[j*4] * 16777216;
                
-               if(newline[j*4+1] < 0)
+               if (newline[j*4+1] < 0)
                   charlie +=   (256 + newline[j*4+1]) * 65536;
                else
                   charlie +=   newline[j*4+1] * 65536;
                
-               if(newline[j*4+2] < 0)
+               if (newline[j*4+2] < 0)
                   charlie +=   (256 + newline[j*4+2]) * 256;
                else
                   charlie +=   newline[j*4+2] * 256;
                
-               if(newline[j*4+3] < 0)
+               if (newline[j*4+3] < 0)
                   charlie +=   (256 + newline[j*4+3]);
                else
                   charlie +=   newline[j*4+3];
 
-               if(charlie > high) {
-                  high = charlie;
-                  etarget = new Dimension(j+xlow, i);
+               if (charlie > max) {
+                  max = charlie;
+                  etarget = new Dimension(j+xmin, i);
                }
 
             }            
@@ -801,6 +811,7 @@ class importImage {
       return etarget;
    }
 
+// *****************************************************************************
    public void exportImage(String filename, Image km) {
       int kwidth  = km.getWidth(null);
       int kheight = km.getHeight(null);
@@ -811,7 +822,7 @@ class importImage {
 
       try {
          pg.grabPixels();
-         for(int i = 0; i < kwidth*kheight; i++)
+         for (int i = 0; i < kwidth*kheight; i++)
             bytearray[i] = (byte) (pixelarray[i] & 0x000000FF);
 //         bytearray = (byte[]) pg.getPixels();
          
@@ -837,47 +848,49 @@ class importImage {
       }
    }
 
-   public void colourarray(int low, int high) {
-      if(low < 0)
-         low = 0;
-      if(low > 255)
-         low = 255;
-      if(high < 0)
-         high = 0;
-      if(high > 255)
-         high = 255;
+// *****************************************************************************
+   public void colourarray(int min, int max) {
+      if (min < 0)
+         min = 0;
+      if (min > 255)
+         min = 255;
+      if (max < 0)
+         max = 0;
+      if (max > 255)
+         max = 255;
       
-      contrastlow = low;
-      contrasthigh = high;
+      contrastLow = min;
+      contrastHigh = max;
       
-      if(high-low != 0) {      //yeah, it's wanky. but it prevents div by zero errors.
+      if (max-min != 0) {      //yeah, it's wanky. but it prevents div by zero errors.
          double ratio = 255;
-         ratio /= high - low;
-         for(int i = 0; i < 256; i++) {
-            if(i < low)
+         ratio /= max - min;
+         for (int i = 0; i < 256; i++) {
+            if (i < min)
                greyarray[i] = (byte) 0;
-            else if(i > high)
+            else if (i > max)
                greyarray[i] = (byte) 255;
             else
-               greyarray[i] = (byte) ((i - low) * ratio);
+               greyarray[i] = (byte) ((i - min) * ratio);
          }
       }
       else {
-         for(int i = 0; i < 256; i++) {
-            if(i < low)
+         for (int i = 0; i < 256; i++) {
+            if (i < min)
                greyarray[i] = (byte) 0;
-            else if(i > high)
+            else if (i > max)
                greyarray[i] = (byte) 255;
             else
-               greyarray[i] = (byte) low;
+               greyarray[i] = (byte) min;
          }
       }
 
       cm = new IndexColorModel(8, 256, greyarray, greyarray, greyarray);
    }
 
+// *****************************************************************************
    public boolean closeImage() {
-      if(raf != null) {
+      if (raf != null) {
          try {
             raf.close();
             rafFLAG = false;
