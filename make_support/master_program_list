@@ -202,10 +202,12 @@ PROGRAMS
 #			vexcel_complex_data_planes xy_plotter }
 #
 
-#@experimental/
+@experimental/
 #	cpx_spectrum { }
 #	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
-
+	image_stats { }
+	offset_test { }
+	detect_cr { }
 
 # Build this very last since it depends on the plethora of gtk2 libraries, and
 # tends to kill the build
