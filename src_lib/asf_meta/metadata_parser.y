@@ -169,12 +169,18 @@ void fill_structure_field(char *field_name, void *valp)
 	MGENERAL->orbit_direction = 'A'; 
 	return; 
       }
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "D") ) { 
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "D") ) { 
 	MGENERAL->orbit_direction = 'D'; 
 	return; 
       }
-      yyerror("bad orbit_direction field in metadata file");
-      exit(EXIT_FAILURE);
+      else {
+	char tmp[2], msg[256];
+	strncpy (tmp, VALP_AS_CHAR_POINTER, 1);
+	MGENERAL->orbit_direction = tmp[0];
+	sprintf(msg, "Bad value: orbit_direction = '%c'.",tmp[0]);
+	yyerror(msg);
+	return;
+      }      
     }
     if ( !strcmp(field_name, "frame") )
       { MGENERAL->frame = VALP_AS_INT; return; }
