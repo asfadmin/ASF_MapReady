@@ -89,7 +89,7 @@ typedef enum {
   BETA_IMAGE,
   COHERENCE_IMAGE,
   GEOCODED_IMAGE,
-  ELEVATION_IMAGE,
+  ELEVATION,
   DEM,
   IMAGE
 } image_data_type_t;
@@ -571,6 +571,10 @@ stateVector propagate(stateVector source, double sourceSec, double destSec);
 /*Propagate the state vectors in the given meta_parameters structure so they
  * start at the image start. Make nStVec of them, data_int seconds apart.*/
 void propagate_state(meta_parameters *meta,int nStVec,double data_int);
+
+/* Reads a subset of a non-complex image */
+void readSubset(char *fileName, int width, int height, int posX, int posY, 
+		float *subset);
 
 /* Keep track of open meta and ddr structures, so that all updated
  * metadata can be written to the metafile, initialized in meta_init.c Nov '02 */
