@@ -22,6 +22,19 @@ static int parse_double(const char * str, double * val)
     return TRUE;
 }
 
+static int parse_int(const char * str, int * val)
+{
+    char *p;
+    *val = (int) strtol(str, &p, 10);
+    
+    if (*str == '\0' || *p != '\0')
+    {
+	return FALSE;
+    }
+    
+    return TRUE;
+}
+
 static void no_arg(char * option)
 {
     if (print_warn)
@@ -82,28 +95,139 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 
 	    if (strcmp((*argv)[i], "utm") == 0)
 	    {
-		pps->utm.zone = -1;
+		int specified_zone = 0;
+		int specified_lat0 = 0;
+		int specified_lon0 = 0;
+
 		*proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
 
-		++i;
-
-		if (i < *argc &&
-		    (strcmp((*argv)[i], "--zone") == 0 || 
-		     strcmp((*argv)[i], "-z") == 0))
+		while (1)
 		{
-		    double val;
 		    ++i;
 
-		    if (parse_double((*argv)[i], &val))
+		    if (i == *argc)
+			break;
+
+		    if (strcmp((*argv)[i], "--zone") == 0 || 
+			strcmp((*argv)[i], "-z") == 0)
 		    {
-			pps->utm.zone = val;
+			int val;
 			++i;
+			
+			if (i == *argc)
+			{
+			    no_arg((*argv)[i-1]);
+			    return NULL;
+			}
+
+			if (specified_zone)
+			{
+			    double_arg((*argv)[i]);
+			    return NULL;
+			}
+
+			specified_zone = 1;
+
+			if (parse_int((*argv)[i], &val))
+			{
+			    pps->utm.zone = val;
+			}
+			else
+			{
+			    bad_arg((*argv)[i-1], (*argv)[i]);
+			    return NULL;
+			}
 		    }
+
+		    else if (strcmp((*argv)[i], "--lat0") == 0 ||
+			     strcmp((*argv)[i], "-lat0") == 0 ||
+			     strcmp((*argv)[i], "--center_latitude") == 0 ||
+			     strcmp((*argv)[i], "--slat") == 0 ||
+			     strcmp((*argv)[i], "-slat") == 0 ||
+			     strcmp((*argv)[i], "--lat_0") == 0)
+		    {
+			double val;
+			++i;
+
+			if (i == *argc)
+			{
+			    no_arg((*argv)[i-1]);
+			    return NULL;
+			}
+
+			if (specified_lat0)
+			{
+			    double_arg((*argv)[i]);
+			    return NULL;
+			}
+
+			specified_lat0 = 1;
+
+			if (parse_double((*argv)[i], &val))
+			{
+			    pps->utm.lat0 = val;
+			}
+			else
+			{
+			    bad_arg((*argv)[i-1], (*argv)[i]);
+			    return NULL;
+			}
+		    }
+
+		    else if (strcmp((*argv)[i], "--lon0") == 0 ||
+			     strcmp((*argv)[i], "-lon0") == 0 ||
+			     strcmp((*argv)[i], "--center_longitude") == 0 ||
+			     strcmp((*argv)[i], "--slon") == 0 ||
+			     strcmp((*argv)[i], "-slon") == 0 ||
+			     strcmp((*argv)[i], "--lon_0") == 0)
+		    {
+			double val;
+			++i;
+
+			if (i == *argc)
+			{
+			    no_arg((*argv)[i-1]);
+			    return NULL;
+			}
+
+			if (specified_lon0)
+			{
+			    double_arg((*argv)[i]);
+			    return NULL;
+			}
+
+			specified_lon0 = 1;
+
+			if (parse_double((*argv)[i], &val))
+			{
+			    pps->utm.lon0 = val;
+			}
+			else
+			{
+			    bad_arg((*argv)[i-1], (*argv)[i]);
+			    return NULL;
+			}
+		    }
+
 		    else
 		    {
-			bad_arg((*argv)[i-1], (*argv)[i]);
-			return NULL;
+			break;
 		    }
+		}
+
+		if (!specified_lon0)
+		{
+		    pps->utm.lon0 = MAGIC_UNSET_DOUBLE;
+		}
+
+		if (!specified_lat0)
+		{
+		    pps->utm.lat0 = MAGIC_UNSET_DOUBLE;
+		}
+
+		if (!specified_zone)
+		{
+		    pps->utm.zone = MAGIC_UNSET_INT;
 		}
 
 		break;
@@ -394,6 +518,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 		    }
 
 		    else if (strcmp((*argv)[i], "--lat0") == 0 ||
+			     strcmp((*argv)[i], "-lat0") == 0 ||
 			     strcmp((*argv)[i], "--center_latitude") == 0 ||
 			     strcmp((*argv)[i], "--slat") == 0 ||
 			     strcmp((*argv)[i], "-slat") == 0 ||
@@ -428,6 +553,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 		    }
 
 		    else if (strcmp((*argv)[i], "--lon0") == 0 ||
+			     strcmp((*argv)[i], "-lon0") == 0 ||
 			     strcmp((*argv)[i], "--center_longitude") == 0 ||
 			     strcmp((*argv)[i], "--slon") == 0 ||
 			     strcmp((*argv)[i], "-slon") == 0 ||
@@ -613,6 +739,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 			break;
 
 		    else if (strcmp((*argv)[i], "--lat0") == 0 ||
+			     strcmp((*argv)[i], "-lat0") == 0 ||
 			     strcmp((*argv)[i], "--center_latitude") == 0 ||
 			     strcmp((*argv)[i], "--slat") == 0 ||
 			     strcmp((*argv)[i], "-slat") == 0 ||
@@ -647,6 +774,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 		    }
 
 		    else if (strcmp((*argv)[i], "--lon0") == 0 ||
+			     strcmp((*argv)[i], "-lon0") == 0 ||
 			     strcmp((*argv)[i], "--center_longitude") == 0 ||
 			     strcmp((*argv)[i], "--slon") == 0 ||
 			     strcmp((*argv)[i], "-slon") == 0 ||
@@ -850,6 +978,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 		    }
 
 		    else if (strcmp((*argv)[i], "--lat0") == 0 ||
+			     strcmp((*argv)[i], "-lat0") == 0 ||
 			     strcmp((*argv)[i], "--center_latitude") == 0 ||
 			     strcmp((*argv)[i], "--slat") == 0 ||
 			     strcmp((*argv)[i], "-slat") == 0 ||
@@ -884,6 +1013,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 		    }
 
 		    else if (strcmp((*argv)[i], "--lon0") == 0 ||
+			     strcmp((*argv)[i], "-lon0") == 0 ||
 			     strcmp((*argv)[i], "--center_longitude") == 0 ||
 			     strcmp((*argv)[i], "--slon") == 0 ||
 			     strcmp((*argv)[i], "-slon") == 0 ||
