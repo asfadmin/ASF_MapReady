@@ -988,7 +988,8 @@ main (int argc, char **argv)
   omd->general->line_count = oiy_max + 1;
   omd->general->sample_count = oix_max + 1;
   omd->sar->image_type = 'P';
-  omd->projection = g_new0 (meta_projection, 1);
+  omd->projection = MALLOC(sizeof(meta_projection));
+  memset(omd->projection, 0, sizeof(meta_projection));
   omd->projection->type = projection_type;
   omd->projection->startX = min_x;
   omd->projection->startY = max_y;
