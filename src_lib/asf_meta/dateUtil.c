@@ -81,7 +81,7 @@ void sec2date(double secs,julian_date *date,hms_time *time)
 }
 
 
-/*Get Julian Day (since 10,000 BC) given Gregorian Year, Month, and day.
+/*Get Julian Day (since Jan. 1, 4712 BC) given Gregorian Year, Month, and day.
 Uses an interesting algorithm from the NASDA Downlink Reference document,
 which easily and implicitly handles all the oddities of Gregorian dates
 (leap year rules, variable number of days per month, etc.)*/
