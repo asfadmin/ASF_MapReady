@@ -32,7 +32,7 @@ char *getMLine(void)
 	while (lineIsComment)
 	{
 		debugfParse("Reading a line...\n");
-		if (NULL==fgets(inLine,1024,master)) 
+		if (NULL==fgets(inLine,1024,master))
 			return NULL;
 		masterLine++;
 		if (inLine[0]=='#')
@@ -114,7 +114,7 @@ typedef struct prog{
 	char path[255];
 	char name[255];
 	int numLibs;
-	lib *libs[100];	
+	lib *libs[100];
 	int numProgs;
 	PROG *progs[100];
 	char isOnlyBinary,isCat;
@@ -136,7 +136,7 @@ void parseMasterList(void)
 {
 	char *tok=inM();
 	numLibs=numProgs=0;
-	
+
 /*Parse LIBS section*/
 	if (tokNot("LIBS")) wrong("Expected LIBS, got ",tok);
 	nextTok();
@@ -197,8 +197,8 @@ void parseMasterList(void)
 				nextTokN();
 			}
 		}
-		
-		if (tokIs("}")) 
+
+		if (tokIs("}"))
 			nextTokN()
 		else
 			wrong("Expected } to close PROGRAM, got ",tok);
@@ -232,7 +232,7 @@ void parseMasterList(void)
 					" part of program '%s'!  Ignoring...\n\n",tok,p->name);
 			nextTokN();
 		}
-		if (tokIs("}")) 
+		if (tokIs("}"))
 			nextTokN()
 		else
 			wrong("Expected } to close CATEGORIES, got ",tok);
@@ -265,7 +265,7 @@ void findLibraries(void)
 				p->libs[p->numLibs++]=libs[libNo];
 			}
 		}
-	}	
+	}
 }
 
 /*********************** MakeMake, which prints the now-parsed program list to a makefile *********************/
@@ -273,7 +273,7 @@ void printMake(FILE *f,char *platform);
 #include "printMake.c"
   /*
   Note that I've hidden the unspeakable hideousness of printMake
-  in a separate file.  Basically, it generates the tail end 
+  in a separate file.  Basically, it generates the tail end
   (the library, program, and tool targets) of the makefile.
   */
 void makeMakefile(char *platform)
@@ -281,21 +281,21 @@ void makeMakefile(char *platform)
 	char command[255];
 	char makefileName[255];
 	FILE *make;
-	
+
 	strcpy(makefileName,"../Makefile");
-	
+
 	sprintf(command,"rm -f %s\n",makefileName);
 	system(command);
 	sprintf(command,"cat makestart > %s\n",makefileName);
 	system(command);
-	
+
 	make=fopen(makefileName,"a");
-	
+
 	if (make==NULL)
 		{printf("Can't open output '%s'.\n",makefileName);exit(1);}
-	
+
 	printMake(make,platform);
-	
+
 	fclose(make);
 }
 /*********************** UpdateAutotar, which creates the stuff in asf_tools/autotar *****************/
@@ -303,25 +303,25 @@ int strcmpr(const char **a, const char **b)
 {
 	return strcmp(*a,*b);
 }
-char *fnames[10000];
+char fnames[10000][256];
 int numFnames=0;
 void cleanAndWrite(FILE *out)
 {
 	int i;
 	char *lastName="";
-	qsort(fnames,numFnames,sizeof(char *),(int (*)(const void *,const void *))strcmpr);
+/*	qsort(fnames,numFnames,sizeof(char *),(int (*)(const void *,const void *))strcmpr);*/
 	for (i=0;i<numFnames;i++)
 	{
 		if (0!=strcmp(lastName,fnames[i]))
 			fprintf(out,"%s\n",fnames[i]);
 		lastName=fnames[i];
 	}
-	fclose(out);
 	numFnames=0;
 }
 void addPathName(char *path,char *name)
 {
-	char *outName=fnames[numFnames++]=(char *)malloc(255);
+	char *outName = fnames[numFnames];
+	numFnames++;
 	strcpy(outName,path);
 	strcat(outName,name);
 }
@@ -358,7 +358,7 @@ void updateAutotar(void)
 		addProgram(p,1);
 		cleanAndWrite(out);
 		fclose(out);
-		
+
 		strcpy(name,"../../release/autotar/binary.");
 		strcat(name,p->name);
 		out=fopen(name,"w");
@@ -376,25 +376,25 @@ int main(int argc, char **argv)
 	printf( "Makemake reads master_program_list, and the make \n"
 		"fragment in this directory (makestart) to generate\n"
 		"the top-level Makefile. It's working its magic now...\n\n");
-	if (NULL==(master=fopen("master_program_list","r"))) 
+	if (NULL==(master=fopen("master_program_list","r")))
 		{printf("Can't open './master_program_list'.\n");exit(1);}
-		
+
 	parseMasterList();
 
 	findLibraries();
 
 	printf("\nA total of %i libraries and %i programs\n",numLibs,numProgs);
-	
+
 	makeMakefile(sys);
-	
+
 	if (0==system("test -x ../../release/autotar"))
 	{/*Autotar directory exists-- so fill it.*/
 		printf("\n\nCreating autotar directory (slowly...)\n");
 		updateAutotar();
 		printf("Autotar directory updated!\n\n");
 	}
-	
+
 	printf("Makemake Complete\n");
-	
+
 	return 0;
 }
