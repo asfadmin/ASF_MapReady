@@ -96,7 +96,7 @@ OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
 $(PROGRAM): $(OBJS)
 	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
-	mv $(PROGRAM) $(BINDIR)
+	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
 
 .PHONY: clean
 clean:
