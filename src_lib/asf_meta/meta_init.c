@@ -113,7 +113,7 @@ meta_projection *meta_projection_init(void)
   projection->hem = MAGIC_UNSET_CHAR;
   projection->re_major = MAGIC_UNSET_DOUBLE;
   projection->re_minor = MAGIC_UNSET_DOUBLE;
-  projection->ecc = MAGIC_UNSET_DOUBLE;        /* DEPRECATED */
+/*  projection->ecc = MAGIC_UNSET_DOUBLE;        * DEPRECATED */
 /* Can't really initalize projection->param to a dummy value, so just leave it.*/
   return projection;
 }
@@ -215,7 +215,7 @@ meta_parameters *raw_init(void)
   meta->ifm->nLooks = 5;
   meta->ifm->orig_nLines = 25989;
   meta->ifm->orig_nSamples = 5989;
-  meta->ifm->lookCenter = 19.989;
+/*  meta->ifm->lookCenter = 19.989;*/
   
   return meta;
 }
