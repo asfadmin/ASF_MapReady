@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/usr/bin/bash
 
 # A quick and automatic way to look up the definition of things in
 # asf_tools.  
@@ -7,7 +7,7 @@
 # the libraries in asf_tools.  This will produce a file called TAGS in
 # this directory.  You can use this tag file from emacs with the
 # visit-tags-table command.  If you put (visit-tags-table
-# "/wherever_asf_tools_is_these_days/asf_tools/") in your ~/.emacs,
+# "/wherever_asf_tools_is_these_days/asf_tools/src_lib") in your ~/.emacs,
 # you will always have the asf library functions in your emacs tags
 # table.
 
@@ -20,4 +20,8 @@
 # the produced TAGS file.  C-u M-. can be used to cycle through tag
 # definitions.
 
-ctags -e --recurse --links=no ./
+# Tags for the include directory are also generated, since many common
+# headers that don't properly belong to any single library are kept
+# there.
+
+ctags -e --recurse --links=no ./ ../include
