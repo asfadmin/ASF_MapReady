@@ -5,7 +5,9 @@
 #include "regex_wrapper.h"
 #include "metadata_parser.h"
 #include "asf_nan.h"
-#include "ddr.h"
+#include "worgen.h"
+#include <sys/types.h>
+#include <sys/stat.h>
 
 void meta_read_old(meta_parameters *meta, char *fileName);
 void meta_new2old(meta_parameters *meta);
@@ -120,6 +122,7 @@ void meta_io_state(coniStruct *coni, meta_state_vectors *state)
  * base name automagically.  */
 void meta_read_old(meta_parameters *meta, char *fileName)
 {
+	struct stat junk;
 	char *ddrName = appendExt(fileName,".ddr");
 	struct DDR ddr;
 	char *metaName = appendExt(fileName,".meta");
@@ -128,6 +131,14 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 /*	meta_stats   *stats   = meta->stats;*/
 	coniStruct   *coni    = coniOpen(metaName, asciiIn);
 
+/* Fields that cannot be filled from the old structures */
+	general->frame            = 0;
+	general->band_number      = 0;
+	general->center_latitude  = NAN;
+	general->center_longitude = NAN;
+	general->missing_lines    = -2147283648;
+
+/* Read old style meta file */
 	coniIO_double(coni,"","meta_version:",&meta->meta_version,"ASF APD Metadata File.\n");
 
 /*Geolocation parameters.*/
@@ -237,48 +248,52 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	    }
 	}
 	
-/* Info from ddr */
-	c_getddr(ddrName, &ddr);
-	general->line_count     = ddr.nl;
-	general->sample_count   = ddr.ns;
-	general->start_line     = ddr.master_line - 1;
-	general->start_sample   = ddr.master_sample - 1;
-	sar->line_increment     = ddr.line_inc;
-	sar->sample_increment   = ddr.sample_inc;
-	if (0==strcmp(ddr.system,"ieee-std"))
-		strcpy(meta->general->system,"big_ieee");
-	else if (0==strcmp(ddr.system,"ieee-lil"))
-		strcpy(meta->general->system,"lil_ieee");
-	else if (0==strcmp(ddr.system,"cray-unicos"))
-		strcpy(meta->general->system,"cray_float");
-	else /* "ibm-mvs" or "other-msc" */
-		strcpy(meta->general->system,"???");
-	if (sar->image_type=='P')
-		{strcpy(meta->projection->units, ddr.proj_units);}
-	switch ( ddr.dtype ) {
-	    case 0: /* BYTE */
-	    case 1: strcpy(general->data_type, "BYTE"); break;
-	    case 2: strcpy(general->data_type, "INTEGER*2"); break;
-	    case 3: strcpy(general->data_type, "INTEGER*4"); break;
-	    case 4: strcpy(general->data_type, "REAL*4"); break;
-	    case 5: strcpy(general->data_type, "REAL*8"); break;
-	    default:
-	        printf("ERROR: Unrecognized data type identifier: %d\n",ddr.dtype);
-		exit(1);
+/* Info from ddr (if its there) */
+	if (0 == stat(ddrName,&junk)) {
+		c_getddr(ddrName, &ddr);
+		general->line_count     = ddr.nl;
+		general->sample_count   = ddr.ns;
+		general->start_line     = ddr.master_line - 1;
+		general->start_sample   = ddr.master_sample - 1;
+		sar->line_increment     = ddr.line_inc;
+		sar->sample_increment   = ddr.sample_inc;
+		if (0==strcmp(ddr.system,"ieee-std"))
+			strcpy(meta->general->system,"big_ieee");
+		else if (0==strcmp(ddr.system,"ieee-lil"))
+			strcpy(meta->general->system,"lil_ieee");
+		else if (0==strcmp(ddr.system,"cray-unicos"))
+			strcpy(meta->general->system,"cray_float");
+		else /* "ibm-mvs" or "other-msc" */
+			strcpy(meta->general->system,"???");
+		if (sar->image_type=='P')
+			{strcpy(meta->projection->units, ddr.proj_units);}
+		switch ( ddr.dtype ) {
+		    case 0: /* BYTE */
+		    case 1: strcpy(general->data_type, "BYTE"); break;
+		    case 2: strcpy(general->data_type, "INTEGER*2"); break;
+		    case 3: strcpy(general->data_type, "INTEGER*4"); break;
+		    case 4: strcpy(general->data_type, "REAL*4"); break;
+		    case 5: strcpy(general->data_type, "REAL*8"); break;
+		    default:
+	        	printf("ERROR: Unrecognized data type identifier: %d\n",ddr.dtype);
+			exit(1);
+		}
+	}
+	else {
+		printf("\n"
+		       "WARNING: Failed to get DDR file while reading old style metadata.\n"
+		       "         Some meta fields will not be correctly initialized.\n");
 	}
 
 /* Fields not yet filled */
+	general->orbit_direction  = '?';
+	if (meta->state_vectors->vecs[0].vec.vel.z > 0)
+		general->orbit_direction  = 'A';
+	else if (meta->state_vectors->vecs[0].vec.vel.z < 0)
+		general->orbit_direction  = 'D';
 	general->re_major = (meta->projection) ? meta->projection->re_major : 6378144.0;
 	general->re_minor = (meta->projection) ? meta->projection->re_minor : 6356754.9;
 	
-/* Fields that cannot be filled from the old structures */
-	general->frame            = 0;
-	general->band_number      = 0;
-	general->orbit_direction  = '?';
-	general->center_latitude  = NAN;
-	general->center_longitude = NAN;
-	general->missing_lines    = -2147283648;
-
 /* Close coni structure */
 	coniClose(coni);
 
