@@ -125,6 +125,7 @@ fi
 cat <<'EOF' >>system_rules
 # If <make 'DEBUG_BUILD=[anything but 0]'> then set DEBUGFLAGS and DEBUGLIBS
 ifeq ($(shell if test -n '$(DEBUG_BUILD)' -a '$(DEBUG_BUILD)' -ne 0 -a '$(CC)' = gcc; then echo 'true'; fi), true)
+  OPTFLAG = 
   DEBUGFLAGS = -Wall -g
   DEBUGLIBS = -lefence
 endif
