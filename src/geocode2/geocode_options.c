@@ -1,30 +1,24 @@
 #include "geocode_options.h"
 #include "asf.h"
+#include "asf_nan.h"
 #include "asf_meta.h"
 #include "asf_reporting.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-/*
-  --projection <name> <<projection specific options>>
-
-  --projection utm --zone <zone>
-  --projection ps --center_latitude 14.0 --center_longitude 
-
-*/
 static int print_warn = 1;
 
-static int parse_int(const char * str, int * val)
+static int parse_double(const char * str, double * val)
 {
     char *p;
-    *val = (int) strtol(str, &p, 10);
-
+    *val = strtod(str, &p);
+    
     if (*str == '\0' || *p != '\0')
     {
 	return FALSE;
     }
-
+    
     return TRUE;
 }
 
@@ -51,6 +45,13 @@ static void double_arg(const char * option)
 {
     if (print_warn)
 	asfPrintWarning("Option occurs twice: %s\n", option); 
+}
+
+static void missing_arg(const char * option)
+{
+    if (print_warn)
+	asfPrintWarning(
+	    "Projection requires option that was not specified: %s\n", option);
 }
 
 void set_options_testing(int is_testing)
@@ -85,10 +86,10 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 		    (strcmp(argv[i], "--zone") == 0 || 
 		     strcmp(argv[i], "-z") == 0))
 		{
-		    int val;
+		    double val;
 		    ++i;
 
-		    if (parse_int(argv[i], &val))
+		    if (parse_double(argv[i], &val))
 		    {
 			pps->utm.zone = val;
 		    }
@@ -106,6 +107,8 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 		int specified_slat = 0;
 		int specified_slon = 0;
 		int specified_pole = 0;
+		int specified_false_northing = 0;
+		int specified_false_easting = 0;
 
 		pps->ps.is_north_pole = 1;
 
@@ -121,8 +124,14 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 			strcmp(argv[i], "--center_latitude") == 0 ||
 			strcmp(argv[i], "--lat_ts") == 0)
 		    {
-			int val;
+			double val;
 			++i;
+
+			if (i == argc)
+			{
+			    no_arg(argv[i-1]);
+			    return NULL;
+			}
 
 			if (specified_slat)
 			{
@@ -132,7 +141,7 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 
 			specified_slat = 1;
 
-			if (parse_int(argv[i], &val))
+			if (parse_double(argv[i], &val))
 			{
 			    pps->ps.slat = val;
 			}
@@ -148,8 +157,14 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 			strcmp(argv[i], "--center_longitude") == 0 ||
 			strcmp(argv[i], "--lon_0") == 0)
 		    {
-			int val;
+			double val;
 			++i;
+
+			if (i == argc)
+			{
+			    no_arg(argv[i-1]);
+			    return NULL;
+			}
 
 			if (specified_slon)
 			{
@@ -159,9 +174,71 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 
 			specified_slon = 1;
 
-			if (parse_int(argv[i], &val))
+			if (parse_double(argv[i], &val))
 			{
 			    pps->ps.slon = val;
+			}
+			else
+			{
+			    bad_arg(argv[i-1], argv[i]);
+			    return NULL;
+			}
+		    }
+
+		    else if (strcmp(argv[i], "--false_easting") == 0 ||
+			     strcmp(argv[i], "-fe") == 0)
+		    {
+			double val;
+			++i;
+
+			if (i == argc)
+			{
+			    no_arg(argv[i-1]);
+			    return NULL;
+			}
+
+			if (specified_false_easting)
+			{
+			    double_arg(argv[i]);
+			    return NULL;
+			}
+
+			specified_false_easting = 1;
+
+			if (parse_double(argv[i], &val))
+			{
+			    pps->ps.false_easting = val;
+			}
+			else
+			{
+			    bad_arg(argv[i-1], argv[i]);
+			    return NULL;
+			}
+		    }
+
+		    else if (strcmp(argv[i], "--false_northing") == 0 ||
+			     strcmp(argv[i], "-fn") == 0)
+		    {
+			double val;
+			++i;
+
+			if (i == argc)
+			{
+			    no_arg(argv[i-1]);
+			    return NULL;
+			}
+
+			if (specified_false_northing)
+			{
+			    double_arg(argv[i]);
+			    return NULL;
+			}
+
+			specified_false_northing = 1;
+
+			if (parse_double(argv[i], &val))
+			{
+			    pps->ps.false_northing = val;
 			}
 			else
 			{
@@ -218,11 +295,299 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 		    pps->ps.slon = 0;
 		}
 
+		if (!specified_false_easting)
+		{
+		    pps->ps.false_easting = MAGIC_UNSET_DOUBLE;
+		}
+
+		if (!specified_false_northing)
+		{
+		    pps->ps.false_northing = MAGIC_UNSET_DOUBLE;
+		}
+
 		return pps;
 	    }
 	    else if (strcmp(argv[i], "lamcc") == 0)
 	    {
+		int specified_plat1 = 0;
+		int specified_plat2 = 0;
+		int specified_lat0 = 0;
+		int specified_lon0 = 0;
+		int specified_false_easting = 0;
+		int specified_false_northing = 0;
+		int specified_scale_factor = 0;
 
+		while (1)
+		{
+		    ++i;
+		    if (i == argc)
+			break;
+
+		    if (strcmp(argv[i], "--plat1") == 0 ||
+			strcmp(argv[i], "--lat_1") == 0)
+		    {
+			double val;
+			++i;
+
+			if (i == argc)
+			{
+			    no_arg(argv[i-1]);
+			    return NULL;
+			}
+
+			if (specified_plat1)
+			{
+			    double_arg(argv[i]);
+			    return NULL;
+			}
+
+			specified_plat1 = 1;
+
+			if (parse_double(argv[i], &val))
+			{
+			    pps->lamcc.plat1 = val;
+			}
+			else
+			{
+			    bad_arg(argv[i-1], argv[i]);
+			    return NULL;
+			}
+		    }
+
+		    else if (strcmp(argv[i], "--plat2") == 0 ||
+			     strcmp(argv[i], "--lat_2") == 0)
+		    {
+			double val;
+			++i;
+
+			if (i == argc)
+			{
+			    no_arg(argv[i-1]);
+			    return NULL;
+			}
+
+			if (specified_plat2)
+			{
+			    double_arg(argv[i]);
+			    return NULL;
+			}
+
+			specified_plat2 = 1;
+
+			if (parse_double(argv[i], &val))
+			{
+			    pps->lamcc.plat2 = val;
+			}
+			else
+			{
+			    bad_arg(argv[i-1], argv[i]);
+			    return NULL;
+			}
+		    }
+
+		    else if (strcmp(argv[i], "--lat0") == 0 ||
+			     strcmp(argv[i], "--center_latitude") == 0 ||
+			     strcmp(argv[i], "--slat") == 0 ||
+			     strcmp(argv[i], "-slat") == 0 ||
+			     strcmp(argv[i], "--lat_0") == 0)
+		    {
+			double val;
+			++i;
+
+			if (i == argc)
+			{
+			    no_arg(argv[i-1]);
+			    return NULL;
+			}
+
+			if (specified_lat0)
+			{
+			    double_arg(argv[i]);
+			    return NULL;
+			}
+
+			specified_lat0 = 1;
+
+			if (parse_double(argv[i], &val))
+			{
+			    pps->lamcc.lat0 = val;
+			}
+			else
+			{
+			    bad_arg(argv[i-1], argv[i]);
+			    return NULL;
+			}
+		    }
+
+		    else if (strcmp(argv[i], "--lon0") == 0 ||
+			     strcmp(argv[i], "--center_longitude") == 0 ||
+			     strcmp(argv[i], "--slon") == 0 ||
+			     strcmp(argv[i], "-slon") == 0 ||
+			     strcmp(argv[i], "--lon_0") == 0)
+		    {
+			double val;
+			++i;
+
+			if (i == argc)
+			{
+			    no_arg(argv[i-1]);
+			    return NULL;
+			}
+
+			if (specified_lon0)
+			{
+			    double_arg(argv[i]);
+			    return NULL;
+			}
+
+			specified_lon0 = 1;
+
+			if (parse_double(argv[i], &val))
+			{
+			    pps->lamcc.lon0 = val;
+			}
+			else
+			{
+			    bad_arg(argv[i-1], argv[i]);
+			    return NULL;
+			}
+		    }
+
+		    else if (strcmp(argv[i], "--false_easting") == 0 ||
+			     strcmp(argv[i], "-fe") == 0)
+		    {
+			double val;
+			++i;
+
+			if (i == argc)
+			{
+			    no_arg(argv[i-1]);
+			    return NULL;
+			}
+
+			if (specified_false_easting)
+			{
+			    double_arg(argv[i]);
+			    return NULL;
+			}
+
+			specified_false_easting = 1;
+
+			if (parse_double(argv[i], &val))
+			{
+			    pps->lamcc.false_easting = val;
+			}
+			else
+			{
+			    bad_arg(argv[i-1], argv[i]);
+			    return NULL;
+			}
+		    }
+
+		    else if (strcmp(argv[i], "--false_northing") == 0 ||
+			     strcmp(argv[i], "-fn") == 0)
+		    {
+			double val;
+			++i;
+
+			if (i == argc)
+			{
+			    no_arg(argv[i-1]);
+			    return NULL;
+			}
+
+			if (specified_false_northing)
+			{
+			    double_arg(argv[i]);
+			    return NULL;
+			}
+
+			specified_false_northing = 1;
+
+			if (parse_double(argv[i], &val))
+			{
+			    pps->lamcc.false_northing = val;
+			}
+			else
+			{
+			    bad_arg(argv[i-1], argv[i]);
+			    return NULL;
+			}
+		    }
+
+		    else if (strcmp(argv[i], "--scale_factor") == 0 ||
+			     strcmp(argv[i], "-sf") == 0)
+		    {
+			double val;
+			++i;
+
+			if (i == argc)
+			{
+			    no_arg(argv[i-1]);
+			    return NULL;
+			}
+
+			if (specified_scale_factor)
+			{
+			    double_arg(argv[i]);
+			    return NULL;
+			}
+
+			specified_scale_factor = 1;
+
+			if (parse_double(argv[i], &val))
+			{
+			    pps->lamcc.scale_factor = val;
+			}
+			else
+			{
+			    bad_arg(argv[i-1], argv[i]);
+			    return NULL;
+			}
+		    }
+
+		    else
+		    {
+			break;
+		    }
+		}
+
+		if (!specified_plat1)
+		{
+		    pps->lamcc.plat1 = MAGIC_UNSET_DOUBLE;
+		}
+
+		if (!specified_plat2)
+		{
+		    pps->lamcc.plat2 = MAGIC_UNSET_DOUBLE;
+		}
+
+		if (!specified_lat0)
+		{
+		    pps->lamcc.lat0 = MAGIC_UNSET_DOUBLE;
+		}
+
+		if (!specified_lon0)
+		{
+		    pps->lamcc.lon0 = MAGIC_UNSET_DOUBLE;
+		}
+
+		if (!specified_false_easting)
+		{
+		    pps->lamcc.false_easting = MAGIC_UNSET_DOUBLE;
+		}
+
+		if (!specified_false_northing)
+		{
+		    pps->lamcc.false_northing = MAGIC_UNSET_DOUBLE;
+		}
+
+		if (!specified_scale_factor)
+		{
+		    pps->lamcc.scale_factor = MAGIC_UNSET_DOUBLE;
+		}
+
+		return pps;
 	    }
 	    else if (strcmp(argv[i], "lamaz") == 0)
 	    {
@@ -235,9 +600,11 @@ project_parameters_t * get_geocode_options(int argc, char *argv[])
 	    else
 	    {
 		asfPrintWarning("Unknown projection: %s\n", argv[i]);
+		return NULL;
 	    }
 	}
     }
 
     asfPrintWarning("No projection Specified");
+    return NULL;
 }
