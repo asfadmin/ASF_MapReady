@@ -15,6 +15,8 @@ typedef enum {
   NO_CEOS_METADATA=0,
   CEOS_L,
   CEOS_LDR,
+  CEOS_ldr,
+  CEOS_LEA,
   CEOS_lea,
   NUM_CEOS_METADATA_EXTS
 } ceos_metadata_ext_t;
@@ -25,6 +27,8 @@ typedef enum {
   NO_CEOS_DATA=0,
   CEOS_D,
   CEOS_RAW,
+  CEOS_raw,
+  CEOS_DAT,
   CEOS_dat,
   NUM_CEOS_DATA_EXTS
 } ceos_data_ext_t;
@@ -33,15 +37,14 @@ extern const char ceos_data_extensions[][8];
 /* Enum for pairs of ceos extensions */
 typedef enum {
    NO_CEOS_FILE_PAIR=0, /* Maybe an individual match, but not a pair */
-   CEOS_D_L_PAIR,       /* .D   data and .L   meta */
-   CEOS_RAW_LDR_PAIR,   /* .RAW data and .LDR meta */
-   CEOS_dat_lea_PAIR,   /* dat. data and lea. meta */
+   CEOS_D_L_PAIR,
+   CEOS_RAW_LDR_PAIR,
+   CEOS_raw_ldr_PAIR,
+   CEOS_DAT_LEA_PAIR,
+   CEOS_dat_lea_PAIR,
    NUM_CEOS_FILE_PAIRS
 } ceos_file_pairs_t;
 
-/* Returns TRUE if the file exists and has an accepted ASF CEOS metadata file
- * extension  */
-int has_ceos_metadata_extension(const char *ceosName);
 
 /* Given the name of a file (potentially with path in front of it), determine
    if it is a CEOS leader file (depending on our accepted CEOS extensions). If
