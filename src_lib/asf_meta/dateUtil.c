@@ -489,6 +489,7 @@ char * date_printY2Kdate(ymd_date *in,char sep,char *dest)
 	dest=date_writeInt(in->month,2,dest);
 	if (sep) *dest++=sep;
 	dest=date_writeInt(in->day,2,dest);
+	*dest++ = '\0';
 	return dest;
 }
 
@@ -500,6 +501,7 @@ char * date_printDate(ymd_date *in,char sep,char *dest)
 	dest=date_writeInt(in->month,2,dest);
 	if (sep) *dest++=sep;
 	dest=date_writeInt(in->day,2,dest);
+	*dest++ = '\0';
 	return dest;
 }
 
@@ -521,5 +523,6 @@ char * date_printTime(hms_time *in,int prec,char sep,char *dest)
 		for (i=0;i<prec;i++) frac*=10.0;
 		dest=date_writeInt((int)frac,prec,dest);
 	}
+	*dest++ = '\0';
 	return dest;
 }
