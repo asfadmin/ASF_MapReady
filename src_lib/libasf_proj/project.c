@@ -14,6 +14,12 @@ static double round(double d)
     return floor(d + 0.5);
 }
 
+static const char * datum(project_parameters_t * pps)
+{
+    /* for now we are hard-coded... */
+    return "WGS84";
+}
+
 /*
   We aren't really using this function... just a basic test from
   right out of the libproj manual, to get the ball rolling.  Only
@@ -242,14 +248,14 @@ static double utm_nudge(double lon_0)
   return lon_0;
 }
 
-static char * utm_projection_description(double lon_0)
+static char * utm_projection_description(project_parameters_t * pps)
 {
   static char utm_wgs84_projection_description[128];
 
   /* Establish description of output projection. */
   sprintf(utm_wgs84_projection_description,
-	  "+proj=utm +lon_0=%f +datum=WGS84",
-	  lon_0);
+	  "+proj=utm +lon_0=%f +datum=%s",
+	  utm_nudge(pps->utm.lon0 * RAD_TO_DEG), datum(pps));
 
   return utm_wgs84_projection_description;
 }
@@ -258,9 +264,8 @@ int
 project_utm (project_parameters_t * pps, 
 	     double lat, double lon, double *x, double *y)
 {
-  return project_worker_arr(
-      utm_projection_description(utm_nudge(pps->utm.zone)),
-      &lat, &lon, &x, &y, 1);
+  return project_worker_arr(utm_projection_description(pps),
+			    &lat, &lon, &x, &y, 1);
 }
 
 int
@@ -270,7 +275,7 @@ project_utm_arr (project_parameters_t * pps,
 		 long length)
 {
   return project_worker_arr(
-      utm_projection_description(utm_nudge(pps->utm.zone)),
+      utm_projection_description(pps),
       lat, lon, projected_x, projected_y, length);
 }
 
@@ -279,7 +284,7 @@ project_utm_inv (project_parameters_t * pps,
 		 double x, double y,  double *lat, double *lon)
 {
   return project_worker_arr_inv(
-      utm_projection_description(utm_nudge(pps->utm.zone)),
+      utm_projection_description(pps),
       &x, &y, &lat, &lon, 1);
 }
 
@@ -290,36 +295,29 @@ project_utm_arr_inv (project_parameters_t * pps,
 		     long length)
 {
   return project_worker_arr_inv(
-      utm_projection_description(utm_nudge(pps->utm.zone)),
+      utm_projection_description(pps),
       x, y, lat, lon, length);
 }
 
 /****************************************************************************
  Polar Sterographic (PS)
 ****************************************************************************/
-static char * ps_projection_desc(double lat_ts, double lon_0,
-				 int is_north_pole)
+static char * ps_projection_desc(project_parameters_t * pps)
 {
   static char ps_wgs84_projection_description[128];
 
   /* Establish description of output projection. */
   sprintf(ps_wgs84_projection_description,
-	  "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f +datum=WGS84",
-	  is_north_pole ? "90" : "-90",
-	  lat_ts * RAD_TO_DEG,
-	  lon_0 * RAD_TO_DEG);
+	  "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f"
+	  "+x_0=%f +y_0=%f +k_0=%f +datum=%s",
+	  pps->ps.is_north_pole ? "90" : "-90",
+	  pps->ps.slat * RAD_TO_DEG,
+	  pps->ps.slon * RAD_TO_DEG,
+	  pps->ps.false_easting, pps->ps.false_northing,
+	  1.0 /* pps->ps.scale_factor */,
+	  datum(pps));
 
   return ps_wgs84_projection_description;
-}
-
-static int
-project_ps_imp (double lat_ts, double lon_0, int is_north_pole,
-		double lat, double lon,
-		double *x, double *y)
-{
-    return  project_worker_arr(
-	ps_projection_desc(lat_ts, lon_0, is_north_pole),
-	&lat, &lon, &x, &y, 1);
 }
 
 int
@@ -327,18 +325,7 @@ project_ps(project_parameters_t * pps,
 	   double lat, double lon,
 	   double *x, double *y)
 {
-    return project_ps_imp(pps->ps.slat, pps->ps.slon, pps->ps.is_north_pole,
-			  lat, lon, x, y);
-}
-
-static int
-project_ps_arr_imp(double lat_ts, double lon_0, int is_north_pole,
-		   double *lat, double *lon,
-		   double **x, double **y,
-		   long length)
-{
-    return project_worker_arr(ps_projection_desc(lat_ts, lon_0, is_north_pole),
-			      lat, lon, x, y, length);
+    return project_worker_arr(ps_projection_desc(pps), &lat, &lon, &x, &y, 1);
 }
 
 int
@@ -347,38 +334,16 @@ project_ps_arr(project_parameters_t * pps,
 	       double **projected_x, double **projected_y,
 	       long length)
 {
-    return project_ps_arr_imp(
-	pps->ps.slat, pps->ps.slon, pps->ps.is_north_pole,
-	lat, lon, projected_x, projected_y, length);
-}
-
-static int
-project_ps_inv_imp(double lat_ts, double lon_0, int is_north_pole,
-		   double x, double y, double *lat, double *lon)
-{
-    return project_worker_arr_inv(
-	ps_projection_desc(lat_ts, lon_0, is_north_pole),
-	&x, &y, &lat, &lon, 1);
+    return project_worker_arr(ps_projection_desc(pps), lat, lon,
+			      projected_x, projected_y, length);
 }
 
 int
 project_ps_inv(project_parameters_t * pps,
 	       double x, double y, double *lat, double *lon)
 {
-    return project_ps_inv_imp(
-	pps->ps.slat, pps->ps.slon, pps->ps.is_north_pole,
-	x, y, lat, lon);
-}
-
-static int
-project_ps_arr_inv_imp(double lat_ts, double lon_0, int is_north_pole,
-		       double *x, double *y,
-		       double **lat, double **lon,
-		       long length)
-{
-  return project_worker_arr_inv(
-      ps_projection_desc(lat_ts, lon_0, is_north_pole),
-      x, y, lat, lon, length);
+    return project_worker_arr_inv(
+	ps_projection_desc(pps), &x, &y, &lat, &lon, 1);
 }
 
 int
@@ -387,9 +352,8 @@ project_ps_arr_inv(project_parameters_t * pps,
 		   double **lat, double **lon,
 		   long length)
 {
-  return project_ps_arr_inv_imp(
-      pps->ps.slat, pps->ps.slon, pps->ps.is_north_pole,
-      x, y, lat, lon, length);
+    return project_worker_arr_inv(ps_projection_desc(pps), 
+				  x, y, lat, lon, length);
 }
 
 /****************************************************************************
@@ -401,8 +365,10 @@ static char * lamaz_projection_desc(project_parameters_t * pps)
 
   /* Establish description of output projection. */
   sprintf(lamaz_projection_description,
-	  "+proj=laea +lat_0=%f +lon_0=%f +datum=WGS84",
-	  pps->lamaz.center_lat, pps->lamaz.center_lon);
+	  "+proj=laea +lat_0=%f +lon_0=%f +x_0=%f +y_0=%f +datum=%s",
+	  pps->lamaz.center_lat, pps->lamaz.center_lon,
+	  pps->lamaz.false_easting, pps->lamaz.false_northing,
+	  datum(pps));
 
   return lamaz_projection_description;
 }
@@ -453,9 +419,12 @@ static char * lamcc_projection_desc(project_parameters_t * pps)
 
   /* Establish description of output projection. */
   sprintf(lamcc_projection_description,
-	  "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=WGS84",
+	  "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f"
+	  "+x_0=%f +y_0=%f +datum=%s",
 	  pps->lamcc.plat1, pps->lamcc.plat2,
-	  pps->lamcc.lat0, pps->lamcc.lon0);
+	  pps->lamcc.lat0, pps->lamcc.lon0,
+	  pps->lamcc.false_easting, pps->lamcc.false_northing,
+	  datum(pps));
 
   return lamcc_projection_description;
 }
@@ -506,9 +475,12 @@ static char * albers_projection_desc(project_parameters_t * pps)
 
   /* Establish description of output projection. */
   sprintf(albers_projection_description,
-	  "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=WGS84",
+	  "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f"
+	  "+x_0=%f +y_0=%f +datum=%s",
 	  pps->albers.std_parallel1, pps->albers.std_parallel2,
-	  pps->albers.orig_latitude, pps->albers.center_meridian);
+	  pps->albers.orig_latitude, pps->albers.center_meridian,
+	  pps->albers.false_easting, pps->albers.false_northing,
+	  datum(pps));
 
   return albers_projection_description;
 }

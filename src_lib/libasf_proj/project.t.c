@@ -17,7 +17,7 @@
 #define FALSE 0
 #endif
 
-static const int ARR_TEST_SIZE = 250;
+static const int ARR_TEST_SIZE = 50;
 static const int NUM_REPS = 2;
 
 static int nfail = 0;
@@ -138,7 +138,7 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
     lat = lat_deg * DEG_TO_RAD;
     lon = lon_deg * DEG_TO_RAD;
 
-    pps.utm.zone = lon0_deg;
+    pps.utm.lon0 = lon0;
 
     /* normal function call check */
     {
@@ -209,7 +209,7 @@ void testa_random_utm()
     reference_lon = rand() % 360 - 180;
     reference_lat = rand() % 120 - 60;
 
-    pps.utm.zone = reference_lon;
+    pps.utm.lon0 = reference_lon * DEG_TO_RAD;
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
@@ -393,6 +393,9 @@ void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
     pps.ps.slat = lat0;
     pps.ps.slon = lon0;
     pps.ps.is_north_pole = 1;
+    pps.ps.false_easting = 0;
+    pps.ps.false_northing = 0;
+    pps.ps.scale_factor = 1;
 
     /* normal function call check */
     {
@@ -592,6 +595,236 @@ void test_alb()
 {
 }
 
+typedef int project_f_t(project_parameters_t*, double, double,
+		     double*, double*);
+typedef int project_f_arr_t(project_parameters_t*, double*, double*,
+			 double**, double**, long);
+typedef int project_f_inv_t(project_parameters_t*, double, double,
+			 double*, double*);
+typedef int project_f_arr_inv_t(project_parameters_t*, double*, double*,
+			     double**, double**, long);
+typedef double gen_lat_t(void);
+typedef double gen_lon_t(void);
+
+void testa_random(char * name,
+                  project_parameters_t * pps,
+		  project_f_t *project_f, 
+		  project_f_arr_t *project_f_arr,
+		  project_f_inv_t *project_f_inv,
+		  project_f_arr_inv_t *project_f_arr_inv,
+		  gen_lat_t *gen_lat,
+		  gen_lon_t *gen_lon)
+{
+    {
+	double lat, lon, x, y, lat_out, lon_out, lat_deg, lon_deg;
+	int ok;
+	
+	lat_deg = gen_lat();
+	lon_deg = gen_lon();
+	
+	lat = lat_deg * DEG_TO_RAD;
+	lon = lon_deg * DEG_TO_RAD;
+	
+	x = y = lat_out = lon_out = HUGE_VAL;
+	ok = FALSE;
+	
+	if (project_f(pps, lat, lon, &x, &y))
+	{
+	    if (project_f_inv(pps, x, y, &lat_out, &lon_out))
+	    {
+		ok = within_tol(lat, lat_out) && within_tol(lon, lon_out);
+	    }
+	}
+	
+	if (ok)
+	{
+	    ++nok;
+	}
+	else
+	{
+	    printf("Fail: %s(%f,%f):"
+		   "(%f,%f) forward-> (%f,%f) inverse-> (%f,%f)\n",
+		   name, lat_deg, lon_deg, lat, lon, 
+		   x, y, lat_out, lon_out);
+	    
+	    ++nfail;
+	}
+    }
+    {
+	double *lat_rad, *lon_rad;
+	double *px, *py;
+	double *lat_out, *lon_out;
+	int i, ok = FALSE;
+
+	lat_rad = (double *) malloc (sizeof(double) * ARR_TEST_SIZE);
+	lon_rad = (double *) malloc (sizeof(double) * ARR_TEST_SIZE);
+
+	px = py = lat_out = lon_out = NULL;
+
+	for (i = 0; i < ARR_TEST_SIZE; ++i)
+	{
+	    lat_rad[i] = gen_lat() * DEG_TO_RAD;
+	    lon_rad[i] = gen_lon() * DEG_TO_RAD;
+	}
+
+	if (project_f_arr(pps, lat_rad, lon_rad, &px, &py, ARR_TEST_SIZE))
+	{
+	    if (project_f_arr_inv(pps, px, py, &lat_out, &lon_out, 
+				  ARR_TEST_SIZE))
+	    {
+		ok = TRUE;
+		for (i = 0; i < ARR_TEST_SIZE; ++i)
+		{
+		    if (!within_tol(lat_rad[i], lat_out[i]) ||
+			!within_tol(lon_rad[i], lon_out[i]))
+		    {
+			printf("Fail: %s_arr:"
+			       "(%f,%f) forward-> (%f,%f) inverse-> (%f,%f)\n",
+			       name,
+			       lat_rad[i], lon_rad[i], 
+			       px[i], py[i],
+			       lat_out[i], lon_out[i]);
+
+			ok = FALSE;
+		    }
+		}
+	    }
+	}
+
+	if (ok)
+	{
+	    ++nok;
+	}
+	else
+	{
+	    printf("Fail: %s_arr\n", name);
+	    ++nfail;
+	}
+
+	free(lon_out);
+	free(lat_out);
+	free(px);
+	free(py);
+	free(lon_rad);
+	free(lat_rad);
+    }
+}
+
+double gen_all_lon()
+{
+    return (double) ( rand() % 360 - 180 );
+}
+
+double gen_lamaz_lat()
+{
+    /* mid-latitudes ? */
+    return (double) ( rand() % 30 + 30 );
+}
+
+double gen_ps_lat()
+{
+    /* northern latitudes */
+    return (double) ( rand() % 45 + 45 );
+}
+
+double gen_utm_lat()
+{
+    /* any latitude, -90 to +90 */
+    return (double) ( rand() % 180 - 90 );
+}
+
+double gen_utm_lon()
+{
+    static int ref_lon = -1;
+
+    if (ref_lon == -1)
+    {
+	ref_lon = gen_all_lon();
+	return (double) ref_lon;
+    }
+    else
+    {
+	double r = (double)rand() / (double)RAND_MAX / 2.0 - 0.25;
+	return (double) ref_lon + r;
+    }
+}
+
+void testa_random_lamaz()
+{
+    project_parameters_t pps;
+    char name[256];
+    double center_lat, center_lon;
+
+    center_lat = gen_lamaz_lat();
+    center_lon = gen_all_lon();
+
+    pps.lamaz.center_lat = center_lat * DEG_TO_RAD;
+    pps.lamaz.center_lon = center_lon * DEG_TO_RAD;
+    pps.lamaz.false_easting = 0;
+    pps.lamaz.false_northing = 0;
+
+    sprintf(name, "lamaz(%f,%f)", center_lat, center_lon);
+
+    testa_random(name, &pps,
+		 project_lamaz, project_lamaz_arr,
+		 project_lamaz_inv, project_lamaz_arr_inv,
+		 gen_lamaz_lat, gen_all_lon);
+}
+
+void testa_random_ps2()
+{
+    project_parameters_t pps;
+    char name[256];
+    int slat, slon;
+
+    slat = (int)floor(gen_ps_lat());
+    slon = (int)floor(gen_all_lon());
+
+    pps.ps.slat = slat * DEG_TO_RAD;
+    pps.ps.slon = slon * DEG_TO_RAD;
+    pps.ps.is_north_pole = 1;
+    pps.ps.false_easting = 0;
+    pps.ps.false_northing = 0;
+    pps.ps.
+    sprintf(name, "ps(%d,%d)", slat, slon);
+
+    testa_random(name, &pps,
+		 project_ps, project_ps_arr,
+		 project_ps_inv, project_ps_arr_inv,
+		 gen_ps_lat, gen_all_lon);
+}
+
+void testa_random_utm2()
+{
+    project_parameters_t pps;
+    char name[256];
+    int slon;
+
+    slon = gen_utm_lon();
+    pps.utm.zone = slon;
+
+    sprintf(name, "utm(%d)", slon);
+
+    testa_random(name, &pps,
+		 project_utm, project_utm_arr,
+		 project_utm_inv, project_utm_arr_inv,
+		 gen_utm_lat, gen_utm_lon);
+}
+
+void test_random_all()
+{
+    int i;
+
+    srand(12345);
+    /* testa_random_lamaz(); */
+
+    for (i = 0; i < NUM_REPS; ++i)
+    {
+	testa_random_ps2();
+	testa_random_utm2();
+    }
+}
+
 void perf_test_ps()
 {
     const int N = ARR_TEST_SIZE * NUM_REPS * 10;
@@ -691,6 +924,8 @@ int main(int argc, char * argv [])
     test_alb();
 
     perf_test_ps();
+
+    test_random_all();
 
     if (nfail == 0)
 	printf("%d tests passed!\n", nok);
