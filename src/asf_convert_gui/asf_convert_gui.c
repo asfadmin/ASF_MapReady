@@ -158,7 +158,11 @@ main(int argc, char **argv)
     /* GtkWidget *widget; */
 
     gtk_init(&argc, &argv);
-    glade_xml = glade_xml_new("asf_convert_gui.glade", NULL, NULL);
+
+    gchar *glade_xml_file = g_find_program_in_path("asf_convert_gui.glade");
+    glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
+
+    g_free(glade_xml_file);
 
     /* get a widget (useful if you want to change something) */
     /* widget = glade_xml_get_widget (xml, "widgetname"); */

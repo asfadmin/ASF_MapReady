@@ -49,6 +49,8 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 default: $(OBJS)
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
+	mv $(TARGET) $(BINDIR)
+	cp $(TARGET).glade $(BINDIR)
 
 clean:
 	rm *.o $(TARGET)
