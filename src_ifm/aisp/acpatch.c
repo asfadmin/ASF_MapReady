@@ -93,8 +93,6 @@ void acpatch(patch *p,const satellite *s)
 		f_rate=getDopplerRate(r,f0,p->g);
 		np = (int)(r*s->refPerRange)/2;
 
-// printf("Col %d:  f0=%f, f_rate=%f\n",lineNo,f0,f_rate);
-
 		/*Compute the pixel shift for this line.*/
 		/*az_resamp=Pixel shift caused by resampling function*/
 		az_resamp = p->yResampScale * lineNo + p->yResampOffset;
