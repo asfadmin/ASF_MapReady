@@ -1,7 +1,7 @@
+#include <unistd.h>
 #include <asf_meta.h>
 #include <ceos_io.h>
 #include <float_image.h>
-#include <unistd.h>
 #include <math.h>
 
 #include "ceos_thumbnail.h"
