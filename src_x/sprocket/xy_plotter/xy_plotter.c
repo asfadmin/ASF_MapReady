@@ -12,7 +12,6 @@
 
 #define PRINT_SPACING (" ")
 
-#undef VERSION
 #define VERSION 0.5
 
 /* <in>.metadata feilds */
@@ -54,15 +53,15 @@ int main (int argc, char **argv)
          num_bins = atod(GET_ARG(1));
       */
          printf("The -bin option has not yet been implemented");
-	 usage(argv[0]);
+         usage(argv[0]);
       }
       else if (strmatch(key,"-x")) {
          printf("The -x option has not yet been implemented");
-	 usage(argv[0]);
+         usage(argv[0]);
       }
       else if (strmatch(key,"-y")) {
          printf("The -y option has not yet been implemented");
-	 usage(argv[0]);
+         usage(argv[0]);
       }
       else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
    }
@@ -86,9 +85,9 @@ int main (int argc, char **argv)
    outFile      = FOPEN (outfileName,      "w");
    excelOutFile = FOPEN (excelOutfileName, "w");
 
-/* This value depends on how the mask is interpeted - 
+/* This value depends on how the mask is interpeted -
  * see the for loop bellow. It is 0x80 because the bit
- * representing the current pixel is shifted left and 
+ * representing the current pixel is shifted left and
  * compared with 0x80.  -JC
  */
    if (strcmp ("off", argv[ON_NUMBER]))
@@ -96,7 +95,7 @@ int main (int argc, char **argv)
    else
       ON = 0x80;
 
-/* Get necessary metadata values */              
+/* Get necessary metadata values */
    read_metadata_int (metadataFile, NUMBER_OF_PIXELS, &number_of_pixels);
    read_metadata_int (metadataFile, NUMBER_OF_LINES, &number_of_lines);
    read_metadata_double (metadataFile, SLANT_RANGE_TO_FIRST_PIXEL,
@@ -114,7 +113,7 @@ int main (int argc, char **argv)
    sigma_counter = (double *)MALLOC(sizeof (double) * number_of_pixels);
    dn_counter    = (double *)MALLOC(sizeof (double) * number_of_pixels);
    dn2_counter   = (double *)MALLOC(sizeof (double) * number_of_pixels);
-   counter = (unsigned int *) MALLOC(sizeof (unsigned int) * number_of_pixels);
+   counter = (unsigned int *)MALLOC(sizeof (unsigned int) * number_of_pixels);
 
    start = 0;
    stop = number_of_pixels;
@@ -147,14 +146,14 @@ int main (int argc, char **argv)
          ieee_big32(imageBuf[pixel]);
          ieee_big32(sigmaBuf[pixel]);
 
-	 mi = pixel / 8;
+         mi = pixel / 8;
 
 /*         if (pixel % 8 != 0)  { mi++; }
  */
 
 /*         if (maskBuf[mi] != 0 ) {
  *            printf("Something should be found..\n");
- *            printf("Mask = %x, offset = %d (%x), imageBuf = %d (%x) -> %x\n", 
+ *            printf("Mask = %x, offset = %d (%x), imageBuf = %d (%x) -> %x\n",
  *                    maskBuf[mi],
  *                    pixel%8,
  *                    pixel%8,
@@ -162,24 +161,35 @@ int main (int argc, char **argv)
  *                    ((maskBuf[mi] << (pixel % 8)) & 0x80));
  *         }
  */
-	 if ((((maskBuf[mi] << (pixel % 8)) & 0x80) == ON)
-	      && (imageBuf[pixel] != 0 && sigmaBuf[pixel] > 1E-9)) {
-	    counter[pixel]++;
-	    sigma_counter[pixel] += (double) sigmaBuf[pixel];
-	    t = (double) imageBuf[pixel];
-	    dn_counter[pixel] += t * t;
-	    dn2_counter[pixel] += t * t * t * t;
-	 }
+
+/* Do this if sigma layer is in sigma dB instead of plain old simga
+ *       double test_o_happiness = pow ( 10, sigmaBuf[pixel]/10);
+ *       if ((((maskBuf[mi] << (pixel % 8)) & 0x80) == ON)
+ *           && (imageBuf[pixel] != 0 && test_o_happiness > 1E-9)) {
+ *          counter[pixel]++;
+ *          sigma_counter[pixel] += test_o_happiness;
+ *          t = (double) imageBuf[pixel];
+ *          dn_counter[pixel] += t * t;
+ *          dn2_counter[pixel] += t * t * t * t;
+ *       }
+ */
+         if ((((maskBuf[mi] << (pixel % 8)) & 0x80) == ON)
+             && (imageBuf[pixel] != 0 && sigmaBuf[pixel] > 1E-9)) {
+            counter[pixel]++;
+            sigma_counter[pixel] += (double) sigmaBuf[pixel];
+            t = (double) imageBuf[pixel];
+            dn_counter[pixel] += t * t;
+            dn2_counter[pixel] += t * t * t * t;
+         }
       }
 
       if (line % 8 == 0) {
-	 printf ("\b\b\b%3d", (100*line)/number_of_lines);
-	 fflush (stdout);
+         printf ("\b\b\b%3d", (100*line)/number_of_lines);
+         fflush (stdout);
       }
    }
 /* Free memory we're finished with */
    FREE(imageBuf);
-   FREE(lookBuf);
    FREE(sigmaBuf);
    FREE(maskBuf);
 
@@ -191,39 +201,42 @@ int main (int argc, char **argv)
       double t_power, t_stdpower, t_sigma0, t_look, t_sltrng, t_gama0;
 
       if (counter[pixel] > 3) {
-	 t_power    = dn_counter[pixel] / (double) counter[pixel];
-	 t_stdpower = stdev (dn_counter[pixel], dn2_counter[pixel],
-	                     (double) counter[pixel]);
-	 t_sltrng = look2slant (lookBuf[pixel], Re, H);
-	 t_look   = lookBuf[pixel];
-	 t_sigma0 = 10.0 * log10 (sigma_counter[pixel]/(double)counter[pixel]);
-	 t_gama0  = sigma02gama0 (look2incidence (t_look, Re, H), t_sigma0);
+         t_power    = dn_counter[pixel] / (double) counter[pixel];
+         t_stdpower = stdev (dn_counter[pixel], dn2_counter[pixel],
+                             (double) counter[pixel]);
+         t_sltrng = look2slant (lookBuf[pixel], Re, H);
+         t_look   = lookBuf[pixel];
+         t_sigma0 = 10.0 * log10 (sigma_counter[pixel]/(double)counter[pixel]);
+/* Do this if sigma layer is in sigma dB instead of plain old simga
+ *       t_sigma0 = sigma_counter[pixel]/(double)counter[pixel];*/
+         t_gama0  = sigma02gama0 (look2incidence (t_look, Re, H), t_sigma0);
 
-	 fprintf (outFile, "%12d%s", pixel, PRINT_SPACING);
-	 fprintf (outFile, "%12d%s", (counter[pixel]), PRINT_SPACING);
-	 fprintf (outFile, "%12f%s", t_sltrng, PRINT_SPACING);
-	 fprintf (outFile, "%12f%s", t_look, PRINT_SPACING);
-	 fprintf (outFile, "%12e%s", dn_counter[pixel], PRINT_SPACING);
-	 fprintf (outFile, "%12e%s", dn2_counter[pixel], PRINT_SPACING);
-	 fprintf (outFile, "%12e%s", t_power, PRINT_SPACING);
-	 fprintf (outFile, "%12e%s", t_stdpower, PRINT_SPACING);
-	 fprintf (outFile, "%12f%s", t_sigma0, PRINT_SPACING);
-	 fprintf (outFile, "%12f%s\n", t_gama0, PRINT_SPACING);
+         fprintf (outFile, "%12d%s", pixel, PRINT_SPACING);
+         fprintf (outFile, "%12d%s", (counter[pixel]), PRINT_SPACING);
+         fprintf (outFile, "%12f%s", t_sltrng, PRINT_SPACING);
+         fprintf (outFile, "%12f%s", t_look, PRINT_SPACING);
+         fprintf (outFile, "%12e%s", dn_counter[pixel], PRINT_SPACING);
+         fprintf (outFile, "%12e%s", dn2_counter[pixel], PRINT_SPACING);
+         fprintf (outFile, "%12e%s", t_power, PRINT_SPACING);
+         fprintf (outFile, "%12e%s", t_stdpower, PRINT_SPACING);
+         fprintf (outFile, "%12f%s", t_sigma0, PRINT_SPACING);
+         fprintf (outFile, "%12f%s\n", t_gama0, PRINT_SPACING);
 
-	 fprintf (excelOutFile, "%12d,", pixel);
-	 fprintf (excelOutFile, "%12d,", (counter[pixel]));
-	 fprintf (excelOutFile, "%12f,", t_sltrng);
-	 fprintf (excelOutFile, "%12f,", t_look);
-	 fprintf (excelOutFile, "%12e,", dn_counter[pixel]);
-	 fprintf (excelOutFile, "%12e,", dn2_counter[pixel]);
-	 fprintf (excelOutFile, "%12e,", t_power);
-	 fprintf (excelOutFile, "%12e,", t_stdpower);
-	 fprintf (excelOutFile, "%12f,", t_sigma0);
-	 fprintf (excelOutFile, "%12f%s\n", t_gama0, PRINT_SPACING);
+         fprintf (excelOutFile, "%12d,", pixel);
+         fprintf (excelOutFile, "%12d,", (counter[pixel]));
+         fprintf (excelOutFile, "%12f,", t_sltrng);
+         fprintf (excelOutFile, "%12f,", t_look);
+         fprintf (excelOutFile, "%12e,", dn_counter[pixel]);
+         fprintf (excelOutFile, "%12e,", dn2_counter[pixel]);
+         fprintf (excelOutFile, "%12e,", t_power);
+         fprintf (excelOutFile, "%12e,", t_stdpower);
+         fprintf (excelOutFile, "%12f,", t_sigma0);
+         fprintf (excelOutFile, "%12f%s\n", t_gama0, PRINT_SPACING);
       }
    }
 
 /* Free the rest of the buffers */
+   FREE(lookBuf);
    FREE(sigma_counter);
    FREE(dn_counter);
    FREE(dn2_counter);
@@ -238,9 +251,7 @@ int main (int argc, char **argv)
    FCLOSE (outFile);
    FCLOSE (excelOutFile);
 
-   StopWatch();
-
-   return 0;
+   exit(EXIT_SUCCESS);
 }
 
 
