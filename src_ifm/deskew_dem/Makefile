@@ -1,30 +1,25 @@
-#	deskew_dem
-#	by Orion Lawlor, ASF, 1997
-#	Deskew and interpolate across areas which didn't 
-#	phase unwrap, to correct an interferometric dem.
+# Makefile for deskew_dem
+# by Orion Lawlor 1997; Patrick Denny 2004
 
 include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/asf.a \
 	-lm
 
 OBJS  = calc_ranges.o \
-	set_ddr_corners.o \
-	dem_sr2gr.o \
 	dem_interp_col.o \
-	geo_compensate.o \
+	dem_sr2gr.o \
 	deskew_dem.o \
+	geo_compensate.o \
 	radio_compensate.o
 
-all: deskew_dem
-	rm *.o
+all: deskew_dem clean
 
 deskew_dem: $(OBJS)
-	${CC} ${CFLAGS} ${LDFLAGS} -o deskew_dem $(OBJS) ${LIBS}
+	${CC} ${CFLAGS} -o deskew_dem $(OBJS) ${LIBS} ${LDFLAGS}
 	mv deskew_dem$(BIN_POSTFIX) $(BINDIR)
-	cp deskew_dem.man ../../man/cat1/deskew_dem.1
+	cp deskew_dem.1 ../../man/cat1
 
 clean:
-	rm -f core ${OBJS} *.o
+	rm -f core *.o
