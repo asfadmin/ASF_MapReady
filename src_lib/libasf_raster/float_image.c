@@ -285,6 +285,105 @@ float_image_new_from_memory (ssize_t size_x, ssize_t size_y, float *buffer)
   return NULL;
 }
 
+// Bilinear interpolation for a point delta_x, delta_y from the lower
+// left corner between values ul (upper left), ur (upper right), etc.
+// The corner are considered to be corners of a unit square.
+static float
+bilinear_interpolate (double delta_x, double delta_y, float ul, float ur, 
+		      float ll, float lr)
+{
+  float lv = ll + (lr - ll) * delta_x; // Lower value.
+  float uv = ul + (ur - ul) * delta_x; // Upper value.
+
+  return lv + (uv - lv) * delta_y;
+}
+
+FloatImage *
+float_image_new_from_model_scaled (FloatImage *model, ssize_t size_x, 
+				   ssize_t size_y) 
+{
+  g_assert (size_x > 0 && size_y > 0);
+
+  // Image can only be scaled down with this routine, not up.
+  g_assert (model->size_x < SSIZE_MAX);
+  g_assert (size_x <= (ssize_t) model->size_x);
+  g_assert (model->size_y < SSIZE_MAX);
+  g_assert (size_y <= (ssize_t) model->size_y);
+
+  FloatImage *self = float_image_new (size_x, size_y);
+
+  // Convenience aliases.
+  ssize_t msx = model->size_x;
+  ssize_t msy = model->size_y;
+
+  // Find the stride that we need to use in each dimension to evenly
+  // cover the original image space.
+  double stride_x = (double) (msx - 1) / (size_x - 1);
+  double stride_y = (double) (msy - 1) / (size_y - 1);  
+
+  ssize_t ii, jj;
+  // For each row of the new image...
+  for ( ii = 0 ; ii < size_y ; ii++ ) {
+    // Input image y index of row above row of interest.
+    ssize_t in_ray = floor (ii * stride_y);   
+    // Due to the vagaries of floating point arithmetic, we might run
+    // past the index of our last pixel by a little bit, so we correct.
+    if ( in_ray >= msy - 1 ) {
+      // We better not be much over the last index though.
+      g_assert (in_ray < msy);
+      // The index should be an integer, so floor should fix us up.
+      in_ray = floor (in_ray);
+      g_assert (in_ray == msy - 1);
+    }
+    g_assert (in_ray < msy);
+    // Input image y index of row below row of interest.  If we would
+    // be off the image, we just take the last row a second time, and
+    // let the interpolation work things out.
+    ssize_t in_rby;
+    if ( in_ray == msy - 1 ) {
+      in_rby = in_ray;
+    }
+    else {
+      in_rby = in_ray + 1;
+    }
+    // For each pixel in the row...
+    for ( jj = 0 ; jj < size_x ; jj++ ) {
+      // Get the values of the neighbors.
+      float ul, ur, ll, lr;
+      // Input image x index of current upper left corner pixel.
+      ssize_t in_ul_x = floor (jj * stride_x);
+      // Watch for floating point inexactness (see comment above).
+      if ( G_UNLIKELY (in_ul_x >= msx - 1) ) {
+	g_assert (in_ul_x < msx);
+	in_ul_x = floor (in_ul_x);
+	g_assert (in_ul_x == msx - 1);
+      }
+      g_assert (in_ul_x < msx);
+      ul = float_image_get_pixel (model, in_ul_x, in_ray);
+      ll = float_image_get_pixel (model, in_ul_x, in_rby);
+      // If the left row was the row in the input image,
+      if ( in_ul_x == msx - 1 ) {
+	// just treat it as the right row as well,
+	ur = ul;
+	lr = ll;
+      }
+      // otherwise read the next pixel as the upper right pixel.
+      else {
+	ur = float_image_get_pixel (model, in_ul_x + 1, in_ray);
+	lr = float_image_get_pixel (model, in_ul_x + 1, in_rby);
+      }
+      // Doe the interpolation.
+      double delta_x = stride_x * jj - floor (stride_x * jj);
+      double delta_y = -(stride_y * ii - floor (stride_y * ii));
+      float_image_set_pixel (self, jj, ii, 
+			     bilinear_interpolate (delta_x, delta_y,
+						    ul, ur, ll, lr));
+    }
+  }
+
+  return self;
+}
+
 // Return true iff file is larger than size.
 static gboolean
 file_larger_than (const char *file, off_t size)
@@ -370,8 +469,12 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
   // it with zeros instead.  The data off the edges of the image
   // should never be accessed directly anyway.
 
-  // Some data for doing zero fill.
-  float *zero_line = g_new0 (float, size_x);
+  // Some data for doing zero fill.  If the tiles are bigger than the
+  // image itself, we need to make the available zero fill the size of
+  // the tile instead of the size of the file.
+  g_assert (self->tile_size <= SSIZE_MAX);
+  float *zero_line = g_new0 (float, (size_x > (ssize_t) self->tile_size ? 
+				     (size_t) size_x : self->tile_size));
   g_assert (0.0 == 0x0);
 
   // Buffer capable of holding a full strip.
@@ -493,19 +596,6 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
   g_free (zero_line);
 
   return self;
-}
-
-// Bilinear interpolation for a point delta_x, delta_y from the lower
-// left corner between values ul (upper left), ur (upper right), etc.
-// The corner are considered to be corners of a unit square.
-static float
-bilinear_interpolate (double delta_x, double delta_y, float ul, float ur, 
-		      float ll, float lr)
-{
-  float lv = ll + (lr - ll) * delta_x; // Lower value.
-  float uv = ul + (ur - ul) * delta_x; // Upper value.
-
-  return lv + (uv - lv) * delta_y;
 }
 
 FloatImage *
@@ -891,8 +981,21 @@ float_image_set_pixel (FloatImage *self, ssize_t x, ssize_t y, float value)
 		(off_t) tile_offset * self->tile_area * sizeof (float),
 		SEEK_SET);
     g_assert (return_code == 0);
+    clearerr (self->tile_file);
     size_t read_count = fread (tile_address, sizeof (float), self->tile_area, 
 			       self->tile_file);
+    if ( read_count < self->tile_area ) {
+      if ( ferror (self->tile_file) ) {
+	perror ("error reading tile cache file");
+	g_assert_not_reached ();
+      }
+      if ( feof (self->tile_file) ) {
+	fprintf (stderr, 
+		 "nothing left to read in tile cache file at offset %lld\n",
+		 ftello (self->tile_file));
+	g_assert_not_reached ();
+      }
+    }
     g_assert (read_count == self->tile_area);
     
     // Set pixel of interest.
