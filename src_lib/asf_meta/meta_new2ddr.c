@@ -61,7 +61,8 @@ int earth_radius2datum(double re_major, double re_minor)
 		return minor_index;
 	}
 
-	printf("\nWarning: Function earth_radius2datum was unable to figure\n"
+	printf("\n"
+	       "WARNING: Function earth_radius2datum was unable to figure\n"
 	       "         supported datum... setting DDR datum code to -1\n");
 	return (-1);
 }
@@ -80,22 +81,18 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 /* Number of bands; int */
 	ddr->nbands = 1;
 /* Data type; int */
-	if (0==strcmp(meta->general->data_type, "BYTE"))
-		ddr->dtype = DTYPE_BYTE;   /* 1 */
-	else if (0==strcmp(meta->general->data_type, "INTEGER*2"))
-		ddr->dtype = DTYPE_SHORT;  /* 2 */
-	else if (0==strcmp(meta->general->data_type, "INTEGER*4"))
-		ddr->dtype = DTYPE_LONG;   /* 3 */
-	else if (0==strcmp(meta->general->data_type, "REAL*4"))
-		ddr->dtype = DTYPE_FLOAT;  /* 4 */
-	else if (0==strcmp(meta->general->data_type, "REAL*8"))
-		ddr->dtype = DTYPE_DOUBLE; /* 5 */
-	else {
-		printf("** meta.general.data_type is '%s'; it must be:\n"
-		       "** BYTE, INTEGER*2, INTEGER*4, REAL*4, or REAL*8\n"
-		       "** Setting ddr.data_type value to -1.\n",
-		       meta->general->data_type);
+	switch (meta->general->data_type) {
+	  case BYTE:      ddr->dtype = DTYPE_BYTE;   break;
+	  case INTEGER16: ddr->dtype = DTYPE_SHORT;  break;
+	  case INTEGER32: ddr->dtype = DTYPE_LONG;   break;
+	  case REAL32:    ddr->dtype = DTYPE_FLOAT;  break;
+	  case REAL64:    ddr->dtype = DTYPE_DOUBLE; break;
+	  default:
+		printf("** Invalid meta.general.data_type; it must be:\n"
+		       "** BYTE, INTEGER16, INTEGER32, REAL32, or REAL64\n"
+		       "** Setting ddr.data_type value to -1.\n");
 		ddr->dtype = -1;
+		break;
 	}
 /* Worthless date & time fields; both char[12] */
 	strcpy (ddr->last_used_date,"");
