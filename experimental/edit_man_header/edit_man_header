@@ -41,6 +41,7 @@ use Env;
 $source_file = $ARGV[0];
 $backup_file = "$ARGV[0]~";
 $temp_file = "temp.txt";
+$html_file = "$source_file.html";
 {
     print STDOUT "Opening $source_file for read and $temp_file for write...\n";
     open SOURCE_FILE, "<$source_file" or die "Couldn't open source file $source_file: $!";
@@ -127,10 +128,11 @@ $temp_file = "temp.txt";
     close BACKUP_FILE;
     print STDOUT "...Done creating backup.\n";
     
-    print STDOUT "Opening $backup_file for read, $source_file for write, and $temp_file for read...\n";
+    print STDOUT "Opening $backup_file and $temp_file for read, $source_file and $html_file for write...\n";
     open BACKUP_FILE, "<$backup_file" or die "Couldn't open backup file $backup_file: $!";
-    open SOURCE_FILE, ">$source_file" or die "Couldn't open source file $source_file: $!";
     open TEMP_FILE, "<$temp_file" or die "Couldn't open temp file $temp_file: $!";
+    open SOURCE_FILE, ">$source_file" or die "Couldn't open source file $source_file: $!";
+    open HTML_FILE, ">$html_file" or die "Couldn't open html file $html_file: $!";
     
     print SOURCE_FILE "/*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/\n";
     print SOURCE_FILE "/*\n";
@@ -150,6 +152,9 @@ $temp_file = "temp.txt";
     print SOURCE_FILE "file. Save yourself the time and trouble, and use edit_man_header.pl. :)\n";
     print SOURCE_FILE "*/\n\n";
 
+    #Prep the html help file
+    print HTML_FILE "<html>\n<body>\n";
+
     $def_line = 0;
     $active = 0;
     while(<TEMP_FILE>)
@@ -159,13 +164,15 @@ $temp_file = "temp.txt";
         {
             $def_line = 1;
             $active = 1;
-            print SOURCE_FILE "#define ASF_$1_STRING "
+            print SOURCE_FILE "#define ASF_$1_STRING ";
+            print HTML_FILE "<hr width=70%>\n<b>$1</b>\n<br>\n";
         }
         elsif(/^(.*)\_END/)
         {
             $def_line = 0;
             $active = 0;
             print SOURCE_FILE "\"\n\n";
+            print HTML_FILE "<p>\n";
         }
         elsif($active == 1)
         {
@@ -179,6 +186,7 @@ $temp_file = "temp.txt";
             }
             $def_line = 0;
             chomp;
+            print HTML_FILE "$_<br>\n";
             s/\\/\\\\/g; #replace any outgoing \ with \\
             s/"/\\"/g; #replace any outgoing " with \"
             s/'/\\"/g; #replace any outgoing ' with \"
@@ -186,6 +194,7 @@ $temp_file = "temp.txt";
         }
     }
     print SOURCE_FILE "/*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/\n";
+    print HTML_FILE "<hr width=70%>\n</body>\n</html>\n";
     
     $edit_section = FALSE;
     while(<BACKUP_FILE>)
@@ -204,6 +213,7 @@ $temp_file = "temp.txt";
             print SOURCE_FILE;
         }
     }
+    close HTML_FILE;
     close TEMP_FILE;
     close SOURCE_FILE;
     close BACKUP_FILE;
@@ -212,7 +222,7 @@ $temp_file = "temp.txt";
 
 {
     print STDOUT "Removing temporary files...";
-    system("rm $temp_file*");
+    system("rm $temp_file");
     print STDOUT "Done removing temporary files.\n";
     print STDOUT "\nA backup of the original $source_file can be found in $backup_file\n\n";
 }
