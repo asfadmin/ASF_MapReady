@@ -14,9 +14,10 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 
-#if ( GLIB_MAJOR_VERSION >= 2 && GLIB_MINOR_VERSION >= 4 )
-#define THUMBNAILS
-#define THUMB_SIZE 48
+#if ( GTK_MAJOR_VERSION >= 2 && GTK_MINOR_VERSION >= 4 \
+      && GDK_PIXBUF_MAJOR >= 2 && GDK_PIXBUF_MINOR >= 4 )
+#  define THUMBNAILS
+#  define THUMB_SIZE 48
 #endif
 
 enum OutputFormat

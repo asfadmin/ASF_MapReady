@@ -121,8 +121,14 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
 
   if (ok)
   {
+
+    // This coude shouldn't ever run if we don't have this version (so
+    // that thumbnails are enabled.  So here we put it in an ifdef so
+    // everything will still compile on older versions.
+#if ( GDK_PIXBUF_MAJOR >= 2 && GDK_PIXBUF_MINOR >= 4 )
      result = gdk_pixbuf_new_from_file_at_size (tfn, max_thumbnail_dimension,
 						max_thumbnail_dimension, &err);
+#endif
 
      return_code = unlink (tfn);
      g_assert (return_code == 0);
