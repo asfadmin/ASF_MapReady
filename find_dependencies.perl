@@ -374,7 +374,7 @@ if ( -e $graph_cache_file ) {
 	        }
 
 		# Make a temp file and strip comments as appropriate.
-		open(ENTRY, "<$entry") or die "open failed";
+		open(ENTRY, "<$entry") or die "open failed: $!";
 		my $file_contents = join('', <ENTRY>);
 		close(ENTRY) or die "close failed";
 		unless ( $p{'scan_comments'} ) {
