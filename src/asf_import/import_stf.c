@@ -33,11 +33,32 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   iqType *iqBuf;             /* Buffer containing the complex i & q channels */
   readPulseFunc readNextPulse; /* Pointer to function that reads the next line of CEOS Data */
 
+
   /* Handle output file name */
   strcpy(outDataName,outBaseName);
   strcat(outDataName,TOOLS_RAW_EXT);
   strcpy(outMetaName,outBaseName);
   strcat(outMetaName,TOOLS_META_EXT);
+
+  /* Make sure that none of the level one flags are set */
+  strcpy(logbuf,"");
+  if (flags[f_AMP] != FLAG_NOT_SET)
+    sprintf(logbuf, "%s amplitude", logbuf);
+  if (flags[f_SIGMA] != FLAG_NOT_SET)
+    sprintf(logbuf, "%s sigma", logbuf);
+  if (flags[f_BETA] != FLAG_NOT_SET)
+    sprintf(logbuf, "%s beta", logbuf);
+  if (flags[f_GAMMA] != FLAG_NOT_SET)
+    sprintf(logbuf, "%s gamma", logbuf);
+  if (flags[f_POWER] != FLAG_NOT_SET)
+    sprintf(logbuf, "%s power", logbuf);
+  sprintf(logbuf,
+          "Warning:\n"
+          "  The following flags will be ignored since this is a level zero data set:\n"
+          "  %s\n", logbuf);
+  if (flags[f_QUIET] == FLAG_NOT_SET)
+    printf(logbuf);
+  printLog(logbuf);
 
   if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
     /* Determine start and end line for latitude constraint */
