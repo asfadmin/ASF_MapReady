@@ -33,7 +33,7 @@ ZIPFILE := $(TARFILE).gz
 # appropriate places in the ASF directory structure.
 install_glib: stage_glib_stamp
 	cp $(LIB_STAGEDIR)/*.a $(LIBDIR)
-	cp -r $(INCLUDE_STAGEDIR)/glib-2.0 $(ASF_INCLUDE_DIR)
+	cp -r $(INCLUDE_STAGEDIR)/glib-2.0/* $(ASF_INCLUDE_DIR)
 
 ifeq ($(SYS),win32)
 
@@ -42,6 +42,7 @@ stage_glib_stamp:
 	for f in *.zip; do (yes|unzip $$f -d glib); done;
 	cp glib/lib/libglib-2.0.dll.a $(LIB_STAGEDIR);
 	cp -r glib/include/glib-2.0 $(INCLUDE_STAGEDIR);
+	cp glib/lib/glib-2.0/include/*.h $(INCLUDE_STAGEDIR)/glib-2.0;
 
 else
 
