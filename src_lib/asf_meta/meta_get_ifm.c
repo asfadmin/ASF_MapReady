@@ -22,14 +22,30 @@ void meta_get_orig_img_dimensions(meta_parameters *sar, long *lines, long *sampl
 }
 
 /*Interferometry calls:*/
-double meta_get_sat_height(meta_parameters *sar)
+double meta_get_sat_height(meta_parameters *meta, long line, long sample)
 {
-	return sar->ifm->ht;
+	double ht, time;
+	stateVector stVec;
+
+	time = meta_get_time(meta, line, sample);
+        stVec = meta_get_stVec(meta, time);
+        ht = sqrt(stVec.pos.x*stVec.pos.x+stVec.pos.y*stVec.pos.y+stVec.pos.z*stVec.pos.z);
+
+	return ht;
 }
 
-double meta_get_earth_radius(meta_parameters *sar)
+double meta_get_earth_radius(meta_parameters *meta, long line, long sample)
 {
-	return sar->ifm->er;
+	double re=6378144.0, rp=6356754.9, lat, ht, er, time;
+	stateVector stVec;
+
+	time = meta_get_time(meta, line, sample);
+        stVec = meta_get_stVec(meta, time);
+        ht = sqrt(stVec.pos.x*stVec.pos.x+stVec.pos.y*stVec.pos.y+stVec.pos.z*stVec.pos.z);
+        lat = asin(stVec.pos.z/ht);
+        er=(double) (re*rp)/sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+
+	return er;
 }
 
 void meta_get_slants(meta_parameters *sar,double *slantFirst, double *slantPer)
