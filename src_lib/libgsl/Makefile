@@ -48,7 +48,7 @@ stage_gsl_stamp: staging_directories
                $(LIB_STAGEDIR) ; \
             cp -r $(EXISTING_GSL_ROOT)/include/gsl $(INCLUDE_STAGEDIR) ; \
 	else \
-	    gunzip $(ZIPFILE) > $(TARFILE) ; \
+	    gunzip $(ZIPFILE) ; \
 	    tar xvf $(TARFILE) ; \
 	    (cd $(UNPACK_DIR) ; \
                 ./configure --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
