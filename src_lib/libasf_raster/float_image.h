@@ -23,6 +23,7 @@
 
 #include <glib.h>
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_histogram.h>
 
 // Instance structure.  Everything here is private and need not be
 // used or understood by client code, except for the size_x and size_y
@@ -72,8 +73,8 @@ typedef enum {
 
 // Form reduced resolution version of the model.  The scale_factor
 // must be positive and odd.  The new image will be
-// ceil (model->size_x / scale_factor) pixels by 
-// ceil (model->size_y / scale_factor) pixels.  Scaling is performed by 
+// ceil (model->size_x / scale_factor) pixels by
+// ceil (model->size_y / scale_factor) pixels.  Scaling is performed by
 // averaging blocks of pixels together, using odd pixel reflection
 // around the image edges (see the description of the apply_kernel
 // method).
@@ -92,7 +93,7 @@ float_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
 // of a file name, and the offset argument is with respect to the
 // current position in the file_pointer stream.
 FloatImage *
-float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y, 
+float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 				   FILE *file_pointer, off_t offset,
 				   float_image_byte_order_t byte_order);
 
@@ -103,10 +104,10 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 // bilinear interpolation.  This is a decent way of forming quick
 // thumbnails of images, but not much else.
 FloatImage *
-float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y, 
-				  ssize_t original_size_x, 
+float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
+				  ssize_t original_size_x,
 				  ssize_t original_size_y,
-				  const char *file, off_t offset, 
+				  const char *file, off_t offset,
 				  float_image_byte_order_t byte_order);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -138,12 +139,12 @@ float_image_set_pixel (FloatImage *self, ssize_t x, ssize_t y, float value);
 // not necessarily any caching help for this method, i.e. it may
 // always involve disk access and always be slow.
 void
-float_image_get_region (FloatImage *self, ssize_t x, ssize_t y, 
+float_image_get_region (FloatImage *self, ssize_t x, ssize_t y,
 			ssize_t size_x, ssize_t size_y, float *buffer);
 
 // This method is analogous to float_image_get_region.
 void
-float_image_set_region (FloatImage *self, size_t x, size_t y, size_t size_x, 
+float_image_set_region (FloatImage *self, size_t x, size_t y, size_t size_x,
 			size_t size_y, float *buffer);
 
 // Get a full row of pixels, copying the data into already allocated
@@ -168,15 +169,21 @@ float_image_get_pixel_with_reflection (FloatImage *self, ssize_t x, ssize_t y);
 // mean and standard deviation of all pixels.  This function considers
 // every pixel in the image.
 void
-float_image_statistics (FloatImage *self, float *min, float *max, float *mean, 
-			float *standard_deviation);
+float_image_statistics (FloatImage *self, float *min, float *max, float *mean,
+                        float *standard_deviation);
 
 // Compute an efficient estimate of the mean and standard deviation of
 // the pixels in the image, by sampling every stride th pixel in each
 // dimension, beginning with pixel (0, 0).
 void
-float_image_approximate_statistics (FloatImage *self, size_t stride, 
-				    float *mean, float *standard_deviation);
+float_image_approximate_statistics (FloatImage *self, size_t stride,
+                                    float *mean, float *standard_deviation);
+
+// Creates a gsl_histogram with 'num_bins' bins evenly spaced between 'min' and
+// 'max'.  This function considers every pixel in the image.
+gsl_histogram *
+float_image_histogram (FloatImage *self, float min, float max,
+                       size_t num_bins);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -193,7 +200,7 @@ float_image_approximate_statistics (FloatImage *self, size_t stride,
 // not duplicated, i.e. reflection about the middle of the edge pixels
 // is used.
 float
-float_image_apply_kernel (FloatImage *self, ssize_t x, ssize_t y, 
+float_image_apply_kernel (FloatImage *self, ssize_t x, ssize_t y,
 			  gsl_matrix_float *kernel);
 
 // Type used to specify whether disk files should be in big or little
@@ -212,7 +219,7 @@ typedef enum {
 } float_image_sample_method_t;
 
 float
-float_image_sample (FloatImage *self, float x, float y, 
+float_image_sample (FloatImage *self, float x, float y,
 		    float_image_sample_method_t sample_method);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -226,7 +233,7 @@ float_image_sample (FloatImage *self, float x, float y,
 // contiguously in memory.  Individual pixels are stored in byte order
 // byte_order.  Returns 0 on success, nonzero on error.
 int
-float_image_store (FloatImage *self, const char *file, 
+float_image_store (FloatImage *self, const char *file,
 		   float_image_byte_order_t byte_order);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -252,7 +259,7 @@ float_image_store (FloatImage *self, const char *file,
 // image into memory, so beware.  Returns 0 on success, nonzero on
 // error.
 int
-float_image_export_as_jpeg (FloatImage *self, const char *file, 
+float_image_export_as_jpeg (FloatImage *self, const char *file,
 			    size_t max_dimension);
 
 ///////////////////////////////////////////////////////////////////////////////
