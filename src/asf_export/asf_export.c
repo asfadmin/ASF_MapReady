@@ -269,7 +269,7 @@ main (int argc, char *argv[])
 
   while ( currArg < (argc - num_args) ) {
     char *key = argv[currArg++];
-    if ( strmatch (key, "-f") ) {
+    if ( strmatch (key, "-format") ) {
       CHECK_ARG (1);		/* One string argument: format string.  */
       strcpy (command_line.format, GET_ARG (1));
       if ( !((strcmp (command_line.format, "CEOS") == 0) 
@@ -278,19 +278,19 @@ main (int argc, char *argv[])
 	     || (strcmp (command_line.format, "geotiff") == 0)
 	     || (strcmp (command_line.format, "jpeg") == 0)
 	     || (strcmp (command_line.format, "ppm") == 0)) ) {
-	fprintf (stderr, "%s: bad format (-f argument): %s\n", program_name, 
+	fprintf (stderr, "%s: bad format (-format argument): %s\n", program_name, 
 		 command_line.format);
 	usage();
       }
     }
-    else if ( strmatch (key, "-s") ) {
+    else if ( strmatch (key, "-size") ) {
       char *endptr;
       int base = 10;		/* Size is a base 10 integer.  */
       CHECK_ARG (1);
       command_line.size = strtol (GET_ARG (1), &endptr, base);
       for ( ; *endptr != '\0' ; endptr++ ) {
 	if ( !isspace (*endptr) ) {
-	  fprintf (stderr, "%s: bad size (-s argument): %s\n", program_name, 
+	  fprintf (stderr, "%s: bad size (-size argument): %s\n", program_name, 
 		   GET_ARG (1));
 	  usage();
 	}
