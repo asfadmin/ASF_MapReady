@@ -15,18 +15,12 @@
 *									    *
 ****************************************************************************/
 
+#include "asf.h"
+
 /*-----------------------------------------------------*/
 /* define complex variable type if not already defined */
 /*-----------------------------------------------------*/
-#include "asf.h"
-
-#ifndef __complex_var
-#define __complex_var
-typedef struct {
-   float r;
-   float i;
-} FCMPLX;
-#endif
+#include "asf_complex.h"
 
 
 /*-----------------------------*/
@@ -38,19 +32,19 @@ typedef struct {
 
 
 
-float  Cabs(FCMPLX); 
-FCMPLX Cadd (FCMPLX,FCMPLX);
-FCMPLX Cconj(FCMPLX);
-FCMPLX Cmplx(float,float);
-FCMPLX Czero();
-FCMPLX Csmul(float,FCMPLX);
-FCMPLX Cmul (FCMPLX,FCMPLX);
+float        Cabs(complexFloat); 
+complexFloat Cadd (complexFloat,complexFloat);
+complexFloat Cconj(complexFloat);
+complexFloat Cmplx(float,float);
+complexFloat Czero();
+complexFloat Csmul(float,complexFloat);
+complexFloat Cmul (complexFloat,complexFloat);
 
 /*cfft1d: Perform FFT, 1 dimentional:
 	dir=0 -> init; 
 	dir<0 -> forward; 
 	dir>0 -> backward*/
-void cfft1d(int n, FCMPLX *c, int dir);
+void cfft1d(int n, complexFloat *c, int dir);
 
 /*-----------------------*/
 /* Constants Definitions */
