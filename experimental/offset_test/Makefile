@@ -14,17 +14,12 @@ LIBS  = $(LIBDIR)/asf.a \
 
 OBJS  = offset_test.o \
 	fft_corr.o
-FOBJS = test_fopen.o
 
-all: offset_test test_fopen clean
+all: offset_test clean
 
 offset_test: $(OBJS)
 	$(CC) $(CFLAGS) -o offset_test $(OBJS) $(LIBS) $(LDFLAGS)
 	cp offset_test$(BIN_POSTFIX) $(BINDIR)
-
-test_fopen: $(FOBJS)
-	$(CC) $(CFLAGS) -o test_fopen $(FOBJS) $(LIBS) $(LDFLAGS)
-	cp test_fopen$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f core *.o
