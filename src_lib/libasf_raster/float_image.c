@@ -373,7 +373,6 @@ file_larger_than (const char *file, off_t size)
   }
 #endif
 
-
   return stat_buffer.st_size >= size;
 }
 
