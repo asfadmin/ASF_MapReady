@@ -346,21 +346,22 @@ main (int argc, char *argv[])
   asfSplashScreen (argc, argv);
 
   if( formatFlag != FLAG_NOT_SET ) {
-    strcpy(command_line.format, argv[formatFlag + 1]);
+    strcpy (command_line.format, argv[formatFlag + 1]);
   }
   else {
     /* Default behavior: produce a geotiff.  */
-    strcpy(command_line.format, "geotiff");
+    strcpy (command_line.format, "geotiff");
   }
 
   /* Convert the string to upper case.  */
-  for ( ii = 0 ; ii < strlen(command_line.format) ; ++ii ) {
+  for ( ii = 0 ; ii < strlen (command_line.format) ; ++ii ) {
     command_line.format[ii] = toupper (command_line.format[ii]);
   }
 
   /* Set the default byte scaling mechanisms */
-  if (strcmp(command_line.format, "TIFF") == 0 ||
-      strcmp(command_line.format, "JPEG") == 0)
+  if ( strcmp (command_line.format, "TIFF") == 0 
+       || strcmp (command_line.format, "TIF") == 0
+       || strcmp (command_line.format, "JPEG") == 0)
     command_line.scale = SIGMA;
   if ( strcmp (command_line.format, "GEOTIFF") == 0 )
     command_line.scale = NONE;
