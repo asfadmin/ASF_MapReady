@@ -361,7 +361,7 @@ static gboolean
 file_larger_than (const char *file, off_t size)
 {
   struct stat stat_buffer;
-  int return_code = stat (file, &stat_buffer);
+  int return_code = g_stat (file, &stat_buffer);
   g_assert (return_code == 0);
   return stat_buffer.st_size >= size;
 }
