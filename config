@@ -27,7 +27,7 @@ else
 	versMinor=`uname -r | awk -F. '{print $2}'`
 fi
 
-ranlib="echo"
+ranlib="@echo do not need to run ranlib on this system on file: "
 optFlag="-O"
 case "${osType}:${versMajor}:${versMinor}" in
 	IRIX*:5:*)
