@@ -136,8 +136,8 @@ if (strlen(worconfig) == 0)
     strcpy(worconfig, ptr);
     }
 */
-sprintf(fn27, "%s/nad27sp", "../../src/asf_inc");
-sprintf(fn83, "%s/nad83sp", "../../src/asf_inc");
+sprintf(fn27, "%s/nad27sp", "../../include");
+sprintf(fn83, "%s/nad83sp", "../../include");
 
 
 /* Call the GCTP  entry point
