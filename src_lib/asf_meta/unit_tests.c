@@ -1,9 +1,10 @@
-/* Unit tests for the asf_meta library.  These use the 'check' unit
+/********************************************************************
+   Unit tests for the asf_meta library.  These use the 'check' unit
    testing framework for C.  Not complete by any means, but hopefully
-   new code will use them at least.  */
+   new code will use them at least.
 
-/* Note that these tests have wired in the values from the test meta
-   file.  */
+* Note: these tests have wired in the values from the test meta file.
+********************************************************************/
 
 /* System headers.  */
 #include <stdlib.h>
@@ -12,7 +13,6 @@
 /* ASF headers.  */
 #include <asf.h>
 #include <asf_meta.h>
-
 #include <check.h>		/* For unit check functions.  */
 
 /* Over-safe micron for test floating point comparisons.  */
@@ -39,12 +39,38 @@ START_TEST(test_meta_read_new_format)
      use wierd field names in the data file and map strangely into a
      dynamicly allocated internal structure, lots of possibility for
      error.  */
-  fail_unless(UNIT_TESTS_FLOAT_COMPARE(meta->state_vectors
-				             ->vecs[1].vec.pos.y, 
-				       22333),
+  fail_unless(UNIT_TESTS_FLOAT_COMPARE(meta->state_vectors->vecs[1].vec.pos.y,22333),
 	      "Y position element of second state vector not read correctly");
 
   meta_free(meta);
+}
+END_TEST
+
+/* Test the part of meta_read that parses old files.  */
+START_TEST(test_meta_read_old_format)
+{
+  meta_parameters *meta = meta_read("test_file_old_style.meta");
+
+  /* Check a random fields to make sure things are working.  */
+  fail_unless(meta->sar->azimuth_time_per_pixel == 0.015099817313, "azPixTime field from geo block not read correctly");
+  fail_unless(meta->general->line_count == 8262, "nl from ddr read incorrectly");
+  
+  /* Check a not-so-random field: things from projection params block
+     are currently partly holdover from deprecated code and use a
+     union.  */
+  fail_unless(meta->projection->type == 'P' 
+	      && meta->projection->param.ps.slon == -158.3591,
+	      "ps_lon field from param->ps block not read correctly");
+  
+  /* Another not-so-random field check: state vector blocks currently
+     use wierd field names in the data file and map strangely into a
+     dynamicly allocated internal structure, lots of possibility for
+     error.  */
+  fail_unless(UNIT_TESTS_FLOAT_COMPARE(meta->state_vectors->vecs[1].vec.pos.y,-359150.94171),
+	      "Y position element of second state vector not read correctly");
+
+ meta_write(meta,"test_output_from_old_to_new_style.meta");
+ meta_free(meta);
 }
 END_TEST
 
@@ -80,7 +106,7 @@ START_TEST(test_meta_create_new_format)
 {
   char err_msg[256];
   meta_parameters *meta;
-  
+
   meta = meta_create("./CEOS/E12259029000X008");
   
   /* Check random fields to make sure things are working.  */
@@ -90,22 +116,19 @@ START_TEST(test_meta_create_new_format)
    fail_unless(meta->general->orbit_direction == 'D',err_msg);
   sprintf(err_msg,"meta->sar->prf = %lf; not read correctly, should be 1679.9023438",meta->sar->prf);
    fail_unless(meta->sar->prf == 1679.9023438,err_msg);
-
-  /* Check a not-so-random field: things from projection params block
-     are currently partly holdover from deprecated code and use a
-     union.  */
-/*  fail_unless((meta->projection->type=='A') && (meta->projection->param.atct.alpha1==0.6),
-	      "alpha1 field from param->atct block not read correctly");
-  */
-  /* Another not-so-random field check: state vector blocks currently
-     use wierd field names in the data file and map strangely into a
-     dynamicly allocated internal structure, lots of possibility for
-     error.  */
-/*  fail_unless(UNIT_TESTS_FLOAT_COMPARE(meta->state_vectors->vecs[1].vec.pos.y, 22333),
-	      "Y position element of second state vector not read correctly");
-*/
-  meta_write(meta, "test_output_of_meta_create.meta");
+  meta_write(meta, "CEOS_E12259029000X008.meta");
   meta_free(meta);
+
+  meta = meta_create("./CEOS/E20291729000X010");
+  meta_write(meta,"CEOS_E20291729000X010.meta");
+  meta_free(meta);
+  meta = meta_create("./CEOS/R129968351P4S515");
+  meta_write(meta,"CEOS_R129968351P4S515.meta");
+  meta_free(meta);
+  meta = meta_create("./CEOS/R129968351U4S115");
+  meta_write(meta,"CEOS_R129968351U4S115.meta");
+  meta_free(meta);
+
 }
 END_TEST
 
@@ -118,6 +141,7 @@ Suite *asf_meta_suite(void)
   suite_add_tcase(s, tc_core);
   
   tcase_add_test(tc_core, test_meta_read_new_format);
+  tcase_add_test(tc_core, test_meta_read_old_format);
   tcase_add_test(tc_core, test_meta_read_write_new_format);
   tcase_add_test(tc_core, test_meta_create_new_format);
 
