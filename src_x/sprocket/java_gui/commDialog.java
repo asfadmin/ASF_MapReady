@@ -2,7 +2,8 @@
 NAME: commDialog.java
 
 DESCRIPTION:
-	Sub-gui for SProCKET to call commands.
+	Sub-gui for SProCKET to call one of its accompanying programs,
+        xy_plotter.
 
 PROGRAM HISTORY:
     VERS:   DATE:  AUTHOR:      PURPOSE:
@@ -11,244 +12,211 @@ PROGRAM HISTORY:
                                  files named after their classes
             07/03  P. Denny     Replaced depricated action and handleEvent
                                  methods with appropriate Listeners
+            09/03  P. Denny     Update the gui to use the new improved java
+                                 J-Components. And use gridBagLayout for a nicer
+                                 looking gui. As soon as we upgrade to a newer
+                                 java, we should change over to GridLayout2 for
+                                 better readability
 
 **************************************************************************** */
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.*;
-import java.util.*;
-import java.io.*;
+import javax.swing.*;
 
+class commDialog extends JDialog implements ActionListener, KeyListener,
+                                            WindowListener {
+   public boolean cancelled=true;
+   public String outputfile;
+   public String imagefile;
+   public String maskfile;
+   public String maskThing;
+   pvs mainFrame;
+   JTextField imageTextField;
+   JTextField maskTextField;
+   JTextField outputTextField;
+   Choice maskChoice;
+   JButton browseOutputButton;
+   JButton browseImageButton;
+   JButton browseMaskButton;
+   JButton okayButton;
+   JButton cancelButton;
 
-//COMMAND OPTIONS
+   commDialog (pvs parent, String maskfile, String imagefile, String outputfile) {
+      super (parent, "Command console", true);
+      this.setBackground(Color.lightGray);
 
-class commDialog extends Dialog implements ActionListener, KeyListener,
-                                                         WindowListener {
-  public String outputfile;
-  public String imagefile;
-  public String maskfile;
-  public String xthing;
-  public String ything;
-  public String mthing;
-  public int bin;
-  boolean cancelled;
-  pvs mainFrame;
-  TextField outputTextField;
-  TextField imageTextField;
-  TextField maskTextField;
-  TextField bintextfield;
-  Choice xchoice;
-  Choice ychoice;
-  Choice mchoice;
-  Button browseOutputButton;
-  Button browseImageButton;
-  Button browseMaskButton;
-  Button okayButton;
-  Button cancelButton;
+      mainFrame = parent;
+      this.imagefile = imagefile;
+      this.maskfile = maskfile;
+      this.outputfile = outputfile;
 
-  commDialog (pvs parent, String maskfile, String imagefile, String outputfile) {
-    super (parent, "Command console", true);
-    this.setBackground(Color.lightGray);
+   // Build textFields, buttons, and choices for the 1st panel
+      imageTextField = new JTextField(imagefile, 40);
+      maskTextField = new JTextField(maskfile, 40);
+      outputTextField = new JTextField(outputfile, 40);
+      browseImageButton = new JButton("Browse image");
+      browseMaskButton = new JButton("Browse mask");
+      browseOutputButton = new JButton("Browse output");
+      maskChoice = new Choice();
+      maskChoice.add("on");
+      maskChoice.add("off");
 
-    mainFrame = parent;
-    this.imagefile = imagefile;
-    this.maskfile = maskfile;
-    this.outputfile = outputfile;
-    
-    outputTextField = new TextField(outputfile, 40);
-    browseOutputButton = new Button("Browse output");
-    imageTextField = new TextField(imagefile, 40);
-    browseImageButton = new Button("Browse image");
-    maskTextField = new TextField(maskfile, 40);
-    browseMaskButton = new Button("Browse mask");
-    bintextfield = new TextField("500", 5);
+   // Since we're using java 1.3 instead of 1.4, we can't use GridLayout2
+   // This panel collects all the info needed to run xy_plotter
+      GridBagLayout gbL = new GridBagLayout();
+      GridBagConstraints gbC = new GridBagConstraints();
+      gbC.fill = GridBagConstraints.BOTH;
+      gbC.weightx = 1.0;
+      gbC.weighty = 1.0;
+      JPanel topPanel = new JPanel(gbL);
+      topPanel.setBackground(Color.lightGray);
+      insertRow(topPanel,"Image:", imageTextField, browseImageButton, gbL,gbC);
+      insertRow(topPanel,"Mask:",  maskTextField,  browseMaskButton,  gbL,gbC);
+      insertRow(topPanel,"Output:",outputTextField,browseOutputButton,gbL,gbC);
+      insertRow(topPanel,"Masked area:", maskChoice, new JLabel(""),  gbL,gbC);
+      getContentPane().add ("Center", topPanel);
 
-    xchoice = new Choice();
-    xchoice.add("Incidence");
-    xchoice.add("Look");
-    xchoice.add("Slant");
-    xchoice.add("Ground");
-    xchoice.add("Pixel");
-    ychoice = new Choice();
-    ychoice.add("Digital Number");
-    ychoice.add("Power");
-    ychoice.add("Sigma0");
-    ychoice.add("Gamma0");
-    mchoice = new Choice();
-    mchoice.add("On");
-    mchoice.add("Off");
-    
-    Panel firstpan = new Panel();
-    firstpan.setLayout(new GridLayout(3,1));
-    firstpan.setBackground(Color.lightGray);
-    firstpan.add(new Label("Image:"));
-    firstpan.add(new Label("Mask:"));
-    firstpan.add(new Label("Output:"));
-    
-    Panel secondpan = new Panel();
-    secondpan.setLayout(new GridLayout(3,1));
-    secondpan.setBackground(Color.lightGray);
-    secondpan.add(imageTextField);
-    secondpan.add(maskTextField);
-    secondpan.add(outputTextField);
-    
-    Panel thirdpan = new Panel();
-    thirdpan.setLayout(new GridLayout(3,1));
-    thirdpan.setBackground(Color.lightGray);
-    thirdpan.add(browseImageButton);
-    thirdpan.add(browseMaskButton);
-    thirdpan.add(browseOutputButton);
+   // Make the panel with okay & cancel buttons
+      JPanel bottomPanel = new JPanel();
+      bottomPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+      bottomPanel.setBackground(Color.lightGray);
+      bottomPanel.add(okayButton = new JButton ("Okay"));
+      bottomPanel.add(cancelButton = new JButton ("Cancel"));
+      getContentPane().add ("South", bottomPanel);
 
-    Panel collect = new Panel();
-    collect.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-    collect.setBackground(Color.lightGray);
-    collect.add(firstpan);
-    collect.add(secondpan);
-    collect.add(thirdpan);
+   // Add listeners
+      imageTextField.addKeyListener(this);
+      maskTextField.addKeyListener(this);
+      outputTextField.addKeyListener(this);
+      browseImageButton.addActionListener(this);
+      browseMaskButton.addActionListener(this);
+      browseOutputButton.addActionListener(this);
+      okayButton.addActionListener(this);
+      cancelButton.addActionListener(this);
+      addWindowListener(this);
 
-    Panel fourthpan = new Panel();
-    fourthpan.setLayout(new GridLayout(2, 4));
-    fourthpan.setBackground(Color.lightGray);
-    fourthpan.add(new Label("X"));
-    fourthpan.add(new Label("Y"));
-    fourthpan.add(new Label("Bin"));
-    fourthpan.add(new Label("Masked area"));
-    fourthpan.add(xchoice);
-    fourthpan.add(ychoice);
-    fourthpan.add(bintextfield);
-    fourthpan.add(mchoice);
+      pack();
+   }
 
-    Panel north = new Panel();
-    north.setLayout(new BorderLayout());
-    north.setBackground(Color.lightGray);
-    north.add("North", collect);
-    north.add("South", fourthpan);
-    add ("North", north);
+// *****************************************************************************
+// Insert a row with 3 columns to a panel using the gridBagLayout format
+//   the first column is a label & the other 2 are misc components
+   private void insertRow(JPanel panel,
+                          String col_1, Component col_2, Component col_3,
+                          GridBagLayout gbl, GridBagConstraints gbc) {
+      JLabel label = new JLabel(col_1);
+      gbc.gridwidth = GridBagConstraints.WEST; //Start row on left
+      gbl.setConstraints(label, gbc);
+      panel.add(label);
+      gbl.setConstraints(col_2, gbc);
+      panel.add(col_2);
+      gbc.gridwidth = GridBagConstraints.REMAINDER; //end row
+      gbl.setConstraints(col_3, gbc);
+      panel.add(col_3);
+      gbc.gridwidth = GridBagConstraints.WEST; //Start next row on left
+   }
 
-    Panel south = new Panel();
-    collect.setLayout(new FlowLayout(FlowLayout.CENTER));
-    south.setBackground(Color.lightGray);
-    south.add(okayButton = new Button ("Okay"));
-    south.add(cancelButton = new Button ("Cancel"));
-    add ("South", south);
-
-    //Add listeners
-    imageTextField.addKeyListener(this);
-    maskTextField.addKeyListener(this);
-    outputTextField.addKeyListener(this);
-    browseImageButton.addActionListener(this);
-    browseMaskButton.addActionListener(this);
-    browseOutputButton.addActionListener(this);
-    okayButton.addActionListener(this);
-    cancelButton.addActionListener(this);
-    addWindowListener(this);
-
-    pack();
-  }
-    
-  public void keyPressed (KeyEvent keyEvt) {
-    if (keyEvt.getKeyCode() == KeyEvent.VK_ENTER) {
-      try {
-        xthing = xchoice.getSelectedItem();
-        ything = ychoice.getSelectedItem();
-        mthing = mchoice.getSelectedItem();
-        bin = Integer.parseInt(bintextfield.getText());
-        outputfile = outputTextField.getText();
-        imagefile = imageTextField.getText();
-        maskfile = maskTextField.getText();
+// Key Listener stuff **********************************************************
+   public void keyPressed (KeyEvent keyEvt) {
+      if (keyEvt.getKeyCode() == KeyEvent.VK_ENTER) {
+         try {
+            maskThing = maskChoice.getSelectedItem();
+            outputfile = outputTextField.getText();
+            imagefile = imageTextField.getText();
+            maskfile = maskTextField.getText();
+            cancelled = false;
+         }
+         catch (Exception ex) {
+            System.out.print("Egad, man!");
+         }
+         finally {
+            processEvent(new WindowEvent(this,WindowEvent.WINDOW_CLOSING));
+         }
       }
-      catch (Exception ex) {
-        System.out.print("Egad, man!");
-      }
-      finally {
-        processEvent(new WindowEvent(this,WindowEvent.WINDOW_CLOSING));
-      }
-    }
-  }
-  public void keyReleased (KeyEvent ke) { }
-  public void keyTyped (KeyEvent ke) { }
+   }
+   public void keyReleased (KeyEvent ke) { }
+   public void keyTyped (KeyEvent ke) { }
 
 
-  public void actionPerformed (ActionEvent actEvent) {
-    if (actEvent.getSource() == okayButton) {
-      try {
-        xthing = xchoice.getSelectedItem();
-        ything = ychoice.getSelectedItem();
-        mthing = mchoice.getSelectedItem();
-        bin = Integer.parseInt(bintextfield.getText());
-        outputfile = outputTextField.getText();
-        imagefile = imageTextField.getText();
-        maskfile = maskTextField.getText();
+// Action Listener stuff *******************************************************
+   public void actionPerformed (ActionEvent actEvent) {
+      if (actEvent.getSource() == okayButton) {
+         try {
+            maskThing = maskChoice.getSelectedItem();
+            outputfile = outputTextField.getText();
+            imagefile = imageTextField.getText();
+            maskfile = maskTextField.getText();
+            cancelled = false;
+         }
+         catch (Exception ex) {
+            System.out.print("Egad, man!");
+         }
+         finally {
+            processEvent(new WindowEvent(this,WindowEvent.WINDOW_CLOSING));
+         }
       }
-      catch (Exception ex) {
-        System.out.print("Egad, man!");
+      if (actEvent.getSource() == cancelButton) {
+         cancelled = true;
+         processEvent(new WindowEvent(this,WindowEvent.WINDOW_CLOSING));
       }
-      finally {
-        processEvent(new WindowEvent(this,WindowEvent.WINDOW_CLOSING));
+      if (actEvent.getSource() == browseImageButton) {
+         String imagedir = null;
+         FileDialog f = new FileDialog(mainFrame, "select image file", FileDialog.LOAD);
+         if (imagefile != null)
+            imagedir = imagefile.substring(0, imagefile.lastIndexOf(System.getProperty("file.separator")) + 1);
+         if (imagedir != null)
+            f.setDirectory(imagedir);
+         f.show();
+         String filename = f.getFile();
+         if (filename != null) {
+            String directory = f.getDirectory();
+            imagefile = directory + filename;
+            imageTextField.setText(imagefile);
+         }
       }
-    }
-    if (actEvent.getSource() == cancelButton) {
-      cancelled = true;
-      processEvent(new WindowEvent(this,WindowEvent.WINDOW_CLOSING));
-    }
-    if (actEvent.getSource() == browseImageButton) {
-      String imagedir = null;
-      FileDialog f = new FileDialog(mainFrame, "select image file", FileDialog.LOAD);
-      if(imagefile != null)
-        imagedir = imagefile.substring(0, imagefile.lastIndexOf(System.getProperty("file.separator")) + 1);
-      if(imagedir != null)
-        f.setDirectory(imagedir);
-      f.show();
-      String filename = f.getFile();
-      if(filename != null) {
-        String directory = f.getDirectory();
-        imagefile = directory + filename;
-        imageTextField.setText(imagefile);
+      if (actEvent.getSource() == browseMaskButton) {
+         String maskdir = null;
+         FileDialog f = new FileDialog(mainFrame, "select image file", FileDialog.LOAD);
+         if (maskfile != null)
+            maskdir = maskfile.substring(0, maskfile.lastIndexOf(System.getProperty("file.separator")) + 1);
+         if (maskdir != null)
+            f.setDirectory(maskdir);
+         f.show();
+         String filename = f.getFile();
+         if (filename != null) {
+            String directory = f.getDirectory();
+            maskfile = directory + filename;
+            maskTextField.setText(maskfile);
+         }
       }
-    }
-    if (actEvent.getSource() == browseMaskButton) {
-      String maskdir = null;
-      FileDialog f = new FileDialog(mainFrame, "select image file", FileDialog.LOAD);
-      if(maskfile != null)
-        maskdir = maskfile.substring(0, maskfile.lastIndexOf(System.getProperty("file.separator")) + 1);
-      if(maskdir != null)
-        f.setDirectory(maskdir);
-      f.show();
-      String filename = f.getFile();
-      if(filename != null) {
-        String directory = f.getDirectory();
-        maskfile = directory + filename;
-        maskTextField.setText(maskfile);
+      if (actEvent.getSource() == browseOutputButton) {
+         String outputdir = null;
+         FileDialog f = new FileDialog(mainFrame, "select image file", FileDialog.SAVE);
+         if (outputfile != null)
+            outputdir = outputfile.substring(0, outputfile.lastIndexOf(System.getProperty("file.separator")) + 1);
+         if (outputdir != null)
+            f.setDirectory(outputdir);
+         f.show();
+         String filename = f.getFile();
+         if (filename != null) {
+            String directory = f.getDirectory();
+            outputfile = directory + filename;
+            outputTextField.setText(outputfile);
+         }
       }
-    }
-    if (actEvent.getSource() == browseOutputButton) {
-      String outputdir = null;
-      FileDialog f = new FileDialog(mainFrame, "select image file", FileDialog.SAVE);
-      if(outputfile != null)
-        outputdir = outputfile.substring(0, outputfile.lastIndexOf(System.getProperty("file.separator")) + 1);
-      if(outputdir != null)
-        f.setDirectory(outputdir);
-      f.show();
-      String filename = f.getFile();
-      if(filename != null) {
-        String directory = f.getDirectory();
-        outputfile = directory + filename;
-        outputTextField.setText(outputfile);
-      }
-    }
-  } 
+   } 
 
-  public void windowClosing(WindowEvent we) { 
-    cancelled = true;
-    this.dispose(); 
-  } 
-  public void windowActivated(WindowEvent we) { }
-  public void windowDeactivated(WindowEvent we) { }
-  public void windowDeiconified(WindowEvent we) { }
-  public void windowClosed(WindowEvent we) { }
-  public void windowIconified(WindowEvent we) { }
-  public void windowOpened(WindowEvent we) { }
-  
+// Window Listener stuff *******************************************************
+   public void windowClosing(WindowEvent we) { 
+      this.dispose(); 
+   } 
+   public void windowActivated(WindowEvent we) { }
+   public void windowDeactivated(WindowEvent we) { }
+   public void windowDeiconified(WindowEvent we) { }
+   public void windowClosed(WindowEvent we) { }
+   public void windowIconified(WindowEvent we) { }
+   public void windowOpened(WindowEvent we) { }
+
 }
 
