@@ -85,12 +85,18 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          --false-easting             : False Easting (optional)\n"\
 "          --false-northing            : False Northing (optional)\n"\
 "\n"\
+"         You may omit the origin (the image center will be used as the\n"\
+"         origin), however the standard parallels are required.\n"\
+"\n"\
 "     LAMBERT AZIMUTHAL EQUAL AREA\n"\
 "     ----------------------------\n"\
 "          --latitude-of-origin        : Latitude at center of projection\n"\
 "          --central-meridian          : Longitude at center of projection\n"\
 "          --false-easting             : False Easting (optional)\n"\
 "          --false-northing            : False Northing (optional)\n"\
+"\n"\
+"         You may omit the point of tangency (the image center will be\n"\
+"         used).\n"\
 "\n"\
 "     ALBERS CONICAL EQUAL AREA\n"\
 "     -------------------------\n"\
@@ -100,6 +106,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          --central-meridian          : Central Meridian\n"\
 "          --false-easting             : False Easting (optional)\n"\
 "          --false-northing            : False Northing (optional)\n"\
+"\n"\
+"         You may omit the origin (the image center will be used as the\n"\
+"         origin), however the standard parallels are required.\n"\
 "\n"\
 "     Using a Projection Parameters File\n"\
 "     ==================================\n"\
