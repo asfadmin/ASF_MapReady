@@ -6,7 +6,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	-lm
 
-OBJS  = read_stats.o \
+OBJS  = converters.o \
 	convert2byte.o
 
 all: build_only

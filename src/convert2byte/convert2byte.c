@@ -71,13 +71,6 @@ BUGS: None known
 #include "asf.h"
 #include "asf_meta.h"
 
-#ifndef TRUE
-#define TRUE 1
-#endif
-#ifndef FALSE
-#define FALSE 0
-#endif
-
 /* For floating point comparisons */
 #define MICRON 0.0000001
 #define FLOAT_EQUIVALENT(a, b) (abs(a - b) < MICRON ? 1 : 0)
@@ -86,34 +79,37 @@ BUGS: None known
 
 #define VERSION 1.0
 
+/* PROTOTYPES */
+void linear_conversion(FILE *fpin, FILE *fpout, meta_parameters *inMeta,
+                       meta_parameters *outMeta);
+void multilook(FILE *fpin, FILE *fpout,
+               meta_parameters *inMeta, meta_parameters *outMeta,
+               int lookLine, int lookSample,
+               int stepLine, int stepSample);
+
+
 int main(int argc, char **argv)
 {
-	char inFileName[256];
-	char outFileName[256];
-	char inMetaFileName[256];
-	char outMetaFileName[256];
-	int usingDefaultLS=1;      /* Has user overridden look line & sample? */
-	int multilook=FALSE;
-	int stepLine=5, stepSample=1;
-	int lookLine=5, lookSample=1;
-	int percent_complete;
-	int line, sample;
-	int num_lines, num_samples;
-	double slope, offset;
-	double *inBuffer;
-	double *outBuffer;
-	extern int currArg;        /* Pre-initialized to 1                    */
-	meta_parameters *inMeta;
-	meta_parameters *outMeta;
-	FILE *inFilePtr;
-	FILE *outFilePtr;
+	char inFileName[256];           /* Input data file name               */
+	char inMetaFileName[256];       /* Input metadata file name           */
+	char outFileName[256];          /* Output data file name              */
+	char outMetaFileName[256];      /* Output metadata file name          */
+	int defaultLookStep_flag=TRUE;  /* Use meta look line & sample?       */
+	int multilook_flag=FALSE;       /* Multilook the data or not          */
+	int stepLine, stepSample;       /* Step line/samp for multilooking    */
+	int lookLine, lookSample;       /* Look line/samp for multilooking    */
+	meta_parameters *inMeta;        /* Input metadata structure pointer   */
+	meta_parameters *outMeta;       /* Output metadata structure pointer  */
+	FILE *inFilePtr;                /* File pointer for input data        */
+	FILE *outFilePtr;               /* File pointer for output data       */
+	extern int currArg;             /* Pre-initialized to 1               */
 
 /* parse command line */
 	logflag=quietflag=FALSE;
 	while (currArg < (argc-2)) {
 		char *key = argv[currArg++];
 		if (strmatch(key,"-multilook")) {
-			multilook=TRUE;
+			multilook_flag=TRUE;
 		}
 		else if (strmatch(key,"-look")) {
 			CHECK_ARG(1)
@@ -121,8 +117,8 @@ int main(int argc, char **argv)
 				printf("**ERROR: '%s' does not look like a line x sample (e.g. '5x1').\n",GET_ARG(1));
 				usage(argv[0]);
 			}
-			multilook=TRUE;
-       			usingDefaultLS=FALSE;
+			multilook_flag=TRUE;
+       			defaultLookStep_flag=FALSE;
 		}
 		else if (strmatch(key,"-step")) {
 			CHECK_ARG(1)
@@ -130,8 +126,8 @@ int main(int argc, char **argv)
 				printf("**ERROR: '%s' does not look like a line x sample (e.g. '5x1').\n",GET_ARG(1));
 				usage(argv[0]);
 			}
-			multilook=TRUE;
-			usingDefaultLS=FALSE;
+			multilook_flag=TRUE;
+			defaultLookStep_flag=FALSE;
 		}
 		else if (strmatch(key,"-log")) {
 			CHECK_ARG(1);
@@ -150,44 +146,46 @@ int main(int argc, char **argv)
 	create_name(inMetaFileName,inFileName,".meta");
 
 	strcpy(outFileName,argv[currArg]);
+	if (!findExt(outFileName))
+		strncat(outFileName,".img",256);
 	create_name(outMetaFileName,outFileName,".meta");
+
+	StartWatch();
+	printf("Date: ");
+	fflush(NULL);
+	system("date");
+	printf("Program: convert2byte\n\n");
+	if (logflag) {
+		StartWatchLog(fLog);
+		fprintf(fLog, "Program: convert2byte\n\n");
+		fflush(fLog);
+	}
 
 /* Get metadata */
 	inMeta = meta_read(inMetaFileName);
 	if (inMeta->general->data_type==BYTE) {
-		printf("Data type is already byte... Exitting.\n");
+		printf("Data type is already byte... Exiting.\n");
+		if (logflag) {
+			fprintf(fLog,"Data type is already byte... Exiting.\n");
+			FCLOSE(fLog);
+		}
 		return 0;
 	}
-	num_lines = inMeta->general->line_count;
-	num_samples = inMeta->general->sample_count;
 
-	outMeta = meta_copy(inMeta);
-	outMeta->general->data_type = BYTE;
-
-	if (usingDefaultLS) {
-		/* We don't want to multilook any image twice */
-		if (inMeta->sar->line_increment==inMeta->sar->look_count)
-			stepLine=stepSample=lookLine=lookSample=1;
-		else
-			stepLine = inMeta->sar->look_count;
-			stepSample = 1;
-			lookLine = WINDOW_SIZE_MULTIPLIER * stepLine;
-			lookSample = WINDOW_SIZE_MULTIPLIER * stepSample;
-	}
-
-/* Get statistics for input data (all this quiet and log flag business makes it
- * awfully messy, but hey whachya gonna do? */
+/* Get statistics for input data (all this -quiet and -log flag business makes
+ * it awfully messy, but hey, whachya gonna do? */
 	if (!inMeta->stats) {
 		char command[1024];
 		
 		if (!quietflag)
-			printf(" Theres is no statistics structure in the meta file.\n"
+			printf(" There is no statistics structure in the meta file.\n"
 			       " To fix this the stats program will be run...\n");
-		if (!quietflag && logflag) 
+		if (!quietflag && logflag) {
 			fprintf(fLog,
-			       " Theres is no statistics structure in the meta file.\n"
+			       " There is no statistics structure in the meta file.\n"
 			       " To fix this the stats program will be run...\n");
-
+			fflush(fLog);
+		}
 		sprintf(command,"stats -nostat");
 		if (quietflag) sprintf(command,"%s -quiet",command);
 		if (logflag)   sprintf(command,"%s -log %s",command,logFile);
@@ -195,19 +193,17 @@ int main(int argc, char **argv)
 
 		if (!quietflag)
 			printf(" Running command line:  %s\n",command);
-		if (!quietflag && logflag)
+		if (!quietflag && logflag) {
 			fprintf(fLog," Running command line:  %s\n",command);
+			fflush(fLog);
+		}
 		system(command);
 
 		meta_free(inMeta);
 		inMeta = meta_read(inMetaFileName);
-		num_lines = inMeta->general->line_count;
-		num_samples = inMeta->general->sample_count;
-		meta_free(outMeta);
-		outMeta = meta_copy(inMeta);
-		outMeta->general->data_type = BYTE;
 	}
-	
+
+	/* if a mask was used in prior stats, move them, and get new stats */
 	if (inMeta->stats->mask == inMeta->stats->mask) {
 		char command[1024];
 		
@@ -216,12 +212,14 @@ int main(int argc, char **argv)
 			       " This program needs statistics without a mask, let's rectify that...\n"
 			       " Moving %s to %s.old...\n",
 				inMetaFileName, inMetaFileName);
-		if (!quietflag && logflag) 
+		if (!quietflag && logflag) {
 			fprintf(fLog,
 			       " It appears that a mask was used in prior statisticas calculations\n"
 			       " This program needs statistics without a mask, let's rectify that...\n"
 			       " Moving %s to %s.old...\n",
 				inMetaFileName, inMetaFileName);
+			fflush(fLog);
+		}
 		sprintf(command,"mv %s %s.old", inMetaFileName, inMetaFileName);
 		system(command);
 
@@ -232,53 +230,60 @@ int main(int argc, char **argv)
 
 		if (!quietflag)
 			printf(" Running command line:  %s\n",command);
-		if (!quietflag && logflag)
+		if (!quietflag && logflag) {
 			fprintf(fLog," Running command line:  %s\n",command);
+			fflush(fLog);
+		}
 		system(command);
 
 		meta_free(inMeta);
 		inMeta = meta_read(inMetaFileName);
-		num_lines = inMeta->general->line_count;
-		num_samples = inMeta->general->sample_count;
-		meta_free(outMeta);
-		outMeta = meta_copy(inMeta);
-		outMeta->general->data_type = BYTE;
+	}
+
+/* Prepare output meta data for processing & writing */
+	outMeta = meta_copy(inMeta);
+	outMeta->general->data_type = BYTE;
+
+/* Figure multilooking parameters if necessary */
+	if (multilook_flag && defaultLookStep_flag) {
+		/* We don't want to multilook any image twice */
+		if (inMeta->sar->line_increment==inMeta->sar->look_count)
+			stepLine=stepSample=lookLine=lookSample=1;
+		else {
+			stepLine = inMeta->sar->look_count;
+			stepSample = 1;
+			lookLine = WINDOW_SIZE_MULTIPLIER * stepLine;
+			lookSample = WINDOW_SIZE_MULTIPLIER * stepSample;
+			outMeta->general->sample_count = 
+				inMeta->general->sample_count / stepSample;
+			outMeta->general->line_count = 
+				inMeta->general->line_count / stepLine;
+			outMeta->sar->line_increment *= stepLine;
+			outMeta->sar->sample_increment *= stepSample;
+			outMeta->general->x_pixel_size *= stepSample;
+			outMeta->general->y_pixel_size *= stepLine;
+		}
 	}
 
 /* Read data and convert it to byte data */
 	inFilePtr = fopenImage(inFileName, "r");
-	inBuffer = (double *) MALLOC(num_samples*sizeof(double));
 	outFilePtr = FOPEN(outFileName, "w");
-	outBuffer = (double *) MALLOC(num_samples*sizeof(double));
-	/* Factors to convert pixels fo [0..255]
-	 * byte = slope * in + offset
-	 * 0    = slope * min + offset
-	 * 255  = slope * max + offset
-	 * Therefore: */
-	slope = 255.0 / (inMeta->stats->max - inMeta->stats->min);
-	offset = -slope * inMeta->stats->min;
-
-	percent_complete=0;
-	for (line=0; line<num_lines; line++) {
-		if (!quietflag && (line*100/num_lines==percent_complete)) {
-			printf("\rConverting data to byte: %3d%% complete.",
-				percent_complete++);
-			fflush(NULL);
-		}
-		get_double_line(inFilePtr, inMeta, line, inBuffer);
-		for (sample=0; sample<num_samples; sample++) {
-			outBuffer[sample] = slope*inBuffer[sample] + offset;
-		}
-		put_double_line(outFilePtr, outMeta, line, outBuffer);
+	if (multilook_flag) {
+		multilook(inFilePtr, outFilePtr, inMeta, outMeta,
+		          lookLine, lookSample, stepLine,stepSample);
 	}
-	if (!quietflag) printf("\rConverting data to byte: 100%% complete.\n\n");
-	
-	meta_write(outMeta,outMetaFileName);
+	else {
+		linear_conversion(inFilePtr, outFilePtr, inMeta, outMeta);
+	}
 
-	FREE(inBuffer);
-	FREE(outBuffer);
 	FCLOSE(inFilePtr);
 	FCLOSE(outFilePtr);
+
+	meta_write(outMeta,outMetaFileName);
+
+	StopWatch();
+	if (logflag) StopWatchLog(fLog);
+	if (fLog) FCLOSE(fLog);
 
 	return 0;
 }
@@ -291,10 +296,10 @@ void usage(char *name) {
 	"                <infile> <outfile>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
-	"   infile   is an image file (WITH extension)\n"
+	"   infile   Image file to be read in(WITH extension)\n"
 	"              accompanied by a .meta file.\n"
-	"   outfile  is the image file to be created, .img and .meta\n"
-	"              (Do not include an extension on your outfile)\n");
+	"   outfile  Output image file which will be byte data.\n"
+	"              (No extension necessary.)\n");
  printf("\n"
 	"OPTIONAL ARGUMENTS:\n"
 	"   -look lxs      change number of look lines and samples (default = 5x1).\n"
@@ -303,9 +308,9 @@ void usage(char *name) {
 	"   -quiet         Suppress terminal output.\n");
  printf("\n"
 	"DESCRIPTION:\n"
-	"   Converts a float .amp file into a byte image.\n");
+	"   Converts any ASF image into a byte image.\n");
  printf("\n"
 	"Version %.2f, ASF SAR Tools\n"
 	"\n",VERSION);
- exit(1);
+ exit(EXIT_FAILURE);
 }
