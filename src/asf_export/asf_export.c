@@ -128,9 +128,21 @@ static char *program_name = "asf_export";
 void 
 usage (char *program_name)
 {
-  printf ("\nUsage:\n"
-	  "%s: [-f FORMAT] [-s size] [-o OUTPUT_FILE] INPUT_FILE\n", 
-	  program_name);
+  printf ("\n"
+     "USAGE:\n"
+     "   %s: asf_export [ -f <format> ] [ -s <size> ] [ -o <outFile> ] <inFile>\n", 
+     program_name);
+  printf ("\n"
+     "OPTIONS:\n"
+     "   -f             Format to export to. Must be one of the following:\n"
+     "                      CEOS, envi, esri, geotiff, jpeg, ppm\n"
+     "   -s             Scale image so that its largest dimension is, at most, size.\n"
+     "   -o             Name of the output file.\n");
+  printf ("\n"
+     "DESCRIPTION:\n"
+     "This program ingests ASF internal format data and exports said data to\n"
+     "a number of output formats. If the input data was geocoded and the ouput\n"
+     "format supports geocoding, that information will be included.\n");
 }
 
 /* Evaluate to true iff floats are within tolerance of each other.  */
