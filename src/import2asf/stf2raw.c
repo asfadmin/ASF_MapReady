@@ -147,6 +147,7 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
 	hms_time st_time,img_time;
 	char *st_timeStr;/*Source state vector time, YYYY-MM-DD hh:mm:ss.ttt*/
 	int num_vecs;
+	extern int sprocketFlag;
 
 /*Open the parameter file*/
 	strcat(strcpy(parN,inN),".par");
@@ -229,6 +230,11 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
 
 /*Write out and free the metadata structure*/
 	meta_write(meta,outN);
+	if (sprocketFlag) {
+		char sprocketName[256];
+		create_name(sprocketName,outN,".metadata");
+		meta_write_sprocket(sprocketName,meta,NULL);
+	}
 	meta_free(meta);
 }
 

@@ -22,7 +22,8 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
                      char *outN)
 {
 	meta_parameters *meta=raw_init();
-	
+	extern int sprocketFlag;
+		
 	ceos_init(inN,meta);
 	s->lookDir = meta->sar->look_direction;
 	
@@ -30,8 +31,8 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
          --------------------------------------------------*/
 	if (0==strncmp(dssr->sys_id,"SKY",3))
 	{
-	/*Correct for wrong time of image start-- image start time
-	(from DSSR) is *actually* in the center of the image.*/
+	/* Correct for wrong time of image start-- image start time
+	 * (from DSSR) is *actually* in the center of the image.*/
 		double imgLen;/*Half of length of image, in seconds*/
 		int i;
 		imgLen=ceosLen(inN)/2.0/s->prf;
@@ -42,12 +43,18 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
 			meta->state_vectors->julDay--;
 			meta->state_vectors->second+=24*60*60;
 		}
-		/*Correct the time of the state vectors, which are *relative* to image start.*/
+		/* Correct the time of the state vectors, which are *relative*
+		 * to image start.*/
 		for (i=0;i<meta->state_vectors->vector_count;i++)
 			meta->state_vectors->vecs[i].time += imgLen;
-	/*State vectors are too far apart or too far from image as read-
-	   propagate them*/
+	/* State vectors are too far apart or too far from image as read --
+	 * propagate them*/
+		if (!quietflag) {
+		  printf("   Updating state vectors...  ");
+		  fflush(NULL);
+		}
 		propagate_state(meta, 3, (s->nLines / s->prf / 2.0) );
+		if (!quietflag) printf("Done.\n");
 	}
 	
 	/* Update s-> fields with new state vector
@@ -61,6 +68,11 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
         /* Write out and free the metadata structure
          ------------------------------------------*/
 	meta_write(meta,outN);
+	if (sprocketFlag) {
+		char sprocketName[256];
+		create_name(sprocketName,outN,".metadata");
+		meta_write_sprocket(sprocketName,meta,dssr);
+	}
 	meta_free(meta);
 }
 

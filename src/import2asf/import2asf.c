@@ -32,6 +32,8 @@ PROGRAM HISTORY:
                                 data to calibrated amplitude data
     1.31    5/04   P. Denny    Made format of input data a required
                                 argument (CEOS,STF,ESRI,ENVI)
+    1.4     5/04   P. Denny    Added hidden option to write out sprocket
+                                style metadata.
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -100,6 +102,7 @@ BUGS:
 #define MAX_tableRes 512
 #define REQUIRED_ARGS 4
 
+/* PROTOTYPES */
 void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart,
                   long *imgEnd, char *imgTimeStr, int *nVec,
                   float *fd, float *fdd, float *fddd);
@@ -110,12 +113,10 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
 bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
                               readPulseFunc *readNextPulse,
                               int prcflag, char *prcPath);
-void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
-                     char *outN);
 bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
                                 readPulseFunc *readNextPulse);
-void usage(char *name);
 
+/* Helpful functions */
 int firstRecordLen(char *ceosName)
 {
   FILE *f;
@@ -141,7 +142,10 @@ char *uc(char *string)
 /* Global variables - needed to handle missing lines properly */
 long imgStart, imgEnd;
 int outLine;
+/* needed to handle writing out of sprocket metadata file correctly */
+int sprocketFlag=FALSE;
 
+/* Lets go! */
 int main(int argc, char *argv[])
 {
   struct IOF_VFDR image_fdr;
@@ -169,6 +173,7 @@ int main(int argc, char *argv[])
   double noise_table[MAX_tableRes];
   double incid_cos[MAX_tableRes], incid_sin[MAX_tableRes];
   extern int currArg; /* from cla.h in asf.h */
+  char sprocketName[256];
 
   logflag=FALSE;
   quietflag=FALSE;
@@ -176,7 +181,10 @@ int main(int argc, char *argv[])
   /* Parse command line args */
   while (currArg < (argc-REQUIRED_ARGS)) {
     char *key = argv[currArg++];
-    if (strmatch(key,"-log")) {
+    if (strmatch(key,"-sprocket")) {
+      sprocketFlag=TRUE;
+    }
+    else if (strmatch(key,"-log")) {
       CHECK_ARG(1); /*one string argument: log file */
       strcpy(logFile,GET_ARG(1));
       fLog = FOPEN(logFile,"a");
@@ -318,6 +326,10 @@ int main(int argc, char *argv[])
       create_name(outName, outBaseName, "_cpx.img");
       meta->general->data_type=COMPLEX_REAL32;
       meta_write(meta,outName);
+      if (sprocketFlag) {
+        create_name(sprocketName, outName, ".metadata");
+        meta_write_sprocket(sprocketName, meta, NULL);
+      }
 
       /* Take care of image files and memory */
       fpIn  = fopenImage(inDataName,"rb");
@@ -431,6 +443,10 @@ int main(int argc, char *argv[])
       /* Handle output files */
       meta->general->data_type=REAL32;
       meta_write(meta,outName);
+      if (sprocketFlag) {
+        create_name(sprocketName, outName, ".metadata");
+        meta_write_sprocket(sprocketName, meta, NULL);
+      }
 
       /* Read calibration parameters if required */
       if (strcmp(out_type, "sigma")==0 || strcmp(out_type, "gamma")==0
@@ -491,7 +507,7 @@ int main(int argc, char *argv[])
                 if (cal_param->output_type==gamma_naught)
                   incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
                 if (cal_param->output_type==beta_naught)
-                  incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
+                 incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
                 out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
             }
             else
@@ -798,7 +814,11 @@ int main(int argc, char *argv[])
     meta = esri2meta(esri);
 
     /* Write metadata file */
-    meta_write(meta, outName);
+    meta_write(meta,outName);
+    if (sprocketFlag) {
+      create_name(sprocketName, outName, ".metadata");
+      meta_write_sprocket(sprocketName, meta, NULL);
+    }
 
     /* Write data file - currently no header, so just copying generic binary */
     sprintf(tmp, "cp %s %s", inDataName, outName);
@@ -955,7 +975,12 @@ int main(int argc, char *argv[])
     meta = envi2meta(envi);
 
     /* Write metadata file */
-    meta_write(meta, outName);
+    meta_write(meta,outName);
+    if (sprocketFlag) {
+      create_name(sprocketName, outName, ".metadata");
+      meta_write_sprocket(sprocketName, meta, NULL);
+    }
+
 
     /* Write data file - currently no header, so just copying generic binary */
     sprintf(tmp, "cp %s %s", inDataName, outName);
@@ -972,6 +997,7 @@ int main(int argc, char *argv[])
       FCLOSE(fLog);
     }
   }
+
   else {
         sprintf(tmp,"Unrecognized data format: '%s'\n\n",type);
         printf(tmp);
