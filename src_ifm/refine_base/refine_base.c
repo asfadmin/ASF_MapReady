@@ -43,7 +43,10 @@
     1.0	    11/96	 M. Shindle - Original program
     1.1	    8/97	 O. Lawlor  - Takes Parameters from metadata & ddr
     1.2	    7/01	 R. Gens    - Conversion of script into program
-				      Included external programs as functions 
+				      Included external programs as functions
+    1.5    12/03         P. Denny   - Bring commandline parsing to our standard
+                                      Use meta 1.1 instead of DDR (genab.c)
+
 HARDWARE/SOFTWARE LIMITATIONS:
 
 ALGORITHM DESCRIPTION:
@@ -85,52 +88,51 @@ BUGS:
 
 #include "asf.h"
 
-#define VERSION 1.2
+#define VERSION 1.5
 
-void print_usage();
+/* Prototypes */
+int getphase(char *phasein, char *tiept, char *outfile);
+int genab(char *datafile, char *basefile, char *metaName, char *matfile,
+          char *vecfile);
+int bp(char *matfile, char *vecfile, char *newbase);
+int test_base(char *basefile, char *matfile, char *vecfile);
+
+
 
 int main(int argc,char *argv[])
 {
-  int iter=0, keepIter=0, i, optind=1;
+  int iter=0, keepIter=0;
   char cmd[255], phase_file[255], tp_file[255], ctrlpt_file[255];
   char meta_file[255], oldbase_file[255], newbase_file[255], matrix_file[255], vec_file[255];
 
-  if (argc==1 || argc>11) print_usage();
-
-  logflag=quietflag=0;
-
-  /* take care of the options */
-  for (i=1; i<argc; i++) {
-    if (strncmp(argv[i], "-k", 2)==0) {
-      iter=atoi(argv[i+1]);
-      keepIter=1;
-      i+=1;
-      optind+=2;
-    }
-    else if (strncmp(argv[i], "-log", 4)==0) {
-      sprintf(logFile, "%s", argv[i+1]);
-      fLog = FOPEN(logFile, "a");
-      logflag=1;
-      i+=1;
-      optind+=2;
-    } 
-    else if (strncmp(argv[i], "-quiet", 6)==0) {
-      quietflag=1;
-      optind+=1;
-    }
-    else if (strncmp(argv[i], "-", 1)==0) {
-      sprintf(errbuf, "   ERROR: %s is not a valid option!\n", argv[i]);
-      printErr(errbuf);
-    }
+  /* Parse command line arguments */
+  logflag=quietflag=FALSE;
+  while (currArg < (argc-5)) {
+     char *key = argv[currArg++];
+     if (strmatch(key,"-keep")) {
+        CHECK_ARG(1);
+	iter = atoi(GET_ARG(1));
+	keepIter=TRUE;
+     }
+     else if (strmatch(key,"-log")) {
+        CHECK_ARG(1);
+        strcpy(logFile,GET_ARG(1));
+        fLog = FOPEN(logFile, "a");
+        logflag=TRUE;
+     }
+     else if (strmatch(key,"-quiet")) {
+        quietflag=TRUE;
+     }
+     else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
   }
+  if ((argc-currArg) < 5) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 
   /* take care of required command line arguments */
-  i=optind;
-  sprintf(phase_file, "%s", argv[i]);
-  sprintf(tp_file, "%s", argv[i+1]);
-  sprintf(meta_file, "%s", argv[i+2]);
-  sprintf(oldbase_file, "%s", argv[i+3]);
-  sprintf(newbase_file, "%s", argv[i+4]);
+  strcpy(phase_file,   argv[currArg]);
+  strcpy(tp_file,      argv[currArg+1]);
+  strcpy(meta_file,    argv[currArg+2]); /* Do we need this argument?? */
+  strcpy(oldbase_file, argv[currArg+3]);
+  strcpy(newbase_file, argv[currArg+4]);
 
   system("date");
   printf("Program: refine_base\n\n");
@@ -162,22 +164,32 @@ int main(int argc,char *argv[])
   return(0);
 }
 
-void print_usage () {
-      	printf("Usage: refine_base [-k __iter__] [-log <file>] [-quiet] "
-	       "          phase tie_points meta old_base new_base\n");
-      	printf("  phase         unwrapped interferogram phase file\n");
-      	printf("  tie_points    tie-point location file.\n");
-      	printf("  meta          filename containing interferogram's metadata.\n");
-      	printf("  old_base      baseline file containg four parameters:\n");
-      	printf("                Bn delta_Bn Bp delta_Bp\n");
-      	printf("  new_base      refined baseline file containg four parameters:\n");
-      	printf("                Bn delta_Bn Bp delta_Bp\n");
-      	printf("  -k __iter__   Keep intermediate products.  Iterations=__iter__\n");
-	printf("  -log <file>   Allows the output to be written to a log file\n");
-	printf("  -quiet	Suppresses the output to the essential\n");
-      	printf("Corrects a given baseline for an interferogram using tie points.\n");
-        printf("Version: %.2f, ASF SAR TOOLS\n", VERSION);
-        exit(1);
+void usage (char *name) {
+ printf("\n"
+ 	"USAGE:\n"
+	"   %s [-keep <iter>] [-log <file>] [-quiet]\n"
+	"            <phase> <tie_points> <meta> <old_base> <new_base>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   phase        Unwrapped interferogram phase file\n"
+	"   tie_points   Tie-point location file.\n"
+	"   meta         Filename containing interferogram's metadata.\n"
+	"   old_base     Baseline file containg four parameters:\n"
+	"                  Bn delta_Bn Bp delta_Bp\n"
+	"   new_base     Refined baseline file containg four parameters:\n"
+	"                  Bn delta_Bn Bp delta_Bp\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -keep <iter>  Keep intermediate products.  Iterations=<iter>\n"
+	"   -log <file>   Allows the output to be written to a log file\n"
+	"   -quiet	  Suppresses the output to the essential\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Corrects a given baseline for an interferogram using tie points.\n");
+ printf("\n"
+	"Version: %.2f, ASF SAR Tools\n"
+	"\n", VERSION);
+ exit(EXIT_FAILURE);
 }
 
 
