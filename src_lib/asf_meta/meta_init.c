@@ -31,12 +31,57 @@ meta_state_vectors *raw_init_state(int nState)
 }
 
 /*raw_init:
+	Creates and initializes a meta_parameters structure, guessing at
+conceivable values.  These bogus values always end in "989", so you can
+tell them from real values.
+*/
+meta_parameters *raw_init(void)
+{
+/*Create new structure.*/
+	meta_parameters *meta = (meta_parameters *)MALLOC(sizeof(meta_parameters));
+	meta->general         = (meta_general *)MALLOC(sizeof(meta_general));
+	meta->sar             = NULL;
+	meta->optical         = NULL;  /* Not yet in use */
+	meta->thermal         = NULL;  /* Not yet in use */
+	meta->projection      = NULL;
+	meta->stats           = NULL;
+	meta->state_vectors   = NULL;
+	meta->geo  = NULL; /* DEPRECATED */
+	meta->ifm  = NULL; /* DEPRECATED */
+	meta->info = NULL; /* DEPRECATED */
+
+/*Fill with ludicrous values.*/
+	meta->general->sensor[0] = '\0';
+	meta->general->mode[0] = '\0';
+	meta->general->processor[0] = '\0';
+	meta->general->data_type[0] = '\0';
+	meta->general->system[0] = '\0';
+	meta->general->orbit -1;
+	meta->general->frame = -1;
+	meta->general->orbit_direction = '\0';
+	meta->general->line_count = -1;
+	meta->general->sample_count = -1;
+	meta->general->start_line = -1;
+	meta->general->start_sample = -1;
+	meta->general->xPix = NAN;
+	meta->general->yPix = NAN;
+	meta->general->center_latitude = NAN;
+	meta->general->center_longitude = NAN;
+	meta->general->re_major = NAN;
+	meta->general->re_minor = NAN;
+	meta->general->bit_error_rate = NAN;
+	meta->general->missing_lines = -1;
+	
+	return meta;
+}
+
+/*raw_init_old:
 	Creates and initializes a meta_parameters
 structure, guessing at conceivable values.
 These bogus values always end in "989", so
 you can tell them from real values.
 */
-meta_parameters *raw_init(void)
+meta_parameters *raw_init_old(void)
 {
 	
 /*Create new structure.*/
@@ -75,8 +120,7 @@ meta_parameters *raw_init(void)
 	return sar;
 }
 
-
-/*meta_init: 
+/*meta_init_old: 
 	Reads in a new meta_parameters record from
 disk with the given filename.  If no .meta
 exists, it calls create_meta to construct 
@@ -85,18 +129,22 @@ one.
 #ifndef WIN32
 #include "unistd.h"/*For getpid()*/
 #endif
-meta_parameters *meta_init(const char *fName)
+meta_parameters *meta_init_old(const char *fName)
 {
 	if (extExists(fName,".meta")) /*Read .meta file if possible*/
-		return meta_read(fName);
+		return meta_read_old(fName);
 	else
-		return meta_create(fName);
+		return meta_create/*_old*/(fName);
+}
+meta_parameters *meta_init(const char *fName)
+{
+	return meta_init_old(fName);
 }
 
 /*meta_free:
 	Disposes of a given metadata parameters record.
 */
-void meta_free(meta_parameters *meta)
+void meta_free_old(meta_parameters *meta)
 {
 	if (meta->geo->proj!=NULL)
 		free((void *)meta->geo->proj);
@@ -108,6 +156,10 @@ void meta_free(meta_parameters *meta)
 	meta->ifm=NULL;
 	meta->stVec=NULL;
 	free((void *)meta);
+}
+void meta_free(meta_parameters *meta)
+{
+	meta_free_old(meta);
 }
 
 /*final_init:

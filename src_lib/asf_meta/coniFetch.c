@@ -226,8 +226,8 @@ char * coniStr(coniStruct *coniN,char *desiredParam,int *err)
 	if (err==NULL)
 	{/*User doesn't care about errors.  Print our own message and quit.*/
 		printf("ERROR!\n"
-		"Couldn't find field '%s' in\n"
-		"coni file '%s'.\n",desiredParam,coni->fName);
+			"Couldn't find field '%s' in\n"
+			"coni file '%s'.\n",desiredParam,coni->fName);
 		exit(1);
 	} else
 		*err=CONI_MISSING;
