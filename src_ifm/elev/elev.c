@@ -74,6 +74,33 @@ BUGS:
 
 #define VERSION 2.5
 
+static
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <file>] [-quiet] <phase> <base> <meta> <outfile> <seed_file>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"    phase:      Unwrapped phase file (.phase and .meta)\n"
+	"    base:       File containing baseline params. used to unwrap\n"
+	"                  format:  Bn_c   dBn   Bp_c   dBp \n"
+	"    meta:       The name of the file that contains the \n"
+	"                  metadata for image 1 of the interferogram pair.\n"
+	"    outfile:    Output file containing elevations.\n"
+	"    seed_file:  Tandem_ifm style seed file.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -log:    Option to have output written to a log <file>.\n"
+	"   -quiet:  Option to have output surpressed to essential.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Generate a DEM from unwrapped phase\n");
+ printf("\n"
+	"Version: %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
+}
 
 int main(int argc, char **argv)
 {
@@ -285,29 +312,3 @@ int main(int argc, char **argv)
 	return(0);
 }
 
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-log <file>] [-quiet] <phase> <base> <meta> <outfile> <seed_file>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"    phase:      Unwrapped phase file (.phase and .meta)\n"
-	"    base:       File containing baseline params. used to unwrap\n"
-	"                  format:  Bn_c   dBn   Bp_c   dBp \n"
-	"    meta:       The name of the file that contains the \n"
-	"                  metadata for image 1 of the interferogram pair.\n"
-	"    outfile:    Output file containing elevations.\n"
-	"    seed_file:  Tandem_ifm style seed file.\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"   -log:    Option to have output written to a log <file>.\n"
-	"   -quiet:  Option to have output surpressed to essential.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Generate a DEM from unwrapped phase\n");
- printf("\n"
-	"Version: %.2f, ASF InSAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
-}
