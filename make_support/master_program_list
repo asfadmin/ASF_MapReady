@@ -124,6 +124,7 @@ PROGRAMS
 		PROGRAMS
 			asf_export
 			asf_import
+			asf_geocode
 	}
 
 
@@ -218,6 +219,7 @@ PROGRAMS
 			asf_convert
 			asf_export
 			asf_import
+			asf_geocode
 	}
 
 }
@@ -236,6 +238,7 @@ CATEGORIES
   	asf_convert
 	asf_export
 	asf_import
+	asf_geocode
   }
 
 # Open - Anybody can get this stuff (BSD license)
