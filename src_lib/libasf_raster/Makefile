@@ -9,6 +9,11 @@ OBJS = interpolate.o \
 
 CFLAGS += $(shell pkg-config --cflags-only-I glib-2.0)
 
+LIBS = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a \
+	-lm
+
 all: build_only
 	cp libasf_raster.a $(LIBDIR)
 	cp asf_raster.h $(ASF_INCLUDE_DIR)
@@ -21,7 +26,10 @@ build_only: $(OBJS)
 # Rebuild everything if makefile or any local of ASF header or library
 # has changed.
 $(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) \
-	 $(addprefix $(LIBDIR)/, $(LIBS))
+	 $(LIBS)
 
 clean:
 	rm -rf $(OBJS) libasf_raster.a
+
+test: interpolate.t.c all
+	$(CC) $(CFLAGS) interpolate.t.c $(LIBDIR)/libasf_raster.a $(LIBS) -o interpolate.t
