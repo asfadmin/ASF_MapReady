@@ -12,9 +12,9 @@ FileUtil:
  * returns whether the given file basename and extension exist and are readable.*/
 int extExists(const char *name,const char *newExt)
 {
-	char *fName=appendExt(name,newExt);
-	int exists=fileExists(fName);
-	free((void *)fName);
+	char *fName = appendExt(name,newExt);
+	int exists = fileExists(fName);
+	free( (void *) fName);
 	return exists;
 }
 
