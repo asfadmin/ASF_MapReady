@@ -355,6 +355,17 @@ swap_bytes_32 (unsigned char *in)
   in[2] = tmp;
 }
 
+// Swap the byte order of a 16 bit value, hopefully converting from
+// big endian to little endian or vice versa.
+static void
+swap_bytes_16 (unsigned char *in)
+{
+  g_assert (sizeof (unsigned char) == 1);
+  int tmp = in[0];
+  in[0] = in[1];
+  in[1] = tmp;
+}
+
 FloatImage *
 float_image_new_from_memory (ssize_t size_x, ssize_t size_y, float *buffer)
 {
@@ -422,9 +433,9 @@ float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor)
   return self;
 }
 
-// Return true iff file is larger than size.
+// Return true iff file is size or larger.
 static gboolean
-file_larger_than (const char *file, off_t size)
+is_large_enough (const char *file, off_t size)
 {
   struct stat stat_buffer;
 #if GLIB_CHECK_VERSION(2, 6, 0)
@@ -450,8 +461,8 @@ float_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
 
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
-  g_assert (file_larger_than (file, offset + ((off_t) size_x * size_y
-					      * sizeof (float))));
+  g_assert (is_large_enough (file, offset + ((off_t) size_x * size_y
+					     * sizeof (float))));
 
   // Open the file to read data from.
   FILE *fp = fopen (file, "r");
@@ -641,8 +652,6 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
     }
 
     // Did we write the correct total amount of data?
-    off_t end_offset = ftello (self->tile_file);
-    end_offset = end_offset;
     g_assert (ftello (self->tile_file) 
 	      == (off_t) self->tile_area * self->tile_count * sizeof (float));
 
@@ -694,11 +703,11 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
 
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
-  g_assert (file_larger_than (file, 
-			      offset + ((off_t) original_size_x 
-					* original_size_y
-					* sizeof (float))));
-
+  g_assert (is_large_enough (file, 
+			     offset + ((off_t) original_size_x 
+				       * original_size_y
+				       * sizeof (float))));
+  
   // Find the stride that we need to use in each dimension to evenly
   // cover the original image space.
   double stride_x = (size_x == 1 ? 0.0 
@@ -868,6 +877,279 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
   // Now that we have an instantiated version of the image we are done
   // with this temporary file.
   return_code = fclose (reduced_image);
+
+  return self;
+}
+
+FloatImage *
+float_image_new_from_file_pointer_with_sample_type
+  (ssize_t size_x, ssize_t size_y, FILE *file_pointer, off_t offset,
+   float_image_byte_order_t byte_order, float_image_sample_type sample_type)
+{
+  g_assert (size_x > 0 && size_y > 0);
+
+  // Check in advance if the source file looks big enough (we will
+  // still need to check return codes as we read() data, of course).
+  switch ( sample_type ) {
+  case FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER:
+    g_assert (file_pointed_to_larger_than (file_pointer, 
+					   offset + ((off_t) size_x * size_y
+						     * sizeof (int16_t))));
+    break;
+  default:
+    g_assert_not_reached ();
+  }
+
+  FloatImage *self = initialize_float_image_structure (size_x, size_y);
+
+  FILE *fp = file_pointer;	// Convenience alias.
+
+  // Seek to the indicated offset in the file.
+  int return_code = fseeko (fp, offset, SEEK_CUR);
+  g_assert (return_code == 0);  
+
+  // If we need a tile file for an image of this size, we will load
+  // the data straight into it.
+  if ( self->tile_file != NULL ) {
+
+    // We will read the input image data in horizontal stips one tile
+    // high.  Note that we probably won't be able to entirely fill the
+    // last tiles in each dimension with real data, since the image
+    // sizes rarely divide evenly by the numbers of tiles.  So we fill
+    // it with zeros instead.  The data off the edges of the image
+    // should never be accessed directly anyway.
+
+    // Some data for doing zero fill.  If the tiles are bigger than
+    // the image itself, we need to make the available zero fill the
+    // size of the tile instead of the size of the file.
+    g_assert (self->tile_size <= SSIZE_MAX);
+    float *zero_line = g_new0 (float, (size_x > (ssize_t) self->tile_size ? 
+				       (size_t) size_x : self->tile_size));
+    g_assert (0.0 == 0x0);
+
+    // Buffer capable of holding a full strip of the input sample
+    // type.  Initializer reassures compiler without making the thing
+    // usable without initialization
+    void *input_buffer = NULL;
+    switch ( sample_type ) {
+    case FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER:
+      input_buffer = g_new (int16_t, self->tile_size * self->size_x);
+      break;
+    default:
+      g_assert_not_reached ();
+    }
+
+    // Buffer capable of holding a full strip of floats.
+    float *buffer = g_new (float, self->tile_size * self->size_x);
+    
+    // Reorganize data into tiles in tile oriented disk file.
+    size_t ii = 0;
+    for ( ii = 0 ; ii < self->tile_count_y ; ii++ ) {
+      // The "effective_height" of the strip is the portion of the
+      // strip for which data actually exists.  If the effective
+      // height is less than self->tile>size, we will have to add some
+      // junk to fill up the extra part of the tile (which should
+      // never be accessed).
+      size_t effective_height;
+      if ( ii < self->tile_count_y - 1 
+	   || self->size_y % self->tile_size == 0 ) {
+	effective_height = self->tile_size;
+      }
+      else {
+	effective_height = self->size_y % self->tile_size;
+      }
+      // Total area of the current strip.
+      size_t strip_area = effective_height * self->size_x;
+      
+      // Read one strip of tiles worth of data from the file.
+      size_t read_count = -1;	// Initializer reassures compiler.
+      switch ( sample_type ) {
+      case FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER:
+	read_count = fread (input_buffer, sizeof (int16_t), strip_area, fp);
+	break;
+      default:
+	g_assert_not_reached ();
+      }
+      g_assert (read_count == strip_area);
+
+      // Convert from the byte order on disk to the host byte order,
+      // if necessary.
+      if ( non_native_byte_order (byte_order) ) {
+	switch ( sample_type ) {
+	  case FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER:
+	    g_assert (sizeof (int16_t) == 2);
+	    size_t idx;
+	    for ( idx = 0 ; idx < strip_area ; idx++ ) {
+	      swap_bytes_16 
+		((unsigned char *) &(((int16_t *) input_buffer)[idx]));
+	    }
+	    break;
+	default:
+	  g_assert_not_reached ();
+	}
+      }
+
+      // Convert from the input sample type to floating point.
+      size_t jj;
+      for ( jj = 0 ; jj < strip_area ; jj++ ) {
+	switch ( sample_type ) {
+	case FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER:
+	  buffer[jj] = ((int16_t *) input_buffer)[jj];
+	  break;
+	default:
+	  g_assert_not_reached ();
+	}
+      }
+
+      // Write data from the strip into the tile store.
+      for ( jj = 0 ; jj < self->tile_count_x ; jj++ ) {
+	// This is roughly analogous to effective_height.
+	size_t effective_width;
+	if ( jj < self->tile_count_x - 1 
+	     || self->size_x % self->tile_size == 0) {
+	  effective_width = self->tile_size;
+	}
+	else {
+	  effective_width = self->size_x % self->tile_size;
+	}
+	size_t write_count;	// For return of fwrite() calls.
+	size_t kk;
+	for ( kk = 0 ; kk < effective_height ; kk++ ) {
+	  write_count 
+	    = fwrite (buffer + kk * self->size_x + jj * self->tile_size, 
+		      sizeof (float), effective_width, self->tile_file);
+	  // If we wrote less than expected,
+	  if ( write_count < effective_width ) {
+	    // it must have been a write error (probably no space left),
+	    g_assert (ferror (self->tile_file));
+	    // so print an error message,
+	    fprintf (stderr, 
+		     "Error creating tile cache file for float_image "
+		     "instance: %s\n", strerror (errno));
+	    // and exit.
+	    exit (EXIT_FAILURE);
+	  }
+	  if ( effective_width < self->tile_size ) {
+	    // Amount we have left to write to fill out the last tile.
+	    size_t edge_width = self->tile_size - effective_width;
+	    write_count = fwrite (zero_line, sizeof (float), edge_width,
+				  self->tile_file);
+	    // If we wrote less than expected,
+	    if ( write_count < edge_width ) {
+	      // it must have been a write error (probably no space left),
+	      g_assert (ferror (self->tile_file));
+	      // so print an error message,
+	      fprintf (stderr, 
+		       "Error creating tile cache file for float_image "
+		       "instance: %s\n", strerror (errno));
+	      // and exit.
+	      exit (EXIT_FAILURE);
+	    }
+	  }
+	}
+	// Finish writing the bottom of the tile for which there is no
+	// image data (should only happen if we are on the last strip of
+	// tiles).
+	for ( ; kk < self->tile_size ; kk++ ) {
+	  g_assert (ii == self->tile_count_y - 1);
+	  write_count = fwrite (zero_line, sizeof (float), self->tile_size,
+				self->tile_file);
+	  // If we wrote less than expected,
+	  if ( write_count < self->tile_size ) {
+	    // it must have been a write error (probably no space left),
+	    g_assert (ferror (self->tile_file));
+	    // so print an error message,
+	    fprintf (stderr, 
+		     "Error creating tile cache file for float_image "
+		     "instance: %s\n", strerror (errno));
+	    // and exit.
+	    exit (EXIT_FAILURE);
+	  }
+	}
+      }
+    }
+
+    // Did we write the correct total amount of data?
+    g_assert (ftello (self->tile_file) 
+	      == (off_t) self->tile_area * self->tile_count * sizeof (float));
+
+    // Free temporary buffers.
+    g_free (buffer);
+    g_free (input_buffer);
+    g_free (zero_line);
+  }
+
+  // Everything fits in the cache (at the moment this means everything
+  // fits in the first tile, which is a bit of a FIXME), so just put
+  // it there.
+  else {
+    self->tile_addresses[0] = self->cache;
+    switch ( sample_type ) {
+    case FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER:
+      {  
+	// Buffer to hold input samples.
+	int16_t *input_buffer_16 = g_new (int16_t, self->tile_area);
+	// Read the input samples.
+	size_t read_count = fread (input_buffer_16, sizeof (int16_t), 
+				   self->tile_area, fp);
+	g_assert (read_count == self->tile_area);
+	// Convert to native byte order, if necessary.
+	if ( non_native_byte_order (byte_order) ) {
+	  g_assert (sizeof (int16_t) == 2);
+	  size_t idx;
+	  for ( idx = 0 ; idx < self->tile_area ; idx++ ) {
+	    swap_bytes_16 ((unsigned char *) &(input_buffer_16[idx]));
+	  }
+	}
+	// Convert to output float format as advertised.
+	size_t jj;
+	for ( jj = 0 ; jj < self->tile_area ; jj++ ) {
+	  self->tile_addresses[0][jj] = input_buffer_16[jj];
+	}
+	g_free (input_buffer_16);
+	break;
+      }
+    default:
+      g_assert_not_reached ();
+    }
+  }
+
+  return self;
+}
+
+FloatImage *
+float_image_new_from_file_with_sample_type
+  (ssize_t size_x, ssize_t size_y, const char *file, off_t offset,
+   float_image_byte_order_t byte_order, float_image_sample_type sample_type)
+{
+  g_assert (size_x > 0 && size_y > 0);
+
+  size_t sample_size = 0;	// Initializer reassures compiler.
+  switch ( sample_type ) {
+  case FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER:
+    sample_size = sizeof (int16_t);
+    break;
+  default:
+    g_assert_not_reached ();
+  }
+
+  // Check in advance if the source file looks big enough (we will
+  // still need to check return codes as we read() data, of course).
+  g_assert (is_large_enough (file, offset + ((off_t) size_x * size_y
+					     * sample_size)));
+
+  // Open the file to read data from.
+  FILE *fp = fopen (file, "r");
+  // FIXME: we need some error handling and propagation here.
+  g_assert (fp != NULL);
+
+  FloatImage *self = float_image_new_from_file_pointer_with_sample_type 
+    (size_x, size_y, fp, offset, byte_order, 
+     FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER);
+  
+  // Close file we read image from.
+  int return_code = fclose (fp);
+  g_assert (return_code == 0);
 
   return self;
 }
