@@ -58,6 +58,8 @@ disable_for_multiple_selected(GtkMenu * menu)
 gint
 popup_handler(GtkWidget *widget, GdkEvent *event)
 {
+  LSL;
+
     GtkMenu *menu;
     GdkEventButton *event_button;
     GtkTreeSelection *selection;
@@ -104,6 +106,7 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 		if (strstr(status, "...") != NULL)
 		{
 		    gtk_tree_path_free(path);
+		    LSU;
 		    return FALSE;
 		}
 
@@ -124,8 +127,8 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 	    {
 		/* nothing selected, and nothing was under mouse when
 		   clicked */
-
-		return FALSE;
+	      LSU;
+	      return FALSE;
 	    }
 	}
 	else
@@ -136,10 +139,10 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 	
 	gtk_menu_popup(menu, NULL, NULL, NULL, NULL,
 		       event_button->button, event_button->time);
-	
+	LSU;
 	return TRUE;
     }
-    
+    LSU;
     return FALSE;
 }
 
@@ -171,6 +174,8 @@ static gboolean confirm_overwrite()
 SIGNAL_CALLBACK gint
 popup_menu_remove(GtkWidget *widget, GdkEvent *event)
 {
+  LSL;
+
     GtkWidget *files_list;
     GtkTreeModel * model;
     GtkTreeSelection *selection;
@@ -222,12 +227,14 @@ popup_menu_remove(GtkWidget *widget, GdkEvent *event)
     g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
     g_list_free(refs);
 
+    LSU;
     return TRUE;
 }
 
 gboolean
 get_iter_to_first_selected_row(GtkWidget * files_list, GtkTreeIter * iter)
 {
+  LSL;
     GList * selected_rows;
     GtkTreeModel *model;
     GtkTreeSelection *selection;
@@ -246,10 +253,12 @@ get_iter_to_first_selected_row(GtkWidget * files_list, GtkTreeIter * iter)
 	g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
 	g_list_free(selected_rows);
 
+	LSU;
 	return TRUE;
     }
     else
     {
+        LSU;
 	return FALSE;
     }
 }
@@ -257,6 +266,8 @@ get_iter_to_first_selected_row(GtkWidget * files_list, GtkTreeIter * iter)
 SIGNAL_CALLBACK gint
 popup_menu_jump(GtkWidget *widget, GdkEvent *event)
 {
+  LSL;
+
     GtkWidget *files_list;
     GtkWidget * textview_output;
     GtkTreeIter iter;
@@ -287,12 +298,14 @@ popup_menu_jump(GtkWidget *widget, GdkEvent *event)
 	}
     }
 
+    LSU;
     return TRUE;
 }
 
 SIGNAL_CALLBACK gint
 popup_menu_metadata(GtkWidget *widget, GdkEvent *event)
 {
+  LSL;
     GtkWidget *files_list;
     GtkTreeIter iter;
     
@@ -308,12 +321,14 @@ popup_menu_metadata(GtkWidget *widget, GdkEvent *event)
         show_meta_data(out_name);
     }
 
+    LSU;
     return TRUE;
 }
 
 SIGNAL_CALLBACK gint
 popup_menu_process(GtkWidget *widget, GdkEvent *event)
 {
+  LSL;
   GtkWidget *files_list;
   GtkTreeIter iter;
   GtkTreeModel * model;
@@ -323,8 +338,10 @@ popup_menu_process(GtkWidget *widget, GdkEvent *event)
   gboolean confirm_needed = FALSE;
 
   /* gui should prevent this from happening */
-  if (processing)
+  if (processing) {
+    LSU;
     return TRUE;
+  }
 
   files_list = glade_xml_get_widget(glade_xml, "files_list");
   selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
@@ -372,6 +389,7 @@ popup_menu_process(GtkWidget *widget, GdkEvent *event)
   g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
   g_list_free(selected_rows);
   
+  LSU;
   return TRUE;
 }
 
@@ -384,6 +402,8 @@ popup_menu_rename(GtkWidget *widget, GdkEvent *event)
 SIGNAL_CALLBACK gint
 popup_menu_view_output(GtkWidget *widget, GdkEvent *event)
 {
+  LSL;
+
     GtkWidget *files_list;
     GtkTreeIter iter;
     
@@ -399,6 +419,7 @@ popup_menu_view_output(GtkWidget *widget, GdkEvent *event)
         show_output_image(out_name);
     }
 
+    LSU;
     return TRUE;
 }
 

@@ -73,6 +73,7 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
 
   /* next is the files & their statuses */
   fprintf(f, "[Files]\n");
+  LSL;
   if (list_store)
   {
     gboolean valid;
@@ -105,6 +106,7 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
       valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
     }
   }
+  LSU;
 
   fprintf(f, "[End]\n");
   fclose(f);
@@ -115,6 +117,8 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
 
 static void read_ver_1_0(FILE *f)
 {
+  LSL;
+
   Settings s;
   GtkTreeIter iter;
 
@@ -211,10 +215,14 @@ static void read_ver_1_0(FILE *f)
 
   naming_scheme_delete(current_naming_scheme);
   current_naming_scheme = naming_scheme_default();
+
+  LSU;
 }
 
 static void read_ver_1_1(FILE *f)
 {
+  LSL;
+
   Settings s;
   GtkTreeIter iter;
   gchar line[1024];
@@ -314,10 +322,14 @@ static void read_ver_1_1(FILE *f)
       }
     }
   }
+
+  LSU;
 }
 
 static void read_ver_1_2(FILE *f)
 {
+  LSL;
+
   Settings s;
   GtkTreeIter iter;
   gchar line[1024];
@@ -417,10 +429,14 @@ static void read_ver_1_2(FILE *f)
       }
     }
   }
+
+  LSU;
 }
 
 static void read_ver_2_0(FILE *f)
 {
+  LSL;
+
   Settings s;
   GtkTreeIter iter;
   gchar line[1024];
@@ -528,6 +544,8 @@ static void read_ver_2_0(FILE *f)
       }
     }
   }
+
+  LSU;
 }
 
 SIGNAL_CALLBACK void

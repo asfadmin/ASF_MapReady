@@ -50,7 +50,8 @@ LDLIBS = $(LIBDIR)/asf_meta.a \
          $(LIBDIR)/libgslcblas.a \
 	 $(LIBDIR)/libjpeg.a \
          $(shell /usr/bin/pkg-config --libs gtk+-2.0) \
-	 $(shell /usr/bin/pkg-config --libs libglade-2.0)
+	 $(shell /usr/bin/pkg-config --libs libglade-2.0) \
+         $(shell /usr/bin/pkg-config --libs gthread-2.0)
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 

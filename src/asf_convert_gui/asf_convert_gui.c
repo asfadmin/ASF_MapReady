@@ -4,6 +4,7 @@
 #include "asf_convert_gui.h"
 
 GladeXML *glade_xml;
+GStaticRecMutex list_store_lock = G_STATIC_REC_MUTEX_INIT;
 GtkListStore *list_store = NULL;
 gboolean processing;
 Settings *settings_on_execute;
@@ -26,7 +27,13 @@ main(int argc, char **argv)
 
 #ifndef THUMBNAILS
     printf("GTK Version < 2.4 -- output thumbnails disabled.\n");
-#endif
+#else
+    // We will want to load thumbnails in other threads.
+    if ( !g_thread_supported () ) {
+      g_thread_init (NULL);
+    }
+    gdk_threads_init ();
+#endif // THUMBNAILS
 
     /* select defaults for dropdowns */
     widget = glade_xml_get_widget (glade_xml, "scaling_method_combobox");

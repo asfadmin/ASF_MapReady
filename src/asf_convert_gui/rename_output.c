@@ -102,20 +102,26 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
 void
 do_rename_selected(const gchar *new_name)
 {
-    GtkWidget * files_list;
-    GtkTreeIter iter;
-    
-    files_list = glade_xml_get_widget(glade_xml, "files_list");
-    
-    if (get_iter_to_first_selected_row(files_list, &iter))
+  LSL;
+
+  GtkWidget * files_list;
+  GtkTreeIter iter;
+  
+  files_list = glade_xml_get_widget(glade_xml, "files_list");
+  
+  if (get_iter_to_first_selected_row(files_list, &iter))
     {
-	do_rename(GTK_TREE_MODEL(list_store), &iter, new_name);
+      do_rename(GTK_TREE_MODEL(list_store), &iter, new_name);
     }
+  
+  LSU;
 }
 
 gboolean
 rename_selected_output_filename()
 {
+  LSL;
+
   GtkWidget *files_list;
   GtkTreeIter iter;
 
@@ -157,6 +163,8 @@ rename_selected_output_filename()
 
     gtk_widget_show(change_output_name_dialog);
   }
+
+  LSU;
   
   return TRUE;
 }

@@ -15,6 +15,7 @@ static gboolean keep_going = TRUE;
 
 static gboolean confirm_overwrite()
 {
+  LSL;
     GtkTreeIter iter;
     gboolean valid;
     gboolean exist = FALSE;
@@ -72,15 +73,18 @@ static gboolean confirm_overwrite()
         switch (result)
         {
             default:
-                return FALSE;
+	      LSU;
+	      return FALSE;
 
             case GTK_RESPONSE_OK:
-                return TRUE;
+	      LSU;
+	      return TRUE;
         }
     }
     else
     {
         /* no need to confirm -- no overwrites */
+      LSU;
         return TRUE;
     }
 }
@@ -412,6 +416,7 @@ append_begin_processing_tag(const gchar * input_filename)
 void
 invalidate_progress()
 {
+  LSL;
   gboolean valid;
   GtkTreeIter iter;
 
@@ -423,11 +428,14 @@ invalidate_progress()
     gtk_list_store_set(list_store, &iter, COL_STATUS, "-", -1);
     valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
   }
+  LSU;
 }
 
 #ifdef THUMBNAILS
 static void set_thumbnail(GtkTreeIter *iter, const gchar * file)
 {
+    LSL;
+
     GError * err = NULL;
     GdkPixbuf * pb;
 
@@ -442,12 +450,15 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * file)
 	g_warning("Couldn't load image '%s': %s\n", file, err->message);
 	g_error_free(err);
     }
+
+    LSU;
 }
 #endif
 
 static void
 process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 {
+  LSL;
   gchar *in_data, *out_full, *status;
   int pid;
   /* time_t s; */
@@ -617,11 +628,15 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
   g_free(status);
   g_free(out_full);
   g_free(in_data);
+
+  LSU;
 }
 
 void
 process_items_from_list(GList * list_of_row_refs, gboolean skip_done)
 {
+  LSL;
+
     GList * i;
     Settings * user_settings;
     GtkTreeIter iter;
@@ -660,11 +675,15 @@ process_items_from_list(GList * list_of_row_refs, gboolean skip_done)
 
     g_list_foreach(list_of_row_refs, (GFunc)gtk_tree_row_reference_free, NULL);
     g_list_free(list_of_row_refs);
+
+    LSU;
 }
 
 SIGNAL_CALLBACK void
 on_execute_button_clicked (GtkWidget *button)
 {
+  LSL;
+
     GtkTreeIter iter;
     gboolean valid;
     Settings * user_settings;
@@ -708,6 +727,8 @@ on_execute_button_clicked (GtkWidget *button)
 
 	process_items_from_list(rows, TRUE);
     }
+
+    LSU;
 }
 
 SIGNAL_CALLBACK void

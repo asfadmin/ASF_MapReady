@@ -15,6 +15,7 @@ change_output_output_directory_hide()
 
 void do_change_output_directory(const gchar * new_dir )
 {
+  LSL;
     gboolean valid;
     GtkTreeIter iter;
     gchar * new_dir_fixed;
@@ -70,11 +71,15 @@ void do_change_output_directory(const gchar * new_dir )
     output_directory = g_strdup(new_dir_fixed);
     
     g_free(new_dir_fixed);
+
+    LSU;
 }
 
 gboolean
 prepare_change_output_directory_dialog()
 {
+  LSL;
+
     GtkTreeIter iter;
 
     GtkWidget *change_output_directory_dialog,
@@ -156,6 +161,7 @@ prepare_change_output_directory_dialog()
         gtk_widget_show(change_output_directory_dialog);
     }
   
+    LSU;
     return TRUE;
 }
 

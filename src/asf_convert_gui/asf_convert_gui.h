@@ -109,7 +109,13 @@ extern const char PATH_SEPATATOR;
 /* xml version of the .glade file */
 extern GladeXML *glade_xml;
 
-/* the files listing */
+/* The files listing, and an associated lock that is needed because
+   the thumbnail loader threads look in here to figure out which files
+   thumbnails they should be loading into which treeview rows.  */
+extern GStaticRecMutex list_store_lock;
+/* Convenience macros for locking the list_store.  */
+#define LSL g_static_rec_mutex_lock (&list_store_lock)
+#define LSU g_static_rec_mutex_unlock (&list_store_lock)
 extern GtkListStore *list_store;
 
 /* TRUE during processing */
