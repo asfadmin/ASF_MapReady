@@ -39,7 +39,6 @@ tempDir=`dirname $tempDir`
 tempDir=`dirname $tempDir`
 TCL_LIBRARY=${tempDir}/lib/${sys}/tcl8.1
 export TCL_LIBRARY
-echo $TCL_LIBRARY
 
 echo "Running SARview..."
 $0_bin $1 &
