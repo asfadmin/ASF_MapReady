@@ -726,8 +726,8 @@ main (int argc, char **argv)
   // image pixel coordinates predicted by the model for each point
   // with the known values.
   {
-    // Here is a small map that shows a visual of the distribution of
-    // errors in the output grid.
+    // This is a small image which will show a visual of the
+    // distribution of errors in the output grid.
     FloatImage *error_map = float_image_new (grid_size, grid_size);
 
     gsl_vector *model_x_errors = gsl_vector_alloc (dtf.n);
@@ -742,13 +742,14 @@ main (int argc, char **argv)
       double error_distance = sqrt (pow (x_error, 2) + pow (y_error, 2));
       float_image_set_pixel (error_map, ii % grid_size, ii / grid_size,
 			     error_distance);
-      printf ("x_error: %lf, y_error %lf, error_distance: %lf\n",
-	      x_error, y_error, error_distance);
       gsl_vector_set (model_x_errors, ii, x_error);
       gsl_vector_set (model_y_errors, ii, y_error);
       gsl_vector_set (model_errors, ii, error_distance);
     }
-    float_image_export_as_jpeg (error_map, "error_map.jpeg", grid_size);
+    // Uncomment this line to get an image showing the distribution of 
+    // errors in the approximating grid.
+    // float_image_export_as_jpeg (error_map, "error_map.jpeg", grid_size);
+    float_image_free (error_map);
     double mean_error 
       = gsl_stats_mean (model_errors->data, model_errors->stride, 
 			model_errors->size);
@@ -794,10 +795,14 @@ main (int argc, char **argv)
   }
 
   // Done with the data being modeled.
-  //g_free (dtf.y_pix);
-  //g_free (dtf.x_pix);
-  //g_free (dtf.y_proj);
-  //g_free (dtf.x_proj);
+  g_free (dtf.y_pix_sparse);
+  g_free (dtf.x_pix_sparse);
+  g_free (dtf.y_proj_sparse);
+  g_free (dtf.x_proj_sparse);
+  g_free (dtf.y_pix);
+  g_free (dtf.x_pix);
+  g_free (dtf.y_proj);
+  g_free (dtf.x_proj);
 
   // Check correctness of reverse mappings of some corners, as an
   // extra paranoid check.  We insist on the model being within this
