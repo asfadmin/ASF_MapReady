@@ -31,7 +31,7 @@ void cproc_polyinfo(char *dest)/*: TCL asks C to
 		"%d pixels",totalPixels);
 	if (meta!=NULL)
 		sprintf(&dest[strlen(dest)],", which is an area of %.2f square km.\n\n",
-			totalPixels*meta->geo->xPix*meta->geo->yPix/1000000.0);
+			totalPixels*meta->general->x_pixel_size*meta->general->y_pixel_size/1000000.0);
 	else
 		sprintf(&dest[strlen(dest)],"\n\n");
 

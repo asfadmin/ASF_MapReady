@@ -37,30 +37,30 @@ void image_describeImage(char *dest)
 	if (meta!=NULL)
 	{
 #define prt sprintf(&dest[strlen(dest)],
-		switch(meta->geo->type)
+		switch(meta->sar->image_type)
 		{
 		case 'S':prt "The image is in slant range.\n");break;
 		case 'G':prt "The image is in ground range.\n");break;
 		case 'P':prt "The image is map-projected ");
-			switch(meta->geo->proj->type)
+			switch(meta->projection->type)
 			{
 			case 'U':prt "to the Universal Transverse Mercator projection--\n"
 						 "zone %d.\n",
-						 meta->geo->proj->param.utm.zone);
+						 meta->projection->param.utm.zone);
 				break;
 			case 'P':prt "to the Polar Stereographic projection--\n"
 						 "reference latitude %f, longitude %f.\n",
-						  meta->geo->proj->param.ps.slat,meta->geo->proj->param.ps.slon);break;
+						  meta->projection->param.ps.slat,meta->projection->param.ps.slon);break;
 			case 'A':prt "to the Along Track/Cross Track projection.\n");break;
-			default: prt "to the unknown projection '%c'.\n",meta->geo->proj->type);break;
+			default: prt "to the unknown projection '%c'.\n",meta->projection->type);break;
 			}
 			break;
-		default:prt "The image is of the unknown type '%c'.\n",meta->geo->type);break;
+		default:prt "The image is of the unknown type '%c'.\n",meta->sar->image_type);break;
 		}
-		prt "Pixels are %f meters wide, and %f meters high\n",meta->geo->xPix,meta->geo->yPix);
+		prt "Pixels are %f meters wide, and %f meters high\n",meta->general->x_pixel_size,meta->general->y_pixel_size);
 		prt "The image was aquired on julian day %d of %d, at %f seconds past midnight GMT\n",
-			meta->stVec->julDay,meta->stVec->year,meta->stVec->second);
-		if (meta->geo->lookDir=='L') prt "The data is left-looking\n");
+			meta->state_vectors->julDay,meta->state_vectors->year,meta->state_vectors->second);
+		if (meta->sar->look_direction=='L') prt "The data is left-looking\n");
 	}
 	if (image_projOK())
 	{
