@@ -192,13 +192,7 @@ typedef struct {
   /* Note: we compute ecc=sqrt(1-re_major^2/re_minor^2).  This field
      is therefore redundant and should be eliminated.  DEPRECATED.         */
   double ecc;            /* First eccentricity of earth ellipsoid.         */
-    /* Projection parameters for each projection.                          */
-  union {		     
-    proj_atct     atct;	    /* Along-track/cross-track.                    */
-    proj_lambert  lambert;  /* Lambert Conformal projection.               */
-    proj_ps       ps;       /* Polar Sterographic.                         */
-    proj_utm      utm;      /* Universal Transverse Mercator.              */
-  } param;
+  param_t param;         /* Projection parameters for each projection.     */
 } meta_projection;
  /* Compatibility alias.  proj_parameters is DEPRECATED.  */
 typedef meta_projection proj_parameters;
