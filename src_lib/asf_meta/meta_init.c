@@ -130,7 +130,7 @@ meta_parameters *raw_init(void)
 /*meta_init_old: 
 	Reads in a new meta_parameters record from
 disk with the given filename.  If no .meta
-exists, it calls create_meta to construct 
+exists, it calls meta_create to construct 
 one.
 */
 #ifndef WIN32
