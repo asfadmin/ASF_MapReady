@@ -3,7 +3,7 @@ NAME: calc_deltas
 
 SYNOPSIS: 
 
-   calc_deltas linePatch1 linePatchL numLines output_deltas [-log <file>]
+   calc_deltas [-log <file>] <linePatch1> <linePatchL> <numLines> <output_deltas>
 
 DESCRIPTION:
 	Calc_deltas uses the two input lines, generally created
@@ -16,6 +16,7 @@ PROGRAM HISTORY:
     ---------------------------------------------------------------
     1.0	    3/97   T. Logan     For use with aisp(1) interferometry.
     1.01    7/01   R. Gens	Added logfile switch
+    1.2     6/03   P. Denny     Update command line parsing
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -59,52 +60,46 @@ BUGS:
 ****************************************************************************/
 #include "asf.h"
 
-#define VERSION 1.01
+#define VERSION 1.2
 
 int main(int argc,char *argv[])
 {
-   char file1[256], file2[256], ofile[256];
+   char inName1[256], inName2[256], outName[256];
    FILE *fp;
    float nLines;
    float mx1, bx1, my1, by1;
    float mx2, bx2, my2, by2;
    float delt_m_x, delt_b_x, delt_m_y, delt_b_y;
 
-   if (argc <5)
-    {
-      printf("\nUsage:  %s linePatch1 linePatchL numLines output_deltas [-log <file>]\n",argv[0]);
-      printf("\n        linePatch1     Input - regressions for 1st patch\n");
-      printf("        linePatchL     Input - regressions for last patch\n");
-      printf("        numLines       Input - number of lines between first and last patch\n");
-      printf("        output_deltas  Output file - linear regression\n");
-      printf("        -log <file>    Option to have output written to log file");
-      printf("\n\ncalc_deltas -- Uses two input lines to generate a deltas file"
-	     "\n               for use with aisp(1).");
-      printf("\nVersion %.2f, ASF SAR TOOLS\n\n",VERSION);
-      exit(1);
-    }
-
+   /* parse command line */
    logflag=0;
-   strcpy(file1,argv[1]);
-   strcpy(file2,argv[2]);
-   if (1!=sscanf(argv[3],"%f",&nLines))
-   {
-   	sprintf(errbuf,"   Error: '%s' is not a number of lines.\n",argv[3]);
-   	printErr(errbuf);
+   while (currArg < (argc-4)) {
+	char *key = argv[currArg++];
+	if (strmatch(key,"-log")) {
+		CHECK_ARG(1)
+		strcpy(logFile,GET_ARG(1));
+		fLog = FOPEN(logFile, "a");
+		logflag=1;
+	}
+	else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
    }
-   strcpy(ofile,argv[4]);
-   if (argc == 7) {
-     sscanf(argv[6], "%s", logFile);
-     logflag=1;
-     fLog = FOPEN(logFile, "a");
-   }
+   if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 
-   fp = FOPEN(file1,"r"); 
+   strcpy(inName1,argv[currArg]);
+   strcpy(inName2,argv[currArg+1]);
+   if (1!=sscanf(argv[currArg+2],"%f",&nLines)) {
+     sprintf(errbuf,"   Error: '%s' is not a number of lines.\n",
+             argv[currArg+2]);
+     printErr(errbuf);
+   }
+   strcpy(outName,argv[currArg+3]);
+
+   fp = FOPEN(inName1,"r"); 
    fscanf(fp,"%f %f\n",&mx1,&bx1);
    fscanf(fp,"%f %f\n",&my1,&by1);
    FCLOSE(fp);
 
-   fp = FOPEN(file2,"r"); 
+   fp = FOPEN(inName2,"r"); 
    fscanf(fp,"%f %f\n",&mx2,&bx2);
    fscanf(fp,"%f %f\n",&my2,&by2);
    FCLOSE(fp);
@@ -114,7 +109,7 @@ int main(int argc,char *argv[])
    delt_m_y = (my2 - my1) / nLines;
    delt_b_y = (by2 - by1) / nLines;
 
-   fp = FOPEN(ofile,"w");
+   fp = FOPEN(outName,"w");
    fprintf(fp,"%f %f %f %f\n",mx1,bx1,my1,by1);
    fprintf(fp,"%g %g %g %g\n",delt_m_x, delt_b_x, delt_m_y, delt_b_y);
    FCLOSE(fp);
@@ -144,5 +139,30 @@ int main(int argc,char *argv[])
      printLog(logbuf);
    }
 
-   exit(0);
+   return 0;
+}
+
+
+void usage (char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <file>] <linePatch1> <linePatchL> <numLines> <output_deltas>\n",
+	name);
+ printf("\n"
+ 	"REQUIRED ARGUMENTS:\n"
+	"   linePatch1     Input - regressions for 1st patch\n"
+	"   linePatchL     Input - regressions for last patch\n"
+	"   numLines       Input - number of lines between first and last patch\n"
+	"   output_deltas  Output file - linear regression\n");
+ printf("\n"
+	"OPTIONAL ARGUMENT:\n"
+	"   -log <file>    Option to have output written to log file.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Uses two input lines to generate a deltas file for use with aisp(1).\n");
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
