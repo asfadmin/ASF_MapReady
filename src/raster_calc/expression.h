@@ -3,16 +3,6 @@
 #ifndef _EXPRESSION_H_
 #define _EXPRESSION_H_
 
-/********EXTERNAL VARIABLES FROM ASF.H******************/
-extern FILE *fLog;		
-extern int logflag;		
-extern char logFile[255];	
-extern int quietflag;		
-extern char logbuf[255];
-extern char errbuf[255];
-/********************************************************/
-
-
 char *expression2cookie(const char *expr,int nvars);
 double evaluate(char *cookie,const double *variables);
 
