@@ -10,6 +10,8 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+#include <glib.h>
+
 static int print_warn = 1;
 
 static int parse_double(const char * str, double * val)
@@ -101,7 +103,7 @@ static int parse_val(char * inbuf, char * key, double * val)
     char * p, * eq, * buf;
     int match = FALSE;
 
-    buf = strdup(inbuf);
+    buf = g_strdup(inbuf);
 
     p = eq = strchr(buf, '=');
     if (!eq)
@@ -113,7 +115,7 @@ static int parse_val(char * inbuf, char * key, double * val)
     while (isspace((int)(*p)))
 	*p-- = '\0';
  
-    if (strcasecmp(buf, key) == 0)
+    if (g_ascii_strcasecmp(buf, key) == 0)
     {
 	p = eq + 1;
 	while (isspace((int)(*p)))
