@@ -173,7 +173,7 @@ float_image_statistics (FloatImage *self, float *min, float *max, float *mean,
 
 // Compute an efficient estimate of the mean and standard deviation of
 // the pixels in the image, by sampling every stride th pixel in each
-// dimension.
+// dimension, beginning with pixel (0, 0).
 void
 float_image_approximate_statistics (FloatImage *self, size_t stride, 
 				    float *mean, float *standard_deviation);
