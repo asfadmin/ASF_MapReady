@@ -118,7 +118,7 @@ Use low criteria when scanning packages for depencence on node
 I<node>.  Pretty much any occurence of the name I<node> in a package
 will be daken as a dependency.  This option may well generate false
 positives, but is extremely unlikely to miss anything, and works well
-for looking for depencence on explicitly declared non-package nodes
+for looking for depenence on explicitly declared non-package nodes
 like types (see the --with_node option).  This option is only relevant
 when a new dependency graph cache file is being created.
 
@@ -198,7 +198,7 @@ Print usage information.
 =cut
 
 my $progname = basename($0);
-my $version = "0.6.0";
+my $version = "0.7.0";
 
 # Set up output wrapping.
 if ( $ENV{COLUMNS} ) {
@@ -319,6 +319,14 @@ if ( $p{'independency_file'} ) {
 # List of nodes to be forced to exist, even if there is no
 # corresponding package directory with this name.
 my @with_nodes = @{$p{'with_node'}};		
+# Hash with elements for nodes to be explicitly included.  I use this
+# trick as a resonably fast lazy way to search lists when I don't
+# actualy want to see the list item, just know if it is there, and
+# using twice the memory is not a problem.  Yes I am evil.
+my %with_nodes;	
+foreach ( @with_nodes ) {
+    $with_nodes{$_} = 1;
+}
 
 # Parse with_node_file option argument.
 if ( $p{'with_node_file'} ) {
@@ -335,7 +343,10 @@ if ( $p{'with_node_file'} ) {
             $line_number++;
 	    next;
 	}
-        push (@with_nodes, $_);
+        unless ( exists($with_nodes{$_}) ) {
+            push (@with_nodes, $_);
+            $with_nodes{$_} = 1;
+        }
         $line_number++;
     }
     close(WITH_NODE_FILE) 
