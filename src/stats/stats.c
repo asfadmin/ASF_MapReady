@@ -1,8 +1,9 @@
 /****************************************************************
 NAME: stats
 
-SYNOPSIS: stats [-mask <value>] [-log <logFile>] [-quiet] [-overmeta]
-                [-overstat] <sar_name>
+SYNOPSIS: stats [-mask <value>] [-log <logFile>] [-quiet]
+                [-overmeta] [-nometa] [-overstat] [-nostat]
+		<sar_name>
 
 DESCRIPTION:
 	Takes statistics on an image file and prints them out to
@@ -94,6 +95,8 @@ int main(int argc, char **argv)
 	int percent_complete=0;      /* Percent of data sweep completed       */
 	int overmeta_flag=FALSE;     /* If TRUE write over current .meta file */
 	int overstat_flag=FALSE;     /* If TRUE write over current .stat file */
+	int nometa_flag=FALSE;       /* If TRUE do not write .meta file       */
+	int nostat_flag=FALSE;       /* If TRUE do not write .stat file       */
 	int mask_flag=FALSE;         /* TRUE if user specifies a mask value   */
 	double mask=NAN;             /* Value to ignore while caculating stats*/
 	char meta_name[261];         /* Meta file name                        */
@@ -128,6 +131,12 @@ int main(int argc, char **argv)
 		else if (strmatch(key,"-overstat")) {
 			overstat_flag=TRUE;
 		}
+		else if (strmatch(key,"-nometa")) {
+			nometa_flag=TRUE;
+		}
+		else if (strmatch(key,"-nostat")) {
+			nostat_flag=TRUE;
+		}
 		else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
 	}
 	if ((argc-currArg)<1) {printf("Insufficient arguments.\n"); usage(argv[0]);}
@@ -141,7 +150,7 @@ int main(int argc, char **argv)
 	num_samples = meta->general->sample_count;
 
 /* Make sure we don't over write any files that we don't want to */
-	if (meta->stats && !overmeta_flag) {
+	if (meta->stats && !overmeta_flag && !nometa_flag) {
 		printf(" ** The meta file already has a populated statistics structure.\n"
 		       " ** If you want to run this program and replace that structure,\n"
 		       " ** then use the -overmeta option to do so.\n");
@@ -153,7 +162,7 @@ int main(int argc, char **argv)
 		}
 		exit(EXIT_FAILURE);
 	}
- 	if (fileExists(stat_name) && !overstat_flag) {
+ 	if (fileExists(stat_name) && !overstat_flag && !nostat_flag) {
 		printf(" ** The file, %s, already exists. If you want to\n"
 		       " ** overwrite it, then use the -overstat option to do so.\n",
 		       stat_name);
@@ -247,41 +256,53 @@ int main(int argc, char **argv)
 	meta->stats->mask = mask;
 
 /* Write out .meta and .stat files */
-	meta_write(meta, meta_name);
-	stat_file = FOPEN(stat_name, "w");
-	fprintf(stat_file, "# Statistics for image file \"%s\".\n",sar_name);
-	fprintf(stat_file, "%-16.11g\t# minimum\n",meta->stats->min);
-	fprintf(stat_file, "%-16.11g\t# maximum\n",meta->stats->max);
-	fprintf(stat_file, "%-16.11g\t# mean\n",meta->stats->mean);
-	fprintf(stat_file, "%-16.11g\t# root mean squared error\n",
-		meta->stats->rmse);
-	fprintf(stat_file, "%-16.11g\t# standard deviation\n",
-		meta->stats->std_deviation);
-	fprintf(stat_file, "%-16.11g\t# masked value (none if NaN)\n",mask);
-	fprintf(stat_file, "\n");
-	fprintf(stat_file, "# Histogram %s\n", (meta->general->data_type==BYTE)
-		?  "" : "(data is scaled and offset to fill [0..255])");
-	for (ii=0; ii<256; ii++) {
-		fprintf(stat_file, "% 4i: % 9i\n",ii, histogram[ii]);
+	if (!nometa_flag) meta_write(meta, meta_name);
+	if (!nostat_flag) {
+		stat_file = FOPEN(stat_name, "w");
+		fprintf(stat_file, "# Statistics for image file \"%s\".\n",
+			sar_name);
+		fprintf(stat_file, "%-16.11g\t# minimum\n",meta->stats->min);
+		fprintf(stat_file, "%-16.11g\t# maximum\n",meta->stats->max);
+		fprintf(stat_file, "%-16.11g\t# mean\n",meta->stats->mean);
+		fprintf(stat_file, "%-16.11g\t# root mean squared error\n",
+			meta->stats->rmse);
+		fprintf(stat_file, "%-16.11g\t# standard deviation\n",
+			meta->stats->std_deviation);
+		fprintf(stat_file,
+			"%-16.11g\t# masked value (none if NaN)\n",mask);
+		fprintf(stat_file, "\n");
+		fprintf(stat_file, "# Histogram %s\n",
+			(meta->general->data_type==BYTE)
+			? "" 
+			: "(data is scaled and offset to fill [0..255])");
+		for (ii=0; ii<256; ii++) {
+			fprintf(stat_file, "% 4i: % 9i\n",ii, histogram[ii]);
+		}
+		FCLOSE(stat_file);
 	}
 	meta_free(meta);
-	FCLOSE(stat_file);
 
 /* Report */
 	if (!quietflag) {
 		printf("\n");
 		printf("Statistics taken on image file %s.\n",sar_name);
-		printf("Results written to the stats block in %s.\n",meta_name);
-		printf("Results plus histogram written to %s.\n",stat_name);
+		if (!nometa_flag)
+			printf("Results written to the stats block in %s.\n",
+				meta_name);
+		if (!nostat_flag)
+			printf("Results plus histogram written to %s.\n",
+				stat_name);
 		printf("\n");
 	}
 	if (logflag && !quietflag) {
 		printf("\n");
 		fprintf(fLog,"Statistics taken on image file '%s'\n",sar_name);
-		fprintf(fLog,"Results written to the stats block in %s\n",
-			meta_name);
-		fprintf(fLog,"Results plus histogram written to %s\n",
-			stat_name);
+		if (!nometa_flag)
+			fprintf(fLog,"Results written to the stats block in %s\n",
+				meta_name);
+		if (!nostat_flag)
+			fprintf(fLog,"Results plus histogram written to %s\n",
+				stat_name);
 		printf("\n");
 	}
 
@@ -293,7 +314,8 @@ void usage(char *name)
 {
  printf("\n"
 	"USAGE:\n"
-	"   %s [-mask <value>] [-log <logFile>] [-quiet] [-overmeta] [-overstat]\n"
+	"   %s [-mask <value>] [-log <logFile>] [-quiet]\n"
+	"         [-overmeta] [-nometa] [-overstat] [-nostat]"
 	"         <sar_name>\n", name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
@@ -304,7 +326,9 @@ void usage(char *name)
 	"   -log       Copy terminal output to <logFile>.\n"
 	"   -quiet     Supress terminal output.\n"
 	"   -overmeta  Force overwrite of existing .meta file.\n"
-	"   -overstat  Force overwrite of existing .stat file.\n");
+	"   -nometa    Do not write out a .meta file.\n"
+	"   -overstat  Force overwrite of existing .stat file.\n"
+	"   -nostat    Do not write out a .stat file.\n");
  printf("\n"
 	"DESCRIPTION:\n"
 	"   This program takes statistics on a SAR data file and writes them\n"
