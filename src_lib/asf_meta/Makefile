@@ -92,15 +92,15 @@ cook_libs: $(addprefix $(LIBDIR)/, $(LIBS)) library_cooking_pot
 library_cooking_pot:
 	mkdir library_cooking_pot
 
-# Rebuild everything if makefile or any local or ASF header or any lex
-# or yacc file has changed.  The line commented out uses a target
-# local variable to keep track of the local headers which are not
-# automaticly generated, useful to prevent make from rebuilding
+# Rebuild everything if makefile or any local or ASF header or library
+# or any lex or yacc file has changed.  The line commented out uses a
+# target local variable to keep track of the local headers which are
+# not automaticly generated, useful to prevent make from rebuilding
 # everything if the lex and yacc objects aren't first in the object
 # list.
 #$(OBJS): LOCAL_HEADERS = $(subst y.tab.h, , $(wildcard *.h))
 $(OBJS): Makefile $(LOCAL_HEADERS) $(wildcard ../../include/*.h) \
-	 $(YACC_SOURCES) $(LEX_SOURCES)
+	 $(YACC_SOURCES) $(LEX_SOURCES) $(addprefix $(LIBDIR)/, $(LIBS))
 
 clean:
 	rm -rf $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
