@@ -440,8 +440,10 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * file)
 	GError * err = NULL;
 	GdkPixbuf * pb;
 	
+#if ( GDK_PIXBUF_MAJOR >= 2 && GDK_PIXBUF_MINOR >= 4 )
 	pb = gdk_pixbuf_new_from_file_at_size(file, THUMB_SIZE, THUMB_SIZE, 
 					      &err);
+#endif
 
 	if (!err)
 	{
