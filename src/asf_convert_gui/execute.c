@@ -535,10 +535,11 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
       append_output(cmd_output);
 
-      if (!settings_get_run_export(user_settings))
+      if (!settings_get_run_export(user_settings) &&
+	  !settings_get_run_geocode(user_settings))
       {
 	done = err ? "Error" : "Done";
-	gtk_list_store_set(list_store, iter, 2, done, -1);
+	gtk_list_store_set(list_store, iter, COL_STATUS, done, -1);
       }
 
       g_free(cmd_output);

@@ -11,6 +11,7 @@ typedef struct
   double latitude_hi;
 
   /* export */
+  int export_is_checked;
   int output_format;
   int apply_scaling;
   int longest_dimension;

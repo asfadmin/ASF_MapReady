@@ -129,41 +129,49 @@ void update_summary()
     }
 
     strcat(text, "Export: ");
-    switch (s->output_format)
+    if (s->export_is_checked)
     {
-	case OUTPUT_FORMAT_JPEG:
-	default:
-	    strcat(text, "JPEG");
-	    break;
-	    
-	case OUTPUT_FORMAT_PPM:
-	    strcat(text, "PPM");
-	    break;
-	    
-	case OUTPUT_FORMAT_GEOTIFF:
-	    strcat(text, "geoTIFF");
-	    break;
-	    
-	case OUTPUT_FORMAT_TIFF:
-	    strcat(text, "TIFF");
-	    break;
-    }
+	switch (s->output_format)
+	{
+	    case OUTPUT_FORMAT_JPEG:
+	    default:
+		strcat(text, "JPEG");
+		break;
+		
+	    case OUTPUT_FORMAT_PPM:
+		strcat(text, "PPM");
+		break;
+		
+	    case OUTPUT_FORMAT_GEOTIFF:
+		strcat(text, "geoTIFF");
+		break;
+		
+	    case OUTPUT_FORMAT_TIFF:
+		strcat(text, "TIFF");
+		break;
+	}
 
-    if (s->apply_scaling)
+	if (s->apply_scaling)
+	{
+	    GtkWidget *longest_dimension_spinbutton;
+	    gdouble d;
+	    
+	    longest_dimension_spinbutton = 
+		glade_xml_get_widget(glade_xml, 
+				     "longest_dimension_spinbutton");
+
+	    d = gtk_spin_button_get_value(
+		GTK_SPIN_BUTTON(longest_dimension_spinbutton));
+	    
+	    sprintf(text, "%s (size %d)", text, (int)floor(d + 0.5));
+	}
+
+	strcat(text, "\n");
+    }
+    else
     {
-	GtkWidget *longest_dimension_spinbutton;
-	gdouble d;
-	
-	longest_dimension_spinbutton = 
-	    glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
-	
-	d = gtk_spin_button_get_value(
-	    GTK_SPIN_BUTTON(longest_dimension_spinbutton));
-
-	sprintf(text, "%s (size %d)", text, (int)floor(d + 0.5));
+	strcat(text, "<none>\n");
     }
-
-    strcat(text, "\n");
 
     if (s->output_bytes)
     {

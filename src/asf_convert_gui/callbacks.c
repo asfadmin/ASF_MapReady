@@ -207,10 +207,19 @@ output_bytes_checkbutton_toggle()
     gtk_widget_set_sensitive(scaling_method_label, is_checked);
 }
 
+void export_checkbutton_toggle();
+
 void
 output_format_combobox_changed()
 {
-  GtkWidget *output_format_combobox,
+    export_checkbutton_toggle();
+}
+
+void
+export_checkbutton_toggle()
+{
+  GtkWidget *export_checkbutton,
+    *output_format_combobox,
     *longest_dimension_label,
     *longest_dimension_spinbutton,
     *scale_checkbutton,
@@ -219,80 +228,102 @@ output_format_combobox_changed()
     *scaling_method_label;
 
   gint output_format;
-  gboolean show;
+  gboolean export_checked, show;
+
+  export_checkbutton =
+    glade_xml_get_widget(glade_xml, "export_checkbutton");
+
+  export_checked =
+    gtk_toggle_button_get_active(
+	GTK_TOGGLE_BUTTON(export_checkbutton));
 
   output_format_combobox = 
     glade_xml_get_widget(glade_xml, "output_format_combobox");
-
-  output_format = get_combo_box_item(output_format_combobox);
-
-  switch (output_format)
-  {
-    default:
-    case OUTPUT_FORMAT_JPEG:
-    case OUTPUT_FORMAT_PPM:
-    case OUTPUT_FORMAT_TIFF:
-    case OUTPUT_FORMAT_GEOTIFF:
-      show = TRUE;
-      break;
-    case OUTPUT_FORMAT_ASF_INTERNAL:
-    case OUTPUT_FORMAT_CEOS:  
-      show = FALSE;
-      break;
-  }
-
+  
   longest_dimension_label =
     glade_xml_get_widget(glade_xml, "longest_dimension_label");
-
+  
   longest_dimension_spinbutton =
     glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
-
+  
   scale_checkbutton =
     glade_xml_get_widget(glade_xml, "scale_checkbutton");
 
-  gtk_widget_set_sensitive(longest_dimension_label, show);
-  gtk_widget_set_sensitive(longest_dimension_spinbutton, show);
-  gtk_widget_set_sensitive(scale_checkbutton, show);
-
-  if (show)
-    scale_checkbutton_toggle();
-
   output_bytes_checkbutton =
     glade_xml_get_widget(glade_xml, "output_bytes_checkbutton");
-
+  
   scaling_method_combobox =
     glade_xml_get_widget(glade_xml, "scaling_method_combobox");
-
+  
   scaling_method_label =
     glade_xml_get_widget(glade_xml, "scaling_method_label");
-  
-  switch (output_format)
+    
+  if (export_checked)
   {
-      default:
-      case OUTPUT_FORMAT_JPEG:
-      case OUTPUT_FORMAT_PPM:
-      case OUTPUT_FORMAT_TIFF:
-      case OUTPUT_FORMAT_ASF_INTERNAL:
-      case OUTPUT_FORMAT_CEOS:          
-          gtk_toggle_button_set_active(
-                  GTK_TOGGLE_BUTTON(output_bytes_checkbutton), TRUE);
+    gtk_widget_set_sensitive(output_format_combobox, TRUE);
 
-	  set_combo_box_item(scaling_method_combobox, SCALING_METHOD_SIGMA);
+    output_format = get_combo_box_item(output_format_combobox);
 
-          gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
-          gtk_widget_set_sensitive(scaling_method_combobox, TRUE);
-          gtk_widget_set_sensitive(scaling_method_label, TRUE);
+    switch (output_format)
+    {
+	default:
+	case OUTPUT_FORMAT_JPEG:
+	case OUTPUT_FORMAT_PPM:
+	case OUTPUT_FORMAT_TIFF:
+	case OUTPUT_FORMAT_GEOTIFF:
+	    show = TRUE;
+	    break;
+	case OUTPUT_FORMAT_ASF_INTERNAL:
+	case OUTPUT_FORMAT_CEOS:  
+	    show = FALSE;
+	    break;
+    }
 
-          break;
-      case OUTPUT_FORMAT_GEOTIFF:
-          gtk_widget_set_sensitive(output_bytes_checkbutton, TRUE);
-          gtk_toggle_button_set_active(
-                  GTK_TOGGLE_BUTTON(output_bytes_checkbutton), FALSE);
-
-          output_bytes_checkbutton_toggle();
-          break;
+    gtk_widget_set_sensitive(longest_dimension_label, show);
+    gtk_widget_set_sensitive(longest_dimension_spinbutton, show);
+    gtk_widget_set_sensitive(scale_checkbutton, show);
+    
+    if (show)
+	scale_checkbutton_toggle();
+    
+    switch (output_format)
+    {
+	default:
+	case OUTPUT_FORMAT_JPEG:
+	case OUTPUT_FORMAT_PPM:
+	case OUTPUT_FORMAT_TIFF:
+	case OUTPUT_FORMAT_ASF_INTERNAL:
+	case OUTPUT_FORMAT_CEOS:          
+	    gtk_toggle_button_set_active(
+		GTK_TOGGLE_BUTTON(output_bytes_checkbutton), TRUE);
+	    
+	    set_combo_box_item(scaling_method_combobox, SCALING_METHOD_SIGMA);
+	    
+	    gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
+	    gtk_widget_set_sensitive(scaling_method_combobox, TRUE);
+	    gtk_widget_set_sensitive(scaling_method_label, TRUE);
+	    
+	    break;
+	case OUTPUT_FORMAT_GEOTIFF:
+	    gtk_widget_set_sensitive(output_bytes_checkbutton, TRUE);
+	    gtk_toggle_button_set_active(
+		GTK_TOGGLE_BUTTON(output_bytes_checkbutton), FALSE);
+	    
+	    output_bytes_checkbutton_toggle();
+	    break;
+    }
   }
-  
+  else
+  {
+    gtk_widget_set_sensitive(output_format_combobox, FALSE);
+    gtk_widget_set_sensitive(longest_dimension_label, FALSE);
+    gtk_widget_set_sensitive(longest_dimension_spinbutton, FALSE);
+    gtk_widget_set_sensitive(scale_checkbutton, FALSE);
+    gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
+    gtk_widget_set_sensitive(scaling_method_combobox, FALSE);
+    gtk_widget_set_sensitive(scaling_method_label, FALSE);
+  }
+
   update_all_extensions();
 }
 
@@ -398,3 +429,11 @@ on_output_bytes_checkbutton_toggled(GtkWidget *widget)
   output_bytes_checkbutton_toggle();
   update_summary();
 }
+
+SIGNAL_CALLBACK void
+on_export_checkbutton_toggled(GtkWidget *widget)
+{
+  export_checkbutton_toggle();
+  update_summary();
+}
+

@@ -116,23 +116,23 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
   
   while (*current)
   {
-      if (add_to_files_list(*current))
-          ++i;
+    if (add_to_files_list(*current))
+      ++i;
             
-      ++current;
-      ++n;
+    ++current;
+    ++n;
   }
 
   if (i != n)
   {
-      if (n == 1 || i == 0)
-      {
-          message_box("Error: Unrecognized extension.");
-      }
-      else
-      {
-          message_box("Some of the files were not added -- unknown extensions.");
-      }
+    if (n == 1 || i == 0)
+    {
+      message_box("Error: Unrecognized extension.");
+    }
+    else
+    {
+      message_box("Some of the files were not added -- unknown extensions.");
+    }
   }
   
   g_strfreev(selections);

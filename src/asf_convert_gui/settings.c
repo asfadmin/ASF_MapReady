@@ -30,6 +30,7 @@ settings_apply_to_gui(const Settings * s)
   GtkWidget
     *input_data_type_combobox,
     *input_data_format_combobox,
+    *export_checkbutton,
     *output_format_combobox,
     *scale_checkbutton,
     *output_bytes_checkbutton,
@@ -40,6 +41,9 @@ settings_apply_to_gui(const Settings * s)
 
   input_data_format_combobox = 
     glade_xml_get_widget(glade_xml, "input_data_format_combobox");
+
+  export_checkbutton =
+    glade_xml_get_widget(glade_xml, "export_checkbutton");
 
   output_format_combobox = 
     glade_xml_get_widget(glade_xml, "output_format_combobox");
@@ -107,11 +111,14 @@ settings_apply_to_gui(const Settings * s)
 
   input_data_format_combobox_changed();
 
+  gtk_toggle_button_set_active(
+      GTK_TOGGLE_BUTTON(export_checkbutton), s->export_is_checked);
+
   if (settings_get_output_format_requires_byte(s))
   {
       /* seems like we should do something! */
   }
-  else
+  else if (s->export_is_checked)
   {
     output_bytes_checkbutton =
           glade_xml_get_widget(glade_xml, "output_bytes_checkbutton");
@@ -240,6 +247,7 @@ settings_get_from_gui()
   GtkWidget
     *input_data_type_combobox,
     *input_data_format_combobox,
+    *export_checkbutton,
     *output_format_combobox,
     *scale_checkbutton,
     *output_bytes_checkbutton,
@@ -255,6 +263,9 @@ settings_get_from_gui()
 
   input_data_format_combobox = 
     glade_xml_get_widget(glade_xml, "input_data_format_combobox");
+
+  export_checkbutton = 
+    glade_xml_get_widget(glade_xml, "export_checkbutton");
 
   output_format_combobox = 
     glade_xml_get_widget(glade_xml, "output_format_combobox");
@@ -313,29 +324,36 @@ settings_get_from_gui()
     }
   }
 
-  if (settings_get_output_format_requires_byte(ret))
+  ret->export_is_checked = gtk_toggle_button_get_active(
+      GTK_TOGGLE_BUTTON(export_checkbutton));
+
+  if (ret->export_is_checked)
   {
-      scaling_method_combobox =
-              glade_xml_get_widget(glade_xml, "scaling_method_combobox");
-
-      ret->output_bytes = TRUE;
-      ret->scaling_method = get_combo_box_item(scaling_method_combobox);
-  }
-  else
-  {
-      output_bytes_checkbutton =
-              glade_xml_get_widget(glade_xml, "output_bytes_checkbutton");
-
-      ret->output_bytes =
-              gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(output_bytes_checkbutton));
-
-      if (ret->output_bytes)
+      if (settings_get_output_format_requires_byte(ret))
       {
-          scaling_method_combobox =
+	  scaling_method_combobox =
+              glade_xml_get_widget(glade_xml, "scaling_method_combobox");
+	  
+	  ret->output_bytes = TRUE;
+	  ret->scaling_method = get_combo_box_item(scaling_method_combobox);
+      }
+      else
+      {
+	  output_bytes_checkbutton =
+              glade_xml_get_widget(glade_xml, "output_bytes_checkbutton");
+	  
+	  ret->output_bytes =
+              gtk_toggle_button_get_active(
+		  GTK_TOGGLE_BUTTON(output_bytes_checkbutton));
+	  
+	  if (ret->output_bytes)
+	  {
+	      scaling_method_combobox =
                   glade_xml_get_widget(glade_xml, "scaling_method_combobox");
-
-          ret->scaling_method = get_combo_box_item(scaling_method_combobox);
+	      
+	      ret->scaling_method =
+		  get_combo_box_item(scaling_method_combobox);
+	  }
       }
   }
   
@@ -713,31 +731,38 @@ settings_get_output_format_extension(const Settings *s)
   switch (s->input_data_format)
   {
     case INPUT_FORMAT_CEOS_LEVEL1:
-      switch (s->output_format)
-      {
-        case OUTPUT_FORMAT_ASF_INTERNAL:
-	  out_extension = "";
-	  break;
-
-        case OUTPUT_FORMAT_CEOS:
-	  out_extension = "D";
-	  break;
-
-        default:
-        case OUTPUT_FORMAT_JPEG:
-	  out_extension = "jpg";
-	  break;
-
-        case OUTPUT_FORMAT_PPM:
-	  out_extension = "ppm";
-	  break;
-
-        case OUTPUT_FORMAT_GEOTIFF:
-        case OUTPUT_FORMAT_TIFF:
-	  out_extension = "tif";
-	  break;
-      }
-      break;
+	if (s->export_is_checked)
+	{
+	    switch (s->output_format)
+	    {
+		case OUTPUT_FORMAT_ASF_INTERNAL:
+		    out_extension = "";
+		    break;
+		    
+		case OUTPUT_FORMAT_CEOS:
+		    out_extension = "D";
+		    break;
+		    
+		default:
+		case OUTPUT_FORMAT_JPEG:
+		    out_extension = "jpg";
+		    break;
+		    
+		case OUTPUT_FORMAT_PPM:
+		    out_extension = "ppm";
+		    break;
+		    
+		case OUTPUT_FORMAT_GEOTIFF:
+		case OUTPUT_FORMAT_TIFF:
+		    out_extension = "tif";
+		    break;
+	    }
+	}
+	else
+	{
+	    out_extension = "img";
+	}
+	break;
 
     case INPUT_FORMAT_COMPLEX:
       out_extension = "cpx";
@@ -828,7 +853,8 @@ settings_get_run_import(const Settings *s)
 int 
 settings_get_run_export(const Settings *s)
 {
-  return s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1;
+  return s->export_is_checked &&
+      s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1;
 }
 
 int 
