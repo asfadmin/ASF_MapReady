@@ -30,7 +30,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 1.2
+#define META_VERSION 1.3
 
 /******************Baseline Utilities******************/
 typedef struct {
@@ -104,6 +104,31 @@ typedef enum {
   STATE_PLANE,
   SCANSAR_PROJECTION, /* along-track/across-track is ScanSAR specific projection */
 } projection_type_t;
+
+typedef enum {
+  BESSEL,
+  CLARKE1866,
+  CLARKE1880,
+  GEM6,
+  GEM10C,
+  GRS1980,
+  INTERNATIONAL1924,
+  INTERNATIONAL1967,
+  WGS72,
+  WGS84
+} spheroid_type_t;
+
+typedef enum {
+  EGM96,   /* Earth Gravity Model 1996 (spheroid: WGS84) */
+  ED50,    /* European Datum 1950 (International 1924) */
+  ETRF89,  /* European Terrestrial Reference Frame 1989 (WGS84) */
+  ETRS89,  /* European Terrestrial Reference System 1989 (GRS 1980) */
+  ITRF,    /* International Terrestrial Reference Frame (GRS 1980) */
+  NAD27,   /* North American Datum 1927 (Clarke 1866) */
+  NAD83,   /* North American Datum 1983 (GRS 1980) */
+  WGS72,   /* World Geodetic System 1972 (WGS72) */
+  WGS84    /* World Geodetic System 1984 (WGS84) */
+} datum_type_t;
 
 /********************************************************************
  * meta_general: General RAdio Detection And Ranging parameters
@@ -293,11 +318,13 @@ typedef struct {
   double perX,perY;      /* Projection coordinates per X and Y pixel.      */
   char units[12];        /* Units of projection (meters, arcsec)           */
   char hem;              /* Hemisphere Code: 'S'->southern; other northern.*/
+  spheroid_type_t spheroid; /* Spheroid - will replace re_major and re_minor */
   double re_major;       /* Semimajor axis length (equator) (meters).      */
   double re_minor;       /* Semiminor axis length (poles) (meters).        */
   /* Note: we compute ecc=sqrt(1-re_major^2/re_minor^2).  This field
      is therefore redundant and should be eliminated.  DEPRECATED.         */
 /*  double ecc;           * First eccentricity of earth ellipsoid.         */
+  datum_type_t datum;    /* Geodetic datum - height reference system       */
   param_t param;         /* Projection parameters for each projection.     */
 } meta_projection;
  /* Compatibility alias.  proj_parameters is DEPRECATED.  */
