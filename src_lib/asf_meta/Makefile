@@ -22,7 +22,7 @@ YACC = bison -y			# -y means use yacc file name conventions.
 # Build with this defined to enable parser diagnostics.  Note that
 # this doesn't automaticly clean or otherwise force a rebuild.
 ifdef DEBUG_METADATA_PARSER
-  YDEBUG_FLAGS = -t -v   
+  YDEBUG_FLAGS = -t -v
   LDEBUG_FLAGS = -d
   CC_PARSER_DEBUG_FLAGS = -DDEBUG_METADATA_PARSER
   CFLAGS += $(CC_PARSER_DEBUG_FLAGS)
@@ -77,7 +77,7 @@ LAS_OBJS = allocbuf.o \
 	doopen.o \
 	lasIO.o  \
 	packed_deg.o \
-	squeeze.o 
+	squeeze.o
 
 OBJS =  $(LEX_YACC_OBJS) \
 	aisp_params.o \
@@ -114,6 +114,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta2esri.o \
 	meta_read.o \
 	meta_write.o \
+	meta_write_sprocket.o \
 	proj2meta.o \
 	propagate.o \
 	read_baseline.o \
@@ -134,7 +135,7 @@ asf_meta: build_only
 
 build_only: $(OBJS) cook_libs
 	rm -rf asf_meta.a	# Get rid of all stale symbols.
-	ar rv asf_meta.a $(OBJS) $(wildcard ./library_cooking_pot/*.o) 
+	ar rv asf_meta.a $(OBJS) $(wildcard ./library_cooking_pot/*.o)
 	$(RANLIB) asf_meta.a
 
 cook_libs: $(addprefix $(LIBDIR)/, $(LIBS)) library_cooking_pot
