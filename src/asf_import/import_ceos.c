@@ -301,7 +301,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *outBaseName,
                 incid_sin[kk]=get_invSinIncAngle(cal_param,kk*tablePix,ii);
 
           for (kk=0; kk<ns; kk++) {
-            if (short_buf[kk]) {
             /*Interpolate noise table to find this pixel's noise.*/
                 double index=(float)kk/tablePix;
                 int    base=(int)index;
@@ -313,9 +312,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *outBaseName,
                 if (cal_param->output_type==beta_naught)
                  incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
                 out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
-            }
-            else
-              out_buf[kk]=0;
+           
           }
 
           put_float_line(fpOut, meta, ii, out_buf);
@@ -348,7 +345,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *outBaseName,
                 incid_sin[kk]=get_invSinIncAngle(cal_param,kk*tablePix,ii);
 
           for (kk=0; kk<ns; kk++) {
-            if (byte_buf[kk]) {
               /*Interpolate noise table to find this pixel's noise.*/
               double index=(float)kk/tablePix;
               int    base=(int)index;
@@ -360,9 +356,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *outBaseName,
               if (cal_param->output_type==beta_naught)
                 incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
               out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)byte_buf[kk]);
-            }
-            else
-              out_buf[kk]=0;
           }
 
           put_float_line(fpOut, meta, ii, out_buf);
