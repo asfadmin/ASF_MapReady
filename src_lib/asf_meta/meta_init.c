@@ -119,15 +119,12 @@ one.
 meta_parameters *meta_init_old(const char *fName)
 {
 	if (extExists(fName,".meta")) /*Read .meta file if possible*/
-		return meta_read_old(fName);
+		return meta_read(fName);
 	else
-		return meta_create/*_old*/(fName);
+		return meta_create(fName);
 }
 meta_parameters *meta_init(const char *fName)
 {
-  meta_parameters *meta = raw_init(); /* Allocate empty metadata structure.  */
-
-  
   return meta_init_old(fName);
 }
 
