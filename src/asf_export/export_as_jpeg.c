@@ -52,6 +52,7 @@ export_as_jpeg (const char *metadata_file_name,
 	      "format.\n");
 
   /* Get the image data.  */
+  asfPrintStatus ("Loading image...\n");
   const off_t start_of_file_offset = 0;
   FloatImage *iim 
     = float_image_new_from_file (md->general->sample_count,
@@ -74,9 +75,8 @@ export_as_jpeg (const char *metadata_file_name,
     }
   }
 
-  asfPrintStatus ("Scaling...\n");
-
   /* Generate the scaled image.  */
+  asfPrintStatus ("Scaling...\n");
   FloatImage *si = float_image_new_from_model_scaled (iim, scale_factor);
 
   /* We might someday want to mask out certain valus for some type of
@@ -116,7 +116,6 @@ export_as_jpeg (const char *metadata_file_name,
   asfRequire(test_jsample == UCHAR_MAX,
              "Something wacky happened, like data overflow.\n");
   const int jsample_max = UCHAR_MAX;
-
 
   /* Gather some statistics to help with the mapping.  */
   float mean, standard_deviation;

@@ -46,7 +46,7 @@ export_as_ppm (const char *metadata_file_name,
   FILE *ofp;			/* Output file pointer.  */
   const char *ppm_magic_number = PPM_MAGIC_NUMBER;
   int print_count;		/* For return from printf().  */
-  /* The maximum color value for byte values ppm images.  */
+  /* The maximum color value for unsigned byte valued ppm images.  */
   const int max_color_value = 255;
   size_t ii;			/* Index variable.  */
 
@@ -55,6 +55,7 @@ export_as_ppm (const char *metadata_file_name,
 	     "format.\n");
 
   /* Get the image data.  */
+  asfPrintStatus ("Loading image...\n");
   const off_t start_of_file_offset = 0;
   asfRequire (md->general->data_type == REAL32,
 	      "Input data type must be in 32-bit floating point format.\n");
@@ -79,13 +80,15 @@ export_as_ppm (const char *metadata_file_name,
     }
   }
 
-  asfPrintStatus("Scaling...\n");
-
   /* Generate the scaled image.  */
+  asfPrintStatus("Scaling...\n");
   FloatImage *si = float_image_new_from_model_scaled (iim, scale_factor);
 
-  /* We need a version of the data in unsigned byte form, so we have
-     to form a scaled version of the input data.  */
+  /* We need a version of the data in byte form, so we have to map
+     floats into bytes.  We do this by defining a region 2 sigma on
+     either side of the mean to be mapped in the range of unsigned
+     char linearly, and clamping everything outside this range at the
+     limits of the unsigned char range.  */
   /* Make sure the unsigned char is the size we expect.  */
   asfRequire (sizeof(unsigned char) == 1,
               "Size of the unsigned char data type on this machine is "
@@ -107,13 +110,13 @@ export_as_ppm (const char *metadata_file_name,
   float omin = mean - 2 * standard_deviation;
   float omax = mean + 2 * standard_deviation;
 
-  asfPrintStatus("Writing Output File...\n");
+  asfPrintStatus ("Writing output file...\n");
 
   /* Open the output file to be used.  */
   ofp = fopen (output_file_name, "w");
   if ( ofp == NULL )
-    asfPrintError("Open of %s for writing failed: %s", output_file_name,
-                  strerror(errno));
+    asfPrintError ("Open of %s for writing failed: %s", output_file_name,
+		   strerror(errno));
 
   /* Write the ppm header.  */
   print_count = fprintf (ofp, PPM_MAGIC_NUMBER);
