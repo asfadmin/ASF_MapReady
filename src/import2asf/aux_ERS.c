@@ -4,7 +4,6 @@
 #include "auxiliary.h"
 
 /********************************************************************
-/******************************************************************************
  * Information about ERS_raw_aux for function: ERS_decodeAux()
  * Description of the ERS aux data header in raw form
  * View only using a fixed width font
