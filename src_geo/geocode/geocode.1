@@ -1,121 +1,120 @@
 
-NAME:	geocode
+NAME: geocode
 
-SYNOPSIS:  
+SYNOPSIS:
 
- geocode [-h ht] [-p pix] [ [-o|-l] N S E W ]  [-i lat lon nl ns ]
-         [-r <-nearest | -bilinear |-sinc | '-kernel x y'> ]
-         [-background <fill> ]
-         in_meta in_img projfile projkey outfile
- 
-  -p pix   Set output pixel size to pix meters.           
-  -h ht    Set average input elevation to ht meters.      
-  -r ...   Set the output resampling scheme used. (See remap(1)).
-           Default is -near, for nearest-neighbor interpolation.
-  -background Set the background (non-image) parts of the output
-           image to the value <fill> (default is zero-- black).
+ geocode [-h ht] [-p pix] [ [-o|-l] N W S E ]  [-i lat lon nl ns]
+         [-r <-nearest | -bilinear | -sinc | '-kernel x y'>]
+         [-background <fill>] [-log <file>]
+         <in_img> <projfile> <projkey> <outfile>
 
-        in_meta  input SAR metadata (e.g. .meta, .ddr, or .L)    
-        in_img   input LAS image (.ddr and .img) [from sarin]
-        projfile projection definition file name [from projprm]
-        projkey  projection key name [as passed to projprm]
-        outfile  output LAS 6.0 image (makes .img, .ddr)    
- 
- 
-  Geocode projects the given SAR image into
-the given map projection at the given pixel size.
-This process is called geocoding. 
+ Required:
+    in_img    input image (.img and .meta)
+    projfile  projection definition file name [from projprm]
+    projkey   projection key name [as passed to projprm]
+    outfile   output image (makes .img and .meta)
 
-DESCRIPTION: Performs automatic geocoding of SAR files.
-       Geocode works on slant range, ground range, or
-       even already-geocoded image files.
+DESCRIPTION:
+    Geocode projects the given SAR image into the given map projection at the
+    given pixel size. Performs automatic geocoding of SAR files. Geocode works
+    on slant range, ground range, or even already-geocoded image files.
 
 OPTIONS:
-        The default is to make an output image just big enough to
-    contain the entire geocode input image.  You can change 
-    (enlarge or shrink) the output window with the windowing options-
-    -l specifies the output window in (decimal degree) latitude and
-    longitude; -o specifies the output window in projection coordinates;
-    and -i specifies the output image's center point and size.
+    The default is to make an output image just big enough to contain the
+    entire geocode input image.  You can change (enlarge or shrink) the output
+    window with the windowing options: -l specifies the output window in
+    latitude and longitude (decimal degree); -o specifies the output window in
+    projection coordinates; and -i specifies the output image's center point
+    and size.
 
-   -o   Means N S E W are projection coordinates.
-	N    Y projection coordinate of top edge
-	S    Y projection coordinate of bottom edge
-	E    X projection coordinate of right edge
-	W    X projection coordinate of left edge
+    -o  Means N W S E are projection coordinates.
+        N    Y projection coordinate of upper edge
+        W    X projection coordinate of left edge
+        S    Y projection coordinate of lower edge
+        E    X projection coordinate of right edge
 
-   -l   Means N S are latitude, and E W are longitude:
-	N    Latitude of north edge of output
-	S    Latitude of south edge of output
-	E    Longitude of east edge of output
-	W    Longitude of west edge of output
+    -l  Means N S are latitude, and E W are longitude:
+        N    Latitude of north edge of output
+        W    Longitude of west edge of output
+        S    Latitude of south edge of output
+        E    Longitude of east edge of output
 
-   -i   Means write a nl x ns output image with:
-	lat  Latitude of center of output
-	lon  Longitude of center of output
+    -i  Means write a nl x ns output image with:
+        lat  Latitude of center of output
+        lon  Longitude of center of output
+        nl   Number of lines in output image
+        ns   Number of samples in output image
+
+    -p <pix>
+        Set output pixel size to pix meters.
+    -h <ht>
+        Set average input elevation to ht meters.
+    -r <-nearest | -bilinear | -sinc | '-kernel x y'>
+        Set the output resampling scheme used. (See remap(1)).
+        Default is -nearest, for nearest-neighbor interpolation.
+    -background <fill>
+        Set the background (non-image) parts of the output
+        image to the value <fill> (default is zero-- black).
+   -log <file>
+        Allows the output to be written to a log file.
 
  
 EXAMPLES:
-      In these examples, we show various ways to geocode a SAR image
-      named E1537 (.D and .L).  This image has first been converted to LAS
-      format using:
-      
-             example0> sarin E1537 las_e1
-       
-      And a Polar Stereographic map projection file "polar.proj" has been 
-      created using
-      
+    In these examples, we show various ways to geocode a SAR image named asf_e1
+    (.img and .meta). First a Polar Stereographic map projection file
+    "polar.proj" was created using:
+
              example0> projprm  -l -45 -p 70 PLSTEREO ps1 met polar.proj
-    
-            
-     
+
+
         1.  In order to do full scene processing, specify no windowing    
-            option on the command line.  In this case, the entire
-            SAR image will be geocoded by using the image extent information
-            given in the SAR file's metadata.
+            option on the command line.
 
-            example1> geocode E1537 las_e1 polar.proj ps polar_a
+            example1> geocode asf_e1 polar.proj ps polar_a
 
-                This example transforms the input LAS image las_e1 to 
-		the geocoded LAS file polar_a.img.  The projection definition
-		file, polar.proj, is used to get the definition for the output
-		projection, ps.  The output window defaults to the whole SAR
-		scene.
+                This example transforms the input ASF image asf_e1 to 
+                the geocoded file polar_a.img.  The projection definition
+                file, polar.proj, is used to get the definition for the output
+                projection, ps.  The output window defaults to the whole SAR
+                scene.
 
-        2.  The second option allows the area of interest to be specified using
-            output projection coordinates.  In this case, the -o command line
-            option is used.  
 
-            example3> geocode  -o -2679700 -2745700 571800 631500 \
-			 E1537 las_e1 polar.proj ps polar_b
+        2.  The second option allows the area of interest to be specified
+            using output projection coordinates.  In this case, the -o command
+            line option is used.  
+
+            example3> geocode  -o 571800 -2745700 631500 -2679700 \
+                         asf_e1 polar.proj ps polar_b
 
                 This example clips the ouput file so the output projection
-		coordinates
-                run from -2679700 to -2745700 in Y and 571800 to 631500 in X.
-                The output file is named polar_b.
+                coordinates are upper left of 571800,-2745700 and lower right
+                of 631500,-2679700 (read in x,y coordinates). The output file
+                is named polar_b.
+
 
         3.  The final windowing option allows the area of interest to be 
             specified by latitude and longitude.
 
-            example4> geocode  -l 65.0 64.5 -147.1 -148.0 \
-                       E1537 las_e1 polar.proj ps polar_c
-			
+            example4> geocode  -l 65.0 -148.0 64.5 -147.1 \
+                         asf_e1 polar.proj ps polar_c
+                        
+                This example clips the output image so it only includes the
+                area with corner coordinates of upper left 65.0, -148.0 and
+                lower right 64.5, -147.1 (read as latitude,longitue).
+                The output file is named polar_c.
 
-                This example clips the output file so it just includes the points
-                with lat,lon 65.0, -148.0 and  64.5, -147.1.  The output file
-                is named polar_c.
 
-SEE ALSO:   sarin, projprm
+SEE ALSO:  projprm(1)
 
 HARDWARE/SOFTWARE LIMITATIONS:
-      A projection file must be created before running this program. Use the
-      projprm program to create such a file. See projprm for more details.
+    A projection file must be created before running this program. Use the
+    projprm program to create such a file. See projprm(1) for more details.
 
-BUGS:
+BUGS: None known.
 
-AUTHOR:	Orion Lawlor, Alaska SAR Facility, UAF  
+AUTHOR: Orion Lawlor
 
-CONTACT:	apd@asf.alaska.edu
-		http://www.asf.alaska.edu/apd
+CONTACT: apd@asf.alaska.edu
+         http://www.asf.alaska.edu/apd
 
 
