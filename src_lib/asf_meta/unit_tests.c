@@ -5,7 +5,12 @@
 /* Note that these tests have wired in the values from the test meta
    file.  */
 
+/* System headers.  */
+#include <unistd.h>
+
+/* ASF headers.  */
 #include <asf_meta.h>
+
 #include <check.h>		/* For unit check functions.  */
 
 /* Over-safe micron for test floating point comparisons.  */
@@ -60,6 +65,11 @@ START_TEST(test_meta_read_write_new_format)
 				       meta_reread->projection
 				                    ->param.atct.rlocal),
 	      "projection->param.atct.rlocal fields from original and written-then-reread metadata structures not equal");
+
+  if ( unlink("test_output_file.meta") == -1 ) {
+    perror("failed to delete intra-test temporary file test_output_file.meta");
+    fail("");
+  }
 }
 END_TEST
 
