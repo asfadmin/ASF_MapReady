@@ -45,7 +45,7 @@ OBJS  = ${XTIFF} \
 	cpl_csv.o
 
 HEADERS = geo_config.h geo_keyp.h geo_normalize.h geo_tiffp.h geokeys.h \
-          geonames.h geotiff.h geotiffio.h geovalues.h
+          geonames.h geotiff.h geotiffio.h geovalues.h $(LIB_XTIFF)/xtiffio.h
 
 all: libgeotiff.a
 	mv libgeotiff.a $(LIBDIR)
