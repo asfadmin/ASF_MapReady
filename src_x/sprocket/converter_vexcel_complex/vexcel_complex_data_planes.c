@@ -24,8 +24,8 @@ static double noise_scale;
 static int direction;
 static double noise_inc;
 
-#define ASENDING (0)
-#define DESENDING (1)
+#define ASCENDING (0)
+#define DESCENDING (1)
 
 #define SIZE_OF_VEXCEL_HEADER (16252)
 #define SIZE_OF_VEXCEL_IOF (192)
@@ -34,7 +34,7 @@ static double noise_inc;
 
 /* Prototypes */
 int main (int argc, char **argv);
-static void usage ();
+void usage (char *name);
 static int generate_data_planes (char *infile, char *base);
 static void obtain_metadata (char *datain, char *metaout);
 static float sigma_nought (float dn2, float j, float look_angle, float inc, float sl);
@@ -44,7 +44,7 @@ int main (int argc, char **argv)
 {
   clock_t start, stop;
   if (argc == 1)
-    usage ();
+    usage (argv[0]);
 
   start = times (NULL);
 
@@ -60,10 +60,10 @@ int main (int argc, char **argv)
 }
 
 
-static void usage ()
+void usage (char *name)
 {
-  printf ("vexcel_complex_data_planes <DATA FILE> <METADATAFILE> <BASE>\n");
-  exit (0);
+  printf ("%s <DATA FILE> <METADATAFILE> <BASE>\n",name);
+  exit (EXIT_FAILURE);
 }
 
 
@@ -143,16 +143,16 @@ static void obtain_metadata (char *data, /*+ Name of data file +*/
 
   ceos_read_char (fd, START_OF_PPR + 534, 10, str);
   if (str[0] == 'A')
-    direction = ASENDING;
+    direction = ASCENDING;
   else
-    direction = DESENDING;
+    direction = DESCENDING;
 
   left_pad = top_pad = bottom_pad = right_pad = 0;
 }
 
 /*******************************************************************
 *   sigma_
-*    Computes sigma0 for a asending image.
+*    Computes sigma0 for a ASCENDING image.
 *    Approach is from CSA's product description, section 5.3.2
 *	dn2		power ( dn squared )
 *	j		pixel number, across range
@@ -184,17 +184,17 @@ static float sigma_nought (float dn2, float j, float look_angle, float inc, floa
 }
 
 //#undef CALLER
-//#define CALLER "sigma_nought_desending"
+//#define CALLER "sigma_nought_DESCENDING"
 /*******************************************************************
-*   sigma_nought_desending
-*    Computes sigma0 for a desending image.
+*   sigma_nought_DESCENDING
+*    Computes sigma0 for a DESCENDING image.
 *    Approach is from CSA's product description, section 5.3.2
 *       dn2             power ( dn squared )
 *       j               pixel number, across range
 *       look_angle      look angle to platform, in deg
 ********************************************************************/
 /***
-float sigma_nought_desending (float dn2, float j, float look_angle, float inc,
+float sigma_nought_DESCENDING (float dn2, float j, float look_angle, float inc,
 			      float sl)
 {
   int Il, Iu;
@@ -243,237 +243,191 @@ float sigma_nought_desending (float dn2, float j, float look_angle, float inc,
 }
 */
 
+#include "asf.h"
+#include "asf_meta.h"
+#include "asf_endian.h"
+
+#define SQR(X) ((X)*(X))
 
 #undef CALLER
 #define CALLER "generate_data_planes"
-static int generate_data_planes (char *infile, char *base)
+static int generate_data_planes (char *inDataName, char *base)
 {
-  int f_in, f_data, f_look, f_sigma, idata, qdata;
-  int mask = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-  char datafile[PATH_MAX], lookfile[PATH_MAX], sigmafile[PATH_MAX];
-  char qfile[PATH_MAX], ifile[PATH_MAX];
-  int i, j;
-  unsigned int I, Q;
-  unsigned char *in;
-  unsigned int *out_I, *out_Q, *detected;
-  float *look, *sigma, *sl_range, *inc;
-  double slant_range;
-  double delta, initial_range;
-  int sz;
-  unsigned int ms_I, ls_I, ms_Q, ls_Q;
-  unsigned int dn;
-  double Ddn;
-  int index;
+   FILE *inDataFile;
+   FILE *outDetectedFile, *outLookFile, *outSigmaFile, *outIFile, *outQFile;
+   char detectedName[PATH_MAX], lookName[PATH_MAX], sigmaName[PATH_MAX];
+   char Q_Name[PATH_MAX], I_Name[PATH_MAX];
+   int ii, jj;
+   unsigned char *inBuf;
+   float *detectedBuf, *lookBuf, *sigmaBuf, *I_Buf, *Q_Buf;
+   float *slantRangeBuf, *incidAngBuf;
+   double slant_range;
+   double delta;
+   int inLineLen = (number_of_samples+right_pad+left_pad)*SIZE_OF_VEXCEL_COMPLEX
+                   + SIZE_OF_VEXCEL_IOF;
+   int inBufferSize = sizeof(char) * inLineLen;
+   int outBufferSize = sizeof(float) * number_of_samples;
+   unsigned int I_msb, I_lsb, Q_msb, Q_lsb;
+   int I, Q;
+   int index;
 
-  sz = (number_of_samples + right_pad + left_pad) * SIZE_OF_VEXCEL_COMPLEX +
-    SIZE_OF_VEXCEL_IOF;
+/* Create file names */
+   strcat( strcpy(detectedName,base), DATA_EXT);
+   strcat( strcpy(I_Name,base),       COMPLEX_I_PLANE);
+   strcat( strcpy(Q_Name,base),       COMPLEX_Q_PLANE);
+   strcat( strcpy(lookName,base),     LOOK_EXT);
+   strcat( strcpy(sigmaName,base),    SIGMA_EXT);
 
-  in = (unsigned char *) malloc (sizeof (char) * (sz));
-  out_I = (unsigned int *) malloc (sizeof (int) * number_of_samples);
-  out_Q = (unsigned int *) malloc (sizeof (int) * number_of_samples);
-  look = (float *) malloc (sizeof (float) * number_of_samples);
-  inc = (float *) malloc (sizeof (float) * number_of_samples);
-  sl_range = (float *) malloc (sizeof (float) * number_of_samples);
+/* Open files */
+   inDataFile      = FOPEN(inDataName,   "r");
+   outDetectedFile = FOPEN(detectedName, "w");
+   outIFile        = FOPEN(I_Name,       "w");
+   outQFile        = FOPEN(Q_Name,       "w");
+   outLookFile     = FOPEN(lookName,     "w");
+   outSigmaFile    = FOPEN(sigmaName,    "w");
 
-  sigma = (float *) malloc (sizeof (float) * number_of_samples);
-  detected = (unsigned int *) malloc (sizeof (int) * number_of_samples);
+/* Allocate in/out buffer memory */
+   inBuf         = (unsigned char *) MALLOC (inBufferSize);
+   detectedBuf   = (float *) MALLOC (outBufferSize);
+   I_Buf         = (float *) MALLOC (outBufferSize);
+   Q_Buf         = (float *) MALLOC (outBufferSize);
+   lookBuf       = (float *) MALLOC (outBufferSize);
+   incidAngBuf   = (float *) MALLOC (outBufferSize);
+   slantRangeBuf = (float *) MALLOC (outBufferSize);
+   sigmaBuf      = (float *) MALLOC (outBufferSize);
 
-  /* Create file names */
-  strcpy (datafile, base);
-  strcat (datafile, DATA_EXT);
+/* To compute slant range - compute range of near edge ( range pixel of 0) and
+ * increment/decrent one pixel for each line.
+ *
+ * delta = size of one pixel.  Negitive if ASCENDING, as the left hand side of
+ * a image is the farthest from the platform.  Positive if DESCENDING, as the
+ * left hand is nearest the platform.
+ */
+   delta = (direction==ASCENDING) ? pixel_size_range : pixel_size_range*(-1.0);
+   
+   printf("Noise Vector\n");
+   printf("Index\t\tValue\n");
+   slant_range = slant_range_to_first_pixel;
 
-  /* Detected file */
-  strcpy (datafile, base);
-  strcat (datafile, DATA_EXT);
-
-  /* I file */
-  strcpy (ifile, base);
-  strcat (ifile, COMPLEX_I_PLANE);
-
-  /* Q file */
-  strcpy (qfile, base);
-  strcat (qfile, COMPLEX_Q_PLANE);
-
-  strcpy (lookfile, base);
-  strcat (lookfile, LOOK_EXT);
-  strcpy (sigmafile, base);
-  strcat (sigmafile, SIGMA_EXT);
-
-  /* Open files */
-  f_data = open (datafile, O_WRONLY | O_CREAT | O_TRUNC, mask);
-  file_check (f_data, datafile);
-
-  idata = open (ifile, O_WRONLY | O_CREAT | O_TRUNC, mask);
-  file_check (idata, ifile);
-
-  qdata = open (qfile, O_WRONLY | O_CREAT | O_TRUNC, mask);
-  file_check (qdata, qfile);
-
-  f_look = open (lookfile, O_WRONLY | O_CREAT | O_TRUNC, mask);
-  file_check (f_look, lookfile);
-
-  f_sigma = open (sigmafile, O_WRONLY | O_CREAT | O_TRUNC, mask);
-  file_check (f_sigma, sigmafile);
-
-  f_in = open (infile, O_RDONLY);
-  file_check (f_in, infile);
-
-  printf ("Noise Vector\nIndex\t\tValue\n");
-  lseek (f_in, SIZE_OF_VEXCEL_HEADER, SEEK_SET);
-
-
-  /* 
-     To compute slant range - compute range of near edge ( range pixel of 0) and 
-     increment/decrent one pixel for each line.
-
-     delta = size of one pixel.  Negitive if ASENDING, as the left hand side of a image
-     is the farthest from the platform.  Positive if DECENDING, as the left hand is nearest
-     the platform.
-   */
-
-  initial_range = slant_range_to_first_pixel;
-
-  if (direction == ASENDING)
-    delta = pixel_size_range;
-  else
-    delta = pixel_size_range * -1.0;
-
-
-  /* Look angle is fixed across azmuth - compute before hand */
-  for (j = 0, slant_range = initial_range; j < number_of_samples;
-       j++, slant_range += delta)
-    {
+/* Look angle is fixed across azmuth - compute before hand */
+   for (jj = 0; jj < number_of_samples; jj++) {
       double A2;
       int Il, Iu;
-      look[j] = (float) slant2look (slant_range, Re, platform_alt);
-      inc[j] =
-	10.0 *
-	log10 (sin
-	       (look2incidence (look[j], Re, platform_alt) * M_PI / 180.0));
-      if (direction == ASENDING)
-	{
-	  Il = j / noise_inc;
-	  if (Il >= 511)
-	    {
-	      A2 = noise_array[511] + (noise_array[511] -
-				       noise_array[510]) * ((j / noise_inc) -
-							    511);
-	    }
-	  else
-	    {
-	      Iu = Il + 1;
-	      A2 = noise_array[Il] + (noise_array[Iu] -
-				      noise_array[Il]) * ((j / noise_inc) -
-							  Il);
-	    }
-	}
-      else
-	{
-	  Il = (number_of_samples - j - 1.0) / noise_inc;
-	  if (Il >= 511)
-	    {
-	      A2 = noise_array[511] + (noise_array[511] -
-				       noise_array[510]) *
-		(((number_of_samples - 1 - j) / noise_inc - 511));
+      double incidence;
 
-	    }
-	  else
-	    {
-	      Iu = Il - 1;
-	      A2 =
-		noise_array[Il] + (noise_array[Iu] -
-				   noise_array[Il]) * ((j / noise_inc) - Il);
-	    }
-	}
+      lookBuf[jj]     = (float) slant2look (slant_range, Re, platform_alt);
+      incidence       = look2incidence (lookBuf[jj], Re, platform_alt);
+      incidAngBuf[jj] = 10.0 * log10 (sin (incidence * M_PI / 180.0));
 
-      sl_range[j] = A2;
+      if (direction == ASCENDING) {
+         Il = jj / noise_inc;
+         if (Il >= 511) {
+            A2 = noise_array[511]
+                 + (noise_array[511]-noise_array[510]) * ((jj/noise_inc)-511);
+         }
+         else {
+            Iu = Il + 1;
+            A2 = noise_array[Il]
+                 + (noise_array[Iu]-noise_array[Il]) * ((jj/noise_inc)-Il);
+         }
+      }
+      else {
+         Il = (number_of_samples-jj-1.0) / noise_inc;
+         if (Il >= 511) {
+            A2 = noise_array[511] + (noise_array[511]-noise_array[510])
+                 * ((number_of_samples-1-jj) / noise_inc - 511);
+         }
+         else {
+            Iu = Il - 1;
+            A2 = noise_array[Il]
+                 + (noise_array[Iu]-noise_array[Il]) * ((jj/noise_inc)-Il);
+         }
+      }
+      slantRangeBuf[jj] = A2;
+      slant_range += delta;
+      if (jj%512 == 0)   printf ("% 6d       % 17.5f\n", jj, A2);
+   }
 
-      if (j % 512 == 0)
-	printf ("%d \t\t%17.5f\n", j, A2);
-    }
+   FSEEK64 (inDataFile, SIZE_OF_VEXCEL_HEADER, SEEK_SET);
 
-
-  printf ("Completed:        ");
-
-  /* Loop through all the lines */
-  for (i = 0; i < number_of_lines; i++)
-    {
+/* Read, calculate, and write through all the lines */
+   for (ii=0; ii<number_of_lines; ii++) {
       /* read data */
-      if (read (f_in, in, sz) != sz)
-	ERROR (CALLER, "Error reading from original data file.", EXIT);
+      FREAD(inBuf, sizeof(char), inLineLen, inDataFile);
 
-      /* Now, loop through all the pixels.  delta and inital_range are set above. */
+   /* Now, loop through all the pixels. */
+      for (jj=0; jj<number_of_samples; jj++) {
+         index = SIZE_OF_VEXCEL_IOF + SIZE_OF_ASF_COMPLEX * (jj + left_pad);
 
-      for (j = 0; j < number_of_samples; j++)
-	{
+      /* Pick apart the incoming data into the most significant byte (msb) and
+       * least signficant byte (lsb) for the I and Q values */
+         Q_msb = inBuf[index];
+         Q_lsb = inBuf[index + 1];
+         I_msb = inBuf[index + 2];
+         I_lsb = inBuf[index + 3];
 
-	  index = SIZE_OF_VEXCEL_IOF + SIZE_OF_ASF_COMPLEX * (j + left_pad);
+      /* Build the I and Q values from the msb and lsb parts */
+         I = I_msb*256 + I_lsb;
+         Q = Q_msb*256 + Q_lsb;
 
-	  /* Pick appart the incomming data into the most sig (ms) and least sig (ls)
-	     parts for the I and Q values */
-	  ms_Q = in[index];
-	  ls_Q = in[index + 1];
-	  ms_I = in[index + 2];
-	  ls_I = in[index + 3];
+      /*If the ms piece is less than zero, then the whole value was ment to be
+        negitive.  Mask out the upper 16 bits to ffff to set the whole piece to
+        negitive.*/
+         if ((char) (Q_msb) < 0)  Q = Q ^ 0xffff0000;
+         if ((char) (I_msb) < 0)  I = I ^ 0xffff0000;
 
-	  /* build the I and Q values from the ms and ls parts */
-	  I = ms_I * 256 + ls_I;
-	  Q = ms_Q * 256 + ls_Q;
+      /* Cast I & Q to floating point and fill the I & Q buffers */
+         I_Buf[jj] = (float) ((unsigned int)I);
+         Q_Buf[jj] = (float) ((unsigned int)Q);
 
-	  /* 
-	     If the ms piece is less than zero, then the whole value was ment to be
-	     negitive.  Mask out the upper 16 bits to ffff to set the whole piece to
-	     negitive.
-	   */
-	  if ((char) (ms_Q) < 0)
-	    Q = Q ^ 0xffff0000;
-	  if ((char) (ms_I) < 0)
-	    I = I ^ 0xffff0000;
-	  dn = I * I + Q * Q;
+      /* Compute the detected value from the I and Q values */
+         detectedBuf[jj] = (float)sqrt((double)(SQR(Q)+SQR(I)));
+         
+      /* Figure the Sigma0 value and we're ready to write! */
+         sigmaBuf[jj]    = (float) sigma_nought( (float)detectedBuf[jj],
+                                                 (float)jj, lookBuf[jj],
+                                                 incidAngBuf[jj],
+                                                 slantRangeBuf[jj]);
+      }
 
-	  /* bit flip the I and Q values */
-	  out_I[j] = (float) (htonl ((unsigned int) (I)));
-	  out_Q[j] = (float) (htonl ((unsigned int) (Q)));
+   /* Put data in big endian order (SProCKET & asf_tools read big endian) */
+      for (jj = 0; jj<number_of_samples; jj++) {
+         ieee_big32(detectedBuf[jj]);
+         ieee_big32(Q_Buf[jj]);
+         ieee_big32(I_Buf[jj]);
+         ieee_big32(lookBuf[jj]);
+         ieee_big32(sigmaBuf[jj]);
+      }
 
-	  /* Compute the dn value from the I and Q values */
-	  Ddn = sqrt ((double) (dn));
-	  detected[j] = htonl ((unsigned int) Ddn);
-	  sigma[j] =
-	    (float) (sigma_nought
-		     ((float) Ddn, (float) j, look[j], inc[j], sl_range[j]));
-	}
+   /* Write data to file */
+      FWRITE(detectedBuf, sizeof(float), number_of_samples, outDetectedFile);
+      FWRITE(Q_Buf,       sizeof(float), number_of_samples, outQFile);
+      FWRITE(I_Buf,       sizeof(float), number_of_samples, outIFile);
+      FWRITE(lookBuf,     sizeof(float), number_of_samples, outLookFile);
+      FWRITE(sigmaBuf,    sizeof(float), number_of_samples, outSigmaFile);
 
-      if (write (f_data, detected, number_of_samples * sizeof (int)) !=
-	  number_of_samples * sizeof (int))
-	ERROR (CALLER, "Error writing to output data file.", EXIT);
+      if (ii%100 == 0) {
+         printf ("Completed: % 3d%%\r",(100*ii)/number_of_lines);
+         fflush (stdout);
+      }
+   }
+   printf ("Completed: % 3d\n%%",(100*ii)/number_of_lines);
 
-      if (write (qdata, out_Q, number_of_samples * sizeof (int)) !=
-	  number_of_samples * sizeof (float))
-	ERROR (CALLER, "Error writing to output data file.", EXIT);
+/* Free malloc'd memory */
+   FREE(inBuf);
+   FREE(detectedBuf);
+   FREE(I_Buf);
+   FREE(Q_Buf);
+   FREE(lookBuf);
+   FREE(incidAngBuf);
+   FREE(slantRangeBuf);
+   FREE(sigmaBuf);
 
-      if (write (idata, out_I, number_of_samples * sizeof (int)) !=
-	  number_of_samples * sizeof (float))
-	ERROR (CALLER, "Error writing to output data file.", EXIT);
-
-      if (write (f_look, look, number_of_samples * sizeof (float)) !=
-	  number_of_samples * sizeof (float))
-	ERROR (CALLER, "Error writing to output look angle file.", EXIT);
-
-      if (write (f_sigma, sigma, number_of_samples * sizeof (float)) !=
-	  number_of_samples * sizeof (float))
-	ERROR (CALLER, "Error writing to output sigma0 data file.", EXIT);
-
-      if (i % 16 == 0)
-	{
-	  printf ("\b\b\b\b\b\b\b%% %05.2f",
-		  100.0 * (double) i / (double) number_of_lines);
-	  fflush (stdout);
-	}
-    }
-
-  /* Close the output files */
-  close (f_data);
-  close (f_look);
-  close (f_sigma);
-  exit(1);
+/* Close the output files */
+   FCLOSE (outDetectedFile);
+   FCLOSE (outQFile);
+   FCLOSE (outIFile);
+   FCLOSE (outLookFile);
+   FCLOSE (outSigmaFile);
+   exit(EXIT_SUCCESS);
 }
