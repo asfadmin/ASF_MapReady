@@ -248,9 +248,13 @@ export_as_geotiff (const char *metadata_file_name,
     
     /* Its a byte image, so the sample_size is one.  */
     sample_size = 1;
+    sample_format = SAMPLEFORMAT_UINT;
   }
   else {
-    g_assert_not_reached ();
+    /* Its a floating point image.  */
+    g_assert (sizeof (float) == 4);
+    sample_size = 4;
+    sample_format = SAMPLEFORMAT_IEEEFP;
   }
 
   /* Set the normal TIFF image tags.  */
@@ -266,27 +270,6 @@ export_as_geotiff (const char *metadata_file_name,
   TIFFSetField(otif, TIFFTAG_YRESOLUTION, 1.0);
   TIFFSetField(otif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
   TIFFSetField(otif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-  switch ( md->general->data_type ) {
-  case BYTE:
-    sample_format = SAMPLEFORMAT_UINT;
-    break;
-  case INTEGER16:
-    sample_format = SAMPLEFORMAT_INT;
-    break;
-  case INTEGER32:
-    sample_format = SAMPLEFORMAT_INT;
-    break;
-  case REAL32:
-    sample_format = SAMPLEFORMAT_IEEEFP;
-    break;
-  case REAL64:
-    asfPrintError("Don't know what to do with 64 bit floating point data.\n");
-    break;
-  default: /* Shouldn't get to this point */
-    asfPrintError("Unknown input data type, there is likely something wrong "
-		  "with the metadata.\n");
-    break;
-  }
   TIFFSetField(otif, TIFFTAG_SAMPLEFORMAT, sample_format);
   TIFFSetField(otif, TIFFTAG_DATATYPE, sample_format);
 
