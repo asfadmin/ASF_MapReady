@@ -1,8 +1,9 @@
 #!/bin/sh
-# ASF/STEP Software Automatic Configuration script:
-# Sets system variables, creates Makefile.
+# ASF Software Automatic Configuration script:
+# Creates the top level Makefile which builds our tools.
 
-set -e   # Exit immediately if command returns non-zero.
+# Exit immediately if command returns non-zero.
+set -e
 
 # If given --batch command line option, try to run noninteractively.
 if [ "$1" = "--batch" ]; then
@@ -17,10 +18,10 @@ osType=`uname`
 if [ -z $osType ]; then
 	# No uname!  Must ask user.
 	echo "Could not match your system automatically..."
-	# Could be Linux, or Next:
+	# Could be Next or something:
 	printf "Please enter your system type (linux, next, etc.): "
 	read sys
-	echo "Configuring for " $sys .
+	echo "Configuring for " $sys "."
 	osType=$sys
 else
 	versMajor=`uname -r | awk -F. '{print $1}'`
@@ -123,24 +124,14 @@ SYS     = $sys
 CC      = $cc
 RANLIB  = $ranlib
 OPTFLAG = $optFlag
-ASF_INCLUDE_DIR = ../../include
 EOF
-cat <<'EOF' >>system_rules
-INCLUDE = -I. -I$(ASF_INCLUDE_DIR)
-EOF
-
-if [ $sys = linux ]
-then
-	echo 'FLAGS   = $(INCLUDE) $(OPTFLAG) -D'$sys' $(ENDIAN_FLAGS) -D_LARGEFILE64_SOURCE=1' >> system_rules
-else
-        echo '# Flags to support large (> 2GB) files.  These must precede all' >> system_rules
-	echo '# include options.' >> system_rules
-	echo 'LARGEFILE_FLAGS = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64' >> system_rules
-	echo 'FLAGS   = $(LARGEFILE_FLAGS) $(INCLUDE) $(OPTFLAG) -D'$sys' $(ENDIAN_FLAGS)' >> system_rules
-fi
-
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
 cat <<'EOF' >>system_rules
+ASF_INCLUDE_DIR = ../../include
+INCLUDE = -I. -I$(ASF_INCLUDE_DIR)
+# Flags to support large (> 2GB) files.  These must precede all include options.
+LARGEFILE_FLAGS = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+FLAGS   = $(LARGEFILE_FLAGS) $(INCLUDE) $(OPTFLAG) -D$(SYS) $(ENDIAN_FLAGS)
 # If compiler is gcc we're going to add some debugging flags/libraries
 #   if <make 'DEBUG_BUILD=1'>  apply debugging tags and show all compiler warnings
 #   if <make 'DEBUG_BUILD=2'>  do the same and add the electric fence library
@@ -189,47 +180,11 @@ cd ..
 echo "########### Automatic configuration complete ###########"
 directory=$asfDir'/bin/'$sys'/'
 echo ""
-echo "The ASF APD tool Makefile is now fully prepared."
+echo "The ASF tools Makefile is now fully prepared."
 echo ""
 echo "To use the programs, you must add the binaries "
-echo "  directory to your path: " $directory " "
+echo "  directory to your path: "$directory" "
 echo ""
-
-bournePath='PATH='$directory':$PATH'
-addWhat1=$bournePath
-addWhat2='export PATH'
-addWhere='/dev/null'
-case $SHELL in
-	/bin/csh|/bin/tcsh)
-		addWhere=".cshrc"
-		addWhat1='setenv PATH '$directory':$PATH'
-		addWhat2='echo ASF APD Tool path set.'
-		;;
-	/bin/ksh|/bin/sh)
-		addWhere=".profile" ;;
-	/bin/bash)
-		addWhere=".bashrc" ;;
-esac
-if [ ! $addWhere = '/dev/null' -a ! $batch_mode = "true" ]
-then
-	echo "Would you like this script to automatically add these lines:"
-	echo "  --> "$addWhat1
-	echo "  --> "$addWhat2
-	printf "to your "$addWhere" file (y/n)? "
-	read resp
-	if [ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]
-	then
-		cd
-		echo "# Next two lines added by ASF APD Tools installer." >> $addWhere
-		echo $addWhat1 >> $addWhere
-		echo $addWhat2 >> $addWhere
-		cd $currDir
-	fi
-	PATH=$directory:$PATH
-	export PATH
-fi
-
-echo 
-echo "To build the programs, type 'make'."
-echo
+echo "To build the tools, type 'make'."
+echo ""
 echo "######### Source Installation Complete.  ##########"
