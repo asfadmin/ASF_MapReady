@@ -125,7 +125,6 @@ static int parse_val(char * inbuf, char * key, double * val)
 	    if (parse_double(p, &d))
 	    {
 		*val = d;
-		printf("Obtained: %s=%f\n", key, *val);
 		match = TRUE;
 	    }
 	    else
@@ -210,8 +209,9 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
     }
 }
 
-static void write_args(projection_type_t proj_type, project_parameters_t *pps,
-		       char * file)
+/* static */ 
+void write_args(projection_type_t proj_type, project_parameters_t *pps,
+		char * file)
 {
     FILE * fp = FOPEN(file, "wt");
 
@@ -612,7 +612,7 @@ static int parse_write_proj_file_option(int *i, int argc, char *argv[],
 	}
 	else
 	{
-	    write_file = argv[*i];
+	    *write_file = argv[*i];
 	    *ok = TRUE;
 	}
 
@@ -643,6 +643,7 @@ static int parse_read_proj_file_option(int *i, int argc, char *argv[],
 	    *ok = TRUE;
 	}
 
+	++(*i);
 	return TRUE;
     }
     else
@@ -651,10 +652,76 @@ static int parse_read_proj_file_option(int *i, int argc, char *argv[],
     }
 }
 
+static void remove_args(int start, int end, int *argc, char **argv[])
+{
+    int i, j, nargs;
+
+    nargs = end - start + 1;
+    i = start;
+    j = start + nargs;
+
+    while (j < *argc)
+    {
+	char * tmp = (*argv)[i];
+	(*argv)[i] = (*argv)[j];
+	(*argv)[j] = tmp;
+	
+	++i;
+	++j;
+    }
+
+    *argc -= nargs;
+}
+
+static void extract_double_option(int *argc, char **argv[], double *val,
+				 char *arg, int *found)
+{
+    int i;
+
+    for (i = 0; i < *argc; ++i)
+    {
+	if (strcmp((*argv)[i], arg) == 0)
+	{
+	    if (parse_double_option(&i, *argc, *argv, found, val))
+	    {
+		remove_args(i-1, i, argc, argv);
+	    }
+	}
+    }
+}
+
+static void extract_double_options(int *argc, char **argv[],
+				   double *val, ... )
+{
+    va_list ap;
+    char * arg = NULL;
+    int found = FALSE;
+
+    *val = MAGIC_UNSET_DOUBLE;
+
+    va_start(ap, val);
+    do
+    {
+	arg = va_arg(ap, char *);
+
+	if (arg)
+	    extract_double_option(argc, argv, val, arg, &found);
+    }
+    while (arg);
+}
+
+void parse_other_options(int *argc, char **argv[],
+			 double *height, double *pixel_size)
+{
+    extract_double_options(argc, argv, height, "--height", "-h", NULL);
+    extract_double_options(argc, argv, pixel_size, "--pixel_size", 
+			   "--pixel-size", "-ps", NULL);
+}
+    
 project_parameters_t * parse_options(int *argc, char **argv[],
 				     projection_type_t * proj_type)
 {
-    int i, j;
+    int i;
     project_parameters_t *pps = malloc(sizeof(project_parameters_t));
     int start_arg = 0, end_arg = 0;
     char * write_file = NULL;
@@ -662,17 +729,17 @@ project_parameters_t * parse_options(int *argc, char **argv[],
 
     for (i = 0; i < *argc; ++i)
     {
-	if (parse_write_proj_file_option(&i, *argc, *argv, &write_file, &ok))
-	    continue;
-
 	if (parse_read_proj_file_option(&i, *argc, *argv, proj_type, pps, &ok))
+	{
+	    if (!ok)
+		return NULL;
+
 	    break;
+	}
 					
 	else if (strcmp((*argv)[i], "--projection") == 0 ||
-	    strcmp((*argv)[i], "-p") == 0)
+		 strcmp((*argv)[i], "-p") == 0)
 	{
-	    start_arg = i;
-
 	    if (++i == *argc)
 	    {
 		no_arg((*argv)[i-1]);
@@ -687,7 +754,7 @@ project_parameters_t * parse_options(int *argc, char **argv[],
 
 		*proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
 
-		while (1)
+		while (TRUE)
 		{
 		    if (!ok)
 			return NULL;
@@ -739,7 +806,7 @@ project_parameters_t * parse_options(int *argc, char **argv[],
 		pps->ps.is_north_pole = 1;
 		*proj_type = POLAR_STEREOGRAPHIC;
 
-		while (1)
+		while (TRUE)
 		{
 		    if (!ok)
 			return NULL;
@@ -835,7 +902,7 @@ project_parameters_t * parse_options(int *argc, char **argv[],
 		int specified_scale_factor = FALSE;
 		*proj_type = LAMBERT_CONFORMAL_CONIC;
 
-		while (1)
+		while (TRUE)
 		{
 		    if (!ok)
 			return NULL;
@@ -917,7 +984,7 @@ project_parameters_t * parse_options(int *argc, char **argv[],
 
 		*proj_type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
 
-		while (1)
+		while (TRUE)
 		{
 		    if (!ok)
 			return NULL;
@@ -977,7 +1044,7 @@ project_parameters_t * parse_options(int *argc, char **argv[],
 
 		*proj_type = ALBERS_EQUAL_AREA;
 
-		while (1)
+		while (TRUE)
 		{
 		    if (!ok)
 			return NULL;
@@ -1048,36 +1115,33 @@ project_parameters_t * parse_options(int *argc, char **argv[],
 		return NULL;
 	    }
 	}
+
+	++start_arg;
     }
 
     end_arg = i - 1;
 
-    if (start_arg == end_arg)
+    if (start_arg >= end_arg)
     {
 	asfPrintWarning("No projection specified\n");
 	return NULL;
     }
     else
     {
-	int nargs = end_arg - start_arg + 1;
+	remove_args(start_arg, end_arg, argc, argv);
+
+	for (i = 0; i < *argc; ++i)
+	{
+	    if (parse_write_proj_file_option(
+		    &i, *argc, *argv, &write_file, &ok))
+	    {
+		remove_args(i-1, i, argc, argv);
+		break;
+	    }
+	}
 
 	if (write_file)
 	    write_args(*proj_type, pps, write_file);
-
-	i = start_arg;
-	j = start_arg + nargs;
-
-	while (j < *argc)
-	{
-	    char * tmp = (*argv)[i];
-	    (*argv)[i] = (*argv)[j];
-	    (*argv)[j] = tmp;
-
-	    ++i;
-	    ++j;
-	}
-
-	*argc -= nargs;
 
 	return pps;
     }

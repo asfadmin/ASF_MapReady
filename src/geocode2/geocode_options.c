@@ -9,7 +9,8 @@
 #include <string.h>
 
 project_parameters_t * get_geocode_options(int *argc, char **argv[],
-					   projection_type_t * proj_type)
+					   projection_type_t * proj_type,
+					   double *height, double *pixel_size)
 {
     project_parameters_t * pps;
 
@@ -17,6 +18,8 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 
     if (pps)
     {
+	parse_other_options(argc, argv, height, pixel_size);
+
 	apply_defaults(*proj_type, pps);
 	sanity_check(*proj_type, pps);
     }
