@@ -41,70 +41,72 @@ export_as_ppm (const char *metadata_file_name,
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
-  /* Get image dimensions.  */
-  int line_count = md->general->line_count;
-  int sample_count = md->general->sample_count;
-  /* Maximum large dimension to allow in the output.  */
-  unsigned long max_large_dimension;
-  size_t pixel_count;
-  float *daf;
-  int jj;
-  unsigned char *pixels;
-  unsigned long width,height;
-  FILE *ofp;
+  /* Scale factor needed to satisfy max_size argument.  */
+  size_t scale_factor;
+  FILE *ofp;			/* Output file pointer.  */
   const char *ppm_magic_number = PPM_MAGIC_NUMBER;
-  int print_count;
+  int print_count;		/* For return from printf().  */
+  /* The maximum color value for byte values ppm images.  */
   const int max_color_value = 255;
-  size_t ii;
+  size_t ii;			/* Index variable.  */
 
   asfRequire(md->general->data_type == REAL32,
-             "Input data type must be in 32-bit floating point format.\n");
-
-  if ( (max_size > line_count && max_size > sample_count)
-       || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
-    max_large_dimension = GSL_MAX (line_count, sample_count);
-  }
-  else {
-    max_large_dimension = max_size;
-  }
-
-  pixel_count = (size_t) line_count * sample_count;
+             "Input data type must be in big endian 32-bit floating point "
+	     "format.\n");
 
   /* Get the image data.  */
-  asfRequire(md->general->data_type == REAL32,
-             "Input data type must be in 32-bit floating point format.\n");
-  daf = get_image_data (md, image_data_file_name);
+  const off_t start_of_file_offset = 0;
+  asfRequire (md->general->data_type == REAL32,
+	      "Input data type must be in 32-bit floating point format.\n");
+  FloatImage *iim 
+    = float_image_new_from_file (md->general->sample_count,
+				 md->general->line_count, 
+				 image_data_file_name, start_of_file_offset,
+				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
-  asfPrintStatus("Processing...\n");
-
-  /* Input is supposed to be big endian data, this converts to host
-     byte order.  */
-  for ( jj = 0 ; jj < pixel_count ; jj++ ) {
-    ieee_big32 (daf[jj]);
+  /* We want to scale the image st the long dimension is less than or
+     equal to the prescribed maximum, if any.  */
+  if ( (max_size > iim->size_x && max_size > iim->size_y)
+       || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
+    scale_factor = 1;
   }
+  else {
+    scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y) 
+			 / max_size);
+    /* The scaling code we intend to use needs odd scale factors.  */
+    if ( scale_factor % 2 != 1 ) {
+      scale_factor++;
+    }
+  }
+
+  asfPrintStatus("Scaling...\n");
+
+  /* Generate the scaled image.  */
+  FloatImage *si = float_image_new_from_model_scaled (iim, scale_factor);
 
   /* We need a version of the data in unsigned byte form, so we have
      to form a scaled version of the input data.  */
-  /* Here are some very funky checks to try to ensure that the JSAMPLE
-     really is the type we expect, so we can scale properly.  */
-  asfRequire(sizeof(unsigned char) == 1,
-             "Size of the data type on this machine is different than expected.\n");
+  /* Make sure the unsigned char is the size we expect.  */
+  asfRequire (sizeof(unsigned char) == 1,
+              "Size of the unsigned char data type on this machine is "
+	      "different than expected.\n");
 
-  /* This pixel space is resized later (with realloc) if the image
-     dimensions are scaled.  */
-  pixels = scale_floats_to_unsigned_bytes (daf, pixel_count);
+  /* Gather some statistics to help with the mapping.  */
+  float mean, standard_deviation;
+  const int default_sampling_stride = 30;
+  const int minimum_samples_in_direction = 10;
+  int sampling_stride = GSL_MIN (default_sampling_stride, 
+				 GSL_MIN (si->size_x, si->size_y) 
+				 / minimum_samples_in_direction);
+  float_image_approximate_statistics (si, sampling_stride, &mean, 
+				      &standard_deviation);
 
-  /* We want to scale the image st the long dimension is less than or
-     equal to the prescribed maximum.  */
-  /* Current size of the image.  */
-  width = sample_count;
-  height = line_count;
-  /* Scale the image, modifying width and height to reflect the new
-     image size.  */
+  /* Compute the limits of the interval which will be mapped linearly
+     into the byte values for output.  Values outside this interval
+     will be clamped.  */
+  float omin = mean - 2 * standard_deviation;
+  float omax = mean + 2 * standard_deviation;
 
-  asfPrintStatus("Scaling...\n");
-  pixels = scale_unsigned_char_image_dimensions (pixels, max_large_dimension,
-                                                 &width, &height);
   asfPrintStatus("Writing Output File...\n");
 
   /* Open the output file to be used.  */
@@ -117,27 +119,39 @@ export_as_ppm (const char *metadata_file_name,
   print_count = fprintf (ofp, PPM_MAGIC_NUMBER);
   /* After this we will assume that writing to the new file will work
      correctly.  */
-  asfRequire(print_count == strlen(ppm_magic_number),"Error writing to file.\n");
+  asfRequire (print_count == strlen (ppm_magic_number),
+	      "Error writing to file.\n");
   fprintf (ofp, "\n");
-  fprintf (ofp, "%ld\n", width);
-  fprintf (ofp, "%ld\n", height);
+  asfRequire (sizeof (long int) >= sizeof (size_t), 
+	      "size of C type 'long int' less than size of C type 'size_t");
+  fprintf (ofp, "%ld\n", (long int) si->size_x);
+  fprintf (ofp, "%ld\n", (long int) si->size_y);
   fprintf (ofp, "%d\n", max_color_value);
 
   /* Write the pixels themselves.  */
-  for ( ii = 0 ; ii < height ; ii++ ) {
+  for ( ii = 0 ; ii < si->size_y ; ii++ ) {
     size_t jj;
-    for ( jj = 0 ; jj < width ; jj++ ) {
+    for ( jj = 0 ; jj < si->size_x ; jj++ ) {
+      double paf = float_image_get_pixel (si, jj, ii); /* Pixes as float.  */
+      unsigned char pab;	/* Pixel as byte.  */
+      if ( paf < omin ) { pab = 0; }
+      else if ( paf > omax ) { pab = max_color_value; }
+      else {
+	pab = round (((paf - omin) / (omax - omin)) * max_color_value);
+      }
       /* Write red, green, and blue the same to get grey scale.  */
-      fwrite (&pixels[ii * width + jj], 1, 1, ofp);
-      fwrite (&pixels[ii * width + jj], 1, 1, ofp);
-      fwrite (&pixels[ii * width + jj], 1, 1, ofp);
+      fwrite (&pab, 1, 1, ofp);
+      fwrite (&pab, 1, 1, ofp);
+      fwrite (&pab, 1, 1, ofp);
     }
-    asfLineMeter(ii, height);
+    asfLineMeter(ii, si->size_y);
   }
 
   FCLOSE (ofp);
 
-  free (pixels);
-  free (daf);
+  float_image_free (si);
+  
+  float_image_free (iim);
+
   meta_free (md);
 }
