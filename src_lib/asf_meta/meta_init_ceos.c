@@ -18,7 +18,7 @@ PROGRAM HISTORY:
 #include "meta_init.h"
 #include "asf_endian.h"
 
-int has_mpdr(const char *ldr_name);
+int has_mpdr(const char *leader_name);
 
 /************************************************************
  * ceos_init:
@@ -48,16 +48,18 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
     /* Fill meta->general structure */
 	strcpy(meta->general->sensor, dssr.mission_id);
 	strtok(meta->general->sensor," ");/*Remove spaces from field.*/
-	strcpy(meta->general->mode,  dssr.beam1);
+	if (strlen(dssr.beam1) <= (MODE_FIELD_STRING_MAX)) {
+		strcpy(meta->general->mode, dssr.beam1);
+	}
 	strcpy(fac,dssr.fac_id);strtok(fac," ");/*Remove spaces from field*/
 	strcpy(sys,dssr.sys_id);strtok(sys," ");/*Remove spaces from field*/
 	strcpy(ver,dssr.ver_id);strtok(ver," ");/*Remove spaces from field*/
 	sprintf(meta->general->processor,"%s/%s/%s",fac,sys,ver);
 	dataSize = (iof.bitssamp+7)/8;
 	switch (dataSize) {
-	    case 2:strcpy(meta->general->data_type,"INTEGER*2");break;
-	    case 4:strcpy(meta->general->data_type,"INTEGER*4");break;
-	    default:strcpy(meta->general->data_type,"BYTE");    break;
+	    case 2:  meta->general->data_type = INTEGER16; break;
+	    case 4:  meta->general->data_type = INTEGER32; break;
+	    default: meta->general->data_type = BYTE;      break;
 	}
 #if defined(big_ieee)
 	strcpy(meta->general->system,     "big_ieee");
@@ -73,7 +75,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	meta->general->band_number      = 0;
 	meta->general->orbit_direction  = dssr.asc_des[0];
 	meta->general->line_count       = iof.numofrec;
-	meta->general->sample_count     = -999999999;  /* Retrieved below by ceos_init_asf() */
 	meta->general->start_line       = 0;
 	meta->general->start_sample     = 0;
 	meta->general->x_pixel_size     = dssr.pixel_spacing;
@@ -91,17 +92,12 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	else if (ceos->product==LOW_REZ
 	       || ceos->product==HI_REZ) { meta->sar->image_type = 'G'; }
 	meta->sar->look_direction = (dssr.clock_ang>=0.0) ? 'R' : 'L';
-/*	meta->sar->look_count = -999999999;  found below */
 /**/	meta->sar->deskewed = -999999999;
     {	struct data_hist_rec pdhr;
 	strcpy(fName,in_fName);
 	if ( get_dhr(fName, &pdhr) != -1 ) {
 	    meta->sar->original_line_count   = (pdhr.data)->ns_lin;
 	    meta->sar->original_sample_count = (pdhr.data)->ns_pix;
-	}
-	else {
-	    meta->sar->original_line_count   = -999999999;
-	    meta->sar->original_sample_count = -999999999;
 	}
 /**/}	meta->sar->line_increment   = 1.0; /* There is probably a better way to set this */
 /**/	meta->sar->sample_increment = 1.0; /* There is probably a better way to set this */
@@ -243,21 +239,19 @@ ceos_description *get_ceos_description(char *fName)
 	return ceos;
 }
 
-/**************************************
+/**************************************************************
  * has_mpdr:
- * Returns 1 if it does have a map
- * projection data record, 0 if not.*/
-int has_mpdr(const char *ldr_name)
+ * Returns 1 if it has a map projection data record, 0 if not.*/
+int has_mpdr(const char *leader_name)
 {
 	FILE *fp;
-	char ldr_name_with_ext[2000];
+	char leader_name_with_ext[2000];
 	int length;
 	struct HEADER bufhdr;
 
-        /* set_era returns an era code, but we don't know what to do
-           with it, so we ignore it.  */
-	set_era(ldr_name, ldr_name_with_ext, 1);
-	fp = FOPEN(ldr_name_with_ext, "r");
+        /* Append correct .L or .ldr extention  */
+	set_era(leader_name, leader_name_with_ext, 1);
+	fp = FOPEN(leader_name_with_ext, "r");
 	while (1)
 	{
 		if (fread(&bufhdr,sizeof(bufhdr),1,fp)!=1)
