@@ -1,6 +1,10 @@
 #include "asf.h"
 #include "create_dem.h"
 
+/* Prototype */
+void check_return(int ret, char *msg);
+
+
 int strindex(char s[], char t[])
 {
 	int i, j, k;
@@ -78,9 +82,10 @@ dem_config *init_config(char *configFile)
 	cfg->ceos2raw = newStruct(s_status);
 	cfg->trim_slc = newStruct(s_trim_slc);
 	cfg->avg_in_dop = newStruct(s_status);
-	cfg->aisp_master = newStruct(s_aisp);
 	cfg->coreg_p1 = newStruct(s_coreg);
 	cfg->coreg_pL = newStruct(s_coreg);
+	cfg->doppler_per_patch = newStruct(s_status);
+	cfg->aisp_master = newStruct(s_aisp);
 	cfg->aisp_slave = newStruct(s_aisp);
 	cfg->cpx_autofilter = newStruct(s_status);
 	cfg->coreg_slave = newStruct(s_coreg);
@@ -151,15 +156,6 @@ dem_config *init_config(char *configFile)
 	cfg->avg_in_dop->status = (char *)MALLOC(sizeof(char)*25);
 	strcpy(cfg->avg_in_dop->status, "new");
 
-	cfg->aisp_master->start_offset = 0;
-	cfg->aisp_master->end_offset = 0;
-	cfg->aisp_master->patches = 1;
-	cfg->aisp_master->power = 1;
-	cfg->aisp_master->power_img = (char *)MALLOC(sizeof(char)*255);
-	strcpy(cfg->aisp_master->power_img, "");
-	cfg->aisp_master->status = (char *)MALLOC(sizeof(char)*25);
-	strcpy(cfg->aisp_master->status, "new");
-
 	cfg->coreg_p1->start_master = 0;
 	cfg->coreg_p1->start_slave = 0;
 	cfg->coreg_p1->grid = 20;
@@ -178,8 +174,26 @@ dem_config *init_config(char *configFile)
 	cfg->coreg_pL->status = (char *)MALLOC(sizeof(char)*25);
 	strcpy(cfg->coreg_pL->status, "new");
 
+	cfg->doppler_per_patch->status = (char *)MALLOC(sizeof(char)*25);
+	strcpy(cfg->doppler_per_patch->status, "new");
+
+	cfg->aisp_master->start_offset = 0;
+	cfg->aisp_master->end_offset = 0;
+	cfg->aisp_master->patches = 1;
+	cfg->aisp_master->deskew = 0;
+	cfg->aisp_master->doppler = (char *)MALLOC(sizeof(char)*255);
+	strcpy(cfg->aisp_master->doppler, "");
+	cfg->aisp_master->power = 1;
+	cfg->aisp_master->power_img = (char *)MALLOC(sizeof(char)*255);
+	strcpy(cfg->aisp_master->power_img, "");
+	cfg->aisp_master->status = (char *)MALLOC(sizeof(char)*25);
+	strcpy(cfg->aisp_master->status, "new");
+
 	cfg->aisp_slave->start_offset = 0;
 	cfg->aisp_slave->patches = 1;
+	cfg->aisp_slave->deskew = 0;
+	cfg->aisp_slave->doppler = (char *)MALLOC(sizeof(char)*255);
+	strcpy(cfg->aisp_slave->doppler, "");
 	cfg->aisp_slave->power = 1;
 	cfg->aisp_slave->power_img = (char *)MALLOC(sizeof(char)*255);
 	strcpy(cfg->aisp_slave->power_img, "");
@@ -284,6 +298,10 @@ dem_config *init_config(char *configFile)
 	    if (strncmp(test, "processors", 10)==0) cfg->general->procs = read_int(line, "processors");
             if (strncmp(test, "data type", 9)==0) cfg->general->data_type = read_str(line, "data type");
 	    if (strncmp(test, "coregistration", 14)==0) cfg->general->coreg = read_str(line, "coregistration");
+	    if (strncmp(test, "doppler", 7)==0) cfg->aisp_master->doppler = read_str(line, "doppler");
+	    if (strncmp(test, "doppler", 7)==0) cfg->aisp_slave->doppler = read_str(line, "doppler");
+	    if (strncmp(test, "deskew", 6)==0) cfg->aisp_master->deskew = read_int(line, "deskew");
+	    if (strncmp(test, "deskew", 6)==0) cfg->aisp_slave->deskew = read_int(line, "deskew");
 	    if (strncmp(test, "maximum offset", 14)==0) cfg->general->max_off = read_int(line, "maximum offset");
 	    if (strncmp(test, "precise master", 14)==0) cfg->lz2raw->prc_master = read_str(line, "precise master"); 
 	    if (strncmp(test, "precise slave", 13)==0) cfg->lz2raw->prc_slave = read_str(line, "precise slave");
@@ -424,17 +442,6 @@ dem_config *read_config(char *configFile, int cFlag)
 	    if (strncmp(test, "status", 6)==0) cfg->avg_in_dop->status = read_str(line, "status");
 	  }
 
-	  if (strncmp(line, "[paisp - Master image]", 22)==0) strcpy(params, "aisp_master");
-	  if (strcmp(params, "aisp_master")==0) {
-	    test = read_param(line);
-	    if (strncmp(test, "start offset", 12)==0) cfg->aisp_master->start_offset = read_int(line, "start offset"); 
-	    if (strncmp(test, "end offset", 10)==0) cfg->aisp_master->end_offset = read_int(line, "end offset"); 
-	    if (strncmp(test, "patches", 7)==0) cfg->aisp_master->patches = read_int(line, "patches"); 
-	    if (strncmp(test, "power flag", 10)==0) cfg->aisp_master->power = read_int(line, "power flag"); 
-	    if (strncmp(test, "power image", 11)==0) cfg->aisp_master->power_img = read_str(line, "power image"); 
-	    if (strncmp(test, "status", 6)==0) cfg->aisp_master->status = read_str(line, "status"); 
-	  }	  
-
 	  if (strncmp(line, "[Coregister first patch]", 24)==0) strcpy(params, "coreg_p1");
 	  if (strcmp(params, "coreg_p1")==0) {
 	    test = read_param(line);
@@ -459,11 +466,32 @@ dem_config *read_config(char *configFile, int cFlag)
 	    if (strncmp(test, "status", 6)==0) cfg->coreg_pL->status = read_str(line, "status"); 
 	  }	  
 
+	  if (strncmp(line, "[doppler_per_patch]", 19)==0) strcpy(params, "doppler_per_patch");
+	  if (strcmp(params, "doppler_per_patch")==0) {
+	    test = read_param(line);
+	    if (strncmp(test, "status", 6)==0) cfg->doppler_per_patch->status = read_str(line, "status");
+	  }
+
+	  if (strncmp(line, "[paisp - Master image]", 22)==0) strcpy(params, "aisp_master");
+	  if (strcmp(params, "aisp_master")==0) {
+	    test = read_param(line);
+	    if (strncmp(test, "start offset", 12)==0) cfg->aisp_master->start_offset = read_int(line, "start offset"); 
+	    if (strncmp(test, "end offset", 10)==0) cfg->aisp_master->end_offset = read_int(line, "end offset"); 
+	    if (strncmp(test, "patches", 7)==0) cfg->aisp_master->patches = read_int(line, "patches");
+	    if (strncmp(test, "deskew", 6)==0) cfg->aisp_master->deskew = read_int(line, "deskew");
+	    if (strncmp(test, "doppler", 7)==0) cfg->aisp_master->doppler = read_str(line, "doppler");
+	    if (strncmp(test, "power flag", 10)==0) cfg->aisp_master->power = read_int(line, "power flag"); 
+	    if (strncmp(test, "power image", 11)==0) cfg->aisp_master->power_img = read_str(line, "power image"); 
+	    if (strncmp(test, "status", 6)==0) cfg->aisp_master->status = read_str(line, "status"); 
+	  }	  
+
 	  if (strncmp(line, "[paisp - Slave image]", 21)==0) strcpy(params, "aisp_slave");
 	  if (strcmp(params, "aisp_slave")==0) {
 	    test = read_param(line);
 	    if (strncmp(test, "start offset", 6)==0) cfg->aisp_slave->start_offset = read_int(line, "start offset"); 
 	    if (strncmp(test, "patches", 7)==0) cfg->aisp_slave->patches = read_int(line, "patches"); 
+	    if (strncmp(test, "deskew", 6)==0) cfg->aisp_slave->deskew = read_int(line, "deskew");
+	    if (strncmp(test, "doppler", 7)==0) cfg->aisp_slave->doppler = read_str(line, "doppler");
 	    if (strncmp(test, "power flag", 10)==0) cfg->aisp_slave->power = read_int(line, "power flag"); 
 	    if (strncmp(test, "power image", 11)==0) cfg->aisp_slave->power_img = read_str(line, "power image"); 
 	    if (strncmp(test, "status", 6)==0) cfg->aisp_slave->status = read_str(line, "status"); 
@@ -606,19 +634,14 @@ int write_config(char *configFile, dem_config *cfg)
 	  fprintf(fConfig, "precise slave = %s\n", cfg->lz2raw->prc_slave);
 	  fprintf(fConfig, "precise orbits = %d\n", cfg->lz2raw->prcFlag);
 	  fprintf(fConfig, "status = %s\n\n", cfg->lz2raw->status);
-	  fprintf(fConfig, "[avg_in_dop]\n");
-	  fprintf(fConfig, "status = %s\n\n", cfg->avg_in_dop->status);
-	  fprintf(fConfig, "[paisp - Master image]\n");
-	  fprintf(fConfig, "start offset = %ld\n", cfg->aisp_master->start_offset);
-	  fprintf(fConfig, "end offset = %ld\n", cfg->aisp_master->end_offset);
-	  fprintf(fConfig, "patches = %d\n", cfg->aisp_master->patches);
-	  fprintf(fConfig, "power flag = %d\n", cfg->aisp_master->power);
-	  fprintf(fConfig, "power image = %s\n", cfg->aisp_master->power_img);
-	  fprintf(fConfig, "status = %s\n\n", cfg->aisp_master->status);
+	  if (strncmp(cfg->aisp_master->doppler, "average", 7)==0) {
+	    fprintf(fConfig, "[avg_in_dop]\n");
+	    fprintf(fConfig, "status = %s\n\n", cfg->avg_in_dop->status);
+	  }
 	  fprintf(fConfig, "[Coregister first patch]\n");
 	  fprintf(fConfig, "start master = %ld\n", cfg->coreg_p1->start_master);
 	  fprintf(fConfig, "start slave = %ld\n", cfg->coreg_p1->start_slave);
-	  fprintf(fConfig, "grid = %ld\n", cfg->coreg_p1->grid);
+	  fprintf(fConfig, "grid = %d\n", cfg->coreg_p1->grid);
 	  fprintf(fConfig, "fft = %d\n", cfg->coreg_p1->fft);
 	  fprintf(fConfig, "offset azimuth = %d\n", cfg->coreg_p1->off_az);
 	  fprintf(fConfig, "offset range = %d\n", cfg->coreg_p1->off_rng);
@@ -626,14 +649,29 @@ int write_config(char *configFile, dem_config *cfg)
 	  fprintf(fConfig, "[Coregister last patch]\n");
 	  fprintf(fConfig, "start master = %ld\n", cfg->coreg_pL->start_master);
 	  fprintf(fConfig, "start slave = %ld\n", cfg->coreg_pL->start_slave);
-	  fprintf(fConfig, "grid = %ld\n", cfg->coreg_pL->grid);
+	  fprintf(fConfig, "grid = %d\n", cfg->coreg_pL->grid);
 	  fprintf(fConfig, "fft = %d\n", cfg->coreg_pL->fft);
 	  fprintf(fConfig, "offset azimuth = %d\n", cfg->coreg_pL->off_az);
 	  fprintf(fConfig, "offset range = %d\n", cfg->coreg_pL->off_rng);
 	  fprintf(fConfig, "status = %s\n\n", cfg->coreg_pL->status);
+	  if (strncmp(cfg->aisp_master->doppler, "updated", 7)==0) {
+	    fprintf(fConfig, "[doppler_per_patch]\n");
+	    fprintf(fConfig, "status = %s\n\n", cfg->doppler_per_patch->status);
+	  }
+	  fprintf(fConfig, "[paisp - Master image]\n");
+	  fprintf(fConfig, "start offset = %ld\n", cfg->aisp_master->start_offset);
+	  fprintf(fConfig, "end offset = %ld\n", cfg->aisp_master->end_offset);
+	  fprintf(fConfig, "patches = %d\n", cfg->aisp_master->patches);
+	  fprintf(fConfig, "deskew = %d\n", cfg->aisp_master->deskew);
+	  fprintf(fConfig, "doppler = %s\n", cfg->aisp_master->doppler);
+	  fprintf(fConfig, "power flag = %d\n", cfg->aisp_master->power);
+	  fprintf(fConfig, "power image = %s\n", cfg->aisp_master->power_img);
+	  fprintf(fConfig, "status = %s\n\n", cfg->aisp_master->status);
 	  fprintf(fConfig, "[paisp - Slave image]\n");
 	  fprintf(fConfig, "start offset = %ld\n", cfg->aisp_slave->start_offset);
 	  fprintf(fConfig, "patches = %d\n", cfg->aisp_slave->patches);
+	  fprintf(fConfig, "deskew = %d\n", cfg->aisp_slave->deskew);
+	  fprintf(fConfig, "doppler = %s\n", cfg->aisp_slave->doppler);
 	  fprintf(fConfig, "power flag = %d\n", cfg->aisp_slave->power);
 	  fprintf(fConfig, "power image = %s\n", cfg->aisp_slave->power_img);
 	  fprintf(fConfig, "status = %s\n\n", cfg->aisp_slave->status);
@@ -641,19 +679,14 @@ int write_config(char *configFile, dem_config *cfg)
 	if (strncmp(cfg->general->data_type, "RAW", 3)==0) {
 	  fprintf(fConfig, "[ceos2raw]\n");
 	  fprintf(fConfig, "status = %s\n\n", cfg->ceos2raw->status);
-	  fprintf(fConfig, "[avg_in_dop]\n");
-	  fprintf(fConfig, "status = %s\n\n", cfg->avg_in_dop->status);
-	  fprintf(fConfig, "[paisp - Master image]\n");
-	  fprintf(fConfig, "start offset = %ld\n", cfg->aisp_master->start_offset);
-	  fprintf(fConfig, "end offset = %ld\n", cfg->aisp_master->end_offset);
-	  fprintf(fConfig, "patches = %d\n", cfg->aisp_master->patches);
-	  fprintf(fConfig, "power flag = %d\n", cfg->aisp_master->power);
-	  fprintf(fConfig, "power image = %s\n", cfg->aisp_master->power_img);
-	  fprintf(fConfig, "status = %s\n\n", cfg->aisp_master->status);
+	  if (strncmp(cfg->aisp_master->doppler, "average", 7)==0) {
+	    fprintf(fConfig, "[avg_in_dop]\n");
+	    fprintf(fConfig, "status = %s\n\n", cfg->avg_in_dop->status);
+	  }
 	  fprintf(fConfig, "[Coregister first patch]\n");
 	  fprintf(fConfig, "start master = %ld\n", cfg->coreg_p1->start_master);
 	  fprintf(fConfig, "start slave = %ld\n", cfg->coreg_p1->start_slave);
-	  fprintf(fConfig, "grid = %ld\n", cfg->coreg_p1->grid);
+	  fprintf(fConfig, "grid = %d\n", cfg->coreg_p1->grid);
 	  fprintf(fConfig, "fft = %d\n", cfg->coreg_p1->fft);
 	  fprintf(fConfig, "offset azimuth = %d\n", cfg->coreg_p1->off_az);
 	  fprintf(fConfig, "offset range = %d\n", cfg->coreg_p1->off_rng);
@@ -661,29 +694,44 @@ int write_config(char *configFile, dem_config *cfg)
 	  fprintf(fConfig, "[Coregister last patch]\n");
 	  fprintf(fConfig, "start master = %ld\n", cfg->coreg_pL->start_master);
 	  fprintf(fConfig, "start slave = %ld\n", cfg->coreg_pL->start_slave);
-	  fprintf(fConfig, "grid = %ld\n", cfg->coreg_pL->grid);
+	  fprintf(fConfig, "grid = %d\n", cfg->coreg_pL->grid);
 	  fprintf(fConfig, "fft = %d\n", cfg->coreg_pL->fft);
 	  fprintf(fConfig, "offset azimuth = %d\n", cfg->coreg_pL->off_az);
 	  fprintf(fConfig, "offset range = %d\n", cfg->coreg_pL->off_rng);
 	  fprintf(fConfig, "status = %s\n\n", cfg->coreg_pL->status);
+	  if (strncmp(cfg->aisp_master->doppler, "updated", 7)==0) {
+	    fprintf(fConfig, "[doppler_per_patch]\n");
+	    fprintf(fConfig, "status = %s\n\n", cfg->doppler_per_patch->status);
+	  }
+	  fprintf(fConfig, "[paisp - Master image]\n");
+	  fprintf(fConfig, "start offset = %ld\n", cfg->aisp_master->start_offset);
+	  fprintf(fConfig, "end offset = %ld\n", cfg->aisp_master->end_offset);
+	  fprintf(fConfig, "patches = %d\n", cfg->aisp_master->patches);
+	  fprintf(fConfig, "deskew = %d\n", cfg->aisp_master->deskew);
+	  fprintf(fConfig, "doppler = %s\n", cfg->aisp_master->doppler);
+	  fprintf(fConfig, "power flag = %d\n", cfg->aisp_master->power);
+	  fprintf(fConfig, "power image = %s\n", cfg->aisp_master->power_img);
+	  fprintf(fConfig, "status = %s\n\n", cfg->aisp_master->status);
 	  fprintf(fConfig, "[paisp - Slave image]\n");
 	  fprintf(fConfig, "start offset = %ld\n", cfg->aisp_slave->start_offset);
 	  fprintf(fConfig, "patches = %d\n", cfg->aisp_slave->patches);
+	  fprintf(fConfig, "deskew = %d\n", cfg->aisp_slave->deskew);
+	  fprintf(fConfig, "doppler = %s\n", cfg->aisp_slave->doppler);
 	  fprintf(fConfig, "power flag = %d\n", cfg->aisp_slave->power);
 	  fprintf(fConfig, "power image = %s\n", cfg->aisp_slave->power_img);
 	  fprintf(fConfig, "status = %s\n\n", cfg->aisp_slave->status);
 	}
 	if (strncmp(cfg->general->data_type, "SLC", 3)==0) {
 	  fprintf(fConfig, "[trim_slc]\n");
-	  fprintf(fConfig, "start line = %ld\n", cfg->trim_slc->line);
-	  fprintf(fConfig, "start sample = %ld\n", cfg->trim_slc->sample);
+	  fprintf(fConfig, "start line = %d\n", cfg->trim_slc->line);
+	  fprintf(fConfig, "start sample = %d\n", cfg->trim_slc->sample);
 	  fprintf(fConfig, "length = %ld\n", cfg->trim_slc->length);
 	  fprintf(fConfig, "width = %ld\n", cfg->trim_slc->width);
 	  fprintf(fConfig, "status = %s\n\n", cfg->trim_slc->status);
 	  fprintf(fConfig, "[cpx_autofilter]\n");
 	  fprintf(fConfig, "status = %s\n\n", cfg->cpx_autofilter->status);
 	  fprintf(fConfig, "[Coregister slave]\n");
-	  fprintf(fConfig, "grid = %ld\n", cfg->coreg_slave->grid);
+	  fprintf(fConfig, "grid = %d\n", cfg->coreg_slave->grid);
 	  fprintf(fConfig, "fft = %d\n", cfg->coreg_slave->fft);
 	  fprintf(fConfig, "sinc = %d\n", cfg->coreg_slave->sinc);
 	  fprintf(fConfig, "warp = %d\n", cfg->coreg_slave->warp);
