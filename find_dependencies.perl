@@ -376,7 +376,7 @@ if ( -e $graph_cache_file ) {
 		# Make a temp file and strip comments as appropriate.
 		open(ENTRY, "<$entry") or die "open failed: $!";
 		my $file_contents = join('', <ENTRY>);
-		close(ENTRY) or die "close failed";
+		close(ENTRY) or die "close failed on $entry: $!";
 		unless ( $p{'scan_comments'} ) {
 		    if ( $entry =~ m/\.[ch]$/ ) {
 			$file_contents =~ s!/\*.*?\*/!!gs;
@@ -387,7 +387,7 @@ if ( -e $graph_cache_file ) {
 		# Get temp file handle and name.
 		my ($tfh, $tfn) = tempfile(DIR => "/tmp", UNLINK => 1);
 		print $tfh $file_contents;
-		close($tfh) or die "close failed on $tfn";
+		close($tfh) or die "close failed on $tfn: $!";
 
 		# Look for references to other packages in temp file.
 	        if ( !system("grep -q -I '[^_[:alpha:]]$other_pkg_name"
