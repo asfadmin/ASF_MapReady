@@ -185,7 +185,7 @@ void check_return(int ret, char *msg)
 
 //Check to see if an option was supplied or not
 //If it was found, return its argument number
-//Otherwise, return -1
+//Otherwise, return FLAG_NOT_SET
 int checkForOption(char* key, int argc, char* argv[])
 {
 	int ii = 0;
@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
 		char command[255];
 		char temp[255];
 		sprintf(command, "asf_import -log tmp%i_import.log -format %s", (int)getpid(), format_in);
-		if(quietFlag != -1)
+		if(quietFlag != FLAG_NOT_SET)
 			strcat(command, " -quiet");
 		sprintf(temp, " -%s %s %s tmp%i",
 		cfg->general->data_type,
