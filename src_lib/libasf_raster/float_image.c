@@ -1251,9 +1251,11 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   // If the statistics don't work, something is beastly wrong and we
   // don't want to deal with it.
 #ifndef solaris
+#ifndef win32
   // Solaris doesn't have isfinite().
   g_assert (isfinite (min) && isfinite (max) && isfinite (mean) 
 	    && isfinite (standard_deviation));
+#endif
 #endif
 
   // If min == max, the pixel values are all the same.  There is no
