@@ -34,6 +34,7 @@
      1.1     7/01   R. Gens	Converted into program, added log file switch
      1.25    3/02   P. Denny    Update commandline parsing & usage()
      1.5     3/03   P. Denny    Remove DDR dependency... use only new meta
+     1.6     3/04   R. Gens     Added process ID for temporary files
 
  HARDWARE/SOFTWARE LIMITATIONS:
  	A projection file must be created before running this program. Use the
@@ -86,20 +87,22 @@
 
 
 #include "asf.h"
+#include <unistd.h> /*For getpid()*/
 
 #define VERSION 1.25
 
 int projectGeo(double pixSize, char *metaName, char *in_proj, char *in_key,
-               char *in_tie, char *out_tie, char *out_meta, char win_type,
+               char *in_tie, char *out_tie, char *out_meta, int id, char win_type,
 	       char *win);
 void geoLatLon(double eleva, char *metaName, char *out_tps);
 
 int main(int argc, char *argv[])
 {
-	char in_img[255], projfile[255], projkey[255], outfile[255], outWindow[255]="", cmd[255];
+	char in_img[255], projfile[255], projkey[255], outfile[255], outWindow[255]="", cmd[255], buf1[255], buf2[255];
 	char resample[15]="-nearest", background[20]="";
 	float height=0.0, pixel_size=0.0;
 	char win_type;
+	int id;
 	extern int currArg; /* from cla.h which is in asf.h */
 
 	logflag=0;
@@ -166,20 +169,25 @@ int main(int argc, char *argv[])
 	  printLog("Program: geocode\n\n");
 	}
 
+	/* Get process ID. */
+	id = (int)getpid();
+
     /* Creating tiepoint file from image metadata */
-	geoLatLon(height, in_img, "tmp.geo");
+	sprintf(buf1, "tmp%d.geo", id);
+	geoLatLon(height, in_img, buf1);
 
     /* Projecting tie points */
-	projectGeo(pixel_size, in_img, projfile, projkey, "tmp.geo", "tmp.tie",
-	           outfile, win_type, outWindow);
+	sprintf(buf2, "tmp%d.tie", id);
+	projectGeo(pixel_size, in_img, projfile, projkey, buf1, buf2,
+	           outfile, id, win_type, outWindow);
 
 	if (logflag) FCLOSE(fLog);
 
     /* Finding least-squares polynomial fit of tie points */
-	sprintf(cmd, "fit_quadratic tmp.tie tmp.map"); 
+	sprintf(cmd, "fit_quadratic tmp%d.tie tmp%d.map", id, id); 
         if (logflag) {
           fLog = FOPEN(logFile, "a");
-	  sprintf(cmd, "fit_quadratic -log %s tmp.tie tmp.map", logFile); 
+	  sprintf(cmd, "fit_quadratic -log %s tmp%d.tie tmp%d.map", logFile, id, id); 
           sprintf(logbuf,"\nCommand line: %s\n", cmd);
           printLog(logbuf);
           FCLOSE(fLog);
@@ -188,12 +196,12 @@ int main(int argc, char *argv[])
         system(cmd);
 
     /* Remapping image */
-        sprintf(cmd, "remap %s %s -quadratic tmp.map -asDDR tmp %s %s", resample,
-	        background, in_img, outfile);
+        sprintf(cmd, "remap %s %s -quadratic tmp%d.map -asDDR tmp%d %s %s", resample,
+	        background, id, id, in_img, outfile);
         if (logflag) {
           fLog = FOPEN(logFile, "a");
-          sprintf(cmd, "remap %s %s -quadratic tmp.map -asDDR tmp -log %s %s %s",
-	          resample, background, logFile, in_img, outfile);
+          sprintf(cmd, "remap %s %s -quadratic tmp%d.map -asDDR tmp%d -log %s %s %s",
+	          resample, background, id, id, logFile, in_img, outfile);
           sprintf(logbuf,"\nCommand line: %s\n", cmd);
           printLog(logbuf);
           FCLOSE(fLog);
@@ -202,7 +210,10 @@ int main(int argc, char *argv[])
         system(cmd);
 
 	/* clean up and exit gracefully */
- 	system("rm tmp.geo tmp.tie tmp.meta tmp.map");
+	sprintf (cmd, "rm tmp%d.geo", id); system(cmd);
+	sprintf (cmd, "rm tmp%d.tie", id); system(cmd);
+	sprintf (cmd, "rm tmp%d.meta", id); system(cmd);
+	sprintf (cmd, "rm tmp%d.map", id); system(cmd);
 
 	StopWatch();
 	if (logflag) {
