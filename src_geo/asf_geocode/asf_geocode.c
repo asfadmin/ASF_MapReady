@@ -23,11 +23,11 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     --help"
 
 #define ASF_DESCRIPTION_STRING \
-"     This program takes an unprojected image in the ASF internal\n"\
-"     format and geocodes it, i.e. swizzles it around into one of the\n"\
-"     standard projections used for maps (universal transverse\n"\
-"     mercator, polar stereo, etc).  The output is a new image in ASF\n"\
-"     internal format."
+"     This program takes a map projected or an unprojected (ground\n"\
+"     range) image in the ASF internal format and geocodes it,\n"\
+"     i.e. swizzles it around into one of the standard projections used\n"\
+"     for maps (universal transverse mercator, polar stereo, etc).  The\n"\
+"     output is a new image in ASF internal format.  "
 
 #define ASF_INPUT_STRING \
 "     Most of the \"options\" are actually required.  The specification\n"\
@@ -147,9 +147,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_LIMITATIONS_STRING \
 "     May fail badly if bad projection parameters are supplied for the\n"\
-"     area in the image.\n"\
-"\n"\
-"     Does not reproject images."
+"     area in the image."
 
 #define ASF_SEE_ALSO_STRING \
 "     asf_import, asf_export"
@@ -196,9 +194,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_PROGRAM_HISTORY_STRING \
 "   No history."
 
-#define ASF_VERSION_MAJOR_STRING \
-"0.10"
-
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
 // Standard libraries.
@@ -210,6 +205,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 // Libraries from packages outside ASF.
 #include <glib.h>
 #include <gsl/gsl_blas.h>
+#include <gsl/gsl_math.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_statistics_double.h>
 
@@ -556,28 +552,40 @@ main (int argc, char **argv)
   // Flag true iff input image not map projected.
   gboolean input_projected = FALSE;
   // Convenience alias (valid iff input_projected).
+  meta_projection *ipb = imd->projection;
   project_parameters_t *ipp = &imd->projection->param;
   // FIXME: remove this compiler reassurance:
+  ipb = ipb;
   ipp = ipp;
+  int (*project_input) (project_parameters_t *pps, double lat, double lon,
+			double *x, double *y);
+  project_input = NULL;		// Silence compiler warnings.
   int (*unproject_input) (project_parameters_t *pps, double x, double y, 
 			  double *lat, double *lon);
+  unproject_input = NULL;	// Silence compiler warnings.
   if ( imd->sar->image_type == 'P' 
        && imd->projection->type != SCANSAR_PROJECTION ) {
     input_projected = TRUE;
+    
     switch ( imd->projection->type) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
+      project_input = project_utm;
       unproject_input = project_utm_inv;
       break;
     case POLAR_STEREOGRAPHIC:
+      project_input = project_ps;
       unproject_input = project_ps_inv;
       break;
     case ALBERS_EQUAL_AREA:
+      project_input = project_albers;
       unproject_input = project_albers_inv;
       break;
     case LAMBERT_CONFORMAL_CONIC:
+      project_input = project_lamcc;
       unproject_input = project_lamcc_inv;
       break;
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      project_input = project_lamaz;
       unproject_input = project_lamaz_inv;
       break;
     default:
@@ -672,35 +680,75 @@ main (int argc, char **argv)
     size_t current_edge_point = 0;
     size_t ii = 0, jj = 0;
     for ( ; ii < ii_size_x - 1 ; ii++ ) {
-      meta_get_latLon (imd, (double)jj, (double)ii, average_height, 
-		       &(lats[current_edge_point]), 
-		       &(lons[current_edge_point]));
-      lats[current_edge_point] *= DEG_TO_RAD;
-      lons[current_edge_point] *= DEG_TO_RAD;
+      if ( input_projected ) {
+	double xpc = ipb->startX + ipb->perX * ii;
+	double ypc = ipb->startY - ipb->perY * jj;
+	int return_code = unproject_input (ipp, xpc, ypc, 
+					   &(lats[current_edge_point]),
+					   &(lons[current_edge_point]));
+	g_assert (return_code);
+      }
+      else {
+	meta_get_latLon (imd, (double)jj, (double)ii, average_height, 
+			 &(lats[current_edge_point]), 
+			 &(lons[current_edge_point]));
+	lats[current_edge_point] *= DEG_TO_RAD;
+	lons[current_edge_point] *= DEG_TO_RAD;
+      }
       current_edge_point++;
     }
     for ( ; jj < ii_size_y - 1 ; jj++ ) {
-      meta_get_latLon (imd, (double)jj, (double)ii, average_height,
-		       &(lats[current_edge_point]), 
-		       &(lons[current_edge_point]));
-      lats[current_edge_point] *= DEG_TO_RAD;
-      lons[current_edge_point] *= DEG_TO_RAD;
+      if ( input_projected ) {
+	double xpc = ipb->startX + ipb->perX * ii;
+	double ypc = ipb->startY - ipb->perY * jj;
+	int return_code = unproject_input (ipp, xpc, ypc,
+					   &(lats[current_edge_point]),
+					   &(lons[current_edge_point]));
+	g_assert (return_code);
+      }
+      else {
+	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+			 &(lats[current_edge_point]), 
+			 &(lons[current_edge_point]));
+	lats[current_edge_point] *= DEG_TO_RAD;
+	lons[current_edge_point] *= DEG_TO_RAD;
+      }
       current_edge_point++;
     }
     for ( ; ii > 0 ; ii-- ) {
-      meta_get_latLon (imd, (double)jj, (double)ii, average_height, 
-		       &(lats[current_edge_point]), 
-		       &(lons[current_edge_point]));
-      lats[current_edge_point] *= DEG_TO_RAD;
-      lons[current_edge_point] *= DEG_TO_RAD;
+      if ( input_projected ) {
+	double xpc = ipb->startX + ipb->perX * ii;
+	double ypc = ipb->startY - ipb->perY * jj;
+	int return_code = unproject_input (ipp, xpc, ypc,
+					   &(lats[current_edge_point]),
+					   &(lons[current_edge_point]));
+	g_assert (return_code);
+      }
+      else {
+	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+			 &(lats[current_edge_point]), 
+			 &(lons[current_edge_point]));
+	lats[current_edge_point] *= DEG_TO_RAD;
+	lons[current_edge_point] *= DEG_TO_RAD;
+      }
       current_edge_point++;
     }
     for ( ; jj > 0 ; jj-- ) {
-      meta_get_latLon (imd, (double)jj, (double)ii, average_height, 
-		       &(lats[current_edge_point]), 
-		       &(lons[current_edge_point]));
-      lats[current_edge_point] *= DEG_TO_RAD;
-      lons[current_edge_point] *= DEG_TO_RAD;
+      if ( input_projected ) {
+	double xpc = ipb->startX + ipb->perX * ii;
+	double ypc = ipb->startY - ipb->perY * jj;
+	int return_code = unproject_input (ipp, xpc, ypc,
+					   &(lats[current_edge_point]),
+					   &(lons[current_edge_point]));
+	g_assert (return_code);
+      }
+      else {
+	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+			 &(lats[current_edge_point]), 
+			 &(lons[current_edge_point]));
+	lats[current_edge_point] *= DEG_TO_RAD;
+	lons[current_edge_point] *= DEG_TO_RAD;
+      }
       current_edge_point++;
     }
     g_assert (current_edge_point == edge_point_count);
@@ -791,7 +839,23 @@ main (int argc, char **argv)
       lon *= RAD_TO_DEG;
       // Corresponding pixel indicies in input image.
       double x_pix, y_pix;
-      meta_get_lineSamp (imd, lat, lon, average_height, &y_pix, &x_pix);
+      if ( input_projected ) {
+	// Input projection coordinates of the current pixel.
+	double ipcx, ipcy;
+	return_code = project_input (ipp, DEG_TO_RAD * lat, DEG_TO_RAD * lon, 
+				     &ipcx, &ipcy);
+	if ( return_code == 0 ) {
+	  g_assert_not_reached ();
+	}
+	g_assert (return_code);
+	// Find the input image pixel indicies corresponding to input
+	// projection coordinates.
+	x_pix = (ipcx - ipb->startX) / ipb->perX;
+	y_pix = (-ipcy + ipb->startY) / ipb->perY;
+      }
+      else {
+	meta_get_lineSamp (imd, lat, lon, average_height, &y_pix, &x_pix);
+      }
       dtf.x_proj[current_mapping] = cxproj;
       dtf.y_proj[current_mapping] = cyproj;
       dtf.x_pix[current_mapping] = x_pix;
@@ -891,47 +955,50 @@ main (int argc, char **argv)
     gsl_vector_free (model_x_errors);
   }
 
-  // Check correctness of reverse mappings of some corners, as an
-  // extra paranoid check.  We insist on the model being within this
-  // many pixels for reverse transformations of the projection
-  // coordinates of the corners of the output image back to the pixel
-  // indicies in the input image.
-  double max_corner_error = 1.0;
-  // Upper left corner.
-  double ul_lat, ul_lon;
-  meta_get_latLon (imd, (float) 0, (float) 0, average_height, &ul_lat, 
-		   &ul_lon);
-  double ul_x, ul_y;
-  project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
-  double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
-  if (fabs (ul_x_pix_approx) > max_corner_error ) {
+  // If we don't have a projected image, we are basing things on
+  // meta_get_lineSampe, god help us.  Check correctness of reverse
+  // mappings of some corners, as an extra paranoid check.  We insist
+  // on the model being within this many pixels for reverse
+  // transformations of the projection coordinates of the corners of
+  // the output image back to the pixel indicies in the input image.
+  if ( !input_projected ) {
+    double max_corner_error = 1.0;
+    // Upper left corner.
+    double ul_lat, ul_lon;
+    meta_get_latLon (imd, (float) 0, (float) 0, average_height, &ul_lat, 
+		     &ul_lon);
+    double ul_x, ul_y;
+    project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
+    double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
+    if (fabs (ul_x_pix_approx) > max_corner_error ) {
       asfPrintError ("UL X Corner Error was too large!  %f > %f\n",
 		     fabs(ul_x_pix_approx), max_corner_error );
-  }
-  double ul_y_pix_approx = Y_PIXEL (ul_x, ul_y);
-  if (fabs (ul_y_pix_approx) > max_corner_error ) {
+    }
+    double ul_y_pix_approx = Y_PIXEL (ul_x, ul_y);
+    if (fabs (ul_y_pix_approx) > max_corner_error ) {
       asfPrintError ("UL Y Corner Error was too large! %f > %f\n",
 		     fabs (ul_y_pix_approx), max_corner_error );
-  }
-
-  // Lower right corner.
-  double lr_lat, lr_lon;
-  meta_get_latLon (imd, (float) (ii_size_y - 1), (float) (ii_size_x - 1), 
-		   average_height, &lr_lat, &lr_lon);
-  double lr_x, lr_y;
-  project (pp, DEG_TO_RAD * lr_lat, DEG_TO_RAD * lr_lon, &lr_x, &lr_y);
-  double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
-  if (fabs (lr_x_pix_approx - (ii_size_x - 1)) > max_corner_error ) {
+    }
+    
+    // Lower right corner.
+    double lr_lat, lr_lon;
+    meta_get_latLon (imd, (float) (ii_size_y - 1), (float) (ii_size_x - 1), 
+		     average_height, &lr_lat, &lr_lon);
+    double lr_x, lr_y;
+    project (pp, DEG_TO_RAD * lr_lat, DEG_TO_RAD * lr_lon, &lr_x, &lr_y);
+    double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
+    if (fabs (lr_x_pix_approx - (ii_size_x - 1)) > max_corner_error ) {
       asfPrintError ("LR X Corner Error was too large! %f > %f\n",
 		     fabs (lr_x_pix_approx - (ii_size_x - 1)),
 		     max_corner_error);
-  }
-  double lr_y_pix_approx = Y_PIXEL (lr_x, lr_y);
-  if (fabs (lr_y_pix_approx - (ii_size_y - 1)) > max_corner_error ) {
+    }
+    double lr_y_pix_approx = Y_PIXEL (lr_x, lr_y);
+    if (fabs (lr_y_pix_approx - (ii_size_y - 1)) > max_corner_error ) {
       asfPrintError ("LR Y Corner Error was too large! %f > %f\n",
 		     fabs (lr_y_pix_approx - (ii_size_y - 1)), 
 		     max_corner_error);
-  }
+    }
+  }    
 
   // Done with the input metadata.
   meta_free (imd);
