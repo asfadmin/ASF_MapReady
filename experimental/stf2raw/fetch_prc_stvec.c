@@ -133,34 +133,30 @@ void find_prc_file(char *prc_path,int requested_date, int orbit, char *prc_file)
 
   tmpRequest = requested_date - ((requested_date/1000000)*1000000);
 
-  while (dent = readdir(dirp)) 
-    {
-        char   tmpName[256];
-        int    tmpDate;
-	int    tmpOrbit;
+  while ((dent=readdir(dirp)) != 0) {
+	char tmpName[256];
+	int tmpDate;
+	int tmpOrbit;
 
 	strcpy(tmpName,dent->d_name);
-	if (strncmp(tmpName,"PRC_",4)==0)
-	  {
+	if (strncmp(tmpName,"PRC_",4)==0) {
 		tmpDate = atoi(&(tmpName[4]));
 		tmpOrbit = atoi(&(tmpName[11]));
 
 		/* Calculation by date - gave problems T. Logan 9/2001 ******
-		if (  ((tmpRequest-tmpDate) >=0) && ((tmpRequest-tmpDate) < minDiff))
-		  {
+		if ( ((tmpRequest-tmpDate) >=0) && ((tmpRequest-tmpDate) < minDiff)) {
 			minDiff = (tmpRequest - tmpDate);
-		        strcpy(saveName,tmpName);
-		  }
+			strcpy(saveName,tmpName);
+		}
 		*************************************************************/
 
 		/* Calculation by orbit number */
-		if (  (tmpOrbit < orbit) && ((orbit - tmpOrbit) < minDiff))
-		 {
+		if (  (tmpOrbit < orbit) && ((orbit - tmpOrbit) < minDiff)) {
 			minDiff = (orbit-tmpOrbit);
-		        strcpy(saveName,tmpName);
-		 }
-	  }
-    }
+			strcpy(saveName,tmpName);
+		}
+	}
+  }
   (void)closedir(dirp);
   printf("   Closest file found is %s\n",saveName);
   if (logflag) {
