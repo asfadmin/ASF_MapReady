@@ -9,7 +9,7 @@ given image and set link_imagewidth and height. They
 return 0 on failure.*/
 int image_loadLas(char *fileName);
 int image_loadCeos(char *fileName);
-
+int image_loadNewMeta(char *fileName); /* Load from new-style meta file.  */
 
 int image_saveJpeg(const char * imageName);/* TCL asks C to 
 	save the current image as a JPEG  with the given filename.  Returns 0 on failure; 1 on sucess.*/
@@ -51,6 +51,7 @@ typedef enum {
 	image_none=0,/*No image*/
 	image_ddr=100,/*LAS image, with DDR*/
 	image_ceos=200/*CEOS image, with leader*/
+	image_new_meta = 300;	/* Image with new-style meta file.  */
 } image_type;
 
 extern image_type type;
