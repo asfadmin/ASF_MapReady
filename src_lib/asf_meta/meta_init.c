@@ -298,6 +298,8 @@ int get_meta_ddr_struct_index(const char *name)
  * Disposes of a given metadata parameters record.  */
 void meta_free(meta_parameters *meta)
 {
+  int ii;
+
   if (meta != NULL) {
     FREE(meta->general);
     meta->general = NULL;
@@ -322,6 +324,10 @@ void meta_free(meta_parameters *meta)
     FREE(meta->info);
     meta->info = NULL;
 
+    for (ii=0; ii<NUM_META_DDR_STRUCTS; ii++) {
+      if (meta_ddr_structs[ii].meta == meta)
+        { meta_ddr_structs[ii].meta = NULL; }
+    }
     FREE(meta);
     meta = NULL;
   }
