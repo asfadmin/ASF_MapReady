@@ -74,11 +74,12 @@ int main(int argc, char **argv)
   if ( !out_name_specified ) {
     strncpy(out_name, argv[optind], MAX_FILE_NAME_LENGTH 
                             	    - MAX_FILE_EXTENSION_LENGTH);
-    strncat(out_name, ".meta", MAX_FILE_EXTENSION_LENGTH + 1);
+    if ( strcmp(&out_name[strlen(out_name) - 5], ".meta") ) {
+      strncat(out_name, ".meta", MAX_FILE_EXTENSION_LENGTH + 1);
+    }
   }
   
   meta_write(meta, out_name);
   
   exit(EXIT_SUCCESS);
 }
-  
