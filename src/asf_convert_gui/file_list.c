@@ -87,6 +87,15 @@ update_all_extensions()
 }
 
 void
+edited_handler(GtkCellRendererText *ce, gchar *arg1, gchar *arg2, 
+	       gpointer user_data)
+{
+  /* arg1 indicates which row -- should assert() that it matches
+     the selected row, since we're asssuming that */
+  do_rename_selected(arg2);
+}
+
+void
 setup_files_list(int argc, char *argv[])
 {
   gint i;
@@ -142,6 +151,17 @@ setup_files_list(int argc, char *argv[])
   gtk_tree_view_column_set_resizable(col, TRUE);
   gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
   renderer = gtk_cell_renderer_text_new();
+
+  /* allow editing the output filename right in the grid */
+  GValue val = {0,};
+  g_value_init(&val, G_TYPE_BOOLEAN);
+  g_value_set_boolean(&val, TRUE);
+  g_object_set_property(G_OBJECT(renderer), "editable", &val);
+
+  /* connect "editing-done" signal */
+  g_signal_connect(G_OBJECT(renderer), "edited",
+		   G_CALLBACK(edited_handler), NULL);
+
   gtk_tree_view_column_pack_start(col, renderer, TRUE);
   gtk_tree_view_column_add_attribute(col, renderer, "text", 1);
 

@@ -960,6 +960,9 @@ GeoTIFF (.tif)</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
   <property name="show_fileops">True</property>
+  <signal name="delete_event" handler="on_input_file_selection_delete_event" last_modification_time="Mon, 16 Aug 2004 23:33:49 GMT"/>
+  <signal name="destroy_event" handler="on_input_file_selection_destroy_event" last_modification_time="Mon, 16 Aug 2004 23:33:54 GMT"/>
+  <signal name="destroy" handler="on_input_file_selection_destroy" last_modification_time="Mon, 16 Aug 2004 23:34:03 GMT"/>
 
   <child internal-child="cancel_button">
     <widget class="GtkButton" id="cancel_button1">

@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = asf_convert_gui
-SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c popup_menu.c settings.c file_list.c help.c rename_output.c
+SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c popup_menu.c settings.c file_list.c help.c rename_output.c file_selection.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
@@ -35,7 +35,8 @@ clean:
 
 ### End Windows Section
 
-else                                                                                
+else
+
 ### Begin Unix Section
 
 CFLAGS = -Wall -O0 -g $(shell pkg-config --cflags gtk+-2.0) \

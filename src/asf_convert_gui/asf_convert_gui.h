@@ -11,6 +11,7 @@
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 
+/* make these enums once we've settled down */
 #define OUTPUT_FORMAT_JPEG 0
 #define OUTPUT_FORMAT_PPM 1
 #define OUTPUT_FORMAT_GEOTIFF 2
@@ -50,13 +51,23 @@
 #include "file_list.h"
 #include "help.h"
 #include "rename_output.h"
+#include "file_selection.h"
 
 extern const char DIR_SEPARATOR;
 extern const char PATH_SEPATATOR;
 
+/* these are our global variables ... */
+
+/* xml version of the .glade file */
 extern GladeXML *glade_xml;
+
+/* the files listing */
 extern GtkListStore *list_store;
+
+/* TRUE during processing until the user clicks "STOP" */
 extern gboolean keep_going;
+
+/* TRUE during processing */
 extern gboolean processing;
 
 #endif

@@ -1,4 +1,5 @@
 #include "asf_convert_gui.h"
+#include <ctype.h>
 
 static void
 change_output_name_dialog_hide()
@@ -9,6 +10,104 @@ change_output_name_dialog_hide()
     glade_xml_get_widget(glade_xml, "change_output_name_dialog");
   
   gtk_widget_hide(change_output_name_dialog);  
+}
+
+static void
+do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
+{
+  const char * ext;
+  char *user_ext, *basename, *name_without_path, *p, *fixed_name,
+    *data_file_name, *path;
+  Settings * user_settings;
+
+  user_settings = settings_get_from_gui();
+  ext = settings_get_output_format_extension(user_settings);
+
+  gtk_tree_model_get(model, iter, 0, &data_file_name, -1);
+  path = g_path_get_dirname(data_file_name);
+  if (strcmp(path, ".") == 0)
+  {
+    *path = '\0';
+  }
+  else
+  {
+    int len = strlen(path);
+    path = (char *)realloc(path, len + 1);
+    *(path + len) = DIR_SEPARATOR;
+    *(path + len + 1) = '\0';	
+  }
+
+  /* do not allow user to move output file to a different location */
+  name_without_path = g_path_get_basename(new_name);
+ 
+  /* replace illegal characters with _ */
+  p = name_without_path;
+  do
+  {
+    /* figure out a better way here */
+    if (*p == '?' || isspace(*p) || *p == '>' || *p == '<' || *p == '|')
+      *p = '_';
+  }
+  while (*p++);
+    
+  /* add appropriate extension if was not given by user */
+  basename = strdup(name_without_path);
+  p = strrchr(basename, '.');
+  if (p)
+  {
+    *p = '\0';
+    user_ext = p + 1;
+  }
+  else
+  {
+    user_ext = NULL;
+  }
+
+  if (user_ext == NULL)
+  {
+    fixed_name = (char *)malloc(strlen(path) + strlen(basename) + 
+				strlen(ext) + 2);
+
+    sprintf(fixed_name, "%s%s.%s", path, basename, ext);
+  }
+  else if (strcmp(user_ext, ext) != 0)
+  {
+    fixed_name = (char *)malloc(strlen(path) + strlen(name_without_path) + 
+				strlen(ext) + 2);
+    sprintf(fixed_name, "%s%s.%s", path, name_without_path, ext);
+  }
+  else
+  {
+    fixed_name = (char *)malloc(strlen(path) + strlen(name_without_path));
+    sprintf(fixed_name, "%s%s", path, name_without_path);
+  }
+
+  free(basename);
+  free(name_without_path);
+  free(path);
+    
+  gtk_list_store_set(list_store, iter, 1, fixed_name, -1);
+  
+  free(fixed_name);
+}
+
+void
+do_rename_selected(char *new_name)
+{
+  GtkTreeSelection * selection;
+  GtkWidget * files_list;
+  GtkTreeIter iter;
+  GtkTreeModel * model;
+  
+  files_list = glade_xml_get_widget(glade_xml, "files_list");
+  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+  
+  assert(gtk_tree_selection_count_selected_rows(selection) == 1);
+    
+  if (gtk_tree_selection_get_selected(selection, &model, &iter))
+  {
+    do_rename(model, &iter, new_name);
+  }
 }
 
 gboolean
@@ -81,84 +180,8 @@ on_change_output_name_button_ok_clicked(GtkWidget *widget)
 
   if (strlen(new_name) > 0)
   {
-    GtkTreeSelection * selection;
-    GtkWidget * files_list;
-    GtkTreeIter iter;
-    GtkTreeModel * model;
-
     /* since dialog is modal, can assume same row is selected */
-    files_list = glade_xml_get_widget(glade_xml, "files_list");
-    selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
-    
-    assert(gtk_tree_selection_count_selected_rows(selection) == 1);
-    
-    if (gtk_tree_selection_get_selected(selection, &model, &iter))
-    {
-      const char * ext;
-      char *user_ext, *basename, *name_without_path, *p, *fixed_name,
-	*data_file_name, *path;
-      Settings * user_settings;
-
-      user_settings = settings_get_from_gui();
-      ext = settings_get_output_format_extension(user_settings);
-
-      gtk_tree_model_get(model, &iter, 0, &data_file_name, -1);
-      path = g_path_get_dirname(data_file_name);
-      if (strcmp(path, ".") == 0)
-      {
-	*path = '\0';
-      }
-      else
-      {
-	int len = strlen(path);
-	path = (char *)realloc(path, len + 1);
-	*(path + len) = DIR_SEPARATOR;
-	*(path + len + 1) = '\0';	
-      }
-
-      /* do not allow user to move output file to a different location */
-      name_without_path = g_path_get_basename(new_name);
-
-      /* add appropriate extension if was not given by user */
-      basename = strdup(name_without_path);
-      p = strrchr(basename, '.');
-      if (p)
-      {
-	*p = '\0';
-	user_ext = p + 1;
-      }
-      else
-      {
-	user_ext = NULL;
-      }
-
-      if (user_ext == NULL)
-      {
-	fixed_name = (char *)malloc(strlen(path) + strlen(basename) + 
-				    strlen(ext) + 2);
-
-	sprintf(fixed_name, "%s%s.%s", path, basename, ext);
-      }
-      else if (strcmp(user_ext, ext) != 0)
-      {
-	fixed_name = (char *)malloc(strlen(path) + strlen(name_without_path) + 
-				    strlen(ext) + 2);
-	sprintf(fixed_name, "%s%s.%s", path, name_without_path, ext);
-      }
-      else
-      {
-	fixed_name = (char *)malloc(strlen(path) + strlen(name_without_path));
-	sprintf(fixed_name, "%s%s", path, name_without_path);
-      }
-
-      free(basename);
-      free(name_without_path);
-      free(path);
-    
-      gtk_list_store_set(list_store, &iter, 1, fixed_name, -1);
-
-      free(fixed_name);
-    }
+    do_rename_selected((char*)new_name);
   }
   
   gtk_widget_hide(change_output_name_dialog);  
