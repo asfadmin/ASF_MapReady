@@ -62,7 +62,10 @@ void init_asf_proj(meta_parameters *meta,ceos_description *ceos,
 			"in map projection data record.\n",mpdr->mpdesig); 
 		exit(1); 
 	}
-	
+
+	/* Default to meters */
+	strcpy(projection->units,"meters");
+
 	if (facdr->imgclat > 0.0) 
 		projection->hem='N'; 
 	else 
