@@ -73,7 +73,6 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
 		create_name(sprocketName,outN,".metadata");
 		meta_write_sprocket(sprocketName,meta,dssr);
 	}
-	meta_free(meta);
 }
 
 /******************************************************************************
