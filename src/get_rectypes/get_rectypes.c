@@ -66,25 +66,25 @@ BUGS:
 #include <math.h>
 #include "ceos.h"
 #include "asf.h"
+#include "asf_endian.h"
 
 #define VERSION 1.1
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	FILE 	 *fp;
-	char 	 buff[131072];
 	int	 itype, length;
 	struct HEADER	bufhdr;
 
 	if (argc != 2)
 	{
-		fprintf(stderr, "\nUsage: ");
-		fprintf(stderr, "%s <file>\n\n",argv[0]);
-		fprintf(stderr, "	<file> File (with extension) to get records from.\n\n");
-		fprintf(stderr, "get_rectypes reads an ASF groundstation file\n"
+		printf( "\nUsage: ");
+		printf( "%s <file>\n\n",argv[0]);
+		printf( "	<file> File (with extension) to get records from.\n\n");
+		printf( "get_rectypes reads an ASF groundstation file\n"
 				"and prints the names of all of the records found\n"
 				"therein.\n\n");
-		fprintf(stderr,"VERSION %.2f, ASF SAR TOOLS\n\n",VERSION);
+		printf("VERSION %.2f, ASF SAR TOOLS\n\n",VERSION);
 		exit(1);
 	}
 	
@@ -93,7 +93,7 @@ main(int argc, char **argv)
 	{
 		if (fread(&bufhdr,sizeof(bufhdr),1,fp)!=1)
 		{
-			fprintf(stderr," End of file detected.\n");
+			printf("**End of file detected.\n");
 			fclose(fp);
 			exit(0);
 		}
@@ -124,11 +124,12 @@ main(int argc, char **argv)
 		}
 
 		length = bigInt32(bufhdr.recsiz) - 12;
-		if((fread(buff, length, 1, fp)) == NULL) 
+		if((fseek(fp, length, 1)) != 0) 
 		{
-			fprintf(stderr," Error reading data portion of record.\n");
+			printf("**Error scanning over data portion of record, exiting.\n");
 			fclose(fp);
 			exit(0);
 		}
-	}	
+	}
+	return 0; /* for whiny compilers */	
 }
