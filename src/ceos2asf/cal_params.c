@@ -225,34 +225,34 @@ int check_cal(char *filename)
 {
         struct qual_sum_rec    *dqsr;
 
-        dqsr=(struct qual_sum_rec*)malloc(sizeof(struct qual_sum_rec));
+        dqsr=(struct qual_sum_rec*)MALLOC(sizeof(struct qual_sum_rec));
         if (get_dqsr(filename,dqsr) == -1) return(1);
 
         if (strncmp(dqsr->cal_status,"UNCALIB",7)==0)
         {
           printf("   **********  UNCALIBRATED DATA  **********  \n");
           printf("   Calibration Comments: %s\n",dqsr->cal_comment);
-          free(dqsr);
+          FREE(dqsr);
           return(0);
         }
         else if (strncmp(dqsr->cal_status,"INFERRE",7)==0)
         {
           printf("   INFERRED CALIBRATION DATA\n");
           printf("   Calibration Comments: %s\n",dqsr->cal_comment);
-          free(dqsr);
+          FREE(dqsr);
           return(1);
         }
         else if (strncmp(dqsr->cal_status,"CALIBRA",7)==0)
         {
           printf("   Calibration Comments: %s\n",dqsr->cal_comment);
-          free(dqsr);
+          FREE(dqsr);
           return(1);
         }
         else 
         {
           printf("   ****** UNABLE TO DETERMINE CALIBRATION OF DATA ******\n"); 
           printf("   Calibration Comments: %s\n",dqsr->cal_comment);
-          free(dqsr);
+          FREE(dqsr);
           return(0);
         }
 }
