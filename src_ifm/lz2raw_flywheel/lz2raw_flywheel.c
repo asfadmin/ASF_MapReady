@@ -226,7 +226,7 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
 	}
 	
 /*Update s-> fields with new state vector*/
-	addStateVector(s,&meta->state_vectors->vecs[0].vec);
+/*	addStateVector(s,&meta->state_vectors->vecs[0].vec);*/
 	
 /*Update fields for which we have decoded header info.*/
 	updateMeta(s,meta,inN);
