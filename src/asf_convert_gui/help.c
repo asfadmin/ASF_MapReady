@@ -1,5 +1,7 @@
 #include "asf_convert_gui.h"
 
+const int max_line_len = 2048;
+
 SIGNAL_CALLBACK void
 on_help_button_clicked(GtkWidget *widget)
 {
@@ -23,21 +25,23 @@ on_help_button_clicked(GtkWidget *widget)
   help_file = fopen(help_filename, "rt");
   if (help_file)
   {
+    gchar * buffer = (gchar *) g_malloc(sizeof(gchar) * max_line_len);
     while (!feof(help_file))
     {
-      gchar buffer[1024];
-      gchar *p = fgets(buffer, sizeof(buffer), help_file);
+      gchar *p = fgets(buffer, max_line_len, help_file);
       if (p)
       {
-	GtkTextIter end;
-	gtk_text_buffer_get_end_iter(text_buffer, &end);
-	gtk_text_buffer_insert(text_buffer, &end, buffer, -1);
+        GtkTextIter end;
+        gtk_text_buffer_get_end_iter(text_buffer, &end);
+        gtk_text_buffer_insert(text_buffer, &end, buffer, -1);
       }
     }
 
     fclose(help_file);
+    g_free(buffer);
   }
 
+  g_free(help_filename);
   gtk_widget_show(help_dialog);
 }
 
