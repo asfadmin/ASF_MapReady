@@ -18,7 +18,7 @@ if [ -z $osType ]; then
 	# No uname!  Must ask user.
 	echo "Could not match your system automatically..."
 	# Could be Linux, or Next:
-	echo -n "Please enter your system type (linux, next, etc.): "
+	printf "Please enter your system type (linux, next, etc.): "
 	read sys
 	echo "Configuring for " $sys .
 	osType=$sys
@@ -83,7 +83,7 @@ fi
 
 ######## Ask about GCC ############
 if [ ! $cc = "gcc" -a ! $batch_mode = "true" ]; then
-    echo -n "Would you like to use the GNU C Compiler 'gcc' (y/n)? "
+    printf "Would you like to use the GNU C Compiler 'gcc' (y/n)? "
     read resp
     if [ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]; then
         cc="gcc"
@@ -160,7 +160,13 @@ for xdir in `echo /usr /usr/openwin /usr/X /usr/X11 /usr/X11R6`
 do
 	if [ -r $xdir/lib/libX11.so ]
 	then
-		echo "XHOME   = $xdir" >> system_rules
+		# linux needs to know about the /lib directory
+		if [ $sys = "linux" ]
+		then
+			echo "XHOME   = ${xdir}/lib" >> system_rules
+		else
+			echo "XHOME   = ${xdir}" >> system_rules
+		fi
 		break
 	fi
 done
@@ -199,7 +205,7 @@ then
 	echo "Would you like this script to automatically add these lines:"
 	echo "  --> "$addWhat1
 	echo "  --> "$addWhat2
-	echo -n "to your "$addWhere" file (y/n)? "
+	printf "to your "$addWhere" file (y/n)? "
 	read resp
 	if [ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]
 	then
