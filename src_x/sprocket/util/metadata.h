@@ -50,11 +50,11 @@
 #define ELLIP_MIN "ellip_minor"
 
 #define SIGMA_EXT ".sigma0"
-#define DATA_EXT ".data1"
+#define DATA_EXT ".img"
 #define LOOK_EXT ".look"
 #define METADATA_EXT ".metadata"
 #define COMPLEX_I_PLANE ".dataI"
-#define COMPLEX_Q_PLANE 	".dataQ"
+#define COMPLEX_Q_PLANE ".dataQ"
 #define SIZE_OF_ASF_COMPLEX (4)
 #define COMPLEX_FORMAT 		"complex"
 #define STANDARD_FORMAT 	"detected"
