@@ -3,6 +3,7 @@
 #define _LOGFILE_H_
 
 #include <stdio.h>
+#include <stdarg.h>
 
 extern int quietflag;       /* flag for little or lots of output */
 extern int logflag;         /* flag for log file output */
@@ -11,5 +12,6 @@ extern char logbuf[4096];   /* buffer for log file output */
 extern FILE *fLog;          /* file pointer for log file */
 
 void printLog(char *msg);
+void printAndLog(char *format, ...);
 
 #endif
