@@ -49,6 +49,7 @@ PROGRAM HISTORY:
     1.1	    5/98   Orion Lawlor Caplib/bug fix.
     1.11    7/01   Rudi Gens	Added logfile switch
     1.3     3/02   Pat Denny    Updated Command line parsing
+    1.5     3/04   Rudi Gens    Removed DDR dependency
 
 HARDWARE/SOFTWARE LIMITATIONS: none
 
@@ -111,6 +112,7 @@ void usage(char *name);
 int main(int argc, char *argv[])
 {
   struct DDR inDDR,outDDR;
+  meta_parameters *metaIn, *metaOut;
   int isComplex;
   long long pixelSize, offset;
   long long x,y,startX,startY,endX=-1,endY=-1,
@@ -139,15 +141,16 @@ int main(int argc, char *argv[])
     } 
     else if (strmatch(key,"-log")) {
       CHECK_ARG(1) /*one string argument: logfile name */
-      strcpy(logFile,GET_ARG(1));
+      strcpy(logFile,GET_ARG(1));  c_putddr(outfile,&outDDR);
+
       fLog = FOPEN(logFile, "a");
       logflag=1;
       StartWatchLog(fLog);
       printLog("Program: trim\n\n");
     }
-    else {printf("*****Unrecognized option keyword:  %s\n",argv[currArg-1]);usage(argv[0]);}
+    else {printf("   *****Unrecognized option keyword:  %s\n",argv[currArg-1]);usage(argv[0]);}
   }
-  if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+  if ((argc-currArg) < 4) {printf("   Insufficient arguments.\n"); usage(argv[0]);}
 
  /*Compute filenames*/
   infile=argv[currArg];
@@ -155,14 +158,15 @@ int main(int argc, char *argv[])
   outfile=argv[currArg+1];
   in=fopenImage(infile,"rb");
   out=fopenImage(outfile,"wb");
-
-  c_getddr(infile,&inDDR);
-  pixelSize=inDDR.dtype;
+  
+  metaIn = meta_read(infile);
+  pixelSize = metaIn->general->data_type;
   if (pixelSize==3) pixelSize=4;
   if (pixelSize==5) pixelSize=8;
   if (isComplex)    pixelSize*=2;
-	
-  inMaxX=inDDR.ns; inMaxY=inDDR.nl;
+
+  inMaxX = metaIn->general->sample_count;
+  inMaxY = metaIn->general->line_count;	
   startX=atoi(argv[currArg+3]);
   startY=atoi(argv[currArg+2]);
 
@@ -173,30 +177,25 @@ int main(int argc, char *argv[])
   outMaxY=endY-startY;
 
 /*Write out our outDDR*/
-  outDDR=inDDR;
-  outDDR.nl=outMaxY;
-  outDDR.ns=outMaxX;
-  outDDR.master_line+=startY*outDDR.line_inc;
-  outDDR.master_sample+=startX*outDDR.sample_inc;
+  metaOut = meta_copy(metaIn);
+  metaOut->general->line_count = outMaxY;
+  metaOut->general->sample_count = outMaxX;
+  metaOut->general->start_line += startY * metaOut->sar->line_increment;
+  metaOut->general->start_sample += startX * metaOut->sar->sample_increment;
+
   /*Some sort of conditional on the validity of the corner coordinates would be nice here.*/
+  if (metaIn->projection)
   {
   	double bX, mX, bY, mY;
-  	bY=inDDR.upleft[0];
-  	bX=inDDR.upleft[1];
-  	mY=(inDDR.loleft[0]-inDDR.upleft[0])/(inDDR.nl-1);
-  	mX=(inDDR.upright[1]-inDDR.upleft[1])/(inDDR.ns-1);
-  	
-  	outDDR.upleft[0]=bY+mY*startY;
-  	outDDR.upright[0]=bY+mY*startY;
-  	outDDR.loleft[0]=bY+mY*(startY+outMaxY);
-  	outDDR.loright[0]=bY+mY*(startY+outMaxY);
-  	outDDR.upleft[1]=bX+mX*startX;
-  	outDDR.upright[1]=bX+mX*(startX+outMaxX);
-  	outDDR.loleft[1]=bX+mX*startX;
-  	outDDR.loright[1]=bX+mX*(startX+outMaxX);
+	bY = metaIn->projection->startY;
+	bX = metaIn->projection->startX;
+  	mY = metaIn->projection->perY;
+  	mX = metaIn->projection->perX;  	
+	metaOut->projection->startY = bY + mY * startY;
+	metaOut->projection->startX = bX + mX * startX;
   }
-  
-  c_putddr(outfile,&outDDR);
+
+  meta_write(metaOut, outfile);  
     
 /*If everything's OK, then allocate a buffer big enough for one line of output data.*/
   buffer= (char *)MALLOC(pixelSize*(outMaxX));
@@ -277,7 +276,7 @@ void usage(char *name)
  printf("\n"
       	"DESCRIPTION:\n"
       	"   Allows you to trim/add any number of samples to any\n"
-	"   LAS 6.0 image file (even complex .cpx) while maintaining the DDR.\n");
+	"   ASF internal image file (even complex .cpx) while maintaining the metadata.\n");
  printf("\n"
       	"Version %.2f, ASF SAR TOOLS\n"
       	"\n",VERSION);
