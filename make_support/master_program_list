@@ -81,6 +81,7 @@ PROGRAMS
 	deskew { }
 	dspddr { }
 	fftMatch { }
+	import2asf { }
 	makeddr { }
 	meta2ddr { BINS ddr2meta }
 	metadata { }
