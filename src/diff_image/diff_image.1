@@ -1,0 +1,45 @@
+NAME: diff_image
+
+SYNOPSIS:
+        diff_image [mask value] [-d diff.ext] <img1.ext> <img2.ext>
+
+DESCRIPTION:
+        Compares two ASF tools format images. It then outputs a 
+        histogram and summary of the differences, and if -d is 
+        specified, an image containing (img1-img2).
+
+        This is useful for comparing image files.
+
+OPTIONS:
+        -m mask 
+            Specify a value in the comparison images to be ignored.
+        -d diff.ext
+            Create an image with pixels numerically equal to: 
+              diff.ext = img1.ext - img2.ext
+
+EXAMPLES:
+        > diff_image correct.img questionable.img
+            Compares correct to questionable and prints out a summary 
+            and histogram of the differences.
+        
+        > diff_image -d difference.img correct.img questionable.img
+            Creates an image "difference", whose pixels are equal to 
+            (correct - questionable). If correct equals questionable, 
+            then the pixels are (of course) zero.
+
+SEE ALSO:
+
+HARDWARE/SOFTWARE LIMITATIONS:
+        Unsigned byte inputs will return a signed integer16 image.
+
+BUGS:
+        None known.
+        
+AUTHORS:
+        Orion Lawlor, 1997
+        Patrick Denny, 2/2004
+
+CONTACT:
+        uso@asf.alaska.edu
+        http://www.asf.alaska.edu
+

@@ -1,9 +1,9 @@
 /******************************************************************************
-NAME:  diff_las
+NAME:  diff_image
 
-SYNOPSIS:  diff_las [-d difference.ext] [-m mask_val] <img1.ext> <img2.ext>
+SYNOPSIS:  diff_image [-d difference.ext] [-m mask_val] <img1.ext> <img2.ext>
 
-DESCRIPTION:  compare LAS 6.0 images, for debugging and verification
+DESCRIPTION:  compare ASF tools format images, for debugging and verification
 	      (especially between platforms).
 
 EXTERNAL ASSOCIATES:
@@ -15,15 +15,17 @@ FILE REFERENCES:
     ---------------------------------------------------------------
 
 PROGRAM HISTORY:
-    VERS:   DATE:  AUTHOR:      PURPOSE:
+    VERS:  DATE:  AUTHOR:      PURPOSE:
     ---------------------------------------------------------------
-    1.0	    1997   Orion Lawlor
-    1.1     7/01   P. Denny	Change byte output to signed short
-    				 input for better visualization
-    1.5     2/02   P. Denny	Add masking option, standardize
-    				 command line arguments
-    2.0     1/03   P. Denny	Update to use meta struct instead
-				 of DDR struct
+    1.0    1997   Orion Lawlor
+    1.1    7/01   P. Denny     Change byte output to signed short input for
+                                 better visualization
+    1.5    2/02   P. Denny     Add masking option, standardize command line
+                                 arguments
+    2.0    1/03   P. Denny     Update to use meta struct instead of DDR struct
+    2.1    2/04   P. Denny     Change license to BSD. Change name from diff_las
+                                 to diff_image. Fixed bad initial value of mask
+                                 from -1 to NaN.
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -34,42 +36,50 @@ ALGORITHM REFERENCES:
 BUGS:
 
 ******************************************************************************/
-/****************************************************************************
-*								            *
-*   diff_las -- Compares to LAS 6.0 images				    *
-*   Copyright (C) 2001  ASF Advanced Product Development    	    	    *
-*									    *
-*   This program is free software; you can redistribute it and/or modify    *
-*   it under the terms of the GNU General Public License as published by    *
-*   the Free Software Foundation; either version 2 of the License, or       *
-*   (at your option) any later version.					    *
-*									    *
-*   This program is distributed in the hope that it will be useful,	    *
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
-*   GNU General Public License for more details.  (See the file LICENSE     *
-*   included in the asf_tools/ directory).				    *
-*									    *
-*   You should have received a copy of the GNU General Public License       *
-*   along with this program; if not, write to the Free Software		    *
-*   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
-*									    *
-*   ASF Advanced Product Development LAB Contacts:			    *
-*	APD E-mail:	apd@asf.alaska.edu 				    *
-* 									    *
-*	Alaska SAR Facility			APD Web Site:	            *	
-*	Geophysical Institute			www.asf.alaska.edu/apd	    *
-*       University of Alaska Fairbanks					    *
-*	P.O. Box 757320							    *
-*	Fairbanks, AK 99775-7320					    *
-*									    *
-****************************************************************************/
+/******************************************************************************
+*                                                                             *
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* Redistribution and use in source and binary forms, with or without          *
+* modification, are permitted provided that the following conditions are met: *
+*                                                                             *
+*    * Redistributions of source code must retain the above copyright notice, *
+*      this list of conditions and the following disclaimer.                  *
+*    * Redistributions in binary form must reproduce the above copyright      *
+*      notice, this list of conditions and the following disclaimer in the    *
+*      documentation and/or other materials provided with the distribution.   *
+*    * Neither the name of the Geophysical Institute nor the names of its     *
+*      contributors may be used to endorse or promote products derived from   *
+*      this software without specific prior written permission.               *
+*                                                                             *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" *
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE   *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE  *
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE    *
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR         *
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF        *
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS    *
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN     *
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)     *
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE  *
+* POSSIBILITY OF SUCH DAMAGE.                                                 *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*       Alaska Satellite Facility                                             *
+*       Geophysical Institute                   http://www.asf.alaska.edu     *
+*       University of Alaska Fairbanks          uso@asf.alaska.edu            *
+*       P.O. Box 757320                                                       *
+*       Fairbanks, AK 99775-7320                                              *
+*                                                                             *
+******************************************************************************/
 
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_nan.h"
 
-#define VERSION 2.0
+#define VERSION 2.1
 #define REQ_ARGS 2
 
 void usage(char *name);
@@ -268,7 +278,7 @@ void usage(char *name)
 	"                        diff.ext = img1.ext - img2.ext\n");
  printf("\n"
 	"DESCRIPTION:\n"
-	"   Compares two LAS 6.0 images.\n"
+	"   Compares two ASF tools format images.\n"
 	"   This is useful for debugging.\n");
  printf("\n"
 	"Version %.2f, ASF SAR Tools\n"
