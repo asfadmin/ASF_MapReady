@@ -85,9 +85,8 @@ int set_era(const char *inname, char *onm, int opflag)
   }
 
  printf("****************** ERROR! ******************\n"
-"*  This program was looking for a SAR file, base name %s,\n"
-"*  which it could not find.  The file it was looking for\n"
-"*  was %s.\n",inname,fileType);
- exit(0);
- return(0);
+	"*  This program was looking for a SAR file, base name %s,\n"
+	"*  which it could not find.  The file it was looking for\n"
+	"*  was %s.\n",inname,fileType);
+ exit(EXIT_FAILURE);
 }
