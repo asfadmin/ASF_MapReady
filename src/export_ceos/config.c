@@ -95,10 +95,6 @@ int init_config(char *configFile)
   fprintf(fConfig, "batch file = < batch file name >\n");
   fprintf(fConfig, "log file = < log file name >\n");
   fprintf(fConfig, "status = new\n\n");
-  fprintf(fConfig, "[Import]\n");
-  fprintf(fConfig, "status = new\n\n");
-  fprintf(fConfig, "[Export]\n");
-  fprintf(fConfig, "status = new\n\n"); 
 
   FCLOSE(fConfig);
 
@@ -154,8 +150,7 @@ int init_projection_config(char *configFile)
 	  "Albers Conic Equal Area | Lambert Conformal Conic >\n");
   fprintf(fConfig, "pixel spacing = < pixel spacing of geocoded image >\n");
   fprintf(fConfig, "height = < average height of the data (default: 0) >\n");
-  fprintf(fConfig, "background fill = < pixel value for the background >\n");
-  fprintf(fConfig, "status = new\n\n");
+  fprintf(fConfig, "background fill = < pixel value for the background >\n\n");
   fprintf(fConfig, "[Polar Stereographic]\n");
   fprintf(fConfig, "datum = < datum code >\n");
   fprintf(fConfig, "center latitude = < decimal degrees >\n");
@@ -187,7 +182,7 @@ int init_projection_config(char *configFile)
 
   FCLOSE(fConfig);
 
-  printf("   Initialized extended geocoding configuration file\n");
+  printf("   Initialized extended geocoding configuration file\n\n");
 
   return(0);
 }
@@ -199,12 +194,12 @@ int init_resample_config(char *configFile)
   fConfig = FOPEN(configFile, "a");
 
   fprintf(fConfig, "[Resampling]\n");
-  fprintf(fConfig, "subsampling factor = < factor for reducing the output file dimensions >\n");
-  fprintf(fConfig, "status = new\n\n");
+  fprintf(fConfig, "subsampling factor = < factor for reducing the output file "
+	  "dimensions >\n\n");
 
   FCLOSE(fConfig);
 
-  printf("   Initialized extended resampling configuration file\n");
+  printf("   Initialized extended resampling configuration file\n\n");
 
   return(0);
 }
@@ -221,10 +216,8 @@ s_config *init_fill_config(char *configFile)
   /* Create structure */
   s_config *cfg = newStruct(s_config);
   cfg->general = newStruct(s_general);
-  cfg->import = newStruct(s_status);
   cfg->geocoding = newStruct(s_geocoding);
   cfg->resampling = newStruct(s_resampling);
-  cfg->export = newStruct(s_status);
   cfg->polar = newStruct(s_azimuthal);
   cfg->utm = newStruct(s_utm);
   cfg->albers = newStruct(s_conic);
@@ -255,23 +248,13 @@ s_config *init_fill_config(char *configFile)
   cfg->general->status = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->general->status, "new");
 
-  cfg->import->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->import->status, "new");
-
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->geocoding->projection, "UTM");
   cfg->geocoding->background = 0;
   cfg->geocoding->pixel = 12.5;
   cfg->geocoding->height = 0.0;
-  cfg->geocoding->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->geocoding->status, "new");
   
   cfg->resampling->kernel = 3;
-  cfg->resampling->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->resampling->status, "new");
-
-  cfg->export->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->export->status, "new");
 
   cfg->polar->datum = 0;
   cfg->polar->center_lon = 0.0;
@@ -336,18 +319,6 @@ s_config *init_fill_config(char *configFile)
       if (strncmp(test, "status", 6)==0) 
 	cfg->general->status = read_str(line, "status");
     }
-
-    if (strncmp(line, "[Import]", 8)==0) strcpy(params, "import");
-    if (strcmp(params, "import")==0) {
-      if (strncmp(test, "status", 6)==0) 
-	cfg->import->status = read_str(line, "status");
-    }
- 
-    if (strncmp(line, "[Export]", 8)==0) strcpy(params, "export");
-    if (strcmp(params, "export")==0) {
-      if (strncmp(test, "status", 6)==0) 
-	cfg->export->status = read_str(line, "status");
-    }
   }
   FCLOSE(fConfig);
   
@@ -397,14 +368,9 @@ s_config *read_config(char *configFile, int cFlag)
         cfg->general->status = read_str(line, "status");
     }
 
-    if (strncmp(line, "[Import]", 8)==0) strcpy(params, "import");
-    if (strcmp(params, "import")==0) {
-      if (strncmp(test, "status", 6)==0)
-        cfg->import->status = read_str(line, "status");
-    }
-
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "geocoding");
     if (strcmp(params, "geocoding")==0) {
+      test = read_param(line);
       if (strncmp(test, "projection", 10)==0)
         cfg->geocoding->projection = read_str(line, "projection");
       if (strncmp(test, "background fill", 15)==0)
@@ -413,8 +379,6 @@ s_config *read_config(char *configFile, int cFlag)
         cfg->geocoding->pixel = read_double(line, "pixel spacing");
       if (strncmp(test, "height", 6)==0)
         cfg->geocoding->height = read_double(line, "height");
-      if (strncmp(test, "status", 6)==0)
-        cfg->geocoding->status = read_str(line, "status");
     }
 
     if (strncmp(line, "[Polar Stereographic]", 21)==0) strcpy(params, "polar");
@@ -498,17 +462,9 @@ s_config *read_config(char *configFile, int cFlag)
       test = read_param(line);
       if (strncmp(test, "subsampling factor", 18)==0) 
         cfg->resampling->kernel = read_int(line, "subsampling factor");
-      if (strncmp(test, "status", 6)==0)
-        cfg->resampling->status = read_str(line, "status");
     }
-    
-    if (strncmp(line, "[Export]", 8)==0) strcpy(params, "export");
-    if (strcmp(params, "export")==0) {
-      if (strncmp(test, "status", 6)==0)
-        cfg->export->status = read_str(line, "status");
-    }
-    
   }
+  
   FCLOSE(fConfig);
   
   return cfg;	
@@ -531,19 +487,17 @@ int write_config(char *configFile, s_config *cfg)
   fprintf(fConfig, "output format = %s\n", cfg->general->out_format);
   fprintf(fConfig, "resampling = %d\n", cfg->general->resample);
   fprintf(fConfig, "browse image = %d\n", cfg->general->browse);
+  fprintf(fConfig, "geocoding = %d\n", cfg->general->geocoding);
   fprintf(fConfig, "batch mode = %d\n", cfg->general->batch);
   fprintf(fConfig, "batch file = %s\n", cfg->general->batchFile);
   fprintf(fConfig, "log file = %s\n", cfg->general->logFile);
   fprintf(fConfig, "status = %s\n\n", cfg->general->status);
-  fprintf(fConfig, "[Import]\n");
-  fprintf(fConfig, "status = %s\n\n", cfg->import->status);
   if (cfg->general->geocoding) {
     fprintf(fConfig, "[Geocoding]\n");
     fprintf(fConfig, "projection = %s\n", cfg->geocoding->projection);
     fprintf(fConfig, "background fill = %i\n", cfg->geocoding->background);
     fprintf(fConfig, "pixel spacing = %.2f\n", cfg->geocoding->pixel);
-    fprintf(fConfig, "height = %.3f\n", cfg->geocoding->height);
-    fprintf(fConfig, "status = %s\n\n", cfg->geocoding->status);
+    fprintf(fConfig, "height = %.3f\n\n", cfg->geocoding->height);
     if (strncmp(uc(cfg->geocoding->projection), "POLAR", 5)==0) {
       fprintf(fConfig, "[Polar Stereographic]\n");
       fprintf(fConfig, "datum = %i\n", cfg->polar->datum);
@@ -594,10 +548,7 @@ int write_config(char *configFile, s_config *cfg)
   if (cfg->general->resample) {
     fprintf(fConfig, "[Resampling]\n");
     fprintf(fConfig, "subsampling factor = %i\n", cfg->resampling->kernel);
-    fprintf(fConfig, "status = %s\n\n", cfg->resampling->status);
   }
-  fprintf(fConfig, "[Export]\n");
-  fprintf(fConfig, "status = %s\n\n", cfg->export->status);
   
   FCLOSE(fConfig);
   

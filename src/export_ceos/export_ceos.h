@@ -24,16 +24,10 @@ typedef struct {
   int background;	    /* background fill color */
   double pixel;		    /* pixel size for geocoding */
   double height;            /* average height of the data */
-  char *status;             /* status */ 
 } s_geocoding;
 
 typedef struct {
-  char *status;             /* status */
-} s_status;
-
-typedef struct {
   int kernel;               /* kernel size for reducing the output image size */
-  char *status;             /* status */
 } s_resampling;
 
 typedef struct {
@@ -61,10 +55,8 @@ typedef struct {
 typedef struct {
   char comment[255];        /* first line for comments */
   s_general *general;       /* general processing details */
-  s_status *import;         /* import parameters */
   s_geocoding *geocoding;   /* geocoding parameters */
   s_resampling *resampling; /* resampling parameters */
-  s_status *export;         /* export parameters */
   s_azimuthal *polar;       /* parameters for Polarstereo coordinates */
   s_utm *utm;		    /* parameters for UTM coordinates */
   s_conic *albers;	    /* parameters for Albers coordinates */

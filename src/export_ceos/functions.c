@@ -96,6 +96,24 @@ int filter(char *options, char *inFile, char *outFile)
   return ret;
 }
 
+int stats(char *inFile, float trim_fraction)
+{
+  char command[255];
+  int ret;
+  
+  sprintf(command, "stats -log %s -trim %f %s", logFile, trim_fraction, inFile);
+  printf("\nCommand line: %s\nDate: ", command);
+  if (logflag) {
+    fLog = FOPEN(logFile, "a");
+    sprintf(logbuf,"\nCommand line: %s\n", command);
+    printLog(logbuf);
+    FCLOSE(fLog);
+  }
+  ret = system(command);
+  
+  return ret;
+}
+
 int convert2byte(char *inFile, char *outFile)
 {
   char command[255];
@@ -119,8 +137,7 @@ int convert2geotiff(char *inFile, char *outFile)
   char command[255];
   int ret;
   
-  sprintf(command, "convert2geotiff -log %s -quiet %s %s", 
-	  logFile, inFile, outFile);
+  sprintf(command, "convert2geotiff %s %s", inFile, outFile);
   printf("\nCommand line: %s\nDate: ", command);
   if (logflag) {
     fLog = FOPEN(logFile, "a");

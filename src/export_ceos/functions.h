@@ -15,6 +15,7 @@ int geocode(char *inFile, char *projFile, char *projkey, float pix_size,
 	    float height, char *outFile);
 int corner_coords(char *inFile);
 int filter(char *options, char *inFile, char *outFile);
+int stats(char *inFile, float trim_fraction);
 int convert2byte(char *inFile, char *outFile);
 int convert2geotiff(char *inFile, char *outFile);
 int convert2jpeg(char *inFile, char *outFile);
