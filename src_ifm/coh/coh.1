@@ -1,7 +1,7 @@
-    NAME:		coh - Calculates interferogram coherence 
+    NAME: coh - Calculates interferogram coherence 
 
-    SYNOPSIS:    coh [-l linexsamp] [-s linexsample]
-                      In1 In2 Out
+    SYNOPSIS: coh [-look linexsamp] [-step linexsample]
+                  <In1> <In2> <Out>
 
        In1   is the image 1 complex file
        In2   is the image 2 complex file
@@ -10,49 +10,52 @@
 
     DESCRIPTION:
 
-	    This program is used after interferometry has been 
-	performed in order to generate a coherence image-- a
-	black and white image whose brightness corresponds to
-	the quantity of variation (rho) observed in the
-	interferogram. This rho can then be used to distinguish 
-	between different features on the ground (especially 
-	useful when those features have the same radar brightness),
-	as well as give a quantitative evaluation of how
-	sucessful the interferometry was.
-	
-	    This program operates on the raw interferogram,
-	before multilooking (i.e. before the ml(1) program),
-	because it performs multilooking as it computes rho.
-	It defaults to reading the ddr to get the number of
-	lines and samples in an image.  All filenames are
-	without extentions.
-	
-	Coh calculates the coherence for the Igram using the following
-	formula:
-	 
-			     | Sum (n pixels) { a x b* } |
-	  | rho | =    __________________________________________
-	
-		       Sqrt [ Sum { |a x a*| }  Sum { |b x b*| } ]
-	
-	In this program n = 20 pixels: 10 in azimuth x 2 in range.
+            This program is used after interferometry has been 
+        performed in order to generate a coherence image-- a
+        black and white image whose brightness corresponds to
+        the quantity of variation (rho) observed in the
+        interferogram. This rho can then be used to distinguish 
+        between different features on the ground (especially 
+        useful when those features have the same radar brightness),
+        as well as give a quantitative evaluation of how
+        sucessful the interferometry was.
+        
+            This program operates on the raw interferogram,
+        before multilooking (i.e. before the ml(1) program),
+        because it performs multilooking as it computes rho.
+        It defaults to reading the ddr to get the number of
+        lines and samples in an image.  All filenames are
+        without extentions.
+        
+        Coh calculates the coherence for the Igram using the following
+        formula:
+         
+                             | Sum (n pixels) { a x b* } |
+          | rho | =    __________________________________________
 
-	
+                       Sqrt [ Sum { |a x a*| }  Sum { |b x b*| } ]
+        
+        In this program n = 20 pixels: 10 in azimuth x 2 in range.
+
+        
     OPTIONS:
-      -l      change look box line and sample. Default = 10x2
-      -s      change step box line and sample. Default = 5x1
+      -look   change look box line and sample.
+      -step   change step box line and sample.
 
 
     EXAMPLES:
-    	If you've just run 
-    		igram img1 img2 interferogram
-    	and you want to generate a coherence image bob.coh, type
-    	
-    		coh img1 img2 interferogram bob
+        If you've just run "igram img1 img2 interferogram"
+        and you want to generate a coherence image bob.coh, type:
+            $ coh img1 img2 interferogram bob
+
+        If you would like to specifiy your own look window to 15
+        lines by 3 samples and your step increment to 5 lines by 1
+        sample, then you would use this command line:
+            $ coh -look 15x3 -step 5x1 img1 img2 interferogram bob
 
     SEE ALSO:
 
-	igram(1), ml(1)
+        igram(1), ml(1)
 
     HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -61,5 +64,5 @@
     AUTHOR: Tom Logan, ASF Software Engineer, 1997
 
     CONTACT:  email: apd@asf.alaska.edu
-              URL:   http://www.asf.alaska.edu/apd
+              web:   http://www.asf.alaska.edu/apd
 
