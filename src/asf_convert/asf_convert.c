@@ -238,7 +238,8 @@ int main(int argc, char *argv[])
 	}
 
 	/*Normal options*/
-	if(checkForOption("-help", argc, argv) != -1)/*Most important*/
+	if(checkForOption("-help", argc, argv) != -1 ||
+		checkForOption("--help", argc, argv) != -1)
 		help_page();
 	formatFlag = checkForOption("-format", argc, argv);
 	sizeFlag = checkForOption("-size", argc, argv);
