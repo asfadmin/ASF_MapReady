@@ -155,7 +155,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_statistics.h>
 #include <jpeglib.h>
-/*#include <proj_api.h>*/
+#include <proj_api.h>
 #include <tiff.h>
 #include <tiffio.h>
 #include <xtiffio.h>
@@ -246,7 +246,7 @@ int
 main (int argc, char *argv[])
 {
 
-  output_format_t format;
+  output_format_t format = UNSET;
   meta_parameters *md;
 
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
@@ -366,9 +366,11 @@ main (int argc, char *argv[])
   /* Set the default byte scaling mechanisms */
   if ( strcmp (command_line.format, "TIFF") == 0 
        || strcmp (command_line.format, "TIF") == 0
-       || strcmp (command_line.format, "JPEG") == 0)
+       || strcmp (command_line.format, "JPEG") == 0
+       || strcmp (command_line.format, "JPG") == 0
+       || strcmp (command_line.format, "PPM") == 0)
     command_line.sample_mapping = SIGMA;
-  if ( strcmp (command_line.format, "GEOTIFF") == 0 )
+  else if ( strcmp (command_line.format, "GEOTIFF") == 0 )
     command_line.sample_mapping = NONE;
 
   if ( sizeFlag != FLAG_NOT_SET )
