@@ -30,7 +30,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 1.1
+#define META_VERSION 1.2
 
 /******************Baseline Utilities******************/
 typedef struct {
@@ -89,6 +89,7 @@ typedef enum {
   BETA_IMAGE,
   COHERENCE_IMAGE,
   GEOCODED_IMAGE,
+  ELEVATION_IMAGE,
   DEM,
   IMAGE
 } image_data_type_t;
