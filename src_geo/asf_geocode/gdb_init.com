@@ -8,9 +8,10 @@
 # the directory hierarchy.
 
 file asf_geocode
+set args --resample-method nearest_neighbor --projection utm test_data/R132293160G1U010 speed_test
 #set args --projection lamaz --latitude-of-origin 65 --central-meridian -145 --height 466 test8192 test_8192_projected_nn
 #set args --projection lamaz --latitude-of-origin 65 --central-meridian -145 --height 466 test_data/e1_22590_290_full projected_lamaz
-set args --projection lamcc --first-standard-parallel 20 --second-standard-parallel 60 --central-meridian -96 --latitude-of-origin 40 --height 466 test_data/e1_22590_290_full projected_lamcc
+#set args --projection lamcc --first-standard-parallel 20 --second-standard-parallel 60 --central-meridian -96 --latitude-of-origin 40 --height 466 test_data/e1_22590_290_full projected_lamcc
 #set args --projection utm csr1_18270_262 projected_image
 #set args --projection utm --height 0 car1_10054_164 projected_core_dumped
 #set args --projection utm --zone 1 --height 0 csr1_11994_266 projected_spans_180

@@ -906,14 +906,48 @@ static datum_type_t parse_datum_option(int *argc, char **argv[])
     return the_datum;
 }
 
+
+static resample_method_t parse_resample_method_option(int *argc, char **argv[])
+{
+  char resample_method[1024];
+
+  /* To be returned (default to bilinear).  */
+  resample_method_t ret = RESAMPLE_BILINEAR;
+
+  if (extract_string_options(argc, argv, resample_method, "--resample-method", 
+			     NULL))
+  {
+    if (g_ascii_strcasecmp(resample_method, "nearest_neighbor") == 0)
+    {
+      ret = RESAMPLE_NEAREST_NEIGHBOR;
+    }
+    else if (g_ascii_strcasecmp(resample_method, "bilinear") == 0)
+    {
+      ret = RESAMPLE_BILINEAR;
+    }
+    else if (g_ascii_strcasecmp(resample_method, "bicubic") == 0)
+    {
+      ret = RESAMPLE_BICUBIC;
+    }
+  }
+  else
+  {
+    ret = RESAMPLE_BILINEAR;
+  }
+
+  return ret;
+} 
+
 void parse_other_options(int *argc, char **argv[],
 			 double *height, double *pixel_size,
-			 datum_type_t *datum)
+			 datum_type_t *datum, 
+			 resample_method_t *resample_method)
 {
     *datum = parse_datum_option(argc, argv);
     extract_double_options(argc, argv, height, "--height", "-h", NULL);
     extract_double_options(argc, argv, pixel_size,
 			   "--pixel-size", "-ps", NULL);
+    *resample_method = parse_resample_method_option (argc, argv);
 }
 
 project_parameters_t * parse_projection_options(int *argc, char **argv[],

@@ -17,7 +17,8 @@ static const double DEFAULT_POLAR_STERO_SOUTH_STANDARD_PARALLEL = -70;
 project_parameters_t * get_geocode_options(int *argc, char **argv[],
 					   projection_type_t * proj_type,
 					   double *height, double *pixel_size,
-					   datum_type_t *datum)
+					   datum_type_t *datum,
+					   resample_method_t *resample_method)
 {
     /* projection parameters obtained from the command line */
     project_parameters_t * pps;
@@ -30,8 +31,10 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 
     if (pps)
     {
-	/* "other" options include: --height, --pixel-size */
-	parse_other_options(argc, argv, height, pixel_size, datum);
+	/* "other" options include: --height, --pixel-size, 
+	   and --resample_method.  */
+	parse_other_options(argc, argv, height, pixel_size, datum, 
+			    resample_method);
 
 	/* here the semantics of the projection parameters are applied */
 	sanity_check(*proj_type, pps);
