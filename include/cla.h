@@ -8,7 +8,7 @@
 
 extern int currArg;
 
-int strmatch(const char *a, const char *b);
+int strmatch(const char *key, const char *match);
 
 /* Prototype to make sure the usage() jives with the macros */
 void usage(char *name);
