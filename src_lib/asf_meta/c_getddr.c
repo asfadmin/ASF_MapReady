@@ -68,7 +68,7 @@ lasErr c_getddr(const char *hname,struct DDR *ddr)
    * get ddr info from meta file */
   if ( fileExists(meta_name) && meta_is_new_style(meta_name) ) {
 	meta_parameters *meta = meta_read(meta_name);
-	meta_new2ddr(meta, ddr);
+	meta2ddr(meta, ddr);
 	meta_free(meta);
 	FREE(meta_name);
   }
