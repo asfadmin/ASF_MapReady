@@ -55,3 +55,6 @@
 #define STANDARD_FORMAT      "detected"
 #define SIZE_OF_ASF_COMPLEX  (4)
 
+/* Prototype for writing function */
+void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
+                         struct dataset_sum_rec *dssr);
