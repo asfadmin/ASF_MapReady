@@ -181,7 +181,7 @@ my %p = (
 	 'elev' => undef,	        # Window center elevation.
 	 'out'  => "./out_image.img",   # Name to use for output image.
 	 'peg-point-lat-delta' => 0,    # Compensate for broken airsar data.
-	 'peg-point-long-delta' => 0,   # Compensate for broken airsar date.
+	 'peg-point-long-delta' => 0,   # Compensate for broken airsar data.
 
 	 # Standard (really optional) options.
 	 'verbose' => 0,	# Verbose output to terminal.
@@ -499,3 +499,6 @@ if ( $p{type} eq "airsar" ) {
 Britton Kerin <bkerin@mail1.asf.alaska.edu>
 
 =cut
+
+
+
