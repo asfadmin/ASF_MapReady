@@ -67,11 +67,11 @@ void meta_io_state(coniStruct *coni, meta_state_vectors *state)
 {
 	int i;
 	coniIO_structOpen(coni,"state {","begin list of state vectors for satellite, over image");
-	coniIO_int   (coni,"state.","year:",  &state->year,  "Year of image start");
-	coniIO_int   (coni,"state.","julDay:",&state->julDay,"Julian day of the year for image start");
-	coniIO_double(coni,"state.","second:",&state->second,"Second of the day for image start");
-	coniIO_int   (coni,"state.","num:",   &state->num,   "Number of state vectors below");
-	for (i=0;i<state->num;i++)
+	coniIO_int   (coni,"state.","year:",  &state->year,        "Year of image start");
+	coniIO_int   (coni,"state.","julDay:",&state->julDay,      "Julian day of the year for image start");
+	coniIO_double(coni,"state.","second:",&state->second,      "Second of the day for image start");
+	coniIO_int   (coni,"state.","num:",   &state->vector_count,"Number of state vectors below");
+	for (i=0;i<state->vector_count;i++)
 	{
 		coniIO_structOpen(coni,"vector {","begin a single state vector");
 		coniIO_double(coni,"state.vector.","time:",&state->vecs[i].time,     "Time, relative to image start [s]");
@@ -307,6 +307,7 @@ void meta_new2old(meta_parameters *meta)
 
 /* State vectors are the same for both meta structures */
 	meta->stVec = meta->state_vectors;
+	meta->stVec->num = meta->state_vectors->vector_count;
 
 	if (meta->sar->proj_type!='P') /*Image not map projected-- compute look angle to beam center*/
 		meta->ifm->lookCenter = meta_look(meta, 0, meta->ifm->orig_nSamples/2);
