@@ -21,7 +21,7 @@ PROGRAM HISTORY:
 into existing meta_parameters structure.  Calls
 the facility-specific decoders below.
 */
-void ceos_init(const char *in_fName,meta_parameters *sar)
+void ceos_init(const char *in_fName,meta_parameters *meta)
 {
 	char fName[255],fac[50],sys[50],ver[50];
 	ceos_description *ceos;
@@ -34,47 +34,43 @@ void ceos_init(const char *in_fName,meta_parameters *sar)
 
         /* Extract everything we possibly can from the DSSR.
          --------------------------------------------------*/
-	dssr.rng_gate*=get_units(dssr.rng_gate,EXPECTED_RANGEGATE);
-	sar->geo->slantFirst=dssr.rng_gate*speedOfLight/2.0;
+	dssr.rng_gate *= get_units(dssr.rng_gate,EXPECTED_RANGEGATE);
+	meta->sar->slant_range_first_pixel = dssr.rng_gate*speedOfLight/2.0;
 	
-	dssr.wave_length*=get_units(dssr.wave_length,EXPECTED_WAVELEN);
-	sar->geo->wavelen=dssr.wave_length;
+	dssr.wave_length *= get_units(dssr.wave_length,EXPECTED_WAVELEN);
+	meta->sar->wavelength = dssr.wave_length;
 	
 	if (dssr.clock_ang>=0.0)
-		sar->geo->lookDir='R';
+		meta->sar->look_direction='R';
 	else
-		sar->geo->lookDir='L';
+		meta->sar->look_direction='L';
 	
-	dssr.rng_samp_rate*=get_units(dssr.rng_samp_rate,EXPECTED_FS);
-	sar->geo->rngPixTime=dssr.n_rnglok/dssr.rng_samp_rate;
-	sar->geo->xPix=dssr.pixel_spacing;
-	sar->geo->azPixTime=dssr.n_azilok/dssr.prf;
-	sar->geo->yPix=dssr.line_spacing;
-	sar->geo->dopRange[0]=dssr.crt_dopcen[0];
-	sar->geo->dopRange[1]=dssr.crt_dopcen[1];
-	sar->geo->dopRange[2]=dssr.crt_dopcen[2];
-	sar->geo->dopAz[0]=dssr.alt_dopcen[0];
-	sar->geo->dopAz[1]=dssr.alt_dopcen[1];
-	sar->geo->dopAz[2]=dssr.alt_dopcen[2];
+	dssr.rng_samp_rate *= get_units(dssr.rng_samp_rate,EXPECTED_FS);
+	meta->general->x_pixel_size       =dssr.pixel_spacing;
+	meta->general->y_pixel_size       =dssr.line_spacing;
+	meta->sar->range_time_per_pixel   =dssr.n_rnglok/dssr.rng_samp_rate;
+	meta->sar->azimuth_time_per_pixel =dssr.n_azilok/dssr.prf;
+	meta->sar->range_doppler_coefficients[0]   =dssr.crt_dopcen[0];
+	meta->sar->range_doppler_coefficients[1]   =dssr.crt_dopcen[1];
+	meta->sar->range_doppler_coefficients[2]   =dssr.crt_dopcen[2];
+	meta->sar->azimuth_doppler_coefficients[0] =dssr.alt_dopcen[0];
+	meta->sar->azimuth_doppler_coefficients[1] =dssr.alt_dopcen[1];
+	meta->sar->azimuth_doppler_coefficients[2] =dssr.alt_dopcen[2];
 	
-        /* Read information about the sensor/processor/version.
-         -----------------------------------------------------*/
-	sar->info = (extra_info *) MALLOC (sizeof(extra_info));
-
-	strcpy(sar->info->sensor,dssr.mission_id);
-	strtok(sar->info->sensor," ");/*Remove spaces from field.*/
+	strcpy(meta->general->sensor, dssr.mission_id);
+	strtok(meta->general->sensor," ");/*Remove spaces from field.*/
 
 	strcpy(fac,dssr.fac_id);strtok(fac," ");/*Remove spaces from field*/
 	strcpy(sys,dssr.sys_id);strtok(sys," ");/*Remove spaces from field*/
 	strcpy(ver,dssr.ver_id);strtok(ver," ");/*Remove spaces from field*/
-	sprintf(sar->info->processor,"%s/%s/%s",fac,sys,ver);
+	sprintf(meta->general->processor,"%s/%s/%s",fac,sys,ver);
 
-        sar->info->orbit = atoi(dssr.revolution);
-        strcpy(sar->info->satBinTime,dssr.sat_bintim);
-        strcpy(sar->info->satClkTime,dssr.sat_clktim);
-        strcpy(sar->info->mode,dssr.beam1);
-        sar->info->bitErrorRate = 0.0;
-	sar->info->prf = dssr.prf;
+        meta->general->orbit = atoi(dssr.revolution);
+        strcpy(meta->sar->satellite_binary_time,dssr.sat_bintim);
+        strcpy(meta->sar->satellite_clock_time, dssr.sat_clktim);
+        strcpy(meta->general->mode,  dssr.beam1);
+        meta->info->bitErrorRate = 0.0;
+	meta->info->prf = dssr.prf;
 
         /* If we can find the processed data histogram record, we can
            get some information about image size from there.  This
@@ -84,8 +80,8 @@ void ceos_init(const char *in_fName,meta_parameters *sar)
 	  struct data_hist_rec pdhr;
 	  strcpy(fName,in_fName);
 	  if ( get_dhr(fName, &pdhr) != -1 ) {
-	    sar->ifm->orig_nLines = (pdhr.data)->ns_lin;
-	    sar->ifm->orig_nSamples = (pdhr.data)->ns_pix;
+	    meta->general->line_count = (pdhr.data)->ns_lin;
+	    meta->general->sample_count = (pdhr.data)->ns_pix;
 	  }
 	}
 
@@ -95,25 +91,26 @@ void ceos_init(const char *in_fName,meta_parameters *sar)
 
         /* Fetch state vectors.
          ---------------------*/
-	ceos_init_stVec(fName,ceos,sar);
+	ceos_init_stVec(fName,ceos,meta);
 
         /* Decode facility-dependant values.
          ---------------------------------*/
 	if (ceos->facility==ASF)
-		ceos_init_asf(fName,ceos,sar);
+		ceos_init_asf(fName,ceos,meta);
 
 	/* Set the number of looks correctly
 	 ----------------------------------*/
-	if (ceos->satellite==ERS) sar->ifm->nLooks = 5;
-	else if (ceos->satellite==JERS) sar->ifm->nLooks = 3;
+	if (ceos->satellite==ERS) meta->sar->look_count = 5;
+	else if (ceos->satellite==JERS) meta->sar->look_count = 3;
 	else if (ceos->satellite==RSAT)
 	 {
 		double looks;
-		double look = meta_look(sar,0,sar->ifm->orig_nSamples/2);
-		looks = ((sar->geo->xPix/sin(look))/sar->geo->yPix) + 0.5;
-		sar->ifm->nLooks = (int) looks;
+		double look = meta_look(meta,0,meta->ifm->orig_nSamples/2);
+		looks = ((meta->general->x_pixel_size/sin(look))
+		          /meta->general->y_pixel_size) + 0.5;
+		meta->sar->look_count = (int) looks;
 
-		if (0==strncmp(sar->info->mode,"FN",2)) sar->ifm->nLooks = 1;
+		if (0==strncmp(meta->general->mode,"FN",2)) meta->sar->look_count = 1;
 	 }
 }
 
@@ -198,7 +195,7 @@ ceos_description *get_ceos_description(char *fName)
 		}
 	} else
 	{
-		printf("*************************************\n"
+		printf( "****************************************\n"
 			"SEVERE WARNING!!!!  Unknown CEOS Facility '%s'!\n"
 			"****************************************\n",
 			ceos->dssr.fac_id);
