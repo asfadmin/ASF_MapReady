@@ -1,6 +1,6 @@
 /* Cal_params:
 	Fetches noise and scaling factors from
-input CEOS image, and returns them to 
+input CEOS image, and returns them to
 calibrate.*/
 
 
@@ -10,7 +10,7 @@ calibrate.*/
 #include "calibrate.h"
 
 /**Harcodings to fix calibration of ASF data***
- --------------------------------------------   
+ --------------------------------------------
    Currently contains:
 
         double sspswb010_noise_vec[256];
@@ -36,7 +36,7 @@ double get_noise(cal_params *p,int x,int y)
 {
 	float noise_index=0,frac;
 	int index;
-	
+
 /*Switch on the indexing scheme of the noise table.*/
 	if (p->noise_type==by_pixel)
 		noise_index=(float)x*p->noise_len/p->ns;
@@ -55,14 +55,14 @@ double get_noise(cal_params *p,int x,int y)
 			    &time,&slant,&dop);
 	    pixel = slantRange2groundPixel(p->meta,slant);
 	    noise_index = (float) pixel*p->noise_len/p->ns;
-	  } 
-	
+	  }
+
 /*Clamp noise_index to within the noise table.*/
 	if (noise_index<=0)
 		return p->noise[0];
 	if (noise_index>=p->noise_len-1)
 		return p->noise[p->noise_len-1];
-	
+
 /*Use linear interpolation on noise array.*/
 	index=(int)noise_index;
 	frac=noise_index-index;
@@ -83,50 +83,53 @@ given inSAR CEOS file.
 
 **************************************************************************/
 
-#define ERROR_IMAGEID	7000
+#define ERROR_IMAGEID   7000
 
-cal_params *create_cal_params(char *inSAR)
+cal_params *create_cal_params(const char *inSAR)
 {
-	int i;
-	cal_params *p=(cal_params *)MALLOC(sizeof(cal_params));
-	struct VFDRECV         facdr;	/* Facility-related data record.*/
-	struct VRADDR          rdr;	/* Radiometric data record	*/
-	struct dataset_sum_rec dssr;	/* Data set summary record.     */
-	struct VMPDREC	       mpdr;	/* Map projection data record.  */
+        int i;
+        cal_params *p=(cal_params *)MALLOC(sizeof(cal_params));
+        struct VFDRECV         facdr;   /* Facility-related data record.*/
+        struct VRADDR          rdr;     /* Radiometric data record      */
+        struct dataset_sum_rec dssr;    /* Data set summary record.     */
+        struct VMPDREC         mpdr;    /* Map projection data record.  */
         double  *noise_vector;          /* Noise vector pointer         */
+        char sarName[512];
 
-	/* Check for FOCUS data and directly return because we cannot handle
-	   them yet */
-	get_dssr(inSAR, &dssr);
-	if (strcmp(dssr.product_type, "FOCUS")==0) return NULL;
+        strcpy (sarName,inSAR);
 
-	p->meta=meta_init(inSAR);
-	
-	/* Get values for calibration coefficients and LUT */
-	get_raddr(inSAR, &rdr);
+        /* Check for FOCUS data and directly return because we cannot handle
+           them yet */
+        get_dssr(sarName, &dssr);
+        if (strcmp(dssr.product_type, "FOCUS")==0) return NULL;
 
-	/* hardcodings for not-yet-calibrated fields */
-	if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) { 
-		p->a0 = 1.1E4; 
-		p->a1 = 2.2E-5; 
-		p->a2 = 0.0; 
-	} else { 
-		p->a0 = rdr.a[0];
-		p->a1 = rdr.a[1]; 
-		p->a2 = rdr.a[2]; 
-	}
-	
-	/* Set Default values
+        p->meta=meta_init(sarName);
+
+        /* Get values for calibration coefficients and LUT */
+        get_raddr(sarName, &rdr);
+
+        /* hardcodings for not-yet-calibrated fields */
+        if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
+                p->a0 = 1.1E4;
+                p->a1 = 2.2E-5;
+                p->a2 = 0.0;
+        } else {
+                p->a0 = rdr.a[0];
+                p->a1 = rdr.a[1];
+                p->a2 = rdr.a[2];
+        }
+
+        /* Set Default values
          --------------------*/
-	p->Dmax = 0.0; 
-	p->Dmin = -25.5;       
-	p->noise_len=256;
-	p->output_type=sigma_naught;
+        p->Dmax = 0.0;
+        p->Dmin = -25.5;
+        p->noise_len=256;
+        p->output_type=sigma_naught;
 
-	get_dssr(inSAR, &dssr);
+        get_dssr(sarName, &dssr);
 
-        /* Set the Noise Correction Vector to correct version 
-	 -------------------------------------0--------------*/
+        /* Set the Noise Correction Vector to correct version
+         -------------------------------------0--------------*/
         if (strncmp(dssr.cal_params_file,"SSPSWB010.CALPARMS",18)==0) {
           printf("\n   Substituting hardcoded noise vector sspswb010\n");
           noise_vector = sspswb010_noise_vec;
@@ -142,71 +145,82 @@ cal_params *create_cal_params(char *inSAR)
         } else if (strncmp(dssr.cal_params_file,"SSPSWB015.CALPARMS",18)==0) {
           printf("\n   Substituting hardcoded noise vector sspswb015\n");
           noise_vector = sspswb015_noise_vec;
-	} else if (strncmp(dssr.cal_params_file,"SSPSWB016.CALPARMS",18)==0) {
+        } else if (strncmp(dssr.cal_params_file,"SSPSWB016.CALPARMS",18)==0) {
           printf("\n   Substituting hardcoded noise vector sspswb016\n");
           noise_vector = sspswb015_noise_vec;
-	/* 16 and 15 were identical antenna patterns, only metadata fields were changed, so the noise vector for 16 is the same and that for 15. JBN */
+        /* 16 and 15 were identical antenna patterns, only metadata fields were changed, so the noise vector for 16 is the same and that for 15. JBN */
         } else noise_vector = rdr.noise;
 
- 	for (i=0;i<p->noise_len;i++) p->noise[i]=noise_vector[i];
-	
-	/* ASF SCANSAR images are indexed by look angle so Check for SCANSAR */
-	if (strncmp(dssr.product_type,"SCANSAR",7)==0)
-		p->noise_type=by_look;
+        for (i=0;i<p->noise_len;i++) p->noise[i]=noise_vector[i];
 
-	/* Next, check for old-style geocoded images */
-	else if (get_mpdr(inSAR,&mpdr)>=0)
-	  {
-  	    get_asf_facdr(inSAR,&facdr);
-	    p->noise_type=by_geo;
-	    p->ns = slantRange2groundPixel(p->meta,facdr.sltrnglp*1000.0);
-	    printf("   Recognize old geocoded image; Max ns = %i\n",p->ns);
-	  }	
+        /* ASF SCANSAR images are indexed by look angle so Check for SCANSAR */
+        if (strncmp(dssr.product_type,"SCANSAR",7)==0)
+                p->noise_type=by_look;
 
-	/* Otherwise, use a straight-forward by_pixel approach */
-	else if (1)
-	  {
-		p->noise_type=by_pixel;
-		p->ns=p->meta->ifm->orig_nSamples;
-	  }
+        /* Next, check for old-style geocoded images */
+        else if (get_mpdr(sarName,&mpdr)>=0)
+          {
+            get_asf_facdr(sarName,&facdr);
+            p->noise_type=by_geo;
+            p->ns = slantRange2groundPixel(p->meta,facdr.sltrnglp*1000.0);
+            printf("   Recognize old geocoded image; Max ns = %i\n",p->ns);
+          }
+
+        /* Otherwise, use a straight-forward by_pixel approach */
+        else if (1)
+          {
+                p->noise_type=by_pixel;
+                p->ns=p->meta->ifm->orig_nSamples;
+          }
 
         /* For Future Use:: Most other images are indexed by slant range.*/
-	else
-	  {
-		double totalSlant;
-		
-		get_asf_facdr(inSAR,&facdr);
-		p->noise_type=by_slant;
-		p->minSlant=facdr.sltrngfp;
-		totalSlant=facdr.sltrnglp-facdr.sltrngfp;
-		p->slantPer=totalSlant/p->noise_len;
-	  }
-	return p;
+        else
+          {
+                double totalSlant;
+
+                get_asf_facdr(sarName,&facdr);
+                p->noise_type=by_slant;
+                p->minSlant=facdr.sltrngfp;
+                totalSlant=facdr.sltrnglp-facdr.sltrngfp;
+                p->slantPer=totalSlant/p->noise_len;
+          }
+        return p;
 }
 
 /*----------------------------------------------------------------------
   Get_cal_dn:
-        Convert amplitude image data number into
-        calibrated image data number, given the current
-        noise value.
+        Convert amplitude image data number into calibrated image data
+        number (in dB), given the current noise value.
 ----------------------------------------------------------------------*/
 float get_cal_dn(cal_params *p,double noiseValue,double invIncAngle,int inDn)
 {
 
 
         double scaledPower,sigma0;
-        
+
         /*Convert (amplitude) data number to scaled, noise-removed power*/
         scaledPower=(p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
 
         /*Convert power to dB */
-        if (scaledPower > 0.0) 
+        if (scaledPower > 0.0)
         {
                 sigma0=10.0*log10(scaledPower);
                         return sigma0;
         }
         /*Otherwise, log undefined*/
         return -30.0;
+}
+
+/*----------------------------------------------------------------------
+  sprocket_get_cal_dn:
+        Convert amplitude image data number into calibrated image data
+        number (NOT in dB), given the current noise value.
+----------------------------------------------------------------------*/
+float sprocket_get_cal_dn(cal_params *p,double noiseValue,double invIncAngle,
+                          int inDn)
+{
+        /*Convert (amplitude) data number to scaled, noise-removed power*/
+        return (p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
 }
 
 /*----------------------------------------------------------------------
@@ -244,9 +258,9 @@ int check_cal(char *filename)
           FREE(dqsr);
           return(1);
         }
-        else 
+        else
         {
-          printf("   ****** UNABLE TO DETERMINE CALIBRATION OF DATA ******\n"); 
+          printf("   ****** UNABLE TO DETERMINE CALIBRATION OF DATA ******\n");
           printf("   Calibration Comments: %s\n",dqsr->cal_comment);
           FREE(dqsr);
           return(0);
