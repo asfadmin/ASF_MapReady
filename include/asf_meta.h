@@ -49,12 +49,22 @@ baseline read_baseline(char *fName);
     read values directly.
 ---------------------------------------------------------------*/
 
+/* These are the dummy values that meta variables get set to at initialization */
+#define MAGIC_UNSET_CHAR ('?')
+#define MAGIC_UNSET_STRING ("???")
+#define MAGIC_UNSET_INT (-999999999)
+/* For MAGIC_UNSET_DOUBLE to work, you must include asf_nan.h */
+#define MAGIC_UNSET_DOUBLE (NAN)
+
 /* Maximum length of most string fields, including trailing null.  */
 #define FIELD_STRING_MAX 256
 
 /* Maximum length of mode field, including trailing null.  In case its
    so short for some good reason.  */
 #define MODE_FIELD_STRING_MAX 5
+
+/* general->data_type values */
+enum {BYTE=1, INTEGER16, INTEGER32, REAL32, REAL64};
 
 /********************************************************************
  * meta_general: General RAdio Detection And Ranging parameters
@@ -63,20 +73,20 @@ typedef struct {
   char sensor[FIELD_STRING_MAX];    /* Name of imaging sensor.             */
   char mode[MODE_FIELD_STRING_MAX]; /* Mode of imaging sensor.             */
   char processor[FIELD_STRING_MAX]; /* Name and version of SAR processor.  */
-  char data_type[FIELD_STRING_MAX]; /* Type of samples (e.g. "REAL*4").    */
-/*  Possible string values for date_type:                                  *
- *                   BYTE      = 1 byte                = unsigned char     *
- *                   INTEGER*2 = 2 byte integer        = short int         *
- *                   INTEGER*4 = 4 byte integer        = int               *
- *                   REAL*4    = 4 byte floating point = float             *
- *                   REAL*8    = 8 byte floating point = double            *
- *                   ???       = unknown                                   */
+  int data_type;                    /* Type of samples (e.g. "REAL4").     */
+/*  Possible values for data_type:                                         *
+ *    BYTE      =  1  =   1 byte                   = unsigned char         *
+ *    INTEGER16 =  2  =   2 byte integer           = short int             *
+ *    INTEGER32 =  3  =   4 byte integer           = int                   *
+ *    REAL32    =  4  =   4 byte floating point    = float                 *
+ *    REAL64    =  5  =   8 byte floating point    = double                *
+ *    ???                 unknown (-999999999)                             */
   char system[FIELD_STRING_MAX];    /* System of samples (e.g. "ieee-std") */
 /*  Possible string values for system:                                     *
  *    OUR NAME      DDR EQUIVALENT      WHAT IT IS                         *
  *    big_ieee        ieee-std       IEEE standard (ref 754)               *
  *    lil_ieee        ieee-lil       IEEE standard (ref 754) little-endian *
- * we don't support   ibm-mvs        IBM MVS                               *
+ *      ???           ibm-mvs        IBM MVS                               *
  *   cray_float       cray-unicos    Cray Y-MP Unicos                      *
  *      ???           other-msc      Misc. Other systems not covered       */
   int orbit;                 /* Orbit number of satellite.                 */
@@ -158,7 +168,7 @@ typedef struct {
     double rlocal;              /* Radius of earth at scene center (meters)*/
     double alpha1,alpha2,alpha3;/* Rotation angles, in degrees             */
   } proj_atct;
- /* Lambert Conformal projection.*/
+ /* Lambert Conformal Conic projection.*/
   typedef struct {
     double plat1;     /* First standard parallel for Lambert */
     double plat2;     /* Second standard parallel for Lambert*/
@@ -177,14 +187,13 @@ typedef struct {
  /* Projection parameters for the projection in use.  */
   typedef union {		     
     proj_atct     atct;     /* Along-track/cross-track      */
-    proj_lambert  lambert;  /* Lambert Conformal projection */
+    proj_lambert  lambert;  /* Lambert Conformal Conic projection */
     proj_ps       ps;       /* Polar Sterographic           */
     proj_utm      utm;      /* Universal Transverse Mercator*/
   } param_t;
 typedef struct {
-  char type;   /* 'A'->Along Track/Cross Track; 'P'->Polar Stereographic;  *
-                * 'L'->Lambert Azimuthal Equal Area;                       *
-                * 'U'->Universal Transverse Mercator.                      */
+  char type;  /*'A'->Along Track/Cross Track; 'P'->Polar Stereographic;    *
+               *'L'->Lambert Conformal Conic; 'U'->Universal Transverse Mercator*/
   double startX,startY;  /* Projection coordinates of top, lefthand corner.*/
   double perX,perY;      /* Projection coordinates per X and Y pixel.      */
   char units[12];        /* Units of projection (meters, arcsec)           */
@@ -227,7 +236,7 @@ typedef struct {
   double second;      /* Seconds of day for first state vector.       */
   int vector_count;   /* Number of state vectors.                     */
   int num;            /* Same as vector_count.  For backward compat.  */
-  state_loc *vecs;    /* Array sized at run-time.                     */
+  state_loc vecs[1];    /* Array sized at run-time.                     */
 } meta_state_vectors;
 
 
@@ -336,6 +345,10 @@ All arrays and coordinates are zero-based.
 
 /******************** General ***********************
 General Calls: in meta_get.c*/
+
+/* Figure out byte ordering system */
+char *meta_get_system(void);
+
 /* Convert a line, sample pair to a time, slant-range pair.
 These only use the geo_parameters structure, and work
 for all images.  They apply the time and slant range 
@@ -454,7 +467,7 @@ double meta_phase_rate(meta_parameters *sar,const baseline base,int y,int x);
 /* Keep track of open meta and ddr structures, so that all updated
  * metadata can be written to the metafile, initialized in meta_init.c Nov '02 */
 typedef struct {
-    char             base_name[256];
+    char             base_name[1024];
     meta_parameters *meta;
     struct DDR      *ddr;
 } META_DDR_STRUCT;
