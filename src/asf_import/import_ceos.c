@@ -179,6 +179,13 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         sprintf(logbuf,
                 "   Input data type: level two data\n"
                 "   Output data type: geocoded amplitude image\n\n");
+	meta->general->image_data_type = GEOCODED_IMAGE;
+      }
+      else {
+	sprintf(logbuf,
+		"   Input data type: level one data\n"
+		"   Output data type: amplitude image\n\n");
+	meta->general->image_data_type = AMPLITUDE_IMAGE;
       }
     }
     else if (flags[f_AMP] != FLAG_NOT_SET) {
@@ -262,7 +269,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       double incid[MAX_tableRes], old, new, min_incid=100.0, max_incid=0.0, tmpIncid;
       char line[255];
       int nLut=0, n, tableRes=MAX_tableRes, tablePix=0, ll, min, max;
-      int incid_is_increasing;
 
       /**** Read look up table ****/
       fpLut = FOPEN(lutName, "r");
