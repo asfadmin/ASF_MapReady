@@ -10,7 +10,8 @@ LIBS =	$(LIBDIR)/libproj.a \
 OBJS =  project.o
 
 all: build_only
-	mv libasf_proj.a $(LIBDIR)
+	cp libasf_proj.a $(LIBDIR)
+	cp libasf_proj.h $(ASF_INCLUDE_DIR)
 	rm *.o
 
 build_only: $(OBJS)

@@ -238,7 +238,7 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
     }
 }
 
-void test_random_utm()
+void testa_random_utm()
 {
     /* check that randomly generated values agree between array
        version and by-point version */
@@ -263,8 +263,9 @@ void test_random_utm()
 
     srand(102);
 
-    reference_lon = -112; //  rand() % 360 - 180;
-    reference_lat = 45; // rand() % 360 - 180;
+    /* any longitude, and latitudes (-60,60) should be ok */
+    reference_lon = rand() % 360 - 180;
+    reference_lat = rand() % 120 - 60;
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
@@ -355,11 +356,19 @@ void test_random_utm()
     free(y);
 }
 
+void test_random_utm(int N)
+{
+    int i;
+    for (i = 0; i < N; ++i)
+	testa_random_utm();
+}
+
+
 void test_utm()
 {
     testa_utm(-112, 45.25919444, -111.5, 460769.27, 5011648.45);
 
-    test_random_utm();
+    test_random_utm(25);
 }
 
 /************************************* Polar Stereographic Projection Tests */
@@ -459,7 +468,7 @@ void testa_ps(double lat0_deg, double lon0_deg, double lat_deg, double lon_deg,
     }
 }
 
-void test_random_ps()
+void testa_random_ps()
 {
     /* check that randomly generated values agree between array
        version and by-point version */
@@ -580,11 +589,19 @@ void test_random_ps()
     free(y);
 }
 
+void test_random_ps(int N)
+{
+    int i;
+    for (i = 0; i < N; ++i)
+	testa_random_ps();
+}
+
+
 void test_ps()
 {
     testa_ps(71, -96, 39.101252222, -121.33955, -2529570, -5341800); 
-
-    test_random_ps();
+    
+    test_random_ps(25);
 }
 
 /********************************************* Lambert Azimuthal Equal Area  */

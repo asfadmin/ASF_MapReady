@@ -447,23 +447,27 @@ project_ps_arr_inv(double lat_ts, double lon_0, int is_north_pole,
       x, y, length);
 }
 
-/*
-  lat_0 : Latitude at projection center
-  lon_0 : Longitude at projection center
-*/
-
-int
-project_lamaz(double lat_0, double lon_0, double lat, double lon, 
-	      double *x, double *y)
+/****************************************************************************
+ Lambert Azimuthal Equal Area
+****************************************************************************/
+static char * lamaz_projection_desc(double lat_0, double lon_0)
 {
-  char lamaz_projection_description[128];
+  static char lamaz_projection_description[128];
 
   /* Establish description of output projection. */
   sprintf(lamaz_projection_description,
 	  "+proj=laea +lat_0=%f +lon_0=%f +datum=WGS84",
 	  lat_0, lon_0);
 
-  return project_worker(lamaz_projection_description, lat, lon, x, y);
+  return lamaz_projection_desc;
+}
+
+int
+project_lamaz(double lat_0, double lon_0, double lat, double lon, 
+	      double *x, double *y)
+{
+    return project_worker(lamaz_projection_description(lat_0, lon_0),
+			  lat, lon, x, y);
 }
 
 int
