@@ -17,7 +17,8 @@ DESCRIPTION:
 typedef enum {
   TRUNCATE=1,
   MINMAX,
-  SIGMA
+  SIGMA,
+  NONE
 } scale_t;
 
 /* Prototypes from scaling.c *************************************************/
