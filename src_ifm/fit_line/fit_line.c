@@ -294,19 +294,19 @@ int main(int argc,char **argv)
 	      CHECK_ARG(1);
 	      strcpy(logFile,GET_ARG(1));
 	      fLog = FOPEN(logFile, "a");
-	      logflag=TRUE;
+	      logflag = TRUE;
 	   }
 	   else if (strmatch(key,"-quiet")) {
 	      quietflag=TRUE;
 	   }
 	/*** Begin hidden arguments: c (coefficents) or p (points) ***/
-	   else if (strmatch(key,"c")) {
+	   else if (strmatch(key,"-c")) {
 	      CHECK_ARG(1);
 	      f.coeffList = FOPEN(GET_ARG(1),"w");
 	   }
-	   else if (strmatch(key,"p")) {
+	   else if (strmatch(key,"-p")) {
 	      CHECK_ARG(1);
-	      pointOutput=FOPEN(GET_ARG(1),"w");
+	      pointOutput = FOPEN(GET_ARG(1),"w");
 	   }
 	/*** End hidden arguments: c (coefficents) or p (points) ***/
  	   else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
