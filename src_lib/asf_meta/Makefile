@@ -76,6 +76,8 @@ parser_tester: $(OBJS) parser_tester.o
 $(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) \
          $(YACC_SOURCES) $(LEX_SOURCES)
 
+check: $(OBJS) tests.c
+
 clean:
 	rm -f $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
               $(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h
