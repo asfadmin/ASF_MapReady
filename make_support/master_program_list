@@ -48,8 +48,9 @@ LIBS
 {
 @src_lib/
 	asf
-	asf_meta
+	regex_wrapper
 	asf_las
+	asf_meta
 	asf_concat
 	asf_lt
 	asf_geolib
