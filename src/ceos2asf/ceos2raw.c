@@ -3,13 +3,6 @@
 #include "ceos.h"
 #include "dateUtil.h"
 
-#define VERSION 1.5
-
-/*********************************
-createMeta:
-	Create outN.meta file using information
-from CEOS in the inN.L file.
-*/
 /*Return the length (in lines) of the given CEOS image*/
 int ceosLen(char *inN)
 {
@@ -21,11 +14,12 @@ int ceosLen(char *inN)
 meta_parameters *raw_init(void);
 void ceos_init(const char *in_fName,meta_parameters *sar);
 
-/*hack function for .ldr & .raw compatibility (in ceosUtil.c)*/
-void linkFlag(short,char*);
 
-
-void createMeta_ceos(bin_state *s,struct dataset_sum_rec *dssr,char *inN,char *outN)
+/******************************************************************************
+ * createMeta_ceos:
+ * Create outN.meta file using information from CEOS in the inN.L file.  */
+void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
+                     char *outN)
 {
 	meta_parameters *meta=raw_init();
 	
@@ -70,14 +64,12 @@ void createMeta_ceos(bin_state *s,struct dataset_sum_rec *dssr,char *inN,char *o
 	meta_free(meta);
 }
 
-/********************************
-convertMetadata:
-	Creates AISP .in and .fmt files,
-as well as determining the number of lines in the l0 file,
-by reading the granule (.gran) file.
-*/
-
-bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,readPulseFunc *readNextPulse)
+/******************************************************************************
+ * convertMetadata:
+ * Creates AISP .in and .fmt files, as well as determining the number of lines
+ * in the l0 file, by reading the granule (.gran) file.  */
+bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
+                                readPulseFunc *readNextPulse)
 {
 	bin_state *s;
 	struct dataset_sum_rec dssr;
@@ -93,8 +85,10 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,readPulseFunc *
 		s=JRS_ceos_decoder_init(inN,outN,readNextPulse);
 	else if (0==strncmp(satName,"R",1))
 		s=RSAT_ceos_decoder_init(inN,outN,readNextPulse);
-	else 
-		{printf("Unrecognized satellite '%s'!\n",satName);exit(EXIT_FAILURE);}
+	else {
+		printf("Unrecognized satellite '%s'!\n",satName);
+		exit(EXIT_FAILURE);
+	}
 	createMeta_ceos(s,&dssr,inN,outN);
 	
 /*Write out AISP input parameter files.*/
