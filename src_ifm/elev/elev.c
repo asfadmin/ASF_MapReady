@@ -26,16 +26,19 @@ FILE REFERENCES:
     ---------------------------------------------------------------
 
 PROGRAM HISTORY:
-    VERS:   DATE:        PURPOSE:
+    VERS:  DATE:   PROGRAMMER:   PURPOSE:
     ---------------------------------------------------------------
-    .1      10/96        Original Creation
-    .2       4/97        Properly handles windowed images - T. Logan
-    1.0	     6/97        Gets image size from ddr - O. Lawlor
-    1.2      10/97       Eliminated unwrapping mask parameter - O. Lawlor
-    1.3      11/97       Changed CLA's to accept list of seed points- O. Lawlor
-    2.0      6/98        Re-derived equation; updated for new ceos. O. Lawlor
-    2.1      6/00	 Modified to handle files larger than 2GB -D. Koster
-    2.2	     7/01	 Added log file switch - R. Gens
+    0.1    10/96                 Original Creation
+    0.2     4/97   T. Logan      Properly handles windowed images
+    1.0     6/97   O. Lawlor     Gets image size from ddr
+    1.2    10/97   O. Lawlor     Eliminated unwrapping mask parameter
+    1.3    11/97   O. Lawlor     Changed CLA's to accept list of seed points
+    2.0     6/98   O. Lawlor     Re-derived equation; updated for new ceos
+    2.1     6/00   D. Koster     Modified to handle files larger than 2GB
+    2.2     7/01   R. Gens       Added log file switch
+    2.5     3/03   P. Denny      Obliterate use of DDR, and replace with
+                                   updated meta structure. Standardized
+                                   command line parsing
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -79,153 +82,149 @@ BUGS:
 
 #include "asf.h"
 #include "asf_meta.h"
-#include "ddr.h"
 
-#define VERSION                2.2
+#define VERSION 2.5
 
-/* local function declaration */
-void usage(char *name);
 
 int main(int argc, char **argv)
 {
-	int x, y, i, optind=1;
+	int x, y;
 	float percent=5.0;
 	double xScale,yScale;
 	int ss,sl;
-
 	double k;
 	double *phase2elevBase,*sinFlat,*cosFlat;
 	baseline base;
-	meta_parameters *meta;
-	char *datafile, *basefile, *outfile,*seedfile;
+	meta_parameters *meta, *meta_out;
+	char *datafile, *basefile, *metafile, *outfile,*seedfile;
 	FILE *fdata, *fout,*fseed;
 	float *f_uwp,*f_elev;
-	char *ceos;
 	int nrows,ncols/*,arows,acols*/;
 	double delta_phase,delta_height;
 	double seed_phase,seed_height;
-	struct DDR ddr,newddr;
-
-	if (argc==1 || argc>9) usage(argv[0]);
+	extern int currArg; /* pre-initialized to 1; like optind */
 
 	logflag=quietflag=0;
 
-	/* handle options */
-        for (i=1; i<argc; i++) {
-          if (strncmp(argv[i], "-log", 4)==0) {
-	    sprintf(logFile, "%s", argv[i+1]);
-	    fLog = FOPEN(logFile, "a");
-	    logflag=1;
-            i+=1;
-	    optind+=2;
-          }
-	  else if (strncmp(argv[i], "-quiet", 6)==0) {
-	    quietflag=1;
-	    optind+=1;
-	  }
-	  else if (strncmp(argv[i], "-", 1)==0) {
-	    sprintf(errbuf, "%s is not a valid option!\n", argv[i]);
-	    printErr(errbuf);
-	  }
+/* parse command line */
+	while (currArg < (argc-5)) {
+		char *key = argv[currArg++];
+		if (strmatch(key,"-log")) {
+			CHECK_ARG(1)
+			strcpy(logFile, GET_ARG(1));
+			fLog = FOPEN(logFile, "a");
+			logflag=1;
+		}
+		else if (strmatch(key,"-quiet")) {
+			quietflag=1;
+		}
+		else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
 	}
-
-	/* handle required input */
-	i=optind;
-	datafile = argv[i];
-	basefile = argv[i+1];
-	ceos=argv[i+2];
-	outfile = argv[i+3];
-	seedfile= argv[i+4];
+	if ((argc-currArg) < 5) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+	datafile = argv[currArg++];
+	basefile = argv[currArg++];
+	metafile = argv[currArg++];
+	outfile  = argv[currArg++];
+	seedfile = argv[currArg];
 
 	system("date");
 	printf("Program: elev\n\n");
 	if (logflag) {
-	  StartWatchLog(fLog);
-	  printLog("Program: elev\n\n");
+		StartWatchLog(fLog);
+		printLog("Program: elev\n\n");
 	}
 
-	/* Get input scene size and windowing info*/
-	c_getddr(datafile, &ddr);
-	ss = ddr.master_sample - 1;
-	sl = ddr.master_line - 1;
-	xScale=ddr.sample_inc;
-	yScale=ddr.line_inc;
-	nrows=ddr.nl;
-	ncols=ddr.ns;
+/* Get input scene size and windowing info. Get datafile values*/
+	meta = meta_read(datafile);
+	nrows  = meta->general->line_count;
+	ncols  = meta->general->sample_count;
+	sl     = meta->general->start_line;
+	ss     = meta->general->start_sample;
+	yScale = meta->sar->line_increment;
+	xScale = meta->sar->sample_increment;
 
-	/*Copy DDR fields over.*/
-	newddr=ddr;
-	newddr.dtype=4;
-	newddr.nbands=1;
-	c_putddr(outfile,&newddr);
+/* In case this is old style data (DDR), make sure to get the specified legit metadata */
+	meta_free(meta);
+	meta = meta_read(metafile);
+	meta->general->line_count   = nrows;
+	meta->general->sample_count = ncols;
+	meta->general->start_line   = sl;
+	meta->general->start_sample = ss;
+	meta->sar->line_increment   = yScale;
+	meta->sar->sample_increment = xScale;
+	
+/* Copy meta fields to a separate meta structure & write out.*/
+	meta_out = meta_copy(meta);
+	meta_out->general->data_type = REAL32;
+	meta_write(meta_out, outfile);
+	meta_free(meta_out);
 
-	/* allocate space for vectors and matricies*/
-	f_uwp = (float *)MALLOC(sizeof(float)*ncols);
-	f_elev =(float *)MALLOC(sizeof(float)*ncols);
+/* Allocate space for vectors and matricies*/
+	f_uwp  = (float *)MALLOC(sizeof(float)*ncols);
+	f_elev = (float *)MALLOC(sizeof(float)*ncols);
 
-	/* Read in values from CEOS */
-	meta=meta_init(ceos);
-	k=meta_get_k(meta);/*Wavenumber K.*/
+/* Wavenumber K.*/
+	k = meta_get_k(meta);
 
-	/* read in baseline values*/
+/* Read in baseline values*/
 	base=read_baseline(basefile);
 
-	/* open data file & get seed phase*/
-/*	printf("opening unwrapped phase file %s...\n",datafile);*/
+/* Open data file & get seed phase*/
 	fdata = fopenImage(datafile, "rb");
-	fseed=FOPEN(seedfile,"r");
-	/*Use least-squares fit to determine
-	  	the optimal seed_phase and seed_height.*/
-	{
-		double x,xSum=0,xSqrSum=0,hSum=0,hxSum=0,pxSum=0,pxSqrSum=0;
-		double a,b,c,d,e,f,det;
-		int npts=0;
-		while (1)
-		{
-			float seed_x,seed_y,height,phase;
-			int seek_x,seek_y;
-			/*Read in each seed point*/
-			if (3!=fscanf(fseed,"%f%f%f",&seed_x,&seed_y,&height))
-				break;/*Break out when no more points.*/
-			seek_x=(int)((seed_x-ss)/xScale);
-			seek_y=(int)((seed_y-sl)/yScale);
-			FSEEK64(fdata,sizeof(float)*(seek_y*ncols+seek_x),0);
-			fread(&phase,sizeof(float),1,fdata);
-			if (phase==0)
-				continue;/*Escher couldn't unwrap this tie point.*/
+	fseed = FOPEN(seedfile,"r");
 
-			/*Calculate that seed point's impact on fit.*/
-			x=meta_phase_rate(meta,base,seed_y,seed_x);
-			xSum+=x;
-			xSqrSum+=x*x;
-			hSum+=height;
-			hxSum+=height*x;
-			pxSum+=phase*x;
-			pxSqrSum+=phase*x*x;
-			npts++;
-		}
-		if (!quietflag) printf("   Read %d seed points\n",npts);
-		/*The least-squares fit above leaves us with a matrix equation
-			  [ a  b ]   [ seed_phase  ]   [ e ]
-			  [      ] * [             ] = [   ]
-			  [ c  d ]   [ seed_height ]   [ f ]
-			  
-			  which has the solution
-			  
-			  [ d  -b ]   [ e ]    1    [ seed_phase  ]
-			  [       ] * [   ] * --- = [             ]
-			  [ -c  a ]   [ f ]   det   [ seed_height ]
-			  */
-		a=-xSqrSum;
-		b=xSum;
-		c=-xSum;
-		d=npts;
-		e=hxSum-pxSqrSum;
-		f=hSum-pxSum;
-		det=a*d-b*c;
-		seed_phase=(e*d-f*b)/det;
-		seed_height=(e*(-c)+f*a)/det;
+/*Use least-squares fit to determine the optimal seed_phase and seed_height.*/
+   {
+	double x,xSum=0,xSqrSum=0,hSum=0,hxSum=0,pxSum=0,pxSqrSum=0;
+	double a,b,c,d,e,f,det;
+	int npts=0;
+	while (1)
+	{
+		float seed_x,seed_y,height,phase;
+		int seek_x,seek_y;
+		/*Read in each seed point*/
+		if (3!=fscanf(fseed,"%f%f%f",&seed_x,&seed_y,&height))
+			break;/*Break out when no more points.*/
+		seek_x=(int)((seed_x-ss)/xScale);
+		seek_y=(int)((seed_y-sl)/yScale);
+		FSEEK64(fdata,sizeof(float)*(seek_y*ncols+seek_x),0);
+		fread(&phase,sizeof(float),1,fdata);
+		if (phase==0)
+			continue;/*Escher couldn't unwrap this tie point.*/
+
+		/*Calculate that seed point's impact on fit.*/
+		x         = meta_phase_rate(meta,base,seed_y,seed_x);
+		xSum     += x;
+		xSqrSum  += x * x;
+		hSum     += height;
+		hxSum    += height * x;
+		pxSum    += phase * x;
+		pxSqrSum += phase * x * x;
+		npts++;
 	}
+	if (!quietflag)
+		printf("   Read %d seed points\n",npts);
+	/* The least-squares fit above leaves us with a matrix equation
+	 *	[ a  b ]   [ seed_phase  ]   [ e ]
+	 *	[      ] * [             ] = [   ]
+	 *	[ c  d ]   [ seed_height ]   [ f ]
+	 *
+	 *	which has the solution
+	 *
+	 *	[ d  -b ]   [ e ]    1    [ seed_phase  ]
+	 *	[       ] * [   ] * --- = [             ]
+	 *	[ -c  a ]   [ f ]   det   [ seed_height ]
+	 */
+	a = -xSqrSum;
+	b = xSum;
+	c = -xSum;
+	d = npts;
+	e = hxSum-pxSqrSum;
+	f = hSum-pxSum;
+	det = a*d-b*c;
+	seed_phase  = (e*d-f*b)/det;
+	seed_height = (e*(-c)+f*a)/det;
+   }
 
 	FSEEK64(fdata,0,0);
 	if (!quietflag) printf("   Seed Phase: %f\n   Elevation: %f\n",seed_phase,seed_height);
@@ -284,30 +283,42 @@ int main(int argc, char **argv)
 	  printLog(logbuf);
 	}
 
-	/* free memory & scram*/
+	/* free memory, close files, & scram*/
+	meta_free(meta);
 	FREE(f_uwp);
 	FREE(f_elev);
+	FREE(sinFlat);
+	FREE(cosFlat);
+	FREE(phase2elevBase);
 	FCLOSE(fout);
 	FCLOSE(fdata);
+	FCLOSE(fseed);
 	return(0);
 }
 
 void usage(char *name)
 {
-	printf("\n");
-	printf("Usage: %s [-log <file>] [-quiet] <phase> <base> <meta> <outfile> <seed_file>\n",name);
-	printf("\n");
-	printf("    -log:   Option to have output written to a log <file>.\n"
-	       "    -quiet: Option to have output surpressed to essential.\n");
-	printf("    phase:  unwrapped phase file (.phase and .ddr)\n");
-	printf("    base:   file containing baseline params. used to unwrap\n");
-	printf("            format:  Bn_c   dBn   Bp_c   dBp \n");
-	printf("    meta:   the name of the file that contains the \n");
-	printf("            metadata for image 1 of the interferogram pair.\n");
-	printf("    outfile: output file containing elevations.\n");
-	printf("    seed_file: tandem_ifm style seed file.\n");
-	printf("\n");
-	printf("elev: generate DEM from unwrapped phase\n");
-	printf("Version: %.2f, ASF SAR TOOLS\n\n",VERSION);
-	exit(1);
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <file>] [-quiet] <phase> <base> <meta> <outfile> <seed_file>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"    phase:      Unwrapped phase file (.phase and .meta)\n"
+	"    base:       File containing baseline params. used to unwrap\n"
+	"                  format:  Bn_c   dBn   Bp_c   dBp \n"
+	"    meta:       The name of the file that contains the \n"
+	"                  metadata for image 1 of the interferogram pair.\n"
+	"    outfile:    Output file containing elevations.\n"
+	"    seed_file:  Tandem_ifm style seed file.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -log:    Option to have output written to a log <file>.\n"
+	"   -quiet:  Option to have output surpressed to essential.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Generate a DEM from unwrapped phase\n");
+ printf("\n"
+	"Version: %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
