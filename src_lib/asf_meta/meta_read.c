@@ -8,22 +8,18 @@
 void meta_read_old(meta_parameters *meta, char *fileName);
 void meta_new2old(meta_parameters *meta);
 
-/***************************************************************
- * meta_read:
- * Reads a meta file and returns a meta structure filled with
- * both old backward compatability and new fields filled in.
- * Note that the appropriate extension is appended to the given
- * base name automagically if needed.  */
-meta_parameters *meta_read(const char *inName)
+/* Does the metadata file with the given base name exist and conform
+   to the new all-in-one standard?  */
+int meta_is_new_style(const char *file_name)
 {
  /* Maximum line length.  */
 #define MAX_METADATA_LINE 1024 
  /* Version where new metadata was adopted.  */
 #define NEW_FORMAT_VERSION 1.0 
 
-  char              *meta_name      = appendExt(inName,".meta");
-  FILE              *meta_file      = FOPEN(meta_name, "r");
-  meta_parameters   *meta           = raw_init();	/* To be filled.  */
+  int return_value;		/* Value to be returned.  */
+  char *meta_name = appendExt(file_name, ".meta");
+  FILE *meta_file = FOPEN(meta_name, "r");
   char              line[MAX_METADATA_LINE]; /* Metadata line.  */
   /* For pattern matching for version string.  */
   matched_subexps_t version_subexps = MATCHED_SUBEXPS_INITIALIZER;
@@ -40,16 +36,37 @@ meta_parameters *meta_read(const char *inName)
       err_die("meta_read function: didn't find Meta version field\n");
     }
   }
-  FCLOSE(meta_file);   /* Done using meta file directly.  */
+
+  if ( strtod(get_subexp_string(&version_subexps, 1), NULL) 
+       < NEW_FORMAT_VERSION ) {
+    return_value = 0;
+  } else {
+    return_value = 1;
+  }
+
+  FCLOSE(meta_file);            /* Done using meta file directly.  */
+  matched_subexps_free(&version_subexps); /* Done with subexpressions.  */
+  free(meta_name);		/* Done with file name with extension.  */
+}
+  
+
+/***************************************************************
+ * meta_read:
+ * Reads a meta file and returns a meta structure filled with
+ * both old backward compatability and new fields filled in.
+ * Note that the appropriate extension is appended to the given
+ * base name automagically if needed.  */
+meta_parameters *meta_read(const char *inName)
+{
+  char              *meta_name      = appendExt(inName,".meta");
+  meta_parameters   *meta           = raw_init();	/* To be filled.  */
 
   /* Read file with appropriate reader for version.  */
-  if ( strtod(get_subexp_string(&version_subexps, 1), NULL)
-       < NEW_FORMAT_VERSION ) {
+  if ( !meta_is_new_style(meta_name) ) {
     meta_read_old(meta, meta_name);
   } else {
     parse_metadata(meta, meta_name);
   }
-  matched_subexps_free(&version_subexps);   /* Done with matches.  */
   
   /* Fill old structure parameters */
   meta_new2old(meta);
@@ -250,7 +267,6 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	general->orbit_direction  = '\0';
 	general->center_latitude  = NAN;
 	general->center_longitude = NAN;
-	sar->look_angle           = NAN;
 
 /* Close coni structure */
 	coniClose(coni);
