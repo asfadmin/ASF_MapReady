@@ -1,11 +1,61 @@
 #include "asf.h"
 #include "coniFetch.h"
 #include "asf_meta.h"
+#include "err_die.h"
+#include "regex_wrapper.h"
 
-/*meta_io_state:
-	Called by meta_io, below, this routine reads/writes
-the given state vector structure.
-*/
+/***************************************************************
+ * meta_read:
+ * Reads a meta file and returns a meta structure filled with
+ * both old backward compatability and new fields filled in.
+ * Note that the appropriate extension is appended to the given
+ * base name automagicly.  */
+meta_parameters *meta_read(const char *inName)
+{
+#define MAX_LINE             1024	  /* Maximum line length.  */
+/* Version where new metadata was adopted.  */
+#define NEW_FORMAT_VERSION   1.0 
+
+	char              *meta_name      = appendExt(inName,".meta");
+	FILE              *meta_file      = FOPEN(meta_name, "r");
+	meta_parameters   *meta           = raw_init();
+	matched_subexps_t version_subexps = MATCHED_SUBEXPS_INITIALIZER;
+	char              line[MAX_LINE];
+	double            meta_version;
+
+	/* Scan for the version string.  */
+	if ( fgets(line, MAX_LINE, meta_file) == '\0' ) {
+	  err_die("%s function: metadata file is empty\n", __func__);
+	}
+	while ( !regex_match(&version_subexps, 
+			     "^Meta version : ([[:digit:]]+(\\.[[:digit]]+)?)",
+			     line) ) {
+	  if ( fgets(line, MAX_LINE, meta_file) == '\0' ) {
+	    err_die("meta_read function: didn't find Meta version field\n");
+	  }
+	}
+	matched_subexps_free(&version_subexps);
+	FCLOSE(meta_file);
+
+	/* Read file with appropriate reader for version.  */
+	if ( strtod(get_subexp_string(&version_subexps, 1), NULL) 
+	     < NEW_FORMAT_VERSION ) {
+	  /* FIXME: I should be returning meta_parameters * somehow.  */
+	  meta_read_old(ddr_name, meta_name);
+ 	} else {
+	  parse_metadata(meta, meta_file);
+	}
+
+	free(meta_name);
+
+	return meta;
+}
+
+/***************************************************************
+ * meta_io_state:
+ * Called by meta_io, below, this routine reads/writes
+ * the given state vector structure.
+ */
 void meta_io_state(coniStruct *coni, meta_state_vectors *state)
 {
 	int i;
@@ -29,15 +79,16 @@ void meta_io_state(coniStruct *coni, meta_state_vectors *state)
 	coniIO_structClose(coni,"end of list of state vectors\n");
 }
 
-meta_parameters *meta_read_old(char *fileName)
+/***************************************************************
+ * meta_read_old:
+ * Reads in old style meta file and fills new style meta struct
+ */
+void meta_read_old(char *fileName, meta_parameters *meta)
 {
 	int reading = 1;
 	char *ddrName = appendExt(fileName,".ddr");
 	struct DDR ddr;
 	char *metaName = appendExt(fileName,".meta");
-/************ IS THIS NEEDED IN THIS FUNCTION?? *************/
-	meta_parameters *meta = raw_init();
-/************************************************************/
 	meta_general *general = meta->general;
 	meta_sar     *sar     = meta->sar = (meta_sar *)MALLOC(sizeof(meta_sar));
 	meta_stats   *stats   = meta->stats;
