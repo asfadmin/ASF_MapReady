@@ -566,12 +566,12 @@ struct dataset_sum_rec {
     double sc_pix;               /* image center pixel number (range) */
     double scene_len;            /* image length in km */
     double scene_wid;            /* image width in km */
-    char  spare2[17];            /* spare */
-    short nchn;                  /* number of SAR channels */
-    char  spare3[5];             /* spare */
-    char  mission_id[17];        /* mission id */
-    char  sensor_id[33];         /* sensor id: AAAAAA-BB-CCDD-EEFF */
-    char  revolution[9];         /* orbit number */
+    char   spare2[17];           /* spare */
+    short  nchn;                 /* number of SAR channels */
+    char   spare3[5];            /* spare */
+    char   mission_id[17];       /* mission id */
+    char   sensor_id[33];        /* sensor id: AAAAAA-BB-CCDD-EEFF */
+    char   revolution[9];        /* orbit number */
     double plat_lat;             /* spacecraft latitude at nadir */
     double plat_long;            /* spacecraft longitude at nadir */
     double plat_head_scene;      /* sensor platform heading (degrees) */
@@ -579,21 +579,21 @@ struct dataset_sum_rec {
     double incident_ang;         /* incidence angle at image center */
     double frequency;            /* radar frequency (GHz) */
     double wave_length;          /* radar wavelength (m) */
-    char  motion_comp[3];        /* motion compensation indicator */
-    char  pulse_code[17];        /* range pulse code specifier */
+    char   motion_comp[3];       /* motion compensation indicator */
+    char   pulse_code[17];       /* range pulse code specifier */
     double ampl_coef[5];         /* range chirp coefficients */
     double phas_coef[5];         /* range phase coefficients */
-    int  chirp_ext_ind;         /* chirp extraction index */
-    char  spare4[9];             /* spare */
+    int    chirp_ext_ind;        /* chirp extraction index */
+    char   spare4[9];            /* spare */
     double rng_samp_rate;        /* range complex sampling rate */
     double rng_gate;             /* range gate at early edge */
     double rng_length;           /* range pulse length */
-    char  baseband_f[5];         /* base band conversion flag */
-    char  rngcmp_f[5];           /* range compressed flag */
+    char   baseband_f[5];        /* base band conversion flag */
+    char   rngcmp_f[5];          /* range compressed flag */
     double gn_polar;             /* receiver gain for like pol */
     double gn_cross;             /* receiver gain for cross pol */
-    int  chn_bits;              /* quantization bits per channel */
-    char  quant_desc[13];        /* quantizer description */
+    int    chn_bits;             /* quantization bits per channel */
+    char   quant_desc[13];       /* quantizer description */
     double i_bias;               /* I channel DC bias */
     double q_bias;               /* Q channel DC bias */
     double iq_ratio;             /* I/Q channel ratio */
@@ -607,7 +607,7 @@ struct dataset_sum_rec {
     double azi_beam;             /* antenna azimuth 3dB beam width */
     char   sat_bintim[17];       /* Satellite binary time */
     char   sat_clktim[33];       /* Satellite clock time */
-    int   sat_clkinc;           /* Satellite clock increment */
+    int	   sat_clkinc;           /* Satellite clock increment */
     char   spare5[9];            /* spare */
     char   fac_id[17];           /* processing facility */
     char   sys_id[9];            /* processing system */
