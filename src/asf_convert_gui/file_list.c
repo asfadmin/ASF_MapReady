@@ -303,6 +303,55 @@ void render_output_name(GtkTreeViewColumn *tree_column,
     g_free(status);
 }
 
+#ifdef THUMBNAILS
+static gboolean    
+files_list_enter_notify_event_handler (GtkWidget *widget, 
+				       GdkEventCrossing *event,
+				       gpointer user_data)
+{
+  g_message ("event x: %lf, event y: %lf", event->x, event->y);
+  gint tx, ty;
+  gtk_tree_view_widget_to_tree_coords (GTK_TREE_VIEW (widget),
+				       (gint) event->x,
+				       (gint) event->y,
+				       &tx,
+				       &ty);
+  g_message ("tree x: %d, tree y: %d", tx, ty);
+  g_assert (event->window 
+	    == gtk_tree_view_get_bin_window (GTK_TREE_VIEW (widget)));
+  GtkTreePath *path;
+  gboolean row_exists = gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (widget),
+						       event->x,
+						       event->y,
+						       &path,
+						       NULL,
+						       NULL,
+						       NULL);
+  if ( row_exists ) {
+    g_message ("row exists, path: %s", gtk_tree_path_to_string (path));
+  }
+  else {
+    g_message ("row doesn't exist");
+  }
+
+  /* Input thumbnail column.  */
+  GtkTreeViewColumn *itc = gtk_tree_view_get_column (GTK_TREE_VIEW (widget),
+						     COL_INPUT_THUMBNAIL);
+  GdkRectangle itn_rect;
+  gtk_tree_view_get_cell_area (GTK_TREE_VIEW (widget),
+			       path,
+			       itc,
+			       &itn_rect);
+
+  g_message ("Input thumbnail top left: %d, %d  Width: %d  Height %d",
+	     itn_rect.x, itn_rect.y, itn_rect.width, itn_rect.height);
+
+  /* Returning false means to GTK: "Don't stop other handlers from
+     running".  */
+  return FALSE;			
+}
+#endif /* THUMBNAILS */
+
 void
 setup_files_list(int argc, char *argv[])
 {
@@ -352,6 +401,9 @@ setup_files_list(int argc, char *argv[])
   gtk_tree_view_column_pack_start (col, renderer, FALSE);
   gtk_tree_view_column_add_attribute (col, renderer, "pixbuf",
 				      COL_INPUT_THUMBNAIL);
+  
+  g_signal_connect (files_list, "enter-notify-event",
+		    G_CALLBACK (files_list_enter_notify_event_handler), NULL); 
 #endif
 
   /* Next Column: Output File Name */
