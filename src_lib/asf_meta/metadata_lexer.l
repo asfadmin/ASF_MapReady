@@ -8,6 +8,13 @@
 #include "lex_yacc.h"   /* Must precede y.tab.h include.  */
 #include "y.tab.h"
 
+/* For some dumb reason it seems necessary to provide this, or else
+   you have to link with the library.  */
+int yywrap(void)
+{
+  return 1;
+}
+
 %}
 
 %option nomain
@@ -60,3 +67,9 @@ FIELD_STRING       [^#\n]*
                                       strcpy(yylval.string_val, yytext);
                                       return STRING; }
 %%
+
+
+
+
+
+
