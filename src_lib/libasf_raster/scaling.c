@@ -4,8 +4,8 @@
 unsigned char *floats_to_bytes (float *data, long long pixel_count, float mask,
 				scale_t scaling)
 {
-  long long ii, kk;
-  double imin=99999, imax=-99999, imean=0, isdev=0, pix=0;
+  long long ii;
+  double imin=99999, imax=-99999, imean=0, isdev=0;
   double diff_min, diff_max, omin, omax, slope, offset;
   unsigned char *pixels = malloc (pixel_count * sizeof (unsigned char));
 

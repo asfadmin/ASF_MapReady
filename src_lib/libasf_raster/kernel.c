@@ -11,6 +11,8 @@ INPUT: inbuf          - input image buffer
        damping_factor - exponential damping factor
        nLooks         - number of looks in radar image
 *******************************************************************/
+#include <assert.h>
+
 #include "asf.h"
 #include "asf_raster.h"
 
@@ -21,6 +23,9 @@ int compare_values(const float *valueA, const float *valueB)
   if (*valueA <  *valueB) return -1;
   if (*valueA == *valueB) return  0;
   if (*valueA >  *valueB) return  1;
+  
+  assert (FALSE);		/* Shouldn't be here.  */
+  return 0;
 }
 
 double calc_sum(float *inbuf, int nSamples, int xLine, int xSample, int kernel_size)

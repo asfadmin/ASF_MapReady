@@ -70,7 +70,7 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
 
 /* Prototypes from interpolate.c *********************************************/
 float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines, 
-		  int nSamples, int xLine, int xSample, 
+		  int nSamples, float xLine, float xSample, 
 		  weighting_type_t weighting, int sinc_points);
 
 #endif
