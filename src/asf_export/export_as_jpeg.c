@@ -53,8 +53,6 @@ export_as_jpeg (const char *metadata_file_name,
 
   /* Get the image data.  */
   const off_t start_of_file_offset = 0;
-  asfRequire (md->general->data_type == REAL32,
-	      "Input data type must be in 32-bit floating point format.\n");
   FloatImage *iim 
     = float_image_new_from_file (md->general->sample_count,
 				 md->general->line_count, 
