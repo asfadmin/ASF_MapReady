@@ -17,5 +17,5 @@ fico_new: $(OBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) -o fico $(OBJS) $(LIBS)
 	rm *.o
 	mv fico $(BIN_POSTFIX) $(BINDIR)
-	cp fico.1 ../../man/cat1
+	cp fico.1 ../../man/man1
 	
