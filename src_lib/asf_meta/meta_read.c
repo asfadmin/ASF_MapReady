@@ -109,8 +109,8 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 
 /*Geolocation parameters.*/
 	coniIO_structOpen(coni,"geo {","begin parameters used in geolocating the image.");
-	coniIO_char(coni,"geo.","type:",&sar->proj_type,"Image type: [S=slant range; G=ground range; P=map projected]");
-	if (sar->proj_type=='P') {
+	coniIO_char(coni,"geo.","type:",&sar->image_type,"Image type: [S=slant range; G=ground range; P=map projected]");
+	if (sar->image_type=='P') {
 	/*Projection Parameters.*/
 		meta_projection *projection = meta->projection = (meta_projection *)MALLOC(sizeof(meta_projection));
 		coniIO_structOpen(coni,"proj {","Map Projection parameters");
@@ -219,7 +219,8 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	strcpy( general->system,  ddr.system);
 	general->start_line     = ddr.master_line;
 	general->start_sample   = ddr.master_sample;
-/* FIXME: UNITS TO PROJECTION */
+	if (sar->image_type=='P')
+		{strcpy(meta->projection->units, ddr.proj_units);
 	switch ( ddr.dtype ) {
 	    case 0: /* BYTE */
 	    case 1: strcpy(general->data_type, "BYTE"); break;
@@ -260,7 +261,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 void meta_new2old(meta_parameters *meta)
 {
 /* Fill geo_parameters structure */
-	meta->geo->type        = meta->sar->proj_type;
+	meta->geo->type        = meta->sar->image_type;
 	/* Projection structure is the same for both old and new */
 	meta->geo->proj        = meta->projection;
 	meta->geo->lookDir     = meta->sar->look_direction;
@@ -317,7 +318,7 @@ void meta_new2old(meta_parameters *meta)
 	meta->stVec      = meta->state_vectors;
 
 /* Calculated values for the old structure */
-	if (meta->sar->proj_type!='P') /*Image not map projected-- compute look angle to beam center*/
+	if (meta->sar->image_type!='P') /*Image not map projected-- compute look angle to beam center*/
 		meta->ifm->lookCenter = meta_look(meta, 0, meta->ifm->orig_nSamples/2);
 	else 
 	{/*Image *is* map projected-- compute earth's eccentricity*/
