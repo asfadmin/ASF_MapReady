@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 		readCeosLine(ibuff,y,fpIn);
 
 		/*Convert data.*/
-		if (strcmp(fpIn->meta->general->data_type,"BYTE")==0)
+		if (fpIn->meta->general->data_type == BYTE)
 		{/*For byte data, we have a special case*/
 			for (x = 0; x < ns; x++)
 				obuff_char[x]=(unsigned char)ibuff[x];
