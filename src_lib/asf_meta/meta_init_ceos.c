@@ -28,6 +28,7 @@ int has_mpdr(const char *leader_name);
 void ceos_init(const char *in_fName,meta_parameters *meta)
 {
 	char fName[255],fac[50],sys[50],ver[50];
+	char frame_temp[33];
 	ceos_description *ceos;
 	int dataSize;		    /* Number of bytes per image pixel.*/
 
@@ -61,17 +62,16 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	    case 4:  meta->general->data_type = INTEGER32; break;
 	    default: meta->general->data_type = BYTE;      break;
 	}
-#if defined(big_ieee)
-	strcpy(meta->general->system,     "big_ieee");
-#elif defined(lil_ieee)
-	strcpy(meta->general->system,     "lil_ieee");
-#elif defined(cray_float)
-	strcpy(meta->general->system,     "cray_float");
-#else
-	strcpy(meta->general->system,     "???");
-#endif
+	strcpy(meta->general->system, meta_get_system());
 	meta->general->orbit            = atoi(dssr.revolution);
-/**/	meta->general->frame            = 0; /*TEMPORARY SETTING, WILL EVENTUALLY CACLUATE FROM CENTER LAT*/
+	/* Fill frame with the number after "FRAME=" in the scene_des
+	 * Which should be formated ORBIT=xxxx-FRAME=xxxx */
+	strcpy(frame_temp, dssr.scene_des);
+	if (frame_temp[0] == 'O') {
+		strtok(frame_temp,"=");
+		strtok(NULL,"=");
+		meta->general->frame    = atoi (strtok(NULL,"="));
+	}
 	meta->general->band_number      = 0;
 	meta->general->orbit_direction  = dssr.asc_des[0];
 	meta->general->line_count       = iof.numofrec;
@@ -92,15 +92,15 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	else if (ceos->product==LOW_REZ
 	       || ceos->product==HI_REZ) { meta->sar->image_type = 'G'; }
 	meta->sar->look_direction = (dssr.clock_ang>=0.0) ? 'R' : 'L';
-/**/	meta->sar->deskewed = -999999999;
+/*	meta->sar->deskewed = gotten in meta_init_asf */
     {	struct data_hist_rec pdhr;
 	strcpy(fName,in_fName);
 	if ( get_dhr(fName, &pdhr) != -1 ) {
 	    meta->sar->original_line_count   = (pdhr.data)->ns_lin;
 	    meta->sar->original_sample_count = (pdhr.data)->ns_pix;
 	}
-/**/}	meta->sar->line_increment   = 1.0; /* There is probably a better way to set this */
-/**/	meta->sar->sample_increment = 1.0; /* There is probably a better way to set this */
+    }	meta->sar->line_increment   = 1.0;
+	meta->sar->sample_increment = 1.0;
 	meta->sar->range_time_per_pixel   = dssr.n_rnglok
 		/ (dssr.rng_samp_rate * get_units(dssr.rng_samp_rate,EXPECTED_FS));
 	meta->sar->azimuth_time_per_pixel = dssr.n_azilok/dssr.prf;
