@@ -217,8 +217,8 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 /* Info from ddr */
 	c_getddr(ddrName, &ddr);
 	strcpy( general->system,  ddr.system);
-	general->start_line     = ddr.master_line;
-	general->start_sample   = ddr.master_sample;
+	general->start_line     = ddr.master_line - 1;
+	general->start_sample   = ddr.master_sample - 1;
 	if (sar->image_type=='P')
 		{strcpy(meta->projection->units, ddr.proj_units);}
 	switch ( ddr.dtype ) {
