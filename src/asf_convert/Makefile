@@ -13,7 +13,7 @@ all:    asf_convert clean
 
 asf_convert: $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o asf_convert $(OBJS) $(LIBS)
-	mv asf_convert $(BINDIR)
+	mv asf_convert$(BIN_POSTFIX) $(BINDIR)
 #	cp asf_convert.1 ../../man/cat1
 
 clean:
