@@ -44,7 +44,8 @@ typedef struct
 /* For initializing variables of type matched_subexps_t.  */
 #define MATCHED_SUBEXPS_INITIALIZER {0, 0, NULL}
 
-/* Perform extended regular expression match of 'string' against 'regex'.  */
+/* Perform extended regular expression match of 'string' against
+   'regex'.  Returns one if the match succeeds, zero otherwise.  */
 int regex_match(matched_subexps_t *msubs, const char *string, 
 		const char *regex);
 
