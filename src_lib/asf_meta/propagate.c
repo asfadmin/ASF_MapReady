@@ -63,12 +63,11 @@ cartesian_to_keplerian (cartesian_orbit_t *co_in, keplerian_orbit_t *ko,
   double  a, u, r, v, es, ec, e, E, M_deg, V2, H, i, i_deg;
   double  w_deg, cu, su, somega, comega, omega;
   double  pi, mu;
-  
-  pi = M_PI;
-  mu = 3.9860045e+5;
-
   double rx = co_in->x, ry = co_in->y, rz = co_in->z;
   double vx = co_in->vx, vy = co_in->vy, vz = co_in->vz;
+
+  pi = M_PI;
+  mu = 3.9860045e+5;
 
   /* determine semi major axis 'a' */
   r = sqrt ((rx * rx) + (ry * ry) + (rz * rz));
@@ -161,6 +160,7 @@ keplerian_to_cartesian (keplerian_orbit_t *ko, double ea,
 			cartesian_orbit_t *co) 
 {
   double td[8];
+  double radius;
 
   td[0]=cos(ko->cap_omega)*cos(ko->omega)-sin(ko->cap_omega)*sin(ko->omega)
     *cos(ko->i);
@@ -175,7 +175,7 @@ keplerian_to_cartesian (keplerian_orbit_t *ko, double ea,
   td[6]=sqrt(1 - pow(ko->e, 2)) * ko->a;
   td[7]=sqrt(GM / pow(ko->a, 3));
 
-  double radius = ko->a * (1 - ko->e * cos(ea));
+  radius = ko->a * (1 - ko->e * cos(ea));
 
   co->x = ko->a * td[0] * (cos(ea) - ko->e) + td[6] * td[3] * sin(ea);
   co->y = ko->a * td[1] * (cos(ea) - ko->e) + td[6] * td[4] * sin(ea);
@@ -194,15 +194,15 @@ derivatives (double cjt, cartesian_orbit_t *co, orbit_derivatives_t *od)
   double r2 = pow (co->x, 2) + pow (co->y, 2) + pow (co->z, 2);
   double r1 = sqrt (r2);
   double r3 = r1 * r2;
-  od->dx = co->vx;
-  od->dy = co->vy;
-  od->dz = co->vz;
-
   static const double j2 = 0.0010826271;
   static const double re = 6378.140;
   double r5 = r2 * r3;
   double d1 = -1.5 * j2 * re * re * GM / r5;
   double d2 = 1 - 5.0 * co->z * co->z / r2;
+
+  od->dx = co->vx;
+  od->dy = co->vy;
+  od->dz = co->vz;
 
   od->dvx = co->x * d1 * d2 - (GM * co->x / r3);
   od->dvy = co->y * d1 * d2 - (GM * co->y / r3);
@@ -221,12 +221,23 @@ runge_kutta (cartesian_orbit_t *co, double *t, double tout)
   static double beta[12][13];
   static const int dim_1 = 13;
   static const int dim_2 = 12;
+  static const double fact = 0.7;
+  static const double small = 1.0e-8;
+  static const double h = 60.0;	/* Initial step size guess.  */
+  static const double sp = 1e99;
+  double x[SYSTEM_SIZE];	/* To be returned in co.  */
+  int idx;      
+  double sdt;
+  double dt;
+  double spp;
+  double tpr;
+
 
   if ( ch == NULL ) {
+    int idx, idx2;
     ch = calloc (dim_1, sizeof (double));
     alpha = calloc (dim_1, sizeof (double));
 
-    int idx, idx2;
     for ( idx = 0 ; idx < dim_2 ; idx++ ) {
       for ( idx2 = 0 ; idx2 < dim_1 ; idx2++ ) {
 	beta[idx][idx2] = 0.0;
@@ -308,29 +319,27 @@ runge_kutta (cartesian_orbit_t *co, double *t, double tout)
     beta[11][12] = 1.0;
   }
 
-  static const double fact = 0.7;
-  static const double small = 1.0e-8;
-  static const double h = 60.0;	/* Initial step size guess.  */
-  static const double sp = 1e99;
-  double x[SYSTEM_SIZE];	/* To be returned in co.  */
-  int idx;      
-
   /* Initialization. */
-  double sdt = tout - *t >= 0 ? 1 : -1;
-  double dt = fabs(h) * sdt;
-  double spp = fabs(sp) * sdt;
-  double tpr = *t;
+  sdt = tout - *t >= 0 ? 1 : -1;
+  dt = fabs(h) * sdt;
+  spp = fabs(sp) * sdt;
+  tpr = *t;
   for ( idx = 0 ; idx < SYSTEM_SIZE ; idx++ ) {
     x[idx] = ((double *) co)[idx];
   }
 
   do {
     double t_dummy = *t;
-
-    tpr += spp;
-    
     double x_dummy[SYSTEM_SIZE];
     double f[13][SYSTEM_SIZE];
+    static const int ntimes = 13;
+    static const double relative_err = 1e-12;
+    static const double absolute_err = 1e-12;
+    int kk, ii, jj;		/* Loop indicies.  */
+    double err;
+    static const double order_cp = 0.125;
+
+    tpr += spp;
     
     for ( idx = 0 ; idx < SYSTEM_SIZE ; idx++ ) {
       x_dummy[idx] = x[idx];
@@ -346,11 +355,6 @@ runge_kutta (cartesian_orbit_t *co, double *t, double tout)
     
     derivatives (*t, (cartesian_orbit_t *) x, (orbit_derivatives_t *) (f[0]));
     
-    static const int ntimes = 13;
-    static const double relative_err = 1e-12;
-    static const double absolute_err = 1e-12;
-    
-    int kk, ii, jj;		/* Loop indicies.  */
     for ( kk = 1 ; kk < ntimes ; kk++ ) {
       int kk_max = kk;
       for ( ii = 0 ; ii < SYSTEM_SIZE ; ii++ ) {
@@ -374,7 +378,7 @@ runge_kutta (cartesian_orbit_t *co, double *t, double tout)
       x[ii] = x_dummy[ii] + dt * temp;
     }
     
-    double err = relative_err;
+    err = relative_err;
     for ( ii = 0 ; ii < SYSTEM_SIZE ; ii++ ) {
       double ter = fabs ((f[0][ii] + f[10][ii] - f[11][ii] 
 			  - f[12][ii]) * ch[11] * dt);
@@ -385,7 +389,6 @@ runge_kutta (cartesian_orbit_t *co, double *t, double tout)
       }
     }
     
-    static const double order_cp = 0.125;
     dt = fact * dt * pow ((1 / err), order_cp);
     
     if ( err > 1.0 ) {
@@ -407,18 +410,26 @@ runge_kutta (cartesian_orbit_t *co, double *t, double tout)
 stateVector propagate(stateVector source,double sourceSec,double destSec)
 {
 	stateVector ret;
+	cartesian_orbit_t co[1];
+	keplerian_orbit_t ko[1];
+	double mean_anomaly;
+	static const double d2r = M_PI / 180.0;
+	double ecc_anomaly;
+	double t_step;
+	double t_current;
+	double t_next;
 
 	/* Convert input state vector to inertial coordinates.  */
 	fixed2gei(&source,sec2gha(sourceSec));
 
 	/* Recompute the cartesian elements, replacing the mean
            anomaly with the eccentric anomaly.  */
-	cartesian_orbit_t co[1] 
-	  = {{ source.pos.x, source.pos.y, 
-	       source.pos.z, source.vel.x / 1000.0, 
-	       source.vel.y / 1000.0, source.vel.z / 1000.0 }};
-	keplerian_orbit_t ko[1];
-	double mean_anomaly;
+	co->x  = source.pos.x;
+	co->y  = source.pos.y;
+	co->z  = source.pos.z;
+	co->vx = source.vel.x / 1000.0;
+	co->vy = source.vel.y / 1000.0;
+	co->vz = source.vel.z / 1000.0;
 
 	/* Convert cartesian coordinates to Keplerian elements. */
 	cartesian_to_keplerian (co, ko, &mean_anomaly);
@@ -427,21 +438,19 @@ stateVector propagate(stateVector source,double sourceSec,double destSec)
 	co->z /= 1000;
 
 	/* Convert to radians.  */
-	static const double d2r = M_PI / 180.0;
 	ko->i *= d2r;
 	ko->cap_omega *= d2r;
 	ko->omega *= d2r;
 	mean_anomaly *= d2r;
 
 	/* Calculate eccentric anomaly using the Kepler equation. */
-	double ecc_anomaly = kepler_equation (mean_anomaly, ko->e);
+	ecc_anomaly = kepler_equation (mean_anomaly, ko->e);
 
 	/* Convert Keplerian elements to cartesian coordinates. */
 	keplerian_to_cartesian (ko, ecc_anomaly, co);
 
-	double t_step = destSec - sourceSec;
-	double t_current = sourceSec;
-	double t_next;
+	t_step = destSec - sourceSec;
+	t_current = sourceSec;
 	do {
 	  t_next = t_current + t_step;
 
