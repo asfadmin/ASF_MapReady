@@ -19,6 +19,8 @@ PROGRAM HISTORY:
 #include "dateUtil.h"
 
 
+meta_state_vectors *meta_state_vectors_init(int vector_count);
+
 /*********************************************************************
  * Convert the given platform position data record & time since ppdr
  * start into a GHA, in degrees.  Note that this is only called if the
@@ -100,7 +102,7 @@ void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 	get_ppdr(fName,&ppdr);
 	
 /*Allocate output record.*/
-	meta->state_vectors->vecs=(state_loc *)MALLOC(ppdr.ndata * sizeof(state_loc));
+	meta->state_vectors = meta_state_vectors_init(ppdr.ndata);
 	meta->state_vectors->vector_count = ppdr.ndata;
 	s = meta->state_vectors;
 
