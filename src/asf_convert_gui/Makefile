@@ -63,7 +63,7 @@ LDLIBS = $(LIBDIR)/asf_meta.a \
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 
-default: $(OBJS)
+default: $(OBJS) doc
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(BINDIR)
