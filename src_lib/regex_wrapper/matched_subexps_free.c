@@ -19,7 +19,9 @@ void matched_subexps_free(matched_subexps_t *msubs)
 
   if ( msubs->subexp_strings == NULL ) { /* If the match failed...  */
     /* Nothing to free, so reset structure and return.  */
-    *msubs = (matched_subexps_t) MATCHED_SUBEXPS_INITIALIZER;
+    matched_subexps_t tmp = MATCHED_SUBEXPS_INITIALIZER;
+    *msubs = tmp;
+     
     return;
   }
   
@@ -30,6 +32,9 @@ void matched_subexps_free(matched_subexps_t *msubs)
   /* Free the array of strings itself.  */
   free(msubs->subexp_strings);
   
-  /* Reset structure.  */
-  *msubs = (matched_subexps_t) MATCHED_SUBEXPS_INITIALIZER;
+  {
+    /* Reset structure.  */
+    matched_subexps_t tmp = MATCHED_SUBEXPS_INITIALIZER;
+    *msubs = tmp;
+  }
 }
