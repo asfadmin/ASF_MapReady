@@ -15,7 +15,7 @@ install_gsl: build_gsl_stamp
 	cp -r ./stage_dir/include/gsl $(ASF_INCLUDE_DIR)
 
 # Build the GSL from its tarball and install it in a staging directory.
-build_gsl: $(TARBALL)
+build_gsl_stamp: $(TARBALL)
 	tar xzvf $(TARBALL)
 	cd $(UNPACK_DIR) ; ./configure --prefix=`pwd`/../stage_dir ; \
 			   make ; \
