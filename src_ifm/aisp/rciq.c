@@ -1,34 +1,22 @@
 /****************************************************************************
 *								            *
 *   rciq.c --  Performs range compression using I,Q data      		    *
-*   Copyright (C) 1997  Alaska SAR Facility		   	    	    *
-*									    *
-*   This program is free software; you can redistribute it and/or modify    *
-*   it under the terms of the GNU General Public License as published by    *
-*   the Free Software Foundation; either version 2 of the License, or       *
-*   (at your option) any later version.					    *
-*									    *
-*   This program is distributed in the hope that it will be useful,	    *
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
-*   GNU General Public License for more details.  (See the file LICENSE     *
-*   included in the asf_tools/ directory).				    *
-*									    *
-*   You should have received a copy of the GNU General Public License       *
-*   along with this program; if not, write to the Free Software		    *
-*   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
-*									    *
-*   ASF APD Contacts:							    *
-*	Rick Guritz				rguritz@asf.alaska.edu   *
-*	Tom Logan				tlogan@asf.alaska.edu    *
-* 									    *
-*	Alaska SAR Facility			ASF APD Web Site:	    *	
-*	Geophysical Institute			www.asf.alaska.edu	    *
-*       University of Alaska Fairbanks					    *
-*	P.O. Box 757320							    *
-*	Fairbanks, AK 99775-7320					    *
-*									    *
-****************************************************************************/
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* You should have received an ASF SOFTWARE License Agreement with this source *
+* code. Please consult this agreement for license grant information.          *
+*                                                                             *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*	Alaska Satellite Facility	    	                              *
+*	Geophysical Institute			www.asf.alaska.edu            *
+*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
+*	P.O. Box 757320							      *
+*	Fairbanks, AK 99775-7320					      *
+*									      *
+******************************************************************************/
 /****************************************************************
 FUNCTION NAME: rciq - Read a patch from file
 
