@@ -15,7 +15,7 @@ void check_parameters(projection_type_t projection_type,
 void check_parameters(projection_type_t projection_type, 
 		      project_parameters_t *pp, meta_parameters *meta)
 {
-  double lat, lon;
+  double lat, lon, min_lat, max_lat;
   int zone, min_zone=60, max_zone=1;
 
   switch (projection_type)
@@ -131,9 +131,24 @@ void check_parameters(projection_type_t projection_type,
 	asfPrintError("Latitude of origin '%.4f' outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->albers.orig_latitude);
 
-      // This projection should be used for predominantly East-West oriented
-      // areas. The latitude range should not exceed 30 to 35 degrees. These
-      // restrictions do not really apply to geocoding regular radar imagery.
+      // Distortion test - only areas with a latitude not more than 30 degrees
+      // outside the latitude range defined by first and second parallel are
+      // permitted.
+      if (pp->albers.std_parallel1 < pp->albers.std_parallel2) {
+	min_lat = pp->albers.std_parallel1 - 30.0;
+	max_lat = pp->albers.std_parallel2 + 30.0;
+      }
+      else {
+	min_lat = pp->albers.std_parallel2 - 30.0;
+	max_lat = pp->albers.std_parallel1 + 30.0;
+      }
+      if (meta->general->center_latitude > max_lat ||
+	  meta->general->center_latitude < min_lat)
+	asfPrintError("Geocoding of areas with latitudes outside the defined range "
+		      "(%.1f deg %.1f deg) in the Albers Equal Area projection with "
+		      "the standard parallels (first: %.1f and second: %.1f ) is "
+		      "not supported by this tool.\n", min_lat, max_lat,
+		      pp->albers.std_parallel1, pp->albers.std_parallel2);
 
       break;
 
@@ -159,6 +174,25 @@ void check_parameters(projection_type_t projection_type,
 	asfPrintError("Latitude of origin '%.4f' outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->lamcc.lat0);
     
+      // Distortion test - only areas with a latitude not more than 30 degrees
+      // outside the latitude range defined by first and second parallel are
+      // permitted.
+      if (pp->lamcc.plat1 < pp->lamcc.plat2) {
+	min_lat = pp->lamcc.plat1 - 30.0;
+	max_lat = pp->lamcc.plat2 + 30.0;
+      }
+      else {
+	min_lat = pp->lamcc.plat2 - 30.0;
+	max_lat = pp->lamcc.plat1 + 30.0;
+      }
+      if (meta->general->center_latitude > max_lat ||
+	  meta->general->center_latitude < min_lat)
+	asfPrintError("Geocoding of areas with latitudes outside the defined range "
+		      "(%.1f deg %.1f deg) in the Lambert Conformal Conic "
+		      "projection with the standard parallels (first: %.1f and "
+		      "second: %.1f ) is not supported by this tool.\n", min_lat, 
+		      max_lat, pp->lamcc.plat1, pp->lamcc.plat2);
+
       break;
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
       // Debugging print
