@@ -20,15 +20,25 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "offset_test"
 
 #define ASF_USAGE_STRING \
-"<file1> <file2> <out>"
+"<file1> <file2> <out>\n"\
+"\n"\
+"Additional option: -help"
 
-#define ASF_DESCRIPTION_STRING #define ASF_INPUT_STRING \
-"The basenames of two data files that are to be compared."
+#define ASF_DESCRIPTION_STRING \
+"Offset_test is verifying that two images have no offset relative to \n"\
+"each other. This is achieved by matching small image chips defined \n"\
+"on a regular grid. If no offset can be determined between the two \n"\
+"images, it is assumed that changes in the implementation of a \n"\
+"particular tool did not affect the geometry or geolocation of the \n"\
+"image."
+
+#define ASF_INPUT_STRING \
+"<file1> <file2>\n"\
+"The two images to be compared."
 
 #define ASF_OUTPUT_STRING \
-"File containing the measured offsets and a level of doubt for these\n"\
-"offsets calculated for a regular grid of 20x20 image chips. The level\n"\
-"of doubt is calculated by the largest neighbor value over the maximum peak."
+"<out>\n"\
+"Text file reporting the individual correlations."
 
 #define ASF_OPTIONS_STRING \
 "None."
@@ -38,6 +48,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_LIMITATIONS_STRING \
 "None known."
+
+#define ASF_SEE_ALSO_STRING \
+"image_stats, detect_cr"
 
 #define ASF_COPYRIGHT_STRING \
 "Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks\n"\
@@ -89,15 +102,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "fft.h"
 #include "fft2d.h"
 #include "ifm.h"
-
-#define borderX 80	/* Distances from edge of image to start correlating.*/
-#define borderY 80
-#define maxDisp 1.8	/* Forward and reverse correlations which differ 
-			   by more than this will be deleted.*/
-#define maxDxDy 1.0     /* Maximum allowed difference before point is 
-			   reported as moved */
-#define minSNR 0.3
-#define VERSION 1.0
+#include "offset_test.h"
 
 /*Read-only, informational globals:*/
 int lines, samples;		/* Lines and samples of source images. */
@@ -110,8 +115,6 @@ float xMEP=4.1,yMEP=6.1;     /*Maximum Error Pixel values.*/
 complexFloat cZero;
 
 /*Function declarations */
-void usage(char *name);
-
 bool getNextPoint(int *x1,int *y1,int *x2,int *y2);
 
 void topOffPeak(float *peaks, int i, int j, int maxI, float *di, float *dj);
@@ -125,21 +128,111 @@ void getPeak(int x1,int y1,char *szImg1,int x2,int y2,char *szImg2,
 	     float *peakX,float *peakY, float *snr);
 bool outOfBounds(int x1, int y1, int srcSize);
 
+/* usage - enter here on command-line usage error*/
+void usage(void)
+{
+  printf("\n"
+         "USAGE:\n"
+         ASF_NAME_STRING
+         " "
+         ASF_USAGE_STRING
+         "\n\n");
+  exit (EXIT_FAILURE);
+}
+
+/* help_page - go here when the -help option is specified */
+void help_page()
+{
+  if(system("echo '"
+            "\n\n\n"
+            "Tool name:\n" ASF_NAME_STRING "\n\n\n"
+            "Usage:\n" ASF_USAGE_STRING "\n\n\n"
+            "Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
+            "Input:\n" ASF_INPUT_STRING "\n\n\n"
+            "Output:\n"ASF_OUTPUT_STRING "\n\n\n"
+            "Options:\n" ASF_OPTIONS_STRING "\n\n\n"
+            "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
+            "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
+            "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
+            "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
+            "Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
+            "' | less") != -1)
+    exit(EXIT_SUCCESS);
+  
+  else if(system("echo '"
+                 "\n\n\n"
+                 "Tool name:\n" ASF_NAME_STRING "\n\n\n"
+                 "Usage:\n" ASF_USAGE_STRING "\n\n\n"
+                 "Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
+                 "Input:\n" ASF_INPUT_STRING "\n\n\n"
+                 "Output:\n"ASF_OUTPUT_STRING "\n\n\n"
+                 "Options:\n" ASF_OPTIONS_STRING "\n\n\n"
+                 "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
+                 "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
+                 "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
+                 "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
+                 "Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
+                 "' | more") != -1)
+    exit(EXIT_SUCCESS);
+  
+  else
+    printf("\n\n\n"
+           "Tool name:\n" ASF_NAME_STRING "\n\n\n"
+           "Usage:\n" ASF_USAGE_STRING "\n\n\n"
+           "Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
+           "Input:\n" ASF_INPUT_STRING "\n\n\n"
+           "Output:\n"ASF_OUTPUT_STRING "\n\n\n"
+           "Options:\n" ASF_OPTIONS_STRING "\n\n\n"
+           "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
+           "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
+           "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
+           "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
+           "Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n");
+  exit(EXIT_SUCCESS);
+}
+
+
 /* Start of main progam */
 int main(int argc, char *argv[])
 {
   char szOut[255], szImg1[255], szImg2[255];
-  int x1, x2, y1, y2;
+  int x1, x2, y1, y2, ii;
   int goodPoints=0, attemptedPoints=0;
   FILE *fp_output;
   meta_parameters *masterMeta, *slaveMeta;
   int ampFlag=TRUE;
   
-  /* Check command line args */
-  if (argc < 3) usage(argv[0]);
-  strcpy(szImg1,argv[1]);
-  strcpy(szImg2,argv[2]);
-  strcpy(szOut,argv[3]);
+  flag_indices_t flags[NUM_FLAGS];
+
+  /* Set all flags to 'not set' */
+  for (ii=0; ii<NUM_FLAGS; ii++) {
+    flags[ii] = FLAG_NOT_SET;
+  }
+  
+/**********************BEGIN COMMAND LINE PARSING STUFF**********************/
+  /* Check to see if any options were provided */
+  if (checkForOption("-help", argc, argv) != -1) /* Most important */
+    help_page();
+
+  /* Make sure to set log & quiet flags (for use in our libraries) */
+  logflag = (flags[f_LOG]!=FLAG_NOT_SET) ? TRUE : FALSE;
+  quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
+
+  if (flags[f_QUIET] == FLAG_NOT_SET)
+    /* display splash screen if not quiet */
+    print_splash_screen(argc, argv);
+  if (flags[f_LOG] != FLAG_NOT_SET)
+    strcpy(logFile, argv[flags[f_LOG] + 1]);
+  else
+    /* default behavior: log to tmp<pid>.log */
+    sprintf(logFile, "tmp%i.log", (int)getpid());
+  fLog = FOPEN(logFile, "a");
+
+  /* Fetch required arguments */
+  strcpy(szImg1,argv[argc - 3]);
+  strcpy(szImg2,argv[argc - 2]);
+  strcpy(szOut, argv[argc - 1]);
+/***********************END COMMAND LINE PARSING STUFF***********************/
 
   /* Read metadata */
   masterMeta = meta_read(szImg1);
@@ -230,22 +323,6 @@ int main(int argc, char *argv[])
   return(0);
 }
 
-void usage(char *name)
-{
-  printf("\noffset_test:\n\n");
-  printf("usage:\n   offset_test <file1> <file2> <out>\n\n");
-  printf("\t<file1> and <file2> are the data file names of two images\n");
-  printf("\t<out> is the output file for reporting individual correlations\n");
-  printf("\n"
-	 "Offset_test is verifying that two images have no offset relative to \n"
-	 "each other. This is achieved by matching small image chips defined \n"
-	 "on a regular grid. If no offset can be determined between the two \n"
-	 "images, it is assumed that changes in the implementation of a \n"
-	 "particular tool did not affect the geometry or geolocation of the \n"
-	 "image.\n\n");
-  printf("Version: %.2f, ASF SAR Tools\n",VERSION);
-  exit(EXIT_FAILURE);
-}
 
 bool outOfBounds(int x1, int y1, int srcSize)
 {

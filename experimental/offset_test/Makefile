@@ -13,7 +13,8 @@ LIBS  = $(LIBDIR)/asf.a \
 	-lm
 
 OBJS  = offset_test.o \
-	fft_corr.o
+	fft_corr.o \
+	utilities.o
 
 all: offset_test clean
 
