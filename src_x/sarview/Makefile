@@ -5,9 +5,8 @@
 
 include ../../make_support/system_rules
 
-LIBDIR = ../../lib/$(SYS)
-SV_CFLAGS = -I$(LIBDIR)/tcltk81/include $(CFLAGS)
-SV_LDFLAGS = -L$(LIBDIR) -L$(LIBDIR)/tcltk81/lib $(LDFLAGS)
+CFLAGS := -I$(LIBDIR)/tcltk81/include $(CFLAGS)
+LDFLAGS := -L$(LIBDIR) -L$(LIBDIR)/tcltk81/lib $(LDFLAGS)
 
  # ldl, lsocket, and lnsl are necessary for Solaris, but break sarview on irix
 OTHER = -ldl -lsocket -lnsl
@@ -16,7 +15,8 @@ LIBS =	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/libjpeg.a \
-	-ltcl8.1 -ltk8.1 -lX11 -lm
+	-ltcl8.1 -ltk8.1 \
+	-lX11 -lm
 
 OBJS = \
 	cproc.o cproc_desc.o cproc_hist.o \
@@ -27,16 +27,18 @@ OBJS = \
 	tkAppInit.o tkCommand.o
 
 all: tcltk sarview
-	rm *.o
 
 tcltk:
 	./make_tcltk.sh
 
 # if system is solaris include extra libraries; test looks wrong, but it's right
 sarview: $(OBJS)
-	test $(SYS) != solaris || $(CC) $(SV_CFLAGS) $(SV_LDFLAGS) -o sarview_bin $(OBJS) $(LIBS) $(OTHER)
-	test $(SYS) = solaris || $(CC) $(SV_CFLAGS) $(SV_LDFLAGS) -o sarview_bin $(OBJS) $(LIBS)
+	test $(SYS) != solaris || $(CC) $(CFLAGS) $(LDFLAGS) -o sarview_bin $(OBJS) $(LIBS) $(OTHER)
+	test $(SYS) = solaris || $(CC) $(CFLAGS) $(LDFLAGS) -o sarview_bin $(OBJS) $(LIBS)
 	mv sarview_bin ../../bin/$(SYS)/sarview_bin
 	cp sarview.sh ../../bin/$(SYS)/sarview
 	-rm -r ../../bin/$(SYS)/support
 	-cp -r ./support ../../bin/$(SYS)/
+
+clean:
+	rm -f $(OBJS)
