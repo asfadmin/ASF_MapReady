@@ -1,6 +1,6 @@
 Thank you for trying the ASF convert utility's graphical user interface.
 
-This is version: 1.0.0 - RC1.
+This is version: $VERSION
 
 Overview
 ========

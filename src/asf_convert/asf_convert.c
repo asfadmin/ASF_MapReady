@@ -111,10 +111,12 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "    0.5     06/04   R. Gens   Renamed to asf_convert, added alternative\n"\
 "                              command line"
 
+/*
 #define ASF_VERSION_MAJOR_STRING \
 "   0.30"
 
 #define VERSION 0.3
+*/
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
@@ -170,7 +172,7 @@ void help_page()
           "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
           "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
           "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
-          "Version:\n" ASF_VERSION_MAJOR_STRING "\n\n\n"
+          "Version:\n" CONVERT_PACKAGE_VERSION_STRING "\n\n\n"
           "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n");
 
   /* If we can, use less */

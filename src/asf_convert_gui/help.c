@@ -1,4 +1,5 @@
 #include "asf_convert_gui.h"
+#include "asf_version.h"
 
 const int max_line_len = 2048;
 
@@ -32,6 +33,17 @@ on_help_button_clicked(GtkWidget *widget)
       if (p)
       {
         GtkTextIter end;
+	gchar * q = strstr(buffer, "$VERSION");
+	
+	if (q)
+	{
+	  gchar * r = g_strdup(q + 8); /* 8 = length of '$VERSION' */
+	  
+	  strcpy(q, CONVERT_PACKAGE_VERSION_STRING);
+	  strcat(buffer, r);
+	  g_free(r);
+	}
+
         gtk_text_buffer_get_end_iter(text_buffer, &end);
         gtk_text_buffer_insert(text_buffer, &end, buffer, -1);
       }
