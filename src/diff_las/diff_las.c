@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 		printf("The number of samples is different.\n");
 		exit(EXIT_FAILURE);
 	}
-	if (strncmp(meta1->general->data_type, meta2->general->data_type,FIELD_STRING_MAX)!=0) {
+	if (meta1->general->data_type != meta2->general->data_type) {
 		printf("The data types are different.\n");
 		exit(EXIT_FAILURE);
 	}
@@ -141,8 +141,9 @@ int main(int argc, char **argv)
 	if (diff_file_name)
 	{
 		diff_meta = meta_copy(meta1);
-		if (strncmp(diff_meta->general->data_type, "BYTE", FIELD_STRING_MAX) == 0)
-			strncpy (diff_meta->general->data_type, "INTEGER*2", FIELD_STRING_MAX);
+		if (diff_meta->general->data_type == BYTE) {
+			diff_meta->general->data_type == INTEGER16;
+		}
 		diff_fp = fopenImage(diff_file_name,"wb");
 		meta_write(diff_meta, diff_file_name);
 	}
@@ -198,14 +199,17 @@ int main(int argc, char **argv)
 		}
 		if (diff_fp)
 			put_float_line(diff_fp,diff_meta,yy,diff_line_buf);
-		if (yy%100==0)
+		if (yy%100==0) {
 			printf("\tComparing line %i...\r",yy);
+			fflush(NULL);
+		}
 	}
 	printf("\tCompared %i lines.     \n", yy);
 
 /* If files differ enough, write out histogram and other stats for user */
 	if (histogram[hist_bins/2]/npixels<0.995)
 	{
+		printf("\n");
 		printf("Files differ by more than 0.5%%!\n");
 		printf("Relative Error Histogram:\n Diff:  Frequency:\n");
 		for (xx=0;xx<=hist_bins;xx++)
@@ -231,6 +235,7 @@ int main(int argc, char **argv)
 			printf(" Pixels ignored: %d\n",ignored_pix_cnt);
 			printf(" Actual pixels in each image: %d\n",(int)npixels);
 		}
+		printf("\n");
 	}
 /* Clean up allocated memory */
 	meta_free(meta1);
@@ -242,7 +247,6 @@ int main(int argc, char **argv)
 		FCLOSE(diff_fp);
 	}
 
-	printf("\n");
 	return(0);
 }
 
