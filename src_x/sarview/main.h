@@ -9,14 +9,6 @@
 /*Global Tcl Interpreter*/
 extern Tcl_Interp *interp;
 
-/*Figure out the directory separator*/
-#ifdef WIN32
-# define DIRSEP '\\'
-#else
-# define DIRSEP '/'
-#endif
-
-
 /*********The Histogram interface (histo.c) ****/
 typedef struct {
 	int nBins;		/*Number of bins in histogram*/
@@ -36,7 +28,7 @@ histogram *createHist(int nBins,double min,double max);
 void addToHist(histogram *h,float *vals,int nVals);
 
 /*Compute the trimmed max & min values.
-minDex & maxDex whould be the image minimum and maximum if we removed 
+minDex & maxDex whould be the image minimum and maximum if we removed
 the trimFraction smallest and trimFraction largest pixels.*/
 void trimMaxMin(const histogram *h,double trimFraction,double *Tmin,double *Tmax);
 
@@ -82,7 +74,7 @@ polygon *newPoly(void);/*Read polygon from TCL link_poly_x & y lists*/
 /*Return a bounding box for the given polygon*/
 void polyBounds(polygon *p,int *minX,int *maxX,int *minY,int *maxY);
 
-void rasterizePoly(polygon *p,int height);/*Find 
+void rasterizePoly(polygon *p,int height);/*Find
 	intersections of polygon with all scanlines*/
 
 int scanPoly(polygon *p,int yLine,int width,int spanNo,int *min,int *max);/*Find
@@ -92,7 +84,7 @@ void deletePoly(polygon *p);
 
 /*********************************************
 Selection routines (sel.c)
-These return the "current selection", which is composed of the 
+These return the "current selection", which is composed of the
 full-resolution pixels of the current image included in the current
 polygon, or all the image pixels if no polygon is selected.
 */
