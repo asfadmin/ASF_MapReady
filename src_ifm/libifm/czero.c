@@ -31,8 +31,8 @@ BUGS:
 ****************************************************************/
 #include "ifm.h"
 
-FComplex Czero() {
-  FComplex zero;
+complexFloat Czero() {
+  complexFloat zero;
 
   zero.real = 0.0;
   zero.imag = 0.0;

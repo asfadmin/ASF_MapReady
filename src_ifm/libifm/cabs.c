@@ -22,14 +22,14 @@ PROGRAM HISTORY:
 
 #include "ifm.h"
 
-float Cabs(FComplex a)
+float Cabs(complexFloat a)
 {
   double x;
   x = sqrt(a.real*a.real + a.imag*a.imag);
   return((float)x);
 }
 
-double Cabs_d(DComplex a)
+double Cabs_d(complexDouble a)
 {
   double x;
   x = sqrt(a.real*a.real + a.imag*a.imag);

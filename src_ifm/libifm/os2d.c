@@ -25,7 +25,11 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include "ifm.h"
 
-void os2d(FComplex *v, FComplex *vo, int dim, int os)
+/* Prototypes */
+void fft2d (complexFloat *array, int n, int direction);
+void zeroPad(complexFloat *vIn, complexFloat *vOut, int dim, int os);
+
+void os2d(complexFloat *v, complexFloat *vo, int dim, int os)
 {
   int i;
   int forward_fft =  1;

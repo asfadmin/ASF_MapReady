@@ -26,16 +26,19 @@ PROGRAM HISTORY:
    1.0 - Mike Shindle & Rob Fatland - original development
 ****************************************************************/
 #include "asf.h"
-
 #include "ifm.h"
 
-void oversamp2dCpx(FComplex *vin, FComplex *vout, int dim, int os)
+/* Prototype */
+void os2d(complexFloat *v, complexFloat *vo, int dim, int os);
+
+
+void oversamp2dCpx(complexFloat *vin, complexFloat *vout, int dim, int os)
 {
   int     vsize;
-  FComplex *vtmp;
+  complexFloat *vtmp;
 
   vsize = dim*dim;
-  vtmp  = (FComplex *)(MALLOC(vsize*sizeof(FComplex)));
+  vtmp  = (complexFloat *)(MALLOC(vsize*sizeof(complexFloat)));
   /* printf("oversamp2dCpx(): allocated memory\n"); */
   
   copyVector(vin, vtmp, COMPLEX, COMPLEX, vsize);

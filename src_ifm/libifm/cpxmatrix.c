@@ -2,28 +2,28 @@
 
 #include "ifm.h"
 
-FComplex **cpxmatrix(int nrl, int nrh, int ncl, int nch)
+complexFloat **cpxmatrix(int nrl, int nrh, int ncl, int nch)
 {
 	int i,nelem;
-	FComplex **m;
+	complexFloat **m;
 
 	nelem = nrh-nrl+1;
-	m=(FComplex **)MALLOC(nelem * sizeof(FComplex *));
+	m=(complexFloat **)MALLOC(nelem * sizeof(complexFloat *));
 	m -= nrl;
 
 	for(i=nrl;i<=nrh;i++) {
-		m[i]=(FComplex *)MALLOC((unsigned)(nch-ncl+1)*sizeof(FComplex));
+		m[i]=(complexFloat *)MALLOC((unsigned)(nch-ncl+1)*sizeof(complexFloat));
 		m[i] -= ncl;
 	}
 	return m;
 }
 
 void free_cpxmatrix(m,nrl,nrh,ncl,nch)
-FComplex **m;
+complexFloat **m;
 int nrl,nrh,ncl,nch;
 {
 	int i;
 
-	for(i=nrh;i>=nrl;i--) free((FComplex*) (m[i]+ncl));
-	free((FComplex**) (m+nrl));
+	for(i=nrh;i>=nrl;i--) free((complexFloat*) (m[i]+ncl));
+	free((complexFloat**) (m+nrl));
 }

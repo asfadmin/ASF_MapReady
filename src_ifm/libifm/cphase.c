@@ -22,7 +22,7 @@ PROGRAM HISTORY:
 
 #include "ifm.h"
 
-float Cphase(FComplex a)
+float Cphase(complexFloat a)
 {
   float real, imag;
 

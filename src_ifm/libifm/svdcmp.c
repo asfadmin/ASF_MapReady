@@ -4,16 +4,19 @@
 static float at,bt,ct;
 static float maxarg1,maxarg2;
 
+/* Macros */
 #define PYTHAG(a,b) ((at=fabs(a)) > (bt=fabs(b)) ? \
-(ct=bt/at,at*sqrt(1.0+ct*ct)) : (bt ? (ct=at/bt,bt*sqrt(1.0+ct*ct)): 0.0))
-
-
+	(ct=bt/at,at*sqrt(1.0+ct*ct)) : \
+	(bt ? (ct=at/bt,bt*sqrt(1.0+ct*ct)): 0.0))
 #define MAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ?\
 	(maxarg1) : (maxarg2))
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
 
-void 
-svdcmp(float **a, int m, int n, float *w, float **v)
+/* Prototype */
+void nrerror(char *fmt, ...);
+
+
+void svdcmp(float **a, int m, int n, float *w, float **v)
 {
   int flag,i,its,j,jj,k,l=0,nm=0;
   float c,f,h,s,x,y,z;

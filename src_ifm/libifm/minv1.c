@@ -18,14 +18,15 @@ PROGRAM HISTORY:
 
 ****************************************************************/
 #include "asf.h"
-
-
 #include "ifm.h"
 
 #ifdef EPSILON
 #undef EPSILON
 #endif
 #define EPSILON 1.3877787807814457e-17
+
+/* prototype */
+int fcpvec(float *from, float *to, int nitems);
 
 void minv1(float **a, int n)		/* find A[nn] = A[nn]^-1 */
 {

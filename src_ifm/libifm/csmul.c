@@ -1,12 +1,12 @@
 /****************************************************************
 FUNCTION NAME: Csmul
 
-SYNTAX: Complex Csmul(s,b);
+SYNTAX: complexFloat Csmul(s,b);
 
 PARAMETERS:
     NAME:	TYPE:		PURPOSE:
     --------------------------------------------------------
-    s           double           scalar value
+    s           double          scalar value
     b           Complex         multiplier
 
 DESCRIPTION:
@@ -22,17 +22,17 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "ifm.h"
 
-FComplex Csmul(float s, FComplex b)
+complexFloat Csmul(float s, complexFloat b)
 {
-  FComplex x;
+  complexFloat x;
   x.real = s * b.real;
   x.imag = s * b.imag;
   return x;
 }
 
-DComplex Csmul_d(double s, DComplex b)
+complexDouble Csmul_d(double s, complexDouble b)
 {
-  DComplex x;
+  complexDouble x;
   x.real = s * b.real;
   x.imag = s * b.imag;
   return x;

@@ -48,8 +48,8 @@ static fcomplex cwk[1];
 #define free_coeff(a,dim)   ( free_cpxmatrix(a,0,dim-1,0,dim-1) )
 
 void 
-imos2d(FComplex *v, 
-       FComplex *vo, 
+imos2d(complexFloat *v, 
+       complexFloat *vo, 
        int dim, 
        int os)
 {

@@ -24,17 +24,17 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "ifm.h"
 
-FComplex Cconj(FComplex a)
+complexFloat Cconj(complexFloat a)
 {
-  FComplex x;
+  complexFloat x;
   x.real = a.real;
   x.imag = -a.imag;
   return x;
 }
 
-DComplex Cconj_d(DComplex a)
+complexDouble Cconj_d(complexDouble a)
 {
-  DComplex x;
+  complexDouble x;
   x.real = a.real;
   x.imag = -a.imag;
   return(x);

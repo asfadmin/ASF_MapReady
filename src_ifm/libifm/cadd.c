@@ -2,8 +2,8 @@
 NAME: Cadd
 
 SYNOPSIS:
-	SIComplex Cadd_sic();
-	DComplex Cadd_d();
+	complexDouble Cadd_d();
+	complexFloat  Cadd();
 
 DESCRIPTION:
 
@@ -20,6 +20,8 @@ PROGRAM HISTORY:
     ---------------------------------------------------------------
     1.0     9/96	M. Shindle - Original Development
     1.1    10/96        M. Shindle - Added DComplex version of add
+    1.2     6/03        P. Denny   - Change FComplex and DComplex data types
+                                       to complexFloat and complexDouble
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -33,8 +35,8 @@ BUGS:
 #include "ifm.h"
 
 
-DComplex Cadd_d(DComplex a, DComplex b) {
-  DComplex c;
+complexDouble Cadd_d(complexDouble a, complexDouble b) {
+  complexDouble c;
 
   c.real = a.real+b.real;
   c.imag = a.imag+b.imag;
@@ -42,8 +44,8 @@ DComplex Cadd_d(DComplex a, DComplex b) {
   return(c);
 }
 
-FComplex Cadd(FComplex a, FComplex b) {
-  FComplex c;
+complexFloat Cadd(complexFloat a, complexFloat b) {
+  complexFloat c;
 
   c.real = a.real+b.real;
   c.imag = a.imag+b.imag;

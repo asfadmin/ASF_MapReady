@@ -20,9 +20,10 @@ PROGRAM HISTORY:
 
 ****************************************************************/
 #include "asf.h"
-
-
 #include "ifm.h"
+
+/* prototype */
+int fcpvec(float *from, float *to, int nitems);
 
 void mxv1(float *u, float **a, float *v, int m, int n) 
 {

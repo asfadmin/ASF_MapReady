@@ -1,7 +1,7 @@
 /****************************************************************
 FUNCTION NAME: c2p
 
-SYNTAX: int c2p(FComplex *cpx, float *amp, float *phase, int nitems)
+SYNTAX: int c2p(complexFloat *cpx, float *amp, float *phase, int nitems)
 
 PARAMETERS:
     NAME:	TYPE:		PURPOSE:
@@ -33,7 +33,7 @@ BUGS:
 
 
 int 
-c2p(FComplex *cpx, float *amp, float *phase, int nitems)
+c2p(complexFloat *cpx, float *amp, float *phase, int nitems)
 {
   int i;
 

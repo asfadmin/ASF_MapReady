@@ -1,13 +1,13 @@
 /****************************************************************
 FUNCTION NAME: Csdiv
 
-SYNTAX: FComplex Csdiv(s,a);
+SYNTAX: complexFloat Csdiv(s,a);
 
 PARAMETERS:
     NAME:	TYPE:		PURPOSE:
     --------------------------------------------------------
     s		double		scalar to divide complex number by.
-    a		FComplex         complex number
+    a		complexFloat         complex number
 
 DESCRIPTION:
     Divides a complex number by a scalar.
@@ -23,8 +23,8 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "ifm.h"
 
-FComplex Csdiv(float s, FComplex a) {
-   FComplex x;
+complexFloat Csdiv(float s, complexFloat a) {
+   complexFloat x;
 
    if (s == 0.0)
      Exit("Csdiv(): scalar divisor == 0.0");

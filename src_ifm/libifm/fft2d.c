@@ -30,7 +30,9 @@ PROGRAM HISTORY:
 
 #include "ifm.h"
 
-void fft2d (FComplex *array, int n, int direction)
+void fourn(float *data, int *nn, int ndim, int isign);
+
+void fft2d (complexFloat *array, int n, int direction)
 {
     int   i; 
     int   size;
@@ -46,7 +48,7 @@ void fft2d (FComplex *array, int n, int direction)
     size = n*n;
 
     /* set up my copy of the passed vector */
-    myV  = (float *)(MALLOC((size + 1)*sizeof(FComplex)));
+    myV  = (float *)(MALLOC((size + 1)*sizeof(complexFloat)));
     
     /* assign values to myV */
     *myV = 0.0;

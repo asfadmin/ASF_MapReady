@@ -2,16 +2,16 @@
 
 #include "ifm.h"
 
-FComplex *cpxvector(int nl, int nh)
+complexFloat *cpxvector(int nl, int nh)
 {
-	FComplex *v;
+	complexFloat *v;
 
-	v=(FComplex *)MALLOC((unsigned) (nh-nl+1)*sizeof(FComplex));
+	v=(complexFloat *)MALLOC((unsigned) (nh-nl+1)*sizeof(complexFloat));
 	return v-nl;
 }
 
 void free_cpxvector(v,nl,nh)
-FComplex *v;
+complexFloat *v;
 int nl,nh;
 {
 	free((v+nl));

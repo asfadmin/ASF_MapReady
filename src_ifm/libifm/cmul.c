@@ -22,9 +22,9 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "ifm.h"
 
-FComplex Cmul(FComplex a, FComplex b)
+complexFloat Cmul(complexFloat a, complexFloat b)
 {
-  FComplex x;
+  complexFloat x;
   x.real = a.real*b.real - a.imag*b.imag;
   x.imag = a.real*b.imag + a.imag*b.real;
   return x;

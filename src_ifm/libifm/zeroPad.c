@@ -44,10 +44,10 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "ifm.h"
 
-void zeroPad(FComplex *vIn, FComplex *vOut, int dim, int os)
+void zeroPad(complexFloat *vIn, complexFloat *vOut, int dim, int os)
 {
   int i, j, ii, jj, indx, oindx, big;
-  FComplex a, b;
+  complexFloat a, b;
 
   big = dim*os;
 
