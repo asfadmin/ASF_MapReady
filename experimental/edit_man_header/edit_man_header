@@ -258,7 +258,7 @@ $html_file = "$source_file.html";
             $def_line = 1;
             $active = 1;
             print SOURCE_FILE "#define ASF_$1_STRING ";
-            print HTML_FILE "<hr width=70%>\n<b>$1</b>\n<br>\n";
+            print HTML_FILE "<hr width=70%>\n<b>$1</b>\n\n";
         }
         elsif(/^(.*)\_END/)
         {
@@ -278,7 +278,12 @@ $html_file = "$source_file.html";
             }
             $def_line = 0;
             chomp;
-            print HTML_FILE "$_<br>\n";
+            $temp = $_;
+            $temp =~ s/&/&amp;/g; #fix &'s for HTML
+            $temp =~ s/</&lt;/g; #fix <'s for HTML
+            $temp =~ s/>/&gt;/g; #fix >'s for HTML
+            $temp =~ s/"/&quot;/g; #fix "'s for HTML
+            print HTML_FILE "$temp\n";
             s/\\/\\\\/g; #replace any outgoing \ with \\
             s/"/\\"/g; #replace any outgoing " with \"
             s/'/\\"/g; #replace any outgoing ' with \"
