@@ -6,7 +6,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := $(CFLAGS) -DDECODE_CEOS -Wall -g
+CFLAGS := $(CFLAGS) -DDECODE_CEOS
 
 LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
@@ -20,6 +20,8 @@ OBJS  = cal_params.o ceos2raw.o \
 	decoder_ERS.o aux_ERS.o \
 	decoder_JRS.o aux_JRS.o aux_JRS_PCM.o \
 	createSubset.o fetch_prc_stvec.o stf2raw.o \
+	matrix.o least_squares.o \
+	sprocket_layers.o \
 	import2asf.o
 
 all: import2asf
