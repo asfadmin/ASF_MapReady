@@ -1,7 +1,7 @@
 /************************************
 Log file utilities
 ************************************/
-
+#include "asf.h"
 #include "log.h"
 
 FILE *fLog;          /* log file stream pointer */
