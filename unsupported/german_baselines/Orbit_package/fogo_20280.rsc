@@ -1,0 +1,13 @@
+FILE_LENGTH                              9000                
+HEIGHT                                   786144.73
+EARTH_RADIUS                             6376803.4488
+STARTING_RANGE                           827837.4
+PRF                                      1679.902
+RANGE_PIXEL_SIZE                         7.9099159279847093  
+AZIMUTH_PIXEL_SIZE                       4.4872287868414036  
+FIRST_LINE_UTC                           43565.94275040 
+DATE                                     950601
+FIRST_LINE_YEAR                          1995                          
+FIRST_LINE_MONTH_OF_YEAR                 06                            
+FIRST_LINE_DAY_OF_MONTH                  01                            
+PLATFORM                                 ERS1                

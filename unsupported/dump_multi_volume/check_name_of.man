@@ -1,0 +1,41 @@
+NAME:  check_name_of -- determines the "era" of an image file, by checking
+	the metadata, then renames the file appropriately.
+
+SYNOPSIS:        check_name_of <filename>
+	         <filename> -- name of SAR file whose name to check
+
+DESCRIPTION:
+	check_name_of reads the CEOS imagery options file to determine the
+	number of header bytes.  If this number is zero, then the image must be
+	pre-RADARSAT era data and will be changed to end in .dat and .ldr.  
+	If this number of prefix bytes is not zero, then the image is
+	post-RADARSAT era data and will be changed to end with the extensions
+	.D and .L.
+
+	RETURN VALUE:  
+	       0 successful
+               2 usage
+               
+OPTIONS:
+
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+--------------------------------------------------------------------------
+
+EXAMPLES:
+
+SEE ALSO:
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR:  Orion Lawlor, ASF SAR, 08/12/97
+
+CONTACT:  apd@asf.alaska.edu
+	  http://www.asf.alaska.edu/apd
+
+
+
+
+

@@ -1,0 +1,11 @@
+*******************************************
+*                                         *
+*            Use gnumake                  *
+*                                         *
+*******************************************
+  This directory creates three libraries:
+
+	1. libpps.a
+	2. libpps_client.a
+	3. libpps_test.a
+

@@ -1,0 +1,90 @@
+#
+# Makefile for the calibration library rcal.a
+#   Lines which need system-specific modifications are prefaced by 
+#   a FIX THIS comment.
+#
+
+.KEEP_STATE:
+# Changes made for new path - Jay
+PWD = /user2/jdio/files/src/
+# FIX THIS
+CALPATH         = $(PWD)
+LIBPATH         = $(CALPATH)lib/
+LBSPATH         = $(LIBPATH)rcal_src/
+
+# FIX THIS
+#IDLPATH   = /proj2/pvi/wave/bin/bin.sun4/
+#IDLOBJS   = $(IDLPATH)callwave.o
+IDLPATH   =
+IDLOBJS   =
+
+RCAL_LIB        = $(LIBPATH)rcal.a
+RCAL_LIB_OBJS   = $(LBSPATH)rcal_ceos.o $(LBSPATH)rcal_io.o $(LBSPATH)rcal_idl.o \
+                  $(LBSPATH)rcal_math.o $(LBSPATH)rcal_string.o 
+
+list: 
+	@echo "'make list' tells you what this Makefile does             "
+	@echo "                                                          "
+	@echo "legal targets are 'all, 'rcal' and 'test'                 "
+	@echo "                                                          "
+	@echo "the objective is to create a library file 'rcal.a' in the "
+	@echo "parent directory CAL/lib which can be linked to various   "
+	@echo "calibration workstation programs.  The source files for   "
+	@echo "this calibration library are as follow:                   "
+	@echo "                                                          "
+	@echo "rcal_ceos.c:  ceos file access functions                  "
+	@echo "rcal_math.c:  math functions                              "
+	@echo "rcal_io.c:  i/o functions                                 "
+	@echo "rcal_idl.c:  idl functions                                "
+	@echo "rcal_string.c:  string manipulations                      "
+	@echo "                                                          "
+	@echo "test is just a continually changing test program          "
+	@echo "                                                          "
+
+all:  $(RCAL_LIB)
+rcal: $(RCAL_LIB)
+
+CC        = cc -c
+CCEX      = cc -o
+CC_DBG    = cc -g -c -o
+CCEX_DBG  = cc -g -o
+
+#include files 
+# FIX TEHSE TWO
+LIBINC    = -DLIBINC=\"$(PWD)lib/rcal_src/rcal.h"
+INCLUDE   = $(LIBINC) 
+
+# other links
+MATHLINK  = -lm
+
+test: $(RCAL_LIB) test.c
+	$(CC_DBG) test.o $(INCLUDE) test.c
+	$(CCEX_DBG) test test.o $(RCAL_LIB) $(MATHLINK)
+
+test_read_m: $(RCAL_LIB)
+	$(CC_DBG) test_read_m.o $(INCLUDE) test_read_m.c
+	$(CCEX_DBG) test_read_m test_read_m.o $(RCAL_LIB) $(MATHLINK)
+
+test_2dc: $(RCAL_LIB) test_2dc.c
+	$(CC_DBG) test_2dc.o $(INCLUDE) test_2dc.c
+	$(CCEX_DBG) test_2dc test_2dc.o $(RCAL_LIB) $(MATHLINK)
+
+$(RCAL_LIB):  $(RCAL_LIB_OBJS)
+	-rm -f $(RCAL_LIB)
+	ar cr $(RCAL_LIB) $(RCAL_LIB_OBJS)
+	ranlib $(RCAL_LIB)
+
+$(LBSPATH)rcal_ceos.o:
+	$(CC_DBG) $(LBSPATH)rcal_ceos.o $(INCLUDE) $(LBSPATH)rcal_ceos.c
+
+$(LBSPATH)rcal_io.o:
+	$(CC) -o $(LBSPATH)rcal_io.o $(INCLUDE) $(LBSPATH)rcal_io.c
+
+$(LBSPATH)rcal_idl.o:
+	$(CC) -o $(LBSPATH)rcal_idl.o $(INCLUDE) $(LBSPATH)rcal_idl.c
+
+$(LBSPATH)rcal_math.o:
+	$(CC) -o $(LBSPATH)rcal_math.o $(INCLUDE) $(LBSPATH)rcal_math.c
+
+$(LBSPATH)rcal_string.o:
+	$(CC) -o $(LBSPATH)rcal_string.o $(INCLUDE) $(LBSPATH)rcal_string.c

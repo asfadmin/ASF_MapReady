@@ -1,0 +1,41 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+/*=======================
+	@(#)sp_set_insert_top.crt	1.2  11/27/96
+=========================*/
+
+/* stored procedure to generate a new job_id - jtg */
+
+if exists (select * from sysobjects where name = "sp_set_insert_top")
+	drop procedure sp_set_insert_top
+go
+
+create proc sp_set_insert_top
+		@job_id int,
+		@insert_top_flag LogicalType
+	as
+
+	/* begin transaction */
+	begin transaction
+
+	/* update insert_top_flag in the jobs table */
+	update jobs 
+		set insert_top_flag = @insert_top_flag
+                where job_id = @job_id
+
+        /* update trigger will update insert_top_flag in ppsgui_orders
+           and schedule table */
+
+	if (@@transtate > 0)
+	begin
+		rollback transaction
+		return -1
+	end
+
+	/* commit transaction */
+	commit transaction
+
+go

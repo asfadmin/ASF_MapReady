@@ -1,0 +1,18 @@
+lastmodified = '11-DEC-90 16:28:00'
+
+instname = 'SAR'
+	fullinstname = 'SAR - JERS-1 - 75 km Swath'
+	type = 'beam' minlook = 15.0 maxlook = 60.0 swathwidth = 75
+	minyaw = -90 maxyaw = 90 *mask = 'station'
+
+platname = 'JERS-2'
+	QI = 15 QN = 1 QD = 44
+	e = 0.0
+	node0 = -33.9299
+	omega0 = 0.0
+	m0 = 0.0
+	t0 = 0.0
+	nodetime = 10.0
+
+instname = 'Nadir'
+	type = 'nadir'

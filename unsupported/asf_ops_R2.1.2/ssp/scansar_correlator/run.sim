@@ -1,0 +1,18 @@
+#! /usr/bin/ksh
+# Script to run sample progrmas
+# 
+# SCCS_Id : @(#)run.sim	2.41 3/24/98
+# (C) COPYRIGHT IBM CORP 1994
+# All Rights Reserved
+#  
+#
+echo 'Executing SIMULATION RUN'
+#
+echo 'run.transfer'
+./run.transfer        ./eng_config.sim  SSP2
+echo 'run.pre_processor'
+./run.pre_processor   ./eng_config.sim  SSP2
+echo 'run.correlator'
+./run.correlator      ./eng_config.sim  SSP2
+echo 'run.post_processor'
+./run.post_processor  ./eng_config.sim  SSP2

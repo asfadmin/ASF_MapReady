@@ -1,0 +1,43 @@
+
+    NAME:	dopPlotOrder - doppler centroid trending program
+
+    SYNOPSIS:	dopPlotOrder
+
+    DESCRIPTION:
+
+	dopPlotOrder is the main entry point for the doppler trending
+    process performed by ASF Operations staff.  It takes no parameters--
+    instead, it searches two directories deep for CEOS .L files.  In
+    normal operation, these are the order directories.
+    
+    	The revolution numbers of found CEOS files are sorted, listed,
+    and each revolution is passed to dopPlot for doppler trending
+    analysis.  A list of frames with bad dopplers is assembled, and
+    this list is e-mailed to appropriate personell at ASF and OSU.
+
+    OPTIONS:	None
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+    EXAMPLES:	dopPlotOrder
+
+	This call will search all subdirectories 2 levels below the current
+	working directory for any ceos images.  For example, if the command
+	is run in a directory containing the directory "orders", in turn
+	containing the directories "1", "2", and "3"; then the directories
+	orders/1, orders/2, and orders/3 will be scanned for CEOS files.
+	
+	Any files found will be passed to dopPlot for further analysis.
+
+    SEE ALSO: dopTrend, dopPlot
+
+    HARWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:	None Known
+
+    AUTHOR:	Tom Logan, ASF
+
+    CONTACT:	olawlor@images.alaska.edu
+		rguritz@images.alaska.edu

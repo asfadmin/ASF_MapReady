@@ -1,0 +1,27 @@
+#!/bin/sh
+# RGPS Tape-writing utility
+# Usage: rgpsTape cycleNN/mosaicN
+device="/dev/rmt/2bn"
+
+if [ ! $# -eq 1 ]
+then
+	echo "Usage: "
+	echo "  rgpsTape cycleNN/mosaicN"
+	echo " "
+	echo "Writes out a tape containing the given cycle "
+	echo "and mosaic to "$device"."
+	echo "ASF-STEP RGPS Tools, 8/98.  Version 1.00"
+	exit 1
+fi
+
+mt -f $device status
+
+if [ ! $? -eq 0 ]
+then
+	echo "mt returned an error.  Bailing out."
+fi
+
+mt -f $device rewind
+
+tar cvf $device tapeout/$1/*.L
+tar cvf $device tapeout/$1/*.D

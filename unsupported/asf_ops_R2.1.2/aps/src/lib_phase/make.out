@@ -1,0 +1,41 @@
+
+Compiling asftime_2_phase.c
+
+Compiling check_rev_asftimes.c
+
+Compiling check_rev_times_overlap.c
+
+Compiling decode_error_message.c
+
+Compiling phase_asftime2rev.c
+
+Compiling phase_rev_in_phase.c
+
+Compiling phase_first_rev.c
+
+Compiling phase_get_list.c
+
+Compiling phase_rev2asftime.c
+
+Compiling phase_rev2et.c
+
+Compiling rev2asftime.c
+
+Compiling rev_2_phase.c
+
+Creating/Modifying Library libphase.a
+ar: writing libphase.a
+r - asftime_2_phase.o
+r - asftime2rev.o
+r - check_rev_asftimes.o
+r - check_rev_times_overlap.o
+r - decode_error_message.o
+r - phase_asftime2rev.o
+r - phase_rev_in_phase.o
+r - phase_first_rev.o
+r - phase_get_list.o
+r - phase_rev2asftime.o
+r - phase_rev2et.o
+r - rev2asftime.o
+r - rev_2_phase.o
+Done

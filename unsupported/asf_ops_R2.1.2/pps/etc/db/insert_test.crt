@@ -1,0 +1,14 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)insert_test.crt	1.1  11/21/96
+=========================*/
+insert into scan_orders 
+	(order_id,item_id,job_id,order_type, sv_type)
+	values
+	(1,2,3,"TSR", null)
+go

@@ -1,0 +1,60 @@
+
+
+**********  UNCALIBRATED DATA  **********  
+Calibration Comments: Radiometric calibration in process, use with care.                                                                                                                                                      
+
+*************** begin of Attitude Data record ******************
+
+ NUM OF POINTS			3
+ POINT NUMBER			1
+ DAY IN THE YEAR (GMT)		313
+ MS OF THE DAY (GMT)		67223709
+ PTICH DATA QUAL FLAG		1
+ ROLL DATA QUAL FLAG		1
+ YAW DATA QUAL FLAG		1
+ PITCH				     -0.107342
+ ROLL				     -0.130353
+ YAW				      0.054294
+ PITCH RATE QUAL FLAG		1
+ ROLL RATE QUAL FLAG		1
+ YAW RATE QUAL FLAG		1
+ PITCH RATE			      0.884108
+ ROLL RATE			      0.999526
+ YAW RATE			      1.002464
+ END OF POINT			1
+
+ POINT NUMBER			2
+ DAY IN THE YEAR (GMT)		313
+ MS OF THE DAY (GMT)		67264859
+ PTICH DATA QUAL FLAG		1
+ ROLL DATA QUAL FLAG		1
+ YAW DATA QUAL FLAG		1
+ PITCH				     -0.150395
+ ROLL				     -0.126681
+ YAW				      0.065488
+ PITCH RATE QUAL FLAG		1
+ ROLL RATE QUAL FLAG		1
+ YAW RATE QUAL FLAG		1
+ PITCH RATE			      0.887902
+ ROLL RATE			      1.001607
+ YAW RATE			      1.000995
+ END OF POINT			2
+
+ POINT NUMBER			3
+ DAY IN THE YEAR (GMT)		313
+ MS OF THE DAY (GMT)		67299173
+ PTICH DATA QUAL FLAG		1
+ ROLL DATA QUAL FLAG		1
+ YAW DATA QUAL FLAG		1
+ PITCH				     -0.190387
+ ROLL				     -0.122397
+ YAW				      0.070563
+ PITCH RATE QUAL FLAG		1
+ ROLL RATE QUAL FLAG		1
+ YAW RATE QUAL FLAG		1
+ PITCH RATE			      0.891819
+ ROLL RATE			      0.999037
+ YAW RATE			      1.000138
+ END OF POINT			3
+
+**************** end of Attitude Data record *******************

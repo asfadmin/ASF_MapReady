@@ -1,0 +1,44 @@
+README File for:
+	ERS/JERS
+	Agency-Format State Vector File
+	Creation/Display Utilities
+
+10/29/98- Orion Lawlor, author
+	olawlor@images.alaska.edu
+
+  In this directory, you'll find several utilities
+for manipulating files full of state vectors.  Specifically,
+you'll find routines for converting ASF-DADS format
+state vector files (both pre- and post-1996 format) back
+into the original ESA and NASDA flight agency formats.
+
+  The ESA converter definetly works well; since we've 
+sucessfully run the Vexcel LZP on its output.  The 
+NASDA converter is not definetly OK-- we think the format
+is right; but we cannot get the Vexcel LZP to accept
+its output (the jury is still out, however).
+
+  To build this software sucessfully, you'll have to
+have already built the geolocate library (for fixed2gei
+and gei2fixed state vector conversion routines), the
+asf_sar library (for byte-order conversion routines) and
+the caplib library (for FOPEN and FREAD routines
+which carefully check return codes and produce their
+own error messages).  The programs should be compile and
+run sucessfully on any platform (big or little endian, 
+4 or 8 byte integers) but have only been tested on big-endian
+4-byte int systems.
+
+  In general, the programs accept a single ASF-DADS 
+state vector file, and produce a single agency-format
+state vector file.
+
+  The binaries are:
+stVec_ers 
+stVec_ers_dump 
+  These create and display ESA-format state vector files.
+
+stVec_jers 
+stVec_jers_dump
+  These create and display NASDA-format state vector files.
+

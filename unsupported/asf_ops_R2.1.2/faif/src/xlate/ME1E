@@ -1,0 +1,1799 @@
+
+OBJECT                 = STATE_VECTOR
+
+  OBJECT                 = COMMON_HEADER
+    TIME                 = 1996-269T17:45:46.000
+    MSG_TYPE             = 'EPHEMERIS'
+    DESTINATION          = 'WFF'
+    SOURCE               = 'APS'
+    NUMBER_OF_RECORDS    = 85
+  END_OBJECT             = COMMON_HEADER
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:19:00.000
+      X_POSITION           = -1.37607
+      Y_POSITION           = 1185.96632
+      Z_POSITION           = 7054.86932
+      X_VELOCITY           = 6692.22387
+      Y_VELOCITY           = 3257.13823
+      Z_VELOCITY           = -545.46898
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:20:00.000
+      X_POSITION           = 399.89909
+      Y_POSITION           = 1378.95563
+      Z_POSITION           = 7008.37456
+      X_VELOCITY           = 6679.26754
+      Y_VELOCITY           = 3173.74728
+      Z_VELOCITY           = -1003.85505
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:21:00.000
+      X_POSITION           = 799.61511
+      Y_POSITION           = 1566.56840
+      Z_POSITION           = 6934.48462
+      X_VELOCITY           = 6640.26859
+      Y_VELOCITY           = 3077.97803
+      Z_VELOCITY           = -1458.34615
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:22:00.000
+      X_POSITION           = 1196.21333
+      Y_POSITION           = 1748.07277
+      Z_POSITION           = 6833.48626
+      X_VELOCITY           = 6575.37391
+      Y_VELOCITY           = 2970.19948
+      Z_VELOCITY           = -1907.17612
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:23:00.000
+      X_POSITION           = 1588.14693
+      Y_POSITION           = 1922.76043
+      Z_POSITION           = 6705.77164
+      X_VELOCITY           = 6484.82965
+      Y_VELOCITY           = 2850.82680
+      Z_VELOCITY           = -2348.59886
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:24:00.000
+      X_POSITION           = 1973.88674
+      Y_POSITION           = 2089.94928
+      Z_POSITION           = 6551.83695
+      X_VELOCITY           = 6368.98088
+      Y_VELOCITY           = 2720.31996
+      Z_VELOCITY           = -2780.89496
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:25:00.000
+      X_POSITION           = 2351.92732
+      Y_POSITION           = 2248.98618
+      Z_POSITION           = 6372.28054
+      X_VELOCITY           = 6228.27046
+      Y_VELOCITY           = 2579.18245
+      Z_VELOCITY           = -3202.37806
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:26:00.000
+      X_POSITION           = 2720.79269
+      Y_POSITION           = 2399.24944
+      Z_POSITION           = 6167.80081
+      X_VELOCITY           = 6063.23792
+      Y_VELOCITY           = 2427.95966
+      Z_VELOCITY           = -3611.40140
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:27:00.000
+      X_POSITION           = 3079.04206
+      Y_POSITION           = 2540.15132
+      Z_POSITION           = 5939.19361
+      X_VELOCITY           = 5874.51798
+      Y_VELOCITY           = 2267.23688
+      Z_VELOCITY           = -4006.36446
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:28:00.000
+      X_POSITION           = 3425.27558
+      Y_POSITION           = 2671.14032
+      Z_POSITION           = 5687.34928
+      X_VELOCITY           = 5662.83820
+      Y_VELOCITY           = 2097.63717
+      Z_VELOCITY           = -4385.71940
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:29:00.000
+      X_POSITION           = 3758.13974
+      Y_POSITION           = 2791.70340
+      Z_POSITION           = 5413.24927
+      X_VELOCITY           = 5429.01652
+      Y_VELOCITY           = 1919.81919
+      Z_VELOCITY           = -4747.97688
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:30:00.000
+      X_POSITION           = 4076.33277
+      Y_POSITION           = 2901.36808
+      Z_POSITION           = 5117.96254
+      X_VELOCITY           = 5173.95889
+      Y_VELOCITY           = 1734.47502
+      Z_VELOCITY           = -5091.71212
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:31:00.000
+      X_POSITION           = 4378.60984
+      Y_POSITION           = 2999.70432
+      Z_POSITION           = 4802.64139
+      X_VELOCITY           = 4898.65612
+      Y_VELOCITY           = 1542.32732
+      Z_VELOCITY           = -5415.57128
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:32:00.000
+      X_POSITION           = 4663.78799
+      Y_POSITION           = 3086.32628
+      Z_POSITION           = 4468.51711
+      X_VELOCITY           = 4604.17989
+      Y_VELOCITY           = 1344.12646
+      Z_VELOCITY           = -5718.27723
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:33:00.000
+      X_POSITION           = 4930.75089
+      Y_POSITION           = 3160.89392
+      Z_POSITION           = 4116.89516
+      X_VELOCITY           = 4291.67870
+      Y_VELOCITY           = 1140.64753
+      Z_VELOCITY           = -5998.63435
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:34:00.000
+      X_POSITION           = 5178.45331
+      Y_POSITION           = 3223.11436
+      Z_POSITION           = 3749.15020
+      X_VELOCITY           = 3962.37404
+      Y_VELOCITY           = 932.68751
+      Z_VELOCITY           = -6255.53358
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:35:00.000
+      X_POSITION           = 5405.92545
+      Y_POSITION           = 3272.74311
+      Z_POSITION           = 3366.72070
+      X_VELOCITY           = 3617.55599
+      Y_VELOCITY           = 721.06232
+      Z_VELOCITY           = -6487.95757
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:36:00.000
+      X_POSITION           = 5612.27679
+      Y_POSITION           = 3309.58515
+      Z_POSITION           = 2971.10329
+      X_VELOCITY           = 3258.57782
+      Y_VELOCITY           = 506.60346
+      Z_VELOCITY           = -6694.98548
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:37:00.000
+      X_POSITION           = 5796.69977
+      Y_POSITION           = 3333.49574
+      Z_POSITION           = 2563.84684
+      X_VELOCITY           = 2886.85067
+      Y_VELOCITY           = 290.15478
+      Z_VELOCITY           = -6875.79688
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:38:00.000
+      X_POSITION           = 5958.47312
+      Y_POSITION           = 3344.38099
+      Z_POSITION           = 2146.54639
+      X_VELOCITY           = 2503.83819
+      Y_VELOCITY           = 72.56897
+      Z_VELOCITY           = -7029.67542
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:39:00.000
+      X_POSITION           = 6096.96483
+      Y_POSITION           = 3342.19843
+      Z_POSITION           = 1720.83670
+      X_VELOCITY           = 2111.05078
+      Y_VELOCITY           = -145.29587
+      Z_VELOCITY           = -7156.01253
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:40:00.000
+      X_POSITION           = 6211.63471
+      Y_POSITION           = 3326.95710
+      Z_POSITION           = 1288.38574
+      X_VELOCITY           = 1710.03903
+      Y_VELOCITY           = -362.58011
+      Z_VELOCITY           = -7254.31075
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:41:00.000
+      X_POSITION           = 6302.03668
+      Y_POSITION           = 3298.71759
+      Z_POSITION           = 850.88795
+      X_VELOCITY           = 1302.38676
+      Y_VELOCITY           = -578.42650
+      Z_VELOCITY           = -7324.18579
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:42:00.000
+      X_POSITION           = 6367.82050
+      Y_POSITION           = 3257.59173
+      Z_POSITION           = 410.05738
+      X_VELOCITY           = 889.70422
+      Y_VELOCITY           = -791.98364
+      Z_VELOCITY           = -7365.36798
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:43:00.000
+      X_POSITION           = 6408.73316
+      Y_POSITION           = 3203.74218
+      Z_POSITION           = -32.37919
+      X_VELOCITY           = 473.62124
+      Y_VELOCITY           = -1002.40949
+      Z_VELOCITY           = -7377.70352
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:44:00.000
+      X_POSITION           = 6424.61988
+      Y_POSITION           = 3137.38181
+      Z_POSITION           = -474.68927
+      X_VELOCITY           = 55.78034
+      Y_VELOCITY           = -1208.87496
+      Z_VELOCITY           = -7361.15506
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:45:00.000
+      X_POSITION           = 6415.42461
+      Y_POSITION           = 3058.77267
+      Z_POSITION           = -915.14161
+      X_VELOCITY           = -362.17036
+      Y_VELOCITY           = -1410.56762
+      Z_VELOCITY           = -7315.80146
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:46:00.000
+      X_POSITION           = 6381.19019
+      Y_POSITION           = 2968.22502
+      Z_POSITION           = -1352.01316
+      X_VELOCITY           = -778.58381
+      Y_VELOCITY           = -1606.69496
+      Z_VELOCITY           = -7241.83726
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:47:00.000
+      X_POSITION           = 6322.05809
+      Y_POSITION           = 2866.09599
+      Z_POSITION           = -1783.59599
+      X_VELOCITY           = -1191.82081
+      Y_VELOCITY           = -1796.48772
+      Z_VELOCITY           = -7139.57210
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:48:00.000
+      X_POSITION           = 6238.26770
+      Y_POSITION           = 2752.78806
+      Z_POSITION           = -2208.20418
+      X_VELOCITY           = -1600.25750
+      Y_VELOCITY           = -1979.20350
+      Z_VELOCITY           = -7009.42937
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:49:00.000
+      X_POSITION           = 6130.15524
+      Y_POSITION           = 2628.74739
+      Z_POSITION           = -2624.18058
+      X_VELOCITY           = -2002.29253
+      Y_VELOCITY           = -2154.12993
+      Z_VELOCITY           = -6851.94355
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:50:00.000
+      X_POSITION           = 5998.15210
+      Y_POSITION           = 2494.46188
+      Z_POSITION           = -3029.90333
+      X_VELOCITY           = -2396.35380
+      Y_VELOCITY           = -2320.58742
+      Z_VELOCITY           = -6667.75709
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:51:00.000
+      X_POSITION           = 5842.78301
+      Y_POSITION           = 2350.45920
+      Z_POSITION           = -3423.79229
+      X_VELOCITY           = -2780.90479
+      Y_VELOCITY           = -2477.93149
+      Z_VELOCITY           = -6457.61712
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:52:00.000
+      X_POSITION           = 5664.66366
+      Y_POSITION           = 2197.30454
+      Z_POSITION           = -3804.31520
+      X_VELOCITY           = -3154.45053
+      Y_VELOCITY           = -2625.55535
+      Z_VELOCITY           = -6222.37162
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:53:00.000
+      X_POSITION           = 5464.49803
+      Y_POSITION           = 2035.59833
+      Z_POSITION           = -4169.99361
+      X_VELOCITY           = -3515.54337
+      Y_VELOCITY           = -2762.89215
+      Z_VELOCITY           = -5962.96532
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:54:00.000
+      X_POSITION           = 5243.07545
+      Y_POSITION           = 1865.97376
+      Z_POSITION           = -4519.40851
+      X_VELOCITY           = -3862.78866
+      Y_VELOCITY           = -2889.41700
+      Z_VELOCITY           = -5680.43522
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:55:00.000
+      X_POSITION           = 5001.26712
+      Y_POSITION           = 1689.09419
+      Z_POSITION           = -4851.20578
+      X_VELOCITY           = -4194.84989
+      Y_VELOCITY           = -3004.64875
+      Z_VELOCITY           = -5375.90556
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:56:00.000
+      X_POSITION           = 4740.02265
+      Y_POSITION           = 1505.65052
+      Z_POSITION           = -5164.10126
+      X_VELOCITY           = -4510.45340
+      Y_VELOCITY           = -3108.15153
+      Z_VELOCITY           = -5050.58256
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:57:00.000
+      X_POSITION           = 4460.36604
+      Y_POSITION           = 1316.35841
+      Z_POSITION           = -5456.88543
+      X_VELOCITY           = -4808.39258
+      Y_VELOCITY           = -3199.53593
+      Z_VELOCITY           = -4705.74905
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:58:00.000
+      X_POSITION           = 4163.39160
+      Y_POSITION           = 1121.95546
+      Z_POSITION           = -5728.42797
+      X_VELOCITY           = -5087.53153
+      Y_VELOCITY           = -3278.45987
+      Z_VELOCITY           = -4342.75929
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25211
+      TIME                 = 1996-131T23:59:00.000
+      X_POSITION           = 3850.25954
+      Y_POSITION           = 923.19835
+      Z_POSITION           = -5977.68180
+      X_VELOCITY           = -5346.80907
+      Y_VELOCITY           = -3344.62966
+      Z_VELOCITY           = -3963.03404
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25212
+      TIME                 = 1996-132T00:33:18.057
+      X_POSITION           = -6405.17149
+      Y_POSITION           = -3212.31483
+      Z_POSITION           = 0.00391
+      X_VELOCITY           = -489.00273
+      Y_VELOCITY           = 994.58507
+      Z_VELOCITY           = 7377.10436
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25213
+      TIME                 = 1996-132T02:13:53.923
+      X_POSITION           = -6401.41189
+      Y_POSITION           = -3219.94980
+      Z_POSITION           = 0.00218
+      X_VELOCITY           = -490.16053
+      Y_VELOCITY           = 993.86826
+      Z_VELOCITY           = 7377.04593
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25214
+      TIME                 = 1996-132T03:54:29.839
+      X_POSITION           = -6397.43180
+      Y_POSITION           = -3227.70511
+      Z_POSITION           = -0.00042
+      X_VELOCITY           = -491.31117
+      Y_VELOCITY           = 993.01565
+      Z_VELOCITY           = 7377.19058
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25215
+      TIME                 = 1996-132T05:35:05.855
+      X_POSITION           = -6393.36234
+      Y_POSITION           = -3235.46956
+      Z_POSITION           = 0.00097
+      X_VELOCITY           = -492.41501
+      Y_VELOCITY           = 992.38940
+      Z_VELOCITY           = 7377.32597
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25216
+      TIME                 = 1996-132T07:15:41.838
+      X_POSITION           = -6389.35880
+      Y_POSITION           = -3243.10003
+      Z_POSITION           = 0.00057
+      X_VELOCITY           = -493.65284
+      Y_VELOCITY           = 991.88097
+      Z_VELOCITY           = 7377.43798
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25217
+      TIME                 = 1996-132T08:56:17.755
+      X_POSITION           = -6385.44311
+      Y_POSITION           = -3250.71214
+      Z_POSITION           = -0.00090
+      X_VELOCITY           = -494.99057
+      Y_VELOCITY           = 991.44214
+      Z_VELOCITY           = 7377.46069
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25218
+      TIME                 = 1996-132T10:36:53.639
+      X_POSITION           = -6381.58234
+      Y_POSITION           = -3258.31761
+      Z_POSITION           = -0.00170
+      X_VELOCITY           = -496.24614
+      Y_VELOCITY           = 990.95606
+      Z_VELOCITY           = 7377.43254
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25219
+      TIME                 = 1996-132T12:17:29.493
+      X_POSITION           = -6377.74601
+      Y_POSITION           = -3265.96158
+      Z_POSITION           = 0.00196
+      X_VELOCITY           = -497.47711
+      Y_VELOCITY           = 990.34025
+      Z_VELOCITY           = 7377.39285
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25220
+      TIME                 = 1996-132T13:58:05.364
+      X_POSITION           = -6373.94895
+      Y_POSITION           = -3273.70389
+      Z_POSITION           = -0.00032
+      X_VELOCITY           = -498.60235
+      Y_VELOCITY           = 989.63036
+      Z_VELOCITY           = 7377.25363
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25221
+      TIME                 = 1996-132T15:38:41.302
+      X_POSITION           = -6370.10915
+      Y_POSITION           = -3281.34259
+      Z_POSITION           = 0.00347
+      X_VELOCITY           = -499.68851
+      Y_VELOCITY           = 988.81506
+      Z_VELOCITY           = 7377.16144
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25222
+      TIME                 = 1996-132T17:19:17.312
+      X_POSITION           = -6366.19109
+      Y_POSITION           = -3288.92241
+      Z_POSITION           = 0.00165
+      X_VELOCITY           = -500.87844
+      Y_VELOCITY           = 988.12847
+      Z_VELOCITY           = 7377.11675
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25223
+      TIME                 = 1996-132T18:59:53.316
+      X_POSITION           = -6362.19405
+      Y_POSITION           = -3296.54404
+      Z_POSITION           = 0.00279
+      X_VELOCITY           = -502.10880
+      Y_VELOCITY           = 987.61555
+      Z_VELOCITY           = 7377.18096
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25223
+      TIME                 = 1996-132T18:59:53.317
+      X_POSITION           = -6362.19521
+      Y_POSITION           = -3296.54203
+      Z_POSITION           = 0.00419
+      X_VELOCITY           = -502.10762
+      Y_VELOCITY           = 987.61567
+      Z_VELOCITY           = 7377.18096
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25224
+      TIME                 = 1996-132T20:40:29.270
+      X_POSITION           = -6358.18084
+      Y_POSITION           = -3304.21661
+      Z_POSITION           = -0.00025
+      X_VELOCITY           = -503.35403
+      Y_VELOCITY           = 987.25684
+      Z_VELOCITY           = 7377.19156
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25225
+      TIME                 = 1996-132T22:21:05.145
+      X_POSITION           = -6354.19234
+      Y_POSITION           = -3311.95019
+      Z_POSITION           = -0.00031
+      X_VELOCITY           = -504.58935
+      Y_VELOCITY           = 986.78900
+      Z_VELOCITY           = 7377.14999
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25226
+      TIME                 = 1996-133T00:01:41.006
+      X_POSITION           = -6350.21572
+      Y_POSITION           = -3319.64610
+      Z_POSITION           = 0.00239
+      X_VELOCITY           = -505.73491
+      Y_VELOCITY           = 986.21140
+      Z_VELOCITY           = 7377.10222
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25227
+      TIME                 = 1996-133T01:42:16.867
+      X_POSITION           = -6346.32231
+      Y_POSITION           = -3327.23681
+      Z_POSITION           = -0.00158
+      X_VELOCITY           = -506.87746
+      Y_VELOCITY           = 985.50322
+      Z_VELOCITY           = 7377.02312
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25228
+      TIME                 = 1996-133T03:22:52.762
+      X_POSITION           = -6342.29060
+      Y_POSITION           = -3334.85072
+      Z_POSITION           = 0.00381
+      X_VELOCITY           = -508.00272
+      Y_VELOCITY           = 984.67408
+      Z_VELOCITY           = 7377.12706
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25229
+      TIME                 = 1996-133T05:03:28.755
+      X_POSITION           = -6338.08699
+      Y_POSITION           = -3342.57323
+      Z_POSITION           = -0.00111
+      X_VELOCITY           = -509.12122
+      Y_VELOCITY           = 983.95660
+      Z_VELOCITY           = 7377.26740
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25230
+      TIME                 = 1996-133T06:44:04.757
+      X_POSITION           = -6333.92550
+      Y_POSITION           = -3350.17781
+      Z_POSITION           = -0.00136
+      X_VELOCITY           = -510.29305
+      Y_VELOCITY           = 983.42869
+      Z_VELOCITY           = 7377.38172
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25231
+      TIME                 = 1996-133T08:24:40.704
+      X_POSITION           = -6329.85094
+      Y_POSITION           = -3357.71297
+      Z_POSITION           = -0.00299
+      X_VELOCITY           = -511.60149
+      Y_VELOCITY           = 982.96189
+      Z_VELOCITY           = 7377.44189
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25232
+      TIME                 = 1996-133T10:05:16.597
+      X_POSITION           = -6325.85139
+      Y_POSITION           = -3365.25670
+      Z_POSITION           = 0.00044
+      X_VELOCITY           = -512.86856
+      Y_VELOCITY           = 982.47881
+      Z_VELOCITY           = 7377.41501
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25233
+      TIME                 = 1996-133T11:45:52.456
+      X_POSITION           = -6321.86168
+      Y_POSITION           = -3372.81127
+      Z_POSITION           = 0.00305
+      X_VELOCITY           = -514.09894
+      Y_VELOCITY           = 981.87928
+      Z_VELOCITY           = 7377.40067
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25234
+      TIME                 = 1996-133T13:26:28.316
+      X_POSITION           = -6317.92199
+      Y_POSITION           = -3380.45443
+      Z_POSITION           = -0.00129
+      X_VELOCITY           = -515.24303
+      Y_VELOCITY           = 981.19050
+      Z_VELOCITY           = 7377.29543
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25235
+      TIME                 = 1996-133T15:07:04.228
+      X_POSITION           = -6313.96116
+      Y_POSITION           = -3388.08330
+      Z_POSITION           = -0.00026
+      X_VELOCITY           = -516.30767
+      Y_VELOCITY           = 980.39477
+      Z_VELOCITY           = 7377.18108
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25236
+      TIME                 = 1996-133T16:47:40.221
+      X_POSITION           = -6309.94513
+      Y_POSITION           = -3395.59597
+      Z_POSITION           = -0.00037
+      X_VELOCITY           = -517.45485
+      Y_VELOCITY           = 979.61653
+      Z_VELOCITY           = 7377.11040
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25237
+      TIME                 = 1996-133T18:28:16.226
+      X_POSITION           = -6305.83186
+      Y_POSITION           = -3403.11835
+      Z_POSITION           = -0.00121
+      X_VELOCITY           = -518.66785
+      Y_VELOCITY           = 979.03475
+      Z_VELOCITY           = 7377.16687
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25238
+      TIME                 = 1996-133T20:08:52.199
+      X_POSITION           = -6301.68320
+      Y_POSITION           = -3410.71027
+      Z_POSITION           = -0.00185
+      X_VELOCITY           = -519.89491
+      Y_VELOCITY           = 978.63188
+      Z_VELOCITY           = 7377.20084
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25239
+      TIME                 = 1996-133T21:49:28.094
+      X_POSITION           = -6297.56043
+      Y_POSITION           = -3418.34866
+      Z_POSITION           = -0.00355
+      X_VELOCITY           = -521.10818
+      Y_VELOCITY           = 978.18883
+      Z_VELOCITY           = 7377.17225
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25240
+      TIME                 = 1996-133T23:30:03.947
+      X_POSITION           = -6293.44634
+      Y_POSITION           = -3425.99559
+      Z_POSITION           = 0.00193
+      X_VELOCITY           = -522.27632
+      Y_VELOCITY           = 977.61921
+      Z_VELOCITY           = 7377.12631
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25241
+      TIME                 = 1996-134T01:10:39.802
+      X_POSITION           = -6289.38364
+      Y_POSITION           = -3433.54945
+      Z_POSITION           = 0.00070
+      X_VELOCITY           = -523.39791
+      Y_VELOCITY           = 976.94184
+      Z_VELOCITY           = 7377.06230
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25242
+      TIME                 = 1996-134T02:51:15.681
+      X_POSITION           = -6285.30410
+      Y_POSITION           = -3441.05105
+      Z_POSITION           = 0.00051
+      X_VELOCITY           = -524.52325
+      Y_VELOCITY           = 976.14952
+      Z_VELOCITY           = 7377.08659
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25243
+      TIME                 = 1996-134T04:31:51.638
+      X_POSITION           = -6280.98835
+      Y_POSITION           = -3448.70254
+      Z_POSITION           = -0.00339
+      X_VELOCITY           = -525.65263
+      Y_VELOCITY           = 975.32778
+      Z_VELOCITY           = 7377.23924
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25244
+      TIME                 = 1996-134T06:12:27.651
+      X_POSITION           = -6276.66750
+      Y_POSITION           = -3456.27801
+      Z_POSITION           = 0.00012
+      X_VELOCITY           = -526.76850
+      Y_VELOCITY           = 974.75246
+      Z_VELOCITY           = 7377.36481
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25245
+      TIME                 = 1996-134T07:53:03.607
+      X_POSITION           = -6272.43867
+      Y_POSITION           = -3463.74255
+      Z_POSITION           = -0.00294
+      X_VELOCITY           = -528.04189
+      Y_VELOCITY           = 974.21041
+      Z_VELOCITY           = 7377.45817
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25246
+      TIME                 = 1996-134T09:33:39.505
+      X_POSITION           = -6268.29509
+      Y_POSITION           = -3471.22517
+      Z_POSITION           = -0.00058
+      X_VELOCITY           = -529.32515
+      Y_VELOCITY           = 973.70435
+      Z_VELOCITY           = 7377.44532
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25247
+      TIME                 = 1996-134T11:14:15.376
+      X_POSITION           = -6264.17092
+      Y_POSITION           = -3478.69744
+      Z_POSITION           = -0.00115
+      X_VELOCITY           = -530.54211
+      Y_VELOCITY           = 973.12628
+      Z_VELOCITY           = 7377.43214
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25248
+      TIME                 = 1996-134T12:54:51.234
+      X_POSITION           = -6260.09225
+      Y_POSITION           = -3486.23772
+      Z_POSITION           = -0.00210
+      X_VELOCITY           = -531.70448
+      Y_VELOCITY           = 972.44828
+      Z_VELOCITY           = 7377.35812
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25249
+      TIME                 = 1996-134T14:35:27.127
+      X_POSITION           = -6256.02517
+      Y_POSITION           = -3493.83832
+      Z_POSITION           = -0.00304
+      X_VELOCITY           = -532.75887
+      Y_VELOCITY           = 971.66785
+      Z_VELOCITY           = 7377.21506
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25250
+      TIME                 = 1996-134T16:16:03.101
+      X_POSITION           = -6251.90821
+      Y_POSITION           = -3501.29386
+      Z_POSITION           = -0.00101
+      X_VELOCITY           = -533.84249
+      Y_VELOCITY           = 970.81343
+      Z_VELOCITY           = 7377.13576
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25251
+      TIME                 = 1996-134T17:56:39.117
+      X_POSITION           = -6247.68922
+      Y_POSITION           = -3508.73243
+      Z_POSITION           = -0.00185
+      X_VELOCITY           = -535.02612
+      Y_VELOCITY           = 970.17059
+      Z_VELOCITY           = 7377.15171
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25252
+      TIME                 = 1996-134T19:37:15.111
+      X_POSITION           = -6243.41914
+      Y_POSITION           = -3516.23763
+      Z_POSITION           = 0.00287
+      X_VELOCITY           = -536.23850
+      Y_VELOCITY           = 969.70053
+      Z_VELOCITY           = 7377.20013
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25253
+      TIME                 = 1996-134T21:17:51.031
+      X_POSITION           = -6239.16025
+      Y_POSITION           = -3523.78212
+      Z_POSITION           = -0.00164
+      X_VELOCITY           = -537.45377
+      Y_VELOCITY           = 969.28204
+      Z_VELOCITY           = 7377.18425
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+  OBJECT                 = STATE_VECTOR_RECORD
+
+    OBJECT                 = STATE_VECTOR_METADATA
+      PLATFORM             = 'E1'
+      STATE_VECTOR_PRECISION = 'PREDICTED'
+      COORDINATE_SYSTEM    = 'TRUE_EQUATORIAL'
+    END_OBJECT             = STATE_VECTOR_METADATA
+
+    OBJECT                 = STATE_VECTOR_DATA
+      REVOLUTION           = 25254
+      TIME                 = 1996-134T22:58:26.883
+      X_POSITION           = -6234.90859
+      Y_POSITION           = -3531.37492
+      Z_POSITION           = -0.00275
+      X_VELOCITY           = -538.66284
+      Y_VELOCITY           = 968.72234
+      Z_VELOCITY           = 7377.14039
+    END_OBJECT             = STATE_VECTOR_DATA
+
+  END_OBJECT             = STATE_VECTOR_RECORD
+
+END_OBJECT             = STATE_VECTOR
+
+END

@@ -1,0 +1,375 @@
+<html>
+<head>
+<title>FAIF</title>
+</head>
+<body bgcolor="#ffffff" text="#000000" link="#0000FF" >
+<hr>
+<p>
+<h1> 
+<center>FAIF - Flight Agency Interface Function</center></h1>
+<hr>
+
+<p>
+Summary :
+<p>
+<font size=+1>
+
+<A HREF="#01"><img src="Graphics/set.gif">
+1. The environment variables FAIF_ROOTPATH and FAIF_BINPATH</A><br>
+
+<A HREF="#02"><img src="Graphics/lightnin.gif">
+2. The FAIF directory structure</A><br>
+
+<A HREF="#03"><img src="Graphics/list1.gif">
+3. FAIF executables and scripts</A><br>
+
+<A HREF="#04"><img src="Graphics/list2.gif">
+4. FAIF config files</A><br>
+
+<A HREF="#05"><img src="Graphics/lock1.gif">
+5. Password Encryption</A><br>
+
+<A HREF="#06"><img src="Graphics/lightnin.gif">
+6. FAIF program execution</A><br>
+
+<A HREF="#07"><img src="Graphics/eyeglasses.gif">
+7. Monitoring FAIF </A><br>
+
+<A HREF="#08"><img src="Graphics/elink.gif">
+8. Nominal Operations </A><br>
+
+<A HREF="#9"><img src="Graphics/alarmclock.gif">
+9. Changing the crontab file</A><br>
+
+<A HREF="#10"><img src="Graphics/qmark.gif">
+10. Unrecognized files</A><br>
+
+<A HREF="#11"><img src="Graphics/lightnin.gif">
+11. Shutting down FAIF</A><br>
+</font>
+
+<hr>
+
+<p><font size=+1>
+<a name="01"><p><b>1.</b>  The environment variables FAIF_ROOTPATH and FAIF_BINPATH.</a></font>
+
+<p><b>
+Both of these environment variables are normally set via set_env.csh,</b> which should be referenced in the FAIF operator's .cshrc file, like this: <pre>
+    >source set_env.csh </pre>
+
+<p>
+FAIF_ROOTPATH is an environment variable whose value must be set to the 
+root of the <a href="#02">FAIF working directory</a> tree in which reception directories, 
+default configuration files and temporary FTP files are to be stored.  
+
+<p>
+Example setting of FAIF_ROOTPATH:<pre>
+    >setenv FAIF_ROOTPATH /LOCAL/R2.1.2/faif </pre>
+
+<p>
+FAIF_BINPATH is an environment variable whose value must be set to the
+name of the directory where FAIF executables and scripts are found.  Note
+that all scripts and programs must stored in the same directory.
+FAIF_BINPATH is normally set to /ASF/R<i>xx</i>/bin for Release R<i>xx</i>.
+
+<p>
+Example setting of FAIF_BINPATH:<pre>
+    >setenv FAIF_BINPATH /ASF/R2.1.2/bin </pre>
+
+<p>
+<hr align=center width=60%><font size=+1>
+<a name="02"><b>2.</b>  The FAIF directory structure.</font>
+
+<p>
+The FAIF working directory tree which includes reception, FTP and other 
+subdirectories.  The directory structure is built under the top directory 
+which is specified by the value of the environment variable <a href="#01">FAIF_ROOTPATH</a>.
+
+<p>
+The FAIF working directory tree comprises of the following:
+
+<ul>
+  <li> reception directories where flight agencies will deposit files into,
+  <li> directories for storing FTP temporary files, 
+  <li> a directory for holding encrypted password, 
+  <li> a directory for generated shell scripts,
+  <li> directories for default config files,
+
+</ul>
+<p>
+Details are <a href="dir_structure.html">here</a>.
+ 
+<p>
+Under $FAIF_ROOTPATH, ESA/, NASDA/, WALPS/, and CSA/CSA_<i>XXX</i>/ 
+are the reception directories.  Notice that each agency's directory also has a 
+config and a log directory for storing default configuration and log files, 
+respectively.
+ 
+<p>
+$FAIF_ROOTPATH/FTP/stmp/ is used by the FTP send script <a href="FAIF_XXX_ftpsend.html">FAIF_ftpsend.csh</a> 
+for storing temporary files while $FAIF_ROOTPATH/gtmp/ is used by the FTP get 
+scripts <a href="CSA_ftpget.html">CSA_ftpget.csh</a>, <a href="ESA_ftpget.html">ESA_ftpget.csh</a>, and <a href="J1_ftpget.html">J1_ftpget.csh</a>.
+ 
+<p>
+The $FAIF_ROOTPATH/FTP/upw/ directory is used to store encrypted password files
+<ul>
+  <li> encrypted usernames and passwords are written to files which are stored 
+here by the <a href="FAIF_encrypt.html">FAIF_encrypt</a> program.
+ 
+</ul>
+<p>
+/local/faif/config/ is used to store the FAIF <a href="crontab.html">crontab</a> and the 
+<a href="FAxmitserver.html">FAxmitserver</a> configuration file.
+ 
+ 
+<p>
+/local/etc/ is used to store documentation for the FAIF programs delivered.  
+Directories under /local/etc/ contain FAIF documents such as the Release 
+Description Document (RDD).  $FAIF_ROOTPATH/etc/html/ contains files
+for this FAIF Hypertext document.
+ 
+<p>
+<hr align=center width=60%><font size=+1>
+<a name="03"><b>3.</b> FAIF executables and scripts</a></font>
+<p>
+Below are the names of the programs and scripts used in FAIF:
+
+<p>
+<a href="dirmons.html">ESAdirmon</a><br>
+<a href="dirmons.html">NASDAdirmon</a><br>
+<a href="dirmons.html">WALPSdirmon</a><br>
+<a href="CSAgetfile.html">CSAgetfile</a><br>
+<a href="CSAgetfile.html">CSAgetfile_all</a><br>
+idCSAfilename<br>
+CSAPredOrRes<br>
+<a href="CSA_ftpget.html">CSA_ftpget.csh</a><br>
+<a href="J1_ftpget.html">J1_ftpget.csh</a><br>
+<a href="J1_ftpget.html">J1_ftpget_all.csh</a><br>
+<a href="ESA_ftpget.html">ESA_ftpget.csh</a><br>
+<a href="ESA_ftpget.html">ESA_ftpget_all.csh</a><br>
+<a href="FAIF_XXX_ftpsend.html">FAIF_UNIX_ftpsend.csh</a><br>
+<a href="FAIF_XXX_ftpsend.html">FAIF_VAX_ftpsend.csh</a><br>
+<a href="FAxmitserver.html">FAxmitserver</a><br>
+<a href="faif_xmitClient.html">faif_xmitClient</a><br>
+<a href="FAIF_encrypt.html">FAIF_encrypt</a><br>
+
+<p>
+Other supporting utilities must also be installed on the system for proper
+functioning of the above programs:
+
+<p>
+uuidgen - DCE provided uuid generator program<br>
+ftp     - Unix FTP program 
+
+<p>
+<hr align=center width=60%><font size=+1>
+<a name="04"><b>4.</b> FAIF config files.</a></font>
+
+<p>
+The FAIF programs require additional environment variables that are defined
+in config files.  The default config files listed below are part of the
+delivered FAIF system.  Although they may be modified if necessary, using
+the default config files will simplify execution of the programs.
+
+<p>
+The delivered versions of the config files should only rarely need any 
+modification.  Any changes should be thoroughly tested; mistakes in the config 
+files can cause many serious operational problems. 
+
+<p>
+The configuration files reference directories beneath <a href="#01">FAIF_ROOTPATH</a>. 
+If you are not using the default config files, you should check that all 
+referenced directories actually exist prior to program execution.
+
+<pre>
+Config filename                                     Program
+---------------                                     -------
+<p>
+$FAIF_ROOTPATH/CSA/config/CSAgetfile.config      (CSAgetfile)
+$FAIF_ROOTPATH/ESA/config/ESAdirmon.config       (ESAdirmon)
+$FAIF_ROOTPATH/NASDA/config/NASDAdirmon.config   (NASDAdirmon)
+$FAIF_ROOTPATH/WALPS/config/WALPSdirmon.config   (WALPSdirmon)
+$FAIF_ROOTPATH/config/FAxmitserver.config        (FAxmitserver)
+</pre>
+
+<p>
+<hr align=center width=60%><font size=+1>
+<a name="05"><b>5.</b> Password Encryption.</a></font>
+
+<p>
+All FAIF interfaces which use FTP need access to password information.  All
+passwords are encrypted in FAIF using the <a href="FAIF_encrypt.html">FAIF_encrypt</a> program.  Prior to
+running FAIF programs, you must run FAIF_encrypt.  If FAIF_encrypt has been
+previously performed, the appropriate password file in $FAIF_ROOTPATH/FTP/upw
+must be removed if you decide to change the password information and run
+FAIF_encrypt again.
+
+<p>
+Usage:<br> <pre>
+    >$FAIF_BINPATH/FAIF_encrypt -i <i>interface</i>  </pre>
+where <i>interface</i> is the interface for which the password information 
+is intended.  Below are valid values for <i>interface</i>.  After giving the
+<b>FAIF_encrypt</b> command, you will be prompted for the username and 
+password. <pre>
+
+    ESA          - FAIF/ESA  for inbound and outbound files
+                   (Requires the ESA username and password)
+    NASDA        - FAIF/NASDA  for inbound and outbound files
+                   (Requires the NASDA username and password)
+    WALPS        - FAIF to Wallops (Requires the Wallops username and password)
+    CSA_ufdrf_F  - FAIF/CSA UFDRF  for Fairbanks inbound and outbound
+                   (Requires the appropriate CSA username and password)
+    CSA_ufcal_F  - FAIF/CSA UFCAL  for Fairbanks inbound and outbound
+                   (Requires the appropriate CSA username and password)
+    CSA_ufdroc_F - FAIF/CSA UFDROC for Fairbanks inbound and outbound
+                   (Requires the appropriate CSA username and password)
+    CSA_ufdrf_M  - FAIF/CSA UFDRF  for McMurdo inbound and outbound
+                   (Requires the appropriate CSA username and password)
+    CSA_ufcal_M  - FAIF/CSA UFCAL  for McMurdo inbound and outbound
+                   (Requires the appropriate CSA username and password)
+    CSA_ufdroc_M - FAIF/CSA UFDROC for McMurdo inbound and outbound
+                   (Requires the appropriate CSA username and password)
+
+</pre>
+
+<p>
+<hr align=center width=60%><font size=+1>
+<a name="06"><b>6.</b> FAIF program execution</a></font>
+
+<p>
+FAIF programs are run via cron.  After all set-up is complete, the FAIF crontab 
+file can be established by the following command:<pre>
+      >crontab $FAIF_ROOTPATH/config/crontab.default </pre>
+
+<p>
+FAIF consists of several separate programs, and this command establishes
+a <a href="crontab.html">crontab</a> file that will run each of them periodically.  FAIF uses the 
+cron daemon to schedule these according to the specified crontab file.
+
+<p>
+<hr align=center width=60%><font size=+1>
+<a name="07"><b>7.</b> Monitoring FAIF </a></font>
+
+<p>
+FAIF reports most of its activities via <a href="syslog.html">syslog</a>. This is the main 
+starting point for monitoring and <a href="trouble_shoot.html">trouble-shooting FAIF</a>.  Monitoring syslog at
+least daily is strongly recommended.  
+
+<p>
+For each flight agency, FAIF also maintains a log of incoming files it handles.
+These are in the log sub-directories.  FAIF's FTP activity is reported in the 
+sub-directories under FTP.  (These are only kept a short time; they are re-used
+for subsequent FTP sessions.)  See <a href="trouble_shoot.html">trouble-shooting FAIF</a> for more information.
+
+<p>
+<hr align=center width=60%><font size=+1>
+<a name="08"><b>8.</b> Nominal Operations </a></font>
+
+<p>
+In normal operation, FAIF runs by itself.  The way files from the foreign flight
+agencies reach ASF varies:
+
+<ul>
+  <li> For ERS-1 and ERS-2, FAIF retrieves files from ESA on a schedule set
+by the crontab file, and deletes the files from the ESA host computer once
+they are safely in hand at ASF.
+  <li> For JERS-1, FAIF retrieves files from NASDA on a schedule set
+by the crontab file.
+  <li> For RADARSAT, FAIF retrieves files from CSA on a schedule
+set by the crontab file, and deletes the files from the CSA host computer once
+they are safely in hand at ASF.
+
+</ul>
+<p>
+Once they are in the local reception directories, FAIF's <a href="dirmons.html"> directory monitors</a> 
+perform any needed translations, construct meta-data, route the files as 
+specified in the config files, and archive them in IMS.
+
+<p>
+<hr align=center width=60%><font size=+1>
+<a name="9"><b>9.</b> Changing the <a href="crontab.html">crontab</a> file.</a></font>
+
+<p>
+To examine the active crontab file, use the command: <pre>
+      >crontab -l
+</pre>
+<p>   
+Standard unix and crontab commands can be used to change FAIF's program
+execution schedule by adjusting the crontab file.  This can be done by
+  (a) writing a new crontab file, or
+  (b) editing a crontab file which is in use
+
+<p>                              
+(a) You may write a new crontab file (perhaps starting from 
+/local/faif/crontab.default, if you wish).  To put it to use, simply 
+use it in the command: <pre>
+      >crontab <i>my_crontab_file</i>
+</pre>
+<p>
+The changes will take effect immediately.
+
+<p>
+(b) You can edit the active crontab file by using the command: <pre>
+      >crontab -e
+</pre>
+<p>
+(This will invoke the editor specified by the EDITOR environment 
+variable, so you should check that first.)
+
+<p>
+Lines that begin with # are comment lines and are ignored by the cron
+daemon.  Commenting lines in the active crontab file is an easy way to 
+"turn off" particular FAIF executables.
+
+<p>
+The changes will take effect immediately.
+
+<p>
+<hr align=center width=60%><font size=+1>
+<a name="10"><b>10.</b>  Note on unrecognized files</a></font>
+
+<p>
+Note that files that cannot be identified by the FAIF directory 
+monitors remain in the reception directories.  They are not automatically
+deleted.  They are reported in the FAIF <a href="syslog.html">syslog</a> 
+repeatedly until removed by manual intervention.
+<p>
+<hr align=center width=60%><font size=+1>
+<a name="11"><b>11.</b>  Shutting down FAIF</a></font>
+<p>
+Because FAIF involves multiple executable files, shell scripts, lock files,
+semaphores, and interactions with other local and remote computers, shutting 
+down FAIF should be down in a careful manner.   
+<p>
+Details are <a href="shutdown.html">here</a>.
+<p>
+<hr>
+<p>
+<H3>Visit the <A HREF="http://epic.jpl.nasa.gov/asf/">JPL ASFD Home Page</A></H3><p>
+<hr>
+
+<B>
+<P>
+<IMG ALIGN=middle SRC="Graphics/jpl80.gif">
+<A HREF = "http://www.jpl.nasa.gov/">Jet Propulsion Laboratory</A>, 4800 Oak Grove Drive, Pasadena, CA. 91109-8099
+
+<P>
+<hr>
+<address>
+<img align=middle src="Graphics/phone.gif"> Send 
+<a href="mailto:faif@cogito.jpl.nasa.gov">feedback</a> </address>
+
+<hr>
+<p>
+<font size = -1>
+Last Modified:  February, 1998
+
+<p> 
+Copyright (c) 1996, 1997, 1998, California Institute of Technology.<br>
+ALL RIGHTS RESERVED.  U.S. Government Sponsorship acknowledged.
+</font>
+
+</B>
+
+</body>
+</html>

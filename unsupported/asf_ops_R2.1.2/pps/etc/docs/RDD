@@ -1,0 +1,48 @@
+=============================== PPS Release 2.1 ==============================
+
+I. New functionalities:
+
+	1. Upon receiving a SPS Job Status messages with RETRY status,
+	   update the job status and send IMS Order Status message with
+	   status RETRY.
+	2. Upon receivng a SPS Job Status messages with CANCEL/FAIL status,
+	   send IMS Order Status message with status FAILED.  If the Order
+	   Status message is successfully sent to the IMS, delete the job
+	   from the PPS database, otherwise keep the job in status CANCEL/FAIL.
+
+II. PR fixed:
+
+   	1. PR 2550: IMS Order Status message needs to be sent for a job which
+	            is unplanned (state change from AVAILABLE to READY) 
+	2. PR 2512: PPS fails to search the entire PLANNED queue to satisfy a
+	            a CP job request for a specific type.
+	3. ASF 693: The pps_server_debug writes several tens of MBs of NUL 
+	            characters at the head of the PPSrun.log file upon its first
+	            write to the file.
+	4. PR xxxx: A float value should be accepted as a search value for 
+	            pixel_spacing on the PPS GUI Query window. 
+
+III. Operational changes:
+
+	The PPS_startserver.csh was modified to make use of the script
+	$ASF/bin/wrt_PPSrunlog.sh which is maintained and delivered by FAIF.
+	The fix for PR 693 described above requires the outputs generated from
+	the PPS Server to be piped to the script wrt_PPSrunlog.sh, which allows
+	the PPSrun.log to be rotated properly without producing extraneous NUL 
+	characters.  
+
+	When the PPS_startserver.csh script is invoked with -d option, stdout and
+	stderr will be redirected to the file "/LOCAL/pps/logs/PPSrun.log".  
+
+IV. Special notes for testing:
+
+	The problem described in PR 693 can only be reproduced when the PPSrun.log
+	is rotated by the system log rotate script while the PPS Server is up.
+	To test this PR: 
+	    - Start the PPS Server using the PPS_startserver.csh script
+	      with -d option. 
+	    - Request Sevak to execute the system log rotate script on 
+	      /LOCAL/pps/logs/PPSrun.log while the PPS Server is up.
+	    - Invoke any RPC which triggers the Server to write to PPSrun.log
+	      and verify that no NUL characters are inserted at the head of
+	      the file. 

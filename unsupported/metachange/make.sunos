@@ -1,0 +1,39 @@
+# Makefile for          :  meta
+# Module Author         :  Orion Lawlor
+# Platform              :  sunos
+# Makefile Date         :  2/97
+
+SYS = sunos
+INCDIR = ../asf_tools/src/asf_inc
+LIBDIR = ../asf_tools/lib/$(SYS)
+CFLAGS = -I$(INCDIR) -DSYSV
+OLIBS = $(LIBDIR)/asf_lt.a \
+	$(LIBDIR)/asf_geolib.a \
+	$(LIBDIR)/asf_las.a \
+	$(LIBDIR)/asf_sar.a 
+LIBS = $(OLIBS) -lm -lsunmath
+OBJS = parse_ldr.o code_ldr.o
+GRFILES=../gr2sr/gr2ml_vec.c ../gr2sr/gr2sr_vec.c
+
+meta: meta.c $(GRFILES) $(OBJS) $(OLIBS)
+	$(CC) $(CFLAGS) -o meta $(GRFILES) meta.c $(OBJS) $(OLIBS) $(LIBS)
+	rm *.o
+	cp meta ../asf_tools/bin/solaris
+
+parse_ldr.o: parse_ldr.c
+	$(CC) $(CFLAGS) -c parse_ldr.c
+	
+code_ldr.o: code_ldr.c
+	$(CC) $(CFLAGS) -c code_ldr.c
+
+$(LIBDIR)/asf_sar.a:
+        cd ../asf_sar; cp make.$(SYS) Makefile; make; rm Makefile
+
+$(LIBDIR)/asf_las.a:
+        cd ../asf_las; cp make.$(SYS) Makefile; make; rm Makefile
+
+$(LIBDIR)/asf_geolib.a:
+	cd ../asf_geolib; cp make.$(SYS) Makefile; make; rm Makefile
+
+$(LIBDIR)/asf_lt.a:
+        cd ../asf_lt; cp make.$(SYS) Makefile; make; rm Makefile

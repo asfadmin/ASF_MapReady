@@ -1,0 +1,13 @@
+#! /bin/csh
+
+#===============================================================================
+# Copyright(c) 1996, California Institute of Technology.
+#             ALL RIGHTS RESERVED.
+# U.S. Government Sponsorship acknowledged.
+#---------------------------------------------
+# SCCS:
+#       "@(#)Runserver	1.1    11/21/96"
+#---------------------------------------------
+
+source pps_setup.csh
+sparc/pps_server 

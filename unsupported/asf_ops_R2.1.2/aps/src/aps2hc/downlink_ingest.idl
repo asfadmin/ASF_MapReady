@@ -1,0 +1,77 @@
+/*
+ * Filename: downlink_ingest.idl
+ *
+ * Abstract: Interface specification for Acquistion Downlink Ingest
+ * services.
+ *
+ * Author:   Norman Cushing
+ *
+ * History:  10 Nov 1995 -- NJC -- Initial version.
+ *
+ *  This file specifies the interface for RPC services specific to
+ *  Acquisition Downlink Ingest
+ */
+
+[ uuid(004efc5a-7b8e-1043-be3b-89e5253caa77), version(1.0) ]
+
+interface downlink_ingest
+{
+   import "hst_types.idl";
+
+
+/*
+ * put_wos - is used by the client to inform the HC that
+ * one or more wos file(s) are available for pick up
+ * from the client.
+ *
+ * See the HC Interface Design document for a description of
+ *    handle, source, send_time, and status.
+ *
+ * count - the number of paths (valid data elements in the array)
+ *         in the data_file_path array.
+ *
+ * data_file_path - an array whose values are the paths to the files
+ *                  that contain the wos.
+ *
+ *                  A valid path must include the directory and file, e.g.:
+ *
+ *                       /hc/out/wos/wos_1995-123T23:59:59.999
+ */
+   void downlink_ingest_put_wos
+   (
+      [in]  handle_t                       handle,
+      [in]  process_id_t                   source,
+      [in]  time_t                         send_time,
+      [in]  long                           count,
+      [in, size_is (count)] process_addr_t data_file_path[],
+      [out] error_status_t                 *status
+   );
+
+/*
+ * put_ephemeris - is used by the client to inform the HC that
+ * one or more ephemeris file(s) are available for pick up
+ * from the client.
+ *
+ * See the HC Interface Design document for a description of
+ *    handle, source, send_time, and status.
+ *
+ * count - the number of paths (valid data elements in the array)
+ *         in the data_file_path array.
+ *
+ * data_file_path - an array whose values are the paths to the files
+ *                  that contain the ephemeris.
+ *
+ *                  A valid path must include the directory and file, e.g.:
+ *
+ *                       /hc/out/ephemeris/sv_1995-123T23:59:59.999
+ */
+   void downlink_ingest_put_ephemeris
+   (
+      [in]  handle_t                       handle,
+      [in]  process_id_t                   source,
+      [in]  time_t                         send_time,
+      [in]  long                           count,
+      [in, size_is (count)] process_addr_t data_file_path[],
+      [out] error_status_t                 *status
+   );
+}

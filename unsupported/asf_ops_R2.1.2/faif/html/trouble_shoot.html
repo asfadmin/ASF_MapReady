@@ -1,0 +1,231 @@
+<html>
+<head>
+<title>FAIF Trouble-Shooting</title>
+</head>
+<body bgcolor="#ffffff">
+
+<font size=+1>
+<center><b> FAIF Trouble-Shooting </b></center>
+</font>
+<p>
+<b> It is important to remember that FAIF is meant to generally operate in a
+hands-off manner.  This even includes some common error conditions.</b>
+<P>
+Many error conditions in FAIF operations will fix themselves simply by 
+waiting for FAIF to try again, on its regular, cron-controlled schedule.
+<p>
+For example, when IMS is unavailable or a connection to a Flight Agency cannot
+be made, these are often transient situations.  All of FAIF's programs
+run on a regular repeat schedule (as set in the crontab file), and the
+problem might be cleared by the time of the next run.  No operator attention 
+in these cases is needed unless the problem persists after repeated tries.  
+<p>
+In some circumstances, you may not wish to wait for the next regularly-
+scheduled run of a particular FAIF process.  In that case, the <a href="crontab.html">crontab</a>
+file can be adjusted to run the executable sooner and/or more frequently.
+
+<p>
+Topics covered here are:
+<p>
+<A HREF="#01">1.  Error and Warning Messages in Syslog </A><br>
+
+<A HREF="#02">2.  Error Reports in E-Mail </A><br>
+
+<A HREF="#03">3.  Examining FTP Logs </A><br>
+
+<A HREF="#04">4.  IMS Problems </A><br>
+
+<A HREF="#05">5.  Semaphore Problems </A><br>
+
+<A HREF="#06">6.  Client- Server Problems </A><br>
+
+<A HREF="#07">7.  External Communication Problems </A><br>
+
+<p>
+<hr>
+<font size = +1>
+<center>
+<b><a name="01">1.  Partial catalog of FAIF error and warning messages in syslog</a></b>
+</center></font>
+<P> <b>
+WARNING: Check Send List error</b><br>
+  - Check the preceding messages for more information.
+<p> <b>
+WARNING: Error status returned by activate_route</B><br>
+  - Check the preceding messages for more information.
+<p> <b>WARNING: No files in file list.</b><br>
+  - If there are no other error or warning messages in this job, this is 
+    just a notification that there was no work done.  It can be ignored.
+<p> <b>
+WARNING: No value for ..... Using default ....</b><br>
+  - If there are no further error or warning messages in this job, make sure
+    the appropriate config file is complete.  Compare it to the originally-
+    delivered version.  
+<p> <b>
+ERROR: Unable to archive file .... Keeping file in reception area.</b><br>
+  - Check the preceding messages for more information.
+<p> <b>
+Sybase message: ....</B><br>
+  - "granule will be replaced" or "granule will be added" messages indicate
+     successful operation.  Other Sybase messages may indicate problems.
+     Check the preceding messages for more information, and see the 
+     section below on <a href="#04">IMS problems</a>
+<p> <b>
+WARNING: Error sending ....</b><br>
+  - Check the preceding messages and the FAIF operator's e-mail for more 
+    information.
+<p> <b>
+WARNING: Unable to open ....</b><br>
+  - This should not be seen unless FAIF's working environment or config
+    files have been changed.<br>
+  - Make sure the appropriate config file is complete and correct.  Compare
+    it to the originally-delivered version. <br> 
+  - Make sure the specified directory exists.<br>
+  - Check the permissions on the specified file.
+<p> <b> 
+WARNING: Unable to determine file type ....</b><br>
+  - If the indicated file is of unknown type, move it out of the reception
+    directory and investigate how it got there.<br>
+  - Otherwise, the file may have been damaged in transmission; retrieve it
+    again (possibly manually), if possible.
+<p> <b>
+Call dbopen( ) failed</b><br>
+  - See the section below on <a href="#04">IMS problems</a>
+<p> <b>
+Error in binding_import_next</b><br>
+  - See the section below on <a href="#06">DCE problems</a>
+<p>
+<hr>
+<font size = +1> 
+<center>
+<A name="02"><b><br>2.  Errors reported in FAIF e-mail</a></b>
+</center>
+</font>
+<p>
+E-mail indicating failure to retrieve files by FAIF, should 
+be investigated.  The e-mail in such cases will give further diagnostic 
+information.
+<p>
+Certain other error conditions can also result in an e-mail notice to the
+faif account.  Again, the e-mail will itself contain additional diagnostic
+information.
+<p>
+<hr>
+<font size = +1>
+<center>
+<a name="03"><b>3.  Examining FAIF FTP Logs. </b></A>
+</center>
+</font>
+<p>
+FAIF keeps the logs of each FTP session until the next attempt for the same
+file type.  These logs are found in<B> $FAIF_ROOTPATH/FTP/gtmp/*.activity.*</B>  
+<p>
+See below for <a href="#07">network communications problems</a>.  For apparently incorrect
+directories or filenames, make sure the appropriate config file is complete 
+and correct.  Compare it to the originally-delivered version.
+<p>
+<hr>
+<font size = +1>
+<center>
+<a name="04"><b>4.  IMS problems</b></A>
+</center>
+</font>
+<p>
+Unable to connect:<pre>
+  1.  Verify that the IMS is up and running.  Check with the IMS Operator
+      or the DBA.
+  2.  Make certain that the IMS information in the config file is correct.
+      Especially if the config file was recently edited, re-check the IMS
+      values against those in the originally-delivered version.
+
+</pre>
+<p>
+All other problems:<pre>
+   Call either FAIF or IMS support staff at JPL.  Supply the entire log
+   section, file(s), etc.
+
+</pre>
+<p>
+<hr>
+<font size = +1>
+<center>
+<a name="05"><b>5.  Semaphore problems </b></A>
+</center>
+</font>
+<p>
+When semaphore problems are reported in FAIF syslog messages, the operator 
+should check for unwanted FAIF semaphores using the Unix <b>ipcs</b> command.  If 
+any are found, use the Unix <b>ipcrm</b> command to remove them.  (See the Unix man 
+pages for more information on the <b>ipcs</b> and <b>ipcrm</b> commands.)
+<p>
+Then re-try the operation, either on the normal cron schedule or by adjusting 
+the <a href="crontab.html">crontab</a> file to try again immediately.
+<p>
+If the problem persists, there may be FAIF-related semaphores that must be
+removed by the system administrator.
+<p>
+<hr>
+<font size = +1>
+<center>
+<a name="06"><b>6.  Client-Server problems </b></A>
+</center>
+</font>
+<p>
+1.  Kill the server, if it is running.
+<pre> 
+        >ps -ef | grep FAxmitserver
+        >kill -2 #
+ </pre>
+2.  Restart the server:
+<pre>
+  >$FAIF_BINPATH/FAxmitserver -c $FAIF_ROOTPATH/config/FAxmitserver.config \
+    -e $FAXMIT_CDS_ENTRY &
+ </pre>
+<p>
+For other DCE monitoring, these commands may be useful:
+<p>
+To obtain the server's uuid:<pre> 
+        >cdsping -path $FAXMIT_CDS_ENTRY
+</pre><p>
+    The uuid will be a 36-character string something like:<pre>
+        00228e90-f835-108f-b4a9-894f6ca6aa77
+</pre><p>
+(If <b>cdsping</b> just "hangs" (no output after several minutes) it may be a sign 
+of a DCE problem. A usually successful response has been to have the system
+administrator kill and restart the various DCE processes, such as secd, 
+cdsd, rpcd, sec_clientd, cdsadv and cdsclerk.)
+<p>
+To remove an unwanted entry, use the uuid:
+<pre>
+     >rpccp unexport -i <i>uuid</i>,1.0 $FAXMIT_CDS_ENTRY
+</pre>
+    Using the sample uuid above, this command would be:
+<pre>
+  >rpccp unexport -i 00228e90-f835-108f-b4a9-894f6ca6aa77,1.0 $FAXMIT_CDS_ENTRY
+ </pre>
+ <p>
+
+<hr>
+<font size = +1>
+<center>
+<a name="07"><b>7.  External Communication problems </b></A>
+</center>
+</font>
+<p>
+Check the FAIF FTP activity logs found in <b>$FAIF_ROOTPATH/FTP/gtmp/*.activity.*</B>
+Those should help pin down the problem.
+<p>
+Have the ASF System Administrator check the network and communication paths.
+
+<p>
+<hr>
+<p>
+<font size = -1>
+Last Modified:  March, 1998
+<p> 
+Copyright (c) 1996, 1997, 1998, California Institute of Technology.<br>
+ALL RIGHTS RESERVED.  U.S. Government Sponsorship acknowledged.
+</font>
+
+</body>
+</html>

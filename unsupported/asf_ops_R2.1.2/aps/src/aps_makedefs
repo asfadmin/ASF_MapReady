@@ -1,0 +1,389 @@
+###############################################################################
+#
+# File:         aps_makedefs
+#
+# Function:     Definitions for the make process.
+#
+# Author:       Ron Green (Inspired by S. Hardman)
+#
+# Date:         02/02/95
+#
+# SCCS Info:
+#	"%W% %E% APS/ASF"
+#	"%Z% %P%"
+#
+###############################################################################
+
+.PHONY :	clean lint depend
+
+###############################################################################
+#
+# Command variables.
+#
+###############################################################################
+
+CC   =      cc
+FC   =      f77 -c -g -xl
+ARCHIVE =   ar
+
+MAKE =      gnumake $(MAKEOVERRIDES)
+LINT =      lint -ux
+
+###############################################################################
+#
+# Machine specific flags.
+#
+###############################################################################
+
+MACH :=      $(shell $(APS_HOME)/src/machmake)
+ifeq ($(MACH), sparc)
+	OS   =      solaris
+endif
+ifeq ($(MACH), sgi)
+	OS   =      irix
+endif
+
+#
+# Flags for Sparc machines running Solaris.
+#
+solarisCFLAGS = -Xc 
+#-D_POSIX_C_SOURCE
+solarisIFLAGS = 
+solarisLFLAGS = -L/opt/SUNWspro/lib -L/usr/ucblib
+#-ltli 
+solarisLIBS   = -lsocket -lgen -lnsl -lintl  -ldl -lc -lucb
+
+#
+# Flags for Sgi machines running IRIX
+#
+irixCFLAGS := -xansi
+irixIFLAGS := 
+irixLFLAGS :=
+irixLIBS   := -lsocket -lgen -lnsl -lintl  -ldl -lc -lucb
+
+MATH_LIB           = -lF77 -lM77 -lsunmath -lm 
+SPARC_LIB          = -lnsl -lcrypt -lsocket -lgen -lelf -lc -lucb
+APS_MULTI_USER_LIB = -lmu
+
+OSCFLAGS =      $(DPOFLAGS) $($(OS)CFLAGS)
+OSIFLAGS =      $($(OS)IFLAGS)
+OSLFLAGS =      $($(OS)LFLAGS)
+OSLIBS =        $($(OS)LIBS)
+
+###############################################################################
+#
+# Machine independent flags and environment variables.
+#
+###############################################################################
+
+#
+# Compile flags.
+#    Debug     -g
+#    Profile   -pg
+#    Optimize  -O
+#
+DPOFLAGS =      -g
+
+#
+# Link flags.
+#
+DYNAMIC = -Bdynamic
+STATIC  = -Bstatic
+
+###############################################################################
+#
+# CM (Configuration Management) flags and environment variables
+#
+###############################################################################
+CM = sccs
+CM_GET = get
+
+
+###############################################################################
+#
+# 3rd Party Application flags and environment variables.
+#
+###############################################################################
+
+
+###############################################################################
+#
+# X Windows / Motif
+#
+###############################################################################
+
+IXMOTIF    = -I/usr/dt/include -I/usr/openwin/include
+LXMOTIF    = -L/usr/dt/lib -L/usr/openwin/lib
+XMOTIF_LIB = -lXm -lXt -lX11
+
+
+###############################################################################
+#
+# GKS (Graphic Kernal System)
+#
+###############################################################################
+
+GKSHOME  = /usr/local/prior-gks-40/sunos-5/gks-rte
+GKS_ROOT = /usr/local/prior-gks-40/sunos-5/gks-dev
+IGKS     = -I$(GKS_ROOT)/include
+LGKS      = -L$(GKS_ROOT)/lib 
+GKS_LIB  = -lfgks -lgks 
+
+
+###############################################################################
+#
+# Sybase 
+#	Assumes environment variable SYBASE is set
+#
+###############################################################################
+
+ISYBASE    = -I$(SYBASE)/include 
+LSYBASE    = -L$(SYBASE)/lib
+SYBASE_LIB = -lsybdb 
+
+
+###############################################################################
+#
+# Solaris Encryption 
+#
+###############################################################################
+
+IENCRYPT    = -I/usr/include/rpc
+LENCRYPT    = -L/usr/lib
+ENCRYPT_LIB = -lcrypt
+
+###############################################################################
+#
+# Q&A Test Software (See Douglas Hughes)
+#
+###############################################################################
+
+IQA    = 
+LQA    = 
+QA_LIB = -lpartner
+
+
+###############################################################################
+#
+# ASF System specific environment variables.
+# ASF{BIN,LIB,INC} environment variable creation.
+# They define the directory path names for the ASF include, library and 
+# executable directories.
+#
+###############################################################################
+ASFROOT		= /ASF/$(ASFVER)
+
+ASFINC = $(ASFROOT)/include
+ASFLIB = $(ASFROOT)/lib/$(MACH)
+ASFBIN = $(ASFROOT)/bin
+
+###############################################################################
+#
+# APS specific variables.
+#
+# APS_HOME (or CM_HOME) must already be set as an environment variable.  
+#
+###############################################################################
+
+APS_EXE			:=	$(APS_HOME)/bin/$(MACH)
+
+LAPS_LOCAL		:=	-L$(APS_HOME)/lib/$(MACH)/local
+LAPS_GLOBAL		:=	-L$(APS_HOME)/lib/$(MACH)/global
+LAPS			:=	$(LAPS_LOCAL) $(LAPS_GLOBAL)
+
+IAPS_LOCAL		:=	-I$(APS_HOME)/include/local
+IAPS_GLOBAL		:=	-I$(APS_HOME)/include/global
+IAPS			:=	$(IAPS_LOCAL) $(IAPS_GLOBAL)
+
+###############################################################################
+#
+# FAIF/PPS specific variables.
+#
+# PPS_HOME must be already set as an environment variable.  
+#
+###############################################################################
+#IFAIF  = -I$(PPS_HOME)/FAIF/include
+#LFAIF  = -L$(PPS_HOME)/FAIF/lib
+#IPPS   = -I$(PPS_HOME)/include -I$(PPS_HOME)/FAutils/CSAparse
+#LPPS   = -L$(PPS_HOME)/lib
+
+###############################################################################
+#
+# IMS specific variables.
+#
+# IMS_HOME must be already set as an environment variable.  
+#
+###############################################################################
+#IIMS  = -I$(IMS_HOME)/src/eincl
+#LIMS  = -L$(IMS_HOME)/lib/solaris
+
+###############################################################################
+#
+# External subsystem include file and library paths.
+#
+###############################################################################
+
+IFAIF 	= -I$(ASFINC)/faif
+IPPS	= -I$(ASFINC)/pps
+IIMS 	= -I$(ASFINC)/imsdads
+IODL	= -I$(ASFINC)/sys
+ISYS	= -I$(ASFINC)/sys
+
+LFAIF  	= -L$(ASFLIB)
+LPPS  	= -L$(ASFLIB)
+LIMS	= -L$(ASFLIB)
+LODL	= -L$(ASFLIB)
+LSYS	= -L$(ASFLIB)
+
+###############################################################################
+#
+# Set the LOGICALNAMEMAPPING environment variable for f77 compiles with 
+# VAX Fortran extension:   
+#       INCLUDE 'APS_HOME:include/include_file.inc'
+#
+# LOGICALNAMEMAPPING will be set and exported on the f77 command line to
+# make it an environment variable at compilation time.  
+#
+###############################################################################
+
+F77_LOG  = LOGICALNAMEMAPPING="\
+APS_HOME=$(APS_HOME);\
+APS_ROOT=$(APS_HOME);\
+GKSHOME =/usr/local/prior-gks-40/sunos-5/gks-rte;\
+GKS_ROOT=/usr/local/prior-gks-40/sunos-5/gks-dev;\
+eosinclude=.;\
+" ; export LOGICALNAMEMAPPING
+
+###############################################################################
+#
+# ASF installation directories
+#
+###############################################################################
+
+ASF_INSTALL_EXE_DIR = $(ASFBIN)
+ASF_INSTALL_LIB_DIR = $(ASFLIB)
+
+###############################################################################
+#
+# APS local installation directories
+#
+###############################################################################
+
+APS_INSTALL_LIB_DIR = $(APS_HOME)/lib/$(MACH)/local
+APS_INSTALL_GLOBAL_LIB_DIR = $(APS_HOME)/lib/$(MACH)/global
+APS_INSTALL_EXE_DIR = $(APS_HOME)/bin/$(MACH)
+
+###############################################################################
+#
+# APS Release Dates
+#   WARNING!!!!!!!!
+#   These are official release dates of APS S/W
+#   DO NOT MODIFY DATES LISTED HERE!!!!!!
+#   If dates are added, be sure to an "if" check s added so the FILE_VERSION 
+#   variable is updated... if no VER is specified then the latest is retrieved
+#
+###############################################################################
+
+R1A_DATE = 95/08/01:00:00:00
+
+FILE_VERSION = \
+	`if [ "$(VER)" = "R1A" ]; then echo -c\'$(R1A_DATE)\';fi`
+
+
+###############################################################################
+#
+# APS Libraries.
+#
+###############################################################################
+
+LLIST_LIB			= -lllist
+APS_LIB				= -laps 
+DP_VECTOR_LIB		= -ldp-vector 
+SYBINT_LIB			= -lsybint 
+APSDB_LIB			= -lapsdb
+APS_INTERFACE_LIB	= -lAPSinterface
+APS_TIMELIB			= -ltimes
+APS_PHASELIB		= -lphase
+APS_MATHLIB			= -lapsmath
+APS_DTKMLIB			= -ldtkm
+APS_FILEUTILS_LIB	= -lfileutils
+APS_PFMUTILS_LIB	= -lAPSpmfutils
+
+# removed:  combined into APS_INTERFACE_LIB
+# CSA_CONVERSION_LIB = -lcsac
+# ESAC_CONVERSION_LIB = -lesac
+# NASDA_CONVERSION_LIB = -lnasdac
+
+#
+# Sometimes, when Making a new exe, the question of which 
+# libraries and which order can get so confusing.  
+# This is the time to use only the EVERY_LIB variable to 
+# take a short cut:
+#
+# [NOTE: does not include:
+#		any X or XMOTIF lib
+#		GKS_LIB
+#		PPS lib]
+#
+
+EVERY_LIB =         \
+    $(APS_MULTI_USER_LIB) \
+	${SYBASE_LIB}   \
+    ${APS_PFMUTILS_LIB} \
+    ${APS_INTERFACE_LIB}  \
+    ${APS_FILEUTILS_LIB}  \
+    $(APS_MULTI_USER_LIB) \
+	${APS_DTKMLIB}  \
+	${APS_TIMELIB}  \
+    ${APS_INTERFACE_LIB}  \
+	${APS_DTKMLIB}  \
+    ${APS_FILEUTILS_LIB}  \
+	${APS_LIB}      \
+	${APS_PHASELIB}    \
+	${SYBINT_LIB}   \
+	${APS_LIB}      \
+	${APSDB_LIB}    \
+	${SYBINT_LIB}   \
+	${APS_MATHLIB} \
+	${DP_VECTOR_LIB} \
+	${LLIST_LIB}    \
+	${MATH_LIB}     \
+	${OSLIBS}
+
+# removed:  combined into APS_INTERFACE_LIB
+#    ${CSA_CONVERSION_LIB}  \
+#    ${ESAC_CONVERSION_LIB}  \
+#    ${NASDA_CONVERSION_LIB}  \
+
+
+###############################################################################
+#
+# External Libraries.
+#
+###############################################################################
+
+FAIF_CSA_PARSE_LIB		= -lcsap
+FAIF_UTIL_LIB			= -lutil
+FAIF_FASF_LIB			= -lfasf
+COMMON_ODL_LIB			= -lodl
+#
+# these libraries are sybase libs, used by IMS:  
+IMS_SYBASE_LIBS         = -lct -lcs -ltcl -ltli -lcomn
+IMS_LIB					= -lims $(DYNAMIC) $(IMS_SYBASE_LIBS)
+IMSODL_LIB              = -limsodl
+SE_XLAT_ASF_WALPS_LIB   = -lxlat
+FRAMEGEN_LIB            = -lfg
+
+
+###############################################################################
+#
+# DCE definitions
+#
+###############################################################################
+DCE_IDL	= idl
+DCE_IDLFLAGS = -v 
+DCE_LIB	=-Bdynamic -ldce -Bstatic -lsocket -Bdynamic -lnsl -lthread \
+		-Bstatic -lm -Bdynamic
+IDCE	=-I/opt/dce/share/include/dce -I/opt/dce/share/include
+LDCE	= -L/opt/dce/usr/lib
+DCE_CFLAGS = -D_REENTRANT 

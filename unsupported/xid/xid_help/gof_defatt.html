@@ -1,0 +1,59 @@
+<TITLE>6.2 Define Attributes</TITLE>
+<H2>6.2 Define Attributes</H2>
+
+This function allows the user to define attribute names for the current GOF.  
+Attributes can be used to help
+further define or describe graphics elements.  For example, a polygon GOF
+may have the attributes <I>class</I> and <I>site</I> defined.  For each
+polygon selected by the user, these attributes may optionally be given
+corresponding values.  A maximum of 35 attributes may be defined for each 
+type of GOF.<P> 
+
+Attributes may be defined before, during, or after a graphics element has
+been selected.  Attributes may also be defined while editting a graphics
+element.
+
+<P>
+<IMG SRC="gof_defatt.gif">
+<P>
+
+The <B>ascii</B>, <B>integer</B>, and <B>real</B> radio buttons allow the user 
+to select a data type for the value of the attribute.  This data type is
+used for some basic type checking when the attribute is given a value.
+<P>
+
+<BLOCKQUOTE>
+    <DL>
+    <DT><B>Ascii:</B>
+    <DD>The attribute is treated as a character string.
+    <P>
+
+    <DT><B>Integer:</B>
+    <DD>The attribute is treated as integer data. 
+    <P>
+
+    <DT><B>Real:</B>
+    <DD>The attribute is treated as floating point or real data. 
+    </DL>
+</BLOCKQUOTE>
+<P>
+
+<DL>
+<DT><B>Attribute Name:</B>
+<DD>Enter the attribute name to be defined.  The attribute name may contain
+    up to eight characters and each GOF may contain a maximum of 35 <B>unique
+    </B> attributes.  The user need not press <B>enter</B> after specifying
+    the attribute name.  The attribute name is accepted when the user selects
+    the <B>OK</B> button.
+<P>
+
+<DT><B>OK:</B>
+<DD>Write the specified attribute name to the GOF.  An error message will be
+    displayed if the attribute name contains too many characters, if the
+    attribute name is not unique, or if no attribute name was specified.
+<P>
+
+<DT><B>Dismiss:</B>
+<DD>Close the define attributes panel.
+</DL>
+

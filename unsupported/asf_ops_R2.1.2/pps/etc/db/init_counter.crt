@@ -1,0 +1,17 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)init_counter.crt	1.1  11/21/96
+=========================*/
+
+delete from counters
+go
+
+insert into counters
+	values ("job_id", 0)
+go
+

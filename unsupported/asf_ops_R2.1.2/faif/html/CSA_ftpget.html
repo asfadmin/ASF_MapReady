@@ -1,0 +1,121 @@
+<html>
+<head>
+<title>CSA_ftpget</title>
+</head>
+<body>
+<hr>
+
+
+<p>
+This file contains:
+
+<ol>
+  <li> Description of the CSA_ftpget.csh Csh (C shell) script. 
+  <li> Summary argument list for the script
+  <li> Valid argument 4 values for the script
+  <li> Environment variables to set
+  <li> Other programs used, therefore required, by this script
+  <li> Files created by this script
+  <li> Other notes
+                   
+</ol>
+<hr>
+
+<ol>
+  <li> SCRIPT NAME: CSA_ftpget.csh
+
+</ol>
+<p>
+This is the FTP script used to pull files from the CSA host machine to
+the FAIF host machine.  Note that this script is activated within FAIF
+programs only.  Execution on the command line is not usually performed.
+
+<p>
+2. Arguments required when executing CSA_ftpget.csh
+
+<p>
+<pre>
+ARGUMENT 1:  RemoteHost               ex. mcs_vdn
+ARGUMENT 2:  RemoteDir / SourceDir    ex. mcs_to_ufdroc_1
+ARGUMENT 3:  Receptdir                ex. /local/faif/CSA/CSA_PREDORBIT
+ARGUMENT 4:  FileToGetType            ex. CSA_PREDORBIT
+ARGUMENT 5:  Mode                     ex. ascii
+ARGUMENT 6:  FAIF_ROOTPATH            ex. /local/faif
+ARGUMENT 7:  Username                 ex. pps 
+ARGUMENT 8:  Password                 ex. Jkd*%s
+</pre>
+
+<p>
+3. Valid argument 4 values
+
+<p>
+<pre>
+CSA_PREDORBIT
+CSA_DEFVORBIT
+CSA_RECRQST
+CSA_RECSCHED
+CSA_CALIBRQST
+CSA_CALIBSCHED
+CSA_SARPROCPRM
+CSA_RRQ_MCM
+CSA_RSH_MCM
+CSA_CRQ_MCM
+CSA_CSH_MCM
+</pre>
+
+<p>
+4. Environment variables to set
+
+<p>
+The <a href="FAIF.html#01">FAIF_BINPATH</a> environment variable must be set prior to
+running this script or running a FAIF program that invokes this script.  
+$FAIF_BINPATH is normally "/asf/bin" in the operational environment.
+
+<p>
+The <a href="FAIF.html#01">FAIF_ROOTPATH</a> environment variable must also be set prior to 
+running a FAIF program that invokes this script.  This is normally 
+"/local/faif" in the operational environment.
+
+<p>
+5. Other programs which CSA_ftpget.csh needs to run successfully
+
+<p>
+$FAIF_BINPATH/idfilename<br>
+$FAIF_BINPATH/CSAPredOrRes
+
+<p>
+6. Files created by this script
+
+<p>
+Note that the environment variable $FAIF_ROOTPATH is normally defined before
+running the FAIF program that invokes this script.  It is then passed as 
+ARGUMENT 6 to this script.
+
+<p>
+$FAIF_ROOTPATH/FTP/gtmp/remotelisting.$FileToGetType
+$FAIF_ROOTPATH/FTP/gtmp/remotelisting2.$FileToGetType
+$FAIF_ROOTPATH/FTP/gtmp/CSA_ftpget.activity.$FileToGetType
+$FAIF_ROOTPATH/FTP/gtmp/tmp1.tmp1.$FileToGetType
+$FAIF_ROOTPATH/FTP/gtmp/tmp2.tmp2.$FileToGetType
+$FAIF_ROOTPATH/FTP/gtmp/ftypedlistfile.$FileToGetType
+
+<p>
+7. Other notes
+
+<p>
+Note that orbit files obtained are stored in the following directory
+while their precision (predicted or restituted) is being determined:
+
+<p>
+$FAIF_ROOTPATH/CSA/CSA_ORBIT
+
+<hr>
+<p>
+<font size = -1>
+Last Modified:  March, 1998
+
+<p>
+Copyright (c) 1996, 1998 California Institute of Technology.<br>
+ALL RIGHTS RESERVED.  U.S. Government Sponsorship acknowledged.	
+</body>
+</html>

@@ -1,0 +1,133 @@
+#!/bin/sh
+# demIFM: A script to extract seed points from a ground-range DEM
+# for use with tandem_ifm_snaphu.
+#
+# Program History:
+#   9/97: O. Lawlor  Initial Creation
+#   5/98: O. Lawlor  Added more reliable FFT Matching
+#   6/98: O. Lawlor  Removed all matching, since geolocations are so accurate.
+#   4/01: D. Koster  Modified for use with tandem_ifm_snaphu
+#
+# Do: exectues the given shell command
+#
+Do()
+{
+	params=""
+	while [ ! $# -eq 0 ]
+	do
+		params=$params" "$1
+		shift
+	done
+	echo "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+	echo "Performing:"$params
+	$params
+	if [ ! $? -eq 0 ]
+	then
+		echo "demIFM: Last command returned in error:"
+		echo $params
+		exit 1
+	fi
+}
+
+if [ $# != "4" ] && [ $# != "6" ]
+then
+	echo "Usage: demIFM <SAR image.ext> <metadata> <baseline file> <DEM.ext>"
+	echo "		    [ <output_phaseName.ext> <output_seedsName> ]"
+	echo 
+	echo "  This program co-registers a DEM to a SAR image."
+	echo "  It then generates a simulated phase image from the DEM (out_dem_phase),"
+	echo "  and well-distributed seed points (out_dem_seeds)"
+	echo "  This is useful when running tandem_ifm(1)."
+	echo "ASF ISAR Tools, Version 1.1, 1997"
+	exit 1
+fi
+
+if [ $# != "6" ]
+then
+	sar=$1
+	ceos=$2
+	baseLine=$3
+	dem=$4
+	outphase=out_dem_phase.phase
+	outseeds=out_dem_seeds
+else
+	sar=$1
+	ceos=$2
+	baseLine=$3
+	dem=$4
+	outphase=$5
+	outseeds=$6
+fi
+# Parse CLA's
+
+if [ ! -r $sar ]
+then
+	echo "Couldn't find image file "$sar"."
+	echo "Remember- you must include the extension (.img?)"
+	exit 1000
+fi
+
+if [ ! -r $dem ]
+then
+	echo "Couldn't find image file "$dem"."
+	echo "Remember- you must include the extension (.img?)"
+	exit 1001
+fi
+
+
+# XXXXXXX Extract the width and height of the $sar image
+Do dspddr $sar | grep NL | awk '{print substr($1,4,6),substr($2,4,6);}' - > ddrout
+sarHt=`cat ddrout | awk '{print $1;}' -`
+sarWid=`cat ddrout | awk '{print $2;}' -`
+sarHtBig=`cat ddrout | awk '{print $1+0;}' -`
+sarWidBig=`cat ddrout | awk '{print $2+400;}' -`
+rm ddrout
+
+
+# XXXXXX Find the chunk of the DEM which corresponds to this SAR image
+Do create_dem_grid $dem $sar $ceos dem_grid
+Do fit_plane dem_grid dem_plane k 1.0
+
+cp dem_grid $outphase.dem_grid
+cp dem_plane $outphase.dem_plane
+
+# XXXXXX Extract this chunk of the DEM
+move="-matrix dem_plane -translate 0 0 -width $sarWidBig -height $sarHtBig"
+Do remap $dem dem_big.dem $move -bilin -float
+Do makeddr dem_big.dem $sarHtBig $sarWidBig -float
+
+
+# XXXXXXX Create the slant range height and simulated SAR image
+Do /3dsar1/asf_tools/bin/irix/reskew_dem dem_big.dem $ceos dem_slant.ht dem_sim.amp
+
+
+# XXXXXX All this code just does image matching...
+Do amp2img -l 1x1 -s 1x1 dem_sim.amp dem_simbyte.img
+Do trim dem_simbyte.img dem_trimsim.img 0 0 $sarHt $sarWid
+Do fftMatch $sar dem_trimsim.img dem_corr
+
+# Compute the image shift
+imgShiftX=`cat dem_corr | awk '{print int(0-$1);}' -`
+imgShiftY=`cat dem_corr | awk '{print int(0-$2);}' -`
+
+cp dem_corr $outphase.dem_corr
+
+# ADDED BY D.KOSTER TO VIEW INTERMEDIATE VALUES!
+echo image Shift X: $imgShiftX > $outphase.shift
+echo image Shift Y: $imgShiftY >> $outphase.shift
+
+# Extract the slant range height image, shifted appropriately
+Do trim dem_slant.ht dem_lined.ht $imgShiftY $imgShiftX $sarHt $sarWid
+#Do trim dem_simbyte.img dem_lined_amp.img $imgShiftY $imgShiftX $sarHt $sarWid
+Do trim dem_simbyte.img remaped_$sar $imgShiftY $imgShiftX $sarHt $sarWid
+
+# ADDED BY D.KOSTER TO VIEW INTERMEDIATE VALUES!
+cp dem_simbyte.img $outphase.img
+cp dem_simbyte.ddr $outphase.ddr
+
+# XXXXXXXX Convert the slant range height image into phase and seed point files.
+#Do dem2phase dem_lined.ht $ceos $baseLine out_dem_phase.phase
+#Do dem2seeds dem_lined.ht $sar out_dem_seeds
+
+Do dem2phase dem_lined.ht $ceos $baseLine $outphase
+Do dem2seeds dem_lined.ht $sar $outseeds

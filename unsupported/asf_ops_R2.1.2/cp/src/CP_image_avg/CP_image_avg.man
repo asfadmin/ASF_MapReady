@@ -1,0 +1,112 @@
+.\" @(#)CP_image_avg.man	1.3 95/12/23 11:48:23
+.\" Article: 4359 of comp.unix.misc
+.\" From: Tom Christiansen <tchrist@convex.COM>
+.\" Subject: Re: How to make a man-page (stupid question?)
+.\" Organization: CONVEX Realtime Development, Colorado Springs, CO
+.\" Date: Thu, 23 Apr 1992 21:39:42 GMT
+.\" 
+.\" >From the keyboard of jik@athena.mit.edu (Jonathan I. Kamens):
+.\" :My system also has a file /usr/man/man0/xx which contains
+.\" :the skeleton of a man page.
+.\" 
+.\" Here's such a skeleton I once wrote.
+.\" 
+.\" --tom
+.\"
+.\" Please keep the pagelength at 66 lines/page.  [joanne]
+.pl 66
+.\"
+.TH CP_IMAGE_AVG 1 "21 MAR 1996" "ASF SPS Release 1B'" "CP USER COMMANDS"
+.SH NAME
+CP_image_avg \- application for creating a detected byte image from a CEOS\-formatted data file
+.SH SYNOPSIS
+.B CP_image_avg
+.B -imagefile
+.I ceos-image-file
+.B -leaderfile 
+.I ceos-leader-file
+[
+.B \-outputfile
+.I byte-image-file
+]
+[
+.B \-complex_scale_fac
+.I scale-value
+]
+.SH "DESCRIPTION"
+The program
+.I CP_image_avg
+employs either only the scaling algorithm (for unsigned integer
+cases), or both the scaling algorithm and the complex data detection
+algorithm (for complex integer cases) from
+.I CP_qc, 
+and creates an output file containing a byte
+representation of the given file.  This output file can be passed to 
+.I CP_qc
+so that the scaling and detecting of the data need not be done for
+every run of
+.I CP_qc.
+
+.SS "Supported Formats"
+Displayable image types are 1-byte wide unsigned integer
+images and 4-byte wide complex integer images.  These unsigned integer
+images may be low-resolution or full-resolution and may also be geocoded.
+.SH OPTIONS
+.IP "\fB\-imagefile\fP \fIceos-image-file\fP"
+Name of the CEOS-formatted image file.  This file must be specified
+on the command line.
+.IP "\fB\-leaderfile\fP \fIceos-leader-file\fP"
+Name of the CEOS leader file.  This file must be specified
+on the command line.
+.IP "\fB\-outputfile\fP \fIbyte-image-file\fP"
+This option allows the user to specify the output filename for the
+byte data image file.
+If this option is not specified, the output file will be created within
+the same directory as the file specified by \fI\-imagefile\fP.
+The name of the output file will be equal to the same basename as
+\fIceos-image-file\fP plus the suffix \fIavg\fP.
+.IP "\fB\-complex_scale_fac\fP \fIscale-value\fP"
+This floating-point option passes a value to the complex data
+detection algorithm.  The internal default is 0.2, and for passing in
+parameters, a good ballpark to start in might be (100.0 /
+detected_data_mean).
+.SH "DETAILED DESCRIPTION"
+.I CP_image_avg
+is designed to do the initial image reduction that would otherwise
+be done by
+.I CP_qc.
+Consequently, running 
+.I CP_qc
+with the \fI\-avgfile\fP option will greatly speed up the display
+of the image.
+.I CP_image_avg
+makes the same assumptions about the size of the display as
+.I CP_qc
+does in calculating the size of the output image.
+The output image is sized so that the entire image can be displayed
+on screen, assuming that each byte is interpreted as a single image pixel.
+The image data is created using the same algorithm as
+.I CP_qc
+for each type of product.  Pixels from the original image are averaged
+together to form the reduced image; and for the case of complex data
+input, the sample values are scaled and detected.
+The output image is a CEOS-formatted image data file with the dimensions
+corrected to conform to those of the output file.
+.SH "RETURN VALUES"
+CP_image_avg returns 0 upon success, -1 otherwise.
+.SH ERRORS
+Exit status values 4 through 23 and 444 are used to indicate
+various error conditions.  The errors are the same as those
+reported by
+.I CP_qc.
+.SH BUGS
+Although the output image is CEOS-formatted, only the fields that
+contain the dimensions of the image are guaranteed to conform to the
+CEOS product specification.
+.SH EXAMPLES
+Generate a byte data image file R165093660R4S0.avg:
+
+CP_image_avg \-imagefile R165093660R4S0.D \-leaderfile R165093660R4S0.L
+
+.SH SEE ALSO
+CP(1), CP_gpr(1), CP_qc(1), CP_scan_qc(1)

@@ -1,0 +1,10 @@
+
+This document file records any changes we make in order to
+compile this library in the IMS environment.
+
+HDF 3.3 r1
+
+- Removed Makefile
+
+- Added makefile (To build in our environment.)
+  We are only building the C routines and none of the JPEG stuff.

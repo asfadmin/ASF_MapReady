@@ -1,0 +1,10 @@
+PPS_START		Server Startups
+PPS_SHUTDOWN		Server Shutdowns
+PPS_L1_ORDER		L1 Orders Recieved
+PPS_SCAN_ORDER		Scan Orders Recieved
+PPS_DUB_ORDER		Dub Orders Recieved
+PPS_L1_COMPLETE		L1 Orders Completed
+PPS_SCAN_COMPLETE	Scan Orders Completed
+PPS_DUB_COMPLETE	Dub Orders Completed
+PPS_CANCEL_ORDER	Cancel Orders Recieved
+PPS_SVEC_AVAIL		State Vector Available Msg

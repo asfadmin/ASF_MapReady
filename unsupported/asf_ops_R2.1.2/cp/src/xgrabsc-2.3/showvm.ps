@@ -1,0 +1,54 @@
+%!
+%%Creator: Bruce_Schuchardt
+%%Title: showvm.ps
+%%Version:       1.3
+%%
+%% ccsid:         @(#)showvm.ps	1.3 - 07/06/92 10:52:55
+%% from:          ccs/s.showvm.ps
+%% CreationDate:  06/28/93 09:14:49
+%%
+%% Description: a Postscript function to display vmstatus.
+%%              Send this file to your printer to see how much vm is
+%%              available for print jobs.
+%%              Copy the dispvm function into xgrabsc postscript output
+%%              and put
+%%                    20 20 dispvm showpage
+%%              after the xgrabsc showpage to see how much is left after
+%%              printing your image
+%%
+%%EndComments
+gsave
+
+/inch {72 mul} def
+
+/dispvm {   %% x y dispvm -
+  gsave
+  /level 0 store
+  /used  0 store
+  /maximum 0 store
+  /str 10 string store
+
+  vmstatus /maximum exch store /used exch store /level exch store
+  level 10 str cvrs /slevel exch store
+  used  10 str cvrs /sused exch store
+  maximum 10 str cvrs /smaximum exch store
+
+  0.0 inch 8.0 inch translate
+
+  /Courier findfont 18 scalefont setfont          %% get a known font
+  2 copy moveto                                   %% x y -> x y x y
+  (Here are the current VM statistics:) show
+  2 copy 20 sub moveto
+  (level: ) show level 10 str cvrs show ( (level of 'save' nesting)) show
+  2 copy 40 sub moveto
+  (used:  ) show  used  10 str cvrs show ( (bytes)) show
+  60 sub moveto
+  (max:   ) show  maximum 10 str cvrs show ( (bytes)) show
+  grestore
+} bind def
+
+20 20 dispvm
+
+grestore
+showpage
+%%Trailer

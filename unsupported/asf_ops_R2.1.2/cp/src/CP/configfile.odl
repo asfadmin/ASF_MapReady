@@ -1,0 +1,667 @@
+ /*
+ * @(#)configfile.odl.jpl	1.36 96/07/30 11:31:22
+ */
+
+OBJECT		= CONFIG_FILE 
+
+  PORT_ID = 2054
+  PRINT_COMMAND = "$ASF/bin/xgrabsc -bw -compress -id %d | lpr -h"
+  LOG_BROWSER = "$ASF/bin/log_browser"  
+
+  OBJECT		= CP		
+    LOGICAL		= "CP"
+    SAVE_DIR		= "/u/u3/pearl/work/CP/save"
+    RESTORE_DIR		= "/u/u3/pearl/work/CP/save"
+    SCRIPTS_DIR		= "$ASF/bin"
+    ERR_LOGFILE		= "/LOCAL/cp/logs/cp-err.asflog"
+    INFO_LOGFILE	= "/LOCAL/cp/logs/cp-info.asflog"
+    DEBUG_LOGFILE	= "/LOCAL/cp/logs/cp-debug.asflog"
+    SAVED_STATEFILE      = "/u/u3/pearl/work/CP/save/CP.new.state"  
+    LAST_SAVED_STATEFILE = "/u/u3/pearl/work/CP/save/CP.saved.state" 
+    AUTOLOAD_STATE      = "NO"  /* auto-load last state file at startup */
+  END_OBJECT		= CP
+
+  OBJECT		= SPS		
+    START_TIME_INTERVAL		= 60	/* seconds */
+    HEALTH_TIME_INTERVAL	= 10	/* seconds */
+    REQUEST_SENT_TIME_INTERVAL	= 60	/* seconds */
+    ERR_LOGFILE		= "/LOCAL/sps/logs/sps-err.asflog" 
+    INFO_LOGFILE	= "/LOCAL/sps/logs/sps-info.asflog"
+    DEBUG_LOGFILE	= "/LOCAL/sps/logs/sps-debug.asflog" 
+    CAL_PARAMS_BASEDIR	=  "/d/06/cp/pearl/cal_params.dir"
+    SCAN_RESULTS_BASEDIR =  "/d/06/cp/pearl/scans.dir"
+    BLIND_SCAN_RESULTS_BASEDIR =  "/d/06/cp/pearl"
+    RETAIN_PRODUCTS     =  "NO"    /* "YES" or "NO" */
+    J1_ROUTING          = "SINGLE"  /* "SINGLE" or "ANY" */
+  END_OBJECT		= SPS
+
+  SSP_PP_MAX_CONCURRENT	= 3
+  IMS_MAX_CONCURRENT	= 2
+
+  OBJECT		= GPR		
+    MAX_CONCURRENT	= 1
+    LOGICAL		= "CP-GPR"
+    EXECUTABLE		= "CP_gpr"
+    PATH		= "/ASF/PRECM/bin"
+    CONFIG_FILE         = "/LOCAL/PRECM/cp/gpr/configfile.odl.gpr"
+    MSG_TEMP		= "$LOCAL/sps/templates/msgTemplate.odl"
+  END_OBJECT		= GPR
+
+  OBJECT                = BSR
+    MAX_CONCURRENT      = 1
+    LOGICAL             = "CP-BSR"
+    EXECUTABLE          = "CP_bsr"
+    PATH                = "$ASF/bin"
+    CONFIG_FILE         = "$LOCAL/cp/bsr/configfile.odl.bsr"
+    MSG_TEMP            = "$LOCAL/sps/templates/msgTemplate.odl"
+
+/*
+    PATH                = "/ASF/PRECM/bin"
+    CONFIG_FILE         = "/LOCAL/PRECM/cp/gpr/configfile.odl.gpr"
+    MSG_TEMP            = "$LOCAL/sps/templates/msgTemplate.odl"
+*/
+  END_OBJECT            = BSR
+
+  OBJECT		= RDS
+    MAX_CONCURRENT	= 2
+    LOGICAL		= "RDS"
+    BACKGROUND		= "thistle1"  
+    EXECUTABLE          = "sps_copy"
+    PATH                = "/u/u3/pearl/work/Profile"
+    HOST		= "ssp1"
+    CP_HOSTNAME     	= "ssp1"
+    MSG_TEMP		= "$LOCAL/sps/templates/msgTemplate.odl"
+    HALT_TIME_INTERVAL  = 60            /* seconds */
+    STOP_TIME_INTERVAL  = 60            /* seconds */
+    CONFIG_FILE		= "$LOCAL/rds/rds-config.odl"
+    SAVE_DIR		= "$LOCAL/rds"
+  END_OBJECT		= RDS
+
+  OBJECT                = RDS
+    LOGICAL             = "RDS1"
+    BACKGROUND          = "thistle1"
+    EXECUTABLE          = "sps_copy"
+    PATH                = "/u/u3/pearl/work/Profile"
+    HOST                = "ssp1"
+    CP_HOSTNAME         = "ssp1"
+    MSG_TEMP            = "$LOCAL/sps/templates/msgTemplate.odl"
+    HALT_TIME_INTERVAL  = 60            /* seconds */
+    STOP_TIME_INTERVAL  = 60            /* seconds */
+    CONFIG_FILE         = "$LOCAL/rds/rds-config.odl"
+    SAVE_DIR            = "$LOCAL/rds"
+  END_OBJECT            = RDS
+
+  OBJECT		= QC		
+    MAX_CONCURRENT	= 1
+/*    EXECUTABLE		= "qc_cp" */
+ /*   PATH		= "/user/nancy/src/qc"  */
+    EXECUTABLE		= "t" 
+   PATH		= "/usr/people/pearl/parkes"  
+    HOST		= "ssp1"
+    CP_HOSTNAME		= "ssp1"
+    MSG_TEMP		= "" 
+/*   DISPLAY		= "jasper:0.0"  */
+/*    DISPLAY		= "zaskar:0.0"  */
+/*    DISPLAY		= "x-cvuu:0.0"  */
+    DISPLAY		= "taz:0.0"  
+    COMPLEX_SCALE_FAC   = 0.2
+  END_OBJECT		= QC
+
+  OBJECT                = SCAN_QC
+    MAX_CONCURRENT      = 1
+/*    EXECUTABLE          = "qc_cp" 
+    PATH                = "/user/nancy/src/qc"  */
+    EXECUTABLE          = "CP_scan_qc" 
+    PATH                = "$ASF/bin"  
+    HOST                = "ssp1"
+    CP_HOSTNAME         = "ssp1"
+    MSG_TEMP            = ""
+/*    DISPLAY		= "zaskar:0.0"  */
+/*    DISPLAY		= "x-cvuu:0.0"  */
+    DISPLAY		= "taz:0.0"  
+  END_OBJECT            = SCAN_QC
+
+  OBJECT                = BSCAN_QC
+    MAX_CONCURRENT      = 1
+    EXECUTABLE          = "CP_blind_scan_qc"
+    PATH                = "$ASF/bin"
+    HOST                = "ssp1"
+    CP_HOSTNAME         = "ssp1"
+    MSG_TEMP            = ""
+/*    DISPLAY           = "zaskar:0.0"  */
+/*    DISPLAY           = "x-cvuu:0.0"  */
+    DISPLAY             = "taz:0.0"
+  END_OBJECT            = BSCAN_QC
+
+
+  OBJECT                = PRE_QC
+    MAX_CONCURRENT      = 1
+    EXECUTABLE          = "qc_cp"
+    PATH                = "/user/nancy/src/qc"   
+    HOST                = "ssp1"
+    CP_HOSTNAME         = "ssp1"
+    MSG_TEMP            = ""
+  END_OBJECT            = PRE_QC
+
+
+  OBJECT		= SSP_PP		
+    LOGICAL		= "SSP-A"
+    BACKGROUND		= "snow"
+    EXECUTABLE          = "sps_copy"
+    PATH                = "/user/nancy/src/sps/Profile"
+/*    EXECUTABLE		= "asf_ssp2" */
+/*    PATH		= "$ASF/bin" */
+    HOST		= "ssp1"
+    CP_HOSTNAME     	= "ssp1"
+    MSG_TEMP		= "$LOCAL/sps/templates/msgTemplate.odl"
+    HALT_TIME_INTERVAL  = 60            /* seconds */
+    STOP_TIME_INTERVAL  = 60            /* seconds */
+    CONFIG_FILE		= "$ASF/bin/eng_config.ssp2"
+    INPUT_BASEDIR 	= {"/d/06/cp/pearl/input"}
+    CEOS_OUTPUT_BASEDIR	= {"/d/06/cp/pearl/input","/d/06/cp/pearl/input"}
+    SAVE_DIR		= "./save"
+  END_OBJECT		= SSP_PP
+
+  OBJECT                = SSP_PP
+    LOGICAL             = "SSP-B"
+    BACKGROUND          = "antiquewhite"
+    EXECUTABLE          = "sps_copy"
+    PATH                = "/user/nancy/src/sps/Profile"
+/*    EXECUTABLE          = "asf_ssp2" */
+/*    PATH                = "$ASF/bin" */
+    HOST                = "ssp1"
+    CP_HOSTNAME     	= "ssp1"
+    MSG_TEMP            = "$LOCAL/sps/templates/msgTemplate.odl"
+    HALT_TIME_INTERVAL  = 60            /* seconds */
+    STOP_TIME_INTERVAL  = 60            /* seconds */
+    CONFIG_FILE         = "$ASF/bin/eng_config.ssp"
+    INPUT_BASEDIR 	= {"/d/06/cp/pearl/input"}
+    CEOS_OUTPUT_BASEDIR	= {"/d/06/cp/pearl/output",
+                           "/d/06/cp/pearl/output"}
+    SAVE_DIR		= "./save"
+
+  END_OBJECT            = SSP_PP
+
+
+  OBJECT                = SSP_PP
+    LOGICAL             = "SSP-C"
+    BACKGROUND          = "lemonchiffon"
+    EXECUTABLE          = "sps_copy"
+    PATH                = "/user/nancy/src/sps/Profile"
+/*    EXECUTABLE          = "asf_ssp2" */
+/*    PATH                = "$ASF/bin" */
+    HOST                = "ssp1"
+    CP_HOSTNAME     	= "ssp1"
+    MSG_TEMP            = "$LOCAL/sps/templates/msgTemplate.odl"
+    HALT_TIME_INTERVAL  = 60            /* seconds */
+    STOP_TIME_INTERVAL  = 60            /* seconds */
+    CONFIG_FILE         = "$ASF/bin/eng_config.ssp"
+    INPUT_BASEDIR 	= {"/d/06/pearl/input"}
+    CEOS_OUTPUT_BASEDIR	= {"/d/06/pearl/output",
+                           "/d/06/pearl/output"}
+    SAVE_DIR		= "./save"
+  END_OBJECT            = SSP_PP
+
+
+  OBJECT		= ASP
+    MAX_CONCURRENT	= 1
+    LOGICAL		= "ASP"
+    BACKGROUND		= "paleturquoise"
+    EXECUTABLE          = "sps_copy"
+    PATH                = "/user/nancy/src/sps/Profile"
+/*    EXECUTABLE		= "exec_asp" */
+/*    PATH		= "$ASF/bin" */
+    HOST		= "ssp1" 
+    CP_HOSTNAME     	= "ssp1"
+    MSG_TEMP		= "$LOCAL/sps/templates/msgTemplate.odl"
+    HALT_TIME_INTERVAL  = 240            /* seconds */
+    STOP_TIME_INTERVAL  = 240            /* seconds */
+    CEOS_OUTPUT_BASEDIR	= {"/d/06/cp/pearl/output"}
+    SAVE_DIR		= "./save"
+  END_OBJECT		= ASP
+
+  OBJECT		= PPS
+    MAX_CONCURRENT	= 1
+    MAX_PENDING         = 1
+    LOGICAL		= "CP-PPS"
+    BACKGROUND		= "lightsteelblue1"
+/*    EXECUTABLE          = "sps_copy"  */
+    EXECUTABLE          = "eh"  /* Frame job */
+    PATH                = "/u/u3/pearl/work/Profile" 
+/*  EXECUTABLE          = "sps_error"  /* profile1 creates cal products */
+/*  EXECUTABLE          = "sps_pps"  /* profile1 creates cal products */
+
+/*    EXECUTABLE                = "std"   /* */
+/*      EXECUTABLE              = "ss_std"   /* */
+/*    EXECUTABLE                = "ccsd"   /* */
+/*     EXECUTABLE               = "complex_s"  /*  */
+/*      EXECUTABLE              = "complex_ff"   /* */
+/*    EXECUTABLE                = "ramp" /* */
+/*    EXECUTABLE                = "calp" /* */
+/*     EXECUTABLE               = "calp_nocopy" /* */
+/*      EXECUTABLE              = "sps_scan" /* */
+
+/*    EXECUTABLE		= "CP-PPS" */
+ /*   PATH		= "$ASF/bin" */
+    HOST		= "ssp1" 
+    CP_HOSTNAME     	= "ssp1"
+    MSG_TEMP		= "$LOCAL/sps/templates/msgTemplate.odl"
+    HALT_TIME_INTERVAL  = 60            /* seconds */
+    STOP_TIME_INTERVAL  = 60            /* seconds */
+    CONFIG_FILE		= "$LOCAL/cp/config/pps-config.odl"
+  END_OBJECT		= PPS
+
+  OBJECT		= IMS
+    LOGICAL		= "CP-IMS"
+    BACKGROUND		= "honeydew1"
+    EXECUTABLE          = "sps_copy"
+    PATH                = "/user/nancy/src/sps/Profile"
+/*    EXECUTABLE		= "CP-IMS.ops" */
+/*    PATH		= "$ASF/bin" */
+    HOST		= "ssp1"
+    CP_HOSTNAME     	= "ssp1"
+    MSG_TEMP		= "$LOCAL/sps/templates/msgTemplate.odl"
+    HALT_TIME_INTERVAL  = 60            /* seconds */
+    STOP_TIME_INTERVAL  = 60            /* seconds */
+    CONFIG_FILE		= "$LOCAL/cp/config/ims-config.odl"
+  END_OBJECT		= IMS
+
+  OBJECT                = IMS
+    LOGICAL             = "CP-IMGS"
+    BACKGROUND		= "honeydew2"
+    EXECUTABLE          = "sps_copy"
+    PATH                = "/u/u3/pearl/work/Profile"
+/*    EXECUTABLE          = "CP-IMS.ops" */
+/*    PATH                = "$ASF/bin" */
+    HOST                = "ssp1"
+    CP_HOSTNAME         = "ssp1"
+    MSG_TEMP            = "$LOCAL/sps/templates/msgTemplate.odl"
+    HALT_TIME_INTERVAL  = 60            /* seconds */
+    STOP_TIME_INTERVAL  = 60            /* seconds */
+    CONFIG_FILE         = "$LOCAL/cp/config/ims-config.odl"
+  END_OBJECT            = IMS
+/*
+OBJECT                = IMS
+    LOGICAL             = "CP-BSIF"
+    BACKGROUND          = "honeydew3"
+    EXECUTABLE          = "sps_copy"
+    PATH                = "/u/u3/pearl/work/Profile"
+    HOST                = "ssp1"
+    CP_HOSTNAME         = "ssp1"
+    MSG_TEMP            = "$LOCAL/sps/templates/msgTemplate.odl"
+    HALT_TIME_INTERVAL  = 60            
+    STOP_TIME_INTERVAL  = 60          
+    CONFIG_FILE         = "$LOCAL/cp/config/ims-config.odl"
+  END_OBJECT            = IMS
+*/
+NUM_JOB_PROFILES = 21 /* must match number of job profile objects in file */
+
+  OBJECT = JOB_PROFILE_TABLE
+
+/* Standard (i.e., 8-bit detected) products from RADARSAT standard-beam data */
+/* These products can be produced on either the ASP or PP, but for now */
+/* send all of them to the ASP. */
+
+    /* Default products */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("ST1", "ST2", "ST3", "ST4", "ST5", "ST6", "ST7")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "ASP"
+    END_OBJECT = JOB_PROFILE
+
+    /* Products with quicklook flag turned on only */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("ST1", "ST2", "ST3", "ST4", "ST5", "ST6", "ST7")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("YES")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "ASP"
+    END_OBJECT = JOB_PROFILE
+
+    /* Products with compensation turned off only */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("ST1", "ST2", "ST3", "ST4", "ST5", "ST6", "ST7")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("NO")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "ASP"
+    END_OBJECT = JOB_PROFILE
+
+/* Standard products from E1/E2/J1 data */
+/* For R2.1, only the ASP can create standard E1/E2/J1 products. */
+
+    /* Default products */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("E1", "E2", "J1")
+        MODE_LIST = ("STD")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "ASP"
+    END_OBJECT = JOB_PROFILE
+
+    /* Products with quicklook flag turned on only */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("E1", "E2", "J1")
+        MODE_LIST = ("STD")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("YES")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "ASP"
+    END_OBJECT = JOB_PROFILE
+
+    /* Products with compensation turned off only */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("E1", "E2", "J1")
+        MODE_LIST = ("STD")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("NO")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "ASP"
+    END_OBJECT = JOB_PROFILE
+
+
+/* Standard products to be produced by ASP (only) during the AMM */
+
+    /* Full-res and low-res, RADARSAT left-looking standard-beam data only, */
+    /* and no radiometric compensation */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("ST1", "ST2", "ST3", "ST4", "ST5", "ST6", "ST7")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("NO")
+        FRAME_MODE_LIST = ("ANTARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "ASP"
+    END_OBJECT = JOB_PROFILE
+
+/* RADARSAT ScanSAR standard products */
+/* Only the SSP can process the RADARSAT ScanSAR modes. */
+
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("SNA", "SNB", "SWA", "SWB")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (50.0, 100.0, 400.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("YES", "NO")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "SSP"
+    END_OBJECT = JOB_PROFILE
+
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("SNA", "SNB", "SWA", "SWB")
+        PRODUCT_TYPE_LIST = ("CAL_SET")
+        PIXEL_SPACING_LIST = (100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("YES", "NO")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "SSP"
+    END_OBJECT = JOB_PROFILE
+
+    OBJECT = JOB_PROFILE
+
+       PLATFORM_LIST = ("R1")
+        MODE_LIST = ("SNA", "SNB", "SWA", "SWB")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (50.0, 100.0, 400.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("YES", "NO")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("LAMBERT", "PS", "UTM")
+        TERRAIN_CORRECTION_LIST = ("YES", "NO")
+        PRODUCT_CREATOR = "SSP"
+    END_OBJECT = JOB_PROFILE
+
+/* Complex products */
+/* These products are created by both ASP and PP. */
+/* Note that the PP can only create complex products from RADARSAT data */
+/* for R2.1 and that only the PP can process RADARSAT extended-high data. */
+/* Also note that only the ASP can process subframes and only the PP */
+/* can process full frames. */
+
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("E1", "E2", "J1", "R1")
+        MODE_LIST = ("STD", "ST1", "ST2", "ST3", "ST4", "ST5", "ST6", "ST7")
+        PRODUCT_TYPE_LIST = ("COMPLEX")
+        PIXEL_SPACING_LIST = (6.25)
+        SUBFRAME_ID_LIST = (1, 2, 3, 4, 5, 6, 7, 8)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("NO")
+        PROJECTION_LIST = ("SLANT_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "ASP"
+    END_OBJECT = JOB_PROFILE
+
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("ST1", "ST2", "ST3", "ST4", "ST5", "ST6", "ST7",
+            "EH1", "EH2", "EH3", "EH4", "EH5", "EH6")
+        PRODUCT_TYPE_LIST = ("COMPLEX")
+        PIXEL_SPACING_LIST = (6.25)
+        SUBFRAME_ID_LIST = (0)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("NO")
+        PROJECTION_LIST = ("SLANT_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "PP"
+    END_OBJECT = JOB_PROFILE
+
+/* CCSD products */
+/* These products are created only by ASP for R2.1. */
+
+
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("E1", "E2", "J1")
+        MODE_LIST = ("STD")
+        PRODUCT_TYPE_LIST = ("CCSD")
+        PIXEL_SPACING_LIST = (6.25)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("YES", "NO")
+        FRAME_MODE_LIST = ("ARCTIC")
+        DESKEW_LIST = ("NO")
+        PROJECTION_LIST = ("SLANT_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "ASP"
+    END_OBJECT = JOB_PROFILE
+
+/* RAMP products */
+/* These products are produced only by the PP. */
+
+    /* Default products */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("ST1", "ST2", "ST3", "ST4", "ST5", "ST6", "ST7")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ANTARCTIC","ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "PP"
+    END_OBJECT = JOB_PROFILE
+
+    /* Products with quicklook flag turned on only */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("ST1", "ST2", "ST3", "ST4", "ST5", "ST6", "ST7")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("YES")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ANTARCTIC","ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "PP"
+    END_OBJECT = JOB_PROFILE
+
+    /* Products with compensation turned off only */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("ST1", "ST2", "ST3", "ST4", "ST5", "ST6", "ST7")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("NO")
+        FRAME_MODE_LIST = ("ANTARCTIC","ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "PP"
+    END_OBJECT = JOB_PROFILE
+
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("EH1", "EH2", "EH3", "EH4", "EH5", "EH6",
+            "ST1", "ST2", "ST3", "ST4", "ST5", "ST6", "ST7")
+        PRODUCT_TYPE_LIST = ("RAMP")
+        PIXEL_SPACING_LIST = (25.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("YES","NO")
+        COMPENSATION_FLAG_LIST = ("YES", "NO")
+        FRAME_MODE_LIST = ("ANTARCTIC","ARCTIC")
+        DESKEW_LIST = ("NO")
+        PROJECTION_LIST = ("SLANT_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "PP"
+    END_OBJECT = JOB_PROFILE
+
+/* Standard products from RADARSAT extended-high data */
+/* For R2.1, only the PP can process RADARSAT extended-high data. */
+
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("EH1", "EH2", "EH3", "EH4", "EH5", "EH6")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ANTARCTIC","ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "PP"
+    END_OBJECT = JOB_PROFILE
+
+    /* Products with quicklook flag turned on only */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("EH1", "EH2", "EH3", "EH4", "EH5", "EH6")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+       QUICKLOOK_FLAG_LIST = ("YES")
+        COMPENSATION_FLAG_LIST = ("YES")
+        FRAME_MODE_LIST = ("ANTARCTIC","ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "PP"
+    END_OBJECT = JOB_PROFILE
+
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("FN1", "FN2", "FN3", "FN4", "FN5")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("YES","NO")
+        COMPENSATION_FLAG_LIST = ("YES","NO")
+        FRAME_MODE_LIST = ("ANTARCTIC","ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "PP"
+    END_OBJECT = JOB_PROFILE
+
+    /* Products with compensation turned off only */
+    OBJECT = JOB_PROFILE
+        PLATFORM_LIST = ("R1")
+        MODE_LIST = ("EH1", "EH2", "EH3", "EH4", "EH5", "EH6")
+        PRODUCT_TYPE_LIST = ("STANDARD")
+        PIXEL_SPACING_LIST = (12.5, 100.0)
+        SUBFRAME_ID_LIST = (-1)
+        QUICKLOOK_FLAG_LIST = ("NO")
+        COMPENSATION_FLAG_LIST = ("NO")
+        FRAME_MODE_LIST = ("ANTARCTIC","ARCTIC")
+        DESKEW_LIST = ("YES")
+        PROJECTION_LIST = ("GROUND_RANGE")
+        TERRAIN_CORRECTION_LIST = ("NO")
+        PRODUCT_CREATOR = "PP"
+    END_OBJECT = JOB_PROFILE
+
+  END_OBJECT = JOB_PROFILE_TABLE
+
+
+END_OBJECT		= CONFIG_FILE
+END
+

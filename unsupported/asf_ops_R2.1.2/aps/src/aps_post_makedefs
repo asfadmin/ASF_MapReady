@@ -1,0 +1,280 @@
+###############################################################################
+#
+# File:         aps_post_makedefs
+#
+# Function:     Definitions for the gnumake process.
+#
+# Author:       Lawrence Stevens (inspired by Ron Green, Inspired by S. Hardman)
+#
+# Date:         02/17/95
+#
+# SCCS Info:
+#	"@(#)aps_post_makedefs	5.1 98/01/08 APS/ASF"
+#	"@(#) /home/aps/r2.1.2/src/SCCS/s.aps_post_makedefs"
+#
+###############################################################################
+
+
+###############################################################################
+#
+# Paths in which to look for source files that are not in the working directory
+#
+###############################################################################
+vpath %.c $(SRC_DIR)
+vpath %.for $(SRC_DIR)
+vpath %.h $(subst -I,, $(IALL))
+
+#	LALL is defined in the lower level Makefiles
+#ifdef CM_HOME
+#LALL			:=	$(filter-out $(LAPS_GLOBAL), $(LALL))
+#endif
+
+###############################################################################
+#
+# Print Definitions
+#
+###############################################################################
+defs:
+	@echo
+	@echo "*****MAKEFILE DEFINITIONS******"
+	@echo
+	@echo "APS HOME: " $(APS_HOME)
+	@echo
+	@echo "ASF VER: " $(ASFVER)
+	@echo
+	@echo "SYBASE: " $(SYBASE)
+	@echo
+	@echo "ASF INSTALL_EXE_DIR: " $(ASF_INSTALL_EXE_DIR)
+	@echo
+	@echo "ASF INSTALL_LIB_DIR: " $(ASF_INSTALL_LIB_DIR)
+	@echo
+	@echo "APS INSTALL_EXE_DIR: " $(APS_INSTALL_EXE_DIR)
+	@echo
+	@echo "APS INSTALL_LIB_DIR: " $(APS_INSTALL_LIB_DIR)
+	@echo
+	@echo "APS INSTALL_GLOBAL_LIB_DIR: " $(APS_INSTALL_GLOBAL_LIB_DIR)
+	@echo
+	@echo "SRC DIR: " $(SRC_DIR)
+	@echo
+	@echo "TARGETS:  " $(TARGETS)
+	@echo
+	@echo "F77_LOG:  " $(F77_LOG)
+	@echo
+	@echo "F77:      " $(F77) 
+	@echo
+	@echo "F77 SRC:  " $(F77_SRC)
+	@echo
+	@echo "CC:       " $(CC)
+	@echo
+	@echo "CFLAGS:   " $(CFLAGS)
+	@echo
+	@echo "SRC:      " $(SRC)
+	@echo
+	@echo "INC PATH: " $(IALL)
+	@echo
+	@echo "LIB PATH: " $(LALL)
+	@echo
+	@echo "LIBS:     " $(LIBS)
+	@echo
+	@echo "MACHINE:  " $(MACH)
+	@echo
+	@echo "OS:       " $(OS)
+
+
+###############################################################################
+#
+# Install the target (LIB or EXE) into the appropriate APS directory
+#
+###############################################################################
+APSINSTALL_EXE =	$(addprefix $(APS_INSTALL_EXE_DIR)/, $(EXE))
+APSINSTALL_LIB =	$(addprefix $(APS_INSTALL_LIB_DIR)/, $(LIB))
+APSINSTALL_GLOBAL_LIB = \
+		$(addprefix $(APS_INSTALL_GLOBAL_LIB_DIR)/, $(GLOBAL_LIB))
+
+apsinstall:
+	@echo
+	@echo Installing into APS:
+	@if [ "$(EXE)" ]; then \
+		$(MAKE) $(APSINSTALL_EXE) ; \
+	fi
+	@if [ "$(LIB)" ]; then \
+		$(MAKE) $(APSINSTALL_LIB) ; \
+	fi
+	@if [ "$(GLOBAL_LIB)" ]; then \
+		$(MAKE) $(APSINSTALL_GLOBAL_LIB) ; \
+	fi
+	@echo Done
+
+$(APS_INSTALL_EXE_DIR)/% : %
+	@echo Installing $< to $(APS_INSTALL_EXE_DIR)
+	@cp -p $< $(APS_INSTALL_EXE_DIR)
+#	cp -p VERSION.$< $(APS_INSTALL_EXE_DIR)
+
+$(APS_INSTALL_LIB_DIR)/% : %
+	@echo Installing $< to $(APS_INSTALL_LIB_DIR)
+	@cp -p $< $(APS_INSTALL_LIB_DIR)
+#	cp -p VERSION.$< $(APS_INSTALL_LIB_DIR)
+
+$(APS_INSTALL_GLOBAL_LIB_DIR)/% : %
+	@echo Installing $< to $(APS_INSTALL_GLOBAL_LIB_DIR)
+	@cp -p $< $(APS_INSTALL_GLOBAL_LIB_DIR)
+#	cp -p VERSION.$< $(APS_INSTALL_GLOBAL_LIB_DIR)
+
+###############################################################################
+#
+# Remove the target (LIB or EXE) from the appropriate APS directory
+#
+###############################################################################
+cleanapsinstall:
+	@echo
+	@if [ "$(EXE)" ]; then \
+		echo \"Cleaning \" $(EXE) from $(APS_INSTALL_EXE_DIR) ; \
+		rm -f $(APSINSTALL_EXE) ; \
+	fi
+	@if [ "$(LIB)" ]; then \
+		echo \"Cleaning \" $(LIB) from $(APS_INSTALL_LIB_DIR) ; \
+		rm -f $(APSINSTALL_LIB) ; \
+	fi
+	@if [ "$(GLOBAL_LIB)" ]; then \
+		echo \"Cleaning \" $(GLOBAL_LIB) from $(APS_INSTALL_GLOBAL_LIB_DIR) ; \
+		rm -f $(APSINSTALL_GLOBAL_LIB) ; \
+	fi
+	@echo Done
+
+###############################################################################
+#
+# Install the target (EXE only) into the ASF directory
+#
+###############################################################################
+
+ASFINSTALL_EXE =	$(addprefix $(ASF_INSTALL_EXE_DIR), $(notdir $(EXE)))
+ASFINSTALL_LIB =	$(addprefix $(ASF_INSTALL_LIB_DIR), $(notdir $(LIB)))
+asfinstall:
+	@echo
+	@echo Installing into ASF:
+	@if [ "$(EXE)" ]; then \
+		echo Installing $(EXE) to $(ASF_INSTALL_EXE_DIR) ; \
+		cp -p $(EXE) $(ASF_INSTALL_EXE_DIR) ; \
+	fi
+	@if [ "$(LIB)" ]; then \
+        echo Installing $(LIB) to $(ASF_INSTALL_LIB_DIR) ; \
+        cp -p $(LIB) $(ASF_INSTALL_LIB_DIR) ; \
+	fi
+	@echo Done
+
+
+cleanasfinstall:
+	@echo
+	@if [ "$(EXE)" ]; then \
+		echo \"Cleaning \" $(EXE) from $(ASF_INSTALL_EXE_DIR) ; \
+		rm -f $(ASFINSTALL_EXE) ; \
+	elif [ $(LIB) ]; then \
+		echo \"Cleaning \" $(LIB) from $(ASF_INSTALL_LIB_DIR) ; \
+		rm -f $(ASFINSTALL_LIB) ; \
+	else
+		echo 'Could not clean ASF; no EXE or LIB target is defined.'; \
+	fi
+	@echo Done
+
+###############################################################################
+#
+# Clean the executables only and remake
+#
+###############################################################################
+relink:
+	@echo
+	@echo Relinking $(EXE)
+	@rm -f $(EXE)
+	@$(MAKE) all
+
+###############################################################################
+#
+# Check for differences in SRC, HEADER_FILES, F77_SRC, and F77_INC code
+#
+###############################################################################
+CHECKDIFF_DIR = /tmp/diff_$(notdir $(SRC_DIR))/$$USER
+
+checkdiff checkdiffs diffs:
+	@# make sure the "results" directory tree exists
+	@# ASSUMPTIONS: /tmp exists; the "results" dir has exactly 2 other subdirs, 
+	@echo ""
+	@echo diff\'ing DIRS:"\n\t\t"`pwd`"\n\tand\t"$(SRC_DIR)
+	@echo results will be in $(CHECKDIFF_DIR)
+	@if [ ! -d $(dir $(CHECKDIFF_DIR)) ] ; \
+	then \
+		mkdir $(dir $(CHECKDIFF_DIR)) ; \
+		chmod a+rwx $(dir $(CHECKDIFF_DIR)) ; \
+	fi
+	@if [ ! -d $(CHECKDIFF_DIR) ] ; \
+	then \
+		mkdir $(CHECKDIFF_DIR) ; \
+		chmod a+rwx $(CHECKDIFF_DIR) ; \
+	fi
+	@ - rm -f $(CHECKDIFF_DIR)/not_in_first_dir \
+			$(CHECKDIFF_DIR)/not_in_compare_dir
+	@touch $(CHECKDIFF_DIR)/not_in_first_dir	# creates empty file
+	@touch $(CHECKDIFF_DIR)/not_in_compare_dir	# creates empty file
+	@echo ""
+	@echo These files have differences:
+	@echo ""
+	@ for i in $(SRC) $(HEADER_FILES) $(F77_SRC) $(F77_INC) ; \
+	do \
+		if [ -f $$i ] ; \
+		then \
+			if [ -f $(SRC_DIR)/$$i ] ; \
+			then \
+				diff -w $$i $(SRC_DIR)/$$i > $(CHECKDIFF_DIR)/diff.$$i 2>&1 ; \
+				if [ ! -s $(CHECKDIFF_DIR)/diff.$$i ] ; \
+				then \
+					rm $(CHECKDIFF_DIR)/diff.$$i ; \
+				else \
+					echo '	'$$i ; \
+				fi ; \
+			else \
+				echo $$i >> $(CHECKDIFF_DIR)/not_in_compare_dir ; \
+			fi ; \
+		else \
+			echo $$i >> $(CHECKDIFF_DIR)/not_in_first_dir ; \
+		fi ; \
+	done
+
+###############################################################################
+#
+# Create Test contained in libraries
+#
+###############################################################################
+test:
+	@echo
+	@echo Creating test driver
+	@echo "Compiling $(TEST_SRC)"
+	@$(CC) $(CFLAGS) -DMAIN  $(IALL) -c $(TEST_SRC)
+	@$(CC) -o $(TEST_EXE) $(OBJS) $(LALL) $(LIBS)
+	@echo "Done"
+
+
+	@rm -f $(TARGETS)
+	@$(MAKE) all
+
+###############################################################################
+#
+# Make version file for software
+#
+###############################################################################
+VERSION_TARGETS	:=	$(addprefix VERSION., $(notdir $(TARGETS)))
+
+version: $(VERSION_TARGETS)
+
+$(VERSION_TARGETS) : $(TARGETS)
+	@echo
+	@echo Creating Version File $(VERSION_TARGETS)
+	@ for i in $(notdir $(TARGETS)) ; \
+    do \
+		what $$i | grep -v SMI > VERSION.$$i ; \
+	done
+	@echo Done
+
+clean_version :
+	@echo
+	@echo "Cleaning " $(VERSION_TARGETS)
+	rm -f $(VERSION_TARGETS)
+	@echo

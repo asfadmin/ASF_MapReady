@@ -1,0 +1,43 @@
+
+    NAME:	dopPlot - doppler centroid trending program
+
+    SYNOPSIS:	dopPlot <rev>
+
+    DESCRIPTION:
+
+	dopPlot performs doppler centroid trending for a given revolution
+    number.  When executed, dopPlot looks at all subdirectories immediately
+    below the CWD for image products that are from the specified SAR imaging
+    swath.  For all matching files, certain parameters are extracted and
+    the results are stored in an output file containing the rev. number.
+       As currently configured, dopPlot will also create a quick ASCII 
+    plot of the doppler centroids in the swath and call the dopTrend 
+    program (see man page for dopTrend).
+
+    OPTIONS:	None
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+    EXAMPLES:	dopPlot 09938
+
+	This call will search all subdirectories 2 levels below the current
+	working directory for any images with an "09938" in their names.
+	For all matches, the doppler centroid and a few other parameters 
+	are extracted and written to the file out_file_09938.  The
+	centroid values are then plotted using a simple ASCII display.
+	(See dopTrend for further explanations).
+
+    SEE ALSO: dopTrend, dopPlotOrder
+
+    HARWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:	None Known
+
+    AUTHOR:	Tom Logan, ASF
+
+    CONTACT:	tlogan@images.alaska.edu
+		rguritz@images.alaska.edu
+
+

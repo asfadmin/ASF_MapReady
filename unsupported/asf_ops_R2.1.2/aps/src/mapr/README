@@ -1,0 +1,32 @@
+Usage:
+
+	 mapper [ -U <userid> ] -P <password> [ -L <laser printer> ]
+
+Command line Options:
+
+	1. Sybase password
+	required
+
+	2. Sybase user id
+	optional
+
+	3. Laser printer
+	optional
+
+Environment variables needed:
+
+	1. APS_SYBASE_USERID
+	Optional
+	Sybase userid can also be specified using environment variable 
+	APS_SYBASE_USERID. or it can be specified on the command line
+	to the mapper
+
+	2. APSDB
+	required
+
+	3. APS_DATA
+	required
+	/local/aps/
+
+	4. PRINTER
+	optional

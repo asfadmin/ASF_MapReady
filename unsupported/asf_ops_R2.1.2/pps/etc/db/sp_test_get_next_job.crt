@@ -1,0 +1,58 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+/*=======================
+	@(#)sp_test_get_next_job.crt	1.1  11/21/96
+=========================*/
+
+if exists (select * from sysobjects where name = "sp_test_get_next_job")
+	drop proc sp_test_get_next_job
+go
+
+create proc sp_test_get_next_job (@job_type varchar(15),@job_state varchar(15))
+as
+	declare @job_id int
+	declare @order_id int
+	declare @item_id int
+	declare @str_jobid char(10)
+	declare @str_orderid char(10)
+	declare @str_itemid char(10)
+	select @job_id = 0
+	select @order_id = 0
+	select @item_id = 0
+
+	if not exists (select * from jobs 
+		where job_type = @job_type
+		and job_state = @job_state)
+	begin
+		print "0 0 0"
+	end
+
+	select @job_id = min(job_id)
+		from jobs
+		where job_type = @job_type
+		and job_state = @job_state
+
+	if @job_type = "SCAN"
+		select @order_id = order_id,
+			@item_id = item_id
+			from scan_orders
+			where @job_id = job_id
+
+	if @job_type = "L1"
+		select @order_id = order_id,
+			@item_id = item_id
+			from L1_orders
+			where @job_id = job_id
+
+        select @str_jobid = convert(char(10),@job_id)
+        select @str_orderid = convert(char(10),@order_id)
+        select @str_itemid = convert(char(10),@item_id)
+
+        print @str_jobid
+	print @str_orderid 
+	print @str_itemid
+ 
+go

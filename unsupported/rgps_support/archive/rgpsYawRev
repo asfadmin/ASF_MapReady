@@ -1,0 +1,8 @@
+#!/bin/sh
+for file in `echo *$1*.L`
+do
+	echo $file | awk '{ORS="";print "     Frame="substr($1,8,3)" Yaw="}' -
+	metadata f $file | grep "craft yaw at the image center" | awk -F= '{ORS="";print $2"  Doppler="}' -
+	metadata u $file | grep "CRT DOPPLER FREQ 1" | awk '{print int($5)"Hz"}' -
+#	rgpsDop $file
+done

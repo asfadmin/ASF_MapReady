@@ -1,0 +1,84 @@
+/*========================================================================
+ *
+ * Name - Imakefile
+ *
+ * Version:	1.17
+ *
+ * ccsid:	@(#)Imakefile	1.17 - 06/25/93 12:54:11
+ * from: 	ccs/s.Imakefile
+ * date: 	06/28/93 09:14:48
+ *
+ * Description: imake file to build xgrabsc.  Use simple.mak if you
+ *              don't have imake.
+ *
+ *========================================================================
+ */
+
+/* #define MOTIF_XGRAB    /* uncomment this to get the Motif version of xgrab  */
+
+/* you can specify many config.h options here if you don't want to
+ * modify config.h.  E.g.,
+ *   DEFINES= $(SIGNAL_DEFINES) -DNO_RLE_CHECKS
+ */
+
+XRDB=/usr/bin/X11/xrdb
+
+CDebugFlags = -O
+
+
+#if !defined(XmClientLibs)
+#define XmClientLibs -lXm -lXt -lX11
+#endif
+
+
+SRCS1=xgrabsc.c
+OBJS1=xgrabsc.o
+PROGRAMS = xgrabsc xgrab
+
+#if defined(MOTIF_XGRAB)
+SRCS2 = xgrabxm.c
+OBJS2 = xgrabxm.o
+#define Objs2 xgrabxm.o
+LIBS2 = XmClientLibs
+#define ADSource XGrabxm.res
+#define ADName XGrabxm.ad
+#define ADInc xgrabxm_ad.h
+#else
+SRCS2 = xgrabxaw.c
+OBJS2 = xgrabxaw.o
+#define Objs2 xgrabxaw.o
+LIBS2 = XawClientLibs
+#define ADSource XGrabxaw.res
+#define ADName XGrabxaw.ad
+#define ADInc  xgrabxaw_ad.h
+#endif
+
+#define Nil
+
+ComplexProgramTarget_1(xgrabsc,Nil,$(XLIB))
+ComplexProgramTarget_2(xgrab,Nil,$(LIBS2))
+SpecialObjectRule(Objs2,$(SRCS2) ADInc config.h, Nil)
+
+xgrabsc.o:: process.hc get.hc mem.hc convert.hc write.hc checkvm.h cmdopts.h \
+  config.h
+
+ADInc: xgrab_ad.h
+	$(CP) xgrab_ad.h ADInc
+
+xgrab_ad.h: ADName
+	$(RM) xgrab_ad.h
+	sed -n '1,/! ====/p' ADName | sed -n -f ad2c.sed >xgrab_ad.h
+
+XGrab.ad: ADName
+	$(RM) XGrab.ad
+	$(CP) ADName XGrab.ad
+
+ADName: ADSource
+	rm -f ADName
+	$(XRDB) -n ADSource >ADName
+
+clean::
+	$(RM) xgrabxaw_ad.h xgrabxm_ad.h xgrabxaw xgrabxm XGrab.ad
+	$(RM) XGrabxaw.ad XGrabxm.ad
+
+InstallAppDefaults(XGrab)

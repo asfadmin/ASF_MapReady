@@ -1,0 +1,93 @@
+.pl 66
+.\"
+.TH TAPEREAD 1 "29 April 1996" "ASF SPS Release 1B'" "ASF USER COMMANDS"
+.SH NAME
+taperead \- copy data from DCRSi or SONY-ID1 tape to disk
+.SH SYNOPSIS
+.B taperead
+.I {dcrsi|sony}
+.I start_address
+.I last_address
+.I output_filename [
+.B -c
+.I {7|8} ]
+.I [
+.B -d
+.I output_directory ... ]
+.SH "DESCRIPTION"
+\fBtaperead\fP
+copies blocks of data from the DCRSi (\fI/dev/vdi\fR) or
+SONY-ID1 (\fI/dev/ml930a\fR) tape to one or more disk files.
+\fBstart_address\fP
+specifies the address of the first DCRSI block or SONY-ID1 trackset to be
+dumped, which must be greater than or equal to 1.
+\fBlast_address\fP
+specifies the address of the last DCRSI block or SONY-ID1 trackset to be
+dumped, which also must be greater than or equal to 1.
+\fBoutput_filename\fP
+specifies the basename of one or more output disk files.  Except for the last
+file, the size of each output file ranges from a minimum of 512 to a maximum
+of 492544 tape blocks.  One tape block is 4356 bytes.
+
+The names of actual
+output files are formed by appending the specified basename with
+\fI.N\fR, where
+\fIN\fR denotes an integer from 1 to number of files created.
+However, if only one disk file is to be created, then the entire suffix
+\fI.1\fR is dropped, i.e.,
+the specified basename is the name of the output file.
+.SH OPTIONS
+.IP "\fB\-d\fP \fIoutput_directory ...\fP"
+This option specifies one or more directories where the output files may 
+reside.  If no directory is specified, the default is the current directory.
+However, if the 
+specified output directory is not the current directory,
+\fBtaperead\fP automatically creates a symbolic link in the current
+directory
+to point to the real
+output data file that is created in the specified directory.  The filesystems 
+associated with the output directories are filled up in the order specified
+on the command line.
+.IP "\fB\-c\fP \fI{7|8}\fP"
+This option specifies the character size of the serial line
+(\fI/dev/vdi_sp0\fR)
+used for communicating commands and responses with the DCRSi tape drive only.
+The allowable values are 7 or 8 bits per character.  The default is \fI8\fR.
+This option is ignored if the target drive is SONY-ID1.
+.SH EXAMPLES
+Assuming that the current directory is \fI/d/100\fR, and that 
+\fI/d/110\fR and \fI/d/112\fR have 3*1024*1024*1024 and 7*1024*1024*1024 bytes 
+of free disk space, respectively, the command
+
+	taperead dcrsi 1000001 2600000 WS1609 -d /d/110 /d/112
+
+copies 1,600,000 blocks of data off the DCRSi tape, starting from
+block #1000001, to the following disk files:
+
+	Filename				Size (in bytes)
+
+	/d/110/WS1609.1				492544*4356
+	/d/110/WS1609.2				246947*4356
+	/d/112/WS1609.3				492544*4356
+	/d/112/WS1609.4				367965*4356
+	/d/100/WS1609.1				---> /d/110/WS1609.1
+	/d/100/WS1609.2				---> /d/110/WS1609.2
+	/d/100/WS1609.3				---> /d/112/WS1609.3
+	/d/100/WS1609.4				---> /d/112/WS1609.4
+
+.SH NOTES
+\fBtaperead\fP has been used with DCRSi recorder firmware revisions
+4.4 and 5.0.
+Its behavior with other firmware revisions is unknown at this time.
+
+.SH FILES
+.PD 0
+.TP 27
+.B /dev/ml930a
+Data interface to the SONY-ID1 drive
+.TP
+.B /dev/vdi
+Data interface to the DCRSi drive
+.TP
+.B /dev/vdi_sp0
+(Serial) control interface to the DCRSi drive

@@ -1,0 +1,53 @@
+lastmodified = 'June 30, 1993'
+
+instname = 'F-1'
+        fullinstname = 'FINE Resolution Beam-1'
+        type = 'beam'
+        minlook = 33.520 maxlook = 33.520
+        minyaw = 90 maxyaw = 90
+        beamwidth = 2.66
+
+instname = 'F-2'
+        fullinstname = 'FINE Resolution Beam-2'
+        type = 'beam'
+        minlook = 35.445 maxlook = 35.445
+        minyaw = 90 maxyaw = 90
+        beamwidth = 2.43
+
+instname = 'F-3'
+        fullinstname = 'FINE Resolution Beam-3'
+        type = 'beam'
+        minlook = 37.145 maxlook = 37.145
+        minyaw = 90 maxyaw = 90
+        beamwidth = 2.17
+
+instname = 'F-4'
+        fullinstname = 'FINE Resolution Beam-4'
+        type = 'beam'
+        minlook = 38.680 maxlook = 38.680
+        minyaw = 90 maxyaw = 90
+        beamwidth = 2.040
+
+instname = 'F-5'
+        fullinstname = 'FINE Resolution Beam-5'
+        type = 'beam'
+        minlook = 40.105 maxlook = 40.105
+        minyaw = 90 maxyaw = 90
+        beamwidth = 1.930
+
+platname = 'RadarMean'
+         h = 788.912783
+         e = 0.0
+         i = 98.5563
+         node0 = 39.896
+         omega0 = 0.0
+         m0 = 0.0
+         t0 = 0.0
+
+instname = 'F-5'
+        fullinstname = 'FINE Resolution Beam-5'
+        type = 'beam'
+        minlook = 40.105 maxlook = 40.105
+        minyaw = 90 maxyaw = 90
+        beamwidth = 1.930
+

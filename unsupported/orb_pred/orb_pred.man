@@ -1,0 +1,129 @@
+NAME:   orb_pred
+
+SYNOPSIS:  orb_pred -abd -ABCDEFG point_file
+
+DESCRIPTION:
+	For a given point, determines the orbit numbers, dates, and times of
+	an ERS-1 pass for a specified phase and direction. Orb_pred will also
+	display the orbit information for two swath locations to both the
+	east and west of the central location. 
+
+OPTIONS:
+	You must specify which direction (ascending or descending) to
+	calculate orbit information.
+
+	  -a		Ascending
+	  -d		Descending
+	  -b		Both. Works the same as specifying both a & d.
+
+	You must also specify for which phase orbits are to be calculated.
+	You can specify multiple phases. (The start date for each phase will
+	be in paranthesis.)
+
+	  -A		Phase A (1991:212)
+	  -B		Phase B (1991:362)
+	  -C		Phase C (1992:093)
+	  -D		Phase D (1993:357)
+	  -E		Phase E (1994:100)
+	  -F		Phase F	(1994:271)
+	  -G		Phase G (1995:080)
+
+	The point file is a collection of lat/lon separated by a space to
+	obtain orbit information. Each line of the point file must fit the
+	following format:
+
+	Latitude Longitude Point_Description
+
+	An example point file of containg 1 point:
+	  
+	  example% cat pt_1
+
+	  59.17	-137.84	Ice_Shelf_1 
+
+	See EXAMPLES for output from this sample.
+
+ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+EXAMPLES:
+	To obtain information about Phase C (both ascending or descending)
+	for lat. 59.17 and longitude -137.84 located in point file pt_1, enter
+	the following:
+
+	  example% orb_pred -ad -D pt_1
+		 or
+	  example% orb_pred -b -D pt_1
+
+        The resulting output will look like:
+
+
+PHASE D Orbits ==>
+
+ASCENDING:
+
+For given point at Ice_Shelf_1, Lat = 59.17000	lon = -137.84000
+The point is 204.47 km to the east of the center of the central swath
+The distance between adjacent swaths is: 476.74 km.
+The available swaths are:
+West2_Orbits	West1_Orbits	Center-Orbits	East1_Orbits	East2_Orbits
+(Rev/Day/Time)	(Rev/Day/Time)	(Rev/Day/Time)	(Rev/Day/Time)	(Rev/Day/Time)
+Year ==> 1993
+12777 359  8:27 12748 357  7:53 12762 358  7:20 12733 356  6:46 12704 354  6:13 
+12820 362  8:27 12791 360  7:53 12805 361  7:20 12776 359  6:46 12747 357  6:13 
+12863 365  8:27 12834 363  7:53 12848 364  7:20 12819 362  6:46 12790 360  6:13 
+                                                12862 365  6:46 12833 363  6:13 
+Year ==> 1994
+12906   3  8:27 12877   1  7:53 12891   2  7:20                                 
+12949   6  8:27 12920   4  7:53 12934   5  7:20 12905   3  6:46 12876   1  6:13 
+12992   9  8:27 12963   7  7:53 12977   8  7:20 12948   6  6:46 12919   4  6:13 
+13035  12  8:27 13006  10  7:53 13020  11  7:20 12991   9  6:46 12962   7  6:13 
+13078  15  8:27 13049  13  7:53 13063  14  7:20 13034  12  6:46 13005  10  6:13 
+13121  18  8:27 13092  16  7:53 13106  17  7:20 13077  15  6:46 13048  13  6:13 
+13164  21  8:27 13135  19  7:53 13149  20  7:20 13120  18  6:46 13091  16  6:13 
+13207  24  8:27 13178  22  7:53 13192  23  7:20 13163  21  6:46 13134  19  6:13 
+
+DESCENDING:
+
+For given point at Ice_Shelf_1, Lat = 59.17000	lon = -137.84000
+The point is 125.81 km to the east of the center of the central swath
+The distance between adjacent swaths is: 476.74 km.
+The available swaths are:
+West2_Orbits	West1_Orbits	Center-Orbits	East1_Orbits	East2_Orbits
+(Rev/Day/Time)	(Rev/Day/Time)	(Rev/Day/Time)	(Rev/Day/Time)	(Rev/Day/Time)
+Year ==> 1993
+12799 360 21:34 12770 358 21: 1 12784 359 20:27 12755 357 19:54 12769 358 19:20 
+12842 363 21:34 12813 361 21: 1 12827 362 20:27 12798 360 19:54 12812 361 19:20 
+                12856 364 21: 1 12870 365 20:27 12841 363 19:54 12855 364 19:20 
+Year ==> 1994
+12885   1 21:34                                                                 
+12928   4 21:34 12899   2 21: 1 12913   3 20:27 12884   1 19:54 12898   2 19:20 
+12971   7 21:34 12942   5 21: 1 12956   6 20:27 12927   4 19:54 12941   5 19:20 
+13014  10 21:34 12985   8 21: 1 12999   9 20:27 12970   7 19:54 12984   8 19:20 
+13057  13 21:34 13028  11 21: 1 13042  12 20:27 13013  10 19:54 13027  11 19:20 
+13100  16 21:34 13071  14 21: 1 13085  15 20:27 13056  13 19:54 13070  14 19:20 
+13143  19 21:34 13114  17 21: 1 13128  18 20:27 13099  16 19:54 13113  17 19:20 
+
+	This output has been cropped to save space. 
+
+	If you wanted to use the same point file to calculate ascending and
+	descending orbits of Phases A, B, and D, enter the following command.
+
+	  example% orb_pred -b -ABD pt_1
+
+SEE ALSO:
+
+HARWARE/SOFTWARE LIMITATIONS:
+	JERS1 data has yet to be hard coded into the program. As soon as
+	reliable data is obtained, it will be added.
+BUGS:
+
+AUTHOR:
+	Mike Shindle (mshindle@iias.images.alaska.edu)
+
+CONTACT:
+	Mike Shindle (mshindle@iias.images.alaska.edu)
+	Rick Guritz (rguritz@iias.images.alaska.edu)
+	Shusun Li (sli@iias.images.alaska.edu)
+
+

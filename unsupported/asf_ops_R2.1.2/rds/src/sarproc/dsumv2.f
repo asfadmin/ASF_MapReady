@@ -1,0 +1,16 @@
+      SUBROUTINE DSUMV2 (C,ALPHA,A,BETA,B,N)
+C/*   SUBROUTINE DSUMV2 (C,ALPHA,A,BETA,B,N)  ---------------
+C
+C       ****** DOUBLE PRECISION SUBROUTINE ******
+C     A,B,C ARE N-DIMENSIONAL VECTORS   
+C     ALPHA,BETA ARE INPUT SCALARS
+C     THE SUBROUTINE COMPUTES C=ALPHA*A+BETA*B
+C*/
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      DIMENSION A(1),B(1),C(1)   
+      character*80 sccsid
+      data sccsid /'@(#)dsumv2.f	1.3 96/04/09 22:51:46\0'/
+      DO 3 I=1,N
+    3 C(I)=ALPHA*A(I)+BETA*B(I)
+      RETURN
+      END   

@@ -1,0 +1,215 @@
+This is a very quick step-by-step guide to plotting frame points on the
+APS mapper.  The source of the frame points may be an orbit0 file (useful
+for verifying accuracy of frame longitudes) or a flat file containing
+ims data or predicted frames (useful for verifying accuracy of latitudes)
+
+Plotting predicted frames from a flat file:
+
+1) You need a database where you can add/delete dtks without disruption.
+   You will also need to delete sat_rev_dtkid records.
+   You will need to create coverage on this database.
+
+2) Your flat file MUST follow the format 8 lat/lon points separated by space(s):
+
+	NRLAT1 NRLON1 NRLAT2 NRLON FARLAT1 FARLON1 FARLAT2 FARLON2
+	NRLAT1 NRLON1 NRLAT2 NRLON FARLAT1 FARLON1 FARLAT2 FARLON2
+						.
+						.
+						.
+	(eg:
+		-0.01 118.69 0.90 118.47 -0.10 118.03 0.80 117.84
+		0.40 118.58 1.30 118.38 0.30 117.95 1.20 117.75
+		0.80 118.49 1.70 118.29 0.70 117.86 1.60 117.66
+						.
+						.
+						.
+	   )	
+
+2a) You can create your flat file using the get_granules.sql script, which
+	queries the ims database for the necessary points:
+
+    /home/sybase/sqsh-1.4/bin/sqsh 
+	  -Uaps_clnt -Paps_clnt -SIMSDBTEST -h < get_granules.sql > flat_file.txt
+
+    NOTE: the sqsh command is used in order to delete column headers which
+          are not needed.
+
+
+2b) You may also create a flat file using the fgtest tool:
+		[ see How_to_generate_predicted_frames ]
+
+3) Use the following command to generate nominal coverage (if needed) for the
+   rev of the predicted frames:
+
+   aps_rev2time -s J1 -r 700
+   1992:088:19:00:02.762  1992:088:20:36:11.501
+
+   aps_crt_nom_cov -Umiguel -Pdappsdev 
+	-b1992:088:19:00:02.762 -e1992:088:20:36:11.501 J1 SAR
+
+
+4) Use the following command to generate dtk records which match the 
+   frames you wish to plot:
+
+miguel_plot_flatfile -Umiguel -Pdappsdev -p700 -t50 -sJ1 -mSAR flat_file.txt
+
+   This example shows that we are adding 50 frames, and that the
+   corresponding datatakes will be stored under rev=700
+   (with dtkid=1  to dtkid=50 in rev=700 )
+
+5) Bring up the APS Mapper and follow these steps to plot both your coverage
+   and the corresponding orbit0 frames:
+
+ MAPPER
+ 1) WORLD MAP
+ 2) METAFILE MAP
+ 0) QUIT
+
+ Select Map : 1
+
+ RESOLUTION:
+ 1) LOW 
+ 2) MEDIUM 
+
+ Resolution : 1
+
+ PROJECTIONS:
+ 1) GENERAL PERSPECTIVE
+ 2) CYLINDRICAL EQUIDISTANT
+ 3) MERCATOR
+ 4) MILLER CYLINDRICAL
+ 5) POLAR STEREOGRAPHIC
+
+ Projection : 3
+
+ DISPLAY GRID LINES  [ 0 = off, 1 = on ] : 0
+
+ Center longitude [-180.0 TO 180.0] :0
+
+ FUNCTIONS:
+ 1) SET WINDOW
+ 2) CREATE OVERLAYS
+ 3) MANAGE OVERLAYS
+ 4) SAVE MAP
+ 5) PLOT MAP
+ 6) PRINT MAP
+ 0) QUIT
+99) REFRESH DISPLAY
+
+ Function : 2
+
+ CREATE OVERLAYS
+ 1) SITES
+ 2) DAR
+ 3) SEG
+ 4) DTK
+ 5) COVERAGE
+ 6) SPECIFIC SITE COVERAGE
+ 0) QUIT
+99) REFRESH DISPLAY
+
+ Overlay :5 
+
+ COVERAGE DATA SOURCE:
+ 1) DATABASE 
+ 2) FILE 
+
+ Coverage data source: 1
+
+ SATELLITE:
+            1)  E1
+            2)  E2
+            3)  J1
+            4)  R1
+
+ Satellite :3
+
+ SENSOR:
+            1)  SAR
+            2)  VNR
+
+ Sensor :1
+
+ DISPLAY BY:
+ 1) TIME
+ 2) REV
+ 0) QUIT
+
+ Display by: 2
+
+ START REV [1-99999] :700
+
+ STOP REV [1-99999] :700
+
+ DISPLAY DATA:
+ 1) GLOBALLY
+ 2) WITHIN ASF MASK
+ 3) WITHIN MCMURDO MASK
+
+ Display data: 1
+
+ DISPLAY:
+ 1) GROUND TRACK
+ 2) SENSOR SWATH
+ 3) BOTH
+
+ Display: 3
+
+ DISPLAY TEXT:
+ 1) SAT/SEN/REV
+ 2) TIME
+ 3) BOTH
+ 4) NO TEXT
+
+ Display text: 4
+
+ Creating overlay CVG J1/SAR...
+
+	[ the coverage for rev=700  will appear on the map window ]
+
+ CREATE OVERLAYS
+ 1) SITES
+ 2) DAR
+ 3) SEG
+ 4) DTK
+ 5) COVERAGE
+ 6) SPECIFIC SITE COVERAGE
+ 0) QUIT
+99) REFRESH DISPLAY
+
+ Overlay :4
+
+ DISPLAY BY:
+ 1) DTK ID
+ 2) TIME
+ 3) REV
+ 0) QUIT
+
+ Display by: 3								Display by:1
+
+ SATELLITE: 								SATELLITE:
+            1)  E1										1)  E1
+            2)  E2										2)  E2 
+            3)  J1										3)  J1
+            4)  R1										4)  R1
+
+ Satellite :3								Satellite :3
+
+ SENSOR: 									SENSOR:
+            1)  SAR										1)  SAR
+            2)  VNR										2)  VNR
+
+ Sensor :1									Sensor :1
+
+ REV [1-99999] :700							REV [1-99999] :700
+
+ DISPLAY DATA:								ID : 1
+ 1) GLOBALLY
+ 2) WITHIN ASF MASK
+ 3) WITHIN MCMURDO MASK
+
+ Display data: 1
+
+[frames for rev=700  dtkid = 1,50           [frame for rev=700 dtkid = 1
+are displayed on map window. ]               is displayed in window]
+ 

@@ -1,0 +1,68 @@
+NAME: register_lzraw
+
+PURPOSE:
+	register_lzraw automates the process of sub-pixel
+  registration for ASF Level-Zero Swath data.  This program will take
+  this data, cut it into pieces of matching location, and size, SAR process it,
+  sub-pixel register it, and make it into an interferogram.
+
+  After running this script, you can generate a DEM with
+  tandem_ifm(1), or use the interferogram for your own science.
+
+Usage: 
+   register_lzraw
+		[-dem <dem_name>]
+		[-lat <start_lat> <end_lat>]
+		[-line <start_line1> <start_line2> <end_line1> <end_line2>]
+		[-g <grid_resolution>]
+		[-p [<num_processors>]
+		[-f] [-ml] [-r <percent_value>]
+		[-nolz2raw | -flywheel | -par ]
+		<swath_one> <swath_two> <igram_out>
+
+   <swath_one>  is a level zero swath file
+   <swath_two>  is a second level zero swath file
+   <igram_out>  is the name of the output interferogram
+
+   [-dem <dem_name>] sepcifies a dem to mask out large bodies of water
+   [-lat <start_lat> <end_lat>] specifies a start and end
+					latitude to constrian the swath images
+   [-line <start_line1> <start_line2> <end_line2> <end_line2>
+				     constrains the swaths to the given lines
+   [-g <grid_resolution] specifies a grid resolution to pass to
+					fico
+   [-p [<num_processors>] specifies to use parallel versions of
+					programs if possible. If no number of 
+					processors is specified 8 are used.
+   [-f] passes the -f switch to fico for fft matching.
+   [-ml] automatically multi-looks the interferogram.
+   [-r <percent_value>] is passed to watermask to determine
+					the amount of water in the range that can
+					be allowed for correlation.
+   [-nolz2raw]  Do not use lz2raw conversion, assumes inputs are APD raw signal files
+   [-flywheel]  Use lz2raw_flywheel instead of lz2raw
+   [-par]       Use lz2raw_par instead of lz2raw
+
+   register_lzraw will run the Alaska SAR processor
+on the two images, line the two images up, cut out 
+large bodies of water, then coregister the two 
+images using resolve, fico, fit_line, and 
+calc_deltas, then re-process the second image so 
+that it matches up with (is coregistered with) the 
+first. The result will be an inteferogram. After 
+this, you can generate a DEM with tandem_ifm.
+
+
+SEE ALSO:
+	lz2raw(1), swath_offset(1), fix_in_fromraw(1)
+        avg_in_dop(1), water_mask(1), aisp(1)
+        paisp(1), resolve(1), fico(1), register_cpx(1)
+        fit_line(1), calc_deltas(1), igram(1)
+        pigram(1), coh(1), las_op(1)
+
+AUTHOR: Dave Koster, 2000
+
+CONTACT: apd@asf.alaska.edu
+         http://www.asf.alaska.edu/apd
+	 
+		Last updated: March 2002

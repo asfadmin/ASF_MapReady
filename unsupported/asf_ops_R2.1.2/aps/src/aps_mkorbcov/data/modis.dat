@@ -1,0 +1,16 @@
+lastmodified = '04-DEC-89 15:22:00'
+
+platname = 'Eos-A'
+	h = 699.589
+	e = 0.0
+	i = 98.186
+	node0 = 999.0
+	omega0 = 0.0
+	m0 = 0.0
+	t0 = 0.0
+	nodetime = 13.5
+
+instname = 'MODIS-N'
+	fullname = 'Moderate Resolution Imaging Spectrometer'
+	type = 'beam' minlook = 0.0 maxlook = 0.0 minyaw = 90.0 maxyaw = 90.0
+	beamwidth = 99.2 mask = 'suntarget' minelev = 0

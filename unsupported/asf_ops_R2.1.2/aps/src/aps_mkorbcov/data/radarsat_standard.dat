@@ -1,0 +1,133 @@
+lastmodified = '18-MAR-93 15:10:00'
+
+instname = 'Nadir_D'
+        fullinstname = 'Nadir track'
+        type = 'nadir'
+    	mask = 'descending'
+
+instname = 'Nadir_St'
+        fullinstname = 'Nadir track Station Mask'
+        type = 'nadir'
+        mask = 'station'
+
+instname = 'S_1-7_500'
+        fullinstname = 'STANDARD Beams 1-7 (500km)'
+        type = 'beam'
+        minlook = 29.815 maxlook = 29.815
+        minyaw = -90 maxyaw = -90
+        swathwidth = 500.0
+
+instname = 'VS_1-7_95'
+        fullinstname = 'STANDARD Beams Variable 85km'
+	type = 'beam'
+	minlook = 17.30 maxlook = 42.33
+	minyaw = -90 maxyaw = -90
+	swathwidth = 95.0
+
+instname = 'S_1D_95'
+        fullinstname = 'STANDARD Beam-1 85km'
+        type = 'beam'
+        minlook = 20.545 maxlook = 20.545
+        minyaw = -90 maxyaw = -90
+        swathwidth = 95.0
+        mask = 'descending'
+
+instname = 'S_1'
+        fullinstname = 'STANDARD Beam-1'
+        type = 'beam'
+        minlook = 20.545 maxlook = 20.545
+        minyaw = -90 maxyaw = -90
+        beamwidth = 6.490
+
+instname = 'S_2'
+        fullinstname = 'STANDARD Beam-2'
+        type = 'beam'
+        minlook = 24.360 maxlook = 24.360
+        minyaw = -90 maxyaw = -90
+        beamwidth = 6.040
+
+instname = 'S_2D_95'
+        fullinstname = 'STANDARD Beam-2 85km'
+        type = 'beam'
+        minlook = 24.360 maxlook = 24.360
+        minyaw = -90 maxyaw = -90
+        swathwidth = 95.0
+        mask = 'descending'
+
+instname = 'S_3'
+        fullinstname = 'STANDARD Beam-3'
+        type = 'beam'
+        minlook = 29.460 maxlook = 29.460
+        minyaw = -90 maxyaw = -90
+        beamwidth = 5.48
+
+instname = 'S_3D_95'
+        fullinstname = 'STANDARD Beam-3'
+        type = 'beam'
+        minlook = 29.460 maxlook = 29.460
+        minyaw = -90 maxyaw = -90
+        swathwidth = 95.0
+        mask = 'descending'
+
+instname = 'S_4'
+        fullinstname = 'STANDARD Beam-4'
+        type = 'beam'
+        minlook = 31.945 maxlook = 31.945
+        minyaw = -90 maxyaw = -90
+        beamwidth = 5.050
+ 
+instname = 'S_4A'
+        fullinstname = 'STANDARD Beam-4 Ascending Mask'
+	type = 'beam'
+	minlook = 31.945 maxlook = 31.945
+	minyaw = -90 maxyaw = -90
+	beamwidth = 5.050
+	mask = 'ascending'
+
+instname = 'S_5'
+        fullinstname = 'STANDARD Beam-5'
+        type = 'beam'
+        minlook = 34.220 maxlook = 34.220
+        minyaw = -90 maxyaw = -90
+        beamwidth = 4.720
+
+instname = 'S_6'
+        fullinstname = 'STANDARD Beam-6'
+        type = 'beam'
+        minlook = 38.020 maxlook = 38.020
+        minyaw = -90 maxyaw = -90
+        beamwidth = 4.140
+
+instname = 'S_7'
+        fullinstname = 'STANDARD Beam-7'
+        type = 'beam'
+        minlook = 40.525 maxlook = 40.525
+        minyaw = -90 maxyaw = -90
+        beamwidth = 3.610
+
+instname = 'S_1-7_St'
+        fullinstname = 'STANDARD Beams 1-7 (500km) Station Mask'
+	type = 'beam'
+	minlook = 29.815 maxlook = 29.815
+	minyaw = -90 maxyaw = -90
+	beamwidth = 25.030
+    	mask = 'station'
+
+platname = 'RadarMean'
+         h = 788.912783
+         e = 0.0
+         i = 98.5563
+         node0 = 39.300
+         omega0 = 0.0
+         m0 = 0.0
+         t0 = 0.0
+
+instname = 'S_1-7_St'
+        fullinstname = 'STANDARD Beams 1-7 (500km) Station Mask'
+        type = 'beam'
+        minlook = 29.815 maxlook = 29.815
+        minyaw = 90 maxyaw = 90
+        beamwidth = 25.030
+        mask = 'station'
+    	mask = 'descending'
+

@@ -1,0 +1,18 @@
+#  State Vector TRANSLATION TABLE
+# FLAG   OLD_VALUE   NEW_VALUE
+# FLAG ::= <R|D>  R means "replace" old w/new
+#                 D means delete line containing
+#
+#  "hash" is comment to  end of line
+
+
+R     PLATFORM            	SATELLITE
+R     STATE_VECTOR_PRECISION    TYPE
+R     COORDINATE_SYSTEM         COORDINATE
+R     EPHEMERIS            	STATE_VECTOR
+R     WFF                	WALLOPS
+R     APS                	ASF
+R     E1                 	E-ERS-1
+R     E2                 	E-ERS-2
+R     J1                 	J-ERS-1
+R     R1                 	RADARSAT

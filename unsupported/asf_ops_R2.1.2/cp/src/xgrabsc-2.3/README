@@ -1,0 +1,146 @@
+*========================================================================
+*
+* Name - README
+*
+* Version:	1.12
+*
+* ccsid:	@(#)README	1.12 - 06/25/93 12:54:12
+* from: 	ccs/s.README
+* date: 	06/28/93 09:14:48
+*
+* Copyright (C) 1990-92 Bruce Schuchardt
+* See either the man page or the file cpyright.h for full copyright
+* information.
+*
+* Description:  README for xgrabsc
+*
+*		Notes for this specific release are in README.xx_yy
+*
+*========================================================================
+
+INTRO TO xgrabsc
+
+When I first wrote xgrabsc, there were a number of programs available
+for getting X-Window screen dumps (e.g., xwd and xwps), but they
+were all restricted to dumping a single window in a single format.
+I wrote xgrabsc in an effort to get around these restrictions.
+
+The main contribution of this program is its use of root-window
+rubberbanding to allow capture of arbitrary portions of the screen,
+and its multiple output formats (x-bitmap, x-pixmap, xwd, puzzle,
+"simple", and several Postscript formats).
+
+The Postscript dumps will use run-length encoding if it results in
+any savings in size.  A typical xterm window dump on a mono system
+runs around 40K bytes (20K for binary output).  An xwd dump on the
+same screen will be around 650K bytes.  While the xpr program has a
+"compress" option, it only compresses white samples.  Reducing the 
+size of the output increases the cost of computing the dump and the
+final printing of the dump, but it reduces the cost of storage and
+the time to transfer the dump to your printer.  The latter is
+especially important for large screen dumps.
+
+The xgrabsc program is not interactive.  You specify all processing
+options on the command line with obscure option characters.  These
+are all detailed in the man page.  An interactive interface to xgrabsc,
+named xgrab, is also included in this release.  xgrab allows you to
+do most of the setup with a mouse, and then uses the xgrabsc program
+to actually do the processing.  To use xgrab you must have the xgrabsc
+program in your execution path.
+
+
+
+OPTIONS FOR BUILDING xgrabsc
+
+The file config.h contains all the configuration options for xgrabsc.
+Please take a moment to look through that file before building xgrabsc.
+
+You also have the choice of building either the Athena or Motif 1.2 version of
+the xgrab form.  The default is to build the Athena version since many people
+don't have version 1.2 of Motif yet.  If you want to build the Motif version
+you will have to edit the Imakefile or simple.mak before building. 
+
+To find out if you have Motif 1.2, look for the definition of XmREVISION in
+your Xm.h include file.  If it is 1, you don't have Motif 1.2. 
+
+
+
+
+BUILDING xgrabsc
+
+Xgrabsc should build easily enough.  If you don't have the imake
+program, use simple.mak (i.e., make -f simple.mak).  There are targets
+for xgrabsc, xgrab, install, install.man, and clean.
+
+E.g.,
+  xmkmf
+  make
+  make install
+  make install.man
+
+The install target will put xgrabsc in /usr/bin/X11 and the man page in
+/usr/man/man1, unless you are using imake and your configuration files
+specify alternative directories.  If you are using simple.mak and don't
+like these locations, change the makefile before installing.
+
+Please send comments, bugs, and enhancements to bruce@slc.com.  Please
+read the Bugs file before sending bug reports.
+
+
+ Manifest
+ ---------------------------------
+ README              this file
+ README.xx_yy        files describing incremental changes to xgrabsc
+
+ Acks                acknowledgements for code gleaned from other
+                     systems, and people who have been very helpful
+                     in adding features and removing bugs from xgrabsc
+
+ Bugs                known bugs - read this before sending bug reports
+
+ Imakefile           Input for "imake" program
+ simple.mak          Simpler input for standard "make"
+ hp.mak		     A version of simple.mak for HPUX 9.0, which comes with
+ 		     Motif1.2
+
+ checkvm.h           Memory-check Postscript operator
+ config.h            Configuration options
+ cpyright.h          Copyright notice for this software (READ IT)
+ cmdopts.h	     Command line options for xgrabsc
+ patchlevel.h        Current patch level
+ virtual.h           Support for virtual window managers
+ xgrabxm.c           Source for Motif 1.2 window interface to xgrabsc
+ xgrabxaw.c	     Source for the Athena window interface to xgrabsc
+ xgrabsc.c           Program source for the screen grabber
+
+ *.hc                function include files for xgrabsc.c
+
+ XWDfile.h           xwd structure definition needed on some platforms
+ 
+ ad2c.sed            sed script to convert XGrab.ad to fallback resources
+                     for xgrab (see Ack file - this isn't mine)
+
+ xgrabsc.man         Man page for xgrabsc
+ xgrab.man           Man page for xgrab
+
+ XGrabxm.res         Resources for the Motif xgrab program
+ XGrabxaw.res	     Resources for the Athena xgrab program
+
+
+
+BUGS:
+
+Common problems and known bugs are described in the Bugs file.
+
+
+
+TO DO:
+
+Support for 24-bit displays.  If someone wants to give this a shot, please
+let me know.
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Bruce Schuchardt          bruce@SLC.COM
+  Servio Corp.
+  Beaverton, OR

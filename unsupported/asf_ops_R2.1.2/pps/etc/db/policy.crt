@@ -1,0 +1,39 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*==============================================================================
+Filename:	policy.crt
+
+Purpose:        Drop PPS policy database relation and create a new one.
+ 
+Input:          none.
+ 
+Output:         PPS policy database relation.
+ 
+Modif History:
+		@(#)policy.crt	1.1  11/21/96
+ 
+Detailed Desc: 	PPS policy table
+
+		There will be one row in this table for each job_type,
+		quicklook_flag, priority combination.  The table should
+		be initialized with all 16 rows currently supported.
+==============================================================================*/
+
+if exists (select 1 from sysobjects where name = "policy")
+	drop table policy 
+go
+
+create table  policy (
+	job_type	JobTypeType	not null,
+	quicklook_flag	LogicalType	not null,
+	job_priority	PriorityType	not null,
+	auto_flag	LogicalType	not null,
+
+	primary key clustered (job_type, quicklook_flag, job_priority)
+)
+go
+

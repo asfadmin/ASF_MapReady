@@ -1,0 +1,114 @@
+<html>
+<head>
+<title>ESA_ftpget</title>
+</head>
+<body>
+<hr>
+
+
+<p>
+This file contains:
+
+<ol>
+  <li> Description of the ESA_ftpget.csh and ESA_ftpget_all.csh (C shell) scripts.
+  <li> Summary argument list for the scripts
+  <li> Valid argument values for the scripts
+  <li> Environment variables to set
+  <li> Other programs used, therefore required, by these scripts
+                   
+</ol>
+<hr>
+
+<ol>
+  <li> SCRIPT NAMES: ESA_ftpget.csh and ESA_ftpget_all.csh
+
+</ol>
+<p>
+ESA_ftpget.csh is the FTP script used to pull files from the ESA host machine 
+to the FAIF host machine.  Note that this script is normally activated only
+from ESA_ftpget_all.csh.  Execution on the command line is not usually performed.
+
+<p>
+In normal operations, ESA_ftpget_all.csh is the job that appears in the FAIF
+crontab file.  ESA_ftpget_all.csh first uses set_env.csh to establish necessary
+environment variables (see (4) below), then invokes ESA_ftpget.csh repeatedly,
+once for each incoming ERS-1 and ERS-2 file type being retrieved.
+
+<p>
+After ERS-1 and ERS-2 files are retrieved, ESA_ftpget_all.csh invokes ESAdirmon 
+to process them.
+
+<p>
+2. Arguments required
+
+<p>
+ESA_ftpget_all.csh takes no arguments.
+<p>
+Arguments required when executing ESA_ftpget.csh:
+
+<p>
+<pre>
+ARGUMENT 1:  RemoteHost               ex. ersiss.esrin.esa.it
+ARGUMENT 2:  upw file                 ex. $FAIF_ROOTPATH/FTP/upw/ESAsend.upw
+ARGUMENT 2:  SourceDir                ex. from_eecf
+ARGUMENT 3:  Receptdir                ex. $FAIF_ROOTPATH/ESA
+ARGUMENT 5:  FileToGetType            ex. PATC
+ARGUMENT 6:  Mode                     ex. binary
+</pre>
+
+<p>
+3. Valid argument 5 values for ESA_ftpget.csh
+
+<p>
+<pre>
+PATC
+ORPD
+ORRE
+ODMC
+ODMR
+SHAQ
+RQST
+RQVR
+MPSG
+</pre>
+
+<p>
+4. Environment variables
+
+<p>
+As explained shortly, setting necessary environment variables is automatic
+in normal operations.
+
+<p>
+The <a href="FAIF.html#01">FAIF_BINPATH</a> environment variable must be set prior to
+running this script or running a FAIF program that invokes this script.  
+$FAIF_BINPATH is normally "/asf/bin" in the operational environment.
+
+<p>
+The <a href="FAIF.html#01">FAIF_ROOTPATH</a> environment variable must also be set prior to 
+running a FAIF program that invokes this script.  This is normally 
+"/local/faif" in the operational environment.
+
+<p>
+Both of these environment variables are established in set_env.csh.  In normal
+operations, ESA_ftpget_all.csh, which is in the crontab file to retrieve all
+ERS-1 and ERS-2 files from ESA, first uses set_env.csh, then repeatedly invokes
+ESA_ftpget.csh.
+
+<p>
+5. Other files needed to run successfully
+
+<p>
+$HOME/set_env.csh<br>
+$FAIF_ROOTPATH/FTP/upw/ESAsend.upw
+
+<hr>
+<p>
+<font size = -1>
+Last Modified:  March, 1998
+
+<p>
+Copyright (c) 1996, 1998, California Institute of Technology.<br>
+ALL RIGHTS RESERVED.  U.S. Government Sponsorship acknowledged.
+</body>
+</html>

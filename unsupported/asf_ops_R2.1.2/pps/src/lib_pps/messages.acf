@@ -1,0 +1,25 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*----------------------------*/
+/* @(#)messages.acf	1.2  12/16/96                   */
+/*----------------------------*/
+
+/* This is the ACL for the messages DCE RPC interface */
+
+[auto_handle] interface messages
+{
+send_IMS_CancelReq_to_PPS([comm_status,fault_status] status);
+send_IMS_ScanReq_to_PPS([comm_status,fault_status] status);
+send_IMS_L1PReq_to_PPS([comm_status,fault_status] status);
+send_IMS_SvAvail_to_PPS([comm_status,fault_status] status);
+
+send_status_to_PPS([comm_status,fault_status] status);
+recv_job_from_PPS([comm_status,fault_status] status);
+pps_rpc_kill([comm_status,fault_status] status);
+pps_rpc_exit([comm_status,fault_status] status);
+}
+

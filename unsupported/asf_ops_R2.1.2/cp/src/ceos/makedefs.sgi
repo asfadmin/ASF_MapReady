@@ -1,0 +1,9 @@
+#
+# makefile definitions for SGI
+#
+
+CFLAGS = -g 
+COMPILE.cc = cc
+#CFLAGS = -Wall 
+
+

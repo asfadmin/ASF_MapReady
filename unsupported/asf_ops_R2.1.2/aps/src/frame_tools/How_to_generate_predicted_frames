@@ -1,0 +1,90 @@
+Here is how I generate predicted frames for a test rev (to test accuracy of
+the latitude calculation in framegen):
+
+**** get the start/stop for a test rev:
+aps_rev2time -s E2 -r 400
+1995:139:00:15:45.068  1995:139:01:56:20.995
+
+**** create e2.odl as follows:
+PLATFORM = "E2"
+REVOLUTION = 400
+SEQUENCE = 1
+SENSOR = "S"
+MODE = "STD"
+ACTIVITY_ID = "RLT"
+DAR_ID = 16
+START_TIME = 1995-139T00:15:45.068  <--- start of test rev
+END_TIME = 1995-139T00:20:00.000    <--- sometime after start of test rev
+FRAME_MODE = "ARCTIC"
+STATION_ID = "FA"
+SITE_NAME = "Dateline Within Antarctic Circle"
+DATATAKE_STATUS = "PLANNED"
+
+**** create coverage for the test area:
+aps_crt_nom_cov -Umiguel -Pdappsdev  -b1995:139:00:15:45.068 
+									 -e1995:139:00:20:00.000 E2 SAR
+
+**** setup your aps_fg.ini file to point to the correct orbit0 files
+     and a good test area for writing *M files
+		setenv FG_CONFIG /home/miguel/aps/src/framegen/aps_fg.ini
+		aps_fg.ini :
+		FG_PATH=/home/miguel/clipboard    # Path to create temporary files
+		FG_FRMPATH=/home/aps/r2.1/etc/aps_data/framegen 
+										  # Location of Orbit0 and init files
+
+**** run the fgtest executable to create *.M files
+     (You will need your $LD_LIBRARY_PATH variable to be correctly set)
+
+	 fgtest e2.odl
+
+**** in ~miguel/clipboard I have quite a few *.M files for E2, with
+	 frame corner points which are to be stored in file e2.plot ;
+	 we process them to get corner points for our test frames:
+	 (use the getcoord script, via the korn or c shell)
+
+%/bin/ksh    <------use the korn shell
+
+$ for i in *.M
+> do
+> /ua/aps/aps/r2.1/src/mko0/getcoord $i >> flatfile.txt
+> done
+$ exit
+
+% foreach i ( *M )
+? /ua/aps/aps/r2.1/src/mko0/getcoord $i >> flatfile.txt
+? end
+
+
+cat flatfile.txt
+
+0.01 -24.32 1.18 -24.52 0.15 -23.41 1.32 -23.61
+0.68 -24.41 1.59 -24.61 0.82 -23.50 1.72 -23.70
+1.08 -24.50 1.98 -24.70 1.21 -23.59 2.12 -23.79
+1.48 -24.58 2.39 -24.79 1.62 -23.67 2.53 -23.88
+1.88 -24.67 2.79 -24.87 2.01 -23.76 2.93 -23.96
+2.27 -24.76 3.18 -24.96 2.41 -23.85 3.32 -24.05
+2.68 -24.85 3.59 -25.05 2.82 -23.94 3.73 -24.13
+3.08 -24.94 3.99 -25.13 3.21 -24.03 4.12 -24.22
+3.48 -25.02 4.39 -25.22 3.62 -24.11 4.52 -24.31
+3.88 -25.11 4.79 -25.31 4.01 -24.20 4.93 -24.39
+4.28 -25.20 5.19 -25.40 4.41 -24.28 5.32 -24.48
+4.68 -25.29 5.59 -25.48 4.82 -24.37 5.72 -24.56
+5.08 -25.37 5.99 -25.56 5.21 -24.46 6.13 -24.65
+5.48 -25.46 6.39 -25.65 5.61 -24.54 6.52 -24.73
+5.88 -25.54 6.79 -25.74 6.02 -24.63 6.92 -24.82
+6.28 -25.63 7.19 -25.83 6.41 -24.71 7.33 -24.91
+6.68 -25.72 7.59 -25.92 6.81 -24.80 7.72 -25.00
+7.08 -25.80 7.99 -26.00 7.22 -24.88 8.12 -25.08
+7.48 -25.89 8.39 -26.09 7.61 -24.97 8.52 -25.17
+7.88 -25.98 8.79 -26.17 8.02 -25.06 8.92 -25.25
+8.28 -26.07 9.19 -26.26 8.41 -25.14 9.32 -25.34
+8.68 -26.15 9.59 -26.35 8.81 -25.23 9.72 -25.42
+9.08 -26.24 9.99 -26.44 9.22 -25.31 10.12 -25.51
+9.48 -26.33 10.39 -26.52 9.61 -25.40 10.52 -25.59
+9.88 -26.41 10.79 -26.60 10.01 -25.49 10.92 -25.68
+10.28 -26.50 11.19 -26.69 10.42 -25.57 11.32 -25.76
+10.68 -26.58 11.58 -26.78 10.81 -25.66 11.72 -25.85
+11.08 -26.67 11.99 -26.87 11.21 -25.74 12.12 -25.93
+11.48 -26.76 12.39 -26.95 11.62 -25.83 12.52 -26.02
+11.88 -26.84 12.78 -27.04 12.01 -25.91 12.92 -26.10
+12.28 -26.93 13.19 -27.13 12.41 -25.99 13.32 -26.19

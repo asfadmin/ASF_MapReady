@@ -1,0 +1,52 @@
+
+    NAME:	parse_lzp_par - creates input file for propagation from LZP
+				.PAR file location blocks
+
+    SYNOPSIS:	parse_lzp_par <inPARfile> <nlocs>
+
+    DESCRIPTION:
+
+	Reads the LZP par file and creates input propagation files for the 
+	program propagate.  These files contain:
+
+		Start State Vector X	(km; GEI coordinates)
+		Start State Vector Y	(km; GEI coordinates)
+		Start State Vector Z	(km; GEI coordinates)
+		Start State Vector X'	(m/s; GEI coordinates)
+		Start State Vector Y'	(m/s; GEI coordinates)
+		Start State Vector Z'	(m/s; GEI coordinates)
+		Start Time : year	
+		Start Time : month
+		Start Time : day 
+		Start Time : sec of day
+		Desired Time : year
+		Desired Time : month
+		Desired Time : day 
+		Desired Time : sec of day
+		Number of propagation steps (always 1)
+		Greenwhich Hour Angle of Desired Time			
+
+	This program should only be called using the script "alp."
+
+    OPTIONS:	None
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+    EXAMPLES: 
+
+    SEE ALSO:	alp, propagate, gen_oe, asap, check_lzp
+
+    HARWARE/SOFTWARE LIMITATIONS:
+
+		Output files are called "loc##.cart" where ## is a two
+		digit number that is the location block from the PARfile.
+
+    BUGS:	None Known
+
+    AUTHOR:	Tom Logan
+
+    CONTACT:	tlogan@images.alaska.edu
+		rguritz@images.alaska.edu
+

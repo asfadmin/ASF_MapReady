@@ -1,0 +1,7 @@
+CSFE_PRINTER=lw7
+LOG_PRINTER=lw7
+SNAP_PRINTER=lw7
+WINDOW_DUMP_PRINTER=lw7
+#
+# this file should be named $home/.printer
+#

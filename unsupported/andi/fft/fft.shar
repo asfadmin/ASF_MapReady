@@ -1,0 +1,2043 @@
+
+#--------------------------------CUT HERE-------------------------------------
+#! /bin/sh
+#
+# This is a shell archive. Save this into a file, edit it
+# and delete all lines above this comment.  Then give this
+# file to sh by executing the command 'sh file'. The files
+# will be extracted into the current directory owned by
+# you with default permissions.
+
+echo 'x - math_num.h'
+sed 's/^X//' << '________This_Is_The_END________' > math_num.h
+X// This may look like C code, but it is really -*- C++ -*-
+X/*
+X ************************************************************************
+X *
+X *			  Numerical Math Package
+X *
+X * The present package implements various algorithms of Numerical Math
+X *
+X ************************************************************************
+X */
+X
+X#pragma once
+X#pragma interface
+X
+X#include "myenv.h"
+X#include <math.h>
+X#include <std.h>
+X
+X/*
+X *------------------------------------------------------------------------
+X *				Some constants
+X * Compile and run the program epsilon.c to determine the values below for
+X * your computer
+X */
+X
+X#define EPSILON		2.22045e-16
+X#define SQRT_EPSILON	1.49012e-08
+X
+X/*
+X *------------------------------------------------------------------------
+X *		Brent's minimum and zero finders for 
+X *		  a function of a single argument
+X */
+X
+X				// Obtain a zero of function f
+X				// over the range [ax,bx] with the
+X				// accuracy tol.
+Xdouble zeroin(const double ax, const double bx, 
+X	      double (*f)(const double x), const double tol=EPSILON);
+X
+X				// Find a minimum of function f
+X				// over the range [a,b] with the
+X				// accuracy tol.
+X				// Returns an approx. to the min location
+Xdouble fminbr(const double a, const double b, 
+X	      double (*f)(const double x), const double tol=EPSILON);
+X
+X#ifdef REAL
+X
+X/*
+X *------------------------------------------------------------------------
+X *			Interpolation of the function
+X *			specified in the tabular form
+X */
+X
+X				// Aitken-Lagrange interpolation to the
+X				// point q over the table of function values
+X				// y[i] = y(x[i]), i = y.lwb..y.upb
+Xoverload ali;
+X				// Uniform mesh x[i] = x0 + s*(i-y.lwb)
+Xdouble ali(const double q, const double x0, const double s, const Vector& y);
+X				// Nonuniform grid with nodes in x[i]
+Xdouble ali(const double q, const Vector& x, const Vector& y);
+X
+X/*
+X *------------------------------------------------------------------------
+X *			Multi-dimensional minimization
+X */
+X
+X				// Find a local minimum of a given
+X				// function by the Hook-Jeevse method
+Xdouble hjmin(				// Return the function value at min
+X	Vector& b,			// On input - initial guess to min loc
+X					// On output - loc for the min found
+X 	const Vector& h0,		// Initial values for the steps along
+X 					// each direction
+X 	double (*f)(const Vector& x)	// Procedure to compute a function
+X 					// value at the specified point
+X	    );
+X#endif
+________This_Is_The_END________
+if test `wc -l < math_num.h` -ne 80; then
+echo 'shar: math_num.h was damaged during transit (should have had 80 lines)'
+fi
+
+
+echo 'x - fft.h'
+sed 's/^X//' << '________This_Is_The_END________' > fft.h
+X// This may look like C code, but it is really -*- C++ -*-
+X/*
+X ************************************************************************
+X *
+X *  			    Fast Fourier Transform
+X *
+X * The present package is intended to be used for computing the sums
+X * of the form
+X *	(1) xf[k] = SUM{ x[j] *  exp(-2*PI*I/N j*k), j=0..N-1 }, k=0..N-1
+X *	(2) x[j]  = 1/N SUM{ xf[k] * exp(+2*PI*I/N j*k), k=0..N-1 }, j=0..N-1
+X *	(3) xf[k] = SUM{ x[j] *  exp(-2*PI*I/N j*k), j=0..N/2-1 }, k=0..N/2-1
+X *
+X * where N is the exact power of two.
+X *
+X * Formula (1) defines the classical Discrete Fourier transform, with x[j]
+X * being a real or complex sequence. The result xf[k] is always a complex
+X * sequence, though the package lets user to get only real and/or imaginaire
+X * parts of the result (sine/cosine transform of x if x is real), or the
+X * absolute value of xf (the power spectrum).
+X * Formula (2) is the inverse formula for the DFT.
+X * Formula (3) is nothing but the trapezoid rule approximation to the
+X * Fourier integral; the trapezoid rule is the most stable one with respect
+X * to the noise in the input data. Again, x[j] maybe either real or
+X * complex sequence. The mesh size other than 1 can be specified as well.
+X *
+X ************************************************************************
+X */
+X
+X#pragma once
+X#pragma interface
+X
+X#include "LinAlg.h"
+X#include <math.h>
+X#include <Complex.h>
+X
+Xclass FFT
+X{
+X  const int N;				// No of points the FFT packet
+X					// has been initialized for
+X  int logN;				// log2(N)
+X  const double dr;			// Mesh size in the r-space
+X
+X  Complex * A;				// [0:N-1] work array
+X					// the transform is placed to
+X
+X  Complex * A_end;         		// Ptr to the memory location next to
+X					// the last A element
+X
+X  short * index_conversion_table;	// index_conversion_table[i]
+X					// is the bit-inverted i, i=0..N
+X
+X  Complex * W;				// FFT weight factors
+X					// exp( -I j 2pi/N ), j=0..N-1
+X
+X			// Private package procedures
+X  void fill_in_index_conversion_table(void);
+X  void fill_in_W();
+X
+X  void complete_transform(void);
+X
+Xpublic:
+X
+X  FFT(const int n, const double dr=1);	// Constructor, n being the no. of
+X					// points to transform, dr being the
+X					// grid mesh in the r-space
+X  ~FFT(void);
+X
+X			// Fundamental procedures,
+X			// Input the data and perform the transform
+X  void input(				// Preprocess the real input sequence
+X	     const Vector& x);		// Real [0:N-1] vector
+X
+X  void input(				// Preprocess the complex input seq
+X	     const Vector& x_re,	// [0:N-1] vector - Re part of input
+X	     const Vector& x_im);	// [0:N-1] vector - Im part of input
+X
+X			// Preprocess the input with zero padding
+X  void input_pad0(			// Preprocess the real input sequence
+X	     const Vector& x);		// Real [0:N/2-1] vector
+X
+X  void input_pad0(			// Preprocess the complex input seq
+X	     const Vector& x_re,	// [0:N/2-1] vector - Re part of input
+X	     const Vector& x_im);	// [0:N/2-1] vector - Im part of input
+X
+X
+X			// Output results in the form the user wants them
+X  void real(				// Give only the Re part of the result
+X	    Vector& xf_re);		// [0:N-1] vector
+X
+X  void imag(				// Give only the Im part of the result
+X	    Vector& xf_im);		// [0:N-1] vector
+X  
+X  void abs(				// Give only the abs value
+X	   Vector& xf_abs);		// [0:N-1] vector (power spectrum)
+X
+X				// Return only the half of the result
+X				// (if the second half is unnecessary due
+X				// to the symmetry)
+X  void real_half(			// Give only the Re part of the result
+X		 Vector& xf_re);	// [0:N/2-1] vector
+X
+X  void imag_half(			// Give only the Im part of the result
+X		 Vector& xf_im);	// [0:N/2-1] vector
+X  
+X  void abs_half(			// Give only the abs value
+X		 Vector& xf_abs);	// [0:N/2-1] vector
+X
+X
+X			// Perform sin/cos transforms of f: R+ -> R
+X			// Source and destination arguments of the functions
+X			// below may point to the same vector (in that case,
+X			// transform is computed inplace)
+X
+X             			// Sine-transform of the function f(x)
+X				// Integrate[ f(x) sin(kx) dx], x=0..Infinity
+X  void sin_transform(		// j=0..n-1, n=N/2
+X	Vector& dest,			// F(k) tabulated at kj = j*dk
+X	const Vector& src		// f(x) tabulated at xj = j*dr
+X            );
+X
+X             			// Cosine-transform of the function f(x)
+X				// Integrate[ f(x) cos(kx) dx], x=0..Infinity
+X  void cos_transform(		// j=0..n-1, n=N/2
+X	Vector& dest,			// F(k) tabulated at kj = j*dk
+X	const Vector& src		// f(x) tabulated at xj = j*dr
+X            );
+X
+X             			// Inverse sine-transform of the function F(k)
+X				// 2/pi Integrate[ F(k) sin(kx) dk], k=0..Inf
+X  void sin_inv_transform(	// j=0..n-1, n=N/2
+X	Vector& dest,			// f(x) tabulated at xj = j*dr
+X	const Vector& src		// F(k) tabulated at kj = j*dk
+X            );
+X
+X             			// Inverse cosine-transform of function F(k)
+X				// 2/pi Integrate[ F(k) cos(kx) dk], k=0..Inf
+X  void cos_inv_transform(	// j=0..n-1, n=N/2
+X	Vector& dest,			// f(x) tabulated at xj = j*dr
+X	const Vector& src		// F(k) tabulated at kj = j*dk
+X            );
+X
+X
+X             			// Inquires
+X  int q_N(void) const			{ return N; }
+X  int q_logN(void) const		{ return logN; }
+X  double q_dr(void) const		{ return dr;  }
+X  double q_dk(void) const		{ return 2*PI/N/dr; }
+X  double q_r_cutoff(void) const		{ return N/2 * dr; }
+X  double q_k_cutoff(void) const		{ return PI/dr; }
+X
+X};
+X
+X
+X
+X
+________This_Is_The_END________
+if test `wc -l < fft.h` -ne 155; then
+echo 'shar: fft.h was damaged during transit (should have had 155 lines)'
+fi
+
+
+echo 'x - fft_init.cc'
+sed 's/^X//' << '________This_Is_The_END________' > fft_init.cc
+X// This may look like C code, but it is really -*- C++ -*-
+X/*
+X ************************************************************************
+X *
+X * 		         Fast Fourier Transform
+X *
+X *		     Initialization of the FFT packet
+X *
+X *  The file defines the constructor and the destructor for the FFT class,
+X *  allocates global arrays and initializes global data
+X *
+X ************************************************************************
+X */
+X
+X
+X#include "fft.h"
+X#pragma implementation "fft.h"
+X
+X#include <math.h>
+X#include <Complex.h>
+X#include <std.h>
+X
+X
+X/*
+X *------------------------------------------------------------------------
+X *			Constructor and Destructor
+X */
+X
+XFFT::FFT(const int n, const double dr=1)
+X     : N(n), dr(dr)
+X{
+X  assure( n > 3, "At least 4 points must be given for transforms");
+X  assure( dr > 0, "Grid mesh in the r-space, dr, must be positive");
+X
+X  register int i;
+X  for(i=1, logN=0; i < N; i *= 2, logN++)
+X    ;
+X  assure( i == N, "No. of points has to be the exact power of two");
+X
+X  A = new Complex[N];
+X  W = new Complex[N];
+X  index_conversion_table = new short[N];
+X  A_end = A + N;
+X  
+X  fill_in_W();
+X  fill_in_index_conversion_table();
+X}
+X
+XFFT::~FFT(void)
+X{
+X  assert( N > 0 && A != 0 && W != 0 && A_end == A + N );
+X  delete A;
+X  delete W;
+X  delete index_conversion_table;
+X}
+X
+X/*
+X *------------------------------------------------------------------------
+X *		Fill in the index_conversion_table so that
+X *  if j = J[m-1] * 2^(m-1) +  J[m-2] * 2^(m-2) + ... + J1 * 2^1 + J0 * 2^0
+X *  then index_conversion_table[j] =
+X *	   J0 * 2^(m-1) + J1 * 2^(m-2) + ... + J[m-2] * 2^1 + J[m-1] * 2^0
+X *
+X *  m being Log2(N)
+X */
+X
+Xvoid FFT::fill_in_index_conversion_table()
+X{
+X  register int j;			// j counts 0,1,2,... N-1
+X  register int jp;			// Reverse counter:
+X					// N, N/2, N/4, N/4+N/2, N/8, N/8+N/2,
+X					// with N identical to 0 (mod N)
+X  register short * tablj = index_conversion_table;
+X  register int k;
+X
+X  for(j=0, jp=0; *tablj++ = jp, ++j < N;)
+X  {
+X    for(k=N/2; k <= jp; jp -= k, k /= 2)
+X      ;
+X    jp += k;
+X  }
+X}
+X
+X
+X				// Fill in the W array
+X				// W[j] = exp( -I 2pi/N * j ), j=0..N-1
+Xvoid FFT::fill_in_W()
+X{
+X  register Complex * wj = W;
+X  register int j;
+X  for(j=0; j<N; j++)
+X  {
+X    register Complex arg = Complex(0,-2*PI/N * j);
+X    *wj++ = exp(arg);
+X  }
+X}
+________This_Is_The_END________
+if test `wc -l < fft_init.cc` -ne 96; then
+echo 'shar: fft_init.cc was damaged during transit (should have had 96 lines)'
+fi
+
+
+echo 'x - fft_input.cc'
+sed 's/^X//' << '________This_Is_The_END________' > fft_input.cc
+X// This may look like C code, but it is really -*- C++ -*-
+X/*
+X ************************************************************************
+X *
+X * 		         Fast Fourier Transform
+X *
+X *		      Processing the Input Sequence
+X *
+X * The functions below handle different cases of the input (real/complex,
+X * with/without zero padding), form the array A, and perform the radix 2 FFT
+X * algorithm itself, taking advantage of the particular form of input.
+X *
+X * General radix 2 FFT algorithm is as follows
+X *	Input: x_re[i], x_im[i]		the input sequence
+X *	Output: Aj = SUM[ Xk * W^(k*j) ],  j,k = 0:N-1,
+X *	where
+X *		W = exp(-2pi I/N)
+X *		Xk = ( k<N/2 ? x_re[k] + I x_im[k] : 0.0 ) with zero padding
+X *		Xk = x_re[k] + I x_im[k], without zero padding
+X *                                
+X * Algorithm
+X *	1.  Fill in the complex array A performing the permutation
+X *	    of input data
+X *		Ai = ( j < N/2 ? x_re[j] + I x_im[j] : 0.0 ), j = 0..N-1
+X *		or
+X *		Ai = ( x_re[j] + I x_im[j] ), j = 0..N-1
+X *	    where 
+X * 	    index i is the "inverse" of the index j (in the sense that
+X *	    m-bit string representing the value of 'i' is read from right
+X *	    to left the string corresponding to index 'j'; m = log2(N)
+X *
+X *	2. Transform itself
+X *	   n2_l = 1;			// 2^l at l=0
+X *	   for l=0 to m-1 do		// m = log2(N)
+X *	       for k=0 by 2* n2_l to N-1 do
+X *	           for j=0 to n2_l-1 do
+X *			compl w = exp(- I j*pi/2^l );
+X *		        i1 = j + k;
+X *			i2 = i1 + n2_l;
+X *			A[i1] = A[i1] + A[i2]*w		// Batterfly operation
+X *			A[i2] = A[i1] - A[i2]*w	
+X *		   od
+X *             od
+X *	       n2_l *= 2				// 2^l at the next l
+X *	   od
+X *
+X * The first three steps of the algorithm above can be performed with
+X * simplified formulas from
+X *		G.Nussbaumer. Fast Fourier Transform and Convolution
+X *		Algorithms, M., Radio i sviaz, 1985, p.135 (in Russian)
+X * The formulas carry out the 8-point FFT for each set of 8 points
+X * A[k+0], A[k+1], ... A[k+7], k=0,8,16..N-8 	
+X *
+X * The formulas are given below for references, x0-x7 being the source
+X * data, y0-y7 the transformed data. Moreover, one has to keep in mind
+X * that the source data x0-x7 have been already permuted (as opposite to
+X * the book that assumes the source data to be arranged in the natural
+X * order rather than permutted one)
+X *
+X *	t1 = x0 + x1       m0 = t7 + t8           s1 = m3 + m4    y0 = m0
+X *	t2 = x2 + x3       m1 = t7 - t8           s2 = m3 - m4    y1 = s1 + s3
+X *	t3 = x4 - x5       m2 = t1 - t2           s3 = m6 + m7    y2 = m2 + m5
+X *	t4 = x4 + x5       m3 = x0 - x1           s4 = m6 - m7    y3 = s2 - s4
+X *	t5 = x6 + x7       m4 = cu*(t3 - t6)                      y4 = m1
+X *	t6 = x6 - x7       m5 = I * (t5 - t4)                     y5 = s2 + s4
+X *	t7 = t1 + t2       m6 = I * (x3 - x2)                     y6 = m2 - m5
+X *	t8 = t4 + t5       m7 = -Isu* (t3 + t6)                   y7 = s1 - s3
+X *
+X *	cu = su = sin( pi/4 )
+X *
+X ************************************************************************
+X */
+X
+X#include "fft.h"
+X#pragma implementation "fft.h"
+X
+X#include <math.h>
+X#include <Complex.h>
+X#include <std.h>
+X
+X/*
+X *-----------------------------------------------------------------------
+X *			Perform the transform itself
+X * on the complex array A with inplace. First three steps of the algorithm
+X * 		   are assumed to have been already performed.
+X *
+X */
+X
+Xvoid FFT::complete_transform()
+X{
+X  register int n2_l = 8;		// 2^l at l=3
+X  register int inc = N/2/n2_l;		// Increment for the index in W
+X
+X  for(; n2_l < N; n2_l *= 2, inc /= 2)
+X  {
+X    register Complex * ak;
+X    for(ak=A; ak < A_end; ak += 2*n2_l)
+X    {
+X      register Complex * aj1 = ak;
+X      register Complex * aj2 = aj1 + n2_l;
+X      register Complex * w = W + inc;	// Since j=0 case is handled explicitly
+X
+X      Complex ai1  = *aj1;
+X      Complex ai2w = *aj2;     		// Batterfly operation in case of
+X      *aj1++ += ai2w;			// j=0 ==> W=1
+X      *aj2++ = ai1 - ai2w;
+X      for(; aj1 < ak+n2_l; w += inc)
+X      {
+X        Complex ai1 = *aj1;		// w = exp(-I 2pi/N j*inc) =
+X        Complex ai2w = *w * *aj2;   	// exp(-I j pi/2^l)
+X        *aj1++ += ai2w;
+X        *aj2++ = ai1 - ai2w;		// Batterfly operation
+X      }
+X    }
+X  }
+X}
+X
+X/*
+X *------------------------------------------------------------------------
+X *	The most general case of complex input without zero padding
+X *
+X * The Nussbaumer formulas are applied as they are, no further simplification
+X * seems possible.
+X */
+X
+Xvoid FFT::input(
+X	     const Vector& x_re,	// [0:N-1] vector - Re part of input
+X	     const Vector& x_im)	// [0:N-1] vector - Im part of input
+X{
+X  are_compatible(x_re,x_im);
+X  if( x_re.q_lwb() != 0 || x_re.q_upb() != N-1 )
+X    _error("Sorry, vector [%d:%d] cannot be processed.\n"
+X	   "Only [0:%d] vectors are valid",
+X	   x_re.q_lwb(), x_re.q_upb(), N-1);
+X
+X  register int k;
+X  register Complex * ak;
+X
+X  for(ak=A,k=0; k < N; k +=8)
+X  {
+X    const double cu = W[ N/8 ].real();			// cos( pi/4 )
+X
+X    register int i;
+X    i = index_conversion_table[k];	// Index being "reverse" to k
+X    Complex x0(x_re(i),x_im(i));
+X
+X    i = index_conversion_table[k+1];
+X    Complex x1(x_re(i),x_im(i));
+X
+X    i = index_conversion_table[k+2];
+X    Complex x2(x_re(i),x_im(i));
+X
+X    i = index_conversion_table[k+3];
+X    Complex x3(x_re(i),x_im(i));
+X
+X    i = index_conversion_table[k+4];
+X    Complex x4(x_re(i),x_im(i));
+X
+X    i = index_conversion_table[k+5];
+X    Complex x5(x_re(i),x_im(i));
+X
+X    i = index_conversion_table[k+6];
+X    Complex x6(x_re(i),x_im(i));
+X
+X    i = index_conversion_table[k+7];
+X    Complex x7(x_re(i),x_im(i));
+X
+X    Complex t1 = x0 + x1;
+X    Complex t2 = x2 + x3;
+X    Complex t3 = x4 - x5;
+X    Complex t4 = x4 + x5;
+X    Complex t5 = x6 + x7;
+X    Complex t6 = x6 - x7;
+X    Complex t7 = t1 + t2;
+X    Complex t8 = t4 + t5;
+X
+X#define m2 t1
+X    m2 -= t2;				// Forget t1 from now on
+X#define m3 x0
+X    m3 -= x1;				// Forget x0 from now on
+X    Complex m7 = t3 + t6; m7 = Complex(cu*m7.imag(),-cu*m7.real());
+X#define m4 t3				// Forget t3 from now on
+X    m4 -= t6;
+X    m4 *= cu;
+X    Complex m5 = t5 - t4; m5 = Complex(-m5.imag(),m5.real());
+X    Complex m6 = x3 - x2; m6 = Complex(-m6.imag(),m6.real());
+X
+X#define s1 m3
+X    Complex s2 = m3 - m4;		// Forget m3 from now on
+X    s1 += m4;
+X#define s3 m6				// Forget m6 from now on
+X    Complex s4 = m6 - m7;
+X    s3 += m7;
+X
+X    *ak++ = t7 + t8; 				// y0  
+X    *ak++ = s1 + s3;				// y1
+X    *ak++ = m2 + m5;				// y2
+X    *ak++ = s2 - s4;				// y3
+X    *ak++ = t7 - t8;				// y4
+X    *ak++ = s2 + s4;				// y5
+X    *ak++ = m2 - m5;				// y6
+X    *ak++ = s1 - s3;				// y7
+X  }
+X  assert( ak == A_end );
+X  complete_transform();
+X}
+X#undef m2
+X#undef m3
+X#undef m4
+X#undef s1
+X#undef s3
+X
+X/*
+X *------------------------------------------------------------------------
+X *		   Real input sequence without zero padding
+X * When x[j]-s are all real, some intermediate results are either pure
+X * real, or pure imaginaire, which are much cheaper to compute than
+X * the complex ones. In Nussbauner's formulas above, t1 through t8,
+X * m0 through m4, s1 and s2 are all real, whilest m5 through m7, s3, and
+X * s4 are pure imaginaire.
+X *
+X */
+X
+Xvoid FFT::input(
+X	     const Vector& x_re)	// [0:N-1] vector - Re part of input
+X{
+X  x_re.is_valid();
+X  if( x_re.q_lwb() != 0 || x_re.q_upb() != N-1 )
+X    _error("Sorry, vector [%d:%d] cannot be processed.\n"
+X	   "Only [0:%d] vectors are valid",
+X	   x_re.q_lwb(), x_re.q_upb(), N-1);
+X
+X  register int k;
+X  register Complex * ak;
+X
+X  for(ak=A,k=0; k < N; k +=8)
+X  {
+X    const double cu = W[ N/8 ].real();			// cos( pi/4 )
+X
+X    register int i;
+X    i = index_conversion_table[k];	// Index being "reverse" to k
+X    double x0 = x_re(i);
+X
+X    i = index_conversion_table[k+1];
+X    double x1 = x_re(i);
+X
+X    i = index_conversion_table[k+2];
+X    double x2 = x_re(i);
+X
+X    i = index_conversion_table[k+3];
+X    double x3 = x_re(i);
+X
+X    i = index_conversion_table[k+4];
+X    double x4 = x_re(i);
+X
+X    i = index_conversion_table[k+5];
+X    double x5 = x_re(i);
+X
+X    i = index_conversion_table[k+6];
+X    double x6 = x_re(i);
+X
+X    i = index_conversion_table[k+7];
+X    double x7 = x_re(i);
+X
+X    double t1 = x0 + x1;
+X    double t2 = x2 + x3;
+X    double t3 = x4 - x5;
+X    double t4 = x4 + x5;
+X    double t5 = x6 + x7;
+X    double t6 = x6 - x7;
+X    double t7 = t1 + t2;
+X    double t8 = t4 + t5;
+X
+X#define m2 t1
+X    m2 -= t2;				// Forget t1 from now on
+X#define m3 x0
+X    m3 -= x1;				// Forget x0 from now on
+X    double m7i = -cu*(t3 + t6);
+X#define m4 t3				// Forget t3 from now on
+X    m4 -= t6;
+X    m4 *= cu;
+X    double m5i = t5 - t4;
+X    double m6i = x3 - x2;
+X
+X#define s1 m3
+X    double s2 = m3 - m4;		// Forget m3 from now on
+X    s1 += m4;
+X#define s3i m6i				// Forget m6 from now on
+X    double s4i = m6i - m7i;
+X    s3i += m7i;
+X
+X    *ak++ = t7 + t8; 				// y0  
+X    *ak++ = Complex(s1,s3i);			// y1
+X    *ak++ = Complex(m2,m5i);			// y2
+X    *ak++ = Complex(s2,-s4i);			// y3
+X    *ak++ = t7 - t8;				// y4
+X    *ak++ = Complex(s2,s4i);			// y5
+X    *ak++ = Complex(m2,-m5i);			// y6
+X    *ak++ = Complex(s1,-s3i);			// y7
+X  }
+X  assert( ak == A_end );
+X  complete_transform();
+X}
+X#undef m2
+X#undef m3
+X#undef m4
+X#undef s1
+X#undef s3i
+X
+X/*
+X *------------------------------------------------------------------------
+X *			Complex input with zero padding
+X *
+X * Note, if index j > N/2, its "inverse", index i is odd. Since the second
+X * half of the input data is zero (and isn't specified), x1, x3, x5, and x7
+X * in the Nussbaumer formulas above are zeros, and the formulas can be
+X * simplified as follows
+X *
+X *	t1 = x0                                   s1 = x0 + m4    y0 = t7 + t8
+X *	t2 = x2                                   s2 = x0 - m4    y1 = s1 + s3
+X *	t3 = x4            m2 = x0 - x2           s3 = m6 + m7    y2 = m2 + m5
+X *	t4 = x4            m3 = x0                s4 = m6 - m7    y3 = s2 - s4
+X *	t5 = x6            m4 = cu*(x4 - x6)                      y4 = t7 - t8
+X *	t6 = x6            m5 = -I * (x4 - x6)                    y5 = s2 + s4
+X *	t7 = x0 + x2       m6 = -I * x2                           y6 = m2 - m5
+X *	t8 = x4 + x6       m7 = -Isu* (x4 + x6)                   y7 = s1 - s3
+X *
+X *	cu = su = sin( pi/4 )
+X */
+X
+Xvoid FFT::input_pad0(
+X	     const Vector& x_re,	// [0:N/2-1] vector - Re part of input
+X	     const Vector& x_im)	// [0:N/2-1] vector - Im part of input
+X{
+X  are_compatible(x_re,x_im);
+X  if( x_re.q_lwb() != 0 || x_re.q_upb() != N/2-1 )
+X    _error("Sorry, vector [%d:%d] cannot be processed.\n"
+X	   "Zero padding is assumed, only [0:%d] vectors are valid",
+X	   x_re.q_lwb(), x_re.q_upb(), N/2-1);
+X
+X  register int k;
+X  register Complex * ak;
+X
+X  for(ak=A,k=0; k < N; k +=8)
+X  {
+X    const double cu = W[ N/8 ].real();			// cos( pi/4 )
+X
+X    register int i;
+X    i = index_conversion_table[k];	// Index being "reverse" to k
+X    Complex x0(x_re(i),x_im(i));
+X
+X    i = index_conversion_table[k+2];
+X    Complex x2(x_re(i),x_im(i));
+X
+X    i = index_conversion_table[k+4];
+X    Complex x4(x_re(i),x_im(i));
+X
+X    i = index_conversion_table[k+6];
+X    Complex x6(x_re(i),x_im(i));
+X
+X    Complex t7 = x0 + x2;
+X    Complex t9 = x4 - x6;
+X#define t8 x4				// Forget x4 from now on
+X    t8 += x6;
+X
+X    Complex m2 = x0 - x2;
+X    Complex m5(t9.imag(),-t9.real());
+X    Complex m6(x2.imag(),-x2.real());
+X    Complex m7(cu*t8.imag(),-cu*t8.real());
+X#define m4 t9				// Forget t9 from now on
+X    m4 *= cu;
+X
+X#define s1 x0
+X    Complex s2 = x0 - m4;		// Forget x0 from now on
+X    s1 += m4;
+X#define s3 m6				// Forget m6 from now on
+X    Complex s4 = m6 - m7;
+X    s3 += m7;
+X
+X    *ak++ = t7 + t8; 				// y0  
+X    *ak++ = s1 + s3;				// y1
+X    *ak++ = m2 + m5;				// y2
+X    *ak++ = s2 - s4;				// y3
+X    *ak++ = t7 - t8;				// y4
+X    *ak++ = s2 + s4;				// y5
+X    *ak++ = m2 - m5;				// y6
+X    *ak++ = s1 - s3;				// y7
+X  }
+X  assert( ak == A_end );
+X  complete_transform();
+X}
+X#undef t8
+X#undef m4
+X#undef s1
+X#undef s3
+X
+X/*
+X *------------------------------------------------------------------------
+X *		   Real input sequence with zero padding
+X * Again, since the input is a real sequence, some intermediate results
+X * are also real, that makes things simpler.
+X */
+X
+Xvoid FFT::input_pad0(
+X	     const Vector& x_re)	// [0:N/2-1] vector - Re part of input
+X{
+X  x_re.is_valid();
+X  if( x_re.q_lwb() != 0 || x_re.q_upb() != N/2-1 )
+X    _error("Sorry, vector [%d:%d] cannot be processed.\n"
+X	   "Zero padding is assumed, only [0:%d] vectors are valid",
+X	   x_re.q_lwb(), x_re.q_upb(), N/2-1);
+X
+X  register int k;
+X  register Complex * ak;
+X
+X  for(ak=A,k=0; k < N; k +=8)
+X  {
+X    const double cu = W[ N/8 ].real();			// cos( pi/4 )
+X
+X    register int i;
+X    i = index_conversion_table[k];	// Index being "reverse" to k
+X    double x0 = x_re(i);
+X
+X    i = index_conversion_table[k+2];
+X    double x2 = x_re(i);
+X
+X    i = index_conversion_table[k+4];
+X    double x4 = x_re(i);
+X
+X    i = index_conversion_table[k+6];
+X    double x6 = x_re(i);
+X
+X    double t7 = x0 + x2;
+X    double t9 = x4 - x6;
+X#define t8 x4				// Forget x4 from now on
+X    t8 += x6;
+X
+X    double m2 = x0 - x2;
+X    double m5i = -t9;
+X    double m7i = -cu*t8;
+X#define m4 t9				// Forget t9 from now on
+X    m4 *= cu;
+X
+X#define s1 x0
+X    double s2 = x0 - m4;		// Forget x0 from now on
+X    s1 += m4;
+X    double s3i = -x2 + m7i;
+X    double s4i = -x2 - m7i;
+X
+X    *ak++ = t7 + t8; 				// y0  
+X    *ak++ = Complex(s1,s3i);			// y1
+X    *ak++ = Complex(m2,m5i);			// y2
+X    *ak++ = Complex(s2,-s4i);			// y3
+X    *ak++ = t7 - t8;				// y4
+X    *ak++ = Complex(s2,s4i);			// y5
+X    *ak++ = Complex(m2,-m5i);			// y6
+X    *ak++ = Complex(s1,-s3i);			// y7
+X  }
+X  assert( ak == A_end );
+X  complete_transform();
+X}
+X#undef t8
+X#undef m4
+X#undef s1
+________This_Is_The_END________
+if test `wc -l < fft_input.cc` -ne 464; then
+echo 'shar: fft_input.cc was damaged during transit (should have had 464 lines)'
+fi
+
+
+echo 'x - fft_output.cc'
+sed 's/^X//' << '________This_Is_The_END________' > fft_output.cc
+X// This may look like C code, but it is really -*- C++ -*-
+X/*
+X ************************************************************************
+X *
+X * 		         Fast Fourier Transform
+X *
+X *		Return the transformation results in the form
+X *			   the user wants them
+X *
+X ************************************************************************
+X */
+X
+X#include "fft.h"
+X#pragma implementation "fft.h"
+X
+X#include <math.h>
+X#include <Complex.h>
+X#include <std.h>
+X
+X/*
+X *-----------------------------------------------------------------------
+X *	     Give a real/imaginaire part / absolute value
+X *			of the complex transform
+X */
+X
+Xvoid FFT::real(Vector& xf_re)		// [0:N-1] vector
+X{
+X  if( xf_re.q_lwb() != 0 || xf_re.q_upb() != N-1 )
+X    _error("Vector [%d:%d] isn't fit for placing the resulting transform.\n",
+X	   "[%d:%d] vector was expected",
+X	   xf_re.q_lwb(), xf_re.q_upb(), 0, N-1);
+X
+X  register int i;
+X  register Complex * ap;
+X  for(i=0,ap=A; i<N; i++)
+X    xf_re(i) = (*ap++).real();
+X  assert( ap == A_end );
+X}
+X
+Xvoid FFT::imag(Vector& xf_im)		// [0:N-1] vector
+X{
+X  if( xf_im.q_lwb() != 0 || xf_im.q_upb() != N-1 )
+X    _error("Vector [%d:%d] isn't fit for placing the resulting transform.\n",
+X	   "[%d:%d] vector was expected",
+X	   xf_im.q_lwb(), xf_im.q_upb(), 0, N-1);
+X
+X  register int i;
+X  register Complex * ap;
+X  for(i=0,ap=A; i<N; i++)
+X    xf_im(i) = (*ap++).imag();
+X  assert( ap == A_end );
+X}
+X
+Xvoid FFT::abs(Vector& xf_abs)		// [0:N-1] vector
+X{
+X  if( xf_abs.q_lwb() != 0 || xf_abs.q_upb() != N-1 )
+X    _error("Vector [%d:%d] isn't fit for placing the resulting transform.\n",
+X	   "[%d:%d] vector was expected",
+X	   xf_abs.q_lwb(), xf_abs.q_upb(), 0, N-1);
+X
+X  register int i;
+X  register Complex * ap;
+X  for(i=0,ap=A; i<N; i++)
+X    xf_abs(i) = ::abs(*ap++);
+X  assert( ap == A_end );
+X}
+X
+X/*
+X *-----------------------------------------------------------------------
+X *	       Give only a half of the resulting transform
+X */
+X
+X
+Xvoid FFT::real_half(Vector& xf_re)	// [0:N/2-1] vector
+X{
+X  if( xf_re.q_lwb() != 0 || xf_re.q_upb() != N/2-1 )
+X    _error("Vector [%d:%d] isn't fit for placing the resulting transform.\n",
+X	   "[%d:%d] vector was expected",
+X	   xf_re.q_lwb(), xf_re.q_upb(), 0, N/2-1);
+X
+X  register int i;
+X  register Complex * ap;
+X  for(i=0,ap=A; i<N/2; i++)
+X    xf_re(i) = (*ap++).real();
+X  assert( ap + N/2 == A_end );
+X}
+X
+Xvoid FFT::imag_half(Vector& xf_im)	// [0:N/2-1] vector
+X{
+X  if( xf_im.q_lwb() != 0 || xf_im.q_upb() != N/2-1 )
+X    _error("Vector [%d:%d] isn't fit for placing the resulting transform.\n",
+X	   "[%d:%d] vector was expected",
+X	   xf_im.q_lwb(), xf_im.q_upb(), 0, N/2-1);
+X
+X  register int i;
+X  register Complex * ap;
+X  for(i=0,ap=A; i<N/2; i++)
+X    xf_im(i) = (*ap++).imag();
+X  assert( ap + N/2 == A_end );
+X}
+X
+Xvoid FFT::abs_half(Vector& xf_abs)	// [0:N/2-1] vector
+X{
+X  if( xf_abs.q_lwb() != 0 || xf_abs.q_upb() != N/2-1 )
+X    _error("Vector [%d:%d] isn't fit for placing the resulting transform.\n",
+X	   "[%d:%d] vector was expected",
+X	   xf_abs.q_lwb(), xf_abs.q_upb(), 0, N/2-1);
+X
+X  register int i;
+X  register Complex * ap;
+X  for(i=0,ap=A; i<N/2; i++)
+X    xf_abs(i) = ::abs(*ap++);
+X  assert( ap + N/2 == A_end );
+X}
+X
+X/*
+X *-----------------------------------------------------------------------
+X *		Perform sin/cos transforms of a real function
+X *  			as a postprocessing of FFT
+X *
+X * Sine-transform:   F(k) = Integrate[ f(x) sin(kx) dx ], x = 0..Infinity
+X * Cosine-transform: F(k) = Integrate[ f(x) cos(kx) dx ], x = 0..Infinity
+X * Inverse
+X *   sin-transform:  f(x) = 2/pi Integrate[ F(k) sin(kx) dk ], k = 0..Infinity
+X *   cos-transform:  f(x) = 2/pi Integrate[ F(k) cos(kx) dk ], k = 0..Infinity
+X *
+X * Function f(x) is tabulated over the uniform grid xj = j*dr, j=0..n-1
+X * Function F(k) is tabulated over the uniform grid kj = j*dk, j=0..n-1
+X * 							n=N/2
+X * Source and destination arguments of the functions below may point to
+X * the same vector (in that case, transform is computed inplace)
+X */
+X
+Xvoid FFT::sin_transform(Vector& F, const Vector& f)
+X{
+X  are_compatible(F,f);
+X  input_pad0(f);
+X
+X  register int j;
+X  register Complex * ap;
+X  for(j=0,ap=A; j<N/2; j++)
+X    F(j) = - (*ap++).imag() * dr;
+X  assert( ap + N/2 == A_end );
+X}
+X
+Xvoid FFT::cos_transform(Vector& F, const Vector& f)
+X{
+X  are_compatible(F,f);
+X  input_pad0(f);
+X
+X  register int j;
+X  register Complex * ap;
+X  for(j=0,ap=A; j<N/2; j++)
+X    F(j) = (*ap++).real() * dr;
+X  assert( ap + N/2 == A_end );
+X}
+X
+X
+Xvoid FFT::sin_inv_transform(Vector& f, const Vector& F)
+X{
+X  are_compatible(F,f);
+X  input_pad0(F);
+X
+X  register int j;
+X  register Complex * ap;
+X  for(j=0,ap=A; j<N/2; j++)
+X    f(j) = - (*ap++).imag() * 4/N/dr;	// 2/pi * dk = 2/pi * 2pi/N/dr
+X  assert( ap + N/2 == A_end );
+X}
+X
+Xvoid FFT::cos_inv_transform(Vector& f, const Vector& F)
+X{
+X  are_compatible(F,f);
+X  input_pad0(F);
+X
+X  register int j;
+X  register Complex * ap;
+X  for(j=0,ap=A; j<N/2; j++)
+X    f(j) = (*ap++).real() * 4/N/dr;
+X  assert( ap + N/2 == A_end );
+X}
+X
+________This_Is_The_END________
+if test `wc -l < fft_output.cc` -ne 182; then
+echo 'shar: fft_output.cc was damaged during transit (should have had 182 lines)'
+fi
+
+
+echo 'x - vfft.cc'
+sed 's/^X//' << '________This_Is_The_END________' > vfft.cc
+X// This may look like C code, but it is really -*- C++ -*-
+X/*
+X ************************************************************************
+X *
+X *		Verify the Fast Fourier Transform Package
+X *
+X ************************************************************************
+X */
+X
+X#include "fft.h"
+X#include <math.h>
+X#include <builtin.h>
+X#include <ostream.h>
+X
+X/*
+X *------------------------------------------------------------------------
+X *		     Timing the program execution
+X */
+X
+X#include <time.h>
+X
+Xstatic tms clock_acc;
+X
+Xstatic void start_timing(void)
+X{
+X  times(&clock_acc);
+X}
+X
+Xstatic void print_timing(const char * header)
+X{
+X  register int old_tick = clock_acc.tms_utime;
+X  register double timing = (times(&clock_acc),clock_acc.tms_utime
+X			    - old_tick )/60.; 	// In secs  
+X  printf("\nIt took %.2f sec to perform %s\n",timing,header);
+X}
+X
+X/*
+X *-----------------------------------------------------------------------
+X */
+X
+X				// Simplified printing a vector
+Xstatic void print_seq(const char * header, const Vector& v)		
+X{
+X  register int i;
+X  cout << "\n" << header << "\t";
+X  for(i=v.q_lwb(); i<=v.q_upb(); i++)
+X    cout << form("%7.4f ",v(i));
+X  cout << "\n";
+X}
+X
+X
+Xstatic void verify_vector_identity(const Vector& v1, const Vector& v2)
+X{
+X  register imax = 0;
+X  register double max_dev = 0;
+X  register int i;
+X  are_compatible(v1,v2);
+X  for(i=v1.q_lwb(); i<=v1.q_upb(); i++)
+X  {
+X    register double dev = abs(v1(i)-v2(i));
+X    if( dev >= max_dev )
+X      imax = i, max_dev = dev;
+X  }
+X
+X  if( max_dev == 0 )
+X    return;
+X  if( max_dev < 1e-5 )
+X    message("Two #%d elements of the vectors with values %g and %g\n"
+X	    "differ the most, though the deviation %g is small\n",
+X	    imax,v1(imax),v2(imax),max_dev);
+X  else
+X    _error("A significant difference between the vectors encountered\n"
+X	   "at #%d element, with values %g and %g",
+X	   imax,v1(imax),v2(imax));
+X}
+X
+X/*
+X *-----------------------------------------------------------------------
+X *	      Check FFT of the Arithmetical Progression sequence
+X *				x[j] = j
+X * Analytical transform is
+X *	SUM{ j*W^(kj) } = N/(W^k - 1), k > 0,
+X *		          N*(N-1)/2,   k = 0
+X */
+X
+Xvoid test_ap_series(const int N)
+X{
+X  cout << "\n\nVerify the computed FFT of the AP series x[j]=j\n";
+X  cout << "j = 0.." << N-1 << "\n";
+X
+X  Vector xre(0,N-1);
+X  Vector xim(xre);
+X
+X  register int j;
+X  for(j=0; j<N; j++)
+X    xre(j) = j;
+X  xim = 0;
+X
+X
+X  Vector xfe_re(xre), xfe_im(xre), xfe_abs(xre); // Exact transform
+X  xfe_re(0) = xfe_abs(0) = N*(N-1)/2;
+X  xfe_im(0) = 0;
+X  register int k;
+X  for(k=1; k<N; k++)
+X  {
+X    Complex arg(0,-2*PI/N * k);
+X    Complex t = N / ( exp(arg) - 1 );
+X    xfe_re(k)  = t.real();
+X    xfe_im(k)  = t.imag();
+X    xfe_abs(k) = abs(t);
+X  }
+X
+X  FFT fft(N);
+X  Vector xf_re(xre), xf_im(xre), xf_abs(xre);
+X
+X  cout << "\nPerforming Complex FFT of AP series (IM part being set to 0)\n";
+X  start_timing();
+X  fft.input(xre,xim);
+X  fft.real(xf_re);
+X  fft.imag(xf_im);
+X  print_timing("Complex Fourier transform");
+X  fft.abs(xf_abs);
+X
+X  cout << "Verifying the Re part of the transform ...\n";
+X  verify_vector_identity(xfe_re,xf_re);
+X  cout << "Verifying the Im part of the transform ...\n";
+X  verify_vector_identity(xfe_im,xf_im);
+X  cout << "Verifying the power spectrum ...\n";
+X  verify_vector_identity(xfe_abs,xf_abs);
+X
+X  Vector xfr_re(xre), xfr_im(xre), xfr_abs(xre);
+X  cout << "\nPerforming FFT of a REAL AP sequence\n";
+X  start_timing();
+X  fft.input(xre);
+X  fft.real(xfr_re);
+X  fft.imag(xfr_im);
+X  print_timing("\"Real\" Fourier transform");
+X  fft.abs(xfr_abs);
+X
+X  cout << "Check out that \"Real\" and Complex FFT give identical results";
+X  verify_vector_identity(xfr_re,xf_re);
+X  verify_vector_identity(xfr_im,xf_im);
+X  verify_vector_identity(xfr_abs,xf_abs);
+X
+X  cout << "\nDone\n";
+X}
+X
+X/*
+X *-----------------------------------------------------------------------
+X *	      Check out the orthogonality of the basis functions of FFT
+X *			
+X * x[j] = W^(-l*j)
+X * SUM{ x[j] * W^(kj) } = 0,   k <> l
+X *		          N,   k = l
+X */
+X
+Xvoid test_orth(const int N, const int l)
+X{
+X  cout << "\n\nVerify the computed FFT for x[j] = W^(-l*j)\n";
+X  cout << "j = 0.." << N-1 << ", l=" << l << "\n";
+X
+X  Vector xre(0,N-1);
+X  Vector xim(xre);
+X
+X  register int j;
+X  for(j=0; j<N; j++)
+X  {
+X    Complex arg(0, 2*PI/N * l * j);
+X    Complex t = exp(arg);
+X    xre(j) = t.real(), xim(j) = t.imag();
+X  }
+X
+X  Vector xfe_re(xre), xfe_im(xre);		// Exact transform
+X  xfe_re(l) = N; xfe_im = 0;
+X
+X  FFT fft(N);
+X  Vector xf_re(xre), xf_im(xre), xf_abs(xre);
+X
+X  cout << "\nPerforming Complex FFT\n";
+X  start_timing();
+X  fft.input(xre,xim);
+X  fft.real(xf_re);
+X  fft.imag(xf_im);
+X  print_timing("Complex Fourier transform");
+X  fft.abs(xf_abs);
+X
+X  cout << "Verifying the Re part of the transform ...\n";
+X  verify_vector_identity(xfe_re,xf_re);
+X  cout << "Verifying the Im part of the transform ...\n";
+X  verify_vector_identity(xfe_im,xf_im);
+X  cout << "Verifying the power spectrum ...\n";
+X  verify_vector_identity(xfe_re,xf_abs);
+X
+X  cout << "\nDone\n";
+X}
+X
+X
+X/*
+X *-----------------------------------------------------------------------
+X *      Check FFT of the truncated Arithmetical Progression sequence
+X *			     x[j] = j, j=0..N/2
+X * Analytical transform is
+X *	SUM{ j*W^(kj) } = N/2 (W^k - 1), k > 0 and even
+X *			  2*W^k/(W^k - 1)^2 - N/2 * 1/(W^k - 1), k being odd
+X *		          N/2 * (N/2-1)/2,   k = 0
+X */
+X
+Xvoid test_ap_series_pad0(const int N)
+X{
+X  cout << "\n\nVerify the computed FFT of the truncated AP sequence x[j]=j\n";
+X  cout << "j = 0.." << N/2-1 << ", with N=" << N << "\n";
+X
+X  Vector xre(0,N/2-1);
+X  Vector xim(xre);
+X
+X  register int j;
+X  for(j=0; j<N/2; j++)
+X    xre(j) = j;
+X  xim = 0;
+X
+X
+X  Vector xfe_re(0,N-1), xfe_im(0,N-1), xfe_abs(0,N-1); // Exact transform
+X  xfe_re(0) = xfe_abs(0) = N/2 * (N/2 - 1)/2;
+X  xfe_im(0) = 0;
+X  register int k;
+X  for(k=1; k<N; k++)
+X  {
+X    Complex wk = exp(Complex(0,-2*PI/N * k));
+X    Complex t = 1 / ( wk - 1 );
+X    if( k & 1 )
+X      t = 2*wk*t*t - N/2 * t;			// for k odd
+X    else
+X      t *= N/2;					// for k even
+X    xfe_re(k)  = t.real();
+X    xfe_im(k)  = t.imag();
+X    xfe_abs(k) = abs(t);
+X  }
+X
+X  FFT fft(N);
+X  Vector xf_re(0,N-1), xf_im(0,N-1), xf_abs(0,N-1);
+X
+X  cout << "\nPerforming Complex FFT (with IM part being set to 0)\n";
+X  start_timing();
+X  fft.input_pad0(xre,xim);
+X  fft.real(xf_re);
+X  fft.imag(xf_im);
+X  print_timing("Complex Fourier transform");
+X  fft.abs(xf_abs);
+X
+X  if( N <= 16 )
+X  {
+X    print_seq("Source Vector         ",xre);
+X    print_seq("Computed cos transform",xf_re);
+X    print_seq("Computed sin transform",xf_im);
+X  }
+X
+X  cout << "Verifying the Re part of the transform ...\n";
+X  verify_vector_identity(xfe_re,xf_re);
+X  cout << "Verifying the Im part of the transform ...\n";
+X  verify_vector_identity(xfe_im,xf_im);
+X  cout << "Verifying the power spectrum ...\n";
+X  verify_vector_identity(xfe_abs,xf_abs);
+X
+X  Vector xfr_re(xf_re), xfr_im(xf_re), xfr_abs(xf_re);
+X  cout << "\nPerforming FFT of a REAL AP sequence\n";
+X  start_timing();
+X  fft.input_pad0(xre);
+X  fft.real(xfr_re);
+X  fft.imag(xfr_im);
+X  print_timing("\"Real\" Fourier transform");
+X  fft.abs(xfr_abs);
+X
+X  cout << "Check out that \"Real\" and Complex FFT give identical results\n";
+X  verify_vector_identity(xfr_re,xf_re);
+X  verify_vector_identity(xfr_im,xf_im);
+X  verify_vector_identity(xfr_abs,xf_abs);
+X
+X  Vector xfh_re(xre), xfh_im(xre), xfh_abs(xre);
+X  cout << "Check out the functions returning the half of the transform\n";
+X  fft.real_half(xfh_re);
+X  fft.imag_half(xfh_im);
+X  fft.abs_half(xfh_abs);
+X  Vector xfhr_re(xre), xfhr_im(xre), xfhr_abs(xre);
+X  for(j=0; j<N/2; j++)
+X    xfhr_re(j) = xfh_re(j), xfhr_im(j) = xfh_im(j), xfhr_abs(j) = xfh_abs(j);
+X  verify_vector_identity(xfhr_re,xfh_re);
+X  verify_vector_identity(xfhr_im,xfh_im);
+X  verify_vector_identity(xfhr_abs,xfh_abs);
+X
+X  cout << "\nDone\n";
+X}
+X
+X
+X/*
+X *-----------------------------------------------------------------------
+X *		     Verify the sin/cos Fourier transform
+X *
+X *	r*exp( -r/a )	<=== sin-transform ===> 2a^3 k / (1 + (ak)^2)^2
+X *	r*exp( -r/a )	<=== cos-transform ===> a^2 (1 - (ak)^2)/(1 + (ak)^2)^2
+X */
+X
+Xstatic void test_lorentzian(void)
+X{
+X  const double R = 20;			// Cutoff distance
+X  const int n = 512;			// No. of grids
+X  const double a = 4;			// Constant a, see above
+X  const double dr = R/n, 		// Grid meshes
+X	       dk = PI/R;	
+X
+X  cout << "\n\nVerify the sin/cos transform for the following example\n";
+X  cout << "\tr*exp( -r/a )\t<=== sin-transform ===>\t2a^3 k/(1 + (ak)^2)^2\n";
+X  cout << "\tr*exp( -r/a )\t<=== cos-transform ===>\t"
+X          "a^2 (1-(ak)^2)/(1 + (ak)^2)^2\n";
+X
+X  cout << "\nParameter a is " << form("%.2f",a);
+X  cout << "\nNo. of grids   " << n;
+X  cout << "\nGrid mesh in the r-space dr = " << form("%.3f",dr);
+X  cout << "\nGrid mesh in the k-space dk = " << form("%.3f",dk);
+X
+X  FFT fft(2*n,dr);
+X
+X  cout << "\nCheck out the inquires to FFT package about N, dr, dk, cutoffs\n";
+X  assert( fft.q_N() == 2*n );
+X  assert( fft.q_dr() == dr );
+X  assert( fft.q_dk() == dk );
+X  assert( fft.q_r_cutoff() == R );
+X  assert( fft.q_k_cutoff() == dk*n );
+X
+X
+X  Vector xr(0,n-1);			// Tabulate the source function
+X  register int j;
+X  for(j=0; j<n; j++)
+X  {
+X    double r = j*dr;
+X    xr(j) = r * exp( -r/a );
+X  }
+X
+X  Vector xs(xr), xc(xr);
+X  start_timing();
+X  fft.sin_transform(xs,xr);
+X  print_timing("Sine transform");
+X  start_timing();
+X  fft.cos_transform(xc,xr);
+X  print_timing("Cosine transform");
+X
+X  Vector xs_ex(xs), xc_ex(xc);		// Compute exact transforms
+X  for(j=0; j<n; j++)
+X  {
+X    double k = j * dk;
+X    Complex t = 1/Complex(1/a,-k);
+X    t = t*t;
+X    xc_ex(j)  = t.real();
+X    xs_ex(j)  = t.imag();
+X  }
+X
+X  compare(xs,xs_ex,"Computed and Exact sin-transform");
+X  compare(xc,xc_ex,"Computed and Exact cos-transform");
+X
+X  Vector xt(xc); xt = xc; xt -= xc(xc.q_upb());
+X  compare(xt,xc_ex,"Computed cos-transform with DC component removed, and "
+X	  "exact result");
+X
+X  Vector xs_inv(xr), xc_inv(xr);	// Compute Inverse transforms
+X  start_timing();
+X  fft.sin_inv_transform(xs_inv,xs);
+X  print_timing("Inverse sine transform");
+X  start_timing();
+X  fft.cos_inv_transform(xc_inv,xc);
+X  print_timing("Inverse cosine transform");
+X
+X  compare(xs_inv,xr,"Computed inverse sin-transform vs the original function");
+X  compare(xc_inv,xr,"Computed inverse cos-transform vs the original function");
+X
+X  xt = xc_inv; xt -= xc_inv(xc_inv.q_upb());
+X  compare(xt,xr,"Computed inverse cos-transform with DC component removed,\n"
+X	  "and the original function");
+X
+X  cout << "\nDone\n";
+X}
+X
+X/*
+X *-----------------------------------------------------------------------
+X *		     Verify the cos Fourier transform
+X *
+X *	exp( -r^2/4a )	<=== cos-transform ===> sqrt(a*pi) exp(-a*k^2)
+X */
+X
+Xstatic void test_gaussian(void)
+X{
+X  const double R = 20;			// Cutoff distance
+X  const int n = 512;			// No. of grids
+X  const double a = 4;			// Constant a, see above
+X  const double dr = R/n, 		// Grid meshes
+X	       dk = PI/R;	
+X
+X  cout << "\n\nVerify the sin/cos transform for the following example\n";
+X  cout << "\texp( -r^2/4a )\t<=== cos-transform ===> sqrt(a*pi) exp(-a*k^2)\n";
+X
+X  cout << "\nParameter a is " << form("%.2f",a);
+X  cout << "\nNo. of grids   " << n;
+X  cout << "\nGrid mesh in the r-space dr = " << form("%.3f",dr);
+X  cout << "\nGrid mesh in the k-space dk = " << form("%.3f",dk);
+X
+X  FFT fft(2*n,dr);
+X
+X  cout << "\nCheck out the inquires to FFT package about N, dr, dk, cutoffs\n";
+X  assert( fft.q_N() == 2*n );
+X  assert( fft.q_dr() == dr );
+X  assert( fft.q_dk() == dk );
+X  assert( fft.q_r_cutoff() == R );
+X  assert( fft.q_k_cutoff() == dk*n );
+X
+X
+X  Vector xr(0,n-1);			// Tabulate the source function
+X  register int j;
+X  for(j=0; j<n; j++)
+X  {
+X    double r = j*dr;
+X    xr(j) = exp(-r*r/4/a );
+X  }
+X
+X  Vector xc(xr);
+X  start_timing();
+X  fft.cos_transform(xc,xr);
+X  print_timing("Cosine transform");
+X
+X  Vector xc_ex(xr);			// Compute exact transforms
+X  for(j=0; j<n; j++)
+X  {
+X    double k = j * dk;
+X    xc_ex(j)  = sqrt(PI*a) * exp( -a*k*k );
+X  }
+X
+X  compare(xc,xc_ex,"Computed and Exact cos-transform");
+X  xc -= xc(xc.q_upb());
+X  compare(xc,xc_ex,"Computed with DC removed, and Exact cos-transform");
+X
+X  Vector xc_inv(xr);			// Compute Inverse transforms
+X  start_timing();
+X  fft.cos_inv_transform(xc_inv,xc);
+X  print_timing("Inverse cosine transform");
+X
+X  compare(xc_inv,xr,"Computed inverse cos-transform vs the original function");
+X  xc_inv -= xc_inv(xc_inv.q_upb());
+X  compare(xc_inv,xr,"Computed inverse with DC removed vs the original");
+X
+X  cout << "\nDone\n";
+X}
+X
+X/*
+X *------------------------------------------------------------------------
+X *				Root module
+X */
+X
+Xmain()
+X{
+X  cout << "\n\n" << _Equals << 
+X       "\n\n\t\tVerify Fast Fourier Transform Package\n\n";
+X
+X  test_ap_series(8);
+X  test_ap_series(1024);
+X
+X  test_orth(1024,1);
+X
+X  test_ap_series_pad0(16);
+X  test_ap_series_pad0(1024);
+X
+X  test_lorentzian();
+X  test_gaussian();
+X}
+X
+________This_Is_The_END________
+if test `wc -l < vfft.cc` -ne 471; then
+echo 'shar: vfft.cc was damaged during transit (should have had 471 lines)'
+fi
+
+
+echo 'x - vfft.dat'
+sed 's/^X//' << '________This_Is_The_END________' > vfft.dat
+X
+X
+X===============================================================================
+X
+X		Verify Fast Fourier Transform Package
+X
+X
+X
+XVerify the computed FFT of the AP series x[j]=j
+Xj = 0..7
+X
+XPerforming Complex FFT of AP series (IM part being set to 0)
+XVerifying the Re part of the transform ...
+XVerifying the Im part of the transform ...
+XTwo #4 elements of the vectors with values 2.44921e-16 and 0
+Xdiffer the most, though the deviation 2.44921e-16 is small
+XVerifying the power spectrum ...
+X
+XPerforming FFT of a REAL AP sequence
+XCheck out that "Real" and Complex FFT give identical results
+XDone
+X
+X
+XVerify the computed FFT of the AP series x[j]=j
+Xj = 0..1023
+X
+XPerforming Complex FFT of AP series (IM part being set to 0)
+XVerifying the Re part of the transform ...
+XVerifying the Im part of the transform ...
+XTwo #512 elements of the vectors with values 3.13499e-14 and 0
+Xdiffer the most, though the deviation 3.13499e-14 is small
+XVerifying the power spectrum ...
+X
+XPerforming FFT of a REAL AP sequence
+XCheck out that "Real" and Complex FFT give identical results
+XDone
+X
+X
+XVerify the computed FFT for x[j] = W^(-l*j)
+Xj = 0..1023, l=1
+X
+XPerforming Complex FFT
+XVerifying the Re part of the transform ...
+XTwo #869 elements of the vectors with values 0 and 3.87654e-06
+Xdiffer the most, though the deviation 3.87654e-06 is small
+XVerifying the Im part of the transform ...
+XTwo #897 elements of the vectors with values 0 and -3.21195e-14
+Xdiffer the most, though the deviation 3.21195e-14 is small
+XVerifying the power spectrum ...
+XTwo #869 elements of the vectors with values 0 and 3.87654e-06
+Xdiffer the most, though the deviation 3.87654e-06 is small
+X
+XDone
+X
+X
+XVerify the computed FFT of the truncated AP sequence x[j]=j
+Xj = 0..7, with N=16
+X
+XPerforming Complex FFT (with IM part being set to 0)
+X
+XSource Vector         	 0.0000  1.0000  2.0000  3.0000  4.0000  5.0000  6.0000  7.0000 
+X
+XComputed cos transform	28.0000 -9.1371 -4.0000  2.3801 -4.0000  3.2768 -4.0000  3.4802 -4.0000  3.4802 -4.0000  3.2768 -4.0000  2.3801 -4.0000 -9.1371 
+X
+XComputed sin transform	 0.0000 -20.1094  9.6569 -5.9864  4.0000 -2.6727  1.6569 -0.7956  0.0000  0.7956 -1.6569  2.6727 -4.0000  5.9864 -9.6569 20.1094 
+XVerifying the Re part of the transform ...
+XVerifying the Im part of the transform ...
+XTwo #8 elements of the vectors with values 2.44921e-16 and 0
+Xdiffer the most, though the deviation 2.44921e-16 is small
+XVerifying the power spectrum ...
+X
+XPerforming FFT of a REAL AP sequence
+XCheck out that "Real" and Complex FFT give identical results
+XCheck out the functions returning the half of the transform
+X
+XDone
+X
+X
+XVerify the computed FFT of the truncated AP sequence x[j]=j
+Xj = 0..511, with N=1024
+X
+XPerforming Complex FFT (with IM part being set to 0)
+XVerifying the Re part of the transform ...
+XVerifying the Im part of the transform ...
+XTwo #512 elements of the vectors with values 1.5675e-14 and 0
+Xdiffer the most, though the deviation 1.5675e-14 is small
+XVerifying the power spectrum ...
+X
+XPerforming FFT of a REAL AP sequence
+XCheck out that "Real" and Complex FFT give identical results
+XCheck out the functions returning the half of the transform
+X
+XDone
+X
+X
+XVerify the sin/cos transform for the following example
+X	r*exp( -r/a )	<=== sin-transform ===>	2a^3 k/(1 + (ak)^2)^2
+X	r*exp( -r/a )	<=== cos-transform ===>	a^2 (1-(ak)^2)/(1 + (ak)^2)^2
+X
+XParameter a is 4.00
+XNo. of grids   512
+XGrid mesh in the r-space dr = 0.039
+XGrid mesh in the k-space dk = 0.157
+XCheck out the inquires to FFT package about N, dr, dk, cutoffs
+X
+X
+XComparison of two Matrices:
+X	Computed and Exact sin-transform
+XMatrix 0:511x1:1 ''
+XMatrix 0:511x1:1 ''
+XMaximal discrepancy    		0.312458
+X   occured at the point		(1,1)
+X Matrix 1 element is    		10.6476
+X Matrix 2 element is    		10.3351
+X Absolute error v2[i]-v1[i]		-0.312458
+X Relative error				-0.0297824
+X
+X||Matrix 1||   			26.1276
+X||Matrix 2||   			23.5973
+X||Matrix1-Matrix2||				4.69511
+X||Matrix1-Matrix2||/sqrt(||Matrix1|| ||Matrix2||)	0.189089
+X
+X
+X
+XComparison of two Matrices:
+X	Computed and Exact cos-transform
+XMatrix 0:511x1:1 ''
+XMatrix 0:511x1:1 ''
+XMaximal discrepancy    		0.649606
+X   occured at the point		(0,1)
+X Matrix 1 element is    		15.3504
+X Matrix 2 element is    		16
+X Absolute error v2[i]-v1[i]		0.649606
+X Relative error				0.0414416
+X
+X||Matrix 1||   			34.543
+X||Matrix 2||   			33.8396
+X||Matrix1-Matrix2||				3.01891
+X||Matrix1-Matrix2||/sqrt(||Matrix1|| ||Matrix2||)	0.0882996
+X
+X
+X
+XComparison of two Matrices:
+X	Computed cos-transform with DC component removed, and exact result
+XMatrix 0:511x1:1 ''
+XMatrix 0:511x1:1 ''
+XMaximal discrepancy    		0.651867
+X   occured at the point		(0,1)
+X Matrix 1 element is    		15.3481
+X Matrix 2 element is    		16
+X Absolute error v2[i]-v1[i]		0.651867
+X Relative error				0.0415889
+X
+X||Matrix 1||   			34.9727
+X||Matrix 2||   			33.8396
+X||Matrix1-Matrix2||				3.01892
+X||Matrix1-Matrix2||/sqrt(||Matrix1|| ||Matrix2||)	0.0877554
+X
+X
+X
+XComparison of two Matrices:
+X	Computed inverse sin-transform vs the original function
+XMatrix 0:511x1:1 ''
+XMatrix 0:511x1:1 ''
+XMaximal discrepancy    		5.96046e-08
+X   occured at the point		(221,1)
+X Matrix 1 element is    		0.997371
+X Matrix 2 element is    		0.997371
+X Absolute error v2[i]-v1[i]		5.96046e-08
+X Relative error				5.97618e-08
+X
+X||Matrix 1||   			392.97
+X||Matrix 2||   			392.97
+X||Matrix1-Matrix2||				1.12206e-05
+X||Matrix1-Matrix2||/sqrt(||Matrix1|| ||Matrix2||)	2.85533e-08
+X
+X
+X
+XComparison of two Matrices:
+X	Computed inverse cos-transform vs the original function
+XMatrix 0:511x1:1 ''
+XMatrix 0:511x1:1 ''
+XMaximal discrepancy    		0.767671
+X   occured at the point		(58,1)
+X Matrix 1 element is    		2.05355
+X Matrix 2 element is    		1.28588
+X Absolute error v2[i]-v1[i]		-0.767671
+X Relative error				-0.459761
+X
+X||Matrix 1||   			785.94
+X||Matrix 2||   			392.97
+X||Matrix1-Matrix2||				392.97
+X||Matrix1-Matrix2||/sqrt(||Matrix1|| ||Matrix2||)	0.707107
+X
+X
+X
+XComparison of two Matrices:
+X	Computed inverse cos-transform with DC component removed,
+Xand the original function
+XMatrix 0:511x1:1 ''
+XMatrix 0:511x1:1 ''
+XMaximal discrepancy    		0.135816
+X   occured at the point		(55,1)
+X Matrix 1 element is    		1.11981
+X Matrix 2 element is    		1.25562
+X Absolute error v2[i]-v1[i]		0.135816
+X Relative error				0.11435
+X
+X||Matrix 1||   			324.137
+X||Matrix 2||   			392.97
+X||Matrix1-Matrix2||				69.4601
+X||Matrix1-Matrix2||/sqrt(||Matrix1|| ||Matrix2||)	0.194622
+X
+X
+XDone
+X
+X
+XVerify the sin/cos transform for the following example
+X	exp( -r^2/4a )	<=== cos-transform ===> sqrt(a*pi) exp(-a*k^2)
+X
+XParameter a is 4.00
+XNo. of grids   512
+XGrid mesh in the r-space dr = 0.039
+XGrid mesh in the k-space dk = 0.157
+XCheck out the inquires to FFT package about N, dr, dk, cutoffs
+X
+X
+XComparison of two Matrices:
+X	Computed and Exact cos-transform
+XMatrix 0:511x1:1 ''
+XMatrix 0:511x1:1 ''
+XMaximal discrepancy    		0.0195313
+X   occured at the point		(18,1)
+X Matrix 1 element is    		0.0195313
+X Matrix 2 element is    		4.5914e-14
+X Absolute error v2[i]-v1[i]		-0.0195313
+X Relative error				-2
+X
+X||Matrix 1||   			21.7725
+X||Matrix 2||   			11.7725
+X||Matrix1-Matrix2||				10
+X||Matrix1-Matrix2||/sqrt(||Matrix1|| ||Matrix2||)	0.624616
+X
+X
+X
+XComparison of two Matrices:
+X	Computed with DC removed, and Exact cos-transform
+XMatrix 0:511x1:1 ''
+XMatrix 0:511x1:1 ''
+XMaximal discrepancy    		2.23517e-08
+X   occured at the point		(350,1)
+X Matrix 1 element is    		-2.23517e-08
+X Matrix 2 element is    		0
+X Absolute error v2[i]-v1[i]		2.23517e-08
+X Relative error				0.223517
+X
+X||Matrix 1||   			11.7725
+X||Matrix 2||   			11.7725
+X||Matrix1-Matrix2||				3.91315e-06
+X||Matrix1-Matrix2||/sqrt(||Matrix1|| ||Matrix2||)	3.32399e-07
+X
+X
+X
+XComparison of two Matrices:
+X	Computed inverse cos-transform vs the original function
+XMatrix 0:511x1:1 ''
+XMatrix 0:511x1:1 ''
+XMaximal discrepancy    		0.177245
+X   occured at the point		(2,1)
+X Matrix 1 element is    		1.17686
+X Matrix 2 element is    		0.999619
+X Absolute error v2[i]-v1[i]		-0.177245
+X Relative error				-0.162873
+X
+X||Matrix 1||   			181.999
+X||Matrix 2||   			91.2496
+X||Matrix1-Matrix2||				90.7496
+X||Matrix1-Matrix2||/sqrt(||Matrix1|| ||Matrix2||)	0.704198
+X
+X
+X
+XComparison of two Matrices:
+X	Computed inverse with DC removed vs the original
+XMatrix 0:511x1:1 ''
+XMatrix 0:511x1:1 ''
+XMaximal discrepancy    		3.57628e-07
+X   occured at the point		(0,1)
+X Matrix 1 element is    		1
+X Matrix 2 element is    		1
+X Absolute error v2[i]-v1[i]		3.57628e-07
+X Relative error				3.57628e-07
+X
+X||Matrix 1||   			91.2496
+X||Matrix 2||   			91.2496
+X||Matrix1-Matrix2||				6.16255e-06
+X||Matrix1-Matrix2||/sqrt(||Matrix1|| ||Matrix2||)	6.75351e-08
+X
+X
+XDone
+________This_Is_The_END________
+if test `wc -l < vfft.dat` -ne 299; then
+echo 'shar: vfft.dat was damaged during transit (should have had 299 lines)'
+fi
+
+
+echo 'x - myenv.h'
+sed 's/^X//' << '________This_Is_The_END________' > myenv.h
+X// This may look like C code, but it is really -*- C++ -*-
+X//************************************************************************
+X//
+X//			A standard environment
+X//			  I am accustomed to
+X
+X#pragma once
+X#pragma interface
+X
+X				/* Strings of symbols			*/
+X				/* They may be used as a delimiting lines*/
+Xextern const char _Minuses [];
+Xextern const char _Asteriscs [];
+Xextern const char _Equals [];
+X
+X				/* Print an error message at stderr and	*/
+X				/* abort				*/
+Xvolatile void _error(
+X	const char * message,		/* Message to be printed	*/
+X	...                             /* Additional args to printf	*/
+X	   );
+X
+X				/* Print a message at stderr 		*/
+Xvoid message(
+X	const char * text,		/* Message to be printed	*/
+X	...                             /* Additional args to printf	*/
+X	   );
+X
+X
+X//------------------------------------------------------------------------
+X//			Verify the assertion
+X
+X#if 0
+X  					/* Print a message and abort*/
+Xextern volatile void _error( const char * message,... ); 
+X#endif
+X
+X#define assert(ex) \
+X        (void)((ex) ? 1 : \
+X              (_error("Failed assertion " #ex " at line %d of `%s'.\n", \
+X               __LINE__, __FILE__), 0))
+X#define assertval(ex) assert(ex)
+X
+X#define assure(expr,message)				\
+X	if	(expr) ;				\
+X	else _error("%s\n at line %d of '%s'.",message,__LINE__, __FILE__);
+X
+X
+________This_Is_The_END________
+if test `wc -l < myenv.h` -ne 48; then
+echo 'shar: myenv.h was damaged during transit (should have had 48 lines)'
+fi
+
+
+echo 'x - myenv.cc'
+sed 's/^X//' << '________This_Is_The_END________' > myenv.cc
+X// This may look like C code, but it is really -*- C++ -*-
+X/*
+X ************************************************************************
+X *			Service C++ functions 
+X *	     that support the standard environment for me
+X */
+X
+X#pragma implementation
+X
+X#include "myenv.h"
+X#include <builtin.h>
+X#include <stdarg.h>
+X
+X			// The following line is needed only for
+X			// the stupid BSD 4.3
+X#define vfprintf(fp,format,arg) _doprnt(format,arg,fp)
+X
+X/*
+X *-----------------------------------------------------------------------
+X *		Some global constant pertaining to input/output
+X */
+X
+Xconst char _Minuses [] = "\
+X-------------------------------------------------------------------------------";
+X
+Xconst char _Asteriscs [] = "\
+X*******************************************************************************";
+X
+Xconst char _Equals [] = "\
+X===============================================================================";
+X
+X
+X/*
+X *------------------------------------------------------------------------
+X *	        Print an error message at stderr and abort
+X * Synopsis
+X *	volatile void _error(const char * message,... );
+X *	Message may contain format control sequences %x. Items to print 
+X *	with the control sequences are to be passed as additional arguments to
+X *	the function call.
+X */
+X
+Xvolatile void _error(const char * message,...)
+X{
+X  va_list args;
+X  va_start(args,message);		/* Init 'args' to the beginning of */
+X					/* the variable length list of args*/
+X  fprintf(stderr,"\n_error:\n"); 	
+X  vfprintf(stderr,message,args);
+X  fputs("\n",stderr);
+X  abort();
+X}
+X
+X
+X/*
+X *------------------------------------------------------------------------
+X *	       		 Print a message at stderr
+X * Synopsis
+X *	void message(const char * text,... );
+X *	Message may contain format control sequences %x. Items to print 
+X *	with the control sequences are to be passed as additional arguments to
+X *	the function call.
+X */
+X
+Xvoid message(const char * text,...)
+X{
+X  va_list args;
+X  va_start(args,text);		/* Init 'args' to the beginning of */
+X					/* the variable length list of args*/
+X  vfprintf(stderr,text,args);
+X}
+X
+________This_Is_The_END________
+if test `wc -l < myenv.cc` -ne 72; then
+echo 'shar: myenv.cc was damaged during transit (should have had 72 lines)'
+fi
+
+
+echo 'x - Makefile'
+sed 's/^X//' << '________This_Is_The_END________' > Makefile
+XCC=./c++
+XCCL=./c++l
+XTOUCH=/usr/att/bin/touch
+X.SUFFIXES: .cc
+XMODULES=myenv.cc
+XLAMODULES=matrix1.cc matrix2.cc vector.cc determinant.cc \
+X	  fft_init.cc fft_input.cc fft_output.cc
+X
+X#	Rules
+X.cc.o: 
+X	$(CC) $*.cc
+X
+X.cc:	$*.cc libla.a
+X	$(CC) $*.cc
+X	$(CCL) $*.o libla.a -o $*
+X	./$*
+X	
+X.o:	$*.o libla.a
+X	$(CCL) $*.o libla.a -o $*
+X	./$*
+X	
+X# Primary goal
+X
+Xlibserv.a:    $(MODULES)
+X	$(CC) $*.cc
+X	ar rv libserv.a $*.o
+X	rm $*.o
+X	ranlib libserv.a
+X
+X# Linear Algebra Library
+X
+Xlalib:	libla.a
+X
+Xlibla.a::	LinAlg.h
+X# 					Make the library very obsolete
+X	$(TOUCH) 0101010180 $@
+X
+Xlibla.a::	$(LAMODULES)
+X
+X# 			Compile the source files that have been changed 
+X	$(CC) $?
+X	listobj=`echo $? | sed s/.cc/.o/g` ; \
+X	ar rv libla.a $$listobj &&	\
+X	rm $$listobj
+X	ranlib libla.a
+X
+X
+X# Verification routines
+Xvvector:	vvector.o libla.a
+X	$(CCL) vvector.o libla.a -o vvector
+X	./vvector
+X
+X
+X# Specific dependent goals
+X
+X
+X# Dependence rules
+X
+X
+________This_Is_The_END________
+if test `wc -l < Makefile` -ne 59; then
+echo 'shar: Makefile was damaged during transit (should have had 59 lines)'
+fi
+
+
+echo 'x - c++'
+sed 's/^X//' << '________This_Is_The_END________' > c++
+X#!/bin/csh
+X#	GNU C++ compilation
+Xg++ -c -O -pipe -W -Wall -Wpointer-arith -finline-functions  -fforce-mem \
+X-fforce-addr -fstrict-prototype -felide-constructors \
+X-I. -I{$HOME}/croot/c++-include/ -I- $*
+________This_Is_The_END________
+if test `wc -l < c++` -ne 5; then
+echo 'shar: c++ was damaged during transit (should have had 5 lines)'
+fi
+
+
+echo 'x - c++l'
+sed 's/^X//' << '________This_Is_The_END________' > c++l
+X#!/bin/csh
+X#	GNU C++ linking
+Xg++ -O -pipe -W -Wall -Wpointer-arith -finline-functions  -fforce-mem \
+X-fforce-addr -fstrict-prototype -felide-constructors \
+X-L{$HOME}/croot/c++serv $* -lserv -lg++ -lm
+________This_Is_The_END________
+if test `wc -l < c++l` -ne 5; then
+echo 'shar: c++l was damaged during transit (should have had 5 lines)'
+fi
+
+
+

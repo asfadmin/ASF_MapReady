@@ -1,0 +1,127 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+/*=======================
+	@(#)sp_test_print_jobs.crt	1.1  11/21/96
+=========================*/
+
+if exists (select * from sysobjects where name = "sp_test_print_jobs")
+	drop proc sp_test_print_jobs
+go
+
+create proc sp_test_print_jobs
+as
+	declare @num_scan int
+	declare @num_frame int
+	declare @num int
+	declare @str  char(10)
+	declare @str1 char(10)
+	declare @str2 char(10)
+
+	select @num_scan = count(job_id)
+		from jobs
+		where job_state = "SUBMITTED"
+		and job_type = "SCAN"
+
+	select @num_frame = count(job_id)
+		from jobs
+		where job_state = "SUBMITTED"
+		and job_type = "L1"
+
+	select @num = count(job_id)
+		from jobs
+		where job_state = "SUBMITTED"
+
+	select @str  = convert(char(3),@num)
+	select @str1 = convert(char(3),@num_scan)
+	select @str2 = convert(char(3),@num_frame)
+	print "SUBMITTED :  Scan %1! , L1 %2! , Total %3!", @str1,@str2,@str
+
+	select @num_scan = count(job_id)
+		from jobs
+		where job_state = "AVAILABLE"
+		and job_type = "SCAN"
+
+	select @num_frame = count(job_id)
+		from jobs
+		where job_state = "AVAILABLE"
+		and job_type = "L1"
+
+	select @num = count(job_id)
+		from jobs
+		where job_state = "AVAILABLE"
+
+	select @str  = convert(char(3),@num)
+	select @str1 = convert(char(3),@num_scan)
+	select @str2 = convert(char(3),@num_frame)
+	print "AVAILABLE :  Scan %1! , L1 %2! , Total %3!", @str1,@str2,@str
+
+	select @num_scan = count(job_id)
+		from jobs
+		where job_state = "READY"
+		and job_type = "SCAN"
+
+	select @num_frame = count(job_id)
+		from jobs
+		where job_state = "READY"
+		and job_type = "L1"
+
+	select @num = count(job_id)
+		from jobs
+		where job_state = "READY"
+
+	select @str  = convert(char(3),@num)
+	select @str1 = convert(char(3),@num_scan)
+	select @str2 = convert(char(3),@num_frame)
+	print "READY     :  Scan %1! , L1 %2! , Total %3!", @str1,@str2,@str
+
+	select @num_scan = count(job_id)
+		from jobs
+		where job_state = "PENDING"
+		and job_type = "SCAN"
+
+	select @num_frame = count(job_id)
+		from jobs
+		where job_state = "PENDING"
+		and job_type = "L1"
+
+	select @num = count(job_id)
+		from jobs
+		where job_state = "PENDING"
+
+	select @str  = convert(char(3),@num)
+	select @str1 = convert(char(3),@num_scan)
+	select @str2 = convert(char(3),@num_frame)
+	print "PENDING   :  Scan %1! , L1 %2! , Total %3!", @str1,@str2,@str
+
+	print ""
+	select @num = count(*) from L1_orders
+	select @str  = convert(char(3),@num)
+	print "L1_orders     : %1! ", @str
+
+	select @num = count(*) from scan_orders
+	select @str  = convert(char(3),@num)
+	print "scan_orders   : %1! ", @str
+
+	select @num_scan = count(*) 
+		from jobs
+		where job_type = "SCAN"
+	select @num_frame = count(*) 
+		from jobs
+		where job_type = "L1"
+	select @str1 = convert(char(3),@num_scan)
+	select @str2 = convert(char(3),@num_frame)
+	print "jobs : scan %1! , L1 %2!", @str1, @str2
+
+	select @num_scan = count(*) 
+		from ppsgui_orders
+		where job_type = "SCAN"
+	select @num_frame = count(*) 
+		from ppsgui_orders
+		where job_type = "L1"
+	select @str1 = convert(char(3),@num_scan)
+	select @str2 = convert(char(3),@num_frame)
+	print "ppsgui_orders : scan %1! , L1 %2!", @str1, @str2
+go

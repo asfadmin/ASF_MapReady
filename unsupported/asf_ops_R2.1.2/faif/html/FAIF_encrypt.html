@@ -1,0 +1,84 @@
+<html>
+<head>
+<title>FAIF_encrypt</title>
+</head>
+<body>
+<hr>
+
+<p>
+This file contains:
+
+<ol>
+  <li> FAIF_encrypt application description
+  <li> Environment variables to set
+  <li> Cleaning up FTP directories
+
+</ol>
+<hr>
+
+<ol>
+  <li> FAIF_encrypt is an application program for encrypting passwords which
+must be executed prior to activating all FAIF.  File transfer operations,
+particularly those involving FTP, shall decrypt the files as necessary.
+Below is a usage summary.
+
+</ol>
+<p>
+Usage:<br> <pre>
+    >$FAIF_BINPATH/FAIF_encrypt -i <i>interface</i>  </pre>
+where <i>interface</i> is the interface for which the password information 
+is intended.  Below are valid values for <i>interface</i>.  After giving the
+<b>FAIF_encrypt</b> command, you will be prompted for the username and 
+password. <pre>
+
+    ESA          - FAIF to ESA (Requires the ESA username and password)
+    NASDA        - FAIF/NASDA  for inbound and outbound files 
+                   (Requires the NASDA username and password)
+    WALPS        - FAIF to Wallops (Requires the Wallops username and password)
+    CSA_ufdrf_F  - FAIF/CSA UFDRF  for Fairbanks inbound and outbound
+                   (Requires the appropriate CSA username and password)
+    CSA_ufcal_F  - FAIF/CSA UFCAL  for Fairbanks inbound and outbound
+                   (Requires the appropriate CSA username and password)
+    CSA_ufdroc_F - FAIF/CSA UFDROC for Fairbanks inbound and outbound
+                   (Requires the appropriate CSA username and password)
+    CSA_ufdrf_M  - FAIF/CSA UFDRF  for McMurdo inbound and outbound
+                   (Requires the appropriate CSA username and password)
+    CSA_ufcal_M  - FAIF/CSA UFCAL  for McMurdo inbound and outbound
+                   (Requires the appropriate CSA username and password)
+    CSA_ufdroc_M - FAIF/CSA UFDROC for McMurdo inbound and outbound
+                   (Requires the appropriate CSA username and password)
+
+</pre>
+
+<p>
+FAIF_encrypt encrypts username and password information entered
+interactively and stores the encrypted information in a file.  Encrypted
+files are decrypted by the FAIF when file transfer is initiated.
+
+<hr>
+2. The environment variable <a href="FAIF.html#01">FAIF_ROOTPATH</a> must be set prior to executing
+FAIF_encrypt and its value must be the same as the value used when
+executing all other FAIF components.  Note as well that the FAIF 
+directories must be set up as described in the FAIF Instructions page.
+
+<hr>
+3. Note that once a password file has been created for a specific interface,
+a user is not allowed to keep on re-executing FAIF_encrypt to replace its
+contents.  The FAIF directory where password files are found has to be
+cleaned up prior to re-entering a different username and password.  The
+FAIF directory containing password files must be cleaned up by a user
+with the appropriate permissions.
+
+<hr>
+<p>
+<font size = -1>
+Last Modified:  March, 1998
+
+<p>
+Copyright (c) 1996, 1998 California Institute of Technology.<br>
+ALL RIGHTS RESERVED.  U.S. Government Sponsorship acknowledged.
+</font>
+ 
+
+</body>
+</html>

@@ -1,0 +1,61 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)sp_remove_l1_complete.crt	1.1  11/21/96
+=========================*/
+
+if exists (select * from sysobjects where name = "sp_remove_l1_complete")
+	drop proc sp_remove_l1_complete
+go
+
+create proc sp_remove_l1_complete (@job_id int) 
+as
+	begin transaction
+
+	delete from L1_orders
+		where job_id = @job_id
+
+	if (@@transtate > 0)
+        begin
+                rollback transaction
+                return -1
+        end
+ 
+        /* delete job from L1_procparms table */
+        delete from L1_procparms
+                where job_id = @job_id
+
+        if (@@transtate > 0)
+        begin
+                rollback transaction
+                return -1
+        end
+
+        /* delete job from jobs table */
+        delete from jobs
+                where job_id = @job_id
+
+        if (@@transtate > 0)
+        begin
+                rollback transaction
+                return -1
+        end
+
+        /* delete job from schedule table */
+	delete from schedule
+		where job_id = @job_id
+
+        if (@@transtate > 0)
+        begin
+                rollback transaction
+                return -1
+        end
+
+	commit transaction
+
+	return 1 
+go

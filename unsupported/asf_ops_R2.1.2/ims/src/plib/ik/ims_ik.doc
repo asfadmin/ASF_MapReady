@@ -1,0 +1,18 @@
+
+This document file records any changes we make in order to
+compile this library in the IMS environment.
+
+LIBIK_951207
+
+- Removed Gaea_config.h.in
+
+- Removed Makefile.in
+
+- Removed README.libik
+
+- Removed configure
+
+- Added IK_Clnt.c (Needed for v0_client.c driver program.)
+
+- Added makefile (To build in our environment.)
+

@@ -1,0 +1,384 @@
+C--  Copyright (c)1996, California Institute of Technology.
+C--  U.S. Government Sponsorship acknowledged.
+C-- ==========================================================================
+C--
+C--  Fortran Filename:	zoom.for
+C--
+C--  Description:	
+C--	
+C--  Notes:
+C--
+C-- ==========================================================================
+
+C-----------------------------------------------------------------------
+C SUBROUTINE ZOOM
+C
+C PURPOSE
+C	PROMPT THE USER FOR THE ZOOM WINDOW LATS AND LONS
+C	RECALC WINDOW VARIABLES
+C	ZOOM INTO WINDOW
+C
+C $Logfile:   ACS003:[BLD.MPS.MAPR.SRC]ZOOM.FOV  $
+C
+C VARIABLES
+C INPUT
+C	DISP		DISPLAY 1=WORLD MAP / 2=METAFILE MAP
+C	WSID		WORKSTATION ID
+C	WISS		WORKSTATION IND. SEG. STORAGE ID
+C	PROJN		PROJECTION NO.
+C	GRIDLN		GRID LINE FLAG
+C	WNSIZE		WINDOW SIZE
+C	OBSLAT,OBSLON	CENTER LAT/LON
+C	LONPT		LONGITUDE DIVISIONS
+C	NSEG		OVERLAY COUNT
+C	CRSEGN		OVERLAY STATUS ARRAY
+C	STMNLT,STMXLT,
+C	STMNLN,STMXLN	MIN/MAX WINDOW LAT/LON
+C	START_LL	START WINDOW MIN/MAX LON/LAT
+C OUTPUT
+C	OBSMIN,OBSMAX	MIN/MAX LONGITUDE OF CURRENT WINDOW
+C	MINLAT,MAXLAT	MIN/MAX LAT OF WINDOW
+C	MINLON,MAXLON	MIN/MAX LON OF WINDOW
+C	MINX,MAXX,
+C	MINY,MAXY	MIN/MAX X/Y COORDS
+C	MINXWN,MAXXWN,
+C	MINYWN,MAXYWN	MIN/MAX X/Y OF ENTIRE WINDOW
+C	ZMFLAG		ZOOM FLAG 0=NO ZOOM/1=RECENTER AND ZOOM/2=ZOOM
+C
+C INTERNAL
+C	I,J		COUNTERS
+C	NUGRID		1 = GREATE NEW GRID GSEG
+C	IOS		I/O STATUS NUMBER
+C	ANS		RESPONSE Y/N
+C	INMNLT,INMXLT	INITIAL MIN/MAX LAT
+C	INMNLN,INMXLN	INITIAL MIN/MAX LON
+C	DIFLAT,DIFLON	HEIGHT,LENGTH OF THE WINDOW
+C	LONMIN,LONMAX	MIN/MAX WINDOW LON
+C	OLDMIN,OLDMAX	SAVE OLD OBS MIN/MAX
+C	TLNMN,TLNMX,
+C	TLTMN,TLTMX	USER INPUT MIN/MAX LATS/LONS
+C
+C SUBROUTINE CALLS
+C	POLZOOM
+C	POLCHK
+C	MERZOOM
+C	MERCHK
+C	ASK_ZMVER
+C	DIFDEG
+C	CALC_WINDOW
+C	SET_WINDOW
+C	DISP_SEG
+C
+C ORIGINALLY WRITTEN BY RICHARD P. LEE
+C MODIFIED FOR ASF BY CRAIG K. FUJIMOTO
+C
+C MODIFICATIONS
+C $Date$ $Revision$ $Author$
+C-----------------------------------------------------------------------
+      SUBROUTINE ZOOM (DISP,WSID,WISS,PROJN,GRIDLN,WNSIZE,
+     1                 MINLAT,MAXLAT,MINLON,MAXLON,
+     2                 OBSLAT,OBSLON,OBSMIN,OBSMAX,LONPT,
+     3                 NSEG,CRSEGN,
+     4                 STMNLT,STMXLT,STMNLN,STMXLN,
+     5                 START_LL,
+     6                 MINX,MAXX,MINY,MAXY,
+     7                 MINXWN,MAXXWN,MINYWN,MAXYWN)
+
+      character*100 SccsFileID
+     -/'@(#)zoom.for	5.1 98/01/08 APS/ASF\0'/
+
+      IMPLICIT NONE
+
+C INPUT: 
+
+      INTEGER PROJN,DISP,WSID,WISS,GRIDLN
+      INTEGER NSEG,CRSEGN(*)
+
+      REAL OBSLAT,OBSLON
+      REAL STMNLT,STMXLT,STMNLN,STMXLN
+      REAL START_LL(2,2)
+      REAL WNSIZE,LONPT(*)
+
+C OUTPUT:
+      REAL OBSMIN,OBSMAX
+      REAL MINLAT,MAXLAT,MINLON,MAXLON
+      REAL MINX,MAXX,MINY,MAXY
+      REAL MINXWN,MAXXWN,MINYWN,MAXYWN
+
+C INTERNAL:
+      CHARACTER*1 ANS
+      INTEGER NUGRID
+      INTEGER ZMOPT
+      INTEGER IOS
+
+      REAL DIFLAT,DIFLON
+      REAL INMNLT,INMXLT,INMNLN,INMXLN
+      REAL OLDMIN,OLDMAX
+
+C-----------------------------------------------------------------------
+
+       INCLUDE 'mapper_port.inc'
+
+C TEXT COLOR INDEX
+       CALL GSTXCI (6)
+C POLYMARKER COLOR INDEX
+       CALL GSPMCI (6)
+C SET POLYLINE COLOR INDEX - BLACK
+      CALL GSPLCI (6)
+
+C INITIALIZE SAVE VARIABLES
+      INMNLT = MINLAT
+      INMXLT = MAXLAT
+      INMNLN = MINLON
+      INMXLN = MAXLON
+
+      OLDMIN = OBSMIN
+      OLDMAX = OBSMAX
+
+C SET OBSMIN AND OBSMAX VARIABLES
+      OBSMIN = OBSLON - 179.99
+      OBSMAX = OBSLON + 179.99
+               
+C MAKE SURE OBSMIN AND OBSMAX ARE WITHIN BOUNDS
+
+      IF (OBSMIN .LT. -180.01) THEN
+        OBSMIN = OBSMIN + 360.0
+      ELSE IF (OBSMIN .GT. 180.01) THEN
+        OBSMIN = OBSMIN - 360.0
+      END IF
+
+      IF (OBSMAX .LT. -180.01) THEN 
+        OBSMAX = OBSMAX + 360.0
+      ELSE IF (OBSMAX .GT. 180.01) THEN
+        OBSMAX = OBSMAX - 360.0
+      END IF
+
+      CALL ASK_ZOOMOPT(ZMOPT)
+
+      IF (ZMOPT .EQ. 0) THEN
+
+            GO TO 9999
+
+      ELSE IF (ZMOPT .EQ. 2) THEN
+
+        MINLON = START_LL(1,1)
+        MAXLON = START_LL(1,2)
+        MINLAT = START_LL(2,1)
+        MAXLAT = START_LL(2,2)
+
+      ELSE IF (ZMOPT .EQ. 3) THEN
+
+C MERCATOR PROJECTION
+        IF (PROJN .EQ. 3) THEN
+          MINLAT = -85.0
+          MAXLAT = 85.0
+          MINLON = -179.99
+          MAXLON = 179.99
+C POLAR STEREO NORTH
+        ELSE IF (PROJN .EQ. 5) THEN
+          MINLAT = 90.0
+          MAXLAT = 0.0
+          MINLON = 0.0
+          MAXLON = 0.0
+C POLAR STEREO SOUTH
+        ELSE IF (PROJN .EQ. 6) THEN
+          MINLAT = -90.0
+          MAXLAT = 0.0
+          MINLON = 0.0
+          MAXLON = 0.0
+C SAT VIEW,MILLER CYLIN,CYLIN EQUI
+        ELSE
+          MINLAT = -89.99
+          MAXLAT = 89.99
+          MINLON = -179.99
+          MAXLON = 179.99
+        END IF
+
+        CALL CALC_CENTER(OBSLAT,OBSLON,OBSMIN,OBSMAX,LONPT)
+
+      ELSE IF (ZMOPT .EQ. 4) THEN
+
+C DISPLAY PREVIOUS NEW WINDOW
+
+C CHECK IF A NEW WINDOW HAS BEEN SPECIFIED BEFORE
+        IF (MINLAT_PREV .EQ. 0   .AND.
+     ?      MINLON_PREV .EQ. 0   .AND.
+     ?      MAXLAT_PREV .EQ. 0   .AND.
+     ?      MAXLON_PREV .EQ. 0 ) THEN
+
+            CALL DISMSG('Error : No previous NEW window has been set.')
+            GOTO 9999
+
+        ENDIF
+
+C DISPLAY CURRENT WINDOW LATS/LONS
+        WRITE (6,110) NINT(MINLAT),NINT(MAXLAT)
+        WRITE (6,120) NINT(MINLON),NINT(MAXLON)
+  210   FORMAT (/,' Current Window:   ',I4,' to ',I4,' deg latitude')
+  220   FORMAT (  '                   ',I4,' to ',I4,' deg longitude')
+
+        MINLAT = MINLAT_PREV
+        MAXLAT = MAXLAT_PREV
+        MINLON = MINLON_PREV
+        MAXLON = MAXLON_PREV
+         
+C DISPLAY PREVIOUS WINDOW LATS/LONS
+        WRITE (6,130) NINT(MINLAT),NINT(MAXLAT)
+        WRITE (6,140) NINT(MINLON),NINT(MAXLON)
+  230   FORMAT (/,' Previous Window:  ',I4,' to  ',I4,' deg latitude')
+  240   FORMAT (  '              ',I4,' to  ',I4,' deg longitude')
+ 
+C ASK IF THE ZOOM WINDOW IS CORRECT
+        CALL ASK_ZMVER(ANS)
+ 
+        IF (ANS .NE. 'Y') THEN
+
+          MINLAT = INMNLT
+          MAXLAT = INMXLT
+          MINLON = INMNLN
+          MAXLON = INMXLN
+ 
+          OBSMIN = OLDMIN
+          OBSMAX = OLDMAX
+
+          GOTO 9999
+        ENDIF
+        
+
+      ELSE IF (ZMOPT .EQ. 1) THEN
+
+ 1000   CONTINUE
+
+        IOS = 0
+
+C DISPLAY CURRENT WINDOW LATS/LONS
+        WRITE (6,110) NINT(MINLAT),NINT(MAXLAT)
+        WRITE (6,120) NINT(MINLON),NINT(MAXLON)
+  110   FORMAT (/,' Current Window:   ',I4,' to ',I4,' deg latitude')
+  120   FORMAT (  '                   ',I4,' to ',I4,' deg longitude')
+
+        IF (PROJN .EQ. 5 .OR. PROJN .EQ. 6) THEN
+
+          CALL POLZOOM(PROJN,
+     1                 MINLAT,MAXLAT,MINLON,MAXLON,
+     2                 IOS)
+
+          IF (IOS .NE. 0) GO TO 1000
+
+          CALL POLCHK (PROJN,OBSLAT,OBSLON,
+     1                 MINLAT,MAXLAT,MINLON,MAXLON,
+     2                 IOS)
+
+          IF (IOS .NE. 0) GO TO 1000
+
+        ELSE
+
+          CALL MERZOOM(DISP,PROJN,
+     1                 MINLAT,MAXLAT,MINLON,MAXLON,
+     2                 OBSMIN,OBSMAX,
+     3                 STMNLT,STMXLT,STMNLN,STMXLN,
+     5                 IOS)
+
+          IF (IOS .NE. 0) GO TO 1000
+        
+          CALL MERCHK (PROJN,OBSLAT,OBSLON,
+     1                 MINLAT,MAXLAT,MINLON,MAXLON,
+     2                 IOS)
+
+          IF (IOS .NE. 0) GO TO 1000
+
+        END IF
+      
+C DISPLAY NEW WINDOW LATS/LONS
+        WRITE (6,130) NINT(MINLAT),NINT(MAXLAT)
+        WRITE (6,140) NINT(MINLON),NINT(MAXLON)
+  130   FORMAT (/,' New Window:  ',I4,' to  ',I4,' deg latitude')
+  140   FORMAT (  '              ',I4,' to  ',I4,' deg longitude')
+
+C ASK IF THE ZOOM WINDOW IS CORRECT
+        CALL ASK_ZMVER(ANS)
+ 
+        IF (ANS .NE. 'Y') THEN
+
+C SET THE MINIMUM AND MAXIMUM WINDOW LONGITUDES TO INITIAL VALUES
+          MINLAT = INMNLT
+          MAXLAT = INMXLT
+          MINLON = INMNLN
+          MAXLON = INMXLN
+ 
+          OBSMIN = OLDMIN
+          OBSMAX = OLDMAX
+
+          IF (ANS .EQ. 'N') THEN
+            GO TO 1000
+          ELSE
+            GO TO 9999
+          END IF
+
+        ELSE
+
+C         ANSWER = 'Y', save these coordinates
+
+          MINLAT_PREV = MINLAT
+          MAXLAT_PREV = MAXLAT
+          MINLON_PREV = MINLON
+          MAXLON_PREV = MAXLON
+         
+        END IF
+
+      ELSE
+        GO TO 9999
+      END IF
+
+C CALCULATE WINDOW DIMENSIONS
+      CALL DIFDEG (OBSLON,MINLAT,MAXLAT,MINLON,MAXLON,
+     1             DIFLAT,DIFLON)
+
+C  SET THE MINIMUM AND MAXIMUM WINDOW LONGITUDE
+
+      OBSMIN = MINLON
+      OBSMAX = MAXLON
+      IF (DIFLON .GE. 359.97) THEN
+        OBSMIN = OBSLON + 180.01
+        OBSMAX = OBSLON + 179.99
+        MINLON = STMNLN
+        MAXLON = STMXLN
+      END IF
+  950 IF (OBSMIN .GT. 360.0) THEN 
+          OBSMIN = OBSMIN - 360.0
+        GO TO 950
+      END IF
+  955 IF (OBSMAX .GT. 360.0) THEN 
+        OBSMAX = OBSMAX - 360.0
+        GO TO 955            
+      END IF
+  960 IF (OBSLON .GT. 360.0) THEN 
+        OBSLON = OBSLON - 360.0
+        GO TO 960
+      END IF
+            
+C MESSAGE TO USER
+      CALL DISMSGW('Resetting window...')
+
+C CALCULATE THE WINDOW DIMENSIONS
+      CALL CALC_WINDOW (WSID,PROJN,WNSIZE,
+     1                  MINLAT,MAXLAT,MINLON,MAXLON,
+     2                  OBSLAT,OBSLON,OBSMIN,OBSMAX,
+     3                  MINX,MAXX,MINY,MAXY,
+     4                  MINXWN,MAXXWN,MINYWN,MAXYWN)
+
+C SET THE WINDOW
+      CALL SET_WINDOW (WSID,WNSIZE,MINXWN,MAXXWN,MINYWN,MAXYWN)
+
+C DISPLAY THE SEGMENTS
+      NUGRID = 1
+      CALL DISP_SEG (WSID,PROJN,NUGRID,GRIDLN,WNSIZE,
+     1               MINLAT,MAXLAT,MINLON,MAXLON,
+     2               OBSLAT,OBSLON,OBSMIN,OBSMAX,LONPT,
+     3               NSEG,CRSEGN,
+     4               MINX,MAXX,MINY,MAXY)
+
+
+ 9999 CONTINUE
+      RETURN
+      END

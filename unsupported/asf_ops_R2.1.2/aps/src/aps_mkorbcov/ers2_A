@@ -1,0 +1,24 @@
+lastmodified = '1-May-1996 10:35:57'
+
+instname = 'ERS-2'
+        fullinstname = 'ERS-2'
+        type = 'beam'
+        minlook = 20.3 maxlook = 20.3
+        minyaw = 90 maxyaw = 90
+        swathwidth = 100.0
+
+platname = 'ERS-2/A'
+	h = 781.351960
+	e = 0.001165
+	i = 98.5421
+	node0 = 288.2772
+	omega0 = 0.0
+	m0 =    0.0
+	t0 =    0.0
+
+instname = 'ERS-2'
+        fullinstname = 'ERS-2'
+        type = 'beam'
+        minlook = 20.3 maxlook = 20.3
+        minyaw = 90 maxyaw = 90
+        swathwidth = 100.0

@@ -1,0 +1,4 @@
+baseline.scr fogo_3613 fogo_20280 PRC
+mv fogo_3613-fogo_20280_baseline  fogo_3613-20280_PRC.out
+#baseline.scr fogo_3613 fogo_20280 ODR
+#mv fogo_3613-fogo_20280_baseline  fogo_3613-20280_ODR.out

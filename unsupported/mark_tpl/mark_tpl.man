@@ -1,0 +1,87 @@
+
+    NAME:  mark_tpl - Annotate a LAS image with markers at tie point locations
+
+    
+    SYNOPSIS: 
+
+	mark_tpl [-c size | -i marker] <mode> <infile> <tplfile> <outfile>
+
+		<mode>     specify the input tie point file type
+		<infile>   LAS byte image to be marked.
+		<tplfile>  Input tie point file.
+		<outfile>  LAS byte image with marker at given locations.  
+
+    DESCRIPTION:
+
+	This program provides the ability to visualize where tie-points
+      occur in an image.  By placing a marker in an image for each tie-point
+      location, the spatial distribution of the tie points can be examined.
+      At each location (tpl_file), a marker (cross) is combined with the
+      input file (in_image) to create the output file (out_image).
+        This program works in one of three modes, controlled by the first
+      argument given (either t, t2, or i).  In one mode ("t"), the first 
+      set of terrain correction tie-points from a file is used.  These points
+      correspond to the simulated image.  In the second mode ("t2"), the 
+      second set of terrain correction tie-points from a file is used.  
+      These points correspond to the SAR image.  In the other mode, an
+      interferometry seed point file (specified by "i") is used.  The marker
+      image used to annotate locations can be provided by the user or the
+      default cross can be used.
+
+    MODES:
+
+	t 	When this mode is specified, the input location file is
+                assumed to be a terrain correction tie-point file.  The form
+		is an ASCII file with one line (4 entries) for each location: 
+	            	SimLine SimSamp SarLine SarSamp
+
+	 	When the t option is used, the Sim points are anotated in the
+		image.
+
+	t2	When this mode is specified, the input location file is
+                assumed to be a terrain correction tie-point file.  The form
+		is an ASCII file with one line (4 entries) for each location: 
+	            	SimLine SimSamp SarLine SarSamp
+
+	 	When the t2 option is used, the SAR points are anotated in the
+		image.
+
+	i	When this mode is specified, the input location file is
+		assumed to be an interferometry seed point file.  The form
+		is an ASCII file with one line (3 entries) for each location:
+	            	samp line ht
+
+    OPTIONS:
+
+      [-c size] 	Use default cross of given size (default is size 25)
+			Size should be an odd number
+      [-i marker]  	Use user defined marker file
+
+
+    EXAMPLES:
+
+     % mark_tpl t2 p17972200 17972200_2.tpl a1797
+	Create the file a1797.img by marking image p17972200 at locations
+	specified by the SAR points from the terrain correction tie-point
+        file 17972200_2.tpl, using the default cross as the marker.
+
+     % mark_tpl big_cross i e12_amp seed_new e12_amp_anot 
+	Create the file e12_amp_anot.img by marking image e12_amp at
+	locations specified by the interferometry seed elevation file
+	seed_new, usng the image big_cross as the marker.
+
+    SEE ALSO: 
+
+    HARDWARE/SOFTWARE LIMITATIONS:
+
+	The input, output, and cross files are all LAS 6.0 single-banded 
+	byte images only.  Only a limited number of locations can be used
+	per run.
+
+    BUGS:
+
+    AUTHOR:     Tom Logan, ASF
+
+    CONTACT:  	apd@asf.alaska.edu
+		http://www.asf.alaska.edu/apd
+

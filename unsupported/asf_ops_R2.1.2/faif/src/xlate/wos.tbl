@@ -1,0 +1,69 @@
+#  WOS TRANSLATION TABLE
+# FLAG   OLD_VALUE   NEW_VALUE
+# FLAG ::= <R|D>  R means "replace" old w/new
+#                 D means delete line containing
+#
+#  "hash" is comment to  end of line
+
+D     FIRST_AOS
+D     LAST_LOS
+#D     TRANSMITTER_ID
+D     QUICKLOOK_FLAG
+D     ANTENNA_ID
+D     TIME_AOS
+D     TIME_LOS
+D     FA_SCHEDULE_LINK
+
+R     wos_record          	WOS_RECORD
+R     common_header       	COMMON_HEADER
+R     object              	OBJECT
+R     end                 	END
+R     PLATFORM            	SATELLITE
+R     SEQUENCE            	DATATAKES
+R     wos                 	WOS
+R     EPHEMERIS            	STATE_VECTOR
+R     HC                 	WALLOPS
+R     WFF                	WALLOPS
+R     APS                	ASF
+R     E1                 	E-ERS-1
+R     E2                 	E-ERS-2
+R     J1                 	J-ERS-1
+R     R1                 	RADARSAT
+R     S                  	SAR
+R     O                  	OPS
+R     V                  	VNIR
+R     ST1                	STANDARD-1
+R     ST2                	STANDARD-2
+R     ST3                	STANDARD-3
+R     ST4                	STANDARD-4
+R     ST5                	STANDARD-5
+R     ST6                	STANDARD-6
+R     ST7                	STANDARD-7
+R     WD1                	WIDE-1
+R     WD2                	WIDE-2
+R     WD3                	WIDE-3
+R     FN1                	FINE-1
+R     FN2                	FINE-2
+R     FN3                	FINE-3
+R     FN4                	FINE-4
+R     FN5                	FINE-5
+R     EL1                	EXT-LOW-1
+R     EH1                	EXT-HIGH-1
+R     EH2                	EXT-HIGH-2
+R     EH3                	EXT-HIGH-3
+R     EH4                	EXT-HIGH-4
+R     EH5                	EXT-HIGH-5
+R     EH6                	EXT-HIGH-6
+R     SS1                	SCANSAR-1
+R     SS2                	SCANSAR-2
+R     SS3                	SCANSAR-3
+R     SS4                	SCANSAR-4
+R     RTL                	RT-SAR
+R     DMP                	DUMP
+R     JERS-1_8150        	JERS-1_8150
+R     JERS-1_8350        	JERS-1_8350
+R     RADARSAT-1_8105    	RADARSAT_8105
+R     RASARSAT-1_8230    	RADARSAT_8230
+R     STATE_VECTOR_PRECISION	TYPE
+R     COORDINATE_SYSTEM		COORDINATE
+R     RT			RT-SAR

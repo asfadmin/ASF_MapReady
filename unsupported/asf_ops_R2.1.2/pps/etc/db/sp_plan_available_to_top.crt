@@ -1,0 +1,77 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)sp_plan_available_to_top.crt	1.1  11/21/96
+=========================*/
+
+/* stored procedure to send an AVAILABLE job to the top of the schedule.
+								- jtg */
+
+if exists (select * from sysobjects where name = "sp_plan_available_to_top")
+	drop procedure sp_plan_available_to_top
+go
+
+create proc sp_plan_available_to_top(
+		@job_id 	int,
+		@quicklook_flag	LogicalType)
+	as
+
+	declare @min_sequence		int
+
+	/* begin transaction */
+	begin transaction
+
+	/* get lowest sequence number currently in schedule */
+	select @min_sequence = min(job_sequence) from schedule holdlock
+		where quicklook_flag = @quicklook_flag
+
+	/* really no errors here, just handle empty schedule */
+	if (@min_sequence is null)
+	begin
+		select @min_sequence = 0
+	end
+
+	/* decrement @min_sequence */
+	select @min_sequence = @min_sequence - 1
+
+	/* update state_date in the jobs table */
+	update jobs
+		set state_date = getdate()
+                where job_id = @job_id
+
+	if (@@transtate > 0)
+	begin
+		rollback transaction
+		return -1
+	end
+
+	/* update state_date in the ppsgui_orders table */
+	update ppsgui_orders
+		set state_date = getdate()
+                where job_id = @job_id
+
+	if (@@transtate > 0)
+	begin
+		rollback transaction
+		return -1
+	end
+
+	/* update job_sequence in the schedule table */
+	update schedule
+		set job_sequence = @min_sequence
+                where job_id = @job_id
+
+	if (@@transtate > 0)
+	begin
+		rollback transaction
+		return -1
+	end
+
+	/* commit transaction */
+	commit transaction
+
+go

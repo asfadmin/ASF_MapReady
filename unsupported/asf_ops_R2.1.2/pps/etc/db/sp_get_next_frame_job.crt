@@ -1,0 +1,107 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)sp_get_next_frame_job.crt	1.5  04/23/97
+=========================*/
+
+if exists (select * from sysobjects where name = "sp_get_next_frame_job")
+	drop proc sp_get_next_frame_job
+go
+
+create proc sp_get_next_frame_job (@job_type varchar(15), @processor_mode varchar(15))
+as
+	declare @job_id int
+	declare @min_seq int
+	declare @quicklook_flag LogicalType
+
+	select @job_id = -100 /* 0 to -99 are reserved */
+	select @min_seq = null
+	select @quicklook_flag = "YES"
+
+	if not exists (select  *
+			from schedule
+			where job_type = @job_type)
+		return -100
+
+	if @processor_mode = "SCANSAR"
+	begin
+		select @min_seq = min(job_sequence)
+		from schedule 
+		where job_type = @job_type
+		and quicklook_flag = "YES"
+		and job_id in
+			(select job_id 
+			from L1_procparms 
+			where platform = "R1"
+	                and mode in ("SNA","SNB","SWA","SWB"))    
+
+		if @min_seq is null
+		begin
+
+                select @min_seq = min(job_sequence)
+                from schedule
+                where job_type = @job_type
+                and quicklook_flag = "NO"
+                and job_id in
+                        (select job_id
+                        from L1_procparms 
+                        where platform = "R1"
+                        and mode in ("SNA","SNB","SWA","SWB"))    
+		select @quicklook_flag = "NO"
+		end
+
+	end
+
+        if @processor_mode = "CONTINUOUS"
+	begin
+                select @min_seq = min(job_sequence)
+                from schedule 
+                where job_type = @job_type
+                and quicklook_flag = "YES" 
+                and job_id in
+                        (select job_id
+                        from L1_procparms 
+                        where
+                        (platform = "E1"    )
+                        or (platform = "E2" )
+                        or (platform = "J1" )
+                        or (platform = "R1" and mode NOT in
+                                ("SNA","SNB","SWA","SWB")))
+                if @min_seq is null 
+		begin
+ 
+                select @min_seq = min(job_sequence)
+                from schedule
+                where job_type = @job_type
+                and quicklook_flag = "NO" 
+                and job_id in
+                        (select job_id
+                        from L1_procparms 
+                        where
+                        (platform = "E1"    )
+                        or (platform = "E2" )
+                        or (platform = "J1" )
+                        or (platform = "R1" and mode NOT in
+                                ("SNA","SNB","SWA","SWB")))
+		select @quicklook_flag = "NO"
+		end
+
+	end
+
+	if (@min_seq is not null)
+	begin
+
+	select @job_id = job_id
+		from schedule
+		where job_type = @job_type
+		and quicklook_flag = @quicklook_flag
+		and job_sequence = @min_seq
+	end
+
+	return @job_id
+
+go

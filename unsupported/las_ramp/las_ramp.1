@@ -1,0 +1,48 @@
+NAME: Las_ramp
+
+SYNOPSIS:
+    las_ramp <in img> <out img> <topleft line,sample> <ht> <wth> <min> <max>
+    
+DESCRIPTION:
+	Overlays a ramp-- a smooth graduation of grey tones-- across
+	any given LAS image.  This is useful in preparing scientific
+	illustrations.
+	The procedure works with any single-banded image (e.g., byte, 
+	short, float...).
+    
+OPTIONS:
+	These grey tones are contained in a rectangular box, whose top 
+	left corner is at <topleft line,sample> and whose dimensions are 
+	width <wth> by height <ht>.
+
+	The grey tones are interpolated linearly across the box--
+	if the box is tall and skinny, they blend from <min> at the top to 
+	<max> at the bottom; if the box is wider than it is tall, they blend
+	from <min> at the left edge to <max> at the right edge.
+
+ERROR MESSAGES:
+MESSAGE GIVEN:			REASON:
+----------------------------------------------------------
+
+EXAMPLES:
+las_ramp in.img out.img 20 30 100 400 0 255
+
+	This call overlays a 400 pixel wide by 100 pixel tall box,
+	ramping from 0 at the left to 255 at the right, and starting
+	at line 20, sample 30, atop the LAS image <in img>.  The result is
+	written to <out img>.
+
+
+SEE ALSO:
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+   
+AUTHOR: Orion Lawlor, ASF SAR TOOLS
+    
+CONTACT:
+	apd@asf.alaska.edu
+	http://www.asf.alaska.edu/apd
+
+

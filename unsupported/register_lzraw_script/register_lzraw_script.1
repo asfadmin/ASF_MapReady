@@ -1,0 +1,37 @@
+NAME: register_lzraw
+
+PURPOSE: The register_lzraw scripts automates the process of sub-pixel
+  registration for ASF Level-Zero Swath data.  This script will take
+  this data, SAR process it, sub-pixel register it, and make it into
+  an interferogram.
+  
+  After running this script, you can generate a DEM with
+  tandem_ifm(1), or use the interferogram for your own science.
+
+
+Usage: register_lzraw <file 1> <file 2> <igram> 
+                     [ <grid resolution> [ <line 1> <line 2> ] ]
+  <file 1> an ASF LZP swath file ( .000 )
+  <file 2> an ASF LZP swath file ( .000 )
+  <igram> the output interferogram (.amp, .phase, .ddr)
+  [ <grid resolution> ] is the grid resolution for fico(1).
+                           (the default is 20, for a 20x20 grid)
+  <line 1>  first line to process for file #1
+  <line 2>  first line to process for file #2
+
+   register_lzraw will run the Alaska SAR processor
+on the two images, then coregister the two images
+using resolve, fico, fit_line, and calc_deltas,
+then re-process the second image so that it matches 
+up with (is coregistered with) the first.
+   The result will be an inteferogram.
+    After this, you can generate a DEM with tandem_ifm.
+Vers. 1.2, ASF ISAR Tools, 2000
+
+SEE ALSO:
+	tandem_ifm(1), aisp(1), resolve(1), fico(1), calc_deltas(1).
+
+AUTHOR: Tom Logan, 2000 
+
+CONTACT: Rick Guritz, rguritz@images.alaska.edu
+or visit http://www.images.alaska.edu

@@ -1,0 +1,188 @@
+<TITLE>3.3 Power Spectrum Estimation</TITLE>
+<H2>3.3 Power Spectrum Estimation</H2>
+
+Two methods of spectral estimation are available:
+
+<OL>
+<LI>Periodograms and
+<LI>the Maximum Entropy method
+</OL>
+
+The periodogram is considered the "classical" way
+to estimate the power spectrum and the Maximum Entropy Method (also known
+as Berg's Method) is a newer, not as widely used method.  The periodogram
+is based on the FFT; the Maximum Entropy method is not.<P>
+
+The power spectrum function activates an interactive session allowing the user
+to display the one-dimensional power spectral density (PSD) for the main
+image window.  The plot shows normalized frequency values on the X-axis 
+and power
+in decibels (dB) on the Y-axis.  The power spectrum function makes use of a
+viewport (just as the main image window) for any portion of the plot which
+falls outside the power spectrum window.  This viewport can be enlarged by
+resizing the power spectrum window.<P>
+
+The <B>periodogram</B> method of spectral estimation is found by calculating 
+the 
+magnitude squared of the FFT of the input sequence, divided by the number of
+samples in the sequence.  Since it is based on the FFT, the number of points
+in the plot is a power of two (the next higher power of two if the input
+sequence is not a power of two).  The periodogram can be greatly affected by
+the presence of noise in a sequence.<P>
+
+The <B>maximum entropy</B> method is a good estimator of the power spectrum 
+if one
+can properly select the <B>order</B> parameter.  A low order estimation can 
+result in
+an overly smooth spectrum whereas a high order estimation can be greatly
+affected by noise in the data.  In general, one must experiment with the 
+<B>order</B> parameter for different types of data.<P>
+
+The peaks of the power spectrum can rise sharply, often falling between points
+being evaluated, giving a false impression of the amplitude of the spectrum.
+Using the maximum entropy method, however, one can evaluate a portion of the
+spectrum at different granularities.  This is done by changing the <B>number of
+points, start frequency,</B> and <B>end frequency</B> parameters--the spectrum 
+is 
+estimated at the specified number of points starting at the specified starting
+frequency and ending at the specified ending frequency.  All frequencies are
+normalized, that is, a normalized frequency of 0.5 corresponds to PI/2.  Both
+forms of spectral estimation yield real-valued sequences which are symmetric
+about the Y-axis.<P>
+
+More information on these methods may be found in:<P>
+
+<OL>
+<LI>Numerical Recipes--The Art of Scientific Computing by Press, Flannery,
+    Teukolsky, and Vetterling, Cambridge University Press, 1986.
+
+<LI>Digital Signal Processing--Theory, Applications, and Hardware by
+    Haddad and Parsons, Computer Science Press, 1991.
+
+<LI>The Measurement of Power Spectra by Blackman and Tukey, Dover
+    Publications, 1958.
+</UL>
+
+<P>
+<IMG SRC="power.gif">
+<P>
+
+<DL>
+<DT><B>Maximum Entropy:</B>
+<DD>Calculate and display a power spectral density plot using the maximum 
+entropy method.  The plot is drawn using the color indicated when the toggle is selected.
+<P>
+
+<DT><B>Periodogram:</B>
+<DD>Calculate and display a power spectral density plot using
+a periodogram.  The plot is drawn using the color indicated when the 
+toggle is selected.
+<P>
+
+<DT><B>Start Frequency:</B>
+<DD>Initial output frequency 
+is plotted on the X-axis of the power spectrum plot.  This value is always
+0 for the periodogram plot but may be modified by the user for the
+maximum entropy calculation.  If both the maximum entropy and the periodogram
+plot are displayed, start frequency will be set to 0 and it cannot be
+modified.
+<P>
+
+<DT><B>End Frequency:</B>
+<DD>Ending output frequency 
+is plotted on the X-axis of the power spectrum plot.  This value is always
+.5 for the periodogram plot but may be modified by the user for the
+maximum entropy calculation.  If both the maximum entropy and the periodogram
+plot are displayed, end frequency will be set to .5 and it cannot be
+modified.
+<P>
+
+<DT><B>Number of Points:</B>
+<DD>The number of points evalulated.
+The default number of points depends on the dimension selected.<P>
+
+If the <B>X</B> dimension is selected, the default number of points for the
+maximum entropy method is the number of displayed samples divided by two
+(<B>number_samples / 2.0</B>).  The default number of points for the 
+periodogram is the number of displayed samples rounded to the next 
+greatest power of 2 divided by 2.0 (<B>nearest_power_two(number_samples) / 
+2.0</B>).<P>
+
+If the <B>Y</B> dimension is selected, the default number of points for the
+maximum entropy method is the number of displayed lines divided by two
+(<B>number_lines / 2.0</B>).  The default number of points for the periodogram
+is the number of displayed lines rounded to the next greatest power of
+2 divided by 2.0 (<B>nearest_power_two(number_lines) / 2.0</B>).<P>
+
+If the <B>Z</B> dimension is selected, the default number of points for the
+maximum entropy method is the number of displayed bands divided by two
+(<B>number_bands / 2.0</B>).  The default number of points for the periodogram
+is the number of displayed bands rounded to the next greatest power of
+2 divided by 2.0 (<B>nearest_power_two(number_bands) / 2.0</B>).<P>
+
+If both the maximum entropy and periodogram plots are displayed, the number 
+of points will be set using the periodogram method and cannot be modified.
+<P>
+
+<DT><B>Order:</B>
+<DD>Enter the order of the maximum entropy 
+calculation.  As this number is increased, the maximum entropy plot will more
+closely resemble the periodogram plot.  The default is 25.
+</DL>
+
+The <B>X</B>, <B>Y</B>, and <B>Z</B> radio buttons allow the user to select 
+the dimension the power spectrum is to be calculated in.  
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>X:</B>
+    <DD>The input data for the power
+    spectral density plot is a single line of image data.
+    <P>
+
+    <DT><B>Y:</B>
+    <DD>The input data for the power
+    spectral density plot is a single column of image data.
+    <P>
+
+    <DT><B>Z:</B>
+    <DD>The input data for the power 
+    spectral density plot is an array of data made up of a single pixel 
+    from each of the displayed bands of image data.
+</DL>
+</BLOCKQUOTE>
+
+The <B>automatic</B> and <B>manual</B> radio buttons 
+allow the user to select the update mode for the power spectrum plot. 
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>Automatic:</B>
+    <DD>Update the power spectrum plot each time the user moves the mouse 
+    within the main image window.  
+    <P>
+
+    <DT><B>Manual:</B>
+    <DD>Update the power spectrum plot only when the user clicks the left
+    mouse button in the main image window.
+</DL>
+</BLOCKQUOTE>
+
+The <B>continouous</B> and <B>discrete</B> radio 
+buttons allow the user to select the type of line to be drawn.
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>Continuous:</B>
+    <DD>Draw the plot line as a continuous line between points.
+    <P>
+
+    <DT><B>Discrete:</B>
+    <DD>Draw the plot line as discrete points.
+</DL>
+</BLOCKQUOTE>
+
+<DL>
+<DT><B>Dismiss:</B>
+<DD>Close the power spectrum panel.
+</DL>

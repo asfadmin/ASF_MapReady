@@ -1,0 +1,6 @@
+#
+# makefile definitions for IBM RISC
+#
+COMPILE.cc  = cc
+CFLAGS = -g
+LIBS = -lisode

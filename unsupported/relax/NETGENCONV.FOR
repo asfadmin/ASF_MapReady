@@ -1,0 +1,61 @@
+C **********************************************************************
+C
+C		  NETGEN DATA FORMAT CONVERTER
+C             BY DIMITRI P. BERTSEKAS AND P. TSENG
+C                        NOVEMBER 1994 
+C **********************************************************************
+C
+C     THIS CODE READS IN DATA FOR A LINEAR COST ORDINARY NETWORK
+C     FLOW PROBLEM IN NETGEN FORMAT FROM THE BINARY FILE `NETGEN.INP',
+C     CONVERTS IT TO A FORMAT READABLE BY RELAX4.FOR
+C     AND WRITES THE DATA TO THE ASCII FILE `RELAX4.INP'.
+C
+      PROGRAM MAIN
+      IMPLICIT INTEGER (A-Z) 
+      INTEGER C(70000),X(70000),U(70000),B(6000)
+      INTEGER STARTN(70000),ENDN(70000)
+C
+      PRINT *,'READING PROBLEM IN NETGEN FORMAT FROM',
+     $' FILE NETGEN.INP'
+C
+      OPEN(12,FILE='NETGEN.INP',FORM='UNFORMATTED',STATUS='OLD')
+      REWIND(12)
+      READ(12)N,IA,NSORC,NSINK
+      READ(12)(STARTN(I),I=1,IA)
+      READ(12)(ENDN(I),I=1,IA)
+      READ(12)(C(I),I=1,IA)
+      READ(12)(U(I),I=1,IA)
+      CLOSE(12)
+C
+      DO 60 I=1,N
+60      B(I)=0
+      M=0
+      DO 62 I=1,IA
+        IF (STARTN(I).EQ.N+1) THEN
+          B(ENDN(I))=-U(I)
+        ELSE IF (ENDN(I).EQ.N+2) THEN
+          B(STARTN(I))=U(I)
+        ELSE
+          M=M+1
+          C(M)=C(I)
+          U(M)=U(I)
+          STARTN(M)=STARTN(I)
+          ENDN(M)=ENDN(I)
+        END IF
+62    CONTINUE
+      NA=M
+C
+      PRINT*,'WRITE PROBLEM IN RELAX4 FORMAT TO FILE RELAX4.INP'
+C
+      OPEN(12,FILE='RELAX4.INP',FORM='FORMATTED',STATUS='NEW')
+      REWIND(12)
+      WRITE(12,1000)N,NA
+      DO 10 I=1,NA
+10      WRITE(12,1000)STARTN(I),ENDN(I),C(I),U(I)
+      DO 50 I=1,N
+50      WRITE(12,1000)-B(I)
+      CLOSE(12)
+1000  FORMAT(4I8)
+C
+      STOP
+      END

@@ -1,0 +1,31 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*==============================================================================
+Filename:	L1_orders.crt
+
+Purpose:        Destroy old L1 order database relation and create a new one.
+ 
+Input:          none.
+ 
+Output:         PPS database relation.
+ 
+Modif History:
+		@(#)L1_orders.crt	1.2  11/27/96	
+ 
+Detailed Desc: 	IMS Level 1 Product Order
+==============================================================================*/
+if exists (select 1 from sysobjects where name = "L1_orders")
+	drop table L1_orders
+go
+
+create table L1_orders (
+	order_id	int		not null,   /* key */
+	item_id		int		not null,   /* key */
+        job_id		int             not null,
+	primary key clustered (order_id, item_id)
+)
+go

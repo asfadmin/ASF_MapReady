@@ -1,0 +1,53 @@
+#!/bin/csh
+#
+# Added for the Alaska SAR Facility SAR Processing Subsystem
+#
+# @(#)configure	1.2 95/11/17 10:50:46
+#
+# This script tries to determine what OS is being used and selects the
+# "configure" script appropriately.  AIX 4.x has /bin/sh symlinked to
+# /bin/ksh; so on AIX 4.x alone we need to run a version of configure
+# that invokes /bin/bsh (the Bourne shell) instead of /bin/sh or else
+# configure will fail.  On all other systems, we can run the standard
+# configure that comes with flex.  The original "configure" script has
+# been renamed to configure.sh and configure.bsh, depending on whether
+# it invokes /bin/sh or /bin/bsh, respectively.
+#
+# This script relies on the behavior of the "uname" command on all the
+# supported systems.
+# Sample output from "uname -a":
+#     AIX 3.2:		AIX rincon 2 3 000163825700
+#     AIX 4.1:		AIX gaviota0 1 4 000101885900
+#     IRIX 5.2:		IRIX ssp1 5.2 02282015 IP19 mips
+#     OSF/1:		OSF1 mach2 V1.3 113 alpha
+#     Solaris 2.4:	SunOS ditto 5.4 Generic_101945-27 sun4m sparc
+#
+# Only on AIX are the major and minor OS version numbers split into
+# separate words; on the other systems, the version numbers are combined
+# into a single word separated by a "."  This script first looks
+# at the first word of the output of "uname -a" to see if it is "AIX."
+# If so, it looks at the fourth argument to determine the major version
+# number of the OS.
+#
+# This script was written using /bin/csh for obvious reasons.  :-)
+#
+
+set sysinfo = `uname -a`
+set os = $sysinfo[1]
+set version = $sysinfo[3]
+if ($os == "AIX") then
+    # This system must be running AIX.  Check the major version number.
+    set major_version = $sysinfo[4]
+    if ($major_version == 3) then
+	# System is running AIX 3.x; use the /bin/sh configure script
+	./configure.sh
+    else
+	# System is running AIX 4.x; use the /bin/bsh configure script
+	./configure.bsh
+    endif
+else
+    # Everything else:  use the /bin/sh configure script
+    ./configure.sh
+endif
+
+exit 0

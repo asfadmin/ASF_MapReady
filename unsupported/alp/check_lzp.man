@@ -1,0 +1,29 @@
+
+    NAME:	check_lzp - checks metadata for a location block in an LZP par file
+
+    SYNOPSIS:   check_lzp <inASAPfile> <inVECTfile> <inPARfile>
+
+    DESCRIPTION:  Calculates metadata and compares with that found in the PARfile
+		  at the location given in the Vectfile name.  This program
+		  should be called using the script "alp."
+
+    OPTIONS:	NONE
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+    EXAMPLES:
+
+    SEE ALSO:	alp, parse_lzp_par, propagate, gen_oe, asap
+
+    HARWARE/SOFTWARE LIMITATIONS:   Filename syntax is rigid 
+
+    BUGS:   None known
+
+    AUTHOR:	Tom Logan
+
+    CONTACT:	tlogan@images.alaska.edu
+		rguritz@images.alaska.edu	
+
+

@@ -1,0 +1,73 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)sp_match_l1_order.crt	1.3  10/31/97
+=========================*/
+
+if exists (select * from sysobjects where name = "sp_match_l1_order")
+	drop proc sp_match_l1_order
+go
+
+create proc sp_match_l1_order ( 
+	@quicklook_flag varchar(15), 
+	@platform varchar(15), 
+	@sensor varchar(15), 
+	@rev int, 
+	@mode varchar(15), 
+	@product_type varchar(15), 
+	@sequence int, 
+	@pixel_spacing real, 
+	@frame_id int, 
+	@subframe_id int, 
+	@output_format varchar(15), 
+	@projection varchar(15),
+	@processing_gain int,
+	@deskew varchar(15),
+	@avg_terrain_ht real,
+	@ps_reference_lat real,
+	@ps_reference_lon real,
+	@utm_zone int,
+	@terrain_correction varchar(15),
+	@lambert_latitude_n real,
+	@lambert_latitude_s real,
+	@compensation_flag char(3)
+	)
+
+as
+
+	declare @job_id int
+	select @job_id = 0
+
+	select @job_id = job_id
+		from L1_procparms 
+		where 
+		L1_procparms.quicklook_flag = @quicklook_flag and
+		L1_procparms.platform = @platform and
+		L1_procparms.sensor = @sensor and
+		L1_procparms.rev = @rev and
+		L1_procparms.mode = @mode and
+		L1_procparms.product_type = @product_type and
+		L1_procparms.sequence = @sequence and
+		L1_procparms.pixel_spacing = @pixel_spacing and
+		L1_procparms.frame_id = @frame_id and
+		L1_procparms.subframe_id = @subframe_id and
+		L1_procparms.output_format = @output_format and
+		L1_procparms.projection = @projection and
+		L1_procparms.processing_gain = @processing_gain and
+		L1_procparms.deskew = @deskew and
+		L1_procparms.avg_terrain_ht = @avg_terrain_ht and
+		L1_procparms.ps_reference_lat = @ps_reference_lat and
+		L1_procparms.ps_reference_lon = @ps_reference_lon and
+		L1_procparms.utm_zone = @utm_zone and
+		L1_procparms.terrain_correction = @terrain_correction and
+		L1_procparms.lambert_latitude_n = @lambert_latitude_n and
+		L1_procparms.lambert_latitude_s = @lambert_latitude_s and
+		L1_procparms.compensation_flag = @compensation_flag
+
+	
+return @job_id
+go

@@ -1,0 +1,16 @@
+Horizontal baseline(m) & rate(m/m): -840.61228450796364 -7.6448656879025048e-05
+Vertical baseline(m) & rate(m/m):   72.640555695046942 -8.9746005352083679e-06
+Azimuth_Offset (px)                 -6115.0889164660221
+Range_Offset   (px)                 46.404886836608341
+top    CrossSight baseline (m)      -760.20644458918332
+top    AlongSight baseline (m)      -366.04893771524007
+bottom CrossSight baseline (m)      -768.26062206869926
+bottom AlongSight baseline (m)      -368.06856933519248
+start bh,bv : -840.6123   72.6406
+end   bh,bv : -848.8592   71.6724
+Parameters for simroi:
+Bperp, Bpar: -760.2064 -366.0489
+1 look : -840.6123   72.6406 0 -0.001715 -0.000201
+2 looks: -840.6123   72.6406 0 -0.003430 -0.000403
+4 looks: -840.6123   72.6406 0 -0.006861 -0.000805
+8 looks: -840.6123   72.6406 0 -0.013722 -0.001611

@@ -1,0 +1,88 @@
+<TITLE>5.3.3 Piecewise Linear</TITLE>
+<H2>5.3.3 Piecewise Linear</H2>
+
+The piecewise linear mapping function allows the user to
+build a mapping with a piecewise linear fit from a set of
+mapping pairs (or break points).  The mapping pairs are
+entered as a list of <B>from</B> values and a list of <B>to</B> values
+(see below).  The <B>from</B> values are a list of image values 
+specifying the input values at the break points, while
+<B>to</B> values indicate the output values at the break points.
+Values are then calculated between each mapping pair entered.
+The values are determined by the nearest integer to the line
+drawn between each mapping pair.
+
+<P>
+<IMG SRC="pwl.gif">
+<P>
+
+The <B>red</B>, <B>green</B>, <B>blue</B>, and <B>all</B> radio buttons allow 
+the user to select which of the mapping components to modify.
+Each displayed image has three separate mapping components, one
+for the red, one for the green, and one for the blue portion
+of the mapping.
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>Red:</B>
+    <DD>When selected, only the red component of the mapping will be modified.  
+	The green and blue components will not be changed.
+    <P>
+
+    <DT><B>Green:</B>
+    <DD>When selected, only the green component of the mapping will be modified.
+	The red and blue components will not be changed.
+    <P>
+
+    <DT><B>Blue:</B>
+    <DD>When selected, only the blue component of the mapping will be modified.
+	The red and green components will not be changed.
+    <P>
+
+    <DT><B>All:</B>
+    <DD>When selected, all components of the mapping will be adjusted equally.
+    This is the default.
+</DL>
+</BLOCKQUOTE>
+
+<DL>
+<DT><B>From:</B>
+<DD>A text field which allows the user to enter the input mapping values.
+    These values must be in increasing order between 0 and 255 and may be
+    separated by either spaces or commas.
+<P>
+
+<DT><B>To:</B>
+<DD>A text field which allows the user to enter the output mapping values.
+    There must be the same number of <B>To</B> values as <B>From</B> values, 
+    and they must be in the range 0 to 255 and may be
+    separated by either spaces or commas.
+<P>
+
+<DT><B>Apply:</B>
+<DD>Verify the mapping pairs are valid, calculate the new mapping based on the
+    mapping pairs entered, and apply the mapping to the displayed image.
+<P>
+
+<DT><B>Restore:</B>
+<DD>Reload the mapping that was applied to the image when the piecewise linear
+    mapping function was initiated.
+<P>
+
+<DT><B>Linear:</B>
+<DD>Load a linear or identity mapping.
+<P>
+
+<DT><B>Cancel:</B>
+<DD>Close the piecewise linear mapping panel without saving the current 
+    piecewise linear mapping.  The
+    current mapping is not removed from the image, but other functions
+    (such as <B>Cursor</B>) will have no knowledge of the mapping.
+<P>
+
+<DT><B>Dismiss:</B>
+<DD>Close the piecewise linear mapping panel and save the current piecewise
+    linear mapping.  This does
+    not save the mapping permanently.  It only indicates that other functions
+    (such as <B>Cursor</B>) will now be aware of the mapping
+</DL>

@@ -1,0 +1,43 @@
+#!/bin/ksh
+#
+#  Name:  alp - analyzes LZP .par files
+#
+#  Syntax:  alp <inPARfile> <nlocs>
+#
+#  Description:  This script automates the LZP PAR file analysis procedure
+#		 To run, enter the LZP par file name and the number of location
+#		 blocks to examine
+#
+#  External Associates:
+#	parse_lzp_par	creates input vector files for ASAP propagator
+#	propagate	runs propagation on vector file
+#	check_lzp_par	uses propagated state vector to examine location metadata
+#
+#  History:	Vers 1.0	T. Logan 9/98  	
+#
+#
+
+if [[ $# -ne 2 ]] 
+then
+  print "Usage: alp <inPARfile> <nlocs>"
+  print "      inPARfile   LZP par file name"
+  print "      nlocs       Number of location blocks to check"
+  print " "
+  print "ASF STEP Tools,  Version 1.0"
+  exit 1
+fi
+
+print "Analyzing LZP par file $1 at $2 locations"
+echo parse_lzp_par $1 $2
+parse_lzp_par $1 $2
+for file in *.cart
+  do
+    echo propagate ${file} ${file%.cart}.asap
+    propagate ${file} ${file%.cart}.asap
+    echo " check_lzp ${file%.cart}.asap ${file} $1 > ${file%.cart}.out"
+    check_lzp ${file%.cart}.asap ${file} $1 $count > ${file%.cart}.out
+  done
+print " "
+print "Done with analysis.  Results are in the .out files"
+print " "
+

@@ -1,0 +1,395 @@
+<html>
+<head>
+<title>libscap</title>
+</head>
+<body>
+<hr>
+
+<p>
+<center><font size = +1> libcsap </center> </font>
+<p>
+<hr>
+<p>
+This file contains:
+
+<ol>
+  <li> Overview
+  <li> Data Structures
+  <li> Synopsis of Function Library
+  <li> Sample Code Listing
+
+</ol>
+<hr>
+<p>
+<center><font size = +1> 1. Overview</center></font>
+
+<p>
+This file contains a short synopsis of all the functions supported
+in the CSA file parse library libcsap.a.  The CSA file parse library is
+a set of routines which allow parsing, manipulation and creation of CSA
+format files.  It is similar to other libraries for keyword-value notation
+objects such as the ODL library except it does not support any value
+validation.
+
+
+<hr>
+<p>
+<center><font size = +1>2. Data Structures </center> </font>
+
+<p>
+The following data structures defined in the header file "CSAparse.h"
+(found in /asf/include/faif) are used in the CSA parse library:
+
+<pre>
+
+struct array_node
+{
+   char *value;
+   struct array_node *next;
+};
+     
+struct node 
+{
+   char *keyword;
+   char *value;
+   struct node *block;
+   struct array_node *Array;
+   char *vector[7];
+   int data_type;
+   struct node *prev;
+   struct node *next;
+};
+                      
+struct block_ptr
+{
+   struct node *block;
+   struct block_ptr *next;
+   struct block_ptr *prev;
+};
+                             
+typedef struct node *NODEPTR;
+typedef struct node *CSA_STMT;
+typedef struct block_ptr *BLOCKPTR;
+typedef struct array_node *ARRAYPTR;
+
+</pre>
+<hr>
+<p>
+<center> <font size = +1> 3. Synopsis of Function Library </font> </center>
+
+<p>
+Below is a synopsis of the functions available in the CSA parse library:
+
+<p>
+NODEPTR <b>create_tree</b>(char *filename)
+
+<p>
+<i>        Given the CSA file named filename, it parses it, and puts it into
+a tree structure.  It then passes back the root of the tree.</i>
+
+
+<p>
+ int <b>print_tree</b>(NODEPTR tree_root, char *filename)
+
+<p>
+<i>        Given the root of the tree, it prints the tree to filename.  If 
+filename is "stdout", it is printed to the screen.  It returns -1 on error.</i>
+
+
+<p>
+ NODEPTR <b>find_ag</b>(char *keyword, NODEPTR tree_root)
+
+<p>
+<i>        Given the name of an aggregation (keyword), and the tree it is 
+located in, it returns a pointer to the aggregation, or NULL if one isn't
+found.</i>
+
+
+<p>
+ NODEPTR <b>next_ag</b> (NODEPTR ag, NODEPTR tree_root)
+
+<p>
+<i>        Given a pointer to an aggregation, and the tree it is located in, 
+it returns a pointer to the next aggregation, or NULL if there isn't one.</i>
+
+
+<p>
+ NODEPTR <b>find_keyword</b>(char *keyword, NODEPTR tree_root)
+
+<p>
+<i>        Given a keyword and the tree that contains it, it returns a pointer
+to the node that contains that keyword, or NULL if there isn't one.</i>
+
+
+<p>
+ char *<b>get_keyword_value</b>(NODEPTR Node)
+
+<p>
+<i>        Given a node, returns a pointer to it's value character string.</i>
+
+
+<p>
+ NODEPTR <b>create_node</b>(char *keyword, char *value, NODEPTR block, <br>
+                        ARRAYPTR Array, char *vector[7], int data_type)
+
+<p>
+<i>        Given all the parameters for a node, creates a new node and returns 
+a pointer to it.</i>
+
+
+<p>
+ int <b>insert_node</b>(NODEPTR Node, NODEPTR current, NODEPTR tree_root, <br>
+                    int placement)
+
+<p>
+<i>        Inserts a node, given the node to be inserted (Node), the node
+it's placed next to (current), the root of the tree it's in (tree_root), 
+and it's placement (has a value of BEFORE or AFTER).</i>
+
+
+<p>
+ int <b>delete_node</b>(NODEPTR Node, NODEPTR tree_root)
+
+<p>
+<i>        Given a node and a tree tree_root, it deletes the node from the
+tree.</i>
+
+
+<p>
+ int <b>insert_ag</b> (NODEPTR Node, NODEPTR current, NODEPTR tree_root)
+
+<p>
+  <i>   Given an aggregation (Node), it inserts it after current in tree 
+tree_root.</i>
+
+
+<p>
+ int <b>append_statement</b>(NODEPTR Node, NODEPTR tree_root)
+
+<p>
+<i>        Appends a CSA statement (Node) to the end of the tree pointed to
+by tree_root.</i>
+
+
+<p>
+ int <b>append_substatement</b>(NODEPTR Node, NODEPTR aggregation)
+
+<p>
+<i>   Appends a CSA statement (Node) to the end of the given aggregation.</i>
+
+<p>
+ NODEPTR <b>create_header</b>(char *filename, char *spacecraft_identifier,<br> 
+                           char *file_cration_time, char *file_source,
+                           char *file_dest, char *file_type)
+<p>
+<i>        Given the proper values, creates a header for a CSA file.</i>
+
+
+<p>
+ NODEPTR <b>create_keyword_value</b>(char *keyword, char *value)
+
+<p>
+<i>        Creates a node containing the specified keyword and value.</i>
+
+
+<p>
+ NODEPTR <b>create_ag</b>(NODEPTR top)
+
+<p>
+<i>        Takes a node (top) and turns it into an aggregation.</i>
+
+
+<p>
+ NODEPTR <b>create_array</b>(char *keyword, char *value)
+
+<p>
+<i>        Given a keyword and value, creates a node of ARRAY type.</i>
+
+
+<p>
+ int <b>append_element</b>(char *element, NODEPTR array_stmt)
+
+<p>
+<i>        Appends element to the node array_stmt.</i>
+
+
+<p>
+ void <b>delete_tree</b>(NODEPTR tree_root)
+
+<p>
+<i>        Given a pointer to the root of a tree, deletes the tree and frees its
+memory.</i>
+<p>
+<hr>
+<p>
+<center><font size = +1>4. Sample Code Listings</center></font>
+
+<p>
+<b> /* The first sample program below creates a CSA file out of scratch */ </b>
+
+<pre>
+#include &lt;stdio.h&gt;
+#include "CSAparse.h"
+
+void main ()
+{
+  /* declare temp variables for storing statements */
+
+  CSA_STMT temp;
+  CSA_STMT temp2;
+  CSA_STMT temp3;
+  CSA_STMT tree_root;
+  char *string;
+
+  /* construct the header and set the root of the tree */
+
+  tree_root = (CSA_STMT) create_header("f0004289.rrp", "RADARSAT_1",
+                                       "1995-301-16:05:00.000", "FBDROC", 
+                                       "MCS", "RECEPTION_REPORT");
+
+  /* create some keyword = value statement and concatenate them */
+
+  temp = (CSA_STMT) create_keyword_value("RECEPTION_FACILITY_ID", "F");
+  
+  temp2 = (CSA_STMT) create_keyword_value("RECEPTION_ORBIT_NUMBER", "4289");
+
+  append_statement(temp2, temp);
+
+  /* create a keyword=value statement, and transform it into an aggregation */
+  
+  temp2 = (CSA_STMT) create_keyword_value("MEDIUM_INFO", "1");
+  temp2 = (CSA_STMT) create_ag(temp2);
+
+  /* add a statement to the aggregation */
+
+  temp3 = (CSA_STMT) create_keyword_value("SATELLITE_ID", "RADARSAT_1");
+  append_substatement(temp3, temp2);<br>
+  append_substatement(temp3, temp2);
+
+  /* create an array and add elements to it */
+
+  temp3 = (CSA_STMT) create_array("BER_SAMPLE", "2");
+  append_element("1995-300-12:40:05.230", temp3);
+  append_element("1.0E-5", temp3);
+  append_element("1995-300-12:41:05.230", temp3);
+  append_element("1.0E-4", temp3);
+
+  /* append the array to the aggregation */
+
+  append_substatement(temp3, temp2);
+
+  /* append the aggregation to previously defined statements */
+
+  append_statement(temp2, temp);
+
+  /* append all statements to the tree root */
+
+  append_statement(temp, tree_root);
+
+  /* print the tree to standard output */
+  print_tree(tree_root, "stdout");
+  delete_tree(tree_root);
+
+} /* End Main */
+
+</pre>
+
+<p>
+<b> /* The next sample program below parses information from a CSA file */ </b>
+
+<pre>
+#include &lt;stdio.h&gt;
+#include "CSAparse.h"
+
+void arg_error()
+{
+  printf("Usage: csaparse -i inputfile -o outputfile\n");
+  exit(0);
+}
+
+main(int argc, char *argv[])
+{
+  /* declare temp variables for storage */
+  
+  CSA_STMT temp;
+  CSA_STMT temp2;
+  CSA_STMT tree_root;
+  char *string;
+
+  /* input error checking */
+
+  if ((argc &lt; 5) || (argc &gt; 9))
+    arg_error();
+  
+  if (strcmp(argv[1], "-i") != 0)
+    arg_error();
+  
+  if (strcmp(argv[3], "-o") != 0)
+    arg_error();
+
+  /* create the tree from the file in argv[2] */
+
+  tree_root = (CSA_STMT)create_tree(argv[2]);
+  
+  temp = (CSA_STMT)find_keyword("SCHEDULE_ID", tree_root);
+  exit(0);
+
+
+  /* find the aggregation "RECEPTION_ACTIVITY_SPECS" in tree_root */
+
+  temp = (CSA_STMT) find_ag("RECEPTION_ACTIVITY_SPECS", tree_root);
+
+  /* get the next aggregation */
+
+  temp = (CSA_STMT) next_ag(temp, tree_root);
+
+  /* get the node that contains the keyword "X_BAND_LOS" */
+
+  temp = (CSA_STMT) find_keyword("X_BAND_LOS", tree_root);
+
+  /* get its corresponding value and print it to standard output */
+
+  string = (char *)find_keyword_value("X_BAND_LOS", tree_root);
+  printf("\nX_BAND_LOS = %s\n", string);
+
+  /* create a keyword = value statement */
+
+  temp2 = (CSA_STMT) create_keyword_value("SATELLITE_ID", "RADARSAT_1");
+
+  /*  insert it into the tree, after the statement pointed to by 
+      temp (X_BAND_LOS) 
+   */
+
+  insert_node(temp2, temp, tree_root, AFTER);
+
+  /* remove the statement pointed to by temp (X_BAND_LOS) */
+
+  delete_node(temp, tree_root);
+
+  /* create another keyword = value statement */
+
+  temp2 = (CSA_STMT) create_keyword_value("RECEPTION_FACILITY_ID", "F");
+
+  /* append it to the end of the tree */
+
+  append_statement(temp2, tree_root);
+
+  /* print the tree */
+
+  print_tree(tree_root, argv[4]);
+
+  delete_tree(tree_root);
+
+} /* End Main */
+
+</pre>
+<hr>
+<p>
+<font size = -1>
+Last Modified:  July, 1996
+ 
+<p>
+Copyright (c) 1996, California Institute of Technology.<br>
+ALL RIGHTS RESERVED.  U.S. Government Sponsorship acknowledged
+</body>
+</html>

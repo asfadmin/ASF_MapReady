@@ -1,0 +1,714 @@
+! UIMX ascii 2.9 key: 5451                                                      
+
+*pps.class: Project
+*pps.PjName: pps
+*pps.PjDoMain: 1
+*pps.PjDoMake: 0
+*pps.PjWriteAll: 1
+*pps.PjRunMake: 0
+*pps.PjRunExecutable: 0
+*pps.PjUserData: 0
+*pps.PjStartupIface: pps_main
+*pps.PjWriteCDir: utest
+*pps.PjMode: 0
+*pps.PjAppClassName: Pps
+
+*pps_query_PJinterface.class: PJinterface
+*pps_query_PJinterface.PjName: pps_query_PJinterface
+*pps_query_PJinterface.PjSwName: pps_query
+*pps_query_PJinterface.PjParent: pps
+*pps_query_PJinterface.PjFileName: pps_query.i
+*pps_query_PJinterface.PjShowFlag: 0
+*pps_query_PJinterface.PjGuiDate: 838749659
+*pps_query_PJinterface.PjDate: 839003499
+*pps_query_PJinterface.PjMode: 0
+*pps_query_PJinterface.PjCFileName: pps_query.c
+
+*nojoy_PJinterface.class: PJinterface
+*nojoy_PJinterface.PjName: nojoy_PJinterface
+*nojoy_PJinterface.PjSwName: nojoy
+*nojoy_PJinterface.PjParent: pps
+*nojoy_PJinterface.PjFileName: nojoy.i
+*nojoy_PJinterface.PjShowFlag: 0
+*nojoy_PJinterface.PjGuiDate: 838749662
+*nojoy_PJinterface.PjDate: 839003500
+*nojoy_PJinterface.PjMode: 0
+*nojoy_PJinterface.PjCFileName: nojoy.c
+
+*pps_main_PJinterface.class: PJinterface
+*pps_main_PJinterface.PjName: pps_main_PJinterface
+*pps_main_PJinterface.PjSwName: pps_main
+*pps_main_PJinterface.PjParent: pps
+*pps_main_PJinterface.PjFileName: pps_main.i
+*pps_main_PJinterface.PjShowFlag: 0
+*pps_main_PJinterface.PjGuiDate: 838749664
+*pps_main_PJinterface.PjDate: 839003501
+*pps_main_PJinterface.PjMode: 0
+*pps_main_PJinterface.PjCFileName: pps_main.c
+
+*pps_plan_PJinterface.class: PJinterface
+*pps_plan_PJinterface.PjName: pps_plan_PJinterface
+*pps_plan_PJinterface.PjSwName: pps_plan
+*pps_plan_PJinterface.PjParent: pps
+*pps_plan_PJinterface.PjFileName: pps_plan.i
+*pps_plan_PJinterface.PjShowFlag: 0
+*pps_plan_PJinterface.PjGuiDate: 839004942
+*pps_plan_PJinterface.PjDate: 839004246
+*pps_plan_PJinterface.PjMode: 0
+*pps_plan_PJinterface.PjCFileName: pps_plan.c
+
+*pps_policy_PJinterface.class: PJinterface
+*pps_policy_PJinterface.PjName: pps_policy_PJinterface
+*pps_policy_PJinterface.PjSwName: pps_policy
+*pps_policy_PJinterface.PjParent: pps
+*pps_policy_PJinterface.PjFileName: pps_policy.i
+*pps_policy_PJinterface.PjShowFlag: 0
+*pps_policy_PJinterface.PjGuiDate: 838749668
+*pps_policy_PJinterface.PjDate: 839003505
+*pps_policy_PJinterface.PjMode: 0
+*pps_policy_PJinterface.PjCFileName: pps_policy.c
+
+*pps_file_selector_PJinterface.class: PJinterface
+*pps_file_selector_PJinterface.PjName: pps_file_selector_PJinterface
+*pps_file_selector_PJinterface.PjSwName: pps_file_selector
+*pps_file_selector_PJinterface.PjParent: pps
+*pps_file_selector_PJinterface.PjFileName: pps_file_selector.i
+*pps_file_selector_PJinterface.PjShowFlag: 0
+*pps_file_selector_PJinterface.PjGuiDate: 838749670
+*pps_file_selector_PJinterface.PjDate: 839003506
+*pps_file_selector_PJinterface.PjMode: 0
+*pps_file_selector_PJinterface.PjCFileName: pps_file_selector.c
+
+*pps_error_dialog_PJinterface.class: PJinterface
+*pps_error_dialog_PJinterface.PjName: pps_error_dialog_PJinterface
+*pps_error_dialog_PJinterface.PjSwName: pps_error_dialog
+*pps_error_dialog_PJinterface.PjParent: pps
+*pps_error_dialog_PJinterface.PjFileName: pps_error_dialog.i
+*pps_error_dialog_PJinterface.PjShowFlag: 0
+*pps_error_dialog_PJinterface.PjGuiDate: 838749671
+*pps_error_dialog_PJinterface.PjDate: 839003507
+*pps_error_dialog_PJinterface.PjMode: 0
+*pps_error_dialog_PJinterface.PjCFileName: pps_error_dialog.c
+
+*uxmain.class: PJuxmain
+*uxmain.PjName: uxmain
+*uxmain.PjParent: pps
+*uxmain.PjFileName: pps.c
+*uxmain.PjDate: 839003507
+*uxmain.PjMode: 0
+*uxmain.PjBody: /*------------------------------------------------------------------------------\
+ * $Date$			$Revision$\
+ *------------------------------------------------------------------------------\
+ *		Copyright 1991, Visual Edge Software Ltd.\
+ *\
+ * ALL  RIGHTS  RESERVED.  Permission  to  use,  copy,  modify,  and\
+ * distribute  this  software  and its documentation for any purpose\
+ * and  without  fee  is  hereby  granted,  provided  that the above\
+ * copyright  notice  appear  in  all  copies  and  that  both  that\
+ * copyright  notice and this permission notice appear in supporting\
+ * documentation,  and that  the name of Visual Edge Software not be\
+ * used  in advertising  or publicity  pertaining to distribution of\
+ * the software without specific, written prior permission. The year\
+ * included in the notice is the year of the creation of the work.\
+ *------------------------------------------------------------------------------\
+ * This is the project main program file for Ux generated code.\
+ * You may add application dependent source code at the appropriate places.\
+ *\
+ * Do not modify the statements preceded by the dollar sign ($), these\
+ * statements will be replaced with the appropriate source code when the\
+ * main program is automatically generated.\
+ *----------------------------------------------------------------------------*/\
+\
+#ifdef XOPEN_CATALOG\
+#include <locale.h>\
+#endif\
+\
+#include <UxLib.h>\
+#include <X11/Xlib.h>\
+#include <PPShdr.h>\
+\
+\
+#ifdef UX_CATALOG\
+nl_catd		UxMsgCatalog;\
+#endif /* UX_CATALOG */\
+\
+/*----------------------------------------------\
+ * Insert application global declarations here\
+ *---------------------------------------------*/\
+\
+char *dbname = NULL;\
+char *dbuser = NULL;\
+char *dbpass = NULL;\
+\
+#ifdef _NO_PROTO\
+main(argc,argv)\
+	int	argc;\
+	char	*argv[];\
+#else\
+main(int argc, char *argv[])\
+#endif /* _NO_PROTO */\
+{\
+	/*-----------------------------------------------------------\
+	 * Declarations.\
+	 * The default identifier - mainIface will only be declared\
+	 * if the interface function is global and of type swidget.\
+	 * To change the identifier to a different name, modify the\
+	 * string mainIface in the file "main.dat". If "mainIface"\
+	 * is declared, it will be used below where the return value\
+	 * of PJ_INTERFACE_FUNCTION_CALL will be assigned to it.\
+	 *----------------------------------------------------------*/ \
+\
+	$PJ_INTERFACE_RETVAL_TYPE\
+\
+	/*---------------------------------\
+	 * Interface function declaration\
+	 *--------------------------------*/	\
+\
+	$PJ_INTERFACE_FUNCTION_DECL\
+	$PJ_INTERFACE_FUNCTION_ARG_DECL\
+\
+	/*---------------------\
+	 * Initialize program\
+	 *--------------------*/\
+\
+#ifdef XOPEN_CATALOG\
+	setlocale(LC_ALL, "");\
+	if (XSupportsLocale())\
+	{\
+		XtSetLanguageProc(NULL, (XtLanguageProc)NULL, NULL);\
+	}\
+#endif\
+\
+#ifdef UX_CATALOG\
+\
+#if defined(SOLARIS)\
+	/* Ensure NLSPATH has default value if not set. */\
+	if (!getenv("NLSPATH"))\
+	{\
+		putenv("NLSPATH=./%N");\
+	}\
+#endif\
+	UxMsgCatalog = UxCATOPEN(UX_CATALOG_NAME, 0);\
+#endif\
+\
+	/*----------------------------------\
+	 * Initialize the message catalog.\
+	 *---------------------------------*/\
+	(void) UxInitCat();\
+\
+	UxTopLevel = XtAppInitialize(&UxAppContext, "$PJ_APP_CLASS_NAME",\
+				     NULL, 0, &argc, argv, NULL, NULL, 0);\
+	UxAppInitialize("$PJ_APP_CLASS_NAME", &argc, argv);\
+\
+	/*-------------------------------------------------------\
+	 * Insert initialization code for your application here\
+	 *------------------------------------------------------*/\
+        dbname = (char *)getenv(PPS_DBNAME_KEYWD);\
+        if (dbname == (char *)NULL)\
+        {\
+                fprintf(stderr, "%s unknown.  Exiting.\n", PPS_DBNAME_KEYWD);\
+                exit(1);\
+        }\
+        dbuser = (char *)getenv(PPS_USERID_KEYWD);\
+        if (dbuser == (char *)NULL)\
+        {\
+                fprintf(stderr, "%s unknown.  Exiting.\n", PPS_USERID_KEYWD);\
+                exit(1);\
+        }\
+        dbpass = (char *)getenv(PPS_PASSWD_KEYWD);\
+        if (dbpass == (char *)NULL)\
+        {\
+                fprintf(stderr, "%s unknown.  Exiting.\n", PPS_PASSWD_KEYWD);\
+                exit(1);\
+        }\
+\
+\
+	/*----------------------------------------------------------------\
+	 * Create and popup the first window of the interface. The\
+	 * return value can be used in the popdown or destroy functions.\
+	 * The swidget return value of PJ_INTERFACE_FUNCTION_CALL will\
+	 * be assigned to "mainIface" from PJ_INTERFACE_RETVAL_TYPE.\
+	 *---------------------------------------------------------------*/\
+\
+	$PJ_INTERFACE_FUNCTION_CALL\
+	$PJ_POPUP_CALL\
+\
+	/*-----------------------\
+	 * Enter the event loop \
+	 *----------------------*/\
+\
+	$PJ_EVENT_LOOP\
+\
+}\
+
+*uxmain.PjExplicitEventLoop: {\
+\
+	XEvent event;\
+\
+	for (;;)\
+	{\
+	    UxNextEvent(&event);\
+\
+	    switch (event.type)\
+	    {\
+\
+		/*------------------------------------------------\
+		 * Insert code here to handle any events that you \
+		 * do not wish to be handled by the interface.    \
+		 *----------------------------------------------*/\
+\
+		default:\
+		    UxDispatchEvent(&event);\
+		    break;\
+	    }\
+	}\
+}
+*uxmain.PjEdited: 1
+*uxmain.PjHasImplicitLoop: 1
+*uxmain.PjHasExplicitLoop: 0
+
+*xtmain.class: PJxtmain
+*xtmain.PjName: xtmain
+*xtmain.PjParent: pps
+*xtmain.PjFileName: pps.c
+*xtmain.PjDate: 816662065
+*xtmain.PjMode: 1
+
+*uilmain.class: PJuilmain
+*uilmain.PjName: uilmain
+*uilmain.PjParent: pps
+*uilmain.PjFileName: pps.c
+*uilmain.PjDate: 0
+*uilmain.PjMode: -1
+
+*uxmake.class: PJuxmake
+*uxmake.PjName: uxmake
+*uxmake.PjParent: pps
+*uxmake.PjFileName: Makefile
+*uxmake.PjExecutable: pps_gui
+*uxmake.PjTarget: pps
+*uxmake.PjDate: 821412874
+*uxmake.PjMode: 0
+*uxmake.PjBody: ########################################################################\
+# $Date$		$Revision$\
+########################################################################\
+#             Copyright 1991, Visual Edge Software Ltd.\
+#\
+# ALL  RIGHTS  RESERVED.  Permission  to  use,  copy,  modify,  and\
+# distribute  this  software  and its documentation for any purpose\
+# and  without  fee  is  hereby  granted,  provided  that the above\
+# copyright  notice  appear  in  all  copies  and  that  both  that\
+# copyright  notice and this permission notice appear in supporting\
+# documentation,  and that  the name of Visual Edge Software not be\
+# used  in advertising  or publicity  pertaining to distribution of\
+# the software without specific, written prior permission. The year\
+# included in the notice is the year of the creation of the work.\
+########################################################################\
+# \
+#    	MAKEFILE FOR STAND-ALONE UX CODE APPLICATION.\
+#\
+#       EXECUTABLE      is the name of the executable to be created \
+#       MAIN            is the .c file containing your main() function\
+#       INTERFACES      is a list of the generated C code files \
+#       APP_OBJS        is a (possibly empty) list of the object code\
+#                       files that form the non-interface portion of\
+#                       your application \
+#\
+#       In the first three statements, the variables on the right \
+#	of the equal sign will be replaced with their corresponding \
+#       values when the makefile is automatically generated. \
+#\
+########################################################################\
+# \
+#	List of supported compiler(s):\
+#\
+#	gcc - Version 2.6.1\
+#	cc  - SPARCompiler Version 3.0.1\
+#	CC  - SPARCompiler Version 3.0.1  \
+#\
+########################################################################\
+\
+EXECUTABLE	= $PJ_EXECUTABLE\
+MAIN		= $PJ_MAIN_SRC\
+INTERFACES	= $PJ_INTERFACES_SRC\
+LANGUAGE	= $PJ_LANGUAGE_OPTION\
+APPL_OBJS	= $PJ_SPECIAL_MODULES pps_query_util.o pps_plan_util.o pps_policy_util.o pps_util.o pps_db.o\
+\
+APPL_MSG_FILES	=\
+MSG_FILES	= $(INTERFACES:$PJ_SOURCE_SUFFIX=.msg) $(APPL_MSG_FILES)\
+MSG_FILES_STRIP	= $(INTERFACES:$PJ_SOURCE_SUFFIX=) $(APPL_MSG_FILES:.msg=)\
+MSG_CATALOG	= $(EXECUTABLE).cat\
+MSG_HEADER	= $(EXECUTABLE)_cat.h\
+MSG_CPP		= $PJ_CATALOG_CPP\
+MSG_DEPEND	= $PJ_CATALOG\
+\
+SHELL		= /bin/sh\
+\
+UX_DIR		= /usr/local/uimx2.9\
+UX_LIBPATH	= $(UX_DIR)/lib\
+X_LIBS          = -lXm -lXt -lX11 -lXext\
+\
+\
+X_LIBDIR	= /usr/openwin/lib\
+X_LIBPATH	= -L$(X_LIBDIR)\
+MOTIF_LIBDIR	= /opt/SUNWmotif/lib\
+MOTIF_LIBPATH	= -L$(MOTIF_LIBDIR)\
+X_CFLAGS	= -I/usr/openwin/include\
+MOTIF_CFLAGS	= -DMOTIF -I/opt/SUNWmotif/include\
+\
+\
+CAT_CFLAGS	= -DUX_CATALOG_HEADER=\"$(MSG_HEADER)\" \\
+		  -DUX_CATALOG_NAME=\"$(MSG_CATALOG)\" \\
+		  $(MSG_CPP)\
+CAT_LIBPATH	=\
+CAT_LIB		= -lw -ldl\
+\
+\
+# For GNU K&R cc\
+#KR_CC           = gcc\
+#KR_CFLAGS       = -traditional -D_NO_PROTO\
+\
+# For SPARCompiler K&R cc\
+KR_CC		= cc\
+KR_CFLAGS	= -Xs -D_NO_PROTO \
+\
+# For GNU Ansi cc\
+#ANSI_CC         = gcc\
+#ANSI_CFLAGS     = -ansi\
+\
+# For SPARCompiler Ansi cc\
+ANSI_CC		= cc\
+ANSI_CFLAGS	= \
+\
+# For GNU c++\
+#CPLUS_CC        = gcc\
+#CPLUS_CFLAGS    = -xc++\
+\
+# For SPARCompiler c++\
+CPLUS_CC	= CC\
+CPLUS_CFLAGS	= \
+\
+PPS_LINCLUDE = ../../include/global\
+\
+CFLAGS		= -g -I$(UX_DIR)/include $(X_CFLAGS) $(MOTIF_CFLAGS) $(CAT_CFLAGS) \\
+		  -DXOPEN_CATALOG -DSOLARIS -I/db/sybase/sol/include  \\
+		-I$(PPS_LINCLUDE)\
+XOPEN_LIBS	=\
+UCB_LIBDIR	= /usr/ucblib\
+\
+# For GNU compiler\
+#GCC_LINKFLAG   = -Xlinker\
+\
+LIBSEARCHPATH	= $(GCC_LINKFLAG) -R$(MOTIF_LIBDIR):$(X_LIBDIR):$(UCB_LIBDIR)\
+LIBPATH		= $(MOTIF_LIBPATH) $(X_LIBPATH) $(CAT_LIBPATH) \\
+		  -L$(UX_LIBPATH) $(LIBSEARCHPATH)\
+LIBS		= -lux $(X_LIBS) $(CAT_LIBS) -L/db/sybase/sol/lib -lcs -lct -lcomn -lintl -ltcl -lw -ldl -lm \\
+			-lsocket -lnsl -lgen -lelf $(XOPEN_LIBS) -lc\
+\
+\
+OBJS = $(MAIN:$PJ_SOURCE_SUFFIX=.o) $(INTERFACES:$PJ_SOURCE_SUFFIX=.o) $(APPL_OBJS) $(EXTRA_OBJS)\
+\
+all:		$(MSG_DEPEND) $(EXECUTABLE)\
+\
+catalog:	$(MSG_HEADER) $(MSG_CATALOG)\
+\
+$PJ_CATALOG_RULE\
+\
+$(MSG_HEADER): $PJ_NAME\
+	@echo "Generating $(MSG_HEADER)" ; \\
+	rm -f $@ ; \\
+	touch $@ ; \\
+	echo "/*---------------------------------------------------------------------" >> $@ ; \\
+	echo " *" >> $@ ; \\
+	echo " *        $@" >> $@ ; \\
+	echo " *        This file is included by all interface files in project" >> $@ ; \\
+	echo " *" >> $@ ; \\
+	echo " *-------------------------------------------------------------------*/" >> $@ ; \\
+	cap_name=`echo $@ | tr a-z. A-Z_` ; \\
+	echo "" >> $@ ; \\
+	echo "#ifndef   _$${cap_name}_" >> $@ ; \\
+	echo "#define   _$${cap_name}_" >> $@ ; \\
+	echo "" >> $@ ; \\
+	msg_set_no=1 ; \\
+	for i in $(MSG_FILES) ; do \\
+	msg_set_name=`awk '/^\\$$set/ { print $$2; exit }' $${i}` ; \\
+	echo "#define $${msg_set_name}  $${msg_set_no}" >> $@ ; \\
+	msg_set_no=`expr $${msg_set_no} + 1` ; \\
+	done ;\\
+	echo "" >> $@ ; \\
+	echo "#endif /* _$${cap_name}_ */" >> $@ ;\
+\
+$(MSG_CATALOG): $(MSG_HEADER) $(MSG_FILES)\
+	@echo "Generating $(MSG_CATALOG)" ; \\
+	msg_set_no=1 ; \\
+	for i in $(MSG_FILES_STRIP) ; do \\
+	sed -e 's/^\$$set.*$$/\$$set    '$${msg_set_no}'/' $${i}.msg >> $(MSG_CATALOG).msg; \\
+	msg_set_no=`expr $${msg_set_no} + 1` ; \\
+	done; \\
+	gencat $(MSG_CATALOG) $(MSG_CATALOG).msg ; \\
+	rm -f $(MSG_CATALOG).msg ;\
+\
+$(EXECUTABLE): $(OBJS)\
+	@echo "Linking    $(EXECUTABLE)"\
+	$(LD) $(LD_FLAGS) $(OBJS) $(LIBPATH) $(LIBS) -o $(EXECUTABLE)\
+	/bin/cp $(EXECUTABLE) ../../bin/sparc/.\
+	@echo "Done"\
+\
+\
+.SUFFIXES: \
+.SUFFIXES: .o $PJ_SOURCE_SUFFIX .c\
+\
+.c.o:\
+	@echo Compiling $< [$(LANGUAGE)] [UX-CODE]\
+	$(CC) -c $(CFLAGS) $< -o $@\
+$PJ_SOURCE_SUFFIX.o:\
+	@echo Compiling $< [$(LANGUAGE)] [UX-CODE]\
+	$(CC) -c $(CFLAGS) $< -o $@\
+\
+\
+clean:\
+	@echo "Cleaning $PJ_EXECUTABLE $(OBJS)" ; \\
+	/bin/rm -f $PJ_EXECUTABLE $(OBJS)\
+\
+.PHONY: all catalog\
+\
+CC = \\
+@`if [ "$(LANGUAGE)" = "C++" ]; then echo $(CPLUS_CC) $(CPLUS_CFLAGS);fi` \\
+`if [ "$(LANGUAGE)" = "ANSI C" ]; then echo $(ANSI_CC) $(ANSI_CFLAGS); fi`\\
+`if [ "$(LANGUAGE)" = "KR-C" ]; then echo $(KR_CC) $(KR_CFLAGS); fi`\
+\
+\
+\
+LD = \\
+@`if [ "$(LANGUAGE)" = "C++" ]; then echo $(CPLUS_CC);fi` \\
+`if [ "$(LANGUAGE)" = "ANSI C" ]; then echo $(ANSI_CC); fi`\\
+`if [ "$(LANGUAGE)" = "KR-C" ]; then echo $(KR_CC); fi`\
+\
+LD_FLAGS = \\
+`if [ "$(LANGUAGE)" = "C++" ]; then echo $(CPLUS_LDFLAGS);fi`\\
+`if [ "$(LANGUAGE)" = "ANSI C" ]; then echo $(ANSI_LDFLAGS); fi`\\
+`if [ "$(LANGUAGE)" = "KR-C" ]; then echo $(KR_LDFLAGS); fi`\
+\
+
+*uxmake.PjEdited: 1
+
+*xtmake.class: PJxtmake
+*xtmake.PjName: xtmake
+*xtmake.PjParent: pps
+*xtmake.PjFileName: pps.mk
+*xtmake.PjExecutable: pps
+*xtmake.PjTarget: pps
+*xtmake.PjDate: 816662065
+*xtmake.PjMode: 1
+*xtmake.PjBody: #########################################################################\
+#\
+#       MAKEFILE FOR STAND-ALONE XT CODE APPLICATION.  \
+#\
+#       EXECUTABLE      is the name of the executable to be created \
+#       MAIN            is the .c file containing your main() function \
+#       INTERFACES      is a list of the generated C code files\
+#       APP_OBJS        is a (possibly empty) list of the object code\
+#                       files that form the non-interface portion of\
+#                       your application\
+#\
+#       In the first three statements, the variables on the right \
+#	of the equal sign will be replaced with their corresponding\
+#       values when the makefile is automatically generated.\
+#\
+#       This template is used for makefiles which do not reference \
+#       the Ux runtime library.\
+#\
+#  	$Date$ 		$Revision$\
+#########################################################################\
+\
+\
+EXECUTABLE	= $PJ_EXECUTABLE\
+MAIN		= $PJ_MAIN_SRC\
+INTERFACES	= $PJ_INTERFACES_SRC\
+LANGUAGE        = $PJ_LANGUAGE_OPTION\
+APPL_OBJS       = $PJ_SPECIAL_MODULES pps_util.o\
+\
+UX_DIR		= /usr/local/CenterLine/vctrm/sparc-solaris2\
+UX_LIBPATH	= $(UX_DIR)/lib\
+X_LIBS		= -lXm -lXt -lX11\
+\
+X_LIBPATH        = -L/usr/lib/X11  \
+MOTIF_LIBPATH        = -L/opt/SUNWmotif/lib  \
+X_CFLAGS  = -I/usr/include  \
+MOTIF_CFLAGS  = -I/opt/SUNWmotif/include -DMOTIF \
+\
+# For Centerline K&R cc\
+KR_CC           = clcc -traditional\
+KR_CFLAGS       = -D_NO_PROTO\
+\
+# For GNU K&R cc\
+# KR_CC         = gcc -traditional\
+# KR_CFLAGS     = -D_NO_PROTO\
+\
+# For Centerline ansi cc\
+ANSI_CC         = clcc\
+ANSI_CFLAGS     =\
+\
+# For GNU ansi cc\
+# ANSI_CC       = gcc -ansi\
+# ANSI_CFLAGS   =\
+\
+# For Centerline c++\
+CPLUS_CC        = CC\
+CPLUS_CFLAGS    =\
+\
+# For GNU c++\
+# CPLUS_CC      = gcc -xc++\
+# CPLUS_CFLAGS  =\
+\
+CFLAGS          =  -DSOLARIS -DXT_CODE $(X_CFLAGS) $(MOTIF_CFLAGS)\
+UCB_LIBPATH	= /usr/ucblib\
+LIBPATH         = $(X_LIBPATH) $(MOTIF_LIBPATH) -L$(UCB_LIBPATH) \\
+		  -L/usr/ccs/lib -L/usr/lib\
+\
+#\
+# Use this LIB line for if you are NOT using the gcc compiler\
+LIBS            = $(X_LIBS) -lm -lsocket -lnsl -lgen -lelf -lucb \
+\
+#\
+# Use this LIB line if you are using the gcc compiler.\
+#LIBS            = $(X_LIBS) -lm -lsocket -lnsl -lgen -lelf -lc -lucb -R(UCB_LIBPATH)\
+\
+\
+OBJS = $(MAIN:$PJ_SOURCE_SUFFIX=.o) $(INTERFACES:$PJ_SOURCE_SUFFIX=.o) $(APPL_OBJS)\
+SRCS = $(MAIN) $(INTERFACES) $(APPL_OBJS:.o=.c)\
+\
+$(EXECUTABLE): $(OBJS)\
+	@echo Linking    $(EXECUTABLE)\
+	@$(LD) $(OBJS) $(LIBPATH) $(LIBS) -o $(EXECUTABLE)\
+	@echo "Done"\
+\
+clean:\
+	rm -f $(OBJS) $(EXECUTABLE)\
+\
+.SUFFIXES: \
+.SUFFIXES: .o $PJ_SOURCE_SUFFIX .c\
+\
+.c.o:\
+	@echo Compiling $< [$(LANGUAGE)] [XT-CODE]\
+	@$(CC) -c $(CFLAGS) $< -o $@\
+\
+$PJ_SOURCE_SUFFIX.o:\
+	@echo Compiling $< [$(LANGUAGE)] [XT-CODE]\
+	@$(CC) -c $(CFLAGS) $< -o $@\
+\
+\
+\
+CC = \\
+`if [ "$(LANGUAGE)" = "C++" ]; then echo $(CPLUS_CC) $(CPLUS_CFLAGS);fi` \\
+`if [ "$(LANGUAGE)" = "ANSI C" ]; then echo $(ANSI_CC) $(ANSI_CFLAGS); fi`\\
+`if [ "$(LANGUAGE)" = "KR-C" ]; then echo $(KR_CC) $(KR_CFLAGS); fi`\
+\
+LD = \\
+`if [ "$(LANGUAGE)" = "C++" ]; then echo $(CPLUS_CC);fi` \\
+`if [ "$(LANGUAGE)" = "ANSI C" ]; then echo $(ANSI_CC); fi`\\
+`if [ "$(LANGUAGE)" = "KR-C" ]; then echo $(KR_CC); fi`\
+\
+COMPILE_FLAGS = \\
+`if [ "$(LANGUAGE)" = "C++" ]; then echo $(CPLUS_CFLAGS) $(CFLAGS);fi`\\
+`if [ "$(LANGUAGE)" = "ANSI C" ]; then echo $(ANSI_CFLAGS) $(CFLAGS); fi`\\
+`if [ "$(LANGUAGE)" = "KR-C" ]; then echo $(KR_CFLAGS) $(CFLAGS); fi`\
+\
+\
+#\
+# TestCenter Targets\
+# CenterLine Software\
+#\
+\
+$(EXECUTABLE)_TC: $(OBJS)\
+	proof $(LD) $(OBJS) $(LIBPATH) $(LIBS) -o $(EXECUTABLE)_TC\
+\
+#\
+# CodeCenter Targets\
+# CenterLine Software\
+#\
+\
+CC_KR_C_OBJ: $(OBJS)\
+	#setopt load_flags $(COMPILE_FLAGS)\
+	#unsetopt ansi\
+	#setopt cc_prog $(CC)\
+	#load $(COMPILE_FLAGS) $(OBJS) $(LIBPATH) $(LIBS)\
+	#link\
+\
+CC_ANSI_C_OBJ: $(OBJS)\
+	#setopt load_flags $(COMPILE_FLAGS)\
+	#setopt ansi\
+	#setopt cc_prog $(CC)\
+	#load $(COMPILE_FLAGS) $(OBJS) $(LIBPATH) $(LIBS)\
+	#link\
+\
+CC_KR_C_SRC: $(SRCS)\
+	#setopt load_flags $(COMPILE_FLAGS)\
+	#unsetopt ansi\
+	#setopt cc_prog $(CC)\
+	#load $(COMPILE_FLAGS) $(SRCS) $(LIBPATH) $(LIBS)\
+	#link\
+\
+CC_ANSI_C_SRC: $(SRCS)\
+	#setopt load_flags $(COMPILE_FLAGS)\
+	#setopt ansi\
+	#setopt cc_prog $(CC)\
+	#load $(COMPILE_FLAGS) $(SRCS) $(LIBPATH) $(LIBS)\
+	#link\
+\
+#\
+# ObjectCenter Targets\
+# CenterLine Software\
+#\
+\
+OC_KR_C_OBJ: $(OBJS)\
+	#setopt load_flags $(COMPILE_FLAGS)\
+	#unsetopt ansi\
+	#setopt cc_prog $(CC)\
+	#load -C $(COMPILE_FLAGS) $(OBJS) $(LIBPATH) $(LIBS)\
+	#link\
+\
+OC_ANSI_C_OBJ: $(OBJS)\
+	#setopt load_flags $(COMPILE_FLAGS)\
+	#setopt ansi\
+	#setopt cc_prog $(CC)\
+	#load -C $(COMPILE_FLAGS) $(OBJS) $(LIBPATH) $(LIBS)\
+	#link\
+\
+OC_CXX_OBJ: $(OBJS)\
+	#setopt load_flags $(COMPILE_FLAGS)\
+	#setopt cxx_prog $(CC)\
+	#load $(COMPILE_FLAGS) $(OBJS) $(LIBPATH) $(LIBS)\
+	#link\
+\
+OC_KR_C_SRC: $(SRCS)\
+	#setopt load_flags $(COMPILE_FLAGS)\
+	#unsetopt ansi\
+	#setopt cc_prog $(CC)\
+	#load -C $(COMPILE_FLAGS) $(SRCS) $(LIBPATH) $(LIBS)\
+	#link\
+\
+OC_ANSI_C_SRC: $(SRCS)\
+	#setopt load_flags $(COMPILE_FLAGS)\
+	#setopt ansi\
+	#setopt cc_prog $(CC)\
+	#load -C $(COMPILE_FLAGS) $(SRCS) $(LIBPATH) $(LIBS)\
+	#link\
+\
+OC_CXX_SRC: $(SRCS)\
+	#setopt load_flags $(COMPILE_FLAGS)\
+	#setopt cxx_prog $(CC)\
+	#load $(COMPILE_FLAGS) $(SRCS) $(LIBPATH) $(LIBS)\
+	#link\
+\
+
+*xtmake.PjEdited: 1
+
+*uilmake.class: PJuilmake
+*uilmake.PjName: uilmake
+*uilmake.PjParent: pps
+*uilmake.PjFileName: pps.mk
+*uilmake.PjExecutable: pps
+*uilmake.PjTarget: pps
+*uilmake.PjDate: 0
+*uilmake.PjMode: -1

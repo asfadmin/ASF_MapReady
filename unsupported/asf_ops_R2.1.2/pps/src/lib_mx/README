@@ -1,0 +1,21 @@
+This directory contains the routines for the PPS Mutex Variable routines.  A
+PPS Mutex Variable, or mx_var, is a mutex-protected int.  One should use
+MX_VAR type variables whenever is is necessary to share an int value among
+multiple threads.
+
+libmx.c		This file contains: init_mx_var(), drop_mx_var(),
+		inc_mx_var(), dec_mx_var(), test_mx_var(), and set_mx_var().
+
+makefile	The makefile generates libmx.a from ppsmx.c and ppsmx.h.
+
+Before using a MX_VAR, one must declare a variable of MX_VAR type, then
+set its initial value using init_mx_var().  Once initialized, one can then
+use inc_mx_var() to increment it, dec_mx_var() to decrement it, set_mx_var()
+to set it to a new value, and test_mx_var() to get the current value.  The
+mutex, internal to the datatype, will ensure that all operations on the
+variable will be atomic.
+
+drop_mx_var() should be used to get rid of an MX_VAR once you are done with it.
+
+_john
+

@@ -1,0 +1,36 @@
+.pl 66
+.\"
+.TH STOPIT 1 "29 April 1996" "ASF SPS Release 1B'" "ASF USER COMMANDS"
+.SH NAME
+stopit \- stop DCRSi recording or playing back
+.SH SYNOPSIS
+.B stopit 
+.I [
+.B -c
+.I {7|8} ]
+.SH "DESCRIPTION"
+\fBstopit\fP
+commands the DCRSi tape drive 
+(\fI/dev/vdi\fR) 
+to stop recording or playing back in an orderly manner.
+.SH OPTIONS
+.IP "\fB\-c\fP \fI{7|8}\fP"
+This option specifies the character size of the serial line
+(\fI/dev/vdi_sp0\fR)
+used for communicating commands and responses with the DCRSi tape drive.
+The allowable values are 7 or 8 bits per character.  The default is \fI8\fR
+if this option is not specified.
+
+.SH NOTES
+\fBstopit\fP has been used with DCRSi recorder firmware revisions
+4.4 and 5.0.
+Its behavior with other firmware revisions is unknown at this time.
+
+.SH FILES
+.PD 0
+.TP 27
+.B /dev/vdi
+Data interface to the DCRSi drive
+.TP
+.B /dev/vdi_sp0
+(Serial) control interface to the DCRSi drive

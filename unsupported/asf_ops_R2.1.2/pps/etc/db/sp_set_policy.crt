@@ -1,0 +1,42 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+/*=======================
+	@(#)sp_set_policy.crt	1.1  11/21/96
+=========================*/
+
+/* stored procedure to generate a new job_id - jtg */
+
+if exists (select * from sysobjects where name = "sp_set_policy")
+	drop procedure sp_set_policy
+go
+
+create proc sp_set_policy
+		@job_type JobTypeType,
+		@quicklook_flag LogicalType,
+		@job_priority PriorityType,
+		@auto_flag LogicalType
+	as
+
+	/* begin transaction */
+	begin transaction
+
+	/* update auto_flag in the policy table */
+	update policy 
+		set auto_flag = @auto_flag
+                where job_type = @job_type and
+			quicklook_flag = @quicklook_flag and
+			job_priority = @job_priority
+
+	if (@@transtate > 0)
+	begin
+		rollback transaction
+		return -1
+	end
+
+	/* commit transaction */
+	commit transaction
+
+go

@@ -1,0 +1,22 @@
+log_browser is a X/MOTIF applcation written by Section 363 and donated to
+ASF.  I hacked it a bit to get it to work in a generic environment.  It
+works pretty well.  When I get a chance, the following changes should be
+made:
+
+1) Right now you point it at a single directory, any number of files.  It
+cannot traverse directories (it was designed this way).  It should be able
+to move around (., ..).
+
+2) The printer environment is a bit of a hack.  It uses a file called
+.printer to determine where to send output.  I should use standard
+environment variables (PRINTER, LASERPRINTER).
+
+3) msgtest.c is a test program for using syslog() to generate messages.
+The scripts TEST and TEST2 will start log_browser to look at the
+/usr/adm/messages file.  The other scripts are from 363.
+
+4) To get around some bugs in the SOLARIS version of regular expression, I
+am now using the GNU regular expression library.  It seems to work fine.
+
+--mike
+

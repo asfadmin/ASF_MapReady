@@ -1,0 +1,23 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)sp_remove_l1_order.crt	1.1  11/21/96
+=========================*/
+
+if exists (select * from sysobjects where name = "sp_remove_l1_order")
+	drop proc sp_remove_l1_order
+go
+
+create proc sp_remove_l1_order (@order_id int, @item_id int) 
+as
+
+	/* delete this job from L1_orders table */
+	delete from L1_orders
+		where order_id = @order_id
+		and   item_id = @item_id
+	return @@rowcount
+go

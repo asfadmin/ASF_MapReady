@@ -1,0 +1,50 @@
+PURPOSES:
+--------
+
+This ceos release version is 6.4. The Data Set Summary Record
+and Data Quality Summary Record in leader file are affected.  
+The Detail Processing Record and Data Quality Summary Record
+in Trailer file are modified. Also, based on the record length,
+the output of redundency keywords is prevented.
+
+MODIFICATIONS:
+-------------
+
+1. The format of Data Set Summary Record in ceos.pre.rsat is
+different from that of ceos. But they were processed as Data
+Set Summary Record of ceos.
+
+The affected keywords include the Average Terrain Height, Image
+Center Line Number, and Image Center Pixel Number.
+
+2. In ceos leader file, two OBJECTS were added at the end of Data 
+Quality Summary Record. They are
+
+   OBJECT              EXPLANATION                    FORMAT
+CAL_STATUS        : Calibration Status           : 16  ASCII CHARS
+CAL_COMMENT       : Calibration Comment          : 200 ASCII CHARS
+
+Seeing from the oceos.h file, you will find the original size of
+the spare area spare (238 bytes) is reduced to 22 bytes and the above
+two keywords are located at before and after this spare area..
+
+3. The Detail Processing Record of Trailer file was mistyping and
+its incorrect header leaded to the wrong record which caused a lot of
+warning messages and incorrect data. After the header and title were
+corrected, it showed the record successfuly.
+
+4. The Calibration Data Record is added and showed in the Trailer file.
+
+5. As long as the leader file contained a record, both ceos.pre.rsat 
+and ceos outputed the whole content of that record without checking its 
+record size. This ceos package watches every record's size while that
+record is processing. Only the keywords within the covered range are
+outputed. For the uncovered keywords in the record will be intialized
+to 0 or blank.
+
+CONCLUSION:
+----------
+
+The ceos package has been tested on different platforms - SGI IRIX, 
+DEC-AXP OSF, Sun Sparc SunOS 4, Sun Sparc SunOS 5, IBM AIX systems.
+

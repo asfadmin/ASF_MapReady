@@ -1,0 +1,24 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)empty.crt	1.1  11/21/96
+=========================*/
+truncate table L1_orders
+truncate table dub_orders
+truncate table scan_orders
+truncate table L1_procparms
+truncate table jobs
+truncate table schedule
+truncate table policy
+truncate table counters
+truncate table ppsgui_orders
+go
+
+insert into counters
+	values ("job_id", 0)
+go
+

@@ -1,0 +1,63 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)sp_get_next_jobid.crt	1.1  11/21/96
+=========================*/
+
+if exists (select * from sysobjects where name = "sp_get_next_job_id")
+	drop proc sp_get_next_job_id
+go
+
+create proc sp_get_next_job_id 
+as
+	declare @job_id int 
+	declare @counter_name char(10)
+
+	select @counter_name = "job_id"
+
+	begin transaction
+
+	select @job_id = next_counter
+  		from counters holdlock
+		where counter_name = @counter_name
+
+	/* if "job_id" counter is not in this table, */
+	/* we are in big trouble */ 
+	if @job_id is null
+	begin
+		commit transaction
+		return -100
+	end
+
+	/* if we have reached the maximum int value, */
+	/* reset the counter to 1 */
+	if @job_id = 2147483647
+		select @job_id = 1
+
+	/* otherwise, increment counter */
+	else
+		select @job_id = @job_id + 1
+
+	/* update the counters table */
+	update counters
+		set next_counter = @job_id
+		where counter_name = @counter_name 
+
+	/* if successfully updated, then return the new job_id */
+	if @@error = 0
+	begin
+		commit transaction
+		return @job_id
+	end
+
+      	/* if failed to update, return -100 */
+	else
+	begin
+		rollback transaction
+		return -100
+	end
+go

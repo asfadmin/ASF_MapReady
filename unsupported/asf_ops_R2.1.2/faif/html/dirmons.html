@@ -1,0 +1,337 @@
+<html>
+<head>
+<title>dirmons</title>
+</head>
+<body>
+<hr>
+
+<font size=+1>
+FAIF Directory Monitors (dirmons)  <br>
+</font>June 1996
+
+<p>
+This file contains:
+
+<ol>
+  <li> Usage summary for all dirmons.  Type XXXdirmon -h for banner where
+      <i>XXX</i> is ESA, NASDA, or WALPS.
+  <li> Configurable items for ESAdirmon
+  <li> Configurable items for NASDAdirmon
+  <li> Configurable items for WALPSdirmon
+  <li> Configuration items needed by all dirmons, for IMS archiving.
+
+</ol>
+<hr>
+<ol>
+  <li> Usage synopsis for ESAdirmon, NASDAdirmon and WALPSdirmon. 
+
+</ol>
+<p>
+The Directory monitors.  A directory monitor checks designated local 
+reception directories for incoming files from ESA, NASDA or WALPS, 
+identifies the files according to file type and then routes them 
+accordingly.  Each flight agency file type may utilize its own reception 
+directory.  The forwarding of files for ESA and NASDA is via FTP 
+while routing for WALPS (Wallops) is via NFS. The files are also archived 
+using IMS.
+
+<p>
+<b>NOTE: In normal operation, the dirmons are run via <a href="crontab.html">cron</a>, not from the command line.</b>
+
+<p>
+XXXdirmon -c configfile [-h] [-v] [-l logfile]
+
+<p>
+where <i>XXX</i> may be ESA, NASDA or WALPS<br>
+-h just prints a usage banner and stops<br>
+-v (verbose) results in more syslog messages
+
+<p>
+<b>NOTE: the configfile <i>must</i> be specified on the command line.</b>
+
+<p>
+The logfile may be specified on the command line, in the configfile or 
+through a default value.  If in the configfile, use <i>XXX</i>_LOGFILE
+where <i>XXX</i> is ESA, NASDA, or WALPS.  The logfile is normally 
+specified in the config file rather than on the command line.
+
+
+<p>
+Note that another variable called <a href="FAIF.html#01">FAIF_ROOTPATH</a> must also be specified.  
+In normal operation, when the dirmons are run via cron, the shell script first
+uses set_env.csh to establish needed environment variables.  FAIF_ROOTPATH is 
+the root path under which default config files, default log files, reception 
+directories, and temp directories are searched.  
+
+
+<hr>
+2. Configurable items for ESAdirmon
+
+<p>
+The IMS config values shown in section 6, below, must be included in the
+configuration file.
+
+<p>
+The names of environment variables that can be set to specify the configuration
+of the ESA directory monitor are listed below.  
+
+<p>
+<pre>
+<a href="FAIF.html#01">FAIF_BINPATH</a>   - Directory containing FAIF executables and FTP scripts; Note
+                 that this is not configurable via the config file.  All
+                 executables are expected to be stored in one place so this
+                 variable must only be set once via set_env.csh, which is
+                 done automatically in normal operation.
+
+ESA_CONFIGFILE - Name of config file.  This may only be specified through
+                 command line.
+</pre>
+                  
+<p>
+Other config items may be specified on the config file:
+
+<p>
+<pre>
+<a href="FAIF.html#01">FAIF_ROOTPATH</a>  - Root pathname of reception directory, default config file, 
+                 default log file.
+
+ESA_LOGFILE    - Directory monitor log file
+</pre>
+
+<p>
+Default configuration :<br>
+<pre>
+Variable         Sample value
+
+FAIF_BINPATH     /asf/bin
+FAIF_ROOTPATH    /LOCAL/R1BP/faif
+ESA_CONFIGFILE   $FAIF_ROOTPATH/ESA/config/ESAdirmon.config
+ESA_LOGFILE      $FAIF_ROOTPATH/ESA/log/ESAdirmon.log
+</pre>
+
+<p>
+Below are the variables for reception, destination and translation
+directories per ESA file type.  Note that the complete reception
+directory name is the root path + the value of the ESA_XXX_RDIR
+below.  For example, if rootpath is /LOCAL/R1BP/faif and  ESA_ORPD_RDIR is
+ESA, the complete reception directory name is /LOCAL/R1BP/faif/ESA.
+(On the right hand side is the default value).
+
+<p>
+<pre>
+Variable       Sample value
+
+ESA_ORPD_RDIR  ESA
+ESA_ORRE_RDIR  ESA
+ESA_ODMC_RDIR  ESA
+ESA_ODMR_RDIR  ESA
+ESA_SHAQ_RDIR  ESA
+ESA_RQST_RDIR  ESA
+ESA_PATC_RDIR  ESA
+ESA_RQVR_RDIR  ESA
+ESA_MPSG_RDIR  ESA
+
+ESA_SHAQ_DDIR  /LOCAL/R1BP/aps/esa_archive/shaq
+ESA_MPSG_DDIR  /LOCAL/R1BP/aps/esa_archive/mpsg
+ 
+ESA_ORPD_TDIR  $FAIF_ROOTPATH/ESA/tran
+ESA_ORRE_TDIR  $FAIF_ROOTPATH/ESA/tran
+</pre>
+
+<p>
+<hr>
+3. Configurable items for NASDAdirmon
+
+<p>
+The IMS config values shown in section 6, below, must be included in the
+configuration file.
+
+<p>
+The names of environment variables that can be set to specify the configuration 
+of the ESA directory monitor are listed below.
+
+<p>
+<pre>
+<a href="FAIF.html#01">FAIF_BINPATH</a>     - Directory containing FAIF executables and FTP scripts; Note
+                   that this is not configurable via the config file.  All
+                   executables are expected to be stored in one place so this 
+                   variable must only be set once via set_env.csh, which is
+                   done automatically in normal operation.
+
+NASDA_CONFIGFILE - Name of config file.  This may only be specified through
+                   command line.
+</pre>
+                                                               
+<p>
+Other config items may be specified on the config file:
+
+<p>
+<pre>
+<a href="FAIF.html#01">FAIF_ROOTPATH</a>    - Root pathname of reception directory, default config file, 
+                   default log file.
+
+NASDA_LOGFILE    - Directory monitor log file
+</pre>
+
+<p>
+Default configuration:<br>
+<p>
+
+<pre>
+Variable         Sample value
+
+FAIF_BINPATH     /asf/bin
+FAIF_ROOTPATH    /LOCAL/R1BP/faif
+NASDA_CONFIGFILE $FAIF_ROOTPATH/NASDA/config/NASDAdirmon.config
+NASDA_LOGFILE    $FAIF_ROOTPATH/NASDA/log/NASDAdirmon.log
+</pre>
+
+<p>
+Below are the variables for reception, destination and translation
+directories per NASDA file type.  Note that the complete reception
+directory name is the root path + the value of the NASDA_XXX_RDIR
+below.  For example, if rootpath is /LOCAL/R1BP/faif and  NASDA_ORPD_RDIR is
+NASDA, the complete reception directory name is /LOCAL/R1BP/faif/NASDA.
+(On the right hand side is the default value).
+
+<p>
+<pre>
+Variable         Sample value
+
+NASDA_ELMF_RDIR  NASDA
+NASDA_OPLN_RDIR  NASDA
+NASDA_REQA_RDIR  NASDA
+NASDA_REQM_RDIR  NASDA
+NASDA_MSGC_RDIR  NASDA
+NASDA_MSGN_RDIR  NASDA
+
+NASDA_OPLN_DDIR  /LOCAL/R1BP/aps/nasda_archive/opln
+NASDA_REQA_DDIR  /LOCAL/R1BP/aps/nasda_archive/reqa
+NASDA_REQM_DDIR  /LOCAL/R1BP/aps/nasda_archive/reqm
+NASDA_MSGC_DDIR  /LOCAL/R1BP/aps/nasda_archive/msgc
+NASDA_MSGN_DDIR  /LOCAL/R1BP/aps/nasda_archive/msgn
+</pre>
+
+NASDAdirmon requires satellite phase information in order to determine orbit 
+(rev) numbers from dates and times.  It expects the phase information to be
+in a configuration file.  
+
+<p>
+NASDAdirmon expects the following phase data to be specified in the configuration
+file:
+
+<pre>
+PHASE_START        phase start (yyyy:doy:hh:mm:ss.sss)
+PHASE_REVS         phase orbits
+PHASE_LASTREV      phase last orbit
+PHASE_CYCLEDAYS    phase cycle in days
+PHASE_CYCLEREVS    phase cycle in orbits
+</pre>
+
+
+<hr>
+4. Configurable items for WALPSdirmon
+
+<p>
+WALPSdirmon requires a small translation table to translate datatake messages
+from Wallops into ASF-style downlink messages.  This file's name and full path
+is specified in the WALPSdirmon.config file.  See the sample entry for 
+DTK_TBL below.
+
+<p>
+The IMS config values shown in section 6, below, must be included in the
+configuration file.
+
+<p>
+The names of environment variables that can be set to specify the configuration 
+of the ESA directory monitor are listed below.
+
+<p>
+<pre>
+<a href="FAIF.html#01">FAIF_BINPATH</a>     - Directory containing FAIF executables and FTP scripts; Note
+                   that this is not configurable via the config file.  All
+                   executables are expected to be stored in one place so this
+                   variable must only be set once via set_env.csh, which is
+                   done automatically in normal operation.
+
+WALPS_CONFIGFILE - Name of config file.  This may only be specified through
+                   command line.
+</pre>
+                                                               
+<p>
+Other config items may be specified on the config file:
+
+<p>
+<pre>
+<a href="FAIF.html#01">FAIF_ROOTPATH</a>    - Root pathname of reception directory, default config file, 
+                   default log file.
+
+WALPS_LOGFILE    - Directory monitor log file
+
+WALPS_DESTHOST   - Files destination machine
+</pre>
+ 
+<p>
+Default configuration:
+<pre>
+FAIF_BINPATH       /asf/bin
+FAIF_ROOTPATH      /LOCAL/R1BP/faif
+WALPS_CONFIGFILE   $FAIF_ROOTPATH/WALPS/config/WALPSdirmon.config
+WALPS_LOGFILE      $FAIF_ROOTPATH/WALPS/log/WALPSdirmon.log
+
+DTK_TBL            $FAIF_ROOTPATH/WALPS/config/dtk.tbl
+</pre>
+ 
+<p>
+Below are the variables for reception, destination and translation
+directories per WALPS file type.  Note that the complete reception
+directory name is the root path + the value of the WALPS_XXX_RDIR
+below.  For example, if rootpath is /LOCAL/R1BP/faif and  WALPS_ORPD_RDIR is
+WALPS, the complete reception directory name is /LOCAL/R1BP/faif/WALPS.
+(On the right hand side is the default value).
+
+<p>
+<pre>
+Variable            Sample value
+
+WALPS_RES_RDIR     WALPS
+WALPS_DNL_RDIR     WALPS
+WALPS_MSH_RDIR     WALPS
+
+
+WALPS_RES_DDIR     $FAIF_ROOTPATH/WALPS/dest
+WALPS_DNL_DDIR     $FAIF_ROOTPATH/WALPS/dest
+WALPS_MSH_DDIR     $FAIF_ROOTPATH/WALPS/dest
+</pre>
+
+<hr>
+5. Configuration items needed by all dirmons, for IMS archiving.
+
+<p>
+The following config values must be supplied in the configuration file for
+any of the dirmon programs. These values are needed in order to use the IMS
+to archive files.
+
+<p>
+<pre>
+Name             Sample value     Description
+
+IMS_DEV          IMSDEV           server name
+IMS_DB           test_catalog     database name
+IMS_USERNAME     ims_clnt         username
+IMS_PASSWD       ims_clnt         user password
+IMS_ACCT_ID      ACCT_ALL         account identification
+</pre>
+
+<hr>
+<p>
+<font size = -1>
+Last Modified:  March, 1998
+<p> 
+Copyright (c) 1996, 1997, 1998 California Institute of Technology.<br>
+ALL RIGHTS RESERVED.  U.S. Government Sponsorship acknowledged.
+</font>
+
+</body>
+</html>
+

@@ -1,0 +1,4 @@
+#baseline.scr test1.slc test2.slc PRC
+#mv test1.slc-test2.slc_baseline test12_PRC.out
+baseline.scr test1.slc test2.slc ODR
+mv test1.slc-test2.slc_baseline test12_ODR.out

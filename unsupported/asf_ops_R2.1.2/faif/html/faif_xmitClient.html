@@ -1,0 +1,63 @@
+<html>
+<head>
+<title>faif_xmitClient</title>
+</head>
+<body>
+<hr>
+
+<ol>
+  <li> Usage synopsis for faif_xmitClient.  
+
+</ol>
+<p>
+The faif_xmitClient program sends a file to an external flight agency via 
+the <a href="FAxmitserver.html">FAxmitserver</a>.
+
+<p>
+Usage:
+<p>
+<pre>
+    >faif_xmitClient -f <i>outbound_file</i> -d <i>destinationFA</i> -t <i>filetype</i>
+</pre>
+ 
+<p>
+where <i>destinationFA</i> may be: <br>
+<pre>
+ESA, NASDA, CSA, or WALPS
+</pre>
+
+<p>
+and <i>filetype</i> may be: <br>
+<pre>
+CSA_PREDORBIT CSA_DEFVORBIT CSA_RECRQST CSA_RECSCHED CSA_CALIBRQST 
+CSA_CALIBSCHED CSA_SARPROCPRM CSA_RRQ_MCM CSA_RSH_MCM CSA_CRQ_MCM CSA_CSH_MCM
+CSA_ARCHSTRGRPT CSA_RECRPT CSA_RECAVAILRPT CSA_CALIBRPT CSA_CALIBAVAILRPT
+CSA_RRP_MCM CSA_RAR_MCM CSA_CRP_MCM CSA_CAR_MCM
+
+ESA_ORPD ESA_ORRE ESA_ODMC ESA_ODMR ESA_SHAQ ESA_RQST ESA_PATC ESA_RQVR
+ESA_MPSG ESA_SHAQP ESA_RQUS ESA_REAQ ESA_RESM ESA_REEX ESA_REUG
+
+NASDA_ELMF NASDA_OPLN NASDA_REQA NASDA_REQM NASDA_MSGC NASDA_MSGN NASDA_REQQ
+NASDA_REQW NASDA_REAC NASDA_CATA NASDA_MSGM NASDA_MSGF NASDA_MSGE
+
+WALPS_AVAIL_RESP WALPS_WOS WALPS_STVEC WALPS_DT WALPS_SHIP_RPT
+WALPS_AVAIL_REQ WALPS_TDRS_PLAYBACK
+
+</pre>
+<p>
+The above list shows every Flight Agency filetype.  These are acceptable <i>filetype</i> 
+arguments for faif_xmitClient.   <b>Note, however, that only certain filetypes 
+are outbound from ASF to Flight Agencies.</b>  Inbound filetypes are  <i>not</i>
+expected to be used with faif_xmitClient.
+<p>
+<hr>
+<p>
+<font size = -1>
+Last Modified:  March, 1998
+
+<p> 
+Copyright (c) 1996, 1998, California Institute of Technology.<br>
+ALL RIGHTS RESERVED.  U.S. Government Sponsorship acknowledged.
+
+</body>
+</html>

@@ -1,0 +1,50 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)tr_schedule_update.crt	1.1  11/21/96
+=========================*/
+
+if exists (select * from sysobjects where name = "tr_schedule_update")
+        drop trigger tr_schedule_update
+go
+
+create trigger tr_schedule_update
+     on schedule 
+     for insert, update
+as
+begin
+	declare @retcode int,
+		@sequence int
+
+	if @@rowcount = 0
+             return
+ 
+         if update (job_sequence)
+	 begin 
+		select @sequence = job_sequence from inserted
+		if (@sequence = 2147483647 or 
+		    @sequence = -2147483648)
+		begin
+			exec @retcode = sp_resequence_schedule
+			if (@retcode = 0)
+			begin
+			   delete from schedule
+			   if (@@error != 0)
+				raiserror 99999			
+			   insert schedule select * from schedule_resequence
+			   if (@@error != 0)
+			   begin		
+			   	delete from schedule_resequence
+			        raiserror 99999
+			   end
+			end
+			else raiserror 99999
+		end
+	 end
+
+end
+go

@@ -1,0 +1,88 @@
+#!/bin/csh
+#
+# @(#)remote-kill	1.1 98/01/23 13:38:04
+#
+# Usage:  remote-kill hostname subsystem-name
+#
+# Subsystem:  CP
+#
+# This script is designed to kill SPS processes belonging to a particular
+# subsystem.  Although the name implies that these processes are located
+# on remote hosts, the script works equally well for killing processes that
+# are located on the same host as the CP.  The script is intended to be used
+# only if a subsystem process has failed to exit within the STOP_TIME_INTERVAL
+# after being sent a shutdown message by the CP.  (The length of this period
+# is defined in the CP's configuration file.)
+#
+# The script searches the output of the "ps" command in order to determine
+# the process IDs of the processes to be killed.  It does assume that the
+# remote accounts have been set up so that a System-V "ps" is invoked.  The
+# script also assumes that the process was invoked with the name of the
+# subsystem on the command line via the "-asfn" flag.  These two checks
+# are made to help ensure that only the specified subsystem is targeted
+# and that only the processes invoked by the CP are affected.
+#
+# Output messages are written to the CP log files.
+#
+# This script has been tested with the following operating systems:
+#     IRIX 5.2
+#     OSF/1 1.3
+#     Solaris 2.3
+#     AIX 4.1.3
+#
+
+#
+# Define syslog parameters.
+#
+set LOG_FACILITY=local3
+set LOGOPTS="-i -t CP"
+
+#
+# Define error codes.
+#
+set OK=0
+set BADUSAGE=1
+
+#
+# Parse the command line.
+#
+
+if ($#argv != 2) then
+    echo "($0) ERROR:  Usage:  $0 hostname subsystem" | \
+	logger $LOGOPTS -p $LOG_FACILITY.err
+    exit $BADUSAGE
+endif
+set HOSTNAME=$1
+set SUBSYSTEM=$2
+
+#
+# Set the path explicitly.
+#
+set path = ( /usr/sbin /sbin /usr/bin /bin /usr/bsd )
+
+#
+# Find and kill all processes that were invoked by the CP and that meet
+# certain conditions:
+#
+#     1.  The process belongs to the user that invoked the script ("sps");
+#     2.  The process includes the given subsystem name as one of its
+#         command-line parameters (or the name under which it was invoked);
+#     3.  The process was invoked with the string "asfn" on the command line.
+#
+
+while(1)
+setenv me `whoami`
+
+set PIDS = `rsh $HOSTNAME "env COLUMNS=120 /usr/bin/ps -f -u $me " | grep $SUBSYSTEM | egrep 'asfn|poe|exec_asp' | grep -v grep | awk '{print $2}'`
+unsetenv me 
+if ($#PIDS == 0) then
+    break
+#    echo "($0) No SPS processes were found on $HOSTNAME" | \
+#	logger $LOGOPTS -p $LOG_FACILITY.debug
+else
+    echo "killing $PIDS"
+    rsh -n $HOSTNAME kill -9 $PIDS
+endif
+
+end
+exit $OK

@@ -1,0 +1,216 @@
+
+login in to ims1 as imsoper:
+
+rlogin ims1.asf.alaska.edu -l imsoper
+
+fire up a kornshell and setup the environment:
+
+ksh
+. ./.profile.mace
+
+if this is ordered from Nettie its rgps otherwise
+its probably ramm stuff...if you don't know for
+sure ask what account its on. 
+
+cd to either the ramm or rgps directory:
+
+
+cd uso/ramm (or cd /us/imsoper/uso/ramm)
+-or-
+cd uso/rgps (or cd /us/imsoper/uso/rgps)
+
+you need to make a separate directory for each batch of 
+orders you want to place otherwise the ordering files get
+rewritten...I usually make one with the date:
+
+mkdir 980611
+
+cd to the directory you just made
+
+cd 980611
+
+############################################################
+RAMM Input
+############################################################
+There are several ways that we get input that needs to be
+parsed first...if its already in:
+   revolution <white space> beam <white space> frame
+
+format then copy the 1.data file to 2.data and proceed 
+to the createRAMM step...otherwise read on.
+############################################################
+
+If the input is from Orion Lawlors doppler trend analysis tool
+which comes via eMail and looks like this:
+
+you need to get the stuff in the Doppler Trending Report that 
+Format: ramp/orderNumber/fileName   Beam   DopplerOffset
+looks like this:
+quicklook/21564001/R109814667S2R032.L	ST6 	1.000000
+quicklook/21564002/R109814669S2R031.L	ST6 	-1.000000
+quicklook/21564002/R109814673S2R030.L	ST6 	-2.000000
+quicklook/21564002/R109814674S2R029.L	ST6 	-3.000000
+quicklook/21560001/R109866673S2R106.L	EH4 	-1.000000
+quicklook/21560002/R109866681S2R104.L	EH4 	-1.000000
+quicklook/21560004/R109866687S2R103.L	EH4 	-2.000000
+
+into a file called 1.data
+
+the way I do that is vi the file 1.data and then cut the data
+from the eMail and paste it into 1.data
+
+so that would be:
+
+vi 1.data
+
+ok now you are in vi and you want to insert data so type an i like:
+
+i
+
+now, go copy the data out of the eMail by selecting it with the mouse
+and using the copy button on the left of the keyboard; click on
+the window with the vi session; and hit the paste key.
+
+in vi you gotta get out of insert mode by using the escape key
+
+esc
+
+if there is an line with no data in it at the bottom of the
+file you gotta delete it; so navigate to the end of the file
+by type a capital G...that means shift and g
+
+G
+
+if there is not a tilde (~) there then its a line with no data so
+you gotta delete it by typing the vi command dd
+
+dd
+
+poof the line should be gone. if there is more than one line with
+no data it should be deleted too.
+
+moving on...
+
+now in vi you gotta write the file and quit so type this
+
+:wq
+
+
+OK now you should be back at the Unix prompt.
+
+do an ls and you should see 1.data
+
+ms1$ ls 
+1.data
+ims1$ 
+
+there it is...
+
+no you gotta run the trendOrder.ksh script on it so just type:
+
+trendParse.ksh
+
+this parses the 1.data file and makes a file Called 2.data that 
+simply isolates the revolution <white space> beam <white space> frame
+from all the other stuff
+
+############################################################
+Katy Noltimier will eMail requests in the format:
+
+revolution <white space> beam <white space> frame
+
+if this request comes in it will be a big one.
+
+She may also request some GCPs which are on 8mm that stuff
+needs a separate directory and is ordered with the gcpOrder
+script.
+
+Save the data from the eMails into a file called 2.data
+and proceed with the createRAMM steps below.
+
+############################################################
+Nettie La Belle Hamer will request RGPS orders via eMail 
+and will be in the format:
+
+revolution <white space> frame
+
+All of the beams for rgps is SWB and its hard coded 
+into the script.
+
+Go to Creating a RGPS order below.
+
+She may request that they all be on one tape...they will
+automatically all be on one order which means one tape
+so you don't have to do anything.
+
+Save the data from the eMails into a file called 2.data
+and proceed witht he createRGPS step below.
+############################################################
+Creating a ramm order
+############################################################
+Now you need to further process 2.data by running the createRAMM.ksh
+script by typing...
+
+createRAMM.ksh
+
+This will create the necessary ODL files for a RAMM order as well as a
+script to fire off the tool that submits them to the vZero Server.
+
+Finally its time to submit the orders to the vZero server...its done
+in parts because if the ask you to reorder the same rev/beam/frame
+sequences you can just do this part lots of times.
+############################################################
+Creating a GCP order
+############################################################
+Now you need to further process 2.data by running the createGCP.ksh
+script by typing...
+
+createGCP.ksh
+
+This will create the necessary ODL files for a RAMM/GCP order as well as a
+script to fire off the tool that submits them to the vZero Server.
+
+Finally its time to submit the orders to the vZero server...its done
+in parts because if the ask you to reorder the same rev/beam/frame
+sequences you can just do this part lots of times.
+
+############################################################
+Creating a rgps order
+############################################################
+The 2.data should contain the:
+
+    revolution <whitespace> frame
+
+data. So you need to run:
+
+createRGPS.ksh
+
+This will create the one file rgps.odl and the script
+2.ksh to fire off the tool that submits them to the vZero Server.
+
+
+Finally its time to submit the orders to the vZero server...its done
+in parts because if the ask you to reorder the same rev/beam/frame
+sequences you can just do this part lots of times.
+
+############################################################
+Submitting the order to the vZero server. (for RGPS and RAMM)
+############################################################
+So now you are going to submit the order by running the sumbitOrder.ksh
+which requires the presence of the ODL files and the generated script
+2.ksh...do this by typing:
+
+submitOrder.ksh
+
+ordering information will now spew forth on the screen and it is also
+captured in to log files. 2.log is the log file for this run...while
+hist.log is the ongoing log file for this directory...in other words
+2.log file is overwritten each time submitOrder.ksh is fired while
+hist.log is appended to.
+
+OK hopefully they were submitted successfully.
+
+Next step is to go into the ims_op tool and validate them.
+
+the end.
+

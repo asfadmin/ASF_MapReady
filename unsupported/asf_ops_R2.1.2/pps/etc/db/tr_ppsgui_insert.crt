@@ -1,0 +1,46 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+/*=======================
+	@(#)tr_ppsgui_insert.crt	1.1  11/21/96
+=========================*/
+
+if exists (select * from sysobjects where name = "tr_ppsgui_insert")
+        drop trigger tr_ppsgui_insert
+go
+
+create trigger tr_ppsgui_insert
+	on ppsgui_orders
+	for insert
+as
+
+	declare @num_rows int
+	declare @priority_num int
+	declare @priority char(15)
+	select @num_rows = count(*) from inserted
+
+	if @num_rows = 0
+		return
+
+	select @priority = priority
+		from inserted
+
+	if @priority = "URGENT"
+		select @priority_num = 1
+	if @priority = "HIGH"
+		select @priority_num = 2
+	if @priority = "ROUTINE"
+		select @priority_num = 3
+	if @priority = "LOW"
+		select @priority_num = 4
+
+	update ppsgui_orders
+		set p.priority_num = @priority_num 
+		from inserted i, ppsgui_orders p
+		where 
+			p.job_id = i.job_id
+
+return
+go

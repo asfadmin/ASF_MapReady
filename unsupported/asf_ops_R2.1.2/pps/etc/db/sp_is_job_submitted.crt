@@ -1,0 +1,28 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)sp_is_job_submitted.crt	1.2  11/27/96
+=========================*/
+
+if exists (select * from sysobjects where name = "sp_is_job_submitted")
+	drop proc sp_is_job_submitted
+go
+
+create proc sp_is_job_submitted ( @job_id int ) 
+as
+	declare @job_state JobStateType 
+	select @job_state = ""
+
+	select @job_state = job_state
+			from jobs 
+			where job_id = @job_id
+	if @job_state = "SUBMITTED"
+		return 1
+	else
+		return 0
+
+go

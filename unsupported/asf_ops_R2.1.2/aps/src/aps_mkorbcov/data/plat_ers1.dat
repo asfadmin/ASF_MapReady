@@ -1,0 +1,14 @@
+lastmodified = '12-JUN-90 14:35:00'
+
+platname = 'ERS-1 Venice'
+	QI = 14 QN = 1 QD = 3
+	e = 0.0
+	node0 = 24.36
+	omega0 = 0.0
+	m0 = 0.0
+	t0 = 0.0
+
+instname = 'SAR ERS-1'
+	fullinstname = 'SAR - EERS-1'
+	type = 'beam' minlook = 20.355 maxlook = 20.355 swathwidth = 100
+	minyaw = 90 maxyaw = 90 *mask = 'station'

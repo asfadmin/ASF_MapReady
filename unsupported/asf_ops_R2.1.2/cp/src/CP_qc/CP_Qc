@@ -1,0 +1,10 @@
+!
+! @(#)CP_Qc	1.6 96/06/21 11:07:33
+!
+! CP_qc application resources
+!
+! Don't try to set the background color in here -- it produces unexpected
+! results for any color except white (reason unknown).
+!
+CP_Qc*Background:  white
+CP_Qc*fontList: -*-helvetica-bold-r-*-*-14-*-*-*-*-*-*-*

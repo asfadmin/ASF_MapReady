@@ -1,0 +1,76 @@
+C--  Copyright (c)1996, California Institute of Technology.
+C--  U.S. Government Sponsorship acknowledged.
+
+********************************************************************
+*  Name:	SWSIDE
+*  Module Type: SUBROUTINE	Language: FORTRAN
+*  $Logfile:   ACS003:[BLD.MPS.LIB.SRC]SWSIDE.FOV  $
+*  Purpose:	GIVEN SEGMENTS Q AND S IN THE SAME GREAT CIRCLE, DETERMINE IF
+*		THEY INTERSECT GIVING A START COVERAGE INPLICATION.  SL SR
+*		ARE THE LEFT AND RIGHT POINTS OF A SWATH WITH COVERAGE TAKING
+*		PLACE BEYOND.  QL AND QR ARE ENDPOINTS TO A SIDE OF A 
+*		QUADRILATERAL, WITH THE INSIDE BEYOND IT.  
+*  Subroutines called:
+*  VECTOR LIBRARY: UCROSS, VUNIT, VUNITN
+*  Input Parameters:
+*  POINTS ON A UNIT SPHERE, (X,Y,Z)
+*  Name         Type    Definition
+*  SL		REAL*8	LEFT POINT OF START OF SWATH
+*  SR		REAL*8	RIGHT POINT OF START OF SWATH
+*  QL		REAL*8	LEFT POINT OF QUADRILATERAL BOUNDARY
+*  QR		REAL*8	RIGHT POINT OF QUADRILATERAL
+*  Output Parameters:
+*  Name         Type    Definition
+*  IFLAG	INTEGER	RESULT FLAG:
+*			= 1	COVERAGE STARTS.
+*			= -1	ALL OTHER CASES.
+*  Variables:
+*  Locals :
+*  Externals :
+*  Modification History:                                            
+*  Date			Revision	Author
+*  $Date$ $Revision$ $Author$
+*                                                                   
+*********************************************************************/
+      SUBROUTINE SWSIDE (SL,SR,QL,QR,IFLAG)
+      character*100 SccsFileID
+     -/'@(#)swside.for	5.1 98/01/08 APS/ASF\0'/
+
+      IMPLICIT NONE
+      REAL*8 SL(3),SR(3),QL(3),QR(3)
+      REAL*8 QP(3), SP(3), XMAG
+      INTEGER IFLAG, JFLAG
+      IFLAG = - 1
+C---	IF S AND Q DO NOT LIE IN THE SAME PLANE / GREAT CIRCLE, 
+C---	THEN RETURN -1.  
+C---	TAKE NORMAL IN THE DIRECTION OF INSIDE QUADRILATERAL 
+      CALL UCROSM(XMAG,QP,QL,QR)
+      IF(XMAG .EQ. 0.0D0) GO TO 9999
+C---	TAKE NORMAL IN THE DIRECTION OF COVERAGE SIDE OF SWATH LINE.  
+      CALL UCROSS(SP,SL,SR)
+C---	THEN SEE IF THESE NORMALS ARE PARALLEL AND NOT ANTIPARALLEL.
+      CALL GCLOSE(JFLAG,SP,QP)
+      IF(JFLAG.NE.1) GO TO 9999
+C---	WE WILL IDENTIFY THE FOLLOWING CASES AS STARTING COVERAGE 
+C---	AT THIS TIME.  THEY ARE SELECTED SO THAT THERE IS MORE THAN
+C---	JUST ONE POINT IN COMMON BETWEEN THEM.  
+C---	1)	SL IS BETWEEN QL AND QR, AND SL .NE. QR
+      CALL GCBTWN(JFLAG,QL,QR,SL)
+      IF(JFLAG.NE.1) GO TO 1000
+      CALL GCLOSE(JFLAG,SL,QR)
+      IF(JFLAG.EQ.1) GO TO 9999
+C---	O.K. SUCCESS.
+C---	COVERAGE STARTS.  
+      IFLAG = 1
+      GO TO 9999
+ 1000 CONTINUE
+C---	2)	QR IS BETWEEN SL AND SR, AND ALSO SR .NE. QL
+      CALL GCBTWN(JFLAG,SL,SR,QR)
+      IF(JFLAG.NE.1) GO TO 9999
+      CALL GCLOSE(JFLAG,SL,QR)
+      IF(JFLAG.EQ.1) GO TO 9999
+C---	COVERAGE STARTS.  
+      IFLAG = 1
+ 9999 CONTINUE
+      RETURN
+      END

@@ -1,0 +1,36 @@
+#! /usr/bin/ksh
+# Script to run sample progrmas
+#
+# SCCS_Id : @(#)changeto	2.41 3/24/98
+# (C) COPYRIGHT IBM CORP 1994
+# All Rights Reserved
+#
+#
+echo "Copyright (C) 1996, California Institute of Technology. U.S. Government"
+echo "Sponsorship under NASA Contract NAS7-1260 is acknowledged."
+
+
+if [ $1 = 'F' ] ; then
+    echo "CHANGING TO FILE: "
+    cp run.transfer.F        run.transfer
+    cp run.pre_processor.F   run.pre_processor
+    cp run.correlator.F      run.correlator
+    cp run.post_processor.F  run.post_processor
+    cp run.ceos.F            run.ceos
+    cp run.pp_transfer.F        run.pp_transfer
+    cp run.pp_ceos.F            run.pp_ceos
+    cp run.pp_correlator.F      run.pp_correlator
+fi
+if [ $1 = 'S' ] ; then
+    echo "CHANGING TO SCREEN:"
+    cp run.transfer.S        run.transfer
+    cp run.pre_processor.S   run.pre_processor
+    cp run.correlator.S      run.correlator
+    cp run.post_processor.S  run.post_processor
+    cp run.ceos.S            run.ceos
+    cp run.pp_transfer.S        run.pp_transfer
+    cp run.pp_ceos.S            run.pp_ceos
+    cp run.pp_correlator.S      run.pp_correlator
+fi
+
+exit 0

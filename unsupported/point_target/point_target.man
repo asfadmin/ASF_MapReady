@@ -1,0 +1,52 @@
+NAME: fftMatch - image-to-image correlator, using FFT.
+
+SYNOPSIS:
+        fftMatch img1.ext img2.ext [ matchFile [ corrImg.ext ] ]
+
+        img1.ext: any single-banded LAS image.
+        img2.ext: an image to line up with the first.
+                image 2 should not be bigger than image 1
+        matchFile: an output file, listing how much image 2
+                should be shifted to line up with image 1:
+                <shift x (pixels)> <shift y (pixels)> <confidence (percent)>
+
+        corrImg.ext: an image of the correlation between the two
+                source images.  This is useful for debugging.
+
+DESCRIPTION:
+        fftMatch lines up two images, to slightly better than
+single-pixel precision.  It will work with images of any
+size, but is most efficient when the image dimensions are
+near a power of 2.  The images need not be square.
+
+	The lining-up is performed using image correlation via
+the much-vaunted Fast Fourier Transform (FFT).  The working
+space size is rounded up to the nearest power of 2 (for the FFT).
+The first image is read in completely, and a chip of the second
+image is also read in.  The average brightness of the chip is 
+calculated and subtracted from both images.  The images are then
+FFT'd to frequency space, the FFT'd chip is conjugated, and the
+two images are multiplied together.  The product is inverse-FFT'd,
+and the resulting correlation image shows a brightness peak
+where the two images line up best.
+
+EXAMPLES:
+	fftMatch a.img b.img
+		Tries to make image b line up with image a.
+	The resulting offset is only written to the screen.
+	
+	fftMatch a.img b.img match corr.img
+		Tries to make image b line up with image a.
+	The resulting offset is written to the screen, a new
+	file "match", and a correlation image is created as
+	corr.img.
+	
+BUGS:
+	The images must have at least 75% overlap.
+	fftMatch will occasionally fail to find the
+	correct offset (especially with noisy images).
+
+AUTHOR: Orion Lawlor: olawlor@images.alaska.edu
+
+CONTACT: Rick Guritz: rguritz@images.alaska.edu
+	http://www.images.alaska.edu/

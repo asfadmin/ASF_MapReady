@@ -1,0 +1,43 @@
+
+    NAME:	ceosui2byte - converts CEOS INT*2 files to byte LAS images
+
+    SYNOPSIS:	ceosui2byte [layoutfile] infile outfile
+
+       infile         base name (.L,.D)
+       outfile        base name (.img,.ddr)
+       [layoutfile]   name of layout file containing:
+                     		file header bytes
+                     		record leader bytes
+                     		data samples per line
+                     		data lines in file
+
+    DESCRIPTION:
+
+	Read CEOS I*2 imagery into memory.  Calculate full data histogram.
+	Find upper and lower data value cut offs for lower and upper 5% of
+	data in file, and scale this data to byte values for the output
+        file.
+
+    OPTIONS:  layoutfile - If using non-ceos data, you can enter the file
+			   layout via a file containing 4 integer values.
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+    EXAMPLES:	ceosui2byte R110115699S2R062 s699
+
+		This call will convert the unsigned 2 byte-integer valued
+	    file R110115699S2R062.D into a byte valued LAS image s699.img.
+
+    SEE ALSO:	sr2gr, rampautoreg
+
+    HARDWARE/SOFTWARE LIMITATIONS:	
+
+    BUGS:
+
+    AUTHOR:	Tom Logan, ASF
+
+    CONTACT:	apd@asf.alaska.edu
+	     or http://www.asf.alaska.edu/apd
+

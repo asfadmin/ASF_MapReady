@@ -1,0 +1,165 @@
+<TITLE>3.0 Image Analysis Tools</TITLE>
+<H2>3.0 Image Analysis Tools</H2>
+
+<H2>3.1 Cursor</H2>
+
+The cursor function displays line/sample values in both image
+and file coordinates and displays a matrix of gray level values
+surrounding the point of interest.  Optionally, the user may
+choose to display:<P>
+
+<OL>
+<LI>Projection coordinates
+
+<LI>Latitude/longitude coordinates
+
+<LI>Unscaled gray level values
+</OL>
+
+This information may be calculated for any displayed image
+window (e.g., main image window, full resolution image window, 
+zoom image window, etc.) by using the mouse to move the cursor 
+into the appropriate window.  Single-stepping the cursor is 
+also provided for precise movement through a keyboard interface.
+The <B>"h"</B>, <B>"j"</B>, <B>"k"</B>, and <B>"l"</B> keys are used to 
+move the cursor 
+left, down, up, and right one pixel respectively, in addition
+to the four arrow keys.  Using the <B>shift key</B> in combination with 
+the special or arrow keys, moves the cursor in the corresponding 
+direction ten pixels.
+<P>
+
+<P>
+<IMG SRC="cursor.gif">
+<P>
+
+<DL>
+<DT><B>Gray Level Matrix:</B>
+<DD>These values represent a 3X3 matrix of gray level values
+(or pixel intensity values).  The center value (colored red, green, or blue)
+is the gray level value of the current cursor position and the remaining
+matrix values represent those values immediately surrounding 
+the center pixel.
+<P>
+
+<DT><B>Line/Sample:</B> 
+<DD>A text field which displays a one-relative coordinate
+calculated from the upper left corner of the displayed
+image.  Therefore, the upper left coordinate will always be 
+1,1 and the lower right coordinate will be the size of the 
+displayed image.
+<P>
+
+<DT><B>File Coordinate:</B> 
+<DD>A text field which displays a one-relative line and 
+sample coordinate calculated from the upper left corner 
+of the orignal disk image.  This coordinate may differ from the
+line/sample coordinate described above by the window loaded, 
+the subsampling and/or the zoom factor applied.
+<P>
+
+<DT><B>Projection Coord:</B>
+<DD>When selected, a coordinate respresenting
+the X/Y position of the cursor in the coordinate 
+space defined by the map projection of the image is displayed.  The corner 
+coordinates, as well as the units these coordinates are specified
+in (e.g., meters), must be stored with the image for this 
+option to function.  An error message will be output to the 
+user if the appropriate information is not available.  <B>Note:</B>
+for LAS 5.0 images, this information is stored in the DDR of 
+the image.
+<P>
+
+<DT><B>Lat/Long:</B>
+<DD>When selected, a coordinate representing the latitude/longitude position 
+of the cursor is displayed.  XID uses the 
+geometric transformation package GCTP to perform this calculation.  
+Therefore, the corner coordinates (in projection coordinates) of the 
+image, as well as 15 projection parameters defining 
+the projection, must be stored with the image for this option to 
+function.  An error message will be output to the user if the 
+appropriate information is not available.  <B>Note:</B> for LAS 5.0 
+images, this information is stored in the DDR of the image.
+<P>
+
+<DT><B>Unscaled:</B>
+<DD>When selected, values representing
+an approximation of the original red, green, and blue gray level values 
+of the current point are displayed.  This option applies only if the original 
+image data was two-byte integer, four-byte integer, or floating
+point data which requires the image data to be scaled at load
+time.  These values are <B>only</B> approximations since the original
+values are not read from disk, but are calculated based on the 
+scale and offset applied to the data when the image was read from disk.
+</DL>
+
+The <B>original</B> and <B>mapped</B> radio buttons allow the user to 
+select how gray level values are displayed.<P>
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>Original:</B>
+    <DD>The gray level values are displayed as the original values that have 
+	been loaded into the image planes (i.e., for non-byte data, the 
+	unscaled values are not displayed).
+    <P>
+
+    <DT><B>Mapped</B>:
+    <DD>The gray level values are displayed as gray level values with 
+	the current mapping applied (i.e., mapped gray level values indicate 
+        how the value looks to the user, rather than the actual value).
+</DL>
+</BLOCKQUOTE>
+
+The <B>X/Y</B> and <B>Z</B> radio buttons allow the user to select the
+dimension to cursor in.<P> 
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>X/Y:</B>
+    <DD>Gray level values are reported for the currently displayed image.
+	If a color image is displayed, red, green, and 
+	blue gray level values are displayed.  If a single 
+	band black and white image is displayed, only the
+	gray level values for that band are displayed.
+    <P>
+
+    <DT><B>Z:</B>
+    <DD>Gray level values are reported for a single band at a time.  
+	The <A href=#MANUAL>manual option</A> is automatically enabled 
+	when the Z 
+	dimension is selected.  The user chooses which band the values 
+	are displayed for with the slider in the lower right 
+	corner of the panel.  As the user moves the slider, 
+	values are updated for the current band.  The current
+	band is indicated by the slider.
+</DL>
+</BLOCKQUOTE>
+
+The <B>automatic</B> and <B>manual</B> radio buttons allow the user to
+select the update mode for the cursor information panel.<P>
+	
+<BLOCKQUOTE>
+<DL>
+    <DT><B>Automatic:</B>
+    <DD>The cursor panel information is updated 
+	each time the user moves the mouse within an image window.
+    <P>
+    
+    <A name=MANUAL><DT><B>Manual:</B></A>
+    <DD>The cursor panel information is updated only 
+	when the user clicks the left mouse button in an image window.
+</DL>
+</BLOCKQUOTE>
+
+<DL>
+<DT><B>Slider:</B>
+<DD>The slider is sensitive only when cursoring in the <B>Z</B> dimension.  As
+the user moves the slider to the right, the band number is incremented 
+and cursor values are reported for the indicated band.  The maximum band 
+number is the the maximum plane number containing image data.
+<P>
+
+<DT><B>Dismiss:</B>
+<DD>Close the cursor panel.
+</DL>

@@ -1,0 +1,17 @@
+/*-------------------------------------------------------------------*  
+ *  @(#)ims-config.odl	2.4 96/05/31 12:23:26 
+ *  CP-IMS Configuration File.
+ *-------------------------------------------------------------------*/
+OBJECT             	 = IMS_CONFIG
+  OBJECT         	 = BODY
+    USERNAME   		 = "cp_clnt"
+    PASSWORD   		 = "cp_clnt"
+    ACCOUNTID  		 = "ACCT_CP"
+    CP_ACK_RETRY	 = 3
+    CP_ACK_TIMER	 = 10	 /* Duration in secs, 5 secs minimum */
+    DEFAULT_IMS_TIMER 	 = 600
+    STORE_METADATA_TIMER = 2000
+    STORE_PRODUCTS_RATE  = 50000 /* Transfer rate to IMS (bytes per sec) */
+  END_OBJECT     	 = BODY
+END_OBJECT         	 = IMS_CONFIG
+END

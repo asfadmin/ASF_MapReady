@@ -1,0 +1,8 @@
+#!/bin/sh
+# Calls rgpsYawRev for each rev. in the directory
+for rev in `ls *.L | awk '{print substr($1,3,5)}' | sort -u`
+do
+	echo "Revolution #" $rev
+	rgpsYawRev $rev
+	echo
+done

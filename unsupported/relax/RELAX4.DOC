@@ -1,0 +1,23 @@
+Instructions for using RELAX4.FOR on a Unix machine (some modifications
+to the instructions may be necessary for non-Unix machine):
+
+Step 1. Compile RELAX4.FOR to create an executable version of RELAX4.FOR.
+
+Step 2. Create (in the same directory as the executable version of RELAX4.FOR) 
+ascii file RELAX4.INP containing the problem data in RELAX-IV format.  
+[The first line of RELAX4.INP 
+should contain n (the number of nodes) and m (the number of arcs); the 
+next m lines should contain the starting node, ending node, cost, and 
+upper capacity (lower capacity is assumed to be zero) for each arc; 
+the last n lines should contain the supply for each node.  See the  
+RELAX4.INP file included with the package for an example.]
+
+Step 3. Run the executable version of RELAX4.FOR.  [You will be asked by 
+the code to enter either 0 (for default initialization) or 1 (for auction 
+initialization).  
+Either initialization will solve the problem and, for most problems, we 
+recommend using the default initialization for faster solution time.  If 
+the code with default initialization takes a long time to solve the 
+problem, then try running the code with the auction initialization instead.] 
+
+-----------------------------------------------------------------------

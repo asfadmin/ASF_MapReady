@@ -1,0 +1,217 @@
+<html>
+<head>
+<title>CSAgetfile</title>
+</head>
+<body>
+<hr>
+<font size = +1>
+CSAgetfile and CSAgetfile_all.csh<br>
+</font>
+<p>
+This file contains:
+
+<ol>
+  <li> Documentation for CSAgetfile_all.csh
+  <li> Usage summary for CSAgetfile. 
+  <li> Configurable items for CSAgetfile
+                   
+</ol>
+<hr>
+ 
+1.  Documentation for CSAgetfile_all.csh
+
+<p>
+CSAgetfile_all.csh is the script used to pull files from the CSA host machine
+to the FAIF host machine.  Note that this script is normally activated only
+via cron.  Execution from the command line is not usually performed.
+
+<p>
+In normal operations, CSAgetfile_all.csh is the job that appears in the FAIF
+crontab file.  CSAgetfile_all.csh first uses set_env.csh to establish necessary
+environment variables, then invokes CSAgetfile repeatedly, once for each 
+incoming RADARSAT file type being retrieved.
+
+<hr> 
+2.  Usage synopsis for CSAgetfile.
+
+<p>
+The CSA inbound file polling program.  CSAgetfile pulls files of the 
+specified file type from CSA into a local reception directory and then 
+attempts to forward each received file to designated directories within 
+ASF via NFS move. The files are also archived to the IMS via the IMS API
+called ims_archive.
+
+<p>
+Note that CSAgetfile is normally invoked only by CSAgetfile_all.csh (see above).
+Execution from the command line is not usually performed.
+
+<p>
+CSAgetfile -f filetype [-h] [-v] [-c config_filename] [-l log_filename]
+
+<p>
+    -f filetype. Get files of type filetype from CSA.
+<p>
+       where filetype may be:
+
+<pre>
+          CSA_PREDORBIT
+          CSA_DEFVORBIT
+          CSA_RECRQST
+          CSA_RECSCHED
+          CSA_CALIBRQST
+          CSA_CALIBSCHED
+          CSA_SARPROCPRM
+          CSA_RRQ_MCM
+          CSA_RSH_MCM
+          CSA_CRQ_MCM
+          CSA_CSH_MCM
+</pre>
+
+    -h Help.     Prints this banner.
+<p>
+    -v Verbose.  Prints config settings.
+<p>
+    -c config_filename.  Use config info from file specified
+                 via config_filename.<br>
+<p>
+    -l log_filename.  Print log info in the file specified via
+                 log_filename.
+
+<p>
+As explained shortly, setting necessary environment variables is automatic
+in normal operations.
+ 
+<p>
+The environment variable <a href="FAIF.html#01">FAIF_BINPATH</a> should be set prior to
+executing the CSAgetfile to specify from where the FTP scripts and other
+utilities (idfilename - file identification by name; CSAPredOrRes - if
+state vector file is predicted or restituted) will be obtained.  
+
+<p>
+Another variable called <a href="FAIF.html#01">FAIF_ROOTPATH</a> must also be specified.
+<a href="FAIF.html#01">FAIF_ROOTPATH</a> is the root path under which default config files, default
+log files, reception directories, and temp directories are searched.
+ 
+<p>
+Both of these environment variables are established in set_env.csh.  In normal
+operations, CSAgetfile_all.csh, which is in the crontab file to retrieve all
+RADARSAT files from CSA, first uses set_env.csh, then repeatedly invokes
+CSAgetfile.
+
+<hr>
+3.  Configurable items for CSAgetfile
+
+<p>
+The names of environment variables that can be set to specify the configuration
+of CSAgetfile are listed below.
+
+<p>
+<pre>
+<a href="FAIF.html#01">FAIF_BINPATH</a>   - Directory containing FAIF executables and FTP scripts; Note
+that this is not configurable via the config file.  All executables are 
+expected to be stored in one place so this variable must only be set once via 
+set_env.  Again, in normal operations, this is done automatically, since
+CSAgetfile_all.csh begins by calling set_env.csh.
+
+CSA_CONFIGFILE - Name of config file.  This may only be specified through
+command line or by set_env.  Normally, the repeated calls to CSAgetfile in
+CSAgetfile_all.csh include specification of the configuration file.
+</pre>
+
+<p>
+Other config items may be specified on the config file:
+
+<p>
+<pre>
+<a href="FAIF.html#01">FAIF_ROOTPATH</a>  - Root pathname of reception directory, default config file, 
+                 default log file.
+CSA_LOGFILE    - CSAgetfile log file
+CSA_SRCHOST    - Files source machine
+CSA_GET_SCRIPT - FTP script for getting file from CSA
+</pre>
+
+<p>
+Sample configuration :<br>
+
+<pre>
+FAIF_ROOTPATH    /LOCAL/R1BP/faif
+CSA_CONFIGFILE   $FAIF_ROOTPATH/CSA/config/CSAgetfile.config
+CSA_LOGFILE      $FAIF_ROOTPATH/CSA/log/CSAgetfile.log
+CSA_SRCHOST      mcs_vdn
+CSA_GET_SCRIPT   <a href="CSA_ftpget.html">CSA_ftpget.csh</a>
+</pre>
+
+<p>
+Below are the variables for source and reception directories per CSA file 
+type.  Note that the complete reception directory name is the root path plus 
+the value of the CSA_XXX_RDIR below.  For example, if rootpath is /LOCAL and
+CSA_ORPD_RDIR is CSA, the complete reception directory name is /LOCAL/CSA.
+(On the right hand side is a sample value).
+
+<p>
+<pre>
+Variable           Example value
+
+ (Remote Host Source Directories)
+ CSA_PORB_SDIR     mcs_to_ufdroc_1
+ CSA_DORB_SDIR     mcs_to_ufdroc_1
+ CSA_SARPP_SDIR    mcs_to_ufdroc_1
+ CSA_RRQ_SDIR      mcs_to_ufdrf_f
+ CSA_RSH_SDIR      mcs_to_ufdrf_f
+ CSA_CRQ_SDIR      mcs_to_ufcal_1
+ CSA_CSH_SDIR      mcs_to_ufcal_1
+ CSA_RRQ_M_SDIR    mcs_to_ufdrf_m
+ CSA_RSH_M_SDIR    mcs_to_ufdrf_m
+ CSA_CRQ_M_SDIR    mcs_to_ufcal_2
+ CSA_CSH_M_SDIR    mcs_to_ufcal_2
+
+ (Reception Directories)
+ CSA_PORB_RDIR     CSA_PREDORBIT
+ CSA_DORB_RDIR     CSA_DEFVORBIT
+ CSA_SARPP_RDIR    CSA_SARPROCPRM
+ CSA_RRQ_RDIR      CSA_RECRQST/ASF
+ CSA_RSH_RDIR      CSA_RECSCHED/ASF
+ CSA_CRQ_RDIR      CSA_CALIBRQST/ASF
+ CSA_CSH_RDIR      CSA_CALIBSCHED/ASF
+ CSA_RRQ_M_RDIR    CSA_RECRQST/MCMURDO
+ CSA_RSH_M_RDIR    CSA_RECSCHED/MCMURDO
+ CSA_CRQ_M_RDIR    CSA_CALIBRQST/MCMURDO
+ CSA_CSH_M_RDIR    CSA_CALIBSCHED/MCMURDO
+
+ (Destination Directories)
+ CSA_PORB_DDIR     $FAIF_ROOTPATH/CSA/CSA_PORB_DDIR
+ CSA_DORB_DDIR     $FAIF_ROOTPATH/CSA/CSA_DORB_DDIR
+ CSA_RSH_DDIR      .../aps/csa_archive/reception_schedule_asf
+ CSA_RRQ_DDIR      .../aps/csa_archive/reception_request_asf
+ CSA_RRQ_M_DDIR    .../aps/csa_archive/reception_request_mcm
+ CSA_RSH_M_DDIR    .../aps/csa_archive/reception_request_mcm
+
+</pre>
+
+The following config values must also be supplied in the configuration file.
+These values are needed in order to use the IMS to archive files.
+
+<p>
+<pre>
+Name           Sample value     Description
+
+IMS_DEV        IMSDEV           server name
+IMS_DB         dev_catalog      database name
+IMS_USERNAME   faif_clnt        username
+IMS_PASSWD     faif_clnt        user password
+IMS_ACCT_ID    ACCT_FAIF        account identification
+</pre>
+
+<hr>
+
+<p> <font size = -1>
+<p> 
+Last modified:  March 1998
+
+<p>
+Copyright (c) 1996, 1998, California Institute of Technology.<br>
+ALL RIGHTS RESERVED.  U.S. Government Sponsorship acknowledged.
+</font>
+
+</body>
+</html>

@@ -1,0 +1,129 @@
+#
+# @(#)CP.ad	"@(#)CP.ad	1.11 96/10/30 09:16:21";
+#
+
+#### sizes ##############################################################
+
+#  initial (x,y) location of main window
+CP*.CPmainQ_shell.x: 10
+CP*.CPmainQ_shell.y: 10
+
+#  initial height, width of main window
+#*.CPmainQ_shell.height: 750
+*.CPmainQ_shell.width: 1020
+
+CP*JobFailureBox*text.width: 400
+
+#### colors ##############################################################
+
+CP*background:                          lightblue2
+CP*XmList.background:                   lightblue3
+#CP*XmList.foreground:               black
+
+CP*.CPerrorBox.background: red
+CP*.CPerrorBox.foreground: white
+
+# fill color for all toggle buttons
+
+CP*.selectColor: #50505050a0a0
+
+#### fonts ##############################################################
+
+#CP*fontList: -adobe-helvetica-bold-r-normal--14-*
+CP*fontList: 7x14
+CP*XmList.fontList:                   helvb10
+CP*XmText.fontList:                   helvb10
+CP*XmLabel.fontList:                   helvb12
+
+
+#this doesn't really seem to apply to any widgets in our tree
+CP*XmForm*labelFontList:  helvb10
+CP*XmForm*textFontList:  helvb10
+
+CP*.JobFailureBox.XmForm*labelFontList:  helvo10
+CP*.JobFailureBox.XmForm*textFontList:  helvo10
+#CP*.JobFailureBox*text.value: "default explanation string"
+
+
+#menu button fonts (top-level)
+CP*XmCascadeButton.fontList:  helvbo10
+CP*XmCascadeButtonGadget.fontList:  helvbo10
+
+#dialog box fonts
+CP*XmPushButton.fontList:  helvb10
+CP*XmPushButtonGadget.fontList:  helvb10
+CP*XmMessageBox.XmPushButtonGadget.fontList: helvb12
+
+
+*CPinfoBox.textFontList: helvb12
+
+
+### scan destination and qc invocation menu items ######################
+
+CP*.toggleScanDest_RDS.set: true
+CP*.toggleScanDest_ASP.set: false
+
+CP*.toggleQC_automatic.set: false
+CP*.toggleQC_manual.set: true
+
+### menu sensitive/insensitive items ###################################
+CP*.Start_GPR_button.sensitive: true
+
+### sgi-specific look and feel #########################################
+
+#*sgiMode:  true
+CP*useSchemes: all
+
+#*scheme:  Vancouver
+#*scheme:  Base
+#*scheme:  Myers
+
+
+#---------------------------- experimental settings below this line
+
+#### main window "subsystems" colors and fonts
+
+# looks good with 3 subsystems
+#*.CPstatusForm.height: 175
+# looks good with 5 subsystems
+*.CPstatusForm.height: 300
+
+#                                              state table subsystem names
+#CP*.CPstatusRC.XmToggleButton.fontList: helvb14
+CP*.CPstatusRC.XmToggleButton.fontList: -*-*-demi-r-*-*-18-*
+
+#                            not running, started, ready,.... column headings
+CP*.CPstatusRC.XmLabel.fontList: helvb12
+
+#### main window "external interfaces" colors and fonts
+
+*.CPexternForm.height: 175
+*.CPexternForm.labelFontList: helvb12
+*.CPexternForm.buttonFontList: helvb12
+
+#CP*.CPexternRC.XmToggleButton.fontList:  -*-*-demi-r-*-*-10-*
+CP*.CPexternRC.XmToggleButton.fontList:  -*-*-demi-r-*-*-14-*
+CP*.CPexternRC.XmLabel.fontList: helvb12
+
+#### main window "jobs" scrolled list colors and fonts
+
+CP*CPjobs_form.height: 325
+CP*CPjobs_form*XmList.background:                   gray55
+CP*CPjobs_form*XmList.foreground:                   white
+CP*CPjobs_form*XmList.fontList:                   helvb10
+CP*CPjobs_form*XmList.visibleItemCount: 7
+
+
+#             jobid, type, status,... 8 column headings headings
+.CP*CPmainQ*CPjobs_form.XmLabelGadget.fontList: helvbo10
+
+CP*.CPstatusRC.XmToggleButton.fontList: -*-*-demi-r-*-*-18-*
+CP*.CPexternRC.XmLabel.fontList: helvb12
+
+
+#                                   initial height, fonts of options panel
+*.CPoptionsForm.height: 75
+*.CPoptionsForm.labelFontList: helvb2
+*.CPoptionsForm.buttonFontList: helvb12
+
+

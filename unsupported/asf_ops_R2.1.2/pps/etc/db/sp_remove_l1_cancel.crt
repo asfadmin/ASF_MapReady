@@ -1,0 +1,46 @@
+/*************************************************************************
+ * Copyright(c) 1996, California Institute of Technology.                *
+ *             ALL RIGHTS RESERVED.                                      *
+ * U.S. Government Sponsorship acknowledged.                             *
+ *************************************************************************/
+
+/*=======================
+	@(#)sp_remove_l1_cancel.crt	1.1  11/21/96
+=========================*/
+
+if exists (select * from sysobjects where name = "sp_remove_l1_cancel")
+	drop proc sp_remove_l1_cancel
+go
+
+create proc sp_remove_l1_cancel (@order_id int, @item_id int, @job_id int) 
+as
+	declare @num int
+
+	/* check if matching jobs (with the same job_id) exists */
+	select @num = count(job_id)
+		from L1_orders
+		where job_id = @job_id
+	if @num > 1
+		/* delete this job from L1_orders table and return */
+		delete from L1_orders
+			where order_id = @order_id
+			and   item_id = @item_id
+	else
+	begin	
+		/* no matching job found, delete from all tables */
+
+		/* delete job from L1_orders table */
+		delete from L1_orders
+			where L1_orders.job_id = @job_id
+		/* delete job from L1_procparms table */
+		delete from L1_procparms
+			where L1_procparms.job_id = @job_id
+		/* delete job from jobs table */
+		delete from jobs
+			where jobs.job_id = @job_id
+		/* delete job from schedule table */
+		delete from schedule
+			where schedule.job_id = @job_id
+	end
+	return @num
+go

@@ -1,0 +1,90 @@
+<html>
+<head>
+<title>Shutting down FAIF</title>
+</head>
+<body bgcolor="#ffffff"> 
+<hr>
+<p>
+<h1> 
+<center>How to shut down FAIF</center></h1>
+<hr>
+
+<p>
+<A HREF="#01"><img src="Graphics/alarmclock.gif">
+1.  Save and then stop crontab</A><br>
+
+<A HREF="#02"><img src="Graphics/unix.gif">
+2.  Check for active jobs</A><br>
+
+<A HREF="#03"><img src="Graphics/elink.gif">
+3.  Stop FAxmitserver</A><br>
+<p>
+<hr align=center width=60%><font size=+1>
+
+<p>
+<a name="01"><p><b>1.</b>  Save and then stop crontab </a></font>
+
+<p>
+To save a copy of the active crontab file, use a command like: <pre>
+   <b>  >crontab -l > <i>crontab_file_save</i> </b> </pre>
+
+<p>
+After saving the crontab file, stop the crontab with this command: <pre>
+   <b>  >crontab -r </b> </pre>
+
+<p>
+When you're ready to re-instate this crontab file, use this command: <pre>
+   <b>  >crontab <i>crontab_file_save</i> </b> </pre>
+
+
+<hr align=center width=60%><font size=+1>
+<p>
+<a name="02"><b>2.</b>  Check for active jobs </a></font>
+
+<p>
+Find out what's running:
+<pre>
+       >ps -ef | grep faif
+</pre><p>
+<b>If at all possible, FAIF shell scripts which are executing should be
+allowed to finish.</b>  Interrupting one may require careful manual attention
+before re-starting.  Any script lock files will also have to be manually removed
+when you are ready to resume.
+<p>
+Interrupting FAIF directory monitors should also be avoided.  However, they
+should be able to recover cleanly if you must stop them.
+<p>
+<hr align=center width=60%><font size=+1>
+<p>
+<a name="03"><b>3.</b>   Stop FAxmitserver </a></font>
+
+<p>
+Kill the server:
+<pre> 
+        >ps -ef | grep FAxmitserver
+        >kill -2 #
+ </pre>
+<p>
+When you're ready to restart the server:
+<pre>
+  >$FAIF_BINPATH/FAxmitserver -c $FAIF_ROOTPATH/config/FAxmitserver.config \
+    -e $FAXMIT_CDS_ENTRY &
+ </pre>
+
+<P>
+<hr>
+<address>
+<img align=middle src="Graphics/phone.gif">Send 
+<a href="mailto:faif@cogito.jpl.nasa.gov">feedback</a> </address>
+<hr>
+<font size = -1>
+Last Modified:  March, 1997
+<p> 
+Copyright (c) 1997, California Institute of Technology.<br>
+ALL RIGHTS RESERVED.  U.S. Government Sponsorship acknowledged.
+</font>
+
+</body>
+</html>
+
+

@@ -1,0 +1,46 @@
+#!/bin/sh
+if [ -f /usr/ccs/lib/cpp ]
+then
+	usefile=/usr/ccs/lib/cpp
+elif [ -f /lib/cpp ]
+then
+	usefile=/lib/cpp
+else
+	echo cannot locate \"cpp\"
+	exit 10
+fi
+
+$usefile <<'EOF' | sh
+
+#ifdef alpha
+echo "alpha"
+exit
+#endif
+
+#ifdef sparc
+echo "sparc"
+exit
+#endif
+
+#ifdef sun
+echo "sun"
+exit
+#endif
+
+#ifdef sgi
+echo "sgi"
+exit
+#endif
+
+#ifdef vax
+echo "vax"
+exit
+#endif
+
+#ifdef ibm
+echo "ibm"
+exit
+#endif
+
+echo "unknown"
+EOF

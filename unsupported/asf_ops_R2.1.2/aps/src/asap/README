@@ -1,0 +1,10 @@
+This directory contains source files written by Section 312, Johnny Kwok
+The product is called ASAP, Artificial Satellite Analysis Program.
+
+makefile	this file compiles these routines.  
+
+The executable asapephm uses these routines and is created by this makefile:
+../src/makefile  
+
+Note that to create the asapephm executable, other source files located in the 
+directory ../src  are also used.  

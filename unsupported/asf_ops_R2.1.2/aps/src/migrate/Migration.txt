@@ -1,0 +1,39 @@
+
+TO BE RUN AT ASF FOR DATA MIGRATION:
+
+MIGRATE1.csh*      Performs first migration steps to be done at ASF.  
+                   - Rename dtk to dtk_old
+                   - create new dtk relation structure
+                   - create new stats_calls relation structure
+                   - insert recs from dtk_old to new dtk relation using 
+                     defaults for new fields.  
+                   ASF DBA or installer may drop the dtk_old relation.  
+
+MIGRATE2.csh*      Performs second migration steps to be done at ASF.
+                   runs the executable aps_migrate which places values 
+                   into the new dtk fields, using the existing values 
+                   of strttime and stoptime in the same record.
+                   The executable is run for all dtk records with 
+                   revs during and after 35 days before installation date 
+
+MIGRATE3.csh*      Performs third migration steps to be done at ASF.  
+                   Runs aps_stats for yesterday going back 30 days; 
+                   None of the statistics is reported to IMS, but 
+                   records are placed into the stats_calls relation.  
+                   The aps_stats run may be now be installed in ASF 
+                   operations and run daily and will report only 
+                   events taking place after installation.
+                   (Before installation, sufficent tracking was not 
+                   in place to support accurate statistics reporting.)
+
+
+Scripts that helped in testing data migration at JPL:
+
+INIT.csh*          For testing:  initializes db to ASF delivery starting point.
+
+
+
+
+
+
+

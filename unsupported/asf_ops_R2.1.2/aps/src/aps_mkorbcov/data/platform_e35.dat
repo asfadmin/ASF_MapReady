@@ -1,0 +1,37 @@
+lastmodified = '27-FEB-91 15:30:00'
+
+instname = 'NadirM'
+	fullinstname = 'Nadir track with mask'
+	type = 'nadir' mask = 'station'
+
+instname = 'Nadir'
+	fullinstname = 'Nadir track'
+	type = 'nadir'
+
+instname = 'SwathCtrM'
+	fullinstname = 'SAR - EERS-1 - Swath Center with mask'
+	type = 'beam' minlook = 20.355 maxlook = 20.355 swathwidth = 0
+	minyaw = 90 maxyaw = 90 mask = 'station'
+
+instname = 'SwathCtr'
+	fullinstname = 'SAR - EERS-1 - Swath Center'
+	type = 'beam' minlook = 20.355 maxlook = 20.355 swathwidth = 0
+	minyaw = 90 maxyaw = 90
+
+instname = 'SAR'
+	fullinstname = 'SAR - EERS-1 - 100 km Swath'
+	type = 'beam' minlook = 20.355 maxlook = 20.355 swathwidth = 100
+	minyaw = 90 maxyaw = 90
+
+platname = 'ERS-1'
+	QI = 14 QN = 11 QD = 35
+	e = 0.0
+	node0 = 0.1335
+	omega0 = 0.0
+	m0 = 0.0
+	t0 = 0.0
+
+instname = 'SARM'
+	fullinstname = 'SAR - EERS-1 - 100 km Swath with mask'
+	type = 'beam' minlook = 20.355 maxlook = 20.355 swathwidth = 100
+	minyaw = 90 maxyaw = 90 mask = 'station'

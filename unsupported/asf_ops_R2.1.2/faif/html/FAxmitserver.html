@@ -1,0 +1,206 @@
+<html>
+<head>
+<title>FAxmitserver</title>
+</head>
+<body>
+<hr>
+
+<p>
+This file contains:
+
+<ol>
+  <li> FAxmitserver usage synopsis
+  <li> Sample server activation
+  <li> Sample client program usage synopsis 
+  <li> Syslog messages
+  <li> Running FAxmitserver without dce_login
+
+</ol>
+<hr>
+
+<b> 1.  FAxmitserver - the Flight Agency transmit server. </b>
+
+<p>
+Usage:
+<p><pre>
+        FAxmitserver [-h] [-c <i>configfile</i>] -e <i>CDS_entry_name</i>
+</pre>
+
+<p>
+The FA transmit server sends a file to a specified external
+flight agency destination.  The CDS entry name for this server may
+be specified on the command line via the -e option, through the 
+environment variable FAXMIT_CDS_ENTRY or through the config file.  The
+following items may also be configured by means of environment variables 
+or a config file:
+
+<p>
+<a href="FAIF.html#01">FAIF_ROOTPATH</a> - root path under which temp directories are set up
+
+<p>
+Remote hosts where files will be sent:<br>
+<pre>
+ESA_HOSTADDR   - address of ESA destination host 
+NASDA_HOSTADDR - address of NASDA destination host 
+CSA_HOSTADDR   - address of CSA destination host 
+WALPS_HOSTADDR - address of WALPS destination host 
+</pre>
+
+<p>
+Transfer command/FTP script to use for file transfer:
+<pre>
+ESA_TRANSFER_CMD   - ESA   FTP script
+NASDA_TRANSFER_CMD - NASDA FTP script
+CSA_TRANSFER_CMD   - CSA   FTP script
+WALPS_TRANSFER_CMD - WALPS FTP script
+</pre>
+
+<p>
+Names of directories on ESA host where files will be transferred:
+<pre>
+ESA_EXTDIR    - default if file type not specified by client
+ESA_RQUS_EDIR - for Acquisition Requests
+ESA_REAQ_EDIR - for Acquisition Reports
+ESA_RESM_EDIR - for Shipment Reports
+ESA_REEX_EDIR - for Extracted Data
+ESA_REUG_EDIR - for Unavailability Reports
+</pre>
+
+<p>
+Names of directories on NASDA host where files will be transferred:
+<pre>
+NASDA_EXTDIR    - default if file type not specified by client
+NASDA_REQQ_EDIR - for Quarterly Requests
+NASDA_REQW_EDIR - for Weekly Requests
+NASDA_REAC_EDIR - for Acquisition Results
+NASDA_CATA_EDIR - for Catalogue Data
+NASDA_MSGM_EDIR - for HDDT Shipment Reports
+NASDA_MSGF_EDIR - for Station Status Information
+NASDA_MSGE_EDIR - for Station Unavailability Data
+</pre>
+
+<p>
+Names of directories on CSA host where files will be transferred:
+<pre>
+CSA_EXTDIR     - default if file type not specified by client
+CSA_ASR_EDIR   - for Archive Storage Reports
+CSA_RRP_EDIR   - for Reception Reports
+CSA_RAR_EDIR   - for Reception Availability Reports
+CSA_CRP_EDIR   - for Calibration Reports
+CSA_CAR_EDIR   - for Calibration Availability Reports
+CSA_RRP_M_EDIR - for Reception Reports for McMurdo
+CSA_RAR_M_EDIR - for Reception Availability Reports for McMurdo
+CSA_CRP_M_EDIR - for Calibration Reports for McMurdo
+CSA_CAR_M_EDIR - for Calibration Availability Reports for McMurdo
+</pre>
+
+<p>
+Names of directories on WALPS host where files will be transferred:
+<pre>
+WALPS_EXTDIR         - default if file type not specified by client
+WALPS_WOS_EDIR       - for Weekly Operations Schedules
+WALPS_STVEC_EDIR     - for State Vectors
+WALPS_AVAIL_REQ_EDIR - for Availability Requests
+</pre>
+
+<p>
+Note also that the name of the config file may be set using
+the environment variable FAXMIT_CONFIG if it was not specified on the
+command line using the -c option.
+
+<p>
+Lastly, the environment variables <a href="FAIF.html#01">FAIF_BINPATH</a> and <a href="FAIF.html#01">FAIF_ROOTPATH</a>
+must also be set for the server to work.  The <a href="FAIF.html#01">FAIF_ROOTPATH</a> environment 
+variable value serves as the root path under which default config files,
+and temporary files are stored while the <a href="FAIF.html#01">FAIF_BINPATH</a> environment variable 
+value specifies the root path under which file transfer scripts and other
+required executables are stored.
+
+<p>
+This is normally done via set_env.csh, which should be referenced in the FAIF
+operator's .cshrc file, like this: <pre>
+    >source set_env.csh </pre>
+ 
+
+<hr>
+<b>  2.  Sample FAxmitserver activation </b>
+
+
+<p> <pre>
+    >$FAIF_BINPATH/FAxmitserver -c FAxmitserver.config -e $FAXMIT_CDS_ENTRY &
+</pre>
+
+<p>
+Note that if the config file $FAIF_ROOTPATH/config/FAxmitserver.config is
+found, it will be used as the default.  You may want to use your own
+config file by executing FAxmitserver with the -c option.
+
+<p>
+See also the <b>Client-Server</b> section of the <a href="trouble_shoot.html"> FAIF trouble-shooting</a> pages.
+
+<hr>
+
+  <b>3.  FAxmitserver client.  </b>
+
+<p>
+A sample client application called faif_xmitClient has been created.  It
+is executed as follows:
+
+<p><pre>
+   ><a href="faif_xmitClient.html">faif_xmitClient</a> -f <i>filetosend</i> -d <i>FAcode</i> -t <i>filetype</i>
+</pre>
+
+<p>
+where
+<p>
+<pre>
+   <i>FAcode</i>   = ESA, NASDA, CSA, or WALPS
+   <i>filetype</i> = ESA_RQUS, ESA_REAQ, ESA_RESM, ESA_REEX, ESA_REUG,
+              NASDA_REQQ, NASDA_REQW, NASDA_REAC, NASDA_CATA,
+              NASDA_MSGM, NASDA_MSGF, NASDA_MSGE,
+              CSA_ARCHSTRGRPT, CSA_RECRPT, CSA_RECAVAILRPT,
+              CSA_CALIBRPT, CSA_CALIBAVAILRPT,
+              WALPS_AVAIL_REQ, WALPS_STVEC, WALPS_WOS,
+</pre>
+        Note that the environment variable FAXMIT_CDS_ENTRY must be set
+to the CDS entry name of the server prior to executing this client. 
+
+<p>
+        A convention used for FAxmitserver server entry names is the interface
+name "sendtoFA" followed by "_<i>serverhost</i>" where <i>serverhost</i> is the host 
+machine on which the server is running.  Although not strictly enforced, this 
+convention is highly recommended.
+
+
+<hr>
+   <b>4.  Syslog messages </b>
+
+<p>
+Error messages are logged through the syslog facility on LOG_LOCAL6 as
+defined by ASF System Engineering.  The syslog.conf file where the FAIF
+software is running may be configured to direct LOG_LOCAL6 messages to
+some designated file.
+
+<hr>
+   <b>5.  Running FAxmitserver without dce_login </b>
+
+<p>
+Note that the FAxmitserver must be run unathenticated so that neither
+clients nor the server has to be dce_logged-in to run successfully.
+Normally, the server and clients would have to perform a dce_login
+everyday since their tickets expire everyday and the server cannot be
+reached by clients.  To avoid this problem, use <b>acl_edit</b> to modify
+the permissions for CDS entry name for the server.  See the Unix man pages
+for more information about <b>acl_edit</b>.
+
+
+<hr>
+<p>
+<font size = -1>
+Last Modified:  March, 1998
+
+<p>
+Copyright (c) 1996, 1998, California Institute of Technology.<br>
+ALL RIGHTS RESERVED.  U.S. Government Sponsorship acknowledged.
+</body>
+</html>

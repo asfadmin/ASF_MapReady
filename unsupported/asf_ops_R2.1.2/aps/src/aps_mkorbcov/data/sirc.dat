@@ -1,0 +1,21 @@
+lastmodified = '11-JAN-91 16:45:00'10:15:00'
+
+instname = 'Nadir'
+	fullinstname = 'Nadir Track'
+	type = 'Nadir'
+
+platname = 'SIR-C'
+	h = 215.0
+	e = 0.0
+	i = 57.0
+	node0 = 171.17
+	omega0 = 0.0
+	m0 = 0.0
+	t0 = 0.0
+
+instname = '20 deg inc'
+	type = 'beam'
+	minlook = 19.32 maxlook = 19.32
+	minyaw = -90 maxyaw = -90
+	mask = 'descending'
+	swathwidth = 0
