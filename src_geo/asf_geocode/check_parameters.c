@@ -118,7 +118,7 @@ void check_parameters(projection_type_t projection_type,
 
     case ALBERS_EQUAL_AREA:
       // Debugging print
-      printf("Projection: Albert Equal Area Conic\nFirst standard parallel: %.4f\n"
+      printf("Projection: Albers Equal Area Conic\nFirst standard parallel: %.4f\n"
 	     "Second standard parallel: %.4f\nCentral meridian: %.4f\n"
 	     "Latitude of origin: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n",
 	     pp->albers.std_parallel1, pp->albers.std_parallel2, 
