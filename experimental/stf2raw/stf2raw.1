@@ -1,0 +1,61 @@
+
+NAME: stf2raw
+
+SYNOPSIS:
+        stf2raw [-lat <lower> <upper>] [-log <file>] [-quiet]
+                [-prc <path>] <input> <output>
+
+                <input>   VEXCEL Level-0 signal data
+                <output>  AISP-compatible raw data
+
+DESCRIPTION:
+        Converts the given VEXCEL Level-0 signal data file into an  AISP
+        - compatible  raw format.  It extracts  the necessary processing
+        parameters (slant range, prf, satellite mode) from the satellite
+        headers,  which  it  copiously  outputs  during  processing.  It
+        extracts state vectors from the VEXCEL .par file.
+
+        The currently supported satellites are:
+                -ERS-1 and ERS-2
+                -JERS
+                -RADARSAT, all beams & modes (excluding SCANSAR)
+
+        Also checks for and corrects missing and truncated lines in  ERS
+        data. Note: this is ONLY FOR ERS DATA.
+
+OPTIONS:
+        -lat <lower> <upper>
+             Option for latitude constraints.
+        -log <file>
+             Option to have output written to a log file.
+        -quiet
+             Option to have the output suppressed to essential
+        -prc <path>
+             Path to use precision state vectors (assume prc format)
+
+EXAMPLES:
+        > stf2raw RSAT_02.000 format_02.raw
+            Converts the superPrep data  file RSAT_02.000 into the  AISP
+            raw input file  format_02.raw.  This file  can later be  SAR
+            processed using "aisp format_02.raw aisp_02".
+
+SEE ALSO:
+        aisp, ceos2raw
+
+HARDWARE/SOFTWARE LIMITATIONS:
+	None known.
+
+BUGS:
+        Does not compensate for skipped lines for JERS or RSAT.
+        Output is very inefficient for SCANSAR images.
+
+AUTHORS:
+        O. Lawlor, 5/1998
+        M. Ayers, 12/2000
+        T. Logan,  6/2001
+        P. Denny,  2/2004
+
+CONTACT:
+        uso@asf.alaska.edu
+        http://www.asf.alaska.edu/software
+

@@ -1,29 +1,27 @@
 /******************************************************************************
-NAME: lz2raw_flywheel
+NAME: stf2raw
 
 SYNOPSIS:
+        stf2raw [-lat <lower> <upper>] [-log <file>] [-quiet] [-prc <path>]
+	        <input> <output>
 
-        lz2raw_flywheel [-lat <lower> <upper>}[-log <file>][-quiet][-prc <path>]
-	                <input> <output>
-
-                <input>   VEXCEL Leverl-0 signal data
+                <input>   VEXCEL Level-0 signal data
                 <output>  AISP-compatible raw data
+
 DESCRIPTION:
-
-        lz2raw_flywheel is different from the original lz2raw in that
-        it checks for and corrects missing lines and well as truncated
-        lines in ERS data.  Note, this is ONLY FOR ERS DATA.
-
-        The original lz2raw converts the given VEXCEL Level-0 signal data
-        file into an AISP-compatible raw format.  It extracts the necessary
-        processing parameters (slant range, prf, satellite mode) from the
-        satellite headers, which it copiously outputs during processing.
-        It extracts state vectors from the VEXCEL .par file.
+        Converts the given VEXCEL Level-0 signal data file into an AISP-
+        compatible raw format. It extracts the necessary processing parameters 
+        (slant range, prf, satellite mode) from the satellite headers, which it 
+        copiously outputs during processing. It extracts state vectors from the 
+        VEXCEL .par file.
 
         The currently supported satellites are:
                 -ERS-1 and ERS-2
                 -JERS
                 -RADARSAT, all beams & modes (excluding SCANSAR)
+
+        Also checks for and corrects missing and truncated lines in ERS data. 
+        Note: this is ONLY FOR ERS DATA.
 
 EXTERNAL ASSOCIATES:
     NAME:               USAGE:
@@ -61,37 +59,26 @@ BUGS:
 
 
 ******************************************************************************/
-/****************************************************************************
-*								            *
-*   lz2raw_flywheel -- this program decodes the input data into             *
-* 		       AISP-compatible raw data				    *
-*   Copyright (C) 2001  ASF Advanced Product Development    	    	    *
-*									    *
-*   This program is free software; you can redistribute it and/or modify    *
-*   it under the terms of the GNU General Public License as published by    *
-*   the Free Software Foundation; either version 2 of the License, or       *
-*   (at your option) any later version.					    *
-*									    *
-*   This program is distributed in the hope that it will be useful,	    *
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
-*   GNU General Public License for more details.  (See the file LICENSE     *
-*   included in the asf_tools/ directory).				    *
-*									    *
-*   You should have received a copy of the GNU General Public License       *
-*   along with this program; if not, write to the Free Software		    *
-*   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
-*									    *
-*   ASF Advanced Product Development LAB Contacts:			    *
-*	APD E-mail:	apd@asf.alaska.edu 				    *
-* 									    *
-*	Alaska SAR Facility			APD Web Site:	            *	
-*	Geophysical Institute			www.asf.alaska.edu/apd	    *
-*       University of Alaska Fairbanks					    *
-*	P.O. Box 757320							    *
-*	Fairbanks, AK 99775-7320					    *
-*									    *
-****************************************************************************/
+/******************************************************************************
+*                                                                             *
+* stf2raw -- Decodes the input data into AISP-compatible raw data             *
+*                                                                             *
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* You should have received an ASF SOFTWARE License Agreement with this source *
+* code. Please consult this agreement for license grant information.          *
+*                                                                             *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*       Alaska Satellite Facility                                             *
+*       Geophysical Institute                   www.asf.alaska.edu            *
+*       University of Alaska Fairbanks          uso@asf.alaska.edu            *
+*       P.O. Box 757320                                                       *
+*       Fairbanks, AK 99775-7320                                              *
+*                                                                             *
+******************************************************************************/
 
 #include "asf.h"
 #include "lzFetch.h"
@@ -376,26 +363,19 @@ int main(int argc,char *argv[])
 	inName = argv[currArg++];
 	outName = appendExt(argv[currArg],".raw");
 		
-        StartWatch();
-	if (logflag) {
-	  StartWatchLog(fLog);
-	  printLog("Program: lz2raw_flywheel\n\n");
-	}
-	system("date");
-	printf("Program: lz2raw_flywheel\n\n");
-
 	/* Determine start and end line for latitude constraint
 	 -----------------------------------------------------*/
 	if (lowerLat!=-99.0 && upperLat!=99.0)
-	  createSubset(inName, lowerLat, upperLat, &imgStart, &imgEnd, imgTimeStr,
-                       &nVec, &fd, &fdd, &fddd);
+	  createSubset(inName, lowerLat, upperLat, &imgStart, &imgEnd,
+                       imgTimeStr, &nVec, &fd, &fdd, &fddd);
 	else
 	  estimateDoppler(inName, &fd, &fdd, &fddd);
 
 	/* Read the metadata to determine where window position shifts
 	   happen, as well as the number of lines in the image.
          ------------------------------------------------------------*/
-	s=convertMetadata_lz(inName,outName,&nTotal,&readNextPulse,prcflag,prcPath);
+	s=convertMetadata_lz(inName,outName,&nTotal,&readNextPulse,prcflag,
+	                     prcPath);
 	iqBuf=(iqType *)MALLOC(sizeof(iqType)*2*s->nSamp);
 	if (imgEnd == 0) imgEnd = nTotal;
 	
@@ -439,7 +419,8 @@ int main(int argc,char *argv[])
 	}
 	if (lowerLat!=-99.0 && upperLat!=99.0) {
 	  s->nLines -= 4096; /* reduce the line number from extra padding */
-	  createMeta_lz(s,inName,outName,imgTimeStr,nVec,fd,fdd,fddd,prcflag,prcPath);
+	  createMeta_lz(s,inName,outName,imgTimeStr,nVec,fd,fdd,fddd,prcflag,
+	                prcPath);
 	  /* Set meta's center lat & long */
 /******	  meta->general->center_latitude = lowerLat + (upperLat-lowerLat)/2;*/
 /*****	  meta->general->center_longitude =  */
@@ -462,10 +443,9 @@ int main(int argc,char *argv[])
 	if (logflag) {
 	  sprintf(logbuf,"   Wrote %i lines of raw signal data.\n\n",s->nLines);
 	  printLog(logbuf);
-	  StopWatchLog(fLog);
 	}
-	StopWatch();
-	return 0;
+
+	exit(EXIT_SUCCESS);
 }
 
 void usage(char *name)
@@ -492,7 +472,7 @@ void usage(char *name)
 	"   raw data.  Currently supports ERS, JERS, Radarsat, Strip mode\n"
 	"   (all beams), but not Radarsat ScanSAR mode.\n");
  printf("\n"
-	"Version %.2f, ASF InSAR Tools\n"
+	"Version %.2f, ASF SAR Tools\n"
 	"\n",VERSION);
  exit(EXIT_FAILURE);
 }

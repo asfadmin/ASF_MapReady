@@ -1,11 +1,10 @@
-#	lz2raw_flywheel
+#	stf2raw
 #	by Orion Lawlor, ASF, 1998
+#          Patrick Denny, ASF, 2004
 #	A program to convert ASF level-zero format data into
 #       raw (unpacked, byte-oriented) data.
 
 include ../../make_support/system_rules
-
-CFLAGS  := $(CFLAGS) -DDECODE_CEOS
 
 LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
@@ -28,13 +27,13 @@ OBJS  = aisp_write.o \
 	fetch_prc_stvec.o \
 	createSubset.o
 
-all:	lz2raw_flywheel
+all:	stf2raw
 	-rm *.o
 
-lz2raw_flywheel: $(OBJS) lz2raw_flywheel.c
-	${CC} ${CFLAGS} ${LDFLAGS} -o lz2raw_flywheel lz2raw_flywheel.c $(OBJS) ${LIBS}
-	mv lz2raw_flywheel$(BIN_POSTFIX) $(BINDIR)
-	cp lz2raw_flywheel.1 ../../man/cat1/
+stf2raw: $(OBJS) stf2raw.c
+	${CC} ${CFLAGS} ${LDFLAGS} -o stf2raw stf2raw.c $(OBJS) ${LIBS}
+	mv stf2raw$(BIN_POSTFIX) $(BINDIR)
+	cp stf2raw.1 ../../man/cat1/
 
 clean:
-	rm -f core ${OBJS} *.o
+	rm -f core *.o

@@ -322,7 +322,7 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
 
 	/* Propagate a state vector to center latitude */
 	lat2stVec(inN, centerLat, &locVec, &loc_sec, &nLoc, &centerVec);
-printf("center latitude: time = %lf, nLoc = %d, nVec = %d\n", loc_sec, nLoc, centerVec);
+/*printf("center latitude: time = %lf, nLoc = %d, nVec = %d\n", loc_sec, nLoc, centerVec);*/
 
 	/* Determine Doppler for time of location block */
 	sprintf(buf, "prep_block.location[%d].near_range:", nLoc);
@@ -334,19 +334,19 @@ printf("center latitude: time = %lf, nLoc = %d, nVec = %d\n", loc_sec, nLoc, cen
         date_ymd2jd(&ymdDate, &jDate);
         centerTime += (double)(date_getMJD(&jDate) * 3600 * 24);
 	time_range2Doppler(inN, centerTime, range, fd, fdd, fddd);
-printf("time = %lf, fd = %e, fdd = %e, fddd = %e\n", centerTime, fd, fdd, fddd);
+/*printf("time = %lf, fd = %e, fdd = %e, fddd = %e\n", centerTime, *fd, *fdd, *fddd);*/
 
         /* Calculate time for the center latitude of the subset */
 	lat2time(locVec, loc_sec, centerLat, range, *fd, &centerTime);
 	line = (centerTime - imgTime) / azPixTime;
         date_ymd2jd(&ymdDate, &jDate);
-printf("center time = %lf\n", centerTime);
+/*printf("center time = %lf\n", centerTime);*/
         centerTime += (double)(date_getMJD(&jDate) * 3600 * 24);
 	time_range2Doppler(inN, centerTime, range, fd, fdd, fddd);
 
 	/* Propagate a state vector to upper latitude */
 	lat2stVec(inN, upperLat, &locVec, &loc_sec, &nLoc, &upperVec);
-printf("upper latitude time = %lf, nLoc = %d, nVector = %d\n", loc_sec, nLoc, upperVec);
+/*printf("upper latitude time = %lf, nLoc = %d, nVector = %d\n", loc_sec, nLoc, upperVec);*/
 
         /* Calculate time for the upper latitude of the subset */
 	lat2time(locVec, loc_sec, upperLat, range, *fd, &upperTime);
@@ -358,7 +358,7 @@ printf("upper latitude time = %lf, nLoc = %d, nVector = %d\n", loc_sec, nLoc, up
 	
 	/* Propagate a state vector to lower latitude */
 	lat2stVec(inN, lowerLat, &locVec, &loc_sec, &nLoc, &lowerVec);
-printf("lower latitude time = %lf, nLoc = %d, nVector = %d\n", loc_sec, nLoc, lowerVec);
+/*printf("lower latitude time = %lf, nLoc = %d, nVector = %d\n", loc_sec, nLoc, lowerVec);*/
 
         /* Calculate time for the lower latitude of the subset */
 	lat2time(locVec, loc_sec, lowerLat, range, *fd, &lowerTime);
@@ -383,5 +383,5 @@ printf("hmsStr = '%s', strlen = %d\n", hmsStr, strlen(hmsStr));
 
 	*nVec = (lowerVec < upperVec) ? lowerVec : upperVec;
 
-printf("imgTime = %lf, imgTimeStr = %s, nVec = %d\n", imgTime, imgTimeStr, *nVec);
+/*printf("imgTime = %lf, imgTimeStr = %s, nVec = %d\n", imgTime, imgTimeStr, *nVec);*/
 }
