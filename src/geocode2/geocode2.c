@@ -483,8 +483,8 @@ main (int argc, char **argv)
 {
   // Get the projection parameters from the command line.
   projection_type_t projection_type;
-  // Height to 
-  double average_height;
+  // Terrain height to assume.  Defaults to 0.
+  double average_height = 0;	// FIXME: Put this default in docs
   // Pixel size to use for output image, in projection coordinate
   // units (presumably meters, but you never know when we might lose
   // our heads and decide to add some dumb projection).
@@ -752,20 +752,25 @@ main (int argc, char **argv)
     }
     // There's nothing particularly insightful about these termination
     // conditions, but they seem to work...
-    status = gsl_multifit_test_delta (s->dx, s->x, 1e-2, 1e-2);
+    status = gsl_multifit_test_delta (s->dx, s->x, 1e-8, 1e-8);
   } while ( status == GSL_CONTINUE && iteration < maximum_iterations );
   gsl_multifit_covar (s->J, 0.0, covariance);
 	  
 #define FIT(i) gsl_vector_get (s->x, i)
 #define ERR(i) sqrt (gsl_matrix_get (covariance, i, i))
 
-  printf ("Cubic coefficients: ax^2 + by^2 + cxy + dx + ey + g: \n");
+  printf ("Cubicic coefficients: \n"
+	  "ax^3 + by^3 + cx^2y + dy^2x + ex^2 + gy^2 + hxy + ix + jy + k: \n");
   printf ("a = %12.5e +/-%12.5e\n", FIT (a_index), ERR (a_index));
   printf ("b = %12.5e +/-%12.5e\n", FIT (b_index), ERR (b_index));
   printf ("c = %12.5e +/-%12.5e\n", FIT (c_index), ERR (c_index));
   printf ("d = %12.5e +/-%12.5e\n", FIT (d_index), ERR (d_index));
   printf ("e = %12.5e +/-%12.5e\n", FIT (e_index), ERR (e_index));
   printf ("g = %12.5e +/-%12.5e\n", FIT (g_index), ERR (g_index));
+  printf ("h = %12.5e +/-%12.5e\n", FIT (h_index), ERR (g_index));
+  printf ("i = %12.5e +/-%12.5e\n", FIT (i_index), ERR (g_index));
+  printf ("j = %12.5e +/-%12.5e\n", FIT (j_index), ERR (g_index));
+  printf ("k = %12.5e +/-%12.5e\n", FIT (k_index), ERR (g_index));
   
   // Check the health of the fit.
   {
@@ -818,7 +823,7 @@ main (int argc, char **argv)
     }
     // There's nothing particularly insightful about these termination
     // conditions, but they seem to work...
-    status = gsl_multifit_test_delta (s->dx, s->x, 1e-4, 1e-4);
+    status = gsl_multifit_test_delta (s->dx, s->x, 1e-8, 1e-8);
   } while ( status == GSL_CONTINUE && iteration < 500 );
   gsl_multifit_covar (s->J, 0.0, covariance);
 
