@@ -134,7 +134,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
           case 'E':
             if (dssr->beam1[1]=='H') sprintf(beamname,"EH%i",beamnum);
             else sprintf(beamname,"EL%i",beamnum);
-	    break;
+            break;
         }
       }
       if ((ppr) &&
@@ -273,7 +273,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       }
       date_dssr2date(dssr->inp_sctim, &date, &time);
       centerTime = date_hms2sec(&time);
-      meta->sar->azimuth_time_per_pixel = (centerTime - firstTime) / dssr->sc_lin;
+      meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
+                                          / (meta->sar->original_line_count/2);
    }
    /* CEOS data does not account for slant_shift and time_shift errors so far as
     * we can tell.  Other ASF tools may later set these fields based on more
@@ -352,6 +353,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
  * if (ceos->facility==UK) {
  *   int ii;
  *   meta_state_vectors *s;
+ *   int ii;
  *   s = meta_state_vectors_init(3);
  *   meta->state_vectors->vector_count = 3;
  *   for (ii=0; ii<3; ii++) {
@@ -366,7 +368,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
     * you have raw or complex data. */
    if (ceos->facility!=ESA) {
       int vector_count=3;
-      double data_int = dssr->sc_lin * fabs(meta->sar->azimuth_time_per_pixel);
+      double data_int = (meta->sar->original_line_count/2)
+                         * fabs(meta->sar->azimuth_time_per_pixel);
       get_timeDelta(ceos, ppdr, meta);
       if (meta->general->data_type>=COMPLEX_BYTE) {
         while (data_int > 15.0) {
@@ -400,7 +403,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
  * Allocate a projection parameters structure, given an ASF map projection data
  * record. */
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
-                    struct VMPDREC *mpdr)
+                   struct VMPDREC *mpdr)
 {
    meta_projection *projection = meta->projection =
            (meta_projection *)MALLOC(sizeof(meta_projection));
