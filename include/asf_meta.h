@@ -23,6 +23,7 @@
 #ifndef __ASF_META_H__
 #define __ASF_META_H__
 
+#include "ddr.h"
 #include "geolocate.h"		/* For stateVector.  */
 
 /* There are some different versions of the metadata files around.
@@ -152,34 +153,34 @@ typedef struct {
  * meta_projection / proj_parameters: These describe a map projection.
  * Projection parameter components: one for each projection.
  */
-/* Along-track/cross-track.*/
-typedef struct {
-  double rlocal;              /* Radius of earth at scene center (meters)*/
-  double alpha1,alpha2,alpha3;/* Rotation angles, in degrees             */
-} proj_atct;
+ /* Along-track/cross-track.*/
+  typedef struct {
+    double rlocal;              /* Radius of earth at scene center (meters)*/
+    double alpha1,alpha2,alpha3;/* Rotation angles, in degrees             */
+  } proj_atct;
  /* Lambert Conformal projection.*/
-typedef struct {
-  double plat1;     /* First standard parallel for Lambert */
-  double plat2;     /* Second standard parallel for Lambert*/
-  double lat0;      /* Original lat for Lambert            */
-  double lon0;      /* Original lon for Lambert            */
-} proj_lambert;
+  typedef struct {
+    double plat1;     /* First standard parallel for Lambert */
+    double plat2;     /* Second standard parallel for Lambert*/
+    double lat0;      /* Original lat for Lambert            */
+    double lon0;      /* Original lon for Lambert            */
+  } proj_lambert;
  /* Polar Sterographic.  */
-typedef struct {
-  double slat;      /* Reference latitude for polar stereographic */
-  double slon;      /* Reference longitude for polar stereographic*/
-} proj_ps;
- /* Universal Transverse Mercator.*/
-typedef struct {
-  int zone;
-} proj_utm;
+  typedef struct {
+    double slat;      /* Reference latitude for polar stereographic */
+    double slon;      /* Reference longitude for polar stereographic*/
+  } proj_ps;
+/* Universal Transverse Mercator.*/
+  typedef struct {
+    int zone;
+  } proj_utm;
  /* Projection parameters for the projection in use.  */
-typedef union {		     
-  proj_atct     atct;     /* Along-track/cross-track      */
-  proj_lambert  lambert;  /* Lambert Conformal projection */
-  proj_ps       ps;       /* Polar Sterographic           */
-  proj_utm      utm;      /* Universal Transverse Mercator*/
-} param_t;
+  typedef union {		     
+    proj_lambert  lambert;  /* Lambert Conformal projection */
+    proj_atct     atct;     /* Along-track/cross-track      */
+    proj_ps       ps;       /* Polar Sterographic           */
+    proj_utm      utm;      /* Universal Transverse Mercator*/
+  } param_t;
 typedef struct {
   char type;   /* 'A'->Along Track/Cross Track; 'P'->Polar Stereographic;
                   'L'->Lambert Conformal; 'U'->Universal Transverse Mercator.*/
@@ -196,6 +197,7 @@ typedef struct {
 } meta_projection;
  /* Compatibility alias.  proj_parameters is DEPRECATED.  */
 typedef meta_projection proj_parameters;
+
 
 /********************************************************************
  * meta_stats: statistical info about the image
@@ -308,7 +310,11 @@ meta_parameters *meta_read(const char *inName);
 /*In meta_read*/
 meta_parameters *meta_read(const char *inName);
 
+/* In meta_write */
 void meta_write(meta_parameters *meta,const char *outName);
+
+/* in meta_new2old */
+void meta_new2ddr(meta_parameters *meta, struct DDR *ddr);
 
 /*Internal creation routines:*/
 meta_parameters *raw_init(void);
