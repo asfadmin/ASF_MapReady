@@ -109,8 +109,11 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	meta->sar->range_time_per_pixel   = dssr.n_rnglok
 		/ (dssr.rng_samp_rate * get_units(dssr.rng_samp_rate,EXPECTED_FS));
 	meta->sar->azimuth_time_per_pixel = dssr.n_azilok/dssr.prf;
-/**/	meta->sar->slant_shift = NAN;
-/**/	meta->sar->time_shift = NAN;
+	/* CEOS data does not account for slant_shift and time_shift
+           errors so far as we can tell.  Other ASF tools may later
+           set these fields based on more precise orbit data.  */
+	meta->sar->slant_shift = 0.0;
+	meta->sar->time_shift = 0.0;
 	meta->sar->slant_range_first_pixel = dssr.rng_gate
 		* get_units(dssr.rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
 	meta->sar->wavelength = dssr.wave_length * get_units(dssr.wave_length,EXPECTED_WAVELEN);
