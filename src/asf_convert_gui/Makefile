@@ -15,11 +15,13 @@ GTK_ZIP = gtkwin32zip
 GTK_INC = $(GTK_DIR)/include
 GTK_LIB = $(GTK_DIR)/lib
 
-INCLUDE = -I$(GTK_INC) -I$(GTK_INC)/glib-2.0 -I$(GTK_INC)/pango-1.0 -I$(GTK_INC)/gtk-2.0 -I$(GTK_INC)/freetype2/freetype -I$(GTK_LIB)/glib-2.0/include -I$(GTK_LIB)/gtk-2.0/include -I$(GTK_INC)/atk-1.0 -I$(GTK_INC)/libglade-2.0 -I$(ASF_INCLUDE_DIR) 
+ASF_LIB = ../../lib/win32
 
-LIB = -L$(GTK_LIB) -L$(GTK_LIB)/glib-2.0 -L$(GTK_LIB)/gtk-2.0 -L$(GTK_LIB)/pango -L$(GTK_LIB)/libglade -lintl -liconv -lm -lgtk-win32-2.0 -lgobject-2.0 -llibglade-2.0 -llibgdk_pixbuf-2.0 -lglib-2.0 -lpango-1.0 -L/usr/lib/w32api -lgdi32
+INCLUDE = -I$(GTK_INC) -I$(GTK_INC)/glib-2.0 -I$(GTK_INC)/pango-1.0 -I$(GTK_INC)/gtk-2.0 -I$(GTK_INC)/freetype2/freetype -I$(GTK_LIB)/glib-2.0/include -I$(GTK_LIB)/gtk-2.0/include -I$(GTK_INC)/atk-1.0 -I$(GTK_INC)/libglade-2.0 -I$(ASF_INCLUDE_DIR)
 
-CFLAGS = -mms-bitfields -Dwin32 -g -Wall
+LIB = -L$(GTK_LIB) -L$(GTK_LIB)/glib-2.0 -L$(GTK_LIB)/gtk-2.0 -L$(GTK_LIB)/pango -L$(GTK_LIB)/libglade -llibgthread-2.0 -lpthread -lintl -liconv -lm -lgtk-win32-2.0 -lgobject-2.0 -llibglade-2.0 -llibgdk_pixbuf-2.0 -lpango-1.0 -L/usr/lib/w32api -lgdi32 -llibgdk-win32-2.0 $(ASF_LIB)/libasf_raster.a $(ASF_LIB)/libasf_meta.a $(ASF_LIB)/libasf.a $(ASF_LIB)/libgsl.a $(ASF_LIB)/libjpeg.a $(ASF_LIB)/libgslcblas.a -lglib-2.0
+
+CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
 $(TARGET).exe: $(TARGET).c
 	if [ ! -f $(GTK_DIR)/README.txt ]; then\
@@ -31,8 +33,13 @@ $(TARGET).exe: $(TARGET).c
 	cp $(TARGET).glade ../../bin/win32
 	cp $(TARGET)_help.txt ../../bin/win32
 
+doc:
+	xsltproc --nonet /usr/share/docbook-xsl/htmlhelp/htmlhelp.xsl asf_convert_gui.sgml
+	/cygdrive/c/Program\ Files\HTML\ Help\ Workshop\hhc.exe htmlhelp.hhp
+
+	
 clean:
-	rm -rf $(GTK_DIR) $(TARGET).exe core.*
+	rm -rf $(GTK_DIR) $(TARGET).exe core.* *.html *.hhc *.hhp *.chm
 
 ### End Windows Section
 
