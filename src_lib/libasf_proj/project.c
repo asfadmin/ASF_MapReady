@@ -9,6 +9,7 @@
 
 #include "projects.h"
 #include "proj_api.h"
+#include "spheroids.h"
 
 #define DEFAULT_AVERAGE_HEIGHT 0.0;
 
@@ -109,6 +110,7 @@ static int project_worker_arr(char * projection_description,
   double * tmp3;
   projPJ geographic_projection, output_projection;
   int i, ok = TRUE;
+  char latlon_projection[256];
 
   if (!(*projected_x))
   {
@@ -133,9 +135,16 @@ static int project_worker_arr(char * projection_description,
       py[i] = lat[i];
   }
 
-  geographic_projection
-      = pj_init_plus ("+proj=latlong +a=6378136.3 +b=6356751.600563");
+  sprintf(latlon_projection, "+proj=latlong +a=%lf +rf=%lf",
+	  (double) GEM6_SEMIMAJOR, (double) GEM6_INV_FLATTENING);
+
+  geographic_projection = pj_init_plus ( latlon_projection );
   
+/*
+  printf("projection description: %s %s\n", latlon_projection,
+  	 projection_description);
+*/
+
   if (pj_errno != 0)
   {
       asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
@@ -198,6 +207,7 @@ static int project_worker_arr_inv(char * projection_description,
   double * tmp3;
   projPJ geographic_projection, output_projection;
   int i, ok = TRUE;
+  char latlon_projection[256];
 
   if (!(*lat))
   {
@@ -222,8 +232,10 @@ static int project_worker_arr_inv(char * projection_description,
       plon[i] = y[i];
   }
 
-  geographic_projection
-      = pj_init_plus ("+proj=latlong +a=6378136.3 +b=6356751.600563");
+  sprintf(latlon_projection, "+proj=latlong +a=%lf +rf=%lf",
+	  (double) GEM6_SEMIMAJOR, (double) GEM6_INV_FLATTENING);
+
+  geographic_projection = pj_init_plus ( latlon_projection );
   
   if (pj_errno != 0)
   {
@@ -317,9 +329,18 @@ static char * utm_projection_description(project_parameters_t * pps)
   static char utm_wgs84_projection_description[128];
 
   /* Establish description of output projection. */
-  sprintf(utm_wgs84_projection_description,
-	  "+proj=utm +lon_0=%f +datum=%s",
-	  utm_nudge(pps->utm.lon0 * RAD_TO_DEG), datum(pps));
+  if (pps->utm.zone == MAGIC_UNSET_INT)
+  {
+      sprintf(utm_wgs84_projection_description,
+	      "+proj=utm +lon_0=%f +datum=%s",
+	      utm_nudge(pps->utm.lon0 * RAD_TO_DEG), datum(pps));
+  }
+  else
+  {
+      sprintf(utm_wgs84_projection_description,
+	      "+proj=utm +zone=%d +datum=%s",
+	      pps->utm.zone, datum(pps));
+  }
 
   return utm_wgs84_projection_description;
 }
