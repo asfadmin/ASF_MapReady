@@ -150,7 +150,7 @@ This option may not be used together with the B<--package> option.
 Do not try to ignore comment text when looking for node names in
 program text.  This option is only relevant when a new dependency
 graph cache file is being created.  Use of this option will probably
-result in a lot of false positives.  This program may get confuses
+result in a lot of false positives.  This program may get confused
 about what constitutes a comment in the presence of quoting, but not
 in such a way that it generally causes much error.
 
