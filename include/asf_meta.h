@@ -24,7 +24,7 @@
 #define __ASF_META_H__
 
 #include "geolocate.h"		/* For stateVector.  */
-/* #include "ddr.h" */
+#include "ddr.h"
 
 /******************Baseline Utilities******************/
 typedef struct {
