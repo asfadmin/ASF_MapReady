@@ -44,6 +44,9 @@ main(int argc, char **argv)
     widget = glade_xml_get_widget (glade_xml, "input_data_type_combobox");
     set_combo_box_item(widget, INPUT_TYPE_AMP);
 
+    widget = glade_xml_get_widget (glade_xml, "resample_option_menu");
+    set_combo_box_item(widget, RESAMPLE_BILINEAR);
+
     widget = glade_xml_get_widget (glade_xml, "output_format_combobox");
     set_combo_box_item(widget, OUTPUT_FORMAT_JPEG);
 

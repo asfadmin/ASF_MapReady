@@ -15,6 +15,23 @@ const char * datum_string(int datum)
     }
 }
 
+const char * resample_method_string(ResampleMethod resample_method)
+{
+  switch (resample_method) {
+  case RESAMPLE_NEAREST_NEIGHBOR:
+    return "nearest_neighbor";
+    break;
+  case RESAMPLE_BILINEAR:
+    return "bilinear";
+    break;
+  case RESAMPLE_BICUBIC:
+    return "bicubic";
+    break;
+  default:
+    g_assert_not_reached ();
+  }
+}
+
 static int entry_has_text(const char * entry_name)
 {
     GtkEntry * entry;
@@ -129,6 +146,9 @@ const char * geocode_options_string(const Settings * settings)
 	    sprintf(ret, "%s --height %f ", ret, settings->height);
 
 	sprintf(ret, "%s --datum %s ", ret, datum_string(settings->datum));
+
+	sprintf(ret, "%s --resample-method %s ", ret, 
+		resample_method_string (settings->resample_method));
     }
     else
     {
@@ -186,6 +206,8 @@ void geocode_options_changed()
 
     GtkWidget * datum_hbox;
 
+    GtkWidget * resample_hbox;
+
     gboolean geocode_projection_is_checked;
     gboolean predefined_projection_is_selected;
     gboolean average_height_is_checked;
@@ -208,6 +230,8 @@ void geocode_options_changed()
     gboolean enable_average_height_entry = FALSE;
 
     gboolean enable_datum_hbox = FALSE;
+
+    gboolean enable_resample_hbox = FALSE;
 
     table_utm_projection_options =
 	glade_xml_get_widget(glade_xml, "table_utm_projection_options");
@@ -432,6 +456,7 @@ void geocode_options_changed()
 
 	enable_average_height_checkbutton = TRUE;
 	enable_datum_hbox = TRUE;
+	enable_resample_hbox = TRUE;
 
 	average_height_is_checked = 
 	    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
@@ -487,6 +512,9 @@ void geocode_options_changed()
     datum_hbox =
 	glade_xml_get_widget(glade_xml, "datum_hbox");
 
+    resample_hbox =
+        glade_xml_get_widget(glade_xml, "resample_hbox");
+
     gtk_widget_set_sensitive(utm_zone_entry,
 			     enable_utm_zone);
 
@@ -538,6 +566,9 @@ void geocode_options_changed()
     gtk_widget_set_sensitive(datum_hbox,
 			     enable_datum_hbox);
 
+    gtk_widget_set_sensitive(resample_hbox,
+			     enable_resample_hbox);
+    
     update_summary();
 }
 
@@ -600,6 +631,25 @@ on_nad83_activate(GtkWidget * widget)
 {
     geocode_options_changed();
 }
+
+SIGNAL_CALLBACK void
+on_nearest_neighbor_activate(GtkWidget *widget)
+{
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_bilinear_activate(GtkWidget *widget)
+{
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_bicubic_activate(GtkWidget *widget)
+{
+    geocode_options_changed();
+}
+
 
 SIGNAL_CALLBACK void
 on_predefined_projection_option_menu_changed(GtkWidget * widget)

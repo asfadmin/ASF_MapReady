@@ -1,3 +1,4 @@
+#include "asf_convert_gui.h"
 
 typedef struct
 {
@@ -32,6 +33,7 @@ typedef struct
   int specified_height;
   double height;
   int datum;
+  int resample_method;
 }
 Settings;
 

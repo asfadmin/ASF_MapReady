@@ -72,6 +72,14 @@ enum Datums
     DATUM_NAD83 = 2
 };
 
+enum
+{
+  RESAMPLE_NEAREST_NEIGHBOR = 0,
+  RESAMPLE_BILINEAR = 1,
+  RESAMPLE_BICUBIC = 2
+};
+  
+
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
 #  if defined(win32)

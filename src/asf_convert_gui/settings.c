@@ -376,7 +376,8 @@ settings_get_from_gui()
 	  *false_easting_entry, 
 	  *average_height_checkbutton,
 	  *average_height_entry,
-	  *datum_option_menu;
+	  *datum_option_menu,
+	  *resample_option_menu;
 
       projection_option_menu =
 	  glade_xml_get_widget(glade_xml, "projection_option_menu");
@@ -443,6 +444,13 @@ settings_get_from_gui()
       ret->datum =
 	  gtk_option_menu_get_history(
 	      GTK_OPTION_MENU(datum_option_menu));
+
+      resample_option_menu =
+	glade_xml_get_widget(glade_xml, "resample_option_menu");
+
+      ret->resample_method =
+	gtk_option_menu_get_history(GTK_OPTION_MENU(resample_option_menu));
+				    
       
   }
 
