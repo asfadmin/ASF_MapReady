@@ -14,11 +14,15 @@ int cproc_loadimage(char * imageName)/*  TCL asks C to load up the given
 	image_delete();
 
 /*Determine the type of the image, and read it in*/
-	if (extExists(imageName,".ddr"))
-	{/*Is a LAS image*/
-		if (0==image_loadLas(imageName)) return 0;
-	} else {/*Is a CEOS image*/
-		if (0==image_loadCeos(imageName)) return 0;
+	if ( extExists(imageName,".ddr") ) {
+	  /* Is a LAS image.  */
+	  if ( 0 == image_loadLas(imageName) ) return 0;
+	} else if ( extExists(imageName, ".meta") 
+		    && meta_is_new_style(imageName) ) {
+	  if ( 0 == image_loadNewMeta(imageName) ) return 0;
+	} else {
+	  /* Is a CEOS image.  */
+	  if (0==image_loadCeos(imageName)) return 0;
 	}
 
 /*Set the zoom factor based on the image and screen sizes--
