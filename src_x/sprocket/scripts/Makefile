@@ -1,35 +1,34 @@
-# Makefile for ASF Converter
-include ../mk.common
+# Makefile for Sprocket scripts
 
-all: $(SCRIPTS)/standard.zsh $(SCRIPTS)/complex.zsh $(SCRIPTS)/pvs_gui $(SCRIPTS)/vexcel_complex.zsh $(SCRIPTS)/target_selector.zsh $(SCRIPTS)/iq.zsh $(SCRIPTS)/geo.zsh
+include ../Make_rules
 
-$(SCRIPTS)/standard.zsh: standard.zsh
-	cp standard.zsh $(SCRIPTS)/standard.zsh
+SOURCE= $(BINDIR)/standard.zsh \
+	$(BINDIR)/complex.zsh \
+	$(BINDIR)/pvs_gui \
+	$(BINDIR)/vexcel_complex.zsh \
+	$(BINDIR)/target_selector.zsh \
+	$(BINDIR)/iq.zsh \
+	$(BINDIR)/geo.zsh
 
-$(SCRIPTS)/complex.zsh: complex.zsh
-	cp complex.zsh $(SCRIPTS)/complex.zsh
+all: $(SOURCE)
 
-$(SCRIPTS)/pvs_gui: pvs_gui
-	cp pvs_gui $(SCRIPTS)/pvs_gui
+$(BINDIR)/standard.zsh: standard.zsh
+	cp standard.zsh $(BINDIR)/standard.zsh
 
-$(SCRIPTS)/vexcel_complex.zsh: vexcel_complex.zsh
-	cp vexcel_complex.zsh $(SCRIPTS)/vexcel_complex.zsh
+$(BINDIR)/complex.zsh: complex.zsh
+	cp complex.zsh $(BINDIR)/complex.zsh
 
-$(SCRIPTS)/target_selector.zsh:target_selector.zsh
-	cp target_selector.zsh $(SCRIPTS)/target_selector.zsh
+$(BINDIR)/pvs_gui: pvs_gui
+	cp pvs_gui $(BINDIR)/pvs_gui
 
-$(SCRIPTS)/iq.zsh:iq.zsh
-	cp iq.zsh $(SCRIPTS)/iq.zsh
+$(BINDIR)/vexcel_complex.zsh: vexcel_complex.zsh
+	cp vexcel_complex.zsh $(BINDIR)/vexcel_complex.zsh
 
-$(SCRIPTS)/geo.zsh:geo.zsh
-	cp geo.zsh $(SCRIPTS)/geo.zsh
+$(BINDIR)/target_selector.zsh:target_selector.zsh
+	cp target_selector.zsh $(BINDIR)/target_selector.zsh
 
+$(BINDIR)/iq.zsh:iq.zsh
+	cp iq.zsh $(BINDIR)/iq.zsh
 
-clean:
-	rm -f $(SCRIPTS)/standard.zsh
-	rm -f $(SCRIPTS)/complex.zsh
-	rm -f $(SCRIPTS)/pvs_gui
-	rm -f $(SCRIPTS)/vexcel_complex.zsh
-	rm -f $(SCRIPTS)/target_selector.zsh
-	rm -f $(SCRIPTS)/iq.zsh
-	rm -f $(SCRIPTS)/geo.zsh
+$(BINDIR)/geo.zsh:geo.zsh
+	cp geo.zsh $(BINDIR)/geo.zsh
