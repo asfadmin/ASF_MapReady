@@ -57,14 +57,21 @@ ALGORITHM REFERENCES	none
 #include "asf_meta.h"
 #include "las.h"
 #include "sysdef.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+
+/* This prototype needs a .h home */
+void meta_new2ddr(meta_parameters *meta, struct DDR *ddr);
 
 lasErr c_getddr(const char *hname,struct DDR *ddr)
 {
 	struct stat junk;
+	char *meta_name = appendExt(hname,".meta");
 	/* If the meta file exists and is version 1.1 or greater,
 	 * get ddr info from meta file */
-	if ((ENOENT!=stat(hname,junk) && meta_is_new_style(hname)) {
-		meta_parameters *meta = meta_read(hname);
+	if ((0==stat(meta_name,&junk)) && meta_is_new_style(meta_name)) {
+		meta_parameters *meta = meta_read(meta_name);
+		FREE(meta_name);
 		meta_new2ddr(meta, ddr);
 		meta_free(meta);
 	}
@@ -89,6 +96,7 @@ lasErr c_getddr(const char *hname,struct DDR *ddr)
 		char  temp[2];          /* temporary buffer                        */
 		unsigned char *dbuf;    /* pointer to area where data is stuffed   */
 
+		FREE(meta_name);
 		c_lsmknm(hname,".ddr",hostddr);		  /* make associated DDR file name */
 
 		mode = 0;				  /* make sure DDR file exists on disk*/
