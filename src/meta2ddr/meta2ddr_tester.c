@@ -32,7 +32,7 @@ START_TEST(test_ddr2meta)
   printf("%s\n",cmd);  
   fail_unless( !system(cmd), "test_ddr2meta: meta2ddr returned non-zero exit code.");
 
-  sprintf(cmd,"diff %s/ddr2meta_out.meta %s/ddr2meta_out.meta > %s/diff_ddr2meta.txt",
+  sprintf(cmd,"diff %s/ddr2meta_out.meta %s/ddr2meta_good.meta > %s/diff_ddr2meta.txt",
           _TEST_DATA_DIR,_TEST_DATA_DIR,_TEST_DATA_DIR);
   fail_unless( !system(cmd), "test_ddr2meta: diff between out and good .meta file.");
 }
@@ -60,7 +60,6 @@ START_TEST(test_meta2ddr)
   system(cmd);
   sprintf(cmd,"diff %s/meta2ddr_out.txt %s/meta2ddr_good.txt > %s/diff_meta2ddr_ddr.txt",
           _TEST_DATA_DIR,_TEST_DATA_DIR,_TEST_DATA_DIR);
-  printf("%s\n",cmd);  
   fail_unless( !system(cmd), "test_meta2ddr: diff between out and good .ddr file");
 }
 END_TEST
