@@ -48,8 +48,6 @@ export_as_esri (const char *metadata_file_name,
   double central_meridian;
   spheroid_type_t spheroid;
   char esri_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
-  char command[10000];
-  int return_code;
 
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
@@ -452,9 +450,5 @@ export_as_esri (const char *metadata_file_name,
   /* Write ESRI data file */
   strcpy (esri_data_file_name, output_file_name);
   strcat (esri_data_file_name, ".bil");
-  sprintf (command, "cp %s %s\n", image_data_file_name, esri_data_file_name);
-  return_code = system (command);
-
-  if ( return_code != 0 )
-    asfPrintError("System command '%s' failed", command);
+  fileCopy(image_data_file_name, esri_data_file_name);
 }

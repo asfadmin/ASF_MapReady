@@ -42,8 +42,6 @@ export_as_envi (const char *metadata_file_name,
   time_t time;
   char t_stamp[15];
   char envi_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
-  char command[10000];
-  int return_code;
 
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
@@ -154,9 +152,5 @@ export_as_envi (const char *metadata_file_name,
 
   strcpy (envi_data_file_name, output_file_name);
   strcat (envi_data_file_name, ".bil");
-  sprintf (command, "cp %s %s\n", image_data_file_name, envi_data_file_name);
-  return_code = system (command);
-
-  if ( return_code != 0 )
-    asfPrintError("System command '%s' failed", command);
+  fileCopy(image_data_file_name, envi_data_file_name);
 }
