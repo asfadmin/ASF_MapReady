@@ -10,7 +10,7 @@ general {
     sensor: Fred the satellite
     mode: sily
     processor: Funky proc. version 1.23
-    data_type: INTEGER*4
+    data_type: INTEGER32
     # Test comment.
     system: ieee-std # Test comment. # <-- useless but harmless pound sign
     orbit: 123#Test comment. 
