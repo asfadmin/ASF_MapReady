@@ -31,9 +31,6 @@ BUGS:
 
 ******************************************************************************/
 #include "asf.h"
- 
-
- 
 #include "asf_meta.h"
 #include "jpl_proj.h"
 
@@ -43,8 +40,11 @@ BUGS:
 
 #define RE (proj->re_major) /*Extract semimajor axis of earth (equatorial)*/
 #define RP (proj->re_minor) /*Extract semiminor axis of earth (polar)*/
-#define ecc2 (proj->ecc*proj->ecc) /*Extract first eccentricity, squared*/
-#define ecc_e (proj->ecc) /*Extract first eccentricity*/
+ /*Extract first eccentricity, squared*/
+#define ecc2 (sqrt(1.0 - (proj->re_minor*proj->re_minor)/(proj->re_major*proj->re_major)) \
+            * sqrt(1.0 - (proj->re_minor*proj->re_minor)/(proj->re_major*proj->re_major)))
+ /*Extract first eccentricity*/
+#define ecc_e (sqrt(1.0 - (proj->re_minor*proj->re_minor)/(proj->re_major*proj->re_major)))
 
 /*Projection Prototypes;*/
 void ll_ac(meta_projection *proj, char look_dir, double lat, double lon, double *c1, double *c2);
