@@ -2,10 +2,11 @@
 
 #include "asf_meta.h"
 #include "caplib.h"
+#include "err_die.h"
 
 /* Given a meta_parameters structure pointer and a file name, write a
    metadata file for that structure.  */
-void meta_write(meta_parameters *meta, char *file_name)
+void meta_write(meta_parameters *meta, const char *file_name)
 {
   FILE *fp = FOPEN(file_name, "w");
   
@@ -24,9 +25,9 @@ void meta_write(meta_parameters *meta, char *file_name)
   fprintf(fp, "    sample_count: %d\n", meta->general->sample_count);
   fprintf(fp, "    start_line: %d\n", meta->general->start_line);
   fprintf(fp, "    start_sample: %d\n", meta->general->start_sample);
-  fprintf(fp, "    range_pixel_size: %f\n", meta->general->range_pixel_size);
-  fprintf(fp, "    azimuth_pixel_size: %f\n", 
-	  meta->general->azimuth_pixel_size);
+  fprintf(fp, "    x_pixel_size: %f\n", meta->general->x_pixel_size);
+  fprintf(fp, "    y_pixel_size: %f\n", 
+	  meta->general->y_pixel_size);
   fprintf(fp, "    center_latitude: %f\n", meta->general->center_latitude);
   fprintf(fp, "    center_longitude: %f\n", meta->general->center_longitude);
   fprintf(fp, "    re_major: %f\n", meta->general->re_major);
@@ -48,21 +49,21 @@ void meta_write(meta_parameters *meta, char *file_name)
 	  meta->sar->azimuth_time_per_pixel);
   fprintf(fp, "    slant_range_first_pixel: %f\n", 
 	  meta->sar->slant_range_first_pixel);
-  fprintf(fp, "    slant_shift: %d\n", meta->sar->slant_shift);
-  fprintf(fp, "    time_shift: %d\n", meta->sar->time_shift);
-  fprintf(fp, "    wavelength: %d\n", meta->sar->wavelength);
-  fprintf(fp, "    pfr: %d\n", meta->sar->prf);
-  fprintf(fp, "    doppler range center frequency: %d\n", 
+  fprintf(fp, "    slant_shift: %f\n", meta->sar->slant_shift);
+  fprintf(fp, "    time_shift: %f\n", meta->sar->time_shift);
+  fprintf(fp, "    wavelength: %f\n", meta->sar->wavelength);
+  fprintf(fp, "    pfr: %f\n", meta->sar->prf);
+  fprintf(fp, "    doppler range center frequency: %f\n", 
 	  meta->sar->range_doppler_coefficients[0]);
-  fprintf(fp, "    doppler range linear coefficient: %d\n", 
+  fprintf(fp, "    doppler range linear coefficient: %f\n", 
 	  meta->sar->range_doppler_coefficients[1]);
-  fprintf(fp, "    doppler range quadratic coefficient: %d\n", 
+  fprintf(fp, "    doppler range quadratic coefficient: %f\n", 
 	  meta->sar->range_doppler_coefficients[2]);
-  fprintf(fp, "    doppler azimuth center frequency: %d\n", 
+  fprintf(fp, "    doppler azimuth center frequency: %f\n", 
 	  meta->sar->azimuth_doppler_coefficients[0]);
-  fprintf(fp, "    doppler azimuth linear coefficient: %d\n", 
+  fprintf(fp, "    doppler azimuth linear coefficient: %f\n", 
 	  meta->sar->azimuth_doppler_coefficients[1]);
-  fprintf(fp, "    doppler azimuth quadratic coefficient: %d\n", 
+  fprintf(fp, "    doppler azimuth quadratic coefficient: %f\n", 
 	  meta->sar->azimuth_doppler_coefficients[2]);
   fprintf(fp, "    satellite_binary_time: %s\n", 
 	  meta->sar->satellite_binary_time);
@@ -74,25 +75,25 @@ void meta_write(meta_parameters *meta, char *file_name)
   fprintf(fp, "state {\n");
   fprintf(fp, "    year: %d\n", meta->state_vectors->year);
   fprintf(fp, "    julDay: %d\n", meta->state_vectors->julDay);
-  fprintf(tp, "    second: %f\n", meta->state_vectors->second);
+  fprintf(fp, "    second: %f\n", meta->state_vectors->second);
   { 
     int i;
     for ( i = 0 ; i < meta->state_vectors->num ; i++ ) {
       fprintf(fp, "    vector {\n");
       fprintf(fp, "        time: %f\n", 
-	      meta->state_vectors->state_loc[i].time);
+	      meta->state_vectors->vecs[i].time);
       fprintf(fp, "        X coordinate, earth-fixed [m]: %f\n", 
-	      meta->state_vectors->state_loc[i].vec.pos.x);
+	      meta->state_vectors->vecs[i].vec.pos.x);
       fprintf(fp, "        Y coordinate, earth-fixed [m]: %f\n", 
-	      meta->state_vectors->state_loc[i].vec.pos.y);
+	      meta->state_vectors->vecs[i].vec.pos.y);
       fprintf(fp, "        Z coordinate, earth-fixed [m]: %f\n", 
-	      meta->state_vectors->state_loc[i].vec.pos.z);
+	      meta->state_vectors->vecs[i].vec.pos.z);
       fprintf(fp, "        X velocity, earth-fixed [m/s]: %f\n", 
-	      meta->state_vectors->state_loc[i].vec.vel.x);
+	      meta->state_vectors->vecs[i].vec.vel.x);
       fprintf(fp, "        Y velocity, earth-fixed [m/s]: %f\n", 
-	      meta->state_vectors->state_loc[i].vec.vel.y);
+	      meta->state_vectors->vecs[i].vec.vel.y);
       fprintf(fp, "        Z velocity, earth-fixed [m/s]: %f\n", 
-	      meta->state_vectors->state_loc[i].vec.vel.z);
+	      meta->state_vectors->vecs[i].vec.vel.z);
       fprintf(fp, "    }\n");
     }
   }
@@ -123,7 +124,7 @@ void meta_write(meta_parameters *meta, char *file_name)
 	    meta->projection->param.atct.alpha3);
     break;
   case 'B': /* Lambert conformal conic projection.  */
-    fprintf(fp, "        lambert {\n"
+    fprintf(fp, "        lambert {\n");
     fprintf(fp, "            plat1: %f\n", 
 	    meta->projection->param.lambert.plat1);
     fprintf(fp, "            plat2: %f\n", 
@@ -140,7 +141,7 @@ void meta_write(meta_parameters *meta, char *file_name)
     break;
   case 'U': /* Universal transverse mercator projection.  */
     fprintf(fp, "        utm {\n");
-    fprintf(fp, "            zone: $d\n", meta->projection->param.utm.zone);
+    fprintf(fp, "            zone: %d\n", meta->projection->param.utm.zone);
     break;
   default: 
     err_die("unknown projection type seen in function '%s'\n", __func__);
@@ -148,3 +149,4 @@ void meta_write(meta_parameters *meta, char *file_name)
   fprintf(fp, "        }\n");
   fprintf(fp, "    }\n");
   fprintf(fp, "}\n");
+}
