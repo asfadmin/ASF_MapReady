@@ -79,6 +79,21 @@ typedef enum {
 } data_type_t;
 
 typedef enum {
+  RAW_IMAGE=1,
+  COMPLEX_IMAGE,
+  AMPLITUDE_IMAGE,
+  PHASE_IMAGE,
+  POWER_IMAGE,
+  SIGMA_IMAGE,
+  GAMMA_IMAGE,
+  BETA_IMAGE,
+  COHERENCE_IMAGE,
+  GEOCODED_IMAGE,
+  DEM,
+  IMAGE
+} image_data_type_t;
+
+typedef enum {
   UNIVERSAL_TRANSVERSE_MERCATOR,
   POLAR_STEREOGRAPHIC,
   ALBERS_EQUAL_AREA,
@@ -109,6 +124,21 @@ typedef struct {
  *    COMPLEX_REAL32      two 4 byte floats        = float                 *
  *    COMPLEX_REAL64      two 8 byte floats        = double                *
  *    ???                 unknown (-999999999)                             */
+  image_data_type_t image_data_type;/* Image data type                     */
+/* Possible values for image type:                                         *
+ *   META STRING          IMAGE DATA TYPE                                  *
+ *    RAW                 Level 0 raw data (STF or CEOS)                   *
+ *    COMPLEX             Level 1 complex data                             *
+ *    AMPLITUDE           Amplitude image                                  *
+ *    PHASE               Phase image (e.g. interferogram)                 *
+ *    POWER               Power (magnitude) image                          *
+ *    SIGMA               Sigma image (calibrated amplitude) [dB]          *
+ *    GAMMA               Gamma image (calibrated amplitude) [dB]          *
+ *    BETA                Beta image (calibrated amplitude) [dB]           *
+ *    COHERENCE           Coherence image                                  *
+ *    GEOCODED_IMAGE      Geocoded image                                   *
+ *    DEM                 Digital elevation model                          *
+ *    IMAGE               Generic image                                    */
   char system[FIELD_STRING_MAX];    /* System of samples (e.g. "ieee-std") */
 /*  Possible string values for system:                                     *
  *    OUR NAME      DDR EQUIVALENT      WHAT IT IS                         *
