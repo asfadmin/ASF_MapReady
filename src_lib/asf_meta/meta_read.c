@@ -244,7 +244,6 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	general->re_major = (meta->projection) ? meta->projection->re_major : 6378144.0;
 	general->re_minor = (meta->projection) ? meta->projection->re_minor : 6356754.9;
 	
-
 /* Fields that cannot be filled from the old structures */
 	general->frame            = -1;
 	general->band_number      = -1;
@@ -287,22 +286,8 @@ void meta_new2old(meta_parameters *meta)
 	meta->geo->dopAz[2]    = meta->sar->azimuth_doppler_coefficients[2];
 
 /* Fill ifm_parameters structure */
-    { /* Estimate satellite height and Earth radius */
-	int line = meta->general->line_count / 2;
-	int sample = 0;
-	double lat, time;
-	double re=meta->general->re_major,   rp=meta->general->re_minor;
-	stateVector stVec;
-
-	/* ht */
-	time = meta_get_time(meta, line, sample);
-	stVec = meta_get_stVec(meta, time);
-	meta->ifm->ht = sqrt(stVec.pos.x * stVec.pos.x + stVec.pos.y * stVec.pos.y + stVec.pos.z * stVec.pos.z);
-
-	/* er */
-	lat = asin(stVec.pos.z / meta->ifm->ht);
-	meta->ifm->er = (double) (re*rp)/sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
-    }
+	meta->ifm->ht            = meta_get_sat_height(meta, meta->general->line_count/2, 0);
+	meta->ifm->er            = meta_get_earth_radius(meta, meta->general->line_count/2, 0);
 	meta->ifm->nLooks        = meta->sar->look_count;
 	meta->ifm->orig_nLines   = meta->general->line_count;
 	meta->ifm->orig_nSamples = meta->general->sample_count;
