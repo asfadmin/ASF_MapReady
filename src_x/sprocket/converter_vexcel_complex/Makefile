@@ -3,6 +3,8 @@
 include ../Make_rules
 
 LIBS  = $(LIBDIR)/libUtil.a \
+	$(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
 	-lm
 
 META_OBJS = ceos_rd.o \
