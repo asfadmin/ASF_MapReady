@@ -48,8 +48,8 @@ LIBS
 {
 @src_lib/
 	asf
-	regex_wrapper
 	asf_las
+	regex_wrapper
 	asf_meta
 	asf_concat
 	asf_lt
@@ -57,6 +57,8 @@ LIBS
 	asf_odl
 	asf_fft
 	libjpeg
+	libtiff
+	libgeotiff
 @src_ifm/
 	libifm
 @src_tc/
@@ -81,6 +83,7 @@ PROGRAMS
 	}
 	fftMatch { }
 	get_rectypes { }
+	las2geotiff { }
 	las2jpeg { BINS jpeg2las }
 	las2ppm { }
 	las_op { }
