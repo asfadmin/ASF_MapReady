@@ -908,7 +908,7 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 			    &i, *argc, *argv, &write_file, &ok))
 			continue;
 
-		    if (parse_center_latitude_option(
+		    if (parse_first_standard_parallel_option(
 			    &i, *argc, *argv, &specified_slat,
 			    &pps->ps.slat, &ok))
 			continue;
