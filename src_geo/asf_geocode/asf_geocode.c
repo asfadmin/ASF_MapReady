@@ -215,6 +215,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include <asf.h>
 #include <asf_meta.h>
 #include <asf_raster.h>
+#include <asf_reporting.h>
 #include "float_image.h"
 #include <libasf_proj.h>
 
@@ -583,8 +584,9 @@ main (int argc, char **argv)
   // minimum and maximum projection coordinates in each dimension.
   // This lets us determine the exact extent of the projected image in
   // projection coordinates.
-  printf ("Determining input image extents in projection coordinate "
-	  "space... ");
+  asfPrintStatus ("Determining input image extents in projection coordinate "
+		  "space... ");
+
   double min_x = DBL_MAX;
   double max_x = - DBL_MAX;
   double min_y = DBL_MAX;
@@ -651,14 +653,14 @@ main (int argc, char **argv)
     g_free (lats);
   }
 
-  printf ("done.\n\n");
+  asfPrintStatus ("done.\n\n");
 
   // Generate some mappings between output image projection
   // coordinates and input image pixel coordinates, using proj.  We
   // compute transformations for points on a grid_size * grid_size
   // grid and a sparse_grid_size * sparse_grid_size grid.
-  printf ("Performing analytical projection of a spatially distributed\n"
-	  "subset of input image pixels... ");
+  asfPrintStatus ("Performing analytical projection of a spatially "
+		  "distributed\nsubset of input image pixels... ");
   fflush (stdout);
   double x_range_size = max_x - min_x, y_range_size = max_y - min_y;
   const size_t grid_size = 131;
@@ -697,7 +699,11 @@ main (int argc, char **argv)
       // Corresponding latitude and longitude.
       double lat, lon;
       gboolean return_code = unproject (pp, cxproj, cyproj, &lat, &lon);
-      g_assert (return_code);
+      if (!return_code)
+      {
+	  /* details of the error should have already been printed */
+	  asfPrintError("Projection Error!\n");
+      }
       lat *= RAD_TO_DEG;
       lon *= RAD_TO_DEG;
       // Corresponding pixel indicies in input image.
@@ -721,7 +727,7 @@ main (int argc, char **argv)
     }
   }
 
-  printf ("done.\n\n");
+  asfPrintStatus ("done.\n\n");
 
   // Here are some convenience macros for the spline model.
 #define X_PIXEL(x, y) reverse_map_x (&dtf, x, y) 
@@ -783,17 +789,20 @@ main (int argc, char **argv)
     // We want to choke if our worst point in the model is off by this
     // many pixels or more.
     double max_allowable_error = 0.5;
-    g_assert (largest_error < max_allowable_error);
-    printf ("For the differences between spline model values and projected "
-	    "values\nfor the analytically projected control points:\n");
-    printf ("Mean: %g\n", mean_error);
-    printf ("Standard deviation: %g\n", error_standard_deviation); 
-    printf ("Maximum (Worst observed error in pixel index distance): %g\n", 
-	    largest_error);
-    printf ("Maximum x error (worst observed error in x pixel index): %g\n",
-	    largest_x_error);
-    printf ("Maximum y error (worst observed error in y pixel index): %g\n",
-	    largest_y_error);
+    if ( largest_error > max_allowable_error )
+	asfPrintError("Largest Error was larger than maximum allowed! "
+		      "%f > %f\n", largest_error, max_allowable_error);
+    asfPrintStatus ("For the differences between spline model values and "
+		    "projected values\nfor the analytically projected "
+		    "control points:\n");
+    asfPrintStatus ("Mean: %g\n", mean_error);
+    asfPrintStatus ("Standard deviation: %g\n", error_standard_deviation); 
+    asfPrintStatus ("Maximum (Worst observed error in pixel index distance): "
+		    "%g\n", largest_error);
+    asfPrintStatus ("Maximum x error (worst observed error in x pixel index): "
+		    "%g\n", largest_x_error);
+    asfPrintStatus ("Maximum y error (worst observed error in y pixel index): "
+		    "%g\n", largest_y_error);
     gsl_vector_free (model_errors);
     gsl_vector_free (model_y_errors);
     gsl_vector_free (model_x_errors);
@@ -811,9 +820,15 @@ main (int argc, char **argv)
   double ul_x, ul_y;
   project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
   double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
-  g_assert (fabs (ul_x_pix_approx) < max_corner_error);
+  if (fabs (ul_x_pix_approx) > max_corner_error )
+      asfPrintError ("UL X Corner Error was too large!  %f > %f\n",
+		     fabs(ul_x_pix_approx), max_corner_error );
+
   double ul_y_pix_approx = Y_PIXEL (ul_x, ul_y);
-  g_assert (fabs (ul_y_pix_approx) < max_corner_error);
+  if (fabs (ul_y_pix_approx) > max_corner_error )
+      asfPrintError ("UL Y Corner Error was too large! %f > %f\n",
+		     fabs (ul_y_pix_approx), max_corner_error );
+
   // Lower right corner.
   double lr_lat, lr_lon;
   meta_get_latLon (imd, (float)(ii_size_y - 1), (float)(ii_size_x - 1), 
@@ -821,17 +836,25 @@ main (int argc, char **argv)
   double lr_x, lr_y;
   project (pp, DEG_TO_RAD * lr_lat, DEG_TO_RAD * lr_lon, &lr_x, &lr_y);
   double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
-  g_assert (fabs (lr_x_pix_approx - (ii_size_x - 1)) < max_corner_error);
+  if (fabs (lr_x_pix_approx - (ii_size_x - 1)) > max_corner_error )
+      asfPrintError ("LR X Corner Error was too large! %f > %f\n",
+		     fabs (lr_x_pix_approx - (ii_size_x - 1)),
+		     max_corner_error);
+
   double lr_y_pix_approx = Y_PIXEL (lr_x, lr_y);
-  g_assert (fabs (lr_y_pix_approx - (ii_size_y - 1)) < max_corner_error);
+  if (fabs (lr_y_pix_approx - (ii_size_y - 1)) > max_corner_error )
+      asfPrintError ("LR Y Corner Error was too large! %f > %f\n",
+		     fabs (lr_y_pix_approx - (ii_size_y - 1)), 
+		     max_corner_error);
 
   // Done with the input metadata.
   meta_free (imd);
 
-  printf ("\n");
+  asfPrintStatus ("\n");
 
   // Now we are ready to produce our output image.  
-  printf ("Resampling input image into output image coordinate space...\n");
+  asfPrintStatus ("Resampling input image into output image "
+		  "coordinate space...\n");
 
   // Maximum output image pixel indicies.
   size_t oix_max = ii_size_x - 1, oiy_max = ii_size_y - 1;
@@ -882,12 +905,10 @@ main (int argc, char **argv)
 					floor (input_y_pixel + 0.5)));
       }
     }
-    if ( (oiy != 0 && (oiy + 1) % 100 == 0) || oiy + 1 == oiy_max ) {
-      printf ("Finished output image line %d\n", oiy + 1);
-    }
+    asfLineMeter( oiy, oiy_max );
   }
 
-  printf ("Done resampling image.\n\n");
+  asfPrintStatus ("Done resampling image.\n\n");
 
   float_image_free (iim);
 
@@ -896,7 +917,7 @@ main (int argc, char **argv)
   g_string_append (output_data_file, ".img");
   int return_code = float_image_store (oim, output_data_file->str,
 				       FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  g_assert (return_code == 0);
+  asfRequire (return_code == 0, "Error saving image.\n");
   float_image_free (oim);
   g_string_free (output_data_file, TRUE);
 
@@ -905,10 +926,14 @@ main (int argc, char **argv)
   // geocoding parameters.
   meta_parameters *omd = meta_read (input_image->str);
   if ( omd->sar->image_type == 'P' ) {
-    g_assert (omd->projection->type == SCANSAR_PROJECTION);
+      if (omd->projection->type != SCANSAR_PROJECTION)
+	  asfPrintError ("Expected SCANSAR projection type but got %d!\n",
+			 omd->projection->type);
   }
   else {
-    g_assert (omd->projection == NULL);
+      if (omd->projection != NULL)
+	  asfPrintError ("This image is already projected! "
+			 "Cannot re-project.\n");
   }
   omd->sar->image_type = 'P';
   omd->projection = g_new0 (meta_projection, 1);

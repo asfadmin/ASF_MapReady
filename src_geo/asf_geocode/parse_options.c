@@ -791,7 +791,10 @@ static int extract_flags(int *argc, char **argv[], ... )
 void parse_log_options(int *argc, char **argv[])
 {
     if (extract_string_options(argc, argv, logFile, "-log", NULL))
+    {
 	logflag = 1;
+	fLog = FOPEN(logFile, "wt");
+    }
     else
 	logflag = 0;
 
