@@ -20,8 +20,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_convert"
 
 #define ASF_USAGE_STRING \
-"[-format <output_format>] [-size <output_size>] <in_data> <in_meta> <out_full>\n"\
-"Additional options: -help, -log <log_file>, -quiet"
+"[-format <output_format>] [-size <output_size>] [-log <logFile>]\n"\
+"            [-quiet] [-help] <inBaseName> <outBaseName>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "This program ingests level one CEOS data, geocodes and resamples them (both optional) and exports them to a variety of output formats."
@@ -42,9 +42,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_EXAMPLES_STRING \
 "To convert the CEOS format file1 to the default format (geotiff) file2.tif\n"\
-"   asf_convert file file1.D file1.L file2.tif\n"\
+"   asf_convert file1 file2\n"\
 "To convert the CEOS format file1 to a jpeg format in file2.jpg\n"\
-"   asf_convert -format jpeg file1.D file1.L file2.jpg"
+"   asf_convert -format jpeg file1 file2"
 
 #define ASF_LIMITATIONS_STRING \
 "None known."
@@ -228,6 +228,7 @@ int main(int argc, char *argv[])
 	int formatFlag, sizeFlag, configFlag, configInitFlag, quietFlag;
 	int ii, size_out;
 	file_format_t type_in, type_out;
+	int found;
 
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
 	/*Super-secret hidden options :)*/
@@ -261,7 +262,7 @@ int main(int argc, char *argv[])
 	  if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
 		  neededArgs += 2;/*option & parameter*/
 	  else
-		  neededArgs += 3;/*in_data_file, in_meta_file, out_file*/
+		  neededArgs += 2;/*in_data_file, in_meta_file (no longer!), out_file*/
 	  if(logflag != FLAG_NOT_SET)
 		  neededArgs += 2;/*option & parameter*/
 	  if(formatFlag != FLAG_NOT_SET)
@@ -283,7 +284,7 @@ int main(int argc, char *argv[])
 			usage();
 	}
 	else
-		if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-' || argv[argc - 3][0] == '-')
+	  if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-')
 			usage();/*This exits with a failure*/
 
 	/*Next we're going to make sure the options are specified according to the usage
@@ -296,14 +297,14 @@ int main(int argc, char *argv[])
 			if(argv[logflag + 1][0] == '-' || logflag >= argc - 3)
 				usage();
 		else
-			if(argv[logflag + 1][0] == '-' || logflag >= argc - 4)
+			if(argv[logflag + 1][0] == '-' || logflag >= argc - 3)
 				usage();/*This exits with a failure*/
 	}
 	if(formatFlag != FLAG_NOT_SET)
-		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 4)
+		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3)
 			usage();/*This exits with a failure*/
 	if(sizeFlag != FLAG_NOT_SET)
-		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 4)
+		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
 			usage();/*This exits with a failure*/
 
 	/*We must be good enough at this point...start processing with assumptions that are
@@ -336,27 +337,75 @@ int main(int argc, char *argv[])
 	/*Get files from command line if we're not doing a config file*/
 	if(configFlag == FLAG_NOT_SET && configInitFlag == FLAG_NOT_SET)
 	{
-		strcpy(data_file, argv[argc - 3]);/*The first of the last three arguments*/
-		strcpy(meta_file, argv[argc - 2]);/*The second of the last three arguments*/
-		strcpy(out_file, argv[argc - 1]);/*The third of the last three arguments*/
+		strcpy(data_file, argv[argc - 2]);/*The first of the last two arguments*/
+		/*strcpy(meta_file, argv[argc - 2]);*/ /*The second of the last three arguments*/
+		strcpy(out_file, argv[argc - 1]);/*The second of the last two arguments*/
 		/*Replace any \'s with \\'s*/
 		replace_backslashes(data_file);
-		replace_backslashes(meta_file);
+		/*replace_backslashes(meta_file);*/
 		replace_backslashes(out_file);
-		if(strchr(data_file, '.') != NULL)/*Make sure the file has an extension*/
+
+		found = FALSE;
+		if(strchr(data_file, '.') != NULL)/* If file has an extension, see if we know it*/
 		{
 			if(!strcmp(".D", strrchr(data_file, '.')))/*If the file ends in .D*/
-				strcpy(format_in, "CEOS");/*It must be a CEOS image*/
+			  {                                       /*It must be a CEOS image*/
+				strcpy(format_in, "CEOS");
+				strcpy(meta_file, data_file);
+				meta_file[ strlen(meta_file) - 1 ] = 'L';
+				found = TRUE;
+			  }
 			else if(!strcmp(".img", strrchr(data_file, '.')))/*If the file ends in .img*/
-				strcpy(format_in, "ASF");/*It must be an ASF internal format file*/
-			else
-				print_error("Unrecognized input file format");/*Otherwise, we have no idea*/
+			  {                                /*It must be an ASF internal format file*/
+			        char *ext;
+				strcpy(format_in, "ASF");
+				strcpy(meta_file, data_file);
+				ext = strrchr(meta_file, '.');
+				strcpy(ext + 1, "meta");
+				found = TRUE;
+			  }
 		}
-		else
-			print_error("Unrecognized input file format");/*If no extension, we're not sure what to do*/
+
+		if (!found)
+		{
+		  /* see if <basename>.D exists */
+		  char file_test[255];
+		  strcpy(file_test, data_file);
+		  strcat(file_test, ".D");
+		  if (fileExists(file_test))
+		    {
+		      strcpy(format_in, "CEOS");
+		      strcpy(data_file, file_test);
+		      strcpy(meta_file, data_file);
+		      meta_file[ strlen(meta_file) - 1 ] = 'L';
+		    }
+		  else
+		    {
+		      /* try <basename>.img */
+		      strcpy(file_test, data_file);
+		      strcat(file_test, ".img");
+		      if (fileExists(file_test))
+			{
+			  char *ext;
+			  strcpy(format_in, "ASF");
+			  strcpy(data_file, file_test);
+			  strcpy(meta_file, data_file);
+			  ext = strrchr(meta_file, '.');
+			  strcpy(ext + 1, "meta");
+			}
+		      else
+			{
+			  /* can't find the file! */
+			  snprintf(file_test, sizeof(file_test),
+				   "Couldn't find input file %s.D", 
+				   data_file, data_file);
+
+			  print_error(file_test); /*Otherwise, we have no idea*/
+			}
+		    }
+		}
 	}
 /***********************END COMMAND LINE PARSING STUFF***********************/
-
 	if(configInitFlag != FLAG_NOT_SET)
 	{
 		if(fileExists(configFile))
@@ -460,6 +509,8 @@ int main(int argc, char *argv[])
 	{
 		char command[255];
 		char temp[255];
+		char asf_internal_basename[255];
+
 		/* Prepare processing */
 		if (configFlag == FLAG_NOT_SET)
 		{
@@ -470,16 +521,30 @@ int main(int argc, char *argv[])
 		}
 
 
-		sprintf(command, "asf_import -log %s -format %s", logFile, format_in);
-		if(quietFlag != FLAG_NOT_SET)
-			strcat(command, " -quiet");
-		sprintf(temp, " -%s %s %s tmp%i",
-		cfg->general->data_type,
-		cfg->general->in_data_name,
-		cfg->general->in_meta_name,
-		(int)getpid());
-		strcat(command, temp);
-		check_return(system(command), "Importing data (asf_import)");
+		/* skip asf_import if given an img file */
+		if (strcmp(uc(format_in), "ASF"))
+		  {
+		    sprintf(asf_internal_basename, "tmp%i", (int)getpid());
+		    sprintf(command, "asf_import -log %s -format %s", logFile, format_in);
+		    if(quietFlag != FLAG_NOT_SET)
+		      strcat(command, " -quiet");
+		    sprintf(temp, " -%s %s %s",
+			    cfg->general->data_type,
+			    cfg->general->in_data_name,
+			    /* cfg->general->in_meta_name, */
+			    asf_internal_basename);
+		    strcat(command, temp);
+		    check_return(system(command), "Importing data (asf_import)");
+		  }
+		else
+		  {
+		    char *p;
+
+		    strcpy(asf_internal_basename, cfg->general->in_data_name);
+		    p = strrchr(asf_internal_basename, '.');
+		    if (strcmp(p, ".img") == 0)
+		      *p = '\0';
+		  }
 
 		/* Determine the corner coordinates of the image */
 		if (cfg->general->browse)
@@ -570,9 +635,9 @@ int main(int argc, char *argv[])
 			sprintf(temp, " -size %i", size_out);
 			strcat(command, temp);
 		}
-		sprintf(temp, " -format %s tmp%i %s",
+		sprintf(temp, " -format %s %s %s",
 		format_out,
-		(int)getpid(),
+		asf_internal_basename,
 		cfg->general->out_name);
 		strcat(command, temp);
 		check_return(system(command), "Exporting data (asf_export)");
