@@ -2,68 +2,62 @@ NAME: trim_slc
 
 SYNOPSIS:
    
-     trim_slc <inSLC> <outCPX> <top line> <left samp> [<trim ht> <trim wth>]
+	trim_slc [-height <trim_ht>] [-width <trim_wid>] <inSLC> <outCPX>
+	         <top line> <left samp>
 
 DESCRIPTION:
 
-	Trim_slc does two things: it converts a single-look-complex
-	format image into a LAS 6.0 float-complex image, and allows you 
-	to trim that image.  The DDR's master line and master sample 
-	fields ARE maintained.
+	Trim_slc does two things: it converts a single-look-complex format
+	image into an ASF tools format float-complex image, and allows you  to
+	trim that image.  The DDR's master line and master sample  fields ARE
+	maintained.
 
-	You specify the input, output filenames, and 
-	a top left coordinate.  Trim_slc will create a new image in outfile
-	which starts at these coordinates.  Optionally, you can also
-	specify the new height and width of the output image (if not 
-	specified, trim will use the old size minus the top left coordinates
-	-- i.e. minus the part that is trimmed off).  (note: you can also 
-	make images bigger with this program, by specifying a larger width 
-	and height than were originally there.)
+	You specify the input, output filenames, and a top left coordinate. 
+	Trim_slc will create a new image in outfile which starts at these
+	coordinates. Optionally, you can also specify the new height and width
+	of the output image (if not specified, trim will use the old size minus
+	the top left coordinates -- i.e. minus the part that is trimmed off).
+	(note: you can also make images bigger with this program, by specifying
+	a larger width and height than were originally there.)
 
-	Trim_slc creates a valid LAS 6.0 DDR (data descriptor record) from
-	the metadata.  You do not need to create a DDR for the input data.
-
-	This program should work with, but has not been tested with,
-	RADARSAT era datafiles and metadata.
-
-OPTIONS:
-
-ERROR MESSAGES:
-MESSAGE GIVEN:				REASON:
--------------------------------------------------------------------------
+	This program should work with, but has not been tested with, RADARSAT
+	era datafiles and metadata.
 
 EXAMPLES:
 
-	If you have an ASF CEOS image named "R102.D" and "R102.L", and
-	you want to convert the whole thing into a LAS 6.0 float-complex image
-	named "lasimg.cpx" and "lasimg.ddr", probably for use in interferometry
-	(and with resolve, the first step in the interferometry process), type:
+	If you have an ASF CEOS image named "R102.D" and "R102.L", and you want
+	to convert the whole thing into a ASF tools format float-complex image
+	named "asf_img.cpx" and "asf_img.meta", probably for use in
+	interferometry (and with resolve, the first step in the interferometry
+	process), type:
 
-	trim_slc R102 lasimg 0 0
+	> trim_slc R102 asf_img 0 0
 	
 	If you have the same situation, but you want only the first 
 	1000 lines and 400 samples, type
 
-	trim_slc R102 lasimg 0 0 1000 400
+	> trim_slc -height 1000 -width 400 R102 asf_img 0 0
 	
 	If you want those 1000 lines and 400 samples from
 	line 3000, sample 52 of the CEOS image, type
 	
-	trim_slc R102 lasimg 3000 52 1000 400
+	> trim_slc R102 asf_img 3000 52 1000 400
 
 	Another example, to convert bob.D and bob.L, a Single-Look-Complex
-  	image file into bill.cpx and bill.ddr, a Float-Complex image file,
-	type:  trim_slc bob bill 0 0
+  	image file into bill.cpx and bill.meta, a Float-Complex image file,
+	type:
+	
+	> trim_slc bob bill 0 0
 
 
 SEE ALSO:
 	trim(1), resolve(1)
 
-HARDWARE/SOFTWARE LIMITATIONS: none
+HARDWARE/SOFTWARE LIMITATIONS: None known.
 
-BUGS:
+BUGS: None known.
 
-AUTHOR: Orion Lawlor  --  June 1997, ASF SAR Tools.
+AUTHOR: Orion Lawlor
 
 CONTACT:  apd@asf.alaska.edu
 	  http://www.asf.alaska.edu/apd
