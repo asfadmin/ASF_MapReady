@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 {
   char inBaseName[256]="";
   char inDataName[256]="", inMetaName[256]="";
-  char outName[288]="", outBaseName[256]="";
+  char outBaseName[256]="";
   char inMetaNameOption[256], prcPath[256]="";
   char *lutName=NULL;
   char format_type[256]="";
@@ -245,10 +245,6 @@ int main(int argc, char *argv[])
   flags[f_LOG] = checkForOption("-log", argc, argv);
   flags[f_QUIET] = checkForOption("-quiet", argc, argv);
   flags[f_FORMAT] = checkForOption("-format", argc, argv);
-
-  /*Make sure to set old school log & quiet flags (for use in our libraries)*/
-  quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
-  logflag = TRUE; /* Since we always log set the oldschool logflag to true */
 
   { /*Check for mutually exclusive options: we can only have one of these*/
     int temp = 0;
@@ -320,21 +316,25 @@ int main(int argc, char *argv[])
        || flags[f_FORMAT] >= argc-REQUIRED_ARGS)
       usage();
 
-  /*We must be close to good enough at this point...
-    start filling in fields as needed*/
-  if(flags[f_QUIET] == FLAG_NOT_SET)
-    print_splash_screen(argc, argv);/*display splash screen if not quiet*/
-
+  /* Be sure to open log ASAP */
   if(flags[f_LOG] != FLAG_NOT_SET)
     strcpy(logFile, argv[flags[f_LOG] + 1]);
   else /*default behavior: log to tmp<pid>.log*/
     sprintf(logFile, "tmp%i.log", (int)getpid());
-
+  logflag = TRUE; /* Since we always log, set the old school logflag to true */
   fLog = FOPEN(logFile, "a");
+  /* Set old school quiet flag (for use in our libraries) */
+  quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
+
+  /*We must be close to good enough at this point... (logfile is open)
+    start filling in fields as needed*/
+  if(flags[f_QUIET] == FLAG_NOT_SET)
+    print_splash_screen(argc, argv);/*display splash screen if not quiet*/
+
   if(flags[f_PRC] != FLAG_NOT_SET)
-   strcpy(prcPath, argv[flags[f_PRC] + 1]);
-  if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET)
-  {
+    strcpy(prcPath, argv[flags[f_PRC] + 1]);
+
+  if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
     lowerLat = strtod(argv[flags[f_LAT_CONSTRAINT] + 2],NULL);
     upperLat = strtod(argv[flags[f_LAT_CONSTRAINT] + 1],NULL);
     if(lowerLat > upperLat) {
@@ -347,10 +347,12 @@ int main(int argc, char *argv[])
       print_error("Invalid latitude constraint (must be -90 to 90)");
     }
   }
+
   if(flags[f_LUT] != FLAG_NOT_SET) {
     lutName = (char *) MALLOC(sizeof(char)*256);
     strcpy(lutName, argv[flags[f_LUT] + 1]);
   }
+
   { /* BEGIN: Check for conflict between pixel type flags */
     char flags_used[256] = "";
     int flag_count=0;
@@ -395,43 +397,46 @@ int main(int argc, char *argv[])
   else
     strcpy(format_type, "CEOS");
 
-  /* Fetch required arguments */
-  strcpy(inBaseName, argv[argc - 2]);
-  strcpy(outBaseName,argv[argc - 1]);
-/***********************END COMMAND LINE PARSING STUFF***********************/
-
-  /* Log what we got from the commandline */
-  StartWatchLog(fLog);
-  strcpy(logbuf,"Command line:");
-  for (ii=0; ii<argc; ii++) {
-    sprintf(logbuf, "%s %s",logbuf,argv[ii]);
-  }
-  strcat(logbuf,"\n");
-  printLog(logbuf);
-
-  /* Check whether options are chosen correctly */
-  if (strncmp(format_type, "STF", 3)!=0) {
+  /* Make sure STF specific options are not used with other data types */
+  if (strcmp(format_type, "STF")!=0) {
     if (flags[f_PRC] != FLAG_NOT_SET) {
-      sprintf(logbuf,
-              "WARNING: No precision state vectors used for this image type!\n");
-      if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
-      printLog(logbuf);
+      printAndLog("WARNING: Precision state vectors only work with STF data\n"
+                  "         and will not be used with this data set!\n");
       flags[f_PRC]=FLAG_NOT_SET;
     }
     if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
-      sprintf(logbuf,
-              "WARNING: No latitude constraints for this image type!\n");
-      if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
-      printLog(logbuf);
+      printAndLog("WARNING: No latitude constraints only work with STF data\n"
+                  "         and will not be used with this data set!\n");
       flags[f_LAT_CONSTRAINT]=FLAG_NOT_SET;
+    }
+  }
+
+  /* Fetch required arguments */
+  strcpy(inBaseName, argv[argc - 2]);
+  strcpy(outBaseName,argv[argc - 1]);
+
+/***********************END COMMAND LINE PARSING STUFF***********************/
+
+  /* If the user wants sprocket layers, first check to see if the asf data is
+     already there and go straight to creating the layers */
+  if (flags[f_SPROCKET] != FLAG_NOT_SET) {
+    char asfimage[256], asfmeta[256];
+    strcat(strcpy(asfimage,outBaseName),TOOLS_IMAGE_EXT);
+    strcat(strcpy(asfmeta,outBaseName),TOOLS_META_EXT);
+    if (fileExists(asfimage) && fileExists(asfmeta)) {
+      create_sprocket_layers(outBaseName, inMetaName);
+      /* Nix the log file if the user didn't ask for it */
+    	if (flags[f_LOG] == FLAG_NOT_SET) {
+    		FCLOSE(fLog);
+    		remove(logFile);
+    	}
+    	exit(EXIT_SUCCESS);
     }
   }
 
   /* Ingest all sorts of flavors of CEOS data */
   if (strncmp(format_type, "CEOS", 4) == 0) {
-    sprintf(logbuf,"   Data format: CEOS\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
-    printLog(logbuf);
+    printAndLog("   Data format: %s\n", format_type);
     if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
       require_ceos_pair(inBaseName, inDataName, inMetaName);
     else {
@@ -443,29 +448,17 @@ int main(int argc, char *argv[])
   }
   /* Ingest ENVI format data */
   else if (strncmp(format_type, "ENVI", 4) == 0) {
-    sprintf(logbuf,"   Data format: ENVI\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
-    printLog(logbuf);
-
+    printAndLog("   Data format: %s\n", format_type);
     import_envi(inDataName, inMetaName, outBaseName, flags);
   }
   /* Ingest ESRI format data */
   else if (strncmp(format_type, "ESRI", 4) == 0) {
-    sprintf(logbuf,"   Data format: ESRI\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
-    printLog(logbuf);
-
+    printAndLog("   Data format: %s\n", format_type);
     import_esri(inDataName, inMetaName, outBaseName, flags);
   }
   /* Ingest Vexcel Sky Telemetry Format (STF) data */
   else if (strncmp(format_type, "STF", 3) == 0) {
-    if (flags[f_SPROCKET] != FLAG_NOT_SET) {
-      print_error("Data is level 0, sprocket can not use this.");
-      exit(EXIT_FAILURE);
-    }
-    sprintf(logbuf,"   Data format: STF\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
-    printLog(logbuf);
+    printAndLog("   Data format: %s\n", format_type);
     if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
       require_stf_pair(inBaseName, inDataName, inMetaName);
     else {
@@ -486,7 +479,7 @@ int main(int argc, char *argv[])
   /* If the user asked for sprocket layers, create sprocket data layers
      now that we've got asf tools format data */
   if (flags[f_SPROCKET] != FLAG_NOT_SET) {
-    create_sprocket_layers(outName, inMetaName);
+    create_sprocket_layers(outBaseName, inMetaName);
   }
 
   /* If the user didn't ask for a log file then we can nuke the one that
