@@ -86,22 +86,26 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "asf.h"
 #include "ifm.h"
 #include "asf_meta.h"
+#include "fft.h"
+#include "fft2d.h"
+#include "ifm.h"
 
 #define borderX 80	/* Distances from edge of image to start correlating.*/
 #define borderY 80
-#define maxDoubt 0.5	/* Points will larger margin will be flagged */
 #define maxDisp 1.8	/* Forward and reverse correlations which differ 
 			   by more than this will be deleted.*/
+#define minSNR 0.3
 #define VERSION 1.0
 
 /*Read-only, informational globals:*/
 int lines, samples;		/* Lines and samples of source images. */
-int srcSize=64;
+int srcSize=64, trgSize=64;
 int pointNo=0, gridResolution=20;
 int chipX, chipY,            /*Chip location (top left corner) in second image*/
     chipDX,chipDY;           /*Chip size in second image.*/
 int searchX,searchY;         /*Maximum distance to search for peak*/
-
+float xMEP=4.1,yMEP=6.1;     /*Maximum Error Pixel values.*/
+complexFloat cZero;
 
 /*Function declarations */
 void usage(char *name);
@@ -109,10 +113,15 @@ void usage(char *name);
 bool getNextPoint(int *x1,int *y1,int *x2,int *y2);
 
 void topOffPeak(float *peaks, int i, int j, int maxI, float *di, float *dj);
+void topOffPeakCpx(float *peaks,int i, int j, int maxI, int maxJ,
+		   float *dx,float *dy);
 
-void findPeak(int x1,int y1, char *szImg1, int x2, int y2, char *szImg2,
+bool findPeak(int x1,int y1, char *szImg1, int x2, int y2, char *szImg2,
 	      float *peakX, float *peakY, float *snr);
-
+float getFFTCorrelation(complexFloat *igram,int sizeX,int sizeY);
+void getPeak(int x1,int y1,char *szImg1,int x2,int y2,char *szImg2,
+	     float *peakX,float *peakY, float *snr);
+bool outOfBounds(int x1, int y1, int srcSize);
 
 /* Start of main progam */
 int main(int argc, char *argv[])
@@ -122,28 +131,40 @@ int main(int argc, char *argv[])
   int goodPoints=0, attemptedPoints=0;
   FILE *fp_output;
   meta_parameters *masterMeta, *slaveMeta;
+  int ampFlag=TRUE;
   
   /* Check command line args */
   if (argc < 3) usage(argv[0]);
   strcpy(szImg1,argv[1]);
   strcpy(szImg2,argv[2]);
   strcpy(szOut,argv[3]);
-	
+
   /* Read metadata */
   masterMeta = meta_read(szImg1);
   slaveMeta = meta_read(szImg2);
   if (masterMeta->general->line_count != slaveMeta->general->line_count ||
       masterMeta->general->sample_count != slaveMeta->general->sample_count) {
-    sprintf(errbuf, "   ERROR: Input images have different dimension\n");
-    printf(errbuf);
-    printLog(errbuf);
+    printf("\n  ERROR: Input images have different dimension!\n\n");
+    exit(0);
+  }
+  else if (masterMeta->general->data_type != slaveMeta->general->data_type) {
+    printf("\n   ERROR: Input image have different data type!\n\n");
+    exit(0);
+  }
+  else if (masterMeta->general->data_type > 5 &&
+	   masterMeta->general->data_type != COMPLEX_REAL32) {
+    printf("\n   ERROR: Cannot compare raw images for offsets!\n\n");
+    exit(0);
   }
   else {
     lines = masterMeta->general->line_count;
     samples = masterMeta->general->sample_count;
   }
-  strcat(szImg1, ".img");
-  strcat(szImg2, ".img");    
+  if (masterMeta->general->data_type == COMPLEX_REAL32) {
+    srcSize = 32;
+    ampFlag = FALSE;
+    cZero = Czero();
+  }
 
   /* Create output file */
   fp_output=FOPEN(szOut, "w");
@@ -151,36 +172,60 @@ int main(int argc, char *argv[])
   /* Loop over grid, performing forward and backward correlations */
   while (getNextPoint(&x1,&y1,&x2,&y2))
       {
-	float dx, dy, doubt, dxFW, dyFW, doubtFW, dxBW, dyBW, doubtBW;
+	float dx, dy, snr, dxFW, dyFW, snrFW, dxBW, dyBW, snrBW;
 	attemptedPoints++;
-	
-	/* ...check forward correlation... */
-	findPeak(x1,y1,szImg1,x2,y2,szImg2,&dxFW,&dyFW,&doubtFW);
-	if (doubtFW < maxDoubt)
-	  {
+
+        /* Check bounds */
+	if (!(outOfBounds(x1, y1, srcSize)))
+	{
+	  /* ...check forward correlation... */
+	  if (ampFlag) {
+	    if (!(findPeak(x1,y1,szImg1,x2,y2,szImg2,&dxFW,&dyFW,&snrFW))) {
+	      attemptedPoints--;
+	      continue; /* next point if chip in complete background fill */
+	    }
+	  }
+	  else {
+	    getPeak(x1,y1,szImg1,x2,y2,szImg2,&dxFW,&dyFW,&snrFW);
+	  }
+	  if ((!ampFlag && snrFW>minSNR) || (ampFlag)) {
 	    /* ...check backward correlation... */
-	    findPeak(x2,y2,szImg2,x1,y1,szImg1,&dxBW,&dyBW,&doubtBW);
+	    if (ampFlag) {
+	      if (!(findPeak(x2,y2,szImg2,x1,y1,szImg1,&dxBW,&dyBW,&snrBW))) {
+		attemptedPoints--;
+                continue; /* next point if chip in complete background fill */
+	      }
+	    }
+	    else {
+	      getPeak(x2,y2,szImg2,x1,y1,szImg1,&dxBW,&dyBW,&snrBW);
+	    }
+
 	    dxBW*=-1.0;dyBW*=-1.0;
-	    if ((doubtBW < maxDoubt) &&
+	    if (((!ampFlag && snrFW>minSNR) || (ampFlag)) &&
 		(fabs(dxFW-dxBW) < maxDisp) &&
 		(fabs(dyFW-dyBW) < maxDisp))
 	      {
 		goodPoints++;
 		dx = (dxFW+dxBW)/2;
 		dy = (dyFW+dyBW)/2;
-		doubt = (doubtFW+doubtBW)/2;
+		snr = snrFW*snrBW;
 		fprintf(fp_output,"%6d %6d %8.5f %8.5f %4.2f\n",
-			x1, y1, x2+dx, y2+dy, doubt);
+			x1, y1, x2+dx, y2+dy, snr);
 		fflush(fp_output);
 	      }
 	  }
+	}
       }
   if (goodPoints < attemptedPoints)
     printf("\n   WARNING: %i out of %i points moved!\n\n", 
 	   (attemptedPoints-goodPoints), attemptedPoints);
   else 
     printf("\n   There is no difference between the images\n\n");
-  
+
+  FCLOSE(fp_output);
+  FREE(masterMeta);
+  FREE(slaveMeta);  
+
   return(0);
 }
 
@@ -188,68 +233,76 @@ void usage(char *name)
 {
   printf("\noffset_test:\n\n");
   printf("usage:\n   offset_test <file1> <file2> <out>\n\n");
-  printf("\t<file1> and <file2> are basenames of two amplitude images\n");
+  printf("\t<file1> and <file2> are the data file names of two images\n");
   printf("\t<out> is the output file for reporting individual correlations\n");
   printf("\n"
-	 "Offset_test is verifying that two images have no offset relative to each \n"
-	 "other. This is achieved by matching small image chips defined on a regular \n"
-	 "grid. If no offset can be determined between the two images, it is assumed \n"
-	 "that changes in the implementation of a particular tool did not affect \n"
-	 "the geometry or geolocation of the image.\n\n");
+	 "Offset_test is verifying that two images have no offset relative to \n"
+	 "each other. This is achieved by matching small image chips defined \n"
+	 "on a regular grid. If no offset can be determined between the two \n"
+	 "images, it is assumed that changes in the implementation of a \n"
+	 "particular tool did not affect the geometry or geolocation of the \n"
+	 "image.\n\n");
   printf("Version: %.2f, ASF SAR Tools\n",VERSION);
   exit(EXIT_FAILURE);
+}
+
+bool outOfBounds(int x1, int y1, int srcSize)
+{
+  if (x1 - srcSize/2 + 1 < 0) return TRUE;
+  if (y1 - srcSize/2 + 1 < 0) return TRUE;
+  if (x1 + srcSize/2  >= samples) return TRUE;
+  if (y1 + srcSize/2  >= lines) return TRUE;
+  return FALSE;
 }
 
 
 bool getNextPoint(int *x1,int *y1,int *x2,int *y2)
 {
-        int unscaledX, unscaledY;
-        unscaledX=pointNo%gridResolution;
-        unscaledY=pointNo/gridResolution;
-        *x1=unscaledX*(samples-2*borderX)/(gridResolution-1)+borderX;
-        *y1=unscaledY*(lines-2*borderY)/(gridResolution-1)+borderY;
-        *x2=*x1;
-        *y2=*y1;
-        if (pointNo>=(gridResolution*gridResolution)) 
-                return FALSE;
-        pointNo++;
-        return TRUE;
+  int unscaledX, unscaledY;
+  unscaledX=pointNo%gridResolution;
+  unscaledY=pointNo/gridResolution;
+  *x1=unscaledX*(samples-2*borderX)/(gridResolution-1)+borderX;
+  *y1=unscaledY*(lines-2*borderY)/(gridResolution-1)+borderY;
+  *x2=*x1;
+  *y2=*y1;
+  if (pointNo>=(gridResolution*gridResolution)) 
+    return FALSE;
+  pointNo++;
+  return TRUE;
 }
 
 
 /*FindPeak: 
-  This function computes a correlation peak, with SNR, between
+  This function computes a correlation peak, with doubt level, between
   the two amplitude images at the given points.
 */
-void findPeak(int x1, int y1, char *szImg1, int x2, int y2, char *szImg2,
+bool findPeak(int x1, int y1, char *szImg1, int x2, int y2, char *szImg2,
 	      float *peakX, float *peakY, float *doubt)
 {
-  static float *peaks;
-  static float *s=NULL, *t, *product; /*Keep working arrays around between calls.*/
-  int peakMaxX, peakMaxY, x,y,xOffset,yOffset,count;
-  int srcIndex;
+  meta_parameters *meta;
+  static float *peaks, *s=NULL, *t, *product;
+  int x, y, srcIndex;
   int mX,mY; /* Invariant: 2^mX=ns; 2^mY=nl. */
 #define modX(x) ((x+srcSize)%srcSize)  /* Return x, wrapped to [0..srcSize-1] */
 #define modY(y)	((y+srcSize)%srcSize)  /* Return y, wrapped to [0..srcSize-1] */
   
-  float peakMax, thisMax, peakSum;
   float aveChip=0;
   float scaleFact=1.0/(srcSize*srcSize);
+  float sum=0, stdDev;
   
-  /* Allocate working arrays if we haven't already done so. */
-  if (s==NULL)
-    {                       
-      s = (float *)(MALLOC(srcSize*srcSize*sizeof(float)));
-      t = (float *)(MALLOC(srcSize*srcSize*sizeof(float)));
-      product = (float *)(MALLOC(srcSize*srcSize*sizeof(float)));
-      peaks=(float *)MALLOC(sizeof(float)*srcSize*srcSize);
-    }
-  
+  meta = meta_read(szImg1); 
+
+  /* Allocate working arrays */
+  if (s == NULL) {
+    s = (float *)(MALLOC(srcSize*srcSize*sizeof(float)));
+    t = (float *)(MALLOC(srcSize*srcSize*sizeof(float)));
+    product = (float *)(MALLOC(srcSize*srcSize*sizeof(float)));
+    peaks=(float *)MALLOC(sizeof(float)*srcSize*srcSize);
+  }  
+
   /* At each grid point, read in a chunk of each image...*/
-  readMatrix(szImg1, s, FLOAT, srcSize, srcSize, x1-srcSize/2+1, y1-srcSize/2+1, 
-	     samples, lines, 0, 0);
-  readMatrix(szImg2, t, FLOAT, srcSize, srcSize, x2-srcSize/2+1, y2-srcSize/2+1, 
-	     samples, lines, 0, 0);
+  readSubset(szImg1, srcSize, srcSize, x1-srcSize/2+1, y1-srcSize/2+1, s);
+  readSubset(szImg2, srcSize, srcSize, x2-srcSize/2+1, y2-srcSize/2+1, t);
   
   /* Compute average brightness of chip */
   for(y=0;y<srcSize;y++)
@@ -260,6 +313,16 @@ void findPeak(int x1, int y1, char *szImg1, int x2, int y2, char *szImg2,
       }
     }
   aveChip/=-(float)srcSize*srcSize;
+
+  /* Compute standard deviation for background fill test */
+  for(y=0;y<srcSize;y++) {
+    srcIndex=y*srcSize;
+    for(x=0;x<srcSize;x++) {
+      sum+=s[x+srcIndex];
+    }
+  }
+  stdDev = sqrt(sum/(srcSize*srcSize-1));
+  if (stdDev < 0.1) return FALSE;
 
   /* Subtract average brightness from chip 2 */
   for(y=0;y<srcSize;y++)
@@ -286,8 +349,7 @@ void findPeak(int x1, int y1, char *szImg1, int x2, int y2, char *szImg2,
   rfft2d(s,mY,mX); /* FFT chip 1 */
   rfft2d(t,mY,mX); /* FFT chip 2 */
 
-  for(y=0;y<srcSize;y++) /* Conjugate chip 2 */
-    {
+  for(y=0;y<srcSize;y++) /* Conjugate chip 2 */    {
       srcIndex=y*srcSize;
       if (y<2) x=1; else x=0;
       for (;x<srcSize/2;x++)
@@ -351,16 +413,124 @@ void findPeak(int x1, int y1, char *szImg1, int x2, int y2, char *szImg2,
   *doubt=biggestNearby/bestMatch;
   if (*doubt<0) *doubt = 0;
   
+  /* Clean up */
+  meta_free(meta);
+
   /* Output our guess. */
   *peakX = bestLocX;
   *peakY = bestLocY;
+
+  return TRUE;
+}
+
+
+/*getPeak:
+  This function computes a correlation peak, with SNR, between
+  the two given images at the given points.
+*/
+void getPeak(int x1,int y1,char *szImg1,int x2,int y2,char *szImg2,
+	     float *peakX,float *peakY, float *snr)
+{
+  static float *peaks;
+  static complexFloat *s=NULL, *t, *product;
+  int peakMaxX, peakMaxY, x,y,xOffset,yOffset,count;
+  int xOffsetStart, yOffsetStart, xOffsetEnd, yOffsetEnd;
+  float dx,dy,accel1 = (float)(trgSize/2 - srcSize/2);
+  
+  float peakMax, thisMax, peakSum;
+        
+  /* 
+   * Calculate the limits of the time domain correlations...
+   *   A coordinate in the target may be set to:
+   *   (  (trgSize/2 - srcSize/2), (trgSize/2 - srcSize/2)  ).
+   *   If this is the ulh element of the source chip, then
+   *     the src chip coincides with the trg precisely, with no offset.
+   */
+  xOffsetStart = (trgSize/2 - srcSize/2) - (int)(xMEP);
+  xOffsetEnd = (trgSize/2 - srcSize/2) + (int)(xMEP);
+  yOffsetStart = (trgSize/2 - srcSize/2) - (int)(yMEP);
+  yOffsetEnd = (trgSize/2 - srcSize/2) + (int)(yMEP);
+  
+  /*Allocate working arrays if we haven't already done so.*/
+  if (s==NULL)
+    {
+      s = (complexFloat *)(MALLOC(srcSize*srcSize*sizeof(complexFloat)));
+      t = (complexFloat *)(MALLOC(trgSize*trgSize*sizeof(complexFloat)));
+      product = (complexFloat *)(MALLOC(srcSize*srcSize*sizeof(complexFloat)));
+      peaks=(float *)MALLOC(sizeof(float)*trgSize*trgSize);
+    }
+  
+  /*At each grid point, read in a chunk of each image...*/
+  readMatrix(szImg1,s,FLOAT_COMPLEX,srcSize,srcSize,
+	     x1- srcSize/2+1, y1-srcSize/2+1, samples, lines,0,0);
+  readMatrix(szImg2,t,FLOAT_COMPLEX,trgSize,trgSize, 
+	     x2 - trgSize/2+1, y2-trgSize/2+1, samples, lines,0,0);
+  
+  /*Take the complex conjugate of the source chunk */
+  for(y=0;y<srcSize;y++)
+    {
+      int srcIndex=y*srcSize;
+      for(x=0;x<srcSize;x++)
+	s[srcIndex++].imag*=-1;
+    }
+  
+  /*Now compute the best possible offset between these two images,
+    by checking the phase coherence at each possible offset.*/
+  
+  peakMax = peakSum = 0.0;
+  peakMaxX=peakMaxY=count=0;
+  for(yOffset=yOffsetStart;yOffset<=yOffsetEnd;yOffset++)
+    {
+      for(xOffset=xOffsetStart;xOffset<=xOffsetEnd;xOffset++)
+	{
+	  /* Form an interferogram (multiply by complex conjugate 1
+	     at this offset between the images: */
+	  for(y=0;y<srcSize;y++)
+	    {
+	      int srcIndex=y*srcSize;
+	      int trgIndex=xOffset+(yOffset+y)*trgSize;
+	      for(x=0;x<srcSize;x++)
+		{
+		  product[srcIndex] = Cmul(s[srcIndex], t[trgIndex]);
+		  srcIndex++,trgIndex++;
+		}
+	    }
+	  
+	  /*Find the phase coherence for this interferogram*/
+	  thisMax=getFFTCorrelation(product,srcSize,srcSize);
+	  
+	  /*Possibly save this coherence value.*/
+	  if (thisMax>peakMax)
+	    {
+	      peakMax=thisMax;
+	      peakMaxX=xOffset;
+	      peakMaxY=yOffset;
+	    }
+	  peaks[yOffset*trgSize+xOffset]=thisMax;
+	  peakSum += thisMax;
+	  count++;
+	}
+    }
+  
+  /* Calculate the SNR, with a much faster (but weaker) SNR calculation */
+  *snr = peakMax / ((peakSum - peakMax) / (float)(count-1))-1.0;
+  
+  
+  if ((peakMaxX>xOffsetStart)&&(peakMaxY>yOffsetStart)&&
+      (peakMaxX<xOffsetEnd)&&(peakMaxY<yOffsetEnd))
+    topOffPeakCpx(peaks,peakMaxX,peakMaxY,trgSize,trgSize,&dx,&dy);
+  else 
+    dx=dy=0.0;
+  
+  *peakX=((float)(peakMaxX) + dx - accel1 );
+  *peakY=((float)(peakMaxY) + dy - accel1 );
 }
 
 
 /* TopOffPeak:
-   Given an array of peak values, use trilinear interpolation to determine the exact 
-   (i.e. float) top. This works by finding the peak of a parabola which goes though 
-   the highest point, and the three points surrounding it.
+   Given an array of peak values, use trilinear interpolation to determine the 
+   exact (i.e. float) top. This works by finding the peak of a parabola which 
+   goes though the highest point, and the three points surrounding it.
 */
 void topOffPeak(float *peaks,int i,int j,int maxI,float *di,float *dj)
 {
@@ -379,4 +549,26 @@ void topOffPeak(float *peaks,int i,int j,int maxI,float *di,float *dj)
         if (d!=0)
                 *dj=j+(a-c)/d;
         else *dj=j;
+}
+
+
+void topOffPeakCpx(float *peaks,int i, int j, int maxI, int maxJ,
+		   float *dx,float *dy)
+{
+        int offset=j*maxI+i;
+        float a,b,c,d;
+        a=peaks[offset-1];
+        b=peaks[offset];
+        c=peaks[offset+1];
+        d=4*((a+c)/2-b);
+        if (d!=0)
+                *dx=(a-c)/d;
+        else *dx=0;
+        a=peaks[offset-maxI];
+        b=peaks[offset];
+        c=peaks[offset+maxI];
+        d=4*((a+c)/2-b);
+        if (d!=0)
+                *dy=(a-c)/d;
+        else *dy=0;
 }
