@@ -16,6 +16,7 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include <ctype.h>
 #include "meta_init.h"
+#include "asf_nan.h"
 
 /************************************************************
  * ceos_init:

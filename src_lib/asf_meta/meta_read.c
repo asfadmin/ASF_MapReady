@@ -4,6 +4,7 @@
 #include "err_die.h"
 #include "regex_wrapper.h"
 #include "metadata_parser.h"
+#include "asf_nan.h"
 #include "ddr.h"
 
 void meta_read_old(meta_parameters *meta, char *fileName);
