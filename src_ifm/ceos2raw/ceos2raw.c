@@ -1,7 +1,7 @@
 /******************************************************************************
 NAME: ceos2raw
 
-SYNOPSIS: ceos2raw <input CEOS signal> <output> [ <beamNo> ]
+SYNOPSIS: ceos2raw <input CEOS signal> <output>
 
 DESCRIPTION:
         ceos2raw converts the given CEOS signal data file into
@@ -35,12 +35,14 @@ PROGRAM HISTORY:
     0.8  Orion Lawlor,  8/3/98
     1.0  O. Lawlor,     3/99
     1.1  Dave Koster,   6/00    Modified to read files larger than 2GB
-    1.2  Patrick Denny, 5/01    Disallowed same in and out files
+    1.2  Patrick Denny, 5/01    Disallowed same name for in and out files
     1.3  Patrick Denny, 6/01    Remove .L and .D links after processing
 			         added to ceosUtil.c
     1.35 P. Denny       4/02    Update commandline Parsing & usage()
                                  beamNo option was ignored! so I removed
                                  it from the usage
+    1.5 P. Denny        2/03    Change to use new meta structures
+                                 Fix commandline parsing routine
 
 HARDWARE/SOFTWARE LIMITATIONS:
 	Does not compensate for skipped lines.
@@ -92,7 +94,7 @@ BUGS:
 #include "ceos.h"
 #include "dateUtil.h"
 
-#define VERSION 1.45
+#define VERSION 1.5
 
 /*********************************
 createMeta:
@@ -119,18 +121,8 @@ void createMeta_ceos(bin_state *s,struct dataset_sum_rec *dssr,char *inN,char *o
 {
 	meta_parameters *meta=raw_init();
 	
-	/* Read look direction, time & state vectors from CEOS file
-         ---------------------------------------------------------*/
-	if (!extExists(inN,".L") && extExists(inN,".ldr"))
-	{/*HACK: link .ldr file over to .L file-- keeps get_facdr happy*/
-		linkFlag(0,inN);
-		if (findExt(inN)&&(0!=strcmp(findExt(inN),".D")))
-		{/*HACK: link .raw (or whatever) over to .D file-- keeps get_iof happy*/
-			linkFlag(1,inN);
-		}
-	}
 	ceos_init(inN,meta);
-	s->lookDir=meta->geo->lookDir;
+	s->lookDir = meta->sar->look_direction;
 	
         /* Check for VEXCEL LZP Data-- has odd state vectors
          --------------------------------------------------*/
@@ -143,12 +135,14 @@ void createMeta_ceos(bin_state *s,struct dataset_sum_rec *dssr,char *inN,char *o
 		imgLen=ceosLen(inN)/2.0/s->prf;
 		printf("VEXCEL Level-0 CEOS: Shifted by %f seconds...\n",imgLen);
 		/*Correct the image start time*/
-		meta->stVec->second-=imgLen;
-		if (meta->stVec->second<0)
-			{meta->stVec->julDay--;meta->stVec->second+=24*60*60;}
+		meta->state_vectors->second -= imgLen;
+		if (meta->state_vectors->second<0) {
+			meta->state_vectors->julDay--;
+			meta->state_vectors->second+=24*60*60;
+		}
 		/*Correct the time of the state vectors, which are *relative* to image start.*/
-		for (i=0;i<meta->stVec->num;i++)
-			meta->stVec->vecs[i].time+=imgLen;
+		for (i=0;i<meta->state_vectors->vector_count;i++)
+			meta->state_vectors->vecs[i].time += imgLen;
 	/*State vectors are too far apart or too far from image as read-
 	   propagate them*/
 		propagate_state(meta,3);
@@ -156,10 +150,10 @@ void createMeta_ceos(bin_state *s,struct dataset_sum_rec *dssr,char *inN,char *o
 	
 	/* Update s-> fields with new state vector
          ----------------------------------------*/
-	addStateVector(s,&meta->stVec->vecs[0].vec);
+	addStateVector(s,&meta->state_vectors->vecs[0].vec);
 
-        /* Update fields for which we have decoded header info.
-         -----------------------------------------------------*/
+	/* Update fields for which we have decoded header info.
+	 -----------------------------------------------------*/
 	updateMeta(s,meta);
 
         /* Write out and free the metadata structure
@@ -192,15 +186,14 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,readPulseFunc *
 	else if (0==strncmp(satName,"R",1))
 		s=RSAT_ceos_decoder_init(inN,outN,readNextPulse);
 	else 
-		{printf("Unrecognized satellite '%s'!\n",satName);exit(1);}
+		{printf("Unrecognized satellite '%s'!\n",satName);exit(EXIT_FAILURE);}
 	createMeta_ceos(s,&dssr,inN,outN);
 	
 /*Write out AISP input parameter files.*/
 	writeAISPparams(s,outN,dssr.crt_dopcen[0],dssr.crt_dopcen[1],dssr.crt_dopcen[2]);
 	writeAISPformat(s,outN);
 
-/*Clean up and leave.*/
-	*nLines=1000000;
+	*nLines=s->nLines;
 	
 	return s;
 }
@@ -218,27 +211,47 @@ int main(int argc,char *argv[])
 	int outLine,nTotal;
 	char *inName,*outName;
 	FILE *out;
-	
 	bin_state *s;
+	meta_parameters *meta;
 	readPulseFunc readNextPulse;
 	iqType *iqBuf;
 	
-/*Parse CLA's.*/
 	StartWatch();
 
-	if (argc!=3)
-		usage(argv[0]);
-
-	if (SAME==strcmp(argv[1], argv[2]))	    /* File names are the same */
+/* Parse command line args */
+	logflag = quietflag = 0;
+	while (currArg < (argc-2))
 	{
-		printf(	"*************************************************************\n"
-		       	"* Error: Input and output files must not be named the same. *\n"
-			"*************************************************************\n");
-		exit(1);
+		char *key=argv[currArg++];
+		if (strmatch(key,"-log")) {
+			CHECK_ARG(1);
+			strcpy(logFile, GET_ARG(1));
+			logflag=1;
+			fLog = FOPEN(logFile, "a");
+		}
+		else if (strmatch(key,"-quiet")) {
+			quietflag=1;
+		}
+		else {printf("\n*****Invalid option:  %s\n\n",argv[currArg-1]);usage(argv[0]);}
 	}
-	inName=argv[1];
-	outName=appendExt(argv[2],".raw");
+	if ((argc-currArg) < 2) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+	if (SAME==strcmp(argv[currArg], argv[currArg+1])) { /* File names are the same */
+		printf(	"* Error: Input and output files must not be named the same. *\n");
+		exit(EXIT_FAILURE);
+	}
+	inName = argv[currArg++];
+	outName = appendExt(argv[currArg],".raw");
 	
+/* Read look direction, time & state vectors from CEOS file */
+	if (!extExists(inName,".L") && extExists(inName,".ldr"))
+	{/*HACK: link .ldr file over to .L file-- keeps get_facdr happy*/
+		linkFlag(0,inName);
+		if (findExt(inName)&&(0!=strcmp(findExt(inName),".D")))
+		{/*HACK: link .raw (or whatever) over to .D file-- keeps get_iof happy*/
+			linkFlag(1,inName);
+		}
+	}
+
 /* First, we read the metadata to determine where window position shifts happen,
    as well as the number of lines in the image.*/
 	s=convertMetadata_ceos(inName,outName,&nTotal,&readNextPulse);
@@ -258,32 +271,50 @@ int main(int argc,char *argv[])
 			printf("Converting line %d\n",outLine);
 		s->nLines++;
 	}
+	
+	printf("Converted %d lines.\n",outLine);
+
+/* Make sure all the meta feilds are up to date */
+	meta = meta_read(outName);
+	updateMeta(s,meta);
+	meta_write(meta, outName);
+	meta_free(meta);
+
+/* Cleanup */
+	delete_bin_state(s);
+	if (logflag) FCLOSE(fLog);
+	FCLOSE(out);
 
 	linkFlag(2,NULL);
 	return 0;
 }
 
+
 void usage(char *name)
 {
  printf("\n"
 	"USAGE:\n"
-	"   %s <input> <output>\n",name);
+	"   %s [-log <file>] [-quiet] <input> <output>\n",name);
  printf("\n"
-	"ARGUMENTS:\n"
+	"REQUIRED ARGUMENTS:\n"
 	"   <input>    VEXCEL Level-0 CEOS signal data\n"
 	"   <output>   AISP-compatible raw data.\n");
-/*	"   -b <beamNo>  Number of beams to write out.\n"
+/*	("   -b <beamNo>  Number of beams to write out.\n"
  *	"                 Optional; only for SCANSAR data\n"
  *	"                 Default is beam 0 for the first beam.\n");
  */
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -log     Allows the output to be written to a log file\n"
+	"   -quiet   Suppresses the output to the essential\n");
  printf("\n"
 	"DESCRIPTION:\n"
 	"   This program decodes the input data into AISP-compatible\n"
 	"   raw data.  Currently supports ERS, JERS, Radarsat \n"
 	"   Strip mode (all beams) including Radarsat ScanSAR mode.\n");
  printf("\n"
-	"Version %.2f, ASF SAR Tools\n"
+	"Version %.2f, ASF InSAR Tools\n"
 	"\n",VERSION);
- exit(1);
+ exit(EXIT_FAILURE);
 }
 
