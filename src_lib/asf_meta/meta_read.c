@@ -5,6 +5,7 @@
 #include "err_die.h"
 #include "metadata_parser.h"
 #include "worgen.h"
+#include "earth_radius2datum.h"
 
 /* Local prototypes */
 void meta_read_old(meta_parameters *meta, char *fileName);
@@ -185,28 +186,28 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 			projection->re_minor=6356754.9;
 		}
 		switch(projection->type) {
-			case 'A':/*Along-track/cross-track projection.*/
-				coniIO_double(coni,"geo.proj.","rlocal:",     &projection->param.atct.rlocal,"Local earth radius [m]");
-				coniIO_double(coni,"geo.proj.","atct_alpha1:",&projection->param.atct.alpha1,"at/ct projection parameter");
-				coniIO_double(coni,"geo.proj.","atct_alpha2:",&projection->param.atct.alpha2,"at/ct projection parameter");
-				coniIO_double(coni,"geo.proj.","atct_alpha3:",&projection->param.atct.alpha3,"at/ct projection parameter");
-				break;
-			case 'L':/*Lambert Conformal Conic projection.*/
-				coniIO_double(coni,"geo.proj.","lam_plat1:",&projection->param.lamcc.plat1,"Lambert first standard parallel");
-				coniIO_double(coni,"geo.proj.","lam_plat2:",&projection->param.lamcc.plat2,"Lambert second standard parallel");
-				coniIO_double(coni,"geo.proj.","lam_lat:",  &projection->param.lamcc.lat0, "Lambert original latitude");
-				coniIO_double(coni,"geo.proj.","lam_lon:",  &projection->param.lamcc.lon0, "Lambert original longitude");
-				break;
-			case 'P':/*Polar Stereographic Projection.*/
-				coniIO_double(coni,"geo.proj.","ps_lat:",&projection->param.ps.slat,"Polar Stereographic reference Latitude");
-				coniIO_double(coni,"geo.proj.","ps_lon:",&projection->param.ps.slon,"Polar Stereographic reference Longitude");
-				break;
-			case 'U':/*Universal Trasnverse Mercator Projection.*/
-				coniIO_int(coni,"geo.proj.","utm_zone:",&projection->param.utm.zone,"UTM Zone Code");
-				break;
-			default:
-				printf("ERROR! Unrecognized map projection code '%c!'\n",projection->type);
-				exit(1);
+		case 'A':/*Along-track/cross-track projection.*/
+		  coniIO_double(coni,"geo.proj.","rlocal:",     &projection->param.atct.rlocal,"Local earth radius [m]");
+		  coniIO_double(coni,"geo.proj.","atct_alpha1:",&projection->param.atct.alpha1,"at/ct projection parameter");
+		  coniIO_double(coni,"geo.proj.","atct_alpha2:",&projection->param.atct.alpha2,"at/ct projection parameter");
+		  coniIO_double(coni,"geo.proj.","atct_alpha3:",&projection->param.atct.alpha3,"at/ct projection parameter");
+		  break;
+		case 'L':/*Lambert Conformal Conic projection.*/
+		  coniIO_double(coni,"geo.proj.","lam_plat1:",&projection->param.lamcc.plat1,"Lambert first standard parallel");
+		  coniIO_double(coni,"geo.proj.","lam_plat2:",&projection->param.lamcc.plat2,"Lambert second standard parallel");
+		  coniIO_double(coni,"geo.proj.","lam_lat:",  &projection->param.lamcc.lat0, "Lambert original latitude");
+		  coniIO_double(coni,"geo.proj.","lam_lon:",  &projection->param.lamcc.lon0, "Lambert original longitude");
+		  break;
+		case 'P':/*Polar Stereographic Projection.*/
+		  coniIO_double(coni,"geo.proj.","ps_lat:",&projection->param.ps.slat,"Polar Stereographic reference Latitude");
+		  coniIO_double(coni,"geo.proj.","ps_lon:",&projection->param.ps.slon,"Polar Stereographic reference Longitude");
+		  break;
+		case 'U':/*Universal Transverse Mercator Projection.*/
+		  coniIO_int(coni,"geo.proj.","utm_zone:",&projection->param.utm.zone,"UTM Zone Code");
+		  break;
+		default:
+		  printf("ERROR! Unrecognized map projection code '%c!'\n",projection->type);
+		  exit(1);
 		}
 		coniIO_structClose(coni,"end proj");
 	}
@@ -378,8 +379,12 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 		else
 			strcpy(meta->projection->units, "meters");
 		meta->projection->hem = MAGIC_UNSET_CHAR;
-		meta->projection->re_major = MAGIC_UNSET_DOUBLE;
-		meta->projection->re_minor = MAGIC_UNSET_DOUBLE;
+		if (ddr.valid[DDZCV] == VALID)
+		  datum2earth_radius(ddr.datum_code, &meta->projection->re_major, &meta->projection->re_minor);
+		else {
+		  meta->projection->re_major = MAGIC_UNSET_DOUBLE;
+		  meta->projection->re_minor = MAGIC_UNSET_DOUBLE;
+		}
 		if ((ddr.valid[DDPCV]==VALID) && (ddr.valid[DDPPV]==VALID)) {
 		   switch (ddr.proj_code) {
 		     case ALBERS:
