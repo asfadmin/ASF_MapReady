@@ -85,6 +85,8 @@ static gboolean file_is_valid(const gchar * data_file)
         }
     }
 }
+
+#ifdef THUMBNAILS
     
 static void set_input_image_thumbnail(GtkTreeIter *iter, 
 				      const gchar *metadata_file,
@@ -142,6 +144,8 @@ thumbnail_thread (GString *file, gpointer user_data)
   g_string_free (file, TRUE);
 }
 
+#endif
+
 gboolean
 add_to_files_list(const gchar * data_file)
 {
@@ -162,6 +166,7 @@ add_to_files_list(const gchar * data_file)
 			   COL_STATUS, "-", -1);
 	LSU;
 
+#ifdef THUMBNAILS
 	if (use_thumbnails)
 	{
 	    /* Thumbnail thread pool.  */
@@ -178,6 +183,7 @@ add_to_files_list(const gchar * data_file)
 	    g_thread_pool_push (ttp, g_string_new (data_file), &err);
 	    g_assert (err == NULL);
 	}
+#endif
 
         out_name_full = determine_default_output_file_name(data_file);
     
@@ -346,6 +352,8 @@ void render_output_name(GtkTreeViewColumn *tree_column,
     g_free(output_file);
     g_free(status);
 }
+
+#ifdef THUMBNAILS
 
 static GtkTreePath *
 thumbnail_path (GtkWidget *widget, GdkEventMotion *event)
@@ -884,6 +892,8 @@ files_list_scroll_event_handler (GtkWidget *widget, GdkEventScroll *event,
   return FALSE;
 }
 
+#endif
+
 void
 setup_files_list(int argc, char *argv[])
 {
@@ -954,6 +964,7 @@ setup_files_list(int argc, char *argv[])
       gtk_tree_view_column_add_attribute (col, renderer, "pixbuf",
 					  COL_INPUT_THUMBNAIL);
       
+#ifdef THUMBNAILS
       g_signal_connect (files_list, "motion-notify-event",
 			G_CALLBACK (files_list_motion_notify_event_handler), 
 			NULL);
@@ -964,6 +975,7 @@ setup_files_list(int argc, char *argv[])
 
       g_signal_connect (files_list, "scroll-event",
 			G_CALLBACK (files_list_scroll_event_handler), NULL);
+#endif
   }
 
   /* Next Column: Output File Name */
