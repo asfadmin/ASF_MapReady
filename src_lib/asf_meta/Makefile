@@ -58,7 +58,6 @@ OBJS =  $(LEX_YACC_OBJS) \
         endian.o \
         get_ceos.o \
         heading.o \
-	meta_coni.o \
 	coniFetch.o \
 	meta_create.o \
         meta_init_aisp.o \
@@ -70,7 +69,7 @@ OBJS =  $(LEX_YACC_OBJS) \
         set_era.o \
         utc2gha.o
 
-all: asf_meta clean
+all: asf_meta
 
 asf_meta: build_only
 	 mv asf_meta.a $(LIBDIR)
