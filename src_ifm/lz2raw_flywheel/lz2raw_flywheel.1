@@ -3,7 +3,7 @@ NAME: lz2raw_flywheel
 
 SYNOPSIS: 
 
-	lz2raw_flywheel <input> <output> [-log <file>][-quiet][-prc <path>]
+	lz2raw_flywheel [-log <file>][-quiet][-prc <path>] <input> <output>
 
 		<input>   VEXCEL Leverl-0 signal data
 		<output>  AISP-compatible raw data
@@ -14,27 +14,23 @@ DESCRIPTION:
 	it checks for and corrects missing lines and well as truncated
 	lines in ERS data.  Note, this is ONLY FOR ERS DATA.
 
-	The original lz2raw converts the given VEXCEL Level-0 signal data 
+	The lz2raw_flywheel converts the given VEXCEL Level-0 signal data 
 	file into an AISP-compatible raw format.  It extracts the necessary
 	processing parameters (slant range, prf, satellite mode) from the
 	satellite headers, which it copiously outputs during processing.
-	It extracts state vectors from the VEXCEL .par file.
+	It checks for and corrects missing lines and truncated lines ONLY
+	in ERS data.  It extracts state vectors from the VEXCEL .par file.
 
 	The currently supported satellites are:
 		-ERS-1 and ERS-2
 		-JERS
 		-RADARSAT, all beams & modes (excluding SCANSAR)
 
-	
 OPTIONS:
 
 	[-log <file>]  Option to have output written to a log file.
 	[-quiet]       Option to have the output surpressed to essential
 	[-prc <path>]  Path to use percision state vectors (assume prc format)
-
-ERROR MESSAGES:
-MESSAGES GIVEN:				REASON:
------------------------------------------------------------------------
 
 EXAMPLES:
 
