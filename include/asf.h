@@ -160,7 +160,7 @@ ceos_file_pairs_t get_ceos_names(const char *ceosName, char *dataName,
  * returns data in host byte order. Implemented in asf.a/ioLine.c */
 
 /* Size of line chunk to read or write.  */
-#define CHUNK_OF_LINES 256
+#define CHUNK_OF_LINES 32
 
 int get_float_line(FILE *file, meta_parameters *meta, int line_number,
 		float *dest);
