@@ -514,7 +514,7 @@ typedef struct {
     struct DDR      *ddr;
 } META_DDR_STRUCT;
 
-#define NUM_META_DDR_STRUCTS 3
+#define NUM_META_DDR_STRUCTS 10
 extern META_DDR_STRUCT meta_ddr_structs[NUM_META_DDR_STRUCTS];
 
 
