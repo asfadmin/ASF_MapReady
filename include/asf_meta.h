@@ -83,7 +83,7 @@ typedef struct {
  * meta_sar: SAR specific parameters
  */
 typedef struct {
-  char proj_type;                    /* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected.*/
+  char image_type;                   /* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected.*/
   char look_direction;               /* 'L'-> Left Looking; 'R'-> Right Looking.*/
   int look_count;                    /* Number of looks to take from SLC.       */
   double look_angle;                 /* Angle SAR looks at earth [radians]      */
