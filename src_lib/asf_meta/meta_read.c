@@ -54,6 +54,7 @@ meta_parameters *meta_read(const char *inName)
   /* Remember the name and location of the meta struct */
   add_meta_ddr_struct(inName, meta, NULL);
 
+  FREE(ddr_name);
   FREE(meta_name);
   
   return meta;
