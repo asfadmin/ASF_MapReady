@@ -56,10 +56,10 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    struct PPREC *ppr=NULL;           /* Processing Parameter Record           */
    struct VFDRECV *asf_facdr=NULL;   /* ASF facility data record              */
    struct ESA_FACDR *esa_facdr=NULL; /* ESA facility data record              */
-   int dataSize, vector_count=3;
+   int dataSize;
    ymd_date date;
    hms_time time;
-   double firstTime, centerTime, data_int;
+   double firstTime, centerTime;
 
    /* Allocate & fetch CEOS records. If its not there, free & nullify pointer
       ----------------------------------------------------------------------*/
@@ -202,6 +202,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
  /* Fill meta->sar structure */
    if (mpdr) {
       meta->sar->image_type = 'P';
+      /* fetch stVecs for earth radius calc in ceos_init_proj */
       ceos_init_stVec(fName,ceos,meta);
       ceos_init_proj(meta, dssr, mpdr);
    }
@@ -271,7 +272,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    else {
       create_name(dataName, in_fName, ".D");
       firstTime = get_firstTime(dataName);
-      if (esa_facdr) {
+      if (esa_facdr && (ceos->facility != VEXCEL)) {
         date_dssr2time(dssr->az_time_first, &time);
         firstTime = date_hms2sec(&time);
       }
@@ -303,6 +304,11 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
    meta->sar->wavelength = dssr->wave_length * get_units(dssr->wave_length,EXPECTED_WAVELEN);
    meta->sar->prf = dssr->prf;
+   if (asf_facdr) {     /* Get earth radius & satellite height if we can */
+      meta->sar->earth_radius = asf_facdr->eradcntr*1000.0;
+      meta->sar->satellite_height = meta->sar->earth_radius
+                                     + asf_facdr->scalt*1000;
+   }
    if (ceos->facility==CDPF) {
    /* Doppler centroid values stored in Doppler rate fields */
       meta->sar->range_doppler_coefficients[0] = dssr->crt_rate[0];
@@ -346,8 +352,9 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 
    /* Propagate state vectors if they are covering more than frame size in case you have raw or complex data */
    if (ceos->facility!=ESA) {
+     int vector_count=3;
+     double data_int = dssr->sc_lin * fabs(meta->sar->azimuth_time_per_pixel);
      get_timeDelta(ceos, ppdr, meta);
-     data_int = dssr->sc_lin * fabs(meta->sar->azimuth_time_per_pixel);
      if (data_int>15.0 && meta->general->data_type>=6) { 
        while (data_int > 15.0) {
          data_int /= 2;
@@ -359,6 +366,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
 
    FREE(ceos);
+/* FREE(dssr); Don't free dssr because it points to the ceos struct (ceos->dssr) */
    FREE(iof);
    FREE(mpdr);
    FREE(fdr);
@@ -609,8 +617,8 @@ double get_firstTime (char *fName)
         FILE *fp;
         struct HEADER hdr;
         struct RHEADER linehdr;
-        int era, length;
-        char dataName[255], buff[25600];
+        int length;
+        char buff[25600];
 
         fp = FOPEN(fName, "r");
         FREAD (&hdr, sizeof(struct HEADER), 1, fp);
