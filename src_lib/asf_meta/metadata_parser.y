@@ -42,7 +42,7 @@ static void block_stack_push(block_stack_node **stack_top_p,
                              const char *block_name, void *new_block)
 {
   block_stack_node *new_node = malloc(sizeof(block_stack_node));
-  assert (strnlen (block_name, MAX_SYMBOL_STRING + 1) <= MAX_SYMBOL_SRING);
+  assert(strlen (block_name) <= MAX_SYMBOL_STRING);
   strncpy(new_node->block_name, block_name, MAX_SYMBOL_STRING + 1);
   new_node->block = new_block;
   new_node->next = *stack_top_p;
@@ -673,10 +673,7 @@ int parse_metadata(meta_parameters *dest, char *file_name)
   vector_count = 0;
 
   meta_yyin = FOPEN(file_name, "r");
-  if ( !(stack_top = malloc(sizeof(block_stack_node))) ) {
-    fprintf(stderr, "malloc failed in %s, giving up", "parse_metadata");
-    exit(EXIT_FAILURE);
-  }
+  stack_top = NULL;
   block_stack_push(&stack_top, "outermost_section", dest);
 
   /* Parse metadata file.  */
@@ -690,6 +687,11 @@ int parse_metadata(meta_parameters *dest, char *file_name)
                     dest->state_vectors->vector_count, vector_count);
     dest->state_vectors->vector_count = vector_count;
     dest->state_vectors->num = vector_count; /* Backward compat alias.  */
+  }
+
+  /* Done with the block stack, so empty it.  */
+  while ( stack_top != NULL ) {
+    block_stack_pop (&stack_top);
   }
 
   FCLOSE(meta_yyin);
