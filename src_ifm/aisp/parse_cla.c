@@ -33,6 +33,11 @@
 #include "aisp_defs.h"
 #include "geolocate.h"
 
+/* this define is a hack to avoid calling usage() as done in cla.h */	
+#define CHK_ARG_ASP(num_args) if (currArg+num_args>argc) \
+  {printf("   *****You need %i arguments for the keyword %s.\n\n",currArg-argc+num_args,argv[currArg-1]);return 0;} \
+  else currArg+=num_args;
+
 /*Prototypes:*/
 void get_params(char *,struct AISP_PARAMS *,meta_parameters **);
 
@@ -50,19 +55,17 @@ for this scene.
 
 int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta_out)
 {
-	/*int   fromfile = 0,*//* Flag - Read parameters from file?         */
-	int read_offset = 0,   /* Flag - Read resampling offsets from file? */
-	read_dopplr = 0;       /* Flag - Read doppler constant from file?   */
-	int cal_check=0;       /* checks to see if output file needs input cal file */
-	int debug_help=-1;      /* If -debug 0 used, give debug usage */ 
-	char fName_slope[256], /* Input slope,intercept (offsets) file */
-	fName_doppler[256];    /* Input doppler constant file          */
+	int read_offset = 0,   /* Flag - Read resampling offsets from file?   */
+	    read_dopplr = 0;   /* Flag - Read doppler constant from file?     */
+	int cal_check=0;       /* checks if output file needs input cal file  */
+	int debug_help=-1;     /* If -debug 0 used, give debug usage          */
+	char fName_slope[256], /* Input slope,intercept (offsets) file        */
+	   fName_doppler[256]; /* Input doppler constant file                 */
 	FILE  *fp;
 	meta_parameters *meta;
 	
 	/* Preset Optional Command Line Parameters
 	   ---------------------------------------------------------*/
-
 	g->hamFlag=0;
 	g->kaiFlag=0;
 	g->pwrFlag=0;
@@ -72,14 +75,14 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
 	g->nextend=0.0;
 	g->pctbw=g->pctbwaz=0.0;
 	g->fd=0;
-	g->fdd=-99;   /*A doppler slope of -99 means to figure it out ourselves.*/
-	g->fddd=-99;  /*A doppler slope of -99 means to figure it out ourselves.*/
-	g->ifirstline = 0;  /* First line to process                            */
-	g->npatches = 100;  /* (Absurdly Large) Number of patches               */
-	g->ifirst = 0;      /* i,q byte samples to skip                         */
-	g->isave = 0;       /* start range bin                                  */
-	g->na_valid = -99;  /* Valid output samples per patch (-99-> determine) */
-	g->iflag = 1;       /* Debug Flag                                       */
+	g->fdd=-99;   /*Doppler slope of -99 means to figure it out ourselves.*/
+	g->fddd=-99;  /*Doppler slope of -99 means to figure it out ourselves.*/
+	g->ifirstline = 0;  /* First line to process                          */
+	g->npatches = 100;  /* (Absurdly Large) Number of patches             */
+	g->ifirst = 0;      /* i,q byte samples to skip                       */
+	g->isave = 0;       /* start range bin                                */
+	g->na_valid = -99;  /* Valid output samples per patch (-99->determine)*/
+	g->iflag = 1;       /* Debug Flag                                     */
 	g->deskew=0;
 	g->sloper = g->interr = g->slopea = g->intera = 0.0;
 	g->dsloper = g->dinterr = g->dslopea = g->dintera = 0.0;  
@@ -96,26 +99,14 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
 	/*Create AISP_PARAMS struct as well as meta_parameters.*/
 	if (extExists(g->in1,".in"))
 	{/*Read parameters from AISP parameter file*/
-
 		read_params(g->in1,g);
-		if (extExists(g->in1,".meta"))
-		/*Input file has .meta attached: read it*/
+		if (extExists(g->in1,".meta"))/*Input file has .meta attached: read it*/
 			meta=meta_read(g->in1);
-		else/*No .meta exists--fabricate one*/
+		else /*No .meta exists--fabricate one*/
 			meta=raw_init();
 	}
-	else
-	/*Read parameters & .meta from CEOS.*/
+	else    /*Read parameters & .meta from CEOS.*/
 		get_params(g->in1,g,&meta);
-g->iflag = 0;
-
-
-/* this define is a hack to avoid calling usage() as done in cla.h */	
-#define CHK_ARG_ASP(num_args) if (currArg+num_args>argc) \
-  {printf("   *****You need %i arguments for the keyword %s.\n\n",currArg-argc+num_args,argv[currArg-1]);return 0;} \
-  else currArg+=num_args;
-	currArg = 1;	/* from cla.h in asf.h */
-/* Parse command line args */
 
 	while (currArg < (argc-2)) {
 		char *key=argv[currArg++];
@@ -134,7 +125,6 @@ g->iflag = 0;
 		else if (strmatch(key,"-kaiser"))  {g->kaiFlag = 1;}
 		else if (strmatch(key,"-l")) {CHK_ARG_ASP(1); g->ifirstline = atoi(GET_ARG(1));}
 		else if (strmatch(key,"-p")) {CHK_ARG_ASP(1); g->npatches = atoi(GET_ARG(1));}
-		
 		else if (strmatch(key,"-f")) {CHK_ARG_ASP(1); g->isave   += atoi(GET_ARG(1));}
 		else if (strmatch(key,"-s")) {CHK_ARG_ASP(1); g->ifirst  += atoi(GET_ARG(1));}
 		else if (strmatch(key,"-n")) {CHK_ARG_ASP(1); g->nla      = atoi(GET_ARG(1));}
@@ -159,10 +149,6 @@ g->iflag = 0;
 		g->gammaFlag=0;
 		g->betaFlag=0;
 	}
-/*	printf("\n\n***********************************************\n");
-	printf("******    Single Orbit SAR Processor      *****\n");
-	printf("***********************************************\n\n\n");*/
-
 
 	if (read_offset) {
 		fp=FOPEN(fName_slope,"r");
@@ -188,13 +174,18 @@ g->iflag = 0;
 	}
 
 /*Copy fields from AISP_PARAMS struct to meta_parameters struct.*/
-	meta->sar->image_type = 'S';/*Slant range image*/
-	meta->sar->look_count = g->nlooks;
-	meta->sar->deskewed = g->deskew;
-	meta->sar->range_time_per_pixel  =  1.0/g->fs;
-	meta->sar->azimuth_time_per_pixel = 1.0/g->prf;
+	meta->sar->image_type              = 'S';          /*Slant range image*/
+	meta->sar->look_count              = g->nlooks;
+	meta->sar->deskewed                = g->deskew;
+	meta->sar->range_time_per_pixel    = 1.0/g->fs;
+	meta->sar->azimuth_time_per_pixel  = 1.0/g->prf;
+	meta->sar->slant_shift             = g->slantOff;
+	meta->sar->time_shift              = g->timeOff;
 	meta->sar->slant_range_first_pixel = g->r00;
-	meta->sar->wavelength = g->wavl;
+	meta->sar->wavelength              = g->wavl;
+	meta->sar->prf                     = g->prf;
+	meta->sar->earth_radius            = g->re;
+	meta->sar->satellite_height        = g->re+g->ht;
 	meta->sar->range_doppler_coefficients[0] = g->fd*g->prf;
 	meta->sar->range_doppler_coefficients[1] = g->fdd*g->prf;
 	meta->sar->range_doppler_coefficients[2] = g->fddd*g->prf;
@@ -205,9 +196,10 @@ g->iflag = 0;
 	strcpy (meta->general->system, meta_get_system());
 	meta->general->data_type = REAL32;
 	meta->general->band_number = 0;
-	meta->general->x_pixel_size = meta->sar->range_time_per_pixel*(speedOfLight/2.0);
+	meta->general->x_pixel_size = meta->sar->range_time_per_pixel
+	                                                   * (speedOfLight/2.0);
 	meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel
-/* DO I WANT TO USE THE META FUNCTIONS? */	* g->vel * (g->re/g->ht);
+	                                               * g->vel * (g->re/g->ht);
 
 	*meta_out = meta;
 
@@ -249,31 +241,29 @@ void get_params(char *file,struct AISP_PARAMS *g,meta_parameters **meta_out)
 	struct dataset_sum_rec dssr1;
 
 /* First, we set the hardcoded parameters: */
-	g->rhww = 0.8;			/* Range Spectrum Weight - a little	  */
-	g->nlooks = 5;			/* Produces square pixels (5 X 1 look) 	  */
-	g->wavl=0.0565646;	/*SAR wavelength, in meters.*/
-	g->slope = 4.1913749E+11; 	/* Chirp Frequency slope (Hz/Sec) */
-	g->azres = 8.0;       /* ERS-1 azimuth resolution, in meters */
+	g->rhww = 0.8;             /* Range Spectrum Weight - a little    */
+	g->nlooks = 5;             /* Produces square pixels (5 X 1 look) */
+	g->wavl = 0.0565646;       /* SAR wavelength, in meters.          */
+	g->slope = 4.1913749E+11;  /* Chirp Frequency slope (Hz/Sec)      */
+	g->azres = 8.0;            /* ERS-1 azimuth resolution, in meters */
 	
-/*Read CCSD metadata parameters*/
+/* Get .meta metadata parameters */
 	meta=meta_create(file);
 	
-/* Allocate Memory and Read CEOS structures
- -----------------------------------------*/
+/* Read CEOS structures */
 	get_asf_facdr(file,&asf_facdr1);
 	get_ifiledr(file,&ifiledr);
 	get_dssr(file,&dssr1);
 
-/* Extract parameters of interest from Metadata
- ---------------------------------------*/
-	g->nla      = ifiledr.datgroup;			/* number of range bins */
-	g->re       = asf_facdr1.eradcntr*1000.0;	/* Radius of the Earth  */
-	g->ht       = asf_facdr1.scalt*1000.0;		/* Spacecraft Altitude  */
-	g->r00      = asf_facdr1.sltrngfp*1000.0;	/* Slant Range 1st Pix  */
-	g->prf      = asf_facdr1.prfreq;		/* Pulse Rep. Frequency */
-	g->fs       = dssr1.rng_samp_rate * 1000000.0;	/* Range sampling rate  */
-	g->pulsedur = dssr1.rng_length / 1000000.0;	/* Beam pulse length	*/
-	g->wavl     = dssr1.wave_length; 		/* Beam wavength	*/
+/* Extract parameters of interest from CEOS metadata */
+        g->nla      = ifiledr.datgroup;                /* number of range bins*/
+        g->re       = asf_facdr1.eradcntr*1000.0;      /* Radius of the Earth */
+        g->ht       = asf_facdr1.scalt*1000.0;         /* Spacecraft Altitude */
+        g->r00      = asf_facdr1.sltrngfp*1000.0;      /* Slant Range 1st Pix */
+        g->prf      = asf_facdr1.prfreq;               /* Pulse Rep. Frequency*/
+        g->fs       = dssr1.rng_samp_rate * 1000000.0; /* Range sampling rate */
+        g->pulsedur = dssr1.rng_length / 1000000.0;    /* Beam pulse length   */
+        g->wavl     = dssr1.wave_length;               /* Beam wavength       */
 
 /*Finally, add the computed parameters:*/
 	
@@ -283,7 +273,7 @@ void get_params(char *file,struct AISP_PARAMS *g,meta_parameters **meta_out)
 	/*Magnitude of s/c orbital velocity (m/sec)*/
 	g->vel=vecMagnitude(meta->state_vectors->vecs[0].vec.vel);
 
-	g->nla-=g->pulsedur*g->fs;/*Subtract off the (wasted) pulse length samples*/
+	g->nla-=g->pulsedur*g->fs;/*Subtract the (wasted) pulse length samples*/
 	
 	*meta_out=meta;
 	
