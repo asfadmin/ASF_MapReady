@@ -2,7 +2,8 @@
 #include "../util/metadata.h"
 #include "ceos.h"
 #include "errno.h"
-#include <netinet/in.h>
+#include "asf_endian.h"
+/* #include <netinet/in.h>   // for htonl() (put data network byte order) */
 
 #define INFO ( getenv("INFO") != NULL)
 #define ASP (1)
@@ -12,7 +13,7 @@
 #define SLANT (5)
 #define NOT_SLANT (6)
 
-	/* globals defining image */
+   /* globals defining image */
 int format;
 int processor;
 int number_of_samples;
@@ -35,14 +36,27 @@ int projection;
 void generate_data_planes (char *infile, char *base);
 void write_metadata (char *metafile, char *file);
 
-void ussage ()
+void usage (char *name)
 {
-  printf ("convert_standard <DATA FILE> <METADATAFILE> <BASE>\n");
-
-  exit (0);
+ printf("\n"
+	"USAGE:\n"
+ 	"   %s <dataFile> <metaFile> <outName>\n",name);
+ printf("\n"
+	"ARGUMENTS:\n"
+	"   dataFile   ASF CEOS data file (*.D)\n"
+	"   metaFile   ASF CEOS meta data file (*.L)\n"
+	"   outName    Base name for the data planes to be output.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Converts the ASF CEOS data and metadata file set to the SProCKET\n"
+	"   data and metadata file set.\n");
+ printf("\n"
+	"Version 1.00, ASF SAR Tools\n"
+	"\n");
+ exit (EXIT_FAILURE);
 }
 
-	/* globals defining conversion routines */
+   /* globals defining conversion routines */
 void write_metadata_item_string (FILE * f, char *item, char *value)
 {
   char *str;
@@ -66,7 +80,7 @@ void write_metadata_item_int (FILE * f, char *item, int value)
 int main (int argc, char **argv)
 {
   if (argc != 4)
-    ussage ();
+    usage (argv[0]);
 
   write_metadata (argv[2], argv[3]);
   generate_data_planes (argv[1], argv[3]);
@@ -77,139 +91,112 @@ int main (int argc, char **argv)
 #define CALLER "generate_data_planes"
 void generate_data_planes (char *infile, char *base)
 {
-  int f_in, f_data, f_look, f_sigma;
-  int mask = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-  char datafile[PATH_MAX], lookfile[PATH_MAX], sigmafile[PATH_MAX];
-  int i, j;
-  unsigned char *in;
-  unsigned int *out;
-  float *look, *sigma;
-  unsigned int dn;
-  double near_ground_range;
+   int f_in, f_data, f_look, f_sigma;
+   int mask = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+   char datafile[PATH_MAX], lookfile[PATH_MAX], sigmafile[PATH_MAX];
+   int ii, jj;
+   unsigned char *in;
+   float *out, *look, *sigma;
+   unsigned int dn;
+   double near_ground_range;
+
+   in = (unsigned char *) malloc (sizeof (char) *
+                         (number_of_samples + right_pad + left_pad + iof_size));
+   out = (float *) malloc (sizeof (float) * number_of_samples);
+   look = (float *) malloc (sizeof (float) * number_of_samples);
+   sigma = (float *) malloc (sizeof (float) * number_of_samples);
+
+   /* Create file names */
+   strcpy (datafile, base);
+   strcat (datafile, DATA_EXT);
+   strcpy (lookfile, base);
+   strcat (lookfile, LOOK_EXT);
+   strcpy (sigmafile, base);
+   strcat (sigmafile, SIGMA_EXT);
+
+   /* Open files */
+   f_data = open (datafile, O_WRONLY | O_CREAT | O_TRUNC, mask);
+   file_check (f_data, datafile);
+
+   f_look = open (lookfile, O_WRONLY | O_CREAT | O_TRUNC, mask);
+   file_check (f_look, lookfile);
+
+   f_sigma = open (sigmafile, O_WRONLY | O_CREAT | O_TRUNC, mask);
+   file_check (f_sigma, sigmafile);
+
+   f_in = open (infile, O_RDONLY);
+   file_check (f_in, infile);
 
 
-  printf ("Completed:        ");
-  in =
-    (unsigned char *) malloc (sizeof (char) *
-			      (number_of_samples + right_pad + left_pad +
-			       iof_size));
-  out = (unsigned int *) malloc (sizeof (int) * number_of_samples);
-  look = (float *) malloc (sizeof (float) * number_of_samples);
-  sigma = (float *) malloc (sizeof (float) * number_of_samples);
+   /* Compute ground range to near edge of image */
+   /* This is used to compute the slant range of each sample */
+   near_ground_range = slant2ground (slant_range_to_first_pixel, Re,
+                                     platform_alt);
 
-  /* Create file names */
-  strcpy (datafile, base);
-  strcat (datafile, DATA_EXT);
-  strcpy (lookfile, base);
-  strcat (lookfile, LOOK_EXT);
-  strcpy (sigmafile, base);
-  strcat (sigmafile, SIGMA_EXT);
-
-  /* Open files */
-  f_data = open (datafile, O_WRONLY | O_CREAT | O_TRUNC, mask);
-  file_check (f_data, datafile);
-
-  f_look = open (lookfile, O_WRONLY | O_CREAT | O_TRUNC, mask);
-  file_check (f_look, lookfile);
-
-  f_sigma = open (sigmafile, O_WRONLY | O_CREAT | O_TRUNC, mask);
-  file_check (f_sigma, sigmafile);
-
-  f_in = open (infile, O_RDONLY);
-  file_check (f_in, infile);
-
-
-  /* Compute ground range to near edge of image */
-  /* This is used to compute the slant range of each sample */
-  near_ground_range =
-    slant2ground (slant_range_to_first_pixel, Re, platform_alt);
-
-  lseek (f_in, number_of_samples + right_pad + left_pad + iof_size, SEEK_SET);
-  for (i = 0; i < number_of_lines; i++)
-    {
+   lseek (f_in, number_of_samples + right_pad + left_pad + iof_size, SEEK_SET);
+   for (ii = 0; ii < number_of_lines; ii++) {
       if (read (f_in, in, number_of_samples + right_pad + left_pad + iof_size)
-	  != number_of_samples + right_pad + left_pad + iof_size)
-	ERROR (CALLER, "Error reading from original data file.", EXIT);
+          != number_of_samples + right_pad + left_pad + iof_size)
+         ERROR (CALLER, "Error reading from original data file.", EXIT);
 
-      for (j = 0; j < number_of_samples; j++)
-	{
-	  dn = in[iof_size + left_pad + j];
-	  /* Assign pixel value */
-	  out[j] = (unsigned int) (htonl (in[iof_size + left_pad + j]));
+      for (jj = 0; jj < number_of_samples; jj++) {
+         dn = in[iof_size + left_pad + jj];
 
-	  /* Compute look angle */
+      /* Assign pixel value */
+         out[jj] = (float) in[iof_size + left_pad + jj];
 
-	  if (projection == SLANT)
-	    look[j] = (float)
-	      slant2look (j * pixel_size_range + slant_range_to_first_pixel,
-			  Re, platform_alt);
-	  else
-	    {
-	      look[j] =
-		slant2look (ground2slant_range
-			    (((double) j) * pixel_size_range +
-			     near_ground_range, Re, platform_alt), Re,
-			    platform_alt);
-	    }
-	  if (projection == SLANT)
-	    {
-	      /* Undefined actions here */
-	      look[j] =
-		slant2look (j * pixel_size_range + slant_range_to_first_pixel,
-			    Re, platform_alt);
-	    }
-	  else			/* ground */
-	    look[j] =
-	      slant2look (ground2slant_range
-			  (j * pixel_size_range + near_ground_range, Re,
-			   platform_alt), Re, platform_alt);
+      /* Compute look angle */
+         if (projection == SLANT)
+            look[jj] = slant2look((double)jj * pixel_size_range
+                                + slant_range_to_first_pixel, Re, platform_alt);
+         else {
+            double gr2sr = ground2slant_range((double)jj*pixel_size_range
+                                              + near_ground_range,
+                                              Re, platform_alt);
+            look[jj] = slant2look(gr2sr, Re, platform_alt);
+         }
 
+      /* compute sigma0 */
+         if (processor == PP) {
+            if (format == LOW)
+               sigma[jj] = (float)sigma0_low_PP((double)dn,jj,noise,a1,a2,a3);
+            else
+               sigma[jj] = (float)sigma0_PP((double)dn, jj, noise, a1, a2, a3);
+         }
+         else
+            sigma[jj] = (float)sigma0_ASP((double) dn, jj, noise, a1, a2, a3,
+                                         number_of_samples);
+      }
 
+   /* Put data in big endian order */
+      for (jj = 0; jj<number_of_samples; jj++) {
+         ieee_big32(out[jj]);
+         ieee_big32(look[jj]);
+         ieee_big32(sigma[jj]);
+      }
+      if (write (f_data, out, number_of_samples * sizeof (float))
+          != number_of_samples * sizeof (float))
+         ERROR (CALLER, "Error writing to output data file.", EXIT);
 
+      if (write (f_look, look, number_of_samples * sizeof (float))
+          != number_of_samples * sizeof (float))
+         ERROR (CALLER, "Error writing to output look angle file.", EXIT);
 
-	  /* compute sigma0 */
-	  if (processor == PP)
-	    {
-	      if (format == LOW)
-		sigma[j] =
-		  (float) sigma0_low_PP ((double) dn, j, noise, a1, a2, a3);
-	      else
-		sigma[j] =
-		  (float) sigma0_PP ((double) dn, j, noise, a1, a2, a3);
-	    }
-	  else
-	    sigma[j] =
-	      (float) sigma0_ASP ((double) dn, j, noise, a1, a2, a3,
-				  number_of_samples);
+      if (write (f_sigma, sigma, number_of_samples * sizeof (float))
+          != number_of_samples * sizeof (float))
+         ERROR (CALLER, "Error writing to output sigma0 data file.", EXIT);
 
-	}
+      if (ii % 8 == 0) {
+         printf ("Completed: %05.2f%%\r",100.0*(double)ii/(double)number_of_lines);
+         fflush (stdout);
+      }
+   }
+   printf ("Completed: %05.2f%%\n", 100.0*(double)ii/(double)number_of_lines);
 
-      if (write (f_data, out, number_of_samples * sizeof (float)) !=
-	  number_of_samples * sizeof (float))
-	ERROR (CALLER, "Error writing to output data file.", EXIT);
-
-      if (write (f_look, look, number_of_samples * sizeof (float)) !=
-	  number_of_samples * sizeof (float))
-	ERROR (CALLER, "Error writing to output look angle file.", EXIT);
-
-      if (write (f_sigma, sigma, number_of_samples * sizeof (float)) !=
-	  number_of_samples * sizeof (float))
-	ERROR (CALLER, "Error writing to output sigma0 data file.", EXIT);
-
-      if (i % 8 == 0)
-	{
-	  printf ("\b\b\b\b\b\b\b%% %05.2f",
-		  100.0 * (double) i / (double) number_of_lines);
-	  fflush (stdout);
-	}
-
-
-    }
-
-  /* Close the output files */
-  close (f_data);
-  close (f_look);
-  close (f_sigma); 
+   /* Close the output files */
+   close (f_data);
+   close (f_look);
+   close (f_sigma); 
 }
 
 void write_metadata (char *metafile, char *file)
@@ -234,8 +221,8 @@ void write_metadata (char *metafile, char *file)
     {
       char str[256];
       sprintf (str,
-	       "Could not open the file \"%s\" for writing(%d:'%s').\n",
-	       file, errno, strerror (errno));
+          "Could not open the file \"%s\" for writing(%d:'%s').\n",
+          file, errno, strerror (errno));
     }
 
   /* Read faclity data record */
@@ -340,15 +327,15 @@ void write_metadata (char *metafile, char *file)
 
   /* SLANT_RANGE_TO_FIRST_PIXEL */
   write_metadata_item_double (out, SLANT_RANGE_TO_FIRST_PIXEL,
-			      facdr.sltrngfp);
+               facdr.sltrngfp);
 
   /* EARTH_RADIUS_AT_IMAGE_CENTER */
   write_metadata_item_double (out, EARTH_RADIUS_AT_IMAGE_CENTER,
-			      facdr.eradcntr);
+               facdr.eradcntr);
 
   /* EARTH_RADIUS_AT_IMAGE_NARIR */
   write_metadata_item_double (out, EARTH_RADIUS_AT_IMAGE_NARIR,
-			      facdr.eradnadr);
+               facdr.eradnadr);
 
 
   write_metadata_item_string (out, IMAGE_FORMAT, STANDARD_FORMAT);
@@ -427,17 +414,17 @@ void write_metadata (char *metafile, char *file)
   if (INFO)
     {
       write_metadata_item_int (stdout, "number_of_samples",
-			       number_of_samples);
+                number_of_samples);
       write_metadata_item_int (stdout, "number_of_lines", number_of_lines);
       write_metadata_item_int (stdout, "left_pad", left_pad);
       write_metadata_item_int (stdout, "right_pad", right_pad);
       write_metadata_item_int (stdout, "top_pad", top_pad);
       write_metadata_item_int (stdout, "bottom_pad", bottom_pad);
       write_metadata_item_double (stdout, "pixel_size_range",
-				  pixel_size_range);
+              pixel_size_range);
       write_metadata_item_double (stdout, "pixel_size_az", pixel_size_az);
       write_metadata_item_double (stdout, "slant_range_to_first_pixel",
-				  slant_range_to_first_pixel);
+              slant_range_to_first_pixel);
       write_metadata_item_double (stdout, "platform_alt", platform_alt);
       write_metadata_item_double (stdout, "Re", Re);
       write_metadata_item_int (stdout, "Size of iof", iof_size);
