@@ -84,11 +84,10 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "worgen.h"
-#include "ddr.h"
 #include "amp2img.h"
 #include "ifm.h"
 
-#define VERSION 3.95
+#define VERSION 4.0
 
 void usage(char *name);
 
@@ -114,8 +113,7 @@ int main(int argc, char *argv[])
    float	*ibuf;
    unsigned char *obuf;
    int		 obuflen;
-   struct DDR	 ddr,outddr;		/* ddr structure */
-   
+   meta_parameters *meta, *outmeta;
 
    logflag=0;
    currArg=1;
@@ -172,7 +170,7 @@ int main(int argc, char *argv[])
 	usage(argv[0]);
    }
    
-   /* If infile does not have an extention then fail*/
+   /* If infile does not have an extention then fail.  */
    if (NULL==findExt(fnin))
 	strcpy(tmpExt,"");
    else
@@ -182,35 +180,34 @@ int main(int argc, char *argv[])
    
    /* open input file */
    fpin = fopenImage(fnin,"rb");
+   meta = meta_read(fnin);
 
-   c_getddr(fnin, &ddr);
    if (usingDefaultLS)
    {
-	meta_parameters *meta;
-	meta = meta_read(fnin);
-	if (ddr.line_inc==meta->ifm->nLooks)	/*We don't want to multilook any image twice.*/
+	/* We don't want to multilook any image twice.  */
+	if ( meta->sar->line_increment == meta->ifm->nLooks )	
 		StepLine=StepSample=LookLine=LookSample=1;
 	meta_free(meta);
    }
 
-   if (ddr.dtype!=EREAL)
+   if ( strncmp(meta->general->data_type, "REAL", 4) )
    {
    	sprintf(errbuf, "   ERROR: Input data must be floating point data.\n");
    	printErr(errbuf);
    }
-   wid = ddr.ns;
-   len = ddr.nl;
+   wid = meta->general->sample_count;
+   len = meta->general->line_count;
    
-   outddr=ddr;
-   outddr.dtype=EBYTE;
-   outddr.ns=wid/StepSample;
-   outddr.nl=len/StepLine;
-   outddr.line_inc*=StepLine;
-   outddr.sample_inc*=StepSample;
-   outddr.pdist_x*=StepSample;
-   outddr.pdist_y*=StepLine;
-   c_putddr(fnout,&outddr);
-
+   outmeta = meta_read(fnin);
+   strcpy(outmeta->general->data_type, "BYTE");
+   outmeta->general->sample_count = wid/StepSample;
+   outmeta->general->line_count = len/StepLine;
+   outmeta->sar->line_increment *= StepLine;
+   outmeta->sar->sample_increment *= StepSample;
+   outmeta->general->x_pixel_size *= StepSample;
+   outmeta->general->y_pixel_size *= StepLine;
+   meta_write(outmeta, fnout);
+   
    /* determine mean value from input file */
    avg = get_mean(fpin,wid,len,TRUE);
    mean = calc_hist(fpin,wid,len,avg);
@@ -220,9 +217,9 @@ int main(int argc, char *argv[])
    fpout = fopenImage(fnout,"wb");
    
    /* allocate memory */
-   obuflen=outddr.ns;
-   ibuf = (float *)MALLOC(sizeof(float) * wid * LookLine);
-   obuf = (unsigned char *)MALLOC(sizeof(unsigned char) * obuflen);
+   obuflen= outmeta->general->sample_count;
+   ibuf = (float *) MALLOC(sizeof(float) * wid * LookLine);
+   obuf = (unsigned char *) MALLOC(sizeof(unsigned char) * obuflen);
    
    /* start conversion */
    if (!quietflag) {
@@ -238,7 +235,8 @@ int main(int argc, char *argv[])
 
    /* look over data for full set of LookLines write data to file fpout */
    mldata(fpin,fpout,nitems,newbytes,LookLine,LookSample,
-	  StepLine,StepSample,ibuf,obuf,ddr.nl,ddr.ns,obuflen,mult);
+	  StepLine,StepSample,ibuf,obuf,meta->general->line_count,
+	  meta->general->sample_count,obuflen,mult);
 
    FCLOSE(fpin);
    FCLOSE(fpout);
@@ -258,8 +256,8 @@ void usage(char *name) {
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
 	"   infile   is an image file (WITH extension-- .amp or .img)\n"
-	"              accompanied by .meta and .ddr files.\n"
-	"   outfile  is the image file to be created, .img and .ddr\n"
+	"              accompanied by a .meta file.\n"
+	"   outfile  is the image file to be created, .img and .meta\n"
 	"              (Do not include an extension on your outfile)\n");
  printf("\n"
 	"OPTIONAL ARGUMENTS:\n"
