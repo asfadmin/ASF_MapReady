@@ -14,48 +14,72 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_nan.h"
 
 /*Interferometry calls:*/
 
-/***********************************************************************
+/*******************************************************************************
  * meta_get_sat_height:
- * Return the satellite height (in meters) from the center of the earth
- * at a specific line & sample of the image */
+ * Return the satellite height (in meters) from the center of the earth at a
+ * specific line & sample of the image */
 double meta_get_sat_height(meta_parameters *meta, long line, long sample)
 {
-	double ht, time;
-	stateVector stVec;
+	double sat_height = MAGIC_UNSET_DOUBLE;
+	
+	/* Satellite height should be calculated (as it is in the 'else'), but
+	   due to delivery schedule restrictions we had to fall back on the old
+	   way of retrieving this info (storing it in the .meta file) */
+	if (meta_is_valid_double(meta->sar->satellite_height)) {
+		sat_height = meta->sar->satellite_height;
+	}
+	else {
+		double time;
+		stateVector stVec;
 
-	time = meta_get_time(meta, line, sample);
-        stVec = meta_get_stVec(meta, time);
-        ht = sqrt(stVec.pos.x*stVec.pos.x+stVec.pos.y*stVec.pos.y+stVec.pos.z*stVec.pos.z);
-
-	return ht;
+		time = meta_get_time(meta, line, sample);
+        	stVec = meta_get_stVec(meta, time);
+        	sat_height = sqrt(  stVec.pos.x * stVec.pos.x
+		                  + stVec.pos.y * stVec.pos.y
+				  + stVec.pos.z * stVec.pos.z);
+	}
+	
+	return sat_height;
 }
 
-/******************************************
+/*******************************************************************************
  * meta_get_earth_radius:
- * Return the earth radius (in meters) at a
- * specific line & sample of the image */
+ * Return the earth radius (in meters) at a specific line & sample of the image
+ */
 double meta_get_earth_radius(meta_parameters *meta, long line, long sample)
 {
-	double re, rp, lat, ht, er, time;
-	stateVector stVec;
+	double earth_rad = MAGIC_UNSET_DOUBLE;
 
-/* If re & rp are not NAN then set it to meta values, otherwise default to WGS84 */
-	re = meta->general->re_major;
-	re = (re==re) ? re : 6378137.0;
-	rp = meta->general->re_minor;
-	rp = (rp==rp) ? rp : 6356752.31414;
-
-/* Actual algorithm */
-	time = meta_get_time(meta, line, sample);
-        stVec = meta_get_stVec(meta, time);
-        ht = sqrt(stVec.pos.x*stVec.pos.x+stVec.pos.y*stVec.pos.y+stVec.pos.z*stVec.pos.z);
-        lat = asin(stVec.pos.z/ht);
-        er=(double) (re*rp)/sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
-
-	return er;
+	/* Earth radius should be calculated (as it is in the 'else'), but due
+	   to delivery schedule restrictions we had to fall back on the old way
+	   of retrieving this info (storing it in the .meta file) */
+	if (meta_is_valid_double(meta->sar->earth_radius)) {
+		earth_rad = meta->sar->earth_radius;
+	}
+	else {
+		double re, rp, lat, ht, time;
+		stateVector stVec;
+	/* If re & rp are valid then set them to meta values, otherwise WGS84 */
+		re = (meta_is_valid_double(meta->general->re_major))
+		       ? meta->general->re_major : 6378137.0;
+		rp = (meta_is_valid_double(meta->general->re_minor))
+		       ? meta->general->re_minor : 6356752.31414;
+	/* Actual algorithm */
+		time = meta_get_time(meta, line, sample);
+        	stVec = meta_get_stVec(meta, time);
+        	ht = sqrt(  stVec.pos.x * stVec.pos.x
+		          + stVec.pos.y * stVec.pos.y
+			  + stVec.pos.z * stVec.pos.z);
+        	lat = asin(stVec.pos.z/ht);
+        	earth_rad = (re*rp)
+		        / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+	}
+	
+	return earth_rad;
 }
 
 void meta_get_slants(meta_parameters *meta,double *slantFirst, double *slantPer)
