@@ -1,6 +1,9 @@
 #include "asf_convert_gui.h"
 
 #ifdef G_OS_WIN32
+#include <pango/pango.h>
+#include <Windows.h>
+
 static char appfontname[128] = "tahoma 8"; /* fallback value */
 
 static void set_app_font (const char *fontname)
