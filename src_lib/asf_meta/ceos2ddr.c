@@ -34,8 +34,6 @@ PROGRAM HISTORY:
 
 ****************************************************************************/
 #include "asf.h"
-
-
 #include "ddr.h"
 #include "ceos.h"
 #include "asf_endian.h"
@@ -165,8 +163,8 @@ void ceos2ddr(char *ceosIn,struct DDR *ddrOut,int *headerLen,int *lineLen)
 			ddrOut->proj_coef[6] = 0.0;
 			ddrOut->proj_coef[7] = 0.0; 
 			break;
-		    case 'L':/*Lambert*/
-			ddrOut->proj_code = LAMCC;	
+		    case 'L':/*Lambert azimuthal equal area*/
+			ddrOut->proj_code = LAMAZ;	
 			ddrOut->datum_code = 0;
 			ddrOut->zone_code = 62;
 			ddrOut->proj_coef[2] = packed_deg(p->param.lambert.plat1); /*standard parallel1*/
