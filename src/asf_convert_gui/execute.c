@@ -390,6 +390,20 @@ process_item(GtkTreeIter *iter,
       
       g_snprintf(log_file, sizeof(log_file), "tmp%d.log", pid);
 
+#ifdef win32
+      /* we probably should have this on all platforms, but use
+	 strcasecmp on win32 only, others would use strcmp.  For now
+	 skip on other platforms, since it will only come up on win32
+	 at the moment
+      */
+      if (user_settings->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 &&
+	  strcasecmp(in_data, out_full) == 0)
+      {
+	 /* should be enough room -- we chopped the extension */
+	 strcat(out_basename, "_out");
+      }
+#endif
+
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
     "asf_import %s -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
          settings_get_data_type_arg_string(user_settings),
