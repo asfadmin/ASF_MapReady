@@ -70,4 +70,7 @@
 project_parameters_t * get_geocode_options(int *argc, char ***argv,
 					   projection_type_t * proj_type);
 
+void sanity_check(projection_type_t proj_type, project_parameters_t * pps);
+void apply_defaults(projection_type_t proj_type, project_parameters_t * pps);
+
 #endif
