@@ -6,9 +6,9 @@ Log file utilities
 
 FILE *fLog;
 int logflag;		/* flag for log file output */
-char logFile[255];	/* log file name */
+char logFile[256];	/* log file name */
 int quietflag;		/* flag for short or long output */
-char logbuf[255];	/* buffer for log file output */
+char logbuf[4096];	/* buffer for log file output */
 
 void printLog(char *msg)
 {
