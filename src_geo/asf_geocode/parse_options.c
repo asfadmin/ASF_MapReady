@@ -821,7 +821,7 @@ static void detect_flag_option(int argc, char *argv[], char *arg, int *found)
     }
 }
 
-int detect_flag_options(int argc, char *argv[], ...)
+int detect_flag_options(int argc, char **argv, ...)
 {
     va_list ap;
     char * arg = NULL;
@@ -840,7 +840,7 @@ int detect_flag_options(int argc, char *argv[], ...)
     return found;
 }
 
-static int extract_flags(int *argc, char **argv[], ... )
+static int extract_flags(int *argc, char ***argv, ... )
 {
     va_list ap;
     char * arg = NULL;
