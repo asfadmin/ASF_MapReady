@@ -25,16 +25,12 @@ OBJS  = addMetaToCeos.o \
 	ceos_misc.o
 
 
-all: sarout lzceos2ceos clean
+all: sarout clean
 
 sarout: $(CINCFIL) $(OBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) sarout.c -o sarout $(OBJS) $(LIBS)
 	mv sarout$(BIN_POSTFIX) $(BINDIR)
 	cp sarout.man ../../man/cat1/sarout.1
-
-lzceos2ceos:
-	cp lzceos2ceos.sh $(BINDIR)/lzceos2ceos
-	-chmod 775 $(BINDIR)/lzceos2ceos
 
 clean:
 	rm -f *.o
