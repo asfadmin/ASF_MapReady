@@ -681,23 +681,6 @@ void perf_test_ps()
     free(x);
 }
 
-void perf_test()
-{
-    double x, y;
-    int i;
-    struct timeval tv1, tv2;
-    struct timezone tz;
-    
-    gettimeofday(&tv1, &tz);    
-    for (i = 0; i < 1000000; ++i)
-    {
-	project_lamaz(46, -112, .765, -1.1305, &x, &y);
-    }
-    gettimeofday(&tv2, &tz);
-
-    printf("Elapsed: %d sec\n", (int)(tv2.tv_sec - tv1.tv_sec));
-}
-
 int main(int argc, char * argv [])
 {
     test_poly();

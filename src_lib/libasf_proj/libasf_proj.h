@@ -197,33 +197,51 @@ int project_ps_arr_inv(project_parameters_t * pps,
   Lambert Azimuthal Equal Area
   www.remotesensing.org/geotiff/proj_list/lambert_azimuthal_equal_area.html
 ****************************************************************************/
-int project_lamaz(double lat_0, double lon_0,
-		  double lat, double lon, double *x, double *y);
-int project_lamaz_s(project_parameters_t * lamaz,
+int project_lamaz(project_parameters_t * pps,
 		    double lat, double lon, double *x, double *y);
-int project_lamaz_arr(double lat_0, double lon_0,
-		      double *x, double *y, int len);
+int project_lamaz_arr(project_parameters_t * pps,
+		      double * lat, double * lon,
+		      double ** projected_x, double ** projected_y, 
+		      int len);
+int project_lamaz_inv(project_parameters_t * pps,
+		      double x, double y, double *lat, double *lon);
+int project_lamaz_arr_inv(project_parameters_t * pps,
+			  double * x, double * y,
+			  double ** lat, double ** lon, 
+			  int len);
 
 /****************************************************************************
   Lambert Conformal Conic
   www.remotesensing.org/geotiff/proj_list/lambert_conic_conformal_2sp.html
 ****************************************************************************/
-int project_lamcc(double lat_1, double lat_2, double lat_0, double lon_0, 
+int project_lamcc(project_parameters_t * pps,
 		  double lat, double lon, double *x, double *y);
-int project_lamcc_s(proj_lamcc * lamcc,
-		    double lat, double lon, double *x, double *y);
-int project_lamcc_arr(double lat_1, double lat_2, double lat_0, double lon_0,
-		      double *x, double *y, int length);
+int project_lamcc_arr(project_parameters_t * pps,
+		      double * lat, double * lon,
+		      double ** projected_x, double ** projected_y, 
+		      int len);
+int project_lamcc_inv(project_parameters_t * pps,
+		      double x, double y, double *lat, double *lon);
+int project_lamcc_arr_inv(project_parameters_t * pps,
+			  double * x, double * y,
+			  double ** lat, double ** lon, 
+			  int len);
 
 /****************************************************************************
   Albers Equal-Area Conic
   www.remotesensing.org/geotiff/proj_list/albers_equal_area_conic.html
 ****************************************************************************/
-int project_albers(double lat_1, double lat_2, double lat_0, double lon_0,
+int project_albers(project_parameters_t * pps,
 		   double lat, double lon, double *x, double *y);
-int project_albers_s(proj_albers * alb, 
-		     double lat, double lon, double *x, double *y);
-int project_albers_arr(double lat_1, double lat_2, double lat_0, double lon_0,
-		       double *x, double *y, int length);
+int project_albers_arr(project_parameters_t * pps,
+		       double * lat, double * lon,
+		       double ** projected_x, double ** projected_y, 
+		       int len);
+int project_albers_inv(project_parameters_t * pps,
+		       double x, double y, double *lat, double *lon);
+int project_albers_arr_inv(project_parameters_t * pps,
+			   double * x, double * y,
+			   double ** lat, double ** lon, 
+			   int len);
 
 #endif

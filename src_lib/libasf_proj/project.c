@@ -289,9 +289,6 @@ project_utm_arr_inv (project_parameters_t * pps,
 		     double **lat, double **lon,
 		     long length)
 {
-    /* it is natural to call this function with latitude in x,
-       and longitude in y -- however the transform wants longitude
-       in y and latitude in x.  So here we switch */
   return project_worker_arr_inv(
       utm_projection_description(utm_nudge(pps->utm.zone)),
       x, y, lat, lon, length);
@@ -398,151 +395,154 @@ project_ps_arr_inv(project_parameters_t * pps,
 /****************************************************************************
  Lambert Azimuthal Equal Area
 ****************************************************************************/
-static char * lamaz_projection_desc(double lat_0, double lon_0)
+static char * lamaz_projection_desc(project_parameters_t * pps)
 {
   static char lamaz_projection_description[128];
 
   /* Establish description of output projection. */
   sprintf(lamaz_projection_description,
 	  "+proj=laea +lat_0=%f +lon_0=%f +datum=WGS84",
-	  lat_0, lon_0);
+	  pps->lamaz.center_lat, pps->lamaz.center_lon);
 
   return lamaz_projection_description;
 }
 
 int
-project_lamaz(double lat_0, double lon_0, double lat, double lon, 
-	      double *x, double *y)
-{
-    char * d = lamaz_projection_desc(lat_0, lon_0);
- /*
-    return project_worker(lamaz_projection_description(lat_0, lon_0),
-			  lat, lon, x, y);
- */
-    return d ? TRUE : FALSE;
-}
-
-static int
-project_lamaz_s0(proj_lamaz * lamaz,
-		double lat, double lon, 
-		double *x, double *y)
-{
-    return project_lamaz(lamaz->center_lat, lamaz->center_lon,
-			 lat, lon, x, y);
-}
-
-int
-project_lamaz_s(project_parameters_t * proj,
-		double lat, double lon, 
-		double *x, double *y)
-{
-    return project_lamaz_s0(&proj->lamaz,
-			   lat, lon, x, y);
-}
-
-int
-project_lamaz_arr(double lat_0, double lon_0, double *x, double *y, int length)
-{
-  char lamaz_projection_description[128];
-
-  /* Establish description of output projection. */
-  sprintf(lamaz_projection_description,
-	  "+proj=laea +lat_0=%f +lon_0=%f +datum=WGS84",
-	  lat_0, lon_0);
-
-  return project_worker_arr(lamaz_projection_description, x, y, &x,&y, length);
-}
-
-/*
-  lat_1 : First standard parallel
-  lat_2 : Second standard parallel
-  lat_0 : Latitude of false origin
-  lon_0 : Longitude of false origin
-*/
-
-int
-project_lamcc(double lat_1, double lat_2, double lat_0, double lon_0, 
+project_lamaz(project_parameters_t * pps,
 	      double lat, double lon, double *x, double *y)
 {
-  char lamcc_projection_description[128];
+    return project_worker_arr(
+	lamaz_projection_desc(pps), &lat, &lon, &x, &y, 1);
+}
+
+int
+project_lamaz_arr(project_parameters_t * pps,
+		  double * lat, double * lon,
+		  double ** projected_x, double ** projected_y, 
+		  int len)
+{
+    return project_worker_arr(
+	lamaz_projection_desc(pps), lat, lon, projected_x, projected_y, len);
+}
+
+int
+project_lamaz_inv(project_parameters_t * pps,
+		  double x, double y, double *lat, double *lon)
+{
+    return project_worker_arr(
+	lamaz_projection_desc(pps), &x, &y, &lat, &lon, 1);
+}
+
+int
+project_lamaz_arr_inv(project_parameters_t * pps,
+		      double * x, double * y,
+		      double ** lat, double ** lon, 
+		      int len)
+{
+    return project_worker_arr_inv(
+	lamaz_projection_desc(pps), x, y, lat, lon, len);
+}
+
+/****************************************************************************
+ Lambert Conformal Conic
+****************************************************************************/
+static char * lamcc_projection_desc(project_parameters_t * pps)
+{
+  static char lamcc_projection_description[128];
 
   /* Establish description of output projection. */
   sprintf(lamcc_projection_description,
 	  "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=WGS84",
-	  lat_1, lat_2, lat_0, lon_0);
-/*
-  return project_worker(lamcc_projection_description, lat, lon, x, y);
-*/
-  return FALSE;
+	  pps->lamcc.plat1, pps->lamcc.plat2,
+	  pps->lamcc.lat0, pps->lamcc.lon0);
+
+  return lamcc_projection_description;
 }
 
 int
-project_lamcc_s(proj_lamcc * lamcc,
-		double lat, double lon, double *x, double *y)
+project_lamcc(project_parameters_t * pps,
+	      double lat, double lon, double *x, double *y)
 {
-    return project_lamcc(lamcc->plat1, lamcc->plat2, lamcc->lat0, lamcc->lon0,
-			 lat, lon, x, y);
+    return project_worker_arr(
+	lamcc_projection_desc(pps), &lat, &lon, &x, &y, 1);
 }
 
 int
-project_lamcc_arr(double lat_1, double lat_2, double lat_0, double lon_0,
-		  double *x, double *y, int length)
+project_lamcc_arr(project_parameters_t * pps,
+		  double * lat, double * lon,
+		  double ** projected_x, double ** projected_y, 
+		  int len)
 {
-  char lamcc_projection_description[128];
+    return project_worker_arr(
+	lamcc_projection_desc(pps), lat, lon, projected_x, projected_y, len);
+}
+
+int
+project_lamcc_inv(project_parameters_t * pps,
+		  double x, double y, double *lat, double *lon)
+{
+    return project_worker_arr(
+	lamcc_projection_desc(pps), &x, &y, &lat, &lon, 1);
+}
+
+int
+project_lamcc_arr_inv(project_parameters_t * pps,
+		      double * x, double * y,
+		      double ** lat, double ** lon, 
+		      int len)
+{
+    return project_worker_arr_inv(
+	lamcc_projection_desc(pps), x, y, lat, lon, len);
+}
+
+/****************************************************************************
+  Albers Equal-Area Conic
+****************************************************************************/
+static char * albers_projection_desc(project_parameters_t * pps)
+{
+  static char albers_projection_description[128];
 
   /* Establish description of output projection. */
-  sprintf(lamcc_projection_description,
-	  "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=WGS84",
-	  lat_1, lat_2, lat_0, lon_0);
+  sprintf(albers_projection_description,
+	  "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=WGS84",
+	  pps->albers.std_parallel1, pps->albers.std_parallel2,
+	  pps->albers.orig_latitude, pps->albers.center_meridian);
 
-  return project_worker_arr(lamcc_projection_description, x, y,&x,&y, length);
+  return albers_projection_description;
 }
 
-/*
-  lat_1 : Latitude of first standard parallel
-  lat_2 : Latitude of second standard parallel
-  lat_0 : Latitude at false origin
-  lon_0 : Longitude at false origin
- */
-
 int
-project_albers(double lat_1, double lat_2, double lat_0, double lon_0,
+project_albers(project_parameters_t * pps,
 	       double lat, double lon, double *x, double *y)
 {
-  char aea_projection_description[128];
-
-  /* Establish description of output projection. */
-  sprintf(aea_projection_description,
-	  "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=WGS84",
-	  lat_1, lat_2, lat_0, lon_0);
-/*
-  return project_worker(aea_projection_description, lat, lon, x, y);
-*/
-  return FALSE;
+    return project_worker_arr(
+	albers_projection_desc(pps), &lat, &lon, &x, &y, 1);
 }
 
 int
-project_albers_s(proj_albers * alb,
-		 double lat, double lon, double *x, double *y)
+project_albers_arr(project_parameters_t * pps,
+		  double * lat, double * lon,
+		  double ** projected_x, double ** projected_y, 
+		  int len)
 {
-    return project_albers(
-	  alb->std_parallel1,
-	  alb->std_parallel2,
-	  alb->orig_latitude,
-	  alb->center_meridian,
-	  lat, lon, x, y);
+    return project_worker_arr(
+	albers_projection_desc(pps), lat, lon, projected_x, projected_y, len);
 }
 
 int
-project_albers_arr(double lat_1, double lat_2, double lat_0, double lon_0,
-		   double *x, double *y, int length)
+project_albers_inv(project_parameters_t * pps,
+		  double x, double y, double *lat, double *lon)
 {
-  char aea_projection_description[128];
+    return project_worker_arr(
+	albers_projection_desc(pps), &x, &y, &lat, &lon, 1);
+}
 
-  /* Establish description of output projection. */
-  sprintf(aea_projection_description,
-	  "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=WGS84",
-	  lat_1, lat_2, lat_0, lon_0);
-
-  return project_worker_arr(aea_projection_description, x, y,&x,&y, length);
+int
+project_albers_arr_inv(project_parameters_t * pps,
+		      double * x, double * y,
+		      double ** lat, double ** lon, 
+		      int len)
+{
+    return project_worker_arr_inv(
+	albers_projection_desc(pps), x, y, lat, lon, len);
 }
