@@ -3,6 +3,7 @@
 #include "ceos.h"
 #include "decoder.h"
 #include "dateUtil.h"
+#include "get_ceos_names.h"
 
 /*Internal Metadata creation routine prototype*/
 void ceos_init(const char *in_fName,meta_parameters *sar);
@@ -111,9 +112,9 @@ bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
  * file pointer  */
 FILE *openCeos(char *fName, char *outN, bin_state *s)
 {
-  char dataName[256], metaName[256];
+  char dataName[256];
   FILE *ret;
-  get_ceos_names(fName,dataName,metaName);
+  require_ceos_data(fName,dataName);
   ret=FOPEN(dataName,"rb");
   FSEEK64(ret,0,0);/*Seek to beginning of file*/
   getNextCeosLine(ret, s, fName, outN);/*Skip over first line of file*/
