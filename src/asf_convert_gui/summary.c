@@ -83,38 +83,30 @@ void update_summary()
 
 	    case POLAR_STEREOGRAPHIC:
 		sprintf(text, "%sPolar Stereo\n"
-			"   Center: (%f, %f)\n"
-			"   False N/E: %.0f/%.0f\n",
-			text, s->lat0, s->lon0,
-			s->false_northing, s->false_easting);
+			"   Center: (%f, %f)\n",
+			text, s->lat0, s->lon0);
 		break;
 
 	    case LAMBERT_CONFORMAL_CONIC:
 		sprintf(text, "%sLambert Conformal Conic\n"
 			"   Center: (%f, %f)\n"
-			"   Standard Parallels: (%f, %f)\n"
-			"   False N/E: %.0f/%.0f\n",
+			"   Standard Parallels: (%f, %f)\n",
 			text, s->lat0, s->lon0,
-			s->plat1, s->plat2,
-			s->false_northing, s->false_easting);
+			s->plat1, s->plat2);
 		break;
 
 	    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
 		sprintf(text, "%sLambert Azimuthal Equal Area\n"
-			"   Center: (%f, %f)\n"
-			"   False N/E: %.0f/%.0f\n",
-			text, s->lat0, s->lon0,
-			s->false_northing, s->false_easting);
+			"   Center: (%f, %f)\n",
+			text, s->lat0, s->lon0);
 		break;
 
 	    case ALBERS_EQUAL_AREA:
 		sprintf(text, "%sAlbers Conical Equal Area\n"
 			"   Center: (%f, %f)\n"
-			"   Standard Parallels: (%f, %f)\n"
-			"   False N/E: %.0f/%.0f\n",
+			"   Standard Parallels: (%f, %f)\n",
 			text, s->lat0, s->lon0,
-			s->plat1, s->plat2,
-			s->false_northing, s->false_easting);
+			s->plat1, s->plat2);
 		break;
 	}
 
@@ -122,6 +114,9 @@ void update_summary()
 	    sprintf(text, "%s   Height: %f\n", text, s->height);
 
 	sprintf(text, "%s   Datum: %s\n", text, datum_string(s->datum));
+
+	sprintf(text, "%s   Resampling Method: %s\n", text,
+		resample_method_string(s->resample_method));
     }
     else
     {
