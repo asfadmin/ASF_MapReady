@@ -29,12 +29,9 @@ PROGRAM HISTORY:
                      accurate.  Takes into account the doppler.
    3.1   T. Logan 9/00   Fixed bug in baseline delta calculation
 ****************************************************************/
-#include "asf.h"
-
-
-
 #include "geolocate.h"
 #include "resolve.h"
+#include "dateUtil.h"
 
 /* function declarations */
 double get_days(meta_state_vectors *s1,meta_state_vectors *s2);
@@ -49,32 +46,32 @@ baseline find_baseline(char *file1,char *file2)
 	double range,dop;
 	double Bn[MAX_STVEC],Bp[MAX_STVEC];
 	stateVector stVec;
-	baseline base={0.0,0.0,0.0,0.0,1.0};
-	meta_parameters *meta1=meta_init(file1);
-	meta_parameters *meta2=meta_init(file2);
+	baseline base = {0.0, 0.0, 0.0, 0.0, 1.0};
+	meta_parameters *meta1 = meta_read(file1);
+	meta_parameters *meta2 = meta_read(file2);
 	int ncol;
 
-	ncol=meta1->ifm->orig_nSamples;
+	ncol = meta1->sar->original_sample_count;
 
 /*Calculate the range and doppler of beam center.*/
-	range=meta_get_slant(meta1,0,ncol/2);
-	dop=meta_get_dop(meta1,0,ncol/2);
+	range = meta_get_slant(meta1,0,ncol/2);
+	dop   = meta_get_dop(meta1,0,ncol/2);
 	
-	if (meta1->stVec==NULL)
+	if (meta1->state_vectors==NULL)
 	{
 		sprintf(errbuf,"   ERROR: The image file '%s' has no\n"
 			"   state vectors!\n",file1);
 		printErr(errbuf);
 	}
 	
-	N_STVEC=meta1->stVec->num;
+	N_STVEC=meta1->state_vectors->vector_count;
 	
 /*Get image 1's state vectors, and advance each
 of image 2's so they line up.
 This creates an array of normal and parallel baseline values.*/
 	for (i=0;i<N_STVEC;i++)
 	{
-		stVec=meta1->stVec->vecs[i].vec;
+		stVec=meta1->state_vectors->vecs[i].vec;
 		get_sep(stVec,meta2,range,dop,&Bn[i],&Bp[i]);
 	}
 	
@@ -113,7 +110,7 @@ This creates an array of normal and parallel baseline values.*/
 	base.dBn/=(N_STVEC-1);
 	base.dBp/=(N_STVEC-1);
 	
-	base.temporal=get_days(meta1->stVec,meta2->stVec);
+	base.temporal=get_days(meta1->state_vectors,meta2->state_vectors);
 	
 	return base;
 }
