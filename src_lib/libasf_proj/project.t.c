@@ -72,10 +72,13 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
 {
     char name[256];
     double lon0, lat, lon;
+    project_parameters_t pps;
 
     lon0 = lon0_deg * DEG_TO_RAD;
     lat = lat_deg * DEG_TO_RAD;
     lon = lon_deg * DEG_TO_RAD;
+
+    pps.utm.zone = lon0_deg;
 
     /* normal function call check */
     {
@@ -86,7 +89,7 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
 	sprintf(name, "project_utm(%f,%f,%f)",
 		lon0_deg, lat_deg, lon_deg);
 	
-	project_utm(lon0, lat, lon, &x, &y);
+	project_utm(&pps, lat, lon, &x, &y);
 	
 	ok = check(name, x, y, x_correct, y_correct);
 
@@ -97,7 +100,7 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
 	    sprintf(name, "project_utm_inv(%f,%f,%f)",
 		    lon0_deg, x, y);
 	    
-	    project_utm_inv(lon0, x, y, &lat_out, &lon_out);
+	    project_utm_inv(&pps, x, y, &lat_out, &lon_out);
 	    check(name, lat, lon, lat_out, lon_out);
 	}
     }
@@ -123,7 +126,7 @@ void testa_utm(double lon0_deg, double lat_deg, double lon_deg,
 	    yarr[i] = lon;
 	}
 	
-	project_utm_arr(lon0, xarr, yarr, xarr_out, yarr_out, ARR_TEST_SIZE);
+	project_utm_arr(&pps, xarr, yarr, xarr_out, yarr_out, ARR_TEST_SIZE);
 
 	ok = 1;
 	for (i = 1; i < ARR_TEST_SIZE; ++i)
@@ -164,6 +167,7 @@ void testa_random_utm()
 
     int reference_lon;
     int reference_lat;
+    project_parameters_t pps;
 
     /* do these dynamically, might be too big for the stack */
     x = (double *) malloc(sizeof(double) * ARR_TEST_SIZE);
@@ -181,6 +185,8 @@ void testa_random_utm()
     reference_lon = rand() % 360 - 180;
     reference_lat = rand() % 120 - 60;
 
+    pps.utm.zone = reference_lon;
+
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
 	/* latitude: close to the reference latitude (within 2 degrees) */
@@ -192,11 +198,11 @@ void testa_random_utm()
 	    ( (double)rand() / (double)RAND_MAX * 1 - .5 ) );
     }
 
-    project_utm_arr(reference_lon * DEG_TO_RAD, x, y, xa, ya, ARR_TEST_SIZE);
+    project_utm_arr(&pps, x, y, xa, ya, ARR_TEST_SIZE);
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
-	project_utm(reference_lon * DEG_TO_RAD, x[i], y[i], &xp[i], &yp[i]); 
+	project_utm(&pps, x[i], y[i], &xp[i], &yp[i]); 
     }
 
     /* do they agree? */
@@ -222,8 +228,7 @@ void testa_random_utm()
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {
-	project_utm_inv(reference_lon * DEG_TO_RAD, 
-			xp[i], yp[i], &xp[i], &yp[i]);
+	project_utm_inv(&pps,xp[i], yp[i], &xp[i], &yp[i]);
     }
 
     /* agrees with original values ? */
@@ -252,8 +257,7 @@ void testa_random_utm()
 	yp[i] = ya[i];
     }
 
-    project_utm_arr_inv(reference_lon * DEG_TO_RAD,
-			xp, yp, xa, ya, ARR_TEST_SIZE);
+    project_utm_arr_inv(&pps, xp, yp, xa, ya, ARR_TEST_SIZE);
 
     for (i = 0; i < ARR_TEST_SIZE; ++i)
     {

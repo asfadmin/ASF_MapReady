@@ -22,7 +22,7 @@ int project_poly(double phi_deg, double lam_deg, double * xx, double *yy);
                  In this situation, *x and *y will be HUGE_VAL
 
 */
-int project_utm(double lon_0, double lat, double lon,
+int project_utm(project_parameters_t * pps, double lat, double lon,
 		double *x, double *y);
 
 /* project_utm_arr
@@ -37,7 +37,7 @@ int project_utm(double lon_0, double lat, double lon,
    return value: TRUE if point projected ok, FALSE if not.
 */
 
-int project_utm_arr (double lon_0,
+int project_utm_arr (project_parameters_t * pps,
 		     double *lat, double *lon, 
 		     double *projected_x, double *projected_y,
 		     long length);
@@ -51,10 +51,10 @@ int project_utm_arr (double lon_0,
 
    return value: TRUE if point projected ok, FALSE if not.
 */
-int project_utm_inv (double lon_0, double x, double y,
+int project_utm_inv (project_parameters_t * pps, double x, double y,
 		     double *lat, double *lon);
 
-int project_utm_arr_inv (double lon_0, 
+int project_utm_arr_inv (project_parameters_t * pps, 
 			 double *x, double *y,
 			 double *lat, double *lon,
 			 long length);

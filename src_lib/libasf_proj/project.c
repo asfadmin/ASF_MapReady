@@ -191,22 +191,21 @@ static int project_worker_arr_inv(char * projection_description,
 static double utm_nudge(double lon_0)
 {
   double tiny_value;
-  double lon_deg = lon_0 * RAD_TO_DEG;
 
   /* Nudge cases which are marginal in terms of which utm zone they
      fall in towards zero a bit.  The proj documentation tells us we
      should avoid the marginal cases. */
   tiny_value = 0.00001;    /* Random small number of degrees. */
-  if ( fabs(round(lon_deg / 6.0) - lon_deg / 6) < tiny_value ) {
-    if ( lon_deg > 0 ) {
-      lon_deg -= tiny_value;
+  if ( fabs(round(lon_0 / 6.0) - lon_0 / 6) < tiny_value ) {
+    if ( lon_0 > 0 ) {
+      lon_0 -= tiny_value;
     }
     else {
-      lon_deg += tiny_value;
+      lon_0 += tiny_value;
     }
   }
 
-  return lon_deg * DEG_TO_RAD;
+  return lon_0;
 }
 
 static char * utm_projection_description(double lon_0)
@@ -216,37 +215,42 @@ static char * utm_projection_description(double lon_0)
   /* Establish description of output projection. */
   sprintf(utm_wgs84_projection_description,
 	  "+proj=utm +lon_0=%f +datum=WGS84",
-	  lon_0 * RAD_TO_DEG);
+	  lon_0);
 
   return utm_wgs84_projection_description;
 }
 
 int
-project_utm (double lon_0, double lat, double lon, double *x, double *y)
+project_utm (project_parameters_t * pps, 
+	     double lat, double lon, double *x, double *y)
 {
-  return project_worker_arr(utm_projection_description(utm_nudge(lon_0)),
-			    &lat, &lon, x, y, 1);
+  return project_worker_arr(
+      utm_projection_description(utm_nudge(pps->utm.zone)),
+      &lat, &lon, x, y, 1);
 }
 
 int
-project_utm_arr (double lon_0,
+project_utm_arr (project_parameters_t * pps, 
 		 double *lat, double *lon, 
 		 double *projected_x, double *projected_y,
 		 long length)
 {
-  return project_worker_arr(utm_projection_description(utm_nudge(lon_0)),
-			    lat, lon, projected_x, projected_y, length);
+  return project_worker_arr(
+      utm_projection_description(utm_nudge(pps->utm.zone)),
+      lat, lon, projected_x, projected_y, length);
 }
 
 int
-project_utm_inv (double lon_0, double x, double y,  double *lat, double *lon)
+project_utm_inv (project_parameters_t * pps,
+		 double x, double y,  double *lat, double *lon)
 {
-  return project_worker_arr_inv(utm_projection_description(utm_nudge(lon_0)),
-				&x, &y, lat, lon, 1);
+  return project_worker_arr_inv(
+      utm_projection_description(utm_nudge(pps->utm.zone)),
+      &x, &y, lat, lon, 1);
 }
 
 int
-project_utm_arr_inv (double lon_0, 
+project_utm_arr_inv (project_parameters_t * pps,
 		     double *x, double *y,
 		     double *lat, double *lon,
 		     long length)
@@ -254,8 +258,9 @@ project_utm_arr_inv (double lon_0,
     /* it is natural to call this function with latitude in x,
        and longitude in y -- however the transform wants longitude
        in y and latitude in x.  So here we switch */
-  return project_worker_arr_inv(utm_projection_description(utm_nudge(lon_0)),
-			    x, y, lat, lon, length);
+  return project_worker_arr_inv(
+      utm_projection_description(utm_nudge(pps->utm.zone)),
+      x, y, lat, lon, length);
 }
 
 /****************************************************************************
