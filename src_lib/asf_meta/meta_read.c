@@ -37,7 +37,7 @@ int meta_is_new_style(const char *file_name)
     }
   }
 
-  if ( strtod(get_subexp_string(&version_subexps, 1), NULL) 
+  if ( strtod(get_subexp_string(&version_subexps, 1), NULL)
        < NEW_FORMAT_VERSION - 0.0002 /* <-- for sloppy float compare.  */ ) {
     return_value = 0;
   } else {
@@ -47,6 +47,8 @@ int meta_is_new_style(const char *file_name)
   FCLOSE(meta_file);            /* Done using meta file directly.  */
   matched_subexps_free(&version_subexps); /* Done with subexpressions.  */
   free(meta_name);		/* Done with file name with extension.  */
+
+  return return_value;
 }
   
 
