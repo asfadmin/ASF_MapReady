@@ -208,14 +208,12 @@ orbital_state_vector_propagate (OrbitalStateVector *self, double time)
   double step_size = initial_step_size;
   double *y = malloc (dimension * sizeof (double));
   double t = t0;		/* Current time.  */
-#ifdef __GNUC__
-  ode_system = {func, NULL, dimension, NULL};
-#else
+
   ode_system.function = func;
   ode_system.jacobian = NULL;
   ode_system.dimension = dimension;
   ode_system.params = NULL;
-#endif
+
   y[0] = self->position->x;
   y[1] = self->position->y;
   y[2] = self->position->z;
