@@ -342,12 +342,12 @@ struct data_to_fit {
 };
 
 // Reverse map from projection coordinates x, y to input pixel
-// coordinate X.  This function only looks at the data to fit on the
-// first time through, in order to set up vertical splines, after
-// which this argument is mostly ignored.  But not entirely, so you
-// can't free or change the dtf.  Mapping is efficient only if the y
-// coordinates are usually identical between calls, since when y
-// changes a new spline between splines has to be created.
+// coordinate X.  This function looks at the data to fit on the first
+// time through, in order to set up vertical splines, after which this
+// argument is mostly ignored.  But not entirely, so you can't free or
+// change the dtf.  Mapping is efficient only if the y coordinates are
+// usually identical between calls, since when y changes a new spline
+// between splines has to be created.
 static double
 reverse_map_x (struct data_to_fit *dtf, double x, double y) 
 {
@@ -539,7 +539,7 @@ main (int argc, char **argv)
   }
 
   // Set items in the projection parameters not on command-line
-  apply_defaults(projection_type, pp, imd, &average_height, &pixel_size);
+  apply_defaults (projection_type, pp, imd, &average_height, &pixel_size);
 
   // Convert all angle measures in the project_parameters to radians.
   to_radians (projection_type, pp);
