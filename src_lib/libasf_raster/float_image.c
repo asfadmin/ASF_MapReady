@@ -824,7 +824,7 @@ float_image_sample (FloatImage *self, float x, float y,
     break;
   default:
     g_assert_not_reached ();
-    return HUGE_VALF;		// Reassure the compiler.
+    return -42;		// Reassure the compiler.
   }
 }
 
