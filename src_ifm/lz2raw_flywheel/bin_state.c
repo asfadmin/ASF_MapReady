@@ -115,8 +115,14 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN)
 	meta->sar->slant_range_first_pixel = s->range_gate*speedOfLight/2.0;
 	meta->sar->wavelength = speedOfLight/s->frequency;
 	meta->sar->prf = s->prf;
-	sprintf(meta->sar->satellite_binary_time, "%f", s->time_code);
-	strcpy (meta->sar->satellite_clock_time, "0");
+	meta->sar->earth_radius = s->re;
+	meta->sar->satellite_height = s->re+s->ht;
+	if (!meta_is_valid_string(meta->sar->satellite_binary_time)) {
+		sprintf(meta->sar->satellite_binary_time, "%f", s->time_code);
+	}
+	if (!meta_is_valid_string(meta->sar->satellite_clock_time)) {
+		strcpy (meta->sar->satellite_clock_time, "0");
+	}
 
 	strcpy(meta->general->sensor, s->satName);
 	strcpy(meta->general->mode, s->beamMode);
@@ -160,6 +166,28 @@ Format:
 /*** THIS FUNCTION IS PROBABLY NOT NEEDED AND NEEDS TO BE LOOKED AT ***********/
 void addStateVector(bin_state *s,stateVector *stVec)
 {
+    double latCen;/*Geocentric latitude of state vector, in radians.*/
+    double er;/*Radius of earth under state vector, in m.*/
+    
+    /* Use state vector to estimate latitude.
+     ---------------------------------------*/
+    latCen=atan(stVec->pos.z/
+    	sqrt(stVec->pos.x*stVec->pos.x+stVec->pos.y*stVec->pos.y));
+    
+    /* Use the latitude to determine earth's (ellipsoidal) radius.
+     -----------------------------------------------------------*/
+    er=er_polar/sqrt(1-ecc2/(1+tan(latCen)*tan(latCen)));
+    
+    /* Now write all these parameters into satellite structure.
+     --------------------------------------------------------*/
+    s->re=er;
+    s->ht=vecMagnitude(stVec->pos)-er;
+    s->vel=vecMagnitude(stVec->vel);
+    
+    printf("Updating for more accurate earth radius (%.2f), \n"
+    	   "height (%.2f), and velocity (%.2f).\n",
+    	   s->re,s->ht,s->vel);
+
    /* Estimate the doppler value at beam center
     ------------------------------------------*/
    if (!s->zeroDopSteered)
