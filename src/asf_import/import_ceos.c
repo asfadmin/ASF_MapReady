@@ -21,7 +21,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 		 char *outBaseName, flag_indices_t flags[])
 {
   char outDataName[256], outMetaName[256];              /* Output file names */
-  char user_message[256];                  /* Let user know what's happening */
   int nl=MAGIC_UNSET_INT, ns=MAGIC_UNSET_INT;     /* Number of lines/samples */
   int ii, kk;                                                /* loop indices */
   int headerBytes;                       /* Number of bytes in a CEOS header */
@@ -58,29 +57,36 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     }
 
     /* Let the user know what format we are working on */
-    strcpy(user_message,
-          "   Input data type: level zero raw data\n"
-          "   Output data type: complex byte raw data\n");
-    if (flags[f_AMP]!=FLAG_NOT_SET)
-      strcat(user_message, "Ignoring amplitude option\n");
-    if (flags[f_SIGMA]!=FLAG_NOT_SET)
-      strcat(user_message, "Ignoring sigma option\n");
-    if (flags[f_GAMMA]!=FLAG_NOT_SET)
-      strcat(user_message, "Ignoring gamma option\n");
-    if (flags[f_BETA]!=FLAG_NOT_SET)
-      strcat(user_message, "Ignoring beta option\n");
-    if (flags[f_POWER]!=FLAG_NOT_SET)
-      strcat(user_message, "Ignoring power option\n");
-    strcat(user_message, "\n");
-    if (flags[f_QUIET] == FLAG_NOT_SET) {
-      printf(user_message);
-      printLog(user_message);
-    }
+    strcpy(logbuf,
+           "   Input data type: level zero raw data\n"
+           "   Output data type: complex byte raw data\n");
+    if (flags[f_QUIET] == FLAG_NOT_SET)
+      printf(logbuf);
+    printLog(logbuf);
+
+    /* Make sure that none of the level one flags are set */
+    strcpy(logbuf,"");
+    if (flags[f_AMP] != FLAG_NOT_SET)
+      sprintf(logbuf, "%s amplitude", logbuf);
+    if (flags[f_SIGMA] != FLAG_NOT_SET)
+      sprintf(logbuf, "%s sigma", logbuf);
+    if (flags[f_BETA] != FLAG_NOT_SET)
+      sprintf(logbuf, "%s beta", logbuf);
+    if (flags[f_GAMMA] != FLAG_NOT_SET)
+      sprintf(logbuf, "%s gamma", logbuf);
+    if (flags[f_POWER] != FLAG_NOT_SET)
+      sprintf(logbuf, "%s power", logbuf);
+    sprintf(logbuf,
+            "Warning:\n"
+            "  The following flags will be ignored since this is a level zero data set:\n"
+            "  %s\n\n", logbuf);
+    if (flags[f_QUIET] == FLAG_NOT_SET)
+      printf(logbuf);
+    printLog(logbuf);
 
     /* Handle output files */
     strcat(outDataName,TOOLS_RAW_EXT);
     meta->general->image_data_type = RAW_IMAGE;
-/*    nl = meta->general->line_count;*/
     s = convertMetadata_ceos(inMetaName, outMetaName, &trash, &readNextPulse);
     iqBuf = (iqType*)MALLOC(sizeof(iqType)*2*(s->nSamp));
     fpOut = FOPEN(outDataName, "wb");
@@ -103,24 +109,32 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     complexFloat *out_cpx_buf;
 
     /* Let the user know what format we are working on */
-    strcpy(user_message,
+    strcpy(logbuf,
            "   Input data type: single look complex\n"
            "   Output data type: single look complex\n");
-    if (flags[f_AMP]!=FLAG_NOT_SET)
-      strcat(user_message, "Ignoring amplitude option\n");
-    if (flags[f_SIGMA]!=FLAG_NOT_SET)
-      strcat(user_message, "Ignoring sigma option\n");
-    if (flags[f_GAMMA]!=FLAG_NOT_SET)
-      strcat(user_message, "Ignoring gamma option\n");
-    if (flags[f_BETA]!=FLAG_NOT_SET)
-      strcat(user_message, "Ignoring beta option\n");
-    if (flags[f_POWER]!=FLAG_NOT_SET)
-      strcat(user_message, "Ignoring power option\n");
-    strcat(user_message, "\n");
-    if (flags[f_QUIET] == FLAG_NOT_SET) {
-      printf(user_message);
-      printLog(user_message);
-    }
+    if (flags[f_QUIET] == FLAG_NOT_SET)
+      printf(logbuf);
+    printLog(logbuf);
+
+    /* Make sure that none of the level one flags are set */
+    strcpy(logbuf,"");
+    if (flags[f_AMP] != FLAG_NOT_SET)
+      sprintf(logbuf, "%s amplitude", logbuf);
+    if (flags[f_SIGMA] != FLAG_NOT_SET)
+      sprintf(logbuf, "%s sigma", logbuf);
+    if (flags[f_BETA] != FLAG_NOT_SET)
+      sprintf(logbuf, "%s beta", logbuf);
+    if (flags[f_GAMMA] != FLAG_NOT_SET)
+      sprintf(logbuf, "%s gamma", logbuf);
+    if (flags[f_POWER] != FLAG_NOT_SET)
+      sprintf(logbuf, "%s power", logbuf);
+    sprintf(logbuf,
+            "Warning:\n"
+            "  The following flags will be ignored since this is a complex data set:\n"
+            "  %s\n", logbuf);
+    if (flags[f_QUIET] == FLAG_NOT_SET)
+      printf(logbuf);
+    printLog(logbuf);
 
     /* Deal with metadata */
     meta->general->data_type=COMPLEX_REAL32;
@@ -130,9 +144,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     strcat(outDataName,TOOLS_COMPLEX_EXT);
     fpIn  = fopenImage(inDataName,"rb");
     fpOut = fopenImage(outDataName,"wb");
-/*    nl = meta->general->line_count;
- *    ns = meta->general->sample_count;
- */ cpx_buf = (short *) MALLOC(2*ns * sizeof(short));
+    cpx_buf = (short *) MALLOC(2*ns * sizeof(short));
     out_cpx_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat));
 
     /* Read single look complex data */
@@ -177,65 +189,63 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       /* This must be ScanSAR */
       if (meta->projection->type!=SCANSAR_PROJECTION) {
         /* This is actually geocoded */
-        sprintf(user_message,
+        sprintf(logbuf,
                 "   Input data type: level two data\n"
                 "   Output data type: geocoded amplitude image\n\n");
       }
     }
     else if (flags[f_AMP] != FLAG_NOT_SET) {
-      sprintf(user_message,
+      sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: amplitude image\n\n");
       meta->general->image_data_type = AMPLITUDE_IMAGE;
     }
     else if (flags[f_POWER] != FLAG_NOT_SET) {
-      sprintf(user_message,
+      sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: power image\n\n");
       meta->general->image_data_type = POWER_IMAGE;
     }
     else if (flags[f_SIGMA] != FLAG_NOT_SET) {
-      sprintf(user_message,
+      sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: calibrated image (sigma dB values)\n\n");
       meta->general->image_data_type = SIGMA_IMAGE;
     }
     else if (flags[f_GAMMA] != FLAG_NOT_SET) {
-      sprintf(user_message,
+      sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: calibrated image (gamma dB values)\n\n");
       meta->general->image_data_type = GAMMA_IMAGE;
     }
     else if (flags[f_BETA] != FLAG_NOT_SET) {
-      sprintf(user_message,
+      sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: calibrated image (beta dB values)\n\n");
       meta->general->image_data_type = BETA_IMAGE;
     }
     else if (flags[f_LUT] != FLAG_NOT_SET) {
-      sprintf(user_message,
+      sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: user defined LUT image\n\n");
       meta->general->image_data_type = LUT_IMAGE;
     }
     else { /* No chosen output type: default to amplitude */
       flags[f_AMP] = FLAG_SET;
-      sprintf(user_message,
+      sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: amplitude image\n\n");
       meta->general->image_data_type = AMPLITUDE_IMAGE;
     }
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(user_message);
-    printLog(user_message);
+    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
+    printLog(logbuf);
 
     /* Open image files */
     fpIn=fopenImage(inDataName,"rb");
     fpOut=fopenImage(outDataName,"wb");
 
-    /* Check number of lines and samples, size of the header */
-/*    nl=meta->general->line_count;
- *    ns=meta->general->sample_count;
- */ get_ifiledr(inDataName,&image_fdr);
+    /* Check size of the header */
+    get_ifiledr(inDataName,&image_fdr);
     headerBytes = firstRecordLen(inDataName)
                   + (image_fdr.reclen - ns * image_fdr.bytgroup);
 
@@ -276,7 +286,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       while(fgets(line, 255, fpLut)) {
 	sscanf(line, "%lf\t%lf", &incid_table[nLut], &scale_table[nLut]);
 	nLut++;
-      }	
+      }
 
       /**** Read 16 bit data and apply look up table ****/
       if (ceos_data_type == INTEGER16) {
@@ -294,7 +304,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
 	  /* Allocate incidence table entries or update */
 	  if (ii==0 || (ii%(nl/tableRes)==0 && meta->projection != NULL))
-	    for (kk=0;kk<tableRes;kk++) 
+	    for (kk=0;kk<tableRes;kk++)
 	      incid[kk] = meta_incid(meta, kk*tablePix, ii);
 
 	  /* Calculate output values */
@@ -350,7 +360,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	      old = 10000000;
 	      n = 0;
 	      for (ll=0; ll<nLut; ll++) {
-		new = (incid[base]+frac*(incid[base+1]-incid[base]))*R2D 
+		new = (incid[base]+frac*(incid[base+1]-incid[base]))*R2D
 		       - incid_table[ll];
 		if (fabs(new) < fabs(old)) {
 		  old = new;
@@ -360,7 +370,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	      }
 	      out_buf[kk] = byte_buf[kk] * scale_table[n];
 	    }
-	    else 
+	    else
 	      out_buf[kk] = 0;
 	  }
           put_float_line(fpOut, meta, ii, out_buf);
@@ -434,7 +444,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
                 if (cal_param->output_type==beta_naught)
                  incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
                 out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
-           
+
           }
 
           put_float_line(fpOut, meta, ii, out_buf);
