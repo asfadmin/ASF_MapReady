@@ -83,10 +83,13 @@ double read_double(char *line, char *block, char *param)
 
 char *str2upper(char *string)
 {
-  char *out=(char *)MALLOC(sizeof(char)*strlen(string));
+  int len = strlen(string);
+  char *out=(char *)MALLOC(sizeof(char)*(len+1));
   int i;
 
-  for (i=0; i<strlen(string); i++) out[i]=toupper(string[i]);
+  for (i=0; i<len; i++)
+    out[i]=toupper(string[i]);
+
   out[i]='\0';
 
   return out;
