@@ -1,19 +1,23 @@
 #include "deskew_dem.h"
-#include "ddr.h"
 
-double calc_ranges(const struct DDR *ddr)
+double minPhi, maxPhi, phiMul;
+
+double calc_ranges(meta_parameters *meta)
 {
 	int x;
 	double slantFirst,slantPer;
-	double er=meta->ifm->er;
-	double satHt=meta->ifm->ht;
+	double er=meta_get_earth_radius(meta, meta->general->line_count/2, meta->general->sample_count/2);
+	double satHt=meta_get_sat_height(meta, meta->general->line_count/2, meta->general->sample_count/2);
 	double saved_ER=er;
 	double er2her2,phi,phiAtSeaLevel,slantRng;
+	int ns = meta->general->sample_count;
+
 	meta_get_slants(meta,&slantFirst,&slantPer);
-	slantFirst+=slantPer*ddr->master_sample;
-	slantPer*=ddr->sample_inc;
+	slantFirst+=slantPer*meta->general->start_sample+1;
+	slantPer*=meta->sar->sample_increment;
 	er2her2=er*er-satHt*satHt;
 	minPhi=acos((satHt*satHt+er*er-slantFirst*slantFirst)/(2.0*satHt*er));
+
 /*Compute arrays indexed by slant range pixel:*/
 	for (x=0;x<ns;x++)
 	{
@@ -25,7 +29,7 @@ double calc_ranges(const struct DDR *ddr)
 		sinIncidAng[x]=sin(incidAng[x]);
 		cosIncidAng[x]=cos(incidAng[x]);
 	}
-	
+
 	maxPhi=acos((satHt*satHt+er*er-slantRangeSqr[ns-1])/(2.0*satHt*er));
 	phiMul=(ns-1)/(maxPhi-minPhi);
 
@@ -38,7 +42,7 @@ double calc_ranges(const struct DDR *ddr)
 		slantGR[x]=(slantRng-slantFirst)/slantPer;
 		er+=1000.0;
 		phi=acos((satHt*satHt+er*er-slantRng*slantRng)/(2*satHt*er));
-		
+
 		heightShiftGR[x]=(phi2grX(phi)-x)/1000.0;
 	}
 /*Compute arrays indexed by slant range pixel: groundSR and heightShiftSR*/
@@ -49,7 +53,7 @@ double calc_ranges(const struct DDR *ddr)
 		groundSR[x]=phi2grX(phiAtSeaLevel);
 		er+=1000.0;
 		slantRng=sqrt(satHt*satHt+er*er-2.0*satHt*er*cos(phiAtSeaLevel));
-		
+
 		heightShiftSR[x]=((slantRng-slantFirst)/slantPer-x)/1000.0;
 	}
 	er=saved_ER;
