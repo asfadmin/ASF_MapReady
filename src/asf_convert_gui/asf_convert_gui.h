@@ -16,6 +16,7 @@
 
 #if ( GLIB_MAJOR_VERSION >= 2 && GLIB_MINOR_VERSION >= 4 )
 #define THUMBNAILS
+#define THUMB_SIZE 48
 #endif
 
 enum OutputFormat

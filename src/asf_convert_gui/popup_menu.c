@@ -99,9 +99,9 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 					&iter, path);
 
 		gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-				   2, &status, -1);
+				   COL_STATUS, &status, -1);
 		    
-		if (strcmp(status, "Processing...") == 0)
+		if (strstr(status, "...") != NULL)
 		{
 		    gtk_tree_path_free(path);
 		    return FALSE;
@@ -271,7 +271,7 @@ popup_menu_jump(GtkWidget *widget, GdkEvent *event)
 	GtkTextBuffer * text_buffer;
 
 	gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-			   0, &in_data, -1);
+			   COL_DATA_FILE, &in_data, -1);
 
 	text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
 	mark = gtk_text_buffer_get_mark(text_buffer, in_data);
@@ -303,7 +303,7 @@ popup_menu_metadata(GtkWidget *widget, GdkEvent *event)
 	gchar * out_name;
 
 	gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-			   1, &out_name, -1);
+			   COL_OUTPUT_FILE, &out_name, -1);
 
         show_meta_data(out_name);
     }
@@ -346,8 +346,8 @@ popup_menu_process(GtkWidget *widget, GdkEvent *event)
 
 	  gtk_tree_model_get_iter(model, &iter, path);
 	  gtk_tree_model_get (model, &iter, 
-			      1, &output_file, 
-			      2, &status,
+			      COL_OUTPUT_FILE, &output_file, 
+			      COL_STATUS, &status,
 			      -1);
       
 	  if (strcmp(status, "Done") != 0 &&
@@ -394,7 +394,7 @@ popup_menu_view_output(GtkWidget *widget, GdkEvent *event)
 	gchar * out_name;
 
 	gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-			   1, &out_name, -1);
+			   COL_OUTPUT_FILE, &out_name, -1);
 
         show_output_image(out_name);
     }

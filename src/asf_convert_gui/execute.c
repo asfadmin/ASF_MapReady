@@ -38,7 +38,8 @@ static gboolean confirm_overwrite()
         gboolean done;
     
         gtk_tree_model_get (GTK_TREE_MODEL(list_store), &iter,
-                            1, &output_file, 2, &status, -1);
+                            COL_OUTPUT_FILE, &output_file,
+			    COL_STATUS, &status, -1);
 
         done = strcmp("Done", status) == 0;
     
@@ -419,7 +420,7 @@ invalidate_progress()
   valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
   while (valid)
   {
-    gtk_list_store_set(list_store, &iter, 2, "-", -1);
+    gtk_list_store_set(list_store, &iter, COL_STATUS, "-", -1);
     valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
   }
 }
@@ -430,11 +431,11 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * file)
     GError * err = NULL;
     GdkPixbuf * pb;
 
-    pb = gdk_pixbuf_new_from_file_at_size(file, 48, 48, &err);
+    pb = gdk_pixbuf_new_from_file_at_size(file, THUMB_SIZE, THUMB_SIZE, &err);
 
     if (!err)
     {
-	gtk_list_store_set(list_store, iter, 3, pb, -1);	
+	gtk_list_store_set(list_store, iter, COL_OUTPUT_THUMBNAIL, pb, -1);
     }
     else
     {
@@ -455,7 +456,10 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
   /* s = time(NULL); */
 
   gtk_tree_model_get(GTK_TREE_MODEL(list_store), iter, 
-             0, &in_data, 1, &out_full, 2, &status, -1);
+		     COL_DATA_FILE, &in_data,
+		     COL_OUTPUT_FILE, &out_full,
+		     COL_STATUS, &status,
+		     -1);
   
   if (strcmp(status, "Done") != 0 || !skip_done)
   {
@@ -486,7 +490,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 	before_geocoding_basename = g_strdup(out_basename);
     }
 
-    gtk_list_store_set(list_store, iter, 2, "Processing...", -1);
+    gtk_list_store_set(list_store, iter, COL_STATUS, "Processing...", -1);
     append_begin_processing_tag(in_data);
 
     while (gtk_events_pending())
@@ -496,7 +500,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     {
       gchar * cmd_output;
       
-      gtk_list_store_set(list_store, iter, 2, "Importing...", -1);
+      gtk_list_store_set(list_store, iter, COL_STATUS, "Importing...", -1);
       g_snprintf(log_file, sizeof(log_file), "tmpi%d.log", pid);
 
       if (user_settings->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 &&
@@ -536,7 +540,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     {
       gchar * cmd_output;
 
-      gtk_list_store_set(list_store, iter, 2, "Geocoding...", -1);
+      gtk_list_store_set(list_store, iter, COL_STATUS, "Geocoding...", -1);
 
       g_snprintf(log_file, sizeof(log_file), "tmpg%d.log", pid);
     
@@ -577,7 +581,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     
       g_snprintf(log_file, sizeof(log_file), "tmpe%d.log", pid);
     
-      gtk_list_store_set(list_store, iter, 2, "Exporting...", -1);
+      gtk_list_store_set(list_store, iter, COL_STATUS, "Exporting...", -1);
 
       snprintf(convert_cmd, sizeof(convert_cmd),
            "asf_export -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
@@ -603,7 +607,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     }
 
     done = err ? "Error" : "Done"; 
-    gtk_list_store_set(list_store, iter, 2, done, -1);
+    gtk_list_store_set(list_store, iter, COL_STATUS, done, -1);
 
     g_free(basename);
     g_free(before_geocoding_basename);

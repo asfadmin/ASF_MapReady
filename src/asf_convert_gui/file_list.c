@@ -91,7 +91,7 @@ static void set_input_image_thumbnail(GtkTreeIter *iter,
   gchar *tfn;
   gint tfd = g_file_open_tmp ("thumbnail_jpg-XXXXXX", &tfn, &err);
   if ( err != NULL ) {
-    g_error ("Couldn't opent temporary thumbnail image: %s\n", err->message);
+    g_error ("Couldn't open temporary thumbnail image: %s\n", err->message);
   }
   g_assert (err == NULL);
   int return_code = close (tfd);
@@ -99,13 +99,14 @@ static void set_input_image_thumbnail(GtkTreeIter *iter,
 
   make_input_image_thumbnail (metadata_file, data_file, 256, tfn);
 
-  GdkPixbuf *pb = gdk_pixbuf_new_from_file_at_size (tfn, 48, 48, &err);
+  GdkPixbuf *pb = gdk_pixbuf_new_from_file_at_size (tfn, THUMB_SIZE, 
+						    THUMB_SIZE, &err);
 
   if ( !err ) {
-    gtk_list_store_set (list_store, iter, 4, pb, -1);	
+    gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);	
   }
   else {
-    g_warning ("Couldn't load thumbnail image'%s': %s\n", tfn, err->message);
+    g_warning ("Couldn't load thumbnail image '%s': %s\n", tfn, err->message);
     g_error_free (err);
   }
 }
@@ -127,7 +128,8 @@ add_to_files_list(const gchar * data_file)
         gtk_list_store_append(list_store, &iter);
     
         gtk_list_store_set(list_store, &iter,
-                           0, data_file, 2, "-", -1);
+                           COL_DATA_FILE, data_file,
+			   COL_STATUS, "-", -1);
 
 #ifdef THUMBNAILS
 	gchar *metadata_file = meta_file_name (data_file);
@@ -171,7 +173,7 @@ update_all_extensions()
       gchar * p;
       
       gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-             1, &current_output_name, -1);
+             COL_OUTPUT_FILE, &current_output_name, -1);
       
       basename = g_strdup(current_output_name);
       p = strrchr(basename, '.');
@@ -216,7 +218,7 @@ void render_status(GtkTreeViewColumn *tree_column,
     gboolean done;
     gboolean settings_are_stale = FALSE;
     
-    gtk_tree_model_get (tree_model, iter, 2, &status, -1);
+    gtk_tree_model_get (tree_model, iter, COL_STATUS, &status, -1);
     done = strcmp(status, "Done") == 0;
 
     if (done && settings_on_execute)
@@ -258,7 +260,9 @@ void render_output_name(GtkTreeViewColumn *tree_column,
     gboolean done;
     gboolean processing;
 
-    gtk_tree_model_get (tree_model, iter, 1, &output_file, 2, &status, -1);
+    gtk_tree_model_get (tree_model, iter, 
+			COL_OUTPUT_FILE, &output_file, 
+			COL_STATUS, &status, -1);
 
     /* Do not mark the file in red if the item has been marked "Done"
        However, if the user has changed the settings, the "Done"
@@ -306,42 +310,29 @@ setup_files_list(int argc, char *argv[])
   GtkWidget *files_list;
   GtkTreeViewColumn *col;
   GtkCellRenderer *renderer;
-  GtkTreeIter iter;
   GValue val = {0,};
 
 #ifdef THUMBNAILS
   list_store = gtk_list_store_new(5, 
-                  G_TYPE_STRING, 
-                  G_TYPE_STRING, 
-                  G_TYPE_STRING,
-		  GDK_TYPE_PIXBUF,
-		  GDK_TYPE_PIXBUF);
+				  G_TYPE_STRING, 
+				  GDK_TYPE_PIXBUF,
+				  G_TYPE_STRING, 
+				  GDK_TYPE_PIXBUF,
+				  G_TYPE_STRING);
 #else
   list_store = gtk_list_store_new(3, 
-                  G_TYPE_STRING, 
-                  G_TYPE_STRING, 
-		  G_TYPE_STRING);
+				  G_TYPE_STRING, 
+				  G_TYPE_STRING, 
+				  G_TYPE_STRING);
 #endif
 
   for (i = 1; i < argc; ++i)
-  {
-    gchar * data_file = argv[i];
-    if (file_is_valid(data_file))
-    {
-        gchar * output_file = determine_default_output_file_name(data_file);
-    
-        gtk_list_store_append(list_store, &iter);
-        gtk_list_store_set(list_store, &iter, 0, data_file, 2, "-", -1);
-        set_output_name(&iter, output_file);
-        
-        g_free(output_file);
-    }
-  }
+      add_to_files_list(argv[i]);
 
   files_list =
     glade_xml_get_widget(glade_xml, "files_list");
 
-  /* First Column */
+  /* First Column: Input File Name */
   col = gtk_tree_view_column_new();
   gtk_tree_view_column_set_title(col, "Data File");
   gtk_tree_view_column_set_resizable(col, TRUE);
@@ -349,20 +340,21 @@ setup_files_list(int argc, char *argv[])
   renderer = gtk_cell_renderer_text_new();
   gtk_tree_view_column_pack_start(col, renderer, TRUE);
   g_object_set(renderer, "text", "?", NULL);
-  gtk_tree_view_column_add_attribute(col, renderer, "text", 0);
+  gtk_tree_view_column_add_attribute(col, renderer, "text", COL_DATA_FILE);
 
-  /* Second Column */
-  /* -- this was the "meta" column -- removed
-  col = gtk_tree_view_column_new();
-  gtk_tree_view_column_set_title(col, "Meta File");
-  gtk_tree_view_column_set_resizable(col, TRUE);
-  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
-  renderer = gtk_cell_renderer_text_new();
-  gtk_tree_view_column_pack_start(col, renderer, TRUE);
-  gtk_tree_view_column_add_attribute(col, renderer, "text", 1);
-  */
+#ifdef THUMBNAILS
+  /* Next Column: thumbnail of input image.  */
+  col = gtk_tree_view_column_new ();
+  gtk_tree_view_column_set_title (col, "Input Thumbnail");
+  gtk_tree_view_column_set_resizable (col, FALSE);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (files_list), col);
+  renderer = gtk_cell_renderer_pixbuf_new ();
+  gtk_tree_view_column_pack_start (col, renderer, FALSE);
+  gtk_tree_view_column_add_attribute (col, renderer, "pixbuf",
+				      COL_INPUT_THUMBNAIL);
+#endif
 
-  /* Third (now 2nd) Column */
+  /* Next Column: Output File Name */
   col = gtk_tree_view_column_new();
   gtk_tree_view_column_set_title(col, "Output File");
   gtk_tree_view_column_set_resizable(col, TRUE);
@@ -379,44 +371,36 @@ setup_files_list(int argc, char *argv[])
            G_CALLBACK(edited_handler), NULL);
   
   gtk_tree_view_column_pack_start(col, renderer, TRUE);
-  gtk_tree_view_column_add_attribute(col, renderer, "text", 1);
+  gtk_tree_view_column_add_attribute(col, renderer, "text", COL_OUTPUT_FILE);
 
   /* add our custom renderer (turns existing files red) */
   gtk_tree_view_column_set_cell_data_func(col, renderer,
             render_output_name, NULL, NULL);
-  
-  /* Last Column: Current Status */
+
+#ifdef THUMBNAILS
+  /* Next Column: Pixbuf of output image */
+  col = gtk_tree_view_column_new();
+  gtk_tree_view_column_set_title(col, "Output Thumbnail");
+  gtk_tree_view_column_set_resizable(col, FALSE);
+  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+  renderer = gtk_cell_renderer_pixbuf_new();
+  gtk_tree_view_column_pack_start(col, renderer, FALSE);
+  gtk_tree_view_column_add_attribute(col, renderer, "pixbuf",
+				     COL_OUTPUT_THUMBNAIL);
+#endif
+
+  /* Next Column: Current Status */
   col = gtk_tree_view_column_new();
   gtk_tree_view_column_set_title(col, "Status");
   gtk_tree_view_column_set_resizable(col, TRUE);
   gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
   renderer = gtk_cell_renderer_text_new();
   gtk_tree_view_column_pack_start(col, renderer, TRUE);
-  gtk_tree_view_column_add_attribute(col, renderer, "text", 2);
+  gtk_tree_view_column_add_attribute(col, renderer, "text", COL_STATUS);
 
   /* add our custom renderer (turns stale "Done" entries gray) */
   gtk_tree_view_column_set_cell_data_func(col, renderer,
             render_status, NULL, NULL);
-
-#ifdef THUMBNAILS
-  /* New Last Column: Pixbuf */
-  col = gtk_tree_view_column_new();
-  gtk_tree_view_column_set_title(col, " ");
-  gtk_tree_view_column_set_resizable(col, FALSE);
-  gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
-  renderer = gtk_cell_renderer_pixbuf_new();
-  gtk_tree_view_column_pack_start(col, renderer, FALSE);
-  gtk_tree_view_column_add_attribute(col, renderer, "pixbuf", 3);
-
-  /* Even newer last column: thumbnail of input image.  */
-  col = gtk_tree_view_column_new ();
-  gtk_tree_view_column_set_title (col, "Input Thumbnail");
-  gtk_tree_view_column_set_resizable (col, FALSE);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (files_list), col);
-  renderer = gtk_cell_renderer_pixbuf_new ();
-  gtk_tree_view_column_pack_start (col, renderer, FALSE);
-  gtk_tree_view_column_add_attribute (col, renderer, "pixbuf", 4);
-#endif
 
   gtk_tree_view_set_model(GTK_TREE_VIEW(files_list), 
               GTK_TREE_MODEL(list_store));  
@@ -431,5 +415,5 @@ setup_files_list(int argc, char *argv[])
 void
 set_output_name(GtkTreeIter *iter, const gchar *name)
 {
-    gtk_list_store_set(list_store, iter, 1, name, -1);
+    gtk_list_store_set(list_store, iter, COL_OUTPUT_FILE, name, -1);
 }

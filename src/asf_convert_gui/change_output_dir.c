@@ -47,7 +47,7 @@ void do_change_output_directory(const gchar * new_dir )
         gchar * basename;
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-                            1, &current_output_name, -1);
+                            COL_OUTPUT_FILE, &current_output_name, -1);
 
         basename = g_path_get_basename(current_output_name);
 
@@ -74,16 +74,12 @@ void do_change_output_directory(const gchar * new_dir )
 gboolean
 prepare_change_output_directory_dialog()
 {
-    GtkWidget *files_list;
     GtkTreeIter iter;
 
     GtkWidget *change_output_directory_dialog,
         *label_current_output_directory,
         *entry_new_output_directory;
     
-    files_list =
-            glade_xml_get_widget(glade_xml, "files_list");
-
     change_output_directory_dialog =
             glade_xml_get_widget(glade_xml, "change_output_directory_dialog");
 

@@ -24,7 +24,7 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
   user_settings = settings_get_from_gui();
   ext = settings_get_output_format_extension(user_settings);
 
-  gtk_tree_model_get(model, iter, 0, &data_file_name, -1);
+  gtk_tree_model_get(model, iter, COL_DATA_FILE, &data_file_name, -1);
   path = g_path_get_dirname(data_file_name);
   if (strcmp(path, ".") == 0)
   {
@@ -140,7 +140,7 @@ rename_selected_output_filename()
       glade_xml_get_widget(glade_xml, "entry_new_output_filename");
 
     gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-		       1, &current_output_name, -1);
+		       COL_OUTPUT_FILE, &current_output_name, -1);
 
     name_without_path = g_path_get_basename(current_output_name);
 

@@ -248,7 +248,8 @@ static void prepare_dialog_cons()
     gtk_widget_show(dialog_cons);
 }
 
-static void apply_naming_scheme(const NamingScheme * new, const NamingScheme * old)
+static void apply_naming_scheme(const NamingScheme * new,
+				const NamingScheme * old)
 {
     gboolean valid;
     GtkTreeIter iter;
@@ -271,8 +272,8 @@ static void apply_naming_scheme(const NamingScheme * new, const NamingScheme * o
         gchar * path;
                 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-                            0, &input_file_name,
-                            1, &current_output_name, -1);
+                            COL_DATA_FILE, &input_file_name,
+                            COL_OUTPUT_FILE, &current_output_name, -1);
 
         path = g_path_get_dirname(input_file_name);
         
