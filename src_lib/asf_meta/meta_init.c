@@ -1,10 +1,7 @@
 /****************************************************************
-FUNCTION NAME:  meta_get_*
+FUNCTION NAME:
 
 DESCRIPTION:
-   Extract relevant parameters from various
-metadata files and meta_parameters structure.
-   Internal-only routine.
 
 RETURN VALUE:
    
@@ -16,6 +13,14 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_nan.h"
+
+META_DDR_STRUCT meta_ddr_structs[NUM_META_DDR_STRUCTS] = {
+	{ "", NULL, NULL},
+	{ "", NULL, NULL},
+	{ "", NULL, NULL}
+};
+
+
 
 /****************************************************
  * raw_init:
@@ -133,17 +138,72 @@ one.
 #endif
 meta_parameters *meta_init_old(const char *fName)
 {
-	if (extExists(fName,".meta")) /*Read .meta file if possible*/
-		return meta_read(fName);
-	else
-		return meta_create(fName);
+  if (extExists(fName,".meta")) /*Read .meta file if possible*/
+    return meta_read(fName);
+  else
+    return meta_create(fName);
 }
 meta_parameters *meta_init(const char *fName)
 {
   return meta_init_old(fName);
 }
 
-/*  Disposes of a given metadata parameters record.  */
+/************************************************************
+ * add_meta_ddr_struct:
+ * */
+void add_meta_ddr_struct(const char *name, meta_parameters *meta, struct DDR *ddr)
+{
+  int ii;
+  char *base_name = appendExt(name,"");
+/* First check to see if this filename already has a structure in it */
+  for (ii=0; ii<NUM_META_DDR_STRUCTS; ii++)
+  {
+    if (0==strcmp(meta_ddr_structs[ii].base_name, base_name)) {
+      if (meta) meta_ddr_structs[ii].meta = meta;
+      if (ddr) meta_ddr_structs[ii].ddr = ddr;
+      FREE(base_name);
+      return;
+    }
+  }
+/* Otherwise look for an empty slot and fill it */
+  for (ii=0; ii<NUM_META_DDR_STRUCTS; ii++)
+  {
+    if (0==strcmp(meta_ddr_structs[ii].base_name, "")) {
+      strcpy(meta_ddr_structs[ii].base_name, base_name);
+      meta_ddr_structs[ii].meta = meta;
+      meta_ddr_structs[ii].ddr = ddr;
+      FREE(base_name);
+      return;
+    }
+  }
+/* If we made it here, report and free the malloc'd memory */
+  printf("\nWARNING: function add_meta_ddr_struct failed in its duties.\n"
+         "           Metadata may not be properly updated when written to file.\n");
+  FREE(base_name);
+}
+
+/************************************************************
+ * metadata_struct_exists:
+ * */
+int get_meta_ddr_struct_index(const char *name)
+{
+  int ii;
+  char *base_name = appendExt(name,"");
+  for (ii=0; ii<NUM_META_DDR_STRUCTS; ii++)
+  {
+    if (0==strcmp(meta_ddr_structs[ii].base_name, base_name)) {
+      FREE(base_name);
+      return ii;
+    }
+  }
+  FREE(base_name);
+  return -1;
+}
+
+
+/****************************************************
+ * meta_free:
+ * Disposes of a given metadata parameters record.  */
 void meta_free(meta_parameters *meta)
 {
   free(meta->general);

@@ -447,4 +447,16 @@ double meta_flat_phase(meta_parameters *sar,const baseline base,int y,int x);
 /*Return the "phase rate"-- the number of meters of elevation per radian of phase.*/
 double meta_phase_rate(meta_parameters *sar,const baseline base,int y,int x);
 
+/* Keep track of open meta and ddr structures, so that all updated
+ * metadata can be written to the metafile, initialized in meta_init.c Nov '02 */
+typedef struct {
+    char             base_name[256];
+    meta_parameters *meta;
+    struct DDR      *ddr;
+} META_DDR_STRUCT;
+
+#define NUM_META_DDR_STRUCTS 3
+extern META_DDR_STRUCT meta_ddr_structs[NUM_META_DDR_STRUCTS];
+
+
 #endif

@@ -6,13 +6,14 @@
 #include "metadata_parser.h"
 #include "asf_nan.h"
 #include "worgen.h"
-#include <sys/types.h>
-#include <sys/stat.h>
 
+/* Local prototypes */
 void meta_read_old(meta_parameters *meta, char *fileName);
 void meta_new2old(meta_parameters *meta);
 int meta_is_new_style(const char *file_name);
 
+/* PROTOTYPE from meta_init.c */
+void add_meta_ddr_struct(const char *name, meta_parameters *meta, struct DDR *ddr);
 
 /***************************************************************
  * meta_read:
@@ -35,6 +36,9 @@ meta_parameters *meta_read(const char *inName)
   /* Fill old structure parameters */
   meta_new2old(meta);
   
+  /* Remember the name and location of the meta struct */
+  add_meta_ddr_struct(inName, meta, NULL);
+
   free(meta_name);
   
   return meta;
@@ -122,7 +126,6 @@ void meta_io_state(coniStruct *coni, meta_state_vectors *state)
  * base name automagically.  */
 void meta_read_old(meta_parameters *meta, char *fileName)
 {
-	struct stat junk;
 	char *ddrName = appendExt(fileName,".ddr");
 	struct DDR ddr;
 	char *metaName = appendExt(fileName,".meta");
@@ -249,7 +252,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	}
 	
 /* Info from ddr (if its there) */
-	if (0 == stat(ddrName,&junk)) {
+	if (fileExists(ddrName)) {
 		c_getddr(ddrName, &ddr);
 		general->line_count     = ddr.nl;
 		general->sample_count   = ddr.ns;

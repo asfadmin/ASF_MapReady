@@ -29,97 +29,132 @@ ALGORITHM
 
 ALGORITHM REFERENCES	none
 *******************************************************************************/
-#include "asf.h"
-
 #include "las.h"
 #include "diskio.h"
 
+/* PROTOTYPE from meta_init.c */
+int get_meta_ddr_struct_index(const char *name);
+
 lasErr c_putddr(const char *hname,struct DDR *ddr)
 {
-int   access;			 /* file access type		              */
-int   action;		         /* file close action		              */
-int   clen;		         /* length of char part of record             */
-int   dlen;			 /* length of data part of record    	      */
-FILE *   fd;			 /* file descriptor 		              */
+    int   access;                   /* file access type                      */
+    int   action;                   /* file close action                     */
+    int   clen;                     /* length of char part of record         */
+    int   dlen;                     /* length of data part of record         */
+    FILE *fd;                       /* file descriptor                       */
+    char  d_temp[DDSTCT][DDSYLN];   /* temporary for squeezed strings        */
+    char *junk_temp,hostddr[1024];
+    unsigned char *dbuf;            /* pointer to area where data is stuffed */
 
+    /* Find corresponding meta structure to fill necessary values to */
+    int ii = get_meta_ddr_struct_index(hname);
 
-unsigned char *dbuf;		 /* pointer to area where data is stuffed     */
+    /* Ensure that required parameters were specified.
+    --------------------------------------------------*/
+    if ((ddr->nl < 1) || (ddr->nl > MAXNL)) {
+      c_errmsg("Invalid number of lines specified","putddr-badnl",NON_FATAL);
+      return(E_FAIL);
+    }
+    if ((ddr->ns < 1) || (ddr->ns > MAXNS)) {
+      c_errmsg("Invalid number of samples specified","putddr-badns",NON_FATAL);
+      return(E_FAIL);
+    }
+    if ((ddr->nbands < 1) || (ddr->nbands > MAXBND)) {
+      c_errmsg("Invalid number of bands specified","putddr-badbnds",NON_FATAL);
+      return(E_FAIL);
+    }
+    if ((ddr->dtype < 1) || (ddr->dtype > 20)) {
+      c_errmsg("Invalid data type specified","putddr-bdtype",NON_FATAL);
+      return(E_FAIL);
+    }
 
-char d_temp[DDSTCT][DDSYLN];	 /* temporary for squeezed strings	      */
-char *junk_temp,hostddr[1024];
+    strcpy(ddr->system,c_getsys());
 
-/* Ensure that required parameters were specified.
---------------------------------------------------*/
+    c_lsmknm(hname,".ddr",hostddr);
 
-if ((ddr->nl < 1) || (ddr->nl > MAXNL))
- {
-  c_errmsg("Invalid number of lines specified","putddr-badnl",NON_FATAL);
-  return(E_FAIL);
- }
+    access = 1;                          /* open DDR file for write access   */
+    c_lsopen(&fd,hostddr,&access);
 
-if ((ddr->ns < 1) || (ddr->ns > MAXNS))
- {
-  c_errmsg("Invalid number of samples specified","putddr-badns",NON_FATAL);
-  return(E_FAIL);
- }
+    /*  Place the string portion of the DDR into a temporary buffer
+    ---------------------------------------------------------------*/
+    junk_temp = (char *)&ddr->spare;
+    strncpy(junk_temp,ddr->system,4);
+    strcpy(d_temp[0],squeeze(ddr->system,DDSYLN));
+    strcpy(d_temp[1],squeeze(ddr->proj_units,DDPULN));
+    strcpy(d_temp[2],squeeze(ddr->last_used_date,DDLDLN));
+    strcpy(d_temp[3],squeeze(ddr->last_used_time,DDLTLN));
 
-if ((ddr->nbands < 1) || (ddr->nbands > MAXBND))
- {
-  c_errmsg("Invalid number of bands specified","putddr-badbnds",NON_FATAL);
-  return(E_FAIL);
- }
+    clen = DDSTCT * DDSYLN - 1;                /* set up and output record 1 */
+    dlen = DISIZE * 4;
+    dbuf = (unsigned char *) MALLOC(dlen);
+    int2byteArr((int *)ddr,dbuf,DISIZE);
+    c_lswrit(&fd,"DDRINT",&clen,&dlen,d_temp[0],dbuf,"I4");
+    free(dbuf);
 
-if ((ddr->dtype < 1) || (ddr->dtype > 20))
- {
-  c_errmsg("Invalid data type specified","putddr-bdtype",NON_FATAL);
-  return(E_FAIL);
- }
+    /* Set up and output record 2
+       There is no character part to this record 
+    --------------------------------------------*/
+    clen = 0;				  
+    dlen = DDSIZE * 8;		  
+    dbuf = (unsigned char *) &(ddr->proj_coef[0]);
+    c_lswrit(&fd,"DDRDUB",&clen,&dlen,d_temp[0],dbuf,"R8");
 
-strcpy(ddr->system,c_getsys());
+    action = 0;                                 /* close associated DDR file */
+    c_lsclos(&fd,hostddr,&action);
 
-c_lsmknm(hname,".ddr",hostddr);
-
-access = 1;				  /* open DDR file for write access   */
-c_lsopen(&fd,hostddr,&access);
-
-/*  Place the string portion of the DDR into a temporary buffer
----------------------------------------------------------------*/
-junk_temp = (char *)&ddr->spare;
-strncpy(junk_temp,ddr->system,4);
-strcpy(d_temp[0],squeeze(ddr->system,DDSYLN));
-strcpy(d_temp[1],squeeze(ddr->proj_units,DDPULN));
-strcpy(d_temp[2],squeeze(ddr->last_used_date,DDLDLN));
-strcpy(d_temp[3],squeeze(ddr->last_used_time,DDLTLN));
-
-clen = DDSTCT * DDSYLN - 1;		  /* set up and output record 1	      */
-dlen = DISIZE * 4;
-dbuf = (unsigned char *) MALLOC(dlen);
-int2byteArr((int *)ddr,dbuf,DISIZE);
-c_lswrit(&fd,"DDRINT",&clen,&dlen,d_temp[0],dbuf,"I4");
-free(dbuf);
-
-/* Set up and output record 2
-   There is no character part to this record 
---------------------------------------------*/
-clen = 0;				  
-dlen = DDSIZE * 8;		  
-dbuf = (unsigned char *) &(ddr->proj_coef[0]);
-c_lswrit(&fd,"DDRDUB",&clen,&dlen,d_temp[0],dbuf,"R8");
-
-action = 0;				  /* close associated DDR file	      */
-c_lsclos(&fd,hostddr,&action);
-
-{/*Create/write correct number of BDRs*/
-	int bandNo;
-	for (bandNo=1;bandNo<=ddr->nbands;bandNo++)
-	{
-		struct BDDR bdr;
-		int_c_intbdr(&bdr);
-		bdr.bandno=bandNo;
-		int_c_putbdr(hname,&bdr);
-	}
-}
-return(E_SUCC);
+    {/*Create/write correct number of BDRs*/
+	    int bandNo;
+	    for (bandNo=1;bandNo<=ddr->nbands;bandNo++)
+	    {
+		    struct BDDR bdr;
+		    int_c_intbdr(&bdr);
+		    bdr.bandno=bandNo;
+		    int_c_putbdr(hname,&bdr);
+	    }
+    }
+    if (ii > -1 && ii < NUM_META_DDR_STRUCTS) {
+        char ddr_code[2];
+        if (meta_ddr_structs[ii].ddr==ddr) {
+                printf("\nSOMETHING THAT SHOULDN't HAVE HAPPENED IN C_PUTDDR() DID;\n"
+                       " REPORT TO PATRICK DENNY IMMEDIATELY!!\n");
+        }
+        if ( meta_ddr_structs[ii].meta && (meta_ddr_structs[ii].ddr==ddr) ) {
+            meta_parameters *mds_meta = meta_ddr_structs[ii].meta;
+            struct DDR      *mds_ddr  = meta_ddr_structs[ii].ddr;
+            mds_meta->general->line_count     = mds_ddr->nl;
+            mds_meta->general->sample_count   = mds_ddr->ns;
+            mds_meta->general->start_line     = mds_ddr->master_line - 1;
+            mds_meta->general->start_sample   = mds_ddr->master_sample - 1;
+            mds_meta->sar->line_increment     = mds_ddr->line_inc;
+            mds_meta->sar->sample_increment   = mds_ddr->sample_inc;
+            if (0==strcmp(mds_ddr->system,"ieee-std"))
+                    strcpy(mds_meta->general->system,"big_ieee");
+            else if (0==strcmp(mds_ddr->system,"ieee-lil"))
+                    strcpy(mds_meta->general->system,"lil_ieee");
+            else if (0==strcmp(mds_ddr->system,"cray-unicos"))
+                    strcpy(mds_meta->general->system,"cray_float");
+            else /* "ibm-mvs" or "other-msc" */
+                    strcpy(mds_meta->general->system,"???");
+            if (mds_meta->sar->image_type=='P')
+                    {strcpy(mds_meta->projection->units, mds_ddr->proj_units);}
+            switch ( mds_ddr->dtype ) {
+              case 0: /* BYTE */
+              case 1: strcpy(mds_meta->general->data_type,"BYTE");      break;
+              case 2: strcpy(mds_meta->general->data_type,"INTEGER*2"); break;
+              case 3: strcpy(mds_meta->general->data_type,"INTEGER*4"); break;
+              case 4: strcpy(mds_meta->general->data_type,"REAL*4");    break;
+              case 5: strcpy(mds_meta->general->data_type,"REAL*8");    break;
+              default:
+                    ddr_code[0]=mds_ddr->dtype+48;  /* Turn code # to ascii */
+                    ddr_code[1]='\0';             /* Make ddr_code a string */
+                    strncpy(mds_meta->general->data_type,
+                            strcat("DDR_code_",ddr_code),
+                            12);
+                    break;
+            }
+        }
+    }
+    return(E_SUCC);
 }
 
 
