@@ -18,8 +18,12 @@ ALGORITHM REFERENCES
 #include "cproj.h"
 #include "proj.h"
 
+#ifndef TRUE
 #define TRUE 1
+#endif
+#ifndef FALSE
 #define FALSE 0
+#endif
 
 static int iter = 0;			/* First time flag		*/
 static int inpj[MAXPROJ + 1];		/* input projection array	*/

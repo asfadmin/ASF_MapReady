@@ -28,11 +28,7 @@ S. Nelson		Jun, 1993	Added inline code.
 
 *******************************************************************************/
 #include "asf.h"
-
 #include "cproj.h"
-
-#define TRUE 1
-#define FALSE 0
 
 static int terminal_p;		/* flag for printing parameters to terminal */
 static int terminal_e;		/* flag for printing errors to terminal */

@@ -39,13 +39,9 @@ ALGORITHM REFERENCES
     Coast and Geodetic Survey, Publication 62-4, 1973.
 *******************************************************************************/
 #include "asf.h"
-
 #include "worgen.h"
 #include "cproj.h"
 #include "proj.h"
-
-#define TRUE 1
-#define FALSE 0
 
 
 int c_proj(inproj, inunit, inzone, inparm, outproj, outunit, outzone, 

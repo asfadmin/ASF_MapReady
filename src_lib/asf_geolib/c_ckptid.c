@@ -21,14 +21,9 @@ ALGORITHM DESCRIPTION:
 	Return TRUE
 *****************************************************************************/
 #include "asf.h"
-
-
 #include <ctype.h>
 #include "worgen.h"
 #include "geompak.h"
-
-#define TRUE 1
-#define FALSE 0
 
 char *rem_blanks(register char *str,register int  *len);
 
