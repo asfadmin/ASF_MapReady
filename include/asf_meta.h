@@ -272,6 +272,7 @@ typedef struct {
     proj_utm      utm;      /* Universal Transverse Mercator */
     proj_state    state;    /* State Plane                   */
   } param_t;
+typedef param_t project_parameters_t;
 typedef struct {
   projection_type_t type;  /* Projection types */
   double startX,startY;  /* Projection coordinates of top, lefthand corner.*/
