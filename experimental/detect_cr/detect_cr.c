@@ -20,7 +20,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "detect_cr"
 
 #define ASF_USAGE_STRING \
-"<image> <corner reflector locations> <peak search file>"
+"<image> <corner reflector locations> <peak search file>\n"\
+"\n"\
+"Additional option: -help"
 
 #define ASF_DESCRIPTION_STRING \
 "Detect_cr takes the geolocation information of corner reflectors are\n"\
@@ -49,7 +51,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "None known."
 
 #define ASF_SEE_ALSO_STRING \
-"offset_test"
+"offset_test, image_stats"
 
 #define ASF_COPYRIGHT_STRING \
 "Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks\n"\
