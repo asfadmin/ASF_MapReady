@@ -1,4 +1,5 @@
 #include "asf.h"
+#include "asf_meta.h"
 #include "asf_endian.h"
 #include "ceos.h"
 #include "decoder.h"
@@ -85,8 +86,12 @@ bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
 
   if (0==strncmp(satName,"E",1))
     s=ERS_ceos_decoder_init(inN,outN,readNextPulse);
-  else if (0==strncmp(satName,"J",1))
+  else if (0==strncmp(satName,"J",1)) {
+    /* JERS ingest temporarily disabled */
+    asfPrintError("   JERS data ingest currently under development\n");
+    /************************************/
     s=JRS_ceos_decoder_init(inN,outN,readNextPulse);
+  }
   else if (0==strncmp(satName,"R",1))
     s=RSAT_ceos_decoder_init(inN,outN,readNextPulse);
   else

@@ -166,8 +166,12 @@ bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
   /*Initialize the appropriate decoder routine*/
   if (0==strncmp(satName,"ERS",3))
     s=ERS_decoder_init(inName,outName,readNextPulse);
-  else if (0==strncmp(satName,"JERS",4))
+  else if (0==strncmp(satName,"JERS",4)) {
+    /* JERS data temporarily disabled */
+    asfPrintError("   JERS data ingest currently under development\n");
+    /**********************************/
     s=JRS_decoder_init(inName,outName,readNextPulse);
+  }
   else if (0==strncmp(satName,"RSAT",4))
     s=RSAT_decoder_init(inName,outName,readNextPulse);
   else
