@@ -65,10 +65,16 @@ main (int argc, char **argv)
 
   return_code = system (date_command_string->str);
 
+  // Done with the input image.
+  float_image_free (id);
+
   // Store the output image data.
   return_code = float_image_store (od, output_data_file->str,
 				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   g_assert (return_code == 0);
+
+  // Done with the output image.
+  float_image_free (od);
 
   // Copy the input metadata to the output metadata.
   GString *system_command = g_string_new ("cp ");
