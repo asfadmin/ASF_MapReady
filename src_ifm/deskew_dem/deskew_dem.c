@@ -2,14 +2,14 @@
 NAME:  deskew_dem
 
 USAGE:  deskew_dem [-i inSARfile bit] [-log <file>]]
-			<inDEMfile> <ceos> <outfile> 
+			<inDEMfile> <outfile>
 
 SYNOPSIS:
 
     deskew_dem removes incidence angle skew from a slant-range
     DEM, and interpolates across areas that didn't phase unwrap.
 
-    If <outfile> has the extension .dem or .ht, deskew_dem will 
+    If <outfile> has the extension .dem or .ht, deskew_dem will
     remove the incidence angle skew from the input slant-range DEM.
 
     If the <outfile> has the extention of .img, or .amp, deskew_dem
@@ -33,13 +33,17 @@ FILE REFERENCES:
     ---------------------------------------------------------------
 
 PROGRAM HISTORY:
-    VERS:   DATE:        PURPOSE:
+    VERS:   DATE:  AUTHOR:     PURPOSE:
     ---------------------------------------------------------------
-    1.0	     7/97        O. Lawlor-- Deskew Interferometry DEMs.
-    1.1	     6/98	 O. Lawlor-- Made more consistent with reskew_dem.
-    1.2	     7/01	 R. Gens -- Added log file switch.
-    1.35     4/02        P. Denny -- Updated commandline parsing & usage()
-    
+    1.0	     7/97  O. Lawlor   Deskew Interferometry DEMs.
+    1.1	     6/98  O. Lawlor   Made more consistent with reskew_dem.
+    1.2	     7/01  R. Gens     Added log file switch.
+    1.35     4/02  P. Denny    Updated commandline parsing & usage()
+    2.0      2/04  P. Denny    Removed use of DDR; upgraded to meta v1.1
+                                Removed <ceos> command line argument
+                                Fix sr2gr & gr2sr functions from leaving memory
+                                Use newer io functions (eg: get_float_line)
+
 HARDWARE/SOFTWARE LIMITATIONS:
 
 ALGORITHM DESCRIPTION:
@@ -73,7 +77,7 @@ BUGS:
 *   ASF Advanced Product Development LAB Contacts:			    *
 *	APD E-mail:	apd@asf.alaska.edu 				    *
 * 									    *
-*	Alaska SAR Facility			APD Web Site:	            *	
+*	Alaska SAR Facility			APD Web Site:	            *
 *	Geophysical Institute			www.asf.alaska.edu/apd	    *
 *       University of Alaska Fairbanks					    *
 *	P.O. Box 757320							    *
@@ -82,14 +86,12 @@ BUGS:
 ****************************************************************************/
 
 #include "deskew_dem.h"
-#include "ddr.h"
 
 void usage(char *name);
 
 
-double minPhi,maxPhi,phiMul,grPixelSize;
-meta_parameters *meta;
-int ns;
+int numLines, numSamples;
+double grPixelSize;
 
 double *slantGR;/*Slant range pixel #*/
 double *heightShiftGR;
@@ -99,224 +101,238 @@ double *slantPixel;
 double *groundRange;
 double *slantRangeSqr,*slantRange,*heightShift;
 double *incidAng,*sinIncidAng,*cosIncidAng;
-struct DDR ddrDEM,outddr,inddr;
 
-#define VERSION 1.35
+#define VERSION 2.0
+#define REQ_ARGS 2
 
 int main(int argc, char *argv[])
 {
-	float *srDEMline,*grDEM,*grDEMline,*grDEMlast,*inLine,*outLine;
-	register int x,y,nl;
-	char inDEMfile[255],ceos[255],outfile[255],infileStorage[255];
-	char *infile=NULL, *ext=NULL;
-	FILE *inDEM,*in=NULL,*out;
-	int doRadiometric=0,dem_is_ground_range=0;
+	float *srDEMline,*grDEM,*grDEMline,*grDEMlast,*inSarLine,*outLine;
+	char inDemName[255],inSarName[255],outName[255];
+	char *ext=NULL;
+	FILE *inDemFp,*inSarFp,*outFp;
+	meta_parameters *inDemMeta, *outMeta, *inSarMeta;
+	char msg[256];
+	int inSarFlag=FALSE;
+	int dem_is_ground_range=FALSE;
+	int doRadiometric=0;
+	register int x,y;
+	extern int currArg; /* in cla.h in asf.h in deskew_dem.h */
 
-	logflag=0;
+	logflag=FALSE;
 
 /* parse commandline arguments */
-	currArg = 1; /* in cla.h in asf.h in deskew_dem.h */
-	while (currArg < (argc-3)) {
+	while (currArg < (argc-REQ_ARGS)) {
 		char *key = argv[currArg++];
 		if (strmatch(key,"-i")) {
 			CHECK_ARG(2);
-			strcpy(infile=infileStorage,GET_ARG(2));
-			ext=findExt(infile);
+			strcpy(inSarName,GET_ARG(2));
+			ext=findExt(inSarName);
 			if ((0!=strcmp(ext,".amp")) && (0!=strcmp(ext,".img")))
 			  {printf("**ERROR: <inSARfile> must have a \".amp\" or \".img\" extention.\n");usage(argv[0]);}
 			doRadiometric = atoi(GET_ARG(1));
 			if ((doRadiometric != 0) && (doRadiometric != 1))
 			  {printf("**ERROR:  <bit> must be either 0 or 1\n"); usage(argv[0]);}
+			inSarFlag = TRUE;
 		}
 		else if (strmatch(key,"-log")) {
 			CHECK_ARG(1);
 			strcpy(logFile,GET_ARG(1));
 			fLog = FOPEN(logFile, "a");
-			logflag = 1;
+			logflag = TRUE;
 		}
 		else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
 	}
-	if ((argc-currArg) < 3) {printf("Insufficient arguments.\n"); usage(argv[0]);}
-	strcpy(inDEMfile,argv[currArg]);
-	strcpy(ceos,     argv[currArg+1]);
-	strcpy(outfile,  argv[currArg+2]);
-	ext=findExt(inDEMfile);
-	if (0==strcmp(ext,".dem"))
-		dem_is_ground_range=1;
+	if ((argc-currArg) < REQ_ARGS) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+	strcpy(inDemName,argv[currArg]);
+	strcpy(outName,  argv[currArg+1]);
 
-	StartWatch();
-	system("date");
+	ext=findExt(inDemName);
+	if (0==strcmp(ext,".dem"))
+	   dem_is_ground_range=TRUE;
+
 	printf("Program: deskew_dem\n\n");
 	if (logflag) {
-	  StartWatchLog(fLog);
-	  printLog("Program: deskew_dem\n\n");
+	   printLog("Program: deskew_dem\n\n");
 	}
 
-/*Get CEOS Parameters.*/
-	meta=meta_init(ceos);
+/*Extract metadata*/
+	inDemMeta = meta_read(inDemName);
+	outMeta = meta_copy(inDemMeta);
 
-/*Extract DDRs*/
-	if (infile)
-		c_getddr(infile,&inddr);
-	
-	c_getddr(inDEMfile,&ddrDEM);
-	
-	outddr=ddrDEM;
-	if (infile)
-	{
-		outddr.dtype=inddr.dtype;
-		if ((inddr.nl!=ddrDEM.nl)&&(inddr.ns!=ddrDEM.ns))
-		{
-			sprintf(errbuf, "   ERROR: The DEM and the image must be the same size.\n");
-			printErr(errbuf);
-		}
+	if (inDemMeta->sar->image_type=='P') {
+		printf("DEM cannot be map projected for this program to work!\n");
+		exit(EXIT_FAILURE);
 	}
-	nl=ddrDEM.nl;
-	ns=ddrDEM.ns;
-  	printf("   Images are %i lines by %i samples.\n",nl,ns);
-	
+	if (inSarFlag) {
+	   inSarMeta = meta_read(inSarName);
+	   if (inSarMeta->sar->image_type=='P') {
+	      printf("SAR image cannot be map projected for this program to work!\n");
+	      exit(EXIT_FAILURE);
+	   }
+	   outMeta->general->data_type = inSarMeta->general->data_type;
+
+	   if ((inSarMeta->general->line_count != inDemMeta->general->line_count) &&
+	       (inSarMeta->general->sample_count != inDemMeta->general->sample_count))
+	   {
+	      printErr("ERROR: The DEM and the SAR image must be the same size.\n");
+	   }
+	}
+	numLines = inDemMeta->general->line_count;
+	numSamples = inDemMeta->general->sample_count;
+  	printf("   Images are %i lines by %i samples.\n",numLines,numSamples);
+
 /*Allocate vectors.*/
-	slantGR=(double *)MALLOC(sizeof(double)*ns);
-	groundSR=(double *)MALLOC(sizeof(double)*ns);
-	heightShiftSR=(double *)MALLOC(sizeof(double)*ns);
-	heightShiftGR=(double *)MALLOC(sizeof(double)*ns);
-	slantRange=(double *)MALLOC(sizeof(double)*ns);
-	slantRangeSqr=(double *)MALLOC(sizeof(double)*ns);
-	incidAng=(double *)MALLOC(sizeof(double)*ns);
-	sinIncidAng=(double *)MALLOC(sizeof(double)*ns);
-	cosIncidAng=(double *)MALLOC(sizeof(double)*ns);
+	slantGR       = (double*)MALLOC(sizeof(double)*numSamples);
+	groundSR      = (double*)MALLOC(sizeof(double)*numSamples);
+	heightShiftSR = (double*)MALLOC(sizeof(double)*numSamples);
+	heightShiftGR = (double*)MALLOC(sizeof(double)*numSamples);
+	slantRange    = (double*)MALLOC(sizeof(double)*numSamples);
+	slantRangeSqr = (double*)MALLOC(sizeof(double)*numSamples);
+	incidAng      = (double*)MALLOC(sizeof(double)*numSamples);
+	sinIncidAng   = (double*)MALLOC(sizeof(double)*numSamples);
+	cosIncidAng   = (double*)MALLOC(sizeof(double)*numSamples);
 
-	grPixelSize=calc_ranges(&outddr);
-	
-/*Set up the output DDR.*/
-	set_ddr_corners(ceos,&outddr);
-	outddr.pdist_x=grPixelSize;
-	outddr.pdist_y=meta->geo->yPix*ddrDEM.line_inc;
-	
-	c_putddr(outfile,&outddr);
-	meta->geo->type='G';
-	meta->geo->xPix=grPixelSize;
-	meta_write(meta,outfile);
-	
+/*Set up the output meta file.*/
+	grPixelSize = calc_ranges(inDemMeta);
+	outMeta->sar->image_type='G';
+	outMeta->general->x_pixel_size = grPixelSize;
+	meta_write(outMeta, outName);
+
 /*Open files.*/
-	inDEM=fopenImage(inDEMfile,"rb");
-	out=fopenImage(outfile,"wb");
-	if (infile)
-		in=fopenImage(infile,"rb");
-	
+	inDemFp = fopenImage(inDemName,"rb");
+	outFp   = fopenImage(outName,"wb");
+	if (inSarFlag) inSarFp = fopenImage(inSarName,"rb");
+
+/* Blather at user about what is going on */
+	strcpy(msg,"");
 	if (dem_is_ground_range)
-	  printf("   DEM is in ground range.\n");
-	else 
-	  printf("   DEM in slant range, but will be corrected.\n");
-	if (dem_is_ground_range && logflag)
-	  printLog("   DEM is in ground range.\n");
-	else if (logflag) 
-	  printLog("   DEM in slant range, but will be corrected.\n");
-	
-	if (infile)
-	  printf("   Correcting image ");
-	else 
-	  printf("   Correcting DEM ");
-	if (doRadiometric)
-	  printf("geometrically and radiometrically.\n");
-	else 
-	  printf("geometrically.\n");
-	if (infile && logflag)
-	  printLog("   Correcting image ");
-	else if (logflag)
-	  printLog("   Correcting DEM ");
-	if (doRadiometric && logflag)
-	  printLog("geometrically and radiometrically.\n");
-	else if (logflag)
-	  printLog("geometrically.\n");
-	
-/*Allocate input buffers.*/
-	inLine=(float *)MALLOC(sizeof(float)*ns);
-	outLine=(float *)MALLOC(sizeof(float)*ns);
-	srDEMline=(float *)MALLOC(sizeof(float)*ns);
-	
-/*Map DEM to ground range.*/
-	if (dem_is_ground_range) /*It's much simpler if the DEM is already in ground range.*/
-		grDEM=(float *)MALLOC(sizeof(float)*ns);
+	  sprintf(msg,"%s   DEM is in ground range.\n",msg);
 	else
-	{ /*If the dem is slant range, then we need to map it to ground range, 
-	    all at once-- we have to read it ALL in to interpolate the columns.*/
-/*		printf("Mapping DEM to ground range...\n");*/
-		grDEM=(float *)MALLOC(sizeof(float)*ns*nl);
-		for (y=0;y<nl;y++)
+	  sprintf(msg,"%s   DEM in slant range, but will be corrected.\n",msg);
+
+	if (inSarFlag)
+	  sprintf(msg,"%s   Correcting image",msg);
+	else
+	  sprintf(msg,"%s   Correcting DEM",msg);
+
+	if (doRadiometric)
+	  sprintf(msg,"%s geometrically and radiometrically.\n",msg);
+	else
+	  sprintf(msg,"%s geometrically.\n",msg);
+
+	printf(msg);
+	if (logflag) printLog(msg);
+
+/*Allocate input buffers.*/
+	if (inSarFlag) 
+	   inSarLine = (float *)MALLOC(sizeof(float)*numSamples);
+	outLine   = (float *)MALLOC(sizeof(float)*numSamples);
+	srDEMline = (float *)MALLOC(sizeof(float)*numSamples);
+
+/*Map DEM to ground range if necessary.*/
+	/*It's much simpler if the DEM is already in ground range.*/
+	if (dem_is_ground_range)
+		grDEM=(float *)MALLOC(sizeof(float)*numSamples);
+	/*If the dem is slant range, then we need to map it to ground range,
+	 *all at once-- we have to read it ALL in to interpolate the columns.*/
+	else {
+		grDEM=(float *)MALLOC(sizeof(float)*numSamples*numLines);
+		for (y=0;y<numLines;y++)
 		{
-			getFloatLine(inDEM,&ddrDEM,y,srDEMline);
-			dem_sr2gr(srDEMline,&grDEM[y*ns],ns);
+			get_float_line(inDemFp,inDemMeta,y,srDEMline);
+			dem_sr2gr(srDEMline,&grDEM[y*numSamples],numSamples);
 		}
-		for (x=0;x<ns;x++)
-			dem_interp_col(&grDEM[x],ns,nl);/*Close gaps in y direction.*/
+		/*Close gaps in y direction.*/
+		for (x=0;x<numSamples;x++)
+			dem_interp_col(&grDEM[x],numSamples,numLines);
 	}
-	
-/*Rectify data.
-	printf("Rectifying Data...\n");*/
-	for (y=0;y<nl;y++)
-	{
-		if (infile) 
-		{
-			if (dem_is_ground_range)
-			{ /*We read in the DEM line-by-line (keeping two lines buffered).*/
-				float * tmp=srDEMline;srDEMline=grDEM;grDEM=tmp;
-				getFloatLine(inDEM,&ddrDEM,y,grDEM);
+
+/*Rectify data.*/
+	for (y=0;y<numLines;y++) {
+		if (inSarFlag) {
+			/*Read in DEM line-by-line (keeping two lines buffered)*/
+			if (dem_is_ground_range) {
+				float *tmp=srDEMline;
+				srDEMline=grDEM;
+				grDEM=tmp;
+				get_float_line(inDemFp,inDemMeta,y,grDEM);
 				grDEMline=grDEM;
 				grDEMlast=srDEMline;
-			} else { /*Otherwise, we just fetch the appropriate lines from the big buffer.*/
-				grDEMline=&grDEM[y*ns];
-				grDEMlast=&grDEM[(y-1)*ns];
 			}
-			getFloatLine(in,&inddr,y,inLine);
-			geo_compensate(grDEMline,inLine,outLine,ns);
+			/*Fetch the appropriate lines from the big buffer.*/
+			else {
+				grDEMline=&grDEM[y*numSamples];
+				grDEMlast=&grDEM[(y-1)*numSamples];
+			}
+			get_float_line(inSarFp,inSarMeta,y,inSarLine);
+			geo_compensate(grDEMline,inSarLine,outLine,numSamples);
 			if (y>0&&doRadiometric)
-				radio_compensate(grDEMline,grDEMlast,outLine,ns);
-			putFloatLine(out,&outddr,y,outLine);
-		} else 
-			putFloatLine(out,&outddr,y,&grDEM[y*ns]);
+				radio_compensate(grDEMline,grDEMlast,outLine,
+				                 numSamples);
+			put_float_line(outFp,outMeta,y,outLine);
+		}
+		else
+			put_float_line(outFp,outMeta,y,&grDEM[y*numSamples]);
 	}
-/*	printf("Program Complete!\n");*/
 
-	printf("\n   Wrote %lld bytes of data\n\n", (long long) (nl*ns*4));
-	StopWatch();
+	sprintf(msg,"\n   Wrote %lld bytes of data\n\n",
+	        (long long)(numLines*numSamples*4));
+	printf(msg);
 	if (logflag) {
-	  sprintf(logbuf,"\n   Wrote %lld bytes of data\n\n", (long long) (nl*ns*4));
-	  printLog(logbuf);
-	  StopWatchLog(fLog);
+	  printLog(msg);
 	  FCLOSE(fLog);
 	}
 
-	return(0);
+/* Clean up & skidattle */
+	if (inSarFlag) {
+	   FREE(inSarLine);
+	   FCLOSE(inSarFp);
+	   meta_free(inSarMeta);
+	}
+	FREE(srDEMline);
+	FREE(outLine);
+	FCLOSE(inDemFp);
+	FCLOSE(outFp);
+	meta_free(inDemMeta);
+	meta_free(outMeta);
+	FREE(slantGR);
+	FREE(groundSR);
+	FREE(heightShiftSR);
+	FREE(heightShiftGR);
+	FREE(slantRange);
+	FREE(slantRangeSqr);
+	FREE(incidAng);
+	FREE(sinIncidAng);
+	FREE(cosIncidAng);
+
+	exit(EXIT_SUCCESS);
 }
+
 void usage(char *name)
 {
  printf("\n"
 	"USAGE:\n"
 	"   %s [-i <inSARfile> <bit>] [-log <file>]\n"
-	"              <inDEMfile> <ceos> <outfile>\n",name);
+	"              <inDEMfile> <outfile>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
-	"   <inDEMfile>  IEEE float slant-range dem, with \n"
-	"                  extension .ht or .dem.\n"
-	"   <ceos>       Original image metadata.\n"
-	"   <outfile>    Output LAS image, with an extention.\n");
+	"   <inDEMfile>  IEEE float slant-range dem, with extension .ht or .dem.\n"
+	"   <outfile>    Output image, with an extention.\n");
  printf("\n"
 	"OPTIONAL ARGUMENTS:\n"
-	"   -i    The <inSARfile> is the LAS image to be rectified, with\n"
-	"             extention.  If <bit> is 1 both radiometric and\n"
-	"             geometric rectification are performed; if <bit> is\n"
-	"             0 then only geometric rectification is performed.\n"
+	"   -i	  The <inSARfile> is the image to be rectified (include the extention). If <bit>\n"
+	"	     is 1 both radiometric and geometric rectification are performed; if <bit> is\n"
+	"	     0 then only geometric rectification is performed.\n"
 	"   -log  Allows the output to be written to a log <file>.\n");
  printf("\n"
 	"DESCRIPTION:\n"
-	"   This program removes incidence-angle skew and maps from\n"
-	"   slant range to ground range.  It will do this to a DEM\n"
-	"   or SAR image.\n");
+	"   This program removes incidence-angle skew and maps from slant range to\n"
+	"   ground range. It will do this to a DEM or SAR image.\n");
  printf("\n"
 	"Version %.2f, ASF SAR Tools\n"
 	"\n", VERSION);
-	exit(1);
+ exit(EXIT_FAILURE);
 }
 
 
@@ -329,22 +345,24 @@ float sr2gr(float srX,float height)
 {
 	double dx,srXSeaLevel=srX-height*heightShiftSR[(int)srX];
 	int ix;
+    /*Prevent ix index (and ix+1) from leaving the bounds of allotted memory*/
 	if (srXSeaLevel<0) srXSeaLevel=0;
-	if (srXSeaLevel>=ns-1) srXSeaLevel=ns-1;
+	if (srXSeaLevel>=numSamples-1)  srXSeaLevel=numSamples-2;
 	ix=(int)srXSeaLevel;
 	dx=srXSeaLevel-ix;
-/*Linear interpolation on groundSR array*/
+    /*Linear interpolation on groundSR array*/
 	return groundSR[ix]+dx*(groundSR[ix+1]-groundSR[ix]);
 }
 float gr2sr(float grX,float height)
 {
 	double dx,grXSeaLevel=grX-height*heightShiftGR[(int)grX];
 	int ix;
+    /*Prevent ix index (and ix+1) from leaving the bounds of allotted memory*/
 	if (grXSeaLevel<0) grXSeaLevel=0;
-	if (grXSeaLevel>=ns-1) grXSeaLevel=ns-1;
+	if (grXSeaLevel>=numSamples-1)  grXSeaLevel=numSamples-2;
 	ix=(int)grXSeaLevel;
 	dx=grXSeaLevel-ix;
-/*Linear interpolation on slantGR array*/
+    /*Linear interpolation on slantGR array*/
 	return slantGR[ix]+dx*(slantGR[ix+1]-slantGR[ix]);
 }
 #else
