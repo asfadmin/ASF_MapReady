@@ -46,9 +46,9 @@ CPPFLAGS := $(INCLUDE_FLAGS)
 # take type float (still get a complaint about argument being passed
 # as float due to prototype rather than double.
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
-#CFLAGS := $(CFLAGS) -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
-#          -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
-#          -Wwrite-strings -Wnested-externs -fno-common -g -O4
+CFLAGS := $(CFLAGS) -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
+          -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
+          -Wwrite-strings -Wnested-externs -fno-common -g -O4
 
 LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
@@ -96,6 +96,7 @@ OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
 $(PROGRAM): $(OBJS)
 	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
+	mv $(PROGRAM) $(BINDIR)
 
 .PHONY: clean
 clean:
