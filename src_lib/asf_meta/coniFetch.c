@@ -345,8 +345,10 @@ void coniIO_double(coniStruct *coni,char *loc,char *name,double *value,char *com
 	if (coniDir==asciiOut)
 		sprintf(buf,"%-16.11g",*value);
 	coniIO_str(coni,loc,name,buf,comment);
+printf("|%s|\n",buf);
 	if (coniDir==asciiIn)
 		sscanf(buf,"%lg",value);
+printf("%s = %lg\n",name,*value);
 }
 void coniIO_char(coniStruct *coni,char *loc,char *name,char *value,char *comment)
 {
