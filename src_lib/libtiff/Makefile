@@ -53,7 +53,7 @@ endif
 
 # To enable JPEG support include -DJPEG_SUPPORT here.
 # To enable Deflate support add a -DZIP_SUPPORT here.
-CFLAGS := $(COMPILE_POS_INDEP) $(CFLAGS)
+CFLAGS := $(COMPILE_POS_INDEP) $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
 
 OBJS  = tif_aux.o \
 	tif_close.o \
@@ -104,4 +104,4 @@ tif_fax3sm.c: mkg3states.c tif_fax3.h
 
 clean:
 	$(RM) ${OBJS} mkg3states tif_fax3sm.c libtiff.a
-	
+
