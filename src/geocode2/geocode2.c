@@ -12,8 +12,9 @@
 
 // Libraries developed at ASF.
 #include <asf_meta.h>
-#include <libasf_proj.h>
 #include <asf_raster.h>
+#include "float_image.h"
+#include <libasf_proj.h>
 
 // Headers used by this program.
 #include "geocode_options.h"
@@ -207,6 +208,8 @@ main (int argc, char **argv)
   projection_type_t projection_type;
   project_parameters_t *pp = get_geocode_options(&argc, &argv, 
 						 &projection_type);
+  // Convert all angle measures in the project_parameters to radians.
+  to_radians(projection_type, pp);
 
   // Assign our transformation function pointers to point to the
   // appropriate functions.
@@ -243,18 +246,21 @@ main (int argc, char **argv)
     break;
   }
 
+  // Get non-option command line arguments.
   g_assert (argc == 3);
   GString *input_image = g_string_new (argv[1]);
   GString *output_image = g_string_new (argv[2]);
+
   // Input metadata.
   meta_parameters *imd = meta_read (input_image->str);
-  // x and y dimensions of input image.
-  size_t ixdim = imd->general->line_count;
-  size_t iydim = imd->general->sample_count;
+
+  // Input image dimensions in pixels in x and y directions.
+  size_t ii_size_x = imd->general->sample_count;
+  size_t ii_size_y = imd->general->line_count;
 
   // The latitude and longitude of the center of the image.
   double lat_0, lon_0;
-  meta_get_latLon (imd, ixdim / 2.0, iydim / 2.0, 0.0, &lat_0, &lon_0);
+  meta_get_latLon (imd, ii_size_y / 2.0, ii_size_x / 2.0, 466, &lat_0, &lon_0);
 
   // First we march around the entire outside of the image and compute
   // projection coordinates for every pixel, keeping track of the
@@ -270,21 +276,21 @@ main (int argc, char **argv)
 
   { // Scoping block.
     // Number of pixels in the edge of the image.
-    size_t edge_point_count = 2 * ixdim + 2 * iydim - 4;
+    size_t edge_point_count = 2 * ii_size_x + 2 * ii_size_y - 4;
     double *lats = g_new (double, edge_point_count);
     double *lons = g_new (double, edge_point_count);
     size_t current_edge_point = 0;
     size_t ii = 0, jj = 0;
-    for ( ; ii < ixdim - 1 ; ii++ ) {
-      meta_get_latLon (imd, (double)ii, (double)jj, 0.0, 
+    for ( ; ii < ii_size_x - 1 ; ii++ ) {
+      meta_get_latLon (imd, (double)jj, (double)ii, 466, 
 		       &(lats[current_edge_point]), 
 		       &(lons[current_edge_point]));
       lats[current_edge_point] *= DEG_TO_RAD;
       lons[current_edge_point] *= DEG_TO_RAD;
       current_edge_point++;
     }
-    for ( ; jj < iydim - 1 ; jj++ ) {
-      meta_get_latLon (imd, (double)ii, (double)jj, 0.0,
+    for ( ; jj < ii_size_y - 1 ; jj++ ) {
+      meta_get_latLon (imd, (double)jj, (double)ii, 466,
 		       &(lats[current_edge_point]), 
 		       &(lons[current_edge_point]));
       lats[current_edge_point] *= DEG_TO_RAD;
@@ -292,7 +298,7 @@ main (int argc, char **argv)
       current_edge_point++;
     }
     for ( ; ii > 0 ; ii-- ) {
-      meta_get_latLon (imd, (double)ii, (double)jj, 0.0, 
+      meta_get_latLon (imd, (double)jj, (double)ii, 466, 
 		       &(lats[current_edge_point]), 
 		       &(lons[current_edge_point]));
       lats[current_edge_point] *= DEG_TO_RAD;
@@ -300,7 +306,7 @@ main (int argc, char **argv)
       current_edge_point++;
     }
     for ( ; jj > 0 ; jj-- ) {
-      meta_get_latLon (imd, (double)ii, (double)jj, 0.0, 
+      meta_get_latLon (imd, (double)jj, (double)ii, 466, 
 		       &(lats[current_edge_point]), 
 		       &(lons[current_edge_point]));
       lats[current_edge_point] *= DEG_TO_RAD;
@@ -309,7 +315,8 @@ main (int argc, char **argv)
     }
     g_assert (current_edge_point == edge_point_count);
     // Pointers to arrays of projected coordinates to be filled in.
-    double *x, *y;
+    // The projection function will allocate this memory itself.
+    double *x = NULL, *y = NULL;
     x = y = NULL;
     // Project all the edge pixels.
     int return_code = project_arr (pp, lats, lons, &x, &y, edge_point_count);
@@ -335,7 +342,7 @@ main (int argc, char **argv)
   // we compute transformation for points on a grid_size * grid_size
   // grid.
   printf ("Performing analytical projection of a spacially distributed\n"
-	  "subsetof input image pixels...\n");
+	  "subset of input image pixels...\n");
   const size_t grid_size = 10;
   size_t mapping_count = pow ((double)grid_size, 2.0);
   struct data_to_fit dtf;
@@ -346,8 +353,8 @@ main (int argc, char **argv)
   dtf.y_pix = g_new0 (double, mapping_count);
   // Given the grid size and the image dimensions, how many pixels
   // between points we want to get the "truth" about from proj?
-  double x_pix_stride = ixdim / (grid_size - 1);
-  double y_pix_stride = iydim / (grid_size - 1);
+  double x_pix_stride = ii_size_x / (grid_size - 1);
+  double y_pix_stride = ii_size_y / (grid_size - 1);
   // Index into the flattened list of mappings we want to produce.
   int current_mapping = 0;	
   size_t ii;
@@ -356,12 +363,12 @@ main (int argc, char **argv)
     for ( jj = 0 ; jj < grid_size ; jj++ ) {
       // Input image x and y pixel coordinates.
       size_t xpc = floor (jj * x_pix_stride);
-      g_assert (xpc < ixdim);
+      g_assert (xpc < ii_size_x);
       size_t ypc = floor (ii * y_pix_stride);
-      g_assert (ypc < iydim);
+      g_assert (ypc < ii_size_y);
       // Corresponding latitude and longitude.
       double lat, lon;
-      meta_get_latLon (imd, (double)xpc, (double)ypc, 0.0, &lat, &lon);
+      meta_get_latLon (imd, (double)ypc, (double)xpc, 466, &lat, &lon);
       // Corresponding projection coordinates.  */
       lat *= DEG_TO_RAD;
       lon *= DEG_TO_RAD;
@@ -395,7 +402,7 @@ main (int argc, char **argv)
     dtf.y_proj[ii] -= y_proj_mean;
   }  
 
-  // Here we find out quadratic models for input pixel coorinates
+  // Here we find our quadratic models for input pixel coorinates
   // x_pix, y_pix in term of projection coordinates x, y.  For easy
   // reference, we put some variables in the terms used in the GSL
   // documentation.
@@ -463,8 +470,8 @@ main (int argc, char **argv)
     double error_standard_deviation 
       = gsl_stats_sd_m (s->f->data, s->f->stride, s->f->size, mean_error);
     double largest_error = gsl_vector_max (s->f);
-    // We want to choke if it our worst point in the quadratic model
-    // is off by this many pixels or more.
+    // We want to choke if our worst point in the quadratic model is
+    // off by this many pixels or more.
     double max_allowable_error = 3.0;
     g_assert (largest_error < max_allowable_error);
     printf ("For the differences between quadratic model values and projected "
@@ -538,18 +545,23 @@ main (int argc, char **argv)
   gsl_vector *y_pix_model_coefficients = gsl_vector_alloc (s->x->size);
   gsl_vector_memcpy (y_pix_model_coefficients, s->x);
 
+  // Done with the solver and the data being modeled.
   gsl_multifit_fdfsolver_free (s);
   gsl_matrix_free (covariance);
+  g_free (dtf.y_pix);
+  g_free (dtf.x_pix);
+  g_free (dtf.y_proj);
+  g_free (dtf.x_proj);
 
-  // Check correctness of reverse mappings of some corners.
-  // We insist on the quadratic model being within this many pixels
-  // for reverse transformations of the projection coordinates of the
-  // corners of the output image back to the pixel indicies in the
-  // input image.
-  double max_corner_error = 3.0;
+  // Check correctness of reverse mappings of some corners, as an
+  // extra paranoid check.  We insist on the quadratic model being
+  // within this many pixels for reverse transformations of the
+  // projection coordinates of the corners of the output image back to
+  // the pixel indicies in the input image.
+  double max_corner_error = 2.0;
   // Upper left corner.
   double ul_lat, ul_lon;
-  meta_get_latLon (imd, (float)0, (float)0, 0.0, &ul_lat, &ul_lon);
+  meta_get_latLon (imd, (float)0, (float)0, 466, &ul_lat, &ul_lon);
   double ul_x, ul_y;
   project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
   double ul_x_pix_approx = evaluate_quadratic (x_pix_model_coefficients, 
@@ -562,18 +574,21 @@ main (int argc, char **argv)
   g_assert (fabs (ul_y_pix_approx) < max_corner_error);
   // Lower right corner.
   double lr_lat, lr_lon;
-  meta_get_latLon (imd, (float)(ixdim - 1), (float)(iydim - 1), 0.0, &lr_lat, 
-		   &lr_lon);
+  meta_get_latLon (imd, (float)(ii_size_y - 1), (float)(ii_size_x - 1), 466, 
+		   &lr_lat, &lr_lon);
   double lr_x, lr_y;
   project (pp, DEG_TO_RAD * lr_lat, DEG_TO_RAD * lr_lon, &lr_x, &lr_y);
   double lr_x_pix_approx = evaluate_quadratic (x_pix_model_coefficients, 
 					       lr_x - x_proj_mean, 
 					       lr_y - y_proj_mean);
-  g_assert (fabs (lr_x_pix_approx - (ixdim - 1)) < max_corner_error);
+  g_assert (fabs (lr_x_pix_approx - (ii_size_x - 1)) < max_corner_error);
   double lr_y_pix_approx = evaluate_quadratic (y_pix_model_coefficients, 
 					       lr_x - x_proj_mean, 
 					       lr_y - y_proj_mean);
-  g_assert (fabs (lr_y_pix_approx - (iydim - 1)) < max_corner_error);
+  g_assert (fabs (lr_y_pix_approx - (ii_size_y - 1)) < max_corner_error);
+
+  // Done with the input metadata.
+  meta_free (imd);
 
   // Ok, we now have quadratic functions we are happy with.  Make some
   // convenience macros for using them.
@@ -581,35 +596,32 @@ main (int argc, char **argv)
 					  x - x_proj_mean, y - y_proj_mean)
 #define Y_PIXEL(x, y) evaluate_quadratic (y_pix_model_coefficients, \
 					  x - x_proj_mean, y - y_proj_mean)
+
   printf ("\n");
 
   // Now we are ready to produce our output image.  
   printf ("Resampling input image into output image coordinate space...\n");
 
   // Maximum output image pixel indicies.
-  size_t oix_max = ixdim - 1, oiy_max = iydim - 1;
+  size_t oix_max = ii_size_x - 1, oiy_max = ii_size_y - 1;
   // Projection coordinates per pixel in output image.
   double pc_per_x = (max_x - min_x) / oix_max;
   double pc_per_y = (max_y - min_y) / oiy_max;
-  // Input image as matrix, top left is at 0, 0.
-  gsl_matrix_float *iim = gsl_matrix_float_alloc (iydim, ixdim);  
-  // FIXME: BAD BAD BOY MACHINE DEPENDENT FLOATING POINT READ AFTER
-  // ALL OUR HARD WORK TO AVOID THIS KIND OF SCHLOP.
+
+  // Input image.
   GString *input_data_file = g_string_new (input_image->str);
   g_string_append (input_data_file, ".img");
-  FILE *iim_stream = fopen (input_data_file->str, "r");
-  g_assert (iim_stream != NULL);
-  int return_code = gsl_matrix_float_fread (iim_stream, iim);
-  g_assert (return_code == GSL_SUCCESS);
-  return_code = fclose (iim_stream);
-  g_assert (return_code == 0);
+  FloatImage *iim 
+    = float_image_new_from_file (ii_size_x, ii_size_y, input_data_file->str, 0,
+				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   g_string_free (input_data_file, TRUE);
-  // Output image a matrix, top left is at 0, 0.
-  gsl_matrix_float *oim = gsl_matrix_float_alloc (oix_max + 1, oiy_max + 1);
+
+  // Output image.
+  FloatImage *oim = float_image_new (ii_size_x, ii_size_y);
 
   // Convenience macros for getting and setting pixels.
-#define GET_PIXEL(x, y) gsl_matrix_float_get (iim, x, y)
-#define SET_PIXEL(x, y, value) gsl_matrix_float_set (oim, x, y, value);
+#define GET_PIXEL(x, y) float_image_get_pixel (iim, x, y)
+#define SET_PIXEL(x, y, value) float_image_set_pixel (oim, x, y, value)
 
   // Set the pixels of the output image.
   size_t oix, oiy;		// Output image pixel indicies.
@@ -618,29 +630,28 @@ main (int argc, char **argv)
       // Projection coordinates for the center of this pixel.    
       double oix_pc = ((double)oix / oix_max) * (max_x - min_x) + min_x;
       double oiy_pc = ((double)oiy / oiy_max) * (max_y - min_y) + min_y;
-      // Determine pixel of interest in input image which we will use
-      // to perform nearest neighbot sampling.
-      ssize_t input_x_pixel = round (X_PIXEL (oix_pc, oiy_pc));
-      ssize_t input_y_pixel = round (Y_PIXEL (oix_pc, oiy_pc));
+      // Determine pixel of interest in input image.  The fractional
+      // part is desired, we will use some sampling method to
+      // interpolate between pixel values.
+      double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
+      double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
       // If we are outside the extent of the input image, set to the
       // fill value.  FIXME: user should be able to specify fill value?
       const float fill_value = 0.0;
-      g_assert (ixdim <= SSIZE_MAX);
-      g_assert (iydim <= SSIZE_MAX);
-      if ( input_x_pixel < 0 || input_x_pixel >= (ssize_t)ixdim
-	   || input_y_pixel < 0 || input_y_pixel >= (ssize_t)iydim ) {
+      g_assert (ii_size_x <= SSIZE_MAX);
+      g_assert (ii_size_y <= SSIZE_MAX);
+      if ( input_x_pixel < 0 || input_x_pixel >= (ssize_t)ii_size_x
+	   || input_y_pixel < 0 || input_y_pixel >= (ssize_t)ii_size_y ) {
 	SET_PIXEL (oix, oiy, (float)fill_value);
       }
       // Otherwise, set to the value from the appropriate position in
       // the input image.
       else {
-	// If the GSL is inserting extra padding into our matricies,
-	// we are in trouble, and will need to do something more
-	// complicated.
-	g_assert (iim->tda == iim->size2);
-	SET_PIXEL (oix, oiy, interpolate (NEAREST, iim->data, iim->size1,
-					  iim->size2, input_x_pixel,
-					  input_y_pixel, NO_WEIGHT, 8));
+	SET_PIXEL (oix, oiy, GET_PIXEL (round (input_x_pixel),
+					round (input_y_pixel)));
+	//SET_PIXEL (oix, oiy, interpolate (NEAREST, iim->data, iim->size1,
+	//		                    iim->size2, input_x_pixel,
+	//			            input_y_pixel, NO_WEIGHT, 8));
       }
     }
     if ( oiy % 100 == 0 || oiy == oiy_max ) {
@@ -648,16 +659,17 @@ main (int argc, char **argv)
     }
   }
 
-  // FIXME: machine independent write.  Use our machine neutralized
-  // interfaces instead.
+  // Done with the quadratic model and the input image data.
+  float_image_free (iim);
+  gsl_vector_free (y_pix_model_coefficients);
+  gsl_vector_free (x_pix_model_coefficients);
+
   GString *output_data_file = g_string_new (output_image->str);
   g_string_append (output_data_file, ".img");
-  FILE *oim_stream = fopen (output_data_file->str, "w");
-  g_assert (oim_stream != NULL);
-  return_code = gsl_matrix_float_fwrite (oim_stream, oim);
-  return_code = fclose (oim_stream);
+  int return_code = float_image_store (oim, output_data_file->str,
+				       FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   g_assert (return_code == 0);
-  g_assert (return_code == GSL_SUCCESS);
+  float_image_free (oim);
   g_string_free (output_data_file, TRUE);
 
   // Now we need some metadata for the output image.  We will just
@@ -671,7 +683,7 @@ main (int argc, char **argv)
   omd->projection->startX = min_x;
   omd->projection->startY = min_y;
   omd->projection->perX = pc_per_x;
-  omd->projection->perY = pc_per_y;
+  omd->projection->perY = -pc_per_y;
   strcpy (omd->projection->units, "meters");
   if ( lat_0 > 0.0 ) {
     omd->projection->hem = 'N';
@@ -689,10 +701,17 @@ main (int argc, char **argv)
     = sqrt (wgs84_semimajor_axis * wgs84_parameter_of_ellipse);
   omd->projection->re_major = wgs84_semimajor_axis;
   omd->projection->re_minor = wgs84_semiminor_axis;
+  // We need to convert things in this structure back to degrees.
+  // There should be a call to_degrees() that corresponds to
+  // to_radians.
+  pp->utm.lon0 *= RAD_TO_DEG;
   omd->projection->param = *pp;
   meta_write (omd, output_image->str);
+  meta_free (omd);
 
-  // FIXME: Free stuff and close files and such in case this ever
-  // becomes a library function.
+  // Done with the file name arguments.
+  g_string_free (input_image, TRUE);
+  g_string_free (output_image, TRUE);
+
   exit (EXIT_SUCCESS);
 }
