@@ -97,11 +97,11 @@ void check_parameters(projection_type_t projection_type,
 
       // Distortion test - only areas with a latitude above 60 degrees North or 
       // below -60 degrees South are permitted
-      if (meta->general->center_latitude < 60.0)
+      if (meta->general->center_latitude < 60.0 && pp->ps.is_north_pole)
         asfPrintError("Geocoding of areas below 60 degrees latitude in the "
                       "polar stereographic map projection is not supported "
                       "by this tool\n");
-      if (meta->general->center_latitude > -60.0)
+      if (meta->general->center_latitude > -60.0 && !pp->ps.is_north_pole)
         asfPrintError("Geocoding of areas above -60 degrees latitude in the "
                       "polar stereographic map projection is not supported "
                       "by this tool\n");
