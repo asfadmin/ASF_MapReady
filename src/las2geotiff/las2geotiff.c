@@ -76,7 +76,6 @@ BUGS:
 #define VERSION 1.0
 
 
-void usage(void);
 int main (int argc, char *argv[])
 {
   struct DDR ddr;
@@ -97,7 +96,7 @@ int main (int argc, char *argv[])
   int test_size;
 
 /***Usage***/
-if (argc != 3) {usage();exit(0);}
+if (argc != 3) {usage(argv[0]);exit(0);}
 
 strcpy(infile, argv[1]);
 strcpy(outfile, argv[2]);
@@ -344,15 +343,15 @@ else
 return(0);
 }
 
-void usage (void)
+void usage (char *name)
 {
 printf(
-  "\nUsage:  las2geotiff <inLAS> <outGeoTIFF>\n\n"
+  "\nUsage:  %s <inLAS> <outGeoTIFF>\n\n"
   "\t<inLAS>       Base name for (input) LAS image with valid ddr file.\n"
   "\t<outGeoTIFF>  Base name for (output) geotiff image.\n"
   "\t              (Do not add extension.  Program will.)\n\n"
   "las2geotiff:  converts a LAS image into a geotiff file.\n"
-  "Version %.2f, ASF SAR TOOLS\n\n", VERSION);  
+  "Version %.2f, ASF SAR Tools\n\n", name, VERSION);  
   exit(0);
 }
 
