@@ -6,7 +6,7 @@ FileUtil:
 #include <assert.h>
 
 #include "asf.h"
-#include "asf_meta.h"
+#include "asf_endian.h"
 
 int extExists(const char *name,const char *newExt)
 {
@@ -138,16 +138,16 @@ FILE *fopenImage(const char *fName,const char *access)
 	return NULL;
 }
 
-/* Get a single line of data in floating point format, performing
-   rounding, padding, and endian conversion as needed.  The line_number
-   argument is the zero-indexed line number to get.  The dest argument
-   must be a pointer to existing memory.  */
-void get_float_line(FILE *file, meta_parameters *meta, int line_number, 
-		    float *dest)
+/***********************************************************************************
+ * Get a single line of data in floating point format, performing rounding, padding,
+ * and endian conversion as needed.  The line_number argument is the zero-indexed
+ * line number to get.  The dest argument must be a pointer to existing memory.   */
+int get_float_line(FILE *file, meta_parameters *meta, int line_number, float *dest)
 {
-  int x_idx;			/* Sample index.  */
-  size_t sample_size;		/* Sample size in bytes.  */
-  void *temp_buffer;		/* Buffer for unconverted data.  */
+  int x_idx;            /* Sample index.  */
+  int samples_gotten;   /* Number of samples retrieved */
+  size_t sample_size;   /* Sample size in bytes.  */
+  void *temp_buffer;    /* Buffer for unconverted data.  */
 
   assert(line_number <= meta->general->line_count - 1);
 
@@ -169,27 +169,33 @@ void get_float_line(FILE *file, meta_parameters *meta, int line_number,
 
   temp_buffer = MALLOC( (size_t) sample_size * meta->general->sample_count);
   
-  FREAD(temp_buffer, sample_size, meta->general->sample_count, file);
+  samples_gotten = FREAD(temp_buffer, sample_size, meta->general->sample_count, file);
 
   /* Fill in destination array.  */
   if ( !strcmp(meta->general->data_type, "BYTE") )
     for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ )
       dest[x_idx] = *( (uint8_t *) temp_buffer + x_idx);
-  if ( !strcmp(meta->general->data_type, "INTEGER*2") )
-    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ )
+  else if ( !strcmp(meta->general->data_type, "INTEGER*2") )
+    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ ) {
+      big16(*((int16_t *)temp_buffer + x_idx));
       dest[x_idx] = *( (int16_t *) temp_buffer + x_idx);
-  if ( !strcmp(meta->general->data_type, "INTEGER*4") )
-    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ )
+    }
+  else if ( !strcmp(meta->general->data_type, "INTEGER*4") )
+    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ ) {
+      big32(*((int32_t *)temp_buffer + x_idx));
       dest[x_idx] = *( (int32_t *) temp_buffer + x_idx);
-  if ( !strcmp(meta->general->data_type, "REAL*4") )
-    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ )
+    }
+  else if ( !strcmp(meta->general->data_type, "REAL*4") )
+    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ ) {
+      ieee_big32(*((float*)temp_buffer + x_idx));
       dest[x_idx] = *( (float *) temp_buffer + x_idx);
-  if ( !strcmp(meta->general->data_type, "REAL*8") )
-    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ )
+    }
+  else if ( !strcmp(meta->general->data_type, "REAL*8") )
+    for ( x_idx = 0 ; x_idx < meta->general->sample_count ; x_idx++ ) {
+      ieee_big64(*((double*)temp_buffer + x_idx));
       dest[x_idx] = *( (double *) temp_buffer + x_idx);
+    }
+
+  FREE(temp_buffer);
+  return samples_gotten;
 }
-  
-
-
-
-
