@@ -344,10 +344,10 @@ int FSEEK64(FILE *stream,long long offset,int ptrname)
 	if (stream==NULL)
 		programmer_error("NULL file pointer passed to FSEEK64.\n");
 
-#if defined(solaris)
-	ret=fseeko64(stream,offset,ptrname);
-#else
+#if defined(irix)
 	ret=fseek64(stream,offset,ptrname);
+#else
+	ret=fseeko64(stream,offset,ptrname);
 #endif
 	if (ret==-1)
 	{
@@ -363,10 +363,10 @@ long long FTELL64(FILE *stream)
 	long long ret;
 	if (stream==NULL)
 		programmer_error("NULL file pointer passed to FTELL64.\n");
-#if defined(solaris)
-	ret=(long long)ftello64(stream);
+#if defined(irix)
+	ret=(long long)ftell64(stream);
 #else
-	ret=ftell64(stream);
+	ret=ftello64(stream);
 #endif
 	if (ret==-1)
 		programmer_error("Stream passed to FTELL64 is not seekable.\n");
