@@ -21,6 +21,10 @@
 #define D2R (PI/180.0)
 #define R2D (180.0/PI)
 
+/* The maximum allowable length in characters (not including trailing
+   null character )of result strings from the appendExt function.  */
+#define MAX_APPENDEXT_RESULT_STRING_LENGTH 255
+
 /* Print an error with printf-style formatting codes and args, then die.  */
 void bail(const char *message, ...)/* ; is coming, don't worry.  */
 /* The GNU C compiler can give us some special help if compiling with
