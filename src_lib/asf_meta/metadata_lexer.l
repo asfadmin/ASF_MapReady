@@ -10,7 +10,6 @@
 
 %}
 
-%option noyywrap
 %option nomain
 
 INT_STRING         -?([0-9]+)
