@@ -15,8 +15,9 @@ OBJS = regex_match.o \
        matched_subexps_free.o
 
 # Build and install.
-all: $(OBJS) build_only
+all: build_only
 	mv $(LIB_NAME).a $(LIBDIR)
+	ln -s $(LIBDIR)/$(LIB_NAME).a $(LIBDIR)/lib$(LIB_NAME).a
 	$(MAKE) clean
 
 # Build, but don't install.
@@ -26,11 +27,11 @@ build_only: $(OBJS)
 
 # For simplicity, everything is rebuilt if the Makefile or any header
 # or library we depend on has changed.
-$(OBJS): Makefile $(LIB_NAME).h
+$(OBJS): Makefile $(ASF_INCLUDE_DIR)/$(LIB_NAME).h
 
 # Compile and run a test program.
 check: clean build_only test/test_regex_wrapper.c
-	$(CC) -c $(CPPFLAGS) -I. $(CFLAGS) -ggdb3 test/test_regex_wrapper.c \
+	$(CC) -c -I. $(CFLAGS) -ggdb3 test/test_regex_wrapper.c \
               -o test/test_regex_wrapper.o
 	$(CC) test/test_regex_wrapper.o $(LIB_NAME).a \
               -o test/test_regex_wrapper
