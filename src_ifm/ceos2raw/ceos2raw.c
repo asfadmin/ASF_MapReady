@@ -111,7 +111,6 @@ int ceosLen(char *inN)
 /*Internal Metadata creation routines (asf_ceos.a)*/
 meta_parameters *raw_init(void);
 void ceos_init(const char *in_fName,meta_parameters *sar);
-void propagate_state(meta_parameters *meta,int nStVec);
 
 /*hack function for .ldr & .raw compatibility (in ceosUtil.c)*/
 void linkFlag(short,char*);
@@ -145,12 +144,12 @@ void createMeta_ceos(bin_state *s,struct dataset_sum_rec *dssr,char *inN,char *o
 			meta->state_vectors->vecs[i].time += imgLen;
 	/*State vectors are too far apart or too far from image as read-
 	   propagate them*/
-		propagate_state(meta,3);
+		propagate_state(meta, 3, (s->nLines / s->prf / 2.0) );
 	}
 	
 	/* Update s-> fields with new state vector
          ----------------------------------------*/
-	addStateVector(s,&meta->state_vectors->vecs[0].vec);
+/*	addStateVector(s,&meta->state_vectors->vecs[0].vec);*/
 
 	/* Update fields for which we have decoded header info.
 	 -----------------------------------------------------*/
