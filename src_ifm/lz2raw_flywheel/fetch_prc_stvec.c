@@ -69,7 +69,7 @@ void find_closest_prc_rec(char *file, ymd_date *seekDate, hms_time *seekTime,
 				stateVector *vec, float *offset_time);
 void find_prc_file(char *prc_path,int requested_date, int orbit, char *prc_file);
 
-fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime, 
+int fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime, 
 	stateVector *retVec, ymd_date *retDate, hms_time *retTime, int orbit)
 {
 	char 		prc_file[256];
@@ -98,8 +98,7 @@ fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime,
 	*retDate = *seekDate;
 	*retTime = *seekTime;
 
-	if (offset_time > 0.0) add_time(offset_time,retDate,retTime);
-	else sub_time(-1.0*offset_time,retDate,retTime);
+	add_time(offset_time,retDate,retTime);
  
 	return(1);
 }
@@ -179,8 +178,8 @@ void find_closest_prc_rec(char *prc_file, ymd_date *seekDate, hms_time *seekTime
 {
 	int	currRec;
 	STATE 	*header;
-	PRC_REC *rec1;
-	PRC_REC *rec2;
+	PRC_REC *rec1 = NULL;
+	PRC_REC *rec2 = NULL;
 	ymd_date date, date1, date2;
 	hms_time time, time1, time2;
 	float    diff1, diff2;
