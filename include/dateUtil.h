@@ -134,6 +134,9 @@ what they wrote.
 /*Extract a DSSR-style date from inStr=YYYYMMDDhhmmssttt */
 void date_dssr2date(const char *inStr,ymd_date *date,hms_time *time);
 
+/*Extract second DSSR-style date from instr="DD-MMM-YYYY hh:mm:ss.ttt" */
+void date_dssr2time(const char *inStr,hms_time *time);
+
 /*Writes YY&MM&DD, where sep==&*/
 char * date_printY2Kdate(ymd_date *in,char sep,char *dest);
 
