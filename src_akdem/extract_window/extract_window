@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/local/bin/perl -w
 
 =head1 NAME
 
@@ -28,7 +28,7 @@ use strict;
 
 # FIXME: somebody install Params::Validate into the standard repository.
 use lib "/home/bkerin/local/lib/site_perl";
-# Module pragma used in function parameter checking.
+# Module used in function parameter checking.
 use Params::Validate;
 
 # Standard libraries (they ship with perl).
@@ -55,10 +55,10 @@ B<extract_window> -m img -p type -t=lat -n=long -z size [-l elev] [-o outimg]
 =head1 DESCRIPTION
 
 extract_window tries to extract a square window centered at a certain
-lat/lon from an image.  If it cannot produce a square image centered
-at the requested point, you get a warning and a non-square image.  A
-'.ddr' file for the new image is also produced and put in the same
-directory as the new image.
+geodetic lat/lon from an image.  If it cannot produce a square image
+centered at the requested point, you get a warning and a non-square
+image.  A '.ddr' file for the new image is also produced and put in
+the same directory as the new image.
 
 =head1 OPTIONS AND ARGUMENTS
 
@@ -87,7 +87,7 @@ be present alongside the '.img' file itself.
 
 TYPE is the type of image from which the window is being extracted.
 For correct operation, use the most appropriate type, not the most
-discernable supertype.
+easily discernable supertype.
 
 Currently supported TYPEs include:
 
@@ -109,7 +109,8 @@ An airsar .demi2 or .vvi2 file from the JPL processor.
 
 =item B<-t LAT, --lat=LAT>
 
-LAT is the center lattitude coordinate of the window to be extracted.
+LAT is the center geodetic lattitude coordinate of the window to be
+extracted.
 
 =item B<-n LONG, --long=LONG>
 
@@ -207,13 +208,13 @@ if ( $p{help} ) {
 
 # These things if not given as options better appear as arguments.
 { 
-    my $ope = 0;   # Flag true if we don't get an argument we need.
-    $p{image} ||= shift(@ARGV) or $ope++;
-    $p{type}  ||= shift(@ARGV) or $ope++;
-    $p{lat}   ||= shift(@ARGV) or $ope++;
-    $p{long}  ||= shift(@ARGV) or $ope++;
-    $p{size}  ||= shift(@ARGV) or $ope++;
-    $ope and pod2usage("$progname: argument parse failed: not enough arguments\n");
+    my $option_oops_flag = 0;   # Flag true if we don't get a needed argument.
+    $p{image} ||= shift(@ARGV) or $option_oops_flag++;
+    $p{type}  ||= shift(@ARGV) or $option_oops_flag++;
+    $p{lat}   ||= shift(@ARGV) or $option_oops_flag++;
+    $p{long}  ||= shift(@ARGV) or $option_oops_flag++;
+    $p{size}  ||= shift(@ARGV) or $option_oops_flag++;
+    $option_oops_flag and pod2usage("$progname: argument parse failed: not enough arguments\n");
 }
 
 # Make a completely bogus guess at elevation if user didn't supply it.
@@ -317,7 +318,7 @@ if ( $p{type} eq 'gr' ) {
 
     # We aren't really in the range and azimuth directions anymore,
     # but we still use the names here.  They are closer to the actual
-    # axis' of these dimensions that not :)
+    # axis' of these dimensions than not :)
     $wc_azi = $fracs{ul} * $lines;
     $wc_rng = $fracs{lr} * $samps;
 
@@ -363,7 +364,7 @@ if ( $p{type} eq 'gr' ) {
     # Non-value width in characters of a pp related field. 
     my $pp_non_value_width = $field_width - $pp_values_width;
     seek(TOPSAR, $dem_os + ($first_pp_field_number - 1) * $field_width
-	         + ($pp_non_value_width), SEEK_SET)
+	         + $pp_non_value_width, SEEK_SET)
     && read(TOPSAR, $pp_lat, $pp_values_width) == $pp_values_width 
     && seek(TOPSAR, $pp_non_value_width, SEEK_CUR) 
     && read(TOPSAR, $pp_lon, $pp_values_width) == $pp_values_width 
@@ -383,8 +384,7 @@ if ( $p{type} eq 'gr' ) {
 
     # Get global cartesian coordinates of window center point.
     my ($x, $y, $z) = llr2xyz($p{lat}, $p{long}, 
-			      &earth_radius_at_geodetic_lat(64.870) 
-			      + $p{elev});
+			      &earth_radius_at_geodetic_lat($p{lat}));
     # Get sch coordinates from global cartesian coordinates and peg
     # point information.
     my ($s, $c, $h_r) = xyz2sch($x, $y, $z, $pp_lat, $pp_lon, $pp_head);
@@ -392,7 +392,6 @@ if ( $p{type} eq 'gr' ) {
     # 1-indexed coordinates of center pixel window to be extracted.
     ($wc_azi, $wc_rng) = sc2line_sample($s, $c, $psz_azi, $psz_rng, 
 			       	        $azimuth_offset, $range_offset);
-
 
 } else {
     print STDERR "$progname: unknown image type string $p{type}\n";
