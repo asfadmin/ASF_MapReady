@@ -42,13 +42,12 @@ static float *wff1[MAXSIZE];
 static float *wff2[MAXSIZE];
 static float *cpy[MAXSIZE];
 int sizes[MAXSIZE];
-static fcomplex cwk[1];
+static complexFloat cwk[1];
 
 /* macro declarations */
 #define free_coeff(a,dim)   ( free_cpxmatrix(a,0,dim-1,0,dim-1) )
 
-void 
-imos2d(complexFloat *v, 
+void imos2d(complexFloat *v, 
        complexFloat *vo, 
        int dim, 
        int os)
@@ -58,7 +57,7 @@ imos2d(complexFloat *v,
   int inverse_fft = -1;
   int osDim, osArea;
   int id_dim, id_osdim;
-  fcomplex zero;
+  complexFloat zero;
 
   /* calculate total size of oversampled array */
   osDim = dim*os;
