@@ -17,6 +17,10 @@ typedef enum {
   STF_000_par,
   STF_001_PAR,
   STF_001_par,
+  STF_U_000_PAR,
+  STF_U_000_par,
+  STF_U_001_PAR,
+  STF_U_001_par,
   NUM_STF_METADATA_EXTS
 } stf_metadata_ext_t;
 extern const char stf_metadata_extensions[][16];
@@ -44,6 +48,10 @@ typedef enum {
   STF_000_par_PAIR,
   STF_001_PAR_PAIR,
   STF_001_par_PAIR,
+  STF_U_000_PAR_PAIR,
+  STF_U_000_par_PAIR,
+  STF_U_001_PAR_PAIR,
+  STF_U_001_par_PAIR,
   NUM_STF_FILE_PAIRS
 } stf_file_pairs_t;
 
