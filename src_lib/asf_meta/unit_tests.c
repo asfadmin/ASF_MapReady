@@ -1,5 +1,6 @@
-/* Unit tests for the asf_meta library.  Not complete by any means,
-   but hopefully new code will use them at least.  */
+/* Unit tests for the asf_meta library.  These use the 'check' unit
+   testing framework for C.  Not complete by any means, but hopefully
+   new code will use them at least.  */
 
 /* Note that these tests have wired in the values from the test meta
    file.  */
@@ -39,3 +40,39 @@ START_TEST(test_meta_read_new_format)
 
   meta_free(meta);
 }
+
+
+/* Machinery for running the 'check' tests.  */
+Suite *asf_meta_suite(void)
+{
+  Suite *s = suite_create("asf_meta");
+  TCase *tc_core = tcase_create("Core");
+  
+  suite_add_tcase(s, tc_core);
+  
+  tcase_add_test(tc_core, test_meta_read_new_format);
+
+  return s;
+}
+
+int main(void)
+{
+  int nf;
+  Suite *s = asf_meta_suite();
+  SRunner *sr = srunner_create(s);
+ 
+  srunner_run_all(sr, CK_NORMAL);
+
+  nf = srunner_ntests_failed(sr);
+
+  srunner_free(sr);
+  suite_free(s);
+
+  return ( nf == 0 ) ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
+
+
+
+
+
