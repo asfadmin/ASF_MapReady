@@ -412,10 +412,10 @@ main(int argc, char *argv[])
       
       /*** Albers Conic Equal Area ***/
       if (strncmp(uc(cfg->geocoding->projection), "ALBERS", 6)==0) {
-	sprintf(options, "-a %lf -b %lf -c %lf -g %s -d %d",
+	sprintf(options, "-a %lf -b %lf -c %lf -o %lf -g %s -d %d",
 		cfg->albers->first_parallel, cfg->albers->second_parallel, 
-		cfg->albers->center_meridian, cfg->albers->units, 
-		cfg->albers->datum);
+		cfg->albers->center_meridian, cfg->albers->orig_latitude, 
+                cfg->albers->units, cfg->albers->datum);
 	check_return(projprm("albers", "key", proj, options), 
 		     "generating projection parameter file (projprm)");
       }
@@ -479,10 +479,10 @@ main(int argc, char *argv[])
       break;
     }
 
-    /* Remove temporary files */
+    /* Remove temporary files *
     sprintf(cmd, "rm -f tmp%d*", id);
-    system(cmd);
-    
+    system(cmd);*/
+
   }
   return(0);
 }
