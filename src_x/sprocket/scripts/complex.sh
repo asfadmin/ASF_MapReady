@@ -6,7 +6,7 @@ IMAGE_CONVERTER=image2pgm
 # Check for no args
 if [ $# -ne "1" ]
 then
-   echo  "Usage: complex.zsh <root>"
+   echo  "Usage: complex <root>"
    exit 1
 fi
 
