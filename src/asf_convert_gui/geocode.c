@@ -29,6 +29,7 @@ const char * resample_method_string(int resample_method)
     break;
   default:
     g_assert_not_reached ();
+    return ""; /* to quiet the warning */
   }
 }
 
@@ -571,6 +572,13 @@ void geocode_options_changed()
     gtk_widget_set_sensitive(resample_hbox,
 			     enable_resample_hbox);
     
+    /* Turn off False Easting & Northing, as they seem to not really
+       be very useful. */
+    gtk_widget_hide(false_northing_entry);
+    gtk_widget_hide(false_northing_label);
+    gtk_widget_hide(false_easting_entry);
+    gtk_widget_hide(false_easting_label);
+
     update_summary();
 }
 
