@@ -147,10 +147,12 @@ This option may not be used together with the B<--package> option.
 
 =item B<-s>, B<--scan_comments>
 
-Do not ignore comment text when looking for node names in program
-text.  This option is only relevant when a new dependency graph cache
-file is being created.  Use of this option will probably result in a
-lot of false positives.
+Do not try to ignore comment text when looking for node names in
+program text.  This option is only relevant when a new dependency
+graph cache file is being created.  Use of this option will probably
+result in a lot of false positives.  This program may get confuses
+about what constitutes a comment in the presence of quoting, but not
+in such a way that it generally causes much error.
 
 =item B<-w> I<name>, B<--with_node>=I<name>
 
