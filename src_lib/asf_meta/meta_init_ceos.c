@@ -28,7 +28,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
 ceos_description *get_ceos_description(char *fName);
 double get_firstTime(char *fName);
 
-/* Prototypes from ceos_init_stVec.c */
+/* Prototypes from meta_init_stVec.c */
 void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *sar);
 double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,
                      meta_parameters *meta);
