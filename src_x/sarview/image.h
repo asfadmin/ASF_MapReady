@@ -48,10 +48,10 @@ void drawFloatsToColor(float *zoomed,int *dest,int width,int color);
 
 /******************** Main image variables  **/
 typedef enum {
-	image_none=0,/*No image*/
-	image_ddr=100,/*LAS image, with DDR*/
-	image_ceos=200/*CEOS image, with leader*/
-	image_new_meta = 300;	/* Image with new-style meta file.  */
+	image_none     =   0,  /*No image*/
+	image_ddr      = 100,  /*LAS image, with DDR*/
+	image_ceos     = 200,  /*CEOS image, with leader*/
+	image_new_meta = 300  /* Image with new-style meta file.*/
 } image_type;
 
 extern image_type type;
