@@ -20,6 +20,7 @@ PROGRAM HISTORY:
 
 **************************************************************************** */
 
+import java.io.File;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -117,22 +118,42 @@ class commDialog extends JDialog implements ActionListener, KeyListener,
       gbc.gridwidth = GridBagConstraints.WEST; //Start next row on left
    }
 
+// Warn user that a file does not exist ****************************************
+   public boolean fileTest(String fileName) {
+      boolean fileReadable = (new File(fileName)).canRead();
+
+      if (!fileReadable) {
+         String message = 
+           "File \""+fileName+"\" cannot be read\n"+
+           "Please check to make sure that the path and file name are correct\n"+
+           "and that you have the correct permissions to read the file.\n";
+         JOptionPane.showMessageDialog(this, message, "File unreadable",
+                                       JOptionPane.WARNING_MESSAGE);
+      }
+      return fileReadable;
+   }
+
+// What to do if enter or the 'okay' button is pressed *************************
+   public void goAhead() {
+      try {
+         imagefile = imageTextField.getText();
+         if (!fileTest(imagefile)) return;
+         maskfile = maskTextField.getText();
+         if (!fileTest(maskfile)) return;
+         maskThing = maskChoice.getSelectedItem();
+         outputfile = outputTextField.getText();
+         cancelled = false;
+         processEvent(new WindowEvent(this,WindowEvent.WINDOW_CLOSING));
+      }
+      catch (Exception ex) {
+         System.out.print("Egad, man!");
+      }
+   }
+
 // Key Listener stuff **********************************************************
    public void keyPressed (KeyEvent keyEvt) {
       if (keyEvt.getKeyCode() == KeyEvent.VK_ENTER) {
-         try {
-            maskThing = maskChoice.getSelectedItem();
-            outputfile = outputTextField.getText();
-            imagefile = imageTextField.getText();
-            maskfile = maskTextField.getText();
-            cancelled = false;
-         }
-         catch (Exception ex) {
-            System.out.print("Egad, man!");
-         }
-         finally {
-            processEvent(new WindowEvent(this,WindowEvent.WINDOW_CLOSING));
-         }
+         this.goAhead();
       }
    }
    public void keyReleased (KeyEvent ke) { }
@@ -142,19 +163,7 @@ class commDialog extends JDialog implements ActionListener, KeyListener,
 // Action Listener stuff *******************************************************
    public void actionPerformed (ActionEvent actEvent) {
       if (actEvent.getSource() == okayButton) {
-         try {
-            maskThing = maskChoice.getSelectedItem();
-            outputfile = outputTextField.getText();
-            imagefile = imageTextField.getText();
-            maskfile = maskTextField.getText();
-            cancelled = false;
-         }
-         catch (Exception ex) {
-            System.out.print("Egad, man!");
-         }
-         finally {
-            processEvent(new WindowEvent(this,WindowEvent.WINDOW_CLOSING));
-         }
+         this.goAhead();
       }
       if (actEvent.getSource() == cancelButton) {
          cancelled = true;
