@@ -64,8 +64,10 @@ void cproc_polyinfo(char *dest)
  * TCL asks C to compute the latitude and longitude of (x,y)*/
 int cproc_pointloc(double x,double y, double *lat,double *lon)
 {
-	if (meta==NULL || meta->state_vectors==NULL
-	    || (meta->state_vectors->vector_count<3))
+	if (meta==NULL 
+	    || meta->state_vectors==NULL
+	    || meta->state_vectors->vector_count<3
+	    || !(meta->sar->image_type=='S' || meta->sar->image_type=='G' || meta->sar->image_type=='P'))
 		return 0;
 	meta_get_latLon(meta,y,x,0.0,lat,lon);
 	return 1;

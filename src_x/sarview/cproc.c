@@ -65,7 +65,8 @@ void cproc_ne_arrows(char *canvas,double x,double y)
 	sprintf(buf,"catch \"%s delete arrows\"",canvas);Tcl_GlobalEval(interp,buf);
 
 	if ((meta!=NULL) && meta->state_vectors!=NULL
-	    && (meta->state_vectors->vector_count>2))
+	    && (meta->state_vectors->vector_count>2)
+	    && (meta->sar->image_type=='S' || meta->sar->image_type=='G' || meta->sar->image_type=='P'))
 	{/*We have metadata for this image-- figure out which way north is.*/
 		int ix=(int)x,iy=(int)y;
 		double lat,lon,time,slant,doppler;
