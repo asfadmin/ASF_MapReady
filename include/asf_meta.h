@@ -68,7 +68,8 @@ typedef struct {
   int sample_count;          /* Number of samples in image.                */
   int start_line;	     /* First line relative to original image.     */
   int start_sample;          /* First sample relative to original image.   */
-  double xPix,yPix;          /* Range, azimuth pixel size, in m            */
+  double x_pixel_size;       /* Range pixel size, in meters                */
+  double y_pixel_size;       /* Azimuth pixel size, in meters              */
   double center_latitude;    /* Approximate image center latitude.         */
   double center_longitude;   /* Approximage image center longitude.        */
   double re_major;           /* Semimajor axis length (equator) (meters).  */
@@ -131,33 +132,31 @@ typedef struct {
  */
 /* Along-track/cross-track.*/
 typedef struct {
-  /* Radius of earth at scene center (meters).  */
-  double rlocal;	      
-  /* Rotation angles, in degrees.  */
-  double alpha1, alpha2, alpha3;
+  double rlocal;              /* Radius of earth at scene center (meters)*/
+  double alpha1,alpha2,alpha3;/* Rotation angles, in degrees             */
 } proj_atct;
-/* Lambert Conformal projection.*/
+ /* Lambert Conformal projection.*/
 typedef struct {
-  double plat1;			/* First standard parallel for Lambert.  */
-  double plat2;			/* Second standard parallel for Lambert.  */
-  double lat0;			/* Original lat for Lambert.  */
-  double lon0;			/* Original lon for Lambert.  */
+  double plat1;     /* First standard parallel for Lambert */
+  double plat2;     /* Second standard parallel for Lambert*/
+  double lat0;      /* Original lat for Lambert            */
+  double lon0;      /* Original lon for Lambert            */
 } proj_lambert;
-/* Polar Sterographic.  */
+ /* Polar Sterographic.  */
 typedef struct {
-  double slat;		    /* Reference latitude for polar stereographic.  */
-  double slon;              /* Reference longitude for polar stereographic.  */
+  double slat;      /* Reference latitude for polar stereographic */
+  double slon;      /* Reference longitude for polar stereographic*/
 } proj_ps;
-/* Universal Transverse Mercator.*/
+ /* Universal Transverse Mercator.*/
 typedef struct {
   int zone;
 } proj_utm;
-/* Projection parameters for the projection in use.  */
+ /* Projection parameters for the projection in use.  */
 typedef union {		     
-  proj_atct     atct;	      /* Along-track/cross-track.  */
-  proj_lambert  lambert;    /* Lambert Conformal projection.  */
-  proj_ps       ps;         /* Polar Sterographic.  */
-  proj_utm      utm;        /* Universal Transverse Mercator.  */
+  proj_atct     atct;     /* Along-track/cross-track      */
+  proj_lambert  lambert;  /* Lambert Conformal projection */
+  proj_ps       ps;       /* Polar Sterographic           */
+  proj_utm      utm;      /* Universal Transverse Mercator*/
 } param_t;
 typedef struct {
   char type;   /* 'A'->Along Track/Cross Track; 'P'->Polar Stereographic;
@@ -193,21 +192,24 @@ typedef struct {
 } meta_stats;  
 
 
-/* State_vectors: Some collection of fixed-earth state vectors around
-   the image.  These are always increasing in time; but beyond that,
-   have no assumptions.  */
+/********************************************************************
+ * State_vectors: Some collection of fixed-earth state vectors around
+ * the image.  These are always increasing in time; but beyond that,
+ * have no assumptions.
+ */
 typedef struct {
-  double time;		/* Time of state vector, in seconds from the
+  double time;     /* Time of state vector, in seconds from the
 			   start of the image.  */
-  stateVector vec;	/* Fixed-earth state vector.  */
+  stateVector vec; /* Fixed-earth state vector.  */
 } state_loc;
 typedef struct {
-  int  year;		      /* Year for first state vector */
-  int  julDay;		      /* Julian day of year for first state vector.  */
-  double second;	      /* Seconds of day for first state vector.  */
-  int  num;		      /* Number of state vectors.  */
-  state_loc *vecs;	      /* Array sized at run-time.  */
+  int year;        /* Year for first state vector              */
+  int julDay;      /* Julian day of year for first state vector*/
+  double second;   /* Seconds of day for first state vector    */
+  int num;         /* Number of state vectors                  */
+  state_loc *vecs; /* Array sized at run-time                  */
 } meta_state_vectors;
+
 
 /* DEPRECATED */
 /*Geo_parameters: These are used in geolocating the image.*/
