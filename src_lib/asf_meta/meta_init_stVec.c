@@ -97,7 +97,8 @@ void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 	get_ppdr(fName,&ppdr);
 	
 /*Allocate output record.*/
-	s=meta->stVec=raw_init_state(ppdr.ndata);
+	meta->stVec->vecs=(state_loc *)MALLOC(ppdr.ndata * sizeof(state_loc));
+	s=meta->stVec;
 	
 /*Determine State Vector Format.*/
 	if (0==strncmp(ppdr.ref_coord,"INERTIAL",9))
