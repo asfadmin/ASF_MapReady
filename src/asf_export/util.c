@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <setjmp.h>
@@ -28,8 +27,8 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include <asf_export.h>
-#include "asf_nan.h"
-#include "asf_raster.h"
+#include <asf_reporting.h>
+#include <asf_raster.h>
 
 /* Get sample size in bytes of the data types represented by the
    meta_parameters_t.  */
@@ -54,8 +53,8 @@ get_sample_size (meta_parameters *metadata)
     sample_size = sizeof (double);
     break;
   default:
-    assert (FALSE);		/* Other types aren't handled.  */
-    break;
+    /* Other types aren't handled.  */
+    asfPrintError ("This program can handle byte, int16, int32, real32, and real64 data types.\n");
   }
 
   return sample_size;
@@ -76,12 +75,8 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
 
   /* Read the image data itself.  */
   FILE *ifp = fopen (image_data_file, "r");
-  if ( ifp == NULL ) {
-	char* temp;
-	sprintf(temp, "Failed to open %s: %s", image_data_file, strerror(errno));
-	print_error(temp);
-    exit (EXIT_FAILURE);
-  }
+  if ( ifp == NULL )
+    asfPrintError("Failed to open %s: %s", image_data_file, strerror(errno));
 
   /* Total number of samples in image.  */
   pixel_count = metadata->general->line_count * metadata->general->sample_count;
@@ -89,24 +84,21 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
   read_count = fread (data, sample_size, pixel_count, ifp);
   if ( read_count != pixel_count ) {
     if ( feof (ifp) ) {
-	  char* temp;
-	  sprintf(temp, "Read wrong amount of data from %s", image_data_file);
-	  print_error(temp);
+      asfPrintError("Read wrong amount of data from %s", image_data_file);
     }
     else if ( ferror (ifp) ) {
-	  char* temp;
-	  sprintf(temp, "Read of file %s failed: %s", image_data_file, 
-		  strerror(errno));
-	  print_error(temp);
+      asfPrintError("Read of file %s failed: %s", image_data_file,
+                    strerror(errno));
     }
     else {
-      assert (FALSE);		/* Shouldn't be here.  */
+      /* Shouldn't get here.  */
+      asfPrintError("Unknown error reading %s\n", image_data_file);
     }
     exit (EXIT_FAILURE);
   }
 
   return_code = fclose (ifp);
-  assert (return_code == 0);
+  asfRequire ((return_code==0), "Error closing file %s\n", image_data_file);
 
   return data;
 }
@@ -128,7 +120,7 @@ averaging_kernel (gsl_matrix_uchar *img, int kernel_size, size_t i, size_t j)
   int sum = 0;
   int average; /* Truncated average.  */
 
-  assert (kernel_size % 2 != 0); /* Odd-sized kernels only.  */
+  asfRequire(kernel_size%2 != 0, "Odd-sized kernels only.\n");
 
   for ( i_idx = i_min ; i_idx < i_max ; i_idx++ ) {
     /* The i index to use, adjusted in case we are off the edge of the
@@ -154,7 +146,8 @@ averaging_kernel (gsl_matrix_uchar *img, int kernel_size, size_t i, size_t j)
   average = sum / pow (kernel_size, 2); /* Truncated average.  */
   /* Since we are averaging unsigned char values, this should always
      be true.  */
-  assert (average <= UCHAR_MAX);
+  asfRequire(average<=UCHAR_MAX,
+             "The average value of the image is above its maximum value.\n");
 
   return average;
 }
@@ -179,7 +172,7 @@ unsigned char *average_unsigned_char_pixels (unsigned char *pixels,
   gsl_matrix_uchar *oimg;
   unsigned char *reallocated_pixels;
 
-  assert (kernel_size % 2 != 0); /* Odd-sized kernels only.  */
+  asfRequire (kernel_size%2 != 0, "Odd-sized kernels only.\n");
 
   /* Make a matrix form of the input image for easy indexing.  */
   iimg = gsl_matrix_uchar_alloc (iheight, iwidth);
@@ -277,7 +270,8 @@ unsigned char *scale_unsigned_char_image_dimensions (unsigned char *pixels,
 {
   /* This assertion is pretty obvious, but since the algorithm needs
      it to work correctly, its included.  */
-  assert (max_large_dimension > 1);
+  asfRequire(max_large_dimension>1,
+             "Image needs to be at least one pixel by one pixel.\n");
   if ( GSL_MAX (*width, *height) > max_large_dimension ) {
     int kernel_size = GSL_MAX (*width, *height) / max_large_dimension + 1;
     if ( kernel_size % 2 != 1 ) {
