@@ -1,0 +1,46 @@
+# The existing build system had some good ideas but was complicated
+# and didn't gracefully handle things like libraries that need binary
+# modules to be built first in order to build themselves.  
+
+# This make file lists all the system components used by the latest
+# tools in one flat list, making no attempt to sort out the build
+# order automatically.  Since the old system didn't rebuild anything
+# on changes in dependencies anyway this isn't much of a loss.
+
+# Note that the order in which the modules are listed is critical!
+# Note also that this simplistic build scheme takes the traditional
+# built-too-much approach: building the default target all will
+# rebuild everything.  So if you want to be sure all the prerequisite
+# to your tool are rebuilt, you should do a make all.  On the other
+# hand, if you want to rebuild just the module you are working on,
+# just do a make in that subdirectory.
+
+# FIXME: I think asf_import has some run time dependencies on tools
+# that I don't know about, these tools must be added to this list.
+MODULES = src_lib/asf \
+          src_lib/libgsl \
+          src_lib/asf_meta \
+          src_lib/asf_lt \
+          src_lib/asf_geolib \
+          src_lib/asf_odl \
+          src_lib/asf_fft \
+          src_lib/libproj \
+          src/pkgconfig \
+          src_lib/libglib-2.0 \
+          src_lib/libasf_proj \
+          src_lib/libasf_raster \
+          src_lib/libasf_reporting \
+          src_lib/libjpeg \
+          src_lib/libtiff \
+          src_lib/libgeotiff \
+          src_lib/tclTk \
+          src/asf_export \
+          src/asf_import \
+          src_geo/asf_geocode \
+          src/asf_convert \
+          src/asf_convert_gui \
+	  src_x/sarview
+
+all:
+	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE);)
+
