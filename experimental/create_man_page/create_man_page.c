@@ -43,6 +43,7 @@
 
 #define VERSION 1.0
 
+/* Change string into upper case */
 char *uc(char *string)
 {
   char *out=(char *)MALLOC(sizeof(char)*255);
@@ -54,6 +55,7 @@ char *uc(char *string)
   return out;
 }
 
+/* Change the special characters for a correct output in HTML */
 char* change_special_characters(char *in)
 {
   int i,j=0;
@@ -83,6 +85,30 @@ char* change_special_characters(char *in)
   return out;
 }
 
+/* Check whether tags are around */
+int check_tag(char *file, char *tag, int warnFlag)
+{
+  FILE *fp;
+  char *line=(char *)MALLOC(sizeof(char)*255);
+
+  fp = FOPEN(file, "r");
+  while (fgets(line, 255, fp) != NULL) {
+    if (strncmp(uc(line), "<DOCUMENTATION>", 15)==0) {
+      while (fgets(line, 255, fp) != NULL) {
+        if (strncmp(uc(line), tag, strlen(tag))==0)
+	  return(1);
+	if (strncmp(uc(line), "</DOCUMENTATION>", 16)==0) {
+	  if (warnFlag) printf("   WARNING: %s tag missing!\n", tag);
+	  FCLOSE(fp);
+	  return(0);
+	}
+      }
+    }
+  }
+  return(0); /* for whining compilers */
+}
+
+/* Extract the information between start and end tags */
 void find_tag(char *file, char *begin_tag, char *end_tag, FILE *fpOut, int html_flag)
 {
   FILE *fpIn;
@@ -91,20 +117,35 @@ void find_tag(char *file, char *begin_tag, char *end_tag, FILE *fpOut, int html_
 
   fpIn = FOPEN(file, "r");
   while (fgets(line, 255, fpIn) != NULL) {
-    if (strncmp(uc(line), begin_tag, strlen(begin_tag))==0) {
-      fgets(line, 255, fpIn);
-      while (strncmp(uc(line), end_tag, strlen(end_tag))!=0) {
-        if (html_flag) {
-	  out = change_special_characters(line);
-	  fprintf(fpOut, "%s", out);
+    if (strncmp(uc(line), "<DOCUMENTATION>", 15)==0) {
+      while (fgets(line, 255, fpIn) != NULL) {
+	if (strncmp(uc(line), begin_tag, strlen(begin_tag))==0) {
+	  fgets(line, 255, fpIn);
+	  while (strncmp(uc(line), end_tag, strlen(end_tag))!=0) {
+	    if (html_flag) {
+	      out = change_special_characters(line);
+	      fprintf(fpOut, "%s", out);
+	    }
+	    else 
+	      fprintf(fpOut, "%s", line);
+	    if (strncmp(uc(line), "</DOCUMENTATION>", 16)==0) {
+	      FCLOSE(fpIn);
+	      return;
+	    }
+	    fgets(line, 255, fpIn);
+	    if (strncmp(uc(line), end_tag, strlen(end_tag))==0) {
+	      FCLOSE(fpIn);
+	      return;
+	    }
+	  }
 	}
-        else 
-	  fprintf(fpOut, "%s", line);
-        fgets(line, 255, fpIn);
+	if (strncmp(uc(line), "</DOCUMENTATION>", 16)==0) {
+	  FCLOSE(fpIn);
+	  return;
+	}
       }
     }
   }
-  FCLOSE(fpIn);
 }
 
 int main(int argc, char **argv)
@@ -137,42 +178,69 @@ int main(int argc, char **argv)
 	  " content=\"text/html; charset=iso-8859-1\">\n");
   fprintf(fp, "</head>\n<body>\n");
   fprintf(fp, "<table width=600 border=0>\n");
-  fprintf(fp, "<tr><td colspan=2><strong>NAME</strong></td></tr>\n");
-  fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
-  find_tag(code_name, "<NAME>", "</NAME>", fp, 1);
-  fprintf(fp, "</pre><br></td></tr>\n");
-  fprintf(fp, "<tr><td colspan=2><strong>SYNOPSIS</strong></td></tr>\n");
-  fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
-  find_tag(code_name, "<SYNOPSIS>", "</SYNOPSIS>", fp, 1);
-  fprintf(fp, "</pre><br></td></tr>\n");
-  fprintf(fp, "<tr><td colspan=2><strong>DESCRIPTION</strong></td></tr>\n");
-  fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
-  find_tag(code_name, "<DESCRIPTION>", "</DESCRIPTION>", fp, 1);
-  fprintf(fp, "</pre><br></td></tr>\n");
-  fprintf(fp, "<tr><td colspan=2><strong>INPUT</strong></td></tr>\n");
-  fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
-  find_tag(code_name, "<INPUT>", "</INPUT>", fp, 1);
-  fprintf(fp, "</pre><br></td></tr>\n");
-  fprintf(fp, "<tr><td colspan=2><strong>OUTPUT</strong></td></tr>\n");
-  fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
-  find_tag(code_name, "<OUTPUT>", "</OUTPUT>", fp, 1);
-  fprintf(fp, "</pre><br></td></tr>\n");
-  fprintf(fp, "<tr><td colspan=2><strong>OPTIONS</strong></td></tr>\n");
-  fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
-  find_tag(code_name, "<OPTIONS>", "</OPTIONS>", fp, 1);
-  fprintf(fp, "</pre><br></td></tr>\n");
-  fprintf(fp, "<tr><td colspan=2><strong>LIMITATIONS</strong></td></tr>\n");
-  fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
-  find_tag(code_name, "<LIMITATIONS>", "</LIMITATIONS>", fp, 1);
-  fprintf(fp, "</pre><br></td></tr>\n");
-  fprintf(fp, "<tr><td colspan=2><strong>SEE ALSO</strong></td></tr>\n");
-  fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
-  find_tag(code_name, "<SEE_ALSO>", "</SEE_ALSO>", fp, 1);
-  fprintf(fp, "</pre><br></td></tr>\n");
-  fprintf(fp, "<tr><td colspan=2><strong>COPYRIGHT</strong></td></tr>\n");
-  fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
-  find_tag(code_name, "<COPYRIGHT>", "</COPYRIGHT>", fp, 1);
-  fprintf(fp, "</pre><br></td></tr>\n<br>\n");
+  if (check_tag(code_name, "<NAME>", 1) && 
+      check_tag(code_name, "</NAME>", 1)) {
+    fprintf(fp, "<tr><td colspan=2><strong>NAME</strong></td></tr>\n");
+    fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
+    find_tag(code_name, "<NAME>", "</NAME>", fp, 1);
+    fprintf(fp, "</pre><br></td></tr>\n");
+  }
+  if (check_tag(code_name, "<SYNOPSIS>", 1) &&
+      check_tag(code_name, "</SYNOPSIS>", 1)) {
+    fprintf(fp, "<tr><td colspan=2><strong>SYNOPSIS</strong></td></tr>\n");
+    fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
+    find_tag(code_name, "<SYNOPSIS>", "</SYNOPSIS>", fp, 1);
+    fprintf(fp, "</pre><br></td></tr>\n");
+  }
+  if (check_tag(code_name, "<DESCRIPTION>", 1) &&
+      check_tag(code_name, "</DESCRIPTION>", 1)) {
+    fprintf(fp, "<tr><td colspan=2><strong>DESCRIPTION</strong></td></tr>\n");
+    fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
+    find_tag(code_name, "<DESCRIPTION>", "</DESCRIPTION>", fp, 1);
+    fprintf(fp, "</pre><br></td></tr>\n");
+  }
+  if (check_tag(code_name, "<INPUT>", 1) &&
+      check_tag(code_name, "</INPUT>", 1)) {
+    fprintf(fp, "<tr><td colspan=2><strong>INPUT</strong></td></tr>\n");
+    fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
+    find_tag(code_name, "<INPUT>", "</INPUT>", fp, 1);
+    fprintf(fp, "</pre><br></td></tr>\n");
+  }
+  if (check_tag(code_name, "<OUTPUT>", 1) &&
+      check_tag(code_name, "</OUTPUT>", 1)) {
+    fprintf(fp, "<tr><td colspan=2><strong>OUTPUT</strong></td></tr>\n");
+    fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
+    find_tag(code_name, "<OUTPUT>", "</OUTPUT>", fp, 1);
+    fprintf(fp, "</pre><br></td></tr>\n");
+  }
+  if (check_tag(code_name, "<OPTIONS>", 1) &&
+      check_tag(code_name, "</OPTIONS>", 1)) {
+    fprintf(fp, "<tr><td colspan=2><strong>OPTIONS</strong></td></tr>\n");
+    fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
+    find_tag(code_name, "<OPTIONS>", "</OPTIONS>", fp, 1);
+    fprintf(fp, "</pre><br></td></tr>\n");
+  }
+  if (check_tag(code_name, "<LIMITATIONS>", 1) &&
+      check_tag(code_name, "</LIMITATIONS>", 1)) {
+    fprintf(fp, "<tr><td colspan=2><strong>LIMITATIONS</strong></td></tr>\n");
+    fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
+    find_tag(code_name, "<LIMITATIONS>", "</LIMITATIONS>", fp, 1);
+    fprintf(fp, "</pre><br></td></tr>\n");
+  }
+  if (check_tag(code_name, "<SEE_ALSO>", 1) &&
+      check_tag(code_name, "</SEE_ALSO>", 1)) {
+    fprintf(fp, "<tr><td colspan=2><strong>SEE ALSO</strong></td></tr>\n");
+    fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
+    find_tag(code_name, "<SEE_ALSO>", "</SEE_ALSO>", fp, 1);
+    fprintf(fp, "</pre><br></td></tr>\n");
+  }
+  if (check_tag(code_name, "<COPYRIGHT>", 1) &&
+      check_tag(code_name, "</COPYRIGHT>", 1)) {
+    fprintf(fp, "<tr><td colspan=2><strong>COPYRIGHT</strong></td></tr>\n");
+    fprintf(fp, "<tr><td width=10></td>\n<td><pre>");
+    find_tag(code_name, "<COPYRIGHT>", "</COPYRIGHT>", fp, 1);
+    fprintf(fp, "</pre><br></td></tr>\n<br>\n");
+  }
   fprintf(fp, "<tr><td colspan=2>\n<hr>\n");
   fprintf(fp, "<font size=1>\nCopyright &copy; 2004, ");
   fprintf(fp, "<A HREF=\"mailto:uso@asf.alaska.edu\">"
@@ -187,25 +255,51 @@ int main(int argc, char **argv)
   fp = FOPEN(man_name, "w");
 
   fprintf(fp, ".TH %s 1 %s\n", base_name, date_stamp());
-  fprintf(fp, "\n.SH NAME\n");
-  find_tag(code_name, "<NAME>", "</NAME>", fp, 0);
-  fprintf(fp, "\n.SH SYNSOPSIS\n");
-  find_tag(code_name, "<SYNOPSIS>", "</SYNOPSIS>", fp, 0);
-  fprintf(fp, "\n.SH DESCRIPTION\n");
-  find_tag(code_name, "<DESCRIPTION>", "</DESCRIPTION>", fp, 0);
-  fprintf(fp, "\n.SH INPUT\n");
-  find_tag(code_name, "<INPUT>", "</INPUT>", fp, 0);
-  fprintf(fp, "\n.SH OUTPUT\n");
-  find_tag(code_name, "<OUTPUT>", "</OUTPUT>", fp,  0);
-  fprintf(fp, "\n.SH OPTIONS\n");
-  find_tag(code_name, "<OPTIONS>", "</OPTIONS>", fp, 0);
-  fprintf(fp, "\n.SH LIMITATIONS\n");
-  find_tag(code_name, "<LIMITATIONS>", "</LIMITATIONS>", fp, 0);
-  fprintf(fp, "\n.SH SEE ALSO\n");
-  find_tag(code_name, "<SEE_ALSO>", "</SEE_ALSO>", fp, 0);
-  fprintf(fp, "\n.SH COPYRIGHT\n");
-  find_tag(code_name, "<COPYRIGHT>", "</COPYRIGHT>", fp, 0);
-
+  if (check_tag(code_name, "<NAME>", 0) && 
+      check_tag(code_name, "</NAME>", 0)) {
+    fprintf(fp, "\n.SH NAME\n");
+    find_tag(code_name, "<NAME>", "</NAME>", fp, 0);
+  }
+  if (check_tag(code_name, "<SYNOPSIS>", 0) &&
+      check_tag(code_name, "</SYNOPSIS>", 0)) {
+    fprintf(fp, "\n.SH SYNSOPSIS\n");
+    find_tag(code_name, "<SYNOPSIS>", "</SYNOPSIS>", fp, 0);
+  }
+  if (check_tag(code_name, "<DESCRIPTION>", 0) &&
+      check_tag(code_name, "</DESCRIPTION>", 0)) {
+    fprintf(fp, "\n.SH DESCRIPTION\n");
+    find_tag(code_name, "<DESCRIPTION>", "</DESCRIPTION>", fp, 0);
+  }
+  if (check_tag(code_name, "<INPUT>", 0) &&
+      check_tag(code_name, "</INPUT>", 0)) {
+    fprintf(fp, "\n.SH INPUT\n");
+    find_tag(code_name, "<INPUT>", "</INPUT>", fp, 0);
+  }
+  if (check_tag(code_name, "<OUTPUT>", 0) &&
+      check_tag(code_name, "</OUTPUT>", 0)) {
+    fprintf(fp, "\n.SH OUTPUT\n");
+    find_tag(code_name, "<OUTPUT>", "</OUTPUT>", fp,  0);
+  }
+  if (check_tag(code_name, "<OPTIONS>", 0) &&
+      check_tag(code_name, "</OPTIONS>", 0)) {
+    fprintf(fp, "\n.SH OPTIONS\n");
+    find_tag(code_name, "<OPTIONS>", "</OPTIONS>", fp, 0);
+  }
+  if (check_tag(code_name, "<LIMITATIONS>", 0) &&
+      check_tag(code_name, "</LIMITATIONS>", 0)) {
+    fprintf(fp, "\n.SH LIMITATIONS\n");
+    find_tag(code_name, "<LIMITATIONS>", "</LIMITATIONS>", fp, 0);
+  }
+  if (check_tag(code_name, "<SEE_ALSO>", 0) &&
+      check_tag(code_name, "</SEE_ALSO>", 0)) {
+    fprintf(fp, "\n.SH SEE ALSO\n");
+    find_tag(code_name, "<SEE_ALSO>", "</SEE_ALSO>", fp, 0);
+  }
+  if (check_tag(code_name, "<COPYRIGHT>", 0) &&
+      check_tag(code_name, "</COPYRIGHT>", 0)) {
+    fprintf(fp, "\n.SH COPYRIGHT\n");
+    find_tag(code_name, "<COPYRIGHT>", "</COPYRIGHT>", fp, 0);
+  }
   FCLOSE(fp);
 
   return 0;
