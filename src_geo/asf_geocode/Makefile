@@ -49,9 +49,9 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libgslcblas.a \
 	$(LIBDIR)/libjpeg.a \
-	$(LIBDIR)/libproj.a \
-	$(LIBDIR)/libglib-2.0.a \
-	$(LIBDIR)/libiconv.a \
+	$(PROJ_LIBS) \
+	$(GLIB_LIBS) \
+#	$(LIBDIR)/libiconv.a \
 	-lm
 
 LDLIBS := $(LIBS)

@@ -1,0 +1,44 @@
+# This make file lists all the system components used by the latest
+# tools in one flat list, making no attempt to sort out the build
+# order automatically.
+
+# Note that the order in which the modules are listed is critical!
+# Note also that this simplistic build scheme takes the traditional
+# built-too-much approach: building the default target all will
+# rebuild everything.  So if you want to be sure all the prerequisite
+# to your tool are rebuilt, you should do a make all.  On the other
+# hand, if you want to rebuild just the module you are working on,
+# just do a make in that subdirectory.
+
+# FIXME: I think asf_import has some run time dependencies on tools
+# that I don't know about, these tools must be added to this list.
+MODULES = src_lib/asf \
+          @ASF_LIB_GSL@ \
+          src_lib/asf_meta \
+          src_lib/asf_lt \
+          src_lib/asf_geolib \
+          src_lib/asf_odl \
+          src_lib/asf_fft \
+          @ASF_LIB_PROJ@ \
+          @ASF_PKG_CONFIG@ \
+          @ASF_GLIB@ \
+          src_lib/libasf_proj \
+          src_lib/libasf_raster \
+          src_lib/libasf_reporting \
+          src_lib/libjpeg \
+          src_lib/libtiff \
+          src_lib/libgeotiff \
+          src/asf_export \
+          src/asf_import \
+          src_geo/asf_geocode \
+          src/asf_convert \
+          @ASF_GUI@ \
+#         src_lib/tclTk \
+#	  src_x/sarview
+
+
+all:
+	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE);)
+
+clean:
+	rm -f bin/@sys@/* lib/@sys@/*

@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-LIBS =	$(LIBDIR)/libproj.a \
+LIBS =	$(PROJ_LIBS) \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
 	-lm

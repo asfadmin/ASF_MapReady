@@ -47,7 +47,7 @@ STATIC_DATA_FILE_SOURCES = IERS_Bulletin_Bs
 #
 ###############################################################################
 
-CC := /home/bkerin/local/gcc-3.4.3/bin/gcc
+#CC := /home/bkerin/local/gcc-3.4.3/bin/gcc
 
 INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR)
 

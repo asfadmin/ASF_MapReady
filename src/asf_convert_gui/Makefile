@@ -78,7 +78,7 @@ asf_convert_gui.txt:
 	cp $(TARGET).txt $(BINDIR)
 
 clean:
-	-rm *.o $(BINDIR)/$(TARGET)* $(TARGET).txt
+	rm -f *.o $(BINDIR)/$(TARGET)* $(TARGET).txt
 
 ### End Unix Section
 

@@ -10,8 +10,9 @@ OBJS = interpolate.o \
 
 LIBS = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libgsl.a \
-	$(LIBDIR)/libglib-2.0.a \
+	$(GSL_LIBS) \
+	$(GLIB_LIBS) \
+	$(LDFAGS) \
 	-lm
 
 all: build_only
@@ -73,8 +74,8 @@ test_float_image_statistics: test_float_image_statistics.o
 
 # Rebuild everything if makefile or any local of ASF header or library
 # has changed.
-$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) \
-	 $(LIBS)
+$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) 
+#	 $(LIBS)
 
 clean:
 	rm -rf $(OBJS) rm brighten_float_image.o brighten_float_image \
