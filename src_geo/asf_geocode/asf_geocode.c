@@ -614,7 +614,7 @@ main (int argc, char **argv)
   // minimum and maximum projection coordinates in each dimension.
   // This lets us determine the exact extent of the projected image in
   // projection coordinates.
-  asfPrintStatus ("Determining input image extents in projection coordinate "
+  asfPrintStatus ("Determining input image extent in projection coordinate "
 		  "space... ");
 
   double min_x = DBL_MAX;
@@ -668,7 +668,6 @@ main (int argc, char **argv)
     x = y = NULL;
     // Project all the edge pixels.
     int return_code = project_arr (pp, lats, lons, &x, &y, edge_point_count);
-
     g_assert (return_code == TRUE);
     // Find the extents of the image in projection coordinates.
     for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
