@@ -222,7 +222,7 @@ DESCRIPTION:
    of input parameter files by g->interrogating the CEOS metadata structures.
 
 EXTERNAL ASSOCIATES:
-    get_facdr		 Retrieves facility data record
+    get_asf_facdr	 Retrieves ASF facility data record
     get_ifiledr		 Retrieves image file descriptor record
     get_dssr		 Retrieves data set summary record
     jpl_odl_library	 Retrieves information in odl Engineering files
@@ -244,7 +244,7 @@ ALGORITHM DESCRIPTION: Fills each of the ASP globals with appropriate values.
 void get_params(char *file,struct AISP_PARAMS *g,meta_parameters **meta_out)
 {
 	meta_parameters *meta;
-	struct VFDRECV facdr1;
+	struct VFDRECV asf_facdr1;
 	struct IOF_VFDR ifiledr;
 	struct dataset_sum_rec dssr1;
 
@@ -260,19 +260,19 @@ void get_params(char *file,struct AISP_PARAMS *g,meta_parameters **meta_out)
 	
 /* Allocate Memory and Read CEOS structures
  -----------------------------------------*/
-	get_facdr(file,&facdr1);
+	get_asf_facdr(file,&asf_facdr1);
 	get_ifiledr(file,&ifiledr);
 	get_dssr(file,&dssr1);
 
 /* Extract parameters of interest from Metadata
  ---------------------------------------*/
-	g->nla      = ifiledr.datgroup;                 /* number of range bins */
-	g->re       = facdr1.eradcntr*1000.0;		/* Radius of the Earth  */
-	g->ht       = facdr1.scalt*1000.0;		/* Spacecraft Altitude  */
-	g->r00      = facdr1.sltrngfp*1000.0;		/* Slant Range 1st Pix  */
-	g->prf      = facdr1.prfreq;			/* Pulse Rep. Frequency */
+	g->nla      = ifiledr.datgroup;			/* number of range bins */
+	g->re       = asf_facdr1.eradcntr*1000.0;	/* Radius of the Earth  */
+	g->ht       = asf_facdr1.scalt*1000.0;		/* Spacecraft Altitude  */
+	g->r00      = asf_facdr1.sltrngfp*1000.0;	/* Slant Range 1st Pix  */
+	g->prf      = asf_facdr1.prfreq;		/* Pulse Rep. Frequency */
 	g->fs       = dssr1.rng_samp_rate * 1000000.0;	/* Range sampling rate  */
-	g->pulsedur = dssr1.rng_length / 1000000.0;	/* Beam pulse length  */
+	g->pulsedur = dssr1.rng_length / 1000000.0;	/* Beam pulse length	*/
 	g->wavl     = dssr1.wave_length; 		/* Beam wavength	*/
 
 /*Finally, add the computed parameters:*/
