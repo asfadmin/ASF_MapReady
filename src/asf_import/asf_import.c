@@ -24,22 +24,24 @@
 </input>
 
 <output>
-   Outputs metadata and data files with the user-provided base name and
+   Outputs data and metadata files with the user-provided base name and
    appropriate extensions.
 </output>
 
 <options>
-   -amplitude     ?
-   -sigma         ?
-   -gamma         ?
-   -beta          ?
-   -power         ?
-   -log           ?
-   -quiet         ?
-   -lat           ?
-   -sprocket      ?
-   -old           ?
-   -prc           ?
+   -amplitude     Create an amplitude image. This is the default behavior.
+   -sigma         Create a calibrated image (sigma dB values).
+   -gamma         Create a calibrated image (gamma dB values).
+   -beta          Create a calibrated image (beta dB values).
+   -power         Create a power image.
+   -log           Output will be written to a specified log file.
+   -quiet         Supresses all non-essential output.
+   -lat           Specify lower and upper latitude contraints.
+   -sprocket      Do not use this option.
+   -old           Output in old style ASF internal format.
+   -prc           Replace the restituted state vectors from the original raw
+                  data acquired by the ERS satellites with preceision state
+                  vectors from DLR.
 </options>
 
 <examples>
