@@ -56,8 +56,8 @@ meta_parameters *raw_init(void)
   meta->general->sample_count = -1;
   meta->general->start_line = -1;
   meta->general->start_sample = -1;
-  meta->general->xPix = NAN;
-  meta->general->yPix = NAN;
+  meta->general->x_pixel_size = NAN;
+  meta->general->y_pixel_size = NAN;
   meta->general->center_latitude = NAN;
   meta->general->center_longitude = NAN;
   meta->general->re_major = NAN;
