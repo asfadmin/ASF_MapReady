@@ -237,8 +237,6 @@ the look angle, added by Mark Ayers 7/00 */
 void antptn_correct(meta_parameters *meta,FCMPLX *outputBuf,int curLine,int numSamples,const satellite *s)
 {
    int samp;			/* Current Sample index for FOR loop */
-   int ind;			/* WHILE loop index for finding the right table entry */
-   double lookAngle=0;		/* Calculated look angle for each pixel */
    double incidAngle=0;		/* Calculated incidence angle for each pixel */
    double slantRange=0;		/* Calculated slant range for each pixel */	
    double gainThisPixel;		/* Antenna gain for this pixel */	 
@@ -268,8 +266,6 @@ void writeTable(meta_parameters *meta,const satellite *s,int numSamples)
 
 	int line=0;			/* Line to calculate the noise vector from */
 	int index;			/* Table indexing counter */
-	int ind=0;			/* Gain indexing counter */
-	int temp;                       /* Temp! */
 	int tableEntries=256;		/* Number of table entries */
         char cmd[300];                  /* arg for system command*/
 	double slantRange,incidAngle;	/* Slant range and Incidence angle variables */
