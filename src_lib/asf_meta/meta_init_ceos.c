@@ -349,16 +349,18 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 
    /* UK-PAF provides only one state vector with its raw data.
       Copy the contents over to create two other ones for the propagation */
-   if (ceos->facility==UK) {
-     meta_state_vectors *s;
-     s = meta_state_vectors_init(3);
-     meta->state_vectors->vector_count = 3;
-     for (ii=0; ii<3; ii++) {
-       s->vecs[ii].vec = meta->state_vectors->vecs[0].vec;
-       s->vecs[ii].time = meta->state_vectors->vecs[0].time;
-     }
-     meta->state_vectors = s;
-   }
+/* This functionality is not yet implemented.
+ * if (ceos->facility==UK) {
+ *   meta_state_vectors *s;
+ *   s = meta_state_vectors_init(3);
+ *   meta->state_vectors->vector_count = 3;
+ *   for (ii=0; ii<3; ii++) {
+ *     s->vecs[ii].vec = meta->state_vectors->vecs[0].vec;
+ *     s->vecs[ii].time = meta->state_vectors->vecs[0].time;
+ *   }
+ *   meta->state_vectors = s;
+ * }
+ */
 
    /* Propagate state vectors if they are covering more than frame size in case
     * you have raw or complex data. */
@@ -609,10 +611,12 @@ ceos_description *get_ceos_description(char *fName)
       ceos->facility=ESA;
       if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=RAW;
    }
-   else if (0==strncmp(ceos->dssr.fac_id,"UK-WFS",6)) {
-      printf("   Data set processed by UK-WFS\n");
-      ceos->facility=UK;
-   }
+/* This functionality is not yet implemented.
+ * else if (0==strncmp(ceos->dssr.fac_id,"UK-WFS",6)) {
+ *    printf("   Data set processed by UK-WFS\n");
+ *    ceos->facility=UK;
+ * }
+ */
    else {
       printf( "****************************************\n"
          "SEVERE WARNING!!!!  Unknown CEOS Facility '%s'!\n"
