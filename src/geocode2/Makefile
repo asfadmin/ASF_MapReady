@@ -12,7 +12,7 @@ include ../../make_support/system_rules
 #
 ###############################################################################
 
-SOURCES := geocode2.c geocode_options.c
+SOURCES := geocode_options.c geocode2.c
 
 ###############################################################################
 #
@@ -25,7 +25,7 @@ SOURCES := geocode2.c geocode_options.c
 #
 ###############################################################################
 
-CC := /home/bkerin/local/gcc_3_4/bin/gcc
+CC := gcc
 
 INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) -I$(HOME)/local/include \
                   $(shell pkg-config --cflags-only-I glib-2.0)
@@ -37,7 +37,7 @@ CPPFLAGS := -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 \
 # make it impossible to pass arguments of type float to functions that
 # take type float (still get a complaint about argument being passed
 # as float due to prototype rather than double.
-#          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
+#          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
 CFLAGS := -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
           -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
           -Wwrite-strings -Wnested-externs -fno-common -g -O4 \
@@ -46,6 +46,7 @@ CFLAGS := -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
 LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libgsl.a \
@@ -70,7 +71,6 @@ OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
 $(PROGRAM): $(OBJS)
 	$(CC) $(OBJS) $(LDLIBS) -o $@
-
 
 .PHONY: clean
 clean:
