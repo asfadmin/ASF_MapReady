@@ -9,6 +9,7 @@ OBJS  = diagnostics.o \
 
 all: build_only
 	mv libasf_reporting.a $(LIBDIR)
+	cp asf_reporting.h $(ASF_INCLUDE_DIR)
 	rm *.o
 
 build_only: $(OBJS)
