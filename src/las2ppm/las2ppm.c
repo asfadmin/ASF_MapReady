@@ -1,17 +1,17 @@
 /****************************************************************
 NAME: las2ppm - Convert LAS byte files to PPM format.
 
-SYNOPSIS: las2ppm [-m | -p palfile] <in> <out> 
+SYNOPSIS: las2ppm [-mask] [-pal palfile] <in> <out> 
 
 DESCRIPTION:
 
-	Las2ppm  converts  byte  data into a PPM file using either
-       built-in palette files or a user specified palette file.
+	Las2ppm  converts  byte  data into a PPM file using either built-in
+	palette files or a user specified palette file.
 
-       The PPM file format is more common than the LAS file  for-
-       mat  used  by  our tools.  You can view PPM files with the
-       program xv(1), or convert them to yet more common  formats
-       (gif, jpeg) using the NetPBM package.
+	The PPM file format is more common than the LAS file  for- mat  used 
+	by  our tools.  You can view PPM files with the program xv(1), or
+	convert them to yet more common  formats (gif, jpeg) using the NetPBM
+	package.
 
 
 EXTERNAL ASSOCIATES:
@@ -27,9 +27,11 @@ PROGRAM HISTORY:
     ---------------------------------------------------------------
     1.0                  R. Fatland - Original Development
     1.1     11/95        M. Shindle - Cleaning, porting, and conversion into
-			 a LAS 6.0 image.
-    1.2     6/97         O. Lawlor - Get width and length from ddr.
-    1.3     6/98         O. Lawlor - Automatically determine if 3-banded.
+			               a LAS 6.0 image.
+    1.2     6/97         O. Lawlor  - Get width and length from ddr.
+    1.3     6/98         O. Lawlor  - Automatically determine if 3-banded.
+    1.5    12/03         P. Denny     Bring command line parsing to current
+                                       standard. Use meta 1.1 instead of DDR.    
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -73,10 +75,13 @@ BUGS:
 #include "asf.h"
 #include "ifm.h"
 #include "las2ppm.h"
-#include "ddr.h"
+#include "asf_meta.h"
+#include <sys/types.h>  /* for fstat function */
+#include <sys/stat.h>   /* for fstat function */
+
 
 #define BUF          256
-#define VERSION      1.3
+#define VERSION      1.5
 #define INC          5
 
 #define zMASK        0x01
@@ -95,54 +100,57 @@ int main (int argc, char *argv[])
   char ppmbuf[BUF];
   char *outpal=NULL;
   RGBDATA *out, table[256];
-  Uchar *band;
-  Uchar *cptr;
+  unsigned char *band;
+  unsigned char *cptr;
   FILE *fin, *fout;
-  Uchar flags = 0;
+  unsigned char flags = 0;
   int wid,len;
   int cnt, data_read, i;
-  extern char *optarg;
-  extern int optind;
-  struct DDR ddr;
-  int c;
+  meta_parameters *meta;
+  struct stat fileInfo;
 
   /* Start time keeping*/
   StartWatch();
- 
    
-  /* handle command line args*/
-  while ((c=getopt(argc,argv,"dmo:p:")) != EOF)
-    switch (c) {
-       case 'm':
-          mask_colortable(table);
-	  flags |= zMASK;
-          break;
-       case 'p':
-	  user_colortable(table,optarg);
-	  flags |= zUSER;
-	  break;
-       case '?':
-          fprintf(stderr,"Invalid option.\n");
-          usage(argv[0]);
-          break;
-    }
+  /* Parse command line arguments */
+  while (currArg < (argc-2)) {
+     char *key = argv[currArg++];
+     if (strmatch(key,"-mask")) {
+       mask_colortable(table);
+       flags |= zMASK;
+     }
+     else if (strmatch(key,"-pal")) {
+	CHECK_ARG(1);
+        user_colortable(table,GET_ARG(1));
+        flags |= zUSER;
+     }
+     else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
+  }
+  if ((argc-currArg) < 2) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 
-  /* set constants & other variables  */
-  if (argc - optind != 2)  usage(argv[0]);  
+  strcpy(infile,argv[currArg]);
+  strcpy(outfile,argv[currArg+1]);
+
+  /* Populate colortable in grayscale if no table has been specified */
   if ( !(flags & zALL)) 
     grey_colortable(table);
-  strcpy(infile,argv[optind]);
-  strcpy(outfile,argv[optind+1]);
-  c_getddr(argv[optind],&ddr);
-  wid=ddr.ns;
-  len=ddr.nl;
-  if (ddr.nbands==3)
-  	flags |=zXID;
-  
+
+  /* Get image dimensions */
+  meta = meta_read(infile);
+  wid = meta->general->sample_count;
+  len = meta->general->line_count;
+  meta_free(meta);
+
   /* open files */
   fin = FOPEN(infile,"rb");
   fout = FOPEN(outfile,"w");
   
+  /* Hack to see if there are 3 bands; someday we'll be able to use the .meta */
+  fstat(fileno(fin), &fileInfo);
+  if (fileInfo.st_size == 3*wid*len) {
+    flags |= zXID;
+  }
+
   /* write out ppm header*/
   sprintf(ppmbuf,"P6 %d %d 255\n",wid,len);
   i = strlen(ppmbuf);
@@ -152,10 +160,10 @@ int main (int argc, char *argv[])
    * malloc buffers, check and open files 
    */
   if (flags & zXID || flags & zUSER) {
-    band = (Uchar *)MALLOC(wid * len * sizeof(Uchar));
+    band = (unsigned char *)MALLOC(wid * len * sizeof(unsigned char));
     out = (RGBDATA *)MALLOC(len * wid * sizeof(RGBDATA));
   } else {
-    band = (Uchar *)MALLOC(INC * wid * sizeof(Uchar));
+    band = (unsigned char *)MALLOC(INC * wid * sizeof(unsigned char));
     out = (RGBDATA *)MALLOC(INC * wid * sizeof(RGBDATA));
   }
 
@@ -163,16 +171,16 @@ int main (int argc, char *argv[])
    * process data
    */
   if (flags & zXID) {
-    cptr = (Uchar *)out;
+    cptr = (unsigned char *)out;
     for (cnt=0; cnt<3; cnt++) {
-      data_read = FREAD(band,sizeof(Uchar),wid*len,fin);
+      data_read = FREAD(band,sizeof(unsigned char),wid*len,fin);
       for (i=0;i<wid*len;i++)
 	*(cptr + sizeof(RGBDATA)*i + cnt) = band[i];
     }
     fwrite(out,sizeof(RGBDATA),wid*len,fout);
   } else { 
     for (cnt=0; cnt < len; cnt+=INC) {
-      data_read = fread(band,sizeof(Uchar),INC*wid,fin);
+      data_read = fread(band,sizeof(unsigned char),INC*wid,fin);
       for (i=0; i < data_read; i++)
         out[i] = table[band[i]];
       fwrite(out,sizeof(RGBDATA),data_read,fout);
@@ -192,14 +200,23 @@ int main (int argc, char *argv[])
 
 void usage(char *name)
 {
-  printf("\nusage: %s [-m | -p palfile] <in> <out>\n",name);
-  printf(" -m     input file is an unwrap mask file.\n");
-  printf(" -p     apply palfile to input byte file.\n"
-  	" <in>   Input file is a 1 or 3 banded LAS byte image.\n"
-	" <out>  Output file is a PPM image.\n\n"   
-  	"las2ppm converts 1- or 3-band LAS byte image\n"
-  	"into a PPM file.  A PPM file can be viewed with\n"
-  	"many graphics programs, such as xv(1).\n\n");
-  printf("Version %.2f, ASF SAR TOOLS\n\n",VERSION);
-  exit(1);
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-mask] [-pal <palfile>] <in> <out>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <in>    Input file is a 1 or 3 banded LAS byte image.\n"
+	"   <out>   Output file is a PPM image.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -mask           Input file is an unwrap mask file.\n"
+	"   -pal <palfile>  Apply palfile to input byte file.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Converts 1- or 3-band LAS byte image into a PPM file. A PPM file can\n"
+	"   be viewed with many graphics programs, such as xv(1).\n");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
