@@ -17,17 +17,6 @@ PROGRAM HISTORY:
 #include "asf_meta.h"
 
 
-/* Raw_init_state: Creates a meta_state_vectors array big enough to
-   hold the given number of state vectors.  */
-meta_state_vectors *raw_init_state(int nState)
-{
-	meta_state_vectors *s;
-	s=(meta_state_vectors *)MALLOC(sizeof(meta_state_vectors)
-				       + nState*sizeof(state_loc));
-	s->num=nState;
-	return s;
-}
-
 /* Creates and initializes a meta_parameters structure, guessing at
    conceivable values.  These bogus values always end in "989", so you
    can tell them from real values.  */
@@ -38,7 +27,7 @@ meta_parameters *raw_init(void)
   meta->sar             = MALLOC(sizeof(meta_sar));
   meta->optical         = NULL;  /* Not yet in use */
   meta->thermal         = NULL;  /* Not yet in use */
-  meta->projection      = MALLOC(sizeof(meta_projection));
+  meta->projection      = NULL;  /* Allocated later if geocoded */
   meta->stats           = NULL;  /* Not yet in use */
   meta->state_vectors   = MALLOC(sizeof(meta_state_vectors));
   meta->state_vectors->vecs = NULL;
