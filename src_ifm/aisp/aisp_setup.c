@@ -389,14 +389,12 @@ void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_
 		n_az=smallestPow2(g.na_valid+az_reflen);
 	
 
-	meta->geo->slantShift=0;
+	meta->sar->slant_shift = 0.0;
 
-	meta->geo->timeShift=(n_az-g.na_valid)/g.prf/2.0;
-	if (meta->info)
+	meta->sar->time_shift=(n_az-g.na_valid)/g.prf/2.0;
+
 	/*Write the version of AISP*/
-
-		sprintf(meta->info->processor,"ASF/AISP/%.2f",VERSION);
-
+	sprintf(meta->general->processor,"ASF/AISP/%.2f",VERSION);
 
 	*signalGetRec=fillOutGetRec(g.in1);
 
@@ -413,12 +411,12 @@ void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_
 
           g.slope = g.slope / (1.0 + g.slope * g.wavl*g.wavl*dp1*dp1 / fr1 / pow(speedOfLight,2.0)); 
         }
-
 	
 /*Print out the parameters to .in and .meta files*/
 	print_params(g.out,&g,"aisp");
-	meta->ifm->orig_nLines=signalGetRec[0]->nLines;
+	meta->sar->original_line_count = signalGetRec[0]->nLines;
 	meta_write(meta,g.out);
+
 /*Write out parameters/structures for main routine to use:*/
 	*r=newRangeRef(g.nla);
 	*s=newSatellite();
