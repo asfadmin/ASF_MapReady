@@ -55,6 +55,9 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 
 LDLIBS := $(shell pkg-config --libs glib-2.0) $(LIBS)
 
+LDFLAGS := $(shell pkg-config --libs-only-L glib-2.0 \
+                   | perl -p -e 's/-L(.*)/-Wl,--rpath=\1/g')
+
 ###############################################################################
 #
 # Automaticly Computed Stuff
@@ -69,7 +72,7 @@ LDLIBS := $(shell pkg-config --libs glib-2.0) $(LIBS)
 OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
 $(PROGRAM): $(OBJS)
-	$(CC) $(OBJS) $(LDLIBS) -o $@
+	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
 
 .PHONY: clean
 clean:
