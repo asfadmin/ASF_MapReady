@@ -45,5 +45,4 @@
 #
 ###########################################
 include make_support/system_rules
-MAKE = make
 
