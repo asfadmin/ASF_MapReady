@@ -106,7 +106,7 @@ meta_sar *meta_sar_init(void)
 meta_projection *meta_projection_init(void)
 {
   meta_projection *projection = (meta_projection *)MALLOC(sizeof(meta_projection));
-  projection->type = MAGIC_UNSET_CHAR;
+  projection->type = MAGIC_UNSET_INT;
   projection->startX = MAGIC_UNSET_DOUBLE;
   projection->startY = MAGIC_UNSET_DOUBLE;
   projection->perX = MAGIC_UNSET_DOUBLE;
