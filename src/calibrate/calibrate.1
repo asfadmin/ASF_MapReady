@@ -1,11 +1,14 @@
-.TH calibrate 1 "26 January 1999" 
+.TH calibrate 1 "January 2004" 
+
 .SH NAME:
 calibrate \- performs radiometric calibration 
+
 .SH SYNOPSIS: 
 .B "calibrate"  
 .BI " inSARfile outSARfile [-m][-g]"
+
 .SH DESCRIPTION: 
-Performs radiometric calibration of all types of ASF SAR imagery.  Calibrate
+Performs radiometric calibration of all types of ASF SAR imagery. Calibrate
 processes inSARfile.D(dat) using data from the inSARfile.L(ldr) file (assumed
 to be in the same directory as the inSARfile.D) to produce outSARfile.img. 
 Note that the extensions are assumed, and, as such, should not be included
@@ -55,28 +58,36 @@ so to go from a byte value in the image to sigma0, use:
 .ce1
 sigma0 = outByte/10-25.5
 .PP                
-NOTE: For data processed during the Commission Phase (Phase A), the
-coefficients are in error and should be adjusted as outlined below. These
-adjustments are applied to images to images prior to Image ID #7000. 
+NOTE: For Radarsat imagery acquired during the Commissioning Phase (the first
+7000 orbits, where the satellite was being tested and the satellite gain was
+being modified), the a1 and a2 coefficients are not applicable as they
+currently exist. These first 7000 orbits may contain inconsistent satellite
+gains as the engineers determined the best imaging parameters for the
+satellite. It would be best if these orbits were avoided entirely. However, if
+this data is needed please apply the following equations to obtain more
+radiometrically accurate data. For a1, the noise scaling coefficient:
 .PP
-The noise scaling coefficient should be replaced by the function
+.in +3		   
+new a1 = (existing a1 in the metadata) * \\
+.in +10
+10[(processor gain)/10]
 .PP
-.ce 1		   
-a1 = 406.0 * 10[(processor gain)/10]
+The processor gain is always a multiple of 3 dB and typically is 0. To
+determine a new a2, or linear coefficient:
 .PP
-The processor gain is always a multiple of 3 db and typically is 0. The
-linear coefficient should be replaced with
+.in +3		   
+new a2 = (existing a2 in the metadata) * \\
+.in +10		   
+10^(-5)*10[-(processor gain)/10]
 .PP
-.ce 1
-a2 = 1.2*10^(-5)*10[-(processor gain)/10]
-.PP
-These replacements should produce conversion results that have relative
-errors of less than +/- 1 db, and absolute errors less than +/- 2 dB. All
-images after #7000 have corrected coefficients and should produce similar
-results. 
+These replacements for the orbits during the Commissioning Phase of Radarsat
+should produce results similar to the calibrated images that were acquired
+after the Commissioning Phase completed. The requirements for calibration are
++/- 1dB of relative error and +/- 2 dB in absolute error, radiometrically.
 .RE 
 .PP
 ===============================================> End Excerpt
+
 .SH OPTIONS:
 .TP 8
 .B "-m"
@@ -88,26 +99,28 @@ allows creation of gamma0 output images based on the incidence angle at each pix
 .PP
 .ce1
 gamma0 = sigma0 - 10log(cos(incidence))
-.PP
-.SH ERROR MESSAGES:
-.B MESSAGE_GIVEN:\t\t\t\tREASON:
--------------------------------------------------------------
+
 .SH EXAMPLES:
 .ce 1
 calibrate E106987290G1S033 e1_06987_290
 .PP
 This would process the file E106987290G1S033.D, using information found in the
-file E106987290G1S033.L.  The output file created would be named 
+file E106987290G1S033.L. The output file created would be named 
 e1_06987_290.img.
+
 .SH SEE ALSO:
+metadata(1), sarin(1)
+
 .SH HARDWARE/SOFTWARE LIMITATIONS:
+None known.
+
 .SH BUGS:
-.SH AUTHOR:         
-\tTom Logan, Alaska SAR Facility, Fairbanks, AK
-.br
-\tMike Shindle, Alaska SAR Facility, Fairbanks, AK
+None known.
+
+.SH AUTHORS:         
+Tom Logan, Mike Shindle
+
 .SH CONTACT:
-\tapd@asf.alaska.edu
-\tor http://www.asf.alaska.edu/apd
-
-
+E-Mail:  uso@asf.alaska.edu
+.br
+Website: http://www.asf.alaska.edu
