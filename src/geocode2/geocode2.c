@@ -797,8 +797,8 @@ main (int argc, char **argv)
       // Otherwise, set to the value from the appropriate position in
       // the input image.
       else {
-	SET_PIXEL (oix, oiy, GET_PIXEL (round (input_x_pixel),
-					round (input_y_pixel)));
+	SET_PIXEL (oix, oiy, GET_PIXEL (floor (input_x_pixel + 0.5),
+					floor (input_y_pixel + 0.5)));
 	//SET_PIXEL (oix, oiy, interpolate (NEAREST, iim->data, iim->size1,
 	//		                    iim->size2, input_x_pixel,
 	//			            input_y_pixel, NO_WEIGHT, 8));
