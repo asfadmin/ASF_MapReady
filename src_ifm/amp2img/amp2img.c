@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 	meta_free(meta);
    }
 
-   if ( strncmp(meta->general->data_type, "REAL", 4) )
+   if ( (meta->general->data_type!=REAL32) && (meta->general->data_type!=REAL64) )
    {
    	sprintf(errbuf, "   ERROR: Input data must be floating point data.\n");
    	printErr(errbuf);
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
    len = meta->general->line_count;
    
    outmeta = meta_read(fnin);
-   strcpy(outmeta->general->data_type, "BYTE");
+   outmeta->general->data_type = BYTE;
    outmeta->general->sample_count = wid/StepSample;
    outmeta->general->line_count = len/StepLine;
    outmeta->sar->line_increment *= StepLine;
