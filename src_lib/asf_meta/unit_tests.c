@@ -15,9 +15,7 @@
 /* Test part of meta_read that parses new files.  */
 START_TEST(test_meta_read_new_format)
 {
-  meta_parameters *meta;
-  
-  meta_read(meta, "test_file.meta");
+  meta_parameters *meta = meta_read("test_file_new_style.meta");
   
   /* Check a random fields to make sure things are working.  */
   fail_unless(meta->general->orbit == 123, 
@@ -27,20 +25,21 @@ START_TEST(test_meta_read_new_format)
      are currently partly holdover from deprecated code and use a
      union.  */
   fail_unless(meta->projection->type == 'A' 
-	      && meta->projection.param.atct.alpha1 == 0.6,
+	      && meta->projection->param.atct.alpha1 == 0.6,
 	      "alpha1 field from param->atct block not read correctly");
 
   /* Another not-so-random field check: state vector blocks currently
      use wierd field names in the data file and map strangely into a
      dynamicly allocated internal structure, lots of possibility for
      error.  */
-  fail_unless( UNIT_TESTS_FLOAT_COMPARE(meta->state_vectors.vecs[1].pos.y, 
+  fail_unless( UNIT_TESTS_FLOAT_COMPARE(meta->state_vectors
+					      ->vecs[1].vec.pos.y, 
 					22333),
 	       "Y position element of second state vector not read correctly");
 
   meta_free(meta);
 }
-
+END_TEST
 
 /* Machinery for running the 'check' tests.  */
 Suite *asf_meta_suite(void)
@@ -70,9 +69,3 @@ int main(void)
 
   return ( nf == 0 ) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
-
-
-
-
-
