@@ -5,6 +5,9 @@
 // spatially correlated.  A variety of useful methods are implemented
 // (filtering, subsetting, interpolating, etc.)
 //
+// Don't try to access the same instance concurrently.  Use course
+// parallelism: one instance per thread.
+//
 // For many methods, arguments of type ssize_t are used, but are not
 // allowed to be negative.  This is to help prevent people from
 // shooting themselves in the foor by accidently passing negative
