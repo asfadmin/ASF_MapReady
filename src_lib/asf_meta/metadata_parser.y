@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "asf_meta.h"
+#include "caplib.h"
 #include "lex_yacc.h"
 
 /* Lex provides this parser function.  */
@@ -448,7 +449,7 @@ int parse_metadata(meta_parameters *dest, char *file_name)
   /* (Re)set file scope variable which counts number of vector blocks seen.  */
   vector_count = 0;
 
-  meta_yyin = fopen(file_name, "r");
+  meta_yyin = FOPEN(file_name, "r");
   if ( !(stack_top = malloc(sizeof(block_stack_node))) ) {
     fprintf(stderr, "malloc failed in %s, giving up", __func__);
     exit(EXIT_FAILURE);
