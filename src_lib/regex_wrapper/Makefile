@@ -17,6 +17,9 @@ OBJS = regex_match.o \
 # Build and install.
 all: build_only
 	mv $(LIB_NAME).a $(LIBDIR)
+	# Remove lib, since test -e, -L don't seem to work right on solaris.
+	rm -f $(LIBDIR)/lib$(LIB_NAME).a
+	# Create link obeying normal library naming convention.
 	ln -s $(LIBDIR)/$(LIB_NAME).a $(LIBDIR)/lib$(LIB_NAME).a
 	$(MAKE) clean
 
