@@ -84,7 +84,7 @@ BUGS:
 
 #define Version 1.1
 
-main(int argc,char **argv)
+int main(int argc,char **argv)
 {
 #define fftLen 1024
 
