@@ -205,16 +205,17 @@ int main(int argc,char **argv)
      prjunits = 2; /* meters */
      utm(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
  }
- /*
+ /**********************************************
  else if (strcmp(subcmd,"LAMAZEQA") == 0){
      prjunits = 2; ** meters **
      lamazeqa(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
  }
+ **********************************************/
  else if (strcmp(subcmd,"ALBERS") == 0){
-     prjunits = 2; ** meters **
+     prjunits = 2; /* meters */
      albers(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
  }
-**
+/*
 else if (strcmp(subcmd,"STATEPLN") == 0)
    statepln(&parb,&prjzone,&prjtype,&prjsph,prjparms);
 else if (strcmp(subcmd,"ALBERS") == 0)

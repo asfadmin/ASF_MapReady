@@ -1,23 +1,25 @@
-# Makefile for          :  projprm 
-# Module Author         :  Tom Logan & Mike Shindle
+# Makefile for  :  projprm 
+# Module Author :  Tom Logan, Mike Shindle
+#        03/2004:  Patrick Denny
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf_lt.a \
+LIBS  =	$(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_lt.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_geolib.a \
-	$(LIBDIR)/asf.a 
+	-lm
 
-OBJS =	wrlabtab.o \
+OBJS =	albers.o \
 	plstereo.o \
-	utm.o
+	utm.o \
+	wrlabtab.o
 # lamazeqa.o
-# albers.o
 # geograph.o
 
  #-lm needed for solaris
 projprm: projprm.c $(OBJS)
-	$(CC) $(CFLAGS) -o projprm projprm.c $(OBJS) $(LIBS) $(LDFLAGS) -lm
+	$(CC) $(CFLAGS) -o projprm projprm.c $(OBJS) $(LIBS) $(LDFLAGS)
 	mv projprm$(BIN_POSTFIX) $(BINDIR)
 	cp projprm.1 ../../man/cat1
 	rm *.o
