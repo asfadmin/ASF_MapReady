@@ -24,14 +24,14 @@ install: stage_stamp
 # some prototypes in the API header that don't include 'void'.
 stage_stamp:
 	mkdir -p $(LIB_STAGEDIR) $(INCLUDE_STAGEDIR)
-	gunzip --to-stdout $(ZIPFILE) >$(TARFILE); \
-	    tar xvf $(TARFILE) ; \
-	    (cd $(UNPACK_DIR) ; \
-		perl -p -i -e 's{\(\);}{(void);}' src/proj_api.h ; \
-                ./configure --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
-		make ; \
-	        make check ; \
-                make install) ; \
+	gunzip --to-stdout $(ZIPFILE) >$(TARFILE)
+	tar xvf $(TARFILE)
+	cd $(UNPACK_DIR) ; \
+           perl -p -i -e 's{\(\);}{(void);}' src/proj_api.h ; \
+           ./configure --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
+	   make ; \
+	   make check ; \
+           make install
 	touch $@
 
 clean:
