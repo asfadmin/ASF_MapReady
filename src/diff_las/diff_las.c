@@ -64,7 +64,7 @@ BUGS:
 ****************************************************************************/
 
 #include "asf.h"
-#include "ddr.h"
+#include "asf_meta.h"
 
 #define VERSION 1.5
 
