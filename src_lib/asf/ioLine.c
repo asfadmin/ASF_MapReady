@@ -3,154 +3,19 @@ io_util:
 	Read & write files line by line.
 */
 
-#include <assert.h>
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_endian.h"
-
-/***********************************************************************************
- * Get a single line of data in floating point format, performing rounding, padding,
- * and endian conversion as needed.  The line_number argument is the zero-indexed
- * line number to get.  The dest argument must be a pointer to existing memory.   */
-int get_float_line(FILE *file, meta_parameters *meta, int line_number, float *dest)
-{
-  int ii;               /* Sample index.  */
-  int samples_gotten;   /* Number of samples retrieved */
-  size_t sample_size;   /* Sample size in bytes.  */
-  void *temp_buffer;    /* Buffer for unconverted data.  */
-  int sample_count = meta->general->sample_count;
-  int data_type    = meta->general->data_type;
-
-  assert(line_number <= meta->general->line_count - 1);
-
-  /* Determine sample size.  */
-  switch (data_type) {
-    case BYTE:      sample_size = 1; break;
-    case INTEGER16: sample_size = 2; break;
-    case INTEGER32: sample_size = 4; break;
-    case REAL32:    sample_size = 4; break;
-    case REAL64:    sample_size = 8; break;
-    default:
-      printf("get_float_line: Unrecognized data type. Exiting program.\n");
-      exit(EXIT_FAILURE);
-  }
-
-  /* Scan to the beginning of the line.  */
-  FSEEK64(file, sample_size*sample_count*line_number, SEEK_SET);
-
-  temp_buffer = MALLOC( (size_t) sample_size * sample_count);
-  
-  samples_gotten = FREAD(temp_buffer, sample_size, sample_count, file);
-
-  /* Fill in destination array.  */
-  switch (data_type) {
-    case BYTE:
-      for ( ii=0; ii<sample_count; ii++ )
-        dest[ii] = *( (uint8_t *) temp_buffer + ii);
-      break;
-    case INTEGER16:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        big16(*((int16_t *)temp_buffer + ii));
-        dest[ii] = *( (int16_t *) temp_buffer + ii);
-      }
-      break;
-    case INTEGER32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        big32(*((int32_t *)temp_buffer + ii));
-        dest[ii] = *( (int32_t *) temp_buffer + ii);
-      }
-      break;
-    case REAL32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ieee_big32(*((float*)temp_buffer + ii));
-        dest[ii] = *( (float *) temp_buffer + ii);
-      }
-      break;
-    case REAL64:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ieee_big64(*((double*)temp_buffer + ii));
-        dest[ii] = *( (double *) temp_buffer + ii);
-      }
-  }
-
-  FREE(temp_buffer);
-  return samples_gotten;
-}
-
-/***********************************************************************************
- * Put a single line of data in floating point format, performing rounding, padding,
- * and endian conversion as needed.  The line_number argument is the zero-indexed
- * line number to get.  The dest argument must be a pointer to existing memory.   */
-int put_float_line(FILE *file, meta_parameters *meta, int line_number, const float *source)
-{
-  int ii;               /* Sample index.                       */
-  int samples_put;      /* Number of samples written           */
-  size_t sample_size;   /* Sample size in bytes.               */
-  void *out_buffer;     /* Buffer of converted data to write.  */
-  int sample_count = meta->general->sample_count;
-  int data_type    = meta->general->data_type;
-
-  assert(line_number <= meta->general->line_count - 1);
-
-  /* Determine sample size.  */
-  switch (data_type) {
-    case BYTE:      sample_size = 1; break;
-    case INTEGER16: sample_size = 2; break;
-    case INTEGER32: sample_size = 4; break;
-    case REAL32:    sample_size = 4; break;
-    case REAL64:    sample_size = 8; break;
-    default:
-      printf("put_float_line: Unrecognized data type. Exiting program.\n");
-      exit(EXIT_FAILURE);
-  }
-
-  out_buffer = MALLOC( (size_t) sample_size * sample_count);
-
-  /* Fill in destination array.  */
-  switch (data_type) {
-    case BYTE:
-      for ( ii=0; ii<sample_count; ii++ )
-        ((unsigned char *)out_buffer)[ii] = (unsigned char)source[ii];
-      break;
-    case INTEGER16:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((short*)out_buffer)[ii] = (short)source[ii];
-        big16( ((short*)out_buffer)[ii] );
-      }
-      break;
-    case INTEGER32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((int*)out_buffer)[ii] = (int)source[ii];
-        big32( ((int*)out_buffer)[ii] );
-      }
-      break;
-    case REAL32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((float*)out_buffer)[ii] = (float)source[ii];
-        ieee_big32( ((float*)out_buffer)[ii] );
-      }
-    case REAL64:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((double*)out_buffer)[ii] = (double)source[ii];
-        ieee_big64( ((double*)out_buffer)[ii] );
-      }
-      break;
-  }
-
-  FSEEK64(file, sample_size*sample_count*line_number, SEEK_SET);
-  samples_put = FWRITE(out_buffer, sample_size, sample_count, file);
-
-  FREE(out_buffer);
-  return samples_put;
-}
-
+#include "asf_complex.h"
 
 /*******************************************************************************
- * Get a single line of data in double floating point format, performing
- * rounding, padding, and endian conversion as needed.  The line_number argument
- * is the zero-indexed line number to get.  The dest argument must be a pointer
- * to existing memory. */
-int get_double_line(FILE *file, meta_parameters *meta, int line_number, double *dest)
+ * Get x number of lines of data (any data type) and fill a pre-allocated array
+ * with it. The data is assumed to be in big endian format and will be converted
+ * to the native machine's format. The line_number argument is the zero-indexed
+ * line number to get. The dest argument must be a pointer to existing memory.
+ * Returns the amount of samples successfully read & converted. */
+int get_data_lines(FILE *file, meta_parameters *meta, int line_number,
+                    int num_lines_to_get, void *dest, int dest_data_type)
 {
   int ii;               /* Sample index.  */
   int samples_gotten;   /* Number of samples retrieved */
@@ -158,56 +23,169 @@ int get_double_line(FILE *file, meta_parameters *meta, int line_number, double *
   void *temp_buffer;    /* Buffer for unconverted data.  */
   int sample_count = meta->general->sample_count;
   int data_type    = meta->general->data_type;
+  int num_samples_to_get = num_lines_to_get * sample_count;
 
-  assert(line_number <= meta->general->line_count - 1);
+  if ((data_type>=COMPLEX_BYTE) && (dest_data_type<=REAL64)) {
+    printf("\nget_data_lines: Cannot put complex data into a simple data buffer. Exiting.\n\n");
+    exit(EXIT_FAILURE);
+  }
+  if ((data_type<=REAL64) && (dest_data_type>=COMPLEX_BYTE)) {
+    printf("\nget_data_lines: Cannot put simple data into a complex data buffer. Exiting.\n\n");
+    exit(EXIT_FAILURE);
+  }
 
   /* Determine sample size.  */
   switch (data_type) {
-    case BYTE:      sample_size = 1; break;
-    case INTEGER16: sample_size = 2; break;
-    case INTEGER32: sample_size = 4; break;
-    case REAL32:    sample_size = 4; break;
-    case REAL64:    sample_size = 8; break;
-    default:
-      printf("get_float_line: Unrecognized data type. Exiting program.\n");
+    case BYTE:      sample_size = sizeof(unsigned char); break;
+    case INTEGER16: sample_size = sizeof(short int);     break;
+    case INTEGER32: sample_size = sizeof(int);           break;
+    case REAL32:    sample_size = sizeof(float);         break;
+    case REAL64:    sample_size = sizeof(double);        break;
+    case COMPLEX_BYTE:      sample_size = sizeof(unsigned char)*2; break;
+    case COMPLEX_INTEGER16: sample_size = sizeof(short int)*2;     break;
+    case COMPLEX_INTEGER32: sample_size = sizeof(int)*2;           break;
+    case COMPLEX_REAL32:    sample_size = sizeof(float)*2;         break;
+    case COMPLEX_REAL64:    sample_size = sizeof(double)*2;        break;
+   default:
+      printf("\nget_data_lines: Unrecognized data type. Exiting program.\n");
       exit(EXIT_FAILURE);
+  }
+
+  /* Make sure not to go past the end of file */
+  if (line_number > meta->general->line_count) {
+    printf("\nget_data_lines: Cannot read line %d in a file of %d lines. Exiting.\n",
+           line_number, meta->general->line_count);
+    exit(EXIT_FAILURE);
+  }
+  if ((line_number+num_lines_to_get) > meta->general->line_count) {
+    num_samples_to_get = (meta->general->line_count - line_number)
+                          * sample_count;
   }
 
   /* Scan to the beginning of the line.  */
   FSEEK64(file, sample_size*sample_count*line_number, SEEK_SET);
 
-  temp_buffer = (void *)MALLOC( (size_t) sample_size * sample_count);
-  
-  samples_gotten = FREAD(temp_buffer, sample_size, sample_count, file);
+  temp_buffer = MALLOC( sample_size * num_samples_to_get );
+
+  samples_gotten = FREAD(temp_buffer, sample_size, num_samples_to_get, file);
 
   /* Fill in destination array.  */
   switch (data_type) {
     case BYTE:
-      for ( ii=0; ii<sample_count; ii++ )
-        dest[ii] = (double)*( (uint8_t *) temp_buffer + ii);
-      break;
+      for ( ii=0; ii<samples_gotten; ii++ ) {
+        switch (dest_data_type) {
+         case BYTE:((unsigned char*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
+         case INTEGER16:((short int*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
+         case INTEGER32:((int*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
+         case REAL32:((float*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
+         case REAL64:((double*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
+        }
+      }
+     break;
     case INTEGER16:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        big16(*((int16_t *)temp_buffer + ii));
-        dest[ii] = (double)*( (int16_t *) temp_buffer + ii);
+      for ( ii=0; ii<samples_gotten; ii++ ) {
+        big16(((short int *)temp_buffer)[ii]);
+        switch (dest_data_type) {
+         case BYTE:((unsigned char*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
+         case INTEGER16:((short int*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
+         case INTEGER32:((int*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
+         case REAL32:((float*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
+         case REAL64:((double*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
+        }
       }
       break;
     case INTEGER32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        big32(*((int32_t *)temp_buffer + ii));
-        dest[ii] = (double)*( (int32_t *) temp_buffer + ii);
+      for ( ii=0; ii<samples_gotten; ii++ ) {
+        big32(((int *)temp_buffer)[ii]);
+        switch (dest_data_type) {
+         case BYTE:((unsigned char*)dest)[ii] = ((int*)temp_buffer)[ii];break;
+         case INTEGER16:((short int*)dest)[ii] = ((int*)temp_buffer)[ii];break;
+         case INTEGER32:((int*)dest)[ii] = ((int*)temp_buffer)[ii];break;
+         case REAL32:((float*)dest)[ii] = ((int*)temp_buffer)[ii];break;
+         case REAL64:((double*)dest)[ii] = ((int*)temp_buffer)[ii];break;
+        }
       }
       break;
     case REAL32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ieee_big32(*((float*)temp_buffer + ii));
-        dest[ii] = (double)*( (float *) temp_buffer + ii);
+      for ( ii=0; ii<samples_gotten; ii++ ) {
+        ieee_big32(((float*)temp_buffer)[ii]);
+        switch (dest_data_type) {
+         case BYTE:((unsigned char*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case INTEGER16:((short int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case INTEGER32:((int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case REAL32:((float*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case REAL64:((double*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+        }
       }
       break;
     case REAL64:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ieee_big64(*((double*)temp_buffer + ii));
-        dest[ii] = (double)*( (double *) temp_buffer + ii);
+      for ( ii=0; ii<samples_gotten; ii++ ) {
+        ieee_big64(((double*)temp_buffer)[ii]);
+        switch (dest_data_type) {
+         case BYTE:((unsigned char*)dest)[ii] = ((double*)temp_buffer)[ii];break;
+         case INTEGER16:((short int*)dest)[ii] = ((double*)temp_buffer)[ii];break;
+         case INTEGER32:((int*)dest)[ii] = ((double*)temp_buffer)[ii];break;
+         case REAL32:((float*)dest)[ii] = ((double*)temp_buffer)[ii];break;
+         case REAL64:((double*)dest)[ii] = ((double*)temp_buffer)[ii];break;
+        }
+      }
+    case COMPLEX_BYTE:
+      for ( ii=0; ii<samples_gotten*2; ii++ ) {
+        switch (dest_data_type) {
+         case COMPLEX_BYTE:((unsigned char*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER16:((short int*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER32:((int*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
+         case COMPLEX_REAL32:((float*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
+         case COMPLEX_REAL64:((double*)dest)[ii] = ((unsigned char*)temp_buffer)[ii];break;
+        }
+      }
+      break;
+    case COMPLEX_INTEGER16:
+      for ( ii=0; ii<samples_gotten*2; ii++ ) {
+        big16(((short int *)temp_buffer)[ii]);
+         switch (dest_data_type) {
+         case COMPLEX_BYTE:((unsigned char*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER16:((short int*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER32:((int*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
+         case COMPLEX_REAL32:((float*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
+         case COMPLEX_REAL64:((double*)dest)[ii] = ((short int*)temp_buffer)[ii];break;
+        }
+      }
+      break;
+    case COMPLEX_INTEGER32:
+      for ( ii=0; ii<samples_gotten*2; ii++ ) {
+        big32(((int *)temp_buffer)[ii]);
+        switch (dest_data_type) {
+         case COMPLEX_BYTE:((unsigned char*)dest)[ii] = ((int*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER16:((short int*)dest)[ii] = ((int*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER32:((int*)dest)[ii] = ((int*)temp_buffer)[ii];break;
+         case COMPLEX_REAL32:((float*)dest)[ii] = ((int*)temp_buffer)[ii];break;
+         case COMPLEX_REAL64:((double*)dest)[ii] = ((int*)temp_buffer)[ii];break;
+        }
+      }
+      break;
+    case COMPLEX_REAL32:
+      for ( ii=0; ii<samples_gotten*2; ii++ ) {
+        ieee_big32(((float*)temp_buffer)[ii]);
+        switch (dest_data_type) {
+         case COMPLEX_BYTE:((unsigned char*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER16:((short int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER32:((int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case COMPLEX_REAL32:((float*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case COMPLEX_REAL64:((double*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+        }
+      }
+      break;
+    case COMPLEX_REAL64:
+      for ( ii=0; ii<samples_gotten*2; ii++ ) {
+        ieee_big64(((double*)temp_buffer)[ii]);
+        switch (dest_data_type) {
+         case COMPLEX_BYTE:((unsigned char*)dest)[ii] = ((double*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER16:((short int*)dest)[ii] = ((double*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER32:((int*)dest)[ii] = ((double*)temp_buffer)[ii];break;
+         case COMPLEX_REAL32:((float*)dest)[ii] = ((double*)temp_buffer)[ii];break;
+         case COMPLEX_REAL64:((double*)dest)[ii] = ((double*)temp_buffer)[ii];break;
+        }
       }
   }
 
@@ -216,69 +194,309 @@ int get_double_line(FILE *file, meta_parameters *meta, int line_number, double *
 }
 
 /*******************************************************************************
- * Put a single line of data in double floating point format, performing
- * rounding, padding, and endian conversion as needed.  The line_number argument
- * is the zero-indexed line number to get.  The dest argument must be a pointer
- * to existing memory. */
-int put_double_line(FILE *file, meta_parameters *meta, int line_number, const double *source)
+ * Get one line of any non-complex data type via get_data_lines and fill a float
+ * buffer with it. Returns number of samples gotten                           */
+int get_float_line(FILE *file, meta_parameters *meta, int line_number,
+                   float *dest)
+{
+  return get_data_lines(file, meta, line_number, 1, dest, REAL32);
+}
+
+/*******************************************************************************
+ * Get num_lines_to_get lines of any non-complex data type via get_data_lines
+ * and fill a float buffer with it. Returns number of samples gotten          */
+int get_float_lines(FILE *file, meta_parameters *meta, int line_number,
+                   int num_lines_to_get, float *dest)
+{
+  return get_data_lines(file,meta,line_number,num_lines_to_get,dest,REAL32);
+}
+
+/*******************************************************************************
+ * Get a single line of any non-complex data in double floating point format,
+ * performing rounding, padding, and endian conversion as needed.  The
+ * line_number argument is the zero-indexed line number to get.  The dest
+ * argument must be a pointer to existing memory. */
+int get_double_line(FILE *file, meta_parameters *meta, int line_number,
+                    double *dest)
+{
+  return get_data_lines(file, meta, line_number, 1, dest, REAL64);
+}
+
+/*******************************************************************************
+ * Get num_lines_to_get lines of any non-complex data type via get_data_lines
+ * and fill a double buffer with it. Returns number of samples gotten.        */
+int get_double_lines(FILE *file, meta_parameters *meta, int line_number,
+                   int num_lines_to_get, double *dest)
+{
+  return get_data_lines(file,meta,line_number,num_lines_to_get,dest,REAL64);
+}
+
+/*******************************************************************************
+ * Get one line of any complex data type via get_data_lines and fill a
+ * complexFloat buffer with it. Returns number of samples gotten              */
+int get_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
+                    complexFloat *dest)
+{
+  return get_data_lines(file, meta, line_number, 1, dest, COMPLEX_REAL32);
+}
+
+/*******************************************************************************
+ * Get num_lines_to_get lines of any complex data type via get_data_lines
+ * and fill a complexFloat buffer with it. Returns number of samples gotten   */
+int get_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
+                     int num_lines_to_get, complexFloat *dest)
+{
+  return get_data_lines(file, meta, line_number, num_lines_to_get, dest,
+                        COMPLEX_REAL32);
+}
+
+/*******************************************************************************
+ * Write x number of lines of any data type to file in the data format specified
+ * by the meta structure. It is always written in big endian format. Returns the
+ * amount of samples successfully converted & written. Will not write more lines
+ * than specified in the supplied meta struct. */
+int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
+                   int num_lines_to_put, const void *source,
+                   int source_data_type)
 {
   int ii;               /* Sample index.                       */
   int samples_put;      /* Number of samples written           */
   size_t sample_size;   /* Sample size in bytes.               */
   void *out_buffer;     /* Buffer of converted data to write.  */
-  int sample_count = meta->general->sample_count;
-  int data_type    = meta->general->data_type;
+  int sample_count       = meta->general->sample_count;
+  int data_type          = meta->general->data_type;
+  int num_samples_to_put = num_lines_to_put * sample_count;
 
-  assert(line_number <= meta->general->line_count - 1);
+  if ((source_data_type>=COMPLEX_BYTE) && (data_type<=REAL64)) {
+    printf("\nput_data_lines: Cannot put complex data into a simple data file. Exiting.\n\n");
+    exit(EXIT_FAILURE);
+  }
+  if ((source_data_type<=REAL64) && (data_type>=COMPLEX_BYTE)) {
+    printf("\nput_data_lines: Cannot put simple data into a complex data file. Exiting.\n\n");
+    exit(EXIT_FAILURE);
+  }
 
   /* Determine sample size.  */
   switch (data_type) {
-    case BYTE:      sample_size = 1; break;
-    case INTEGER16: sample_size = 2; break;
-    case INTEGER32: sample_size = 4; break;
-    case REAL32:    sample_size = 4; break;
-    case REAL64:    sample_size = 8; break;
+    case BYTE:      sample_size = sizeof(unsigned char); break;
+    case INTEGER16: sample_size = sizeof(short int);     break;
+    case INTEGER32: sample_size = sizeof(int);           break;
+    case REAL32:    sample_size = sizeof(float);         break;
+    case REAL64:    sample_size = sizeof(double);        break;
+    case COMPLEX_BYTE:      sample_size = sizeof(unsigned char)*2; break;
+    case COMPLEX_INTEGER16: sample_size = sizeof(short int)*2;     break;
+    case COMPLEX_INTEGER32: sample_size = sizeof(int)*2;           break;
+    case COMPLEX_REAL32:    sample_size = sizeof(float)*2;         break;
+    case COMPLEX_REAL64:    sample_size = sizeof(double)*2;        break;
     default:
-      printf("put_float_line: Unrecognized data type. Exiting program.\n");
+      printf("\nput_data_lines: Unrecognized data type. Exiting program.\n");
       exit(EXIT_FAILURE);
   }
 
-  out_buffer = (void *)MALLOC( (size_t) sample_size * sample_count);
+  /* Make sure not to make file bigger than meta says it should be */
+  if (line_number > meta->general->line_count) {
+    printf("\nput_data_lines: Cannot write line %d in a file that should be %d lines. Exiting.\n",
+           line_number, meta->general->line_count);
+    exit(EXIT_FAILURE);
+  }
+  if ((line_number+num_lines_to_put) > meta->general->line_count) {
+    num_samples_to_put = (meta->general->line_count - line_number)
+                          * sample_count;
+  }
+
+  FSEEK64(file, sample_size*sample_count*line_number, SEEK_SET);
+  out_buffer = MALLOC( sample_size * sample_count * num_lines_to_put );
 
   /* Fill in destination array.  */
   switch (data_type) {
     case BYTE:
-      for ( ii=0; ii<sample_count; ii++ )
-        ((unsigned char *)out_buffer)[ii] = (unsigned char)source[ii];
+      for ( ii=0; ii<num_samples_to_put; ii++ ) {
+        switch (source_data_type) {
+         case BYTE:((unsigned char*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case INTEGER16:((unsigned char*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case INTEGER32:((unsigned char*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case REAL32:((unsigned char*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case REAL64:((unsigned char*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
+      }
       break;
     case INTEGER16:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((short*)out_buffer)[ii] = (short)source[ii];
-        big16( ((short*)out_buffer)[ii] );
+      for ( ii=0; ii<num_samples_to_put; ii++ ) {
+        switch (source_data_type) {
+         case BYTE:((short int*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case INTEGER16:((short int*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case INTEGER32:((short int*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case REAL32:((short int*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case REAL64:((short int*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
+        big16( ((short int*)out_buffer)[ii] );
       }
       break;
     case INTEGER32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((int*)out_buffer)[ii] = (int)source[ii];
+      for ( ii=0; ii<num_samples_to_put; ii++ ) {
+        switch (source_data_type) {
+         case BYTE:((int*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case INTEGER16:((int*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case INTEGER32:((int*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case REAL32:((int*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case REAL64:((int*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
         big32( ((int*)out_buffer)[ii] );
       }
       break;
     case REAL32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((float*)out_buffer)[ii] = (float)source[ii];
+      for ( ii=0; ii<num_samples_to_put; ii++ ) {
+        switch (source_data_type) {
+         case BYTE:((float*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case INTEGER16:((float*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case INTEGER32:((float*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case REAL32:((float*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case REAL64:((float*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
         ieee_big32( ((float*)out_buffer)[ii] );
       }
+      break;
     case REAL64:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((double*)out_buffer)[ii] = (double)source[ii];
+      for ( ii=0; ii<num_samples_to_put; ii++ ) {
+        switch (source_data_type) {
+         case BYTE:((double*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case INTEGER16:((double*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case INTEGER32:((double*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case REAL32:((double*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case REAL64:((double*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
+        ieee_big64( ((double*)out_buffer)[ii] );
+      }
+      break;
+    case COMPLEX_BYTE:
+      for ( ii=0; ii<num_samples_to_put*2; ii++ )
+        switch (source_data_type) {
+         case COMPLEX_BYTE:((unsigned char*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case COMPLEX_INTEGER16:((unsigned char*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case COMPLEX_INTEGER32:((unsigned char*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case COMPLEX_REAL32:((unsigned char*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case COMPLEX_REAL64:((unsigned char*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
+     break;
+    case COMPLEX_INTEGER16:
+      for ( ii=0; ii<num_samples_to_put*2; ii++ ) {
+        switch (source_data_type) {
+         case COMPLEX_BYTE:((short int*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case COMPLEX_INTEGER16:((short int*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case COMPLEX_INTEGER32:((short int*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case COMPLEX_REAL32:((short int*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case COMPLEX_REAL64:((short int*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
+        big16( ((short int*)out_buffer)[ii] );
+      }
+      break;
+    case COMPLEX_INTEGER32:
+      for ( ii=0; ii<num_samples_to_put*2; ii++ ) {
+        switch (source_data_type) {
+         case COMPLEX_BYTE:((int*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case COMPLEX_INTEGER16:((int*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case COMPLEX_INTEGER32:((int*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case COMPLEX_REAL32:((int*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case COMPLEX_REAL64:((int*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
+        big32( ((int*)out_buffer)[ii] );
+      }
+      break;
+    case COMPLEX_REAL32:
+      for ( ii=0; ii<num_samples_to_put*2; ii++ ) {
+        switch (source_data_type) {
+         case COMPLEX_BYTE:((float*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case COMPLEX_INTEGER16:((float*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case COMPLEX_INTEGER32:((float*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case COMPLEX_REAL32:((float*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case COMPLEX_REAL64:((float*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
+        ieee_big32( ((float*)out_buffer)[ii] );
+      }
+      break;
+    case COMPLEX_REAL64:
+      for ( ii=0; ii<num_samples_to_put*2; ii++ ) {
+        switch (source_data_type) {
+         case COMPLEX_BYTE:((double*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case COMPLEX_INTEGER16:((double*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case COMPLEX_INTEGER32:((double*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case COMPLEX_REAL32:((double*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case COMPLEX_REAL64:((double*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
         ieee_big64( ((double*)out_buffer)[ii] );
       }
       break;
   }
-
-  FSEEK64(file, sample_size*sample_count*line_number, SEEK_SET);
-  samples_put = FWRITE(out_buffer, sample_size, sample_count, file);
-
+  samples_put = FWRITE(out_buffer, sample_size, num_samples_to_put, file);
   FREE(out_buffer);
+
+  if ( samples_put != num_samples_to_put ) {
+    printf("put_data_lines: failed to write the correct number of samples\n");
+  }
+
   return samples_put;
+}
+
+/*******************************************************************************
+ * Write 1 line of data via put_data_lines from a floating point array to a file
+ * in the data type specified in the meta struct. Return number of samples put*/
+int put_float_line(FILE *file, meta_parameters *meta, int line_number,
+                   const float *source)
+{
+  return put_data_lines(file, meta, line_number, 1, source, REAL32);
+}
+
+/*******************************************************************************
+ * Write num_lines_to_put lines of data via put_data_lines from a floating point
+ * array to a file in the data type specified in the meta struct. Returns the
+ * number of samples successfully written */
+int put_float_lines(FILE *file, meta_parameters *meta, int line_number,
+                    int num_lines_to_put, const float *source)
+{
+  return put_data_lines(file,meta,line_number,num_lines_to_put,source,REAL32);
+}
+
+/*******************************************************************************
+ * Write 1 line of data from a double floating point array to a file in the data
+ * format specified by the meta structure. All rounding, padding, and endian
+ * conversion will be done as needed. The line_number argument is the
+ * zero-indexed line number to get. The source argument must be a pointer to
+ * existing memory. */
+int put_double_line(FILE *file, meta_parameters *meta, int line_number,
+                    const double *source)
+{
+  return put_data_lines(file, meta, line_number, 1, source, REAL64);
+}
+
+/*******************************************************************************
+ * Write num_lines_to_put lines of data from a double floating point array to a
+ * file in the data format specified by the meta structure. All rounding,
+ * padding, and endian conversion will be done as needed. The line_number
+ * argument is the zero-indexed line number to get. The source argument must be
+ * a pointer to existing memory. */
+int put_double_lines(FILE *file, meta_parameters *meta, int line_number,
+                     int num_lines_to_put, const double *source)
+{
+  return put_data_lines(file,meta,line_number,num_lines_to_put,source,REAL64);
+}
+
+/*******************************************************************************
+ * Write 1 line of data via put_data_lines from a complexFloat array to a file
+ * in the complex data type specified in the meta struct. Return number of
+ * samples put */
+int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
+                    const complexFloat *source)
+{
+  return put_data_lines(file, meta, line_number, 1, source, COMPLEX_REAL32);
+}
+
+/*******************************************************************************
+ * Write num_lines_to_put lines of data via put_data_lines from a floating point
+ * array to a file in the data type specified in the meta struct. Returns the
+ * number of samples successfully written */
+int put_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
+                     int num_lines_to_put, const complexFloat *source)
+{
+  return put_data_lines(file,meta,line_number,num_lines_to_put,source,
+                        COMPLEX_REAL32);
 }
