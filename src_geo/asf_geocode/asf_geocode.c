@@ -122,10 +122,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          <height>, assuming a satellite look angle 45 degrees from\n"\
 "          horizontal.\n"\
 "\n"\
-"     --pixel-size <size>\n"\
-"          Scale output image such that each pixel is <size> projection\n"\
-"          coordinates (i.e. meters) on a side.\n"\
-"\n"\
 "     --datum <datum> \n"\
 "          Specifies the datum that is used when projecting.  The datum\n"\
 "          applies to the target coordinate system.  Supported Datums:\n"\
@@ -139,7 +135,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     mercator projection, with one pixel 50 meters on a side:\n"\
 "\n"\
 "     asf_project --projection utm --central-meridian -147.0 --height 466\n"\
-"                 --pixel-size 50 input_image output_image\n"\
+"                 input_image output_image\n"\
 ""
 
 #define ASF_LIMITATIONS_STRING \
@@ -497,8 +493,8 @@ main (int argc, char **argv)
   // Terrain height to assume.  Defaults to 0.
   double average_height;
   // Pixel size to use for output image, in projection coordinate
-  // units (presumably meters, but you never know when we might lose
-  // our heads and decide to add some dumb projection).
+  // units.  This variable corresponds to a "private"
+  // (i.e. undocumented, so users don't fiddle with it) option.
   double pixel_size;
   // Datum to use in the target projection
   datum_type_t datum;
@@ -910,7 +906,14 @@ main (int argc, char **argv)
   asfPrintStatus ("Resampling input image into output image "
 		  "coordinate space...\n");
 
-  // Projection coordinates per pixel in output image.
+  // Projection coordinates per pixel in output image.  There is a
+  // significant assumption being made here: we assume that the
+  // projection coordinates (which are in meters) come at least
+  // reasonably close to the ground distances.  This way, when we set
+  // the projection coordinates per pixel in the output image equal to
+  // the pixel size of the input image, we should be resampling at
+  // close to one-to-one (which is where resampling works and we don't
+  // have to worry about pixel averaging or anything).
   double pc_per_x = pixel_size;
   double pc_per_y = pixel_size;
 
