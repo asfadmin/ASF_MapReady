@@ -182,13 +182,13 @@ $(BINDIR)/scripts:
 	cd scripts; $(MAKE)
 
 clean_scripts:
-	- rm -f $(BINDIR)/standard.zsh
-	- rm -f $(BINDIR)/complex.zsh
-	- rm -f $(BINDIR)/pvs_gui
-	- rm -f $(BINDIR)/vexcel_complex.zsh
-	- rm -f $(BINDIR)/target_selector.zsh
-	- rm -f $(BINDIR)/iq.zsh
-	- rm -f $(BINDIR)/geo.zsh
+	- rm -f $(BINDIR)/standard
+	- rm -f $(BINDIR)/complex
+	- rm -f $(BINDIR)/sprocket
+	- rm -f $(BINDIR)/vexcel_complex
+	- rm -f $(BINDIR)/target_selector
+	- rm -f $(BINDIR)/iq
+	- rm -f $(BINDIR)/geo
 
 
 
