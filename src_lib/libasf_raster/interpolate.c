@@ -71,14 +71,12 @@ get_pixel_with_reflection (float *inbuf, int nSamples, int nLines, int sample,
   return inbuf[nSamples * jj + ii];
 }
 
-
-
 float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines, 
-		  int nSamples, float xLine, float xSample, 
+		  int nSamples, float yLine, float xSample, 
 		  weighting_type_t weighting, int sinc_points)
 {
   int ix, iy, base;
-  int a00, a10, a01, a11;
+  float a00, a10, a01, a11;
   float value;
              
   /* Get closed pixel position to start from */
@@ -86,14 +84,16 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
   switch ( interpolation ) {
     case NEAREST:
       ix = (int) (xSample + 0.5);
-      iy = (int) (xLine + 0.5);
-      base = ix + iy*nSamples;
+      iy = (int) (yLine + 0.5);
+      base = iy*nSamples + ix;
       value = inbuf[base];
       break;
 
     case BILINEAR:
-      assert (xSample >= 0.0 && xSample >= 0.0);
-      assert (xSample <= nSamples - 1 && xLine <= nLines - 1);
+      assert (xSample >= 0.0);
+      assert (yLine >= 0.0);
+      assert (xSample <= nSamples - 1);
+      assert (yLine <= nLines - 1);
       // If we fall on the right or lower edge of the image, we cheat
       // by nudging the requested line sample down just slightly, to
       // keep the below interpolation algorithm simple.
@@ -101,16 +101,16 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
       //      if ( xSample >= nSamples - 1 ) { xSample - cheat_nudge ;}
       //      if ( xLine >=  nLines - 1 ) { xLine - cheat_nudge; }
       ix = floor(xSample);
-      iy = floor(xLine);
+      iy = floor(yLine);
       
-      base = ix + iy*nSamples;
+      base = iy*nSamples + ix;
       a00 = inbuf[base];
       a10 = inbuf[base+1] - inbuf[base];
       a01 = inbuf[base+nSamples] - inbuf[base];
       a11 = (inbuf[base] - inbuf[base+1] - inbuf[base+nSamples] 
 	     + inbuf[base+nSamples+1]);
-      value = (a00 + a10 * (xSample - ix) + a01 * (xLine - iy) 
-	       + a11 * (xSample - ix) * (xLine - iy));
+      value = (a00 + a10 * (xSample - ix) + a01 * (yLine - iy) 
+	       + a11 * (xSample - ix) * (yLine - iy));
       break;
 
     case BICUBIC:
@@ -119,26 +119,64 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
 
     case SINC:
       {
-	// Initialize array of shifted sinc functions on first time
-	// through.
+	// Initialize array of shifted sinc functions and weights on 
+	// first time through.
 	static float *sinc_funcs = NULL;
+	static float *weights = NULL;
+        float alpha = 5;
 	if ( sinc_funcs == NULL ) {
 	  sinc_funcs = MALLOC (sinc_points * NUM_SINCS * sizeof (float));
+          weights = MALLOC (sinc_points * NUM_SINCS * sizeof(float));
 	  int ii;
 	  for ( ii = 0 ; ii < NUM_SINCS ; ii++ ) {
 	    double shift = (double)ii / NUM_SINCS;
 	    float *current_sinc = &sinc_funcs[ii * sinc_points];
 	    float sinc_weight = 0.0;
 	    int jj;
+
+	    for ( jj = 0 ; jj < sinc_points/2 ; jj++ ) {
+
+	      // Assigning weights
+	      switch ( weighting ) {
+	      case NO_WEIGHT:
+		weights[jj] = 1.0;
+		weights[sinc_points-jj] = 1.0;
+		break;
+	      case KAISER:
+                // optimum alpha value to be determined - for the moment set to 5
+                // gsl_sf_bessel_I0 - zeroth order modified Bessel function
+                weights[jj] = gsl_sf_bessel_I0(alpha*sqrt(1.0 - SQR(jj/sinc_points))) 
+                  / gsl_sf_bessel_I0(alpha);
+                weights[sinc_points-jj] = gsl_sf_bessel_I0(alpha*sqrt(1.0 - SQR(jj/sinc_points))) 
+                  / gsl_sf_bessel_I0(alpha);
+	      case HAMMING:
+		weights[jj] = 0.54 + 0.46 * cos(M_PI*(jj-sinc_points) / sinc_points);
+		weights[sinc_points-jj] = 0.54 + 0.46 * cos(M_PI*(jj-sinc_points) / sinc_points);
+		break;
+              case LANCZOS:
+                weights[jj] = sin(M_PI*(jj-sinc_points) / sinc_points) 
+                  / (M_PI*(jj-sinc_points)/sinc_points);
+                weights[sinc_points-jj] = sin(M_PI*(jj-sinc_points) / sinc_points) 
+                  / (M_PI*(jj-sinc_points)/sinc_points);
+                break;
+	      default:
+		assert (FALSE);    /* should not be here! */
+		break;
+	      }
+	    }
+
 	    for ( jj = 0 ; jj < sinc_points ; jj++ ) {
+
 	      // Argument of the sinc function for this shifted sinc function.
-	      double sinc_arg = jj - sinc_points / 2 + 1.0 - shift;
+	      double sinc_arg = jj - sinc_points / 2.0 + 1.0 - shift;
 	      if ( sinc_arg == 0.0 ) {
 		current_sinc[jj] = 1.0;
 	      }
 	      else {
-		current_sinc[jj] = sin (M_PI * sinc_arg) / (M_PI * sinc_arg);
+		current_sinc[jj] = 
+		  sin (M_PI * sinc_arg) / (M_PI * sinc_arg) * weights[jj];
 	      }
+
 	      sinc_weight += current_sinc[jj];
 	    }
 
@@ -153,8 +191,8 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
 	// Apply sinc interpolation in two dimensions.
 	value = 0.0;
 	// Integer parts of x and y to interpolate.
-	int ix = floor (xSample), iy = floor (xLine);
-	float x_fraction = xSample - ix, y_fraction = xLine - iy;
+	int ix = floor (xSample), iy = floor (yLine);
+	float x_fraction = xSample - ix, y_fraction = yLine - iy;
 	float *x_sinc_func 
 	  = &sinc_funcs[((int)(x_fraction * NUM_SINCS)) * sinc_points];
 	float *y_sinc_func
