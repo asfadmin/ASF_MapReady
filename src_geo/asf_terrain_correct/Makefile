@@ -21,7 +21,8 @@ PROGRAM_C_SOURCE = $(addsuffix .c, $(PROGRAM))
 CLASSES := date_time \
            orbital_state_vector \
 	   platform_path \
-	   vector
+	   vector \
+	   dem
 
 # Non-main, non-class source files that need building.
 OTHER_C_SOURCES := utilities.c
@@ -111,6 +112,12 @@ test_orbital_state_vector_stamp: test_orbital_state_vector.c \
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(NONMAIN_OBJS) $(LDLIBS) \
               -o test_orbital_state_vector
 	./test_orbital_state_vector;
+	touch $@
+
+# Build (and don't run... yet) the test_dem class test.
+test_dem_stamp: test_dem.c $(TEST_PREREQUISITES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(NONMAIN_OBJS) $(LDLIBS) dem.o \
+	      -o test_dem
 	touch $@
 
 ###############################################################################
