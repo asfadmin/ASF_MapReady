@@ -1,0 +1,190 @@
+#include "asf.h"
+#include "coniFetch.h"
+#include "asf_meta.h"
+
+/*meta_io_state:
+	Called by meta_io, below, this routine reads/writes
+the given state vector structure.
+*/
+void meta_io_state(coniStruct *coni, meta_state_vectors *state)
+{
+	int i;
+	coniIO_structOpen(coni,"state {","begin list of state vectors for satellite, over image");
+	coniIO_int   (coni,"state.","year:",  &state->year,  "Year of image start");
+	coniIO_int   (coni,"state.","julDay:",&state->julDay,"Julian day of the year for image start");
+	coniIO_double(coni,"state.","second:",&state->second,"Second of the day for image start");
+	coniIO_int   (coni,"state.","num:",   &state->num,   "Number of state vectors below");
+	for (i=0;i<state->num;i++)
+	{
+		coniIO_structOpen(coni,"vector {","begin a single state vector");
+		coniIO_double(coni,"state.vector.","time:",&state->vecs[i].time,     "Time, relative to image start [s]");
+		coniIO_double(coni,"state.vector.","x:",   &state->vecs[i].vec.pos.x,"X Coordinate, earth-fixed [m]");
+		coniIO_double(coni,"state.vector.","y:",   &state->vecs[i].vec.pos.y,"Y Coordinate, earth-fixed [m]");
+		coniIO_double(coni,"state.vector.","z:",   &state->vecs[i].vec.pos.z,"Z Coordinate, earth-fixed [m]");
+		coniIO_double(coni,"state.vector.","vx:",  &state->vecs[i].vec.vel.x,"X Velocity, earth-fixed [m/s]");
+		coniIO_double(coni,"state.vector.","vy:",  &state->vecs[i].vec.vel.y,"Y Velocity, earth-fixed [m/s]");
+		coniIO_double(coni,"state.vector.","vz:",  &state->vecs[i].vec.vel.z,"Z Velocity, earth-fixed [m/s]");
+		coniIO_structClose(coni,"end vector");
+	}
+	coniIO_structClose(coni,"end of list of state vectors\n");
+}
+
+meta_parameters *meta_read_old(char *fileName)
+{
+	int reading = 1;
+	char *ddrName = appendExt(fileName,".ddr");
+	struct DDR ddr;
+	char *metaName = appendExt(fileName,".meta");
+/************ IS THIS NEEDED IN THIS FUNCTION?? *************/
+	meta_parameters *meta = raw_init();
+/************************************************************/
+	meta_general *general = meta->general;
+	meta_sar     *sar     = meta->sar = (meta_sar *)MALLOC(sizeof(meta_sar));
+	meta_stats   *stats   = meta->stats;
+	coniStruct   *coni    = coniOpen(metaName, asciiIn);
+
+	coniIO_double(coni,"","meta_version:",&version,"ASF APD Metadata File.\n");
+
+/*Geolocation parameters.*/
+	coniIO_structOpen(coni,"geo {","begin parameters used in geolocating the image.");
+	coniIO_char(coni,"geo.","type:",&sar->proj_type,"Image type: [S=slant range; G=ground range; P=map projected]");
+	if (sar->proj_type=='P') {
+	/*Projection Parameters.*/
+		meta_projection *projection = meta->projection = (meta_projection *)MALLOC(sizeof(meta_projection));
+		coniIO_structOpen(coni,"proj {","Map Projection parameters");
+		coniIO_char  (coni,"geo.proj.","type:",  &projection->type,  "Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]");
+		coniIO_double(coni,"geo.proj.","startX:",&projection->startX,"Projection Coordinate at top-left, X direction");
+		coniIO_double(coni,"geo.proj.","startY:",&projection->startY,"Projection Coordinate at top-left, Y direction");
+		coniIO_double(coni,"geo.proj.","perX:",  &projection->perX,  "Projection Coordinate per pixel, X direction");
+		coniIO_double(coni,"geo.proj.","perY:",  &projection->perY,  "Projection Coordinate per pixel, Y direction");
+		coniIO_char  (coni,"geo.proj.","hem:",   &projection->hem,   "Hemisphere: [N=northern hemisphere; S=southern hemisphere]");
+		if (version>0.8) {
+		/*Read geoid from file*/
+			coniIO_double(coni,"geo.proj.","re_major:",&projection->re_major,"Major (equator) Axis of earth (meters)");
+			coniIO_double(coni,"geo.proj.","re_minor:",&projection->re_minor,"Minor (polar) Axis of earth (meters)");
+		} else {
+		/*Default: use the GEM-06 (Goddard Earth Model 6) Ellipsoid*/
+			projection->re_major=6378144.0;
+			projection->re_minor=6356754.9;
+		}
+		switch(projection->type) {
+			case 'A':/*Along-track/cross-track projection.*/
+				coniIO_double(coni,"geo.proj.","rlocal:",     &projection->param.atct.rlocal,"Local earth radius [m]");
+				coniIO_double(coni,"geo.proj.","atct_alpha1:",&projection->param.atct.alpha1,"at/ct projection parameter");
+				coniIO_double(coni,"geo.proj.","atct_alpha2:",&projection->param.atct.alpha2,"at/ct projection parameter");
+				coniIO_double(coni,"geo.proj.","atct_alpha3:",&projection->param.atct.alpha3,"at/ct projection parameter");
+				break;
+			case 'L':/*Lambert Conformal Conic projection.*/
+				coniIO_double(coni,"geo.proj.","lam_plat1:",&projection->param.lambert.plat1,"Lambert first standard parallel");
+				coniIO_double(coni,"geo.proj.","lam_plat2:",&projection->param.lambert.plat2,"Lambert second standard parallel");
+				coniIO_double(coni,"geo.proj.","lam_lat:",  &projection->param.lambert.lat0, "Lambert original latitude");
+				coniIO_double(coni,"geo.proj.","lam_lon:",  &projection->param.lambert.lon0, "Lambert original longitude");
+				break;
+			case 'P':/*Polar Stereographic Projection.*/
+				coniIO_double(coni,"geo.proj.","ps_lat:",&projection->param.ps.slat,"Polar Stereographic reference Latitude");
+				coniIO_double(coni,"geo.proj.","ps_lon:",&projection->param.ps.slon,"Polar Stereographic reference Longitude");
+				break;
+			case 'U':/*Universal Trasnverse Mercator Projection.*/
+				coniIO_int(coni,"geo.proj.","utm_zone:",&projection->param.utm.zone,"UTM Zone Code");
+				break;
+			default:
+				printf("ERROR! Unrecognized map projection code '%c!'\n",projection->type);
+				exit(1);
+		}
+		coniIO_structClose(coni,"end proj");
+	}
+	coniIO_char(coni,"geo.","lookDir:",       &sar->look_direction,         "SAR Satellite look direction (normally R) [R=right; L=left]");
+	coniIO_int(coni,"geo.","deskew:",         &sar->deskewed,               "Image moved to zero doppler? [1=yes; 0=no]");
+	coniIO_double(coni,"geo.","xPix:",        &general->xPix,               "Pixel size in X direction [m]");
+	coniIO_double(coni,"geo.","yPix:",        &general->yPix,               "Pixel size in Y direction [m]");
+	coniIO_double(coni,"geo.","rngPixTime:",  &sar->range_time_per_pixel,   "Time/pixel, range (xPix/(c/2.0), or 1/fs) [s]");
+	coniIO_double(coni,"geo.","azPixTime:",   &sar->azimuth_time_per_pixel, "Time/pixel, azimuth (yPix/swathVel, or 1/prf) [s]");
+	coniIO_double(coni,"geo.","slantShift:",  &sar->slantShift,             "Error correction factor, in slant range [m]");
+	coniIO_double(coni,"geo.","timeShift:",   &sar->timeShift,              "Error correction factor, in time [s]");
+	coniIO_double(coni,"geo.","slantFirst:",  &sar->slant_range_first_pixel,"Slant range to first image pixel [m]");
+	coniIO_double(coni,"geo.","wavelength:",  &sar->wavelength,             "SAR Carrier Wavelength [m]");
+	coniIO_double(coni,"geo.","dopRangeCen:", &sar->range_doppler_coefficients[0],  "Doppler centroid [Hz]");
+	coniIO_double(coni,"geo.","dopRangeLin:", &sar->range_doppler_coefficients[1],  "Doppler per range pixel [Hz/pixel]");
+	coniIO_double(coni,"geo.","dopRangeQuad:",&sar->range_doppler_coefficients[2],  "Doppler per range pixel sq. [Hz/(pixel^2)]");
+	coniIO_double(coni,"geo.","dopAzCen:",    &sar->azimuth_doppler_coefficients[0],"Doppler centroid [Hz]");
+	coniIO_double(coni,"geo.","dopAzLin:",    &sar->azimuth_doppler_coefficients[1],"Doppler per azimuth pixel [Hz/pixel]");
+	coniIO_double(coni,"geo.","dopAzQuad:",   &sar->azimuth_doppler_coefficients[2],"Doppler per azimuth pixel sq. [Hz/(pixel^2)]");
+	coniIO_structClose(coni,"end geo\n");
+
+/*Interferometry parameters:*/
+	coniIO_structOpen(coni,"ifm {","begin interferometry-related parameters");
+	if (version>0.6)
+		coniIO_int(coni,"ifm.","nLooks:",&sar->look_count,      "Number of looks to take from SLC");
+	coniIO_int(coni,"ifm.","orig_lines:",    &general->line_count,  "Number of lines in original image");
+	coniIO_int(coni,"ifm.","orig_samples:",  &general->sample_count,"Number of samples in original image");
+	coniIO_structClose(coni,"end ifm\n");
+
+/*State Vectors:*/
+	{ /*Check to see if the state vectors even exist.*/
+	    int err,nVec;
+	    nVec=coniInt(coni,"state.number:",&err);
+	    coniReopen(coni);/*Seek back to beginning of file.*/
+	    if (err==CONI_OK && nVec!=0) {
+	    /*We have state vectors!*/
+		    meta->stVec=raw_init_state(nVec);/*Allocate state vectors.*/
+		    meta_io_state(coni,meta->stVec);/*And initialize them.*/
+	    }
+	}
+
+/*Extra Info:*/
+	{ /* Check to see if extra info exists.*/
+	    int err;
+	    coniStr(coni,"extra.sensor:",&err);
+	    coniReopen(coni);/*Seek back to beginning of file.*/
+	    if (err==CONI_OK) {
+		coniIO_str     (coni,"extra.","sensor:",       general->sensor,           "Imaging sensor");
+		if (version>0.7)
+		  coniIO_str   (coni,"extra.","mode:",         general->mode,             "Imaging mode");
+		if (version>0.6)
+		  coniIO_str   (coni,"extra.","processor:",    general->processor,        "Name & Version of SAR Processor");
+		if (version>0.7) {
+ 		  coniIO_int   (coni,"extra.","orbit:",       &general->orbit,            "Orbit Number for this datatake");
+		  coniIO_double(coni,"extra.","bitErrorRate:",&general->bit_error_rate,   "Bit Error Rate");
+		  coniIO_str   (coni,"extra.","satBinTime:",   sar->satellite_binary_time,"Satellite Binary Time");
+		  coniIO_str   (coni,"extra.","satClkTime:",   sar->satellite_clock_time, "Satellite Clock Time (UTC)");
+		  coniIO_double(coni,"extra.","prf:",         &sar->prf,                  "Pulse Repition Frequency");
+		}
+	    }
+	}
+	
+/* Info from ddr */
+	c_getddr(ddrName, &ddr);
+	strcpy( meta_new->general->system,  ddr.system);
+	meta_new->general->start_line     = ddr.master_line;
+	meta_new->general->start_sample   = ddr.master_sample;
+	switch ( ddr->dtype ) {
+	    case 0: /* BYTE */
+	    case 1: strcpy(meta_new->general->data_type, "BYTE"); break;
+	    case 2: strcpy(meta_new->general->data_type, "INTEGER*2"); break;
+	    case 3: strcpy(meta_new->general->data_type, "INTEGER*4"); break;
+	    case 4: strcpy(meta_new->general->data_type, "REAL*4"); break;
+	    case 5: strcpy(meta_new->general->data_type, "REAL*8"); break;
+	    default:
+	        printf("ERROR: Unrecognized data type identifier: %d\n",ddr->dtype);
+	    	meta_free_old(meta_old);
+		meta_free(meta_new);
+		exit(1);
+	}
+
+/* Fields that cannot be filled from the old structures */
+	meta_new->general->frame            = -1;
+	meta_new->general->band_number      = -1;
+	meta_new->general->orbit_direction  = '\0';
+	meta_new->general->center_latitude  = NAN;
+	meta_new->general->center_longitude = NAN;
+	meta_new->sar->look_angle           = NAN;
+	meta_new->stats->max                = NAN;
+	meta_new->stats->min                = NAN;
+	meta_new->stats->mean               = NAN;
+	meta_new->stats->rms                = NAN;
+	meta_new->stats->std_deviation      = NAN;
+
+/* Close coni structure */
+	coniClose(coni);
+
+} /* End pre-1.0 version read */
