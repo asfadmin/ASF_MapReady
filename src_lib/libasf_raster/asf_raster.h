@@ -9,6 +9,8 @@ DESCRIPTION:
 
 ******************************************************************************/
 
+#include "asf_meta.h"
+
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 #define ASF_EXPORT_FLOAT_MICRON 0.000000001
 #define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
@@ -49,7 +51,8 @@ typedef enum {
 typedef enum {
   NO_WEIGHT=1,
   KAISER,
-  HAMMING
+  HAMMING,
+  LANCZOS
 } weighting_type_t;
 
 /* Prototypes from scaling.c *************************************************/
@@ -70,7 +73,7 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
 
 /* Prototypes from interpolate.c *********************************************/
 float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines, 
-		  int nSamples, float xLine, float xSample, 
+		  int nSamples, float yLine, float xSample, 
 		  weighting_type_t weighting, int sinc_points);
 
 #endif
