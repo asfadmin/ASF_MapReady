@@ -112,6 +112,23 @@ comma without white space, and has exactly the same set of effects as
 a corresponding B<-i> option would.  Perl-style comments may be used
 in the file.
 
+=item B<-l> I<node>, B<--loose_match>=I<node>
+
+Use low criteria when scanning packages for depencence on node
+I<node>.  Pretty much any occurence of the name I<node> in a package
+will be daken as a dependency.  This option may well generate false
+positives, but is extremely unlikely to miss anything, and works well
+for looking for depencence on explicitly declared non-package nodes
+like types (see the --with_node option).  This option is only relevant
+when a new dependency graph cache file is being created.
+
+=item B<--loose_match_file>=I<file_name>
+
+Parse file I<file_name> as a list of nodes to be matched loosely.
+Each line of the file must consist of exactly one node name, and has
+exactly the same effects as a corresponding B<-l> option would.
+Perl-style comments may be used in the file.
+
 =item B<-p> I<node>, B<--package>=I<node>
 
 Compute only the direct dependencies for node I<node>.  This is much
@@ -141,14 +158,15 @@ Force a dependency graph node of name I<name> to exist, even if there
 is no individual tool directory I<name>.  This node is (probably
 wrongly) assumed to have no dependencies of its own.  This option is
 only relevant when a new dependency graph cache file is being created.
-Note that this option may be used to add arbitrary textual dependency
-information to the dependency graph.  For example,
-'--with_node=the_magic_type' may be used to add include in the
-dependency graph information about which packages directly or
-indirectly depend on the_magic_type (possibly including, somewhat
-unfortunately, the package in which the type is defined).  This a
-potentially useful way to deal with the problem of header files which
-do not properly belong to any individual package.
+Note that this option may be used together with the --loose_match
+option to add arbitrary textual dependency information to the
+dependency graph.  For example, '--loose_match=the_magic_type
+--with_node=the_magic_type' may be used to include in the dependency
+graph information about which packages directly or indirectly depend
+on the_magic_type (including, somewhat unfortunately, the package in
+which the type is defined).  This is a potentially useful way to deal
+with the problem of header files which do not properly belong to any
+individual package.
 
 =item B<--with_node_file>=I<file_name>
 
@@ -194,14 +212,17 @@ my %p = (
 	 'check' => [],		# Ref to list to contain two node names.
 	 'independency' => [],	# Each successive pair an independency.	
 	 'independency_file' => undef, # File containing independency pairs.
+	 # Ref to list of nodes to match for loosely.
+	 'loose_match' => [],  
+	 # File containing node names to match for loosely.
+	 'loose_match_file' => undef,
 	 'package' => undef,	# Package name to compute direct deps for.
 	 # Node name to compute reverse deps for. 
 	 'reverse_dependencies' => undef,
 	 'scan_comments' => 0,	# Flag true if comment text to be scanned.
-	 # Ref to list containing list of node names explicitly
-	 # declared to exist.
+	 # Ref to list of node names explicitly declared to exist.
 	 'with_node' => [],
-	 # File containing nodes names explicitly declared to exist.
+	 # File containing node names explicitly declared to exist.
 	 'with_node_file' => undef,
 
 	 # Standard options. 
@@ -213,7 +234,8 @@ my %p = (
 sub babble { if ( $p{verbose} ) { print @_; } }
 
 GetOptions(\%p, 'check|c=s', 'package|p=s', 'independency|i=s',
-	   'independency_file=s', 'reverse_dependencies|r=s',
+	   'independency_file=s', 'loose_match|l=s',
+	   'loose_match_file=s', 'reverse_dependencies|r=s',
 	   'scan_comments|s', 'with_node|w=s', 'with_node_file=s',
 	   'verbose|v', 'version', 'help|?')
     or pod2usage("$progname: option parse failed.\n");
@@ -275,6 +297,7 @@ if ( $p{'independency_file'} ) {
 	s/\s*$//;		# Strip trailing white space.
 	# Skip blank lines.
 	unless ( $_ ) {
+            $line_number++;
 	    next;
 	}
         unless ( (my @new_independency = split(/,/)) == 2 ) {
@@ -309,6 +332,7 @@ if ( $p{'with_node_file'} ) {
 	s/\s*$//;		# Strip trailing white space.
 	# Skip blank lines.
 	unless ( $_ ) {
+            $line_number++;
 	    next;
 	}
         push (@with_nodes, $_);
@@ -316,6 +340,40 @@ if ( $p{'with_node_file'} ) {
     }
     close(WITH_NODE_FILE) 
         or die "couldn't close $p{'with_node_file'}: $!";
+}
+
+# List of nodes which are to be matched for loosely.
+my @loose_match_nodes = @{$p{'loose_match'}};		
+
+# Parse loose_match_file option argument.
+if ( $p{'loose_match_file'} ) {
+    open(LOOSE_MATCH_FILE, "<$p{'loose_match_file'}")
+	or die "$progname: couldn't open $p{'loose_match_file'} for reading: $!\n";
+    my $line_number = 1;	# Line number being parsed.
+    while ( <LOOSE_MATCH_FILE> ) {
+	chomp;			# Strip newline.
+	s/#.*$//;		# Strip comments.
+	s/^\s*//;		# Strip leading white space.
+	s/\s*$//;		# Strip trailing white space.
+	# Skip blank lines.
+	unless ( $_ ) {
+            $line_number++;
+	    next;
+	}
+        push(@loose_match_nodes, $_);
+        $line_number++;
+    }
+    close(LOOSE_MATCH_FILE) 
+        or die "couldn't close $p{'loose_match_file'}: $!";
+}
+
+# Hash with elements for nodes to be matched for loosely.  I use this
+# trick as a resonably fast lazy way to search lists when I don't
+# actualy want to see the list item, just know if it is there, and
+# using twice the memory is not a problem.  Yes I am evil.
+my %loose_match_nodes;	
+foreach ( @loose_match_nodes ) {
+    $loose_match_nodes{$_} = 1;
 }
 
 # Hash of package dependency list refs.
@@ -331,16 +389,15 @@ if ( -e $graph_cache_file ) {
 	die "$progname: failed to correctly retrieve $graph_cache_file, maybe delete it to force regeneration?\n";
     }
     print "\nNOTE: using dependency graph cache file\n'$graph_cache_file'. Delete it and rerun if its stale.\n";
+    # Print warning if using the cache means we are ignoring options.
+    if ( @loose_match_nodes ) {
+	print wrap('', '', "\nWARNING: --loose_match type options (-l, -loose_match, or --loose_match_file) are irrelevant when using an existing dependency graph cache file.\n");
+    }
     if ( $p{'scan_comments'} ) {
-	print wrap('', '', "\nWARNING: scan comments option (-s or "
-		   ."--scan_comments) is irrelevant when using an existing "
-		   ."dependency graph cache file.\n");
+	print wrap('', '', "\nWARNING: --scan_comments option (-s or --scan_comments) is irrelevant when using an existing dependency graph cache file.\n");
     }
     if ( @with_nodes ) {
-	print wrap('', '', "\nWARNING: 'with_node' type options (-w, "
-                   ."--with_node, or --with_node_file) are irrelevant "
-                   ."when using an existing dependency graph cache "
-                   ."file.\n");
+	print wrap('', '', "\nWARNING: --with_node type options (-w, --with_node, or --with_node_file) are irrelevant when using an existing dependency graph cache file.\n");
     }
     sleep 4;
     %node_deps = %{$node_deps_ref};
@@ -410,7 +467,7 @@ if ( -e $graph_cache_file ) {
         $node_deps{$pkg_name} ||= [];
 
         # Check for dependencies on every other node.
-        my @other_nodes = (@pkg_dirs, @{$p{with_node}});
+        my @other_nodes = (@pkg_dirs, @with_nodes);
         foreach my $other_node ( @other_nodes ) {
 
 	    # No need to worry about nodes depending on themselves.
@@ -472,12 +529,21 @@ if ( -e $graph_cache_file ) {
 		close($tfh) or die "close failed on $tfn: $!";
 
 		# Look for references to other node in temp file.
-	        if ( !system("grep -q -I '[^_[:alpha:]]$other_node_name"
-			     ."[^_[:alpha:]]' $tfn 2>/dev/null") 
-		      and ( !system("grep -q -I 'system *(' $tfn "
-				    ."2>/dev/null") 
-		            or `head -n 1 $tfn` =~ /^.!.*\/sh/ ) ) {
-		    $dep_flag = 1;
+		my $grep_for_other_node_token_command
+		    = "grep -q -I '[^_[:alpha:]]$other_node_name"
+       		      ."[^_[:alpha:]]' $tfn 2>/dev/null";
+		my $grep_for_system_function_call_command
+		    = "grep -q -I 'system *(' $tfn 2>/dev/null";
+		if ( exists($loose_match_nodes{$other_node_name}) ) {
+		    if ( !system($grep_for_other_node_token_command) ) {
+			$dep_flag = 1;
+		    }
+		} else {
+		    if ( !system($grep_for_other_node_token_command)
+			 and ( !system($grep_for_system_function_call_command)
+			       or `head -n 1 $tfn` =~ /^.!.*\/sh/ ) ) {
+			$dep_flag = 1;
+		    }
 	        }
 
 		# Remove temporary file.
@@ -523,11 +589,15 @@ if ( -e $graph_cache_file ) {
         unless ( nstore(\%node_deps, $graph_cache_file) ) {
 	    die "$progname: failed to correctly store dependency graph in $graph_cache_file\n";
 	} else {
+	    # Print warnings if we cache the effects of options.
+	    if ( @loose_match_nodes ) {
+		print wrap('', '', "\nWARNING: the effects of --loose_match type options (-l, -loose_match, or --loose_match_file) have been cached in the dependency graph cache file.\n");
+	    }
 	    if ( $p{'scan_comments'} ) {
-		print wrap('', '', "\nWARNING: the effects of the scan comments option (-s or --scan_comments) have been cached in the dependency graph cache.\n");
+		print wrap('', '', "\nWARNING: the effects of the scan comments option (-s or --scan_comments) have been cached in the dependency graph cache file.\n");
 	    }
 	    if ( @with_nodes ) {
-		print wrap('', '', "\nWARNING: the effects of 'with_node' type options (-w, --with_node, or --with_node_file) have been cached in the dependency graph cache.\n");
+		print wrap('', '', "\nWARNING: the effects of 'with_node' type options (-w, --with_node, or --with_node_file) have been cached in the dependency graph cache file.\n");
 	    }
 	    print wrap('', '', "\nGenerated dependency graph cache file\n'$graph_cache_file'.\n");
 	}
