@@ -367,6 +367,14 @@ int main(int argc,char *argv[])
 	inName = argv[currArg++];
 	outName = appendExt(argv[currArg],".raw");
 
+        if (logflag) {
+          StartWatchLog(fLog);
+          printLog("Program: stf2raw\n\n");
+        }
+        system("date");
+        printf("Program: stf2raw\n\n");
+
+
 	if (latConstraintFlag) {
 	    /* Determine start and end line for latitude constraint */
 	    createSubset(inName, lowerLat, upperLat, &imgStart, &imgEnd,
