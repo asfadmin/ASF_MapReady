@@ -29,9 +29,7 @@ void RSAT_readNextPulse(bin_state *s,iqType *iqBuf, char *inName,
 	int bytesToRead=RSAT_datPerAux;/*Just skip auxiliary data file.*/
 	int bytesRead,dataStart;
 	int repLen=s->fs*replicaDur;/*Number of samples in pulse replica.*/
-	
-	static unsigned int nLines=0;
-	nLines++;
+/*	static unsigned int nLines=0;*/
 	
 /*Skip to next auxiliary frame (start of line)*/
 	while (RSAT_readNextFrame(s,&aux_frame)->is_aux!=1) {}
@@ -76,7 +74,7 @@ void RSAT_readNextPulse(bin_state *s,iqType *iqBuf, char *inName,
 	}
 	
 /* Every once in a while, write out a description of which line we're on.*/
-/*	if (nLines%50==0) {
+/*	if ((nLines++)%1000==0) {
  *		printf("   Line # %d\n",nLines);
  *		RSAT_auxPrint(&aux_frame.aux,stdout);
  *	}
@@ -212,7 +210,7 @@ void RSAT_readNextCeosPulse(bin_state *s,iqType *iqBuf, char *inN, char *outN)
 	int repLen=(int)(s->fs*replicaDur);
 	signalType *sig=NULL;
 	RSAT_aux aux;
-	static unsigned int nLines=0;
+/*	static unsigned int nLines=0;*/
 	
 /*Seek to next pulse start.*/
 	sig=getNextCeosLine(s->binary, s, inN, outN);
@@ -224,6 +222,7 @@ void RSAT_readNextCeosPulse(bin_state *s,iqType *iqBuf, char *inN, char *outN)
 	else
 		RSAT_unpackCeosBytes(&sig[RSAT_datPerAux],2*s->nSamp,iqBuf);
 	
+/* Every once in a while, write out a description of which line we're on.*/
 /*	if ((nLines++)%1000==0) {
  *		printf("   Line # %d\n",nLines);
  * 		RSAT_auxPrint(&aux,stdout);
