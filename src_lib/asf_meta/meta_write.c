@@ -102,57 +102,59 @@ void meta_write(meta_parameters *meta, const char *file_name)
   }
   fprintf(fp, "}\n");
 
-  /* Projection parameters block.  */
-  fprintf(fp, "projection {\n");
-  fprintf(fp, "    type: %c\n", meta->projection->type);
-  fprintf(fp, "    startX: %f\n", meta->projection->startX);
-  fprintf(fp, "    startY: %f\n", meta->projection->startY);
-  fprintf(fp, "    perX: %f\n", meta->projection->perX);
-  fprintf(fp, "    perY: %f\n", meta->projection->perY);
-  fprintf(fp, "    units: %s\n", meta->projection->units);
-  fprintf(fp, "    hem: %c  # S=>southern, other=>northern\n", 
-	  meta->projection->hem);
-  fprintf(fp, "    re_major: %f\n", meta->projection->re_major);
-  fprintf(fp, "    re_minor: %f\n", meta->projection->re_minor);
-  fprintf(fp, "    param {\n");
-  switch ( meta->projection->type ) {
-  case 'A': /* Along-track/cross-track projection.  */
-    fprintf(fp, "        atct {\n");
-    fprintf(fp, "            rlocal: %f  # Earth radius at scene center\n", 
-	    meta->projection->param.atct.rlocal);
-    fprintf(fp, "            alpha1: %f  # Rotation angle 1\n", 
-	    meta->projection->param.atct.alpha1);
-    fprintf(fp, "            alpha2: %f  # Rotation angle 2\n", 
-	    meta->projection->param.atct.alpha2);
-    fprintf(fp, "            alpha3: %f  # Rotation angle 3\n", 
-	    meta->projection->param.atct.alpha3);
-    break;
-  case 'B': /* Lambert conformal conic projection.  */
-    fprintf(fp, "        lambert {\n");
-    fprintf(fp, "            plat1: %f  # First standard parallel\n", 
-	    meta->projection->param.lambert.plat1);
-    fprintf(fp, "            plat2: %f  # Second standard parallel\n", 
-	    meta->projection->param.lambert.plat2);
-    fprintf(fp, "            lat0: %f  # Original latitude\n", 
-	    meta->projection->param.lambert.lat0);
-    fprintf(fp, "            lon0: %f  # Original longitude\n", 
-	    meta->projection->param.lambert.lon0);
-    break;
-  case 'P': /* Polar stereographic projection.  */
-    fprintf(fp, "        polar stereographic {\n");
-    fprintf(fp, "            lat: %f  # Reference latitude\n",
-	    meta->projection->param.ps.slat);
-    fprintf(fp, "            lon: %f  # Regerence longitude\n", 
-	    meta->projection->param.ps.slon);
-    break;
-  case 'U': /* Universal transverse mercator projection.  */
-    fprintf(fp, "        utm {\n");
-    fprintf(fp, "            zone: %d\n", meta->projection->param.utm.zone);
-    break;
-  default: 
-    err_die("unknown projection type seen in function '%s'\n", __func__);
+  /* Projection parameters block, if appropriate.  */
+  if ( meta->sar->proj_type == 'P' ) {
+    fprintf(fp, "projection {\n");
+    fprintf(fp, "    type: %c\n", meta->projection->type);
+    fprintf(fp, "    startX: %f\n", meta->projection->startX);
+    fprintf(fp, "    startY: %f\n", meta->projection->startY);
+    fprintf(fp, "    perX: %f\n", meta->projection->perX);
+    fprintf(fp, "    perY: %f\n", meta->projection->perY);
+    fprintf(fp, "    units: %s\n", meta->projection->units);
+    fprintf(fp, "    hem: %c  # S=>southern, other=>northern\n", 
+	    meta->projection->hem);
+    fprintf(fp, "    re_major: %f\n", meta->projection->re_major);
+    fprintf(fp, "    re_minor: %f\n", meta->projection->re_minor);
+    fprintf(fp, "    param {\n");
+    switch ( meta->projection->type ) {
+    case 'A': /* Along-track/cross-track projection.  */
+      fprintf(fp, "        atct {\n");
+      fprintf(fp, "            rlocal: %f  # Earth radius at scene center\n", 
+	      meta->projection->param.atct.rlocal);
+      fprintf(fp, "            alpha1: %f  # Rotation angle 1\n", 
+	      meta->projection->param.atct.alpha1);
+      fprintf(fp, "            alpha2: %f  # Rotation angle 2\n", 
+	      meta->projection->param.atct.alpha2);
+      fprintf(fp, "            alpha3: %f  # Rotation angle 3\n", 
+	      meta->projection->param.atct.alpha3);
+      break;
+    case 'B': /* Lambert conformal conic projection.  */
+      fprintf(fp, "        lambert {\n");
+      fprintf(fp, "            plat1: %f  # First standard parallel\n", 
+	      meta->projection->param.lambert.plat1);
+      fprintf(fp, "            plat2: %f  # Second standard parallel\n", 
+	      meta->projection->param.lambert.plat2);
+      fprintf(fp, "            lat0: %f  # Original latitude\n", 
+	      meta->projection->param.lambert.lat0);
+      fprintf(fp, "            lon0: %f  # Original longitude\n", 
+	      meta->projection->param.lambert.lon0);
+      break;
+    case 'P': /* Polar stereographic projection.  */
+      fprintf(fp, "        polar stereographic {\n");
+      fprintf(fp, "            lat: %f  # Reference latitude\n",
+	      meta->projection->param.ps.slat);
+      fprintf(fp, "            lon: %f  # Regerence longitude\n", 
+	      meta->projection->param.ps.slon);
+      break;
+    case 'U': /* Universal transverse mercator projection.  */
+      fprintf(fp, "        utm {\n");
+      fprintf(fp, "            zone: %d\n", meta->projection->param.utm.zone);
+      break;
+    default: 
+      err_die("unknown projection type seen in function '%s'\n", __func__);
+    }
+    fprintf(fp, "        }\n");
+    fprintf(fp, "    }\n");
+    fprintf(fp, "}\n");
   }
-  fprintf(fp, "        }\n");
-  fprintf(fp, "    }\n");
-  fprintf(fp, "}\n");
 }
