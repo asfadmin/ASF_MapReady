@@ -1,0 +1,2 @@
+#define ASF_SHARE_DIR "@SHAREDIR@"
+#define ASF_INSTALL_DIR "@INSTALLDIR@"
