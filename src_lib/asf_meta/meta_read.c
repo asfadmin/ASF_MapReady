@@ -43,7 +43,7 @@ meta_parameters *meta_read_old(char *fileName)
 	meta_stats   *stats   = meta->stats;
 	coniStruct   *coni    = coniOpen(metaName, asciiIn);
 
-	coniIO_double(coni,"","meta_version:",&version,"ASF APD Metadata File.\n");
+	coniIO_double(coni,"","meta_version:",&meta_version,"ASF APD Metadata File.\n");
 
 /*Geolocation parameters.*/
 	coniIO_structOpen(coni,"geo {","begin parameters used in geolocating the image.");
@@ -95,8 +95,8 @@ meta_parameters *meta_read_old(char *fileName)
 	}
 	coniIO_char(coni,"geo.","lookDir:",       &sar->look_direction,         "SAR Satellite look direction (normally R) [R=right; L=left]");
 	coniIO_int(coni,"geo.","deskew:",         &sar->deskewed,               "Image moved to zero doppler? [1=yes; 0=no]");
-	coniIO_double(coni,"geo.","xPix:",        &general->xPix,               "Pixel size in X direction [m]");
-	coniIO_double(coni,"geo.","yPix:",        &general->yPix,               "Pixel size in Y direction [m]");
+	coniIO_double(coni,"geo.","x_pixel_size:",&general->x_pixel_size,       "Pixel size in X direction [m]");
+	coniIO_double(coni,"geo.","y_pixel_size:",&general->y_pixel_size,       "Pixel size in Y direction [m]");
 	coniIO_double(coni,"geo.","rngPixTime:",  &sar->range_time_per_pixel,   "Time/pixel, range (xPix/(c/2.0), or 1/fs) [s]");
 	coniIO_double(coni,"geo.","azPixTime:",   &sar->azimuth_time_per_pixel, "Time/pixel, azimuth (yPix/swathVel, or 1/prf) [s]");
 	coniIO_double(coni,"geo.","slantShift:",  &sar->slantShift,             "Error correction factor, in slant range [m]");
