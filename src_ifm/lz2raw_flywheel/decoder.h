@@ -107,7 +107,7 @@ FILE *openCeos(const char *fName);
 signalType *getNextCeosLine(FILE *f);
 
 /*Write the bin_state * fields into the given meta_parameters*/
-void updateMeta(bin_state *s,meta_parameters *meta);
+void updateMeta(bin_state *s,meta_parameters *meta,char *inN);
 void addStateVector(bin_state *s,stateVector *stVec);
 
 
