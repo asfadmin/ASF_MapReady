@@ -926,13 +926,13 @@ main (int argc, char **argv)
   FloatImage *iim 
     = float_image_new_from_file (ii_size_x, ii_size_y, input_data_file->str, 0,
 				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  // FIXME: remve this free after debugging.
   g_string_free (input_data_file, TRUE);
 
   // Output image.
   FloatImage *oim = float_image_new (oix_max + 1, oiy_max + 1);
 
-  // Convenience macros for getting and setting pixels.
-#define GET_PIXEL(x, y) float_image_get_pixel (iim, x, y)
+  // Convenience macros for getting a pixel.
 #define SET_PIXEL(x, y, value) float_image_set_pixel (oim, x, y, value)
 
   // Set the pixels of the output image.
