@@ -175,9 +175,6 @@ int main(int argc, char **argv)
 		strncat(outFileName,".img",256);
 	create_name(outMetaFileName,outFileName,".meta");
 
-	StartWatch();
-	printf("Date: ");
-	fflush(NULL);
 	system("date");
 	printf("Program: convert2byte\n\n");
 	if (logflag) {
@@ -322,8 +319,6 @@ int main(int argc, char **argv)
 
 	meta_write(outMeta,outMetaFileName);
 
-	StopWatch();
-	if (logflag) StopWatchLog(fLog);
 	if (fLog) FCLOSE(fLog);
 
 	return 0;
