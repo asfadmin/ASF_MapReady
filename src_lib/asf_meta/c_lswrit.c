@@ -61,7 +61,7 @@ if (strlen(key) >= KEYL)
     }
 
 /*Seek to end-of-file.*/
-FSEEK(*fd, (int)0, 2);
+FSEEK64(*fd, 0, 2);
 
 if (*clen > 0)
    sprintf(len,"%-d/%-d",*clen,*dlen);
