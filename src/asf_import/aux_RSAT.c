@@ -2,6 +2,7 @@
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
+#include "asf_reporting.h"
 
 /******************************************************************************
  * Information about RSAT_raw_aux for function: RSAT_decodeAux()
@@ -193,8 +194,8 @@ void RSAT_decodeAux(unsigned char *in, RSAT_aux *out)
       case 1: out->timeBase =  7.0/CONF_RSAT_SMO; break;
       case 2: out->timeBase = 10.0/CONF_RSAT_SMO; break;
       default:
-         printf("Error! Unrecognized ADC conversion rate %d!\n",
-            ADCSamplingRate);
+         asfPrintStatus("Error! Unrecognized ADC conversion rate %d!\n",
+                        ADCSamplingRate);
    }
 
    out->prf_code       = (PRFBeam1<<5) | PRFBeam2;
@@ -278,7 +279,7 @@ void RSAT_auxUpdate(RSAT_aux *aux,bin_state *s)
 
 	s->time_code=aux->seconds;
 
-	printf("%d pulses in air; beam %d\n",s->nPulseInAir,aux->beams[0]);
+	asfPrintStatus("%d pulses in air; beam %d\n",s->nPulseInAir,aux->beams[0]);
 
 	strcpy(s->beamMode,aux->beamNames[aux->beam]);
 
@@ -300,7 +301,7 @@ int RSAT_auxGetBeam(RSAT_aux *aux)
 int RSAT_auxIsImaging(RSAT_aux *aux)
 {
 	if (aux->isImaging==0)
-		printf("Warning!! Not imaging!!\n");
+		asfPrintWarning("Not imaging!!\n");
 	return aux->isImaging;
 }
 

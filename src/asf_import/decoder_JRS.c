@@ -8,6 +8,7 @@ This file ingests VEXCEL Level-0 products from the JERS satellite.
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
+#include "asf_reporting.h"
 
 
 /*Satellite-specific Parameters:*/
@@ -72,29 +73,11 @@ void JRS_stcCompensate(bin_state *s,int stcOff,int len,iqType *iqBuf)
 void JRS_readNextPulse(bin_state *s,iqType *iqBuf, char *inName, char *outName)
 {
 	JRS_frame f;
-
 	static int nFrames=0;
 	nFrames++;
-
 	JRS_readNextFrame(s,&f);
-
 	JRS_auxAGC_window(s,&f.aux);
-
 	decodePulse(f.data,iqBuf);
-
-	if (nFrames%100==0)
-	{/*Compute and print out I and Q mean values*/
-/*		double iAve,qAve;
- *		int i;
- *		double iAve=0.0,qAve=0.0;
- *		for (i=0;i<samplesPerFrame;i++)
- *			{iAve+=iqBuf[2*i];qAve+=iqBuf[2*i+1];}
- *		printf("iAve=%f; qAve=%f\n",iAve/samplesPerFrame,qAve/samplesPerFrame);
- */
-
-		/* JRS_auxPrint(&f.aux,stdout); */
-	}
-
 	JRS_stcCompensate(s,JRS_auxStc(&f.aux),samplesPerFrame,iqBuf);
 }
 
@@ -120,7 +103,7 @@ bin_state *JRS_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 {
 	bin_state *s=new_bin_state();
 	JRS_frame f;
-	printf("   Initializing JERS decoder...\n");
+	asfPrintStatus("   Initializing JERS decoder...\n");
 	*reader=JRS_readNextPulse;
 
 	JRS_init(s);
@@ -168,7 +151,7 @@ bin_state *JRS_ceos_decoder_init(char *inName, char *outName,
 	signalType *sig=NULL;
 	JRS_raw_aux raux;
 	JRS_aux aux;
-	printf("   Initializing JRS CEOS decoder...\n");
+	asfPrintStatus("   Initializing JRS CEOS decoder...\n");
 	*reader=JRS_readNextCeosPulse;
 
 	JRS_init(s);

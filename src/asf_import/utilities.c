@@ -1,6 +1,7 @@
 #include "asf.h"
 #include "asf_endian.h"
 #include "asf_import.h"
+#include "asf_reporting.h"
 #include <ctype.h>
 
 /* Helpful functions */
@@ -26,31 +27,14 @@ void print_splash_screen(int argc, char* argv[])
   for (ii = 0; ii < argc; ii++) {
     sprintf(logbuf, "%s %s",logbuf, argv[ii]);
   }
-  printAndLog("%s\n"
-              "\n"
-              "Date: %s\n"
-              "PID:  %i\n"
-              "\n",
-              logbuf, date_time_stamp(), (int)getpid());
+  asfPrintStatus("%s\n"
+                 "\n"
+                 "Date: %s\n"
+                 "PID:  %i\n"
+                 "\n",
+                 logbuf, date_time_stamp(), (int)getpid());
 }
 
-
-void print_progress(int current_line, int total_lines)
-{
-  current_line++;
-
-  if ((current_line%128==0) || (current_line==total_lines)) {
-    printf("\rWrote %5d of %5d lines.", current_line, total_lines);
-    fflush(NULL);
-    if (current_line == total_lines) {
-      printf("\n");
-      if (logflag) {
-        sprintf(logbuf,"Wrote %5d of %5d lines.\n", current_line, total_lines);
-        printLog(logbuf);
-      }
-    }
-  }
-}
 
 /* Check to see if an option was supplied or not
    If it was found, return its argument number
@@ -67,25 +51,6 @@ int checkForOption(char* key, int argc, char* argv[])
   return(FLAG_NOT_SET);
 }
 
-/* Print an error message. This is just here for circumventing check_return.
-   Also, it makes it possible to reformat all the error messages at once. */
-void print_error(char *msg)
-{
-  char tmp[256];
-  /* I made "ERROR:" red...Yay! :D */
-  printf("\n   \033[31;1mERROR:\033[0m %s\n\n", msg);
-  sprintf(tmp, "\n   ERROR: %s\n\n", msg);
-  printLog(tmp);
-  exit(EXIT_FAILURE);
-}
-
-/* Check the return value of a function and display an error message if it's a bad return */
-void check_return(int ret, char *msg)
-{
-  if (ret != 0)
-    print_error(msg);
-}
-
 void pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName)
 {
   if (*flag_count==0)
@@ -94,10 +59,7 @@ void pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName)
     strcat(strcat(flags_used, " and "), flagName);
   else if (*flag_count>1)
     strcat(strcat(flags_used, ", and "), flagName);
-  else {
-    char msg[256];
-    sprintf(msg, "Programmer error dealing with the %s flag.", flagName);
-    print_error(msg);
-  }
+  else
+    asfPrintError("Programmer error dealing with the %s flag.\n", flagName);
   (*flag_count)++;
 }

@@ -9,6 +9,7 @@ This file ingests VEXCEL Level-0 products from the RADARSAT satellite.
 #include "lzFetch.h"
 #include "decoder.h"
 #include "auxiliary.h"
+#include "asf_reporting.h"
 
 
 /*Satellite-specific Parameters:*/
@@ -72,13 +73,6 @@ void RSAT_readNextPulse(bin_state *s,iqType *iqBuf, char *inName,
 		iqBuf=RSAT_unpackBytes(f.data,unpackThis,iqBuf);
 		bytesRead+=unpackThis;
 	}
-
-/* Every once in a while, write out a description of which line we're on.*/
-/*	if ((nLines++)%1000==0) {
- *		printf("   Line # %d\n",nLines);
- *		RSAT_auxPrint(&aux_frame.aux,stdout);
- *	}
- */
 }
 
 /*********************************
@@ -178,7 +172,7 @@ bin_state *RSAT_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	bin_state *s=new_bin_state();
 	RSAT_frame aux_frame;
 
-	printf("   Initializing RSAT decoder...\n");
+	asfPrintStatus("   Initializing RSAT decoder...\n");
 	*reader=RSAT_readNextPulse;
 
 	RSAT_init(s);
@@ -218,13 +212,6 @@ void RSAT_readNextCeosPulse(bin_state *s,iqType *iqBuf, char *inN, char *outN)
 		RSAT_unpackCeosBytes(&sig[2*repLen+RSAT_datPerAux],2*s->nSamp,iqBuf);
 	else
 		RSAT_unpackCeosBytes(&sig[RSAT_datPerAux],2*s->nSamp,iqBuf);
-
-/* Every once in a while, write out a description of which line we're on.*/
-/*	if ((nLines++)%1000==0) {
- *		printf("   Line # %d\n",nLines);
- * 		RSAT_auxPrint(&aux,stdout);
- *	}
- */
 }
 
 /*********************************
@@ -261,7 +248,7 @@ bin_state *RSAT_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 	signalType *sig=NULL;
 	RSAT_aux aux;
 
-	printf("   Initializing RSAT decoder...\n");
+	asfPrintStatus("   Initializing RSAT decoder...\n");
 	*reader=RSAT_readNextCeosPulse;
 
 	RSAT_init(s);

@@ -5,10 +5,11 @@ data into (byte-packed) I/Q samples.
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
+#include "asf_reporting.h"
 
 /**************************************
 Bit fiddling:
-	ERS-1 uses a 5-bit I \ 5-bit Q 
+	ERS-1 uses a 5-bit I \ 5-bit Q
 sampling strategy; so we have to copy over
 various horrible bitwise combinations of the
 data.
@@ -39,7 +40,8 @@ iqType *ERS_unpackBytes(signalType *in,int nIn,iqType *out)
 {
 	int i,len=nIn/EnSig;
 	if (len*EnSig!=nIn)
-		{printf("Error!  Asked to convert %d bytes, which is not divisble by %d!\n",nIn,EnSig);exit(1);}
+		asfPrintError("Asked to convert %d bytes, which is not divisble by %d!\n",
+		              nIn,EnSig);
 	for (i=0;i<len;i++)
 		ERS_convertSignalBytes(&in[i*EnSig],&out[i*EnIQ*2]);
 	return &out[len*EnIQ*2];
@@ -48,7 +50,7 @@ iqType *ERS_unpackBytes(signalType *in,int nIn,iqType *out)
 
 /**************************************
 Bit fiddling:
-	JRS-1 uses a bizarre bit-interleaved 3-bit I \ 3-bit Q 
+	JRS-1 uses a bizarre bit-interleaved 3-bit I \ 3-bit Q
 sampling strategy; so we have to copy over
 various horrible bitwise combinations of the data.
 */
@@ -67,19 +69,19 @@ void JERS_convertSignalBytes(signalType *in,iqType *out)
 
 	int b=(in[0]<<16)|(in[1]<<8)|(in[2]);/*3 bytes as an int.*/
 	int s;/*6 bits, forming one sample.*/
-	
+
 	s=0x03F&(b >> 18);/*1st sample pair*/
 	out[0]=125+ext_i(s);
 	out[1]=125+ext_q(s);
-	
+
 	s=0x03F&(b >> 12);/*2nd sample pair*/
 	out[2]=125+ext_i(s);
 	out[3]=125+ext_q(s);
-	
+
 	s=0x03F&(b >> 6);/*3rd sample pair*/
 	out[4]=125+ext_i(s);
 	out[5]=125+ext_q(s);
-	
+
 	s=0x03F&(b);/*4th sample pair*/
 	out[6]=125+ext_i(s);
 	out[7]=125+ext_q(s);
@@ -91,7 +93,8 @@ iqType *JERS_unpackBytes(signalType *in,int nIn,iqType *out)
 {
 	int i,len=nIn/JnSig;
 	if (len*JnSig!=nIn)
-		{printf("Error!  Asked to convert %d bytes, which is not divisble by %d!\n",nIn,JnSig);exit(1);}
+		asfPrintError("Asked to convert %d bytes, which is not divisble by %d!\n",
+		              nIn,JnSig);
 	for (i=0;i<len;i++)
 		JERS_convertSignalBytes(&in[i*JnSig],&out[i*JnIQ*2]);
 	return &out[len*JnIQ*2];
@@ -135,7 +138,8 @@ iqType *RSAT_unpackBytes(signalType *in,int nIn,iqType *out)
 {
 	int i,len=nIn/RnSig;
 	if (len*RnSig!=nIn)
-		{printf("Error!  Asked to convert %d bytes, which is not divisble by %d!\n",nIn,RnSig);exit(1);}
+		asfPrintError("Asked to convert %d bytes, which is not divisble by %d!\n",
+		              nIn,RnSig);
 	for (i=0;i<len;i++)
 		RSAT_convertSignalBytes(in[i*RnSig],&out[i*RnIQ*2]);
 	return &out[len*RnIQ*2];

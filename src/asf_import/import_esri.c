@@ -1,5 +1,6 @@
 #include "asf.h"
 #include "asf_import.h"
+#include "asf_reporting.h"
 #include "esri.h"
 #include <ctype.h>
 
@@ -33,15 +34,13 @@ void import_esri(char *inDataName, char *inMetaName, char *outBaseName,
     else if (strncmp(key, "NBITS", 5)==0) {
       esri->nbits = atoi(value);
       if (esri->nbits < 8) {
-        sprintf(errbuf, "metadata do not support data less than 8 bit");
-        print_error(errbuf);
+        asfPrintError("Metadata does not support data less than 8 bit.\n");
       }
     }
     else if (strncmp(key, "NBANDS", 6)==0) {
       esri->nbands = atoi(value);
       if (esri->nbands > 1) {
-        sprintf(errbuf, "metadata do not support multi-band data");
-        print_error(errbuf);
+        asfPrintError("Metadata does not support multi-band data.\n");
       }
     }
     else if (strncmp(key, "BYTEORDER", 9)==0) esri->byteorder = value[0];
@@ -52,15 +51,13 @@ void import_esri(char *inDataName, char *inMetaName, char *outBaseName,
       for (ii=0; ii<strlen(esri->layout); ii++)
         layout_in_caps[ii] = toupper(esri->layout[ii]);
       if (strncmp(layout_in_caps, "BIL", 3)!=0) {
-        sprintf(errbuf, "metadata do not support data other than BIL format");
-        print_error(errbuf);
+        asfPrintError("Metadata does not support data other than BIL format.\n");
       }
    }
     else if (strncmp(key, "SKIPBYTES", 9)==0) {
       esri->skipbytes = atoi(value);
       if (esri->skipbytes > 0) {
-        sprintf(errbuf, "metadata only support generic binary data");
-        print_error(errbuf);
+        asfPrintError("Metadata only supports generic binary data.\n");
       }
     }
     else if (strncmp(key, "ULXMAP", 6)==0) esri->ulxmap = atof(value);
@@ -82,10 +79,6 @@ void import_esri(char *inDataName, char *inMetaName, char *outBaseName,
 
   /* Clean and report */
   meta_free(meta);
-  sprintf(logbuf, "   Converted ESRI file (%s) to ASF internal file (%s)\n\n",
-          inDataName, outDataName);
-  if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
-  fLog = FOPEN(logFile, "a");
-  printLog(logbuf);
-  FCLOSE(fLog);
+  asfPrintStatus("   Converted ESRI file (%s) to ASF internal file (%s)\n\n",
+                 inDataName, outDataName);
 }

@@ -29,22 +29,16 @@ typedef enum {
 } flag_indices_t;
 
 /* Prototypes from utilities.c */
-void usage(void);
-void help_page();
 int firstRecordLen(char *ceosName);
-char *uc(char *string);
 void print_splash_screen(int argc, char* argv[]);
-void print_progress(int current_line, int total_lines);
 int checkForOption(char* key, int argc, char* argv[]);
-void print_error(char *msg);
-void check_return(int ret, char *msg);
 void pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName);
 
 /* Prototypes from sprocket_layers.c */
 void create_sprocket_layers(const char *asfName, const char *importName);
 
 /* import_*() function prototypes */
-void import_ceos(char *inDataName,char *inMetaName,char *lutName, 
+void import_ceos(char *inDataName,char *inMetaName,char *lutName,
 		 char *outBaseName,flag_indices_t flags[]);
 void import_envi(char *inDataName,char *inMetaName,char *outBaseName,flag_indices_t flags[]);
 void import_esri(char *inDataName,char *inMetaName,char *outBaseName,flag_indices_t flags[]);

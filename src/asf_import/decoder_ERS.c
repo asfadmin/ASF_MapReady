@@ -8,6 +8,7 @@ This file ingests VEXCEL Level-0 products from the ERS satellite.
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
+#include "asf_reporting.h"
 
 
 /********************************
@@ -39,14 +40,9 @@ void ERS_readNextPulse(bin_state *s,iqType *iqBuf, char *inName, char *outName)
   for (ii=1; ii<ERS_framesPerLine; ii++) {
     ERS_readNextFrame(s,&f);
     if (f.is_echo==0) {
-      if (!quietflag) {
-        char msg[256];
-        sprintf(msg,
-                "   Error! Expected echo frame; got '%d' frame! Assuming bit error\n",
-                f.type);
-        printf(msg);
-        if (logflag) printLog(msg);
-      }
+      asfForcePrintStatus(
+        "   Error! Expected echo frame; got '%d' frame! Assuming bit error\n",
+        f.type);
     }
     iqCurr=ERS_unpackBytes(f.data,ERS_datPerFrame,iqCurr);
   }
@@ -76,7 +72,7 @@ bin_state *ERS_decoder_init(char *inN,char *outN,readPulseFunc *reader)
 {
   bin_state *s=new_bin_state();
   ERS_frame f;
-  printf("   Initializing ERS decoder...\n");
+  asfPrintStatus("   Initializing ERS decoder...\n");
   *reader=ERS_readNextPulse;
 
   ERS_init(s);
@@ -114,7 +110,7 @@ bin_state *ERS_ceos_decoder_init(char *inName, char *outName,
   bin_state *s=new_bin_state();
   signalType *sig=NULL;
   ERS_aux aux;
-  printf("   Initializing ERS decoder...\n");
+  asfPrintStatus("   Initializing ERS decoder...\n");
   *reader=ERS_readNextCeosPulse;
 
   ERS_init(s);

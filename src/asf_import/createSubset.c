@@ -11,6 +11,7 @@ createSubset.c
 #include "string.h"
 #include "ctype.h"
 #include "get_stf_names.h"
+#include "asf_reporting.h"
 
 stateVector propagate(stateVector source,double sourceSec,double destSec);
 
@@ -327,7 +328,6 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
 
   /* Propagate a state vector to center latitude */
   lat2stVec(inN, centerLat, &locVec, &loc_sec, &nLoc, &centerVec);
-/*printf("center latitude: time = %lf, nLoc = %d, nVec = %d\n", loc_sec, nLoc, centerVec);*/
 
   /* Determine Doppler for time of location block */
   sprintf(buf, "prep_block.location[%d].near_range:", nLoc);
@@ -339,54 +339,41 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
   date_ymd2jd(&ymdDate, &jDate);
   centerTime += (double)(date_getMJD(&jDate) * 3600 * 24);
   time_range2Doppler(inN, centerTime, range, fd, fdd, fddd);
-/*printf("time = %lf, fd = %e, fdd = %e, fddd = %e\n", centerTime, *fd, *fdd, *fddd);*/
 
   /* Calculate time for the center latitude of the subset */
   lat2time(locVec, loc_sec, centerLat, range, *fd, &centerTime);
   line = (centerTime - imgTime) / azPixTime;
   date_ymd2jd(&ymdDate, &jDate);
-/*printf("center time = %lf\n", centerTime);*/
   centerTime += (double)(date_getMJD(&jDate) * 3600 * 24);
   time_range2Doppler(inN, centerTime, range, fd, fdd, fddd);
 
   /* Propagate a state vector to upper latitude */
   lat2stVec(inN, upperLat, &locVec, &loc_sec, &nLoc, &upperVec);
-/*printf("upper latitude time = %lf, nLoc = %d, nVector = %d\n", loc_sec, nLoc, upperVec);*/
 
   /* Calculate time for the upper latitude of the subset */
   lat2time(locVec, loc_sec, upperLat, range, *fd, &upperTime);
   line = (upperTime - imgTime) / azPixTime;
   *imgStart = (long)line;
-  sprintf(logbuf,"   Starting line of subset: %ld (time: %lf)\n", *imgStart, upperTime);
-  printf(logbuf);
-  if (logflag) printLog(logbuf);
+  asfPrintStatus("   Starting line of subset: %ld (time: %lf)\n",
+                 *imgStart, upperTime);
 
   /* Propagate a state vector to lower latitude */
   lat2stVec(inN, lowerLat, &locVec, &loc_sec, &nLoc, &lowerVec);
-/*printf("lower latitude time = %lf, nLoc = %d, nVector = %d\n", loc_sec, nLoc, lowerVec);*/
 
   /* Calculate time for the lower latitude of the subset */
   lat2time(locVec, loc_sec, lowerLat, range, *fd, &lowerTime);
   line = (lowerTime - imgTime) / azPixTime;
   *imgEnd = (long)line;
-  sprintf(logbuf, "   End line of subset: %ld (time:%lf)\n", *imgEnd, lowerTime);
-  printf(logbuf);
-  if (logflag) printLog(logbuf);
+  asfPrintStatus("   End line of subset: %ld (time:%lf)\n", *imgEnd, lowerTime);
 
   /* Calculate starting time string and state vector */
   imgTime = (lowerTime < upperTime) ? lowerTime : upperTime;
   date_sec2hms(imgTime, &hmsTime);
   date_printDate(&ymdDate,'\0',ymdStr);
   date_printTime(&hmsTime,3,'\0',hmsStr);
-/*
-printf("hmsStr = '%s', strlen = %d\n", hmsStr, strlen(hmsStr));
-  for (i=strlen(hmsStr); i<=9; i++) sprintf(hmsStr, "0%s", hmsStr);
-  tmp = atof(hmsStr);*/
   for (i=0; i<strlen(hmsStr); i++)
     if (isdigit(hmsStr[i])) sprintf(tmp, "%s%c", tmp, hmsStr[i]);
   sprintf(imgTimeStr, "%s%s", ymdStr, tmp);
 
   *nVec = (lowerVec < upperVec) ? lowerVec : upperVec;
-
-/*printf("imgTime = %lf, imgTimeStr = %s, nVec = %d\n", imgTime, imgTimeStr, *nVec);*/
 }

@@ -29,13 +29,14 @@ PROGRAM HISTORY:
   01/2004  R. Gens       Updated old to new metadata
   05/2004  P. Denny      Spruced up metadata & bin_state interaction
                            Initialize bin_state 'nLines' line
-			   incrementer at 0 
+			   incrementer at 0
 
 ****************************************************************/
 
 #include "decoder.h"
 #include "missing.h"
 #include "lzFetch.h"
+#include "asf_reporting.h"
 
 /*********************************************************************
  * new_bin_state:
@@ -59,17 +60,17 @@ bin_state *new_bin_state(void)
   s->dwp_code=-1;
   s->range_gate=0;
   s->time_code=0;
-  
+
   s->binary=NULL;
   s->curFrame=0;
   s->bytesPerFrame=0;
   s->bytesInFile=0;
   s->missing=NULL;
-  
+
   s->nValid=0;
   s->estDop=0.0;
   s->I_BIAS=s->Q_BIAS=0.0;
-  
+
   s->re=6363000.989; /*approximate earth radius at scene center.*/
   s->vel=7463.989;   /*satellite velocity, m/s.*/
   s->ht=792000.989;  /*satellite height above earth, m.*/
@@ -78,11 +79,11 @@ bin_state *new_bin_state(void)
   s->azres=8.0;      /* Desired azimuth resolution (m)*/
   s->nLooks=5;       /* Number of looks to square up data */
   s->nLines=0;       /* Start the line count at 0. */
-  
+
   s->dotFMT=NULL;
   for (i=0;i<MAX_BEAMS;i++)
     s->firstFrame[i]=NULL;
-  
+
   return s;
 }
 
@@ -151,9 +152,9 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN,int stfFlag)
     meta->general->band_number  = 0;
     meta->general->start_line   = 0;
     meta->general->start_sample = 0;
-    meta->general->bit_error_rate = 
+    meta->general->bit_error_rate =
       lzDouble(parN,"prep_block.bit_error_rate:",NULL);
-    meta->general->missing_lines = 
+    meta->general->missing_lines =
       lzDouble(parN,"prep_block.missing_lines:",NULL);
     meta->sar->original_line_count   = s->nLines;
     meta->sar->original_sample_count = s->nSamp;
@@ -183,7 +184,7 @@ void addStateVector(bin_state *s,stateVector *stVec)
 {
   double latCen; /*Geocentric latitude of state vector, in radians.*/
   double er;     /*Radius of earth under state vector, in m.*/
-  
+
   /* Use state vector to estimate latitude.
    ---------------------------------------*/
   latCen=atan(stVec->pos.z/
@@ -198,13 +199,11 @@ void addStateVector(bin_state *s,stateVector *stVec)
   s->re=er;
   s->ht=vecMagnitude(stVec->pos)-er;
   s->vel=vecMagnitude(stVec->vel);
-  
-  if (!quietflag) {
-    printf("   Updating for more accurate earth radius (%.2f), \n"
-           "   height (%.2f), and velocity (%.2f).\n",
-           s->re,s->ht,s->vel);
-  }
-  
+
+  asfPrintStatus("   Updating for more accurate earth radius (%.2f), \n"
+                 "   height (%.2f), and velocity (%.2f).\n",
+                 s->re,s->ht,s->vel);
+
   /* Estimate the doppler value at beam center
    ------------------------------------------*/
   if (!s->zeroDopSteered) {
@@ -212,11 +211,7 @@ void addStateVector(bin_state *s,stateVector *stVec)
     g->side=s->lookDir;
     g->lambda=speedOfLight/s->frequency;
     s->estDop=yaw2doppler(g,s->range_gate*speedOfLight/2.0,1.10)/s->prf;
-    printf("   Estimated doppler: %f PRF\n",s->estDop);
-    if (logflag) {
-      sprintf(logbuf,"   Estimated doppler: %f PRF\n",s->estDop);
-      printLog(logbuf);
-    }
+    asfPrintStatus("   Estimated doppler: %f PRF\n",s->estDop);
     free_geolocate(g);
   }
 }

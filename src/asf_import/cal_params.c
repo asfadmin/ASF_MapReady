@@ -5,9 +5,9 @@ calibrate.*/
 
 
 #include "asf.h"
-#include "ddr.h"
 #include "ceos.h"
 #include "calibrate.h"
+#include "asf_reporting.h"
 
 /**Harcodings to fix calibration of ASF data***
  --------------------------------------------
@@ -131,22 +131,22 @@ cal_params *create_cal_params(const char *inSAR)
         /* Set the Noise Correction Vector to correct version
          -------------------------------------0--------------*/
         if (strncmp(dssr.cal_params_file,"SSPSWB010.CALPARMS",18)==0) {
-          printf("\n   Substituting hardcoded noise vector sspswb010\n");
+          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb010\n");
           noise_vector = sspswb010_noise_vec;
         } else if (strncmp(dssr.cal_params_file,"SSPSWB011.CALPARMS",18)==0) {
-          printf("\n   Substituting hardcoded noise vector sspswb011\n");
+          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb011\n");
           noise_vector = sspswb011_noise_vec;
         } else if (strncmp(dssr.cal_params_file,"SSPSWB013.CALPARMS",18)==0) {
-          printf("\n   Substituting hardcoded noise vector sspswb013\n");
+          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb013\n");
           noise_vector = sspswb013_noise_vec;
         } else if (strncmp(dssr.cal_params_file,"SSPSWB014.CALPARMS",18)==0) {
-          printf("\n   Substituting hardcoded noise vector sspswb014\n");
+          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb014\n");
           noise_vector = sspswb014_noise_vec;
         } else if (strncmp(dssr.cal_params_file,"SSPSWB015.CALPARMS",18)==0) {
-          printf("\n   Substituting hardcoded noise vector sspswb015\n");
+          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb015\n");
           noise_vector = sspswb015_noise_vec;
         } else if (strncmp(dssr.cal_params_file,"SSPSWB016.CALPARMS",18)==0) {
-          printf("\n   Substituting hardcoded noise vector sspswb016\n");
+          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb016\n");
           noise_vector = sspswb015_noise_vec;
         /* 16 and 15 were identical antenna patterns, only metadata fields were changed, so the noise vector for 16 is the same and that for 15. JBN */
         } else noise_vector = rdr.noise;
@@ -163,7 +163,8 @@ cal_params *create_cal_params(const char *inSAR)
             get_asf_facdr(sarName,&facdr);
             p->noise_type=by_geo;
             p->ns = slantRange2groundPixel(p->meta,facdr.sltrnglp*1000.0);
-            printf("   Recognize old geocoded image; Max ns = %i\n",p->ns);
+            asfPrintStatus("   Recognize old geocoded image; Max ns = %i\n",
+                           p->ns);
           }
 
         /* Otherwise, use a straight-forward by_pixel approach */
@@ -201,7 +202,7 @@ float get_cal_dn(cal_params *p,double noiseValue,double invIncAngle,int inDn)
         /* Convert (amplitude) data number to scaled, noise-removed power */
         scaledPower=(p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
 
-        /* We don't want to convert the scaled power image into dB values 
+        /* We don't want to convert the scaled power image into dB values
 	   since it messes up the statistics */
         if (scaledPower > 0.0 && inDn > 0)
           return scaledPower;
@@ -238,28 +239,28 @@ int check_cal(char *filename)
 
         if (strncmp(dqsr->cal_status,"UNCALIB",7)==0)
         {
-          printf("   **********  UNCALIBRATED DATA  **********  \n");
-          printf("   Calibration Comments: %s\n",dqsr->cal_comment);
+          asfPrintStatus("   **********  UNCALIBRATED DATA  **********  \n");
+          asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
           FREE(dqsr);
           return(0);
         }
         else if (strncmp(dqsr->cal_status,"INFERRE",7)==0)
         {
-          printf("   INFERRED CALIBRATION DATA\n");
-          printf("   Calibration Comments: %s\n",dqsr->cal_comment);
+          asfPrintStatus("   INFERRED CALIBRATION DATA\n");
+          asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
           FREE(dqsr);
           return(1);
         }
         else if (strncmp(dqsr->cal_status,"CALIBRA",7)==0)
         {
-          printf("   Calibration Comments: %s\n",dqsr->cal_comment);
+          asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
           FREE(dqsr);
           return(1);
         }
         else
         {
-          printf("   ****** UNABLE TO DETERMINE CALIBRATION OF DATA ******\n");
-          printf("   Calibration Comments: %s\n",dqsr->cal_comment);
+          asfPrintStatus("   ****** UNABLE TO DETERMINE CALIBRATION OF DATA ******\n");
+          asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
           FREE(dqsr);
           return(0);
         }

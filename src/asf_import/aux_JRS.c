@@ -2,6 +2,7 @@
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
+#include "asf_reporting.h"
 
 
 /***********************************************
@@ -21,7 +22,7 @@ void deInterlace(signalType *in,unsigned char *out)
 	     ((0x01&(in1>>2))<<1)|
 	     ((0x01&(in1>>0))<<0);
 }
-/*ThreeOfEight: extract the low three bits from each 
+/*ThreeOfEight: extract the low three bits from each
 of 8 input bytes, making 3 full (8-bit) output bytes.
 */
 void threeOfEight(signalType *in,unsigned char *out)
@@ -80,10 +81,10 @@ void JRS_auxCeosUnpack(signalType *in,JRS_raw_aux *out)
 	/*Unpack the 24 3-bit/sample parts of the H/K record (!!)*/
 	for (i=0;i<3;i++)
 		threeOfEight(&in[108+8*i],&dest[i*3]);
-	
+
 	/*Unpack the 8 3-bit/sample parts of the line counter*/
 	threeOfEight(&in[108+23],(signalType *)&(out->lineCountHi));
-	
+
 }
 /******************************************
 Decode the given raw auxiliary structure into
@@ -96,15 +97,15 @@ void JRS_auxDecode(JRS_raw_aux *in,JRS_aux *out)
 	out->dwp=(out->dwp_code+1)*0.000010-0.000013;/* this fudge factor matches VEXCEL */
 	out->prf_code=in->prfCode;
 	out->prf=PRF_list[out->prf_code];
-	
+
 	out->stcOffset=in->stcOffset;
-	
+
 	if (in->agcOn==1)
 	/*Using automatic gain control*/
 		out->agc_dB=in->agcAtten;
 	else /*Using manual gain control*/
 		out->agc_dB=(in->gcStatus1<<4)+in->gcStatus2;
-	
+
 	out->lineCount=((int)in->lineCountHi<<16)|
 		((int)in->lineCountMid<<8)|
 		((int)in->lineCountLo);
@@ -139,11 +140,6 @@ auxUpdate:
 */
 void JRS_auxUpdate(JRS_aux *aux,bin_state *s)
 {
-	/*
-	printf("Updating metadata for...\n");
-	JRS_auxPrint(aux,stdout);
-	*/
-	
 	s->prf_code=aux->prf_code;
 	s->prf=aux->prf;
 	s->dwp_code=aux->dwp_code;

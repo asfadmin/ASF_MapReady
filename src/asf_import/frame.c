@@ -31,6 +31,7 @@ RSAT frames are 323 bytes, 4 sync bytes, and 311 bytes of payload.
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
+#include "asf_reporting.h"
 
 /*Open the given binary file, and make it s' current file*/
 void openBinary(bin_state *s,const char *fName)
@@ -72,13 +73,10 @@ ERS_frame * ERS_readNextFrame(bin_state *s,ERS_frame *f)
 	else if ((f->type>128)&&(f->type<=156))
 		f->is_echo=1;
 	else {
-	  char msg[256];
 	  f->is_echo=1;
-	  sprintf(msg,
-	          "   ***** ERROR at frame %i - Unknown frame type (%i); assumed to be bit error \n",
-	         s->curFrame, f->type);
-	  printf("%s",msg);
-	  if (logflag) { printLog(msg); }
+	  asfForcePrintStatus(
+	    "Error at frame %i - Unknown frame type (%i); assumed to be bit error.\n",
+	    s->curFrame, f->type);
 	}
 
 /*Extract & decode auxiliary data*/
@@ -136,7 +134,7 @@ RSAT_frame * RSAT_readNextFrame(bin_state *s,RSAT_frame *f)
 	else if ((f->id[1]&6)==2)/*Check echo data bit.*/
 		f->is_echo=1;
 /*	else
-		{printf("Error!  Unknown RSAT frame type '%d'\n",(int)f->id[1]);exit(1);}
+      asfPrintError("Unknown RSAT frame type '%d'\n",(int)f->id[1]);
 */
 
 	if (f->is_aux)

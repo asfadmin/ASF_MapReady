@@ -1,13 +1,14 @@
 #include "asf.h"
 #include "aisp_params.h"
+#include "asf_reporting.h"
 
 void print_params(const char *in,struct AISP_PARAMS *a,const char *sourceProgram)
 {
  FILE *fp; char out[256];
 
- create_name(out,in,".in"); 
+ create_name(out,in,".in");
  fp = FOPEN(out,"w");
- 
+
  fprintf(fp,"AISP3.1 SAR Processing Parameter File (%s)\n",sourceProgram);
  fprintf(fp,"%i \t\t\t\t\t! Debug Flag                 \n", a->iflag);
  fprintf(fp,"%i \t\t\t\t\t! First line (from 0)        \n", a->ifirstline);
@@ -50,10 +51,10 @@ EXTERNAL ASSOCIATES: NONE
 FILE REFERENCES: pfile - parameter file
 PROGRAM HISTORY: 1.0    11/96  T. Logan		New Code for SAR Processor
 ******************************************************************************/
-void err(void); 
-void err(void) { printf("Unexpected end-of-file, while reading AISP parameter file.\n\n"); exit(1);}
 
-#define FILL(A,B,C)	if (fgets((A),(B),(C))==NULL) err()
+#define FILL(A,B,C) \
+  if (fgets((A),(B),(C))==NULL) \
+    asfPrintError("Unexpected end-of-file, while reading AISP parameter file.\n\n");
 
 
 void read_params(const char *pfile,struct AISP_PARAMS *gbla)
@@ -66,42 +67,42 @@ void read_params(const char *pfile,struct AISP_PARAMS *gbla)
 /*Open Parameter file.*/
   create_name(buf,pfile,".in");
   fp = FOPEN(buf,"r");
-  
+
 /*Determine file version.*/
   FILL(buf,255,fp); sscanf(buf,"%s", versionStr);
   if (0==strncmp("AISP",versionStr,4))
   {
   	sscanf(versionStr,"AISP%f",&version);
-  	printf("Parsing AISP input file, version %.2f\n",version);
+  	asfPrintStatus("Parsing AISP input file, version %.2f\n",version);
   	FILL(buf,255,fp);
   }
-  
+
 /*Read in parameters.*/
   if (version<2.2)
   {/*File has encoded input and output names*/
 	  sscanf(buf,"%s",gbla->in1);
 	  FILL(buf,255,fp); sscanf(buf,"%s\n", gbla->out);
-	  FILL(buf,255,fp); 
+	  FILL(buf,255,fp);
   }
   sscanf(buf,"%i\n", &gbla->iflag);
-  
+
   if (version<2.0)
   {
   	FILL(buf,255,fp); /*sscanf(buf,"%i\n", &gbla->nbytes);*/
   	FILL(buf,255,fp); /*sscanf(buf,"%i\n", &gbla->ngood);*/
   }
-  
+
   FILL(buf,255,fp); sscanf(buf,"%i\n", &gbla->ifirstline);
   FILL(buf,255,fp); sscanf(buf,"%i\n", &gbla->npatches);
   FILL(buf,255,fp); sscanf(buf,"%i\n", &gbla->ifirst);
   FILL(buf,255,fp); sscanf(buf,"%i\n", &gbla->na_valid);
   FILL(buf,255,fp); sscanf(buf,"%i\n", &gbla->deskew);
-  
+
   if (version<2.0)
   {
   	FILL(buf,255,fp); /*sscanf(buf,"%f\n", &gbla->caltone);*/
   }
-  
+
   FILL(buf,255,fp); sscanf(buf,"%i %i\n", &gbla->isave,&gbla->nla);
   FILL(buf,255,fp); sscanf(buf,"%f %f %f\n", &gbla->fd,&gbla->fdd,&gbla->fddd);
   FILL(buf,255,fp); sscanf(buf,"%f\n", &gbla->re);
@@ -109,20 +110,20 @@ void read_params(const char *pfile,struct AISP_PARAMS *gbla)
   FILL(buf,255,fp); sscanf(buf,"%f\n", &gbla->ht);
   FILL(buf,255,fp); sscanf(buf,"%f\n", &gbla->r00);
   FILL(buf,255,fp); sscanf(buf,"%f\n", &gbla->prf);
-  
+
   if (version<2.0)
   {
   	FILL(buf,255,fp); /*sscanf(buf,"%f %f\n", &gbla->xmi,&gbla->xmq);*/
   	FILL(buf,255,fp); /*sscanf(buf,"%s\n", gbla->iqflip);*/
   }
-  
+
   FILL(buf,255,fp); sscanf(buf,"%f\n", &gbla->azres);
   FILL(buf,255,fp); sscanf(buf,"%i\n", &gbla->nlooks);
   FILL(buf,255,fp); sscanf(buf,"%f\n", &gbla->fs);
   FILL(buf,255,fp); sscanf(buf,"%f\n", &gbla->slope);
   FILL(buf,255,fp); sscanf(buf,"%f\n", &gbla->pulsedur);
   FILL(buf,255,fp); sscanf(buf,"%f\n", &gbla->nextend);
-  
+
   FILL(buf,255,fp);
   if (strstr(buf,"Secondary")!=NULL) /*Skip over secondary range migration section.*/
   	{ FILL(buf,255,fp); }
@@ -134,7 +135,7 @@ void read_params(const char *pfile,struct AISP_PARAMS *gbla)
 	 &gbla->sloper, &gbla->interr, &gbla->slopea, &gbla->intera);
   FILL(buf,255,fp); sscanf(buf,"%g %g %g %g\n",
 	 &gbla->dsloper, &gbla->dinterr, &gbla->dslopea, &gbla->dintera);
-  
+
   FCLOSE(fp);
   return;
 }

@@ -1,5 +1,6 @@
 #include "asf.h"
 #include "asf_import.h"
+#include "asf_reporting.h"
 #include "envi.h"
 
 #define ENVI_UTM     3
@@ -149,8 +150,7 @@ void import_envi(char *inDataName, char *inMetaName, char *outBaseName,
              &envi->center_lon, bla);
       break;
     default:
-      sprintf(errbuf, "unsupported map projection");
-      print_error(errbuf);
+      asfPrintError("Unsupported map projection\n");
       break;
     }
 
@@ -165,12 +165,6 @@ void import_envi(char *inDataName, char *inMetaName, char *outBaseName,
 
   /* Clean and report */
   meta_free(meta);
-  if(flags[f_QUIET] == FLAG_NOT_SET) {
-    sprintf(logbuf, "   Converted ENVI file (%s) to ASF internal file (%s)\n\n",
-            inDataName, outDataName);
-    printf(logbuf);
-    fLog = FOPEN(logFile, "a");
-    printLog(logbuf);
-    FCLOSE(fLog);
-  }
+  asfPrintStatus("   Converted ENVI file (%s) to ASF internal file (%s)\n\n",
+                 inDataName, outDataName);
 }

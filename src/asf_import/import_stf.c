@@ -2,6 +2,7 @@
 #include "dateUtil.h"
 #include "decoder.h"
 #include "lzFetch.h"
+#include "asf_reporting.h"
 
 /* Prototypes */
 void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart,
@@ -34,7 +35,7 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   readPulseFunc readNextPulse; /* Pointer to function that reads the next line of CEOS Data */
 
   if (flags[f_SPROCKET] != FLAG_NOT_SET) {
-    print_error("Data is level 0, sprocket can not use this.");
+    asfPrintError("Data is level 0, sprocket can not use this.\n");
     exit(EXIT_FAILURE);
   }
 
@@ -56,13 +57,10 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
     sprintf(logbuf, "%s gamma", logbuf);
   if (flags[f_POWER] != FLAG_NOT_SET)
     sprintf(logbuf, "%s power", logbuf);
-  sprintf(logbuf,
-          "Warning:\n"
-          "  The following flags will be ignored since this is a level zero data set:\n"
-          "  %s\n", logbuf);
-  if (flags[f_QUIET] == FLAG_NOT_SET)
-    printf(logbuf);
-  printLog(logbuf);
+  asfPrintStatus(
+    "Warning:\n"
+    "  The following flags will be ignored since this is a level zero data set:\n"
+    "  %s\n", logbuf);
 
   if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
     /* Determine start and end line for latitude constraint */
@@ -118,8 +116,7 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
 
   for (outLine=0; outLine<nTotal; outLine++) {
       if (s->curFrame >= s->nFrames) {
-        if(flags[f_QUIET] == FLAG_NOT_SET) printf("   Reached end of file\n");
-        printLog("   Reached end of file\n");
+        asfPrintStatus("   Reached end of file\n");
         break;
       }
 
@@ -137,7 +134,7 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
         }
       }
       /* Write status information to screen. */
-      line_meter(outLine,nTotal);
+      asfLineMeter(outLine,nTotal);
   }
 
   if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {

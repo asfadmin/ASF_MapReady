@@ -150,6 +150,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "decoder.h"
 #include "get_ceos_names.h"
 #include "get_stf_names.h"
+#include "asf_reporting.h"
 #include <ctype.h>
 
 #define REQUIRED_ARGS 2
@@ -344,7 +345,7 @@ int main(int argc, char *argv[])
     }
     if(lowerLat < -90.0 || lowerLat > 90.0 || upperLat < -90.0 || upperLat > 90.0)
     {
-      print_error("Invalid latitude constraint (must be -90 to 90)");
+      asfPrintError("Invalid latitude constraint (must be -90 to 90)");
     }
   }
 
@@ -377,7 +378,7 @@ int main(int argc, char *argv[])
     }
     if (flag_count > 1) {
       sprintf(logbuf, "Cannot mix the %s flags.", flags_used);
-      print_error(logbuf);
+      asfPrintError(logbuf);
     }
   } /* END: Check for conflict between pixel type flags */
 
@@ -473,9 +474,7 @@ int main(int argc, char *argv[])
   }
   /* Don't recognize this data format; report & quit */
   else {
-    sprintf(logbuf,"Unrecognized data format: '%s'",format_type);
-    print_error(logbuf);
-    printLog(logbuf);
+    asfPrintError("Unrecognized data format: '%s'",format_type);
   }
 
   /* If the user asked for sprocket layers, create sprocket data layers

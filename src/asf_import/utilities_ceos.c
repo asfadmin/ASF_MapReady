@@ -4,6 +4,7 @@
 #include "decoder.h"
 #include "dateUtil.h"
 #include "get_ceos_names.h"
+#include "asf_reporting.h"
 
 /*Internal Metadata creation routine prototype*/
 void ceos_init(const char *in_fName,meta_parameters *sar);
@@ -37,7 +38,7 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
     double imgLen;/*Half of length of image, in seconds*/
     int i;
     imgLen=ceosLen(inN)/2.0/s->prf;
-    printf("   VEXCEL Level-0 CEOS: Shifted by %f seconds...\n",imgLen);
+    asfPrintStatus("   VEXCEL Level-0 CEOS: Shifted by %f seconds...\n",imgLen);
     /*Correct the image start time*/
     meta->state_vectors->second -= imgLen;
     if (meta->state_vectors->second<0) {
@@ -50,12 +51,10 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
       meta->state_vectors->vecs[i].time += imgLen;
   /* State vectors are too far apart or too far from image as read -- propagate
    * them */
-    if (!quietflag) {
-      printf("   Updating state vectors...  ");
-      fflush(NULL);
-    }
+    asfPrintStatus("   Updating state vectors...  ");
+    fflush(NULL);
     propagate_state(meta, 3, (s->nLines / s->prf / 2.0) );
-    if (!quietflag) printf("Done.\n");
+    asfPrintStatus("Done.\n");
   }
 
   /* Update s-> fields with new state vector */
@@ -90,10 +89,8 @@ bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
     s=JRS_ceos_decoder_init(inN,outN,readNextPulse);
   else if (0==strncmp(satName,"R",1))
     s=RSAT_ceos_decoder_init(inN,outN,readNextPulse);
-  else {
-    printf("Unrecognized satellite '%s'!\n",satName);
-    exit(EXIT_FAILURE);
-  }
+  else
+    asfPrintError("Unrecognized satellite '%s'!\n",satName);
   createMeta_ceos(s,&dssr,inN,outN);
 
 /*Write out AISP input parameter files.*/
@@ -132,7 +129,6 @@ signalType *getNextCeosLine(FILE *f, bin_state *s, char *inN, char *outN)
   struct HEADER head;
   int length;
   struct dataset_sum_rec dssr;
-  char message[256];
 
   if (headerLen!=fread(&head,1,headerLen,f)) {
     /* create metadata file */
@@ -147,9 +143,7 @@ signalType *getNextCeosLine(FILE *f, bin_state *s, char *inN, char *outN)
 
     writeAISPformat(s,outN);
 
-    sprintf(message,"\n   Wrote %i lines of raw signal data.\n\n",s->nLines);
-    printf(message);
-    if (logflag) { printLog(message); }
+    asfPrintStatus("\n   Wrote %i lines of raw signal data.\n\n",s->nLines);
 
     exit(EXIT_SUCCESS);
   }

@@ -3,6 +3,7 @@
 #include "asf_meta.h"
 #include "calibrate.h"
 #include "decoder.h"
+#include "asf_reporting.h"
 
 #define MAX_tableRes 512
 
@@ -52,17 +53,13 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
     /* Die if the sprocket flag is specified, since it doesn't do lvl 0 */
     if (flags[f_SPROCKET] != FLAG_NOT_SET) {
-      print_error("Data is level 0, SProCKET can not use it.");
+      asfPrintError("Data is level 0, SProCKET can not use it.");
       exit(EXIT_FAILURE);
     }
 
     /* Let the user know what format we are working on */
-    strcpy(logbuf,
-           "   Input data type: level zero raw data\n"
-           "   Output data type: complex byte raw data\n");
-    if (flags[f_QUIET] == FLAG_NOT_SET)
-      printf(logbuf);
-    printLog(logbuf);
+    asfPrintStatus("   Input data type: level zero raw data\n"
+                   "   Output data type: complex byte raw data\n");
 
     /* Make sure that none of the level one flags are set */
     strcpy(logbuf,"");
@@ -76,13 +73,11 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       sprintf(logbuf, "%s gamma", logbuf);
     if (flags[f_POWER] != FLAG_NOT_SET)
       sprintf(logbuf, "%s power", logbuf);
-    sprintf(logbuf,
-            "Warning:\n"
-            "  The following flags will be ignored since this is a level zero data set:\n"
-            "  %s\n\n", logbuf);
-    if (flags[f_QUIET] == FLAG_NOT_SET)
-      printf(logbuf);
-    printLog(logbuf);
+    asfPrintStatus(
+      "Warning:\n"
+      "  The following flags will be ignored since this is a level zero data set:\n"
+      "  %s\n\n", logbuf);
+
 
     /* Handle output files */
     strcat(outDataName,TOOLS_RAW_EXT);
@@ -92,11 +87,10 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     fpOut = FOPEN(outDataName, "wb");
     getNextCeosLine(s->binary, s, inMetaName, outDataName); /* Skip CEOS header. */
     s->nLines = 0;
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf("\n");
     for (ii=0; ii<nl; ii++) {
       readNextPulse(s, iqBuf, inDataName, outDataName); /* I think outDataName is just a place holder... at least for now */
       FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
-      line_meter(ii,nl);
+      asfLineMeter(ii,nl);
      s->nLines++;
     }
     updateMeta(s,meta,NULL,0);
@@ -109,12 +103,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     complexFloat *out_cpx_buf;
 
     /* Let the user know what format we are working on */
-    strcpy(logbuf,
-           "   Input data type: single look complex\n"
-           "   Output data type: single look complex\n");
-    if (flags[f_QUIET] == FLAG_NOT_SET)
-      printf(logbuf);
-    printLog(logbuf);
+    asfPrintStatus("   Input data type: single look complex\n"
+                   "   Output data type: single look complex\n");
 
     /* Make sure that none of the level one flags are set */
     strcpy(logbuf,"");
@@ -128,13 +118,10 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       sprintf(logbuf, "%s gamma", logbuf);
     if (flags[f_POWER] != FLAG_NOT_SET)
       sprintf(logbuf, "%s power", logbuf);
-    sprintf(logbuf,
-            "Warning:\n"
-            "  The following flags will be ignored since this is a complex data set:\n"
-            "  %s\n", logbuf);
-    if (flags[f_QUIET] == FLAG_NOT_SET)
-      printf(logbuf);
-    printLog(logbuf);
+    asfPrintStatus(
+      "Warning:\n"
+      "  The following flags will be ignored since this is a complex data set:\n"
+      "  %s\n", logbuf);
 
     /* Deal with metadata */
     meta->general->data_type=COMPLEX_REAL32;
@@ -165,7 +152,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         out_cpx_buf[kk].imag=(float)cpx_buf[kk*2+1];
       }
       put_complexFloat_line(fpOut, meta, ii, out_cpx_buf);
-      line_meter(ii,nl);
+      asfLineMeter(ii,nl);
     }
   }
   /******************* END COMPLEX (level 1) DATA SECTION ********************/
@@ -181,7 +168,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     if (check_cal(inMetaName)==0 &&
         ( (flags[f_SIGMA]!=FLAG_NOT_SET) || (flags[f_SIGMA]!=FLAG_NOT_SET) ||
           (flags[f_SIGMA]!=FLAG_NOT_SET) ) ) {
-      print_error("Unable to find calibration parameters in the metadata.\n");
+      asfPrintError("Unable to find calibration parameters in the metadata.\n");
     }
 
     /* Let the user know what format we are working on */
@@ -237,8 +224,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
               "   Output data type: amplitude image\n\n");
       meta->general->image_data_type = AMPLITUDE_IMAGE;
     }
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
-    printLog(logbuf);
+    asfPrintStatus(logbuf);
 
     /* Open image files */
     fpIn=fopenImage(inDataName,"rb");
@@ -262,7 +248,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       out_buf = (float *) MALLOC(ns * sizeof(float));
     }
     else
-      print_error("Unkown CEOS data format");
+      asfPrintError("Unkown CEOS data format");
 
     meta->general->data_type=REAL32;
 
@@ -326,7 +312,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	      out_buf[kk] = 0;
 	  }
           put_float_line(fpOut, meta, ii, out_buf);
-          line_meter(ii,nl);
+          asfLineMeter(ii,nl);
 	}
 
       } /**** End processing of 16 bit input data ****/
@@ -374,7 +360,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	      out_buf[kk] = 0;
 	  }
           put_float_line(fpOut, meta, ii, out_buf);
-          line_meter(ii,nl);
+          asfLineMeter(ii,nl);
 	}
 
       } /**** End processing of byte input data ****/
@@ -396,7 +382,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       tablePix=((ns+(tableRes-1))/tableRes);
       cal_param=create_cal_params(inMetaName);
       if (cal_param==NULL) /* Die if we can't get the calibration params */
-        print_error("Unable to extract calibration parameters from CEOS file.");
+        asfPrintError("Unable to extract calibration parameters from CEOS file.");
       if (flags[f_SIGMA]!=FLAG_NOT_SET)
         cal_param->output_type=sigma_naught;
       else if (flags[f_GAMMA]!=FLAG_NOT_SET)
@@ -449,7 +435,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          line_meter(ii,nl);
+          asfLineMeter(ii,nl);
         }
       } /**** End processing of 16 bit input data ****/
 
@@ -492,7 +478,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          line_meter(ii,nl);
+          asfLineMeter(ii,nl);
         }
       } /**** End processing of byte input data ****/
     } /**** End calibrated output section ****/
@@ -516,7 +502,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
         put_float_line(fpOut, meta, ii, out_buf);
 
-        line_meter(ii,nl);
+        asfLineMeter(ii,nl);
       }
     }
 
@@ -537,7 +523,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
         put_float_line(fpOut, meta, ii, out_buf);
 
-        line_meter(ii,nl);
+        asfLineMeter(ii,nl);
       }
     }
   }
@@ -560,5 +546,5 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   FCLOSE(fpIn);
   FCLOSE(fpOut);
 
-  if(flags[f_QUIET] == FLAG_NOT_SET) printf("Finished.\n\n");
+  asfPrintStatus("Finished.\n\n");
 }

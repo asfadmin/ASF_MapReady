@@ -3,6 +3,7 @@
 #include "decoder.h"
 #include "dateUtil.h"
 #include "get_stf_names.h"
+#include "asf_reporting.h"
 
 /* allocation routine for meta_state_vectors */
 meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
@@ -24,27 +25,19 @@ void lzStateTime(const char *lzStr,ymd_date *date,hms_time *time)
     {"JAN","FEB","MAR","APR","MAY","JUN",
      "JUL","AUG","SEP","OCT","NOV","DEC"};
   int monthNo;
-  if (6!=sscanf(lzStr,"%d-%[^- ]-%d %d:%d:%lf",
-    &date->day, month, &date->year,
-    &time->hour, &time->min, &time->sec))
-  {/*We couldn't read the date correctly*/
-    printf("   ERROR! createMeta_lz:lzStTime couldn't parse LZP\n"
-           "   state vector date string '%s'!\n",lzStr);
-    printf("   Month='%s'\n",month);
-    sprintf(errbuf,"   ERROR: createMeta_lz:lzStTime couldn't parse LZP\n"
-      "   state vector date string '%s'!\n   Month='%s'\n",lzStr,month);
-    printErr(errbuf);
+  if (6!=sscanf(lzStr,"%d-%[^- ]-%d %d:%d:%lf", &date->day, month, &date->year,
+                &time->hour, &time->min, &time->sec))
+  { /*We couldn't read the date correctly*/
+    asfPrintError("* createMeta_lz:lzStTime couldn't parse LZP state vector date string:\n"
+                  "* '%s'!\n"
+		  "* Month='%s'\n",lzStr,month);
   }
 /*Try to figure out the month*/
   monthNo=0;
   while (monthNo<12 && (0!=strncmp(month,monthNames[monthNo],3)))
     monthNo++;
   if (monthNo==12)
-  {
-    printf("   ERROR: createMeta_lz:lzStTime couldn't match month '%s'!\n",month);
-    sprintf(errbuf,"   ERROR: createMeta_lz:lzStTime couldn't match month '%s'!\n",month);
-    printErr(errbuf);
-  }
+    asfPrintError("* createMeta_lz:lzStTime couldn't match month '%s'!\n",month);
   date->month=monthNo+1;
 }
 
@@ -122,11 +115,8 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
     s->lookDir='R';
   else if (clock_ang == -90.0)
     s->lookDir='L';
-  else {
-    printf("   ERROR! Clock angle in .par file is %f!\n",clock_ang);
-    sprintf(errbuf,"   ERROR! Clock angle in .par file is %f!\n",clock_ang);
-    printErr(errbuf);
-  }
+  else
+    asfPrintError("* Clock angle in metadata file is %f!\n",clock_ang);
 
 /*Update s-> fields with new state vector*/
   addStateVector(s,&meta->state_vectors->vecs[0].vec);
@@ -180,11 +170,8 @@ bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
     s=JRS_decoder_init(inName,outName,readNextPulse);
   else if (0==strncmp(satName,"RSAT",4))
     s=RSAT_decoder_init(inName,outName,readNextPulse);
-  else {
-    printf("   Unrecognized satellite '%s'!\n",satName);
-    sprintf(errbuf,"   Unrecognized satellite '%s'!\n",satName);
-   printErr(errbuf);
-  }
+  else
+    asfPrintError("   Unrecognized satellite '%s'!\n",satName);
 
 /*Read in essential parameters from granule file.*/
        /** numLines from parfile is often wrong;

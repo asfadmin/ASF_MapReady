@@ -2,6 +2,7 @@
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
+#include "asf_reporting.h"
 
 /********************************************************************
  * Information about ERS_raw_aux for function: ERS_decodeAux()
@@ -107,15 +108,18 @@ void ERS_auxUpdate(ERS_aux *aux,bin_state *s)
  * E2 was off by about 20 meters.
  */
 
-  if (aux->rfAtten==30)
-  {/*Reciever attenuation at 30-- is ERS-1*/
+  if (aux->rfAtten==30) {
+    /*Reciever attenuation at 30-- is ERS-1*/
     strcpy(s->satName,"ERS1");
     outputDelay=CONF_ERS1_rangePulseDelay;
-  } else if (aux->rfAtten==38) {/*Reciever attenuation at 38-- is ERS-2*/
+  }
+  else if (aux->rfAtten==38) {/*Reciever attenuation at 38-- is ERS-2*/
     strcpy(s->satName,"ERS2");
     outputDelay=CONF_ERS2_rangePulseDelay;
-  } else
-    printf("   WARNING!!! Can't tell if this is ERS-1 or ERS-2!!  RF Atten=%d\n",aux->rfAtten);
+  }
+  else
+    asfPrintWarning("Can't tell if this is ERS-1 or ERS-2!!  RF Atten=%d\n",
+                    aux->rfAtten);
 
 /*Compute slant range to first pixel:*/
   s->prf=aux->prf;
@@ -136,7 +140,7 @@ void ERS_auxUpdate(ERS_aux *aux,bin_state *s)
  * call updateAGC_window with satellite AGC (1.0) and window position for this
  * line.  */
 
-#define SWST_UNIT 0.00000021094 
+#define SWST_UNIT 0.00000021094
 /* unit reported window position corresponds to 210.94 ns */
 
 void ERS_auxAGC_window(bin_state *s,ERS_aux *aux)

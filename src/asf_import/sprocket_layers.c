@@ -22,6 +22,7 @@ PROGRAM HISTORY:
 #include "least_squares.h"
 #include "calibrate.h"
 #include "get_ceos_names.h"
+#include "asf_reporting.h"
 
 #ifndef PI
 # define PI 3.14159265358979323846
@@ -48,7 +49,7 @@ int is_complex(data_type_t data_type)
  * */
 double get_satellite_height(double time, stateVector stVec)
 {
-  return sqrt(SQR(stVec.pos.x) + SQR(stVec.pos.y) + SQR(stVec.pos.z));
+ return sqrt(SQR(stVec.pos.x) + SQR(stVec.pos.y) + SQR(stVec.pos.z));
 }
 
 /******************************************************************************
@@ -247,7 +248,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
   }
 
   /* Tell user we're starting */
-  printAndLog("Now creating SProCKET metadata and data layers...\n");
+  asfPrintStatus("Now creating SProCKET metadata and data layers...\n");
 
   /* Set up file names */
   strcat(strcpy(metaName, asfName), ".meta");
@@ -282,7 +283,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
     else if (nl<3000) tableRes=256;
     tablePix=( (ns+(tableRes-1))/tableRes );
     if (cal_param==NULL) {
-      printAndLog(
+      asfPrintStatus(
           "*************************** WARNING! ***************************\n"
           " Calibration parameters could not be extracted out of CEOS file\n"
           " There will be no sigma0 data layer.\n"
@@ -291,10 +292,10 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
   }
 
   /* Write the sprocket format metadata */
-  printAndLog("Creating metadata file.\n");
+  asfPrintStatus("Creating metadata file.\n");
   meta_write_sprocket(sprocketMetaName, metaOut, dssr);
   FREE(dssr);
-  printAndLog("Done.\n");
+  asfPrintStatus("Done.\n");
 
   doComplex = (is_complex(metaIn->general->data_type)) ? TRUE : FALSE;
 
@@ -323,12 +324,12 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
     size = CHUNK_OF_LINES;
 
     /* create layers */
-    printAndLog("Creating look angle layer:\n");
+    asfPrintStatus("Creating look angle layer:\n");
     for (chunk=0; chunk<nl; chunk+=size) {
       if ((nl-chunk)<CHUNK_OF_LINES)
         size = nl-chunk;
       for (yy=0; yy<size; yy++) {
-        percent_meter((double)(chunk+yy+1)/(double)nl);
+        asfPercentMeter((double)(chunk+yy+1)/(double)nl);
         for (xx=0; xx<ns; xx++) {
           px = metaIn->projection->startX
                + metaIn->projection->perX * xx;
@@ -429,12 +430,12 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
     quad2D.A = firstLook;
     lookFp  = fopenImage(lookName, "wb");
     lookBuf = (float *) MALLOC(ns * sizeof(float) * CHUNK_OF_LINES);
-    printAndLog("Creating look angle layer:\n");
+    asfPrintStatus("Creating look angle layer:\n");
     for (ii=0; ii<nl; ii+=size) {
       if ((nl-ii)<CHUNK_OF_LINES)
         size = nl-ii;
       for (ll=0; ll<size; ll++) {
-        percent_meter((double)(ii+ll+1)/(double)nl);
+        asfPercentMeter((double)(ii+ll+1)/(double)nl);
         for (kk=0; kk<ns; kk++) {
           x = ii + ll;
           y = kk;
@@ -464,12 +465,12 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
  *    quad2D.A = firstLat;
  *    latFp  = fopenImage(latName, "wb");
  *    latBuf = (float *) MALLOC(ns * sizeof(float) * CHUNK_OF_LINES);
- *    printAndLog("Creating latitude layer:\n");
+ *    asfPrintStatus("Creating latitude layer:\n");
  *    for (ii=0; ii<nl; ii+=size) {
  *      if ((nl-ii)<CHUNK_OF_LINES)
  *        size = nl-ii;
  *      for (ll=0; ll<size; ll++) {
- *        percent_meter((double)(ii+ll+1)/(double)nl);
+ *        asfPercentMeter((double)(ii+ll+1)/(double)nl);
  *        for (kk=0; kk<ns; kk++) {
  *          x = ii + ll;
  *          y = kk;
@@ -497,11 +498,11 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
  *    quad2D.A = firstLon;
  *    lonFp = fopenImage(lonName, "wb");
  *    lonBuf = (float *) MALLOC(ns * sizeof(float) * CHUNK_OF_LINES);
- *    printAndLog("Creating longitude layer:\n");
+ *    asfPrintStatus("Creating longitude layer:\n");
  *    for (ii=0; ii<nl; ii+=size) {
  *      if ((nl-ii)<CHUNK_OF_LINES) size = nl-ii;
  *      for (ll=0; ll<size; ll++) {
- *        percent_meter((double)(ii+ll+1)/(double)nl);
+ *        asfPercentMeter((double)(ii+ll+1)/(double)nl);
  *        for (kk=0; kk<ns; kk++) {
  *          x = ii + ll;
  *          y = kk;
@@ -550,14 +551,14 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
 
       /* Break complex data into I and Q data layers and create amp & sigma0*/
       size = CHUNK_OF_LINES;
-      printAndLog("Creating I, Q, amp, & sigma0 layers:\n");
+      asfPrintStatus("Creating I, Q, amp, & sigma0 layers:\n");
       for (chunk=0; chunk<nl; chunk+=size) {
         if ((nl-chunk)<CHUNK_OF_LINES)
           size = nl-chunk;
         get_complexFloat_lines(inFp, metaIn, chunk, size, iqBuf);
         for (yy=0; yy<size; yy++) {
           overall_line = chunk+yy;
-          percent_meter((double)(overall_line+1)/(double)nl);
+          asfPercentMeter((double)(overall_line+1)/(double)nl);
           /*Allocate noise table entries and/or update if needed.*/
           if (overall_line==0
               || (overall_line%(nl/tableRes)==0
@@ -612,14 +613,14 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
 
     /* What to do if it's in ASF CEOS format */
     if (!rsiCeos) {
-      printAndLog("Creating sigma0 layer:\n");
+      asfPrintStatus("Creating sigma0 layer:\n");
       for (chunk=0; chunk<nl; chunk+=size) {
         if ((nl-chunk)<CHUNK_OF_LINES)
           size = nl-chunk;
         get_float_lines(inFp, metaIn, chunk, size, ampBuf);
         for (yy=0; yy<size; yy++) {
           overall_line = chunk+yy;
-          percent_meter((double)(overall_line+1)/(double)nl);
+          asfPercentMeter((double)(overall_line+1)/(double)nl);
           /*Allocate noise table entries and/or update if needed.*/
           if (overall_line==0
               || (overall_line%(nl/tableRes)==0
@@ -660,14 +661,14 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
       get_rsi_raddr(leaderName, &rdr);
       scalingGain = create_rsi_scaling_table(rdr, dir, ns);
 
-      printAndLog("Creating sigma0 layer:\n");
+      asfPrintStatus("Creating sigma0 layer:\n");
       for (chunk=0; chunk<nl; chunk+=size) {
         if ((nl-chunk)<CHUNK_OF_LINES)
         size = nl-chunk;
         get_float_lines(inFp, metaIn, chunk, size, ampBuf);
         for (yy=0; yy<size; yy++) {
           overall_line = chunk+yy;
-          percent_meter((double)(overall_line+1)/(double)nl);
+          asfPercentMeter((double)(overall_line+1)/(double)nl);
           for (xx=0; xx<ns; xx++) {
             int bufInd = yy*ns+xx;
             float sinIncid = ht * sin((D2R*lookLayerBuf[xx])/Re);
@@ -694,6 +695,6 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
 
   /* Clean up a bit & report */
   FREE(lookLayerBuf);
-  
-  printAndLog("Finished creating SProCKET layers.\n");
+
+  asfPrintStatus("Finished creating SProCKET layers.\n");
 }

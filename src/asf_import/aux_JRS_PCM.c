@@ -16,32 +16,32 @@ data line reads as sin(x) for a logic 1, and
 can be extracted from the data line.
 
 XXXXXXXXXXXXXXXXX JERS PCM Data Encoding XXXXXXXXXXXXXXXXX
-Data line:                                                        
-1 |   ------                   -----            ------   -----               
-  |  /      \        |        /     \ |        /      \|/     \         |    
+Data line:
+1 |   ------                   -----            ------   -----
+  |  /      \        |        /     \ |        /      \|/     \         |
   | /- -- - -\- - - -- - - - / - - - \ - - - -/- -- - - - - - -\- - - - ...
-  |/          \     /\      /         \      /                  \      /    
+  |/          \     /\      /         \      /                  \      /
 0 |            ----- |------          |------          |         ------ |
 
   |<--- bit time --->|<---- .49ms --->|<- 10 samples ->|                |
-  |                  |                |                |                |                 
-  |        1         |       0        |       0        |       1        |                
   |                  |                |                |                |
-                                                                           
+  |        1         |       0        |       0        |       1        |
+  |                  |                |                |                |
+
 Clock line:          |                |                |                |
-1 |       ------           -----            -----            -----       
+1 |       ------           -----            -----            -----
   |      /      \    |    /     \     |    /     \     |    /     \     |
   |- - -/- -- - -\- - - -/- - - -\- - - - / - - - \ - -  - / - - - \ - - ...
   |    /          \  |  /         \   |  /         \   |  /         \   |
 0 |----            -----           ------           ------           ----
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-Oddly enough, because you have 10 samples of data and clock for 
-each PCM bit, it's easy to correct almost all bit errors using a 
+Oddly enough, because you have 10 samples of data and clock for
+each PCM bit, it's easy to correct almost all bit errors using a
 "majority", or "bit polarity" approach.
 
 Once you extract the 2048-bit per second stream from the data
-and clock line samples, you look for the pattern 0xFAF320 
+and clock line samples, you look for the pattern 0xFAF320
 (the JERS PCM data frame synchronization code).
 This pattern marks the beginning of a 128-byte PCM minor frame.
 We finally extract the satellite time code from bytes 16 and 17
@@ -53,7 +53,7 @@ ASF-STEP Level-Zero Data Quality Tool
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
-
+#include "asf_reporting.h"
 
 JRS_PCM *new_JRS_PCM(int maxFrames)
 {
@@ -68,7 +68,7 @@ JRS_PCM *new_JRS_PCM(int maxFrames)
 	for (i=0;i<nBytes;i++)
 		p->pcmBits[i]=0;/*Initialize frame buffer to all zeros*/
 	p->frames=(unsigned char *)MALLOC(nFrames*128);
-	
+
 	return p;
 }
 void delete_JRS_PCM(JRS_PCM *p)
@@ -89,7 +89,7 @@ static void setBit(JRS_PCM *p,int bitVal)
 
 /*Return the circular index of the clock
 bits' "trough"-- where the clock pulse reads lowest.
-Searches from end-len to end-1 in buffer, 
+Searches from end-len to end-1 in buffer,
 looking for the clock trough, and returns the index of the
 middle of the trough.
 */
@@ -112,13 +112,13 @@ static int clock_trough(JRS_PCM *p)
 			bestVal=thisVal;
 			bestOffset=offset;
 		}
-		
+
 	}
 	return PCM_bit_mask&(bestOffset+start+troughMaskLen/2);
 }
 
 /*Determine the polarity of the data bit located immediately
-before the given clock trough.  Needs at least 9 bits in the 
+before the given clock trough.  Needs at least 9 bits in the
 data_bits buffer.
 */
 int extract_bit(JRS_PCM *p,int trough)
@@ -132,8 +132,8 @@ int extract_bit(JRS_PCM *p,int trough)
 	/*Now subtract the bits on the early edge of the data cycle*/
 	for (i=6;i<10;i++)
 		polarity-=p->data_bits[PCM_bit_mask&(trough-i)];
-	
-/*printf("Polarity=%d, clockLen=%d\n",polarity,PCM_bit_mask&(trough-p->prevTrough));	*/
+
+/*asfPrintStatus("Polarity=%d, clockLen=%d\n",polarity,PCM_bit_mask&(trough-p->prevTrough));	*/
 	return (polarity<0);
 }
 
@@ -141,7 +141,7 @@ int extract_bit(JRS_PCM *p,int trough)
 /*Add a single (at least 8x over-) sampling of the data and clock
 lines to the circular buffer.
 
-Note: dataVal and clockVal represent a single bit, but need not 
+Note: dataVal and clockVal represent a single bit, but need not
 actually be 0 or 1-- they can be 0 and 15, or 0 and 3, or whatever.
 Analog signals (0,1,2, or 3) are even OK.
 */
@@ -151,7 +151,7 @@ void JRS_PCM_add_sample(JRS_PCM *p,int clockVal,int dataVal)
 	p->clk_bits[p->end]=clockVal;
 	p->end++;p->len++;
 	p->end&=PCM_bit_mask;
-	
+
 	if (p->len>16)
 	{/*We have a long string of data and clock bits-- cut them back a bit*/
 		int trough=clock_trough(p);
@@ -176,8 +176,8 @@ void JRS_PCM_sync(JRS_PCM *p)
 			break;/*Jump out of loop*/
 	}
 	p->startBit=bitOffset;
-	
-/*Now that we've found the bit synchronization code, 
+
+/*Now that we've found the bit synchronization code,
   extract each frame, bit-aligned.*/
 	for (p->nFrames=0;(bitOffset+(p->nFrames+1)*8*128)<p->nBits;p->nFrames++)
 		extractBits(p->pcmBits,bitOffset+p->nFrames*8*128,128,&p->frames[p->nFrames*128]);
@@ -191,7 +191,7 @@ void JRS_PCM_write(JRS_PCM *p,const char *fName)
 	for (i=0;i<p->nFrames;i++)
 		FWRITE(&p->frames[i*128],128,1,f);
 	FCLOSE(f);
-	printf("Wrote %d 128-byte frames of JRS PCM data to '%s'.\n",p->nFrames,fName);
+	asfPrintStatus("Wrote %d 128-byte frames of JRS PCM data to '%s'.\n",p->nFrames,fName);
 }
 
 
@@ -216,7 +216,7 @@ double JRS_PCM_time(JRS_PCM *p)
 			time|=(curFrame[16]<<16);
 		}
 		else if (fc==2)
-		{/*Finally, we have the last piece of the time code-- 
+		{/*Finally, we have the last piece of the time code--
 		If we have the other pieces, extract and return them all*/
 			timePieces|=0x100;
 			time|=(curFrame[16]<<8);
@@ -224,12 +224,12 @@ double JRS_PCM_time(JRS_PCM *p)
 			{/*We collected all three pieces! Return them*/
 				int waitBits;/*Number of PCM bit-times we wasted looking for this clock frame*/
 				double ret;
-				printf("Found JRS PCM time code %d at frame %d!!\n",time,frameNo);
+				asfPrintStatus("Found JRS PCM time code %d at frame %d!!\n",time,frameNo);
 			/*Subtract off the amount of time we wasted *looking* for the clock--
 			clock time refers to time of the first bit of the frame with fc=0*/
 				waitBits=p->startBit+128*8*(frameNo-2);
 				ret=time-waitBits/2048.0;/*PCM data is 2048.0 bps, so n bits==n/2048.0 seconds.*/
-				printf("Correcting JRS PCM time to %f for first line\n",ret);
+				asfPrintStatus("Correcting JRS PCM time to %f for first line\n",ret);
 				return ret;
 			}
 		}
@@ -237,7 +237,8 @@ double JRS_PCM_time(JRS_PCM *p)
 		frameNo++;
 	}
 	/*If we haven't returned by now, we couldn't find a time code in all the frames*/
-	printf("ERROR!!  Couldn't find JRS PCM time in %d frames!!\n",p->nFrames);
+	asfForcePrintStatus("ERROR!!  Couldn't find JRS PCM time in %d frames!!\n",
+	                    p->nFrames);
 	return 0;
 }
 
