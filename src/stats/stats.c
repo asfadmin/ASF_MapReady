@@ -4,7 +4,8 @@ NAME: stats
 SYNOPSIS: stats [-mask <value>] [-log <logFile>] [-quiet]
                 [-overmeta] [-nometa] [-overstat] [-nostat]
                 [-startline <line>] [-startsample <sample>]
-                [-width <width>] [-height <height>] <sar_name>
+                [-width <width>] [-height <height>] 
+                [-trim <fraction>] <sar_name>
 
 DESCRIPTION:
 	Takes statistics on an image file and prints them out to
@@ -28,6 +29,7 @@ PROGRAM HISTORY:
     1.1     4/2003   B. Kerin     Added windowing functionality.
     1.2     5/2003   P. Denny     Fixed windowing bug,
                                     wrote stat_write and stat_read
+    1.3     5/2004   R. Gens      Added trimming option
 
 HARDWARE/SOFTWARE LIMITATIONS:
 	None known
@@ -83,7 +85,7 @@ BUGS: None known
 #include "asf_nan.h"
 #include "stats.h"
 
-#define VERSION 1.2
+#define VERSION 1.3
 
 /* For floating point comparisons.  */
 #define MICRON 0.00000001
@@ -91,17 +93,17 @@ BUGS: None known
 
 #define SQR(X) ((X)*(X))
 
+stat_parameters calc_hist(stat_parameters stats, char *sar_name, meta_parameters *meta,
+                          double sum_of_samples, long samples_counted, int mask_flag);
+
 int main(int argc, char **argv)
 {
 	double min, max;             /* Minimum & maximum sample values       */
-	double mean;                 /* Average value of samples              */
 	double sum_of_samples=0.0;   /* Sum of all samples accounted for      */
 	double sum_of_squared_samples=0.0; /* Sum of all squared samples accounted for*/
-	double diff_squared_sum=0.0; /* Summation of square of (sample - mean)*/
-	double slope=1.0;            /* Slope of line to convert real to byte */
-	double offset=0.0;           /* Offset of line to convert real to byte*/
+        double trim_fraction;        /* Fraction used to trim the histogram   */
 	int ii;                      /* Loop index                            */
-	int samples_counted=0;       /* Number of all samples accounted for   */
+	long samples_counted=0;      /* Number of all samples accounted for   */
 	double *data_line;           /* Buffer for a line of samples          */
 	int line, sample;            /* Line and sample indices               */
 	int num_lines, num_samples;  /* Number of lines and samples           */
@@ -111,6 +113,7 @@ int main(int argc, char **argv)
 	int nometa_flag=FALSE;       /* If TRUE do not write .meta file       */
 	int nostat_flag=FALSE;       /* If TRUE do not write .stat file       */
 	int mask_flag=FALSE;         /* TRUE if user specifies a mask value   */
+        int trim_flag=FALSE;         /* If TRUE trim histogram                */
 	double mask=NAN;             /* Value to ignore while caculating stats*/
 	char meta_name[261];         /* Meta file name                        */
 	meta_parameters *meta;       /* SAR meta data structure               */
@@ -192,6 +195,11 @@ int main(int argc, char **argv)
 			  usage(argv[0]);
 			}
 		}
+		else if (strmatch(key,"-trim")) {
+			CHECK_ARG(1);
+			trim_flag=TRUE; /* Implied.  */
+			trim_fraction = atof(GET_ARG(1));
+		}
 		else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
 	}
 
@@ -200,13 +208,11 @@ int main(int argc, char **argv)
 	create_name(meta_name, sar_name, ".meta");
 	create_name(stat_name, sar_name, ".stat");
 
-	StartWatch();
 	printf("Date: ");
 	fflush(NULL);
 	system("date");
 	printf("Program: stats\n\n");
 	if (logflag) {
-		StartWatchLog(fLog);
 		fprintf(fLog, "Program: stats\n\n");
 	}
 
@@ -319,64 +325,67 @@ int main(int argc, char **argv)
 	}
 	if (!quietflag) printf("\rFirst data sweep: 100%% complete.\n");
 
-/* Create histogram of the data and get the summation of the
- * square of (sample-mean) to use in calculation of rmse & stdev */
-	/* Initialize the histogram array */
-	for (ii=0; ii<256; ii++) stats.histogram[ii] = 0;
-
-	if (meta->general->data_type != BYTE) {
-		/* Set slope and offset, to map pixels to [0..255].
-		 * byte = slope * in + offset
-		 * 0    = slope * min + offset
-		 * 255  = slope * max + offset
-		 * Therefore: */
-		slope = 255.0 / (max-min);
-		offset = -slope * min;
-	}
-
-	/* Get histogram of the data.  If its byte data just slap it into the
-	 * histogram; otherwise use slope & offset to scale the data */
-	diff_squared_sum=0.0;
-	mean = sum_of_samples / (double)samples_counted;
-	percent_complete=0;
-	for (line=start_line; line<start_line+window_height; line++) {
-		if (((line-start_line)*100/window_height==percent_complete)
-                    && !quietflag) {
-			printf("\rSecond data sweep: %3d%% complete.",
-				percent_complete++);
-			fflush(NULL);
-		}
-		get_double_line(sar_file, meta, line, data_line);
-		for (sample=start_sample; sample<start_sample+window_width;
-                     sample++) {
-			int bin = (meta->general->data_type == BYTE)
-				? (int)data_line[sample]
-				: (int)(slope*data_line[sample]+offset);
-			if ( mask_flag && FLOAT_EQUIVALENT(data_line[sample],mask) )
-				continue;
-			stats.histogram[bin]++;
-			diff_squared_sum = SQR(data_line[sample] - mean);
-		}
-	}
-	if (!quietflag) printf("\rSecond data sweep: 100%% complete.\n");
 	FREE(data_line);
 	FCLOSE(sar_file);
 
-/* Populate stats structure */
-	stats.min = min;
-	stats.max = max;
-	stats.mean = mean;
-	stats.rmse =
-		sqrt( fabs( diff_squared_sum / (double)samples_counted ) );
-	stats.std_deviation =
-		sqrt( fabs( diff_squared_sum / (double)(samples_counted-1) ) );
-	stats.mask = mask;
-	stats.slope = slope;
-	stats.offset = offset;
+        stats.min = min;
+        stats.max = max;
 	stats.upper_left_line = start_line;
 	stats.upper_left_samp = start_sample;
 	stats.lower_right_line = start_line + window_height;
 	stats.lower_right_samp = start_sample + window_width;
+	stats.mask = mask;
+
+        stats = calc_hist(stats, sar_name, meta, sum_of_samples, 
+                          samples_counted, mask_flag);
+
+
+/* Remove outliers and trim the histogram by resetting the minimum and
+   and maximum */
+        if (trim_flag) {
+          register int sum=0, num_pixels, minDex=0, maxDex=255;
+          double overshoot, width;
+
+          num_pixels = (int)(samples_counted*trim_fraction);
+          minDex = 0;
+          while (sum < num_pixels)
+            sum += stats.histogram[minDex++];
+          if (minDex-1>=0) 
+            overshoot = (double)(num_pixels-sum)/stats.histogram[minDex-1]; 
+          else 
+            overshoot = 0;
+          stats.min = (minDex-overshoot-stats.offset)/stats.slope;
+
+          sum=0;
+          while (sum < num_pixels)
+            sum += stats.histogram[maxDex--];
+          if (maxDex+1<256) 
+            overshoot = (double)(num_pixels-sum)/stats.histogram[maxDex+1];
+          else 
+            overshoot = 0;
+          stats.max = (maxDex+1+overshoot-stats.offset)/stats.slope;
+
+          /* Widening the range for better visual effect */
+          width = (stats.max-stats.min)*(1/(1.0-2*trim_fraction)-1);
+          stats.min -= width/2;
+          stats.max += width/2;
+        
+          /* Couple useful corrections borrowed from SARview */
+          if ((stats.max-stats.min) < 0.01*(max-min)) {
+            stats.max = max;
+            stats.min = min;
+          }
+          if (min == 0.0) 
+            stats.min=0.0;
+          if (stats.min == stats.max)
+            stats.max = stats.min + MICRON;
+
+          stats.slope = 255.0/(stats.max-stats.min);
+          stats.offset = -stats.slope*stats.min;
+
+          stats = calc_hist(stats, sar_name, meta, sum_of_samples, 
+                            samples_counted, mask_flag);
+        }
 
 /* Populate meta->stats structure */
 	if (!meta->stats)
@@ -404,6 +413,8 @@ int main(int argc, char **argv)
 		printf("\n");
 		printf("Data fit to [0..255] using equation:  byte = %g * sample + %g\n",
 			stats.slope, stats.offset);
+                if (trim_flag)
+                  printf("Trimming fraction = %.3g\n", trim_fraction);
 		printf("\n");
 		printf("Histogram:\n");
 		for (ii=0; ii<256; ii++) {
@@ -431,6 +442,8 @@ int main(int argc, char **argv)
 		fprintf(fLog,
 			"Data fit to [0..255] using equation:  byte = %g * sample + %g\n",
 			stats.slope, stats.offset);
+                if (trim_flag)
+                  fprintf(fLog, "Trimming fraction = %.3g\n", trim_fraction);
 		fprintf(fLog,"\n");
 		fprintf(fLog,"Histogram:\n");
 		for (ii=0; ii<256; ii++) {
@@ -473,10 +486,78 @@ int main(int argc, char **argv)
 		fprintf(fLog,"\n");
 	}
 
-	StopWatch();
-	if (logflag) StopWatchLog(fLog);
 	if (fLog) FCLOSE(fLog);
 	return 0;
+}
+
+/* Create histogram of the data and get the summation of the
+ * square of (sample-mean) to use in calculation of rmse & stdev */
+stat_parameters calc_hist(stat_parameters stats, char *sar_name, meta_parameters *meta,
+                          double sum_of_samples, long samples_counted, int mask_flag)
+{
+        FILE *fp;
+        int start_line, start_sample, window_height, window_width;
+        int percent_complete, line, sample, ii;
+        double diff_squared_sum=0.0, *data_line;
+
+        start_line = stats.upper_left_line;
+        start_sample = stats.upper_left_samp;
+        window_height = stats.lower_right_line - start_line;
+        window_width = stats.lower_right_samp - start_sample;
+
+ 	data_line = (double *)MALLOC(sizeof(double)*meta->general->sample_count); 
+	fp = FOPEN(sar_name, "r");
+
+	/* Initialize the histogram array */
+	for (ii=0; ii<256; ii++) stats.histogram[ii] = 0;
+
+	if (meta->general->data_type != BYTE) {
+		/* Set slope and offset, to map pixels to [0..255].
+		 * byte = slope * in + offset
+		 * 0    = slope * min + offset
+		 * 255  = slope * max + offset
+		 * Therefore: */
+		stats.slope = 255.0 / (stats.max-stats.min);
+		stats.offset = -stats.slope * stats.min;
+	}
+
+	/* Get histogram of the data.  If its byte data just slap it into the
+	 * histogram; otherwise use slope & offset to scale the data */
+	stats.mean = sum_of_samples / (double)samples_counted;
+	percent_complete=0;
+	for (line=start_line; line<start_line+window_height; line++) {
+		if (((line-start_line)*100/window_height==percent_complete)
+                    && !quietflag) {
+			printf("\rSecond data sweep: %3d%% complete.",
+				percent_complete++);
+			fflush(NULL);
+		}
+		get_double_line(fp, meta, line, data_line);
+		for (sample=start_sample; sample<start_sample+window_width;
+                     sample++) {
+			int bin = (meta->general->data_type == BYTE)
+				? (int)data_line[sample]
+				: (int)(stats.slope*data_line[sample]+stats.offset);
+			if (bin < 0) bin = 0;
+			else if (bin > 255) bin = 255;
+			if ( mask_flag && FLOAT_EQUIVALENT(data_line[sample],stats.mask) )
+				continue;
+			stats.histogram[bin]++;
+			diff_squared_sum = SQR(data_line[sample] - stats.mean);
+		}
+	}
+	if (!quietflag) printf("\rSecond data sweep: 100%% complete.\n");
+
+	FREE(data_line);
+	FCLOSE(fp);
+
+/* Populate stats structure */
+	stats.rmse =
+		sqrt( fabs( diff_squared_sum / (double)samples_counted ) );
+	stats.std_deviation =
+		sqrt( fabs( diff_squared_sum / (double)(samples_counted-1) ) );
+
+        return stats;
 }
 
 void usage(char *name)
@@ -486,7 +567,8 @@ void usage(char *name)
 	"   %s [-mask <value>] [-log <logFile>] [-quiet]\n"
 	"         [-overmeta] [-nometa] [-overstat] [-nostat]\n"
 	"         [-startline <line>] [-startsample <sample>]\n"
-	"         [-width <width>] [-height <height>] <sar_name>\n", name);
+	"         [-width <width>] [-height <height>]\n"
+        "         [-trim <fraction>] <sar_name>\n", name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
 	"   sar_name   Name of input image file (including extension)\n");
@@ -502,7 +584,8 @@ void usage(char *name)
 	"   -startline    Start counting at image line <line> (implies -nometa).\n"
 	"   -startsample  Start counting at image sample <sample> (implies -nometa).\n"
 	"   -height       Only process <height> lines (implies -nometa).\n"
-	"   -width        Only process <width> samples per line (implies -nometa).\n");
+	"   -width        Only process <width> samples per line (implies -nometa).\n"
+        "   -trim         Fraction used to trim the histogram.\n");
  printf("\n"
 	"DESCRIPTION:\n"
 	"   This program takes statistics on a SAR data file and writes them\n"
