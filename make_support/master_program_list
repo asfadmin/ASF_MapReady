@@ -63,8 +63,6 @@ LIBS
 @src_tc/
 	sarmodel
 	tcobj
-#@src_x/sprocket/util/
-#	libUtil
 }
 
 # A listing of programs (not so easy).
@@ -74,17 +72,21 @@ PROGRAMS
 	calibrate { }
 	stats { }
 	convert2byte { PROGRAMS stats }
+	convert2geotiff { }
+# 		jpeg2asf can be compiled if explicitly told to by the
+#		convert2jpeg Makefile
+	convert2jpeg { }
+	convert2ppm { }
 	deskew { }
-	diff_las {  }
 	dspddr { }
 	fftMatch { }
-	las2geotiff { }
-	las2jpeg { BINS jpeg2las }
-	las2ppm { }
-	las_op { }
 	makeddr { }
 	meta2ddr { BINS ddr2meta }
 	metadata { }
+# 		propagate built at the end because not everyone has an F77
+#		compiler
+	raster_calc { }
+	raster_diff { }
 	remap { }
 	resample { }
 	sarin { }
@@ -100,10 +102,9 @@ PROGRAMS
 	fit_quadratic { }
 	idimage { BINS idtable }
 	projprm { }
-
-# Because makemake parses this file from top-to-bottom,
-# you can't reference not-yet-listed programs.
-# Hence the scripts are at the end.
+#		Because makemake parses this file from top-to-bottom,
+#		you can't reference not-yet-listed programs.
+#		Hence the scripts are at the end.
 	geocode
 	{
 		PROGRAMS
@@ -139,8 +140,10 @@ PROGRAMS
 	}
 	avg_in_dop { }
 	c2p { }
+#		ceos2raw program built later (after propagate which it depends on)
 	coh { }
-	cpx_spectrum { }
+	coregister_coarse { PROGRAMS fftMatch convert2byte c2p }
+	coregister_fine { }
 	create_dem_grid	{ }
 	dem2phase { }
 	dem2seeds { }
@@ -150,18 +153,13 @@ PROGRAMS
 	elev { }
 	eleverr { }
 	escher { }
-	fico { }
 	fit_line { }
 	fit_plane { }
 	fit_warp { }
 	igram  { }
-# ceos2raw & lz2raw_flywheel depend on PROGRAMS propagate
-	ceos2raw { }
-	lz2raw_flywheel { }
-	ml { }
+	multilook { }
 	p2c { }
 	phase_filter { }
-	resolve { PROGRAMS fftMatch convert2byte c2p }
 	refine_base { }
 	refine_offset { }
 	trim_slc { }
@@ -201,76 +199,59 @@ PROGRAMS
 			sarsim 
 	}
 
-@src/
 # Propagate is down here so it gets built late as it tends to kill the build
 # (because not every machine has f77).
+@src/
 	propagate { BINS gen_oe asap }
 
 
 # X-Windows source code	
 @src_x/
 	sarview { BINS sarview_bin support }
-#	sprocket
-#	{
-#		BINS
-#			complex
-#			iq
-#			standard
-#			vexcel_complex
-#			geo
-#			target_selector
-#			list_ground_targets.sql
-#			list_sites.sql
-#			convert_standard
-#			image2pgm
-#			image_mask
-#			vexcel_complex_metadata
-#			vexcel_complex_data_planes
-#			xy_plotter
-#	}
+#	sprocket { BINS complex iq standard vexcel_complex geo target_selector
+#	                list_ground_targets.sql list_sites.sql convert_standard
+#			image2pgm image_mask vexcel_complex_metadata
+#			vexcel_complex_data_planes xy_plotter }
+#
 
-
-#@experimental/
+@experimental/
+#	cpx_spectrum { }
 #	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
+	stf2raw { PROGRAMS propagate }
 
+# Down here because it needs propagate
+@src_ifm/
+	ceos2raw { PROGRAMS propagate }
 
 }
 
 
 #The categories have no directories or source, but are valid
 #  autotar and makefile targets.
-
 CATEGORIES
 {
-
-#General Utilites (useful to everybody)
-	utility {
-		calibrate dspddr 
-		metadata sarin sarout
-		convert2byte diff_las fftMatch
-		las2jpeg las2ppm las_op
-		makeddr propagate remap resample 
-		sr2gr trim
+# Open - Anybody can get this stuff (BSD license)
+#        src & src_geo
+	open {
+		calibrate stats convert2byte convert2geotiff convert2jpeg
+		convert2ppm deskew dspddr fftMatch makeddr meta2ddr metadata
+		raster_calc raster_diff remap resample sarin sarout sr2gr trim
+		propagate
+		accum_offset concat concat_dem concatm fit_quadratic idimage
+		projprm geocode auto_sar_mosaic auto_swath_mosaic 
+		sarview
 	}
 
-#All unrestricted source (geocoding + terrain correction)
-	usource {
-		utility
-		auto_sar_mosaic auto_swath_mosaic
-		concat concatm concat_dem geocode projprm
-		terrcorr
+# Restricted - open + ASF controlled + gov't restricted (BSD/ASF license)
+#              src, src_geo, src_ifm, & src_tc
+	restricted {
+		open
+		aisp avg_in_dop c2p ceos2raw coh coregister_coarse
+		coregister_fine create_dem_grid dem2phase dem2seeds deskew_dem
+		reskew_dem deramp elev eleverr escher fit_line fit_plane
+		fit_warp igram multilook p2c phase_filter refine_base
+		refine_offset trim_slc zeroify
+		2dmap demimg demclip despike greycorr sargeom sarsim rtc_add
+		tpl_mult tpl_search correlate terrcorr
 	}
-
-#Inteferometry (i.e. all restricted and unrestricted source)
-	interferometry {
-		usource
-		aisp ceos2raw lz2raw_flywheel
-		refine_offset 
-	}
-
-# SARview: this is separate because it requires Tcl/Tk to compile or run
-#	sarviewer {
-#		sarview
-#	}
-
 }
