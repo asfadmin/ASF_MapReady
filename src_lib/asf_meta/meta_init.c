@@ -71,7 +71,7 @@ meta_parameters *raw_init(void)
    values.  */
   meta->geo   = MALLOC(sizeof(geo_parameters));
   meta->ifm   = MALLOC(sizeof(ifm_parameters));
-  meta->stVec = NULL;
+  meta->stVec = meta->state_vectors; /* Compatability alias.  */
   meta->info = MALLOC(sizeof(extra_info));
   
   /* Guess at conceivable values for deprecated elements.  */
