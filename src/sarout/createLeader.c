@@ -16,8 +16,10 @@ SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY:
 
 ****************************************************************/
+#include <string.h>
 #include "ceos_defaults.h"
 #include "sarout.h"
+
 
 void createLeader(ceosLeader *data, char *filename);
 void createLeader(ceosLeader *data, char *filename)
