@@ -617,7 +617,7 @@ void test_utm_options()
 void ps_test_1()
 {
     static char * opts [] =
-	{ "--projection", "ps", "--center-latitude", "61", "--central-meridian", "-59" };
+	{ "--projection", "ps", "--first-standard-parallel", "61", "--central-meridian", "-59" };
 
     p = opts; l =  6;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -638,7 +638,7 @@ void ps_test_1()
 void ps_test_2()
 {
     static char * opts [] =
-	{ "--projection", "ps", "--central-meridian", "59", "--center-latitude", "-61", "f1", "f2"  };
+	{ "--projection", "ps", "--central-meridian", "59", "--first-standard-parallel", "-61", "f1", "f2"  };
 
     p = opts; l =  8;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -661,7 +661,7 @@ void ps_test_2()
 void ps_test_3()
 {
     static char * opts [] =
-	{ "-p", "ps", "--central-meridian", "59", "--center-latitude", "-61"  };
+	{ "-p", "ps", "--central-meridian", "59", "--first-standard-parallel", "-61"  };
 
     p = opts; l =  6;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -682,7 +682,7 @@ void ps_test_3()
 void ps_test_4()
 {
     static char * opts [] =
-	{ "-p", "ps", "--central-meridian", "0", "--center-latitude", "61"  };
+	{ "-p", "ps", "--central-meridian", "0", "--first-standard-parallel", "61"  };
 
     p = opts; l =  6;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -703,7 +703,7 @@ void ps_test_4()
 void ps_test_5()
 {
     static char * opts [] =
-	{ "-p", "ps", "--central-meridian", "59", "--center-latitude", "-61"  };
+	{ "-p", "ps", "--central-meridian", "59", "--first-standard-parallel", "-61"  };
 
     p = opts; l =  6;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -724,7 +724,7 @@ void ps_test_5()
 void ps_test_6()
 {
     static char * opts [] =
-	{ "-p", "ps", "--central-meridian", "123zap", "--center-latitude", "-61"  };
+	{ "-p", "ps", "--central-meridian", "123zap", "--first-standard-parallel", "-61"  };
 
     p = opts; l =  6;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -741,7 +741,7 @@ void ps_test_6()
 void ps_test_7()
 {
     static char * opts [] =
-	{ "-p", "ps", "--central-meridian", "59", "--center-latitude", "-61", "-n"  };
+	{ "-p", "ps", "--central-meridian", "59", "--first-standard-parallel", "-61", "-n"  };
 
     p = opts; l =  7;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -762,7 +762,7 @@ void ps_test_7()
 void ps_test_8()
 {
     static char * opts [] =
-	{ "-p", "ps", "--central-meridian", "59", "--center-latitude", "-61", "-s"  };
+	{ "-p", "ps", "--central-meridian", "59", "--first-standard-parallel", "-61", "-s"  };
 
     p = opts; l =  7;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -784,7 +784,7 @@ void ps_test_9()
 {
     static char * opts [] =
 	{ "-p", "ps", "--central-meridian", "159",
-	  "--center-latitude", "61", "--south-pole"  };
+	  "--first-standard-parallel", "61", "--south-pole"  };
 
     p = opts; l =  7;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -805,7 +805,7 @@ void ps_test_9()
 void ps_test_10()
 {
     static char * opts [] =
-	{ "--projection", "ps", "--center-latitude", "19", "--central-meridian", "-101",
+	{ "--projection", "ps", "--first-standard-parallel", "19", "--central-meridian", "-101",
 	  "--north-pole"  };
 
     p = opts; l =  7;
@@ -827,7 +827,7 @@ void ps_test_10()
 void ps_test_11()
 {
     static char * opts [] =
-	{ "--projection", "ps", "--center-latitude", "19", "--central-meridian", "-101",
+	{ "--projection", "ps", "--first-standard-parallel", "19", "--central-meridian", "-101",
 	  "--south-pole"  };
 
     p = opts; l =  7;
@@ -849,7 +849,7 @@ void ps_test_11()
 void ps_test_12()
 {
     static char * opts [] =
-	{ "--projection", "ps", "--center-latitude", "19",
+	{ "--projection", "ps", "--first-standard-parallel", "19",
 	  "--central-meridian", "-101",
 	  "--south-pole"  };
 
@@ -914,7 +914,7 @@ void ps_test_14()
 void ps_test_15()
 {
     static char * opts [] =
-	{ "-p", "ps", "--center-latitude", "-11", "-n"  };
+	{ "-p", "ps", "--first-standard-parallel", "-11", "-n"  };
 
     p = opts; l =  5;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -935,7 +935,7 @@ void ps_test_15()
 void ps_test_16()
 {
     static char * opts [] =
-	{ "-p", "ps", "--center-latitude", "-n"  };
+	{ "-p", "ps", "--first-standard-parallel", "-n"  };
 
     p = opts; l =  4;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -969,7 +969,7 @@ void ps_test_17()
 void ps_test_18()
 {
     static char * opts [] =
-	{ "--projection", "ps", "--center-latitude", "7", "--central-meridian"  };
+	{ "--projection", "ps", "--first-standard-parallel", "7", "--central-meridian"  };
 
     p = opts; l =  5;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -986,7 +986,7 @@ void ps_test_18()
 void ps_test_19()
 {
     static char * opts [] =
-	{ "--projection", "ps", "--central-meridian", "7", "--center-latitude"  };
+	{ "--projection", "ps", "--central-meridian", "7", "--first-standard-parallel"  };
 
     p = opts; l =  5;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -1003,7 +1003,7 @@ void ps_test_19()
 void ps_test_20()
 {
     static char * opts [] =
-	{ "-p", "ps", "--center-latitude", "-81", "-n",
+	{ "-p", "ps", "--first-standard-parallel", "-81", "-n",
 	  "--false-northing", "5.5", "--false-easting", "8.1"  };
 
     p = opts; l =  9;
@@ -1029,7 +1029,7 @@ void ps_test_20()
 void ps_test_21()
 {
     static char * opts [] =
-	{ "-p", "ps", "--center-latitude", "-11.101", "--north-pole",
+	{ "-p", "ps", "--first-standard-parallel", "-11.101", "--north-pole",
 	  "--central-meridian", "60",
 	  "--false-northing", "-55000000", "--false-easting", "81000000"  };
 
@@ -1059,7 +1059,7 @@ void ps_test_22()
     static char * opts [] =
 	{ "-p", "ps", "-n",
 	  "--false-northing", "-55000000", "--false-easting", "81000000",
-	  "--center-latitude", "11.101", "--central-meridian", "60"  };
+	  "--first-standard-parallel", "11.101", "--central-meridian", "60"  };
 
     p = opts; l =  11;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -1086,7 +1086,7 @@ void ps_test_23()
     static char * opts [] =
 	{ "hey", "-p", "ps", "-n",
 	  "--false-easting", "81000000",
-	  "--center-latitude", "51.101", "--central-meridian", "60"  };
+	  "--first-standard-parallel", "51.101", "--central-meridian", "60"  };
 
     p = opts; l = 10;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -1116,7 +1116,7 @@ void ps_test_24()
     static char * opts [] =
 	{ "-p", "ps", "-n",
 	  "--false-northing", "81000000",
-	  "--center-latitude", "1.101", "--central-meridian", "60", "phat"  };
+	  "--first-standard-parallel", "1.101", "--central-meridian", "60", "phat"  };
 
     p = opts; l =  10;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
@@ -1141,7 +1141,7 @@ void ps_test_24()
 void ps_test_25()
 {
     static char * opts [] =
-	{ "--projection", "ps", "--center-latitude", "11fff9", "--central-meridian", "-101",
+	{ "--projection", "ps", "--first-standard-parallel", "11fff9", "--central-meridian", "-101",
 	  "--south-pole", "more", "stuff"  };
 
     p = opts; l = 9;
@@ -1735,7 +1735,6 @@ void lamcc_test_26()
 	within_tol(pps->lamcc.lon0, -111.111) &&
 	within_tol(pps->lamcc.plat2, 45.001) &&
 	within_tol(pps->lamcc.lat0, 17.778) &&
-	within_tol(pps->lamcc.scale_factor, 1.1) &&
 	within_tol(pps->lamcc.false_easting, 1) &&
 	within_tol(pps->lamcc.false_northing, 7888))
     {
@@ -1752,18 +1751,19 @@ void lamcc_test_26()
 void lamcc_test_27()
 {
     static char * opts [] =
-	{ "-p", "lamcc", "--center-latitude", "17.778", "--second-standard-parallel", "45.001",
-	  "--first-standard-parallel", "-1.123", "--central-meridian", "-111.111", "--false-easting", "1",
-	   "--scale-factor", "91.1", "--false-northing", "7888", };
+	{ "-p", "lamcc", "--center-latitude", "17.778",
+	  "--second-standard-parallel", "45.001",
+	  "--first-standard-parallel", "-1.123",
+	  "--central-meridian", "-111.111", "--false-easting", "1",
+	  "--false-northing", "7888", };
 
-    p = opts; l =  16;
+    p = opts; l =  14;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
 
     if (within_tol(pps->lamcc.plat1, -1.123) &&
 	within_tol(pps->lamcc.lon0, -111.111) &&
 	within_tol(pps->lamcc.plat2, 45.001) &&
 	within_tol(pps->lamcc.lat0, 17.778) &&
-	within_tol(pps->lamcc.scale_factor, 91.1) &&
 	within_tol(pps->lamcc.false_easting, 1) &&
 	within_tol(pps->lamcc.false_northing, 7888))
     {
@@ -1784,16 +1784,15 @@ void lamcc_test_28()
 	  "--second-standard-parallel", "45.001",
 	  "--first-standard-parallel", "-1.123",
 	  "--central-meridian", "-111.111", "--false-northing", "21",
-	  "--false-easting", "7888", "--scale-factor", "1.12", "final" };
+	  "--false-easting", "7888", "final" };
 
-    p = opts; l =  17;
+    p = opts; l =  15;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
 
     if (within_tol(pps->lamcc.plat1, -1.123) &&
 	within_tol(pps->lamcc.lon0, -111.111) &&
 	within_tol(pps->lamcc.plat2, 45.001) &&
 	within_tol(pps->lamcc.lat0, 17.778) &&
-	within_tol(pps->lamcc.scale_factor, 1.12) &&
 	within_tol(pps->lamcc.false_easting, 7888) &&
 	within_tol(pps->lamcc.false_northing, 21) &&
 	l == 1 &&
@@ -1824,16 +1823,15 @@ void lamcc_test_29()
 	  "--second-standard-parallel", "45.001",
 	  "--first-standard-parallel", "-1.123",
 	  "--central-meridian", "-111.111", "--false-easting", "1",
-	  "--false-northing", "7888", "--scale-factor", "1.1" };
+	  "--false-northing", "7888" };
 
-    p = opts; l =  16;
+    p = opts; l =  14;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
 
     if (within_tol(pps->lamcc.plat1, -1.123) &&
 	within_tol(pps->lamcc.lon0, -111.111) &&
 	within_tol(pps->lamcc.plat2, 45.001) &&
 	within_tol(pps->lamcc.lat0, 17.778) &&
-	within_tol(pps->lamcc.scale_factor, 1.1) &&
 	within_tol(pps->lamcc.false_easting, 1) &&
 	within_tol(pps->lamcc.false_northing, 7888))
     {
@@ -1850,20 +1848,19 @@ void lamcc_test_29()
 void lamcc_test_30()
 {
     static char * opts [] =
-	{ "-p", "lamcc", "--second-standard-parallel", "45.001", "--scale-factor", "1.1",
+	{ "-p", "lamcc", "--second-standard-parallel", "45.001",
 	  "--false-northing", "7888", "--central-meridian", "-111.111",
 	  "--false-easting", "1",
 	  "--first-standard-parallel", "-1.123",
 	  "--center-latitude", "17.778"  };
 
-    p = opts; l =  16;
+    p = opts; l =  14;
     project_parameters_t * pps = get_geocode_options(&l, &p, &pt, &height, &pixel_size);
 
     if (within_tol(pps->lamcc.plat1, -1.123) &&
 	within_tol(pps->lamcc.lon0, -111.111) &&
 	within_tol(pps->lamcc.plat2, 45.001) &&
 	within_tol(pps->lamcc.lat0, 17.778) &&
-	within_tol(pps->lamcc.scale_factor, 1.1) &&
 	within_tol(pps->lamcc.false_easting, 1) &&
 	within_tol(pps->lamcc.false_northing, 7888))
     {
