@@ -17,8 +17,8 @@ void project_set_avg_height(double height);
 /**************************************************************************
    project_set_datum
 
-   The height parameter for the projection.  If this is not called prior
-   to projecting, the average height will be 0.
+   The datum parameter for the projection.  If this is not called prior
+   to projecting, an WGS84 ellipsoidal datum will be used.
 ****************************************************************************/
 void project_set_datum(datum_type_t datum);
 
