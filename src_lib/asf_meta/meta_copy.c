@@ -115,6 +115,16 @@ meta_parameters *meta_copy(meta_parameters *src)
 			ret->state_vectors->vecs[ii].vec.vel.z = src->state_vectors->vecs[ii].vec.vel.z;
 		}
 	}
+	
+	if (src->stats) {
+		ret->stats = meta_stats_init();
+		ret->stats->max  = src->stats->max;
+		ret->stats->min  = src->stats->min;
+		ret->stats->mean = src->stats->mean;
+		ret->stats->rmse  = src->stats->rmse;
+		ret->stats->std_deviation = src->stats->std_deviation;
+		ret->stats->mask  = src->stats->mask;
+	}
 
 /************************* Structures not yet in use *************************
 	if (src->optical) {
@@ -126,13 +136,6 @@ meta_parameters *meta_copy(meta_parameters *src)
 		ret->thermal->band_gain        = src->thermal->band_gain;
 		ret->thermal->band_gain_change = src->thermal->band_gain_change;
 		ret->thermal->day              = src->thermal->day;
-	}
-	if (src->stats) {
-		ret->stats->max  = src->stats->max;
-		ret->stats->min  = src->stats->min;
-		ret->stats->mean = src->stats->mean;
-		ret->stats->rms  = src->stats->rms;
-		ret->stats->std_deviation = src->stats->std_deviation;
 	}
 *****************************************************************************/
 
