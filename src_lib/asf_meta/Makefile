@@ -106,7 +106,7 @@ $(OBJS): Makefile $(LOCAL_HEADERS) $(wildcard ../../include/*.h) \
 clean:
 	rm -rf $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
                $(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
-	       library_cooking_pot asf_meta_tester meta_update
+	       library_cooking_pot asf_meta_tester meta_update asf_meta.a
 
 check: unit_tests.c build_only
 	$(CC) $(CFLAGS) $< asf_meta.a -lm -lcheck $(LDFLAGS) \
