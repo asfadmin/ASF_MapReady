@@ -28,10 +28,10 @@ void meta_get_original_line_sample(meta_parameters *meta, int line,
 				   int sample, int *original_line, 
 				   int *original_sample)
 {
-  *original_line = line * meta_parameters->general->x_pixel_size 
-                   + meta_parameters->general->start_sample;
-  *original_sample = sample * meta_parameters->general->y_pixel_size
-                     + meta_parameters->general->start_line;
+  *original_line = line * meta_parameters->general->y_pixel_size 
+                   + meta_parameters->general->start_line;
+  *original_sample = sample * meta_parameters->general->x_pixel_size
+                     + meta_parameters->general->start_sample;
 }
 
 /* DEPRECATED.  You probably want meta_get_original_line_sample.  */
