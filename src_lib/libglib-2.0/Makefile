@@ -14,7 +14,7 @@ ROOT_STAGEDIR := stage_dir
 LIB_STAGEDIR := $(ROOT_STAGEDIR)/lib
 INCLUDE_STAGEDIR := $(ROOT_STAGEDIR)/include
 
-# Root of tree under which the GSL is already installed on the system,
+# Root of tree under which the GLIB is already installed on the system,
 # or the empty string if it doesn't seem to be installed in a way we
 # can easily recognize.  We only try to use GLIB if we find the
 # library and the include files under a common parent, in leaf
