@@ -27,7 +27,7 @@ $(TARGET).exe: $(TARGET).c
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
 	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
-	cp $(TARGET).exe ../../bin/win32
+	mv $(TARGET).exe ../../bin/win32
 	cp $(TARGET).glade ../../bin/win32
 
 clean:
