@@ -4,6 +4,7 @@
 #include "err_die.h"
 #include "regex_wrapper.h"
 #include "metadata_parser.h"
+#include "ddr.h"
 
 void meta_read_old(meta_parameters *meta, char *fileName);
 void meta_new2old(meta_parameters *meta);
@@ -19,7 +20,7 @@ int meta_is_new_style(const char *file_name);
 meta_parameters *meta_read(const char *inName)
 {
   char              *meta_name      = appendExt(inName,".meta");
-  meta_parameters   *meta           = raw_init();	/* To be filled.  */
+  meta_parameters   *meta           = raw_init(); /* Allocate and initialize basic structs */
 
   /* Read file with appropriate reader for version.  */
   if ( !meta_is_new_style(meta_name) ) {
@@ -197,9 +198,9 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 /*Interferometry parameters:*/
 	coniIO_structOpen(coni,"ifm {","begin interferometry-related parameters");
 	if (meta->meta_version>0.6)
-		coniIO_int(coni,"ifm.","nLooks:",&sar->look_count,      "Number of looks to take from SLC");
-	coniIO_int(coni,"ifm.","orig_lines:",    &general->line_count,  "Number of lines in original image");
-	coniIO_int(coni,"ifm.","orig_samples:",  &general->sample_count,"Number of samples in original image");
+		coniIO_int(coni,"ifm.","nLooks:",&sar->look_count,           "Number of looks to take from SLC");
+	coniIO_int(coni,"ifm.","orig_lines:",    &sar->original_line_count,  "Number of lines in original image");
+	coniIO_int(coni,"ifm.","orig_samples:",  &sar->original_sample_count,"Number of samples in original image");
 	coniIO_structClose(coni,"end ifm\n");
 
 /*State Vectors:*/
@@ -237,9 +238,20 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	
 /* Info from ddr */
 	c_getddr(ddrName, &ddr);
-	strcpy( general->system,  ddr.system);
+	general->line_count     = ddr.nl;
+	general->sample_count   = ddr.ns;
 	general->start_line     = ddr.master_line - 1;
 	general->start_sample   = ddr.master_sample - 1;
+	sar->line_increment     = ddr.line_inc;
+	sar->sample_increment   = ddr.sample_inc;
+	if (0==strcmp(ddr.system,"ieee-std"))
+		strcpy(meta->general->system,"big_ieee");
+	else if (0==strcmp(ddr.system,"ieee-lil"))
+		strcpy(meta->general->system,"lil_ieee");
+	else if (0==strcmp(ddr.system,"cray-unicos"))
+		strcpy(meta->general->system,"cray_float");
+	else /* "ibm-mvs" or "other-msc" */
+		strcpy(meta->general->system,"???");
 	if (sar->image_type=='P')
 		{strcpy(meta->projection->units, ddr.proj_units);}
 	switch ( ddr.dtype ) {
@@ -261,9 +273,10 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 /* Fields that cannot be filled from the old structures */
 	general->frame            = 0;
 	general->band_number      = 0;
-	general->orbit_direction  = '\0';
+	general->orbit_direction  = '?';
 	general->center_latitude  = NAN;
 	general->center_longitude = NAN;
+	general->missing_lines    = -2147283648;
 
 /* Close coni structure */
 	coniClose(coni);
@@ -302,8 +315,8 @@ void meta_new2old(meta_parameters *meta)
 	meta->ifm->ht            = meta_get_sat_height(meta, meta->general->line_count/2, 0);
 	meta->ifm->er            = meta_get_earth_radius(meta, meta->general->line_count/2, 0);
 	meta->ifm->nLooks        = meta->sar->look_count;
-	meta->ifm->orig_nLines   = meta->general->line_count;
-	meta->ifm->orig_nSamples = meta->general->sample_count;
+	meta->ifm->orig_nLines   = meta->sar->original_line_count;
+	meta->ifm->orig_nSamples = meta->sar->original_sample_count;
 
 /* point meta->stVec at 'meta->state_vectors */
 	meta->stVec = meta->state_vectors;
