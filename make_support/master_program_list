@@ -127,6 +127,19 @@ PROGRAMS
 			projprm
 	}
 
+# Commenting this out ... do not want it built by default,
+# since we do not want to require GTK to build.  Added some
+# targets to "makestart" to enable building the gui.  But
+# it will not be built by default.
+#
+# @src/
+#	asf_convert_gui
+#	{
+#		PROGRAMS
+#			asf_export
+#			asf_import
+#	}
+
 @src_ifm/
 	aisp
 	{

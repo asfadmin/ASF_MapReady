@@ -46,3 +46,16 @@
 ###########################################
 include make_support/system_rules
 
+default: all
+
+gui:
+	@ echo
+	@ echo XXXXXXXXXXXXXX Building asf_convert_gui... XXXXXXXXXXXXXXXXXXXX
+	@ echo
+	cd src/asf_convert_gui; make
+	@ echo
+	@ echo XXXXXXXXXXXXXX Built asf_convert_gui XXXXXXXXXXXXXXXXXXXXXXXXXX
+	@ echo
+
+asf_convert_gui: gui
+ 
