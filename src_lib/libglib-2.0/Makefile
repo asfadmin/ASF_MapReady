@@ -65,6 +65,7 @@ stage_glib_stamp:
 	    gunzip --to-stdout $(ICONV_ZIPFILE) >$(ICONV_TARFILE) ; \
 	    tar xvf $(ICONV_TARFILE) ; \
 	    (cd $(ICONV_UNPACK_DIR) ; \
+                export PATH=`cd $(BINDIR) ; pwd`:$(PATH) ; \
                 ./configure --enable-static=yes --enable-shared=yes \
 		   --enable-relocatable --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
 		make ; \
