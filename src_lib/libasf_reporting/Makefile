@@ -2,8 +2,9 @@
 
 include ../../make_support/system_rules
 
-OBJS =  print_alerts.o \
-	progress_meters.o
+OBJS  = print_alerts.o \
+	progress_meters.o \
+	splash_screen.o
 
 all: build_only
 	mv libasf_reporting.a $(LIBDIR)
