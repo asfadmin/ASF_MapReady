@@ -92,6 +92,8 @@ BUGS:
 #define PFILE 1
 #define VERSION 3.0
 
+lasErr c_getddr_old(const char *hname,struct DDR *ddr);
+
 void dstbnd (FILE *fp, int *print, char *name, int *band, struct BDDR *bddr); 
 void dstimg (FILE *fp, int *print, char *name, struct DDR *ddr); 
 void usage(char *name);
@@ -142,7 +144,7 @@ int main(int argc,char **argv)
 	strcpy(hname,argv[optind]);
 
 	/* get records 1 and 2 of DDR file */
-	status = c_getddr(hname,&ddr);
+	status = c_getddr_old(hname,&ddr);
 
 	/* get band number specification. Either get all of the bands or only the
 	   valid bands specified by user. */
