@@ -338,8 +338,8 @@ static char * utm_projection_description(project_parameters_t * pps)
   else
   {
       sprintf(utm_wgs84_projection_description,
-	      "+proj=utm +zone=%d +datum=%s",
-	      pps->utm.zone, datum(pps));
+	      "+proj=utm +zone=%d %s+datum=%s",
+	      pps->utm.zone, pps->utm.lat0 < 0 ? "+south " : "", datum(pps));
   }
 
   return utm_wgs84_projection_description;
