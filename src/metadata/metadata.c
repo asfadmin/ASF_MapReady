@@ -122,7 +122,7 @@ BUGS:
 
 int main(int argc, char **argv)
 {
-  char  filename[256];
+  char  dataName[256], leaderName[256];
   int	j, itype=-99, nrecs;
   int   reqrec, era;
   int   fileFlag=0;
@@ -167,7 +167,11 @@ int main(int argc, char **argv)
   }
 
   if (fileFlag) write_to_file(argv[0],argv[optind],argv[optind+1]);
-  era = set_era(argv[optind+1],filename,-1);
+
+  era = 1;  /* Used to use set_era() to find if data was pre or post RADARSAT
+             * Now we don't support pre-RADARSAT, so era is always 1 (post) */
+
+  get_ceos_names(argv[optind+1], dataName, leaderName);
  
   nrecs = (int) strlen(argv[optind]);
   for (j = 0; j < nrecs; j++)
@@ -200,51 +204,51 @@ int main(int argc, char **argv)
 
     switch (reqrec) {
      case (10): dssr = (struct dataset_sum_rec *) malloc(sizeof(struct dataset_sum_rec));
-		get_dssr(filename,dssr); prn_dssr(dssr,era); free(dssr);
+		get_dssr(leaderName,dssr); prn_dssr(dssr,era); free(dssr);
 		break;
      case (20):	mpdrec = (struct VMPDREC  *) malloc (sizeof(struct VMPDREC));
-                if ( get_mpdr(filename,mpdrec) >= 0 ) { prn_mpdr(mpdrec); }
+                if ( get_mpdr(leaderName,mpdrec) >= 0 ) { prn_mpdr(mpdrec); }
 		else printf("\nNo Map Projection Data Record Found\n");
                 free(mpdrec);
 		break;
      case (30):	ppdr=(struct pos_data_rec*)malloc(sizeof(struct pos_data_rec));
-		get_ppdr(filename,ppdr); prn_ppdr(ppdr); free(ppdr);
+		get_ppdr(leaderName,ppdr); prn_ppdr(ppdr); free(ppdr);
 		break;
      case (40):	atdr=(struct att_data_rec*)malloc(sizeof(struct att_data_rec));
-		get_atdr(filename,atdr); prn_atdr(atdr); free(atdr);
+		get_atdr(leaderName,atdr); prn_atdr(atdr); free(atdr);
 		break;
      case (50):	raddr = (struct VRADDR  *) malloc (sizeof(struct VRADDR));
-		get_raddr(filename,raddr); prn_raddr(raddr); free(raddr);
+		get_raddr(leaderName,raddr); prn_raddr(raddr); free(raddr);
 		break;
      case (60):	dqsr=(struct qual_sum_rec*)malloc(sizeof(struct qual_sum_rec));
-		if (get_dqsr(filename,dqsr) >= 0) { prn_dqsr(dqsr,era); }
+		if (get_dqsr(leaderName,dqsr) >= 0) { prn_dqsr(dqsr,era); }
 		else printf("\nNo Data Quality Summary Record Found\n");
 		free(dqsr);
 		break;
      case (70):	dhr=(struct data_hist_rec*)malloc(sizeof(struct data_hist_rec));
-		if (get_dhr(filename,dhr) >= 0) { prn_dhr(dhr); }
+		if (get_dhr(leaderName,dhr) >= 0) { prn_dhr(dhr); }
 		else printf("\nNo Processed Data Histograms Record Found\n");
 		free(dhr);
 		break;
      case (71): dhr=(struct data_hist_rec*)malloc(sizeof(struct data_hist_rec));
-		if (get_sdhr(filename,dhr) >= 0) { prn_dhr(dhr); }
+		if (get_sdhr(leaderName,dhr) >= 0) { prn_dhr(dhr); }
 		else printf("\nNo Signal Data Histograms Record Found\n");
 		free(dhr); 
 		break;
      case (80):	rsr=(struct rng_spec_rec*) malloc (sizeof(struct rng_spec_rec));
-                if (get_rsr(filename,rsr) >= 0) { prn_rsr(rsr); }
+                if (get_rsr(leaderName,rsr) >= 0) { prn_rsr(rsr); }
 		else printf("\nNo Range Spectra Record Found\n");
 		free(rsr); 
 		break;
      case (192): vfdr=(struct IOF_VFDR *) malloc (sizeof(struct IOF_VFDR));
-                 get_ifiledr(filename,vfdr);prn_ifiledr(vfdr);free(vfdr);break;
+                 get_ifiledr(dataName,vfdr);prn_ifiledr(vfdr);free(vfdr);break;
      case (200): facdr = (struct VFDRECV  *) malloc (sizeof(struct VFDRECV));
-                 if (get_asf_facdr(filename,facdr) >= 0) { prn_facdr(facdr,era); }
+                 if (get_asf_facdr(leaderName,facdr) >= 0) { prn_facdr(facdr,era); }
 		 else printf("\nNo Facility Related Data Record Found\n");
 		 free(facdr);
 		 break;
      case (300): fdr = (struct FDR *) malloc (sizeof(struct FDR));
-     		 get_fdr(filename,fdr); prn_fdr(fdr); free(fdr);
+     		 get_fdr(leaderName,fdr); prn_fdr(fdr); free(fdr);
      		 break;
 
 /********  THESE ARE THE RECORDS THAT I FOUND, BUT THEY WERE BLANK  ***
