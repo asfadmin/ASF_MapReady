@@ -25,7 +25,7 @@ static void
 parse_gridfloat_header(char * headername, ssize_t * ncols, ssize_t * nrows,
 		       double * xllcorner, double * yllcorner, 
 		       double * cellsize, double * nodata_value,
-		       float_image_byte_order_t * byteorder);
+		       float_image_byte_order_t * byte_order);
 
 static const char * 
 get_extension (const char *file);
@@ -189,7 +189,7 @@ dem_new_from_file_gridfloat(const char * file)
     parse_gridfloat_header(header_file, &ret->ncols, &ret->nrows,
 			   &ret->xllcorner, &ret->yllcorner,
 			   &ret->cellsize, &ret->nodata_value,
-			   &ret->byteorder);
+			   &ret->byte_order);
 
     g_assert (ret->ncols > 0);
     g_assert (ret->nrows > 0);
@@ -202,7 +202,7 @@ dem_new_from_file_gridfloat(const char * file)
     g_assert (ret->cellsize > 0.0);
 
     ret->float_image = float_image_new_from_file(ret->ncols, ret->nrows,
-						 file, 0, ret->byteorder);
+						 file, 0, ret->byte_order);
 
     g_assert (ret->float_image);
 
@@ -213,7 +213,7 @@ static void
 parse_gridfloat_header(char * headername, ssize_t * ncols, ssize_t * nrows,
 		       double * xllcorner, double * yllcorner, 
 		       double * cellsize, double * nodata_value,
-		       float_image_byte_order_t * byteorder)
+		       float_image_byte_order_t * byte_order)
 {
     FILE * fp = fopen(headername, "rt");
     if (fp)
@@ -229,9 +229,9 @@ parse_gridfloat_header(char * headername, ssize_t * ncols, ssize_t * nrows,
 
 	fscanf(fp, "byteorder %s\n", c_byte_order);
 	if (strcmp(c_byte_order, "LSBFIRST") == 0)
-	    *byteorder = FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN;
+	    *byte_order = FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN;
 	else
-	    *byteorder = FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
+	    *byte_order = FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
     }
     else
     {

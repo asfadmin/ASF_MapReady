@@ -13,7 +13,7 @@ typedef struct
     double yllcorner;
     double cellsize;
     double nodata_value;
-
+    int byte_order;
 } Dem;
 
 Dem * 
