@@ -7,26 +7,25 @@ stats \- Get basic statistics on a SAR image file
 
 .SH SYNOPSIS:
 .B stats
-.BI "[-mask <value>] [-log <logFile>] [-quiet] [-overmeta]"
-.BI "[-nometa] [-overstat] [-nostat] [-startline <line>]"
-.BI "[-startsample <sample>] [-width <width>]"
-.BI "[-height <height>] <\fIimageName\fP>"
+.I "[-mask <value>] [-log <logFile>] [-quiet] [-overmeta]"
+.I "[-nometa] [-overstat] [-nostat] [-startline <line>]"
+.I "[-startsample <sample>] [-width <width>]"
+.I "[-height <height>] <\fBimageName\fP>"
 
 .SH DESCRIPTION:
-The 
-.B "stats"
-command figures the statistics for the given \fIimageName\fP data file (you
-must include the file extention [e.g. "data_file.img"]). It then writes the
-statistics into a .stat file of the same base name as \fIimageName\fP. It also
-fills a stats block in the .meta file of the same base name as \fIimageName\fP.
+The \fBstats\fP command figures the statistics for the given \fBimageName\fP
+data file (you must include the file extention [e.g. "data_file.img"]). It then
+writes the statistics into a .stat file of the same base name as
+\fBimageName\fP. It also fills a stats block in the .meta file of the same base
+name as \fBimageName\fP.
 
 .SH COMMAND LINE OPTIONS:
 .TP 8
-.B "-mask <value>"
-Ignore <value> while taking statistics.
+.B "-mask \fIvalue\fP"
+Ignore \fIvalue\fP while taking statistics.
 .TP 8
-.B "-log <logFile>"
-Copy terminal output to <logFile>.
+.B "-log \fIlogFile\fP"
+Copy terminal output to \fIlogFile\fP.
 .TP 8
 .B "-quiet"
 Supress terminal output to essential.
@@ -42,19 +41,19 @@ Force overwrite of existing .stat file.
 .B "-nostat"
 Do not generate output in a .stat file.
 .TP 8
-.B "-startline <line>"
-Generate statistics for window starting at <line>. (implies -nometa)
+.B "-startline \fIline\fP"
+Generate statistics for window starting at \fIline\fP. (implies -nometa)
 .TP 8
-.B "-startsample <sample>"
-Generate statistics for window starting at <sample>. (implies -nometa)
+.B "-startsample \fIsample\fP"
+Generate statistics for window starting at \fIsample\fP. (implies -nometa)
 .TP 8
-.B "-height <height>"
-Generate statistics for window of <height> lines. (implies -nometa)
+.B "-height \fIheight\fP"
+Generate statistics for window of \fIheight\fP lines. (implies -nometa)
 .TP 8
-.B "-width <width>"
-Generate statistics for window of <width> samples. (implies -nometa)
+.B "-width \fIwidth\fP"
+Generate statistics for window of \fIwidth\fP samples. (implies -nometa)
 .TP 8
-.B "\fIimageName\fP"
+.B "imageName"
 Name of input image file (include extension).
 
 .SH EXAMPLES:

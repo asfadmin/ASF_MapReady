@@ -5,9 +5,9 @@ convert2byte \- convert any ASF image file into a byte image.
 
 .SH SYNOPSIS:
 .B convert2byte
-.BI "[-multilook] [-look lxs] [-step lxs]"
+.I "[-multilook] [-look lxs] [-step lxs]"
 .in 18
-.BI "[-log <logFile>] [-quiet]"
+.I "[-log <logFile>] [-quiet]"
 .B "<inFile> <outFile>"
 .in -18
 
@@ -15,7 +15,7 @@ convert2byte \- convert any ASF image file into a byte image.
 .B "Convert2byte"
 converts an ASF image file from any non-complex data type to a byte image. It is
 a replacement for the former ASF tools amp2img and ui2byte. Use the
-\-\f multilook\FP option to immitate amp2img's behavior. You do not need to use
+\-\fRmultilook\fP option to immitate amp2img's behavior. You do not need to use
 any option to accomplish that which ui2byte used to do.
 .PP
 When the -multilook, -look, or -step options are used,
@@ -37,17 +37,17 @@ the meta file to figure the number of look and step lines (only if the data has
 not already been multilooked). The number of look and step samples defaults to
 1.
 .TP 8
-.B "-look\f lxs\fP"
+.B "-look \fRlxs\fP"
 Change number of look lines and samples. (-multilook is implied.) If \-step is
 specified, but \-look is not, then \-look defaults to the same values as \-step
 is set to.
 .TP 8
-.B "-step\f lxs\fP"
+.B "-step \fRlxs\fP"
 Change number of step lines and samples. (-multilook is implied.) If \-look is
 specified, but \-step is not, then \-step defaults to the same values as \-look
 is set to.
 .TP
-.B "-log\f logFile\fP"
+.B "-log \fRlogFile\fP"
 Copies the terminal output and appends it to file\f logFile\fP.
 .TP
 .B "-quiet"
