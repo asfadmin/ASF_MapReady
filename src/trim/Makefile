@@ -8,7 +8,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	-lm 
 
 trim: trim.c
-	$(CC) $(CFLAGS) $(LFLAGS) -o trim trim.c $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o trim trim.c $(LIBS) $(LDFLAGS)
 	mv trim$(BIN_POSTFIX) $(BINDIR)
 	cp *.1 ../../man/cat1
 	

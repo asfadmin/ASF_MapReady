@@ -9,7 +9,7 @@ LIBS  = $(LIBDIR)/asf.a \
 OBJS = c2p.o 
 
 c2p: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o c2p $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o c2p $(OBJS) $(LIBS) $(LDFLAGS)
 	rm *.o
 	mv c2p$(BIN_POSTFIX) $(BINDIR)
 	cp c2p.1 ../../man/man1

@@ -9,7 +9,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	-lm
 
 tpl_search: tpl_search.c
-	$(CC) $(CFLAGS) -o tpl_search tpl_search.c $(LIBS)
+	$(CC) $(CFLAGS) -o tpl_search tpl_search.c $(LIBS) $(LDFLAGS)
 	mv tpl_search$(BIN_POSTFIX) $(BINDIR)
 	cp tpl_search.man ../../man/cat1/tpl_search.1
 

@@ -13,5 +13,5 @@ all:  zeroify
 	cp zeroify.1 ../../man/cat1
 
 zeroify: $(OBJS)
-	$(CC) $(CFLAGS) -o zeroify $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o zeroify $(OBJS) $(LIBS) $(LDFLAGS)
 	mv zeroify$(BIN_POSTFIX) $(BINDIR)

@@ -9,7 +9,7 @@ LIBS  = $(LIBDIR)/asf.a \
 OBJS = p2c.o 
 
 p2c: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o p2c $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o p2c $(OBJS) $(LIBS) $(LDFLAGS)
 	rm *.o
 	mv p2c$(BIN_POSTFIX) $(BINDIR)
 	cp p2c.1 ../../man/cat1

@@ -10,6 +10,6 @@ LIBS  = $(LIBDIR)/asf.a \
 	-lm
 
 demclip: demclip.c
-	$(CC) $(CFLAGS) -o demclip demclip.c $(LIBS)
+	$(CC) $(CFLAGS) -o demclip demclip.c $(LIBS) $(LDFLAGS)
 	mv demclip$(BIN_POSTFIX) $(BINDIR) 
 	cp demclip.man ../../man/cat1/demclip.1

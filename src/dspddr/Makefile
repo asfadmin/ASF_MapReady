@@ -15,7 +15,7 @@ OBJS = dspddr.o \
 all: dspddr clean
 
 dspddr: $(OBJS) 
-	$(CC) $(CFLAGS) -o dspddr $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o dspddr $(OBJS) $(LIBS) $(LDFLAGS)
 	mv dspddr$(BIN_POSTFIX) $(BINDIR)
 	cp dspddr.man ../../man/cat1/dspddr.1
 

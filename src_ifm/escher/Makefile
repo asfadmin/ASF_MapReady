@@ -18,6 +18,6 @@ all: escher
 	- rm *.o
 
 escher: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o escher $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o escher $(OBJS) $(LIBS) $(LDFLAGS)
 	mv escher$(BIN_POSTFIX) $(BINDIR)
 	cp escher.1 ../../man/man1

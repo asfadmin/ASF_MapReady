@@ -9,7 +9,7 @@ LIBS  = $(LIBDIR)/asf.a \
 OBJS  = eleverr.o 
 
 eleverr: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o eleverr $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o eleverr $(OBJS) $(LIBS) $(LDFLAGS)
 	rm *.o
 	mv eleverr$(BIN_POSTFIX) $(BINDIR)
 	cp eleverr.1 ../../man/cat1

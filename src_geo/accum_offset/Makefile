@@ -11,7 +11,7 @@ OBJS  = accum_offset.o
 
 
 accum_offset: $(OBJS) $(OLIBS)
-	$(CC) $(CFLAGS)  -o accum_offset $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS)  -o accum_offset $(OBJS) $(LIBS) $(LDFLAGS)
 	mv accum_offset$(BIN_POSTFIX) $(BINDIR)
 	cp accum_offset.1 ../../man/cat1/accum_offset.1
 	rm *.o

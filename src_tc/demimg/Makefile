@@ -17,7 +17,7 @@ OBJLIB = demimg.o \
 	 init_meta.o
  
 demimg : $(OBJLIB) 
-	$(CC) $(CFLAGS) $(LFLAGS) -o demimg $(OBJLIB) $(LIBS)
+	$(CC) $(CFLAGS) -o demimg $(OBJLIB) $(LIBS) $(LDFLAGS)
 	rm *.o
 	mv demimg$(BIN_POSTFIX) $(BINDIR)
 	cp demimg.man ../../man/cat1/demimg.1

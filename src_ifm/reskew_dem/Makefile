@@ -17,9 +17,9 @@ all: reskew_dem
 	rm *.o
 
 reskew_dem:	$(OBJS)
-	${CC} ${CFLAGS} ${LDFLAGS} -o reskew_dem $(OBJS) ${LIBS}
+	$(CC) $(CFLAGS) $(LDFLAGS) -o reskew_dem $(OBJS) $(LIBS) $(LDFLAGS)
 	mv reskew_dem$(BIN_POSTFIX) $(BINDIR)
 	cp reskew_dem.1 ../../man/cat1/reskew_dem.1
 
 clean:
-	rm -f core ${OBJS} *.o
+	rm -f core $(OBJS) *.o

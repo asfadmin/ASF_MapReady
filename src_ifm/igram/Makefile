@@ -9,7 +9,7 @@ LIBS  = $(LIBDIR)/asf.a \
 OBJS = igram.o
 
 igram: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o igram $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o igram $(OBJS) $(LIBS) $(LDFLAGS)
 	mv igram$(BIN_POSTFIX) $(BINDIR)
 	cp igram.1 ../../man/man1
 	rm *.o

@@ -19,7 +19,7 @@ OBJS  = calc_coef.o \
 
 # Make the executable file for program 2dmap.
 2dmap:  2dmap.c $(OBJS) $(CINCFIL)
-	$(CC) $(CFLAGS) -o 2dmap $(OBJS) 2dmap.c $(LIBS)
+	$(CC) $(CFLAGS) -o 2dmap $(OBJS) 2dmap.c $(LIBS) $(LDFLAGS)
 	mv 2dmap$(BIN_POSTFIX) $(BINDIR)
 	rm *.o
 	cp 2dmap.man ../../man/cat1/2dmap.1

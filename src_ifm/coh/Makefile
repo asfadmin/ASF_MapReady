@@ -13,6 +13,6 @@ all: coh
 	rm *.o
 
 coh: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o coh $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o coh $(OBJS) $(LIBS) $(LDFLAGS)
 	mv coh$(BIN_POSTFIX) $(BINDIR)
 	cp coh.1 ../../man/cat1

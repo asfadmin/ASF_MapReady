@@ -22,7 +22,7 @@ OBJS  = greycorr.o \
 all: greycorr clean
 
 greycorr:       $(OBJS) 
-	$(CC) $(CFLAGS) $(LFLAGS) -o greycorr $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o greycorr $(OBJS) $(LIBS) $(LDFLAGS)
 	mv greycorr$(BIN_POSTFIX) $(BINDIR)
 	cp greycorr.man ../../man/cat1/greycorr.1
 

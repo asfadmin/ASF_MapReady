@@ -11,7 +11,7 @@ OBJS  = elev.o
 all: elev clean
 
 elev: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o elev $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o elev $(OBJS) $(LIBS) $(LDFLAGS)
 	mv elev$(BIN_POSTFIX) $(BINDIR)
 	cp elev.1 ../../man/man1
 

@@ -8,7 +8,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	-lm
 
 rtc_add : rtc_add.c
-	$(CC) $(CFLAGS) -o rtc_add rtc_add.c $(LIBS)
+	$(CC) $(CFLAGS) -o rtc_add rtc_add.c $(LIBS) $(LDFLAGS)
 	mv rtc_add$(BIN_POSTFIX) $(BINDIR)
 	cp rtc_add.man ../../man/cat1/rtc_add.1
 

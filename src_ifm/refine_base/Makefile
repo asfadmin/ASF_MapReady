@@ -16,7 +16,7 @@ OBJS = 	getphase.o \
 all: refine_base
 
 refine_base: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o refine_base $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o refine_base $(OBJS) $(LIBS) $(LDFLAGS)
 	mv refine_base$(BIN_POSTFIX) $(BINDIR)
 	rm *.o
 	cp refine_base.1 ../../man/man1

@@ -11,7 +11,7 @@ OBJS  = deskew.o
 all: deskew clean
 
 deskew: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o deskew $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o deskew $(OBJS) $(LIBS) $(LDFLAGS)
 	mv deskew$(BIN_POSTFIX) $(BINDIR)
 	cp deskew.1 ../../man/cat1/deskew.1
 

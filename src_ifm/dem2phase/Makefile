@@ -13,7 +13,7 @@ all: dem2phase
 	rm *.o
 
 dem2phase: $(OBJS)
-	$(CC) $(CFLAGS) -o dem2phase $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o dem2phase $(OBJS) $(LIBS) $(LDFLAGS)
 	mv dem2phase$(BIN_POSTFIX) $(BINDIR)
 	cp dem2phase.1 ../../man/man1
 

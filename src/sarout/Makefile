@@ -28,7 +28,7 @@ OBJS  = addMetaToCeos.o \
 all: sarout clean
 
 sarout: $(CINCFIL) $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) sarout.c -o sarout $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) sarout.c -o sarout $(OBJS) $(LIBS) $(LDFLAGS)
 	mv sarout$(BIN_POSTFIX) $(BINDIR)
 	cp sarout.man ../../man/cat1/sarout.1
 

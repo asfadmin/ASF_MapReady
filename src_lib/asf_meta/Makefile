@@ -19,6 +19,9 @@ LIBS = asf.a
 LEX = flex
 YACC = bison -y			# -y means use yacc file name conventions.
 
+# Add flags to pull in the GSL.
+CFLAGS += -I$(HOME)/local/include
+
 # Build with this defined to enable parser diagnostics.  Note that
 # this doesn't automaticly clean or otherwise force a rebuild.
 ifdef DEBUG_METADATA_PARSER
@@ -114,6 +117,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta2esri.o \
 	meta_read.o \
 	meta_write.o \
+	orbital_state_vector.o \
 	meta_write_sprocket.o \
 	proj2meta.o \
 	propagate.o \
@@ -123,6 +127,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	unpacked_deg.o \
 	utc2gha.o \
 	util3d.o \
+	vector.o \
 	yaw2doppler.o \
 	$(LAS_OBJS)
 
@@ -163,7 +168,8 @@ clean:
 	library_cooking_pot asf_meta_tester meta_update asf_meta.a
 
 check: asf_meta_tester.c build_only
-	$(CC) $(CFLAGS) $< asf_meta.a -lm -lcheck $(LDFLAGS) -o asf_meta_tester
+	$(CC) $(CFLAGS) $< asf_meta.a -lm -L$(HOME)/local/lib -lgsl \
+              -lgslcblas -lcheck $(LDFLAGS) -o asf_meta_tester
 	./asf_meta_tester
 
 meta_update: meta_update.c build_only

@@ -15,7 +15,7 @@ all: refine
 refine_offset: refine 
 
 refine:	$(OBJS)
-	$(CC) $(CFLAGS) -o refine_offset $(OBJS) $(LIBS) 
+	$(CC) $(CFLAGS) -o refine_offset $(OBJS) $(LIBS)  $(LDFLAGS)
 	mv refine_offset$(BIN_POSTFIX) $(BINDIR)
 	cp refine_offset.1 ../../man/cat1/
 	rm *.o

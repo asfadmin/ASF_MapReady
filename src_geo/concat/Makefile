@@ -20,7 +20,7 @@ all: concat
 	rm *.o
 
 concat:	concat.c $(OBJS) 
-	$(CC) $(CFLAGS) -o concat concat.c $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o concat concat.c $(OBJS) $(LIBS) $(LDFLAGS)
 	mv concat$(BIN_POSTFIX) $(BINDIR)
 	cp concat.man ../../man/cat1/concat.1
 

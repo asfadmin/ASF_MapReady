@@ -3,10 +3,9 @@
 
 include ../../make_support/system_rules
 
-LFLAGS = $(LIBDIR)/asf.a
-#LIBS = -lm 
+LIBS = $(LIBDIR)/asf.a
 
 fit_plane: fit_plane.c
-	$(CC) $(CFLAGS) -o fit_plane fit_plane.c $(LFLAGS) $(LIBS) -lm #-lm needed for solaris
+	$(CC) $(CFLAGS) -o fit_plane fit_plane.c $(LIBS) $(LDFLAGS) -lm
 	mv fit_plane$(BIN_POSTFIX) $(BINDIR)
 	cp fit_plane.1 ../../man/cat1

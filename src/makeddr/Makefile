@@ -8,7 +8,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_geolib.a
 
 makeddr: makeddr.c
-	$(CC) $(CFLAGS) -o makeddr makeddr.c $(LIBS) -lm
+	$(CC) $(CFLAGS) -o makeddr makeddr.c $(LIBS) $(LDFLAGS) -lm
 	mv makeddr$(BIN_POSTFIX) $(BINDIR)
 	cp makeddr.1 ../../man/cat1
 

@@ -14,12 +14,12 @@ OBJS_D2M = ddr2meta.o
 all: meta2ddr ddr2meta clean
 
 meta2ddr: $(OBJS_M2D)
-	$(CC) $(CFLAGS) $(LFLAGS) -o meta2ddr $(OBJS_M2D) $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o meta2ddr $(OBJS_M2D) $(LIBS) $(LDFLAGS)
 	mv meta2ddr$(BIN_POSTFIX) $(BINDIR)
 	cp meta2ddr.1 ../../man/man1/meta2ddr.1
 
 ddr2meta: $(OBJS_D2M)
-	$(CC) $(CFLAGS) $(LFLAGS) -o ddr2meta $(OBJS_D2M) $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o ddr2meta $(OBJS_D2M) $(LIBS) $(LDFLAGS)
 	mv ddr2meta$(BIN_POSTFIX) $(BINDIR)
 	cp ddr2meta.1 ../../man/man1/ddr2meta.1
 

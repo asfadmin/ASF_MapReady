@@ -21,12 +21,12 @@ all: geocode
 	-rm *.o
 
 geocode: $(OBJS)
-	$(CC) $(CFLAGS) -o geocode $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o geocode $(OBJS) $(LIBS) $(LDFLAGS)
 	mv geocode$(BIN_POSTFIX) $(BINDIR)
 	cp geocode.1 ../../man/cat1
 
 #projectGeo: $(POBJS)
-#	$(CC) $(CFLAGS) -o projectGeo $(POBJS) $(LIBS)
+#	$(CC) $(CFLAGS) -o projectGeo $(POBJS) $(LIBS) $(LDFLAGS)
 #	mv projectGeo$(BIN_POSTFIX) $(BINDIR)
 #	cp projectGeo.1 ../../man/cat1
 

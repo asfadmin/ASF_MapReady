@@ -12,7 +12,7 @@ all: create_dem_grid
 	rm *.o
 
 create_dem_grid: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o create_dem_grid $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o create_dem_grid $(OBJS) $(LIBS) $(LDFLAGS)
 	mv create_dem_grid$(BIN_POSTFIX) $(BINDIR)
 	cp create_dem_grid.1 ../../man/cat1
 

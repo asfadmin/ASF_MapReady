@@ -61,7 +61,7 @@ OBJS =	get_tiepoints.o \
 all: convert2geotiff clean
 
 convert2geotiff: $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o convert2geotiff $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o convert2geotiff $(OBJS) $(LIBS) $(LDFLAGS)
 	cp convert2geotiff.1 ../../man/man1
 	mv convert2geotiff$(BIN_POSTFIX) $(BINDIR)
 

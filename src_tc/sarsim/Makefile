@@ -13,7 +13,7 @@ LIBS  = $(LIBDIR)/asf.a \
 OBJS  = sim_init.o 
  
 sarsim : sarsim.c $(CINCFIL) $(OBJS) 
-	$(CC) $(CFLAGS) -o sarsim sarsim.c $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o sarsim sarsim.c $(OBJS) $(LIBS) $(LDFLAGS)
 	mv sarsim$(BIN_POSTFIX) $(BINDIR)
 	rm *.o
 	cp sarsim.man ../../man/cat1/sarsim.1

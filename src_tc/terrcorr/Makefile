@@ -9,7 +9,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	-lm
 
 terrcorr :  terrcorr.c 
-	$(CC) $(CFLAGS) -o terrcorr terrcorr.c $(LIBS) $(CFLAGS)
+	$(CC) $(CFLAGS) -o terrcorr terrcorr.c $(LIBS) $(LDFLAGS)
 	mv terrcorr$(BIN_POSTFIX) $(BINDIR)
 	cp terrcorr.man ../../man/cat1/terrcorr.1
 

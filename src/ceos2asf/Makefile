@@ -7,11 +7,11 @@ include ../../make_support/system_rules
 
 CFLAGS  := $(CFLAGS) -DDECODE_CEOS
 
-LIBS    = $(LIBDIR)/asf_meta.a \
+LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	-lm
 
-OBJS	= cal_params.o ceos2raw.o \
+OBJS  = cal_params.o ceos2raw.o \
 	aisp_params.o aisp_write.o missing.o \
 	bin_state.o unpack.o frame.o \
 	decoder_utils.o ceosUtil.o \
@@ -21,7 +21,7 @@ OBJS	= cal_params.o ceos2raw.o \
 	ceos2asf.o
 
 all: ceos2asf
-	-rm *.o
+#	-rm $(OBJS)
 
 ceos2asf: $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o ceos2asf $(OBJS) $(LIBS)

@@ -16,7 +16,7 @@ OBJS  = concatm.o \
 	set_dtype.o
 
 concatm: $(OBJS)
-	$(CC) $(CFLAGS) -o concatm $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o concatm $(OBJS) $(LIBS) $(LDFLAGS)
 	rm *.o
 	mv concatm$(BIN_POSTFIX) $(BINDIR)/concatm$(BIN_POSTFIX)
 	cp concatm.man ../../man/cat1/concatm.1

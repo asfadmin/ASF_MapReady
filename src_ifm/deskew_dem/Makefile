@@ -17,7 +17,7 @@ OBJS  = calc_ranges.o \
 all: deskew_dem clean
 
 deskew_dem: $(OBJS)
-	${CC} ${CFLAGS} -o deskew_dem $(OBJS) ${LIBS} ${LDFLAGS}
+	$(CC) $(CFLAGS) -o deskew_dem $(OBJS) $(LIBS) $(LDFLAGS)
 	mv deskew_dem$(BIN_POSTFIX) $(BINDIR)
 	cp deskew_dem.1 ../../man/cat1
 

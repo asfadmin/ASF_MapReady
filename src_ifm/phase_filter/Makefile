@@ -17,6 +17,6 @@ all: phase_filter
 	- rm *.o
 
 phase_filter:	$(OBJLIB) $(LIBS)
-	$(CC) $(CFLAGS) -o phase_filter $(OBJLIB) $(LIBC)
+	$(CC) $(CFLAGS) -o phase_filter $(OBJLIB) $(LIBC) $(LDFLAGS)
 	mv phase_filter$(BIN_POSTFIX) $(BINDIR)
 	cp phase_filter.1 ../../man/cat1

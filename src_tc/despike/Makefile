@@ -9,7 +9,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	-lm
  
 despike :  despike.c
-	$(CC) $(CFLAGS) -o despike despike.c $(LIBS)
+	$(CC) $(CFLAGS) -o despike despike.c $(LIBS) $(LDFLAGS)
 	mv despike$(BIN_POSTFIX) $(BINDIR)
 	cp despike.man ../../man/cat1/despike.1
 

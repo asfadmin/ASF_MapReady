@@ -31,9 +31,9 @@ OBJS  = aisp_params.o \
 all: ceos2raw clean
 
 ceos2raw: $(OBJS)
-	${CC} ${CFLAGS} ${LDFLAGS} -o ceos2raw $(OBJS) ${LIBS}
+	$(CC) $(CFLAGS) -o ceos2raw $(OBJS) $(LIBS) $(LDFLAGS)
 	mv ceos2raw$(BIN_POSTFIX) $(BINDIR)
 	cp ceos2raw.1 ../../man/cat1/
 
 clean:
-	rm -f core ${OBJS} *.o
+	rm -f core $(OBJS) *.o

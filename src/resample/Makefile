@@ -9,7 +9,7 @@ LIBS = $(OLIBS) -lm
 OBJS = 	filter.o 
 
 resample:  resample.c $(OBJS)  $(OLIBS)
-	$(CC) $(CFLAGS) -o resample resample.c $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o resample resample.c $(OBJS) $(LIBS) $(LDFLAGS)
 	rm *.o
 	mv resample$(BIN_POSTFIX) $(BINDIR)
 	cp resample.1 ../../man/man1/resample.1

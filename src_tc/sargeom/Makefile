@@ -11,6 +11,6 @@ LIBS  = $(LIBDIR)/asf.a \
 	-lm
  
 sargeom : sargeom.c
-	$(CC) $(CFLAGS) -o sargeom sargeom.c $(LIBS)
+	$(CC) $(CFLAGS) -o sargeom sargeom.c $(LIBS) $(LDFLAGS)
 	mv sargeom$(BIN_POSTFIX) $(BINDIR)
 	cp sargeom.man ../../man/cat1/sargeom.1

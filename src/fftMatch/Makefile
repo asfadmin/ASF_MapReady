@@ -16,7 +16,7 @@ OBJLIB =  fftMatch.o
 all: fftMatch clean
 
 fftMatch: $(OBJLIB) $(LIBS)
-	$(CC) $(CFLAGS) -o fftMatch $(OBJLIB) $(LIBC)
+	$(CC) $(CFLAGS) -o fftMatch $(OBJLIB) $(LIBC) $(LDFLAGS)
 	mv fftMatch$(BIN_POSTFIX) $(BINDIR)
 	cp fftMatch.man ../../man/cat1/fftMatch.1
 

@@ -19,7 +19,7 @@ OBJS = CLA.o \
 all: remap clean
 
 remap: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o remap remap.c $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o remap remap.c $(OBJS) $(LIBS) $(LDFLAGS)
 	mv remap$(BIN_POSTFIX) $(BINDIR)
 	cp remap.1 ../../man/cat1
 

@@ -10,7 +10,7 @@ LIBS =  $(LIBDIR)/asf.a \
 OBJS = sarin.o
 
 sarin: $(OBJS)
-	$(CC) $(CFLAGS) -o sarin $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o sarin $(OBJS) $(LIBS) $(LDFLAGS)
 	rm *.o
 	mv sarin$(BIN_POSTFIX) $(BINDIR)
 	cp sarin.1 ../../man/man1/sarin.1

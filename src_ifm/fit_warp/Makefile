@@ -8,6 +8,6 @@ LIBS  = $(LIBDIR)/asf.a \
 	-lm 
 
 fit_warp: fit_warp.c
-	$(CC) $(CFLAGS) -o fit_warp fit_warp.c $(LIBS)
+	$(CC) $(CFLAGS) -o fit_warp fit_warp.c $(LIBS) $(LDFLAGS)
 	mv fit_warp$(BIN_POSTFIX) $(BINDIR)
 	cp fit_warp.1 ../../man/cat1

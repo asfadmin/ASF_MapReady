@@ -8,6 +8,6 @@ OLIBS = $(LIBDIR)/asf.a \
 LIBS = $(OLIBS) -lm
 
 correlate:  correlate.c $(OBJS) $(OLIBS)
-	$(CC) $(CFLAGS) -o correlate correlate.c $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o correlate correlate.c $(OBJS) $(LIBS) $(LDFLAGS)
 	mv correlate$(BIN_POSTFIX) $(BINDIR)
 	cp correlate.man ../../man/cat1/correlate.1

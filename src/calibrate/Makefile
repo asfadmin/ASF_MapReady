@@ -13,7 +13,7 @@ OBJS =  calibrate.o \
 all: calibrate clean
 
 calibrate: $(OBJS)
-	$(CC) $(CFLAGS) -o calibrate $(OBJS) $(LIBS) -lm
+	$(CC) $(CFLAGS) -o calibrate $(OBJS) $(LIBS) $(LDFLAGS) -lm
 	mv calibrate$(BIN_POSTFIX) $(BINDIR)
 	cp calibrate.1 ../../man/man1/
 

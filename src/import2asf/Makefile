@@ -28,7 +28,7 @@ all: import2asf
 	-rm *.o
 
 import2asf: $(OBJS) import2asf.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o import2asf $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o import2asf $(OBJS) $(LIBS) $(LDFLAGS)
 	mv import2asf$(BIN_POSTFIX) $(BINDIR)
 #	cp import2asf.1 ../../man/cat1/
 
