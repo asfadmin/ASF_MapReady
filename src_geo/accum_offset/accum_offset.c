@@ -99,6 +99,28 @@ struct OFFSET {
 void mosaic_image_pos(struct OFFSET *ip, int n, char **name, int *ms, int *ml);
 meta_parameters *get_metadata(const char *fName);
 
+static
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s <metafile1> <metafile2> [...]\n", name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   metafile1   A meta file (.ldr, .trl, etc) (do not include extension)\n"
+	"   metafile2   A meta file (.ldr, .trl, etc) (do not include extension)\n");	
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   ...   You may add as many meta files as you like.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Puts metafiles in ascending order by latitude.");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools.\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
+}
+
 int main(int argc, char **argv) 
 {
 	int ii;
@@ -199,23 +221,3 @@ void mosaic_image_pos(struct OFFSET *ip, int n, char **name, int *ms, int *ml)
 
 
 
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s <metafile1> <metafile2> [...]\n", name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   metafile1   A meta file (.ldr, .trl, etc) (do not include extension)\n"
-	"   metafile2   A meta file (.ldr, .trl, etc) (do not include extension)\n");	
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"   ...   You may add as many meta files as you like.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Puts metafiles in ascending order by latitude.");
- printf("\n"
-	"Version %.2f, ASF SAR Tools.\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
-}

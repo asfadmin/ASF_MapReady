@@ -146,6 +146,25 @@ void ml_vec(float oldSize, float newSize,float *ml)
 	}
 }
 
+void usage (char * name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"%s <infile> <outfile> <pixsiz> \n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   infile   Input image base name (.img & .meta)\n"
+	"   outfile  Output image base name (.img & .meta)\n"
+	"   pixsiz   Output pixel spacing, in meters\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Converts the given image from slant range to ground range.\n");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
+}
+
 int main(int argc,char *argv[])
 {
 	int    in_np,  in_nl;               /* input number of pixels,lines   */
@@ -296,21 +315,3 @@ int main(int argc,char *argv[])
 	return 0;
 }
 
-void usage (char * name)
-{
- printf("\n"
-	"USAGE:\n"
-	"%s <infile> <outfile> <pixsiz> \n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   infile   Input image base name (.img & .meta)\n"
-	"   outfile  Output image base name (.img & .meta)\n"
-	"   pixsiz   Output pixel spacing, in meters\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Converts the given image from slant range to ground range.\n");
- printf("\n"
-	"Version %.2f, ASF SAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
-}

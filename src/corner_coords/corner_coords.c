@@ -42,6 +42,25 @@
 
 #define VERSION 1.0
 
+static
+void usage(char *name)
+{
+  printf("\n"
+	 "USAGE:\n"
+	 "   %s  <name>\n",name);
+  printf("\n"
+	 "REQUIRED ARGUMENTS:\n"
+	 "   name   Base name of image file.");
+  printf("\n"
+	 "DESCRIPTION:\n"
+	 "   %s writes the geographic corner coordinates to a file.\n",
+	 name);
+  printf("\n"
+	 "Version %.2f, ASF SAR Tools\n"
+	 "\n",VERSION);
+  exit(EXIT_FAILURE);
+}
+
 int main(int argc, char **argv)
 {
   char meta_name[255], out_name[255];
@@ -82,21 +101,3 @@ int main(int argc, char **argv)
   return 0;
 }
 
-
-void usage(char *name)
-{
-  printf("\n"
-	 "USAGE:\n"
-	 "   %s  <name>\n",name);
-  printf("\n"
-	 "REQUIRED ARGUMENTS:\n"
-	 "   name   Base name of image file.");
-  printf("\n"
-	 "DESCRIPTION:\n"
-	 "   %s writes the geographic corner coordinates to a file.\n",
-	 name);
-  printf("\n"
-	 "Version %.2f, ASF SAR Tools\n"
-	 "\n",VERSION);
-  exit(EXIT_FAILURE);
-}

@@ -43,6 +43,33 @@
 
 #define VERSION 1.0
 
+static
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s <las_name> <meta_name>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   las_name    Base name of the old style meta data.  I.E. if <las_name> is\n"
+	"                \"test1\", then both \"test1.ddr\" and \"test1.meta\" must be\n"
+	"                in the working directory\n"
+	"   meta_name   Base name of the new style meta data.  I.E. if <meta_name> is\n"
+	"                \"test2\", then \"test2.meta\" must be in the working directory\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   %s coverts old ASF style metadata to new ASF style metadata.\n"
+	"   Old metadata being a LAS DDR file and a pre-version 1.10 meta file.\n"
+	"   New metadata is a meta file that is version 1.10 or greater. Current\n"
+	"   version is %.2f. Make sure that <las_name> and <meta_name> are\n"
+	"   different.  Otherwise the meta file that was read in will get written\n"
+	"   over.\n",name,META_VERSION);
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
+}
+
 int main(int argc, char **argv)
 {
 	char las_name[256];
@@ -72,29 +99,3 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s <las_name> <meta_name>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   las_name    Base name of the old style meta data.  I.E. if <las_name> is\n"
-	"                \"test1\", then both \"test1.ddr\" and \"test1.meta\" must be\n"
-	"                in the working directory\n"
-	"   meta_name   Base name of the new style meta data.  I.E. if <meta_name> is\n"
-	"                \"test2\", then \"test2.meta\" must be in the working directory\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   %s coverts old ASF style metadata to new ASF style metadata.\n"
-	"   Old metadata being a LAS DDR file and a pre-version 1.10 meta file.\n"
-	"   New metadata is a meta file that is version 1.10 or greater. Current\n"
-	"   version is %.2f. Make sure that <las_name> and <meta_name> are\n"
-	"   different.  Otherwise the meta file that was read in will get written\n"
-	"   over.\n",name,META_VERSION);
- printf("\n"
-	"Version %.2f, ASF SAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
-}

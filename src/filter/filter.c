@@ -69,6 +69,33 @@ char *uc(char *string)
   return out;
 }
 
+/* usage - enter here on command-line usage error*/
+static
+void usage(char *name)
+{
+  printf("\n"
+	 "USAGE:\n"
+	 "   %s [ -log <file> ] -resample <size> | -kernel <type> <size>\n"
+         "   <inFile> <outFile>\n", name);
+  printf("\n"
+	 "OPTIONAL ARGUMENTS:\n"
+ 	 "   -log <file> Allows the output to be written to a log file.\n");
+  printf("\n"
+         "REQUIRED ARGUMENTS:\n"
+	 "   -resample <size>      Subsampling with given kernel size.\n"
+         "   -kernel <type> <size> Kernel type: average\n"
+         "               Size of the kernel\n"
+         "   inFile      Basename of the input file.\n"
+	 "   outFile     Basename of the output file.\n");
+  printf("\n"
+	 "DESCRIPTION:\n"
+ 	 "   %s filters an image with a variety of kernels (only average for the\n"
+         "   format). It opitionally subsamples the image to a smaller size\n",name);
+  printf("\n"
+	 "Version %.2f, ASF SAR TOOLS\n\n", VERSION);
+  exit(EXIT_FAILURE);
+}
+
 int main(int argc, char *argv[])
 {
   FILE *fpIn, *fpOut;
@@ -283,28 +310,4 @@ int main(int argc, char *argv[])
   return(0);
 }
 
-/* usage - enter here on command-line usage error*/
-void usage(char *name)
-{
-  printf("\n"
-	 "USAGE:\n"
-	 "   %s [ -log <file> ] -resample <size> | -kernel <type> <size>\n"
-         "   <inFile> <outFile>\n", name);
-  printf("\n"
-	 "OPTIONAL ARGUMENTS:\n"
- 	 "   -log <file> Allows the output to be written to a log file.\n");
-  printf("\n"
-         "REQUIRED ARGUMENTS:\n"
-	 "   -resample <size>      Subsampling with given kernel size.\n"
-         "   -kernel <type> <size> Kernel type: average\n"
-         "               Size of the kernel\n"
-         "   inFile      Basename of the input file.\n"
-	 "   outFile     Basename of the output file.\n");
-  printf("\n"
-	 "DESCRIPTION:\n"
- 	 "   %s filters an image with a variety of kernels (only average for the\n"
-         "   format). It opitionally subsamples the image to a smaller size\n",name);
-  printf("\n"
-	 "Version %.2f, ASF SAR TOOLS\n\n", VERSION);
-  exit(EXIT_FAILURE);
-}
+

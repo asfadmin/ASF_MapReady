@@ -86,6 +86,24 @@ BUGS:
 
 #define VERSION 1.1
 
+static void usage (char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s <inASF> <outGeoTIFF>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <inASF>       Base name for (input) ASF tools image with metadata file.\n"
+	"   <outGeoTIFF>  Base name for (output) geotiff image.\n"
+	"                 (Do not add extension.  Program will.)\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Converts an ASF tools image into a geotiff file.\n");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n", VERSION);
+  exit(EXIT_FAILURE);
+}
 
 int main (int argc, char *argv[])
 {
@@ -355,23 +373,3 @@ else { /**FOR ALL 1-BAND IMAGES****/
 
 return(0);
 }
-
-void usage (char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s <inASF> <outGeoTIFF>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   <inASF>       Base name for (input) ASF tools image with metadata file.\n"
-	"   <outGeoTIFF>  Base name for (output) geotiff image.\n"
-	"                 (Do not add extension.  Program will.)\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Converts an ASF tools image into a geotiff file.\n");
- printf("\n"
-	"Version %.2f, ASF SAR Tools\n"
-	"\n", VERSION);
-  exit(EXIT_FAILURE);
-}
-
