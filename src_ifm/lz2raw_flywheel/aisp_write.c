@@ -71,7 +71,7 @@ void writeAISPparams(bin_state *s,char *outN,double fd, double fdd, double fddd)
 		g.na_valid*=g.nlooks;
 	/* end calculate valid patches per line */
 
-	print_params(outN,&g,"lz2raw/ceos2raw");
+	print_params(outN,&g,"lz2raw_flywheel");
 }
 
 void writeAISPformat(bin_state *s,char *outN)
