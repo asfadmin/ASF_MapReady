@@ -50,7 +50,13 @@ VERSION		DATE	AUTHOR		CODE/CONT   REASON
 						     file correctly.
   7.7		3/02	P. Denny	   ASF      Update commanline parsing
 						     and usage()
-   
+   -            1/04    P. Denny        Removed GEOGRAPH, LAMAZEQA, and ALBERS
+                                         projections because the current
+                                         version of the .meta file without a
+                                         ddr cannot handle them. Also note that
+                                         our tools are made to work with LAMCC
+                                         and **NOT** LAMAZEQA
+
 COMPUTER HARDWARE AND/OR SOFTWARE LIMITATIONS:
 
 PROJECT:  LAS
@@ -175,11 +181,14 @@ int main(int argc,char **argv)
 
  /*  Call the correct subroutine based upon the subcommand that was called.
  --------------------------------------------------------------------------*/
+ /*
  if (strcmp(subcmd,"GEOGRAPH") == 0){
-     prjunits = 3; /* seconds */
+     prjunits = 3; ** seconds **
      geograph(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
  }
- else if (strcmp(subcmd,"PLSTEREO") == 0){
+ else 
+ */
+ if (strcmp(subcmd,"PLSTEREO") == 0){
      prjunits = 2; /* meters */
      plstereo(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
  } 
@@ -187,15 +196,16 @@ int main(int argc,char **argv)
      prjunits = 2; /* meters */
      utm(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
  }
+ /*
  else if (strcmp(subcmd,"LAMAZEQA") == 0){
-     prjunits = 2; /* meters */
+     prjunits = 2; ** meters **
      lamazeqa(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
  }
  else if (strcmp(subcmd,"ALBERS") == 0){
-     prjunits = 2; /* meters */
+     prjunits = 2; ** meters **
      albers(argc-currArg,&argv[currArg],&prjzone,&prjtype,&prjsph,prjparms);
  }
-/*
+**
 else if (strcmp(subcmd,"STATEPLN") == 0)
    statepln(&parb,&prjzone,&prjtype,&prjsph,prjparms);
 else if (strcmp(subcmd,"ALBERS") == 0)
@@ -290,8 +300,9 @@ void usage(char *name)
 	"   %s [-log <file>] <projection> <prjkey> <outfile> <parameters...>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
-	"   projection   Designate a map style.  Can be: GEOGRAPH,\n"
+/*	"   projection   Designate a map style.  Can be: GEOGRAPH,\n"
 	"                  PLSTEREO, UTM, LAMAZEQA, or ALBERS\n"
+*/	"   projection   Designate a map style.  Can be: PLSTEREO or UTM\n"
 	"   prjkey       Key sting to identify this projection in your\n"
 	"                  projection file.\n"
 	"   outfile      Output file name.\n"
