@@ -45,6 +45,9 @@
 #   Britton Kerin
 #   4.2 - Added check that we have at least two image arguments.
 #
+#   4.3 - P. Denny - Include the .meta in file maintenance (meta to replace ddr)
+#                  - Update call to geocode
+#
 # HARDWARE/SOFTWARE LIMITATIONS:
 #	A projection file must be created before running  this  pro-
 #    	gram.  Use the projprm(1) program to create such a file.
@@ -218,8 +221,9 @@ do
     	sarin $infile las_tmp
     fi
     check_error
-    echo "Doing "geocode $fillGeocode $pixFlag $resampFlag las_tmp $projfile $projkey $outfile
-    geocode $fillGeocode $pixFlag $resampFlag las_tmp $projfile $projkey $outfile
+    geocode_args="$fillGeocode $pixFlag $resampFlag las_tmp $projfile $projkey $outfile"
+    echo "Doing geocode "$geocode_args
+    geocode $geocode_args
     check_error
     rm las_tmp.*
 done
@@ -233,12 +237,17 @@ then
   idtable $TableFile $file_list
   check_error
   
-  # copy over the ddr; adding image name to list
+  # copy over the meta/ddr; adding image name to list
   idimages=""
   for i in $file_list
   do
-    cp $i.ddr id$i.ddr
-    idimages="$idimages id$i"
+    if [ -r ${i}.meta ]
+    then
+      cp ${i}.meta id${i}.meta
+    else
+      cp ${i}.ddr id${i}.ddr
+    fi
+    idimages="$idimages id${i}"
   done
 
   # concat idimages together
@@ -249,7 +258,15 @@ then
   # remove unwanted individual strip images
   for i in $idimages
   do
-    rm $i.img $i.ddr
+    to_remove="${i}.img"
+    if [ -r ${i}.meta ]
+    then
+      to_remove="${to_remove} ${i}.meta"
+    fi
+    if [ -r ${i}.ddr ]
+    then
+      to_remove="${to_remove} ${i}.ddr"
+    rm ${to_remove}
   done
 fi
 
