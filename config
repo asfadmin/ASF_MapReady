@@ -133,10 +133,10 @@ echo "$makeExtra" >>system_rules
 # Look for the X-Windows directory
 for xdir in `echo /usr /usr/openwin /usr/X /usr/X11 /usr/X11R6`
 do
-	if [ -r $xdir/lib/libX11.so ]
+	if [ -r $xdir/lib/libX11.so -o -r $xdir/lib/libX11.dll.a ]
 	then
 		# linux needs to know about the /lib directory
-		if [ $sys = "linux" ]
+		if [ $sys = "linux" -o $sys = "win32" ]
 		then
 			echo "XHOME   = ${xdir}/lib" >> system_rules
 		else
