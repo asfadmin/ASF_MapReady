@@ -1125,7 +1125,8 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 
     if (start_arg >= end_arg)
     {
-	asfPrintWarning("No projection specified\n");
+	/* don't need this -- caller detects and prints a better message */
+	/* asfPrintWarning("No projection specified\n"); */
 	return NULL;
     }
     else
