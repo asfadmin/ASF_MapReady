@@ -55,11 +55,11 @@ baseline read_baseline(char *fName);
  * meta_general: General RAdio Detection And Ranging parameters
  */
 typedef struct {
-  char sensor[FIELD_STRING_MAX];     /* Name of imaging sensor.            */
-  char mode[MODE_FIELD_STRING_MAX];  /* Mode of imaging sensor.            */
-  char processor[FIELD_STRING_MAX];  /* Name and version of SAR processor. */
-  char data_type[FIELD_STRING_MAX];  /* Type of samples (e.g. "REAL*4").   */
-  char system[FIELD_STRING_MAX];     /* System of samples (e.g. "iee-std") */
+  char sensor[FIELD_STRING_MAX];    /* Name of imaging sensor.             */
+  char mode[MODE_FIELD_STRING_MAX]; /* Mode of imaging sensor.             */
+  char processor[FIELD_STRING_MAX]; /* Name and version of SAR processor.  */
+  char data_type[FIELD_STRING_MAX]; /* Type of samples (e.g. "REAL*4").    */
+  char system[FIELD_STRING_MAX];    /* System of samples (e.g. "ieee-std") */
   int orbit;		     /* Orbit number of satellite.                 */
   int frame;		     /* Frame for this image or -1 if inapplicable.*/
   int band_number;           /* Band number; first band is 0               */
@@ -273,7 +273,6 @@ typedef struct {
   meta_state_vectors *stVec;	       /* Can be NULL (check!).  */
   geo_parameters  *geo;
   ifm_parameters  *ifm;
-  proj_parameters *proj;               /* Can be NULL (check!).  */
   extra_info      *info;               /* Can be NULL (check!).  */
 } meta_parameters;
 
