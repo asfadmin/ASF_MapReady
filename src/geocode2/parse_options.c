@@ -749,8 +749,8 @@ static int extract_string_options(int *argc, char **argv[],
     return found;
 }
 
-static int extract_flag(int *argc, char **argv[],
-			char *arg, int *found)
+static void extract_flag(int *argc, char **argv[],
+			 char *arg, int *found)
 {
     int i;
 
