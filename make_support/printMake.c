@@ -54,7 +54,7 @@ void printMake(FILE *f,char *platform)
 	"	@ echo XXXXXXXXXXXXXX   REMOVING ALL BINARIES   XXXXXXXXXXX\n"
 	"	@ echo\n"
 	"	- rm -f $(L)/*\n"
-	"	- rm -f $(B)/*\n"
+	"	- rm -fr $(B)/*\n"
 	"	- rm -fr man/*\n"
 	"\n"
 	"man_create:\n"
