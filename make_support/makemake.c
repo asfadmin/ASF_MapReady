@@ -345,27 +345,21 @@ void updateAutotar(void)
 	int i;
 	FILE *out;
   /* Clean out the crap in the old directory.*/
-	system("/bin/rm -f ../release/autotar/source.* ../release/autotar/binary.*\n");
+	system("/bin/rm -f ../../release_cvs/autotar/source.* ../../release_cvs/autotar/binary.*\n");
   /* Now fill it up with new crap.*/
 	for (i=0;i<numProgs;i++)
 	{
 		prog *p=progs[i];
 		/* if (!p->isCat) continue; *//*Skip things that aren't categories*/
-		strcpy(name,"../release/autotar/source.");
+		strcpy(name,"../../release_cvs/autotar/source.");
 		strcat(name,p->name);
 		out=fopen(name,"w");
-	/* Hardcoded so as to not include unwanted src* directories */
-		fprintf(out,	"src/asf_inc\n"
-				"src_geo/asf_inc\n"
-				"src_ifm/asf_inc\n"
-				"src_lib/asf_inc\n"
-				"src_tc/asf_inc\n"
-				"src_x/asf_inc\n");
+		fprintf(out,"include\n");
 		addProgram(p,1);
 		cleanAndWrite(out);
 		fclose(out);
 		
-		strcpy(name,"../release/autotar/binary.");
+		strcpy(name,"../../release_cvs/autotar/binary.");
 		strcat(name,p->name);
 		out=fopen(name,"w");
 		addProgram(p,0);
@@ -393,7 +387,7 @@ int main(int argc, char **argv)
 	
 	makeMakefile(sys);
 	
-	if (0==system("test -x ../release/autotar"))
+	if (0==system("test -x ../../release_cvs/autotar"))
 	{/*Autotar directory exists-- so fill it.*/
 		printf("\n\nCreating autotar directory (slowly...)\n");
 		updateAutotar();
