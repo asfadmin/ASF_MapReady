@@ -1,8 +1,6 @@
 #include "asf.h"
 #include <unistd.h>
 
-#include "ddr.h"
-#include "geolocate.h"
 #include "asf_meta.h"
 #include "minimize.h"
 #include "offset.h"
@@ -14,7 +12,6 @@ typedef struct {
 #define N_LOCPTS 100
 typedef struct {
 	char *ceos;
-	struct DDR *ddr;
 	meta_parameters *meta;
 	double offT;
 	double offX;
@@ -46,38 +43,38 @@ double errorVsLoc(imgLocRec *loc)
 double errorVsTimeAz(double t,imgLocRec *loc)
 {
 	int i;
-	double saved_timeOffset=loc->meta->geo->timeShift;
-	double saved_slant=loc->meta->geo->slantShift;
-	loc->meta->geo->timeShift=t;
-	loc->meta->geo->slantShift=loc->offX;
+	double saved_timeOffset=loc->meta->sar->time_shift;
+	double saved_slant=loc->meta->sar->slant_shift;
+	loc->meta->sar->time_shift=t;
+	loc->meta->sar->slant_shift=loc->offX;
 	for (i=0;i<loc->nPts;i++)
 	{
 		int y=(int)loc->y[i],x=(int)loc->x[i];
-		meta_get_orig((void *)loc->ddr,y,x,&y,&x);
+		meta_get_original_line_sample(loc->meta,y,x,&y,&x);
 		meta_get_latLon(loc->meta,y,x,loc->elev[i],
 				&loc->est[i].lat,&loc->est[i].lon);
 	}
-	loc->meta->geo->timeShift=saved_timeOffset;
-	loc->meta->geo->slantShift=saved_slant;
+	loc->meta->sar->time_shift=saved_timeOffset;
+	loc->meta->sar->slant_shift=saved_slant;
 	return errorVsLoc(loc);
 }
 
 double errorVsTimeRng(double x,imgLocRec *loc)
 {
 	int i;
-	double saved_timeOffset=loc->meta->geo->timeShift;
-	double saved_slant=loc->meta->geo->slantShift;
-	loc->meta->geo->timeShift=loc->offT;
-	loc->meta->geo->slantShift=x;
+	double saved_timeOffset=loc->meta->sar->time_shift;
+	double saved_slant=loc->meta->sar->slant_shift;
+	loc->meta->sar->time_shift=loc->offT;
+	loc->meta->sar->slant_shift=x;
 	for (i=0;i<loc->nPts;i++)
 	{
 		int y=(int)loc->y[i],x=(int)loc->x[i];
-		meta_get_orig((void *)loc->ddr,y,x,&y,&x);
+		meta_get_original_line_sample(loc->meta,y,x,&y,&x);
 		meta_get_latLon(loc->meta,y,x,loc->elev[i],
 				&loc->est[i].lat,&loc->est[i].lon);
 	}
-	loc->meta->geo->timeShift=saved_timeOffset;
-	loc->meta->geo->slantShift=saved_slant;
+	loc->meta->sar->time_shift  = saved_timeOffset;
+	loc->meta->sar->slant_shift = saved_slant;
 	return errorVsLoc(loc);
 }
 
@@ -103,12 +100,11 @@ a (void *) so our imgLocRec never sees the outside
 world.
 */
 
-void *init_offset(char *ceos,meta_parameters *meta,struct DDR *ddr)
+void *init_offset(char *ceos,meta_parameters *meta)
 {
 	imgLocRec *loc=(imgLocRec *)MALLOC(sizeof(imgLocRec));
 	loc->meta=meta;
 	loc->ceos=ceos;
-	loc->ddr=ddr;
 	loc->nPts=0;
 	return (void *)loc;
 }
