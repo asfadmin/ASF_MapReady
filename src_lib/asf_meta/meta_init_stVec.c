@@ -101,8 +101,9 @@ void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 	
 /*Allocate output record.*/
 	meta->state_vectors->vecs=(state_loc *)MALLOC(ppdr.ndata * sizeof(state_loc));
+	meta->state_vectors->vector_count = ppdr.ndata;
 	s = meta->state_vectors;
-	
+
 /*Determine State Vector Format.*/
 	if (0==strncmp(ppdr.ref_coord,"INERTIAL",9))
 		areInertial=1;/*Listed as Inertial-- believe it.*/
@@ -131,7 +132,7 @@ void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 	} 
 
 /*Fill ouput record with state vectors.*/
-	for (i=0;i<s->num;i++)
+	for (i=0;i<s->vector_count;i++)
 	{
 		/*Read a state vector from the record, fixing the units.*/
 		stateVector st;
