@@ -143,7 +143,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    strcpy(ver,dssr->ver_id);strtok(ver," ");/*Remove spaces from field*/
    sprintf(meta->general->processor,"%s/%s/%s",fac,sys,ver);
    dataSize = (iof->bitssamp+7)/8 + (iof->sampdata-1)*5;
-   if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0)) dataSize += 4;
+   if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0)) dataSize += (10 - dataSize)/2;
    switch (dataSize) {
       case 2:  meta->general->data_type = INTEGER16;         break;
       case 4:  meta->general->data_type = INTEGER32;         break;
