@@ -1,0 +1,39 @@
+
+    NAME:	tpl_search -- search an image for areas of high contrast
+
+    SYNOPSIS:   tpl_search a|d image outtpl
+
+           image    input raw format SAR image (.raw)
+           outtpl   output tie point location file
+
+    DESCRIPTION:
+        Performs an adaptive search of the input SAR image to find
+        "ideal" locations for tie point correlation.  This is done
+        by finding areas of high contrast in an image that should 
+	correspond to mountain peaks or other discernible image 
+	features. 
+
+    OPTIONS:     a|d    Specifies whether an ascending or descending
+			SAR image has been used as input, and modifies 
+			the search orientation appropriately.
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+    Unable to open file <filename>		Incorrect file name given
+    Unable to read # items from the input file <file>  Incorrect file size 
+
+    EXAMPLES:	tpl_search d 17972200 tiep 
+
+    SEE ALSO:   terrcorr, correlate, greycorr, tpl_mult, 2dmap
+
+    HARWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:
+
+    AUTHOR: 	T. Logan, ASF STEP Software Engineer
+
+    CONTACT: 	tlogan@images.alaska.edu
+    		or visit http://www.images.alaska.edu
+
+

@@ -1,0 +1,57 @@
+
+    NAME: lz2raw
+
+    SYNOPSIS: lz2raw <input superPrep signal> <output> [ <beamNo> ]
+
+
+    DESCRIPTION:
+	lz2raw converts the given VEXCEL Level-0 signal data file into
+an AISP-compatible raw format.  It extracts the necessary processing
+parameters (slant range, prf, satellite mode) from the satellite
+headers, which it copiously outputs during processing.  It extracts
+state vectors from the VEXCEL .par file.
+
+The currently supported satellites are:
+	-ERS-1 and ERS-2
+	-JERS
+	-RADARSAT, all beams & modes (including SCANSAR)
+
+
+    OPTIONS:
+	beamNo: for SCANSAR data, the number of the
+beam to write out.  The default is beam 0, the first
+beam.  This parameter exists because AISP and quicklook
+cannot handle multiple beams at once-- the beams must
+be processed individually.
+
+
+    EXAMPLES:
+	> lz2raw RSAT_02.000 format_02.raw
+	Converts the superPrep data file RSAT_02.000 into the
+AISP raw input file format_02.raw.  This file can later
+be SAR processed using "aisp format_02.raw aisp_02" or
+"quicklook format_02.raw quick_02".
+
+	> lz2raw RSAT_12.000 beam2.raw 2
+	Extract beam number 2 (the third beam) from the
+SCANSAR superPrep file RSAT_12.000.  Produces AISP raw input file 
+beam2.raw, which only contains pulses from beam 2.
+
+
+    BUGS: 
+Does not compensate for skipped lines.
+Output is very inefficient for SCANSAR images.  
+SCANSAR images cannot be quicklooked.
+
+
+    SEE ALSO:
+	aisp, quicklook, ceos2raw
+
+
+    AUTHOR:
+     O. Lawlor, 5/98
+
+
+    CONTACT:
+tlogan@images.alaska.edu
+or visit http://www.images.alaska.edu

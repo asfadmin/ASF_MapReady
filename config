@@ -1,0 +1,171 @@
+#!/bin/sh
+# ASF/STEP Software Automatic Configuration script:
+# Sets system variables, creates Makefile.
+
+echo "############ Determining operating system ###############"
+cc="cc"
+osType=`uname`
+if [ -z $osType ]
+then
+# No uname!  Must ask user.
+	echo "Could not match your system automatically..."
+# Could be Linux, or Next:
+	echo "Please enter your system type (linux, next, etc.):"
+	read sys
+	echo "Configuring for " $sys .
+	osType=$sys
+else
+	versMajor=`uname -r | awk -F. '{print $1}'`
+	versMinor=`uname -r | awk -F. '{print $2}'`
+fi
+
+ranlib="echo"
+optFlag="-O"
+case "${osType}:${versMajor}:${versMinor}" in
+	IRIX*:5:*)
+		sys="irix5x" ;;
+	IRIX*:*:*)
+		sys="irix" 
+		optFlag="-O -n32";;
+	SunOS:4:*)
+		sys="sunos"
+		ranlib="ranlib"
+		cc="gcc" ;;
+	SunOS:*:*)
+		sys="solaris" ;;
+	AIX*:*:*)
+		sys="aix" ;;
+	ULTRIX:*:*)
+		sys="ultrix" ;;
+	OSF1:*:*)
+		sys="osf1" ;;
+	HP-UX:*:*)
+		sys="hpux" ;;
+	*BSD:*:*)
+		sys="bsd" ;;
+	GNU:*:*)
+		sys="gnu" ;;
+	Linux:*:*)
+		sys="linux" ;;
+	Mach:*:*)
+		sys="mach" ;;
+	CYGWIN*:*:*)
+		sys="win32"
+		makeExtra="BIN_POSTFIX = .exe";;
+	*:*:*)
+		sys=$osType ;;
+esac
+
+######## Ask about GCC ############
+
+if [ ! $cc = "gcc" ]
+then
+	echo "Would you like to use the GNU C Compiler "gcc" (y/n)? \c"
+	read resp
+	if [ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]
+	then
+		cc="gcc"
+		optFlag="-O"
+	fi
+fi
+
+asfDir=`pwd`
+
+echo "########## Determining machine characteristics #############"
+cd make_support
+$cc -o endian endian.c
+./endian
+
+echo "########### Building the make_support/system_rules file ###############"
+./endian -r > system_rules
+rm -f ./endian
+
+cat <<EOF >>system_rules
+SYS     = $sys
+CC      = $cc
+RANLIB  = $ranlib
+OPTFLAG = $optFlag
+INCLUDE = -I. -I${asfDir}/include
+EOF
+
+if [ $sys = linux ]
+then
+	echo 'FLAGS   = $(INCLUDE) $(OPTFLAG) -D'$sys' $(ENDIAN_FLAGS) -D_LARGEFILE64_SOURCE=1' >> system_rules
+else
+	echo 'FLAGS   = $(INCLUDE) $(OPTFLAG) -D'$sys' $(ENDIAN_FLAGS)' >> system_rules
+fi
+
+cat <<EOF >>system_rules
+ifeq ($(shell if test -n '$(DEBUG_BUILD)' -a '$(DEBUG_BUILD)' -ne 0 -a '$(CC)' = gcc; then echo 'true'; fi), true)
+  DEBUGFLAGS = -Wall -g
+  DEBUGLIBS = -lefence
+endif
+CFLAGS  = $(FLAGS) $(DEBUGFLAGS)
+LDFLAGS = $(DEBUGLIBS)
+LIBDIR  = ../../lib/$(SYS)
+BINDIR  = ../../bin/$(SYS)
+$makeExtra
+EOF
+
+# Look for the X-Windows directory
+for xdir in `echo /usr /usr/openwin /usr/X /usr/X11 /usr/X11R6`
+do
+	if [ -r $xdir/lib/libX11.so ]
+	then
+		echo "XHOME   = $xdir" >> system_rules
+		break
+	fi
+done
+
+echo "########### Building the Makefile ###############"
+make CC=$cc
+./makemake $sys
+cd ..
+
+echo "########### Automatic configuration complete ###########"
+directory=$asfDir'/bin/'$sys'/'
+echo ""
+echo "The ASF-STEP tool Makefile is now fully prepared."
+echo ""
+echo "To use the programs, you must add the binaries "
+echo "  directory to your path: " $directory " "
+echo ""
+
+bournePath='PATH='$directory':$PATH'
+addWhat1=$bournePath
+addWhat2='export PATH'
+addWhere='/dev/null'
+case $SHELL in
+	/bin/csh|/bin/tcsh)
+		addWhere=".cshrc"
+		addWhat1='setenv PATH '$directory':$PATH'
+		addWhat2='echo ASF-STEP Tool path set.'
+		;;
+	/bin/ksh|/bin/sh)
+		addWhere=".profile" ;;
+	/bin/bash)
+		addWhere=".bashrc" ;;
+esac
+if [ ! addWhere = '/dev/null' ]
+then
+	echo "Would you like this script to automatically add these lines:"
+	echo "  --> "$addWhat1
+	echo "  --> "$addWhat2
+	echo "to your "$addWhere" file (y/n)? \c"
+	read resp
+	if [ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]
+	then
+		cd
+		echo "# Next two lines added by ASF-STEP Tools installer." >> $addWhere
+		echo $addWhat1 >> $addWhere
+		echo $addWhat2 >> $addWhere
+		cd $currDir
+	fi
+	PATH=$directory:$PATH
+	export PATH
+fi
+
+echo 
+echo "To build the programs, type 'make'."
+echo
+echo "######### Source Installation Complete.  ##########"

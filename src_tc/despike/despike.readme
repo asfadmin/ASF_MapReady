@@ -1,0 +1,20 @@
+
+
+README FILE FOR image despiking routines
+ 
+PACKING LIST:
+        NAME            DESCRIPTION
+        despike.readme  This File
+        despike.man     man page format help file
+        despike.c       C main processing routine to perform 2 despike passes
+        Makefile        make utility routine to create despike executable
+        
+INSTALLATION INSTRUCTIONS:   Use the make file.
+ 
+SITE SPECIFIC MODIFICATIONS: No modifications should be required.
+ 
+TEST/EVALUATION PROCEDURES:
+ 
+NOTES:
+
+

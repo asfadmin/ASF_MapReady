@@ -1,0 +1,139 @@
+
+NAME:	   sarsim -- creates simulated sar products 
+ 
+SYNOPSIS:     sarsim inSARfile inDEMfile outSIMfile [-kr{1-4}]
+	   or sarsim inSARfile inDEMfile outSIMfile [-pBperp]
+ 
+DESCRIPTION:
+    This program uses a digital elevation model and the metadata from
+  a SAR image to create a simulated SAR image.  Processing is driven
+  by the input DEM file, which is used one line at a time from top to
+  bottom.  For non-zero height DEM pixels, the lon,lat coordinates are
+  calculated.  These are passed to the SARMODEL, which calculates the
+  backscatter based on the DEM height at the point of interest.  This
+  value and the SAR image space coordinates are returned.  If the returned
+  image coordinates are in the area of interest, the output pixel is
+  given the value calculated by SARMODEL.
+    The sarmodel works in two modes - SLANT RANGE and GROUND RANGE.
+  When the input SAR image is a complex data set, slant range processing
+  is assumed.  In this case, a slant range simulated SAR is created and
+  optionally a simulated phase image.  When the input is an amplitude
+  image, ground range processing is assumed.  Optional products for the
+  ground range mode include a radar shadow/layover mask image and a
+  radiometric terrain correction factor image.
+
+PARAMETERS:	inSARfile	pre-registered input SAR triplet
+		inDEMfile	DEM clipped to the area of interest
+		outSIMfile	output simulated SAR image
+ 
+OPTIONS:	-k		Create a mask value image.  This image 
+				is the same size and projection as the 
+				input DEM file and contains the following
+				values:
+       		                 0       No layover or radar shadowing
+	                         100     Radar Shadow Exists
+	                         200     Terrain Layover Detected
+
+		-pBperp		Create a simulated interferogram phase image
+ 				(float) using the value Bperp as a constant
+ 				perpendicular baseline parameter.
+
+		-r{1-4}		Create a radiometric terrain correction
+				factor image.  This image contains values
+				in the range 0.0 to 1.0, based on the amount
+				of area correction and model scattering that
+ 				is called for by the terrain geometry.  Four
+				different formulas can be specified (one of
+				them is mandatory).  This file of correction
+				factors can then be applied to the terrain
+ 				corrected image produced by SARGEOM, creating
+                                a terrain corrected and radiometrically 
+ 				normalized SAR product.
+ 
+ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+    Failure in malloc				pixel size too small
+    Cannot Open File !! : <filename> 		Unable to open output file
+    Unable to open Demfile <filename>		Invalid file name given
+    Demfile Read Error				Incorrect type or size DEM file
+	
+EXAMPLES:
+    1)	sarsim 78983100 7898dem 7898_sim
+ 
+	The above command will use the SAR metadata files 78983100.ldr, 
+      78983100.trl, and 78983100.ddr along with the input DEM file 7898dem.img
+      and its associated metadata file 7898dem.ddr to create a simulated SAR
+      ground range image with the same area of coverage as that of the real
+      SAR.  The output file, 7898_sim.img will be the same size as the input
+      SAR image.
+
+    2)  sarsim 78983100 7898dem 7898_sim -k
+
+	This command gives results similar to that of example 1, but also
+      creates a mask value image, 7898_sim_mask.img.  The mask image will
+      be in the same projection and have the same size as the DEM file. It
+      contains the following values:
+		0	No layover or radar shadowing
+		100	Radar Shadow Exists
+		200 	Terrain Layover Detected
+
+    3)  sarsim 78983100 7898dem 7898_sim -r1
+
+	This command will create a simulated ground range SAR image (as
+      example #1) as well as a radiometric terrain correction factor image
+      in DEM projection space. The formula specified for the radiometric
+      normalizations is LI.  The output file will be called 7898_sim_rtc.img.
+
+    4)  sarsim 78983100 7898dem 7898_sim -kr2
+
+	This example creates all three ground range products: simulated
+      SAR image, mask value image, and radiometric terrain correction
+      factors image.  The radiometric normalization formula requested
+      in this case is Goering/Olmsted. 
+
+    5)  sarsim 550201500 201_dem 201_sim -p89.9
+
+	This example creates a simluated SAR amplitude image in the
+      slant range, because the input SAR file is type 500, which is a
+      single look complex slant range image.  The image created is
+      a 5 by 1 look file (5 looks in azimuth, 1 look in range).  The 
+      -p89.9 option specifies that a simulated interferogram phase
+      image be created as well, using a constant perpendicular baseline
+      seperation of 89.9 meters.
+ 
+SEE ALSO:
+    terrcorr	  --  Terrain correction main routine 
+    sarmodel      --  Performs simlution for each pixel in a DEM file  
+    sargeom	  --  Creates terrain corrected image
+    greycorr	  --  Performs SIM to SAR image correlations
+ 
+HARWARE/SOFTWARE LIMITATIONS:
+
+    1)   The DEM file that is given to the SARSIM routine must be 
+	 already clipped to the proper area of coverage and pixel spacing.
+	 This can be accomplished either by using the ASF program demclip,
+	 or the LAS modules REMAP and GEOM as they were set up in the original
+         EDC terrain correction code.
+ 
+    2)	 This program is somewhat limited in what resolution processing it
+	 can handle.  This results from the fact that enough space for the
+         entire simulated SAR image must be kept in main memory during 
+	 processing.  The quandry is that the output pixels are not generated
+         in a fashion that is parallel to the edges of the output image.
+         When a DEM line is processed, the output pixels generated will
+         most likely appear as a diagonal stripe across the output image.
+         This stripe is skewed in relation to the edges.  Moreover, since
+         the amount that a SAR image is turned from its corresponding DEM
+         file is variable, it is no simple matter to predict how much of the
+         output image an individual DEM line is responsible for.  The simplest
+         way to overcome this problem is to keep a copy of the whole image in
+         memory.  Thus no predictions for coverage of the output image are
+         required.
+
+BUGS:    None Known
+ 
+AUTHOR:  Tom Logan, ASF
+ 
+CONTACT: Tom Logan, ASF
+	 E-mail: tlogan@iias.images.alaska.edu

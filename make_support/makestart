@@ -1,0 +1,49 @@
+# Makefile for          :  All ASF-STEP Tools 
+# Module Author(s)      :  asf_tools/make_support/makemake
+# Makefile Date         :  6/99
+#
+#        The Zen and the Art of ASF STEP Makefiles:
+#
+#    Overview: a "makefile" is a sort of script which is
+# read by the UNIX "make" utility.  The purpose of a 
+# makefile is to quickly and automatically compile a 
+# piece of software.  For the ASF STEP tools, there is 
+# one makefile in each tool's directory, and one central 
+# makefile (this file) in the asf_tools directory.  
+#
+#    The individual tools' makefiles "include" 
+# make_support/system_rules to get the parameters they
+# need (endian-ness, etc.)
+#
+#    If you're a user, your life is simple: always make 
+# everything from the asf_tools directory, by typing:
+#        make <toolname>
+#
+#    If you're an ASF programmer, however, since you're
+# working on these tools, your life is (of course) 
+# more complex.  When you modify a tool, you don't 
+# need to change anything but that tool's makefile.  
+# But if you add a tool, or change a tool's name, 
+# you need to modify several other files, as well.
+#
+#    I (Orion Lawlor) have written a program which should
+# make this process much easier for you.  It's in
+# asf_tools/make_support/makemake, and it parses a file called
+# asf_tools/make_support/master_program_list to generate the
+# top-level makefile, as well as update our
+# autotar directory.  To add a program or tool, just modify
+# asf_tools/make_support/master_program_list, then run
+# asf_tools/make_support/makemake.
+#
+#    To debug software, I suggest you make an alias like:
+# alias Mag 'make OPTFLAG=-g'
+# This will re-set the "OPTFLAG" variable to "-g" from "-O".
+#
+# Questions?
+#  Contact   Tom Logan: tlogan@images.alaska.edu
+#       or Rick Guritz: rguritz@images.alaska.edu
+#
+###########################################
+include make_support/system_rules
+MAKE = make
+

@@ -1,0 +1,50 @@
+
+    NAME:  demclip -- Clips an input DEM file to the coverage of a SAR image
+
+    SYNOPSIS:	demclip INdem SARfile OUTfile [u]
+
+    DESCRIPTION:
+	This program uses the SAR image metadata to calculate the UTM
+      projection of the corner coordinates of a SAR scene.  These are
+      compared with the DEM corner coordinates and a maximum size window
+      is formed.  Next, offsets for the SAR into the DEM file, and the
+      nl,ns covered by the image are determined.  In its final stage,
+      demclip reads the appropriate portion of the LAS 6.0 INT*2 image
+      file, and creates OUTfile (same LAS 6.0 INT*2 format with a valid
+      .ddr file).  
+
+    OPTIONS:
+	     U option specifies a user entered extent file called
+	      inSAR of the form UL_lat UL_lon LR_lat LR_lon.
+	
+    ERROR MESSAGE GIVEN:                REASON:
+    ----------------------------------------------------------------------
+    c_getddr:  unable to read file      Improper format or name
+    Unable to allocate enough memory	Input files are too large
+    Unable to open DEM file		Improper name or file type
+    Unable to seek byte ...		Failure determining file size
+    Unable to read the input DEM	Failure reading DEM file
+    Error returned from putbdr		Not able to create output ddr 
+
+    EXAMPLE:    demclip akdem E106987290G4S014 fair_dem
+
+	This example clips a piece from the file akdem.img that
+      covers the same area as the SAR image E106987290G4S014.D (as
+      given in the SAR metadata file E106987290G4S014.L).  The output
+      DEM file, fair_dem.img, will contain the overlapping region of the
+      SAR file and the DEM file.
+
+    SEE ALSO:	terrcorr, dspddr
+
+    HARWARE/SOFTWARE LIMITATIONS:
+        The input DEM must be an INT*2 LAS 6.0 file, with a valid
+        LAS 6.0 ddr file.  Also, it must be in the UTM projection.
+
+    BUGS:	None Known
+
+    AUTHOR:	Tom Logan,  Alaska SAR Facility
+
+    CONTACT:	tlogan@iias.images.alaska.edu
+		rguritz@iias.images.alaska.edu
+
+

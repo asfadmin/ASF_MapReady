@@ -1,0 +1,25 @@
+
+
+README FILE FOR greycorr program to correlate 2 byte images
+ 
+PACKING LIST:
+        NAME              DESCRIPTION
+        greycorr.readme   This file - installation notes and instructions
+        greycorr.man      Man page style help file
+        Makefile          Unix Make utility file
+        greycorr.c        Main executable file, written in C
+	complex.h 	  Include file for complex numbers	
+	correlate.h	  Include file with standard definitions, etc
+	eval.c		  Evaluates the strengths of correlations
+	fft2d.c		  Performs a 2d fft
+	fitreg.c	  Determines best-fit registration using a quadratic
+	grey.c		  Performs grey (cross) correlation for a tie point
+ 
+INSTALLATION INSTRUCTIONS:   Should only need to run Makefile
+ 
+SITE SPECIFIC MODIFICATIONS: None should be required
+ 
+TEST/EVALUATION PROCEDURES:
+ 
+NOTES:
+

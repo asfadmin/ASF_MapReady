@@ -1,0 +1,61 @@
+#!/bin/csh
+
+#The purpose of this script is to automate the filtering of complex image data in an attempt
+#to improve interferometric coherence.
+#
+#This script uses
+#1.    cpx_spectrum
+#2.    gen_filt_params
+#3.    pcpx_filter (parallel version of cpx_filter)
+#
+#Usage         : pcpx_autoFilter <.cpx in 1> <.cpx in 2> <.cpx out 1> <.cpx out 2> <num of processors>
+#Input         : This program uses two complex image files (.cpx, .ddr, AND .meta)
+#Output        : This program outputs two filtered complex image files (.cpx and .ddr)
+#
+#Written by Mark Ayers on 5-30-2000
+
+if ( $# != 5 )
+then
+        echo "pcpx_autoFilter"
+        echo "Usage: pcpx_autoFilter <.cpx in 1> <.cpx in 2> <.cpx out 1> <.cpx out 2> <num of processors>"
+        echo ""
+        echo "<.cpx in 1> a complex image file (.cpx, .ddr, AND .meta)"
+        echo "<.cpx in 2> a complex image file (.cpx, .ddr, AND .meta)"
+        echo "<.cpx out 1> a complex image file (.cpx, .ddr)"
+        echo "<.cpx out 2> a complex image file (.cpx, .ddr)"
+	echo "<num of processors> is the number of processors to use"
+        echo ""
+	echo "     cpx_autoFilter will attempt to improve interferogram coherence"
+        echo "by filtering the complex images in azimuth."
+	echo ""
+	echo "     It does this by calculating the frequencies at which at azimuthal" 
+	echo "spectrum contains information in both images.  It then builds a bandpass" 
+	echo "filter, allowing only those frequencies with information to pass."
+	echo ""
+	echo "     Finally, the program examines the metadata of both images and "
+	echo "determines the processed doppler frequencies.  Using these values, the" 
+	echo "images are shifted by a common modulation frequency which is just the"
+	echo "negative average of the two dopplers.  This operation essentially translates" 
+	echo "the data to baseband, removing any doppler carrier that may have existed in"
+	echo "the datasets."
+        echo ""
+	echo "Version 1.0, ASF ISAR Tools, 2000"
+        exit 1
+endif
+
+echo "Performing the complex fft to determine the azimuthal spectrum"
+cpx_spectrum $1.cpx $1 0
+cpx_spectrum $2.cpx $2 0
+
+echo "Calculating the filter parameters"
+gen_filt_params $1 $2 params
+
+echo "Filtering the data"
+mpirun -np $5 `which pcpx_filter` $1.cpx $3 params
+mpirun -np $5 `which pcpx_filter` $2.cpx $4 params
+
+echo "Performing the complex fft of the filtered data"
+cpx_spectrum $3.cpx $3 0
+cpx_spectrum $4.cpx $4 0
+
+echo "Filtering of data completed successfully"

@@ -1,0 +1,128 @@
+#!/bin/sh
+#
+# NAME: register_cpx_window
+#
+# SYNOPSIS:
+#
+#        register_cpx_window <file1> <file2> <igram> <start line>
+#                            <start sample> <height> <width>
+#                            [<grid resolution>[-sinc[-warp]]]
+#
+# DESCRIPTION:
+#
+#  Register_cpx_window will cut a window, or section, out of
+#  the two input images, then run register_cpx to make
+#  an interferogram out of them.
+#  After this, interferometry can be done using tandem_ifm.
+#
+#  The register scripts automate the process of interferogram
+#  generation for four data types:
+#  CPX (register_cpx), windowed CPX (register_cpx_window),
+#  SIC (register_slc), and windowed (or trimmed) SIC (register_slc_window).
+#  CPX refers to IEEE 32-bit floating-point complex data (.cpx and .ddr)
+#  SIC refers to ASF's Single Int Complex data (.D and .L, or .dat and .ldr).
+#
+#  After running this script you have an interferogram, which
+#  you can view with ml, generate a DEM with tandem_ifm(1), or
+#  use for your own science.
+#  An estimate of the baseline is written to base.00.
+#       
+# EXTERNAL ASSOCIATES:
+#    NAME:               USAGE:
+#    ---------------------------------------------------------------
+#
+# FILE REFERENCES:
+#    NAME:               USAGE:
+#    ---------------------------------------------------------------
+#
+# PROGRAM HISTORY:
+#    VERS:   DATE:  AUTHOR:      PURPOSE:
+#    ---------------------------------------------------------------
+#    1.0	
+#    1.2     1997  Orion Lawlor
+#
+# HARDWARE/SOFTWARE LIMITATIONS:
+#
+# ALGORITHM DESCRIPTION:
+#
+# ALGORITHM REFERENCES:
+#
+# BUGS
+#	
+#****************************************************************************
+#								            *
+#   Register_cpx_window will cut a window, or section, out of the two input *
+#            images, then run register_cpx to make an interferogram out of  *
+#	     them. 							    *
+#   Copyright (C) 2001  ASF Advanced Product Development    	    	    *
+#									    *
+#   This program is free software; you can redistribute it and/or modify    *
+#   it under the terms of the GNU General Public License as published by    *
+#   the Free Software Foundation; either version 2 of the License, or       *
+#   (at your option) any later version.					    *
+#									    *
+#   This program is distributed in the hope that it will be useful,	    *
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
+#   GNU General Public License for more details.  (See the file LICENSE     *
+#   included in the asf_tools/ directory).				    *
+#									    *
+#   You should have received a copy of the GNU General Public License       *
+#   along with this program; if not, write to the Free Software		    *
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
+#									    *
+#       ASF Advanced Product Development LAB Contacts:			    *
+#	APD E-mail:	apd@asf.alaska.edu 				    *
+# 									    *
+#	Alaska SAR Facility			APD Web Site:	            *	
+#	Geophysical Institute			www.asf.alaska.edu/apd	    *
+#      	University of Alaska Fairbanks					    *
+#	P.O. Box 757320							    *
+#	Fairbanks, AK 99775-7320					    *
+#								  	    *
+#**************************************************************************/
+#
+
+if [ $# -lt 7 -o $# -gt 10 ]
+then
+	echo "Register_cpx_window:"
+	echo "Usage: register_cpx_window <file 1> <file 2> <igram> "
+	echo "          <start line> <start sample> <height> <width> "
+	echo "          [ <grid resolution> [ -sinc [ -warp ]]]"
+	echo ""
+	echo "  <file 1> a complex file (.cpx, .ddr, and .L or .ldr)"
+	echo "  <file 2> a complex file (.cpx, .ddr)"
+	echo "  <igram> the output interferogram (.amp, .phase, .ddr)"
+	echo "  <start line>,<start sample> define the vertical and horizontal"
+	echo "        coordinates of the top left corner of the desired section."
+	echo "  <heigth>,<width> define the height and width of the output images."
+	echo "  [ <grid resolution> ] is the grid resolution for fico(1)."
+	echo "                           (the default is 20, for a 20x20 grid)"
+	echo "  [ -sinc ] use Sinc kernel to do the remapping-- this is "
+	echo "            slower, but may result in higher quality."
+	echo "            The default is bilinear interpolation."
+	echo "  [ -warp ] create and use a non-linear warping image instead"
+	echo "            of a linear planar map.  See fit_warp(1)."
+	echo ""
+	echo "Register_cpx_window will cut a window, or section, out of "
+	echo "the two input images, then run register_cpx to make"
+	echo "an interferogram out of them."
+	echo "After this, interferometry can be done using tandem_ifm."
+	echo "Version 1.2, ASF SAR TOOLS"
+	exit 1
+fi
+
+trim -h $6 -w $7 $1.cpx $1_trim.cpx $4 $5 
+trim -h $6 -w $7 $2.cpx $2_trim.cpx $4 $5
+cp $1.L $1_trim.L > /dev/null 2>&1
+cp $1.ldr $1_trim.ldr > /dev/null 2>&1
+cp $1.trl $1_trim.trl > /dev/null 2>&1
+cp $2.L $2_trim.L > /dev/null 2>&1
+cp $2.ldr $2_trim.ldr > /dev/null 2>&1
+cp $2.trl $2_trim.trl > /dev/null 2>&1
+register_cpx $1_trim $2_trim $3 $8 $9 $10
+
+/bin/rm $1_trim.* $2_trim.*
+
+echo XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+echo "register_cpx_window complete..."

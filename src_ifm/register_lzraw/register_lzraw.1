@@ -1,0 +1,65 @@
+NAME: register_lzraw
+
+SYNOPSIS:
+
+   register_lzraw <file 1> <file 2> <igram_out> 
+		[-g <grid_resolution>]
+		[-line <start_line1> <start_line2> <end_line1> <end_line2>]
+		[-lat <start_lat> <end_lat>]
+		[-p [<num_processors>]]
+		[-f]
+		[-ml]
+		[-nolz2raw]
+
+   <file 1>  is a level zero swath file
+   <file 2>  is a second level zero swath file
+   <igram_out>  is the name of the output interferogram
+
+DESCRIPTION:
+
+	register_lzraw automates the process of sub-pixel
+  registration for ASF Level-Zero Swath data.  This program will take
+  this data, cut it into pieces of matching location, and size, SAR process it,
+  sub-pixel register it, and make it into an interferogram.  The result will 
+  be an inteferogram. After this, you can generate a DEM with tandem_ifm.
+
+OPTIONS:   
+
+   [-g <grid_resolution] specifies a grid resolution to pass to fico
+   [-line <start_line1> <start_line2> <end_line2> <end_line2>]
+	   constrains the swaths to the given lines
+   [-lat <start_lat> <end_lat>] specifies a start and end
+	   latitude to constrian the swath images
+   [-p [<num_processors>] specifies to use parallel versions of
+	   programs if possible. If no number of processors is
+	   specified, 8 are used.
+   [-f]    passes the -f switch to fico for fft matching.
+   [-ml]   automatically multi-looks the interferogram.
+   [-nolz2raw]  Option to disable call to lz2raw_flywheel, assumes input 
+	   are APD raw format.
+
+
+ERROR MESSAGES:
+MESSAGES GIVEN:  			REASON:
+-------------------------------------------------------------------------
+
+EXAMPLES: 
+
+SEE ALSO:
+	
+	lz2raw_flywheel(1), swath_offset(1), fix_in_fromraw(1)
+        avg_in_dop(1), water_mask(1), aisp(1)
+        paisp(1), resolve(1), fico(1), register_cpx(1)
+        fit_line(1), calc_deltas(1), igram(1)
+        pigram(1), coh(1), las_op(1)
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR: Dave Koster, 2000
+
+CONTACT: apd@asf.alaska.edu
+	 or visit http://www.asf.alaska.edu
+ 
+

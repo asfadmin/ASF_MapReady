@@ -1,0 +1,55 @@
+
+    NAME: fit_plane
+
+    SYNOPSIS: fit_plane <in> <out> [k <keepFraction>] [-log <file>]
+
+    DESCRIPTION:
+    	fit_plane is used during interferometry to clean up
+    the output of fico.
+    	
+    	fit_plane performs a weighted planar least-squares regression 
+    on the output of fico to generate an output file in remap-compatible 
+    format.  This allows for any combination of translate, scale, rotate, 
+    and shear transformations.
+    
+    	It performs point elimination, to throw out points which do not
+    agree well with the fit.
+
+    OPTIONS:
+    	<in> an fico offset point file
+    	<out> a matrix file in remap compatible format:
+    		This file matches the <image 1> to <image 2>, as
+    		img1.x=img2.x*<first number>+img2.y*<second number>+<third number>
+    		img1.y=img2.x*<fourth number>+img2.y*<fifth number>+<sixth number>
+    	
+    	k <keepFraction> Specify the fraction of points to keep in fit.
+    	        The default is 0.80-- keep 80% of the given points.
+	-log <file>  Option to have the output written to a log file.
+    	
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+    EXAMPLES:
+	If you had previously performed a correlation with
+	fico to generate "fico1", to generate a file for 
+	use with remap (called matrixFile), you would type:
+	
+		fit_plane fico1 matrixFile
+	
+    SEE ALSO:
+    	fico(1), remap(1), compare to fit_line(1).
+
+    HARDWARE/SOFTWARE LIMITATIONS: none
+
+    BUGS: none known
+
+    AUTHOR: Orion Lawlor, June 1997
+
+    CONTACT: apd@asf.alaska.edu
+	     or visit http://www.asf.alaska.edu/apd
+
+
+
+
+

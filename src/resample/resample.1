@@ -1,0 +1,57 @@
+.TH resample 1 "April 8, 1999"
+.SH NAME: 
+resample \- resamples images to desired resolution 
+.SH SYNOPSIS: 
+.B resample 
+.BI "infile outfile pixsiz" 
+.SH DESCRIPTION: 
+Resamples the input file to a desired output pixel resolution. Images are
+downsized by a factor equal to the desired resolution divided by the true
+resolution of the image (as given in the image's trailer metadata file). 
+This is the size used for the kernel. Processing proceeds by selecting the
+pixel in the input image that closest represents the middle of the new
+pixel in the output image. The output pixel is given the value of the
+average of the kernel around the choosen input pixel. This program
+combines the programs filter.c and subsample.c from the original EDC
+Terrain Correction software (LAS Modules). 
+
+.SH OPTIONS:
+.B infile
+Input file name. If no extension is given, .img is assumed.
+.TP
+.B outfile
+Output file name. Resampled image will be placed in a LAS 6.0
+file with this name.
+.TP
+.B pixsiz
+Desired pixel resolution. This number is commonly in meters, but uses the 
+same units as the input file name. ASF lo-res images are typically 100m 
+resolution; while high-res images are 12.5m resolution
+.SH ERROR MESSAGES:
+.B MESSAGE_GIVEN:  REASON:
+-----------------------------------------------------------------
+.SH EXAMPLES:
+.ce 1
+example2% resample strip strip_small 300.0
+.PP
+This call to resample operates on the LAS 6.0 image file strip.img to
+produce the LAS 6.0 file strip_small.img.  The input image is downsized to
+create an output pixel resolution of 300 meters. The metadata file
+strip.ddr is required during processing.
+.SH SEE ALSO:
+.SH HARDWARE/SOFTWARE LIMITATIONS:
+This program can only process single banded byte data images from LAS 6.0. 
+No multi-band images or other data types from LAS 6.0 are supported. 
+Also, no LAS 5 (or earlier) image types are supported. 
+.SH BUGS:
+.SH AUTHOR:
+\tT. Logan, ASF 
+.br
+\tM. Shindle, ASF
+.SH CONTACT:
+\tapd@asf.alaska.edu
+\t or http://www.asf.alaska.edu/apd
+
+
+
+

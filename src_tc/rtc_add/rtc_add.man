@@ -1,0 +1,41 @@
+
+    NAME:	rtc_add		Adds radiometric normalization factors to
+				a terrain corrected SAR image
+
+    SYNOPSIS:	rtc_add sarfile rtcfile outfile
+
+    DESCRIPTION:
+        Adds the terrain corrected byte image named sarfile with the
+        float valued radiometric terrain correction factor image named
+        rtcfile to produce the output file named outfile.  This creates
+        a radiometrically normalized SAR image file.
+	Note that all file name extensions are assumed to be .img as 
+	per LAS 6.0 standards.  Both of the input files are required 
+	to have valid LAS 6.0 .ddr metadata files, and the output image
+	will be given a valid ddr file upon successful execution.
+
+    OPTIONS:	None
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+    Unable to allocate enough storage space	Obvious
+    Unable to open file %s			Obvious
+    Unable to read from file %s			Wrong File Type
+    Failure copying metadata: Program Exited    System Error
+
+    SEE ALSO:	terrcorr, sarsim, sargeom
+
+    HARWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:	None Known
+
+    AUTHOR:	Tom Logan
+		STEP Software Engineer
+		Alaska SAR Facility
+		907 - 474 - 6845
+
+    CONTACT:	tlogan@iias.images.alaska.edu
+		rguritz@iias.images.alaska.edu
+
+

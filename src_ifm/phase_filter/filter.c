@@ -1,0 +1,345 @@
+/*****************************************************************************
+NAME: phase_filter
+
+SYNOPSIS: phase_filter [-log <file] <in> <strength> <out>
+
+DESCRIPTION:
+	phase_filter applies the Goldstein phase filter
+to an interferometric phase image.
+
+	An interpolation scheme lifted from Rob Fatland smooths
+the edges.
+
+
+EXTERNAL ASSOCIATES:
+    NAME:                USAGE:
+    ---------------------------------------------------------------
+	asf_fft.a: FFT Library
+
+PROGRAM HISTORY:
+    VERS:   DATE:  AUTHOR:      PURPOSE:
+    ---------------------------------------------------------------
+    1.0	    7/98   O. Lawlor    Filter interferometric phase.
+    1.1     7/01   R. Gens	Added log file switch
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+ALGORITHM DESCRIPTION:
+
+ALGORITHM REFERENCES:
+
+BUGS:
+
+*****************************************************************************/
+/****************************************************************************
+*								            *
+*   Filters <in>, a phase image, via the Goldstein filter with strength     *
+*           <strength> and writes the result to <out>. 			    *
+*   Copyright (C) 2001  ASF Advanced Product Development    	    	    *
+*									    *
+*   This program is free software; you can redistribute it and/or modify    *
+*   it under the terms of the GNU General Public License as published by    *
+*   the Free Software Foundation; either version 2 of the License, or       *
+*   (at your option) any later version.					    *
+*									    *
+*   This program is distributed in the hope that it will be useful,	    *
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
+*   GNU General Public License for more details.  (See the file LICENSE     *
+*   included in the asf_tools/ directory).				    *
+*									    *
+*   You should have received a copy of the GNU General Public License       *
+*   along with this program; if not, write to the Free Software		    *
+*   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
+*									    *
+*   ASF Advanced Product Development LAB Contacts:			    *
+*	APD E-mail:	apd@asf.alaska.edu 				    *
+* 									    *
+*	Alaska SAR Facility			APD Web Site:	            *	
+*	Geophysical Institute			www.asf.alaska.edu/apd	    *
+*       University of Alaska Fairbanks					    *
+*	P.O. Box 757320							    *
+*	Fairbanks, AK 99775-7320					    *
+*									    *
+****************************************************************************/
+#include "asf.h"
+#include "fft.h"
+#include "fft2d.h"
+#include "ddr.h"
+#include "filter.h"
+
+#define VERSION 1.1
+
+int nl,ns;
+
+void las_filter(FILE *in,const struct DDR *inDDR,
+		FILE *out,const struct DDR *outDDR,float strength);
+
+int main(int argc,char **argv)
+{
+	int i, optind=1;
+	FILE *in,*out;
+	char *inFile,*outFile;
+	struct DDR inDDR,outDDR;
+	float strength;
+	
+	if (argc==1 || argc>6) 
+	{
+		printf("\nUSAGE: phase_filter [-log <file>] <in> <strength> <out>\n"
+		"\n\t   <in>     LAS 6.0 sigle-banded image (with extension)\n"
+		"\t<strength>  is a real decimal number generally between 1.2"
+		"\n\t            and 1.8\n"
+		"\t  <out>     LAS 6.0 sigle_banded floating-point image.\n"
+		"\t  -log      Allows the output to be written to a log file.\n"     
+		"\nFilters <in>, a phase image, via the Goldstein\n"
+		"filter with strength <strength> and writes the result to <out>."
+		"\nVersion %.1f, ASF SAR TOOLS\n\n",VERSION);
+		exit(1);
+	}
+
+	logflag=0;
+	
+/* Check options */
+	for (i=1; i<argc; i++) {
+	  if (strncmp(argv[i], "-log", 4)==0) {
+	    sprintf(logFile, "%s", argv[i+1]);
+	    fLog = FOPEN(logFile, "a");
+	    logflag=1;
+	    i+=1;
+	    optind+=2;
+	  }
+	  else if (strncmp(argv[i], "-", 1)==0) {
+	    sprintf(errbuf, "   ERROR: %s is not a valid option!", argv[i]);
+	    printErr(errbuf);
+	  }
+	}
+
+/* Check required input */
+	i=optind;
+	inFile=argv[i];
+	if (1!=sscanf(argv[i+1],"%f",&strength))
+	{
+		sprintf(errbuf, "   ERROR: '%s' is not floating-point number.\n",argv[i+1]);
+		printErr(errbuf);
+	}
+	outFile=argv[i+2];
+
+	StartWatch();
+	system("date");
+	printf("Program: phase_filter\n\n");
+	if (logflag) {
+	  StartWatchLog(fLog);
+	  printLog("Program: phase_filter\n\n");
+	}
+
+/*Open input files.*/
+	in=fopenImage(inFile,"rb");
+	out=fopenImage(outFile,"wb");
+	c_getddr(inFile,&inDDR);
+	
+/*Round up to find image size which is an even number of output chunks..*/
+	ns=(inDDR.ns+ox-1)/ox*ox;
+	nl=(inDDR.nl+oy-1)/oy*oy;
+	printf("   Output Size: %d samples by %d lines\n\n",ns,nl);
+	if (logflag) {
+	  sprintf(logbuf,"   Output Size: %d samples by %d lines\n\n",ns,nl);
+	  printLog(logbuf);
+	}
+	
+/*Set up output file.*/
+	outDDR=inDDR;
+	outDDR.dtype=4;
+	c_putddr(outFile,&outDDR);
+	
+/*Perform the filtering, write out.*/
+	fft2dInit(dMy, dMx);
+	las_filter(in,&inDDR,out,&outDDR,strength);
+
+	printf("   Completed 100 percent\n\n");
+
+	StopWatch();
+	if (logflag) {
+	  StopWatchLog(fLog);
+	  FCLOSE(fLog);
+	}
+	return (0);
+}
+
+/**************************************************
+ las_readImg: reads the image file given by in & ddr
+into the (delX x delY) float array dest.  Reads pixels 
+into topleft corner of dest, starting
+at (startY , startX) in the input file.
+*/
+void las_readImg(FILE *in,const struct DDR *ddr, float *dest, 
+	int startX,int startY,int delX,int delY)
+{
+	register int x,y,l;
+	int stopY=delY,stopX=delX;
+	if ((stopY+startY)>ddr->nl)
+		stopY=ddr->nl-startY;
+	if ((stopX+startX)>ddr->ns)
+		stopX=ddr->ns-startX;
+/*Read portion of input image into topleft of dest array.*/
+	for (y=0;y<stopY;y++)
+	{
+		l=ns*y;
+		getFloatLine(in,ddr,startY+y,&dest[l]);
+		for (x=stopX;x<delX;x++)
+			dest[l+x]=0.0; /*Fill rest of line with zeros.*/
+	}
+/*Fill remainder of array (bottom portion) with zero lines.*/
+	for (y=stopY;y<delY;y++)
+	{
+		l=ns*y;
+		for (x=0;x<ns;x++)
+			dest[l+x]=0.0; /*Fill rest of in2 with zeros.*/
+	}
+}
+
+/*******************************************
+Phase_filter:
+	Performs goldstein phase filtering on the given
+dx x dy buffer of complex data.
+
+Goldstein phase filtering consists of:
+fft; exponentiate amplitude of fft'd data; ifft
+Where the exponential applied (strength) is typically
+between 1.2 and 1.7.  Larger strengths filter noise
+better, but eliminate more good information, too.
+Huge scalings, like 2.0 or 3.0, result in very geometric-
+looking phase.
+*/
+
+void phase_filter(complex *buf,float strength)
+{
+	register int x,y;
+	
+/*We must adjust the scaling for two reasons:
+	-The complex buffer is not normalized (strength-1)
+	-We operate on the square of the amplitude (/2)
+Hence,
+	fft*=pow(fft.r^2+fft.i^2,adjScale);
+is equivalent to
+	amp=sqrt(fft.r^2+fft.i^2);fft/=amp;fft*=pow(amp,strength);
+*/
+	float adjStrength=(strength-1)/2;
+
+/*fft buf*/
+	fft2d((float *)buf,dMy,dMx);	
+			
+/*Manipulate power spectrum.*/
+	for (y=0;y<dy;y++) 
+	{
+		register complex *fft=&buf[y*dx];
+		for (x=0;x<dx;x++)
+		{
+			float mul=pow(fft->r*fft->r+fft->i*fft->i,adjStrength);
+			fft->r*=mul;fft->i*=mul;
+			fft++;
+		}
+	}
+	
+/*ifft buf*/
+	ifft2d((float *)buf,dMy,dMx);
+}
+
+/************************************************************
+las_filter: 
+	Applies the goldstein phase filter across an entire
+LAS image, and writes the result to another LAS image.
+
+	The goldstein phase filter works best when applied
+to little pieces of the image.  But processing the image as
+a bunch of little pieces results in a segmented phase image.
+Hence we do a bilinear weighting of 4 overlapping filters 
+to "feather" the edges.
+*/
+
+void las_filter(FILE *in,const struct DDR *inDDR,
+		FILE *out,const struct DDR *outDDR,float strength)
+{
+	int chunkX,chunkY,nChunkX,nChunkY;
+	int i,x,y;
+	float *inBuf,*outBuf,*weight, percent=5.0;
+	complex **chunks,**last_chunks=NULL;
+	
+	/*Allocate polar to complex conversion array*/
+#define NUM_PHASE 512
+#define phase2cpx(ph) p2c[(int)((ph)*polarCvrt)&(NUM_PHASE-1)]
+	complex *p2c;
+	float polarCvrt=NUM_PHASE/(2*PI);
+	p2c=(complex *)MALLOC(sizeof(complex)*NUM_PHASE);
+	for (i=0;i<NUM_PHASE;i++)
+	{
+		float phase=i*2*PI/NUM_PHASE;
+		p2c[i].r=cos(phase);
+		p2c[i].i=sin(phase);
+	}
+	
+	/*Allocate bilinear weighting array.*/
+	weight=(float *)MALLOC(sizeof(float)*ox*oy);
+	for (y=0;y<oy;y++)
+		for (x=0;x<ox;x++)
+			weight[y*ox+x]=(float)x/(ox-1)*(float)y/(oy-1);
+
+	/*Allocate storage arrays.*/
+	nChunkX=ns/ox-1;
+	nChunkY=nl/oy-1;
+	outBuf=inBuf=(float *)MALLOC(sizeof(float)*ns*dy);
+#define newChunkArray(name) name=(complex **)MALLOC(sizeof(complex **)*nChunkX); \
+			for (chunkX=0;chunkX<nChunkX;chunkX++) \
+				name[chunkX]=(complex *)MALLOC(sizeof(complex)*dx*dy);
+	newChunkArray(chunks);
+	
+	/*Loop across each chunk in file.
+	printf("Filtering phase in %d x %d blocks...\n",dx,dy);
+	printf("Output phase in %d x %d blocks...\n",ox,oy);*/
+	for (chunkY=0;chunkY<nChunkY;chunkY++) 
+	{
+
+	if ((chunkY*100/nChunkY)>percent) {
+	  printf("   Completed %3.0f percent\n",percent);
+	  percent+=5.0;
+	}
+
+	/*Read next chunk of input.*/
+		las_readImg(in,inDDR,inBuf,0,chunkY*ox,ns,dy);
+
+	/*Convert polar image to complex chunk.*/
+		for (chunkX=0;chunkX<nChunkX;chunkX++)
+		{
+			register float *in;
+			register complex *out;
+			for (y=0;y<dy;y++) 
+			{
+				in=&inBuf[y*ns+chunkX*ox];
+				out=&chunks[chunkX][y*dx];
+				for (x=0;x<dx;x++)
+					*out++=phase2cpx(*in++);
+			}
+		}
+		
+	/*Filter each newly-read chunk.*/
+		for (chunkX=0;chunkX<nChunkX;chunkX++)
+			phase_filter(chunks[chunkX],strength);
+	
+	/*Blend and write out filtered data.*/
+		blendData(chunks,last_chunks,weight,outBuf);
+		for (y=0;y<oy;y++) {
+			if (chunkY*oy+y<outDDR->nl)
+				putFloatLine(out,outDDR,chunkY*oy+y,&outBuf[y*ns]);
+		}
+		
+	/*Swap chunks and last_chunks.*/
+		{complex **tmp=last_chunks;last_chunks=chunks;chunks=tmp;}
+		if (chunks==NULL) { newChunkArray(chunks); }
+	}
+
+	/*Write very last line of phase.*/
+	blendData(NULL,last_chunks,weight,outBuf);
+	for (y=0;y<oy;y++)
+		if (chunkY*oy+y<outDDR->nl)
+			putFloatLine(out,outDDR,chunkY*oy+y,&outBuf[y*ns]);
+
+}

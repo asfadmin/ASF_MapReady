@@ -1,0 +1,135 @@
+#!/bin/sh
+#
+# NAME: cpx_autofilter - Automatic complex image bandpass filter
+#
+# SYNOPSIS:
+#
+#    cpx_autofilter <cpx in_img1> <cpx in_img2> <cpx out_img1> <cpx out_img2>
+#
+#        <cpx in_img1>           Complex Input Image 1
+#        <cpx in_img2>           Complex Input Image 2
+#        <cpx out_img1>          Complex Output Image 1
+#        <cpx out_img2>          Complex Output Image 2
+#
+# DESCRIPTION:
+#
+#        cpx_autofilter will attempt to improve interferogram coherence
+#        by filtering the complex images in azimuth.
+#
+#        It does this by calculating the frequencies at which at azimuthal
+#        spectrum contains information in both images.  It then builds a
+#        bandpass filter, allowing only those frequencies with information
+#        to pass.
+#
+#        Finally, the program examines the metadata of both images and
+#        determines the processed doppler frequencies.  Using these values, the
+#        images are shifted by a common modulation frequency which is just the
+#        negative average of the two dopplers.  This operation essentially
+#        translates the data to baseband, removing any doppler carrier that
+#        may have existed in the datasets.
+#
+#                cpx_autofilter is actually a script that sequentially calls
+#        the following programs:
+#
+#        1.      cpx_spectrum - generates a spectrum for each of the two complex
+#                images before the filtering
+#
+#        2.      gen_filt_params - generates the filtering parameter file which
+#                tells the program pcpx_filter what information to keep and what
+#                information to throw away.
+#
+#        3.      cpx_filter - program is used to implement the filtering of the 
+#  		 data in azimuth.
+#
+#        4.      cpx_spectrum - generate a spectrum for each of the two complex
+#                images after the filtering operation has taken place.
+#       
+# EXTERNAL ASSOCIATES:
+#    NAME:               USAGE:
+#    ---------------------------------------------------------------
+#	This script uses
+#	1.    cpx_spectrum
+#	2.    gen_filt_params
+#	3.    cpx_filter#
+#
+# FILE REFERENCES:
+#    NAME:               USAGE:
+#    ---------------------------------------------------------------
+#
+# PROGRAM HISTORY:
+#    VERS:   DATE:      AUTHOR:      PURPOSE:
+#    ---------------------------------------------------------------
+#    1.0   5-30-2000	Mark Ayers
+#
+# HARDWARE/SOFTWARE LIMITATIONS:
+#
+# ALGORITHM DESCRIPTION:
+#
+# ALGORITHM REFERENCES:
+#
+# BUGS:
+#	
+#****************************************************************************
+#								            *
+#   cpx_autoFilter will attempt to improve interferogram coherence	    *
+#   by filtering the complex images in azimuth. 		            *
+#   Copyright (C) 2001  ASF Advanced Product Development    	    	    *
+#									    *
+#   This program is free software; you can redistribute it and/or modify    *
+#   it under the terms of the GNU General Public License as published by    *
+#   the Free Software Foundation; either version 2 of the License, or       *
+#   (at your option) any later version.					    *
+#									    *
+#   This program is distributed in the hope that it will be useful,	    *
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
+#   GNU General Public License for more details.  (See the file LICENSE     *
+#   included in the asf_tools/ directory).				    *
+#									    *
+#   You should have received a copy of the GNU General Public License       *
+#   along with this program; if not, write to the Free Software		    *
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
+#									    *
+#       ASF Advanced Product Development LAB Contacts:			    *
+#	APD E-mail:	apd@asf.alaska.edu 				    *
+# 									    *
+#	Alaska SAR Facility			APD Web Site:	            *	
+#	Geophysical Institute			www.asf.alaska.edu/apd	    *
+#      	University of Alaska Fairbanks					    *
+#	P.O. Box 757320							    *
+#	Fairbanks, AK 99775-7320					    *
+#								  	    *
+#**************************************************************************/
+#
+
+if [ $# -ne 4 ]
+then
+        echo "\nUsage: cpx_autoFilter <.cpx in 1> <.cpx in 2> <.cpx out 1> <.cpx out 2>"
+        echo ""
+        echo "<.cpx in 1> a complex image file (.cpx, .ddr, AND .meta)"
+        echo "<.cpx in 2> a complex image file (.cpx, .ddr, AND .meta)"
+        echo "<.cpx out 1> a complex image file (.cpx, .ddr)"
+        echo "<.cpx out 2> a complex image file (.cpx, .ddr)"
+        echo ""
+	echo "cpx_autoFilter will attempt to improve interferogram coherence"
+        echo "by filtering the complex images in azimuth."
+	echo "Version 1.1, ASF SAR TOOLS\n"
+        exit 1
+fi
+
+echo "Performing the complex fft to determine the azimuthal spectrum"
+cpx_spectrum $1.cpx $1 0
+cpx_spectrum $2.cpx $2 0
+
+echo "Calculating the filter parameters"
+gen_filt_params $1 $2 params
+
+echo "Filtering the data"
+cpx_filter $1.cpx $3 params
+cpx_filter $2.cpx $4 params
+
+echo "Performing the complex fft of the filtered data"
+cpx_spectrum $3.cpx $3 0
+cpx_spectrum $4.cpx $4 0
+
+echo "Filtering of data completed successfully"

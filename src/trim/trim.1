@@ -1,0 +1,82 @@
+NAME: trim
+
+SYNOPSIS:
+
+	trim [-log <file>] [-h <trim height>] [-w <trim width>] 
+	     <in> <out> <new top line> <new left sample> 
+
+DESCRIPTION:
+
+Trim will let you change the size of any LAS 6.0 single-band image.
+It works on byte, short, long, float, (IEEE 4 byte), and complex data.  The 
+data type of the output image is the same as that of the input image.
+
+This program will create an output file <out>, which
+is <in> file minus the trimmed number of lines and/or samples,
+constrained to the new width and height.
+(note: you can also make images bigger with this program,
+by specifying a larger width and height than were originally
+there.)
+
+You specify the input and output filenames (WITH extension), and 
+a top left coordinate.  Trim will create a new image in <out> file which
+starts at these coordinates.  Optionally, you can also specify the new height 
+and width of the output image (if not specified, trim will use the old size
+minus the top left coordinates-- i.e. minus the part that is trimmed off).
+
+Trim relies on DDR information to do the trimming, and maintains DDR
+information through to the output.
+
+Trim defines the top,left line and sample to be at (0,0).
+
+OPTIONS:
+
+	[-log <file>]      Option to have the output written to a file.
+	[-h <trim_height>] Height of file to be output
+	[-w <trim_width>]  Width of file to be output
+
+EXAMPLES:
+
+1.)	Trim's primary purpose is to allow you to work with a smaller image.
+For example, if you're doing baseline refinement in interferometry, and
+want the process to go more quickly, you can cut down the amound of data
+the baseline refinement tools have to work on by trimming the data.
+	If you want a 400x500 pixel scene from near the middle 
+(coordinate 6000x800) of a 12800x2048 image called "img1.amp", type
+
+	trim -h 400 -w 500 img1.amp smaller1.amp 6000 800
+
+	Trim will generate smaller1.amp and smaller1.ddr
+	
+
+2.)	Trim can be used anytime you want to work with a smaller image, but
+it also can be used to remove the CEOS header from an image (albeit the process
+for doing so is a bit convoluted): since the RADARSAT-era CEOS header is one line
+on top of the image, plus 192 bytes per line, we can just trim it off.  E.g.
+if we have a byte CEOS image "bob.D" we wish to turn into a LAS image "bill.img", type
+
+	trim bob.D bill.img 1 192
+
+	Trim will generate bill.img and bill.ddr.  Note that for this to work, you
+need a file called "bob.ddr" to describe bob.D's dimentions and data type-- but 
+CEOS files don't ship with such a file.  This is the purpose of the makeddr program,
+which should also be available from ASF.
+
+3.)	Another example is to take a 100x150 (Line x Sample) window out of 
+the top right corner (coordinate 50,1800) of a floating point image named 'bob.amp'
+with dimensions of 4000x2000, type:
+
+	trim -h 100 -w 150 bob.amp corner.amp 50 1800
+
+
+SEE ALSO:
+	makeddr(1), trim_sic(1)
+
+HARDWARE/SOFTWARE LIMITATIONS: none
+
+BUGS:
+
+AUTHOR: Orion Lawlor  --  June 1997, ASF SAR Tools.
+
+CONTACT:  apd@asf.alaska.edu
+	  or visit http://www.asf.alaska.edu/apd

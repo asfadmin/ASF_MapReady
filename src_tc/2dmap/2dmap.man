@@ -1,0 +1,47 @@
+NAME:      2dmap  Creates a set of planar warp coefficients from a 
+		  set of tie-points. 
+ 
+SYNOPSIS:  
+           2dmap intplfile outppffile
+
+DESCRIPTION:  
+     2dmap uses an ASCII Tie Point Location file containing tie point pairs to
+     derive two bivariate polynomials using least squares regression
+     analysis in a forward stepping procedure.  This defines the trans-
+     formation from one coordinate system to another.  Then it creates the
+     2D offset mapping coefficients that approximate the transformation
+     defined by the polynomials.
+ 
+OPTIONS: None
+ 
+ERROR MESSAGES:
+    MESSAGE GIVEN:                           REASON:
+    --------------------------------------------------------------------
+    Not enough memory for tie_points              Out of System Resources
+    Unable to open tie point file <file>          Wrong file name given
+    Failure in malloc                             Out of System Resources 
+    Failed in calc_coef                           Correlation attempt failed
+    Error opening coefficients file               System conflicts
+    No more points can be deleted from the model  Not enough tie-points
+    Can not derive a fit in the X-direction	  Not enough tie-points
+    Can not derive a fit in the Y-direction	  Not enough tie-points
+    Modeling process failed			  Correlation attempt failed
+ 
+EXAMPLES:  2dmap tiep coef 
+
+    This call will execute the 2dmap procedure, using the input file 
+    tiep.tpl and creating the output file coef.ppf. (Note that the file
+    extensions are assumed, and thus not entered on the command line.)
+ 
+SEE ALSO:  terrcorr.c terrain correction main routine
+ 
+HARWARE/SOFTWARE LIMITATIONS: 
+ 
+BUGS:
+ 
+AUTHOR:  Tom Logan, ASF
+ 
+CONTACT: Tom Logan, ASF
+         E-mail: tlogan@iias.images.alaska.edu
+
+

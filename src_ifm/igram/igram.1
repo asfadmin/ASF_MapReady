@@ -1,0 +1,58 @@
+.TH igram 1 "7 June 1996"
+.SH NAME:
+igram \- create an interferogram from the two input images. 
+.SH SYNOPSIS:
+.B "igram"
+.BI " imageA imageB outfile"
+.SH DESCRIPTION:
+.B "Igram" 
+creates an interferogram from two sets of input images.
+\fIimageA\fP and \fIimageB\fP are the base names of two files with the
+extensions .amp and .phase. The .amp & .phase extensions will be appended. 
+.PP
+The output file, \fIoutfile\fP, is the multiplication of the amplitude and
+phase of \fIimageA\fP and the complex conjugate of \fIimageB\fP. The
+product will be split into two parts, phase and amplitude, and placed in
+separate files.  The phase file (which has the extension .phase) is the
+interferogram's phase which still retains the ramping effects produced by
+the Earth's curvature. The amp file (which has the extension .amp) is
+the amplitude file. 
+.PP
+This is the central, critical program in the interferometry process.
+.SH COMMAND LINE OPTIONS:
+.TP 8
+.B "imageA"
+First complex image file. (*.cpx, *.ddr).
+.B "Igram"
+adds any extensions.
+.TP 8
+.B "imageB"
+Second complex image file. (*.cpx, *.ddr).
+.B "Igram"
+adds any extensions.
+.TP 8
+.B "outfile"
+Base name of amplitude and phase file to store interferogram.
+.SH ERROR MESSAGES:
+.B "MESSAGE_GIVEN:" \t\t\tREASON:
+--------------------------------------------------------------
+.SH EXAMPLES:
+.ce 1
+example% igram 100 200 ifm100200
+.PP
+Calculates an interferogram from the input files 100.cpx and
+200.cpx. The amplitude and phase are stored in ifm100200.amp 
+and ifm100200.phase.
+.SH SEE ALSO
+.BR deramp (1), 
+.BR resolve (1),
+.BR register (1)
+.SH HARDWARE/SOFTWARE LIMITATIONS:
+.SH BUGS:
+.SH AUTHOR:
+\tMike Shindle, Alaska SAR Facility, Fairbanks, AK
+.SH CONTACT:
+\t  apd@asf.alaska.edu
+\t  http://www.asf.alaska.edu/apd
+
+

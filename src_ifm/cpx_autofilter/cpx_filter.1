@@ -1,0 +1,58 @@
+NAME:	cpx_filter - Bandpass filters complex image data in azimuth
+
+SYNOPSIS:	cpx_filter <complex image input.cpx> <complex image output>
+		<frequency parameter file>
+
+	<complex image input.cpx>	Input Complex Image
+	<complex image output>		Output Complex Image
+	<frequency parameter file>	File containing passband information
+
+DESCRIPTION:
+	Complex images are usually processed using an optimal doppler,
+	which is ideal for that particular image.  This means that when 
+	interferometry is attempted with two different complex images, the 
+	azimuthal spectra will not overlap completely.  The part of the spectra 
+	that is outside	the overlapping bands contributes noise in the resulting
+	inteferogram.  The overall phase coherence of the interferogram can be 
+	improved by removing the components of the azimuthal spectrum 
+	which do not overlap.
+		
+	This program filters the complex image data in an attempt to
+	improve coherence in interferograms.  Complex data that is processed
+	at a doppler different then that of the optimal doppler will exhibit a
+	decreased coherence in interferometry.  This coherence can be improved
+	by filtering the data in azimuth and retaining only the part of the two
+	dataset's spectra that overlap.  The two datasets are then time-domain
+	demodulated to baseband by the mean of their two doppler centroids.
+	Another program 'cpx_spectrum' generates an azimuthal spectrum of
+	the data.
+	The frequency parameter file indicates which frequencies should be
+	filtered.  This can be generated using the program gen_filt_params.
+	
+OPTIONS:
+
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+----------------------------------------------------------------------------
+
+EXAMPLES:
+	Suppose you have an input image ers1.cpx, then to filter the data,
+	the command line input would be:
+	
+	cpx_filter ers1.cpx ers1_filtered params
+		
+SEE ALSO:
+
+   cpx_autofilter(1), pcpx_autofilter(1), gen_filt_params(1), pcpx_filter(1)
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR: Mark Ayers, ASF Graduate Research Assitant, 2000
+
+CONTACT:  apd@asf.alaska.edu/apd
+          or visit http://www.asf.alaska.edu/apd
+
+
+

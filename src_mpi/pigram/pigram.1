@@ -1,0 +1,63 @@
+
+NAME:
+	pigram - create an interferogram from the two input images 
+	         with multiple processors.
+
+SYNOPSIS:
+	pigram imageA imageB outfile [-log <file>]
+
+DESCRIPTION:
+	pigram creates an interferogram from the two sets of input
+	images, this is done exactly like igram, except that multiple
+	processors are used.  imageA and imageB are the base names of 
+	two files with extensions .amp and .phase.  The .amp & .phase
+	extensions will be appended to the input names, so they must 
+	be omitted.
+	
+	The output file, outfile, is the multiplication of the 
+	amplitude and phase of imageA and the complex conjugate of 
+	imageB.  The product will be split into two parts, phase and
+	amplitude, and placed in seperate files.  The phase file 
+	(which has the extension .phase) is the interferogram's phase
+	which still retains the remaping effects produced by the Earth's
+	curvature. The amp file (which has the extension .amp) is the 
+	amplitude file.
+
+	This is the central, critical program in the interferometry 
+	process.
+
+COMMAND LINE OPTIONS:
+	imageA First complex image file. (*.cpx, *.ddr). Igram
+		adds any extensions.
+
+	imageB Second complex image file. (*.cpx, *.ddr). Igram
+		adds any extensions.
+
+	outfile Base name of amplitude and phase file to store 
+		interferogram.
+
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+------------------------------------------------------------------
+
+EXAMPLES:
+	example% pigram a b ifm_ab
+
+	Calculates an interferogram from the input files a.cpx and
+	b.cpx. The amplitude and phase are stored in ifm_ab.amp and
+	ifm_ab.phase.
+
+SEE ALSO:
+	deramp(1), resolve(1), register(1)
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR:
+	Tom Logan, ASF.
+
+CONTACT:
+	apd@asf.alaska.edu
+	or visit http://www.asf.alaska.edu/apd
+

@@ -1,0 +1,60 @@
+C		Include file for projection codes
+C     0 = Geographic
+C     1 = Universal Transverse Mercator (UTM)
+C     2 = State Plane Coordinate System
+C     3 = Albers Conical Equal Area
+C     4 = Lambert Conformal Conic
+C     5 = Mercator
+C     6 = Polar Stereographic
+C     7 = Polyconic
+C     8 = Equidistant Conic
+C     9 = Transverse Mercator
+C    10 = Stereographic
+C    11 = Lambert Azimuthal Equal Area
+C    12 = Azimuthal Equidistant
+C    13 = Gnomonic
+C    14 = Orthographic
+C    15 = General Vertical Near-Side Perspective
+C    16 = Sinusiodal
+C    17 = Equirectangular
+C    18 = Miller Cylindrical
+C    19 = Van der Grinten
+C    20 = (Hotine) Oblique Mercator
+C    21 = Robinson
+C    22 = Space Oblique Mercator (SOM)
+C    23 = Alaska Conformal
+C    24 = Interrupted Goode Homolosine
+C    25 = Mollweide
+C    26 = Interrupted Mollweide
+C    27 = Hammer
+C    28 = Wagner IV
+C    29 = Wagner VII
+C    30 = Oblated Equal Area
+
+      integer*4  GEO, UTM, SPCS, ALBERS, LAMCC, MERCAT, PS, POLYC
+      integer*4  EQUIDC, TM, STEREO, LAMAZ, AZMEQD, GNOMON, ORTHO, GVNSP
+      integer*4  SNSOID, EQRECT, MILLER, VGRINT, HOM, ROBIN, SOM, ALASKA
+      integer*4  GOOD, MOLL, IMOLL, HAMMER, WAGIV, WAGVII, OBEQA
+
+      parameter (GEO=0, UTM=1, SPCS=2, ALBERS=3, LAMCC=4, MERCAT=5)
+      parameter (PS=6, POLYC=7, EQUIDC=8, TM=9, STEREO=10, LAMAZ=11)
+      parameter (AZMEQD=12, GNOMON=13, ORTHO=14, GVNSP=15, SNSOID=16)
+      parameter (EQRECT=17, MILLER=18, VGRINT=19, HOM=20, ROBIN=21, SOM=22)
+      parameter (ALASKA=23, GOOD=24, MOLL=25, IMOLL=26, HAMMER=27)
+      parameter (WAGIV=28, WAGVII=29, OBEQA=30)
+
+C  IN_BREAK -2  Return value for points in interrupted area
+C  PROJCT 31	Number of projections
+C  COEFCT 15	Number of projection coeficients
+C  DATMCT 20	Number of datum codes
+
+	integer*4 PROJCT,COEFCT,DATMCT,IN_BREAK
+
+	parameter (PROJCT = 31,COEFCT = 15,DATMCT = 20,IN_BREAK = -2)
+
+C  GEOTER 1	Array index for print-to-term flag
+C  GEOFIL 2	Array index for print-to-file flag
+
+	integer*4 GEOTER, GEOFIL
+
+	parameter (GEOTER = 1, GEOFIL = 2)

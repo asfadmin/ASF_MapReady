@@ -1,0 +1,57 @@
+.TH sarview 1 "28 June 2001"
+.SH NAME:
+sarview
+.SH SYNOPSIS:  
+.B "sarview"
+.BI " [imageFile] "
+.SH DESCRIPTION:
+.B "Sarview"
+is a program for viewing SAR images.  CEOS and LAS images can be viewed directly.  Additionally,
+.B "sarview"
+has the ability to export a SAR image (or a selected portion) as a JPEG
+image.    
+.SH OPTIONS:
+.TP
+.B "[imageFile]"
+SAR image file with or without extension.
+.B "Sarview"
+will look for a (.D or .dat) extension if one is not given.
+.SH ERROR MESSAGES:
+.B MESSAGE_GIVEN:  REASON:
+-----------------------------------------------------------------------
+1)  **********ERROR! ******* \t      Program could not find
+    * looking for a SAR file,\t      the image file that was
+    * couldn't find data file\t      given by the use on the
+    * (.dat or .D)           \t      command line.
+
+2)  **********ERROR! ******* \t      User does not have read 
+    * Cannot open <imageFile>\t      permission for the file
+    * for reading.           \t      <imageFile>.
+
+3)  **ERROR! Read past EOF** \t      Check image-size 
+    * program terminating... \t      related parameters.
+.SH ENVIRONMENT VARIABLES
+SARVIEW_SUPPORT_DIR \t	The full path name of the support directory
+                        sarview uses.  If this is set, you can run
+                        run the actual sarview_bin binary rather than
+                        the wrapper script.  So you can use an actual
+                        dubugger.
+.SH EXAMPLE:
+.TP 
+sarview
+sarview executes.
+.TP 
+sarview imgA
+sarview will execute looking for an imgA.D or imgA.dat file.  It will either
+view the image once found or display an error message if not.
+.TP 
+sarview imgA.D or sarview imgA.dat
+sarview will execute and open the designated image.
+.SH SEE ALSO:
+.SH HARDWARE/SOFTWARE LIMITATIONS:
+.SH BUGS:
+.SH AUTHOR:
+.SH CONTACT:  
+\tapd@asf.alaska.edu
+
+

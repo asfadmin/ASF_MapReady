@@ -1,0 +1,1 @@
+f77 -extend_source -bytereclen -O multitps.f -o multitps

@@ -1,0 +1,39 @@
+
+    NAME: 	dem_diff - Differences an Insar and Reference DEM
+
+    SYNOPSIS:	dem_diff <insar_dem> <ref_dem> <output_diff>
+
+			insar_dem 	- INSAR created DEM file, (geocoded, float)
+			ref_dem		- Reference DEM file, (geocoded, short int)
+			output_diff 	- Output difference file, insar - ref (float)
+
+    DESCRIPTION:
+
+		Subtracts the reference DEM values from the corresponding 
+	points in the INSAR dem.  Calculates statistics based on only the
+	non-zero pixels from the INSAR dem file.  
+
+    OPTIONS:	None
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+    EXAMPLES:	dem_diff insar_dem alaska_fixed insar_dem_diff
+
+	This example subtracts the reference DEM file, named alaska_fixed,
+	from the geocoded float INSAR dem, named insar_dem, to create the
+	output file insar_dem_diff
+
+    SEE ALSO:
+
+    HARDWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:	Doesn't check for END OF FILE when reading from reference
+		DEM file.
+
+    AUTHOR:	Tom Logan, 6/2001
+
+    CONTACT:	apd@asf.alaska.edu
+
+

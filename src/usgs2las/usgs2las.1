@@ -1,0 +1,49 @@
+NAME: usgs2las-- convert an old-format USGS DEM to a LAS DEM
+
+SYNOPSIS: 
+
+    usgs2las <in USGS> <out LAS>
+
+ 	<in USGS>: a USGS DEM file with ASCII-formatted records.
+ 	<out LAS>: an output INT*2 las image name.  Must include extension
+ 		   (e.g. .img)
+ 	
+DESCRIPTION:
+
+	All the ASF SAR tools use LAS format images.
+	This tool lets you ingest an old-format USGS DEM (INT*2 format,
+	some-arc-second spacing) into LAS format.
+	
+	The old USGS DEM format is a set of ASCII-formatted 
+	1024-byte records (type A, B, and C).  This program should work
+	with any sample spacing/ground area.
+
+OPTIONS:
+
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+----------------------------------------------------------------
+
+EXAMPLE:
+ 	To convert the USGS DEM GULA1.DEM into the
+ LAS format DEM myDem.img, type
+ 	
+ 	> usgs2las GULA1.DEM myDem.img
+
+SEE ALSO:
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR: Orion Lawlor, 5/24/99
+
+CONTACT:  apd@asf.alaska.edu
+	  http://www.asf.alaska.edu/apd
+
+INFORMATION:
+  	USGS DEMs can be downloaded from the web at:
+  http://edcwww.cr.usgs.gov/doc/edchome/ndcdb/ndcdb.html
+  
+  Recent DEMs of Alaska, however, are available from 
+  http://agdc.usgs.gov/data/usgs/to_geo.html

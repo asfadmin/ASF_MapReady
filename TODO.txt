@@ -1,0 +1,173 @@
+ASF-STEP Lab Tools To-Do List: 6/21/1999
+	Future modifications, additions, or improvements
+to the SAR tools that I think could/should be made at some point.
+These apply to all the SAR tools, and are things I (Orion Lawlor) 
+didn't have time to get to before I left at the end of June, 1999.  
+Difficulty levels vary from simple (a few days) to moderate 
+(a week or so) to catastrophic (weeks or months) to truly
+terrifying (months or years)
+
+
+XXXXXXXXXXXXXXXXX INTERFEROMETRY XXXXXXXXXXXXXXXXXXXXXXX
+-register_ccsd fails and calls register_cpx for CCSD
+scenes that are shifted by more than about 1500 lines
+in the azimuth direction.  Instead of AISP'ing two
+huge chunks at the top and bottom of the scene,
+it should call quicklook to estimate the single-pixel 
+offset between the images, then AISP and fico very small pieces 
+distributed all across the scene.  We'd need a new
+calc_deltas and register_ccsd. [catastrophic]
+
+-The software currently produces geocentric heights over
+the ellipsoid-- it should produce geocentric heights over
+the geoid.  Both corrections are small, but not negligible
+height errors.
+
+-deskew_dem and reskew_dem should use the actual SAR
+equations to convert between ground and slant range,
+instead of the first-order (linear) approximation they
+now use.  They should also be able to handle different
+ground and slant-range pixel sizes (right now, the
+pixel sizes must be the same!). [moderate]
+
+-in the same vein, demIFM calls create_dem_grid, which 
+uses a serious hack to extract an appropriate ground-range
+piece of the source DEM.  Create_dem_grid should actually
+create a *grid* to map the DEM to a ground-range version
+of the SAR (ideally, using fit_cubic instead of fit_plane),
+instead of using two lines at the near and far range
+like it does now. [simple]
+
+-If you really got the above programs working, you could
+just use create_dem_grid and deskew_dem to do "instant"
+(sub-10 minute) terrain corrections.  Downside: you may
+have to deskew the images beforehand and reskew afterwards.
+[catastrophic]
+
+
+
+XXXXXXXXXXXXXXXXXXXXXXX AISP XXXXXXXXXXXXXXXXXXXX
+-It seems like somebody aught to write a version of AISP that
+somebody (anybody) can explain-- it's dangerous and unsatisfying
+to use a processor whose equations we can't justify.  The
+parts of AISP that would change would be the range migration
+[equations to shift echo paths straight] and azimuth compression 
+[equations to produce azimuth reference function] 
+(rmpatch.c and acpatch.c). [truly terrifying]
+
+-Similarly, somebody else aught to look into Secondary Range
+Migration (I've calculated Ke in section 4.2.54 of Curlander's
+SAR book, but the new value is very close to the old value and
+makes no difference in the image's focus). [moderate]
+
+-JERS is not quite focused-- the geolocations are excellent with
+the current slant range; but AISP seems to need about a 10km larger
+slant range to get a really tightly focused image. [catastrophic]
+
+-dop_prf has potential, but needs some serious work.  It needs to
+use a larger test window, try multiple locations, or else use
+quicklook's output to try to find contrasty places.  It could
+also only do one range compression and azimuth FFT-- only 
+range migration and azimuth compression depend on the doppler.
+
+-I don't believe "deskew" and AISP's deskew option work properly.
+The basic problem is that zero doppler and zero yaw don't 
+actually lie at the same location, because the Earth rotates
+(even though JPL doesn't seem to believe this!).  Deskewed
+images are a farce anyway, in my opinion. (I believe in time/
+slant/doppler images, and map-projected images.  Anything else
+is a shameful, illegitemate union of the two.)  If you think
+otherwise, write a "deskew" and geolocation algorithm that 
+produces results consistent with slant-range, non-deskewed
+geolocations. [catastrophic?]
+
+
+
+XXXXXXXXXXXXXXXX LIBRARY CHANGES XXXXXXXXXXXXXXXXX
+-asf_meta's get_ceos.c routines should look through
+files with .ldr, .trl, .tlr, .L, .dat, .raw, and .D 
+extentions for every CEOS record they're looking for--
+other facilities (and the LZP) put records in random,
+unpredictable places.  ceos2raw hacks around this 
+limitation by soft-linking the .raw file to a .D file
+just so it can get_ifiledr!  This is very ugly.
+[moderate]
+
+-asf_meta's ceosIO.c routines should deal with multi-banded
+CEOS SAR images, but they don't.  Also, all the tools should
+deal with multi-banded SAR images of any data type (use
+getFloatLine_mb and putFloatLine_mb *everywhere*).  We'll
+really need this once we start doing multitemporal analysis
+or have multispectral/multipolarization sensors.
+[catastrophic]
+
+-asf_meta's "getTimeSlantDop" routines for geocoded
+ScanSAR image ignore the image doppler (the ASF doppler
+values give bizarre results).  Somebody needs to figure
+out why this is. [moderate]
+
+-I think .ddr files should be in all-ASCII format, instead 
+of the current ugly LAS mixed ASCII/binary format.  This is 
+easier than it sounds-- DDR structures are always read/written 
+by the "c_getddr" and "c_putddr" routines in our asf_las library.
+A more useful (and more ambitious) project would be to fold
+the .meta and .ddr files into a single ASCII file (named
+.ddr, probably).  Of course, we'd have to be able to read
+the old format for a while (maybe only in a convert_ddr 
+program) and would have to finally give up on the EDC LAS 
+package (this would be tough on Rick, but I think it'd be good
+in the long run-- users *don't* have LAS!). [catastrophic]
+
+
+
+XXXXXXXXXXXXXXX OTHER TOOLS XXXXXXXXXXXXXXXXXXX
+-Somebody needs to get cygwin and really test out the
+Win32 binaries (ideally, on Win95, 98, as well as NT).
+I've poked around with the tools a bit, but haven't
+even tried most programs. [moderate]
+
+-remap needs to have a "-pixelsize" option, which would
+scale the image to the given pixel size and set the resampling
+kernel appropriately.
+
+-geocode may need to use a higher-order polynomial 
+(right now it's a planar cubic equation) or some other
+function to do the resampling.  This means changing 
+fit_cubic to fit some other function, and adding another
+option to remap to handle the function.  I'm not convinced
+a least-squares fit is even appropriate here-- the
+geocoded points probably have less than 1/10'th pixel
+of error, and the errors certainly aren't random.
+[moderate]
+
+-display_pdr and get_names may not work properly on little-
+endian systems.  asf_meta and asf_las use the "asf_endian.h" 
+functions and macros to work properly on any integer size/
+endian system.  The tools also need be checked for 64/128-bit
+integer compliance.  Basically, all you need to do is *always*
+use the "sizeof" macros to figure out how much memory to allocate,
+and *never* read directly from disk into an "int", "short", or
+"long" (instead, read an array of "unsigned char" and convert
+them to a 16- or 32- bit quantity).  [moderate]
+
+-Along the same vein, *all* the tools should use the
+"getFloatLine_mb" and "putFloatLine_mb" asf_las calls-- these handle
+all data types, integer/float size problems, and endian differences
+automatically.  Tom's tools (which assume byte amplitude and
+short DEM images) and the interferometry tools (which assume
+float images) are especially guilty of this. [moderate]
+
+-It seems like there should only be *one* concat in existence.
+"concat" and "concatm" are substantially identical, far-too-
+complicated LAS tools, and "concat_dem" is a bare-bones
+interferometry tool. [moderate]
+
+-dump_multi_volume is way too complicated for a shell script.
+It needs to be re-written in C, incorporating get_names and
+check_name_of along the way.  Somebody with a PC IDE 8mm tape
+drive should try to write a version which works under Win32, 
+as well. [catastrophic]
+
+-the ASAP portion of propagate (our very accurate state 
+vector propagator) needs to be re-written in C (it's currently
+in Fortran).  [truly terrifying]

@@ -1,0 +1,312 @@
+################################ Master Program List ####################
+#
+# This is the Master List of All ASF Programs, Libraries, and Tools.
+#
+#########################################################################
+#
+#   The program makemake, in asf_tools/make_support, reads this file
+# to automatically generate the following files (these files should 
+# NOT be edited!)
+#    asf_tools/Makefile
+#    asf_tools/release/autotar/source.*
+#    asf_tools/release/autotar/binary.*
+#
+#   To add a new program or tool, just put an entry for it
+# in the PROGRAMS or TOOLS sections of this file.  Then
+# run makemake.  It will parse this file and generate
+# new copies of the files above, replacing the old copies.
+#
+# makemake ignores any line beginning with a #,
+# but will completely misunderstand a line with a # in the middle.
+#
+# makemake uses lines starting with @ to find the path to 
+# the program source code (e.g., src_tc vs. src_geo).
+#
+# Other than # and @, makemake couldn't care less about what form whitespace
+# takes, as long as it's there.  Any indentation, returns, etc.
+# which you see below are purely for human enjoyment.
+#
+# Also, note that:
+#     progname { BINS x }   is ok, but
+#     progname {BINS x}     is not ok (no space between tokens),
+#     progname            is not ok (missing braces).
+#
+# The general syntax is:
+#     LIBS { <libraries ...> }
+#     PROGRAMS { <programs ...> }
+#
+#     <programs...>=<program> [ <programs...> ]
+#     <program>= <program name> { [ PROGRAMS <program names> ] [ BINS <bin/sys/file names>] }
+#
+# Here, a "program" is a full-fledged package, with an entry
+# in the top-level PROGRAMS list, while "binaries" are just
+# files in the bin/$SYS/ directory.
+#
+
+# A listing of libraries (easy).
+LIBS
+{
+@src_lib/
+	asf
+	asf_meta
+	asf_las
+	asf_concat
+	asf_lt
+	asf_geolib
+	asf_odl
+	asf_fft
+	libjpeg
+@src_ifm/
+	libifm
+@src_tc/
+	sarmodel
+	tcobj
+}
+
+# A listing of programs (not so easy).
+PROGRAMS
+{
+@src/
+	calibrate { }
+	ceosui2byte { }
+	convert_geo_ddr { }
+	diff_las {  }
+        display_pdr {  }
+	dspddr { }
+	dump_multi_volume
+	{ 
+		BINS check_name_of get_names 
+		dump_multi_volume.valid_dev
+	}
+	fftMatch { }
+	get_rectypes { }
+	las2jpeg { BINS jpeg2las }
+	las2ppm { }
+	las_op { }
+	las_ramp { }
+	las_text { }
+	makeddr { }
+	mark_tpl { }
+	metadata { }
+	remap { }
+	resample { }
+	sarin { }
+	sarout { }
+	sr2gr { BINS deskew ui2byte }
+	ssar_crop { }
+	trim { }
+	
+@src_geo/
+	accum_offset { }
+	concat {  }
+	concat_dem { BINS profile }
+	concatm {  }
+	fit_quadratic { }
+	idimage { BINS idtable }
+	projprm { }
+	psconv { }
+	twoway { }
+
+# Because makemake parses this file from top-to-bottom,
+# you can't reference not-yet-listed programs.
+# Hence the scripts are at the end.
+	geocode
+	{
+		PROGRAMS
+			remap
+			fit_quadratic
+	}
+	auto_sar_mosaic 
+	{
+		PROGRAMS
+			calibrate
+			sarin
+			geocode
+			concat
+			resample
+			idimage
+	}
+	auto_swath_mosaic 
+	{
+		PROGRAMS
+			calibrate
+			sarin
+			accum_offset
+			concatm
+			resample
+			idimage
+	}
+
+@src_ifm/
+	aisp
+	{ 
+		BINS
+			calc_deltas
+			spectra
+			estavedop
+			quicklook
+	}
+	amp2img {  }
+	avg_in_dop { }
+	c2p { }
+	coh { }
+	cpx_spectrum { }
+	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
+	deskew_dem { }
+	reskew_dem { }
+	deramp { }
+	elev { }
+	eleverr { }
+	escher { }
+	fico { }
+	fit_line { }
+	fit_plane { }
+	fit_warp { }
+	fix_in { }
+	fix_in_fromraw { }
+	igram  { }
+	ceos2raw { }
+	lz2raw_flywheel { }
+	ml { }
+	p2c { }
+	phase_filter { }
+	resolve { PROGRAMS fftMatch amp2img c2p }
+	refine_base { }
+	refine_offset { }
+	trim_slc { }
+	demIFM
+	{  
+		PROGRAMS dspddr fit_plane remap makeddr
+			 reskew_dem amp2img trim fftMatch 
+		BINS dem2phase dem2seeds create_dem_grid
+	}
+	register_slc 
+	{
+		PROGRAMS
+			trim_slc remap 
+			resolve fico fit_plane fit_warp c2p coh igram 
+		BINS
+			register_cpx
+			register_cpx_window
+	}
+	register_ccsd
+	{
+		PROGRAMS
+			aisp 
+			resolve fico fit_line coh igram 
+			register_slc
+	}
+	tandem_ifm
+	{
+		PROGRAMS
+			las2ppm
+			deramp elev eleverr deskew_dem
+			ml escher refine_base phase_filter
+		BINS zeroify
+	}
+	register_lzceos 
+	{
+		PROGRAMS
+			avg_in_dop aisp resolve fico register_slc
+			fit_line metadata igram coh
+	}
+	register_lzraw
+	{
+		PROGRAMS
+			lz2raw_flywheel fix_in_fromraw avg_in_dop
+			aisp fico fit_line igram coh ml
+		BINS calc_deltas
+	}
+	swath_offset { }
+	
+@src_tc/
+	2dmap { }
+	demimg { }
+	demclip { }
+	despike { }
+	greycorr { }
+	sargeom { }
+	sarsim { }
+	rtc_add { }
+	tpl_mult { }
+	tpl_search { }
+	correlate 
+	{
+		PROGRAMS
+			resample
+			tpl_mult
+			tpl_search
+			greycorr
+			2dmap
+	}
+	terrcorr
+	{
+		PROGRAMS
+			sarin
+			calibrate
+			correlate
+			demimg
+			demclip
+			despike
+			sargeom
+			rtc_add
+			sarsim 
+	}
+@src/
+# Bleeping forward references... Las-Stack has to go down here,
+# since it references correlate, which is in src_tc.
+# Ditto for the DEM converters, which reference concat
+	las_stack { PROGRAMS dspddr 
+	       correlate fit_plane remap concatm }
+        sdts2las { PROGRAMS concat BINS sdts_ingest }
+	usgs2las { PROGRAMS concat_dem BINS usgs_ingest }
+
+# Propagate is down here so it gets built last-- it tends to kill the
+# build (because not every machine has f77).
+	propagate { BINS gen_oe asap }
+	
+
+# X-Windows source code	
+@src_x/
+	sarview { BINS sarview_bin support }
+}
+
+#The categories have no directories or source, but are valid
+#  autotar and makefile targets.
+
+CATEGORIES
+{
+
+#General Utilites (useful to everybody)
+	utility {
+		calibrate dspddr dump_multi_volume 
+		metadata sarin sarout
+		
+		amp2img diff_las display_pdr fftMatch
+                las2jpeg las2ppm las_op las_ramp las_stack las_text
+                makeddr mark_tpl propagate remap resample 
+                sdts2las sr2gr ssar_crop trim usgs2las
+	}
+
+#All unrestricted source (geocoding + terrain correction)
+	usource {
+		utility
+		auto_sar_mosaic auto_swath_mosaic
+		concat concatm concat_dem geocode projprm
+		psconv twoway
+		terrcorr
+	}
+
+#Inteferometry (i.e. all restricted and unrestricted source)
+	interferometry {
+		usource
+        	aisp ceos2raw demIFM fix_in lz2raw_flywheel
+		register_ccsd register_slc register_lzceos
+		register_lzraw refine_offset tandem_ifm 
+        }
+
+# SARview: this is separate because it requires Tcl/Tk to compile or run
+	sarviewer {
+		sarview
+	}
+}

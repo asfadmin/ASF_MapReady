@@ -1,0 +1,1 @@
+f77 -extend_source -bytereclen -O3 multiaffine3d.f -o multiaffine3d

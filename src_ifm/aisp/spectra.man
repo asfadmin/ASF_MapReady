@@ -1,0 +1,53 @@
+
+    NAME: spectra
+
+    SYNOPSIS: spectra <signal data> [ startX startY ]
+
+    DESCRIPTION:
+
+	Spectra computes range and azimuth spectra of the input
+complex signal data file.  The spectra are written to the output
+files "spectra_range", and "spectra_az", which are 1024-line long
+ASCII files containing the (arbitrary-units) power of the signal
+data at freqencies between 0 Hz and the sampling frequency.
+In range, this is several tens of megahertz (18.96 MHz for ERS);
+in azimuth, this is about a thousand hertz (about 1700 Hz for ERS).
+
+	Spectra is useful in checking signal data quality/validity,
+but most people have no reason to use it.
+
+	Spectra's output files have the format:
+<FFT bin #> <power>
+<FFT bin #> <power>
+...
+
+    OPTIONS:
+        startY:
+        startX: specifies that the signal spectra are to
+                be computed starting at sample startX and 
+                line startY, instead of sample 0 and line 0.
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:			REASON:
+    -----------------------------------------------------------
+
+    EXAMPLES:
+	> spectra E122175287S0C006 1000 20000
+	Writes the azimuth and range spectra of the given
+    ASF CEOS signal data at lines 20000-20123, samples
+    1000-2023 to the files spectra_az and spectra_range,
+    respectively.
+    
+    SEE ALSO:
+    	aisp, quicklook
+
+    HARDWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:
+
+    AUTHOR:
+	O. Lawlor, 6/98 
+
+    CONTACT:  apd@asf.alaska.edu
+	      or visit http://www.asf.alaska.edu/apd
+

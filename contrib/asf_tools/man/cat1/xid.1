@@ -1,0 +1,148 @@
+X Image Display (XID)
+
+( This text has been converted from asf_tools/xid_help/introduction.html.
+It and all other xid help files can be viewed directly using a web browser.)
+
+1.0 Introduction
+
+XID is an X Window System application which allows the user to display, interactively
+manipulate and store image and image related information. XID was developed to work in
+conjunction with the Land Analysis System (LAS), however, there are some limited capabilities
+to display and manipulate non-LAS images.
+
+XID is built on the X Window System and uses the Motif (version 1.1 or 1.2) widget set for
+its "look and feel". The building blocks of XID are software oriented, making XID a very
+portable application. Any UNIX system capable of running X11R4 or X11R5 is capable of running
+XID.
+
+The disadvantage of a portable, software oriented system is a performance degradation for
+certain tasks. For example, specialized hardware devices for image display have certain
+functionality (such as zooming) built into the hardware. This makes these operations very fast
+and efficient. XID must perform these types of operations in software resulting in a slower
+response.
+
+Another potential disadvantage of using the X Window System for image display is the limited
+number of colors available. The user must keep in mind that because a portion of the X Window
+System color map must be reserved for background colors, foreground colors, border colors,
+shadow colors, etc., not all the possible colors are available for displaying image data (see
+below for an alternative). On systems with 8-bit displays, only 200 of the 256 colors are
+available for displaying image data. On systems with 24-bit displays, approximately 7 of the 8
+bits for each red, green and blue band are available for displaying image data. The major
+effect on the user is that certain mapping operations, such as pseudocoloring, may not work as
+expected. For example, when displaying a black and white image (with a minimum value of 0 and a
+maximum value of 255), each individual gray level will NOT have its own color map cell. The
+resulting side effect is that when the user assigns red to the pixel value 0, pixel value 1 may
+also become red since it may share the same color map cell. An alternative to this is to select
+User Preferences from the Setup pulldown menu. This function allows the user to choose either
+200 or 256 image colors. By selecting 256 image colors, the user is dedicating a separate color
+map to the main image window. This will give the user the full range of colors but will also
+cause a great deal more swapping of color maps.
+
+Following is a list and short description of general XID capabilities.
+
+1. Image file interfaces. 
+      Load LAS images. 
+      Load nonLAS images. 
+      Exit the XID application. 
+
+2. General image analysis tools. 
+      Display coordinate values for the current cursor position. 
+      Generate a histogram of the displayed image. 
+      Interactive power spectrum plot of the displayed image. 
+      Interactive profile of the displayed image. 
+
+3. Additional image views. 
+      Display a full resolution window of the displayed image. 
+      Save a LAS image to disk. 
+      Display a zoomed window of the displayed image. 
+
+4. General image display capabilities. 
+      Flicker two or more images. 
+      Initialize the image window. 
+      Define various types of mappings (eg. pseudocolor, piecewise linear, interactive adjust)
+      as well as save and retrieve mappings. 
+      Show different band combinations of the currently loaded images/bands. 
+
+5. Graphics capabilities. 
+      Draw, display or edit graphics overlay files (GOFs). 
+      Generate a graphics plane mask. 
+
+6. General XID setup functions. 
+      Memory layout. 
+      User preferences. 
+
+7. General information. 
+      Current display configuration (type, width and height). 
+      On-line help access. 
+      Description of current mouse button functionality. 
+
+1.1 User Notes
+
+1. Functionality that was originally designed into XID but which has not yet been implemented
+   is indicated by the particular option being insensitive. An insensitive item (button, radio
+   button, etc.) is one which shows as a lighter color than the other items (i.e., grayed out).
+   An option may also be made insensitive when it is not appropriate to select that option at a
+   given time. It will be made sensitive when it becomes appropriate. 
+
+2. As a general rule, using the dismiss button to close an XID panel indicates the operation
+   or function will be completed or saved. Selecting the cancel button indicates the operation
+   will be ignored (as if it had never been done). 
+
+3. Also as a general rule, the user should always press enter after typing data into a text
+   field. This signals the XID process that entry has been completed. There are cases in which
+   pressing enter is optional. These exceptions are noted in the documentation. 
+
+4. There are several resources an XID user may wish to set. Listed below are the more commonly
+   used ones. 
+
+      xid*shell_mainmenu.geometry can be used to set the initial location of the main
+      menu. For example:
+
+      xid*shell_mainmenu.geometry: +0+0
+
+      will place the main menu in the upper left corner of the display screen. 
+
+      xid*shell_mainwin.geometry can be used to set the initial location of the main image
+      window. For example:
+
+      xid*shell_mainwin.geometry: +0+90
+
+      will place the main image window just below the main menu in the upper left corner of the
+      display screen. 
+
+      xid*XmForm.load_fileselector.dirMask can be used to indicate the location of the
+      user's images. For example: 
+
+      xid*XmForm.load_fileselector.dirMask: ~huewe\/images\/*.img
+
+      will set the default filter on the file selection box for the load functions to the
+      specified directory. Note that the directory separator ("/") must be escaped using a
+      backslash ("\"). 
+
+      xid*colors_message can be used to turn on or off the warning message concerning the
+      number of colors required by the loaded image. For example: 
+
+      xid*colors_message: False
+
+      indicates the user does not wish to see the warning message. 
+
+      xid*background and xid*foreground can be used to set the background and foreground
+      colors for the XID panels. The user may also wish to set the top and bottom shadow colors
+      using the resources xid*topShadowColor and xid*bottomShadowColor to coordinate
+      with the background color specified. 
+
+5. There are also several command line options the user may specify to indicate initial
+   placement of the main menu and main image window. 
+
+      Starting XID using the command xid -ul indicates the main menu is to be placed in the
+      upper left corner of the display with the main image window directly below it. 
+
+      Starting XID using the command xid -ur indicates the main menu is to be placed in the
+      upper right corner of the display with the main image window directly below it. 
+
+      Starting XID using the command xid -ll indicates the main image window is to be placed in
+      the lower left corner of the display with the main menu directly above it. 
+
+      Starting XID using the command xid -lr indicates the main image window is to be placed in
+      the lower right corner of the display with the main menu directly above it. 
+

@@ -1,0 +1,40 @@
+.TH p2c 1 "11 April 2001"
+.SH NAME:
+c2p \- polar (amplitude & phase) to complex stream converter
+.SH SYNOPSIS:
+.B "p2c"
+.BI "<in> <out>"
+.SH DESCRIPTION:
+.B "p2c" 
+converts an amplitude and phase value into a complex value. The 
+values are written into a file with the extensions "cpx".
+.PP
+The p2c program is part of the interferometry processing software and is
+meant to be used as the last step in sub-pixel registration. When 
+registration is finished, the .cpx files need to be converted into .amp 
+and .phase files. P2c preforms this conversion.
+.SH COMMAND LINE OPTIONS:
+.TP 8
+.B "<in>"
+Input amplitude (amp) and phase (phase) files. 
+.TP 8
+.B "<out>"
+Output complex (cpx) file. 
+.SH ERROR MESSAGES:
+.B MESSAGE_GIVEN: \t\t\t\tREASON:
+--------------------------------------------------------
+.SH EXAMPLES:
+.ce 1
+example% p2c bob ted
+.PP
+Creates a file ted.cpx from two input files bob.amp and bob.phase. 
+.SH SEE ALSO:
+.BR fico (1)
+.BR resolve (1)
+.SH HARDWARE/SOFTWARE LIMITATIONS:
+.SH BUGS:
+.SH AUTHOR:
+\tAPD, Alaska SAR Facility, Fairbanks, AK
+.SH CONTACT:
+\tapd@asf.alaska.edu
+\thttp://www.asf.alaska.edu/apd

@@ -1,0 +1,46 @@
+    NAME:	gen_filt_params - Generate filter parameters for cpx_filter
+
+    SYNOPSIS:	gen_filt_params <complex image 1> <complex image 2>
+		<output filter parameters>
+		*no extensions are required for this program*
+		*the program looks for a .spectra file for both images*
+
+	<complex image 1>		Complex Input image 1
+	<complex image 2>		Complex Input image 2
+	<output filter parameters>	File containing filter parameters
+
+    DESCRIPTION:
+		In order to automate the cpx_filtering routine, a means needs 
+	to exist to estimate the stopband, passband, and frequency shift 
+	applied to the complex image pair automatically.  gen_filt_params
+	performs this task.  It takes both complex image files as input and
+	using the metadata and the azimuthal spectra, estimates the passband
+	and the frequency shift.  The output file has the following format in 
+	ASCII text:
+
+	line 1.	frequency shift (in Hertz)
+	line 2. loFreq1 hiFreq1 (in Hertz)
+	line 3. loFreq2 hiFreq2 (in Hertz)
+
+		The frequency shift simply specifies the amount both spectra
+	should be shifted to return them both to baseband.  The first pair of
+	frequency specifications indicates the first stopband, the second pair
+	specifies the second stopband (There are potentially two stopbands 
+	depending on how the spectra wrap around the 1 PRF sampling frequency).
+
+
+	EXAMPLES:
+		Suppose you have an input image ers1.cpx and another input image
+	ers2.cpx then to generate the filter parameter files, the command line 
+	input would be:
+	
+		gen_filt_params ers1 ers2 params		
+    SEE ALSO:
+
+	cpx_autofilter(1), pcpx_autofilter(1), gen_filt_params(1), pcpx_filter(1)
+
+    AUTHOR: Mark Ayers, ASF Graduate Research Assitant, 2000
+
+    CONTACT: Rick Guritz (rguritz@images.alaska.edu)
+          or visit http://www.images.alaska.edu/
+

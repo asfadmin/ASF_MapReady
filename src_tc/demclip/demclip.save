@@ -1,0 +1,340 @@
+/****************************************************************
+NAME:  demclip -- clips an input DEM to the coverage of a SAR scene
+
+SYNOPSIS:  demclip demfile sarfile outfile
+
+DESCRIPTION:
+        This program uses a SAR image trailer metadata file to
+      calculate the exact area of coverage of a SAR image.  It
+      then calculates and extracts from the DEM file as much of
+      the same geographic area as possible.  The output is a
+      LAS 6.0 INT*2 DEM file and its DDR file giving valid projection
+      information.
+
+EXTERNAL ASSOCIATES:
+    NAME:               USAGE:
+    ---------------------------------------------------------------
+    ex_corners          Extracts corner locations from SAR metadata
+    c_getddr            Reads a DDR file into a structure
+    utminit             Initialize the UTM projection package
+    tmfor               Xform lat,lob to UTM X,Y
+
+FILE REFERENCES:
+    NAME:               USAGE:
+    ---------------------------------------------------------------
+    demfile.img         Input DEM file, raw INT*2 format
+    demfile.ddr         Input DEM metadata
+    outfile.img         Output INT*2 raw format DEM file
+    outfile.ddr         Data descriptor for output DEM file
+
+PROGRAM HISTORY:
+    VERS:   DATE:  AUTHOR:    PURPOSE:
+    ---------------------------------------------------------------
+     1.0    7/95   T. Logan   Incorporate DEM preprocessing in TC package
+     2.0   10/95   T. Logan   Port from YMP to Solaris
+     2.1   12/96   T. Logan   Allow input file of corner coordinates
+
+HARDWARE/SOFTWARE LIMITATIONS:
+        The input DEM must be INT*2, with a valid LAS 6.0 ddr file
+        The input DEM must be in the UTM projection
+
+ALGORITHM DESCRIPTION:
+        Read region of interest extents 
+        Read DEM ddr metadata file
+        Convert the region of interest extents to the UTM projection
+        Determine the placement of the region in the DEM file
+        Determine the number of line and samples in output DEM
+        Read the appropriate portion of the DEM file and write
+          to the output file
+        Create a valid DDR file for the output DEM
+
+ALGORITHM REFERENCES:
+	This program is loosely based on the algorithm used in
+     the LAS application remap.  All of the code was rewritten.
+
+BUGS:
+
+****************************************************************/
+/***************** Copyright Notice ***********************
+                        English:
+         You can freely use, modify, and re-distribute 
+this code and/or binaries as long as you don't sell them,
+and make sure to carry this notice along with them.
+However, if you want to sell them, you can contact the 
+University of Alaska Technology Corporation, below.
+
+
+                        Legalese:
+                 COPYRIGHT NOTIFICATION
+
+(C) COPYRIGHT 1997 UNIVERSITY OF ALASKA. ALL RIGHTS RESERVED
+
+This software discloses material protectable under copyright 
+laws of the United States. Permission is hereby granted to 
+use, reproduce, and prepare derivative works for noncommercial 
+purposes at no charge, provided that this original copyright 
+notice, and disclaimer are retained and any changes are 
+clearly documented. Any entity desiring permission to 
+incorporate this software or a work based on the software 
+into a product for sale must contact the University of 
+Alaska Technology Corporation.
+
+
+This software was authored by:
+
+RICK GURITZ      rguritz@images.alaska    (907)474-7886
+Alaska SAR Facility, Geophysical Institute
+P.O. Box 757320, University of Alaska Fairbanks
+Fairbanks, Alaska 99775Ð7320
+FAX: (907)474-5195
+
+Any questions or comments on the software may be directed 
+to one of the authors: Rick Guritz, Tom Logan, Mike Shindle,
+Rob Fatland, Orion Lawlor, and Dorothy Corbett; or to
+http://www.images.alaska.edu
+
+
+NEITHER THE UNIVERSITY OF ALASKA NOR ANY SUBUNIT THEREOF, 
+NOR ANY OF THEIR EMPLOYEES MAKES ANY WARRANTY, EXPRESS 
+OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR 
+RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR 
+USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR 
+PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD 
+NOT INFRINGE PRIVATELY OWNED RIGHTS.
+LICENSING INQUIRES MAY BE DIRECTED TO THE UNIVERSITY 
+OF ALASKA TECHNOLOGY DEVELOPMENT CORPORATION AT (907)451-0718.
+************************************************************/
+#include "asf.h"
+#include "ddr.h"
+#include "cproj.h"
+#include "asf_meta.h"
+#define RPD 0.017453293		/* Radians per Degree */
+#define VERSION 2.1
+
+int mapedge(double *gul,double *glr,double *sul,double *slr,double pdist);
+
+void ex_add_pt(meta_parameters *meta,int x,int y,double *min,double *max)
+{
+	double lat,lon;
+	meta_get_latLon(meta,y,x,0,&lat,&lon);
+	if (min[0]>lat) min[0]=lat;
+	if (max[0]<lat) max[0]=lat;
+	if (min[1]>lon) min[1]=lon;
+	if (max[1]<lon) max[1]=lon;
+}
+void ex_corners(char *fName,double *min,double *max)
+{
+	meta_parameters *meta=meta_init(fName);
+	int nl=meta->ifm->orig_nLines,ns=meta->ifm->orig_nSamples;
+	min[0]=min[1]=1000;
+	max[0]=max[1]=-1000;
+	ex_add_pt(meta,0,0,min,max);
+	ex_add_pt(meta,0,nl,min,max);
+	ex_add_pt(meta,ns,nl,min,max);
+	ex_add_pt(meta,ns,0,min,max);
+	ex_add_pt(meta,ns/2,nl/2,min,max);
+}
+
+int main(argc,argv)
+    int argc; 
+    char **argv;
+  {
+    char inFDR[255];		/* Input SAR file w/o extension 	*/
+    char inDEM[255];		/* Input DEM file name 			*/
+    char inDDR[255];		/* Input DDR file name 			*/
+    char outDEM[255];		/* Output DEM file name 		*/
+    FILE *fpi;			/* Input DEM file pointer 		*/
+    FILE *fpo;			/* Output DEM file pointer 		*/
+    struct DDR ddr;		/* Data Descriptor Record structure 	*/
+    double sul[2],slr[2],	/* SAR file corner coordinates in UTM 	*/
+           gul[2],glr[2],	/* Lat,Lon coordinates for SAR scene 	*/
+            ul[2],lr[2];	/* Output DEM corner coordinates 	*/
+    int  off[2];		/* Offsets of SAR into DEM 		*/	
+    int  nl,ns,i,ok=0;	/* Number lines, samples in output DEM 	*/
+    int   find, index, cnt;
+    char  *obuf;		/* I/O buffer for transfer data 	*/
+
+    StartWatch();
+
+    if (argc != 4 && argc != 5)
+      {
+        printf("\n\nUsage: %s inDEM inSAR outDEM [u]\n\n",argv[0]);
+        printf("      Clips the input LAS 6.0 INT*2 DEM file to match the\n");
+	printf("      area covered by the input SAR file metadata, giving\n");
+	printf("      the output DEM file with valid LAS 6.0 ddr metadata\n");
+	printf("      U option specifies a user entered extent file called\n");
+	printf("      inSAR of the form UL_lat UL_lon LR_lat LR_lon\n");
+	printf("\n      Version %.2f	ASF STEP TOOLS\n\n",VERSION);
+        exit(1);
+      }
+
+    strcpy(inFDR,argv[2]);
+    strcat(strcpy(inDEM,argv[1]),".img");
+    strcat(strcpy(inDDR,argv[1]),".ddr");
+    strcat(strcpy(outDEM,argv[3]),".img");
+
+    /* Read SAR image extents & convert to radians */
+    if (argc == 4) ex_corners(inFDR,gul,glr);
+    else if (argc == 5)
+      {
+        fpi=fopen(inFDR,"r");
+	fscanf(fpi,"%lf %lf %lf %lf",&gul[0],&gul[1],&glr[0],&glr[1]);
+	fclose(fpi);
+      }
+
+    gul[0] *= RPD; gul[1] *= RPD; glr[0] *= RPD; glr[1] *= RPD;
+
+    /*  Read input DEM DDR file */
+    if (c_getddr(inDEM,&ddr) != 0)
+      {
+        printf("Error returned from c_getddr:  unable to read file %s\n",inDEM);
+        exit(1);
+      }
+
+    /* calculate corner projection coordinates for the SAR image
+     ----------------------------------------------------------*/
+    utmforint(6378206.4,6356583.8,0.9996,ddr.zone_code);  /* Clarke 1866 */
+    mapedge(gul,glr,sul,slr,ddr.pdist_x);
+
+    printf("Calculated SAR corners in UTM (UL) : %f,%f\n",sul[0],sul[1]);
+    printf("Calculated SAR corners in UTM (LR) : %f,%f\n",slr[0],slr[1]);
+    printf("Actual DEM corners in UTM (UL)     : %f,%f\n",ddr.upleft[0],
+	ddr.upleft[1]);
+    printf("Actual DEM corners in UTM (LR)     : %f,%f\n",ddr.loright[0],
+	ddr.loright[1]);
+    printf("Calculated output DEM size (l,s)   : %f,%f\n",
+        fabs((sul[0]-slr[0])/ddr.pdist_x)+1.0,
+        fabs((sul[1]-slr[1])/ddr.pdist_x)+1.0);
+
+    /*  Set the corner coordinates for the output DEM file 
+     ----------------------------------------------------*/
+    ul[0] = (ddr.upleft[0] < sul[0]) ? ddr.upleft[0] : sul[0];
+    ul[1] = (ddr.upleft[1] > sul[1]) ? ddr.upleft[1] : sul[1];
+    lr[0] = (ddr.loright[0] > slr[0]) ? ddr.loright[0] : slr[0];
+    lr[1] = (ddr.loright[1] < slr[1]) ? ddr.loright[1] : slr[1];
+
+    /* Determine offsets of SAR into DEM file
+     ---------------------------------------*/
+    off[0] = (int) ((fabs(ddr.upleft[0] - ul[0]))/ ddr.pdist_x + 0.5);
+    off[1] = (int) ((fabs(ddr.upleft[1] - ul[1]))/ ddr.pdist_y + 0.5);
+
+    /* Determine number of lines and samples needed
+     ---------------------------------------------*/
+    nl = ((ul[0]-lr[0])/ddr.pdist_x)+1.01;
+    ns = ((lr[1]-ul[1])/ddr.pdist_y)+1.01;
+
+    if (nl > ddr.nl-off[0]) nl = ddr.nl-off[0];
+    if (ns > ddr.ns-off[1]) ns = ddr.ns-off[1];
+
+    printf("Calculated offsets are %i,%i\n",off[0],off[1]);
+    printf("Calculated image size is %i,%i\n",nl,ns);
+
+    obuf = (char *) MALLOC (nl*ns*2);
+    fpi = fopenImage(inDEM,"rb");
+    for (index=0; index < nl*ns*2; index++) obuf[index] = 0;
+
+    find = (off[1]+ddr.ns*off[0])*2;
+    index = 0;
+
+    for (cnt = 0; cnt < nl; cnt++)
+     {
+       if (fseek(fpi,find,0)!=0)
+        { printf("Unable to seek byte %d in input file",find); exit(1); }
+       if (fread(&obuf[index],ns*2,1,fpi)!= 1)
+        { printf("Unable to read the input DEM file"); exit(1); }
+       index += ns*2;
+       find  += ddr.ns*2;
+     }
+    for (i = 0; i < nl*ns*2; i++) if (obuf[i]) ok = 1;
+    if (!ok) { printf("All points in the DEM file are zero!!!\n"); exit(1); }
+    fclose(fpi);
+    fpo = fopenImage(outDEM,"wb");
+    fwrite(obuf,ns*nl*2,1,fpo);
+    fclose(fpo);
+    free(obuf);
+
+    ddr.upleft[0] = ul[0]; ddr.upleft[1] = ul[1];
+    ddr.upright[0] = ul[0]; ddr.upright[1] = lr[1];
+    ddr.loleft[0] = lr[0]; ddr.loleft[1] = ul[1];
+    ddr.loright[0] = lr[0]; ddr.loright[1] = lr[1];
+    ddr.nl = nl; ddr.ns = ns;
+    c_putddr(outDEM,&ddr);
+   
+    printf("\n DEMCLIP successfully completed.\n");
+    StopWatch();
+    return(0);
+}
+/*--------------------------------------------------------------------------- 
+  mapedge :
+	Find maximum and minimum extents of an image in UTM projection 
+	coordinates using input lat,lon coordinates.  Iteratively checks
+	75 points along each border and keeps the minimum and maximum
+	values found in both the x and y direction.  Finally, it truncates
+	the minimum values and rounds the maximum values up to the nearest
+        multiple of the projection distance, pdist.
+ ---------------------------------------------------------------------------*/
+int mapedge(double *gul,double *glr,double *sul,double *slr,double pdist)
+{
+   double inx,iny,outx,outy;
+   double dx, dy;
+   double pxmin = 100000000.0;
+   double pxmax = -100000000.0;
+   double pymin = 100000000.0;
+   double pymax = -100000000.0;
+   double inc = 75;
+   int i;
+
+   dx = (gul[1]-glr[1])/(inc-1);
+   dy = (gul[0]-glr[0])/(inc-1);
+
+   /* Check East */
+   inx = glr[1]; iny = glr[0];
+   for (i = 0; i < inc; i++, iny += dy)
+     {
+        utmfor(inx,iny,&outx,&outy);
+	if (outx < pxmin) pxmin = outx; if (outx > pxmax) pxmax = outx;
+        if (outy < pymin) pymin = outy; if (outy > pymax) pymax = outy;
+     }
+
+   /* Check West */
+   inx = gul[1]; iny = glr[0];
+   for (i = 0; i < inc; i++, iny += dy) 
+     {
+        utmfor(inx,iny,&outx,&outy);
+        if (outx < pxmin) pxmin = outx; if (outx > pxmax) pxmax = outx;
+        if (outy < pymin) pymin = outy; if (outy > pymax) pymax = outy; 
+     }
+
+   /* Check South */
+   inx = glr[1]; iny = gul[0];
+   for (i = 0; i < inc; i++, inx += dx) 
+     {
+        utmfor(inx,iny,&outx,&outy);
+        if (outx < pxmin) pxmin = outx; if (outx > pxmax) pxmax = outx;
+        if (outy < pymin) pymin = outy; if (outy > pymax) pymax = outy; 
+     }
+
+   /* Check North */
+   inx = glr[1]; iny = glr[0];
+   for (i = 0; i < inc; i++, inx += dx) 
+     {
+        utmfor(inx,iny,&outx,&outy);
+        if (outx < pxmin) pxmin = outx; if (outx > pxmax) pxmax = outx;
+        if (outy < pymin) pymin = outy; if (outy > pymax) pymax = outy; 
+     }
+
+   /* Round to nearest pixel size */
+   iny = pymax - ((int)(pymax/pdist)*pdist);
+   if (iny != 0) pymax += (pdist-iny);
+   pymin -= pymin - ((int)(pymin/pdist)*pdist);
+   pxmin -= pxmin - ((int)(pxmin/pdist)*pdist);
+   inx = pxmax - ((int)(pxmax/pdist)*pdist);
+   if (inx != 0.0) pxmax += (pdist-inx); 
+
+   sul[0] = pymax;
+   sul[1] = pxmin;
+   slr[0] = pymin;
+   slr[1] = pxmax;
+
+   return(0);
+}

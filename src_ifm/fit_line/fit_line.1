@@ -1,0 +1,46 @@
+
+    NAME: fit_line
+
+    SYNOPSIS: fit_line <in> <out> [-log <file>] [-quiet]
+
+    DESCRIPTION:
+    	fit_line is used during CCSD interferometry to clean up
+    the output of fico.  It fits a scaling and translation matrix
+    to the input offsets file in a least-squares sense.  Normally,
+    fit_line is called by register_ccsd.
+
+    OPTIONS: 
+    	 <in> a fico point offset file
+    	<out> a offset file in calc-deltas compatible format:
+    		This file matches the <image 1> to <image 2>, as
+    		img2.x=img1.x+img1.x*<first number>+<second number>
+    		img2.y=img1.y+img1.x*<third number>+<fourth number>
+[-log <file>]   Option to have output written to a log file.
+     [-quiet]   Option to suppress the output to the essential.
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+    EXAMPLES:
+	If you had previously run fico to generate "fico1", to generate
+	a file for use with calc_deltas (called toLine), you would type:
+	
+		fit_line fico1 toLine
+	
+    SEE ALSO:
+    	fico(1), calc_deltas(1)
+
+    HARDWARE/SOFTWARE LIMITATIONS: none
+
+    BUGS: none known
+
+    AUTHOR: Orion Lawlor, June 1997
+
+    CONTACT: apd@asf.alaska.edu
+	     or visit http://www.asf.alaska.edu/apd
+
+
+
+
+

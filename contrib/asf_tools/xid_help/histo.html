@@ -1,0 +1,153 @@
+<TITLE>3.2 Histogram</TITLE>
+<H2>3.2 Histogram</H2>
+
+The histogram function generates a distributional histogram
+(by default) for the currently displayed image data.  For
+a multi-band image, a separate histogram graph is generated 
+for each displayed image band (i.e. one for red, one for 
+green, and one for blue).  For a single-band image, only 
+one histogram graph is displayed.  Along with the graphs, 
+the mean pixel value, standard deviation, minimum pixel 
+value and maximum pixel value for each band are also calculated.  
+The user may also obtain histogram percentage information by moving 
+the cursor over the histogram graph.
+
+<P>
+<IMG SRC="histo.gif">
+<P>
+
+<DL>
+<DT><B>Percentage Information:</B>
+<DD>This information is generated when the user moves the cursor
+over the histogram graph within the bounds of the X axis of
+the graph (the Y position of the cursor is not relevant).
+The cursor position, along the X axis, indicates a specific
+gray level value.  The percentage value represents the 
+percentage of pixels with a gray level value less than or 
+equal to the selected gray level. 
+</DL>
+
+The <B>image</B>, <B>line</B>, and <B>poly</B> radio buttons allow the 
+user to select the object the histogram is to be calculated for.<P>
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>Image:</B>
+    <DD>A histogram is calculated for the currently displayed image (default).
+    <P>
+
+    <DT><B>Line:</B>
+    <DD>A histogram is calculated for all pixels that lie along a line.
+    <P>
+
+    <DT><B>Poly:</B>
+    <DD>A histogram is calculated for all pixels that are contained within 
+        a defined polygon.
+</DL>
+</BLOCKQUOTE>
+
+The <B>X/Y</B>, <B>X/Z</B>, and <B>Y/Z</B> radio buttons allow the 
+user to select the dimension the histogram is to be calculated in.<P> 
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>X/Y:</B>
+    <DD>A histogram is calculated for all bands of the currently displayed 
+        image.
+    <P>
+
+    <DT><B>X/Z:</B>
+    <DD>A histogram is calculated for the line of 
+	the image indicated by the cursor 
+	position for all bands currently loaded (whether
+	they are displayed or not).  For example, if the 
+	cursor is positioned at line 100 and there are 
+	currently 10 image planes which contain image data,
+	the histogram displayed shows the values for line 
+	100 of all 10 planes.
+    <P>
+
+    <DT><B>Y/Z:</B>
+    <DD>A histogram is calculated 
+	for the column of the image indicated by the cursor 
+	position for all bands currently loaded (whether
+	they are displayed or not).  For example, if the 
+	cursor is positioned at sample 50 and there are 
+	currently 25 image planes which contain image data,
+	the histogram displayed shows the values for sample 
+	100 of all lines in the image (i.e., a column of data)
+	of all 10 planes.
+</DL>
+</BLOCKQUOTE>
+
+The <B>distributional</B> and <B>cumulative</B> radio buttons allow 
+the user to select the type of histogram to be displayed.<P>
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>Distributional:</B>
+    <DD>The x-axis of the histogram represents gray level 
+	values 0 to 255; the y-axis represents the 
+	total number of pixels that have the 
+	corresponding gray level value.
+    <P>
+
+    <DT><B>Cumulative:</B>
+    <DD>The x-axis of the histogram represents gray level 
+	values 0 to 255; the y-axis represents the total number
+	of pixels that have the corresponding gray 
+	level as well as all previous gray levels.
+</DL>
+</BLOCKQUOTE>
+
+The <B>original</B> and <B>mapped</B> radio buttons allow the user 
+to select the type of data the histogram is to be calculated for.<P>
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>Original:</B>
+    <DD>Calculate a histogram for the image values as they are loaded into 
+	the image planes (i.e., for non-byte data, the 
+	unscaled values are not used).  
+    <P>
+
+    <DT><B>Mapped:</B>
+    <DD>Calculate a histogram for the mapped image values as 
+	they appear on the 
+	display monitor (i.e., the current mapping is 
+	applied before the histogram is calculated).
+</DL>
+</BLOCKQUOTE>
+
+<DL>
+<DT><B>Mask Values:</B>
+<DD>Enter specific pixel values and/or ranges of values to be 
+    excluded from the histogram calculations.  Specific
+    pixel values are separated by commas, while range values
+    are separated by a dash.  The following conditions
+    cause an error message to be displayed:
+    <P>
+
+    <OL>
+    <LI>The first character in the mask value specification is not numeric.
+
+    <LI>Any alphabetic characters appear in the specification.
+
+    <LI>Any punctuation marks other than a dash (-) or a comma (,) are used.
+
+    <LI>Two consecutive punctuation marks appear in the specification.
+
+    <LI>Both ends of a range are not specified (i.e. "10 - " or "- 100").
+
+    <LI>A value less than 0 or greater than 255 is specified.
+    </OL>
+    <P>
+
+<DT><B>Update:</B>
+<DD>Calculate and update the histogram based on the currently selected 
+    options.
+<P>
+
+<DT><B>Dismiss:</B>
+<DD>Close the histogram panel.
+</DL>

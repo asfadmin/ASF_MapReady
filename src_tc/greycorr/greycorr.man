@@ -1,0 +1,78 @@
+NAME:   GREYCORR  --   Performs grey-level image-to-image correlation
+ 
+SYNOPSIS:  greycorr [-n nFile] [-o offFile] [-s minStrength] [-v]
+                        reference search intpl outtpl
+ 
+DESCRIPTION:
+      This program attempts to perform correlation of the two input images,
+    reference.img and search.img, to produce the file outtplfile.tpl of
+    the highest correlation strength tie-points.  The correlations are
+    attempted at the candidate points specified in the input tpl file.
+    Processing proceeds by extracting a piece of the reference image and
+    a smaller peice of the search image for each candidate point.  The
+    correlation calculates a degree of match for all the possible placements
+    of the search chip inside the reference chip.  If the maximum resulting 
+    correlation is less than the minimum allowed, this candidate is 
+    discarded.  Otherwise a tie-point is calculated and written to the
+    output file in ascii format.  These tie-points consist of a point from
+    the reference image and the point from the search image that produced
+    the closest correlation. 
+      The pixelsize parameter controls the parameters used for the correlation
+    attempt.  For pixel sizes of < 90.0 meters, large chips and lower
+    correlation peak strengths are used than for > 90.0 meter correlations.
+ 
+OPTIONS:
+	-s minStrength:
+		set the minimum correlation strength, below which points
+		will be rejected.  (default: 2.0)
+		
+	-n nFile:  If this argument is passed, greycorr will write out an
+	        ASCII file with this name containing:
+	            <number of good correlated points>
+	            <number of points whose correlations failed>
+	            <number of out-of-bounds points>
+	            
+	-o offFile: If this argument is passed, greycorr will attempt to read
+	        an ASCII file with this name containing:
+	            <shift X> <shift Y>
+	        which indicates how the search image should be moved
+	        to line up with the reference image.  For example, this
+	        might come from > fftMatch ref search.
+	
+	-v      Verbose mode.  If this flag is passed, each correlation 
+	        attempted is printed to the screen in ASCII graphics.
+ 
+ERROR MESSAGES:
+   MESSAGE GIVEN:                            REASON:
+   ----------------------------------------------------------------------
+   Failure in malloc                         Not Enough Memory
+   Unable to open input file <file>          Bad filename, missing file
+   Unable to read file <file>                Wrong file size or type
+   Unable to open output file <file>         Can't open output tpl file
+   Unable to write tie point data            Not enough space on disk (?)
+ 
+EXAMPLES:  greycorr 7898_simftr 7898_ftr 7898_tpl 90.0 tiep
+
+   This example uses the file 7898_simftr.img as the reference image and
+   7898_ftr.img as the search image.  Correlation is attempted at the  
+   candidate points given in the file 7898_tpl.tpl, and points that showed
+   the highest correlation are then written to the output file, tiep.tpl,
+   in ascii format as follows:
+ 
+        ref[0]    ref[1]   sea[0]   sea[1]
+          ^         ^        ^        ^      
+          |         |        |        |       
+       reference reference search   search 
+        y-coord   x-coord  y-coord  x-coord
+ 
+SEE ALSO:  terrcorr
+ 
+HARWARE/SOFTWARE LIMITATIONS: Only works correctly for even chip sizes
+ 
+BUGS:    None Known
+ 
+AUTHOR:  Tom Logan, ASF
+ 
+CONTACT: Tom Logan, ASF
+         E-mail: tlogan@iias.images.alaska.edu
+

@@ -1,0 +1,47 @@
+NAME:
+       jpeg2las - Convert JPEG images to LAS byte format.
+
+SYNOPSIS:
+
+       jpeg2las <infile> <outfile>
+       
+       	<infile> - a JPEG/JFIF graphic image
+       	<outfile> - a LAS 6.0 3-banded byte image
+
+DESCRIPTION:
+
+       jpeg2las converts standard JPEG/JFIF images to LAS 6.0 3-
+       banded format. JPEG images are commonly found on the
+       internet, etc.
+
+OPTIONS:
+
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+----------------------------------------------------------------
+
+EXAMPLES:
+ 		  example% jpeg2las bob.jpg las_bob.img
+
+       Create a 3-banded byte image out of bob, a JPEG image.
+
+SEE ALSO:
+
+       las2ppm(1), ml(1)
+
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR:
+
+       Orion Lawlor, Alaska SAR Facility, Fairbanks, AK.
+       Uses the excellent libjpeg routines from IJG 
+       (the Independent JPEG Group).
+
+CONTACT:
+
+	apd@asf.alaska.edu
+        or visit http://www.asf.alaska.edu/apd
+ 

@@ -1,0 +1,25 @@
+
+    NAME:  projfit
+
+    SYNOPSIS:  projfit inPROJfile outCOEFfile
+
+    DESCRIPTION:  Uses the 'yax2bxc' routine to compute coefficients for a
+	quadratic fit of the near and far edge swath coordinates, then
+	writes the computed coefficients to outCOEF file.
+
+    EXAMPLES:
+		projfit SWATH.1 COEF.1
+	The coordinate swath in SWATH.1 will be translated into
+    coefficients for a quadratic fit, whcih will be saved in COEF.1
+
+
+    SEE ALSO:
+	utmfit
+
+    BUGS:
+
+    AUTHOR:	Joshua Badgley.  Based on 'utmfit' by Mike Jessop.
+
+    CONTACT:	Rick Guritz <rguritz@asf.alaska.edu>
+
+

@@ -1,0 +1,53 @@
+NAME:	 SARGEOM  -- Creates geometrically corrected SAR image
+ 
+SYNOPSIS:  sargeom inDEMfile inSARfile inCOEFfile outCORfile 
+ 
+    FILES REFERENCED:    USAGE:
+    ---------------------------------------------------------------
+    inDEMfile.img        Las 6.0 format DEM file of INT*2 values 
+    inDEMfile.ddr        DEM file's LAS data descriptor record file
+    inSARfile.img        Resampled and stripped SAR image
+    inSARfile.ddr        Resampled SAR image metadata
+    inSARfile.L or .trl,.ldr        Metadata for the SAR image
+    inCOEFfile.ppf       Mapping Coefficients File
+    outCORfile.img       Ouput Terrain Corrected Image
+ 
+DESCRIPTION:    Performs geocoding & geometric rectification of
+		Synthetic Aperature Radar images.
+ 
+OPTIONS:	None 
+ 
+ERROR MESSAGES:
+    MESSAGE GIVEN:                              REASON:
+    ----------------------------------------------------------------------
+    Unable to open input file <file>            Bad coefficients file name
+    Failure opening input image %s              Bad SAR file name or type
+    Failure reading input image %s              Bad SAR file type or size
+    Unable to open input DEM file %s            Bad DEM file name or type
+    Demfile Read Error                          Bad DEM file type or size
+    Failure opening output image %s             System Error 
+    Failure writing output image %s             System Error
+ 
+EXAMPLE:   sargeom 7898dem 7898_ftr coef 7898_cor
+           
+             This examples uses the DEM file 7898dem.img, the mapping
+           coefficients file coef.ppf, and the resampled SAR image
+           7898_ftr.img to create the terrain corrected SAR image
+           7898_cor.img.
+ 
+SEE ALSO:  terrcorr
+ 
+HARWARE/SOFTWARE LIMITATIONS:
+         The DEM file that is given to SARSGEOM must be already clipped
+         to the proper area of coverage and pixel spacing corresponding 
+         to the input SAR image.  This can be accomplished by using the
+         LAS modules REMAP and GEOM as they were set up in the original
+         EDC terrain correction code.
+ 
+BUGS:	 None Known
+ 
+AUTHOR:  Tom Logan, ASF
+ 
+CONTACT: Tom Logan, ASF
+         E-mail: tlogan@iias.images.alaska.edu
+

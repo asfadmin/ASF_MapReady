@@ -1,0 +1,39 @@
+
+    NAME:	ui2byte - converts LAS INT*2 images to byte LAS images
+
+    SYNOPSIS:	ui2byte infile outfile
+
+       infile         base name (.img,.ddr)
+       outfile        base name (.img,.ddr)
+
+    DESCRIPTION:
+
+	Reads LAS image into memory.  Calculates a full data histogram.
+	Finds upper and lower data value cut offs for lower and upper 5% of
+	data in file, and scales this data to byte values for the output
+        file.
+
+    OPTIONS:	
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+    EXAMPLES:	ui2byte R110115699S2R062 s699
+
+		This call will convert the unsigned 2 byte integer-valued
+	    file R110115699S2R062.img into a byte valued LAS image s699.img.
+
+    SEE ALSO:	sr2gr, deskew
+
+    HARDWARE/SOFTWARE LIMITATIONS:	
+
+    BUGS:
+
+    AUTHOR:	Tom Logan, ASF
+
+    CONTACT:	apd@asf.alaska.edu
+		http://www.asf.alaska.edu/apd
+
+
+

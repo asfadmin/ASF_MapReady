@@ -1,0 +1,244 @@
+
+    NAME: aisp - ASF Sar Processor (SAR Software Correlator)
+
+    SYNOPSIS:     aisp [options] ifile ofile
+
+              ifile   input ASF CCSD (.D & .L), or raw file (.raw & .in)
+                      of raw SAR signal data.
+              ofile   output file name.  AISP will create ofile_amp.img,
+                      a multilooked amplitude image, and ofile.cpx, a 
+                      single-look-complex image.
+
+    DESCRIPTION:
+        This program creates a complex SAR image from ASF signal data.
+     Either the input AND output file names or a parameter file name
+     must be specified.  The input file (ifile) must be an ASF groundstation
+     CCSD product pair (ifile.D & ifile.L).  The standard outputs are:
+
+      - ofile.cpx       Single-look-complex float SAR image 
+      - ofile.ddr       Data descriptor for output image
+      - ofile.in        Parameter file that was used for this run
+      - ofile.meta      Metadata file containing state vectors, etc.
+      - ofile_amp.img   Multilooked float SAR amplitude image.
+      - ofile_amp.ddr   Data descriptor for amplitude image.
+
+     Basically put, ASP works in one of two modes,
+
+         A - Input parameters are read from an image's CEOS metadata (.L)
+      or B - Input parameters are read from a parameter file (.in)
+
+     In mode A (the default), the file <ifile>.L is interrogated to fill the
+     platform and scene dependent parameters necessary to define a valid run.
+     In mode B (when reading raw signal data), a previously generated 
+     parameter file, <ifile>.in, is used to fill these processing parameters.
+     When many runs are to be performed on a single input scene or if the image
+     metadata is known to be erroneous, it is more convenient to use mode B.
+    
+    OPTIONS:
+
+      The following switches provide the ability to override 1) default values,
+     2) parameters read from metadata, and 3) parameters read from a previously
+     generated parameter file.
+ 
+    SWITCH	   DEF   DESCRIPTION
+    ---------------------------------------------------------------------------
+    -l first_line   0    First line to read (from 0).  This parameter controls
+			 the first line of data read from the input CCSD file.
+			 The default is 1 to automatically skip the CEOS leader
+			 record occurring as the first line of every ASF CCSD
+			 file.  (Using a value of 0 is invalid for ASF data.)
+
+    -p #patches     8    This parameter controls the number of patches that
+                         will be processed.  For each patch, 4K lines are read
+                         from the input file and a default of 3000 valid output
+                         lines are created (see -v below).
+
+    -v valid_lines 3000  Valid output lines per patch.  This parameter controls
+			 the number of Azimuth lines that are considered valid
+                         for each 4K patch of lines processed.  For each patch,
+                         valid_lines lines of data are written as output.
+
+    -s skip_samps   0    This sets the number of samples in each line that are
+                         to be treated as INVALID.  Thus, 2*skip_samps bytes
+                         from the begining of each line are completely ignored.
+			 Internally, the record leader for each line (again,
+                         standard with ASF data) is automatically skipped.  The
+                         -s switch allows for extra i,q samples to be skipped
+                         in a similar fashion.
+
+    -f first_samp    0   First range sample to use (from 0).  This parameter
+                         controls the first range sample to be processed in
+                         each line.  This switch differs from -s by specifying
+			 the number of VALID range samples to skip, while -s
+			 specifies how many INVALID samples are skipped.  When
+			 using the -f switch, the range to the first pixel is
+			 adjusted appropriately.  
+    -e 1            0    Remove doppler skew from image flag.  If -e 1 is given,
+                         the image will be moved to zero doppler (deskewed).
+                         The default is to output the image at the processed doppler.
+
+    -n num_samps   META  The number of range samples to process.  By default,
+                         all range samples in the file are used.  (This
+                         parameter is normally read from metadata.)
+
+    -r output_res   8.0  Desired output azimuth resolution (m).  Theoretical
+			 best resolution is ~5.0 meters for ERS-1 data.
+
+    -d debug_flag    1   Debug flag;  Turns on the creation of different debug
+			 files.  The flags can all work together simply by 
+			 adding their values.
+
+			  1 = create a multilooked amplitude image
+				ofile_amp.img	multilooked float amplitude file
+
+			  2 = create range reference function files
+				reference_time 	  time domain
+				reference_freq    phase domain
+
+			  4 = create a range migrated test file
+				rangemig.cpx      range migrated float complex
+						  data (1st patch only)
+				
+                          8 = create a range compressed test file
+ 			        rangecomp.cpx     range compressed
+				                  float complex data (1st patch)
+				rangefft.cpx      range compressed,
+						  azimuth transformed
+						  float complex data (1st patch)
+
+			 16 = create azimuth reference functions
+			 	az_time.cpx	time domain
+			 	az_fft.cpx	phase domain
+
+    -c dfile         NO  Read doppler centroid from dfile.  This switch 
+			 disables the doppler centroid estimation and enables
+			 reading the doppler centroid constant from a file.
+			 The file should contain a 3 floating point numbers
+			 that represents the constant, linear, and quadratic
+			 doppler terms as a percentage of the PRF.
+
+    -o off_file      NO  Read image offsets from off_file.  This switch allows
+                         for patch offsets to be read from file.  The file
+                         should contain 8 floating point numbers which represent
+                         (in order):
+
+			  sloper,interr    Slope and intercept for range	
+			  slopea,intera    Slope and intercept for azimuth
+			  dsloper,dinterr  Delta slope, intercept for range
+			  dslopea,dintera  Delta slope, intercept for azimuth
+
+                         All values should be in terms of pixels, including the
+                         deltas.  The slope is an odd parameter-- it always depends 
+                         on the range pixel (x).  This is because the slope,
+			 intercept parameters are used as
+				xOut = x - sloper*x - interr.
+				yOut = y - slopea*x - intera.
+			 
+			 This way, the default is for all these parameters to be zero.
+			 slopea is multiplied by x because the azimuth reference
+			 function is constructed for an entire azimuth line-- so
+			 no Y scaling is possible.
+
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:			 REASON:
+    ----------------------------------------------------------------------
+    Malloc Failure			 Not even close to enough RAM 
+    Failure Allocating Memory		 Not enough RAM
+    Unable to allocate enough memory	 Not enough RAM
+    Malloc Error for trans arrays.	 Patch size to large, reduce #samples
+    Unable to open file <file>	 	 Incorrect file name given
+    Unable to open <file>	 	 Incorrect file name given
+
+    TRIED TO READ LINE <NUM> FROM INPUT FILE. 
+    ONLY 26624 LINES OF DATA EXIST.
+					The combination of start line, patch
+					size and number of patches selected 
+				 	required more than 26,624 line of 
+					input data
+
+    Unable to seek byte # in file <file> File size mismatch
+    Unable to read from file <file>	 File size mismatch
+
+    EXAMPLES:
+
+      ex1>  aisp -v 3000 -n 5000 E122361290S0C014 e1
+
+        Process the CCSD file E122361290S0C014.D into complex image e1.cpx,
+      and e1_amp.img.  Processing proceeds by running 8 image patches
+      of size 4096 lines (azimuth) by 5000 samples (range), creating 24,000
+      lines (8 patches * 3,000 valid lines per patch) of 5,000 samples of
+      float complex image data.  e1_amp.img will be 4800 lines (8 patches
+      * 3000/5 lines per patch) by 5000 samples of float data.  Note that the
+      combined output requires 24000*5000*8 + 4800*5000*4 = 1,056 Megs of disk
+      space for this run.  This command takes about an hour to run.
+
+      ex2>  aisp -p 1 -l 20000 -f 1000 -n 290 -v 300 E122361290S0C014 e1
+
+	This example processes the same input data as above, but only extracts
+      a tiny piece starting at line 20,000 and sample 1,000.  A 290x300 output
+      complex image e1.cpx will be created, as well as e1_amp.img, a multilooked
+      290x60 float amplitude image.  This example takes about 1 minute to run.
+
+    SEE ALSO: register_ccsd, quicklook, estavedop, c2p, amp2img, tandem_ifm
+
+    FILE FORMATS:
+    	The input files can be ASF-format CCSD data, or any byte-aligned file
+    format.  For CCSD data, AISP automatically determines the size and 
+    characteristics of the file.  
+    
+    
+	AISP can also process a common, simple, generic format: each sample of
+    SAR data is encoded as two bytes, containing the real and imaginary (I and Q)
+    components of the echo as unsigned bytes.  AISP then expects to find a file with
+    the same base name as the input file, but with extention ".fmt", containing:
+    	
+    .fmt file:
+    	<number of bytes per line of data> <number of header bytes per line>
+    	<mean value of I samples> <mean value of Q samples>
+    	<byte order in file: 'n'=i,q; 'y'=q,i>
+    	[<ignored line>]
+    	[<line1> <window shift (pixels)> <agc scale>]
+    	[<line2> <window shift (pixels)> <agc scale>]
+    	[...]
+    
+    .fmt example:
+    	11232 0                 ! Bytes per line, bytes per header.
+	15.500000 15.500000     ! i,q bias
+	y                       ! Flip i/q?
+	
+	While constructing a .fmt file, it may be useful to use the signal2amp
+    or spectra SAR processing debugging programs.
+
+
+
+	AISP can also read in a range pulse replica (chirp), or generate
+    a linear FM pulse replica.  If AISP finds a file with the same base name 
+    as the input file, but with extention ".replica", containing:
+    
+    .replica file:
+    	<number of samples>
+    	<real part, sample 1> <imaginary part, sample 1>
+    	<real part, sample 2> <imaginary part, sample 2>
+    	...
+    .replica example:
+    	1440
+    	0.0 -1.0
+    	1.2 0.3
+    	...
+
+       then AISP will use this range pulse replica to compress the data.  
+     Otherwise, it will synthesize a linear FM chirp.
+
+
+    HARDWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:
+    
+
+    AUTHOR:  Tom Logan, STEP Software Engineer, ASF
+	     Converted from Fortran Code donated by Howard Zebker
+	     Extensively modified by Orion Lawlor, ASF
+
+    CONTACT: tlogan@images.alaska.edu
+

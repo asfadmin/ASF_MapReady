@@ -1,0 +1,54 @@
+
+    NAME:       correlate - Automated correlation algorithm
+
+    SYNOPSIS:   correlate sim sar coef [log]
+                sim    - input simulated SAR file (image1)
+                sar    - input SAR file (image2)
+                coef   - output coefficients file
+                log    - log file name
+
+    DESCRIPTION:
+       Implements an image-to-image correlation specifically for use
+     on a SAR and a simulated SAR.  If the pixel size is greater than
+     or equal to 90 meters, a single pass is used.  If the first
+     correlation fails (more than 1/2 of the in-bounds points are
+     bad correlations) then the images are downsampled and the process
+     is repeated until the correlation suceeds, or the images are too small.
+     
+       In either case, the points that survive the correlation
+     are used to create a linear transformation that approximates the
+     translation from one image to the other.
+     
+       Each stage begins by estimating the gross offset between the images
+     using the fftMatch program, and then refines this offset using
+     greycorr.
+
+    OPTIONS:  The log file is optional.
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:                              REASON:
+    ----------------------------------------------------------------------
+    Unable to open log file                     Log file doesn't exist
+    Unable to get ddr file for image <file>     No ddr file exists 
+    CORRELATION FAILED:                         Failure in correlation
+          USING ZERO WARPING COEFFICIENTS
+    Program Aborted                             Unspecified
+
+    EXAMPLES:   
+        correlate fs27546100 p27546100 coef 27546100
+
+        This example will perform image-to-image correlation between the 
+      simulated SAR image, fs27546100.img, and the preprocessed SAR image,
+      p27546100.img, to create the coefficients file coef.ppf.  The results
+      of the correlation will be written to the log file 27546100.log.
+ 
+    SEE ALSO:   terrcorr, tpl_search, greycorr, resample, 2dmap, tpl_mult
+
+    HARWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:
+
+    AUTHOR:     Tom Logan, ASF Step Software Engineer
+
+    CONTACT:    tlogan@images.alaska.edu
+

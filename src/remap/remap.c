@@ -1,0 +1,339 @@
+/******************************************************************************
+NAME:  remap
+
+SYNOPSIS: 
+
+    remap <infile> <outfile>
+          [-rotate <deg>][-scale <sX> <sY>][-translate <tX> <tY>]
+          [-matrix <matrixFile>][-ppf <ppfFile>][-deltas <deltaFile>]
+                     [-quadratic <quadFile>][-warp <warpImages>]
+          [-nearest|-bilinear|-sinc
+                     |-kernel <sizeX> <sizeY>|-fileKernel <kernelFile>]
+          [-background <fill>]
+          [-byte [-map <min> <max>] |-char|-short|-int|-float|-double]
+          [-width <width>][-height <height>][-sameSize][-asDDR <ddr>]
+          [-log <file>]
+
+GENERAL DESCRIPTION:
+
+	Remap works with LAS 6.0 images.  Pass it two filenames.
+A DDR must exist for the input image, and a DDR will be created for the output.
+
+	Remap will perform a remapping and a resampling of the input image to the output
+image.  Remapping changes the LOCATION of pixels (e.g. translation); resampling
+changes the VALUE of pixels (e.g. a 3x3 kernel).  Remap will only work with
+one-band (i.e. greyscale) byte, short, long, or float LAS 6.0 images.
+
+	The other command line options can be entered in any order.  Although 
+case is significant, the unique start of each option is always sufficient 
+to identify it (e.g. "-rot 45" instead of "-rotation 45").  Specifing no 
+parameters (other than the file names) will result an output image
+which is in every way identical to the first.
+
+	For details on the command line parameters, see the man page.
+	
+EXTERNAL ASSOCIATES:
+	process_CLAs in CLA.c,
+	perform_mapping in mapping.c,
+	various Matrix2D utility routines in Matrix2D.c,
+	and LAS DDR/BDDR I/O routines.
+
+FILE REFERENCES:
+    NAME:               USAGE:
+    ---------------------------------------------------------------
+
+PROGRAM HISTORY:
+        VERS:   DATE:   AUTHOR:         PURPOSE:
+    ---------------------------------------------------------------
+	0.5	5/21/97	Orion Lawlor	Initial Development- needed
+					  system to remap ISAR float/complex data.
+	0.7	5/22/97	Orion Lawlor	Make project bigger+more general
+					  (Probably sheer masochism).  It now
+					  applies a
+					  general 2x3 matrix tranform to char,
+					  short, long,
+					  and float data of any size.
+	1.0	5/30/97	Orion Lawlor	Is now actually useful.  Maintains DDR
+					  correctly.
+					 Many bugs lost their buggy lives.
+					 Includes #option to do forward and
+					  reverse FFT.
+	1.2	6/19/97 Orion Lawlor	Works on .cpx data, component -by-
+					  component.
+	2.0     5/21/98 Orion Lawlor    Put mapping and sampling functions into
+					  their own files.
+	2.1     3/14/99 Orion Lawlor    Added -quadratic option and -asDDR
+					  options.
+	2.11    7/16/01 Rudi Gens	Added logfile switch
+	2.3     3/02    P. Denny        Updated Command line parsing
+
+
+HARDWARE/SOFTWARE LIMITATIONS: none
+
+ALGORITHM DESCRIPTION:
+
+	This program, in an attempt to be general, uses a "Mapping Function,"
+"Sampling Function," and data (as void *'s) for each.  The mapping function defines
+the spatial transformation between output image space and input image space, and
+is designed to not necessarily be linear.  The sampling function defines how 
+pixels from the input image are changed into pixels in the output image.
+
+	Each mapping or sampling function is responsible for allocating
+and maintaining its own data in mapData and sampData.  Since there can
+only be one mapping function and one sampling function, any function
+has unfettered rights to this variable, which is carried along between
+each function.
+
+	There are currently two supported mapping functions- a 2x3 matrix (matrixMap),
+and a quadratic 2D polynomial (quadraticMap).
+To add others, you should add your mapping function to the mappingFunction
+enumerated type in remap.h, then change calc_outDDR, process_CLAs, and
+perform_mapping to handle the new mapping.  But you probably won't need to
+do this, because a matrix tranformation is quite general.  It handles
+any combination of translation, scaling, rotation, and shearing.
+
+	It's probably more likely that you'll need to either add support
+for another sampling function.  The currently defined sampling functions
+are nearest neighbor (nearestSamp), bilinear interpolation (bilinearSamp),
+and uniform or nonuniform image convolution kernels (kernelSamp).  To add
+these, change the enum in remap.h, then add your parameters in process_CLAs,
+and finally change perform_mapping.
+
+BUGS: 
+	none (but could be faster)  
+	Also, remap is a large program, and may take while to learn.
+	But I've found it quite useful in many graphics-related tasks,
+	and ASF currently uses it for their complex interferometry,
+	and soon will use it for DEM geocoding.  I hope you enjoy it.
+
+
+******************************************************************************/
+/****************************************************************************
+*								            *
+*   Remap will perform a remapping and a resampling of the input image to   *
+*	  the output image. 						    *
+*   Copyright (C) 2001  ASF Advanced Product Development    	    	    *
+*									    *
+*   This program is free software; you can redistribute it and/or modify    *
+*   it under the terms of the GNU General Public License as published by    *
+*   the Free Software Foundation; either version 2 of the License, or       *
+*   (at your option) any later version.					    *
+*									    *
+*   This program is distributed in the hope that it will be useful,	    *
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
+*   GNU General Public License for more details.  (See the file LICENSE     *
+*   included in the asf_tools/ directory).				    *
+*									    *
+*   You should have received a copy of the GNU General Public License       *
+*   along with this program; if not, write to the Free Software		    *
+*   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
+*									    *
+*   ASF Advanced Product Development LAB Contacts:			    *
+*	APD E-mail:	apd@asf.alaska.edu 				    *
+* 									    *
+*	Alaska SAR Facility			APD Web Site:	            *	
+*	Geophysical Institute			www.asf.alaska.edu/apd	    *
+*       University of Alaska Fairbanks					    *
+*	P.O. Box 757320							    *
+*	Fairbanks, AK 99775-7320					    *
+*									    *
+****************************************************************************/
+
+#include "asf.h"
+#include "las.h"
+#include "Matrix2D.h"
+#include "remap.h"
+
+float VERSION = 2.3;
+
+float minFlt=-1, maxFlt=-1,backgroundFill=0.0;
+
+/* Prototypes */
+void grow(fPoint *min,fPoint *max,fPoint addThis);
+fPoint makePoint(float x,float y);
+void calc_outDDR(struct DDR *inDDR, mappingFunction map, struct DDR *outDDR);
+float getProjection(float x,float y,struct DDR *ddr,int val);
+void update_projection(struct DDR *inDDR, mappingFunction map, struct DDR *outDDR);
+
+
+/*grow: Increases the size of an axis-aligned box defined by two points min and max.*/
+void grow(fPoint *min,fPoint *max,fPoint addThis)
+{
+	if (addThis.x<min->x)
+		min->x=addThis.x;
+	if (addThis.x>max->x)
+		max->x=addThis.x;
+	if (addThis.y<min->y)
+		min->y=addThis.y;
+	if (addThis.y>max->y)
+		max->y=addThis.y;
+}
+fPoint makePoint(float x,float y)
+{
+	fPoint ret;
+	ret.x=x;
+	ret.y=y;
+	return ret;
+}
+/*Compute the values for the output DDR, based on the input DDR.*/
+void calc_outDDR(struct DDR *inDDR, mappingFunction map, struct DDR *outDDR)
+{
+/*Depending on the mapping function, we'll calculate the output extents differently.
+  In general, we're going to make the output image as big as it needs to be to hold
+  the positive X and Y part of the image, BUT we'll truncate the image if it crosses
+  the X or Y axis into negative coordinates.*/
+	fPoint max={-1000000000,-1000000000},min={1000000000,1000000000},cur;
+	printf("   Input dimensions: %ix%i (LxS).\n",inDDR->nl,inDDR->ns);
+	if (logflag) {
+	  sprintf(logbuf,"   Input dimensions: %ix%i (LxS).\n",inDDR->nl,inDDR->ns);
+	  printLog(logbuf);
+	}
+  	*outDDR=*inDDR;
+	updateDDR(map,inDDR,outDDR);
+	forwardMap(map,makePoint(0,0),&cur); grow(&min,&max,cur);
+	forwardMap(map,makePoint(0,inDDR->nl),&cur); grow(&min,&max,cur);
+	forwardMap(map,makePoint(inDDR->ns,0),&cur); grow(&min,&max,cur);
+	forwardMap(map,makePoint(inDDR->ns,inDDR->nl),&cur); grow(&min,&max,cur);
+	outDDR->ns=ceil(max.x);
+	outDDR->nl=ceil(max.y); 
+	
+}
+/*GetProjection:
+	Interpolates the projection coordinates of the given DDR 
+to find the projection coordinate of the given (pixel) point (x,y).
+If val==0, Northing coordinates are returned.  
+If val==1, Easting coordinates are returned.*/
+float getProjection(float x,float y,struct DDR *ddr,int val)
+{
+	float dx=x/ddr->ns,dy=y/ddr->nl;
+	float upint=ddr->upleft[val]+(ddr->upright[val]-ddr->upleft[val])*dx;
+	float loint=ddr->loleft[val]+(ddr->loright[val]-ddr->loleft[val])*dx;
+	return upint+(loint-upint)*dy;
+}
+/*UpdateProjection:
+	Updates the projection corner coordinates for the new 
+DDR.  It does so by reverse-projecting the corners of the new, output DDR
+into the old, trusted, input DDR space.  The coordinates of the corners of the
+output DDR are computed in input space using getProjection.	
+*/
+void update_projection(struct DDR *inDDR, mappingFunction map, struct DDR *outDDR)
+{
+	fPoint inPt,outPt;
+	inPt.x=inPt.y=0; map->doMap((void *)map,inPt,&outPt);
+	outDDR->upleft[0]=getProjection(outPt.x,outPt.y,inDDR,0);
+	outDDR->upleft[1]=getProjection(outPt.x,outPt.y,inDDR,1);
+	
+	inPt.x=outDDR->ns;inPt.y=0; map->doMap((void *)map,inPt,&outPt);
+	outDDR->upright[0]=getProjection(outPt.x,outPt.y,inDDR,0);
+	outDDR->upright[1]=getProjection(outPt.x,outPt.y,inDDR,1);
+	
+	inPt.x=0;inPt.y=outDDR->nl; map->doMap((void *)map,inPt,&outPt);
+	outDDR->loleft[0]=getProjection(outPt.x,outPt.y,inDDR,0);
+	outDDR->loleft[1]=getProjection(outPt.x,outPt.y,inDDR,1);
+	
+	inPt.x=outDDR->ns;inPt.y=outDDR->nl; map->doMap((void *)map,inPt,&outPt);
+	outDDR->loright[0]=getProjection(outPt.x,outPt.y,inDDR,0);
+	outDDR->loright[1]=getProjection(outPt.x,outPt.y,inDDR,1);
+}
+
+int main(int argc, char *argv[])
+{
+	int outPixelType,outWidth=0,outHeight=0;
+	int bandNo;
+	struct DDR inDDR,outDDR;
+	struct DDR *asDDR=NULL;/*DDR to copy projection info & size from.*/
+	FILE *in,*out=NULL;
+	mappingFunction map;
+	sampleFunction samp;
+	int inputIsComplex=0;
+  
+  /* First, we process the filename arguments.*/
+	char infile[255],outfile[255];
+	if (argc<3) usage(argv[0]);
+	strcpy(infile,argv[argc-2]);
+	strcpy(outfile,argv[argc-1]);
+	if (findExt(infile)!=NULL&&(0==strcmp(".cpx",findExt(infile))))
+		inputIsComplex=1;
+	if (findExt(outfile)!=NULL&&(0==strcmp(".cpx",findExt(outfile))))
+		if (inputIsComplex==0)
+			printf("   WARNING: Remapping complex to non-complex data has undefined results!\n");
+	in=fopenImage(infile,"rb");
+	out=fopenImage(outfile,"wb");FCLOSE(out);/*Create the image*/
+	out=fopenImage(outfile,"r+b");/*Re-Open for append (this lets us read & write).*/
+/*	printf("Remap input image: '%s'.  Output image: '%s'.\n",infile,outfile);*/
+
+	StartWatch();
+	system("date");
+	printf("Program: remap\n\n");
+	logflag=0;
+	
+  /*Next, we process the rest of the arguments.*/
+	outPixelType=process_CLAs(argc,argv,&map,&samp,&outWidth,&outHeight,&asDDR);
+	if (logflag) {
+	  StartWatchLog(fLog);
+	  printLog("Program: remap\n\n");
+	}
+  
+  /*Now we read in the input DDR.*/
+	c_getddr(infile,&inDDR);
+  
+  /*We now calculate the correct values for the output DDR.*/
+  	if (asDDR!=NULL)
+  	{/*We copy all the projection, etc. info from the given DDR*/
+  		outDDR=*asDDR;
+  		outDDR.dtype=inDDR.dtype;
+  		outDDR.nbands=inDDR.nbands;
+  	} else {
+  	/*We copy some fields from the input DDR & update the rest*/
+		calc_outDDR(&inDDR,map,&outDDR);
+		if (outWidth<0&&outHeight<0)
+			{outDDR.ns=inDDR.ns;outDDR.nl=inDDR.nl;}
+		if (outWidth>0)
+			outDDR.ns=outWidth;
+		if (outHeight>0)
+			outDDR.nl=outHeight;
+		update_projection(&inDDR,map,&outDDR);
+	}
+	printf("   Output dimensions: %ix%i (LxS).\n",outDDR.nl,outDDR.ns);
+	if (logflag) {
+	  sprintf(logbuf,"   Output dimensions: %ix%i (LxS).\n",outDDR.nl,outDDR.ns);
+	  printLog(logbuf);
+	}
+	if (outPixelType)/*Set the output pixel type*/
+		outDDR.dtype=outPixelType;
+	
+   /*Now we write out the new DDR.*/
+  	c_putddr(outfile,&outDDR);
+	
+/*Now we just call Perform_mapping, which does the actual I/O and the remapping.*/
+	for (bandNo=0;bandNo<outDDR.nbands;bandNo++)
+	{
+		if (outDDR.nbands>1)
+			printf("   Remapping band %d of %d...\n",bandNo+1,outDDR.nbands);
+		if (inputIsComplex)
+		{
+			inDDR.dtype=DTYPE_COMPLEX;
+			outDDR.dtype=DTYPE_COMPLEXREAL;
+			printf("   Remapping complex data-- real portion:\n");
+		}
+		perform_mapping(in,&inDDR,out,&outDDR,map,samp,bandNo);
+		if (inputIsComplex)
+		{
+			outDDR.dtype=DTYPE_COMPLEXIMAG;
+			printf("   Remapping complex data-- imaginary portion:\n");
+			perform_mapping(in,&inDDR,out,&outDDR,map,samp,bandNo);
+		}
+	}
+/*	printf("Remap completed sucessfully!\n\n");*/
+	StopWatch();
+	if (logflag) StopWatchLog(fLog);
+  
+  	killMap(map);
+	killSamp(samp);
+	return(0);
+}
+
+
+
+

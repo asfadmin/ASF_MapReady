@@ -1,0 +1,49 @@
+.TH airsarin 1 "June 2001"
+.SH NAME:
+airsarin \- converts JPL AIRSAR SAR images to LAS 6.0 format
+.SH SYNOPSIS:
+.B airsarin
+.BI " inJPLfile outLASfile"
+.SH DESCRIPTION:
+Airsarin is a image conversion tool used to convert JPL AIRSAR images
+into LAS 6.0 images. This is the first step of geocoding this data.
+.PP
+The outputs are the LAS image file, 
+outLASfile "\|.img,"
+a data descriptor record file, 
+outLASfile "\|.ddr,"
+for the input SAR image file 
+inJPLfile.
+The DDR will only contain the line, sample, and pixel size of the
+image.
+.PP
+Note that airsarin does a straight conversion from JPL AIRSAR format to
+LAS format-- the output pixels are linear SAR amplitude values.
+
+.SH COMMAND LINE OPTIONS:
+.TP
+.B inJPLfile
+Any type of AIRSAR image file.
+.TP
+.B outLASfile
+A LAS 6.0 format image with corresponding DDR.
+.SH ERROR MESSAGES:
+.SH MESSAGE_GIVEN:\t\t\t\tREASON:
+------------------------------------------------------------------------
+.SH EXAMPLES:
+.ce 1
+example% airsarin ts1185.demi2 c_demi2.img
+.PP
+Airsarin  converts the AIRSAR file ts1185.demi2 to the LAS 6.0 file
+c_demi2.img. Airsarin will also create the DDR file c_demi2.ddr.
+.PP
+.ne 13
+.SH SEE ALSO:
+.SH HARDWARE/SOFTWARE LIMITATIONS:
+.SH BUGS:
+.SH AUTHOR:
+\tJoshua Badgley, Alaska SAR Facility, Fairbanks, AK
+.SH CONTACT:
+.br
+\tAdvanced Product Development (apd@asf.alaska.edu)
+

@@ -1,0 +1,138 @@
+NAME:		ASF_META.A
+
+DESCRIPTION:	Library of metadata routines which are used
+		throughout the code.
+
+CONTENTS:
+This library contains the ASF-STEP standard metadata ingestion
+and analysis routines.  Metadata is "data about data", and 
+includes everything that comes with a SAR image except the
+actual pixel brightness values.  SAR images come with large 
+quantities of timing, location, and processing information.
+
+The routines in this library can extract geolocations 
+(meta_get_geo.c), state vectors, critical angles (meta_get.c), 
+doppler, slant range, time, and version information.
+
+The routines run from a "meta_parameters" structure
+(see asf_meta.h), which can be read from a simple ASCII
+".meta" file or a standard CEOS ".L" or ".ldr" file.
+We created the .meta file format in the winter of 1998-99 
+because it is often convoluted to extract metadata directly
+from CEOS files (which may have differing units, coordinate
+systems, missing values, etc).
+
+To read a meta_parameters structure from a file (or create one
+from CEOS if none exists), call meta_init (see asf_meta.h).  
+To create a new meta_parameters structure from CEOS 
+(even if a .meta exists), call meta_create.  To write a 
+meta_parameters structure to a .meta file, call meta_write.
+
+
+
+HIGHLIGHTS:
+All these routines work with all supported image types-- slant range,
+ground range, and even map projected.
+
+meta_parameters *meta_init(const char *fName);
+	Reads or creates a new meta_parameters structure.
+
+double meta_get_time(meta_parameters *sar,double yLine,double xSample);
+	Gets the time of aquisition (seconds from image start). 
+
+double meta_get_slant(meta_parameters *sar,double yLine, double xSample);
+	Gets the slant range to the target (meters from satellite).
+
+stateVector meta_get_stVec(meta_parameters *sar,double time);
+	Extract fixed-earth satellite state vector for the given time 
+	past image start.  Uses cubic interpolation (<2cm error over 30s)
+
+double meta_incid(meta_parameters *sar,double y,double x);
+	Extract SAR incidence angle (radians).
+
+double meta_look(meta_parameters *sar,double y,double x);
+	Extract SAR look angle (radians).
+
+void meta_get_latLon(meta_parameters *sar,
+	double yLine, double xSample,double elev,double *lat,double *lon);
+	Get latitude and longitude of given point in image, if it has
+	given elevation.
+
+double meta_phase_rate(meta_parameters *sar,const baseline base,int y,int x);
+	Return the interferometric phase rate (meters of elevation/radian
+	of phase) for the given point of the given image with the given baseline.
+
+
+EXAMPLE:
+/*BEGIN asf_meta example code
+Extracts a latitude and longitude for a given point
+in a SAR image.  Needs SAR CEOS or a .meta file.
+Works with slant range, ground range, or map projected images.
+*/
+#include "asf.h"
+#include "asf_meta.h"
+
+void main(void)
+{
+	double line=100,sample=200,elevation=0;
+	
+	char *inName="input_file";
+	meta_parameters *meta=meta_init(inName);
+	double lat,lon;
+	
+	meta_get_latLon(meta,line,sample,elevation,&lat,&lon);
+	printf("Line %f, sample %f -> latitude %.5f, longitude %.5f\n",line,sample,lat,lon);
+}
+/*END asf_meta example code*/
+
+IMPLEMENTATION:
+This library consists of two independent pieces-- meta_get and its
+cohorts work *with* an existing meta_parameters structure; while
+meta_init *creates* a meta_parameters structure from a CEOS file.
+
+The meta_get portion comprises:
+coniFetch.c          Read a "coni" file, which is a field-value file       
+coniFetch.h          include file for above       
+earthloc.h           geolocation include file      
+getLatLong.c         geolocation calling routine         
+getLoc.c             geolocation implementation    
+interp_stVec.c       cubic state vector interpolator          
+jpl_proj.c           JPL's map projection routines      
+latLon2timeSlant.c   convert lat/lon point to time/slant range (for map projected)              
+meta_coni.c          read/write a meta_parameters structure to a .meta file       
+meta_get.c           main API: extract general values from meta_parameters      
+meta_get_geo.c       main API: extract lat/lon from image line/sample          
+meta_get_geo2.c      main API: extract line/sample from lat/lon           
+meta_get_ifm.c       main API: interferometry-related calls          
+meta_get_util.c      main API: utility           
+read_baseline.c      read an interferometric baseline from a baseline file           
+
+The CEOS-reading routines are below:
+aisp_params.h        read SAR processing parameters from a .in file (header)     
+aisp_params.c        read SAR processing parameters from a .in file        
+ceos2ddr.c           get a LAS DDR for a CEOS image      
+ceos_io.c            easily read CEOS images     
+code_ceos.c          pack/unpack CEOS structures (use get_ceos.c)       
+endian.c             do byte-order conversions (byte swapping)    
+fixed2gei.c          convert state vector format from fixed-earth to intertial       
+gei2fixed.c          convert state vector from inertial to fixed-earth       
+get_ceos.c           read and unpack a CEOS structure      
+meta_create.c        driver: calls subsequent routines         
+meta_init.c          meta_parameters initialization       
+meta_init.h          header for above     
+meta_init_aisp.c     read SAR processing parameters into meta_parameters            
+meta_init_asf.c      read ASF CEOS parameters           
+meta_init_ceos.c     read generic CEOS parameters            
+meta_init_ceos.h     information about CEOS            
+meta_init_stVec.c    read CEOS state vector             
+set_era.c            determine format of CEOS leader (pre- or post- radarsat)     
+utc2gha.c            Convert a time to an (estimated) greenwhich hour angle     
+
+
+These files are general utilities used throughout the code
+dateUtil.c           Converts date/time between various formats (see dateUtil.h)      
+heading.c            Compute satellite heading (bearing to north)     
+slantRange2groundPixel.c   Convert slant range to ground range
+util3d.c             Various 3d vector/matrix utilities    
+yaw2doppler.c        Convert satellite yaw to estimated doppler & doppler rate         
+

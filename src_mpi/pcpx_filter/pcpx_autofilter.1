@@ -1,0 +1,65 @@
+    NAME:	pcpx_autofilter - Parallelized automatic complex image bandpass
+		filter
+
+    SYNOPSIS:	pcpx_autofilter <complex image in1.cpx> <complex image in2.cpx>
+		<complex image out1> <complex image out2> <num of processors>
+
+	<complex image in1.cpx>		Complex Input Image 1
+	<complex image in2.cpx>		Complex Input Image 2
+	<complex image out1>		Complex Output Image 1
+	<complex image out2>		Complex Output Image 2
+	<num of processors>		Number of Processors to use
+
+    DESCRIPTION:
+		pcpx_autofilter is actually a script that sequentially calls 
+	the following programs:
+
+	1.	cpx_spectrum - generates a spectrum for each of the two complex
+		images before the filtering
+
+	2.	gen_filt_params - generates the filtering parameter file which
+		tells the program pcpx_filter what information to keep and what
+		information to throw away.
+
+	3.	pcpx_filter - parallelized version of cpx_filter that is used to
+		implement the filtering of the data in azimuth.
+
+	4.	cpx_spectrum - generate a spectrum for each of the two complex
+		images after the filtering operation has taken place.
+
+    OPTIONS:
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ------------------------------------------------------------------
+
+    EXAMPLES:
+		
+	Suppose that you have two complex images, processed using different
+	doppler centroids and you want to increase the coherence of the interferogram.
+	The command line to perform this task using pcpx_autofilter is as follows.
+
+		pcpx_autofilter ers1.cpx ers2.cpx ers1_filtered ers2_filtered 8
+
+		This command would produce two complex images, ers1_filtered.cpx and
+	ers2_filtered.cpx that have been filtered and basebanded.  One problem with this
+	script can occur if the "which" command does not lie in the path on your system.
+	The mpirun command fails because it does not find the program pcpx_filter.  The
+	user must either modify the pcpx_autofilter script, or add the which command to
+	their path.  Modification amounts to simply editing the script and inserting the
+	absolute path to the program pcpx_filter as described in the man page for 
+	pcpx_filter.
+		
+    SEE ALSO:
+
+	cpx_autofilter(1), gen_filt_params(1), pcpx_filter(1)
+	
+    HARDWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:
+
+    AUTHOR: Mark Ayers, ASF Graduate Research Assitant, 2000
+
+    CONTACT: apd@asf.alaska.edu
+
+

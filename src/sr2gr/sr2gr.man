@@ -1,0 +1,43 @@
+
+    NAME: sr2gr - converts slant range images to ground range images
+
+    SYNOPSIS:	sr2gr infile inmeta outfile outmeta pixsiz
+
+       infile     base name (.img,.ddr)
+       inmeta     input metadata name
+       outfile    base name (.img,.ddr)
+       outmeta    output metadata name (.meta)
+       pixsiz     output pixel spacing (m)
+
+
+    DESCRIPTION:
+
+	This program converts slant range imagery into ground range
+	imagery.  The algorithm calculates the ground range to the
+        first pixel in the image and from the spacecraft ephemeris,
+	earth ellipsoid, and slant range to first pixel given in the
+	image's metadata.  It then uses the slant range spacing interval
+	to determine appropriate ground range positions.  The remapping
+	is performed using bi-linear interpolation.
+
+    OPTIONS:
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:			REASON:	
+    -------------------------------------------------------------------
+
+    EXAMPLE:
+
+    SEE ALSO:  deskew
+
+    HARDWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:
+
+    AUTHOR: Tom Logan, ASF
+
+    CONTACT:	apd@asf.alaska.edu
+		http://www.asf.alaska.edu/apd
+
+
+

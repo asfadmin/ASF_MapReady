@@ -1,0 +1,75 @@
+NAME:	cpx_autofilter - Automatic complex image bandpass filter
+
+SYNOPSIS:	
+
+    cpx_autofilter <cpx in_img1> <cpx in_img2> <cpx out_img1> <cpx out_img2>
+
+	<cpx in_img1>		Complex Input Image 1
+	<cpx in_img2>		Complex Input Image 2
+	<cpx out_img1>		Complex Output Image 1
+	<cpx out_img2>		Complex Output Image 2
+
+DESCRIPTION:
+	
+	cpx_autofilter will attempt to improve interferogram coherence
+        by filtering the complex images in azimuth.
+
+	It does this by calculating the frequencies at which at azimuthal
+	spectrum contains information in both images.  It then builds a 
+	bandpass filter, allowing only those frequencies with information
+	to pass.  
+
+	Finally, the program examines the metadata of both images and
+	determines the processed doppler frequencies.  Using these values, the
+	images are shifted by a common modulation frequency which is just the
+	negative average of the two dopplers.  This operation essentially
+	translates the data to baseband, removing any doppler carrier that 
+	may have existed in the datasets.
+
+		cpx_autofilter is actually a script that sequentially calls 
+	the following programs:
+
+	1.	cpx_spectrum - generates a spectrum for each of the two complex
+		images before the filtering
+
+	2.	gen_filt_params - generates the filtering parameter file which
+		tells the program pcpx_filter what information to keep and what
+		information to throw away.
+
+	3.	cpx_filter - program is used to implement the filtering of the
+		data in azimuth.
+
+	4.	cpx_spectrum - generate a spectrum for each of the two complex
+		images after the filtering operation has taken place.
+
+OPTIONS:
+
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+--------------------------------------------------------------------------
+
+EXAMPLES:
+		
+	Suppose that you have two complex images, processed using different
+	doppler centroids and you want to increase the coherence of the
+	interferogram.
+	The command line to perform this task using cpx_autofilter is as
+	follows.
+	cpx_autofilter ers1.cpx ers2.cpx ers1_filtered ers2_filtered
+
+	This command would produce two complex images, ers1_filtered.cpx and
+	ers2_filtered.cpx that have been filtered and basebanded.l
+		
+SEE ALSO:
+
+	pcpx_autofilter(1), gen_filt_params(1), pcpx_filter(1)
+    
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR: Mark Ayers, ASF Graduate Research Assistant, 2000
+
+CONTACT: apd@asf.alaska.edu
+         or visit http://www.asf.alaska.edu/apd
+

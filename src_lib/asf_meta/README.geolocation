@@ -1,0 +1,70 @@
+Basic SAR Geolocation Algorithm: 
+
+	When dealing with SAR imagery, it is often desirable to
+find the actual latitude and longitude of any given pixel in a
+SAR image.  The process of finding the latitude and longitude
+corresponding to any pixel is called geolocation.  This document
+describes the basic geolocation algorithm implimented in this
+library (geolocate.a). 
+
+	The geometry of a SAR scene is fundamentally pretty
+simple-- an orbiting satellite bounces a signal off the ground
+and listens for the echo.  From the delay, the direct,
+line-of-sight distance (called the slant range) to any given
+echo can be determined.  The position and velocity of the
+satellite is known, and the radius of the earth can be
+determined.  The general direction the SAR is looking and the
+doppler shift of the imaged point are all known. 
+
+	The set of points on the surface of the earth which are
+a given distance (the slant range) away from a given point (the
+satellite location) form an approximate circle on the ground
+(it's not quite a circle because the earth is ellipsoidal and
+the earth's surface is not smooth (terrain)).  The problem,
+then, in SAR geolocation, is just to find the point on that
+circle which has the correct doppler shift. 
+
+	Although this involves some rather interesting vector
+algebra, the computation is tractable.  Since a method of direct
+solution is not known, the code in this library computes the
+solution iteratively.  It usually takes less than a dozen
+iterations to convege within a millimeter to the mathematically
+correct solution. 
+
+
+	The true accuracy, however, is somewhat less than this;
+for one thing, individual pixels for ERS-1 and ERS-2 are
+approximately 20m on the ground.  In addition, the position and
+velocity (collectively referred to as the state vector) of the
+satellite is only known to within a few meters of accuracy.  In
+actual implimentation, the state vector must be interpolated
+from several known points, introducing additional error.  The
+largest potential error comes from the fact that the radius of
+the earth, and hence the elevation of the target point, must
+both be given before the location of the point is even known! 
+
+	Geolocation is still quite useful, however.  Assuming a
+constant, average elevation gives a reasonably accurate estimate
+for mesa-style areas (+/- 100m), although it is less accurate in
+mountainous areas (+/- 500m).  Once a SAR image has been
+terrain-corrected, the elevation can be taken as zero, and if
+the terrain correction is done well, the geolocation error can
+be less than sub-pixel (Lawlor et al, 1997). 
+
+					Orion Lawlor
+
+Refs:
+
+Lawlor, Orion et al.
+"Generation of fine-resolution DEM at Test areas in Alaska using
+ERS- SAR Tandem Pairs and Precise Orbital Data" 
+
+Proceedings of the Twelfth International Conference and Workshops
+Applied Geologic Remote Sensing
+Practical Solutions for Real-World Problems
+Denver, Colorado, USA
+17-19 November 1997
+
+You can find it on the WWW (http://www.erim.org/CONF/conf.html).
+
+

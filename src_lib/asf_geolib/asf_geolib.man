@@ -1,0 +1,204 @@
+NAME:		asf_geolib.a
+
+DESCRIPTION:	This library contains routines converted from LAS 6.0 which
+		perform the following operations:
+			1) processing of geometric mapping grids
+			2) conversion of geographic units
+			3) projection conversion routines for both forward
+		           and inverse mappings
+
+COORDINATE SYSTEMS:
+Each map projection (see the CONTENTS list below) essentially defines
+a 2-D coordinate system atop the (3-D) globe.  The map projection's
+"forward" transformation takes latitude (north/south angle to equator),
+and longitude (east/west angle to Greenwhich, England), in radians
+into some sort of "projection coordinates", almost always in meters.
+The "inverse" transformation converts projection coordinates into 
+latitude and longitude.  Positive latitude is degrees north; while
+positive longitude is degrees east.
+
+Projection coordinates are a 2-d approximation of the curved surface
+of the Earth, but the map projection can be chosen so the approximation
+is quite good for a few hundred kilometers.  Generally, distances
+measured in projection coordinates can be taken at face value
+(even though they're actually an approximation).
+
+The most common map projection used in the US is the Universal Transverse
+Mercator (UTM) projection.  UTM uses a "zone code" to identify which
+of 60 coordinate system origins to use.  For example, central Alaska spans
+UTM zones 4, 5, 6, and 7, so a UTM map or image of Fairbanks, Alaska might use
+UTM zone 5 or 6.
+
+Since UTM gets more and more distorted near the poles, polar researchers
+often choose the Polar Stereographic (PS) projection.  The standard arctic
+polar stereographic projection is oriented so longitude -45 degrees faces
+straight down. (This line is near Hudson's bay, Candada).  
+
+
+SAMPLE CODE: 
+/*BEGIN sample asf_geolib program
+This program converts a line,sample in a LAS image into
+projection coordinates, and then calls the asf_geolib routine
+inv_init to get a function pointer which will convert the projection
+coordinates to latitude and longitude.
+*/
+include "asf.h" /*Global Include file*/
+#include "ddr.h" /*for DDR info.*/
+#include "proj.h" /*for map projection stuff.*/
+
+void main(void)
+{
+...
+Inputs:
+	char *ddrName;/*Name of DDR file, with or without extension*/
+	int line,sample;/*Line and sample (zero-based) to convert to lat,lon*/
+Output:
+	double lat,lon;/*Latitude and longitude, in radians*/
+...
+/*Temporary storage variables*/
+	double projX,projY;/*Projection coordinates*/
+	struct DDR ddr;
+	int error;/*Returned error code (0==no error)*/
+	inverse_transform trans[100];/*Array of function pointers*/
+
+	c_getddr(ddrName,&ddr);/*Read DDR off disk*/
+
+/*Initialize map projection using parameters in DDR (should check return code, too)*/
+	inv_init(ddr.proj_code,ddr.zone_code,ddr.proj_coef,
+		ddr.datum_code,NULL,NULL,&error,trans);
+
+/*Convert input line,sample to projection coords*/
+	projX=ddr.upleft[1]+((double)sample)/ddr.ns*(ddr.upright[1]-ddr.upleft[1]);
+	projY=ddr.upleft[0]+((double)line)/ddr.nl*(ddr.loleft[0]-ddr.upleft[0]);
+	
+/*Convert projection coords to lat,lon (in radians)*/
+	trans[ddr.proj_code](projX,projY,&lon,&lat);
+
+/*Print out latitude & longitude (in degrees)*/
+	printf("Line %d, sample %d is lat %.5f, lon %.5f\n",line,sample,
+		lat*R2D,lon*R2D);
+}
+/*END sample asf_geolib program*/
+
+
+NUMERIC FORMAT:
+One oddity with the LAS projection fields is that they use so-called
+"packed-decimal" degrees.  Here, instead of storing an actual
+floating-point number of degrees, they store the degrees, minutes, 
+and seconds-- so "30.45071" might be 30 degrees, 45 arc-minutes,
+and 7.1 arc-seconds (equal to 30.751972222 actual degrees).
+Thus the projection information fields in a LAS DDR 
+have to be specially unpacked before they can be used. 
+This is an obtuse format for computers; but easy to read
+for humans.  Luckily, for_init and inv_init (in proj.h) 
+automatically convert these fields.
+
+
+
+CONTENTS:
+-------------------------------------------------------------------------------
+alberfor.c		ALBERS CONICAL EQUAL-AREA
+alberinv.c		"
+alconfor.c		ALASKA CONFORMAL
+alconinv.c		"
+azimfor.c		AZIMUTHAL EQUIDISTANT
+aziminv.c		"
+c_ckptid.c		Checks point id to see if it has been used before
+c_decdeg.c		Converts angles to total degrees
+c_degdms.c		Converts total degrees, total minutes, or total seconds
+			to packed degress,minutes,seconds.
+c_eval.c		Evaluates a polynomial at a given point
+c_getgrd.c		Read a geometric mapping grid file from disk
+c_getrwt.c		Read a resampling weight table file from disk
+c_grderr.c		Calculates errors which occured during gridding
+c_grdred.c		Discard rows and columns of the geometric mapping grid
+			that are within the tolerance of linear approximation
+			across neighboring rows and columns.
+c_mapedg.c		Calculate the minimum and maximum projection coordinates
+			for given upper left and lower right latitude, longitude
+			coordinates.
+c_proj.c		Converts coordinates from one map projection to another
+c_projon.c		Reports user entered projection parameters. This routine
+			also does parameter validation, checks compatablity of
+			datum codes, and supplies default datum codes.
+c_ptclse.c		Closes a tie point file
+c_putgrd.c		Write a geometric mapping grid file to disk
+c_steplr.c		Computes transformation coefficients based on a stepwise
+          		regression procedure.
+check_dms.c		Check packed DMS value entered--is it valid?
+cproj.c			Projection support routines
+eqconfor.c		EQUIDISTANT CONIC
+eqconinv.c		"
+equifor.c		EQUIRECTANGULAR
+equiinv.c		"
+for_init.c		Initialize forward projection parameters 
+gctp.c			Initializes entire GCTP package
+gnomfor.c		GNOMONIC
+gnominv.c		"
+goodfor.c		GOODE'S HOMOLOSINE EQUAL AREA
+goodinv.c		"
+gvnspfor.c		GENERAL VERT. NEAR-SIDE PERSPECTIVE
+gvnspinv.c		"
+hamfor.c		HAMMER
+haminv.c		"
+imolwfor.c		INTERRUPTED MOLLWEIDE EQUAL AREA
+imolwinv.c		"
+inv_init.c		Initialize inverse projection parameters 
+lamazfor.c		LAMBERT AZIMUTHAL EQUAL-AREA
+lamazinv.c		"
+lamccfor.c		LAMBERT CONFORMAL CONIC
+lamccinv.c		"
+make.solaris		Makefile for solaris systems
+make.sunos		Makefile for sunos systems
+merfor.c		MERCATOR
+merinv.c		"
+millfor.c		MILLER CYLINDRICAL
+millinv.c		"
+molwfor.c		MOLLWEIDE
+molwinv.c		"
+obleqfor.c		OBLATED EQUAL-AREA
+obleqinv.c		"
+omerfor.c		OBLIQUE MERCATOR (HOTINE)
+omerinv.c		"
+orthfor.c		ORTHOGRAPHIC
+orthinv.c		"
+paksz.c			This function converts a packed DMS angle to seconds
+polyfor.c		POLYCONIC
+polyinv.c		"
+proj_err.c		projection error routine
+proj_print.c		projection print routine
+proj_report.c		projection report routine
+prt_spcs_zone.c		Print the state or area which corresponds to the state
+			plane coordinate system zone id entered by the user.
+			(File version)
+psfor.c			POLAR STEREOGRAPHIC
+psinv.c			"
+psupport.c		Package-specific support routines
+report.c		Projection support routines 
+robfor.c		ROBINSON
+robinv.c		"
+sinfor.c		SINUSOIDAL
+sininv.c		"
+somfor.c		SPACE OBLIQUE MERCATOR
+sominv.c		"
+spcs_zone.c		Print the state or area which corresponds to the state
+			plane coordinate system zone id entered by the user.
+			(Screen version)
+sphdz.c			This function assigns values to the semimajor axis,
+			semiminor axis, and radius of sphere.
+spheroid.c		Places spheroid values into projection parameter array
+sterfor.c		STEREOGRAPHIC
+sterinv.c		"
+stplnfor.c		STATE PLANE
+stplninv.c		"
+tmfor.c			UNIVERSAL TRANSVERSE MERCATOR
+tminv.c			"
+untfz.c			Determines the convergence factor between the input
+		        and output unit types.
+vandgfor.c		VAN DER GRINTEN I
+vandginv.c		"
+wivfor.c		WAGNER IV
+wivinv.c		"
+wviifor.c		WAGNER VII
+wviiinv.c		"
+

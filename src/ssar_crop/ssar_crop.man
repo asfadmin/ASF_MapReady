@@ -1,0 +1,52 @@
+
+    NAME:  ssar_crop - Crop SCANSAR data to bounding box & correct geolocations
+
+    SYNOPSIS:  ssar_crop inSAR outfile [-c]
+	
+			inSAR -- scansar image for input.
+			outfile -- CEOS output file.
+
+    DESCRIPTION:
+
+	ssar_crop clips a scansar image to a minimum external bounding box
+     and creates a CEOS formatted output file with the map projection data
+     record modified to fit the new (cropped) size of the image.  It also 
+     searches the image for the corner locations and modifies the facility
+     data record geolocations to match those found in the actual data file. 
+
+    OPTIONS: 
+ 
+          -c :: clip to the minumum image corners.
+
+	  This option provides clipping that is intended to remove all of the
+          black fill from a file.  Use caution, this also has the capability 
+	  of removing good image data.  It should only be used on 
+	  images with small rotations (like AT/CT).
+
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+    The chip extracted is all zeros		corner location search failed
+    Unable to determine distinct corners	corner location search failed
+
+    EXAMPLES:
+
+    SEE ALSO:
+
+    HARDWARE/SOFTWARE LIMITATIONS:
+
+	Because this algorithm involves a thresh hold type search, it
+	may fail.  Several internal checks are made to trap any errors,
+        but if problems arise please contact the Alaska SAR Facility.
+
+    BUGS: None known
+
+    AUTHOR:   Tom Logan, ASF
+
+    CONTACT:  	apd@asf.alaska.edu
+		http://www.asf.alaska.edu/apd
+
+
+
+

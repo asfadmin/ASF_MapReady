@@ -1,0 +1,89 @@
+NAME:
+     auto_sar_mosaic - create a single mosaic from  two  or  more
+     SAR images
+
+SYNOPSIS:
+
+     auto_sar_mosaic [-c] [-h] [-p pixel_size] [ -i] [-f fill]
+            projfile projkey output_file <input files...>
+
+
+DESCRIPTION:
+     auto_sar_mosaic will assemble SAR CEOS images, from any swath
+     or frame, into a large mosaic in LAS format. 
+
+OPTIONS:
+     -h      Create a color image.  The  first  picture  will  be
+             red,  the next green, the next blue, cycling through
+             red again.
+
+     -c      Specifying this option will prevent  auto_sar_mosaic
+             from performing a radiometric calibration of the SAR
+             data. 
+
+     -p pixel_size
+             Set output pixel size to pixel_size meters. 
+
+     projfile
+             Projection file used for geocoding.
+
+     projkey
+             Projection key used for geocoding.
+
+     -i      Create an imageid mosaic.
+             An image id mosaic is a mosaic that has the same out-
+             line as the image, but each  pixel  has a value that
+             corresponds  to  the  id  of the image where it ori-
+             ginated.
+     
+     -f fill
+             Fills the background of the images with fill (default zero).
+
+     output_file
+             Specify the output file  name. This is a LAS image
+             that auto_sar_mosaic will create.
+
+     input_file
+	     SAR CEOS images
+
+ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+EXAMPLES:
+     This command will combine the SAR CEOS images E1203, E1923,
+     and E1935 into a combined LAS image "mosaic.img".  The
+     projection file is "polar.proj" (created using projprm)
+     and projection key is "ps1".
+
+            example% auto_sar_mosaic polar.proj ps1 mosaic \
+            			E1203 E1923 E1935
+
+     Works exactly as above, but the data is  not  calibrated  before
+     performing the mosaic.
+
+          example% auto_sar_mosaic -c polar.proj ps1 mosaic \
+            			E1203 E1923 E1935
+
+     All of the above examples would  have  created  a  mosaic
+     image.  To  create  an  imageid mosaic, you would have to add
+     the -i option.  
+
+
+SEE ALSO:
+     calibrate(1), concat(1),  resample(1), sarin(1), geocode(1)
+
+HARDWARE/SOFTWARE LIMITATIONS:
+     A projection file must be created before running  this  pro-
+     gram.  Use the projprm(1) program to create such a file.  
+     See  projprm  for  more details.
+
+BUGS:
+
+AUTHOR:
+     Mike Shindle, Alaska SAR Facility, Fairbanks, AK
+     Orion Lawlor, Alaska SAR Facility, Fairbanks, AK
+
+CONTACT:
+    aps@asf.alaska.edu
+    http://www.asf.alaska.edu/apd

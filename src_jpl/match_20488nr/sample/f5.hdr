@@ -1,0 +1,5 @@
+                                          sch ;  Data file type 
+            251            251                ;  Data file dimensions 
+        100.000        100.000                ;  Post Spacing
+      -12600.00      -12600.00                ;  Starting corner position (s,c)
+     40.6684000   -122.5371000    180.0000000 ;  Peg position (WGS-84)

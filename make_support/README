@@ -1,0 +1,42 @@
+README file--  Answers the question: 
+
+ "What the heck is going on in asf_tools/make_support/ ?"
+
+    Here at ASF, we have a top-level Makefile sitting
+in asf_tools which calls each individual program's
+makefile.  This file has to know about each program's
+name, directory, and need for libraries.  In addition,
+in autotar, we have a script called tarfile which will
+automatically tar up the source and/or binaries for
+each of several different platforms for each program
+and tool.  Maintaining all these files, and keeping them
+consistent, has gotten to be a big hassle.
+
+    Hence, to unify all these separate lists of asf software
+into one, computer-readable master list, I've unified all
+these separate lists into one computer-readable master list.
+It's called "master_program_list", and it's in this directory.
+There's also a program called "makemake", which parses the
+master_program_list, updates the autotar directory, and 
+creates the top-level Makefile.
+
+   To run this program, and update these files, just 
+type makemake.  To add a program or tool, modify
+master_program_list, and run makemake.  Do note that
+makemake depends also on each individual program's
+Makefile to find library dependencies.
+
+   To recompile makemake, just type
+ --> make
+
+   To save on disk space, this program is tarred up with
+our source code instead of using many different platform 
+makefiles.  The 'config' script will automatically call
+makemake and create the top-level Makefile.
+
+   To find out more, check out master_program_list,
+makemake.c, or makestart.
+
+			Orion Lawlor.
+			Trying to make life make sense.
+			Only mostly failing.

@@ -1,0 +1,32 @@
+
+    NAME:	tpl_mult - Applies scaling to a tie point file 
+
+    SYNOPSIS:	tpl_mult factor intpl outtpl
+
+           factor      floating point multiplication factor
+           intpl       input tie point location file
+           outtpl      output tie point location file
+
+    DESCRIPTION:  Multiplies all points in a tie point file by a scaling
+		factor.  Used for two-pass correlation.
+
+    OPTIONS: 	None
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:			REASON:
+    ----------------------------------------------------------------------
+    Unable to open input file		Incorrect file name
+    Unable to open output file		Incorrect file name 
+
+    EXAMPLES:	tpl_mult 3.0 tpl_1 tpl_2
+
+    SEE ALSO:	terrcorr, tpl_search, greycorr, correlate, 2dmap
+
+    HARWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:	None known
+
+    AUTHOR:	Tom Logan, ASF STEP Software Engineer
+
+    CONTACT:	tlogan@images.alaska.edu
+

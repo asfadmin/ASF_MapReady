@@ -1,0 +1,74 @@
+.TH amp2img 1 "April 2002"
+.SH NAME:
+amp2img \- convert a float .amp file into a byte image.
+.SH SYNOPSIS:
+.B "amp2img"
+ [-look lxs] [-step lxs] [-log <log_file>] [-quiet] <infile> <outfile>
+.SH DESCRIPTION:
+.B "Amp2img"
+(amplitude to image) converts an amplitude file into a byte image. This
+process also decreases the image dimensions by performing a box average on
+some number of pixels.  For ERS-1 the box is often some multiple of 5x1
+in order to produce multilooked pixels with near-unity aspect ratio. Whereas
+.B "ml(1)"
+turns an interferogram (both amplitude and phase) into an image, 
+.B "amp2img"
+creates an image that resembles the landscape. This image can give the 
+user an idea of the ground/area in the interferogram.
+.PP
+In
+.B "amp2img,"
+look area can be defined with command line arguments, but has default
+values of 1 col (1 pixel in range) and 5 rows (5 pixels in azimuth). This
+look area is equal to the step area. The step area defines the size of the
+input area equal to 1 pixel in the output area. The look area defines how
+much input data will be used to determine the value of one pixel in the
+output data. 
+.B "Amp2img"
+uses a default value of 5x1 rows for step area. In most cases,
+the default look values should work. For noisy data, try a look area 
+of 10x2 rows. 
+.PP
+Amp2img creates a one-banded, byte image as output. 
+.SH COMMAND LINE OPTIONS:
+.TP 8
+.B "-look \f L_linesxS_lines\fP"
+Change number of look lines and samples. Default is 5x1.
+.TP 8
+.B "-step \f S_linesxS_samples\fP"
+Change number of step samples. Default is 5x1.
+.TP
+.B "-log \f log_file\fP"
+Allows the output to be written to a log file.
+.TP
+.B "-quiet "
+Suppresses the output to the essential.
+.TP
+.B "infile"
+Input amplitude file, with extension added. Usually the output of igram(1).
+.TP 8
+.B "outfile"
+Output image, without extension.
+.SH EXAMPLES:
+.ce 1
+example% amp2img ifm1.amp fred
+.PP
+Convert the amplitude file ifm1.amp (ifm1.ddr and ifm1.meta) into 
+an image file named fred.img.  Use a look line of 5 and a look 
+sample of 1. 
+.PP
+.ce 1
+example% amp2img -look 10x2 ifm1.amp fred
+.PP
+Same as above except change the look area to 10 rows and 2 cols.
+.SH SEE ALSO:
+.BR sqrt (1), ml (1)
+.SH HARDWARE/SOFTWARE LIMITATIONS:
+.SH BUGS:
+.SH AUTHOR:
+\tTom Logan, Alaska SAR Facility, Fairbanks, AK
+.SH CONTACT:
+\tapd@asf.alaska.edu
+\tor visit http://www.asf.alaska.edu/apd
+
+

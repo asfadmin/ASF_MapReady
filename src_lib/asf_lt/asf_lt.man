@@ -1,0 +1,31 @@
+
+NAME:		ASF_LT.A
+
+DESCRIPTION:	Library of LAS labelled table processing routines that
+		have been ported to remove all TAE dependencies. 
+
+OVERVIEW:
+The LAS labelled table format is an odd, unattractive
+ASCII format which is now only used to store map projection
+coefficents (see projprm and geocode).
+
+
+CONTENTS:
+---------------------------------------------------------------------------
+close_tab.c	Close table
+error.c		Report errors
+get_record.c	Read a record
+get_vector.c	Return label vector as a linked list from I/O buffer
+getfieldptr.c	Return pointer to record field of Labeled Table record
+getstrfield.c   Return string value from Labeled Table I/O buffer
+make.solaris    Makefile for solaris systems
+make.sunos	Makefile for sunos systems
+open_tab.c	Opens the Labeled Table file with the specified access
+put_matrix.c	Write matrix into Labeled Table I/O buffer
+put_record.c	Write a logical record to Labeled Table I/O buffer
+put_vector.c	Write label vector into Labeled Table I/O buffer
+putnullfld.c	Write a null field into Labeled Table I/O buffer
+putnullmatr.c   Write a null matrix into Labeled Table I/O buffer
+putstrfield.c	Write string value into Labeled Table I/O buffer
+read_tab.c	Physical read from Labeled Table file into I/O buffer
+write_tab.c	Physical write from I/O buffer into Labeled Table file

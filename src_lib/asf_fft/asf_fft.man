@@ -1,0 +1,45 @@
+NAME:		ASF_FFT.A
+
+DESCRIPTION:	Library of Fast Fourier Transform routines.
+
+CONTENTS:
+This library contains the ASF-STEP standard Fast Fourier
+Transform (FFT) routines.  They are a very fast software
+implementation of the discrete FFT, and include both forward,
+reverse, 2d and 3d FFTs.  In general, they are 2-3 times 
+faster than the standard Numerical Recipies FFT, and don't
+use Fortran array indexing.
+
+
+This code was taken from the INFO-MAC hyperarchive, at
+http://hyperarchive.lcs.mit.edu/HyperArchive.html
+
+The file's abstract was:
+
+X Abstract of INFO-MAC archived encoded Mac binary file
+X    'dev/src/ffts-for-risc-2-c.hqx'
+X   Uploaded 01/27/98   161947 bytes
+X 
+X From: green_jt@VSDEC.Npt.NUWC.Navy.Mil
+X Subject: FFTs-for-RISC-2-c
+X 
+X Enclosed is a stuffit archive of version 2.0 of my 'C' source code fft 
+X library.
+X 
+X Very-Fast Fourier Transform routines.  Routines are provided for real
+X and complex forward and inverse 1d and 2d fourier transforms and 3d
+X complex forward and inverse ffts. I coded these to optimize execution
+X speed on Risc processors like the PowerPC. All fft sizes must still be a
+X power of two. 
+X 
+X This code is public domain, do anything you want to with it.
+X 
+X - John Green
+
+(John Green was the original author, and is not affiliated with 
+ASF-STEP). 
+
+For support, contact
+	rguritz@images.alaska.edu
+or visit
+	http://www.images.alaska.edu/

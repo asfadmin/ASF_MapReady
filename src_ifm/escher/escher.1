@@ -1,0 +1,56 @@
+.TH escher 1 "1 April 1999"
+.SH NAME:
+escher \- unwrapped an interferogram phase file using the branch cut method.
+.SH SYNOPSIS:
+.B "escher"
+.BI "<source.phase> <output.phase> [x y]"
+.SH DESCRIPTION:
+.B "Escher"
+unwraps a wrapped phase file using the Goldstein branch-cut method. The
+resultant phase file is unwrapped in all areas that are not branch cuts,
+singularities, or grounding lines. A masking file, which has the same name as
+the output file with a .mask appended, is created to identify the different
+areas of the file.
+.PP
+The output phase file is a float file. The output masking file is a byte
+file. Both files have the same dimensions as the input file.
+.PP
+.SH COMMAND LINE OPTIONS:
+.TP 8
+.B "<source.phase>"
+Input wrapped phase file (.phase and .ddr).
+.TP 8
+.B "<output.phase>"
+Unwrapped phase file (.phase and .ddr). 
+.TP 8
+.B "x"
+X or column location of seed point. Default is center of image.
+.TP 8
+.B "y"
+Y or row location of seed point. Default is center of image.
+.TP 8
+.SH ERROR MESSAGES:
+MESSAGE_GIVEN: \t\t\t\t\tREASON:
+------------------------------------------------------------
+.SH EXAMPLES:
+.ce 1
+example% escher ml12 uwp12
+.PP
+Unwrap the phase file ml12.phase and place its output in the file
+uwp12.phase. A masking file will be created with the values uwp12.phase.mask.
+.PP
+.ce 1
+example% escher ml12 uwp12 100 200 
+.PP
+Unwrap ml12 starting at line 200, sample 100. 
+.SH SEE ALSO:
+.BR deramp (1), ml (1)
+.SH HARDWARE/SOFTWARE LIMITATIONS:
+.SH BUGS:
+.SH AUTHOR:
+\tMike Shindle, Alaska SAR Facility, Fairbanks, AK
+.SH CONTACT:
+\tapd@asf.alaska.edu
+\thttp://www.asf.alaska.edu/apd
+
+

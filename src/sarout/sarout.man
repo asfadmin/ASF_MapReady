@@ -1,0 +1,44 @@
+
+    NAME: sarout - product generation program
+
+    SYNOPSIS: sarout [-L inCeos] <m|c|x|d> <inMeta> <inImg> <outCeos>
+
+    DESCRIPTION:
+  	   Sarout converts images that are formatted in the STEP internal
+        .meta style into ASF CEOS formatted products.  The inputs can
+	be of type .raw, .cpx, or .img to create output products of type
+        CCSD, SLC, or detected images, respectively (see modes list below).
+
+    Modes:
+        m       Convert .raw into CCSD metadata (.L) file only
+        c       Convert .raw into CCSD
+        x       Convert .cpx into COMPLEX
+        d       Convert .img into DETECTED IMAGE
+
+    Option:
+	-L inCeos	When using this option, the CEOS leader file is first
+			created using values from the inCeos.L file.  These
+			are then modified to match the input .meta file.  In
+			this way, one can create a modifiied CEOS file that
+			still has all of the information from the original.
+ 
+
+    EXAMPLES:
+
+    SEE ALSO:
+
+    HARDWARE/SOFTWARE LIMITATIONS:
+	This version of sarout does not fill all of the fields in the CEOS
+	product.  Check the readme file to get a full list of the invalid
+        fields.
+
+    BUGS:
+
+    AUTHOR: Tom Logan, ASF
+
+    CONTACT: apd@asf.alaska.edu
+	     http://www.asf.alaska.edu/apd
+
+
+
+

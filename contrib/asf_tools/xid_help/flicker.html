@@ -1,0 +1,100 @@
+<TITLE>5.0 General Display Capabilities</TITLE>
+<H2>5.0 General Display Capabilities</H2>
+
+<H2>5.1 Flicker Loaded Images</H2>
+
+The flicker function allows a user to view, in sequence, a specified list
+of images.  The user must first build a list of images to flicker.  This is
+done much like images are selected for viewing in the <B>Show</B> function.
+The user may select combinations of plane numbers or previously saved image 
+combinations for flickering.  To select a combination of planes for flickering,
+the user need only use the
+mouse to select a single plane number from each plane list (i.e., one for 
+the red, one for the green and one for the blue channel) and press the
+<B>accept</B> button.  If only 2 image planes are selected, the third will
+be a duplicate of one of the selected planes.  There will be a slight delay
+while the flicker image is being created and once it is, the selected 
+combination will be dislayed in the <B>Flicker List</B>.  To flicker a black 
+and white (i.e., gray scale image), select only one plane number from any 
+plane list or select the same plane number in all three lists and press the 
+<B>accept</B> button.  To add a previously saved combination to the flicker
+list, select the name and press the <B>accept</B> button.  
+<P>
+
+To flicker images with mappings applied, the user must first save the band
+combinations and the associated mapping using the <B>save</B> option in
+the <A href=show.html#save>Show</A> function.  The saved band combination
+names will then appear in the save list and they can be selected for
+flickering.
+
+<P>
+<IMG SRC="flicker.gif">
+<P>
+
+<DL>
+<DT><B>Red, Green, and Blue Plane Lists:</B>
+<DD>The plane lists show the user a list of plane numbers that 
+    contain valid image data.  The user chooses the combinations of
+    plane numbers to flicker from these lists.
+<P>
+
+<DT><B>Save List:</B>
+<DD>The list of currently saved band combinations and mappings.  To select
+    a previously saved combination for flickering, select the name and press 
+    the <B>accept</B> button.
+<P>
+
+<DT><B>Flicker List:</B>
+<DD>The list of currently selected plane number combinations and saved image
+     combinations to flicker.
+<P>
+
+<DT><B>Delete:</B>
+<DD>Delete the selected item from the flicker list.  The <B>delete</B> button
+    is sensitive only when an item has been selected from the flicker list.
+    Image data is not deleted; only the reference to the band combination
+    and mapping is removed from the flicker list.
+<P>
+
+<DT><B>Accept:</B>
+<DD>Accept the currently selected plane combination or saved image combination
+    and build the flicker image.  On 8-bit displays, choosing a color image 
+    for flickering implies the selected planes must be sent through the color 
+    compression algorithm.
+<P>
+
+<DT><B>Step:</B>
+<DD>Display the next image in the flicker list.  Image combinations will be
+    flickered in the order they were added to the flicker list.  The <B>
+    step</B> button is used to manually step through each image in the list.
+<P>
+
+<DT><B>Start:</B>
+<DD>Begin the automatic flicker process.  Each image in the flicker list
+    will be displayed in succession.  The number of seconds between the 
+    display of each image is determined by the <B>rate slider</B>.
+<P>
+
+<DT><B>Rater Slider:</B>
+<DD>The delay, in number of seconds, between the display of each image
+    combination in the flicker list.  The delay may be from 0 seconds to
+    10 seconds with a default of 1 second.  <B>Note:</B> it is not advisable
+    to reduce the delay to 0 seconds.  This causes the flicker process to
+    execute as fast as the host CPU will allow.  This makes it difficult
+    for the application to process other events like button presses (for
+    stopping the flicker process) because the process is spending all it's time
+    displaying images.
+<P>
+
+<DT><B>Stop:</B>
+<DD>Stop the automatic flicker process. The last image displayed will become
+    the currently displayed image.
+<P>
+
+<DT><B>Clear:</B>
+<DD>Clear all specifications from the flicker list.
+<P>
+
+<DT><B>Dismiss:</B>
+<DD>Close the flicker panel.
+</DL>

@@ -1,0 +1,39 @@
+NAME:		INCLUDE DIRECTORY
+
+DESCRIPTION:	This directory contains all of the include files required
+		by the ASF STEP software.  Most of these were converted 
+		from LAS 6.0 files.
+
+CONTENTS:
+------------------------------------------------------------------------------
+asf_las.h		Header file for asf_las.a functions.
+asf_sar.h		Header file for asf_sar.a functions.
+asf_tm.h		Header file for asf_tm.a functions.
+buf.h			LAS buffers
+ceos.h			CEOS structure definitions
+cm.h			LAS Definitions for cm files
+cproj.h			LAS Header for projection transformation files
+datasize.h		LAS Defines the size of datatypes
+ddr.h			LAS Data Descriptor Records definitions
+desc.h			LAS Descriptor
+diskio.h		LAS Disk I/O 
+display.h		LAS Display
+fdesc.h			LAS File Descriptor
+geompak.h		LAS Include file of geometric transformations
+ieee.h			LAS IEEE constant values
+imageio.h		LAS Image processing definitions
+itwoway.h		Header file for twoway program
+las.h			LAS standard LAS include files
+locinc.h		LAS image file processing
+ltable.h		LAS labelled table routines
+nad27sp			LAS Zone list
+nad83sp			LAS Zone list
+pixman.h		LAS Pixel management
+proj.h			LAS Projection definitions 
+ptio.h			LAS Tie Point files 
+resolve.h		Header file for the resolve program
+sarsim.h		Header file for the sarmodel code
+sysdef.h		LAS Defines valid systems
+typlim.h		LAS Data type limits 
+vll.h			LAS File access 
+worgen.h		LAS General world include file

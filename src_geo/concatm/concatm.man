@@ -1,0 +1,78 @@
+
+    NAME:	concatm --  Creates a mosaic of LAS 6.0 images
+
+    SYNOPSIS:
+
+       concatm [-c][-m mask][-v ovrlp] <outfile> <outfile_nl> <outfile_ns>
+                             <infile1> <infile1_sl> <infile1_ss>
+                             <infile2> <infile2_sl> <infile2_ss>
+                             [<infileN> <infileN_sl> <infileN_ss>] [...]
+ 
+	outfile		output file name
+	outfile_nl	number of lines in output image
+	outfile_ns   	number of samples in output image
+	infileN		input file name #N
+	infileN_sl	starting line in output image to place fileN
+	infileN_ss	starting samp in output image to place fileN	
+
+    DESCRIPTION:
+	     Creates an output image by overlaying each input image into
+	the output space at the user specified locations.  This Unix routine
+	provides similar functionality to the LAS 6.0 routine concat-manual,
+	but operates from the Unix command line.  The output is a large area
+	image with a valid DDR, describing the geolocation of the image.
+
+	inputs:  file1 sl1 ss1 [ file2 sl2 ss2  ... ]
+
+		LAS 6.0 .img files and their .ddr metadata files.
+		ss1,sl1 gives the location of this input file in the
+		output image.  At least one input image must be
+		specified, and up to 50 are allowed.  Inputs file names
+		should not include extensions (.img will be appended).
+
+	output:  outfile.img, outfile.ddr
+
+	    	LAS 6.0 .img file and its .ddr file giving the geolocation.
+		Unlike the original LAS module, this parameter must be
+		specified.  No extension should be given on the command
+		line, the .img file name extension will be appended.
+
+	The commmand line option groups can be entered in any order,
+	where [-o out nl ns], [-m msk], [-v ovr], and [filex slx ssx] are 
+	the four permissible groups.
+
+
+    OPTIONS:
+        -c              Create 3-band color output mosaic.  The first image 
+                        is red, the second green, the third blue, the 
+                        fourth red again, ...
+                        
+	-m mask		Sets mask value for output mosaic, default is 0.
+
+	-v ovrlp	Overlap pixel options.  Can be REPLAC, LEAVE, or AVER.
+			Default is REPLAC.
+
+    EXAMPLES:
+	example>concat strip 1662 3299 87239 127 1 87240 53 883 87241 1 1764
+
+	This example creates the output mosaic strip.img by placing all of
+	the pixels from the input images 87239.img, 87240.img, and 87241.img
+	into the output space based on the given positions.  The background
+	(mask) values are all set to 0 by default and overlapping pixels are
+	simply replaced by the newer values.  The input images' .ddr files
+	are all consulted, and the output file strip.ddr will contain valid
+	geolocation information for the output image.
+
+    SEE ALSO: sarin		converts ASF images to LAS 6.0 images
+	      sarautoreg	automatically geocodes ASF SAR images
+
+    HARDWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:
+
+    AUTHOR:	Removal of TAE dependencies performed by T. Logan (ASF)
+
+    CONTACT:	apd@asf.alaska.edu
+		http://www.asf.alaska.edu/apd
+
+

@@ -1,0 +1,87 @@
+
+    NAME: metadata.c -- retrieves ceos structures from SAR metadata
+
+    SYNOPSIS:	metadata [-f] rectypes infile
+         Where, the rectypes are:
+                u               Data Set Summary Record
+                m               Map Projection Data Record
+                l               Platform Position Data Record
+                a               Attitude Data Record
+                r               Radiometric Data Record
+                q               Data Quality Summary Record
+		p		Processed Data Histograms Record
+                h               Signal Data Histograms Record
+                s               Range Spectra Record
+                f               Facility Related Data Record
+                i               Image File Descriptor Record
+		b		Leader File Descriptor Record
+
+          infile                the base name of the SAR image
+          -f                    specifies writing the data to an output file
+
+    DESCRIPTION:
+        Reads infile.ext, where ext is one of L, D, ldr, trl, tlr, or dat
+        to find the record type specified.  Once found, converts the data
+        to a structure of values and prints the values out, either to the
+        screen or to file as specified by the -f switch.
+
+        This program handles both old ASF format image triplet (leader,
+        data, trailer) and new ASF format pair (leader, data) files.
+        New format files are "looked for" first.
+
+    OPTIONS:
+	-f option selects dumping output to a file.  One file will be
+        created for each record type choosen.  The files are named as
+	filename.rectype, where rectype is one of:
+
+                Data Set Summary Record				dssr	
+                Map Projection Data Record			mpdr
+                Platform Position Data Record			ppdr
+                Attitude Data Record				atdr
+                Radiometric Data Record				raddr
+                Data Quality Summary Record			dqsr
+                Processed Data Histograms Record		pdhr
+                Signal Data Histograms Record			sdhr
+                Range Spectra Record				rsr
+                Facility Related Data Record			facdr
+                Image File Descriptor Record			ifiledr
+		Leader File Descriptor Record			fdr
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+
+    EXAMPLES:
+	csh> metadata r 17972200
+		Prints the radiometric data record found in 17972200.ldr
+		to the screen.
+
+	csh> metadata -f r 17972200
+		Prints the radiometric data record found in 17972200.ldr
+		to a file called 17972200.raddr.
+	
+	csh> metadata ru 87240401
+		Prints the radiometric data record and the data set summary
+		record to the screen.
+
+	csh> metadata -f umlarsfi 87240401
+		Prints the Data Set Summary(u), Map Projection Data(m),
+ 		Platform Position Data(l), Attitude Data(a), Radiometric
+		Data(r), Range Spectra(s), Facility Related Data(f), and
+		Image File Descriptor(i) records to files named 87240401.dssr,
+		87240401.mpdr, 87240401.ppdr, 87240401.atdr, 87240401.raddr,
+		87240401.rsr, 87240401.facdr, and 87240401.ifiledr,
+		respectively.
+
+    SEE ALSO:
+
+    HARDWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:
+
+    AUTHOR:	Tom Logan, ASF
+
+    CONTACT:	apd@asf.alaska.edu
+		http://www.asf.alaska.edu/apd
+
+

@@ -1,0 +1,413 @@
+#!/usr/bin/perl -w
+
+=head1 NAME
+
+extract_window - extract a (hopefully) square window from an image
+
+=cut
+
+use lib "/asf_tools/perl/lib";
+
+# Compiler pragmas.
+use diagnostics;
+use strict;
+
+# FIXME: somebody install Params::Validate into the standard repository.
+use lib "/home/bkerin/local/lib/site_perl";
+# Module pragma used in function parameter checking.
+use Params::Validate;
+
+# Standard libraries (they ship with perl).
+use Fcntl qw(:seek);
+use File::Basename qw(basename dirname fileparse);
+use Getopt::Long;
+use Pod::Usage;
+use POSIX qw(floor ceil);
+
+# Nonstandard external modules (they don't ship with perl).
+use PDL;  # Perl Data Language, http://pdl.perl.org/.
+
+# Libraries developed at ASF.
+use ASF::CoordinateConversion;
+use ASF::Meta;
+
+my $progname = basename($0);
+my $version = '0.7.0';
+
+=head1 SYNOPSIS
+
+B<extract_window> -m img -p type -t=lat -n=long -z size [-l elev] [-o outimg]
+
+=head1 DESCRIPTION
+
+extract_window tries to extract a square window centered at a certain
+lat/lon from an image.  If it cannot produce a square image centered
+at the requested point, you get a warning and a non-square image.  A
+'.ddr' file for the new image is also produced and put in the same
+directory as the new image.
+
+=head1 OPTIONS AND ARGUMENTS
+
+Some 'Options' are actually required to appear either as options or as
+arguments in normal usage.  Any 'options' that appear as arguments
+must be given in the order listed here.  Negative lat/long values will
+confuse the option parser unless you use an equals sign instead of a
+space between the option and its argument (i.e. do like this:
+'-t=-120.2', not like this: '-t -120.2'), or use the magical '--'
+string to signal the end of options and then give lat/long as
+arguments (i.e. do like this: '... -- 65 -120.2').
+
+The non-optional 'options' are:
+
+=over 4
+
+=item B<-m IMG, --image=IMG>
+
+IMG is the input image file from which the window is to be extracted.
+This program may expect to find other files of the same name with
+different extensions from which relevant metadata can be extracted.
+In particular, for ASF products, '.meta' and '.ddr' files will need to
+be present alongside the '.img' file itself.
+
+=item B<-p TYPE, --type=TYPE>
+
+TYPE is the type of image from which the window is being extracted.
+For correct operation, use the most appropriate type, not the most
+discernable supertype.
+
+Currently supported TYPEs include:
+
+=over 4
+
+=item gr
+
+Ground range.  This may not work right, or indeed at all.
+
+=item gcutm
+
+Geocoded universal transverse mercator map projected ASF '.img' product.
+
+=item airsar
+
+An airsar .demi2 or .vvi2 file from the JPL processor.
+
+=back
+
+=item B<-t LAT, --lat=LAT>
+
+LAT is the center lattitude coordinate of the window to be extracted.
+
+=item B<-n LONG, --long=LONG>
+
+LONG is the center longitude coordinate of the window to be extracted.
+
+=item B<-z SIZE, --size=SIZE>
+
+SIZE is the size of square to extract, in meters on a side.
+
+=back
+
+These options are actually optional:
+
+=over 4
+
+=item B<-l ELEV, --elev=ELEV>
+
+ELEV is the elevation of the center coordinate of the window to be
+extracted.  Supplying this option may improve the accuracy of the
+window centering for some image types.
+
+=item B<-o NIMG, --out=NIMG>
+
+NIMG is the name to use for the new '.img' file.  Defaults to
+'./out_image.img'.  The '.ddr' file gets the same name except for the
+different extension.
+
+=item B<-v, --verbose>
+
+Enable verbose output.
+
+=item B<--version>
+
+Print version information.
+
+=item B<-?, --help>
+
+Print usage information.
+
+=back
+
+=cut 
+
+# Parameters from command line.  These start with default values and
+# may be filled in from either options or arguments to user taste.
+my %p = (
+	 # These options are actually required to appear, either as
+         # options or as arguments.
+	 'image'  => undef,	# Image file name (with extension).
+	 'type'   => undef,	# Image type string.
+	 'lat'    => undef,	# Window center lattitude.
+	 'long'   => undef,	# Window center longitude.
+	 'size'   => undef,	# Window size in meters.
+	 
+	 # These options are actually optional.
+	 'elev' => undef,	        # Window center elevation.
+	 'out'  => "./out_image.img",   # Name to use for output image.
+
+	 # Standard (really optional) options.
+	 'verbose' => 0,	# Verbose output to terminal.
+	 'version' => 0,	# If given print version and exit.
+	 'help'	   => 0		# If given print help and exit.
+	 );
+
+sub babble { if ( $p{verbose} ) { print @_; } }
+
+GetOptions(\%p, 'image|m=s', 'type|p=s', 'lat|t=f', 'long|n=f', 'elev|l=f', 
+	   'size|z=i', 'out|o=s', 'verbose|v', 'version', 'help|?')
+    or pod2usage("$progname: option parse failed.\n");
+
+if ( $p{version} ) {
+    print <<END_VERSION_TEXT;
+$progname version $version
+END_VERSION_TEXT
+}
+
+if ( $p{help} ) {
+    pod2usage('-exitval' => 0);
+}
+
+# These things if not given as options better appear as arguments.
+{ 
+    my $ope = 0;   # Flag true if we don't get an argument we need.
+    $p{image} ||= shift(@ARGV) or $ope++;
+    $p{type}  ||= shift(@ARGV) or $ope++;
+    $p{lat}   ||= shift(@ARGV) or $ope++;
+    $p{long}  ||= shift(@ARGV) or $ope++;
+    $p{size}  ||= shift(@ARGV) or $ope++;
+    $ope and pod2usage("$progname: argument parse failed: not enough arguments\n");
+}
+
+# Make a completely bogus guess at elevation if user didn't supply it.
+unless ( defined($p{elev}) ) { $p{elev} = 1; }
+
+my $meta;   # Metadata object for types using .meta files.
+
+# Instantiate meta data (assumed to live where the image data lives).
+unless ( $p{type} eq 'airsar' ) {
+    (my $meta_file = $p{image}) =~ s/\.img$/\.meta/;
+    unless ( -r $meta_file ) { 
+	die "couldn't read needed file $meta_file (if extract_window
+is being run on a '.img' file, the corresponding '.meta' file should
+appear in the same directory as the '.img' file)"
+    }
+    $meta = ASF::Meta->new($meta_file);
+} 
+
+my $ddr_file;   # '.ddr' file to get some things from.
+if ( $p{type} eq 'airsar' ) {
+    # Create temporary .img and .ddr.  'airsarin' is an ASF tool.
+    system("airsarin $p{image} /tmp/extract_window_ps_$$ >/dev/null")
+	and die("airsarin program didn't run or exited abnormally");
+    $ddr_file = "/tmp/extract_window_ps_$$.ddr";
+} else {
+    ($ddr_file = $p{image}) =~ s/\.img$/\.ddr/;	
+}
+
+# Get a text version of the '.ddr' file.  'dsppdr' is an ASF tool.
+unless ( -r $ddr_file ) { 
+    die "couldn't read needed file $ddr_file (if extract_window is
+being run on a '.img' file, the corresponding '.ddr' file should
+appear in the same directory as the '.img' file)"
+}
+my $ddr_text = `dspddr $ddr_file`;
+# The text output by dspddr used scientific notation alot, so this
+# pattern gets used several times.
+my $sci_num_pat = '(\d*(?:\.\d*)?)E((?:\+|-)\d\d)';
+
+# Image dimensions in pixels.
+$ddr_text =~ /NL:\s*(\d*)\s/;
+my $lines = $1;   # Lines increase in azimuth direction.
+$ddr_text =~ /NS:(\d*)\s/;
+my $samps = $1;   # Samples increase in range direction.
+
+# Number of looks.  Breaks if second value from ddr is not one.
+$ddr_text =~ /INCREMENT:\s*$sci_num_pat/;
+my $looks = $1 * 10**$2;
+
+# Pixel sizes after looks in range and azimuth directions.
+$ddr_text =~ /PROJ\.\sDIST:	# Field name.
+              \s*$sci_num_pat   # 1st number.
+              \s*$sci_num_pat   # 2nd number.
+             /x;   # x pattern modifer allows spaces and comments.
+my $psz_azi = $1 * 10**$2;
+my $psz_rng = $3 * 10**$4;
+
+# Is first argument between second and third arguments?
+sub is_bounded {
+    unless (    (($_[0] < $_[1]) and ($_[0] < $_[2])) 
+	     or (($_[0] > $_[1]) and ($_[0] > $_[2])) ) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
+# Window center pixel in azimuth and range directions.
+my ($wc_azi, $wc_rng);
+if ( $p{type} eq 'gr' ) {
+    # Dies horribly if lat/long are bogus (and sometime if they aren't):
+    my ($wc_azi, $wc_rng) = $meta->get_lineSamp($p{lat}, $p{long}, $p{elev});
+
+} elsif ( $p{type} eq 'gcutm' ) {
+    # Convert center latlong to map projection coordinates.
+    # Returns bad coords if lat long are bogus.
+    my ($c1, $c2) = $meta->latlon_to_proj($p{lat}, $p{long});
+    # Image bounds in utm.
+    my %ibnds;
+    $ddr_text =~ /ULcorner:\s*$sci_num_pat\s*$sci_num_pat/;
+    $ibnds{upper} = $1 * 10**$2;
+    $ibnds{left} = $3 * 10**$4;
+    $ddr_text =~ /LRcorner:\s*$sci_num_pat\s*$sci_num_pat/;
+    $ibnds{lower} = $1 * 10**$2;
+    $ibnds{right} = $3 * 10**$4;
+    # Make sure coords are reasonable:
+    unless (     &is_bounded($c1, $ibnds{left}, $ibnds{right})
+	     and &is_bounded($c2, $ibnds{upper}, $ibnds{lower}) ) {
+	print "extract_window: extraction failed: the given lattitude and longitude mapped to a point not in this image for this map projection\n";
+	exit(1);
+    }
+    # Fractions of image in left-right and upper-lower directions of
+    # window center.
+    my %fracs;
+    $fracs{lr} = ( $ibnds{left} < $ibnds{right} ) ?
+                   ($c1 - $ibnds{left}) / ($ibnds{right} - $ibnds{left}) 
+	         : ($ibnds{left} - $c1) / ($ibnds{left} - $ibnds{right});
+    $fracs{ul} = ( $ibnds{upper} < $ibnds{lower} ) ?
+                   ($c2 - $ibnds{upper}) / ($ibnds{lower} - $ibnds{upper}) 
+                 : ($ibnds{upper} - $c2) / ($ibnds{upper} - $ibnds{lower});
+
+    # We aren't really in the range and azimuth directions anymore,
+    # but we still use the names here.  They are closer to the actual
+    # axis' of these dimensions that not :)
+    $wc_azi = $fracs{ul} * $lines;
+    $wc_rng = $fracs{lr} * $samps;
+
+} elsif ( $p{type} eq 'airsar' ) {
+
+    unless ( $p{image} =~ /(\.demi2|\.vvi2)$/ ) {
+	die "got file of supposed type airsar which didn't have a .demi2 or .vvi2 extension";
+    }
+
+    open(TOPSAR, $p{image})
+        or die "failed to open $p{image} for reading: $!";
+
+    my $param_os;   # Offset of start of parameter header.
+    seek(TOPSAR, 13*50 + 42, SEEK_SET) 
+        or die "seek in $p{image} failed: $!";
+    unless ( read(TOPSAR, $param_os, 8) == 8 ) {
+	die "read in $p{image} failed or read less than expected";
+    }
+
+    # Get peg point information from header.  See AIRSAR Integrated
+    # Processor Documentation, DATA FORMATS, Anhua Chu.  There is a C
+    # library which does this but it didn't seem worth wrapping for
+    # this small application.
+    my ($pp_lat, $pp_lon, $pp_head);   # Peg point lat/lon/aircraft heading.
+    # Offsets of first swath pixel from peg point.
+    my ($azimuth_offset, $range_offset);  
+    seek(TOPSAR, $param_os + 93*50 + 38, SEEK_SET) &&
+                 read(TOPSAR, $pp_lat, 12) == 12 &&
+                 seek(TOPSAR, 38, SEEK_CUR) &&
+                 read(TOPSAR, $pp_lon, 12) == 12 &&
+                 seek(TOPSAR, 38, SEEK_CUR) &&
+                 read(TOPSAR, $pp_head, 12) == 12 &&
+		 seek(TOPSAR, 138, SEEK_CUR) &&
+		 read(TOPSAR, $azimuth_offset, 12) == 12 &&
+		 seek(TOPSAR, 38, SEEK_CUR) &&
+                 read(TOPSAR, $range_offset, 12) == 12
+        or die "read or seek in $p{image} failed or read less than expected";
+    close(TOPSAR) or die "close failed: $!";
+
+    # Get global cartesian coordinates of window center point.
+    my ($x, $y, $z) = llr2xyz($p{lat}, $p{long}, 
+			      &earth_radius_at_geodetic_lat(64.870) 
+			      + $p{elev});
+    # Get sch coordinates from global cartesian coordinates and peg
+    # point information.
+    my ($s, $c, $h_r) = xyz2sch($x, $y, $z, $pp_lat, $pp_lon, $pp_head);
+
+    # 1-indexed coordinates of center pixel window to be extracted.
+    ($wc_azi, $wc_rng) = sch2line_sample($s, $c, $psz_azi, $psz_rng, 
+					 $azimuth_offset, $range_offset);
+
+
+} else {
+    print STDERR "$progname: unknown image type string $p{type}\n";
+    exit(1);
+}
+
+# Window size in pixels in azimuth and range directions.
+my $wsz_azi = $p{size} / $psz_azi;
+my $wsz_rng = $p{size} / $psz_rng;
+
+# Window edge indices.
+my %wedge;
+$wedge{top} = floor($wc_azi - floor($wsz_azi / 2));
+$wedge{bottom} = floor($wedge{top} + $wsz_azi);
+$wedge{left} = floor($wc_rng - floor($wsz_rng / 2));
+$wedge{right} = floor($wedge{left} + $wsz_rng);
+
+# Sacrifice squareness in favor of indices in the image.
+{
+my $win_wrong_sized = 0;   # Flag true if full window couldn't be gotten.
+if ( $wedge{top} < 1 ) {
+    $win_wrong_sized = "true";
+    $wedge{top} = 1;
+}
+if ( $wedge{bottom} > $lines ) {
+    $win_wrong_sized = "true";
+    $wedge{bottom} = $lines;
+}
+if ( $wedge{left} < 1 ) {
+    $win_wrong_sized = "true";
+    $wedge{left} = 1;
+}
+if ( $wedge{right} > $samps ) {
+    $win_wrong_sized = "true";
+    $wedge{right} = $samps;
+}
+if ( $win_wrong_sized ) {
+    print STDERR "$progname: warning: input image is not large enough to provide a square window of the requested size around the requested lat/lon, generated image will be smaller than the requested size and probably non-square\n";
+}
+}
+
+# Window dimensions in pixels.
+my %wdims;
+$wdims{azi} = $wedge{bottom} - $wedge{top} + 1;
+$wdims{rng} = $wedge{right} - $wedge{left} + 1;
+
+&babble(<<END_COORD_LISTING
+Pixel coordinate of output image relative to input image:
+    Top line:     $wedge{top}
+    Bottom line:  $wedge{bottom}
+    Left sample:  $wedge{left}
+    Right sample: $wedge{right}
+END_COORD_LISTING
+	);
+
+# Invoke trim program.
+if ( $p{type} eq "airsar" ) {
+    my $sys_command = "trim  -h $wdims{azi} -w $wdims{rng} /tmp/extract_window_ps_$$ $p{out} $wedge{top} $wedge{left} >/dev/null";
+    system($sys_command) and die "system($sys_command) failed";
+    system("rm /tmp/extract_window_ps_$$.*") 
+	and die "failed to rm temporary files /tmp/extract_window_ps_$$.*";
+} else {
+    my $sys_command = "trim -h $wdims{azi} -w $wdims{rng} $p{image} $p{out} $wedge{top} $wedge{left} >/dev/null";
+    system($sys_command) and die "system($sys_command) failed";
+}
+
+=head1 AUTHOR
+
+Britton Kerin <bkerin@mail1.asf.alaska.edu>
+
+=cut

@@ -1,0 +1,43 @@
+NAME:  reskew_dem
+
+SYNOPSIS:  
+    
+    reskew_dem <inGR_DEM> <ceos> <outSR_DEM> <outSR_simAmp> [-log <file>]
+
+DESCRIPTION:
+
+    Reskew_dem maps an input, ground range DEM into slant range,
+and creates a simulated SAR image.  The input DEM must already
+be lined up with the image, but need not be precisely co-registered.
+In fact, the amplitude image is generated only so the images can be
+co-registered.
+
+    This program is called by the dem2seeds script.
+
+OPTIONS:
+
+    -log <file>  Option to have the output written to a log file.
+
+ERROR MESSAGES:
+MESSAGE GIVEN:				REASON:
+------------------------------------------------------------------
+
+EXAMPLES:
+    reskew_dem elevation.dem ceos elevation_sr.ht ampsim_sr.amp
+    
+    	This will remap the input LAS file elevation.dem to
+    the slant range LAS DEM elevation_sr.ht and the simulated
+    amplitude image ampsim_sr.amp.
+    
+SEE ALSO:
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+BUGS:
+
+AUTHOR: 8/97  Orion Lawlor
+	ASF SAR Tools, 1997
+
+CONTACT:  apd@asf.alaska.edu
+	  or visit http://www.asf.alaska.edu/apd
+

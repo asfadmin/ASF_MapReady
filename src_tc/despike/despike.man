@@ -1,0 +1,71 @@
+NAME: Despike --  Performs an adaptive low-pass filter of the input image
+ 
+SYNOPSIS: despike infile outfile 
+ 
+DESCRIPTION: 
+      This program uses kernel filtering to remove high frequency
+    information from the input byte image.  Processing proceeds by placing a 
+    3X3 kernel over each point in the image.  Then, the mean and deviation 
+    of all values x in the kernel such that min <= x <= max are computed.
+    If the pixel being processed is more than nstd deviations from the mean
+    AND is more than tol from the mean, it is considered invalid.
+    Invalid pixels are replaced based on the invld option given.
+      If invld = 1, invalid pixels are replaced with 0.
+      If invld = 2, invalid pixels are replaced with the kernel mean.
+
+    Processing continues until all points in the image have been despiked.
+    This version of despike automatically performs two passes through each
+    image.  For the first pass the parameters are:
+	min = 0, max = 255, nstd = 1.5, tol = 50.0, invld = 1
+    For the second pass through the image the paramters are:
+	min = 1, max = 255, nstd = 1.5, tol = 50.0, invld = 2
+    After the second pass, the input file, infile.img, has been despiked
+    and the results are written to disk as the output file, outfile.img.
+ 
+PARAMETERS/OPTIONS:         
+    min       minimum pixel value to include in kernel mean calculation
+    max       maximum pixel value to include in kernel mean calculation
+    invld     invalid pixel processing options:
+                   1) replace with 0
+                   2) replace with mean
+    nstd      number of standard deviations a pixel value must
+              be from the kernel mean to be considered invalid
+    tol       minimum value a pixel must be from the kernel 
+              mean in order to be considered invalid
+ 
+ERROR MESSAGES:
+    MESSAGE GIVEN:                              REASON:
+    ----------------------------------------------------------------------
+    Failure allocating memory                   Out of memory
+    Failure opening file <file>                 Invalid File Name Given
+    Failure reading from file <file>            Improper File Type Given
+ 
+EXAMPLES:
+         despike infile outfile
+                 
+             This example executes the despike algorithm on infile.img
+         producing outfile.img.  The first pass uses invalid pixel option 1.
+         Thus, invalid pixels will be replaced by the value 0.  The minimum
+         and maximum values to operate on are 0 to 255, corresponding
+         to a byte image.  The threshhold for the number of standard
+         deviations that a pixel value can be from its kernel mean before
+         being considered invalid is set to 1.5.  Also, the minimum a pixel
+         value must be from the kernel mean to be considered invalid is set
+         to 50.0.  The second pass uses invalid pixel option 2.  This means 
+         invalid pixels will be replaced by the kernel mean of the point.
+         This time the minimum and maximum values to consider in the 
+         the processing are 1 to 255.  Again the number of standard 
+         deviations allowable is 1.5, and a pixel is valid if it is less
+         than 50.0 from the mean.
+         
+SEE ALSO:  terrcorr
+ 
+HARWARE/SOFTWARE LIMITATIONS:
+
+BUGS:	    None Known
+ 
+AUTHOR:     Tom Logan, ASF
+ 
+CONTACT:    Tom Logan, ASF
+            E-mail: tlogan@iias.images.alaska.edu
+

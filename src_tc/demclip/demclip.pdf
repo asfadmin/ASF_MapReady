@@ -1,0 +1,95 @@
+!.HEADER LAS
+!Last modified 8-13-92 by Chris Taylor
+!------------------------------------
+PROCEDURE DEMCLIP HELP=*
+
+PARM DEM     TYPE=(STRING,100)
+PARM OUT     TYPE=(STRING,100)
+PARM COORS   TYPE=REAL  COUNT=4
+PARM ZONENUM TYPE=INTEGER        DEFAULT=5
+PARM PIXSIZ  TYPE=REAL           DEFAULT=100
+LOCAL PIX TYPE=REAL COUNT=2
+LOCAL MSKTMP TYPE=(STRING,100)
+LOCAL AZ1COEF TYPE=REAL
+LOCAL AZ2COEF TYPE=REAL
+LOCAL AZ3COEF TYPE=REAL
+LOCAL GR1COEF TYPE=REAL
+LOCAL GR2COEF TYPE=REAL
+LOCAL GR3COEF TYPE=REAL
+
+BODY
+
+LET PIX=(&PIXSIZ,&PIXSIZ)
+
+!Create a Project Definition File
+!--------------------------------
+projprm-UTM OUTPROJ=proj.tmp PROJKEY=UTM ZONENUM=&ZONENUM GEOUNITS=DEG+
+      PROJUNIT=MET
+
+!Change map projection of DEM and create DEM window
+!--------------------------------------------------
+remap IN=&DEM INPROJ=proj.tmp OUTGRID=grid.tmp IPROJKEY=UTM PIXSIZ=&PIX +
+      COORS=&COORS
+geom IN=&DEM OUT=&"OUT"dem INGRID=grid.tmp RESAMP=BI
+
+!Clean up temporary files
+!------------------------
+cmdel-FILE proj.tmp;proj no
+cmdel-FILE grid.tmp;grid no
+
+END-PROC
+.TITLE
+Given a large DEM produces a clipped DEM file 
+.HELP
+This procedure combines a number of LAS functions (PROJPRM-UTM, REMAP, 
+GEOM, CMDEL-FILE) to produce a clipped DEM file given a Digital Elevation 
+Model and the coordinates of the area of interest.
+.page
+!.EXAMPLES
+Examples:
+1. LAS> DEMCLIP DEM=bigdem OUT=A1 COORS=(66.55,-152.81,65.31,-149.97) +
+               ZONENUM=6 PIXSIZ=90 
+
+               The user has requested to window BIGDEM with an upper
+               left corner of 66.55 latitude and -152.81 longitude and a
+               lower right corner of 65.31 latitude and -149.97
+               longitude in zone number 6 with a pixel size of 90 meters
+               in automatic mode and to perform all of the necessary
+               steps on the output image A1 and its derivatives.
+.page
+!.DESC
+Description/Algorithm:
+This procedure windows a Digital Elevation Model given the proper coordinates
+(COORS)  
+.page
+.LEVEL1
+.VAR DEM
+The large DEM to be windowed
+.VAR OUT
+Output image name
+.VAR COORS
+The coordinates for the windowed DEM
+.VAR ZONENUM
+Zone number
+.VAR PIXSIZ
+Pixel size in meters
+.LEVEL2
+.VAR OUT
+The output image is the output dem image.
+.VAR DEM
+The Digital Elevation Model of a large region including the area covered
+by the raw SAR image.
+.VAR COORS
+The coordinates of the windowed DEM.  These should be the coordinates for
+the raw SAR image with a boarder of 0.05 degrees.  They should be entered
+in the following order:  Upper left latitude, upper left longitude, lower
+right latitude, and lower right longitude.
+.VAR ZONENUM
+The zone number is found from the following equation:
+             (center longitude + 180)/6 + 1
+.VAR PIXSIZ
+The pixel size of the DEM and raw SAR image (they must be the same) in
+meters.
+.PAGE
+.END
+.FINAL

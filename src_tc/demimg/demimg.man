@@ -1,0 +1,57 @@
+
+    NAME:	demimg	--  Reproject a UTM DEM into SAR slant range
+
+    SYNOPSIS: demimg inDEMfile inSARfile inCOEFfile outfile
+
+	      inputs: inDEMfile.img   Input UTM projection DEM file
+	              inSARfile.img   SAR image
+	              inCOEFfile.ppf  Coefficients File
+	      output: outfile.img     Slant Range DEM Image
+
+    DESCRIPTION:
+	This program creates a slant range DEM file that matches the given 
+     SAR scene.  Using the height values from the DEM file, the remapping
+     coefficients file, and the SAR image metadata, each height value is
+     placed into the SAR image space to create a slant range DEM file.
+
+    OPTIONS:	None
+
+    ERROR MESSAGES:
+    MESSAGE GIVEN:				REASON:
+    ----------------------------------------------------------------------
+    Unable to open input file			No such file exists
+    Out of memory for dembuf			Not enough system memory
+    Out of memory for outbuf			Not enough system memory
+    Failure opening output image 		No system privileges
+    Failure opening input image 		No such file exists
+    Demfile Read Error in dembuf		Invalid DEM file 
+    Unable to open file '*' for reading.	No such file exists
+    Unable to open file '*' for writing.	No system privileges
+    Error only read %d bytes of %d for file 	Invalid file 
+    Error only wrote %d bytes of %d for file 	No system privileges
+    Unable to get ddr file for image 		Image ddr doesn't exist
+
+    EXAMPLES:
+	demimg 201_dem 201_ml 201_coef 201_sldem
+
+	This call to demimg uses the input INT*2 LAS 6.0 DEM file 201_dem.img,
+	the multilooked SAR image 201_ml.img (along with appropriate metadata),
+        and the mapping coefficients file 201_coef.ppf to create the output
+        slant range DEM file 201_sldem.img
+
+    SEE ALSO:
+	sarsim,		  Creation of byte value simulated SAR file
+	tpl_search,	  Creation of tie point search file
+	greycorr,	  Correlation of ml_sar and sim_sar
+	2dmap	          Creation of coefficients file
+	tpl_samp	  Creation of X,Y,Z height points from output file
+
+    HARWARE/SOFTWARE LIMITATIONS:
+
+    BUGS:
+
+    AUTHOR:	T. Logan & M. Shindle
+
+    CONTACT:	tlogan@images.alaska.edu
+		rguritz@images.alaska.edu
+

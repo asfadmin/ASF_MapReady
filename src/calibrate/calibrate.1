@@ -1,0 +1,113 @@
+.TH calibrate 1 "26 January 1999" 
+.SH NAME:
+calibrate \- performs radiometric calibration 
+.SH SYNOPSIS: 
+.B "calibrate"  
+.BI " inSARfile outSARfile [-m][-g]"
+.SH DESCRIPTION: 
+Performs radiometric calibration of all types of ASF SAR imagery.  Calibrate
+processes inSARfile.D(dat) using data from the inSARfile.L(ldr) file (assumed
+to be in the same directory as the inSARfile.D) to produce outSARfile.img. 
+Note that the extensions are assumed, and, as such, should not be included
+on the command line. 
+.PP
+Calibrate utilizes the equations and conditions described below:
+.PP
+.ce 1 
+Excerpt on Radiometric Calibration from SAR User Guide. ==>
+.PP 
+.RS 4
+The Radiometric Data Record contains the information necessary to convert
+image data values to backscatter (sigma0). There are three coefficients
+immediately following the word "INTENSITY" near the beginning of the
+record. These coefficients (a1,a2, and a3) are the noise scaling, the
+linear conversion, and the offset, respectively. (The offset, a3, is
+always 0.) The conversion of data number, d, to backscatter in units of dB
+is
+.PP
+.ce 1
+sigma0 = 10log[a2(d^2 - a1n(r)) + a3]
+.PP
+where n(r) is the noise versus range function immediately following the
+coefficients in the record. The noise in the image varies with range due
+to internal radiometric compensation for antenna pattern, range to target,
+and incidence angle. Accurate conversion to backscatter requires
+subtraction of the noise as indicated by the equation. There are 256 noise
+values as a function of range. The first value corresponds to pixel one
+(in each range line), the second value to pixel 33,...,and the 256th to
+pixel 8161. The function varies slowly enough that nearest neighbor
+application is well within the accuracy of the function, but linear
+interpolation between values is functionally more accurate. The square
+root of the a1n(r) term is the d (amplitude) value of the noise. 
+.PP
+In general the edge pixels should be avoided for accurate quanitative
+work, since the antenna pattern mismatch is always greatest at the edges. 
+.PP
+Once sigma0 is calculated, calibrate maps sigma0 (from -25.5 dB
+to 0 dB attenuation) to a byte (from 0 to 255 brightness) via
+the scaling:
+.PP
+.ce1
+outByte = (25.5+sigma0)*10
+.PP
+so to go from a byte value in the image to sigma0, use:
+.PP
+.ce1
+sigma0 = outByte/10-25.5
+.PP                
+NOTE: For data processed during the Commission Phase (Phase A), the
+coefficients are in error and should be adjusted as outlined below. These
+adjustments are applied to images to images prior to Image ID #7000. 
+.PP
+The noise scaling coefficient should be replaced by the function
+.PP
+.ce 1		   
+a1 = 406.0 * 10[(processor gain)/10]
+.PP
+The processor gain is always a multiple of 3 db and typically is 0. The
+linear coefficient should be replaced with
+.PP
+.ce 1
+a2 = 1.2*10^(-5)*10[-(processor gain)/10]
+.PP
+These replacements should produce conversion results that have relative
+errors of less than +/- 1 db, and absolute errors less than +/- 2 dB. All
+images after #7000 have corrected coefficients and should produce similar
+results. 
+.RE 
+.PP
+===============================================> End Excerpt
+.SH OPTIONS:
+.TP 8
+.B "-m"
+allows modification of radiometric calibration coefficients that have been
+read from the .ldr file. 
+.TP 8
+.B "-g"
+allows creation of gamma0 output images based on the incidence angle at each pixel in the image.  Gamma0 is defined as
+.PP
+.ce1
+gamma0 = sigma0 - 10log(cos(incidence))
+.PP
+.SH ERROR MESSAGES:
+.B MESSAGE_GIVEN:\t\t\t\tREASON:
+-------------------------------------------------------------
+.SH EXAMPLES:
+.ce 1
+calibrate E106987290G1S033 e1_06987_290
+.PP
+This would process the file E106987290G1S033.D, using information found in the
+file E106987290G1S033.L.  The output file created would be named 
+e1_06987_290.img.
+.SH SEE ALSO:
+.SH HARDWARE/SOFTWARE LIMITATIONS:
+.SH BUGS:
+.SH AUTHOR:         
+\tTom Logan, Alaska SAR Facility, Fairbanks, AK
+.br
+\tMike Shindle, Alaska SAR Facility, Fairbanks, AK
+.SH CONTACT:
+\tapd@asf.alaska.edu
+\tor http://www.asf.alaska.edu/apd
+
+

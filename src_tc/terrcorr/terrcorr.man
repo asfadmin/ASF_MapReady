@@ -1,0 +1,122 @@
+==================================================================
+        Terrain Correction Software for ASF ERS1 SAR images
+==================================================================
+
+NAME:  terrcorr -- Terrain Correction Main Program
+
+SYNOPSIS:  terrcorr [-cf{1-4}klms] SAR DEM
+
+ The inputs to this procedure are as follows:
+
+   SAR         Input SAR file, must be an original ASF groundstation
+               LOW or FULL-RES image set.
+   DEM         Input DEM file in LAS 6.0 format and UTM projection,
+	       must overlap the SAR image area of coverage.
+
+ The outputs from this procedure are as follows:
+
+           VARIABLE        EXAMPLE                 DESCRIPTION
+        -------------   ------------------      ----------------------------
+        pSAR            p17972200.img           Preprocessed SAR file
+        fsSAR           fs17972200.img          Filtered Sim image
+        Mapping Coefs   coef.ppf                Coefficients for modeling
+        COR             17972200_cor.img        Terrain Corrected SAR file
+        rCOR            17972200_corli.img      Radiometrically corrected SAR
+        mSAR            17972200_mask.img       Mask values image file
+        ---------------------------------------------------------------------
+
+DESCRIPTION: 
+      This program incorporates all steps involved in performing
+    terrain correction of a full-resolution ASF SAR image.  Phases
+    include SAR image preprocessing, DEM preprocessing, creation
+    of a simulated SAR image, determination of mapping coefficients
+    by image correlation, and creation of the corrected image.  The 
+    actual commands proceed as follows:
+
+	PROGRAM:	FUNCTION:
+	-------------   ----------------------------------------------
+SARPP	calibrate	radiometric calibration of SAR image
+	resample	resample SAR image to desired resolution	
+	strip_sar	removes the CEOS wrapper from images that do not
+			need to be resampled.
+
+DEMPP	demclip		Clips a large DEM to the area of SAR image coverage.
+
+SIM	sarsim		create a simulated SAR image, a mask value image, 
+			and a radiometric terrain correction factor image.
+        despike    	perform smoothing filter on simulated image
+
+COEFS  
+	if (90.0 meter or >)
+	tpl_search	determine best locations to find image correlations
+	greycorr	determine tie points with highest correlation
+	2dmap		approximate tie points with a planar warp map
+
+	if (< 90.0 meter)
+	resamnple	downsize SAR and SIM images
+	tpl_search	determine best locations to find image correlations
+	greycorr	determine tie points with highest correlation (reduced)
+ 	tpl_mult	expand tie-points to original image resolution
+	greycorr	determine tie points with highest correlation (reduced)
+	2dmap		approximate tie points with a planar warp map
+
+FINAL	sargeom		perform geometric rectification and geocoding
+	mod_ddr		creates a valid .ddr metadata file.
+	rtc_add		apply radiometric correction factors to the values 
+			in the terain corrected image.
+
+OPTIONS: 
+  DEM OPTIONS:
+   c           Clip the DEM file to the area of the SAR image
+               (thus reducing processing time).
+
+  SAR PREPROCESSING OPTIONS:
+   m           Modify radiometric calibration sigma0 range, 
+               coefficients, and noise vs. range LUT
+   s           Skip the SAR preprocessing steps
+
+  OPERATIONS OPTIONS:
+   f{1-4}      Apply radiometric terrain corrections using the
+               formula requested (1 LI  2 GO  3 SQ  4 VX).
+   k           Create a mask value image.
+   l           Leave temporary processing files intact.
+
+ERROR MESSAGES:
+    MESSAGE GIVEN:                        REASON:
+    ----------------------------------------------------------------------
+    Program Aborted                       Reasons given by called programs
+ 
+EXAMPLES:  terrcorr 78983100 7898dem	(old format SAR file)
+        
+           This example uses the input SAR image 78983100.dat, its .ldr
+           and .trl metadata files, the LAS DEM file 7898dem.img,  and
+           the DEM's .ddr metatdata file to create the terrain corrected
+           image 78983100_cor.img.  The input SAR image is assumed to be
+           an ASF product type 100 full-resolution SAR image and the DEM
+           file is assumed to be in LAS 6.0 format and clipped to the area
+	   of coverage of the SAR scene.
+
+	   terrcorr -k 32213100 32213dem  (old format SAR file)
+
+	   In this example, the SAR image 32213100.dat (with metadata)
+	   and the DEM file 32113dem.img (with metadata) are used to
+           create the output file 32113100_cor.img.  In this run, a mask
+	   image will be created.
+
+	   terrcorr -c E106987290G4S014 ak_dem
+
+	   In this example, SAR file E106987290G4S014.D will be terrain 
+	   corrected using the DEM file ak_dem.img.  Only the portion of
+	   the DEM file that overlaps with the SAR will be used during
+	   processing.
+
+SEE ALSO:  calibrate, resample, strip_sar, sarsim, despike, correlate, sargeom
+ 
+HARWARE/SOFTWARE LIMITATIONS:
+ 
+BUGS:    
+ 
+AUTHOR:  Tom Logan, ASF
+ 
+CONTACT: tlogan@images.alaska.edu
+

@@ -1,0 +1,80 @@
+<TITLE>4.3 Save LAS Image</TITLE>
+<H2>4.2 Save LAS Image</H2>
+
+The save function allows the user to save various XID windows to disk as
+LAS format images.  Any mappings currently applied to the image will be
+applied to the image data before the image is written to disk and any
+graphics data currently displayed is written into the image (i.e., engraved 
+into the image).
+
+<P>
+<IMG SRC="save.gif">
+<P>
+
+<DL>
+<DT><B>LAS Image Name:</B>
+<DD>Enter the name of the image to be created.  This name may be entered
+    as a LAS name or a host name.  No case conversions are done but keep
+    in mind that LAS does not handle names with upper case letters properly.
+    The user is not required to press <B>enter</B> after entering the image
+    name since the name is not retrieved until the user presses the <B>apply
+    </B> button.
+</DL>
+
+The <B>save all</B>, and <B>save viewed</B> radio buttons allow the user to 
+select what part of the image window will be saved. 
+
+<BLOCKQUOTE>
+<DL>
+    <DT><B>Save All:</B>
+    <DD>When selected, the entire image loaded into memory is saved to disk,
+	including any image data not currently visible.  With this option,
+	only image and graphics data are saved (i.e., no window frames,
+	scrollbars, etc. are saved).  The number of output bands created
+	for this option depends on the type of image displayed.  If a black
+	and white image is displayed, all color channels are mapped the
+	same, and no graphics data is displayed, a single band image is 
+	created, otherwise a 3-band image is created.
+    <P>
+
+    <DT><B>Save Viewed:</B>
+    <DD>When selected, only the visible portion of the image is saved to 
+	disk.  The user is allowed to select the window to be saved
+	using the mouse much like the X application <I>xwd</I>.  Technically,
+	this does not have to be an XID image window.  It can be any window 
+	currently visible on the display screen (eg., the root window,
+	a window from another application, the XID histogram window, etc.). 
+	A 3-band image is always saved to disk using this option.
+    <P>
+
+</DL>
+</BLOCKQUOTE>
+
+<DL>
+<DT><B>Save Window:</B>
+<DD>Select the XID image window to be saved.  The user may choose from the
+    main image window, the full resolution image window or the zoom image
+    window.  This option is available only when the <B>save all</B> option
+    has been selected.
+<P>
+
+<DT><B>Frame Option:</B>
+<DD>Choose whether or not to save the window manager frame with the image.
+    If <B>without frame</B> is chosen and the window to be saved is an XID
+    image window (main image, full resolution or zoom window), the scroll bars
+    are not saved.  This option is available only when the <B>save 
+    viewed</B> option has been selected.
+<P>
+
+<DT><B>Cancel:</B>
+<DD>Close the save panel without saving an image to disk. 
+<P>
+
+<DT><B>Apply:</B>
+<DD>Close the save panel and save the image data to disk according to
+    the specified options.
+</DL>
+<P>
+<B>Note:</B> The <B>save viewed</B> option does not work properly if a 
+   mapping has been applied and the user is running the Open Windows
+   window manager.

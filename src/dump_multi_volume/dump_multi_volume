@@ -1,0 +1,369 @@
+#!/bin/sh
+#
+# NAME: dump_multi_volume -- dumps one or more volumes of tape files
+#
+# SYNOPSIS: dump_multi_volume [-v] [-t] [-s] device
+#
+# DESCRIPTION:
+#       dumps either one or multiple volumes of CEOS format tape files 
+#	produced by the ASF ground station for a single user data order. 
+#	The options include the ability to handle any tape drive device,
+#	dump all or selected files from a tape, and dumping multiple
+#	volumes for a large order.
+#
+#	-v 	verbose mode on.
+#	-t    	use .tlr extension for TRAILER files, instead of using
+#		the default .trl.
+#	-s	Allows selection of files to dump in an interactive
+#		process.  The default is to dump all files from the tape.
+#
+#	device  This is the device name of the tape drive to read files
+#		from.  Only devices listed in the file
+#		dump_multi_volume.valid_dev can be specified.
+#		
+# EXTERNAL:
+#	It calls a series of UNIX commands as well as two C programs
+#	developed for this tape dumping task.
+#
+#	One C program is get_names which extracts all the file names and 
+#       the maximum record sizes stored	in the VDF (volume description file) 
+#       of the tape.  In addition,it extracts current volume number and total 
+#       number of volumes for use with multi-volume sets.  The information 
+#       extracted by get_names is used in a loop which calls a UNIX data 
+#       copying and conversion command "dd" to dump tape files onto disk.
+#	The other C program is check_name_of which determines whether the 
+#	suffix on the files is pre-radarsat (.dat, .ldr, .trl) or 
+#	post-radarsat (.D,.L).
+#
+#       A file called dump_multi_volume.valid_dev contains a list of
+#       valid tape device names.
+#
+# FILE REFERENCES:
+#       This script creates, uses, and destroys several temporary files:
+#	   header	volume information
+#	   new_name     names & record sizes on current volume  
+#	   new_name0    intermediate file for building new_name from tmp_name1	
+#	   tmp_name	original volume descriptor file
+#	   tmp_name1    names, record sizes, and volume info from VDF
+#	   tmp_name0    intermediate file for creating names under -t option
+#         
+#
+# PROGRAM HISTORY:
+# 	0.0	Written by Shusun Li June 29, 1993
+# 	1.0	Modified Heavily by Tom Logan August 17, 1993
+# 	1.1     Bug Fix Performed T. Logan Fall 1994 
+#	1.2	Changed operation to be consistent with STEP tools guidelines
+#		T. Logan 5/95
+#       1.3     Modified get_names routine for RADARSAR era CEOS files
+#       1.4     Bug Fix D. Corbett 02/06/97
+#       2.0     Fix valid_dev matching bug;Add error trapping;Add new option
+#               in selection loop when yes list complete and only read
+#               tape to last selected file. D.Corbett 05/30/97
+#       2.1	New get_names, added check_name_of O.Lawlor 08/12/97
+#
+# LIMITATIONS:	
+#	Warning: Different computer systems may use different names for the
+#	tape drive.  This is the reason for prompting for the device name.
+#	A file dump_multi_volume.valid_dev lists all valid devices for
+#	this program with one device per line and no trailing blanks.  This 
+#       file should be tailored by the system manager for each site.
+#       The dump_multi_volume script expects that the valid_dev file is in the
+#       same directory as the dump_multi_volume script. 
+#
+#	With version 2.1, any CEOS format tape should be readable, but
+#	it has been tested only with ASF tapes and Canadian Centre for
+#	Remote Sensing (CCRS) tapes from Gatineau Station.
+#
+# INTERNAL VARIABLES:
+#	verbose	   verbose option on or off
+#	b_size	   record size of files to extract
+#	temp_dev   temporary device name
+#	source	   actual tape device used
+#	total_vol  total number of volumes in user order
+#	this_vol   number of current volume being processed
+#	extension  switches between default trailer extension (.trl) or
+#		   alternate trailer extension (.tlr)
+#	rep	   controls repeating loop for multiple volumes
+#	all	   controls dumping of all or selected files
+#	flg	   controls which files are selected to be dumped
+#
+#****************************************************************************
+#								            *
+#   dump_multi_volume -- dumps one or more volumes of tape files	    *
+#   Copyright (C) 2001  ASF Advanced Product Development    	    	    *
+#									    *
+#   This program is free software; you can redistribute it and/or modify    *
+#   it under the terms of the GNU General Public License as published by    *
+#   the Free Software Foundation; either version 2 of the License, or       *
+#   (at your option) any later version.					    *
+#									    *
+#   This program is distributed in the hope that it will be useful,	    *
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
+#   GNU General Public License for more details.  (See the file LICENSE     *
+#   included in the asf_tools/ directory).				    *
+#									    *
+#   You should have received a copy of the GNU General Public License       *
+#   along with this program; if not, write to the Free Software		    *
+#   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
+#									    *
+#       ASF Advanced Product Development LAB Contacts:			    *
+#	APD E-mail:	apd@asf.alaska.edu 				    *
+# 									    *
+#	Alaska SAR Facility			APD Web Site:	            *	
+#	Geophysical Institute			www.asf.alaska.edu/apd	    *
+#      	University of Alaska Fairbanks					    *
+#	P.O. Box 757320							    *
+#	Fairbanks, AK 99775-7320					    *
+#								  	    *
+#**************************************************************************/
+#	
+echo
+echo '***********************************'
+echo ' Multi Volume Tape Dumping Utility ' 
+echo '***********************************'
+echo
+
+# test the parameters
+verbose="n"
+source="n"
+temp_dev="y"
+extension="y"
+all="a"
+errflag=0
+
+while getopts vts arg
+do
+  case $arg in
+    v)
+      verbose="y";;
+    t)
+      extension="n";;
+    s)
+      all="s";;
+    *)
+	errflag=1;;
+  esac
+done
+shift `expr $OPTIND - 1`
+
+# usage error
+
+if [ $# -eq 1 -a !$errflag ]
+then
+  temp_dev=$1
+  source=`fgrep -x $temp_dev $0.valid_dev`
+else
+  echo "Usage: $0 [-v] [-t] [-s] device"
+  echo "      -v verbose"
+  echo "      -t use .tlr extension for trailer files"
+  echo "      -s dump only selected files from tape "
+  echo "         device name of tape drive device" 
+  echo
+  echo Valid devices are:
+  cat $0.valid_dev
+  echo
+  echo "Multi Volume Tape Dumping Utility"
+  echo "Version 2.1, ASF SAR TOOLS"
+  echo
+  exit 1
+fi
+
+# error if drive name is not matched in valid_dev file
+
+if [ "$source" != "$temp_dev" ]
+then
+  echo "Error: *** drive name not in $0.valid_dev : $source"
+  echo
+  echo "Usage: $0 [-v] [-t] [-s] device"
+  echo "          -v    verbose"
+  echo "          -t    use .tlr extension for trailer files"
+  echo "          -s    dump only selected files from tape "
+  echo "        device  Name of tape drive device"
+  echo
+  echo "        Version 2.1   ASF STEP TOOLS"
+  echo
+  echo Valid devices are:
+  cat $0.valid_dev
+  echo
+  exit 2
+fi
+
+# error if get_names not in search path
+
+get_names 2>/dev/null
+if [ ! $? -eq 2 ]
+then
+   echo "Error: *** get_names not found in search path" 
+   which get_names
+   exit 3 
+fi
+
+# rewind the tape
+echo
+echo Rewinding tape drive $source
+mt -f $source rewind
+
+# Read in the volume description file and write its content to tmp_name
+echo
+echo Reading volume description file...
+dd if=$source of=tmp_name bs=360
+
+# extract file names, record sizes, and volume info - save in tmp_name1
+
+get_names tmp_name | grep -v UCT | grep -v UTC > tmp_name1
+
+# if optional TRAILER extension is desired change them now
+if [ $extension = "n" ]
+then
+     sed s/trl/tlr/g tmp_name1 > tmp_name0
+     mv tmp_name0 tmp_name1
+fi
+
+# get volume information, put into file header
+sed -n '1p' tmp_name1 > header
+total_vol=`awk '{ print $4 }' header`
+this_vol=`awk '{ print $2 }' header`
+
+if [ $verbose = "y" ]
+then
+  echo Tape Contents: 
+  cat header
+fi
+
+# Although we might not repeat, we need to enter loop at least once...
+rep="y"
+
+while [ $rep = "y" -o $rep = "Y" -o $rep = "yes" -o $rep = "YES" ]
+  do
+    # extract file names actually on current volume
+    grep ${this_vol}'$' tmp_name1 | grep -v volume > new_name0
+    awk '{ printf("%s\t%d\n",$1,$2) }' new_name0 > new_name
+    rm new_name0
+
+    # Exit with error if new_name is empty
+    if [ `wc -l < new_name` = 0 ]
+    then
+       echo
+       echo "Error: *** Tape Contents list is empty"
+       exit 3
+    else
+       if [ $verbose = "y" ]
+       then
+   	cat new_name 
+       fi
+    fi
+
+    # Dump all files
+    if [ $all = "a" ]
+    then
+	echo 
+	echo Dumping all files from tape...
+	set - `awk '{ print $1 }' new_name`
+	for i 
+	  do
+	    echo extracting file $i
+	    b_size=`grep $i new_name | awk '{ printf("%d",$2) }'`
+	    dd if=$source of=$i bs=$b_size
+	    check_name_of $i
+	  done
+    # handle selection interactively
+    else
+	echo
+	echo Please select files to dump from tape:
+        if [ $verbose = "y" ]
+        then
+           echo   After each filename type y for yes, n for no, or d for done
+           echo   done will set no for all the remaining files on current volume
+        fi
+	set - `awk '{ print $1 }' new_name`
+	for i 
+  	  do
+            ans="N"
+	    b_size=`grep $i new_name | awk '{ printf("%d",$2) }'`
+	    echo "select $i, yes or no or done: "
+	    read ans
+            if [ $ans = "done" -o $ans = "DONE" -o $ans = "d" -o $ans = "D" ]
+            then
+              break
+            fi
+	    echo $i $b_size $ans >> new_name0
+	  done
+
+	# a new file list with "yes" or "no" marks is created
+        # the file lists only up to the last selected file and
+        # discards the rest of the filenames for this volume
+
+        if [ -s new_name0 ]
+        then
+	 mv new_name0 new_name
+
+	 # then go through files one by one
+	 echo 
+	 echo Dumping selected files from tape...
+	 set - `awk '{ print $1 }' new_name`
+	 for i 
+	   do
+	     b_size=`grep $i new_name | awk '{ printf("%d",$2) }'`
+	     flg=`grep $i new_name | awk '{ printf("%s", $3) }'`
+	     #if file is marked yes, dump it
+	     if [ $flg = "yes" -o $flg = "YES" -o $flg = "y" -o $flg = "Y" ]
+	     then
+	       echo extracting file $i
+ 	       dd if=$source of=$i bs=$b_size
+ 	       check_name_of $i
+	     else
+   	       mt -f $source fsf 1
+  	     fi
+	   done
+          fi
+    fi
+ 
+    # Handle multi volume jobs by prompting user for continuation to
+    # process next volume 
+    if [ $total_vol -gt 1 -a $this_vol -lt $total_vol ]
+    then
+      echo 
+      echo  Multiple Volumes Detected
+      echo "Do you wish to process the next volume?"
+      read rep
+      if [ $rep = "y" -o $rep = "Y" -o $rep = "yes" -o $rep = "YES" ]
+      then 
+	echo
+	echo Rewinding tape drive $source
+	mt -f $source rew
+	echo Please mount the next volume now...
+	echo "Press return when ready"
+	read $ans
+	this_vol=`expr $this_vol + 1`
+	mt -f $source rew
+	if [ $verbose="y" ]
+	then
+	  echo Skipping Volume Descriptor Record
+	fi
+	mt -f $source fsf 1
+	if [ $verbose="y" ]
+	then
+	  echo Volume $this_vol of $total_vol
+	fi
+      fi
+    else
+      rep="n"
+    fi  
+
+  done
+
+# rewind the tape
+echo
+echo Rewinding tape...
+mt -f $source rew
+
+# remove temporary files  
+ 
+rm tmp_name new_name tmp_name1 header
+
+echo
+echo '***********************************'
+echo ' DUMP_MULTI_VOLUME EXIT SUCCESSFUL '
+echo '***********************************'
+echo

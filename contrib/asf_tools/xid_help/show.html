@@ -1,0 +1,89 @@
+<TITLE>5.4 Show Loaded Images</TITLE> 
+<H2>5.4 Show Loaded Images</H2>
+
+The show function allows the user to select which plane numbers or saved
+image combinations 
+are to be displayed in the red, green and blue channels or to 
+select which plane number is to be displayed as a black and 
+white image.  To view a color composite image, the user need only use the
+mouse to select a single plane number from each plane list (i.e., one for 
+the red, one for the green and one for the blue channel) and press the
+<B>accept</B> button.  If only 2 image planes are selected, the third will
+be a duplicate of one of the selected planes.  To view a black and white
+(i.e., gray scale image), select only one plane number from any plane list
+or select the same plane number in all three lists and press the <B>accept</B>
+button.
+The image data loaded into the selected plane will be displayed in black
+and white.
+
+<P>
+<IMG SRC="show_info.gif">
+<P>
+
+The <B>Show</B> function also allows the user to obtain information about the
+image data loaded into a particular image plane.  By double clicking the
+left mouse button on a plane number (from the red, green or blue plane list), 
+an image information panel is popped
+up which shows the file name the image data was read from, the window that
+was loaded, the band number and the subsampling factor.  By double clicking on
+a name in the save list, the user can determine which planes were used in the
+saved combination.
+
+<P>
+<IMG SRC="show.gif">
+<P>
+
+<DL>
+<DT><B>Red, Green, and Blue Plane Lists:</B>
+<DD>The plane lists show the user a list of plane numbers that 
+    contain valid image data.  The user chooses the plane numbers 
+    to be displayed in the associated channels from these lists.
+<P>
+
+<DT><B>Save List:</B>
+<DD>The list of currently saved band combinations and mappings.  To view a
+    previously saved combination, select the name and press the <B>accept</B>
+    button.  The entry <B>Current</B> is a special entry.  Double clicking
+    on this entry shows the user which planes are currently displayed in
+    the main image window.
+<P>
+
+<A name=save>
+<DT><B>Save:</B>
+</A>
+<DD>Save the current band combination and mapping with the specified name for
+    future reference.  This save operation is session temporary.
+<P>
+
+<DT><B>Delete:</B>
+<DD>Delete the selected item from the save list.  The <B>delete</B> button
+    is sensitive only when an item has been selected from the save list.
+    Image data is not deleted; only the reference to the band combination
+    and mapping is deleted.
+<P>
+
+<DT><B>Accept:</B>
+<DD>Display the selected planes in the appropriate channels.  On 8-bit 
+    displays, displaying a color image with the show function implies the 
+    selected planes must be sent through the color compression algorithm.
+
+<DT>
+<P>
+<IMG SRC="show_save.gif">
+<P>
+
+<B>Name (Save popup):</B>
+<DD>Enter the name to be associated with the currently displayed image.  The
+    name is accepted and verified as soon as the user presses <B>enter</B>.
+    All names are converted to lower case, duplicate names are not allowed and
+    there is no restriction on the length of the name.
+<P>
+
+<DT><B>Cancel (Save popup):</B>
+<DD>Close the <B>Save</B> popup panel without saving the displayed image
+    combination.
+<P>
+
+<DT><B>Dismiss:</B>
+<DD>Close the show panel.
+</DL>

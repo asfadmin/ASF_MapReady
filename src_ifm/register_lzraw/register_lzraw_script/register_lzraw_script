@@ -1,0 +1,164 @@
+#!/bin/sh
+# usage: register_lzraw <file 1> <file 2> [<grid resolution>]
+# Input: two level-zero Swath files, $1 and $2
+# purpose: process, correlate, and register two non-correlated L0 images.
+
+# Version 1.0: Initial development from existing register_lzceos
+#	       script v2.0
+
+if [ ! $# -eq 3 -a ! $# -eq 4 -a ! $# -eq 6 ]
+then
+	echo "register_lzraw:"
+	echo "Usage: register_lzraw <file 1> <file 2> <igram> "
+	echo "                     [ <grid resolution> [ <line 1> <line 2>] ]"
+	echo ""
+	echo "  <file 1> an ASF LZP Swath file"
+	echo "  <file 2> an ASF LZP Swath file"
+	echo "  <igram> the output interferogram (.amp, .phase, .ddr)"
+	echo "  [ <grid resolution> ] is the grid resolution for fico(1)."
+	echo "                           (the default is 20, for a 20x20 grid)"
+	echo "  <line 1>  start line for image 1 (default=0)"
+	echo "  <line 2>  start line for image 2 (default=0)"
+	echo ""
+	echo "   register_lzraw will run the Alaska SAR processor"
+	echo "on the two images, then coregister the two images"
+	echo "using resolve, fico, fit_line, and calc_deltas,"
+	echo "then re-process the second image so that it matches "
+	echo "up with (is coregistered with) the first."
+	echo "   The result will be an inteferogram."
+	echo "    After this, you can generate a DEM with tandem_ifm."
+	echo "Version 1.0, ASF ISAR Tools, 2000"
+	exit 1
+fi
+
+#rm="echo Remove "
+rm="/bin/rm -r"
+gridRes=$4
+dop="-d 1 -c reg/avedop"
+if [ $# -eq 6 ]
+then
+	aisp1_shift=$5
+	aisp2_shift=$6
+else
+	aisp1_shift=0
+	aisp2_shift=0
+fi
+
+mkdir reg
+
+lz2raw $1 a
+lz2raw $2 b
+
+
+echo "Calculating the average doppler term"
+estavedop a b reg/avedop
+
+
+###-------------------------------------------------------###
+### Co-Register the top of image 1 to the top of image 2  ###
+###-------------------------------------------------------###
+echo "Co-registering first patch"
+
+aisp1=`expr $aisp1_shift + 0`
+aisp2=`expr $aisp2_shift + 0`
+
+### Create the first patch from image 1 ###
+	echo aisp -p 1 $dop -l $aisp1 a reg/a_p1
+	     aisp -p 1 $dop -l $aisp1 a reg/a_p1
+	cp a.L reg/a_p1.L
+
+### Create the first patch from image 2###
+	echo aisp -p 1 $dop -l $aisp2 b reg/b_p1
+	     aisp -p 1 $dop -l $aisp2 b reg/b_p1
+	cp b.L reg/b_p1.L
+
+### Estimate the initial offsets from reg/a to reg/b ###
+	echo resolve reg/a_p1 reg/b_p1 base.00 reg/ctrl1
+	     resolve reg/a_p1 reg/b_p1 base.00 reg/ctrl1
+
+### Perform sub-pixel correlation
+	fico reg/a_p1 reg/b_p1 reg/ctrl1 reg/fico1 $gridRes
+
+# Check to see if fico completed sucessfully.
+if [ $? -eq 101 ]
+then
+	echo "Error: Fico could not find many offsets with"
+	echo "interferometric phase in the top patch."
+	echo "This means the interferogram"
+	echo "is either mis-registered or just bad."
+	echo "This can indicate any number of problems-- some can be fixed by"
+	echo "processing the images separately, then co-registering them."
+	echo "register_lzraw will now attempt this."
+	aisp $dop -l $aisp1 a a
+	aisp $dop -l $aisp2 b b
+	register_cpx a b $3 $gridRes
+	exit 2
+fi
+
+	fit_line reg/fico1 reg/line1
+
+###------------------------------------------###
+### CORRELATE THE LAST PATCH FROM EACH IMAGE ###
+###------------------------------------------###
+echo "Co-registering last patch"
+
+lastLineNo=20000
+aisp1=`expr $aisp1_shift + $lastLineNo`
+aisp2=`expr $aisp2_shift + $lastLineNo`
+
+# Create the last patch from image 1 
+	echo aisp -p 1 $dop -l $aisp1 a reg/a_pL
+	     aisp -p 1 $dop -l $aisp1 a reg/a_pL
+	cp a.L reg/a_pL.L
+
+# Create the last patch from image 2
+	echo aisp -p 1 $dop -l $aisp2 b reg/b_pL
+	     aisp -p 1 $dop -l $aisp2 b reg/b_pL
+	cp b.L reg/b_pL.L
+
+# Estimate the initial offsets from reg/a to reg/b
+	echo resolve reg/a_pL reg/b_pL base.00 reg/ctrlL
+	     resolve reg/a_pL reg/b_pL base.00 reg/ctrlL
+
+# Perform sub-pixel correlation
+	fico reg/a_pL reg/b_pL reg/ctrlL reg/ficoL $gridRes
+# Check to see if fico completed sucessfully.
+if [ $? -eq 101 ]
+then
+	echo "Error: Fico could not find many offsets with"
+	echo "interferometric phase in the bottom patch.  "
+	echo "This means the interferogram"
+	echo "is either mis-registered or just bad."
+	echo "This can indicate any number of problems-- some can be fixed by"
+	echo "processing the images separately, then co-registering them."
+	echo "register_lzraw will now attempt this."
+	aisp $dop -l $aisp1 a a
+	aisp $dop -l $aisp2 b b
+	register_cpx a b $3 $gridRes
+	exit 2
+fi
+	fit_line reg/ficoL reg/lineL
+
+	calc_deltas reg/line1 reg/lineL $lastLineNo reg/deltas
+
+###------------------------------------------###
+### PROCESS Images, now lined up.            ###
+###------------------------------------------###
+echo "Processing input image 1"
+aisp1=`expr $aisp1_shift + 0`
+aisp2=`expr $aisp2_shift + 0`
+echo aisp $dop -l $aisp1 a a
+     aisp $dop -l $aisp1 a a
+
+echo "Processing input image 2"
+echo aisp -o reg/deltas $dop -l $aisp2 b b_corr
+     aisp -o reg/deltas $dop -l $aisp2 b b_corr
+
+igram a b_corr $3
+coh a b_corr $3 $3_coh
+# $rm b_corr*
+
+	echo XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+	echo register_lzraw complete
+	echo XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+

@@ -1,0 +1,45 @@
+
+  This directory contains the code for 3 executables:
+
+  =====================================================================
+  sr2gr - converts slant range imagery into ground range imagery
+	
+	Usage: sr2gr infile outfile pix_code [-r]
+
+	       infile     base name (.img,.ddr,.L)
+	       outfile    base name (.img,.ddr)
+	       pix_code   output pixel spacing code [0-8]
+	                     spacing = 6.25 * 2 ^ <pix_code>
+		             (eg. pix_code 4 => resolution = 100.0m)
+	       -r         Use RAMP inputs; default is AISP
+	
+	ASF Step Tools - Version 2.00
+
+  =====================================================================
+  deskew - removes squint induced skew from an image
+	
+	Usage: deskew infile outfile meta
+
+       		infile   input file name (.img,.ddr)
+       		outfile  output file name (.img,.ddr)
+       		meta     metadata type (0 - CEOS, 1 - AISP)
+
+	ASF Step Tools, Version 1.10
+
+
+  =====================================================================
+  ui2byte - converts ASF RAMP product into byte (slant range) image
+
+	Usage: ui2byte infile outfile
+	       infile     base name (.L,.D)
+	       outfile    base name (.img,.ddr)
+	
+	ASF Step Tools - Version 1.00
+
+  =====================================================================
+
+	These executables rely on routines found in asf_sar.a,
+	asf_las.a, caplib.a, and geolocate.a
+
+  =====================================================================
+
