@@ -1,13 +1,18 @@
 # Makefile for java point target fetcher
-include ../mk.common
 
-SOURCE= MainTargetSelection.java SelectArea.java SelectTargets.java
+include ../Make_rules
 
-all:
+SOURCE= MainTargetSelection.java \
+	SelectArea.java \
+	SelectTargets.java
+
+all: point_target_selection clean
+
+point_target_selection:
 	$(JAVAC) $(SOURCE)
-	cp *.class $(JAVA)
+	cp *.class $(JAVADIR)
 	
 clean:
-	rm -f *.class $(JAVA)/*.class
+	rm -f *.class
 
 

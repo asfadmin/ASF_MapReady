@@ -1,13 +1,26 @@
 # Makefile for java point target fetcher
-include ../mk.common
 
-SOURCE=ASF_Time.java Target.java Area.java MetaReader.java TargetReader.java AreaReader.java Metadata.java Constants.java Spawner.java TargetIngester.java ImageUtils.java
+include ../Make_rules
 
-all:
+SOURCE= ASF_Time.java \
+	Target.java \
+	Area.java \
+	MetaReader.java \
+	TargetReader.java \
+	AreaReader.java \
+	Metadata.java \
+	Constants.java \
+	Spawner.java \
+	TargetIngester.java \
+	ImageUtils.java
+
+all: java_util clean
+
+java_util:
 	$(JAVAC) $(SOURCE)
-	cp *.class $(JAVA)
+	cp *.class $(JAVADIR)
 	
 clean:
-	rm -f *.class $(JAVA)/*.class
+	rm -f *.class
 
 

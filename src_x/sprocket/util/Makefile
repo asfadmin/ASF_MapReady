@@ -1,23 +1,14 @@
 # Makefile for ASF Converter
-include ../mk.common
+include ../Make_rules
 
-OBJECTS= util.o 
-all: $(LIBARY)/libUtil.a  $(INCLUDE)/util.h $(INCLUDE)/metadata.h $(INCLUDE)/ceos_rd.h
+OBJS = util.o
 
-$(INCLUDE)/util.h: util.h
-	cp util.h $(INCLUDE)/util.h
+all: build_only clean
 
-$(LIBARY)/libUtil.a: $(OBJECTS)
-	ar -r $(LIBARY)/libUtil.a $(OBJECTS)
+build_only: $(OBJS)
+	$(AR) rv libUtil.a $(OBJS)
+	$(RANLIB) libUtil.a
+	mv libUtil.a $(LIBDIR)
 
-$(INCLUDE)/metadata.h: metadata.h
-	cp metadata.h  $(INCLUDE)/metadata.h
-
-$(INCLUDE)/ceos_rd.h: ceos_rd.h
-	cp ceos_rd.h $(INCLUDE)/ceos_rd.h
-
-util.o: util.c
-	$(COMP) util.c
-#	$(BEAT) util.c util.h
 clean:
-	rm -f $(LIBARY)/libUtil.a $(INCLUDE)/util.h *.o  $(INCLUDE)/metadata.h $(INCLUDE)/ceos_rd.h
+	rm -f *.o

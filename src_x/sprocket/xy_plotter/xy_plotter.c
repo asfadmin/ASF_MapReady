@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "util.h"
-#include "metadata.h"
+#include "../util/util.h"
+#include "../util/metadata.h"
 
 #define COMPLEX 	(11)
 #define DETECTED 	(13)

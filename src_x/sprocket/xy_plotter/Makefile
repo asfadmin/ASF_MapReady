@@ -1,15 +1,17 @@
-# Makefile for ASF Converter
-include  ../mk.common
-TARGET=xy_plotter
+# Makefile for program xy_plotter
 
-all: $(BIN)/$(TARGET)
+include  ../Make_rules
 
-$(BIN)/$(TARGET): $(TARGET).o
-	$(LINK) $(BIN)/$(TARGET) $(TARGET).o $(LINK_LIB)
+LIBS  = $(LIBDIR)/libUtil.a \
+	-lm
+OBJS  = xy_plotter.o
 
-$(TARGET).o: $(TARGET).c
-	$(COMP) -g $(TARGET).c
-#	$(BEAT) $(TARGET).c
+all: xy_plotter clean
+
+xy_plotter: $(OBJS)
+	$(CC) $(CFLAGS) -o xy_plotter $(OBJS) $(LIBS)
+	mv xy_plotter$(BIN_POSTFIX) $(BINDIR)
+#	cp xy_plotter.1 ../../../man/cat1
 
 clean:
-	rm -f *.o $(BIN)/$(TARGET)
+	rm -f *.o

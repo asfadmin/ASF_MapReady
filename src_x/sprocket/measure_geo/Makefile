@@ -1,7 +1,12 @@
-include ../mk.common
-all:
+# Makefile for MeasureGeoLocationErrors.class
+
+include ../Make_rules
+
+all: MeasureGeoLocationErrors clean
+
+MeasureGeoLocationErrors:
 	$(JAVAC) MeasureGeoLocationErrors.java
-	cp *.class $(JAVA) 
+	cp *.class $(JAVADIR) 
 
 clean:
-	rm -f *.class $(JAVA)/MeasureGeoLocationErrors.class
+	rm -f *.class

@@ -1,12 +1,18 @@
-# Makefile for ASF Converter
-include  ../mk.common
+# Makefile for image2pgm
 
-all: $(BIN)/image2pgm
+include  ../Make_rules
 
-$(BIN)/image2pgm: image2pgm.o
-	$(LINK) $(BIN)/image2pgm image2pgm.o $(LINK_LIB)
+LIBS  = $(LIBDIR)/libUtil.a \
+	-lm
 
-image2pgm.o: image2pgm.c
-	$(COMP) image2pgm.c
+OBJS  = image2pgm.o
+
+all: image2pgm clean
+
+image2pgm: $(OBJS)
+	$(CC) $(CFLAGS) -o image2pgm $(OBJS) $(LIBS)
+	mv image2pgm$(BIN_POSTFIX) $(BINDIR)
+#	cp image2pgm.1 ../../man/cat1
+
 clean:
-	rm -f *.o $(BIN)/image2pgm
+	rm -f *.o

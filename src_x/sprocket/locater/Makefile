@@ -1,11 +1,13 @@
-include ../mk.common
-all:
-	cp geotransform.jar $(JAVA)
+# Makefile for Locater.class
+
+include ../Make_rules
+
+all: locater clean
+
+locater:
+	cp geotransform.jar $(JAVADIR)
 	$(JAVAC) Locater.java
-	cp *.class $(JAVA) 
+	cp *.class $(JAVADIR) 
 
 clean:
-	rm -f *.class $(JAVA)/Locater.class $(JAVA)/geotransform.jar
-
-test:
-	java Locater /scratch2/test_images/vexcel/new_version/1675/out
+	rm -f *.class

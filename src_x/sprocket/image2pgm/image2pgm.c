@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "util.h"
-#include "metadata.h"
+#include "../util/util.h"
+#include "../util/metadata.h"
 
 #define X_SIZE (800)
 #define Y_SIZE (800)

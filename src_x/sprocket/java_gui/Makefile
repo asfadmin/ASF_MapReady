@@ -1,12 +1,14 @@
-# Makefile for ASF Converter
-include  ../mk.common
+# Makefile for java_gui
 
-all: java_gui
+
+include  ../Make_rules
+
+all: java_gui clean
 
 java_gui: 
 	$(JAVAC) pvs.java
-	cp *.class $(JAVA)
-	cp pvs.pref $(JAVA)
+	cp *.class $(JAVADIR)
+	cp pvs.pref $(JAVADIR)
 
 clean:
-	rm -f *.class $(JAVA)/*class $(JAVA)/pvs.pref
+	rm -f *.class

@@ -1,6 +1,5 @@
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-File Name:
-  Orthanc:/ASF/dev/src/util/util.c
+File Name: util.c
 
 Sub Functions:
 
@@ -46,32 +45,29 @@ mmoore     07/11/02  Added comments and renamed some variables for clarity
 #include "util.h"
 #include "metadata.h"
 
-//#define INFO (1==0)
+#define INFO (0)
 
 /* Local Prototypes */
 static int read_metadata_item (FILE * metadata, char *token, char *value);
 static double toDeg (double theta);
 static double toRad (double theta);
 
-/* unused functions
 void string_trim (char *str);
 void read_metadata_string (FILE * metadata, char *item, char *value);
 double incidence2look (double inc, double Re, double H);
-double slant2ground (double sl, double Re, double H);
 double sigma0_ASP (double dn, double range, double *noise_array, double a1,
-double a2, double a3, int number_of_pixels);
+                   double a2, double a3, int number_of_pixels);
 double sigma0_PP (double dn, double range, double *noise_array, double a1,
-double a2, double a3);
+                  double a2, double a3);
 double sigma0_low_PP (double dn, double range, double *noise_array, double a1,
-double a2, double a3);
+                      double a2, double a3);
 double compute_ASF_sigma0 (double dn, double range, double *noise_array,
-double a1, double a2, double a3,
-int interval_size);
-double ground2slant_range (double r *** ground range *** ,
-double Re *** height above platform *** ,
-double H *** Radius of Earth *** );
+                           double a1, double a2, double a3,
+                           int interval_size);
+double ground2slant_range (double r /*** ground range ***/ ,
+                           double Re /*** height above platform ***/ ,
+                           double H /*** Radius of Earth ***/ );
 double slant2ground (double sl, double Re, double H);
- */
 
 
 /* not used
@@ -464,92 +460,82 @@ double stdev (double sum, double sum2, double n)
 }
 
 
-/* not used
 double sigma0_low_PP (double dn, double range, double *noise_array, double a1,
-double a2, double a3)
+                      double a2, double a3)
 {
-return compute_ASF_sigma0 (dn, range, noise_array, a1, a2, a3, 4.0);
+    return compute_ASF_sigma0 (dn, range, noise_array, a1, a2, a3, 4.0);
 }
- */
 
-/* not used
 double sigma0_PP (double dn, double range, double *noise_array, double a1,
-double a2, double a3)
+                  double a2, double a3)
 {
-return compute_ASF_sigma0 (dn, range, noise_array, a1, a2, a3, 32);
+    return compute_ASF_sigma0 (dn, range, noise_array, a1, a2, a3, 32);
 }
- */
 
-/* not used
 double sigma0_ASP (double dn, double range, double *noise_array, double a1,
-double a2, double a3, int number_of_pixels)
+                   double a2, double a3, int number_of_pixels)
 {
-return compute_ASF_sigma0 (dn, range, noise_array, a1, a2, a3,
-number_of_pixels / 256);
+ return compute_ASF_sigma0 (dn, range, noise_array, a1, a2, a3,
+                            number_of_pixels / 256);
 }
- */
 
-/* not used
 double compute_ASF_sigma0 (double dn, double range, double *noise_array,
-double a1, double a2, double a3, int interval_size)
+                           double a1, double a2, double a3, int interval_size)
 {
-int lowend;
-double npower;
-double ret;
+    int lowend;
+    double npower;
+    double ret;
 
 
-lowend = (int) (range / interval_size);
+    lowend = (int) (range / interval_size);
 
- *** This part is not intuitive. Since we are
-using lowend, and lowend + 1, lowend must be less
-than 255, as there are only 255 elements. If all
-well, this code should never be executed. ***
-if (lowend >= 255) lowend = 254;
+     /*** This part is not intuitive. Since we are
+    using lowend, and lowend + 1, lowend must be less
+    than 255, as there are only 255 elements. If all
+    well, this code should never be executed. ***/
+    if (lowend >= 255) lowend = 254;
 
-npower = noise_array[lowend] * (1 - (range / interval_size - lowend))
-+ noise_array[lowend + 1] * (range / interval_size - lowend);
+    npower = noise_array[lowend] * (1 - (range / interval_size - lowend))
+             + noise_array[lowend + 1] * (range / interval_size - lowend);
 
- *** Equation: 10 * log{a2 * [d^2 - (a1 * n(r))] + a3} ***
+     /*** Equation: 10 * log{a2 * [d^2 - (a1 * n(r))] + a3} ***/
 
- ***
-printf ("{ noise = %g ", npower);
-printf ("power = %g ", dn * dn);
-printf ("a = (%g, %g, %g)", a1, a2, a3);
-printf ("index = (%d,%d)", lowend, lowend + 1);
-printf ("sigma = %g } \n", (a2 * (dn * dn - a1 * npower) + a3));
- ***
+     /***
+    printf ("{ noise = %g ", npower);
+    printf ("power = %g ", dn * dn);
+    printf ("a = (%g, %g, %g)", a1, a2, a3);
+    printf ("index = (%d,%d)", lowend, lowend + 1);
+    printf ("sigma = %g } \n", (a2 * (dn * dn - a1 * npower) + a3));
+     ***/
 
-ret = ((a2 * (dn * dn - a1 * npower) + a3));
+    ret = ((a2 * (dn * dn - a1 * npower) + a3));
 
 
- ***
-if (ret > .5 || ret < .005)
-   {
-printf ("{ noise = %g ", npower);
-printf ("power = %g ", dn * dn);
-printf ("a = (%g, %g, %g)", a1, a2, a3);
-printf ("index = (%d,%d)", lowend, lowend + 1);
-printf ("sigma = %g } \n", (a2 * (dn * dn - a1 * npower) + a3));
+     /***
+    if (ret > .5 || ret < .005)
+       {
+    printf ("{ noise = %g ", npower);
+    printf ("power = %g ", dn * dn);
+    printf ("a = (%g, %g, %g)", a1, a2, a3);
+    printf ("index = (%d,%d)", lowend, lowend + 1);
+    printf ("sigma = %g } \n", (a2 * (dn * dn - a1 * npower) + a3));
+    }
+
+     ***/
+
+    return ret;
 }
 
- ***
-
-return ret;
-}
- */
-
-/* not used
-double ground2slant_range (double r *** ground range *** ,
-double Re *** height above platform *** ,
-double H *** Radius of Earth *** )
+double ground2slant_range (double r /*** ground range ***/ ,
+			   double Re /*** height above platform ***/ ,
+			   double H /*** Radius of Earth ***/ )
 {
-double p;
-p = r / Re;
-if (INFO)
-   printf ("INFO:\tground2slant_range(r=%f, Re=%f, H=%f)\n", r, Re, H);
-return (sqrt (2.0 * Re * (Re + H) * (1.0 - cos (p)) + H * H));
+    double p;
+    p = r / Re;
+    if (INFO)
+       printf ("INFO:\tground2slant_range(r=%f, Re=%f, H=%f)\n", r, Re, H);
+    return (sqrt (2.0 * Re * (Re + H) * (1.0 - cos (p)) + H * H));
 }
- */
 
 /*+ Calculate the look angle from the slant range, height and Earth Radius +*/
 
@@ -603,55 +589,58 @@ double look2incidence (double look, double Re, double H)
    return toDeg ((asin ((Re + H) * sin (toRad (look)) / Re)));
 }
 
-/* not used
 double incidence2look (double inc, double Re, double H)
 {
-return toDeg (asin ((sin (toRad (inc)) / (Re + H)) * Re));
+    return toDeg (asin ((sin (toRad (inc)) / (Re + H)) * Re));
 }
- */
 
-/*
+/* not used 
 double P_2_slant( double P)
 {
-double R2;
-R2 = 2.0*Re*(Re+H)*(1-cosd(P))+H*H;
-return sqrt(R2);
+    double R2;
+    R2 = 2.0*Re*(Re+H)*(1-cosd(P))+H*H;
+    return sqrt(R2);
 }
+*/
 
+/* not used 
 double look_2_slant ( double look)
 {
-double P;
-if (state == 0) geo_error(ERROR_STATE);
-P = look_2_P ( look);
-return P_2_slant(P);
+     double P;
+     if (state == 0) geo_error(ERROR_STATE);
+     P = look_2_P ( look);
+     return P_2_slant(P);
 }
+*/
 
+/* not used 
 double incidence_2_slant (double incidence )
 {
-double P, R2;
-if (state == 0) geo_error(ERROR_STATE);
-P = incidence_2_P (incidence );
-return P_2_slant(P);
+    double P, R2;
+    if (state == 0) geo_error(ERROR_STATE);
+    P = incidence_2_P (incidence );
+    return P_2_slant(P);
 }
+*/
 
+/* not used 
 double look_2_P ( double look)
 {
-return look_2_incidence(look) - look;
+    return look_2_incidence(look) - look;
 }
+*/
+/* not used 
 double incidence_2_P (double incidence )
 {
-return incidence-incidence_2_look(incidence);
+    return incidence-incidence_2_look(incidence);
 }
+*/
 
- */
-
-/* not used
 double slant2ground (double sl, double Re, double H)
 {
-double ReH;
-if (INFO)
-   printf ("INFO:\t slant2ground(sl=%f, Re=%f, H=%f)\n", sl, Re, H);
-ReH = Re + H;
-return ((Re * acos ((Re * Re + ReH * ReH - sl * sl) / (2.0 * Re * ReH))));
+    double ReH;
+    if (INFO)
+       printf ("INFO:\t slant2ground(sl=%f, Re=%f, H=%f)\n", sl, Re, H);
+    ReH = Re + H;
+    return ((Re * acos ((Re * Re + ReH * ReH - sl * sl) / (2.0 * Re * ReH))));
 }
- */
