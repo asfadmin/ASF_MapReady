@@ -24,6 +24,7 @@ meta_general       *meta_general_init(void);
 meta_sar           *meta_sar_init(void);
 meta_projection    *meta_projection_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
+meta_stats         *meta_stats_init(void);
 
 
 /********************************************************
@@ -147,6 +148,22 @@ meta_state_vectors *meta_state_vectors_init(int vector_count)
     state_vectors->vecs[ii].vec.vel.z = MAGIC_UNSET_DOUBLE;
   }
   return state_vectors;
+}
+
+/********************************************************
+ * meta_stats_init():
+ * Allocate memory for and initialize elements of a meta
+ * stats structure */
+meta_stats *meta_stats_init(void)
+{
+  meta_stats *stats = (meta_stats *)MALLOC(sizeof(meta_stats));
+  stats->min = MAGIC_UNSET_DOUBLE;
+  stats->max = MAGIC_UNSET_DOUBLE;
+  stats->mean = MAGIC_UNSET_DOUBLE;
+  stats->rmse = MAGIC_UNSET_DOUBLE;
+  stats->std_deviation = MAGIC_UNSET_DOUBLE;
+  stats->mask = MAGIC_UNSET_DOUBLE;
+  return stats;
 }
 
 /****************************************************
