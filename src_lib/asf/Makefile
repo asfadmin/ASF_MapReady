@@ -9,13 +9,6 @@
 
 include ../../make_support/system_rules
 
-# Static libraries used by this library.  These get pulled out of the
-# library repository and expanded, then recombined together with the
-# objects from this library to save user having to link against all
-# libraries used by this library and give some semblance of modularity
-# to this benighted C language.
-LIBS = asf_meta.a
-
 OBJS  = caplib.o \
 	fileUtil.o \
 	stopwatch.o \
@@ -29,19 +22,10 @@ all: build_only
 	ln -s -f $(LIBDIR)/asf.a $(LIBDIR)/libasf.a
 	rm *.o
 
-build_only: $(OBJS) cook_libs
+build_only: $(OBJS)
 	rm -rf asf.a
-	ar rv asf.a $(OBJS) $(wildcard ./library_cooking_pot/*.o)
+	ar rv asf.a $(OBJS)
 	$(RANLIB) asf.a
-
-cook_libs: $(addprefix $(LIBDIR)/, $(LIBS)) library_cooking_pot
-	cd library_cooking_pot; \
-	for lib in $(LIBS); do \
-	  ar xv ../$(LIBDIR)/$$lib; \
-	done
-
-library_cooking_pot:
-	mkdir library_cooking_pot
 
 # Rebuild everything if makefile or any local of ASF header or library
 # has changed.
