@@ -51,6 +51,10 @@ stage_glib_stamp:
 
 else
 
+# Absolute path of the tool binaries directory (with a few relative
+# components because thats the easiest way get the string we need).
+BINDIR_FULL := $(shell pwd)/$(BINDIR)
+
 # Copy an already built GLIB into the staging area, or build it there
 # if a copy doesn't appear to be available.
 stage_glib_stamp:
@@ -65,20 +69,21 @@ stage_glib_stamp:
 	    gunzip --to-stdout $(ICONV_ZIPFILE) >$(ICONV_TARFILE) ; \
 	    tar xvf $(ICONV_TARFILE) ; \
 	    (cd $(ICONV_UNPACK_DIR) ; \
-                export PATH=`cd ../$(BINDIR) ; pwd`:$(PATH) ; \
+                PATH=$(BINDIR_FULL):$(PATH) ; \
                 ./configure --enable-static=yes --enable-shared=yes \
 		   --enable-relocatable --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
 		make ; \
                 make install) ; \
 	    gunzip --to-stdout $(GLIB_ZIPFILE) >$(GLIB_TARFILE) ; \
 	    tar xvf $(GLIB_TARFILE) ; \
+	    echo $(BINDIR_FULL); \
 	    (cd $(GLIB_UNPACK_DIR) ; \
-                   export PATH=`cd ../$(BINDIR) ; pwd`:$(PATH) ; \
-                   LDFLAGS="-L`pwd`/../$(ROOT_STAGEDIR)/lib" \
-                   CFLAGS="-I`pwd`/../$(ROOT_STAGEDIR)/include" \
-	           ./configure --enable-static=yes --enable-shared=no  \
-		   --with-libiconv=gnu --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
-		make ; \
+                PATH=$(BINDIR_FULL):$(PATH) \
+                LDFLAGS="-L`pwd`/../$(ROOT_STAGEDIR)/lib" \
+                CFLAGS="-I`pwd`/../$(ROOT_STAGEDIR)/include" \
+	        ./configure --enable-static=yes --enable-shared=no  \
+		--with-libiconv=gnu --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
+		PATH=$(BINDIR_FULL):$(PATH) make ; \
                 make install) ; \
 	    cp $(ROOT_STAGEDIR)/lib/glib-2.0/include/*.h \
 	       $(INCLUDE_STAGEDIR)/glib-2.0; \
