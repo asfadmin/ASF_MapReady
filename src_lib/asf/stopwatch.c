@@ -54,7 +54,7 @@ void StopWatchLog(FILE *fLog)
   fprintf (fLog, "Total CPU time = %f seconds.\n\n", elapsed);
 }
 
-char* date_stamp(void)
+char* date_time_stamp(void)
 {
   time_t t;
   char *t_stamp;
@@ -65,3 +65,16 @@ char* date_stamp(void)
 
   return t_stamp;
 }
+
+char* date_stamp(void)
+{
+  time_t t;
+  char *t_stamp;
+
+  t_stamp = (char*) MALLOC(25*sizeof(char));
+  t = time(NULL);
+  strftime(t_stamp, 12, "%d-%b-%Y", localtime(&t));
+
+  return t_stamp;
+}
+
