@@ -400,10 +400,10 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
       projection->type=MAGIC_UNSET_CHAR;
    }
    else if (strncmp(mpdr->mpdesig, "GROUND RANGE",12) == 0) {
-      projection->type='A';/*Along Track/Cross Track.*/
+      projection->type=SCANSAR_PROJECTION;/*Along Track/Cross Track.*/
    }
    else if (strncmp(mpdr->mpdesig, "LAMBERT", 7) == 0) {
-      projection->type='L';/*Lambert Conformal Conic.*/
+      projection->type=LAMBERT_CONFORMAL_CONIC;/*Lambert Conformal Conic.*/
       printf("WARNING: * Images geocoded with the Lambert Conformal Conic projection may not\n"
              "         * be accurately geocoded!\n");
       projection->param.lamcc.plat1=mpdr->nsppara1;
@@ -415,19 +415,19 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
     */
    }
    else if (strncmp(mpdr->mpdesig, "UPS", 3) == 0) {
-      projection->type='P';/*Polar Stereographic: pre-radarsat era*/
+      projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic: pre-radarsat era*/
       projection->param.ps.slat=70.0;
       projection->param.ps.slon=-45.0;
    }
    else if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0) {
-      projection->type='P';/*Polar Stereographic: radarsat era.*/
+      projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic: radarsat era.*/
       projection->param.ps.slat=mpdr->upslat;
       projection->param.ps.slon=mpdr->upslong;
       if (projection->param.ps.slat>0 && projection->param.ps.slon==0.0)
         projection->param.ps.slon=-45.0;/*Correct reference longitude bug*/
    } 
    else if (strncmp(mpdr->mpdesig, "UTM", 3) == 0) {
-      projection->type='U';/*Universal Transverse Mercator*/
+      projection->type=UNIVERSAL_TRANSVERSE_MERCATOR;/*Universal Transverse Mercator*/
       projection->param.utm.zone=UTM_zone(mpdr->utmpara1);
    } 
    else { 
@@ -437,7 +437,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
    }
 
     /* The Along-Track/Cross-Track projection requires special initialization*/
-   if (projection->type=='A') 
+   if (projection->type==SCANSAR_PROJECTION) 
    {
       stateVector st_start;
       
