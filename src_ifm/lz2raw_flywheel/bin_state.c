@@ -25,6 +25,7 @@ PROGRAM HISTORY:
 					ignore bit errors in RSAT AGC fields.
 	6/2001		T. Logan     - Modified updateAGC_window to check for and
 					ignore bit errors in window shift for ERS
+	1/2003		P. Denny     - Updated to new meta structures
 
 ****************************************************************/
 
@@ -88,42 +89,63 @@ void delete_bin_state(bin_state *s)
 	FREE(s);
 }
 
+/* couple of prototypes */
+double lzDouble(char *granN,char *desiredParam,int *err);
+int lzInt(char *granN,char *desiredParam,int *err);
 /************************
 Writes the satellite * fields into the given meta_parameters
 */
-void updateMeta(bin_state *s,meta_parameters *meta)
+void updateMeta(bin_state *s,meta_parameters *meta,char *inN)
 {
+	char parN[255];
+	strcat(strcpy(parN,inN),".par");
 /*Update fields for which we have decoded header info.*/
-	meta->ifm->er=s->re;
-	meta->ifm->ht=s->re+s->ht;
-	meta->ifm->nLooks=s->nLooks;
-	meta->ifm->orig_nLines=30000;/*Guess 30K lines- doesn't really matter.*/
-	meta->ifm->orig_nSamples=s->nSamp;
-	
-	meta->geo->type='S';/*Slant range product*/
-	meta->geo->deskew=0;/*Not doppler deskewed*/
-	meta->geo->lookDir=s->lookDir;
-	meta->geo->rngPixTime=1.0/s->fs;
-	meta->geo->azPixTime=1.0/s->prf;
-	meta->geo->xPix=meta->geo->rngPixTime*(speedOfLight/2.0);
-	meta->geo->yPix=meta->geo->azPixTime*s->vel* /*Orbital velocity*/
-		(meta->ifm->er/meta->ifm->ht);/*Swath velocity*/
-	meta->geo->timeShift=meta->geo->slantShift=0.0;
-	meta->geo->slantFirst=s->range_gate*speedOfLight/2.0;
-	meta->geo->wavelen=speedOfLight/s->frequency;
+	meta->sar->image_type = 'S';               /*Slant range product*/
+	meta->sar->look_direction = s->lookDir;
+	meta->sar->look_count = s->nLooks;
+	meta->sar->deskewed = 0;
+	meta->sar->original_line_count = s->nLines;
+	meta->sar->original_sample_count = s->nSamp;
+	meta->sar->line_increment = 1.0;
+	meta->sar->sample_increment = 1.0;
+	meta->sar->range_time_per_pixel = 1.0/s->fs;
+	meta->sar->azimuth_time_per_pixel = 1.0/s->prf;
+	meta->sar->slant_shift = 0.0;
+	meta->sar->time_shift = 0.0;
+	meta->sar->slant_range_first_pixel = s->range_gate*speedOfLight/2.0;
+	meta->sar->wavelength = speedOfLight/s->frequency;
+	meta->sar->prf = s->prf;
+	sprintf(meta->sar->satellite_binary_time, "%f", s->time_code);
+	strcpy (meta->sar->satellite_clock_time, "0");
 
-	if (meta->info==NULL)
-	{
-		meta->info=(extra_info *)MALLOC(sizeof(extra_info));
-		meta->info->orbit=-1;
-		meta->info->bitErrorRate=-1;
-		sprintf(meta->info->satBinTime,"%f",s->time_code);
-		sprintf(meta->info->satClkTime,"0");
-	}
-	strcpy(meta->info->sensor,s->satName);
-	strcpy(meta->info->mode,s->beamMode);
-	strcpy(meta->info->processor,"ASF Lz/ceos2raw");
-	meta->info->prf = s->prf;
+	strcpy(meta->general->sensor, s->satName);
+	strcpy(meta->general->mode, s->beamMode);
+	strcpy(meta->general->processor, "ASF/LZ2RAW_FLYWHEEL");
+	meta->general->data_type = BYTE;
+	strcpy(meta->general->system, meta_get_system());
+	meta->general->orbit = lzInt(parN,"prep_block.OrbitNr:",NULL);
+/*****	meta->general->orbit_direction = FIXME: HUM, HOW TO DO THIS??*/
+/*****	meta->general->frame = FIXME: HUM, HOW TO DO THIS??*/
+	meta->general->band_number = 0;
+	meta->general->line_count = s->nLines;
+	meta->general->sample_count = s->nSamp;
+	meta->general->start_line = 0;
+	meta->general->start_sample = 0;
+	meta->general->x_pixel_size = meta->sar->range_time_per_pixel * (speedOfLight/2.0);
+	meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel * s->vel /*Orbital velocity*/
+					* (s->re / (s->re+s->ht));               /*Swath velocity*/
+/*****	meta->general->center_latitude = Gotten in main() function */
+/*****	meta->general->center_longitude = Gotten in main() function */
+	if (meta->general->re_major != meta->general->re_major) /* See if its NaN */
+/*FIXME*/	meta->general->re_major = 6378137.0;/*Would be better if this weren't hardcoded*/
+	if (meta->general->re_minor != meta->general->re_minor) /* See if its NaN */
+/*FIXME*/	meta->general->re_minor = 6356752.31414;/*Would be better if this weren't hardcoded*/
+	meta->general->bit_error_rate = lzDouble(parN,"prep_block.bit_error_rate:",NULL);
+	meta->general->missing_lines = lzDouble(parN,"prep_block.missing_lines:",NULL);
+	
+/* temporary fix for earth radius and satellite height */
+	s->re = meta_get_earth_radius(meta, s->nLines, 0);
+	s->ht = meta_get_sat_height(meta, s->nLines, 0) - s->re;
 }
 
 /********************************
@@ -213,7 +235,6 @@ void updateAGC_window(bin_state *s,float amplify,float startOff)
 		if (!quietflag) printf("   Writing to Format file - line %i\n",s->nLines);
 
 		fprintf(s->dotFMT,"%-8d %12.3f %10.5g\n",s->nLines,startOff,amplify);
-
 		fflush(s->dotFMT);  /*Flush the format file*/
 	}
 }
