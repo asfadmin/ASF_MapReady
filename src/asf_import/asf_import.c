@@ -23,7 +23,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "[-amplitude | -sigma | -gamma | -beta | -power]\n"\
 "              [-prc] [-old] [-format <inputFormat>] [-lat <lower> <upper>]\n"\
 "              [-metadata <inMetaFile>] [-lut <file> ] [-log <logFile>] \n"\
-"	      [-quiet] [-help] <inBaseName> <outBaseName>"
+"              [-quiet] [-help] <inBaseName> <outBaseName>"
 
 #define ASF_DESCRIPTION_STRING \
 "   Ingests all varieties of CEOS and STF data formats as well as the\n"\
@@ -39,40 +39,47 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   appropriate extensions."
 
 #define ASF_OPTIONS_STRING \
-"   -amplitude     Create an amplitude image. This is the default behavior.\n"\
-"   -sigma         Create a calibrated image (sigma dB values).\n"\
-"   -gamma         Create a calibrated image (gamma dB values).\n"\
-"   -beta          Create a calibrated image (beta dB values).\n"\
-"   -power         Create a power image.\n"\
-"   -format        Force input data to be read as the given format type.\n"\
-"                    Valid options are ceos, stf, esri, and envi.\n"\
-"                    \"ceos\" is the default behavior.\n"\
-"   -log           Output will be written to a specified log file.\n"\
-"   -quiet         Supresses all non-essential output.\n"\
-"   -lat           Specify lower and upper latitude contraints.\n"\
-"   -old           Output in old style ASF internal format.\n"\
-"   -metadata      Use a different name for the metadata file.\n"\
-"                    Requires only the base name.\n"\
-"   -prc           Replace the restituted state vectors from the original\n"\
-"                    raw data acquired by the ERS satellites with preceision\n"\
-"   -lut           Applies a user defined look up table to the\n"\
-"                    data. Look up contains incidence angle dependent\n"\
-"                    scaling factor."
+"   -amplitude\n"\
+"        Create an amplitude image. This is the default behavior.\n"\
+"   -sigma\n"\
+"        Create a calibrated image (sigma dB values).\n"\
+"   -gamma\n"\
+"        Create a calibrated image (gamma dB values).\n"\
+"   -beta\n"\
+"        Create a calibrated image (beta dB values).\n"\
+"   -power\n"\
+"        Create a power image.\n"\
+"   -format\n"\
+"        Force input data to be read as the given format type. Valid options\n"\
+"        are:  ceos, stf, esri, and envi. \"ceos\" is the default behavior.\n"\
+"   -log <logFile>\n"\
+"        Output will be written to a specified log file.\n"\
+"   -quiet\n"\
+"        Supresses all non-essential output.\n"\
+"   -lat Specify lower and upper latitude contraints.\n"\
+"   -old Output in old style ASF internal format.\n"\
+"   -metadata\n"\
+"        Use a different name for the metadata file. Requires only the base\n"\
+"        name.\n"\
+"   -prc Replace the restituted state vectors from the original raw data\n"\
+"        acquired by the ERS satellites with preceision\n"\
+"   -lut Applies a user defined look up table to the data. Look up contains\n"\
+"        incidence angle dependent scaling factor."
 
 #define ASF_EXAMPLES_STRING \
 "   To import CEOS format to the ASF tools internal format run:\n"\
-"       example> asf_import fileCEOS fileASF\n"\
+"        example> asf_import fileCEOS fileASF\n"\
 "\n"\
 "   To import a STF fileset (fileSTF.000 & file.000.par) you will need to\n"\
 "   specify the -format option since STF is not the default.\n"\
-"       example> asf_import -format stf fileSTF.000 fileASF\n"\
+"        example> asf_import -format stf fileSTF.000 fileASF\n"\
 "\\n"
 
 #define ASF_LIMITATIONS_STRING \
-"  CEOS base name issue:\n"\
-"   If you have two or more CEOS filesets ([*.D & *.L], [*.RAW & *.LDR], or\n"\
-"   [dat.* & lea.*]) with the same base name, then this program will\n"\
-"   automatically fetch the first set in the aforementioned list."
+"   CEOS base name issue:\n"\
+"        If you have two or more CEOS filesets ([*.D & *.L], [*.RAW & *.LDR],\n"\
+"        or [dat.* & lea.*]) with the same base name, then this program will\n"\
+"        automatically fetch the first set in the aforementioned list."
 
 #define ASF_SEE_ALSO_STRING \
 "   asf_convert, asf_export"
@@ -137,11 +144,12 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "                                filetype imports... ready for release."
 
 #define ASF_VERSION_MAJOR_STRING \
-"1.0"
+"   0.30"
+
+#define VERSION 0.3
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
-#define VERSION 1.0
 
 #include "asf_import.h"
 #include "asf_meta.h"
@@ -185,8 +193,8 @@ void help_page()
           "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
           "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
           "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
-          "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
-          "Version: " ASF_VERSION_MAJOR_STRING "\n\n\n");
+          "Version:\n" ASF_VERSION_MAJOR_STRING "\n\n\n"
+          "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n");
 
   /* If we can, use less */
   sprintf(command,"echo '%s' | less",happy_string);
@@ -217,8 +225,8 @@ int main(int argc, char *argv[])
   char *lutName=NULL;
   char format_type[256]="";
   int ii;
+  int flags[NUM_FLAGS];
   double lowerLat=NAN, upperLat=NAN;
-  flag_indices_t flags[NUM_FLAGS];
 
   /* Set all flags to 'not set' */
   for (ii=0; ii<NUM_FLAGS; ii++) {
@@ -327,10 +335,9 @@ int main(int argc, char *argv[])
   /* Set old school quiet flag (for use in our libraries) */
   quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
 
-  /*We must be close to good enough at this point... (logfile is open)
-    start filling in fields as needed*/
-  if(flags[f_QUIET] == FLAG_NOT_SET)
-    print_splash_screen(argc, argv);/*display splash screen if not quiet*/
+  /*We must be close to good enough at this point... log & quiet flags are set
+    Report what was retrieved at the command line */
+  asfSplashScreen(argc, argv);
 
   if(flags[f_PRC] != FLAG_NOT_SET)
     strcpy(prcPath, argv[flags[f_PRC] + 1]);
@@ -429,11 +436,11 @@ int main(int argc, char *argv[])
       get_ceos_metadata_name(inBaseName, inMetaName);
       create_sprocket_layers(outBaseName, inMetaName);
       /* Nix the log file if the user didn't ask for it */
-    	if (flags[f_LOG] == FLAG_NOT_SET) {
-    		FCLOSE(fLog);
-    		remove(logFile);
-    	}
-    	exit(EXIT_SUCCESS);
+      if (flags[f_LOG] == FLAG_NOT_SET) {
+        FCLOSE(fLog);
+        remove(logFile);
+      }
+      exit(EXIT_SUCCESS);
     }
   }
 
