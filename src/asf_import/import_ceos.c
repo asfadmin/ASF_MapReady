@@ -18,7 +18,7 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
  * Import a wide variety for CEOS flavors (hopefully all) to our very own ASF
  * Tools format */
 void import_ceos(char *inDataName, char *inMetaName, char *lutName,
-		 char *outBaseName, flag_indices_t flags[])
+                 char *outBaseName, flag_indices_t flags[])
 {
   char outDataName[256], outMetaName[256];              /* Output file names */
   int nl=MAGIC_UNSET_INT, ns=MAGIC_UNSET_INT;     /* Number of lines/samples */
@@ -96,7 +96,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     for (ii=0; ii<nl; ii++) {
       readNextPulse(s, iqBuf, inDataName, outDataName); /* I think outDataName is just a place holder... at least for now */
       FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
-      if(flags[f_QUIET] == FLAG_NOT_SET) print_progress(ii,nl);
+      line_meter(ii,nl);
      s->nLines++;
     }
     updateMeta(s,meta,NULL,0);
@@ -165,7 +165,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         out_cpx_buf[kk].imag=(float)cpx_buf[kk*2+1];
       }
       put_complexFloat_line(fpOut, meta, ii, out_cpx_buf);
-      if(flags[f_QUIET] == FLAG_NOT_SET) print_progress(ii,nl);
+      line_meter(ii,nl);
     }
   }
   /******************* END COMPLEX (level 1) DATA SECTION ********************/
@@ -326,7 +326,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	      out_buf[kk] = 0;
 	  }
           put_float_line(fpOut, meta, ii, out_buf);
-          if(flags[f_QUIET] == FLAG_NOT_SET) print_progress(ii,nl);
+          line_meter(ii,nl);
 	}
 
       } /**** End processing of 16 bit input data ****/
@@ -374,7 +374,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	      out_buf[kk] = 0;
 	  }
           put_float_line(fpOut, meta, ii, out_buf);
-          if(flags[f_QUIET] == FLAG_NOT_SET) print_progress(ii,nl);
+          line_meter(ii,nl);
 	}
 
       } /**** End processing of byte input data ****/
@@ -449,7 +449,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          if(flags[f_QUIET] == FLAG_NOT_SET) print_progress(ii,nl);
+          line_meter(ii,nl);
         }
       } /**** End processing of 16 bit input data ****/
 
@@ -492,7 +492,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          if(flags[f_QUIET] == FLAG_NOT_SET) print_progress(ii,nl);
+          line_meter(ii,nl);
         }
       } /**** End processing of byte input data ****/
     } /**** End calibrated output section ****/
@@ -516,7 +516,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
         put_float_line(fpOut, meta, ii, out_buf);
 
-        if(flags[f_QUIET] == FLAG_NOT_SET) print_progress(ii,nl);
+        line_meter(ii,nl);
       }
     }
 
@@ -537,7 +537,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
         put_float_line(fpOut, meta, ii, out_buf);
 
-        if(flags[f_QUIET] == FLAG_NOT_SET) print_progress(ii,nl);
+        line_meter(ii,nl);
       }
     }
   }
