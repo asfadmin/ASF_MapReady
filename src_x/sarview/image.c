@@ -17,7 +17,9 @@ meta_parameters *meta=NULL;
 histogram *data_hist=NULL;  /* used for histogram display */
 
 
-/*Throw away cached image info.*/
+/*****************************************************
+ * image_delete
+ * Nuke cached image info.*/
 void image_delete(void)
 {
 	if (type==image_ddr) {
@@ -38,9 +40,11 @@ void image_delete(void)
 	image.width=image.height=-1;
 }
 
-/*Load routines-- these read the metadata of the
-given image and set link_imagewidth and height. They
-return 0 on failure.*/
+/*****************************************************
+ * image_loadLas:
+ * Load routine number 1 -- read the metadata (if it's
+ * there) and the ddr of the given image and set
+ * link_imagewidth and height. Return 0 on failure.*/
 int image_loadLas(char *fileName)
 {
 	type=image_ddr;
@@ -56,12 +60,19 @@ int image_loadLas(char *fileName)
 	ddr_file=fopenImage(fileName,"rb");
 	if (ddr_file==NULL)
 		return 0;
+
 /*Try to read in the metadata*/
 	if (extExists(fileName,".meta"))
-		meta=meta_init(fileName);
+		meta=meta_read(fileName);
 
 	return 1;
 }
+
+/**********************************************************
+ * image_loadCeos:
+ * Load routine number 2 -- read the metadata (leader file)
+ * of the given image and set link_imagewidth and height.
+ * return 0 on failure.*/
 int image_loadCeos(char *fileName)
 {
 	type=image_ceos;
@@ -78,22 +89,10 @@ int image_loadCeos(char *fileName)
 	return 1;
 }
 
-int image_loadNewMeta(char *fileName)
-{
-  type=image_new_meta;
-  meta_parameters *meta = meta_read(fileName);
-
-  strcpy(image.fName, fileName); /* Set image name.  */
-
-  /* Set the image size; based on the metadata.  */
-  image.width = meta->general->sample_count;
-  image.height = meta->general->line_count;
-  
-  return 1;
-}
-
-/*Extract the entire given line from the current image.
-Dest must be link_imagewidth floats long.*/
+/*******************************************************
+ * image_readLine:
+ * Extract the entire given line from the current image.
+ * Dest must be link_imagewidth floats long.*/
 void image_readLine(float *dest,int lineY,int bandNo)
 {
 	int *iBuf,x;
@@ -109,16 +108,16 @@ void image_readLine(float *dest,int lineY,int bandNo)
 			dest[x]=(float)iBuf[x];
 		FREE(iBuf);
 		break;
-	case image_new_meta:
-	  
 	default:
 		abort();/*Unknown image type*/
 		break;
 	}
 }
 
-/*Compute the pixel scaling slope and offset, and write 
-  them to link_slope and link_offset*/
+/*********************************************************
+ * image_slopeOffset:
+ * Compute the pixel scaling slope and offset, and write 
+ * them to link_slope and link_offset*/
 void image_slopeOffset(void)
 {
 	const int nLines=100;/*Number of lines of data to examine*/

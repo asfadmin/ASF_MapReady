@@ -20,11 +20,8 @@ int cproc_loadimage(char * imageName)
 	if ( extExists(imageName,".ddr") ) { /* Is a LAS image.  */
 		if ( 0 == image_loadLas(imageName) ) return 0;
 	}
-	else if ( extExists(imageName, ".meta") && meta_is_new_style(imageName) ) {
-		if ( 0 == image_loadNewMeta(imageName) ) return 0;
-	}
-	else { /* Is a CEOS image.  */
-		if (0==image_loadCeos(imageName)) return 0;
+	else { /* Is a CEOS image. */
+		if (0 == image_loadCeos(imageName)) return 0;
 	}
 
 /*Set the zoom factor based on the image and screen sizes--
@@ -76,7 +73,6 @@ void cproc_ne_arrows(char *canvas,double x,double y)
 		meta_get_original_line_sample(meta, iy, ix, &iy, &ix);
 		meta_get_latLon(meta,iy,ix,0.0,&lat,&lon);
 		meta_get_timeSlantDop(meta,iy,ix,&time,&slant,&doppler);
-
 		meta_get_lineSamp(meta,lat+0.01,lon,0.0,&destY,&destX);
 		drawArrow(canvas,"N",destX-ix,destY-iy);
 
