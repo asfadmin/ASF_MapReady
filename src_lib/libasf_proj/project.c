@@ -11,11 +11,13 @@
 #include "proj_api.h"
 
 #ifndef linux
+#ifndef win32
 static double
 round (double arg)
 {
   return floor (arg + 0.5);
 }
+#endif // #ifndef win32
 #endif // #ifndef linux
 
 static datum_type_t sDatum = MAGIC_UNSET_INT;
@@ -41,7 +43,7 @@ static const char * datum(project_parameters_t * pps)
     }
 }
 
-static double sHeight = MAGIC_UNSET_DOUBLE;
+static double sHeight = 0.0;
 void project_set_avg_height(double h)
 {
     sHeight = h;
