@@ -19,9 +19,9 @@ build_only: $(OBJS)
 
 check: convert2byte_tester.c build_only
 	$(CC) -DTEST_DATA_DIR='"$(TEST_DATA_DIR)"' $(CFLAGS) $< $(LFLAGS) \
-              -lcheck $(LDFLAGS) -o amp2img_tester
+              -lcheck $(LDFLAGS) -o convert2byte_tester
 	mkdir test_data
-	./amp2img_tester
+	./convert2byte_tester
 
 clean:
 	rm -f *.o convert2byte_tester
