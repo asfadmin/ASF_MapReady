@@ -22,8 +22,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_USAGE_STRING \
 "[-amplitude | -sigma | -gamma | -beta | -power]\n"\
 "              [-prc] [-old] [-format <inputFormat>] [-lat <lower> <upper>]\n"\
-"              [-metadata <inMetaFile>] [-log <logFile>] [-quiet] [-help]\n"\
-"              <inBaseName> <outBaseName>"
+"              [-metadata <inMetaFile>] [-lut <file> ] [-log <logFile>] \n"\
+"	      [-quiet] [-help] <inBaseName> <outBaseName>"
 
 #define ASF_DESCRIPTION_STRING \
 "   Ingests all varieties of CEOS and STF data formats as well as the\n"\
@@ -46,7 +46,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   -power         Create a power image.\n"\
 "   -format        Force input data to be read as the given format type.\n"\
 "                    Valid options are ceos, stf, esri, and envi.\n"\
-"                    'ceos' is the default behavior.\n"\
+"                    \"ceos\" is the default behavior.\n"\
 "   -log           Output will be written to a specified log file.\n"\
 "   -quiet         Supresses all non-essential output.\n"\
 "   -lat           Specify lower and upper latitude contraints.\n"\
@@ -55,10 +55,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "                    Requires only the base name.\n"\
 "   -prc           Replace the restituted state vectors from the original\n"\
 "                    raw data acquired by the ERS satellites with preceision\n"\
-"                    state vectors from DLR."\
 "   -lut           Applies a user defined look up table to the\n"\
 "                    data. Look up contains incidence angle dependent\n"\
-"                    scaling factors."
+"                    scaling factor."
 
 #define ASF_EXAMPLES_STRING \
 "   To import CEOS format to the ASF tools internal format run:\n"\
@@ -67,7 +66,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   To import a STF fileset (fileSTF.000 & file.000.par) you will need to\n"\
 "   specify the -format option since STF is not the default.\n"\
 "       example> asf_import -format stf fileSTF.000 fileASF\n"\
-"\n"
+"\\n"
 
 #define ASF_LIMITATIONS_STRING \
 "  CEOS base name issue:\n"\
@@ -137,8 +136,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "    1.0     8/04   P. Denny    Create functions to do each of the different\n"\
 "                                filetype imports... ready for release."
 
-
-#define ASF_VERSION_MAJOR_STRING "1.0"
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
 #define VERSION 1.0
