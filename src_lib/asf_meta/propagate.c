@@ -3,6 +3,7 @@
 
 #include "asf.h"
 #include "dateUtil.h"
+#include "orbital_state_vector.h"
 #include "propagate.h"
 
 /* allocation routine for meta_state_vectors */
@@ -416,36 +417,22 @@ stateVector propagate(stateVector source,double sourceSec,double destSec)
 	FILE *asapIn,*asapOut;
 /*Convert input state vector to inertial coordinates*/
 	fixed2gei(&source,sec2gha(sourceSec));
-#define asapInName "asap.in"
-#define asapOutName "asap.out"
-/*Create ASAP Input File*/
-	asapIn=FOPEN(asapInName,"w");
-	fprintf(asapIn,"%f\n%f\n%f\n%f\n%f\n%f\n",
-		source.pos.x/1000.0,source.pos.y/1000.0,source.pos.z/1000.0,
-		source.vel.x,source.vel.y,source.vel.z);
-	printYMDS_date(sourceSec,asapIn);
-	printYMDS_date(destSec,asapIn);
-	fprintf(asapIn,"1\n");/*One step.*/
-	FCLOSE(asapIn);
-/*Call Propagate*/
-	system("propagate "asapInName" "asapOutName);
-/*Read ASAP output file*/
-	asapOut=FOPEN(asapOutName,"r");
-	fgets(inBuf,256,asapOut);/*Skip echo of input vector*/
-	fgets(inBuf,256,asapOut);/*Read propagated output vector*/
-	for (i=strlen(inBuf)-1;i>=0;i--)
-		if (inBuf[i]=='D')
-			inBuf[i]='E';/*Replace 12.3D3 with 12.3E3*/
-	sscanf(inBuf,"%lg%lg%lg%lg%lg%lg%lg",&ignored,/*Skip time field*/
-		&ret.pos.x,&ret.pos.y,&ret.pos.z,
-		&ret.vel.x,&ret.vel.y,&ret.vel.z);
-	vecScale(&ret.pos,1000.0);/*Convert from km to m*/
-	vecScale(&ret.vel,1000.0);/*Convert from km/s to m/s*/
-	FCLOSE(asapOut);
-/*Remove temporaries.*/
-	unlink(asapInName);
-	unlink(asapOutName);
-/*Convert out state vector to fixed-earth coordinates*/
+	OrbitalStateVector *osv 
+	  = orbital_state_vector_new (source.pos.x, source.pos.y, 
+				      source.pos.z, source.vel.x, 
+				      source.vel.y, source.vel.z);
+	orbital_state_vector_propagate (osv, destSec - sourceSec);
+	ret.pos.x = osv->position->x;
+	ret.pos.y = osv->position->y;
+	ret.pos.z = osv->position->z;
+	ret.vel.x = osv->velocity->x;
+	ret.vel.y = osv->velocity->y;
+	ret.vel.z = osv->velocity->z;
+	vector_free (osv->position);
+	vector_free (osv->velocity);
+	free (osv);
+
+	/*Convert out state vector to fixed-earth coordinates*/
 	gei2fixed(&ret,sec2gha(destSec));
 	return ret;
 }
