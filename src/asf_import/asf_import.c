@@ -21,7 +21,6 @@
    The data file name must be provided seperately from the meta file name.
    The output file provided should only be a base name, by which the created
    files will be named, with appropriate extensions.
-   
 </input>
 
 <output>
@@ -43,8 +42,12 @@
    -prc           ?
 </options>
 
+<examples>
+   asf_import CEOS file1.img file1.meta file2
+</examples>
+
 <limitations>
-   None known.
+   Don't use the -sprocket option.
 </limitations>
 
 <see_also>

@@ -31,6 +31,15 @@
    -o             Name of the output file.
 </options>
 
+<examples>
+   To export to the default geotiff format from file1:
+      asf_export file1
+   To file1 export to the jpeg format:
+      asf_export -f jpeg file1
+   To export file1 to a jpeg no larger than 800x800:
+      asf_export -f jpeg -s 800 file1
+</examples>
+
 <limitations>
    Currently only supports ingest of ASF format floating point data.
    Geotiffs will not be scaled.

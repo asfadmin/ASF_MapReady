@@ -54,6 +54,13 @@
    -output        output format and output filename.
 </options>
 
+<examples>
+   To convert the CEOS format file1 to a jpeg format in file2.jpg
+      asf_convert -input CEOS file1.img file1.meta -output jpeg file2.jpg
+   To run the program from a configuration file:
+      asf_convert -config configFile
+</examples>
+
 <limitations>
    None known.
 </limitations>
