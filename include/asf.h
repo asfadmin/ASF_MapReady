@@ -45,34 +45,36 @@ void bail(const char *message, ...)/* ; is coming, don't worry.  */
 ; /* <-- Semicolon for bail prototype.  */
 
 /*****************************************
- * These routines allow programs to be timed easily.  Call *
- * StartWatch(Log) at the beginning, and then call StopWatch(Log) at
- * the end to automaticly print out some information about how much
- * CPU time the program took to standard output or to a log file.  If
- * the program takes more than 72 minutes, the reported time may be
- * totally wrong on some systems, due to clock wrap around.  */
-
+ * Deprecated program timing routines.  There are better ways (like
+ * looking at yor watch even) to time programs than using these
+ * routines.  Call StartWatch(Log) at the beginning, and then call
+ * StopWatch(Log) at the end to automaticly print out some information
+ * about how much CPU time the program took to standard output or to a
+ * log file.  If the program takes more than 72 minutes, the reported
+ * time may be totally wrong on some systems, due to clock wrap
+ * around.  So its probably best not to use these in new code
+ * (consider them deprecated).  */
 void StartWatch(void);
 void StopWatch(void);
 void StartWatchLog(FILE *fLog);
 void StopWatchLog(FILE *fLog);
 
 /*****************************************
- * FileUtil:
- * A collection of file I/O utilities. Implemented in asf.a/fileUtil.c */
+ * FileUtil: 
+ * A collection of file name and I/O utilities. Implemented * in
+ * asf.a/fileUtil.c */
 
-/* Return a pointer to the rightmost dot extension, including the dot,
-   in name, or NULL if no extension is found.  */
 char *findExt(char *name);
 /* The maximum allowable length in characters (not including trailing
-   null character) of result strings from the appendExt function.  */
+   null character) of result strings from the appendExt routine.  */
 #define MAX_APPENDEXT_RESULT_STRING_LENGTH 255
-/* This function is badly misnamed.  What it actuall does: First, if
-   newExt is NULL (not an empty string, but a NULL pointer, return a
-   new copy of name.  Otherwise, return in new memory a string
-   consisting of a copy of name with the rightmost dot extension, if
-   present, replaced with newExt.  If no dot extension exists
-   originally, the new extension is appended.  */
+/* Deprecated: use create_name and preallocated memory instead.  This
+   function is badly misnamed.  What it actuall does: First, if newExt
+   is NULL (not an empty string, but a NULL pointer, return a new copy
+   of name.  Otherwise, return in new memory a string consisting of a
+   copy of name with the rightmost dot extension, if present, replaced
+   with newExt.  If no dot extension exists originally, the new
+   extension is appended.  */
 char *appendExt(const char *name,const char *newExt);
 /* Ruturn true iff file name exists and is readable.  */
 int fileExists(const char *name);
