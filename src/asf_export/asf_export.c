@@ -223,7 +223,7 @@ checkForOption (char *key, int argc, char *argv[])
 {
   int ii = 0;
   while ( ii < argc ) {
-    if ( strmatch(key, argv[ii]) )
+    if ( strmatch (key, argv[ii]) )
       return ii;
     ++ii;
   }
@@ -261,120 +261,148 @@ main (int argc, char *argv[])
   /*Check to see which options were specified*/
   if ( checkForOption ("-help", argc, argv) != -1
        || checkForOption ("--help", argc, argv) != -1 ) {
-    help_page();
+    help_page ();
   }
-  formatFlag = checkForOption("-format", argc, argv);
-  sizeFlag = checkForOption("-size", argc, argv);
-  logFlag = checkForOption("-log", argc, argv);
-  quietFlag = checkForOption("-quiet", argc, argv);
-  lutFlag = checkForOption("-lut", argc, argv);
-  byteFlag = checkForOption("-byte", argc, argv);
+  formatFlag = checkForOption ("-format", argc, argv);
+  sizeFlag = checkForOption ("-size", argc, argv);
+  logFlag = checkForOption ("-log", argc, argv);
+  quietFlag = checkForOption ("-quiet", argc, argv);
+  lutFlag = checkForOption ("-lut", argc, argv);
+  byteFlag = checkForOption ("-byte", argc, argv);
 
-  if(formatFlag != FLAG_NOT_SET)
-    needed_args += 2;/*option & parameter*/
-  if(sizeFlag != FLAG_NOT_SET)
-    needed_args += 2;/*option & parameter*/
-  if(quietFlag != FLAG_NOT_SET)
-    needed_args += 1;/*option*/
-  if(logFlag != FLAG_NOT_SET)
-    needed_args += 2;/*option & parameter*/
-  if(lutFlag != FLAG_NOT_SET)
-    needed_args += 4;/*option & parameters */
-  if(byteFlag != FLAG_NOT_SET)
-    needed_args += 2;/*option & parameter*/
+  if ( formatFlag != FLAG_NOT_SET ) { 
+    needed_args += 2;		/* Option & parameter.  */ 
+  }
+  if ( sizeFlag != FLAG_NOT_SET ) {
+    needed_args += 2;		/* Option & parameter.  */
+  }
+  if ( quietFlag != FLAG_NOT_SET ) {
+    needed_args += 1;		/* Option & parameter.  */
+  }
+  if ( logFlag != FLAG_NOT_SET ) {
+    needed_args += 2;		/* Option & parameter.  */
+  }
+  if ( lutFlag != FLAG_NOT_SET ) {
+    needed_args += 4;		/* Option & parameters.  */
+  }
+  if ( byteFlag != FLAG_NOT_SET ) {
+    needed_args += 2;		/* Option & parameter.  */
+  }
 
-  if(argc != needed_args)
-    usage();/*This exits with a failure*/
+  if ( argc != needed_args ) {
+    usage ();			/* This exits with a failure.  */
+  }
 
-  /*We also need to make sure the last three options are close to what we expect*/
-  if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-')
-    usage();/*This exits with a failure*/
+  /* We also need to make sure the last three options are close to
+     what we expect.  */
+  if ( argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-' ) {
+    usage (); /* This exits with a failure.  */
+  }
 
-  /*Make sure any options that have parameters are followed by parameters (and not other options)
-  Also make sure options' parameters don't bleed into required arguments*/
-  if(formatFlag != FLAG_NOT_SET)
-    if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3)
-      usage();
-  if(sizeFlag != FLAG_NOT_SET)
-    if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
-      usage();
-  if(lutFlag != FLAG_NOT_SET)
-    if(argv[lutFlag + 1][0] == '-' || argv[lutFlag + 2][0] == '-' ||
-       argv[lutFlag + 3][0] == '-' || lutFlag >= argc - 5)
-      usage();
-  if(byteFlag != FLAG_NOT_SET)
-    if(argv[byteFlag + 1][0] == '-' || byteFlag >= argc -3)
-      usage();
-  if(logFlag != FLAG_NOT_SET)
-    if(argv[logFlag + 1][0] == '-' || logFlag >= argc - 3)
-      usage();
+  /* Make sure any options that have parameters are followed by
+     parameters (and not other options) Also make sure options'
+     parameters don't bleed into required arguments.  */
+  if ( formatFlag != FLAG_NOT_SET ) {
+    if ( argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3 ) {
+      usage ();
+    }
+  }
+  if ( sizeFlag != FLAG_NOT_SET ) {
+    if ( argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3 ) {
+      usage ();
+    }
+  }
+  if ( lutFlag != FLAG_NOT_SET ) {
+    if ( argv[lutFlag + 1][0] == '-' || argv[lutFlag + 2][0] == '-' ||
+	 argv[lutFlag + 3][0] == '-' || lutFlag >= argc - 5 ) {
+      usage ();
+    }
+  }
+  if ( byteFlag != FLAG_NOT_SET ) {
+    if ( argv[byteFlag + 1][0] == '-' || byteFlag >= argc -3 ) {
+      usage ();
+    }
+  }
+  if ( logFlag != FLAG_NOT_SET ) {
+    if ( argv[logFlag + 1][0] == '-' || logFlag >= argc - 3 ) {
+      usage ();
+    }
+  }
 
-  if (logFlag != FLAG_NOT_SET)
-    strcpy(logFile, argv[logFlag + 1]);
-  else
-    sprintf(logFile, "tmp%i.log", (int)getpid());
-  logflag = TRUE; /* Since we always log, set the old school logflag to true */
-  fLog = FOPEN(logFile, "a");
+  if ( logFlag != FLAG_NOT_SET ) {
+    strcpy (logFile, argv[logFlag + 1]);
+  }
+  else {
+    sprintf (logFile, "tmp%i.log", (int) getpid ());
+  }
+  /* Since we always log, set the old school logflag to true.  */
+  logflag = TRUE;
+  fLog = FOPEN (logFile, "a");
 
   /* Set old school quiet flag (for use in our libraries) */
-  quietflag = (quietFlag!=FLAG_NOT_SET) ? TRUE : FALSE;
+  quietflag = ( quietFlag != FLAG_NOT_SET ) ? TRUE : FALSE;
 
-  /* We're good enough at this point... print the splash screen */
-  asfSplashScreen(argc, argv);
+  /* We're good enough at this point... print the splash screen.  */
+  asfSplashScreen (argc, argv);
 
-  if(formatFlag != FLAG_NOT_SET)
+  if( formatFlag != FLAG_NOT_SET ) {
     strcpy(command_line.format, argv[formatFlag + 1]);
-  else
-    strcpy(command_line.format, "geotiff");/*Default behavior: produce a geotiff*/
+  }
+  else {
+    /* Default behavior: produce a geotiff.  */
+    strcpy(command_line.format, "geotiff");
+  }
 
-  for(ii = 0; ii < strlen(command_line.format); ++ii)/*convert the string to upper case*/
-    command_line.format[ii] = toupper(command_line.format[ii]);
+  /* Convert the string to upper case.  */
+  for ( ii = 0 ; ii < strlen(command_line.format) ; ++ii ) {
+    command_line.format[ii] = toupper (command_line.format[ii]);
+  }
 
   /* Set the default byte scaling mechanisms */
   if (strcmp(command_line.format, "TIFF") == 0 ||
       strcmp(command_line.format, "JPEG") == 0)
     command_line.scale = SIGMA;
-  if (strcmp(command_line.format, "GEOTIFF") == 0)
+  if ( strcmp (command_line.format, "GEOTIFF") == 0 )
     command_line.scale = NONE;
 
-  if(sizeFlag != FLAG_NOT_SET)
-    command_line.size = atol(argv[sizeFlag + 1]);
+  if ( sizeFlag != FLAG_NOT_SET )
+    command_line.size = atol (argv[sizeFlag + 1]);
   else
     command_line.size = NO_MAXIMUM_OUTPUT_SIZE;
 
-  if(quietFlag != FLAG_NOT_SET)
+  if ( quietFlag != FLAG_NOT_SET )
     command_line.quiet = TRUE;
   else
     command_line.quiet = FALSE;
 
-  if(lutFlag != FLAG_NOT_SET) {
+  if ( lutFlag != FLAG_NOT_SET ) {
     strcpy(command_line.format, "CEOS");
     strcpy(command_line.leader_name, argv[lutFlag + 1]);
     strcpy(command_line.cal_params_file, argv[lutFlag + 2]);
     strcpy(command_line.cal_comment, argv[lutFlag + 3]);
   }
-  if(byteFlag != FLAG_NOT_SET) {
-    strcpy(scaleStr, argv[byteFlag + 1]);
-    for(ii=0; ii<strlen(scaleStr); ii++)
-      scaleStr[ii] = toupper(scaleStr[ii]);
+  if ( byteFlag != FLAG_NOT_SET ) {
+    strcpy (scaleStr, argv[byteFlag + 1]);
+    for ( ii = 0 ; ii < strlen (scaleStr) ; ii++)
+      scaleStr[ii] = toupper (scaleStr[ii]);
 
     /* Set scaling mechanism */
-    if(strcmp(scaleStr, "TRUNCATE") == 0)
+    if ( strcmp (scaleStr, "TRUNCATE") == 0 )
       command_line.scale = TRUNCATE;
-    else if(strcmp(scaleStr, "MINMAX") == 0)
+    else if ( strcmp(scaleStr, "MINMAX") == 0 )
       command_line.scale = MINMAX;
-    else if(strcmp(scaleStr, "SIGMA") == 0)
+    else if ( strcmp(scaleStr, "SIGMA") == 0 )
       command_line.scale = SIGMA;
   }
 
   /*Grab/construct the data file name*/
-  strcpy(command_line.in_data_name, argv[argc - 2]);
-  strcat(command_line.in_data_name, ".img");
+  strcpy (command_line.in_data_name, argv[argc - 2]);
+  strcat (command_line.in_data_name, ".img");
   /*Grab/construct the meta file name*/
-  strcpy(command_line.in_meta_name, argv[argc - 2]);
-  strcat(command_line.in_meta_name, ".meta");
+  strcpy (command_line.in_meta_name, argv[argc - 2]);
+  strcat (command_line.in_meta_name, ".meta");
   /*Grab the output name*/
-  strcpy(command_line.output_name, argv[argc - 1]);
+  strcpy (command_line.output_name, argv[argc - 1]);
 
 
 /***********************END COMMAND LINE PARSING STUFF***********************/
@@ -386,22 +414,22 @@ main (int argc, char *argv[])
     format = ESRI;
   }
   else if ( strcmp (command_line.format, "GEOTIFF") == 0 ||
-    strcmp(command_line.format, "GEOTIF") == 0) {
-    append_ext_if_needed(command_line.output_name, ".tif", ".tiff");
+    strcmp (command_line.format, "GEOTIF") == 0) {
+    append_ext_if_needed (command_line.output_name, ".tif", ".tiff");
     format = GEOTIFF;
   }
   else if ( strcmp (command_line.format, "TIFF") == 0 ||
-      strcmp(command_line.format, "TIF") == 0) {
-    append_ext_if_needed(command_line.output_name, ".tif", ".tiff");
+	    strcmp (command_line.format, "TIF") == 0) {
+    append_ext_if_needed (command_line.output_name, ".tif", ".tiff");
     format = TIF;
   }
   else if ( strcmp (command_line.format, "JPEG") == 0 ||
-    strcmp(command_line.format, "JPG") == 0) {
-    append_ext_if_needed(command_line.output_name, ".jpg", ".jpeg");
+    strcmp (command_line.format, "JPG") == 0) {
+    append_ext_if_needed (command_line.output_name, ".jpg", ".jpeg");
     format = JPEG;
   }
   else if ( strcmp (command_line.format, "PPM") == 0 ) {
-    append_ext_if_needed(command_line.output_name, ".ppm", NULL);
+    append_ext_if_needed (command_line.output_name, ".ppm", NULL);
     format = PPM;
   }
   else if ( strcmp (command_line.format, "CEOS") == 0 ) {
@@ -423,29 +451,29 @@ main (int argc, char *argv[])
   meta_free (md);
   if ( format == ENVI ) {
     export_as_envi (command_line.in_meta_name, command_line.in_data_name,
-        command_line.output_name);
+		    command_line.output_name);
   }
   else if ( format == ESRI ) {
     export_as_esri (command_line.in_meta_name, command_line.in_data_name,
-        command_line.output_name);
+		    command_line.output_name);
   }
   else if ( format == TIF ) {
     export_as_tiff (command_line.in_meta_name, command_line.in_data_name,
-        command_line.output_name, command_line.size,
-        command_line.scale);
+		    command_line.output_name, command_line.size,
+		    command_line.scale);
   }
   else if ( format == GEOTIFF ) {
     export_as_geotiff (command_line.in_meta_name, command_line.in_data_name,
-           command_line.output_name, command_line.scale);
+		       command_line.output_name, command_line.scale);
   }
   else if ( format == JPEG ) {
     export_as_jpeg (command_line.in_meta_name, command_line.in_data_name,
-        command_line.output_name, command_line.size,
-        command_line.scale);
+		    command_line.output_name, command_line.size,
+		    command_line.scale);
   }
   else if ( format == PPM ) {
     export_as_ppm (command_line.in_meta_name, command_line.in_data_name,
-       command_line.output_name, command_line.size);
+		   command_line.output_name, command_line.size);
   }
   else if ( format == CEOS ) {
     export_as_ceos (command_line.in_meta_name, command_line.in_data_name,
