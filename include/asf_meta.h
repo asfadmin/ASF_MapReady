@@ -169,7 +169,6 @@ typedef struct {
   double re_minor;       /* Semiminor axis length (poles) (meters).        */
   /* Note: we compute ecc=sqrt(1-re_major^2/re_minor^2).  This field
      is therefore redundant and should be eliminated.  DEPRECATED.         */
-  /* FIXME: fill this in from somewhere for backward compatability.  */
   double ecc;            /* First eccentricity of earth ellipsoid.         */
     /* Projection parameters for each projection.                          */
   union {		     
@@ -298,7 +297,6 @@ meta_parameters *meta_read(const char *inName);
 void meta_write(meta_parameters *meta,const char *outName);
 
 /*Internal creation routines:*/
-meta_state_vectors *raw_init_state(int nState);
 meta_parameters *raw_init(void);
 meta_parameters *meta_create(const char *fName);
 
