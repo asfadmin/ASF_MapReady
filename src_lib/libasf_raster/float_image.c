@@ -1138,10 +1138,7 @@ float_image_store (FloatImage *self, const char *file,
   // Reorganize data into tiles in tile oriented disk file.
   size_t ii;
   for ( ii = 0 ; ii < self->size_y ; ii++ ) {
-    size_t jj;
-    for ( jj = 0 ; jj < self->size_x ; jj++ ) {
-      line_buffer[jj] = float_image_get_pixel (self, jj, ii);
-    }
+    float_image_get_row (self, ii, line_buffer);
     // Convert from the host byte order to the byte order specified
     // for the disk file, if necessary.  Doing this with floats is
     // somewhat questionable apparently: major libraries don't seem to
@@ -1151,9 +1148,9 @@ float_image_store (FloatImage *self, const char *file,
     if ( non_native_byte_order (byte_order) ) {
       // Floats better be four bytes for this to work.
       g_assert (sizeof (float) == 4);
-      size_t idx;
-      for ( idx = 0 ; idx < self->size_x ; idx++ ) {
-	swap_bytes_32 ((unsigned char *) &(line_buffer[idx]));
+      size_t jj;
+      for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+	swap_bytes_32 ((unsigned char *) &(line_buffer[jj]));
       }
     }
     // Write the data.
