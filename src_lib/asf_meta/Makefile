@@ -35,7 +35,7 @@ YACC_SOURCES = metadata_parser.y
 LEX_SOURCES = metadata_lexer.l
 
 LEX_YACC_OBJS =  $(patsubst %.y, %.o, $(YACC_SOURCES)) \
-                 $(patsubst %.l, %.o, $(LEX_SOURCES))
+		 $(patsubst %.l, %.o, $(LEX_SOURCES))
 
 LAS_OBJS = allocbuf.o \
 	c_calcor.o \
@@ -79,43 +79,43 @@ LAS_OBJS = allocbuf.o \
 	squeeze.o 
 
 OBJS =  $(LEX_YACC_OBJS) \
-	getLatLong.o \
-	getLoc.o \
+	aisp_params.o \
+	ceos_io.o \
+	code_ceos.o \
+	coniFetch.o \
+	dateUtil.o \
 	err_die.o \
 	fixed2gei.o \
 	gei2fixed.o \
+	getLatLong.o \
+	getLoc.o \
+	get_ceos.o \
+	heading.o \
 	interp_stVec.o \
 	jpl_proj.o \
 	latLon2timeSlant.o \
+	lzFetch.o \
+	meta_complex2polar.o \
+	meta_copy.o \
+	meta_create.o \
 	meta_get.o\
 	meta_get_geo.o \
 	meta_get_ifm.o \
 	meta_get_util.o \
 	meta_init.o \
-	read_baseline.o \
-	slantRange2groundPixel.o \
-	util3d.o \
-	yaw2doppler.o \
-	aisp_params.o \
-	code_ceos.o \
-	ceos2ddr.o \
-	ceos_io.o \
-	dateUtil.o \
-	get_ceos.o \
-	heading.o \
-	coniFetch.o \
-        meta_complex2polar.o \
-	meta_create.o \
 	meta_init_aisp.o \
-	meta_init_asf.o \
 	meta_init_ceos.o \
 	meta_init_stVec.o \
+	meta2ddr.o \
 	meta_read.o \
-	meta_copy.o \
 	meta_write.o \
-	meta_new2ddr.o \
+	propagate.o \
+	read_baseline.o \
 	set_era.o \
+	slantRange2groundPixel.o \
 	utc2gha.o \
+	util3d.o \
+	yaw2doppler.o \
 	$(LAS_OBJS)
 
 all: asf_meta
@@ -151,8 +151,8 @@ $(OBJS): Makefile $(LOCAL_HEADERS) $(wildcard ../../include/*.h) \
 
 clean:
 	rm -rf $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
-               $(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
-	       library_cooking_pot asf_meta_tester meta_update asf_meta.a
+	$(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
+	library_cooking_pot asf_meta_tester meta_update asf_meta.a
 
 check: asf_meta_tester.c build_only
 	$(CC) $(CFLAGS) $< asf_meta.a -lm -lcheck $(LDFLAGS) -o asf_meta_tester
