@@ -135,7 +135,12 @@ void ERS_auxUpdate(ERS_aux *aux,bin_state *s)
  * auxAGC_window:
  * call updateAGC_window with satellite AGC (1.0) and window position for this
  * line.  */
+
+#define SWST_UNIT 0.00000021094 
+/* unit reported window position corresponds to 210.94 ns */
+
 void ERS_auxAGC_window(bin_state *s,ERS_aux *aux)
 {
-  updateAGC_window(s,1.0,aux->dwp*s->fs);
+/*  updateAGC_window(s,1.0,aux->dwp*s->fs);*/
+  updateAGC_window(s,1.0,aux->dwp_code*SWST_UNIT*s->fs);
 }
