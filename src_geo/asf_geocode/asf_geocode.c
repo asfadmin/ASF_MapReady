@@ -495,7 +495,7 @@ main (int argc, char **argv)
   // Get the projection parameters from the command line.
   projection_type_t projection_type;
   // Terrain height to assume.  Defaults to 0.
-  double average_height;	// FIXME: Put this default in docs
+  double average_height;
   // Pixel size to use for output image, in projection coordinate
   // units (presumably meters, but you never know when we might lose
   // our heads and decide to add some dumb projection).
@@ -761,7 +761,7 @@ main (int argc, char **argv)
   // Here are some convenience macros for the spline model.
 #define X_PIXEL(x, y) reverse_map_x (&dtf, x, y) 
 #define Y_PIXEL(x, y) reverse_map_y (&dtf, x, y)
-  
+
   // Check the health of the our spline model by comparing the input
   // image pixel coordinates predicted by the model for each point
   // with the known values.
@@ -1002,7 +1002,7 @@ main (int argc, char **argv)
 
   // Close Log, if needed
   if (logflag)
-      FCLOSE (fLog);
+    FCLOSE (fLog);
 
   exit (EXIT_SUCCESS);
 }
