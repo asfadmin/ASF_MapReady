@@ -52,8 +52,8 @@ main(int argc,char **argv)
 	struct DDR inDDR,outDDR;			/* DDR structures to figure out info about the images */
 	char *infile, *freqFile, *outfile;		/* Input filename */
 	float filtStart[2], filtEnd[2],df,stop;		/* Filter stop, start, delta and counter variables */
-	FCMPLX *inBuf,*outBuf;				/* Input/Output Image Buffers */
-	FCMPLX *fftBuf;					/* FFT Buffer for the image */
+	complexFloat *inBuf,*outBuf;				/* Input/Output Image Buffers */
+	complexFloat *fftBuf;					/* FFT Buffer for the image */
 	float *ampBuf,*phsBuf;				/*Amplitude and Phase Buffers */
 	float *time_vector,A,B,shift;			/* Time vector and frequency modulation shift variables */
 	float chunk_float;				/* Temporary value */
@@ -152,9 +152,9 @@ main(int argc,char **argv)
 
 /* Allocate the memory for all the buffers */
 
-        inBuf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*samps*fftLen);
-        outBuf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*samps*fftLen);
-        fftBuf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*fftLen);
+        inBuf=(complexFloat *)MALLOC(sizeof(complexFloat)*samps*fftLen);
+        outBuf=(complexFloat *)MALLOC(sizeof(complexFloat)*samps*fftLen);
+        fftBuf=(complexFloat *)MALLOC(sizeof(complexFloat)*fftLen);
         ampBuf=(float *)MALLOC(sizeof(float)*fftLen);
         phsBuf=(float *)MALLOC(sizeof(float)*fftLen);  
         time_vector=(float *)MALLOC(sizeof(float)*lines);
@@ -257,7 +257,7 @@ main(int argc,char **argv)
 			else
 				start_line=mpi_offset*chunk_size-2*toss_size;
 			
-                        in_offset=samps*sizeof(FCMPLX)*start_line;
+                        in_offset=samps*sizeof(complexFloat)*start_line;
 
 			if(mpi_offset==chunk_int)
 			{
@@ -270,7 +270,7 @@ main(int argc,char **argv)
 		/* Read in the data chunk */
 	
 			FSEEK64(inF,in_offset,SEEK_SET);
-			FREAD(inBuf,sizeof(FCMPLX)*samps*chunk_size,1,inF);
+			FREAD(inBuf,sizeof(complexFloat)*samps*chunk_size,1,inF);
 		/* Process the each column */
 	
 			if(prcsr_rank==0)
@@ -351,10 +351,10 @@ main(int argc,char **argv)
 			if(k==0 && prcsr_rank==0)
 				out_offset=0;
 			else
-				out_offset=(mpi_offset*(block_size-2*toss_size))*sizeof(FCMPLX)*samps;
+				out_offset=(mpi_offset*(block_size-2*toss_size))*sizeof(complexFloat)*samps;
 		
 			FSEEK64(outF1,out_offset,SEEK_SET);
-			FWRITE(outBuf+(samps*toss_size),sizeof(FCMPLX)*samps*(chunk_size-toss_size),1,outF1);
+			FWRITE(outBuf+(samps*toss_size),sizeof(complexFloat)*samps*(chunk_size-toss_size),1,outF1);
 			
 		} /* End of the processing using the active processors */
 	
