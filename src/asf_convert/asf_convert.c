@@ -131,10 +131,12 @@ PROGRAM HISTORY:
 #include "proj.h"
 #include <unistd.h>
 
+char *program_name = "asf_convert";
+
 #define VERSION 0.5
 #define REQUIRED_ARGS 1
 
-void usage()
+void usage(char *program_name)
 {
  printf("\n"
 	"USAGE:\n"
@@ -210,7 +212,7 @@ int main(int argc, char *argv[])
     exit(0);
   }
   else if (argc<3)
-    usage();
+    usage(program_name);
 
   quietflag = TRUE;
 
