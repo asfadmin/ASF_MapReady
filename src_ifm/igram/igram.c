@@ -48,6 +48,7 @@ PROGRAM HISTORY:
     3.4      10/00	 M. Ayers   - Changed igram back to calculating the
 				      amplitude of interferogram, also removed
 				      the extra square root.
+    3.5      2/04	 R. Gens    - Added log switch
 
 
 HARDWARE/SOFTWARE LIMITATIONS:
@@ -91,7 +92,7 @@ BUGS:
  *  Buffer Size
  */
 #define  BSZ     65535
-#define VERSION  3.4
+#define VERSION  3.5
 #define ampScale 200
 
 /* function declaration */
@@ -102,7 +103,7 @@ int main(int argc, char *argv[])
   char fnm[256];
   int count = 0,len;
   FILE *inFile1, *inFile2, *outFileAmp, *outFilePhase;
-  unsigned int bytesRead=0;
+  long bytesRead=0;
   int bailout=0;
   struct DDR inDDR1, inDDR2;
 	
@@ -110,14 +111,32 @@ int main(int argc, char *argv[])
   float *outAmp,*outPhase;
   char cmd[256];
 
+  logflag = 0;
   /*
    * in-line usage
    */
-  StartWatch(); 
   if(argc < 4){
     usage(argv[0]);
   }
   
+  while (currArg < (argc-4)) {
+    char *key = argv[currArg++];
+    if (strmatch(key,"-log")) {
+      CHECK_ARG(1);
+      strcpy(logFile,GET_ARG(1));
+      fLog = FOPEN(logFile, "a");
+      logflag = 1;
+    }
+    else {printf("\n   ***Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
+  }
+
+  system("date");
+  printf("Program: igram\n\n");
+  if (logflag) {
+    StartWatchLog(fLog);
+    printLog("Program: igram\n\n");
+  }
+
   /* 
    * establish buffers
    */
@@ -129,24 +148,23 @@ int main(int argc, char *argv[])
   /* 
    * open input files 
    */
-  create_name(fnm,argv[1],".cpx");
+  create_name(fnm,argv[currArg++],".cpx");
   inFile1=fopenImage(fnm, "rb");
   c_getddr(fnm,&inDDR1);  
 
-  create_name(fnm,argv[2],".cpx");
+  create_name(fnm,argv[currArg++],".cpx");
   inFile2=fopenImage(fnm, "rb");
   c_getddr(fnm,&inDDR2); 
 
-  create_name(fnm,argv[3],".amp");
+  create_name(fnm,argv[currArg],".amp");
   outFileAmp=fopenImage(fnm, "wb");
   
-  create_name(fnm,argv[3],".phase");
+  create_name(fnm,argv[currArg],".phase");
   outFilePhase=fopenImage(fnm, "wb");
 
   /*
    * Loop through each chunk of data 
    */
-  printf("igram:\n\tstarting igram\n");
   do {
     int i,j,x;
     count++;  /* used in diagnostic */
@@ -177,7 +195,7 @@ int main(int argc, char *argv[])
     len = i/sizeof(complexFloat);
     bytesRead += (len * sizeof(complexFloat));
     
-    printf("\tRead chunk %d, %d total bytes read\r", count, bytesRead);
+    printf("\tRead chunk %d, %ld total bytes read\r", count, bytesRead);
 
     /* if any data were obtained... */
     for (x=0;x<len;x++)
@@ -227,7 +245,7 @@ int main(int argc, char *argv[])
   else
   {
   	printf("\n");
-  	sprintf(cmd,"cp %s.ddr %s.ddr\n",argv[1],argv[3]);
+  	sprintf(cmd,"cp %s.meta %s.meta\n",argv[currArg-2],argv[currArg]);
   	system(cmd);
   }
 
@@ -236,17 +254,20 @@ int main(int argc, char *argv[])
   FREE(in1);FREE(in2);
   FREE(outAmp);FREE(outPhase);
   
-  printf("\nigram:  Ends successfully\n");
-  StopWatch(); 
+/*  printf("\nigram:  Ends successfully\n");*/
+  if (logflag) {
+     sprintf(logbuf, "   Wrote %ld bytes of data\n\n",bytesRead);
+     printLog(logbuf);
+  }
   return 0;
 }
 
 void usage(char *name)
 {
     printf("\nUSAGE:  %s <imageA> <imageB> <outfile>\n\n",name);
-    printf("    <imageA>     complex image file (imageA.cpx, imageA.ddr). "
+    printf("    <imageA>     complex image file (imageA.cpx, imageA.meta). "
 	   "\n\t         Igram adds any extension\n");
-    printf("    <imageB>     complex image file (imageB.cpx, imageB.ddr)."
+    printf("    <imageB>     complex image file (imageB.cpx, imageB.meta."
 	   "\n\t         Igram adds any extension\n");
     printf("    <outfile>    Base name of amplitude and phase file to "
  	   "store interferogram. \n\n");
