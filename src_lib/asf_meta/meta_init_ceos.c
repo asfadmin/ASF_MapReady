@@ -58,7 +58,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	}
     }	strcpy(meta->general->system,"");
 	meta->general->orbit = atoi(dssr.revolution);
-/**/	meta->general->frame = 
+/**/	meta->general->frame = 0; /*TEMPORARY SETTING, WILL EVENTUALLY CACLUATE FROM CENTER LAT*/
 	meta->general->band_number = 0;
 	meta->general->orbit_direction = dssr.asc_des[0];
     {	struct data_hist_rec pdhr;
@@ -78,28 +78,14 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	meta->general->bit_error_rate   = 0.0;
 
     /* Fill meta->sar structure */
-/**/	meta->sar->image_type = 
+/**/	meta->sar->image_type = '?';
 	meta->sar->look_direction = (dssr.clock_ang>=0.0) ? 'R' : 'L';
-     /* Set the number of looks correctly */
-	if (ceos->satellite==ERS) meta->sar->look_count = 5;
-	else if (ceos->satellite==JERS) meta->sar->look_count = 3;
-	else if (ceos->satellite==RSAT)
-	{
-		double looks;
-		double look = meta_look(meta,0,meta->ifm->orig_nSamples/2);
-		looks = ((meta->general->x_pixel_size / sin(look))
-		          / meta->general->y_pixel_size) + 0.5;
-		meta->sar->look_count = (int) looks;
-
-		if (0==strncmp(meta->general->mode,"FN",2)) meta->sar->look_count = 1;
-	}
-/**/	meta->sar->look_angle = 
-/**/	meta->sar->deskewed = 
+/**/	meta->sar->deskewed = NAN;
 	meta->sar->range_time_per_pixel   = dssr.n_rnglok
 		/ (dssr.rng_samp_rate * get_units(dssr.rng_samp_rate,EXPECTED_FS));
 	meta->sar->azimuth_time_per_pixel = dssr.n_azilok/dssr.prf;
-/**/	meta->sar->slant_shift = 
-/**/	meta->sar->time_shift = 
+/**/	meta->sar->slant_shift = NAN;
+/**/	meta->sar->time_shift = NAN;
 	meta->sar->slant_range_first_pixel = dssr.rng_gate
 		* get_units(dssr.rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
 	meta->sar->wavelength = dssr.wave_length * get_units(dssr.wave_length,EXPECTED_WAVELEN);
@@ -119,6 +105,21 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
     /* Decode facility-dependant values. */
 	if (ceos->facility==ASF)
 		ceos_init_asf(fName,ceos,meta);
+
+printf("Sample count = %d\n",meta->general->sample_count);
+    /* Set the number of looks correctly, must be done after fetching of stVecs & facility stuff */
+	if (ceos->satellite==ERS) meta->sar->look_count = 5;
+	else if (ceos->satellite==JERS) meta->sar->look_count = 3;
+	else if (ceos->satellite==RSAT)
+	{
+		double looks;
+		double look = meta_look(meta,0,meta->general->sample_count/2);
+		looks = ((meta->general->x_pixel_size / sin(look))
+		          / meta->general->y_pixel_size) + 0.5;
+		meta->sar->look_count = (int) looks;
+
+		if (0==strncmp(meta->general->mode,"FN",2)) meta->sar->look_count = 1;
+	}
 }
 
 
@@ -141,7 +142,7 @@ ceos_description *get_ceos_description(char *fName)
 	else if (0==strncmp(satStr,"J",1)) ceos->satellite=JERS;
 	else if (0==strncmp(satStr,"R",1)) ceos->satellite=RSAT;
 	else {
-		printf("Get_ceos_description Warning! Unknown sensor '%s'!\n",satStr);
+		printf("get_ceos_description Warning! Unknown sensor '%s'!\n",satStr);
 		ceos->satellite=unknownSatellite;
 	}
 	
@@ -178,7 +179,7 @@ ceos_description *get_ceos_description(char *fName)
 			ceos->product=CCSD;
 			return ceos;
 		} else {
-			printf("Get_ceos_description Warning! Unknown ASF processor '%s'!\n",procStr);
+			printf("get_ceos_description Warning! Unknown ASF processor '%s'!\n",procStr);
 			ceos->processor=unknownProcessor;
 		}
 	
@@ -188,7 +189,7 @@ ceos_description *get_ceos_description(char *fName)
 		else if (0==strncmp(prodStr,"CCSD",4)) ceos->product=CCSD;
 		else if (0==strncmp(prodStr,"COMPLEX",7)) ceos->product=CCSD;
 		else {
-			printf("Get_ceos_description Warning! Unknown ASF product type '%s'!\n",prodStr);
+			printf("get_ceos_description Warning! Unknown ASF product type '%s'!\n",prodStr);
 			ceos->product=unknownProduct;
 		}
 		
