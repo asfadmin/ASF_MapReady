@@ -158,8 +158,22 @@ void fill_structure_field(char *field_name, void *valp)
       { strcpy(MGENERAL->system, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "orbit") )
       { MGENERAL->orbit = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "orbit_direction") ) {
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "A") ) { 
+	MGENERAL->orbit_direction = 'A'; 
+	return; 
+      }
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "D") ) { 
+	MGENERAL->orbit_direction = 'D'; 
+	return; 
+      }
+      yyerror("bad orbit_direction field in metadata file");
+      exit(EXIT_FAILURE);
+    }
     if ( !strcmp(field_name, "frame") )
       { MGENERAL->frame = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "band_number") )
+      { MGENERAL->band_number = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "line_count") )
       { MGENERAL->line_count = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "sample_count") )
@@ -232,17 +246,17 @@ void fill_structure_field(char *field_name, void *valp)
       { MSAR->wavelength = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "prf") )
       { MSAR->prf = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "doppler range center frequency") )
+    if ( !strcmp(field_name, "dopRangeCen") )
       { MSAR->range_doppler_coefficients[0] = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "doppler range linear coefficient") )
+    if ( !strcmp(field_name, "dopRangeLin") )
       { MSAR->range_doppler_coefficients[1] = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "doppler range quadratic coefficient") )
+    if ( !strcmp(field_name, "dopRangeQuad") )
       { MSAR->range_doppler_coefficients[2] = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "doppler azimuth center frequency") )
+    if ( !strcmp(field_name, "dopAzCen") )
       { MSAR->azimuth_doppler_coefficients[0] = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "doppler azimuth linear coefficient") )
+    if ( !strcmp(field_name, "dopAzLin") )
       { MSAR->azimuth_doppler_coefficients[1] = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "doppler azimuth quadratic coefficient") )
+    if ( !strcmp(field_name, "dopAzQuad") )
       { MSAR->azimuth_doppler_coefficients[2] = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "satellite_binary_time") )
       { strcpy(MSAR->satellite_binary_time, VALP_AS_CHAR_POINTER); return; }
@@ -269,17 +283,17 @@ void fill_structure_field(char *field_name, void *valp)
   if ( !strcmp(stack_top->block_name, "vector") ) {
     if ( !strcmp(field_name, "time") )
       { MVECTOR->time = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "X coordinate, earth-fixed [m]") )
+    if ( !strcmp(field_name, "x") )
       { MVECTOR->vec.pos.x = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "Y coordinate, earth-fixed [m]") )
+    if ( !strcmp(field_name, "y") )
       { MVECTOR->vec.pos.y = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "Z coordinate, earth-fixed [m]") )
+    if ( !strcmp(field_name, "z") )
       { MVECTOR->vec.pos.z = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "X velocity, earth-fixed [m/s]") )
+    if ( !strcmp(field_name, "vx") )
       { MVECTOR->vec.vel.x = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "Y velocity, earth-fixed [m/s]") )
+    if ( !strcmp(field_name, "vy") )
       { MVECTOR->vec.vel.y = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "Z velocity, earth-fixed [m/s]") )
+    if ( !strcmp(field_name, "vz") )
       { MVECTOR->vec.vel.z = VALP_AS_DOUBLE; return; }
   }
 
