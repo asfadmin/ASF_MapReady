@@ -212,7 +212,7 @@ if ( $ENV{COLUMNS} ) {
 # Default values for command line parameters.
 my %p = (
 	 'check' => [],		# Ref to list to contain two node names.
-	 'independency' => [],	# Each successive pair an independency.	
+	 'independency' => [],	# Each successive pair states an independency.
 	 'independency_file' => undef, # File containing independency pairs.
 	 # Ref to list of nodes to match for loosely.
 	 'loose_match' => [],  
@@ -260,7 +260,7 @@ if ( @ARGV ) {
     pod2usage("$progname: error: no (non-option) arguments allowed.\n");
 }
 
-# Parse check option argument.
+# Parse the check option argument.
 if ( @{$p{'check'}} ) {
     if ( @{$p{'check'}} > 1 ) {
 	pod2usage("$progname: only one check (-c) option is allowed.\n");
