@@ -47,9 +47,9 @@ void meta_get_latLon(meta_parameters *meta,
 	} else if (meta->sar->image_type=='P')
 	{	/*Map-Projected. Use projection information to calculate lat & lon.*/
 		double px,py;
-		px = meta->proj->startX + meta->proj->perX * xSample;
-		py = meta->proj->startY + meta->proj->perY * yLine;
-		proj_to_ll(meta->proj,meta->sar->look_direction,px,py,lat,lon);
+		px = meta->projection->startX + meta->projection->perX * xSample;
+		py = meta->projection->startY + meta->projection->perY * yLine;
+		proj_to_ll(meta->projection,meta->sar->look_direction,px,py,lat,lon);
 	} else
 	{	/*Bogus image type.*/
 		printf("Error! Invalid image type '%c' passed to meta_get_latLon!\n",

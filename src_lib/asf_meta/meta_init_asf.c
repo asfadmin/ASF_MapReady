@@ -78,7 +78,7 @@ void init_asf_proj(meta_parameters *meta,ceos_description *ceos,
 		st_start=meta_get_stVec(meta,0.0);
 		fixed2gei(&st_start,0.0);/*Remove earth's spin.  
 				JPL's AT/CT projection requires this.*/
-		atct_init(meta->proj,st_start);
+		atct_init(meta->projection,st_start);
 		projection->startY = mpdr->tlceast;
 		projection->startX = mpdr->tlcnorth;
 		projection->perY   = (mpdr->blceast-mpdr->tlceast)/mpdr->nlines;
