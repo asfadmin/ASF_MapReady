@@ -42,7 +42,7 @@ double meta_get_time(meta_parameters *meta,double yLine, double xSample)
 	}
 	else /*Unknown projection type.*/
 	{
-		printf("Error!  Unknown projection type '%c' passed to meta_get_slant!\n",
+		printf("Error!  Unknown projection type '%c' passed to meta_get_time!\n",
 			meta->sar->image_type);
 		exit(1);
 	}
@@ -71,9 +71,9 @@ double meta_get_slant(meta_parameters *meta,double yLine, double xSample)
 		meta_get_timeSlantDop(meta,yLine,xSample,&time,&slant,NULL);
 		return slant+meta->sar->slant_shift;
 	}
-	else /*Unknown projection type.*/
+	else /*Unknown image type.*/
 	{
-		printf("Error!  Unknown projection type '%c' passed to meta_get_slant!\n",
+		printf("Error!  Unknown SAR image type '%c' passed to meta_get_slant!\n",
 			meta->sar->image_type);
 		exit(1);
 	}
