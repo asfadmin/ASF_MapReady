@@ -46,14 +46,14 @@ stage_glib_stamp:
 
 else
 
-# Copy an already build GSL into the staging area, or build it there
+# Copy an already build GLIB into the staging area, or build it there
 # if a copy doesn't appear to be available.
 stage_glib_stamp:
 	mkdir -p $(LIB_STAGEDIR) $(INCLUDE_STAGEDIR)
 	if [ -n "$(EXISTING_GLIB_ROOT)" ] ; then \
 	    cp $(EXISTING_GLIB_ROOT)/lib/libglib-2.0.a \
                $(LIB_STAGEDIR) ; \
-            cp -r $(EXISTING_GLIB_ROOT)/include/glib-2.0 $(INCLUDE_STAGEDIR) ; \
+            cp -r $(EXISTING_GLIB_ROOT)/include/glib-2.0 $(INCLUDE_STAGEDIR); \
 	else \
 	    gunzip --to-stdout $(ZIPFILE) >$(TARFILE) ; \
 	    tar xvf $(TARFILE) ; \
