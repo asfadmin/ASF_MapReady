@@ -2,6 +2,7 @@
 char * strdup(const char *);
 
 static char * s_share_dir = 0;
+static char * s_bin_dir = 0;
 
 #if defined(win32)
 
@@ -16,7 +17,9 @@ static char * s_share_dir = 0;
 #include <windows.h>
 
 static const char * s_asf_application_key = "Software\\ASF_Tools\\";
+
 static const char * s_asf_share_dir_key = "Share_Dir";
+static const char * s_asf_install_dir_key = "Install_Dir";
 
 #else
 
@@ -25,17 +28,11 @@ static const char * s_asf_share_dir_key = "Share_Dir";
 
 #endif
 
-const char * 
-get_asf_share_dir()
-{
-  if (!s_share_dir) {
-
 #if defined(win32)
-
-      /* on windows, pull the share dir from the registry */
-
+LONG 
+get_string_from_registry(const char * key, char * str_value)
+{
     HKEY Hkey;
-    char str_value[512];
     unsigned long read_size;
     LONG rv;
 
@@ -62,11 +59,59 @@ get_asf_share_dir()
                     (LPTSTR) &ErrBuf, 0, 0);
       printf("error %d: %s\n", dw, ErrBuf);
       LocalFree(ErrBuf);
-      return "";
+      strcpy(str_value, "");
     }
       
     RegCloseKey(Hkey);
 
+    return rv;
+}
+
+#endif
+
+const char *
+get_asf_bin_dir()
+{
+  if (!s_bin_dir) {
+
+#if defined(win32)
+
+      /* on windows, pull the install dir from the registry */
+
+    char str_value[512];
+    get_string_from_registry(s_asf_install_dir_key, str_value);
+    s_bin_dir = strdup(str_value);
+
+#else
+
+      /* on UNIX, assume ASF_INSTALL_DIR has been set by the configure */
+      /* script -- in config.h                                         */
+
+    s_bin_dir = strdup(ASF_BIN_DIR);
+
+#endif
+
+      /* remove trailing path separator, if one is present */
+    
+    if (s_bin_dir[strlen(s_bin_dir) - 1] == DIR_SEPARATOR) {
+      s_bin_dir[strlen(s_bin_dir) - 1] = '\0';
+    }
+  }
+
+  return s_bin_dir;
+}
+
+const char * 
+get_asf_share_dir()
+{
+  if (!s_share_dir) {
+
+#if defined(win32)
+
+      /* on windows, pull the share dir from the registry */
+
+    char str_value[512];
+    get_string_from_registry(s_asf_share_dir_key, str_value);
     s_share_dir = strdup(str_value);
 
 #else
