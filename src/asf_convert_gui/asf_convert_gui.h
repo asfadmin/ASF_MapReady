@@ -49,6 +49,9 @@
 #include "popup_menu.h"
 #include "file_list.h"
 
+extern const char DIR_SEPARATOR;
+extern const char PATH_SEPATATOR;
+
 extern GladeXML *glade_xml;
 extern GtkListStore *list_store;
 extern gboolean keep_going;

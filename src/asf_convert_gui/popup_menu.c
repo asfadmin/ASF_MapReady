@@ -102,8 +102,47 @@ popup_menu_process(GtkWidget *widget, GdkEvent *event)
 static SIGNAL_CALLBACK gint
 popup_menu_rename(GtkWidget *widget, GdkEvent *event)
 {
-  printf("Rename!\n");
+  GtkWidget *files_list;
+  GtkTreeSelection *selection;
+  GtkTreeModel *model;
+  GtkTreeIter iter;
 
+  files_list = glade_xml_get_widget(glade_xml, "files_list");
+  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+
+  if (gtk_tree_selection_get_selected(selection, &model, &iter))
+  {
+    gchar *current_output_name;
+    gchar *name_without_path;
+
+    GtkWidget *change_output_name_dialog, 
+      *label_current_output_filename,
+      *entry_new_output_filename;
+
+    change_output_name_dialog =
+      glade_xml_get_widget(glade_xml, "change_output_name_dialog");
+
+    label_current_output_filename =
+      glade_xml_get_widget(glade_xml, "label_current_output_filename");
+
+    entry_new_output_filename =
+      glade_xml_get_widget(glade_xml, "entry_new_output_filename");
+
+    gtk_tree_model_get(model, &iter, 1, &current_output_name, -1);
+    name_without_path = g_path_get_basename(current_output_name);
+
+    gtk_label_set_text(GTK_LABEL(label_current_output_filename),
+		       name_without_path);
+
+    gtk_entry_set_text(GTK_ENTRY(entry_new_output_filename),
+		       name_without_path);
+
+    gtk_widget_grab_focus(entry_new_output_filename);
+
+    free(name_without_path);
+    gtk_widget_show(change_output_name_dialog);
+  }
+  
   return TRUE;
 }
 

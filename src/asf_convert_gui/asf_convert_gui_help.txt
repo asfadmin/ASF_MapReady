@@ -1,0 +1,50 @@
+Thank you for trying the ASF convert utility's graphical user interface.
+
+(A) Choosing your files
+=======================
+
+There several ways you can add files to the utility.
+
+At this time, your ".D" files must have the same basename as the ".L" files.  So, you won't be specifying the names of the .L files -- just the data files.  The metadata files should be located in the same directory as the data file, and use the same base name.
+
+(1) Specify the source files on the command line.
+
+When you run the utility, you can put a list of files as arguments on the command line.  For example:
+
+Select the file "file1.D":
+     asf_convert_gui file1.D
+
+Select all .D files in the current directory:
+     asf_convert_gui *.D
+
+Select all .D files in the "data" directory:
+     asf_convert gui data/*.D
+
+(2) Use the "Add" button.
+
+After you've run the utility, you can add additional files by typing the name in the textbox next to the "Add" button, and clicking "Add".
+
+(3) Use the "Browse" button.
+
+You can also click "Browse" to pull up a file selection dialog.  Use ctrl-click or shift-click to select more than one file.
+
+(4) Drag and Drop
+
+You can drag and drop files from your file explorer program into the files list, and they will be added.
+
+(B) Choose your conversion options
+==================================
+
+TBD
+
+(C) Change your output files names
+==================================
+
+TBD
+
+(D) Convert your files
+======================
+
+You can either do all of the files, or select the file you'd like to convert, and right-click, and select "Process" from the popup menu.
+
+Clicking "Stop" will stop processing after the current conversion finishes.

@@ -16,7 +16,7 @@ determine_default_output_file_name(char * data_file_name)
   
   user_settings = settings_get_from_gui();
   ext = settings_get_output_format_extension(user_settings);
-  output_name_full = (char *)malloc(strlen(basename) + 20);
+  output_name_full = (char *)malloc(strlen(basename) + strlen(ext) + 2);
   sprintf(output_name_full, "%s.%s", basename, ext);
 
   free(basename);

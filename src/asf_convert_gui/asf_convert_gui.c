@@ -12,10 +12,11 @@ int
 main(int argc, char **argv)
 {
     GtkWidget *widget;
+    gchar *glade_xml_file;
 
     gtk_init(&argc, &argv);
 
-    gchar *glade_xml_file = (gchar *)find_in_path("asf_convert_gui.glade");
+    glade_xml_file = (gchar *)find_in_path("asf_convert_gui.glade");
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
     g_free(glade_xml_file);

@@ -280,3 +280,161 @@ on_scale_checkbutton_toggled(GtkWidget *widget)
 {
   scale_checkbutton_toggle();
 }
+
+SIGNAL_CALLBACK void
+on_change_output_name_button_cancel_clicked(GtkWidget *widget)
+{
+  GtkWidget *change_output_name_dialog =
+    glade_xml_get_widget(glade_xml, "change_output_name_dialog");
+
+  gtk_widget_hide(change_output_name_dialog);
+}
+
+SIGNAL_CALLBACK void
+on_change_output_name_button_ok_clicked(GtkWidget *widget)
+{
+  GtkWidget *change_output_name_dialog;
+  GtkWidget *entry_new_output_filename;
+  const gchar * new_name;
+
+  change_output_name_dialog =
+    glade_xml_get_widget(glade_xml, "change_output_name_dialog");
+
+  entry_new_output_filename =
+    glade_xml_get_widget(glade_xml, "entry_new_output_filename");
+
+  new_name = gtk_entry_get_text(GTK_ENTRY(entry_new_output_filename));
+
+  if (strlen(new_name) > 0)
+  {
+    GtkTreeSelection * selection;
+    GtkWidget * files_list;
+    GtkTreeIter iter;
+    GtkTreeModel * model;
+
+    /* since dialog is modal, can assume same row is selected */
+    files_list = glade_xml_get_widget(glade_xml, "files_list");
+    selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+    
+    assert(gtk_tree_selection_count_selected_rows(selection) == 1);
+    
+    if (gtk_tree_selection_get_selected(selection, &model, &iter))
+    {
+      const char * ext;
+      char *user_ext, *basename, *name_without_path, *p, *fixed_name,
+	*data_file_name, *path;
+      Settings * user_settings;
+
+      user_settings = settings_get_from_gui();
+      ext = settings_get_output_format_extension(user_settings);
+
+      gtk_tree_model_get(model, &iter, 0, &data_file_name, -1);
+      path = g_path_get_dirname(data_file_name);
+      if (strcmp(path, ".") == 0)
+      {
+	*path = '\0';
+      }
+      else
+      {
+	int len = strlen(path);
+	path = (char *)realloc(path, len + 1);
+	*(path + len) = DIR_SEPARATOR;
+	*(path + len + 1) = '\0';	
+      }
+
+      /* do not allow user to move output file to a different location */
+      name_without_path = g_path_get_basename(new_name);
+
+      /* add appropriate extension if was not given by user */
+      basename = strdup(name_without_path);
+      p = strrchr(basename, '.');
+      if (p)
+      {
+	*p = '\0';
+	user_ext = p + 1;
+      }
+      else
+      {
+	user_ext = NULL;
+      }
+
+      if (user_ext == NULL)
+      {
+	fixed_name = (char *)malloc(strlen(path) + strlen(basename) + 
+				    strlen(ext) + 2);
+
+	sprintf(fixed_name, "%s%s.%s", path, basename, ext);
+      }
+      else if (strcmp(user_ext, ext) != 0)
+      {
+	fixed_name = (char *)malloc(strlen(path) + strlen(name_without_path) + 
+				    strlen(ext) + 2);
+	sprintf(fixed_name, "%s%s.%s", path, name_without_path, ext);
+      }
+      else
+      {
+	fixed_name = (char *)malloc(strlen(path) + strlen(name_without_path));
+	sprintf(fixed_name, "%s%s", path, name_without_path);
+      }
+
+      free(basename);
+      free(name_without_path);
+      free(path);
+    
+      gtk_list_store_set(list_store, &iter, 1, fixed_name, -1);
+
+      free(fixed_name);
+    }
+  }
+  
+  gtk_widget_hide(change_output_name_dialog);  
+}
+
+SIGNAL_CALLBACK void
+on_help_button_clicked(GtkWidget *widget)
+{
+  GtkWidget *help_dialog;
+  GtkWidget *help_text;
+  GtkTextBuffer * text_buffer;
+  FILE * help_file;
+  gchar * help_filename;
+
+  help_dialog =
+    glade_xml_get_widget(glade_xml, "help_dialog");
+
+  help_text =
+    glade_xml_get_widget(glade_xml, "help_text");
+
+  text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(help_text));
+  gtk_text_buffer_set_text(text_buffer, "", -1);
+
+  help_filename = (gchar *)find_in_path("asf_convert_gui_help.txt");
+  help_file = fopen(help_filename, "rt");
+  if (help_file)
+  {
+    while (!feof(help_file))
+    {
+      char buffer[1024];
+      char *p = fgets(buffer, 1024, help_file);
+      if (p)
+      {
+	GtkTextIter end;
+	gtk_text_buffer_get_end_iter(text_buffer, &end);
+	gtk_text_buffer_insert(text_buffer, &end, buffer, -1);
+      }
+    }
+
+    fclose(help_file);
+  }
+
+  gtk_widget_show(help_dialog);
+}
+
+SIGNAL_CALLBACK void
+on_help_dialog_ok_button_clicked(GtkWidget *widget)
+{
+  GtkWidget *help_dialog =
+    glade_xml_get_widget(glade_xml, "help_dialog");
+
+  gtk_widget_hide(help_dialog);
+}
