@@ -20,7 +20,7 @@ void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd);
 /******************************************************************************
  * Import Sky Telemetry Format data to ASF Tools format */
 void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
-                flag_indices_t flags[],
+                int flags[],
                 double lowerLat, double upperLat, char *prcPath)/*this last line of parameters are extra from the rest of the import_*() functions */
 {
   char outDataName[256]="", outMetaName[256]="";        /* Output file names */
@@ -33,6 +33,7 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   bin_state *s;    /* Structure with info about the satellite & its raw data */
   iqType *iqBuf;             /* Buffer containing the complex i & q channels */
   readPulseFunc readNextPulse; /* Pointer to function that reads the next line of CEOS Data */
+  int tempFlag=FALSE;
 
   if (flags[f_SPROCKET] != FLAG_NOT_SET) {
     asfPrintError("Data is level 0, sprocket can not use this.\n");
@@ -45,22 +46,24 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   strcpy(outMetaName,outBaseName);
   strcat(outMetaName,TOOLS_META_EXT);
 
-  /* Make sure that none of the level one flags are set */
+  /* Make sure that none of the detected level one flags are set */
   strcpy(logbuf,"");
   if (flags[f_AMP] != FLAG_NOT_SET)
-    sprintf(logbuf, "%s amplitude", logbuf);
+    { sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; }
   if (flags[f_SIGMA] != FLAG_NOT_SET)
-    sprintf(logbuf, "%s sigma", logbuf);
+    { sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; }
   if (flags[f_BETA] != FLAG_NOT_SET)
-    sprintf(logbuf, "%s beta", logbuf);
+    { sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; }
   if (flags[f_GAMMA] != FLAG_NOT_SET)
-    sprintf(logbuf, "%s gamma", logbuf);
+    { sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; }
   if (flags[f_POWER] != FLAG_NOT_SET)
-    sprintf(logbuf, "%s power", logbuf);
-  asfPrintStatus(
-    "Warning:\n"
-    "  The following flags will be ignored since this is a level zero data set:\n"
-    "  %s\n", logbuf);
+    { sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; }
+  if (tempFlag) {
+    asfPrintStatus(
+      "Warning:\n"
+      "  The following flags will be ignored since this is a level zero data set:\n"
+      "  %s\n", logbuf);
+  }
 
   if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
     /* Determine start and end line for latitude constraint */

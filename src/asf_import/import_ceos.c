@@ -19,12 +19,13 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
  * Import a wide variety for CEOS flavors (hopefully all) to our very own ASF
  * Tools format */
 void import_ceos(char *inDataName, char *inMetaName, char *lutName,
-                 char *outBaseName, flag_indices_t flags[])
+                 char *outBaseName, int flags[])
 {
   char outDataName[256], outMetaName[256];              /* Output file names */
   int nl=MAGIC_UNSET_INT, ns=MAGIC_UNSET_INT;     /* Number of lines/samples */
   int ii, kk;                                                /* loop indices */
   int headerBytes;                       /* Number of bytes in a CEOS header */
+  int tempFlag=FALSE;             /* Flag on whether or not to print warning */
   long offset;
   meta_parameters *meta=NULL;                         /* Meta data structure */
   cal_params *cal_param=NULL;                  /* Calibration info structure */
@@ -35,7 +36,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
   /* Fill output names (don't add extention to data name because it differs
    * for raw, complex, and 'image' */
-  strcpy(outDataName, outBaseName);
+ strcpy(outDataName, outBaseName);
   strcpy(outMetaName, outBaseName);
   strcat(outMetaName, TOOLS_META_EXT);
 
@@ -61,23 +62,24 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     asfPrintStatus("   Input data type: level zero raw data\n"
                    "   Output data type: complex byte raw data\n");
 
-    /* Make sure that none of the level one flags are set */
+    /* Make sure that none of the detected level one flags are set */
     strcpy(logbuf,"");
     if (flags[f_AMP] != FLAG_NOT_SET)
-      sprintf(logbuf, "%s amplitude", logbuf);
+      { sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; }
     if (flags[f_SIGMA] != FLAG_NOT_SET)
-      sprintf(logbuf, "%s sigma", logbuf);
+      { sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; }
     if (flags[f_BETA] != FLAG_NOT_SET)
-      sprintf(logbuf, "%s beta", logbuf);
+      { sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; }
     if (flags[f_GAMMA] != FLAG_NOT_SET)
-      sprintf(logbuf, "%s gamma", logbuf);
+      { sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; }
     if (flags[f_POWER] != FLAG_NOT_SET)
-      sprintf(logbuf, "%s power", logbuf);
-    asfPrintStatus(
-      "Warning:\n"
-      "  The following flags will be ignored since this is a level zero data set:\n"
-      "  %s\n\n", logbuf);
-
+      { sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; }
+    if (tempFlag) {
+      asfPrintStatus(
+        "Warning:\n"
+        "  The following flags will be ignored since this is a level zero data set:\n"
+        "  %s\n", logbuf);
+    }
 
     /* Handle output files */
     strcat(outDataName,TOOLS_RAW_EXT);
@@ -106,22 +108,24 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     asfPrintStatus("   Input data type: single look complex\n"
                    "   Output data type: single look complex\n");
 
-    /* Make sure that none of the level one flags are set */
+    /* Make sure that none of the detected level one flags are set */
     strcpy(logbuf,"");
     if (flags[f_AMP] != FLAG_NOT_SET)
-      sprintf(logbuf, "%s amplitude", logbuf);
+      { sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; }
     if (flags[f_SIGMA] != FLAG_NOT_SET)
-      sprintf(logbuf, "%s sigma", logbuf);
+      { sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; }
     if (flags[f_BETA] != FLAG_NOT_SET)
-      sprintf(logbuf, "%s beta", logbuf);
+      { sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; }
     if (flags[f_GAMMA] != FLAG_NOT_SET)
-      sprintf(logbuf, "%s gamma", logbuf);
+      { sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; }
     if (flags[f_POWER] != FLAG_NOT_SET)
-      sprintf(logbuf, "%s power", logbuf);
-    asfPrintStatus(
-      "Warning:\n"
-      "  The following flags will be ignored since this is a complex data set:\n"
-      "  %s\n", logbuf);
+      { sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; }
+    if (tempFlag) {
+      asfPrintStatus(
+        "Warning:\n"
+        "  The following flags will be ignored since this is a complex data set:\n"
+        "  %s\n", logbuf);
+    }
 
     /* Deal with metadata */
     meta->general->data_type=COMPLEX_REAL32;
@@ -291,7 +295,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	min_incid = max_incid;
 	max_incid = tmpIncid;
       }
-      
+
       /* Look up the index for the minimum in the LUT */
       n = 0;
       old = 100000000;
@@ -304,7 +308,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	else break;
       }
       min = n;
-      
+
       /* Look up the index for the maximum in the LUT */
       n = 0;
       old = 100000000;
@@ -317,7 +321,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	else break;
       }
       max = n;
-      
+
       /**** Read 16 bit data and apply look up table ****/
       if (ceos_data_type == INTEGER16) {
 
