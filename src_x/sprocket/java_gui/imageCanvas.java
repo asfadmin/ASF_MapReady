@@ -257,15 +257,15 @@ class imageCanvas extends Canvas implements MouseListener, MouseMotionListener {
       
       if(mm != null)
          g.drawImage(mm, 0, 0, null);
-      
+
       //make sure the glowing box is there.
-      if(im instanceof importImage && mainFrame.zf instanceof zoomFrame && mainFrame.zf.isShowing()) {
+      if (im instanceof importImage && mainFrame.zf instanceof zoomFrame
+          && mainFrame.zf.isVisible()) {
          clearZoom();
          updateZoom(mainFrame.zf.getPosition(), 
-                    mainFrame.zf.getZoomSize().width, 
-                    mainFrame.zf.getZoomSize().height);
+                    mainFrame.zf.getZoomWidth(), 
+                    mainFrame.zf.getZoomHeight());
       }
-      
    }
 
    public void printit(Frame parent, Properties printprefs) {      //wait for java1.2 . . . 
