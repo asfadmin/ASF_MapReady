@@ -63,10 +63,10 @@ void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,doub
 		bail("NULL projection parameter structure passed to ll_to_proj!\n");
 	switch (proj->type)
 	{
-		case 'A': ll_ac(proj,look_dir,lat_d,lon,p2,p1); break;
-		case 'L': ll_lamcc(proj,lat_d,lon,p1,p2); break;
-		case 'P': ll_ps(proj,lat_d,lon,p1,p2); break;
-		case 'U': ll_utm(proj,lat_d,lon,p1,p2); break;
+		case SCANSAR_PROJECTION: ll_ac(proj,look_dir,lat_d,lon,p2,p1); break;
+		case LAMBERT_CONFORMAL_CONIC: ll_lamcc(proj,lat_d,lon,p1,p2); break;
+		case POLAR_STEREOGRAPHIC: ll_ps(proj,lat_d,lon,p1,p2); break;
+		case UNIVERSAL_TRANSVERSE_MERCATOR: ll_utm(proj,lat_d,lon,p1,p2); break;
 		default:
 			printf("Unrecognized map projection '%c' passed to ll_to_proj!\n",proj->type);
 			exit(1);
@@ -80,10 +80,10 @@ void proj_to_ll(meta_projection *proj, char look_dir, double p1, double p2, doub
 		bail("NULL projection parameter structure passed to proj_to_ll!\n");
 	switch(proj->type)
 	{
-		case 'A': ac_ll(proj,look_dir,p2,p1,lat_d,lon); break;
-		case 'L': lamcc_ll(proj,p1,p2,lat_d,lon); break;
-		case 'P': ps_ll(proj,p1,p2,lat_d,lon); break;
-		case 'U': utm_ll(proj,p1,p2,lat_d,lon); break;
+		case SCANSAR_PROJECTION: ac_ll(proj,look_dir,p2,p1,lat_d,lon); break;
+		case LAMBERT_CONFORMAL_CONIC: lamcc_ll(proj,p1,p2,lat_d,lon); break;
+		case POLAR_STEREOGRAPHIC: ps_ll(proj,p1,p2,lat_d,lon); break;
+		case UNIVERSAL_TRANSVERSE_MERCATOR: utm_ll(proj,p1,p2,lat_d,lon); break;
 		default:
 			printf("Unrecognized map projection '%c' passed to proj_to_ll!\n",proj->type);
 			exit(1);
