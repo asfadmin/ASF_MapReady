@@ -3,8 +3,6 @@
 # and do interferometric processing on SAR images.
 #   Now incorporates asf_ceos library, as well.
 
-DEBUG_BUILD = 2
-
 include ../../make_support/system_rules
 
 # Static libraries used by this library.  These get pulled out of the
@@ -91,6 +89,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	earth_radius2datum.o \
 	err_die.o \
 	fixed2gei.o \
+	frame_calc.o \
 	gei2fixed.o \
 	getLatLong.o \
 	getLoc.o \
