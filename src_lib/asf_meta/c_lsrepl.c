@@ -81,16 +81,16 @@ FREAD (header,sizeof(char),HDRL,fp);
 
 charlen = datalen = 0;
 if (((ptr = strchr(header,'/')) != NULL) && (ptr - header < LENL))
-    sscanf(header,"%d/%d%s",&charlen,&datalen,odtype);
+    sscanf(header,"%lld/%lld%s",&charlen,&datalen,odtype);
 else
-    sscanf(header,"%d%s",&datalen,odtype);
+    sscanf(header,"%lld%s",&datalen,odtype);
 
 out_key = squeeze(header+LENL+TYPL,KEYL - 1);
 if (charlen + datalen != *clen + *dlen)			
     {
     c_errmsg("Error replacing record within label services file",
 	     "lsrepl-replace",NON_FATAL);
-    sprintf(msgtxt,"    %d bytes requested, record contains %d",*clen + *dlen,
+    sprintf(msgtxt,"    %d bytes requested, record contains %lld",*clen + *dlen,
              datalen);
     c_errmsg(msgtxt,"lsrepl-bytes",NON_FATAL);
     return(E_FAIL);
