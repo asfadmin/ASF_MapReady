@@ -29,6 +29,7 @@ PROGRAM HISTORY:
     2.2     2/96         Removed file get facdr & replace w/get facdr
     2.3     5/96         Changing to update to new metadata readers
     3.0     12/98        Uses asf_meta instead of two-way.
+    3.2     01/03        Update to use new meta structures
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -74,7 +75,7 @@ BUGS:	Accum_offset does not take into account an average elevation.
 #include "asf.h"
 #include "asf_meta.h"
 
-#define VERSION 3.0
+#define VERSION 3.2
 
 /* structures */
 struct OFFSET {
@@ -86,33 +87,23 @@ struct OFFSET {
 #define MIN(a,b) ((a) <= (b))
 
 /* function declarations */
-int get_cntr(char *, double *, double *);
-int check_order(int,char **,char **);
-void mosaic_image_pos(struct OFFSET *,int,char **,int*,int*);
+void mosaic_image_pos(struct OFFSET *ip, int n, char **name, int *ms, int *ml);
+meta_parameters *get_metadata(const char *fName);
 
-int main(argc, argv) 
-int   argc;
-char  *argv[];
+int main(int argc, char **argv) 
 {
-	int   i;
-	meta_parameters *metaRef;
+	int ii;
+	meta_parameters *meta1st;
 	struct OFFSET *image_pos;
 	
-	int filec,argNo=1;
+	int filec;
 	char **fNames;
 	double elev=0.0;
 	int npixels, nlines;
 	
-	if (argc < 3) {
-		fprintf (stderr, "\nUsage: %s METAfile1 METAfile2 ...\n", argv[0]);
-		fprintf (stderr, "\tMust provide at least two METAfiles.\n");
-		fprintf (stderr, "\tNo extensions needed. Any extensions will be added.\n");
-		fprintf (stderr, "\nPuts metafiles in ascending order by latitude.");
-		fprintf (stderr, "\nVersion %.2f, ASF SAR TOOLS.\n\n",VERSION);
-		exit(1);
-	}
-	fNames=&argv[argNo];
-	filec=argc-argNo;
+	if (argc < 3) usage(argv[0]);
+	fNames = &argv[1];
+	filec  = argc-1;
 	
 	/* declare space for image_pos */
 	image_pos = (struct OFFSET *)MALLOC(filec * sizeof(struct OFFSET));
@@ -121,33 +112,39 @@ char  *argv[];
 	printf ("\n  File  \t  Line \t  Sample ");
 	printf ("\n--------\t-------\t---------\n");
 	
-	metaRef=meta_init(argv[1]);
-	for (i = 0; i < filec; i++) {
-		meta_parameters *meta=meta_init(fNames[i]);
+	meta1st = get_metadata(argv[1]);
+	for (ii = 0; ii < filec; ii++) {
+		meta_parameters *meta = get_metadata(fNames[ii]);
 		double latCen,lonCen;
 		double xPos,yPos;
 		meta_get_latLon(meta,0,0,elev,&latCen,&lonCen);
-		meta_get_lineSamp(metaRef,latCen,lonCen,elev,&yPos,&xPos);
-		image_pos[i].line=yPos;
-		image_pos[i].sample=xPos;
-		printf("\n%s\t%.0f\t%.0f\n",fNames[i],yPos+1,xPos+1);
+		meta_get_lineSamp(meta1st,latCen,lonCen,elev,&yPos,&xPos);
+		image_pos[ii].line   = yPos;
+		image_pos[ii].sample = xPos;
+		printf("\n%s\t%.0f\t%.0f\n",fNames[ii],yPos+1,xPos+1);
 	}
 	/* determine total # of lines and sample */
 	mosaic_image_pos(image_pos,filec,fNames,&npixels,&nlines);
-	printf("Total number of lines: %d\n", nlines + metaRef->ifm->orig_nLines);
-	printf("Total number of columns: %d\n", npixels + metaRef->ifm->orig_nSamples);
+	printf("Total number of lines: %d\n", nlines + meta1st->sar->original_line_count);
+	printf("Total number of columns: %d\n", npixels + meta1st->sar->original_sample_count);
 	
 	return 0;
 }
 
-/* calculate each images position in the mosaic 
-   and return the width of the mosaic. */
-void mosaic_image_pos(ip,n,name,ms,ml)
-struct OFFSET *ip;
-int n;
-char **name;
-int *ms;
-int *ml;
+meta_parameters *get_metadata(const char *fName)
+{
+  if (extExists(fName,".meta")) /*Read .meta file if possible*/
+    return meta_read(fName);
+  else
+    return meta_create(fName);
+}
+
+
+/****************************************************************************
+ * mosaic_image_pos:
+ * calculate each images position in the mosaic and return the width of the
+ * mosaic. */
+void mosaic_image_pos(struct OFFSET *ip, int n, char **name, int *ms, int *ml)
 {
 	int maxpos, minpos;
 	int minvalue;
@@ -188,6 +185,28 @@ int *ml;
 	for (i=0;i<n;i++) 
 		printf("File: %s\tLine: %.2f\tSample: %.2f\n",
 			name[i],ip[i].line,ip[i].sample);
-	
 	return;
+}
+
+
+
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s <metafile1> <metafile2> [...]\n", name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   metafile1   A meta file (.ldr, .trl, etc) (do not include extension)\n"
+	"   metafile2   A meta file (.ldr, .trl, etc) (do not include extension)\n");	
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   ...   You may add as many meta files as you like.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Puts metafiles in ascending order by latitude.");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools.\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
