@@ -482,5 +482,5 @@ meta_parameters *meta_read_old(const char *inName)
 }
 meta_parameters *meta_read(const char *inName)
 {
-	meta_read_old(inName);
+	return meta_read_old(inName);
 }
