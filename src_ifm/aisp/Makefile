@@ -23,27 +23,22 @@ ASPLIB = patch.o \
 	 aisp_setup.o \
 	 rciq.o rmpatch.o acpatch.o calibration.o
 
-all: aisp calc_deltas spectra estavedop clean
+all: aisp calc_deltas spectra clean
 
 aisp:	$(ASPLIB) $(OBJLIB) aisp.o $(LIBS)
 	$(CC) $(CFLAGS) -o aisp aisp.o $(ASPLIB) $(OBJLIB) $(LIBC)
 	mv aisp$(BIN_POSTFIX) $(BINDIR)
-	cp aisp.man ../../man/cat1/aisp.1 
+	cp aisp.1 ../../man/cat1/aisp.1 
 
 calc_deltas: calc_deltas.o yaxb.o $(LIBS)
 	$(CC) $(CFLAGS) calc_deltas.o -o calc_deltas yaxb.o $(LIBC)
 	mv calc_deltas$(BIN_POSTFIX) $(BINDIR)
-	cp calc_deltas.man ../../man/cat1/calc_deltas.1
-
-estavedop: estavedop.o $(OBJLIB)
-	$(CC) $(CFLAGS) estavedop.o $(OBJLIB) -o estavedop $(LIBC)
-	mv estavedop$(BIN_POSTFIX) $(BINDIR)
-	cp estavedop.man ../../man/cat1/estavedop.1
+	cp calc_deltas.1 ../../man/cat1/calc_deltas.1
 
 spectra: spectra.o $(OBJLIB)
 	$(CC) $(CFLAGS) spectra.o $(OBJLIB) -o spectra $(LIBC)
 	mv spectra$(BIN_POSTFIX) $(BINDIR)
-	cp spectra.man ../../man/cat1/spectra.1
+	cp spectra.1 ../../man/cat1/spectra.1
 
 # Note: signal2amp is a tiny program which generates
 # a (very blurry!) image of raw signal data-- it's useful
