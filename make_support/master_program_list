@@ -43,7 +43,7 @@
 # files in the bin/$SYS/ directory.
 #
 
-# A listing of libraries (easy).
+######################### A listing of libraries (easy). ######################
 LIBS
 {
 @src_lib/
@@ -66,8 +66,9 @@ LIBS
 	sarmodel
 	tcobj
 }
+############################### END OF LIBRARIES ##############################
 
-# A listing of programs (not so easy).
+###################### A listing of programs (not so easy). ###################
 PROGRAMS
 {
 @src/
@@ -115,30 +116,16 @@ PROGRAMS
 	}
 
 # Down here because it depends on geocode
+# Also note: corner_coords, filter, geocode, and projprm are only used by
+# asf_convert's hidden options and we don't want to include them in the release
 @src/
 	asf_convert
 	{
 		PROGRAMS
 			asf_export
 			asf_import
-			corner_coords
-			filter
-			geocode
-			projprm
 	}
 
-# Commenting this out ... do not want it built by default,
-# since we do not want to require GTK to build.  Added some
-# targets to "makestart" to enable building the gui.  But
-# it will not be built by default.
-#
-# @src/
-#	asf_convert_gui
-#	{
-#		PROGRAMS
-#			asf_export
-#			asf_import
-#	}
 
 @src_ifm/
 	aisp
@@ -220,19 +207,31 @@ PROGRAMS
 #	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
 
 
+# Build this very last since it depends on the plethora of gtk2 libraries, and
+# tends to kill the build
+@src/
+	asf_convert_gui
+	{
+		PROGRAMS
+			asf_import
+			asf_export
+	}
+
 }
+############################### END OF PROGRAMS ###############################
 
-
+############################## List of Categories #############################
 # The categories have no directories or source, but are valid autotar and
 # makefile targets.
-
 CATEGORIES
 {
 # Convert package (BSD license) - get data from asf ceos to whatever you want!
 #                                 (that we can convert to)
+#                                 asf_export asf_import are automatically
+#                                 included by asf_convert
   convert
   {
-  	asf_convert asf_export asf_import
+  	asf_convert
   }
 
 # Open - Anybody can get this stuff (BSD license)
