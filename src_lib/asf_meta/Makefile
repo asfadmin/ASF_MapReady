@@ -113,6 +113,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	read_baseline.o \
 	set_era.o \
 	slantRange2groundPixel.o \
+	unpacked_deg.o \
 	utc2gha.o \
 	util3d.o \
 	yaw2doppler.o \
