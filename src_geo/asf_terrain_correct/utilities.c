@@ -53,9 +53,15 @@ datafile_path (const char *relative_path)
 #endif /* FINAL_PRODUCTION_BUILD */
 
   /* We are not doing a final production build, or the datafile wasn't
-     installed yet, so look in the current directory.  */
-  fprintf (stderr, "Note: Looking for datafile %s in ./ instead of "
-	             ASF_SHAREDIR " ... ", relative_path);
+     installed yet, so look in the current directory.  If this is our
+     first time through this code, print a note explaing where we are
+     looking.  */
+  static int first_time_through = TRUE;
+  if ( first_time_through ) {
+    fprintf (stderr, "Note: Looking for data file %s in './' instead of '"
+	     ASF_SHAREDIR "' ... ", relative_path);
+    first_time_through = FALSE;
+  }
   path = g_strdup_printf ("./%s", relative_path);
   if ( g_file_test (path, G_FILE_TEST_EXISTS) ) {
     fprintf (stderr, "found it.\n");

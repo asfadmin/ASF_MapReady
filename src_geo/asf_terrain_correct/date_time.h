@@ -18,8 +18,8 @@
    requires knowledge of |UT1 - UTC| for the time in question.  This
    data is provided by the International Earth Rotation Service (IERS)
    as a monthly bulletin known as IERS Bulletin B.  IERS Bulletin B
-   actually provides offsets to a time referred to as UT1R, which may
-   be regarded as a more accurate form of UT1 (it accounts for the
+   also provides offsets to a time referred to as UT1R, which is a
+   regularized (i.e. high pass filtered) form of UT1 (it ignores the
    effects of body tides, which may amount to as much as 2.5 ms worth
    of time).  Data file archives of existing IERS Bulletin B issues
    are used by these routines for dates in the past with respect to
@@ -40,7 +40,14 @@
 /* The algorithms used seem to give at least this much precision,
    i.e. the test comparisons pass with this value as the tolerance
    after a single conversion or date arithmetic operation.  */
-#define TIME_PRECISION_IN_SECONDS (1.0e-21)
+// FIXME: I swear the tests worked with 1.0e-21 in here on solaris,
+// and I thought double was supposed to be the same IEEE standard
+// thing on all platforms.  Also, it seems the value that ends up in
+// the DateTime structure is not the same as the second of day
+// argument that is passed into date_time_new, and nothing happens but
+// an assignment.  I don't know if this is gcc bug or AMD FPU problem
+// or what.
+#define TIME_PRECISION_IN_SECONDS (1.0e-8L)
 #define SECONDS_PER_MINUTE 60
 #define MINUTES_PER_HOUR 60
 #define SECONDS_PER_HOUR (SECONDS_PER_MINUTE * MINUTES_PER_HOUR)

@@ -51,6 +51,18 @@ orbital_state_vector_get_keplerian_elements
  double *capital_omega, double *lower_case_omega, double *nu, double *E, 
  double *M);
 
+/* Get the equivalent International Terrestrial Reference System
+   coordinates, given earth rotation angle theta.  This method should
+   account for precession and nutation, since they are built into the
+   GEI system, but does not account for pole offsets (see secion
+   2.1.2.3 of the above referenced Satellite Geodesy).  The pole
+   offsets are typically ~0.3 arc seconds, equivalent to ~9 m on the
+   earth's surface.  */
+void
+orbital_state_vector_get_itrs_coordinates (OrbitalStateVector *self, 
+					   double theta,
+					   double *x, double *y, double *z);
+
 /* Height in meters of the satellite above the WGS84 ellipsoid.  */
 double
 orbital_state_vector_height_above_ellipsoid (OrbitalStateVector *self);

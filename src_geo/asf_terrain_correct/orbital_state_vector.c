@@ -84,6 +84,18 @@ orbital_state_vector_get_keplerian_elements
   free (e_fv);
 }
 
+void
+orbital_state_vector_get_itrs_coordinates (OrbitalStateVector *self, 
+					   double theta,
+					   double *x, double *y, double *z)
+{
+  // Compiler reassurance.
+  self = self;
+  theta = theta;
+  x = x ; y = y ; z = z;
+  assert (0);			/* Unfinished.  */
+}
+
 double
 orbital_state_vector_height_above_ellipsoid (OrbitalStateVector *self)
 {

@@ -156,7 +156,8 @@ typedef enum {
    modification time has changed.  */
 static double
 lookup_time_offset (const char *lookup_table_file, 
-		    lookup_table_column_t lookup_table_column, double mjd) 
+		    lookup_table_column_t lookup_table_column, 
+		    long double mjd) 
 {
   /* Properties of the lookup table.  */
   
@@ -207,7 +208,7 @@ lookup_time_offset (const char *lookup_table_file,
 	table = realloc (table, table_lines * sizeof (double *));
 	int cl = table_lines - 1; /* Current line of the table.  */
 	table[cl] = malloc (table_columns * sizeof (double));
-	/* Number of table columsn we care about.  */
+	/* Number of table columns we care about.  */
 	const int columns_of_interest = 4;
 	int assigned_field_count 
 	  = sscanf (line_buffer, "%d %*d %*s %*d %lf %lf %lf\n", 
@@ -238,31 +239,50 @@ lookup_time_offset (const char *lookup_table_file,
     cli = (max_index - min_index) / 2 + min_index;
   }
 
-  /* Interpolate to get the result.  */
-  int cli_mjd = table_mjd_keys[cli];
   /* Index of neighbor we will interpolate with.  */
   int neighbor_index;	
   if ( table_mjd_keys[cli] < mjd ) {
-    neighbor_index = cli - 1;
-  } else {
     neighbor_index = cli + 1;
+  } else {
+    neighbor_index = cli - 1;
   }
-  /* MJD of neighbor entry we will interpolate with.  */
-  int neighbor_mjd = table_mjd_keys[neighbor_index];    
-  double interpolation_fraction = (mjd - cli_mjd) / (mjd - neighbor_mjd);
-  int column_index;		/* Column of interest.  */
+
+  /* We better now have two table entries, one from each side of the
+     current mjd.  */
+  assert (cli != neighbor_index);
+  assert ((mjd >= table_mjd_keys[cli] && mjd <= table_mjd_keys[neighbor_index])
+	  || (mjd <= table_mjd_keys[cli] 
+	      && mjd >= table_mjd_keys[neighbor_index]));
+
+  /* FIXME: interpolating accross leap seconds is the very likely the
+     wrong thing to do, as there is a sharp discontinuity in UTC which
+     probably propagates into the other calculations (i.e. everything
+     should probably be stepped at the appropriate instant).  I
+     haven't really thought this problem through though.  */
+  if ( table[cli][tai_minus_utc_column_index]
+       != table[neighbor_index][tai_minus_utc_column_index] ) {
+    assert (0);			/* Not implemented yet.  */
+  }
+
+  /* Indicies of table entries before and after the mjd.  */
+  int ib = cli < neighbor_index ? cli : neighbor_index;
+  int ia = cli < neighbor_index ? neighbor_index : cli;
+
+  /* Column of interest.  */
+  int column_index;	
   if ( lookup_table_column == UT1_MINUS_UTC ) {
     column_index = ut1_minus_utc_column_index;
   } else if ( lookup_table_column == UT1_MINUS_UT1R ) {
-    column_index = ut1_minus_utc_column_index;
+    column_index = ut1_minus_ut1r_column_index;
   } else if ( lookup_table_column == TAI_MINUS_UTC ) {
     column_index = tai_minus_utc_column_index;
   } else {
     assert (FALSE);		/* Shouldn't get here.  */
   }
-  
-  return ((1.0 - interpolation_fraction) * table[cli][column_index]
-	  + interpolation_fraction * table[neighbor_index][column_index]);
+
+  /* Return the interpolated value.  */
+  return ((1.0 - (mjd - table_mjd_keys[ib])) * table[ib][column_index]
+	  + (1.0 - (table_mjd_keys[ia] - mjd)) * table[ia][column_index]);
 }
 
 /* The name of the in this librarie's part of the share directory in
@@ -292,10 +312,22 @@ convert_to_terrestrial_dynamical_time (long double mjd,
   if ( time_scale == TDT ) {
     return mjd;
   } else if ( time_scale == UT1R ) {
+    // FIXME: this method is currently broken.  It needs to be fixed
+    // in the ways that he corresponding convert_from method was
+    // fixed.
+    assert (0);
     double ut1r_minus_tai = ut1_minus_utc - ut1_minus_ut1r - tai_minus_utc;
     double ut1r_minus_tdt = ut1r_minus_tai - tdt_minus_tai;
+    /* We should maybe in theory be dividing by the astronomical
+       seconds per day here, but the variation is only a couple of
+       milliseconds, which would make only a tiny difference in an
+       already small adjustment.  */
     return mjd - ( (long double) ut1r_minus_tdt / SECONDS_PER_DAY);
   } else if ( time_scale == UTC ) {
+    // FIXME: this method is currently broken.  It needs to be fixed
+    // in the ways that he corresponding convert_from method was
+    // fixed.
+    assert (0);
     double tdt_minus_utc = tdt_minus_tai + tai_minus_utc;
     return mjd + ( (long double) tdt_minus_utc / SECONDS_PER_DAY);
     assert (FALSE);
@@ -320,21 +352,22 @@ convert_from_terrestrial_dynamical_time (long double mjd,
 
   /* Offsets between various time scales.  Converting involves solving
      some equations involving these differences.  */
-  const double tdt_minus_tai = 32.184;
-  double ut1_minus_utc = lookup_time_offset (lookup_table_file,
-					     UT1_MINUS_UTC, mjd);
-  double ut1_minus_ut1r = lookup_time_offset (lookup_table_file,
-					      UT1_MINUS_UT1R, mjd);
-  double tai_minus_utc = lookup_time_offset (lookup_table_file, 
-					     TAI_MINUS_UTC, mjd);
+  const long double tdt_minus_tai = 32.184;
+  long double ut1_minus_utc = lookup_time_offset (lookup_table_file,
+						  UT1_MINUS_UTC, mjd);
+  long double ut1_minus_ut1r = lookup_time_offset (lookup_table_file,
+						   UT1_MINUS_UT1R, mjd);
+  long double tai_minus_utc = lookup_time_offset (lookup_table_file, 
+						  TAI_MINUS_UTC, mjd);
   if ( time_scale == TDT ) {
     return mjd;
   } else if ( time_scale == UT1R ) {
-    double ut1r_minus_tai = ut1_minus_utc - ut1_minus_ut1r - tai_minus_utc;
-    double ut1r_minus_tdt = ut1r_minus_tai - tdt_minus_tai;
+    long double ut1r_minus_tai 
+      = ut1_minus_utc - ut1_minus_ut1r - tai_minus_utc;
+    long double ut1r_minus_tdt = ut1r_minus_tai - tdt_minus_tai;
     return mjd + ( (long double) ut1r_minus_tdt / SECONDS_PER_DAY);
   } else if ( time_scale == UTC ) {
-    double tdt_minus_utc = tdt_minus_tai + tai_minus_utc;
+    long double tdt_minus_utc = tdt_minus_tai + tai_minus_utc;
     return mjd - ( (long double) tdt_minus_utc / SECONDS_PER_DAY);
   } else {
     assert (FALSE);		/* Shouldn't be here.  */
@@ -484,11 +517,12 @@ date_time_minute_of_hour (DateTime *self, time_scale_t time_scale)
   double second_of_day;
   mjd_tdt_to_year_day_second (self->mjd, &year, &day_of_year, &second_of_day,
 			      time_scale);
+
   static const int seconds_per_hour = SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
 
-  return (second_of_day - (seconds_per_hour
-			   * floor (second_of_day 
-				    / (seconds_per_hour)))
+  return ((second_of_day - (seconds_per_hour
+			    * floor (second_of_day 
+				     / seconds_per_hour)))
 	  / SECONDS_PER_MINUTE);
 }
 
@@ -502,6 +536,12 @@ date_time_second_of_minute (DateTime *self, time_scale_t time_scale)
 
   return second_of_day - (SECONDS_PER_MINUTE 
 			  * floor (second_of_day / SECONDS_PER_MINUTE));
+}
+
+long double
+date_time_mjd (DateTime *self, time_scale_t time_scale)
+{
+  return convert_from_terrestrial_dynamical_time (self->mjd, time_scale);
 }
 
 long double

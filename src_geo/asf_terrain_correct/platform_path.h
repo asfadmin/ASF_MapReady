@@ -3,8 +3,14 @@
 // fill in the blanks at a number of position along the orbital path,
 // and then splines are fit to these known positions to allow fast
 // lookup of the platform position and velocity at different points in
-// time.  See orbital_state_vector.h for some indications of the
-// errors involved in the propagation.
+// time.  Exponentially weighted two-sided interpolation is used to
+// interpolate between observations, which results in a reasonably
+// tradeoff between positional smoothnes and accuracy, but distorts
+// the velocity component of the model somewhat at points located
+// farther away from the observations (to the tune of ~25E1 m/s for
+// the RADARSAT orbit in the test case in test_platform_path.c) See
+// orbital_state_vector.h for some indications of the errors involved
+// in the propagation between observations.
 
 #ifndef PLATFORM_PATH_H
 #define PLATFORM_PATH_H
@@ -35,7 +41,7 @@ typedef struct {
 PlatformPath *
 platform_path_new (int control_point_count, double start_time, double end_time,
 		   int observation_count, double *observation_times, 
-		   OrbitalStateVector **observation_positions);
+		   OrbitalStateVector **observations);
 
 // Set position to the position of platform at time.
 void

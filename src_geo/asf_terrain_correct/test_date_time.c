@@ -1,5 +1,8 @@
 /* Tests for the DateTime class.  */
 
+// FIXME: remove after done fixing tests.
+#include <stdio.h>
+
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
@@ -26,10 +29,17 @@
 #define BASE_SECOND_OF_MINUTE \
   (BASE_SECOND_OF_DAY - BASE_HOUR_OF_DAY * SECONDS_PER_HOUR \
    - BASE_MINUTE_OF_HOUR * SECONDS_PER_MINUTE)
-#define BASE_JD ( (long double) BASE_MJD + MJD_OFFSET)
-#define BASE_JDS ( (long double) BASE_MJD + MJD_OFFSET - JDS_OFFSET)
-#define APPROXIMATE_DAYS_PER_MONTH 30
+#define BASE_JD ((long double) BASE_MJD + MJD_OFFSET)
+#define BASE_JDS ((long double) BASE_MJD + MJD_OFFSET - JDS_OFFSET)
+/* Equivalent coordinated universal time, computed by hand from
+   International Earth Rotation Service Bulletin B Issue 98 using
+   linear interpolation.  */
+#define BASE_EQUIVALENT_UTC 50136.48539625000000L
+/* Equivalent UT1R time, calculated in the same way as
+   BASE_EQUIVALENT_UTC.  */
+#define BASE_EQUIVALENT_UT1R 50136.48540150729476L
 
+#define APPROXIMATE_DAYS_PER_MONTH 30
 /* Date after addition of about a month of time.  */
 #define DATE_IN_FUTURE_MJD ( (long double) BASE_MJD \
                              + APPROXIMATE_DAYS_PER_MONTH)
@@ -48,7 +58,7 @@
 /* Return true iff two day values compare equal within the advertised
    tolerance.  */
 #define COMPARE_DAYS(a, b) \
-  (fabs (a - b) < TIME_PRECISION_IN_SECONDS / SECONDS_PER_DAY ? TRUE : FALSE)
+  (fabsl (a - b) < TIME_PRECISION_IN_SECONDS / SECONDS_PER_DAY ? TRUE : FALSE)
 /* Return true iff two second values compare equal with the advertised
    tolerance.  */
 #define COMPARE_SECONDS(a, b) \
@@ -59,8 +69,12 @@
 static void
 assert_base_values (DateTime *dt)
 {
-  assert (dt->year == BASE_YEAR && dt->day_of_year == BASE_DAY_OF_YEAR
-	  && COMPARE_SECONDS (dt->second_of_day, BASE_SECOND_OF_DAY));
+  /* Compare values in year/day/second form.  */
+  assert (dt->year == BASE_YEAR);
+  assert (dt->day_of_year == BASE_DAY_OF_YEAR);
+  assert (COMPARE_SECONDS (dt->second_of_day, BASE_SECOND_OF_DAY));
+
+  /* Compare modified julian day value.  */
   assert (COMPARE_DAYS (dt->mjd, BASE_MJD));
 }
 
@@ -72,6 +86,9 @@ main (void)
   DateTime *dt = date_time_new (BASE_YEAR, BASE_DAY_OF_YEAR, 
 				BASE_SECOND_OF_DAY, TDT);
   assert_base_values (dt);
+  /* Do the UTC and UT1R translations work as expected?  */
+  assert (COMPARE_DAYS (date_time_mjd (dt, UTC), BASE_EQUIVALENT_UTC));
+  assert (COMPARE_DAYS (date_time_mjd (dt, UT1R), BASE_EQUIVALENT_UT1R));
   date_time_free (dt);
   
   dt = date_time_new_from_mjd (BASE_MJD, TDT);

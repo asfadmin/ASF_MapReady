@@ -21,8 +21,9 @@ PROGRAM_C_SOURCE = $(addsuffix .c, $(PROGRAM))
 CLASSES := date_time \
            orbital_state_vector \
 	   platform_path \
-	   vector \
-	   dem
+	   vector
+# Disabled for now
+#	   dem
 
 # Non-main, non-class source files that need building.
 OTHER_C_SOURCES := utilities.c
@@ -46,7 +47,7 @@ STATIC_DATA_FILE_SOURCES = IERS_Bulletin_Bs
 #
 ###############################################################################
 
-CC := gcc
+CC := /home/bkerin/local/gcc-3.4.3/bin/gcc
 
 INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR)
 
@@ -95,9 +96,9 @@ CPPFLAGS += $(DEFINE_FLAGS)
 # call installed.
 TEST_PREREQUISITES := build_stamp
 
-test_stamp:            test_orbital_state_vector_stamp
-# Disabled for now in CVS since it isn't quite working yet.
-# test_date_time_stamp \
+test_stamp: test_orbital_state_vector_stamp \
+            test_platform_path_stamp \
+            test_date_time_stamp
 
 # Build and run the date_time class test.
 test_date_time_stamp: test_date_time.c $(TEST_PREREQUISITES)
@@ -113,6 +114,15 @@ test_orbital_state_vector_stamp: test_orbital_state_vector.c \
               -o test_orbital_state_vector
 	./test_orbital_state_vector;
 	touch $@
+
+test_platform_path_stamp: test_platform_path.c \
+                          test_orbital_state_vector_stamp \
+                          $(TEST_PREREQUISITES)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(NONMAIN_OBJS) $(LDLIBS) \
+              -o test_platform_path
+	./test_platform_path
+	touch $@
+
 
 # Build (and don't run... yet) the test_dem class test.
 test_dem_stamp: test_dem.c $(TEST_PREREQUISITES)
@@ -143,7 +153,7 @@ NONMAIN_OBJS := $(patsubst %.c, %.o, $(OTHER_C_SOURCES) \
 # having depended on libraries installed.  Actually, since the
 # libraries are all static, we can build fine without them, but its ok
 # to insist on what will logically be required anyway.  We also need
-# to have the statis data files we need built.
+# to have the static data files we need built.
 build_stamp: $(OBJS) $(LIBS) static_data_file_build_stamp
 	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $(PROGRAM)
 	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
@@ -193,5 +203,5 @@ clean:
 	       core \
                time_scale_offsets \
 	       test_orbital_state_vector \
+               test_platform_path \
 	       test_date_time
-

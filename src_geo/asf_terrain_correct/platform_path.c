@@ -4,6 +4,8 @@
 #include <math.h>
 
 #include <gsl/gsl_errno.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_interp.h>
 
 #include "platform_path.h"
 
@@ -48,12 +50,19 @@ platform_path_new (int control_point_count, double start_time, double end_time,
 
   // The control point times are evenly spaced over the time interval
   // modeled.
+  double cp_separation = time_range / (control_point_count - 1);
+
+  // Initialize an array of control point times.
   for ( ii = 0 ; ii < control_point_count ; ii++ ) {
-    times[ii] = start_time + ii * (time_range / (control_point_count - 1));
+    times[ii] = start_time + ii * cp_separation;
   }
 
+  // Find the values of interest at all the control points.
   for ( ii = 0 ; ii < control_point_count ; ii++ ) {
-    double ct = times[ii];
+
+    double ct = times[ii];	// Current time.
+
+    // Find the nearest observation after the current time.
     for ( jj = 0 ; jj < observation_count ; jj++ ) {
       if ( observation_times[jj] >= ct ) {
 	break;
@@ -64,8 +73,16 @@ platform_path_new (int control_point_count, double start_time, double end_time,
     // observation, or after the time of the last observation, all we
     // can do is propagate backward or forward, respectively.
     if ( jj == 0 || jj == observation_count ) {
-      OrbitalStateVector *tmp = orbital_state_vector_copy (observations[jj]);
-      orbital_state_vector_propagate (tmp, ct - observation_times[jj]);
+      /* Initializer reassures compiler without making pointer usable.  */
+      OrbitalStateVector *tmp = NULL;
+      if ( jj == 0 ) {
+	tmp = orbital_state_vector_copy (observations[jj]);
+	orbital_state_vector_propagate (tmp, ct - observation_times[jj]);
+      }
+      else if ( jj == observation_count ) {
+	tmp = orbital_state_vector_copy (observations[jj - 1]);
+	orbital_state_vector_propagate (tmp, ct - observation_times[jj - 1]);
+      }
       xcp[ii] = tmp->position->x;
       ycp[ii] = tmp->position->y;
       zcp[ii] = tmp->position->z;
@@ -80,9 +97,9 @@ platform_path_new (int control_point_count, double start_time, double end_time,
       // We will keep track of which pair of observations we are
       // between so we don't have to propagate things over the same
       // path multiple times.  This magic number and static value keep
-      // track of which such segment we currently in.
-      const int no_current_segment = -1;
-      static int current_segment = no_current_segment;
+      // track of which segment we are currently in.
+#define NO_CURRENT_SEGMENT -1
+      static int current_segment = NO_CURRENT_SEGMENT;
       // Times of the observations that bound the current segment.
       static double current_segment_start, current_segment_end;
       // Last observation and next observation.  These terms are a bit
@@ -90,28 +107,25 @@ platform_path_new (int control_point_count, double start_time, double end_time,
       // as we compute the positions for the spline control points.
       static OrbitalStateVector *lo, *no;
 
-      double nt = times[ii + 1];   // Time of next control point.
-      double lt = times[ii - 1];   // Time of last control point.
-
-      if ( current_segment == no_current_segment 
+      if ( current_segment == NO_CURRENT_SEGMENT 
 	   || ct > current_segment_end ) {
-	current_segment = jj - 1;
-	if ( current_segment != no_current_segment ) {
+	if ( current_segment != NO_CURRENT_SEGMENT ) {
 	  orbital_state_vector_free (lo);
 	  orbital_state_vector_free (no);
 	}
+	current_segment = jj - 1;
 	lo = orbital_state_vector_copy (observations[current_segment]);
 	no = orbital_state_vector_copy (observations[current_segment + 1]);
 	current_segment_start = observation_times[current_segment];
 	current_segment_end = observation_times[current_segment + 1];
 	orbital_state_vector_propagate (lo, ct - current_segment_start);
-	orbital_state_vector_propagate (no, nt - current_segment_end);
+	orbital_state_vector_propagate (no, ct - current_segment_end);
       }
       else {
-	orbital_state_vector_propagate (lo, ct - lt);
-	orbital_state_vector_propagate (no, lt - ct);
+	orbital_state_vector_propagate (lo, cp_separation);
+	orbital_state_vector_propagate (no, cp_separation);
       }
-      
+
       // We now have two opinions about where the satellite is at the
       // current time, one based on a forward propagation and the
       // other based on a backward propagation.  We want to reconcile
@@ -135,7 +149,7 @@ platform_path_new (int control_point_count, double start_time, double end_time,
 
       // "Weighting of next observation".  Here we apply the function
       // discussed above, then map the result back into [0, 1].
-      double wono = (pow (fop, 1.0 / 3.0) + 1) / 2.0;
+      double wono = ((GSL_SIGN (fop) * pow (fabs (fop), 1.0 / 3.0)) + 1) / 2.0;
       
       // Finally we can compute the control point for this time.
       xcp[ii] = lo->position->x * (1.0 - wono) + no->position->x * wono;
