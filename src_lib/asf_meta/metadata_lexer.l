@@ -19,8 +19,7 @@ int yywrap(void)
 
 %option nomain
 
-INT_STRING         -?([0-9]+)
-DOUBLE_STRING      -?(([0-9]+)|([0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?)
+DOUBLE_STRING      (-?([0-9]+)|(([0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?)?)
 ID_STRING          [a-zA-Z]("["|"]"|[-a-zA-Z0-9'>=(),;/_ \t])*
 FIELD_STRING       [^#\n]*
 
@@ -53,10 +52,6 @@ FIELD_STRING       [^#\n]*
 [ \t]*\}[ \t]*                { return '}'; }
 
  /* Return a numeric value.  FIXME: needs errno ERANGE check added.  */
-<FIELD_STATE>{INT_STRING}/[#\n]   { BEGIN INITIAL;
-                                    yylval.int_val 
-			              = strtol(yytext, NULL, 10);
-                                    return INT; }
 <FIELD_STATE>{DOUBLE_STRING}/[#\n]   { BEGIN INITIAL;
                                        yylval.double_val 
 				         = strtod(yytext, NULL); 
@@ -67,9 +62,4 @@ FIELD_STRING       [^#\n]*
                                       strcpy(yylval.string_val, yytext);
                                       return STRING; }
 %%
-
-
-
-
-
 
