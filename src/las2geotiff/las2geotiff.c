@@ -16,8 +16,6 @@ EXTERNAL ASSOCIATES:
 FILE REFERENCES:
     NAME:               USAGE:
     ---------------------------------------------------------------
-    datum.txt		gets datum information form this file.
-    spheroid.txt 	
 
 PROGRAM HISTORY:
     VERS:   DATE:  AUTHOR:      PURPOSE:
@@ -72,6 +70,7 @@ BUGS:
 #include "las2geotiff_IO.h"
 #include "geotiffio.h"
 #include "xtiffio.h"
+#include "protos.h"
 
 #define VERSION 1.0
 
