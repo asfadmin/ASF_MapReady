@@ -81,7 +81,6 @@ BUGS:
 ******************************************************************************/
 
 #include "asf.h"
-#include "asf_nan.h"
 #include "lzFetch.h"
 #include "decoder.h"
 #include "dateUtil.h"
