@@ -15,7 +15,8 @@
 #include <gsl/gsl_matrix.h>
 
 // Instance structure.  Everything here is private and need not be
-// used or understood by client code.
+// used or understood by client code, except for the size_x and size_y
+// fields.
 typedef struct {
   size_t size_x, size_y;	// Image dimensions.
   size_t cache_space;		// Memory cache space in bytes.
@@ -104,6 +105,12 @@ void
 float_image_set_region (FloatImage *self, size_t x, size_t y, size_t size_x, 
 			size_t size_y, float *buffer);
 
+// Get a pixel, performing odd reflection at image edges if the pixel
+// indicies fall outside the image.  See the description of the
+// apply_kernel method for an explanation of reflection.
+float
+float_image_get_pixel_with_reflection (FloatImage *self, ssize_t x, ssize_t y);
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Image Analysis and Statistics
@@ -144,6 +151,25 @@ float_image_approximate_statistics (FloatImage *self, size_t stride,
 float
 float_image_apply_kernel (FloatImage *self, ssize_t x, ssize_t y, 
 			  gsl_matrix_float *kernel);
+
+// Type used to specify whether disk files should be in big or little
+// endian byte order.
+
+// Sample method types.  These dictate how nearby pixels are
+// considered when we want to find the approximate value for a point
+// which falls between pixel indicies.
+typedef enum {
+  // Nearest pixel.
+  FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR,
+  // Linearly weited average of four nearest pixels
+  FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR,
+  // Bicubic spline interpolation (which consideres the nearest 16 pixels).
+  FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC
+} float_image_sample_method_t;
+
+float
+float_image_sample (FloatImage *self, float x, float y, 
+		    float_image_sample_method_t sample_method);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
