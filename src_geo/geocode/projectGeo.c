@@ -3,7 +3,7 @@
 
  SYNOPSIS: int projectGeo(double pixSize, char *metaName, char *in_proj,
                          char *in_key, char *in_tie, char *out_tie,
-                         char *out_meta, char win_type, char *win)
+                         char *out_meta, int id, char win_type, char *win)
 
  DESCRIPTION:  This program converts the input metadata, projection file and
       key, and input tie points into the given output tie points and .meta file,
@@ -21,6 +21,7 @@
                   Has format:
                        <out X> <out Y> <in X> <in Y>
     out_meta    Output metadata file name (.meta)
+    id		process ID
 
 
  Windowing Modes: -o, -l, or -i set the size of the output image.
@@ -50,6 +51,7 @@
      2.0    ?       R. Gens     Convert from program to function
      2.5    08/03   P. Denny    Obliterate DDR and use new metadata
                                   Add this neat about & program history
+     2.6    03/04   R. Gens	Added process ID for robustness
 
 *******************************************************************************/
 
@@ -58,7 +60,7 @@
 double aLat,aLon;/*First point in grid (for zone calculations)*/
 
 int projectGeo(double pixSize, char *metaName, char *in_proj, char *in_key,
-               char *in_tie, char *out_tie, char *out_meta, char win_type,
+               char *in_tie, char *out_tie, char *out_meta, int id, char win_type,
                char *win)
 {
 	window *out_window=NULL;      /*Projection window*/
@@ -69,6 +71,7 @@ int projectGeo(double pixSize, char *metaName, char *in_proj, char *in_key,
 	int pointOfInterest=FALSE;    /*Is user-specified window (lat lon nl ns)?*/
 	int userWin_flag=FALSE;       /*Did the user specify an output window?*/
 	meta_parameters *meta;        /*Metadata structure*/
+	char tmp[255];
 
 	if (win_type=='l') {     /*User specified window as lat/lon*/
 		winIsLatLon=TRUE;
@@ -131,7 +134,8 @@ int projectGeo(double pixSize, char *metaName, char *in_proj, char *in_key,
 	
 	if (write_proj_meta(pixSize, &proj, out_window, meta)) {
 		meta_write(meta,out_meta);
-                meta_write(meta,"tmp");
+		sprintf(tmp, "tmp%d", id);
+                meta_write(meta,tmp);
 	}
         meta_free(meta);
 	
