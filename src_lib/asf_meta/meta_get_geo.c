@@ -132,8 +132,22 @@ typedef struct {
 double get_distance(lat_lon one,lat_lon two)
 {
 	double dlat=one.lat-two.lat;
-	double dlon=(one.lon-two.lon)*cos(one.lat*PI/180.0);
-	return dlat*dlat+dlon*dlon;
+	double dlon;
+	if ( one.lon < -170 && two.lon > 170 ) {
+	  dlon = (180 + one.lon) + (180 - two.lon);
+	}
+	else if ( one.lon > 170 && two.lon < -170 ) {
+	  dlon = (180 - one.lon) + (180 + two.lon);
+	}
+	else {
+	  dlon = one.lon - two.lon;
+	}
+
+	/* Scale longitude difference to take into accound the fact
+	   that longitude lines are a lot closer at the pole.  */
+	dlon *= cos (one.lat * PI / 180.0);
+
+	return dlat * dlat + dlon * dlon;
 }
 double get_error(meta_parameters *meta,
 	lat_lon target,double elev, double xSamp,double yLine)
