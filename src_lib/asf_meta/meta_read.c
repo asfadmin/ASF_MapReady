@@ -30,13 +30,13 @@ meta_parameters *meta_read(const char *inName)
 	
   
   /* Scan for the version string.  */
-  if ( fgets(line, MAX_LINE, meta_file) == '\0' ) {
+  if ( fgets(line, MAX_METADATA_LINE, meta_file) == '\0' ) {
     err_die("%s function: metadata file is empty\n", __func__);
   }
   while ( !regex_match(&version_subexps, line,
-		       "^Meta version : [[:digit:]]+(\\.[[:digit:]]+)?"
+		       "^[[:space:]]*meta_version[[:space:]]*:[[:space:]]*[[:digit:]]+(\\.[[:digit:]]+)?"
 		       ) ) {
-    if ( fgets(line, MAX_LINE, meta_file) == '\0' ) {
+    if ( fgets(line, MAX_METADATA_LINE, meta_file) == '\0' ) {
       err_die("meta_read function: didn't find Meta version field\n");
     }
   }
