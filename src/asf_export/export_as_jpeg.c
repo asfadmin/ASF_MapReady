@@ -74,7 +74,7 @@ export_as_jpeg (const char *metadata_file_name,
     }
   }
 
-  asfPrintStatus("Scaling...\n");
+  asfPrintStatus ("Scaling...\n");
 
   /* Generate the scaled image.  */
   FloatImage *si = float_image_new_from_model_scaled (iim, scale_factor);
