@@ -50,7 +50,7 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 default: $(OBJS)
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
-#	mv $(TARGET) $(BINDIR)
+	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(BINDIR)
 	cp $(TARGET)_help.txt $(BINDIR)
 
