@@ -44,7 +44,6 @@ int set_era(const char *inname, char *onm, int opflag)
        n_dat[BUFFER];
   char *fileType="bad opflag";
   FILE *fp;
-  /*int i;*/
   
   create_name(n_L,inname,".L");
   create_name(n_D,inname,".D");
