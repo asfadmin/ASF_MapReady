@@ -29,8 +29,11 @@
 #include <asf_meta.h>
 #include <asf_reporting.h>
 #include <asf_export.h>
+#include <asf_reporting.h>
+
 
 #define PPM_MAGIC_NUMBER "P6"
+
 
 void
 export_as_ppm (const char *metadata_file_name,
@@ -54,9 +57,9 @@ export_as_ppm (const char *metadata_file_name,
   int print_count;
   const int max_color_value = 255;
   size_t ii;
-  int return_code;
 
-  assert (md->general->data_type == REAL32);
+  asfRequire(md->general->data_type == REAL32,
+             "Input data type must be in 32-bit floating point format.\n");
 
   if ( (max_size > line_count && max_size > sample_count)
        || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
@@ -69,7 +72,8 @@ export_as_ppm (const char *metadata_file_name,
   pixel_count = (size_t) line_count * sample_count;
 
   /* Get the image data.  */
-  assert (md->general->data_type == REAL32);
+  asfRequire(md->general->data_type == REAL32,
+             "Input data type must be in 32-bit floating point format.\n");
   daf = get_image_data (md, image_data_file_name);
 
   asfPrintStatus("Processing...\n");
@@ -84,7 +88,8 @@ export_as_ppm (const char *metadata_file_name,
      to form a scaled version of the input data.  */
   /* Here are some very funky checks to try to ensure that the JSAMPLE
      really is the type we expect, so we can scale properly.  */
-  assert (sizeof (unsigned char) == 1);
+  asfRequire(sizeof(unsigned char) == 1,
+             "Size of the data type on this machine is different than expected.\n");
 
   /* This pixel space is resized later (with realloc) if the image
      dimensions are scaled.  */
@@ -105,18 +110,15 @@ export_as_ppm (const char *metadata_file_name,
 
   /* Open the output file to be used.  */
   ofp = fopen (output_file_name, "w");
-  if ( ofp == NULL ) {
-    char* temp;
-        sprintf(temp, "Open of %s for writing failed: %s", output_file_name, strerror(errno));
-        print_error(temp);
-    exit (EXIT_FAILURE);
-  }
+  if ( ofp == NULL )
+    asfPrintError("Open of %s for writing failed: %s", output_file_name,
+                  strerror(errno));
 
   /* Write the ppm header.  */
   print_count = fprintf (ofp, PPM_MAGIC_NUMBER);
   /* After this we will assume that writing to the new file will work
      correctly.  */
-  assert (print_count == strlen (ppm_magic_number));
+  asfRequire(print_count == strlen(ppm_magic_number),"Error writing to file.\n");
   fprintf (ofp, "\n");
   fprintf (ofp, "%ld\n", width);
   fprintf (ofp, "%ld\n", height);
@@ -134,8 +136,7 @@ export_as_ppm (const char *metadata_file_name,
     asfLineMeter(ii, height);
   }
 
-  return_code = fclose (ofp);
-  assert (return_code == 0);
+  FCLOSE (ofp);
 
   free (pixels);
   free (daf);
