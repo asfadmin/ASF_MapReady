@@ -306,6 +306,8 @@ void fill_structure_field(char *field_name, void *valp)
       { MPROJ->perX = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "perY") )
       { MPROJ->perY = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "units") )
+      { strcpy(MPROJ->units, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "hem") ) {
       if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { MPROJ->hem = 'S'; return; }
       else { MPROJ->hem = 'N'; return; }
