@@ -130,7 +130,7 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   return_code = sigprocmask (SIG_SETMASK, &all_signals, &old_set);
   self->tile_file = fopen (tile_file_name->str, "w+");
   g_assert (self->tile_file != NULL);
-  return_code = unlink (tile_file_name->str);
+  //  return_code = unlink (tile_file_name->str);
   g_assert (return_code == 0);
   return_code = sigprocmask (SIG_SETMASK, &old_set, NULL);
   g_string_free (tile_file_name, TRUE);
@@ -477,8 +477,8 @@ float
 float_image_get_pixel (FloatImage *self, ssize_t x, ssize_t y)
 {
   // Are we at a valid image pixel?
-  g_assert (x >= 0 && (size_t)x <= self->size_x);
-  g_assert (y >= 0 && (size_t)y <= self->size_y);
+  g_assert (x >= 0 && (size_t)x < self->size_x);
+  g_assert (y >= 0 && (size_t)y < self->size_y);
 
   // Get the pixel coordinates, including tile and pixel-in-tile.
   g_assert (sizeof (long int) >= sizeof (size_t));
@@ -517,6 +517,8 @@ float_image_get_pixel (FloatImage *self, ssize_t x, ssize_t y)
 		       GINT_TO_POINTER ((int)tile_offset));
 
     // Load the tile data.
+    printf ("tile_offset: %u, tile_area: %u\n", tile_offset, 
+	    self->tile_area);
     int return_code 
       = fseeko (self->tile_file, 
 		(off_t)tile_offset * self->tile_area * sizeof (float),
@@ -524,6 +526,9 @@ float_image_get_pixel (FloatImage *self, ssize_t x, ssize_t y)
     g_assert (return_code == 0);
     size_t read_count = fread (tile_address, sizeof (float), self->tile_area, 
 			       self->tile_file);
+    if ( read_count < self->tile_area ) {
+      fprintf (stderr, "error reading from tile file: %s\n", strerror (errno));
+    }
     g_assert (read_count == self->tile_area);
 
     return tile_address[self->tile_size * pc_y.rem + pc_x.rem];
