@@ -676,5 +676,8 @@ int parse_metadata(meta_parameters *dest, char *file_name)
     dest->state_vectors->vector_count = vector_count;
     dest->state_vectors->num = vector_count; /* Backward compat alias.  */
   }
+
+  FCLOSE(meta_yyin);
+
   return ret_val;
 }
