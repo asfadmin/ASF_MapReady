@@ -147,6 +147,11 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "sensor") ) 
       { !strcpy(MGENERAL->sensor, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "mode") ) {
+      if ( strlen(VALP_AS_CHAR_POINTER) > MODE_FIELD_STRING_MAX - 1 ) {
+				          /* (-1 for trailing null)  */
+	yyerror("mode field string too long");
+	exit(EXIT_FAILURE);
+      }	
       strncpy(MGENERAL->mode, VALP_AS_CHAR_POINTER, MODE_FIELD_STRING_MAX); 
       return; 
     }
