@@ -2,6 +2,8 @@
 #ifndef _LOGFILE_H_
 #define _LOGFILE_H_
 
+#include <stdio.h>
+
 extern int quietflag;       /* flag for little or lots of output */
 extern int logflag;         /* flag for log file output */
 extern char logFile[256];   /* log file name */
