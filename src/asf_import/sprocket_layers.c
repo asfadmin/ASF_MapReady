@@ -1,5 +1,22 @@
+/******************************************************************************
+PURPOSE:
+  Create data layers for the SAR Processing Calibration Kit and Evaluation Tool
+  (SProCKET)
+
+PROGRAM HISTORY:
+  DATE:   AUTHOR:    PURPOSE:
+  -----   -------    --------
+  5/04    P. Denny   Initial development. Creates sprocket style data layers
+                      right after data is imported to asf tools format
+  6/04    P. Denny   Fix to properly create the sigma0 layer for RSI CEOS
+                      detected data (not done for slc!)
+
+******************************************************************************/
+
 #include "asf.h"
+#include "asf_nan.h"
 #include "asf_meta.h"
+#include "ceos.h"
 #include "metadata.h"
 #include "jpl_proj.h"
 #include "least_squares.h"
@@ -15,7 +32,8 @@
 
 #define SQR(X) ((X)*(X))
 
-/* Is this complex data? (follows asf_meta.h ENUM 'data_type_t') */
+/******************************************************************************
+ * Is this complex data? (follows asf_meta.h ENUM 'data_type_t') */
 int is_complex(data_type_t data_type)
 {
   if ((data_type>=COMPLEX_BYTE) && (data_type<=COMPLEX_REAL64))
@@ -25,11 +43,15 @@ int is_complex(data_type_t data_type)
 }
 
 /* Lots of neat quick math functions */
+/******************************************************************************
+ * */
 double get_satellite_height(double time, stateVector stVec)
 {
   return sqrt(SQR(stVec.pos.x) + SQR(stVec.pos.y) + SQR(stVec.pos.z));
 }
 
+/******************************************************************************
+ * */
 double get_earth_radius(double time, stateVector stVec, double re, double rp)
 {
   double er = sqrt(SQR(stVec.pos.x) + SQR(stVec.pos.y) + SQR(stVec.pos.z));
@@ -37,6 +59,8 @@ double get_earth_radius(double time, stateVector stVec, double re, double rp)
   return (re*rp)/sqrt(SQR(rp)*cos(lat)*cos(lat)+SQR(re)*sin(lat)*sin(lat));
 }
 
+/******************************************************************************
+ * */
 double get_slant_range(meta_parameters *meta, double er, double ht, int sample)
 {
   double minPhi = acos((SQR(ht) + SQR(er) -
@@ -46,59 +70,144 @@ double get_slant_range(meta_parameters *meta, double er, double ht, int sample)
   return slantRng + meta->sar->slant_shift;
 }
 
+/******************************************************************************
+ * */
 double get_look_angle(double er, double ht, double sr)
 {
   return acos((SQR(sr)+SQR(ht)-SQR(er))/(2.0*sr*ht));
 }
 
-/* Not useful for now
+/******************************************************************************
+ * NOT USEFUL FOR NOW:
  *double get_incidence_angle(double er, double ht, double sr)
  *{
  *  return PI-acos((SQR(sr)+SQR(er)-SQR(ht))/(2.0*sr*er));
  *}
  */
-
-/* Get the noise array which is tucked away somewhere special for FOCUS (RSI)*/
-/* NOT YET IN USE!
- *void get_noise_array_focus(char *ceosMetaFile)
+/******************************************************************************
+ * KEPT FOR REFERENCE:
+ * Calculate the look angle from the slant range, height and Earth Radius **
+ *double slant2look (double slant_range,
+ *                   double Re,          **Radius of the earth at nadir**
+ *                   double ht           **satellite height from earth center**
+ *                  )
  *{
- *  FILE fp = FOPEN(ceosMetaFile, "rb");
- *  int ii;
- *
- *  FSEEK64 (fp, START_OF_RDR + 85, SEEK_SET);
- *
- *  fscanf (fF, " %lg", &noise_inc);
- *
- *  for (ii=0; ii<512; ii++)
- *    fscanf (fF, " %lf ", &(noise_array[ii]));
- *
- *  fscanf (fF, " %lf ", &noise_scale);
- *  fscanf (fF, " %lf ", &offset);
+ *  double ht_from_cent = ht - Re;
+ *  double temp1 = SQR(slant_range) + 2.0*Re*ht_from_cent + SQR(ht_from_cent);
+ *  double temp2 = 2.0 * slant_range * (ht);
+ *  return R2D * acos ( temp1 / temp2);
  *}
  */
-
-/* Computes sigma0 for an ASCENDING image. Approach is from CSA's product
- * description, section 5.3.2
- * NOTE: dispite the assertation that this is only for ascending data,
- * sprocket's import for FOCUS data (vexcel_complex_data_planes.c) used it for
- * all FOCUS data, so that's what we'll do here too. */
-/* NOT YET IN USE!!
- *float sigma_naught_focus (float dn, float look_angle, float incidenceAngle,
- *                          float slantRange)
+/******************************************************************************
+ * KEPT FOR REFERENCE:
+ * Convert Look angle to Incidence angle **
+ *double look2incidence (double look,
+ *                       double Re,    **Radius of the earth at nadir **
+ *                       double ht     **satellite height from earth center **
+ *                      )
  *{
+ *   return R2D * asin( (ht) * sin((D2R*look)/Re) );
+ *}
+ */
+/******************************************************************************
+ * KEPT FOR REFERENCE:
+ * Figure out sigma naught (in dB) for a detected product in the RSI CEOS file
+ * format (currently would be a product from the FOCUS processor)
+ *float sigma0_rsi_detected (float dn, float sineIncidence, float scalingGain)
+ *{
+ *  double dn2 = SQR(dn);
+ *  double sigma0;
+ *
+ *  if (dn2 == 0)
+ *    return 1E-10;
+ *
+ *   * How we got here (Detected data):
+ *   * beta0 (dB) = 10*log ( dn^2 / scalingGain)
+ *   * sigma0 (pow) = 10^[(beta0 + 10*log(sine(incidAngle))) / 10]
+ *   * sigma0 (pow) = 10^[(10*log(dn^2/scalingGain) + 10*log(sine(incidAngle))) / 10]
+ *   * sigma0 (pow) = 10^[log(dn^2/scalingGain) + log(sine(incidAngle))]
+ *   * sigma0 (pow) = dn^2/scalingGain * sine(incidAngle)
+ *  sigma0 = dn2 / scalingGain * sineIncidence;
+ *
+ *   * if you want it in dB instead of power
+ *   * sigma0 (dB) = 10*log( dn^2/scalingGain * sine(incidAngle) ) *
+ *  return sigma0;
+ *}
+ */
+/******************************************************************************
+ * NOT IN USE
+ * Compute sigma0: CSA's product description, section 5.3.2
+ *float sigma0_rsi_slc (float dn, float sineIncidence, float scalingGain)
+ *{
+ *  float beta, sigma;
  *  double dn2 = SQR(dn);
  *
  *  if (dn2 == 0)
  *    return 1E-10;
  *
- *  beta = 20.0 * log10 (dn2 / slantRange);
- *  sigma = pow (10.0, (beta + incidenceAngle) / 10.0);
+ *  beta = 20.0 * log10 (dn2 / scalingGain);
+ *  sigma = pow (10.0, (beta + sineIncidence) / 10.0);
  *
  *  return sigma;
  *}
  */
 
-/* Print the percent thats been completed to stdout */
+#define ASC 12
+#define DESC 22
+/******************************************************************************
+* Gets radiometric info from the leader file and creates a lookup table the
+ * width of a data line. Allocates memory that needs to be freed */
+float *create_rsi_scaling_table(char *leaderName, int direction, int ns)
+{
+  struct RSI_VRADDR rdr; /* RSI CEOS radiometric data record */
+  int lut_end;           /* 0 indexed end of the radiometric lookup table */
+  float *scalingGain;    /* Scaling gain array */
+  double A2;             /* Scaling gain value for iith pixel */
+  int Il;                /* Index at lower end of lookup table */
+  int Iu;                /* Index at upper end of lookup table */
+  int ii;                /* Sample index */
+
+  get_rsi_raddr(leaderName,&rdr);
+  lut_end = rdr.n_samp-1;
+  scalingGain = (float*)MALLOC(sizeof(float)*ns);
+
+  for (ii=0; ii<ns; ii++) {
+    if (direction == ASC) {
+      Il = ii / rdr.samp_inc;
+      if (Il >= lut_end) {
+        A2 = rdr.lookup_tab[lut_end]
+             + (rdr.lookup_tab[lut_end]-rdr.lookup_tab[lut_end-1])
+               * ((ii/rdr.samp_inc)-lut_end);
+      }
+      else {
+        Iu = Il + 1;
+        A2 = rdr.lookup_tab[Il]
+             + (rdr.lookup_tab[Iu]-rdr.lookup_tab[Il])
+               * ((ii/rdr.samp_inc)-Il);
+      }
+    }
+    else {
+      Il = (ns-ii-1.0) / rdr.samp_inc;
+      if (Il >= lut_end) {
+        A2 = rdr.lookup_tab[lut_end]
+             + (rdr.lookup_tab[lut_end]-rdr.lookup_tab[lut_end-1])
+               * ((ns-1-ii)/rdr.samp_inc - lut_end);
+      }
+      else {
+        Iu = Il - 1;
+        A2 = rdr.lookup_tab[Il]
+             + (rdr.lookup_tab[Iu]-rdr.lookup_tab[Il])
+               * ((ii/rdr.samp_inc)-Il);
+      }
+    }
+    scalingGain[ii] = A2;
+  }
+
+  return scalingGain;
+}
+
+/******************************************************************************
+ * Print the percent thats been completed to stdout */
 void print_layer_progress(const char *msg, int currentLine, int totalLines,
                           int *progress)
 {
@@ -111,7 +220,11 @@ void print_layer_progress(const char *msg, int currentLine, int totalLines,
 }
 
 
-void create_sprocket_layers(const char *asfName, const char *importName)
+
+/******************************************************************************
+ * The actual point of this file! This function creates the data layers
+* necessary for SProCKET to do its magic */
+void create_sprocket_layers(const char *asfName, char *leaderName)
 {
   FILE *ampFp=NULL, *lookFp=NULL, *sigmaFp=NULL;
   FILE *lookTiePointFp=NULL;
@@ -127,21 +240,28 @@ void create_sprocket_layers(const char *asfName, const char *importName)
   int percent_done;
   int lookTiePointFlag=FALSE;
   int tableRes=MAX_tableRes, tablePix=0;
+  int doComplex=FALSE;
+  int rsiCeos=FALSE;
   char metaName[256], sprocketMetaName[256];
   char ampName[256], lookName[256], sigmaName[256];
   char lookTiePointName[256];
+  char junk1[256], junk2[256];
 /*char latName[256], lonName[256];*/
+  float *lookLayerBuf=NULL; /*Entire look layer has its own buffer*/
   float *ampBuf=NULL, *lookBuf=NULL, *sigmaBuf=NULL;
 /*float *latBuf=NULL, *lonBuf=NULL;*/
   double latitude, longitude, time, doppler, earth_radius;
   double satellite_height, range, look_angle/*, incidence_angle*/;
-  double re=6378144.0, rp=6356754.9;
+  double re=NAN, rp=NAN;
 /*Calibration stuff*/
   double noise_table[MAX_tableRes];
 
+  if (FOCUS_CEOS_DAT_LEA_PAIR==get_ceos_names(leaderName, junk1, junk2)) {
+    rsiCeos=TRUE;
+  }
 
   /* Tell user we're starting */
-  printf("Creating SProCKET metadata and data planes...\n");
+  printf("Now creating SProCKET metadata and data planes...\n");
 
   /* Set up file names */
   create_name(metaName, asfName, ".meta");
@@ -159,7 +279,7 @@ void create_sprocket_layers(const char *asfName, const char *importName)
   if (meta_is_valid_double(metaIn->general->re_major))
     re = metaIn->general->re_major;
   if (meta_is_valid_double(metaIn->general->re_minor))
-    re = metaIn->general->re_minor;
+    rp = metaIn->general->re_minor;
   metaOut = meta_copy(metaIn);
   metaOut->general->data_type = REAL32;
 
@@ -168,18 +288,20 @@ void create_sprocket_layers(const char *asfName, const char *importName)
 
   /* We can get some useful stuff from the CEOS leader file, like the
    * calibration parameters */
-  if (has_ceos_leader_extension(importName)) {
+  if (has_ceos_leader_extension(leaderName)) {
     char tmp[256];
-    cal_param = create_cal_params(importName);
+    cal_param = create_cal_params(leaderName);
     dssr = (struct dataset_sum_rec*) MALLOC (sizeof(struct dataset_sum_rec));
-    get_dssr(importName, dssr);
+    get_dssr(leaderName, dssr);
     if (nl<1500) tableRes=128;
     else if (nl<3000) tableRes=256;
     tablePix=( (ns+(tableRes-1))/tableRes );
     if (cal_param==NULL) {
       sprintf(tmp,
+              "   ************************** WARNING! **************************\n"
               "   Calibration parameters could not be extracted out of CEOS file\n"
-              "   There will be no sigma0 data layer.\n");
+              "   There will be no sigma0 data layer.\n"
+              "   *************************************************************\n");
       printf(tmp);
       if (logflag) printLog(tmp);
     }
@@ -188,136 +310,15 @@ void create_sprocket_layers(const char *asfName, const char *importName)
   /* Write the sprocket format metadata */
   meta_write_sprocket(sprocketMetaName, metaOut, dssr);
   FREE(dssr);
+  printf("Wrote SProCKET .metadata file.\n");
 
-/* First create all layers except the look angle layer (and maybe in the future
- * lat, lon, and incidence angle layers)
-   --------------------------------------------------------------------------*/
+  doComplex = (is_complex(metaIn->general->data_type)) ? TRUE : FALSE;
 
-  /* Create I & Q data planes real quick if we got complex data */
-  if (is_complex(metaIn->general->data_type)) {
-    char IName[256], QName[256];
-    FILE *IFp, *QFp;
-    complexFloat *iqBuf;
-    float *IBuf, *QBuf;
+  /* We'll be using the look buffer for the entire time so allocate it now */
+  lookLayerBuf  = (float *) MALLOC(ns * nl * sizeof(float));
 
-    /* File naming, opening, & memory allocation */
-    create_name(IName, asfName, COMPLEX_I_PLANE);
-    create_name(QName, asfName, COMPLEX_Q_PLANE);
-    inFp = fopenImage(asfName,"rb");
-    IFp = fopenImage(IName,"wb");
-    QFp = fopenImage(QName,"wb");
-    ampFp = fopenImage(ampName,"wb");
-    sigmaFp = fopenImage(sigmaName,"wb");
-    iqBuf = (complexFloat*) MALLOC (sizeof(complexFloat)*ns*CHUNK_OF_LINES);
-    IBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
-    QBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
-    ampBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
-    sigmaBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
 
-    /* Break complex data into I and Q data planes and create amp & sigma0*/
-    size = CHUNK_OF_LINES;
-    percent_done=0;
-    for (chunk=0; chunk<nl; chunk+=size) {
-      if ((nl-chunk)<CHUNK_OF_LINES)
-        size = nl-chunk;
-      get_complexFloat_lines(inFp, metaIn, chunk, size, iqBuf);
-      for (yy=0; yy<size; yy++) {
-        overall_line = chunk+yy;
-        print_layer_progress("Creating I, Q, amp, & sigma0 planes",
-                             overall_line, nl, &percent_done);
-        /*Allocate noise table entries and/or update if needed.*/
-        if (overall_line==0
-             || (overall_line%(nl/tableRes)==0
-                 && cal_param->noise_type!=by_pixel)) {
-          int qq;
-          for (qq=0; qq<tableRes; qq++)
-            noise_table[qq]=get_noise(cal_param, qq*tablePix, overall_line);
-        }
-        for (xx=0; xx<ns; xx++) {
-          int bufInd = yy*ns + xx; /* buffer index */
-          IBuf[bufInd] = iqBuf[bufInd].real;
-          QBuf[bufInd] = iqBuf[bufInd].imag;
-          ampBuf[bufInd] = sqrt(SQR(QBuf[bufInd]) + SQR(IBuf[bufInd]));
-          if (ampBuf[bufInd]) {
-          /*Interpolate noise table to find this pixel's noise.*/
-              double index = (float) xx / tablePix;
-              int    base  = (int)index;
-              double frac  = index - base;
-              double noise = noise_table[base] + frac
-                             * (noise_table[base+1] - noise_table[base]);
-              sigmaBuf[bufInd] = sprocket_get_cal_dn(cal_param,noise, 1.0,
-                                                     (int)ampBuf[bufInd]);
-          }
-          else {
-            sigmaBuf[bufInd]=0;
-          }
-        }
-      }
-      put_float_lines(IFp, metaOut, chunk, size, IBuf);
-      put_float_lines(QFp, metaOut, chunk, size, QBuf);
-      put_float_lines(ampFp, metaOut, chunk, size, ampBuf);
-      put_float_lines(sigmaFp, metaOut, chunk, size, sigmaBuf);
-    }
-    /* Clean up after ourselves */
-    FCLOSE(inFp);    FREE(iqBuf);
-    FCLOSE(IFp);     FREE(IBuf);
-    FCLOSE(QFp);     FREE(QBuf);
-    FCLOSE(ampFp);   FREE(ampBuf);
-    FCLOSE(sigmaFp); FREE(sigmaBuf);
-  }
-
-/* If it's not complex data, then it's detected (main function should make sure
- * of that!) */
-  else {
-    inFp = fopenImage(asfName,"rb");
-    sigmaFp = fopenImage(sigmaName,"wb");
-    ampBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
-    sigmaBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
-
-    /* Process sigma0 from the amplitude data  */
-    size = CHUNK_OF_LINES;
-    percent_done=0;
-    for (chunk=0; chunk<nl; chunk+=size) {
-      if ((nl-chunk)<CHUNK_OF_LINES)
-        size = nl-chunk;
-      get_float_lines(inFp, metaIn, chunk, size, ampBuf);
-      for (yy=0; yy<size; yy++) {
-        overall_line = chunk+yy;
-        print_layer_progress("Creating sigma0 plane", overall_line, nl,
-                             &percent_done);
-        /*Allocate noise table entries and/or update if needed.*/
-        if (overall_line==0
-            || (overall_line%(nl/tableRes)==0
-                && cal_param->noise_type!=by_pixel)) {
-          int qq;
-          for (qq=0; qq<tableRes; qq++)
-            noise_table[qq]=get_noise(cal_param, qq*tablePix, overall_line);
-        }
-        for (xx=0; xx<ns; xx++) {
-          int bufInd = yy*ns + xx; /* buffer index */
-          if (ampBuf[bufInd]) {
-          /*Interpolate noise table to find this pixel's noise.*/
-              double index = (float) xx / tablePix;
-              int    base  = (int)index;
-              double frac  = index - base;
-              double noise = noise_table[base] + frac
-                             * (noise_table[base+1] - noise_table[base]);
-              sigmaBuf[bufInd] = sprocket_get_cal_dn(cal_param, noise, 1.0,
-                                                     (int)ampBuf[bufInd]);
-          }
-          else {
-            sigmaBuf[bufInd]=0;
-          }
-        }
-      }
-      put_float_lines(sigmaFp, metaOut, chunk, size, sigmaBuf);
-    }
-    /* Clean up after ourselves */
-    FCLOSE(inFp);    FREE(ampBuf);
-    FCLOSE(sigmaFp); FREE(sigmaBuf);
-  }
-
-/* Now create the look angle layer (and maybe in the future lat, lon, and
+/* First create the look angle layer (and maybe in the future lat, lon, and
  * incidence angle layers)
    ---------------------------------------------------------------------*/
 
@@ -332,13 +333,10 @@ void create_sprocket_layers(const char *asfName, const char *importName)
 
     /* Allocate memory */
     lookBuf  = (float *) MALLOC(ns * sizeof(float) * CHUNK_OF_LINES);
-    sigmaBuf = (float *) MALLOC(ns * sizeof(float) * CHUNK_OF_LINES);
 /*    latBuf = (float *) MALLOC(ns * sizeof(float) * CHUNK_OF_LINES);
  *    lonBuf = (float *) MALLOC(ns * sizeof(float) * CHUNK_OF_LINES); */
 
     size = CHUNK_OF_LINES;
-    re = metaIn->projection->re_major;
-    rp = metaIn->projection->re_minor;
 
     /* create layers */
     percent_done=0;
@@ -366,6 +364,7 @@ void create_sprocket_layers(const char *asfName, const char *importName)
  *          latBuf[xx+yy*ns]   = (float) latitude;
  *          lonBuf[xx+yy*ns]   = (float) longitude; */
           lookBuf[xx+yy*ns]  = (float) look_angle*R2D;
+          lookLayerBuf[xx+(chunk+yy)*ns] = lookBuf[xx+yy*ns];
         }
       }
       put_float_lines(lookFp, metaOut, chunk+yy, size, lookBuf);
@@ -462,6 +461,7 @@ void create_sprocket_layers(const char *asfName, const char *importName)
                        + quad2D.H*x*y*y + quad2D.I*x*x*y*y + quad2D.J*x*x*x
                        + quad2D.K*y*y*y;
           lookBuf[kk+ll*ns] = (float) look_angle;
+          lookLayerBuf[kk+ii*ns] = lookBuf[kk+ll*ns];
         }
       }
       put_float_lines(lookFp, metaOut, ii, size, lookBuf);
@@ -537,9 +537,179 @@ void create_sprocket_layers(const char *asfName, const char *importName)
 
   }
 
-  /* Clean up & Report */
+  /* A little clean up */
   if (lookTiePointFlag) remove(lookTiePointName);
+
+/* Now create all layers except the look angle layer (and maybe in the future
+ * lat, lon, and incidence angle layers)
+   --------------------------------------------------------------------------*/
+
+  /* Create I & Q data planes if we got complex data */
+  if (doComplex) {
+    if (!rsiCeos) {
+      char IName[256], QName[256];
+      FILE *IFp, *QFp;
+      complexFloat *iqBuf;
+      float *IBuf, *QBuf;
+
+      /* File naming, opening, & memory allocation */
+      create_name(IName, asfName, COMPLEX_I_PLANE);
+      create_name(QName, asfName, COMPLEX_Q_PLANE);
+      inFp = fopenImage(asfName,"rb");
+      IFp = fopenImage(IName,"wb");
+      QFp = fopenImage(QName,"wb");
+      ampFp = fopenImage(ampName,"wb");
+      sigmaFp = fopenImage(sigmaName,"wb");
+      iqBuf = (complexFloat*) MALLOC (sizeof(complexFloat)*ns*CHUNK_OF_LINES);
+      IBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
+      QBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
+      ampBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
+      sigmaBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
+
+      /* Break complex data into I and Q data planes and create amp & sigma0*/
+      size = CHUNK_OF_LINES;
+      percent_done=0;
+      for (chunk=0; chunk<nl; chunk+=size) {
+        if ((nl-chunk)<CHUNK_OF_LINES)
+          size = nl-chunk;
+        get_complexFloat_lines(inFp, metaIn, chunk, size, iqBuf);
+        for (yy=0; yy<size; yy++) {
+          overall_line = chunk+yy;
+          print_layer_progress("Creating I, Q, amp, & sigma0 planes",
+                               overall_line, nl, &percent_done);
+          /*Allocate noise table entries and/or update if needed.*/
+          if (overall_line==0
+              || (overall_line%(nl/tableRes)==0
+                   && cal_param->noise_type!=by_pixel)) {
+            int qq;
+            for (qq=0; qq<tableRes; qq++)
+              noise_table[qq]=get_noise(cal_param, qq*tablePix, overall_line);
+          }
+          for (xx=0; xx<ns; xx++) {
+            int bufInd = yy*ns + xx; /* buffer index */
+            IBuf[bufInd] = iqBuf[bufInd].real;
+            QBuf[bufInd] = iqBuf[bufInd].imag;
+            ampBuf[bufInd] = sqrt(SQR(QBuf[bufInd]) + SQR(IBuf[bufInd]));
+            if (ampBuf[bufInd]) {
+            /*Interpolate noise table to find this pixel's noise.*/
+                double index = (float) xx / tablePix;
+                int    base  = (int)index;
+                double frac  = index - base;
+                double noise = noise_table[base] + frac
+                               * (noise_table[base+1] - noise_table[base]);
+                sigmaBuf[bufInd] = get_cal_dn(cal_param,noise, 1.0,
+                                                       (int)ampBuf[bufInd]);
+            }
+            else {
+              sigmaBuf[bufInd]=0;
+            }
+          }
+        }
+        put_float_lines(IFp, metaOut, chunk, size, IBuf);
+        put_float_lines(QFp, metaOut, chunk, size, QBuf);
+        put_float_lines(ampFp, metaOut, chunk, size, ampBuf);
+        put_float_lines(sigmaFp, metaOut, chunk, size, sigmaBuf);
+      }
+      /* Clean up after ourselves */
+      FCLOSE(inFp);    FREE(iqBuf);
+      FCLOSE(IFp);     FREE(IBuf);
+      FCLOSE(QFp);     FREE(QBuf);
+      FCLOSE(ampFp);   FREE(ampBuf);
+      FCLOSE(sigmaFp); FREE(sigmaBuf);
+    }
+  }
+/* If it's not complex data, then it's detected (main function should make sure
+ * of that!) */
+  else {
+    inFp = fopenImage(asfName,"rb");
+    sigmaFp = fopenImage(sigmaName,"wb");
+    ampBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
+    sigmaBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
+
+    /* Process sigma0 from the amplitude data  */
+    size = CHUNK_OF_LINES;
+    percent_done=0;
+
+    /* What to do if it's in ASF CEOS format */
+    if (!rsiCeos) {
+      for (chunk=0; chunk<nl; chunk+=size) {
+        if ((nl-chunk)<CHUNK_OF_LINES)
+          size = nl-chunk;
+        get_float_lines(inFp, metaIn, chunk, size, ampBuf);
+        for (yy=0; yy<size; yy++) {
+          overall_line = chunk+yy;
+          print_layer_progress("Creating sigma0 plane", overall_line, nl,
+                               &percent_done);
+          /*Allocate noise table entries and/or update if needed.*/
+          if (overall_line==0
+              || (overall_line%(nl/tableRes)==0
+                  && cal_param->noise_type!=by_pixel)) {
+            int qq;
+            for (qq=0; qq<tableRes; qq++)
+              noise_table[qq]=get_noise(cal_param, qq*tablePix, overall_line);
+          }
+          for (xx=0; xx<ns; xx++) {
+            int bufInd = yy*ns + xx; /* buffer index */
+            if (ampBuf[bufInd]) {
+            /*Interpolate noise table to find this pixel's noise.*/
+                double index = (float) xx / tablePix;
+                int    base  = (int)index;
+                double frac  = index - base;
+                double noise = noise_table[base] + frac
+                               * (noise_table[base+1] - noise_table[base]);
+                sigmaBuf[bufInd] = sprocket_get_cal_dn(cal_param, noise, 1.0,
+                                                       (int)ampBuf[bufInd]);
+            }
+            else {
+              sigmaBuf[bufInd]=0;
+            }
+          }
+        }
+        put_float_lines(sigmaFp, metaOut, chunk, size, sigmaBuf);
+      }
+    }
+
+    /* What to do if it's in RSI CEOS format */
+    else /*if (rsiCeos)*/ {
+      int dir = (metaIn->general->orbit_direction=='A') ? ASC : DESC;
+      float *scalingGain = create_rsi_scaling_table(leaderName, dir, ns);
+      double ht = meta_get_sat_height(metaIn, nl/2, ns/2);
+      double Re = meta_get_earth_radius(metaIn, nl/2, ns/2);
+
+      for (chunk=0; chunk<nl; chunk+=size) {
+        if ((nl-chunk)<CHUNK_OF_LINES)
+        size = nl-chunk;
+        get_float_lines(inFp, metaIn, chunk, size, ampBuf);
+        for (yy=0; yy<size; yy++) {
+          overall_line = chunk+yy;
+          print_layer_progress("Creating sigma0 plane", overall_line, nl,
+                               &percent_done);
+          for (xx=0; xx<ns; xx++) {
+            int bufInd = yy*ns+xx;
+            float sinIncid = ht * sin((D2R*lookLayerBuf[xx])/Re);
+            /* How we got this sigma0 equation for RSI detected data:
+             * Start with equation in Document number RSI-GS-026 Section 5.4
+             * beta0 (dB) = 10*log ( dn^2 / scalingGain)      [A3 is disregarded because it is 0]
+             * sigma0 (pow) = 10^[(beta0 + 10*log(sin(incidAngle))) / 10]
+             * sigma0 (pow) = 10^[(10*log(dn^2/scalingGain) + 10*log(sin(incidAngle))) / 10]
+             * sigma0 (pow) = 10^[log(dn^2/scalingGain) + log(sin(incidAngle))]
+             * sigma0 (pow) = dn^2/scalingGain * sin(incidAngle) */
+            sigmaBuf[bufInd] = SQR(ampBuf[bufInd]) / scalingGain[xx] * sinIncid;
+          }
+        }
+        put_float_lines(sigmaFp, metaOut, chunk, size, sigmaBuf);
+      }
+      FREE(scalingGain);
+    }
+
+    /* Clean up after ourselves */
+    FCLOSE(inFp);    FREE(ampBuf);
+    FCLOSE(sigmaFp); FREE(sigmaBuf);
+  }
+
+
+  /* Clean up & report */
+  FREE(lookLayerBuf);
   meta_free(metaIn);
   meta_free(metaOut);
-  printf("SProCKET data planes and metadata have been created.\n");
 }
