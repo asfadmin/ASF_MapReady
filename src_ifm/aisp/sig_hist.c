@@ -1,68 +1,82 @@
-/*Sig_hist:
-	Creates a signal-data histogram 
-and calculates the I/Q gain imbalance and
-non-orthogonality.
-*/
+/**********************************************************
+Sig_hist:
+	Creates a signal-data histogram and calculates the
+	I/Q gain imbalance and non-orthogonality.
 
+ Vers    Programmer   Date    Reason
+ ----------------------------------------------------------
+  1.0    ?. ???       1999    Original Development
+  1.1    P. Denny     1/03    Use new metadata, kill DDR
+                               Commandline Parsing
+                               Somewhat informative Usage
+***********************************************************/
 #include "asf.h"
-#include "ddr.h"
+#include "asf_meta.h"
 #include "aisp_defs.h"
 #include "read_signal.h"
 
-main(int argc,char **argv)
-{
-#define sigLen 1000 /*Program reads a sigLen x sigLen block of data*/
-#define outSize 200
+#define SIGNAL_LENGTH 1000 /*Program reads a SIGNAL_LENGTH x SIGNAL_LENGTH block of data*/
+#define OUTPUT_SIZE 200
+#define SIG_HIST_VERSION 1.1
 
+int main(int argc,char **argv)
+{
 	int startX=0,startY=0;
-	int x,y,ind;
+	int y,ind;
 	getRec *r;
 	FCMPLX *inBuf;
-	FCMPLX fftBuf[sigLen];
 	double sumR,sumI,sumRI,sumRR,sumII;
 	double stdR,stdI,cov,corr;
 	int n;
-	float outBuf[outSize*outSize];
-	struct DDR ddr;/*Output DDR*/
+	float outBuf[OUTPUT_SIZE*OUTPUT_SIZE];
+	meta_parameters *meta = raw_init();
 	FILE *outF;
-	if (argc!=2 && argc!=4)
-		{printf("Usage:sig_hist <ccsd> [start X start Y]\n"
-		"\n"
-		"  Sig_hist computes a signal data histogram.\n"
-		"ASF ISAR Tools, 1999\n",sigLen);exit(1);}
-	
-	r=fillOutGetRec(argv[1]);
-	if (argc>3)
+
+	while (currArg < (argc-6))
 	{
-		startX=atoi(argv[2]);
-		startY=atoi(argv[3]);
+		char *key=argv[currArg++];
+		if (strmatch(key,"-log")) {
+			CHECK_ARG(1); /*one string argument: log file */
+			strcpy(logFile,GET_ARG(1));
+			fLog = FOPEN(logFile,"a");
+			logflag=1;
+		}
+		else if (strmatch(key,"-offset")) {
+			CHECK_ARG(2);
+			startY = atoi(GET_ARG(2));
+			startX = atoi(GET_ARG(1));
+		}
+		else {printf("\n*****Invalid option:  %s\n\n",argv[currArg-1]);usage(argv[0]);}
 	}
+	if ((argc-currArg) < 6) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+
+	r=fillOutGetRec(argv[currArg]);
+
+	inBuf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*SIGNAL_LENGTH*SIGNAL_LENGTH);
 	
-	inBuf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*sigLen*sigLen);
-	
-/*Read a sigLen x sigLen block of input complex data.*/
-	for (y=0;y<sigLen;y++)
-		getSignalLine(r,startY+y,&inBuf[y*sigLen],startX,sigLen);
+/*Read a SIGNAL_LENGTH x SIGNAL_LENGTH block of input complex data.*/
+	for (y=0;y<SIGNAL_LENGTH;y++)
+		getSignalLine(r,startY+y,&inBuf[y*SIGNAL_LENGTH],startX,SIGNAL_LENGTH);
 	
 /*Compute histogram image.*/
-	for (ind=0;ind<outSize*outSize;ind++)
+	for (ind=0;ind<OUTPUT_SIZE*OUTPUT_SIZE;ind++)
 		outBuf[ind]=0.0;
 	sumR=sumI=sumRI=sumRR=sumII=0.0;
-	for (ind=0;ind<sigLen*sigLen;ind++)
+	for (ind=0;ind<SIGNAL_LENGTH*SIGNAL_LENGTH;ind++)
 	{
 		double r=inBuf[ind].r;
 		double i=inBuf[ind].i;
-		int x=(int)(r+outSize/2);
-		int y=(int)(-i+outSize/2);
-		if ((0<=x)&&(x<outSize)&&(0<=y)&&(y<outSize))
-			outBuf[y*outSize+x]+=1.0;
+		int x=(int)(r+OUTPUT_SIZE/2);
+		int y=(int)(-i+OUTPUT_SIZE/2);
+		if ((0<=x)&&(x<OUTPUT_SIZE)&&(0<=y)&&(y<OUTPUT_SIZE))
+			outBuf[y*OUTPUT_SIZE+x]+=1.0;
 		sumR+=r;
 		sumI+=i;
 		sumRR+=r*r;
 		sumII+=i*i;
 		sumRI+=r*i;
 	}
-	n=sigLen*sigLen;/*n== number of pixels added into sums*/
+	n=SIGNAL_LENGTH*SIGNAL_LENGTH;/*n== number of pixels added into sums*/
 	/*Compute standard deviations*/
 	stdR=sqrt((sumRR-sumR*sumR/n)/(n-1));
 	stdI=sqrt((sumII-sumI*sumI/n)/(n-1));
@@ -91,16 +105,40 @@ main(int argc,char **argv)
 	}
 
 /*Write out histogram image.*/
-	c_intddr(&ddr);
-	ddr.nl=ddr.ns=outSize;
-	ddr.dtype=4;
-	ddr.nbands=1;
-	c_putddr("sig_hist_img",&ddr);
+	meta->general->line_count = OUTPUT_SIZE;
+	meta->general->sample_count = OUTPUT_SIZE;
+	meta->general->data_type = REAL32;
+	meta_write(meta, "sig_hist_img");
+	meta_free(meta);
 	outF=fopenImage("sig_hist_img","wb");
-	for (y=0;y<outSize;y++) 
-		putFloatLine(outF,&ddr,y,&outBuf[y*outSize]);
+	for (y=0;y<OUTPUT_SIZE;y++) 
+		put_float_line(outF,meta,y,&outBuf[y*OUTPUT_SIZE]);
 	FCLOSE(outF);
 	
 	return 0;
 }
 
+void usage (char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <logfile>] [-offset <Line> <Sample>] <ccsd>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENT:\n"
+	"   ccsd   CCSD image to create histogram for.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -log     Copy standard output to <logfile>.\n"
+	"   -offset  <line> and <sample> to start collecting\n"
+	"              the histogram data at. (default 0x0)\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Computes a signal data histogram. Writes a histogram\n"
+	"   image based on a %dx%d block of signal data with its\n"
+	"   upper left corner at the line and sample specified by\n"
+	"   the -offset option.\n", SIGNAL_LENGTH, SIGNAL_LENGTH);
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n", SIG_HIST_VERSION);
+ exit(EXIT_FAILURE);
+}
