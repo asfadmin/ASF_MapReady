@@ -8,8 +8,8 @@
 # to automatically generate the following files (these files should 
 # NOT be edited!)
 #    asf_tools/Makefile
-#    asf_tools/release/autotar/source.*
-#    asf_tools/release/autotar/binary.*
+#    release/autotar/source.*
+#    release/autotar/binary.*
 #
 #   To add a new program or tool, just put an entry for it
 # in the PROGRAMS or TOOLS sections of this file.  Then
@@ -63,6 +63,8 @@ LIBS
 @src_tc/
 	sarmodel
 	tcobj
+#@src_x/sprocket/util/
+#	libUtil
 }
 
 # A listing of programs (not so easy).
@@ -139,7 +141,6 @@ PROGRAMS
 	c2p { }
 	coh { }
 	cpx_spectrum { }
-	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
 	create_dem_grid	{ }
 	dem2phase { }
 	dem2seeds { }
@@ -154,6 +155,7 @@ PROGRAMS
 	fit_plane { }
 	fit_warp { }
 	igram  { }
+# ceos2raw & lz2raw_flywheel depend on PROGRAMS propagate
 	ceos2raw { }
 	lz2raw_flywheel { }
 	ml { }
@@ -198,22 +200,42 @@ PROGRAMS
 			rtc_add
 			sarsim 
 	}
-@src/
-# Bleeping forward references... the DEM converters
-# have to go down here, since they reference reference
-# concat which is in src_geo
-        sdts2las { PROGRAMS concat BINS sdts_ingest }
-	usgs2las { PROGRAMS concat_dem BINS usgs_ingest }
 
-# Propagate is down here so it gets built last-- it tends to kill the
-# build (because not every machine has f77).
+@src/
+# Propagate is down here so it gets built late as it tends to kill the build
+# (because not every machine has f77).
 	propagate { BINS gen_oe asap }
-	
+
 
 # X-Windows source code	
 @src_x/
 	sarview { BINS sarview_bin support }
+#	sprocket
+#	{
+#		BINS
+#			complex
+#			iq
+#			standard
+#			vexcel_complex
+#			geo
+#			target_selector
+#			list_ground_targets.sql
+#			list_sites.sql
+#			convert_standard
+#			image2pgm
+#			image_mask
+#			vexcel_complex_metadata
+#			vexcel_complex_data_planes
+#			xy_plotter
+#	}
+
+
+#@experimental/
+#	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
+
+
 }
+
 
 #The categories have no directories or source, but are valid
 #  autotar and makefile targets.
@@ -225,11 +247,10 @@ CATEGORIES
 	utility {
 		calibrate dspddr 
 		metadata sarin sarout
-		
 		convert2byte diff_las fftMatch
-                las2jpeg las2ppm las_op
-                makeddr propagate remap resample 
-                sdts2las sr2gr trim usgs2las
+		las2jpeg las2ppm las_op
+		makeddr propagate remap resample 
+		sr2gr trim
 	}
 
 #All unrestricted source (geocoding + terrain correction)
@@ -243,12 +264,13 @@ CATEGORIES
 #Inteferometry (i.e. all restricted and unrestricted source)
 	interferometry {
 		usource
-        	aisp ceos2raw demIFM fix_in lz2raw_flywheel
+		aisp ceos2raw lz2raw_flywheel
 		refine_offset 
-        }
+	}
 
 # SARview: this is separate because it requires Tcl/Tk to compile or run
-	sarviewer {
-		sarview
-	}
+#	sarviewer {
+#		sarview
+#	}
+
 }
