@@ -1,24 +1,20 @@
-NAME: calc_deltas  --  For use with aisp(1) interferometry.
+NAME: calc_deltas  --  For use with aisp(1).
 
-SYNOPSIS: calc_deltas linePatch1 linePatchL numLines output_deltas [-log <file>]
-
-        linePatch1     Input - regressions for 1st patch
-        linePatchL     Input - regressions for last patch
-        numLines       Input - number of lines between first and last patch
-        output_deltas  Output file - linear regression
-	-log <file>    Option to have output written to log file
+SYNOPSIS: calc_deltas [-log <file>]
+                      <linePatch1> <linePatchL> <numLines> <output_deltas>
 
 DESCRIPTION:
-	Calc_deltas uses the two input lines, generally created
-by fit_line(1) on the output of fico(1), to generate a deltas
-file for use with aisp(1).  To see this program in action, check
-out register_ccsd(1).
+    Calc_deltas uses the two input lines, generally created by fit_line(1)
+    on the output of fico(1), to generate a deltas file for use with
+    aisp(1).
 
 OPTIONS:
 
-ERROR MESSAGES:
-MESSAGE GIVEN:				REASON:
-----------------------------------------------------------------
+    linePatch1     Input - regressions for 1st patch
+    linePatchL     Input - regressions for last patch
+    numLines       Input - number of lines between first and last patch
+    output_deltas  Output file - linear regression
+    -log <file>    Option to have output written to log file
 
 EXAMPLES:
 
@@ -28,9 +24,9 @@ HARDWARE/SOFTWARE LIMITATIONS:
 
 BUGS:
 
-AUTHOR:  T. Logan 3/97 Version 1.0
+AUTHOR:  T. Logan
     
 CONTACT: apd@asf.alaska.edu
-or visit http://www.asf.alaska.edu/apd
+         http://www.asf.alaska.edu/apd
 
 
