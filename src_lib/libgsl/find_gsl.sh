@@ -8,7 +8,7 @@
 # files under any of the hard coded root directories, it exits without
 # printing anything.
 
-# Exit immediately if a command exists with a non-zero status.
+# Exit immediately if a command exits with a non-zero status.
 set -e
 
 # Directories to look in.
