@@ -409,8 +409,10 @@ static char * lamaz_projection_desc(project_parameters_t * pps)
   /* Establish description of output projection. */
   sprintf(lamaz_projection_description,
 	  "+proj=laea +lat_0=%f +lon_0=%f +x_0=%f +y_0=%f +datum=%s",
-	  pps->lamaz.center_lat, pps->lamaz.center_lon,
-	  pps->lamaz.false_easting, pps->lamaz.false_northing,
+	  pps->lamaz.center_lat * RAD_TO_DEG,
+	  pps->lamaz.center_lon * RAD_TO_DEG,
+	  pps->lamaz.false_easting,
+	  pps->lamaz.false_northing,
 	  datum(pps));
 
   return lamaz_projection_description;
@@ -464,9 +466,12 @@ static char * lamcc_projection_desc(project_parameters_t * pps)
   sprintf(lamcc_projection_description,
 	  "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f"
 	  "+x_0=%f +y_0=%f +datum=%s",
-	  pps->lamcc.plat1, pps->lamcc.plat2,
-	  pps->lamcc.lat0, pps->lamcc.lon0,
-	  pps->lamcc.false_easting, pps->lamcc.false_northing,
+	  pps->lamcc.plat1 * RAD_TO_DEG,
+	  pps->lamcc.plat2 * RAD_TO_DEG,
+	  pps->lamcc.lat0 * RAD_TO_DEG,
+	  pps->lamcc.lon0 * RAD_TO_DEG,
+	  pps->lamcc.false_easting,
+	  pps->lamcc.false_northing,
 	  datum(pps));
 
   return lamcc_projection_description;
@@ -520,9 +525,12 @@ static char * albers_projection_desc(project_parameters_t * pps)
   sprintf(albers_projection_description,
 	  "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f"
 	  "+x_0=%f +y_0=%f +datum=%s",
-	  pps->albers.std_parallel1, pps->albers.std_parallel2,
-	  pps->albers.orig_latitude, pps->albers.center_meridian,
-	  pps->albers.false_easting, pps->albers.false_northing,
+	  pps->albers.std_parallel1 * RAD_TO_DEG,
+	  pps->albers.std_parallel2 * RAD_TO_DEG,
+	  pps->albers.orig_latitude * RAD_TO_DEG,
+	  pps->albers.center_meridian * RAD_TO_DEG,
+	  pps->albers.false_easting,
+	  pps->albers.false_northing,
 	  datum(pps));
 
   return albers_projection_description;
