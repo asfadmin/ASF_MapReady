@@ -351,7 +351,7 @@ void fill_structure_field(char *field_name, void *valp)
   }
 
   /* Fields that go in the (proj->param).utm block.  */
-  if ( !strcmp(stack_top->block_name, "ps") ) {    
+  if ( !strcmp(stack_top->block_name, "utm") ) {    
     if ( !strcmp(field_name, "zone") )
       { (*MPARAM).utm.zone = VALP_AS_INT; return; }
   }
