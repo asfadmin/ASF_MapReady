@@ -20,8 +20,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_export"
 
 #define ASF_USAGE_STRING \
-"[-format <output_format>] [-size <max_dimension>] <in_base_name> <out_full_name>\n"\
-"Additional options: -help, -log <log_file>, -quiet"
+"[-format <output_format>] [-size <max_dimension>] [-log <logFile>]\n"\
+"              [-quiet] [-help] <inBaseName> <outBaseName>"
 
 #define ASF_DESCRIPTION_STRING \
 "This program ingests ASF internal format data and exports said data to a number of output formats. If the input data was geocoded and the ouput format supports geocoding, that information will be included."
@@ -35,15 +35,18 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_OPTIONS_STRING \
 "-format <format>  Format to export to. Must be one of the following:\n"\
 "                     CEOS, envi, esri, geotiff, jpeg, ppm\n"\
-"-size <size>      Scale image so that its largest dimension is, at most, size."
+"-size <size>      Scale image so that its largest dimension is, at most, size.\n"\
+"-log <file>       Output will be written to the specified log file.\n"\
+"-quiet            Suppress all non-essential output.\n"
 
 #define ASF_EXAMPLES_STRING \
-"To export to the default geotiff format from file1:\n"\
-"   asf_export file1\n"\
-"To export file1 to the jpeg format:\n"\
-"   asf_export -format jpeg file1\n"\
-"To export file1 to a jpeg no larger than 800x800:\n"\
-"   asf_export -format jpeg -size 800 file1"
+"To export to the default geotiff format from file1.img and file1.meta\n"\
+"to file1.jpg:\n"\
+"   asf_export file1 file1\n"\
+"To export to file2.jpg in the jpeg format:\n"\
+"   asf_export -format jpeg file1 file2\n"\
+"To export file1 to a jpeg called file3.jpg no larger than 800x800:\n"\
+"   asf_export -format jpeg -size 800 file1 file3"
 
 #define ASF_LIMITATIONS_STRING \
 "Currently only supports ingest of ASF format floating point data.\n"\
