@@ -5,9 +5,6 @@
 #include <string.h>
 #include <glib.h>
 #include <gsl/gsl_math.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
 
 #ifndef linux
 #ifndef win32
