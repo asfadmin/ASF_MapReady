@@ -3,7 +3,7 @@
 
 static const int max_line_len = 2048;
 
-static gchar * build_metadata_filename(gchar * name)
+gchar * build_metadata_filename(gchar * name)
 {
     gchar * p;
 

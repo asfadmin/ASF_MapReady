@@ -2,11 +2,13 @@
 
 static const int popup_menu_item_remove = 0;
 static const int popup_menu_item_process = 1;
+static const int popup_menu_item_display_metadata = 4;
 static const int popup_menu_item_view_output = 5;
 
 
 static void
-enable_menu_items(GtkMenu * menu, gboolean enable_view_output)
+enable_menu_items(GtkMenu * menu, gboolean enable_view_output,
+		  gboolean enable_display_metadata)
 {
     GList * children;
     GList * iter;
@@ -17,14 +19,19 @@ enable_menu_items(GtkMenu * menu, gboolean enable_view_output)
 
     while (iter)
     {
-	gboolean enable;
-	GtkWidget * item = GTK_WIDGET(iter->data);
+      gboolean enable = TRUE;
+      GtkWidget * item = GTK_WIDGET(iter->data);
+      
+      if ((n == popup_menu_item_view_output && !enable_view_output) ||
+	  (n == popup_menu_item_display_metadata && !enable_display_metadata))
+      {
+	  enable = FALSE;
+      }      
 
-	enable = n != popup_menu_item_view_output || enable_view_output;
-	gtk_widget_set_sensitive(item, enable);
-
-	iter = g_list_next(iter);
-	++n;
+      gtk_widget_set_sensitive(item, enable);
+      
+      iter = g_list_next(iter);
+      ++n;
     }
 
     g_list_free(children);
@@ -92,8 +99,9 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 					      event_button->x, event_button->y,
 					      &path, NULL, NULL, NULL))
 	    {
-		gchar * status;
-		gboolean show_view_output_menu_item = FALSE;
+		gchar * status, * out_name, * meta_name;
+		gboolean show_view_output_menu_item = FALSE,
+		    show_display_metadata_menu_item;
 
 		gtk_tree_selection_unselect_all(selection);
 		gtk_tree_selection_select_path(selection, path);
@@ -101,8 +109,9 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 					&iter, path);
 
 		gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-				   COL_STATUS, &status, -1);
-		    
+				   COL_STATUS, &status, 
+				   COL_OUTPUT_FILE, &out_name, -1);
+
 		gtk_tree_path_free(path);
 
 		if (strstr(status, "...") != NULL)
@@ -112,6 +121,7 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 		    return FALSE;
 		}
 
+		/* check if we should disable "View Output" */
 		if (strcmp(status, "Done") == 0)
 		{
 		    Settings * s = settings_get_from_gui();
@@ -120,8 +130,17 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 			show_view_output_menu_item = TRUE;
 		    }
 		}
-		
-		enable_menu_items(menu, show_view_output_menu_item);
+
+		/* check if we should disable "Display Metadata" */
+		meta_name = build_metadata_filename(out_name);
+		show_display_metadata_menu_item =
+		    g_file_test(meta_name, G_FILE_TEST_EXISTS);
+
+		/* enable/disable the items */
+		enable_menu_items(menu, show_view_output_menu_item,
+				  show_display_metadata_menu_item);
+
+		g_free(meta_name);
 	    }
 	    else
 	    {
