@@ -1,42 +1,4 @@
 /******************************************************************************
-NAME:  diff_image
-
-SYNOPSIS:  diff_image [-d difference.ext] [-m mask_val] <img1.ext> <img2.ext>
-
-DESCRIPTION:  compare ASF tools format images, for debugging and verification
-	      (especially between platforms).
-
-EXTERNAL ASSOCIATES:
-    NAME:               USAGE:
-    ---------------------------------------------------------------
-
-FILE REFERENCES:
-    NAME:               USAGE:
-    ---------------------------------------------------------------
-
-PROGRAM HISTORY:
-    VERS:  DATE:  AUTHOR:      PURPOSE:
-    ---------------------------------------------------------------
-    1.0    1997   Orion Lawlor
-    1.1    7/01   P. Denny     Change byte output to signed short input for
-                                 better visualization
-    1.5    2/02   P. Denny     Add masking option, standardize command line
-                                 arguments
-    2.0    1/03   P. Denny     Update to use meta struct instead of DDR struct
-    2.1    2/04   P. Denny     Change license to BSD. Change name from diff_las
-                                 to diff_image. Fixed bad initial value of mask
-                                 from -1 to NaN.
-
-HARDWARE/SOFTWARE LIMITATIONS:
-
-ALGORITHM DESCRIPTION:
-
-ALGORITHM REFERENCES:
-
-BUGS:
-
-******************************************************************************/
-/******************************************************************************
 *                                                                             *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
@@ -73,6 +35,44 @@ BUGS:
 *       P.O. Box 757320                                                       *
 *       Fairbanks, AK 99775-7320                                              *
 *                                                                             *
+******************************************************************************/
+/******************************************************************************
+NAME:  raster_diff
+
+SYNOPSIS:  raster_diff [-d difference.ext] [-m mask_val] <img1.ext> <img2.ext>
+
+DESCRIPTION:  compare ASF tools format images, for debugging and verification
+	      (especially between platforms).
+
+EXTERNAL ASSOCIATES:
+    NAME:               USAGE:
+    ---------------------------------------------------------------
+
+FILE REFERENCES:
+    NAME:               USAGE:
+    ---------------------------------------------------------------
+
+PROGRAM HISTORY:
+    VERS:  DATE:  AUTHOR:      PURPOSE:
+    ---------------------------------------------------------------
+    1.0    1997   Orion Lawlor
+    1.1    7/01   P. Denny     Change byte output to signed short input for
+                                 better visualization
+    1.5    2/02   P. Denny     Add masking option, standardize command line
+                                 arguments
+    2.0    1/03   P. Denny     Update to use meta struct instead of DDR struct
+    2.1    2/04   P. Denny     Change license to BSD. Change name from diff_las
+                                 to raster_diff. Fixed bad initial value of mask
+                                 from -1 to NaN.
+
+HARDWARE/SOFTWARE LIMITATIONS:
+
+ALGORITHM DESCRIPTION:
+
+ALGORITHM REFERENCES:
+
+BUGS:
+
 ******************************************************************************/
 
 #include "asf.h"

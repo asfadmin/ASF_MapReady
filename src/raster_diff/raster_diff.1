@@ -1,7 +1,7 @@
-NAME: diff_image
+NAME: raster_diff
 
 SYNOPSIS:
-        diff_image [mask value] [-d diff.ext] <img1.ext> <img2.ext>
+        raster_diff [mask value] [-d diff.ext] <img1.ext> <img2.ext>
 
 DESCRIPTION:
         Compares two ASF tools format images. It then outputs a 
@@ -18,11 +18,11 @@ OPTIONS:
               diff.ext = img1.ext - img2.ext
 
 EXAMPLES:
-        > diff_image correct.img questionable.img
+        > raster_diff correct.img questionable.img
             Compares correct to questionable and prints out a summary 
             and histogram of the differences.
         
-        > diff_image -d difference.img correct.img questionable.img
+        > raster_diff -d difference.img correct.img questionable.img
             Creates an image "difference", whose pixels are equal to 
             (correct - questionable). If correct equals questionable, 
             then the pixels are (of course) zero.
