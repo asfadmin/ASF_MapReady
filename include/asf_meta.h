@@ -281,18 +281,22 @@ typedef struct {
 */
 /*In meta_init.c.  
  * These are the routines to use, generally.*/
-meta_parameters *meta_init_old(const char *fName);
-void meta_free_old(meta_parameters *meta);
 meta_parameters *meta_init(const char *fName);
 void meta_free(meta_parameters *meta);
 
-/*In meta_coni.c*/
+/*In meta_coni.c*//*
 void meta_write_old(meta_parameters *meta,const char *outName);
 meta_parameters *meta_read_old(const char *inName);
 void meta_write(meta_parameters *meta,const char *outName);
 meta_parameters *meta_read(const char *inName);
+*/
+/*In meta_read*/
+meta_parameters *meta_read(const char *inName);
 
-/**Internal creation routines:*/
+/* TO BE IN META_WRITE.C */
+void meta_write(meta_parameters *meta,const char *outName);
+
+/*Internal creation routines:*/
 meta_state_vectors *raw_init_state(int nState);
 meta_parameters *raw_init(void);
 meta_parameters *meta_create(const char *fName);
