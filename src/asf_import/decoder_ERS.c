@@ -39,9 +39,14 @@ void ERS_readNextPulse(bin_state *s,iqType *iqBuf, char *inName, char *outName)
   for (ii=1; ii<ERS_framesPerLine; ii++) {
     ERS_readNextFrame(s,&f);
     if (f.is_echo==0) {
-      if (!quietflag)
-        printf("   Error! Expected echo frame; got '%d' frame! Assuming bit error\n",
-               f.type);
+      if (!quietflag) {
+        char msg[256];
+        sprintf(msg,
+                "   Error! Expected echo frame; got '%d' frame! Assuming bit error\n",
+                f.type);
+        printf(msg);
+        if (logflag) printLog(msg);
+      }
     }
     iqCurr=ERS_unpackBytes(f.data,ERS_datPerFrame,iqCurr);
   }
