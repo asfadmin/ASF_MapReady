@@ -93,6 +93,10 @@ typedef struct {
   char look_direction;            /* 'L'-> Left Looking; 'R'-> Right Looking*/
   int look_count;                 /* Number of looks to take from SLC.      */
   int deskewed;                   /* True if image moved to zero doppler.   */
+  int original_line_count;        /* Number of lines in original image      */
+  int original_sample_count;      /* Number of samples in original image    */
+  double line_increment;          /* line increment for sampling            */
+  double sample_increment;        /* sample increment for sampling          */
   double range_time_per_pixel;    /* Time per pixel in range.               */
   double azimuth_time_per_pixel;  /* Time per pixel in azimuth.             */
   double slant_shift;             /* Error correction factor, in slant range*/
@@ -102,9 +106,9 @@ typedef struct {
   double prf;                     /* Pulse Repition Frequency.              */
   char satellite_binary_time[FIELD_STRING_MAX];  /* Satellite binary time   */
   char satellite_clock_time[FIELD_STRING_MAX];   /* Satellite UTC clock time*/
-  /* Doppler centroid, doppler per pixel, and doppler per pixel squared.    */
+    /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
   double range_doppler_coefficients[3];
-  /* Doppler centroid, doppler per pixel, and doppler per pixel squared.    */
+    /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
   double azimuth_doppler_coefficients[3]; 
 } meta_sar;
 
