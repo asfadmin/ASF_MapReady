@@ -179,7 +179,7 @@ void *MALLOC(size_t size)
 }
 void FREE(void *ptr)
 {
-	free(ptr);
+	if (ptr != NULL) free(ptr);
 }
 
 
