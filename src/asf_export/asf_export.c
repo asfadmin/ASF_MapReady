@@ -194,7 +194,7 @@ void help_page()
 
   /* If we can, use less */
   sprintf (command, "echo '%s' | less --prompt='Type q to quit help, h for "
-	   "help with help browser", happy_string);
+	   "help with help browser'", happy_string);
   if ( system (command) != -1 )
     exit (EXIT_SUCCESS);
 
