@@ -60,23 +60,26 @@ Modifies and returns the pointed-to frame.
 ERS_frame * ERS_readNextFrame(bin_state *s,ERS_frame *f)
 {
 /*Read next frame in file.*/
-	FREAD(f->sync,ERS_bytesPerFrame,1,s->binary);
+	FREAD(f,ERS_bytesPerFrame,1,s->binary);
 	s->curFrame++;
 
 /*Determine frame type:*/
-	f->is_aux=f->is_zero=f->is_echo=0;
+	f->is_aux = f->is_zero = f->is_echo = 0;
 	if (f->type==128)/*Check auxiliary data bit.*/
 		f->is_aux=1;
 	else if (f->type&64)/*Check zero bit.*/
 		f->is_zero=1;
 	else if ((f->type>128)&&(f->type<=156))
 		f->is_echo=1;
-	else
-	  {
-	     f->is_echo =1;
-	     printf("   ***** ERROR at frame %i - Unknown frame type (%i); assumed to be bit error \n",
-			s->curFrame, f->type);
-	  }
+	else {
+	  char msg[256];
+	  f->is_echo=1;
+	  sprintf(msg,
+	          "   ***** ERROR at frame %i - Unknown frame type (%i); assumed to be bit error \n",
+	         s->curFrame, f->type);
+	  printf("%s",msg);
+	  if (logflag) { printLog(msg); }
+	}
 
 /*Extract & decode auxiliary data*/
 	if (f->is_aux) {
