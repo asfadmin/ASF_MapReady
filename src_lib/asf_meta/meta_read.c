@@ -4,6 +4,8 @@
 #include "err_die.h"
 #include "regex_wrapper.h"
 
+void meta_read_old(char *fileName, meta_parameters *meta);
+
 /***************************************************************
  * meta_read:
  * Reads a meta file and returns a meta structure filled with
@@ -27,7 +29,7 @@ meta_parameters *meta_read(const char *inName)
 	if ( fgets(line, MAX_LINE, meta_file) == '\0' ) {
 	  err_die("%s function: metadata file is empty\n", __func__);
 	}
-	while ( !regex_match(&version_subexps, 
+	while ( !regex_match(&version_subexps,
 			     "^Meta version : ([[:digit:]]+(\\.[[:digit]]+)?)",
 			     line) ) {
 	  if ( fgets(line, MAX_LINE, meta_file) == '\0' ) {
@@ -38,11 +40,10 @@ meta_parameters *meta_read(const char *inName)
 	FCLOSE(meta_file);
 
 	/* Read file with appropriate reader for version.  */
-	if ( strtod(get_subexp_string(&version_subexps, 1), NULL) 
+	if ( strtod(get_subexp_string(&version_subexps, 1), NULL)
 	     < NEW_FORMAT_VERSION ) {
-	  /* FIXME: I should be returning meta_parameters * somehow.  */
-	  meta_read_old(ddr_name, meta_name);
- 	} else {
+	  meta_read_old(meta_name, meta);
+	} else {
 	  parse_metadata(meta, meta_file);
 	}
 
@@ -82,7 +83,8 @@ void meta_io_state(coniStruct *coni, meta_state_vectors *state)
 /***************************************************************
  * meta_read_old:
  * Reads in old style meta file and fills new style meta struct
- */
+ * Note that the appropriate extension is appended to the given
+ * base name automagically.  */
 void meta_read_old(char *fileName, meta_parameters *meta)
 {
 	int reading = 1;
@@ -94,7 +96,7 @@ void meta_read_old(char *fileName, meta_parameters *meta)
 	meta_stats   *stats   = meta->stats;
 	coniStruct   *coni    = coniOpen(metaName, asciiIn);
 
-	coniIO_double(coni,"","meta_version:",&meta_version,"ASF APD Metadata File.\n");
+	coniIO_double(coni,"","meta_version:",&meta->meta_version,"ASF APD Metadata File.\n");
 
 /*Geolocation parameters.*/
 	coniIO_structOpen(coni,"geo {","begin parameters used in geolocating the image.");
@@ -109,7 +111,7 @@ void meta_read_old(char *fileName, meta_parameters *meta)
 		coniIO_double(coni,"geo.proj.","perX:",  &projection->perX,  "Projection Coordinate per pixel, X direction");
 		coniIO_double(coni,"geo.proj.","perY:",  &projection->perY,  "Projection Coordinate per pixel, Y direction");
 		coniIO_char  (coni,"geo.proj.","hem:",   &projection->hem,   "Hemisphere: [N=northern hemisphere; S=southern hemisphere]");
-		if (version>0.8) {
+		if (meta->meta_version>0.8) {
 		/*Read geoid from file*/
 			coniIO_double(coni,"geo.proj.","re_major:",&projection->re_major,"Major (equator) Axis of earth (meters)");
 			coniIO_double(coni,"geo.proj.","re_minor:",&projection->re_minor,"Minor (polar) Axis of earth (meters)");
@@ -164,7 +166,7 @@ void meta_read_old(char *fileName, meta_parameters *meta)
 
 /*Interferometry parameters:*/
 	coniIO_structOpen(coni,"ifm {","begin interferometry-related parameters");
-	if (version>0.6)
+	if (meta->meta_version>0.6)
 		coniIO_int(coni,"ifm.","nLooks:",&sar->look_count,      "Number of looks to take from SLC");
 	coniIO_int(coni,"ifm.","orig_lines:",    &general->line_count,  "Number of lines in original image");
 	coniIO_int(coni,"ifm.","orig_samples:",  &general->sample_count,"Number of samples in original image");
@@ -189,11 +191,11 @@ void meta_read_old(char *fileName, meta_parameters *meta)
 	    coniReopen(coni);/*Seek back to beginning of file.*/
 	    if (err==CONI_OK) {
 		coniIO_str     (coni,"extra.","sensor:",       general->sensor,           "Imaging sensor");
-		if (version>0.7)
+		if (meta->meta_version>0.7)
 		  coniIO_str   (coni,"extra.","mode:",         general->mode,             "Imaging mode");
-		if (version>0.6)
+		if (meta->meta_version>0.6)
 		  coniIO_str   (coni,"extra.","processor:",    general->processor,        "Name & Version of SAR Processor");
-		if (version>0.7) {
+		if (meta->meta_version>0.7) {
  		  coniIO_int   (coni,"extra.","orbit:",       &general->orbit,            "Orbit Number for this datatake");
 		  coniIO_double(coni,"extra.","bitErrorRate:",&general->bit_error_rate,   "Bit Error Rate");
 		  coniIO_str   (coni,"extra.","satBinTime:",   sar->satellite_binary_time,"Satellite Binary Time");
@@ -205,35 +207,33 @@ void meta_read_old(char *fileName, meta_parameters *meta)
 	
 /* Info from ddr */
 	c_getddr(ddrName, &ddr);
-	strcpy( meta_new->general->system,  ddr.system);
-	meta_new->general->start_line     = ddr.master_line;
-	meta_new->general->start_sample   = ddr.master_sample;
-	switch ( ddr->dtype ) {
+	strcpy( general->system,  ddr.system);
+	general->start_line     = ddr.master_line;
+	general->start_sample   = ddr.master_sample;
+	switch ( ddr.dtype ) {
 	    case 0: /* BYTE */
-	    case 1: strcpy(meta_new->general->data_type, "BYTE"); break;
-	    case 2: strcpy(meta_new->general->data_type, "INTEGER*2"); break;
-	    case 3: strcpy(meta_new->general->data_type, "INTEGER*4"); break;
-	    case 4: strcpy(meta_new->general->data_type, "REAL*4"); break;
-	    case 5: strcpy(meta_new->general->data_type, "REAL*8"); break;
+	    case 1: strcpy(general->data_type, "BYTE"); break;
+	    case 2: strcpy(general->data_type, "INTEGER*2"); break;
+	    case 3: strcpy(general->data_type, "INTEGER*4"); break;
+	    case 4: strcpy(general->data_type, "REAL*4"); break;
+	    case 5: strcpy(general->data_type, "REAL*8"); break;
 	    default:
-	        printf("ERROR: Unrecognized data type identifier: %d\n",ddr->dtype);
-	    	meta_free_old(meta_old);
-		meta_free(meta_new);
+	        printf("ERROR: Unrecognized data type identifier: %d\n",ddr.dtype);
 		exit(1);
 	}
 
 /* Fields that cannot be filled from the old structures */
-	meta_new->general->frame            = -1;
-	meta_new->general->band_number      = -1;
-	meta_new->general->orbit_direction  = '\0';
-	meta_new->general->center_latitude  = NAN;
-	meta_new->general->center_longitude = NAN;
-	meta_new->sar->look_angle           = NAN;
-	meta_new->stats->max                = NAN;
-	meta_new->stats->min                = NAN;
-	meta_new->stats->mean               = NAN;
-	meta_new->stats->rms                = NAN;
-	meta_new->stats->std_deviation      = NAN;
+	general->frame            = -1;
+	general->band_number      = -1;
+	general->orbit_direction  = '\0';
+	general->center_latitude  = NAN;
+	general->center_longitude = NAN;
+	sar->look_angle           = NAN;
+	stats->max                = NAN;
+	stats->min                = NAN;
+	stats->mean               = NAN;
+	stats->rms                = NAN;
+	stats->std_deviation      = NAN;
 
 /* Close coni structure */
 	coniClose(coni);
