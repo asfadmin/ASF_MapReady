@@ -78,7 +78,8 @@ void estdop(char file[], int nDopLines, float *a, float *b,float *c);
 void calc_range_ref(FCMPLX *range_ref, int rangeFFT, int refLen);
 void elapse(int fnc);
 void multilook(FCMPLX *patch,int n_range,int nlooks, float *pwrs);
-void save_ddr(const char *fname,int nl,int ns,int sl,int ss,
+void save_meta(meta_parameters *meta, const char *fname,
+	int nl,int ns,int sl,int ss,
 	double pdx,double pdy, int li);
 
 /*-------------Structures:---------------
