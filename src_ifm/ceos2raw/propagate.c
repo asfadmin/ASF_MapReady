@@ -29,7 +29,7 @@ void printStVec(const char *desc,stateVector s,FILE *f)
 }
 
 /*Prototype for asf_ceos.a routine:*/
-state_vectors *raw_init_state(int nStVec);
+meta_state_vectors *raw_init_state(int nStVec);
 
 /*Get the GHA corresponding to the given number
 of seconds since 1900.*/
@@ -124,7 +124,7 @@ void propagate_state(meta_parameters *meta,int nStVec)
 	
 	int startNo;/*Number of starting state vector*/
 	int outNo;/*Number of output state vector*/
-	state_vectors *new_st;/*Freshly-created state vector structure.*/
+	meta_state_vectors *new_st;/*Freshly-created state vector structure.*/
 
 /*Search the list of state vectors for the one nearest to the image start.*/
 	for (startNo=0;startNo<meta->stVec->num;startNo++)

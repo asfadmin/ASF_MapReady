@@ -37,7 +37,7 @@ PROGRAM HISTORY:
 #include "resolve.h"
 
 /* function declarations */
-double get_days(state_vectors *s1,state_vectors *s2);
+double get_days(meta_state_vectors *s1,meta_state_vectors *s2);
 void get_sep(stateVector stVec1, meta_parameters *meta2,
 	double range, double dop,double *Bn,double *Bp);
 
@@ -120,7 +120,7 @@ This creates an array of normal and parallel baseline values.*/
 
 /*Return number of days between beginnings of the given images.
 Computes s2->time-s1->time.*/
-double get_days(state_vectors *s1,state_vectors *s2)
+double get_days(meta_state_vectors *s1,meta_state_vectors *s2)
 {
 	double day_diff=0.0;
 
