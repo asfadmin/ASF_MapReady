@@ -1,11 +1,12 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "las.h"
-#include "ddr.h"
 
 #define VERSION 1.0
 
 void meta_write_old(meta_parameters *meta, const char *file_name);
+
+/* This prototype needs a .h home, function is in src_lib/asf_meta/meta_new2ddr.c */
 void meta_new2ddr(meta_parameters *meta, struct DDR *ddr);
 
 int main(int argc, char **argv)
