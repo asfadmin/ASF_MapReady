@@ -128,12 +128,10 @@ void fill_structure_field(char *field_name, void *valp)
   /* Pointer to substructure corresponding to current block.  */ 
   void *current_block = stack_top->block;
 
-  /* Uncomment these lines and enable yacc debug flags in the make
-   * file to debug the parser.
-   *
-   * extern int yydebug;
-   * yydebug = 1; 
-   */
+#ifdef DEBUG_METADATA_PARSER
+    extern int yydebug;
+    yydebug = 1; 
+#endif
 
   /* Top-level fields (these normally go outside all blocks).  */
   if ( !strcmp(field_name, "meta_version") ) {
