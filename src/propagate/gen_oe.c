@@ -5,8 +5,9 @@ SYNOPSIS:  gen_oe <infile>
 
 DESCRIPTION:  
 
-	gen_oe reads an input vector file for propagation (see parse_lzp_par
-    for file description) and creates a file called "5" that is input to the
+	gen_oe reads an input vector file for propagation (see
+    parse_lzp_par for file description) and creates a file called
+    "temp_file_formerly_known_as_5" (don't ask) that is input to the
     ASAP propagator.
 
 EXTERNAL ASSOCIATES:
@@ -142,9 +143,8 @@ main(int argc,char **argv)
     ctok (x, y, z, xv, yv, zv, result);
 
 
- /* write out the ASAP input file '5' */
-   /* file_name = "5";*/
-    fp=FOPEN("/var/tmp/5","w");
+ /* Write out the ASAP input file.  */
+    fp=FOPEN("./temp_file_formerly_known_as_5","w");
     
     fprintf(fp,
 "20                            L\n"

@@ -33,8 +33,9 @@ How to use ASAP:
                 the end time.
 	
 	      b)  Run "ASAP"
-		ASAP will read the "5" file and create "fort.7" which
-		contains the requested state vector propagation.
+		ASAP will read the "temp_file_formerly_known_as_5"
+		file and create "fort.7" which contains the requested
+		state vector propagation.
 
 	      c)  Move the file "fort.7" to your desired output name
 

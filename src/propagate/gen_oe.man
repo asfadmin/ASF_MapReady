@@ -6,8 +6,8 @@ SYNOPSIS:  gen_oe <infile>
 DESCRIPTION: 
 
     gen_oe reads an input vector file for propagation (see parse_lzp_par for
-    file description) and creates a file called "5" that is input to the
-    ASAP propagator.
+    file description) and creates a file called something like 
+    "file_formerly_known_as_5" that is input to the ASAP propagator.
 
 OPTIONS:	NONE
     
