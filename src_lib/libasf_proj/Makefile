@@ -9,6 +9,9 @@ LIBS =	$(LIBDIR)/libproj.a \
 
 OBJS =  project.o
 
+#CC := /home/bkerin/local/my_gcc/bin/gcc
+#CC := gcc
+
 all: build_only
 	cp libasf_proj.a $(LIBDIR)
 	cp libasf_proj.h $(ASF_INCLUDE_DIR)

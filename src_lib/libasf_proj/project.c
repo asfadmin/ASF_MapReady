@@ -419,10 +419,11 @@ int
 project_lamaz_arr(project_parameters_t * pps,
 		  double * lat, double * lon,
 		  double ** projected_x, double ** projected_y, 
-		  int len)
+		  long length)
 {
     return project_worker_arr(
-	lamaz_projection_desc(pps), lat, lon, projected_x, projected_y, len);
+	lamaz_projection_desc(pps), lat, lon, projected_x, projected_y, 
+	length);
 }
 
 int
@@ -437,10 +438,10 @@ int
 project_lamaz_arr_inv(project_parameters_t * pps,
 		      double * x, double * y,
 		      double ** lat, double ** lon, 
-		      int len)
+		      long length)
 {
     return project_worker_arr_inv(
-	lamaz_projection_desc(pps), x, y, lat, lon, len);
+	lamaz_projection_desc(pps), x, y, lat, lon, length);
 }
 
 /****************************************************************************
@@ -471,10 +472,11 @@ int
 project_lamcc_arr(project_parameters_t * pps,
 		  double * lat, double * lon,
 		  double ** projected_x, double ** projected_y, 
-		  int len)
+		  long length)
 {
     return project_worker_arr(
-	lamcc_projection_desc(pps), lat, lon, projected_x, projected_y, len);
+	lamcc_projection_desc(pps), lat, lon, projected_x, projected_y, 
+	length);
 }
 
 int
@@ -489,10 +491,10 @@ int
 project_lamcc_arr_inv(project_parameters_t * pps,
 		      double * x, double * y,
 		      double ** lat, double ** lon, 
-		      int len)
+		      long length)
 {
     return project_worker_arr_inv(
-	lamcc_projection_desc(pps), x, y, lat, lon, len);
+	lamcc_projection_desc(pps), x, y, lat, lon, length);
 }
 
 /****************************************************************************
@@ -523,10 +525,11 @@ int
 project_albers_arr(project_parameters_t * pps,
 		  double * lat, double * lon,
 		  double ** projected_x, double ** projected_y, 
-		  int len)
+		  long length)
 {
     return project_worker_arr(
-	albers_projection_desc(pps), lat, lon, projected_x, projected_y, len);
+	albers_projection_desc(pps), lat, lon, projected_x, projected_y, 
+	length);
 }
 
 int
@@ -541,8 +544,8 @@ int
 project_albers_arr_inv(project_parameters_t * pps,
 		      double * x, double * y,
 		      double ** lat, double ** lon, 
-		      int len)
+		      long length)
 {
     return project_worker_arr_inv(
-	albers_projection_desc(pps), x, y, lat, lon, len);
+	albers_projection_desc(pps), x, y, lat, lon, length);
 }

@@ -202,13 +202,13 @@ int project_lamaz(project_parameters_t * pps,
 int project_lamaz_arr(project_parameters_t * pps,
 		      double * lat, double * lon,
 		      double ** projected_x, double ** projected_y, 
-		      int len);
+		      long length);
 int project_lamaz_inv(project_parameters_t * pps,
 		      double x, double y, double *lat, double *lon);
 int project_lamaz_arr_inv(project_parameters_t * pps,
 			  double * x, double * y,
 			  double ** lat, double ** lon, 
-			  int len);
+			  long length);
 
 /****************************************************************************
   Lambert Conformal Conic
@@ -219,13 +219,13 @@ int project_lamcc(project_parameters_t * pps,
 int project_lamcc_arr(project_parameters_t * pps,
 		      double * lat, double * lon,
 		      double ** projected_x, double ** projected_y, 
-		      int len);
+		      long length);
 int project_lamcc_inv(project_parameters_t * pps,
 		      double x, double y, double *lat, double *lon);
 int project_lamcc_arr_inv(project_parameters_t * pps,
 			  double * x, double * y,
 			  double ** lat, double ** lon, 
-			  int len);
+			  long length);
 
 /****************************************************************************
   Albers Equal-Area Conic
@@ -236,12 +236,12 @@ int project_albers(project_parameters_t * pps,
 int project_albers_arr(project_parameters_t * pps,
 		       double * lat, double * lon,
 		       double ** projected_x, double ** projected_y, 
-		       int len);
+		       long length);
 int project_albers_inv(project_parameters_t * pps,
 		       double x, double y, double *lat, double *lon);
 int project_albers_arr_inv(project_parameters_t * pps,
 			   double * x, double * y,
 			   double ** lat, double ** lon, 
-			   int len);
+			   long length);
 
 #endif
