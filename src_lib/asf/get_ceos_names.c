@@ -210,11 +210,12 @@ ceos_file_pairs_t get_ceos_names(const char *ceosName, char *dataName,
    }
 
    /* If we didn't find anything, report & leave */
-   printf("************************ ERROR! ************************\n"
-          "*   This program was looking for a SAR file,\n"
-          "*   %s,\n"
-          "*   which it either could not read or find.\n"
-          "********************************************************\n",
+   printf("**************************** ERROR! ****************************\n"
+          "*   This program was looking for the CEOS style SAR file,\n"
+          "*   %s and its associated file.\n"
+          "*   It was unable to read one or both of them.\n"
+          "*   File sets are: (*.D *.L), (*.RAW *.LDR), and (dat.* lea.*)\n"
+          "****************************************************************\n",
           ceosName);
    exit(EXIT_FAILURE);
 }
