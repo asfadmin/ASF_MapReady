@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "asf_meta.h"
+#include "asf_nan.h"
 #include "caplib.h"
 #include "err_die.h"
 
@@ -18,6 +19,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
 #define FILE_NAME_MAX 1000
   char *file_name_with_extension = appendExt(file_name, ".meta");
   FILE *fp = FOPEN(file_name_with_extension, "w");
+  char comment[256];
 
   FREE(file_name_with_extension);
 
@@ -27,8 +29,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	"#      '%c' is likely an unknown single character value.\n"
 	"#      '%s' is likely an unknown string of characters.\n"
 	"#      '%d' is likely an unknown integer value.\n"
-	"#      'NaN' is likely an unknown Real value.\n\n",
-	MAGIC_UNSET_CHAR, MAGIC_UNSET_STRING, MAGIC_UNSET_INT);
+	"#      '%lf' is likely an unknown Real value.\n\n",
+	MAGIC_UNSET_CHAR, MAGIC_UNSET_STRING, MAGIC_UNSET_INT, MAGIC_UNSET_DOUBLE);
 
   /* We always write out files corresponding to the latest meta version.  */
   fprintf(fp, "meta_version: %.2f\n\n", META_VERSION);
@@ -38,81 +40,88 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_string(fp,"sensor:", meta->general->sensor, "Imaging sensor");
   meta_put_string(fp,"mode:",meta->general->mode,"Imaging mode");
   meta_put_string(fp,"processor:", meta->general->processor,"Name and Version of Processor");
+  strcpy(comment,"Type of samples (e.g. REAL64)");
   switch (meta->general->data_type) {
     case BYTE:
-      meta_put_string(fp,"data_type:","BYTE","Type of samples (e.g. REAL64)");
+      meta_put_string(fp,"data_type:","BYTE",comment);
       break;
     case INTEGER16:
-      meta_put_string(fp,"data_type:","INTEGER16","Type of samples (e.g. REAL64)");
+      meta_put_string(fp,"data_type:","INTEGER16",comment);
       break;
     case INTEGER32:
-      meta_put_string(fp,"data_type:","INTEGER32","Type of samples (e.g. REAL64)");
+      meta_put_string(fp,"data_type:","INTEGER32",comment);
       break;
     case REAL32:
-      meta_put_string(fp,"data_type:","REAL32","Type of samples (e.g. REAL64)");
+      meta_put_string(fp,"data_type:","REAL32",comment);
       break;
     case REAL64:
-      meta_put_string(fp,"data_type:","REAL64","Type of samples (e.g. REAL64)");
+      meta_put_string(fp,"data_type:","REAL64",comment);
       break;
     case COMPLEX_BYTE:
-      meta_put_string(fp,"data_type:","COMPLEX_BYTE","Type of samples (e.g. REAL64)");
+      meta_put_string(fp,"data_type:","COMPLEX_BYTE",comment);
       break;
     case COMPLEX_INTEGER16:
-      meta_put_string(fp,"data_type:","COMPLEX_INTEGER16","Type of samples (e.g. REAL64)");
+      meta_put_string(fp,"data_type:","COMPLEX_INTEGER16",comment);
       break;
     case COMPLEX_INTEGER32:
-      meta_put_string(fp,"data_type:","COMPLEX_INTEGER32","Type of samples (e.g. REAL64)");
+      meta_put_string(fp,"data_type:","COMPLEX_INTEGER32",comment);
       break;
     case COMPLEX_REAL32:
-      meta_put_string(fp,"data_type:","COMPLEX_REAL32","Type of samples (e.g. REAL64)");
+      meta_put_string(fp,"data_type:","COMPLEX_REAL32",comment);
       break;
     case COMPLEX_REAL64:
-      meta_put_string(fp,"data_type:","COMPLEX_REAL64","Type of samples (e.g. REAL64)");
+      meta_put_string(fp,"data_type:","COMPLEX_REAL64",comment);
       break;
     default:
-      meta_put_string(fp,"data_type:","???","Type of samples (e.g. REAL64)");
+      meta_put_string(fp,"data_type:",MAGIC_UNSET_STRING,comment);
       break;
   }
-  switch (meta->general->image_data_type) {
-    case RAW_IMAGE:
-      meta_put_string(fp,"image_data_type:","RAW_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    case COMPLEX_IMAGE:
-      meta_put_string(fp,"image_data_type:","COMPLEX_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    case AMPLITUDE_IMAGE:
-      meta_put_string(fp,"image_data_type:","AMPLITUDE_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    case PHASE_IMAGE:
-      meta_put_string(fp,"image_data_type:","PHASE_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    case POWER_IMAGE:
-      meta_put_string(fp,"image_data_type:","POWER_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    case SIGMA_IMAGE:
-      meta_put_string(fp,"image_data_type:","SIGMA_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    case GAMMA_IMAGE:
-      meta_put_string(fp,"image_data_type:","GAMMA_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    case BETA_IMAGE:
-      meta_put_string(fp,"image_data_type:","BETA_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    case COHERENCE_IMAGE:
-      meta_put_string(fp,"image_data_type:","COHERENCE_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    case GEOCODED_IMAGE:
-      meta_put_string(fp,"image_data_type:","GEOCODED_IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    case DEM:
-      meta_put_string(fp,"image_data_type:","DEM","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    case IMAGE:
-      meta_put_string(fp,"image_data_type:","IMAGE","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
-    default:
-      meta_put_string(fp,"image_data_type:","???","Image data type (e.g. AMPLITUDE_IMAGE)");
-      break;
+  if (META_VERSION >= 1.2) {
+    strcpy(comment,"Image data type (e.g. AMPLITUDE_IMAGE)");
+    switch (meta->general->image_data_type) {
+      case RAW_IMAGE:
+	meta_put_string(fp,"image_data_type:","RAW_IMAGE",comment);
+	break;
+      case COMPLEX_IMAGE:
+	meta_put_string(fp,"image_data_type:","COMPLEX_IMAGE",comment);
+	break;
+      case AMPLITUDE_IMAGE:
+	meta_put_string(fp,"image_data_type:","AMPLITUDE_IMAGE",comment);
+	break;
+      case PHASE_IMAGE:
+	meta_put_string(fp,"image_data_type:","PHASE_IMAGE",comment);
+	break;
+      case POWER_IMAGE:
+	meta_put_string(fp,"image_data_type:","POWER_IMAGE",comment);
+	break;
+      case SIGMA_IMAGE:
+	meta_put_string(fp,"image_data_type:","SIGMA_IMAGE",comment);
+	break;
+      case GAMMA_IMAGE:
+	meta_put_string(fp,"image_data_type:","GAMMA_IMAGE",comment);
+	break;
+      case BETA_IMAGE:
+	meta_put_string(fp,"image_data_type:","BETA_IMAGE",comment);
+	break;
+      case COHERENCE_IMAGE:
+	meta_put_string(fp,"image_data_type:","COHERENCE_IMAGE",comment);
+	break;
+      case GEOCODED_IMAGE:
+	meta_put_string(fp,"image_data_type:","GEOCODED_IMAGE",comment);
+	break;
+      case ELEVATION_IMAGE:
+	meta_put_string(fp,"image_data_type:","ELEVATION_IMAGE",comment);
+	break;
+      case DEM:
+	meta_put_string(fp,"image_data_type:","DEM",comment);
+	break;
+      case IMAGE:
+	meta_put_string(fp,"image_data_type:","IMAGE",comment);
+	break;
+      default:
+	meta_put_string(fp,"image_data_type:","???",comment);
+	break;
+    }
   }
   meta_put_string(fp,"system:", meta->general->system,"System of samples (e.g. big_ieee)");
   meta_put_int   (fp,"orbit:", meta->general->orbit,"Orbit Number for this datatake");
@@ -169,7 +178,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_int   (fp,"julDay:",meta->state_vectors->julDay,"Julian day of the year for image start");
     meta_put_double(fp,"second:",meta->state_vectors->second,"Second of the day for image start");
     meta_put_int   (fp,"vector_count:",meta->state_vectors->vector_count,"Number of state vectors below");
-    { 
+    {
       int ii;
       for (ii = 0; ii < meta->state_vectors->vector_count; ii++ ) {
 	meta_put_string(fp,"vector {","","Begin a single state vector");
@@ -188,21 +197,21 @@ void meta_write(meta_parameters *meta, const char *file_name)
 
 /* Projection parameters block, if appropriate.  */
   if ( meta->sar->image_type == 'P' && meta->projection ) {
-    meta_put_string(fp,"projection {","","Map Projection parameters");    
+    meta_put_string(fp,"projection {","","Map Projection parameters");
     switch (meta->projection->type) {
-      case UNIVERSAL_TRANSVERSE_MERCATOR: 
+      case UNIVERSAL_TRANSVERSE_MERCATOR:
 	meta_put_string(fp,"type:","UNIVERSAL_TRANSVERSE_MERCATOR","Projection Type");
 	break;
       case POLAR_STEREOGRAPHIC:
 	meta_put_string(fp,"type:","POLAR_STEREOGRAPHIC","Projection Type");
         break;
-      case ALBERS_EQUAL_AREA: 
+      case ALBERS_EQUAL_AREA:
 	meta_put_string(fp,"type:","ALBERS_EQUAL_AREA","Projection Type");
 	break;
       case LAMBERT_CONFORMAL_CONIC:
 	meta_put_string(fp,"type:","LAMBERT_CONFORMAL_CONIC","Projection Type");
 	break;
-      case LAMBERT_AZIMUTHAL_EQUAL_AREA: 
+      case LAMBERT_AZIMUTHAL_EQUAL_AREA:
 	meta_put_string(fp,"type:","LAMBERT_AZIMUTHAL_EQUAL_AREA","Projection Type");
 	break;
       case STATE_PLANE:
@@ -268,7 +277,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_int   (fp,"zone:",meta->projection->param.state.zone,"Zone Code");
       meta_put_string(fp,"}","","End state");
       break;
-   default: 
+   default:
       printf("WARNING in asf_meta library function '%s': unknown projection type '%c'.\n",
              "meta_write", meta->projection->type);
     }
@@ -289,7 +298,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   }
 
   FCLOSE(fp);
-  
+
   return;
 }
 
@@ -394,7 +403,7 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
     meta_put_int   (fp,"day:",meta->state_vectors->julDay,"Julian day of the year for image start");
     meta_put_double(fp,"second:",meta->state_vectors->second,"Second of the day for image start");
     meta_put_int   (fp,"number:",meta->state_vectors->vector_count,"Number of state vectors below");
-    { 
+    {
       int ii;
       for (ii = 0; ii < meta->state_vectors->vector_count; ii++ ) {
         meta_put_string(fp,"vector {","","begin a single state vector");
@@ -444,13 +453,13 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 	char line[255];/*The line to be written to the file.*/
 	static int depth=0;
 	strcpy(line,"");
-	
+
 /*Deal with indentation.*/
 	if (strchr(name,'}'))/*If the string has a closing brace, indent less.*/
 		depth--;
 	if (depth<0)
 		{printf("ERROR!  Too many '}' in meta file!\n"); exit(1);}
-	
+
 	for (ii=0; ii<depth; ii++)
 		strcat(line,"    ");/*Indent the appropriate number of spaces.*/
 
@@ -473,7 +482,7 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 		while (ii < 42+depth*4) /*Fill spaces out to about column 50.*/
 			line[ii++]=' ';
 		line[ii++]='\0';        /*Append trailing NULL.*/
-	
+
 	/*Add the comment.*/
 		strcat(line," # ");     /*Signal beginning of comment.*/
 		strcat(line,comment);   /*Append comment.*/
@@ -483,7 +492,7 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 	if (strchr(name,'}') && (depth==0))
 		strcat(line,"\n");
 
-/*More indentation.*/	
+/*More indentation.*/
 	if (strchr(name,'{'))/*If the string has an opening brace, indent more.*/
 		depth++;
 
@@ -500,7 +509,7 @@ void meta_put_double(FILE *meta_file,char *name,double value,char *comment)
 	meta_put_string(meta_file,name,param,comment);
 }
 
-	
+
 void meta_put_int(FILE *meta_file,char *name,int value,char *comment)
 {
 	char param[64];
