@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
   int bailout=0;
   struct DDR inDDR1, inDDR2;
 	
-  FComplex *in1,*in2;
+  complexFloat *in1,*in2;
   float *outAmp,*outPhase;
   char cmd[256];
 
@@ -132,8 +132,8 @@ int main(int argc, char *argv[])
   /* 
    * establish buffers
    */
-  in1=(FComplex *)MALLOC(sizeof(FComplex)*BSZ);
-  in2=(FComplex *)MALLOC(sizeof(FComplex)*BSZ);
+  in1=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ);
+  in2=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ);
   outAmp=(float *)MALLOC(sizeof(float)*BSZ);
   outPhase=(float *)MALLOC(sizeof(float)*BSZ);
   
@@ -166,8 +166,8 @@ int main(int argc, char *argv[])
      * read next chunk of data, check and calculate 
      * how many values were read
      */
-    i = fread(in1, 1, BSZ*sizeof(FComplex),inFile1);
-    j = fread(in2, 1, BSZ*sizeof(FComplex),inFile2);
+    i = fread(in1, 1, BSZ*sizeof(complexFloat),inFile1);
+    j = fread(in2, 1, BSZ*sizeof(complexFloat),inFile2);
   
     /*if( i != j ) bail("One input file was too short"); */
 
@@ -185,8 +185,8 @@ int main(int argc, char *argv[])
  
 
     /* calculate how many values were read, print a brief diagnostic message */
-    len = i/sizeof(FComplex);
-    bytesRead += (len * sizeof(FComplex));
+    len = i/sizeof(complexFloat);
+    bytesRead += (len * sizeof(complexFloat));
     
     printf("\tRead chunk %d, %d total bytes read\r", count, bytesRead);
 
