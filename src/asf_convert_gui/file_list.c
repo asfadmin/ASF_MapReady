@@ -53,11 +53,12 @@ add_to_files_list(gchar * data_file, gchar * meta_file)
 
   gtk_list_store_append(list_store, &iter);
 
+  gtk_list_store_set(list_store, &iter, 0, data_file, 2, "-", -1);
+  
   out_name_full = determine_default_output_file_name(data_file);
 
-  gtk_list_store_set(list_store, &iter, 
-		     0, data_file, 1, out_name_full, 2, "-", -1);
-
+  set_output_name(&iter, out_name_full);
+  
   g_free(out_name_full);
 }
 
@@ -95,8 +96,8 @@ update_all_extensions()
 					    strlen(ext) + 1));
 
       g_sprintf(new_output_name, "%s.%s", basename, ext);
-      
-      gtk_list_store_set(list_store, &iter, 1, new_output_name, -1);
+
+      set_output_name(&iter, new_output_name);      
       
       g_free(basename);
       g_free(new_output_name);
@@ -115,6 +116,92 @@ edited_handler(GtkCellRendererText *ce, gchar *arg1, gchar *arg2,
   do_rename_selected(arg2);
 }
 
+void render_status(GtkTreeViewColumn *tree_column,
+                   GtkCellRenderer *cell,
+                   GtkTreeModel *tree_model,
+                   GtkTreeIter *iter,
+                   gpointer data)
+{
+    gchar *status;
+    gboolean done;
+    gboolean settings_are_stale = FALSE;
+    
+    gtk_tree_model_get (tree_model, iter, 2, &status, -1);
+    done = strcmp(status, "Done") == 0;
+
+    if (done && settings_on_execute)
+    {
+        Settings * user_settings =
+                settings_get_from_gui();
+
+        settings_are_stale =
+                !settings_equal(user_settings, settings_on_execute);
+    }
+
+    if (done && settings_are_stale)
+    {
+        GdkColor c;
+        
+        c.red = c.green = c.blue = 32768;
+        
+        g_object_set( G_OBJECT (cell), "foreground-gdk", &c, NULL);
+    }
+    else
+    {
+        g_object_set( G_OBJECT (cell), "foreground-gdk", NULL, NULL);
+    }
+        
+    g_object_set (G_OBJECT (cell), "text", status, NULL);
+}
+    
+void render_output_name(GtkTreeViewColumn *tree_column,
+                        GtkCellRenderer *cell,
+                        GtkTreeModel *tree_model,
+                        GtkTreeIter *iter,
+                        gpointer data)
+{
+    gchar *output_file;
+    gchar *status;
+    gboolean done;
+    
+    gtk_tree_model_get (tree_model, iter, 1, &output_file, 2, &status, -1);
+
+    /* Do not mark the file in red if the item has been marked "Done"
+       However, if the user has changed the settings, the "Done"
+       marks are stale... so in that case do not look at "Done" */
+    
+    done = strcmp("Done", status) == 0;
+    
+    if (done && settings_on_execute)
+    {
+        Settings * user_settings =
+                settings_get_from_gui();
+
+        if (!settings_equal(user_settings, settings_on_execute))
+            done = FALSE;
+    }
+
+    if (!done && g_file_test(output_file, G_FILE_TEST_EXISTS))
+    {
+        GdkColor c;
+        
+        c.red = 65535;
+        c.green = c.blue = 0;
+        
+        g_object_set( G_OBJECT (cell), "foreground-gdk", &c, NULL);
+    }
+    else
+    {
+        g_object_set( G_OBJECT (cell), "foreground-gdk", NULL, NULL);
+    }
+        
+    g_object_set (G_OBJECT (cell), "text", output_file, NULL);
+}
+
+void stub(gpointer p)
+{
+}
+    
 void
 setup_files_list(int argc, char *argv[])
 {
@@ -135,9 +222,9 @@ setup_files_list(int argc, char *argv[])
     gchar * output_file = determine_default_output_file_name(data_file);
 
     gtk_list_store_append(list_store, &iter);
-    gtk_list_store_set(list_store, &iter,
-		       0, data_file, 1, output_file, 2, "-", -1);
-
+    gtk_list_store_set(list_store, &iter, 0, data_file, 2, "-", -1);
+    set_output_name(&iter, output_file);
+    
     g_free(output_file);
   }
 
@@ -181,10 +268,14 @@ setup_files_list(int argc, char *argv[])
   /* connect "editing-done" signal */
   g_signal_connect(G_OBJECT(renderer), "edited",
 		   G_CALLBACK(edited_handler), NULL);
-
+  
   gtk_tree_view_column_pack_start(col, renderer, TRUE);
   gtk_tree_view_column_add_attribute(col, renderer, "text", 1);
 
+  /* add our custom renderer (turns existing files red) */
+  gtk_tree_view_column_set_cell_data_func(col, renderer,
+            render_output_name, NULL, NULL);
+  
   /* Last Column: Current Status */
   col = gtk_tree_view_column_new();
   gtk_tree_view_column_set_title(col, "Status");
@@ -194,6 +285,10 @@ setup_files_list(int argc, char *argv[])
   gtk_tree_view_column_pack_start(col, renderer, TRUE);
   gtk_tree_view_column_add_attribute(col, renderer, "text", 2);
 
+  /* add our custom renderer (turns stale "Done" entries gray) */
+  gtk_tree_view_column_set_cell_data_func(col, renderer,
+            render_status, NULL, NULL);
+
   gtk_tree_view_set_model(GTK_TREE_VIEW(files_list), 
 			  GTK_TREE_MODEL(list_store));  
 
@@ -202,4 +297,10 @@ setup_files_list(int argc, char *argv[])
   gtk_tree_selection_set_mode(
       gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list)),
       GTK_SELECTION_SINGLE);
+}
+    
+void
+set_output_name(GtkTreeIter *iter, const gchar *name)
+{
+    gtk_list_store_set(list_store, iter, 1, name, -1);
 }

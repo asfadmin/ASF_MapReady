@@ -91,8 +91,8 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
   g_free(basename);
   g_free(name_without_path);
   g_free(path);
-    
-  gtk_list_store_set(list_store, iter, 1, fixed_name, -1);
+
+  set_output_name(iter, fixed_name);
   
   g_free(fixed_name);
 }
