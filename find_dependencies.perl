@@ -116,7 +116,7 @@ in the file.
 
 Use low criteria when scanning packages for depencence on node
 I<node>.  Pretty much any occurence of the name I<node> in a package
-will be daken as a dependency.  This option may well generate false
+will be taken as a dependency.  This option may well generate false
 positives, but is extremely unlikely to miss anything, and works well
 for looking for depenence on explicitly declared non-package nodes
 like types (see the --with_node option).  This option is only relevant
