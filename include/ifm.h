@@ -47,24 +47,24 @@ typedef signed char Schar;
 
 
 /* function declarations */
-double Cabs_d(DComplex);
+double Cabs_d(complexDouble);
 double **dmatrix(int,int,int,int);
 double *dvector(int,int);
 double d_vmag(double*,int);
 
-DComplex Cadd_d(DComplex,DComplex);
-DComplex Cconj_d(DComplex);
-DComplex Csmul_d(double, DComplex);
-FComplex Cadd(FComplex,FComplex);
-FComplex Cconj(FComplex);
-FComplex Cmul(FComplex,FComplex);
-FComplex **cpxmatrix(int,int,int,int);
-FComplex *cpxvector(int,int);
-FComplex Csdiv(float, FComplex);
-FComplex Csmul(float, FComplex);
-FComplex Czero(void);
-float Cabs(FComplex);
-float Cphase(FComplex);
+complexDouble Cadd_d(complexDouble,complexDouble);
+complexDouble Cconj_d(complexDouble);
+complexDouble Csmul_d(double, complexDouble);
+complexFloat Cadd(complexFloat,complexFloat);
+complexFloat Cconj(complexFloat);
+complexFloat Cmul(complexFloat,complexFloat);
+complexFloat **cpxmatrix(int,int,int,int);
+complexFloat *cpxvector(int,int);
+complexFloat Csdiv(float, complexFloat);
+complexFloat Csmul(float, complexFloat);
+complexFloat Czero(void);
+float Cabs(complexFloat);
+float Cphase(complexFloat);
 
 /****FILE *fileOpen(char*,char*);***should use FOPEN*******/
 int fileExist(char *);
