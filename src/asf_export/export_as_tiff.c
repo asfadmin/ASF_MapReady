@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <setjmp.h>
@@ -27,10 +26,10 @@
 #include <asf.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
-#include "asf_nan.h"
-#include "asf_reporting.h"
-#include "asf_raster.h"
-#include "asf_export.h"
+#include <asf_nan.h>
+#include <asf_reporting.h>
+#include <asf_raster.h>
+#include <asf_export.h>
 
 #define ASF_NAME_STRING "asf_export"
 
@@ -54,7 +53,8 @@ export_as_tiff (const char *metadata_file_name,
   size_t ii;
 
   /* Get the image data.  */
-  assert (md->general->data_type == REAL32);
+  asfRequire(md->general->data_type == REAL32,
+             "Can only ingest ASF format floating point data.");
   daf = get_image_data (md, image_data_file_name);
 
   asfPrintStatus("Processing...\n");
@@ -67,7 +67,7 @@ export_as_tiff (const char *metadata_file_name,
 
   /* Open output tiff file */
   otif = XTIFFOpen (output_file_name, "w");
-  assert (otif != NULL);
+  asfRequire(otif != NULL, "Error opening output tiff file.\n");
 
   /* Scale float image down to bytes */
   if (md->general->image_data_type == SIGMA_IMAGE ||
@@ -118,11 +118,7 @@ export_as_tiff (const char *metadata_file_name,
   asfPrintStatus("Writing Output File...\n");
   for ( ii = 0 ; ii < height ; ii++ ) {
     if ( TIFFWriteScanline (otif, pixels + width * ii, ii, 0) < 0 ) {
-          char* temp;
-          sprintf(temp, "Error writing to output tiff file %s", 
-		  output_file_name);
-          print_error(temp);
-      exit (EXIT_FAILURE);
+      asfPrintError("Error writing to output tiff file %s", output_file_name);
     }
     asfLineMeter(ii, height);
   }
