@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "asf_convert_gui.h"
 #include "asf_version.h"
 #include <gdk/gdkkeysyms.h>
