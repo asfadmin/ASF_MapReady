@@ -17,6 +17,11 @@
 #define FLAG_SET 1
 #define FLAG_NOT_SET -1
 
+#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
+#define FLOAT_MICRON 0.000000001
+#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
+                                (a, b, FLOAT_MICRON))
+
 /* Index keys for all flags used in this program via a 'flags' array */
 typedef enum {
   f_LOOK=1,

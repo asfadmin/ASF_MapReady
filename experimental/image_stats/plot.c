@@ -102,8 +102,11 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
 
 	if (compFile) {
 	  temp = bufImage[ll*samples+kk];
-	  bufImage[ll*samples+kk] = (temp-bufComp[ll*samples+kk])/
-	    (temp+bufComp[ll+samples+kk]);
+	  if (FLOAT_EQUIVALENT(temp, 0.0))
+	    bufImage[ll*samples+kk] = 0.0;
+	  else
+	    bufImage[ll*samples+kk] = (temp-bufComp[ll*samples+kk])/
+	      (temp+bufComp[ll+samples+kk]);
 	}
 	if (maskFlag) {
 	  if (mask[x*samples+y]) {
@@ -144,8 +147,11 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
 
 	if (compFile) {
 	  temp = bufImage[ll*samples+kk];
-	  bufImage[ll*samples+kk] = (temp-bufComp[ll*samples+kk])/
-	    (temp+bufComp[ll+samples+kk]);
+	  if (FLOAT_EQUIVALENT(temp, 0.0))
+	    bufImage[ll*samples+kk] = 0.0;
+	  else
+	    bufImage[ll*samples+kk] = (temp-bufComp[ll*samples+kk])/
+	      (temp+bufComp[ll+samples+kk]);
 	}
 	if (maskFlag) {
 	  if (mask[x*samples+y]) 
