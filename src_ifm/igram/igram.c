@@ -156,10 +156,10 @@ int main(int argc, char *argv[])
   inFile2=fopenImage(fnm, "rb");
   c_getddr(fnm,&inDDR2); 
 
-  create_name(fnm,argv[currArg],".amp");
+  create_name(fnm,argv[currArg],"_amp.img");
   outFileAmp=fopenImage(fnm, "wb");
   
-  create_name(fnm,argv[currArg],".phase");
+  create_name(fnm,argv[currArg],"_phase.img");
   outFilePhase=fopenImage(fnm, "wb");
 
   /*
