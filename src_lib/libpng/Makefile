@@ -18,10 +18,20 @@ install_png: build_png_stamp
 	cp $(UNPACK_DIR)/libpng.a $(LIBDIR)
 	install -d $(PNG_INCLUDE_DIR)
 	cp $(UNPACK_DIR)/png.h $(PNG_INCLUDE_DIR)
+	cp $(UNPACK_DIR)/pngconf.h $(PNG_INCLUDE_DIR)
 
 # Build the libpng library.
 build_png_stamp: 
 	tar xzvf $(TARBALL)
+# It seems like some junk got in this header upstream, stripping it
+# out makes everything work fine.  Should check if its gone when we go
+# to the next libpng version.
+	(cd $(UNPACK_DIR) ; \
+	    perl -p -i \
+                 -e 's/^\s*__png\.h__ already includes setjmp\.h;\s*\n//' \
+                 pngconf.h ; \
+	    perl -p -i -e 's/^\s*__dont__ include it again.;\s*\n//' \
+                 pngconf.h)
 	(cd $(UNPACK_DIR) ; \
 	    cp scripts/makefile.std Makefile ; \
             make test)
