@@ -135,7 +135,6 @@ PROGRAMS
 			calc_deltas
 			spectra
 	}
-	amp2img {  }
 	avg_in_dop { }
 	c2p { }
 	coh { }
@@ -160,7 +159,7 @@ PROGRAMS
 	ml { }
 	p2c { }
 	phase_filter { }
-	resolve { PROGRAMS fftMatch amp2img c2p }
+	resolve { PROGRAMS fftMatch convert2byte c2p }
 	refine_base { }
 	refine_offset { }
 	trim_slc { }
@@ -227,7 +226,7 @@ CATEGORIES
 		calibrate dspddr 
 		metadata sarin sarout
 		
-		amp2img diff_las fftMatch
+		convert2byte diff_las fftMatch
                 las2jpeg las2ppm las_op
                 makeddr propagate remap resample 
                 sdts2las sr2gr trim usgs2las
