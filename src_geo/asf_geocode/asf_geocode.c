@@ -867,7 +867,8 @@ main (int argc, char **argv)
   double max_corner_error = 1.0;
   // Upper left corner.
   double ul_lat, ul_lon;
-  meta_get_latLon (imd, (float)0, (float)0, average_height, &ul_lat, &ul_lon);
+  meta_get_latLon (imd, (float) 0, (float) 0, average_height, &ul_lat, 
+		   &ul_lon);
   double ul_x, ul_y;
   project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
   double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
@@ -883,7 +884,7 @@ main (int argc, char **argv)
 
   // Lower right corner.
   double lr_lat, lr_lon;
-  meta_get_latLon (imd, (float)(ii_size_y - 1), (float)(ii_size_x - 1), 
+  meta_get_latLon (imd, (float) (ii_size_y - 1), (float) (ii_size_x - 1), 
 		   average_height, &lr_lat, &lr_lon);
   double lr_x, lr_y;
   project (pp, DEG_TO_RAD * lr_lat, DEG_TO_RAD * lr_lon, &lr_x, &lr_y);
@@ -989,7 +990,7 @@ main (int argc, char **argv)
   omd->general->sample_count = oix_max + 1;
   omd->sar->image_type = 'P';
   omd->projection = MALLOC(sizeof(meta_projection));
-  memset(omd->projection, 0, sizeof(meta_projection));
+  memset (omd->projection, 0, sizeof(meta_projection));
   omd->projection->type = projection_type;
   omd->projection->startX = min_x;
   omd->projection->startY = max_y;
