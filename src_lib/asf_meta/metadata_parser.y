@@ -95,6 +95,7 @@ void warning_message(const char *warn_msg, ...)
   }
 
 /* Print warning with some diagnostics */
+  printf("\n");
   printf("WARNING: * Parsing %s around line %d:\n"
          "         * ", current_file, line_number);
   va_start(ap, message_to_print);
@@ -157,8 +158,8 @@ void select_current_block(char *block_name)
     { current_block = &(MPROJ->param); goto MATCHED; }
   if ( !strcmp(block_name, "atct") )
     { current_block = &((*( (param_t *) current_block)).atct); goto MATCHED; }
-  if ( !strcmp(block_name, "lambert") )
-    { current_block = &((*( (param_t *) current_block)).lambert); goto MATCHED; }
+  if ( !strcmp(block_name, "lamcc") )
+    { current_block = &((*( (param_t *) current_block)).lamcc); goto MATCHED; }
   if ( !strcmp(block_name, "ps") )
     { current_block = &((*( (param_t *) current_block)).ps); goto MATCHED; }
   if ( !strcmp(block_name, "utm") )
@@ -442,16 +443,17 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).atct.alpha3 = VALP_AS_DOUBLE; return; }
   }
 
-  /* Fields that go in the (proj->param).lambert block.  */
-  if ( !strcmp(stack_top->block_name, "lambert") ) {
+  /* Fields that go in the (proj->param).lamcc block.  */
+  /* Check for both lamcc and lambert for backwards compatibility */
+  if ( !strcmp(stack_top->block_name, "lamcc") ||  !strcmp(stack_top->block_name, "lambert")) {
     if ( !strcmp(field_name, "plat1") )
-      { (*MPARAM).lambert.plat1 = VALP_AS_DOUBLE; return; }
+      { (*MPARAM).lamcc.plat1 = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "plat2") )
-      { (*MPARAM).lambert.plat2 = VALP_AS_DOUBLE; return; }
+      { (*MPARAM).lamcc.plat2 = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "lat0") )
-      { (*MPARAM).lambert.lat0 = VALP_AS_DOUBLE; return; }
+      { (*MPARAM).lamcc.lat0 = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "lon0") )
-      { (*MPARAM).lambert.lon0 = VALP_AS_DOUBLE; return; }
+      { (*MPARAM).lamcc.lon0 = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields that go in the (proj->param).ps block.  */

@@ -95,10 +95,10 @@ int write_proj_meta(double pixSize,proj_prm *proj,const window *w,
 		break;
 	case LAMCC:/*Lambert Conformal Conic*/
 		p->type='L';
-		p->param.lambert.lat0=paksz(proj->parms[5],&ignored);
-		p->param.lambert.lon0=paksz(proj->parms[4],&ignored);
-		p->param.lambert.plat1=paksz(proj->parms[2],&ignored);
-		p->param.lambert.plat2=paksz(proj->parms[3],&ignored);
+		p->param.lamcc.lat0=paksz(proj->parms[5],&ignored);
+		p->param.lamcc.lon0=paksz(proj->parms[4],&ignored);
+		p->param.lamcc.plat1=paksz(proj->parms[2],&ignored);
+		p->param.lamcc.plat2=paksz(proj->parms[3],&ignored);
 		break;
 	default:/*Unrecognized Map projection!*/
 		printf("   WARNING: Unrecognized map projection code %d passed to \n"

@@ -2,10 +2,9 @@
 NAME:JPL_proj
 
 SYNOPSIS:
-	A set of map projection routines from JPL.
-Includes Along-Track/Cross-Track (AT/CT), 
-Universal Transverse Mercator,
-Polar Sterographic, and Lambert.
+	A set of map projection routines from JPL. Includes
+	Along-Track/Cross-Track (AT/CT), Universal Transverse Mercator, Polar
+	Sterographic, and Lambert Conformal Conic.
 
 DESCRIPTION:
 
@@ -48,12 +47,12 @@ BUGS:
 
 /*Projection Prototypes;*/
 void ll_ac(meta_projection *proj, char look_dir, double lat, double lon, double *c1, double *c2);
-void ll_lambert(meta_projection *proj,double lat,double lon,double *x,double *y);
+void ll_lamcc(meta_projection *proj,double lat,double lon,double *x,double *y);
 void ll_ps(meta_projection *proj,double lat, double lon, double *x, double *y);
 void ll_utm(meta_projection *proj,double tlat, double tlon, double *p1, double *p2);
 
 void ac_ll(meta_projection *proj, char look_dir, double c1, double c2,double *lat_d, double *lon);
-void lambert_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon);
+void lamcc_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon);
 void ps_ll(meta_projection *proj,double xx,double yy,double *alat,double *alon);
 void utm_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon);
 
@@ -65,7 +64,7 @@ void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,doub
 	switch (proj->type)
 	{
 		case 'A': ll_ac(proj,look_dir,lat_d,lon,p2,p1); break;
-		case 'L': ll_lambert(proj,lat_d,lon,p1,p2); break;
+		case 'L': ll_lamcc(proj,lat_d,lon,p1,p2); break;
 		case 'P': ll_ps(proj,lat_d,lon,p1,p2); break;
 		case 'U': ll_utm(proj,lat_d,lon,p1,p2); break;
 		default:
@@ -82,7 +81,7 @@ void proj_to_ll(meta_projection *proj, char look_dir, double p1, double p2, doub
 	switch(proj->type)
 	{
 		case 'A': ac_ll(proj,look_dir,p2,p1,lat_d,lon); break;
-		case 'L': lambert_ll(proj,p1,p2,lat_d,lon); break;
+		case 'L': lamcc_ll(proj,p1,p2,lat_d,lon); break;
 		case 'P': ps_ll(proj,p1,p2,lat_d,lon); break;
 		case 'U': utm_ll(proj,p1,p2,lat_d,lon); break;
 		default:
@@ -92,7 +91,7 @@ void proj_to_ll(meta_projection *proj, char look_dir, double p1, double p2, doub
 }
 
 /******************************************************************
-  Module Name: ll_lambert
+  Module Name: ll_lamcc
  
   Abstract:
             convert lat/lon to Lambert Conformal Conic (Ellipsoid)
@@ -114,7 +113,7 @@ void proj_to_ll(meta_projection *proj, char look_dir, double p1, double p2, doub
              geological survey(bulletin 1532)
 
  ******************************************************************/
-void lambert_init(proj_lambert *l,double e,
+void lamcc_init(proj_lamcc *l,double e,
 	double *m1,double *m2,double *t0,double *t1,double *t2,double *n)
 {
 	*m1 = cosd(l->plat1)/sqrt(1.0-SQR(e*sind(l->plat1)));
@@ -135,25 +134,25 @@ void lambert_init(proj_lambert *l,double e,
 	else 
 		*n = sind(l->plat1);
 }
-void ll_lambert(meta_projection *proj,double lat,double lon,double *x,double *y)
+void ll_lamcc(meta_projection *proj,double lat,double lon,double *x,double *y)
 {
 	double F, rho_0, t, rho, theta;
 	double m1, m2, t0, t1, t2, n;
 	double e=ecc_e;
-	lambert_init(&proj->param.lambert,e,
+	lamcc_init(&proj->param.lamcc,e,
 		&m1,&m2,&t0,&t1,&t2,&n);
 	
 	F = m1/(n*pow(t1,n)); rho_0 = RE*F*pow(t0,n);
 	
 	t = tand(45.0-lat/2.0)/pow(((1.0-e*sind(lat))/(1.0+e*sind(lat))),(e/2.0));
 	rho = RE*F*pow(t,n);
-	theta = n*(lon-proj->param.lambert.lon0);
+	theta = n*(lon-proj->param.lamcc.lon0);
 	
 	*x = rho*sind(theta);
 	*y = rho_0-rho*cosd(theta);
 }
 /***********************************************************************
-  Module Name: lambert_ll
+  Module Name: lamcc_ll
  
   Abstract: convert Lambert Conformal Conic(Ellipsoid) coordinates to lat/lon
  
@@ -173,12 +172,12 @@ void ll_lambert(meta_projection *proj,double lat,double lon,double *x,double *y)
              geological survey(bulletin 1532)
  
 ***********************************************************************/
-void lambert_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon)
+void lamcc_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon)
 {
 	double F, rho_0, t, rho, theta, chi;
 	double m1, m2, t0, t1, t2, n;
 	double e=ecc_e,e2=ecc2;
-	lambert_init(&proj->param.lambert,e,
+	lamcc_init(&proj->param.lamcc,e,
 		&m1,&m2,&t0,&t1,&t2,&n);
 	
 	F = m1 / ( n * pow(t1,n) );
@@ -188,7 +187,7 @@ void lambert_ll(meta_projection *proj,double x,double y,double *lat_d,double *lo
 	/* If n is negative, the signs of x,y and rho_0 must be reversed
 	(see notes in "Map projections used by the USGS) */
 	theta = atand(x/(rho_0-y));
-	*lon   = theta / n + proj->param.lambert.lon0;
+	*lon   = theta / n + proj->param.lamcc.lon0;
 	t = pow((rho/(RE*F)),(1.0/n));
 	
 	/* use a series to calculate the inverse formula */

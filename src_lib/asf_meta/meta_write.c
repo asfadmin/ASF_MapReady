@@ -108,7 +108,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_double(fp,"slant_shift:",meta->sar->slant_shift,"Error correction factor, in slant range [m]");
   meta_put_double(fp,"time_shift:",meta->sar->time_shift,"Error correction factor, in time [s]");
   meta_put_double(fp,"wavelength:",meta->sar->wavelength,"SAR carrier wavelength [m]");
-  meta_put_double(fp,"prf:",meta->sar->prf,"Pulse Repetition Frequency");
+  meta_put_double(fp,"prf:",meta->sar->prf,"Pulse Repetition Frequency [Hz]");
   meta_put_string(fp,"satellite_binary_time:",meta->sar->satellite_binary_time,"Satellite Binary Time");
   meta_put_string(fp,"satellite_clock_time:",meta->sar->satellite_clock_time,"Satellite Clock Time (UTC)");
   meta_put_double(fp,"dopRangeCen:",meta->sar->range_doppler_coefficients[0],"Range doppler centroid [Hz]");
@@ -166,12 +166,12 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"}","","End atct");
       break;
     case'L':/*Lambert conformal conic projection.*/
-      meta_put_string(fp,"lambert {","","Begin Lambert Conformal Conic projection");
-      meta_put_double(fp,"plat1:",meta->projection->param.lambert.plat1,"First standard parallel");
-      meta_put_double(fp,"plat2:",meta->projection->param.lambert.plat2,"Second standard parallel");
-      meta_put_double(fp,"lat0:",meta->projection->param.lambert.lat0,"Original latitude");
-      meta_put_double(fp,"lon0:",meta->projection->param.lambert.lon0,"Original longitude");
-      meta_put_string(fp,"}","","End lambert");
+      meta_put_string(fp,"lamcc {","","Begin Lambert Conformal Conic projection");
+      meta_put_double(fp,"plat1:",meta->projection->param.lamcc.plat1,"First standard parallel");
+      meta_put_double(fp,"plat2:",meta->projection->param.lamcc.plat2,"Second standard parallel");
+      meta_put_double(fp,"lat0:",meta->projection->param.lamcc.lat0,"Original latitude");
+      meta_put_double(fp,"lon0:",meta->projection->param.lamcc.lon0,"Original longitude");
+      meta_put_string(fp,"}","","End lamcc");
       break;
     case'P':/*Polar stereographic projection.*/
       meta_put_string(fp,"ps {","","Begin Polar Stereographic Projection");

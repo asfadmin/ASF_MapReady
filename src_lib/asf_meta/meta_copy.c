@@ -78,10 +78,10 @@ meta_parameters *meta_copy(meta_parameters *src)
 			ret->projection->param.atct.alpha3 = src->projection->param.atct.alpha3;
 			break;
 		    case 'L':
-			ret->projection->param.lambert.plat1 = src->projection->param.lambert.plat1;
-			ret->projection->param.lambert.plat2 = src->projection->param.lambert.plat2;
-			ret->projection->param.lambert.lat0 = src->projection->param.lambert.lat0;
-			ret->projection->param.lambert.lon0 = src->projection->param.lambert.lon0;
+			ret->projection->param.lamcc.plat1 = src->projection->param.lamcc.plat1;
+			ret->projection->param.lamcc.plat2 = src->projection->param.lamcc.plat2;
+			ret->projection->param.lamcc.lat0 = src->projection->param.lamcc.lat0;
+			ret->projection->param.lamcc.lon0 = src->projection->param.lamcc.lon0;
 			break;
 		    case 'P':
 			ret->projection->param.ps.slat = src->projection->param.ps.slat;

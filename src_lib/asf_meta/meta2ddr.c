@@ -157,10 +157,10 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 			ddr->valid[DDPCV] = VALID;
 			ddr->proj_coef[0] = proj->re_major;
 			ddr->proj_coef[1] = proj->re_minor;
-			ddr->proj_coef[2] = packed_deg(proj->param.lambert.plat1); /*standard parallel1*/
-			ddr->proj_coef[3] = packed_deg(proj->param.lambert.plat2); /*standard parallel2*/
-			ddr->proj_coef[4] = packed_deg(proj->param.lambert.lon0);  /*Center longitude of proj*/
-			ddr->proj_coef[5] = packed_deg(proj->param.lambert.lat0);  /*Center latitude of proj*/
+			ddr->proj_coef[2] = packed_deg(proj->param.lamcc.plat1); /*standard parallel1*/
+			ddr->proj_coef[3] = packed_deg(proj->param.lamcc.plat2); /*standard parallel2*/
+			ddr->proj_coef[4] = packed_deg(proj->param.lamcc.lon0);  /*Center longitude of proj*/
+			ddr->proj_coef[5] = packed_deg(proj->param.lamcc.lat0);  /*Center latitude of proj*/
 			ddr->proj_coef[6] = 0.0; /*False Easting*/
 			ddr->proj_coef[7] = 0.0; /*False Northing*/
 			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
