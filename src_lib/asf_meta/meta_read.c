@@ -17,45 +17,46 @@ void meta_new2old(meta_parameters *meta);
 meta_parameters *meta_read(const char *inName)
 {
  /* Maximum line length.  */
-#define MAX_LINE             1024 
+#define MAX_METADATA_LINE 1024 
  /* Version where new metadata was adopted.  */
-#define NEW_FORMAT_VERSION   1.0 
+#define NEW_FORMAT_VERSION 1.0 
 
-	char              *meta_name      = appendExt(inName,".meta");
-	FILE              *meta_file      = FOPEN(meta_name, "r");
-	meta_parameters   *meta           = raw_init();
-	matched_subexps_t version_subexps = MATCHED_SUBEXPS_INITIALIZER;
-	char              line[MAX_LINE];
-	double            meta_version;
-
-	/* Scan for the version string.  */
-	if ( fgets(line, MAX_LINE, meta_file) == '\0' ) {
-	  err_die("%s function: metadata file is empty\n", __func__);
-	}
-	while ( !regex_match(&version_subexps,
-			     "^Meta version : ([[:digit:]]+(\\.[[:digit]]+)?)",
-			     line) ) {
-	  if ( fgets(line, MAX_LINE, meta_file) == '\0' ) {
-	    err_die("meta_read function: didn't find Meta version field\n");
-	  }
-	}
-	matched_subexps_free(&version_subexps);
-	FCLOSE(meta_file);
-
-	/* Read file with appropriate reader for version.  */
-	if ( strtod(get_subexp_string(&version_subexps, 1), NULL)
-	     < NEW_FORMAT_VERSION ) {
-	  meta_read_old(meta, meta_name);
-	} else {
-	  parse_metadata(meta, meta_name);
-	}
-
-	/* Fill old structure parameters */
-	meta_new2old(meta);
-
-	free(meta_name);
-
-	return meta;
+  char              *meta_name      = appendExt(inName,".meta");
+  FILE              *meta_file      = FOPEN(meta_name, "r");
+  meta_parameters   *meta           = raw_init();	/* To be filled.  */
+  char              line[MAX_METADATA_LINE]; /* Metadata line.  */
+  /* For pattern matching for version string.  */
+  matched_subexps_t version_subexps = MATCHED_SUBEXPS_INITIALIZER;
+	
+  
+  /* Scan for the version string.  */
+  if ( fgets(line, MAX_LINE, meta_file) == '\0' ) {
+    err_die("%s function: metadata file is empty\n", __func__);
+  }
+  while ( !regex_match(&version_subexps, line,
+		       "^Meta version : [[:digit:]]+(\\.[[:digit:]]+)?"
+		       ) ) {
+    if ( fgets(line, MAX_LINE, meta_file) == '\0' ) {
+      err_die("meta_read function: didn't find Meta version field\n");
+    }
+  }
+  FCLOSE(meta_file);   /* Done using meta file directly.  */
+  
+  /* Read file with appropriate reader for version.  */
+  if ( strtod(get_subexp_string(&version_subexps, 1), NULL)
+       < NEW_FORMAT_VERSION ) {
+    meta_read_old(meta, meta_name);
+  } else {
+    parse_metadata(meta, meta_name);
+  }
+  matched_subexps_free(&version_subexps);   /* Done with matches.  */
+  
+  /* Fill old structure parameters */
+  meta_new2old(meta);
+  
+  free(meta_name);
+  
+  return meta;
 }
 
 /***************************************************************
