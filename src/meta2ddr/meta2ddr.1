@@ -1,0 +1,61 @@
+.PU
+
+.TH meta2ddr 1 "September 2002"
+
+.SH NAME:
+meta2ddr, ddr2meta \- convert between old and new metadata formats
+
+.SH SYNOPSIS:
+.B meta2ddr
+.BI "<\fImeta_name\fP> <\fIlas_name\fP>"
+.br
+.B ddr2meta
+.BI "<\fIlas_name\fP> <\fImeta_name\fP>"
+
+.SH DESCRIPTION:
+The 
+.B "meta2ddr"
+command converts old style ASF metadata to new style ASF metadata;
+.B "ddr2meta"
+does exactly the opposite.
+.PP
+Old style metadata is a combination of a LAS 6.0 DDR file
+(\fIlas_name\fP.ddr) and a pre-version 1.10 ASF meta file
+(\fIlas_name\fP.meta). The new style metadata is simply a version
+1.10 or greater ASF meta file (\fImeta_name\fP.meta) by itself.
+
+.SH EXAMPLES:
+Assume you have the file 'sar_image_new.meta' in your working
+directory. Running:
+.in +8
+.I "meta2ddr sar_image_new sar_image_old"
+.in -8
+will read the new style meta file, sar_image_new.meta, and produce both
+sar_image_old.ddr and sar_image_old.meta. Sar_image_old.meta will be meta
+version 0.9.
+.PP
+Now assume you have the file 'sar_image_old.meta' and  'sar_image_old.ddr'
+in your working directory. Running:
+.in +8
+.I "ddr2meta sar_image_old sar_image_new"
+.in -8
+will read both sar_image_old.ddr and sar_image_old.meta (assuming
+sar_image_old.meta is version 0.9 or earlier) and will produce
+a new style meta file, sar_image_new.meta.
+
+.SH NOTES:
+\fILas_name\fP and \fImeta_name\fP must be different.
+.br
+LAS stands for Land Analysis System
+.br
+DDR stands for Data Descriptor Record.
+.br
+See the EROS website http://edc.usgs.gov for more info.
+
+.SH BUGS:
+None known.
+
+.SH CONTACT:
+E-Mail:  apd@asf.alaska.edu
+.RE
+Website: http://www.asf.alaska.edu/apd
