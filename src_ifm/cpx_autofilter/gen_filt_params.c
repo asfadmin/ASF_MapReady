@@ -41,9 +41,11 @@ FILE REFERENCES:
     ---------------------------------------------------------------
 
 PROGRAM HISTORY:
-    VERS:   DATE:  AUTHOR:      PURPOSE:
+    VERS:   DATE:   AUTHOR:      PURPOSE:
     ---------------------------------------------------------------
-    1.0	   5-2000  Mike Ayers
+    1.0	   5/00   M. Ayers       Original development
+    1.5    5/03   P. Denny       Standardize usage()
+                                  Update meta struct values
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -88,14 +90,13 @@ BUGS:
 #include <math.h>
 #include "asf.h"
 #include "aisp_defs.h"
-#include "ddr.h"
 #include "asf_meta.h"
 
 #define fftLen 2048	/* this is the default FFT length from the cpx_spectrum program */
 #define thresh 0.1	/* set the threshold to determine which frequencies we will be zeroing currently 5% of max amplitude */
 #define VERSION 1.10
 
-main(int argc,char **argv)
+int main(int argc,char **argv)
 {
 	
 /* Define all the variables that we'll be using */
@@ -117,19 +118,7 @@ main(int argc,char **argv)
 	float freq_mod, f_s;				/* Output modulation frequency */
 
 /* Usage is shown if the user doesn't give 3 arguments */
-	if(argc != 4)
-	{
-	printf("\nUsage %s <cpx img1> <cpx img2>"
-		" <out_filt_params>\n\n",argv[0]);
-	printf("\t*no extensions are required for this program*\n"
-               "\t*the program looks for a .spectra file for both images*\n"
-	       "\n<cpx img1>             Complex Input image 1\n"
-               "<cpx img2>             Complex Input image 2\n"
-               "<out_filt_params>      Output file containing filter parameters"
-	"\n\ngen_filt_params - Generate filter parameters for cpx_filter");
-	printf("\nVersion %.2f, ASF SAR TOOLS\n\n",VERSION);
-	exit(0);
-	}
+	if(argc != 4) { usage(argv[0]); }
 	
 	StartWatch();
 
@@ -142,17 +131,17 @@ main(int argc,char **argv)
 	strcpy(specFile1, infile1);
 	strcpy(specFile2, infile2);
 
-	meta1=meta_read(infile1);
-	meta2=meta_read(infile2);
+	meta1 = meta_read(infile1);
+	meta2 = meta_read(infile2);
 
-	azDop1=meta1->geo->dopAz;
-	azDop2=meta2->geo->dopAz;
+	azDop1 = meta1->sar->azimuth_doppler_coefficients;
+	azDop2 = meta2->sar->azimuth_doppler_coefficients;
 
 	printf("%s Image Doppler is %f\n",infile1,azDop1[0]);
 	printf("%s Image Doppler is %f\n\n",infile2,azDop2[0]);
 	
 	freq_mod=-(azDop1[0]+azDop2[0])/2;
-	f_s=1/(meta1->geo->azPixTime);
+	f_s = 1 / (meta1->sar->azimuth_time_per_pixel);
 	printf("The sampling frequency is %f Hz\n",f_s);
 	printf("The time domain shift needs to be %f Hz\n\n",freq_mod);
 
@@ -165,14 +154,14 @@ main(int argc,char **argv)
 	if((inSpectra1=FOPEN(specFile1,"r"))==NULL)
 	{
 		printf("Error! Couldn't open %s\n",infile1);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 
 	if((inSpectra2=FOPEN(specFile2,"r"))==NULL) 
         { 
                 printf("Error! Couldn't open %s\n",infile2);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 
 	for(i=0;i<fftLen;i++)
@@ -285,7 +274,6 @@ main(int argc,char **argv)
 		if(lo_im1_1 < lo_im2_1)
 			lo_out_1 = lo_im1_1;
 		else
-	
 			lo_out_1 = lo_im2_1;
 	
 		if(hi_im1_1 > hi_im2_1)
@@ -389,12 +377,29 @@ main(int argc,char **argv)
 	if((outF1=FOPEN(outfile,"w"))==NULL)
         {
                 printf("Error! Couldn't open %s\n",infile2);
-                exit(1);
+                exit(EXIT_FAILURE);
         }
 	
 	fprintf(outF1,"%f\n%f\n%f %f\n%f %f",f_s,freq_mod,lo_out_1,hi_out_1,lo_out_2,hi_out_2);
 	FCLOSE(outF1);
+        return 0;
+}
 
-		
-	
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s <cpx img1> <cpx img2> <out_filt_params>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+        "   <cpx img1>          Complex Input image 1 (no extension)\n"
+        "   <cpx img2>          Complex Input image 2 (no extension)\n"
+        "   <out_filt_params>   Output file containing filter parameters\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   This program generates filter parameters for cpx_filter");
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
