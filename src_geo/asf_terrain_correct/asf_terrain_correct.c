@@ -8,6 +8,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_min.h>
+#include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_vector.h>
 
 #include "ITRS_platform_path.h"
@@ -68,11 +69,11 @@ main (int argc, char **argv)
 	FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER));
   float_image_export_as_jpeg (td, "test_dem.jpg", 4000);
   // Test DEM ul x and y projection coordinates.
-  //  const double td_ul_x = 4.00632767000000E+05;
-  //  const double td_ul_y = 1.57235253300000E+06;
+  const double td_ul_x = 4.00632767000000E+05;
+  const double td_ul_y = 1.57235253300000E+06;
   // Test DEM per x and per y projection coordinates per pixel.
-  //  const double td_px = 60;
-  //  const double td_py = -60;
+  const double td_px = 60;
+  const double td_py = -60;
   project_parameters_t projection_parameters;
   const double radians_per_degree = M_PI / 180;
   projection_parameters.albers.std_parallel1 = 55 * radians_per_degree;
@@ -296,7 +297,7 @@ main (int argc, char **argv)
   const gsl_min_fminimizer_type *mimimizer_type = gsl_min_fminimizer_brent;
   gsl_min_fminimizer *minimizer = gsl_min_fminimizer_alloc (mimimizer_type);
   gsl_function distance_function; 
-  distance_function.function = &target_distance;
+  distance_function.function = &target_distance; 
   target_distance_params tdp;
   tdp.target = target;
   tdp.pp = pp_fixed;
@@ -344,6 +345,8 @@ main (int argc, char **argv)
   printf ("Imaging time for CR1: %lf +/- %lf\n", min, eor - sor);
   
   double time_of_cr_pixel = meta_get_time (imd, 4293, 1933);
+  double opt = meta_get_time (imd, 4293, 6000);
+  opt=opt;
   printf ("Solved time: %lf,  meta_get_time: %lf\n", min, time_of_cr_pixel);
 
   Vector poca;
@@ -363,6 +366,10 @@ main (int argc, char **argv)
 
   // Here we take a crack at actually painting a DEM.
 
+  // For debugging we form an image of the slant range and time images.
+  FloatImage *range_image = float_image_new (tdsx, tdsy);
+  FloatImage *time_image = float_image_new (tdsx, tdsy);
+
   FloatImage *pd = float_image_new (tdsx, tdsy);   // Backscatter painted DEM.
   double *x_buffer = g_new (double, tdsx);
   double *y_buffer = g_new (double, tdsx);
@@ -374,16 +381,30 @@ main (int argc, char **argv)
     // Get the latitude and longitude of each pixel in this row.
     size_t jj;
     for ( jj = 0 ; jj < tdsx ; jj++ ) {
-      x_buffer[jj] = target_point_albers_x;
-      y_buffer[jj] = target_point_albers_y;
-      //      x_buffer[jj] = td_ul_x + jj * td_px;
-      //      y_buffer[jj] = td_ul_y + ii * td_py;
+      // x_buffer[jj] = target_point_albers_x;
+      // y_buffer[jj] = target_point_albers_y;
+      x_buffer[jj] = td_ul_x + jj * td_px;
+      y_buffer[jj] = td_ul_y + ii * td_py;
     }
     g_assert (tdsx < LONG_MAX);
     return_code = project_albers_arr_inv (&projection_parameters,
 					  x_buffer, y_buffer, &lats, 
 					  &lons, tdsx);
     g_assert (return_code == TRUE);
+
+    double x_buffer_mean = gsl_stats_mean (x_buffer, 1, tdsx);
+    double x_buffer_sd = gsl_stats_sd_m (x_buffer, 1, tdsx, x_buffer_mean);
+    x_buffer_sd = x_buffer_sd;
+    double y_buffer_mean = gsl_stats_mean (y_buffer, 1, tdsx);
+    double y_buffer_sd = gsl_stats_sd_m (y_buffer, 1, tdsx, y_buffer_mean);
+    y_buffer_sd = y_buffer_sd;
+
+    double lats_mean = gsl_stats_mean (lats, 1, tdsx);
+    double lats_sd = gsl_stats_sd_m (lats, 1, tdsx, lats_mean);
+    lats_sd = lats_sd;
+    double lons_mean = gsl_stats_mean (lons, 1, tdsx);
+    double lons_sd = gsl_stats_sd_m (lons, 1, tdsx, lons_mean);
+    lons_sd = lons_sd;
 
     // Find the closest point of approach for each DEM pixel, look up
     // the corresponding backscatter value from the slant range image,
@@ -392,6 +413,10 @@ main (int argc, char **argv)
     // We take advantage of all the settings needed are already made
     // for the test case above.
     tdp.target = &cp_target;
+    double *tdifs = g_new (double, tdsx); /* FIXME REMOVE DEBUG SCHLOP */
+    double *poca_x = g_new (double, tdsx); // FIXME REMOVE DEBUG 
+    double *poca_y = g_new (double, tdsx); // FIXME REMOVE DEBUG 
+    double *poca_z = g_new (double, tdsx); // FIXME REMOVE DEBUG 
     for ( jj = 0 ; jj < tdsx ; jj++ ) {
       double p_lat = lats[jj];
       double p_lon = lons[jj];
@@ -403,6 +428,12 @@ main (int argc, char **argv)
       cp_target.y = ctp->y;
       cp_target.z = ctp->z;
 
+      // Since the ranges seem wrong, maybe something is wrong with
+      // the target?
+      tdifs[jj] = sqrt (pow (cp_target.x - target->x, 2)
+			+ pow (cp_target.y - target->y, 2)
+			+ pow (cp_target.z - target->z, 2));
+      
       ITRS_point_free (ctp);
 
       iteration = 0;
@@ -454,25 +485,77 @@ main (int argc, char **argv)
       // FIXME: this delcaration currently shadows declaration in test case
       //      Vector *
       poca_to_target = vector_copy (&poca);
-      vector_subtract (poca_to_target, target);
+      vector_subtract (poca_to_target, &cp_target);
       double solved_slant_range = vector_magnitude (poca_to_target);
       solved_slant_range = solved_slant_range; /* FIXME: remove. */
       vector_free (poca_to_target);
-    
+
+      // FIXME remove DEBUG: Store stuff so we can later see what the
+      // poca variance is like.
+      poca_x[jj] = poca.x;
+      poca_y[jj] = poca.y;
+      poca_z[jj] = poca.z;
+
       // Look up the backscatter value for the found slant range and
       // time.
       float backscatter 
       	= slant_range_image_sample (sri, solved_time, solved_slant_range,
       				    FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR);
 
+      // Take a look at the range and time images (FIXME: remove debug).
+      float_image_set_pixel (range_image, jj, ii, solved_slant_range);
+      if ( ii % 10 == 0 && (tdsy - jj - 1) % 10 == 0 ) {
+	printf ("range(%ld, %ld): %lf\n", (long) ii, (long) jj, 
+		solved_slant_range);
+      }
+      float_image_set_pixel (time_image, jj, ii, solved_time);
+
       // Set the pixel in the painted dem.
       float_image_set_pixel (pd, jj, ii, backscatter);
 
     }
+
+    // FIXME: debugging stuff for discovering why the ranges don't
+    // vary as expected.
+    double dft_mean = gsl_stats_mean (tdifs, tdsx, 1);
+    double dft_sd = gsl_stats_sd_m (tdifs, tdsx, 1, dft_mean);
+    dft_sd = dft_sd;
+    double poca_x_mean = gsl_stats_mean (poca_x, tdsx, 1);
+    size_t kk;
+    double poca_x_min = DBL_MAX, poca_x_max = -DBL_MAX;
+    for ( kk = 0 ; kk < tdsx ; kk++ ) {
+      if ( poca_x[kk] < poca_x_min ) { poca_x_min = poca_x[kk]; }
+      if ( poca_x[kk] > poca_x_max ) { poca_x_max = poca_x[kk]; }
+    }
+    double poca_x_sd = gsl_stats_sd_m (poca_x, tdsx, 1, poca_x_mean);
+    poca_x_sd = poca_x_sd;
+    double poca_y_mean = gsl_stats_mean (poca_y, tdsx, 1);
+    double poca_y_sd = gsl_stats_sd_m (poca_y, tdsx, 1, poca_y_mean);
+    poca_y_sd = poca_y_sd;
+    double poca_z_mean = gsl_stats_mean (poca_z, tdsx, 1);
+    double poca_z_sd = gsl_stats_sd_m (poca_z, tdsx, 1, poca_z_mean);
+    poca_z_sd = poca_z_sd;
+
   }
 
   float_image_export_as_jpeg (pd, "painted_dem.jpg", GSL_MAX (pd->size_x,
 							      pd->size_y));
+  float_image_export_as_jpeg (range_image, "range_image.jpg", 
+			      GSL_MAX (pd->size_x, pd->size_y));
+  float range_min, range_max, range_mean, range_sdev;
+  float_image_statistics (range_image, &range_min, &range_max, &range_mean,
+			  &range_sdev);
+  printf ("range_min: %f, range_max: %f, range_mean: %f, range_sdev: %f\n",
+	  range_min, range_max, range_mean, range_sdev);
+
+  float_image_export_as_jpeg (time_image, "time_image.jpg", 
+			      GSL_MAX (pd->size_x, pd->size_y));
+  float time_min, time_max, time_mean, time_sdev;
+  float_image_statistics (time_image, &time_min, &time_max, &time_mean,
+			  &time_sdev);
+  printf ("time_min: %f, time_max: %f, time_mean: %f, time_sdev: %f\n",
+	  time_min, time_max, time_mean, time_sdev);
+
 
   exit (EXIT_SUCCESS);
 }
