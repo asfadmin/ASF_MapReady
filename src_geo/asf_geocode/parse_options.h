@@ -11,7 +11,7 @@ typedef enum {
 } resample_method_t;
 
 int detect_string_options(int argc, char *argv[], char *val, ... );
-int detect_flag_options(int argc, char *argv[], ...);
+int detect_flag_options(int argc, char **argv, ...);
 
 void set_options_testing(int is_testing);
 project_parameters_t * parse_projection_options(int *argc, char **argv[],
