@@ -25,6 +25,7 @@
 
   2/97  T. Logan	Included ability to estimate dopplers, read
 			doppler from file, & read offsets from file
+  10/02 J. Nicoll 	Updated deskew options to remove wedges in data. 
 ***********************************************************************/
 #include "asf.h"
 #include "ceos.h"
@@ -120,6 +121,7 @@ satellite *newSatellite(void)
 	float slantToLast;
 	int err=0; /* Error codes for the ODL interface */
 	char errC=0;
+	int my_precomp; /* far range precompensation value */
 	int cols; /* Dummy Variable to hold the number of columns in the antenna pattern correction vector */
 	satellite *s=(satellite *)MALLOC(sizeof(satellite));
 	ODL odl;
@@ -251,8 +253,12 @@ satellite *newSatellite(void)
 	s->az_reflen=refPerRange*slantToLast;
 	if (!quietflag) printf("   The azimuth reference function is at most %d lines long\n",s->az_reflen);
 
-/*Trade doppler deskew for shifted line start.*/
+/*Shift patch to midpoint between near and far precompensation when deskew flag is on.*/
+	
 	s->dop_precomp=(int)(s->a2*g.fd*g.prf*g.r00);
+	my_precomp = (int)(s->a2*(g.fd + g.fdd*g.nla + g.fddd*g.nla*g.nla)*g.prf*slantToLast);
+	s->dop_precomp=(s->dop_precomp + my_precomp)/2;
+		
 	if (!quietflag && s->ideskew==1)
 		printf("   Precompensating by %d pixels for doppler deskew...\n",s->dop_precomp);
 
@@ -296,6 +302,7 @@ file *newFile(void)
 	f->rngpix=rngpix;
 	f->firstLineToProcess=g.ifirstline;
 	f->skipFile=g.ifirst+g.isave;
+
 	f->firstOutputLine = (n_az-g.na_valid)/2;
 	f->skipSamp=g.isave;
 	f->n_az_valid=g.na_valid;
@@ -324,19 +331,19 @@ patch *newPatch(int num_az,int num_range)
 
 
 /*****************************************************************
-parse_cla:
-	Performs all initialization and parameter determination
-for aisp.  Returns parameters in the given structures.
+
 */
 
 void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_range,
 	satellite **s,rangeRef **r,file **f,getRec **signalGetRec)
 {
-	int az_reflen;
-	float slantToLast;
+	int az_reflen, skew_lines;
+	float slantToLast, a2;
 
 /*Set parameters*/
 	g=*g_in;
+
+	
 
 	
 /*Compute a few bizarre numbers.*/
@@ -352,14 +359,23 @@ void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_
 			the azimuth reference function	*/
 
 	slantToLast=g.r00+(g.isave+g.nla)*rngpix;
+	/* For deskewed data, azimuth reference length must include the shift due to deskewing */
+	if (g.deskew==1)
+		a2= g.wavl/(2.0*g.vel*azpix);
+	else
+		a2=0.0;
+	 skew_lines=fabs(a2 *(g.fd + g.fdd*g.nla + g.fddd*g.nla*g.nla)*g.prf*slantToLast- a2 *g.fd*g.prf*g.r00);
 
-	az_reflen=(int)(refPerRange*slantToLast);
+	az_reflen=(int)(refPerRange*slantToLast+skew_lines);
+
+
 	
 	if (g.na_valid<0)
 	{/*Automatically determine number of valid lines.*/
 		/*set valid lines based on n_az.*/
 
 		g.na_valid=n_az-az_reflen;
+
 
 
 		/*Make g.na_valid an even multiple of g.nlooks.*/
@@ -409,6 +425,7 @@ void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_
 	*f=newFile();
 	*N_az=n_az;
 	*N_range=g.nla;
+	
 
 }
 

@@ -62,7 +62,7 @@ void cfft1d(int n, FCMPLX *c, int dir);
 /*-----------------------*/
 /* Constants Definitions */
 /*-----------------------*/
-#define   VERSION       2.9
+#define   VERSION       3.0
 #define   default_n_az 4096
 
 #define   speedOfLight 299792458.0 /*Speed of light in vacuum, m/s */

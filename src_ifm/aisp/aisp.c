@@ -57,6 +57,8 @@ PROGRAM HISTORY:
     2.91    9/01    S. Watts	Made sure input file is CCSD (not ceos)
 				Looks for <name>.D 1st, then looks for
 				<name>.raw if *.D is invalid. 
+    3.0	    10/02   J. Nicoll	Made calibrateable, added beta, sigma, gamma 
+    				products. Fixed deskew to exclude data wedges.
 
 HARDWARE/SOFTWARE LIMITATIONS:
     This program requires large amounts of memory to run.  The main

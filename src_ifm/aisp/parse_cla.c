@@ -26,6 +26,7 @@
   4/02    P. Denny    Rewrote commandline parsing.  A pity because
                          it was already beautiful.  That is the price
 			 of conformity I guess.
+  10/02	  J. Nicoll	Updated deskew options to remove wedges from data.
 ***********************************************************************/
 #include "asf.h"
 #include "ceos.h"
@@ -125,13 +126,17 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
 		else if (strmatch(key,"-kaiser"))  {g->kaiFlag = 1;}
 		else if (strmatch(key,"-l")) {CHK_ARG_ASP(1); g->ifirstline = atoi(GET_ARG(1));}
 		else if (strmatch(key,"-p")) {CHK_ARG_ASP(1); g->npatches = atoi(GET_ARG(1));}
-		else if (strmatch(key,"-v")) {CHK_ARG_ASP(1); g->na_valid = atoi(GET_ARG(1));}
+		
 		else if (strmatch(key,"-f")) {CHK_ARG_ASP(1); g->isave   += atoi(GET_ARG(1));}
 		else if (strmatch(key,"-s")) {CHK_ARG_ASP(1); g->ifirst  += atoi(GET_ARG(1));}
 		else if (strmatch(key,"-n")) {CHK_ARG_ASP(1); g->nla      = atoi(GET_ARG(1));}
 		else if (strmatch(key,"-r")) {CHK_ARG_ASP(1); g->azres    = atof(GET_ARG(1));}
 		else if (strmatch(key,"-d")) {CHK_ARG_ASP(1); g->iflag    = atoi(GET_ARG(1));}
-		else if (strmatch(key,"-e")) {CHK_ARG_ASP(1); g->deskew   = atoi(GET_ARG(1));}
+		else if (strmatch(key,"-e")) {CHK_ARG_ASP(1); g->deskew   = atoi(GET_ARG(1)); 
+					      g->na_valid = -99;printf("made it to na_valid=-99\n");}
+	/* If you use the -e flag, then a deskew wedge in the data will need to be removed. Override  
+	internal measurement of the number of valid azimuth lines with the -v option flag */
+		else if (strmatch(key,"-v")) {CHK_ARG_ASP(1); g->na_valid = atoi(GET_ARG(1));}
 		else if (strmatch(key,"-o")) {CHK_ARG_ASP(1); strcpy(fName_slope,GET_ARG(1));
 						read_offset = 1;}
 		else if (strmatch(key,"-c")) {CHK_ARG_ASP(1); strcpy(fName_doppler,GET_ARG(1));
