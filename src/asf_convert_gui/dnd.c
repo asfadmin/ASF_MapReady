@@ -9,14 +9,14 @@ target_drag_data_received(GtkWidget *widget,
               guint info,
               guint time)
 {
-  printf("Drop!\n");
-
   gchar ** list, ** iter;
   gchar * delim = "\n";
-
-  list = g_strsplit(data->data, delim, 0);
+  int i, n;
+  
+  list = g_strsplit((const gchar *)data->data, delim, 0);
   iter = list;
-
+  i = n = 0;
+  
   while (*iter)
   {
     gchar * data_file = g_strdup( *iter );
@@ -24,23 +24,36 @@ target_drag_data_received(GtkWidget *widget,
     
     if (data_file && strlen(data_file) > 0)
     {
-      gchar * meta_file;
+      gboolean result;
       gchar * p = data_file;
-
-      if (g_str_has_prefix(p, "file://"))
-    p += 7;
-      
-      meta_file = meta_file_name(p);
     
-      add_to_files_list(p, meta_file);
+      if (g_str_has_prefix(p, "file://"))
+        p += 7;
+      
+      result = add_to_files_list(p);
 
-      g_free(meta_file);
+      if (result)
+          ++i;
+
+      ++n;
     }
 
     ++iter;
     g_free(data_file);
   }
 
+  if (i != n)
+  {
+      if (n == 1 || i == 0)
+      {
+          message_box("Error: Unrecognized extension.");
+      }
+      else
+      {
+          message_box("Some of the files were not added -- unknown extensions.");
+      }
+  }
+  
   g_strfreev(list);
 }
 

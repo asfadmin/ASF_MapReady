@@ -12,7 +12,7 @@ change_output_output_directory_hide()
     gtk_widget_hide(change_output_directory_dialog);
 }
 
-void do_change_output_directory( gchar * new_dir )
+void do_change_output_directory(const gchar * new_dir )
 {
     gboolean valid;
     GtkTreeIter iter;

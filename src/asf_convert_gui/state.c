@@ -4,8 +4,34 @@
 /* for now use a hard-coded file */
 const gchar *save_name = "asf_convert_gui.sav";
 const int save_major_ver = 1;
-const int save_minor_ver = 0;
+const int save_minor_ver = 1;
 
+static void readline(FILE * f, gchar * buffer, size_t n)
+{
+    size_t n0;
+    ssize_t read;
+    gchar * p;
+    gchar * newline;
+    
+    p = NULL;
+    read = getline(&p, &n0, f);
+
+    if (read == -1)
+    {
+        strcpy(buffer, "");
+    }
+    else
+    {
+        strncpy(buffer, p, n - 1);
+    
+        newline = strrchr(buffer, '\n');
+        if (newline)
+            *newline = '\0';
+    }
+
+    free(p);
+}
+                        
 SIGNAL_CALLBACK void
 on_save_button_clicked(GtkWidget *w, gpointer data)
 {
@@ -31,8 +57,18 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
   fprintf(f, "[Import]\nFormat=%d\n\n", s->input_data_format);
   fprintf(f, "[Transformations]\nType=%d\nLatLo=%f\nLatHi=%f\n\n",
       s->data_type, s->latitude_low, s->latitude_hi);
-  fprintf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n\n",
-      s->output_format, s->apply_scaling, s->longest_dimension);
+  fprintf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n"
+          "OutputBytes=%d\nScalingMethod=%d\n\n",
+          s->output_format, s->apply_scaling, s->longest_dimension,
+          s->output_bytes, s->scaling_method);
+
+  fprintf(f, "[NamingScheme]\nPrefix=%s\nSuffix=%s\nScheme=%s\n\n",
+          current_naming_scheme->prefix,
+          current_naming_scheme->suffix,
+          current_naming_scheme->scheme);
+
+  fprintf(f, "[OutputDirectory]\nDir=%s\n\n",
+          output_directory);
 
   /* next is the files & their statuses */
   fprintf(f, "[Files]\n");
@@ -71,37 +107,15 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
 
   fprintf(f, "[End]");
   fclose(f);
-
+  settings_delete(s);
+  
   message_box("Settings Saved.");
 }
 
-SIGNAL_CALLBACK void
-on_load_button_clicked(GtkWidget *w, gpointer data)
+static void read_ver_1_0(FILE *f)
 {
-  FILE *f;
   Settings s;
-  int major_ver, minor_ver;
   GtkTreeIter iter;
-
-  f = fopen(save_name, "rt");
-  if (!f)
-  {
-    message_box("Nothing to load.");
-    return;
-  }
-
-  fscanf(f, "%d.%d\n\n", &major_ver, &minor_ver);
-
-  if (major_ver != save_major_ver || minor_ver != save_minor_ver)
-  {
-    gchar msg[64];
-    g_snprintf(msg, sizeof(msg),
-           "Don't know how to load version %d.%d!",
-           major_ver, minor_ver); 
-
-    message_box(msg);
-    return;
-  }
 
   fscanf(f, "[Import]\nFormat=%d\n\n", &s.input_data_format);
   fscanf(f, "[Transformations]\nType=%d\nLatLo=%f\nLatHi=%f\n\n",
@@ -190,5 +204,150 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
     }
   }
 
-  fclose(f);
+  if (output_directory)
+      g_free(output_directory);
+  output_directory = NULL;
+
+  naming_scheme_delete(current_naming_scheme);
+  current_naming_scheme = naming_scheme_default();
+}
+
+static void read_ver_1_1(FILE *f)
+{
+  Settings s;
+  GtkTreeIter iter;
+  gchar line[1024];
+  gchar *prefix, *suffix, *scheme;
+
+  fscanf(f, "[Import]\nFormat=%d\n\n", &s.input_data_format);
+  fscanf(f, "[Transformations]\nType=%d\nLatLo=%f\nLatHi=%f\n\n",
+     &s.data_type, &s.latitude_low, &s.latitude_hi);
+  fscanf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n"
+          "OutputBytes=%d\nScalingMethod=%d\n\n",
+        &s.output_format, &s.apply_scaling, &s.longest_dimension,
+        &s.output_bytes, &s.scaling_method);
+
+  settings_apply_to_gui(&s);
+  settings_on_execute = settings_copy(&s);
+
+  /* read naming scheme */
+  fscanf(f, "[NamingScheme]\nPrefix=");
+  readline(f, line, sizeof(line));
+  prefix = g_strdup(line);
+    
+  fscanf(f, "Suffix=");
+  readline(f, line, sizeof(line));
+  suffix = g_strdup(line);
+
+  fscanf(f, "Scheme=");
+  readline(f, line, sizeof(line));
+  scheme = g_strdup(line);
+
+  if (current_naming_scheme)
+      naming_scheme_delete(current_naming_scheme);
+
+  current_naming_scheme = naming_scheme_new(prefix, suffix, scheme);
+
+  g_free(prefix);
+  g_free(suffix);
+  g_free(scheme);
+
+  /* output directory */
+  if (output_directory)
+      g_free(output_directory);
+
+  fscanf(f, "\n[OutputDirectory]\nDir=");
+  readline(f, line, sizeof(line));
+  output_directory = g_strdup(line);
+
+  fscanf(f, "\n");
+            
+  /* files */
+  gtk_list_store_clear(list_store);
+
+  fscanf(f, "[Files]\n");
+  while (!feof(f))
+  {
+    readline(f, line, sizeof(line));
+    if (strlen(line) > 0)
+    {
+      if (strcmp(line, "[End]") == 0)
+      {
+        break;
+      }
+      else
+      {
+        gchar *data_file, *output_file, *status;
+        gchar *data_file_p, *output_file_p, *status_p;
+
+        data_file = g_strdup(line);
+
+        data_file_p = strchr(data_file, '=');
+        if (!data_file_p)
+            continue;
+        ++data_file_p;
+
+        readline(f, line, sizeof(line));
+        output_file = g_strdup(line);
+
+        output_file_p = strchr(output_file, '=');
+        if (!output_file_p)
+            continue;
+        ++output_file_p;
+
+        readline(f, line, sizeof(line));
+        status = g_strdup(line);
+
+        status_p = strchr(status, '=');
+        if (!status_p)
+            continue;
+        ++status_p;
+
+        gtk_list_store_append(list_store, &iter);
+        gtk_list_store_set(list_store, &iter,
+               0, data_file_p, 1, output_file_p, 2, status_p, -1);
+
+        g_free(status);
+        g_free(output_file);
+        g_free(data_file);
+      }
+    }
+  }
+}
+
+SIGNAL_CALLBACK void
+on_load_button_clicked(GtkWidget *w, gpointer data)
+{
+    FILE *f;
+    int major_ver, minor_ver;
+
+    f = fopen(save_name, "rt");
+    if (!f)
+    {
+        message_box("Nothing to load.");
+        return;
+    }
+
+    fscanf(f, "%d.%d\n\n", &major_ver, &minor_ver);
+
+    if (major_ver == 1 && minor_ver == 0)
+    {
+        read_ver_1_0(f);
+    }
+    else if (major_ver == 1 && minor_ver == 1)
+    {
+        read_ver_1_1(f);
+    }
+    else
+    {
+        gchar msg[64];
+        g_snprintf(msg, sizeof(msg),
+                   "Don't know how to load version %d.%d!",
+                   major_ver, minor_ver);
+
+        message_box(msg);
+        return;
+    }
+
+    fclose(f);
 }

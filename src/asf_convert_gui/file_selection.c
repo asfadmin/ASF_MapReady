@@ -5,8 +5,8 @@ on_add_button_clicked(GtkWidget *widget)
 {
   GtkWidget *input_entry;
   G_CONST_RETURN gchar *in_data;
-  gchar *data, *meta;
-
+  gboolean result;
+  
   input_entry = 
     glade_xml_get_widget(glade_xml, "input_entry");
 
@@ -15,7 +15,7 @@ on_add_button_clicked(GtkWidget *widget)
 
   if (strlen(in_data) == 0)
   {
-    message_box("Enter the name of a data file (.D) to add to the list.");
+    message_box("Enter the name of a data file to add to the list.");
     return;
   }
 
@@ -24,22 +24,32 @@ on_add_button_clicked(GtkWidget *widget)
     gchar * message =
       (gchar *) g_malloc(sizeof(gchar) * (strlen(in_data) + 256));
 
-    g_sprintf(message, "Couldn't find the file \"%s\".", in_data);
+    g_sprintf(message, "Error: Couldn't find the file \"%s\".", in_data);
     message_box(message);
     return;
   }
 
-  /* add file & meta to the list */
-  data = g_strdup(in_data);
-  meta = meta_file_name(data);
+  /* add file to the list */
+  result = add_to_files_list(in_data);
 
-  if (strlen(meta) > 0)
+  if (!result)
   {
-    add_to_files_list(data, meta);
-    g_free(meta);
+      gchar * ext;
+      gchar * message =
+        (gchar *) g_malloc(sizeof(gchar) * (strlen(in_data) + 256));
+
+      ext = strrchr(in_data, '.');
+      if (!ext)
+      {
+          message_box("Error: Unknown file type, did not have extension.");
+      }
+      else
+      {
+          ++ext;
+          g_sprintf(message, "Error: Unknown file type: %s!", ext);
+          message_box(message);
+      }
   }
-   
-  g_free(data);
 }
 
 SIGNAL_CALLBACK void
@@ -92,28 +102,39 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
 {
   GtkWidget *file_selection_dialog;
   gchar **selections;
-
+  gchar **current;
+  int i, n;
+  
   file_selection_dialog =
     glade_xml_get_widget(glade_xml, "input_file_selection");
 
   selections = gtk_file_selection_get_selections(
              GTK_FILE_SELECTION(file_selection_dialog));
 
-  gchar ** current = selections;
-
+  current = selections;
+  i = n = 0;
+  
   while (*current)
   {
-    gchar * meta = meta_file_name(*current);
-
-    if (strlen(meta) > 0)
-    {
-      add_to_files_list(*current, meta);
-      g_free(meta);
-    }
-
-    ++current;
+      if (add_to_files_list(*current))
+          ++i;
+            
+      ++current;
+      ++n;
   }
 
+  if (i != n)
+  {
+      if (n == 1 || i == 0)
+      {
+          message_box("Error: Unrecognized extension.");
+      }
+      else
+      {
+          message_box("Some of the files were not added -- unknown extensions.");
+      }
+  }
+  
   g_strfreev(selections);
   gtk_widget_hide(file_selection_dialog);
 }

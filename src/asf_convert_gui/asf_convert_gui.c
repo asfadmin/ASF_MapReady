@@ -5,7 +5,6 @@
 
 GladeXML *glade_xml;
 GtkListStore *list_store = NULL;
-gboolean keep_going;
 gboolean processing;
 Settings *settings_on_execute;
 gchar * output_directory = NULL;
@@ -16,10 +15,6 @@ main(int argc, char **argv)
 {
     GtkWidget *widget;
     gchar *glade_xml_file;
-
-    /* I've tried to get rid of all mixed {g_}malloc/{g_}free operations,
-       but just in case let's see that it is okay on our supprted platforms */
-    assert(g_mem_is_system_malloc());
 
     gtk_init(&argc, &argv);
 
@@ -35,6 +30,8 @@ main(int argc, char **argv)
     gtk_combo_box_set_active(GTK_COMBO_BOX(widget), INPUT_FORMAT_CEOS_LEVEL1);
     widget = glade_xml_get_widget (glade_xml, "output_format_combobox");
     gtk_combo_box_set_active(GTK_COMBO_BOX(widget), OUTPUT_FORMAT_JPEG);
+    widget = glade_xml_get_widget (glade_xml, "scaling_method_combobox");
+    gtk_combo_box_set_active(GTK_COMBO_BOX(widget), SCALING_METHOD_SIGMA);
 
     /* fire handlers for hiding/showing stuff */
     output_format_combobox_changed();
@@ -76,7 +73,7 @@ main(int argc, char **argv)
     gtk_main ();
 
     if (settings_on_execute)
-        g_free(settings_on_execute);
+        settings_delete(settings_on_execute);
 
     if (output_directory)
         g_free(output_directory);

@@ -11,6 +11,8 @@
 #include <sys/wait.h>
 #include <time.h>
 
+static gboolean keep_going = TRUE;
+
 static gboolean confirm_overwrite()
 {
     GtkTreeIter iter;
@@ -26,7 +28,6 @@ static gboolean confirm_overwrite()
         settings_different = !settings_equal(user_settings, settings_on_execute);
     }
 
-    printf("%s!\n", settings_different ? "Different" : "Same");    
     valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
 
     while (valid)
@@ -52,6 +53,8 @@ static gboolean confirm_overwrite()
                 
         valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
     }
+
+    settings_delete(user_settings);
 
     if (exist)
     {
@@ -298,7 +301,7 @@ gboolean check_for_error(gchar * txt)
 }
 
 void
-append_output(gchar * txt)
+append_output(const gchar * txt)
 {
   GtkWidget * textview_output;
   GtkTextBuffer * text_buffer;
@@ -353,8 +356,6 @@ process_item(GtkTreeIter *iter,
     gchar log_file[128];
     gboolean err;
 
-    /* gchar * in_meta = meta_file_name(in_data); */
-
     basename = g_strdup(in_data);
     p = strrchr(basename, '.');
     if (p)
@@ -373,7 +374,8 @@ process_item(GtkTreeIter *iter,
     if (settings_get_run_import(user_settings))
     {
       gchar * cmd_output;
-
+      gchar * out_name_full;
+      
       g_snprintf(log_file, sizeof(log_file), "tmp%d.log", pid);
 
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
@@ -390,8 +392,8 @@ process_item(GtkTreeIter *iter,
 
       append_output(cmd_output);
 
-      gchar * out_name_full = 
-    (gchar *)g_malloc(sizeof(gchar) * (strlen(basename) + 10));
+      out_name_full =
+        (gchar *)g_malloc(sizeof(gchar) * (strlen(basename) + 10));
 
       g_sprintf(out_name_full, "%s.img", basename);
       
@@ -416,13 +418,14 @@ process_item(GtkTreeIter *iter,
       g_snprintf(log_file, sizeof(log_file), "tmp%d.log", pid);
     
       snprintf(convert_cmd, sizeof(convert_cmd),
-           "asf_export -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
+           "asf_export -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
            settings_get_output_format_string(user_settings),
            settings_get_size_argument(user_settings),
+           settings_get_output_bytes_argument(user_settings),
            log_file,
            out_basename,
            out_full);
-      
+
       cmd_output = do_cmd(convert_cmd, log_file);
       err = err || check_for_error(cmd_output);
 
@@ -494,7 +497,7 @@ on_execute_button_clicked (GtkWidget *button)
         }
 
         processing = FALSE;
-        g_free(user_settings);
+        settings_delete(user_settings);
         show_execute_button(TRUE);
     }
 }

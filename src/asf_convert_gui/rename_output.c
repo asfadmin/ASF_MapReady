@@ -13,7 +13,7 @@ change_output_name_dialog_hide()
 }
 
 static void
-do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
+do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
 {
   const gchar * ext;
   gchar *user_ext, *basename, *name_without_path, *p, *fixed_name,
@@ -95,10 +95,11 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
   set_output_name(iter, fixed_name);
   
   g_free(fixed_name);
+  settings_delete(user_settings);
 }
 
 void
-do_rename_selected(gchar *new_name)
+do_rename_selected(const gchar *new_name)
 {
   GtkTreeSelection * selection;
   GtkWidget * files_list;

@@ -1,1 +1,1 @@
-void do_change_output_directory(gchar *new_dir);
+void do_change_output_directory(const gchar *new_dir);

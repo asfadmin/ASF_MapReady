@@ -1,7 +1,7 @@
 #include "asf_convert_gui.h"
 
 void
-message_box(gchar * message)
+message_box(const gchar * message)
 {
   GtkWidget *dialog, *label;
 
@@ -24,13 +24,13 @@ message_box(gchar * message)
   gtk_widget_show_all(dialog);
 }
 
+/* --- this appears to no longer be needed ---
 gchar *
 meta_file_name(gchar * data_file_name)
 {
   gchar * p = strrchr(data_file_name, '.');
   if (!p)
   {
-    /* no extension -- assume .L */
     gchar * ret =
       (gchar *) g_malloc (sizeof(gchar) * (strlen(data_file_name) + 3));
     
@@ -58,4 +58,4 @@ meta_file_name(gchar * data_file_name)
 
   return "";
 }
-
+*/

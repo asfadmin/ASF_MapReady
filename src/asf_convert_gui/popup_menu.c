@@ -65,7 +65,7 @@ static gboolean confirm_overwrite(GtkTreeIter * iter)
         gint result;
         
         dialog_confirm_overwrite =
-                glade_xml_get_widget(glade_xml, "dialog_confirm_overwrite");
+            glade_xml_get_widget(glade_xml, "dialog_confirm_overwrite");
         
         result = gtk_dialog_run( GTK_DIALOG(dialog_confirm_overwrite) );
         gtk_widget_hide( dialog_confirm_overwrite );
@@ -136,6 +136,7 @@ popup_menu_process(GtkWidget *widget, GdkEvent *event)
   }
 
   processing = FALSE;
+  settings_delete(user_settings);
   return TRUE;
 }
 

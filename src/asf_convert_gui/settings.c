@@ -1,27 +1,37 @@
 #include "asf_convert_gui.h"
 
 static int
-settings_get_input_data_format_allows_latitude(Settings *s)
+settings_get_input_data_format_allows_latitude(const Settings *s)
 {
   return /*s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 ||*/
     s->input_data_format == INPUT_FORMAT_STF;
 }
 
 static int
-settings_get_output_format_allows_size(Settings *s)
+settings_get_output_format_allows_size(const Settings *s)
 {
   return s->output_format == OUTPUT_FORMAT_JPEG ||
     s->output_format == OUTPUT_FORMAT_PPM;
 }
 
+static int
+settings_get_output_format_requires_byte(const Settings *s)
+{
+    return s->output_format == OUTPUT_FORMAT_JPEG ||
+            s->output_format == OUTPUT_FORMAT_PPM ||
+            s->output_format == OUTPUT_FORMAT_TIFF;
+}
+
 void
-settings_apply_to_gui(Settings * s)
+settings_apply_to_gui(const Settings * s)
 {
   GtkWidget
     *input_data_type_combobox,
     *input_data_format_combobox,
     *output_format_combobox,
-    *scale_checkbutton;
+    *scale_checkbutton,
+    *output_bytes_checkbutton,
+    *scaling_method_combobox;
 
   input_data_type_combobox = 
     glade_xml_get_widget(glade_xml, "input_data_type_combobox");
@@ -77,6 +87,27 @@ settings_apply_to_gui(Settings * s)
    gtk_spin_button_set_value(GTK_SPIN_BUTTON(latitude_hi_spinbutton),
 			     s->latitude_hi);
   }
+
+  if (settings_get_output_format_requires_byte(s))
+  {
+      /* seems like we should do something! */
+  }
+  else
+  {
+    output_bytes_checkbutton =
+          glade_xml_get_widget(glade_xml, "output_bytes_checkbutton");
+    
+    gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(output_bytes_checkbutton),
+            s->output_bytes);
+
+    scaling_method_combobox =
+            glade_xml_get_widget(glade_xml, "scaling_method_combobox");
+
+    gtk_combo_box_set_active(
+            GTK_COMBO_BOX(scaling_method_combobox),
+            s->scaling_method);
+  }        
 }
 
 Settings *
@@ -86,7 +117,9 @@ settings_get_from_gui()
     *input_data_type_combobox,
     *input_data_format_combobox,
     *output_format_combobox,
-    *scale_checkbutton;
+    *scale_checkbutton,
+    *output_bytes_checkbutton,
+    *scaling_method_combobox;
 
   Settings *ret;
 
@@ -149,12 +182,41 @@ settings_get_from_gui()
     ret->latitude_low = -999;
     ret->latitude_hi = -999;
   }
- 
+
+  if (settings_get_output_format_requires_byte(ret))
+  {
+      scaling_method_combobox =
+              glade_xml_get_widget(glade_xml, "scaling_method_combobox");
+
+      ret->output_bytes = TRUE;
+      ret->scaling_method =
+          gtk_combo_box_get_active(GTK_COMBO_BOX(scaling_method_combobox));
+  }
+  else
+  {
+      output_bytes_checkbutton =
+              glade_xml_get_widget(glade_xml, "output_bytes_checkbutton");
+
+      ret->output_bytes =
+              gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(output_bytes_checkbutton));
+
+      if (ret->output_bytes)
+      {
+          scaling_method_combobox =
+                  glade_xml_get_widget(glade_xml, "scaling_method_combobox");
+
+          ret->scaling_method =                 
+                  gtk_combo_box_get_active(
+                    GTK_COMBO_BOX(scaling_method_combobox));
+      }
+  }
+  
   return ret;
 }
 
 const gchar *
-settings_get_latitude_argument(Settings *s)
+settings_get_latitude_argument(const Settings *s)
 {
   static gchar latitude_arg[128];
 
@@ -172,7 +234,7 @@ settings_get_latitude_argument(Settings *s)
 }
 
 const gchar *
-settings_get_size_argument(Settings *s)
+settings_get_size_argument(const Settings *s)
 {
   static gchar size_arg[32];
 
@@ -199,7 +261,43 @@ settings_get_size_argument(Settings *s)
 }
 
 const gchar *
-settings_get_data_type_string(Settings *s)
+settings_get_output_bytes_argument(const Settings *s)
+{
+    static gchar byte_arg[64];
+
+    if (s->output_bytes)
+    {
+        gchar * arg;
+        
+        switch (s->scaling_method)
+        {
+            default:
+            case SCALING_METHOD_SIGMA:
+                arg = "sigma";
+                break;
+                
+            case SCALING_METHOD_MINMAX:
+                arg = "minmax";
+                break;
+                
+            case SCALING_METHOD_TRUNCATE:
+                arg = "truncate";
+                break;
+        }
+        
+        g_snprintf(byte_arg, sizeof(byte_arg),
+                   "-byte %s", arg);
+    }
+    else
+    {
+        byte_arg[0] = '\0';
+    }
+
+    return byte_arg;
+}
+        
+const gchar *
+settings_get_data_type_string(const Settings *s)
 {
   const gchar * ret;
 
@@ -231,7 +329,7 @@ settings_get_data_type_string(Settings *s)
 }
 
 const gchar *
-settings_get_input_data_format_string(Settings *s)
+settings_get_input_data_format_string(const Settings *s)
 {
   const gchar * format_arg_to_import;
 
@@ -270,44 +368,74 @@ settings_get_input_data_format_string(Settings *s)
   return format_arg_to_import;
 }
 
+/*
 static void settings_print(Settings *s)
 {
-    printf("(%d,%d,%d,%s,%s)\n",
+    printf("(%d,%d,%d,%s,%s,%s)\n",
            s->input_data_format,
            s->data_type,
            s->output_format,
            settings_get_latitude_argument(s),
-           settings_get_size_argument(s));
+           settings_get_size_argument(s),
+           settings_get_output_bytes_argument(s));
 }
-    
-int
-settings_equal(Settings *s1, Settings *s2)
-{
-  gboolean equal = FALSE;
+*/
   
-  assert(s1);
-  assert(s2);
+int
+settings_equal(const Settings *s1, const Settings *s2)
+{
+    gboolean equal = FALSE;
+  
+    assert(s1);
+    assert(s2);
 
-  /*settings_print(s1);*/
-  /*settings_print(s2);*/
+      /* settings_print(s1); */
+      /* settings_print(s2); */
 
-  equal =
-    s1->input_data_format == s2->input_data_format &&
-    s1->data_type == s2->data_type &&
-    0 == strcmp(
-        settings_get_latitude_argument(s1),
-        settings_get_latitude_argument(s2)) &&
-    s1->output_format == s2->output_format &&
-    0 == strcmp(
-        settings_get_size_argument(s1),
-        settings_get_size_argument(s2));
+    if (s1->input_data_format == s2->input_data_format &&
+        s1->data_type == s2->data_type &&
+        s1->output_format == s2->output_format)
+    {
+        gchar * lat1 =
+                g_strdup(settings_get_latitude_argument(s1));
+        gchar * lat2 =
+                g_strdup(settings_get_latitude_argument(s2));
 
-  /*printf("Equal = %s\n", equal ? "yes" : "no");*/
-  return equal;
+        if (0 == strcmp(lat1, lat2))
+        {
+            gchar * siz1 =
+                    g_strdup(settings_get_size_argument(s1));
+            gchar * siz2 =
+                    g_strdup(settings_get_size_argument(s2));
+
+            if (0 == strcmp(siz1, siz2))
+            {
+                gchar * byt1 =
+                 g_strdup(settings_get_output_bytes_argument(s1));
+                gchar * byt2 =
+                 g_strdup(settings_get_output_bytes_argument(s2));
+
+                if (0 == strcmp(byt1, byt2))
+                    equal = TRUE;
+
+                g_free(byt1);
+                g_free(byt2);
+            }
+
+            g_free(siz1);
+            g_free(siz2);
+        }
+
+        g_free(lat1);
+        g_free(lat2);
+    }      
+
+    /* printf("Equal = %s\n", equal ? "yes" : "no"); */
+    return equal;
 }
 
 Settings *
-settings_copy(Settings *s)
+settings_copy(const Settings *s)
 {
   Settings * ret;
 
@@ -320,7 +448,7 @@ settings_copy(Settings *s)
 }
 
 const gchar *
-settings_get_output_format_extension(Settings *s)
+settings_get_output_format_extension(const Settings *s)
 {
   const gchar * out_extension;
   switch (s->output_format)
@@ -343,6 +471,7 @@ settings_get_output_format_extension(Settings *s)
       break;
 
     case OUTPUT_FORMAT_GEOTIFF:
+    case OUTPUT_FORMAT_TIFF:
       out_extension = "tif";
       break;
   }
@@ -351,7 +480,7 @@ settings_get_output_format_extension(Settings *s)
 }
 
 const gchar *
-settings_get_output_format_string(Settings *s)
+settings_get_output_format_string(const Settings *s)
 {
   const gchar * format_arg_to_export;
   switch (s->output_format)
@@ -376,20 +505,29 @@ settings_get_output_format_string(Settings *s)
     case OUTPUT_FORMAT_GEOTIFF:
       format_arg_to_export = "geotiff";
       break;
+
+    case OUTPUT_FORMAT_TIFF:
+      format_arg_to_export = "tiff";
+      break;
   }
 
   return format_arg_to_export;
 }
 
 int
-settings_get_run_import(Settings *s)
+settings_get_run_import(const Settings *s)
 {
   return s->output_format != OUTPUT_FORMAT_ASF_INTERNAL;
 }
 
 int 
-settings_get_run_export(Settings *s)
+settings_get_run_export(const Settings *s)
 {
   return s->input_data_format != INPUT_FORMAT_ASF_INTERNAL;
 }
 
+void
+settings_delete(Settings * s)
+{
+    g_free(s);
+}

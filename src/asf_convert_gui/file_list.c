@@ -1,7 +1,7 @@
 #include "asf_convert_gui.h"
 
 static gchar *
-determine_default_output_file_name(gchar * data_file_name)
+determine_default_output_file_name(const gchar * data_file_name)
 {
   Settings * user_settings;
   const gchar * ext;
@@ -37,29 +37,75 @@ determine_default_output_file_name(gchar * data_file_name)
   g_sprintf(output_name_full, "%s.%s", basename, ext);
 
   g_free(basename);
+  settings_delete(user_settings);
 
   return output_name_full;
 }
 
-void
-add_to_files_list(gchar * data_file, gchar * meta_file)
+static gboolean file_is_valid(const gchar * data_file)
 {
-  GtkWidget *files_list;
-  GtkTreeIter iter;
-  gchar * out_name_full;
+    /* not sure how much error checking we want to do */
 
-  files_list =
-    glade_xml_get_widget(glade_xml, "files_list");
+    /* for now, just ensure that the extension is ok */
+    /* don't even look at the actual file itself... */
 
-  gtk_list_store_append(list_store, &iter);
+    gchar * p;
 
-  gtk_list_store_set(list_store, &iter, 0, data_file, 2, "-", -1);
-  
-  out_name_full = determine_default_output_file_name(data_file);
+    p = strrchr(data_file, '.');
 
-  set_output_name(&iter, out_name_full);
-  
-  g_free(out_name_full);
+    if (!p)
+    {
+        /* needs to have an extension */
+        return FALSE;
+    }
+    else
+    {
+        ++p;
+        if (strcmp(p, "D") == 0 ||
+            strcmp(p, "img") == 0 ||
+            /*strcmp(p, "L") == 0 ||*/
+            /*strcmp(p, "meta") == 0 ||*/
+            strcmp(p, "raw") == 0 ||
+            strcmp(p, "000") == 0)
+        {
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+}
+    
+gboolean
+add_to_files_list(const gchar * data_file)
+{
+    if (file_is_valid(data_file))
+    {
+        GtkWidget *files_list;
+        GtkTreeIter iter;
+        gchar * out_name_full;
+
+        files_list =
+            glade_xml_get_widget(glade_xml, "files_list");
+    
+        gtk_list_store_append(list_store, &iter);
+    
+        gtk_list_store_set(list_store, &iter,
+                           0, data_file, 2, "-", -1);
+    
+        out_name_full = determine_default_output_file_name(data_file);
+    
+        set_output_name(&iter, out_name_full);
+    
+        g_free(out_name_full);
+
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
 }
 
 void
@@ -105,6 +151,8 @@ update_all_extensions()
 
       valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
     }
+
+    settings_delete(user_settings);
   }
 }
 
@@ -137,6 +185,8 @@ void render_status(GtkTreeViewColumn *tree_column,
 
         settings_are_stale =
                 !settings_equal(user_settings, settings_on_execute);
+
+        settings_delete(user_settings);
     }
 
     if (done && settings_are_stale)
@@ -165,7 +215,8 @@ void render_output_name(GtkTreeViewColumn *tree_column,
     gchar *output_file;
     gchar *status;
     gboolean done;
-    
+    gboolean processing;
+
     gtk_tree_model_get (tree_model, iter, 1, &output_file, 2, &status, -1);
 
     /* Do not mark the file in red if the item has been marked "Done"
@@ -173,6 +224,7 @@ void render_output_name(GtkTreeViewColumn *tree_column,
        marks are stale... so in that case do not look at "Done" */
     
     done = strcmp("Done", status) == 0;
+    processing = strcmp("Processing...", status) == 0;
     
     if (done && settings_on_execute)
     {
@@ -181,9 +233,12 @@ void render_output_name(GtkTreeViewColumn *tree_column,
 
         if (!settings_equal(user_settings, settings_on_execute))
             done = FALSE;
+
+        settings_delete(user_settings);
     }
 
-    if (!done && g_file_test(output_file, G_FILE_TEST_EXISTS))
+    if (!processing && !done &&
+         g_file_test(output_file, G_FILE_TEST_EXISTS))
     {
         GdkColor c;
         
@@ -203,10 +258,6 @@ void render_output_name(GtkTreeViewColumn *tree_column,
     g_free(status);
 }
 
-void stub(gpointer p)
-{
-}
-    
 void
 setup_files_list(int argc, char *argv[])
 {
@@ -215,6 +266,7 @@ setup_files_list(int argc, char *argv[])
   GtkTreeViewColumn *col;
   GtkCellRenderer *renderer;
   GtkTreeIter iter;
+  GValue val = {0,};
 
   list_store = gtk_list_store_new(3, 
                   G_TYPE_STRING, 
@@ -224,13 +276,16 @@ setup_files_list(int argc, char *argv[])
   for (i = 1; i < argc; ++i)
   {
     gchar * data_file = argv[i];
-    gchar * output_file = determine_default_output_file_name(data_file);
-
-    gtk_list_store_append(list_store, &iter);
-    gtk_list_store_set(list_store, &iter, 0, data_file, 2, "-", -1);
-    set_output_name(&iter, output_file);
+    if (file_is_valid(data_file))
+    {
+        gchar * output_file = determine_default_output_file_name(data_file);
     
-    g_free(output_file);
+        gtk_list_store_append(list_store, &iter);
+        gtk_list_store_set(list_store, &iter, 0, data_file, 2, "-", -1);
+        set_output_name(&iter, output_file);
+        
+        g_free(output_file);
+    }
   }
 
   files_list =
@@ -265,7 +320,6 @@ setup_files_list(int argc, char *argv[])
   renderer = gtk_cell_renderer_text_new();
 
   /* allow editing the output filename right in the grid */
-  GValue val = {0,};
   g_value_init(&val, G_TYPE_BOOLEAN);
   g_value_set_boolean(&val, TRUE);
   g_object_set_property(G_OBJECT(renderer), "editable", &val);

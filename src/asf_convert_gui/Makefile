@@ -40,7 +40,7 @@ else
 
 ### Begin Unix Section
 
-CFLAGS = -Wall -O0 -g $(shell /usr/bin/pkg-config --cflags gtk+-2.0) \
+CFLAGS = -Wall -pedantic -O0 -g $(shell /usr/bin/pkg-config --cflags gtk+-2.0) \
          $(shell /usr/bin/pkg-config --cflags libglade-2.0)
 
 LDLIBS = $(shell /usr/bin/pkg-config --libs gtk+-2.0) \
