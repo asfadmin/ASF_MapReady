@@ -10,20 +10,26 @@ extract_window - extract a (hopefully) square window from an image
 #    NAME:               USAGE:
 #    ---------------------------------------------------------------
 #    dspddr              without options, for getting text version 
-#                        ddr file
+#                        of ddr file
 #
 #    trim                with -h and -w options, for cropping images
 #
 #    ASF::CoordinateConversion     for global lat/long to xyz and 
 #                                  sch coordinate conversions
 #
-#    ASF::Meta           lat/long to line/sample conversion or some image
+#    ASF::Meta           lat/long to line/sample conversion on some
+#                        image types
 
-use lib "/asf_tools/lib/perl/";
+use lib "/asf_tools/perl/lib";
 
 # Compiler pragmas.
 use diagnostics;
 use strict;
+
+# FIXME: somebody install Params::Validate into the standard repository.
+use lib "/home/bkerin/local/lib/site_perl";
+# Module pragma used in function parameter checking.
+use Params::Validate;
 
 # Standard libraries (they ship with perl).
 use Fcntl qw(:seek);
@@ -40,7 +46,7 @@ use ASF::CoordinateConversion;
 use ASF::Meta;
 
 my $progname = basename($0);
-my $version = '0.7.0';
+my $version = '0.8.0';
 
 =head1 SYNOPSIS
 
@@ -100,6 +106,18 @@ Geocoded universal transverse mercator map projected ASF '.img' product.
 An airsar .demi2 or .vvi2 file from the JPL processor.
 
 =back
+
+=item B<--peg-point-lat-delta=DELTA>
+
+Only applicable to airsar data.  Attempts to work around a data issue
+in which some peg points appear to be wrong in the airsar metadata.
+The true peg point is taken to be the value given in the metadata plus
+DELTA degrees.  Omitting this option is the same as specifying a DELTA
+of zero.
+
+=item B<--peg-point-long-delta=DELTA>
+
+Analagous to --peg-point-lat-delta option, for longitude.
 
 =item B<-t LAT, --lat=LAT>
 
@@ -161,6 +179,8 @@ my %p = (
 	 # These options are actually optional.
 	 'elev' => undef,	        # Window center elevation.
 	 'out'  => "./out_image.img",   # Name to use for output image.
+	 'peg-point-lat-delta' => 0,    # Compensate for broken airsar data.
+	 'peg-point-long-delta' => 0,   # Compensate for broken airsar date.
 
 	 # Standard (really optional) options.
 	 'verbose' => 0,	# Verbose output to terminal.
@@ -171,7 +191,8 @@ my %p = (
 sub babble { if ( $p{verbose} ) { print @_; } }
 
 GetOptions(\%p, 'image|m=s', 'type|p=s', 'lat|t=f', 'long|n=f', 'elev|l=f', 
-	   'size|z=i', 'out|o=s', 'verbose|v', 'version', 'help|?')
+	   'size|z=i', 'out|o=s', 'verbose|v', 'peg-point-lat-delta=f',
+	   'peg-point-long-delta=f', 'version', 'help|?')
     or pod2usage("$progname: option parse failed.\n");
 
 if ( $p{version} ) {
@@ -336,6 +357,10 @@ if ( $p{type} eq 'gr' ) {
         or die "read or seek in $p{image} failed or read less than expected";
     close(TOPSAR) or die "close failed: $!";
 
+    # Move peg point to compensate for bad airsar metadata.
+    $pp_lat += $p{'peg-point-lat-delta'};
+    $pp_lon += $p{'peg-point-long-delta'};
+
     # Get global cartesian coordinates of window center point.
     my ($x, $y, $z) = llr2xyz($p{lat}, $p{long}, 
 			      &earth_radius_at_geodetic_lat(64.870) 
@@ -345,7 +370,7 @@ if ( $p{type} eq 'gr' ) {
     my ($s, $c, $h_r) = xyz2sch($x, $y, $z, $pp_lat, $pp_lon, $pp_head);
 
     # 1-indexed coordinates of center pixel window to be extracted.
-    ($wc_azi, $wc_rng) = sc2line_sample($s, $c, $psz_azi, $psz_rng, 
+    ($wc_azi, $wc_rng) = sch2line_sample($s, $c, $psz_azi, $psz_rng, 
 					 $azimuth_offset, $range_offset);
 
 
@@ -367,26 +392,62 @@ $wedge{right} = floor($wedge{left} + $wsz_rng);
 
 # Sacrifice squareness in favor of indices in the image.
 {
-my $win_wrong_sized = 0;   # Flag true if full window couldn't be gotten.
-if ( $wedge{top} < 1 ) {
-    $win_wrong_sized = "true";
-    $wedge{top} = 1;
+    # Minimum number of pixels in window required to be in image in
+    # each dimension.  Currently a tenth of average of dimensions.
+    my $edge_boundry = (($wsz_azi + $wsz_rng) / 2) / 10;	      
+
+sub window_not_in_image {
+    print STDERR <<END_ERROR;
+$progname: error: window is entirely or almost entirely (within $edge_boundry 
+pixels of being entirely) outside the image.  Cannot generate window image.
+END_ERROR
+    exit(1);
 }
-if ( $wedge{bottom} > $lines ) {
-    $win_wrong_sized = "true";
-    $wedge{bottom} = $lines;
-}
-if ( $wedge{left} < 1 ) {
-    $win_wrong_sized = "true";
-    $wedge{left} = 1;
-}
-if ( $wedge{right} > $samps ) {
-    $win_wrong_sized = "true";
-    $wedge{right} = $samps;
-}
-if ( $win_wrong_sized ) {
-    print STDERR "$progname: warning: input image is not large enough to provide a square window of the requested size around the requested lat/lon, generated image will be smaller than the requested size and probably non-square\n";
-}
+
+    my $win_wrong_sized = 0;   # Flag true if full window couldn't be gotten.
+
+    if ( $wedge{top} < 1 ) {
+	if ( $wedge{bottom} > $edge_boundry ) {
+	    # Window is partly out of image.
+	    $win_wrong_sized = "true";
+	    $wedge{top} = 1;
+	} else {
+	    # Wndow is almost entirely out of image. 
+	    &window_not_in_image();
+	}
+    }
+    if ( $wedge{bottom} > $lines ) {
+	if ( $wedge{top} < $lines - $edge_boundry ) {
+	    $win_wrong_sized = "true";
+	    $wedge{bottom} = $lines;
+	} else {
+	    &window_not_in_image();
+	}
+    }
+    if ( $wedge{left} < 1 ) {
+	if ( $wedge{right} > $edge_boundry ) {
+	    $win_wrong_sized = "true";
+	    $wedge{left} = 1;
+	} else {
+	    &window_not_in_image();
+	}
+    }
+    if ( $wedge{right} > $samps ) {
+	if ( $wedge{left} < $samps - $edge_boundry ) {
+	    $win_wrong_sized = "true";
+	    $wedge{right} = $samps;
+	} else {
+	    &window_not_in_image();
+	}
+    }
+    if ( $win_wrong_sized ) {
+	print STDERR <<END_WARNING
+$progname: warning: input image is not large enough to provide a
+square window of the requested size around the requested lat/lon,
+generated image will be smaller than the requested size and probably
+non-square
+END_WARNING
+    }
 }
 
 # Window dimensions in pixels.
