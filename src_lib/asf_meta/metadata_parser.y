@@ -39,6 +39,12 @@ static void *block_stack_pop(block_stack_node **stack_top_p)
    track of how many of them we have seen so far.  */
 int vector_count = 0;
 
+/* Help parser handle errors.  */
+int yyerror(char *s)
+{
+  fprintf(stderr, "%s\n", s);
+}
+
 /* Casting shorthand macros for metadata structure subelements.  */
 #define MTL ( (meta_parameters *) current_block)
 #define MGENERAL ( (meta_general *) current_block)
@@ -64,6 +70,7 @@ void select_current_block(char *block_name)
 		(vector_count + 1) * sizeof(state_loc));
     current_block = &( ((meta_state_vectors *) current_block)
 		       ->vecs[vector_count++]); 
+    MSTATE->num = vector_count;
     goto MATCHED; 
   }
 
@@ -219,7 +226,10 @@ void fill_structure_field(char *field_name, void *valp)
   if ( !strcmp(field_name, "Second of the day for image start") )
     { MSTATE->second = VALP_AS_DOUBLE; return; }
   if ( !strcmp(field_name, "Number of state vector blocks") )
-    { MSTATE->num = *( (int *) valp); return; }
+    { /* This field is allowed but ignored, we count the number of state
+         vector blocks that we actually see.  */ 
+      ;
+    }
 
   /* Fields which normally go in a vector block.  */
   if ( !strcmp(field_name, "Time relative to image start") )
