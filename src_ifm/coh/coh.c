@@ -167,6 +167,10 @@ int main(int argc, char *argv[])
   inMeta2 = meta_read(inName2);
   num_lines = inMeta1->general->line_count; 
   num_samples = inMeta1->general->sample_count;
+  /* Since we're assuming data is complex, make sure metadata reflects that...
+   * particularly so get/put_complexFloat_line() work... needs to be here thanks to DDRs */
+  inMeta1->general->data_type = meta_polar2complex(inMeta1->general->data_type);
+  inMeta2->general->data_type = meta_polar2complex(inMeta2->general->data_type);
 
   /* Figure multilooking values if necessary */
   if (!stepFlag) {
