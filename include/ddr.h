@@ -3,8 +3,6 @@
 #ifndef __DDR_H
 #define __DDR_H   /* include only once */
 
-#include "asf.h"
-
 struct DDR                /* ddr for integer data */
     {
     int nl;              /* number of lines in image                */
@@ -235,6 +233,7 @@ void FUNCTION com_ppar(struct DDR ddr1,struct DDR ddr2,int *ppar_flag,
 #define DTYPE_COMPLEXREAL 11
 #define DTYPE_COMPLEXIMAG 12
 
+#include <stdio.h>
 int dtype2dsize(int dtype,char **description);
 /*Read line from file.*/
 void getFloatLine(FILE *f,const struct DDR *ddr,int yLine,float *dest); 
@@ -244,6 +243,5 @@ void getFloatLine_mb(FILE *f,const struct DDR *ddr,
 void putFloatLine(FILE *f,const struct DDR *ddr,int yLine,const float *source);
 void putFloatLine_mb(FILE *f,const struct DDR *ddr,
 	int yLine,int band,const float *source);
-
 #endif
 
