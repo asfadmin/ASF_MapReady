@@ -68,14 +68,14 @@ default: $(OBJS)
 	cp $(TARGET).glade $(BINDIR)
 	cp $(TARGET).ico $(BINDIR)
 
-doc: book1.html
+doc: asf_convert_gui.txt
 
-book1.html:
+asf_convert_gui.txt:
 	docbook2txt asf_convert_gui.sgml
 	cp $(TARGET).txt $(BINDIR)
 
 clean:
-	-rm *.o $(BINDIR)/$(TARGET)* *.html
+	-rm *.o $(BINDIR)/$(TARGET)* $(TARGET).txt
 
 ### End Unix Section
 
