@@ -10,13 +10,14 @@ int lz2raw_flywheel(char *inFile, char *outFile, char *prcOrbits, int prcFlag, d
         char command[255];
 	int ret;
 
-        sprintf(command, "lz2raw_flywheel %s %s", inFile, outFile);
+	sprintf(command, "lz2raw_flywheel");
 	if (prcFlag == 1) sprintf (command, "%s -prc %s", command, prcOrbits); 
         if (logflag) sprintf(command, "%s -log %s", command, logFile);
 	if (quietflag) strcat(command, " -quiet");
 	if (lat_begin!=-99.0 && lat_end!=99.0) sprintf(command, "%s -lat %lf %lf", command, lat_begin, lat_end);
+	sprintf(command, "%s %s %s", command, inFile, outFile);	
 
-        printf("\nCommand line: %s\nDate: ", command);
+	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
           sprintf(logbuf,"\nCommand line: %s\n", command);
@@ -30,42 +31,44 @@ int lz2raw_flywheel(char *inFile, char *outFile, char *prcOrbits, int prcFlag, d
 
 int ceos2raw(char *inFile, char *outFile)
 {
-        char command[255];
+	char command[255];
 	int ret;
 
+	sprintf(command, "ceos2raw");	
         sprintf(command, "ceos2raw %s %s", inFile, outFile);        
 	if (logflag) sprintf(command, "%s -log %s", command, logFile);
 	if (quietflag) strcat(command, " -quiet");
+	sprintf(command, "%s %s %s", command, inFile, outFile);	
 
-        printf("\nCommand line: %s\nDate: ", command);
+	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
-        ret = system(command);
+	ret = system(command);
 
 	return ret;
 }
 
 int trim_slc(char *inFile, char *outFile, int line, int sample, int length, int width)
 {
-        char command[255];
+	char command[255];
 	int ret;
 
-        sprintf(command, "trim_slc %s %s %d %d %d %d", inFile, outFile, line, sample, length, width);        
+	sprintf(command, "trim_slc %s %s %d %d %d %d", inFile, outFile, line, sample, length, width);	
 /*	if (logflag) sprintf(command, "%s -log %s", command, logFile);
 	if (quietflag) strcat(command, " -quiet");*/
 
-        printf("\nCommand line: %s\nDate: ", command);
+	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
-        ret = system(command);
+	ret = system(command);
 
 	return ret;
 }
@@ -85,7 +88,7 @@ int avg_in_dop(char *inFile1, char * inFile2, char *outFile)
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -108,7 +111,7 @@ int doppler_per_patch(char *parFile1, char * parFile2, char *metaFile1, char *me
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -134,7 +137,7 @@ int aisp(char *options, int startLineNum, int numPatches, char *inFile, char *ou
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -171,7 +174,7 @@ int paisp(char *options, int startLineNum, int numPatches, int numProcessors, ch
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -192,7 +195,7 @@ int c2p(char *inFile, char *outFile)
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -213,7 +216,7 @@ int cpx_autofilter(char *inFile1, char *inFile2, char *outFile1, char *outFile2)
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -234,7 +237,7 @@ int pcpx_autofilter(char *inFile1, char *inFile2, char *outFile1, char *outFile2
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -255,7 +258,7 @@ int resolve(char *inFile1, char *inFile2, char *outFile)
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -277,7 +280,7 @@ int fico(char *inFile1, char *inFile2, char *inCtrlFile, char *outFile, int grid
 	printf("\nCommand line: %s\nDate: ", command);	
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -308,7 +311,7 @@ int fit_line(char *inFile, char *outFile)
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -328,7 +331,7 @@ int calc_deltas(char *inFile1, char *inFile2, int lineDiff, char *outFile)
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -361,7 +364,7 @@ int pigram(char *inFile1, char *inFile2, char *outFile, int numProcessors)
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -394,7 +397,7 @@ int pcoh(char *inFile1, char *inFile2, char *outFile, int numProcessors)
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -428,7 +431,7 @@ int pml(char *inFile, char *outFile, int numProcessors, char *metaFile)
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
@@ -439,292 +442,292 @@ int pml(char *inFile, char *outFile, int numProcessors, char *metaFile)
 
 int amp2img(char *inFile, char *outFile, int nLooks, int nSmooth)
 {
-        char command[255];
-        int ret;
-        
-        sprintf(command, "amp2img -look %dx%d -step %dx%d %s %s", nLooks, nSmooth, nLooks, nSmooth, inFile, outFile);
-        if (logflag) sprintf(command, "amp2img -log %s -look %dx%d -step %dx%d %s %s", 
+	char command[255];
+	int ret;
+	
+	sprintf(command, "amp2img -look %dx%d -step %dx%d %s %s", nLooks, nSmooth, nLooks, nSmooth, inFile, outFile);
+	if (logflag) sprintf(command, "amp2img -log %s -look %dx%d -step %dx%d %s %s", 
 				logFile, nLooks, nSmooth, nLooks, nSmooth, inFile, outFile);
-        if (quietflag) sprintf(command, "amp2img -quiet -look %dx%d -step %dx%d %s %s", 
+	if (quietflag) sprintf(command, "amp2img -quiet -look %dx%d -step %dx%d %s %s", 
 				nLooks, nSmooth, nLooks, nSmooth, inFile, outFile);
-        if (quietflag && logflag) 
+	if (quietflag && logflag) 
 	  sprintf(command, "amp2img -quiet -log %s -look %dx%d -step %dx%d %s %s", 
 				logFile, nLooks, nSmooth, nLooks, nSmooth, inFile, outFile);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-         
-        return ret;
+	
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	 
+	return ret;
 }
 
 int create_dem_grid(char *demFile, char *sarFile, char *ceosFile, char *gridFile)
 {
-        char command[255];
-        int ret;
+	char command[255];
+	int ret;
 
-        sprintf(command, "create_dem_grid %s %s %s %s", demFile, sarFile, ceosFile, gridFile);
+	sprintf(command, "create_dem_grid %s %s %s %s", demFile, sarFile, ceosFile, gridFile);
 	if (logflag) sprintf(command, "create_dem_grid -log %s %s %s %s %s", logFile, demFile, sarFile, ceosFile, gridFile);
 
 	printf("\nCommand line: %s\nDate: ", command);
 	if (logflag) {
 	  fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
 	  printLog(logbuf);
 	  FCLOSE(fLog);
 	}
-        ret = system(command);
-          
-        return ret;
+	ret = system(command);
+	  
+	return ret;
 }
 
 int fit_plane(char *inFile, char *outFile, double fraction)
 {
-        char command[255];
-        int ret;
+	char command[255];
+	int ret;
 
-        sprintf(command, "fit_plane %s %s k %.1lf", inFile, outFile, fraction);
+	sprintf(command, "fit_plane %s %s k %.1lf", inFile, outFile, fraction);
 	if (logflag) sprintf(command, "%s -log %s", command, logFile);
 
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-         
-        return ret;
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	 
+	return ret;
 }       
 
 int fit_warp(char *inFile1, char *inFile2, char *outFile)
 {
-        char command[255];
-        int ret;
+	char command[255];
+	int ret;
 
-        sprintf(command, "fit_warp %s %s %s", inFile1, inFile2, outFile);
+	sprintf(command, "fit_warp %s %s %s", inFile1, inFile2, outFile);
 /*	if (logflag) sprintf(command, "%s -log %s", command, logFile);*/
 
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-         
-        return ret;
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	 
+	return ret;
 }       
 
 int remap(char *inFile, char *outFile, char *options)
 {
-        char command[255];
-        int ret;
-        
-        sprintf(command, "remap %s %s %s", options, inFile, outFile);
-        if (logflag) sprintf(command, "remap %s -log %s %s %s", options, logFile, inFile, outFile); 
+	char command[255];
+	int ret;
+	
+	sprintf(command, "remap %s %s %s", options, inFile, outFile);
+	if (logflag) sprintf(command, "remap %s -log %s %s %s", options, logFile, inFile, outFile); 
 
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
  
-        return ret;
+	return ret;
 }
 
 int make_ddr(char *outFile, int nl, int ns, char *type)
 {
-        char command[255];
-        int ret;
-                                
-        sprintf(command, "makeddr %s %d %d %s", outFile, nl, ns, type);
+	char command[255];
+	int ret;
+				
+	sprintf(command, "makeddr %s %d %d %s", outFile, nl, ns, type);
 	if (logflag) sprintf(command, "makeddr -log %s %s %d %d %s", logFile, outFile, nl, ns, type); 
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-        
-        return ret;
+	
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	
+	return ret;
 }
 
 int reskew_dem(char *demFile, char *metaFile, char *outFile1, char *outFile2)
 {       
-        char command[255];
-        int ret;
-                                
-        sprintf(command, "reskew_dem %s %s %s %s", demFile, metaFile, outFile1, outFile2);
+	char command[255];
+	int ret;
+				
+	sprintf(command, "reskew_dem %s %s %s %s", demFile, metaFile, outFile1, outFile2);
 	if (logflag) sprintf(command, "%s -log %s", command, logFile); 
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-        
-        return ret;
-}         
+	
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	
+	return ret;
+}	 
 
 int trim(char *inFile, char *outFile, int sX, int sY, int nl, int ns)
 {
-        char command[255];
-        int ret;
-        
-        sprintf(command, "trim -h %d -w %d %s %s %i %i", nl, ns, inFile, outFile, sX, sY);
-        if (logflag) sprintf(command, "trim -log %s -h %d -w %d %s %s %i %i", logFile, nl, ns, inFile, outFile, sX, sY);
-                                
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-         
-        return ret;
+	char command[255];
+	int ret;
+	
+	sprintf(command, "trim -h %d -w %d %s %s %i %i", nl, ns, inFile, outFile, sX, sY);
+	if (logflag) sprintf(command, "trim -log %s -h %d -w %d %s %s %i %i", logFile, nl, ns, inFile, outFile, sX, sY);
+				
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	 
+	return ret;
 }       
 
 int fftMatch(char *inFile1, char *inFile2, char *outFile)
 {       
-        char command[255];
-        int ret;
-        
-        sprintf(command, "fftMatch -m %s %s %s", outFile, inFile1, inFile2);
-        if (logflag) sprintf(command, "fftMatch -m %s -log %s %s %s", outFile, logFile, inFile1, inFile2);
-        if (quietflag) sprintf(command, "fftMatch -m %s -quiet %s %s", outFile, inFile1, inFile2);
+	char command[255];
+	int ret;
+	
+	sprintf(command, "fftMatch -m %s %s %s", outFile, inFile1, inFile2);
+	if (logflag) sprintf(command, "fftMatch -m %s -log %s %s %s", outFile, logFile, inFile1, inFile2);
+	if (quietflag) sprintf(command, "fftMatch -m %s -quiet %s %s", outFile, inFile1, inFile2);
 	if (logflag && quietflag) sprintf(command, "fftMatch -m %s -log %s -quiet %s %s", outFile, logFile, inFile1, inFile2);
-        
-        printf("\nCommand line: %s\nDate: ", command);
+	
+	printf("\nCommand line: %s\nDate: ", command);
 	system("date");
 	printf("Program: fftMatch\n\n");
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
 	  StartWatchLog(fLog);
 	  printLog("Program: fftMatch\n\n");
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-        
-        return ret;
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	
+	return ret;
 } 
 
 int dem2phase(char *demFile, char *metaFile, char *baseFile, char *phaseFile)
 {
-        char command[255];
-        int ret;
-        
-        sprintf(command, "dem2phase %s %s %s %s", demFile, metaFile, baseFile, phaseFile);
+	char command[255];
+	int ret;
+	
+	sprintf(command, "dem2phase %s %s %s %s", demFile, metaFile, baseFile, phaseFile);
 	if (logflag) sprintf(command, "dem2phase -log %s %s %s %s %s", logFile, demFile, metaFile, baseFile, phaseFile); 
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-          
-        return ret;
+	
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	  
+	return ret;
 }
 
 int dem2seeds(char *demFile, char *ampFile, char *seedsFile, int fft)
 {
-        char command[255];
-        int ret;
-        
-        if (fft) 
-          sprintf(command, "dem2seeds_fft %s %s %s", demFile, ampFile, seedsFile);
-        else 
-          sprintf(command, "dem2seeds %s %s %s", demFile, ampFile, seedsFile);
-        if (logflag) sprintf(command, "dem2seeds -log %s %s %s %s", logFile, demFile, ampFile, seedsFile);
+	char command[255];
+	int ret;
+	
+	if (fft) 
+	  sprintf(command, "dem2seeds_fft %s %s %s", demFile, ampFile, seedsFile);
+	else 
+	  sprintf(command, "dem2seeds %s %s %s", demFile, ampFile, seedsFile);
+	if (logflag) sprintf(command, "dem2seeds -log %s %s %s %s", logFile, demFile, ampFile, seedsFile);
 
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-        
-        return ret;
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	
+	return ret;
 }
 
 int deramp(char *demFile, char *metaFile, char *baseFile, char *outFile, int back)
 {       
-        char command[255];
-        int ret;
+	char command[255];
+	int ret;
  
-        sprintf(command, "deramp %s %s %s %s", demFile, metaFile, baseFile, outFile);
+	sprintf(command, "deramp %s %s %s %s", demFile, metaFile, baseFile, outFile);
 	if (back) sprintf(command, "deramp -backward %s %s %s %s", demFile, metaFile, baseFile, outFile);
-        if (logflag) sprintf(command, "deramp -log %s %s %s %s %s", logFile, demFile, metaFile, baseFile, outFile);
-/*        if (logflag) sprintf(command, "deramp %s %s %s %s -log %s", demFile, metaFile, baseFile, outFile, logFile);*/
-        if (logflag && back) sprintf(command, "deramp -backward -log %s %s %s %s %s", 
+	if (logflag) sprintf(command, "deramp -log %s %s %s %s %s", logFile, demFile, metaFile, baseFile, outFile);
+/*	if (logflag) sprintf(command, "deramp %s %s %s %s -log %s", demFile, metaFile, baseFile, outFile, logFile);*/
+	if (logflag && back) sprintf(command, "deramp -backward -log %s %s %s %s %s", 
 						logFile, demFile, metaFile, baseFile, outFile);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-         
-        return ret;
-}         
+	
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	 
+	return ret;
+}	 
 
 
 int snaphu(char *snaphu_version, char *phaseFile, char *ampFile, char *pwrFile1, char *pwrFile2, char *config, char *outFile, 
 			int nAzimuth, int nRange, int nOverAzi, int nOverRng, int nProcs)
 {       
-        char command[255];
-        int ret;
-        
-        sprintf(command, "%s --tile %d %d %d %d --nproc %d %s 4800 -m %s --AA %s %s -f %s -o %s", 
-				snaphu_version, nAzimuth, nRange, nOverAzi, nOverRng, nProcs, phaseFile, ampFile, 
-				pwrFile1, pwrFile2, config, outFile);        
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-        
-        return ret;
+	char command[255];
+	int ret;
+	
+	sprintf(command, "snaphu --tile %d %d %d %d --nproc %d %s 4800 -m %s --AA %s %s -f %s -o %s", 
+				nAzimuth, nRange, nOverAzi, nOverRng, nProcs, phaseFile, ampFile, 
+				pwrFile1, pwrFile2, config, outFile);	
+	
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	
+	return ret;
 }
 
 int refine_base(char *phaseFile, char *seeds, char *metaFile, char *oldBase, char *newBase)
 {
-        char command[255];
-        int ret;
-        
-        sprintf(command, "refine_base %s %s %s %s %s\n", phaseFile, seeds, metaFile, oldBase, newBase);
+	char command[255];
+	int ret;
+	
+	sprintf(command, "refine_base %s %s %s %s %s\n", phaseFile, seeds, metaFile, oldBase, newBase);
 	if (logflag) 
 	  sprintf(command, "refine_base -log %s %s %s %s %s %s\n", logFile, phaseFile, seeds, metaFile, oldBase, newBase);
 	if (quietflag) 
@@ -733,231 +736,231 @@ int refine_base(char *phaseFile, char *seeds, char *metaFile, char *oldBase, cha
 	  sprintf(command, "refine_base -quiet -log %s %s %s %s %s %s\n", 
 				logFile, phaseFile, seeds, metaFile, oldBase, newBase);
 
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\n", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-        
-        return ret;
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\n", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	
+	return ret;
 }
 
 int las_op(char *outFile, char *operation)
 {
-        char command[255];
+	char command[255];
 	int ret;
 
-        sprintf(command, "las_op %s %s", outFile, operation);
-        if (logflag) sprintf(command, "las_op -log %s %s %s", logFile, outFile, operation);
+	sprintf(command, "las_op %s %s", outFile, operation);
+	if (logflag) sprintf(command, "las_op -log %s %s %s", logFile, outFile, operation);
 
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
 
 	return ret;
 }
 
 int las2ppm(char *inFile, char *outFile)
 {
-        char command[255];
+	char command[255];
 	int ret;
 
-        sprintf(command, "las2ppm -m %s %s", inFile, outFile);
+	sprintf(command, "las2ppm -m %s %s", inFile, outFile);
 
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
 
 	return ret;
 }
 
 int phase_filter(char *inFile, double strength, char *outFile)
 {
-        char command[255];
+	char command[255];
 	int ret;
-          
-        sprintf(command, "phase_filter %s %.1lf %s", inFile, strength, outFile);
-        if (logflag) sprintf(command, "phase_filter -log %s %s %.1lf %s", logFile, inFile, strength, outFile);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-          
-        return ret;
+	  
+	sprintf(command, "phase_filter %s %.1lf %s", inFile, strength, outFile);
+	if (logflag) sprintf(command, "phase_filter -log %s %s %.1lf %s", logFile, inFile, strength, outFile);
+	
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	  
+	return ret;
 }
 
 int zeroify(char *phaseFile1, char *phaseFile2, char *outFile)
 {
-        char command[255];
+	char command[255];
 	int ret;
 
-        sprintf(command, "zeroify %s %s %s", phaseFile1, phaseFile2, outFile);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-          
-        return ret;
+	sprintf(command, "zeroify %s %s %s", phaseFile1, phaseFile2, outFile);
+	
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	  
+	return ret;
 }
 
 int escher(char *inFile, char *outFile)
 {       
-        char command[255];
-        int ret;
-        
-        sprintf(command, "escher %s %s", inFile, outFile);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-          
-        return ret;
+	char command[255];
+	int ret;
+	
+	sprintf(command, "escher %s %s", inFile, outFile);
+	
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	  
+	return ret;
 }
 
 int elev(char *phaseFile, char *baseFile, char *metaFile, char *outFile, char *seeds)
 {       
-        char command[255];
-        int ret;
-        
-        sprintf(command, "elev %s %s %s %s %s", phaseFile, baseFile, metaFile, outFile, seeds);
-        if (logflag) sprintf(command, "elev -log %s %s %s %s %s %s", logFile, phaseFile, baseFile, metaFile, outFile, seeds);
-        if (quietflag) sprintf(command, "elev -quiet %s %s %s %s %s", phaseFile, baseFile, metaFile, outFile, seeds);
-        if (logflag && quietflag) 
+	char command[255];
+	int ret;
+	
+	sprintf(command, "elev %s %s %s %s %s", phaseFile, baseFile, metaFile, outFile, seeds);
+	if (logflag) sprintf(command, "elev -log %s %s %s %s %s %s", logFile, phaseFile, baseFile, metaFile, outFile, seeds);
+	if (quietflag) sprintf(command, "elev -quiet %s %s %s %s %s", phaseFile, baseFile, metaFile, outFile, seeds);
+	if (logflag && quietflag) 
 	  sprintf(command, "elev -log %s -quiet %s %s %s %s %s", logFile, phaseFile, baseFile, metaFile, outFile, seeds);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-          
-        return ret;
+	
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	  
+	return ret;
 }
 
 int eleverr(char *cohFile, char *baseFile, char *metaFile, char *maskFile, char *outFile)
-{                       
-        char command[255];
+{		       
+	char command[255];
 	int ret;
  
 	if (maskFile==NULL) {
-          sprintf(command, "eleverr %s %s %s %s", cohFile, baseFile, metaFile, outFile);
+	  sprintf(command, "eleverr %s %s %s %s", cohFile, baseFile, metaFile, outFile);
 	  if (logflag) sprintf(command, "eleverr -log %s %s %s %s %s", logFile, cohFile, baseFile, metaFile, outFile);
 	}
 	else {
-          sprintf(command, "eleverr -mask %s %s %s %s %s", maskFile, cohFile, baseFile, metaFile, outFile);
+	  sprintf(command, "eleverr -mask %s %s %s %s %s", maskFile, cohFile, baseFile, metaFile, outFile);
 	  if (logflag)
-            sprintf(command, "eleverr -log %s -mask %s %s %s %s %s", logFile, maskFile, cohFile, baseFile, metaFile, outFile);
+	    sprintf(command, "eleverr -log %s -mask %s %s %s %s %s", logFile, maskFile, cohFile, baseFile, metaFile, outFile);
 	}
 
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-          
-        return ret;
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	  
+	return ret;
 }
-          
+	  
 int deskew_dem(char *inFile1, char *metaFile, char *outFile, char *inFile2, int radiometric)
 {
-        char command[255];
-        int ret;
+	char command[255];
+	int ret;
 
-        if (strcmp(inFile2,"")==0) 
-                sprintf(command, "deskew_dem %s %s %s", inFile1, metaFile, outFile);
-        else 
-                sprintf(command, "deskew_dem -i %s %d %s %s %s", inFile2, radiometric, inFile1, metaFile, outFile);
-        if (logflag) sprintf(command, "deskew_dem -i %s %d -log %s %s %s %s", 
+	if (strcmp(inFile2,"")==0) 
+		sprintf(command, "deskew_dem %s %s %s", inFile1, metaFile, outFile);
+	else 
+		sprintf(command, "deskew_dem -i %s %d %s %s %s", inFile2, radiometric, inFile1, metaFile, outFile);
+	if (logflag) sprintf(command, "deskew_dem -i %s %d -log %s %s %s %s", 
 		inFile2, radiometric, logFile, inFile1, metaFile, outFile);
-        if (logflag && strcmp(inFile2,"")==0) 
+	if (logflag && strcmp(inFile2,"")==0) 
 		sprintf(command, "deskew_dem -log %s %s %s %s", logFile, inFile1, metaFile, outFile);
-         
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
+	 
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
  
-        return ret;
+	return ret;
 }
 
 int projprm(char *projection, char *projkey, char *outFile, char *options)
 {       
-        char command[255];
-        int ret;
-            
-        sprintf(command, "projprm %s %s %s %s", projection, projkey, outFile, options);
+	char command[255];
+	int ret;
+	    
+	sprintf(command, "projprm %s %s %s %s", projection, projkey, outFile, options);
 	if (logflag)
-          sprintf(command, "projprm -log %s %s %s %s %s", logFile, projection, projkey, outFile, options);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-        
-        return ret;
+	  sprintf(command, "projprm -log %s %s %s %s %s", logFile, projection, projkey, outFile, options);
+	
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	
+	return ret;
 }       
 
 int geocode(char *metaFile, char *inFile, char *projFile, char *projkey, int pix_size, char *outFile)
 {
-        char command[255];
-        int ret;
-        
-        sprintf(command, "geocode -p %d %s %s %s %s %s", pix_size, metaFile, inFile, projFile, projkey, outFile);
+	char command[255];
+	int ret;
+	
+	sprintf(command, "geocode -p %d %s %s %s %s %s", pix_size, metaFile, inFile, projFile, projkey, outFile);
 	if (logflag) sprintf(command, "geocode -p %d -log %s %s %s %s %s %s", 
 					pix_size, logFile, metaFile, inFile, projFile, projkey, outFile);
 
-        printf("\nCommand line: %s\nDate: ", command);
-        if (logflag) {
-          fLog = FOPEN(logFile, "a");
-          sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-          printLog(logbuf);
-          FCLOSE(fLog);
-        }
-        ret = system(command);
-        
-        return ret;
+	printf("\nCommand line: %s\nDate: ", command);
+	if (logflag) {
+	  fLog = FOPEN(logFile, "a");
+	  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+	  printLog(logbuf);
+	  FCLOSE(fLog);
+	}
+	ret = system(command);
+	
+	return ret;
 }
 
 #endif
