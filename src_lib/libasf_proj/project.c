@@ -20,6 +20,25 @@ static const char * datum(project_parameters_t * pps)
     return "WGS84";
 }
 
+static double *pHeight = NULL;
+void set_avg_height(double h)
+{
+    *pHeight = h;
+}
+
+static double get_avg_height()
+{
+    if (pHeight)
+	return *pHeight;
+    else
+	return 0.0;
+}
+
+static int height_was_set()
+{
+    return pHeight != NULL;
+}
+
 /*
   We aren't really using this function... just a basic test from
   right out of the libproj manual, to get the ball rolling.  Only
@@ -115,7 +134,17 @@ static int project_worker_arr(char * projection_description,
 	  assert (output_projection != NULL);
 	  
 	  tmp3 = (double *) MALLOC(sizeof(double) * length);
-	  memset(tmp3, 0, sizeof(double) * length);
+
+	  if (height_was_set())
+	  {
+	      double height = get_avg_height();
+	      for (i = 0; i < length; ++i)
+		  tmp3[i] = height;
+	  }
+	  else
+	  {
+	      memset(tmp3, 0, sizeof(double) * length);
+	  }
 
 	  pj_transform (geographic_projection, output_projection, length, 1, 
 			px, py, tmp3);
@@ -194,8 +223,18 @@ static int project_worker_arr_inv(char * projection_description,
 	  assert (output_projection != NULL);
 	  
 	  tmp3 = (double *) MALLOC(sizeof(double) * length);
-	  memset(tmp3, 0, sizeof(double) * length);
-	  
+
+	  if (height_was_set())
+	  {
+	      double height = get_avg_height();
+	      for (i = 0; i < length; ++i)
+		  tmp3[i] = height;
+	  }
+	  else
+	  {
+	      memset(tmp3, 0, sizeof(double) * length);
+	  }
+
 	  pj_transform (output_projection, geographic_projection, length, 1, 
 			plat, plon, tmp3);
 	  	  
