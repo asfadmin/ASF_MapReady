@@ -241,6 +241,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
   int tableRes=MAX_tableRes, tablePix=0;
   int doComplex=FALSE;
   int rsiCeos=FALSE;
+  char junk[256];
   char metaName[256], sprocketMetaName[256];
   char ampName[256], lookName[256], sigmaName[256];
   char lookTiePointName[256];
@@ -287,7 +288,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
 
   /* We can get some useful stuff from the CEOS leader file, like the
    * calibration parameters */
-  if (has_ceos_metadata_extension(leaderName)) {
+  if (get_ceos_metadata_name(leaderName,junk) != NO_CEOS_METADATA) {
     char tmp[256];
     cal_param = create_cal_params(leaderName);
     dssr = (struct dataset_sum_rec*) MALLOC (sizeof(struct dataset_sum_rec));
