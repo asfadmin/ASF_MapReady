@@ -145,7 +145,7 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   self->cache = g_new (float, self->cache_area);
   // Do we want to do mlock() here maybe?
 
-  // The addresses in the cache of the start of each of the tiles.
+  // The addresses in the cache of the starts of each of the tiles.
   // This array contains flattened tile addresses in the same way that
   // image memory normally uses flattened pixel addresses, e.g. the
   // address of tile x = 2, y = 4 is stored at self->tile_addresses[4
@@ -449,7 +449,7 @@ float_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
 
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
-  g_assert (file_larger_than (file, offset + (size_x * size_y
+  g_assert (file_larger_than (file, offset + ((off_t) size_x * size_y
 					      * sizeof (float))));
 
   // Open the file to read data from.
@@ -499,7 +499,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
   g_assert (file_pointed_to_larger_than (file_pointer, 
-					 offset + (size_x * size_y
+					 offset + ((off_t) size_x * size_y
 						   * sizeof (float))));
 
   FloatImage *self = initialize_float_image_structure (size_x, size_y);
@@ -643,7 +643,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
     off_t end_offset = ftello (self->tile_file);
     end_offset = end_offset;
     g_assert (ftello (self->tile_file) 
-	      == self->tile_area * self->tile_count * sizeof (float));
+	      == (off_t) self->tile_area * self->tile_count * sizeof (float));
 
     // Free temporary buffers.
     g_free (buffer);
@@ -694,13 +694,16 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
   g_assert (file_larger_than (file, 
-			      offset + (original_size_x * original_size_y
+			      offset + ((off_t) original_size_x 
+					* original_size_y
 					* sizeof (float))));
 
   // Find the stride that we need to use in each dimension to evenly
   // cover the original image space.
-  double stride_x = (double) (original_size_x - 1) / (size_x - 1);
-  double stride_y = (double) (original_size_y - 1) / (size_y - 1);
+  double stride_x = (size_x == 1 ? 0.0 
+		     : (double) (original_size_x - 1) / (size_x - 1));
+  double stride_y = (size_y == 1 ? 0.0 
+		     : (double) (original_size_y - 1) / (size_y - 1));
 
   // Open the file to read data from.
   FILE *fp = fopen (file, "r");
@@ -720,7 +723,7 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
 
   // We will write the reduced resolution version of the image into a
   // temporary file so we can leverage the new_from_file method and
-  // avoid trying to stick the whold reduced resolution image in
+  // avoid trying to stick the whole reduced resolution image in
   // memory.
   FILE *reduced_image = tmpfile ();
 
@@ -763,9 +766,9 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
       g_assert (in_ul_x < original_size_x);
       size_t in_ul_y = in_ray;
       off_t sample_offset 
-	= offset + sizeof (float) * (in_ul_y * original_size_x + in_ul_x);
-      return_code 
-	= fseeko (fp, sample_offset, SEEK_SET);
+	= offset + sizeof (float) * ((off_t) in_ul_y * original_size_x 
+				     + in_ul_x);
+      return_code = fseeko (fp, sample_offset, SEEK_SET);
       g_assert (return_code == 0);
       read_count = fread (&(uls[jj]), sizeof (float), 1, fp);
       g_assert (read_count == 1);
@@ -782,7 +785,7 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
     }
     // Fetch the row below.
     for ( jj = 0 ; jj < size_x ; jj++ ) {
-      // Input image indicies of hte lower left corner pixel.
+      // Input image indicies of the lower left corner pixel.
       ssize_t in_ll_x = floor (jj * stride_x);
       // Watch for floating point inexactness (see comment above).
       if ( G_UNLIKELY (in_ll_x >= original_size_y - 1) ) {
@@ -793,9 +796,9 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
       g_assert (in_ll_x < original_size_x);      
       size_t in_ll_y = in_rby;
       off_t sample_offset
-	= offset + sizeof (float) * (in_ll_y * original_size_x + in_ll_x);
-      return_code 
-	= fseeko (fp, sample_offset, SEEK_SET);
+	= offset + sizeof (float) * ((off_t) in_ll_y * original_size_x 
+				     + in_ll_x);
+      return_code = fseeko (fp, sample_offset, SEEK_SET);
       g_assert (return_code == 0);
       read_count = fread (&(lls[jj]), sizeof (float), 1, fp);
       g_assert (read_count == 1);
@@ -876,7 +879,7 @@ cached_tile_to_disk (FloatImage *self, size_t tile_offset)
 {
   int return_code 
     = fseeko (self->tile_file, 
-	      (off_t)tile_offset * self->tile_area * sizeof (float),
+	      (off_t) tile_offset * self->tile_area * sizeof (float),
 		SEEK_SET);
     g_assert (return_code == 0);
     size_t write_count = fwrite (self->tile_addresses[tile_offset], 
