@@ -35,13 +35,10 @@ install_gsl: stage_gsl_stamp
 	cp $(LIB_STAGEDIR)/*.a $(LIBDIR)
 	cp -r $(INCLUDE_STAGEDIR)/gsl $(ASF_INCLUDE_DIR)
 
-# Create the staging directories.
-staging_directories:
-	mkdir -p $(LIB_STAGEDIR) $(INCLUDE_STAGEDIR)
-
 # Copy an already build GSL into the staging area, or build it there
 # if a copy doesn't appear to be available.
-stage_gsl_stamp: staging_directories
+stage_gsl_stamp:
+	mkdir -p $(LIB_STAGEDIR) $(INCLUDE_STAGEDIR)
 	if [ -n "$(EXISTING_GSL_ROOT)" ] ; then \
 	    cp $(EXISTING_GSL_ROOT)/lib/libgsl.a \
                $(EXISTING_GSL_ROOT)/lib/libgslcblas.a \
