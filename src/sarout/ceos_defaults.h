@@ -131,31 +131,43 @@ struct IOF_VFDR default_ifdr = {
 /*          rlen_len */ 	4,
 /*   char   spare2[4] */ 	"",
 /*          spare3[64]*/ 	"",
-/*   int    numofrec */ 	-99,  	/* data records 			*/
-/*          reclen */ 		-99,    /* Record Length 			*/
-/*          bitssamp */ 	-99,  	/* bits per sample 			*/
-/*          sampdata */ 	-99,  	/* samples per data group 		*/
-/*          bytgroup */ 	-99,  	/* bytes per group 			*/
-/*   char   justific[5] */ 	"",     /* Justificat'n & order of samps group  */
-/*   int    sarchan */ 		1,   	/* SAR channels in this file 		*/
-/*          linedata */ 	-99,  	/* lines per data set 			*/
-/*          lbrdrpxl */ 	0,  	/* left border pixels per line 		*/
-/*          datgroup */ 	-99,  	/* Total number of data groups 		*/
-/*          rbrdrpxl */ 	-99,  	/* right border pixels per line 	*/
-/*          topbrdr */ 		0,   	/* top border lines 			*/
-/*          botbrdr */ 		0,   	/* bottom border lines 			*/
-/*   char   interlv[5] */ 	"BSQ",  /* Interleave Indicator 		*/
-/*   int    recline */ 		1,   	/* physical records per line 		*/
-/*          mrecline */ 	1,  	/* physical recs per multi-channel line */
-/*          predata */ 		192,   	/* bytes of prefix data per record 	*/
-/*          sardata */ 		-99,   	/* bytes of sar data per record 	*/
-/*          sufdata */ 		0,   	/* bytes of suffix data per record 	*/
-/*   char   repflag[5] */ 	"",     /* prefix/suffix repeat flag 		*/
-/*          formatid[29] */ 	"fill me", /* SAR data format identifier 	*/
-/*          formcode[5] */ 	"UNK",  /* SAR data format type code 		*/
-/*   int    leftfill */ 	0,  	/* Left fill bits per pixel 		*/
-/*          rigtfill */ 	0,  	/* Right fill bits per pixel 		*/
-/*          maxidata */ 	-99  	/* Maximum data range of pixel 		*/
+/*   int    numofrec */         -99,    /* data records                       */
+/*          reclen */           -99,    /* Record Length                      */
+/*   char   spare4 */           "",     /* unused                             */
+/*   int    bitssamp */         -99,    /* bits per sample                    */
+/*          sampdata */         -99,    /* samples per data group             */
+/*          bytgroup */         -99,    /* bytes per group                    */
+/*   char   justific[5] */      "",     /* Justificat'n & order of samps group*/
+/*   int    sarchan */          1,      /* SAR channels in this file          */
+/*          linedata */         -99,    /* lines per data set                 */
+/*          lbrdrpxl */         0,      /* left border pixels per line        */
+/*          datgroup */         -99,    /* Total number of data groups        */
+/*          rbrdrpxl */         -99,    /* right border pixels per line       */
+/*          topbrdr */          0,      /* top border lines                   */
+/*          botbrdr */          0,      /* bottom border lines                */
+/*   char   interlv[5] */       "BSQ",  /* Interleave Indicator               */
+/*   int    recline */          1,      /* physical records per line          */
+/*          mrecline */         1,      /* physical recs per multi-channel line*/
+/*          predata */          192,    /* bytes of prefix data per record    */
+/*          sardata */          -99,    /* bytes of sar data per record       */
+/*          sufdata */          0,      /* bytes of suffix data per record    */
+/*   char   repflag[5] */       "    ", /* prefix/suffix repeat flag          */
+/*          lin_loc[9] */       "  1354PB",  /* line number locator           */
+/*          chn_loc[9] */       "  4952PB",  /* channel number locator        */
+/*          time_loc[9] */      "  4554PB",  /* time locator                  */
+/*          left_loc[9] */      "  21 4PB",  /* left fill locator             */
+/*          right_loc[9] */     "  29 4PB",  /* right fill locator            */
+/*          pad_ind[5] */       "    ", /* pad pixel indicator                */
+/*          spare6[29] */       "",     /* unused                             */
+/*          qual_loc[9] */      "",     /* quality code locator               */
+/*          cali_loc[9] */      "",     /* calibration info locator           */
+/*          gain_loc[9] */      "",     /* gain value locator                 */
+/*          bais_loc[9] */      "",     /* bias value locator                 */
+/*          formatid[29] */     "fill me", /* SAR data format identifier      */
+/*          formcode[5] */      "UNK",  /* SAR data format type code          */
+/*   int    leftfill */         0,      /* Left fill bits per pixel           */
+/*          rigtfill */         0,      /* Right fill bits per pixel          */
+/*          maxidata */         -99     /* Maximum data range of pixel        */
 };
 
 /*Facility Related Data Record.*/

@@ -236,6 +236,7 @@ void fill_iof_vfdr(int mode,struct IOF_VFDR *v,int nl,int ns,int nbytes, char *f
  v->file_num = 2;
  strcpy(v->product_id,filename);
  v->reclen      = nbytes;
+ strcpy(v->spare4,"                        ");
  v->justific[0] = '\0';
  v->sarchan     = 1;
  v->lbrdrpxl = v->rbrdrpxl = v->topbrdr = v->botbrdr = 0;
@@ -245,7 +246,18 @@ void fill_iof_vfdr(int mode,struct IOF_VFDR *v,int nl,int ns,int nbytes, char *f
  v->predata     = H_SZ + R_SZ;
  v->sardata     = nbytes - (H_SZ+R_SZ);
  v->sufdata     = 0;
- v->repflag[0]  = '\0';
+ strcpy(v->repflag,"    ");
+ strcpy(v->lin_loc,  "  1354PB");
+ strcpy(v->chn_loc,  "  4952PB");
+ strcpy(v->time_loc, "  4554PB");
+ strcpy(v->left_loc, "  21 4PB");
+ strcpy(v->right_loc,"  29 4PB");
+ strcpy(v->pad_ind,"     ");
+ strcpy(v->spare6,"                            ");
+ strcpy(v->qual_loc,"        ");
+ strcpy(v->cali_loc,"        ");
+ strcpy(v->gain_loc,"        ");
+ strcpy(v->bais_loc,"        ");
  v->leftfill = v->rigtfill = 0;
 
  switch(mode) {
