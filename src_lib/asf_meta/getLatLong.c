@@ -89,12 +89,12 @@ GEOLOCATE_REC *init_geolocate(const stateVector *stVec)
 GEOLOCATE_REC * init_geolocate_meta(const stateVector *stVec,meta_parameters *meta)
 {
 	GEOLOCATE_REC *g=init_geolocate(stVec);
-	g->lambda=meta->geo->wavelen;
-	g->side=meta->geo->lookDir;
-	if (meta->geo->type=='P')/*Image is map projected-- get earth radii from there*/
+	g->lambda=meta->sar->wavelength;
+	g->side=meta->sar->look_direction;
+	if (meta->sar->image_type=='P')/*Image is map projected-- get earth radii from there*/
 	{
-		g->re=meta->geo->proj->re_major;
-		g->rp=meta->geo->proj->re_minor;
+		g->re=meta->projection->re_major;
+		g->rp=meta->projection->re_minor;
 	}
 	return g;
 }
