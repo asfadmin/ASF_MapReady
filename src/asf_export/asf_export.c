@@ -494,65 +494,6 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
   return data;
 }
 
-/* Get a strip strip_size high with 0-based index strip_index of image
-   data from image_data_file having metadata metadata.  Note that
-   strip_index counts image scan lines, not strip_size strips.  The
-   size of the returned region depends on the sample size and image
-   dimensions metadata, and on the strip_size argument.  The stip
-   pointer must point to memory sufficient for the job.  */
-static void
-get_image_strip (meta_parameters *metadata, const char *image_data_file, 
-		 size_t strip_size, size_t strip_index, void *strip)
-{
-  size_t sample_size = get_sample_size (metadata);
-  off_t skip_count;
-  int return_code;
-  off_t pixel_count;
-  void *data;
-  size_t read_count;
-
-  /* Open the image data file.  */
-  FILE *ifp = fopen (image_data_file, "r");
-  if ( ifp == NULL ) {
-    fprintf (stderr, "%s: failed to open %s: %s\n", program_name, 
-	     image_data_file, strerror (errno));
-    exit (EXIT_FAILURE);
-  }
-
-  /* Seek to the start of the strip.  */
-  skip_count 
-    = ( (off_t) metadata->general->sample_count) * strip_index * sample_size;
-  return_code = fseeko (ifp, skip_count, SEEK_SET);
-  assert (return_code == 0);
-
-  /* Total number of samples in strip.  */
-  pixel_count = strip_size * metadata->general->sample_count;
-
-  /* Allocate space for the strip.  */
-  data = MALLOC (pixel_count * sample_size);
-
-  /* Read the image data itself.  */
-  read_count = fread (data, sample_size, pixel_count, ifp);
-  if ( read_count != pixel_count ) {
-    if ( feof (ifp) ) {
-      fprintf (stderr, "%s: read wrong amount of data from %s\n", program_name,
-	       image_data_file);
-    }
-    else if ( ferror (ifp) ) {
-      fprintf (stderr, "%s: read of file %s failed: %s\n", program_name, 
-	       image_data_file, strerror (errno));
-    }
-    else {
-      assert (FALSE);		/* Shouldn't be here.  */
-    }
-    exit (EXIT_FAILURE);
-  }
-  assert (feof (ifp));
-
-  return_code = fclose (ifp);
-  assert (return_code == 0);
-}  
-
 void
 export_as_envi (const char *metadata_file_name,
 		const char *image_data_file_name,
