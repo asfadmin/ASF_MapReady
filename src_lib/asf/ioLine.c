@@ -302,7 +302,7 @@ int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
                           * sample_count;
   }
 
-  FSEEK64(file, sample_size*sample_count*line_number, SEEK_SET);
+  FSEEK64(file, (long long)sample_size*sample_count*line_number, SEEK_SET);
   out_buffer = MALLOC( sample_size * sample_count * num_lines_to_put );
 
   /* Fill in destination array.  */
