@@ -162,11 +162,11 @@ lasErr c_putddr(const char *hname,struct DDR *ddr)
             switch ( mds_ddr->dtype ) {
               char ddr_code[2];
               case 0: /* BYTE */
-              case 1: strcpy(mds_meta->general->data_type,"BYTE");      break;
-              case 2: strcpy(mds_meta->general->data_type,"INTEGER*2"); break;
-              case 3: strcpy(mds_meta->general->data_type,"INTEGER*4"); break;
-              case 4: strcpy(mds_meta->general->data_type,"REAL*4");    break;
-              case 5: strcpy(mds_meta->general->data_type,"REAL*8");    break;
+              case 1: mds_meta->general->data_type = BYTE;      break;
+              case 2: mds_meta->general->data_type = INTEGER16; break;
+              case 3: mds_meta->general->data_type = INTEGER32; break;
+              case 4: mds_meta->general->data_type = REAL32;    break;
+              case 5: mds_meta->general->data_type = REAL64;    break;
               default:
                     ddr_code[0]=mds_ddr->dtype+48;  /* Turn code # to ascii */
                     ddr_code[1]='\0';             /* Make ddr_code a string */
