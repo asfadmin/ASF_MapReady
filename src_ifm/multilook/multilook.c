@@ -1,7 +1,26 @@
-/****************************************************************
-NAME:  ml
+/******************************************************************************
+*                                                                             *
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* You should have received an ASF SOFTWARE License Agreement with this source *
+* code. Please consult this agreement for license grant information.          *
+*                                                                             *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*	Alaska Satellite Facility	    	                              *
+*	Geophysical Institute			www.asf.alaska.edu            *
+*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
+*	P.O. Box 757320							      *
+*	Fairbanks, AK 99775-7320					      *
+*									      *
+******************************************************************************/
+/******************************************************************************
+NAME:  multilook
 
-SYNOPSIS: ml [-l hxw] [-s hxw] [-n metafile] [-a] <interferogram> <output>
+SYNOPSIS:
+	multilook [-l hxw] [-s hxw] [-n metafile] [-a] <interferogram> <output>
     
 DESCRIPTION:
 	Multilook is a low pass filter which also decreases the image 
@@ -15,9 +34,8 @@ DESCRIPTION:
 	Changes: 
 	Look area is now variable with default set to 1 col and 5 rows, equal
 	to the step area. For noisy data, step at 2 cols by 10 rows. Output
-	amp. and phase files are still float values. The new code comes from 
-	mldata() used by amp2img.
-        
+	amp. and phase files are still float values.
+
 	Calculating Multilooked Amp:
 	Add the square of each amp. in look area. Divide by the number of
 	amp. entries. Take square root of this value. 
@@ -41,71 +59,40 @@ FILE REFERENCES:
     ---------------------------------------------------------------
 
 PROGRAM HISTORY:
-    VERS:   DATE:        PURPOSE:
+    VERS: DATE:  AUTHOR       PURPOSE:
     ---------------------------------------------------------------
-    1.0			Rob Fatland - Original Development
-    1.1                 M. Shindle - Revise & Clean
-    2.0                 M. Shindle - Allow multilooking on variable size
-			window. ML will still move in 1 x 5 step, but can now
-			look at an area of StepLine and StepSample. AmpOut
-			and PhaseOut are now byte images instead of float. 
-    3.0                 Modify StepSline & StepSample
-    3.2			O. Lawlor - Get image size from DDR.
-     "     07/11/97     D.Corbett - updated version number
-    3.3    10/24/97     Bug fix - now allows ss <> 1 & fixed for loop for 
-			Sin & Cos table creation. 
-    3.4			O. Lawlor - Updated CLA's.
-    3.5	   9/00		T. Logan - Fixed amp calculation, added nLooks switch
-    3.6	   7/01		R. Gens - Added log file switch
+    1.0          Rob Fatland  Original Development
+    1.1          M. Shindle   Revise & Clean
+    2.0          M. Shindle   Allow multilooking on variable size window. ML
+                                will still move in 1 x 5 step, but can now look
+                                at an area of StepLine and StepSample. AmpOut
+                                and PhaseOut are now byte images instead of
+                                float.
+    3.0                       Modify StepSline & StepSample
+    3.2          O. Lawlor    Get image size from DDR.
+     "     7/97  D.Corbett    Updated version number
+    3.3   10/97               Bug fix - now allows ss <> 1 & fixed for loop for 
+                                 Sin & Cos table creation. 
+    3.4          O. Lawlor    Updated CLA's.
+    3.5    9/00  T. Logan     Fixed amp calculation, added nLooks switch
+    3.6    7/01  R. Gens      Added log file switch
+    3.7    2/04  P. Denny     Changed name from ml to multilook, changed license
+                               from GPL to our own ASF license.
 
 HARDWARE/SOFTWARE LIMITATIONS:
-
 ALGORITHM DESCRIPTION:
-
 ALGORITHM REFERENCES:
-
 BUGS:
-
-****************************************************************/
-/****************************************************************************
-*								            *
-*   ml  -  convert an interferogram's .amp & .phase files into an image.    *
-*   Copyright (C) 2001  ASF Advanced Product Development    	    	    *
-*									    *
-*   This program is free software; you can redistribute it and/or modify    *
-*   it under the terms of the GNU General Public License as published by    *
-*   the Free Software Foundation; either version 2 of the License, or       *
-*   (at your option) any later version.					    *
-*									    *
-*   This program is distributed in the hope that it will be useful,	    *
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
-*   GNU General Public License for more details.  (See the file LICENSE     *
-*   included in the asf_tools/ directory).				    *
-*									    *
-*   You should have received a copy of the GNU General Public License       *
-*   along with this program; if not, write to the Free Software		    *
-*   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
-*									    *
-*   ASF Advanced Product Development LAB Contacts:			    *
-*	APD E-mail:	apd@asf.alaska.edu 				    *
-* 									    *
-*	Alaska SAR Facility			APD Web Site:	            *	
-*	Geophysical Institute			www.asf.alaska.edu/apd	    *
-*       University of Alaska Fairbanks					    *
-*	P.O. Box 757320							    *
-*	Fairbanks, AK 99775-7320					    *
-*									    *
-****************************************************************************/
+*******************************************************************************/
 
 #include "asf.h"
 #include "las.h"
 #include "ifm.h"
 #include "asf_meta.h"
-#include "ml.h"
+#include "multilook.h"
 
 /* local constants */
-#define VERSION      3.6
+#define VERSION      3.7
 
 /* function declaration */
 void parse_clas(int, char **,int *,int *,int *,int *,int *);
@@ -471,21 +458,33 @@ void parse_clas(int argc,
 }
 
 void usage(char *name) {
-  printf("\nUSAGE: %s [-l hxw] [-s hxw] [-n metafile] [-a] [-x logfile] <interferogram> <output>\n",name);
-  printf("    -l changes the look box to h by w. Default is %dx%d\n",LOOKLINE,LOOKSAMPLE);
-  printf("    -s changes the step box to h by w. Default is %dx%d\n",STEPLINE,STEPSAMPLE);
-  printf("    -n changes step & look box to nLooks by 1, as read from meta file\n");
-  printf("    -a removes the amplitude image from the _las.img, producing only color phase\n");
-  printf("    -x allows the output to be written to a log file\n");
-  printf("    <interferogram>  Input iterferogram files (.amp, .phase, .ddr).\n"
-	 "                     Usually the output from igram(1).\n");
-  printf("    <output> is a multilook 'base' file name; the program will produce\n");
-  printf("             four output files:  <ml>.amp and <ml>.phase\n");
-  printf("             <ml>.img and <ml>.ddr\n\n");
-  printf("Multilook will do two things: it will shrink the image\n\
-vertically to make its aspect ratio 1.0, and it can apply a low\n\
-pass filter over the image, to remove speckle.\n");
-  printf("\nVersion: %.2f, ASF SAR Tools\n",VERSION);
-  Exit("ml:  not enough command line args");
+
+ printf("\n"
+	"USAGE: %s [-l hxw] [-s hxw] [-n metafile] [-a] [-x logfile]\n"
+	"                 <interferogram> <output>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <interferogram>  Input iterferogram files (.amp, .phase, .meta).\n"
+	"                    Usually the output from igram(1).\n"
+	"   <output> is a multilook 'base' file name; the program will produce\n"
+	"            four output files: <output>.amp and <output>.phase\n"
+	"                               <output>.img and <output>.meta\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -l changes the look box to h by w. Default is %dx%d\n"
+	"   -s changes the step box to h by w. Default is %dx%d\n"
+	"   -n changes step & look box to nLooks by 1, as read from meta file\n"
+	"   -a removes the amplitude image from the _las.img, producing only color phase\n"
+	"   -x allows the output to be written to a log file\n",
+	LOOKLINE,LOOKSAMPLE,STEPLINE,STEPSAMPLE);
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   This program will do two things: it will shrink the image vertically\n"
+	"   to make its aspect ratio 1.0, and it can apply a low pass filter over\n"
+	"   the image, to remove speckle.\n");
+ printf("\n"
+	"Version: %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
 
