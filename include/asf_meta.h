@@ -391,10 +391,10 @@ void meta_get_orig_img_dimensions(meta_parameters *sar, long *lines,
 				  long *samples);
 
 /*Return satellite height.*/
-double meta_get_sat_height(meta_parameters *sar);
+double meta_get_sat_height(meta_parameters *meta, long line, long sample);
 
 /*Return earth radius at scene center.*/
-double meta_get_earth_radius(meta_parameters *sar);
+double meta_get_earth_radius(meta_parameters *meta, long line, long sample);
 
 /*Return slant range to first (leftmost) pixel, and slant range per pixel.*/
 void meta_get_slants(meta_parameters *sar,double *slantFirst, double *slantPer);
