@@ -1,0 +1,23 @@
+# Makefile for libasf_raster library
+
+include ../../make_support/system_rules
+
+OBJS =  scaling.o \
+	stats.o
+
+all: build_only
+	mv libasf_raster.a $(LIBDIR)
+	rm *.o
+
+build_only: $(OBJS)
+	rm -f libasf_raster.a
+	ar r libasf_raster.a $(OBJS)
+	$(RANLIB) libasf_raster.a
+
+# Rebuild everything if makefile or any local of ASF header or library
+# has changed.
+$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) \
+	 $(addprefix $(LIBDIR)/, $(LIBS))
+
+clean:
+	rm -rf $(OBJS) libasf_raster.a
