@@ -134,26 +134,51 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 	/* UTM zone code or 62 if n/a; int */
 		ddr->zone_code = (proj->type=='U') ? proj->param.utm.zone : 62;
 		ddr->valid[DDZCV] = VALID;
-	/* Projection type; int */
+	/* Projection type; int
+	 * AND
+	 * Projection coefficients array; double[15]
+	 *  Entire coefficients array is 0.0 for Geographic and UTM;
+	 *  meta structure does not currently support geographic or albers projections */
 		switch (proj->type) {
 		    case 'A': /* Along-track/cross-track... ddr has no atct projection, default to UTM */
 			/*Can't do anything here until we add AT/CT to asf_geolib.*/
 			proj_invalid=1;
-	        	printf("** DDR files do not support JPL's along-track/cross-track projection.\n"
-			       "** For valid DDR data, you must geocode your data under a different\n"
-			       "** projection (use ASF tool 'geocode').\n");
+	        	printf("Warning in asf_meta library function meta_new2ddr:\n"
+			       "    DDR files do not support JPL's along-track/cross-track projection.\n"
+			       "    For valid DDR data, you should geocode your data under a different\n"
+			       "    projection (use ASF tool 'geocode').\n");
 			break;
-		    case 'L':/* Lambert azimuthal equal area */
-			ddr->proj_code = LAMAZ;
+		    case 'L':/* Lambert Conformal Conic */
+			ddr->proj_code = LAMCC;
 			ddr->valid[DDPCV] = VALID;
+			ddr->proj_coef[0] = proj->re_major;
+			ddr->proj_coef[1] = proj->re_minor;
+			ddr->proj_coef[2] = packed_deg(proj->param.lambert.plat1); /*standard parallel1*/
+			ddr->proj_coef[3] = packed_deg(proj->param.lambert.plat2); /*standard parallel2*/
+			ddr->proj_coef[4] = packed_deg(proj->param.lambert.lon0);  /*Center longitude of proj*/
+			ddr->proj_coef[5] = packed_deg(proj->param.lambert.lat0);  /*Center latitude of proj*/
+			ddr->proj_coef[6] = 0.0; /*False Easting*/
+			ddr->proj_coef[7] = 0.0; /*False Northing*/
+			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
 			break;
 		    case 'P':/* Polar Stereographic */
 			ddr->proj_code = PS;
 			ddr->valid[DDPCV] = VALID;
+			ddr->proj_coef[0] = proj->re_major;
+			ddr->proj_coef[1] = proj->re_minor;
+			ddr->proj_coef[4] = packed_deg(proj->param.ps.slon);/*Longitude down below pole of map*/
+			ddr->proj_coef[5] = packed_deg(proj->param.ps.slat);/*Latitude of true scale*/
+			ddr->proj_coef[6] = 0.0; /*False Easting*/
+			ddr->proj_coef[7] = 0.0; /*False Northing*/
+			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
 			break;
 		    case 'U':/* Universal Transverse Mercator */
 			ddr->proj_code = UTM;
 			ddr->valid[DDPCV] = VALID;
+		    /*Unnecessary since the zone is specified*/
+			ddr->proj_coef[0] = meta->general->center_latitude; /*any longitude in proj*/
+			ddr->proj_coef[1] = meta->general->center_longitude;/*any latitude in proj*/
+			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
 			break;
 		    default:/*Der?*/
 			printf("Unrecognized map projection type '%c' passed to meta_new2ddr!\n",proj->type);
@@ -165,34 +190,6 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 	/* Datum Code; int */
 		ddr->datum_code = earth_radius2datum(proj->re_major, proj->re_minor);
 		ddr->valid[DDDCV] = (ddr->datum_code==-1) ? INVAL : VALID;
-	/* Projection coefficients array; double[15] */
-		  /* Entire array 0.0 for Geographic and UTM;
-		   * meta structure does not currently support geographic or albers projections */
-		if (ddr->proj_code == LAMAZ) /* Lambert azimuthal equal area */ {
-			ddr->proj_coef[0] = 0.0; /* Reference sphere; 0 denotes 6370997m */
-			ddr->proj_coef[2] = packed_deg(proj->param.lambert.plat1); /*standard parallel1*/
-			ddr->proj_coef[3] = packed_deg(proj->param.lambert.plat2); /*standard parallel2*/
-			ddr->proj_coef[4] = packed_deg(proj->param.lambert.lon0);  /*Center longitude of proj*/
-			ddr->proj_coef[5] = packed_deg(proj->param.lambert.lat0);  /*Center latitude of proj*/
-			ddr->proj_coef[6] = 0.0; /*False Easting*/
-			ddr->proj_coef[7] = 0.0; /*False Northing*/
-			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
-		}
-		else if (ddr->proj_code == PS) /* Polar Stereographic */ {
-			ddr->proj_coef[0] = proj->re_major;
-			ddr->proj_coef[1] = proj->re_minor;
-			ddr->proj_coef[4] = packed_deg(proj->param.ps.slon);/*Longitude down below pole of map*/
-			ddr->proj_coef[5] = packed_deg(proj->param.ps.slat);/*Latitude of true scale*/
-			ddr->proj_coef[6] = 0.0; /*False Easting*/
-			ddr->proj_coef[7] = 0.0; /*False Northing*/
-			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
-		}
-		else if (ddr->proj_code == UTM) /* Universal Transverse Mercator */ {
-		    /*Unneeded since the zone is specified*/
-			ddr->proj_coef[0] = meta->general->center_latitude; /*any longitude in proj*/
-			ddr->proj_coef[1] = meta->general->center_longitude;/*any latitude in proj*/
-			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
-		}
 	/* Corner Coordinates; all double[2] */
 		ddr->upleft[0] = proj->startY;
 		ddr->upleft[1] = proj->startX;
