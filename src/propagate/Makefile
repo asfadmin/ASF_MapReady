@@ -29,7 +29,7 @@ all:  gen_oe asap
 
 # Target specific variable LIBS for code build before fortran libs are
 # unpacked.
-gen_oe: LIBS = $(LIBDIR)/asf.a -lm 
+LIBS = $(LIBDIR)/asf.a -lm 
 gen_oe:	gen_oe.o
 	$(CC) $(CFLAGS) -o gen_oe gen_oe.o $(LIBS)
 	mv gen_oe$(BIN_POSTFIX) $(BINDIR)
