@@ -92,7 +92,7 @@ class importImage {
          return;
       }
    }
-   
+
 // Read pvs image files ********************************************************
    public void readpvsImage() {
 
@@ -153,6 +153,8 @@ class importImage {
          DataInputStream from = new DataInputStream(bis);
          double widthRatio = (double)width/(double)imagesize;   
          double heightRatio = (double)height/(double)imagesize;
+         byte[] byteLine = new byte[width*4];
+         float[] floatLine = new float[width];
          float[] imageLineInFloats = new float[imagesize];
          float[] imageInFloats = new float[imagesize*imagesize];
          int[] countArray = new int[imagesize];
@@ -172,8 +174,18 @@ class importImage {
          // Read line of samples (pixels) into an array (or skip the line)
             if ((imagequality==0) || (int)((ii+imagequality)/heightRatio)>oldii
                                                   || ii>(height-imagequality)) {
+            // Get the data line in bytes
+               from.read(byteLine);
+               float fVal;
                for (int jj=0; jj<width; jj++) {
-                  imageLineInFloats[(int)(jj/widthRatio)] += from.readFloat();
+               // Convert the bytes to floats
+                  fVal = Float.intBitsToFloat(((byteLine[jj*4  ]&0xff)<<24)
+                                            | ((byteLine[jj*4+1]&0xff)<<16)
+                                            | ((byteLine[jj*4+2]&0xff)<<8)
+                                            |  (byteLine[jj*4+3]&0xff));
+               // Add all the data values into image bins
+                  imageLineInFloats[(int)(jj/widthRatio)] += fVal;
+               // Keep track of how many values went into each bin for averaging
                   countArray[(int)(jj/widthRatio)]++;
                }
             }
@@ -244,9 +256,6 @@ class importImage {
          contrastHigh = defaultContrastHigh;
          
          colourarray(contrastLow, contrastHigh);
-      }
-      catch (ArrayIndexOutOfBoundsException aIOOBE) {
-         aIOOBE.printStackTrace();
       }
       catch(Exception e) {
       // Create a fake fuzzy image and let the user know things got hosed
@@ -569,43 +578,19 @@ class importImage {
                      if (!firstFLAG) {
                         raf.skipBytes(start*4);         
                      }
+                     raf.read(newline);
+                  // Convert every 4 bytes to 1 float
                      for (int jj=0; jj<sizer; jj++) {
                         index = ii*zwidth + jj + start;
-                        zoomArray[index] = raf.readFloat();
+                        zoomArray[index] = Float.intBitsToFloat(
+                                                   ((newline[jj*4  ]&0xff)<<24)
+                                                 | ((newline[jj*4+1]&0xff)<<16)
+                                                 | ((newline[jj*4+2]&0xff)<<8)
+                                                 |  (newline[jj*4+3]&0xff));
                      }
                      now += width*4;
                      raf.seek(now);
                   }
-/*
-                     raf.read(newline);
-                     for (int j = 0; j < sizer; j++) {
-                        index = i*zwidth + j + start;
-                                          
-                        //could loop these . . .   ...maybe later.
-                        
-                        if (newline[j*4] < 0) 
-                           zoomarray[index] =   (256 + newline[j*4]) * 16777216;
-                        else
-                           zoomarray[index] =   newline[j*4] * 16777216;
-                        
-                        if (newline[j*4+1] < 0) 
-                           zoomarray[index] +=   (256 + newline[j*4+1]) * 65536;
-                        else
-                           zoomarray[index] +=   newline[j*4+1] * 65536;
-                        
-                        if (newline[j*4+2] < 0) 
-                           zoomarray[index] +=   (256 + newline[j*4+2]) * 256;
-                        else
-                           zoomarray[index] +=   newline[j*4+2] * 256;
-                        
-                        if (newline[j*4+3] < 0)
-                           zoomarray[index] +=   (256 + newline[j*4+3]);
-                        else
-                           zoomarray[index] +=   newline[j*4+3];
-                     }
-                     now += width*4;
-                     raf.seek(now);
-*/
                }
                float divisor = fullmax-fullmin;      //test version;
                for (int ii=0; ii < zwidth*zheight; ii++) {
