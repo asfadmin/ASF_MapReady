@@ -57,7 +57,7 @@ state {
     second: 23.42
     vector_count: 2
     vector {
-        Time relative to image start: 11.1
+        time: 11.1
 	X coordinate, earth-fixed [m]: 22222
 	Y coordinate, earth-fixed [m]: 33333
 	Z coordinate, earth-fixed [m]: 44444
@@ -66,7 +66,7 @@ state {
 	Z velocity, earth-fixed [m]: 77777
     }
     vector {
-        Time relative to image start: 2211.1
+        time: 2211.1
 	X coordinate, earth-fixed [m]: 22222
 	Y coordinate, earth-fixed [m]: 22333
 	Z coordinate, earth-fixed [m]: 22444

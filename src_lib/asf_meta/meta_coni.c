@@ -114,8 +114,8 @@ void meta_io(coniStruct *coni,meta_parameters *meta,int reading)
 		coniIO_double(coni,"geo.","yPix:",&general->y_pixel_size,"Pixel size in Y direction [m]");
 		coniIO_double(coni,"geo.","rngPixTime:",&sar->range_time_per_pixel,"Time/pixel, range (xPix/(c/2.0), or 1/fs) [s]");
 		coniIO_double(coni,"geo.","azPixTime:",&sar->azimuth_time_per_pixel,"Time/pixel, azimuth (yPix/swathVel, or 1/prf) [s]");
-		coniIO_double(coni,"geo.","slantShift:",&sar->slantShift,"Error correction factor, in slant range [m]");
-		coniIO_double(coni,"geo.","timeShift:",&sar->timeShift,"Error correction factor, in time [s]");
+		coniIO_double(coni,"geo.","slantShift:",&sar->slant_shift,"Error correction factor, in slant range [m]");
+		coniIO_double(coni,"geo.","timeShift:",&sar->time_shift,"Error correction factor, in time [s]");
 		coniIO_double(coni,"geo.","slantFirst:",&sar->slant_range_first_pixel,"Slant range to first image pixel [m]");
 		coniIO_double(coni,"geo.","wavelength:",&sar->wavelength,"SAR Carrier Wavelength [m]");
 		coniIO_double(coni,"geo.","dopRangeCen:",&sar->range_doppler_coefficients[0],"Doppler centroid [Hz]");
@@ -184,8 +184,8 @@ void meta_io(coniStruct *coni,meta_parameters *meta,int reading)
 		coniIO_int   (coni,"general.", "original_sample_count:",&general->sample_count,         "Number of samples in original image");
 		coniIO_int   (coni,"general.", "start_line:",           &general->start_line,           "First line relative to original image");
 		coniIO_int   (coni,"general.", "start_sample:",         &general->start_sample,         "First sample relative to original image");
-		coniIO_double(coni,"general.", "xPix:",                 &general->xPix,                 "Range pixel size [m]");
-		coniIO_double(coni,"general.", "yPix:",                 &general->yPix,                 "Azimuth pixel size [m]");
+		coniIO_double(coni,"general.", "xPix:",                 &general->x_pixel_size,                 "Range pixel size [m]");
+		coniIO_double(coni,"general.", "yPix:",                 &general->y_pixel_size,                 "Azimuth pixel size [m]");
 		coniIO_double(coni,"general.", "center_latitude:",      &general->center_latitude,      "Approximate image center latitude");
 		coniIO_double(coni,"general.", "center_longitude:",     &general->center_longitude,     "Approximate image center longitude");
 		coniIO_double(coni,"general.", "re_major:",             &general->re_major,             "Major (equator) Axis of earth [m]");
@@ -209,8 +209,8 @@ void meta_io(coniStruct *coni,meta_parameters *meta,int reading)
 			coniIO_double(coni,"sar.","range_time_per_pixel:",   &sar->range_time_per_pixel,           "Time per pixel in range [s]");
 			coniIO_double(coni,"sar.","azimuth_time_per_pixel:", &sar->azimuth_time_per_pixel,         "Time per pixel in azimuth [s]");
 			coniIO_double(coni,"sar.","slant_range_first_pixel:",&sar->slant_range_first_pixel,        "Slant range to first pixel [m]");
-			coniIO_double(coni,"sar.","slantShift:",             &sar->slantShift,                     "Error correction factor, in slant range [m]");
-			coniIO_double(coni,"sar.","timeShift:",              &sar->timeShift,                      "Error correction factor, in time [s]");
+			coniIO_double(coni,"sar.","slantShift:",             &sar->slant_shift,                     "Error correction factor, in slant range [m]");
+			coniIO_double(coni,"sar.","timeShift:",              &sar->time_shift,                      "Error correction factor, in time [s]");
 			coniIO_double(coni,"sar.","wavelength:",             &sar->wavelength,                     "SAR carrier wavelength [m]");
 			coniIO_double(coni,"sar.","prf:",                    &sar->prf,                            "Pulse Repition Frequency");
 			coniIO_double(coni,"sar.","dopRangeCen:",            &sar->range_doppler_coefficients[0],  "Range doppler centroid [Hz]");

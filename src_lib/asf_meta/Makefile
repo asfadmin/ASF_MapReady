@@ -58,7 +58,9 @@ OBJS =  $(LEX_YACC_OBJS) \
         endian.o \
         get_ceos.o \
         heading.o \
-        meta_create.o \
+	meta_coni.o \
+	coniFetch.o \
+	meta_create.o \
         meta_init_aisp.o \
         meta_init_asf.o \
         meta_init_ceos.o \
