@@ -62,8 +62,8 @@ lasErr FUNCTION c_lsrepl (FILE **fd, const char *key, int *clen, int *dlen,
 	const char *cbuf, const unsigned char *dbuf, const char *dtype)
 {
 FILE *fp;
-int charlen, datalen;
-int offset;
+long long charlen, datalen;
+long long offset;
 char header[HDRL], len[LENL], odtype[TYPL], msgtxt[ERRLEN + 1];
 char *out_key;
 char *ptr;
@@ -75,7 +75,7 @@ if (strlen(key) >= KEYL)
 
 offset = -(*clen + *dlen + HDRL);	/* position at start of record  */
 
-FSEEK(fp, offset, 1);
+FSEEK64(fp, offset, 1);
 
 FREAD (header,sizeof(char),HDRL,fp);
 
@@ -102,7 +102,7 @@ if ((strlen(dtype) != 0) && (strcmp(dtype," ") != 0))
     sprintf(odtype,"%-*s",TYPL-1,dtype);
 
 offset = -(HDRL);
-FSEEK(fp, offset, 1);
+FSEEK64(fp, offset, 1);
 
 if (*clen > 0)
    sprintf(len,"%-d/%-d",*clen,*dlen);
@@ -118,7 +118,7 @@ if (*clen > 0)
 if (*dlen > 0)
     FWRITE(dbuf,sizeof(char),*dlen,fp);
 
-FSEEK(fp,0,1);
+FSEEK64(fp,0,1);
 FREE(out_key);
 
 return(E_SUCC);
