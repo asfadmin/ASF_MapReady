@@ -59,7 +59,7 @@ struct CORRPAR
  void gcorr (float *images, float *imager, int *npls, int *nplr, 
  	int mfit, float *nomoff,
  	float *streng, float *bfoffs, float *tlerrs,int verbose); 
- void cross (float *images, float *imager, 
+ void cross_prod_sums (float *images, float *imager, 
  	int *npls, int *nplr, float *unormc,int *nrow,int *ncol); 
  void eval (int ncol, int nrow, float *corr,
  	int *peakLoc,float *strength,float *hood,int verbose); 
