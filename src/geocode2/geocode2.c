@@ -1,3 +1,198 @@
+/*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
+/*
+ABOUT EDITING THIS DOCUMENTATION:
+If you wish to edit the documentation for this program, you need to change the
+following defines. For the short ones (like ASF_NAME_STRING) this is no big
+deal. However, for some of the longer ones, such as ASF_COPYRIGHT_STRING, it
+can be a daunting task to get all the newlines in correctly, etc. In order to
+help you with this task, there is a tool, edit_man_header.pl. The tool *only*
+works with this portion of the code, so fear not. It will scan in defines of
+the format #define ASF_<something>_STRING between the two auto-generated
+documentation markers, format them for a text editor, run that editor, allow
+you to edit the text in a clean manner, and then automatically generate these
+defines, formatted appropriately. The only warning is that any text between
+those two markers and not part of one of those defines will not be preserved,
+and that all of this auto-generated code will be at the top of the source
+file. Save yourself the time and trouble, and use edit_man_header.pl. :)
+*/
+
+#define ASF_NAME_STRING \
+"   asf_geocode"
+
+#define ASF_USAGE_STRING \
+"     --help"
+
+#define ASF_DESCRIPTION_STRING \
+"     This program takes an unprojected image in the ASF internal\n"\
+"     format and geocodes it, i.e. swizzles it around into one of the\n"\
+"     standard projections used for maps (universal transverse\n"\
+"     mercator, polar stereo, etc).  The output is a new image in ASF\n"\
+"     internal format."
+
+#define ASF_INPUT_STRING \
+"     Most of the \"options\" are actually required.  The specification\n"\
+"     of a certain projection type implies that all the parameters\n"\
+"     required to fully specify a projection of that type be included.\n"\
+"     \n"\
+"     This must be an ASF internal format image base name."
+
+#define ASF_OUTPUT_STRING \
+"     The base name of the geocoded image to produce."
+
+#define ASF_OPTIONS_STRING \
+"     Projection Parameter Options  \n"\
+"     ============================\n"\
+"\n"\
+"     All these options take arguments, unless otherwise noted.  Groups\n"\
+"     of options which appear together on a single line seperated by\n"\
+"     commas are aliases for the same parameter (they are intended to\n"\
+"     aid recognition, since there is much confusion of map projection\n"\
+"     terminology).\n"\
+"\n"\
+"     --projection , -p : Projection\n"\
+"          Projection to use.  Argument must be one of the following:\n"\
+"               utm    - Universal Transverse Mercator\n"\
+"               ps     - Polar stereo\n"\
+"               lamcc  - Lambert conformal conic\n"\
+"	       lamaz  - Lambert azimuthal equal area\n"\
+"               albers - Albers conical equal area\n"\
+"\n"\
+"     UTM\n"\
+"     ---\n"\
+"          --zone, : Zone\n"\
+"          --lon0, --center_longitude : Longitude\n"\
+"	  \n"\
+"	  Either the zone or center_longitude must be specified.\n"\
+"\n"\
+"          Example:\n"\
+"               --projection utm --zone <zone>\n"\
+"\n"\
+"\n"\
+"     POLAR STEREO\n"\
+"     ------------\n"\
+"          --slat, -slat, --center_latitude, --lat_ts  : Center Latitude\n"\
+"          --slon, -slon, --center_longitude, --lon_0  : Center Longitude\n"\
+"          -n, --north_pole : Center on North Pole (no argument)\n"\
+"          -s, --south_pole : Center on South Pole (no argument)\n"\
+"          --false_easting, -fe : False Easting\n"\
+"          --false_northing, -fn : False Northing\n"\
+"\n"\
+"          Examples:\n"\
+"               -p ps -slat <slat> -slon <slon> -n\n"\
+"               -p ps --slat <slat> -slon <slon> --north_pole\n"\
+"               -p ps --center_latitude <slat> --center_longitude <slon> -n\n"\
+"               -p ps -slat <slat> -slon <slon> -s\n"\
+"\n"\
+"     LAMBERT CONFORMAL CONIC\n"\
+"     -----------------------\n"\
+"          --plat1, --lat_1  : First Standard Parallel\n"\
+"          --plat2, --lat_2  : Second Standard Parallel\n"\
+"          --lat0, --center_latitude, --slat, -slat, --lat_0  : Original lat\n"\
+"          --lon0, --center_longitude, --slon, -slon, --lon_0  : Original lon\n"\
+"          --false_easting, -fe : False Easting\n"\
+"          --false_northing, -fn : False Northing\n"\
+"          --scale_factor, -sf : Scale Factor\n"\
+"\n"\
+"     LAMBERT AZIMUTHAL EQUAL AREA\n"\
+"     ----------------------------\n"\
+"          --lat0, --center_latitude, --slat, -slat, --lat_0  : Center lat\n"\
+"          --lon0, --center_longitude, --slon, -slon, --lon_0  : Center lon\n"\
+"          --false_easting, -fe : False Easting\n"\
+"          --false_northing, -fn : False Northing\n"\
+"\n"\
+"     ALBERS CONICAL EQUAL AREA\n"\
+"     -------------------------\n"\
+"          --plat1, --lat_1  : First Standard Parallel\n"\
+"          --plat2, --lat_2  : Second Standard Parallel\n"\
+"          --lat0, --center_latitude, --slat, -slat, --lat_0  \n"\
+"               : Latitude of origin\n"\
+"          --lon0, --center_longitude, --slon, -slon, --lon_0 \n"\
+"               : Longitude of meridian\n"\
+"          --false_easting, -fe : False Easting\n"\
+"          --false_northing, -fn : False Northing\n"\
+"\n"\
+"\n"\
+"     Other Options\n"\
+"     =============\n"\
+"\n"\
+"     --height <height> \n"\
+"          Assume that terrain in the image is <height> meters above\n"\
+"          the reference GEM6 ellipsoid.  Optimal geolocation accuracy\n"\
+"          will then be achieved for pixels on terrain at this height.\n"\
+"          The geolocation of terrain at other height will be off by\n"\
+"          about the height difference between the terrain and\n"\
+"          <height>, assuming a satellite look angle 45 degrees from\n"\
+"          horizontal.\n"\
+"\n"\
+"     --pixel_size <size>\n"\
+"          Scale output image such that each pixel is <size> projection\n"\
+"          coordinates (i.e. meters) on a side."
+
+#define ASF_EXAMPLES_STRING \
+"     To map project an image with centerpoint at -147 degrees\n"\
+"     longitude and average height 466 meters into universal transverse\n"\
+"     mercator projection, with one pixel 50 meters on a side:\n"\
+"\n"\
+"     asf_project --projection utm --lon0 -147.0 --height 466\n"\
+"                 --pixel_size 50 input_image output_image\n"\
+""
+
+#define ASF_LIMITATIONS_STRING \
+"     May fail badly if bad projection parameters are supplied for the\n"\
+"     area in the image.\n"\
+"\n"\
+"     Does not reproject images."
+
+#define ASF_SEE_ALSO_STRING \
+"     asf_import, asf_export"
+
+#define ASF_COPYRIGHT_STRING \
+"Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks\n"\
+"All rights reserved.\n"\
+"\n"\
+"Redistribution and use in source and binary forms, with or without\n"\
+"modification, are permitted provided that the following conditions are met:\n"\
+"\n"\
+"    * Redistributions of source code must retain the above copyright notice,\n"\
+"      this list of conditions and the following disclaimer.\n"\
+"    * Redistributions in binary form must reproduce the above copyright\n"\
+"      notice, this list of conditions and the following disclaimer in the\n"\
+"      documentation and/or other materials provided with the distribution.\n"\
+"    * Neither the name of the Geophysical Institute nor the names of its\n"\
+"      contributors may be used to endorse or promote products derived from\n"\
+"      this software without specific prior written permission.\n"\
+"\n"\
+"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\n"\
+"AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\n"\
+"IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\n"\
+"ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE\n"\
+"LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR\n"\
+"CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF\n"\
+"SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\n"\
+"INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN\n"\
+"CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)\n"\
+"ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\n"\
+"POSSIBILITY OF SUCH DAMAGE.\n"\
+"\n"\
+"       For more information contact us at:\n"\
+"\n"\
+"       Alaska Satellite Facility\n"\
+"       Geophysical Institute\n"\
+"       University of Alaska Fairbanks\n"\
+"       P.O. Box 757320\n"\
+"       Fairbanks, AK 99775-7320\n"\
+"\n"\
+"       http://www.asf.alaska.edu\n"\
+"       uso@asf.alaska.edu"
+
+#define ASF_PROGRAM_HISTORY_STRING \
+"   No history."
+
+#define ASF_VERSION_MAJOR_STRING \
+"0.10"
+
+/*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
+
 // Standard libraries.
 #include <math.h>
 #include <stdio.h>
@@ -11,6 +206,7 @@
 #include <gsl/gsl_statistics_double.h>
 
 // Libraries developed at ASF.
+#include <asf.h>
 #include <asf_meta.h>
 #include <asf_raster.h>
 #include "float_image.h"
@@ -19,20 +215,77 @@
 // Headers used by this program.
 #include "geocode_options.h"
 
+// Print invocation information.  */
+static void
+usage (void)
+{
+  printf ("\n"
+	  "USAGE:\n"
+	  ASF_NAME_STRING
+	  " "
+	  ASF_USAGE_STRING
+	  "\n\n");
+  exit (EXIT_FAILURE);
+}
+
+// Display a manual page using the pager.
+static void
+help_page (void)
+{
+  // Documentation text to display.
+  GString *documentation = g_string_new ("");
+  // System command to use to display it.
+  GString *command = g_string_new ("");
+
+  /* What to print out for help */
+  g_string_append_printf 
+    (documentation, 
+     "\n\n\n"
+     "Tool name:\n" ASF_NAME_STRING "\n\n\n"
+     "Usage:\n" ASF_NAME_STRING " " ASF_USAGE_STRING "\n\n\n"
+     "Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
+     "Input:\n" ASF_INPUT_STRING "\n\n\n"
+     "Output:\n"ASF_OUTPUT_STRING "\n\n\n"
+     "Options:\n" ASF_OPTIONS_STRING "\n\n\n"
+     "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
+     "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
+     "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
+     "Version:\n" CONVERT_PACKAGE_VERSION_STRING "\n\n\n"
+     "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n");
+  
+  // If we can, use less.
+  g_string_append_printf 
+    (command, 
+     "echo '%s' | less --prompt='Type q to quit help, h for help with help "
+     "browser'", documentation->str);
+  if ( system (command->str) == 0 )
+    exit (EXIT_SUCCESS);
+
+  // Hmmm, less didn't work cause we got here, try using more.
+  g_string_append_printf (command, "echo '%s' | more", documentation->str);
+  if ( system (command->str) == 0 )
+    exit (EXIT_SUCCESS);
+
+  // Okay, neither less or more work (obviously if we made it here),
+  // just print the info straight to stdout and exit
+  printf (documentation->str);
+  exit (EXIT_SUCCESS);
+}
+
 // Factors for going between degrees and radians.
 #define RAD_TO_DEG	57.29577951308232
 #define DEG_TO_RAD	0.0174532925199432958
 
 ///////////////////////////////////////////////////////////////////////////////
 // 
-// We want to find two 2D quadratics that map points in the output
-// space to x and y pixel indicies of points in the input space.  In
+// We want to find two 2D cubics that map points in the output space
+// to x and y pixel indicies of points in the input space.  In
 // equations, we want:
 // 
-//      X(x, y) = ax^2 + by^2 + cxy + dx + ey + g
-//      Y(x, y) = hx^2 + iy^2 + jxy + kx + ly + m
+//      X(x, y) = ax^3 + by^3 + cx^2y + dy^2x + ex^2 + gy^2 + hxy + ix + jy + k
+//      Y(x, y) = lx^3 + my^3 + nx^2y + oy^2x + px^2 + qy^2 + rxy + sx + ty + u
 //
-// We need to find model coefficients a through m, excluding f.  Then
+// We need to find model coefficients a through u, excluding f.  Then
 // we will be able to take projection coordinates x, y and find the
 // corresponding pixel indicies (X, Y) in the input image.
 //
@@ -53,11 +306,14 @@ struct data_to_fit {
 };
 
 // The GNU Scientific Library (GSL) needs functions that take vectors
-// of the model parameters as arguments.  The mapping of quadratic
-// coefficients for a quadratic ax^2 + by^2 + cxy + dx + ey + f to
-// vector positions is shown below.  Note that all quadratic
+// of the model parameters as arguments.  The mapping of cubic
+// coefficients for a cubic of the form 
+//
+//      ax^3 + by^3 + cx^2y + dy^2x + ex^2 + gy^2 + hxy + ix + jy + k 
+//
+// to vector positions is shown below.  Note that all cubic
 // coefficient offsets are refered to with these offsets, including
-// those for quadratinc Y(x, y) (for which different coefficients were
+// those for cubic Y(x, y) (for which different coefficients were
 // shown in above comments).
 static const size_t a_index = 0;
 static const size_t b_index = 1;
@@ -65,28 +321,17 @@ static const size_t c_index = 2;
 static const size_t d_index = 3;
 static const size_t e_index = 4;
 static const size_t g_index = 5;
-
 static const size_t h_index = 6;
 static const size_t i_index = 7;
 static const size_t j_index = 8;
 static const size_t k_index = 9;
 
-// Evalutate quadratic ax^2 + by^2 + cxy + dx + ey + g at x, y, where
-// a, b, c, d, e, and g are the first six elements of the coefficients
-// vector.
-//static double
-//evaluate_quadratic (const gsl_vector *coefficients, double x, double y)
-//{
-//  double a = gsl_vector_get (coefficients, a_index);
-//  double b = gsl_vector_get (coefficients, b_index);
-//  double c = gsl_vector_get (coefficients, c_index);
-//  double d = gsl_vector_get (coefficients, d_index);
-//  double e = gsl_vector_get (coefficients, e_index);
-//  double g = gsl_vector_get (coefficients, g_index);
-//  
-//  return a * pow (x, 2.0) + b * pow (y, 2.0) + c * x * y + d * x + e * y + g;
-//}
-
+// Evalutate cubic 
+//
+//      ax^3 + by^3 + cx^2y + dy^2x + ex^2 + gy^2 + hxy + ix + jy + k 
+//
+// where a, b, c, d, e, g, h, i, j, and k are the first ten elements
+// of the coefficients vector.
 static double
 evaluate_cubic (const gsl_vector *coefficients, double x, double y)
 {
@@ -110,29 +355,11 @@ evaluate_cubic (const gsl_vector *coefficients, double x, double y)
 // the difference between modeled coordinates and a batch of
 // "measured" (actually transformed with libproj) ones.  This function
 // is to be called by the minimization routines in the GSL.  The first
-// parameter (named x) is a vector of the set of quadratic
-// coefficients currently under consideration by the minimizer, and
-// has nothing to do with an x coordinate.  The parameter names used
-// were chosen for consistency with the GSL types and examples in the
-// GSL documentation.
-//static int
-//fit_x_coordinates_f (const gsl_vector *x, void *params, gsl_vector *f)
-//{
-//  struct data_to_fit *dtfs = (struct data_to_fit *)params;
-//  size_t n = dtfs->n;
-//  double *x_proj = dtfs->x_proj;
-//  double *y_proj = dtfs->y_proj;
-//  double *x_pix = dtfs->x_pix;
-//
-//  size_t i;
-//  for ( i = 0 ; i < n ; i++ ) {
-//    double x_pix_modeled = evaluate_quadratic (x, x_proj[i], y_proj[i]);
-//    gsl_vector_set (f, i, x_pix_modeled - x_pix[i]);
-//  }
-
-//  return GSL_SUCCESS;
-//}
-
+// parameter (named x) is a vector of the set of cubic coefficients
+// currently under consideration by the minimizer, and has nothing to
+// do with an x coordinate.  The parameter names used were chosen for
+// consistency with the GSL types and examples in the GSL
+// documentation.
 static int
 fit_x_coordinates_cubic_f (const gsl_vector *x, void *params, gsl_vector *f)
 {
@@ -152,24 +379,6 @@ fit_x_coordinates_cubic_f (const gsl_vector *x, void *params, gsl_vector *f)
 }
 
 // Function to minimize to determine coefficients for the Y coordinate model.
-//static int
-//fit_y_coordinates_f (const gsl_vector *x, void *params, gsl_vector *f)
-//{
-//  struct data_to_fit *dtfs = (struct data_to_fit *)params;
-//  size_t n = dtfs->n;
-//  double *x_proj = dtfs->x_proj;
-//  double *y_proj = dtfs->y_proj;
-//  double *y_pix = dtfs->y_pix;
-//
-//  size_t i;
-//  for ( i = 0 ; i < n ; i++ ) {
-//    double y_pix_modeled = evaluate_quadratic (x, x_proj[i], y_proj[i]);
-//    gsl_vector_set (f, i, y_pix_modeled - y_pix[i]);
-//  }
-//
-//  return GSL_SUCCESS;
-//}
-
 static int
 fit_y_coordinates_cubic_f (const gsl_vector *x, void *params, gsl_vector *f)
 {
@@ -188,36 +397,11 @@ fit_y_coordinates_cubic_f (const gsl_vector *x, void *params, gsl_vector *f)
   return GSL_SUCCESS;
 }
 
-
 // We also need routines to compute the jacobian matrices of the
-// fitting functions with respect to the quadratic coefficients.  The
+// fitting functions with respect to the cubic coefficients.  The
 // Jacobians of the X and Y approximating functions are the same, so
-// we don't need seperate jocobian computers for the X and Y
-// quadratics.
-//static int 
-//fit_coordinates_df (const gsl_vector *x, void *params, gsl_matrix *J)
-//{
-//  // Reassure compiler that we know we don't use x.
-//  x = x;		
-//
-//  struct data_to_fit *dtfs = (struct data_to_fit *)params;
-//  size_t n = dtfs->n;
-//  double *x_proj = dtfs->x_proj;
-//  double *y_proj = dtfs->y_proj;
-//
-//  size_t i;
-//  for ( i = 0 ; i < n ; i++ ) {
-//    gsl_matrix_set (J, i, a_index, pow (x_proj[i], 2.0));
-//    gsl_matrix_set (J, i, b_index, pow (y_proj[i], 2.0));
-//    gsl_matrix_set (J, i, c_index, x_proj[i] * y_proj[i]);
-//    gsl_matrix_set (J, i, d_index, x_proj[i]);
-//    gsl_matrix_set (J, i, e_index, y_proj[i]);
-//    gsl_matrix_set (J, i, g_index, 1.0);
-//  }
-//
-//  return GSL_SUCCESS;
-//}
-
+// we don't need seperate jacobian computers for the X and Y
+// cubics.
 static int 
 fit_coordinates_cubic_df (const gsl_vector *x, void *params, gsl_matrix *J)
 {
@@ -250,27 +434,6 @@ fit_coordinates_cubic_df (const gsl_vector *x, void *params, gsl_matrix *J)
 // us fill in a function-and-jacobian routine even if we haven't done
 // any optimizations to simultaneoiusly compute the minimization
 // function and the jacobian.  So here we have those routines.
-//static int
-//fit_x_coordinates_fdf (const gsl_vector *x, void *params, gsl_vector *f, 
-//		       gsl_matrix *J)
-//{
-//  fit_x_coordinates_f (x, params, f);
-//  fit_coordinates_df (x, params, J);
-//
-//  return GSL_SUCCESS;
-//}
-
-// This routine is analogous to fit_x_coordinates_fdf.
-//static int
-//fit_y_coordinates_fdf (const gsl_vector *x, void *params, gsl_vector *f, 
-//		       gsl_matrix *J)
-//{
-//  fit_y_coordinates_f (x, params, f);
-//  fit_coordinates_df (x, params, J);
-//
-//  return GSL_SUCCESS;
-//}
-
 static int
 fit_x_coordinates_cubic_fdf (const gsl_vector *x, void *params, gsl_vector *f,
 			     gsl_matrix *J)
@@ -294,23 +457,6 @@ fit_y_coordinates_cubic_fdf (const gsl_vector *x, void *params, gsl_vector *f,
 // Print out information about the state of the solver.
 static int
 solver_print_state (gsl_multifit_fdfsolver *s, size_t iter)
-{
-  printf ("iteration: %3u Coefficients: %.3e %.3e %.3e %.3e %.3e %.3e "
-	  "|Minimization Criteria| = %g\n",
-	  iter,
-	  gsl_vector_get (s->x, a_index),
-	  gsl_vector_get (s->x, b_index),
-	  gsl_vector_get (s->x, c_index),
-	  gsl_vector_get (s->x, d_index),
-	  gsl_vector_get (s->x, e_index),
-	  gsl_vector_get (s->x, g_index),
-	  gsl_blas_dnrm2 (s->f));
-
-  return GSL_SUCCESS;
-}
-
-static int
-solver_print_state_cubic (gsl_multifit_fdfsolver *s, size_t iter)
 {
   printf ("iteration: %3u Coefficients: %.9e %.9e %.9e %.9e %.9e %.9e %.9e "
 	  "%.9e %.9e %.9e"
@@ -346,6 +492,23 @@ main (int argc, char **argv)
   project_parameters_t *pp 
     = get_geocode_options(&argc, &argv, &projection_type, &average_height, 
 			  &pixel_size);
+  // If help was requested, display it.
+  { // Scoping block.				
+    int ii;
+    for ( ii = 0 ; ii < argc ; ii++ ) {
+      if ( strncmp (argv[ii], "-help", strlen ("-help")) == 0
+	   || strncmp (argv[ii], "--help", strlen ("--help")) == 0 ) {
+	help_page ();
+      }
+    }
+  }
+  // Get non-option command line arguments.
+  if ( argc != 3 ) {
+    usage ();
+  }
+  GString *input_image = g_string_new (argv[1]);
+  GString *output_image = g_string_new (argv[2]);
+
   // Convert all angle measures in the project_parameters to radians.
   to_radians (projection_type, pp);
 
@@ -383,11 +546,6 @@ main (int argc, char **argv)
     g_assert_not_reached ();
     break;
   }
-
-  // Get non-option command line arguments.
-  g_assert (argc == 3);
-  GString *input_image = g_string_new (argv[1]);
-  GString *output_image = g_string_new (argv[2]);
 
   // Input metadata.
   meta_parameters *imd = meta_read (input_image->str);
@@ -542,11 +700,11 @@ main (int argc, char **argv)
     dtf.y_proj[ii] -= y_proj_mean;
   }  
 
-  // Here we find our quadratic models for input pixel coorinates
-  // x_pix, y_pix in term of projection coordinates x, y.  For easy
+  // Here we find our cubic models for input pixel coorinates x_pix,
+  // y_pix in term of projection coordinates x, y.  For easy
   // reference, we put some variables in the terms used in the GSL
   // documentation.
-  printf ("Trying to fit input image x pixel indicies to 2-D quadratic\n"
+  printf ("Trying to fit input image x pixel indicies to 2-D cubic\n"
 	  "function of output image pixel projection coordinates using\n"
 	  "nonlinear least-squares fitting...\n");
   const size_t n = mapping_count;
@@ -578,7 +736,7 @@ main (int argc, char **argv)
   size_t iteration = 0;		// Current iteration of the fit.
   // Find the X model of interest.
   gsl_multifit_fdfsolver_set (s, &x_f, &x.vector);
-  solver_print_state_cubic (s, iteration);
+  solver_print_state (s, iteration);
   // If we haven't converged after this many iterations, we give up.
   size_t maximum_iterations = 500;
   do {
@@ -588,7 +746,7 @@ main (int argc, char **argv)
     if ( status == GSL_ETOLX ) { printf ("GSL_ETOLX\n"); }
     if ( status == GSL_ETOLG ) { printf ("GSL_ETOLG\n"); } 
     printf ("iteration status = %s\n", gsl_strerror (status));
-    solver_print_state_cubic (s, iteration);
+    solver_print_state (s, iteration);
     if ( status != GSL_SUCCESS ) {
       break;
     }
@@ -601,7 +759,7 @@ main (int argc, char **argv)
 #define FIT(i) gsl_vector_get (s->x, i)
 #define ERR(i) sqrt (gsl_matrix_get (covariance, i, i))
 
-  printf ("Quadratic coefficients: ax^2 + by^2 + cxy + dx + ey + g: \n");
+  printf ("Cubic coefficients: ax^2 + by^2 + cxy + dx + ey + g: \n");
   printf ("a = %12.5e +/-%12.5e\n", FIT (a_index), ERR (a_index));
   printf ("b = %12.5e +/-%12.5e\n", FIT (b_index), ERR (b_index));
   printf ("c = %12.5e +/-%12.5e\n", FIT (c_index), ERR (c_index));
@@ -616,11 +774,11 @@ main (int argc, char **argv)
     double error_standard_deviation 
       = gsl_stats_sd_m (s->f->data, s->f->stride, s->f->size, mean_error);
     double largest_error = gsl_vector_max (s->f);
-    // We want to choke if our worst point in the quadratic model is
-    // off by this many pixels or more.
+    // We want to choke if our worst point in the model is off by this
+    // many pixels or more.
     double max_allowable_error = 3.0;
     g_assert (largest_error < max_allowable_error);
-    printf ("For the differences between quadratic model values and projected "
+    printf ("For the differences between cubic model values and projected "
 	    "values:\n");
     printf ("Mean: %g\n", mean_error);
     printf ("Standard deviation: %g\n", error_standard_deviation); 
@@ -628,14 +786,14 @@ main (int argc, char **argv)
 	    largest_error);
   }
 
-  // Save our results for the x pixel quadratic model.
+  // Save our results for the x pixel model.
   gsl_vector *x_pix_model_coefficients = gsl_vector_alloc (s->x->size);
   gsl_vector_memcpy (x_pix_model_coefficients, s->x);
 
   printf ("\n");
 
   // Find the Y model of interest.
-  printf ("Trying to fit input image y pixel indicies to 2-D quadratic\n"
+  printf ("Trying to fit input image y pixel indicies to 2-D cubic\n"
 	  "function of output image pixel projection coordinates using\n"
 	  "nonlinear least-squares fitting...\n");
   // Out of caution, we free and reallocat some stuff.
@@ -654,7 +812,7 @@ main (int argc, char **argv)
     if ( status == GSL_ETOLX ) { printf ("GSL_ETOLX\n"); }
     if ( status == GSL_ETOLG ) { printf ("GSL_ETOLG\n"); } 
     printf ("iteration status = %s\n", gsl_strerror (status));
-    solver_print_state_cubic (s, iteration);
+    solver_print_state (s, iteration);
     if ( status != GSL_SUCCESS ) {
       break;
     }
@@ -664,13 +822,18 @@ main (int argc, char **argv)
   } while ( status == GSL_CONTINUE && iteration < 500 );
   gsl_multifit_covar (s->J, 0.0, covariance);
 
-  printf ("Quadratic coefficients: ax^2 + by^2 + cxy + dx + ey + g: \n");
+  printf ("Cubicic coefficients: \n"
+	  "ax^3 + by^3 + cx^2y + dy^2x + ex^2 + gy^2 + hxy + ix + jy + k: \n");
   printf ("a = %12.5e +/-%12.5e\n", FIT (a_index), ERR (a_index));
   printf ("b = %12.5e +/-%12.5e\n", FIT (b_index), ERR (b_index));
   printf ("c = %12.5e +/-%12.5e\n", FIT (c_index), ERR (c_index));
   printf ("d = %12.5e +/-%12.5e\n", FIT (d_index), ERR (d_index));
   printf ("e = %12.5e +/-%12.5e\n", FIT (e_index), ERR (e_index));
   printf ("g = %12.5e +/-%12.5e\n", FIT (g_index), ERR (g_index));
+  printf ("h = %12.5e +/-%12.5e\n", FIT (h_index), ERR (g_index));
+  printf ("i = %12.5e +/-%12.5e\n", FIT (i_index), ERR (g_index));
+  printf ("j = %12.5e +/-%12.5e\n", FIT (j_index), ERR (g_index));
+  printf ("k = %12.5e +/-%12.5e\n", FIT (k_index), ERR (g_index));
   
   // Check the health of the fit.
   {
@@ -679,11 +842,11 @@ main (int argc, char **argv)
     double error_standard_deviation 
       = gsl_stats_sd_m (s->f->data, s->f->stride, s->f->size, mean_error);
     double largest_error = gsl_vector_max (s->f);
-    // We want to choke if it our worst point in the quadratic model
-    // is off by this many pixels or more.
+    // We want to choke if it our worst point in the model is off by
+    // this many pixels or more.
     double max_allowable_error = 4.0;
     g_assert (largest_error < max_allowable_error);
-    printf ("For the differences between quadratic model values and projected "
+    printf ("For the differences between cubic model values and projected "
 	    "values:\n");
     printf ("Mean: %g\n", mean_error);
     printf ("Standard deviation: %g\n", error_standard_deviation); 
@@ -691,7 +854,7 @@ main (int argc, char **argv)
 	    largest_error);
   }
 
-  // Save our results for the y pixel quadratic model.
+  // Save our results for the y pixel model.
   gsl_vector *y_pix_model_coefficients = gsl_vector_alloc (s->x->size);
   gsl_vector_memcpy (y_pix_model_coefficients, s->x);
 
@@ -704,10 +867,10 @@ main (int argc, char **argv)
   g_free (dtf.x_proj);
 
   // Check correctness of reverse mappings of some corners, as an
-  // extra paranoid check.  We insist on the quadratic model being
-  // within this many pixels for reverse transformations of the
-  // projection coordinates of the corners of the output image back to
-  // the pixel indicies in the input image.
+  // extra paranoid check.  We insist on the model being within this
+  // many pixels for reverse transformations of the projection
+  // coordinates of the corners of the output image back to the pixel
+  // indicies in the input image.
   double max_corner_error = 2.0;
   // Upper left corner.
   double ul_lat, ul_lon;
@@ -740,7 +903,7 @@ main (int argc, char **argv)
   // Done with the input metadata.
   meta_free (imd);
 
-  // Ok, we now have quadratic functions we are happy with.  Make some
+  // Ok, we now have model functions we are happy with.  Make some
   // convenience macros for using them.
 #define X_PIXEL(x, y) evaluate_cubic (x_pix_model_coefficients, \
 				      x - x_proj_mean, y - y_proj_mean)
@@ -809,7 +972,7 @@ main (int argc, char **argv)
     }
   }
 
-  // Done with the quadratic model and the input image data.
+  // Done with the models and the input image data.
   float_image_free (iim);
   gsl_vector_free (y_pix_model_coefficients);
   gsl_vector_free (x_pix_model_coefficients);
