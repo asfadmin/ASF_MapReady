@@ -160,10 +160,10 @@ which we use to keep track of where we are in the file's structure.*/
 	
 /*If we haven't returned by now, the specified field isn't there.*/
 	if (err==NULL)
-	{/*User doesn't care about errors.  Print our own message and quit.*/
-		sprintf(errbuf,"   ERROR: Couldn't find field '%s' in\n"
-		"   granule file '%s'.\n",desiredParam,lzN);
-		printErr(errbuf);
+	{/*Warn user that field wasn't there, but carry on bravely*/
+		sprintf(errbuf,"   WARNING: Couldn't find field '%s' in\n"
+			"   granule file '%s'.\n",desiredParam,lzN);
+		return NULL;
 	} 
 	*err=1;
 	return NULL;
