@@ -22,13 +22,13 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
                 flag_indices_t flags[],
                 double lowerLat, double upperLat, char *prcPath)/*this last line of parameters are extra from the rest of the import_*() functions */
 {
-  char outDataName[256], outMetaName[256];              /* Output file names */
+  char outDataName[256]="", outMetaName[256]="";        /* Output file names */
   char imgTimeStr[20]="";
   int nTotal, nVec=1;
   int outLine;                     /* Used to handle missing lines correctly */
-  long imgStart, imgEnd;           /* Used to handle missing lines correctly */
+  long imgStart=0, imgEnd=0;       /* Used to handle missing lines correctly */
   float fd, fdd, fddd;                               /* Doppler coefficients */
-  FILE *fpOut;                                /* Data file to be written out */
+  FILE *fpOut=NULL;                           /* Data file to be written out */
   bin_state *s;    /* Structure with info about the satellite & its raw data */
   iqType *iqBuf;             /* Buffer containing the complex i & q channels */
   readPulseFunc readNextPulse; /* Pointer to function that reads the next line of CEOS Data */
