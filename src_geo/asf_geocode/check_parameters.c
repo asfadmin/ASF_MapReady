@@ -56,6 +56,13 @@ void check_parameters(projection_type_t projection_type,
         asfPrintError("False northing '%.1f' different from default value (10000000)\n",
                       pp->utm.false_northing);
 
+      // FIXME: When we are reprojecting an image, meta_get_latLon ends
+      // up calling proj_to_ll, which I don't think we are sure works
+      // right (we redid geocode partly because it is known to fail
+      // for some projections).  So we should probably change this
+      // somehow if the input is an already geocoded image which we
+      // want to recode.
+
       // Zone test - only zones for coordinates within image permitted
       meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
       zone = calc_utm_zone(lon);
