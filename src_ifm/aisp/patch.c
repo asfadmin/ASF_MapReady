@@ -14,7 +14,7 @@ EXTERNAL ASSOCIATES:
 FILE REFERENCES:
 
 PROGRAM HISTORY:
-
+  July 2004, modififed by joe lovick to correct endian issues on linux
 HARDWARE/SOFTWARE LIMITATIONS:
 
 BUGS:
@@ -23,7 +23,7 @@ BUGS:
 #include "asf.h"
 #include <unistd.h>
 #include "aisp_defs.h"
-
+#include "../../include/asf_endian.h"
 
 /* Functions in calibration.c (date: Jan 2003) */
 void calculateRCS(int projectionFlag, meta_parameters *meta, float *DNsquared,
@@ -91,6 +91,7 @@ void debugWritePatch(const patch *p,char *basename)
 	printf("   Outputting Debugging image '%s'...\n",outname);
 	strcat(strcpy(name,outname),".cpx");
 	fp = fopenImage(name,"wb");
+	
 	FWRITE(p->trans,sizeof(complexFloat),p->n_az*p->n_range,fp);
 	FCLOSE(fp);
 	meta->general->line_count = p->n_range;
@@ -248,6 +249,7 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const fi
 			
 /* Apply the Antenna Pattern Correction if desired */
 
+
                 if(s->vecLen!=0)
 		{
 	
@@ -264,13 +266,19 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const fi
 			/* Otherwise, write the multi-look buffer now */
 			for(j=0;j<p->n_range;j++)
 			{
+			  
 				mlBuf[j+mlCount*p->n_range].real = outputBuf[j].real;
                                 mlBuf[j+mlCount*p->n_range].imag = outputBuf[j].imag;
 			}
 		}
+		
+		/* Correct endian issues */
+	       for(j=0;j<p->n_range;j++) {
+			ieee_big32( outputBuf[j].real );
+			ieee_big32( outputBuf[j].imag );
+		}
 
 		FWRITE(outputBuf,sizeof(complexFloat),p->n_range,fp_cpx);
-		
 		mlCount+=1;
 		/* Multilook takes f->nlooks lines of data and averages them together, and writes one line on return */
 		if(mlCount==f->nlooks)
@@ -278,25 +286,52 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const fi
 /* multilook on the power image, then use the power image to generate an amplitude, and all other detected images from the command line. Be careful because I recycle amps after writing out the line of amplitude data, and it gets used as the sigma_0, beta_0, and gamma_0 line. It my be confusing, but it uses less memory.*/
 			multilook(mlBuf,p->n_range,f->nlooks,pwrs);
 			intensity(p->n_range,pwrs,amps);
+
+			/* Correct endian issues */
+			for(j=0;j<p->n_range;j++) {
+				ieee_big32( amps[j] );
+			}
+
 			FWRITE(amps,sizeof(float),p->n_range,fp_amp);
-			if (s->imageType.power)
-			  FWRITE(pwrs,sizeof(float),p->n_range,fp_pwr);
+
+			if (s->imageType.power) {
+				for(j=0;j<p->n_range;j++) {
+					ieee_big32( pwrs[j] );
+				}
+				FWRITE(pwrs,sizeof(float),p->n_range,fp_pwr);
+			}
+
 			if (s->imageType.sigma)
 			{
-			  calculateRCS(SIGMA_0,meta,pwrs,amps,base-mlCount/2,p->n_range,s);
-			  FWRITE(amps,sizeof(float),p->n_range,fp_sig);
+				calculateRCS(SIGMA_0, meta, pwrs, amps,
+				             base-mlCount/2, p->n_range,s);
+				/* Correct endian issues */
+				for(j=0;j<p->n_range;j++) {
+					ieee_big32( amps[j] );
+				}
+				FWRITE(amps,sizeof(float),p->n_range,fp_sig);
 			}
 
 			if (s->imageType.gamma)
 			{
-			  calculateRCS(GAMMA_0,meta,pwrs,amps,base-mlCount/2,p->n_range,s);
-			  FWRITE(amps,sizeof(float),p->n_range,fp_gam);
+				calculateRCS(GAMMA_0, meta, pwrs, amps,
+				             base-mlCount/2, p->n_range,s);
+				/* Correct endian issues */
+				for(j=0;j<p->n_range;j++) {
+					ieee_big32( amps[j] );
+				}
+				FWRITE(amps,sizeof(float),p->n_range,fp_gam);
 			}
 
 			if (s->imageType.beta)
 			{
-			  calculateRCS(BETA_0,meta,pwrs,amps,base-mlCount/2,p->n_range,s);
-			  FWRITE(amps,sizeof(float),p->n_range,fp_bet);
+				calculateRCS(BETA_0, meta, pwrs, amps,
+				             base-mlCount/2, p->n_range,s);
+				/* Correct endian issues */
+				for(j=0;j<p->n_range;j++) {
+					ieee_big32( amps[j] );
+				}
+				FWRITE(amps,sizeof(float),p->n_range,fp_bet);
 			}
 			
                         mlCount=0;
@@ -363,8 +398,3 @@ void destroyPatch(patch *p)
 	FREE(p->trans);
 	FREE(p);
 }
-
-
-
-
-
