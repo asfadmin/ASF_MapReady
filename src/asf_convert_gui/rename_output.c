@@ -65,25 +65,26 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
 
   if (user_ext == NULL)
   {
-    fixed_name = (gchar *)g_malloc(strlen(path) + strlen(basename) + 
-				   strlen(ext) + 2);
+    int len = strlen(path) + strlen(basename) + strlen(ext) + 2;
+    fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
-    g_snprintf(fixed_name, sizeof(fixed_name),
+    g_snprintf(fixed_name, len,
 	       "%s%s.%s", path, basename, ext);
   }
   else if (strcmp(user_ext, ext) != 0)
   {
-    fixed_name = (gchar *)g_malloc(strlen(path) + strlen(name_without_path) + 
-				   strlen(ext) + 2);
+    int len = strlen(path) + strlen(name_without_path) + strlen(ext) + 2;
+    fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
-    g_snprintf(fixed_name, sizeof(fixed_name),
+    g_snprintf(fixed_name, len,
 	       "%s%s.%s", path, name_without_path, ext);
   }
   else
   {
-    fixed_name = (gchar *)g_malloc(strlen(path) + strlen(name_without_path));
+    int len = strlen(path) + strlen(name_without_path) + 2;
+    fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
-    g_snprintf(fixed_name, sizeof(fixed_name),
+    g_snprintf(fixed_name, len,
 	       "%s%s", path, name_without_path);
   }
 

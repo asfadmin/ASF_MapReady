@@ -9,6 +9,8 @@ target_drag_data_received(GtkWidget *widget,
 			  guint info,
 			  guint time)
 {
+  printf("Drop!\n");
+
   gchar ** list, ** iter;
   gchar * delim = "\n";
 

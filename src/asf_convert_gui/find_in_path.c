@@ -28,7 +28,7 @@ find_in_path(gchar * file)
   pathlen = strlen(path);
 
   /* work area */
-  buf = (gchar *)g_malloc(pathlen + len + 2); 
+  buf = (gchar *) g_malloc( sizeof(gchar) * (pathlen + len + 2) ); 
 
   /* put separator + filename at the end of the buffer */
   name = buf + pathlen + 1;

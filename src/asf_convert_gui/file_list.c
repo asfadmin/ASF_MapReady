@@ -16,7 +16,10 @@ determine_default_output_file_name(gchar * data_file_name)
   
   user_settings = settings_get_from_gui();
   ext = settings_get_output_format_extension(user_settings);
-  output_name_full = (gchar *)g_malloc(strlen(basename) + strlen(ext) + 2);
+
+  output_name_full = 
+    (gchar *) g_malloc(sizeof(gchar) * (strlen(basename) + strlen(ext) + 2));
+
   g_sprintf(output_name_full, "%s.%s", basename, ext);
 
   g_free(basename);
@@ -73,7 +76,10 @@ update_all_extensions()
       if (p)
 	*p = '\0';
       
-      new_output_name = (gchar *)g_malloc(strlen(basename) + strlen(ext) + 1);
+      new_output_name = 
+	(gchar *) g_malloc(sizeof(gchar) * (strlen(basename) + 
+					    strlen(ext) + 1));
+
       g_sprintf(new_output_name, "%s.%s", basename, ext);
       
       gtk_list_store_set(list_store, &iter, 1, new_output_name, -1);

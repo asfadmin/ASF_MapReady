@@ -41,7 +41,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
 
   if (!output)
   {
-    the_output = (gchar *)g_malloc(256);
+    the_output = (gchar *)g_malloc(512);
     sprintf(the_output, "Error Opening Log File: %s\n", strerror(errno));
   }
   else
@@ -61,7 +61,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
 	}
 	else
 	{
-	  the_output = (gchar *)g_malloc(strlen(buffer) + 1);
+	  the_output = (gchar *)g_malloc(sizeof(gchar) * (strlen(buffer) + 1));
 	  strcpy(the_output, buffer);
 	}
       }
@@ -205,21 +205,35 @@ process_item(GtkTreeIter *iter,
 
       g_snprintf(log_file, sizeof(log_file), "tmp%d.log", pid);
 
+      /* later we will use this version:
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
-       "asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" \"%s\" 2>&1",
-	       settings_get_data_type_string(user_settings),
-	       settings_get_input_data_format_string(user_settings),
-	       settings_get_latitude_argument(user_settings),
-	       log_file,
-	       in_data,
-	       in_meta,
-	       basename);
+	"asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
+		 settings_get_data_type_string(user_settings),
+		 settings_get_input_data_format_string(user_settings),
+		 settings_get_latitude_argument(user_settings),
+		 log_file,
+		 basename,
+		 basename);
+      */
+
+      /* for now we use this version: */
+      g_snprintf(convert_cmd, sizeof(convert_cmd), 
+      "asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" \"%s\" 2>&1",
+		 settings_get_data_type_string(user_settings),
+		 settings_get_input_data_format_string(user_settings),
+		 settings_get_latitude_argument(user_settings),
+		 log_file,
+		 in_data,
+		 in_meta,
+		 basename);
     
       cmd_output = do_cmd(convert_cmd, log_file);
 
       append_output(cmd_output);
 
-      gchar * out_name_full = (char *)g_malloc(strlen(basename) + 10);
+      gchar * out_name_full = 
+	(gchar *)g_malloc(sizeof(gchar) * (strlen(basename) + 10));
+
       g_sprintf(out_name_full, "%s.img", basename);
       
       if (!settings_get_run_export(user_settings))
