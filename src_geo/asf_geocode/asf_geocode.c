@@ -519,8 +519,8 @@ main (int argc, char **argv)
   asfSplashScreen(argc, argv);
 
   project_parameters_t *pp 
-    = get_geocode_options(&argc, &argv, &projection_type, &average_height, 
-			  &pixel_size, &datum, &resample_method);
+    = get_geocode_options (&argc, &argv, &projection_type, &average_height, 
+			   &pixel_size, &datum, &resample_method);
   // If help was requested, display it.
   if (detect_flag_options(argc, argv, "-help", "--help", NULL)) {
     help_page ();
