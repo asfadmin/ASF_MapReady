@@ -1,5 +1,15 @@
 #include "asf_raster.h"
 
+#ifndef linux
+#ifndef win32
+static double
+round (double arg)
+{
+  return floor (arg + 0.5);
+}
+#endif // #ifndef win32
+#endif // #ifndef linux
+
 /* Evaluate to true if floats are within tolerance of each other.  */
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 
