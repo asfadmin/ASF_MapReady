@@ -19,9 +19,10 @@ PROGRAM HISTORY:
 #include "dateUtil.h"
 
 
-/*Convert the given platform position data record & time since ppdr
-start into a GHA, in degrees.  Note that this is only called if the
-scene's state vectors are in Inertial coordinates.*/
+/*********************************************************************
+ * Convert the given platform position data record & time since ppdr
+ * start into a GHA, in degrees.  Note that this is only called if the
+ * scene's state vectors are in Inertial coordinates.*/
 double ppdr2gha(struct pos_data_rec *ppdr,ceos_description *ceos,double desiredTime);
 double ppdr2gha(struct pos_data_rec *ppdr,ceos_description *ceos,double desiredTime)
 {
@@ -39,11 +40,12 @@ double ppdr2gha(struct pos_data_rec *ppdr,ceos_description *ceos,double desiredT
 	return utc2gha(year,julDay,time.hour,time.min,time.sec);*/
 }
 
-/*Get_timeDelta: Return the time difference, in seconds, between 
-the start of the state vectors (in the PPDR) and the start of 
-the image (as described in the DSSR).  Write this time to the
-given meta_parameters->stVec structure.
-*/
+/***************************************************************
+ * Get_timeDelta:
+ * Return the time difference, in seconds, between the start
+ * of the state vectors (in the PPDR) and the start of the image
+ * (as described in the DSSR).  Write this time to the given 
+ * meta_parameters->state_vectors structure.*/
 double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,meta_parameters *meta)
 {
 	ymd_date imgDate;
@@ -65,24 +67,25 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,meta_param
 /*Convert scene center time to scene *start* time, by
 subtracting off the center line # * the time/line */
 	if (!(ceos->facility==VEXCEL && ceos->product==CCSD))
-		imgSec-=ceos->dssr.sc_lin*fabs(meta->geo->azPixTime);
+		imgSec-=ceos->dssr.sc_lin*fabs(meta->sar->azimuth_time_per_pixel);
 	
 /*Convert scene center # of seconds back to date/time*/
 	sec2date(imgSec,&imgJD,&imgTime);
 
-/*Write image time to meta->stVec structure*/
-	meta->stVec->year = (int) imgJD.year;
-	meta->stVec->julDay = (int) imgJD.jd;
-	meta->stVec->second = date_hms2sec(&imgTime);
+/*Write image time to meta->state_vectors structure*/
+	meta->state_vectors->year   = (int) imgJD.year;
+	meta->state_vectors->julDay = (int) imgJD.jd;
+	meta->state_vectors->second = date_hms2sec(&imgTime);
 
 /*Return the time between state vector start and image start*/
 	return stSec-imgSec;
 }
 
 
-/*Ceos_init_stVec:
-	Reads state vectors from given CEOS file, writing
-them in the appropriate format to SAR parameters structure.*/
+/***************************************************************
+ * Ceos_init_stVec:
+ * Reads state vectors from given CEOS file, writing them in the
+ * appropriate format to SAR parameters structure.*/
 void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 {
 	int i;
@@ -97,8 +100,8 @@ void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 	get_ppdr(fName,&ppdr);
 	
 /*Allocate output record.*/
-	meta->stVec->vecs=(state_loc *)MALLOC(ppdr.ndata * sizeof(state_loc));
-	s=meta->stVec;
+	meta->state_vectors->vecs=(state_loc *)MALLOC(ppdr.ndata * sizeof(state_loc));
+	s = meta->state_vectors;
 	
 /*Determine State Vector Format.*/
 	if (0==strncmp(ppdr.ref_coord,"INERTIAL",9))
@@ -121,8 +124,8 @@ void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 	else
 	{/*Most Images' state vectors start at the 
 	same time as the images themselves.*/
-		timeStart=0.0;
-		s->year = (int) ppdr.year;
+		timeStart = 0.0;
+		s->year   = (int) ppdr.year;
 		s->julDay = (int) ppdr.gmt_day;
 		s->second = ppdr.gmt_sec;
 	} 
