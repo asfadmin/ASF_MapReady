@@ -307,7 +307,6 @@ process_item(GtkTreeIter *iter,
 
       g_snprintf(log_file, sizeof(log_file), "tmp%d.log", pid);
 
-      /* later we will use this version: */
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
 	"asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
 		 settings_get_data_type_string(user_settings),
@@ -317,18 +316,6 @@ process_item(GtkTreeIter *iter,
 		 basename,
 		 out_basename);
 
-      /* for now we use this version: 
-      g_snprintf(convert_cmd, sizeof(convert_cmd), 
-      "asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" \"%s\" 2>&1",
-		 settings_get_data_type_string(user_settings),
-		 settings_get_input_data_format_string(user_settings),
-		 settings_get_latitude_argument(user_settings),
-		 log_file,
-		 in_data,
-		 in_meta,
-		 basename);
-      */
- 
       cmd_output = do_cmd(convert_cmd, log_file);
       err = check_for_error(cmd_output);
 
