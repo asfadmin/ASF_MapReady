@@ -1,13 +1,11 @@
 
     NAME: sr2gr - converts slant range images to ground range images
 
-    SYNOPSIS:	sr2gr infile inmeta outfile outmeta pixsiz
+    SYNOPSIS:	sr2gr <infile> <outfile> <pixsiz>
 
-       infile     base name (.img,.ddr)
-       inmeta     input metadata name
-       outfile    base name (.img,.ddr)
-       outmeta    output metadata name (.meta)
-       pixsiz     output pixel spacing (m)
+       infile     base name (.img,.meta)
+       outfile    base name (.img,.meta)
+       pixsiz     output pixel spacing (meters)
 
 
     DESCRIPTION:
@@ -20,24 +18,16 @@
 	to determine appropriate ground range positions.  The remapping
 	is performed using bi-linear interpolation.
 
-    OPTIONS:
+    SEE ALSO:  deskew(1)
 
-    ERROR MESSAGES:
-    MESSAGE GIVEN:			REASON:	
-    -------------------------------------------------------------------
+    HARDWARE/SOFTWARE LIMITATIONS: None known.
 
-    EXAMPLE:
-
-    SEE ALSO:  deskew
-
-    HARDWARE/SOFTWARE LIMITATIONS:
-
-    BUGS:
+    BUGS: None known.
 
     AUTHOR: Tom Logan, ASF
 
-    CONTACT:	apd@asf.alaska.edu
-		http://www.asf.alaska.edu/apd
+    CONTACT:	uso@asf.alaska.edu
+		http://www.asf.alaska.edu
 
 
 
