@@ -96,8 +96,8 @@ int main(int argc, char **argv)
 	char outMetaFileName[256];      /* Output metadata file name          */
 	int defaultLookStep_flag=TRUE;  /* Use meta look line & sample?       */
 	int multilook_flag=FALSE;       /* Multilook the data or not          */
-	int stepLine, stepSample;       /* Step line/samp for multilooking    */
-	int lookLine, lookSample;       /* Look line/samp for multilooking    */
+	int stepLine=-1, stepSample=-1; /* Step line/samp for multilooking    */
+	int lookLine=-1, lookSample=-1; /* Look line/samp for multilooking    */
 	meta_parameters *inMeta;        /* Input metadata structure pointer   */
 	meta_parameters *outMeta;       /* Output metadata structure pointer  */
 	FILE *inFilePtr;                /* File pointer for input data        */
@@ -117,6 +117,14 @@ int main(int argc, char **argv)
 				printf("**ERROR: '%s' does not look like a line x sample (e.g. '5x1').\n",GET_ARG(1));
 				usage(argv[0]);
 			}
+			if (lookLine<1 || lookSample<1) {
+				printf("You can't have an look area of less than 1!\n");
+				usage(argv[0]);
+			}
+			if (stepLine==-1 || stepSample==-1) {
+				stepLine = lookLine;
+				stepSample = stepSample;
+			}				
 			multilook_flag=TRUE;
        			defaultLookStep_flag=FALSE;
 		}
@@ -125,6 +133,14 @@ int main(int argc, char **argv)
 			if (2!=sscanf(GET_ARG(1),"%dx%d",&stepLine,&stepSample)) {
 				printf("**ERROR: '%s' does not look like a line x sample (e.g. '5x1').\n",GET_ARG(1));
 				usage(argv[0]);
+			}
+			if (stepLine<1 || stepSample<1) {
+				printf("You can't step less than 1 line or sample!\n");
+				usage(argv[0]);
+			}
+			if (lookLine==-1 || lookSample==-1) {
+				lookLine = stepLine;
+				lookSample = stepSample;
 			}
 			multilook_flag=TRUE;
 			defaultLookStep_flag=FALSE;
@@ -302,10 +318,13 @@ void usage(char *name) {
 	"              (No extension necessary.)\n");
  printf("\n"
 	"OPTIONAL ARGUMENTS:\n"
-	"   -look lxs      change number of look lines and samples (default = 5x1).\n"
-	"   -step lxs      change number of step lines and samples (default = 5x1).\n"
-	"   -log log_file  allows the output to be written to a log file\n"
-	"   -quiet         Suppress terminal output.\n");
+	"   -multilook     Multilook the data as it is converted to byte.\n"
+	"   -look (l)x(s)  Change number of look lines (l) and samples (s).\n"
+	"                    (-multilook option is implied.)\n"
+	"   -step (l)x(s)  Change number of step lines (l) and samples (s).\n"
+	"                    (-multilook option is implied.)\n"
+	"   -log log_file  Allows the output to be written to a log file\n"
+	"   -quiet         Suppress terminal output to essential.\n");
  printf("\n"
 	"DESCRIPTION:\n"
 	"   Converts any ASF image into a byte image.\n");
