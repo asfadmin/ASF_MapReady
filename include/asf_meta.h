@@ -163,18 +163,30 @@ typedef struct {
  * meta_projection / proj_parameters: These describe a map projection.
  * Projection parameter components: one for each projection.
  */
+ /* Albers Conical Equal Area. */
+  typedef struct {
+    double std_parallel1;     /* First standard parallel           */
+    double std_parallel2;     /* Second standard parallel          */
+    double center_meridian;   /* Longitude of center meridian      */
+    double orig_latitude;     /* Latitude of the projection origin */
+  } proj_albers;
  /* Along-track/cross-track.*/
   typedef struct {
     double rlocal;              /* Radius of earth at scene center (meters)*/
     double alpha1,alpha2,alpha3;/* Rotation angles, in degrees             */
   } proj_atct;
- /* Lambert Conformal Conic projection.*/
+ /* Lambert Conformal Conic.*/
   typedef struct {
-    double plat1;     /* First standard parallel for Lambert */
-    double plat2;     /* Second standard parallel for Lambert*/
-    double lat0;      /* Original lat for Lambert            */
-    double lon0;      /* Original lon for Lambert            */
+    double plat1;     /* First standard parallel  */
+    double plat2;     /* Second standard parallel */
+    double lat0;      /* Original lat             */
+    double lon0;      /* Original lon             */
   } proj_lambert;
+ /* Lambert Azimuthal Equal Area. */
+  typedef struct {
+    double center_lon;   /* Longitude at center of projection */
+    double center_lat;   /* Latitude at center of projection  */
+  } proj_lamaz;
  /* Polar Sterographic.  */
   typedef struct {
     double slat;      /* Reference latitude for polar stereographic */
@@ -185,11 +197,11 @@ typedef struct {
     int zone;
   } proj_utm;
  /* Projection parameters for the projection in use.  */
-  typedef union {		     
-    proj_atct     atct;     /* Along-track/cross-track      */
-    proj_lambert  lambert;  /* Lambert Conformal Conic projection */
-    proj_ps       ps;       /* Polar Sterographic           */
-    proj_utm      utm;      /* Universal Transverse Mercator*/
+  typedef union {
+    proj_atct     atct;     /* Along-track/cross-track       */
+    proj_lambert  lambert;  /* Lambert Conformal Conic       */
+    proj_ps       ps;       /* Polar Sterographic            */
+    proj_utm      utm;      /* Universal Transverse Mercator */
   } param_t;
 typedef struct {
   char type;  /*'A'->Along Track/Cross Track; 'P'->Polar Stereographic;    *
@@ -213,10 +225,11 @@ typedef meta_projection proj_parameters;
  * meta_stats: statistical info about the image
  */
 typedef struct {
-  double max, min;           /* Maximum and minimum image values */
-  double mean;               /* Mean                             */
-  double rms;                /* Root mean squared                */
-  double std_deviation;      /* Standard deviation               */
+  double min, max;           /* Minimum and maximum image values      */
+  double mean;               /* Mean average of image values          */
+  double rmse;               /* Root mean squared error               */
+  double std_deviation;      /* Standard deviation                    */
+  double mask;               /* Value ignored while taking statistics */
 } meta_stats;  
 
 
@@ -320,7 +333,7 @@ meta_parameters *meta_read(const char *inName);
 /* In meta_read.c */
 meta_parameters *meta_read(const char *inName);
 
-/* In meta_copy.c */
+/* In meta_copy.c: Allocates new structure and fills it will values from src */
 meta_parameters *meta_copy(meta_parameters *src);
 
 /* In meta_write.c */
@@ -329,8 +342,15 @@ void meta_write(meta_parameters *meta,const char *outName);
 /* in meta_new2old */
 void meta_new2ddr(meta_parameters *meta, struct DDR *ddr);
 
-/*Internal creation routines:*/
+/*Initialize meta struct & stub structs to dummy values*/
+meta_general *meta_general_init(void);
+meta_sar *meta_sar_init(void);
+meta_projection *meta_projection_init(void);
+meta_state_vectors *meta_state_vectors_init(int vector_count);
+meta_stats *meta_stats_init(void);
 meta_parameters *raw_init(void);
+
+/* Create meta struct from a CEOS file */
 meta_parameters *meta_create(const char *fName);
 
 /* Return true if the file base name given has a corresponding new
@@ -430,10 +450,6 @@ GEOLOCATE_REC *init_geolocate_meta(const stateVector *stVec,meta_parameters *met
 
 /************* Interferometry *******************
 Interferometry Calls: in meta_get_ifm.c*/
-
-/* Get original image dimensions.  */
-void meta_get_orig_img_dimensions(meta_parameters *sar, long *lines, 
-				  long *samples);
 
 /*Return satellite height.*/
 double meta_get_sat_height(meta_parameters *meta, long line, long sample);
