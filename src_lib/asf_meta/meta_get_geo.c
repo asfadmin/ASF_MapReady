@@ -16,7 +16,6 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include "asf_meta.h"
 #include "jpl_proj.h"
-#include "ddr.h"
 
 /*Geolocation Calls:*/
 
