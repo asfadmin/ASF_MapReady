@@ -2,6 +2,7 @@
 Error function
 ************************************/
 
+#include "caplib.h"
 #include "error.h"
 #include "log.h"
 
