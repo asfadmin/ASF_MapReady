@@ -65,7 +65,6 @@ BUGS:
 ****************************************************************************/
 #include "asf.h"
 #include "ifm.h"
-#include "ddr.h"
 #include "asf_meta.h"
 
 /* local function declaration */
