@@ -2,8 +2,6 @@
 
 include ../../make_support/system_rules
 
-CC := /home/bkerin/local/gcc_3_4/bin/gcc
-
 OBJS = interpolate.o \
        kernel.o \
        scaling.o \
