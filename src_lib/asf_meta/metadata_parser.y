@@ -9,6 +9,9 @@
 #include "asf_meta.h"
 #include "lex_yacc.h"
 
+/* Lex provides this parser function.  */
+int yylex(void);
+
 /* Node type for stack of pointers to structure subelements.  */
 typedef struct block_stack_node_struct {
   struct block_stack_node_struct *next;
