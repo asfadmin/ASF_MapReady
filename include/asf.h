@@ -61,6 +61,8 @@ char *appendExt(const char *name,const char *newExt);
 void create_name(char *out,const char *in,const char *newExt);
 FILE *fopenImage(const char *name,const char *accessType);
 
+/* Size of line chunk to read or write */
+#define CHUNK_OF_LINES 256
 
 /*****************************************
  * ioLine:
