@@ -145,6 +145,9 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   int return_code = sigfillset (&all_signals);
   g_assert (return_code == 0);
   return_code = sigprocmask (SIG_SETMASK, &all_signals, &old_set);
+  // FIXME?: It might be faster to use file descriptor based I/O
+  // everywhere, or at least for the big transfers.  I'm not sure its
+  // worth the trouble though.
   self->tile_file = fopen (tile_file_name->str, "w+");
   g_assert (self->tile_file != NULL);
   return_code = unlink (tile_file_name->str);
