@@ -55,6 +55,10 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 
 LDLIBS := $(shell pkg-config --libs glib-2.0) $(LIBS)
 
+# We want to add the directory with the glib library to the run time
+# search path to be compiled into the executable.  The glib pkg-config
+# script gives us about what we want, only with an -L prefix, so we
+# grab from there.
 LDFLAGS := $(shell pkg-config --libs-only-L glib-2.0 \
                    | perl -p -e 's/-L(.*)/-Wl,--rpath=\1/g')
 
