@@ -5,9 +5,7 @@
 </name>
 
 <synopsis>
-asf_convert [-format <format>] <in_base_name> <out_full_name> |
-            -config <config_file> |
-            -init_config <config_file>
+asf_convert [-format <output_format>] <in_data> <in_meta> <out_full>
 </synopsis>
 
 <description>
@@ -131,357 +129,453 @@ PROGRAM HISTORY:
 #include "proj.h"
 #include <unistd.h>
 
-char *program_name = "asf_convert";
 
 #define VERSION 0.5
 #define REQUIRED_ARGS 1
 
-void usage(char *program_name)
+void usage()
 {
- printf("\n"
-	"USAGE:\n"
-	"   asf_convert [-format <format>] <in_base_name> <out_full_name> |\n"
-	"               -config <config_file> |\n"
-        "               -init_config <config_file>\n");
-  exit(EXIT_FAILURE);
+	printf("USAGE:\n"
+		"   asf_convert [-format <output_format>] <in_meta_name> <in_data_name> <out_full_name>\n");
+	exit(EXIT_FAILURE);
 }
+
+
+void config_usage()
+{
+	printf(
+		"USAGE:\n"
+		"   asf_convert -config <config_file> |\n"
+		"               -init_config <config_file>\n");
+}
+
 
 void check_return(int ret, char *msg)
 {
-  if (ret!=0) {
-    sprintf(errbuf, "\n   ERROR: %s\n\n", msg);
-    printErr(errbuf);
-  }
+	if (ret != 0)
+	{
+		sprintf(errbuf, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);//I made "ERROR:" red :D
+		printErr(errbuf);
+	}
 }
+
+//Check to see if an option was supplied or not
+//If it was found, return its argument number
+//Otherwise, return -1
+int checkForOption(char* key, int argc, char* argv[])
+{
+	int ii = 0;
+	while(ii < argc)
+	{
+		if(strmatch(key, argv[ii]))
+			return(ii);
+		++ii;
+	}
+	return(-1);
+}
+
 
 int main(int argc, char *argv[])
 {
-  FILE *fBatch;
-  s_config *cfg;
-  char configFile[255], cmd[255], options[255], in[25], out[25];
-  char proj[25], line[255], fileName[255], batchConfig[255];
-  char format_in[255], format_out[255];
-  char out_file[255], data_file[255], meta_file[255];
-  int inFlag=FALSE, outFlag=FALSE, configFlag=FALSE, configInitFlag=FALSE;
-  int id, ii;
-  file_format_t type_in, type_out;
+	FILE *fBatch;
+	s_config *cfg;
+	char configFile[255], cmd[255], options[255], in[25], out[25];
+	char proj[25], line[255], fileName[255], batchConfig[255];
+	char format_in[255], format_out[255];
+	char out_file[255], data_file[255], meta_file[255];
+//	int inFlag = FALSE, outFlag = FALSE, formatFlag = FALSE, configFlag = FALSE, configInitFlag = FALSE;
+	int formatFlag, configFlag, configInitFlag, quietFlag;
+	int ii;
+	file_format_t type_in, type_out;
+
+//*********************BEGIN COMMAND LINE PARSING STUFF*********************//
+	//Super-secret hidden options :)
+	if(checkForOption("-batch", argc, argv) != -1)
+	{
+		config_usage();
+		exit(0);
+	}
+	//Begin lunch break :)
+	if(checkForOption("-YouRock", argc, argv) != -1)
+	{
+		printf("Why thank you!\n");
+	}
+	//End lunch break :(
+
+	//Normal options
+	formatFlag = checkForOption("-format", argc, argv);
+	configFlag = checkForOption("-config", argc, argv);
+	configInitFlag = checkForOption("-init_config", argc, argv);
+	logflag = checkForOption("-log", argc, argv);
+	quietFlag = checkForOption("-quiet", argc, argv);
 
 
-  /* Parse command line args */
-  while (currArg < (argc-REQUIRED_ARGS)) {
-    char *key=argv[currArg++];
+	if(configFlag != -1 && configInitFlag != -1)//One or the other is fine, but not both
+		usage();//This exits with a failure
+	if((configFlag != -1 || configInitFlag != -1) && formatFlag)//format is mutually exclusive with these
+		usage();//This exits with a failure
 
-    if (strmatch(key,"-config")) {
-      CHECK_ARG(1);
-      strcpy(configFile,GET_ARG(1));
-      configFlag = TRUE;
-      logflag = TRUE;
-    }
-    else if (strmatch(key,"-init_config")) {
-      CHECK_ARG(1);
-      strcpy(configFile,GET_ARG(1));
-      configFlag = TRUE;
-      configInitFlag = TRUE;
-    }
-    else if (strmatch(key,"-input")) {
-      CHECK_ARG(3);
-      strcpy(format_in,GET_ARG(3));
-      strcpy(data_file,GET_ARG(2));
-      strcpy(meta_file,GET_ARG(1));
-      inFlag = TRUE;
-    }
-    else if (strmatch(key,"-output")) {
-      CHECK_ARG(2);
-      strcpy(format_out,GET_ARG(2));
-      strcpy(out_file,GET_ARG(1));
-      outFlag = TRUE;
-    }
-    else if (strmatch(key,"-log")) {
-      CHECK_ARG(1);
-      strcpy(logFile,GET_ARG(1));
-      logflag = TRUE;
-    }
-  }
+	//So, at this point, we know our options don't conflict...now we need
+	//to know how many arguments we ought to have.
+	int neededArgs = 1;//command
+	if(configFlag != -1 || configInitFlag != -1)
+		neededArgs += 2;//option & parameter
+	else
+		neededArgs += 3;//in_data_file, in_meta_file, out_file
+	if(logflag != -1)
+		neededArgs += 2;//option & parameter
+	if(formatFlag != -1)
+		neededArgs += 2;//option & parameter
+	if(quietFlag != -1)
+		neededArgs += 1;//option
 
-  if (!configFlag && (!inFlag && outFlag)) {
-    check_return(1, "No input files defined!");
-    exit(0);
-  }
-  else if (!configFlag && (inFlag && !outFlag)) {
-    check_return(1, "No output file defined!");
-    exit(0);
-  }
-  else if (argc<3)
-    usage(program_name);
+	//make sure we've got enough arguments
+	if(argc < neededArgs)
+		usage();//This exits with a failure
 
-  quietflag = TRUE;
+	//We also need to make sure the last three options are close to what we expect
+	if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-' || argv[argc - 3][0] == '-')
+		usage();//This exits with a failure
 
-  sprintf(logbuf, "\nCommand line: asf_convert");
-  for (ii=1; ii<argc; ii++) {
-    sprintf(cmd, " %s",argv[ii]);
-    strcat(logbuf, cmd);
-  }
-  sprintf(cmd, "\nDate: %s\nProgram: asf_convert\n\n", date_time_stamp());
-  strcat(logbuf, cmd);
-  printf(logbuf);
+	//Next we're going to make sure the options are specified according to the usage
+	//That is, -option <parameter> -option <parameter> and so on...if an option requires
+	//a parameter, we need to make sure it's followed by a parameter!
+	if(logflag != -1)
+		if(argv[logflag + 1][0] == '-')
+			usage();//This exits with a failure
+	if(formatFlag != -1)
+		if(argv[formatFlag + 1][0] == '-')
+			usage();//This exits with a failure
 
-  /* Get process ID. */
-  id = (int)getpid();
+	//We must be good enough at this point...start processing with assumptions that are
+	//*supposedly* guaranteed from above :)
+	if(formatFlag != -1)
+		strcpy(format_out, argv[formatFlag + 1]);
+	else
+		strcpy(format_out, "geotiff");//default behavior is geotiff
+		
+	if(logflag != -1)
+		strcpy(logFile, argv[logflag + 1]);
+	else
+		sprintf(logFile, "tmp%i.log", (int)getpid());//default behavior: log to tmp<pid>.log
+		
+	if(configFlag != -1)
+		strcpy(configFile, argv[configFlag + 1]);
+	else
+		sprintf(configFile, ".tmp%i.config", (int)getpid());//default behavior: config to tmp<pid>.config
+		
+	if(configInitFlag != -1)
+		strcpy(configFile, argv[configInitFlag + 1]);
 
-  /* Read configuration file */
-  if (configFlag) {
-    if (!fileExists(configFile)) {
-      check_return(init_config(configFile),
-		   "basic configuration file could not be initialized");
-      exit(0);
-    }
-    else if (check_resample_flag(configFile) && configInitFlag) {
-      check_return(init_resample_config(configFile),
-		   "extended resampling configuration file "
-		   "could not be initialized");
-      exit(0);
-    }
-    else if (check_geocode_flag(configFile) && configInitFlag) {
-      check_return(init_projection_config(configFile),
-		   "extended geocoding configuration file "
-		   "could not be initialized");
-      exit(0);
-    }
-    else cfg = read_config(configFile);
-    strcpy(format_in, uc(cfg->general->in_format));
-    strcpy(format_out, uc(cfg->general->out_format));
-    sprintf(logFile, "%s", cfg->general->logFile);
-    if (strcmp(logFile, "")==0) sprintf(logFile, "tmp%d.log", id);
-    fLog = FOPEN(logFile, "a");
-    if (logflag)
-      printLog(logbuf);
-  }
-  /* Get input from command line arguments */
-  else {
-    sprintf(configFile, "tmp%d.config", id);
-    cfg = init_cfg();
-    strcpy(cfg->comment, "asf_convert configuration file");
-    strcpy(cfg->general->in_data_name, data_file);
-    strcpy(cfg->general->in_meta_name, meta_file);
-    strcpy(cfg->general->in_format, uc(format_in));
-    strcpy(cfg->general->data_type, "amplitude");
-    strcpy(cfg->general->out_name, out_file);
-    strcpy(cfg->general->out_format, uc(format_out));
-    cfg->general->resample = 0;
-    cfg->general->browse = 0;
-    cfg->general->batch = 0;
-    strcpy(cfg->general->batchFile, "");
-    if (!logflag)
-      sprintf(logFile, "tmp%d.log", id);
-    strcpy(cfg->general->logFile, logFile);
-    check_return(write_config(configFile, cfg),
-		 "writing a temporary configuration file");
-  }
+	if(configFlag == -1 && configInitFlag == -1)
+	{
+		strcpy(data_file, argv[argc - 3]);
+		strcpy(meta_file, argv[argc - 2]);
+		strcpy(out_file, argv[argc - 1]);
+		//WARNING: THIS IS A TOTAL HACK :D
+		for(ii = 0; ii < 255; ++ii)
+			if(argv[argc - 2][ii] == '\0')
+				break;
+		if(argv[argc - 2][ii - 1] == 'L')
+			strcpy(format_in, "CEOS");
+		else
+			strcpy(format_in, "ASF");
+	}
+//**********************END COMMAND LINE PARSING STUFF**********************//
 
-  /* Handle data types */
-  if (strncmp(uc(format_in),"CEOS",4)==0) type_in = CEOS;
-  else if (strncmp(uc(format_in),"ASF",3)==0) type_in = ASF;
-  if (strncmp(uc(format_out),"ASF",3)==0) type_out = ASF;
-  else if (strncmp(uc(format_out),"CEOS",4)==0) type_out = CEOS;
-  else if (strncmp(uc(format_out),"GEOTIFF",3)==0) type_out = GEOTIFF;
-  else if (strncmp(uc(format_out),"JPEG",3)==0) type_out = JPEG;
-  else if (strncmp(uc(format_out),"ENVI",3)==0) type_out = ENVI;
-  else if (strncmp(uc(format_out),"ESRI",3)==0) type_out = ESRI;
-  else if (strncmp(uc(format_out),"PPM",3)==0) type_out = PPM;
-  else if (strncmp(uc(format_out),"PNG",3)==0) type_out = PNG;
-  else if (strncmp(uc(format_out),"LAS",3)==0) type_out = LAS;
+	if(quietFlag == -1)//If we're not quiet
+	{
+		sprintf(logbuf, "\nCommand line: ");
+		for (ii = 0; ii < argc; ii++)
+		{
+			sprintf(cmd, " %s",argv[ii]);
+			strcat(logbuf, cmd);
+		}
+		sprintf(cmd, "\nDate: %s\nProgram: asf_convert\nPid: %i\n", date_time_stamp(), (int)getpid());
+		strcat(logbuf, cmd);
+		printf(logbuf);
+	}
 
-  /* Batch mode processing */
-  if (cfg->general->batch) {
-    cfg->general->batch = 0;
-    logflag = 0;
-    fBatch = FOPEN(cfg->general->batchFile, "r");
-    while (fgets(line, 255, fBatch) != NULL) {
-      sscanf(line, "%s", fileName);
-      sprintf(cfg->general->in_data_name, "%s.D", fileName);
-      sprintf(cfg->general->in_meta_name, "%s.L", fileName);
-      strcpy(cfg->general->out_name, fileName);
-      sprintf(batchConfig, "%s.config", fileName);
-      check_return(write_config(batchConfig, cfg),
-		   "Could not write individual configuration file "
-		   "for batch mode processing");
-      check_return(asf_convert(batchConfig),
-		   "Processing image in batch mode (asf_convert)");
-    }
-  }
-  else {
+	
+	/* If we're working from a config file, read configuration file */
+	if (configFlag != -1)//configFlag has been set
+	{
+		if (!fileExists(configFile))//Does the specific config file already exist? If not...
+		{
+			check_return(init_config(configFile),
+			"basic configuration file could not be initialized");
+			exit(0);
+    	}
+		else if (check_resample_flag(configFile) && configInitFlag != -1)//config init has been set
+		{
+			check_return(init_resample_config(configFile),
+				"extended resampling configuration file "
+				"could not be initialized");
+			exit(0);
+		}
+		else if (check_geocode_flag(configFile) && configInitFlag != -1)//config init has been set
+		{
+			check_return(init_projection_config(configFile),
+				"extended geocoding configuration file "
+				"could not be initialized");
+			exit(0);
+		}
+		//If everything else succeeded, do this...
+		cfg = read_config(configFile);
+		strcpy(format_in, uc(cfg->general->in_format));
+		strcpy(format_out, uc(cfg->general->out_format));
+		if (strcmp(cfg->general->logFile, "") != 0)
+			strcpy(logFile, cfg->general->logFile);
+		fLog = FOPEN(logFile, "a");
+		printLog(logbuf);
+	}
 
-    /* Prepare processing */
-    if (!configFlag) {
-      if (!fileExists(cfg->general->in_data_name))
-	check_return(1, "input data file does not exist");
-      if (!fileExists(cfg->general->in_meta_name))
-	check_return(1, "input metadata file does not exist");
-    }
+	/* Get input from command line arguments */
+	else
+	{
+		cfg = init_cfg();
+		strcpy(cfg->comment, "asf_convert temporary configuration file");
+		strcpy(cfg->general->in_data_name, data_file);
+		strcpy(cfg->general->in_meta_name, meta_file);
+		strcpy(cfg->general->in_format, uc(format_in));
+		strcpy(cfg->general->data_type, "amplitude");
+		strcpy(cfg->general->out_name, out_file);
+		strcpy(cfg->general->out_format, uc(format_out));
+		cfg->general->resample = 0;
+		cfg->general->browse = 0;
+		cfg->general->batch = 0;
+		strcpy(cfg->general->batchFile, "");
+		strcpy(cfg->general->logFile, logFile);
+		check_return(write_config(configFile, cfg),
+			"writing a temporary configuration file");
+	}
 
-    /* Ingest CEOS image */
-    switch (type_in) {
-    case CEOS:
-      sprintf(in, "tmp%d", id);
-      if (strncmp(cfg->general->data_type, "amplitude", 9)==0) {
-	check_return(asf_import(cfg->general->in_data_name,
-				cfg->general->in_meta_name, "-amplitude", in),
-		     "Importing CEOS data (asf_import)");
-	sprintf(out, "tmp%d_amp", id);
-      }
-      else if (strncmp(cfg->general->data_type, "power", 5)==0) {
-	check_return(asf_import(cfg->general->in_data_name,
-				cfg->general->in_meta_name, "-power", in),
-		     "Importing CEOS data (asf_import)");
-	sprintf(out, "tmp%d_power", id);
-      }
-      else if (strncmp(cfg->general->data_type, "sigma", 5)==0) {
-	check_return(asf_import(cfg->general->in_data_name,
-				cfg->general->in_meta_name, "-sigma", in),
-		     "Importing CEOS data (asf_import)");
-	sprintf(out, "tmp%d_sigma", id);
-      }
-      else if (strncmp(cfg->general->data_type, "gamma", 5)==0) {
-	check_return(asf_import(cfg->general->in_data_name,
-				cfg->general->in_meta_name, "-gamma", in),
-		     "Importing CEOS data (asf_import)");
-	sprintf(out, "tmp%d_gamma", id);
-      }
-      else if (strncmp(cfg->general->data_type, "beta", 4)==0) {
-	check_return(asf_import(cfg->general->in_data_name,
-				cfg->general->in_meta_name, "-beta", in),
-		     "Importing CEOS data (asf_import)");
-	sprintf(out, "tmp%d_beta", id);
-      }
-      sprintf(cmd, "cp %s.meta %s.meta", out, cfg->general->out_name);
-      system(cmd);
-      break;
-    case ASF:
-      strcpy(out, cfg->general->in_data_name);
-      break;
-    default: check_return(1, "Unsupported input format type!");
-      break;
-    }
+	/* Handle data types */
+	//Input types:
+	if (strncmp(uc(format_in),"CEOS",4) == 0) type_in = CEOS;
+	else if (strncmp(uc(format_in),"ASF",3) == 0) type_in = ASF;
+	//Output types:
+	if (strncmp(uc(format_out),"ASF",3) == 0) type_out = ASF;
+	else if (strncmp(uc(format_out),"CEOS",4) == 0) type_out = CEOS;
+	else if (strncmp(uc(format_out),"GEOTIFF",3) == 0) type_out = GEOTIFF;
+	else if (strncmp(uc(format_out),"JPEG",3) == 0) type_out = JPEG;
+	else if (strncmp(uc(format_out),"ENVI",3) == 0) type_out = ENVI;
+	else if (strncmp(uc(format_out),"ESRI",3) == 0) type_out = ESRI;
+	else if (strncmp(uc(format_out),"PPM",3) == 0) type_out = PPM;
+	else if (strncmp(uc(format_out),"PNG",3) == 0) type_out = PNG;
+	else if (strncmp(uc(format_out),"LAS",3) == 0) type_out = LAS;
 
-    /* Determine the corner coordinates of the image */
-    if (cfg->general->browse) {
-      check_return(corner_coords(out),
-		   "determining geographic coordinates of corner points "
-		   "(corner_coords)");
-      sprintf(cmd, "mv %s.corners %s.corners", out, cfg->general->out_name);
-      system(cmd);
-    }
+	/* Batch mode processing */
+	if (cfg->general->batch != 0)
+	{
+//		cfg->general->batch = 0;
+//		logflag = 0;
+		fBatch = FOPEN(cfg->general->batchFile, "r");
+		while (fgets(line, 255, fBatch) != NULL)
+		{
+			sscanf(line, "%s", fileName);
+			sprintf(cfg->general->in_data_name, "%s.D", fileName);
+			sprintf(cfg->general->in_meta_name, "%s.L", fileName);
+			strcpy(cfg->general->out_name, fileName);
+			sprintf(batchConfig, "%s.config", fileName);
+			check_return(write_config(batchConfig, cfg),
+				"Could not write individual configuration file "
+				"for batch mode processing");
+			check_return(asf_convert(batchConfig),
+				"Processing image in batch mode (asf_convert)");
+		}
+	}
+	else
+	{
 
-    /* Resampling */
-    if (cfg->general->resample || cfg->general->browse) {
-      sprintf(in, "%s", out);
-      sprintf(out, "tmp%d_small", id);
-      if (cfg->general->browse)
-	sprintf(options, "-browse");
-      else
-	sprintf(options, "-resample %d", cfg->resampling->kernel);
-      check_return(filter(options, in, out),
-		   "subsampling image (filter)");
-    }
+		/* Prepare processing */
+		if (configFlag == -1)
+		{
+			if (!fileExists(cfg->general->in_data_name))
+				check_return(1, "input data file does not exist");
+			if (!fileExists(cfg->general->in_meta_name))
+				check_return(1, "input metadata file does not exist");
+		}
 
-    /* Geocoding */
-    if (cfg->general->geocoding) {
+		/* Ingest CEOS image */
+		switch (type_in)
+		{
+			case CEOS:
+				sprintf(in, ".tmp%i", (int)getpid());
+				if (strncmp(cfg->general->data_type, "amplitude", 9) == 0)
+				{
+					check_return(asf_import(cfg->general->in_data_name,
+						cfg->general->in_meta_name, "-amplitude", in),
+						"Importing CEOS data (asf_import)");
+					sprintf(out, ".tmp%i_amp", (int)getpid());
+				}
+				else if (strncmp(cfg->general->data_type, "power", 5) == 0)
+				{
+					check_return(asf_import(cfg->general->in_data_name,
+						cfg->general->in_meta_name, "-power", in),
+						"Importing CEOS data (asf_import)");
+					sprintf(out, ".tmp%i_power", (int)getpid());
+				}
+				else if (strncmp(cfg->general->data_type, "sigma", 5) == 0)
+				{
+					check_return(asf_import(cfg->general->in_data_name,
+						cfg->general->in_meta_name, "-sigma", in),
+						"Importing CEOS data (asf_import)");
+					sprintf(out, ".tmp%i_sigma", (int)getpid());
+				}
+				else if (strncmp(cfg->general->data_type, "gamma", 5) == 0)
+				{
+					check_return(asf_import(cfg->general->in_data_name,
+						cfg->general->in_meta_name, "-gamma", in),
+						"Importing CEOS data (asf_import)");
+					sprintf(out, ".tmp%i_gamma", (int)getpid());
+				}
+				else if (strncmp(cfg->general->data_type, "beta", 4) == 0)
+				{
+					check_return(asf_import(cfg->general->in_data_name,
+						cfg->general->in_meta_name, "-beta", in),
+						"Importing CEOS data (asf_import)");
+					sprintf(out, ".tmp%i_beta", (int)getpid());
+				}
+				sprintf(cmd, "cp %s.meta %s.meta", out, cfg->general->out_name);
+				system(cmd);
+				break;
+			case ASF:
+				strcpy(out, cfg->general->in_data_name);
+				break;
+			default: check_return(1, "Unsupported input format type!");
+				break;
+		}
 
-      /* Creating projection parameter file */
-      sprintf(proj, "tmp%d.proj", id);
+		/* Determine the corner coordinates of the image */
+		if (cfg->general->browse)
+		{
+			check_return(corner_coords(out),
+				"determining geographic coordinates of corner points "
+				"(corner_coords)");
+			sprintf(cmd, "mv %s.corners %s.corners", out, cfg->general->out_name);
+			system(cmd);
+		}
 
-      /*** Polar Stereographic ***/
-      if (strncmp(uc(cfg->geocoding->projection), "POLAR", 5)==0) {
-	sprintf(options, "-l %lf -p %lf -g %s -d %d",
-		cfg->polar->center_lon, cfg->polar->center_lat,
-		cfg->polar->units, cfg->polar->datum);
-	check_return(projprm("plstereo", "key", proj, options),
-		     "generating projection parameter file (projprm)");
-      }
-      /*** Universal Transverse Mercator ***/
-      if (strncmp(uc(cfg->geocoding->projection), "UTM", 3)==0) {
-	sprintf(options, "-d %i -z %i", cfg->utm->datum, cfg->utm->zone);
-	check_return(projprm("utm", "key", proj, options),
-		     "generating projection parameter file (projprm)");
-      }
+		/* Resampling */
+		if (cfg->general->resample || cfg->general->browse)
+		{
+			sprintf(in, "%s", out);
+			sprintf(out, ".tmp%i_small", (int)getpid());
+			if (cfg->general->browse)
+				sprintf(options, "-browse");
+			else
+				sprintf(options, "-resample %d", cfg->resampling->kernel);
+			check_return(filter(options, in, out),
+				"subsampling image (filter)");
+		}
 
-      /*** Albers Conic Equal Area ***/
-      if (strncmp(uc(cfg->geocoding->projection), "ALBERS", 6)==0) {
-	sprintf(options, "-a %lf -b %lf -c %lf -o %lf -g %s -d %d",
-		cfg->albers->first_parallel, cfg->albers->second_parallel,
-		cfg->albers->center_meridian, cfg->albers->orig_latitude,
-                cfg->albers->units, cfg->albers->datum);
-	check_return(projprm("albers", "key", proj, options),
-		     "generating projection parameter file (projprm)");
-      }
+		/* Geocoding */
+		if (cfg->general->geocoding) {
 
-      /*** Lambert Conformal Conic ***
-	   if (strncmp(uc(cfg->geocoding->projection), "LAMBERT_CC", )==0) {
-	   sprintf(options, "-x %lf -y %lf -g %s -d %d",
-	   cfg->lambert1->latitude, cfg->lambert1->longitude,
-	   cfg->lambert1->units, cfg->lambert1->datum);
-	   check_return(projprm("lambert", "key", proj, options),
-	   "generating projection parameter file (projprm)");
-	   } ***/
+		/* Creating projection parameter file */
+		sprintf(proj, ".tmp%i.proj", (int)getpid());
 
-      /*** Lambert Azimuthal Equal Area ***
-	   if (strncmp(uc(cfg->geocoding->projection), "LAMBERT2", 8)==0) {
-	   *** still needs to be figured out ***
-	   } ***/
+		/*** Polar Stereographic ***/
+		if (strncmp(uc(cfg->geocoding->projection), "POLAR", 5) == 0)
+		{
+			sprintf(options, "-l %lf -p %lf -g %s -d %d",
+				cfg->polar->center_lon, cfg->polar->center_lat,
+				cfg->polar->units, cfg->polar->datum);
+			check_return(projprm("plstereo", "key", proj, options),
+				"generating projection parameter file (projprm)");
+		}
+		/*** Universal Transverse Mercator ***/
+		if (strncmp(uc(cfg->geocoding->projection), "UTM", 3) == 0)
+		{
+			sprintf(options, "-d %i -z %i", cfg->utm->datum, cfg->utm->zone);
+			check_return(projprm("utm", "key", proj, options),
+				"generating projection parameter file (projprm)");
+		}
 
-      sprintf(in, "%s", out);
-      sprintf(out, "tmp%d_geo", id);
-      check_return(geocode(in, proj, "key", cfg->geocoding->pixel,
-			   cfg->geocoding->height, out),
-		   "geocoding image (geocode)");
-    }
+		/*** Albers Conic Equal Area ***/
+		if (strncmp(uc(cfg->geocoding->projection), "ALBERS", 6) == 0)
+		{
+			sprintf(options, "-a %lf -b %lf -c %lf -o %lf -g %s -d %d",
+				cfg->albers->first_parallel, cfg->albers->second_parallel,
+				cfg->albers->center_meridian, cfg->albers->orig_latitude,
+				cfg->albers->units, cfg->albers->datum);
+			check_return(projprm("albers", "key", proj, options),
+				"generating projection parameter file (projprm)");
+		}
 
-    /* Exporting image */
-    switch (type_out) {
-    case CEOS: break;
-    case ASF:
-      sprintf(cmd, "mv %s.img %s.img", out, cfg->general->out_name);
-      system(cmd);
-      sprintf(cmd, "mv %s.meta %s.meta", out, cfg->general->out_name);
-      break;
-    case GEOTIFF:
-      check_return(asf_export(type_out, out, cfg->general->out_name),
-		   "exporting image to GEOTIFF format (asf_export)");
-      break;
-    case JPEG:
-      check_return(asf_export(type_out, out, cfg->general->out_name),
-		   "exporting image to JPEG format (asf_export)");
-      break;
-    case ENVI:
-      check_return(asf_export(type_out, out, cfg->general->out_name),
-		   "exporting image to ENVI format (asf_export)");
-      break;
-    case ESRI:
-      check_return(asf_export(type_out, out, cfg->general->out_name),
-		   "exporting image to ESRI format (asf_export)");
-      break;
-    case PPM:
-      check_return(asf_export(type_out, out, cfg->general->out_name),
-		   "exporting image to PPM format (asf_export)");
-      break;
-    case PNG:
-      /*
-      check_return(asf_export(type_out, out, cfg->general->out_name),
-		   "exporting image to PNG format (asf_export)");
-      */
-      break;
-    case LAS: break;
-    default:
-      check_return(1, "Unsupported output format!");
-      break;
-    }
+		/*** Lambert Conformal Conic ***
+		if (strncmp(uc(cfg->geocoding->projection), "LAMBERT_CC", ) == 0)
+		{
+			sprintf(options, "-x %lf -y %lf -g %s -d %d",
+				cfg->lambert1->latitude, cfg->lambert1->longitude,
+				cfg->lambert1->units, cfg->lambert1->datum);
+			check_return(projprm("lambert", "key", proj, options),
+				"generating projection parameter file (projprm)");
+		} ***/
 
-    /* Remove temporary files */
-    sprintf(cmd, "rm -f tmp%d*", id);
-    system(cmd);
+		/*** Lambert Azimuthal Equal Area ***
+		if (strncmp(uc(cfg->geocoding->projection), "LAMBERT2", 8) == 0)
+		{
+		*** still needs to be figured out ***
+		} ***/
 
-  }
-  return(0);
+		sprintf(in, "%s", out);
+		sprintf(out, ".tmp%i_geo", (int)getpid());
+		check_return(geocode(in, proj, "key", cfg->geocoding->pixel,
+			cfg->geocoding->height, out),
+			"geocoding image (geocode)");
+		}
+
+		/* Exporting image */
+		switch (type_out)
+		{
+			case CEOS:
+				break;
+			case ASF:
+				sprintf(cmd, "mv %s.img %s.img", out, cfg->general->out_name);
+				system(cmd);
+				sprintf(cmd, "mv %s.meta %s.meta", out, cfg->general->out_name);
+				break;
+			case GEOTIFF:
+				check_return(asf_export(type_out, out, cfg->general->out_name),
+					"exporting image to GEOTIFF format (asf_export)");
+				break;
+			case JPEG:
+				check_return(asf_export(type_out, out, cfg->general->out_name),
+					"exporting image to JPEG format (asf_export)");
+				break;
+			case ENVI:
+				check_return(asf_export(type_out, out, cfg->general->out_name),
+					"exporting image to ENVI format (asf_export)");
+				break;
+			case ESRI:
+				check_return(asf_export(type_out, out, cfg->general->out_name),
+					"exporting image to ESRI format (asf_export)");
+				break;
+			case PPM:
+				check_return(asf_export(type_out, out, cfg->general->out_name),
+					"exporting image to PPM format (asf_export)");
+				break;
+			case PNG:
+				/*
+				check_return(asf_export(type_out, out, cfg->general->out_name),
+					"exporting image to PNG format (asf_export)");
+				*/
+				break;
+			case LAS: break;
+			default:
+				check_return(1, "Unsupported output format!");
+				break;
+		}
+	}
+
+	/* Remove temporary files */
+	sprintf(cmd, "rm -f .tmp%i*", (int)getpid());
+	system(cmd);
+	return(0);
 }
+
+
 
 
