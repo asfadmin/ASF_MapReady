@@ -483,7 +483,7 @@ int
 project_lamaz_inv(project_parameters_t * pps,
 		  double x, double y, double *lat, double *lon)
 {
-    return project_worker_arr(
+    return project_worker_arr_inv(
 	lamaz_projection_desc(pps), &x, &y, &lat, &lon, 1);
 }
 
@@ -542,7 +542,7 @@ int
 project_lamcc_inv(project_parameters_t * pps,
 		  double x, double y, double *lat, double *lon)
 {
-    return project_worker_arr(
+    return project_worker_arr_inv(
 	lamcc_projection_desc(pps), &x, &y, &lat, &lon, 1);
 }
 
@@ -601,7 +601,7 @@ int
 project_albers_inv(project_parameters_t * pps,
 		  double x, double y, double *lat, double *lon)
 {
-    return project_worker_arr(
+    return project_worker_arr_inv(
 	albers_projection_desc(pps), &x, &y, &lat, &lon, 1);
 }
 
