@@ -1,4 +1,4 @@
-# Makefile for converter_standard
+# Makefile for convert_standard
 
 include ../Make_rules
 
