@@ -37,7 +37,26 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_string(fp,"sensor:", meta->general->sensor, "Imaging sensor");
   meta_put_string(fp,"mode:",meta->general->mode,"Imaging mode");
   meta_put_string(fp,"processor:", meta->general->processor,"Name and Version of Processor");
-  meta_put_string(fp,"data_type:", meta->general->data_type,"Type of samples (e.g. REAL*4)");
+  switch (meta->general->data_type) {
+    case BYTE:
+      meta_put_string(fp,"data_type:","BYTE","Type of samples (e.g. REAL64)");
+      break;
+    case INTEGER16:
+      meta_put_string(fp,"data_type:","INTEGER16","Type of samples (e.g. REAL64)");
+      break;
+    case INTEGER32:
+      meta_put_string(fp,"data_type:","INTEGER32","Type of samples (e.g. REAL64)");
+      break;
+    case REAL32:
+      meta_put_string(fp,"data_type:","REAL32","Type of samples (e.g. REAL64)");
+      break;
+    case REAL64:
+      meta_put_string(fp,"data_type:","REAL64","Type of samples (e.g. REAL64)");
+      break;
+    default:
+      meta_put_string(fp,"data_type:","???","Type of samples (e.g. REAL64)");
+      break;
+  }
   meta_put_string(fp,"system:", meta->general->system,"System of samples (e.g. big_ieee)");
   meta_put_int   (fp,"orbit:", meta->general->orbit,"Orbit Number for this datatake");
   meta_put_char  (fp,"orbit_direction:", meta->general->orbit_direction,"Ascending 'A', or descending 'D'");
@@ -148,7 +167,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"}","","End utm");
       break;
    default: 
-      printf("Warning in asf_meta library function '%s': unknown projection type '%c'.\n",
+      printf("WARNING in asf_meta library function '%s': unknown projection type '%c'.\n",
              __func__, meta->projection->type);
     }
     meta_put_string(fp,"}","","End param");
@@ -189,8 +208,8 @@ void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 /*Append parameter and value.*/
 	strcat(line,name);/*Append parameter name*/
 	strcat(line," ");
-	if (is_empty(value) && !strchr(name,'{') &&!strchr(name,'}')){
-		value = (char*)malloc(sizeof(char)*4);
+	if (is_empty(value) && !strchr(name,'{') && !strchr(name,'}')){
+		value = (char*)MALLOC(sizeof(char)*4);
 		malloc_flag=1;
 		strcpy(value,"???");
 	}
@@ -228,6 +247,7 @@ void meta_put_double(FILE *meta_file,char *name,double value,char *comment)
 	char param[64];
 	sprintf(param,"%-16.11g",value);
 	strtok(param," ");/*remove all trailing spaces */
+	if (is_empty(param)) { strcpy(param,"NaN"); }
 	meta_put_string(meta_file,name,param,comment);
 }
 
@@ -236,13 +256,15 @@ void meta_put_int(FILE *meta_file,char *name,int value,char *comment)
 {
 	char param[64];
 	sprintf(param,"%i",value);
+	if (is_empty(param)) { strcpy(param,"-999999999"); }
 	meta_put_string(meta_file,name,param,comment);
 }
 
 void meta_put_char(FILE *meta_file,char *name,char value,char *comment)
 {
-	char param[64];
+	char param[2];
 	sprintf(param,"%c",value);
+	if (is_empty(param)) { strcpy(param,"?"); }
 	meta_put_string(meta_file,name,param,comment);
 }
 
