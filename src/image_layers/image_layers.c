@@ -72,6 +72,8 @@
 #define RES_Y 16
 #define MAX_PTS 300
 
+#define SQR(X) ((X)*(X))
+
 double get_satellite_height(double time, stateVector stVec)
 {
         return sqrt(stVec.pos.x*stVec.pos.x+stVec.pos.y*stVec.pos.y+stVec.pos.z*stVec.pos.z);
@@ -86,10 +88,11 @@ double get_earth_radius(double time, stateVector stVec, double re, double rp)
 
 double get_slant_range(meta_parameters *meta, double er, double ht, int sample)
 {
-        double minPhi=acos((ht*ht+er*er-meta->geo->slantFirst*meta->geo->slantFirst)/(2.0*ht*er));
-        double phi=minPhi+sample*(meta->geo->xPix/er);
+        double minPhi=acos((ht*ht + er*er -
+                          SQR(meta->sar->slant_range_first_pixel))/(2.0*ht*er));
+        double phi=minPhi+sample*(meta->general->x_pixel_size/er);
         double slantRng=sqrt(ht*ht+er*er-2.0*ht*er*cos(phi));
-        return slantRng+meta->geo->slantShift;
+        return slantRng+meta->sar->slant_shift;
 }
 
 double get_look_angle(double er, double ht, double sr)
@@ -107,17 +110,16 @@ void usage(char *name);
 int main(int argc, char *argv[])
 {
         FILE *fpIn=NULL, *fpLook=NULL, *fpIncid=NULL, *fpLat=NULL, *fpLon=NULL, *fpRange=NULL, *fpOut=NULL;
-        meta_parameters *meta;
-	struct DDR inddr, outddr;
+        meta_parameters *meta, *metaOut;
 	stateVector stVec;
 	quadratic_2d q;
-	int lookFlag=0, incidFlag=0, latFlag=0, lonFlag=0, rangeFlag=0, nl, ns, ii, kk, ll, size, deskewed;
+	int lookFlag=0, incidFlag=0, latFlag=0, lonFlag=0, rangeFlag=0, nl, ns, ii, kk, ll, size;
 	int nPoints, x, y;
         char *inFile=NULL, metaFile[255], outLook[255], outIncid[255], outLat[255], outLon[255], outRange[255];
-	char *projected, inLine[255]; 
+	char inLine[255]; 
 	float *outBuf=NULL, *bufLook=NULL, *bufIncid=NULL, *bufLat=NULL, *bufLon=NULL, *bufRange=NULL;
 	double latitude, longitude, time, doppler, earth_radius, satellite_height, range, look_angle, incidence_angle;
-	double ignored, re=6378144.0, rp=6356754.9, px, py, startX, startY, perX, perY;
+	double ignored, re=6378144.0, rp=6356754.9, px, py;
 	double *l, *s, *value, line, sample, firstLook=0.0, firstIncid=0.0, firstLat=0.0, firstLon=0.0, firstRange=0.0;
 
 	logflag=0;
@@ -158,72 +160,56 @@ int main(int argc, char *argv[])
 	  printLog("Program: image_layers\n\n");
 	}
 
-	/* Prepare for reading/writing */
-	c_getddr(inFile, &inddr);
-	nl = inddr.nl;        
-	ns = inddr.ns;
-
 	/* Create metadata */
-        meta = meta_init(inFile);
-	c_intddr(&outddr);
-	outddr.nl = nl;
-	outddr.ns = ns;
-	outddr.nbands = 1;
-	outddr.dtype = 4;
+        meta = meta_read(inFile);
+        nl = meta->general->line_count;
+        ns = meta->general->sample_count;
+        metaOut = meta_copy(meta);
+        metaOut->general->data_type = REAL32;
 
 	/* Creating tie point files */
 	doppler = 0.0;
-	deskewed = lzInt(metaFile, "geo.deskew:", NULL);
-	projected = lzStr(metaFile, "geo.type:", NULL);        
 
-        if (strncmp(projected, "P", 1)==0) {
+        if (meta->sar->image_type=='P') {
           /* Calculation in case the imagery is map projected */
 	  size = BUFSIZE;
-          re = lzDouble(metaFile, "geo.proj.re_major:", NULL);
-          rp = lzDouble(metaFile, "geo.proj.re_minor:", NULL);
-          startX = lzDouble(metaFile, "geo.proj.startX:", NULL);
-          startY = lzDouble(metaFile, "geo.proj.startY:", NULL);
-          perX = lzDouble(metaFile, "geo.proj.perX:", NULL);
-          perY = lzDouble(metaFile, "geo.proj.perY:", NULL);
+          re = meta->projection->re_major;
+          rp = meta->projection->re_minor;
 
           if (lookFlag) {
             fpLook = fopenImage(outLook,"wb");
             bufLook = (float *) MALLOC(ns * sizeof(float) * BUFSIZE);        
-            meta_write(meta, outLook);
-            c_putddr(outLook,&outddr);
+            meta_write(metaOut, outLook);
           }
           if (incidFlag) {
             fpIncid = fopenImage(outIncid,"wb");
             bufIncid = (float *) MALLOC(ns * sizeof(float) * BUFSIZE);
-            meta_write(meta, outIncid);
-            c_putddr(outIncid,&outddr);
+            meta_write(metaOut, outIncid);
           }        
           if (latFlag) {
             fpLat = fopenImage(outLat,"wb");
             bufLat = (float *) MALLOC(ns * sizeof(float) * BUFSIZE);
-            meta_write(meta, outLat);
-            c_putddr(outLat,&outddr);
+            meta_write(metaOut, outLat);
           }        
           if (lonFlag) {
             fpLon = fopenImage(outLon,"wb");
             bufLon = (float *) MALLOC(ns * sizeof(float) * BUFSIZE);
-            meta_write(meta, outLon);
-            c_putddr(outLon,&outddr);
+            meta_write(metaOut, outLon);
           }        
           if (rangeFlag) {
             fpRange = fopenImage(outRange,"wb");
             bufRange = (float *) MALLOC(ns * sizeof(float) * BUFSIZE);        
-            meta_write(meta, outRange);
-            c_putddr(outRange,&outddr);
+            meta_write(metaOut, outRange);
           }
 
           for (ii=0; ii<nl; ii+=size) {
             if ((nl-ii)<BUFSIZE) size = nl-ii;
             for (ll=0; ll<size; ll++) 
               for (kk=0; kk<ns; kk++) {
-                px= startX + perX * kk;
-                py= startY + perY * (ii+ll);
-                proj_to_ll(meta->geo, px, py, &latitude, &longitude);
+                px = meta->projection->startX + meta->projection->perX * kk;
+                py = meta->projection->startY + meta->projection->perY * (ii+ll);
+                proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
+                           &latitude, &longitude);
                 latLon2timeSlant(meta, latitude, longitude, &time, &range, &doppler);
                 stVec = meta_get_stVec(meta, time);
                 earth_radius = get_earth_radius(time, stVec, re, rp);
@@ -289,7 +275,8 @@ int main(int argc, char *argv[])
 	      look_angle = get_look_angle(earth_radius, satellite_height, range);
 	      incidence_angle = get_incidence_angle(earth_radius, satellite_height, range);
 	      if (latFlag || lonFlag) {
-		if (!deskewed) doppler = meta_get_dop(meta, line, sample);
+		if (!meta->sar->deskewed)
+		  doppler = meta_get_dop(meta, line, sample);
 		fixed2gei(&stVec, 0.0); /* subtracting the Earth's spin */
 		getLatLongMeta(stVec, meta, range, doppler, 0, &latitude, &longitude, &ignored);
 	      }
@@ -348,8 +335,7 @@ int main(int argc, char *argv[])
 	    FCLOSE(fpIn);
 	    FCLOSE(fpOut);
 	    FREE(outBuf);
-	    meta_write(meta, outLook);
-            c_putddr(outLook,&outddr);
+	    meta_write(metaOut, outLook);
 	    printf("   ... created look angle layer\n");
 	  }
 
@@ -380,8 +366,7 @@ int main(int argc, char *argv[])
 	    FCLOSE(fpIn);
 	    FCLOSE(fpOut);
 	    FREE(outBuf);
-	    meta_write(meta, outIncid);
-            c_putddr(outIncid,&outddr);
+	    meta_write(metaOut, outIncid);
 	    printf("   ... created incidence angle layer\n");
 	  }
 
@@ -412,8 +397,7 @@ int main(int argc, char *argv[])
 	    FCLOSE(fpIn);
 	    FCLOSE(fpOut);
 	    FREE(outBuf);
-	    meta_write(meta, outLat);
-            c_putddr(outLat,&outddr);
+	    meta_write(metaOut, outLat);
 	    printf("   ... created latitude layer\n");
 	  }
 
@@ -444,8 +428,7 @@ int main(int argc, char *argv[])
 	    FCLOSE(fpIn);
 	    FCLOSE(fpOut);
 	    FREE(outBuf);
-	    meta_write(meta, outLon);
-            c_putddr(outLon,&outddr);
+	    meta_write(metaOut, outLon);
 	    printf("   ... created longitude layer\n");
 	  }
 
@@ -476,8 +459,7 @@ int main(int argc, char *argv[])
 	    FCLOSE(fpIn);
 	    FCLOSE(fpOut);
 	    FREE(outBuf);
-	    meta_write(meta, outRange);
-            c_putddr(outRange,&outddr);
+	    meta_write(metaOut, outRange);
 	    printf("   ... created range layer\n");
 	  }
 	}
@@ -511,7 +493,8 @@ void usage(char *name)
 	"DESCRIPTION:\n"
 	"   %s creates image layers containing information about data attributes.\n",name);
  printf("\n"
-	"Version %.2f, ASF SAR TOOLS\n\n", VERSION);
+	"Version %.2f, ASF SAR Tools\n"
+	"\n", VERSION);
  exit(1);
 }
 
