@@ -31,14 +31,22 @@ PROGRAM HISTORY:
 	void StartWatch(void)
 	{
 	  startTime=clock();
+	  if ( startTime == (clock_t) -1 ) {
+	    bail ("clock() returned (clock_t) -1 in file " __FILE__ 
+		  ", line number %d\n", __LINE__ - 2);
+	  }
 	}
 
 	void StopWatch(void)
 	{
 	  float elapsed;
 	  clock_t stopTime=clock();
+	  if ( stopTime == (clock_t) -1 ) {
+	    bail ("clock() returned (clock_t) -1 in file " __FILE__ 
+		  ", line number %d\n", __LINE__ - 2);
+	  }
 	  elapsed = stopTime-startTime;
-	  elapsed/=CLOCKS_PER_SEC;
+	  elapsed /= CLOCKS_PER_SEC;
 	  printf("Total wall clock time = %f seconds.\n\n",elapsed);
 	}
 
