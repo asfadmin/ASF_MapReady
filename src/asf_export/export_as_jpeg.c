@@ -27,6 +27,7 @@
 #include <asf.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
+#include "asf_nan.h"
 #include <asf_export.h>
 #include "asf_raster.h"
 
@@ -46,6 +47,7 @@ export_as_jpeg (const char *metadata_file_name,
   int jj;
   JSAMPLE test_jsample;
   unsigned char *pixels;
+  double mask;
   unsigned long width, height;
   struct jpeg_compress_struct cinfo;
   struct jpeg_error_mgr jerr;
@@ -84,7 +86,17 @@ export_as_jpeg (const char *metadata_file_name,
   assert (test_jsample == UCHAR_MAX); /* Did we wrap?  */
   /* This space is resized later (with realloc) if the image is
      scaled.  */
-  pixels = floats_to_bytes (daf, pixel_count, 0.0, scale);
+  if (md->general->image_data_type == SIGMA_IMAGE ||
+      md->general->image_data_type == GAMMA_IMAGE ||
+      md->general->image_data_type == BETA_IMAGE ||
+      strcmp(md->general->mode, "SNA") == 0 ||
+      strcmp(md->general->mode, "SNB") == 0 ||
+      strcmp(md->general->mode, "SWA") == 0 ||
+      strcmp(md->general->mode, "SWB") == 0)
+    mask = 0.0;
+  else
+    mask = NAN;
+  pixels = floats_to_bytes (daf, pixel_count, mask, scale);
 
   /* We want to scale the image st the long dimesion is less than or
      equal to this value the prescribed maximum.

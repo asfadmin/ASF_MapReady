@@ -27,6 +27,7 @@
 #include <asf.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
+#include "asf_nan.h"
 #include "asf_raster.h"
 #include "asf_export.h"
 
@@ -46,6 +47,7 @@ export_as_tiff (const char *metadata_file_name,
   size_t pixel_count = line_count * sample_count;
   float *daf;
   unsigned char *pixels;
+  double mask;
   int jj;
   TIFF *otif;
   size_t ii;
@@ -64,7 +66,17 @@ export_as_tiff (const char *metadata_file_name,
   assert (otif != NULL);
 
   /* Scale float image down to bytes */
-  pixels = floats_to_bytes (daf, pixel_count, 0.0, scale);
+  if (md->general->image_data_type == SIGMA_IMAGE ||
+      md->general->image_data_type == GAMMA_IMAGE ||
+      md->general->image_data_type == BETA_IMAGE ||
+      strcmp(md->general->mode, "SNA") == 0 ||
+      strcmp(md->general->mode, "SNB") == 0 ||
+      strcmp(md->general->mode, "SWA") == 0 ||
+      strcmp(md->general->mode, "SWB") == 0)
+    mask = 0.0;
+  else
+    mask = NAN;
+  pixels = floats_to_bytes (daf, pixel_count, mask, scale);
 
   /* Scale the image, modifying width and height to reflect the new
   image size.  */
