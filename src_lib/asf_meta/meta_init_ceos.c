@@ -94,10 +94,13 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	meta->sar->range_doppler_coefficients[1]   = dssr.crt_dopcen[1];
 	meta->sar->range_doppler_coefficients[2]   = dssr.crt_dopcen[2];
 	meta->sar->azimuth_doppler_coefficients[0] = dssr.alt_dopcen[0];
+	strtok(meta->general->sensor," ");/*Remove spaces from field.*/
 	meta->sar->azimuth_doppler_coefficients[1] = dssr.alt_dopcen[1];
 	meta->sar->azimuth_doppler_coefficients[2] = dssr.alt_dopcen[2];
 	strcpy(meta->sar->satellite_binary_time,dssr.sat_bintim);
+	strtok(meta->sar->satellite_binary_time," ");/*Remove spaces from field.*/
 	strcpy(meta->sar->satellite_clock_time, dssr.sat_clktim);
+	strtok(meta->sar->satellite_clock_time, " ");/*Remove spaces from field*/
 
     /* Fetch state vectors. */
 	ceos_init_stVec(fName,ceos,meta);
@@ -106,14 +109,13 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	if (ceos->facility==ASF)
 		ceos_init_asf(fName,ceos,meta);
 
-printf("Sample count = %d\n",meta->general->sample_count);
     /* Set the number of looks correctly, must be done after fetching of stVecs & facility stuff */
 	if (ceos->satellite==ERS) meta->sar->look_count = 5;
 	else if (ceos->satellite==JERS) meta->sar->look_count = 3;
 	else if (ceos->satellite==RSAT)
 	{
-		double looks;
-		double look = meta_look(meta,0,meta->general->sample_count/2);
+		double looks, look;
+		look = meta_look(meta, 0.0, (double)(meta->general->sample_count)/2.0);
 		looks = ((meta->general->x_pixel_size / sin(look))
 		          / meta->general->y_pixel_size) + 0.5;
 		meta->sar->look_count = (int) looks;
