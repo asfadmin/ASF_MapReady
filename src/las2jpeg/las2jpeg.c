@@ -28,6 +28,8 @@ PROGRAM HISTORY:
     VERS:   DATE:        PURPOSE:
     ---------------------------------------------------------------
     1.0                  O. Lawlor - Original Development
+    1.5    12/03         P. Denny    Update commandline parsing
+                                      Use meta 1.1 instead of DDR
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -73,18 +75,22 @@ BUGS:
 #include "asf.h"
 #include "ifm.h"
 #include "ifm2ppm.h"
-#include "ddr.h"
+#include "asf_meta.h"
+#include <sys/types.h>  /* for fstat function */
+#include <sys/stat.h>   /* for fstat function */
 
 #define BUF          256
-#define VERSION      1.0
+#define VERSION      1.5
 #define INC          5
 
-#define zMASK        0x01
-#define zXID         0x02
-#define zUSER        0x04
-#define zWRITE       0x10
+#define zMASK     0x01
+#define zXID      0x02
+#define zUSER     0x04
+#define zALL      0x07
 
-#define zALL         0x07
+#define zWRITE    0x10
+
+
 
 
 int main (int argc, char *argv[])
@@ -92,73 +98,75 @@ int main (int argc, char *argv[])
   char infile[BUF];
   char outfile[BUF];
   char *outpal=NULL;
-  Uchar *out;
-RGBDATA table[256];
-  Uchar *band;
+  unsigned char *out;
+  RGBDATA table[256];
+  unsigned char *band;
   FILE *fin, *fout;
-  Uchar flags = 0;
+  unsigned char flags = 0;
   int wid,len;
   int cnt, i;
-  extern char *optarg;
-  extern int optind;
-  struct DDR ddr;
-  int c;
   int x,y;
+  meta_parameters *meta;
+  struct stat fileInfo;
 
   /* Start time keeping*/
   StartWatch();
    
-  /* handle command line args*/
-  while ((c=getopt(argc,argv,"dmo:p:")) != EOF)
-    switch (c) {
-       case 'm':
-          mask_colortable(table);
-	  flags |= zMASK;
-          break;
-       case 'p':
-	  user_colortable(table,optarg);
-	  flags |= zUSER;
-	  break;
-       case '?':
-          fprintf(stderr,"Invalid option.\n");
-          usage(argv[0]);
-          break;
-    }
+  /* Parse command line arguments */
+  while (currArg < (argc-2)) {
+     char *key = argv[currArg++];
+     if (strmatch(key,"-mask")) {
+       mask_colortable(table);
+       flags |= zMASK;
+     }
+     else if (strmatch(key,"-pal")) {
+	CHECK_ARG(1);
+        user_colortable(table,GET_ARG(1));
+        flags |= zUSER;
+     }
+     else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
+  }
+  if ((argc-currArg) < 2) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 
-  /* set constants & other variables  */
-  if (argc - optind != 2)  usage(argv[0]);  
-  if ( !(flags & zALL)) 
+  strcpy(infile,argv[currArg]);
+  strcpy(outfile,argv[currArg+1]);
+
+  /* Populate colortable in grayscale if no table has been specified */
+  if ( !(flags & zALL) ) 
     grey_colortable(table);
-  strcpy(infile,argv[optind]);
-  strcpy(outfile,argv[optind+1]);
-  c_getddr(argv[optind],&ddr);
-  wid=ddr.ns;
-  len=ddr.nl;
-  if (ddr.nbands==3)
-  	flags |=zXID;
-  
-  /* open files */
+
+  /* Get image dimensions */
+  meta = meta_read(infile);
+  wid = meta->general->sample_count;
+  len = meta->general->line_count;
+  meta_free(meta);
+
+  /* malloc buffers, check and open files */
+  band = (unsigned char *)MALLOC(wid * len * 3);
+  out = (unsigned char *)MALLOC(len * wid * 3);
   fin = fopenImage(infile,"rb");
   fout = FOPEN(appendExt(outfile,".jpg"),"w");
-  
-  /*
-   * malloc buffers, check and open files 
-   */
-  band = (Uchar *)MALLOC(wid * len * 3);
-  out = (Uchar *)MALLOC(len * wid * 3);
 
-  /*
-   * process data
-   */
+  /* Hack to see if there are 3 bands, someday we'll use the .meta */
+  fstat(fileno(fin), &fileInfo);
+  if (fileInfo.st_size == 3*wid*len) {
+    flags |= zXID;
+  }
+
+  /* Process data
+   --------------*/
+  /* RGB Color (3 bands) */
   if (flags & zXID) {
-    FREAD(band,sizeof(Uchar),3*wid*len,fin);
+    FREAD(band,sizeof(unsigned char),3*wid*len,fin);
     for (cnt=0; cnt<3; cnt++) {
       for (y=0;y<len;y++)
          for (x=0;x<wid;x++)
  	    out[(y*wid+x)*3+cnt] = band[cnt*wid*len+y*wid+x];
     }
-  } else { 
-     FREAD(band,sizeof(Uchar),len*wid,fin);
+  }
+  /* 1 band (Grayscale or apply a colortable to it) */
+  else {
+     FREAD(band,sizeof(unsigned char),len*wid,fin);
      for (x=0; x < len*wid; x++)
      {
 	i=x*3;
@@ -166,7 +174,7 @@ RGBDATA table[256];
         out[i+1] = table[band[x]].green;
         out[i+2] = table[band[x]].blue;
      }
-  } 
+  }
   
   if (flags & zWRITE) write_table(table,outpal);
 
@@ -183,16 +191,22 @@ RGBDATA table[256];
 
 void usage(char *name)
 {
-  printf("\nusage: %s [-m | -p palfile] <infile> <outfile>",name);
-  printf("\n");
-  printf(" -m         input file is an unwrapped mask file.\n");
-  printf(" -p         apply palfile to input byte file.\n");
-  printf(" <infile>   A 1- or 3- banded LAS byte image.\n");
-  printf(" <outfile>  a JPEG/JFIF image file.\n");
-  printf("\n"
-	"las2jpeg converts the given LAS byte image\n"
-	"into a JPEG file.  This is a common image file\n"
-	"format, used on the world-wide web.\n\n");
-  printf("Version %.2f, ASF SAR TOOLS\n\n",VERSION);
-  exit(1);
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-mask] [-pal <file>] <infile> <outfile>",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   infile   A byte image in ASF tools format.\n"
+	"   outfile  A JPEG/JFIF image file.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -mask        Input file is an unwrapped mask file.\n"
+	"   -pal <file>  Apply palfile to input byte file.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Converts the given byte image into a JPEG file.\n");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
