@@ -75,6 +75,22 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
     self->tile_count = 1;
     self->tile_area = self->tile_size * self->tile_size;
     self->cache = g_new (float, self->cache_area);
+
+	  // Address where the current row of pixels should end up.
+    //	  float *row_address 
+    //	    = self->tile_addresses[0] + ii * self->tile_size * sizeof (float);
+
+
+    size_t ii, jj;
+    for ( ii = 0 ; ii < self->size_y ; ii++ ) {
+      float *row_address 
+	= self->cache + ii * self->tile_size;
+      for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+	row_address[jj] = -42.0;
+      }
+    }
+
+
     self->tile_addresses = g_new0 (float *, self->tile_count);
     g_assert (NULL == 0x0);     // Ensure g_new0 effectively sets to NULL.
     // The tile queue shouldn't ever be needed in this case.
@@ -665,21 +681,32 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
   // it there.
   else {
     self->tile_addresses[0] = self->cache;
-    size_t read_count = fread (self->tile_addresses[0], sizeof (float),
-                               self->tile_area, fp);
-    g_assert (read_count == self->tile_area);
 
-    // Convert from the byte order on disk to the host byte order, if
-    // necessary.  Doing this with floats is somewhat questionable
-    // apparently: major libraries don't seem to support it with their
-    // macros, and the perl documentation says it can't be done in a
-    // truly portable way... but it seems to work.
-    if ( non_native_byte_order (byte_order) ) {
-      // Floats better be four bytes for this to work.
-      g_assert (sizeof (float) == 4);
-      size_t idx;
-      for ( idx = 0 ; idx < self->tile_area ; idx++ ) {
-        swap_bytes_32 ((unsigned char *) &(self->tile_addresses[0][idx]));
+    // FIXME: this path is untested at the moment, it must be tested
+    // before use.
+    g_assert_not_reached ();
+
+    size_t ii;
+    for ( ii = 0 ; ii < self->size_y ; ii++ ) {
+      // Address where the current row of pixels should end up.
+      float *row_address = self->tile_addresses[0] + ii * self->tile_size;
+      
+      // Read the data.
+      size_t read_count = fread (row_address, sizeof (float), self->size_x, 
+				 fp);
+      g_assert (read_count == self->size_x);
+
+      // Convert from the byte order on disk to the host byte order,
+      // if necessary.  Doing this with floats is somewhat
+      // questionable: major libraries don't seem to support it with
+      // their macros, and the perl documentation says it can't be
+      // done in a truly portable way... but it seems to work.
+      if ( non_native_byte_order (byte_order) ) {
+	g_assert (sizeof (float) == 4);
+	size_t jj;
+	for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+	  swap_bytes_32 ((unsigned char *) &(row_address[jj]));
+	}
       }
     }
   }
@@ -1087,28 +1114,42 @@ float_image_new_from_file_pointer_with_sample_type
     switch ( sample_type ) {
     case FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER:
       {  
-	// Buffer to hold input samples.
-	int16_t *input_buffer_16 = g_new (int16_t, self->tile_area);
-	// Read the input samples.
-	size_t read_count = fread (input_buffer_16, sizeof (int16_t), 
-				   self->tile_area, fp);
-	g_assert (read_count == self->tile_area);
-	// Convert to native byte order, if necessary.
-	if ( non_native_byte_order (byte_order) ) {
-	  g_assert (sizeof (int16_t) == 2);
-	  size_t idx;
-	  for ( idx = 0 ; idx < self->tile_area ; idx++ ) {
-	    swap_bytes_16 ((unsigned char *) &(input_buffer_16[idx]));
+	// Buffer capable of holding a row of samples in the input
+	// sample format.
+	int16_t *input_row_16 = g_new (int16_t, self->size_x);
+
+	size_t ii;
+	for ( ii = 0 ; ii < self->size_y ; ii++ ) {
+	  // Read the data.
+	  size_t read_count = fread (input_row_16, sizeof (int16_t), 
+				     self->size_x, fp);
+	  g_assert (read_count == self->size_x);
+	  // Convert from the byte order on disk to the host byte
+	  // order, if necessary.  Doing this with floats is somewhat
+	  // questionable: major libraries don't seem to support it
+	  // with their macros, and the perl docs say it can't be done
+	  // in a truly portable way... but it seems to work.
+	  if ( non_native_byte_order (byte_order) ) {
+	    g_assert (sizeof (int16_t) == 2);
+	    size_t jj;
+	    for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+	      swap_bytes_16 ((unsigned char *) &(input_row_16[jj]));
+	    }
+	  }
+
+	  // Address where the current row of pixels should end up.
+	  float *row_address = self->tile_addresses[0] + ii * self->tile_size;
+
+	  // Convert to output float format as advertised.
+	  size_t jj;
+	  for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+	    row_address[jj] = input_row_16[jj];
 	  }
 	}
-	// Convert to output float format as advertised.
-	size_t jj;
-	for ( jj = 0 ; jj < self->tile_area ; jj++ ) {
-	  self->tile_addresses[0][jj] = input_buffer_16[jj];
-	}
-	g_free (input_buffer_16);
-	break;
+
+	g_free (input_row_16);
       }
+      break;
     default:
       g_assert_not_reached ();
     }
