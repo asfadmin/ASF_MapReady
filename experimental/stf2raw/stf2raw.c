@@ -2,26 +2,26 @@
 NAME: stf2raw
 
 SYNOPSIS:
-        stf2raw [-lat <lower> <upper>] [-log <file>] [-quiet] [-prc <path>]
+	stf2raw [-lat <lower> <upper>] [-log <file>] [-quiet] [-prc <path>]
 	        <input> <output>
 
-                <input>   VEXCEL Level-0 signal data
-                <output>  AISP-compatible raw data
+		<input>   VEXCEL Level-0 signal data
+		<output>  AISP-compatible raw data
 
 DESCRIPTION:
-        Converts the given VEXCEL Level-0 signal data file into an AISP-
-        compatible raw format. It extracts the necessary processing parameters 
-        (slant range, prf, satellite mode) from the satellite headers, which it 
-        copiously outputs during processing. It extracts state vectors from the 
-        VEXCEL .par file.
+	Converts the given VEXCEL Level-0 signal data file into an AISP-
+	compatible raw format. It extracts the necessary processing parameters
+	(slant range, prf, satellite mode) from the satellite headers, which it
+	copiously outputs during processing. It extracts state vectors from the
+	VEXCEL .par file.
 
-        The currently supported satellites are:
-                -ERS-1 and ERS-2
-                -JERS
-                -RADARSAT, all beams & modes (excluding SCANSAR)
+	The currently supported satellites are:
+		-ERS-1 and ERS-2
+		-JERS
+		-RADARSAT, all beams & modes (excluding SCANSAR)
 
-        Also checks for and corrects missing and truncated lines in ERS data. 
-        Note: this is ONLY FOR ERS DATA.
+	Also checks for and corrects missing and truncated lines in ERS data.
+	Note: this is ONLY FOR ERS DATA.
 
 EXTERNAL ASSOCIATES:
     NAME:               USAGE:
@@ -45,7 +45,7 @@ PROGRAM HISTORY:
                                  Use new meta structures
                                  Update commandline parsing routine
                                  Estimate doppler or grab it from par file
-				 
+
 HARDWARE/SOFTWARE LIMITATIONS:
 
 ALGORITHM DESCRIPTION:
@@ -54,8 +54,8 @@ ALGORITHM REFERENCES:
 
 BUGS:
 	Does not compensate for skipped lines for JERS or RSAT.
-        Output is very inefficient for SCANSAR images.
-        SCANSAR images cannot be quicklooked.
+	Output is very inefficient for SCANSAR images.
+	SCANSAR images cannot be quicklooked.
 
 
 ******************************************************************************/
@@ -81,6 +81,7 @@ BUGS:
 ******************************************************************************/
 
 #include "asf.h"
+#include "asf_nan.h"
 #include "lzFetch.h"
 #include "decoder.h"
 #include "dateUtil.h"
@@ -90,14 +91,9 @@ BUGS:
 /* allocation routine for meta_state_vectors */
 meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
 
-/*********************************
-updateMeta:
-	Updates the given satellite record with
-the (more accurate) Earth radius, spacecraft height,
-velocity, etc. using state vector in the ".par" file.
-*/
-/*Utility routine: Convert LZ-state vector-style date
-to structure: DD-MMM-YYYY hh:mm:ss.ttt*/
+/*Utility routine:
+	Convert LZ-state vector-style date to structure:
+	YYYY-MM-DD hh:mm:ss.ttt*/
 void lzStateTime(const char *lzStr,ymd_date *date,hms_time *time)
 {
 	char month[100];/*3-letter, all-caps description of the month*/
@@ -106,20 +102,20 @@ void lzStateTime(const char *lzStr,ymd_date *date,hms_time *time)
 		 "JUL","AUG","SEP","OCT","NOV","DEC"};
 	int monthNo;
 	if (6!=sscanf(lzStr,"%d-%[^- ]-%d %d:%d:%lf",
-		&date->day,month,&date->year,
-		&time->hour,&time->min,&time->sec))
+		&date->day, month, &date->year,
+		&time->hour, &time->min, &time->sec))
 	{/*We couldn't read the date correctly*/
 		printf("   ERROR! createMeta_lz:lzStTime couldn't parse LZP\n"
-			"   state vector date string '%s'!\n",lzStr);
+		       "   state vector date string '%s'!\n",lzStr);
 		printf("   Month='%s'\n",month);
-		  sprintf(errbuf,"   ERROR: createMeta_lz:lzStTime couldn't parse LZP\n"
+		sprintf(errbuf,"   ERROR: createMeta_lz:lzStTime couldn't parse LZP\n"
 			"   state vector date string '%s'!\n   Month='%s'\n",lzStr,month);
-		  printErr(errbuf);
+		printErr(errbuf);
 	}
 /*Try to figure out the month*/
 	monthNo=0;
 	while (monthNo<12 && (0!=strncmp(month,monthNames[monthNo],3)))
-			monthNo++;
+		monthNo++;
 	if (monthNo==12)
 	{
 		printf("   ERROR: createMeta_lz:lzStTime couldn't match month '%s'!\n",month);
@@ -131,23 +127,25 @@ void lzStateTime(const char *lzStr,ymd_date *date,hms_time *time)
 
 /* Initializes base meta structure (asf_meta.a)*/
 meta_parameters *raw_init(void);
-/* In (local_directory)/propagate.c */
 void propagate_state(meta_parameters *meta, int nStVec, double data_int);
 /* In (local_directory)/fetch_prc_stvec.c */
-int fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime, 
+int fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime,
 	stateVector *retVec, ymd_date *retDate, hms_time *retTime, int orbit);
-
+/*********************************
+ * createMeta_lz:
+ * Acquire, figure, & write our fancy dancy .meta and .in files from the
+ * .par file. */
 void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int nVec,
-                   float fd, float fdd, float fddd, int prcflag, char *prcPath)
+		   float fd, float fdd, float fddd, int prcflag, char *prcPath)
 {
 	double clock_ang;
-	char parN[256],buf[255];
+	char parN[256], buf[256];
 	meta_parameters *meta=raw_init();
 	stateVector stVec;/*Source state vector*/
 	ymd_date st_date,img_date;
 	julian_date st_jdate,img_jdate;
 	hms_time st_time,img_time;
-	char *st_timeStr;/*Source state vector time, DD-MMM-YYYY hh:mm:ss.ttt*/
+	char *st_timeStr;/*Source state vector time, YYYY-MM-DD hh:mm:ss.ttt*/
 	int num_vecs;
 
 /*Open the parameter file*/
@@ -164,7 +162,7 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
 	    sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].x:", nVec);
 	    stVec.pos.x = lzDouble(parN,buf,NULL);
 	    sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].y:", nVec);
-    	    stVec.pos.y = lzDouble(parN,buf,NULL);
+	    stVec.pos.y = lzDouble(parN,buf,NULL);
 	    sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].z:", nVec);
 	    stVec.pos.z = lzDouble(parN,buf,NULL);
 	    sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].xv:", nVec);
@@ -183,11 +181,11 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
 	}
 
 	date_ymd2jd(&st_date,&st_jdate);
-	
+
 /*	Convert from GEI to fixed-earth: (NOT needed-- already fixed?)
 	gei2fixed(&stVec,utc2gha(st_jdate.year,st_jdate.jd,
 		st_time.hour,st_time.min,st_time.sec));*/
-	
+
 /*Create a state vector structure to hold our state vector, with *one* state_loc, and copy it over.*/
 	meta->state_vectors = meta_state_vectors_init(1);
 	meta->state_vectors->vecs[0].vec = stVec;
@@ -200,21 +198,21 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
 	num_vecs = 2 + (int)(s->nLines/s->prf)/30.0;
 	propagate_state(meta, num_vecs+1, (s->nLines/s->prf)/num_vecs);
 
-/*Figure out satellite look direction*/ 
+/*Figure out satellite look direction*/
 	clock_ang = lzDouble(parN,"prep_block.clock_angle:",NULL);
-	if (clock_ang  == 90.0) 
+	if (clock_ang  == 90.0)
 		s->lookDir='R';
 	else if (clock_ang == -90.0)
 		s->lookDir='L';
 	else {
-          printf("   ERROR! Clock angle in .par file is %f!\n",clock_ang); 
+	  printf("   ERROR! Clock angle in .par file is %f!\n",clock_ang);
 	  sprintf(errbuf,"   ERROR! Clock angle in .par file is %f!\n",clock_ang);
 	  printErr(errbuf);
 	}
-	
+
 /*Update s-> fields with new state vector*/
 	addStateVector(s,&meta->state_vectors->vecs[0].vec);
-	
+
 /*Update fields for which we have decoded header info.*/
 	updateMeta(s,meta,inN);
 
@@ -225,9 +223,9 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
 	meta->sar->azimuth_doppler_coefficients[0] = fd;
 	meta->sar->azimuth_doppler_coefficients[1] = 0.0;
 	meta->sar->azimuth_doppler_coefficients[2] = 0.0;
-	
+
 /*Write out AISP .in parameter file.*/
-	writeAISPparams(s,outN,fd,fdd,fddd);		
+	writeAISPparams(s,outN,fd,fdd,fddd);
 
 /*Write out and free the metadata structure*/
 	meta_write(meta,outN);
@@ -236,29 +234,28 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
 
 /********************************
 convertMetadata:
-	Creates AISP .in and .fmt files,
-as well as determining the number of lines in the l0 file,
-by reading the granule (.gran) file.
+	Creates AISP .in and .fmt files, as well as determining the number of
+	lines in the level-0 file, by reading the granule (.gran) file.
 */
 #include <ctype.h>
 bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
-                              readPulseFunc *readNextPulse,
-                              int prcflag, char *prcPath)
+			      readPulseFunc *readNextPulse,
+			      int prcflag, char *prcPath)
 {
 	bin_state *s;
 	char lzName[256];
-	int i;
+	int ii;
 	char *satName;
-	
+
 	strcat(strcpy(lzName,inName),".par");
 
-/*Figure out what kind of SAR data we have, and initialize the appropriate decoder.*/
+/*Figure out what kind of SAR data we have; initialize the appropriate decoder*/
 	satName=lzStr(lzName,"prep_block.satellite:",NULL);
 	/*Trim white space from end of satellite name*/
-	i=strlen(satName)-1;
-	while (isspace(satName[i]))
-		satName[i--]=0;
-	
+	ii=strlen(satName)-1;
+	while (isspace((int)satName[ii]))
+		satName[ii--]=0;
+
 	/*Initialize the appropriate decoder routine*/
 	if (0==strncmp(satName,"ERS",3))
 		s=ERS_decoder_init(inName,outName,readNextPulse);
@@ -266,16 +263,15 @@ bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
 		s=JRS_decoder_init(inName,outName,readNextPulse);
 	else if (0==strncmp(satName,"RSAT",4))
 		s=RSAT_decoder_init(inName,outName,readNextPulse);
-	else 
-		{
-		  printf("   Unrecognized satellite '%s'!\n",satName);
-		  sprintf(errbuf,"   Unrecognized satellite '%s'!\n",satName);
-		  printErr(errbuf);
-		}
-	
+	else {
+		printf("   Unrecognized satellite '%s'!\n",satName);
+		sprintf(errbuf,"   Unrecognized satellite '%s'!\n",satName);
+		printErr(errbuf);
+	}
+
 /*Read in essential parameters from granule file.*/
        /** numLines from parfile is often wrong;
- 	** will learn the actual number of lines later in main()
+	** will learn the actual number of lines later in main()
 	**/
 	*numLines = lzInt(lzName,"prep_block.number_lines:",NULL);
 	s->nFrames = lzInt(lzName,"prep_block.number_frames:",NULL);
@@ -300,8 +296,8 @@ int openErrorLog(bin_state *s, char *inN)
 
 /*Prototypes*/
 void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart,
-                  long *imgEnd, char *imgTimeStr, int *nVec,
-                  float *fd, float *fdd, float *fddd);
+		  long *imgEnd, char *imgTimeStr, int *nVec,
+		  float *fd, float *fdd, float *fddd);
 void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd);
 
 /* Global variables - needed to handle missing lines properly */
@@ -315,17 +311,18 @@ main:
 */
 int main(int argc,char *argv[])
 {
-	int 		nTotal, nVec=1;
-	float		percent=5.0;
-	float		fd,fdd,fddd;
-	float		lowerLat=-99.0,upperLat=99.0;
-	char 		*inName,*outName,imgTimeStr[20]="";
-	bin_state 	*s;
-	readPulseFunc 	readNextPulse;
-	iqType 		*iqBuf;
-	int		prcflag=0;
-	char		prcPath[256];
-	extern int	currArg; /* from cla.h (in asf.h) (initialized to 1) */
+	int           nTotal, nVec=1;
+        float         percent=5.0;
+        float         fd,fdd,fddd;
+        float         lowerLat=NAN, upperLat=NAN;
+        int           latConstraintFlag=FALSE;
+        char          *inName,*outName,imgTimeStr[20]="";
+        bin_state     *s;
+        readPulseFunc readNextPulse;
+        iqType        *iqBuf;
+        int           prcflag=0;
+        char          prcPath[256];
+        extern int    currArg; /* from cla.h (in asf.h) (initialized to 1) */
 
 	logflag = quietflag = 0;
 
@@ -335,13 +332,20 @@ int main(int argc,char *argv[])
 		char *key=argv[currArg++];
 		if (strmatch(key,"-lat")) {
 			CHECK_ARG(2);
-			lowerLat = atof(GET_ARG(2));
-			upperLat = atof(GET_ARG(1));
+			lowerLat = strtod(GET_ARG(2),NULL);
+			upperLat = strtod(GET_ARG(1),NULL);
 			if(lowerLat>upperLat) {
 				float tmp=upperLat;
 				upperLat = lowerLat;
 				lowerLat = tmp;
 			}
+			if (   lowerLat<-90.0 || lowerLat>90.0
+			    || upperLat<-90.0 || upperLat>90.0) {
+				printf("Invalid latitude constraint (must be between -90 and 90).\n");
+				printf("Exiting...\n");
+				exit(EXIT_FAILURE);
+			}
+			latConstraintFlag=TRUE;
 		}
 		else if (strmatch(key,"-log")) {
 			CHECK_ARG(1);
@@ -362,23 +366,55 @@ int main(int argc,char *argv[])
 	if ((argc-currArg) < 2) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 	inName = argv[currArg++];
 	outName = appendExt(argv[currArg],".raw");
-		
-	/* Determine start and end line for latitude constraint
-	 -----------------------------------------------------*/
-	if (lowerLat!=-99.0 && upperLat!=99.0)
-	  createSubset(inName, lowerLat, upperLat, &imgStart, &imgEnd,
-                       imgTimeStr, &nVec, &fd, &fdd, &fddd);
-	else
-	  estimateDoppler(inName, &fd, &fdd, &fddd);
+
+	if (latConstraintFlag) {
+	    /* Determine start and end line for latitude constraint */
+	    createSubset(inName, lowerLat, upperLat, &imgStart, &imgEnd,
+	                 imgTimeStr, &nVec, &fd, &fdd, &fddd);
+	}
+	else {
+	    /* Since createSubset isn't called we need to figure nVec
+	     * also we estimate the doppler */
+	    int done = FALSE;
+	    char *tmp_timeStr;
+	    char buf[256];
+	    char parName[256];
+	    hms_time tmp_time;
+	    ymd_date tmp_date;
+	    double vec_sec, loc_sec;
+	    double new_delta, old_delta=1000.0, delta=1000.0;
+
+	    /* Figure out what time the image started getting recorded */
+	    sprintf(parName,"%s.par",inName);
+	    tmp_timeStr = lzStr(parName, "prep_block.location[0].line_date:", NULL);
+	    date_dssr2date(tmp_timeStr,&tmp_date,&tmp_time);
+	    loc_sec = date_hms2sec(&tmp_time);
+
+	    /* Find the index of the closest state vector to the start time */
+	    nVec=1;
+	    while (!done) {
+	      sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].Date:", nVec);
+	      tmp_timeStr = lzStr(parName, buf, NULL);
+	      parse_ymdTime(tmp_timeStr,&tmp_date,&tmp_time);
+	      vec_sec = date_hms2sec(&tmp_time);
+	      new_delta = fabs(vec_sec - loc_sec);
+	      if ((new_delta>delta) && (old_delta>delta)) done=TRUE;
+	      old_delta = delta;
+	      delta = new_delta;
+	      nVec++;
+	    }
+	    FREE(tmp_timeStr);
+	    estimateDoppler(inName, &fd, &fdd, &fddd);
+	}
 
 	/* Read the metadata to determine where window position shifts
 	   happen, as well as the number of lines in the image.
-         ------------------------------------------------------------*/
+	 ------------------------------------------------------------*/
 	s=convertMetadata_lz(inName,outName,&nTotal,&readNextPulse,prcflag,
-	                     prcPath);
+			     prcPath);
 	iqBuf=(iqType *)MALLOC(sizeof(iqType)*2*s->nSamp);
 	if (imgEnd == 0) imgEnd = nTotal;
-	
+
 	/* Now we just loop over the output lines, writing as we go.
 	 ---------------------------------------------------------*/
 	s->fpOut=FOPEN(outName,"wb");
@@ -389,50 +425,49 @@ int main(int argc,char *argv[])
 
 	for (outLine=0;outLine<nTotal;outLine++)
 	{
-		if (s->curFrame >= s->nFrames) { 
-		  printf("   Reached end of file\n"); 
-		  if (logflag) printLog("   Reached end of file\n"); 
-		  break; 
+		if (s->curFrame >= s->nFrames) {
+		  printf("   Reached end of file\n");
+		  if (logflag) printLog("   Reached end of file\n");
+		  break;
 		}
 
-	        /* Now read the next pulse of data.
+		/* Now read the next pulse of data.
 		 ---------------------------------*/
 		readNextPulse(s,iqBuf);
 
 		/* If the read status is good, write this data.
-		 ---------------------------------------------*/ 
+		 ---------------------------------------------*/
 		if (s->readStatus == 1) {
 		  /* write some extra lines at the end for the SAR processing */
 		  if (((outLine >= imgStart) && (outLine <= imgEnd+4096)) ||  /* descending */
 		    ((outLine >= imgEnd) && (outLine <= imgStart+4096)))      /* ascending */
 		  {
-			FWRITE(iqBuf,sizeof(iqType),s->nSamp*2,s->fpOut); 
+			FWRITE(iqBuf,sizeof(iqType),s->nSamp*2,s->fpOut);
 			s->nLines++;
 		  }
 		}
-		/* Write status information to screen. 
+		/* Write status information to screen.
 		 ------------------------------------*/
 		if ((outLine*100/nTotal) == percent) {
 			printf("   Completed %3.0f percent\n", percent);
 			percent += 5.0;
 		}
 	}
-	if (lowerLat!=-99.0 && upperLat!=99.0) {
+
+	if (latConstraintFlag) {
 	  s->nLines -= 4096; /* reduce the line number from extra padding */
 	  createMeta_lz(s,inName,outName,imgTimeStr,nVec,fd,fdd,fddd,prcflag,
-	                prcPath);
-	  /* Set meta's center lat & long */
-/******	  meta->general->center_latitude = lowerLat + (upperLat-lowerLat)/2;*/
-/*****	  meta->general->center_longitude =  */
+			prcPath);
 	}
-	else
+	else {
 	  createMeta_lz(s,inName,outName,NULL,nVec,fd,fdd,fddd,prcflag,prcPath);
+	}
 
 	/* Clean up memory & open files
 	 -----------------------------*/
 	FREE(iqBuf);
 	FREE(outName);
-	FCLOSE(s->fpOut); 
+	FCLOSE(s->fpOut);
 	FCLOSE(s->fperr);
 	delete_bin_state(s);
 
