@@ -68,7 +68,7 @@ char *findExt(char *name);
    null character) of result strings from the appendExt function.  */
 #define MAX_APPENDEXT_RESULT_STRING_LENGTH 255
 /* This function is badly misnamed.  What it actuall does: First, if
-   newExt is NULL (not an empty string, but a NULL pointer, returna
+   newExt is NULL (not an empty string, but a NULL pointer, return a
    new copy of name.  Otherwise, return in new memory a string
    consisting of a copy of name with the rightmost dot extension, if
    present, replaced with newExt.  If no dot extension exists
