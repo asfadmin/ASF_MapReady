@@ -34,7 +34,7 @@ main(int argc, char **argv)
     use_thumbnails = false;
 #endif
 
-    if (use_thumbnails)
+    if (!use_thumbnails)
     {
 	printf("GTK Version < 2.4 -- output thumbnails disabled.\n");
     }
