@@ -65,7 +65,7 @@ void rciq(patch *p,const getRec *signalGetRec,const rangeRef *r)
   register int i,lineNo;
   int readSamples=p->n_range+r->refLen;/*readSamples is the number of samples 
 				  of uncompressed signal which are to be read in.*/
-  patch *r_f=NULL, *raw_f=NULL, *raw_t=NULL, *r_x_f;
+  patch *r_f=NULL, *raw_f=NULL, *raw_t=NULL, *r_x_f = NULL;
 
   if (g.iflag & RANGE_REF_MAP) r_f=copyPatch(p);
   if (g.iflag & RANGE_RAW_F) raw_f=copyPatch(p);
