@@ -18,6 +18,9 @@ meta_projection *meta_projection_init(void);
 void add_meta_ddr_struct(const char *name, meta_parameters *meta, struct DDR *ddr);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
 
+/* Prototype from unpacked_deg */
+double unpacked_deg(double angle);
+
 /***************************************************************
  * meta_read:
  * Reads a meta file and returns a meta structure filled with
@@ -154,7 +157,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	general->missing_lines    = -999999999;
 
 /* Read old style meta file */
-	coniIO_double(coni,"","meta_version:",&meta->meta_version,"ASF APD Metadata File.\n");
+	coniIO_double(coni,"","meta_version:",&meta->meta_version,"ASF Metadata File.\n");
 
 /*Geolocation parameters.*/
 	coniIO_structOpen(coni,"geo {","begin parameters used in geolocating the image.");
@@ -186,10 +189,10 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 				coniIO_double(coni,"geo.proj.","atct_alpha3:",&projection->param.atct.alpha3,"at/ct projection parameter");
 				break;
 			case 'L':/*Lambert Conformal Conic projection.*/
-				coniIO_double(coni,"geo.proj.","lam_plat1:",&projection->param.lambert.plat1,"Lambert first standard parallel");
-				coniIO_double(coni,"geo.proj.","lam_plat2:",&projection->param.lambert.plat2,"Lambert second standard parallel");
-				coniIO_double(coni,"geo.proj.","lam_lat:",  &projection->param.lambert.lat0, "Lambert original latitude");
-				coniIO_double(coni,"geo.proj.","lam_lon:",  &projection->param.lambert.lon0, "Lambert original longitude");
+				coniIO_double(coni,"geo.proj.","lam_plat1:",&projection->param.lamcc.plat1,"Lambert first standard parallel");
+				coniIO_double(coni,"geo.proj.","lam_plat2:",&projection->param.lamcc.plat2,"Lambert second standard parallel");
+				coniIO_double(coni,"geo.proj.","lam_lat:",  &projection->param.lamcc.lat0, "Lambert original latitude");
+				coniIO_double(coni,"geo.proj.","lam_lon:",  &projection->param.lamcc.lon0, "Lambert original longitude");
 				break;
 			case 'P':/*Polar Stereographic Projection.*/
 				coniIO_double(coni,"geo.proj.","ps_lat:",&projection->param.ps.slat,"Polar Stereographic reference Latitude");
@@ -384,17 +387,17 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 				meta->projection->re_major = 6370997;
 				meta->projection->re_minor = 6370997;
 			}
-		        meta->projection->param.lambert.plat1 = ddr.proj_coef[2];
-		        meta->projection->param.lambert.plat2 = ddr.proj_coef[3];
-		        meta->projection->param.lambert.lon0  = ddr.proj_coef[4];
-		        meta->projection->param.lambert.lat0  = ddr.proj_coef[5];
+		        meta->projection->param.lamcc.plat1 = unpacked_deg(ddr.proj_coef[2]);
+		        meta->projection->param.lamcc.plat2 = unpacked_deg(ddr.proj_coef[3]);
+		        meta->projection->param.lamcc.lon0  = unpacked_deg(ddr.proj_coef[4]);
+		        meta->projection->param.lamcc.lat0  = unpacked_deg(ddr.proj_coef[5]);
 		        break;
 		     case PS:
 		        meta->projection->type = 'P';
 		        meta->projection->re_major      = ddr.proj_coef[0];
 		        meta->projection->re_minor      = ddr.proj_coef[1];
-		        meta->projection->param.ps.slon = ddr.proj_coef[4];
-		        meta->projection->param.ps.slat = ddr.proj_coef[5];
+		        meta->projection->param.ps.slon = unpacked_deg(ddr.proj_coef[4]);
+		        meta->projection->param.ps.slat = unpacked_deg(ddr.proj_coef[5]);
 		        break;
 		     case UTM:
 		        meta->projection->type = 'U';
