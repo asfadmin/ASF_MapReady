@@ -5,7 +5,7 @@
 </name>
 
 <synopsis>
-asf_export [-format <format>] [-size <max_dimension>] <in_base_name> <out_full_name>
+asf_export [-format <output_format>] [-size <max_dimension>] <in_base_name> <out_full_name>
 </synopsis>
 
 <description>
@@ -122,16 +122,30 @@ asf_export [-format <format>] [-size <max_dimension>] <in_base_name> <out_full_n
 #include <asf_endian.h>
 #include <asf_meta.h>
 
-static char *program_name = "asf_export";
-
 /* Print invocation information.  */
-void usage(char *program_name)
+void usage()
 {
-  printf ("\n"
-     "USAGE:\n"
-     "   %s [-format <format>] [-size <max_dimension>] "
-     "      <in_base_name> <out_full_name>\n", program_name);
+	printf ("\n"
+		"USAGE:\n"
+        "   asf_export [-format <output_format>] [-size <max_dimension>] <in_base_name> <out_full_name>\n");
   exit (EXIT_FAILURE);
+}
+
+
+void print_splash_screen(int argc, char* argv[])
+{
+	char temp1[255];
+	char temp2[255];
+	int ii;
+	sprintf(temp1, "\nCommand line:");
+	for (ii = 0; ii < argc; ii++)
+	{
+		sprintf(temp2, " %s",argv[ii]);
+		strcat(temp1, temp2);
+	}
+	printf("%s\n", temp1);
+	system("date");
+	printf("PID: %i\n", (int)getpid());
 }
 
 /* Evaluate to true if floats are within tolerance of each other.  */
@@ -158,6 +172,8 @@ void usage(char *program_name)
 /* This value signifies that there is no maximum size is some contexts.  */
 #define NO_MAXIMUM_OUTPUT_SIZE -1
 
+#define FLAG_NOT_SET -1
+
 /* Structure to hold elements of the command line.  */
 typedef struct {
   /* Output format to use.  */
@@ -167,8 +183,9 @@ typedef struct {
      this value, if its maximum dimension is not already less than
      this.  */
   long size;			
-  /* Name or base name of input file(s) to use.  */
-  char input_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+  /* Name of data and metadata input files  */
+  char in_data_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+  char in_meta_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   /* Output name to use.  */
   char output_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   int verbose;			/* Flag true if in verbose mode.  */
@@ -221,6 +238,39 @@ my_strnlen (const char *s, size_t max_len)
   return max_len;
 }
 
+//Check to see if an option was supplied or not
+//If it was found, return its argument number
+//Otherwise, return -1
+int checkForOption(char* key, int argc, char* argv[])
+{
+	int ii = 0;
+	while(ii < argc)
+	{
+		if(strmatch(key, argv[ii]))
+			return(ii);
+		++ii;
+	}
+	return(FLAG_NOT_SET);
+}
+
+//Print an error message. This is just here for circumventing check_return.
+//Also, it makes it possible to reformat all the error messages at once.
+void print_error(char *msg)
+{
+	char* temp;
+	sprintf(temp, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);//I made "ERROR:" red...Yay! :D
+	printErr(temp);
+	exit(EXIT_FAILURE);
+}
+
+//Check the return value of a function and display an error message if it's a bad return
+void check_return(int ret, char *msg)
+{
+	if (ret != 0)
+		print_error(msg);
+}
+
+
 /* Forward declarations.  */
 void
 export_as_envi (const char *metadata_file_name,
@@ -251,39 +301,106 @@ export_as_ppm (const char *metadata_file_name,
 int 
 main (int argc, char *argv[])
 {
-  /* Command line input goes in it's own structure.  */
-  command_line_parameters_t command_line;
+/**********************BEGIN COMMAND LINE PARSING STUFF**********************/
+	/* Command line input goes in it's own structure.  */
+	command_line_parameters_t command_line;
+	
+	int formatFlag, sizeFlag, logFlag, quietFlag;
+
+	//Check to see which options were specified
+	formatFlag = checkForOption("-format", argc, argv);
+	sizeFlag = checkForOption("-size", argc, argv);
+	logFlag = checkForOption("-log", argc, argv);
+	quietFlag = checkForOption("-quiet", argc, argv);
+
+	int needed_args = 3;//command & argument & argument
+	if(formatFlag != FLAG_NOT_SET)
+		needed_args += 2;//option & parameter
+	if(sizeFlag != FLAG_NOT_SET)
+		needed_args += 2;//option & parameter
+	if(quietFlag != FLAG_NOT_SET)
+		needed_args += 1;//option
+	if(logFlag != FLAG_NOT_SET)
+		needed_args += 2;//option & parameter
+
+	if(argc != needed_args)
+		usage();//This exits with a failure
+
+	//We also need to make sure the last three options are close to what we expect
+	if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-' || argv[argc - 3][0] == '-')
+		usage();//This exits with a failure
+
+	//Make sure any options that have parameters are followed by parameters (and not other options)
+	//Also make sure options' parameters don't bleed into required arguments
+	if(formatFlag != FLAG_NOT_SET)
+		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 4)
+			usage();
+	if(sizeFlag != FLAG_NOT_SET)
+		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 4)
+			usage();
+
+	//We're good enough at this point...print the splash screen and start filling in
+	//whatever needs to be filled in.
+	if(quietFlag == FLAG_NOT_SET)
+		print_splash_screen(argc, argv);
+
+	if(formatFlag != FLAG_NOT_SET)
+		strcpy(command_line.format, argv[formatFlag + 1]);
+	else
+		strcpy(command_line.format, "geotiff");//Default behavior: produce a geotiff
+
+	if(sizeFlag != FLAG_NOT_SET)
+		command_line.size = atol(argv[sizeFlag + 1]);
+	else
+		command_line.size = NO_MAXIMUM_OUTPUT_SIZE;
+
+	if(quietFlag != FLAG_NOT_SET)
+		command_line.quiet = TRUE;
+	else
+		command_line.quiet = FALSE;
+
+	//Grab the data file name
+	strcpy(command_line.in_data_name, argv[argc - 2]);
+	strcat(command_line.in_data_name, ".img");
+	//Grab the meta file name
+	strcpy(command_line.in_meta_name, argv[argc - 2]);
+	strcat(command_line.in_meta_name, ".meta");
+	//Grab the output name
+	strcpy(command_line.output_name, argv[argc - 1]);
+/***********************END COMMAND LINE PARSING STUFF***********************/
 
   /* Defaults for options.  These should all be considered immutable
      after they are set here.  */
-  char const_default_format[MAX_FORMAT_STRING_LENGTH + 1];
-  const long default_size = NO_MAXIMUM_OUTPUT_SIZE;
-  const int num_args = 1;
+//  char const_default_format[MAX_FORMAT_STRING_LENGTH + 1];
+//  const long default_size = NO_MAXIMUM_OUTPUT_SIZE;
+//  const int num_args = 1;
   output_format_t format;
-  char image_data_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
-  char metadata_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+//  char image_data_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+//  char metadata_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   meta_parameters *md;
   /* Quiet mode is off by default.  */
-  command_line.quiet = FALSE;
+//  command_line.quiet = FALSE;
   /* Produce geotiff output by default.  */
-  my_strncpy (const_default_format, "geotiff", 
-	      (size_t) (MAX_FORMAT_STRING_LENGTH + 1));
+//  my_strncpy (const_default_format, "geotiff", 
+//	      (size_t) (MAX_FORMAT_STRING_LENGTH + 1));
   /* By default, construct the output base name from the input base
      name.  */
 
   /* Options are initialized with their default values.  */
-  my_strncpy (command_line.format, const_default_format,
-	      (size_t) (MAX_FORMAT_STRING_LENGTH + 1));
-  command_line.size = default_size;
+//  my_strncpy (command_line.format, const_default_format,
+//	      (size_t) (MAX_FORMAT_STRING_LENGTH + 1));
+//  command_line.size = default_size;
   /* If the output_name is still an empty string after option
      processing, we will conclude that it needs to be formed from the
      input string.  */
-  command_line.output_name[0] = '\0';
+//  command_line.output_name[0] = '\0';
 
-  while ( currArg < (argc - num_args) ) {
+/*  while ( currArg < (argc - num_args) ) {
     char *key = argv[currArg++];
     if ( strmatch (key, "-format") ) {
       CHECK_ARG (1);		/* One string argument: format string.  */
+
+/*
       strcpy (command_line.format, GET_ARG (1));
       if ( !((strcmp (command_line.format, "CEOS") == 0) 
 	     || (strcmp (command_line.format, "envi") == 0) 
@@ -291,32 +408,40 @@ main (int argc, char *argv[])
 	     || (strcmp (command_line.format, "geotiff") == 0)
 	     || (strcmp (command_line.format, "jpeg") == 0)
 	     || (strcmp (command_line.format, "ppm") == 0)) ) {
+	print_error("Unknown format specified for output");
 	fprintf (stderr, "%s: bad format (-format argument): %s\n", 
 		 program_name, command_line.format);
-	usage (program_name);
       }
-    }
+    }*/
+/*
     else if ( strmatch (key, "-size") ) {
       char *endptr;
       int base = 10;		/* Size is a base 10 integer.  */
+/*
       CHECK_ARG (1);
       command_line.size = strtol (GET_ARG (1), &endptr, base);
       for ( ; *endptr != '\0' ; endptr++ ) {
 	if ( !isspace (*endptr) ) {
 	  fprintf (stderr, "%s: bad size (-size argument): %s\n", program_name,
 		   GET_ARG (1));
-	  usage (program_name);
+	  usage ();
 	}
+
       }
     }
+*/
+/*
     else if ( strmatch (key, "-o") ) {
       CHECK_ARG (1);
       strcpy (command_line.output_name, GET_ARG (1));
     }
+*/
+/*
     else if ( strmatch (key, "-quiet") ) {
 	  command_line.quiet = TRUE;
     }
   }		
+*/
 
   if ( strcmp (command_line.format, "envi") == 0 ) {
     format = ENVI;
@@ -334,17 +459,18 @@ main (int argc, char *argv[])
     format = PPM;
   }
   else {
-    assert (FALSE);		/* Not implemented yet.  */
+    print_error("Unrecognized output format specified");
   }
+
 
   /* The only argument is the name of the input image.  This may be a
      base name, or include either the .meta or .img extensions,
      correct names for both constituent parts will then be deduced
      automaticly.  We don't validate these much, since opening them is
      the first thing this program attempts.  */
-  if ( argc - currArg != num_args ) {
+/*  if ( argc - currArg != num_args ) {
     fprintf (stderr, "%s: wrong number of arguments\n", program_name);
-    usage (program_name);
+    usage ();
   }
   if ( my_strnlen (argv[currArg], MAX_IMAGE_NAME_LENGTH + 1)
        > MAX_IMAGE_NAME_LENGTH ) {
@@ -353,8 +479,9 @@ main (int argc, char *argv[])
   }
   my_strncpy (command_line.input_name, argv[currArg], 
 	      MAX_IMAGE_NAME_LENGTH + 1);
-
+*
   /* Construct the actual file names from the names the user supplied.  */
+/*
   strcpy (image_data_file_name, command_line.input_name);
   if ( findExt (command_line.input_name) 
        && strcmp (findExt (command_line.input_name), ".img") ) {
@@ -368,9 +495,11 @@ main (int argc, char *argv[])
     create_name (metadata_file_name, command_line.input_name, ".meta");
     create_name (image_data_file_name, command_line.input_name, ".img");
   }
+*/
 
   /* If we didn't get an output file option, we construct the default
      output name from the input name.  */
+/*
   if ( command_line.output_name[0] == '\0' ) {
     if ( format == GEOTIFF ) {
       create_name (command_line.output_name, command_line.input_name, 
@@ -383,38 +512,38 @@ main (int argc, char *argv[])
       create_name (command_line.output_name, command_line.input_name, ".ppm");
     }
     else {
-      assert (FALSE);		/* Not implemented yet.  */
+      assert (FALSE);
     }
   }
+*/
 
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
-  md = meta_read (metadata_file_name);
+  md = meta_read (command_line.in_meta_name);
   assert (md->general->data_type == BYTE
 	  || md->general->data_type == INTEGER16
 	  || md->general->data_type == INTEGER32
 	  || md->general->data_type == REAL32
 	  || md->general->data_type == REAL64);
   meta_free (md);
-
   if ( format == ENVI ) {
-    export_as_envi (metadata_file_name, image_data_file_name, 
+    export_as_envi (command_line.in_meta_name, command_line.in_data_name, 
 		    command_line.output_name);
   }
   else if ( format == ESRI ) {
-    export_as_esri (metadata_file_name, image_data_file_name,
+    export_as_esri (command_line.in_meta_name, command_line.in_data_name,
 		    command_line.output_name);    
   }
   else if ( format == GEOTIFF ) {
-    export_as_geotiff (metadata_file_name, image_data_file_name,
+    export_as_geotiff (command_line.in_meta_name, command_line.in_data_name,
 		       command_line.output_name);
   } 
   else if ( format == JPEG ) {
-    export_as_jpeg (metadata_file_name, image_data_file_name,
+    export_as_jpeg (command_line.in_meta_name, command_line.in_data_name,
 		    command_line.output_name, command_line.size);
   } 
   else if ( format == PPM ) {
-    export_as_ppm (metadata_file_name, image_data_file_name,
+    export_as_ppm (command_line.in_meta_name, command_line.in_data_name,
 		   command_line.output_name, command_line.size);
   }
 
@@ -466,8 +595,11 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
   /* Read the image data itself.  */
   FILE *ifp = fopen (image_data_file, "r");
   if ( ifp == NULL ) {
-    fprintf (stderr, "%s: failed to open %s: %s\n", program_name, 
-	     image_data_file, strerror (errno));
+//    fprintf (stderr, "%s: failed to open %s: %s\n", program_name, 
+//	     image_data_file, strerror (errno));
+	char* temp;
+	sprintf(temp, "Failed to open %s: %s", image_data_file, strerror(errno));
+	print_error(temp);
     exit (EXIT_FAILURE);
   }
   /* Total number of samples in image.  */
@@ -476,12 +608,18 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
   read_count = fread (data, sample_size, pixel_count, ifp);
   if ( read_count != pixel_count ) {
     if ( feof (ifp) ) {
-      fprintf (stderr, "%s: read wrong amount of data from %s\n", program_name,
-	       image_data_file);
+	  char* temp;
+	  sprintf(temp, "Read wrong amoutn of data from %s", image_data_file);
+	  print_error(temp);
+//      fprintf (stderr, "%s: read wrong amount of data from %s\n", program_name,
+//	       image_data_file);
     }
     else if ( ferror (ifp) ) {
-      fprintf (stderr, "%s: read of file %s failed: %s\n", program_name, 
-	       image_data_file, strerror (errno));
+	  char* temp;
+	  sprintf(temp, "Read of file %s failed: %s", image_data_file, strerror(errno));
+	  print_error(temp);
+//      fprintf (stderr, "%s: read of file %s failed: %s\n", program_name, 
+//	       image_data_file, strerror (errno));
     }
     else {
       assert (FALSE);		/* Shouldn't be here.  */
@@ -620,7 +758,10 @@ export_as_envi (const char *metadata_file_name,
   sprintf (command, "cp %s %s\n", image_data_file_name, envi_data_file_name); 
   return_code = system (command);
   if ( return_code != 0 ) {
-    fprintf (stderr, "%s: system command '%s' failed", program_name, command);
+    char* temp;
+    sprintf(temp, "System command '%s' failed", command);
+    print_error(temp);
+//    fprintf (stderr, "%s: system command '%s' failed", program_name, command);
     exit (EXIT_FAILURE);
   }
 }
@@ -1039,7 +1180,10 @@ export_as_esri (const char *metadata_file_name,
   sprintf (command, "cp %s %s\n", image_data_file_name, esri_data_file_name); 
   return_code = system (command);
   if ( return_code != 0 ) {
-    fprintf (stderr, "%s: system command '%s' failed", program_name, command);
+    char* temp;
+	sprintf(temp, "System command '%s' failed", command);
+	print_error(temp);
+//    fprintf (stderr, "%s: system command '%s' failed", program_name, command);
     exit (EXIT_FAILURE);
   }
 }
@@ -1287,8 +1431,11 @@ export_as_jpeg (const char *metadata_file_name,
   /* Open the output file to be used.  */
   ofp = fopen (output_file_name, "w");
   if ( ofp == NULL ) {
-    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
-  	     output_file_name, strerror (errno));
+    char *temp;
+	sprintf(temp, "Open of %s for writing failed: %s", output_file_name, strerror(errno));
+	print_error(temp);
+//    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
+//  	     output_file_name, strerror (errno));
     exit (EXIT_FAILURE);
   }
 
@@ -1396,8 +1543,11 @@ export_as_ppm (const char *metadata_file_name,
   /* Open the output file to be used.  */
   ofp = fopen (output_file_name, "w");
   if ( ofp == NULL ) {
-    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
-  	     output_file_name, strerror (errno));
+    char* temp;
+	sprintf(temp, "Open of %s for writing failed: %s", output_file_name, strerror(errno));
+	print_error(temp);
+//    fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
+//  	     output_file_name, strerror (errno));
     exit (EXIT_FAILURE);
   }
 
@@ -1563,9 +1713,14 @@ export_as_geotiff (const char *metadata_file_name,
     else {
       /* FIXME: we badly need to get the ellipsoid/datum mess sorted
 	 out.  This problem goes deeper than asf_export, however.  */
-      fprintf (stderr, "%s: warning: couldn't conclude which ellipsoid is "
+	  char* temp;
+	  sprintf(temp, "\n\nWARNING: Couldn't conclude which ellipsoid is "
 	       "being used from ellipsoid axis dimensions in metadata, "
-	       "using user defined ellipsoid\n", program_name);
+	       "using user defined ellipsoid\n");
+	  printf(temp);
+//	  fprintf (stderr, "%s: warning: couldn't conclude which ellipsoid is "
+//	       "being used from ellipsoid axis dimensions in metadata, "
+//	       "using user defined ellipsoid\n", program_name);
       ellipsoid = USER_DEFINED;
     }
 
@@ -1778,8 +1933,11 @@ export_as_geotiff (const char *metadata_file_name,
   /* Write the actual image data.  */
   for ( ii = 0 ; ii < line_count ; ii++ ) {
     if ( TIFFWriteScanline (otif, daf + sample_count * ii, ii, 0) < 0 ) {
-      fprintf (stderr, "%s: error writing to output geotiff file %s\n", 
-	       program_name, output_file_name);
+	  char* temp;
+	  sprintf(temp, "Error writing to output geotiff file %s", output_file_name);
+	  print_error(temp);
+//      fprintf (stderr, "%s: error writing to output geotiff file %s\n", 
+//	       program_name, output_file_name);
       exit (EXIT_FAILURE);
     }
   }

@@ -6,8 +6,8 @@
 
 <synopsis>
 asf_import [-amplitude | -sigma | -gamma | -beta | -power]
-           [-lat <lower> <upper>] [-format <format>]
-           <in_data> <in_meta> <out_base_name>
+           [-lat <lower> <upper>] [-format <input_format>]
+           <in_base_name> <out_base_name>
 </synopsis>
 
 <description>
@@ -135,6 +135,7 @@ PROGRAM HISTORY:
 
 #define VERSION 0.5
 #define MAX_tableRes 512
+#define FLAG_NOT_SET -1
 
 /* PROTOTYPES */
 void usage(void);
@@ -216,7 +217,7 @@ void print_progress(int current_line, int total_lines)
 
 /* Check to see if an option was supplied or not
    If it was found, return its argument number
-   Otherwise, return -1 */
+   Otherwise, return FLAG_NOT_SET */
 int checkForOption(char* key, int argc, char* argv[])
 {
   int ii = 0;
@@ -226,7 +227,7 @@ int checkForOption(char* key, int argc, char* argv[])
       return(ii);
     ++ii;
   }
-  return(-1);
+  return(FLAG_NOT_SET);
 }
 
 /* Print an error message. This is just here for circumventing check_return.
@@ -313,46 +314,46 @@ int main(int argc, char *argv[])
 
   /*Check for mutually exclusive options: we can only have one of these*/
   int temp = 0;
-  if(ampFlag != -1)
+  if(ampFlag != FLAG_NOT_SET)
     temp++;
-  if(sigmaFlag != -1)
+  if(sigmaFlag != FLAG_NOT_SET)
     temp++;
-  if(betaFlag != -1)
+  if(betaFlag != FLAG_NOT_SET)
     temp++;
-  if(gammaFlag != -1)
+  if(gammaFlag != FLAG_NOT_SET)
     temp++;
-  if(powerFlag != -1)
+  if(powerFlag != FLAG_NOT_SET)
     temp++;
-  if(sprocketFlag != -1)
+  if(sprocketFlag != FLAG_NOT_SET)
     temp++;
   if(temp > 1)/*If more than one option was selected*/
     usage();/*This exits with a failure*/
 
   /*We need to make sure the user specified the proper number of arguments*/
   int needed_args = 4;/*command & in_data & in_meta & out_base*/
-  if(ampFlag != -1)
+  if(ampFlag != FLAG_NOT_SET)
     needed_args += 1;/*option*/
-  if(sigmaFlag != -1)
+  if(sigmaFlag != FLAG_NOT_SET)
     needed_args += 1;/*option*/
-  if(betaFlag != -1)
+  if(betaFlag != FLAG_NOT_SET)
     needed_args += 1;/*option*/
-  if(gammaFlag != -1)
+  if(gammaFlag != FLAG_NOT_SET)
     needed_args += 1;/*option*/
-  if(powerFlag != -1)
+  if(powerFlag != FLAG_NOT_SET)
     needed_args += 1;/*option*/
-  if(sprocketFlag != -1)
+  if(sprocketFlag != FLAG_NOT_SET)
     needed_args += 1;/*option*/
-  if(latConstraintFlag != -1)
+  if(latConstraintFlag != FLAG_NOT_SET)
     needed_args += 3;/*option & parameter & parameter*/
-  if(prcflag != -1)
+  if(prcflag != FLAG_NOT_SET)
     needed_args += 2;/*option & parameter*/
-  if(oldFlag != -1)
+  if(oldFlag != FLAG_NOT_SET)
     needed_args += 1;/*option*/
-  if(logflag != -1)
+  if(logflag != FLAG_NOT_SET)
     needed_args += 2;/*option & parameter*/
-  if(quietFlag != -1)
+  if(quietFlag != FLAG_NOT_SET)
     needed_args += 1;/*option*/
-  if(formatFlag != -1)
+  if(formatFlag != FLAG_NOT_SET)
     needed_args += 2;/*option & parameter*/
 
   /*Make sure we have enough arguments*/
@@ -361,37 +362,37 @@ int main(int argc, char *argv[])
 
   /*We also need to make sure any options that have parameters are specified correctly
   This includes: -lat, -prc, -log*/
-  if(latConstraintFlag != -1)
+  if(latConstraintFlag != FLAG_NOT_SET)
     /*Make sure the two fields following -lat aren't other options
     Also make sure there's no "bleeding" into the required arguments*/
     if(argv[latConstraintFlag + 1][0] == '-' || argv[latConstraintFlag + 2][0] == '-' || latConstraintFlag >= argc - 5)
       usage();/*This exits with a failure*/
-  if(prcflag != -1)
+  if(prcflag != FLAG_NOT_SET)
     /*Make sure the field following -prc isn't another option
     Also check for bleeding into required arguments*/
     if(argv[prcflag + 1][0] == '-' || prcflag >= argc - 4)
       usage();/*This exits with a failure*/
-  if(logflag != -1)
+  if(logflag != FLAG_NOT_SET)
     /*Make sure the field following -log isn't another option*/
     if(argv[logflag + 1][0] == '-' || logflag >= argc - 4)
       usage();/*This exits with a failure*/
-  if(formatFlag != -1)
+  if(formatFlag != FLAG_NOT_SET)
     /*Make sure the field following -format isn't another option*/
     if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 4)
       usage();
 
   /*We must be close to good enough at this point...start filling in fields as needed*/
-  if(quietFlag == -1)
+  if(quietFlag == FLAG_NOT_SET)
     print_splash_screen(argc, argv);/*display splash screen if not quiet*/
 
-  if(logflag != -1)
+  if(logflag != FLAG_NOT_SET)
     strcpy(logFile, argv[logflag + 1]);
   else
     sprintf(logFile, "tmp%i.log", (int)getpid());/*default behavior: log to tmp<pid>.log*/
   fLog = FOPEN(logFile, "a");
-  if(prcflag != -1)
+  if(prcflag != FLAG_NOT_SET)
     strcpy(prcPath, argv[prcflag + 1]);
-  if(latConstraintFlag != -1)
+  if(latConstraintFlag != FLAG_NOT_SET)
   {
     lowerLat = strtod(argv[latConstraintFlag + 2],NULL);
     upperLat = strtod(argv[latConstraintFlag + 1],NULL);
@@ -406,21 +407,21 @@ int main(int argc, char *argv[])
       print_error("Invalid latitude constraint (must be -90 to 90)");
     }
   }
-  if(ampFlag != -1)
+  if(ampFlag != FLAG_NOT_SET)
     sprintf(out_type,"amp");
-  else if(sigmaFlag != -1)
+  else if(sigmaFlag != FLAG_NOT_SET)
     sprintf(out_type, "sigma");
-  else if(gammaFlag != -1)
+  else if(gammaFlag != FLAG_NOT_SET)
     sprintf(out_type, "gamma");
-  else if(betaFlag != -1)
+  else if(betaFlag != FLAG_NOT_SET)
     sprintf(out_type, "beta");
-  else if(powerFlag != -1)
+  else if(powerFlag != FLAG_NOT_SET)
     sprintf(out_type, "power");
   else
     sprintf(out_type, "amp");/*default behavior*/
 
   /* Deal with input format type */
-  if(formatFlag != -1) {
+  if(formatFlag != FLAG_NOT_SET) {
     strcpy(type, argv[formatFlag + 1]);
     for (ii=0; ii<strlen(type); ii++) {
       type[ii] = (char)toupper(type[ii]);
@@ -437,7 +438,7 @@ int main(int argc, char *argv[])
 /*Back to lame formatting... :P     -G */
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
-  if (logflag) {
+/*  if (logflag)*/ {
     char command_line[2048];
     strcpy(command_line,"Command line:");
     for (ii=0; ii<argc; ii++) {
@@ -453,17 +454,17 @@ int main(int argc, char *argv[])
 
   /* Check whether options are chosen correctly */
   if (strncmp(type, "STF", 3)!=0) {
-    if (prcflag != -1) {
+    if (prcflag != FLAG_NOT_SET) {
       sprintf(tmp, "   WARNING: No precision state vectors used for this image type!\n");
-      if(quietFlag == -1) printf(tmp);
+      if(quietFlag == FLAG_NOT_SET) printf(tmp);
       printLog(tmp);
-      prcflag=-1;
+      prcflag=FLAG_NOT_SET;
     }
-    if (latConstraintFlag != -1) {
+    if (latConstraintFlag != FLAG_NOT_SET) {
       sprintf(tmp, "   WARNING: No latitude constraints for this image type!\n");
-      if(quietFlag == -1) printf(tmp);
+      if(quietFlag == FLAG_NOT_SET) printf(tmp);
       printLog(tmp);
-      latConstraintFlag=-1;
+      latConstraintFlag=FLAG_NOT_SET;
     }
   }
 
@@ -471,7 +472,7 @@ int main(int argc, char *argv[])
   if (strncmp(type, "CEOS", 4) == 0) {
 
     sprintf(tmp,"   Data format: CEOS\n");
-    if(quietFlag == -1) printf(tmp);
+    if(quietFlag == FLAG_NOT_SET) printf(tmp);
     printLog(tmp);
 
     /* Create metadata */
@@ -481,7 +482,7 @@ int main(int argc, char *argv[])
     if (meta->general->data_type==COMPLEX_BYTE) { /* raw data */
       int trash;
 
-      if (sprocketFlag != -1) {
+      if (sprocketFlag != FLAG_NOT_SET) {
         print_error("Data is level 0, SProCKET can not use it.");
         exit(EXIT_FAILURE);
       }
@@ -496,7 +497,7 @@ int main(int argc, char *argv[])
         sprintf(tmp,
                "   Input data type: level zero raw data\n"
                 "   Output data type: complex byte raw data\n\n");
-      if(quietFlag == -1) printf(tmp);
+      if(quietFlag == FLAG_NOT_SET) printf(tmp);
       printLog(tmp);
 
       /* Handle output files */
@@ -507,15 +508,15 @@ int main(int argc, char *argv[])
       fpOut = FOPEN(outName, "wb");
       getNextCeosLine(s->binary, s, inMetaName, outName); /* Skip CEOS header. */
       s->nLines = 0;
-      if(quietFlag == -1) printf("\n");
+      if(quietFlag == FLAG_NOT_SET) printf("\n");
       for (ii=0; ii<nl; ii++) {
         readNextPulse(s, iqBuf, inDataName, outName);
         FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
-        if(quietFlag == -1) print_progress(ii,nl);
+        if(quietFlag == FLAG_NOT_SET) print_progress(ii,nl);
        s->nLines++;
       }
       updateMeta(s,meta,NULL,0);
-      if (oldFlag != -1) {
+      if (oldFlag != FLAG_NOT_SET) {
         meta_new2old(meta);
         meta_write_old(meta, outName);
       }
@@ -531,7 +532,7 @@ int main(int argc, char *argv[])
 
       meta_free(meta);
       FCLOSE(fpOut);
-      if(quietFlag == -1) printf("Finished.\n\n");
+      if(quietFlag == FLAG_NOT_SET) printf("Finished.\n\n");
     }
 
     /* complex (level 1) data */
@@ -547,14 +548,14 @@ int main(int argc, char *argv[])
         sprintf(tmp,
                 "   Input data type: single look complex\n"
                 "   Output data type: single look complex\n\n");
-      if(quietFlag == -1) printf(tmp);
+      if(quietFlag == FLAG_NOT_SET) printf(tmp);
       printLog(tmp);
 
       /* Handle output files */
       create_name(outName, outBaseName, "_cpx.img");
       meta->general->data_type=COMPLEX_REAL32;
 
-      if (oldFlag != -1) {
+      if (oldFlag != FLAG_NOT_SET) {
         char ddrName[256];
         struct DDR ddr;
         create_name(ddrName, outBaseName, "_cpx.ddr");
@@ -589,10 +590,10 @@ int main(int argc, char *argv[])
           out_cpx_buf[kk].imag=(float)cpx_buf[kk*2+1];
         }
         put_complexFloat_line(fpOut, meta, ii, out_cpx_buf);
-        if(quietFlag == -1) print_progress(ii,nl);
+        if(quietFlag == FLAG_NOT_SET) print_progress(ii,nl);
       }
       FCLOSE(fpOut);
-      if(quietFlag == -1) printf("Finished.\n\n");
+      if(quietFlag == FLAG_NOT_SET) printf("Finished.\n\n");
     }
 
     else { /* some kind of amplitude data */
@@ -646,7 +647,7 @@ int main(int argc, char *argv[])
                 "   Output data type: amplitude image\n\n");
         create_name(outName, outBaseName, "_amp.img");
       }
-      if(quietFlag == -1) printf(tmp);
+      if(quietFlag == FLAG_NOT_SET) printf(tmp);
       printLog(tmp);
 
       /* Open image files */
@@ -678,7 +679,7 @@ int main(int argc, char *argv[])
       /* Handle output files */
       meta->general->data_type=REAL32;
 
-      if(oldFlag != -1) {
+      if(oldFlag != FLAG_NOT_SET) {
         char ddrName[256];
         struct DDR ddr;
         meta2ddr(meta, &ddr);
@@ -705,7 +706,7 @@ int main(int argc, char *argv[])
                   "\n"
                   "   Calibration parameters could not be extracted out of CEOS file\n"
                   "   Output data type: amplitude image\n\n");
-          if(quietFlag == -1) printf(tmp);
+          if(quietFlag == FLAG_NOT_SET) printf(tmp);
           printLog(tmp);
         }
       }
@@ -759,10 +760,10 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          if(quietFlag == -1) print_progress(ii,nl);
+          if(quietFlag == FLAG_NOT_SET) print_progress(ii,nl);
         }
         FCLOSE(fpOut);
-        if(quietFlag == -1) printf("Finished.\n\n");
+        if(quietFlag == FLAG_NOT_SET) printf("Finished.\n\n");
       }
 
       /* Read 8 bit data and convert to calibrated amplitude data */
@@ -809,10 +810,10 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          if(quietFlag == -1) print_progress(ii,nl);
+          if(quietFlag == FLAG_NOT_SET) print_progress(ii,nl);
         }
         FCLOSE(fpOut);
-        if(quietFlag == -1) printf("Finished.\n\n");
+        if(quietFlag == FLAG_NOT_SET) printf("Finished.\n\n");
       }
 
       /* Read 16 bit amplitude data */
@@ -834,10 +835,10 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          if(quietFlag == -1) print_progress(ii,nl);
+          if(quietFlag == FLAG_NOT_SET) print_progress(ii,nl);
         }
         FCLOSE(fpOut);
-        if(quietFlag == -1) printf("Finished.\n\n");
+        if(quietFlag == FLAG_NOT_SET) printf("Finished.\n\n");
       }
 
       /* Read 8 bit amplitde data */
@@ -857,10 +858,10 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          if(quietFlag == -1) print_progress(ii,nl);
+          if(quietFlag == FLAG_NOT_SET) print_progress(ii,nl);
         }
         FCLOSE(fpOut);
-        if(quietFlag == -1) printf("Finished.\n\n");
+        if(quietFlag == FLAG_NOT_SET) printf("Finished.\n\n");
       }
     }
   }
@@ -868,19 +869,19 @@ int main(int argc, char *argv[])
   /* Ingest Vexcel Sky Telemetry Format (STF) data */
   else if (strncmp(type, "STF", 3) == 0) {
 
-    if (sprocketFlag != -1) {
+    if (sprocketFlag != FLAG_NOT_SET) {
       print_error("Data is level 0, sprocket can not use this.");
       exit(EXIT_FAILURE);
     }
 
     sprintf(tmp,"   Data format: STF\n");
-    if(quietFlag == -1) printf(tmp);
+    if(quietFlag == FLAG_NOT_SET) printf(tmp);
     printLog(tmp);
 
     /* Handle output file name */
     create_name(outName, outBaseName, "_raw.img");
 
-    if (latConstraintFlag != -1) {
+    if (latConstraintFlag != FLAG_NOT_SET) {
       /* Determine start and end line for latitude constraint */
       createSubset(inDataName, lowerLat, upperLat, &imgStart, &imgEnd,
                    imgTimeStr, &nVec, &fd, &fdd, &fddd);
@@ -937,7 +938,7 @@ int main(int argc, char *argv[])
 
     for (outLine=0; outLine<nTotal; outLine++) {
         if (s->curFrame >= s->nFrames) {
-          if(quietFlag == -1) printf("   Reached end of file\n");
+          if(quietFlag == FLAG_NOT_SET) printf("   Reached end of file\n");
           printLog("   Reached end of file\n");
           break;
         }
@@ -959,10 +960,10 @@ int main(int argc, char *argv[])
         }
         /* Write status information to screen.
            ------------------------------------*/
-        if(quietFlag == -1) print_progress(outLine,nTotal);
+        if(quietFlag == FLAG_NOT_SET) print_progress(outLine,nTotal);
     }
 
-    if (latConstraintFlag != -1) {
+    if (latConstraintFlag != FLAG_NOT_SET) {
       s->nLines -= 4096; /* reduce the line number from extra padding */
       createMeta_lz(s,inDataName,outName,imgTimeStr,nVec,fd,fdd,fddd,prcflag,prcPath);
     }
@@ -984,7 +985,7 @@ int main(int argc, char *argv[])
     char line[255]="", key[25]="", value[25]="";
 
     sprintf(tmp,"   Data format: ESRI\n");
-    if(quietFlag == -1) printf(tmp);
+    if(quietFlag == FLAG_NOT_SET) printf(tmp);
     printLog(tmp);
 
     /* Handle output file name */
@@ -1049,7 +1050,7 @@ int main(int argc, char *argv[])
     meta_free(meta);
     sprintf(logbuf, "   Converted ESRI file (%s) to ASF internal file (%s)\n\n",
             inDataName, outName);
-    if(quietFlag == -1) printf(logbuf);
+    if(quietFlag == FLAG_NOT_SET) printf(logbuf);
     fLog = FOPEN(logFile, "a");
     printLog(logbuf);
     FCLOSE(fLog);
@@ -1061,7 +1062,7 @@ int main(int argc, char *argv[])
     char line[255]="", key[25]="", value[25]="", bla[25];
 
     sprintf(tmp,"   Data format: ENVI\n");
-    if(quietFlag == -1) printf(tmp);
+    if(quietFlag == FLAG_NOT_SET) printf(tmp);
     printLog(tmp);
 
     /* Handle output file name */
@@ -1196,7 +1197,7 @@ int main(int argc, char *argv[])
 
     /* Write metadata file */
     meta_write(meta,outName);
-if (sprocketFlag != -1) {
+if (sprocketFlag != FLAG_NOT_SET) {
   create_name(sprocketName, outName, ".metadata");
   meta_write_sprocket(sprocketName, meta, NULL);
 }
@@ -1209,7 +1210,7 @@ if (sprocketFlag != -1) {
     meta_free(meta);
     sprintf(logbuf, "   Converted ENVI file (%s) to ASF internal file (%s)\n\n",
             inDataName, outName);
-    if(quietFlag == -1) printf(logbuf);
+    if(quietFlag == FLAG_NOT_SET) printf(logbuf);
     {
       fLog = FOPEN(logFile, "a");
       printLog(logbuf);
@@ -1223,7 +1224,7 @@ if (sprocketFlag != -1) {
         printLog(tmp);
   }
 
-  if (sprocketFlag != -1) {
+  if (sprocketFlag != FLAG_NOT_SET) {
     create_sprocket_layers(outName, inMetaName);
   }
 
@@ -1236,7 +1237,8 @@ void usage(void)
 {
  printf("\n"
   "USAGE:\n"
-  "   asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]\n"
-  "              [-format <format>] <in_data> <in_meta> <out_base_name>\n");
+  "   asf_import [-amplitude | -sigma | -gamma | -beta | -power]\n"
+  "              [-lat <lower> <upper>] [-format <input_format>]\n"
+  "              <in_base_name> <out_base_name>\n");
  exit(EXIT_FAILURE);
 }

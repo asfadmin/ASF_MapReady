@@ -132,6 +132,7 @@ PROGRAM HISTORY:
 
 #define VERSION 0.5
 #define REQUIRED_ARGS 1
+#define FLAG_NOT_SET -1
 
 void usage()
 {
@@ -194,7 +195,7 @@ int checkForOption(char* key, int argc, char* argv[])
 			return(ii);
 		++ii;
 	}
-	return(-1);
+	return(FLAG_NOT_SET);
 }
 
 
@@ -213,7 +214,7 @@ int main(int argc, char *argv[])
 
 //*********************BEGIN COMMAND LINE PARSING STUFF*********************//
 	//Super-secret hidden options :)
-	if(checkForOption("-batch", argc, argv) != -1)
+	if(checkForOption("-batch", argc, argv) != FLAG_NOT_SET)
 	{
 		config_usage();
 		exit(0);
@@ -227,23 +228,23 @@ int main(int argc, char *argv[])
 	quietFlag = checkForOption("-quiet", argc, argv);
 
 
-	if(configFlag != -1 && configInitFlag != -1)//One or the other is fine, but not both
+	if(configFlag != FLAG_NOT_SET && configInitFlag != FLAG_NOT_SET)//One or the other is fine, but not both
 		usage();//This exits with a failure
-	if((configFlag != -1 || configInitFlag != -1) && formatFlag)//format is mutually exclusive with these
+	if((configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET) && formatFlag)//format is mutually exclusive with these
 		usage();//This exits with a failure
 
 	//So, at this point, we know our options don't conflict...now we need
 	//to know how many arguments we ought to have.
 	int neededArgs = 1;//command
-	if(configFlag != -1 || configInitFlag != -1)
+	if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
 		neededArgs += 2;//option & parameter
 	else
 		neededArgs += 3;//in_data_file, in_meta_file, out_file
-	if(logflag != -1)
+	if(logflag != FLAG_NOT_SET)
 		neededArgs += 2;//option & parameter
-	if(formatFlag != -1)
+	if(formatFlag != FLAG_NOT_SET)
 		neededArgs += 2;//option & parameter
-	if(quietFlag != -1)
+	if(quietFlag != FLAG_NOT_SET)
 		neededArgs += 1;//option
 
 	//make sure we've got enough arguments
@@ -258,39 +259,39 @@ int main(int argc, char *argv[])
 	//That is, -option <parameter> -option <parameter> and so on...if an option requires
 	//a parameter, we need to make sure it's followed by a parameter! Also make sure
 	//an option's parameters don't bleed into the command's required arguments
-	if(logflag != -1)
+	if(logflag != FLAG_NOT_SET)
 		if(argv[logflag + 1][0] == '-' || logflag >= argc - 4)
 			usage();//This exits with a failure
-	if(formatFlag != -1)
+	if(formatFlag != FLAG_NOT_SET)
 		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 4)
 			usage();//This exits with a failure
 
 	//We must be good enough at this point...start processing with assumptions that are
 	//*supposedly* guaranteed from above :)
-	if(quietFlag == -1)
+	if(quietFlag == FLAG_NOT_SET)
 		print_splash_screen(argc, argv);//display splash screen if not quiet
 	
 	
-	if(formatFlag != -1)
+	if(formatFlag != FLAG_NOT_SET)
 		strcpy(format_out, argv[formatFlag + 1]);
 	else
 		strcpy(format_out, "geotiff");//default behavior is geotiff
 		
-	if(logflag != -1)
+	if(logflag != FLAG_NOT_SET)
 		strcpy(logFile, argv[logflag + 1]);
 	else
 		sprintf(logFile, "tmp%i.log", (int)getpid());//default behavior: log to tmp<pid>.log
 		
-	if(configFlag != -1)
+	if(configFlag != FLAG_NOT_SET)
 		strcpy(configFile, argv[configFlag + 1]);
 	else
 		sprintf(configFile, "tmp%i.config", (int)getpid());//default behavior: config to tmp<pid>.config
 		
-	if(configInitFlag != -1)
+	if(configInitFlag != FLAG_NOT_SET)
 		strcpy(configFile, argv[configInitFlag + 1]);
 
 	//Get files from command line if we're not doing a config file
-	if(configFlag == -1 && configInitFlag == -1)
+	if(configFlag == FLAG_NOT_SET && configInitFlag == FLAG_NOT_SET)
 	{
 		strcpy(data_file, argv[argc - 3]);//The first of the last three arguments
 		strcpy(meta_file, argv[argc - 2]);//The second of the last three arguments
@@ -310,7 +311,7 @@ int main(int argc, char *argv[])
 //**********************END COMMAND LINE PARSING STUFF**********************//
 
 	/* If we're working from a config file, read configuration file */
-	if (configFlag != -1)//configFlag has been set
+	if (configFlag != FLAG_NOT_SET)//configFlag has been set
 	{
 		if (!fileExists(configFile))//Does the specific config file already exist? If not...
 		{
@@ -318,14 +319,14 @@ int main(int argc, char *argv[])
 			"basic configuration file could not be initialized");
 			exit(0);
     	}
-		else if (check_resample_flag(configFile) && configInitFlag != -1)//config init has been set
+		else if (check_resample_flag(configFile) && configInitFlag != FLAG_NOT_SET)//config init has been set
 		{
 			check_return(init_resample_config(configFile),
 				"extended resampling configuration file "
 				"could not be initialized");
 			exit(0);
 		}
-		else if (check_geocode_flag(configFile) && configInitFlag != -1)//config init has been set
+		else if (check_geocode_flag(configFile) && configInitFlag != FLAG_NOT_SET)//config init has been set
 		{
 			check_return(init_projection_config(configFile),
 				"extended geocoding configuration file "
@@ -403,7 +404,7 @@ int main(int argc, char *argv[])
 	{
 
 		/* Prepare processing */
-		if (configFlag == -1)
+		if (configFlag == FLAG_NOT_SET)
 		{
 			if (!fileExists(cfg->general->in_data_name))
 				print_error("input data file does not exist");
@@ -561,7 +562,7 @@ int main(int argc, char *argv[])
 		
 
 		sprintf(command, "asf_export -log tmp%i_export.log", (int)getpid());
-		if(quietFlag != -1)
+		if(quietFlag != FLAG_NOT_SET)
 			strcat(command, " -quiet");
 		sprintf(temp, " -format %s tmp%i_amp.img tmp%i_amp.meta %s",
 		format_out,
