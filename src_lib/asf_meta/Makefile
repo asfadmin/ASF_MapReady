@@ -106,9 +106,9 @@ check: unit_tests.c build_only
 	./asf_meta_tester
 
 clean:
-	rm -f $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
-              $(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
-	      library_cooking_pot
+	rm -rf $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
+               $(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
+	       library_cooking_pot asf_meta_tester
 
 distclean:
 	rm -f core *~ TAGS gdb_init.com
