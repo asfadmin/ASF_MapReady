@@ -500,7 +500,7 @@ at that location. Returns Hz.  Only works for SR & GR.
 double meta_get_dop(meta_parameters *sar,double yLine, double xSample);
 
 /*Return fixed-earth state vector for the given time.*/
-stateVector meta_get_stVec(meta_parameters *sar,double time);
+stateVector meta_get_stVec(meta_parameters *sar,double time_arg);
 
 /*Return the incidence angle: this is the angle measured
 	by the target between straight up and the satellite.
@@ -542,19 +542,19 @@ slant-range, and doppler.  Works with all image types.
 */
 void meta_get_timeSlantDop(meta_parameters *sar,
 	double yLine,double xSample,
-	double *time,double *slant,double *dop);
+	double *time_arg,double *slant,double *dop);
 
 /*Converts the given time, slant range, doppler, and elevation
 off earth's surface into a latitude and longitude.*/
 void meta_timeSlantDop2latLon(meta_parameters *sar,
-	double time, double slant,double dop,double elev,
+	double time_arg, double slant,double dop,double elev,
 	double *lat,double *lon);
 
 /*Convert given latitude and longitude to time, slant
 range, and doppler, using state vectors.*/
 void latLon2timeSlant(meta_parameters *sar,
 	double lat,double lon,
-	double *time,double *slant,double *dop);
+	double *time_arg,double *slant,double *dop);
 
 void getLatLongMeta(const stateVector stVec,meta_parameters *meta,
 	double range,double doppler,double elev,
