@@ -80,7 +80,7 @@ int getCeosRecord(char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	FCLOSE(fp);
 	if (recordType==CEOS_MPDR || recordType==CEOS_DQSR || recordType==CEOS_DHR || recordType==CEOS_PPR)
 		return -1;/*It's OK if the MPDR, DQSR, or DHR are missing.*/
-	return -99;
+	return -1;
 }
 
 int get_atdr(char *filename,struct att_data_rec *rec)
@@ -89,7 +89,7 @@ int get_atdr(char *filename,struct att_data_rec *rec)
 	int era;
 	if ((era = getCeosRecord(filename,CEOS_ATDR,1,&buff)) != -1) {
 		Code_ATDR(buff,rec,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -100,7 +100,7 @@ int get_dhr(char *filename,struct data_hist_rec *rec)
 	int era;
 	if ((era = getCeosRecord(filename,CEOS_DHR,2,&buff)) != -1) {
 		Code_DHR(buff,rec,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -111,7 +111,7 @@ int get_sdhr(char *filename,struct data_hist_rec *rec)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_DHR,1,&buff)) != -1) {
 		Code_DHR(buff,rec,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -122,7 +122,7 @@ int get_dqsr(char *filename,struct qual_sum_rec *rec)
 	int era;
 	if ((era=getCeosRecord(filename,CEOS_DQSR,1,&buff)) != -1) {
 		Code_DQS(buff,rec,era,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -133,7 +133,7 @@ int get_dssr(char *filename,struct dataset_sum_rec *rec)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_DSSR,1,&buff)) != -1) {
 		Code_DSSR(buff,rec,era,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -144,7 +144,7 @@ int get_asf_facdr(char *filename,struct VFDRECV *rec)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_ASFFACDR,1,&buff)) != -1) {
 		Code_ASF_FACDR(buff,rec,era,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -155,7 +155,7 @@ int get_esa_facdr(char *filename,struct ESA_FACDR *rec)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_ESAFACDR,1,&buff)) != -1) {
 		Code_ESA_FACDR(buff,rec,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -167,7 +167,7 @@ int get_mpdr(char *filename,struct VMPDREC *rec)
 	if (era!=-1)
 	{
 		Code_MPDR(buff,rec,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -178,7 +178,7 @@ int get_ppdr(char *filename,struct pos_data_rec *rec)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_PPDR,1,&buff)) != -1) {
 		Code_PPDR(buff,rec,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -189,7 +189,7 @@ int get_raddr(char *filename,struct VRADDR *rec)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_RADDR,1,&buff)) != -1) {
 		Code_RADDR(buff,rec,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -199,7 +199,7 @@ int get_rsi_raddr(char *filename, struct RSI_VRADDR *rec)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_RADDR,1,&buff)) != -1) {
 		Code_RSI_RADDR(buff,rec,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -210,7 +210,7 @@ int get_rsr(char *filename,struct rng_spec_rec *rec)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_RSR,1,&buff)) != -1) {
 		Code_RSR(buff,rec,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -221,7 +221,7 @@ int get_ifiledr(char *filename,struct IOF_VFDR *vfdr)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_IFILEDR,1,&buff)) != -1) {
 		Code_IOF((unsigned char *)buff, vfdr,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return era;
 }
@@ -232,7 +232,7 @@ int get_fdr(char *filename,struct FDR *fdr)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_FDR,1,&buff)) != -1) {
 		Code_FDR(buff,fdr,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return(era);
 }
@@ -243,7 +243,7 @@ int get_ppr(char *filename,struct PPREC *ppr)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_PPR,1,&buff)) != -1) {
 		Code_PPR(buff,ppr,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return(era);
 }
@@ -255,7 +255,7 @@ int get_vdr(char *filename,struct VDREC *vdr)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_VDR,1,&buff)) != -1) {
 		Code_VDR(buff,vdr,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return(era);
 }
@@ -266,7 +266,7 @@ int get_lfpr(char *filename,struct FPREC *fpr)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_LFPR,1,&buff)) != -1) {
 		Code_LFPR(buff,fpr,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return(era);
 }
@@ -277,7 +277,7 @@ int get_dfpr(char *filename,struct FPREC *nvdr)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_DFPR,1,&buff)) != -1) {
 		Code_DFPR(buff,nvdr,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return(era);
 }
@@ -288,7 +288,7 @@ int get_tr(char *filename,struct TREC *tr)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_TR,1,&buff)) != -1) {
 		Code_TR(buff,tr,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return(era);
 }
@@ -299,7 +299,7 @@ int get_nvdr(char *filename,struct VDREC *nvdr)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_NVDR,1,&buff)) != -1) {
 		Code_NVDR(buff,nvdr,fromASCII);
-		free(buff);
+		FREE(buff);
 	}
 	return(era);
 }
