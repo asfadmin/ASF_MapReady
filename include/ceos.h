@@ -247,8 +247,9 @@ struct IOF_VFDR {
    char   spare2[4],
           spare3[64];
    int    numofrec,          /* data records                         */
-          reclen,            /* Record Length                        */
-          bitssamp,          /* bits per sample                      */
+          reclen;            /* Record Length                        */
+   char   spare4[25];        /* unused                               */
+   int    bitssamp,          /* bits per sample                      */
           sampdata,          /* samples per data group               */
           bytgroup;          /* bytes per group                      */
    char   justific[5];       /* Justification and order of samples in data group */
@@ -266,6 +267,17 @@ struct IOF_VFDR {
           sardata,           /* bytes of sar data per record         */
           sufdata;           /* bytes of suffix data per record      */
    char   repflag[5],        /* prefix/suffix repeat flag            */
+          lin_loc[9],        /* line number locator                  */
+          chn_loc[9],        /* channel number locator               */
+          time_loc[9],       /* time locator                         */
+          left_loc[9],       /* left fill locator                    */
+          right_loc[9],      /* right fill locator                   */
+          pad_ind[5],        /* pad pixel indicator                  */
+          spare6[29],        /* unused                               */
+          qual_loc[9],       /* quality code locator                 */
+          cali_loc[9],       /* calibration info locator             */
+          gain_loc[9],       /* gain value locator                   */
+          bais_loc[9],       /* bias value locator                   */
           formatid[29],      /* SAR data format identifier           */
           formcode[5];       /* SAR data format type code            */
    int    leftfill,          /* Left fill bits per pixel             */
