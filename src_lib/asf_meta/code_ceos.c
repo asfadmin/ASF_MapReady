@@ -352,6 +352,7 @@ void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
 	fltV(b24,off,20);
 	
 }
+
 void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir dir)
 {
 	int off=12;
@@ -446,7 +447,7 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
 	    strV(decode_version,1952,16);
 	  }
 	}
-	if (strncmp(q->fac_id, "ES", 2)==0) {
+	if (strncmp(q->fac_id, "ES", 2)==0 || strncmp(q->fac_id, "D-PAF", 5)==0) {
 	  int i;
 	  for (i=0; i<3; i++) fltV(rng_time[i],1766+i*16,16);
 	  strV(az_time_first,1814,24);
