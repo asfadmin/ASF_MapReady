@@ -345,13 +345,13 @@ void updateAutotar(void)
 	int i;
 	FILE *out;
   /* Clean out the crap in the old directory.*/
-	system("/bin/rm -f ../../release_cvs/autotar/source.* ../../release_cvs/autotar/binary.*\n");
+	system("/bin/rm -f ../../release/autotar/source.* ../../release/autotar/binary.*\n");
   /* Now fill it up with new crap.*/
 	for (i=0;i<numProgs;i++)
 	{
 		prog *p=progs[i];
 		/* if (!p->isCat) continue; *//*Skip things that aren't categories*/
-		strcpy(name,"../../release_cvs/autotar/source.");
+		strcpy(name,"../../release/autotar/source.");
 		strcat(name,p->name);
 		out=fopen(name,"w");
 		fprintf(out,"include\n");
@@ -359,7 +359,7 @@ void updateAutotar(void)
 		cleanAndWrite(out);
 		fclose(out);
 		
-		strcpy(name,"../../release_cvs/autotar/binary.");
+		strcpy(name,"../../release/autotar/binary.");
 		strcat(name,p->name);
 		out=fopen(name,"w");
 		addProgram(p,0);
@@ -387,7 +387,7 @@ int main(int argc, char **argv)
 	
 	makeMakefile(sys);
 	
-	if (0==system("test -x ../../release_cvs/autotar"))
+	if (0==system("test -x ../../release/autotar"))
 	{/*Autotar directory exists-- so fill it.*/
 		printf("\n\nCreating autotar directory (slowly...)\n");
 		updateAutotar();
