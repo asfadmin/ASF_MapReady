@@ -8,7 +8,10 @@
 # the directory hierarchy.
 
 file asf_geocode
-set args --projection albers --first-standard-parallel 55 --second-standard-parallel 65 --latitude-of-origin 50 --central-meridian -150 test_data/joanne_basic/test_sfc.A_tmp test_sfc_albers.A
+set args --projection albers --central-meridian -96.000000 --latitude-of-origin 40.000000 --first-standard-parallel 20.000000 --second-standard-parallel 60.000000 --false-northing 0.000000 --false-easting 0.000000 --datum NAD27 -log 'D:\SAR_data\output\tmpg1448.log' 'D:\SAR_data\output\030705_tmp' 'D:\SAR_data\output\030705'
+
+
+#set args --projection albers --first-standard-parallel 55 --second-standard-parallel 65 --latitude-of-origin 50 --central-meridian -150 test_data/joanne_basic/test_sfc.A_tmp test_sfc_albers.A
 
 #set args --projection utm --zone 18 test_data/joanne_recode_attempts/from_geocoded_ceos/R141507213U3S006 rcfagc
 
