@@ -229,6 +229,15 @@
       Azimuthal Equal Area.  Each projection requires one or more
       additional items:</para>
 
+    <para>The geocoding process necessarly involves a resampling of
+      the original data.  For each pixel in the geocoded image, the
+      location of that pixel is projected back to a location in the
+      original image.  The pixels in the original image nearest to
+      this location are then resampled to produce the value of the
+      pixel in the geocoded image.  This resampling is done using
+      cubic splines, and the resulting image can therefore look as
+      if it has been low pass filtered.</para>
+
     <orderedlist>
       <listitem><para>UTM</para>
  
