@@ -51,6 +51,32 @@ BUGS:
 
 #define VERSION 1.2
 
+static
+void usage (char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <file>]\n"
+	"               <linePatch1> <linePatchL> <numLines> <output_deltas>\n",
+	name);
+ printf("\n"
+ 	"REQUIRED ARGUMENTS:\n"
+	"   linePatch1     Input - regressions for 1st patch\n"
+	"   linePatchL     Input - regressions for last patch\n"
+	"   numLines       Input - number of lines between first and last patch\n"
+	"   output_deltas  Output file - linear regression\n");
+ printf("\n"
+	"OPTIONAL ARGUMENT:\n"
+	"   -log <file>    Option to have output written to log file.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Uses two input lines to generate a deltas file for use with aisp(1).\n");
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
+}
+
 int main(int argc,char *argv[])
 {
    char inName1[256], inName2[256], outName[256];
@@ -132,27 +158,3 @@ int main(int argc,char *argv[])
 }
 
 
-void usage (char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-log <file>]\n"
-	"               <linePatch1> <linePatchL> <numLines> <output_deltas>\n",
-	name);
- printf("\n"
- 	"REQUIRED ARGUMENTS:\n"
-	"   linePatch1     Input - regressions for 1st patch\n"
-	"   linePatchL     Input - regressions for last patch\n"
-	"   numLines       Input - number of lines between first and last patch\n"
-	"   output_deltas  Output file - linear regression\n");
- printf("\n"
-	"OPTIONAL ARGUMENT:\n"
-	"   -log <file>    Option to have output written to log file.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Uses two input lines to generate a deltas file for use with aisp(1).\n");
- printf("\n"
-	"Version %.2f, ASF InSAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
-}
