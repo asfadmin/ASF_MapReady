@@ -345,7 +345,7 @@ if ( $p{type} eq 'gr' ) {
     my ($s, $c, $h_r) = xyz2sch($x, $y, $z, $pp_lat, $pp_lon, $pp_head);
 
     # 1-indexed coordinates of center pixel window to be extracted.
-    ($wc_azi, $wc_rng) = sch2line_sample($s, $c, $psz_azi, $psz_rng, 
+    ($wc_azi, $wc_rng) = sc2line_sample($s, $c, $psz_azi, $psz_rng, 
 					 $azimuth_offset, $range_offset);
 
 
