@@ -17,35 +17,36 @@ FILE REFERENCES:
     ---------------------------------------------------------------
 	
 PROGRAM HISTORY:
- VERS:   DATE:    PURPOSE:
+ VERS:   DATE:  AUTHOR:    PURPOSE:
  --------------------------------------------------------------
-   1     6/27/92  Unixrconv.c Created by Hiro_soft 
-   2     5/14/93  unixrconv2.c modifications by Shusun Li
-   2.1   9/93     unixrconv2.c modifications by Tom Logan 
-   1.0   2/28/94  calibrate.c Optimized and Streamlined 
-                  Allowed input from command line (T. Logan)
-   2.0   4/5/95	  Allow calibration of geocoded images using remapping 
-		  coefficients from map data record (T. Logan)
-   2.1   6/19/95  Fixed bug for samples out of image area (T. Logan)
-   2.2   8/22/95  Added code to fix bug with image IDs < 7000.
-                  Coeff.'s a1 & a2 need to be recalculated.
-   2.3   5/96	  Updated to work with new metadata handlers
-   2.4   9/96     Updated for RADARSAT era data file handling
-   2.41  5/97	  Made tiny change for uncalibrated RADARSAT data
-   		  (no longer bail on uncalibrated).
-   2.5   7/97	  Fixed bug from 8/22 bug fix (test for era of file) - T. Logan
-   3.0   3/98     T. Logan/ O. Lawlor-- big change: allow calibration of
-                  Geocoded scanSAR data.
-   3.1   4/98     O. Lawlor- Eliminate fflush(NULL) for SunOS compatibility.
-   3.2   5/98     O. Lawlor- Calibrate AT/CT ground range ScanSAR.
-   3.3   6/98     O. Lawlor- AT/CT bug fix.
-   3.5   6/98     O. Lawlor- Other Projection fixes (lambert still isn't right).
-   4.0   12/98    O. Lawlor- Uses asf_meta routines; vastly simplified.
-   4.1	 1/99	  T. Logan - Added hardcoded noise vectors for ScanSAR
-			     Added gamma-0 calculation 
-   4.2	 6/01	  P. Denny - Added check_cal call to check if image is calibrated
-   4.5   2/02     P. Denny - Updated commandline parsing
-   5.0   10/02	  J. Nicoll - Updated to deal with SWB antenna pattern 16.
+   1     6/92   Hiro_soft  Unixrconv.c Created
+   2     5/93   Shusun Li  unixrconv2.c modifications
+   2.1   9/93   Tom Logan  unixrconv2.c modifications 
+   1.0   2/94   T. Logan   calibrate.c Optimized and Streamlined 
+                             Allowed input from command line
+   2.0   4/95   T. Logan   Allow calibration of geocoded images using remapping 
+                             coefficients from map data record
+   2.1   6/95   T. Logan   Fixed bug for samples out of image area
+   2.2   8/95              Added code to fix bug with image IDs < 7000.
+                           Coeff.'s a1 & a2 need to be recalculated.
+   2.3   5/96              Updated to work with new metadata handlers
+   2.4   9/96              Updated for RADARSAT era data file handling
+   2.41  5/97              Made tiny change for uncalibrated RADARSAT data
+                            (no longer bail on uncalibrated).
+   2.5   7/97   T. Logan   Fixed bug from 8/22 bug fix (test for era of file)
+   3.0   3/98   Logan / Lawlor
+                           Allow calibration of geocoded scanSAR data
+   3.1   4/98   O. Lawlor  Eliminate fflush(NULL) for SunOS compatibility.
+   3.2   5/98   O. Lawlor  Calibrate AT/CT ground range ScanSAR.
+   3.3   6/98   O. Lawlor  AT/CT bug fix.
+   3.5   6/98   O. Lawlor  Other Projection fixes (lambert still isn't right).
+   4.0  12/98   O. Lawlor  Uses asf_meta routines; vastly simplified.
+   4.1   1/99   T. Logan   Added hardcoded noise vectors for ScanSAR
+                             Added gamma-0 calculation 
+   4.2   6/01   P. Denny   Added check_cal call to check if image is calibrated
+   4.5   2/02   P. Denny   Updated commandline parsing; update to meta v1.1
+   5.0  10/02   J. Nicoll  Updated to deal with SWB antenna pattern 16.
+   5.1   2/04   P. Denny   Use put_data_lines instead of FWRITE
 
 ALGORITHM DESCRIPTION:
 
@@ -90,7 +91,7 @@ ALGORITHM DESCRIPTION:
 #include "ceos_io.h"
 
 /* constants */
-#define VERSION 5.0
+#define VERSION 5.1
 
 /* Prototypes */
 int get_cal_dn(cal_params*,double,double,int);
@@ -99,6 +100,8 @@ void usage(char*);
 
 
 #define MAX_tableRes 512 /*Num. of noise table entries, across one image line.*/
+int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
+                   int num_lines_to_write, const void *buffer, int data_type);
 
 int main(int argc, char **argv)
 {
@@ -212,8 +215,9 @@ int main(int argc, char **argv)
 		  else obuff[x]=0;
 		
 		/*Write it out.*/
-		FWRITE(obuff, (unsigned)ns, 1, fpOut);
-		
+		put_data_lines(fpOut, fpIn->meta, y, 1, obuff,
+		               fpIn->meta->general->data_type);
+
 		if ((y%100)==0) {
 			printf(" Now Processing Line: %d\r", y);
 			fflush(NULL);
@@ -227,7 +231,8 @@ int main(int argc, char **argv)
 	printf("\n Calibration is complete!\n\n");
 	StopWatch();
 
-	return(0);
+	meta_free(fpIn->meta);
+	exit(EXIT_SUCCESS);
 }
 
 /*----------------------------------------------------------------------
@@ -319,7 +324,7 @@ void usage(char *name)
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
 	"   inSAR   uncalibrated CEOS image (input)\n"
-	"   out     calibrated LAS 6.0 image (output)\n");
+	"   out     calibrated ASF tools ready image (output)\n");
  printf("\n"
 	"OPTIONAL ARGUMENTS:\n"
 	"   -m   manually overide calibration coefficients\n"
