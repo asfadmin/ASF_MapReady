@@ -153,6 +153,11 @@ if test "$have_libglade" = "yes" ; then
     ASF_GUI="src/asf_convert_gui"
 fi
 
+# we always build the GUI on windows, as we provide our own gtk libraries.
+if test "$sys" = "win32" ; then
+    ASF_GUI="src/asf_convert_gui"
+fi
+
 AC_SUBST(ASF_GUI)
 
 echo "########## Determining machine characteristics #############"
