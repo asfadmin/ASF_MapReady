@@ -59,8 +59,6 @@ LIBS
 	libjpeg
 	libtiff
 	libgeotiff
-	libz
-	libpng
 @src_ifm/
 	libifm
 @src_tc/
