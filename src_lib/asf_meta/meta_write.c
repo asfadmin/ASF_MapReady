@@ -10,7 +10,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
 {
   FILE *fp = FOPEN(file_name, "w");
 
-  fprintf(fp, "meta_version: %f\n", meta->meta_version);
+  /* We always write out files corresponding to the latest meta version.  */
+  fprintf(fp, "meta_version: %f\n", META_VERSION);
 
   /* General block.  */
   fprintf(fp, "general {\n");
