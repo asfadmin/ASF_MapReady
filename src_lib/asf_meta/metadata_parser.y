@@ -61,6 +61,12 @@ int yyerror(char *s)
   return -1;			/* No error codes yet.  */
 }
 
+/* Allow parser to spit out warnings about metadata values.  */
+void warning_message(char *s)
+{
+  printf("Warning: In %s around line %d: %s\n", current_file, line_number, s);
+}
+
 /* Casting shorthand macros for metadata structure subelements.  */
 #define MTL ( (meta_parameters *) current_block)
 #define MGENERAL ( (meta_general *) current_block)
@@ -174,7 +180,7 @@ void fill_structure_field(char *field_name, void *valp)
 	strncpy (tmp, VALP_AS_CHAR_POINTER, 1);
 	MGENERAL->orbit_direction = tmp[0];
 	sprintf(msg, "Bad value: orbit_direction = '%c'.",tmp[0]);
-	yyerror(msg);
+	warning_message(msg);
 	return;
       }      
     }
@@ -211,7 +217,8 @@ void fill_structure_field(char *field_name, void *valp)
   /* Fields which normally go in the sar block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "sar") ) {
     if ( !strcmp(field_name, "image_type") ) { 
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { 
+       char tmp[2], msg[256];
+       if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { 
 	MSAR->image_type = 'S'; 
 	return; 
       }
@@ -223,18 +230,25 @@ void fill_structure_field(char *field_name, void *valp)
 	MSAR->image_type = 'P'; 
 	return; 
       }
-      yyerror("bad image_type field in metadata file");
-      exit(EXIT_FAILURE);
+      strncpy (tmp, VALP_AS_CHAR_POINTER, 1);
+      MSAR->image_type = tmp[0];
+      sprintf(msg, "Bad value: image_type = '%c'.",tmp[0]);
+      warning_message(msg);
+      return;
     }
     if ( !strcmp(field_name, "look_direction") ) { 
+      char tmp[2], msg[256];
       if ( !strcmp(VALP_AS_CHAR_POINTER, "R") ) { 
 	MSAR->look_direction = 'R'; return; 
       }
       if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) { 
 	MSAR->look_direction = 'L'; return; 
       }
-      yyerror("bad look_direction field in metadata file");
-      exit(EXIT_FAILURE);
+      strncpy (tmp, VALP_AS_CHAR_POINTER, 1);
+      MSAR->look_direction = tmp[0];
+      sprintf(msg, "Bad value: look_direction = '%c'.",tmp[0]);
+      warning_message(msg);
+      return;
     }
     if ( !strcmp(field_name, "look_count") )
       { MSAR->look_count = VALP_AS_INT; return; }
@@ -451,6 +465,9 @@ int parse_metadata(meta_parameters *dest, char *file_name)
 
   /* Put file name in a global for error reporting.  */
   strncpy(current_file, file_name, MAX_FILE_NAME);
+
+  /* (Re)set line_number to first line */
+  line_number = 1;
 
   /* (Re)set file scope variable which counts number of vector blocks seen.  */
   vector_count = 0;
