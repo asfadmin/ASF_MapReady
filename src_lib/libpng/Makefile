@@ -32,12 +32,15 @@ build_stamp:
                  pngconf.h ; \
 	    perl -p -i -e 's/^\s*__dont__ include it again.;\s*\n//' \
                  pngconf.h) 
-# We need to explain where to find the zlib library, so we change the
-# supplied Makefile slightly, and do a diff to try to ensure the changes took.
-# Of course, some changes could succeed, and others fail...
+# We need to use the compiler we want, and we need to explain where to
+# find the zlib library, so we change the supplied Makefile slightly,
+# and do a diff to try to ensure the changes took.  Of course, some
+# changes could succeed, and others fail...
 	(cd $(UNPACK_DIR) ; \
 	    cp scripts/makefile.std Makefile ; \
+	    echo $(CC) ; \
 	    perl -p -i.old \
+	         -e 's/^\s*CC\s*=\s*cc\s*$$/CC=$(CC)\n/;' \
                  -e 's{^\s*ZLIBLIB\s*=\s*.*$$}{ZLIBLIB=$(LIBDIR)};' \
                  -e 's{^\s*ZLIBINC\s*=\s*.*$$}{ZLIBINC=$(ASF_INCLUDE_DIR)/z}' \
                  Makefile ; \
