@@ -2,24 +2,22 @@
 # Includes facilities to geolocate, extract critical angles from,
 # and do interferometric processing on SAR images.
 #   Now incorporates asf_ceos library, as well.
-#
-# Convert .c files to .o list:
-#    >  ls *.c | sed -e "s/\.c/.o/" | awk '{print "\t"$1"\\"}'
 
 include ../../make_support/system_rules
 
-# Things used by makes implicit rules for lex and yacc.
-# Uncommend these to debug the parser.
-#YDEBUG_FLAGS = -t -v
-#LDEBUG_FLAGS = -d
+YACC_SOURCES = metadata_parser.y
+LEX_SOURCES = metadata_lexer.l
+
+# Things used/needed by makes implicit rules for lex and yacc.
+#YDEBUG_FLAGS = -t -v   # Uncomment this line to debug parser
+#LDEBUG_FLAGS = -d      # Uncomment this line to debug lexer
 YFLAGS = $(YDEBUG_FLAGS) -d
 LFLAGS = $(LDEBUG_FLAGS)
 
 LEX_YACC_OBJS =  $(patsubst %.y, %.o, $(YACC_SOURCES)) \
                  $(patsubst %.l, %.o, $(LEX_SOURCES))
 
-OBJS =  \
-	coniFetch.o \
+OBJS =  coniFetch.o \
 	getLatLong.o \
 	getLoc.o \
 	fixed2gei.o \
