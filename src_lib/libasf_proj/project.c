@@ -110,8 +110,6 @@ static int project_worker_arr(char * projection_description,
   projPJ geographic_projection, output_projection;
   int i, ok = TRUE;
 
-  printf("projection description : %s\n", projection_description);
-
   if (!(*projected_x))
   {
       /* user should either pre-allocate both, or want us to allocate
@@ -487,7 +485,7 @@ static char * lamcc_projection_desc(project_parameters_t * pps)
 
   /* Establish description of output projection. */
   sprintf(lamcc_projection_description,
-	  "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f"
+	  "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f "
 	  "+x_0=%f +y_0=%f +datum=%s",
 	  pps->lamcc.plat1 * RAD_TO_DEG,
 	  pps->lamcc.plat2 * RAD_TO_DEG,
@@ -546,7 +544,7 @@ static char * albers_projection_desc(project_parameters_t * pps)
 
   /* Establish description of output projection. */
   sprintf(albers_projection_description,
-	  "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f"
+	  "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f "
 	  "+x_0=%f +y_0=%f +datum=%s",
 	  pps->albers.std_parallel1 * RAD_TO_DEG,
 	  pps->albers.std_parallel2 * RAD_TO_DEG,
