@@ -47,6 +47,7 @@ double meta_get_earth_radius(meta_parameters *meta, long line, long sample)
 	re = (re==re) ? re : 6378137.0;
 	rp = meta->general->re_minor;
 	rp = (rp==rp) ? rp : 6356752.31414;
+
 /* Actual algorithm */
 	time = meta_get_time(meta, line, sample);
         stVec = meta_get_stVec(meta, time);
@@ -69,7 +70,8 @@ double meta_get_k(meta_parameters *meta)
 }
 double meta_scene_frac(meta_parameters *meta,int y)
 {
-	return (double)(y - meta->general->line_count/2)/(double)meta->general->line_count;
+	return (double)(y - meta->sar->original_line_count/2)
+			/ (double)meta->sar->original_line_count;
 }
 void meta_interp_baseline(meta_parameters *meta,const baseline base,int y,double *Bn_y,double *Bp_y)
 {
@@ -79,7 +81,7 @@ void meta_interp_baseline(meta_parameters *meta,const baseline base,int y,double
 }
 double meta_flat(meta_parameters *meta,double y,double x)
 {
-	return meta_look(meta,y,x) - meta_look(meta, 0, meta->general->sample_count/2);
+	return meta_look(meta,y,x) - meta_look(meta, 0, meta->sar->original_sample_count/2);
 }
 double meta_flat_phase(meta_parameters *meta,const baseline base,int y,int x)
 {
