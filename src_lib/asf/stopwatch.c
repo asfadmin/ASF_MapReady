@@ -19,30 +19,36 @@ void StartWatch(void)
 
 void StopWatch(void)
 {
+  clock_t stopTime;
+  float elapsed;
   /* The stopwatch must already have been started.  */
   assert (startTime != START_TIME_UNSET_SENTINEL);
-  clock_t stopTime=clock();
+  stopTime=clock();
   assert (stopTime != (clock_t) -1);
-  float elapsed = stopTime - startTime;
+  elapsed = stopTime - startTime;
   elapsed /= CLOCKS_PER_SEC;
   printf ("Total CPU time = %f seconds.\n\n", elapsed);
 }
 
 void StartWatchLog(FILE *fLog)
 {
+  char *c;
+  time_t t;
   startTime = clock ();
   assert (startTime != (clock_t) -1);
-  time_t t = time (NULL);
-  char *c = asctime (localtime (&t));
+  t = time (NULL);
+  *c = asctime (localtime (&t));
   fprintf (fLog, "Stopwatch started on date: %s", c);
 }
 
 void StopWatchLog(FILE *fLog)
 {
+  clock_t stopTime;
+  float elapsed;
   assert (startTime != START_TIME_UNSET_SENTINEL);
-  clock_t stopTime = clock ();
+  stopTime = clock ();
   assert (stopTime != (clock_t) -1);
-  float elapsed = stopTime - startTime;
+  elapsed = stopTime - startTime;
   elapsed /= CLOCKS_PER_SEC;
   fprintf (fLog, "Total CPU time = %f seconds.\n\n", elapsed);
 }
