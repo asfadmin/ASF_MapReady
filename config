@@ -2,7 +2,7 @@
 # ASF/STEP Software Automatic Configuration script:
 # Sets system variables, creates Makefile.
 
-set -e
+set -e   # Exit immediately if command returns non-zero.
 
 # If given --batch command line option, try to run noninteractively.
 if [ "$1" = "--batch" ]; then
@@ -133,7 +133,7 @@ LDFLAGS = $(DEBUGLIBS)
 LIBDIR  = ../../lib/$(SYS)
 BINDIR  = ../../bin/$(SYS)
 EOF
-echo $makeExtra >> system_rules
+echo "$makeExtra" >>system_rules
 
 # Look for the X-Windows directory
 for xdir in `echo /usr /usr/openwin /usr/X /usr/X11 /usr/X11R6`
