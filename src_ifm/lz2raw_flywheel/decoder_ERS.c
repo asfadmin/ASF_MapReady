@@ -6,8 +6,10 @@ satellite.
 #include "decoder.h"
 #include "aux.h"
 
-
 #define FLYWHEEL_LENGTH 25
+
+extern long imgStart, imgEnd;
+extern int outLine;
 
 static iqType saveLines[FLYWHEEL_LENGTH][20000];
 
@@ -133,8 +135,10 @@ void ERS_readNextPulse(bin_state *s,iqType *iqBuf)
 		  sprintf(logbuf,"   Lock-On Re-established at Format %i (1st good format is %i)\n",curFormat,thisGoodFormat);	
 		  printLog(logbuf);
 		}
-		writeZeroData(s,thisGoodFormat-lastGoodFormat-1);
-		writeSaveData(s,FLYWHEEL_LENGTH);
+		if ((outLine >= imgStart) && (outLine <= imgEnd)) {
+		  writeZeroData(s,thisGoodFormat-lastGoodFormat-1);
+		  writeSaveData(s,FLYWHEEL_LENGTH);
+		}
 
 	        badCount = 0;
 		s->readStatus = 1;
@@ -203,9 +207,11 @@ void ERS_readNextPulse(bin_state *s,iqType *iqBuf)
 		  }
 		else if (f.is_echo==0)	/* This frame is not echo data */
 		  {
-		        printf("   ***** Expected echo frame; got '%d' frame for line %i! "
+		        if (!quietflag) {
+				printf("   ***** Expected echo frame; got '%d' frame for line %i! "
 				" (Assuming bit error)\n",f.type,curFormat);
-			if (logflag) {
+			}
+			if (logflag && !quietflag) {
 		          sprintf(logbuf,"   ***** Expected echo frame; got '%d' frame for line %i! "
 				" (Assuming bit error)\n",f.type,curFormat);
 			  printLog(logbuf);
