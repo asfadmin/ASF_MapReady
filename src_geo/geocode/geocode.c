@@ -35,6 +35,7 @@
      1.25    3/02   P. Denny    Update commandline parsing & usage()
      1.5     3/03   P. Denny    Remove DDR dependency... use only new meta
      1.6     3/04   R. Gens     Added process ID for temporary files
+     1.7     3/04   P. Denny    Fixed bugs in command line parsing
 
  HARDWARE/SOFTWARE LIMITATIONS:
  	A projection file must be created before running this program. Use the
@@ -89,71 +90,77 @@
 #include "asf.h"
 #include <unistd.h> /*For getpid()*/
 
-#define VERSION 1.25
+#define VERSION 1.7
+#define NUM_ARGS 4
 
 int projectGeo(double pixSize, char *metaName, char *in_proj, char *in_key,
-               char *in_tie, char *out_tie, char *out_meta, int id, char win_type,
-	       char *win);
+               char *in_tie, char *out_tie, char *out_meta, int id,
+	       char win_type, char *win);
 void geoLatLon(double eleva, char *metaName, char *out_tps);
 
 int main(int argc, char *argv[])
 {
-	char in_img[255], projfile[255], projkey[255], outfile[255], outWindow[255]="", cmd[255], buf1[255], buf2[255];
-	char resample[15]="-nearest", background[20]="";
+	char in_img[255], projfile[255], projkey[255], outfile[255];
+	char cmd[255], buf1[255], buf2[255];
+	char resample[16]="-nearest", outWindow[255]="", background[20]="";
 	float height=0.0, pixel_size=0.0;
 	char win_type;
 	int id;
 	extern int currArg; /* from cla.h which is in asf.h */
 
-	logflag=0;
-
+	logflag=FALSE;
     /* Parse command line args */
-	while (currArg < (argc-4))
-	{
+	while (currArg < (argc-NUM_ARGS)) {
 		char *key=argv[currArg++];
 		if (strmatch(key,"-log")) {
 			CHECK_ARG(1); /*one string argument: log file */
 			strcpy(logFile,GET_ARG(1));
 			fLog = FOPEN(logFile,"a");
-			logflag=1;
+			logflag=TRUE;
 		}
 		else if (strmatch(key,"-background")) {
 			CHECK_ARG(1);
 			sprintf(background,"-background %s",GET_ARG(1));
 		}
 		else if (strmatch(key,"-h")) {
-			CHECK_ARG(1);  /*float: average input elevation in meters */
+			CHECK_ARG(1);  /*float: average input elevation in meters*/
 			height = atof(GET_ARG(1));
 		}
 		else if (strmatch(key,"-p")) {
-			CHECK_ARG(1);  /*float: output pixel size to pix meters */
+			CHECK_ARG(1);  /*float: output pixel size to pix meters*/
 			pixel_size=atof(GET_ARG(1));
 		}
 		else if (strmatch(key,"-r")) {
 			CHECK_ARG(1);  /* string: remapping scheme */
-			strcpy(resample,GET_ARG(1));
+			sprintf(resample,"-%s",GET_ARG(1));
 		}
 		else if (strmatch(key,"-o")) {
-			CHECK_ARG(5);  /* N W S E projection coordinates */
+			CHECK_ARG(4);  /* N W S E projection coordinates */
 			win_type='o';
-			sprintf(outWindow, "%s %s %s %s %s", GET_ARG(5), GET_ARG(4), GET_ARG(3),
-								GET_ARG(2), GET_ARG(1));
+			sprintf(outWindow, "%s %s %s %s %s", GET_ARG(5),
+			        GET_ARG(4), GET_ARG(3), GET_ARG(2), GET_ARG(1));
 		}
 		else if (strmatch(key,"-l")) {
-			CHECK_ARG(5);  /* N S latitude, and E W longitude */
+			CHECK_ARG(4);  /* N S latitude, and E W longitude */
 			win_type='l';
-			sprintf(outWindow, "%s %s %s %s %s", GET_ARG(5), GET_ARG(4), GET_ARG(3),
-								GET_ARG(2), GET_ARG(1));
+			sprintf(outWindow, "%s %s %s %s %s", GET_ARG(5),
+			        GET_ARG(4), GET_ARG(3), GET_ARG(2), GET_ARG(1));
 		}
 		else if (strmatch(key,"-i")) {
-			CHECK_ARG(5); /* Center lat lon and nl x ns output */
+			CHECK_ARG(4); /* Center lat lon and nl x ns output */
 			win_type='i';
-			sprintf(outWindow, "%s %s %s %s %s", GET_ARG(5), GET_ARG(4), GET_ARG(3),
-								GET_ARG(2), GET_ARG(1));
+			sprintf(outWindow, "%s %s %s %s %s", GET_ARG(5),
+			        GET_ARG(4), GET_ARG(3), GET_ARG(2), GET_ARG(1));
 		}
-		else {printf("\n*****Invalid option:  %s\n\n",argv[currArg-1]);usage(argv[0]);}
+		else {
+			printf("\n** Invalid option:  %s\n\n",argv[currArg-1]);
+			usage(argv[0]);
+		}
 	}
-	if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+	if ((argc-currArg) < NUM_ARGS) {
+		printf("Insufficient arguments.\n");
+		usage(argv[0]);
+	}
 
     /* Nab required arguments */
 	strcpy(in_img,  argv[currArg]);
@@ -278,6 +285,6 @@ void usage(char *name)
  printf("\n"
 	"Version %.2f, ASF SAR Tools\n"
 	"\n", VERSION);
- exit(1);
+ exit(EXIT_FAILURE);
 }
 
