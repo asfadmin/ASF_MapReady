@@ -1061,7 +1061,7 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 
 			specified_pole = 1;
 
-			pps->ps.is_north_pole = -1;
+			pps->ps.is_north_pole = 0;
 			continue;
 		    }
 
