@@ -45,7 +45,7 @@ meta_parameters *meta_read(const char *inName)
 	     < NEW_FORMAT_VERSION ) {
 	  meta_read_old(meta_name, meta);
 	} else {
-	  parse_metadata(meta, meta_file);
+	  parse_metadata(meta_name, meta);
 	}
 
 	free(meta_name);
