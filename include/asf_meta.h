@@ -106,28 +106,28 @@ typedef enum {
 } projection_type_t;
 
 typedef enum {
-  BESSEL,
-  CLARKE1866,
-  CLARKE1880,
-  GEM6,
-  GEM10C,
-  GRS1980,
-  INTERNATIONAL1924,
-  INTERNATIONAL1967,
-  WGS1972,
-  WGS1984
+  BESSEL_SPHEROID,
+  CLARKE1866_SPHEROID,
+  CLARKE1880_SPHEROID,
+  GEM6_SPHEROID,
+  GEM10C_SPHEROID,
+  GRS1980_SPHEROID,
+  INTERNATIONAL1924_SPHEROID,
+  INTERNATIONAL1967_SPHEROID,
+  WGS72_SPHEROID,
+  WGS84_SPHEROID
 } spheroid_type_t;
 
 typedef enum {
-  EGM96,   /* Earth Gravity Model 1996 (spheroid: WGS84) */
-  ED50,    /* European Datum 1950 (International 1924) */
-  ETRF89,  /* European Terrestrial Reference Frame 1989 (WGS84) */
-  ETRS89,  /* European Terrestrial Reference System 1989 (GRS 1980) */
-  ITRF,    /* International Terrestrial Reference Frame (GRS 1980) */
-  NAD27,   /* North American Datum 1927 (Clarke 1866) */
-  NAD83,   /* North American Datum 1983 (GRS 1980) */
-  WGS72,   /* World Geodetic System 1972 (WGS72) */
-  WGS84    /* World Geodetic System 1984 (WGS84) */
+  EGM96_DATUM,   /* Earth Gravity Model 1996 (spheroid: WGS84) */
+  ED50_DATUM,    /* European Datum 1950 (International 1924) */
+  ETRF89_DATUM,  /* European Terrestrial Reference Frame 1989 (WGS84) */
+  ETRS89_DATUM,  /* European Terrestrial Reference System 1989 (GRS 1980) */
+  ITRF_DATUM,    /* International Terrestrial Reference Frame (GRS 1980) */
+  NAD27_DATUM,   /* North American Datum 1927 (Clarke 1866) */
+  NAD83_DATUM,   /* North American Datum 1983 (GRS 1980) */
+  WGS72_DATUM,   /* World Geodetic System 1972 (WGS72) */
+  WGS84_DATUM    /* World Geodetic System 1984 (WGS84) */
 } datum_type_t;
 
 /********************************************************************
