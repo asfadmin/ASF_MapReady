@@ -1,23 +1,19 @@
 /******************************************************************************
 NAME:  sr2gr - converts slant range images to ground range images
 
-SYNOPSIS:   sr2gr infile inmeta outfile outmeta pixsiz
+SYNOPSIS:   sr2gr infile outmeta pixsiz
 
-       infile     base name (.img,.ddr)
-       inmeta     input metadata name
-       outfile    base name (.img,.ddr)
-       outmeta    output metadata name (.meta)
-       pixsiz     output pixel spacing (m)
-
+       infile     base name (.img,.meta)
+       outfile    base name (.img,.meta)
+       pixsiz     output pixel spacing (meters)
+ 
 DESCRIPTION:
-
-        This program converts slant range imagery into ground range
-        imagery.  The algorithm calculates the ground range to the
-        first pixel in the image and from the spacecraft ephemeris,
-        earth ellipsoid, and slant range to first pixel given in the
-        image's metadata.  It then uses the slant range spacing interval
-        to determine appropriate ground range positions.  The remapping
-        is performed using bi-linear interpolation.
+	This program converts slant range imagery into ground range imagery. 
+	The algorithm calculates the ground range to the first pixel in the
+	image and from the spacecraft ephemeris, earth ellipsoid, and slant
+	range to first pixel given in the image's metadata.  It then uses the
+	slant range spacing interval to determine appropriate ground range
+	positions.  The remapping is performed using bi-linear interpolation.
 
 EXTERNAL ASSOCIATES:
     NAME:               USAGE:
@@ -36,7 +32,8 @@ PROGRAM HISTORY:
     3.0     4/98   T. Logan     Modified to work with RAMMS data
     3.1     8/98   O. Lawlor    Corrected azimuth pixel spacing equation.
     4.0     12/98  O. Lawlor    Modified for new metadata routines.
-
+    4.5     02/04  P. Denny     Update to use new metastruct instead of ddr
+                                  Use improved get/put_float_line
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -81,160 +78,183 @@ BUGS:
 
 #include "asf.h"
 #include "asf_meta.h"
-#include "ddr.h"
 #include "sr2gr.h"
 
-#define VERSION 4.0
+#define VERSION 4.5
+
+#define REQ_ARGS 3
 
 /*Create vector for multilooking.*/
 void ml_vec(float oldSize, float newSize,float *ml)
 {
 	float  gr=0;
-	int    i;
+	int    ii;
 	
-	for (i=0; i<MAX_IMG_SIZE; i++)
+	for (ii=0; ii<MAX_IMG_SIZE; ii++)
 	{
-		ml[i]=gr/oldSize;
+		ml[ii]=gr/oldSize;
 		gr+=newSize;
 	}
 }
 
 int main(int argc,char *argv[])
 {
-	struct   DDR  ddr,oddr;         /* ddr structure                  */
-	int      np, nl,                /* in number of pixels,lines      */
-	onp, onl,              /* out number of pixels,lines     */
-	i,line;
+	int    in_np,  in_nl;               /* input number of pixels,lines   */
+	int    out_np, out_nl;              /* output number of pixels,lines  */
+	int    ii,line;
+	float  newSize,oldX,oldY;
+	float  sr2gr[MAX_IMG_SIZE];
+	float  ml2gr[MAX_IMG_SIZE];
+	int    a_lower[MAX_IMG_SIZE];
+	int    lower[MAX_IMG_SIZE], upper[MAX_IMG_SIZE];
+	float  a_ufrac[MAX_IMG_SIZE], a_lfrac[MAX_IMG_SIZE];
+	float  ufrac[MAX_IMG_SIZE], lfrac[MAX_IMG_SIZE];
+	float *ibuf1,*ibuf2,*obuf;
+	char   infile_name[512],inmeta_name[512];
+	char   outfile_name[512],outmeta_name[512];
+	FILE  *fpi, *fpo;
+	meta_parameters *in_meta;
+	meta_parameters *out_meta;
+	extern int currArg; /* in cla.h from asf.h; initialized to 1 */
+
+	/* Make sure we've got the right amount of arguments */
+	if (currArg != (argc-REQ_ARGS)) {usage(argv[0]);}
+
+	/* Get required arguments */
+	create_name (infile_name, argv[currArg], ".img");
+	create_name (inmeta_name, argv[currArg], ".meta");
+	create_name (outfile_name, argv[currArg+1], ".img");
+	create_name (outmeta_name, argv[currArg+1], ".meta");
+	newSize = atof(argv[currArg+2]);
+
 	
-	float    newSize,oldX,oldY;
+	in_meta  = meta_read(inmeta_name);
+	out_meta = meta_copy(in_meta);
+	in_nl = in_meta->general->line_count;
+	in_np = in_meta->general->sample_count;
 	
-	float    sr2gr[MAX_IMG_SIZE];
-	float    ml2gr[MAX_IMG_SIZE];
-	int		a_lower[MAX_IMG_SIZE];
-	int		lower[MAX_IMG_SIZE], upper[MAX_IMG_SIZE];
-	float	a_ufrac[MAX_IMG_SIZE], a_lfrac[MAX_IMG_SIZE];
-	float	ufrac[MAX_IMG_SIZE], lfrac[MAX_IMG_SIZE];
-	
-	float     *ibuf1,*ibuf2,*obuf;
-	
-	char	*infile,*inmeta,*outfile,*outmeta;
-	FILE 	*fpi, *fpo;
-	meta_parameters *meta;
-	
-	if (argc != 6)
+	if (in_meta->sar->image_type != 'S')
 	{
-		printf("\nUsage: %s infile inmeta outfile outmeta pixsiz \n",argv[0]);
-		printf(
-		"       infile	   LAS base name (.img,.ddr)\n"
-		"       inmeta     input metadata file\n"
-		"       outfile    LAS base name (.img,.ddr)\n"
-		"       outmeta    output metadata file (.meta)\n"
-		"       pixsiz     output pixel spacing, in meters\n"
-		"\n"
-		"Converts the given image to ground range, from slant range.\n");
-		printf("Version %.2f, ASF SAR TOOLS\n\n",VERSION);
-		exit(1);
+		bail("sr2gr only works with slant range images!\n");
+		exit(EXIT_FAILURE);
 	}
-	infile=argv[1];
-	inmeta=argv[2];
-	outfile=argv[3];
-	outmeta=argv[4];
-	sscanf(argv[5],"%f",&newSize);
-	
-	c_getddr(infile, &ddr);
-	oddr=ddr;
-	nl = ddr.nl;
-	np = ddr.ns;
-	
-	ibuf1 = (float *) MALLOC (np*sizeof(float));
-	ibuf2 = (float *) MALLOC (np*sizeof(float));
 	
 	printf("Output Pixels: %f (range)  %f (azimuth)\n",newSize,newSize);
-	
-	meta=meta_init(inmeta);
-	if (meta->geo->type!='S')
-	{
-		bail("Slant to ground range only works with slant range images!\n");
-		exit(1);
-	}
-	
-	oldX=meta->geo->xPix*ddr.sample_inc;
-	oldY=meta->geo->yPix*ddr.line_inc;
-	
-	/*Update metadata and DDR for new pixel size*/
-	meta->geo->timeShift+=(oddr.master_line*meta->geo->azPixTime);
-	meta->geo->slantShift+=(oddr.master_sample*meta->geo->xPix);
-	oddr.master_line=oddr.master_sample=1.0;
-	
-	meta->geo->azPixTime*=newSize/meta->geo->yPix;
-	oddr.line_inc=oddr.sample_inc=1.0;
+
+	oldX = in_meta->general->x_pixel_size * in_meta->sar->sample_increment;
+	oldY = in_meta->general->y_pixel_size * in_meta->sar->line_increment;
+
+	/*Update metadata for new pixel size*/
+	out_meta->sar->time_shift  += ((in_meta->general->start_line+1)
+				* in_meta->sar->azimuth_time_per_pixel);
+	out_meta->sar->slant_shift += ((in_meta->general->start_sample+1)
+				* in_meta->general->x_pixel_size);
+	out_meta->general->start_line   = 0.0;
+	out_meta->general->start_sample = 0.0;
+	out_meta->sar->azimuth_time_per_pixel *= newSize
+					/ in_meta->general->y_pixel_size;
+	out_meta->sar->line_increment   = 1.0;
+        out_meta->sar->sample_increment = 1.0;
 	
 	/*Create ground/slant and azimuth conversion vectors*/
-	sr2gr_vec(meta,oldX,newSize,sr2gr);
+	out_meta->sar->image_type       = 'G'; 
+	out_meta->general->x_pixel_size = newSize;
+	out_meta->general->y_pixel_size = newSize;
+	sr2gr_vec(out_meta,oldX,newSize,sr2gr);
 	ml_vec(oldY,newSize,ml2gr);
-	meta->geo->type='G'; 
-	meta->geo->xPix=newSize;
-	meta->geo->yPix=newSize;
+
+	out_np = MAX_IMG_SIZE;
+	out_nl = MAX_IMG_SIZE;
+	for (ii=MAX_IMG_SIZE-1; ii>0; ii--)
+		if ((int)sr2gr[ii] > in_np)
+			out_np = ii;
+	for (ii=MAX_IMG_SIZE-1; ii>0; ii--)
+		if ((int)ml2gr[ii] > in_nl)
+			out_nl = ii;
 	
-	onp = MAX_IMG_SIZE;
-	onl = MAX_IMG_SIZE;
-	for (i=MAX_IMG_SIZE-1; i>0; i--) if ((int)sr2gr[i] > np) onp = i;
-	for (i=MAX_IMG_SIZE-1; i>0; i--) if ((int)ml2gr[i] > nl) onl = i;
-	
-	obuf = (float *) MALLOC (onp*sizeof(float));
-	oddr.nl=onl;
-	oddr.ns=onp;
-	oddr.pdist_x=oddr.pdist_y=newSize;
-	
-	c_putddr(outfile,&oddr);
-	meta_write(meta,outmeta);
-	
-	fpi=fopenImage(infile,"rb");
-	fpo=fopenImage(outfile,"wb");
-	
-	printf(" Input image is %s\n",infile);
-	printf(" Input  lines, samples: %i %i\n",nl,np);
-	printf(" Output image is %s\n",outfile);
-	printf(" Output lines, samples: %i %i\n\n\n",onl,onp);
-	
-	for (i=0; i<MAX_IMG_SIZE; i++)
-	{
-		lower[i] = (int) sr2gr[i];
-		upper[i] = lower[i] + 1;
-		ufrac[i] = sr2gr[i] - (float) lower[i];
-		lfrac[i] = 1.0 - ufrac[i]; 
-		
-		a_lower[i] = (int) ml2gr[i];
-		a_ufrac[i] = ml2gr[i] - (float) a_lower[i];
-		a_lfrac[i] = 1.0 - a_ufrac[i]; 
+	out_meta->general->line_count   = out_nl;
+	out_meta->general->sample_count = out_np;
+	if (out_meta->projection) {
+		out_meta->projection->perX = newSize;
+		out_meta->projection->perY = newSize;
 	}
+
+	meta_write(out_meta,outmeta_name);
 	
-	for (line = 0; line < onl; line++)
+	fpi = fopenImage(infile_name,"rb");
+	fpo = fopenImage(outfile_name,"wb");
+	
+	printf(" Input image is %s\n",infile_name);
+	printf(" Input  lines, samples: %i %i\n",in_nl,in_np);
+	printf(" Output image is %s\n",outfile_name);
+	printf(" Output lines, samples: %i %i\n\n",out_nl,out_np);
+	
+	for (ii=0; ii<MAX_IMG_SIZE; ii++)
 	{
-		if (a_lower[line]+1<ddr.nl)
+		lower[ii] = (int) sr2gr[ii];
+		upper[ii] = lower[ii] + 1;
+		ufrac[ii] = sr2gr[ii] - (float) lower[ii];
+		lfrac[ii] = 1.0 - ufrac[ii]; 
+		
+		a_lower[ii] = (int) ml2gr[ii];
+		a_ufrac[ii] = ml2gr[ii] - (float) a_lower[ii];
+		a_lfrac[ii] = 1.0 - a_ufrac[ii]; 
+	}
+
+	ibuf1 = (float *) MALLOC ((in_np+2)*sizeof(float));
+	ibuf2 = (float *) MALLOC ((in_np+2)*sizeof(float));
+	obuf = (float *) MALLOC (out_np*sizeof(float));
+
+	printf("\n");
+	for (line=0; line<out_nl; line++)
+	{
+		if (a_lower[line]+1 < in_nl)
 		{
-			getFloatLine(fpi,&ddr,a_lower[line],ibuf1);
-			getFloatLine(fpi,&ddr,a_lower[line]+1,ibuf2);
+			get_float_line(fpi,in_meta,a_lower[line],  ibuf1);
+			get_float_line(fpi,in_meta,a_lower[line]+1,ibuf2);
 		}
-		for (i=0; i<onp; i++)
+		for (ii=0; ii<out_np; ii++)
 		{
 			int val00,val01,val10,val11,tmp1,tmp2;
-			val00 = ibuf1[lower[i]];
-			val01 = ibuf1[upper[i]];
-			val10 = ibuf2[lower[i]];
-			val11 = ibuf2[upper[i]];
+			val00 = ibuf1[lower[ii]];
+			val01 = ibuf1[upper[ii]];
+			val10 = ibuf2[lower[ii]];
+			val11 = ibuf2[upper[ii]];
 			
-			tmp1 = val00*lfrac[i] + val01*ufrac[i];
-			tmp2 = val10*lfrac[i] + val11*ufrac[i];
+			tmp1 = val00*lfrac[ii] + val01*ufrac[ii];
+			tmp2 = val10*lfrac[ii] + val11*ufrac[ii];
 			
-			obuf[i] = tmp1*a_lfrac[line] + tmp2*a_ufrac[line]; 
+			obuf[ii] = tmp1*a_lfrac[line] + tmp2*a_ufrac[line];
 		}
-		putFloatLine(fpo,&oddr,line,obuf);
-		if (line % 200 == 0) printf("...writing line %i\n",line);
+		put_float_line(fpo,out_meta,line,obuf);
+		if (line % 200 == 0)
+			{printf("\rWriting line %i",line);fflush(NULL);}
 	}
+        meta_free(in_meta);
+        meta_free(out_meta);
 	FCLOSE(fpi);
 	FCLOSE(fpo);
+	
+	printf("\rFinished. Wrote %i lines.\n\n",line);
 	
 	return 0;
 }
 
+void usage (char * name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"%s <infile> <outfile> <pixsiz> \n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   infile   Input image base name (.img & .meta)\n"
+	"   outfile  Output image base name (.img & .meta)\n"
+	"   pixsiz   Output pixel spacing, in meters\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Converts the given image from slant range to ground range.\n");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
+}
