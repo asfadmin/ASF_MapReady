@@ -90,8 +90,8 @@ typedef struct {
   int deskewed;                      /* True if image moved to zero doppler.    */
   double range_time_per_pixel;       /* Time per pixel in range.                */
   double azimuth_time_per_pixel;     /* Time per pixel in azimuth.              */
-  double slantShift;                 /* Error correction factor, in slant range */
-  double timeShift;                  /* Error correction factor, in time        */
+  double slant_shift;                /* Error correction factor, in slant range */
+  double time_shift;                 /* Error correction factor, in time        */
   double slant_range_first_pixel;    /* Slant range to first pixel.             */
   double wavelength;		     /* SAR carrier wavelength, in meters.      */
   double prf;                        /* Pulse Repition Frequency.               */
