@@ -559,7 +559,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
       gchar * fname;
       fname = (gchar *) 
-          g_malloc(sizeof(gchar *) * 
+          g_malloc(sizeof(gchar) * 
               (strlen(before_geocoding_basename) + 10));
 
       sprintf(fname, "%s.img", before_geocoding_basename);
