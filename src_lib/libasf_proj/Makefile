@@ -22,4 +22,4 @@ clean:
 	rm -rf $(OBJS) libasf_proj.a project.t.o project.t
 
 test: project.t.c all
-	$(CC) $(CLFAGS) project.t.c $(LIBDIR)/libasf_proj.a $(LIBS) -o project.t
+	$(CC) $(CFLAGS) project.t.c $(LIBDIR)/libasf_proj.a $(LIBS) -o project.t
