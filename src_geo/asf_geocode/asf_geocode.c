@@ -326,7 +326,7 @@ help_page (void)
        
 ///////////////////////////////////////////////////////////////////////////////
 
-// This is the input data we want to fit splines to.
+// This is form of the input data we want to fit splines to.
 struct data_to_fit {
   size_t grid_size;		// Size of grid of points, in points on a side.
   size_t n;			// Number of transformed points (grid_size^2).
