@@ -29,6 +29,5 @@ meta_parameters *meta_create(const char *fName)
 		ceos_init(fName,meta);
 	if (extExists(fName,".in"))
 		aisp_init(fName,meta);
-	final_init(meta);
 	return meta;
 }
