@@ -109,8 +109,8 @@ void ceos2ddr(char *ceosIn,struct DDR *ddrOut,int *headerLen,int *lineLen)
 	ddrOut->valid[DDPUV]=VALID;
 	
 	strcpy(ddrOut->proj_units,"METERS");
-	ddrOut->pdist_x = meta->geo->xPix;
-	ddrOut->pdist_y = meta->geo->yPix;
+	ddrOut->pdist_x = meta->general->x_pixel_size;
+	ddrOut->pdist_y = meta->general->y_pixel_size;
 	
 	if (has_mpdr)
 	{
@@ -144,17 +144,17 @@ void ceos2ddr(char *ceosIn,struct DDR *ddrOut,int *headerLen,int *lineLen)
 	}
 		
 	/* set projection dependent records */
-	if (meta->geo->type=='P')
+	if (meta->sar->image_type=='P')
 	{/*Map projected input*/
-		proj_parameters *p=meta->geo->proj;
-		int proj_invalid=0;
+		meta_projection *p = meta->projection;
+		int proj_invalid = 0;
 		switch(p->type)
 		{
-		case 'A':/*Along Track/Cross Track*/
+		    case 'A':/*Along Track/Cross Track*/
 			/*Can't do anything here until we add AT/CT to asf_geolib.*/
 			proj_invalid=1;
 			break;
-		case 'P':/*Polar Stereographic*/
+		    case 'P':/*Polar Stereographic*/
 			ddrOut->proj_code = PS;
 			ddrOut->datum_code = 0;
 			ddrOut->zone_code = 62;
@@ -165,7 +165,7 @@ void ceos2ddr(char *ceosIn,struct DDR *ddrOut,int *headerLen,int *lineLen)
 			ddrOut->proj_coef[6] = 0.0;
 			ddrOut->proj_coef[7] = 0.0; 
 			break;
-		case 'L':/*Lambert*/
+		    case 'L':/*Lambert*/
 			ddrOut->proj_code = LAMCC;	
 			ddrOut->datum_code = 0;
 			ddrOut->zone_code = 62;
@@ -177,12 +177,12 @@ void ceos2ddr(char *ceosIn,struct DDR *ddrOut,int *headerLen,int *lineLen)
 			ddrOut->proj_coef[7] = 0; /*false northing    */
 		
 			break;
-		case 'U':/*Universal Transverse Mercator*/
+		    case 'U':/*Universal Transverse Mercator*/
 			ddrOut->proj_code = UTM;
 			ddrOut->datum_code = 0;
 			ddrOut->zone_code = p->param.utm.zone;
 			break;
-		default:
+		    default:
 			printf("Unrecognized map projection type '%c' passed to ceos2ddr!\n",p->type);
 			printf("Continuing...\n");
 			proj_invalid=1;
