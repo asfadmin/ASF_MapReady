@@ -217,6 +217,8 @@ endif
 
 LIBDIR  = ../../lib/$(SYS)
 BINDIR  = ../../bin/$(SYS)
+SHAREDIR = ../../share
+DOCDIR = $(SHAREDIR)/doc
 JAVADIR = ../../java
 
 EOF
@@ -282,10 +284,11 @@ echo "To build the tools, type 'make'."
 echo "To install the tools, type 'make install'."
 echo ""
 echo "The tools will be installed in this location:"
-echo "  "$prefix"
+echo "  "$prefix" "
 echo ""
-echo "To use the programs, you must add the binaries "
-echo "  directory to your path: "$directory" "
+echo "If you do not do a 'make install', to use the programs, "
+echo "you must add the binaries directory to your path: "
+echo "  "$directory" "
 echo ""
 echo "########### Build system is now configured  ############"
 
