@@ -161,19 +161,23 @@ typedef union {
 } param_t;
 typedef struct {
   char type;   /* 'A'->Along Track/Cross Track; 'P'->Polar Stereographic;
-	          'L'->Lambert Conformal; 
-		  'U'->Universal Transverse Mercator.  */
-  double startX,startY;  /* Projection coordinates of top, lefthand corner.  */
-  double perX,perY;      /* Projection coordinates per X and Y pixel.  */
-  char hem;              /* Hemisphere Code: 'S'->southern; other northern.  */
-  double re_major;       /* Semimajor axis length (equator) (meters).  */
-  double re_minor;       /* Semiminor axis length (poles) (meters).  */
+	          'L'->Lambert Conformal; 'U'->Universal Transverse Mercator.*/
+  double startX,startY;  /* Projection coordinates of top, lefthand corner.*/
+  double perX,perY;      /* Projection coordinates per X and Y pixel.      */
+  char units[12];        /* Units of projection (meters, arcsec)           */
+  char hem;              /* Hemisphere Code: 'S'->southern; other northern.*/
+  double re_major;       /* Semimajor axis length (equator) (meters).      */
+  double re_minor;       /* Semiminor axis length (poles) (meters).        */
   /* Note: we compute ecc=sqrt(1-re_major^2/re_minor^2).  This field
-     is therefore redundant and should be eliminated.  DEPRECATED.  */
-  double ecc;            /* First eccentricity of earth ellipsoid.  */
-
-  /* Projection parameters.  */
-  param_t param;
+     is therefore redundant and should be eliminated.  DEPRECATED.         */
+  double ecc;            /* First eccentricity of earth ellipsoid.         */
+    /* Projection parameters for each projection.                          */
+  union {		     
+    proj_atct     atct;	    /* Along-track/cross-track.                    */
+    proj_lambert  lambert;  /* Lambert Conformal projection.               */
+    proj_ps       ps;       /* Polar Sterographic.                         */
+    proj_utm      utm;      /* Universal Transverse Mercator.              */
+  } param;
 } meta_projection;
  /* Compatibility alias.  proj_parameters is DEPRECATED.  */
 typedef meta_projection proj_parameters;
