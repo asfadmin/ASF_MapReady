@@ -184,7 +184,7 @@ cal_params *create_cal_params(char *inSAR)
 	/* Next, check for old-style geocoded images */
 	else if (get_mpdr(inSAR,&mpdr)>=0)
 	  {
-  	    get_facdr(inSAR,&facdr);
+  	    get_asf_facdr(inSAR,&facdr);
 	    p->noise_type=by_geo;
 	    p->ns = slantRange2groundPixel(p->meta,facdr.sltrnglp*1000.0);
 	    printf("Recognize old geocoded image; Max ns = %i\n",p->ns);
@@ -202,7 +202,7 @@ cal_params *create_cal_params(char *inSAR)
 	  {
 		double totalSlant;
 		
-		get_facdr(inSAR,&facdr);
+		get_asf_facdr(inSAR,&facdr);
 		p->noise_type=by_slant;
 		p->minSlant=facdr.sltrngfp;
 		totalSlant=facdr.sltrnglp-facdr.sltrngfp;
