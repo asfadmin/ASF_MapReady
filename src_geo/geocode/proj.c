@@ -97,31 +97,47 @@ int write_proj_meta(double pixSize,proj_prm *proj,const window *w,
 	switch(proj->proj)
 	{/*Switch on the output projection used.*/
 	case UTM:/*Universal Transverse Mercator projection*/
-		p->type = 'U';
-		p->param.utm.zone = proj->zone;
-		break;
+	  p->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+	  p->param.utm.zone = proj->zone;
+	  break;
+	case SPCS:/*State Plane projection*/
+	  p->type = STATE_PLANE;
+	  p->param.state.zone = proj->zone;
+	  break;
 	case PS:/*Polar Stereographic projection*/
-		p->type = 'P';
-		p->param.ps.slat = paksz(proj->parms[5],&ignored);
-		p->param.ps.slon = paksz(proj->parms[4],&ignored);
-		break;
+	  p->type = POLAR_STEREOGRAPHIC;
+	  p->param.ps.slat = paksz(proj->parms[5],&ignored);
+	  p->param.ps.slon = paksz(proj->parms[4],&ignored);
+	  break;
+	case ALBERS:/*Albers Conic Equal Area*/
+	  p->type = ALBERS_EQUAL_AREA;
+	  p->param.albers.std_parallel1 = paksz(proj->parms[2],&ignored);
+	  p->param.albers.std_parallel2 = paksz(proj->parms[3],&ignored);
+	  p->param.albers.center_meridian = paksz(proj->parms[4],&ignored);
+	  p->param.albers.orig_latitude = paksz(proj->parms[5],&ignored);
+	  break;
+	case LAMAZ:/*Lambert Azimuthal Equal Area*/
+	  p->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
+	  p->param.lamaz.center_lat = paksz(proj->parms[5],&ignored);
+	  p->param.lamaz.center_lon = paksz(proj->parms[4],&ignored);
+	  break;
 	case LAMCC:/*Lambert Conformal Conic*/
-		p->type = 'L';
-		p->param.lamcc.lat0 = paksz(proj->parms[5],&ignored);
-		p->param.lamcc.lon0 = paksz(proj->parms[4],&ignored);
-		p->param.lamcc.plat1 = paksz(proj->parms[2],&ignored);
-		p->param.lamcc.plat2 = paksz(proj->parms[3],&ignored);
-		break;
+	  p->type = LAMBERT_CONFORMAL_CONIC;
+	  p->param.lamcc.lat0 = paksz(proj->parms[5],&ignored);
+	  p->param.lamcc.lon0 = paksz(proj->parms[4],&ignored);
+	  p->param.lamcc.plat1 = paksz(proj->parms[2],&ignored);
+	  p->param.lamcc.plat2 = paksz(proj->parms[3],&ignored);
+	  break;
 	default:/*Unrecognized Map projection!*/
-		sprintf(message,
-			"   WARNING: Unrecognized map projection code %d passed to \n"
-			"            geocode/proj.c:write_proj_meta!\n"
-			"            NOT creating .meta file...\n",proj->proj);
-		printf("%s",message);
-		if (logflag) {
-			printLog(message);
-		}
-		return 0;
+	  sprintf(message,
+		  "   WARNING: Unrecognized map projection code %d passed to \n"
+		  "            geocode/proj.c:write_proj_meta!\n"
+		  "            NOT creating .meta file...\n",proj->proj);
+	  printf("%s",message);
+	  if (logflag) {
+	    printLog(message);
+	  }
+	  return 0;
 	}
 	p->startX = w->minX;
 	p->startY = w->maxY;
