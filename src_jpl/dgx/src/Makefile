@@ -1,0 +1,73 @@
+#
+# Makefile for subsystem Graph program (dgx)
+#
+SHELL=/bin/sh
+
+INCDIR = ../inc
+BINDIR = ../bin
+LIBS   = -lXm -lXt -lX11 -lm
+
+# 
+# For SGI
+# 
+FC     = f77
+FFLAGS = -O2 -DSGI -DM4 -DIO64 -bytereclen -extend_source -OPT:Olimit=4500 -I$(INCDIR) 
+
+CC     = cc 
+CFLAGS = -O2 -DSGI -DM4 -DIO64 -I$(INCDIR)
+
+LC     = f77  
+LFLAGS = $(LIBS)
+
+# 
+# For MachTen
+# 
+#FC     = /usr/bin/g77
+#FFLAGS = -DM10 -ffixed-line-length-none
+# 
+#CC     = /usr/bin/cc
+#CFLAGS = -DM10
+# 
+#LC     = /usr/bin/g77
+#LFLAGS = $(LIBS)
+
+CSOURCES = graphx.c
+COBJECTS = $(CSOURCES:.c=.o)
+
+FSOURCES = dgx.f 
+FOBJECTS = $(FSOURCES:.f=.o)
+
+BINLIST	= $(BINDIR)/dgx
+
+# 
+# Standard targets for overall system makefiles
+# 
+bins : $(BINLIST)
+
+SOURCES: $(FSOURCES) $(CSOURCES)
+
+# Make all sybsystem main programs, scripts, IDL procedures, etc.
+
+
+# C executables
+
+graphx.o	: graphx.c 
+		$(CC) $(CFLAGS) -c graphx.c
+
+# Fortran executables 
+
+dgx.o	: dgx.f
+		$(FC) $(FFLAGS) -c dgx.f
+
+# exe only
+
+$(BINDIR)/dgx: $(FOBJECTS) $(COBJECTS)
+	$(LC) -o $@ $(FOBJECTS) $(COBJECTS) $(LFLAGS)
+
+
+
+
+
+
+
+
