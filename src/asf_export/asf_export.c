@@ -128,9 +128,6 @@ PROGRAM HISTORY:
 #include <asf_endian.h>
 #include <asf_meta.h>
 
-#define MICRON 0.00000001
-#define FLOAT_EQUIVALENT(a, b) (fabs(a - b) < MICRON ? 1 : 0)
-
 static char *program_name = "asf_export";
 
 /* Print invocation information.  */
@@ -141,6 +138,9 @@ usage (char *program_name)
 	  "%s: [-f FORMAT] [-s size] [-o OUTPUT_FILE] INPUT_FILE\n", 
 	  program_name);
 }
+
+#define MICRON 0.00000001
+#define FLOAT_EQUIVALENT(a, b) (fabs(a - b) < MICRON ? 1 : 0)
 
 /* Maximum image name length we can accept from the user.  Since the
    user may enter a base name only, the actual file name strings need
@@ -209,20 +209,20 @@ my_strnlen (const char *s, size_t max_len)
   return max_len;
 }
 
-/* Some forward declarations.  */
+/* Forward declarations.  */
 void
 export_as_envi (const char *metadata_file_name,
 		const char *image_data_file_name, 
 		const char *output_file_name);
 
 void
-export_as_esri (const char *metadata_file_name,
+export_as_esri (const char *metadata_file_name, 
 		const char *image_data_file_name,
 		const char *output_file_name);
 
 void
 export_as_geotiff (const char *metadata_file_name,
-		   const char *image_data_file_name,
+		   const char *image_data_file_name, 
 		   const char *output_file_name);
 
 void
@@ -452,16 +452,19 @@ get_sample_size (meta_parameters *metadata)
   return sample_size;
 }
 
+/* Get the image data in data file image_data_file_name, using
+   metadata metadata.  A pointer to new memory containing the image
+   data is returned.  */
 static void *
-get_image_data (meta_parameters *metadata, const char *image_data_file_name)
+get_image_data (meta_parameters *metadata, const char *image_data_file)
 {
   size_t sample_size = get_sample_size (metadata);
 
   /* Read the image data itself.  */
-  FILE *ifp = fopen (image_data_file_name, "r");
+  FILE *ifp = fopen (image_data_file, "r");
   if ( ifp == NULL ) {
     fprintf (stderr, "%s: failed to open %s: %s\n", program_name, 
-	     image_data_file_name, strerror (errno));
+	     image_data_file, strerror (errno));
     exit (EXIT_FAILURE);
   }
   /* Total number of samples in image.  */
@@ -472,22 +475,77 @@ get_image_data (meta_parameters *metadata, const char *image_data_file_name)
   if ( read_count != pixel_count ) {
     if ( feof (ifp) ) {
       fprintf (stderr, "%s: read wrong amount of data from %s\n", program_name,
-	       image_data_file_name);
+	       image_data_file);
     }
     else if ( ferror (ifp) ) {
       fprintf (stderr, "%s: read of file %s failed: %s\n", program_name, 
-	       image_data_file_name, strerror (errno));
+	       image_data_file, strerror (errno));
     }
     else {
       assert (FALSE);		/* Shouldn't be here.  */
     }
     exit (EXIT_FAILURE);
   }
+
   int return_code = fclose (ifp);
   assert (return_code == 0);
   
   return data;
 }
+
+/* Get a strip strip_size high with 0-based index strip_index of image
+   data from image_data_file having metadata metadata.  Note that
+   strip_index counts image scan lines, not strip_size strips.  The
+   size of the returned region depends on the sample size and image
+   dimensions metadata, and on the strip_size argument.  The stip
+   pointer must point to memory sufficient for the job.  */
+static void
+get_image_strip (meta_parameters *metadata, const char *image_data_file, 
+		 size_t strip_size, size_t strip_index, void *strip)
+{
+  size_t sample_size = get_sample_size (metadata);
+
+  /* Open the image data file.  */
+  FILE *ifp = fopen (image_data_file, "r");
+  if ( ifp == NULL ) {
+    fprintf (stderr, "%s: failed to open %s: %s\n", program_name, 
+	     image_data_file, strerror (errno));
+    exit (EXIT_FAILURE);
+  }
+
+  /* Seek to the start of the strip.  */
+  off_t skip_count 
+    = ( (off_t) metadata->general->sample_count) * strip_index * sample_size;
+  int return_code = fseeko (ifp, skip_count, SEEK_SET);
+  assert (return_code == 0);
+
+  /* Total number of samples in strip.  */
+  off_t pixel_count = strip_size * metadata->general->sample_count;
+
+  /* Allocate space for the strip.  */
+  void *data = malloc (pixel_count * sample_size);
+
+  /* Read the image data itself.  */
+  size_t read_count = fread (data, sample_size, pixel_count, ifp);
+  if ( read_count != pixel_count ) {
+    if ( feof (ifp) ) {
+      fprintf (stderr, "%s: read wrong amount of data from %s\n", program_name,
+	       image_data_file);
+    }
+    else if ( ferror (ifp) ) {
+      fprintf (stderr, "%s: read of file %s failed: %s\n", program_name, 
+	       image_data_file, strerror (errno));
+    }
+    else {
+      assert (FALSE);		/* Shouldn't be here.  */
+    }
+    exit (EXIT_FAILURE);
+  }
+  assert (feof (ifp));
+
+  return_code = fclose (ifp);
+  assert (return_code == 0);
+}  
 
 void
 export_as_envi (const char *metadata_file_name,
@@ -1152,6 +1210,11 @@ scale_floats_to_unsigned_bytes (float *daf, size_t pixel_count)
   return pixels;
 }
 
+/* Scale the *width x *height image at pixels st its large dimension
+   is less than or equal to max_large_dimension.  The memory pointed
+   to by pixels is resized and possible relocated, with the new
+   location being returned.  The new image width and height are
+   returned in *width and *height.  */
 static unsigned char *
 scale_unsigned_char_image_dimensions (unsigned char *pixels, 
 				      unsigned long max_large_dimension,
@@ -1475,15 +1538,26 @@ export_as_geotiff (const char *metadata_file_name,
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
   assert (md->general->data_type == REAL32);
-  uint16_t sample_size = 4;
+  unsigned short sample_size = 4;
+  assert (sizeof (unsigned short) == 2);
 
   /* Get image dimensions. */
-  uint32_t line_count = md->general->line_count;
-  uint32_t sample_count = md->general->sample_count;
+  unsigned int line_count = md->general->line_count;
+  assert (sizeof (unsigned int) == 4);
+  unsigned int sample_count = md->general->sample_count;
+  assert (sizeof (unsigned int) == 4);
+
+  size_t pixel_count = line_count * sample_count;
 
   /* Get the image data.  */
   assert (md->general->data_type == REAL32);
   float *daf = get_image_data (md, image_data_file_name);
+  /* It supposed to be big endian data, this converts to host byte
+     order.  */
+  int jj;
+  for ( jj = 0 ; jj < pixel_count ; jj++ ) {
+    ieee_big32 (daf[jj]);
+  }
 
   /* Open output tiff file and GeoKey file descriptor.  */
   TIFF *otif = XTIFFOpen (output_file_name, "w");
@@ -1504,7 +1578,8 @@ export_as_geotiff (const char *metadata_file_name,
   TIFFSetField(otif, TIFFTAG_YRESOLUTION,1);
   TIFFSetField(otif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
   TIFFSetField(otif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-  uint16_t sample_format;
+  unsigned short sample_format;
+  assert (sizeof (unsigned short) == 2);
   switch ( md->general->data_type ) {
   case BYTE:
     sample_format = SAMPLEFORMAT_UINT;
@@ -1533,14 +1608,23 @@ export_as_geotiff (const char *metadata_file_name,
   /* If we have a map projected image, write the projection
      information into the GeoTiff.  */
   if ( md->sar->image_type == 'P' ) {
-    /* FIXME: Set these.  */
-    double tie_points[4][6];
+    double tie_points[4][6];	/* Tie points for image corners.  */
     /* Some applications (e.g., ArcView) won't handle geoTIFF images
        with more than one tie point pair.  Therefore, only the upper
        left corner is being written to the geoTIFF file.  In order to
        write all computed tie points to the geoTIFF, change the 6 to
-       size in the line below.  */
+       size in the line below.  */  
+    tie_points[0][0] = 0;
+    tie_points[0][1] = 0;
+    tie_points[0][2] = 0;
+  /* need the actual corner of the image, not the center of the
+     corner pixel
+     ---------------------------------------------------------- */
+    tie_points[0][3] = md->projection->startX;
+    tie_points[0][4] = md->projection->startY;
+    tie_points[0][5] = 0.0;
     TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_points);
+
 
     /* Set the scale of the pixels, in projection coordinates.  */
     double pixel_scale[3];
@@ -1561,14 +1645,32 @@ export_as_geotiff (const char *metadata_file_name,
          couln't figure out how to set some datum code right, we set it
          to -1.  */
       assert (md->projection->param.utm.zone != -1);
+
+      /* Here we use some funky arithmetic to get the correct geotiff
+	 coordinate system type key from our zone code.  There are a
+	 few assertions to try to ensure that the convention used for
+	 the libgeotiff constants is as expected.  */
+      assert (Proj_UTM_zone_1N == 16001);
+      short projection_code;
+      assert (Proj_UTM_zone_1S == 16101);
+      if ( md->projection->hem == 'N' ) {
+	projection_code = 16000;
+      }
+      else if ( md->projection->hem == 'S' ) {
+	projection_code = 16100;
+      }
+      else {
+	assert (FALSE);		/* Shouldn't be here.  */
+      }
+      projection_code += md->projection->param.utm.zone;
+      
       GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
-		  md->projection->param.utm.zone);
-      assert (FALSE);		/* Unfinished.  */
-      GTIFKeySet(ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, 
-		 meters_units_code);
-      GTIFKeySet(ogtif, PCSCitationGeoKey, TYPE_ASCII, 1,
-		 "UTM projected Geotiff written by Alaska Satellite Facility "
-		 "tools");
+		  projection_code);
+      GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, 
+		  meters_units_code);
+      GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1,
+		  "UTM projected Geotiff written by Alaska Satellite Facility "
+		  "tools");
       break;
     case POLAR_STEREOGRAPHIC:
       GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
