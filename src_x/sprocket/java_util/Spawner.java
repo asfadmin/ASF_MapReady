@@ -9,7 +9,7 @@ public class Spawner {
    public Spawner  ( String command )
      {
        try {
-	 System.err.print("Running \"" + command + "\"...");
+	 System.err.println("Running \"" + command + "\"...");
 	 Process P = Runtime.getRuntime().exec(command);
 	 Out = P.getOutputStream();
 	 In = P.getInputStream();
