@@ -37,7 +37,7 @@ ers.wavelength = dssr.wave_length;
 
 /* Information read from the facility related data record
  -------------------------------------------------------*/
-if (get_facdr(hdname,&ofdr)<0)
+if (get_asf_facdr(hdname,&ofdr)<0)
  { printf("Failure reading facility data record from %s\n",hdname); exit(1); }
 
 ers.latdc =  ofdr.imgclat*RPD;

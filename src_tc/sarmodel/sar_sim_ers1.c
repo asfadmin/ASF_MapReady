@@ -132,7 +132,7 @@ double swathvel,      /* along track swath velocity		        */
   for (i = 1 ; i <= 3 ; i++) { azoff[i] = azcoefs[i]; groff[i] = grcoefs[i]; }
 
   /* Get the track angle parameter */
-  if (get_facdr(hdname,&ofdr)<0)
+  if (get_asf_facdr(hdname,&ofdr)<0)
     { printf("Failure opening file %s\n",hdname); exit(1); }
   trka = ofdr.trackang*RPD;
 
