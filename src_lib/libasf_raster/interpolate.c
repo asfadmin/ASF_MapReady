@@ -11,6 +11,9 @@ INPUT: interpolation  - interpolation method (nearest neighbor, bilinear, sinc)
        weighting      - weighting function to be applied (Kaiser, Hamming)
        nKernel        - kernel size for sinc function
 *******************************************************************/
+#include <assert.h>
+#include <math.h>
+
 #include "asf.h"
 #include "asf_raster.h"
 
@@ -37,13 +40,14 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
 {
   int ix, iy, base;
   int a00, a10, a01, a11;
+  float value;
              
   /* Get closed pixel position to start from */
 
   switch ( interpolation ) {
     case NEAREST:
-      ix = round (xSample);
-      iy = roune (xLine);
+      ix = (int) (xSample + 0.5);
+      iy = (int) (xLine + 0.5);
       base = ix + iy*nSamples;
       value = inbuf[base];
       break;
@@ -73,7 +77,8 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
 	  int ii;
 	  for ( ii = 0 ; ii < NUM_SINCS ; ii++ ) {
 	    double shift = (double)ii / NUM_SINCS;
-	    float *current_sinc = sinc_funcs[ii * sinc_points];
+	    float *current_sinc = &sinc_funcs[ii * sinc_points];
+	    float sinc_weight = 0.0;
 	    int jj;
 	    for ( jj = 0 ; jj < sinc_points ; jj++ ) {
 	      // Argument of the sinc function for this shifted sinc function.
@@ -84,7 +89,7 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
 	      else {
 		current_sinc[jj] = sin (M_PI * sinc_arg) / (M_PI * sinc_arg);
 	      }
-	      sinc_weight += currenc_sinc[jj];
+	      sinc_weight += current_sinc[jj];
 	    }
 
 	    // Normalize the sinc weighting.
@@ -101,9 +106,9 @@ float interpolate(interpolate_type_t interpolation, float *inbuf, int nLines,
 	int ix = floor (xLine), iy = floor (xSample);
 	float x_fraction = xLine - ix, y_fraction = xSample - iy;
 	float *x_sinc_func 
-	  = sinc_funcs[((int)(x_fraction * NUM_SINCS)) * sinc_points];
+	  = &sinc_funcs[((int)(x_fraction * NUM_SINCS)) * sinc_points];
 	float *y_sinc_func
-	  = sinc_funcs[((int)(y_fraction * NUM_SINCS)) * sinc_points];
+	  = &sinc_funcs[((int)(y_fraction * NUM_SINCS)) * sinc_points];
 	int x_start_sinc = ix + 1 - sinc_points / 2;
 	int y_start_sinc = iy + 1 - sinc_points / 2;
 	int x_end_sinc = x_start_sinc + sinc_points;
