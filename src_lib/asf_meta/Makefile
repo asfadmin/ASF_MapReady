@@ -38,46 +38,45 @@ LEX_YACC_OBJS =  $(patsubst %.y, %.o, $(YACC_SOURCES)) \
                  $(patsubst %.l, %.o, $(LEX_SOURCES))
 
 LAS_OBJS = allocbuf.o \
-        c_calcor.o \
-        c_comsys.o \
-        c_dkcre.o \
-        c_dkdel.o \
-        c_dkfree.o \
-        c_dkresv.o \
-        c_dkrspac.o \
-        c_errmsg.o \
-        c_getbdr.o \
-        c_getddr.o \
-        c_getsys.o \
-        c_gettyp.o \
-        c_intbdr.o \
-        c_intddr.o \
-        c_low2up.o \
-        c_lsclos.o \
-        c_lsmknm.o \
-        c_lsopen.o \
-        c_lsread.o \
-        c_lsrepl.o \
-        c_lsstat.o \
-        c_lswrit.o \
-        c_ptio.o \
-        c_ptopen.o \
-        c_putbdr.o \
-        c_putddr.o \
-        c_pxconv.o \
-        c_pxcopy.o \
-        c_pxfill.o \
-        c_pxswap.o \
-        c_pxsys.o \
-        c_rotcor.o \
-        c_rtcoef.o \
-        c_sysset.o \
-        c_up2low.o \
-        convInt.o \
-        doopen.o \
-        lasIO.o  \
-        packed_deg.o \
-        squeeze.o 
+	c_calcor.o \
+	c_dkcre.o \
+	c_dkdel.o \
+	c_dkfree.o \
+	c_dkresv.o \
+	c_dkrspac.o \
+	c_errmsg.o \
+	c_getbdr.o \
+	c_getddr.o \
+	c_getsys.o \
+	c_gettyp.o \
+	c_intbdr.o \
+	c_intddr.o \
+	c_low2up.o \
+	c_lsclos.o \
+	c_lsmknm.o \
+	c_lsopen.o \
+	c_lsread.o \
+	c_lsrepl.o \
+	c_lsstat.o \
+	c_lswrit.o \
+	c_ptio.o \
+	c_ptopen.o \
+	c_putbdr.o \
+	c_putddr.o \
+	c_pxconv.o \
+	c_pxcopy.o \
+	c_pxfill.o \
+	c_pxswap.o \
+	c_pxsys.o \
+	c_rotcor.o \
+	c_rtcoef.o \
+	c_sysset.o \
+	c_up2low.o \
+	convInt.o \
+	doopen.o \
+	lasIO.o  \
+	packed_deg.o \
+	squeeze.o 
 
 OBJS =  $(LEX_YACC_OBJS) \
 	getLatLong.o \
@@ -97,25 +96,25 @@ OBJS =  $(LEX_YACC_OBJS) \
 	slantRange2groundPixel.o \
 	util3d.o \
 	yaw2doppler.o \
-        aisp_params.o \
-        code_ceos.o \
-        ceos2ddr.o \
-        ceos_io.o \
-        dateUtil.o \
-        get_ceos.o \
-        heading.o \
+	aisp_params.o \
+	code_ceos.o \
+	ceos2ddr.o \
+	ceos_io.o \
+	dateUtil.o \
+	get_ceos.o \
+	heading.o \
 	coniFetch.o \
 	meta_create.o \
-        meta_init_aisp.o \
-        meta_init_asf.o \
-        meta_init_ceos.o \
-        meta_init_stVec.o \
+	meta_init_aisp.o \
+	meta_init_asf.o \
+	meta_init_ceos.o \
+	meta_init_stVec.o \
 	meta_read.o \
-        meta_copy.o \
+	meta_copy.o \
 	meta_write.o \
 	meta_new2ddr.o \
-        set_era.o \
-        utc2gha.o \
+	set_era.o \
+	utc2gha.o \
 	$(LAS_OBJS)
 
 all: asf_meta
