@@ -23,6 +23,7 @@ void proj2meta(struct DDR *ddr, meta_parameters *meta)
 
 	switch (ddr->proj_code) {
 	  case ALBERS:/* Albers Conic Equal Area */
+            meta->sar->image_type = 'P';
 	    proj->type = ALBERS_EQUAL_AREA;
 	    proj->re_major = ddr->proj_coef[0];
 	    proj->re_minor = ddr->proj_coef[1];
@@ -32,6 +33,7 @@ void proj2meta(struct DDR *ddr, meta_parameters *meta)
 	    proj->param.albers.orig_latitude = unpacked_deg(ddr->proj_coef[5]);   /*Center latitude of proj*/
 	    break;
 	  case LAMCC:/* Lambert Conformal Conic */
+            meta->sar->image_type = 'P';
 	    proj->type = LAMBERT_CONFORMAL_CONIC;
 	    proj->re_major = ddr->proj_coef[0];
 	    proj->re_minor = ddr->proj_coef[1];
@@ -41,19 +43,22 @@ void proj2meta(struct DDR *ddr, meta_parameters *meta)
 	    proj->param.lamcc.lat0 = unpacked_deg(ddr->proj_coef[5]);  /*Center latitude of proj*/
 	    break;
 	  case LAMAZ:/* Lambert Azimuthal Equal Area */
+            meta->sar->image_type = 'P';
 	    proj->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
 	    proj->re_major = ddr->proj_coef[0];
 	    proj->re_minor = ddr->proj_coef[1];
 	    proj->param.lamaz.center_lon = unpacked_deg(ddr->proj_coef[4]); /*Center longitude of proj*/
 	    proj->param.lamaz.center_lat = unpacked_deg(ddr->proj_coef[5]);
 	  case PS:/* Polar Stereographic */
+            meta->sar->image_type = 'P';
 	    proj->type = POLAR_STEREOGRAPHIC;
 	    proj->re_major = ddr->proj_coef[0];
 	    proj->re_minor = ddr->proj_coef[1];
 	    proj->param.ps.slon = ddr->proj_coef[4]; /*Longitude down below pole of map*/
 	    proj->param.ps.slat = ddr->proj_coef[5]; /*Latitude of true scale*/
 	    break;
-	  case UNIVERSAL_TRANSVERSE_MERCATOR:/* Universal Transverse Mercator */
+	  case UTM:/* Universal Transverse Mercator */
+            meta->sar->image_type = 'P';
 	    proj->type = UNIVERSAL_TRANSVERSE_MERCATOR;
 	    proj->param.utm.zone = ddr->zone_code;
 	    break;
