@@ -13,25 +13,38 @@ typedef enum {
   NO_STF_METADATA=0,
   STF_PAR,
   STF_par,
+  STF_000_PAR,
+  STF_000_par,
+  STF_001_PAR,
+  STF_001_par,
   NUM_STF_METADATA_EXTS
 } stf_metadata_ext_t;
-extern const char stf_metadata_extensions[][8];
+extern const char stf_metadata_extensions[][16];
 
-/* Enum for & strings for STF data file extensions */
+/* Enum for & strings for STF data file extensions (stick with *_BLANK; *_blank
+   is simply for matching data array indices with metadata array indices */
 typedef enum {
   NO_STF_DATA=0,
   STF_BLANK,           /* Dummy value to match up with stf metadata STF_PAR */
   STF_blank,           /* Dummy value to match up with stf metadata STF_par */
+  STF_000_BLANK,
+  STF_000_blank,
+  STF_001_BLANK,
+  STF_001_blank,
   NUM_STF_DATA_EXTS
 } stf_data_ext_t;
-extern const char stf_data_extensions[][8];
+extern const char stf_data_extensions[][16];
 
 /* Enum for pairs of stf extensions */
 typedef enum {
-   NO_STF_FILE_PAIR=0,     /* Maybe an individual match, but not a pair */
-   STF_PAR_PAIR,
-   STF_par_PAIR,
-   NUM_STF_FILE_PAIRS
+  NO_STF_FILE_PAIR=0,     /* Maybe an individual match, but not a pair */
+  STF_PAR_PAIR,
+  STF_par_PAIR,
+  STF_000_PAR_PAIR,
+  STF_000_par_PAIR,
+  STF_001_PAR_PAIR,
+  STF_001_par_PAIR,
+  NUM_STF_FILE_PAIRS
 } stf_file_pairs_t;
 
 /* Given the name of a file (potentially with path in front of it), determine
