@@ -10,31 +10,38 @@ static GtkWidget * lamaz_menu = NULL;
 
 static char * projection_directory(int projection)
 {
-    char * location;
+    char * location, * ret;
+
     switch (projection)
     {
 	case UNIVERSAL_TRANSVERSE_MERCATOR:
-	    location = "projections/utm";
+	    location = "utm";
 	    break;
 	    
 	case POLAR_STEREOGRAPHIC:
-	    location = "projections/polar_stereographic";
+	    location = "polar_stereographic";
 	    break;
 	    
 	case LAMBERT_CONFORMAL_CONIC:
-	    location = "projections/lambert_conformal_conic";
+	    location = "lambert_conformal_conic";
 	    break;
 	    
 	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-	    location = "projections/lambert_azimuthal_equal_area";
+	    location = "lambert_azimuthal_equal_area";
 	    break;
 	    
 	case ALBERS_EQUAL_AREA:
-	    location = "projections/albers_equal_area_conic";
+	    location = "albers_equal_area_conic";
 	    break;
     }
 
-    return find_dir_in_path(location);
+    ret = (char *) malloc(sizeof(char) *
+              (strlen(location) + strlen(get_asf_share_dir()) + 25));
+
+    sprintf(ret, "%s%cprojections%c%s", get_asf_share_dir(),  DIR_SEPARATOR,
+	    DIR_SEPARATOR, location);
+
+    return ret;
 }
 
 static int my_strcmp(const void *s1, const void *s2)
