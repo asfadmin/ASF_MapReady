@@ -21,6 +21,7 @@ typedef enum {
     f_PRC,
     f_FORMAT,
     f_OLD_META,
+    f_METADATA_FILE,
     f_LOG,
     f_QUIET,
     NUM_FLAGS
