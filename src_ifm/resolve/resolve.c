@@ -1,8 +1,9 @@
 /****************************************************************
 NAME: resolve
 
-SYNOPSIS: resolve    <img1>  <img2>  <baseline>  <ctrl-file>   [-log
-       <file>] [-quiet]
+SYNOPSIS: resolve [-log <file>] [-quiet] 
+                  <img1> <img2> <baseline> <ctrl-file>  
+      
 
 DESCRIPTION:
 	
@@ -31,33 +32,35 @@ FILE REFERENCES:
     ---------------------------------------------------------------
 
 PROGRAM HISTORY:
-    VERS:   DATE:        PURPOSE:
+    VERS:   DATE:        AUTHOR:       PURPOSE:
     ---------------------------------------------------------------
     1.0                  S. Li
     1.1			 Z. Lu
-    1.2     11/95        M. Shindle - revisions and porting
-    2.0      5/96        M. Shindle - rewrite to produce either amp/phase
-			       files or cpx files.
-    3.0      7/96        M. Shindle - completely revised. no longer modifies
-				      data. Will only print results of 
-				      correlation and initial baseline
-				      estimation.
-    3.1      3/97        T. Logan - baseline from windowing, usage of CCSD 
-    3.2	     5/97	 T. Logan - added use of ddr file
-    3.5	     5/97        O. Lawlor - Forced use of ddr file (They're 
-good. Use them.)
-    				     Did more error checking (It's good. Do it.)
-    				     Make CLA's more sane.
-    3.6	     10/97        O. Lawlor - Modified fico ctrl file output
+    1.2     11/95        M. Shindle   revisions and porting
+    2.0      5/96        M. Shindle   rewrite to produce either amp/phase
+                                        files or cpx files.
+    3.0      7/96        M. Shindle   completely revised. no longer modifies
+				        data. Will only print results of 
+				        correlation and initial baseline
+				        estimation.
+    3.1      3/97        T. Logan     baseline from windowing, usage of CCSD 
+    3.2	     5/97	 T. Logan     added use of ddr file
+    3.5	     5/97        O. Lawlor    Forced use of ddr file (They're good. Use
+                                        them.) Did more error checking (It's
+                                        good. Do it.) Made CLA's more sane.
+    3.6	    10/97        O. Lawlor    Modified fico ctrl file output
     					for new,improved fico.
-    "        03/08/98     D.Corbett - update version number
-    
-    4.0      5/98         O. Lawlor - Use fftMatch, instead of fft'ing yourself.
-    4.1      6/98         O. Lawlor - Invert baseline deltas for CCSD--
-                                    CCSD images are flipped vs. ASF images!
-    5.0      7/98         O. Lawlor - Simpler, more accurate baseline estimator.
-    5.1      9/00	  P. Denny - multilook value read from metafile
-    5.2      7/01	  R. Gens - added logfile and quiet switch
+    3.6      3/98        D.Corbett    update version number
+    4.0      5/98        O. Lawlor    Use fftMatch, instead of fft'ing yourself.
+    4.1      6/98        O. Lawlor    Invert baseline deltas for CCSD--
+                                        CCSD images are flipped vs. ASF images!
+    5.0      7/98        O. Lawlor    Simpler, more accurate baseline estimator.
+    5.1      9/00	 P. Denny     Multilook value read from metafile
+    5.2      7/01	 R. Gens      Added logfile and quiet switch
+    5.5      9/00	 P. Denny     Standardized command line parsing
+                                        Updated to new meta struct
+                                        DDR is gone by the way
+                                        Changed amp2img call to convert2byte
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -103,81 +106,77 @@ BUGS:
 *	Fairbanks, AK 99775-7320					    *
 *									    *
 ****************************************************************************/
-
-#include "asf.h"
 #include "resolve.h"
-#include "ddr.h"
 
 /* local constants */
-#define VERSION 5.2
+#define VERSION 5.5
+#define BUFFER 1024
 
 /* function declarations */
-void print_usage();
+void usage(char *name);
 void CreateFicoControl(char *ctrl,char *img1,char *img2,int multiLook);
 void WriteFicoControl(char *,int,int);
 void WriteBaseline(char *fnm, baseline b);
 
-#define BUFFER 1024
-int main(int argc, char **argv) {
-  int multiLook,i;
+int main(int argc, char **argv)
+{
+  int multiLook;
   char img1[BUFFER],img2[BUFFER];
   char szBaseFile[BUFFER], szCtrlFile[BUFFER];
-  char metaFile[256];
+  char metaFile[BUFFER];
   meta_parameters *meta;
   
   /* Establish time structures and get initial time */
   system("date");
   printf("Program: resolve\n");
 
-  if (argc < 5) 
-  	print_usage();
-  
-  logflag=0;	
-  strcpy(img1,argv[1]);
-  strcpy(img2,argv[2]);
-  strcpy(szBaseFile,argv[3]);
-  strcpy(szCtrlFile,argv[4]);
-  create_name(metaFile, argv[optind],".meta");
-  for (i=5; i<argc; i++) {
-    if(strncmp(argv[i],"-log", 4)==0) {
-      sscanf(argv[i+1], "%s", logFile);
-      logflag=1;
+  /* Parse commandline */
+  logflag=quietflag=FALSE;
+  while (currArg < (argc-4)) {
+    char *key = argv[currArg++];
+    if (strmatch(key,"-log")) {
+      CHECK_ARG(1);
+      strcpy(logFile,GET_ARG(1));
       fLog = FOPEN(logFile, "a");
-      i+=1;
+      logflag=TRUE;
     }
-    else if(strncmp(argv[i],"-quiet", 6)==0) quietflag=1;
-    else {
-      sprintf(errbuf,"   ERROR: '%s' is not a valid option\n", argv[i]);
-      printErr(errbuf);
+    else if (strmatch(key,"-quiet")) {
+      quietflag=TRUE;
     }
+    else {printf("\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
   }
+  if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+  
+  strcpy(img1,argv[currArg++]);
+  strcpy(img2,argv[currArg++]);
+  strcpy(szBaseFile,argv[currArg++]);
+  strcpy(szCtrlFile,argv[currArg++]);
+  create_name(metaFile, img1, ".meta");
 
   if (logflag) {
     StartWatchLog(fLog);
     printLog("Program: resolve\n");
   }
   
-  if (!(meta=meta_init(metaFile)))
+  if (!(meta=meta_read(metaFile)))
     printErr("   ERROR: Unable to either find or open metaFile.\n");
   else
-	multiLook = meta->ifm->nLooks;
+    multiLook = meta->sar->look_count;
   meta_free(meta);
 	    
   /* get baseline, write it out. */
   WriteBaseline(
-  	szBaseFile,
-  	find_baseline(img1,img2)
+    szBaseFile,
+    find_baseline(img1,img2)
   );
 
   CreateFicoControl(szCtrlFile,img1,img2,multiLook);
 
-/*  printf("resolve: ends successfully\n");*/
   return 0;
 }
 
 void execute(char *cmd)
 {
-/*	printf("Resolve: executing '%s'\n",cmd);*/
 	if (0!=system(cmd))
 	{
 		sprintf(errbuf,"   ERROR: Command '%s' returned in error!\n",cmd);
@@ -187,7 +186,6 @@ void execute(char *cmd)
 
 void CreateFicoControl(char *ctrl,char *img1,char *img2, int multiLook)
 {
-	/*int createdAmp1=0,createdAmp2=0;*/
 	float offX,offY;
 	char cmd[256],tmp[256],*offsetF="res_offsets";
 	FILE *f;
@@ -195,14 +193,13 @@ void CreateFicoControl(char *ctrl,char *img1,char *img2, int multiLook)
 	sprintf(cmd,"%s_amp.img",img1);
 	if (!fileExists(cmd))
 	{
-		/*createdAmp1=1;*/
 		sprintf(cmd,"c2p %s %s",img1,img1);
 		execute(cmd);
-		sprintf(cmd,"amp2img -look %dx1 -step %dx1 %s.amp %s_amp.img",multiLook,multiLook,img1,img1);
-		if (logflag) sprintf(cmd,"amp2img -look %dx1 -step %dx1 -log %s %s.amp %s_amp.img", 
+		sprintf(cmd,"convert2byte -look %dx1 -step %dx1 %s.amp %s_amp.img",multiLook,multiLook,img1,img1);
+		if (logflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s %s.amp %s_amp.img", 
 						multiLook, multiLook, logFile, img1, img1);
-		if (quietflag) sprintf(cmd,"amp2img -look %dx1 -step %dx1 -quiet %s.amp %s_amp.img",multiLook,multiLook,img1,img1);
-		if (logflag && quietflag) sprintf(cmd,"amp2img -look %dx1 -step %dx1 -log %s -quiet %s.amp %s_amp.img",
+		if (quietflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -quiet %s.amp %s_amp.img",multiLook,multiLook,img1,img1);
+		if (logflag && quietflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s -quiet %s.amp %s_amp.img",
 						multiLook, multiLook, logFile, img1, img1);
 		sprintf(tmp, "Command line: %s\n", cmd);
 		printf(tmp);
@@ -215,14 +212,13 @@ void CreateFicoControl(char *ctrl,char *img1,char *img2, int multiLook)
 	sprintf(cmd,"%s_amp.img",img2);
 	if (!fileExists(cmd))
 	{
-		/*createdAmp2=1;*/
 		sprintf(cmd,"c2p %s %s",img2,img2);
 		execute(cmd);
-		sprintf(cmd,"amp2img -look %dx1 -step %dx1 %s.amp %s_amp.img",multiLook,multiLook,img2,img2);
-		if (logflag) sprintf(cmd,"amp2img -look %dx1 -step %dx1 -log %s %s.amp %s_amp.img",
+		sprintf(cmd,"convert2byte -look %dx1 -step %dx1 %s.amp %s_amp.img",multiLook,multiLook,img2,img2);
+		if (logflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s %s.amp %s_amp.img",
 						multiLook, multiLook, logFile, img2, img2);
-		if (quietflag) sprintf(cmd,"amp2img -look %dx1 -step %dx1 -quiet %s.amp %s_amp.img",multiLook,multiLook,img2,img2);
-		if (logflag && quietflag) sprintf(cmd,"amp2img -look %dx1 -step %dx1 -log %s -quiet %s.amp %s_amp.img",
+		if (quietflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -quiet %s.amp %s_amp.img",multiLook,multiLook,img2,img2);
+		if (logflag && quietflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s -quiet %s.amp %s_amp.img",
 						multiLook, multiLook, logFile, img2, img2);
 		sprintf(tmp, "Command line: %s\n", cmd);
 		printf(tmp);
@@ -246,8 +242,8 @@ void CreateFicoControl(char *ctrl,char *img1,char *img2, int multiLook)
 	f=fopen(offsetF,"r");
 	if (f==NULL || 2!=fscanf(f,"%f%f",&offX,&offY))
 	{
-		sprintf(errbuf,"   ERROR: Couldn't extract offset parameters from file %s!\n",offsetF);
-		printErr(errbuf);;
+	  sprintf(errbuf,"   ERROR: Couldn't extract offset parameters from file %s!\n",offsetF);
+	  printErr(errbuf);;
 	}
 	fclose(f);
 	unlink(offsetF);
@@ -258,14 +254,6 @@ void CreateFicoControl(char *ctrl,char *img1,char *img2, int multiLook)
 	  printLog(logbuf);
 	}
 	WriteFicoControl(ctrl,(int)offX,(int)offY);
-/*Clean up after ourselves.*/
-/* It is very annoying to have the program remove these files automatically */
-/*	sprintf(cmd,"/bin/rm %s.amp %s.phase",img1,img1);
-	if (createdAmp1)
-		execute(cmd);
-	sprintf(cmd,"/bin/rm %s.amp %s.phase %s_amp.*",img2,img2,img2);
-	if (createdAmp2)
-		execute(cmd);*/
 }
 
 void WriteFicoControl(char *fnm, int xoff, int yoff)
@@ -298,21 +286,29 @@ void WriteBaseline(char *fnm, baseline b)
    return;
 }
 
-void print_usage() {
-  fprintf(stderr,"resolve: Estimate the offset between two images.\n");
-  fprintf(stderr,"\nUSAGE: resolve <img1> <img2> <basefile> <ctrlfile> [-log <file>] [-quiet]\n\n");
-  fprintf(stderr,"\t<img1>\t\t1st input image (.cpx and .ddr, with metadata).\n");
-  fprintf(stderr,"\t<img2>\t\t2nd input image (.cpx and .ddr, with metadata).\n");
-  fprintf(stderr,"\t<basefile>\toutput file to write calculated baseline.\n");
-  fprintf(stderr,"\t<ctrlfile>\toptional output file to be used as a parameter \n\
-                        file for fico.\n");
-  fprintf(stderr,"\t-log <file>\tallows the output to be written to a log file.\n");
-  fprintf(stderr,"\t-quiet\t\tsuppresses the output to the essential.\n\n");
-  fprintf(stderr,"Resolve is used during the interferometry process in order\n\
-to perform single-pixel correlation, as a basis for fico to perform\n\
-sub-pixel correlation.  Resolve estimates an initial offset using the \n\
-state vectors of the imaging satellite, read from the metadata;\n\
-then refines this initial guess using fftMatch.\n");
-  fprintf(stderr,"\nVersion: %.2f, ASF SAR TOOLS\n\n",VERSION);
-  exit(1);
+void usage(char *name) {
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <file>] [-quiet] <img1> <img2> <basefile> <ctrlfile>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <img1>      1st input image (.cpx and .meta).\n"
+	"   <img2>      2nd input image (.cpx and .meta).\n"
+	"   <basefile>  Output file to write calculated baseline.\n"
+	"   <ctrlfile>  Optional output file to be used as a parameter file for fico.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -log <file>   Allows the output to be written to a log file.\n"
+	"   -quiet        Suppresses the output to the essential.\n");
+ printf("\n"
+ 	"DESCRIPTION:\n"
+	"   This program is used during the interferometry process in order to perform\n"
+	"   single-pixel correlation as a basis for fico(1) to perform sub-pixel\n"
+	"   correlation. It estimates an initial offset using the state vectors of the\n"
+	"   imaging satellite, read from the metadata; then refines this initial\n"
+	"   guess using fftMatch.\n");
+ printf("\n"
+	"Version: %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
