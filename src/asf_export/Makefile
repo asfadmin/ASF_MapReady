@@ -17,8 +17,8 @@ OBJS  = asf_export.o
 all: asf_export
 
 asf_export: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o asf_export  $(OBJS) $(LIBS) $(LDFLAGS)
-	cp asf_export$(BIN_POSTFIX) $(BINDIR)
+	$(CC) $(CFLAGS) $(LFLAGS) -o asf_export $(OBJS) $(LIBS) $(LDFLAGS)
+	mv asf_export$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f *.o core.* asf_export$(BIN_POSTFIX)
