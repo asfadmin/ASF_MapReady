@@ -22,7 +22,7 @@ YACC = bison -y			# -y means use yacc file name conventions.
 # Uncomment next line and yydebug lines in .y file to debug parser.
 #YDEBUG_FLAGS = -t -v   
 # Uncomment next line to debug lexer.
-#LDEBUG_FLAGS = -d     
+#LDEBUG_FLAGS = -d -s    
 
 # All global lexer and parser symbols are preceded by 'meta_' namespace hack.
 YFLAGS = $(YDEBUG_FLAGS) -d -p meta_yy
