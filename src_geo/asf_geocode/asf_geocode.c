@@ -209,7 +209,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
 // Standard libraries.
-#include <execinfo.h>
 #include <math.h>
 #include <signal.h>
 #include <stdio.h>
@@ -310,12 +309,12 @@ sigsegv_handler (int signal_number)
 
 #define MAX_BACKTRACE_CALL_DEPTH 300
   
-  void *array[MAX_BACKTRACE_CALL_DEPTH];
-  
-  size_t size = backtrace (array, MAX_BACKTRACE_CALL_DEPTH);
+  // void *array[MAX_BACKTRACE_CALL_DEPTH];
+  // size_t size = backtrace (array, MAX_BACKTRACE_CALL_DEPTH);
   
   fprintf (stderr, "SIGSEGV caught.  Backtrace:\n");
-  backtrace_symbols_fd (array, size, STDERR_FILENO);
+  fprintf (stderr, "unfortunately, backtrace functionality doesn't work.\n");
+  //  backtrace_symbols_fd (array, size, STDERR_FILENO);
 
   abort ();
 }
