@@ -65,13 +65,13 @@ typedef struct {
   char processor[FIELD_STRING_MAX]; /* Name and version of SAR processor.  */
   char data_type[FIELD_STRING_MAX]; /* Type of samples (e.g. "REAL*4").    */
   char system[FIELD_STRING_MAX];    /* System of samples (e.g. "ieee-std") */
-  int orbit;		     /* Orbit number of satellite.                 */
-  int frame;		     /* Frame for this image or -1 if inapplicable.*/
+  int orbit;                 /* Orbit number of satellite.                 */
+  int frame;                 /* Frame for this image or -1 if inapplicable.*/
   int band_number;           /* Band number; first band is 0               */
   char orbit_direction;	     /* Ascending 'A', or descending 'D'.          */
   int line_count;            /* Number of lines in image.                  */
   int sample_count;          /* Number of samples in image.                */
-  int start_line;	     /* First line relative to original image.     */
+  int start_line;            /* First line relative to original image.     */
   int start_sample;          /* First sample relative to original image.   */
   double x_pixel_size;       /* Range pixel size, in meters                */
   double y_pixel_size;       /* Azimuth pixel size, in meters              */
@@ -90,24 +90,22 @@ typedef struct {
 typedef struct {
   /* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected.  */
   char image_type; 
-  char look_direction;            /* 'L'-> Left Looking; 'R'-> Right Looking.*/
-  int look_count;                 /* Number of looks to take from SLC.       */
-  int deskewed;                   /* True if image moved to zero doppler.    */
-  double range_time_per_pixel;    /* Time per pixel in range.                */
-  double azimuth_time_per_pixel;  /* Time per pixel in azimuth.              */
-  double slant_shift;             /* Error correction factor, in slant range */
-  double time_shift;                 /* Error correction factor, in time.    */
-  double slant_range_first_pixel;    /* Slant range to first pixel.          */
-  double wavelength;		     /* SAR carrier wavelength, in meters.   */
-  double prf;                        /* Pulse Repition Frequency.            */
-  /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
+  char look_direction;            /* 'L'-> Left Looking; 'R'-> Right Looking*/
+  int look_count;                 /* Number of looks to take from SLC.      */
+  int deskewed;                   /* True if image moved to zero doppler.   */
+  double range_time_per_pixel;    /* Time per pixel in range.               */
+  double azimuth_time_per_pixel;  /* Time per pixel in azimuth.             */
+  double slant_shift;             /* Error correction factor, in slant range*/
+  double time_shift;              /* Error correction factor, in time.      */
+  double slant_range_first_pixel; /* Slant range to first pixel.            */
+  double wavelength;              /* SAR carrier wavelength, in meters.     */
+  double prf;                     /* Pulse Repition Frequency.              */
+  char satellite_binary_time[FIELD_STRING_MAX];  /* Satellite binary time   */
+  char satellite_clock_time[FIELD_STRING_MAX];   /* Satellite UTC clock time*/
+  /* Doppler centroid, doppler per pixel, and doppler per pixel squared.    */
   double range_doppler_coefficients[3];
-  /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
+  /* Doppler centroid, doppler per pixel, and doppler per pixel squared.    */
   double azimuth_doppler_coefficients[3]; 
-  /* Satellite binary time.  */
-  char satellite_binary_time[FIELD_STRING_MAX];
-  /* Satellite UTC clock time.  */
-  char satellite_clock_time[FIELD_STRING_MAX];
 } meta_sar;
 
 
@@ -167,7 +165,7 @@ typedef union {
 } param_t;
 typedef struct {
   char type;   /* 'A'->Along Track/Cross Track; 'P'->Polar Stereographic;
-	          'L'->Lambert Conformal; 'U'->Universal Transverse Mercator.*/
+                  'L'->Lambert Conformal; 'U'->Universal Transverse Mercator.*/
   double startX,startY;  /* Projection coordinates of top, lefthand corner.*/
   double perX,perY;      /* Projection coordinates per X and Y pixel.      */
   char units[12];        /* Units of projection (meters, arcsec)           */
@@ -206,7 +204,7 @@ typedef struct {
  */
 typedef struct {
   double time;     /* Time of state vector, in seconds from the
-			   start of the image.  */
+                      start of the image.  */
   stateVector vec; /* Fixed-earth state vector.  */
 } state_loc;
 typedef struct {
@@ -214,7 +212,7 @@ typedef struct {
   int julDay;         /* Julian day of year for first state vector.   */
   double second;      /* Seconds of day for first state vector.       */
   int vector_count;   /* Number of state vectors.                     */
-  int num;	      /* Same as vector_count.  For backward compat.  */
+  int num;            /* Same as vector_count.  For backward compat.  */
   state_loc *vecs;    /* Array sized at run-time.                     */
 } meta_state_vectors;
 
@@ -222,49 +220,49 @@ typedef struct {
 /* DEPRECATED */
 /*Geo_parameters: These are used in geolocating the image.*/
 typedef struct {
-	char type;		/* 'S'-> Slant Range; 'G'-> Ground Range; 
-				   'P'-> Map Projected.*/
-  	proj_parameters *proj;	/* Projection parameters, for map-projected images.*/
-	char lookDir;		/* 'L'-> Left Looking; 'R'-> Right Looking.*/
-	int deskew;		/* Image moved to zero-doppler? (1-> yes; 0->no)*/
-	double xPix,yPix;	/* Range, azimuth pixel size, in m*/
-	double rngPixTime,azPixTime;  /* Range, Azimuth pixel time, in s.*/
-	double timeShift, slantShift; /* Image correction (fudge)
-					 factors in azimuth and range, in s and m.*/
-	double slantFirst;      /* Slant range to first pixel, in m.*/
-	double wavelen;         /* Satellite wavelength, in meters.*/
-	double dopRange[3], dopAz[3]; /* Doppler centroid constant, linear, and
-                                         quadratic terms, in azimuth and range (Hz)*/
+  char type;                    /* 'S'-> Slant Range; 'G'-> Ground Range;
+                                   'P'-> Map Projected.                         */
+  proj_parameters *proj;        /* Projection parameters, for map-projected images*/
+  char lookDir;                 /* 'L'-> Left Looking; 'R'-> Right Looking.     */
+  int deskew;                   /* Image moved to zero-doppler? (1-> yes; 0->no)*/
+  double xPix,yPix;             /* Range, azimuth pixel size, in m              */
+  double rngPixTime,azPixTime;  /* Range, Azimuth pixel time, in s.             */
+  double timeShift, slantShift; /* Image correction (fudge)
+                                   factors in azimuth and range, in s and m.    */
+  double slantFirst;            /* Slant range to first pixel, in m.            */
+  double wavelen;               /* Satellite wavelength, in meters.             */
+  double dopRange[3], dopAz[3]; /* Doppler centroid constant, linear, and
+                                   quadratic terms, in azimuth and range (Hz)   */
 } geo_parameters;
 
 /* DEPRECATED */
 /*Ifm_parameters: These are used only for interferometry.*/
 typedef struct {
-	double er;  /* Earth radius at scene center.*/
-	double ht;  /* Satellite height from earth's center.*/
-	int nLooks; /* Number of looks to take on SLC data to make square pixels*/
-	int orig_nLines,orig_nSamples;
-	double lookCenter;/*Look angle to image center (CALCULATED).*/
+  double er;  /* Earth radius at scene center.                            */
+  double ht;  /* Satellite height from earth's center.                    */
+  int nLooks; /* Number of looks to take on SLC data to make square pixels*/
+  int orig_nLines,orig_nSamples;
+  double lookCenter;/* Look angle to image center (CALCULATED).           */
 } ifm_parameters;
 
 /* DEPRECATED */
 /*extra_info: extra information needed to re-create CEOS files.*/
 typedef struct {
-	char	sensor[256];	   /* Name of imaging sensor.  */
-	char	mode[5];	   /* Mode of imaging sensor.  */
-	char    processor[256];    /* Name and version of SAR processor.  */
-	int     orbit;		   /* Orbit number of satellite.  */
-	double  bitErrorRate;      /* Exactly what it says.  */
-	char    satBinTime[256];   /* Satellite binary clock time.  */
-	char    satClkTime[256];   /* Satellite UTC time.  */
-	double  prf;		   /* Pulse Repition Frequency.  */
+  char   sensor[256];      /* Name of imaging sensor.          */
+  char   mode[5];          /* Mode of imaging sensor.          */
+  char   processor[256];   /* Name and version of SAR processor*/
+  int    orbit;            /* Orbit number of satellite.       */
+  double bitErrorRate;     /* Exactly what it says.            */
+  char   satBinTime[256];  /* Satellite binary clock time.     */
+  char   satClkTime[256];  /* Satellite UTC time.              */
+  double prf;              /* Pulse Repition Frequency.        */
 } extra_info;
 
 /********************************************************************
  * General ASF metadta structure.  Collection of all above.
  */
 typedef struct {
-  double meta_version;     /* Version of metadata format conformed to.  */
+  double meta_version;     /* Version of metadata format conformed to*/
 
   meta_general       *general;
   meta_sar           *sar;             /* Can be NULL (check!).  */
