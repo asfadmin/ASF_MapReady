@@ -330,7 +330,10 @@ int main(int argc, char *argv[])
   else /*default behavior: log to tmp<pid>.log*/
     sprintf(logFile, "tmp%i.log", (int)getpid());
   logflag = TRUE; /* Since we always log, set the old school logflag to true */
-  fLog = FOPEN(logFile, "a");
+  fLog = fopen (logFile, "a");
+  if ( fLog == NULL ) {
+    logflag = FALSE;
+  }
   /* Set old school quiet flag (for use in our libraries) */
   quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
 
@@ -436,7 +439,7 @@ int main(int argc, char *argv[])
       create_sprocket_layers(outBaseName, inMetaName);
       /* Nix the log file if the user didn't ask for it */
       if (flags[f_LOG] == FLAG_NOT_SET) {
-        FCLOSE(fLog);
+	fclose (fLog);
         remove(logFile);
       }
       exit(EXIT_SUCCESS);
@@ -492,7 +495,7 @@ int main(int argc, char *argv[])
   /* If the user didn't ask for a log file then we can nuke the one that
      we've been keeping since we've finished everything */
 	if (flags[f_LOG] == FLAG_NOT_SET) {
-		FCLOSE(fLog);
+		fclose (fLog);
 		remove(logFile);
 	}
 
