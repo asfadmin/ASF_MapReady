@@ -2,7 +2,7 @@
 #include "lzFetch.h"
 #include "decoder.h"
 #include "dateUtil.h"
-
+#include "get_stf_names.h"
 
 /* allocation routine for meta_state_vectors */
 meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
@@ -52,8 +52,9 @@ void lzStateTime(const char *lzStr,ymd_date *date,hms_time *time)
  * createMeta_lz:
  * Acquire, figure, & write our fancy dancy .meta and .in files from the
  * .par file. */
-void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int nVec,
-       float fd, float fdd, float fddd, int prcflag, char *prcPath)
+void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
+                   int nVec,float fd, float fdd, float fddd, int prcflag,
+                   char *prcPath)
 {
   double clock_ang;
   char parN[256], buf[256];
@@ -66,7 +67,7 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int n
   int num_vecs;
 
 /*Open the parameter file*/
-  strcat(strcpy(parN,inN),".par");
+  get_stf_metadata_name(inN, parN);
 
 /*Find start of current scene*/
   if (img_timeStr == NULL)
@@ -163,7 +164,7 @@ bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
   int ii;
   char *satName;
 
-  strcat(strcpy(lzName,inName),".par");
+  get_stf_metadata_name(inName,lzName);
 
 /*Figure out what kind of SAR data we have; initialize the appropriate decoder*/
   satName=lzStr(lzName,"prep_block.satellite:",NULL);
