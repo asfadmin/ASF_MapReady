@@ -3,18 +3,18 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/libasf_reporting.a
 
-OBJS  = config.o \
-	functions.o \
-	asf_convert.o
+OBJS  = asf_convert.o \
+	config.o \
+	functions.o
 
 all:    asf_convert clean
 
 asf_convert: $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o asf_convert $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o asf_convert $(OBJS) $(LIBS) $(LDFLAGS)
 	mv asf_convert$(BIN_POSTFIX) $(BINDIR)
-#	cp asf_convert.1 ../../man/cat1
 
 clean:
 	rm -f core $(OBJS) *.o
