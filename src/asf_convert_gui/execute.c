@@ -218,7 +218,6 @@ do_cmd(gchar *cmd, gchar *log_file_name)
       gchar *p = fgets(buffer, sizeof(buffer), output);
       if (p)
       {
-	printf("Read: %s\n", p);
 	if (the_output)
         {
 	  the_output = (gchar *)g_realloc(the_output, sizeof(gchar) *
