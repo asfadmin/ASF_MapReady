@@ -241,3 +241,12 @@ orbital_state_vector_propagate_interpolate (OrbitalStateVector *self,
 
   assert (FALSE);
 }
+
+void
+orbital_state_vector_free (OrbitalStateVector *self)
+{
+  vector_free (self->position);
+  vector_free (self->velocity);
+
+  free (self);
+}

@@ -20,6 +20,7 @@ PROGRAM_C_SOURCE = $(addsuffix .c, $(PROGRAM))
 # Classes.  Each entry here has a corresponding .h and .c file.
 CLASSES := date_time \
            orbital_state_vector \
+	   platform_path \
 	   vector
 
 # Non-main, non-class source files that need building.
