@@ -1,10 +1,13 @@
 include ../../make_support/system_rules
 
-PROGRAM = export
+PROGRAM = asf_export
 
 LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
-	-ltiff -lgeotiff -L$(HOME)/local/lib -lWand -lgsl -lgslcblas -lm
+	-lgeotiff -ltiff \
+        -ljpeg \
+        -L$(HOME)/local/lib -lgsl -lgslcblas -lm \
+        -lefence
 
 OBJS  = export.o
 
@@ -17,7 +20,7 @@ all: $(PROGRAM) clean
 $(PROGRAM): $(OBJS)
 	echo $(LIBS)
 	$(CC) $(CFLAGS) $(LFLAGS) $(OBJS) -L$(LIBDIR) $(LIBS) -o $(PROGRAM)
-#	mv $(PROGRAM) $(BINDIR)
+	cp $(PROGRAM) $(BINDIR)
 
 clean:
-	rm -f *.o
+	rm -f *.o $(PROGRAM)
