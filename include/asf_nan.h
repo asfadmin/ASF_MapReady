@@ -8,12 +8,14 @@
  * NaN whatsoever. Therefore this NaN should behave like a quiet NaN (QNaN)
  * and will propagate through equations until it's used in a condional
  * statement (which should return False) */
-#if defined (lil_endian)
-# define __nan_bytes { 0xff, 0xff, 0xbf, 0x7f }
-#else /*defined (big_endian)*/
-# define __nan_bytes { 0x7f, 0xbf, 0xff, 0xff }
-#endif
+#ifndef NAN
+# if defined (lil_endian)
+#  define __nan_bytes { 0xff, 0xff, 0xbf, 0x7f }
+# else /*defined (big_endian)*/
+#  define __nan_bytes { 0x7f, 0xbf, 0xff, 0xff }
+# endif
 static union { unsigned char __c[4]; float __d; } __nan_union = { __nan_bytes };
-#define NAN __nan_union.__d
+# define NAN __nan_union.__d
+#endif
 
 #endif
