@@ -27,7 +27,7 @@ SOURCES := geocode_options.c parse_options.c check_parameters.c asf_geocode.c
 
 CC := gcc
 
-INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) $(GLIB_INCLUDE)
+INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR)
 
 CPPFLAGS := $(INCLUDE_FLAGS)
 
@@ -50,21 +50,10 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libgslcblas.a \
 	$(LIBDIR)/libjpeg.a \
 	$(LIBDIR)/libproj.a \
-	$(LIBDIR)/libglib-2.0.a \
+	$(LIBDIR)/libglib-2.0.a -liconv -lintl \
 	-lm
 
 LDLIBS := $(LIBS)
-
-ifneq ($(SYS),win32)
-
-# We want to add the directory with the glib library to the run time
-# search path to be compiled into the executable.  The glib pkg-config
-# script gives us about what we want, only with an -L prefix, so we
-# grab from there.
-LDFLAGS := $(shell pkg-config --libs-only-L glib-2.0 \
-                   | perl -p -e 's/-L(.*)/-Wl,--rpath=\1/g')
-
-endif
 
 ###############################################################################
 #
