@@ -18,7 +18,7 @@ void check_sync(const unsigned char *sync,int nBytes,const unsigned char *trueVa
 		if (sync[i]!=trueVal[i])
 		{
 			totalErrors++;
-			printf("   Expected sync %x, got %x!  (%f error rate)\n",
+			if (!quietflag) printf("   Expected sync %x, got %x!  (%f error rate)\n",
 				trueVal[i],sync[i],((float)totalErrors)/totalChecked);
 		}
 	totalChecked+=nBytes;
