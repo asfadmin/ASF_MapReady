@@ -37,7 +37,8 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,
 void atct_init(meta_projection *proj,stateVector st);
 int UTM_zone(double lon);
 
-
+/* Prototype from frame_calc.c */
+int asf_frame_calc(char *sensor, float latitude, char orbit_direction);
 
 /*******************************************************************************
  * ceos_init:
@@ -161,14 +162,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
    strcpy(meta->general->system, meta_get_system());
    meta->general->orbit = atoi(dssr->revolution);
-   /* Fill frame with the number after "FRAME=" in the scene_des
-    * Which should be formated ORBIT=xxxx-FRAME=xxxx */
-   strcpy(frame_temp, dssr->scene_des);
-   if (frame_temp[0] == 'O') {
-      strtok(frame_temp,"=");
-      strtok(NULL,"=");
-      meta->general->frame    = atoi (strtok(NULL,"="));
-   }
+
    meta->general->band_number      = 0;
    meta->general->orbit_direction  = dssr->asc_des[0];
    if (meta->general->orbit_direction==' ')
@@ -193,6 +187,11 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
    meta->general->center_latitude  = dssr->pro_lat;
    meta->general->center_longitude = dssr->pro_long;
+
+   /* Calculate ASF frame number from latitude considering the orbit direction */
+   meta->general->frame = 
+     asf_frame_calc(meta->general->sensor, meta->general->center_latitude, meta->general->orbit_direction);
+
    meta->general->re_major         = (dssr->ellip_maj < 10000.0) ? dssr->ellip_maj*1000.0 : dssr->ellip_maj;
    meta->general->re_minor         = (dssr->ellip_min < 10000.0) ? dssr->ellip_min*1000.0 : dssr->ellip_min;
    if (asf_facdr)      meta->general->bit_error_rate = asf_facdr->biterrrt;
