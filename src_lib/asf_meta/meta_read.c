@@ -220,7 +220,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	general->start_line     = ddr.master_line;
 	general->start_sample   = ddr.master_sample;
 	if (sar->image_type=='P')
-		{strcpy(meta->projection->units, ddr.proj_units);
+		{strcpy(meta->projection->units, ddr.proj_units);}
 	switch ( ddr.dtype ) {
 	    case 0: /* BYTE */
 	    case 1: strcpy(general->data_type, "BYTE"); break;
