@@ -424,6 +424,8 @@ int main(int argc, char *argv[])
     strcat(strcpy(asfimage,outBaseName),TOOLS_IMAGE_EXT);
     strcat(strcpy(asfmeta,outBaseName),TOOLS_META_EXT);
     if (fileExists(asfimage) && fileExists(asfmeta)) {
+      /* Cal params are only retrieved from CEOS data, so nab the CEOS name */
+      get_ceos_metadata_name(inBaseName, inMetaName);
       create_sprocket_layers(outBaseName, inMetaName);
       /* Nix the log file if the user didn't ask for it */
     	if (flags[f_LOG] == FLAG_NOT_SET) {
