@@ -64,7 +64,18 @@ baseline read_baseline(char *fName);
 #define MODE_FIELD_STRING_MAX 5
 
 /* general->data_type values */
-enum {BYTE=1, INTEGER16, INTEGER32, REAL32, REAL64};
+enum {
+  BYTE=1,
+  INTEGER16,
+  INTEGER32,
+  REAL32,
+  REAL64,
+  COMPLEX_BYTE,
+  COMPLEX_INTEGER16,
+  COMPLEX_INTEGER32,
+  COMPLEX_REAL32,
+  COMPLEX_REAL64,
+};
 
 /********************************************************************
  * meta_general: General RAdio Detection And Ranging parameters
@@ -75,11 +86,17 @@ typedef struct {
   char processor[FIELD_STRING_MAX]; /* Name and version of SAR processor.  */
   int data_type;                    /* Type of samples (e.g. "REAL4").     */
 /*  Possible values for data_type:                                         *
- *    BYTE      =  1  =   1 byte                   = unsigned char         *
- *    INTEGER16 =  2  =   2 byte integer           = short int             *
- *    INTEGER32 =  3  =   4 byte integer           = int                   *
- *    REAL32    =  4  =   4 byte floating point    = float                 *
- *    REAL64    =  5  =   8 byte floating point    = double                *
+ *   META STRING          WHAT IT IS                 DATA TYPE             *
+ *    BYTE                1 byte                   = unsigned char         *
+ *    INTEGER16           2 byte integer           = short int             *
+ *    INTEGER32           4 byte integer           = int                   *
+ *    REAL32              4 byte floating point    = float                 *
+ *    REAL64              8 byte floating point    = double                *
+ *    COMPLEX_BYTE        two 1 byte samples       = unsigned char         *
+ *    COMPLEX_INTEGER16   two 2 byte integers      = short int             *
+ *    COMPLEX_INTEGER32   two 4 byte integers      = int                   *
+ *    COMPLEX_REAL32      two 4 byte floats        = float                 *
+ *    COMPLEX_REAL64      two 8 byte floats        = double                *
  *    ???                 unknown (-999999999)                             */
   char system[FIELD_STRING_MAX];    /* System of samples (e.g. "ieee-std") */
 /*  Possible string values for system:                                     *
