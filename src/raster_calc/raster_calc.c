@@ -41,10 +41,10 @@ NAME: raster_calc
 
 SYNOPSIS:  raster_calc [-log <file>] <out.ext> "exp" <inA.ext> [<inB.ext> [...]]
 
-DESCRIPTION:  
-	Calculates an output image based on some mathematical function of the 
-	input image (or images).  That is, if the expression is "2*a", the 
-	output image's pixel values will be twice the input image's pixel 
+DESCRIPTION:
+	Calculates an output image based on some mathematical function of the
+	input image (or images).  That is, if the expression is "2*a", the
+	output image's pixel values will be twice the input image's pixel
 	values. Works with any type of input data-- byte, short, long, or float.
 
 
@@ -64,7 +64,9 @@ ROGRAM HISTORY:
      1.1      2/02   P. Denny    Updated command line parsing
      1.2      2/04   P. Denny    Changed name from las_op to raster_calc
                                   Changed from the GPL to the BSD License
-                                  
+     1.5      6/04   P. Denny    Update to use meta1.1 instead of DDR
+                                  Re-update commandline parsing
+
 HARDWARE/SOFTWARE LIMITATIONS:
 
 ALGORITHM DESCRIPTION:
@@ -79,117 +81,113 @@ BUGS:
 #include "asf_meta.h"
 #include "expression.h"
 
+#define END_OF_OPTIONAL_ARGS 3
+#define REQUIRED_ARGS 3
 #define MAXIMGS 20
+#define VERSION 1.5
 
-
-#define VERSION 1.2
-
-void usage(char *name);
-void printLog(char *); /* from log.h */
 
 int main(int argc,char **argv)
 {
-	int i,x,y;
-	char *expr,*cookie;
-	float *outbuf,*inbuf[MAXIMGS];
-	char *outfile,*infile[MAXIMGS];
-	FILE *outF,*inF[MAXIMGS];
-	struct DDR outDDR,*inDDR[MAXIMGS];
-	int nInputs;
-	extern int optind;            /* argv index of the next argument */
-	extern char *optarg;          /* current argv[] */
-	int c;                        /* option letter from getopt() */
+  int ii, xx, yy;
+  char *expr,*cookie;
+  float *outbuf,*inbuf[MAXIMGS];
+  char *outfile,*infile[MAXIMGS];
+  FILE *outF,*inF[MAXIMGS];
+  int nInputs;
+  extern int currArg;         /* in cla.h from asf.h; initialized to 1 */
+  meta_parameters *inMeta, *outMeta, *tmpMeta;
 
-	fLog=NULL;
-	logflag=0;
+  fLog=NULL;
+  logflag=FALSE;
 
-        system("date");
-	printf("\n");
+  printf("%s\n",date_time_stamp());
 
-	while ((c=getopt(argc,argv,"l:")) != EOF)
-	{
-	   switch (c) {
-	     case 'l':/* -log <filename>, get logfile; this is sorta hacked */
-		if (0==strncmp(optarg,"og",2)) 
-		{
-			strcpy(logFile,argv[optind++]);
-			fLog = FOPEN(logFile, "a");
-			StartWatchLog(fLog);
-			logflag=1;
-			printLog("\n");
-		}
-		else usage(argv[0]);
-		break;
-	     default:
-		if (fLog) FCLOSE(fLog);
- 		usage(argv[0]);
-		break;	
-	   }
-	}
-	if ((argc-optind) < 3)
-	{
-		printf("Missing <out.ext>, \"exp\", or <inA.ext>.\n\n");
-		if (fLog) FCLOSE(fLog);
-		usage(argv[0]);
-	}
+  if(argc<REQUIRED_ARGS+1) usage(argv[0]);
+  while (currArg < END_OF_OPTIONAL_ARGS) {
+    char *key = argv[currArg++];
+    if (strmatch(key,"-log")) {
+      CHECK_ARG(1); /*one string argument: log file */
+      strcpy(logFile,GET_ARG(1));
+      fLog = FOPEN(logFile,"a");
+      StartWatchLog(fLog);
+      logflag=TRUE;
+    }
+    else {
+      printf("\n** Invalid option:  %s\n\n",argv[currArg-1]);
+      usage(argv[0]);
+    }
+  }
+  if ((argc-currArg) < REQUIRED_ARGS) {
+    printf("Insufficient arguments.\n");
+    usage(argv[0]);
+  }
+  outfile = argv[currArg++];
+  expr    = argv[currArg++];
+  nInputs = argc - currArg;
 
-	outfile = argv[optind++];
-	expr = argv[optind++];
-	
-	nInputs = argc-optind;
+  inMeta = meta_read(argv[currArg]);
+  for (ii=0; ii<nInputs; ii++)
+  {
+    infile[ii] = argv[currArg+ii];
+    tmpMeta    = meta_read(infile[ii]);
+    inF[ii]    = fopenImage(infile[ii],"rb");
+    /* Make sure each image is at least as big as the first image. */
+    if (ii != 0) {
+      if (   (tmpMeta->general->line_count   < inMeta->general->line_count)
+          || (tmpMeta->general->sample_count < inMeta->general->sample_count))
+      {
+        fprintf(stderr,
+                " * The images must all be as least as\n"
+                " * big as the first input image.\n");
+        exit(EXIT_FAILURE);
+      }
+    }
+    inbuf[ii] = (float*)MALLOC( sizeof(float)*tmpMeta->general->sample_count);
+    meta_free(tmpMeta);
+  }
+  outF   = fopenImage(outfile,"wb");
+  outMeta = meta_copy(inMeta);
+  meta_write(outMeta, outfile);
 
-	for (i=0;i<nInputs;i++)
-	{
-		infile[i]=argv[optind+i];
-		inDDR[i]=(struct DDR *)MALLOC(sizeof(struct DDR));
-		c_getddr(infile[i],inDDR[i]);
-		inF[i]=fopenImage(infile[i],"rb");
-		if (i!=0)
-		{/*Make sure everyone has at least the same size as the first image.*/
-			if ((inDDR[i]->nl<inDDR[0]->nl)||
-				(inDDR[i]->ns<inDDR[0]->ns))
-			{
-				fprintf(stderr,"The images must all be as least as \n"
-						"big as the first input image.\n");
-				exit(1);
-			}
-		}
-		inbuf[i]=(float *)MALLOC(sizeof(float)*inDDR[i]->ns);
-	}
-	outF=fopenImage(outfile,"wb");
-	outDDR=*(inDDR[0]);
-	c_putddr(outfile,&outDDR);
-	
-	outbuf=(float *)MALLOC(sizeof(float)*outDDR.ns);
-	cookie=expression2cookie(expr,nInputs);
-	if (NULL==cookie) exit(1);
-	for (y=0;y<outDDR.nl;y++)
-	{
-		double variables[26];
-		variables['y'-'a']=y;
-		for (i=0;i<nInputs;i++)
-			getFloatLine(inF[i],inDDR[i],y,inbuf[i]);
-		for (x=0;x<outDDR.ns;x++)
-		{
-			variables['x'-'a']=x;
-			for (i=0;i<nInputs;i++)
-				variables[i]=inbuf[i][x];
-			outbuf[x]=evaluate(cookie,variables);
-		}
-		putFloatLine(outF,&outDDR,y,outbuf);
-		if ((y%100)==0) {
-			printf(" Now Processing Line %d\r",y);
-			fflush(NULL);
-		}
-	}
-	printf("Processed %d Lines.          \n",y);
-	return 0;
+
+  outbuf=(float *)MALLOC(sizeof(float)*outMeta->general->sample_count);
+  cookie=expression2cookie(expr,nInputs);
+  if (NULL==cookie)
+    exit(EXIT_FAILURE);
+  for (yy=0; yy<outMeta->general->line_count; yy++) {
+    double variables[26];
+
+    variables['y'-'a'] = yy;
+
+    for (ii=0; ii<nInputs; ii++)
+      get_float_line(inF[ii], inMeta, yy, inbuf[ii]);
+
+    for (xx=0; xx<outMeta->general->sample_count; xx++) {
+      variables['x'-'a'] = xx;
+      for (ii=0; ii<nInputs; ii++) {
+        variables[ii] = inbuf[ii][xx];
+      }
+      outbuf[xx] = evaluate(cookie,variables);
+    }
+    put_float_line(outF, outMeta, yy, outbuf);
+
+    if ((yy%100)==0) {
+      printf(" Now Processing Line %d\r",yy);
+      fflush(NULL);
+    }
+  }
+  printf("Processed %d Lines.          \n",yy);
+
+  StopWatchLog(fLog);
+
+  exit(EXIT_SUCCESS);
 }
 
 void usage(char *name)
 {
  printf("\n"
- 	"USAGE:\n"
+	"USAGE:\n"
 	"   %s [-log <file>] <out.ext> \"exp\" <inA.ext> [<inB.ext> [...]]\n",
 	name);
  printf("\n"
