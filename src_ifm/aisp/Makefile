@@ -6,9 +6,10 @@
 
 include ../../make_support/system_rules
 
-LIBS   = $(LIBDIR)/asf_fft.a \
-        $(LIBDIR)/asf_meta.a $(LIBDIR)/asf_las.a \
-	$(LIBDIR)/asf.a $(LIBDIR)/asf_odl.a
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf_fft.a \
+	$(LIBDIR)/asf_odl.a
 LIBC = $(LIBS) -lm 
 
 OBJLIB = aisp_libs.o \
@@ -30,7 +31,7 @@ ASPLIB = patch.o \
 	 rciq.o rmpatch.o acpatch.o calibration.o
 
 all: aisp calc_deltas spectra estavedop # quicklook
-	rm *.o
+#	rm *.o
 
 aisp:	$(ASPLIB) $(OBJLIB) aisp.o $(LIBS)
 	$(CC) $(CFLAGS) -o aisp aisp.o $(ASPLIB) $(OBJLIB) $(LIBC)
