@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <setjmp.h>
