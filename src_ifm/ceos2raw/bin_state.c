@@ -124,15 +124,15 @@ void updateMeta(bin_state *s,meta_parameters *meta)
 	strcpy(meta->general->processor, "ASF/CEOS2RAW");
 	meta->general->sample_count = s->nSamp;
 /* If the major & minor earth radii aren't set, set them to WGS84 */
-	if (meta->general->re_major != meta->general->re_major) /* See if its NaN */
+	if (!meta_is_valid_double(meta->general->re_major))
 		meta->general->re_major = 6378137.0;
-	if (meta->general->re_minor != meta->general->re_minor) /* See if its NaN */
+	if (!meta_is_valid_double(meta->general->re_minor))
 		meta->general->re_minor = 6356752.31414;
 
 /* Set the number of lines to process to the right number */
 	s->nLines = meta->general->line_count;
 
-/* temporary fix for earth radius and satellite height */
+/* earth radius and satellite height */
 	s->re = meta_get_earth_radius(meta, s->nLines/2, s->nSamp/2);
 	s->ht = meta_get_sat_height(meta, s->nLines/2, s->nSamp/2) - s->re;
 }

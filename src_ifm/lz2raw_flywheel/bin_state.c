@@ -136,9 +136,9 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN)
 					* (s->re / (s->re+s->ht));               /*Swath velocity*/
 /*****	meta->general->center_latitude = Gotten in main() function */
 /*****	meta->general->center_longitude = Gotten in main() function */
-	if (meta->general->re_major != meta->general->re_major) /* See if its NaN */
+	if (!meta_is_valid_double(meta->general->re_major))
 /*FIXME*/	meta->general->re_major = 6378137.0;/*Would be better if this weren't hardcoded*/
-	if (meta->general->re_minor != meta->general->re_minor) /* See if its NaN */
+	if (!meta_is_valid_double(meta->general->re_minor))
 /*FIXME*/	meta->general->re_minor = 6356752.31414;/*Would be better if this weren't hardcoded*/
 	meta->general->bit_error_rate = lzDouble(parN,"prep_block.bit_error_rate:",NULL);
 	meta->general->missing_lines = lzDouble(parN,"prep_block.missing_lines:",NULL);
