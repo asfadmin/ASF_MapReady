@@ -80,7 +80,10 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
     /* Fill meta->sar structure */
 /**/	meta->sar->image_type = '?';
 	meta->sar->look_direction = (dssr.clock_ang>=0.0) ? 'R' : 'L';
-/**/	meta->sar->deskewed = NAN;
+/*	meta->sar->look_count = -1;  found below */
+/**/	meta->sar->deskewed = -1;
+	meta->sar->line_increment = NAN;
+	meta->sar->sample_increment = NAN;
 	meta->sar->range_time_per_pixel   = dssr.n_rnglok
 		/ (dssr.rng_samp_rate * get_units(dssr.rng_samp_rate,EXPECTED_FS));
 	meta->sar->azimuth_time_per_pixel = dssr.n_azilok/dssr.prf;
