@@ -3,8 +3,8 @@ FUNCTION NAME: find_baseline
 
 SYNTAX: baseline find_baseline(char *file1,char *file2);
 
-	Finds the baseline between the two .meta file's
-respective satellites. 
+DESCRIPTION:
+	Finds the baseline between the two .meta file's respective satellites.
 
 PARAMETERS:
     NAME:	TYPE:		PURPOSE:
@@ -12,10 +12,6 @@ PARAMETERS:
     file1       char *	       1st image file
     file2       char *         2nd image file
     fnmbase     char *	       baseline filename
-
-
-DESCRIPTION:
-	
 
 RETURN VALUE:
 
@@ -30,7 +26,7 @@ PROGRAM HISTORY:
    3.1   T. Logan 9/00   Fixed bug in baseline delta calculation
 ****************************************************************/
 #include "geolocate.h"
-#include "resolve.h"
+#include "coregister_coarse.h"
 #include "dateUtil.h"
 
 /* function declarations */
