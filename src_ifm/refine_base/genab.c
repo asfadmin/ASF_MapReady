@@ -19,10 +19,9 @@ int genab(char *datafile, char *basefile, char *metaName, char *matfile, char *v
 	baseline base;
 	meta_parameters *meta;
 	FILE *fp;
-	/*struct DDR ddr;*/
 	
 	/* Get input scene size and windowing info*/
-	meta=meta_init(metaName);
+	meta = meta_read(metaName);
 	
 	/* set program variables*/
 	
@@ -52,7 +51,7 @@ int genab(char *datafile, char *basefile, char *metaName, char *matfile, char *v
 	
 	/* read in baseline values*/
 	base=read_baseline(basefile);
-	
+
 	if (!quietflag) printf("   Top left Phase Rate=%f m/radian\n",meta_phase_rate(meta,base,0,0));
 	
 /*	printf("\nCalculating terms for matrix and vector...\n\n");*/
@@ -127,6 +126,7 @@ int genab(char *datafile, char *basefile, char *metaName, char *matfile, char *v
 	}
 	
 	/* free memory & scram*/
+	meta_free(meta);
 	free_dmatrix(A,1,m,1,n);
 	free_dvector(b,1,m);
 	free_dvector(uwp,1,m);
