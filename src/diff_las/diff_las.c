@@ -67,8 +67,10 @@ BUGS:
 
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_nan.h"
 
 #define VERSION 2.0
+#define REQ_ARGS 2
 
 void usage(char *name);
 
@@ -82,7 +84,7 @@ int main(int argc, char **argv)
 	double totalDiff, totalSqDiff;          /* */
 	double smallestDiff, largestDiff;       /* Largest & smallest difference found between images */
 	double npixels;                         /* Number of pixels in each image           */
-	float mask = -1.0;                      /* Value to ignore while doing statistics   */
+	float mask = NAN;                       /* Value to ignore while doing statistics   */
 	int ignored_pix_cnt;                    /* Number of pixels ignored when using mask */
 	int *histogram;                         /* Histogram pointer                        */
 	int line_count, sample_count;           /* Number of lines & samples for all images */
@@ -95,7 +97,7 @@ int main(int argc, char **argv)
 	extern int currArg;                     /* From cla.h in asf.h                      */
 
 /* Parse command line args */
-	while (currArg < (argc-2))
+	while (currArg < (argc-REQ_ARGS))
 	{
 		char *key=argv[currArg++];
 		if (strmatch(key,"-d")) {
@@ -108,7 +110,7 @@ int main(int argc, char **argv)
 		}
 		else {printf("\n**Invalid option:  %s\n\n",argv[currArg-1]);usage(argv[0]);}
 	}
-	if ((argc-currArg) < 2) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+	if ((argc-currArg) < REQ_ARGS) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 	in_file_name1 = argv[currArg++];
 	in_file_name2 = argv[currArg];
 
