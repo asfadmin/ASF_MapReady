@@ -16,12 +16,12 @@
 ****************************************************************************/
 /****************************************************************
 FUNCTION NAME: cfft1d - performs forward and reverse 1d ffts 
-SYNTAX: cfft1d(int n, FCMPLX *c, int dir)
+SYNTAX: cfft1d(int n, complexFloat *c, int dir)
 PARAMETERS:
     NAME:   TYPE:       PURPOSE:
     --------------------------------------------------------
     n       int	      length of the vector to transform
-    c 	    FCMPLX *  pointer to vector to transform
+    c 	    complexFloat *  pointer to vector to transform
     dir	    int	      operations flag: -1 forward, 1 reverse, 0 init.
     
 DESCRIPTION:
@@ -40,7 +40,7 @@ SPECIAL CONSIDERATIONS:
 #include "aisp_defs.h"
 #include "fft.h"
 
-void cfft1d(int n, FCMPLX *c, int dir)
+void cfft1d(int n, complexFloat *c, int dir)
 {
  	int m=(int)(log(n)/log(2.0)+0.5);
 	if (dir == 0)

@@ -33,7 +33,7 @@ PROGRAM HISTORY:
 void estdop(char file[],int nDopLines, float *a, float *b,float *c)
 {
 #define MULTILOOK 100
-	FCMPLX        *signal, *signalNext, *dop;
+	complexFloat        *signal, *signalNext, *dop;
 	float         *x_vec, *y_vec,*phase;
 	int           x,line,firstLine;
 	getRec *r;
@@ -44,9 +44,9 @@ void estdop(char file[],int nDopLines, float *a, float *b,float *c)
 	r=fillOutGetRec(file);
 	firstLine=(r->nLines-nDopLines)/2;
 	
-	signal=(FCMPLX *)MALLOC(sizeof(FCMPLX)*r->nSamples);
-	signalNext=(FCMPLX *)MALLOC(sizeof(FCMPLX)*r->nSamples);
-	dop=(FCMPLX *)MALLOC(sizeof(FCMPLX)*r->nSamples);
+	signal=(complexFloat *)MALLOC(sizeof(complexFloat)*r->nSamples);
+	signalNext=(complexFloat *)MALLOC(sizeof(complexFloat)*r->nSamples);
+	dop=(complexFloat *)MALLOC(sizeof(complexFloat)*r->nSamples);
 	x_vec=(float *)MALLOC(sizeof(float)*r->nSamples);
 	y_vec=(float *)MALLOC(sizeof(float)*r->nSamples);
 	phase=(float *)MALLOC(sizeof(float)*r->nSamples);
@@ -57,7 +57,7 @@ void estdop(char file[],int nDopLines, float *a, float *b,float *c)
 	getSignalLine(r,firstLine,signalNext,0,r->nSamples);
 	for (line = firstLine+1; line < firstLine+nDopLines; line++)
 	{
-		FCMPLX *ptr = signal; signal = signalNext; signalNext = ptr;
+		complexFloat *ptr = signal; signal = signalNext; signalNext = ptr;
 		getSignalLine(r,line,signalNext,0,r->nSamples);
 		for (x = 0; x<r->nSamples; x++) 
 			dop[x] = Cadd(dop[x],Cmul(signalNext[x],Cconj(signal[x])));
@@ -70,18 +70,18 @@ void estdop(char file[],int nDopLines, float *a, float *b,float *c)
 		double out_r=0.0,out_i=0.0;
 		for (i=0;i<MULTILOOK;i++)
 		{
-			out_r+=dop[x*MULTILOOK+i].r;
-			out_i+=dop[x*MULTILOOK+i].i;
+			out_r+=dop[x*MULTILOOK+i].real;
+			out_i+=dop[x*MULTILOOK+i].imag;
 		}
-		dop[x].r=out_r;
-		dop[x].i=out_i;
+		dop[x].real = out_r;
+		dop[x].imag = out_i;
 	}
 	
 	/*Phase-unwrap the doppler values into the "phase" array.*/
 	lastPhase=0;
 	for (x=0;x<r->nSamples/MULTILOOK;x++)
 	{
-		float nextPhase=atan2(dop[x].i, dop[x].r)*(1.0/(2.0*pi));
+		float nextPhase=atan2(dop[x].imag, dop[x].real)*(1.0/(2.0*pi));
 		while ((nextPhase-lastPhase)<-0.5) nextPhase+=1.0;
 		while ((nextPhase-lastPhase)>0.5) nextPhase-=1.0;
 		phase[x]=nextPhase;

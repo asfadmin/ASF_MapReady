@@ -27,10 +27,10 @@ typedef struct {
 
 /*For fetching SAR echo data:*/
 getRec * fillOutGetRec(char file[]);
-void getSignalLine(const getRec *r,long long lineNo,FCMPLX *destArr,int readStart,int readLen);
+void getSignalLine(const getRec *r,long long lineNo,complexFloat *destArr,int readStart,int readLen);
 void freeGetRec(getRec *r);
 
 /*For fetching the range pulse replica (range reference function).*/
-void fetchReferenceFunction(char *fname,FCMPLX *ref,int refLen);
+void fetchReferenceFunction(char *fname,complexFloat *ref,int refLen);
 
 #endif

@@ -36,7 +36,8 @@ anything you wish here, although it will be easiest and most portable
 if you use our fields.
 
 
-void getSignalLine(getRec *r,int lineNo,FCMPLX *destArr,int readStart,int readLen)
+void getSignalLine(getRec *r,int lineNo,complexFloat *destArr,
+                   int readStart,int readLen)
 	Takes a getRec, line number, complex destination, sample start
 number, and number of samples to read.
 	This procedure reads a single line of input and copies it

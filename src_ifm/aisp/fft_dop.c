@@ -43,20 +43,20 @@ void filter_lowPass(float *arr,int fftLen,int keepSamples)
 {
 	int i;
 /*Init.*/
-	FCMPLX *fft=(FCMPLX *)MALLOC(sizeof(FCMPLX)*fftLen);
+	complexFloat *fft=(complexFloat *)MALLOC(sizeof(complexFloat)*fftLen);
 	cfft1d(fftLen,NULL,0);
 /*Copy arr into fft buffer.*/
 	for (i=0;i<fftLen;i++)
 	{
-		fft[i].r=arr[i];
-		fft[i].i=0;
+		fft[i].real = arr[i];
+		fft[i].imag = 0;
 	}
 	cfft1d(fftLen,fft,-1);/*Forward FFT.*/
 /*Filter out high frequencies.*/
 	for (i=1+keepSamples;i<fftLen-keepSamples;i++)
 	{
-		fft[i].r=0;
-		fft[i].i=0;
+		fft[i].real = 0;
+		fft[i].imag = 0;
 	}
 	cfft1d(fftLen,fft,1);/*Reverse FFT.*/
 /*Copy (smoothed) fft buffer back into arr.*/
@@ -70,10 +70,10 @@ double fftEstDop(getRec *inFile,int startLine,int xStride,int fftLen)
 {
 	int x,y,i,wid=inFile->nSamples;
 	float *power,peak;
-	FCMPLX *in,*fft;
+	complexFloat *in,*fft;
 /*Allocate arrays.*/
-	in=(FCMPLX *)MALLOC(sizeof(FCMPLX)*fftLen*wid);
-	fft=(FCMPLX *)MALLOC(sizeof(FCMPLX)*fftLen);
+	in=(complexFloat *)MALLOC(sizeof(complexFloat)*fftLen*wid);
+	fft=(complexFloat *)MALLOC(sizeof(complexFloat)*fftLen);
 	power=(float *)MALLOC(sizeof(float)*fftLen);
 /*Set power sum to zero.*/
 	for (i=0;i<fftLen;i++)
@@ -89,7 +89,8 @@ double fftEstDop(getRec *inFile,int startLine,int xStride,int fftLen)
 			fft[y]=in[y*wid+x];
 		cfft1d(fftLen,fft,-1);
 		for (i=0;i<fftLen;i++)
-			power[i]+=fft[i].r*fft[i].r+fft[i].i*fft[i].i;
+			power[i] += fft[i].real*fft[i].real
+                                    + fft[i].imag*fft[i].imag;
 	}
 
 /*Find peak of azimuth power array-- this is the center of the doppler.*/

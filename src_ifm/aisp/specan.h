@@ -30,7 +30,7 @@ typedef struct {
 /*Calculated Parameters.*/
 	double oSamp;/*Output sampling period [s] (=outPixSize/c)*/
 	double oFirst,oLast;/*First and last samples in output space.*/
-	FCMPLX deramp[SPECAN_MAXFFT];
+	complexFloat deramp[SPECAN_MAXFFT];
 /*Interesting Calculated Parameters.*/
 	int iFirst,iLast;/*First and last input samples, relative to start of specan buffer*/
 	int iNum;/*Number of valid input pixels.*/
@@ -59,13 +59,13 @@ typedef struct {
 
 
 void init_patch(specan_patch *s);
-void read_patch(specan_patch *s,getRec *inFile,FCMPLX *in,int patchNo);
-void specan_process_patch(specan_patch *s,FCMPLX *in,float *amp_out);
+void read_patch(specan_patch *s,getRec *inFile,complexFloat *in,int patchNo);
+void specan_process_patch(specan_patch *s,complexFloat *in,float *amp_out);
 void write_patch(specan_patch *s,float *amp_out,FILE *outFile);
 
 
 /*Internal SPECAN processing routines (in specan.c)*/
 void specan_init(specan_struct *s);/*Computes calculated parameters from filled-in parameters.*/
-void specan_process(specan_struct *s,FCMPLX *input,FCMPLX *output);/*Perform SPECAN SAR Processing.*/
+void specan_process(specan_struct *s,complexFloat *input,complexFloat *output);/*Perform SPECAN SAR Processing.*/
 
 

@@ -22,7 +22,7 @@ slantToFirst,slantPer,wavl,vel,fd,fdd,fddd,prf,ideskew)
 PARAMETERS:
     NAME:       TYPE:           PURPOSE:
     --------------------------------------------------------
-    trans 	FCMPLX *	Input data patch
+    trans 	complexFloat *	Input data patch
     xResampScale	float		Resampling function xResampScale
     xResampOffset	float		Resampling function xResampOffsetcept
     n_az		int		Number of lines in the patch
@@ -53,7 +53,7 @@ void rmpatch(patch *p,const satellite *s)
 #define OVERLAP 10 /*Zero pixels to append to end of single-line buffer*/
 #define NUM_SINC 2048
 	static float *sincInterp=NULL;
-	static FCMPLX *trans_buf,*interpolated_line;
+	static complexFloat *trans_buf,*interpolated_line;
 	static double  *SR;
 	static float   *f0, *f_rate, *xResampVec;
 	
@@ -68,8 +68,8 @@ void rmpatch(patch *p,const satellite *s)
 	{
 		sincInterp=(float *)MALLOC(8*sizeof(float)*NUM_SINC);
 		create_sinc(NUM_SINC,sincInterp);
-		trans_buf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*(p->n_range+2*OVERLAP));
-		interpolated_line=(FCMPLX *)MALLOC(sizeof(FCMPLX)*p->n_range);
+		trans_buf=(complexFloat *)MALLOC(sizeof(complexFloat)*(p->n_range+2*OVERLAP));
+		interpolated_line=(complexFloat *)MALLOC(sizeof(complexFloat)*p->n_range);
 		SR=(double *)MALLOC(sizeof(double)*p->n_range);
 		f0=(float *)MALLOC(sizeof(float)*p->n_range);
 		f_rate=(float *)MALLOC(sizeof(float)*p->n_range);
@@ -138,12 +138,12 @@ and offset as a function of input pixel, we must convert:*/
 				for (k = 0; k < 8; k++) 
 				{
 					float scale=sincInterp[kernelNo+k];
-					interp_real += scale*trans_buf[index].r;
-					interp_imag += scale*trans_buf[index++].i;
+					interp_real += scale*trans_buf[index].real;
+					interp_imag += scale*trans_buf[index++].imag;
 				}
 			}
-			interpolated_line[i].r=interp_real;
-			interpolated_line[i].i=interp_imag;
+			interpolated_line[i].real = interp_real;
+			interpolated_line[i].imag = interp_imag;
 		}
 		/*Write this interpolated range line back into the trans array.*/
 		for (i=0; i<p->n_range; i++) 

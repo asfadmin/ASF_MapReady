@@ -51,18 +51,18 @@ void acpatch(patch *p,const satellite *s)
 #define sinCosTableBitmask 0x0fff
 
 
-	static FCMPLX *sinCosTable=NULL;
+	static complexFloat *sinCosTable=NULL;
 	float sinCosTableConv=1.0/pi2*sinCosTableEntries;
 #define sinCos(phase) (sinCosTable[((int)((phase)*sinCosTableConv))&sinCosTableBitmask])
 
 	float  r, y, f0, f_rate;
 	int    np/*, ind*/;
-	FCMPLX *ref=(FCMPLX *)MALLOC(sizeof(FCMPLX)*p->n_az);
+	complexFloat *ref=(complexFloat *)MALLOC(sizeof(complexFloat)*p->n_az);
 	float  phase, az_resamp;
 	float  dop_deskew;
 	int    n, nfc, nf0;
 	int    lineNo, j, k;
-	FCMPLX cZero=Czero();
+	complexFloat cZero=Czero();
 	float pixel2time=1.0/s->prf;
 	float *win;
 	patch *d_t=NULL, *d_f=NULL, *d_x=NULL;
@@ -75,12 +75,12 @@ void acpatch(patch *p,const satellite *s)
 	if (sinCosTable==NULL)
 	{
 		int tableIndex;
-		sinCosTable=(FCMPLX *)MALLOC(sizeof(FCMPLX)*sinCosTableEntries);
+		sinCosTable=(complexFloat *)MALLOC(sizeof(complexFloat)*sinCosTableEntries);
 		for (tableIndex=0;tableIndex<sinCosTableEntries;tableIndex++)
 		{
 			float tablePhase=(float)tableIndex/sinCosTableConv;
-			sinCosTable[tableIndex].r=cos(tablePhase);
-			sinCosTable[tableIndex].i=sin(tablePhase);
+			sinCosTable[tableIndex].real = cos(tablePhase);
+			sinCosTable[tableIndex].imag = sin(tablePhase);
 		}
 	}
 

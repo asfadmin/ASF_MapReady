@@ -12,7 +12,7 @@ This is only useful for debugging chirp files.
 #include "aisp_defs.h"
 #include "read_signal.h"
 
-void read_reference(char *fName,FCMPLX *ref,int *len)
+void read_reference(char *fName,complexFloat *ref,int *len)
 {
 	char buf[255];
 	FILE *f=FOPEN(fName,"r");
@@ -35,9 +35,9 @@ main(int argc,char **argv)
 	int x,y,i;
 
 	char tmp[100];	
-	FCMPLX ref[100000];
+	complexFloat ref[100000];
 	int refLen;
-	FCMPLX fftBuf[fftLen];
+	complexFloat fftBuf[fftLen];
 	float outBuf[fftLen];
 	FILE *outF;
 	if (argc!=3)

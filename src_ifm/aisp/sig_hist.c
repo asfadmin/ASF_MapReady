@@ -24,7 +24,7 @@ int main(int argc,char **argv)
 	int startX=0,startY=0;
 	int y,ind;
 	getRec *r;
-	FCMPLX *inBuf;
+	complexFloat *inBuf;
 	double sumR,sumI,sumRI,sumRR,sumII;
 	double stdR,stdI,cov,corr;
 	int n;
@@ -52,7 +52,7 @@ int main(int argc,char **argv)
 
 	r=fillOutGetRec(argv[currArg]);
 
-	inBuf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*SIGNAL_LENGTH*SIGNAL_LENGTH);
+	inBuf=(complexFloat *)MALLOC(sizeof(complexFloat)*SIGNAL_LENGTH*SIGNAL_LENGTH);
 	
 /*Read a SIGNAL_LENGTH x SIGNAL_LENGTH block of input complex data.*/
 	for (y=0;y<SIGNAL_LENGTH;y++)

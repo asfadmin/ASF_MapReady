@@ -91,8 +91,8 @@ int main(int argc,char **argv)
 	int startX=0,startY=0;
 	int x,y,i;
 	getRec *r;
-	FCMPLX *inBuf;
-	FCMPLX fftBuf[fftLen];
+	complexFloat *inBuf;
+	complexFloat fftBuf[fftLen];
 	float outBuf[fftLen];
 	FILE *outF;
 	if ((argc!=2 && argc!=4)||(argv[1][0]=='-'))
@@ -114,7 +114,7 @@ int main(int argc,char **argv)
 		startY=atoi(argv[3]);
 	}
 	
-	inBuf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*fftLen*fftLen);
+	inBuf=(complexFloat *)MALLOC(sizeof(complexFloat)*fftLen*fftLen);
 	cfft1d(fftLen,NULL,0);
 	
 /*Read a fftLen x fftLen block of input complex data.*/
@@ -129,11 +129,12 @@ int main(int argc,char **argv)
 		for (x=0;x<fftLen;x++)
 		{
 			fftBuf[x]=inBuf[y*fftLen+x];
-			fprintf(outF,"%f %f\n",fftBuf[x].r,fftBuf[x].i);
+			fprintf(outF,"%f %f\n",fftBuf[x].real,fftBuf[x].imag);
 		}
 		cfft1d(fftLen,fftBuf,-1);
 		for (i=0;i<fftLen;i++) 
-			outBuf[i]+=fftBuf[i].r*fftBuf[i].r+fftBuf[i].i*fftBuf[i].i;
+			outBuf[i] += fftBuf[i].real * fftBuf[i].real
+                                     + fftBuf[i].imag * fftBuf[i].imag;
 	}
 	outF=FOPEN("spectra_range","w");
 	for (i=0;i<fftLen;i++) 
@@ -149,7 +150,8 @@ int main(int argc,char **argv)
 			fftBuf[y]=inBuf[y*fftLen+x];
 		cfft1d(fftLen,fftBuf,-1);
 		for (i=0;i<fftLen;i++) 
-			outBuf[i]+=fftBuf[i].r*fftBuf[i].r+fftBuf[i].i*fftBuf[i].i;
+			outBuf[i] += fftBuf[i].real * fftBuf[i].real
+                                     + fftBuf[i].imag * fftBuf[i].imag;
 	}
 	outF=FOPEN("spectra_az","w");
 	printf("Writing the average azimuthal spectra\n");

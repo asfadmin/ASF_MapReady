@@ -11,7 +11,7 @@ main(int argc,char **argv)
 #define mlY 16
 	int x,outX,y,outY,mlLines,mlSamples;
 	getRec *r;
-	FCMPLX *inBuf;
+	complexFloat *inBuf;
 	FILE *outF;
 	float *outBuf;
 	if (argc!=3)
@@ -20,7 +20,7 @@ main(int argc,char **argv)
 	mlLines=r->nLines/mlY;
 	mlSamples=r->nSamples/mlX;
 	printf("Creating a %d line by %d sample output file.\n",mlLines,mlSamples);
-	inBuf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*r->nSamples);
+	inBuf=(complexFloat *)MALLOC(sizeof(complexFloat)*r->nSamples);
 	outBuf=(float *)MALLOC(sizeof(float)*(mlSamples+10));
 	outF=fopenImage(argv[2],"wb");
 	for (outY=0;outY<mlLines;outY++)

@@ -91,7 +91,7 @@ void debugWritePatch(const patch *p,char *basename)
 	printf("   Outputting Debugging image '%s'...\n",outname);
 	strcat(strcpy(name,outname),".cpx");
 	fp = fopenImage(name,"wb");
-	FWRITE(p->trans,sizeof(FCMPLX),p->n_az*p->n_range,fp);
+	FWRITE(p->trans,sizeof(complexFloat),p->n_az*p->n_range,fp);
 	FCLOSE(fp);
 	meta->general->line_count = p->n_range;
 	meta->general->sample_count   = p->n_az;
@@ -152,17 +152,17 @@ Outputs one full patch of data to the given file.
 */
 void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const file *f,int patchNo)
 {
-	int outLine;		/* Counter for line base output */
-	FILE *fp_amp,*fp_cpx;   /* File pointers for the amplitude and  complex outputs*/
-	FILE *fp_pwr,*fp_sig;   /* File pointers for the power and Sigma_0 outputs */
-        FILE *fp_gam,*fp_bet;   /* File pointers for the Gamma_0 and Beta_0 outputs */
-	FCMPLX *outputBuf;  	/* Buffer for one line of patch = n_range    */
-	FCMPLX *mlBuf;	    	/* Buffer for multilooking the amplitude image */
-	float	*amps;      	/* Output Amplitude  = n_az/nlooks X n_range */
-	float	*pwrs;  	/* Output power */
-	char *openMode="ab";	/* Normally append output.*/
-	int mlCount=0;		/* Counter for setting up the multilook buffer */
-	int writeNoiseTable=0;	/* Flag to determine whether to write the noise table and antenna pattern */
+	int outLine;		 /* Counter for line base output */
+	FILE *fp_amp,*fp_cpx;    /* File pointers for the amplitude and  complex outputs*/
+	FILE *fp_pwr,*fp_sig;    /* File pointers for the power and Sigma_0 outputs */
+        FILE *fp_gam,*fp_bet;    /* File pointers for the Gamma_0 and Beta_0 outputs */
+	complexFloat *outputBuf; /* Buffer for one line of patch = n_range    */
+	complexFloat *mlBuf;     /* Buffer for multilooking the amplitude image */
+	float	*amps;           /* Output Amplitude  = n_az/nlooks X n_range */
+	float	*pwrs;  	 /* Output power */
+	char *openMode="ab";	 /* Normally append output.*/
+	int mlCount=0;		 /* Counter for setting up the multilook buffer */
+	int writeNoiseTable=0;	 /* Flag to determine whether to write the noise table and antenna pattern */
 	if (patchNo==1)
 		openMode="wb";		/* for first patch, truncate output. */
 
@@ -177,8 +177,8 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const fi
 	amps = (float *) MALLOC(p->n_range*sizeof(float));
 	pwrs = (float *) MALLOC(p->n_range*sizeof(float));
 	
-	outputBuf = (FCMPLX *)MALLOC(p->n_range*sizeof(FCMPLX));
-	mlBuf = (FCMPLX *)MALLOC(p->n_range*f->nlooks*sizeof(FCMPLX));
+	outputBuf = (complexFloat *)MALLOC(p->n_range*sizeof(complexFloat));
+	mlBuf = (complexFloat *)MALLOC(p->n_range*f->nlooks*sizeof(complexFloat));
 
 /* transpose and write out the complex image data and amplitude image*/
 
@@ -241,8 +241,8 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const fi
 
 			if(s->vecLen==0)
 			{
-				mlBuf[j+mlCount*p->n_range].r = outputBuf[j].r;
-				mlBuf[j+mlCount*p->n_range].i = outputBuf[j].i;
+				mlBuf[j+mlCount*p->n_range].real = outputBuf[j].real;
+				mlBuf[j+mlCount*p->n_range].imag = outputBuf[j].imag;
 			}	
 		}			
 			
@@ -264,12 +264,12 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const fi
 			/* Otherwise, write the multi-look buffer now */
 			for(j=0;j<p->n_range;j++)
 			{
-				mlBuf[j+mlCount*p->n_range].r = outputBuf[j].r;
-                                mlBuf[j+mlCount*p->n_range].i = outputBuf[j].i;
+				mlBuf[j+mlCount*p->n_range].real = outputBuf[j].real;
+                                mlBuf[j+mlCount*p->n_range].imag = outputBuf[j].imag;
 			}
 		}
 
-		FWRITE(outputBuf,sizeof(FCMPLX),p->n_range,fp_cpx);
+		FWRITE(outputBuf,sizeof(complexFloat),p->n_range,fp_cpx);
 		
 		mlCount+=1;
 		/* Multilook takes f->nlooks lines of data and averages them together, and writes one line on return */

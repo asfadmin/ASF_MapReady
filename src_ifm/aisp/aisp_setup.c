@@ -281,7 +281,7 @@ rangeRef *newRangeRef(int num_range)
 
 	r->refLen=g.pulsedur*g.fs;
 	r->rangeFFT=smallestPow2(num_range+r->refLen);
-	r->ref=(FCMPLX *)MALLOC(sizeof(FCMPLX)*r->rangeFFT);
+	r->ref=(complexFloat *)MALLOC(sizeof(complexFloat)*r->rangeFFT);
 	calc_range_ref(r->ref,r->rangeFFT,r->refLen);
 
 	return r;
@@ -320,7 +320,7 @@ patch *newPatch(int num_az,int num_range)
 	patch *p=(patch *)MALLOC(sizeof(patch));
 	p->n_az=num_az;
 	p->n_range=num_range;
-	p->trans =(FCMPLX *) MALLOC (p->n_range*p->n_az*sizeof(FCMPLX));
+	p->trans =(complexFloat *) MALLOC (p->n_range*p->n_az*sizeof(complexFloat));
 	p->slantPer=rngpix;
 	p->g=NULL;
 	return p;
@@ -333,11 +333,11 @@ and allocates memory for a patch of the given size.
 */
 patch *copyPatch(patch *oldPatch)
 {
-        FCMPLX *old_trans = oldPatch->trans;
+        complexFloat *old_trans = oldPatch->trans;
 	patch *p=(patch *)MALLOC(sizeof(patch));
 	*p = *oldPatch;
-	p->trans =(FCMPLX *) MALLOC (p->n_range*p->n_az*sizeof(FCMPLX));
-	memcpy(p->trans,old_trans,p->n_range*p->n_az*sizeof(FCMPLX));
+	p->trans =(complexFloat *) MALLOC (p->n_range*p->n_az*sizeof(complexFloat));
+	memcpy(p->trans,old_trans,p->n_range*p->n_az*sizeof(complexFloat));
 	return p;
 }
 
@@ -453,7 +453,7 @@ Global Inputs:
 	g.in1,g.slope,g.rhww,g.iflag;
 
 */
-void calc_range_ref(FCMPLX *ref,int rangeFFT,int chirpSamples)
+void calc_range_ref(complexFloat *ref,int rangeFFT,int chirpSamples)
 {
 	float refGain;
 	int i;
@@ -476,7 +476,7 @@ void calc_range_ref(FCMPLX *ref,int rangeFFT,int chirpSamples)
 	
 /*Fill up rest of ref. buffer with zeros.*/
 	for (i=chirpSamples; i<rangeFFT; i++)
-		ref[i].r=ref[i].i=0.0;
+		ref[i].real = ref[i].imag = 0.0;
 	
 /*Scale amplitude of ref. function via a cosine on a pedestal*/
 	for (i=0; i < chirpSamples; i++)
@@ -488,8 +488,9 @@ void calc_range_ref(FCMPLX *ref,int rangeFFT,int chirpSamples)
 	{
 		refFP=FOPEN("range_ref_t","w");
 		for (i=0;i<chirpSamples;i++)
-			fprintf(refFP,"%i  %f %f  %f %f\n",i,Cabs(ref[i]),atan2(ref[i].i,ref[i].r),
-				ref[i].r,ref[i].i);
+			fprintf(refFP,"%i  %f %f  %f %f\n",i,Cabs(ref[i]),
+                                atan2(ref[i].imag,ref[i].real),
+                                ref[i].real, ref[i].imag);
 		fclose(refFP);
 	}
 	
@@ -501,13 +502,13 @@ void calc_range_ref(FCMPLX *ref,int rangeFFT,int chirpSamples)
 	refGain=1.0/chirpSamples;
 	for (i=0; i< rangeFFT; i++)
 	{
-		ref[i].r*=refGain;
-		ref[i].i*=-refGain;
+		ref[i].real *= refGain;
+		ref[i].imag *= -refGain;
 	}
 	
 /*Eliminate the DC offset & scale away very low frequencies (FFT weighting) */
 #define scaleLowFreq 3
-	ref[0].r=ref[0].i=0.0;
+	ref[0].real = ref[0].imag = 0.0;
 	for (i=1; i< scaleLowFreq; i++)
 	{
 		float wgt = 0.5 - 0.5 * cos(pi*i/scaleLowFreq);
@@ -520,8 +521,9 @@ void calc_range_ref(FCMPLX *ref,int rangeFFT,int chirpSamples)
 	{
 		refFP=FOPEN("range_ref_f","w");
 		for (i=0;i<rangeFFT;i++)
-			fprintf(refFP,"%i  %f %f  %f %f\n",i,Cabs(ref[i]),atan2(ref[i].i,ref[i].r),
-			    ref[i].r,ref[i].i);
+			fprintf(refFP,"%i  %f %f  %f %f\n",i,Cabs(ref[i]),
+                            atan2(ref[i].imag, ref[i].real),
+			    ref[i].real, ref[i].imag);
 		fclose(refFP);
 	}
 }

@@ -42,7 +42,7 @@ PROGRAM HISTORY:
 HARDWARE/SOFTWARE LIMITATIONS:
     This program requires large amounts of memory to run.  The main
     buffer is 
-	      size(trans) = n_az * n_range * sizeof(FCMPLX)
+	      size(trans) = n_az * n_range * sizeof(complexFloat)
 
               where  n_az = number of lines in a patch (azimuth samples)
 		     n_range = number of lines in the azimuth (range samples) 
@@ -122,10 +122,10 @@ double amp_corr(patch *p1,patch *p2,file *f)
 	int x,y;
 	int fftLen=smallestPow2(p1->n_range);
 	float scale=1.0/fftLen;
-	FCMPLX *amp1,*amp2;
+	complexFloat *amp1,*amp2;
 	float *corr;
-	amp1=(FCMPLX *)MALLOC(sizeof(FCMPLX)*fftLen);
-	amp2=(FCMPLX *)MALLOC(sizeof(FCMPLX)*fftLen);
+	amp1=(complexFloat *)MALLOC(sizeof(complexFloat)*fftLen);
+	amp2=(complexFloat *)MALLOC(sizeof(complexFloat)*fftLen);
 	corr=(float *)MALLOC(sizeof(float)*(fftLen+overlap));
 	if (!quietflag) printf("   Performing amplitude correlation.\n");
 	for (x=0;x<fftLen+overlap;x++)

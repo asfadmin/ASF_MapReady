@@ -16,8 +16,8 @@ main(int argc,char **argv)
 	int startX=0,startY=0;
 	int x,y,i;
 	getRec *r;
-	FCMPLX *inBuf;
-	FCMPLX fftBuf[fftLen];
+	complexFloat *inBuf;
+	complexFloat fftBuf[fftLen];
 	float outBuf[fftLen];
 	FILE *outF;
 	if (argc!=2 && argc!=4)
@@ -36,7 +36,7 @@ main(int argc,char **argv)
 		startY=atoi(argv[3]);
 	}
 	
-	inBuf=(FCMPLX *)MALLOC(sizeof(FCMPLX)*fftLen*fftLen);
+	inBuf=(complexFloat *)MALLOC(sizeof(complexFloat)*fftLen*fftLen);
 	
 /*Read a fftLen x fftLen block of input complex data.*/
 	for (y=0;y<fftLen;y++)

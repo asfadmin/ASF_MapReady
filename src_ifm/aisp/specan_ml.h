@@ -20,7 +20,7 @@ specan_ml *specan_ml_init(int wid,int ht);
 DestX may be arbitrary (not necessarily in bounds).
 Input buffer is one column of data, at least ht long.
 */
-void specan_ml_look(specan_ml *ml,int destX,FCMPLX *in);
+void specan_ml_look(specan_ml *ml,int destX,complexFloat *in);
 
 
 /*Write the wid x ht floating-point output block to 

@@ -34,13 +34,13 @@ FUNCTION NAME:	General Routines that are used by the ASP software
 
 SYNTAX, DESCRIPTION, and RETURN VALUES:
 
-float	Cabs(FCMPLX a)			Returns Scalar Magnitude of a
-FCMPLX	Cconj(FCMPLX a)			Returns Complex Conjugate of a
-FCMPLX	Czero()				Returns Complex Zero
-FCMPLX	Cadd(FCMPLX a, FCMPLX b)	Returns Complex Sum of a + b
-FCMPLX	Cmplx(float a, float b)		Returns Complex a + bi
-FCMPLX	Csmul(float s, FCMPLX a)	Returns Complex s times a
-FCMPLX	Cmul(FCMPLX a, FCMPLX b)	Returns Complex a times b
+float	Cabs(complexFloat a)			Returns Scalar Magnitude of a
+complexFloat	Cconj(complexFloat a)			Returns Complex Conjugate of a
+complexFloat	Czero()				Returns Complex Zero
+complexFloat	Cadd(complexFloat a, complexFloat b)	Returns Complex Sum of a + b
+complexFloat	Cmplx(float a, float b)		Returns Complex a + bi
+complexFloat	Csmul(float s, complexFloat a)	Returns Complex s times a
+complexFloat	Cmul(complexFloat a, complexFloat b)	Returns Complex a times b
 
 void 	elapse(int fnc)			Elapsed wall clock timer
 
@@ -62,26 +62,59 @@ PROGRAM HISTORY:  Ver 1.0  T. Logan - Most routines are new
 #include "las.h"
 #include "locinc.h"
 
-/* Global Variables used by the FCMPLX Arithmetic Routines */
-FCMPLX a,b,x;
+/* Global Variables used by the complexFloat Arithmetic Routines */
+complexFloat a,b,x;
 float d;
 int i;
 
-float  Cabs(FCMPLX a)   { d = sqrt (a.r*a.r + a.i*a.i); return d; }
+float  Cabs(complexFloat a)
+{
+  d = sqrt (a.real*a.real + a.imag*a.imag);
+  return d;
+}
 
-FCMPLX Cconj(FCMPLX a)  { x.r = a.r; x.i = -a.i; return x; }
+complexFloat Cconj(complexFloat a)
+{
+  x.real = a.real;
+  x.imag = -a.imag;
+  return x;
+}
 
-FCMPLX Czero()          { x.r = 0.0;  x.i = 0.0;   return x; }
+complexFloat Czero()
+{
+  x.real = 0.0;
+  x.imag = 0.0;
+  return x;
+}
 
-FCMPLX Cadd (FCMPLX a, FCMPLX b) { x.r = a.r+b.r; x.i=a.i+b.i; return x; }
+complexFloat Cadd (complexFloat a, complexFloat b)
+{
+  x.real = a.real+b.real;
+  x.imag = a.imag+b.imag;
+  return x;
+}
 
-FCMPLX Cmplx(float a,  float b)  { x.r = a; x.i = b; return x; }
+complexFloat Cmplx(float a, float b)
+{
+  x.real = a;
+  x.imag = b;
+  return x;
+}
 
-FCMPLX Csmul(float s,  FCMPLX a) { x.r=s*a.r; x.i=s*a.i; return x; }
+complexFloat Csmul(float s, complexFloat a)
+{
+  x.real=s*a.real;
+  x.imag=s*a.imag;
+  return x;
+}
 
-FCMPLX Cmul (FCMPLX a, FCMPLX b)
-	{ x.r = a.r*b.r-a.i*b.i; x.i = a.r*b.i+a.i*b.r;  return x; }
-
+complexFloat Cmul (complexFloat a, complexFloat b)
+{
+  x.real = a.real*b.real - a.imag*b.imag;
+  x.imag = a.real*b.imag + a.imag*b.real;
+  return x;
+}
+
 /****************************************************************
 FUNCTION NAME: elapse - an elapsed time wall clock timer
 PARAMETER:   fnc  int	start (0) / stop (!0) switch

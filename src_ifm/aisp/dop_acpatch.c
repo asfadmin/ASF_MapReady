@@ -49,19 +49,19 @@ void acpatch(patch *p,const satellite *s)
 {
 #define sinCosTableEntries 4096
 #define sinCosTableBitmask 0x0fff
-	static FCMPLX *sinCosTable=NULL;
+	static complexFloat *sinCosTable=NULL;
 	float sinCosTableConv=1.0/pi2*sinCosTableEntries;
 #define sinCos(phase) (sinCosTable[((int)((phase)*sinCosTableConv))&sinCosTableBitmask])
 
 	FILE *dbg_az_time=NULL,*dbg_az_fft=NULL;
 	float  r, y, f0, f_rate;
 	int    np;
-	FCMPLX *ref=(FCMPLX *)MALLOC(sizeof(FCMPLX)*p->n_az);
+	complexFloat *ref=(complexFloat *)MALLOC(sizeof(complexFloat)*p->n_az);
 	float  phase, az_resamp, rd0;
 	float  dx, v1, dop_deskew;
 	int    n, nfc, nf0;
 	int    lineNo, j, k;
-	FCMPLX cZero=Czero();
+	complexFloat cZero=Czero();
 	float pixel2time=1.0/s->prf;
 	   
 	if (s->debugFlag & 8)
@@ -78,7 +78,7 @@ void acpatch(patch *p,const satellite *s)
 	if (sinCosTable==NULL)
 	{
 		int tableIndex;
-		sinCosTable=(FCMPLX *)MALLOC(sizeof(FCMPLX)*sinCosTableEntries);
+		sinCosTable=(complexFloat *)MALLOC(sizeof(complexFloat)*sinCosTableEntries);
 		for (tableIndex=0;tableIndex<sinCosTableEntries;tableIndex++)
 		{
 			float tablePhase=(float)tableIndex/sinCosTableConv;
@@ -130,13 +130,13 @@ void acpatch(patch *p,const satellite *s)
 		}
 		
 		if (dbg_az_time)
-			fwrite(ref,sizeof(FCMPLX),p->n_az,dbg_az_time);
+			fwrite(ref,sizeof(complexFloat),p->n_az,dbg_az_time);
 		
 		/* forward transform the reference */
 		cfft1d(p->n_az,ref,-1);
 		
 		if (dbg_az_fft)
-			fwrite(ref,sizeof(FCMPLX),p->n_az,dbg_az_fft);
+			fwrite(ref,sizeof(complexFloat),p->n_az,dbg_az_fft);
 		
 		/* multiply the reference by the data */
 		n = NINT(f0/s->prf);

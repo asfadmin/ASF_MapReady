@@ -42,12 +42,12 @@ extern struct AISP_PARAMS g;/*AISP Globals, defined in aisp_params.h*/
 /*-------------------------------------------------------------------------
 FUNCTION NAME: multilook - performs amplitude multilook of t1 array
 
-SYNTAX: multilook(FCMPLX *, int, int, int, float *)
+SYNTAX: multilook(complexFloat *, int, int, int, float *)
 
 PARAMETERS:
     NAME:       TYPE:           PURPOSE:
     --------------------------------------------------------
-    patch	FCMPLX *	Complex Image Patch (n_range X n_looks)
+    patch	complexFloat *	Complex Image Patch (n_range X n_looks)
     n_range	int		lines in patch
     nlooks	int		number of looks to perform
     amps	float *		return multiooked amplitude patch
@@ -70,7 +70,7 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include "aisp_defs.h"
 
-void multilook(FCMPLX *patch,int n_range,int nlooks,float *pwrs)
+void multilook(complexFloat *patch,int n_range,int nlooks,float *pwrs)
 {
   float   temp_pwr;
   int     samp, line;	
@@ -80,7 +80,8 @@ void multilook(FCMPLX *patch,int n_range,int nlooks,float *pwrs)
     temp_pwr=0;
     for (line=0; line<nlooks; line++)
     {
-      temp_pwr+=patch[samp+n_range*line].r*patch[samp+n_range*line].r+patch[samp+n_range*line].i*patch[samp+n_range*line].i;
+      temp_pwr += patch[samp+n_range*line].real*patch[samp+n_range*line].real
+                  + patch[samp+n_range*line].imag*patch[samp+n_range*line].imag;
 
     }
     pwrs[samp] = temp_pwr/nlooks;
@@ -234,7 +235,7 @@ and the gain_vec taken from an odl cal_params file.  This function takes one
 output line and corrects it by muliplying its values by a gain indexed from
 the look angle, added by Mark Ayers 7/00 */
 
-void antptn_correct(meta_parameters *meta,FCMPLX *outputBuf,int curLine,int numSamples,const satellite *s)
+void antptn_correct(meta_parameters *meta,complexFloat *outputBuf,int curLine,int numSamples,const satellite *s)
 {
    int samp;			/* Current Sample index for FOR loop */
    double incidAngle=0;		/* Calculated incidence angle for each pixel */
@@ -249,8 +250,10 @@ void antptn_correct(meta_parameters *meta,FCMPLX *outputBuf,int curLine,int numS
  	gainThisPixel=lookUpGain(meta,curLine,samp,s)*PROC_GAIN;
 
 	/* Now that we have the right gain, multiply it by the I and Q values in the output Buffer */
-	outputBuf[samp].r=sqrt(calibrationGain(gainThisPixel,slantRange,RANGEREF,incidAngle))*outputBuf[samp].r;
-	outputBuf[samp].i=sqrt(calibrationGain(gainThisPixel,slantRange,RANGEREF,incidAngle))*outputBuf[samp].i;		
+	outputBuf[samp].real = sqrt(calibrationGain(gainThisPixel,slantRange,
+                                    RANGEREF,incidAngle))*outputBuf[samp].real;
+	outputBuf[samp].imag = sqrt(calibrationGain(gainThisPixel,slantRange,
+                                    RANGEREF,incidAngle))*outputBuf[samp].imag;
 
    }
 

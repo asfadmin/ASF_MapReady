@@ -10,7 +10,7 @@ RDS RADARSAT Engineering files, and raw data.
 	Main external entry points:
 
 getRec * fillOutGetRec(char file[]);
-void getSignalLine(getRec *r,long long lineNo,FCMPLX *destArr,int readStart,int readLen);
+void getSignalLine(getRec *r,long long lineNo,complexFloat *destArr,int readStart,int readLen);
 
 */
 #include "asf.h"
@@ -152,13 +152,13 @@ getSignalLine:
 	Fetches and unpacks a single line of signal data
 into the given array.
 */
-void getSignalLine(const getRec *r,long long lineNo,FCMPLX *destArr,int readStart,int readLen)
+void getSignalLine(const getRec *r,long long lineNo,complexFloat *destArr,int readStart,int readLen)
 {
 	int x;
 	int left,leftClip,rightClip;
 	int windowShift=0;
 	float agcScale=1.0;
-	FCMPLX czero=Czero();
+	complexFloat czero=Czero();
 	
 /*If the line is out of bounds, return zeros.*/
 	if ((lineNo>=r->nLines)||(lineNo<0))
@@ -204,16 +204,16 @@ void getSignalLine(const getRec *r,long long lineNo,FCMPLX *destArr,int readStar
 		for (x=leftClip;x<rightClip;x++)
 		{
 			int index=2*(x-leftClip);
-			destArr[x].r=agcScale*(r->inputArr[index+1]-r->dcOffsetQ);
-			destArr[x].i=agcScale*(r->inputArr[index]-r->dcOffsetI);
+			destArr[x].real=agcScale*(r->inputArr[index+1]-r->dcOffsetQ);
+			destArr[x].imag=agcScale*(r->inputArr[index]-r->dcOffsetI);
 		}
 	else /*if (r->flipIQ=='n')*/
 		/*is Raw data (one byte I, next byte Q)*/
 		for (x=leftClip;x<rightClip;x++)
 		{
 			int index=2*(x-leftClip);
-			destArr[x].r=agcScale*(r->inputArr[index]-r->dcOffsetI);
-			destArr[x].i=agcScale*(r->inputArr[index+1]-r->dcOffsetQ);
+			destArr[x].real=agcScale*(r->inputArr[index]-r->dcOffsetI);
+			destArr[x].imag=agcScale*(r->inputArr[index+1]-r->dcOffsetQ);
 		}
 	
 /*Fill the right side with zeros.*/
@@ -237,7 +237,7 @@ void freeGetRec(getRec *r)
 fetchReferenceFunction:
 	Reads in and returns a range reference function.
 */
-void fetchReferenceFunction(char *fname,FCMPLX *ref,int refLen)
+void fetchReferenceFunction(char *fname,complexFloat *ref,int refLen)
 {
 	int i;
 	FILE *in;
@@ -250,7 +250,7 @@ void fetchReferenceFunction(char *fname,FCMPLX *ref,int refLen)
 	for (i=0;i<refLen;i++)
 	{
 		fgets(line,255,in);
-		sscanf(line,"%f%f",&(ref[i].r),&(ref[i].i));
+		sscanf(line,"%f%f",&(ref[i].real),&(ref[i].imag));
 	}
 	FCLOSE(in);
 }

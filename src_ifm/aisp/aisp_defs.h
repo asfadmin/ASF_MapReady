@@ -38,19 +38,19 @@
 
 
 
-float  Cabs(FCMPLX); 
-FCMPLX Cadd (FCMPLX,FCMPLX);
-FCMPLX Cconj(FCMPLX);
-FCMPLX Cmplx(float,float);
-FCMPLX Czero();
-FCMPLX Csmul(float,FCMPLX);
-FCMPLX Cmul (FCMPLX,FCMPLX);
+float  Cabs(complexFloat); 
+complexFloat Cadd (complexFloat,complexFloat);
+complexFloat Cconj(complexFloat);
+complexFloat Cmplx(float,float);
+complexFloat Czero();
+complexFloat Csmul(float,complexFloat);
+complexFloat Cmul (complexFloat,complexFloat);
 
 /*cfft1d: Perform FFT, 1 dimentional:
 	dir=0 -> init; 
 	dir<0 -> forward; 
 	dir>0 -> backward*/
-void cfft1d(int n, FCMPLX *c, int dir);
+void cfft1d(int n, complexFloat *c, int dir);
 
 /*-----------------------*/
 /* Constants Definitions */
@@ -89,9 +89,9 @@ void cfft1d(int n, FCMPLX *c, int dir);
 /*--------------*/
 double fftEstDop(getRec *inFile,int startLine,int xStride,int nLines);
 void estdop(char file[], int nDopLines, float *a, float *b,float *c);
-void calc_range_ref(FCMPLX *range_ref, int rangeFFT, int refLen);
+void calc_range_ref(complexFloat *range_ref, int rangeFFT, int refLen);
 void elapse(int fnc);
-void multilook(FCMPLX *patch,int n_range,int nlooks, float *pwrs);
+void multilook(complexFloat *patch,int n_range,int nlooks, float *pwrs);
 void save_meta(meta_parameters *meta, const char *fname,
 	int nl,int ns,int sl,int ss,
 	double pdx,double pdy, int li);
@@ -104,7 +104,7 @@ file: parameters describing output file.
 */
 typedef struct {
 	int n_az,n_range;/*Number of samples in azimuth and range directions.*/
-	FCMPLX *trans;/*Complex buffer-- indexed as trans[x*n_az+y].*/
+	complexFloat *trans;/*Complex buffer-- indexed as trans[x*n_az+y].*/
 	float slantToFirst,slantPer;/*Slant range (m) to first pixel; per pixel.*/
 	float fd,fdd,fddd;/*Doppler coefficients (Hz; Hz/pixel; Hz/pixel/pixel)*/
 	GEOLOCATE_REC *g;/*Initialized with appropriate inertial state vector*/
@@ -116,7 +116,7 @@ typedef struct {
 typedef struct {
 	int refLen;/*Length of reference function, in samples.*/
 	int rangeFFT;/*Length of FFTs for range reference function.*/
-	FCMPLX *ref;/*FFT'd range reference function.*/
+	complexFloat *ref;/*FFT'd range reference function.*/
 } rangeRef;
 
 typedef struct {
@@ -185,6 +185,6 @@ void destroyPatch(patch *p);
 void rciq(patch *p,const getRec *signalGetRec,const rangeRef *r);
 void rmpatch(patch *p,const satellite *s);
 void acpatch(patch *p,const satellite *s);
-void antptn_correct(meta_parameters *meta,FCMPLX *outputBuf,int curLine,int numSamples,const satellite *s);
+void antptn_correct(meta_parameters *meta,complexFloat *outputBuf,int curLine,int numSamples,const satellite *s);
 void writeTable(meta_parameters *meta, const satellite *s, int numSamples);
 #endif
