@@ -8,7 +8,6 @@
 #include <string.h>
 
 #include "caplib.h"
-#include "diagnostics.h"
 #include "asf_meta.h"    /* For get_(data)_line(s) and put_(data)_line(s) */
 #include "error.h"
 #include "log.h"
