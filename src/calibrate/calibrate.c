@@ -136,7 +136,8 @@ int main(int argc, char **argv)
 		}
 	}
 	
-	if (optind >= argc) 
+	/* There are supposed to be exactly two non-option arguments.  */
+	if (argc - optind != 2) 
 		usage(argv[0]);
 	
 	inSAR=argv[optind];
