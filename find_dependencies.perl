@@ -19,15 +19,20 @@ cd /wherever/asf_tools_root_dir ; find_dependencies.perl [option]...
 
 =head1 DESCRIPTION
 
-This program examines the contents of the ASF source directories (src,
-src_akdem, src_lib, etc. -- the list is hard wired in the code) and
-attempts to divine the interdepencencies of the individual tools and
-libraries. Various strange heuristics are used to do this; see the
-source for details.  A cache file of the package dependency graph
-called 'package_dependency_graph.cache' is generated if it does not
-already exist (unless B<-p> or B<--package> is given) and used to
-speed up future runs of the script; delete it to force dependency
-graph regeneration.
+This program examines the contents of the top level ASF source
+directories (src, src_akdem, src_lib, etc. -- the list is hard wired
+in the code) and attempts to divine the interdepencencies of the
+individual tools and libraries.  In general, one dependency graph node
+is created for each directory immediately under the top level
+directories.  The name of the node created is the same as the name of
+the directory the tool or library source code lives in.
+
+Various strange heuristics are used to actually determine which tools
+depend on which, see the source for details.  A cache file of the
+dependency graph called 'dependency_graph.cache' is generated if it
+does not already exist (unless B<-p> or B<--package> is given) and
+used to speed up future runs of the script; delete it to force
+dependency graph regeneration.
 
 This script tends to err on the side of caution and therefore
 generates a lot of false positives, which need to be eliminated by
@@ -57,23 +62,23 @@ responsible for them, as is done everywhere else.
 =head1 OPTIONS AND ARGUMENTS
 
 If no options specifying certain types of output are used, the direct
-dependencies for all packages are computed and printed.
+dependencies for all nodes are computed and printed.
 
 The interesting options available are:
 
 =over 4
 
-=item B<-c> I<package_one>,I<package_two>, 
-B<--check>=I<package_one>,I<package_two>
+=item B<-c> I<node_one>,I<node_two>, 
+B<--check>=I<node_one>,I<node_two>
 
-Check if I<package_one> depends directly or indirectly on
-I<package_two>.  If there is dependency, print some of the relevant
-unique dependency path(s) in the dependency graph, if not, print a
-message saying there is no dependency.  Note that not all unique
-dependency paths are necessarily shown, because the dependency graph
-of ASF software packages is cyclic in places and I do not have an
-algorithm for finding unique paths in cyclic graphs.  A space after
-the comma will foul things up.
+Check if I<node_one> depends directly or indirectly on I<node_two>.
+If there is dependency, print some of the relevant unique dependency
+path(s) in the dependency graph, if not, print a message saying there
+is no dependency.  Note that not all unique dependency paths are
+necessarily shown, because the dependency graph of ASF software
+packages is cyclic in places and I do not have an algorithm for
+finding unique paths in cyclic graphs.  A space after the comma will
+foul things up.
 
 For example,
 
@@ -86,31 +91,31 @@ find_dependences.perl -c create_dem,asf_meta
 will show some of the ways in which the create_dem package depends on
 the asf_meta package.
 
-=item B<-i> I<package_one>,I<package_two>, 
-B<--independency>=I<package_one>,I<package_two>
+=item B<-i> I<node_one>,I<node_two>, 
+B<--independency>=I<node_one>,I<node_two>
 
-Explicity declare that I<package_one> does not directly depend on
-I<package_two>.  Note that one or more indirect dependencies may still
+Explicity declare that I<node_one> does not directly depend on
+I<node_two>.  Note that one or more indirect dependencies may still
 exist.  This option is useful if you know that the heuristics are
 generating a false positive dependency, and you want to specify the
 true situation.  A space after the comma will foul things up.  This
 option may be used multiple times to declare multiple independencies.
-This option will not permanently affect the package dependency graph
-cache.  To save information about independencies, use the
+This option will not permanently affect the dependency graph cache.
+To save information about independencies, use the
 B<--independency_file> option.
 
 =item B<--independency_file>=I<file_name>
 
 Parse file I<file_name> as a list of indepency rules.  Each line of
-the file must consist of exactly two package names seperated by a
-single comma without white space, and has exactly the same effects as
+the file must consist of exactly two node names seperated by a single
+comma without white space, and has exactly the same set of effects as
 a corresponding B<-i> option would.  Perl-style comments may be used
 in the file.
 
-=item B<-p> I<package>, B<--package>=I<package>
+=item B<-p> I<node>, B<--package>=I<node>
 
-Compute only the direct dependencies for package I<package>.  This is
-much faster than generating a full dependency graph for all packages.
+Compute only the direct dependencies for node I<node>.  This is much
+faster than generating a full dependency graph for all nodes.
 However, if a package dependency graph cache file exists, the savings
 will be small.  If a package dependency graph does not exist, a run
 using this option will not produce one.
@@ -118,33 +123,39 @@ using this option will not produce one.
 This option may not be used together with either of the B<--check> or
 B<--reverse_dependencies> options.
 
-=item B<-r> I<package>, B<--reverse_dependencies>=I<package>
+=item B<-r> I<node>, B<--reverse_dependencies>=I<node>
 
-List all packages which directly or indirectly depend on package
-I<package>.  This option may not be used together with the
-B<--package> option.
+List all nodes which directly or indirectly depend on node I<node>.
+This option may not be used together with the B<--package> option.
 
 =item B<-s>, B<--scan_comments>
 
-Do not ignore comment text when looking for package names in program
-text.  This option is only relevant when a new package dependency
-graph cache file is being created.  Use of this option will probably
-result in a lot of false positives.
+Do not ignore comment text when looking for node names in program
+text.  This option is only relevant when a new dependency graph cache
+file is being created.  Use of this option will probably result in a
+lot of false positives.
 
 =item B<-w> I<name>, B<--with_node>=I<name>
 
 Force a dependency graph node of name I<name> to exist, even if there
 is no individual tool directory I<name>.  This node is (probably
 wrongly) assumed to have no dependencies of its own.  This option is
-only relevant when a new package dependency graph cache file is being
-created.  Note that this option may be used to add arbitrary textual
-dependency information to the dependency graph.  For example,
+only relevant when a new dependency graph cache file is being created.
+Note that this option may be used to add arbitrary textual dependency
+information to the dependency graph.  For example,
 '--with_node=the_magic_type' may be used to add include in the
 dependency graph information about which packages directly or
 indirectly depend on the_magic_type (possibly including, somewhat
 unfortunately, the package in which the type is defined).  This a
 potentially useful way to deal with the problem of header files which
 do not properly belong to any individual package.
+
+=item B<--with_node_file>=I<file_name>
+
+Parse file I<file_name> as a list of nodes to force to exist.  Each
+line of the file must consist of exactly one node name, and has
+exactly the same effects as a corresponding B<-w> option would.
+Perl-style comments may be used in the file.
 
 =back
 
@@ -169,7 +180,7 @@ Print usage information.
 =cut
 
 my $progname = basename($0);
-my $version = "0.4.0";
+my $version = "0.6.0";
 
 # Set up output wrapping.
 if ( $ENV{COLUMNS} ) {
@@ -180,16 +191,18 @@ if ( $ENV{COLUMNS} ) {
 
 # Default values for command line parameters.
 my %p = (
-	 'check' => [],		# Ref to list to contain two package names.
+	 'check' => [],		# Ref to list to contain two node names.
 	 'independency' => [],	# Each successive pair an independency.	
 	 'independency_file' => undef, # File containing independency pairs.
 	 'package' => undef,	# Package name to compute direct deps for.
-	 # Package name to compute reverse deps for. 
+	 # Node name to compute reverse deps for. 
 	 'reverse_dependencies' => undef,
 	 'scan_comments' => 0,	# Flag true if comment text to be scanned.
 	 # Ref to list containing list of node names explicitly
 	 # declared to exist.
 	 'with_node' => [],
+	 # File containing nodes names explicitly declared to exist.
+	 'with_node_file' => undef,
 
 	 # Standard options. 
 	 'verbose' => 0,	# Verbose mode on.
@@ -201,8 +214,8 @@ sub babble { if ( $p{verbose} ) { print @_; } }
 
 GetOptions(\%p, 'check|c=s', 'package|p=s', 'independency|i=s',
 	   'independency_file=s', 'reverse_dependencies|r=s',
-	   'scan_comments|s', 'with_node|w=s', 'verbose|v',
-	   'version', 'help|?')
+	   'scan_comments|s', 'with_node|w=s', 'with_node_file=s',
+	   'verbose|v', 'version', 'help|?')
     or pod2usage("$progname: option parse failed.\n");
 
 if ( $p{version} ) {
@@ -235,7 +248,7 @@ if ( @{$p{'check'}} ) {
 }
 
 # Parse independency option arguments.
-my %pkg_independencies;		# Explicit independency graph (hash of lists).
+my %node_independencies;	# Explicit independency graph (hash of lists).
 if ( @{$p{'independency'}} ) {
     if ( @{$p{'independency'}} ) { 
 	@{$p{'independency'}} = split(/,/, join(',', @{$p{'independency'}}));
@@ -244,8 +257,8 @@ if ( @{$p{'independency'}} ) {
         }
     }
     for ( my $i = 0 ; $i < @{$p{'independency'}} ; $i += 2 ) {
-	$pkg_independencies{${$p{'independency'}}[$i]} ||= [];
-        push(@{$pkg_independencies{${$p{'independency'}}[$i]}},
+	$node_independencies{${$p{'independency'}}[$i]} ||= [];
+        push(@{$node_independencies{${$p{'independency'}}[$i]}},
              ${$p{'independency'}}[$i + 1]);
     }
 }
@@ -270,8 +283,8 @@ if ( $p{'independency_file'} ) {
                    or $new_independency[1] =~ m/^(\s.*)|(.*\s)$/ ) {
             die "$progname: malformed independency at line $line_number of file $p{'independency_file'}, maybe illegal whitespace around comma?\n";
         } else {
-            $pkg_independencies{$new_independency[0]} ||= [];
-            push(@{$pkg_independencies{$new_independency[0]}}, 
+            $node_independencies{$new_independency[0]} ||= [];
+            push(@{$node_independencies{$new_independency[0]}}, 
                  $new_independency[1]);
 	    $line_number++;
         }
@@ -280,39 +293,64 @@ if ( $p{'independency_file'} ) {
         or die "couldn't close $p{'independency_file'}: $!";
 }
 
+# List of nodes to be forced to exist, even if there is no
+# corresponding package directory with this name.
+my @with_nodes = @{$p{'with_node'}};		
+
+# Parse with_node_file option argument.
+if ( $p{'with_node_file'} ) {
+    open(WITH_NODE_FILE, "<$p{'with_node_file'}")
+	or die "$progname: couldn't open $p{'with_node_file'} for reading: $!\n";
+    my $line_number = 1;	# Line number being parsed.
+    while ( <WITH_NODE_FILE> ) {
+	chomp;			# Strip newline.
+	s/#.*$//;		# Strip comments.
+	s/^\s*//;		# Strip leading white space.
+	s/\s*$//;		# Strip trailing white space.
+	# Skip blank lines.
+	unless ( $_ ) {
+	    next;
+	}
+        push (@with_nodes, $_);
+        $line_number++;
+    }
+    close(WITH_NODE_FILE) 
+        or die "couldn't close $p{'with_node_file'}: $!";
+}
+
 # Hash of package dependency list refs.
-my %pkg_deps;
+my %node_deps;
 
 # File in which to cache the dependency graph.
-my $graph_cache_file = 'package_dependency_graph.cache';
+my $graph_cache_file = 'dependency_graph.cache';
 
 # Try to use dependency graph cache file.
 if ( -e $graph_cache_file ) {
-    my $pkg_deps_ref = retrieve($graph_cache_file);
-    unless ( $pkg_deps_ref ) {
+    my $node_deps_ref = retrieve($graph_cache_file);
+    unless ( $node_deps_ref ) {
 	die "$progname: failed to correctly retrieve $graph_cache_file, maybe delete it to force regeneration?\n";
     }
-    print "\nNOTE: using package dependency graph cache file\n'$graph_cache_file'. Delete it and rerun if its stale.\n";
+    print "\nNOTE: using dependency graph cache file\n'$graph_cache_file'. Delete it and rerun if its stale.\n";
     if ( $p{'scan_comments'} ) {
 	print wrap('', '', "\nWARNING: scan comments option (-s or "
 		   ."--scan_comments) is irrelevant when using an existing "
-		   ."package dependency graph cache file.\n");
+		   ."dependency graph cache file.\n");
     }
-    if ( @{$p{'with_node'}} ) {
+    if ( @with_nodes ) {
 	print wrap('', '', "\nWARNING: 'with_node' type options (-w, "
                    ."--with_node, or --with_node_file) are irrelevant "
-                   ."when using an existing package dependency graph cache "
+                   ."when using an existing dependency graph cache "
                    ."file.\n");
     }
     sleep 4;
-    %pkg_deps = %{$pkg_deps_ref};
+    %node_deps = %{$node_deps_ref};
 
 } else {
-    # Regenerate package graph cache.
+    # Regenerate dependency graph cache.
 
-    # Unless doing just a single package, warn user about long delay.
+    # Unless doing just a single node, warn user about long delay.
     unless ( $p{'package'} ) {
-	print "\nNo package dependency graph cache found, building dependendy graph (takes\na loooonng time, like hours and hours)...\n";
+	print "\nNo dependency graph cache found, building dependendy graph (takes\na loooonng time, like hours and hours)...\n";
 	sleep 4;
     }
 
@@ -341,10 +379,10 @@ if ( -e $graph_cache_file ) {
 
     my $top_level_dir = ${my $tmp = `pwd`; chomp($tmp); \$tmp; };
 
-    # Add 'directoryless' packages explicitly declared to exist by
-    # command line option to the package graph.
-    foreach ( @{$p{'with_node'}} ) {
-        $pkg_deps{$_} = [];
+    # Add 'directoryless' nodes explicitly declared to exist by
+    # command line option to the dependency graph.
+    foreach ( @with_nodes ) {
+        $node_deps{$_} = [];
     }
 
     foreach my $dir ( @pkg_dirs ) {
@@ -365,35 +403,44 @@ if ( -e $graph_cache_file ) {
   	    }
         }
 
-        # Initialize reference to empty list.
-        $pkg_deps{$pkg_name} = [];
+        # Initialize reference to empty list, unless it has already
+        # been initialized due to having been declared explicitly as a
+        # node which exists (via one of the -w, --with_node, or
+        # --with_node_file options).
+        $node_deps{$pkg_name} ||= [];
 
-        # Check for dependencies on every other package...
-        foreach my $other_package ( (@pkg_dirs, @{$p{with_node}}) ) {
+        # Check for dependencies on every other node.
+        my @other_nodes = (@pkg_dirs, @{$p{with_node}});
+        foreach my $other_node ( @other_nodes ) {
 
-	    # No need to worry about packages depending on themselves.
-  	    if ( $dir eq $other_package ) {
+	    # No need to worry about nodes depending on themselves.
+  	    if ( $dir eq $other_node ) {
 	        next;
 	    }
 	
-	    my $dep_flag = 0;	# Flag true if other package is depended on.
+	    my $dep_flag = 0;	# Flag true if other node is depended on.
 	
-	    # Get package name without directory part.
-	    $other_package =~ m{\/([^/]+)$};
-	    my $other_pkg_name = $1;
+	    # Get package (node) name without directory part.
+            my $other_node_name;
+	    if ( $other_node =~ m{\/([^/]+)$} ) {
+		$other_node_name = $1;
+	    } else {
+		# Node name does not contain a directory part.
+		$other_node_name = $other_node;
+	    }
 
-	    &babble("  Checking for direct dependence on package $other_pkg_name... ");
+	    &babble("  Checking for direct dependence on node $other_node_name... ");
 
 	    # Heuristics go here.
 	  
 	    # Inclusion of a header file with a name corresponding to a
-	    # package name is taken to mean dependence.
-	    if ( !system("grep -q -I '#include[^a-zA-Z0-9]*$other_pkg_name"
+	    # node name is taken to mean dependence.
+	    if ( !system("grep -q -I '#include[^a-zA-Z0-9]*$other_node_name"
 		         ."[^a-zA-Z0-9]*' *.[ch] 2>/dev/null") ) {
 	        $dep_flag = 1;
 	    }
 
-	    # Mere mention of another package in a file containing
+	    # Mere mention of another node in a file containing
 	    # roughly the string "system(" or beginning with something
 	    # like #!/bin/sh is taken to mean dependence.
 	    foreach my $entry (`ls -1`) { 
@@ -424,8 +471,8 @@ if ( -e $graph_cache_file ) {
 		print $tfh $file_contents;
 		close($tfh) or die "close failed on $tfn: $!";
 
-		# Look for references to other packages in temp file.
-	        if ( !system("grep -q -I '[^_[:alpha:]]$other_pkg_name"
+		# Look for references to other node in temp file.
+	        if ( !system("grep -q -I '[^_[:alpha:]]$other_node_name"
 			     ."[^_[:alpha:]]' $tfn 2>/dev/null") 
 		      and ( !system("grep -q -I 'system *(' $tfn "
 				    ."2>/dev/null") 
@@ -438,32 +485,32 @@ if ( -e $graph_cache_file ) {
 	    }
 
 	    # If a library file with a base name corresponding to the
-	    # package name is mentioned in the Makefile, it is taken
-	    # as a dependency.  This protects against some libraries
-	    # with inconsistently named headers.
-            if ( !system("grep -q '[^_[:alpha:]]$other_pkg_name\.a' "
+	    # node name is mentioned in the Makefile, it is taken as a
+	    # dependency.  This protects against some libraries with
+	    # inconsistently named headers.
+            if ( !system("grep -q '[^_[:alpha:]]$other_node_name\.a' "
 			 ."[Mm]akefile 2>/dev/null") ) {
 	        $dep_flag = 1;
 	    }
 	
 	    if ( $dep_flag ) {
 	        &babble("yes.\n");
-	        push(@{$pkg_deps{$pkg_name}}, $other_pkg_name);
+	        push(@{$node_deps{$pkg_name}}, $other_node_name);
 	    } else {
 	        &babble("no.\n");
 	    }
 	}
 
-        # If in verbose mode, print dependency summary for this package.
+        # If in verbose mode, print dependency summary for this node.
         if ( $p{verbose} ) {
 	    print "\n$pkg_name\n";
-    	    if ( @{$pkg_deps{$pkg_name}} ) {
+    	    if ( @{$node_deps{$pkg_name}} ) {
 	        print "   |\n";	# Print cute little downward ASCII art line.
 	    } else {
 	        print "   No dependencies.\n";
 	    }
-	    foreach my $other_pkg ( @{$pkg_deps{$pkg_name}} ) {
-	        print "   +--> $other_pkg\n";
+	    foreach my $other_node ( @{$node_deps{$pkg_name}} ) {
+	        print "   +--> $other_node\n";
 	    }
         }
     }
@@ -471,50 +518,50 @@ if ( -e $graph_cache_file ) {
     chdir "$top_level_dir";
 
     # Unless we have an incomplete graph due to use of the -p option,
-    # store package dependency graph in file for later use.
+    # store dependency graph in file for later use.
     unless ( $p{'package'} ) {  
-        unless ( nstore(\%pkg_deps, $graph_cache_file) ) {
+        unless ( nstore(\%node_deps, $graph_cache_file) ) {
 	    die "$progname: failed to correctly store dependency graph in $graph_cache_file\n";
 	} else {
 	    if ( $p{'scan_comments'} ) {
-		print wrap('', '', "\nWARNING: the effects of the scan comments option (-s or --scan_comments) have been cached in the package dependency graph cache.\n");
+		print wrap('', '', "\nWARNING: the effects of the scan comments option (-s or --scan_comments) have been cached in the dependency graph cache.\n");
 	    }
-	    if ( @{$p{'with_node'}} ) {
-		print wrap('', '', "\nWARNING: the effects of 'with_node' type options (-w, --with_node, or --with_node_file) have been cached in the package dependency graph cache.\n");
+	    if ( @with_nodes ) {
+		print wrap('', '', "\nWARNING: the effects of 'with_node' type options (-w, --with_node, or --with_node_file) have been cached in the dependency graph cache.\n");
 	    }
-	    print wrap('', '', "\nGenerated package dependency graph cache file\n'$graph_cache_file'.\n");
+	    print wrap('', '', "\nGenerated dependency graph cache file\n'$graph_cache_file'.\n");
 	}
     }
 }
 
 # Validate and apply independencies.
-if ( %pkg_independencies ) {
+if ( %node_independencies ) {
     &babble("\nValidating and applying independencies...\n");
-    foreach my $pkg ( keys %pkg_independencies ) {
+    foreach my $node ( keys %node_independencies ) {
         # If in single package  mode...
         if ( $p{'package'} ) {
 	    # Don't try to apply independencies except to the package
-	    # being dealt with
-	    unless ( $pkg eq $p{'package'} ) {
+	    # being dealt with.
+	    unless ( $node eq $p{'package'} ) {
 		next;
 	    }
 	}
-	unless ( exists($pkg_deps{$pkg}) ) {
-	    die "$progname: unknown package name '$pkg' in independency\n";
+	unless ( exists($node_deps{$node}) ) {
+	    die "$progname: unknown node name '$node' in independency\n";
 	}
-        foreach my $other_pkg ( @{$pkg_independencies{$pkg}} ) {
-	    unless ( $p{'package'} or exists($pkg_deps{$other_pkg}) ) {
-                die "$progname: unknown package name '$other_pkg' in independency\n";
+        foreach my $other_node ( @{$node_independencies{$node}} ) {
+	    unless ( $p{'package'} or exists($node_deps{$other_node}) ) {
+                die "$progname: unknown node name '$other_node' in independency\n";
             }
             my @new_deps = (); # Post-independency dependency list.
-            foreach my $dependency ( @{$pkg_deps{$pkg}} ) {
-                unless ( $dependency eq $other_pkg ) { 
+            foreach my $dependency ( @{$node_deps{$node}} ) {
+                unless ( $dependency eq $other_node ) { 
                     push(@new_deps, $dependency);
                 } else {
-		    print wrap('', '', "\nRemoving detected direct dependency of $pkg on $dependency from dependency graph due to declared independency...\n");
+		    print wrap('', '', "\nRemoving detected direct dependency of $node on $dependency from dependency graph due to declared independency...\n");
 		}
             }
-            @{$pkg_deps{$pkg}} = @new_deps;
+            @{$node_deps{$node}} = @new_deps;
         }
     }
 }
@@ -523,22 +570,22 @@ if ( %pkg_independencies ) {
 unless ( @{$p{'check'}} or $p{'reverse_dependencies'} ) {
     # Generate official (not verbose) output.
 
-    foreach my $pkg ( keys %pkg_deps ) {
+    foreach my $node ( keys %node_deps ) {
 	# If we are computing direct dependencies for a single package
 	# skip ahead unless we are looking at that package.
 	if ( $p{'package'} ) {
-	    unless ( $pkg eq $p{'package'} ) {
+	    unless ( $node eq $p{'package'} ) {
 		next;
 	    }
 	}
-	print "\n$pkg\n";
-	if ( @{$pkg_deps{$pkg}} ) {
+	print "\n$node\n";
+	if ( @{$node_deps{$node}} ) {
 	    print "   |\n";	# Print cute little downward ASCII art line.
 	} else {
 	    print "   No dependencies.\n";
 	}
-	foreach my $other_pkg ( @{$pkg_deps{$pkg}} ) {
-	    print "   +--> $other_pkg\n";
+	foreach my $other_node ( @{$node_deps{$node}} ) {
+	    print "   +--> $other_node\n";
 	}
     }
 
@@ -547,39 +594,39 @@ unless ( @{$p{'check'}} or $p{'reverse_dependencies'} ) {
 if ( @{$p{'check'}} ) {			
 # Check output requested, examine dependency graph for dependency paths.
 
-    # Verify that check arguments are known package names.
-    unless ( exists($pkg_deps{${$p{'check'}}[0]}) ) {
-        die wrap('', '', "$progname: check argument ${$p{'check'}}[0] is not a valid package name\n");
+    # Verify that check arguments are known node names.
+    unless ( exists($node_deps{${$p{'check'}}[0]}) ) {
+        die wrap('', '', "$progname: check argument ${$p{'check'}}[0] is not a valid node name\n");
     }
-    unless ( exists($pkg_deps{${$p{'check'}}[1]}) ) {
-        die wrap('', '', "$progname: check argument ${$p{'check'}}[1] is not a valid package name\n");
+    unless ( exists($node_deps{${$p{'check'}}[1]}) ) {
+        die wrap('', '', "$progname: check argument ${$p{'check'}}[1] is not a valid node name\n");
     }
 
     &babble("\nLooking for all dependencies (direct and indirect) of \n"
             ."${$p{'check'}}[0] on ${$p{'check'}}[1]...\n");
 
     my $paths_buf = "";		# Accumulates dependency paths.
-    my %visited;		# Has entries for package nodes visited.
+    my %visited;		# Has entries for nodes visited.
 
-# Subroutine to do recursive depth first search for depended on package.
+# Subroutine to do recursive depth first search for depended on node.
 sub path_search
 {
-    # Arguments are name of current package, and path from starting
-    # package to current package node.
-    my ($pkg_node, $path) = @_;
+    # Arguments are name of current node, and path from starting node
+    # to current node.
+    my ($node, $path) = @_;
 
-    $visited{$pkg_node} = 1;	# Set visited flag for not to true.
+    $visited{$node} = 1;	# Set visited flag for not to true.
 
-    foreach my $adjacent_pkg_node ( @{$pkg_deps{$pkg_node}} ) {
-	if ( $visited{$adjacent_pkg_node} ) {
+    foreach my $adjacent_node ( @{$node_deps{$node}} ) {
+	if ( $visited{$adjacent_node} ) {
 	    next;
 	}
-	if ( $adjacent_pkg_node eq ${$p{'check'}}[1] ) {
+	if ( $adjacent_node eq ${$p{'check'}}[1] ) {
 	    $paths_buf .= "$path --> ${$p{'check'}}[1]\n";
 	    next;
 	}
-	&path_search($adjacent_pkg_node,
-		     $path." --> ".$adjacent_pkg_node);
+	&path_search($adjacent_node,
+		     $path." --> ".$adjacent_node);
     }
 }
 
@@ -603,9 +650,9 @@ sub path_search
 if ( $p{'reverse_dependencies'} ) {
 # Reverse dependency output requested.
 
-    # Verify that reverse_dependencies argument is known package name.
-    unless ( exists($pkg_deps{$p{'reverse_dependencies'}}) ) {
-        die wrap('', '', "$progname: --reverse_dependencies option argument ${$p{'check'}}[0] is not a valid package name\n");
+    # Verify that reverse_dependencies argument is a known node name.
+    unless ( exists($node_deps{$p{'reverse_dependencies'}}) ) {
+        die wrap('', '', "$progname: --reverse_dependencies option argument ${$p{'check'}}[0] is not a valid node name\n");
     }
 
 
@@ -614,34 +661,34 @@ if ( $p{'reverse_dependencies'} ) {
 
     # Construct reverse dependency graph from dependency graph.
     my %reverse_deps;
-    foreach my $pkg ( keys %pkg_deps ) {
-	foreach my $other_pkg ( @{$pkg_deps{$pkg}} ) {
-            $reverse_deps{$other_pkg} ||= [];
-            push(@{$reverse_deps{$other_pkg}}, $pkg);
+    foreach my $node ( keys %node_deps ) {
+	foreach my $other_node ( @{$node_deps{$node}} ) {
+            $reverse_deps{$other_node} ||= [];
+            push(@{$reverse_deps{$other_node}}, $node);
         }
     }
 
     my %visited;		# Has entries for nodes visited.
 
-# Routine to recursively traverse component connected to package.
+# Routine to recursively traverse component connected to node.
 sub depth_first_traversal
 {    
-    # Arguments are name of current package.
-    my ($pkg_node) = @_;
+    # Arguments are name of current node.
+    my ($node) = @_;
 
-    $visited{$pkg_node} = 1;	# Set visited flag for not to true.
+    $visited{$node} = 1;	# Set visited flag for not to true.
 
-    foreach my $adjacent_pkg_node ( @{$reverse_deps{$pkg_node}} ) {
-	if ( $visited{$adjacent_pkg_node} ) {
+    foreach my $adjacent_node ( @{$reverse_deps{$node}} ) {
+	if ( $visited{$adjacent_node} ) {
 	    next;
 	}
-	&depth_first_traversal($adjacent_pkg_node);
+	&depth_first_traversal($adjacent_node);
     }
 }
 
     &depth_first_traversal($p{'reverse_dependencies'});
     
-    print wrap('', '', "\nPackages with direct dependencies on $p{'reverse_dependencies'}:\n");
+    print wrap('', '', "\nNodes with direct dependencies on $p{'reverse_dependencies'}:\n");
 
     # If we have no direct dependencies...
     unless ( @{$reverse_deps{$p{'reverse_dependencies'}}} ) {
@@ -649,19 +696,19 @@ sub depth_first_traversal
         print "  (none)\n";
     } else {
 	# otherwise, print the indirect dependencies.
-	foreach my $pkg ( @{$reverse_deps{$p{'reverse_dependencies'}}} ) {
-	    # So we don't hear about package again under indirect
+	foreach my $node ( @{$reverse_deps{$p{'reverse_dependencies'}}} ) {
+	    # So we don't hear about node again under indirect
 	    # dependencies...
-	    delete($visited{$pkg});
-	    print "  $pkg\n";
+	    delete($visited{$node});
+	    print "  $node\n";
 	}
     }
 
-    # We don't generally think of packages indirectly depending on
+    # We don't generally think of nodes indirectly depending on
     # themselves.
     delete($visited{$p{'reverse_dependencies'}});
 
-    print wrap('', '', "\nPackages with indirect dependencies on $p{'reverse_dependencies'}:\n");
+    print wrap('', '', "\nNodes with indirect dependencies on $p{'reverse_dependencies'}:\n");
 
     # If we have no indirect dependencies...
     unless ( keys %visited ) {
@@ -669,8 +716,8 @@ sub depth_first_traversal
         print "  (none)\n";
     } else {
 	# otherwise, print the indirect dependencies.
-	foreach my $pkg ( keys %visited ) {
-	    print "  $pkg\n";
+	foreach my $node ( keys %visited ) {
+	    print "  $node\n";
 	}
     }
 }
