@@ -182,18 +182,18 @@ char *uc(char *string)
    This function should be called first in the "we're good enough" part of command line parsing */
 void print_splash_screen(int argc, char* argv[])
 {
-	char temp1[255];
-	char temp2[255];
-	int ii;
-	sprintf(temp1, "\nCommand line:");
-	for (ii = 0; ii < argc; ii++)
-	{
-		sprintf(temp2, " %s",argv[ii]);
-		strcat(temp1, temp2);
-	}
-	printf("%s\n", temp1);
-	system("date");
-	printf("PID: %i\n", (int)getpid());
+  char temp1[255];
+  char temp2[255];
+  int ii;
+  sprintf(temp1, "\nCommand line:");
+  for (ii = 0; ii < argc; ii++)
+  {
+    sprintf(temp2, " %s",argv[ii]);
+    strcat(temp1, temp2);
+  }
+  printf("%s\n", temp1);
+  system("date");
+  printf("PID: %i\n", (int)getpid());
 }
 
 
@@ -219,30 +219,33 @@ void print_progress(int current_line, int total_lines)
    Otherwise, return -1 */
 int checkForOption(char* key, int argc, char* argv[])
 {
-	int ii = 0;
-	while(ii < argc)
-	{
-		if(strmatch(key, argv[ii]))
-			return(ii);
-		++ii;
-	}
-	return(-1);
+  int ii = 0;
+  while(ii < argc)
+  {
+    if(strmatch(key, argv[ii]))
+      return(ii);
+    ++ii;
+  }
+  return(-1);
 }
 
 /* Print an error message. This is just here for circumventing check_return.
    Also, it makes it possible to reformat all the error messages at once. */
 void print_error(char *msg)
 {
-	sprintf(errbuf, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);/* I made "ERROR:" red...Yay! :D */
-	printErr(errbuf);
-	exit(EXIT_FAILURE);
+  char tmp[256];
+  /* I made "ERROR:" red...Yay! :D */
+  printf("\n   \033[31;1mERROR:\033[0m %s\n\n", msg);
+  sprintf(tmp, "\n   ERROR: %s\n\n", msg);
+  if (logflag) printLog(tmp);
+  exit(EXIT_FAILURE);
 }
 
 /* Check the return value of a function and display an error message if it's a bad return */
 void check_return(int ret, char *msg)
 {
-	if (ret != 0)
-		print_error(msg);
+  if (ret != 0)
+    print_error(msg);
 }
 
 
@@ -283,150 +286,153 @@ int main(int argc, char *argv[])
   float fd, fdd, fddd, lowerLat=NAN, upperLat=NAN;
   double noise_table[MAX_tableRes];
   double incid_cos[MAX_tableRes], incid_sin[MAX_tableRes];
-  extern int currArg; /* from cla.h in asf.h */
 
 
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
 /*
-	That is to say, from here to the corresponding end marker, you have to put
-	up with my particular formatting style ;)      -G
+  That is to say, from here to the corresponding end marker, you have to put
+  up with my particular formatting style ;)      -G
 */
 
-	/*Command line option flags*/
-	int ampFlag, sigmaFlag, betaFlag, gammaFlag, powerFlag, sprocketFlag, latConstraintFlag, prcflag;
-	int quietFlag, formatFlag;
-	/*Check to see if any options were provided*/
-	ampFlag = checkForOption("-amplitude", argc, argv);
-	sigmaFlag = checkForOption("-sigma", argc, argv);
-	betaFlag = checkForOption("-beta", argc, argv);
-	gammaFlag = checkForOption("-gamma", argc, argv);
-	powerFlag = checkForOption("-power", argc, argv);
-	sprocketFlag = checkForOption("-sprocket", argc, argv);
-	latConstraintFlag = checkForOption("-lat", argc, argv);
-	prcflag = checkForOption("prc", argc, argv);
-	oldFlag = checkForOption("-old", argc, argv);
-	logflag = checkForOption("-log", argc, argv);
-	quietFlag = checkForOption("-quiet", argc, argv);
-	formatFlag = checkForOption("-format", argc, argv);
+  /*Command line option flags*/
+  int ampFlag, sigmaFlag, betaFlag, gammaFlag, powerFlag, sprocketFlag, latConstraintFlag, prcflag;
+  int quietFlag, formatFlag;
+  /*Check to see if any options were provided*/
+  ampFlag = checkForOption("-amplitude", argc, argv);
+  sigmaFlag = checkForOption("-sigma", argc, argv);
+  betaFlag = checkForOption("-beta", argc, argv);
+  gammaFlag = checkForOption("-gamma", argc, argv);
+  powerFlag = checkForOption("-power", argc, argv);
+  sprocketFlag = checkForOption("-sprocket", argc, argv);
+  latConstraintFlag = checkForOption("-lat", argc, argv);
+  prcflag = checkForOption("prc", argc, argv);
+  oldFlag = checkForOption("-old", argc, argv);
+  logflag = checkForOption("-log", argc, argv);
+  quietFlag = checkForOption("-quiet", argc, argv);
+  formatFlag = checkForOption("-format", argc, argv);
 
-	/*Check for mutually exclusive options: we can only have one of these*/
-	int temp = 0;
-	if(ampFlag != -1)
-		temp++;
-	if(sigmaFlag != -1)
-		temp++;
-	if(betaFlag != -1)
-		temp++;
-	if(gammaFlag != -1)
-		temp++;
-	if(powerFlag != -1)
-		temp++;
-	if(sprocketFlag != -1)
-		temp++;
-	if(temp > 1)/*If more than one option was selected*/
-		usage();/*This exits with a failure*/
+  /*Check for mutually exclusive options: we can only have one of these*/
+  int temp = 0;
+  if(ampFlag != -1)
+    temp++;
+  if(sigmaFlag != -1)
+    temp++;
+  if(betaFlag != -1)
+    temp++;
+  if(gammaFlag != -1)
+    temp++;
+  if(powerFlag != -1)
+    temp++;
+  if(sprocketFlag != -1)
+    temp++;
+  if(temp > 1)/*If more than one option was selected*/
+    usage();/*This exits with a failure*/
 
-	/*We need to make sure the user specified the proper number of arguments*/
-	int needed_args = 4;/*command & in_data & in_meta & out_base*/
-	if(ampFlag != -1)
-		needed_args += 1;/*option*/
-	if(sigmaFlag != -1)
-		needed_args += 1;/*option*/
-	if(betaFlag != -1)
-		needed_args += 1;/*option*/
-	if(gammaFlag != -1)
-		needed_args += 1;/*option*/
-	if(powerFlag != -1)
-		needed_args += 1;/*option*/
-	if(sprocketFlag != -1)
-		needed_args += 1;/*option*/
-	if(latConstraintFlag != -1)
-		needed_args += 3;/*option & parameter & parameter*/
-	if(prcflag != -1)
-		needed_args += 2;/*option & parameter*/
-	if(oldFlag != -1)
-		needed_args += 1;/*option*/
-	if(logflag != -1)
-		needed_args += 2;/*option & parameter*/
-	if(quietFlag != -1)
-		needed_args += 1;/*option*/
-	if(formatFlag != -1)
-		needed_args += 2;/*option & parameter*/
+  /*We need to make sure the user specified the proper number of arguments*/
+  int needed_args = 4;/*command & in_data & in_meta & out_base*/
+  if(ampFlag != -1)
+    needed_args += 1;/*option*/
+  if(sigmaFlag != -1)
+    needed_args += 1;/*option*/
+  if(betaFlag != -1)
+    needed_args += 1;/*option*/
+  if(gammaFlag != -1)
+    needed_args += 1;/*option*/
+  if(powerFlag != -1)
+    needed_args += 1;/*option*/
+  if(sprocketFlag != -1)
+    needed_args += 1;/*option*/
+  if(latConstraintFlag != -1)
+    needed_args += 3;/*option & parameter & parameter*/
+  if(prcflag != -1)
+    needed_args += 2;/*option & parameter*/
+  if(oldFlag != -1)
+    needed_args += 1;/*option*/
+  if(logflag != -1)
+    needed_args += 2;/*option & parameter*/
+  if(quietFlag != -1)
+    needed_args += 1;/*option*/
+  if(formatFlag != -1)
+    needed_args += 2;/*option & parameter*/
 
-	/*Make sure we have enough arguments*/
-	if(argc != needed_args)
-		usage();/*This exits with a failure*/
+  /*Make sure we have enough arguments*/
+  if(argc != needed_args)
+    usage();/*This exits with a failure*/
 
-	/*We also need to make sure any options that have parameters are specified correctly
-	This includes: -lat, -prc, -log*/
-	if(latConstraintFlag != -1)
-		/*Make sure the two fields following -lat aren't other options
-		Also make sure there's no "bleeding" into the required arguments*/
-		if(argv[latConstraintFlag + 1][0] == '-' || argv[latConstraintFlag + 2][0] == '-' || latConstraintFlag >= argc - 5)
-			usage();/*This exits with a failure*/
-	if(prcflag != -1)
-		/*Make sure the field following -prc isn't another option
-		Also check for bleeding into required arguments*/
-		if(argv[prcflag + 1][0] == '-' || prcflag >= argc - 4)
-			usage();/*This exits with a failure*/
-	if(logflag != -1)
-		/*Make sure the field following -log isn't another option*/
-		if(argv[logflag + 1][0] == '-' || logflag >= argc - 4)
-			usage();/*This exits with a failure*/
-	if(formatFlag != -1)
-		/*Make sure the field following -format isn't another option*/
-		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 4)
-			usage();
+  /*We also need to make sure any options that have parameters are specified correctly
+  This includes: -lat, -prc, -log*/
+  if(latConstraintFlag != -1)
+    /*Make sure the two fields following -lat aren't other options
+    Also make sure there's no "bleeding" into the required arguments*/
+    if(argv[latConstraintFlag + 1][0] == '-' || argv[latConstraintFlag + 2][0] == '-' || latConstraintFlag >= argc - 5)
+      usage();/*This exits with a failure*/
+  if(prcflag != -1)
+    /*Make sure the field following -prc isn't another option
+    Also check for bleeding into required arguments*/
+    if(argv[prcflag + 1][0] == '-' || prcflag >= argc - 4)
+      usage();/*This exits with a failure*/
+  if(logflag != -1)
+    /*Make sure the field following -log isn't another option*/
+    if(argv[logflag + 1][0] == '-' || logflag >= argc - 4)
+      usage();/*This exits with a failure*/
+  if(formatFlag != -1)
+    /*Make sure the field following -format isn't another option*/
+    if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 4)
+      usage();
 
-	/*We must be close to good enough at this point...start filling in fields as needed*/
-	if(quietFlag == -1)
-		print_splash_screen(argc, argv);/*display splash screen if not quiet*/
+  /*We must be close to good enough at this point...start filling in fields as needed*/
+  if(quietFlag == -1)
+    print_splash_screen(argc, argv);/*display splash screen if not quiet*/
 
-	if(logflag != -1)
-		strcpy(logFile, argv[logflag + 1]);
-	else
-		sprintf(logFile, "tmp%i.log", (int)getpid());/*default behavior: log to tmp<pid>.log*/
-	fLog = FOPEN(logFile, "a");
-	if(prcflag != -1)
-		strcpy(prcPath, argv[prcflag + 1]);
-	if(latConstraintFlag != -1)
-	{
-		lowerLat = strtod(argv[latConstraintFlag + 2],NULL);
-		upperLat = strtod(argv[latConstraintFlag + 1],NULL);
-		if(lowerLat > upperLat)
-		{
-			float tmp = upperLat;
-			upperLat = lowerLat;
-			lowerLat = tmp;
-		}
-		if(lowerLat < -90.0 || lowerLat > 90.0 || upperLat < -90.0 || upperLat > 90.0)
-		{
-			print_error("Invalid latitude constraint (must be -90 to 90)");
-		}
-	}
-	if(ampFlag != -1)
-		sprintf(out_type,"amp");
-	else if(sigmaFlag != -1)
-		sprintf(out_type, "sigma");
-	else if(gammaFlag != -1)
-		sprintf(out_type, "gamma");
-	else if(betaFlag != -1)
-		sprintf(out_type, "beta");
-	else if(powerFlag != -1)
-		sprintf(out_type, "power");
-	else
-		sprintf(out_type, "amp");/*default behavior*/
-	if(formatFlag != -1)
-		strcpy(type, argv[formatFlag + 1]);
-	else
-		strcpy(type, "CEOS");
+  if(logflag != -1)
+    strcpy(logFile, argv[logflag + 1]);
+  else
+    sprintf(logFile, "tmp%i.log", (int)getpid());/*default behavior: log to tmp<pid>.log*/
+  fLog = FOPEN(logFile, "a");
+  if(prcflag != -1)
+    strcpy(prcPath, argv[prcflag + 1]);
+  if(latConstraintFlag != -1)
+  {
+    lowerLat = strtod(argv[latConstraintFlag + 2],NULL);
+    upperLat = strtod(argv[latConstraintFlag + 1],NULL);
+    if(lowerLat > upperLat)
+    {
+      float tmp = upperLat;
+      upperLat = lowerLat;
+      lowerLat = tmp;
+    }
+    if(lowerLat < -90.0 || lowerLat > 90.0 || upperLat < -90.0 || upperLat > 90.0)
+    {
+      print_error("Invalid latitude constraint (must be -90 to 90)");
+    }
+  }
+  if(ampFlag != -1)
+    sprintf(out_type,"amp");
+  else if(sigmaFlag != -1)
+    sprintf(out_type, "sigma");
+  else if(gammaFlag != -1)
+    sprintf(out_type, "gamma");
+  else if(betaFlag != -1)
+    sprintf(out_type, "beta");
+  else if(powerFlag != -1)
+    sprintf(out_type, "power");
+  else
+    sprintf(out_type, "amp");/*default behavior*/
+
+  /* Deal with input format type */
+  if(formatFlag != -1) {
+    strcpy(type, argv[formatFlag + 1]);
+    for (ii=0; ii<strlen(type); ii++) {
+      type[ii] = (char)toupper(type[ii]);
+    }
+  }
+  else
+    strcpy(type, "CEOS");
 
   /* Fetch required arguments */
-	strcpy(inDataName,argv[argc - 3]);
-	strcpy(inMetaName,argv[argc - 2]);
-	strcpy(outBaseName,argv[argc - 1]);
-
-
+  strcpy(inDataName,argv[argc - 3]);
+  strcpy(inMetaName,argv[argc - 2]);
+  strcpy(outBaseName,argv[argc - 1]);
 
 /*Back to lame formatting... :P     -G */
 /***********************END COMMAND LINE PARSING STUFF***********************/
@@ -462,7 +468,7 @@ int main(int argc, char *argv[])
   }
 
   /* Ingest all sort of flavors of CEOS data */
-  if (strncmp(type, "CEOS", 4)==0) {
+  if (strncmp(type, "CEOS", 4) == 0) {
 
     sprintf(tmp,"   Data format: CEOS\n");
     if(quietFlag == -1) printf(tmp);
@@ -860,7 +866,7 @@ int main(int argc, char *argv[])
   }
 
   /* Ingest Vexcel Sky Telemetry Format (STF) data */
-  else if (strncmp(type, "STF", 3)==0) {
+  else if (strncmp(type, "STF", 3) == 0) {
 
     if (sprocketFlag != -1) {
       print_error("Data is level 0, sprocket can not use this.");
@@ -874,7 +880,7 @@ int main(int argc, char *argv[])
     /* Handle output file name */
     create_name(outName, outBaseName, "_raw.img");
 
-    if (latConstraintFlag) {
+    if (latConstraintFlag != -1) {
       /* Determine start and end line for latitude constraint */
       createSubset(inDataName, lowerLat, upperLat, &imgStart, &imgEnd,
                    imgTimeStr, &nVec, &fd, &fdd, &fddd);
@@ -929,8 +935,7 @@ int main(int argc, char *argv[])
 
     openErrorLog(s,inDataName);
 
-    for (outLine=0;outLine<nTotal;outLine++)
-      {
+    for (outLine=0; outLine<nTotal; outLine++) {
         if (s->curFrame >= s->nFrames) {
           if(quietFlag == -1) printf("   Reached end of file\n");
           printLog("   Reached end of file\n");
@@ -939,25 +944,25 @@ int main(int argc, char *argv[])
 
         /* Now read the next pulse of data.
            ---------------------------------*/
-        readNextPulse(s, iqBuf, inDataName, outName);
+       readNextPulse(s, iqBuf, inDataName, outName);
 
         /* If the read status is good, write this data.
            ---------------------------------------------*/
         if (s->readStatus == 1) {
           /* write some extra lines at the end for the SAR processing */
-         if (((outLine >= imgStart) && (outLine <= imgEnd+4096)) ||  /* descending */
-              ((outLine >= imgEnd) && (outLine <= imgStart+4096)))      /* ascending */
-            {
+          if (((outLine >= imgStart) && (outLine <= imgEnd+4096)) ||  /* descending */
+              ((outLine >= imgEnd) && (outLine <= imgStart+4096)))    /* ascending */
+          {
               FWRITE(iqBuf,sizeof(iqType),s->nSamp*2,s->fpOut);
               s->nLines++;
-            }
+          }
         }
         /* Write status information to screen.
            ------------------------------------*/
         if(quietFlag == -1) print_progress(outLine,nTotal);
-      }
+    }
 
-    if (latConstraintFlag) {
+    if (latConstraintFlag != -1) {
       s->nLines -= 4096; /* reduce the line number from extra padding */
       createMeta_lz(s,inDataName,outName,imgTimeStr,nVec,fd,fdd,fddd,prcflag,prcPath);
     }
@@ -974,7 +979,7 @@ int main(int argc, char *argv[])
   }
 
   /* Ingest ESRI format data */
-  else if (strncmp(type, "ESRI", 4)==0) {
+  else if (strncmp(type, "ESRI", 4) == 0) {
 
     char line[255]="", key[25]="", value[25]="";
 
@@ -1051,7 +1056,7 @@ int main(int argc, char *argv[])
   }
 
   /* Ingest ENVI format data */
-  else if (strncmp(type, "ENVI", 4)==0) {
+  else if (strncmp(type, "ENVI", 4) == 0) {
 
     char line[255]="", key[25]="", value[25]="", bla[25];
 
@@ -1230,8 +1235,8 @@ if (sprocketFlag != -1) {
 void usage(void)
 {
  printf("\n"
-	"USAGE:\n"
-	"   asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]\n"
-	"              [-format <format>] <in_data> <in_meta> <out_base_name>\n");
+  "USAGE:\n"
+  "   asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]\n"
+  "              [-format <format>] <in_data> <in_meta> <out_base_name>\n");
  exit(EXIT_FAILURE);
 }
