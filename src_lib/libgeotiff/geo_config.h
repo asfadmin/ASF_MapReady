@@ -6,8 +6,11 @@
 #define STDC_HEADERS 1
 
 /* Define if you have the <stdlib.h> header file.  */
-#define HAVE_STDLIB_H 1
-
+/* Ugly hack that comes due to libraries or installations that have
+   somehow leaked their autoconf crud into the public headers.  */
+#ifndef HAVE_STDLIB_H
+#  define HAVE_STDLIB_H 1
+#endif
 /* Define if you have the <string.h> header file.  */
 #define HAVE_STRING_H 1
 
