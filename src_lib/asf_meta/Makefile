@@ -83,6 +83,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	code_ceos.o \
 	coniFetch.o \
 	dateUtil.o \
+        earth_radius2datum.o \
 	err_die.o \
 	fixed2gei.o \
 	gei2fixed.o \
@@ -109,6 +110,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta2ddr.o \
 	meta_read.o \
 	meta_write.o \
+        proj2meta.o \
 	propagate.o \
 	read_baseline.o \
 	set_era.o \
