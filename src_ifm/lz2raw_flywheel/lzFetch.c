@@ -12,6 +12,10 @@ be free'd afterward, or memory will leak.
 #include "lzFetch.h"
 #include <math.h>
 
+/* from <ctype.h>*/
+int isspace(int c);
+
+
 /***************************************************
 lzDouble:
 	Usage is identical to lzStr, except
@@ -31,6 +35,7 @@ double lzDouble(char *lzN,char *desiredParam,int *err)
 		} else
 			*err=2;
 	}
+	FREE(str);
 	return ret;
 }
 /***************************************************
@@ -52,6 +57,7 @@ int lzInt(char *lzN,char *desiredParam,int *err)
 		} else
 			*err=3;
 	}
+	FREE(str);
 	return ret;
 }
 /***************************************************
@@ -71,12 +77,13 @@ granule {
 }
 use:
 lzStr("g.gran","granule.thing.subThing.value:",NULL);
+DON'T FORGET TO FREE RETURNED STRING!!!
 */
 char * lzStr(char *lzN,char *desiredParam,int *err)
 {
 /*These two variables form a "stack of structures",
 which we use to keep track of where we are in the file's structure.*/
-	int structDepth;
+	int structDepth, indexVec=0;
 	char structName[16][255];
 	char line[255];/*Input buffer.*/
 	FILE *in=fopen(lzN,"r");
@@ -103,14 +110,19 @@ which we use to keep track of where we are in the file's structure.*/
 			char newStruct[255];/*The base name of the new structure.*/
 			char index[255];/*The index (e.g. "[2]"), or the empty string.*/
 			sscanf(line,"%s",newStruct);
-			if ((0==strcmp(newStruct,"beam"))||(0==strcmp(newStruct,"location")))
+			if (0==strcmp(newStruct,"location"))
 			{/*the new structure is an indexable structure, like a beam or location.*/
 				char throwaway[255];
 				int indexNo;
 				fgets(line,255,in);/*Get the index # from the next line.*/
 				sscanf(line,"%s %d",throwaway,&indexNo);
 				sprintf(index,"[%d]",indexNo);
-			} else strcpy(index,"");
+			} 
+			else if (0==strcmp(newStruct,"state_vector")) {
+				sprintf(index,"[%d]",indexVec);
+				indexVec++;
+			}
+			else strcpy(index,"");
 			strcpy(structName[structDepth+1],structName[structDepth]);
 			if (structDepth!=0)
 				strcat(structName[structDepth+1],".");
@@ -133,14 +145,16 @@ which we use to keep track of where we are in the file's structure.*/
 			if (0==strcmp(thisParam,desiredParam))
 			{/*We found it!*/
 				char *start;
-				char *ret=(char *)malloc(sizeof(char)*255);
+				char *ret=(char *)MALLOC(sizeof(char)*255);
 				/*sscanf(line,"%s %s",thisParamName,ret);*/
 				start = strchr(line,':');
-				start++; start++;
+				start ++;
+				while (isspace(*start)) start++;
 				strcpy(ret,start);
 				if (err!=NULL)
 					*err=0;
 				FCLOSE(in);
+				/* ret will need to be free'd by calling function */
 				return ret;
 			}
 		}
