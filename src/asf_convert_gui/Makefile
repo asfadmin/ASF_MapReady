@@ -23,7 +23,7 @@ LIB = -L$(GTK_LIB) -L$(GTK_LIB)/glib-2.0 -L$(GTK_LIB)/gtk-2.0 -L$(GTK_LIB)/pango
 
 CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
-$(TARGET).exe: $(TARGET).c
+$(TARGET).exe: $(TARGET).c doc
 	if [ ! -f $(GTK_DIR)/README.txt ]; then\
 	  for f in $(GTK_ZIP)/*.zip; do( yes| unzip $$f -d $(GTK_DIR) ); done;\
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
@@ -32,6 +32,7 @@ $(TARGET).exe: $(TARGET).c
 	mv $(TARGET).exe ../../bin/win32
 	cp $(TARGET).glade ../../bin/win32
 	cp $(TARGET)_help.txt ../../bin/win32
+	cp htmlhelp.chm ../../bin/win32/asf_convert_gui.chm
 
 doc:
 	xsltproc --nonet /usr/share/docbook-xsl/htmlhelp/htmlhelp.xsl asf_convert_gui.sgml
