@@ -37,37 +37,47 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   The converted data in the output file."
 
 #define ASF_OPTIONS_STRING \
+"\n"\
 "   -format <format>\n"\
 "        Format to export to. Must be one of the following:\n"\
-"        CEOS, envi, esri, tiff, geotiff, jpeg, ppm\n"\
+"            CEOS    - Committee for Earth Observing Systems format\n"\
+"	    tiff    - Tagged Image File Format, with byte valued pixels\n"\
+"	    geotiff - GeoTIFF file, with floating point valued pixels\n"\
+"	    jpeg    - Lossy compressed image, with byte valued pixels\n"\
+"            ppm     - portable pixmap image, with byte valued pixels\n"\
+"	\n"\
 "   -size <size>\n"\
 "        Scale image so that its largest dimension is, at most, size.\n"\
+"\n"\
 "   -lut <leader file> <cal params file> <cal comment>\n"\
 "        Updates the original leader file with the calibration parameter\n"\
 "        file and the calibration comment. Exports image into CEOS format.\n"\
+"\n"\
 "   -byte <scale option>\n"\
 "        Converts output image to byte using the following options:\n"\
-"            truncate - truncates the input values regardless of their\n"\
-"                       value range.\n"\
-"            minmax   - determines the minimum and maximum values of the\n"\
-"                       input image and maps those values to the byte range\n"\
-"                       of 0 to 255.\n"\
-"            sigma    - determines the mean and standard deviation of an\n"\
-"                       image and applies a buffer of 2 sigma around the\n"\
-"                       mean value (it adjusts this buffer if the 2 sigma\n"\
-"                       buffer is outside the value range)."
-
+"             truncate - truncates the input values regardless of their\n"\
+"                        value range.\n"\
+"             minmax   - determines the minimum and maximum values of the\n"\
+"                        input image and maps those values to the byte range\n"\
+"                        of 0 to 255.\n"\
+"             sigma    - determines the mean and standard deviation of an\n"\
+"                        image and applies a buffer of 2 sigma around the\n"\
+"                        mean value (it adjusts this buffer if the 2 sigma\n"\
+"                        buffer is outside the value range)."
 
 #define ASF_EXAMPLES_STRING \
 "   To export to the default geotiff format from file1.img and file1.meta\n"\
 "   to file1.jpg:\n"\
-"       example> asf_export file1 file1\n"\
+"\n"\
+"        example> asf_export file1 file1\n"\
 "\n"\
 "   To export to file2.jpg in the jpeg format:\n"\
-"       example> asf_export -format jpeg file1 file2\n"\
+"\n"\
+"        example> asf_export -format jpeg file1 file2\n"\
 "\n"\
 "   To export file1 to a jpeg called file3.jpg no larger than 800x800:\n"\
-"       example> asf_export -format jpeg -size 800 file1 file3"
+"\n"\
+"        example> asf_export -format jpeg -size 800 file1 file3"
 
 #define ASF_LIMITATIONS_STRING \
 "   Currently only supports ingest of ASF format floating point data."
@@ -117,12 +127,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_PROGRAM_HISTORY_STRING \
 "   No history."
 
-/*
 #define ASF_VERSION_MAJOR_STRING \
 "0.30"
-
-#define VERSION 0.3
-*/
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
