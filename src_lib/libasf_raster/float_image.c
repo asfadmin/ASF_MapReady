@@ -361,8 +361,19 @@ static gboolean
 file_larger_than (const char *file, off_t size)
 {
   struct stat stat_buffer;
+#if GLIB_CHECK_VERSION(2, 6, 0)
   int return_code = g_stat (file, &stat_buffer);
-  g_assert (return_code == 0);
+  if ( return_code != 0 ) {
+    g_error ("Couldn't g_stat file %s: %s", file, strerror (errno));
+  }
+#else
+  int return_code = stat (file, &stat_buffer);
+  if ( return_code != 0 ) {
+    g_error ("Couldn't stat file %s: %s", file, strerror (errno));
+  }
+#endif
+
+
   return stat_buffer.st_size >= size;
 }
 
@@ -840,12 +851,87 @@ prepare_pixel (FloatImage *self, size_t x, size_t y)
   }
 }
 
+// Return true iff tile (x, y) is already loaded into the memory cache.
+static gboolean
+tile_is_loaded (FloatImage *self, ssize_t x, ssize_t y)
+{
+  g_assert (    x >= 0 && (size_t) x < self->tile_count_x 
+	     && y >= 0 && (size_t) y < self->tile_count_y );
+
+  size_t tile_offset = self->tile_count_x * y + x;
+
+  return self->tile_addresses[tile_offset] != NULL;
+}
+  
+// Load (currently unloaded) tile (x, y) from disk cache into memory
+// cache, possibly displacing the oldest tile already loaded, updating
+// the load order queue, and returning the address of the tile loaded.
+static float *
+load_tile (FloatImage *self, ssize_t x, ssize_t y)
+{
+  g_assert (!tile_is_loaded (self, x, y));
+
+  // Address into which tile gets loaded (to be returned).
+  float *tile_address;
+
+  // Offset of tile in flattened array.
+  size_t tile_offset = self->tile_count_x * y + x;
+
+  // We have to check and see if we have to displace an already loaded
+  // tile or not.
+  if ( self->tile_queue->length == self->cache_size_in_tiles ) {
+    // Displace tile loaded longest ago.
+    size_t oldest_tile 
+      = GPOINTER_TO_INT (g_queue_pop_tail (self->tile_queue));
+    cached_tile_to_disk (self, oldest_tile);
+    tile_address = self->tile_addresses[oldest_tile];
+    self->tile_addresses[oldest_tile] = NULL;
+  }
+  else {
+    // Load tile into first free slot.
+    tile_address = self->cache + self->tile_queue->length * self->tile_area;
+  }
+
+  // Put the new tile address into the index, and put the index into
+  // the load order queue.
+  self->tile_addresses[tile_offset] = tile_address;
+  // Stash in queue by converting to a pointer (so it must fit in an int).
+  g_assert (tile_offset < INT_MAX);
+  g_queue_push_head (self->tile_queue, 
+		     GINT_TO_POINTER ((int) tile_offset));
+
+  // Load the tile data.
+  int return_code 
+    = fseeko (self->tile_file, 
+	      (off_t) tile_offset * self->tile_area * sizeof (float),
+	      SEEK_SET);
+  g_assert (return_code == 0);
+  clearerr (self->tile_file);
+  size_t read_count = fread (tile_address, sizeof (float), self->tile_area, 
+			     self->tile_file);
+  if ( read_count < self->tile_area ) {
+    if ( ferror (self->tile_file) ) {
+      perror ("error reading tile cache file");
+      g_assert_not_reached ();
+    }
+    if ( feof (self->tile_file) ) {
+      fprintf (stderr, 
+	       "nothing left to read in tile cache file at offset %lld\n",
+	       ftello (self->tile_file));
+      g_assert_not_reached ();
+    }
+  }
+  g_assert (read_count == self->tile_area);
+
+  return tile_address;
+}
+
 float
 float_image_get_pixel (FloatImage *self, ssize_t x, ssize_t y)
 {
   // Are we at a valid image pixel?
-  g_assert (x >= 0 && (size_t)x < self->size_x);
-  g_assert (y >= 0 && (size_t)y < self->size_y);
+  g_assert (x >= 0 && (size_t) x < self->size_x);
+  g_assert (y >= 0 && (size_t) y < self->size_y);
 
   // Get the pixel coordinates, including tile and pixel-in-tile.
   g_assert (sizeof (long int) >= sizeof (size_t));
@@ -854,52 +940,17 @@ float_image_get_pixel (FloatImage *self, ssize_t x, ssize_t y)
   // Offset of tile x, y, where tiles are viewed as pixels normally are.
   size_t tile_offset = self->tile_count_x * pc_y.quot + pc_x.quot;
 
-  // First we check if the tile is in the cache.
+  // Address of data for tile containing pixel of interest (may still
+  // have to be loaded from disk cache).
   float *tile_address = self->tile_addresses[tile_offset];
-  if ( G_LIKELY (tile_address != NULL) ) {
-    // If it is, just return the pixel of interest.
-    return tile_address[self->tile_size * pc_y.rem + pc_x.rem];
+
+  // Load the tile containing the pixel of interest if necessary.
+  if ( G_UNLIKELY (tile_address == NULL) ) {
+    tile_address = load_tile (self, pc_x.quot, pc_y.quot);
   }
-  else {
-    // If it isn't, Find the address into which to load the new tile.
-    // We have to check and see if we have to displace an already
-    // loaded tile or not.
-    if ( self->tile_queue->length == self->cache_size_in_tiles ) {
-      // Displace tile loaded longest ago.
-      size_t oldest_tile 
-	= GPOINTER_TO_INT (g_queue_pop_tail (self->tile_queue));
-      cached_tile_to_disk (self, oldest_tile);
-      tile_address = self->tile_addresses[oldest_tile];
-      self->tile_addresses[oldest_tile] = NULL;
-    }
-    else {
-      // Load tile into first free slot.
-      tile_address = self->cache + self->tile_queue->length * self->tile_area;
-    }
 
-    // Put the new tile address into the index, and put the index into
-    // the load order queue.
-    self->tile_addresses[tile_offset] = tile_address;
-    // Stash in queue by converting to a pointer (so it must fit in an int).
-    g_assert (tile_offset < INT_MAX);
-    g_queue_push_head (self->tile_queue, 
-		       GINT_TO_POINTER ((int) tile_offset));
-
-    // Load the tile data.
-    int return_code 
-      = fseeko (self->tile_file, 
-		(off_t) tile_offset * self->tile_area * sizeof (float),
-		SEEK_SET);
-    g_assert (return_code == 0);
-    size_t read_count = fread (tile_address, sizeof (float), self->tile_area, 
-			       self->tile_file);
-    if ( read_count < self->tile_area ) {
-      fprintf (stderr, "error reading from tile file: %s\n", strerror (errno));
-    }
-    g_assert (read_count == self->tile_area);
-
-    return tile_address[self->tile_size * pc_y.rem + pc_x.rem];
-  }
+  // Return pixel of interest.
+  return tile_address[self->tile_size * pc_y.rem + pc_x.rem];
 }
 
 void
@@ -916,63 +967,17 @@ float_image_set_pixel (FloatImage *self, ssize_t x, ssize_t y, float value)
   // Offset of tile x, y, where tiles are viewed as pixels normally are.
   size_t tile_offset = self->tile_count_x * pc_y.quot + pc_x.quot;
 
-  // First we check if the tile is in the cache.
+  // Address of data for tile containing pixel of interest (may still
+  // have to be loaded from disk cache).
   float *tile_address = self->tile_addresses[tile_offset];
-  if ( G_LIKELY (tile_address != NULL) ) {
-    // If it is, just set the pixel of interest.
-    tile_address[self->tile_size * pc_y.rem + pc_x.rem] = value;
-  }
-  else {
-    // If it isn't, Find the address into which to load the new tile.
-    // We have to check and see if we have to displace an already
-    // loaded tile or not.
-    if ( self->tile_queue->length == self->cache_size_in_tiles ) {
-      // Displace tile loaded longest ago.
-      size_t oldest_tile 
-	= GPOINTER_TO_INT (g_queue_pop_tail (self->tile_queue));
-      cached_tile_to_disk (self, oldest_tile);
-      tile_address = self->tile_addresses[oldest_tile];
-      self->tile_addresses[oldest_tile] = NULL;
-    }
-    else {
-      // Load tile into first free slot.
-      tile_address = self->cache + self->tile_queue->length * self->tile_area;
-    }
 
-    // Put the new tile address into the index, and put the index into
-    // the load order queue.
-    self->tile_addresses[tile_offset] = tile_address;
-    // Stash in queue by converting to a pointer (so it must fit in an int).
-    g_assert (tile_offset < INT_MAX);
-    g_queue_push_head (self->tile_queue, 
-		       GINT_TO_POINTER ((int) tile_offset));
-
-    // Load the tile data.
-    int return_code 
-      = fseeko (self->tile_file, 
-		(off_t) tile_offset * self->tile_area * sizeof (float),
-		SEEK_SET);
-    g_assert (return_code == 0);
-    clearerr (self->tile_file);
-    size_t read_count = fread (tile_address, sizeof (float), self->tile_area, 
-			       self->tile_file);
-    if ( read_count < self->tile_area ) {
-      if ( ferror (self->tile_file) ) {
-	perror ("error reading tile cache file");
-	g_assert_not_reached ();
-      }
-      if ( feof (self->tile_file) ) {
-	fprintf (stderr, 
-		 "nothing left to read in tile cache file at offset %lld\n",
-		 ftello (self->tile_file));
-	g_assert_not_reached ();
-      }
-    }
-    g_assert (read_count == self->tile_area);
-    
-    // Set pixel of interest.
-    tile_address[self->tile_size * pc_y.rem + pc_x.rem] = value;
+  // Load the tile containing the pixel of interest if necessary.
+  if ( G_UNLIKELY (tile_address == NULL) ) {
+    tile_address = load_tile (self, pc_x.quot, pc_y.quot);
   }
+
+  // Set pixel of interest.
+  tile_address[self->tile_size * pc_y.rem + pc_x.rem] = value;
 }
 
 void
@@ -1131,16 +1136,49 @@ float_image_sample (FloatImage *self, float x, float y,
   g_assert (y >= 0.0 && y <= (double) self->size_y - 1.0);
 
   switch ( sample_method ) {
+
   case FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR:
     return float_image_get_pixel (self, round (x), round (y));
     break;
+
   case FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR:
     {
-      // Values of neighbor pixels.
-      float ul = float_image_get_pixel (self, floor (x), floor (y));
-      float ur = float_image_get_pixel (self, ceil (x), floor (y));
-      float ll = float_image_get_pixel (self, floor (x), ceil (y));
-      float lr = float_image_get_pixel (self, ceil (x), ceil (y));
+      // Indicies of points we are interpolating between (x below, y
+      // below, etc., where below is interpreted in the numerical
+      // sense, not the image orientation sense.).
+      size_t xb = floor (x), yb = floor (y), xa = ceil (x), ya = ceil (y);
+      size_t ts = self->tile_size;   // Convenience alias.
+      // Offset of xb, yb, etc. relative to tiles they lie in.
+      size_t xbto = xb % ts, ybto = yb % ts, xato = xa % ts, yato = ya % ts;
+      // Values of points we are interpolating between.
+      float ul, ur, ll, lr;
+      
+      // If the points were are interpolating between don't span a
+      // tile edge, we load them straight from tile memory to save
+      // some time.
+      if ( G_LIKELY (   xbto != ts - 1 && xato != 0
+		     && ybto != ts - 1 && yato != 0) ) {
+	// The tile indicies.
+	size_t tx = xb / ts, ty = yb / ts;
+	// Tile offset in flattened list of tile addresses.
+	size_t tile_offset = ty * self->tile_count_x + tx;
+	float *tile_address = self->tile_addresses[tile_offset];
+	if ( G_UNLIKELY (tile_address == NULL) ) {
+	  tile_address = load_tile (self, tx, ty);
+	}
+	ul = tile_address[ybto * self->tile_size + xbto];
+	ur = tile_address[ybto * self->tile_size + xato];
+	ll = tile_address[yato * self->tile_size + xbto];
+	lr = tile_address[yato * self->tile_size + xato];
+      }
+      else {
+	// We are spanning a tile edge, so we just get the pixels
+	// using the inefficient but easy get_pixel method.
+	ul = float_image_get_pixel (self, floor (x), floor (y));
+	ur = float_image_get_pixel (self, ceil (x), floor (y));
+	ll = float_image_get_pixel (self, floor (x), ceil (y));
+	lr = float_image_get_pixel (self, ceil (x), ceil (y));
+      }	
 
       // Upper and lower values interpolated in the x direction.
       float ux = ul + (ur - ul) * (x - floor (x));
