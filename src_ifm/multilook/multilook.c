@@ -20,7 +20,8 @@
 NAME:  multilook
 
 SYNOPSIS:
-	multilook [-l hxw] [-s hxw] [-n metafile] [-a] <interferogram> <output>
+	multilook [-look hxw] [-step hxw] [-meta metafile] [-amplitude]
+                  [-log logfile] <interferogram> <output>
     
 DESCRIPTION:
 	Multilook is a low pass filter which also decreases the image 
@@ -78,6 +79,7 @@ PROGRAM HISTORY:
     3.6    7/01  R. Gens      Added log file switch
     3.7    2/04  P. Denny     Changed name from ml to multilook, changed license
                                from GPL to our own ASF license.
+    3.8    2/04  R. Gens      Updated command line parsing
 
 HARDWARE/SOFTWARE LIMITATIONS:
 ALGORITHM DESCRIPTION:
@@ -99,20 +101,16 @@ void parse_clas(int, char **,int *,int *,int *,int *,int *);
 int c2i(float*,float*,RGBDATA *,RGBDATA *,int,float);
 void usage(char *name);
 
-/* external variables */
-extern int optind;
-extern char *optarg;
-
 int main(int argc, char *argv[])
 {
 	char fnm1[BUF],fnm2[BUF],fnm3[BUF],fnm4[BUF],outname[BUF];
-	char imgfile[BUF];
+	char imgfile[BUF],metaFile[BUF];
 	FILE *fiamp, *fiphase, *foamp, *fophase, *flas;
 	long long inWid, inLen;
-	int ll, ls;   /* look line and sample */
-	int sl, ss;   /* step line and sample */
+	int ll=0, ls=1;   /* look line and sample */
+	int sl=STEPLINE, ss=STEPSAMPLE;   /* step line and sample */
 	int i,line, sample;
-	int row, col, lasFlag = 0;
+	int row, col, ampFlag = 0;
 	long long nitems, newitems;
 	long long outWid, outLen;
 	long long ds/*,samplesRead*/;       /* input data size, number of samples read so far.*/
@@ -128,27 +126,68 @@ int main(int argc, char *argv[])
 	register int index,offset;
 	const float convers=256.0/(2*3.14159265358979);
    
-	/* check command line args */
-	StartWatch();
-	parse_clas(argc, argv, &ll, &ls, &sl, &ss, &lasFlag);
+	logflag = 0;
+
+  /* parse command line */
+  while (currArg < (argc-2)) {
+    char *key = argv[currArg++];
+    if (strmatch(key,"-log")) {
+      CHECK_ARG(1);
+      strcpy(logFile,GET_ARG(1));
+      fLog = FOPEN(logFile, "a");
+      logflag = 1;
+    }
+    else if (strmatch(key,"-look")) {
+      CHECK_ARG(1);
+      if (2!=sscanf(GET_ARG(1),"%dx%d",&ll,&ls)) {
+        printf("   ***ERROR: -look '%s' does not look like line x sample (e.g. '10x2').\n",GET_ARG(1));
+        usage(argv[0]);
+      }
+    }
+    else if (strmatch(key,"-step")) {
+      CHECK_ARG(1);
+      if (2!=sscanf(GET_ARG(1),"%dx%d",&sl,&ss)) {
+        printf("   ***ERROR: -step '%s' does not look like line x sample (e.g. '5x1').\n",GET_ARG(1));
+        usage(argv[0]);
+      }
+    }
+    else if (strmatch(key,"-meta")) {
+      CHECK_ARG(1);
+      if (1!=sscanf(GET_ARG(1),"%s",metaFile)) {
+        printf("   ***ERROR: Could not open '%s'.\n",GET_ARG(1));
+        usage(argv[0]);
+      }
+      strcat(metaFile, "");
+      ls = ss = 1;
+      ll = sl = lzInt(metaFile, "sar.look_count:", NULL);
+    }
+    else if (strmatch(key,"-amplitude")) {
+      CHECK_ARG(1);
+      printf("   Will remove amplitude part of color image\n");
+      ampFlag = 1;
+    }
+    else {printf("\n   ***Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
+  }
+  if ((argc-currArg) < 2) {printf("   Insufficient arguments.\n"); usage(argv[0]);}
+
 	system("date");
-	printf("Program: ml\n\n");
+	printf("Program: multilook\n\n");
 	if (logflag) {
 	  StartWatchLog(fLog);
-	  printLog("Program: ml\n\n");
+	  printLog("Program: multilook\n\n");
 	}
 
 	/* create filenames and open files for reading */
-	c_getddr(argv[optind],&ddr);
+	c_getddr(argv[currArg],&ddr);
   
 	inWid=ddr.ns;
   	inLen=ddr.nl;
-  	strcpy(outname,argv[optind+1]);
-  	create_name(fnm1,argv[optind],".amp");
-  	create_name(fnm2,argv[optind],".phase");
-  	create_name(fnm3,argv[optind+1],".amp");
-  	create_name(fnm4,argv[optind+1],".phase");
-  	create_name(imgfile,argv[optind+1],"_las.img");
+  	create_name(fnm1,argv[currArg],".amp");
+  	create_name(fnm2,argv[currArg],".phase");
+  	strcpy(outname,argv[currArg++]);
+  	create_name(fnm3,argv[currArg],".amp");
+  	create_name(fnm4,argv[currArg],".phase");
+  	create_name(imgfile,argv[currArg],"_rgb.img");
  	
   	outWid  = inWid/ss;
   	outLen = inLen / sl;
@@ -272,7 +311,7 @@ int main(int argc, char *argv[])
 		/*	ampOut[sample] = sqrt(tmp*ampScale); */
 			ampOut[sample] = Cabs(z)*ampScale; 
 			phaseOut[sample] = Cphase(z);
-			if(lasFlag == 0)
+			if(!ampFlag)
 				ampBuf[sample]=ampOut[sample];
 			else
 				ampBuf[sample]=avg*1.5;		
@@ -347,120 +386,14 @@ int main(int argc, char *argv[])
 	FREE(bluPtr);
 	FREE(imgData);
 	FCLOSE(flas);
-	StopWatch();
 
 	return 0;
-}
-
-void parse_clas(int argc, 
-	   char *argv[],
-	   int *ll, 
-	   int *ls,
-	   int *sl,
-	   int *ss,
-	   int *lasFlag
-	   )
-{
-	int c;
-	int lines=0, samples=0;
-	char metaFileName[256];
-	meta_parameters *meta;
-  
-	/* print beginning output and set variables to default 
-	printf("\nml:\n");*/
-
-	logflag=0;
-
-	*ll = 0;
-	*ls = 1;
-
-	*ss = STEPSAMPLE;
-	*sl = STEPLINE;
-
-	/* grab any command line optons */
-	while ((c=getopt(argc,argv,"l:s:n:ax:")) != EOF)
-		switch (c)
-		{
-			case 'l':
-			if (2!=sscanf(optarg,"%dx%d",&lines,&samples))
-			{
-				sprintf(errbuf,"   ERROR: '%s' does not look like a line x sample "
-						"(a good one would be '5x1').\n",optarg);
-				printErr(errbuf);
-			}
-			if (*ll==0) { *ll = lines; *ls = samples; }
-				break;
-		
-			case 's': 
-			if (2!=sscanf(optarg,"%dx%d",sl,ss))
-			{
-				sprintf(errbuf, "   ERROR: '%s' does not look like a line x sample "
-						"(a good one would be '5x1').\n",optarg);
-				printErr(errbuf);
-			}
-			break;
-			
-			case 'n':
-			if (1!=sscanf(optarg,"%s",metaFileName))
-			{
-				sprintf(errbuf, "   ERROR: Unable to parse file name '%s'.\n",optarg);
-				printErr(errbuf);
-			}
-			if (extExists(metaFileName,".meta")) /*Read .meta file if possible*/
-			{
-				meta = meta_read(metaFileName);
-				*ll = meta->ifm->nLooks; *ls = 1;
-				*sl = *ll; *ss = *ls;
-				meta_free(meta);
-			}
-			else
-			{
-				sprintf(errbuf, "   ERROR: Unable to either find or open metaFile.\n");
-				printErr(errbuf);
-			}
-			break;
-
-			case 'a':
-				printf("   Will remove amplitude part of color image\n");
-				*lasFlag = 1;
-			break;
-			
-			case 'x':
-			if (1!=sscanf(optarg,"%s", logFile)) {
-				sprintf(errbuf, "   ERROR: Unable to parse file name '%s'.\n",optarg);
-				printErr(errbuf);
-			}
-			fLog = FOPEN(logFile, "a");
-			logflag=1;
-			break;
-			
-			default:
-			usage(argv[0]);
-		}
-
-	if (*ll==0)
-	{
-		*ll = LOOKLINE;
-		*ls = LOOKSAMPLE;	
-	}
-
-	switch (argc-optind)
-	{
-		case 2:
-		return;
-
-		case 3:
-		return;
-
-		default:
-		usage(argv[0]);
-	}
 }
 
 void usage(char *name) {
 
  printf("\n"
-	"USAGE: %s [-l hxw] [-s hxw] [-n metafile] [-a] [-x logfile]\n"
+	"USAGE: %s [-look hxw] [-step hxw] [-meta metafile] [-amplitude] [-log logfile]\n"
 	"                 <interferogram> <output>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
@@ -471,11 +404,11 @@ void usage(char *name) {
 	"                               <output>.img and <output>.meta\n");
  printf("\n"
 	"OPTIONAL ARGUMENTS:\n"
-	"   -l changes the look box to h by w. Default is %dx%d\n"
-	"   -s changes the step box to h by w. Default is %dx%d\n"
-	"   -n changes step & look box to nLooks by 1, as read from meta file\n"
-	"   -a removes the amplitude image from the _las.img, producing only color phase\n"
-	"   -x allows the output to be written to a log file\n",
+	"   -look changes the look box to h by w. Default is %dx%d\n"
+	"   -step changes the step box to h by w. Default is %dx%d\n"
+	"   -meta changes step & look box to nLooks by 1, as read from meta file\n"
+	"   -amplitde removes the amplitude image from the _rgb.img, producing only color phase\n"
+	"   -log allows the output to be written to a log file\n",
 	LOOKLINE,LOOKSAMPLE,STEPLINE,STEPSAMPLE);
  printf("\n"
 	"DESCRIPTION:\n"
