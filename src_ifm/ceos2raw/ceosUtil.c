@@ -50,10 +50,12 @@ linkFlag:
 */
 void linkFlag(short link, char *inName)
 {
-	char command[256];
-	static short L=0;
-	static short D=0;
-	static char file[256];
+	char temp[1280];
+	char old_leader_name[1024], new_leader_name[1024];
+	char new_data_name[1024];
+	static short leader=0;
+	static short data=0;
+	static char file[1024];
 	
 	if (inName != NULL)
 	{
@@ -61,27 +63,30 @@ void linkFlag(short link, char *inName)
 	}
 	switch (link) {
 	 case 0: /*HACK: link .ldr file over to .L file-- keeps get_facdr happy*/
-		sprintf(command,"ln -s %s %s",appendExt(file,".ldr"),appendExt(file,".L"));
-		system(command);
-		L=1;
+	 	create_name(old_leader_name, file, ".ldr");
+	 	create_name(new_leader_name, file, ".L");
+		sprintf(temp,"ln -s %s %s",old_leader_name,new_leader_name);
+		system(temp);
+		leader=1;
 		break;
 	 case 1: /*HACK: link .raw (or whatever) over to .D file-- keeps get_iof happy*/
-		sprintf(command,"ln -s %s %s",file,appendExt(file,".D"));
-		system(command);
-		D=1;
+	 	create_name(new_data_name, file, ".D");
+		sprintf(temp,"ln -s %s %s",file,new_data_name);
+		system(temp);
+		data=1;
 		break;
 	 case 2: /* Remove ugly hack */
-		if (L)
+		if (leader)
 		{
-			sprintf(command,"rm %s",appendExt(file,".L"));
-			system(command);
-			L=0;
+	 		create_name(new_leader_name, file, ".L");
+			unlink(new_leader_name);
+			leader=0;
 		}
-		if (D)
+		if (data)
 		{
-			sprintf(command,"rm %s",appendExt(file,".D"));
-			system(command);
-			D=0;
+	 		create_name(new_data_name, file, ".D");
+			unlink(new_data_name);
+			data=0;
 		}
 		break;
 	}		
