@@ -1,4 +1,4 @@
-PROGRAM := geocode2
+PROGRAM := asf_geocode
 
 include ../../make_support/system_rules
 
@@ -12,7 +12,7 @@ include ../../make_support/system_rules
 #
 ###############################################################################
 
-SOURCES := geocode_options.c parse_options.c geocode2.c
+SOURCES := geocode_options.c parse_options.c asf_geocode.c
 
 ###############################################################################
 #
