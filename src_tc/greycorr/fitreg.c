@@ -22,17 +22,17 @@ REFERENCES:
 #define GMAX(A, B)      ((A) > (B) ? (A) : (B)) /* assign maximum of a and b */
 #define TINY 1.0e-20;
 
-void fitreg(cpval, mfit, pkoffs, tlerrs)
-
-int mfit;		/* Method of surface fit: 1 - Elliptical paraboloid
+void fitreg(
+	float *cpval,   /* 5 by 5 array of xcorr vals, in units of standard 
+                           dev above background, centered on corr peak      */
+	int mfit,       /* Method of surface fit: 1 - Elliptical paraboloid
                                                   2 - Elliptical Gaussian
                                                   3 - Reciprocal Paraboloid */
-float *cpval;		/* 5 by 5 array of xcorr vals, in units of standard 
-                           dev above background, centered on corr peak 	    */
-float *pkoffs;		/* Best-fit horiz and vertical offsets of correlation 
-                           peak relative to center of 5 by 5 array 	    */
-float *tlerrs;		/* Estimated horizontal error, vertical error, and h-v 
-			   cross term in best-fit offsets 	    	    */
+	float *pkoffs,  /* Best-fit horiz and vertical offsets of correlation 
+                           peak relative to center of 5 by 5 array          */
+	float *tlerrs   /* Estimated horizontal error, vertical error, and h-v 
+			   cross term in best-fit offsets                   */
+)
 {
 int i, j;		/* Loop counters 				    */
 float B[6][6];		/* Matrix of sums of polynomial terms 		    */
@@ -63,7 +63,7 @@ pkoffs[1] = (coeffs[1]*coeffs[4] - 2.0*coeffs[2]*coeffs[3])/denom;
   ------------------------------------*/
 esterr(z, wghts, A, coeffs, pkoffs, tlerrs);
 }
-
+
 /****************************************************************************
 NAME:				SUMS
 
@@ -76,15 +76,15 @@ VERSION	 DATE	AUTHOR
   1.0	 8/92	D. Steinwand 
 
 *****************************************************************************/
-void sums(cpval, mfit, z, wghts, b, vector)
-
-int mfit;		/* Method of fitting surface 			   */
-float b[6][6];		/* Matrix of sums of polynomial terms 		   */
-float *cpval;		/* 5 by 5 array of xcorr values, in std dev 	   */
-float *vector;		/* Col vector obtained by summing products of poly 
-                           terms and an approp. function of xcorr value    */
-float *wghts;		/* Weights to be assigned to points in 5 by 5 array*/
-float *z;		/* Function of xcorr to which quadratic is fit     */
+void sums(
+	float *cpval,    /* 5 by 5 array of xcorr values, in std dev        */
+	int mfit,        /* Method of fitting surface                       */
+	float *z,        /* Function of xcorr to which quadratic is fit     */
+	float *wghts,    /* Weights to be assigned to points in 5 by 5 array*/
+	float b[6][6],   /* Matrix of sums of polynomial terms              */
+	float *vector    /* Col vector obtained by summing products of poly 
+                            terms and an approp. function of xcorr value    */
+)
 {
 int i,ic,ir,j;		/* Loop counters 				   */
 int ivalpt;		/* Index of xcorr vals and weights in peak area    */
@@ -125,7 +125,7 @@ for(ivalpt=0,ir=0; ir<5; ir++)
           }
       }
 }
-
+
 /****************************************************************************
 
 NAME:				INVERT			
@@ -140,10 +140,11 @@ VERSION	 DATE	AUTHOR
   1.0	 8/92	D. Steinwand 
 
 *****************************************************************************/
-void invert(matrix,outA,n)
-float (*matrix)[MAX_DIM];       /* Input--Matrix A 		*/
-float (*outA)[MAX_DIM];       	/* Output--Matrix A 		*/
-int n;				/* Dimension of matrix 		*/
+void invert(
+	float (*matrix)[MAX_DIM], /* Input--Matrix A     */
+	float (*outA)[MAX_DIM],   /* Output--Matrix A    */
+	int n                     /* Dimension of matrix */
+)
 {
 int ipvt[MAX_DIM];		/* Array of pivots 		*/
 float b[MAX_DIM];		/* b & resulting x vectors 	*/
@@ -165,16 +166,16 @@ for(i=0;i<n;i++)
    for(j=0;j<n;j++)outA[j][i]=b[j];
    }
 }
-
+
 /* Routine to perfrom the LU factorization of a matrix.  Upon input, "matrix"
    contains matrix A and upon output "matrix" contains A's LU factorization.
    The pivoting method used is scaled column pivoting.
   ---------------------------------------------------*/
-int lu_fact(n, matrix, ipvt)
-
-int n;				/* Input--Dimension of matrix 		*/
-float (*matrix)[MAX_DIM];	/* Input/Ouput--Matrix A 		*/
-int *ipvt;			/* Output--Record of pivots performed 	*/
+int lu_fact(
+	int n,                     /* Input--Dimension of matrix         */
+	float (*matrix)[MAX_DIM],  /* Input/Ouput--Matrix A              */
+	int *ipvt                  /* Output--Record of pivots performed */
+)
 {
 float s[MAX_DIM];	/* Vector containing abs() of max val for each row */
 float factor;		/* Factor used in zeroing entries (stored) 	*/
@@ -221,16 +222,16 @@ if (matrix[n_1][n_1] == 0.0) return(n);
 
 return(U_OK);
 }
-
+
 /* Routine to solve the LU factorized matrix A, given a vector b.  Upon output,
    vector b is really vector x.
   ----------------------------*/
-void back_solve(n, matrix, ipvt, b)
-
-int n;				/* Input--dimension of matrix 		*/
-float (*matrix)[MAX_DIM];	/* Input--LU factorization of matrix A 	*/
-int *ipvt;			/* Input--Record of pivots 		*/
-float *b;			/* Input/Output--b (in) & x (out) vector */
+void back_solve(
+	int n,                    /* Input--dimension of matrix            */
+	float (*matrix)[MAX_DIM], /* Input--LU factorization of matrix A   */
+	int *ipvt,                /* Input--Record of pivots               */
+	float *b                  /* Input/Output--b (in) & x (out) vector */
+)
 {
 int k, j, i;			/* Loop counters 			*/
 int n_1;			/* Dimension of matrix - 1 		*/
@@ -270,11 +271,11 @@ return;
    pivoting methods can be used with little re-coding (although the s array
    may be unused).
   ---------------*/
-int init_pivot(n, matrix, s)
-
-int n;				/* Input--dimension of matrix */
-float (*matrix)[MAX_DIM];	/* Input--matrix A */
-float *s;			/* Output--S array */
+int init_pivot(
+	int n,                    /* Input--dimension of matrix */
+	float (*matrix)[MAX_DIM], /* Input--matrix A            */
+	float *s                  /* Output--S array            */
+)
 {
 int i,j;		/* Loop counters */
 float test;		/* Temporary variable for maximum test */
@@ -294,12 +295,12 @@ for (i = 0; i < n; i++)
 return(U_OK);
 }
 
-int find_pivot(n, matrix, k, s)
-
-int n;				/* Input--dimension of matrix 		*/
-float (*matrix)[MAX_DIM]; 	/* Input/Output--matrix A 		*/
-int k;				/* Input--Current row (zero-relative) 	*/
-float *s;			/* Input--S array 			*/
+int find_pivot(
+	int n,                    /* Input--dimension of matrix         */
+	float (*matrix)[MAX_DIM], /* Input/Output--matrix A             */
+	int k,                    /* Input--Current row (zero-relative) */
+	float *s                  /* Input--S array                     */
+)
 {
 float max;		/* Maximum value found 				*/
 int j;			/* Loop counter 				*/
@@ -319,7 +320,7 @@ for (j = k; j < n; j++)
 
 return(max_row);
 }
-
+
 /****************************************************************************
 NAME:				ESTERR
 
@@ -331,14 +332,14 @@ VERSION	 DATE	AUTHOR
   1.0	 8/92	D. Steinwand 
 
 *****************************************************************************/
-void esterr(z, wghts, bnvrs, coeffs, pkoffs, tlerrs)
-
-float *pkoffs;		/* Best-fit offset of peak to center of 5 by 5 array */
-float bnvrs[6][6];	/* Inverse of matrix B 				     */
-float *coeffs;		/* Coefs of best-fit quad surface to values of Z     */
-float *tlerrs;		/* Est horiz & vert error & h-v cross term 	     */
-float *wghts;		/* Weights for each point in 5 by 5 array of values  */
-float *z;		/* Function of xcorr val to which quadratic is fit   */
+void esterr(
+	float *z,          /* Function of xcorr val to which quadratic is fit   */
+	float *wghts,      /* Weights for each point in 5 by 5 array of values  */
+	float bnvrs[6][6], /* Inverse of matrix B                               */
+	float *coeffs,     /* Coefs of best-fit quad surface to values of Z     */
+	float *pkoffs,     /* Best-fit offset of peak to center of 5 by 5 array */
+	float *tlerrs      /* Est horiz & vert error & h-v cross term           */
+)
 {
 int i,	j, x, y;	/* Loop counters 				     */
 int ivalpt;		/* Index to values det from measured corr coeffs     */
