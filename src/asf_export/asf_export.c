@@ -389,20 +389,23 @@ main (int argc, char *argv[])
   }
   else if ( strcmp (command_line.format, "GEOTIFF") == 0 ||
     strcmp(command_line.format, "GEOTIF") == 0) {
+    char * name_with_ext = appendExt(command_line.output_name, ".tif");
+    strcpy(command_line.output_name, name_with_ext);
+    FREE(name_with_ext);
     format = GEOTIFF;
-    strcpy(command_line.output_name,
-	   appendExt(command_line.output_name, ".tif"));
   }
   else if ( strcmp (command_line.format, "JPEG") == 0 ||
     strcmp(command_line.format, "JPG") == 0) {
+    char * name_with_ext = appendExt(command_line.output_name, ".jpg");
+    strcpy(command_line.output_name, name_with_ext);
+    FREE(name_with_ext);
     format = JPEG;
-    strcpy(command_line.output_name,
-	   appendExt(command_line.output_name, ".jpg"));
   }
   else if ( strcmp (command_line.format, "PPM") == 0 ) {
+    char * name_with_ext = appendExt(command_line.output_name, ".ppm");
+    strcpy(command_line.output_name, name_with_ext);
+    FREE(name_with_ext);
     format = PPM;
-    strcpy(command_line.output_name,
-	   appendExt(command_line.output_name, ".ppm"));
   }
   else {
     print_error("Unrecognized output format specified");
