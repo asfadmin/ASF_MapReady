@@ -224,7 +224,8 @@ int main(int argc, char *argv[])
   int sprocketFlag=FALSE;
   int sigmaFlag=FALSE, betaFlag=FALSE, gammaFlag=FALSE, powerFlag=FALSE;
   long offset;
-  unsigned short *short_buf=NULL, *cpx_buf=NULL;
+  unsigned short *short_buf=NULL;
+  short *cpx_buf=NULL;
   unsigned char *byte_buf=NULL;
   float *out_buf=NULL;
   complexFloat *out_cpx_buf;
@@ -445,7 +446,7 @@ int main(int argc, char *argv[])
       fpOut = fopenImage(outName,"wb");
       nl = meta->general->line_count;
       ns = meta->general->sample_count;
-      cpx_buf = (unsigned short *) MALLOC(2*ns * sizeof(unsigned short));
+      cpx_buf = (short *) MALLOC(2*ns * sizeof(short));
       out_cpx_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat));
 
       /* Read single look complex data */
@@ -457,13 +458,13 @@ int main(int argc, char *argv[])
         offset = headerBytes+ii*image_fdr.reclen;
         FSEEK64(fpIn, offset, SEEK_SET);
         FREAD(cpx_buf, sizeof(short), 2*ns, fpIn);
-        for (kk=0; kk<ns*2; kk+=2) {
+        for (kk=0; kk<ns; kk++) {
           /* Put read in data in proper endian format */
           big16(cpx_buf[kk]);
           big16(cpx_buf[kk+1]);
           /* Now do our stuff */
-          out_cpx_buf[kk].real=(float)cpx_buf[kk];
-          out_cpx_buf[kk].imag=(float)cpx_buf[kk+1];
+          out_cpx_buf[kk].real=(float)cpx_buf[kk*2];
+          out_cpx_buf[kk].imag=(float)cpx_buf[kk*2+1];
         }
         put_complexFloat_line(fpOut, meta, ii, out_cpx_buf);
         print_progress(ii,nl);
