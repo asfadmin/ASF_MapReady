@@ -7,8 +7,11 @@ These are called by the "routing" routines in tkCommand.c.
 #include "image.h"
 #include "proj.h"
 
-void cproc_polyinfo(char *dest)/*: TCL asks C to 
-	return a string describing the currently selected region.*/
+/**********************************************
+ * cproc_polyinfo:
+ * TCL asks C to return a string describing the
+ * currently selected region.*/
+void cproc_polyinfo(char *dest)
 {
 	int totalPixels=0,y,i;
 	double totalLength;
@@ -56,8 +59,10 @@ void cproc_polyinfo(char *dest)/*: TCL asks C to
 	
 }
 
-int cproc_pointloc(double x,double y, double *lat,double *lon)/*TCL asks C
-	to compute the latitude and longitude of (x,y)*/
+/*************************************************************
+ * cproc_pointloc:
+ * TCL asks C to compute the latitude and longitude of (x,y)*/
+int cproc_pointloc(double x,double y, double *lat,double *lon)
 {
 	if (meta==NULL)
 		return 0;
@@ -66,9 +71,11 @@ int cproc_pointloc(double x,double y, double *lat,double *lon)/*TCL asks C
 }
 
 
-/*Print a textual description fo the current point, in 
-Degrees-Minutes-Seconds units.  Uses PCI's format,
-as in 157d29'14.17" W */
+/*******************************************************
+ * print_dms:
+ * Print a textual description fo the current point,
+ * in Degrees-Minutes-Seconds units.  Uses PCI's format,
+ * as in 157d29'14.17" W */
 char *print_dms(int isLat,double val,char *buf)
 {
 	int deg,min,sec,hsec;/*Degrees, minutes, seconds, and hundredths*/
@@ -90,8 +97,9 @@ char *print_dms(int isLat,double val,char *buf)
 	return buf;
 }
 
-/*Write a description of the current pixel to the given string
-*/
+/*****************************************************************
+ * image_describePixel:
+ * Write a description of the current pixel to the given string */
 void image_describePixel(char *dest,double x,double y)
 {
 	int ix=(int)floor(x+0.5),iy=(int)floor(y+0.5);
