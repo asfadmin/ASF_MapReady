@@ -104,10 +104,8 @@ $(OBJS): Makefile $(LOCAL_HEADERS) $(wildcard ../../include/*.h) \
 	 $(YACC_SOURCES) $(LEX_SOURCES)
 
 check: unit_tests.c build_only
-	make --version
-	$(CC) $(CFLAGS) -I/export/home/bkerin/local/include $< \
-	      -L/export/home/bkerin/local/lib asf_meta.a -lm -lcheck \
-	      $(LDFLAGS) -o asf_meta_tester 
+	$(CC) $(CFLAGS) $< asf_meta.a -lm -lcheck $(LDFLAGS) \
+              -o asf_meta_tester 
 	./asf_meta_tester
 
 clean:
