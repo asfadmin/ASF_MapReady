@@ -34,14 +34,14 @@ meta_parameters *meta_read(const char *inName)
     err_die("%s function: metadata file is empty\n", __func__);
   }
   while ( !regex_match(&version_subexps, line,
-		       "^[[:space:]]*meta_version[[:space:]]*:[[:space:]]*[[:digit:]]+(\\.[[:digit:]]+)?"
+		       "^[[:space:]]*meta_version[[:space:]]*:[[:space:]]*([[:digit:]]+(\\.[[:digit:]]+)?)"
 		       ) ) {
     if ( fgets(line, MAX_METADATA_LINE, meta_file) == '\0' ) {
       err_die("meta_read function: didn't find Meta version field\n");
     }
   }
   FCLOSE(meta_file);   /* Done using meta file directly.  */
-  
+
   /* Read file with appropriate reader for version.  */
   if ( strtod(get_subexp_string(&version_subexps, 1), NULL)
        < NEW_FORMAT_VERSION ) {
