@@ -43,7 +43,7 @@ int getCeosRecord(char *inName,CEOS_RECORD_TYPE recordType,int recordNo,unsigned
 }
 	else {
 		if (recordType==CEOS_FDR){
-		recordType=CEOS_IFILEDR;/*If looking for FDR record type, set it to IFILEDR type*/
+			recordType=CEOS_IFILEDR;/*If looking for FDR record type, set it to IFILEDR type*/
 		}
 		era=set_era(inName,leaderName,1);/*Else, in .L.*/
 	}
@@ -54,7 +54,7 @@ int getCeosRecord(char *inName,CEOS_RECORD_TYPE recordType,int recordNo,unsigned
 		fprintf(stderr,"Can't read SAR leader file '%s'!\n",leaderName);
 		exit(1);
 	}
-	
+
 	while (1==fread(&bufhdr, 12, 1, fp))
 	{
 		int itype,length;
@@ -82,9 +82,12 @@ int getCeosRecord(char *inName,CEOS_RECORD_TYPE recordType,int recordNo,unsigned
 	
 	fclose(fp); 
 
-	if ( recordType != CEOS_MPDR && recordType != CEOS_DQSR 
-	     && recordType != CEOS_DHR ) {
-	  fprintf(stderr, "WARNING: removeal of obsolete code in getCeosRecord may cause your program to fail ungracefully, since it couldn't read SAR leader file record of type %i from SAR leader file named '%s'.\n", 
+	if ( recordType!=CEOS_MPDR && recordType!=CEOS_DQSR
+	     && recordType!=CEOS_DHR ) {
+	  fprintf(stderr,
+	          "WARNING: * Removal of obsolete code in getCeosRecord may cause your program to\n"
+	          "         * fail ungracefully, since it couldn't read SAR leader file record of\n"
+		  "         * type %i from SAR leader file named '%s'.\n", 
 		  recordType, leaderName); 
 	}
 	return -1;
