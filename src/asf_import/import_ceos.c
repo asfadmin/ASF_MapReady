@@ -270,7 +270,9 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       FILE *fpLut;
       double incid_table[MAX_tableRes];                  /* Incidence angle */
       double scale_table[MAX_tableRes];                   /* Scaling factor */
-      double incid[MAX_tableRes], old, new, min_incid=100.0, max_incid=0.0, tmpIncid;
+      double incid[MAX_tableRes], old, new;
+      double UL_incid, UR_incid, LL_incid, LR_incid; 
+      double min_incid=100.0, max_incid=0.0;
       char line[255];
       int nLut=0, n, tableRes=MAX_tableRes, tablePix=0, ll, min, max;
 
@@ -286,15 +288,20 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       }
 
       /* Calculate minimum and maximum incidence angle */
-      min_incid = meta_incid(meta, 0, 0);
+      UL_incid = meta_incid(meta, 0, 0);
+      UR_incid = meta_incid(meta, nl, 0);
+      LL_incid = meta_incid(meta, 0, ns);
+      LR_incid = meta_incid(meta, nl, ns);
+      if (UL_incid < min_incid) min_incid = UL_incid;
+      if (UL_incid > max_incid) max_incid = UL_incid;
+      if (UR_incid < min_incid) min_incid = UR_incid;
+      if (UR_incid > max_incid) max_incid = UR_incid;
+      if (LL_incid < min_incid) min_incid = LL_incid;
+      if (LL_incid > max_incid) max_incid = LL_incid;
+      if (LR_incid < min_incid) min_incid = LR_incid;
+      if (LR_incid > max_incid) max_incid = LR_incid;
       min_incid *= R2D;
-      max_incid = meta_incid(meta, nl, ns);
       max_incid *= R2D;
-      if (min_incid > max_incid) {
-	tmpIncid = min_incid;
-	min_incid = max_incid;
-	max_incid = tmpIncid;
-      }
 
       /* Look up the index for the minimum in the LUT */
       n = 0;
@@ -351,15 +358,13 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	      big16(short_buf[kk]);
 	      old = 10000000;
 
-	      for (ll=min; ll<max; ll++) {
-		new = interp - incid_table[ll];
-		if (fabs(new) < fabs(old)) {
-		  old = new;
-		  n++;
-		}
-		else break;
-	      }
-	      out_buf[kk] = short_buf[kk] * scale_table[n];
+	      for (ll=min; ll<max; ll++)
+		if (interp < incid_table[ll]) break;
+
+	      out_buf[kk] = short_buf[kk] *
+		(((scale_table[ll]-scale_table[ll-1]) /
+		  (incid_table[ll]-incid_table[ll-1])) *
+		  (interp-incid_table[ll-1]) + scale_table[ll-1]);
 	    }
 	    else
 	      out_buf[kk] = 0;
@@ -392,23 +397,20 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	  /* Calculate output values */
           for (kk=0; kk<ns; kk++) {
             if (byte_buf[kk]) {
-              /* Interpolate incidence */
+              /* Interpolate incidence angle */
               double index=(double)kk/tablePix;
               int    base=(int)index;
               double frac=index-base;
 	      double interp= (incid[base]+frac*(incid[base+1]-incid[base]))*R2D;
 
 	      old = 10000000;
-	      n = min;
-	      for (ll=min; ll<=max; ll++) {
-		  new = interp - incid_table[ll];
-		  if (fabs(new) < fabs(old)) {
-		    old = new;
-		    n++;
-		  }
-		  else break;
-		}
-	      out_buf[kk] = byte_buf[kk] * scale_table[n];
+	      for (ll=min; ll<=max; ll++)
+		if (interp < incid_table[ll]) break;
+
+	      out_buf[kk] = byte_buf[kk] * 
+		(((scale_table[ll]-scale_table[ll-1]) /
+		  (incid_table[ll]-incid_table[ll-1])) *
+		  (interp-incid_table[ll-1]) + scale_table[ll-1]);
 	    }
 	    else
 	      out_buf[kk] = 0;
