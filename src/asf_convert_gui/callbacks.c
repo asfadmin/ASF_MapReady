@@ -58,12 +58,14 @@ void
 input_data_format_combobox_changed()
 {
   GtkWidget *input_data_type_combobox,
-    *input_data_type_label,
-    *input_data_format_combobox,
-    *latitude_checkbutton,
-    *latitude_hbox,
-    *latitude_hbox2,
-    *vbox_export;
+      *input_data_type_label,
+      *input_data_format_combobox,
+      *latitude_checkbutton,
+      *latitude_low_label,
+      *latitude_low_entry,
+      *latitude_hi_label,
+      *latitude_hi_entry,
+      *vbox_export;
 
   gint input_data_format;
   gboolean show_data_type_combobox;
@@ -120,15 +122,23 @@ input_data_format_combobox_changed()
   latitude_checkbutton =
     glade_xml_get_widget(glade_xml, "latitude_checkbutton");
 
-  latitude_hbox =
-    glade_xml_get_widget(glade_xml, "latitude_hbox");
+  latitude_low_label =
+    glade_xml_get_widget(glade_xml, "latitude_low_label");
 
-  latitude_hbox2 =
-    glade_xml_get_widget(glade_xml, "latitude_hbox2");
+  latitude_low_entry =
+    glade_xml_get_widget(glade_xml, "latitude_low_entry");
+
+  latitude_hi_label =
+    glade_xml_get_widget(glade_xml, "latitude_hi_label");
+
+  latitude_hi_entry =
+    glade_xml_get_widget(glade_xml, "latitude_hi_entry");
 
   gtk_widget_set_sensitive(latitude_checkbutton, show_latitude_spinbuttons);
-  gtk_widget_set_sensitive(latitude_hbox, show_latitude_spinbuttons);
-  gtk_widget_set_sensitive(latitude_hbox2, show_latitude_spinbuttons);
+  gtk_widget_set_sensitive(latitude_low_label, show_latitude_spinbuttons);
+  gtk_widget_set_sensitive(latitude_low_entry, show_latitude_spinbuttons);
+  gtk_widget_set_sensitive(latitude_hi_label, show_latitude_spinbuttons);
+  gtk_widget_set_sensitive(latitude_hi_entry, show_latitude_spinbuttons);
 
   if (!show_latitude_spinbuttons)
   {
