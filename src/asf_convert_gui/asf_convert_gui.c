@@ -2,6 +2,7 @@
    tool.  */
 
 #include "asf_convert_gui.h"
+#include "asf_version.h"
 
 GladeXML *glade_xml;
 GStaticRecMutex list_store_lock = G_STATIC_REC_MUTEX_INIT;
@@ -33,6 +34,15 @@ main(int argc, char **argv)
       g_thread_init (NULL);
     }
 #endif // THUMBNAILS
+
+    /* add version number to window title */
+    char title [256];
+    sprintf (title,
+	     "Alaska Satellite Facility Data Conversion Tool: Version %s",
+	     CONVERT_PACKAGE_VERSION_STRING);
+
+    widget = glade_xml_get_widget (glade_xml, "asf_convert");
+    gtk_window_set_title(GTK_WINDOW(widget), title);
 
     /* select defaults for dropdowns */
     widget = glade_xml_get_widget (glade_xml, "scaling_method_combobox");
