@@ -63,38 +63,38 @@ main (int argc, char **argv)
   const size_t tdsx = 700, tdsy = 220; /* Test DEM size x and size y.  */
   FloatImage *td 
     = (float_image_new_from_file_with_sample_type 
-       (700, 220, "test_data/dem_over_delta/cut1.img",
+       (tdsx, tdsy, "test_data/dem_over_delta/cut1.img",
 	0, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN,
 	FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER));
   float_image_export_as_jpeg (td, "test_dem.jpg", 4000);
   // Test DEM ul x and y projection coordinates.
-  const double td_ul_x = 1.57235253300000E+06;
-  const double td_ul_y = 4.00632767000000E+05;
+  //  const double td_ul_x = 4.00632767000000E+05;
+  //  const double td_ul_y = 1.57235253300000E+06;
   // Test DEM per x and per y projection coordinates per pixel.
-  const double td_px = 60;
-  const double td_py = -60;
+  //  const double td_px = 60;
+  //  const double td_py = -60;
   project_parameters_t projection_parameters;
-  g_assert_not_reached ();	/* Coordinates belore aren't filled in yet.  */
-  projection_parameters.albers.std_parallel1 = -42;
-  projection_parameters.albers.std_parallel2 = -42;
-  projection_parameters.albers.center_meridian = -42;
-  projection_parameters.albers.orig_latitude = -42;
-  projection_parameters.albers.false_easting = -42;
-  projection_parameters.albers.false_northing = -42;
+  const double radians_per_degree = M_PI / 180;
+  projection_parameters.albers.std_parallel1 = 55 * radians_per_degree;
+  projection_parameters.albers.std_parallel2 = 65 * radians_per_degree;
+  projection_parameters.albers.center_meridian = -154 * radians_per_degree;
+  projection_parameters.albers.orig_latitude = 50 * radians_per_degree;
+  projection_parameters.albers.false_easting = 0;
+  projection_parameters.albers.false_northing = 0;
 
   // Load the reference DEM.
-  Dem *dem = dem_new_from_file (reference_dem->str);
-  float_image_export_as_jpeg (dem->float_image, "dem_view.jpg",
-			      GSL_MAX (dem->float_image->size_x,
-				       dem->float_image->size_y));
-  dem = dem;			/* FIXME: remove compiler reassurance.  */
+  //  Dem *dem = dem_new_from_file (reference_dem->str);
+  //  float_image_export_as_jpeg (dem->float_image, "dem_view.jpg",
+  //			      GSL_MAX (dem->float_image->size_x,
+  //				       dem->float_image->size_y));
+  //  dem = dem;		/* FIXME: remove compiler reassurance.  */
 
   // We will need a slant range version of the image being terrain
   // corrected.
   SlantRangeImage *sri 
     = slant_range_image_new_from_ground_range_image (input_meta_file->str,
 						     input_data_file->str);
-
+  
   meta_parameters *imd = meta_read (input_meta_file->str);
 
   int svc = imd->state_vectors->vector_count;   // State vector count.
@@ -266,6 +266,15 @@ main (int argc, char **argv)
   			      observation_times[svc - 1] + gt,
   			      svc, base_date, observation_times, observations);
 
+  double target_point_albers_x;
+  double target_point_albers_y;
+  int return_code = project_albers (&projection_parameters, 
+				    63.80514 * M_PI / 180.0,
+				    -145.006 * M_PI / 180.0,
+				    &target_point_albers_x,
+				    &target_point_albers_y);
+  g_assert (return_code == TRUE);
+
   // FIXME: This is a test point for a single location in delta
   // junction.  Eventually a computation like this will have to be
   // done for evey pixel in the image.
@@ -273,19 +282,13 @@ main (int argc, char **argv)
     = ITRS_point_new_from_geodetic_lat_long_height (63.80514 * M_PI / 180.0,
 						    -145.006 * M_PI / 180.0,
 						    448.4);
-  double target_height_according_to_dem 
-    = dem_get_height (dem, 63.80514 * M_PI / 180.0, -145.006 * M_PI / 180.0);
-  printf ("target height according to dem: %lf\n",
-	  target_height_according_to_dem);
+  //  double target_height_according_to_dem 
+  //    = dem_get_height (dem, 63.80514 * M_PI / 180.0, -145.006 * M_PI / 180.0);
+  //  printf ("target height according to dem: %lf\n",
+  //	  target_height_according_to_dem);
   Vector *target = vector_new (target_point->x, target_point->y, 
 			       target_point->z);
 
-  ITRSPoint *tp
-    = ITRS_point_new_from_geodetic_lat_long_height ((M_PI / 180) * 45, 
-						    M_PI / 4, 0);
-  Vector *tpt = vector_new (tp->x, tp->y, tp->z);
-  tpt = tpt;
-  
   // Find the time of the point of closest approach for this pixel.
   int status;   // Status of the solver.
   // Current iteration, maximum number of iterations.
@@ -360,37 +363,116 @@ main (int argc, char **argv)
 
   // Here we take a crack at actually painting a DEM.
 
-  FloatImage *cd = float_image_new (tdsx, tdsy);   // Backscatter colored DEM.
-  cd = cd;			/* FIXME: remove. */
+  FloatImage *pd = float_image_new (tdsx, tdsy);   // Backscatter painted DEM.
   double *x_buffer = g_new (double, tdsx);
   double *y_buffer = g_new (double, tdsx);
   double *lats = g_new (double, tdsx);
   double *lons = g_new (double, tdsx);
+
   for ( ii = 0 ; (size_t) ii < tdsy ; ii++ ) {
 
     // Get the latitude and longitude of each pixel in this row.
     size_t jj;
     for ( jj = 0 ; jj < tdsx ; jj++ ) {
-      x_buffer[jj] = td_ul_x + jj * td_px;
-      y_buffer[jj] = td_ul_y + ii * td_py;
-      g_assert (tdsx < LONG_MAX);
-      int return_code = project_utm_arr_inv (&projection_parameters,
-					     x_buffer, y_buffer, &lats, &lons,
-					     tdsx);
-      g_assert (return_code == TRUE);
+      x_buffer[jj] = target_point_albers_x;
+      y_buffer[jj] = target_point_albers_y;
+      //      x_buffer[jj] = td_ul_x + jj * td_px;
+      //      y_buffer[jj] = td_ul_y + ii * td_py;
     }
+    g_assert (tdsx < LONG_MAX);
+    return_code = project_albers_arr_inv (&projection_parameters,
+					  x_buffer, y_buffer, &lats, 
+					  &lons, tdsx);
+    g_assert (return_code == TRUE);
 
     // Find the closest point of approach for each DEM pixel, look up
     // the corresponding backscatter value from the slant range image,
     // and use it to paint the DEM.
-    Vector cp_target;
-    cp_target = cp_target;	/* FIXME: remvoe.  */
+    Vector cp_target;		/* Current pixel target point.  */
+    // We take advantage of all the settings needed are already made
+    // for the test case above.
+    tdp.target = &cp_target;
     for ( jj = 0 ; jj < tdsx ; jj++ ) {
-      g_assert_not_reached ();	/* Not finished yet.  */
-    }
+      double p_lat = lats[jj];
+      double p_lon = lons[jj];
+      double p_height = float_image_get_pixel (td, jj, ii);
+      ITRSPoint *ctp
+	= ITRS_point_new_from_geodetic_lat_long_height (p_lat, p_lon, 
+							p_height);
+      cp_target.x = ctp->x;
+      cp_target.y = ctp->y;
+      cp_target.z = ctp->z;
 
+      ITRS_point_free (ctp);
+
+      iteration = 0;
+      sor = observation_times[0] - gt;
+      eor = observation_times[svc - 1] + gt;
+      min = sor + eor / 2.0;
+      gsl_min_fminimizer_set (minimizer, &distance_function, min, sor, eor);
+
+      //      printf ("using %s method\n",
+      //	      gsl_min_fminimizer_name (minimizer));
+  
+      //      printf ("%5s [%9s, %9s] %9s %9s\n",
+      //	      "iter", "lower", "upper", "min", "err(est)");
+      
+      //      printf ("%5d [%.7f, %.7f] %.7f %.7f\n",
+      //	      iteration, sor, eor, min, eor - sor);
+
+      do {
+	iteration++;
+	status = gsl_min_fminimizer_iterate (minimizer);
     
+	min = gsl_min_fminimizer_x_minimum (minimizer);
+	sor = gsl_min_fminimizer_x_lower (minimizer);
+	eor = gsl_min_fminimizer_x_upper (minimizer);
+    
+	status = gsl_min_test_interval (sor, eor, 0.001, 0.0);
+    
+	//	if (status == GSL_SUCCESS)
+	  //	  printf ("Converged:\n");
+    
+	  //	printf ("%5d [%.7f, %.7f] %.7f %.7f\n",
+	  //		iteration, sor, eor, min, eor - sor);
+      }
+      while (status == GSL_CONTINUE && iteration < max_iterations);
+  
+      // We need to have the convergence work.  
+      assert (status == GSL_SUCCESS);
+
+      // The resulting minimum is time in the arc model of the point
+      // of closest approach.  FIXME: how to verify input images are
+      // zero-doppler processed?
+      double solved_time = min;
+
+      // The slant range can be found from the distance between the
+      // target and the platform at the point of closest approach.
+      // FIXME: this delcaration currently shadows declaration in test case
+      //      Vector poca; 
+      ITRS_platform_path_position_at_time (pp_fixed, solved_time, &poca);
+      // FIXME: this delcaration currently shadows declaration in test case
+      //      Vector *
+      poca_to_target = vector_copy (&poca);
+      vector_subtract (poca_to_target, target);
+      double solved_slant_range = vector_magnitude (poca_to_target);
+      solved_slant_range = solved_slant_range; /* FIXME: remove. */
+      vector_free (poca_to_target);
+    
+      // Look up the backscatter value for the found slant range and
+      // time.
+      float backscatter 
+      	= slant_range_image_sample (sri, solved_time, solved_slant_range,
+      				    FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR);
+
+      // Set the pixel in the painted dem.
+      float_image_set_pixel (pd, jj, ii, backscatter);
+
+    }
   }
+
+  float_image_export_as_jpeg (pd, "painted_dem.jpg", GSL_MAX (pd->size_x,
+							      pd->size_y));
 
   exit (EXIT_SUCCESS);
 }

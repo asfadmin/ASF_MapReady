@@ -92,3 +92,8 @@ ITRS_point_get_geodetic_lat_long (ITRSPoint *self, double *latitude,
   }  
 }
 
+void
+ITRS_point_free (ITRSPoint *self)
+{
+  free (self);
+}
