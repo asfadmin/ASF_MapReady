@@ -74,7 +74,8 @@ void select_current_block(char *block_name)
 		(vector_count + 1) * sizeof(state_loc));
     current_block = &( ((meta_state_vectors *) current_block)
 		       ->vecs[vector_count++]); 
-    MSTATE->num = vector_count;
+    MSTATE->vector_count = vector_count;
+    MSTATE->num = MSTATE->vector_count;	  /* Backward compat alias.  */
     goto MATCHED; 
   }
 
