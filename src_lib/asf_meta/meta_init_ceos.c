@@ -16,8 +16,7 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include <ctype.h>
 #include "meta_init.h"
-#include "asf_nan.h"
-
+#include "asf_endian.h"
 
 int has_mpdr(const char *ldr_name);
 
@@ -74,7 +73,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	meta->general->band_number      = 0;
 	meta->general->orbit_direction  = dssr.asc_des[0];
 	meta->general->line_count       = iof.numofrec;
-	meta->general->sample_count     = -2147283648; /* Retrieved below by ceos_init_asf() */
+	meta->general->sample_count     = -999999999;  /* Retrieved below by ceos_init_asf() */
 	meta->general->start_line       = 0;
 	meta->general->start_sample     = 0;
 	meta->general->x_pixel_size     = dssr.pixel_spacing;
@@ -92,8 +91,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	else if (ceos->product==LOW_REZ
 	       || ceos->product==HI_REZ) { meta->sar->image_type = 'G'; }
 	meta->sar->look_direction = (dssr.clock_ang>=0.0) ? 'R' : 'L';
-/*	meta->sar->look_count = -2147283648;  found below */
-/**/	meta->sar->deskewed = -2147283648;
+/*	meta->sar->look_count = -999999999;  found below */
+/**/	meta->sar->deskewed = -999999999;
     {	struct data_hist_rec pdhr;
 	strcpy(fName,in_fName);
 	if ( get_dhr(fName, &pdhr) != -1 ) {
@@ -101,8 +100,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	    meta->sar->original_sample_count = (pdhr.data)->ns_pix;
 	}
 	else {
-	    meta->sar->original_line_count   = -2147283648;
-	    meta->sar->original_sample_count = -2147283648;
+	    meta->sar->original_line_count   = -999999999;
+	    meta->sar->original_sample_count = -999999999;
 	}
 /**/}	meta->sar->line_increment   = 1.0; /* There is probably a better way to set this */
 /**/	meta->sar->sample_increment = 1.0; /* There is probably a better way to set this */
