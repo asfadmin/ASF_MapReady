@@ -21,8 +21,8 @@ typedef struct {
    enum {unknownFacility,ASF,VEXCEL,ESA,CDPF} facility;
    enum {unknownSatellite,ERS,JERS,RSAT} satellite;
    double version;/*Processor version number, or zero.*/
-   enum {unknownProcessor,ASP,SPS,AISP,PREC,PP,SP2,AMM,LZP,FOCUS} processor;
-   enum {unknownProduct,CCSD, LOW_REZ, HI_REZ, SCANSAR, SLC, PRI} product;
+   enum {unknownProcessor,ASP,SPS,AISP,PREC,PP,SP2,AMM,LZP,FOCUS,SP3} processor;
+   enum {unknownProduct,CCSD,RAW,LOW_REZ,HI_REZ,SCANSAR,SLC,PRI,SGF} product;
 } ceos_description;
 
 /***************************************
