@@ -1,4 +1,4 @@
-package ASF::CoordinateConversion;
+package CoordinateConversion;
 
 # EXTERNAL ASSOCIATES:
 #    NAME:               USAGE:
@@ -9,10 +9,13 @@ use Exporter ();
 @ISA = qw(Exporter);
 
 @EXPORT = qw(earth_radius_at_geodetic_lat geocentric2geodetic
-	     geodetic2geocentric llr2xyz xyz2llr xyz2sch sch2xyz 
-	     line_sample2sc sc2line_sample);
+             geodetic2geocentric llr2xyz xyz2llr xyz2sch sch2xyz
+             line_sample2sc sc2line_sample);
 
 use strict;
+
+# Standard libraries (they ship with perl).
+use POSIX qw(ceil floor);
 
 # Add on libraries from CPAN
 use Params::Validate;		# Better function argument checking.
@@ -20,7 +23,7 @@ use Params::Validate;		# Better function argument checking.
 # seem to be a way to get PDL to play nicely and not try to import the
 # sec symbol, so for now we get the PDL version, which does I don't
 # know what.
-use Math::Trig qw(!sec);	# Trig routines.
+use Math::Trig qw(!sec :radial);	# Trig routines.
 use PDL;			# The perl data language.
 use PDL::Slatec;		# SLATEC matrix routines for PDL.
 
@@ -65,6 +68,9 @@ sub earth_radius_at_geodetic_lat {
 			       + ($re * sin($geocentric_latr))**2));
 }
 
+# Shorthand function for division by pi over two.
+sub divpo2 { return shift() / (pi() / 2); }
+
 =item $geodetic_lat_radians = B<geocentric2geodetic>($geocentric_lat_radians);
 
 Convert given geocentric latitude in radians to geodetic latitude in
@@ -78,7 +84,27 @@ sub geocentric2geodetic {
 
     my $e2 = 0.00669437999014;   # Ellipticity of the WGS84 earth squared.
 
-    return atan(tan($geocentric_lat)/(1 - *e2));
+    # Handle potential infinite returns.
+    my $tmp = &divpo2($geocentric_lat) - floor(&divpo2($geocentric_lat));
+    if ( $tmp < 0.00001 or $tmp > 0.99999 ) {
+	return $geocentric_lat;
+    }
+
+    # FIXME: Bleck this is awful.  But I can't figure out the better
+    # way to do it if there is one.  
+    my $start_quadrant = ceil(&divpo2($geocentric_lat));
+    my $result = atan(tan($geocentric_lat) / (1 - $e2));
+    my $end_quadrant = ceil(&divpo2($result));
+    # Eccentricity is small and shouldn't change the angle much, so we
+    # compare against 1.95 to check if we have jumped a couple
+    # quadrands (not 2.0 to avoid potential problems with floating
+    # point accuracy).
+    if ( abs($end_quadrant - $start_quadrant) > 1.95 ) {
+	if ( $result >= 0 ) { $result -= pi(); }
+	elsif ( $result < 0 ) { $result += pi(); }
+    }
+	
+    return $result;
 }
 
 =item $geocentic_lat_radians = B<geodetic2geocentric>($geodetic_lat_radians);
@@ -94,7 +120,27 @@ sub geodetic2geocentric {
 
     my $e2 = 0.00669437999014;   # Ellipticity of the WGS84 earth squared.
 
-    return atan(tan($geodetic_lat) * (1 - $e2));
+    # Handle potential infinite returns.
+    my $tmp = &divpo2($geodetic_lat) - floor(&divpo2($geodetic_lat));
+    if ( $tmp < 0.00001 or $tmp > 0.99999 ) {
+	return $geodetic_lat;
+    }
+
+    # FIXME: Bleck this is awful.  But I can't figure out the better
+    # way to do it if there is one.  
+    my $start_quadrant = ceil(&divpo2($geodetic_lat));
+    my $result = atan(tan($geodetic_lat) * (1 - $e2));
+    my $end_quadrant = ceil(&divpo2($result));
+    # Eccentricity is small and shouldn't change the angle much, so we
+    # compare against 1.95 to check if we have jumped a couple
+    # quadrands (not 2.0 to avoid potential problems with floating
+    # point accuracy).
+    if ( abs($end_quadrant - $start_quadrant) > 1.95 ) {
+	if ( $result >= 0 ) { $result -= pi(); }
+	elsif ( $result < 0 ) { $result += pi(); }
+    }
+	
+    return $result;
 }
 
 =item ($x, $y, $z) = B<llr2xyz>($lat, $lon, $radius)
@@ -121,7 +167,7 @@ sub llr2xyz {
 
 =item ($lat, $lon, $radius) = B<xyz2llr>($x, $y, $z)
 
-Given global cartesian coordinates in meters, return geodeodetic
+Given global cartesian coordinates in meters, return geodetic
 latitude and longitude in degrees, and geocentric radius in meters.
 
 =cut
@@ -129,8 +175,10 @@ latitude and longitude in degrees, and geocentric radius in meters.
 sub xyz2llr {
     my ($x, $y, $z) = validate_pos(@_, (1) x 3);
 
-    return (rad2deg(&geocentric2geodetic(atan($y/$x))), 
-	    rad2deg(atan(sqrt($x**2 + $y**2)/$z)), 
+    # Return values in degrees, not normalized to 0 to 2*pi (that's
+    # what the 1 arguments to rad2deg mean to not do).
+    return (rad2deg(&geocentric2geodetic(atan($z/sqrt($x**2 + $y**2))), 1), 
+	    rad2deg(atan2($y, $x), 1), 
 	    sqrt($x**2 + $y**2 + $z**2));
 }
 
@@ -173,7 +221,7 @@ sub xyz2llr {
     # Transformation matrices.
 
     sub M1 {
-	my ($pp_lat, $pp_lon) = validate_pos(@_, 1 x (2));
+	my ($pp_lat, $pp_lon) = validate_pos(@_, (1) x 2);
  
 	my $latr = deg2rad($pp_lat);
 	my $lonr = deg2rad($pp_lon);
@@ -221,7 +269,8 @@ of AIRSAR/TOPSAR SAR Data', Holecz et al.
 sub sch2xyz {
     my ($s, $c, $h_r, $pp_lat, $pp_lon, $pp_head) = validate_pos(@_, (1) x 6);
 
-    my $ra = &ra($pp_lat, $pp_head); # Along track earth curvature.
+    # Along track earth radius of curvature at peg point in heading direction.
+    my $ra = &ra($pp_lat, $pp_head);
     my $c_phi = $c/$ra;		# Normalized cross track arc length.
     my $s_lambda = $s/$ra;	# Normalized along track arc length.
 
@@ -230,8 +279,8 @@ sub sch2xyz {
     my $M2 = &M2($pp_head);
 
     # Holecz paper isn't exactly a full explanation of things...
-    my $Unnamed_matrix = pdl [[ ($ra + $h_r)*cos($c_phi)*cos($s_lambda) ]
-			      [ ($ra + $h_r)*cos($c_phi)*sin($s_lambda) ]
+    my $Unnamed_matrix = pdl [[ ($ra + $h_r)*cos($c_phi)*cos($s_lambda) ],
+			      [ ($ra + $h_r)*cos($c_phi)*sin($s_lambda) ],
 			      [        ($ra + $h_r)*sin($c_phi)         ]];
 
     # Translation vector.
@@ -239,7 +288,7 @@ sub sch2xyz {
     
     my $XYZ = $M1 x $M2 x $Unnamed_matrix + $O;
 
-    return ($XYZ->at(0), $XYZ->at(1), $XYZ->at(2));
+    return ($XYZ->at(0,0), $XYZ->at(0,1), $XYZ->at(0,2));
 }
 
 =item ($s, $c, $h_r) = B<xyz2sch>($x, $y, $z, $pp_lat, $pp_lon, $pp_head);
@@ -258,6 +307,9 @@ sub xyz2sch {
     my $XYZ = pdl [[ $x ],
 		   [ $y ],
 		   [ $z ]];
+
+    # Along track earth radius of curvature at peg point in heading direction.
+    my $ra = &ra($pp_lat, $pp_head);
 
     # Transformation matrices.
     my $M1 = &M1($pp_lat, $pp_lon);
@@ -292,16 +344,26 @@ Given 1-based line and sample coordinates of a pixel, azimuth and
 range pixel sizes, and azimuth and range offsets from the peg point to
 the first image pixel, (which point in the first image pixel the
 offset refers to is unclear), returns the s and c coordinates of the
-pixel.
+pixel.  
 
 =cut
 
 sub line_sample2sc {
     my ($line, $sample, $azimuth_pixel_size, $range_pixel_size, 
-	$azimuth_offset, $range_offset) = validate_pos(@_, (1) x 6);
+	$azimuth_offset, $range_offset) 
+	= validate_pos(@_, 
+		       ({ callbacks 
+			      => {'is (at least almost) whole number' 
+				 => 
+        => sub {    $_[0] - floor($_[0]) < 0.000001
+		 or $_[0] - floor($_[0]) > 0.999999; 
+	   }
+			         }
+		        }) x 2,
+		       (1) x 4);
     
-    return ($line * $azimuth_pixel_size + $azimuth_pixel_size,
-	    $sample * $range_pixel_size + $range_pixel_size);
+    return ($line * $azimuth_pixel_size + $azimuth_offset,
+	    $sample * $range_pixel_size + $range_offset);
 }
 
 =item ($line, $sample) = B<sc2line_sample>($s, $c, $azimuth_pixel_size,
@@ -318,10 +380,21 @@ of the pixel at the given coordinates.
 sub sc2line_sample {
     my ($s, $c, $azimuth_pixel_size, $range_pixel_size, $azimuth_offset,
 	        $range_offset) = validate_pos(@_, (1) x 6);
-    
-    return (($s - $azimuth_offset) / $azimuth_pixel_size, 
-	    ($c - $range_offset) / $range_pixel_size);
+
+    # Compute rounded line and sample.
+    my $line = floor(($s - $azimuth_offset) / $azimuth_pixel_size + 0.5);
+    my $sample = floor(($c - $range_offset) / $range_pixel_size + 0.5);
+
+    return ($line, $sample);
 }
 
 # Perl needs to see a true return value from this file.
 "module return true";
+
+
+
+
+
+
+
+
