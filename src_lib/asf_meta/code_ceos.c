@@ -6,7 +6,7 @@
   These #defines convert floats, ints, and strings to/from ascii.
   We can do this because the offset into the ASCII buffer doesn't depend
   on the direction you're translating.  Hence, the below routines just
-  provide the mapping between the two formats. 
+  provide the mapping between the two formats.
 **************************************************************************/
 #define uc (unsigned char *)
 #define fltV(qFld,bfOf,bfSz) flt2asc(&(q->qFld),&bf[bfOf],bfSz,dir);off+=bfSz;
@@ -27,7 +27,7 @@
 FUNCTION NAME: varies
 SYNTAX: varies
 DESCRIPTION:
-  Since there's plenty of symmetry between reading an ASCII buffer into 
+  Since there's plenty of symmetry between reading an ASCII buffer into
   a structure and writing the structure back out to a bffer, and to ease
   modifications and creation of such routines, these routines were created
   to take the enumerated parameter, (called dir), which takes the values
@@ -99,7 +99,7 @@ void flt2asc(double *in,unsigned char *outBuf,int len,codingDir dir)
 }
 
 void long2asc(int *in,unsigned char *outBuf,int len,codingDir dir)
-{	
+{
   int i;
   char	cmp[255],
 	tmp[255]= /*250 spaces follow.*/
@@ -133,22 +133,22 @@ void int2asc(int *in,unsigned char *outBuf,int len,codingDir dir)
   { int l=*in; long2asc(&l,outBuf,len,dir); *in=l; }
 
 void str2asc(char *inString,unsigned char *outBuf,int len,codingDir dir)
-{ 
+{
   int i;
   if (dir==toASCII)
-  { 
-	for (i=0;inString[i]&&i<len;i++) 
+  {
+	for (i=0;inString[i]&&i<len;i++)
 		outBuf[i]=inString[i];
-	for (;i<len;i++) 
+	for (;i<len;i++)
 		outBuf[i]=' ';
      /* right_justify((char *)outBuf,len); */
   } else /*dir==fromASCII*/
-   { 
-   	for (i=0;i<len;i++) 
-   		inString[i]=outBuf[i]; 
-   	inString[len]=0; 
+   {
+   	for (i=0;i<len;i++)
+   		inString[i]=outBuf[i];
+   	inString[len]=0;
    }
-}   
+}
 
 
 
@@ -180,7 +180,7 @@ SYNTAX:
   Code_NVDR(unsigned char *bf, struct VDR *q, codingDir dir)
 
 DESCRIPTION:
-  These procedures convert ASF metadata structures to and from their 
+  These procedures convert ASF metadata structures to and from their
   ASCII form.  See ceos.h for info on the structures.
   To convert an ASCII buffer read in from a .ldr,.trl, or .L file, call
  	Code_###(bf,ceosStructure [,era] ,fromASCII);
@@ -190,7 +190,7 @@ DESCRIPTION:
 PROGRAM HISTORY:
 VERSION         DATE   AUTHOR
 -------         ----   ------
-  1.0           2/97   O. Lawlor (ASF)  converted from various 
+  1.0           2/97   O. Lawlor (ASF)  converted from various
 					(one-way) utility procedures
   2.0		2/98   T. Logan (ASF)   added all record types, debugged each
   2.1		3/98   O. Lawlor (ASF)  Debugged Tom's debugging.
@@ -278,9 +278,9 @@ void Code_IOF(unsigned char *bf, struct IOF_VFDR* q,codingDir dir)
     intV(rigtfill,off,4);
     intV(maxidata,off,8);
     /* ignore variable length spare bytes: byte 448 to ? */
-}        
+}
 void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
-{        
+{
 	int off=12+16;
 	strV(mpdesc,off,32);
 	longV(npixels,off,16);
@@ -294,7 +294,7 @@ void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
 	fltV(altplat,off,16);
 	fltV(velnadir,off,16);
 	fltV(plathead,off,16);
-	
+
 	strV(refelip,off,32);
 	fltV(remajor,off,16);
 	fltV(reminor,off,16);
@@ -305,7 +305,7 @@ void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
 	fltV(datshift2,off,16);
 	fltV(datshift3,off,16);
 	fltV(rescale,off,16);
-	
+
 	strV(mpdesig,off,32);
 	strV(utmdesc,off,32);
 	strV(utmzone,off,4);
@@ -316,14 +316,14 @@ void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
 	fltV(utmpara1,off,16);
 	fltV(utmpara2,off,16);
 	fltV(utmscale,off,16);
-	
+
 	strV(upsdesc,off,32);
 	fltV(upslong,off,16);
 	fltV(upslat,off,16);
 	fltV(upsscale,off,16);
-	
+
 	strV(nspdesc,off,32);
-	
+
 	fltV(nspeast,off,16);
 	fltV(nspnorth,off,16);
 	fltV(nsplong,off,16);
@@ -335,7 +335,7 @@ void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
 	fltV(nspcm1,off,16);
 	fltV(nspcm2,off,16);
 	fltV(nspcm3,off,16);
-	
+
 	off+=64;/*Spares.*/
 	fltV(tlcnorth,off,16);
 	fltV(tlceast,off,16);
@@ -357,7 +357,7 @@ void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
 	fltV(trcheight,off,16);
 	fltV(brcheight,off,16);
 	fltV(blcheight,off,16);
-	
+
 	fltV(a11,off,20);
 	fltV(a12,off,20);
 	fltV(a13,off,20);
@@ -366,7 +366,7 @@ void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
 	fltV(a22,off,20);
 	fltV(a23,off,20);
 	fltV(a24,off,20);
-	
+
 	fltV(b11,off,20);
 	fltV(b12,off,20);
 	fltV(b13,off,20);
@@ -375,7 +375,7 @@ void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
 	fltV(b22,off,20);
 	fltV(b23,off,20);
 	fltV(b24,off,20);
-	
+
 }
 
 void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir dir)
@@ -394,7 +394,7 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
 	    fltV(sc_lin    ,308,16);
 	    fltV(sc_pix    ,324,16);
 	  }
-	else 
+	else
   	  {
             strV(spare1,292,16);
 	    fltV(terrain_h,308,16);
@@ -458,7 +458,7 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
 	  }
 	  else {
   	    intV(no_beams,1766,2);
-	    strV(beam1,1768,4); strV(beam2,1772,4); 
+	    strV(beam1,1768,4); strV(beam2,1772,4);
 	    strV(beam3,1776,4); strV(beam4,1780,4);
 	    sngV(prf1,1784,8); sngV(prf2,1792,8);
 	    sngV(prf3,1800,8); sngV(prf4,1808,8);
@@ -486,7 +486,7 @@ void Code_PPDR (unsigned char *bf, struct pos_data_rec* q, codingDir dir)
     int off=12;
     int i,j;
 
-    strV(orbit_ele_desg,off,32); 
+    strV(orbit_ele_desg,off,32);
     fltV(orbit_ele[0],off,16);
     fltV(orbit_ele[1],off,16);
     fltV(orbit_ele[2],off,16);
@@ -525,7 +525,7 @@ void Code_ATDR(unsigned char *bf, struct att_data_rec *q, codingDir dir)
     int pointNo=0;
     int i;
     shrtV(npoint,off,4);
-    v = q->data;    
+    v = q->data;
     for (i=0; i< q->npoint; i++)
       {
 	if (dir == fromASCII)
@@ -581,10 +581,35 @@ void Code_RADDR(unsigned char *bf, struct VRADDR* q,codingDir dir)
     fltV(a[1],off,16);
     fltV(a[2],off,16);
     off+=4;
-    for (i=0; i<256; i++) 
+    for (i=0; i<256; i++)
     {/* <--- Since fltV is a #define, these brackets are necessary.*/
     	fltV(noise[i],off,16);
     }
+}
+
+void Code_RSI_RADDR(unsigned char *bf, struct RSI_VRADDR* q,codingDir dir)
+{
+    int off = 12;
+    int ii;
+
+    shrtV(seq_num,off,4);
+    shrtV(n_data,off,4);
+    longV(field_size,off,8);
+    strV(chan_ind,off,4);
+    strV(spare1,off,4);
+    strV(table_desig,off,24);
+    longV(n_samp,off,8);
+    strV(samp_type,off,16);
+    shrtV(samp_inc,off,4);
+    for (ii=0; ii<512; ii++) {
+    	fltV(lookup_tab[ii],off,16);
+    }
+    strV(spare2,off,4);
+    fltV(noise_scale,off,16);
+    fltV(spare3,off,16);
+    fltV(offset,off,16);
+    fltV(calib_const,off,16);
+    strV(spare4,off,1512);
 }
 
 void Code_DQS(unsigned char* bf,struct qual_sum_rec* q,int era,codingDir dir)
@@ -621,8 +646,8 @@ void Code_DQS(unsigned char* bf,struct qual_sum_rec* q,int era,codingDir dir)
     fltV(ori_err,off,16);
     off=830;
     for (i=0; i<16; i++)
-    	 { 
-  	    fltV(misreg[0][i],off, 16); 
+    	 {
+  	    fltV(misreg[0][i],off, 16);
 	    fltV(misreg[1][i],off, 16);
 	 }
     if (era==1) {
@@ -641,29 +666,29 @@ void Code_DHR(unsigned char* bf, struct data_hist_rec* q, codingDir dir)
 {
   int j, off=12;
   struct hist_dset *d=NULL,*oldD=NULL;
-  shrtV(seq_num,off,4); 
+  shrtV(seq_num,off,4);
   shrtV(sar_chan,off, 4);
   longV(ntab,off, 8);
   longV(ltab,off, 8);
 
-  if (dir==fromASCII) 
+  if (dir==fromASCII)
 	oldD=NULL;
-  else 
+  else
 	d=q->data;
   for (j=0; j< (q->ntab); j++)
-  { 
-	if (dir==fromASCII) 
+  {
+	if (dir==fromASCII)
 		d=(struct hist_dset *)MALLOC(sizeof(struct hist_dset));
 	Code_DH(&bf[off],d,dir);
 	off += 248+8*d->nhist;
 	if (dir==fromASCII) {
 		d->next = NULL;
-		if (!oldD) 
-			oldD = q->data = d; 
-		else 
+		if (!oldD)
+			oldD = q->data = d;
+		else
 			oldD = ( oldD->next = d);
 	}
-	else /*(dir==toASCII)*/ 
+	else /*(dir==toASCII)*/
 		{ d=d->next; }
   }
 }
@@ -683,7 +708,7 @@ void Code_DH(unsigned char *bf, struct hist_dset* q, codingDir dir)
 	fltV(std_hist,off, 16); longV(nhist,off,8);
 	if (dir==fromASCII)
 	  q->data_values_hist = (int *) MALLOC (sizeof(int)*q->nhist);
-	 
+
 	for (i=0; i<q->nhist; i++)
            { longV(data_values_hist[i],off, 8); }
 }
@@ -858,7 +883,7 @@ void Code_NVDR(unsigned char *bf, struct VDREC *q, codingDir dir)
 {
     int off=12;
 
-    strV(flag1,off,3); 
+    strV(flag1,off,3);
     strV(blank,off,3);
     strV(format_doc,off,13);
     strV(super_doc,off,3);
@@ -941,20 +966,20 @@ void Code_DFPR(unsigned char *bf, struct FPREC *q, codingDir dir)
 
     strV(flag1,off,3);
     strV(blank,off,3);
-    shrtV(nr,off,4);  
-    strV(name,off,17); 
+    shrtV(nr,off,4);
+    strV(name,off,17);
     strV(class,off,29);
     strV(class_code,off,5);
     strV(data_type,off,29);
-    strV(type_code,off,5); 
-    intV(records,off,8);  
+    strV(type_code,off,5);
+    intV(records,off,8);
     intV(first_rec,off,8);
     intV(max_rec,off,8);
     strV(rec_type,off,13);
     strV(rec_type_code,off,5);
     shrtV(vol_nrs,off,4);
-    intV(start,off,8);   
-    intV(end,off,8);    
+    intV(start,off,8);
+    intV(end,off,8);
     strV(spare,off,101);
     strV(local,off,101);
 }
