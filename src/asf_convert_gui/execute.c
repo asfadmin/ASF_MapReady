@@ -458,7 +458,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
   
   if (strcmp(status, "Done") != 0 || !skip_done)
   {
-    gchar *basename, *after_geocoding_basename, *out_basename, *p, *done;
+    gchar *basename, *before_geocoding_basename, *out_basename, *p, *done;
     gchar convert_cmd[4096];
     gchar log_file[128];
     gboolean err;
@@ -472,7 +472,19 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     p = strrchr(out_basename, '.');
     if (p)
       *p = '\0';
-  
+
+    if (settings_get_run_geocode(user_settings))
+    {
+	before_geocoding_basename =
+	    (gchar *)g_malloc(sizeof(gchar) * (strlen(out_basename) + 10));
+
+	sprintf(before_geocoding_basename, "%s_tmp", out_basename);
+    }
+    else
+    {
+	before_geocoding_basename = g_strdup(out_basename);
+    }
+
     gtk_list_store_set(list_store, iter, 2, "Processing...", -1);
     append_begin_processing_tag(in_data);
 
@@ -482,7 +494,6 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     if (settings_get_run_import(user_settings))
     {
       gchar * cmd_output;
-      gchar * out_name_full;
       
       gtk_list_store_set(list_store, iter, 2, "Importing...", -1);
       g_snprintf(log_file, sizeof(log_file), "tmpi%d.log", pid);
@@ -501,26 +512,19 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
          settings_get_latitude_argument(user_settings),
          log_file,
          basename,
-         out_basename);
+         before_geocoding_basename);
 
       cmd_output = do_cmd(convert_cmd, log_file);
       err = check_for_error(cmd_output);
 
       append_output(cmd_output);
 
-      out_name_full =
-        (gchar *)g_malloc(sizeof(gchar) * (strlen(basename) + 10));
-
-      g_sprintf(out_name_full, "%s.img", basename);
-      
       if (!settings_get_run_export(user_settings))
       {
 	done = err ? "Error" : "Done";
-	/*gtk_list_store_set(list_store, iter, 1, out_name_full, -1);*/
 	gtk_list_store_set(list_store, iter, 2, done, -1);
       }
 
-      g_free(out_name_full);
       g_free(cmd_output);
     }
 
@@ -533,19 +537,14 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
       gtk_list_store_set(list_store, iter, 2, "Geocoding...", -1);
 
-      after_geocoding_basename =
-	  (gchar *)g_malloc(sizeof(gchar) * (strlen(out_basename) + 10));
-      sprintf(after_geocoding_basename, "%s_%s", out_basename,
-	      settings_get_projection_abbrev(user_settings));
-
       g_snprintf(log_file, sizeof(log_file), "tmpg%d.log", pid);
     
       snprintf(convert_cmd, sizeof(convert_cmd),
            "asf_geocode %s -log \"%s\" \"%s\" \"%s\" 2>&1",
            settings_get_geocode_options(user_settings),
            log_file,
-           out_basename,
-           after_geocoding_basename);
+           before_geocoding_basename,
+           out_basename);
 
       cmd_output = do_cmd(convert_cmd, log_file);
       err = check_for_error(cmd_output);
@@ -553,10 +552,6 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
       append_output(cmd_output);
      
       g_free(cmd_output);
-    }
-    else
-    {
-      after_geocoding_basename = g_strdup(out_basename);
     }
 
     if (!err && settings_get_run_export(user_settings))
@@ -573,7 +568,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
            settings_get_size_argument(user_settings),
            settings_get_output_bytes_argument(user_settings),
            log_file,
-           after_geocoding_basename,
+           out_basename,
            out_full);
 
       cmd_output = do_cmd(convert_cmd, log_file);
@@ -587,15 +582,23 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 #endif
 
       g_free(cmd_output);
+
+      if (settings_get_run_geocode(user_settings))
+      {
+	  /* delete temporary .img/.meta pair generated before geocoding,
+	     they are just eating up space ... */
+	  snprintf(convert_cmd, sizeof(convert_cmd), "rm -f %s.img %s.meta",
+		   before_geocoding_basename, before_geocoding_basename);
+	  system(convert_cmd);
+      }
     }
 
     done = err ? "Error" : "Done"; 
     gtk_list_store_set(list_store, iter, 2, done, -1);
 
     g_free(basename);
-    g_free(after_geocoding_basename);
+    g_free(before_geocoding_basename);
     g_free(out_basename);
-    /* g_free(in_meta); */
   }
 
   g_free(status);

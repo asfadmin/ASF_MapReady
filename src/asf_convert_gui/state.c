@@ -52,11 +52,12 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
       s->data_type, s->latitude_checked, s->latitude_low, s->latitude_hi);
   fprintf(f, "[Geocode]\nGeocode=%d\nProjection=%d\nLat1=%lf\nLat2=%lf\n"
 	     "Lat0=%lf\nLon0=%lf\nFalseEasting=%lf\nFalseNorthing=%lf\n"
-	     "UseHeight=%d\nHeight=%lf\nUsePixelSize=%d\nPixelSize=%lf\n\n",
+	     "UseHeight=%d\nHeight=%lf\nUsePixelSize=%d\nPixelSize=%lf\n"
+	     "Datum=%d\n\n",
 	  s->geocode_is_checked, s->projection, s->plat1, s->plat2,
 	  s->lat0, s->lon0, s->false_easting, s->false_northing,
 	  s->specified_height, s->height, s->specified_pixel_size,
-	  s->pixel_size);
+	  s->pixel_size, s->datum);
   fprintf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n"
           "OutputBytes=%d\nScalingMethod=%d\n\n",
           s->output_format, s->apply_scaling, s->longest_dimension,
@@ -85,16 +86,16 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
       gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
              0, &data_file, 1, &output_file, 2, &status, -1);
 
-      if (strcmp(status, "Processing...") == 0)
+      if (strstr(status, "...") != NULL)
       {
-    /* user "Saved" while processing was in progress */
-    fprintf(f, "Data=%s\nOutput=%s\nStatus=-\n",
-        data_file, output_file);
+	  /* user "Saved" while processing was in progress */
+	  fprintf(f, "Data=%s\nOutput=%s\nStatus=-\n",
+		  data_file, output_file);
       }
       else
       {
-    fprintf(f, "Data=%s\nOutput=%s\nStatus=%s\n",
-        data_file, output_file, status);
+	  fprintf(f, "Data=%s\nOutput=%s\nStatus=%s\n",
+		  data_file, output_file, status);
       }
 
       g_free(data_file);
@@ -430,11 +431,12 @@ static void read_ver_2_0(FILE *f)
      &s.data_type, &s.latitude_checked, &s.latitude_low, &s.latitude_hi);
   fscanf(f, "[Geocode]\nGeocode=%d\nProjection=%d\nLat1=%lf\nLat2=%lf\n"
 	    "Lat0=%lf\nLon0=%lf\nFalseEasting=%lf\nFalseNorthing=%lf\n"
-	    "UseHeight=%d\nHeight=%lf\nUsePixelSize=%d\nPixelSize=%lf\n\n",
+	    "UseHeight=%d\nHeight=%lf\nUsePixelSize=%d\nPixelSize=%lf\n"
+	    "Datum=%d\n",
 	  &s.geocode_is_checked, &s.projection, &s.plat1, &s.plat2,
 	  &s.lat0, &s.lon0, &s.false_easting, &s.false_northing,
 	  &s.specified_height, &s.height, &s.specified_pixel_size,
-	  &s.pixel_size);
+	  &s.pixel_size, &s.datum);
   fscanf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n"
           "OutputBytes=%d\nScalingMethod=%d\n\n",
         &s.output_format, &s.apply_scaling, &s.longest_dimension,
@@ -571,4 +573,6 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
     }
 
     fclose(f);
+
+    update_summary();
 }
