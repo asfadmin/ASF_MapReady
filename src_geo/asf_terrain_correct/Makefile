@@ -28,7 +28,7 @@ CLASSES := date_time \
            ITRS_point
 
 # Non-main, non-class source files that need building.
-OTHER_C_SOURCES := utilities.c gei2fixed.c
+OTHER_C_SOURCES := utilities.c
 
 # We have a special little program which we run to mash a bunch of
 # International Earth Rotation Service Bulletin B issues together.
@@ -58,8 +58,7 @@ CPPFLAGS := $(INCLUDE_FLAGS)
 # take type float (still get a complaint about argument being passed
 # as float due to prototype rather than double.
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
-# FIXME: remove -O0 here once configure system doesn't put -O2 in in debug mode
-CFLAGS += -O0 -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
+CFLAGS += -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
           -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
           -Wwrite-strings -Wnested-externs -fno-common
 
