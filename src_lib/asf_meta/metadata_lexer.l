@@ -9,7 +9,7 @@
 #include "y.tab.h"
 
 /* For some dumb reason it seems necessary to provide this, or else
-   you have to link with the library.  */
+   you have to link with the lex library.  */
 int yywrap(void)
 {
   return 1;
