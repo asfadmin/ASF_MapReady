@@ -34,7 +34,7 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
     int len = strlen(path);
     path = (gchar *) g_realloc(path, sizeof(gchar) * (len + 2));
     *(path + len) = DIR_SEPARATOR;
-    *(path + len + 1) = '\0';	
+    *(path + len + 1) = '\0';   
   }
 
   /* do not allow user to move output file to a different location */
@@ -69,7 +69,7 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
     fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
     g_snprintf(fixed_name, len,
-	       "%s%s.%s", path, basename, ext);
+           "%s%s.%s", path, basename, ext);
   }
   else if (strcmp(user_ext, ext) != 0)
   {
@@ -77,7 +77,7 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
     fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
     g_snprintf(fixed_name, len,
-	       "%s%s.%s", path, name_without_path, ext);
+           "%s%s.%s", path, name_without_path, ext);
   }
   else
   {
@@ -85,7 +85,7 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, char *new_name)
     fixed_name = (gchar *) g_malloc( sizeof(gchar) * len );
 
     g_snprintf(fixed_name, len,
-	       "%s%s", path, name_without_path);
+           "%s%s", path, name_without_path);
   }
 
   g_free(basename);
@@ -149,14 +149,16 @@ rename_selected_output_filename()
     name_without_path = g_path_get_basename(current_output_name);
 
     gtk_label_set_text(GTK_LABEL(label_current_output_filename),
-		       name_without_path);
+               name_without_path);
 
     gtk_entry_set_text(GTK_ENTRY(entry_new_output_filename),
-		       name_without_path);
+               name_without_path);
 
     gtk_widget_grab_focus(entry_new_output_filename);
 
     g_free(name_without_path);
+    g_free(current_output_name);
+
     gtk_widget_show(change_output_name_dialog);
   }
   

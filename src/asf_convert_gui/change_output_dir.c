@@ -42,12 +42,11 @@ void do_change_output_directory( gchar * new_dir )
     while (valid)
     {
         gchar * current_output_name;
+        gchar * new_output_name;
+        gchar * basename;
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                             1, &current_output_name, -1);
-
-        gchar * new_output_name;
-        gchar * basename;
 
         basename = g_path_get_basename(current_output_name);
 
@@ -61,6 +60,7 @@ void do_change_output_directory( gchar * new_dir )
 
         g_free(basename);
         g_free(new_output_name);
+        g_free(current_output_name);
 
         valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
     }
@@ -126,6 +126,7 @@ prepare_change_output_directory_dialog()
             }
             
             g_free(path);
+            g_free(current_output_name);
       
             valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
         }

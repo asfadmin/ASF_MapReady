@@ -84,16 +84,16 @@ update_all_extensions()
       gchar * p;
       
       gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-			 1, &current_output_name, -1);
+             1, &current_output_name, -1);
       
       basename = g_strdup(current_output_name);
       p = strrchr(basename, '.');
       if (p)
-	*p = '\0';
+    *p = '\0';
       
       new_output_name = 
-	(gchar *) g_malloc(sizeof(gchar) * (strlen(basename) + 
-					    strlen(ext) + 1));
+    (gchar *) g_malloc(sizeof(gchar) * (strlen(basename) + 
+                        strlen(ext) + 1));
 
       g_sprintf(new_output_name, "%s.%s", basename, ext);
 
@@ -101,7 +101,8 @@ update_all_extensions()
       
       g_free(basename);
       g_free(new_output_name);
-      
+      g_free(current_output_name);
+
       valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
     }
   }
@@ -109,7 +110,7 @@ update_all_extensions()
 
 void
 edited_handler(GtkCellRendererText *ce, gchar *arg1, gchar *arg2, 
-	       gpointer user_data)
+           gpointer user_data)
 {
   /* arg1 indicates which row -- should assert() that it matches
      the selected row, since we're asssuming that */
@@ -152,6 +153,7 @@ void render_status(GtkTreeViewColumn *tree_column,
     }
         
     g_object_set (G_OBJECT (cell), "text", status, NULL);
+    g_free(status);
 }
     
 void render_output_name(GtkTreeViewColumn *tree_column,
@@ -196,6 +198,9 @@ void render_output_name(GtkTreeViewColumn *tree_column,
     }
         
     g_object_set (G_OBJECT (cell), "text", output_file, NULL);
+
+    g_free(output_file);
+    g_free(status);
 }
 
 void stub(gpointer p)
@@ -212,9 +217,9 @@ setup_files_list(int argc, char *argv[])
   GtkTreeIter iter;
 
   list_store = gtk_list_store_new(3, 
-				  G_TYPE_STRING, 
-				  G_TYPE_STRING, 
-				  G_TYPE_STRING);
+                  G_TYPE_STRING, 
+                  G_TYPE_STRING, 
+                  G_TYPE_STRING);
 
   for (i = 1; i < argc; ++i)
   {
@@ -267,7 +272,7 @@ setup_files_list(int argc, char *argv[])
 
   /* connect "editing-done" signal */
   g_signal_connect(G_OBJECT(renderer), "edited",
-		   G_CALLBACK(edited_handler), NULL);
+           G_CALLBACK(edited_handler), NULL);
   
   gtk_tree_view_column_pack_start(col, renderer, TRUE);
   gtk_tree_view_column_add_attribute(col, renderer, "text", 1);
@@ -290,7 +295,7 @@ setup_files_list(int argc, char *argv[])
             render_status, NULL, NULL);
 
   gtk_tree_view_set_model(GTK_TREE_VIEW(files_list), 
-			  GTK_TREE_MODEL(list_store));  
+              GTK_TREE_MODEL(list_store));  
 
   g_object_unref(list_store);
 
@@ -302,5 +307,8 @@ setup_files_list(int argc, char *argv[])
 void
 set_output_name(GtkTreeIter *iter, const gchar *name)
 {
+    printf("Tree: %s\n", name);
+//    gtk_list_store_set(list_store, iter, 1, NULL, -1);
     gtk_list_store_set(list_store, iter, 1, name, -1);
+    printf("--\n");
 }

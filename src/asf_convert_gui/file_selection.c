@@ -97,7 +97,7 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
     glade_xml_get_widget(glade_xml, "input_file_selection");
 
   selections = gtk_file_selection_get_selections(
-			 GTK_FILE_SELECTION(file_selection_dialog));
+             GTK_FILE_SELECTION(file_selection_dialog));
 
   gchar ** current = selections;
 

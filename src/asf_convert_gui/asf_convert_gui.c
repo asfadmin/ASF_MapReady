@@ -9,6 +9,7 @@ gboolean keep_going;
 gboolean processing;
 Settings *settings_on_execute;
 gchar * output_directory = NULL;
+NamingScheme * current_naming_scheme = NULL;
 
 int
 main(int argc, char **argv)
@@ -53,6 +54,8 @@ main(int argc, char **argv)
     /* right-click menu setup */
     setup_popup_menu();
 
+    current_naming_scheme = naming_scheme_default();
+    
     /* set initial vpanel setting */
     widget = glade_xml_get_widget(glade_xml, "vertical_pane");
 
@@ -77,6 +80,9 @@ main(int argc, char **argv)
 
     if (output_directory)
         g_free(output_directory);
+
+    if (current_naming_scheme)
+        naming_scheme_delete(current_naming_scheme);
 
     exit (EXIT_SUCCESS);
 }

@@ -2,12 +2,12 @@
 
 static void
 target_drag_data_received(GtkWidget *widget,
-			  GdkDragContext *context,
-			  gint x,
-			  gint y,
-			  GtkSelectionData *data,
-			  guint info,
-			  guint time)
+              GdkDragContext *context,
+              gint x,
+              gint y,
+              GtkSelectionData *data,
+              guint info,
+              guint time)
 {
   printf("Drop!\n");
 
@@ -28,7 +28,7 @@ target_drag_data_received(GtkWidget *widget,
       gchar * p = data_file;
 
       if (g_str_has_prefix(p, "file://"))
-	p += 7;
+    p += 7;
       
       meta_file = meta_file_name(p);
     
@@ -56,8 +56,8 @@ setup_dnd()
   widget = glade_xml_get_widget(glade_xml, "files_list");
 
   gtk_drag_dest_set (widget, GTK_DEST_DEFAULT_ALL, 
-		     target_table, 1, GDK_ACTION_COPY);
+             target_table, 1, GDK_ACTION_COPY);
 
   gtk_signal_connect( GTK_OBJECT(widget), "drag_data_received",
-		      GTK_SIGNAL_FUNC(target_drag_data_received), NULL );
+              GTK_SIGNAL_FUNC(target_drag_data_received), NULL );
 }

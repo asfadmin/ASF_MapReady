@@ -20,7 +20,7 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
   {
     gchar msg[1024];
     g_snprintf(msg, sizeof(msg),
-	       "Couldn't open save file: %s", strerror(errno));
+           "Couldn't open save file: %s", strerror(errno));
     message_box(msg);
     return;
   }
@@ -30,9 +30,9 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
   fprintf(f, "%d.%d\n\n", save_major_ver, save_minor_ver);  
   fprintf(f, "[Import]\nFormat=%d\n\n", s->input_data_format);
   fprintf(f, "[Transformations]\nType=%d\nLatLo=%f\nLatHi=%f\n\n",
-	  s->data_type, s->latitude_low, s->latitude_hi);
+      s->data_type, s->latitude_low, s->latitude_hi);
   fprintf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n\n",
-	  s->output_format, s->apply_scaling, s->longest_dimension);
+      s->output_format, s->apply_scaling, s->longest_dimension);
 
   /* next is the files & their statuses */
   fprintf(f, "[Files]\n");
@@ -47,18 +47,18 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
       gchar *data_file, *output_file, *status;
 
       gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-			 0, &data_file, 1, &output_file, 2, &status, -1);
+             0, &data_file, 1, &output_file, 2, &status, -1);
 
       if (strcmp(status, "Processing...") == 0)
       {
-	/* user "Saved" while processing was in progress */
-	fprintf(f, "Data=%s\nOutput=%s\nStatus=-\n",
-		data_file, output_file);
+    /* user "Saved" while processing was in progress */
+    fprintf(f, "Data=%s\nOutput=%s\nStatus=-\n",
+        data_file, output_file);
       }
       else
       {
-	fprintf(f, "Data=%s\nOutput=%s\nStatus=%s\n",
-		data_file, output_file, status);
+    fprintf(f, "Data=%s\nOutput=%s\nStatus=%s\n",
+        data_file, output_file, status);
       }
 
       g_free(data_file);
@@ -96,8 +96,8 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
   {
     gchar msg[64];
     g_snprintf(msg, sizeof(msg),
-	       "Don't know how to load version %d.%d!",
-	       major_ver, minor_ver); 
+           "Don't know how to load version %d.%d!",
+           major_ver, minor_ver); 
 
     message_box(msg);
     return;
@@ -105,9 +105,9 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
 
   fscanf(f, "[Import]\nFormat=%d\n\n", &s.input_data_format);
   fscanf(f, "[Transformations]\nType=%d\nLatLo=%f\nLatHi=%f\n\n",
-	 &s.data_type, &s.latitude_low, &s.latitude_hi);
+     &s.data_type, &s.latitude_low, &s.latitude_hi);
   fscanf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n\n",
-	 &s.output_format, &s.apply_scaling, &s.longest_dimension);
+     &s.output_format, &s.apply_scaling, &s.longest_dimension);
 
   settings_apply_to_gui(&s);
   settings_on_execute = settings_copy(&s);
@@ -130,62 +130,62 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
     {
       if (strcmp(line, "[End]") == 0)
       {
-	break;
+    break;
       }
       else
       {
-	gchar *data_file, *output_file, *status;
-	gchar *data_file_p, *output_file_p, *status_p;
-	gchar *newline;
+    gchar *data_file, *output_file, *status;
+    gchar *data_file_p, *output_file_p, *status_p;
+    gchar *newline;
 
-	data_file = g_strdup(line);
+    data_file = g_strdup(line);
 
-	data_file_p = strchr(data_file, '=');
-	if (!data_file_p)
-	  continue;
-	++data_file_p;
+    data_file_p = strchr(data_file, '=');
+    if (!data_file_p)
+      continue;
+    ++data_file_p;
 
-	newline = strchr(data_file_p, '\n');
-	if (newline)
-	  *newline = '\0';
+    newline = strchr(data_file_p, '\n');
+    if (newline)
+      *newline = '\0';
 
-	p = fgets(line, sizeof(line), f);
-	if (!p)
-	  continue;
+    p = fgets(line, sizeof(line), f);
+    if (!p)
+      continue;
 
-	output_file = g_strdup(line);
+    output_file = g_strdup(line);
 
-	output_file_p = strchr(output_file, '=');
-	if (!output_file_p)
-	  continue;
-	++output_file_p;
+    output_file_p = strchr(output_file, '=');
+    if (!output_file_p)
+      continue;
+    ++output_file_p;
 
-	newline = strchr(output_file_p, '\n');
-	if (newline)
-	  *newline = '\0';
-	
-	p = fgets(line, sizeof(line), f);
-	if (!p)
-	  continue;
+    newline = strchr(output_file_p, '\n');
+    if (newline)
+      *newline = '\0';
+    
+    p = fgets(line, sizeof(line), f);
+    if (!p)
+      continue;
 
-	status = g_strdup(line);
+    status = g_strdup(line);
 
-	status_p = strchr(status, '=');
-	if (!status_p)
-	  continue;
-	++status_p;
+    status_p = strchr(status, '=');
+    if (!status_p)
+      continue;
+    ++status_p;
 
-	newline = strchr(status_p, '\n');
-	if (newline)
-	  *newline = '\0';
-	
-	gtk_list_store_append(list_store, &iter);
-	gtk_list_store_set(list_store, &iter,
-			   0, data_file_p, 1, output_file_p, 2, status_p, -1);
+    newline = strchr(status_p, '\n');
+    if (newline)
+      *newline = '\0';
+    
+    gtk_list_store_append(list_store, &iter);
+    gtk_list_store_set(list_store, &iter,
+               0, data_file_p, 1, output_file_p, 2, status_p, -1);
 
-	g_free(status);
-	g_free(output_file);
-	g_free(data_file);
+    g_free(status);
+    g_free(output_file);
+    g_free(data_file);
       }
     }
   }

@@ -55,6 +55,7 @@
 #include "rename_output.h"
 #include "file_selection.h"
 #include "state.h"
+#include "naming_scheme.h"
 
 extern const char DIR_SEPARATOR;
 extern const char PATH_SEPATATOR;
@@ -78,5 +79,8 @@ extern Settings * settings_on_execute;
 
 /* where should we put the generated files */
 extern gchar * output_directory;
+
+/* current naming scheme */
+extern NamingScheme * current_naming_scheme;
 
 #endif
