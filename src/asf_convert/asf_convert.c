@@ -498,8 +498,14 @@ int main(int argc, char *argv[])
 
   /* At long last we are sure that logFile has been specified open it & set
      old school logflag to true */
-  fLog = FOPEN(logFile, "a");
-  logflag = TRUE;
+  fLog = fopen (logFile, "a");
+  if ( fLog == NULL ) {
+    /* Failed to open the log file, oh well.  Just set logflag to
+       FALSE and go on.  */
+    logflag = FALSE;		
+  } else {
+    logflag = TRUE;
+  }
 
   /* We are FINALLY good enough at this point... log & quiet flags set */
   asfSplashScreen(argc, argv);/*display splash screen if not quiet*/
