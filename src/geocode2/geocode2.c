@@ -59,8 +59,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "\n"\
 "     UTM\n"\
 "     ---\n"\
-"          --zone, : Zone\n"\
-"          --lon0, --center_longitude : Longitude\n"\
+"          --zone,                     : Zone\n"\
+"          --central-meridian          : Longitude\n"\
 "	  \n"\
 "	  Either the zone or center_longitude must be specified.\n"\
 "\n"\
@@ -70,47 +70,55 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "\n"\
 "     POLAR STEREO\n"\
 "     ------------\n"\
-"          --slat, -slat, --center_latitude, --lat_ts  : Center Latitude\n"\
-"          --slon, -slon, --center_longitude, --lon_0  : Center Longitude\n"\
-"          -n, --north_pole : Center on North Pole (no argument)\n"\
-"          -s, --south_pole : Center on South Pole (no argument)\n"\
-"          --false_easting, -fe : False Easting\n"\
-"          --false_northing, -fn : False Northing\n"\
+"          --center-latitude            : Center Latitude\n"\
+"          --central-meridian           : Center Longitude\n"\
+"          -n, --north_pole             : Center on North Pole (no argument)\n"\
+"          -s, --south_pole             : Center on South Pole (no argument)\n"\
+"          --false-easting              : False Easting\n"\
+"          --false-northing             : False Northing\n"\
 "\n"\
-"          Examples:\n"\
-"               -p ps -slat <slat> -slon <slon> -n\n"\
-"               -p ps --slat <slat> -slon <slon> --north_pole\n"\
-"               -p ps --center_latitude <slat> --center_longitude <slon> -n\n"\
-"               -p ps -slat <slat> -slon <slon> -s\n"\
+"        Examples:\n"\
+"          --projection ps --center-latitude <lat> --central-meridian <lon> -n\n"\
+"          -p ps --center-latitude <lat> --central-meridian <lon> --south-pole\n"\
 "\n"\
 "     LAMBERT CONFORMAL CONIC\n"\
 "     -----------------------\n"\
-"          --plat1, --lat_1  : First Standard Parallel\n"\
-"          --plat2, --lat_2  : Second Standard Parallel\n"\
-"          --lat0, --center_latitude, --slat, -slat, --lat_0  : Original lat\n"\
-"          --lon0, --center_longitude, --slon, -slon, --lon_0  : Original lon\n"\
-"          --false_easting, -fe : False Easting\n"\
-"          --false_northing, -fn : False Northing\n"\
-"          --scale_factor, -sf : Scale Factor\n"\
+"          --first-standard-parallel   : First Standard Parallel\n"\
+"          --second-standard-parallel  : Second Standard Parallel\n"\
+"          --center-latitude           : Original lat\n"\
+"          --central-meridian          : Original lon\n"\
+"          --false-easting             : False Easting\n"\
+"          --false-northing            : False Northing\n"\
+"          --scale-factor              : Scale Factor\n"\
 "\n"\
 "     LAMBERT AZIMUTHAL EQUAL AREA\n"\
 "     ----------------------------\n"\
-"          --lat0, --center_latitude, --slat, -slat, --lat_0  : Center lat\n"\
-"          --lon0, --center_longitude, --slon, -slon, --lon_0  : Center lon\n"\
-"          --false_easting, -fe : False Easting\n"\
-"          --false_northing, -fn : False Northing\n"\
+"          --center-latitude           : Original lat\n"\
+"          --central-meridian          : Original lon\n"\
+"          --false-easting             : False Easting\n"\
+"          --false-northing            : False Northing\n"\
 "\n"\
 "     ALBERS CONICAL EQUAL AREA\n"\
 "     -------------------------\n"\
-"          --plat1, --lat_1  : First Standard Parallel\n"\
-"          --plat2, --lat_2  : Second Standard Parallel\n"\
-"          --lat0, --center_latitude, --slat, -slat, --lat_0  \n"\
-"               : Latitude of origin\n"\
-"          --lon0, --center_longitude, --slon, -slon, --lon_0 \n"\
-"               : Longitude of meridian\n"\
-"          --false_easting, -fe : False Easting\n"\
-"          --false_northing, -fn : False Northing\n"\
+"          --first-standard-parallel   : First Standard Parallel\n"\
+"          --second-standard-parallel  : Second Standard Parallel\n"\
+"          --center-latitude           : Original lat\n"\
+"          --central-meridian          : Original lon\n"\
+"          --false-easting             : False Easting\n"\
+"          --false-northing            : False Northing\n"\
+"          --scale-factor              : Scale Factor\n"\
 "\n"\
+"     Using a Projection Parameters File\n"\
+"     ==================================\n"\
+"\n"\
+"     --write-proj-file <file>\n"\
+"          Save the specified projection information to a file with\n"\
+"          the given name.  The file may be used for subsequent projections\n"\
+"          with '--read-proj-file'.\n"\
+"\n"\
+"     --read-proj-file <file>\n"\
+"          Read projection information from the given file.  The format of\n"\
+"          the file must match what is used with '--write-proj-file'.\n"\
 "\n"\
 "     Other Options\n"\
 "     =============\n"\
@@ -124,7 +132,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          <height>, assuming a satellite look angle 45 degrees from\n"\
 "          horizontal.\n"\
 "\n"\
-"     --pixel_size <size>\n"\
+"     --pixel-size <size>\n"\
 "          Scale output image such that each pixel is <size> projection\n"\
 "          coordinates (i.e. meters) on a side."
 
