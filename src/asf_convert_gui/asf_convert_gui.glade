@@ -1381,7 +1381,7 @@
 			      <child>
 				<widget class="GtkMenuItem" id="scale_sigma">
 				  <property name="visible">True</property>
-				  <property name="label" translatable="yes">Sigma</property>
+				  <property name="label" translatable="yes">Statistical 2 Sigma</property>
 				  <property name="use_underline">True</property>
 				</widget>
 			      </child>
