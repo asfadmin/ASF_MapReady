@@ -201,26 +201,6 @@ void writeVector(void *,char *,data_t,int);
 #define FEET_TO_METERS 12.0*2.54/100.0
 #define METERS_TO_FEET 100.0/(12.0*2.54)
 
-/* CEOS constants */
-#define NUL 0
-#define VDR 1
-#define DSS 2
-#define PPR 3
-#define ADR 4
-#define RDR 5
-#define RCR 6
-#define DQS 7
-#define DHR 8
-#define RSR 9
-#define DPR 10
-#define CDR 11
-#define FRR 12
-#define OLD 13
-
-#define PRE_RCH        12
-#define POST_RCH       192
-
-
 /* 
  * Create max and min macros 
  * create square macro
