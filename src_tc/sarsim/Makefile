@@ -8,6 +8,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/sarmodel.a \
 	$(LIBDIR)/tcobj.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a \
 	-lm
 
 OBJS  = sim_init.o 

@@ -8,7 +8,8 @@ include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf.a 
+	$(LIBDIR)/libgsl.a \
+	$(LIBDIR)/asf.a
 LIBC = $(LIBS) -lm 
 
 OBJLIB =  filter.o blend.o

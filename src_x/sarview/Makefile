@@ -12,6 +12,7 @@ LDFLAGS := -L$(LIBDIR)/tcltk81/lib -L$(XHOME) $(LDFLAGS)
 OTHER = -ldl -lsocket -lnsl
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/libjpeg.a \
 	-ltcl8.1 -ltk8.1 \

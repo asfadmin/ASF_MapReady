@@ -5,7 +5,9 @@ include ../../make_support/system_rules
 
 LIBS = 	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf.a -lm
+	$(LIBDIR)/libgsl.a \
+	$(LIBDIR)/asf.a \
+	-lm
 
 OBJS = 	getphase.o \
 	genab.o \

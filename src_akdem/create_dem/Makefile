@@ -6,6 +6,7 @@ include ../../make_support/system_rules
 CFLAGS := $(CFLAGS) -DDECODE_CEOS
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a \
 	-lm
 
 OBJS  = config.o \

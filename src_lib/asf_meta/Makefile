@@ -139,13 +139,13 @@ asf_meta: build_only
 
 build_only: $(OBJS) cook_libs
 	rm -rf asf_meta.a	# Get rid of all stale symbols.
-	ar rv asf_meta.a $(OBJS) $(wildcard ./library_cooking_pot/*.o)
+	ar r asf_meta.a $(OBJS) $(wildcard ./library_cooking_pot/*.o)
 	$(RANLIB) asf_meta.a
 
 cook_libs: $(addprefix $(LIBDIR)/, $(LIBS)) library_cooking_pot
 	cd library_cooking_pot; \
 	for lib in $(LIBS); do \
-	  ar xv ../$(LIBDIR)/$$lib; \
+	  ar x ../$(LIBDIR)/$$lib; \
 	done
 
 library_cooking_pot:

@@ -6,6 +6,7 @@ include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a \
 	-lm
 
 tpl_search: tpl_search.c

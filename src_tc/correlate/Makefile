@@ -3,11 +3,14 @@
 
 include ../../make_support/system_rules
 
-OLIBS = $(LIBDIR)/asf.a \
-	$(LIBDIR)/asf_meta.a 
-LIBS = $(OLIBS) -lm
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a \
+	-lm
 
-correlate:  correlate.c $(OBJS) $(OLIBS)
-	$(CC) $(CFLAGS) -o correlate correlate.c $(OBJS) $(LIBS) $(LDFLAGS)
+OBJS  = correlate.o
+
+correlate:  $(OBJS)
+	$(CC) $(CFLAGS) -o correlate $(OBJS) $(LIBS) $(LDFLAGS)
 	mv correlate$(BIN_POSTFIX) $(BINDIR)
 	cp correlate.man ../../man/cat1/correlate.1

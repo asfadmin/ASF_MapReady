@@ -5,7 +5,9 @@ include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a \
 	-lm
+
 OBJS=trim_slc.o
 
 trim_slc: $(OBJS)

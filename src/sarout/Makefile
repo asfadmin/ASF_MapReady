@@ -6,6 +6,7 @@ include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/asf_odl.a \
 	-lm
 

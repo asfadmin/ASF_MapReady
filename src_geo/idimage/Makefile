@@ -4,7 +4,9 @@
 include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf.a \
-	$(LIBDIR)/asf_meta.a
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a
+
 TOBJS = idtable.o 
 IOBJS = idimage.o
 

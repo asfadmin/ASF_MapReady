@@ -5,6 +5,7 @@ include ../../make_support/system_rules
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a \
 	-lm
 OBJS = create_dem_grid.o
 
