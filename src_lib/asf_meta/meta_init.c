@@ -269,8 +269,9 @@ void add_meta_ddr_struct(const char *name, meta_parameters *meta, struct DDR *dd
     }
   }
 /* Report if we made it here */
-  printf("\nWARNING: function add_meta_ddr_struct failed in its duties.\n"
-         "           Metadata may not be properly updated when written to file.\n");
+  printf("\n"
+         "WARNING: * asf_meta library function add_meta_ddr_struct() failed.\n"
+         "         * Metadata may not be properly updated when written to file.\n");
 }
 
 /************************************************************
