@@ -95,7 +95,7 @@ void putFloatLine_mb(FILE *f,const struct DDR *ddr,int yLine,int bandNo,const fl
 	/*No conversion necessary for floats.*/
 		FWRITE(source,dsize,maxX,f);
 	else {
-		float *outputBuf=(float *)MALLOC(dsize*maxX);
+		void *outputBuf = MALLOC(dsize*maxX);
 		/*Writes are always in native format*/
 		if (ddr->dtype==DTYPE_BYTE)
 			for (x=0;x<maxX;x++)
