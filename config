@@ -111,11 +111,11 @@ FLAGS   = -D_ISOC99_SOURCE $(LARGEFILE_FLAGS) $(INCLUDE) $(OPTFLAG) -D$(SYS) $(E
 ifeq ($(CC),gcc)
   ifeq ($(DEBUG_BUILD),1)
     OPTFLAG    =
-    DEBUGFLAGS = -Wall -g
+    DEBUGFLAGS = -Wall -g3
   endif
   ifeq ($(DEBUG_BUILD),2)
     OPTFLAG    =
-    DEBUGFLAGS = -Wall -g
+    DEBUGFLAGS = -Wall -g3
     DEBUGLIBS  = -lefence
   endif
 endif
