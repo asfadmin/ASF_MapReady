@@ -143,6 +143,8 @@ int date_ymd2gmt(ymd_date *date)
 
    /* Check for Leap Year */
    if (((date->year%4)==0)&&(((date->year%100)!=0)||((date->year%400)==0))) DIM[2]=29;
+   else
+     DIM[2] = 28;
 
    gmt_day = date->day;
    while (i<date->month) { gmt_day += DIM[i++]; }
