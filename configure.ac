@@ -157,7 +157,7 @@ AC_SUBST(ASF_GUI)
 
 echo "########## Determining machine characteristics #############"
 cd make_support
-$cc -o endian endian.c
+$CC -o endian endian.c
 ./endian
 
 echo "########### Building the make_support/system_rules file ###############"
