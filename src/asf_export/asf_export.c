@@ -258,10 +258,15 @@ main (int argc, char *argv[])
   /* Defaults for options.  These should all be considered immutable
      after they are set here.  */
   char const_default_format[MAX_FORMAT_STRING_LENGTH + 1];
+  const long default_size = NO_MAXIMUM_OUTPUT_SIZE;
+  const int num_args = 1;
+  output_format_t format;
+  char image_data_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+  char metadata_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
+  meta_parameters *md;
   /* Produce geotiff output by default.  */
   my_strncpy (const_default_format, "geotiff", 
 	      (size_t) (MAX_FORMAT_STRING_LENGTH + 1));
-  const long default_size = NO_MAXIMUM_OUTPUT_SIZE;
   /* By default, construct the output base name from the input base
      name.  */
 
@@ -274,7 +279,6 @@ main (int argc, char *argv[])
      input string.  */
   command_line.output_name[0] = '\0';
 
-  const int num_args = 1;
   while ( currArg < (argc - num_args) ) {
     char *key = argv[currArg++];
     if ( strmatch (key, "-f") ) {
@@ -312,7 +316,6 @@ main (int argc, char *argv[])
     }
   }		
 
-  output_format_t format;
   if ( strcmp (command_line.format, "envi") == 0 ) {
     format = ENVI;
   }
@@ -351,8 +354,6 @@ main (int argc, char *argv[])
 	      MAX_IMAGE_NAME_LENGTH + 1);
 
   /* Construct the actual file names from the names the user supplied.  */
-  char image_data_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
-  char metadata_file_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   strcpy (image_data_file_name, command_line.input_name);
   if ( findExt (command_line.input_name) 
        && strcmp (findExt (command_line.input_name), ".img") ) {
@@ -387,7 +388,7 @@ main (int argc, char *argv[])
 
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
-  meta_parameters *md = meta_read (metadata_file_name);
+  md = meta_read (metadata_file_name);
   assert (md->general->data_type == BYTE
 	  || md->general->data_type == INTEGER16
 	  || md->general->data_type == INTEGER32
@@ -456,6 +457,10 @@ static void *
 get_image_data (meta_parameters *metadata, const char *image_data_file)
 {
   size_t sample_size = get_sample_size (metadata);
+  size_t pixel_count;
+  void *data;
+  size_t read_count;
+  int return_code;
 
   /* Read the image data itself.  */
   FILE *ifp = fopen (image_data_file, "r");
@@ -465,10 +470,9 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
     exit (EXIT_FAILURE);
   }
   /* Total number of samples in image.  */
-  size_t pixel_count
-    = metadata->general->line_count * metadata->general->sample_count;
-  void *data = malloc (pixel_count * sample_size);
-  size_t read_count = fread (data, sample_size, pixel_count, ifp);
+  pixel_count = metadata->general->line_count * metadata->general->sample_count;
+  data = MALLOC (pixel_count * sample_size);
+  read_count = fread (data, sample_size, pixel_count, ifp);
   if ( read_count != pixel_count ) {
     if ( feof (ifp) ) {
       fprintf (stderr, "%s: read wrong amount of data from %s\n", program_name,
@@ -484,7 +488,7 @@ get_image_data (meta_parameters *metadata, const char *image_data_file)
     exit (EXIT_FAILURE);
   }
 
-  int return_code = fclose (ifp);
+  return_code = fclose (ifp);
   assert (return_code == 0);
   
   return data;
@@ -501,6 +505,11 @@ get_image_strip (meta_parameters *metadata, const char *image_data_file,
 		 size_t strip_size, size_t strip_index, void *strip)
 {
   size_t sample_size = get_sample_size (metadata);
+  off_t skip_count;
+  int return_code;
+  off_t pixel_count;
+  void *data;
+  size_t read_count;
 
   /* Open the image data file.  */
   FILE *ifp = fopen (image_data_file, "r");
@@ -511,19 +520,19 @@ get_image_strip (meta_parameters *metadata, const char *image_data_file,
   }
 
   /* Seek to the start of the strip.  */
-  off_t skip_count 
+  skip_count 
     = ( (off_t) metadata->general->sample_count) * strip_index * sample_size;
-  int return_code = fseeko (ifp, skip_count, SEEK_SET);
+  return_code = fseeko (ifp, skip_count, SEEK_SET);
   assert (return_code == 0);
 
   /* Total number of samples in strip.  */
-  off_t pixel_count = strip_size * metadata->general->sample_count;
+  pixel_count = strip_size * metadata->general->sample_count;
 
   /* Allocate space for the strip.  */
-  void *data = malloc (pixel_count * sample_size);
+  data = MALLOC (pixel_count * sample_size);
 
   /* Read the image data itself.  */
-  size_t read_count = fread (data, sample_size, pixel_count, ifp);
+  read_count = fread (data, sample_size, pixel_count, ifp);
   if ( read_count != pixel_count ) {
     if ( feof (ifp) ) {
       fprintf (stderr, "%s: read wrong amount of data from %s\n", program_name,
@@ -551,6 +560,15 @@ export_as_envi (const char *metadata_file_name,
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
+  char envi_file_name[2 * MAX_IMAGE_NAME_LENGTH];
+  envi_header *envi;
+  FILE *fp;
+  time_t time;
+  char t_stamp[15];
+  char envi_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
+  char command[10000];
+  int return_code;
+
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
   assert (md->general->data_type == BYTE
@@ -559,14 +577,11 @@ export_as_envi (const char *metadata_file_name,
 	  || md->general->data_type == REAL32
 	  || md->general->data_type == REAL64);
 
-  char envi_file_name[2 * MAX_IMAGE_NAME_LENGTH];
   create_name (envi_file_name, output_file_name, ".hdr");
-  envi_header *envi = meta2envi (md);
+  envi = meta2envi (md);
 
   /* Write ENVI header file */
-  FILE *fp = FOPEN(envi_file_name, "w");
-  time_t time;
-  char t_stamp[15];
+  fp = FOPEN(envi_file_name, "w");
   strftime(t_stamp, 12, "%d-%b-%Y", localtime(&time));
   fprintf(fp, "ENVI\n");
   fprintf(fp, "description = {\n"
@@ -658,12 +673,10 @@ export_as_envi (const char *metadata_file_name,
   free (envi);
   meta_free (md);
 
-  char envi_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
   strcpy (envi_data_file_name, output_file_name);
   strcat (envi_data_file_name, ".bil");
-  char command[10000];
   sprintf (command, "cp %s %s\n", image_data_file_name, envi_data_file_name); 
-  int return_code = system (command);
+  return_code = system (command);
   if ( return_code != 0 ) {
     fprintf (stderr, "%s: system command '%s' failed", program_name, command);
     exit (EXIT_FAILURE);
@@ -677,6 +690,21 @@ export_as_esri (const char *metadata_file_name,
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
+  char esri_file_name[2 * MAX_IMAGE_NAME_LENGTH];
+  esri_header *esri;
+  FILE *fp;
+  time_t time;
+  char t_stamp[15];
+  char esri_prj_file_name[2 * MAX_IMAGE_NAME_LENGTH];
+  char projection[100], datum[100], spheroid_str[100]="", semimajor[25]="";
+  char flattening[25];  
+  double central_meridian, latitude_of_origin;
+  double standard_parallel_1, standard_parallel_2;
+  spheroid_type_t spheroid;
+  char esri_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
+  char command[10000];
+  int return_code;
+
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
   assert (md->general->data_type == BYTE
@@ -685,14 +713,11 @@ export_as_esri (const char *metadata_file_name,
 	  || md->general->data_type == REAL32
 	  || md->general->data_type == REAL64);
 
-  char esri_file_name[2 * MAX_IMAGE_NAME_LENGTH];
   create_name (esri_file_name, output_file_name, ".hdr");
-  esri_header *esri = meta2esri (md);
+  esri = meta2esri (md);
 
   /* Write ESRI header file */
-  FILE *fp = FOPEN(esri_file_name, "w");
-  time_t time;
-  char t_stamp[15];
+  fp = FOPEN(esri_file_name, "w");
   strftime(t_stamp, 12, "%d-%b-%Y", localtime(&time));
   fprintf(fp, "ESRI header file (created %s)\n\n", t_stamp);
   fprintf(fp, "NROWS            %i\n", esri->nrows);
@@ -714,12 +739,6 @@ export_as_esri (const char *metadata_file_name,
   free (esri);
 
   /* Write ESRI projection file */
-  char esri_prj_file_name[2 * MAX_IMAGE_NAME_LENGTH];
-  char projection[100], datum[100], spheroid_str[100]="", semimajor[25]="";
-  char flattening[25];  
-  double central_meridian, latitude_of_origin, standard_parallel_1, 
-    standard_parallel_2;
-  spheroid_type_t spheroid;
   create_name (esri_prj_file_name, output_file_name, ".prj");
 
   if (md->projection && md->projection->type < SCANSAR_PROJECTION) {
@@ -1074,12 +1093,10 @@ export_as_esri (const char *metadata_file_name,
   meta_free(md);
 
   /* Write ESRI data file */
-  char esri_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
   strcpy (esri_data_file_name, output_file_name);
   strcat (esri_data_file_name, ".bil");
-  char command[10000];
   sprintf (command, "cp %s %s\n", image_data_file_name, esri_data_file_name); 
-  int return_code = system (command);
+  return_code = system (command);
   if ( return_code != 0 ) {
     fprintf (stderr, "%s: system command '%s' failed", program_name, command);
     exit (EXIT_FAILURE);
@@ -1094,8 +1111,8 @@ averaging_kernel (gsl_matrix_uchar *img, int kernel_size, size_t i, size_t j)
   int i_max = i + kernel_size / 2;
   int j_min = j - kernel_size / 2;
   int j_max = j + kernel_size / 2;
-    
   int sum = 0;
+  int average; /* Truncated average.  */
 
   for ( i_idx = i_min ; i_idx < i_max ; i_idx++ ) {
     /* The i index to use, adjusted in case we are off the edge of the
@@ -1118,7 +1135,7 @@ averaging_kernel (gsl_matrix_uchar *img, int kernel_size, size_t i, size_t j)
     }
   }
 
-  int average = sum / pow (kernel_size, 2); /* Truncated average.  */
+  average = sum / pow (kernel_size, 2); /* Truncated average.  */
   /* Since we are averaging unsigned char values, this should always
      be true.  */
   assert (average <= UCHAR_MAX);
@@ -1136,14 +1153,19 @@ static unsigned char *
 average_unsigned_char_pixels (unsigned char *pixels, unsigned long *width, 
 			      unsigned long *height, int kernel_size)
 {
-  assert (kernel_size % 2 != 0); /* Odd-sized kernels only.  */
-
   /* Input width and height.  */
   size_t iwidth = *width, iheight = *height;
+  gsl_matrix_uchar *iimg;
+  size_t ii, jj;
+  size_t owidth;
+  size_t oheight;
+  gsl_matrix_uchar *oimg;
+  unsigned char *reallocated_pixels;
+
+  assert (kernel_size % 2 != 0); /* Odd-sized kernels only.  */
 
   /* Make a matrix form of the input image for easy indexing.  */
-  gsl_matrix_uchar *iimg = gsl_matrix_uchar_alloc (iheight, iwidth);
-  size_t ii, jj;
+  iimg = gsl_matrix_uchar_alloc (iheight, iwidth);
   for ( ii = 0 ; ii < iheight ; ii++ ) {
     for ( jj = 0 ; jj < iwidth ; jj++ ) {
       gsl_matrix_uchar_set (iimg, ii, jj, pixels[ii * iwidth + jj]);
@@ -1151,11 +1173,11 @@ average_unsigned_char_pixels (unsigned char *pixels, unsigned long *width,
   }
 
   /* Dimensions of the averaged image.  */
-  size_t owidth = ceil (iwidth / kernel_size);
-  size_t oheight = ceil (iheight / kernel_size);
+  owidth = ceil (iwidth / kernel_size);
+  oheight = ceil (iheight / kernel_size);
 
   /* Form the output image.  */
-  gsl_matrix_uchar *oimg = gsl_matrix_uchar_alloc (oheight, owidth);
+  oimg = gsl_matrix_uchar_alloc (oheight, owidth);
   for ( ii = 0 ; ii < oheight ; ii++ ) {
     for ( jj = 0 ; jj < owidth ; jj++ ) {
       gsl_matrix_uchar_set 
@@ -1180,7 +1202,7 @@ average_unsigned_char_pixels (unsigned char *pixels, unsigned long *width,
      as promised.  */
   *width = owidth;
   *height = oheight;
-  unsigned char *reallocated_pixels = realloc (pixels, owidth * oheight);
+  reallocated_pixels = realloc (pixels, owidth * oheight);
 
   return reallocated_pixels;
 }
@@ -1258,12 +1280,23 @@ export_as_jpeg (const char *metadata_file_name,
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
-  assert (md->general->data_type == REAL32);
-
   int line_count = md->general->line_count;
   int sample_count = md->general->sample_count;
   /* Maximum large dimension to allow in the output.  */
   unsigned long max_large_dimension;
+  size_t pixel_count;
+  float *daf;
+  int jj;
+  JSAMPLE test_jsample;
+  unsigned char *pixels;
+  unsigned long width, height;
+  struct jpeg_compress_struct cinfo;
+  struct jpeg_error_mgr jerr;
+  FILE *ofp;
+  int return_code;
+
+  assert (md->general->data_type == REAL32);
+
   if ( (max_size > line_count && max_size > sample_count) 
        || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
     max_large_dimension = GSL_MAX (line_count, sample_count);
@@ -1272,14 +1305,13 @@ export_as_jpeg (const char *metadata_file_name,
     max_large_dimension = max_size;
   }
 
-  size_t pixel_count = (size_t) line_count * sample_count;
+  pixel_count = (size_t) line_count * sample_count;
 
   /* Get the image data.  */
   assert (md->general->data_type == REAL32);
-  float *daf = get_image_data (md, image_data_file_name);
+  daf = get_image_data (md, image_data_file_name);
   /* It supposed to be big endian data, this converts to host byte
      order.  */
-  int jj;
   for ( jj = 0 ; jj < pixel_count ; jj++ ) {
     ieee_big32 (daf[jj]);
   }
@@ -1290,30 +1322,29 @@ export_as_jpeg (const char *metadata_file_name,
      really is the type we expect, so we can scale properly.  */
   assert (sizeof (unsigned char) == 1);
   assert (sizeof (unsigned char) == sizeof (JSAMPLE));
-  JSAMPLE test_jsample = 0;
+  test_jsample = 0;
   test_jsample--;
   assert (test_jsample == UCHAR_MAX); /* Did we wrap?  */
   /* This space is resized later (with realloc) if the image is
      scaled.  */
-  unsigned char *pixels = scale_floats_to_unsigned_bytes (daf, pixel_count);
+  pixels = scale_floats_to_unsigned_bytes (daf, pixel_count);
 
   /* We want to scale the image st the long dimesion is less than or
      equal to this value the prescribed maximum.  */
   /* Current size of the image.  */
-  unsigned long width = sample_count, height = line_count;
+  width = sample_count;
+  height = line_count;
   /* Scale the image, modifying width and height to reflect the new
      image size.  */
   pixels = scale_unsigned_char_image_dimensions (pixels, max_large_dimension,
 						 &width, &height);
 
   /* Initializae libjpg structures.  */
-  struct jpeg_compress_struct cinfo;
-  struct jpeg_error_mgr jerr;
   cinfo.err = jpeg_std_error (&jerr);
   jpeg_create_compress (&cinfo);
 
   /* Open the output file to be used.  */
-  FILE *ofp = fopen (output_file_name, "w");
+  ofp = fopen (output_file_name, "w");
   if ( ofp == NULL ) {
     fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
   	     output_file_name, strerror (errno));
@@ -1336,16 +1367,16 @@ export_as_jpeg (const char *metadata_file_name,
   while ( cinfo.next_scanline < cinfo.image_height ) {
     /* We are writing one row at a time.  */
     const int rows_to_write = 1;
-    JSAMPROW *row_pointer = malloc (rows_to_write * sizeof (JSAMPROW));
+    int rows_written;
+    JSAMPROW *row_pointer = MALLOC (rows_to_write * sizeof (JSAMPROW));
     row_pointer[0] = &(pixels[cinfo.next_scanline * width]);
-    int rows_written = jpeg_write_scanlines (&cinfo, row_pointer, 
-  					     rows_to_write);
+    rows_written = jpeg_write_scanlines (&cinfo, row_pointer, rows_to_write);
     assert (rows_written == rows_to_write);
   }
 
   /* Finsh compression and close the jpeg.  */
   jpeg_finish_compress (&cinfo);
-  int return_code = fclose (ofp);
+  return_code = fclose (ofp);
   assert (return_code == 0);
   jpeg_destroy_compress (&cinfo);
 
@@ -1354,6 +1385,8 @@ export_as_jpeg (const char *metadata_file_name,
   meta_free (md);
 }
 
+#define PPM_MAGIC_NUMBER "P6"
+
 void
 export_as_ppm (const char *metadata_file_name, 
 	       const char *image_data_file_name, const char *output_file_name,
@@ -1361,13 +1394,25 @@ export_as_ppm (const char *metadata_file_name,
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
-  assert (md->general->data_type == REAL32);
-
   /* Get image dimensions.  */
   int line_count = md->general->line_count;
   int sample_count = md->general->sample_count;
   /* Maximum large dimension to allow in the output.  */
   unsigned long max_large_dimension;
+  size_t pixel_count;
+  float *daf;
+  int jj;
+  unsigned char *pixels;
+  unsigned long width,height;
+  FILE *ofp;
+  const char *ppm_magic_number = PPM_MAGIC_NUMBER;
+  int print_count; 
+  const int max_color_value = 255;
+  size_t ii;
+  int return_code;
+
+  assert (md->general->data_type == REAL32);
+
   if ( (max_size > line_count && max_size > sample_count) 
        || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
     max_large_dimension = GSL_MAX (line_count, sample_count);
@@ -1376,14 +1421,13 @@ export_as_ppm (const char *metadata_file_name,
     max_large_dimension = max_size;
   }
 
-  size_t pixel_count = (size_t) line_count * sample_count;
+  pixel_count = (size_t) line_count * sample_count;
 
   /* Get the image data.  */
   assert (md->general->data_type == REAL32);
-  float *daf = get_image_data (md, image_data_file_name);
+  daf = get_image_data (md, image_data_file_name);
   /* Input is supposed to be big endian data, this converts to host
      byte order.  */
-  int jj;
   for ( jj = 0 ; jj < pixel_count ; jj++ ) {
     ieee_big32 (daf[jj]);
   }
@@ -1396,19 +1440,20 @@ export_as_ppm (const char *metadata_file_name,
 
   /* This pixel space is resized later (with realloc) if the image
      dimensions are scaled.  */
-  unsigned char *pixels = scale_floats_to_unsigned_bytes (daf, pixel_count);
+  pixels = scale_floats_to_unsigned_bytes (daf, pixel_count);
 
   /* We want to scale the image st the long dimension is less than or
      equal to the prescribed maximum.  */
   /* Current size of the image.  */
-  unsigned long width = sample_count, height = line_count;
+  width = sample_count;
+  height = line_count;
   /* Scale the image, modifying width and height to reflect the new
      image size.  */
   pixels = scale_unsigned_char_image_dimensions (pixels, max_large_dimension,
 						 &width, &height);
 
   /* Open the output file to be used.  */
-  FILE *ofp = fopen (output_file_name, "w");
+  ofp = fopen (output_file_name, "w");
   if ( ofp == NULL ) {
     fprintf (stderr, "%s: open of %s for writing failed: %s\n", program_name,
   	     output_file_name, strerror (errno));
@@ -1416,19 +1461,16 @@ export_as_ppm (const char *metadata_file_name,
   }
 
   /* Write the ppm header.  */
-  const char *ppm_magic_number = "P6";
-  int print_count = fprintf (ofp, "P6"); 
+  print_count = fprintf (ofp, PPM_MAGIC_NUMBER); 
   /* After this we will assume that writing to the new file will work
      correctly.  */
   assert (print_count == strlen (ppm_magic_number));
   fprintf (ofp, "\n");
   fprintf (ofp, "%ld\n", width);
   fprintf (ofp, "%ld\n", height);
-  const int max_color_value = 255;
   fprintf (ofp, "%d\n", max_color_value);
 
   /* Write the pixels themselves.  */
-  size_t ii;
   for ( ii = 0 ; ii < height ; ii++ ) {
     size_t jj;
     for ( jj = 0 ; jj < width ; jj++ ) {
@@ -1439,7 +1481,7 @@ export_as_ppm (const char *metadata_file_name,
     }
   }
 
-  int return_code = fclose (ofp);
+  return_code = fclose (ofp);
   assert (return_code == 0);
 
   free (pixels);
@@ -1454,32 +1496,36 @@ export_as_geotiff (const char *metadata_file_name,
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
-  assert (md->general->data_type == REAL32);
   unsigned short sample_size = 4;
-  assert (sizeof (unsigned short) == 2);
-
-  /* Get image dimensions. */
+  unsigned short sample_format;
   unsigned int line_count = md->general->line_count;
-  assert (sizeof (unsigned int) == 4);
   unsigned int sample_count = md->general->sample_count;
-  assert (sizeof (unsigned int) == 4);
-
   size_t pixel_count = line_count * sample_count;
+  float *daf;
+  int jj;
+  TIFF *otif;
+  GTIF *ogtif;
+  size_t ii;
+  int return_code;
+
+
+  assert (md->general->data_type == REAL32);
+  assert (sizeof (unsigned short) == 2);
+  assert (sizeof (unsigned int) == 4);
 
   /* Get the image data.  */
   assert (md->general->data_type == REAL32);
-  float *daf = get_image_data (md, image_data_file_name);
+  daf = get_image_data (md, image_data_file_name);
   /* It supposed to be big endian data, this converts to host byte
      order.  */
-  int jj;
   for ( jj = 0 ; jj < pixel_count ; jj++ ) {
     ieee_big32 (daf[jj]);
   }
 
   /* Open output tiff file and GeoKey file descriptor.  */
-  TIFF *otif = XTIFFOpen (output_file_name, "w");
+  otif = XTIFFOpen (output_file_name, "w");
   assert (otif != NULL);
-  GTIF *ogtif = GTIFNew (otif);
+  ogtif = GTIFNew (otif);
   assert (ogtif != NULL);
 
   /* Set the normal TIFF image tags.  */
@@ -1495,8 +1541,6 @@ export_as_geotiff (const char *metadata_file_name,
   TIFFSetField(otif, TIFFTAG_YRESOLUTION,1);
   TIFFSetField(otif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
   TIFFSetField(otif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-  unsigned short sample_format;
-  assert (sizeof (unsigned short) == 2);
   switch ( md->general->data_type ) {
   case BYTE:
     sample_format = SAMPLEFORMAT_UINT;
@@ -1529,6 +1573,31 @@ export_as_geotiff (const char *metadata_file_name,
        points, each consisting of three raster coordinates, followed
        by three geospatial coordinates.  */    
     double tie_points[4][6];
+    double pixel_scale[3];
+    /* Nail down which ellipsoid we are on exactly.  The ASF metadata doesn't
+       specify this though, so we take a look at the major and minor axis
+       values and try to ensure that they match WGS84.  */
+    const double wgs84_major_axis = 6378137;
+    const double wgs84_flattening = 1.0 / 298.257223563;
+    const double wgs84_e2 = 2 * wgs84_flattening - pow (wgs84_flattening, 2);
+    const double wgs84_minor_axis 
+      = sqrt (pow (wgs84_major_axis, 2) * (1 - wgs84_e2));
+    /* Insist that the minor axis match what we are expecting to
+       within this tolerance.  */
+    double minor_axis_tolerance = 0.2;
+    short projection_code;
+    int max_citation_length = 100;
+    char *citation;
+    int citation_length;
+    /* This constant is from the GeoTIFF spec.  */
+    const int user_defined_projected_coordinate_system_type_code = 32767;
+    /* This constant is from the geotiff spec.  */
+    const int user_defined_projection_geo_key_type_code = 32767;
+
+
+    assert (FLOAT_EQUIVALENT (md->projection->re_major, 6378137));
+    assert (FLOAT_COMPARE_TOLERANCE (md->projection->re_minor, 
+				     wgs84_minor_axis, minor_axis_tolerance));
     /* We will tie down the corner of the image (which has raster coordinates 
        0, 0, 0).  */
     tie_points[0][0] = 0.0;
@@ -1549,7 +1618,6 @@ export_as_geotiff (const char *metadata_file_name,
     TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_points);
 
     /* Set the scale of the pixels, in projection coordinates.  */
-    double pixel_scale[3];
     pixel_scale[0] = md->projection->perX;
     /* Note: we take -perY here because our tools treat the upper left
        as startX, startY, and then count down in the y direction with
@@ -1559,116 +1627,94 @@ export_as_geotiff (const char *metadata_file_name,
     pixel_scale[2] = 0;
     TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
-    /* At this point we need to nail down which ellipsoid we are on
-       exactly.  The ASF metadata doesn't specify this though, so we
-       take a look at the major and minor axis values and try to
-       ensure that they match WGS84.  */
-    const double wgs84_major_axis = 6378137;
-    const double wgs84_flattening = 1.0 / 298.257223563;
-    const double wgs84_e2 = 2 * wgs84_flattening - pow (wgs84_flattening, 2);
-    const double wgs84_minor_axis 
-      = sqrt (pow (wgs84_major_axis, 2) * (1 - wgs84_e2));
-    assert (FLOAT_EQUIVALENT (md->projection->re_major, 6378137));
-    /* Insist that the minor axis match what we are expecting to
-       within this tolerance.  */
-    double minor_axis_tolerance = 0.2;
-    assert (FLOAT_COMPARE_TOLERANCE (md->projection->re_minor, 
-				     wgs84_minor_axis, minor_axis_tolerance));
 
     switch ( md->projection->type ) {
-    case UNIVERSAL_TRANSVERSE_MERCATOR:
-      GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
-      GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
+      case UNIVERSAL_TRANSVERSE_MERCATOR:
+	GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
+	GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
 
-      /* This weird assertion is because I remember once when we
-         couln't figure out how to set some datum code right, we set it
-         to -1.  */
-      assert (md->projection->param.utm.zone != -1);
+	/* This weird assertion is because I remember once when we
+           couln't figure out how to set some datum code right, we set it
+           to -1.  */
+	assert (md->projection->param.utm.zone != -1);
 
-      /* Here we use some funky arithmetic to get the correct geotiff
-	 coordinate system type key from our zone code.  There are a
-	 few assertions to try to ensure that the convention used for
-	 the libgeotiff constants is as expected.  Also note that we
-	 have already verified that we are on a WGS84 ellipsoid.  */
-      assert (PCS_WGS84_UTM_zone_1N == 32601);
-      assert (PCS_WGS84_UTM_zone_1S == 32701);
-      short projection_code;
+	/* Here we use some funky arithmetic to get the correct geotiff
+	   coordinate system type key from our zone code.  There are a
+	   few assertions to try to ensure that the convention used for
+	   the libgeotiff constants is as expected.  Also note that we
+	   have already verified that we are on a WGS84 ellipsoid.  */
+	assert (PCS_WGS84_UTM_zone_1N == 32601);
+	assert (PCS_WGS84_UTM_zone_1S == 32701);
 
-      if ( md->projection->hem == 'N' ) {
-	const int northern_utm_zone_base = PCS_WGS84_UTM_zone_1N - 1;
-	projection_code = northern_utm_zone_base;
-      }
-      else if ( md->projection->hem == 'S' ) {
-	const int southern_utm_zone_base = PCS_WGS84_UTM_zone_1S - 1;
-	projection_code = southern_utm_zone_base;
-      }
-      else {
+	if ( md->projection->hem == 'N' ) {
+	  const int northern_utm_zone_base = PCS_WGS84_UTM_zone_1N - 1;
+	  projection_code = northern_utm_zone_base;
+	}
+	else if ( md->projection->hem == 'S' ) {
+	  const int southern_utm_zone_base = PCS_WGS84_UTM_zone_1S - 1;
+	  projection_code = southern_utm_zone_base;
+	}
+	else {
+	  assert (FALSE);		/* Shouldn't be here.  */
+	}
+	projection_code += md->projection->param.utm.zone;
+
+	GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
+		    projection_code);
+	GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
+	citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+	citation_length
+	  = snprintf (citation, max_citation_length + 1,
+                      "UTM zone %d %c projected GeoTIFF written by Alaska "
+		      "Satellite Facility tools", md->projection->param.utm.zone,
+		      md->projection->hem);
+	assert (citation_length >= 0 && citation_length <= max_citation_length);
+	GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+
+	break;
+      case POLAR_STEREOGRAPHIC:
+	GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
+	GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
+
+	GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
+		    user_defined_projected_coordinate_system_type_code);
+
+
+	GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
+		    user_defined_projection_geo_key_type_code); 
+	GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1, 
+		    CT_PolarStereographic);
+	GTIFKeySet (ogtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
+	/* This is longitude which will point toward the top of the map.
+	   This is often called the reference of central longitude in
+	   the context of polar stereo map projections.  */
+	GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1, 
+		    md->projection->param.ps.slon);
+	/* Set the latitude of true scale, or reference latitude.  */
+	GTIFKeySet (ogtif, ProjOriginLatGeoKey, TYPE_DOUBLE, 1,
+		    md->projection->param.ps.slat);
+	/* Set the false easting and false northing to zero.  */
+	GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0);
+	GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0);
+
+	/* Fill in the details of the geographic coordinate system used.
+	   Note that we have already asserted that the ellipsoid appears
+	   to be WGS84.  */
+	GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, Datum_WGS84);
+	GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, 
+		    Angular_Degree);
+	GTIFKeySet (ogtif, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, PM_Greenwich);
+
+	GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1,
+		   "Polar stereographic projected Geotiff written by Alaska "
+		   "Satellite Facility tools");
+	break;
+      default:
 	assert (FALSE);		/* Shouldn't be here.  */
-      }
-      projection_code += md->projection->param.utm.zone;
-      
-      GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
-		  projection_code);
-      GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
-      int max_citation_length = 100;
-      char *citation = malloc ((max_citation_length + 1) * sizeof (char));
-      int citation_length
-	= snprintf (citation, max_citation_length + 1,
-                    "UTM zone %d %c projected GeoTIFF written by Alaska "
-		    "Satellite Facility tools", md->projection->param.utm.zone,
-		    md->projection->hem);
-      assert (citation_length >= 0 && citation_length <= max_citation_length);
-      GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
-
-      break;
-    case POLAR_STEREOGRAPHIC:
-      GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
-      GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
-
-      /* This constant is from the GeoTIFF spec.  */
-      const int user_defined_projected_coordinate_system_type_code = 32767;
-      GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, 
-		  user_defined_projected_coordinate_system_type_code);
-      
-
-      /* This constant is from the geotiff spec.  */
-      const int user_defined_projection_geo_key_type_code = 32767;
-      GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
-		  user_defined_projection_geo_key_type_code); 
-      GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1, 
-		  CT_PolarStereographic);
-      GTIFKeySet (ogtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
-      /* This is longitude which will point toward the top of the map.
-	 This is often called the reference of central longitude in
-	 the context of polar stereo map projections.  */
-      GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1, 
-		  md->projection->param.ps.slon);
-      /* Set the latitude of true scale, or reference latitude.  */
-      GTIFKeySet (ogtif, ProjOriginLatGeoKey, TYPE_DOUBLE, 1,
-		  md->projection->param.ps.slat);
-      /* Set the false easting and false northing to zero.  */
-      GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0);
-      GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0);
-
-      /* Fill in the details of the geographic coordinate system used.
-	 Note that we have already asserted that the ellipsoid appears
-	 to be WGS84.  */
-      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, Datum_WGS84);
-      GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, 
-		  Angular_Degree);
-      GTIFKeySet (ogtif, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, PM_Greenwich);
-
-      GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1,
-		 "Polar stereographic projected Geotiff written by Alaska "
-		 "Satellite Facility tools");
-      break;
-    default:
-      assert (FALSE);		/* Shouldn't be here.  */
     }
   }
 
   /* Write the actual image data.  */
-  size_t ii;
   for ( ii = 0 ; ii < line_count ; ii++ ) {
     if ( TIFFWriteScanline (otif, daf + sample_count * ii, ii, 0) < 0 ) {
       fprintf (stderr, "%s: error writing to output geotiff file %s\n", 
@@ -1677,7 +1723,7 @@ export_as_geotiff (const char *metadata_file_name,
     }
   }
 
-  int return_code = GTIFWriteKeys (ogtif);
+  return_code = GTIFWriteKeys (ogtif);
   assert (return_code);
 
   GTIFFree (ogtif);
