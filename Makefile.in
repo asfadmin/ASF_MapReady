@@ -50,3 +50,7 @@ install:
 
 clean:
 	rm -rf bin/@sys@/* lib/@sys@/*
+
+release:
+	cd make_support; make; ./makemake @sys@; cd ..
+
