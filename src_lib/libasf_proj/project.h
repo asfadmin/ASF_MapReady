@@ -34,9 +34,24 @@ int project_utm(double lon_0, double lat, double lon,
 	  outputs are the projected points.
    len : Number of points in the x, y arrays.
 
+   return value: TRUE if point projected ok, FALSE if not.
 */
 
 int project_utm_arr(double lon_0, double *x, double *y, int length);
+
+/* project_utm_inv
+
+   lon_0 : Longitude of natural origin (radians)
+
+   x, y: Point to (inverse) project
+   lat, lon: (Inverse) projected point [output] (radians)
+
+   return value: TRUE if point projected ok, FALSE if not.
+*/
+int project_utm_inv (double lon_0, double x, double y,
+		     double *lat, double *lon);
+
+int project_utm_arr_inv (double lon_0, double *x, double *y, int length);
 
 /****************************************************************************
   Polar Stereographic
@@ -52,6 +67,9 @@ int project_utm_arr(double lon_0, double *x, double *y, int length);
    lat : latitude of point to project (radians)
    lon : longitude of point to project (radians)
    x, y: Projected point [output]
+
+   return value: TRUE if point projected ok, FALSE if not.
+                 In this situation, *x and *y will be HUGE_VAL
 */ 
 int project_ps(double lat_ts, double lon_0, int is_north_pole,
 	       double lat, double lon,
@@ -66,6 +84,9 @@ int project_ps(double lat_ts, double lon_0, int is_north_pole,
    lat : latitude of point to project (radians)
    lon : longitude of point to project (radians)
    x, y: Projected point [output]
+
+   return value: TRUE if point projected ok, FALSE if not.
+                 In this situation, *x and *y will be HUGE_VAL
 */ 
 int project_ps_s(proj_ps * ps, int is_north_pole,
 		 double lat, double lon,
@@ -82,6 +103,7 @@ int project_ps_s(proj_ps * ps, int is_north_pole,
          outputs are the projected points
    len : Number of points in the x, y arrays.
 
+   return value: TRUE if point projected ok, FALSE if not.
 */ 
 int project_ps_arr(double lat_0, double lon_0, int is_north_pole,
 		   double *x, double *y, int len);
@@ -94,11 +116,23 @@ int project_ps_arr(double lat_0, double lon_0, int is_north_pole,
 
    x, y: Point to (inverse) project
    lat, lon: (Inverse) projected point [output] (radians)
+
+   return value: TRUE if point projected ok, FALSE if not.
 */
 int project_ps_inv(double lat_ts, double lon_0, int is_north_pole,
 		   double x, double y, double *lat, double *lon);
 
-int project_ps_inv_arr(double lat_ts, double lon_0, int is_north_pole,
+/* project_ps_inv
+
+   lat_ts : Latitude at natural origin (radians)
+   lon_0 : Longitude at natural origin (radians)
+   is_north_pole: 1 if projecting from North Pole, 0 if South Pole
+
+   x, y: Array of points to (inverse) project.  On output, latitude
+         is in x, longitude in y, both in radians.
+   len : Number of points in the x,y arrays.
+*/
+int project_ps_arr_inv(double lat_ts, double lon_0, int is_north_pole,
 		       double *x, double *y, int len);
 
 /****************************************************************************
