@@ -60,6 +60,28 @@ BUGS:
 
 #define VERSION 1.15
 
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <file>] <infile1.in> <infile2.in> <outfile>\n",name); 
+ printf("\n"
+	"ARUGMENTS:\n"
+	"   <infile1.in>  is the first .in file with the .in extension\n"
+	"   <infile2.in>  is the second .in file with the .in extension\n"
+	"   <outfile>     is the output file where the average doppler\n"
+	"                   coefficients are stored.\n"
+	"   -log <file>   Allows output to be written to a log file (optional).\n"); 
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   %s averages the doppler polynomials and writes the\n"
+	"   results to outfile.\n",name);
+ printf("\n"
+	"Version %3.1f, ASF SAR Tools\n"
+	"\n", VERSION);
+ exit(1);
+}
+
 int main(int argc, char *argv[])
 {
 	char dotInFile1[255];		/* first .in file */	
@@ -120,24 +142,3 @@ int main(int argc, char *argv[])
 	return(0);
 }
 
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-log <file>] <infile1.in> <infile2.in> <outfile>\n",name); 
- printf("\n"
-	"ARUGMENTS:\n"
-	"   <infile1.in>  is the first .in file with the .in extension\n"
-	"   <infile2.in>  is the second .in file with the .in extension\n"
-	"   <outfile>     is the output file where the average doppler\n"
-	"                   coefficients are stored.\n"
-	"   -log <file>   Allows output to be written to a log file (optional).\n"); 
- printf("\n"
-	"DESCRIPTION:\n"
-	"   %s averages the doppler polynomials and writes the\n"
-	"   results to outfile.\n",name);
- printf("\n"
-	"Version %3.1f, ASF SAR Tools\n"
-	"\n", VERSION);
- exit(1);
-}

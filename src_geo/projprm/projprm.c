@@ -139,6 +139,35 @@ BUGS:
 
 float VERSION = 7.7;
 
+static
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <file>] <projection> <prjkey> <outfile> <parameters...>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+/*	"   projection   Designate a map style.  Can be: GEOGRAPH,\n"
+	"                  PLSTEREO, UTM, LAMAZEQA, or ALBERS\n"
+*/	"   projection   Designate a map style.  Can be: PLSTEREO, UTM,\n"
+	"                  LAMAEQA or ALBERS.\n"
+	"   prjkey       Key sting to identify this projection in your\n"
+	"                  projection file.\n"
+	"   outfile      Output file name.\n"
+	"   parameters   Projection specific parameters, see man page\n"
+	"                  for details.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -log <file>  Allows the output to be written to a log file\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Creates a projection parameter table file.\n");
+ printf("\n"
+	"Version %.2f, ASF SAR TOOLS\n"
+	"\n",VERSION);
+ exit(1);
+}
+
 int main(int argc,char **argv)
 { 
  double prjparms[15];		/* projection parameter array */
@@ -306,31 +335,3 @@ else if (strcmp(subcmd,"OBLEQ") == 0)
  exit(0);
 } 
 
-
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-log <file>] <projection> <prjkey> <outfile> <parameters...>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-/*	"   projection   Designate a map style.  Can be: GEOGRAPH,\n"
-	"                  PLSTEREO, UTM, LAMAZEQA, or ALBERS\n"
-*/	"   projection   Designate a map style.  Can be: PLSTEREO, UTM,\n"
-	"                  LAMAEQA or ALBERS.\n"
-	"   prjkey       Key sting to identify this projection in your\n"
-	"                  projection file.\n"
-	"   outfile      Output file name.\n"
-	"   parameters   Projection specific parameters, see man page\n"
-	"                  for details.\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"   -log <file>  Allows the output to be written to a log file\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Creates a projection parameter table file.\n");
- printf("\n"
-	"Version %.2f, ASF SAR TOOLS\n"
-	"\n",VERSION);
- exit(1);
-}
