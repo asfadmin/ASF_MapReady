@@ -9,6 +9,7 @@ LIBS =	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgeotiff.a \
 	$(LIBDIR)/libtiff.a \
+	-L$(LIBDIR) -lgsl -lgslcblas \
 	-lm
 
 OBJS =	get_tiepoints.o \
@@ -58,10 +59,12 @@ OBJS =	get_tiepoints.o \
 	convert2geotiff_IO.o \
 	convert2geotiff.o 
 
+CFLAGS += -D_GNU_SOURCE
+
 all: convert2geotiff clean
 
 convert2geotiff: $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o convert2geotiff $(OBJS) $(LIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o convert2geotiff $(OBJS) $(LIBS)
 	cp convert2geotiff.1 ../../man/man1
 	mv convert2geotiff$(BIN_POSTFIX) $(BINDIR)
 
