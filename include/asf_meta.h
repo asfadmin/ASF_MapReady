@@ -347,8 +347,15 @@ double meta_look(meta_parameters *sar,double y,double x);
 Geolocation Calls: in meta_get_geo.c.
 Here, latitude and longitude are always in degrees.*/
 
-/* Converts given line and sample to that for
-the non-multilooked, non-windowed, equivalent image.*/
+/* Converts a given line and sample to that for the non-multilooked,
+   non-windowed, equivalent image.  This function shows how
+   gracelessly our metadata represents the different types of images
+   we have to cope with.  */
+void meta_get_original_line_sample(meta_parameters *meta, int line, 
+				   int sample, int *original_line, 
+				   int *original_sample);
+
+/* DEPRECATED.  You probably want meta_get_original_line_sample.  */
 void meta_get_orig(void *ddr,
 	int y, int x,int *yOrig,int *xOrig);
 
