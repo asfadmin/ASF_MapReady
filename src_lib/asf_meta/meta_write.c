@@ -13,6 +13,12 @@ void meta_put_char  (FILE *meta_file,char *name,char   value,char *comment);
    metadata file for that structure.  */
 void meta_write(meta_parameters *meta, const char *file_name)
 {
+  /* Maximum file name length, including trailing null.  */
+#define FILE_NAME_MAX 1000
+  char file_name_with_extension[FILE_NAME_MAX];
+
+  appendExt(strcpy(file_name_with_extension, file_name), ".meta");
+
   FILE *fp = FOPEN(file_name, "w");
 
   /* Write an 'about meta file' comment  */
