@@ -1,20 +1,11 @@
 /* This program is a simple GUI wrapper around the asf_convert
    tool.  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <gtk/gtk.h>
-#include <glade/glade.h>
+#include "asf_convert_gui.h"
 
 GladeXML *glade_xml;
 
-#define JPEG 0
-#define PPM 1
-#define GEOTIFF 2
-
-void
+SIGNAL_CALLBACK void
 on_browse_input_files_button_clicked(GtkWidget *widget)
 {
   GtkWidget *file_selection_dialog =
@@ -23,7 +14,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
   gtk_widget_show(file_selection_dialog);
 }
 
-void
+SIGNAL_CALLBACK void
 on_input_file_selection_cancel_button_clicked(GtkWidget *widget)
 {
   GtkWidget *file_selection_dialog =
@@ -32,7 +23,7 @@ on_input_file_selection_cancel_button_clicked(GtkWidget *widget)
   gtk_widget_hide(file_selection_dialog);
 }
 
-void
+SIGNAL_CALLBACK void
 on_input_file_selection_ok_button_clicked(GtkWidget *widget)
 {
   GtkWidget *file_selection_dialog =
@@ -51,13 +42,13 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
   gtk_widget_hide(file_selection_dialog);
 }
 
-void
+SIGNAL_CALLBACK void
 on_asf_convert_destroy(GtkWidget *widget, gpointer data)
 {
   gtk_main_quit();
 }
 
-void
+SIGNAL_CALLBACK void
 on_execute_button_clicked (GtkWidget *button)
 {
   GtkWidget *input_entry, 
