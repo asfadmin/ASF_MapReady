@@ -414,7 +414,7 @@ int main(int argc, char *argv[])
 
 		char command[255];
 		char temp[255];
-		sprintf(command, "asf_import -log tmp%i_import.log", (int)getpid());
+		sprintf(command, "asf_import -log tmp%i_import.log -format %s", (int)getpid(), format_in);
 		if(quietFlag != -1)
 			strcat(command, " -quiet");
 		sprintf(temp, " -%s %s %s tmp%i",
