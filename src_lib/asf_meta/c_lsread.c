@@ -111,7 +111,7 @@ do
 	    if (*dlen < datalen)
 		*dlen = datalen;
 	    offset = -(HDRL);
-	    FSEEK(fp,offset,1);
+	    FSEEK64(fp,offset,1);
 	    return(E_SMAL);
     	    }
 	if (charlen > 0)                         /* read character portion    */
