@@ -115,31 +115,29 @@ void createMeta_ceos(bin_state *s,struct dataset_sum_rec *dssr,char *inN,char *o
 
         /* Check for VEXCEL LZP Data-- has odd state vectors
          --------------------------------------------------*/
-/* We do not have the right to distribute ASAP which is required by
- * propagate_state(), therefore this call cannot happen :( 
- *	if (0==strncmp(dssr->sys_id,"SKY",3))
- *	{
- *	**Correct for wrong time of image start-- image start time
- *	 *(from DSSR) is *actually* in the center of the image.**
- *		double imgLen;**Half of length of image, in seconds**
- *		int i;
- *		imgLen=ceosLen(inN)/2.0/s->prf;
- *		printf("VEXCEL Level-0 CEOS: Shifted by %f seconds...\n",imgLen);
- *		**Correct the image start time**
- *		meta->state_vectors->second -= imgLen;
- *		if (meta->state_vectors->second<0) {
- *			meta->state_vectors->julDay--;
- *			meta->state_vectors->second+=24*60*60;
- *		}
- *		**Correct the time of the state vectors, which are *relative* to
- *		 *image start.**
- *		for (i=0;i<meta->state_vectors->vector_count;i++)
- *			meta->state_vectors->vecs[i].time += imgLen;
- *	** State vectors are too far apart or too far from image as read --
- *	 * propagate them**
- *		propagate_state(meta, 3, (s->nLines / s->prf / 2.0) );
- *	}
- */	
+	if (0==strncmp(dssr->sys_id,"SKY",3))
+	{
+	/*Correct for wrong time of image start-- image start time
+	 *(from DSSR) is *actually* in the center of the image.*/
+		double imgLen;/*Half of length of image, in seconds*/
+		int i;
+		imgLen=ceosLen(inN)/2.0/s->prf;
+		printf("VEXCEL Level-0 CEOS: Shifted by %f seconds...\n",imgLen);
+		/*Correct the image start time*/
+		meta->state_vectors->second -= imgLen;
+		if (meta->state_vectors->second<0) {
+			meta->state_vectors->julDay--;
+			meta->state_vectors->second+=24*60*60;
+		}
+		/*Correct the time of the state vectors, which are *relative* to
+		 *image start.*/
+		for (i=0;i<meta->state_vectors->vector_count;i++)
+			meta->state_vectors->vecs[i].time += imgLen;
+		/* State vectors are too far apart or too far from image as read
+		 * -- propagate them */
+		propagate_state(meta, 3, (s->nLines / s->prf / 2.0) );
+	}
+	
 	/* Update s-> fields with new state vector
          ----------------------------------------*/
 	addStateVector(s,&meta->state_vectors->vecs[0].vec);
