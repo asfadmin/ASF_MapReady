@@ -77,6 +77,7 @@ asf_meta: build_only
 	 ln -s -f $(LIBDIR)/asf_meta.a $(LIBDIR)/libasf_meta.a
 
 build_only: $(OBJS) cook_libs
+	rm -rf asf_meta.a	# Get rid of all stale symbols.
 	ar rv asf_meta.a $(OBJS) $(wildcard ./library_cooking_pot/*.o) 
 	$(RANLIB) asf_meta.a
 
