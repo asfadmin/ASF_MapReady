@@ -238,7 +238,7 @@ void print_error(char *msg)
   /* I made "ERROR:" red...Yay! :D */
   printf("\n   \033[31;1mERROR:\033[0m %s\n\n", msg);
   sprintf(tmp, "\n   ERROR: %s\n\n", msg);
-  if (logflag) printLog(tmp);
+  printLog(tmp);
   exit(EXIT_FAILURE);
 }
 
