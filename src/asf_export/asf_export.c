@@ -1,7 +1,7 @@
 /******************************************************************************
 <documentation>
 <name>
-   asf_export
+asf_export
 </name>
 
 <synopsis>
@@ -9,44 +9,41 @@ asf_export [-format <output_format>] [-size <max_dimension>] <in_base_name> <out
 </synopsis>
 
 <description>
-   This program ingests ASF internal format data and exports said data to
-   a number of output formats. If the input data was geocoded and the ouput
-   format supports geocoding, that information will be included.
+This program ingests ASF internal format data and exports said data to
+a number of output formats. If the input data was geocoded and the ouput
+format supports geocoding, that information will be included.
 </description>
 
 <input>
-   This must be an ASF internal format data file.
+This must be an ASF internal format data file.
 </input>
 
 <output>
-   The converted data in the output file. This file can be specified explicitly
-   with the -o option, or the base name from the input file will be used with 
-   an appropriate extension.
+The converted data in the output file.
 </output>
 
 <options>
-   -f             Format to export to. Must be one of the following:
-                      CEOS, envi, esri, geotiff, jpeg, ppm
-   -s             Scale image so that its largest dimension is, at most, size.
-   -o             Name of the output file.
+-format <format>  Format to export to. Must be one of the following:
+                     CEOS, envi, esri, geotiff, jpeg, ppm
+-size <size>      Scale image so that its largest dimension is, at most, size.
 </options>
 
 <examples>
-   To export to the default geotiff format from file1:
-      asf_export file1
-   To export file1 to the jpeg format:
-      asf_export -f jpeg file1
-   To export file1 to a jpeg no larger than 800x800:
-      asf_export -f jpeg -s 800 file1
+To export to the default geotiff format from file1:
+   asf_export file1
+To export file1 to the jpeg format:
+   asf_export -format jpeg file1
+To export file1 to a jpeg no larger than 800x800:
+   asf_export -format jpeg -size 800 file1
 </examples>
 
 <limitations>
-   Currently only supports ingest of ASF format floating point data.
-   GeoTIFF imagess will not be scaled.
+Currently only supports ingest of ASF format floating point data.
+GeoTIFF imagess will not be scaled.
 </limitations>
 
 <see_also>
-   asf_convert, asf_import
+asf_convert, asf_import
 </see_also>
 
 <copyright>
@@ -337,7 +334,7 @@ main (int argc, char *argv[])
 			usage();
 	if(sizeFlag != FLAG_NOT_SET)
 		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
-			usage();
+			usage();//This exits with a failure
 
 	//We're good enough at this point...print the splash screen and start filling in
 	//whatever needs to be filled in.

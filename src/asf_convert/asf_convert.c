@@ -1,69 +1,49 @@
 /*******************************************************************************
 <documentation>
 <name>
-   asf_convert
+asf_convert
 </name>
 
 <synopsis>
-asf_convert [-format <output_format>] <in_data> <in_meta> <out_full>
+asf_convert [-format <output_format>] [-size <output_size>]
+            <in_data> <in_meta> <out_full>
 </synopsis>
 
 <description>
-   This program ingests level one CEOS data, geocodes and resamples them
-   (both optional) and exports them to a variety of output formats. It can
-   handle input from a configuration file as well as directly from the command
-   line. asf_convert is able to run in batch mode. Running the program with a
-   configuration file allows for a more detailed processing flow, including
-   resampling and geocoding as intermediate processing steps.
+This program ingests level one CEOS data, geocodes and resamples them
+(both optional) and exports them to a variety of output formats.
 </description>
 
 <input>
-   The basic configuration file is defined as follows:
-
-   asf_convert configuration file
-
-   [General]
-   input data file = < name of input data file (with extension) >
-   input metadata file = < name of input metadata file (with extension) >
-   input format = < CEOS | ASF >
-   data type = < amplitude | power | sigma | gamma | beta >
-   output file = < basename of the output file >
-   output format = < ASF | GEOTIFF | JPEG | ENVI | ESRI | PPM >
-   resampling = < flag for subsampling: 0 | 1 >
-   browse image = < flag for subsampling to browse image size: 0 | 1 >
-   geocoding = < flag for geocoding: 0 | 1 >
-   batch mode = < flag for batch mode processing: 0 | 1 >
-   batch file = < batch file name >
-   log file = < log file name >
-
-   For command line input see OPTIONS.
+This needs to be a CEOS data/metadata set.
 </input>
 
 <output>
-   For configuration file output see INPUT.
-   For command line output see OPTIONS.
+The imported CEOS data converted to the specified format (or geotiff if
+none was specified).
 </output>
 
 <options>
-   -config        runs asf_convert from a configuration file.
-   -init_config   creates only a configuration file and exits.
-   -input         input format and input data and metadata files.
-   -output        output format and output filename.
+-format <format>  Specifies the output format. Must be one of the following:
+                     jpeg, geotiff. Default behavior is geotiff.
+-log              Allows setting the location of the log file. Default
+                     behavior is to log to tmp<pid>.log
+-quiet            Suppresses all non-essential output to stdout
 </options>
 
 <examples>
-   To convert the CEOS format file1 to a jpeg format in file2.jpg
-      asf_convert -input CEOS file1.img file1.meta -output jpeg file2.jpg
-   To run the program from a configuration file:
-      asf_convert -config configFile
+To convert the CEOS format file1 to the default format (geotiff) file2.tif
+   asf_convert file file1.D file1.L file2.tif
+To convert the CEOS format file1 to a jpeg format in file2.jpg
+   asf_convert -format jpeg file1.D file1.L file2.jpg
 </examples>
 
 <limitations>
-   None known.
+None known.
 </limitations>
 
 <see_also>
-   asf_import, asf_export
+asf_import, asf_export
 </see_also>
 
 <copyright>
@@ -137,7 +117,8 @@ PROGRAM HISTORY:
 void usage()
 {
 	printf("USAGE:\n"
-		"   asf_convert [-format <output_format>] <in_data_name> <in_meta_name> <out_full_name>\n");
+		"   asf_convert [-format <output_format>] [-size <output_size>]\n"
+		"               <in_data_name> <in_meta_name> <out_full_name>\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -208,8 +189,8 @@ int main(int argc, char *argv[])
 	char format_in[255], format_out[255];
 	char out_file[255], data_file[255], meta_file[255];
 //	int inFlag = FALSE, outFlag = FALSE, formatFlag = FALSE, configFlag = FALSE, configInitFlag = FALSE;
-	int formatFlag, configFlag, configInitFlag, quietFlag;
-	int ii;
+	int formatFlag, sizeFlag, configFlag, configInitFlag, quietFlag;
+	int ii, size_out;
 	file_format_t type_in, type_out;
 
 //*********************BEGIN COMMAND LINE PARSING STUFF*********************//
@@ -222,6 +203,7 @@ int main(int argc, char *argv[])
 
 	//Normal options
 	formatFlag = checkForOption("-format", argc, argv);
+	sizeFlag = checkForOption("-size", argc, argv);
 	configFlag = checkForOption("-config", argc, argv);
 	configInitFlag = checkForOption("-init_config", argc, argv);
 	logflag = checkForOption("-log", argc, argv);
@@ -244,6 +226,8 @@ int main(int argc, char *argv[])
 		neededArgs += 2;//option & parameter
 	if(formatFlag != FLAG_NOT_SET)
 		neededArgs += 2;//option & parameter
+	if(sizeFlag != FLAG_NOT_SET)
+		neededArgs += 2;//option & parameter
 	if(quietFlag != FLAG_NOT_SET)
 		neededArgs += 1;//option
 
@@ -265,6 +249,9 @@ int main(int argc, char *argv[])
 	if(formatFlag != FLAG_NOT_SET)
 		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 4)
 			usage();//This exits with a failure
+	if(sizeFlag != FLAG_NOT_SET)
+		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 4)
+			usage();//This exits with a failure
 
 	//We must be good enough at this point...start processing with assumptions that are
 	//*supposedly* guaranteed from above :)
@@ -276,7 +263,8 @@ int main(int argc, char *argv[])
 		strcpy(format_out, argv[formatFlag + 1]);
 	else
 		strcpy(format_out, "geotiff");//default behavior is geotiff
-		
+	if(sizeFlag != FLAG_NOT_SET)
+		size_out = atol(argv[sizeFlag + 1]);
 	if(logflag != FLAG_NOT_SET)
 		strcpy(logFile, argv[logflag + 1]);
 	else
@@ -564,6 +552,11 @@ int main(int argc, char *argv[])
 		sprintf(command, "asf_export -log tmp%i_export.log", (int)getpid());
 		if(quietFlag != FLAG_NOT_SET)
 			strcat(command, " -quiet");
+		if(sizeFlag != FLAG_NOT_SET)
+		{
+			sprintf(temp, " -size %i", size_out);
+			strcat(command, temp);
+		}
 		sprintf(temp, " -format %s tmp%i_amp.img tmp%i_amp.meta %s",
 		format_out,
 		(int)getpid(),

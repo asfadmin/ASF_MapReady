@@ -1,31 +1,31 @@
 /*************************************************************************
 <documentation>
 <name>
-    asf_import
+asf_import
 </name>
 
 <synopsis>
 asf_import [-amplitude | -sigma | -gamma | -beta | -power]
            [-lat <lower> <upper>] [-format <input_format>]
-           <in_base_name> <out_base_name>
+           <in_data_name> <in_meta_name> <out_base_name>
 </synopsis>
 
 <description>
-    Ingests all varieties of CEOS and STF data formats as well as the external
-    ESRI and ENVI data formats and outputs ASF internal format metadata
-    and data files.
+Ingests all varieties of CEOS and STF data formats as well as the external
+ESRI and ENVI data formats and outputs ASF internal format metadata
+and data files.
 </description>
 
 <input>
-   The format of the input file must be specified as CEOS, STF, ESRI, or ENVI.
-   The data file name must be provided seperately from the meta file name.
-   The output file provided should only be a base name, by which the created
-   files will be named, with appropriate extensions.
+The format of the input file must be specified as CEOS, STF, ESRI, or ENVI.
+The data file name must be provided seperately from the meta file name.
+The output file provided should only be a base name, by which the created
+files will be named, with appropriate extensions.
 </input>
 
 <output>
-   Outputs data and metadata files with the user-provided base name and
-   appropriate extensions.
+Outputs data and metadata files with the user-provided base name and
+appropriate extensions.
 </output>
 
 <options>
@@ -46,15 +46,15 @@ asf_import [-amplitude | -sigma | -gamma | -beta | -power]
 </options>
 
 <examples>
-   asf_import -format CEOS file1.D file1.L file2
+asf_import -format CEOS file1.D file1.L file2
 </examples>
 
 <limitations>
-   None known.
+None known.
 </limitations>
 
 <see_also>
-   asf_convert, asf_export
+asf_convert, asf_export
 </see_also>
 
 <copyright>
@@ -256,6 +256,7 @@ int outLine;
 int oldFlag=FALSE;
 
 /* Lets go! */
+/* Where? */
 int main(int argc, char *argv[])
 {
   struct IOF_VFDR image_fdr;
@@ -1239,6 +1240,6 @@ void usage(void)
   "USAGE:\n"
   "   asf_import [-amplitude | -sigma | -gamma | -beta | -power]\n"
   "              [-lat <lower> <upper>] [-format <input_format>]\n"
-  "              <in_base_name> <out_base_name>\n");
+  "              <in_data_name> <in_meta_name> <out_base_name>\n");
  exit(EXIT_FAILURE);
 }
