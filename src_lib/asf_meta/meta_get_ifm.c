@@ -15,12 +15,6 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include "asf_meta.h"
 
-void meta_get_orig_img_dimensions(meta_parameters *meta, long *lines, long *samples)
-{
-  *lines   = meta->general->line_count;
-  *samples = meta->general->sample_count;
-}
-
 /*Interferometry calls:*/
 
 /***********************************************************************
