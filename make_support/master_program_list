@@ -57,6 +57,7 @@ LIBS
 	asf_odl
 	asf_fft
 	libproj
+	libglib-2.0
 	libasf_proj
 	libasf_raster
 	libasf_reporting
