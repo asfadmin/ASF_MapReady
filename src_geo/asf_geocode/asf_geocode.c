@@ -503,6 +503,11 @@ main (int argc, char **argv)
   if ((logflag = detect_string_options(argc, argv, logFile,
 				      "-log", "--log", NULL))) {
       fLog = FOPEN(logFile, "w");
+      fLog = fopen (logFile, "w");
+      if ( fLog == NULL ) {
+	// Couldn't open the log file, so just don't do logging.
+	logflag = FALSE;
+      }
   }
   quietflag = detect_flag_options(argc, argv, "-quiet", "--quiet", NULL);
 
