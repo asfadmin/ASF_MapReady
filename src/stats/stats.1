@@ -21,33 +21,41 @@ statistics into a .stat file of the same base name as \fIimageName\fP. It also
 fills a stats block in the .meta file of the same base name as \fIimageName\fP.
 
 .SH COMMAND LINE OPTIONS:
--mask          Ignore <value> while taking statistics.
-.RE
--log           Copy terminal output to <logFile>.
-.RE
--quiet         Supress terminal output to essential.
-.RE
--overmeta      Force overwrite of existing .meta file.
-.RE
--nometa        Do not generate output in a .meta file.
-.RE
--overstat      Force overwrite of existing .stat file.
-.RE
--nostat        Do not generate output in a .stat file.
-.RE
--startline     Generate statistics for window starting at
-               <line>. (implies -nometa)
-.RE
--startsample   Generate statistics for window starting at
-               <sample>. (implies -nometa)
-.RE
--height        Generate statistics for window of <height>
-               lines. (implies -nometa)
-.RE
--width         Generate statistics for window of <width>
-               samples. (implies -nometa)
-.RE
-\fIimageName\fP      Name of input image file (include extension).
+.TP 8
+.B "-mask <value>"
+Ignore <value> while taking statistics.
+.TP 8
+.B "-log <logFile>"
+Copy terminal output to <logFile>.
+.TP 8
+.B "-quiet"
+Supress terminal output to essential.
+.TP 8
+.B "-overmeta"
+Force overwrite of existing .meta file.
+.B "-nometa"
+Do not generate output in a .meta file.
+.TP 8
+.B "-overstat"
+Force overwrite of existing .stat file.
+.TP 8
+.B "-nostat"
+Do not generate output in a .stat file.
+.TP 8
+.B "-startline <line>"
+Generate statistics for window starting at <line>. (implies -nometa)
+.TP 8
+.B "-startsample <sample>"
+Generate statistics for window starting at <sample>. (implies -nometa)
+.TP 8
+.B "-height <height>"
+Generate statistics for window of <height> lines. (implies -nometa)
+.TP 8
+.B "-width <width>"
+Generate statistics for window of <width> samples. (implies -nometa)
+.TP 8
+.B "\fIimageName\fP"
+Name of input image file (include extension).
 
 .SH EXAMPLES:
 Assume you have the file 'data_file.img' in your working directory. In order to
