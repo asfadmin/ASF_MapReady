@@ -457,7 +457,8 @@ void meta_new2old(meta_parameters *meta)
 
 /* Fill ifm_parameters structure */
 	if (meta->state_vectors) {
-   /*
+   /* Commented out because when there is only a ddr that doesn't have the image
+    * type (slant, ground, map projected), these functions fail.
 		meta->ifm->ht    = meta_get_sat_height(meta, meta->general->line_count/2, 0);
 		meta->ifm->er    = meta_get_earth_radius(meta, meta->general->line_count/2, 0);
    */
