@@ -29,7 +29,7 @@ general {
 }
 
 sar{
-    proj_type: G [S=slant range; G=ground range; P=map projected]
+    proj_type: G  # [S=slant range; G=ground range; P=map projected]
     look_direction: R # (normally R) [R=right; L=left]
     look_count: 5
     look_angle: 2.23
