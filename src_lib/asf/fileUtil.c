@@ -1,13 +1,15 @@
 /*****************************************
 FileUtil:
 	A collection of file I/O utilities.
+	Primarily deals with file naming.
 */
 
 #include <assert.h>
-
 #include "asf.h"
-#include "asf_endian.h"
 
+/*******************************************************************************
+ * extExists:
+ * returns whether the given file basename and extension exist and are readable.*/
 int extExists(const char *name,const char *newExt)
 {
 	char *fName=appendExt(name,newExt);
@@ -16,6 +18,9 @@ int extExists(const char *name,const char *newExt)
 	return exists;
 }
 
+/*******************************************************************************
+ * fileExists:
+ * returns whether the given file name exists and is readable.*/
 int fileExists(const char *name)
 {
 	FILE *f=fopen(name,"r");
@@ -25,6 +30,10 @@ int fileExists(const char *name)
 	return 1;
 }
 
+/*******************************************************************************
+ * findExt:
+ * returns a pointer to the beginning (the period) of the given name's first
+ * extension, or NULL if none exists.*/
 char *findExt(char *name)
 {
 	int i;
@@ -39,6 +48,12 @@ char *findExt(char *name)
 	/*We couldn't find an extension.*/
 		return NULL;
 }
+
+/*******************************************************************************
+ * appendExt:
+ * allocates its return string on the heap, so it must be free'd, or memory will
+ * leak.  It can take a NULL extension, whereupon it just allocates a copy of
+ * the given string, and returns it.*/
 char *appendExt(const char *name,const char *newExt)
 {
 	char *ext, *ret = (char *) MALLOC(sizeof(char) 
@@ -64,6 +79,13 @@ char *appendExt(const char *name,const char *newExt)
 
 	return ret;
 }
+
+/*******************************************************************************
+ * create_name:
+ * Does the same basic thing as appendExt but without dangerously allocating 
+ * new memory. Takes an input name, lops of any extention and puts on a new
+ * extention filling a pre-allocated output string which it's been provided with
+ */
 void create_name(char *out,const char *in,const char *newExt)
 {
 	char *ext;
@@ -74,6 +96,10 @@ void create_name(char *out,const char *in,const char *newExt)
 	strcat(out,newExt);
 }
 
+/*******************************************************************************
+ * fopenImage:
+ * first tries to open the given image name, then appends ".img" and tries again
+ * It returns a pointer to the opened file.*/
 FILE *fopenImage(const char *fName,const char *access)
 {
 	int forWriting=0;
@@ -147,140 +173,3 @@ FILE *fopenImage(const char *fName,const char *access)
 	return NULL;
 }
 
-/***********************************************************************************
- * Get a single line of data in floating point format, performing rounding, padding,
- * and endian conversion as needed.  The line_number argument is the zero-indexed
- * line number to get.  The dest argument must be a pointer to existing memory.   */
-int get_float_line(FILE *file, meta_parameters *meta, int line_number, float *dest)
-{
-  int ii;               /* Sample index.  */
-  int samples_gotten;   /* Number of samples retrieved */
-  size_t sample_size;   /* Sample size in bytes.  */
-  void *temp_buffer;    /* Buffer for unconverted data.  */
-  int sample_count = meta->general->sample_count;
-  int data_type    = meta->general->data_type;
-
-  assert(line_number <= meta->general->line_count - 1);
-
-  /* Determine sample size.  */
-  switch (data_type) {
-    case BYTE:      sample_size = 1; break;
-    case INTEGER16: sample_size = 2; break;
-    case INTEGER32: sample_size = 4; break;
-    case REAL32:    sample_size = 4; break;
-    case REAL64:    sample_size = 8; break;
-    default:
-      printf("get_float_line: Unrecognized data type. Value must be BYTE, INTEGER16,\n"
-             "                INTEGER32, REAL32, or REAL64... Exiting program.\n");
-      exit(EXIT_FAILURE);
-  }
-
-  /* Scan to the beginning of the line.  */
-  FSEEK64(file, sample_size*sample_count*line_number, SEEK_SET);
-
-  temp_buffer = MALLOC( (size_t) sample_size * sample_count);
-  
-  samples_gotten = FREAD(temp_buffer, sample_size, sample_count, file);
-
-  /* Fill in destination array.  */
-  switch (data_type) {
-    case BYTE:
-      for ( ii=0; ii<sample_count; ii++ )
-        dest[ii] = *( (uint8_t *) temp_buffer + ii);
-      break;
-    case INTEGER16:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        big16(*((int16_t *)temp_buffer + ii));
-        dest[ii] = *( (int16_t *) temp_buffer + ii);
-      }
-      break;
-    case INTEGER32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        big32(*((int32_t *)temp_buffer + ii));
-        dest[ii] = *( (int32_t *) temp_buffer + ii);
-      }
-      break;
-    case REAL32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ieee_big32(*((float*)temp_buffer + ii));
-        dest[ii] = *( (float *) temp_buffer + ii);
-      }
-      break;
-    case REAL64:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ieee_big64(*((double*)temp_buffer + ii));
-        dest[ii] = *( (double *) temp_buffer + ii);
-      }
-  }
-
-  FREE(temp_buffer);
-  return samples_gotten;
-}
-
-/***********************************************************************************
- * Put a single line of data in floating point format, performing rounding, padding,
- * and endian conversion as needed.  The line_number argument is the zero-indexed
- * line number to get.  The dest argument must be a pointer to existing memory.   */
-int put_float_line(FILE *file, meta_parameters *meta, int line_number, const float *source)
-{
-  int ii;               /* Sample index.                       */
-  int samples_put;      /* Number of samples written           */
-  size_t sample_size;   /* Sample size in bytes.               */
-  void *out_buffer;     /* Buffer of converted data to write.  */
-  int sample_count = meta->general->sample_count;
-  int data_type    = meta->general->data_type;
-
-  assert(line_number <= meta->general->line_count - 1);
-
-  /* Determine sample size.  */
-  switch (data_type) {
-    case BYTE:      sample_size = 1; break;
-    case INTEGER16: sample_size = 2; break;
-    case INTEGER32: sample_size = 4; break;
-    case REAL32:    sample_size = 4; break;
-    case REAL64:    sample_size = 8; break;
-    default:
-      printf("put_float_line: Unrecognized data type. Value must be BYTE, INTEGER16,\n"
-             "                INTEGER32, REAL32, or REAL64... Exiting program.\n");
-      exit(EXIT_FAILURE);
-  }
-
-  out_buffer = MALLOC( (size_t) sample_size * sample_count);
-
-  /* Fill in destination array.  */
-  switch (data_type) {
-    case BYTE:
-      for ( ii=0; ii<sample_count; ii++ )
-        ((unsigned char *)out_buffer)[ii] = source[ii];
-      break;
-    case INTEGER16:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((short*)out_buffer)[ii] = source[ii];
-        big16( ((short*)out_buffer)[ii] );
-      }
-      break;
-    case INTEGER32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((int*)out_buffer)[ii] = source[ii];
-        big32( ((int*)out_buffer)[ii] );
-      }
-      break;
-    case REAL32:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((float*)out_buffer)[ii] = source[ii];
-        ieee_big32( ((float*)out_buffer)[ii] );
-      }
-    case REAL64:
-      for ( ii=0; ii<sample_count; ii++ ) {
-        ((double*)out_buffer)[ii] = source[ii];
-        ieee_big64( ((double*)out_buffer)[ii] );
-      }
-      break;
-  }
-
-  FSEEK64(file, sample_size*sample_count*line_number, SEEK_SET);
-  samples_put = FWRITE(out_buffer, sample_size, sample_count, file);
-
-  FREE(out_buffer);
-  return samples_put;
-}
