@@ -78,7 +78,7 @@ void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,doub
 void proj_to_ll(meta_projection *proj, char look_dir, double p1, double p2, double *lat_d, double *lon)
 {
 	if (proj==NULL)
-		bail("NULL projection parameter structure passed to ll_to_proj!\n");
+		bail("NULL projection parameter structure passed to proj_to_ll!\n");
 	switch(proj->type)
 	{
 		case 'A': ac_ll(proj,look_dir,p2,p1,lat_d,lon); break;
