@@ -46,12 +46,10 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf.a \
-	$(LIBDIR)/libgsl.a \
-	$(LIBDIR)/libgslcblas.a \
+	$(GSL_LIBS) \
 	$(LIBDIR)/libjpeg.a \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
-#	$(LIBDIR)/libiconv.a \
 	-lm
 
 LDLIBS := $(LIBS)
