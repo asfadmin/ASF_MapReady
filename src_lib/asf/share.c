@@ -1,13 +1,27 @@
-#include "asf.h"
-#include "config.h"
 
 char * strdup(const char *);
 
 static char * s_share_dir = 0;
 
 #if defined(win32)
+
+/* ugly hack here... windef.h and asf_meta.h both define a BYTE symbol. */
+/* since we don't use the BYTE from asf_meta.h here, we'll #define BYTE */
+/* to something else during the processing of that header, leaving BYTE */
+/* defined in windef.h alone (that's the one we want)                   */
+
+#define BYTE __byte
+#include "asf.h"
+#undef BYTE
 #include <windows.h>
+
 static const char * s_asf_application_key = "Software\\ASF\\";
+
+#else
+
+#include "asf.h"
+#include "config.h"
+
 #endif
 
 const char * 
@@ -24,13 +38,12 @@ get_asf_share_dir()
     unsigned long read_size;
 
     RegCreateKeyEx(HKEY_LOCAL_MACHINE, s_asf_application_key, 0, 0,
-		   REG_OPTION_NON_VOLATILE, KEY_QUERY_VALUE, 0,
-		   &HKey, 0);
+		   REG_OPTION_NON_VOLATILE, KEY_QUERY_VALUE, 0, &Hkey, 0);
 
     read_size = sizeof(str_value);
-    RegQueryValueEx(HKey, "ShareDir", 0, 0, (BYTE*)str_value, &read_size);
+    RegQueryValueEx(Hkey, "ShareDir", 0, 0, (BYTE*)str_value, &read_size);
 
-    RegCloseKey(HKey);
+    RegCloseKey(Hkey);
 
     s_share_dir = strdup(str_value);
 
@@ -43,7 +56,8 @@ get_asf_share_dir()
 
 #endif
 
-    /* remove trailing path separator, if one is present */
+      /* remove trailing path separator, if one is present */
+
     if (s_share_dir[strlen(s_share_dir) - 1] == DIR_SEPARATOR) {
       s_share_dir[strlen(s_share_dir) - 1] = '\0';
     }
