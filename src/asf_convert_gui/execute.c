@@ -151,12 +151,26 @@ append_output(char * txt)
 }
 
 void
+invalidate_progress()
+{
+  gboolean valid;
+  GtkTreeIter iter;
+
+  assert (list_store);
+    
+  valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+  while (valid)
+  {
+    gtk_list_store_set(list_store, &iter, 2, "-", -1);
+    valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+  }
+}
+
+void
 process_item(GtkTreeIter *iter,
 	     Settings *user_settings)
 {
-  gchar *in_data, *in_meta, *out_full, *basename, *p;
-  gchar convert_cmd[4096];
-  char log_file[128];
+  gchar *in_data, *out_full, *status;
   int pid;
   time_t s;
 
@@ -164,79 +178,90 @@ process_item(GtkTreeIter *iter,
   s = time(NULL);
 
   gtk_tree_model_get(GTK_TREE_MODEL(list_store), iter, 
-		     0, &in_data, 1, &out_full, -1);
+		     0, &in_data, 1, &out_full, 2, &status, -1);
   
-  in_meta = meta_file_name(in_data);
-
-  basename = strdup(in_data);
-  p = strrchr(basename, '.');
-  if (p)
-    *p = '\0';
-  
-  gtk_list_store_set(list_store, iter, 2, "Processing...", -1);
-  
-  while (gtk_events_pending())
-    gtk_main_iteration();
-  
-  if (settings_get_run_import(user_settings))
+  if (strcmp(status, "Done") != 0)
   {
-    char * cmd_output;
+    gchar *basename, *in_meta, *p;
+    gchar convert_cmd[4096];
+    char log_file[128];
 
-    sprintf(log_file, "tmp_%d_%ld_import.log", pid, s);
+    in_meta = meta_file_name(in_data);
 
-    snprintf(convert_cmd, 4096, 
-	     "asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" \"%s\"",
-	     settings_get_data_type_string(user_settings),
-	     settings_get_input_data_format_string(user_settings),
-	     settings_get_latitude_argument(user_settings),
-	     log_file,
-	     in_data,
-	     in_meta,
-	     basename);
+    basename = strdup(in_data);
+    p = strrchr(basename, '.');
+    if (p)
+      *p = '\0';
+  
+    gtk_list_store_set(list_store, iter, 2, "Processing...", -1);
     
-    cmd_output = do_cmd(convert_cmd, log_file);
-
-    append_output(cmd_output);
-
-    char * out_name_full = (char *)malloc(strlen(basename) + 10);
-    sprintf(out_name_full, "%s.img", basename);
-    
-    if (!settings_get_run_export(user_settings))
+    while (gtk_events_pending())
+      gtk_main_iteration();
+  
+    if (settings_get_run_import(user_settings))
     {
-      gtk_list_store_set(list_store, iter, 1, out_name_full, -1);
-      gtk_list_store_set(list_store, iter, 2, "Done", -1);
+      char * cmd_output;
+
+      sprintf(log_file, "tmp_%d_%ld_import.log", pid, s);
+
+      snprintf(convert_cmd, 4096, 
+	       "asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" \"%s\"",
+	       settings_get_data_type_string(user_settings),
+	       settings_get_input_data_format_string(user_settings),
+	       settings_get_latitude_argument(user_settings),
+	       log_file,
+	       in_data,
+	       in_meta,
+	       basename);
+    
+      cmd_output = do_cmd(convert_cmd, log_file);
+
+      append_output(cmd_output);
+
+      char * out_name_full = (char *)malloc(strlen(basename) + 10);
+      sprintf(out_name_full, "%s.img", basename);
+      
+      if (!settings_get_run_export(user_settings))
+      {
+	gtk_list_store_set(list_store, iter, 1, out_name_full, -1);
+	gtk_list_store_set(list_store, iter, 2, "Done", -1);
+      }
+
+      free(out_name_full);
+      free(cmd_output);
     }
 
-    free(out_name_full);
-    free(cmd_output);
+    while (gtk_events_pending())
+      gtk_main_iteration();
+
+    if (settings_get_run_export(user_settings))
+    {
+      char * cmd_output;
+    
+      sprintf(log_file, "tmp_%d_%ld_export.log", pid, s);
+    
+      snprintf(convert_cmd, 4096,
+	       "asf_export -format %s %s -log \"%s\" \"%s\" \"%s\"",
+	       settings_get_output_format_string(user_settings),
+	       settings_get_size_argument(user_settings),
+	       log_file,
+	       basename,
+	       out_full);
+      
+      cmd_output = do_cmd(convert_cmd, log_file);
+      
+      gtk_list_store_set(list_store, iter, 2, "Done", -1);
+      
+      free(cmd_output);
+    }
+
+    free(basename);
+    free(in_meta);
   }
 
-  while (gtk_events_pending())
-    gtk_main_iteration();
-
-  if (settings_get_run_export(user_settings))
-  {
-    char * cmd_output;
-    
-    sprintf(log_file, "tmp_%d_%ld_export.log", pid, s);
-    
-    snprintf(convert_cmd, 4096,
-             "asf_export -format %s %s -log \"%s\" \"%s\" \"%s\"",
-	     settings_get_output_format_string(user_settings),
-	     settings_get_size_argument(user_settings),
-	     log_file,
-	     basename,
-	     out_full);
-    
-    cmd_output = do_cmd(convert_cmd, log_file);
-    
-    gtk_list_store_set(list_store, iter, 2, "Done", -1);
-    
-    free(cmd_output);
-  }
-
-  free(basename);
-  free(in_meta);
+  g_free(status);
+  g_free(out_full);
+  g_free(in_data);
 }
 
 SIGNAL_CALLBACK void
@@ -251,6 +276,18 @@ on_execute_button_clicked (GtkWidget *button)
     return;
 
   user_settings = settings_get_from_gui();
+
+  if (settings_on_execute)
+  {
+    if (!settings_equal(user_settings, settings_on_execute))
+    {
+      /* settings have changed since last time clicked execute,
+	 or loaded settings from a file - must clear progress so far */
+      invalidate_progress();
+    }
+  }
+
+  settings_on_execute = settings_copy(user_settings);
 
   show_execute_button(FALSE);
   valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);

@@ -17,6 +17,9 @@ typedef struct
 } Settings;
 
 Settings * settings_get_from_gui();
+void settings_apply_to_gui();
+Settings * settings_copy(Settings *);
+int settings_equal(Settings *, Settings *);
 const char * settings_get_size_argument(Settings *);
 const char * settings_get_latitude_argument(Settings *);
 const char * settings_get_data_type_string(Settings *);

@@ -52,6 +52,7 @@
 #include "help.h"
 #include "rename_output.h"
 #include "file_selection.h"
+#include "state.h"
 
 extern const char DIR_SEPARATOR;
 extern const char PATH_SEPATATOR;
@@ -69,5 +70,8 @@ extern gboolean keep_going;
 
 /* TRUE during processing */
 extern gboolean processing;
+
+/* The settings when the user clicked "Execute" (or, "Load") */
+extern Settings * settings_on_execute;
 
 #endif

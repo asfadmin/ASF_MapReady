@@ -7,6 +7,7 @@ GladeXML *glade_xml;
 GtkListStore *list_store = NULL;
 gboolean keep_going;
 gboolean processing;
+Settings *settings_on_execute;
 
 int
 main(int argc, char **argv)
@@ -62,8 +63,12 @@ main(int argc, char **argv)
     glade_xml_signal_autoconnect (glade_xml);
 
     processing = FALSE;
+    settings_on_execute = NULL;
 
     gtk_main ();
+
+    if (settings_on_execute)
+      free(settings_on_execute);
 
     exit (EXIT_SUCCESS);
 }

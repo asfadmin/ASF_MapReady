@@ -92,6 +92,7 @@ popup_menu_process(GtkWidget *widget, GdkEvent *event)
   selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
   if (gtk_tree_selection_get_selected(selection, &model, &iter))
   {
+    gtk_list_store_set(list_store, &iter, 2, "Reprocessing...", -1);
     show_execute_button(FALSE);
     process_item(&iter, user_settings);
     show_execute_button(TRUE);

@@ -14,6 +14,71 @@ settings_get_output_format_allows_size(Settings *s)
     s->output_format == OUTPUT_FORMAT_PPM;
 }
 
+void
+settings_apply_to_gui(Settings * s)
+{
+  GtkWidget
+    *input_data_type_combobox,
+    *input_data_format_combobox,
+    *output_format_combobox,
+    *scale_checkbutton;
+
+  input_data_type_combobox = 
+    glade_xml_get_widget(glade_xml, "input_data_type_combobox");
+
+  input_data_format_combobox = 
+    glade_xml_get_widget(glade_xml, "input_data_format_combobox");
+
+  output_format_combobox = 
+    glade_xml_get_widget(glade_xml, "output_format_combobox");
+
+  scale_checkbutton = 
+    glade_xml_get_widget(glade_xml, "scale_checkbutton");
+
+  gtk_combo_box_set_active(GTK_COMBO_BOX(input_data_format_combobox),
+			   s->input_data_format);
+
+  gtk_combo_box_set_active(GTK_COMBO_BOX(input_data_type_combobox),
+			   s->data_type);
+
+  gtk_combo_box_set_active(GTK_COMBO_BOX(output_format_combobox),
+			   s->output_format);
+
+  if (settings_get_output_format_allows_size(s))
+  {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(scale_checkbutton),
+				 s->apply_scaling);
+
+    if (s->apply_scaling)
+    {
+      GtkWidget *longest_dimension_spinbutton;
+
+      longest_dimension_spinbutton = 
+	glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
+      
+      gtk_spin_button_set_value(GTK_SPIN_BUTTON(longest_dimension_spinbutton),
+				s->longest_dimension);
+      
+    }
+  }
+
+  if (settings_get_input_data_format_allows_latitude(s))
+  {
+    GtkWidget *latitude_low_spinbutton, *latitude_hi_spinbutton;
+
+    latitude_low_spinbutton =
+      glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+
+    latitude_hi_spinbutton =
+      glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+
+   gtk_spin_button_set_value(GTK_SPIN_BUTTON(latitude_low_spinbutton),
+			     s->latitude_low);
+   gtk_spin_button_set_value(GTK_SPIN_BUTTON(latitude_hi_spinbutton),
+			     s->latitude_hi);
+  }
+}
+
 Settings *
 settings_get_from_gui()
 {
@@ -51,6 +116,17 @@ settings_get_from_gui()
   ret->apply_scaling =
     settings_get_output_format_allows_size(ret) &&
     gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(scale_checkbutton));
+
+  if (ret->apply_scaling)
+  {
+    GtkWidget *longest_dimension_spinbutton;
+
+    longest_dimension_spinbutton = 
+      glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
+
+    ret->longest_dimension = (float) gtk_spin_button_get_value(
+	    GTK_SPIN_BUTTON(longest_dimension_spinbutton));
+  }
 
   if (settings_get_input_data_format_allows_latitude(ret))
   {
@@ -195,6 +271,9 @@ settings_get_input_data_format_string(Settings *s)
 int
 settings_equal(Settings *s1, Settings *s2)
 {
+  assert(s1);
+  assert(s2);
+
   return
     s1->input_data_format == s2->input_data_format &&
     s1->data_type == s2->data_type &&
@@ -203,6 +282,19 @@ settings_equal(Settings *s1, Settings *s2)
     s1->output_format == s2->output_format &&
     s1->apply_scaling == s2->apply_scaling &&
     s1->longest_dimension == s2->longest_dimension;
+}
+
+Settings *
+settings_copy(Settings *s)
+{
+  Settings * ret;
+
+  ret = (Settings *)malloc(sizeof(Settings));
+  memcpy(ret, s, sizeof(Settings));
+
+  assert(settings_equal(s, ret));
+
+  return ret;
 }
 
 const char *
