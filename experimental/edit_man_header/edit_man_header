@@ -38,6 +38,99 @@
 
 use Env;
 
+if($#ARGV < 0)
+{
+	print STDOUT "USAGE:\n   edit_man_header [--help] source_file\n";
+	print STDOUT "\n";
+	print STDOUT "P.S. If you use the --help option, do yourself a favor\n";
+	print STDOUT "     and pipe it through less or something similar...\n\n";
+	exit();
+}
+foreach (@ARGV)
+{
+	if($_ eq "--help")
+	{
+		print STDOUT "What this tool does:\n";
+		print STDOUT "   This is a simple tool designed to alter C/C++ source files\n";
+		print STDOUT "   so that all documentation is self-contained and does not require\n";
+		print STDOUT "   any actual installation on the user's part. This tool will add\n";
+		print STDOUT "   a number of #defines to the beginning of your source file, which\n";
+		print STDOUT "   can then be used in your code, as you please.\n";
+		print STDOUT "\n";
+		print STDOUT "How to use this tool:\n";
+		print STDOUT "   It's really quite simple. Almost *too* simple...\n";
+		print STDOUT "   Anyhow, run the tool, providing it with the name of your source\n";
+		print STDOUT "   file. So, something like:\n";
+		print STDOUT "      edit_man_header my_phat_kodez.c\n";
+		print STDOUT "   The tool will then scan your source file to see if any of these\n";
+		print STDOUT "   auto-generated defines already exist. If so, they are dumped into\n";
+		print STDOUT "   a temporary text file which is then opened by your favorite editor,\n";
+		print STDOUT "   or vi. Vi was chosen as the backup because it has an *ever* so\n";
+		print STDOUT "   slightly larger install base than emacs. If this bothers you, define\n";
+		print STDOUT "   the environment variable \$EDITOR...but I digress.\n";
+		print STDOUT "   The temporary file is then opened by an editor, at which point you\n";
+		print STDOUT "   are thoroughly cleared to have your way with it. The only thing you\n";
+		print STDOUT "   need to know is the simple format the text should be in when you\n";
+		print STDOUT "   are done. You can define as many sections as you wish, as follows:\n";
+		print STDOUT "      <name>_START\n";
+		print STDOUT "      Whatever you want to say goes in here, be it one line\n";
+		print STDOUT "      or several.\n";
+		print STDOUT "      <name>_END\n";
+		print STDOUT "   That's it. Really. Just replace <name> with whatever you want. Some\n";
+		print STDOUT "   good recommendations for sections you should include:\n";
+		print STDOUT "      NAME          The name of the tool\n";
+		print STDOUT "      USAGE         A simple usage string to jog the user's memory.\n";
+		print STDOUT "      DESCRIPTION   What does it *do*? What is its motivation?\n";
+		print STDOUT "      INPUT         What sort of input, if any, does the tool expect?\n";
+		print STDOUT "      OUTPUT        What sort of output will the tool produce?\n";
+		print STDOUT "      OPTIONS       A semi-detailed description of all available options\n";
+		print STDOUT "      EXAMPLES      A few simple examples--don't over-do this\n";
+		print STDOUT "      LIMITATIONS   What *won't* the tool do?\n";
+		print STDOUT "      KNOWN_BUGS    Nobody's perfect, and you know it\n";
+		print STDOUT "      SEE_ALSO      Similar tools, or just a reference to a good book\n";
+		print STDOUT "      COPYRIGHT     Your mouth is moving, but all I hear is blah, blah, blah\n";
+		print STDOUT "   If you want to add others, that's entirely up to you.\n";
+		print STDOUT "   After you've set up these SECTION_START/SECTION_END pairs, save the file\n";
+		print STDOUT "   and exit the editor. The script will then scan the temporary file and\n";
+		print STDOUT "   embed the appropriate defines in your source code. You can use the auto-\n";
+		print STDOUT "   generated #defines by ASF_<section_name>_STRING, such as\n";
+		print STDOUT "      ASF_NAME_STRING\n";
+		print STDOUT "      ASF_USAGE_STRING\n";
+		print STDOUT "      ASF_KNOWN_BUGS_STRING\n";
+		print STDOUT "   Lastly, the tool will output an html file ready to be tossed on the web.\n";
+		print STDOUT "\n";
+		print STDOUT "Safety blanket:\n";
+		print STDOUT "   Before your source file is ever opened in write-mode, it is backed up to\n";
+		print STDOUT "      <original_name>~\n";
+		print STDOUT "   This should make using this tool slightly less frightening.\n";
+		print STDOUT "\n";
+		print STDOUT "Known bugs/limitations:\n";
+		print STDOUT "   Like I said, nobody's perfect.\n";
+		print STDOUT "   1) Anything between the BEGIN/END AUTO-GENERATED CODE tags that is not\n";
+		print STDOUT "      part of a define will be nuked. Don't write love-letters to your\n";
+		print STDOUT "      sweetie in here: she won't ever see them.\n";
+		print STDOUT "   2) Don't muck with the #defines. The tool expects them to be in a\n";
+		print STDOUT "      (perhaps overly) specific format. Only ding around with them if you\n";
+		print STDOUT "      know what you're up to. Otherwise, if you mess around and then run\n";
+		print STDOUT "      the tool, lines of documentation may disappear (your actual source\n";
+		print STDOUT "      code outside the BEGIN/END tags will still be safe, however.)\n";
+		print STDOUT "   3) Whatever editor you use, it should not return before you're done\n";
+		print STDOUT "      editing. Kate in single-process mode, for instance, will not work.\n";
+		print STDOUT "   4) While editing the temporary file, anything not inside of a START/\n";
+		print STDOUT "      END pair will not be included in the auto-generated code, just like\n";
+		print STDOUT "      in bug/limitation/feature #1.\n";
+		print STDOUT "   5) Never, ever, EVER write documentation like I have just done, setting\n";
+		print STDOUT "      it up in a million print statements. It's stupid. You'll be labelled\n";
+		print STDOUT "      a fool, as will your children and your children's children. Your\n";
+		print STDOUT "      children's children's children might not be, and certainly their\n";
+		print STDOUT "      children won't be, but at least two generations after you. All fools.\n";
+		print STDOUT "      Don't do it to them. For heaven's sake, don't do it to yourself.\n";
+		print STDOUT "\n";
+		print STDOUT "--Munki out\n\n";
+		exit();
+	}
+}
+
 $source_file = $ARGV[0];
 $backup_file = "$ARGV[0]~";
 $temp_file = "temp.txt";
