@@ -87,6 +87,8 @@ main(int argc, char **argv)
     if (current_naming_scheme)
         naming_scheme_delete(current_naming_scheme);
 
+    release_predefined_projections();
+
     exit (EXIT_SUCCESS);
 }
 

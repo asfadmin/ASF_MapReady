@@ -824,7 +824,7 @@ settings_get_projection_abbrev(const Settings *s)
 	    return "lamcc";
 	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
 	    return "lamaz";
-	case ALBERS_CONICAL_EQUAL_AREA:
+	case ALBERS_EQUAL_AREA:
 	    return "albers";
     }
 }

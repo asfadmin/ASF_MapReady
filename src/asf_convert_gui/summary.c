@@ -105,7 +105,7 @@ void update_summary()
 			s->false_northing, s->false_easting);
 		break;
 
-	    case ALBERS_CONICAL_EQUAL_AREA:
+	    case ALBERS_EQUAL_AREA:
 		sprintf(text, "%sAlbers Conical Equal Area\n"
 			"   Center: (%f, %f)\n"
 			"   Standard Parallels: (%f, %f)\n"

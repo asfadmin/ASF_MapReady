@@ -513,7 +513,7 @@
 				  <child>
 				    <widget class="GtkMenuItem" id="universal_transverse_mercator">
 				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Universal Transverse Mercator (UTM)</property>
+				      <property name="label" translatable="yes">UTM</property>
 				      <property name="use_underline">True</property>
 				      <signal name="activate" handler="on_universal_transverse_mercator_activate" last_modification_time="Mon, 01 Nov 2004 20:38:54 GMT"/>
 				    </widget>
@@ -529,11 +529,11 @@
 				  </child>
 
 				  <child>
-				    <widget class="GtkMenuItem" id="lambert_azimuthal_equal_area">
+				    <widget class="GtkMenuItem" id="albers_conical_equal_area">
 				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Lambert Azimuthal Equal Area</property>
+				      <property name="label" translatable="yes">Albers Conical Equal Area</property>
 				      <property name="use_underline">True</property>
-				      <signal name="activate" handler="on_lambert_azimuthal_equal_area_activate" last_modification_time="Mon, 01 Nov 2004 20:38:54 GMT"/>
+				      <signal name="activate" handler="on_albers_conical_equal_area_activate" last_modification_time="Mon, 01 Nov 2004 20:38:54 GMT"/>
 				    </widget>
 				  </child>
 
@@ -547,11 +547,67 @@
 				  </child>
 
 				  <child>
-				    <widget class="GtkMenuItem" id="albers_conical_equal_area">
+				    <widget class="GtkMenuItem" id="lambert_azimuthal_equal_area">
 				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Albers Conical Equal Area</property>
+				      <property name="label" translatable="yes">Lambert Azimuthal Equal Area</property>
 				      <property name="use_underline">True</property>
-				      <signal name="activate" handler="on_albers_conical_equal_area_activate" last_modification_time="Mon, 01 Nov 2004 20:38:54 GMT"/>
+				      <signal name="activate" handler="on_lambert_azimuthal_equal_area_activate" last_modification_time="Mon, 01 Nov 2004 20:38:54 GMT"/>
+				    </widget>
+				  </child>
+				</widget>
+			      </child>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkLabel" id="label69">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">  </property>
+			      <property name="use_underline">False</property>
+			      <property name="use_markup">False</property>
+			      <property name="justify">GTK_JUSTIFY_LEFT</property>
+			      <property name="wrap">False</property>
+			      <property name="selectable">False</property>
+			      <property name="xalign">0.5</property>
+			      <property name="yalign">0.5</property>
+			      <property name="xpad">0</property>
+			      <property name="ypad">0</property>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkOptionMenu" id="predefined_projection_option_menu">
+			      <property name="width_request">210</property>
+			      <property name="visible">True</property>
+			      <property name="can_focus">True</property>
+			      <property name="history">0</property>
+			      <signal name="changed" handler="on_predefined_projection_option_menu_changed" last_modification_time="Thu, 18 Nov 2004 00:27:21 GMT"/>
+
+			      <child>
+				<widget class="GtkMenu" id="menu7">
+
+				  <child>
+				    <widget class="GtkMenuItem" id="user_defined">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">User Defined</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_user_defined_activate" last_modification_time="Wed, 17 Nov 2004 23:01:57 GMT"/>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkSeparatorMenuItem" id="separator1">
+				      <property name="visible">True</property>
 				    </widget>
 				  </child>
 				</widget>

@@ -6,5 +6,6 @@
 #include <stdlib.h>
 
 gchar *find_in_path(gchar * file);
+gchar *find_dir_in_path(gchar * file);
 
 #endif

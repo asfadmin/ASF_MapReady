@@ -50,7 +50,7 @@ enum ScalingMethod
     SCALING_METHOD_MINMAX = 1,
     SCALING_METHOD_TRUNCATE = 2
 };
-    
+/*    
 enum ProjectionOptions
 {
     UNIVERSAL_TRANSVERSE_MERCATOR = 0,
@@ -59,7 +59,7 @@ enum ProjectionOptions
     LAMBERT_CONFORMAL_CONIC = 3,
     ALBERS_CONICAL_EQUAL_AREA = 4
 };
-
+*/
 enum Datums
 {
     DATUM_WGS84 = 0,
@@ -93,6 +93,7 @@ enum Datums
 #include "summary.h"
 #include "geocode.h"
 #include "win_font.h"
+#include "projfile.h"
 
 extern const char DIR_SEPARATOR;
 extern const char PATH_SEPATATOR;

@@ -1,4 +1,5 @@
 #include "asf_convert_gui.h"
+#include "asf_nan.h"
 
 const char * datum_string(int datum)
 {
@@ -14,12 +15,19 @@ const char * datum_string(int datum)
     }
 }
 
+static int entry_has_text(const char * entry_name)
+{
+    GtkEntry * entry;
+    entry = GTK_ENTRY(glade_xml_get_widget(glade_xml, entry_name));
+    return strlen(gtk_entry_get_text(entry)) > 0;
+}
+
 const char * geocode_options_string(const Settings * settings)
 {
     static gchar ret[1024];
 
     if (settings->geocode_is_checked)
-    {	
+    {
 	gboolean enable_central_meridian = FALSE;
 	gboolean enable_latitude_of_origin = FALSE;
 	gboolean enable_first_standard_parallel = FALSE;
@@ -31,40 +39,66 @@ const char * geocode_options_string(const Settings * settings)
 	{
 	    case UNIVERSAL_TRANSVERSE_MERCATOR:
 		strcpy(ret, "--projection utm");
-		enable_central_meridian = TRUE;
-		enable_latitude_of_origin = TRUE;
+		enable_central_meridian =
+		    entry_has_text("central_meridian_entry");
+		enable_latitude_of_origin =
+		    entry_has_text("latitude_of_origin_entry");
 		break;
+
 	    case POLAR_STEREOGRAPHIC:
 		strcpy(ret, "--projection ps");
-		enable_central_meridian = TRUE;
-		enable_first_standard_parallel = TRUE;
-		enable_false_northing = TRUE;
-		enable_false_easting = TRUE;
+		enable_central_meridian =
+		    entry_has_text("central_meridian_entry");
+		enable_first_standard_parallel =
+		    entry_has_text("first_standard_parallel_entry");
+		enable_false_northing =
+		    entry_has_text("false_northing_entry");
+		enable_false_easting =
+		    entry_has_text("false_easting_entry");
 		break;
+
 	    case LAMBERT_CONFORMAL_CONIC:
 		strcpy(ret, "--projection lamcc");
-		enable_first_standard_parallel = TRUE;
-		enable_second_standard_parallel = TRUE;
-		enable_central_meridian = TRUE;
-		enable_latitude_of_origin = TRUE;
-		enable_false_northing = TRUE;
-		enable_false_easting = TRUE;
+		enable_first_standard_parallel =
+		    entry_has_text("first_standard_parallel_entry");
+		enable_second_standard_parallel =
+		    entry_has_text("second_standard_parallel_entry");
+		enable_central_meridian =
+		    entry_has_text("central_meridian_entry");
+		enable_latitude_of_origin =
+		    entry_has_text("latitude_of_origin_entry");
+		enable_false_northing =
+		    entry_has_text("false_northing_entry");
+		enable_false_easting =
+		    entry_has_text("false_easting_entry");
 		break;
+
 	    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
 		strcpy(ret, "--projection lamaz");
-		enable_central_meridian = TRUE;
-		enable_latitude_of_origin = TRUE;
-		enable_false_northing = TRUE;
-		enable_false_easting = TRUE;
+		enable_central_meridian =
+		    entry_has_text("central_meridian_entry");
+		enable_latitude_of_origin =
+		    entry_has_text("latitude_of_origin_entry");
+		enable_false_northing =
+		    entry_has_text("false_northing_entry");
+		enable_false_easting =
+		    entry_has_text("false_easting_entry");
 		break;
-	    case ALBERS_CONICAL_EQUAL_AREA:
+
+	    case ALBERS_EQUAL_AREA:
 		strcpy(ret, "--projection albers");
-		enable_first_standard_parallel = TRUE;
-		enable_second_standard_parallel = TRUE;
-		enable_central_meridian = TRUE;
-		enable_latitude_of_origin = TRUE;
-		enable_false_northing = TRUE;
-		enable_false_easting = TRUE;
+		enable_first_standard_parallel =
+		    entry_has_text("first_standard_parallel_entry");
+		enable_second_standard_parallel =
+		    entry_has_text("second_standard_parallel_entry");
+		enable_central_meridian =
+		    entry_has_text("central_meridian_entry");
+		enable_latitude_of_origin =
+		    entry_has_text("latitude_of_origin_entry");
+		enable_false_northing =
+		    entry_has_text("false_northing_entry");
+		enable_false_easting =
+		    entry_has_text("false_easting_entry");
 		break;
 	}
 
@@ -106,10 +140,23 @@ const char * geocode_options_string(const Settings * settings)
     return ret;
 }
 
+static const gchar * double_to_string(double value)
+{
+    static gchar buf[32];
+
+    /* in this context, NAN means "not specified", so leave blank */
+    if (ISNAN(value))
+	return "";
+
+    sprintf(buf, "%lf", value);
+    return buf;
+}
+
 void geocode_options_changed()
 {
     GtkWidget * projection_option_menu;
     GtkWidget * geocode_checkbutton;
+    GtkWidget * predefined_projection_option_menu;
 
     GtkWidget * central_meridian_entry;
     GtkWidget * central_meridian_label;
@@ -138,11 +185,13 @@ void geocode_options_changed()
     GtkWidget * datum_hbox;
 
     gboolean geocode_projection_is_checked;
+    gboolean predefined_projection_is_selected;
     gboolean average_height_is_checked;
     gboolean pixel_size_is_checked;
     gint projection;
 
     gboolean enable_projection_option_menu = FALSE;
+    gboolean enable_predefined_projection_option_menu = FALSE;
 
     gboolean enable_central_meridian = FALSE;
     gboolean enable_latitude_of_origin = FALSE;
@@ -174,93 +223,8 @@ void geocode_options_changed()
     projection_option_menu =
 	glade_xml_get_widget(glade_xml, "projection_option_menu");
 
-    if (geocode_projection_is_checked)
-    {	
-	enable_projection_option_menu = TRUE;
-	enable_datum_hbox = TRUE;
-
-	projection =
-	    gtk_option_menu_get_history(
-		GTK_OPTION_MENU(projection_option_menu));
-	
-	switch (projection)
-	{
-	    case UNIVERSAL_TRANSVERSE_MERCATOR:
-		enable_central_meridian = TRUE;
-		enable_latitude_of_origin = TRUE;
-		break;
-
-	    case POLAR_STEREOGRAPHIC:
-		enable_central_meridian = TRUE;
-		enable_first_standard_parallel = TRUE;
-		enable_false_northing = TRUE;
-		enable_false_easting = TRUE;
-		break;
-
-	    case LAMBERT_CONFORMAL_CONIC:
-		enable_first_standard_parallel = TRUE;
-		enable_second_standard_parallel = TRUE;
-		enable_central_meridian = TRUE;
-		enable_latitude_of_origin = TRUE;
-		enable_false_northing = TRUE;
-		enable_false_easting = TRUE;
-		break;
-
-	    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-		enable_central_meridian = TRUE;
-		enable_latitude_of_origin = TRUE;
-		enable_false_northing = TRUE;
-		enable_false_easting = TRUE;
-		break;
-
-	    case ALBERS_CONICAL_EQUAL_AREA:
-		enable_first_standard_parallel = TRUE;
-		enable_second_standard_parallel = TRUE;
-		enable_central_meridian = TRUE;
-		enable_latitude_of_origin = TRUE;
-		enable_false_northing = TRUE;
-		enable_false_easting = TRUE;
-		break;
-	}
-
-	enable_average_height_checkbutton = TRUE;
-	enable_pixel_size_checkbutton = TRUE;
-
-	average_height_is_checked = 
-	    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
-					     average_height_checkbutton));
-
-	pixel_size_is_checked = 
-	    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
-					     pixel_size_checkbutton));
-
-	if (average_height_is_checked)
-	    enable_average_height_entry = TRUE;
-
-	if (pixel_size_is_checked)
-	    enable_pixel_size_entry = TRUE;
-    }
-
-    gtk_widget_set_sensitive(projection_option_menu,
-			     enable_projection_option_menu);
-
-    central_meridian_label =
-	glade_xml_get_widget(glade_xml, "central_meridian_label");
-
-    latitude_of_origin_label =
-	glade_xml_get_widget(glade_xml, "latitude_of_origin_label");
-
-    first_standard_parallel_label =
-	glade_xml_get_widget(glade_xml, "first_standard_parallel_label");
-
-    second_standard_parallel_label =
-	glade_xml_get_widget(glade_xml, "second_standard_parallel_label");
-
-    false_northing_label =
-	glade_xml_get_widget(glade_xml, "false_northing_label");
-
-    false_easting_label =
-	glade_xml_get_widget(glade_xml, "false_easting_label");
+    predefined_projection_option_menu =
+	glade_xml_get_widget(glade_xml, "predefined_projection_option_menu");
 
     central_meridian_entry =
 	glade_xml_get_widget(glade_xml, "central_meridian_entry");
@@ -279,6 +243,226 @@ void geocode_options_changed()
 
     false_easting_entry =
 	glade_xml_get_widget(glade_xml, "false_easting_entry");
+
+    if (geocode_projection_is_checked)
+    {	
+	predefined_projection_is_selected =
+	    0 < gtk_option_menu_get_history(
+		GTK_OPTION_MENU(predefined_projection_option_menu));
+
+	enable_projection_option_menu = TRUE;
+	enable_predefined_projection_option_menu = TRUE;
+
+	projection =
+	    gtk_option_menu_get_history(
+		GTK_OPTION_MENU(projection_option_menu));
+
+	if (predefined_projection_is_selected)
+	{
+	    /* all widgets remain disabled -- load settings from file */
+	    project_parameters_t * pps =
+		load_selected_predefined_projection_parameters(projection);
+
+	    if (!pps)
+	    {
+		predefined_projection_is_selected = FALSE;
+	    }
+	    else
+	    {
+		gtk_entry_set_text(
+		    GTK_ENTRY(central_meridian_entry), "");
+		gtk_entry_set_text(
+		    GTK_ENTRY(latitude_of_origin_entry), "");
+		gtk_entry_set_text(
+		    GTK_ENTRY(first_standard_parallel_entry), "");
+		gtk_entry_set_text(
+		    GTK_ENTRY(second_standard_parallel_entry), "");
+		gtk_entry_set_text(
+		    GTK_ENTRY(false_northing_entry), "");
+		gtk_entry_set_text(
+		    GTK_ENTRY(false_easting_entry), "");
+
+		switch (projection)
+		{
+		    case UNIVERSAL_TRANSVERSE_MERCATOR:
+			gtk_entry_set_text(
+			    GTK_ENTRY(central_meridian_entry),
+			    double_to_string(pps->utm.lon0));
+			gtk_entry_set_text(
+			    GTK_ENTRY(latitude_of_origin_entry),
+			    double_to_string(pps->utm.lat0));
+			gtk_entry_set_text(
+			    GTK_ENTRY(first_standard_parallel_entry), "");
+			gtk_entry_set_text(
+			    GTK_ENTRY(second_standard_parallel_entry), "");
+			gtk_entry_set_text(
+			    GTK_ENTRY(false_northing_entry), "");
+			gtk_entry_set_text(
+			    GTK_ENTRY(false_easting_entry), "");
+			break;
+			
+		    case POLAR_STEREOGRAPHIC:
+			gtk_entry_set_text(
+			    GTK_ENTRY(central_meridian_entry),
+			    double_to_string(pps->ps.slon));
+			gtk_entry_set_text(
+			    GTK_ENTRY(first_standard_parallel_entry),
+			    double_to_string(pps->ps.slat));
+			gtk_entry_set_text(
+			    GTK_ENTRY(false_northing_entry),
+			    double_to_string(pps->ps.false_northing));
+			gtk_entry_set_text(
+			    GTK_ENTRY(false_easting_entry),
+			    double_to_string(pps->ps.false_easting));
+			break;
+		    
+		    case LAMBERT_CONFORMAL_CONIC:
+			gtk_entry_set_text(
+			    GTK_ENTRY(first_standard_parallel_entry),
+			    double_to_string(pps->lamcc.plat1));
+			gtk_entry_set_text(
+			    GTK_ENTRY(second_standard_parallel_entry),
+			    double_to_string(pps->lamcc.plat2));
+			gtk_entry_set_text(
+			    GTK_ENTRY(central_meridian_entry),
+			    double_to_string(pps->lamcc.lon0));
+			gtk_entry_set_text(
+			    GTK_ENTRY(latitude_of_origin_entry),
+			    double_to_string(pps->lamcc.lat0));
+			gtk_entry_set_text(
+			    GTK_ENTRY(false_northing_entry),
+			    double_to_string(pps->lamcc.false_northing));
+			gtk_entry_set_text(
+			    GTK_ENTRY(false_easting_entry),
+			    double_to_string(pps->lamcc.false_easting));
+			break;
+		    
+		    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+			gtk_entry_set_text(
+			    GTK_ENTRY(central_meridian_entry),
+			    double_to_string(pps->lamaz.center_lon));
+			gtk_entry_set_text(
+			    GTK_ENTRY(first_standard_parallel_entry),
+			    double_to_string(pps->lamaz.center_lat));
+			gtk_entry_set_text(
+			    GTK_ENTRY(false_northing_entry),
+			    double_to_string(pps->lamaz.false_northing));
+			gtk_entry_set_text(
+			    GTK_ENTRY(false_easting_entry),
+			    double_to_string(pps->lamaz.false_easting));
+			break;
+			
+		    case ALBERS_EQUAL_AREA:
+			gtk_entry_set_text(
+			    GTK_ENTRY(first_standard_parallel_entry),
+			    double_to_string(pps->albers.std_parallel1));
+			gtk_entry_set_text(
+			    GTK_ENTRY(second_standard_parallel_entry),
+			    double_to_string(pps->albers.std_parallel2));
+			gtk_entry_set_text(
+			    GTK_ENTRY(central_meridian_entry),
+			    double_to_string(pps->albers.center_meridian));
+			gtk_entry_set_text(
+			    GTK_ENTRY(latitude_of_origin_entry),
+			    double_to_string(pps->albers.orig_latitude));
+			gtk_entry_set_text(
+			    GTK_ENTRY(false_northing_entry),
+			    double_to_string(pps->albers.false_northing));
+			gtk_entry_set_text(
+			    GTK_ENTRY(false_easting_entry),
+			    double_to_string(pps->albers.false_easting));
+			break;
+		}
+	    }
+	}
+
+	if (!predefined_projection_is_selected)
+	{	    
+	    switch (projection)
+	    {
+		case UNIVERSAL_TRANSVERSE_MERCATOR:
+		    enable_central_meridian = TRUE;
+		    enable_latitude_of_origin = TRUE;
+		    break;
+		    
+		case POLAR_STEREOGRAPHIC:
+		    enable_central_meridian = TRUE;
+		    enable_first_standard_parallel = TRUE;
+		    enable_false_northing = TRUE;
+		    enable_false_easting = TRUE;
+		    break;
+		    
+		case LAMBERT_CONFORMAL_CONIC:
+		    enable_first_standard_parallel = TRUE;
+		    enable_second_standard_parallel = TRUE;
+		    enable_central_meridian = TRUE;
+		    enable_latitude_of_origin = TRUE;
+		    enable_false_northing = TRUE;
+		    enable_false_easting = TRUE;
+		    break;
+		    
+		case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+		    enable_central_meridian = TRUE;
+		    enable_latitude_of_origin = TRUE;
+		    enable_false_northing = TRUE;
+		    enable_false_easting = TRUE;
+		    break;
+		    
+		case ALBERS_EQUAL_AREA:
+		    enable_first_standard_parallel = TRUE;
+		    enable_second_standard_parallel = TRUE;
+		    enable_central_meridian = TRUE;
+		    enable_latitude_of_origin = TRUE;
+		    enable_false_northing = TRUE;
+		    enable_false_easting = TRUE;
+		    break;
+	    }
+	}
+
+	enable_average_height_checkbutton = TRUE;
+	enable_pixel_size_checkbutton = TRUE;
+	enable_datum_hbox = TRUE;
+
+	average_height_is_checked = 
+	    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+					     average_height_checkbutton));
+
+	pixel_size_is_checked = 
+	    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+					     pixel_size_checkbutton));
+
+	if (average_height_is_checked)
+	    enable_average_height_entry = TRUE;
+
+	if (pixel_size_is_checked)
+	    enable_pixel_size_entry = TRUE;
+
+	set_predefined_projections(projection);
+    }
+
+    gtk_widget_set_sensitive(projection_option_menu,
+			     enable_projection_option_menu);
+
+    gtk_widget_set_sensitive(predefined_projection_option_menu,
+			     enable_predefined_projection_option_menu);
+
+    central_meridian_label =
+	glade_xml_get_widget(glade_xml, "central_meridian_label");
+
+    latitude_of_origin_label =
+	glade_xml_get_widget(glade_xml, "latitude_of_origin_label");
+
+    first_standard_parallel_label =
+	glade_xml_get_widget(glade_xml, "first_standard_parallel_label");
+
+    second_standard_parallel_label =
+	glade_xml_get_widget(glade_xml, "second_standard_parallel_label");
+
+    false_northing_label =
+	glade_xml_get_widget(glade_xml, "false_northing_label");
+
+    false_easting_label =
+	glade_xml_get_widget(glade_xml, "false_easting_label");
 
     hbox_average_height =
 	glade_xml_get_widget(glade_xml, "hbox_average_height");
@@ -407,4 +591,15 @@ SIGNAL_CALLBACK void
 on_nad83_activate(GtkWidget * widget)
 {
     geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_predefined_projection_option_menu_changed(GtkWidget * widget)
+{
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_user_defined_activate(GtkWidget * widget)
+{
 }

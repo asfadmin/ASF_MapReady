@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = asf_convert_gui
-SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c popup_menu.c settings.c file_list.c help.c rename_output.c file_selection.c state.c change_output_dir.c naming_scheme.c metadata.c geocode.c summary.c win_font.c
+SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c popup_menu.c settings.c file_list.c help.c rename_output.c file_selection.c state.c change_output_dir.c naming_scheme.c metadata.c geocode.c summary.c win_font.c projfile.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
@@ -40,7 +40,7 @@ else
 
 ### Begin Unix Section
 
-CFLAGS = -Wall -pedantic -O0 -g $(shell /usr/bin/pkg-config --cflags gtk+-2.0) \
+CFLAGS = -Wall -O0 -g $(shell /usr/bin/pkg-config --cflags gtk+-2.0) \
          $(shell /usr/bin/pkg-config --cflags libglade-2.0) -I$(ASF_INCLUDE_DIR)
 
 LDLIBS = $(shell /usr/bin/pkg-config --libs gtk+-2.0) \

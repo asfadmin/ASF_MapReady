@@ -321,8 +321,8 @@ gboolean check_for_error(gchar * txt)
 
 	    /* ignore use of the word "error" in the comments */
 	    if (strstr(p, "Calibration Comments") == NULL &&
-		(strstr(p, "rror") != NULL || 
-		 strstr(p, "RROR") != NULL))
+		(strstr(p, "Error") != NULL || 
+		 strstr(p, "ERROR") != NULL))
 	    {
 		*q = '\n';
 		return TRUE;
