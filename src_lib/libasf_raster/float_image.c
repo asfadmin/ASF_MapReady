@@ -610,23 +610,44 @@ float_image_set_pixel (FloatImage *self, ssize_t x, ssize_t y, float value)
 }
 
 void
-float_image_get_region (FloatImage *self, size_t x, size_t y, size_t size_x, 
-			size_t size_y, float *buffer)
+float_image_get_region (FloatImage *self, ssize_t x, ssize_t y, ssize_t size_x,
+			ssize_t size_y, float *buffer)
 {
-  g_assert_not_reached ();	// Stubbed out for now.}
-  // Compiler reassurance.
-  self = self; x = x; y = y; size_x = size_x, size_y = size_y; buffer = buffer;
-  // FIXME: THIS LINE IS MEANINGLESS JUNK COMPILER REASSURANCE THAT
-  // prepare_pixel get used somewhere.
-  prepare_pixel (self, 0, 0);
+  g_assert (size_x >= 0);
+  g_assert (x >= 0);
+  g_assert ((size_t) x + (size_t) size_x - 1 < self->size_x);
+  g_assert (size_y >= 0);
+  g_assert (y >= 0);
+  g_assert ((size_t) y + (size_t) size_y - 1 < self->size_y);
+
+  ssize_t ii, jj;		// Index variables.
+  for ( ii = 0 ; ii < size_y ; ii++ ) {
+    for ( jj = 0 ; jj < size_x ; jj++ ) {
+      // We are essentially returning a subimage from the big image.
+      // These are the indicies in the big image (self) of the current
+      // pixel.
+      size_t ix = x + jj, iy = y + ii;
+      buffer[ii * size_x + jj] = float_image_get_pixel (self, ix, iy);
+    }
+  }
 }
 
 void
 float_image_set_region (FloatImage *self, size_t x, size_t y, size_t size_x, 
 			size_t size_y, float *buffer)
 {
-  g_assert_not_reached ();	// Stubbed out for now.}
+  g_assert_not_reached ();	// Stubbed out for now.
   self = self; x = x; y = y; size_x = size_x, size_y = size_y; buffer = buffer;
+  // FIXME: THIS LINE IS MEANINGLESS JUNK COMPILER REASSURANCE THAT
+  // prepare_pixel get used somewhere.  prepare_pixel should either be
+  // put in place or removed.
+  prepare_pixel (self, 0, 0);
+}
+
+void
+float_image_get_row (FloatImage *self, size_t row, float *buffer)
+{
+  float_image_get_region (self, 0, row, self->size_x, 1, buffer);
 }
 
 float
