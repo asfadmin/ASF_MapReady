@@ -1,3 +1,15 @@
+include ../../make_support/system_rules
+
+# Unfortunately compilation is completely different on windows
+ifeq ($(SYS),win32)
+
+default:
+	echo FIXME
+
+clean:
+	echo FIXME clean!
+
+else                                                                                
 PROGRAM = asf_convert_gui
 
 CFLAGS = -Wall -O0 -g $(shell pkg-config --cflags libgtk+-2.0) \
@@ -15,3 +27,6 @@ default: $(OBJS)
 
 clean:
 	rm *.o $(PROGRAM)
+
+endif
+
