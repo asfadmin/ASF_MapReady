@@ -9,10 +9,10 @@
 
 #define EARTH_RADIUS_MICRON 0.1
 
+double unpacked_deg(double angle);
+
 void proj2meta(struct DDR *ddr, meta_parameters *meta)
 {
-	int ii;
-	int proj_invalid = 0;
 	meta_projection *proj;
 
 	/* Initialize metadata projection structure */
@@ -26,20 +26,26 @@ void proj2meta(struct DDR *ddr, meta_parameters *meta)
 	    proj->type = ALBERS_EQUAL_AREA;
 	    proj->re_major = ddr->proj_coef[0];
 	    proj->re_minor = ddr->proj_coef[1];
-	    proj->param.albers.std_parallel1 = ddr->proj_coef[2];   /*standard parallel1*/
-	    proj->param.albers.std_parallel2 = ddr->proj_coef[3];   /*standard parallel2*/
-	    proj->param.albers.center_meridian = ddr->proj_coef[4]; /*Center longitude of proj*/
-	    proj->param.albers.orig_latitude = ddr->proj_coef[5];   /*Center latitude of proj*/
+	    proj->param.albers.std_parallel1 = unpacked_deg(ddr->proj_coef[2]);   /*standard parallel1*/
+	    proj->param.albers.std_parallel2 = unpacked_deg(ddr->proj_coef[3]);   /*standard parallel2*/
+	    proj->param.albers.center_meridian = unpacked_deg(ddr->proj_coef[4]); /*Center longitude of proj*/
+	    proj->param.albers.orig_latitude = unpacked_deg(ddr->proj_coef[5]);   /*Center latitude of proj*/
 	    break;
 	  case LAMCC:/* Lambert Conformal Conic */
 	    proj->type = LAMBERT_CONFORMAL_CONIC;
 	    proj->re_major = ddr->proj_coef[0];
 	    proj->re_minor = ddr->proj_coef[1];
-	    proj->param.lamcc.plat1 = ddr->proj_coef[2]; /*standard parallel1*/
-	    proj->param.lamcc.plat2 = ddr->proj_coef[3]; /*standard parallel2*/
-	    proj->param.lamcc.lon0 = ddr->proj_coef[4];  /*Center longitude of proj*/
-	    proj->param.lamcc.lat0 = ddr->proj_coef[5];  /*Center latitude of proj*/
+	    proj->param.lamcc.plat1 = unpacked_deg(ddr->proj_coef[2]); /*standard parallel1*/
+	    proj->param.lamcc.plat2 = unpacked_deg(ddr->proj_coef[3]); /*standard parallel2*/
+	    proj->param.lamcc.lon0 = unpacked_deg(ddr->proj_coef[4]);  /*Center longitude of proj*/
+	    proj->param.lamcc.lat0 = unpacked_deg(ddr->proj_coef[5]);  /*Center latitude of proj*/
 	    break;
+	  case LAMAZ:/* Lambert Azimuthal Equal Area */
+	    proj->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
+	    proj->re_major = ddr->proj_coef[0];
+	    proj->re_minor = ddr->proj_coef[1];
+	    proj->param.lamaz.center_lon = unpacked_deg(ddr->proj_coef[4]); /*Center longitude of proj*/
+	    proj->param.lamaz.center_lat = unpacked_deg(ddr->proj_coef[5]);
 	  case PS:/* Polar Stereographic */
 	    proj->type = POLAR_STEREOGRAPHIC;
 	    proj->re_major = ddr->proj_coef[0];
@@ -60,5 +66,9 @@ void proj2meta(struct DDR *ddr, meta_parameters *meta)
 	/* Starting Coordinates */
 	proj->startY = ddr->upleft[0];
 	proj->startX = ddr->upleft[1];
+	proj->perY = (ddr->loright[0] - proj->startY) / meta->general->line_count;
+	proj->perX = (ddr->loright[1] - proj->startX) / meta->general->sample_count;
+	proj->hem = (meta->general->center_latitude>0) ? 'N' : 'S';
 
+	meta->projection = proj;
 }
