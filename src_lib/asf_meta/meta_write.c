@@ -53,7 +53,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   fprintf(fp, "    slant_shift: %f\n", meta->sar->slant_shift);
   fprintf(fp, "    time_shift: %f\n", meta->sar->time_shift);
   fprintf(fp, "    wavelength: %f\n", meta->sar->wavelength);
-  fprintf(fp, "    pfr: %f\n", meta->sar->prf);
+  fprintf(fp, "    prf: %f\n", meta->sar->prf);
   fprintf(fp, "    doppler range center frequency: %f\n", 
 	  meta->sar->range_doppler_coefficients[0]);
   fprintf(fp, "    doppler range linear coefficient: %f\n", 
