@@ -64,7 +64,20 @@ typedef struct {
   char mode[MODE_FIELD_STRING_MAX]; /* Mode of imaging sensor.             */
   char processor[FIELD_STRING_MAX]; /* Name and version of SAR processor.  */
   char data_type[FIELD_STRING_MAX]; /* Type of samples (e.g. "REAL*4").    */
+/*  Possible string values for date_type:                                  *
+ *                   ???       = unknown                                   *
+ *                   BYTE      = 1 byte                = unsigned char     *
+ *                   INTEGER*2 = 2 byte integer        = short int         *
+ *                   INTEGER*4 = 4 byte integer        = int               *
+ *                   REAL*4    = 4 byte floating point = float             *
+ *                   REAL*8    = 8 byte floating point = double            */
   char system[FIELD_STRING_MAX];    /* System of samples (e.g. "ieee-std") */
+/*  Possible string values for system (inheritted from sysdef.h):          *
+ *                   "ieee-std"    = IEEE standard (ref 754)               *
+ *                   "ieee-lil"    = IEEE standard (ref 754) little-endian *
+ *                   "ibm-mvs"     = IBM MVS                               *
+ *                   "cray-unicos" = Cray Y-MP Unicos                      *
+ *                   "other-msc"   = Misc. Other systems not covered       */
   int orbit;                 /* Orbit number of satellite.                 */
   int frame;                 /* Frame for this image or -1 if inapplicable.*/
   int band_number;           /* Band number; first band is 0               */
