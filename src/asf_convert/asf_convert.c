@@ -140,6 +140,24 @@ void usage()
 	exit(EXIT_FAILURE);
 }
 
+//Default splash screen, the same for all the tools
+//This function should be called first in the "we're good enough" part of command line parsing
+void print_splash_screen(int argc, char* argv[])
+{
+	char temp1[255];
+	char temp2[255];
+	int ii;
+	sprintf(temp1, "\nCommand line:");
+	for (ii = 0; ii < argc; ii++)
+	{
+		sprintf(temp2, " %s",argv[ii]);
+		strcat(temp1, temp2);
+	}
+	printf("%s\n", temp1);
+	system("date");
+	printf("PID: %i\n", (int)getpid());
+}
+
 
 void config_usage()
 {
@@ -150,13 +168,18 @@ void config_usage()
 }
 
 
+void print_error(char *msg)
+{
+	sprintf(errbuf, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);//I made "ERROR:" red...Yay! :D
+	printErr(errbuf);
+	exit(EXIT_FAILURE);
+}
+
+
 void check_return(int ret, char *msg)
 {
 	if (ret != 0)
-	{
-		sprintf(errbuf, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);//I made "ERROR:" red...Yay! :D
-		printErr(errbuf);
-	}
+		print_error(msg);
 }
 
 //Check to see if an option was supplied or not
@@ -224,7 +247,7 @@ int main(int argc, char *argv[])
 		neededArgs += 1;//option
 
 	//make sure we've got enough arguments
-	if(argc < neededArgs)
+	if(argc != neededArgs)
 		usage();//This exits with a failure
 
 	//We also need to make sure the last three options are close to what we expect
@@ -233,16 +256,21 @@ int main(int argc, char *argv[])
 
 	//Next we're going to make sure the options are specified according to the usage
 	//That is, -option <parameter> -option <parameter> and so on...if an option requires
-	//a parameter, we need to make sure it's followed by a parameter!
+	//a parameter, we need to make sure it's followed by a parameter! Also make sure
+	//an option's parameters don't bleed into the command's required arguments
 	if(logflag != -1)
-		if(argv[logflag + 1][0] == '-')
+		if(argv[logflag + 1][0] == '-' || logflag >= argc - 4)
 			usage();//This exits with a failure
 	if(formatFlag != -1)
-		if(argv[formatFlag + 1][0] == '-')
+		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 4)
 			usage();//This exits with a failure
 
 	//We must be good enough at this point...start processing with assumptions that are
 	//*supposedly* guaranteed from above :)
+	if(quietFlag == -1)
+		print_splash_screen(argc, argv);//display splash screen if not quiet
+	
+	
 	if(formatFlag != -1)
 		strcpy(format_out, argv[formatFlag + 1]);
 	else
@@ -256,7 +284,7 @@ int main(int argc, char *argv[])
 	if(configFlag != -1)
 		strcpy(configFile, argv[configFlag + 1]);
 	else
-		sprintf(configFile, ".tmp%i.config", (int)getpid());//default behavior: config to tmp<pid>.config
+		sprintf(configFile, "tmp%i.config", (int)getpid());//default behavior: config to tmp<pid>.config
 		
 	if(configInitFlag != -1)
 		strcpy(configFile, argv[configInitFlag + 1]);
@@ -267,30 +295,20 @@ int main(int argc, char *argv[])
 		strcpy(data_file, argv[argc - 3]);//The first of the last three arguments
 		strcpy(meta_file, argv[argc - 2]);//The second of the last three arguments
 		strcpy(out_file, argv[argc - 1]);//The third of the last three arguments
-
-		if(!strcmp(".D", strrchr(data_file, '.')))//If the file ends in .D
-			strcpy(format_in, "CEOS");//It must be a CEOS image
-		else if(!strcmp(".img", strrchr(data_file, '.')))//If the file ends in .img
-			strcpy(format_in, "ASF");//It must be an ASF internal format file
+		if(strchr(data_file, '.') != NULL)//Make sure the file has an extension
+		{
+			if(!strcmp(".D", strrchr(data_file, '.')))//If the file ends in .D
+				strcpy(format_in, "CEOS");//It must be a CEOS image
+			else if(!strcmp(".img", strrchr(data_file, '.')))//If the file ends in .img
+				strcpy(format_in, "ASF");//It must be an ASF internal format file
+			else
+				print_error("Unrecognized input file format");//Otherwise, we have no idea
+		}
 		else
-			check_return(-1, "Unrecognized input file format");//Otherwise, we have no idea
+			print_error("Unrecognized input file format");//If no extension, we're not sure what to do
 	}
 //**********************END COMMAND LINE PARSING STUFF**********************//
 
-	if(quietFlag == -1)//If we're not quiet
-	{
-		sprintf(logbuf, "\nCommand line: ");
-		for (ii = 0; ii < argc; ii++)
-		{
-			sprintf(cmd, " %s",argv[ii]);
-			strcat(logbuf, cmd);
-		}
-		sprintf(cmd, "\nDate: %s\nProgram: asf_convert\nPid: %i\n", date_time_stamp(), (int)getpid());
-		strcat(logbuf, cmd);
-		printf(logbuf);
-	}
-
-	
 	/* If we're working from a config file, read configuration file */
 	if (configFlag != -1)//configFlag has been set
 	{
@@ -348,6 +366,7 @@ int main(int argc, char *argv[])
 	//Input types:
 	if (strncmp(uc(format_in),"CEOS",4) == 0) type_in = CEOS;
 	else if (strncmp(uc(format_in),"ASF",3) == 0) type_in = ASF;
+	else print_error("Unrecognized input format");
 	//Output types:
 	if (strncmp(uc(format_out),"ASF",3) == 0) type_out = ASF;
 	else if (strncmp(uc(format_out),"CEOS",4) == 0) type_out = CEOS;
@@ -358,6 +377,7 @@ int main(int argc, char *argv[])
 	else if (strncmp(uc(format_out),"PPM",3) == 0) type_out = PPM;
 	else if (strncmp(uc(format_out),"PNG",3) == 0) type_out = PNG;
 	else if (strncmp(uc(format_out),"LAS",3) == 0) type_out = LAS;
+	else print_error("Unrecognized output format");
 
 	/* Batch mode processing */
 	if (cfg->general->batch != 0)
@@ -386,50 +406,67 @@ int main(int argc, char *argv[])
 		if (configFlag == -1)
 		{
 			if (!fileExists(cfg->general->in_data_name))
-				check_return(1, "input data file does not exist");
+				print_error("input data file does not exist");
 			if (!fileExists(cfg->general->in_meta_name))
-				check_return(1, "input metadata file does not exist");
+				print_error("input metadata file does not exist");
 		}
 
+
+		char command[255];
+		char temp[255];
+		sprintf(command, "asf_import -log tmp%i_import.log", (int)getpid());
+		if(quietFlag != -1)
+			strcat(command, " -quiet");
+		sprintf(temp, " -%s %s %s tmp%i",
+		cfg->general->data_type,
+		cfg->general->in_data_name,
+		cfg->general->in_meta_name,
+		(int)getpid());
+		strcat(command, temp);
+		check_return(system(command), "Importing data (asf_import)");
+//		exit(0);
+		
+		
 		/* Ingest CEOS image */
+/*
 		switch (type_in)
 		{
 			case CEOS:
-				sprintf(in, ".tmp%i", (int)getpid());
+				sprintf(in, "tmp%i", (int)getpid());
 				if (strncmp(cfg->general->data_type, "amplitude", 9) == 0)
 				{
 					check_return(asf_import(cfg->general->in_data_name,
 						cfg->general->in_meta_name, "-amplitude", in),
 						"Importing CEOS data (asf_import)");
-					sprintf(out, ".tmp%i_amp", (int)getpid());
+					sprintf(out, "tmp%i_amp", (int)getpid());
 				}
 				else if (strncmp(cfg->general->data_type, "power", 5) == 0)
 				{
 					check_return(asf_import(cfg->general->in_data_name,
 						cfg->general->in_meta_name, "-power", in),
 						"Importing CEOS data (asf_import)");
-					sprintf(out, ".tmp%i_power", (int)getpid());
+					sprintf(out, "tmp%i_power", (int)getpid());
 				}
 				else if (strncmp(cfg->general->data_type, "sigma", 5) == 0)
 				{
 					check_return(asf_import(cfg->general->in_data_name,
 						cfg->general->in_meta_name, "-sigma", in),
 						"Importing CEOS data (asf_import)");
-					sprintf(out, ".tmp%i_sigma", (int)getpid());
+					sprintf(out, "tmp%i_sigma", (int)getpid());
 				}
 				else if (strncmp(cfg->general->data_type, "gamma", 5) == 0)
 				{
 					check_return(asf_import(cfg->general->in_data_name,
 						cfg->general->in_meta_name, "-gamma", in),
 						"Importing CEOS data (asf_import)");
-					sprintf(out, ".tmp%i_gamma", (int)getpid());
+					sprintf(out, "tmp%i_gamma", (int)getpid());
 				}
 				else if (strncmp(cfg->general->data_type, "beta", 4) == 0)
 				{
 					check_return(asf_import(cfg->general->in_data_name,
 						cfg->general->in_meta_name, "-beta", in),
 						"Importing CEOS data (asf_import)");
-					sprintf(out, ".tmp%i_beta", (int)getpid());
+					sprintf(out, "tmp%i_beta", (int)getpid());
 				}
 				sprintf(cmd, "cp %s.meta %s.meta", out, cfg->general->out_name);
 				system(cmd);
@@ -437,9 +474,10 @@ int main(int argc, char *argv[])
 			case ASF:
 				strcpy(out, cfg->general->in_data_name);
 				break;
-			default: check_return(1, "Unsupported input format type!");
+			default: print_error("Unsupported input format type");
 				break;
 		}
+*/
 
 		/* Determine the corner coordinates of the image */
 		if (cfg->general->browse)
@@ -455,7 +493,7 @@ int main(int argc, char *argv[])
 		if (cfg->general->resample || cfg->general->browse)
 		{
 			sprintf(in, "%s", out);
-			sprintf(out, ".tmp%i_small", (int)getpid());
+			sprintf(out, "tmp%i_small", (int)getpid());
 			if (cfg->general->browse)
 				sprintf(options, "-browse");
 			else
@@ -468,7 +506,7 @@ int main(int argc, char *argv[])
 		if (cfg->general->geocoding) {
 
 		/* Creating projection parameter file */
-		sprintf(proj, ".tmp%i.proj", (int)getpid());
+		sprintf(proj, "tmp%i.proj", (int)getpid());
 
 		/*** Polar Stereographic ***/
 		if (strncmp(uc(cfg->geocoding->projection), "POLAR", 5) == 0)
@@ -515,11 +553,24 @@ int main(int argc, char *argv[])
 		} ***/
 
 		sprintf(in, "%s", out);
-		sprintf(out, ".tmp%i_geo", (int)getpid());
+		sprintf(out, "tmp%i_geo", (int)getpid());
 		check_return(geocode(in, proj, "key", cfg->geocoding->pixel,
 			cfg->geocoding->height, out),
 			"geocoding image (geocode)");
 		}
+		
+
+		sprintf(command, "asf_export -log tmp%i_export.log", (int)getpid());
+		if(quietFlag != -1)
+			strcat(command, " -quiet");
+		sprintf(temp, " -format %s tmp%i_amp.img tmp%i_amp.meta %s",
+		format_out,
+		(int)getpid(),
+		(int)getpid(),
+		cfg->general->out_name);
+		strcat(command, temp);
+		check_return(system(command), "Exporting data (asf_export)");
+		exit(0);
 
 		/* Exporting image */
 		switch (type_out)
@@ -565,7 +616,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Remove temporary files */
-	sprintf(cmd, "rm -f .tmp%i*", (int)getpid());
+	sprintf(cmd, "rm -f tmp%i*", (int)getpid());
 	system(cmd);
 	return(0);
 }

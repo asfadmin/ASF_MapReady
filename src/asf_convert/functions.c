@@ -10,7 +10,7 @@ int asf_import(char *inFile, char *metaFile, char *type, char *outFile)
   char command[255];
   int ret;
   
-  sprintf(command, "asf_import -log %s %s CEOS %s %s %s", 
+  sprintf(command, "asf_import -log %s %s %s %s %s", 
 	  logFile, type, inFile, metaFile, outFile);
   printf("\nCommand line: %s\n", command);
   if (logflag) {
