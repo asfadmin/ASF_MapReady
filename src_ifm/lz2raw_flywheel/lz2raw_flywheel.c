@@ -188,8 +188,9 @@ void createMeta_lz(bin_state *s,char *inN,char *outN,int numLines,int prcflag, c
 	
 /*Create a state vector structure to hold our state vector,
   and copy it over.*/
-	meta->stVec=raw_init_state(1);
-	meta->stVec->vecs[0].vec=stVec;
+	meta->stVec       = (meta_state_vectors*)MALLOC(sizeof(meta_state_vectors));
+	meta->stVec->vecs = (state_loc *)MALLOC(sizeof(state_loc));
+	meta->stVec->vecs[0].vec = stVec;
 
 /*Set time of image start & state vector, and propagate state vector*/
 	meta->stVec->year=img_date.year;

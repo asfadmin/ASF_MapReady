@@ -28,9 +28,6 @@ void printStVec(const char *desc,stateVector s,FILE *f)
 		s.vel.x,s.vel.y,s.vel.z);
 }
 
-/*Prototype for asf_ceos.a routine:*/
-meta_state_vectors *raw_init_state(int nStVec);
-
 /*Get the GHA corresponding to the given number
 of seconds since 1900.*/
 double sec2gha(double sec)
@@ -153,7 +150,8 @@ void propagate_state(meta_parameters *meta,int nStVec)
 	imgSec=date2sec(&img_jd,&img_time);
 
 /*Propagate nearest state vector to create each output state vector.*/
-	new_st=raw_init_state(nStVec);
+	new_st       = (meta_state_vectors*)MALLOC(sizeof(meta_state_vectors));
+	new_st->vecs = (state_loc *)MALLOC(nStVec * sizeof(state_loc));
 	new_st->year=img_jd.year;
 	new_st->julDay=img_jd.jd;
 	new_st->second=date_hms2sec(&img_time);
