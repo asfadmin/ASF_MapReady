@@ -1,5 +1,6 @@
 #include "asf_convert_gui.h"
 #include <ctype.h>
+#include <gdk/gdkkeysyms.h>
 
 static void
 change_output_name_dialog_hide()
@@ -101,34 +102,26 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
 void
 do_rename_selected(const gchar *new_name)
 {
-  GtkTreeSelection * selection;
-  GtkWidget * files_list;
-  GtkTreeIter iter;
-  GtkTreeModel * model;
-  
-  files_list = glade_xml_get_widget(glade_xml, "files_list");
-  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
-  
-  assert(gtk_tree_selection_count_selected_rows(selection) == 1);
+    GtkWidget * files_list;
+    GtkTreeIter iter;
     
-  if (gtk_tree_selection_get_selected(selection, &model, &iter))
-  {
-    do_rename(model, &iter, new_name);
-  }
+    files_list = glade_xml_get_widget(glade_xml, "files_list");
+    
+    if (get_iter_to_first_selected_row(files_list, &iter))
+    {
+	do_rename(GTK_TREE_MODEL(list_store), &iter, new_name);
+    }
 }
 
 gboolean
 rename_selected_output_filename()
 {
   GtkWidget *files_list;
-  GtkTreeSelection *selection;
-  GtkTreeModel *model;
   GtkTreeIter iter;
 
   files_list = glade_xml_get_widget(glade_xml, "files_list");
-  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
 
-  if (gtk_tree_selection_get_selected(selection, &model, &iter))
+  if (get_iter_to_first_selected_row(files_list, &iter))
   {
     gchar *current_output_name;
     gchar *name_without_path;
@@ -146,7 +139,9 @@ rename_selected_output_filename()
     entry_new_output_filename =
       glade_xml_get_widget(glade_xml, "entry_new_output_filename");
 
-    gtk_tree_model_get(model, &iter, 1, &current_output_name, -1);
+    gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
+		       1, &current_output_name, -1);
+
     name_without_path = g_path_get_basename(current_output_name);
 
     gtk_label_set_text(GTK_LABEL(label_current_output_filename),
@@ -172,8 +167,7 @@ on_change_output_name_button_cancel_clicked(GtkWidget *widget)
   change_output_name_dialog_hide();
 }
 
-SIGNAL_CALLBACK void
-on_change_output_name_button_ok_clicked(GtkWidget *widget)
+static void change_output_name_button_ok_clicked()
 {
   GtkWidget *change_output_name_dialog;
   GtkWidget *entry_new_output_filename;
@@ -194,6 +188,12 @@ on_change_output_name_button_ok_clicked(GtkWidget *widget)
   }
   
   gtk_widget_hide(change_output_name_dialog);  
+}
+
+SIGNAL_CALLBACK void
+on_change_output_name_button_ok_clicked(GtkWidget *widget)
+{
+    change_output_name_button_ok_clicked();
 }
 
 SIGNAL_CALLBACK gboolean
@@ -217,3 +217,16 @@ on_change_output_name_dialog_destroy_event(GtkWidget *w)
   return TRUE;
 }
 
+SIGNAL_CALLBACK gboolean
+on_change_output_name_dialog_key_press_event(GtkWidget * widget, 
+					     GdkEventKey * event,
+					     GtkWidget * win)
+{
+    if (event->keyval == GDK_Return)
+    {
+	change_output_name_button_ok_clicked();
+	return TRUE;
+    }
+
+    return FALSE;
+}

@@ -1,4 +1,5 @@
 #include "asf_convert_gui.h"
+#include <gdk/gdkkeysyms.h>
 
 /*
     %I: Basename of the input file
@@ -34,17 +35,17 @@ NamingScheme * naming_scheme_new( const gchar * prefix,
 NamingScheme * naming_scheme_default( )
 {
     return naming_scheme_new(
-            default_prefix,
-            default_suffix,
-            default_scheme);
+	default_prefix,
+	default_suffix,
+	default_scheme);
 }
 
 NamingScheme * naming_scheme_copy( const NamingScheme * ns )
 {
     return naming_scheme_new(
-            ns->prefix,
-    ns->suffix,
-    ns->scheme);
+	ns->prefix,
+	ns->suffix,
+	ns->scheme);
 }
 
 void naming_scheme_delete( NamingScheme * ns )
@@ -74,7 +75,7 @@ gchar * naming_scheme_apply( const NamingScheme * ns,
         {
             ++i;
             c = ns->scheme[i];
-
+	    
             switch (c)
             {
                 case 'I':
@@ -357,8 +358,7 @@ on_dialog_cons_button_cancel_clicked(GtkWidget *widget)
     dialog_cons_hide();
 }
 
-SIGNAL_CALLBACK void
-on_dialog_cons_button_ok_clicked(GtkWidget *widget)
+static void dialog_cons_button_ok_clicked()
 {
     GtkWidget * dialog_cons_prefix_entry;
     GtkWidget * dialog_cons_suffix_entry;
@@ -401,7 +401,26 @@ on_dialog_cons_button_ok_clicked(GtkWidget *widget)
 }
 
 SIGNAL_CALLBACK void
+on_dialog_cons_button_ok_clicked(GtkWidget *widget)
+{
+    dialog_cons_button_ok_clicked();
+}
+
+SIGNAL_CALLBACK void
 on_dialog_cons_button_advanced_clicked(GtkWidget *widget)
 {
     toggle_vbox_advanced();
+}
+
+SIGNAL_CALLBACK gboolean
+on_dialog_cons_key_press_event(GtkWidget * widget, GdkEventKey * event,
+			       GtkWidget * win)
+{
+    if (event->keyval == GDK_Return)
+    {
+	dialog_cons_button_ok_clicked();
+	return TRUE;
+    }
+
+    return FALSE;
 }

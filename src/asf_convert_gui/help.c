@@ -1,7 +1,8 @@
 #include "asf_convert_gui.h"
 #include "asf_version.h"
+#include <gdk/gdkkeysyms.h>
 
-const int max_line_len = 2048;
+static const int max_line_len = 2048;
 
 SIGNAL_CALLBACK void
 on_help_button_clicked(GtkWidget *widget)
@@ -92,4 +93,18 @@ on_help_dialog_destroy(GtkWidget *widget)
 {
   help_hide();
   return TRUE;
+}
+
+SIGNAL_CALLBACK gboolean
+on_help_dialog_key_press_event(GtkWidget * widget, 
+			       GdkEventKey * event,
+			       GtkWidget * win)
+{
+    if (event->keyval == GDK_Return)
+    {
+	help_hide();
+	return TRUE;
+    }
+
+    return FALSE;
 }

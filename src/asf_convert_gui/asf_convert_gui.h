@@ -73,6 +73,7 @@ enum ScalingMethod
 #include "file_selection.h"
 #include "state.h"
 #include "naming_scheme.h"
+#include "metadata.h"
 
 extern const char DIR_SEPARATOR;
 extern const char PATH_SEPATATOR;

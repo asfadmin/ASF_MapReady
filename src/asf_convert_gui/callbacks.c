@@ -24,9 +24,9 @@ void latitude_checkbutton_toggle()
   GtkWidget
     *latitude_checkbutton,
     *latitude_low_label,
-    *latitude_low_spinbutton,
+    *latitude_low_entry,
     *latitude_hi_label,
-    *latitude_hi_spinbutton;
+    *latitude_hi_entry;
 
   gboolean is_checked;
 
@@ -36,22 +36,22 @@ void latitude_checkbutton_toggle()
   latitude_low_label =
     glade_xml_get_widget(glade_xml, "latitude_low_label");
 
-  latitude_low_spinbutton =
-    glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+  latitude_low_entry =
+    glade_xml_get_widget(glade_xml, "latitude_low_entry");
 
   latitude_hi_label =
     glade_xml_get_widget(glade_xml, "latitude_hi_label");
 
-  latitude_hi_spinbutton =
-    glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+  latitude_hi_entry =
+    glade_xml_get_widget(glade_xml, "latitude_hi_entry");
 
   is_checked =
     gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(latitude_checkbutton));
 
   gtk_widget_set_sensitive(latitude_low_label, is_checked);
-  gtk_widget_set_sensitive(latitude_low_spinbutton, is_checked);
+  gtk_widget_set_sensitive(latitude_low_entry, is_checked);
   gtk_widget_set_sensitive(latitude_hi_label, is_checked);
-  gtk_widget_set_sensitive(latitude_hi_spinbutton, is_checked);
+  gtk_widget_set_sensitive(latitude_hi_entry, is_checked);
 }
 
 void 

@@ -1,5 +1,6 @@
 #include "asf_convert_gui.h"
 #include <ctype.h>
+#include <gdk/gdkkeysyms.h>
 
 static void
 change_output_output_directory_hide()
@@ -172,8 +173,7 @@ on_change_output_directory_button_cancel_clicked(GtkWidget *widget)
     change_output_output_directory_hide();
 }
 
-SIGNAL_CALLBACK void
-on_change_output_directory_button_ok_clicked(GtkWidget *widget)
+static void change_output_directory_button_ok_clicked()
 {
     GtkWidget *change_output_directory_dialog;
     GtkWidget *entry_new_output_directory;
@@ -193,6 +193,12 @@ on_change_output_directory_button_ok_clicked(GtkWidget *widget)
     }
   
     gtk_widget_hide(change_output_directory_dialog);
+}
+
+SIGNAL_CALLBACK void
+on_change_output_directory_button_ok_clicked(GtkWidget *widget)
+{
+    change_output_directory_button_ok_clicked();
 }
 
 SIGNAL_CALLBACK gboolean
@@ -215,4 +221,19 @@ on_change_output_directory_dialog_destroy_event(GtkWidget *w)
     change_output_output_directory_hide();
     return TRUE;
 }
+
+SIGNAL_CALLBACK gboolean
+on_change_output_directory_dialog_key_press_event(GtkWidget * widget, 
+						  GdkEventKey * event,
+						  GtkWidget * win)
+{
+    if (event->keyval == GDK_Return)
+    {
+	change_output_directory_button_ok_clicked();
+	return TRUE;
+    }
+
+    return FALSE;
+}
+
 

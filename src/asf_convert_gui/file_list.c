@@ -355,7 +355,7 @@ setup_files_list(int argc, char *argv[])
 
   gtk_tree_selection_set_mode(
       gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list)),
-      GTK_SELECTION_SINGLE);
+      GTK_SELECTION_MULTIPLE);
 }
     
 void

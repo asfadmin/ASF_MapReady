@@ -72,27 +72,30 @@ settings_apply_to_gui(const Settings * s)
   {
     GtkWidget 
       *latitude_checkbutton,
-      *latitude_low_spinbutton,
-      *latitude_hi_spinbutton;
+      *latitude_low_entry,
+      *latitude_hi_entry;
 
     latitude_checkbutton =
       glade_xml_get_widget(glade_xml, "latitude_checkbutton");
 
     if (s->latitude_checked)
     {
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(latitude_checkbutton),
-				   TRUE);
+	gchar tmp[32];
 
-      latitude_low_spinbutton =
-	glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(latitude_checkbutton),
+				     TRUE);
 
-      latitude_hi_spinbutton =
-	glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+	latitude_low_entry =
+	    glade_xml_get_widget(glade_xml, "latitude_low_entry");
 
-      gtk_spin_button_set_value(GTK_SPIN_BUTTON(latitude_low_spinbutton),
-				s->latitude_low);
-      gtk_spin_button_set_value(GTK_SPIN_BUTTON(latitude_hi_spinbutton),
-				s->latitude_hi);
+	latitude_hi_entry =
+	    glade_xml_get_widget(glade_xml, "latitude_hi_entry");
+
+	sprintf(tmp, "%f", s->latitude_low);
+	gtk_entry_set_text(GTK_ENTRY(latitude_low_entry), tmp);
+
+	sprintf(tmp, "%f", s->latitude_hi);
+	gtk_entry_set_text(GTK_ENTRY(latitude_hi_entry), tmp);
     }
     else
     {
@@ -178,8 +181,8 @@ settings_get_from_gui()
   {
     GtkWidget 
       *latitude_checkbutton,
-      *latitude_low_spinbutton,
-      *latitude_hi_spinbutton;
+      *latitude_low_entry,
+      *latitude_hi_entry;
 
     latitude_checkbutton =
       glade_xml_get_widget(glade_xml, "latitude_checkbutton");
@@ -189,17 +192,17 @@ settings_get_from_gui()
 
     if (ret->latitude_checked)
     {
-      latitude_low_spinbutton =
-	glade_xml_get_widget(glade_xml, "latitude_low_spinbutton");
+      latitude_low_entry =
+	glade_xml_get_widget(glade_xml, "latitude_low_entry");
 
-      latitude_hi_spinbutton =
-	glade_xml_get_widget(glade_xml, "latitude_hi_spinbutton");
+      latitude_hi_entry =
+	glade_xml_get_widget(glade_xml, "latitude_hi_entry");
 
-      ret->latitude_low =
-	gtk_spin_button_get_value(GTK_SPIN_BUTTON(latitude_low_spinbutton));
+      ret->latitude_low = atof(
+	gtk_entry_get_text(GTK_ENTRY(latitude_low_entry)));
     
-      ret->latitude_hi =
-	gtk_spin_button_get_value(GTK_SPIN_BUTTON(latitude_hi_spinbutton));
+      ret->latitude_hi = atof(
+	gtk_entry_get_text(GTK_ENTRY(latitude_hi_entry)));
     }
   }
 

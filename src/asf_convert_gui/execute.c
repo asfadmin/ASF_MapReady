@@ -216,7 +216,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
     {
       gchar buffer[4096];
       gchar *p = fgets(buffer, sizeof(buffer), output);
-      if (p)
+      if (p && !g_str_has_prefix(p, "Processing "))
       {
 	if (the_output)
         {
@@ -307,28 +307,106 @@ do_cmd_does_not_work(char *cmd)
 
 gboolean check_for_error(gchar * txt)
 {
-  /* kludge */
-  return strstr(txt, "rror") != NULL || 
-         strstr(txt, "RROR") != NULL;
+    /* kludge */
+    gchar *p, *q;
+    
+    p = txt;
+
+    while (p)
+    {
+	q = strchr(p + 1, '\n');
+	if (q)
+	{
+	    *q = '\0';
+
+	    /* ignore use of the word "error" in the comments */
+	    if (strstr(p, "Calibration Comments") == NULL &&
+		(strstr(p, "rror") != NULL || 
+		 strstr(p, "RROR") != NULL))
+	    {
+		*q = '\n';
+		return TRUE;
+	    }
+	    
+	    *q = '\n';
+	}
+
+	p = q;
+    }
+
+    return FALSE;
 }
 
 void
 append_output(const gchar * txt)
 {
-  GtkWidget * textview_output;
-  GtkTextBuffer * text_buffer;
-  GtkTextIter end;
+    GtkWidget * textview_output;
+    GtkTextBuffer * text_buffer;
+    GtkTextIter end;
+    
+    textview_output = glade_xml_get_widget(glade_xml, "textview_output");
+    text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
+    gtk_text_buffer_get_end_iter(text_buffer, &end);
+    gtk_text_buffer_insert(text_buffer, &end, txt, -1);
+    
+    /* taking this out... annoying to have the window scrolling all the time
+     gtk_text_buffer_get_end_iter(text_buffer, &end);
+     gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(textview_output),
+     &end, 0, TRUE, 0.0, 1.0);
+    */
+}
 
-  textview_output = glade_xml_get_widget(glade_xml, "textview_output");
-  text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
-  gtk_text_buffer_get_end_iter(text_buffer, &end);
-  gtk_text_buffer_insert(text_buffer, &end, txt, -1);
-  
-  /* taking this out... annoying to have the window scrolling all the time
-  gtk_text_buffer_get_end_iter(text_buffer, &end);
-  gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(textview_output),
-                   &end, 0, TRUE, 0.0, 1.0);
-  */
+static void
+append_begin_processing_tag(const gchar * input_filename)
+{
+    static GtkTextTag * tt = NULL;
+
+    GtkWidget * textview_output;
+    GtkTextBuffer * text_buffer;
+    GtkTextMark * mark;
+    GtkTextIter end, line_begin;
+    gchar * txt;
+    const gchar * tag = "Processing Input File: ";
+
+    textview_output = glade_xml_get_widget(glade_xml, "textview_output");
+    text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
+    gtk_text_buffer_get_end_iter(text_buffer, &end);
+
+    /* mark the location of this file -- remove any existing mark */
+    mark = gtk_text_buffer_get_mark(text_buffer, input_filename);
+    if (mark)
+	gtk_text_buffer_delete_mark(text_buffer, mark);
+
+    mark = gtk_text_buffer_create_mark(text_buffer, input_filename,
+				       &end, TRUE);
+
+    txt = (gchar *) g_malloc( sizeof(gchar) *
+			      (strlen(input_filename) + strlen(tag) + 2) );
+
+    sprintf(txt, "%s%s\n", tag, input_filename);
+    gtk_text_buffer_insert(text_buffer, &end, txt, -1);
+
+    line_begin = end;
+    gtk_text_iter_backward_line(&line_begin);
+
+    if (!tt)
+    {
+        /*
+	  tt = gtk_text_buffer_create_tag(text_buffer, "blue_foreground",
+	  "foreground", "blue", NULL);
+	*/
+
+	tt = gtk_text_buffer_create_tag(text_buffer, "bold",
+					"weight", PANGO_WEIGHT_BOLD, 
+					"foreground", "blue",
+					NULL);
+    }
+
+    gtk_text_buffer_apply_tag(text_buffer, tt, &line_begin, &end);
+
+    printf("Iter: :%s:\n", gtk_text_iter_get_slice(&line_begin, &end));
+
+    g_free(txt);
 }
 
 void
@@ -347,9 +425,8 @@ invalidate_progress()
   }
 }
 
-void
-process_item(GtkTreeIter *iter,
-         Settings *user_settings)
+static void
+process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 {
   gchar *in_data, *out_full, *status;
   int pid;
@@ -361,7 +438,7 @@ process_item(GtkTreeIter *iter,
   gtk_tree_model_get(GTK_TREE_MODEL(list_store), iter, 
              0, &in_data, 1, &out_full, 2, &status, -1);
   
-  if (strcmp(status, "Done") != 0)
+  if (strcmp(status, "Done") != 0 || !skip_done)
   {
     gchar *basename, *out_basename, *p, *done;
     gchar convert_cmd[4096];
@@ -379,7 +456,8 @@ process_item(GtkTreeIter *iter,
       *p = '\0';
   
     gtk_list_store_set(list_store, iter, 2, "Processing...", -1);
-    
+    append_begin_processing_tag(in_data);
+
     while (gtk_events_pending())
       gtk_main_iteration();
   
@@ -473,12 +551,56 @@ process_item(GtkTreeIter *iter,
   g_free(in_data);
 }
 
+void
+process_items_from_list(GList * list_of_row_refs, gboolean skip_done)
+{
+    GList * i;
+    Settings * user_settings;
+    GtkTreeIter iter;
+
+    processing = TRUE;
+    keep_going = TRUE;
+    show_execute_button(FALSE);
+    user_settings = settings_get_from_gui();
+
+    i = list_of_row_refs;
+
+    while (i && keep_going)
+    {
+	GtkTreeRowReference * ref;
+	GtkTreePath * path;
+
+	ref = (GtkTreeRowReference *) i->data;
+	path = gtk_tree_row_reference_get_path(ref);
+
+	gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path);
+
+	process_item(&iter, user_settings, skip_done);
+
+	while (gtk_events_pending())
+	    gtk_main_iteration();
+
+	if (!keep_going)
+	    append_output("Processing stopped by user.\n");
+
+	i = g_list_next(i);
+    }
+
+    processing = FALSE;
+    settings_delete(user_settings);
+    show_execute_button(TRUE);
+
+    g_list_foreach(list_of_row_refs, (GFunc)gtk_tree_row_reference_free, NULL);
+    g_list_free(list_of_row_refs);
+}
+
 SIGNAL_CALLBACK void
 on_execute_button_clicked (GtkWidget *button)
 {
     GtkTreeIter iter;
     gboolean valid;
     Settings * user_settings;
+    GList * rows;
 
     /* gui should prevent this from happening */
     if (processing)
@@ -498,33 +620,25 @@ on_execute_button_clicked (GtkWidget *button)
 
         settings_on_execute = settings_copy(user_settings);
 
-        show_execute_button(FALSE);
-        valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
-        keep_going = TRUE;
-        processing = TRUE;
+	rows = NULL;
+        valid = gtk_tree_model_get_iter_first(
+	    GTK_TREE_MODEL(list_store), &iter);
 
         while (valid && keep_going)
         {
-            process_item(&iter, user_settings);
+	    GtkTreeRowReference * ref;
+	    GtkTreePath * path;
 
-            while (gtk_events_pending())
-                gtk_main_iteration();
+	    path = gtk_tree_model_get_path(GTK_TREE_MODEL(list_store), &iter);
+	    ref = gtk_tree_row_reference_new(GTK_TREE_MODEL(list_store), path);
 
-            if (!keep_going)
-            {
-                append_output("Processing stopped by user.");
-      /*
-                gtk_list_store_set(list_store, &iter,
-                2, "Processing stopped by user.", -1);
-      */
-            }
+	    rows = g_list_append(rows, ref);
 
-            valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+            valid = gtk_tree_model_iter_next(
+		GTK_TREE_MODEL(list_store), &iter);
         }
 
-        processing = FALSE;
-        settings_delete(user_settings);
-        show_execute_button(TRUE);
+	process_items_from_list(rows, TRUE);
     }
 }
 
