@@ -6,19 +6,12 @@
 
 #include "asf_meta.h"
 
-/*Ceos2ddr converts a CEOS file into
-a DDR.  If headerBytes and lineBytes are not
-NULL, ceos2ddr returns these values.*/
-void ceos2ddr(char *ceosName,struct DDR *ddrOut,
-	int *headerBytes,int *lineBytes);
-
-
 typedef struct {
 /************************************************************************/
 /*FIXME: Nuke ddr struct as soon as it is not referenced in client code */
-/**/	struct DDR ddr;         /* This DDR is created by ceos2ddr      */
+/**/	struct DDR ddr;                                               /**/
 /************************************************************************/
-	meta_parameters *meta;  /*Meta struct acquired from meta_create()*/
+	meta_parameters *meta;
 	int headerBytes;
 	int lineBytes;
 	FILE *f_in;
