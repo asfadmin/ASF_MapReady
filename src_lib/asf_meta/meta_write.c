@@ -146,7 +146,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   }
 
 /* Projection parameters block, if appropriate.  */
-  if ( meta->sar->image_type == 'P' ) {
+  if ( meta->sar->image_type == 'P' || meta->projection ) {
     meta_put_string(fp,"projection {","","Map Projection parameters");    
     switch (meta->projection->type) {
       case UNIVERSAL_TRANSVERSE_MERCATOR: 
