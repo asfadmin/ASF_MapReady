@@ -250,6 +250,10 @@
           specified zone -- an error will occur if you've specified a
           zone that is more than one zone away from the zone in which
           your data lies.</para>
+
+	<para>You can leave the zone entry blank, in which the case
+          the tool will automatically choose the appropiate zone for
+          your data.</para>
       </listitem>
       <listitem><para>Polar Stereographic</para>
 
