@@ -350,6 +350,10 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 		strcpy(meta->general->system,"cray_float");
 	else
 		strcpy(meta->general->system,MAGIC_UNSET_STRING);
+	if (ddr.valid[DDPDV] == VALID) {
+		meta->general->x_pixel_size = ddr.pdist_x;
+		meta->general->y_pixel_size = ddr.pdist_y;
+	}
 	if (ddr.valid[DDINCV] == VALID) {
 		meta->sar->line_increment = ddr.line_inc;
 		meta->sar->sample_increment = ddr.sample_inc;
@@ -366,7 +370,7 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 		meta->projection->hem = MAGIC_UNSET_CHAR;
 		meta->projection->re_major = MAGIC_UNSET_DOUBLE;
 		meta->projection->re_minor = MAGIC_UNSET_DOUBLE;
-		if (ddr.valid[DDPPV] == VALID) {
+		if ((ddr.valid[DDPCV]==VALID) && (ddr.valid[DDPPV]==VALID)) {
 		   switch (ddr.proj_code) {
 		     case LAMCC:
 		        meta->projection->type = 'L';
