@@ -15,7 +15,6 @@ int main(int argc, char **argv)
 	char meta_name[256];
 	meta_parameters *meta;
 	struct DDR ddr;
-	int ii;
 	
 /* Parse command line */
 	currArg=1;

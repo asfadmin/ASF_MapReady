@@ -10,7 +10,6 @@ int main(int argc, char **argv)
 	char las_name[256];
 	char meta_name[256];
 	meta_parameters *meta;
-	int ii;
 	
 /* Parse command line */
 	currArg=1;
