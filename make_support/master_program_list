@@ -48,7 +48,6 @@ LIBS
 {
 @src_lib/
 	asf
-	asf_las
 	regex_wrapper
 	asf_meta
 	asf_concat
@@ -91,6 +90,7 @@ PROGRAMS
 	las_text { }
 	makeddr { }
 	mark_tpl { }
+	meta2ddr { BINS ddr2meta }
 	metadata { }
 	remap { }
 	resample { }
