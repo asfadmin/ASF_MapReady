@@ -68,7 +68,6 @@ main (int argc, char **argv)
   // Store the output image data.
   return_code = float_image_store (od, output_data_file->str,
 				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-
   g_assert (return_code == 0);
 
   // Copy the input metadata to the output metadata.
