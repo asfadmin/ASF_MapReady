@@ -90,7 +90,7 @@ int main (int argc, char *argv[])
   int nbands=0;               	/* # of actual bands in output image */
   int imagelength;	 	/* Length of image line	 */
   int imagewidth;		/* width of image */
-  float size;                   /* # of array elements in tiepoints */
+  long size;                   /* # of array elements in tiepoints */
   int sampleformat_variable;   /* datatype for output tiff tag */
   int test_size;
 
