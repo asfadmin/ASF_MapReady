@@ -52,6 +52,8 @@ OBJS =  coniFetch.o \
         meta_init_asf.o \
         meta_init_ceos.o \
         meta_init_stVec.o \
+	meta_read.o \
+	meta_write.o \
         set_era.o \
         utc2gha.o \
 	meta_read.o \
