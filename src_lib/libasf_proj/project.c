@@ -10,7 +10,7 @@
 #include "projects.h"
 #include "proj_api.h"
 
-static const double DEFAULT_AVERAGE_HEIGHT = 0.0
+#define DEFAULT_AVERAGE_HEIGHT 0.0;
 
 #ifndef linux
 #ifndef win32
@@ -19,8 +19,8 @@ round (double arg)
 {
   return floor (arg + 0.5);
 }
-#endif // #ifndef win32
-#endif // #ifndef linux
+#endif /* #ifndef win32 */
+#endif /* #ifndef linux */
 
 static datum_type_t sDatum = MAGIC_UNSET_INT;
 void project_set_datum(datum_type_t datum)
@@ -109,6 +109,8 @@ static int project_worker_arr(char * projection_description,
   double * tmp3;
   projPJ geographic_projection, output_projection;
   int i, ok = TRUE;
+
+  printf("projection description : %s\n", projection_description);
 
   if (!(*projected_x))
   {
@@ -372,7 +374,7 @@ static char * ps_projection_desc(project_parameters_t * pps)
 
   /* Establish description of output projection. */
   sprintf(ps_wgs84_projection_description,
-	  "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f"
+	  "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f "
 	  "+x_0=%f +y_0=%f +k_0=%f +datum=%s",
 	  pps->ps.is_north_pole ? "90" : "-90",
 	  pps->ps.slat * RAD_TO_DEG,
