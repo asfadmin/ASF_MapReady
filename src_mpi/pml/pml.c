@@ -124,7 +124,7 @@ OF ALASKA TECHNOLOGY DEVELOPMENT CORPORATION AT (907)451-0718.
 #define MPI_IN_LEN 1000		/* Set the block size for each processor (in lines)*/
 
 /* function declarations */
-void usage(int, char **,int *,int *,int, int *);
+void parse_cla(int, char **,int *,int *,int, int *);
 int c2i(float*,float*,RGBDATA *,RGBDATA *,int,float);
 void print_usage();
 
@@ -178,9 +178,9 @@ int main(int argc, char *argv[])
 
 /* Check command line args */
 	StartWatch();
-	usage(argc, argv, &lookLines, &lookSamples, prcsr_rank, &lasFlag);
+	parse_cla(argc, argv, &lookLines, &lookSamples, prcsr_rank, &lasFlag);
 
-/* Wait here to make sure everyone got through the usage() call */
+/* Wait here to make sure everyone got through the parse_cla() call */
 	MPI_Barrier(MPI_COMM_WORLD);
 
 /* Create filenames and open files for reading */
@@ -319,8 +319,8 @@ int main(int argc, char *argv[])
 				for (sample=0;sample<outWid;sample++)
 				{
 					/* Set these variables to zero since they are local summations */
-					FComplex z;			/* Complex number pointer */
-					float register ampSqrd;		/* High speed variables */
+					complexFloat z;         /* Complex number pointer */
+					float register ampSqrd; /* High speed variables */
 
 					z.real=0.0;
 					z.imag=0.0;
@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
 	exit(0);
 }
 
-void usage(int argc, char *argv[], int *ll, int *ls, int prcsr_rank, int *lasFlag)
+void parse_cla(int argc, char *argv[], int *ll, int *ls, int prcsr_rank, int *lasFlag)
 {
 	
 	int c; 			/* Switch Variable */

@@ -25,7 +25,7 @@
 /*Prototypes:*/
  int c2i (float *amp, float *phase, RGBDATA *image, RGBDATA *table, int nsamples, float avg);
  int main (int argc, char **argv); 
- void usage (int argc, char **argv, int *ll, int *ls, int prcsr_rank, int *lasFlag); 
+ void parse_cla (int argc, char **argv, int *ll, int *ls, int prcsr_rank, int *lasFlag); 
  void print_usage (void); 
  void colortable(RGBDATA *table);
 

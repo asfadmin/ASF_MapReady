@@ -3,10 +3,17 @@
 
 include ../../make_support/system_rules
 
+CFLAGS := $(CFLAGS) -I/usr/local/mpi/include -DUSE_STDARG -DHAVE_STDLIB_H=1 \
+	-DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
+	-DUSE_STDARG=1 -DMALLOC_RET_VOID=1
+
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/asf_meta.a \
-	-lm -lmpi 
+	-L/usr/local/mpi/lib \
+	-lmpich -lnsl -lthread -lnsl -laio \
+	-lm
+
 OBJS = pml.o \
        c2i.o \
        colortable.o

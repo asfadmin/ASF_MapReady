@@ -127,7 +127,7 @@ OF ALASKA TECHNOLOGY DEVELOPMENT CORPORATION AT (907)451-0718.
 #define HIST_SIZE         10
 #define MIN(a,b) 	((a)<(b) ? (a) : (b))
 
-void usage(int );
+void pcoh_usage(int );
 void bye(int, char *);
 
 int
@@ -135,10 +135,10 @@ main(int argc, char *argv[])
 {
 	int 	 line;					/* Line index counter */
 	float    *a1sum, *a2sum;			/* Sums for calculation */
-	FComplex *igram_sum;
+	complexFloat *igram_sum;
 	char     a1f[MN], a2f[MN], cohf[MN], ddrf[MN];	/* File name buffers */
 	FILE 	 *fin1, *fin2, *fcoh;			/* File pointers */
-	FComplex *in1,  *in2;				/* Ptrs for complex vals */
+	complexFloat *in1,  *in2;				/* Ptrs for complex vals */
 	float    *rP, *rho;				/* Holds results */
 	int	 ns = -1, nl = -1;			/* Num sample num lines */
 	int 	 sl = STEP_LINE, ss = STEP_SAMPLE;	/* Line & sample step size */
@@ -221,11 +221,11 @@ main(int argc, char *argv[])
 			logflag=1;
 			break;
 		default : 
-			usage(my_pe);
+			pcoh_usage(my_pe);
 			
 		}
 
-	if (argc-optind != 3) { usage(my_pe); }
+	if (argc-optind != 3) { pcoh_usage(my_pe); }
 
         if (logflag && (my_pe == 0)) {
           fLog = FOPEN(logFile, "a");
@@ -297,11 +297,11 @@ main(int argc, char *argv[])
 
 /* Create buffers */
 	rho   = (float*)MALLOC(sizeof(float)*ns/ss);
-	in1  = (FComplex*)MALLOC(sizeof(FComplex)*ns*wl);
-	in2  = (FComplex*)MALLOC(sizeof(FComplex)*ns*wl);
+	in1  = (complexFloat*)MALLOC(sizeof(complexFloat)*ns*wl);
+	in2  = (complexFloat*)MALLOC(sizeof(complexFloat)*ns*wl);
 	a1sum = (float*)MALLOC(sizeof(float)*ns);
 	a2sum = (float*)MALLOC(sizeof(float)*ns);
-	igram_sum = (FComplex*)MALLOC(sizeof(FComplex)*ns);
+	igram_sum = (complexFloat*)MALLOC(sizeof(complexFloat)*ns);
 
 /* File open */
 	fin1 = fopenImage(a1f,"rb");
@@ -345,7 +345,7 @@ main(int argc, char *argv[])
 	{
 		register int off,row,col,limitLine;
 		register float denXYS1,denXYS2;
-		FComplex igram;
+		complexFloat igram;
 		int inCol;
 		long long seek_pos=0;
 		limitLine=MIN(wl,nl-line);
@@ -359,12 +359,12 @@ main(int argc, char *argv[])
 		}
 
 		/*  read in the next lines of data */
-		seek_pos = (long long) line*ns*sizeof(FComplex);
+		seek_pos = (long long) line*ns*sizeof(complexFloat);
 		FSEEK64(fin1,seek_pos,SEEK_SET);
-		FREAD(in1, sizeof(FComplex)*limitLine*ns,1,fin1);
+		FREAD(in1, sizeof(complexFloat)*limitLine*ns,1,fin1);
 		
 		FSEEK64(fin2,seek_pos,SEEK_SET);
-		FREAD(in2, sizeof(FComplex)*limitLine*ns,1,fin2);
+		FREAD(in2, sizeof(complexFloat)*limitLine*ns,1,fin2);
 
 #define amp(cpx) sqrt((cpx).real*(cpx).real + (cpx).imag*(cpx).imag)
 
@@ -521,7 +521,7 @@ global_hist_sum,global_hist_cnt,percent_sum);
 	return(0);
 }
 
-void usage(int my_pe)
+void pcoh_usage(int my_pe)
 {
     if (my_pe == 0)
       {
@@ -537,11 +537,11 @@ void usage(int my_pe)
 	printf("In1\t\timage 1 complex file\n");
 	printf("In2_corr\tcoregistered image 2 complex file\n");
 	printf("Out\t\tfloating-point coherence file (.img).\n");
-	printf("  Version %4.2f, ASF ISAR Tools.\n",VERSION);
+	printf("  Version %4.2f, ASF InSAR Tools.\n",VERSION);
 	printf("\n");
       }
     MPI_Finalize();
-    exit(1);
+    exit(EXIT_FAILURE);
 }
 
 void bye(int my_pe, char *msg) { 

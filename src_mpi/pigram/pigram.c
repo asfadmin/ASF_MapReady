@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
   double percent=5.0;
   long long bytesRead=0;  
 
-  FComplex *in1,*in2;
+  complexFloat *in1,*in2;
   float *outAmp,*outPhase;
   char cmd[256];
 
@@ -158,8 +158,8 @@ int main(int argc, char *argv[])
   /* 
    * establish buffers
    */
-  in1=(FComplex *)MALLOC(sizeof(FComplex)*BSZ);
-  in2=(FComplex *)MALLOC(sizeof(FComplex)*BSZ);
+  in1=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ);
+  in2=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ);
   outAmp=(float *)MALLOC(sizeof(float)*BSZ);
   outPhase=(float *)MALLOC(sizeof(float)*BSZ);
   
@@ -213,13 +213,13 @@ int main(int argc, char *argv[])
   outFilePhase=fopenImage(fnm, "r+b");
 
   FSEEK64(inFile1, 0, SEEK_END);
-  end_of_input = ftell64(inFile1);
+  end_of_input = FTELL64(inFile1);
 
   /*
    * Loop through each chunk of data 
    */
 
-  input_offset = (long long) BSZ*sizeof(FComplex)*(count*n_pes+my_pe);
+  input_offset = (long long) BSZ*sizeof(complexFloat)*(count*n_pes+my_pe);
   output_offset = (long long) BSZ*sizeof(float)*(count*n_pes+my_pe);
 
   while (input_offset < end_of_input)
@@ -233,18 +233,18 @@ int main(int argc, char *argv[])
      */
 
     FSEEK64(inFile1, input_offset, SEEK_SET);
-    i = fread(in1, 1, BSZ*sizeof(FComplex),inFile1);
+    i = fread(in1, 1, BSZ*sizeof(complexFloat),inFile1);
 
     FSEEK64(inFile2, input_offset, SEEK_SET);
-    j = fread(in2, 1, BSZ*sizeof(FComplex),inFile2);
+    j = fread(in2, 1, BSZ*sizeof(complexFloat),inFile2);
 
     if (i != j ) bail("igram:  an input file was too short.");
 
     /* 
      * calculate how many values were read, print a brief diagnostic message 
      */
-    len = i/sizeof(FComplex);
-    bytesRead += (len * n_pes * sizeof(FComplex));
+    len = i/sizeof(complexFloat);
+    bytesRead += (len * n_pes * sizeof(complexFloat));
     
     if (my_pe==0)
     { 
@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
     FSEEK64(outFilePhase, output_offset, SEEK_SET);
     FWRITE(outPhase, 1, len*sizeof(float),outFilePhase);
 
-    input_offset = (long long) BSZ*sizeof(FComplex)*(count*n_pes+my_pe);
+    input_offset = (long long) BSZ*sizeof(complexFloat)*(count*n_pes+my_pe);
     output_offset = (long long) BSZ*sizeof(float)*(count*n_pes+my_pe);
 
   }
