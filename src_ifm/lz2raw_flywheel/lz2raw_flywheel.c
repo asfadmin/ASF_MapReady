@@ -3,7 +3,8 @@ NAME: lz2raw_flywheel
 
 SYNOPSIS:
 
-        lz2raw_flywheel <input> <output> [-log <file>][-quiet][-prc <path>]
+        lz2raw_flywheel [-lat <lower> <upper>}[-log <file>][-quiet][-prc <path>]
+	                <input> <output>
 
                 <input>   VEXCEL Leverl-0 signal data
                 <output>  AISP-compatible raw data
@@ -42,7 +43,11 @@ PROGRAM HISTORY:
     3.0  T. Logan,     2/01     Modified to check for and fill missing data
     3.01 R. Gens,      7/01     Added logfile and quiet switch
     3.02 S. Watts,     10/01    Write ACTUAL # lines to <out>.meta
-
+    3.5  P. Denny      1/03     Incorporated Rudi's latitude constraints
+                                 Use new meta structures
+                                 Update commandline parsing routine
+                                 Estimate doppler or grab it from par file
+				 
 HARDWARE/SOFTWARE LIMITATIONS:
 
 ALGORITHM DESCRIPTION:
@@ -93,7 +98,10 @@ BUGS:
 #include "decoder.h"
 #include "dateUtil.h"
 
-#define VERSION 3.02
+#define VERSION 3.5
+
+/* allocation routine for meta_state_vectors */
+meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
 
 /*********************************
 updateMeta:
@@ -134,51 +142,58 @@ void lzStateTime(const char *lzStr,ymd_date *date,hms_time *time)
 	date->month=monthNo+1;
 }
 
-/*Internal Metadata creation routines (asf_ceos.a)*/
+/* Initializes base meta structure (asf_meta.a)*/
 meta_parameters *raw_init(void);
-void ceos_init(const char *in_fName,meta_parameters *sar);
-void propagate_state(meta_parameters *meta,int nStVec);
+/* In (local_directory)/propagate.c */
+void propagate_state(meta_parameters *meta, int nStVec, double data_int);
+/* In (local_directory)/fetch_prc_stvec.c */
+int fetch_prc_stvec(char *prc_path, ymd_date *seekDate, hms_time *seekTime, 
+	stateVector *retVec, ymd_date *retDate, hms_time *retTime, int orbit);
 
-
-void createMeta_lz(bin_state *s,char *inN,char *outN,int numLines,int prcflag, char *prcPath)
+void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr, int nVec,
+                   float fd, float fdd, float fddd, int prcflag, char *prcPath)
 {
 	double clock_ang;
-	char parN[256];
+	char parN[256],buf[255];
 	meta_parameters *meta=raw_init();
 	stateVector stVec;/*Source state vector*/
 	ymd_date st_date,img_date;
 	julian_date st_jdate,img_jdate;
 	hms_time st_time,img_time;
 	char *st_timeStr;/*Source state vector time, DD-MMM-YYYY hh:mm:ss.ttt*/
-	char *img_timeStr;/*Image time string: YYYYMMDDhhmmssttt*/
-	
+	int num_vecs;
+
 /*Open the parameter file*/
 	strcat(strcpy(parN,inN),".par");
 
 /*Find start of current scene*/
-	img_timeStr=lzStr(parN,"prep_block.location[0].line_date:",NULL);
+	if (img_timeStr == NULL)
+	  img_timeStr=lzStr(parN,"prep_block.location[0].line_date:",NULL);
 	date_dssr2date(img_timeStr,&img_date,&img_time);
 	date_ymd2jd(&img_date,&img_jdate);
 
 /*Read a state vector.*/
-	if (prcflag == 0)
-	  {	
-	    stVec.pos.x = lzDouble(parN,"prep_block.state_vector.x:",NULL);
-    	    stVec.pos.y = lzDouble(parN,"prep_block.state_vector.y:",NULL);
-	    stVec.pos.z = lzDouble(parN,"prep_block.state_vector.z:",NULL);
-	    stVec.vel.x = lzDouble(parN,"prep_block.state_vector.xv:",NULL);
-	    stVec.vel.y = lzDouble(parN,"prep_block.state_vector.yv:",NULL);
-	    stVec.vel.z = lzDouble(parN,"prep_block.state_vector.zv:",NULL);
-	    st_timeStr=lzStr(parN,"prep_block.state_vector.Date:",NULL);
+	if (prcflag == 0) {
+	    sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].x:", nVec);
+	    stVec.pos.x = lzDouble(parN,buf,NULL);
+	    sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].y:", nVec);
+    	    stVec.pos.y = lzDouble(parN,buf,NULL);
+	    sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].z:", nVec);
+	    stVec.pos.z = lzDouble(parN,buf,NULL);
+	    sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].xv:", nVec);
+	    stVec.vel.x = lzDouble(parN,buf,NULL);
+	    sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].yv:", nVec);
+	    stVec.vel.y = lzDouble(parN,buf,NULL);
+	    sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].zv:", nVec);
+	    stVec.vel.z = lzDouble(parN,buf,NULL);
+	    sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].Date:", nVec);
+	    st_timeStr=lzStr(parN,buf,NULL);
 	    parse_ymdTime(st_timeStr, &st_date, &st_time);
-	  }
-	else
-	  {
-	    int orbit;
-
-	    orbit = lzInt(parN,"prep_block.OrbitNr:",NULL);
+	}
+	else {
+	    int orbit = lzInt(parN,"prep_block.OrbitNr:",NULL);
 	    fetch_prc_stvec(prcPath,&img_date,&img_time,&stVec,&st_date,&st_time,orbit);
-	  }
+	}
 
 	date_ymd2jd(&st_date,&st_jdate);
 	
@@ -186,19 +201,17 @@ void createMeta_lz(bin_state *s,char *inN,char *outN,int numLines,int prcflag, c
 	gei2fixed(&stVec,utc2gha(st_jdate.year,st_jdate.jd,
 		st_time.hour,st_time.min,st_time.sec));*/
 	
-/*Create a state vector structure to hold our state vector,
-  and copy it over.*/
-	meta->stVec       = (meta_state_vectors*)MALLOC(sizeof(meta_state_vectors));
-	meta->stVec->vecs = (state_loc *)MALLOC(sizeof(state_loc));
-	meta->stVec->vecs[0].vec = stVec;
+/*Create a state vector structure to hold our state vector, with *one* state_loc, and copy it over.*/
+	meta->state_vectors = meta_state_vectors_init(1);
+	meta->state_vectors->vecs[0].vec = stVec;
 
 /*Set time of image start & state vector, and propagate state vector*/
-	meta->stVec->year=img_date.year;
-	meta->stVec->julDay=img_jdate.jd;
-	meta->stVec->second=date_hms2sec(&img_time);
-	
-	meta->stVec->vecs[0].time=date2sec(&st_jdate,&st_time)-date2sec(&img_jdate,&img_time);
-	propagate_state(meta,2+(int)((numLines/s->prf)/30.0));
+	meta->state_vectors->year = img_date.year;
+	meta->state_vectors->julDay = img_jdate.jd;
+	meta->state_vectors->second = date_hms2sec(&img_time);
+	meta->state_vectors->vecs[0].time = date2sec(&st_jdate,&st_time)-date2sec(&img_jdate,&img_time);
+	num_vecs = 2 + (int)(s->nLines/s->prf)/30.0;
+	propagate_state(meta, num_vecs+1, (s->nLines/s->prf)/num_vecs);
 
 /*Figure out satellite look direction*/ 
 	clock_ang = lzDouble(parN,"prep_block.clock_angle:",NULL);
@@ -213,17 +226,25 @@ void createMeta_lz(bin_state *s,char *inN,char *outN,int numLines,int prcflag, c
 	}
 	
 /*Update s-> fields with new state vector*/
-	addStateVector(s,&meta->stVec->vecs[0].vec);
+	addStateVector(s,&meta->state_vectors->vecs[0].vec);
 	
 /*Update fields for which we have decoded header info.*/
-	updateMeta(s,meta);
-	meta->ifm->orig_nLines=numLines;
+	updateMeta(s,meta,inN);
+
+/*Put some finishing touches on the updated Meta */
+	meta->sar->range_doppler_coefficients[0] = fd;
+	meta->sar->range_doppler_coefficients[1] = fdd;
+	meta->sar->range_doppler_coefficients[2] = fddd;
+	meta->sar->azimuth_doppler_coefficients[0] = fd;
+	meta->sar->azimuth_doppler_coefficients[1] = 0.0;
+	meta->sar->azimuth_doppler_coefficients[2] = 0.0;
 	
+/*Write out AISP .in parameter file.*/
+	writeAISPparams(s,outN,fd,fdd,fddd);		
+
 /*Write out and free the metadata structure*/
 	meta_write(meta,outN);
 	meta_free(meta);
-	
-	free(parN);
 }
 
 /********************************
@@ -233,20 +254,19 @@ as well as determining the number of lines in the l0 file,
 by reading the granule (.gran) file.
 */
 #include <ctype.h>
-bin_state *convertMetadata_lz(char *inN,char *outN,int *nLines,readPulseFunc *readNextPulse,
-		int prcflag, char *prcPath)
-
+bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
+                              readPulseFunc *readNextPulse,
+                              int prcflag, char *prcPath)
 {
 	bin_state *s;
-	int numLines;
-	char lzN[256];
+	char lzName[256];
 	int i;
 	char *satName;
 	
-	strcat(strcpy(lzN,inN),".par");
+	strcat(strcpy(lzName,inName),".par");
 
 /*Figure out what kind of SAR data we have, and initialize the appropriate decoder.*/
-	satName=lzStr(lzN,"prep_block.satellite:",NULL);
+	satName=lzStr(lzName,"prep_block.satellite:",NULL);
 	/*Trim white space from end of satellite name*/
 	i=strlen(satName)-1;
 	while (isspace(satName[i]))
@@ -254,11 +274,11 @@ bin_state *convertMetadata_lz(char *inN,char *outN,int *nLines,readPulseFunc *re
 	
 	/*Initialize the appropriate decoder routine*/
 	if (0==strncmp(satName,"ERS",3))
-		s=ERS_decoder_init(inN,outN,readNextPulse);
+		s=ERS_decoder_init(inName,outName,readNextPulse);
 	else if (0==strncmp(satName,"JERS",4))
-		s=JRS_decoder_init(inN,outN,readNextPulse);
+		s=JRS_decoder_init(inName,outName,readNextPulse);
 	else if (0==strncmp(satName,"RSAT",4))
-		s=RSAT_decoder_init(inN,outN,readNextPulse);
+		s=RSAT_decoder_init(inName,outName,readNextPulse);
 	else 
 		{
 		  printf("   Unrecognized satellite '%s'!\n",satName);
@@ -267,41 +287,39 @@ bin_state *convertMetadata_lz(char *inN,char *outN,int *nLines,readPulseFunc *re
 		}
 	
 /*Read in essential parameters from granule file.*/
-
-       /***
-	**numLines from parfile is often wrong ***
- 	**will get the actual numlines in main()**
+       /** numLines from parfile is often wrong;
+ 	** will learn the actual number of lines later in main()
 	**/
-	numLines=lzInt(lzN,"prep_block.number_lines:",NULL);
+	*numLines = lzInt(lzName,"prep_block.number_lines:",NULL);
+	s->nFrames = lzInt(lzName,"prep_block.number_frames:",NULL);
 
-	s->nFrames = lzInt(lzN,"prep_block.number_frames:",NULL);
-	
-/*Write out AISP input parameter files.*/
-	
-	/***
-	**call createMeta in main to get the ACTUAL number of lines***
-	***/
-	/*createMeta_lz(s,inN,outN,numLines,prcflag, prcPath);*/
-	
-	writeAISPparams(s,outN,0.0,-99.0,-99.0);		
-	writeAISPformat(s,outN);
+/*Write out AISP .fmt parameter file. This must be done before processing
+	** because starting line, window shift, and agc scaling are
+	** perpetually updated via the updateAGC_window function
+	** during processing.*/
+	writeAISPformat(s,outName);
 
-/*Clean up and leave.*/
-	*nLines=numLines;
-	free(lzN);
 	return s;
 }
 
-openErrorLog(bin_state *s, char *inN)
- {
+int openErrorLog(bin_state *s, char *inN)
+{
 	char errName[256];
 	strcat(strcpy(errName,inN),".errlog");
 	s->fperr = FOPEN(errName,"w");
 
 	return 1;
- }
+}
 
+/*Prototypes*/
+void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart,
+                  long *imgEnd, char *imgTimeStr, int *nVec,
+                  float *fd, float *fdd, float *fddd);
+void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd);
 
+/* Global variables - needed to handle missing lines properly */
+long imgStart, imgEnd;
+int outLine;
 /*****************************
 main:
 	Open input file.
@@ -310,53 +328,54 @@ main:
 */
 int main(int argc,char *argv[])
 {
-	int 		outLine,nTotal,i;
+	int 		nTotal, nVec=1;
 	float		percent=5.0;
-	char 		*inName,*outName;
+	float		fd,fdd,fddd;
+	float		lowerLat=-99.0,upperLat=99.0;
+	char 		*inName,*outName,imgTimeStr[20]="";
 	bin_state 	*s;
 	readPulseFunc 	readNextPulse;
 	iqType 		*iqBuf;
 	int		prcflag=0;
 	char		prcPath[256];
-	
-	/* Parse CLA's.
-	 -------------*/
-        if (argc<3)
-         {
-          printf("\t\tASF Level-Zero Swath Conversion Routine\n\n");
-          printf("\nUsage: %s <input> <output> [-log <file>][-quiet][-prc <path>]\n\n",argv[0]);
-	printf( "\t<input>     VEXCEL Level-0 signal data\n"
-		"\t<output>    AISP-compatible raw data.\n"
-		"\t-log <file> Option to have output written to a log file"
-		"\n\t-quiet      Option to have output surpressed to essential"
-		"\n\t-prc <path> Path to use percision state vectors"
-		" (assume prc format)\n");	
-          printf("\nThis program decodes the input data into AISP-compatible\n"
-		"raw data.  Currently supports ERS, JERS, Radarsat, Strip mode"
-		"\n(all beams), but not Radarsat ScanSAR mode.\n\n");
-          /*printf("\n\t****Filling Missing Data Using Binary Scan****\n\n");*/
-          printf("Version %.2f, ASF SAR TOOLS\n\n",VERSION);
-          exit(1);
-         }
-	
-	logflag = quietflag = 0;
-	inName = argv[1];
-	outName = appendExt(argv[2],".raw");
-	for (i=3; i<argc; i++) {
-          if(strncmp(argv[i],"-log", 4)==0) {
-  	    sscanf(argv[i+1], "%s", logFile);
-	    logflag=1;
- 	    fLog = FOPEN(logFile, "a");
-	    i++;
-	  }
-	  else if(strncmp(argv[i],"-quiet", 6)==0) quietflag=1;
-	  else if (strncmp(argv[i],"-prc",4)==0) {
-	    prcflag = 1;
-	    strcpy(prcPath,argv[i+1]);
-	    i++;
-	  }
-	}
+	extern int	currArg; /* from cla.h (in asf.h) (initialized to 1) */
 
+	logflag = quietflag = 0;
+
+	/* Parse command line args */
+	while (currArg < (argc-2))
+	{
+		char *key=argv[currArg++];
+		if (strmatch(key,"-lat")) {
+			CHECK_ARG(2);
+			lowerLat = atof(GET_ARG(2));
+			upperLat = atof(GET_ARG(1));
+			if(lowerLat>upperLat) {
+				float tmp=upperLat;
+				upperLat = lowerLat;
+				lowerLat = tmp;
+			}
+		}
+		else if (strmatch(key,"-log")) {
+			CHECK_ARG(1);
+			strcpy(logFile, GET_ARG(1));
+			logflag=1;
+			fLog = FOPEN(logFile, "a");
+		}
+		else if (strmatch(key,"-quiet")) {
+			quietflag=1;
+		}
+		else if (strmatch(key,"-prc")) {
+			CHECK_ARG(1);
+			strcpy(prcPath, GET_ARG(1));
+			prcflag = 1;
+		}
+		else {printf("\n*****Invalid option:  %s\n\n",argv[currArg-1]);usage(argv[0]);}
+	}
+	if ((argc-currArg) < 2) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+	inName = argv[currArg++];
+	outName = appendExt(argv[currArg],".raw");
+		
         StartWatch();
 	if (logflag) {
 	  StartWatchLog(fLog);
@@ -365,16 +384,20 @@ int main(int argc,char *argv[])
 	system("date");
 	printf("Program: lz2raw_flywheel\n\n");
 
-/*-----------------------------------------------------------------------
-        printf("\tASF Level-Zero Swath Conversion Routine\n");
-        printf("\t\tFilling Missing Data Using Binary Scan (version %.2f)\n",VERSION);
------------------------------------------------------------------------*/
+	/* Determine start and end line for latitude constraint
+	 -----------------------------------------------------*/
+	if (lowerLat!=-99.0 && upperLat!=99.0)
+	  createSubset(inName, lowerLat, upperLat, &imgStart, &imgEnd, imgTimeStr,
+                       &nVec, &fd, &fdd, &fddd);
+	else
+	  estimateDoppler(inName, &fd, &fdd, &fddd);
 
-	/* First, we read the metadata to determine where window position shifts
+	/* Read the metadata to determine where window position shifts
 	   happen, as well as the number of lines in the image.
-         ----------------------------------------------------------------------*/
+         ------------------------------------------------------------*/
 	s=convertMetadata_lz(inName,outName,&nTotal,&readNextPulse,prcflag,prcPath);
 	iqBuf=(iqType *)MALLOC(sizeof(iqType)*2*s->nSamp);
+	if (imgEnd == 0) imgEnd = nTotal;
 	
 	/* Now we just loop over the output lines, writing as we go.
 	 ---------------------------------------------------------*/
@@ -385,7 +408,7 @@ int main(int argc,char *argv[])
 	openErrorLog(s,inName);
 
 	for (outLine=0;outLine<nTotal;outLine++)
-	  {
+	{
 		if (s->curFrame >= s->nFrames) { 
 		  printf("   Reached end of file\n"); 
 		  if (logflag) printLog("   Reached end of file\n"); 
@@ -398,24 +421,42 @@ int main(int argc,char *argv[])
 
 		/* If the read status is good, write this data.
 		 ---------------------------------------------*/ 
-		if (s->readStatus == 1)
+		if (s->readStatus == 1) {
+		  /* write some extra lines at the end for the SAR processing */
+		  if (((outLine >= imgStart) && (outLine <= imgEnd+4096)) ||  /* descending */
+		    ((outLine >= imgEnd) && (outLine <= imgStart+4096)))      /* ascending */
 		  {
-			FWRITE(iqBuf,s->nSamp,2,s->fpOut); 
+			FWRITE(iqBuf,sizeof(iqType),s->nSamp*2,s->fpOut); 
 			s->nLines++;
 		  }
-
+		}
 		/* Write status information to screen. 
 		 ------------------------------------*/
 		if ((outLine*100/nTotal) == percent) {
 			printf("   Completed %3.0f percent\n", percent);
 			percent += 5.0;
 		}
-	  }
+	}
+	if (lowerLat!=-99.0 && upperLat!=99.0) {
+	  s->nLines -= 4096; /* reduce the line number from extra padding */
+	  createMeta_lz(s,inName,outName,imgTimeStr,nVec,fd,fdd,fddd,prcflag,prcPath);
+	  /* Set meta's center lat & long */
+/******	  meta->general->center_latitude = lowerLat + (upperLat-lowerLat)/2;*/
+/*****	  meta->general->center_longitude =  */
+	}
+	else
+	  createMeta_lz(s,inName,outName,NULL,nVec,fd,fdd,fddd,prcflag,prcPath);
 
-	createMeta_lz(s,inName,outName,s->nLines,prcflag, prcPath);
-
+	/* Clean up memory & open files
+	 -----------------------------*/
+	FREE(iqBuf);
+	FREE(outName);
 	FCLOSE(s->fpOut); 
 	FCLOSE(s->fperr);
+	delete_bin_state(s);
+
+	/* Report & finish
+	 ----------------*/
 	printf("   Completed 100 percent\n\n");
 	printf("   Wrote %i lines of raw signal data.\n\n",s->nLines);
 	if (logflag) {
@@ -425,4 +466,33 @@ int main(int argc,char *argv[])
 	}
 	StopWatch();
 	return 0;
+}
+
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-lat <lower> <upper>] [-log <file>] [-quiet] [-prc <path>]\n"
+	"                   <input> <output>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <input>   VEXCEL Level-0 signal data.\n"
+	"   <output>  AISP-compatible raw data.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -lat <lower> <upper> Option for latitude constraints.\n"
+	"   -log <file>          Copy output to a log file.\n"
+	"   -quiet               Surpress output to the essential.\n"
+	"   -prc <path>          Path to use percision state vectors.\n"
+	"                         (assume prc format)\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   ASF Level-Zero Swath Conversion Routine.\n"
+	"   This program decodes the input data into AISP-compatible\n"
+	"   raw data.  Currently supports ERS, JERS, Radarsat, Strip mode\n"
+	"   (all beams), but not Radarsat ScanSAR mode.\n");
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
 }
