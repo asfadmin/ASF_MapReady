@@ -68,8 +68,8 @@ class helpFrame extends Frame implements ActionListener, WindowListener {
       
       this.directory = directory;
       setFile(directory, filename);
-      int locatex = getToolkit().getScreenSize().width  - getSize().width;
-      int locatey = getToolkit().getScreenSize().height - getSize().height;
+      int locatex = getToolkit().getScreenSize().width  - getWidth();
+      int locatey = getToolkit().getScreenSize().height - getHeight();
       if(locatex > 0 && locatey > 0)
          setLocation(2*locatex/3, locatey/8);
    }
