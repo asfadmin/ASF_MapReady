@@ -230,7 +230,7 @@ int main(int argc, char **argv)
      case (192): vfdr=(struct IOF_VFDR *) malloc (sizeof(struct IOF_VFDR));
                  get_ifiledr(filename,vfdr);prn_ifiledr(vfdr);free(vfdr);break;
      case (200): facdr = (struct VFDRECV  *) malloc (sizeof(struct VFDRECV));
-                 if (get_facdr(filename,facdr) >= 0) { prn_facdr(facdr,era); }
+                 if (get_asf_facdr(filename,facdr) >= 0) { prn_facdr(facdr,era); }
 		 else printf("\nNo Facility Related Data Record Found\n");
 		 free(facdr);
 		 break;
