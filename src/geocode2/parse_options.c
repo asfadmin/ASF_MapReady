@@ -209,7 +209,9 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
     }
 }
 
-/* static */ 
+#ifndef TEST_PARSE_OPTIONS
+static
+#endif
 void write_args(projection_type_t proj_type, project_parameters_t *pps,
 		char * file)
 {
@@ -717,9 +719,9 @@ void parse_other_options(int *argc, char **argv[],
     extract_double_options(argc, argv, pixel_size, "--pixel_size", 
 			   "--pixel-size", "-ps", NULL);
 }
-    
-project_parameters_t * parse_options(int *argc, char **argv[],
-				     projection_type_t * proj_type)
+
+project_parameters_t * parse_projection_options(int *argc, char **argv[],
+						projection_type_t * proj_type)
 {
     int i;
     project_parameters_t *pps = malloc(sizeof(project_parameters_t));

@@ -58,6 +58,10 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 
 LDLIBS := $(shell pkg-config --libs glib-2.0) $(LIBS)
 
+parse_test: geocode_options.t.c
+	$(CC) -DTEST_PARSE_OPTIONS $(INCLUDE_FLAGS) geocode_options.t.c \
+	$(LIBDIR)/geocode_options.a $(LIBS) -o geocode_options.t
+
 ###############################################################################
 #
 # Automaticly Computed Stuff
