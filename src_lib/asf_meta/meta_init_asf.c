@@ -11,6 +11,7 @@ SPECIAL CONSIDERATIONS:
 
 PROGRAM HISTORY:
   1.0 - O. Lawlor.  9/18/98.  CEOS Independence.
+  1.5 - P. Denny.   8/02      Formatted for new meta structure
 ****************************************************************/
 #include "asf.h"
 #include <ctype.h>
@@ -102,7 +103,6 @@ void ceos_init_asf(char *fName,ceos_description *ceos,meta_parameters *meta)
 	struct VMPDREC mpdr;
 	struct dataset_sum_rec dssr;
 	/*int has_mpdr=0;*/
-
 /*Fetch the facility-related data record.*/
 	get_facdr(fName,&facdr);
 
