@@ -5,6 +5,7 @@
 #include <geokeys.h>
 #include <geotiff.h>
 #include <geotiffio.h>
+#include <gsl/gsl_math.h>
 #include <proj_api.h>
 #include <tiff.h>
 #include <tiffio.h>
@@ -98,10 +99,6 @@ export_as_geotiff (const char *metadata_file_name,
   meta_parameters *md = meta_read (metadata_file_name);
   unsigned short sample_size = 4;
   unsigned short sample_format;
-  unsigned int line_count = md->general->line_count;
-  unsigned int sample_count = md->general->sample_count;
-  size_t pixel_count = line_count * sample_count;
-  unsigned char *pixels;
   double mask;
   int jj;
   TIFF *otif;
@@ -140,6 +137,9 @@ export_as_geotiff (const char *metadata_file_name,
 	      "Unsigned integer data type size is different than expected.\n");
   
   /* Get the image data.  */
+  asfPrintStatus("Loading image...\n");  
+  asfRequire (md->general->data_type == REAL32,
+	      "Input data type must be in 32-bit floating point format.\n");
   const off_t start_of_file = 0;
   FloatImage *iim 
     = float_image_new_from_file (md->general->sample_count, 
@@ -147,13 +147,27 @@ export_as_geotiff (const char *metadata_file_name,
 				 image_data_file_name, start_of_file,
 				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
-  asfPrintStatus ("Processing...\n");
-
   /* Open output tiff file and GeoKey file descriptor.  */
   otif = XTIFFOpen (output_file_name, "w");
   asfRequire(otif != NULL, "Error opening output tiff file.\n");
   ogtif = GTIFNew (otif);
   asfRequire (ogtif != NULL, "Error opening output GeoKey file descriptor.\n");
+
+  /* We may need this if exporting in byte form.  */
+  const int max_color_value = 255;
+
+
+  /* If we will be putting the image in byte form, we will need these
+     values to be filled in.  */ 
+  float mean, standard_deviation;
+  const int default_sampling_stride = 30;
+  const int minimum_samples_in_direction = 10;
+  int sampling_stride = GSL_MIN (default_sampling_stride, 
+				 GSL_MIN (iim->size_x, iim->size_y) 
+				 / minimum_samples_in_direction);
+  /* Lower and upper extents of the range of float values which are to
+     be mapped linearly into the output space.  */
+  float omin, omax;
 
   /* Scale float image down to bytes, if required.  This is currently
      done in a very memory intensive way and could stand to be
@@ -170,37 +184,48 @@ export_as_geotiff (const char *metadata_file_name,
     else
       mask = NAN;
 
-    asfPrintStatus("Scaling...\n");
+    asfPrintStatus("Gathering image statistics...\n");
 
-    /* Slurp in all the floating point data.  */
-    float *daf = get_image_data (md, image_data_file_name);
-    /* It supposed to be big endian data, this converts to host byte
-       order.  */
-    for ( jj = 0 ; jj < pixel_count ; jj++ ) {
-      ieee_big32 (daf[jj]);
+    /* We need a version of the data in byte form, so we have to map
+       floats into bytes.  We do this by defining a region 2 sigma on
+       either side of the mean to be mapped in the range of unsigned
+       char linearly, and clamping everything outside this range at the
+       limits of the unsigned char range.  */
+    /* Make sure the unsigned char is the size we expect.  */
+    asfRequire (sizeof(unsigned char) == 1,
+		"Size of the unsigned char data type on this machine is "
+		"different than expected.\n");
+
+    if ( scale != SIGMA ) {
+      asfPrintWarning ("using two sigma method instead of requested method to "
+		       "convert floats to bytes");
     }
-
-    /* Get a byte form of the floating point data.  */
-    pixels = floats_to_bytes (daf, pixel_count, mask, scale);
-
-    /* Done with the data as floating point.  */
-    free (daf);
-
+    
+    /* Gather some statistics to help with the mapping.  */
+    float_image_approximate_statistics (iim, sampling_stride, &mean, 
+					&standard_deviation);
+    
+    /* Compute the limits of the interval which will be mapped
+       linearly into the byte values for output.  Values outside this
+       interval will be clamped.  */
+    omin = mean - 2 * standard_deviation;
+    omax = mean + 2 * standard_deviation;
+    
     /* Its a byte image, so the sample_size is one.  */
     sample_size = 1;
   }
 
   /* Set the normal TIFF image tags.  */
   TIFFSetField(otif, TIFFTAG_SUBFILETYPE, 0);
-  TIFFSetField(otif, TIFFTAG_IMAGEWIDTH, sample_count);
-  TIFFSetField(otif, TIFFTAG_IMAGELENGTH, line_count);
+  TIFFSetField(otif, TIFFTAG_IMAGEWIDTH, iim->size_x);
+  TIFFSetField(otif, TIFFTAG_IMAGELENGTH, iim->size_y);
   TIFFSetField(otif, TIFFTAG_BITSPERSAMPLE, sample_size * 8);
   TIFFSetField(otif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
   TIFFSetField(otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
   TIFFSetField(otif, TIFFTAG_SAMPLESPERPIXEL, 1);
-  TIFFSetField(otif, TIFFTAG_ROWSPERSTRIP,1);
-  TIFFSetField(otif, TIFFTAG_XRESOLUTION,1);
-  TIFFSetField(otif, TIFFTAG_YRESOLUTION,1);
+  TIFFSetField(otif, TIFFTAG_ROWSPERSTRIP, 1);
+  TIFFSetField(otif, TIFFTAG_XRESOLUTION, 1.0);
+  TIFFSetField(otif, TIFFTAG_YRESOLUTION, 1.0);
   TIFFSetField(otif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
   TIFFSetField(otif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
   switch ( md->general->data_type ) {
@@ -893,8 +918,8 @@ export_as_geotiff (const char *metadata_file_name,
       /* Get the lat/longs of three image corners.  */
       double c1_lat, c1_long, c2_lat, c2_long, c3_lat, c3_long;
       meta_get_latLon (md, 0, 0, 0, &c1_lat, &c1_long);
-      meta_get_latLon (md, 0, md->general->sample_count, 0, &c2_lat, &c2_long);
-      meta_get_latLon (md, md->general->line_count, 0, 0, &c3_lat, &c3_long);
+      meta_get_latLon (md, 0, iim->size_x, 0, &c2_lat, &c2_long);
+      meta_get_latLon (md, iim->size_y, 0, 0, &c3_lat, &c3_long);
 
       /* Put three tie points in the image, as described in 2.6.2 of the
          geotiff spec..  */
@@ -905,12 +930,12 @@ export_as_geotiff (const char *metadata_file_name,
       tie_points[0][4] = c1_long;
       tie_points[0][5] = 0.0;
       tie_points[1][0] = 0.0;
-      tie_points[1][1] = md->general->sample_count;
+      tie_points[1][1] = iim->size_x;
       tie_points[1][2] = 0.0;
       tie_points[1][4] = c2_lat;
       tie_points[1][5] = c2_long;
       tie_points[1][6] = 0.0;
-      tie_points[2][0] = md->general->line_count;
+      tie_points[2][0] = iim->size_y;
       tie_points[2][1] = 0.0;
       tie_points[2][2] = 0.0;
       tie_points[2][4] = c3_lat;
@@ -933,11 +958,19 @@ export_as_geotiff (const char *metadata_file_name,
     asfPrintError("Unrecognized image type.\n");
   }
 
+typedef enum {
+  TRUNCATE=1,
+  MINMAX,
+  SIGMA,
+  NONE
+} scale_t;
+
   asfPrintStatus("Writing Output File...\n");
 
   /* Write the actual image data.  */
-  float *line_buffer = malloc (sizeof (float) * iim->size_x);
-  for ( ii = 0 ; ii < line_count ; ii++ ) {
+  float *line_buffer = g_new (float, iim->size_x);
+  unsigned char *byte_line_buffer = g_new (unsigned char, iim->size_x);
+  for ( ii = 0 ; ii < iim->size_y ; ii++ ) {
     float_image_get_row (iim, ii, line_buffer);
     if ( scale == NONE ) {
       if ( TIFFWriteScanline (otif, line_buffer, ii, 0) < 0 ) {
@@ -946,13 +979,30 @@ export_as_geotiff (const char *metadata_file_name,
       }
     }
     else {
-      if ( TIFFWriteScanline (otif, pixels + sample_count * ii, ii, 0) < 0 ) {
+      for ( jj = 0 ; jj < iim->size_x ; jj++ ) {
+	/* Pixel as floatl.  */
+	double paf = float_image_get_pixel (iim, jj, ii);
+	unsigned char pab;	/* Pixel as byte.  */
+	if ( paf < omin ) {
+	  pab = 0;
+	}
+	else if ( paf > omax ) {
+	  pab = max_color_value;
+	}
+	else {
+	  pab = round (((paf - omin) / (omax - omin)) * max_color_value);
+	}
+	byte_line_buffer[jj] = pab;
+      }
+      if ( TIFFWriteScanline (otif, byte_line_buffer, ii, 0) < 0 ) {
         asfPrintError("Error writing to output geotiff file %s",
                       output_file_name);
       }
     }
-    asfLineMeter(ii, line_count);
+    asfLineMeter(ii, iim->size_y);
   }
+  g_free (byte_line_buffer);
+  g_free (line_buffer);  
 
   return_code = GTIFWriteKeys (ogtif);
   asfRequire (return_code, "Error writing geotiff keys.\n");
