@@ -12,6 +12,7 @@ void meta_read_old(meta_parameters *meta, char *fileName);
 void meta_new2old(meta_parameters *meta);
 void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name);
 int meta_is_new_style(const char *file_name);
+meta_projection *meta_projection_init(void);
 
 /* Prototypes from meta_init.c */
 void add_meta_ddr_struct(const char *name, meta_parameters *meta, struct DDR *ddr);
@@ -160,7 +161,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	coniIO_char(coni,"geo.","type:",&sar->image_type,"Image type: [S=slant range; G=ground range; P=map projected]");
 	if (sar->image_type=='P') {
 	/*Projection Parameters.*/
-		meta_projection *projection = meta->projection = (meta_projection *)MALLOC(sizeof(meta_projection));
+		meta_projection *projection = meta->projection = meta_projection_init();
 		coniIO_structOpen(coni,"proj {","Map Projection parameters");
 		coniIO_char  (coni,"geo.proj.","type:",  &projection->type,  "Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]");
 		coniIO_double(coni,"geo.proj.","startX:",&projection->startX,"Projection Coordinate at top-left, X direction");
@@ -356,7 +357,7 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
     /* Projection stuff */
 	for (ii=0; ii<DDNVAL; ii++) {
 	  if ((ddr.valid[ii]==VALID) && (ii!=DDINCV)) {
-		meta->projection = (meta_projection*)MALLOC(sizeof(meta_projection));
+		meta->projection = meta_projection_init();
 		/* Projection units */
 		if (ddr.valid[DDPUV] == VALID)
 			strncpy(meta->projection->units, ddr.proj_units, 12);
