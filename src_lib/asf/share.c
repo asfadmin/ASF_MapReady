@@ -15,7 +15,8 @@ static char * s_share_dir = 0;
 #undef BYTE
 #include <windows.h>
 
-static const char * s_asf_application_key = "Software\\ASF\\";
+static const char * s_asf_application_key = "Software\\ASF_Tools\\";
+static const char * s_asf_share_dir_key = "Share_Dir";
 
 #else
 
@@ -36,13 +37,34 @@ get_asf_share_dir()
     HKEY Hkey;
     char str_value[512];
     unsigned long read_size;
+    LONG rv;
 
-    RegCreateKeyEx(HKEY_LOCAL_MACHINE, s_asf_application_key, 0, 0,
-		   REG_OPTION_NON_VOLATILE, KEY_QUERY_VALUE, 0, &Hkey, 0);
-
+    RegOpenKeyEx(HKEY_LOCAL_MACHINE, s_asf_application_key, 0,
+                 KEY_QUERY_VALUE, &Hkey);
+    
     read_size = sizeof(str_value);
-    RegQueryValueEx(Hkey, "ShareDir", 0, 0, (BYTE*)str_value, &read_size);
+    rv = RegQueryValueEx(Hkey, s_asf_share_dir_key, 0, 0, (BYTE*)str_value, 
+                         &read_size);
 
+    if (rv == ERROR_PATH_NOT_FOUND || rv == ERROR_FILE_NOT_FOUND) {
+      RegOpenKeyEx(HKEY_CURRENT_USER, s_asf_application_key, 0,
+                   KEY_QUERY_VALUE, &Hkey);
+      rv = RegQueryValueEx(Hkey, s_asf_share_dir_key, 0, 0, (BYTE*)str_value, 
+                           &read_size);
+    }
+
+    if (rv != ERROR_SUCCESS) {
+      LPVOID ErrBuf;
+      DWORD dw = GetLastError();
+      FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                    FORMAT_MESSAGE_FROM_SYSTEM,
+                    0, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                    (LPTSTR) &ErrBuf, 0, 0);
+      printf("error %d: %s\n", dw, ErrBuf);
+      LocalFree(ErrBuf);
+      return "";
+    }
+      
     RegCloseKey(Hkey);
 
     s_share_dir = strdup(str_value);
