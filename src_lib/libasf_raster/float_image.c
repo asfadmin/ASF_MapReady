@@ -435,7 +435,9 @@ cached_tile_to_disk (FloatImage *self, size_t tile_offset)
 // sure we want to use this.  It avoids a lot of repetition in the
 // code but requires an extra address-of/dreference pair per pixel,
 // and possibly another function call if the compiler doesn't inline
-// it.
+// it.  It is currently unused and therefore may be slightly out of
+// sync with the get_pixel and set_pixel routines in terms of bug
+// fixes.
 static float *
 prepare_pixel (FloatImage *self, size_t x, size_t y)
 {
