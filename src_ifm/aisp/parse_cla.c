@@ -114,7 +114,7 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
 	
 	while (currArg < (argc-2)) {
 		char *key=argv[currArg++];
-		if      (strmatch(key,"-log"))   {CHK_ARG_ASP(1); strcpy(g->CALPRMS, GET_ARG(1));
+		if      (strmatch(key,"-log"))   {CHK_ARG_ASP(1); strcpy(logFile, GET_ARG(1));
 						  logflag = 1; fLog = FOPEN(logFile, "a");}
 		else if (strmatch(key,"-quiet")) {quietflag = 1;}
 		else if (strmatch(key,"-power")) {g->pwrFlag=1;}
