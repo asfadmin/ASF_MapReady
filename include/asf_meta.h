@@ -182,8 +182,9 @@ typedef struct {
     proj_utm      utm;      /* Universal Transverse Mercator*/
   } param_t;
 typedef struct {
-  char type;   /* 'A'->Along Track/Cross Track; 'P'->Polar Stereographic;
-                  'L'->Lambert Conformal; 'U'->Universal Transverse Mercator.*/
+  char type;   /* 'A'->Along Track/Cross Track; 'P'->Polar Stereographic;  *
+                * 'L'->Lambert Azimuthal Equal Area;                       *
+                * 'U'->Universal Transverse Mercator.                      */
   double startX,startY;  /* Projection coordinates of top, lefthand corner.*/
   double perX,perY;      /* Projection coordinates per X and Y pixel.      */
   char units[12];        /* Units of projection (meters, arcsec)           */
