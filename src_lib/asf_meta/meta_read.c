@@ -13,8 +13,9 @@ void meta_new2old(meta_parameters *meta);
 void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name);
 int meta_is_new_style(const char *file_name);
 
-/* PROTOTYPE from meta_init.c */
+/* Prototypes from meta_init.c */
 void add_meta_ddr_struct(const char *name, meta_parameters *meta, struct DDR *ddr);
+meta_state_vectors *meta_state_vectors_init(int vector_count);
 
 /***************************************************************
  * meta_read:
@@ -235,7 +236,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	    coniReopen(coni);/*Seek back to beginning of file.*/
 	    if (err==CONI_OK && nVec!=0) {
 	    /*We have state vectors!*/
-		    meta->state_vectors->vecs=(state_loc *)MALLOC(nVec * sizeof(state_loc)); /*Allocate state vectors.*/
+		    meta->state_vectors = meta_state_vectors_init(nVec); /*Allocate state vectors.*/
 		    meta_io_state(coni, meta->state_vectors);  /*And initialize them.*/
 	    }
 	}
@@ -282,14 +283,14 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 			{strcpy(meta->projection->units, ddr.proj_units);}
 		switch ( ddr.dtype ) {
 		    case 0: /* BYTE */
-		    case 1: strcpy(general->data_type, "BYTE"); break;
-		    case 2: strcpy(general->data_type, "INTEGER*2"); break;
-		    case 3: strcpy(general->data_type, "INTEGER*4"); break;
-		    case 4: strcpy(general->data_type, "REAL*4"); break;
-		    case 5: strcpy(general->data_type, "REAL*8"); break;
+		    case 1: general->data_type = BYTE;      break;
+		    case 2: general->data_type = INTEGER16; break;
+		    case 3: general->data_type = INTEGER32; break;
+		    case 4: general->data_type = REAL32;    break;
+		    case 5: general->data_type = REAL64;    break;
 		    default:
-	        	printf("ERROR: Unrecognized data type identifier: %d\n",ddr.dtype);
-			exit(1);
+	        	printf("ERROR in meta_read_old(): Unrecognized DDR data type: (code %d)... Exit program.\n",ddr.dtype);
+			exit(EXIT_FAILURE);
 		}
 	}
 	else {
@@ -330,22 +331,14 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 	meta->general->start_line = ddr.master_line - 1;
 	meta->general->start_sample = ddr.master_sample - 1;
 	switch (ddr.dtype) {
-	  case DTYPE_BYTE: case 0:
-		strcpy(meta->general->data_type, "BYTE");
-		break;
-	  case DTYPE_SHORT:
-		strcpy(meta->general->data_type, "INTEGER*2");
-		break;
-	  case DTYPE_LONG:
-		strcpy(meta->general->data_type, "INTEGER*4");
-		break;
-	  case DTYPE_FLOAT:
-		strcpy(meta->general->data_type, "REAL*4");
-		break;
-	  case DTYPE_DOUBLE:
-		strcpy(meta->general->data_type, "REAL*8");
+	  case 0:/*Equivalent to DTYPE_BYTE*/
+	  case DTYPE_BYTE:   meta->general->data_type = BYTE;      break;
+	  case DTYPE_SHORT:  meta->general->data_type = INTEGER16; break;
+	  case DTYPE_LONG:   meta->general->data_type = INTEGER32; break;
+	  case DTYPE_FLOAT:  meta->general->data_type = REAL32;    break;
+	  case DTYPE_DOUBLE: meta->general->data_type = REAL64;    break;
 	  default:
-		printf("ERROR: Unrecognized data type (code %d)... program exiting.\n",ddr.dtype);
+		printf("ERROR in meta_read_only_ddr(): Unrecognized data type (%d)... Exit program.\n",ddr.dtype);
 		exit (EXIT_FAILURE);
 	}
 	if (strcmp(ddr.system,"ieee-std")==0)
@@ -374,7 +367,7 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 		meta->projection->re_minor = NAN;
 		if (ddr.valid[DDPPV] == VALID) {
 		   switch (ddr.proj_code) {
-		     case LAMAZ:
+		     case LAMCC:
 		        meta->projection->type = 'L';
 			if (ddr.proj_coef[2]) {
 				meta->projection->re_major = ddr.proj_coef[0];
@@ -404,7 +397,8 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 		          meta->projection->param.utm.zone = -999999999;
 		        break;
 		     default:
-		        printf("WARNING: * DDR projection code '%d' not supported by meta file\n",ddr.proj_code);
+			meta->projection->type = '?';
+		        printf("WARNING: DDR projection code '%d' not supported by meta file\n",ddr.proj_code);
 		        break;
 		   } /* End switch(ddr.proj_code) */
 		} /* End if (ddr.valid[DDPPV] == VALID) */
