@@ -483,7 +483,8 @@ void geocode_options_changed()
 			     enable_projection_option_menu);
 
     gtk_widget_set_sensitive(predefined_projection_option_menu,
-			     enable_predefined_projection_option_menu);
+			     enable_predefined_projection_option_menu &&
+			     !enable_table_utm_projection_options);
 
     utm_zone_label =
 	glade_xml_get_widget(glade_xml, "utm_zone_label");
