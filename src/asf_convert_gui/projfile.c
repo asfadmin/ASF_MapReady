@@ -47,9 +47,6 @@ static int my_strcmp(const void *s1, const void *s2)
 	sscanf(string1, "utm_%d", &utm_zone1);
 	sscanf(string2, "utm_%d", &utm_zone2);
 
-	printf("scanned: %s -> %d\n", string1, utm_zone1);
-	printf("scanned: %s -> %d\n", string2, utm_zone2);
-
 	if (utm_zone1 == utm_zone2)
 	{
 	    return *(string1 + strlen(string1) - 1) == 'N';
@@ -133,7 +130,9 @@ static GtkWidget * populate_predefined_projections(int projection)
 
     proj_dir = projection_directory(projection);
 
-    if (proj_dir)
+    /* do not populate the predefined projections for UTM -- too many,
+       the large dropdownlist causes crashes on windows */
+    if (proj_dir && projection != UNIVERSAL_TRANSVERSE_MERCATOR)
     {
 	dir = g_dir_open(proj_dir, 0, NULL);
 	
@@ -161,7 +160,6 @@ static GtkWidget * populate_predefined_projections(int projection)
 		    {
 			*p = '\0';
 
-			/* fudge the name a little to deal with long names */
 			names[n] = name_dup;
 			++n;
 
@@ -190,10 +188,6 @@ static GtkWidget * populate_predefined_projections(int projection)
 	}
 	
 	g_free(proj_dir);
-    }
-    else
-    {
-	printf("couldn't find proj_dir for %d\n", projection);
     }
 
     return m;
