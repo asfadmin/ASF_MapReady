@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include <glib.h>
+#include <gsl/gsl_spline.h>
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_vector.h>
 #include <jpeglib.h>
@@ -628,6 +629,27 @@ float_image_set_region (FloatImage *self, size_t x, size_t y, size_t size_x,
   self = self; x = x; y = y; size_x = size_x, size_y = size_y; buffer = buffer;
 }
 
+float
+float_image_get_pixel_with_reflection (FloatImage *self, ssize_t x, ssize_t y)
+{
+  // Reflect at image edges as advertised.
+  if ( x < 0 ) { 
+    x = -x; 
+  }
+  else if ( (size_t) x >= self->size_x ) { 
+    x = self->size_x - 2 - (x - self->size_x); 
+  }
+  if ( y < 0 ) {
+    y = -y;
+  }
+  else if ( (size_t) y >= self->size_y ) {
+    y = self->size_y - 2 - (y - self->size_y);
+  }
+
+  return float_image_get_pixel (self, x, y);
+}
+
+
 void float_image_statistics (FloatImage *self, float *min, float *max, 
 			     float *mean, float *standard_deviation)
 {
@@ -703,24 +725,107 @@ float_image_apply_kernel (FloatImage *self, ssize_t x, ssize_t y,
   size_t ii;
   for ( ii = 0 ; ii < kernel->size1 ; ii++ ) {
     ssize_t iy = y - ks / 2 + ii; // Current image y pixel index.
-    // Reflect at image edge as advertised in interface.
-    if ( iy < 0 ) { iy = -iy; }
-    if ( iy >= (ssize_t) self->size_y ) { 
-      iy = self->size_y - 2 - (iy - self->size_y); 
-    }
     size_t jj;
     for ( jj = 0 ; jj < kernel->size2 ; jj++ ) {
       ssize_t ix = x - ks / 2 + jj; // Current image x pixel index
-      if ( ix < 0 ) { ix = -ix; }
-      if ( ix >= (ssize_t) self->size_x ) { 
-	ix = self->size_x - 2 - (ix - self->size_x); 
-      }
       sum += (gsl_matrix_float_get (kernel, jj, ii) 
-	      * float_image_get_pixel (self, ix, iy));
+	      * float_image_get_pixel_with_reflection (self, ix, iy));
     }
   }
 
   return sum;
+}
+
+float
+float_image_sample (FloatImage *self, float x, float y,
+		    float_image_sample_method_t sample_method)
+{
+  g_assert (x >= 0.0 && x <= (double) self->size_x - 1.0);
+  g_assert (y >= 0.0 && y <= (double) self->size_y - 1.0);
+
+  switch ( sample_method ) {
+  case FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR:
+    return float_image_get_pixel (self, round (x), round (y));
+    break;
+  case FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR:
+    {
+      // Values of neighbor pixels.
+      float ul = float_image_get_pixel (self, floor (x), floor (y));
+      float ur = float_image_get_pixel (self, ceil (x), floor (y));
+      float ll = float_image_get_pixel (self, floor (x), ceil (y));
+      float lr = float_image_get_pixel (self, ceil (x), ceil (y));
+
+      // Upper and lower values interpolated in the x direction.
+      float ux = ul + (ur - ul) * (x - floor (x));
+      float lx = ll + (lr - ll) * (x - floor (x));
+
+      return ux + (lx - ux) * (y - floor (y));
+    }
+    break;
+  case FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC:
+    {
+      static gboolean first_time_through = TRUE;
+      // Splines in the x direction, and their lookup accelerators.
+      static double *x_indicies;
+      static double *values;
+      static gsl_spline **xss;
+      static gsl_interp_accel **xias;
+      // Spline between splines in the y direction, and lookup accelerator.
+      static double *y_spline_indicies;
+      static double *y_spline_values;
+      static gsl_spline *ys;
+      static gsl_interp_accel *yia;
+
+      // All these splines have size 4.
+      const size_t ss = 4;
+
+      size_t ii;		// Index variable.
+
+      if ( first_time_through ) {
+	// Allocate memory for the splines in the x direction.
+	x_indicies = g_new (double, ss);
+	values = g_new (double, ss);
+	xss = g_new (gsl_spline *, ss);
+	xias = g_new (gsl_interp_accel *, ss);
+	for ( ii = 0 ; ii < ss ; ii++ ) {
+	  xss[ii] = gsl_spline_alloc (gsl_interp_cspline, ss);
+	  xias[ii] = gsl_interp_accel_alloc ();
+	}
+
+	// Allocate memory for the spline in the y direction.
+	y_spline_indicies = g_new (double, ss);
+	y_spline_values = g_new (double, ss);
+	ys = gsl_spline_alloc (gsl_interp_cspline, ss);
+	yia = gsl_interp_accel_alloc ();
+	first_time_through = FALSE;
+      }
+
+      // Get the values for the nearest 16 points.
+      size_t jj;		// Index variable.
+      for ( ii = 0 ; ii < ss ; ii++ ) {
+	for ( jj = 0 ; jj < ss ; jj++ ) {
+	  x_indicies[jj] = floor (x) - 1 + jj;
+	  values[jj] 
+	    = float_image_get_pixel_with_reflection (self, x_indicies[jj],
+						     floor (y) - 1 + ii);
+	}
+	gsl_spline_init (xss[ii], x_indicies, values, ss);
+      }
+      
+      // Set up the spline that runs in the y direction.
+      for ( ii = 0 ; ii < ss ; ii++ ) {
+	y_spline_indicies[ii] = floor (y) - 1 + ii;
+	y_spline_values[ii] = gsl_spline_eval (xss[ii], x, xias[ii]);
+      }
+      gsl_spline_init (ys, y_spline_indicies, y_spline_values, ss);
+
+      return (float) gsl_spline_eval (ys, y, yia);
+    }
+    break;
+  default:
+    g_assert_not_reached ();
+    return HUGE_VALF;		// Reassure the compiler.
+  }
 }
 
 int
