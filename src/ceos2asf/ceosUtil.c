@@ -4,14 +4,13 @@
 #include "asf_endian.h"
 
 
-void linkFlag(short, char*);
-void createMeta_ceos(bin_state *s,struct dataset_sum_rec *dssr,char *inN,char *outN);
+void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inName,
+                     char *outName);
 
 /*********************************
-openCeos:
-	Open the given CEOS image, seek to
-the beginning of the file, and return a file pointer
-*/
+ * openCeos:
+ * Open the given CEOS image, seek to the beginning of the file, and return a
+ * file pointer  */
 FILE *openCeos(char *fName, char *outN, bin_state *s)
 {
 	FILE *ret=FOPEN(fName,"rb");
@@ -21,11 +20,9 @@ FILE *openCeos(char *fName, char *outN, bin_state *s)
 }
 
 /*********************************
-getNextCeosLine:
-	Reads the next entire CEOS record from
-the given file.  Returns pointer into static
-buffer.
-*/
+ * getNextCeosLine:
+ * Reads the next entire CEOS record from the given file. Returns pointer into
+ * static buffer. */
 signalType *getNextCeosLine(FILE *f, bin_state *s, char *inN, char *outN)
 {
 	static int headerLen=12,totHeaderLen=192;
@@ -46,7 +43,6 @@ signalType *getNextCeosLine(FILE *f, bin_state *s, char *inN, char *outN)
         	  writeAISPparams(s,outN,0,0,0);
         	writeAISPformat(s,outN);
 		
-		linkFlag(2,NULL);
 	        printf("   Wrote %i lines of raw signal data.\n\n",s->nLines);
 	        if (logflag) {
 	          sprintf(logbuf,"   Wrote %i lines of raw signal data.\n\n",s->nLines);
@@ -54,53 +50,9 @@ signalType *getNextCeosLine(FILE *f, bin_state *s, char *inN, char *outN)
 	          StopWatchLog(fLog);
 	        }
 		StopWatch();
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 	length=bigInt32(head.recsiz);
 	FREAD(&buffer,1,length-12,f);
 	return &buffer[totHeaderLen-headerLen];
-}
-
-/*********************************
-linkFlag:
-	Used to make & remove .L & .D links to
-	 .ldr & .raw  extensions for compatibility
-*/
-void linkFlag(short link, char *inName)
-{
-	char command[256];
-	static short L=0;
-	static short D=0;
-	static char file[256];
-	
-	if (inName != NULL)
-	{
-		strcpy(file,inName);
-	}
-	switch (link) {
-	 case 0: /*HACK: link .ldr file over to .L file-- keeps get_facdr happy*/
-		sprintf(command,"ln -s %s %s",appendExt(file,".ldr"),appendExt(file,".L"));
-		system(command);
-		L=1;
-		break;
-	 case 1: /*HACK: link .raw (or whatever) over to .D file-- keeps get_iof happy*/
-		sprintf(command,"ln -s %s %s",file,appendExt(file,".D"));
-		system(command);
-		D=1;
-		break;
-	 case 2: /* Remove ugly hack */
-		if (L)
-		{
-			sprintf(command,"rm %s",appendExt(file,".L"));
-			system(command);
-			L=0;
-		}
-		if (D)
-		{
-			sprintf(command,"rm %s",appendExt(file,".D"));
-			system(command);
-			D=0;
-		}
-		break;
-	}		
 }
