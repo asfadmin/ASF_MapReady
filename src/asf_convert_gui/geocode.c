@@ -162,6 +162,7 @@ void geocode_options_changed()
     GtkWidget * table_nonutm_projection_options;
     GtkWidget * table_utm_projection_options;
 
+    GtkWidget * utm_zone_label;
     GtkWidget * utm_zone_entry;
 
     GtkWidget * central_meridian_entry;
@@ -199,8 +200,9 @@ void geocode_options_changed()
     gboolean enable_projection_option_menu = FALSE;
     gboolean enable_predefined_projection_option_menu = FALSE;
 
-    gboolean enable_table_utm_projection_options = FALSE;
+    gboolean enable_table_utm_projection_options = TRUE;
 
+    gboolean enable_utm_zone = FALSE;
     gboolean enable_central_meridian = FALSE;
     gboolean enable_latitude_of_origin = FALSE;
     gboolean enable_first_standard_parallel = FALSE;
@@ -261,6 +263,12 @@ void geocode_options_changed()
     false_easting_entry =
 	glade_xml_get_widget(glade_xml, "false_easting_entry");
 
+    projection =
+	gtk_option_menu_get_history(GTK_OPTION_MENU(projection_option_menu));
+
+    enable_table_utm_projection_options =
+	projection == UNIVERSAL_TRANSVERSE_MERCATOR;
+
     if (geocode_projection_is_checked)
     {	
 	predefined_projection_is_selected =
@@ -269,13 +277,6 @@ void geocode_options_changed()
 
 	enable_projection_option_menu = TRUE;
 	enable_predefined_projection_option_menu = TRUE;
-
-	projection =
-	    gtk_option_menu_get_history(
-		GTK_OPTION_MENU(projection_option_menu));
-
-	enable_table_utm_projection_options =
-	    projection == UNIVERSAL_TRANSVERSE_MERCATOR;
 
 	if (predefined_projection_is_selected)
 	{
@@ -392,8 +393,7 @@ void geocode_options_changed()
 	    switch (projection)
 	    {
 		case UNIVERSAL_TRANSVERSE_MERCATOR:
-		    enable_central_meridian = TRUE;
-		    enable_latitude_of_origin = TRUE;
+		    enable_utm_zone = TRUE;
 		    break;
 		    
 		case POLAR_STEREOGRAPHIC:
@@ -468,6 +468,9 @@ void geocode_options_changed()
     gtk_widget_set_sensitive(predefined_projection_option_menu,
 			     enable_predefined_projection_option_menu);
 
+    utm_zone_label =
+	glade_xml_get_widget(glade_xml, "utm_zone_label");
+
     central_meridian_label =
 	glade_xml_get_widget(glade_xml, "central_meridian_label");
 
@@ -494,6 +497,12 @@ void geocode_options_changed()
 
     datum_hbox =
 	glade_xml_get_widget(glade_xml, "datum_hbox");
+
+    gtk_widget_set_sensitive(utm_zone_entry,
+			     enable_utm_zone);
+
+    gtk_widget_set_sensitive(utm_zone_label,
+			     enable_utm_zone);
 
     gtk_widget_set_sensitive(central_meridian_entry, 
 			     enable_central_meridian);
