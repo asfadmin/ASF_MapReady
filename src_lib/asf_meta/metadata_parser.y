@@ -107,7 +107,7 @@ MATCHED: block_stack_push(&stack_top, current_block);
 }
 
 /* Shorthand for casting and dereferenceing the symbol table value pointer.  */
-#define VALP_AS_INT *( (int *) valp)
+#define VALP_AS_INT (floor(*( (double *) valp) + 0.5))
 #define VALP_AS_DOUBLE *( (double *) valp)
 #define VALP_AS_CHAR_POINTER ( (char *) valp)
 
@@ -124,55 +124,51 @@ void fill_structure_field(char *field_name, void *valp)
    */
 
   /* Top-level fields (these normally go outside all blocks).  */
-  if ( !strcmp(field_name, "Meta version") ) {
+  if ( !strcmp(field_name, "meta_version") ) {
     MTL->meta_version = VALP_AS_DOUBLE; 
     return;
-    
   }
 
   /* Fields which normally go in the general block of the metadata file.  */
-  if ( !strcmp(field_name, "Imaging satellite") ) 
+  if ( !strcmp(field_name, "sensor") ) 
     { !strcpy(MGENERAL->sensor, VALP_AS_CHAR_POINTER); return; }
-  if ( !strcmp(field_name, "Imaging mode") ) {
+  if ( !strcmp(field_name, "mode") ) {
     strncpy(MGENERAL->mode, VALP_AS_CHAR_POINTER, MODE_FIELD_STRING_MAX); 
     return; 
   }
-  if ( !strcmp(field_name, "Name and version of processor") )
+  if ( !strcmp(field_name, "processor") )
     { strcpy(MGENERAL->processor, VALP_AS_CHAR_POINTER); return; }
-  if ( !strcmp(field_name, "Sample data type") )
+  if ( !strcmp(field_name, "data_type") )
     { strcpy(MGENERAL->data_type, VALP_AS_CHAR_POINTER); return; }
-  if ( !strcmp(field_name, "Sample system type") )
+  if ( !strcmp(field_name, "system") )
     { strcpy(MGENERAL->system, VALP_AS_CHAR_POINTER); return; }
-  if ( !strcmp(field_name, "Orbit number") )
+  if ( !strcmp(field_name, "orbit") )
     { MGENERAL->orbit = VALP_AS_INT; return; }
-  if ( !strcmp(field_name, "Frame number") )
+  if ( !strcmp(field_name, "frame") )
     { MGENERAL->frame = VALP_AS_INT; return; }
-  if ( !strcmp(field_name, "Number of lines") )
+  if ( !strcmp(field_name, "line_count") )
     { MGENERAL->line_count = VALP_AS_INT; return; }
-  if ( !strcmp(field_name, "Number of samples") )
+  if ( !strcmp(field_name, "sample_count") )
     { MGENERAL->sample_count = VALP_AS_INT; return; }
-  if ( !strcmp(field_name, "Image start line") )
+  if ( !strcmp(field_name, "start_line") )
     { MGENERAL->start_line = VALP_AS_INT; return; }
-  if ( !strcmp(field_name, "Image start sample") )
+  if ( !strcmp(field_name, "start_sample") )
     { MGENERAL->start_sample = VALP_AS_INT; return; }
-  if ( !strcmp(field_name, "Pixel size in x direction") )
+  if ( !strcmp(field_name, "x_pixel_size") )
     { MGENERAL->x_pixel_size = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Pixel size in y direction") )
+  if ( !strcmp(field_name, "y_pixel_size") )
     { MGENERAL->y_pixel_size = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Approximate image center latitude") )
+  if ( !strcmp(field_name, "center_latitude") )
     { MGENERAL->center_latitude = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Approximate image center longitude") )
+  if ( !strcmp(field_name, "center_longitude") )
     { MGENERAL->center_longitude = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Bit error rate") )
+  if ( !strcmp(field_name, "bit_error_rate") )
     { MGENERAL->bit_error_rate = VALP_AS_DOUBLE; return; }
-
-  if ( !strcmp(field_name, "Simple field") ) {
-    printf("SAW SIMPLE FIELD\n");
-    return;
-  }
+  if ( !strcmp(field_name, "missing_lines") )
+    { MGENERAL->missing_lines = VALP_AS_INT; return; }
 
   /* Fields which normally go in the sar block of the metadata file.  */
-  if ( !strcmp(field_name, "Image type [S=slant range; G=ground range; P=map projected]") ) { 
+  if ( !strcmp(field_name, "proj_type") ) { 
     if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { 
       MSAR->proj_type = 'S'; 
       return; 
@@ -188,7 +184,7 @@ void fill_structure_field(char *field_name, void *valp)
     yyerror("bad Image type field in metadata file");
     exit(EXIT_FAILURE);
   }
-  if ( !strcmp(field_name, "SAR Satellite look direction (normally R) [R=right; L=left]") ) { 
+  if ( !strcmp(field_name, "look_direction") ) { 
     if ( !strcmp(VALP_AS_CHAR_POINTER, "R") ) { 
       MSAR->look_direction = 'R'; return; 
     }
@@ -198,73 +194,77 @@ void fill_structure_field(char *field_name, void *valp)
     yyerror("bad Satellite look direction field in metadata file");
     exit(EXIT_FAILURE);
   }
-  if ( !strcmp(field_name, "Image moved to zero doppler [1=yes, 0=no]") )
-    { MSAR->deskewed = VALP_AS_INT; return; }
-  if ( !strcmp(field_name, "Time/pixel, range") )
-    { MSAR->range_time_per_pixel = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Time/pixel, azimuth") )
-    { MSAR->azimuth_time_per_pixel = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Look angle") )
+  if ( !strcmp(field_name, "look_angle") )
     { MSAR->look_angle = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Slant range to first image pixel") )
-    { MSAR->slant_range_first_pixel = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "SAR carrier wavelength") )
-    { MSAR->wavelength = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Pulse repetition frequency") )
-    { MSAR->prf = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Number of looks to take from SLC") )
+  if ( !strcmp(field_name, "look_count") )
     { MSAR->look_count = VALP_AS_INT; return; }
-  if ( !strcmp(field_name, "Range doppler centroid") )
+  if ( !strcmp(field_name, "deskewed") )
+    { MSAR->deskewed = VALP_AS_INT; return; }
+  if ( !strcmp(field_name, "range_time_per_pixel") )
+    { MSAR->range_time_per_pixel = VALP_AS_DOUBLE; return; }
+  if ( !strcmp(field_name, "azimuth_time_per_pixel") )
+    { MSAR->azimuth_time_per_pixel = VALP_AS_DOUBLE; return; }
+  if ( !strcmp(field_name, "slant_range_first_pixel") )
+    { MSAR->slant_range_first_pixel = VALP_AS_DOUBLE; return; }
+  if ( !strcmp(field_name, "slant_shift") )
+    { MSAR->slant_shift = VALP_AS_DOUBLE; return; }
+  if ( !strcmp(field_name, "time_shift") )
+    { MSAR->time_shift = VALP_AS_DOUBLE; return; }
+  if ( !strcmp(field_name, "wavelength") )
+    { MSAR->wavelength = VALP_AS_DOUBLE; return; }
+  if ( !strcmp(field_name, "prf") )
+    { MSAR->prf = VALP_AS_DOUBLE; return; }
+  if ( !strcmp(field_name, "doppler range center frequency") )
     { MSAR->range_doppler_coefficients[0] = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Range doppler per pixel") )
+  if ( !strcmp(field_name, "doppler range linear coefficient") )
     { MSAR->range_doppler_coefficients[1] = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Range doppler per pixel squared") )
+  if ( !strcmp(field_name, "doppler range quadratic coefficient") )
     { MSAR->range_doppler_coefficients[2] = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Azimuth doppler centroid") )
+  if ( !strcmp(field_name, "doppler azimuth center frequency") )
     { MSAR->azimuth_doppler_coefficients[0] = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Azimuth doppler per pixel") )
+  if ( !strcmp(field_name, "doppler azimuth linear coefficient") )
     { MSAR->azimuth_doppler_coefficients[1] = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Azimuth doppler per pixel squared") )
+  if ( !strcmp(field_name, "doppler azimuth quadratic coefficient") )
     { MSAR->azimuth_doppler_coefficients[2] = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Satellite binary time") )
+  if ( !strcmp(field_name, "satellite_binary_time") )
     { strcpy(MSAR->satellite_binary_time, VALP_AS_CHAR_POINTER); return; }
-  if ( !strcmp(field_name, "Satellite clock time (UTC)") )
+  if ( !strcmp(field_name, "satellite_clock_time") )
     { strcpy(MSAR->satellite_clock_time, VALP_AS_CHAR_POINTER); return; }
 
   /* Fields which normally go in the state block of the metadata file.  */
-  if ( !strcmp(field_name, "Year of image start") )
-    { MSTATE->year = *( (int *) valp); return; }
-  if ( !strcmp(field_name, "Julian day of the year for image start") )
-    { MSTATE->julDay = *( (int *) valp); return; }
-  if ( !strcmp(field_name, "Second of the day for image start") )
+  if ( !strcmp(field_name, "year") )
+    { MSTATE->year = VALP_AS_INT; return; }
+  if ( !strcmp(field_name, "jlDay") )
+    { MSTATE->julDay = VALP_AS_INT; return; }
+  if ( !strcmp(field_name, "second") )
     { MSTATE->second = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Number of state vector blocks") )
+  if ( !strcmp(field_name, "vector_count") )
     { /* This field is allowed but ignored, we count the number of state
          vector blocks that we actually see.  */ 
       ;
     }
 
   /* Fields which normally go in a vector block.  */
-  if ( !strcmp(field_name, "Time relative to image start") )
+  if ( !strcmp(field_name, "time") )
     { MVECTOR->time = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "X coordinate, earth-fixed") )
+  if ( !strcmp(field_name, "X coordinate, earth-fixed [m]") )
     { MVECTOR->vec.pos.x = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Y coordinate, earth-fixed") )
+  if ( !strcmp(field_name, "Y coordinate, earth-fixed [m]") )
     { MVECTOR->vec.pos.y = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Z coordinate, earth-fixed") )
+  if ( !strcmp(field_name, "Z coordinate, earth-fixed [m]") )
     { MVECTOR->vec.pos.z = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "X velocity, earth-fixed") )
+  if ( !strcmp(field_name, "X velocity, earth-fixed [m]") )
     { MVECTOR->vec.vel.x = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Y velocity, earth-fixed") )
+  if ( !strcmp(field_name, "Y velocity, earth-fixed [m]") )
     { MVECTOR->vec.vel.y = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Z velocity, earth-fixed") )
+  if ( !strcmp(field_name, "Z velocity, earth-fixed [m]") )
     { MVECTOR->vec.vel.z = VALP_AS_DOUBLE; return; }
 
   /* Code for dealing with optical and/or thermal blocks could be
      added here.  */
 
   /* Fields which normaly go in the projection block of the metadata file.  */
-  if ( !strcmp(field_name, "Projection type") ) {
+  if ( !strcmp(field_name, "type") ) {
     if ( !strcmp(VALP_AS_CHAR_POINTER, "A") ) { MPROJ->type = 'A'; return; }
     if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) { MPROJ->type = 'P'; return; }
     if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) { MPROJ->type = 'L'; return; }
@@ -272,52 +272,51 @@ void fill_structure_field(char *field_name, void *valp)
     yyerror("bad Projection type field in metadata file");
     exit(EXIT_FAILURE);
   }
-  if ( !strcmp(field_name, "Projection coordinate upper left in x") )
+  if ( !strcmp(field_name, "startX") )
     { MPROJ->startX = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Projection coordinate upper left in y") )
+  if ( !strcmp(field_name, "startY") )
     { MPROJ->startY = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Projection coordinates per pixel in x") )
+  if ( !strcmp(field_name, "perX") )
     { MPROJ->perX = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Projection coordinates per pixel in y") )
+  if ( !strcmp(field_name, "perY") )
     { MPROJ->perY = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Hemisphere code ['S'->southern; other northern]") 
-       ) {
+  if ( !strcmp(field_name, "hem") ) {
     if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { MPROJ->type = 'S'; return; }
     else { MPROJ->type = 'N'; return; }
   }
-  if ( !strcmp(field_name, "Semi-major axis length") )
+  if ( !strcmp(field_name, "re_major") )
     { MPROJ->re_major = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Semi-minor axis length") )
+  if ( !strcmp(field_name, "re_minor") )
     { MPROJ->re_minor = VALP_AS_DOUBLE; return; }
 
   /* Fields that go in the (proj->param).atct block.  */
-  if ( !strcmp(field_name, "Earth radius at scene center") )
+  if ( !strcmp(field_name, "rlocal") )
     { (*MPARAM).atct.rlocal = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Rotation angle 1") )
+  if ( !strcmp(field_name, "alpha1") )
     { (*MPARAM).atct.alpha1 = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Rotation angle 2") )
+  if ( !strcmp(field_name, "alpha2") )
     { (*MPARAM).atct.alpha2 = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Rotation angle 3") )
+  if ( !strcmp(field_name, "alpha3") )
     { (*MPARAM).atct.alpha3 = VALP_AS_DOUBLE; return; }
 
   /* Fields that go in the (proj->param).lambert block.  */
-  if ( !strcmp(field_name, "First standard parallel") )
+  if ( !strcmp(field_name, "plat1") )
     { (*MPARAM).lambert.plat1 = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Second standard parallel") )
+  if ( !strcmp(field_name, "plat2") )
     { (*MPARAM).lambert.plat2 = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Original latitude") )
+  if ( !strcmp(field_name, "lat0") )
     { (*MPARAM).lambert.lat0 = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Original longitude") )
+  if ( !strcmp(field_name, "lon0") )
     { (*MPARAM).lambert.lon0 = VALP_AS_DOUBLE; return; }
 
   /* Fields that go in the (proj->param).ps block.  */
-  if ( !strcmp(field_name, "Reference latitude") )
+  if ( !strcmp(field_name, "lat") )
     { (*MPARAM).ps.slat = VALP_AS_DOUBLE; return; }
-  if ( !strcmp(field_name, "Reference longitude") )
+  if ( !strcmp(field_name, "lon") )
     { (*MPARAM).ps.slon = VALP_AS_DOUBLE; return; }
 
 
-  if ( !strcmp(field_name, "Zone") )
+  if ( !strcmp(field_name, "zone") )
     { (*MPARAM).utm.zone = VALP_AS_INT; return; }
 
   /* Code for dealing with statistics blocks could be added here.  */
@@ -340,13 +339,11 @@ void fill_structure_field(char *field_name, void *valp)
 %start element_seq
 
 %union {			   /* Define parser stack type.  */
-  int int_val;
   double double_val;
-  char string_val[MAX_SYMBOL_STRING + 1];   /* Null terminated.  */
-  void *var_type;			    /* Pointer to other type value.  */
+  char string_val[MAX_SYMBOL_STRING + 1];   /* Null terminated so +1.  */
+  void *var_type;
 }
 
-%token <int_val> INT
 %token <double_val> DOUBLE
 %token <string_val> NAME
 %token <string_val> STRING
@@ -368,10 +365,7 @@ field:   NAME ':' field_value
 	       free($3); }
        ;
 
-field_value:   INT    { int *tmp = (int *) malloc(sizeof(int));
-                        *tmp = $1; 
-                        $$ = tmp; }
-             | DOUBLE { double *tmp = (double *) malloc(sizeof(double));
+field_value:   DOUBLE { double *tmp = (double *) malloc(sizeof(double));
             	        *tmp = $1;
 			$$ = tmp; }
              | STRING { $$ = strdup($1); }
