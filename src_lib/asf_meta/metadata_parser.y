@@ -74,8 +74,6 @@ void select_current_block(char *block_name)
 		(vector_count + 1) * sizeof(state_loc));
     current_block = &( ((meta_state_vectors *) current_block)
 		       ->vecs[vector_count++]); 
-    MSTATE->vector_count = vector_count;
-    MSTATE->num = MSTATE->vector_count;	  /* Backward compat alias.  */
     goto MATCHED; 
   }
 
@@ -234,14 +232,14 @@ void fill_structure_field(char *field_name, void *valp)
   /* Fields which normally go in the state block of the metadata file.  */
   if ( !strcmp(field_name, "year") )
     { MSTATE->year = VALP_AS_INT; return; }
-  if ( !strcmp(field_name, "jlDay") )
+  if ( !strcmp(field_name, "julDay") )
     { MSTATE->julDay = VALP_AS_INT; return; }
   if ( !strcmp(field_name, "second") )
     { MSTATE->second = VALP_AS_DOUBLE; return; }
   if ( !strcmp(field_name, "vector_count") )
     { /* This field is allowed but ignored, we count the number of state
          vector blocks that we actually see.  */ 
-      ;
+      return;
     }
 
   /* Fields which normally go in a vector block.  */
@@ -386,6 +384,8 @@ block_start:   NAME '{'
 int parse_metadata(meta_parameters *dest, char *file_name)
 {
   extern FILE *yyin;
+  int ret_val;
+
   yyin = fopen(file_name, "r");
   if ( !(stack_top = malloc(sizeof(block_stack_node))) ) {
     fprintf(stderr, "malloc failed");
@@ -393,5 +393,12 @@ int parse_metadata(meta_parameters *dest, char *file_name)
   }
   block_stack_push(&stack_top, dest);
 
-  return !yyparse();
+  /* Parse metadata file.  */
+  ret_val = yyparse();
+
+  /* Fill in number of state vectors seen.  */
+  dest->state_vectors->vector_count = vector_count;
+  dest->state_vectors->num = vector_count; /* Backward compar alias.  */
+
+  return ret_val;
 }
