@@ -133,7 +133,10 @@ if [ $sys = linux ]
 then
 	echo 'FLAGS   = $(INCLUDE) $(OPTFLAG) -D'$sys' $(ENDIAN_FLAGS) -D_LARGEFILE64_SOURCE=1' >> system_rules
 else
-	echo 'FLAGS   = $(INCLUDE) $(OPTFLAG) -D'$sys' $(ENDIAN_FLAGS)' >> system_rules
+        echo '# Flags to support large (> 2GB) files.  These must precede all' >> system_rules
+	echo '# include options.' >> system_rules
+	echo 'LARGEFILE_FLAGS = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64' >> system_rules
+	echo 'FLAGS   = $(LARGEFILE_FLAGS) $(INCLUDE) $(OPTFLAG) -D'$sys' $(ENDIAN_FLAGS)' >> system_rules
 fi
 
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
