@@ -2,10 +2,11 @@
 #ifndef __ASF_H
 #define __ASF_H
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+
 #include "caplib.h"
 #include "asf_meta.h"    /* For get_(data)_line(s) and put_(data)_line(s) */
 #include "error.h"
@@ -30,10 +31,6 @@
 # define TRUE (!FALSE)
 #endif
 
-/* The maximum allowable length in characters (not including trailing
-   null character )of result strings from the appendExt function.  */
-#define MAX_APPENDEXT_RESULT_STRING_LENGTH 255
-
 /* Print an error with printf-style formatting codes and args, then die.  */
 void bail(const char *message, ...)/* ; is coming, don't worry.  */
 /* The GNU C compiler can give us some special help if compiling with
@@ -47,12 +44,14 @@ void bail(const char *message, ...)/* ; is coming, don't worry.  */
 #endif 
 ; /* <-- Semicolon for bail prototype.  */
 
-/* These routines allow programs to be timed easily.  Call
-   StartWatch(Log) at the beginning, and then call StopWatch(Log) at
-   the end to automaticly print out some information about how much
-   CPU time the program took to standard output or to a log file.  If
-   the program takes more than 72 minutes, the reported time may be
-   totally wrong on some systems, due to clock wrap around.  */
+/*****************************************
+ * These routines allow programs to be timed easily.  Call *
+ * StartWatch(Log) at the beginning, and then call StopWatch(Log) at
+ * the end to automaticly print out some information about how much
+ * CPU time the program took to standard output or to a log file.  If
+ * the program takes more than 72 minutes, the reported time may be
+ * totally wrong on some systems, due to clock wrap around.  */
+
 void StartWatch(void);
 void StopWatch(void);
 void StartWatchLog(FILE *fLog);
@@ -61,20 +60,40 @@ void StopWatchLog(FILE *fLog);
 /*****************************************
  * FileUtil:
  * A collection of file I/O utilities. Implemented in asf.a/fileUtil.c */
-int extExists(const char *name,const char *newExt);
-int fileExists(const char *name);
+
+/* Return a pointer to the rightmost dot extension, including the dot,
+   in name, or NULL if no extension is found.  */
 char *findExt(char *name);
+/* The maximum allowable length in characters (not including trailing
+   null character) of result strings from the appendExt function.  */
+#define MAX_APPENDEXT_RESULT_STRING_LENGTH 255
+/* This function is badly misnamed.  What it actuall does: First, if
+   newExt is NULL (not an empty string, but a NULL pointer, returna
+   new copy of name.  Otherwise, return in new memory a string
+   consisting of a copy of name with the rightmost dot extension, if
+   present, replaced with newExt.  If no dot extension exists
+   originally, the new extension is appended.  */
 char *appendExt(const char *name,const char *newExt);
+/* Ruturn true iff file name exists and is readable.  */
+int fileExists(const char *name);
+/* Return true iff fileExists(appendExt(name, newExt)) would return
+   true, but without the memory leak fileExists(appendExt(name,
+   newExt)) would produce. */
+int extExists(const char *name,const char *newExt);
+/* Creates name out by clipping off the rightmost dot extension, if
+   any, of in, and then appending newExt.  out must point to existing
+   memory large enough to store the result.  */
 void create_name(char *out,const char *in,const char *newExt);
+
 FILE *fopenImage(const char *name,const char *accessType);
 
-/* Size of line chunk to read or write */
+/* Size of line chunk to read or write.  */
 #define CHUNK_OF_LINES 256
 
 /*****************************************
- * ioLine:
- * Grab  any data type and fill a buffer of _type_ data. Puts data in
- * correct endian order. Implemented in asf.a/ioLine.c */
+ * ioLine: Grab any data type and fill a buffer of _type_ data.
+ * Assumes that the datae file contains data in big endian order and
+ * returns data in host byte order. Implemented in asf.a/ioLine.c */
 int get_float_line(FILE *file, meta_parameters *meta, int line_number,
 		float *dest);
 int get_float_lines(FILE *file, meta_parameters *meta, int line_number,
