@@ -39,7 +39,7 @@ I   SAR.dat (or .D)   SAR data file
 N   SAR.ldr (or .L)   SAR leader file
 P   SAR.trl (or .L)   SAR trailer file
 U   DEM.img           SUN LAS format DEM image
-T   DEM.ddr           SUN LAS format data descriptor record for DEM
+T   DEM.meta           SUN LAS format data descriptor record for DEM
 S   
   
 T   cSAR.dat (or .D)  Calibrated SAR image
@@ -47,15 +47,15 @@ M   sSAR.img          Simulated SAR image
 P   rSAR<form>.img    Radiometric Terrain Corection factors
  
     pSAR.img          Preprocessed SAR
-O   pSAR.ddr          Preprocessed SAR
+O   pSAR.meta          Preprocessed SAR
 U   SAR_mask.img          Mask Value Image
-T   SAR_mask.ddr
+T   SAR_mask.meta
 P   SAR_cor.img       Terrain Corrected Image
-U   SAR_cor.ddr
+U   SAR_cor.meta
 T   SAR_cor<form>.img Radiometrically Terrain Corrected Image
-S   SAR_cor<form>.ddr
+S   SAR_cor<form>.meta
     fsSAR.img         Filtered Simulated SAR image
-    fsSAR.ddr         Filtered Simulated SAR image
+    fsSAR.meta         Filtered Simulated SAR image
  
 PROGRAM HISTORY:
     VERS:   DATE:    AUTHOR:    PURPOSE:
@@ -170,7 +170,7 @@ int main(argc, argv)
 char cmd[255], temp[255], SAR[255], SARtrl[255], DEM[255],
      cSAR[255], pSAR[255], mSAR[255], rSAR[255],
      SIM[255], fSIM[255], COR[255], rCOR[255];
-char *DDr=".ddr", *IMG=".img";
+char *DDr=".meta", *IMG=".img";
  
 /*char    ascdesc;                 Ascending/Descending pass flag            */
 float   pixsiz;                 /* Processing pixel size in meters           */
@@ -247,7 +247,7 @@ if (error)
    printf("   SAR         input SAR file, must be an original ASF \n");
    printf("               groundstation LOW or FULL-RES image set\n");
    printf("   DEM         input DEM file of SAR area of coverage, in LAS 6\n");
-   printf("               .img format.  The .ddr metadata file is used also\n");
+   printf("               .img format.  The .meta metadata file is used also\n");
    printf("\n");
    printf(" The options accepted are:\n\n");
    printf("   -c          Clip the DEM file to the area of the SAR image\n");
@@ -321,7 +321,7 @@ printf("Preprocessing the SAR image\n");
     else if (facdr.rapixspc == pixsiz)
       {
 	sprintf(cmd,"mv %s.img %s.img\n",cSAR,pSAR); execute(cmd);	
-	sprintf(cmd,"mv %s.ddr %s.ddr\n",cSAR,pSAR); execute(cmd);	
+	sprintf(cmd,"mv %s.meta %s.meta\n",cSAR,pSAR); execute(cmd);	
       }
     else
       {

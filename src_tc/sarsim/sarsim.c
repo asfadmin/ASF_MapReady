@@ -47,7 +47,7 @@ FILE REFERENCES:
     NAME:                USAGE:
     ---------------------------------------------------------------
     inSARfile.L(ldr/trl) SAR metadata records
-    inDEMfile.ddr        DEM metadata records
+    inDEMfile.meta       DEM metadata records
     inDEMfile.img        Input DEM data file 
     outSIMfile.img       Output simulated SAR image
  
@@ -458,8 +458,8 @@ PHS {
    fwrite(phsbuf,sizeof(float),nl*ns,phs_fp);
    fclose(phs_fp);
 
-   strcat(strcpy(tempfile,argv[3]),"_phs.ddr");
-   strcat(strcpy(tmp2file,argv[1]),".ddr");
+   strcat(strcpy(tempfile,argv[3]),"_phs.meta");
+   strcat(strcpy(tmp2file,argv[1]),".meta");
    sprintf(cmd,"cp %s %s\n",tmp2file,tempfile);
    if (system(cmd) != 0)
     { printf("Failure copying metadata: Program Exited\n\n"); exit(1); }
@@ -468,15 +468,15 @@ PHS {
 
 /* Copy image metadata for output files
  -------------------------------------*/
-strcat(strcpy(tempfile,argv[3]),".ddr");
-strcat(strcpy(tmp2file,argv[1]),".ddr");
+strcat(strcpy(tempfile,argv[3]),".meta");
+strcat(strcpy(tmp2file,argv[1]),".meta");
 sprintf(cmd,"cp %s %s\n",tmp2file,tempfile);
 if (system(cmd) != 0)
   { printf("Failure copying metadata: Program Exited\n\n"); exit(1); }
 
 MSK {
-   strcat(strcpy(tempfile,argv[1]),"_mask.ddr");
-   strcat(strcpy(tmp2file,argv[2]),".ddr");
+   strcat(strcpy(tempfile,argv[1]),"_mask.meta");
+   strcat(strcpy(tmp2file,argv[2]),".meta");
    sprintf(cmd,"cp %s %s\n",tmp2file,tempfile);
    if (system(cmd) != 0)
      { printf("Failure copying metadata: Program Exited\n\n"); exit(1); }
@@ -484,8 +484,8 @@ MSK {
  }
 
 RTC {
-   strcat(strcpy(tempfile,argv[3]),"_rtc.ddr");
-   strcat(strcpy(tmp2file,argv[2]),".ddr");
+   strcat(strcpy(tempfile,argv[3]),"_rtc.meta");
+   strcat(strcpy(tmp2file,argv[2]),".meta");
    sprintf(cmd,"cp %s %s\n",tmp2file,tempfile);
    if (system(cmd) != 0)
      { printf("Failure copying metadata: Program Exited\n\n"); exit(1); }

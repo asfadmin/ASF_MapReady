@@ -169,8 +169,8 @@ if (argc != 3)
  }
 strcat(strcpy(infile,argv[1]),".img");
 strcat(strcpy(outfile,argv[2]),".img");
-strcat(strcpy(inddr,argv[1]),".ddr");
-strcat(strcpy(outddr,argv[2]),".ddr");
+strcat(strcpy(inddr,argv[1]),".meta");
+strcat(strcpy(outddr,argv[2]),".meta");
 i = c_getddr(argv[1], &ddr);
 if (i != 0) { printf("Unable to get ddr for file %s\n",infile); exit(1); }
 nl = ddr.nl;
