@@ -11,6 +11,75 @@
 #include <sys/wait.h>
 #include <time.h>
 
+static gboolean confirm_overwrite()
+{
+    GtkTreeIter iter;
+    gboolean valid;
+    gboolean exist = FALSE;
+    gboolean settings_different = TRUE;
+
+    Settings * user_settings;
+
+    user_settings = settings_get_from_gui();
+    if (settings_on_execute)
+    {
+        settings_different = !settings_equal(user_settings, settings_on_execute);
+    }
+
+    printf("%s!\n", settings_different ? "Different" : "Same");    
+    valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+
+    while (valid)
+    {
+        gchar *output_file;
+        gchar *status;
+        gboolean done;
+    
+        gtk_tree_model_get (GTK_TREE_MODEL(list_store), &iter,
+                            1, &output_file, 2, &status, -1);
+
+        done = strcmp("Done", status) == 0;
+    
+        if ((settings_different || !done) &&
+             g_file_test(output_file, G_FILE_TEST_EXISTS))
+            exist = TRUE;
+
+        g_free(output_file);
+        g_free(status);
+
+        if (exist)
+            break;
+                
+        valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+    }
+
+    if (exist)
+    {
+        GtkWidget * dialog_confirm_overwrite;
+        gint result;
+        
+        dialog_confirm_overwrite =
+                glade_xml_get_widget(glade_xml, "dialog_confirm_overwrite");
+        
+        result = gtk_dialog_run( GTK_DIALOG(dialog_confirm_overwrite) );
+        gtk_widget_hide( dialog_confirm_overwrite );
+        
+        switch (result)
+        {
+            default:
+                return FALSE;
+
+            case GTK_RESPONSE_OK:
+                return TRUE;
+        }
+    }
+    else
+    {
+        /* no need to confirm -- no overwrites */
+        return TRUE;
+    }
+}
+    
 gchar *
 do_cmd(gchar *cmd, gchar *log_file_name)
 {
@@ -378,53 +447,56 @@ process_item(GtkTreeIter *iter,
 SIGNAL_CALLBACK void
 on_execute_button_clicked (GtkWidget *button)
 {
-  GtkTreeIter iter;
-  gboolean valid;
-  Settings * user_settings;
+    GtkTreeIter iter;
+    gboolean valid;
+    Settings * user_settings;
 
-  /* gui should prevent this from happening */
-  if (processing)
-    return;
+    /* gui should prevent this from happening */
+    if (processing)
+        return;
 
-  user_settings = settings_get_from_gui();
-
-  if (settings_on_execute &&
-      !settings_equal(user_settings, settings_on_execute))
-  {
-    /* settings have changed since last time clicked execute,
-       or loaded settings from a file - must clear progress so far */
-    invalidate_progress();
-  }
-
-  settings_on_execute = settings_copy(user_settings);
-
-  show_execute_button(FALSE);
-  valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
-  keep_going = TRUE;  
-  processing = TRUE;
-
-  while (valid && keep_going)
-  {
-    process_item(&iter, user_settings);
-
-    while (gtk_events_pending())
-      gtk_main_iteration();
-
-    if (!keep_going)
+    if (confirm_overwrite())
     {
-      append_output("Processing stopped by user.");
+        user_settings = settings_get_from_gui();
+
+        if (settings_on_execute &&
+            !settings_equal(user_settings, settings_on_execute))
+        {
+            /* settings have changed since last time clicked execute,
+            or loaded settings from a file - must clear progress so far */
+            invalidate_progress();
+        }
+
+        settings_on_execute = settings_copy(user_settings);
+
+        show_execute_button(FALSE);
+        valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+        keep_going = TRUE;
+        processing = TRUE;
+
+        while (valid && keep_going)
+        {
+            process_item(&iter, user_settings);
+
+            while (gtk_events_pending())
+                gtk_main_iteration();
+
+            if (!keep_going)
+            {
+                append_output("Processing stopped by user.");
       /*
-      gtk_list_store_set(list_store, &iter,
-             2, "Processing stopped by user.", -1);
+                gtk_list_store_set(list_store, &iter,
+                2, "Processing stopped by user.", -1);
       */
+            }
+
+            valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+        }
+
+        processing = FALSE;
+        g_free(user_settings);
+        show_execute_button(TRUE);
     }
-
-    valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
-  }
-
-  processing = FALSE;
-  g_free(user_settings);
-  show_execute_button(TRUE);
 }
 
 SIGNAL_CALLBACK void

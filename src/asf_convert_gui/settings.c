@@ -270,20 +270,40 @@ settings_get_input_data_format_string(Settings *s)
   return format_arg_to_import;
 }
 
+static void settings_print(Settings *s)
+{
+    printf("(%d,%d,%d,%s,%s)\n",
+           s->input_data_format,
+           s->data_type,
+           s->output_format,
+           settings_get_latitude_argument(s),
+           settings_get_size_argument(s));
+}
+    
 int
 settings_equal(Settings *s1, Settings *s2)
 {
+  gboolean equal = FALSE;
+  
   assert(s1);
   assert(s2);
 
-  return
+  /*settings_print(s1);*/
+  /*settings_print(s2);*/
+
+  equal =
     s1->input_data_format == s2->input_data_format &&
     s1->data_type == s2->data_type &&
-    s1->latitude_low == s2->latitude_low &&
-    s1->latitude_hi == s2->latitude_hi &&
+    0 == strcmp(
+        settings_get_latitude_argument(s1),
+        settings_get_latitude_argument(s2)) &&
     s1->output_format == s2->output_format &&
-    s1->apply_scaling == s2->apply_scaling &&
-    s1->longest_dimension == s2->longest_dimension;
+    0 == strcmp(
+        settings_get_size_argument(s1),
+        settings_get_size_argument(s2));
+
+  /*printf("Equal = %s\n", equal ? "yes" : "no");*/
+  return equal;
 }
 
 Settings *

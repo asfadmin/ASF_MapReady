@@ -51,6 +51,40 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
   return FALSE;
 }
 
+static gboolean confirm_overwrite(GtkTreeIter * iter)
+{
+    gchar *output_file;
+    gboolean ret = TRUE;
+
+    gtk_tree_model_get (GTK_TREE_MODEL(list_store), iter,
+                        1, &output_file, -1);
+
+    if (g_file_test(output_file, G_FILE_TEST_EXISTS))
+    {
+        GtkWidget * dialog_confirm_overwrite;
+        gint result;
+        
+        dialog_confirm_overwrite =
+                glade_xml_get_widget(glade_xml, "dialog_confirm_overwrite");
+        
+        result = gtk_dialog_run( GTK_DIALOG(dialog_confirm_overwrite) );
+        gtk_widget_hide( dialog_confirm_overwrite );
+        
+        switch (result)
+        {
+            case GTK_RESPONSE_OK:
+                break;
+            default:
+                ret = FALSE;
+                break;
+        }
+    }
+
+    g_free(output_file);
+
+    return ret;
+}
+
 SIGNAL_CALLBACK gint
 popup_menu_remove(GtkWidget *widget, GdkEvent *event)
 {
@@ -92,10 +126,13 @@ popup_menu_process(GtkWidget *widget, GdkEvent *event)
   selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
   if (gtk_tree_selection_get_selected(selection, &model, &iter))
   {
-    gtk_list_store_set(list_store, &iter, 2, "Reprocessing...", -1);
-    show_execute_button(FALSE);
-    process_item(&iter, user_settings);
-    show_execute_button(TRUE);
+      if (confirm_overwrite(&iter))
+      {  
+        gtk_list_store_set(list_store, &iter, 2, "Reprocessing...", -1);
+        show_execute_button(FALSE);
+        process_item(&iter, user_settings);
+        show_execute_button(TRUE);
+      }
   }
 
   processing = FALSE;

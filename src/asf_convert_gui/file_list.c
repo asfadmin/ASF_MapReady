@@ -89,11 +89,11 @@ update_all_extensions()
       basename = g_strdup(current_output_name);
       p = strrchr(basename, '.');
       if (p)
-    *p = '\0';
+        *p = '\0';
       
       new_output_name = 
-    (gchar *) g_malloc(sizeof(gchar) * (strlen(basename) + 
-                        strlen(ext) + 1));
+        (gchar *) g_malloc(sizeof(gchar) * (strlen(basename) +
+                        strlen(ext) + 2));
 
       g_sprintf(new_output_name, "%s.%s", basename, ext);
 
