@@ -95,21 +95,21 @@ START_TEST(test_stat_read)
 	fail_unless( UNIT_TESTS_FLOAT_COMPARE(stats.offset, -0.0091350712219),
 		err_msg);
 	sprintf(err_msg,
-		"test_stat_read: stats.upper_right_line = %d, should be 40\n",
-		stats.upper_right_line);
-	fail_unless( stats.upper_right_line == 40,err_msg);
+		"test_stat_read: stats.upper_left_line = %d, should be 40\n",
+		stats.upper_left_line);
+	fail_unless( stats.upper_left_line == 40,err_msg);
 	sprintf(err_msg,
-		"test_stat_read: stats.upper_right_samp = %d, should be 600\n",
-		stats.upper_right_samp);
-	fail_unless( stats.upper_right_samp == 600,err_msg);
+		"test_stat_read: stats.upper_left_samp = %d, should be 600\n",
+		stats.upper_left_samp);
+	fail_unless( stats.upper_left_samp == 600,err_msg);
 	sprintf(err_msg,
-		"test_stat_read: stats.lower_left_line = %d, should be 2440\n",
-		stats.lower_left_line);
-	fail_unless( stats.lower_left_line == 2440,err_msg);
+		"test_stat_read: stats.lower_right_line = %d, should be 2440\n",
+		stats.lower_right_line);
+	fail_unless( stats.lower_right_line == 2440,err_msg);
 	sprintf(err_msg,
-		"test_stat_read: stats.lower_left_samp = %d, should be 1000\n",
-		stats.lower_left_samp);
-	fail_unless( stats.lower_left_samp == 1000,err_msg);
+		"test_stat_read: stats.lower_right_samp = %d, should be 1000\n",
+		stats.lower_right_samp);
+	fail_unless( stats.lower_right_samp == 1000,err_msg);
 
 /* Check several spots in the histogram to make sure its cool */
 	sprintf(err_msg,
@@ -176,10 +176,10 @@ START_TEST(test_stat_write)
 	stats.mask = NAN;
 	stats.slope = 0.0091350712219;
 	stats.offset = -0.0091350712219;
-	stats.upper_right_line = 40;
-	stats.upper_right_samp = 600;
-	stats.lower_left_line = 2440;
-	stats.lower_left_samp = 1000;
+	stats.upper_left_line = 40;
+	stats.upper_left_samp = 600;
+	stats.lower_right_line = 2440;
+	stats.lower_right_samp = 1000;
 	for (ii=0; ii<256; ii++) stats.histogram[ii] = hist[ii];
 
 	stat_write (&stats,"temp.stat");
@@ -221,21 +221,21 @@ START_TEST(test_stat_write)
 	fail_unless( UNIT_TESTS_FLOAT_COMPARE(stats.offset, -0.0091350712219),
 		err_msg);
 	sprintf(err_msg,
-		"test_stat_write: stats.upper_right_line = %d, should be 40\n",
-		stats.upper_right_line);
-	fail_unless( stats.upper_right_line == 40,err_msg);
+		"test_stat_write: stats.upper_left_line = %d, should be 40\n",
+		stats.upper_left_line);
+	fail_unless( stats.upper_left_line == 40,err_msg);
 	sprintf(err_msg,
-		"test_stat_write: stats.upper_right_samp = %d, should be 600\n",
-		stats.upper_right_samp);
-	fail_unless( stats.upper_right_samp == 600,err_msg);
+		"test_stat_write: stats.upper_left_samp = %d, should be 600\n",
+		stats.upper_left_samp);
+	fail_unless( stats.upper_left_samp == 600,err_msg);
 	sprintf(err_msg,
-		"test_stat_write: stats.lower_left_line = %d, should be 2440\n",
-		stats.lower_left_line);
-	fail_unless( stats.lower_left_line == 2440,err_msg);
+		"test_stat_write: stats.lower_right_line = %d, should be 2440\n",
+		stats.lower_right_line);
+	fail_unless( stats.lower_right_line == 2440,err_msg);
 	sprintf(err_msg,
-		"test_stat_write: stats.lower_left_samp = %d, should be 1000\n",
-		stats.lower_left_samp);
-	fail_unless( stats.lower_left_samp == 1000,err_msg);
+		"test_stat_write: stats.lower_right_samp = %d, should be 1000\n",
+		stats.lower_right_samp);
+	fail_unless( stats.lower_right_samp == 1000,err_msg);
 
 /* Check several spots in the histogram to make sure its cool */
 	sprintf(err_msg,

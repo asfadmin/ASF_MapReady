@@ -9,10 +9,10 @@ typedef struct {
   double std_deviation;  /* Standard deviation                                */
   double mask;           /* Value ignored while taking statistics             */
   double slope, offset;  /* Slope and offset of line fitting data to [0..255] */
-  int upper_right_line;  /* Upper right y coordinate of the area in question  */
-  int upper_right_samp;  /* Upper right x coordinate of the area in question  */
-  int lower_left_line;   /* Lower left y coordinate of the area in question   */
-  int lower_left_samp;   /* Lower left x coordinate of the area in question   */
+  int upper_left_line;   /* Upper left y coordinate of the area in question   */
+  int upper_left_samp;   /* Upper left x coordinate of the area in question   */
+  int lower_right_line;  /* Lower right y coordinate of the area in question  */
+  int lower_right_samp;  /* Lower right x coordinate of the area in question  */
   int histogram[256];    /* Histogram of data fit to [0..255]                 */
 } stat_parameters;  
 

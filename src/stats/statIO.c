@@ -44,10 +44,10 @@ void stat_read(stat_parameters *stats, const char *file_name)
 	stats->mask = get_double(stat_file);
 	stats->slope = get_double(stat_file);
 	stats->offset = get_double(stat_file);
-	stats->upper_right_line = get_int(stat_file);
-	stats->upper_right_samp = get_int(stat_file);
-	stats->lower_left_line = get_int(stat_file);
-	stats->lower_left_samp = get_int(stat_file);
+	stats->upper_left_line = get_int(stat_file);
+	stats->upper_left_samp = get_int(stat_file);
+	stats->lower_right_line = get_int(stat_file);
+	stats->lower_right_samp = get_int(stat_file);
 
 /* get histogram */
 	ii=0;
@@ -92,17 +92,17 @@ void stat_write(stat_parameters *stats, const char *file_name)
 		"%-16.11g\t# Offset of line fitting data to [0..255]\n",
 		stats->offset);
 	fprintf(stat_file,
-		"%-16d\t# Upper right line of the window statistics were taken in\n",
-		stats->upper_right_line);
+		"%-16d\t# Upper left line of the window statistics were taken in\n",
+		stats->upper_left_line);
 	fprintf(stat_file,
-		"%-16d\t# Upper right sample of the window statistics were taken in\n",
-		stats->upper_right_samp);
+		"%-16d\t# Upper left sample of the window statistics were taken in\n",
+		stats->upper_left_samp);
 	fprintf(stat_file,
-		"%-16d\t# Lower left line of the window statistics were taken in\n",
-		stats->lower_left_line);
+		"%-16d\t# Lower right line of the window statistics were taken in\n",
+		stats->lower_right_line);
 	fprintf(stat_file,
-		"%-16d\t# Lower left sample of the window statistics were taken in\n",
-		stats->lower_left_samp);
+		"%-16d\t# Lower right sample of the window statistics were taken in\n",
+		stats->lower_right_samp);
 	fprintf(stat_file,"\n");
 
 	/* Write out histogram */

@@ -263,15 +263,15 @@ int main(int argc, char **argv)
 	if ((start_line!=0) || (start_sample!=0)
 	    || (window_height!=num_lines) || (window_width!=num_samples)) {
 	    	if (!quietflag) {
-		  printf("Taking statistics on a window with upper right corner (%d,%d)\n"
-			"  and lower left corner (%d,%d)\n",
+		  printf("Taking statistics on a window with upper left corner (%d,%d)\n"
+			"  and lower right corner (%d,%d)\n",
 			start_sample, start_line,
 			window_width+start_sample, window_height+start_line);
 		}
 		if (logflag && !quietflag) {
 		  fprintf(fLog,
-		  	"Taking statistics on a window with upper right corner (%d,%d)\n"
-			"  and lower left corner (%d,%d)\n",
+		  	"Taking statistics on a window with upper left corner (%d,%d)\n"
+			"  and lower right corner (%d,%d)\n",
 			start_sample, start_line,
 			window_width+start_sample, window_height+start_line);
 		}
@@ -364,10 +364,10 @@ int main(int argc, char **argv)
 	stats.mask = mask;
 	stats.slope = slope;
 	stats.offset = offset;
-	stats.upper_right_line = start_line;
-	stats.upper_right_samp = start_sample;
-	stats.lower_left_line = start_line + window_height;
-	stats.lower_left_samp = start_sample + window_width;
+	stats.upper_left_line = start_line;
+	stats.upper_left_samp = start_sample;
+	stats.lower_right_line = start_line + window_height;
+	stats.lower_right_samp = start_sample + window_width;
 
 /* Populate meta->stats structure */
 	if (!meta->stats)
