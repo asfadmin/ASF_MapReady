@@ -22,6 +22,11 @@ void meta_get_orig_img_dimensions(meta_parameters *meta, long *lines, long *samp
 }
 
 /*Interferometry calls:*/
+
+/***********************************************************************
+ * meta_get_sat_height:
+ * Return the satellite height (in meters) from the center of the earth
+ * at a specific line & sample of the image */
 double meta_get_sat_height(meta_parameters *meta, long line, long sample)
 {
 	double ht, time;
@@ -34,13 +39,21 @@ double meta_get_sat_height(meta_parameters *meta, long line, long sample)
 	return ht;
 }
 
+/******************************************
+ * meta_get_earth_radius:
+ * Return the earth radius (in meters) at a
+ * specific line & sample of the image */
 double meta_get_earth_radius(meta_parameters *meta, long line, long sample)
 {
 	double re, rp, lat, ht, er, time;
 	stateVector stVec;
 
+/* If re & rp are not NAN then set it to meta values, otherwise default to WGS84 */
 	re = meta->general->re_major;
+	re = (re==re) ? re : 6378137.0;
 	rp = meta->general->re_minor;
+	rp = (rp==rp) ? rp : 6356752.31414;
+/* Actual algorithm */
 	time = meta_get_time(meta, line, sample);
         stVec = meta_get_stVec(meta, time);
         ht = sqrt(stVec.pos.x*stVec.pos.x+stVec.pos.y*stVec.pos.y+stVec.pos.z*stVec.pos.z);
