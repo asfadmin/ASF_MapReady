@@ -83,7 +83,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     int i;
     for ( i = 0 ; i < meta->state_vectors->vector_count ; i++ ) {
       fprintf(fp, "    vector {\n");
-      fprintf(fp, "        time: %f\n", 
+      fprintf(fp, "        time: %f  # From start of image\n", 
 	      meta->state_vectors->vecs[i].time);
       fprintf(fp, "        X coordinate, earth-fixed [m]: %f\n", 
 	      meta->state_vectors->vecs[i].vec.pos.x);
