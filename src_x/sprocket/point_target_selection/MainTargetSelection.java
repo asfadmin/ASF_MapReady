@@ -28,7 +28,7 @@ public class MainTargetSelection
 	   Frame f = new Frame();
 
            SelectArea sa = new SelectArea ("Area Selection", f);
-           sa.resize(200,300);
+           sa.setSize(200,300);
            sa.setLocation(200,200);
            sa.show();
 	   Area area = sa.getSelectedItem();
@@ -53,7 +53,7 @@ public class MainTargetSelection
 
            SelectTargets foo = new SelectTargets("foo!", m, 
 		args[0]+Constants.ground_target_file);
-           foo.resize(400,400);
+           foo.setSize(400,400);
            foo.setLocation(200,200);
            foo.show();
 	 }
