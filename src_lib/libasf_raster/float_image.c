@@ -87,6 +87,8 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
     return self;
   }
 
+  // The default cache size compiled into the class.
+  self->cache_space = default_cache_size;
 
   // Memory cache space, in pixels.
   g_assert (self->cache_space % sizeof (float) == 0);
@@ -901,6 +903,10 @@ tile_is_loaded (FloatImage *self, ssize_t x, ssize_t y)
 static float *
 load_tile (FloatImage *self, ssize_t x, ssize_t y)
 {
+  // Make sure we haven't screwed up somehow and not created a tile
+  // file when in fact we should have.
+  g_assert (self->tile_file != NULL);
+
   g_assert (!tile_is_loaded (self, x, y));
 
   // Address into which tile gets loaded (to be returned).
@@ -1541,14 +1547,22 @@ float_image_set_cache_size (FloatImage *self, size_t size)
 void
 float_image_free (FloatImage *self)
 {
-  // Close the tile file (which should remove it since its already
-  // unlinked).
-  int return_code = fclose (self->tile_file);
-  g_assert (return_code == 0);
+  // Close the tile file (which shouldn't have to remove it since its
+  // already unlinked), if we were ever using it.
+  if ( self->tile_file != NULL ) {
+    int return_code = fclose (self->tile_file);
+    g_assert (return_code == 0);
+  }
 
   // Deallocate dynamic memory.
+
   g_free (self->tile_addresses);
-  g_queue_free (self->tile_queue);
+
+  // If we didn't need a tile file, we also won't have a tile queue.
+  if ( self->tile_queue != NULL ) {
+    g_queue_free (self->tile_queue);
+  }
+
   g_free (self->cache);
 
   g_free (self);
