@@ -1,8 +1,9 @@
-/****************************************************************************
-*								            *
-*   acpatch.c - Performs Azimuth Compression on a Patch of data.            *
-* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
-* All rights reserved.                                                        *
+/******************************************************************************
+*								              *
+*   acpatch.c - Performs Azimuth Compression on a Patch of data.              *
+*  Parts of this code are Copyright Howard Zebker at Stanford University      *
+*  Modifications are Copyright Geophysical Institute, University of Alaska    *
+*  Fairbanks. All rights reserved.                                            *
 *                                                                             *
 * You should have received an ASF SOFTWARE License Agreement with this source *
 * code. Please consult this agreement for license grant information.          *
@@ -17,6 +18,7 @@
 *	Fairbanks, AK 99775-7320					      *
 *									      *
 ******************************************************************************/
+
 /***************************************************************************
 FUNCTION NAME: acpatch - Performs azimuth compression of a CCSD patch
 

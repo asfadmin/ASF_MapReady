@@ -1,8 +1,9 @@
 /****************************************************************************
 *								            *
 *   cfft1d_risc.c -- FFT routine that calls asf_fft.a routines         	    *
-* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
-* All rights reserved.                                                        *
+*  Parts of this code are Copyright Howard Zebker at Stanford University      *
+*  Modifications are Copyright Geophysical Institute, University of Alaska    *
+*  Fairbanks. All rights reserved.                                            *
 *                                                                             *
 * You should have received an ASF SOFTWARE License Agreement with this source *
 * code. Please consult this agreement for license grant information.          *
