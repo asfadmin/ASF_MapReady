@@ -39,9 +39,9 @@ PROGRAM HISTORY:
 
 #include "asf.h"
 #include "datum.h"
+#include "datum_table.h"
+#include "spheroid_table.h"
 
-
-#define MINDTM 99
 #define E_SUCC 0
 #define E_FAIL -1
 #define TRUE 1
@@ -53,163 +53,84 @@ int c_getdatum
     struct DATUMDEF *dtm_info		/* Datum code */
 )
 {
-FILE *file_ptr;         	/* Pointer to current table */
-long dtm_num = -1;		/* Datum code */
-long found = FALSE;		/* Flag set if line contains correct code */
-long dtmflag = FALSE;		/* Flag set if datum code represents datum */
-/*long pass = E_SUCC;*/  	/* Non-fatal code for errmsg routine */
-long i = 0;			/* increment for loop */
-long numb = -1;			/* Number retrieved form table */
+    long datum_num = -1;            /* Datum code */
+    long sphere_num = -1;           /* Spheroid code */
+    long dtmflag = FALSE;           /* Flag set if datum code represents datum */
+    double flat = 0.0;              /* Flattening of the spheroid */
 
-char *temp;			/* temporary storage of line in table */
-/*char *table_ptr;*/		/* Location of the LASTABLES */
-char line[BUFSIZ];		/* Line scanned in from datum table */
-char *dtmary[11] = {0};		/* Array of dtm_num fields */
-char *spherary[4] = {0};	/* Array of spher fields */
-/*char dtmfile[BUFSIZ];*/          	/* Pointer to datum table */
-/*char spherfile[BUFSIZ];*/		/* Pointer to spheroid table */
+    datum_num = dtm_info->datumnum;
 
-double flat = 0.0;              /* Flattening of the spheroid */
+    /* Check for a valid datum code
+      ----------------------------*/
+    if(datum_num < 0) {
+       printf("\nDatum value below valid range\n");
+       return(E_FAIL);
+    }
+    else if(datum_num > MAX_DTM) {
+       printf("\nDatum value above valid range\n");
+       return(E_FAIL);
+    }
+    else if(datum_num > MIN_DTM)
+       dtmflag = TRUE;
 
-dtm_num = dtm_info->datumnum;
-
-/* Check for a valid datum code
-  ----------------------------*/
-if(dtm_num < 0)
-   {
-   printf("\nDatum value out of valid range\n");
-   return(E_FAIL);
-   }
-else if(dtm_num > MINDTM)
-   dtmflag = TRUE;
-
-/* Get the directory of the tables
-  ------------------------------*/
-
-
-/*********************************************************
-*****Took this part out so it is no so LAS dependent****
-**********************************************************
-table_ptr = getenv("LASTABLES");
-if (table_ptr == NULL)
-   {
-   printf("Global variable LASTABLES not defined\n");
-   return(E_FAIL);
-   } 
-
-* Add the file names
-  ------------------ *
-sprintf(dtmfile,"%s/datum.txt",table_ptr);
-sprintf(spherfile,"%s/spheroid.txt",table_ptr); 
-****************************************************************
-********moved these two files into the program directory********
-************************JUST OPEN******************************/
-/* /3dsar/swatts/mytools/src/las2geotiff/ */
+    /* If datum is present, retrieve information from datum table
+      ----------------------------------------------------------*/
+    if (dtmflag && ((datum_num-100)>=0)) {
+        strcpy(dtm_info->datumname, datum_table[datum_num-100].datumname);
+        strcpy(dtm_info->area,      datum_table[datum_num-100].area);
+        strcpy(dtm_info->category,  datum_table[datum_num-100].category);
+        dtm_info->spherenum = datum_table[datum_num-100].spherenum;
+        dtm_info->xshift    = datum_table[datum_num-100].xshift;
+        dtm_info->yshift    = datum_table[datum_num-100].yshift;
+        dtm_info->zshift    = datum_table[datum_num-100].zshift;
+        dtm_info->xdelta    = datum_table[datum_num-100].xdelta;
+        dtm_info->ydelta    = datum_table[datum_num-100].ydelta;
+        dtm_info->zdelta    = datum_table[datum_num-100].zdelta;
+    }
+    /* Datum not in table, assign spherenum and set everything else to zero
+      --------------------------------------------------------------------*/
+    else {
+       dtm_info->spherenum = datum_num;
+       dtm_info->datumname[0] = '\0';
+       dtm_info->area[0] = '\0';
+       dtm_info->category[0] = '\0';
+       dtm_info->xshift = 0;
+       dtm_info->yshift = 0;
+       dtm_info->zshift = 0;
+       dtm_info->xdelta = 0;
+       dtm_info->ydelta = 0;
+       dtm_info->zdelta = 0;
+    }
 
 
-/* Open the datum file.  Retrieve the necessary data
-  -------------------------------------------------*/
-file_ptr = FOPEN("./datum.txt", "r");
-    
-/* If datum is present, retrieve information from datum table
-  ----------------------------------------------------------*/
-if (dtmflag)
-   {
-   while ((fgets(line,BUFSIZ,file_ptr) != NULL) && (found != TRUE))
-         {
-         sscanf(line, "%d", &numb);
-         if (numb == dtm_num)
-            {
-            for (i = 0; i < 11; i++)
-                {
-                temp = strtok(i ? NULL: line, ":");
-                dtmary[i] = malloc(strlen(temp) + 1);
-                strcpy(dtmary[i], temp);
-                }
-            strcpy(dtm_info->datumname, dtmary[1]);
-            strcpy(dtm_info->area, dtmary[2]);
-            strcpy(dtm_info->category, dtmary[3]);
-            dtm_info->spherenum = atol(dtmary[4]);
-            dtm_info->xshift = atol(dtmary[5]);
-            dtm_info->yshift = atol(dtmary[6]);
-            dtm_info->zshift = atol(dtmary[7]);
-            dtm_info->xdelta = atol(dtmary[8]);
-            dtm_info->ydelta = atol(dtmary[9]);
-            dtm_info->zdelta = atol(dtmary[10]);
-            found = TRUE;
-            }
-         }
-   if (found == FALSE)
-      {
-      printf("\nCould not read datum values\n");
-      return (E_FAIL);
-      }
-   }
-/* Since there is no datum, assign sphere numb and set everything else to zero
-  ---------------------------------------------------------------------------*/
-else
-   {
-   dtm_info->spherenum = dtm_num;
-   dtm_info->datumname[0] = '\0';
-   dtm_info->area[0] = '\0';
-   dtm_info->category[0] = '\0';
-   dtm_info->xshift = 0;
-   dtm_info->yshift = 0;
-   dtm_info->zshift = 0;
-   dtm_info->xdelta = 0;
-   dtm_info->ydelta = 0;
-   dtm_info->zdelta = 0;
-   }
+    sphere_num = dtm_info->spherenum;
 
-fclose(file_ptr);
+    /* Check for a valid spheroid code
+      -------------------------------*/
+    if(sphere_num < MIN_SPHEROID) {
+       printf("\nSpheroid value below valid range\n");
+       return(E_FAIL);
+    }
+    else if(sphere_num > MAX_SPHEROID) {
+       printf("\nSpheroid value above valid range\n");
+       return(E_FAIL);
+    }
 
-/* Open the spheroid file.  Retrieve the necessary data
-  ----------------------------------------------------*/
-file_ptr=FOPEN("./spheroid.txt", "r");
+    /*Retrieve necessary spheroid data
+      -------------------------------*/
+    strcpy(dtm_info->spherename, spheroid_table[sphere_num].spherename);
+    dtm_info->recip_flat = spheroid_table[sphere_num].recip_flat;
+    dtm_info->smajor     = spheroid_table[sphere_num].smajor;
 
-found = FALSE;
-while ((fgets(line,BUFSIZ,file_ptr) != NULL) && (found != TRUE))
-      {
-      sscanf(line, "%d", &numb);
-      if (numb == dtm_info->spherenum)
-         {
-         for (i = 0; i < 4; i++)
-             {
-             temp = strtok(i ? NULL: line, ":");
-             spherary[i] = malloc(strlen(temp) + 1);
-             strcpy(spherary[i], temp);
-             }
-         strcpy(dtm_info->spherename, spherary[1]);
-         dtm_info->smajor = atof(spherary[2]);
-         dtm_info->recip_flat = atof(spherary[3]);
+    /* Compute sminor if recip_flat is not zero, otherwise we have a sphere
+     ---------------------------------------------------------------------*/
+    if (dtm_info->recip_flat != 0) {
+       flat = (1.0 / dtm_info->recip_flat);
+       dtm_info->sminor = (dtm_info->smajor * (1 - flat));
+    }
+    else
+       dtm_info->sminor = spheroid_table[sphere_num].smajor;
 
-         /* If the recip_flat is zero it is a sphere, otherwise compute minor
-          ------------------------------------------------------------------*/
-         if (dtm_info->recip_flat != 0)
-            {
-            flat = (1/dtm_info->recip_flat);
-            dtm_info->sminor = (dtm_info->smajor * (1 - flat));
-            }
-         else
-            dtm_info->sminor = atof(spherary[2]);
-         found = TRUE;
-         }
-      }
-if (found == FALSE)
-   {
-   printf("\nProblem reading Spheroid.txt\n");
-   return (E_FAIL);
-   }
-fclose(file_ptr);
 
-/* Free malloc'd memory
------------------------*/
-for ( i = 0; i < 10; i++ )
-    if ( dtmary[i] != NULL )
-	free( dtmary[i] );
-for ( i = 0; i < 4; i++ )
-    if ( spherary[i] != NULL )
-	free( spherary[i] );
-
-return(E_SUCC);
+    return(E_SUCC);
 }
