@@ -13,6 +13,20 @@ determine_default_output_file_name(gchar * data_file_name)
   p = strrchr(basename, '.');
   if (p)
     *p = '\0';
+
+  if (output_directory)
+  {
+      gchar * filename;
+      
+      filename = g_path_get_basename(basename);
+
+      basename = (gchar *) g_realloc(basename,
+            sizeof(gchar) * (strlen(output_directory) + strlen(filename) + 2));
+
+      sprintf(basename, "%s%s", output_directory, filename);
+      
+      g_free(filename);
+  }
   
   user_settings = settings_get_from_gui();
   ext = settings_get_output_format_extension(user_settings);

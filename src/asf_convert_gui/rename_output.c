@@ -187,7 +187,7 @@ on_change_output_name_button_ok_clicked(GtkWidget *widget)
   if (strlen(new_name) > 0)
   {
     /* since dialog is modal, can assume same row is selected */
-    do_rename_selected((char*)new_name);
+      do_rename_selected((gchar *)new_name);
   }
   
   gtk_widget_hide(change_output_name_dialog);  

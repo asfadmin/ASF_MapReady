@@ -8,6 +8,7 @@ GtkListStore *list_store = NULL;
 gboolean keep_going;
 gboolean processing;
 Settings *settings_on_execute;
+gchar * output_directory = NULL;
 
 int
 main(int argc, char **argv)
@@ -72,7 +73,10 @@ main(int argc, char **argv)
     gtk_main ();
 
     if (settings_on_execute)
-      g_free(settings_on_execute);
+        g_free(settings_on_execute);
+
+    if (output_directory)
+        g_free(output_directory);
 
     exit (EXIT_SUCCESS);
 }

@@ -76,4 +76,7 @@ extern gboolean processing;
 /* The settings when the user clicked "Execute" (or, "Load") */
 extern Settings * settings_on_execute;
 
+/* where should we put the generated files */
+extern gchar * output_directory;
+
 #endif
