@@ -103,15 +103,18 @@ library_cooking_pot:
 $(OBJS): Makefile $(LOCAL_HEADERS) $(wildcard ../../include/*.h) \
 	 $(YACC_SOURCES) $(LEX_SOURCES)
 
+clean:
+	rm -rf $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
+               $(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
+	       library_cooking_pot asf_meta_tester meta_update
+
 check: unit_tests.c build_only
 	$(CC) $(CFLAGS) $< asf_meta.a -lm -lcheck $(LDFLAGS) \
               -o asf_meta_tester 
 	./asf_meta_tester
 
-clean:
-	rm -rf $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
-               $(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
-	       library_cooking_pot asf_meta_tester
+meta_update: meta_update.c build_only
+	$(CC) $(CFLAGS) $< asf_meta.a -lm $(LDFLAGS) -o meta_update
 
 distclean:
 	rm -f core *~ TAGS gdb_init.com
