@@ -1,5 +1,6 @@
-<!doctype book PUBLIC "-//Davenport//DTD DocBook V3.0//EN" [
-]>
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" >
 <book>
   <bookinfo>
     <date>2005-01-07</date>
@@ -158,7 +159,7 @@
 	<para>asf_convert_gui data/*.D</para>
       </listitem>
       <listitem>
-	<para>Use the "Add" button.</para
+	<para>Use the "Add" button.</para>
 	<para>After you've run the utility, you can add additional 
         files by typing the name in the textbox next to the "Add" 
         button, and clicking "Add".</para>
