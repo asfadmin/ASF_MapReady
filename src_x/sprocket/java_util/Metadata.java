@@ -97,7 +97,7 @@ public class Metadata {
 
 	earth_radius_at_center = Double.parseDouble(obtain_value(va,m, "earth_radius_at_center" ));
 	earth_radius_at_nadir = Double.parseDouble(obtain_value(va,m, "earth_radius_at_nadir"));
- 	asending_or_desending = obtain_value ( va, m, "assending/desending");
+ 	asending_or_desending = obtain_value ( va, m, "ascending/descending");
 
 	image_format = obtain_value(va,m, "image_format");
 
