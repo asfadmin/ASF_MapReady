@@ -76,9 +76,10 @@ void meta_write(meta_parameters *meta, const char *file_name)
   fprintf(fp, "    year: %d\n", meta->state_vectors->year);
   fprintf(fp, "    julDay: %d\n", meta->state_vectors->julDay);
   fprintf(fp, "    second: %f\n", meta->state_vectors->second);
+  fprintf(fp, "    vector_count: %d\n", meta->state_vectors->vector_count);
   { 
     int i;
-    for ( i = 0 ; i < meta->state_vectors->num ; i++ ) {
+    for ( i = 0 ; i < meta->state_vectors->vector_count ; i++ ) {
       fprintf(fp, "    vector {\n");
       fprintf(fp, "        time: %f\n", 
 	      meta->state_vectors->vecs[i].time);
