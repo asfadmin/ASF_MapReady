@@ -76,7 +76,8 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 	if (meta->sar->image_type=='P') {
 		meta_projection *proj = meta->projection;
 	/* UTM zone code or 62 if n/a; int */
-		ddr->zone_code = (proj->type=='U') ? proj->param.utm.zone : 62;
+		ddr->zone_code = (proj->type==UNIVERSAL_TRANSVERSE_MERCATOR) ? 
+                  proj->param.utm.zone : 62;
 		ddr->valid[DDZCV] = VALID;
 	/* Projection type; int
 	 * AND
