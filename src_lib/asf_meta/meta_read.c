@@ -68,25 +68,28 @@ meta_parameters *meta_read(const char *inName)
  */
 void meta_io_state(coniStruct *coni, meta_state_vectors *state)
 {
-	int i;
+	int ii;
+printf("ENTERED meta_io_state\n");
 	coniIO_structOpen(coni,"state {","begin list of state vectors for satellite, over image");
 	coniIO_int   (coni,"state.","year:",  &state->year,        "Year of image start");
-	coniIO_int   (coni,"state.","julDay:",&state->julDay,      "Julian day of the year for image start");
+	coniIO_int   (coni,"state.","day:",   &state->julDay,      "Julian day of the year for image start");
 	coniIO_double(coni,"state.","second:",&state->second,      "Second of the day for image start");
-	coniIO_int   (coni,"state.","num:",   &state->vector_count,"Number of state vectors below");
-	for (i=0;i<state->vector_count;i++)
+	coniIO_int   (coni,"state.","number:",&state->vector_count,"Number of state vectors below");
+	state->num = state->vector_count;
+	for (ii=0; ii<state->vector_count; ii++)
 	{
 		coniIO_structOpen(coni,"vector {","begin a single state vector");
-		coniIO_double(coni,"state.vector.","time:",&state->vecs[i].time,     "Time, relative to image start [s]");
-		coniIO_double(coni,"state.vector.","x:",   &state->vecs[i].vec.pos.x,"X Coordinate, earth-fixed [m]");
-		coniIO_double(coni,"state.vector.","y:",   &state->vecs[i].vec.pos.y,"Y Coordinate, earth-fixed [m]");
-		coniIO_double(coni,"state.vector.","z:",   &state->vecs[i].vec.pos.z,"Z Coordinate, earth-fixed [m]");
-		coniIO_double(coni,"state.vector.","vx:",  &state->vecs[i].vec.vel.x,"X Velocity, earth-fixed [m/s]");
-		coniIO_double(coni,"state.vector.","vy:",  &state->vecs[i].vec.vel.y,"Y Velocity, earth-fixed [m/s]");
-		coniIO_double(coni,"state.vector.","vz:",  &state->vecs[i].vec.vel.z,"Z Velocity, earth-fixed [m/s]");
+		coniIO_double(coni,"state.vector.","time:",&state->vecs[ii].time,     "Time, relative to image start [s]");
+		coniIO_double(coni,"state.vector.","x:",   &state->vecs[ii].vec.pos.x,"X Coordinate, earth-fixed [m]");
+		coniIO_double(coni,"state.vector.","y:",   &state->vecs[ii].vec.pos.y,"Y Coordinate, earth-fixed [m]");
+		coniIO_double(coni,"state.vector.","z:",   &state->vecs[ii].vec.pos.z,"Z Coordinate, earth-fixed [m]");
+		coniIO_double(coni,"state.vector.","vx:",  &state->vecs[ii].vec.vel.x,"X Velocity, earth-fixed [m/s]");
+		coniIO_double(coni,"state.vector.","vy:",  &state->vecs[ii].vec.vel.y,"Y Velocity, earth-fixed [m/s]");
+		coniIO_double(coni,"state.vector.","vz:",  &state->vecs[ii].vec.vel.z,"Z Velocity, earth-fixed [m/s]");
 		coniIO_structClose(coni,"end vector");
 	}
 	coniIO_structClose(coni,"end of list of state vectors\n");
+printf("LEFT meta_io_state\n");
 }
 
 /***************************************************************
@@ -188,8 +191,8 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	    coniReopen(coni);/*Seek back to beginning of file.*/
 	    if (err==CONI_OK && nVec!=0) {
 	    /*We have state vectors!*/
-		    meta->stVec=raw_init_state(nVec);/*Allocate state vectors.*/
-		    meta_io_state(coni,meta->stVec);/*And initialize them.*/
+		    meta->state_vectors = raw_init_state(nVec);/*Allocate state vectors.*/
+		    meta_io_state(coni, meta->state_vectors);  /*And initialize them.*/
 	    }
 	}
 
@@ -311,9 +314,9 @@ void meta_new2old(meta_parameters *meta)
 	meta->info->prf               = meta->sar->prf;
 
 /* State vectors are the same for both meta structures */
-	meta->stVec = meta->state_vectors;
-	meta->stVec->num = meta->state_vectors->vector_count;
+	meta->stVec      = meta->state_vectors;
 
+/* Calculated values for the old structure */
 	if (meta->sar->proj_type!='P') /*Image not map projected-- compute look angle to beam center*/
 		meta->ifm->lookCenter = meta_look(meta, 0, meta->ifm->orig_nSamples/2);
 	else 
