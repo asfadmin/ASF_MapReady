@@ -131,9 +131,9 @@ void propagate_state(meta_parameters *meta,int nStVec, double data_int)
 			closestSec=loc->time;
 		}
 	}
-	
+/*
 	if (!quietflag) printf("   Nearest state vector is %.2f seconds from image start.\n",secToClosest);
-	
+*/
 	if (closestSec==-1) {
 	  sprintf(errbuf,"   ERROR: Couldn't find any nearby state vectors in propagate_state!\n");
 	  printErr(errbuf);
