@@ -3,8 +3,6 @@
 # and do interferometric processing on SAR images.
 #   Now incorporates asf_ceos library, as well.
 
-DEBUG_BUILD = 2
-
 include ../../make_support/system_rules
 
 # Static libraries used by this library.  These get pulled out of the
@@ -119,7 +117,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta_write_sprocket.o \
 	proj2meta.o \
 	propagate.o \
-        readSubset.o \
+	readSubset.o \
 	read_baseline.o \
 	set_era.o \
 	slantRange2groundPixel.o \
