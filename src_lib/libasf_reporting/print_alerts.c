@@ -86,8 +86,11 @@ void asfPrintError(const char *format, ...)
   va_end(ap);
 
   printf(errorEnd);
-  if (logflag) fprintf(fLog, errorEnd);
 
-  if (logflag) FCLOSE(fLog);
+  if (logflag) {
+    fprintf(fLog, errorEnd);
+    FCLOSE(fLog);
+  }
+
   exit(EXIT_FAILURE);
 }
