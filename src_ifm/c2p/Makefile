@@ -3,7 +3,9 @@
 
 include ../../make_support/system_rules
 
-LIBS = $(LIBDIR)/asf.a -lm
+LIBS  = $(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	-lm
 OBJS = c2p.o 
 
 c2p: $(OBJS)
