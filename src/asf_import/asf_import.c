@@ -284,9 +284,11 @@ int main(int argc, char *argv[])
   if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET)
     /*Make sure the two fields following -lat aren't other options
     Also make sure there's no "bleeding" into the required arguments*/
-    if(   argv[flags[f_LAT_CONSTRAINT] + 1][0] == '-'
+    /*I don't think we can do the first of these... -90 is a latitude we
+      should accept. commenting out those checks */
+    if(/*   argv[flags[f_LAT_CONSTRAINT] + 1][0] == '-'
        || argv[flags[f_LAT_CONSTRAINT] + 2][0] == '-'
-       || flags[f_LAT_CONSTRAINT] >= argc - (REQUIRED_ARGS+1))
+       ||*/ flags[f_LAT_CONSTRAINT] >= argc - (REQUIRED_ARGS+1))
       usage();/*This exits with a failure*/
   if(flags[f_PRC] != FLAG_NOT_SET)
     /* Make sure the field following -prc isn't another option
