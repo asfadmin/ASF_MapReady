@@ -1,26 +1,25 @@
-include ../../make_support/system_rules
+# Makefile for asf_export
+# Author Britton Kerin, June 2004
+#    mod Patrick Denny, June 2004
 
-PROGRAM = asf_export
+include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
-	-lgeotiff -ltiff \
-        -ljpeg \
-        -L$(HOME)/local/lib -lgsl -lgslcblas -lm \
-        -lefence
+	$(LIBDIR)/libgeotiff.a \
+	$(LIBDIR)/libtiff.a \
+	$(LIBDIR)/libjpeg.a \
+	$(LIBDIR)/libgsl.a \
+	-lm
 
 OBJS  = asf_export.o
 
-SRCS = $(patsubst %.o, %.c, $(OBJS))
+all: asf_export clean
 
-CFLAGS += -I$(HOME)/local/include -D_ISOC99_SOURCE -D_GNU_SOURCE
-
-all: $(PROGRAM)
-
-$(PROGRAM): $(OBJS)
-	echo $(LIBS)
-	$(CC) $(CFLAGS) $(LFLAGS) $(OBJS) -L$(LIBDIR) $(LIBS) -o $(PROGRAM)
-	cp $(PROGRAM) $(BINDIR)
+asf_export: $(OBJS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o asf_export  $(OBJS) $(LIBS) $(LDFLAGS)
+	mv asf_export$(BIN_POSTFIX) $(BINDIR)
+#	cp asf_export.1 ../../man/cat1
 
 clean:
-	rm -f *.o $(PROGRAM)
+	rm -f *.o
