@@ -49,16 +49,18 @@ LIBS
 @src_lib/
 	asf
 	regex_wrapper
+	libgsl
 	asf_meta
 	asf_concat
 	asf_lt
 	asf_geolib
 	asf_odl
 	asf_fft
-	libgsl
 	libjpeg
 	libtiff
 	libgeotiff
+        libz
+        libpng
 @src_ifm/
 	libifm
 @src_tc/
