@@ -6,8 +6,8 @@
 #include "ddr.h"
 #include "proj.h"
 
-#define MICRON 0.00001
-#define FLOAT_COMPARE(a, b) (abs(a - b) < MICRON ? 1 : 0)
+#define EARTH_RADIUS_MICRON 0.1
+#define FLOAT_COMPARE(a, b) (abs(a - b) < EARTH_RADIUS_MICRON ? 1 : 0)
 
 /***********Arrays taken from asf_geolib's sphdz.c (Sept 2002)************
 CODE     DATUM NAME                 EQUITORIAL RADIUS       POLAR RADIUS
@@ -44,7 +44,7 @@ int earth_radius2datum(double re_major, double re_minor)
 		 6356750.519915, 6356075.4133,   6356759.769356, 6356752.31414,  6356256.91,
 		 6356103.039,    6356034.448,    6356752.314245, 6356773.3205,   6356774.719,
 		 6356863.0188,   6356794.343479, 6356784.283666, 6356768.337303, 6370997.0};
-	int major_index, minor_index;
+	int major_index = 0, minor_index = 0;
 
 	for (major_index=0; major_index<20; major_index++) {
 		if ( FLOAT_COMPARE(major[major_index],re_major) ) {
