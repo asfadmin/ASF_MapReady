@@ -109,19 +109,30 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 		strcpy(ddr->system,"cray-unicos");
 	else /* "???" ... no meta equivalent of "ibm-mvs" */
 		strcpy(meta->general->system,"other-msc");
+
+/* Projection units; char[12] */
+	if (meta->projection) /* if projection struct has been allocated */
+		strncpy(ddr->proj_units, meta->projection->units, 12);
+	else
+        	strcpy(ddr->proj_units, "meters"); /* Safe to assume meters */
+	ddr->valid[DDPUV] = VALID;
+
+/* Increment per sample in x & y directions; both double */
+	ddr->line_inc   = meta->sar->line_increment;
+	ddr->sample_inc = meta->sar->sample_increment;
+	ddr->valid[DDINCV] = ((meta->sar->line_increment   == meta->sar->line_increment)
+	                    &&(meta->sar->sample_increment == meta->sar->sample_increment))
+	                ? VALID : INVAL;
+
 /* Line/sample relative to master image; both int */
 	ddr->master_line   = meta->general->start_line + 1;
 	ddr->master_sample = meta->general->start_sample + 1;
-
-/* Projection units; char[12] */
-	strncpy(ddr->proj_units, meta->projection->units,12);
-	ddr->valid[DDPUV] = VALID;
 
 /* Projection dependent stuff */
 	if (meta->sar->image_type=='P') {
 		meta_projection *proj = meta->projection;
 	/* UTM zone code or 62 if n/a; int */
-		ddr->zone_code = (meta->projection->type=='U') ? meta->projection->param.utm.zone : 62;
+		ddr->zone_code = (proj->type=='U') ? proj->param.utm.zone : 62;
 		ddr->valid[DDZCV] = VALID;
 	/* Projection type; int */
 		switch (proj->type) {
@@ -151,7 +162,7 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 			break;
 		}
 	/* Datum Code; int */
-		ddr->datum_code = earth_radius2datum(meta->projection->re_major,meta->projection->re_minor);
+		ddr->datum_code = earth_radius2datum(proj->re_major, proj->re_minor);
 		ddr->valid[DDDCV] = (ddr->datum_code==-1) ? INVAL : VALID;
 	/* Projection coefficients array; double[15] */
 		  /* Entire array 0.0 for Geographic and UTM;
@@ -177,33 +188,27 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 		}
 		else if (ddr->proj_code == UTM) /* Universal Transverse Mercator */ {
 		    /*Unneeded since the zone is specified*/
-			ddr->proj_coef[0] = 0.0;/*longitude in proj*/
-			ddr->proj_coef[1] = 0.0;/*latitude in proj*/
+			ddr->proj_coef[0] = meta->general->center_latitude; /*any longitude in proj*/
+			ddr->proj_coef[1] = meta->general->center_longitude;/*any latitude in proj*/
 			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
 		}
 	/* Corner Coordinates; all double[2] */
-		ddr->upleft[0] = meta->projection->startY;
-		ddr->upleft[1] = meta->projection->startX;
-		ddr->loleft[0] = meta->projection->startY + meta->general->line_count * meta->projection->perY;
-		ddr->loleft[1] = meta->projection->startX;
-		ddr->upright[0] = meta->projection->startY;
-		ddr->upright[1] = meta->projection->startX + meta->general->sample_count * meta->projection->perX;
-		ddr->loright[0] = meta->projection->startY + meta->general->line_count * meta->projection->perY;
-		ddr->loright[1] = meta->projection->startX + meta->general->sample_count * meta->projection->perX;
-		ddr->valid[DDCCV] = ((meta->projection->startY == meta->projection->startY)
-	                	   &&(meta->projection->startX == meta->projection->startX))
+		ddr->upleft[0] = proj->startY;
+		ddr->upleft[1] = proj->startX;
+		ddr->loleft[0] = proj->startY + meta->general->line_count * proj->perY;
+		ddr->loleft[1] = proj->startX;
+		ddr->upright[0] = proj->startY;
+		ddr->upright[1] = proj->startX + meta->general->sample_count * proj->perX;
+		ddr->loright[0] = proj->startY + meta->general->line_count * proj->perY;
+		ddr->loright[1] = proj->startX + meta->general->sample_count * proj->perX;
+		ddr->valid[DDCCV] = ((proj->startY == proj->startY)
+	                	   &&(proj->startX == proj->startX))
 	                	? VALID : INVAL;
 	/* Projection distance per pixel; both double */
-		ddr->pdist_y = fabs(meta->projection->perY);
-		ddr->pdist_x = fabs(meta->projection->perX);
-		ddr->valid[DDPDV] = ((meta->projection->perY == meta->projection->perY)
-	                	   &&(meta->projection->perX == meta->projection->perX))
-	                	? VALID : INVAL;
-	/* Increment per sample in x & y directions; both double */
-		ddr->line_inc   = meta->sar->line_increment;
-		ddr->sample_inc = meta->sar->sample_increment;
-		ddr->valid[DDINCV] = ((meta->sar->line_increment   == meta->sar->line_increment)
-	                	    &&(meta->sar->sample_increment == meta->sar->sample_increment))
+		ddr->pdist_y = fabs(proj->perY);
+		ddr->pdist_x = fabs(proj->perX);
+		ddr->valid[DDPDV] = ((proj->perY == proj->perY)
+	                	   &&(proj->perX == proj->perX))
 	                	? VALID : INVAL;
 
 		if (proj_invalid)
