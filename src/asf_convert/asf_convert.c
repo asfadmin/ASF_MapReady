@@ -557,16 +557,15 @@ int main(int argc, char *argv[])
 			sprintf(temp, " -size %i", size_out);
 			strcat(command, temp);
 		}
-		sprintf(temp, " -format %s tmp%i_amp.img tmp%i_amp.meta %s",
+		sprintf(temp, " -format %s tmp%i_amp %s",
 		format_out,
-		(int)getpid(),
 		(int)getpid(),
 		cfg->general->out_name);
 		strcat(command, temp);
 		check_return(system(command), "Exporting data (asf_export)");
-		exit(0);
 
 		/* Exporting image */
+		/*
 		switch (type_out)
 		{
 			case CEOS:
@@ -601,12 +600,15 @@ int main(int argc, char *argv[])
 				check_return(asf_export(type_out, out, cfg->general->out_name),
 					"exporting image to PNG format (asf_export)");
 				*/
+				/*
 				break;
 			case LAS: break;
 			default:
 				check_return(1, "Unsupported output format!");
 				break;
+				
 		}
+		*/
 	}
 
 	/* Remove temporary files */
