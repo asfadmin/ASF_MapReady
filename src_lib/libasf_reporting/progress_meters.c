@@ -2,7 +2,7 @@
 
 /******************************************************************************
  * Report the number of lines processed out of the total number of lines */
-void line_meter(int currentLine, int totalLines)
+void asfLineMeter(int currentLine, int totalLines)
 {
   char *null="", *newline="\n", *endline;
   char *present="ing", *past="ed ", *tense;
@@ -39,7 +39,7 @@ void line_meter(int currentLine, int totalLines)
 
 /******************************************************************************
  * Print the percent thats been completed to stdout */
-void percent_meter(double inPercent)
+void asfPercentMeter(double inPercent)
 {
   char *null="", *newline="\n", *endline;
   static int oldPercent=-1;
