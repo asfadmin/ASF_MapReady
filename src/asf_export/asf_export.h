@@ -46,7 +46,8 @@ typedef enum {
   TIF,                          /* Tiff. */
   JPEG,                         /* Joint Photographic Experts Group.  */
   PPM,                          /* Portable PixMap.  */
-  CEOS                          /* CEOS format */
+  CEOS,				/* CEOS format */
+  UNSET				/* Output format not set.  */
 } output_format_t;
 
 /* Ellipsoid used for the data.  */
