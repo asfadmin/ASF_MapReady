@@ -80,6 +80,30 @@ void create_name(char *out,const char *in,const char *newExt)
   strcat (out, newExt);
 }
 
+void append_ext_if_needed(char *file_name, const char *newExt, 
+			  const char *alsoAllowedExt)
+{
+  /* modifies the given file_name string in-place */
+
+  char *ext;
+  ext = findExt(file_name);
+
+  if (!ext || 
+      (strcmp(ext, newExt) != 0 && 
+       (!alsoAllowedExt || strcmp(ext, alsoAllowedExt) != 0)))
+  {
+    /* no current extension, or the extension is not what we would add 
+       -- so add ours */
+    strcat(file_name, newExt);
+  }
+  else
+  {
+    /* already has correct extension (or the alternate) 
+       -- nothing to be done */    
+  }
+
+  return;
+}
 
 /****************************************************************************
  * split_dir_and_file:
