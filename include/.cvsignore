@@ -21,6 +21,10 @@ geonames.h
 geotiff.h
 geotiffio.h
 geovalues.h
+tcl.h
+tclDecls.h
+tk.h
+tkDecls.h
 png
 xtiffio.h
 zlib
