@@ -745,18 +745,15 @@ main (int argc, char **argv)
     size_t jj;
     for ( jj = 0 ; jj < grid_size ; jj++ ) {
       g_assert (sizeof (long int) >= sizeof (size_t));
-      // FIXME: remove debuggins schlop:      
-      // printf ("ii: %ld, jj: %ld\n", (long int) ii, (long int) jj);
       // Projection coordinates for the current grid point.
       double cxproj = min_x + x_spacing * jj;
       double cyproj = min_y + y_spacing * ii;
       // Corresponding latitude and longitude.
       double lat, lon;
       gboolean return_code = unproject (pp, cxproj, cyproj, &lat, &lon);
-      if (!return_code)
-      {
-	  /* details of the error should have already been printed */
-	  asfPrintError("Projection Error!\n");
+      if ( !return_code ) {
+	// Details of the error should have already been printed.
+	asfPrintError ("Projection Error!\n");
       }
       lat *= RAD_TO_DEG;
       lon *= RAD_TO_DEG;
