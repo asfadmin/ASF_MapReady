@@ -25,7 +25,7 @@ PROGRAM HISTORY:
 void ceos_init(const char *in_fName,meta_parameters *meta)
 {
 	char fName[255],fac[50],sys[50],ver[50];
-	ceos_description *ceos = get_ceos_description(fName);
+	ceos_description *ceos;
 
         /* Fetch the Data Set Summary Record and Image File Descriptor
 	   record, which are always present.
@@ -33,6 +33,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	struct dataset_sum_rec dssr;
 	strcpy(fName,in_fName);
 	get_dssr(fName,&dssr);
+	
+	ceos = get_ceos_description(fName);
 
 	/* Extract everything we possibly can from the DSSR.
 	 --------------------------------------------------*/
