@@ -1,19 +1,21 @@
 #include "deskew.h"
-#include "ddr.h"
 
-double calc_ranges(const struct DDR *ddr)
+double calc_ranges(meta_parameters *meta)
 {
 	int x;
 	double slantFirst,slantPer;
-	double er=meta->ifm->er;
-	double satHt=meta->ifm->ht;
-	double saved_ER=er;
+	double er  = meta_get_earth_radius(meta, meta->general->line_count/2, 0);
+	double satHt = meta_get_sat_height(meta, meta->general->line_count/2, 0);
+	double saved_ER = er;
 	double er2her2,phi,phiAtSeaLevel,slantRng;
+	double minPhi,maxPhi,phiMul;
+
 	meta_get_slants(meta,&slantFirst,&slantPer);
-	slantFirst+=slantPer*ddr->master_sample;
-	slantPer*=ddr->sample_inc;
-	er2her2=er*er-satHt*satHt;
+	slantFirst += slantPer*meta->general->start_sample;
+	slantPer *= meta->sar->sample_increment;
+	er2her2 = er*er-satHt*satHt;
 	minPhi=acos((satHt*satHt+er*er-slantFirst*slantFirst)/(2.0*satHt*er));
+
 /*Compute arrays indexed by slant range pixel:*/
 	for (x=0;x<sr_ns;x++)
 	{
