@@ -5,9 +5,8 @@
 </name>
 
 <synopsis>
-    asf_import [-amplitude] [-sigma] [-gamma] [-beta] [-power]
-               [-log <file>] [-quiet] [-lat <lower> <upper>]
-               <CEOS|STF|ESRI|ENVI> <inData> <inMeta> <outBase>
+asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]
+           <in_base_name> <out_base_name>
 </synopsis>
 
 <description>
@@ -295,12 +294,12 @@ int main(int argc, char *argv[])
     }
     else {
       printf("\n** Invalid option:  %s\n\n",argv[currArg-1]);
-      usage(argv[0]);
+      usage();
     }
   }
   if ((argc-currArg) < REQUIRED_ARGS) {
     printf("Insufficient arguments.\n");
-    usage(argv[0]);
+    usage();
   }
 
   /* Make sure the sprocket flag hasn't been declared with a calibration or
@@ -1103,8 +1102,7 @@ if (sprocketFlag) {
         sprintf(tmp,"Unrecognized data format: '%s'\n\n",type);
         printf(tmp);
         if (logflag) printLog(tmp);
-        usage(argv[0]);
-        exit(EXIT_FAILURE);
+        usage();
   }
 
   if (sprocketFlag) {
@@ -1116,41 +1114,12 @@ if (sprocketFlag) {
 
 
 /* usage - enter here on command-line usage error*/
-void usage(char *name)
+void usage()
 {
 
  printf("\n"
 	"USAGE:\n"
-	"   %s [-prc <path>] [-amplitude] [-sigma] [-gamma] [-beta] [-power]\n"
-	"              [-log <file>] [-quiet] [-lat <lower> <upper>]\n"
-	"              <CEOS|STF|ESRI|ENVI> <inData> <inMeta> <outBase>\n",
-	name);
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"   -prc <path>  Path to use DLR precision state vectors.\n"
-	"   -amplitude   Creates an amplitude image.\n"
-	"   -sigma       Creates a calibrated image (sigma dB values).\n"
-	"   -gamma       Creates a calibrated image (gamma dB values).\n"
-	"   -beta        Creates a calibrated image (beta dB values).\n"
-	"   -power       Creates a power image.\n"
-	"   -log <file>  Allows the output to be written to a log file.\n"
-	"   -quiet       Restricts the output to the essential\n"
-	"   -lat <lower> <upper>   Latitude constraints for STF data.\n");
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   CEOS      Input data is in CEOS format.\n"
-	"   or STF    Input data is in Sky Telemetry Format.\n"
-	"   or ESRI   Input data is in generic ESRI raster format.\n"
-	"   or ENVI   Input data is in ENVI format.\n"
-	"   inData    Data file including the extension.\n"
-	"   inMeta    Metadata file with the extension.\n"
-	"   outBase   Basename of your new ASF tools format data.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Ingests the complete variety of CEOS data, STF data as well as external\n"
-	"   ESRI and ENVI data into the internal ASF data format.\n");
- printf("\n"
-	"Version %.2f, ASF SAR Tools\n"
-	"\n", VERSION);
+	"   asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]\n"
+	"              <in_base_name> <out_base_name>\n");
  exit(EXIT_FAILURE);
 }

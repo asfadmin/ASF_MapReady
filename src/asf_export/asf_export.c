@@ -5,7 +5,7 @@
 </name>
 
 <synopsis>
-   asf_export [ -f <format> ] [ -s <size> ] [ -o <outFile> ] <inFile>
+asf_export [-format <format>] [-size <max_dimension>] <in_base_name> <out_full_name>
 </synopsis>
 
 <description>
@@ -125,24 +125,12 @@
 static char *program_name = "asf_export";
 
 /* Print invocation information.  */
-void 
-usage (char *program_name)
+void usage()
 {
   printf ("\n"
      "USAGE:\n"
-     "   %s: asf_export [ -f <format> ] [ -s <size> ] [ -o <outFile> ] <inFile>\n", 
-     program_name);
-  printf ("\n"
-     "OPTIONS:\n"
-     "   -f             Format to export to. Must be one of the following:\n"
-     "                      CEOS, envi, esri, geotiff, jpeg, ppm\n"
-     "   -s             Scale image so that its largest dimension is, at most, size.\n"
-     "   -o             Name of the output file.\n");
-  printf ("\n"
-     "DESCRIPTION:\n"
-     "This program ingests ASF internal format data and exports said data to\n"
-     "a number of output formats. If the input data was geocoded and the ouput\n"
-     "format supports geocoding, that information will be included.\n");
+     "   asf_export [-format <format>] [-size <max_dimension>] <in_base_name> <out_full_name>\n");
+  exit(EXIT_FAILURE);
 }
 
 /* Evaluate to true iff floats are within tolerance of each other.  */
@@ -292,8 +280,7 @@ main (int argc, char *argv[])
 	     || (strcmp (command_line.format, "ppm") == 0)) ) {
 	fprintf (stderr, "%s: bad format (-f argument): %s\n", program_name, 
 		 command_line.format);
-	usage (program_name);
-	exit (EXIT_FAILURE);
+	usage();
       }
     }
     else if ( strmatch (key, "-s") ) {
@@ -305,8 +292,7 @@ main (int argc, char *argv[])
 	if ( !isspace (*endptr) ) {
 	  fprintf (stderr, "%s: bad size (-s argument): %s\n", program_name, 
 		   GET_ARG (1));
-	  usage (program_name);
-	  exit (EXIT_FAILURE);
+	  usage();
 	}
       }
     }
@@ -342,8 +328,7 @@ main (int argc, char *argv[])
      the first thing this program attempts.  */
   if ( argc - currArg != num_args ) {
     fprintf (stderr, "%s: wrong number of arguments\n", program_name);
-    usage (program_name);
-    exit (EXIT_FAILURE);
+    usage();
   }
   if ( my_strnlen (argv[currArg], MAX_IMAGE_NAME_LENGTH + 1)
        > MAX_IMAGE_NAME_LENGTH ) {

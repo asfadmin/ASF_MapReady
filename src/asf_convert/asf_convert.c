@@ -5,10 +5,9 @@
 </name>
 
 <synopsis>
-   asf_convert [ -config <configuration file> |
-                 -init_config <configuration file> ] |
-               [ -input <format> <dataFile> <metaFile>
-                 -output <format> <outFile> ]
+asf_convert [-format <format>] <in_base_name> <out_full_name> |
+            -config <config_file> |
+            -init_config <config_file>
 </synopsis>
 
 <description>
@@ -135,31 +134,13 @@ PROGRAM HISTORY:
 #define VERSION 0.5
 #define REQUIRED_ARGS 1
 
-void usage(char *name)
+void usage()
 {
  printf("\n"
 	"USAGE:\n"
-	"   %s [ -config <configuration file> | -config_init <configuration file> ] |\n"
-	"               [ -input <format> <dataFile> <metaFile> -output <format> <outFile> ]\n",
-	name);
- printf("\n"
-	"ARGUMENTS:\n"
-	"   -config        runs asf_convert from a configuration file.\n"
-	"   -config_init   creates only a configuration file and exits.\n"
-	"   -input         input format and input data and metadata files.\n"
-	"   -output        output format and output filename.\n");
- printf("\n"
- 	"DESCRIPITON:\n"
-	"   Ingests level one CEOS data, geocodes and resamples them (both optional) and\n"
-	"   exports them to a variety of output formats. It can handle input from a\n"
-	"   configuration file as well as directly from the command line. asf_convert is\n"
-	"   able to run in batch mode. Running the program with a configuration file\n"
-	"   allows for a more detailed processing flow, including resampling and\n"
-	"   geocoding as intermediate processing steps.\n");
-
- printf("\n"
-	"Version: %1.2f, ASF Software Tools\n"
-	"\n", VERSION);
+	"   asf_convert [-format <format>] <in_base_name> <out_full_name> |\n"
+	"               -config <config_file> |\n"
+        "               -init_config <config_file>\n");
   exit(EXIT_FAILURE);
 }
 
@@ -229,7 +210,7 @@ int main(int argc, char *argv[])
     exit(0);
   }
   else if (argc<3)
-    usage("asf_convert");
+    usage();
 
   quietflag = TRUE;
 
