@@ -144,7 +144,7 @@ void print_splash_screen(int argc, char* argv[])
 void config_usage()
 {
 	printf(
-		"USAGE:\n"
+		"BATCH USAGE:\n"
 		"   asf_convert -config <config_file> |\n"
 		"               -init_config <config_file>\n");
 }
@@ -212,7 +212,8 @@ int main(int argc, char *argv[])
 
 	if(configFlag != FLAG_NOT_SET && configInitFlag != FLAG_NOT_SET)/*One or the other is fine, but not both*/
 		usage();/*This exits with a failure*/
-	if((configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET) && formatFlag)/*format is mutually exclusive with these*/
+	if((configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET) && /*These...*/
+		(formatFlag != FLAG_NOT_SET || sizeFlag != FLAG_NOT_SET))/*...are mutually exclusive with these*/
 		usage();/*This exits with a failure*/
 
 	/*So, at this point, we know our options don't conflict...now we need
@@ -234,18 +235,30 @@ int main(int argc, char *argv[])
 	/*make sure we've got enough arguments*/
 	if(argc != neededArgs)
 		usage();/*This exits with a failure*/
-
+printf("1");
 	/*We also need to make sure the last three options are close to what we expect*/
-	if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-' || argv[argc - 3][0] == '-')
-		usage();/*This exits with a failure*/
-
+	if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
+	{
+		if(argv[argc - 1][0] == '-')
+			usage();
+	}
+	else
+		if(argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-' || argv[argc - 3][0] == '-')
+			usage();/*This exits with a failure*/
+printf("2");
 	/*Next we're going to make sure the options are specified according to the usage
 	That is, -option <parameter> -option <parameter> and so on...if an option requires
 	a parameter, we need to make sure it's followed by a parameter! Also make sure
 	an option's parameters don't bleed into the command's required arguments*/
 	if(logflag != FLAG_NOT_SET)
-		if(argv[logflag + 1][0] == '-' || logflag >= argc - 4)
-			usage();/*This exits with a failure*/
+	{
+		if(configFlag != FLAG_NOT_SET || configInitFlag != FLAG_NOT_SET)
+			if(argv[logflag + 1][0] == '-' || logflag >= argc - 3)
+				usage();
+		else
+			if(argv[logflag + 1][0] == '-' || logflag >= argc - 4)
+				usage();/*This exits with a failure*/
+	}
 	if(formatFlag != FLAG_NOT_SET)
 		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 4)
 			usage();/*This exits with a failure*/
@@ -297,6 +310,15 @@ int main(int argc, char *argv[])
 			print_error("Unrecognized input file format");/*If no extension, we're not sure what to do*/
 	}
 /***********************END COMMAND LINE PARSING STUFF***********************/
+
+	if(configInitFlag != FLAG_NOT_SET)
+	{
+		if(fileExists(configFile))
+			print_error("config file already exits");
+		else
+			check_return(init_config(configFile), "Basic configuration file could not be initialized");
+		exit(0);
+	}
 
 	/* If we're working from a config file, read configuration file */
 	if (configFlag != FLAG_NOT_SET)/*configFlag has been set*/

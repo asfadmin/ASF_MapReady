@@ -36,7 +36,7 @@ char *read_str(char *line, char *block, char *param)
   
   start = strchr(line, '<');
   if (start) {
-    sprintf(msg, "   WARNING: Invalid value for parameter '%s'"
+    sprintf(msg, "   \033[33;1mWARNING:\033[0m Invalid value for parameter '%s'"
 	    " in block [%s]\n", param, block);
     printf(msg);
     warnFlag = TRUE;
@@ -57,7 +57,7 @@ int read_int(char *line, char *block, char *param)
   
   tmp = read_str(line, block, param);
   if (!sscanf(tmp, "%i", &value)) {
-    sprintf(msg, "   WARNING: Invalid value for parameter '%s'"
+    sprintf(msg, "   \033[33;1mWARNING:\033[0m Invalid value for parameter '%s'"
 	    " in block [%s]\n", param, block);
     printf(msg);
     warnFlag = TRUE;
@@ -73,7 +73,7 @@ double read_double(char *line, char *block, char *param)
   
   tmp = read_str(line, block, param);
   if (!sscanf(tmp, "%lf", &value)) {
-    sprintf(msg, "   WARNING: Invalid value for parameter '%s'"
+    sprintf(msg, "   \033[33;1mWARNING:\033[0m Invalid value for parameter '%s'"
 	    " in block [%s]\n", param, block);
     printf(msg);
     warnFlag = TRUE;
