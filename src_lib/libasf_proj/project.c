@@ -10,6 +10,13 @@
 #include "projects.h"
 #include "proj_api.h"
 
+#ifndef linux
+static double
+round (double arg)
+{
+  return floor (arg + 0.5);
+}
+#endif // #ifndef linux
 
 static const char * datum(project_parameters_t * pps)
 {
