@@ -7,9 +7,39 @@
 
 void meta_read_old(meta_parameters *meta, char *fileName);
 void meta_new2old(meta_parameters *meta);
+int meta_is_new_style(const char *file_name);
 
-/* Does the metadata file with the given base name exist and conform
-   to the new all-in-one standard?  */
+
+/***************************************************************
+ * meta_read:
+ * Reads a meta file and returns a meta structure filled with
+ * both old backward compatability and new fields filled in.
+ * Note that the appropriate extension is appended to the given
+ * base name automagically if needed.  */
+meta_parameters *meta_read(const char *inName)
+{
+  char              *meta_name      = appendExt(inName,".meta");
+  meta_parameters   *meta           = raw_init();	/* To be filled.  */
+
+  /* Read file with appropriate reader for version.  */
+  if ( !meta_is_new_style(meta_name) ) {
+    meta_read_old(meta, meta_name);
+  } else {
+    parse_metadata(meta, meta_name);
+  }
+  
+  /* Fill old structure parameters */
+  meta_new2old(meta);
+  
+  free(meta_name);
+  
+  return meta;
+}
+
+/***********************************************************
+ * meta_is_new_style:
+ * Does the metadata file with the given base name exist and
+ * conform to the new all-in-one standard?  */
 int meta_is_new_style(const char *file_name)
 {
  /* Maximum line length.  */
@@ -51,33 +81,6 @@ int meta_is_new_style(const char *file_name)
   return return_value;
 }
   
-
-/***************************************************************
- * meta_read:
- * Reads a meta file and returns a meta structure filled with
- * both old backward compatability and new fields filled in.
- * Note that the appropriate extension is appended to the given
- * base name automagically if needed.  */
-meta_parameters *meta_read(const char *inName)
-{
-  char              *meta_name      = appendExt(inName,".meta");
-  meta_parameters   *meta           = raw_init();	/* To be filled.  */
-
-  /* Read file with appropriate reader for version.  */
-  if ( !meta_is_new_style(meta_name) ) {
-    meta_read_old(meta, meta_name);
-  } else {
-    parse_metadata(meta, meta_name);
-  }
-  
-  /* Fill old structure parameters */
-  meta_new2old(meta);
-  
-  free(meta_name);
-  
-  return meta;
-}
-
 /***************************************************************
  * meta_io_state:
  * Called by meta_io, below, this routine reads/writes
@@ -115,13 +118,12 @@ void meta_io_state(coniStruct *coni, meta_state_vectors *state)
  * base name automagically.  */
 void meta_read_old(meta_parameters *meta, char *fileName)
 {
-	int reading = 1;
 	char *ddrName = appendExt(fileName,".ddr");
 	struct DDR ddr;
 	char *metaName = appendExt(fileName,".meta");
 	meta_general *general = meta->general;
 	meta_sar     *sar     = meta->sar = (meta_sar *)MALLOC(sizeof(meta_sar));
-	meta_stats   *stats   = meta->stats;
+/*	meta_stats   *stats   = meta->stats;*/
 	coniStruct   *coni    = coniOpen(metaName, asciiIn);
 
 	coniIO_double(coni,"","meta_version:",&meta->meta_version,"ASF APD Metadata File.\n");
@@ -252,13 +254,6 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 		exit(1);
 	}
 
-/* stats structure is not yet in use */
-/*	stats->max                = NAN;
- *	stats->min                = NAN;
- *	stats->mean               = NAN;
- *	stats->rms                = NAN;
- *	stats->std_deviation      = NAN; */
-
 /* Fields not yet filled */
 	general->re_major = (meta->projection) ? meta->projection->re_major : 6378144.0;
 	general->re_minor = (meta->projection) ? meta->projection->re_minor : 6356754.9;
@@ -282,10 +277,6 @@ void meta_read_old(meta_parameters *meta, char *fileName)
  * so that both old and new structures are populated. */
 void meta_new2old(meta_parameters *meta)
 {
-  /* 'meta->stVec is now 'meta->state_vectors, but some code still
-     looks for the old name. */
-  meta->stVec = meta->state_vectors;
-
 /* Fill geo_parameters structure */
 	meta->geo->type        = meta->sar->image_type;
 	/* Projection structure is the same for both old and new */
@@ -313,6 +304,9 @@ void meta_new2old(meta_parameters *meta)
 	meta->ifm->nLooks        = meta->sar->look_count;
 	meta->ifm->orig_nLines   = meta->general->line_count;
 	meta->ifm->orig_nSamples = meta->general->sample_count;
+
+/* point meta->stVec at 'meta->state_vectors */
+	meta->stVec = meta->state_vectors;
 
 /* Allocate and fill extra_info structure */
 	if (meta->info == NULL)
