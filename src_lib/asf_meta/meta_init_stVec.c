@@ -90,7 +90,7 @@ void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 	int areInertial=1;/*Flag: are state vectors in non-rotating frame?*/
 	int areInertialVelocity=0;/*Flag: have state vectors not been corrected for non-rotating frame?*/
 	int areFixedVelocity=0;/*Flag: were state vectors in fixed-earth velocity; but inertial coordinates?*/
-	state_vectors *s;
+	meta_state_vectors *s;
 	struct pos_data_rec ppdr;
 	
 /*Fetch platform position data record.*/

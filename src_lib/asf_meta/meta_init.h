@@ -31,7 +31,7 @@ meta_parameters *raw_init(void);
 	Creates a state_vectors structure big
 enough to hold the given number of state vectors.
 */
-state_vectors *raw_init_state(int nState);
+meta_state_vectors *raw_init_state(int nState);
 
 /*ceos_init:
 	Reads SAR structure parameters from CEOS

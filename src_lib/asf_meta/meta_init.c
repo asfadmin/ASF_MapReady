@@ -21,11 +21,11 @@ PROGRAM HISTORY:
 	Creates a state_vectors structure big
 enough to hold the given number of state vectors.
 */
-state_vectors *raw_init_state(int nState)
+meta_state_vectors *raw_init_state(int nState)
 {
-	state_vectors *s;
-	s=(state_vectors *)MALLOC(sizeof(state_vectors)+
-			nState*sizeof(state_loc));
+	meta_state_vectors *s;
+	s=(meta_state_vectors *)MALLOC(sizeof(meta_state_vectors)
+				       + nState*sizeof(state_loc));
 	s->num=nState;
 	return s;
 }

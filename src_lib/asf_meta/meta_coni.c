@@ -21,7 +21,7 @@ void coniIO_char(coniStruct *coni,char *loc,char *name,char *value,char *comment
 	Called by meta_io, below, this routine reads/writes
 the given state vector structure.
 */
-void meta_io_state(coniStruct *coni,state_vectors *state)
+void meta_io_state(coniStruct *coni, meta_state_vectors *state)
 {
 	int i;
 	coniIO_structOpen(coni,"state {","begin list of state vectors for satellite, over image");
