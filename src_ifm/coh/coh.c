@@ -100,6 +100,29 @@ BUGS:
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
 
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-look lxs] [-step lxs] <In1> <In2> <Out>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   In1   image 1 complex file\n"
+	"   In2   coregistered image 2 complex file\n"
+	"   Out   floating-point coherence file (.img).\n\n");
+ printf("OPTIONAL ARGUMENTS:\n"
+	"   -look lxs   change look box (l)ine and (s)ample.\n"
+	"                 (Read from meta file by default)\n"
+	"   -step lxs   change step box (l)ine and (s)ample.\n"
+	"                 (Read from meta file by default)\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   A correlation calculator to estimate interferogram quality\n");
+ printf("\n"
+	"Version %4.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
+}
 
 int main(int argc, char *argv[])
 {
@@ -361,27 +384,3 @@ int main(int argc, char *argv[])
   return(0);
 }
 
-
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-look lxs] [-step lxs] <In1> <In2> <Out>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   In1   image 1 complex file\n"
-	"   In2   coregistered image 2 complex file\n"
-	"   Out   floating-point coherence file (.img).\n\n");
- printf("OPTIONAL ARGUMENTS:\n"
-	"   -look lxs   change look box (l)ine and (s)ample.\n"
-	"                 (Read from meta file by default)\n"
-	"   -step lxs   change step box (l)ine and (s)ample.\n"
-	"                 (Read from meta file by default)\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   A correlation calculator to estimate interferogram quality\n");
- printf("\n"
-	"Version %4.2f, ASF InSAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
-}

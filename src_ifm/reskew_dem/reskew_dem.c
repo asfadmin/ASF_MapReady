@@ -79,7 +79,28 @@ double *groundRange;
 double *slantRangeSqr,*slantRange,*heightShift;
 double *incidAng,*sinIncidAng,*cosIncidAng;
 
-
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-log <file>] <inGR_DEM> <outSR_DEM> <outSR_simAmp>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   inGR_DEM      A lined-up ground-range DEM.\n"
+	"   outSR_DEM     Output slant-range DEM.\n"
+	"   outSR_simAmp  Output simulated amplitude image.\n");
+ printf("\n"
+	"OPTIONAL ARGUMENT:\n"
+	"   -log   Allows output to be written to a log <file>.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   This program remaps the input DEM to slant range, and creates a simulated\n"
+	"   slant-range amplitude image from it. This is useful for interferometry.\n");
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n", VERSION);
+ exit(EXIT_FAILURE);
+}
 
 int main(int argc, char *argv[])
 {
@@ -189,29 +210,6 @@ int main(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
 }
 
-
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-log <file>] <inGR_DEM> <outSR_DEM> <outSR_simAmp>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   inGR_DEM      A lined-up ground-range DEM.\n"
-	"   outSR_DEM     Output slant-range DEM.\n"
-	"   outSR_simAmp  Output simulated amplitude image.\n");
- printf("\n"
-	"OPTIONAL ARGUMENT:\n"
-	"   -log   Allows output to be written to a log <file>.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   This program remaps the input DEM to slant range, and creates a simulated\n"
-	"   slant-range amplitude image from it. This is useful for interferometry.\n");
- printf("\n"
-	"Version %.2f, ASF InSAR Tools\n"
-	"\n", VERSION);
- exit(EXIT_FAILURE);
-}
 
 #if 1
 /*Use linearized arrays to do conversion.*/
