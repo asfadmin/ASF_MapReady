@@ -11,6 +11,8 @@ PROJECT:        LAS
 #include "ddr.h"
 #include "protos.h"
 
+/*PROTOTYPE*/ void upcase(char *buf);
+
 unsigned short get_angular_units
 (
     char *unitstr               /* I: Units used (in English)              */

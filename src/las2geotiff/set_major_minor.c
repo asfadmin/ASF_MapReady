@@ -18,6 +18,8 @@ PROJECT:        LAS
 #include "datum.h"
 #include "protos.h"
 
+/*PROTOTYPE*/ int c_getdatum(struct DATUMDEF *dtm_info);
+
 SETSPHEREDEF (spheredefines);     /* Spheroid keywords, names, and axes */
 
 void set_major_minor 

@@ -13,6 +13,8 @@ PROJECT:        LAS
 #include "ddr.h"
 #include "protos.h"
 
+/*PROTOTYPE*/ void upcase(char *buf);
+
 unsigned short get_linear_units
 (
     char *unitstr            /* I: Units used (in English)             */
