@@ -84,32 +84,37 @@ BUGS:
 
 int main(int argc, char **argv)
 {
-	char  *inSAR, *outLAS;      /* Input & output file names              */
-	int   *ibuff;               /* Input buffer                           */
-	int    x, y;                /* loop counters                          */
-	int    ns, nl;              /* number lines/samples in input & output */
-	float *obuff;               /* Output buffer                          */
-	FILE  *fpOut;               /* input and output file ptrs             */
-	CEOS_FILE     *fpIn;
-	unsigned char *obuff_char;
+  char *inSAR, *outLAS;		/* Input & output file names.  */
+  int *ibuff;			/* Input buffer.  */
+  int x, y;			/* Loop counters.  */
+  /* Number of lines/samples in input & output.  */
+  int ns, nl;         
+  float *obuff;			/* Output buffer.  */
+  /* Input and output file pointers.  */
+  FILE *fpOut;	
+  CEOS_FILE     *fpIn;
+  unsigned char *obuff_char;	/* Character output buffer.  */
 
-	StartWatch();
-
-/* Parse command line */
-	if (argc != 3 ) usage(argv[0]);
-	inSAR  = argv[1];
-	outLAS = argv[2];
-
-/*Open input image.*/
-	fpIn = fopenCeos(inSAR);
-	nl = fpIn->meta->general->line_count;
-	ns = fpIn->meta->general->sample_count;
+  /* Start timer to see how long program takes.  */
+  StartWatch();
 	
-/*Open file for output image & write metadata*/
-	fpOut = fopenImage(outLAS,"wb");
-	meta_write(fpIn->meta,outLAS);
+  /* Parse command line */
+  if (argc != 3 ) {
+    usage(argv[0]);
+  }
+  inSAR  = argv[1];
+  outLAS = argv[2];
+  
+  /* Open input image.  */
+  fpIn = fopenCeos(inSAR);
+  nl = fpIn->meta->general->line_count;
+  ns = fpIn->meta->general->sample_count;
+  
+  /* Open file for output image & write metadata.  */
+  fpOut = fopenImage(outLAS,"wb");
+  meta_write(fpIn->meta,outLAS);
 	
-	printf("Input and output nl=%i, ns=%i\n", nl, ns);
+  printf("Input and output nl=%i, ns=%i\n", nl, ns);
 
 /* Allocate buffer space */
 	ibuff = (int *)  MALLOC(ns * sizeof(int));
@@ -143,10 +148,11 @@ int main(int argc, char **argv)
 	closeCeos(fpIn);
 	FCLOSE(fpOut);
 	
-	printf("Sarin is complete!\n\n");
-	StopWatch();
-
-	return(0);
+  printf("Sarin is complete!\n\n");
+  /* Stop the timer and print info about how long the program took.  */
+  StopWatch();
+  
+  return(0);
 }
 
 void usage (char *name)
