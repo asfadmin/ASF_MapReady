@@ -1,7 +1,7 @@
 /******************************************************************************
 NAME:  diff_las
 
-SYNOPSIS:  diff_las img1.ext img2.ext [difference.ext]
+SYNOPSIS:  diff_las [-d difference.ext] [-m mask_val] <img1.ext> <img2.ext>
 
 DESCRIPTION:  compare LAS 6.0 images, for debugging and verification
 	      (especially between platforms).
@@ -22,6 +22,8 @@ PROGRAM HISTORY:
     				 input for better visualization
     1.5     2/02   P. Denny	Add masking option, standardize
     				 command line arguments
+    2.0     1/03   P. Denny	Update to use meta struct instead
+				 of DDR struct
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -66,7 +68,7 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 
-#define VERSION 1.5
+#define VERSION 2.0
 
 void usage(char *name);
 
