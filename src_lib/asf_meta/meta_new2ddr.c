@@ -139,8 +139,9 @@ void meta_new2ddr(meta_parameters *meta, struct DDR *ddr)
 		    case 'A': /* Along-track/cross-track... ddr has no atct projection, default to UTM */
 			/*Can't do anything here until we add AT/CT to asf_geolib.*/
 			proj_invalid=1;
-	        	printf("** DDR files do not support JPL's fabricated along-track/cross-track projection.\n"
-			       "** You must geocode your data under a different projection (use ASF tool 'geocode').\n");
+	        	printf("** DDR files do not support JPL's along-track/cross-track projection.\n"
+			       "** For valid DDR data, you must geocode your data under a different\n"
+			       "** projection (use ASF tool 'geocode').\n");
 			break;
 		    case 'L':/* Lambert azimuthal equal area */
 			ddr->proj_code = LAMAZ;
