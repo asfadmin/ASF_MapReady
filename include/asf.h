@@ -7,6 +7,7 @@
 #include <string.h>
 #include <math.h>
 #include "caplib.h"
+#include "asf_meta.h"
 #include "error.h"
 #include "log.h"
 #include "cla.h"
@@ -85,7 +86,8 @@ int fileExists(const char *name);
 char *findExt(char *name);
 char *appendExt(const char *name,const char *newExt);
 FILE *fopenImage(const char *name,const char *accessType);
-
+void get_float_line(FILE *file, meta_parameters *meta, int line_number, 
+		    float *dest);
 void create_name(char *out,const char *in,const char *newExt);
 
 #endif
