@@ -88,6 +88,6 @@ void asfPrintError(const char *format, ...)
   printf(errorEnd);
   if (logflag) fprintf(fLog, errorEnd);
 
-  FCLOSE(fLog);
+  if (logflag) FCLOSE(fLog);
   exit(EXIT_FAILURE);
 }
