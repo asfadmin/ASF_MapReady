@@ -1,4 +1,42 @@
 /******************************************************************************
+*								              *
+* Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
+* All rights reserved.                                                        *
+*                                                                             *
+* Redistribution and use in source and binary forms, with or without          *
+* modification, are permitted provided that the following conditions are met: *
+*                                                                             *
+*    * Redistributions of source code must retain the above copyright notice, *
+*      this list of conditions and the following disclaimer.                  *
+*    * Redistributions in binary form must reproduce the above copyright      *
+*      notice, this list of conditions and the following disclaimer in the    *
+*      documentation and/or other materials provided with the distribution.   *
+*    * Neither the name of the Geophysical Institute nor the names of its     *
+*      contributors may be used to endorse or promote products derived from   *
+*      this software without specific prior written permission.               *
+*                                                                             *
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" *
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE   *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE  *
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE    *
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR         *
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF        *
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS    *
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN     *
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)     *
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE  *
+* POSSIBILITY OF SUCH DAMAGE.                                                 *
+*                                                                             *
+*       For more information contact us at:                                   *
+*                                                                             *
+*	Alaska Satellite Facility	    	                              *
+*	Geophysical Institute			www.asf.alaska.edu            *
+*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
+*	P.O. Box 757320							      *
+*	Fairbanks, AK 99775-7320					      *
+*									      *
+******************************************************************************/
+/******************************************************************************
 NAME:  sr2gr - converts slant range images to ground range images
 
 SYNOPSIS:   sr2gr infile outmeta pixsiz
@@ -31,9 +69,11 @@ PROGRAM HISTORY:
     2.0	    3/98   T. Logan     Modify to work with AISP outputs
     3.0     4/98   T. Logan     Modified to work with RAMMS data
     3.1     8/98   O. Lawlor    Corrected azimuth pixel spacing equation.
-    4.0     12/98  O. Lawlor    Modified for new metadata routines.
-    4.5     02/04  P. Denny     Update to use new metastruct instead of ddr
+    4.0    12/98   O. Lawlor    Modified for new metadata routines.
+    4.5     2/04   P. Denny     Update to use new metastruct instead of ddr
                                   Use improved get/put_float_line
+    4.1     2/04   J. Nicoll    Initialize in buffer arrays to 0's because
+                                  IRIX is too stupid to do it automatically.
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -44,36 +84,7 @@ ALGORITHM REFERENCES:
 BUGS:
 
 ******************************************************************************/
-/****************************************************************************
-*								            *
-*   sr2gr - converts slant range images to ground range images		    *
-*   Copyright (C) 2001  ASF Advanced Product Development    	    	    *
-*									    *
-*   This program is free software; you can redistribute it and/or modify    *
-*   it under the terms of the GNU General Public License as published by    *
-*   the Free Software Foundation; either version 2 of the License, or       *
-*   (at your option) any later version.					    *
-*									    *
-*   This program is distributed in the hope that it will be useful,	    *
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of    	    *
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the   	    *
-*   GNU General Public License for more details.  (See the file LICENSE     *
-*   included in the asf_tools/ directory).				    *
-*									    *
-*   You should have received a copy of the GNU General Public License       *
-*   along with this program; if not, write to the Free Software		    *
-*   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.               *
-*									    *
-*   ASF Advanced Product Development LAB Contacts:			    *
-*	APD E-mail:	apd@asf.alaska.edu 				    *
-* 									    *
-*	Alaska SAR Facility			APD Web Site:	            *	
-*	Geophysical Institute			www.asf.alaska.edu/apd	    *
-*       University of Alaska Fairbanks					    *
-*	P.O. Box 757320							    *
-*	Fairbanks, AK 99775-7320					    *
-*									    *
-****************************************************************************/
+
 
 
 #include "asf.h"
@@ -81,7 +92,7 @@ BUGS:
 #include "sr2gr.h"
 
 #define VERSION 4.5
-
+#define FUDGE_FACTOR 2
 #define REQ_ARGS 3
 
 /*Create vector for multilooking.*/
@@ -201,10 +212,16 @@ int main(int argc,char *argv[])
 		a_lfrac[ii] = 1.0 - a_ufrac[ii]; 
 	}
 
-	ibuf1 = (float *) MALLOC ((in_np+2)*sizeof(float));
-	ibuf2 = (float *) MALLOC ((in_np+2)*sizeof(float));
+	ibuf1 = (float *) MALLOC ((in_np+FUDGE_FACTOR)*sizeof(float));
+	ibuf2 = (float *) MALLOC ((in_np+FUDGE_FACTOR)*sizeof(float));
 	obuf = (float *) MALLOC (out_np*sizeof(float));
 
+	/* Initialize input arrays to 0 */
+	for (ii=0;ii<in_np+FUDGE_FACTOR;ii++) {
+		ibuf1[ii]=ibuf2[ii]=0.0;
+	}
+
+	/* Work dat magic! */
 	printf("\n");
 	for (line=0; line<out_nl; line++)
 	{
@@ -213,6 +230,7 @@ int main(int argc,char *argv[])
 			get_float_line(fpi,in_meta,a_lower[line],  ibuf1);
 			get_float_line(fpi,in_meta,a_lower[line]+1,ibuf2);
 		}
+		
 		for (ii=0; ii<out_np; ii++)
 		{
 			int val00,val01,val10,val11,tmp1,tmp2;
