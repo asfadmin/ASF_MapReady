@@ -11,10 +11,8 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	-lm
 
-OBJS  = lzFetch.o \
-	aisp_write.o \
+OBJS  = aisp_write.o \
 	missing.o \
-	propagate.o \
 	bin_state.o \
 	unpack.o \
 	frame.o \
