@@ -1,53 +1,63 @@
-/********************************************************************
-NAME:               CEOS.H
+/*******************************************************************************
+NAME: ceos.h
 
 PURPOSE:  Include file defining structure for CEOS file header/trailer/
-	  data record contents.
+          data record contents.
 
 PROGRAM HISTORY:
 VERSION         DATE   AUTHOR
 -------         ----   ------
   1.0           5/92   R. Guritz (ASF)
-  1.1           9/93   T. Logan (ASF)   Added Imagery option file
-					file descriptor record
-  1.2		10/93  T. Logan (ASF)   Added Radiometric Data Record
-  1.3		02/94  M. Shindle <ASF> Added Map Projection Data Record
-  2.0		5/96   T. Logan (ASF)   Added all the rest of the record types
-					Modified existing value structures to 
-					include string values
-  3.0		9/96   T. Logan (ASF)   Added all fields for post Radarsat CEOS
-					structures
-  3.1		11/97  T. Logan (ASF)   Made all records consistent with hdrs.
+  1.1           9/93   T. Logan (ASF)   Added Imagery option file descriptor
+                                          record
+  1.2          10/93   T. Logan (ASF)   Added Radiometric Data Record
+  1.3           2/94   M. Shindle <ASF> Added Map Projection Data Record
+  2.0           5/96   T. Logan (ASF)   Added all the rest of the record types
+                                        Modified existing value structures to 
+                                          include string values
+  3.0           9/96   T. Logan (ASF)   Added all fields for post Radarsat CEOS
+                                          structures
+  3.1          11/97   T. Logan (ASF)   Made all records consistent with hdrs.
+  4.0           2/02   R. Gens          Added ESA facililty data record
   
-*********************************************************************/
+*******************************************************************************/
 #ifndef __CEOS_H
+#define __CEOS_H        /* include ceos.h only once */
 
-#define __CEOS_H	/* include ceos.h only once */
-
-#include	<stdio.h>
+#include <stdio.h>
 
 
 /*** MODES *****/
-#define CEOS_SIC     0
+#define CEOS_SLC     0
 #define CEOS_FUL     1
 #define CEOS_LOW     2
 #define CEOS_CCSD    3
 
 /*** RECORD TYPES ***/
-#define IOFDR   10003		/* Imagery Option File Descriptor 	*/
-#define LFDR	10004		/* Leader File Descriptor		*/
-#define DSSR	10005		/* Data Set Summary 			*/
-#define MPDR	10006		/* Map Projection Data			*/
-#define PPDR    10007		/* Platform Position Data		*/
-#define ATDR    10008		/* Attitude Data			*/
-#define RADR	10009		/* Radiometric Data 			*/
-#define DQSR    10010		/* Data Quality Summary 		*/
-#define SDHR    10011		/* Signal Data Histogram Record		*/
-#define PDHR    10012		/* Processed Data Histogram		*/
-#define RNSR	10013		/* Range Spectra Record			*/
-#define DEMR	10014		/* Digital Elevation Model	 	*/	
-#define FACDR	10015		/* Facility Data Record			*/
-
+/* Leader file */
+#define IOFDR     10003           /* Imagery Option File Descriptor */
+#define LFDR      10004           /* Leader File Descriptor         */
+#define DSSR      10005           /* Data Set Summary               */
+#define MPDR      10006           /* Map Projection Data            */
+#define PPDR      10007           /* Platform Position Data         */
+#define ATDR      10008           /* Attitude Data                  */
+#define RADR      10009           /* Radiometric Data               */
+#define DQSR      10010           /* Data Quality Summary           */
+#define SDHR      10011           /* Signal Data Histogram Record   */
+#define PDHR      10012           /* Processed Data Histogram       */
+#define RNSR      10013           /* Range Spectra Record           */
+#define DEMR      10014           /* Digital Elevation Model        */ 
+#define FACDR     10015           /* Facility Data Record           */
+#define ASFFACDR  10015           /* ASF Facility Data Record       */
+#define ESAFACDR  10016           /* ESA Facility Data Record       */
+#define PPR       10017           /* Processing Parameter Record    */
+/* Volume directory file */
+#define VDR       10018
+#define LFPR      10019
+#define DFPR      10020
+#define TR        10021
+/* Null volume file */
+#define NVDR      10022
 
 /*** RECORD SIZES ***/
 #define H_SZ    12
@@ -55,7 +65,7 @@ VERSION         DATE   AUTHOR
 #define FDR_SZ  720
 
 
-#define SIC_AVG 32768.0
+#define SLC_AVG 32768.0
 
 struct IMG_STATS {
 int   nbins;
@@ -141,11 +151,11 @@ struct RADDR {
 struct VRADDR {
    short  seqnum;       /* Radiometric Data Record Sequence Number */
    short  datfield;     /* Number of radiometric data fields in this rec */
-   int   setsize;      /* Radiometric data set size in bytes */
+   int    setsize;      /* Radiometric data set size in bytes */
    char   sarchan[5];   /* SAR channel indicator */
    char   spare[5]; 
    char   luttype[25];  /* Look Up Table Designator */
-   int   nosample;     /* Number of samples in LUT */
+   int    nosample;     /* Number of samples in LUT */
    char   samptype[17]; /* Sample Type Designator */
    double a[3];         /* Calibration Coefficients */
    char   spare2[5]; 
@@ -155,64 +165,64 @@ struct VRADDR {
 /* Imagery Options File -- File Descriptor Record */
 struct IOF_FDR {
    char   ascii_flag[2],
-	  spare1[2],
-	  format_doc[12],
-	  format_rev[2],
-	  design_rev[2],
-	  software_id[12],
-	  file_num[4],
-	  product_id[16],
-	  rec_seq_flag[4],
-	  seq_loc[8],
-	  seq_len[4],
-	  rec_code[4],
-	  code_loc[8],
-	  code_len[4],
-	  rec_len[4],
-	  rlen_loc[8],
-	  rlen_len[4],
-	  spare2[4],
-	  spare3[64],
-	  
-	  numofrec[6],	/* data records */
-	  reclen[6],	/* Record Length */
-	  blanks[24],	/* Reserved -- Blanks */
-	  
-	  /* sample group data */
-	  bitssamp[4],  /* bits per sample */
-	  sampdata[4],  /* samples per data group */
-	  bytgroup[4],  /* bytes per group */
+          spare1[2],
+          format_doc[12],
+          format_rev[2],
+          design_rev[2],
+          software_id[12],
+          file_num[4],
+          product_id[16],
+          rec_seq_flag[4],
+          seq_loc[8],
+          seq_len[4],
+          rec_code[4],
+          code_loc[8],
+          code_len[4],
+          rec_len[4],
+          rlen_loc[8],
+          rlen_len[4],
+          spare2[4],
+          spare3[64],
+          
+          numofrec[6],  /* data records */
+          reclen[6],    /* Record Length */
+          blanks[24],   /* Reserved -- Blanks */
+          
+          /* sample group data */
+          bitssamp[4],  /* bits per sample */
+          sampdata[4],  /* samples per data group */
+          bytgroup[4],  /* bytes per group */
           justific[4],  /* Justification and order of samples in data group */
-	  
-	  /* SAR related data in the record */
-          sarchan[4],	/* SAR channels in this file */
-	  linedata[8],  /* lines per data set */
-	  lbrdrpxl[4],  /* left border pixels per line */
-	  datgroup[8],  /* Total number of data groups */
+          
+          /* SAR related data in the record */
+          sarchan[4],   /* SAR channels in this file */
+          linedata[8],  /* lines per data set */
+          lbrdrpxl[4],  /* left border pixels per line */
+          datgroup[8],  /* Total number of data groups */
           rbrdrpxl[4],  /* right border pixels per line */
-  	  topbrdr[4],   /* top border lines */
-	  botbrdr[4],	/* bottom border lines */
-	  interlv[4],   /* Interleave Indicator */
+          topbrdr[4],   /* top border lines */
+          botbrdr[4],   /* bottom border lines */
+          interlv[4],   /* Interleave Indicator */
 
-	  /* Record Data in the file */
-	  recline[2],	/* physical records per line */
-	  mrecline[2],  /* physical records per multi channel line */
-	  predata[4],   /* bytes of prefix data per record */
-	  sardata[8],  	/* bytes of sar data per record */
-	  sufdata[4],   /* bytes of suffix data per record */
-	  repflag[4],   /* prefix/suffix repeat flag */
+          /* Record Data in the file */
+          recline[2],   /* physical records per line */
+          mrecline[2],  /* physical records per multi channel line */
+          predata[4],   /* bytes of prefix data per record */
+          sardata[8],   /* bytes of sar data per record */
+          sufdata[4],   /* bytes of suffix data per record */
+          repflag[4],   /* prefix/suffix repeat flag */
 
-     	  /* Prefix/Suffix Data Locators */
-	  DataLoc[104], /* I don't know what this stuff is for */
+          /* Prefix/Suffix Data Locators */
+          DataLoc[104], /* I don't know what this stuff is for */
 
-  	  /* SAR Data Pixel Description */
-	  formatid[28], /* SAR data format identifier */
-	  formcode[4],  /* SAR data format type code */
-	  leftfill[4],  /* Left fill bits per pixel */
+          /* SAR Data Pixel Description */
+          formatid[28], /* SAR data format identifier */
+          formcode[4],  /* SAR data format type code */
+          leftfill[4],  /* Left fill bits per pixel */
           rigtfill[4],  /* Right fill bits per pixel */
-	  maxidata[8],  /* Maximum data range of pixel */
+          maxidata[8],  /* Maximum data range of pixel */
 
-	  padding[588];          
+          padding[588];          
 };
 
 /* Imagery Option File -- Values in File Descriptor Record */
@@ -236,31 +246,31 @@ struct IOF_VFDR {
           rlen_len;
    char   spare2[4],
           spare3[64];
-   int	  numofrec,  	/* data records 			*/
-          reclen,    	/* Record Length 			*/
-          bitssamp,  	/* bits per sample 			*/
-          sampdata,  	/* samples per data group 		*/
-          bytgroup;  	/* bytes per group 			*/
-   char   justific[5];  /* Justification and order of samples in data group */
-   int    sarchan,   	/* SAR channels in this file 		*/
-          linedata,  	/* lines per data set 			*/
-          lbrdrpxl,  	/* left border pixels per line 		*/
-          datgroup,  	/* Total number of data groups 		*/
-          rbrdrpxl,  	/* right border pixels per line 	*/
-          topbrdr,   	/* top border lines 			*/
-          botbrdr;   	/* bottom border lines 			*/
-   char   interlv[5];   /* Interleave Indicator 		*/
-   int    recline,   	/* physical records per line 		*/
-          mrecline,  	/* physical recs per multi-channel line */
-          predata,   	/* bytes of prefix data per record 	*/
-          sardata,   	/* bytes of sar data per record 	*/
-          sufdata;   	/* bytes of suffix data per record 	*/
-   char   repflag[5],   /* prefix/suffix repeat flag 		*/
-          formatid[29], /* SAR data format identifier 		*/
-          formcode[5];  /* SAR data format type code 		*/
-   int    leftfill,  	/* Left fill bits per pixel 		*/
-          rigtfill,  	/* Right fill bits per pixel 		*/
-          maxidata;  	/* Maximum data range of pixel 		*/
+   int    numofrec,          /* data records                         */
+          reclen,            /* Record Length                        */
+          bitssamp,          /* bits per sample                      */
+          sampdata,          /* samples per data group               */
+          bytgroup;          /* bytes per group                      */
+   char   justific[5];       /* Justification and order of samples in data group */
+   int    sarchan,           /* SAR channels in this file            */
+          linedata,          /* lines per data set                   */
+          lbrdrpxl,          /* left border pixels per line          */
+          datgroup,          /* Total number of data groups          */
+          rbrdrpxl,          /* right border pixels per line         */
+          topbrdr,           /* top border lines                     */
+          botbrdr;           /* bottom border lines                  */
+   char   interlv[5];        /* Interleave Indicator                 */
+   int    recline,           /* physical records per line            */
+          mrecline,          /* physical recs per multi-channel line */
+          predata,           /* bytes of prefix data per record      */
+          sardata,           /* bytes of sar data per record         */
+          sufdata;           /* bytes of suffix data per record      */
+   char   repflag[5],        /* prefix/suffix repeat flag            */
+          formatid[29],      /* SAR data format identifier           */
+          formcode[5];       /* SAR data format type code            */
+   int    leftfill,          /* Left fill bits per pixel             */
+          rigtfill,          /* Right fill bits per pixel            */
+          maxidata;          /* Maximum data range of pixel          */
 };
 
 /*********************************************
@@ -287,43 +297,44 @@ struct FDR {
    char   spare2[4],
           spare3[64];
    int    n_dssr,
-	  l_dssr,
-	  n_mpdr,
-	  l_mpdr,
-	  n_ppdr,
-	  l_ppdr,
-	  n_atdr,
-	  l_atdr,
-	  n_raddr,
-	  l_raddr,
-	  n_rcr,
-	  l_rcr,
-	  n_qsr,
-	  l_qsr,
-	  n_dhr,
-	  l_dhr,
-	  n_rsr,
-  	  l_rsr,
-	  n_demdr,
-	  l_demdr,
- 	  n_rpr,
-	  l_rpr,
-	  n_adr,
-	  l_adr,
-	  n_dpr,
-	  l_dpr,
-	  n_calr,
-	  l_calr,
-	  n_gcp,
-	  l_gcp,
-	  spare4[10],
-	  n_facdr,
-	  l_facdr;
+          l_dssr,
+          n_mpdr,
+          l_mpdr,
+          n_ppdr,
+          l_ppdr,
+          n_atdr,
+          l_atdr,
+          n_raddr,
+          l_raddr,
+          n_rcr,
+          l_rcr,
+          n_qsr,
+          l_qsr,
+          n_dhr,
+          l_dhr,
+          n_rsr,
+          l_rsr,
+          n_demdr,
+          l_demdr,
+          n_rpr,
+          l_rpr,
+          n_adr,
+          l_adr,
+          n_dpr,
+          l_dpr,
+          n_calr,
+          l_calr,
+          n_gcp,
+          l_gcp,
+          spare4[10],
+          n_facdr,
+          l_facdr;
     char  spare5[288];
 };
 
-/*Facility Related Data Record.*/
-
+/*************************************/
+/* ASF Facility Related Data Record. */
+/*************************************/
 struct VFDRECV {
    short  seq_num;
    char   spare_frd_1[5];
@@ -346,10 +357,10 @@ struct VFDRECV {
           farelon,  /* Long at end of image frame in the far swath (F16.7) */
           swazim,   /* Actual swath width (km) in azimuth direction (F16.7)*/
           swrange;  /* Actual swath width (km) in range direction (F16.7)*/
-   int   npixels,   /* Actual (without filler) number of pixels per line(I8)*/
-          nlines,    /* Actual (without filler) number of image lines (I8) */
-          apixels,   /* Total (with filler) number of pixels per line (I8) */
-          alines;    /* Total (with filler) number of image lines (I8) */
+   int    npixels,  /* Actual (without filler) number of pixels per line(I8)*/
+          nlines,   /* Actual (without filler) number of image lines (I8) */
+          apixels,  /* Total (with filler) number of pixels per line (I8) */
+          alines;   /* Total (with filler) number of image lines (I8) */
    char   mediaid[8],   /* Identification label of the media written to */
           sblock[18],   /* Location on the DCRSI where data begins */
           eblock[18],   /* Location on the DCRSI where data ends */
@@ -401,9 +412,9 @@ struct VFDRECV {
    char   procgain[5],  /* Processor gain */
           deskewf[5],   /* Flag indicating whether Doppler Skew was removed */
           grndslnt[8];  /* Ground range / slant range flag */
-   double sltrngfp, /* Slant range to the first image pixel (F16.7) */
-          sltrnglp; /* Slant range to the last image pixel (F16.7) */
-   int    strtsamp;  /* Start sample of signal data range line processed (I8)*/
+   double sltrngfp,   /* Slant range to the first image pixel (F16.7) */
+          sltrnglp;   /* Slant range to the last image pixel (F16.7) */
+   int    strtsamp;   /* Start sample of signal data range line processed (I8)*/
    char   clttrlkf[5];  /* Flag indicating whether clutterlock was used */
    double dpplrfrq, /* Doppler frequency at the near range (F16.7)*/
           dpplrslp, /* Doppler frequency slope (F16.7)*/
@@ -444,92 +455,226 @@ struct VFDRECV {
    char   comment[101];         /* comment field */
 };
 
+/*************************************/
+/* ESA Facility Related Data Record. */
+/*************************************/
+struct ESA_FACDR {
+   char seq_num[65]; /* name of facility data record */
+   char qc_release[7]; /* date of last release of QC software */
+   char spare1[3];   /* spare */
+   char cal_update[7]; /* date of last calibration update */
+   short qa_flag; /* overall QA summary flag (sum of the next 9 following flags */
+   short prf_flag; /* PRF code change (0 = PRF constant in scene) */
+   short samp_flag; /* sampling window start time change flag (0 = SWST constant) */
+   short cal_flag; /* cal. system & receiver gain change flag (0 = Cal/Rx gain constant) */
+   short chirp_flag; /* chirp replica quality flag (0 = Replica XCF in limits) */
+   short dop_conf_flag; /*Doppler centroid confidence measure flag (0 = in limits) */
+   short dop_val; /* Doppler centroid value (0 = Dopp-centroid less than PRF_2 */
+   short dop_amb_conf_flag; /* Doppler ambiguity confidence measure flag (0 = in limits) */
+   short out_flag; /* output data mean flag (0 = image mean or sd in limits) */
+   short range_flag; /* on ground / on board range compressed flag (0 = OGRC) */
+   short n_prf_changes; /* number of PRF code changes */
+   short n_samp_changes; /* number of sampling window changes */
+   short n_gain_changes; /* number of calibration sybsystem gain changes */
+   short n_miss_lines; /* number of missing lines (i.e. raw data input lines) */
+   short n_rec_gain_changes; /* number of receiver gain changes */
+   double width_ccf; /* 3-dB pulse width of (first) Chirp Replica Cross Correlation Function (CCF) [samples] */
+   double lobe_ccf; /* first side lobe level of chirp CCF [dB] */
+   double islr; /* ISLR of chirp CCF function [dB]*/
+   double dop_cent_conf; /* Doppler centroid confidence measure */
+   double dop_amb_conf; /* Doppler ambiguity confidence measure */
+   double main_i; /* estimated mean of I input data */
+   double main_q; /* estimated mean of Q input data */
+   double stddev_i; /* estimated standard deviation of I input data */
+   double stddev_q; /* estimated standard deviation of Q input data */
+   double cal_gain; /* calibration system gain of first processed line (telemetry value) */
+   double rec_gain; /* receiver gain of first processed line (telemetry value) */
+   double dop_amb; /* Doppler ambiguity number */
+   char spare2[17]; /* spare */
+   double bias_i; /* bias correction applied to I channel (to be added to the nominal bias) */
+   double bias_q; /* bias correction applied to Q channel (to be added to the nominal bias) */
+   double gain_i; /* I/Q gain imbalance correction (applied to I channel) */
+   double gain_q; /* I/Q gain imbalance correction (applied to Q channel) */
+   double non_ortho; /* I/Q non-orthogonality correction (applied to Q channel) */
+   char spare3[17]; /* spare */
+   double noise_pow; /* estimated nosie power per sample */
+   char pulse_delay[17]; /* calibration pulse time delay [ns] */
+   short n_cal_pulses; /* number of valid calibration pulses [pulses] */
+   short n_noise_pulses; /* number of valid noise pulses [pulses] */
+   short n_rep_pulses; /* number of valid replica pulses [pulses] */
+   double f_samp_rep; /* first sample in replica [samples] */
+   double cal_pulse_pow; /* mean calibration pulse power */
+   double noise_pulse_pow; /* mean noise pulse power */
+   double range_comp; /* range compression normalization factor */
+   double rep_pulse_pow; /* replica pulse power */
+   double inc_first_pix; /* incidence angle at first range pixel (at mid-azimuth) [degrees] */
+   double inc_center_pix; /* incidence angle at center range pixel (at mid_azimuth) [degrees] */
+   double inc_last_pix; /* incidence angle at last range pixel (at mid-azimuth) [degrees] */
+   double sl_range_ref; /* slant range reference [km] */
+   char spare4[13]; /* spare */
+   short ant_pattern_flag; /* antenna pattern correction flag (0 = no correction) */
+   double abs_cal_const; /* absolute calibration constant K [scalar] */
+   double up_cal_const; /* upper bound calibration constant K (+ 3 std dev) */
+   double low_cal_const; /* lower bound calibration constant K (- 3 std dev) */
+   double sigma_0; /* estimated noise equivalent sigma 0 [dB] */
+   char k_gen[7]; /* date on which K was generated */
+   char k_ver[5]; /* K version number */
+   short dup_lines; /* number of duplicated input lines */
+   double ber; /* estimated bit error rate */
+   char spare5[13]; /* spare */
+   double img_mean; /* output image mean */
+   double img_std_dev; /* output image standard deviation */
+   double img_max; /* output image maximum value */
+   char t_first_line[25]; /* time of raw data first input range line (UTC) */
+   char t_asc_node[25]; /* time of ascending node state vectors (UTC) */
+   double x_asc_pos, y_asc_pos, z_asc_pos; /* state vector positions ascending node in x,y,z [m] */
+   double x_asc_vel, y_asc_vel, z_asc_vel; /* state vector velocities ascending node in x,y,z [m/s] */
+   short out_bits; /* output pixel bit length [bits] */
+   double gain1; /* processor gain #1 */
+   double gain2; /* processor gain #2 */
+   double gain3; /* processor gain #3 */
+   short peak_loc_first; /* peak location of CCF between first extracted chirp and nominal chirp [samples] */
+   double width_ccf2; /* 3-dB width of CCF between last extracted chirp and nominal chirp [samples] */
+   double f_lobe; /* first side lobe level of chirp CCF between last extracted chirp and nominal chirp [dB] */
+   double islr_ccf; /* ISLR of chirp CCF between last extracted chirp and nominal chirp [dB] */
+   short peak_loc_last; /* peak location of CCF between last extracted chirp and nominal chirp [samples] */
+   short roll_flag; /* roll tilt mode flag (0 = not in roll tilt mode) */
+   short raw_data_flag; /* raw data correction flag (0 = correction with default parameters) */
+   short look_flag; /* look detection flag (1 = power detected and summed) */
+   short dop_amb_flag; /* Doppler ambiguity estiamtion flag (0 = no estimation done) */
+   short az_base_flag; /* azimuth baseband conversion flag (0 = no conversion done) */
+   short samp_per_line; /* samples per line used for the raw data analysis [samples] */
+   short lines_skip; /* range lines skip factor for raw data analysis [lines] */
+   char t_in_stvec[25]; /* time of input state vector (UTC) used for processed the image */
+   double x_in_pos, y_in_pos, z_in_pos; /* input state vector position in x,y,z [m] */
+   double x_in_vel, y_in_vel, z_in_vel; /* input state vector velocity in x,y,z [m/s] */
+   short in_stvec_flag; /* input state vector type flag (0 = predicted, 1 = restituted, preliminary or precise) */
+   double range_filt; /* window coefficient for range-matched filter */
+   double az_filt; /* window coefficient for azimuth-matched filter */
+   short update_filt; /* update period of range-matched filter [chirps] */
+   double look_gains[8]; /* look scalar gains (up to 8 looks) */
+   short samp_win_bias; /* sampling window start time bias [ns] */
+   double dop_cube_coef; /* Doppler centroid cubic coefficient [Hz/sec3] */
+   short prf_first_line; /* PRF code of first range line (telemetry value) */
+   short prf_last_line; /* PRF code of last range line (telemetry value) */
+   short win_first_line; /* sampling window start time code of first range line (telemetry value) */
+   short win_last_line; /* sampling window start time code of last range line (telemetry value) */
+   short cal_gain_last_line; /* calibration system gain of last processed line (telemetry value) */
+   short rec_gain_last_line; /* receiver gain of last processed line (telemetry value) */
+   short first_range_samp; /* first processed range sample */
+   short fft_ratio; /* azimuth FFT/IFFT ratio */
+   short n_az_blocks; /* number of azimuth blocks processed */
+   int n_in_lines; /* number of raw data lines [lines] */
+   short ini_dop_amb; /* initial Doppler ambiguity number */
+   double chirp_quality[3]; /* chirp quality threshold [pixels,dB,dB] */
+   double in_data_stats[4]; /* input data statistic thresholds */
+   double dop_amb_thres[2]; /* Doppler ambiguity confidence thresholds */
+   double out_data_stats[2]; /* output data statistics thresholds */
+   char t_sat_first_line[17]; /* satellite binary time of first range line (telemetry value) */
+   short n_val_pix; /* number of valid pixels per range line (the remaining pixels are zero padded [pixels] */
+   short n_range_samp; /* number of range samples discarded during processing interpolations [samples] */
+   double gain_low; /* I/Q gain imbalance - lower bound */
+   double gain_up; /* I/Q gain imbalance - upper bound */
+   double quad_low; /* I/Q quadrature departure - lower bound [degrees] */
+   double quad_up; /* I/Q quadrature departure - upper bMod0_CGI236ound [degrees] */
+   double look_bw; /* 3-dB look bandwidth [Hz] */
+   double dop_bw; /* 3-dB processed Doppler bandwidth [Hz] */
+   short range_spread; /* range spreading loss compensation flag (0 = no compensation) */
+   char more_flags[17]; /* some more flags */
+   short max_look; /* maximum value of look scalar gain flag (1 = automatically calculated) */
+   short rep_norm_flag; /* replica normalization method flag */
+   double gr2sr_poly[4]; /* 4 coefficients of the ground range to slant range conversion polynominal */
+   double ant_elev_poly[5]; /* 5 coefficients of the antenna elevation pattern polynomial */
+   double range_time_poly; /* range time of origin of antenna pattern polynomial */
+   char spare6[10239]; /* spare */
+};
+
 /* Map Projection Data Record - Value Structure */
 struct VMPDREC {
   char    mpdesc[33];    /* Map projection descriptor */
   int     npixels,       /* number of pixels per line of image */
-	  nlines;        /* number of lines in image */
+          nlines;        /* number of lines in image */
   double  nomipd,        /* nominal inter-pixel distance in output (meters) */
-	  nomild,        /* nominal inter-line distance in output (meters) */
-	  orient,        /* Orientation at output scene center */
-	  orbitincl,     /* Actual platform orbital inclination (degrees) */
-	  ascnode,       /* Actual ascending node (degrees) */
-	  distplat,      /* Distance of platform from geocenter (meters) */
-	  altplat,       /* Altitude of platform rel. to ellipsoid (meters) */
-	  velnadir,      /* Actual ground speed at nadir (m/s) */
-	  plathead;      /* platform heading (degrees) */
+          nomild,        /* nominal inter-line distance in output (meters) */
+          orient,        /* Orientation at output scene center */
+          orbitincl,     /* Actual platform orbital inclination (degrees) */
+          ascnode,       /* Actual ascending node (degrees) */
+          distplat,      /* Distance of platform from geocenter (meters) */
+          altplat,       /* Altitude of platform rel. to ellipsoid (meters) */
+          velnadir,      /* Actual ground speed at nadir (m/s) */
+          plathead;      /* platform heading (degrees) */
   char    refelip[33];   /* Name of reference ellipsoid */
   double  remajor,       /* Semimajor axis of ref. ellipsoid (m) */
-	  reminor,       /* Semiminor axis of ref. ellipsoid (m) */
-	  datshiftx,     /* Datum shift parameter ref. to Greenwich dx (m) */
+          reminor,       /* Semiminor axis of ref. ellipsoid (m) */
+          datshiftx,     /* Datum shift parameter ref. to Greenwich dx (m) */
           datshifty,     /* datum shift perpendicular to Greenwich dy (m) */
-	  datshiftz,     /* datum shift direction of rotation axis dz (m) */
-	  datshift1,     /* 1st additional datum shift, rotation angle */
-	  datshift2,     /* 2nd additional datum shift, rotation angle */
-	  datshift3,     /* 3rd additional datum shift, rotation angle */
-	  rescale;       /* Scale factor of referenced ellipsoid */
+          datshiftz,     /* datum shift direction of rotation axis dz (m) */
+          datshift1,     /* 1st additional datum shift, rotation angle */
+          datshift2,     /* 2nd additional datum shift, rotation angle */
+          datshift3,     /* 3rd additional datum shift, rotation angle */
+          rescale;       /* Scale factor of referenced ellipsoid */
   char    mpdesig[33],   /* Alphanumeric description of map projection */
-	  utmdesc[33],   /* UTM descriptor */
-	  utmzone[5];    /* Signature of UTM Zone */
+          utmdesc[33],   /* UTM descriptor */
+          utmzone[5];    /* Signature of UTM Zone */
   double  utmeast,       /* Map origin - false easting */
-	  utmnorth,      /* Map origin - false north */
-	  utmlong,       /* Center of projection longitude (deg) */
-	  utmlat,        /* Center of projection latitude (deg) */
-	  utmpara1,      /* 1st standard parallel (deg) */
-	  utmpara2,      /* 2nd standard parallel (deg) */
-	  utmscale;      /* UTM scale factor */
+          utmnorth,      /* Map origin - false north */
+          utmlong,       /* Center of projection longitude (deg) */
+          utmlat,        /* Center of projection latitude (deg) */
+          utmpara1,      /* 1st standard parallel (deg) */
+          utmpara2,      /* 2nd standard parallel (deg) */
+          utmscale;      /* UTM scale factor */
   char    upsdesc[33];   /* UPS descriptor */
   double  upslong,       /* Center of projection longitude (deg) */
-	  upslat,        /* Center of projection latitude (deg) */
-	  upsscale;      /* UPS scale factor */
+          upslat,        /* Center of projection latitude (deg) */
+          upsscale;      /* UPS scale factor */
   char    nspdesc[33];   /* NSP projection description */
   double  nspeast,       /* Map origin - false east */
-	  nspnorth,      /* Map origin - false north */
-	  nsplong,       /* Center of projection longitude (deg) */
-	  nsplat,        /* Center of projection latitude (deg) */
+          nspnorth,      /* Map origin - false north */
+          nsplong,       /* Center of projection longitude (deg) */
+          nsplat,        /* Center of projection latitude (deg) */
           nsppara1,      /* Standard parallels */
-	  nsppara2,      /* Standard parallels */
-	  nsppara3,      /* Standard parallels */
-	  nsppara4,      /* Standard parallels */
-	  nspcm1,        /* Central meridian */
-	  nspcm2,        /* Central meridian */
-	  nspcm3;        /* Central meridian */
+          nsppara2,      /* Standard parallels */
+          nsppara3,      /* Standard parallels */
+          nsppara4,      /* Standard parallels */
+          nspcm1,        /* Central meridian */
+          nspcm2,        /* Central meridian */
+          nspcm3;        /* Central meridian */
   double  tlcnorth,      /* Top left corner north (m) */
-	  tlceast,       /* Top left corner east (m) */
-	  trcnorth,      /* Top right corner north (m) */
-	  trceast,       /* Top right corner east (m) */
-	  brcnorth,      /* Bottom right corner north (m) */
-	  brceast,       /* Bottom right corner east (m) */
-	  blcnorth,      /* Bottom left corner north (m) */
-	  blceast,       /* Bottom left corner east (m) */
-	  tlclat,        /* Top left corner latitude (deg) */
-	  tlclong,       /* Top left corner longitude (deg) */
+          tlceast,       /* Top left corner east (m) */
+          trcnorth,      /* Top right corner north (m) */
+          trceast,       /* Top right corner east (m) */
+          brcnorth,      /* Bottom right corner north (m) */
+          brceast,       /* Bottom right corner east (m) */
+          blcnorth,      /* Bottom left corner north (m) */
+          blceast,       /* Bottom left corner east (m) */
+          tlclat,        /* Top left corner latitude (deg) */
+          tlclong,       /* Top left corner longitude (deg) */
           trclat,        /* Top right corner lat (deg) */
-	  trclong,       /* Top right corner int (deg) */
-	  brclat,        /* Bottom right corner latitude (deg) */
-	  brclong,       /* Bottom right corner longitude (deg) */
-	  blclat,        /* Bottom left corner latitude (deg) */
-	  blclong,       /* Bottom left corner longitude (deg) */
-	  tlcheight,     /* Top left corner terrain height (m) */
-	  trcheight,     /* Top right corner terrain height (m) */
-	  brcheight,     /* Bottom right corner terrain height (m) */
-	  blcheight,     /* Bottom left corner terrain height (m) */
-	  a11,           /* 8 coeff. to convert a line (L) and pixel (p) */
-	  a12,           /* position to the map projection frame of      */
-	  a13,           /* reference, say (E,N) where:                  */
-	  a14,           /*                                              */
-	  a21,           /*  E=A11+A12+A13+A14TL                         */
-	  a22,           /*  N=A21+A22+A23+A24+nP                        */
-	  a23,           /*                                              */
-	  a24,           /*                                              */
-	  b11,           /* 8 coeff. to convert from the map projection  */
-	  b12,           /* (E,N) to line (L) and pixel (P) position.    */
-	  b13,           /*                                              */
-	  b14,           /* L=B11+B12+B13+B14TETN                        */
-	  b21,           /* P=B21+B22+B23+B24TN                          */
-	  b22,           /*                                              */
-	  b23,           /*                                              */
-	  b24;           /*                                              */
+          trclong,       /* Top right corner int (deg) */
+          brclat,        /* Bottom right corner latitude (deg) */
+          brclong,       /* Bottom right corner longitude (deg) */
+          blclat,        /* Bottom left corner latitude (deg) */
+          blclong,       /* Bottom left corner longitude (deg) */
+          tlcheight,     /* Top left corner terrain height (m) */
+          trcheight,     /* Top right corner terrain height (m) */
+          brcheight,     /* Bottom right corner terrain height (m) */
+          blcheight,     /* Bottom left corner terrain height (m) */
+          a11,           /* 8 coeff. to convert a line (L) and pixel (p) */
+          a12,           /* position to the map projection frame of      */
+          a13,           /* reference, say (E,N) where:                  */
+          a14,           /*                                              */
+          a21,           /*  E=A11+A12+A13+A14TL                         */
+          a22,           /*  N=A21+A22+A23+A24+nP                        */
+          a23,           /*                                              */
+          a24,           /*                                              */
+          b11,           /* 8 coeff. to convert from the map projection  */
+          b12,           /* (E,N) to line (L) and pixel (P) position.    */
+          b13,           /*                                              */
+          b14,           /* L=B11+B12+B13+B14TETN                        */
+          b21,           /* P=B21+B22+B23+B24TN                          */
+          b22,           /*                                              */
+          b23,           /*                                              */
+          b24;           /*                                              */
 };
 
 
@@ -607,7 +752,7 @@ struct dataset_sum_rec {
     double azi_beam;             /* antenna azimuth 3dB beam width */
     char   sat_bintim[17];       /* Satellite binary time */
     char   sat_clktim[33];       /* Satellite clock time */
-    int	   sat_clkinc;           /* Satellite clock increment */
+    int    sat_clkinc;           /* Satellite clock increment */
     char   spare5[9];            /* spare */
     char   fac_id[17];           /* processing facility */
     char   sys_id[9];            /* processing system */
@@ -680,6 +825,13 @@ struct dataset_sum_rec {
     char   decode_version[17];   /* version of the decode used      */
     char   spare_dss_16[2130];   /* spare */
     /****** Values included in RADARSAT era data files *****/
+
+    /****** ESA data set summary record fields *****/
+    double rng_time[3];             /* zero-Doppler range times */
+    char   az_time_first[25];       /* zero-Doppler azimuth time first pixel */
+    char   az_time_center[25];      /* zero-Doppler azimuth time center pixel */
+    char   az_time_last[25];        /* zero-Doppler azimuth time last pixel */
+    /****** ESA data set summary record fields *****/
 };
 
 
@@ -690,8 +842,8 @@ struct dataset_sum_rec {
 *                           *
 ****************************/
 struct pos_data_rec {
-    short seq_num;              /* Platform Position: record sequence # */
-    char  orbit_ele_desg[33];   /* Orbital elements designator          */
+    short  seq_num;             /* Platform Position: record sequence # */
+    char   orbit_ele_desg[33];  /* Orbital elements designator          */
     double orbit_ele[6];        /* orbital elements                     */
     short  ndata;               /* number of data sets                  */
     short  year;                /* year of first data point             */
@@ -700,17 +852,17 @@ struct pos_data_rec {
     short  gmt_day;             /* day in year of first data point      */
     double gmt_sec;             /* seconds in day of first data point   */
     double data_int;            /* time interval between data points(s) */
-    char  ref_coord[65];        /* reference coordinate system          */
+    char   ref_coord[65];       /* reference coordinate system          */
     double hr_angle;            /* GMT hour angle (degrees)             */
-    double alt_poserr;          /* Aint track position error           */
+    double alt_poserr;          /* Aint track position error            */
     double crt_poserr;          /* Cross track position error           */
     double rad_poserr;          /* radial position error                */
-    double alt_velerr;          /* Aint track velocity error           */
+    double alt_velerr;          /* Aint track velocity error            */
     double crt_velerr;          /* Cross track velocity error           */
     double rad_velerr;          /* Radial velocity error                */
     double pos_vec[64][6];      /* Data point position/velocity         */
                                 /* 0-2 position,  3-5  velocity         */
-    char spare_ppr_1[243];      /* spare 				*/
+    char spare_ppr_1[243];      /* spare                                */
 };
 
 /******************************************
@@ -720,27 +872,27 @@ struct pos_data_rec {
 ******************************************/
 
 struct  att_vect_rec {
-    short gmt_day;              /* day in the year (GMT) 	*/
-    int  gmt_msec;             /* millisecond of the day (GMT) */
-    short pitch_flag;           /* pitch data quality flag 	*/
-    short roll_flag;            /* roll data quality flag 	*/
-    short yaw_flag;             /* yaw data quality flag 	*/
-    double pitch;               /* pitch (degrees) 		*/
-    double roll;                /* roll (degrees) 		*/
-    double yaw;                 /* yaw (degrees) 		*/
-    short pitch_rate_flag;      /* pitch rate data quality flag */
-    short roll_rate_flag;       /* roll rate data quality flag 	*/
-    short yaw_rate_flag;        /* yaw rate data quality flag 	*/
-    double pitch_rate;          /* pitch rate (degrees/sec) 	*/
-    double roll_rate;           /* roll rate (degrees/sec) 	*/
-    double yaw_rate;            /* yaw_rate (degrees/sec) 	*/
-    struct att_vect_rec *next;  /* pointer to next data set 	*/
+    short  gmt_day;             /* day in the year (GMT)        */
+    int    gmt_msec;            /* millisecond of the day (GMT) */
+    short  pitch_flag;          /* pitch data quality flag      */
+    short  roll_flag;           /* roll data quality flag       */
+    short  yaw_flag;            /* yaw data quality flag        */
+    double pitch;               /* pitch (degrees)              */
+    double roll;                /* roll (degrees)               */
+    double yaw;                 /* yaw (degrees)                */
+    short  pitch_rate_flag;     /* pitch rate data quality flag */
+    short  roll_rate_flag;      /* roll rate data quality flag  */
+    short  yaw_rate_flag;       /* yaw rate data quality flag   */
+    double pitch_rate;          /* pitch rate (degrees/sec)     */
+    double roll_rate;           /* roll rate (degrees/sec)      */
+    double yaw_rate;            /* yaw_rate (degrees/sec)       */
+    struct att_vect_rec *next;  /* pointer to next data set     */
 };
 
 struct  att_data_rec {
     short npoint;               /* number of attitude data sets */
     struct att_vect_rec *data;  /* pointer to list of data sets */
-    char spare_adr_1[641];      /* spare 			*/
+    char spare_adr_1[641];      /* spare                        */
 };
 
 /*********************************************
@@ -751,8 +903,8 @@ struct  att_data_rec {
 *********************************************/
 
 struct Radio_Comp_Tbl {
-    double sample_offset;       /* compensation sample offset */
-    double sample_gain;         /* compensation sample gain */
+    double sample_offset;        /* compensation sample offset */
+    double sample_gain;          /* compensation sample gain */
     struct Radio_Comp_Tbl *next; /* link */
 };
 
@@ -761,16 +913,16 @@ struct Rad_Comp_Set {
     char  data_descr[33];       /* data descriptor */
     short req_recs;             /* number of required records */
     short table_seq_num;        /* table sequence number */
-    int  num_pairs;            /* total number of tables */
-    int  first_pixel;          /* pixel corresponding to first correction */
-    int  last_pixel;           /* pixel corresponding to last correction */
-    int  pixel_size;           /* pixel group size (subsample factor) */
+    int  num_pairs;             /* total number of tables */
+    int  first_pixel;           /* pixel corresponding to first correction */
+    int  last_pixel;            /* pixel corresponding to last correction */
+    int  pixel_size;            /* pixel group size (subsample factor) */
     double min_samp_index;      /* minimum sample index */
     double min_comp_value;      /* minimum radiometric compensation value */
     double max_samp_index;      /* maximum sample index */
     double max_comp_value;      /* maximum radiometric compensation value */
     char  spare_rcr_2[17];      /* spare */
-    int  n_table_entries;      /* number of comp pairs */
+    int  n_table_entries;       /* number of comp pairs */
     struct Radio_Comp_Tbl *tbl; /* pointer to linked list */
     struct Rad_Comp_Set *next;  /* pointer to next pol */
 };
@@ -778,8 +930,8 @@ struct Rad_Comp_Set {
 struct radi_comp_rec {
     short    seq_num;           /* radio comp record seq number */
     short    sar_chan;          /* sar channel indicator */
-    int     n_dset;            /* number of data sets */
-    int     dset_size;         /* data set size */
+    int     n_dset;             /* number of data sets */
+    int     dset_size;          /* data set size */
     char     spare_rcr_1[5];    /* padding for link list */
     struct Rad_Comp_Set  *set;  /* pointer to comp, dataset */
     struct radi_comp_rec *next; /* pointer to next radi. comp. record */
@@ -799,7 +951,7 @@ struct qual_sum_rec {
     double islr;                /* integrated side lobe ratio       */
     double pslr;                /* peak side lobe ratio             */
     double azi_ambig;           /* azimuth ambiguity                */
-    double rng_ambig;           /* range ambiguity  		    */
+    double rng_ambig;           /* range ambiguity                  */
     double snr;                 /* signal-to-noise ratio estimate   */
     double ber;                 /* nominal bit error rate           */
     double rng_res;             /* nominal slant range resolution   */
@@ -817,7 +969,7 @@ struct qual_sum_rec {
     double dis_skew;            /* geometric skew error             */
     double ori_err;             /* image orientation error          */
     double misreg[2][16];       /* misregistration error: 16 pairs  */
-				/* for along track and cross track  */
+                                /* for along track and cross track  */
 
     /****** Value included in PRE RADARSAT era CEOS structure ******/
     char  spare2[279];          /* spare */
@@ -827,8 +979,8 @@ struct qual_sum_rec {
     double nesz;                /* nominal noise equiv sigma zero  */
     double enl;                 /* Nominal equiv no of looks       */
     char  tb_update[9];         /* default param table update date */
-    char  cal_status[17];	/* Calibration status of data      */
-    char  spare3[23];           /* spare 			   */
+    char  cal_status[17];       /* Calibration status of data      */
+    char  spare3[23];           /* spare                           */
     char  cal_comment[201];     /* Calibration comment field       */
     /****** Value included in RADARSAT era CEOS structure **********/
 };
@@ -842,36 +994,36 @@ struct qual_sum_rec {
 ****************************/
 
 struct hist_dset {
-    char  hist_desc[33];       /* histogram descriptor 		*/
-    short nrec;                /* required records 		*/
-    short tab_seq;             /* table sequence number 	*/
-    int  nbin;                /* table size, bytes 		*/
-    int  ns_lin;              /* number of pixels in line 	*/
-    int  ns_pix;              /* number of lines in image 	*/
-    int  ngrp_lin;            /* pixels/group, cross track 	*/
-    int  ngrp_pix;            /* pixels/group, along track 	*/
-    int  nsamp_lin;           /* number of groups, cross track	*/
+    char  hist_desc[33];      /* histogram descriptor          */
+    short nrec;               /* required records              */
+    short tab_seq;            /* table sequence number         */
+    int  nbin;                /* table size, bytes             */
+    int  ns_lin;              /* number of pixels in line      */
+    int  ns_pix;              /* number of lines in image      */
+    int  ngrp_lin;            /* pixels/group, cross track     */
+    int  ngrp_pix;            /* pixels/group, along track     */
+    int  nsamp_lin;           /* number of groups, cross track */
     int  nsamp_pix;           /* number of groups, along track */
-    double min_smp;            /* minimum pixel value 		*/
-    double max_smp;            /* maximum pixel value 		*/
-    double mean_smp;           /* mean sample value 		*/
-    double std_smp;            /* std deviation of sample value */
-    double smp_inc;            /* sample value increment 	*/
-    double min_hist;           /* minimum table value 		*/
-    double max_hist;           /* maximum table value 		*/
-    double mean_hist;          /* histogram mean value 		*/
-    double std_hist;           /* histogram standard deviation  */
-    int  nhist;               /* histogram table size 		*/
-    int  *data_values_hist;   /* table values 1-256 		*/
-    struct hist_dset *next;    /* pointer to next table set 	*/
+    double min_smp;           /* minimum pixel value           */
+    double max_smp;           /* maximum pixel value           */
+    double mean_smp;          /* mean sample value             */
+    double std_smp;           /* std deviation of sample value */
+    double smp_inc;           /* sample value increment        */
+    double min_hist;          /* minimum table value           */
+    double max_hist;          /* maximum table value           */
+    double mean_hist;         /* histogram mean value          */
+    double std_hist;          /* histogram standard deviation  */
+    int  nhist;               /* histogram table size          */
+    int  *data_values_hist;   /* table values 1-256            */
+    struct hist_dset *next;   /* pointer to next table set     */
 };
 
 struct data_hist_rec {
-    short seq_num;             /* data histogram record seq no. */
-    short sar_chan;            /* SAR channel  		 	*/
-    int  ntab;                /* number of table sets 		*/
-    int  ltab;                /* data set size 		*/
-    struct hist_dset *data;    /* pointer to list of tables 	*/
+    short seq_num;            /* data histogram record seq no. */
+    short sar_chan;           /* SAR channel                   */
+    int  ntab;                /* number of table sets          */
+    int  ltab;                /* data set size                 */
+    struct hist_dset *data;   /* pointer to list of tables     */
 };
 
 /****************************
@@ -884,20 +1036,20 @@ struct data_hist_rec {
 struct rng_spec_rec {
     short seq_num;                /* range spectra sequence no. */
     short sar_chan;               /* SAR channel */
-    int  n_dset;                 /* number of data sets */
-    int  dset_size;              /* data set size */
+    int  n_dset;                  /* number of data sets */
+    int  dset_size;               /* data set size */
     short req_recs;               /* number of records required */
     short table_no;               /* table sequence number */
-    int  n_pixels;               /* number of pixels in line */
-    int  pixel_offset;           /* offset from first pixel */
-    int  n_lines;                /* number of lines integrated for spectra */
+    int  n_pixels;                /* number of pixels in line */
+    int  pixel_offset;            /* offset from first pixel */
+    int  n_lines;                 /* number of lines integrated for spectra */
     double first_freq;            /* center freq of first spectra bin */
     double last_freq;             /* center freq of last spectra bin */
     double min_power;             /* minimum spectral power */
     double max_power;             /* maximum spectral power */
     char  spare_rsr_1[17];        /* spare */
     char  spare_rsr_2[17];        /* spare */
-    int  n_bins;                 /* number of freq bins in table */
+    int  n_bins;                  /* number of freq bins in table */
     double data_values_spec[256]; /* spectral data values 1-256 */
     char  spare_rsr_3[1053];      /* spare */
 };
@@ -925,7 +1077,7 @@ struct dem_desc_data {
 
 struct dig_elev_rec {
     short seq_num;              /* sequence no. */
-    int  ttl_num_sets;         /* total number of DEM datasets */
+    int  ttl_num_sets;          /* total number of DEM datasets */
     short DEM_seq_num;          /* Sequence num. of this DEM descriptor */
     char  source_DEM[33];       /* Original src of DEM */
     char  HT_ref_name[33];      /* Height datum reference name */
@@ -965,20 +1117,20 @@ typedef struct beam_info_rec {
 
 typedef struct pix_count_rec {
     char pix_update[22];        /* pixel count update time             (a21) */
-    int n_pix[4];              /* count of image pixels in beams      (4i8) */
+    int n_pix[4];               /* count of image pixels in beams      (4i8) */
     struct pix_count_rec *next; /* pointer to next pix count rec             */
 } Pix_Count;
 
 typedef struct temp_rec {
-    int temp_set[4];           /* temperature settings                (4i4) */
+    int temp_set[4];            /* temperature settings                (4i4) */
     struct temp_rec *next;      /* pointer to next temp rec                  */
 } Temp_Rec;
 
 typedef struct dopcen_est_rec {
-    float dopcen_conf;          /* Doppler Centroid conf measure     (f16.7) */
-    float dopcen_ref_tim;       /* Doppler Centroid ref time         (f16.7) */
-    float dopcen_coef[4];       /* Doppler Centroid coefficients    (4f16.7) */
-    struct dopcen_est_rec *next; /* pointer to next dopcen rec               */
+    float dopcen_conf;           /* Doppler Centroid conf measure     (f16.7) */
+    float dopcen_ref_tim;        /* Doppler Centroid ref time         (f16.7) */
+    float dopcen_coef[4];        /* Doppler Centroid coefficients    (4f16.7) */
+    struct dopcen_est_rec *next; /* pointer to next dopcen rec                */
 } Dopcen_Est;
 
 typedef struct srgr_coefset_rec {
@@ -1001,22 +1153,22 @@ struct proc_parm_rec {
     char proc_stop[22];         /* Processing stop time                (a21) */
     float mn_sig_lev[10];       /* Mean signal levels across range (10f16.7) */
     short src_data_ind;         /* Source data quality indicator        (i4) */
-    int miss_ln;               /* Number of missing lines              (i8) */
-    int rej_ln;                /* Number of rejected lines             (i8) */
-    int large_gap;             /* Number of time inconsistencies       (i8) */
+    int miss_ln;                /* Number of missing lines              (i8) */
+    int rej_ln;                 /* Number of rejected lines             (i8) */
+    int large_gap;              /* Number of time inconsistencies       (i8) */
     float bit_error_rate;       /* Measured bit error rate           (f16.7) */
     float fm_crc_err;           /* Percent of frames with CRC errors (f16.7) */
-    int date_incons;           /* Number of date inconsistencies       (i8) */
-    int prf_changes;           /* Number of unexpected PRF changes     (i8) */
-    int delay_changes;         /* Number of delay changes              (i8) */
-    int skipd_frams;           /* Number of skippped frames            (i8) */
-    int rej_bf_start;          /* Rng lines reject before start time   (i8) */
-    int rej_few_fram;          /* Rng lines reject: too few frames     (i8) */
-    int rej_many_fram;         /* Rng lines reject: too many frames    (i8) */
-    int rej_mchn_err;          /* Frames reject: master ch err         (i8) */
-    int rej_vchn_err;          /* Frames reject: virtual ch err        (i8) */
-    int rej_rec_type;          /* Frames reject: rec type err          (i8) */
-    int prd_qual_ind;          /* Product quality index                (i4) */
+    int date_incons;            /* Number of date inconsistencies       (i8) */
+    int prf_changes;            /* Number of unexpected PRF changes     (i8) */
+    int delay_changes;          /* Number of delay changes              (i8) */
+    int skipd_frams;            /* Number of skippped frames            (i8) */
+    int rej_bf_start;           /* Rng lines reject before start time   (i8) */
+    int rej_few_fram;           /* Rng lines reject: too few frames     (i8) */
+    int rej_many_fram;          /* Rng lines reject: too many frames    (i8) */
+    int rej_mchn_err;           /* Frames reject: master ch err         (i8) */
+    int rej_vchn_err;           /* Frames reject: virtual ch err        (i8) */
+    int rej_rec_type;           /* Frames reject: rec type err          (i8) */
+    int prd_qual_ind;           /* Product quality index                (i4) */
     char qc_rating[7];          /* Quality control rating               (a6) */
     char qc_comment[81];        /* Quality control comment             (a80) */
     char sens_config[11];       /* Sensor configuration                (a10) */
@@ -1027,28 +1179,28 @@ struct proc_parm_rec {
     float rng_phas_coef[4];     /* Range ref phase coeff            (4f16.7) */
     float err_amp_coef[4];      /* Error function ampl coeff        (4f16.7) */
     float err_phas_coef[4];     /* Error function phase coeff       (4f16.7) */
-    int pulse_bandw;           /* Pulse bandwidth code                 (i4) */
+    int pulse_bandw;            /* Pulse bandwidth code                 (i4) */
     char adc_samp_rate[6];      /* ADC sampling rate                    (a5) */
     float rep_agc_attn;         /* Replica AGC attenuation           (f16.7) */
     float gn_corctn_fctr;       /* Gain correction factor (dB)       (f16.7) */
     float rep_energy_gn;        /* Replica energy gain correction    (f16.7) */
     char orb_data_src[12];      /* Orbit data source                   (a11) */
-    int pulse_cnt_1;           /* Pulse count 1                        (i4) */
-    int pulse_cnt_2;           /* Pulse count 2                        (i4) */
+    int pulse_cnt_1;            /* Pulse count 1                        (i4) */
+    int pulse_cnt_2;            /* Pulse count 2                        (i4) */
     char beam_edge_rqd[4];      /* Beam edge detection requested        (a3) */
     float beam_edge_conf;       /* Beam edge confidence measure      (f16.7) */
-    int pix_overlap;           /* Number of pixels in beam overlap     (i4) */
-    int n_beams;               /* Number of beams                      (i4) */
+    int pix_overlap;            /* Number of pixels in beam overlap     (i4) */
+    int n_beams;                /* Number of beams                      (i4) */
     Beam_Info* beam_info;       /* Beam info               (repeats 4 times) */
-    int n_pix_updates;         /* Number of pixel count updates        (i4) */
+    int n_pix_updates;          /* Number of pixel count updates        (i4) */
     Pix_Count* pix_count;       /* Beam pixel count       (repeats 20 times) */
     float pwin_start;           /* Processing window start time, sec (f16.7) */
     float pwin_end;             /* Processing window end time, sec   (f16.7) */
     char recd_type[9];          /* Recording type                       (a9) */
     float temp_set_inc;         /* Time increment btwn temp set, sec (f16.7) */
-    int n_temp_set;            /* Number of temp settings              (i4) */
+    int n_temp_set;             /* Number of temp settings              (i4) */
     Temp_Rec* temp;             /* Temperature settings   (repeats 20 times) */
-    int n_image_pix;           /* Number of image pixels               (i8) */
+    int n_image_pix;            /* Number of image pixels               (i8) */
     float prc_zero_pix;         /* Percent zero pixels               (f16.7) */
     float prc_satur_pix;        /* Percent saturated pixels          (f16.7) */
     float img_hist_mean;        /* Image histogram mean intensity    (f16.7) */
@@ -1056,15 +1208,15 @@ struct proc_parm_rec {
     float pre_img_gn;           /* Pre-image calibration gain factor (f16.7) */
     float post_img_gn;          /* Post-image calibration gain factor(f16.7) */
     float dopcen_inc;           /* Time inc btwn Doppler Cen est, sec(f16.7) */
-    int n_dopcen;              /* Number of Doppler Centroid est       (i4) */
+    int n_dopcen;               /* Number of Doppler Centroid est       (i4) */
     Dopcen_Est* dopcen_est;     /* Doppler Centroid rec   (repeats 20 times) */
-    int dopamb_err;            /* Doppler ambiguity error              (i4) */
+    int dopamb_err;             /* Doppler ambiguity error              (i4) */
     float dopamb_conf;          /* Doppler ambiguity confidence meas.(f16.7) */
     float eph_orb_data[7];      /* Ephemeris orbit data             (7f16.7) */
     char appl_type[13];         /* Application type                    (a12) */
     double first_lntim;         /* Slow time of first image line    (d22.15) */
     double lntim_inc;           /* time inc btwn image lines        (d22.15) */
-    int n_srgr;                /* Number of SRGR coeff sets            (i4) */
+    int n_srgr;                 /* Number of SRGR coeff sets            (i4) */
     SRGR_Coefset* srgr_coefset; /* SRGR coeff set         (repeats 20 times) */
     float pixel_spacing;        /* SGF product pixel spacing         (f16.7) */
     char pics_reqd[4];          /* GICS product required                (a3) */
@@ -1090,6 +1242,82 @@ struct proc_parm_rec {
     struct proc_parm_rec *next; /* pointer to next detail proc parm record   */
 };
 
+struct PPREC {
+    char beam_type[3];
+};
+
+
+/****************************/
+/* Volume Descriptor Record */
+/****************************/
+
+struct VDREC {
+        char flag1[3];          /* ASCII/EBDDIC flag */
+        char blank[3];          /* Blanks */
+        char format_doc[13];    /* Format control document */
+        char super_doc[3];      /* Superstructure format control document */
+        char super_doc_rev[3];  /* Superstructure record format revision */
+        char sw_release[13];    /* Logical volume generating facility software release and revision level */
+        char id[17];            /* ID of physical volume containing this volume descriptor */
+        char vol_id[17];        /* Logical volume identifier */
+        char vol_set_id[17];    /* Volume set identifier */
+        int vol_nrs;            /* Various volume numbers 4 x I2 */
+        short vol_nr;           /* First referenced file number in this physical volume within the logical volume */
+        short vol_volset;       /* Logical volume number within volume set */
+        short vol_phys_vol;     /* Logical volume number within physical volume */        
+        char create_date[9];    /* Logical volume creation date (YYYYMMDD) */
+        char create_time[9];    /* Logical volume creation time (hhmmssdd, dd-deci-seconds) */
+        char country[13];       /* Logical volume generation country */
+        char agency[9];         /* Logical volume agency */
+        char paf[13];           /* Logical volume generating facility */
+        short fprs;             /* Number of pointer records in volume directory */
+        short rec_nr;           /* Number of records in volume directory */
+        char spare[93];         /* Volume descriptor spare segment (always blank filled) */
+        char local[101];        /* Local use segment */
+};
+
+
+/***********************/
+/* File Pointer Record */
+/***********************/
+
+struct FPREC {
+        char flag1[3];          /* ASCII/EBCDIC flag */
+        char blank[3];          /* Blanks */
+        short nr;               /* Referenced file number */
+        char name[17];          /* Referenced file name */
+        char class[29];         /* Referenced file class */
+        char class_code[5];     /* Referenced file class code */
+        char data_type[29];     /* Referenced file data type */
+        char type_code[5];      /* Referenced file data type code */
+        int records;            /* Number of records in referenced file */
+        int first_rec;          /* Referenced file - 1st record length */
+        int max_rec;            /* Referenced file maximum record length */
+        char rec_type[13];      /* Referenced file record length type */
+        char rec_type_code[5];  /* Referenced file record length type code */
+        short vol_nrs;          /* Referenced file physical volume start/end number 2 x I2 */
+        int start;              /* Referenced file portion start, 1st record number for this physical volume */
+        int end;                /* Referenced file portion end, last record number for this physical volume */
+        char spare[101];        /* File pointer spare segment */
+        char local[101];        /* Local use segment */
+};
+
+
+/***************/
+/* Text Record */
+/***************/
+
+struct TREC {
+        char flag1[3];          /* ASCII/EBCDIC flag */
+        char flag2[3];          /* Continuation flag */
+        char prod_type[41];     /* Product type specifier */
+        char location[61];      /* Location and date/time of product creation */
+        char vol_phys_id[41];   /* Physical volume identification */
+        char scene_id[41];      /* Scene identification */
+        char scene_loc[41];     /* Scene location */
+        char spare1[21];        /* Spares */
+        char spare2[105];       /* Spares */
+};
 
 
 /*Prototypes for converting character buffers to records, and back again.*/
@@ -1107,7 +1335,17 @@ void   Code_DQS(unsigned char* bf,struct qual_sum_rec* q,int era,codingDir dir);
 void   Code_DHR(unsigned char* bf, struct data_hist_rec* q, codingDir dir);
 void   Code_DH(unsigned char *bf, struct hist_dset* q, codingDir dir);
 void   Code_RSR(unsigned char *bf, struct rng_spec_rec *q, codingDir dir);
-void   Code_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir);
+void   Code_ASF_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir);
+void   Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir);
+void   Code_PPR(unsigned char *bf, struct PPREC *q, codingDir dir);
+
+void   Code_VDR(unsigned char *bf, struct VDREC *q, codingDir dir);
+void   Code_LFPR(unsigned char *bf, struct FPREC *q, codingDir dir);
+void   Code_DFPR(unsigned char *bf, struct FPREC *q, codingDir dir);
+void   Code_TR(unsigned char *bf, struct TREC *q, codingDir dir);
+
+void   Code_NVDR(unsigned char *bf, struct VDREC *q, codingDir dir);
+
 
 int set_era(const char *inbasename,char *outldrname,int operation);
 
@@ -1117,12 +1355,21 @@ int get_dhr(char *filename,struct data_hist_rec *rec);
 int get_sdhr(char *filename,struct data_hist_rec *rec);
 int get_dqsr(char *filename,struct qual_sum_rec *rec);
 int get_dssr(char *filename,struct dataset_sum_rec *rec);
-int get_facdr(char *filename,struct VFDRECV *rec);
+int get_asf_facdr(char *filename,struct VFDRECV *rec);
+int get_esa_facdr(char *filename,struct ESA_FACDR *rec);
 int get_mpdr(char *filename,struct VMPDREC *rec);
 int get_ppdr(char *filename,struct pos_data_rec *rec);
 int get_raddr(char *filename,struct VRADDR *rec);
 int get_rsr(char *filename,struct rng_spec_rec *rec);
 int get_ifiledr(char *filename,struct IOF_VFDR *vfdr);
 int get_fdr(char *filename,struct FDR *rec);
+int get_ppr(char *filename,struct PPREC *rec);
+
+int get_vdr(char *filename,struct VDREC *rec);
+int get_lfpr(char *filename,struct FPREC *rec);
+int get_dfpr(char *filename,struct FPREC *rec);
+int get_tr(char *filename,struct TREC *rec);
+
+int get_nvdr(char *filename,struct VDREC *rec);
 
 #endif /* end of ceos.h */
