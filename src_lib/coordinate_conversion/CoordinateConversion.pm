@@ -13,10 +13,8 @@ use Exporter ();
 
 use strict;
 
-# FIXME: somebody install Params::Validate into the standard repository.
-use lib "/home/bkerin/local/lib/site_perl";
+# Add on libraries from CPAN
 use Params::Validate;		# Better function argument checking.
-
 # FIXME: I'd rather have Math::Trig::sec imported, but there doesn't
 # seem to be a way to get PDL to play nicely and not try to import the
 # sec symbol, so for now we get the PDL version, which does I don't
@@ -53,7 +51,7 @@ sub earth_radius_at_geodetic_lat {
     my ($geodetic_lat) = validate_pos(@_, 1);
 
     # Convert degrees to radians.
-    my $geodetic_latr = &deg2rad($geodetic_lat);
+    my $geodetic_latr = deg2rad($geodetic_lat);
 
     # Equivalent geocentric latitude.
     my $geocentric_latr = &geodetic2geocentric($geodetic_latr);
