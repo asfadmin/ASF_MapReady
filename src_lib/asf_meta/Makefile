@@ -17,9 +17,6 @@ LIBS = asf.a
 LEX = flex
 YACC = bison -y			# -y means use yacc file name conventions.
 
-# Add flags to pull in the GSL.
-CFLAGS += -I$(HOME)/local/include
-
 # Build with this defined to enable parser diagnostics.  Note that
 # this doesn't automaticly clean or otherwise force a rebuild.
 ifdef DEBUG_METADATA_PARSER
