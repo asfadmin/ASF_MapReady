@@ -77,7 +77,7 @@ int getCeosRecord(char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	FCLOSE(fp); 
         if (recordType==CEOS_MPDR || recordType==CEOS_DQSR || recordType==CEOS_DHR || recordType==CEOS_PPR) 
                 return -1;/*It's OK if the MPDR, DQSR, or DHR are missing.*/
-
+	return -99;
 }
 
 int get_atdr(char *filename,struct att_data_rec *rec)
