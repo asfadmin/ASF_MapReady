@@ -5,7 +5,8 @@ include ../../make_support/system_rules
 
 # Names of the tarball and the unpack directory.
 UNPACK_DIR := zlib-1.2.1
-TARBALL := $(UNPACK_DIR).tar.gz
+TARFILE := $(UNPACK_DIR).tar
+ZIPFILE := $(TARFILE).gz
 
 # Following the policy of installing headers in directories with the
 # same names as the modules they describe, we want to put the headers
@@ -24,8 +25,9 @@ install: stage_stamp
 	cp $(STAGE_DIR)/include/zconf.h $(ZLIB_INCLUDE_DIR)
 
 # Build and stage the library.
-stage_stamp: 
-	tar xzvf $(TARBALL)
+stage_stamp:
+	gunzip -c $(ZIPFILE) > $(TARFILE)
+	tar xvf $(TARFILE)
 	(cd $(UNPACK_DIR) ; \
 	    ./configure --prefix=$(STAGE_DIR) ; \
             make test ; \

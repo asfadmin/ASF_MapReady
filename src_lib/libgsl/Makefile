@@ -26,7 +26,8 @@ EXISTING_GSL_ROOT := $(strip $(shell ./find_gsl.sh))
 # If we find we have to build the GSL, these variables specify the
 # tarball and what it unpacks into.
 UNPACK_DIR := gsl-1.4
-TARBALL := $(UNPACK_DIR).tar.gz
+TARFILE := $(UNPACK_DIR).tar
+ZIPFILE := $(TARFILE).gz
 
 # Copy the static libraries and headers for the GSL into the
 # appropriate places in the ASF directory structure.
@@ -47,7 +48,8 @@ stage_gsl_stamp: staging_directories
                $(LIB_STAGEDIR) ; \
             cp -r $(EXISTING_GSL_ROOT)/include/gsl $(INCLUDE_STAGEDIR) ; \
         else \
-	    tar xzvf $(TARBALL) ; \
+	    gunzip $(ZIPFILE) > $(TARFILE)	
+	    tar xvf $(TARFILE) ; \
 	    (cd $(UNPACK_DIR) ; \
                 ./configure --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
 		make ; \
