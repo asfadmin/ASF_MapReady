@@ -34,16 +34,17 @@ DESCRIPTION:
   of toASCII or fromASCII.
 
 PROGRAM HISTORY:
-VERSION         DATE	AUTHOR
--------         ----	------
-  1.0           2/97	O. Lawlor (ASF)		original creation
-  1.1		8/97	T. Logan (ASF)		????
-  1.4		6/01	P. Denny (ASF)		fixed flt2asc & long2asc
-						 to deal with blank input
-  1.5 		9/01	S. Watts (ASF)		fixed code_dqs to find
-						 all valid values.
-  2.0		9/03    R. Gens / P. Denny      Added new code functions
-						 for more CEOS records
+VERSION  DATE    AUTHOR               PURPOSE
+-------  ----    ------               -------------------------------
+  1.0    2/97    O. Lawlor (ASF)      Original creation
+  1.1    8/97    T. Logan (ASF)       ????
+  1.4    6/01    P. Denny (ASF)       Fixed flt2asc & long2asc to deal with
+                                        blank input
+  1.5    9/01    S. Watts (ASF)       Fixed code_dqs to find all valid values
+  2.0    9/03    R. Gens / P. Denny   Added new code functions for more CEOS
+                                        records
+  2.1    2/04    P. Denny             Fill in a more complete set of fields in
+                                        Code_IOF
 *********************************************************************/
 
 void right_justify(char buf[], int len)
@@ -239,23 +240,47 @@ void Code_IOF(unsigned char *bf, struct IOF_VFDR* q,codingDir dir)
     bf+=12;/*Skip CEOS Header. (OSL 10/3/98)*/
     Code_FDR_common(bf, (struct FDR*)q, dir);
     off = 168;
-    intV(numofrec,off,6); intV(reclen,off,6); off+=24;
-    intV(bitssamp,off,4); intV(sampdata,off,4);
-    intV(bytgroup,off,4); strV(justific,off,4);
-    intV(sarchan,off,4); intV(linedata,off,8);
-    intV(lbrdrpxl,off,4); intV(datgroup,off,8);
-    intV(rbrdrpxl,off,4); intV(topbrdr,off,4);
-    intV(botbrdr,off,4); strV(interlv,off,4);
-    intV(recline,off,2); intV(mrecline,off,2);
-    intV(predata,off,4); intV(sardata,off,8);
+    intV(numofrec,off,6);
+    intV(reclen,off,6);
+    strV(spare4,off,24);
+    intV(bitssamp,off,4);
+    intV(sampdata,off,4);
+    intV(bytgroup,off,4);
+    strV(justific,off,4);
+    intV(sarchan,off,4);
+    intV(linedata,off,8);
+    intV(lbrdrpxl,off,4);
+    intV(datgroup,off,8);
+    intV(rbrdrpxl,off,4);
+    intV(topbrdr,off,4);
+    intV(botbrdr,off,4);
+    strV(interlv,off,4);
+    intV(recline,off,2);
+    intV(mrecline,off,2);
+    intV(predata,off,4);
+    intV(sardata,off,8);
     intV(sufdata,off,4);
-    strV(repflag,off,4); off+=104;
-    strV(formatid,off,28); strV(formcode,off,4);
-    intV(leftfill,off,4); intV(rigtfill,off,4);
+    strV(repflag,off,4);
+    strV(lin_loc,off,8);
+    strV(chn_loc,off,8);
+    strV(time_loc,off,8);
+    strV(left_loc,off,8);
+    strV(right_loc,off,8);
+    strV(pad_ind,off,4);
+    strV(spare6,off,28);
+    strV(qual_loc,off,8);
+    strV(cali_loc,off,8);
+    strV(gain_loc,off,8);
+    strV(bais_loc,off,8);
+    strV(formatid,off,28);
+    strV(formcode,off,4);
+    intV(leftfill,off,4);
+    intV(rigtfill,off,4);
     intV(maxidata,off,8);
-}
+    /* ignore variable length spare bytes: byte 448 to ? */
+}        
 void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
-{
+{        
 	int off=12+16;
 	strV(mpdesc,off,32);
 	longV(npixels,off,16);
