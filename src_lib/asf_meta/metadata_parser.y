@@ -90,7 +90,7 @@ void select_current_block(char *block_name)
 
   if ( !strcmp(block_name, "projection") ) { 
     MTL->projection 
-      = (meta_projection *) malloc(sizeof(meta_projection));;
+      = (meta_projection *) malloc(sizeof(meta_projection));
     current_block = MTL->projection; goto MATCHED; 
   }
   if ( !strcmp(block_name, "param") )
