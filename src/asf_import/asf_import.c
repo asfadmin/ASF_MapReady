@@ -6,7 +6,7 @@
 
 <synopsis>
 asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]
-           <in_base_name> <out_base_name>
+           [-format <format>] <in_data> <in_meta> <out_base_name>
 </synopsis>
 
 <description>
@@ -130,8 +130,6 @@ PROGRAM HISTORY:
 #include <ctype.h>
 #include <string.h>
 
-char *program_name = "asf_import";
-
 #define VERSION 0.5
 #define MAX_tableRes 512
 #define REQUIRED_ARGS 4
@@ -176,6 +174,25 @@ char *uc(char *string)
   return out;
 }
 
+/* Default splash screen, the same for all the tools
+   This function should be called first in the "we're good enough" part of command line parsing */
+void print_splash_screen(int argc, char* argv[])
+{
+	char temp1[255];
+	char temp2[255];
+	int ii;
+	sprintf(temp1, "\nCommand line:");
+	for (ii = 0; ii < argc; ii++)
+	{
+		sprintf(temp2, " %s",argv[ii]);
+		strcat(temp1, temp2);
+	}
+	printf("%s\n", temp1);
+	system("date");
+	printf("PID: %i\n", (int)getpid());
+}
+
+
 void print_progress(int current_line, int total_lines)
 {
   current_line++;
@@ -191,6 +208,37 @@ void print_progress(int current_line, int total_lines)
       }
     }
   }
+}
+
+/* Check to see if an option was supplied or not
+   If it was found, return its argument number
+   Otherwise, return -1 */
+int checkForOption(char* key, int argc, char* argv[])
+{
+	int ii = 0;
+	while(ii < argc)
+	{
+		if(strmatch(key, argv[ii]))
+			return(ii);
+		++ii;
+	}
+	return(-1);
+}
+
+/* Print an error message. This is just here for circumventing check_return.
+   Also, it makes it possible to reformat all the error messages at once. */
+void print_error(char *msg)
+{
+	sprintf(errbuf, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);/* I made "ERROR:" red...Yay! :D */
+	printErr(errbuf);
+	exit(EXIT_FAILURE);
+}
+
+/* Check the return value of a function and display an error message if it's a bad return */
+void check_return(int ret, char *msg)
+{
+	if (ret != 0)
+		print_error(msg);
 }
 
 
@@ -220,9 +268,9 @@ int main(int argc, char *argv[])
   double fTmp1, fTmp2;
   int projection_key;
   int nl, ns=0, ii, kk, tableRes=MAX_tableRes, tablePix=0, headerBytes;
-  int latConstraintFlag=FALSE, prcflag=FALSE, nTotal, nVec=1;
-  int sprocketFlag=FALSE;
-  int sigmaFlag=FALSE, betaFlag=FALSE, gammaFlag=FALSE, powerFlag=FALSE;
+  int /*latConstraintFlag=FALSE, prcflag=FALSE, */nTotal, nVec=1;
+/*  int sprocketFlag=FALSE;*/
+/*  int sigmaFlag=FALSE, betaFlag=FALSE, gammaFlag=FALSE, powerFlag=FALSE;*/
   long offset;
   unsigned short *short_buf=NULL;
   short *cpx_buf=NULL;
@@ -234,75 +282,271 @@ int main(int argc, char *argv[])
   double incid_cos[MAX_tableRes], incid_sin[MAX_tableRes];
   extern int currArg; /* from cla.h in asf.h */
 
-  logflag=FALSE;
-  quietflag=FALSE;
 
-  /* Parse command line args */
-  while (currArg < (argc-REQUIRED_ARGS)) {
-    char *key = argv[currArg++];
-    if (strmatch(key,"-sprocket")) {
-      sprocketFlag=TRUE;
-    }
-    else if (strmatch(key,"-old")) {
-      oldFlag=TRUE;
-    }
-    else if (strmatch(key,"-log")) {
-      CHECK_ARG(1); /*one string argument: log file */
-      strcpy(logFile,GET_ARG(1));
-      fLog = FOPEN(logFile,"a");
-      logflag=TRUE;
-    }
-    else if (strmatch(key,"-quiet"))
-      quietflag=TRUE;
-    else if (strmatch(key,"-prc")) {
-      CHECK_ARG(1);
-      strcpy(prcPath, GET_ARG(1));
-      prcflag=TRUE;
-    }
-    else if (strmatch(key,"-lat")) {
-      CHECK_ARG(2);
-      lowerLat = strtod(GET_ARG(2),NULL);
-      upperLat = strtod(GET_ARG(1),NULL);
-      if(lowerLat>upperLat) {
-        float tmp=upperLat;
-        upperLat = lowerLat;
-        lowerLat = tmp;
-      }
-      if (   lowerLat<-90.0 || lowerLat>90.0
-          || upperLat<-90.0 || upperLat>90.0) {
-        printf("Invalid latitude constraint (must be between -90 and 90).\n");
-        printf("Exiting...\n");
-        exit(EXIT_FAILURE);
-      }
-      latConstraintFlag=TRUE;
-    }
-    else if (strmatch(key,"-amplitude"))
-      sprintf(out_type,"amp"); /* create amplitude image */
-    else if (strmatch(key,"-sigma")) {
-      sprintf(out_type, "sigma");  /* create calibrated image (sigma dB values) */
-      sigmaFlag=TRUE;
-    }
-    else if (strmatch(key,"-gamma")) {
-      sprintf(out_type, "gamma");  /* create calibrated image (gamma dB values) */
-      gammaFlag=TRUE;
-    }
-    else if (strmatch(key,"-beta")) {
-      sprintf(out_type, "beta");  /* create calibrated image (beta dB values) */
-      betaFlag=TRUE;
-    }
-    else if (strmatch(key,"-power")) {
-      sprintf(out_type, "power");  /* create power image */
-      powerFlag=TRUE;
-    }
-    else {
-      printf("\n** Invalid option:  %s\n\n",argv[currArg-1]);
-      usage (program_name);
-    }
-  }
-  if ((argc-currArg) < REQUIRED_ARGS) {
-    printf("Insufficient arguments.\n");
-    usage (program_name);
-  }
+/**********************BEGIN COMMAND LINE PARSING STUFF**********************/
+/*
+	That is to say, from here to the corresponding end marker, you have to put
+	up with my particular formatting style ;)      -G
+*/
+
+	/*Command line option flags*/
+	int ampFlag, sigmaFlag, betaFlag, gammaFlag, powerFlag, sprocketFlag, latConstraintFlag, prcflag;
+	int quietFlag, formatFlag;
+	/*Check to see if any options were provided*/
+	ampFlag = checkForOption("-amplitude", argc, argv);
+	sigmaFlag = checkForOption("-sigma", argc, argv);
+	betaFlag = checkForOption("-beta", argc, argv);
+	gammaFlag = checkForOption("-gamma", argc, argv);
+	powerFlag = checkForOption("-power", argc, argv);
+	sprocketFlag = checkForOption("-sprocket", argc, argv);
+	latConstraintFlag = checkForOption("-lat", argc, argv);
+	prcflag = checkForOption("prc", argc, argv);
+	oldFlag = checkForOption("-old", argc, argv);
+	logflag = checkForOption("-log", argc, argv);
+	quietFlag = checkForOption("-quiet", argc, argv);
+	formatFlag = checkForOption("-format", argc, argv);
+
+	/*Check for mutually exclusive options: we can only have one of these*/
+	int temp = 0;
+	if(ampFlag != -1)
+		temp++;
+	if(sigmaFlag != -1)
+		temp++;
+	if(betaFlag != -1)
+		temp++;
+	if(gammaFlag != -1)
+		temp++;
+	if(powerFlag != -1)
+		temp++;
+	if(sprocketFlag != -1)
+		temp++;
+	if(temp > 1)/*If more than one option was selected*/
+		usage();/*This exits with a failure*/
+
+	/*We need to make sure the user specified the proper number of arguments*/
+	int needed_args = 4;/*command & in_data & in_meta & out_base*/
+	if(ampFlag != -1)
+		needed_args += 1;/*option*/
+	if(sigmaFlag != -1)
+		needed_args += 1;/*option*/
+	if(betaFlag != -1)
+		needed_args += 1;/*option*/
+	if(gammaFlag != -1)
+		needed_args += 1;/*option*/
+	if(powerFlag != -1)
+		needed_args += 1;/*option*/
+	if(sprocketFlag != -1)
+		needed_args += 1;/*option*/
+	if(latConstraintFlag != -1)
+		needed_args += 3;/*option & parameter & parameter*/
+	if(prcflag != -1)
+		needed_args += 2;/*option & parameter*/
+	if(oldFlag != -1)
+		needed_args += 1;/*option*/
+	if(logflag != -1)
+		needed_args += 2;/*option & parameter*/
+	if(quietFlag != -1)
+		needed_args += 1;/*option*/
+	if(formatFlag != -1)
+		needed_args += 2;/*option & parameter*/
+
+	/*Make sure we have enough arguments*/
+	if(argc != needed_args)
+		usage();/*This exits with a failure*/
+
+	/*We also need to make sure any options that have parameters are specified correctly
+	This includes: -lat, -prc, -log*/
+	if(latConstraintFlag != -1)
+		/*Make sure the two fields following -lat aren't other options
+		Also make sure there's no "bleeding" into the required arguments*/
+		if(argv[latConstraintFlag + 1][0] == '-' || argv[latConstraintFlag + 2][0] == '-' || latConstraintFlag >= argc - 5)
+			usage();/*This exits with a failure*/
+	if(prcflag != -1)
+		/*Make sure the field following -prc isn't another option
+		Also check for bleeding into required arguments*/
+		if(argv[prcflag + 1][0] == '-' || prcflag >= argc - 4)
+			usage();/*This exits with a failure*/
+	if(logflag != -1)
+		/*Make sure the field following -log isn't another option*/
+		if(argv[logflag + 1][0] == '-' || logflag >= argc - 4)
+			usage();/*This exits with a failure*/
+	if(formatFlag != -1)
+		/*Make sure the field following -format isn't another option*/
+		if(argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 4)
+			usage();
+
+	/*We must be close to good enough at this point...start filling in fields as needed*/
+	if(quietFlag == -1)
+		print_splash_screen(argc, argv);/*display splash screen if not quiet*/
+
+	if(logflag != -1)
+		strcpy(logFile, argv[logflag + 1]);
+	else
+		sprintf(logFile, "tmp%i.log", (int)getpid());/*default behavior: log to tmp<pid>.log*/
+	fLog = FOPEN(logFile, "a");
+	if(prcflag != -1)
+		strcpy(prcPath, argv[prcflag + 1]);
+	if(latConstraintFlag != -1)
+	{
+		lowerLat = strtod(argv[latConstraintFlag + 2],NULL);
+		upperLat = strtod(argv[latConstraintFlag + 1],NULL);
+		if(lowerLat > upperLat)
+		{
+			float tmp = upperLat;
+			upperLat = lowerLat;
+			lowerLat = tmp;
+		}
+		if(lowerLat < -90.0 || lowerLat > 90.0 || upperLat < -90.0 || upperLat > 90.0)
+		{
+			print_error("Invalid latitude constraint (must be -90 to 90)");
+		}
+	}
+	if(ampFlag != -1)
+		sprintf(out_type,"amp");
+	else if(sigmaFlag != -1)
+		sprintf(out_type, "sigma");
+	else if(gammaFlag != -1)
+		sprintf(out_type, "gamma");
+	else if(betaFlag != -1)
+		sprintf(out_type, "beta");
+	else if(powerFlag != -1)
+		sprintf(out_type, "power");
+	else
+		sprintf(out_type, "amp");/*default behavior*/
+	if(formatFlag != -1)
+		strcpy(type, argv[formatFlag + 1]);
+	else
+		strcpy(type, "CEOS");
+
+	/* Parse command line args */
+/*	while (currArg < (argc-REQUIRED_ARGS))*/
+	{
+
+
+/*
+		else if (strmatch(key,"-log"))
+		{
+			CHECK_ARG(1); //one string argument: log file
+			strcpy(logFile,GET_ARG(1));
+			fLog = FOPEN(logFile,"a");
+			logflag=TRUE;
+		}
+*/
+/*
+		else if (strmatch(key,"-prc"))
+		{
+			CHECK_ARG(1);
+			strcpy(prcPath, GET_ARG(1));
+			prcflag=TRUE;
+		}
+*/
+/*
+		else if (strmatch(key,"-lat"))
+		{
+			CHECK_ARG(2);
+			lowerLat = strtod(GET_ARG(2),NULL);
+			upperLat = strtod(GET_ARG(1),NULL);
+			if(lowerLat>upperLat)
+			{
+				float tmp=upperLat;
+				upperLat = lowerLat;
+				lowerLat = tmp;
+			}
+			if (   lowerLat<-90.0 || lowerLat>90.0
+				|| upperLat<-90.0 || upperLat>90.0)
+			{
+				printf("Invalid latitude constraint (must be between -90 and 90).\n");
+				printf("Exiting...\n");
+				exit(EXIT_FAILURE);
+			}
+			latConstraintFlag=TRUE;
+		}
+*/
+/*
+		else if (strmatch(key,"-amplitude"))
+		sprintf(out_type,"amp"); // create amplitude image
+*/
+/*
+		else if (strmatch(key,"-sigma"))
+		{
+			sprintf(out_type, "sigma");  // create calibrated image (sigma dB values)
+			sigmaFlag=TRUE;
+		}
+*/
+/*
+		else if (strmatch(key,"-gamma"))
+		{
+			sprintf(out_type, "gamma");  // create calibrated image (gamma dB values)
+			gammaFlag=TRUE;
+		}
+*/
+/*
+		else if (strmatch(key,"-beta"))
+		{
+			sprintf(out_type, "beta");  // create calibrated image (beta dB values)
+			betaFlag=TRUE;
+		}
+*/
+/*
+		else if (strmatch(key,"-power"))
+		{
+			sprintf(out_type, "power");  // create power image
+			powerFlag=TRUE;
+		}
+*/
+/*
+		else
+		{
+			printf("\n** Invalid option:  %s\n\n",argv[currArg-1]);
+			usage ();
+		}
+*/
+	}
+/*
+	if ((argc-currArg) < REQUIRED_ARGS)
+	{
+		printf("Insufficient arguments.\n");
+		usage ();
+	}
+*/
+	/* Make sure the sprocket flag hasn't been declared with a calibration or
+	* power flag */
+/*
+	if (sprocketFlag && (sigmaFlag||gammaFlag||betaFlag||powerFlag))
+	{
+		printf(" * Silly calibration engineer, you can't declare -sigma, -beta, -gamma,\n"
+			" * or -power with the all powerful -sprocket option!  Try again. Exiting...\n");
+		exit(EXIT_FAILURE);
+	}
+*/
+
+	/* Read required arguments */
+/*
+	strcpy(type,argv[currArg++]);
+	for (ii=0; ii<strlen(type); ii++)
+	{
+		type[ii] = (char)toupper(type[ii]);
+	}
+*/
+	strcpy(inDataName,argv[argc - 3]);
+	strcpy(inMetaName,argv[argc - 2]);
+	strcpy(outBaseName,argv[argc - 1]);
+	
+	if(strchr(inDataName, '.') != NULL)/*Make sure the file has an extension*/
+	{
+		if(!strcmp(".D", strrchr(inDataName, '.')))/*If the file ends in .D*/
+			strcpy(in_type, "CEOS");/*It must be a CEOS image*/
+		else if(!strcmp(".img", strrchr(inDataName, '.')))/*If the file ends in .img*/
+			strcpy(in_type, "ASF");/*It must be an ASF internal format file*/
+		else
+			print_error("Unrecognized input file format");/*Unrecognized file extension*/
+	}
+	else
+		print_error("Unrecognized input file format");/*No file extension*/
+
+
+/*Back to lame formatting... :P     -G */
+/***********************END COMMAND LINE PARSING STUFF***********************/
 
   if (logflag) {
     char command_line[2048];
@@ -314,44 +558,24 @@ int main(int argc, char *argv[])
     printLog(command_line);
   }
 
-  /* Make sure the sprocket flag hasn't been declared with a calibration or
-   * power flag */
-  if (sprocketFlag && (sigmaFlag||gammaFlag||betaFlag||powerFlag)) {
-    printf(" * Silly calibration engineer, you can't declare -sigma, -beta, -gamma,\n"
-           " * or -power with the all powerful -sprocket option!  Try again. Exiting...\n");
-    exit(EXIT_FAILURE);
-  }
-
-  /* Read required arguments */
-  strcpy(type,argv[currArg++]);
-  for (ii=0; ii<strlen(type); ii++) {
-    type[ii] = (char)toupper(type[ii]);
-  }
-  strcpy(inDataName,argv[currArg++]);
-  strcpy(inMetaName,argv[currArg++]);
-  strcpy(outBaseName,argv[currArg++]);
 
   /* Lets get started */
-  system("date");
-  printf("Program: asf_import\n\n");
-  if (logflag) {
-    StartWatchLog(fLog);
-    printLog("Program: asf_import\n\n");
-  }
+  StartWatchLog(fLog);
+  printLog("Program: asf_import\n\n");
 
   /* Check whether options are chosen correctly */
   if (strncmp(type, "STF", 3)!=0) {
-    if (prcflag) {
+    if (prcflag != -1) {
       sprintf(tmp, "   WARNING: No precision state vectors used for this image type!\n");
-      printf(tmp);
-      if (logflag) printLog(tmp);
-      prcflag=FALSE;
+      if(quietFlag == -1) printf(tmp);
+      printLog(tmp);
+      prcflag=-1;
     }
-    if (latConstraintFlag) {
+    if (latConstraintFlag != -1) {
       sprintf(tmp, "   WARNING: No latitude constraints for this image type!\n");
-      printf(tmp);
-      if (logflag) printLog(tmp);
-      latConstraintFlag=FALSE;
+      if(quietFlag == -1) printf(tmp);
+      printLog(tmp);
+      latConstraintFlag=-1;
     }
   }
 
@@ -359,8 +583,8 @@ int main(int argc, char *argv[])
   if (strncmp(type, "CEOS", 4)==0) {
 
     sprintf(tmp,"   Data format: CEOS\n");
-    printf(tmp);
-    if (logflag) printLog(tmp);
+    if(quietFlag == -1) printf(tmp);
+    printLog(tmp);
 
     /* Create metadata */
     meta=meta_create(inMetaName);
@@ -369,8 +593,8 @@ int main(int argc, char *argv[])
     if (meta->general->data_type==COMPLEX_BYTE) { /* raw data */
       int trash;
 
-      if (sprocketFlag) {
-        printf("Data is level 0, SProCKET can not use it. Exiting...\n");
+      if (sprocketFlag != -1) {
+        print_error("Data is level 0, SProCKET can not use it.");
         exit(EXIT_FAILURE);
       }
 
@@ -384,8 +608,8 @@ int main(int argc, char *argv[])
         sprintf(tmp,
                "   Input data type: level zero raw data\n"
                 "   Output data type: complex byte raw data\n\n");
-      printf(tmp);
-      if (logflag) printLog(tmp);
+      if(quietFlag == -1) printf(tmp);
+      printLog(tmp);
 
       /* Handle output files */
       create_name(outName, outBaseName, "_raw.img");
@@ -395,15 +619,15 @@ int main(int argc, char *argv[])
       fpOut = FOPEN(outName, "wb");
       getNextCeosLine(s->binary, s, inMetaName, outName); /* Skip CEOS header. */
       s->nLines = 0;
-      printf("\n");
+      if(quietFlag == -1) printf("\n");
       for (ii=0; ii<nl; ii++) {
         readNextPulse(s, iqBuf, inDataName, outName);
         FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
-        print_progress(ii,nl);
+        if(quietFlag == -1) print_progress(ii,nl);
        s->nLines++;
       }
       updateMeta(s,meta,NULL,0);
-      if (oldFlag) {
+      if (oldFlag != -1) {
         meta_new2old(meta);
         meta_write_old(meta, outName);
       }
@@ -419,7 +643,7 @@ int main(int argc, char *argv[])
 
       meta_free(meta);
       FCLOSE(fpOut);
-      printf("Finished.\n\n");
+      if(quietFlag == -1) printf("Finished.\n\n");
     }
 
     /* complex (level 1) data */
@@ -435,14 +659,14 @@ int main(int argc, char *argv[])
         sprintf(tmp,
                 "   Input data type: single look complex\n"
                 "   Output data type: single look complex\n\n");
-      printf(tmp);
-      if (logflag) printLog(tmp);
+      if(quietFlag == -1) printf(tmp);
+      printLog(tmp);
 
       /* Handle output files */
       create_name(outName, outBaseName, "_cpx.img");
       meta->general->data_type=COMPLEX_REAL32;
 
-      if (oldFlag) {
+      if (oldFlag != -1) {
         char ddrName[256];
         struct DDR ddr;
         create_name(ddrName, outBaseName, "_cpx.ddr");
@@ -477,10 +701,10 @@ int main(int argc, char *argv[])
           out_cpx_buf[kk].imag=(float)cpx_buf[kk*2+1];
         }
         put_complexFloat_line(fpOut, meta, ii, out_cpx_buf);
-        print_progress(ii,nl);
+        if(quietFlag == -1) print_progress(ii,nl);
       }
       FCLOSE(fpOut);
-      printf("Finished.\n\n");
+      if(quietFlag == -1) printf("Finished.\n\n");
     }
 
     else { /* some kind of amplitude data */
@@ -534,8 +758,8 @@ int main(int argc, char *argv[])
                 "   Output data type: amplitude image\n\n");
         create_name(outName, outBaseName, "_amp.img");
       }
-      printf(tmp);
-      if (logflag) printLog(tmp);
+      if(quietFlag == -1) printf(tmp);
+      printLog(tmp);
 
       /* Open image files */
       fpIn=fopenImage(inDataName,"rb");
@@ -561,12 +785,12 @@ int main(int argc, char *argv[])
         out_buf = (float *) MALLOC(ns * sizeof(float));
       }
       else
-        printErr("   Error: Unkown data format\n");
+        print_error("Unkown data format");
 
       /* Handle output files */
       meta->general->data_type=REAL32;
 
-      if(oldFlag) {
+      if(oldFlag != -1) {
         char ddrName[256];
         struct DDR ddr;
         meta2ddr(meta, &ddr);
@@ -593,8 +817,8 @@ int main(int argc, char *argv[])
                   "\n"
                   "   Calibration parameters could not be extracted out of CEOS file\n"
                   "   Output data type: amplitude image\n\n");
-          printf(tmp);
-          if (logflag) printLog(tmp);
+          if(quietFlag == -1) printf(tmp);
+          printLog(tmp);
         }
       }
 
@@ -647,10 +871,10 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          print_progress(ii,nl);
+          if(quietFlag == -1) print_progress(ii,nl);
         }
         FCLOSE(fpOut);
-        printf("Finished.\n\n");
+        if(quietFlag == -1) printf("Finished.\n\n");
       }
 
       /* Read 8 bit data and convert to calibrated amplitude data */
@@ -697,10 +921,10 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          print_progress(ii,nl);
+          if(quietFlag == -1) print_progress(ii,nl);
         }
         FCLOSE(fpOut);
-        printf("Finished.\n\n");
+        if(quietFlag == -1) printf("Finished.\n\n");
       }
 
       /* Read 16 bit amplitude data */
@@ -722,10 +946,10 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          print_progress(ii,nl);
+          if(quietFlag == -1) print_progress(ii,nl);
         }
         FCLOSE(fpOut);
-        printf("Finished.\n\n");
+        if(quietFlag == -1) printf("Finished.\n\n");
       }
 
       /* Read 8 bit amplitde data */
@@ -745,10 +969,10 @@ int main(int argc, char *argv[])
 
           put_float_line(fpOut, meta, ii, out_buf);
 
-          print_progress(ii,nl);
+          if(quietFlag == -1) print_progress(ii,nl);
         }
         FCLOSE(fpOut);
-        printf("Finished.\n\n");
+        if(quietFlag == -1) printf("Finished.\n\n");
       }
     }
   }
@@ -756,14 +980,14 @@ int main(int argc, char *argv[])
   /* Ingest Vexcel Sky Telemetry Format (STF) data */
   else if (strncmp(type, "STF", 4)==0) {
 
-    if (sprocketFlag) {
-      printf("Data is level 0, sprocket can not use this. Exiting...\n");
+    if (sprocketFlag != -1) {
+      print_error("Data is level 0, sprocket can not use this.");
       exit(EXIT_FAILURE);
     }
 
     sprintf(tmp,"   Data format: STF\n");
-    printf(tmp);
-    if (logflag) printLog(tmp);
+    if(quietFlag == -1) printf(tmp);
+    printLog(tmp);
 
     /* Handle output file name */
     create_name(outName, outBaseName, "_raw.img");
@@ -823,32 +1047,33 @@ int main(int argc, char *argv[])
 
     openErrorLog(s,inDataName);
 
-    for (outLine=0;outLine<nTotal;outLine++) {
-      if (s->curFrame >= s->nFrames) {
-        printf("   Reached end of file\n");
-        if (logflag) printLog("   Reached end of file\n");
-        break;
-      }
-
-      /* Now read the next pulse of data.
-         ---------------------------------*/
-      readNextPulse(s, iqBuf, inDataName, outName);
-
-      /* If the read status is good, write this data.
-         ---------------------------------------------*/
-      if (s->readStatus == 1) {
-        /* write some extra lines at the end for the SAR processing */
-        if (((outLine >= imgStart) && (outLine <= imgEnd+4096)) ||  /* descending */
-            ((outLine >= imgEnd) && (outLine <= imgStart+4096)))      /* ascending */
-        {
-          FWRITE(iqBuf,sizeof(iqType),s->nSamp*2,s->fpOut);
-          s->nLines++;
+    for (outLine=0;outLine<nTotal;outLine++)
+      {
+        if (s->curFrame >= s->nFrames) {
+          if(quietFlag == -1) printf("   Reached end of file\n");
+          printLog("   Reached end of file\n");
+          break;
         }
+
+        /* Now read the next pulse of data.
+           ---------------------------------*/
+        readNextPulse(s, iqBuf, inDataName, outName);
+
+        /* If the read status is good, write this data.
+           ---------------------------------------------*/
+        if (s->readStatus == 1) {
+          /* write some extra lines at the end for the SAR processing */
+         if (((outLine >= imgStart) && (outLine <= imgEnd+4096)) ||  /* descending */
+              ((outLine >= imgEnd) && (outLine <= imgStart+4096)))      /* ascending */
+            {
+              FWRITE(iqBuf,sizeof(iqType),s->nSamp*2,s->fpOut);
+              s->nLines++;
+            }
+        }
+        /* Write status information to screen.
+           ------------------------------------*/
+        if(quietFlag == -1) print_progress(outLine,nTotal);
       }
-      /* Write status information to screen.
-         ------------------------------------*/
-      print_progress(outLine,nTotal);
-    }
 
     if (latConstraintFlag) {
       s->nLines -= 4096; /* reduce the line number from extra padding */
@@ -871,8 +1096,8 @@ int main(int argc, char *argv[])
     char line[255]="", key[25]="", value[25]="";
 
     sprintf(tmp,"   Data format: ESRI\n");
-    printf(tmp);
-    if (logflag) printLog(tmp);
+    if(quietFlag == -1) printf(tmp);
+    printLog(tmp);
 
     /* Handle output file name */
     create_name(outName, outBaseName, "_amp.img");
@@ -889,30 +1114,30 @@ int main(int argc, char *argv[])
       else if (strncmp(key, "NBITS", 5)==0) {
         esri->nbits = atoi(value);
         if (esri->nbits < 8) {
-          sprintf(errbuf, "\n   ERROR: metadata do not support data less than 8 bit\n\n");
-          printErr(errbuf);
+          sprintf(errbuf, "metadata do not support data less than 8 bit");
+          print_error(errbuf);
         }
       }
       else if (strncmp(key, "NBANDS", 6)==0) {
         esri->nbands = atoi(value);
         if (esri->nbands > 1) {
-          sprintf(errbuf, "\n   ERROR: metadata do not support multi-band data\n\n");
-          printErr(errbuf);
+          sprintf(errbuf, "metadata do not support multi-band data");
+          print_error(errbuf);
         }
       }
       else if (strncmp(key, "BYTEORDER", 9)==0) esri->byteorder = value[0];
       else if (strncmp(key, "LAYOUT", 6)==0) {
         sprintf(esri->layout, "%s", value);
         if (strncmp(uc(esri->layout), "BIL", 3)!=0) {
-          sprintf(errbuf, "\n   ERROR: metadata do not support data other than BIL format\n\n");
-          printErr(errbuf);
+          sprintf(errbuf, "metadata do not support data other than BIL format");
+          print_error(errbuf);
         }
      }
       else if (strncmp(key, "SKIPBYTES", 9)==0) {
         esri->skipbytes = atoi(value);
         if (esri->skipbytes > 0) {
-          sprintf(errbuf, "\n   ERROR: metadata only support generic binary data\n\n");
-          printErr(errbuf);
+          sprintf(errbuf, "metadata only support generic binary data");
+          print_error(errbuf);
         }
       }
       else if (strncmp(key, "ULXMAP", 6)==0) esri->ulxmap = atof(value);
@@ -928,6 +1153,10 @@ int main(int argc, char *argv[])
 
     /* Write metadata file */
     meta_write(meta,outName);
+if (sprocketFlag != -1) {
+  create_name(sprocketName, outName, ".metadata");
+  meta_write_sprocket(sprocketName, meta, NULL);
+}
 
     /* Write data file - currently no header, so just copying generic binary */
     fileCopy(inDataName, outName);
@@ -936,12 +1165,10 @@ int main(int argc, char *argv[])
     meta_free(meta);
     sprintf(logbuf, "   Converted ESRI file (%s) to ASF internal file (%s)\n\n",
             inDataName, outName);
-    printf(logbuf);
-    if (logflag) {
-      fLog = FOPEN(logFile, "a");
-      printLog(logbuf);
-      FCLOSE(fLog);
-    }
+    if(quietFlag == -1) printf(logbuf);
+    fLog = FOPEN(logFile, "a");
+    printLog(logbuf);
+    FCLOSE(fLog);
   }
 
   /* Ingest ENVI format data */
@@ -949,8 +1176,8 @@ int main(int argc, char *argv[])
     char line[255]="", key[25]="", value[25]="", bla[25];
 
     sprintf(tmp,"   Data format: ENVI\n");
-    printf(tmp);
-    if (logflag) printLog(tmp);
+    if(quietFlag == -1) printf(tmp);
+    printLog(tmp);
 
     /* Handle output file name */
     create_name(outName, outBaseName, "_amp.img");
@@ -1074,8 +1301,8 @@ int main(int argc, char *argv[])
                &envi->center_lon, bla);
         break;
       default:
-        sprintf(errbuf, "\n   ERROR: unsupported map projection\n\n");
-        printErr(errbuf);
+        sprintf(errbuf, "unsupported map projection");
+        print_error(errbuf);
         break;
       }
 
@@ -1084,7 +1311,7 @@ int main(int argc, char *argv[])
 
     /* Write metadata file */
     meta_write(meta,outName);
-if (sprocketFlag) {
+if (sprocketFlag != -1) {
   create_name(sprocketName, outName, ".metadata");
   meta_write_sprocket(sprocketName, meta, NULL);
 }
@@ -1097,8 +1324,8 @@ if (sprocketFlag) {
     meta_free(meta);
     sprintf(logbuf, "   Converted ENVI file (%s) to ASF internal file (%s)\n\n",
             inDataName, outName);
-    printf(logbuf);
-    if (logflag) {
+    if(quietFlag == -1) printf(logbuf);
+    {
       fLog = FOPEN(logFile, "a");
       printLog(logbuf);
       FCLOSE(fLog);
@@ -1106,13 +1333,12 @@ if (sprocketFlag) {
   }
 
   else {
-        sprintf(tmp,"Unrecognized data format: '%s'\n\n",type);
-        printf(tmp);
-        if (logflag) printLog(tmp);
-        usage (program_name);
+        sprintf(tmp,"Unrecognized data format: '%s'",type);
+        print_error(tmp);
+        printLog(tmp);
   }
 
-  if (sprocketFlag) {
+  if (sprocketFlag != -1) {
     create_sprocket_layers(outName, inMetaName);
   }
 
@@ -1121,12 +1347,12 @@ if (sprocketFlag) {
 
 
 /* usage - enter here on command-line usage error*/
-void usage(char *program_name)
+void usage()
 {
 
  printf("\n"
 	"USAGE:\n"
-	"   %s [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]\n"
-	"              <in_base_name> <out_base_name>\n", program_name);
+	"   asf_import [-amplitude | -sigma | -gamma | -beta | -power] [-lat <lower> <upper>]\n"
+	"              [-format <format>] <in_data> <in_meta> <out_base_name>\n");
  exit(EXIT_FAILURE);
 }
