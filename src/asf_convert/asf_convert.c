@@ -1,4 +1,5 @@
-/********************************************************************************
+/*******************************************************************************
+<documentation>
 <name>
    asf_convert
 </name>
@@ -101,15 +102,16 @@
 *                                                                             *
 *******************************************************************************
 </copyright>
+</documentation>
 
 PROGRAM HISTORY:
 	VERS:   DATE:   AUTHOR:
 	----------------------------------------------------------------------
-	1.0	10/02	R. Gens, original development
-	1.1	10/03	R. Gens, extended output formats
-        1.2     05/04   R. Gens, overhaul for new metadata, added resampling
-        1.3     05/04   R. Gens, added batch mode
-        1.4     06/04   R. Gens, renamed to asf_convert, added alternative
+	1.0     10/02	R. Gens, original development
+	1.1     10/03	R. Gens, extended output formats
+    1.2     05/04   R. Gens, overhaul for new metadata, added resampling
+    1.3     05/04   R. Gens, added batch mode
+    1.4     06/04   R. Gens, renamed to asf_convert, added alternative
                                  command line
 
 *******************************************************************************/
