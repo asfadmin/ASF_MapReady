@@ -38,7 +38,7 @@ clean:
 else                                                                                
 ### Begin Unix Section
 
-CFLAGS = -Wall -O0 -g $(shell pkg-config --cflags libgtk+-2.0) \
+CFLAGS = -Wall -O0 -g $(shell pkg-config --cflags gtk+-2.0) \
          $(shell pkg-config --cflags libglade-2.0)
 
 LDLIBS = $(shell pkg-config --libs gtk+-2.0) \
