@@ -15,54 +15,27 @@ fi
 echo "############ Determining operating system ###############"
 cc="cc"
 osType=`uname`
-if [ -z $osType ]; then
-	# No uname!  Must ask user.
-	echo "Could not match your system automatically..."
-	# Could be Next or something:
-	printf "Please enter your system type (linux, next, etc.): "
-	read sys
-	echo "Configuring for " $sys "."
-	osType=$sys
-else
-	versMajor=`uname -r | awk -F. '{print $1}'`
-	versMinor=`uname -r | awk -F. '{print $2}'`
-fi
+versMajor=`uname -r | awk -F. '{print $1}'`
+versMinor=`uname -r | awk -F. '{print $2}'`
 
 ranlib="@echo do not need to run ranlib on this system on file: "
 optFlag="-O"
 case "${osType}:${versMajor}:${versMinor}" in
-	IRIX*:5:*)
-		sys="irix5x" ;;
 	IRIX*:*:*)
-		sys="irix" 
+		sys="irix"
 		optFlag="-O -n32";;
-	SunOS:4:*)
-		sys="sunos"
-		ranlib="ranlib"
-		cc="gcc" ;;
 	SunOS:*:*)
 		sys="solaris" ;;
-	AIX*:*:*)
-		sys="aix" ;;
-	ULTRIX:*:*)
-		sys="ultrix" ;;
-	OSF1:*:*)
-		sys="osf1" ;;
-	HP-UX:*:*)
-		sys="hpux" ;;
-	*BSD:*:*)
-		sys="bsd" ;;
-	GNU:*:*)
-		sys="gnu" ;;
 	Linux:*:*)
 		sys="linux" ;;
-	Mach:*:*)
-		sys="mach" ;;
 	CYGWIN*:*:*)
 		sys="win32"
-		makeExtra="BIN_POSTFIX = .exe";;
+		makeExtra="BIN_POSTFIX = .exe" ;;
 	*:*:*)
-		sys=$osType ;;
+		echo "ASF tools are only supported on IRIX, Solaris, Linux, and Windows (Cygwin)"
+		echo "Your system appears to be '" $osType "'."
+		echo "Exiting..."
+		exit 1 ;;
 esac
 
 # Make the install directories for the libraries and binaries.
@@ -93,7 +66,7 @@ if [ ! $cc = "gcc" -a ! $batch_mode = "true" ]; then
 else
     cc="gcc"
     optFlag="-O"
-fi     
+fi
 
 asfDir=`pwd`
 
@@ -152,6 +125,7 @@ LDFLAGS = $(DEBUGLIBS)
 LIBDIR  = ../../lib/$(SYS)
 BINDIR  = ../../bin/$(SYS)
 JAVADIR = ../../java
+
 EOF
 
 echo "$makeExtra" >>system_rules
@@ -172,6 +146,7 @@ do
 	fi
 done
 
+
 echo "########### Building the Makefile ###############"
 make CC=$cc
 ./makemake $sys
@@ -187,4 +162,4 @@ echo "  directory to your path: "$directory" "
 echo ""
 echo "To build the tools, type 'make'."
 echo ""
-echo "######### Source Installation Complete.  ##########"
+echo "########### Build system is now configured  ############"
