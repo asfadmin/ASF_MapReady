@@ -51,18 +51,16 @@ class importImage {
    boolean newcontrast;
    boolean rafFLAG = false;
    byte[] greyarray = new byte[256];
-   int[] histogram = new int[256];
    byte[] byteImageArray;
    IndexColorModel cm; 
    
-   //sends the file to the right reader based on it's name.   
+// Sends the file to the correct reader based on it's name.   
    importImage (pvs mainFrame, String filename, int imagesize, int imagequality) { 
       this.mainFrame = mainFrame;
       this.imagesize = imagesize;
       this.imagequality = imagequality;
 
-      //grab the right files
-
+   // Grab the correct files
       if (filename.endsWith("metadata")) {
          metafilename = filename;
          filename = filename.substring(0,filename.length() - 8) + "img";
@@ -78,14 +76,12 @@ class importImage {
       }
       else if (filename.endsWith("D")) {
          metafilename = filename.substring(0,filename.length() - 1) + "L";
-//         metafilename = filename.substring(0,filename.length() - 1) + "converted.metadata";
          this.filename = filename;    
          this.metafilename = metafilename;
          readasfImage();    
       }
       else if (filename.endsWith("L")) {
          metafilename = filename;
-//         metafilename = filename.substring(0,filename.length() - 1) + "converted.metadata";
          filename = filename.substring(0,filename.length() - 1) + "D";
          this.filename = filename;    
          this.metafilename = metafilename;
@@ -160,6 +156,7 @@ class importImage {
          float[] imageLineInFloats = new float[imagesize];
          float[] imageInFloats = new float[imagesize*imagesize];
          int[] countArray = new int[imagesize];
+         int[] histogram = new int[256];
          int oldii = 0;
          float max = Float.MIN_VALUE;
          float min = Float.MAX_VALUE;
@@ -172,7 +169,7 @@ class importImage {
                done = (ii*100)/height;
                pd.process(done);
             }
-         // Read data values into an array
+         // Read line of samples (pixels) into an array (or skip the line)
             if ((imagequality==0) || (int)((ii+imagequality)/heightRatio)>oldii
                                                   || ii>(height-imagequality)) {
                for (int jj=0; jj<width; jj++) {
@@ -189,10 +186,8 @@ class importImage {
                for (int jj=0; jj<imagesize; jj++) {
                   index = oldii*imagesize+jj;
                   imageInFloats[index] = imageLineInFloats[jj]/countArray[jj];
-                  if ((int)max*countArray[jj] < (int)imageLineInFloats[jj])
-                     { max = imageInFloats[index]; }
-                  if ((int)min*countArray[jj] > (int)imageLineInFloats[jj])
-                     { min = imageInFloats[index]; }
+                  if (max<imageInFloats[index])   max = imageInFloats[index];
+                  if (min>imageInFloats[index])   min = imageInFloats[index];
                }
                imageLineInFloats = new float[imagesize];
                countArray = new int[imagesize];
@@ -212,12 +207,12 @@ class importImage {
 
       // Fit freshly read binary data to byte range & get some stats
          if (max-min != 0) {
-            int fit2range;
+            int fit2byte;
             for (int ii=0; ii < imagesize*imagesize; ii++) {
-               fit2range = (int)(255 * (imageInFloats[ii]-min) / (max-min));
-               byteImageArray[ii] = (byte)fit2range;
-               histogram[fit2range]++;
-               mean += fit2range;
+               fit2byte = (int)(255 * (imageInFloats[ii]-min) / (max-min));
+               byteImageArray[ii] = (byte)fit2byte;
+               histogram[fit2byte]++;
+               mean += fit2byte;
             }
          }
          else {
@@ -249,6 +244,9 @@ class importImage {
          contrastHigh = defaultContrastHigh;
          
          colourarray(contrastLow, contrastHigh);
+      }
+      catch (ArrayIndexOutOfBoundsException aIOOBE) {
+         aIOOBE.printStackTrace();
       }
       catch(Exception e) {
       // Create a fake fuzzy image and let the user know things got hosed
@@ -305,6 +303,7 @@ class importImage {
       double heightRatio = fheight/imagesize;
       long[] longArray = new long[imagesize];
       int[] countArray = new int[imagesize];
+      int[] histogram = new int[256];
       int oldi = 0;
          
    // Process meter stuff
