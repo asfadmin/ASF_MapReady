@@ -76,7 +76,7 @@ typedef struct {
  */
 typedef struct {
   char proj_type;                    /* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected.*/
-  char lookDir;                      /* 'L'-> Left Looking; 'R'-> Right Looking.*/
+  char look_direction;               /* 'L'-> Left Looking; 'R'-> Right Looking.*/
   int look_count;                    /* Number of looks to take from SLC.       */
   double look_angle;                 /* Angle SAR looks at earth [radians]      */
   int deskewed;                      /* True if image moved to zero doppler.    */
@@ -257,17 +257,18 @@ typedef struct {
   double meta_version;     /* Version of metadata format conformed to.  */
 
   meta_general       *general;
-  meta_sar           *sar;
-  meta_optical       *optical;
-  meta_thermal       *thermal;
-  meta_projection    *projection;
+  meta_sar           *sar;             /* Can be NULL (check!).  */
+  meta_optical       *optical;         /* Can be NULL (check!).  */
+  meta_thermal       *thermal;         /* Can be NULL (check!).  */
+  meta_projection    *projection;      /* Can be NULL (check!).  */
   meta_stats         *stats;
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
     /* Deprecated elements from old metadata format.  */
   meta_state_vectors *stVec;	       /* Can be NULL (check!).  */
-  geo_parameters *geo;
-  ifm_parameters *ifm;
-  extra_info     *info;		       /* Can be NULL (check!).  */
+  geo_parameters  *geo;
+  ifm_parameters  *ifm;
+  proj_parameters *proj;               /* Can be NULL (check!).  */
+  extra_info      *info;               /* Can be NULL (check!).  */
 } meta_parameters;
 
 
@@ -277,10 +278,14 @@ typedef struct {
 */
 /*In meta_init.c.  
  * These are the routines to use, generally.*/
+meta_parameters *meta_init_old(const char *fName);
+void meta_free_old(meta_parameters *meta);
 meta_parameters *meta_init(const char *fName);
 void meta_free(meta_parameters *meta);
 
 /*In meta_coni.c*/
+void meta_write_old(meta_parameters *meta,const char *outName);
+meta_parameters *meta_read_old(const char *inName);
 void meta_write(meta_parameters *meta,const char *outName);
 meta_parameters *meta_read(const char *inName);
 
