@@ -236,6 +236,9 @@ int main(int argc, char *argv[])
 
   /* Read required arguments */
   strcpy(type,argv[currArg++]);
+  for (ii=0; ii<strlen(type); ii++) {
+    type[ii] = (char)toupper(type[ii]);
+  }
   strcpy(inDataName,argv[currArg++]);
   strcpy(inMetaName,argv[currArg++]);
   strcpy(outBaseName,argv[currArg++]);
@@ -293,16 +296,28 @@ int main(int argc, char *argv[])
 
       /* Handle output files */
       create_name(outName, outBaseName, "_raw.img");
+      nl = meta->general->line_count;
       s = convertMetadata_ceos(inMetaName, outName, &trash, &readNextPulse);
       iqBuf = (iqType*)MALLOC(sizeof(iqType)*2*(s->nSamp));
       fpOut = FOPEN(outName, "wb");
       getNextCeosLine(s->binary, s, inMetaName, outName); /* Skip CEOS header. */
       s->nLines = 0;
-      for (ii=0; ii<meta->general->line_count; ii++) {
+      printf("\n");
+      for (ii=0; ii<nl; ii++) {
         readNextPulse(s, iqBuf, inDataName, outName);
         FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
+        if (((ii+1)%256==0) || ((ii+1)==nl)) {
+	  printf("\rWrote %5d of %5d lines",ii+1,nl);
+          fflush(NULL);
+          if ((ii+1) == nl)
+            printf("\n");
+        }
         s->nLines++;
       }
+      updateMeta(s,meta,NULL,0);
+      meta_write(meta,outName);
+      meta_free(meta);
+      printf("Finished\n\n");
       exit(EXIT_SUCCESS);
     }
 
