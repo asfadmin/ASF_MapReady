@@ -204,11 +204,12 @@ typedef struct {
   stateVector vec; /* Fixed-earth state vector.  */
 } state_loc;
 typedef struct {
-  int year;           /* Year for first state vector                 */
-  int julDay;         /* Julian day of year for first state vector.  */
-  double second;      /* Seconds of day for first state vector.      */
-  int vector_count;   /* Number of state vectors.                    */
-  state_loc *vecs;    /* Array sized at run-time.                    */
+  int year;           /* Year for first state vector                  */
+  int julDay;         /* Julian day of year for first state vector.   */
+  double second;      /* Seconds of day for first state vector.       */
+  int vector_count;   /* Number of state vectors.                     */
+  int num;	      /* Same as vector_count.  For backward compat.  */
+  state_loc *vecs;    /* Array sized at run-time.                     */
 } meta_state_vectors;
 
 
