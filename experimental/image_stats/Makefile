@@ -2,8 +2,6 @@
 # by Rudi Gens, ASF, 2004
 # Based on image_layers
 
-DEBUG_BUILD = 2
-
 include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf_meta.a \

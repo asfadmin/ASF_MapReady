@@ -1,8 +1,6 @@
 # Makefile for detect_cr
-# Module Author: Rudi Gens (sliced and diced from coregister_fine, 
+# Module Author: Rudi Gens (sliced and diced from coregister_fine,
 #	                    coregister_coarse and fftMatch)
-
-DEBUG_BUILD = 2
 
 include ../../make_support/system_rules
 
