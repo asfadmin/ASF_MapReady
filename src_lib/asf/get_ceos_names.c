@@ -164,7 +164,7 @@ ceos_metadata_ext_t require_ceos_metadata(const char *ceosName, char *metaName)
 
     /* Prepare a very readable list of possible extensions */
     sprintf(extensionList,"%s",ceos_metadata_extensions[begin++]);
-    if (end-begin == 1)
+    if (end-begin == 0)
       andFlag=FALSE;
     else
       end--;
@@ -258,7 +258,7 @@ ceos_data_ext_t require_ceos_data(const char *ceosName, char *dataName)
 
     /* Prepare a very readable list of possible extensions */
     sprintf(extensionList,"%s",ceos_data_extensions[begin++]);
-    if (end-begin == 1)
+    if (end-begin == 0)
       andFlag=FALSE;
     else
       end--;
@@ -320,7 +320,7 @@ ceos_file_pairs_t get_ceos_names(const char *ceosName, char *dataName,
 ceos_file_pairs_t require_ceos_pair(const char *ceosName, char *dataName,
                                     char *metaName)
 {
-  ceos_file_pairs_t ret = require_ceos_pair(ceosName, dataName, metaName);
+  ceos_file_pairs_t ret = get_ceos_names(ceosName, dataName, metaName);
 
   /* If we didn't find anything, report & leave */
   if (ret == NO_CEOS_FILE_PAIR) {
@@ -333,7 +333,7 @@ ceos_file_pairs_t require_ceos_pair(const char *ceosName, char *dataName,
     sprintf(extensionList,"(%s %s)",ceos_data_extensions[begin],
                                     ceos_metadata_extensions[begin]);
     begin++;
-    if (end-begin == 1)
+    if (end-begin == 0)
       andFlag=FALSE;
     else
       end--;
