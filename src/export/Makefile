@@ -9,7 +9,7 @@ LIBS  = $(LIBDIR)/asf_meta.a \
         -L$(HOME)/local/lib -lgsl -lgslcblas -lm \
         -lefence
 
-OBJS  = export.o
+OBJS  = asf_export.o
 
 SRCS = $(patsubst %.o, %.c, $(OBJS))
 
