@@ -42,7 +42,7 @@ double meta_get_time(meta_parameters *meta,double yLine, double xSample)
 	}
 	else /*Unknown projection type.*/
 	{
-		printf("Error!  Unknown projection type '%c' passed to meta_get_time!\n",
+		printf("Error!  Unknown SAR image type '%c' passed to meta_get_time!\n",
 			meta->sar->image_type);
 		exit(1);
 	}
