@@ -13,7 +13,7 @@ YACC = bison -y			# -y means use yacc file name conventions.
 #LDEBUG_FLAGS = -d      # Uncomment this line to debug lexer
 YFLAGS = $(YDEBUG_FLAGS) -d
 LFLAGS = $(LDEBUG_FLAGS)
-LDLIBS = -lfl
+LDLIBS = -lfl -lregex_wrapper
 
 YACC_SOURCES = metadata_parser.y
 LEX_SOURCES = metadata_lexer.l
@@ -54,12 +54,13 @@ OBJS =  coniFetch.o \
         meta_init_stVec.o \
         set_era.o \
         utc2gha.o \
+	meta_read.o \
         $(LEX_YACC_OBJS)
 
 all: asf_meta clean
 
 asf_meta: $(OBJS)
-	 ar rv asf_meta.a $(OBJS)
+	 ar rv asf_meta.a $(OBJS) 
 	 $(RANLIB) asf_meta.a
 	 mv asf_meta.a $(LIBDIR)
 	 # Make a link obeying the usual naming convention.
