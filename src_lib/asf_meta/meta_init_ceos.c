@@ -568,6 +568,7 @@ ceos_description *get_ceos_description(char *fName)
       else if (0==strncmp(prodStr,"SCANSAR",7)) ceos->product=SCANSAR;
       else if (0==strncmp(prodStr,"CCSD",4)) ceos->product=CCSD;
       else if (0==strncmp(prodStr,"COMPLEX",7)) ceos->product=SLC;
+      else if (0==strncmp(prodStr,"RAMP",4)) ceos->product=RAMP;
       /* Non-ASF data */
       else if (0==strncmp(prodStr,"SPECIAL PRODUCT(SINGL-LOOK COMP)",32))
          ceos->product=SLC;

@@ -22,7 +22,7 @@ typedef struct {
    enum {unknownSatellite,ERS,JERS,RSAT} satellite;
    double version;/*Processor version number, or zero.*/
    enum {unknownProcessor,ASP,SPS,AISP,PREC,PP,SP2,AMM,LZP,FOCUS,SP3} processor;
-   enum {unknownProduct,CCSD,RAW,LOW_REZ,HI_REZ,SCANSAR,SLC,PRI,SGF} product;
+   enum {unknownProduct,CCSD,RAW,LOW_REZ,HI_REZ,RAMP,SCANSAR,SLC,PRI,SGF} product;
 } ceos_description;
 
 /***************************************
