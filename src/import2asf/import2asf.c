@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   int nl, ns=0, ii, kk, tableRes=MAX_tableRes, tablePix=0, headerBytes;
   int latConstraintFlag=FALSE, prcflag=FALSE, nTotal, nVec=1;
   long offset;
-  short *short_buf=NULL, *cpx_buf=NULL;
+  unsigned short *short_buf=NULL, *cpx_buf=NULL;
   unsigned char *byte_buf=NULL;
   float *out_buf=NULL, percent=5.0;
   float fd, fdd, fddd, lowerLat=NAN, upperLat=NAN;
@@ -1013,6 +1013,7 @@ int main(int argc, char *argv[])
 /* usage - enter here on command-line usage error*/
 void usage(char *name)
 {
+
  printf("\n"
 	"USAGE:\n"
 	"   %s [-prc <path>] [-amplitude] [-sigma] [-gamma] [-beta] [-power]\n"
