@@ -21,9 +21,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_USAGE_STRING \
 "[-amplitude | -sigma | -gamma | -beta | -power]\n"\
-"              [-prc] [-old] [-format <input_format>] [-lat <lower> <upper>]\n"\
-"              [-lut <lut file>] [-log <log_file>] [-quiet] [-help]\n"\
-"              <in_data_name> <in_meta_name> <out_base_name>"
+"              [-prc] [-old] [-format <inputFormat>] [-lat <lower> <upper>]\n"\
+"              [-metadata <inMetaFile>] [-log <logFile>] [-quiet] [-help]\n"\
+"              <inBaseName> <outBaseName>"
 
 #define ASF_DESCRIPTION_STRING \
 "   Ingests all varieties of CEOS and STF data formats as well as the\n"\
@@ -32,9 +32,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_INPUT_STRING \
 "   The format of the input file must be specified as CEOS, STF, ESRI, or\n"\
-"   ENVI. The data file name must be provided seperately from the meta file\n"\
-"   name. The output file provided should only be a base name, by which the\n"\
-"   created files will be named, with appropriate extensions."
+"   ENVI."
 
 #define ASF_OUTPUT_STRING \
 "   Outputs data and metadata files with the user-provided base name and\n"\
@@ -46,24 +44,36 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   -gamma         Create a calibrated image (gamma dB values).\n"\
 "   -beta          Create a calibrated image (beta dB values).\n"\
 "   -power         Create a power image.\n"\
-"   -format        Force input data to be read as the given format type\n"\
-"                    Valid options are ceos, stf, esri, and envi\n"\
+"   -format        Force input data to be read as the given format type.\n"\
+"                    Valid options are ceos, stf, esri, and envi.\n"\
+"                    'ceos' is the default behavior.\n"\
 "   -log           Output will be written to a specified log file.\n"\
 "   -quiet         Supresses all non-essential output.\n"\
 "   -lat           Specify lower and upper latitude contraints.\n"\
 "   -old           Output in old style ASF internal format.\n"\
-"   -prc           Replace the restituted state vectors from the original raw\n"\
-"                  data acquired by the ERS satellites with preceision state\n"\
-"                  vectors from DLR.\n"\
+"   -metadata      Use a different name for the metadata file.\n"\
+"                    Requires only the base name.\n"\
+"   -prc           Replace the restituted state vectors from the original\n"\
+"                    raw data acquired by the ERS satellites with preceision\n"\
+"                    state vectors from DLR."\
 "   -lut           Applies a user defined look up table to the\n"\
-"		  data. Look up contains incidence angle dependent\n"\
-"		  scaling factors."
+"                    data. Look up contains incidence angle dependent\n"\
+"                    scaling factors."
 
 #define ASF_EXAMPLES_STRING \
-"   asf_import -format CEOS file1.D file1.L file2"
+"   To import CEOS format to the ASF tools internal format run:\n"\
+"       example> asf_import fileCEOS fileASF\n"\
+"\n"\
+"   To import a STF fileset (fileSTF.000 & file.000.par) you will need to\n"\
+"   specify the -format option since STF is not the default.\n"\
+"       example> asf_import -format stf fileSTF.000 fileASF\n"\
+"\n"
 
 #define ASF_LIMITATIONS_STRING \
-"   None known."
+"  CEOS base name issue:\n"\
+"   If you have two or more CEOS filesets ([*.D & *.L], [*.RAW & *.LDR], or\n"\
+"   [dat.* & lea.*]) with the same base name, then this program will\n"\
+"   automatically fetch the first set in the aforementioned list."
 
 #define ASF_SEE_ALSO_STRING \
 "   asf_convert, asf_export"
@@ -123,21 +133,26 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "    0.5     5/04   P. Denny    Added hidden option to write out sprocket\n"\
 "                                style metadata.\n"\
 "    0.6     7/04   G. Short    New command line parsing.\n"\
-"    0.7     7/04   G. Shrot    New usage/help style.\n"\
+"    0.7     7/04   G. Short    New usage/help style.\n"\
 "    1.0     8/04   P. Denny    Create functions to do each of the different\n"\
 "                                filetype imports... ready for release."
 
+
+#define ASF_VERSION_MAJOR_STRING "1.0"
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
+
+#define VERSION 1.0
 
 #include "asf_import.h"
 #include "asf_meta.h"
 #include "asf_nan.h"
 #include "ceos.h"
 #include "decoder.h"
+#include "get_ceos_names.h"
+#include "get_stf_names.h"
 #include <ctype.h>
 
-#define VERSION 1.0
-
+#define REQUIRED_ARGS 2
 
 /* usage - enter here on command-line usage error*/
 void usage(void)
@@ -154,52 +169,38 @@ void usage(void)
 /* help_page - go here when the -help option is specified */
 void help_page()
 {
-	if(system("echo '"
-		"\n\n\n"
-		"Tool name:\n" ASF_NAME_STRING "\n\n\n"
-		"Usage:\n" ASF_NAME_STRING " " ASF_USAGE_STRING "\n\n\n"
-		"Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
-		"Input:\n" ASF_INPUT_STRING "\n\n\n"
-		"Output:\n"ASF_OUTPUT_STRING "\n\n\n"
-		"Options:\n" ASF_OPTIONS_STRING "\n\n\n"
-		"Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
-		"Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
-		"See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
-		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
-		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
-		"' | less") != -1)
-		exit(EXIT_SUCCESS);
+  char happy_string[4066];
+  char command[4096];
 
-	else if(system("echo '"
-		"\n\n\n"
-		"Tool name:\n" ASF_NAME_STRING "\n\n\n"
-		"Usage:\n" ASF_USAGE_STRING "\n\n\n"
-		"Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
-		"Input:\n" ASF_INPUT_STRING "\n\n\n"
-		"Output:\n"ASF_OUTPUT_STRING "\n\n\n"
-		"Options:\n" ASF_OPTIONS_STRING "\n\n\n"
-		"Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
-		"Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
-		"See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
-		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
-		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n"
-		"' | more") != -1)
-		exit(EXIT_SUCCESS);
+  /* What to print out for help */
+  sprintf(happy_string,
+          "\n\n\n"
+          "Tool name:\n" ASF_NAME_STRING "\n\n\n"
+          "Usage:\n" ASF_NAME_STRING " " ASF_USAGE_STRING "\n\n\n"
+          "Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
+          "Input:\n" ASF_INPUT_STRING "\n\n\n"
+          "Output:\n"ASF_OUTPUT_STRING "\n\n\n"
+          "Options:\n" ASF_OPTIONS_STRING "\n\n\n"
+          "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
+          "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
+          "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
+          "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
+          "Version: " ASF_VERSION_MAJOR_STRING "\n\n\n");
 
-	else
-		printf("\n\n\n"
-		"Tool name:\n" ASF_NAME_STRING "\n\n\n"
-		"Usage:\n" ASF_USAGE_STRING "\n\n\n"
-		"Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
-		"Input:\n" ASF_INPUT_STRING "\n\n\n"
-		"Output:\n"ASF_OUTPUT_STRING "\n\n\n"
-		"Options:\n" ASF_OPTIONS_STRING "\n\n\n"
-		"Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
-		"Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
-		"See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
-		"Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n"
-		"Program history:\n" ASF_PROGRAM_HISTORY_STRING "\n\n\n");
-		exit(EXIT_SUCCESS);
+  /* If we can, use less */
+  sprintf(command,"echo '%s' | less",happy_string);
+  if(system(command) != -1)
+    exit(EXIT_SUCCESS);
+
+  /* Hmmm, less didn't work cause we got here, try using more */
+  sprintf(command,"echo '%s' | more",happy_string);
+  if(system(command) != -1)
+    exit(EXIT_SUCCESS);
+
+  /* Okay, neither less or more work (obviously if we made it here),
+   * just print the info straight to stdout and exit */
+  printf(happy_string);
+  exit(EXIT_SUCCESS);
 }
 
 
@@ -208,10 +209,12 @@ void help_page()
  *****************************************************************************/
 int main(int argc, char *argv[])
 {
-  char inDataName[256], inMetaName[256], prcPath[256], *lutName=NULL;
-  char outName[288], outBaseName[256];
+  char inBaseName[256]="";
+  char inDataName[256]="", inMetaName[256]="";
+  char outName[288]="", outBaseName[256]="";
+  char inMetaNameOption[256], prcPath[256]="";
+  char *lutName=NULL;
   char format_type[256]="";
-  char message[256];
   int ii;
   double lowerLat=NAN, upperLat=NAN;
   flag_indices_t flags[NUM_FLAGS];
@@ -222,9 +225,12 @@ int main(int argc, char *argv[])
   }
 
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
-  /*Check to see if any options were provided*/
-  if(checkForOption("-help", argc, argv) != -1)/*Most important*/
+  /* Most importantly, check to see if the help option was specified */
+  if (   (checkForOption("--help", argc, argv) != FLAG_NOT_SET)
+      || (checkForOption("-h", argc, argv) != FLAG_NOT_SET)
+      || (checkForOption("-help", argc, argv) != FLAG_NOT_SET) )
     help_page();
+  /*Check to see if any options were provided*/
   flags[f_AMP] = checkForOption("-amplitude", argc, argv);
   flags[f_SIGMA] = checkForOption("-sigma", argc, argv);
   flags[f_BETA] = checkForOption("-beta", argc, argv);
@@ -235,13 +241,14 @@ int main(int argc, char *argv[])
   flags[f_LAT_CONSTRAINT] = checkForOption("-lat", argc, argv);
   flags[f_PRC] = checkForOption("prc", argc, argv);
   flags[f_OLD_META] = checkForOption("-old", argc, argv);
-  flags[f_FORMAT] = checkForOption("-format", argc, argv);
+  flags[f_METADATA_FILE] = checkForOption("-metadata", argc, argv);
   flags[f_LOG] = checkForOption("-log", argc, argv);
   flags[f_QUIET] = checkForOption("-quiet", argc, argv);
+  flags[f_FORMAT] = checkForOption("-format", argc, argv);
 
-  /* Make sure to set log & quiet flags (for use in our libraries) */
-  logflag = (flags[f_LOG]!=FLAG_NOT_SET) ? TRUE : FALSE;
+  /*Make sure to set old school log & quiet flags (for use in our libraries)*/
   quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
+  logflag = TRUE; /* Since we always log set the oldschool logflag to true */
 
   { /*Check for mutually exclusive options: we can only have one of these*/
     int temp = 0;
@@ -256,7 +263,7 @@ int main(int argc, char *argv[])
       usage();/*This exits with a failure*/
   }
   { /*We need to make sure the user specified the proper number of arguments*/
-    int needed_args = 4;/*command & in_data & in_meta & out_base*/
+    int needed_args = REQUIRED_ARGS+1;/*command & in_base & out_base*/
     if(flags[f_AMP] != FLAG_NOT_SET)      needed_args += 1;/*option*/
     if(flags[f_SIGMA] != FLAG_NOT_SET)    needed_args += 1;/*option*/
     if(flags[f_BETA] != FLAG_NOT_SET)     needed_args += 1;/*option*/
@@ -264,10 +271,11 @@ int main(int argc, char *argv[])
     if(flags[f_POWER] != FLAG_NOT_SET)    needed_args += 1;/*option*/
     if(flags[f_SPROCKET] != FLAG_NOT_SET) needed_args += 1;/*option*/
     if(flags[f_LUT] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
-    if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) 
+    if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET)
       needed_args += 3;/*option & parameter & parameter*/
     if(flags[f_PRC] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
     if(flags[f_OLD_META] != FLAG_NOT_SET) needed_args += 1;/*option*/
+    if(flags[f_METADATA_FILE] != FLAG_NOT_SET)  needed_args += 2;/*option & parameter*/
     if(flags[f_LOG] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
     if(flags[f_QUIET] != FLAG_NOT_SET)    needed_args += 1;/*option*/
     if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
@@ -275,33 +283,42 @@ int main(int argc, char *argv[])
     /*Make sure we have enough arguments*/
     if(argc != needed_args)
       usage();/*This exits with a failure*/
- 
-    /*We also need to make sure any options that have parameters are specified 
-      correctly.
-      This includes: -lat, -prc, -log, -lut*/
-    if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET)
-      /*I don't think we can do the first of these... -90 is a latitude we
-	should accept. commenting out those checks */
-      if(flags[f_LAT_CONSTRAINT] >= argc - (needed_args+1))
-	usage();/*This exits with a failure*/
-    if(flags[f_PRC] != FLAG_NOT_SET)
-      /*Make sure the field following -prc isn't another option
-	Also check for bleeding into required arguments*/
-      if(argv[flags[f_PRC] + 1][0] == '-' || flags[f_PRC] >= argc - 4)
-	usage();/*This exits with a failure*/
-    if(flags[f_LOG] != FLAG_NOT_SET)
-      /*Make sure the field following -log isn't another option*/
-      if(argv[flags[f_LOG] + 1][0] == '-' || flags[f_LOG] >= argc - 4)
-	usage();/*This exits with a failure*/
-    if(flags[f_LUT] != FLAG_NOT_SET)
-      /*Make sure the field following -lut isn't another option*/
-      if(argv[flags[f_LUT] + 1][0] == '-' || flags[f_LUT] >= argc - 4)
-	usage();/*This exits with a failure*/
-    if(flags[f_FORMAT] != FLAG_NOT_SET)
-      /*Make sure the field following -format isn't another option*/
-      if(argv[flags[f_FORMAT] + 1][0] == '-' || flags[f_FORMAT] >= argc - 4)
-	usage();
   }
+
+  /*We also need to make sure any options that have parameters are specified
+    correctly.  This includes: -lat, -prc, -log, -lut*/
+  if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET)
+    /*Make sure there's no "bleeding" into the required arguments
+      No check for '-' in the two following fields because negative numbers
+      are legit (eg -lat -67.5 -70.25)*/
+    if(flags[f_LAT_CONSTRAINT] >= argc - (REQUIRED_ARGS+1))
+       usage();
+  if(flags[f_PRC] != FLAG_NOT_SET)
+    /*Make sure the field following -prc isn't another option
+      Also check for bleeding into required arguments*/
+    if(   argv[flags[f_PRC]+1][0] == '-'
+       || flags[f_PRC] >= argc-REQUIRED_ARGS)
+      usage();
+  if(flags[f_METADATA_FILE] != FLAG_NOT_SET)
+    /*Make sure the field following -metadata isn't another option*/
+    if(   argv[flags[f_METADATA_FILE] + 1][0] == '-'
+       || flags[f_METADATA_FILE] >= argc - REQUIRED_ARGS)
+      usage();/*This exits with a failure*/
+  if(flags[f_LOG] != FLAG_NOT_SET)
+    /*Make sure the field following -log isn't another option*/
+    if(   argv[flags[f_LOG]+1][0] == '-'
+       || flags[f_LOG] >= argc-REQUIRED_ARGS)
+      usage();
+  if(flags[f_LUT] != FLAG_NOT_SET)
+    /*Make sure the field following -lut isn't another option*/
+    if(   argv[flags[f_LUT]+1][0] == '-'
+       || flags[f_LUT] >= argc-REQUIRED_ARGS)
+      usage();
+  if(flags[f_FORMAT] != FLAG_NOT_SET)
+    /*Make sure the field following -format isn't another option*/
+    if(   argv[flags[f_FORMAT]+1][0] == '-'
+       || flags[f_FORMAT] >= argc-REQUIRED_ARGS)
+      usage();
 
   /*We must be close to good enough at this point...
     start filling in fields as needed*/
@@ -310,9 +327,9 @@ int main(int argc, char *argv[])
 
   if(flags[f_LOG] != FLAG_NOT_SET)
     strcpy(logFile, argv[flags[f_LOG] + 1]);
-  else
-    sprintf(logFile, "tmp%i.log", (int)getpid());/*default behavior: 
-						   log to tmp<pid>.log*/
+  else /*default behavior: log to tmp<pid>.log*/
+    sprintf(logFile, "tmp%i.log", (int)getpid());
+
   fLog = FOPEN(logFile, "a");
   if(flags[f_PRC] != FLAG_NOT_SET)
    strcpy(prcPath, argv[flags[f_PRC] + 1]);
@@ -357,10 +374,16 @@ int main(int argc, char *argv[])
       pixel_type_flag_looker(&flag_count, flags_used, "lut");
     }
     if (flag_count > 1) {
-      sprintf(message, "Cannot mix the %s flags.", flags_used);
-      print_error(message);
+      sprintf(logBuf, "Cannot mix the %s flags.", flags_used);
+      print_error(logBuf);
     }
   } /* END: Check for conflict between pixel type flags */
+
+  /* Get the input metadata name if the flag was specified (probably for a meta
+   * name with a different base name than the data name) */
+  if(flags[f_METADATA_FILE] != FLAG_NOT_SET) {
+    strcpy(inMetaNameOption, argv[flags[f_METADATA_FILE] + 1]);
+  }
 
   /* Deal with input format type */
   if(flags[f_FORMAT] != FLAG_NOT_SET) {
@@ -373,63 +396,64 @@ int main(int argc, char *argv[])
     strcpy(format_type, "CEOS");
 
   /* Fetch required arguments */
-  strcpy(inDataName,argv[argc - 3]);
-  strcpy(inMetaName,argv[argc - 2]);
+  strcpy(inBaseName, argv[argc - 2]);
   strcpy(outBaseName,argv[argc - 1]);
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
-/*  if (flags[f_LOG])*/ {
-    char command_line[2048];
-    strcpy(command_line,"Command line:");
-    for (ii=0; ii<argc; ii++) {
-      sprintf(command_line, "%s %s",command_line,argv[ii]);
-    }
-    strcat(command_line,"\n");
-    printLog(command_line);
-  }
-
-  /* Lets get started */
+  /* Log what we got from the commandline */
   StartWatchLog(fLog);
-  printLog("Program: asf_import\n\n");
+  strcpy(logBuf,"Command line:");
+  for (ii=0; ii<argc; ii++) {
+    sprintf(logBuf, "%s %s",logBuf,argv[ii]);
+  }
+  strcat(logBuf,"\n");
+  printLog(logBuf);
 
   /* Check whether options are chosen correctly */
   if (strncmp(format_type, "STF", 3)!=0) {
     if (flags[f_PRC] != FLAG_NOT_SET) {
-      sprintf(message, "   WARNING: No precision state vectors used "
-	      "for this image type!\n");
-      if(flags[f_QUIET] == FLAG_NOT_SET) printf(message);
-      printLog(message);
+      sprintf(logBuf,
+              "WARNING: No precision state vectors used for this image type!\n");
+      if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
+      printLog(logBuf);
       flags[f_PRC]=FLAG_NOT_SET;
     }
     if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
-      sprintf(message, "   WARNING: No latitude constraints for this image type!\n");
-      if(flags[f_QUIET] == FLAG_NOT_SET) printf(message);
-      printLog(message);
+      sprintf(logBuf,
+              "WARNING: No latitude constraints for this image type!\n");
+      if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
+      printLog(logBuf);
       flags[f_LAT_CONSTRAINT]=FLAG_NOT_SET;
     }
   }
 
   /* Ingest all sorts of flavors of CEOS data */
   if (strncmp(format_type, "CEOS", 4) == 0) {
-    sprintf(message,"   Data format: CEOS\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(message);
-    printLog(message);
-
+    sprintf(logBuf,"   Data format: CEOS\n");
+    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
+    printLog(logBuf);
+    if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
+      require_ceos_pair(inBaseName, inDataName, inMetaName);
+    else {
+      /* Allow the base name to be different for data & meta */
+      require_ceos_data(inBaseName, inDataName);
+      require_ceos_metadata(inMetaNameOption, inMetaName);
+    }
     import_ceos(inDataName, inMetaName, lutName, outBaseName, flags);
   }
   /* Ingest ENVI format data */
   else if (strncmp(format_type, "ENVI", 4) == 0) {
-    sprintf(message,"   Data format: ENVI\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(message);
-    printLog(message);
+    sprintf(logBuf,"   Data format: ENVI\n");
+    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
+    printLog(logBuf);
 
     import_envi(inDataName, inMetaName, outBaseName, flags);
   }
   /* Ingest ESRI format data */
   else if (strncmp(format_type, "ESRI", 4) == 0) {
-    sprintf(message,"   Data format: ESRI\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(message);
-    printLog(message);
+    sprintf(logBuf,"   Data format: ESRI\n");
+    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
+    printLog(logBuf);
 
     import_esri(inDataName, inMetaName, outBaseName, flags);
   }
@@ -439,24 +463,38 @@ int main(int argc, char *argv[])
       print_error("Data is level 0, sprocket can not use this.");
       exit(EXIT_FAILURE);
     }
-
-    sprintf(message,"   Data format: STF\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(message);
-    printLog(message);
-
+    sprintf(logBuf,"   Data format: STF\n");
+    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
+    printLog(logBuf);
+    if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
+      require_stf_pair(inBaseName, inDataName, inMetaName);
+    else {
+      /* Allow the base name to be different for data & meta */
+      require_stf_data(inBaseName, inDataName);
+      require_stf_metadata(inMetaNameOption, inMetaName);
+    }
     import_stf(inDataName, inMetaName, outBaseName, flags,
                lowerLat, upperLat, prcPath);
   }
   /* Don't recognize this data format; report & quit */
   else {
-    sprintf(message,"Unrecognized data format: '%s'",format_type);
-    print_error(message);
-    printLog(message);
+    sprintf(logBuf,"Unrecognized data format: '%s'",format_type);
+    print_error(logBuf);
+    printLog(logBuf);
   }
 
-
+  /* If the user asked for sprocket layers, create sprocket data layers
+     now that we've got asf tools format data */
   if (flags[f_SPROCKET] != FLAG_NOT_SET) {
     create_sprocket_layers(outName, inMetaName);
   }
+
+  /* If the user didn't ask for a log file then we can nuke the one that
+     we've been keeping since we've finished everything */
+	if (flags[f_LOG] == FLAG_NOT_SET) {
+		FCLOSE(fLog);
+		remove(logFile);
+	}
+
   exit(EXIT_SUCCESS);
 }
