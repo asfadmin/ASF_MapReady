@@ -14,6 +14,11 @@ Switches to work with ERS, JERS, or RADARSAT.
 #include "dateUtil.h"
 #include <unistd.h>
 
+/* allocation routine for meta_state_vectors */
+meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
+
+
+
 void printStVec(const char *desc,stateVector s,FILE *f)
 {
 	fprintf(f,"%s:\n"
@@ -69,10 +74,10 @@ stateVector propagate(stateVector source,double sourceSec,double destSec)
 	FILE *asapIn,*asapOut;
 /*Convert input state vector to inertial coordinates*/
 	fixed2gei(&source,sec2gha(sourceSec));
-#define asapInN "asap.in"
-#define asapOutN "asap.out"
+#define asapInName "asap.in"
+#define asapOutName "asap.out"
 /*Create ASAP Input File*/
-	asapIn=FOPEN(asapInN,"w");
+	asapIn=FOPEN(asapInName,"w");
 	fprintf(asapIn,"%f\n%f\n%f\n%f\n%f\n%f\n",
 		source.pos.x/1000.0,source.pos.y/1000.0,source.pos.z/1000.0,
 		source.vel.x,source.vel.y,source.vel.z);
@@ -81,10 +86,10 @@ stateVector propagate(stateVector source,double sourceSec,double destSec)
 	fprintf(asapIn,"1\n");/*One step.*/
 	FCLOSE(asapIn);
 /*Call Propagate*/
-	system("propagate "asapInN" "asapOutN);
+	system("propagate "asapInName" "asapOutName);
 
 /*Read ASAP output file*/
-	asapOut=FOPEN(asapOutN,"r");
+	asapOut=FOPEN(asapOutName,"r");
 	fgets(inBuf,256,asapOut);/*Skip echo of input vector*/
 	fgets(inBuf,256,asapOut);/*Read propagated output vector*/
 	for (i=strlen(inBuf)-1;i>=0;i--)
@@ -97,8 +102,8 @@ stateVector propagate(stateVector source,double sourceSec,double destSec)
 	vecScale(&ret.vel,1000.0);/*Convert from km/s to m/s*/
 	FCLOSE(asapOut);
 /*Remove temporaries.*/
-	unlink(asapInN);
-	unlink(asapOutN);
+	unlink(asapInName);
+	unlink(asapOutName);
 /*Convert out state vector to fixed-earth coordinates*/
 	gei2fixed(&ret,sec2gha(destSec));
 	return ret;
@@ -107,10 +112,9 @@ stateVector propagate(stateVector source,double sourceSec,double destSec)
 
 /*Propagate the state vectors in the given meta_parameters
 structure so they start at the image start.
-Make nStVec of them, 30 seconds apart.*/
-void propagate_state(meta_parameters *meta,int nStVec)
+Make nStVec of them, data_int seconds apart.*/
+void propagate_state(meta_parameters *meta,int nStVec, double data_int)
 {
-	double data_int=30.0;/*Write out state vectors 30 seconds apart.*/
 	julian_date img_jd;
 	hms_time img_time;
 	double imgSec;
@@ -124,9 +128,9 @@ void propagate_state(meta_parameters *meta,int nStVec)
 	meta_state_vectors *new_st;/*Freshly-created state vector structure.*/
 
 /*Search the list of state vectors for the one nearest to the image start.*/
-	for (startNo=0;startNo<meta->stVec->num;startNo++)
+	for (startNo=0;startNo<meta->state_vectors->vector_count;startNo++)
 	{
-		state_loc *loc=&(meta->stVec->vecs[startNo]);
+		state_loc *loc=&(meta->state_vectors->vecs[startNo]);
 		/*Compute the distance between this state vector and image start.*/
 		double absSec=fabs(loc->time);
 		if (secToClosest>absSec)
@@ -145,18 +149,18 @@ void propagate_state(meta_parameters *meta,int nStVec)
 	}
 	
 /*Compute Seconds since 1900 of Start of Image*/
-	img_jd.year=meta->stVec->year;
-	img_jd.jd=meta->stVec->julDay;
-	date_sec2hms(meta->stVec->second,&img_time);
+	img_jd.year = meta->state_vectors->year;
+	img_jd.jd   = meta->state_vectors->julDay;
+	date_sec2hms(meta->state_vectors->second,&img_time);
 	
 	imgSec=date2sec(&img_jd,&img_time);
 
 /*Propagate nearest state vector to create each output state vector.*/
-	new_st       = (meta_state_vectors*)MALLOC(sizeof(meta_state_vectors));
-	new_st->vecs = (state_loc *)MALLOC(nStVec * sizeof(state_loc));
-	new_st->year=img_jd.year;
-	new_st->julDay=img_jd.jd;
-	new_st->second=date_hms2sec(&img_time);
+	new_st = meta_state_vectors_init(nStVec);
+	new_st->year   = img_jd.year;
+	new_st->julDay = img_jd.jd;
+	new_st->second = date_hms2sec(&img_time);
+
 	for (outNo=0;outNo<nStVec;outNo++)
 	{
 		double outTime=outNo*data_int;
@@ -165,6 +169,6 @@ void propagate_state(meta_parameters *meta,int nStVec)
 	}
 
 /*Blow away the old state vector structure.*/
-	FREE(meta->stVec);
-	meta->stVec=new_st;
+	FREE(meta->state_vectors);
+	meta->state_vectors = new_st;
 }
