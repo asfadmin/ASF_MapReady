@@ -9,9 +9,9 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	-lm
 
-OBJS=calc_ranges.o \
-     dem_gr2sr.o \
-     main.o
+OBJS  = calc_ranges.o \
+	dem_gr2sr.o \
+	reskew_dem.o
 
 all: reskew_dem
 	rm *.o
@@ -19,7 +19,7 @@ all: reskew_dem
 reskew_dem:	$(OBJS)
 	${CC} ${CFLAGS} ${LDFLAGS} -o reskew_dem $(OBJS) ${LIBS}
 	mv reskew_dem$(BIN_POSTFIX) $(BINDIR)
-	cp reskew_dem.man ../../man/cat1/reskew_dem.1
+	cp reskew_dem.1 ../../man/cat1/reskew_dem.1
 
 clean:
 	rm -f core ${OBJS} *.o
