@@ -183,7 +183,7 @@ CC      = $CC
 RANLIB  = $ranlib
 OPTFLAG = $optFlag
 
-CFLAGS = $CLFAGS
+CFLAGS = $CFLAGS
 LDFLAGS = $LDFLAGS
 
 EOF
