@@ -33,27 +33,27 @@ void meta_get_orig(void *fake_ddr,
 /* Converts given line and sample to geodetic
 latitude and longitude. Works with all image types.
 */
-void meta_get_latLon(meta_parameters *sar,
+void meta_get_latLon(meta_parameters *meta,
 	double yLine, double xSample,double elev,double *lat,double *lon)
 {
-	if (sar->geo->type=='S'||sar->geo->type=='G')
+	if (meta->sar->image_type=='S'||meta->sar->image_type=='G')
 	{ /*Slant or ground range.  Use state vectors and doppler.*/
 		double slant,doppler,time;
-		meta_get_timeSlantDop(sar,yLine,xSample,
+		meta_get_timeSlantDop(meta,yLine,xSample,
 			&time,&slant,&doppler);
-		meta_timeSlantDop2latLon(sar,
+		meta_timeSlantDop2latLon(meta,
 			time,slant,doppler,elev,
 			lat,lon);
-	} else if (sar->geo->type=='P')
+	} else if (meta->sar->image_type=='P')
 	{	/*Map-Projected. Use projection information to calculate lat & lon.*/
 		double px,py;
-		px=sar->geo->proj->startX+sar->geo->proj->perX*xSample;
-		py=sar->geo->proj->startY+sar->geo->proj->perY*yLine;
-		proj_to_ll(sar->geo,px,py,lat,lon);
+		px = meta->proj->startX + meta->proj->perX * xSample;
+		py = meta->proj->startY + meta->proj->perY * yLine;
+		proj_to_ll(meta->proj,meta->sar->look_direction,px,py,lat,lon);
 	} else
 	{	/*Bogus image type.*/
 		printf("Error! Invalid image type '%c' passed to meta_get_latLon!\n",
-			sar->geo->type);
+			meta->sar->image_type);
 		exit(1);
 	}
 }
