@@ -258,7 +258,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 		  coniIO_double(coni,"extra.","bitErrorRate:",&general->bit_error_rate,   "Bit Error Rate");
 		  coniIO_str   (coni,"extra.","satBinTime:",   sar->satellite_binary_time,"Satellite Binary Time");
 		  coniIO_str   (coni,"extra.","satClkTime:",   sar->satellite_clock_time, "Satellite Clock Time (UTC)");
-		  coniIO_double(coni,"extra.","prf:",         &sar->prf,                  "Pulse Repition Frequency");
+		  coniIO_double(coni,"extra.","prf:",         &sar->prf,                  "Pulse Repetition Frequency");
 		}
 	    }
 	}
@@ -401,7 +401,7 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 		        if (ddr.valid[DDZCV] == VALID)
 		          meta->projection->param.utm.zone = ddr.zone_code;
 		        else
-		          meta->projection->param.utm.zone = -999999999;
+		          meta->projection->param.utm.zone = MAGIC_UNSET_INT;
 		        break;
 		     default:
 			meta->projection->type = MAGIC_UNSET_CHAR;
@@ -421,7 +421,6 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
     /* Make some guesses */
 	if (meta->projection && (meta->projection->type != MAGIC_UNSET_CHAR))
 		meta->sar->image_type = 'P';
-	
 } /* End function meta_read_only_ddr() */
 
 
@@ -455,8 +454,10 @@ void meta_new2old(meta_parameters *meta)
 
 /* Fill ifm_parameters structure */
 	if (meta->state_vectors) {
+   /*
 		meta->ifm->ht    = meta_get_sat_height(meta, meta->general->line_count/2, 0);
 		meta->ifm->er    = meta_get_earth_radius(meta, meta->general->line_count/2, 0);
+   */
 	}
 	else {
 		meta->ifm->ht    = MAGIC_UNSET_DOUBLE;
@@ -466,7 +467,7 @@ void meta_new2old(meta_parameters *meta)
 	meta->ifm->orig_nLines   = meta->sar->original_line_count;
 	meta->ifm->orig_nSamples = meta->sar->original_sample_count;
 
-/* point meta->stVec at 'meta->state_vectors */
+/* point meta->stVec at meta->state_vectors */
 	meta->stVec = meta->state_vectors;
 
 /* Allocate and fill extra_info structure */
@@ -481,18 +482,21 @@ void meta_new2old(meta_parameters *meta)
 	strcpy( meta->info->satClkTime, meta->sar->satellite_clock_time);
 	meta->info->prf               = meta->sar->prf;
 
-/* Calculated values for the old structure */
-	if (meta->sar->image_type!='P') /*Image not map projected-- compute look angle to beam center*/
-		if (meta->state_vectors)
-			meta->ifm->lookCenter = meta_look(meta, 0, meta->general->sample_count/2);
-		else
-			meta->ifm->lookCenter = MAGIC_UNSET_DOUBLE;
-	else 
-	{/*Image *is* map projected-- compute earth's eccentricity*/
-		double re = meta->general->re_major;
-		double rp = meta->general->re_minor;
-		meta->geo->proj->ecc = sqrt(1.0-rp*rp/(re*re));
-	}
-
+/* DEPRICATED (& not used in client code)
+ * -- Calculated values for the old structure --
+ *	if (meta->sar->image_type!='P')
+ *	{ *Image not map projected-- compute look angle to beam center*
+ *		if (meta->state_vectors)
+ *			meta->ifm->lookCenter = meta_look(meta, 0, meta->general->sample_count/2);
+ *		else
+ *			meta->ifm->lookCenter = MAGIC_UNSET_DOUBLE;
+ *	}
+ *	else 
+ *	{ *Image *is* map projected-- compute earth's eccentricity*
+ *		double re = meta->general->re_major;
+ *		double rp = meta->general->re_minor;
+ *		meta->geo->proj->ecc = sqrt(1.0-rp*rp/(re*re));
+ *	}
+ */
 	return;
 }
