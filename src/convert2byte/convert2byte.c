@@ -97,6 +97,36 @@ void multilook(FILE *fpin, FILE *fpout,
                int stepLine, int stepSample);
 
 
+static void 
+usage(char *name) {
+  printf("\n"
+	 "USAGE:\n"
+	 "   %s [-multilook] [-look lxs] [-step lxs] [-log log_file] [-quiet]\n"
+	 "                <infile> <outfile>\n",name);
+  printf("\n"
+	 "REQUIRED ARGUMENTS:\n"
+	 "   infile   Image file to be read in(WITH extension)\n"
+	 "              accompanied by a .meta file.\n"
+	 "   outfile  Output image file which will be byte data.\n"
+	 "              (No extension necessary.)\n");
+  printf("\n"
+	 "OPTIONAL ARGUMENTS:\n"
+	 "   -multilook     Multilook the data as it is converted to byte.\n"
+	 "   -look (l)x(s)  Change number of look lines (l) and samples (s).\n"
+	 "                    (-multilook option is implied.)\n"
+	 "   -step (l)x(s)  Change number of step lines (l) and samples (s).\n"
+	 "                    (-multilook option is implied.)\n"
+	 "   -log log_file  Allows the output to be written to a log file\n"
+	 "   -quiet         Suppress terminal output to essential.\n");
+  printf("\n"
+	 "DESCRIPTION:\n"
+	 "   Converts any ASF image into a byte image.\n");
+  printf("\n"
+	 "Version %.2f, ASF SAR Tools\n"
+	 "\n",VERSION);
+  exit(EXIT_FAILURE);
+}
+
 int main(int argc, char **argv)
 {
 	char inFileName[256];           /* Input data file name               */
@@ -325,31 +355,3 @@ int main(int argc, char **argv)
 }
 
 
-void usage(char *name) {
- printf("\n"
-	"USAGE:\n"
-	"   %s [-multilook] [-look lxs] [-step lxs] [-log log_file] [-quiet]\n"
-	"                <infile> <outfile>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   infile   Image file to be read in(WITH extension)\n"
-	"              accompanied by a .meta file.\n"
-	"   outfile  Output image file which will be byte data.\n"
-	"              (No extension necessary.)\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"   -multilook     Multilook the data as it is converted to byte.\n"
-	"   -look (l)x(s)  Change number of look lines (l) and samples (s).\n"
-	"                    (-multilook option is implied.)\n"
-	"   -step (l)x(s)  Change number of step lines (l) and samples (s).\n"
-	"                    (-multilook option is implied.)\n"
-	"   -log log_file  Allows the output to be written to a log file\n"
-	"   -quiet         Suppress terminal output to essential.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Converts any ASF image into a byte image.\n");
- printf("\n"
-	"Version %.2f, ASF SAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
-}
