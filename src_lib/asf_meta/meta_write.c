@@ -120,13 +120,13 @@ void meta_write(meta_parameters *meta, const char *file_name)
       break;
     case'P':/*Polarstereographicprojection.*/
       meta_put_string(fp,"Polar_Stereographic {","","Begin Polar Stereographic Projection");
-      meta_put_double(fp,"lat:%f#Referencelatitude",meta->projection->param.ps.slat,"Reference Latitude");
-      meta_put_double(fp,"lon:%f#Referencelongitude",meta->projection->param.ps.slon,"Reference Longitude");
+      meta_put_double(fp,"lat:",meta->projection->param.ps.slat,"Reference Latitude");
+      meta_put_double(fp,"lon:",meta->projection->param.ps.slon,"Reference Longitude");
       meta_put_string(fp,"}","","End Polar Stereographic Projection");
       break;
     case'U':/*Universaltransversemercatorprojection.*/
       meta_put_string(fp,"UTM {","","Begin Universal Transverse Mercator Projection");
-      meta_put_int   (fp,"zone:%d",meta->projection->param.utm.zone,"Zone Code");
+      meta_put_int   (fp,"zone:",meta->projection->param.utm.zone,"Zone Code");
       meta_put_string(fp,"}","","End Universal Transverse Mercator Projection");
       break;
    default: 
