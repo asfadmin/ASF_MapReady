@@ -19,19 +19,8 @@
 #ifndef __ASPMATH_H     /* include only once */
 #define __ASPMATH_H
 
-/*-----------------------------------------------------*/
-/* define complex variable type if not already defined */
-/*-----------------------------------------------------*/
 #include "asf.h"
-
-#ifndef __complex_var
-#define __complex_var
-typedef struct {
-   float r;
-   float i;
-} FCMPLX;
-#endif
-
+#include "asf_complex.h"
 #include "read_signal.h"
 #include "geolocate.h"
 #include "asf_meta.h"
