@@ -139,8 +139,6 @@ export_as_jpeg (const char *metadata_file_name,
   cinfo.err = jpeg_std_error (&jerr);
   jpeg_create_compress (&cinfo);
 
-  asfPrintStatus("Writing Output File...\n");
-
   /* Open the output file to be used.  */
   ofp = fopen (output_file_name, "w");
   if ( ofp == NULL ) {
