@@ -127,9 +127,24 @@ B<--package> option.
 =item B<-s>, B<--scan_comments>
 
 Do not ignore comment text when looking for package names in program
-text.  Note that this option is only relevant when a new package
-dependency graph cache file is being created.  Use of this option will
-probably result in a lot of false positives.
+text.  This option is only relevant when a new package dependency
+graph cache file is being created.  Use of this option will probably
+result in a lot of false positives.
+
+=item B<-w> I<name>, B<--with_node>=I<name>
+
+Force a dependency graph node of name I<name> to exist, even if there
+is no individual tool directory I<name>.  This node is (probably
+wrongly) assumed to have no dependencies of its own.  This option is
+only relevant when a new package dependency graph cache file is being
+created.  Note that this option may be used to add arbitrary textual
+dependency information to the dependency graph.  For example,
+'--with_node=the_magic_type' may be used to add include in the
+dependency graph information about which packages directly or
+indirectly depend on the_magic_type (possibly including, somewhat
+unfortunately, the package in which the type is defined).  This a
+potentially useful way to deal with the problem of header files which
+do not properly belong to any individual package.
 
 =back
 
@@ -172,6 +187,9 @@ my %p = (
 	 # Package name to compute reverse deps for. 
 	 'reverse_dependencies' => undef,
 	 'scan_comments' => 0,	# Flag true if comment text to be scanned.
+	 # Ref to list containing list of node names explicitly
+	 # declared to exist.
+	 'with_node' => [],
 
 	 # Standard options. 
 	 'verbose' => 0,	# Verbose mode on.
@@ -181,9 +199,10 @@ my %p = (
 
 sub babble { if ( $p{verbose} ) { print @_; } }
 
-GetOptions(\%p, 'check|c=s', 'package|p=s', 'independency|i=s', 
+GetOptions(\%p, 'check|c=s', 'package|p=s', 'independency|i=s',
 	   'independency_file=s', 'reverse_dependencies|r=s',
-	   'scan_comments|s', 'verbose|v', 'version', 'help|?')
+	   'scan_comments|s', 'with_node|w=s', 'verbose|v',
+	   'version', 'help|?')
     or pod2usage("$progname: option parse failed.\n");
 
 if ( $p{version} ) {
@@ -279,6 +298,12 @@ if ( -e $graph_cache_file ) {
 		   ."--scan_comments) is irrelevant when using an existing "
 		   ."package dependency graph cache file.\n");
     }
+    if ( @{$p{'with_node'}} ) {
+	print wrap('', '', "\nWARNING: 'with_node' type options (-w, "
+                   ."--with_node, or --with_node_file) are irrelevant "
+                   ."when using an existing package dependency graph cache "
+                   ."file.\n");
+    }
     sleep 4;
     %pkg_deps = %{$pkg_deps_ref};
 
@@ -316,6 +341,12 @@ if ( -e $graph_cache_file ) {
 
     my $top_level_dir = ${my $tmp = `pwd`; chomp($tmp); \$tmp; };
 
+    # Add 'directoryless' packages explicitly declared to exist by
+    # command line option to the package graph.
+    foreach ( @{$p{'with_node'}} ) {
+        $pkg_deps{$_} = [];
+    }
+
     foreach my $dir ( @pkg_dirs ) {
 
 	chdir "$top_level_dir/$dir";
@@ -338,17 +369,17 @@ if ( -e $graph_cache_file ) {
         $pkg_deps{$pkg_name} = [];
 
         # Check for dependencies on every other package...
-        foreach my $other_dir ( @pkg_dirs ) {
+        foreach my $other_package ( (@pkg_dirs, @{$p{with_node}}) ) {
 
 	    # No need to worry about packages depending on themselves.
-  	    if ( $dir eq $other_dir ) {
+  	    if ( $dir eq $other_package ) {
 	        next;
 	    }
 	
 	    my $dep_flag = 0;	# Flag true if other package is depended on.
 	
 	    # Get package name without directory part.
-	    $other_dir =~ m{\/([^/]+)$};
+	    $other_package =~ m{\/([^/]+)$};
 	    my $other_pkg_name = $1;
 
 	    &babble("  Checking for direct dependence on package $other_pkg_name... ");
@@ -378,9 +409,13 @@ if ( -e $graph_cache_file ) {
 		my $file_contents = join('', <ENTRY>);
 		close(ENTRY) or die "close failed on $entry: $!";
 		unless ( $p{'scan_comments'} ) {
+		    # If we are looking at a C file...
 		    if ( $entry =~ m/\.[ch]$/ ) {
+			# then strip C style comments.
 			$file_contents =~ s!/\*.*?\*/!!gs;
+		    # If we are looking at a shell script...	
 		    } elsif ( $file_contents =~ m/^.!\/.*\/(ba)?sh/ ) {
+			# then strip shell style comments.
 			$file_contents =~ s/#[^!][^"']*?\n/\n/gs;
 		    }
 		}
@@ -441,6 +476,12 @@ if ( -e $graph_cache_file ) {
         unless ( nstore(\%pkg_deps, $graph_cache_file) ) {
 	    die "$progname: failed to correctly store dependency graph in $graph_cache_file\n";
 	} else {
+	    if ( $p{'scan_comments'} ) {
+		print wrap('', '', "\nWARNING: the effects of the scan comments option (-s or --scan_comments) have been cached in the package dependency graph cache.\n");
+	    }
+	    if ( @{$p{'with_node'}} ) {
+		print wrap('', '', "\nWARNING: the effects of 'with_node' type options (-w, --with_node, or --with_node_file) have been cached in the package dependency graph cache.\n");
+	    }
 	    print wrap('', '', "\nGenerated package dependency graph cache file\n'$graph_cache_file'.\n");
 	}
     }
