@@ -15,8 +15,7 @@ find_dependencies.perl
 
 =head1 SYNOPSIS
 
-cd /wherever/asf_tools_root_dir ; find_dependencies.perl 
-[-c package_one,package_two | -p package]
+cd /wherever/asf_tools_root_dir ; find_dependencies.perl [option]...
 
 =head1 DESCRIPTION
 
