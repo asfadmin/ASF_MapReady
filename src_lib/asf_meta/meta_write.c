@@ -70,6 +70,34 @@ void meta_write(meta_parameters *meta, char *file_name)
 	  meta->sar->satellite_clock_time);
   fprintf(fp, "}\n");
 
+  /* State block.  */
+  fprintf(fp, "state {\n");
+  fprintf(fp, "    year: %d\n", meta->state_vectors->year);
+  fprintf(fp, "    julDay: %d\n", meta->state_vectors->julDay);
+  fprintf(tp, "    second: %f\n", meta->state_vectors->second);
+  { 
+    int i;
+    for ( i = 0 ; i < meta->state_vectors->num ; i++ ) {
+      fprintf(fp, "    vector {\n");
+      fprintf(fp, "        time: %f\n", 
+	      meta->state_vectors->state_loc[i].time);
+      fprintf(fp, "        X coordinate, earth-fixed [m]: %f\n", 
+	      meta->state_vectors->state_loc[i].vec.pos.x);
+      fprintf(fp, "        Y coordinate, earth-fixed [m]: %f\n", 
+	      meta->state_vectors->state_loc[i].vec.pos.y);
+      fprintf(fp, "        Z coordinate, earth-fixed [m]: %f\n", 
+	      meta->state_vectors->state_loc[i].vec.pos.z);
+      fprintf(fp, "        X velocity, earth-fixed [m/s]: %f\n", 
+	      meta->state_vectors->state_loc[i].vec.vel.x);
+      fprintf(fp, "        Y velocity, earth-fixed [m/s]: %f\n", 
+	      meta->state_vectors->state_loc[i].vec.vel.y);
+      fprintf(fp, "        Z velocity, earth-fixed [m/s]: %f\n", 
+	      meta->state_vectors->state_loc[i].vec.vel.z);
+      fprintf(fp, "    }\n");
+    }
+  }
+  fprintf(fp, "}\n");
+
   /* Projection parameters block.  */
   fprintf(fp, "projection {\n");
   fprintf(fp, "    type: %c\n", meta->projection->type);
@@ -79,38 +107,44 @@ void meta_write(meta_parameters *meta, char *file_name)
   fprintf(fp, "    perY: %f\n", meta->projection->perY);
   fprintf(fp, "    units: %s\n", meta->projection->units);
   fprintf(fp, "    hem: %c\n", meta->projection->hem);
-  fprintf(fp, "    re_major: %d\n", meta->projection->re_major);
-  fprintf(fp, "    re_minor: %d\n", meta->projection->re_minor);
+  fprintf(fp, "    re_major: %f\n", meta->projection->re_major);
+  fprintf(fp, "    re_minor: %f\n", meta->projection->re_minor);
   fprintf(fp, "    param {\n");
   switch ( meta->projection->type ) {
   case 'A': /* Along-track/cross-track projection.  */
     fprintf(fp, "        atct {\n");
-    fprintf(fp, "            rlocal: %d\n", 
+    fprintf(fp, "            rlocal: %f\n", 
 	    meta->projection->param.atct.rlocal);
-    fprintf(fp, "            alpha1: %d\n", 
+    fprintf(fp, "            alpha1: %f\n", 
 	    meta->projection->param.atct.alpha1);
-    fprintf(fp, "            alpha2: %d\n", 
+    fprintf(fp, "            alpha2: %f\n", 
 	    meta->projection->param.atct.alpha2);
-    fprintf(fp, "            alpha3: %d\n", 
+    fprintf(fp, "            alpha3: %f\n", 
 	    meta->projection->param.atct.alpha3);
     break;
   case 'B': /* Lambert conformal conic projection.  */
     fprintf(fp, "        lambert {\n"
-    fprintf(fp, "            plat1: %d\n", 
+    fprintf(fp, "            plat1: %f\n", 
 	    meta->projection->param.lambert.plat1);
-    fprintf(fp, "            plat2: %d\n", 
+    fprintf(fp, "            plat2: %f\n", 
 	    meta->projection->param.lambert.plat2);
-    fprintf(fp, "            lat0: %d\n", 
+    fprintf(fp, "            lat0: %f\n", 
 	    meta->projection->param.lambert.lat0);
-    fprintf(fp, "            lon0: %d\n", 
+    fprintf(fp, "            lon0: %f\n", 
 	    meta->projection->param.lambert.lon0);
     break;
   case 'P': /* Polar stereographic projection.  */
     fprintf(fp, "        polar stereographic {\n");
-    fprintf(fp, "            lat: %d\n", meta->projection->param.ps.slat);
-    fprintf(fp, "            lon: %d\n", meta->projection->param.ps.slon);
+    fprintf(fp, "            lat: %f\n", meta->projection->param.ps.slat);
+    fprintf(fp, "            lon: %f\n", meta->projection->param.ps.slon);
     break;
-  case
-
-
-
+  case 'U': /* Universal transverse mercator projection.  */
+    fprintf(fp, "        utm {\n");
+    fprintf(fp, "            zone: $d\n", meta->projection->param.utm.zone);
+    break;
+  default: 
+    err_die("unknown projection type seen in function '%s'\n", __func__);
+  }
+  fprintf(fp, "        }\n");
+  fprintf(fp, "    }\n");
+  fprintf(fp, "}\n");
