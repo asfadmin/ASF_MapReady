@@ -17,6 +17,8 @@ PROGRAM HISTORY:
 #include "meta_init.h"
 
 
+void meta_new2old(meta_parameters *meta);
+
 /***********************************************************
  * meta_create:
  * Constructs a new meta_parameters record from CEOS, AISP
