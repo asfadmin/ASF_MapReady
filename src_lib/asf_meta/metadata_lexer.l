@@ -1,15 +1,17 @@
 
 %{
 
+#include <ctype.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "lex_yacc.h"   /* Must precede y.tab.h include.  */
 #include "y.tab.h"
 
 %}
 
-%option nomain
 %option noyywrap
+%option nomain
 
 INT_STRING         -?([0-9]+)
 DOUBLE_STRING      -?(([0-9]+)|([0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?)
@@ -28,6 +30,7 @@ FIELD_STRING       [^#\n]*
 
  /* Name tokens name blocks or fields.  */
 {ID_STRING}[ \t]*/[:{]         { int last_nonspace = yyleng - 1;
+
                                  while ( isspace(yytext[last_nonspace]) ) 
                                    last_nonspace--;
                                  strncpy(yylval.string_val, yytext,
@@ -57,4 +60,4 @@ FIELD_STRING       [^#\n]*
 <FIELD_STATE>{FIELD_STRING}/[#\n]   { BEGIN INITIAL;
                                       strcpy(yylval.string_val, yytext);
                                       return STRING; }
-
+%%

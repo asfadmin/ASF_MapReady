@@ -43,6 +43,7 @@ int vector_count = 0;
 int yyerror(char *s)
 {
   fprintf(stderr, "%s\n", s);
+  return -1;			/* No error codes yet.  */
 }
 
 /* Casting shorthand macros for metadata structure subelements.  */
@@ -139,9 +140,9 @@ void fill_structure_field(char *field_name, void *valp)
   if ( !strcmp(field_name, "Frame number") )
     { MGENERAL->frame = VALP_AS_INT; return; }
   if ( !strcmp(field_name, "Number of lines") )
-    { MGENERAL->original_line_count = VALP_AS_INT; return; }
+    { MGENERAL->line_count = VALP_AS_INT; return; }
   if ( !strcmp(field_name, "Number of samples") )
-    { MGENERAL->original_sample_count = VALP_AS_INT; return; }
+    { MGENERAL->sample_count = VALP_AS_INT; return; }
   if ( !strcmp(field_name, "Image start line") )
     { MGENERAL->start_line = VALP_AS_INT; return; }
   if ( !strcmp(field_name, "Image start sample") )
@@ -165,23 +166,27 @@ void fill_structure_field(char *field_name, void *valp)
   /* Fields which normally go in the sar block of the metadata file.  */
   if ( !strcmp(field_name, "Image type [S=slant range; G=ground range; P=map projected]") ) { 
     if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { 
-      MSAR->image_type = 'S'; 
+      MSAR->proj_type = 'S'; 
       return; 
     }
     if ( !strcmp(VALP_AS_CHAR_POINTER, "G") ) { 
-      MSAR->image_type = 'G'; 
+      MSAR->proj_type = 'G'; 
       return; 
     }
     if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) { 
-      MSAR->image_type = 'P'; 
+      MSAR->proj_type = 'P'; 
       return; 
     }
     yyerror("bad Image type field in metadata file");
     exit(EXIT_FAILURE);
   }
   if ( !strcmp(field_name, "SAR Satellite look direction (normally R) [R=right; L=left]") ) { 
-    if ( !strcmp(VALP_AS_CHAR_POINTER, "R") ) { MSAR->lookDir = 'R'; return; }
-    if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) { MSAR->lookDir = 'L'; return; }
+    if ( !strcmp(VALP_AS_CHAR_POINTER, "R") ) { 
+      MSAR->look_direction = 'R'; return; 
+    }
+    if ( !strcmp(VALP_AS_CHAR_POINTER, "L") ) { 
+      MSAR->look_direction = 'L'; return; 
+    }
     yyerror("bad Satellite look direction field in metadata file");
     exit(EXIT_FAILURE);
   }
@@ -388,9 +393,4 @@ int parse_metadata(meta_parameters *dest, char *file_name)
   block_stack_push(&stack_top, dest);
 
   return !yyparse();
-}
-
-int yyerror(char *s)
-{
-  fprintf(stderr, "%s\n", s);
 }
