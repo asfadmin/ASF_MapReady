@@ -543,10 +543,14 @@ main (int argc, char **argv)
   }
 
   GString *input_image = g_string_new (argv[1]);
+  GString *input_meta_data = g_string_new (input_image->str);
+  g_string_append (input_meta_data, ".meta");
   GString *output_image = g_string_new (argv[2]);
+  GString *output_meta_data = g_string_new (output_image->str);
+  g_string_append (output_meta_data, ".meta");
 
   // Input metadata.
-  meta_parameters *imd = meta_read (input_image->str);
+  meta_parameters *imd = meta_read (input_meta_data->str);
   // We can't handle slant range images at the moment.  Happily, there
   // are only a very small number of these products around.
   if ( imd->sar->image_type == 'S' ) {
@@ -1179,7 +1183,7 @@ main (int argc, char **argv)
   // Now we need some metadata for the output image.  We will just
   // start with the metadata from the input image and add the
   // geocoding parameters.
-  meta_parameters *omd = meta_read (input_image->str);
+  meta_parameters *omd = meta_read (input_meta_data->str);
   omd->general->line_count = oiy_max + 1;
   omd->general->sample_count = oix_max + 1;
   omd->sar->image_type = 'P';
@@ -1204,7 +1208,7 @@ main (int argc, char **argv)
   // We need to convert things in this structure back to degrees.
   to_degrees (projection_type, pp);
   omd->projection->param = *pp;
-  meta_write (omd, output_image->str);
+  meta_write (omd, output_meta_data->str);
   meta_free (omd);
 
   // Done with the data being modeled.  Can't call revers_map_*
@@ -1220,7 +1224,9 @@ main (int argc, char **argv)
   g_free (dtf.x_proj);
 
   // Done with the file name arguments.
+  g_string_free (input_meta_data, TRUE);
   g_string_free (input_image, TRUE);
+  g_string_free (output_meta_data, TRUE);
   g_string_free (output_image, TRUE);
 
   // Close Log, if needed
