@@ -17,6 +17,7 @@ PROGRAM HISTORY:
 	----------------------------------------------------------------------
 	1.0	8/01	R. Gens, original development
 	1.1	2/02	R. Gens, added ability to read CEOS raw and SLC data
+	1.2	2/03	R. Gens, adapted processing flow for updated Doppler processing
 
 HARDWARE/SOFTWARE LIMITATIONS:
 	The maximum number of processors is hard-coded at 8.
@@ -165,7 +166,7 @@ main(int argc, char *argv[])
 	if (cfg->general->quiet == 1) quietflag = 1; 
 
 	/* Check the number of processors */
-	if (cfg->general->procs <= 1 || cfg->general->procs > 8) {
+	if (cfg->general->procs < 1 || cfg->general->procs > 8) {
 	  printf("\n   WARNING: number of processors out of range - set to maximum value of 8\n\n");
 	  cfg->general->procs = 8;
           check_return(write_config(configFile, cfg), "Could not update configuration file"); 
@@ -302,6 +303,7 @@ main(int argc, char *argv[])
 		  /* Setting patches and offsets for processing */
 		  strcat(strcpy(metaFile,"a"),".meta");
                   cfg->aisp_master->end_offset = lzInt(metaFile, "ifm.orig_lines:", NULL);
+	          cfg->aisp_master->patches = (int) ((cfg->aisp_master->end_offset-4096)/AISP_VALID_PATCH_LENGTH) + 2;
                   strcat(strcpy(metaFile,"b"),".meta");
                   cfg->aisp_slave->end_offset = lzInt(metaFile, "ifm.orig_lines:", NULL);
 
@@ -310,6 +312,7 @@ main(int argc, char *argv[])
                   else
                     cfg->aisp_master->end_offset = cfg->aisp_slave->end_offset;
 
+	          cfg->aisp_slave->patches = cfg->aisp_master->patches;
                   cfg->coreg_pL->start_master = cfg->aisp_master->end_offset - 4096;
                   cfg->coreg_pL->start_slave = cfg->aisp_slave->end_offset - 4096;
 
@@ -321,40 +324,15 @@ main(int argc, char *argv[])
 	if (datatype<2) {
 
 		/* Calculate average Doppler */
-	        if (strncmp(cfg->avg_in_dop->status, "new", 3)==0) {
-	          check_return(avg_in_dop("a", "b", "reg/avedop"), "calculating the average Doppler (avg_in_dop)");
-	          sprintf(cfg->avg_in_dop->status, "success");
-	          check_return(write_config(configFile, cfg), "Could not update configuration file");
-	        }
-
-		/* Processing the master image */
-	        if (strncmp(cfg->aisp_master->status, "new", 3)==0) {
-		  if (cfg->aisp_master->power < 0 || cfg->aisp_master->power > 1) {
-		    printf("\n   WARNING: power flag set to invalid value - set to value of 1\n\n");
-		    cfg->aisp_master->power = 1;
-	            check_return(write_config(configFile, cfg), "Could not update configuration file"); 
-		  }
-		  sprintf(tmp, "-d 1 -c reg/avedop ");
-	          if (cfg->general->procs == 1) {
-		    if (cfg->aisp_master->power == 1) sprintf(options, "%s-power", tmp);
-		    check_return(aisp(options, cfg->aisp_master->start_offset, cfg->aisp_master->patches, "a", "a"), 
-					"processing master image (aisp)");
-		  }
-	          else {
-		    if (cfg->aisp_master->power == 1) sprintf(options, "%s-power", tmp);
-/*		    if (datatype == 0) strcat(options, " -swath");*/
-		    check_return(paisp(options, cfg->aisp_master->start_offset, cfg->aisp_master->patches, 
-					cfg->general->procs, "a", "a"), "processing master image (paisp)");
-		  }
-		  if (cfg->aisp_master->power == 1) {
-		    sprintf(tmp, "mv a_pwr.img %s_a_pwr.img", cfg->general->base); system(tmp);
-		    sprintf(tmp, "mv a_pwr.ddr %s_a_pwr.ddr", cfg->general->base); system(tmp);
-		  }
-		  sprintf(cmd, "cp a.meta %s.meta", cfg->general->base); system(cmd);
-
-	          sprintf(cfg->aisp_master->status, "success");
-	          check_return(write_config(configFile, cfg), "Could not update configuration file");
-	        }
+/*		if (strncmp(cfg->aisp_master->doppler, "average", 7)==0) {*/
+	          if (strncmp(cfg->avg_in_dop->status, "new", 3)==0) {
+	            check_return(avg_in_dop("a", "b", "reg/avedop"), "calculating the average Doppler (avg_in_dop)");
+		    system("cp reg/avedop a.dop");
+		    system("cp reg/avedop b.dop");
+	            sprintf(cfg->avg_in_dop->status, "success");
+	            check_return(write_config(configFile, cfg), "Could not update configuration file");
+	          }
+/*		}*/
 
 		/* Coregister first patch */
 	        if ((strncmp(cfg->coreg_p1->status, "new", 3)==0) &&
@@ -449,6 +427,48 @@ main(int argc, char *argv[])
 	          check_return(write_config(configFile, cfg), "Could not update configuration file");
 	        }
 	
+		/* Calculate update Doppler */
+		if (strncmp(cfg->aisp_master->doppler, "updated", 7)==0) {
+	          if (strncmp(cfg->doppler_per_patch->status, "new", 3)==0) {
+	            check_return(doppler_per_patch(cfg->master->meta, cfg->slave->meta, "a.meta", "b.meta", 
+				"reg/deltas", "a.dop", "b.dop"), 
+				"calculating the updated Doppler (doppler_per_patch)");
+	            sprintf(cfg->doppler_per_patch->status, "success");
+	            check_return(write_config(configFile, cfg), "Could not update configuration file");
+	          }
+		}
+
+		/* Processing the master image */
+	        if (strncmp(cfg->aisp_master->status, "new", 3)==0) {
+		  if (cfg->aisp_master->power < 0 || cfg->aisp_master->power > 1) {
+		    printf("\n   WARNING: power flag set to invalid value - set to value of 1\n\n");
+		    cfg->aisp_master->power = 1;
+	            check_return(write_config(configFile, cfg), "Could not update configuration file"); 
+		  }
+		  sprintf(tmp, "-d 1 -c a.dop");
+	          if (cfg->general->procs == 1) {
+		    if (cfg->aisp_master->power == 1) sprintf(options, "%s -power", tmp);
+		    if (cfg->aisp_master->deskew == 1) sprintf(options, "%s -e 1", tmp);
+/*		    if (cfg->aisp_master->deskew == 1) sprintf(options, "%s -deskew", tmp);*/
+		    check_return(aisp(options, cfg->aisp_master->start_offset, cfg->aisp_master->patches, "a", "a"), 
+					"processing master image (aisp)");
+		  }
+	          else {
+		    if (cfg->aisp_master->power == 1) sprintf(options, "%s -power", tmp);
+/*		    if (datatype == 0) strcat(options, " -swath");*/
+		    check_return(paisp(options, cfg->aisp_master->start_offset, cfg->aisp_master->patches, 
+					cfg->general->procs, "a", "a"), "processing master image (paisp)");
+		  }
+		  if (cfg->aisp_master->power == 1) {
+		    sprintf(tmp, "mv a_pwr.img %s_a_pwr.img", cfg->general->base); system(tmp);
+		    sprintf(tmp, "mv a_pwr.ddr %s_a_pwr.ddr", cfg->general->base); system(tmp);
+		  }
+		  sprintf(cmd, "cp a.meta %s.meta", cfg->general->base); system(cmd);
+
+	          sprintf(cfg->aisp_master->status, "success");
+	          check_return(write_config(configFile, cfg), "Could not update configuration file");
+	        }
+
 		/* Coregister slave image */
 	        if (strncmp(cfg->aisp_slave->status, "new", 3)==0) {
 	          check_return(calc_deltas("reg/line1", "reg/lineL", cfg->coreg_pL->start_master - cfg->coreg_p1->start_master,
@@ -477,14 +497,16 @@ main(int argc, char *argv[])
 		    cfg->aisp_slave->power = 1;
 	            check_return(write_config(configFile, cfg), "Could not update configuration file"); 
 		  }
-		  sprintf(tmp, "-o reg/deltas -d 1 -c reg/avedop ");
+		  sprintf(tmp, "-o reg/deltas -d 1 -c b.dop");
 	          if (cfg->general->procs == 1) {
-		    if (cfg->aisp_slave->power == 1) sprintf(options, "%s-power", tmp);
+		    if (cfg->aisp_slave->power == 1) sprintf(options, "%s -power", tmp);
+		    if (cfg->aisp_slave->deskew == 1) sprintf(options, "%s -e 1", tmp);
+/*		    if (cfg->aisp_slave->deskew == 1) sprintf(options, "%s -deskew", tmp);*/
 		    check_return(aisp(options, cfg->aisp_slave->start_offset, cfg->aisp_slave->patches, "b", "b_corr"), 
 					"processing slave image (aisp)");
 		  }
 	          else {
-		    if (cfg->aisp_master->power == 1) sprintf(options, "%s-power", tmp);
+		    if (cfg->aisp_master->power == 1) sprintf(options, "%s -power", tmp);
 /*		    if (datatype == 0) strcat(options, " -swath");*/
 		    check_return(paisp(options, cfg->aisp_slave->start_offset, cfg->aisp_slave->patches, 
 					cfg->general->procs, "b", "b_corr"), "processing slave image (paisp)");
