@@ -141,6 +141,8 @@ int main(int argc, char **argv)
     StartWatchLog(fLog);
     printLog("Program: coregister_coarse\n");
   }
+  system("date");
+  printf("Program: coregister_coarse\n");
 
   if (!(meta=meta_read(metaFile)))
     printErr("   ERROR: Unable to either find or open metaFile.\n");
