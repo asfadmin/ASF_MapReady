@@ -391,6 +391,11 @@ sub sc2line_sample {
 # Perl needs to see a true return value from this file.
 "module return true";
 
+=head1 AUTHOR
+
+Britton Kerin <bkerin@mail1.asf.alaska.edu>
+
+=cut
 
 
 
