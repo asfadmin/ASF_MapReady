@@ -33,6 +33,7 @@ int main(void)
     }
   } else {
     printf("'regex_match' or 'get_subexp_string' failed, expression that was expected to match didn't\n");
+    exit(EXIT_FAILURE);
   }
   
   printf("Testing function 'matched_subexps_free'...\n");
