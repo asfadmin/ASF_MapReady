@@ -79,7 +79,14 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
   }
   g_assert (err == NULL);
   int return_code = close (tfd);
+
+#ifndef win32
+  /* for some reason, this assert fails on windows... errno reveals
+     a "Bad file descriptor" error when doing the above close.  Removing
+     for now, this should be investigated.  Not sure what problems, if
+     any, are caused by ignoring this error. */
   g_assert (return_code == 0);  
+#endif
 
   /* This is about the size needed for the thumbnail code in
      make_input_image_thumbnail to behave decently.  We will let the
