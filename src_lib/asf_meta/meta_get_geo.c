@@ -20,10 +20,22 @@ PROGRAM HISTORY:
 
 /*Geolocation Calls:*/
 
-/* Converts a given line and sample to that for
-the non-multilooked, non-windowed, equivalent image.*/
-void meta_get_orig(void *fake_ddr,
-	int y, int x,int *yOrig,int *xOrig)
+/* Converts a given line and sample to that for the non-multilooked,
+   non-windowed, equivalent image.  This function shows how
+   gracelessly our metadata represents the different types of images
+   we have to cope with.  */
+void meta_get_original_line_sample(meta_parameters *meta, int line, 
+				   int sample, int *original_line, 
+				   int *original_sample)
+{
+  *original_line = line * meta_parameters->general->x_pixel_size 
+                   + meta_parameters->general->start_sample;
+  *original_sample = sample * meta_parameters->general->y_pixel_size
+                     + meta_parameters->general->start_line;
+}
+
+/* DEPRECATED.  You probably want meta_get_original_line_sample.*/
+void meta_get_orig(void *fake_ddr, int y, int x,int *yOrig,int *xOrig)
 {
 	struct DDR *ddr=(struct DDR *)fake_ddr;
 	*xOrig=(x)*ddr->sample_inc + (ddr->master_sample-1);
