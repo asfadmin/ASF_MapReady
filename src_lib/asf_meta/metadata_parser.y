@@ -304,8 +304,8 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "perY") )
       { MPROJ->perY = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "hem") ) {
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { MPROJ->type = 'S'; return; }
-      else { MPROJ->type = 'N'; return; }
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { MPROJ->hem = 'S'; return; }
+      else { MPROJ->hem = 'N'; return; }
     }
     if ( !strcmp(field_name, "re_major") )
       { MPROJ->re_major = VALP_AS_DOUBLE; return; }
