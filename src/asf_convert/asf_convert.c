@@ -136,7 +136,7 @@ PROGRAM HISTORY:
 void usage()
 {
 	printf("USAGE:\n"
-		"   asf_convert [-format <output_format>] <in_meta_name> <in_data_name> <out_full_name>\n");
+		"   asf_convert [-format <output_format>] <in_data_name> <in_meta_name> <out_full_name>\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -154,7 +154,7 @@ void check_return(int ret, char *msg)
 {
 	if (ret != 0)
 	{
-		sprintf(errbuf, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);//I made "ERROR:" red :D
+		sprintf(errbuf, "\n   \033[31;1mERROR:\033[0m %s\n\n", msg);//I made "ERROR:" red...Yay! :D
 		printErr(errbuf);
 	}
 }
@@ -195,12 +195,6 @@ int main(int argc, char *argv[])
 		config_usage();
 		exit(0);
 	}
-	//Begin lunch break :)
-	if(checkForOption("-YouRock", argc, argv) != -1)
-	{
-		printf("Why thank you!\n");
-	}
-	//End lunch break :(
 
 	//Normal options
 	formatFlag = checkForOption("-format", argc, argv);
@@ -273,13 +267,16 @@ int main(int argc, char *argv[])
 		strcpy(meta_file, argv[argc - 2]);
 		strcpy(out_file, argv[argc - 1]);
 		//WARNING: THIS IS A TOTAL HACK :D
+		//Find the end of the string
 		for(ii = 0; ii < 255; ++ii)
 			if(argv[argc - 2][ii] == '\0')
 				break;
-		if(argv[argc - 2][ii - 1] == 'L')
+		if(argv[argc - 2][ii - 1] == 'L')//If it ends in .L, it's a CEOS image
 			strcpy(format_in, "CEOS");
-		else
+		else if(strcmp("meta", argv[argc-2][ii - 4]))
 			strcpy(format_in, "ASF");
+		else
+			check_return(-1, "Unrecognized input file type\n");
 	}
 //**********************END COMMAND LINE PARSING STUFF**********************//
 

@@ -3,7 +3,8 @@
 
 typedef struct
 {
-	char *in_data_name;		/* input metadata file name */
+	char *in_data_name;		/* input data file name */
+	char *in_meta_name;		/* input metadata file name */
 	char *in_format;		/* input format: CEOS, ASF */
 	char *data_type;		/* data type: amplitude, power, sigma, gamma,
 								beta */
