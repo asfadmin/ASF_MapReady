@@ -92,18 +92,24 @@ float_image_get_pixel (FloatImage *self, ssize_t x, ssize_t y);
 void
 float_image_set_pixel (FloatImage *self, ssize_t x, ssize_t y, float value);
 
-// Get rectangular image region of size_x, size_y starting at x, y and
-// copy it into already allocated buffer.  There is not necessarily
-// any caching help for this method, i.e. it may involve disk access
-// and be slow.
+// Get rectangular image region of size_x, size_y having upper left
+// corner at x, y and copy it into already allocated buffer.  There is
+// not necessarily any caching help for this method, i.e. it may
+// always involve disk access and always be slow.
 void
-float_image_get_region (FloatImage *self, size_t x, size_t y, size_t size_x, 
-			size_t size_y, float *buffer);
+float_image_get_region (FloatImage *self, ssize_t x, ssize_t y, 
+			ssize_t size_x, ssize_t size_y, float *buffer);
 
 // This method is analogous to float_image_get_region.
 void
 float_image_set_region (FloatImage *self, size_t x, size_t y, size_t size_x, 
 			size_t size_y, float *buffer);
+
+// Get a full row of pixels, copying the data into already allocated
+// buffer.  This method will be fast on the average for calls with
+// sequential row numbers.
+void
+float_image_get_row (FloatImage *self, size_t row, float *buffer);
 
 // Get a pixel, performing odd reflection at image edges if the pixel
 // indicies fall outside the image.  See the description of the
