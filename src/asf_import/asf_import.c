@@ -196,12 +196,12 @@ void help_page()
   /* If we can, use less */
   sprintf (command, "echo '%s' | less --prompt='Type q to quit help, h for "
 	   "help with help browser'", happy_string);
-  if(system(command) != -1)
+  if(system(command) == 0)
     exit(EXIT_SUCCESS);
 
   /* Hmmm, less didn't work cause we got here, try using more */
   sprintf(command,"echo '%s' | more",happy_string);
-  if(system(command) != -1)
+  if(system(command) == 0)
     exit(EXIT_SUCCESS);
 
   /* Okay, neither less or more work (obviously if we made it here),
