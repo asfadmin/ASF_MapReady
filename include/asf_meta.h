@@ -169,6 +169,7 @@ typedef struct {
   double re_minor;       /* Semiminor axis length (poles) (meters).        */
   /* Note: we compute ecc=sqrt(1-re_major^2/re_minor^2).  This field
      is therefore redundant and should be eliminated.  DEPRECATED.         */
+  /* FIXME: fill this in from somewhere for backward compatability.  */
   double ecc;            /* First eccentricity of earth ellipsoid.         */
     /* Projection parameters for each projection.                          */
   union {		     
