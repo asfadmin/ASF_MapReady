@@ -3,6 +3,7 @@
 #include "asf_meta.h"
 #include "err_die.h"
 #include "regex_wrapper.h"
+#include "metadata_parser.h"
 
 void meta_read_old(char *fileName, meta_parameters *meta);
 
