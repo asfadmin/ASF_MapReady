@@ -21,17 +21,16 @@ calibration 4-01-02.
 ****************************************************************/
 #include "ceos.h"
 #include "asf.h"
-#include "ddr.h"
-#include "sarout.h"
 #include "asf_meta.h"
+#include "sarout.h"
 #include "ifm.h"
 #include "odl.h"
 
- int radio_fill(struct VRADDR *radiometricDataRecord, const char *inName)
- { 
-    /*   radio_fill fills up the radiometric data record, which has structure VRADDR. 
-	 inName is the prefix of the input filename of the files with suffixes 
-	 .ant and .noise. */
+int radio_fill(struct VRADDR *radiometricDataRecord, const char *inName)
+{ 
+    /* radio_fill fills up the radiometric data record, which has structure VRADDR.
+     * inName is the prefix of the input filename of the files with suffixes
+     * .ant and .noise. */
     char *ant_name, *noise_name;    /* full names of files to be read */
     FILE *noisePtr;                 /* Pointer to noise_name's data stream */
     ODL odl;                        /* Pointer to ant_name's ODL stream */
@@ -59,10 +58,8 @@ calibration 4-01-02.
 	
         /* We opened the antenna pattern file, read in vectors */		
         radiometricDataRecord->a[0]=(double)ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.NOISE_FACT",&err);
-       radiometricDataRecord->a[1]=(double)ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.LINEAR_CONV_FACT",&err);
-       radiometricDataRecord->a[2]=(double)ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.OFFSET_CONV_FACT",&err);
-       
-       
+        radiometricDataRecord->a[1]=(double)ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.LINEAR_CONV_FACT",&err);
+        radiometricDataRecord->a[2]=(double)ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.OFFSET_CONV_FACT",&err);
     } /* end .ant portion */
 
     /* Opens and reads the .noise, then fills radiometricDataRecord.noise fields */
@@ -82,151 +79,4 @@ calibration 4-01-02.
     else err=-1;
     return err;
     /* -1 if there was a problem, 0 otherwise */
- };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
