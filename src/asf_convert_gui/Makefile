@@ -15,7 +15,7 @@ GTK_ZIP = gtkwin32zip
 GTK_INC = $(GTK_DIR)/include
 GTK_LIB = $(GTK_DIR)/lib
 
-INCLUDE = -I$(GTK_INC) -I$(GTK_INC)/glib-2.0 -I$(GTK_INC)/pango-1.0 -I$(GTK_INC)/gtk-2.0 -I$(GTK_INC)/freetype2/freetype -I$(GTK_LIB)/glib-2.0/include -I$(GTK_LIB)/gtk-2.0/include -I$(GTK_INC)/atk-1.0 -I$(GTK_INC)/libglade-2.0
+INCLUDE = -I$(GTK_INC) -I$(GTK_INC)/glib-2.0 -I$(GTK_INC)/pango-1.0 -I$(GTK_INC)/gtk-2.0 -I$(GTK_INC)/freetype2/freetype -I$(GTK_LIB)/glib-2.0/include -I$(GTK_LIB)/gtk-2.0/include -I$(GTK_INC)/atk-1.0 -I$(GTK_INC)/libglade-2.0 $(ASF_INCLUDE_DIR)
 
 LIB = -L$(GTK_LIB) -L$(GTK_LIB)/glib-2.0 -L$(GTK_LIB)/gtk-2.0 -L$(GTK_LIB)/pango -L$(GTK_LIB)/libglade -lintl -liconv -lm -lgtk-win32-2.0 -lgobject-2.0 -llibglade-2.0 -lglib-2.0
 
@@ -41,7 +41,7 @@ else
 ### Begin Unix Section
 
 CFLAGS = -Wall -pedantic -O0 -g $(shell /usr/bin/pkg-config --cflags gtk+-2.0) \
-         $(shell /usr/bin/pkg-config --cflags libglade-2.0)
+         $(shell /usr/bin/pkg-config --cflags libglade-2.0) -I$(ASF_INCLUDE_DIR)
 
 LDLIBS = $(shell /usr/bin/pkg-config --libs gtk+-2.0) \
 	 $(shell /usr/bin/pkg-config --libs libglade-2.0)

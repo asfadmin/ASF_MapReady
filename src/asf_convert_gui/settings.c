@@ -11,7 +11,8 @@ static int
 settings_get_output_format_allows_size(const Settings *s)
 {
   return s->output_format == OUTPUT_FORMAT_JPEG ||
-    s->output_format == OUTPUT_FORMAT_PPM;
+    s->output_format == OUTPUT_FORMAT_PPM ||
+    s->output_format == OUTPUT_FORMAT_TIFF;
 }
 
 static int
@@ -409,29 +410,29 @@ settings_equal(const Settings *s1, const Settings *s2)
         s1->output_format == s2->output_format)
     {
         gchar * lat1 =
-                g_strdup(settings_get_latitude_argument(s1));
+	  g_strdup(settings_get_latitude_argument(s1));
 
         gchar * lat2 =
-                g_strdup(settings_get_latitude_argument(s2));
+	  g_strdup(settings_get_latitude_argument(s2));
 
         if (0 == strcmp(lat1, lat2))
         {
             gchar * siz1 =
-                    g_strdup(settings_get_size_argument(s1));
+	      g_strdup(settings_get_size_argument(s1));
 
             gchar * siz2 =
-                    g_strdup(settings_get_size_argument(s2));
+	      g_strdup(settings_get_size_argument(s2));
 
             if (0 == strcmp(siz1, siz2))
             {
                 gchar * byt1 =
-                 g_strdup(settings_get_output_bytes_argument(s1));
+		  g_strdup(settings_get_output_bytes_argument(s1));
 
                 gchar * byt2 =
-                 g_strdup(settings_get_output_bytes_argument(s2));
+		  g_strdup(settings_get_output_bytes_argument(s2));
 
                 if (0 == strcmp(byt1, byt2))
-                    equal = TRUE;
+		  equal = TRUE;
 
                 g_free(byt1);
                 g_free(byt2);

@@ -401,7 +401,7 @@ process_item(GtkTreeIter *iter,
       if (!settings_get_run_export(user_settings))
       {
 	done = err ? "Error" : "Done";
-	gtk_list_store_set(list_store, iter, 1, out_name_full, -1);
+	/*gtk_list_store_set(list_store, iter, 1, out_name_full, -1);*/
 	gtk_list_store_set(list_store, iter, 2, done, -1);
       }
 

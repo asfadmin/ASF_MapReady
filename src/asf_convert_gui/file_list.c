@@ -61,12 +61,12 @@ static gboolean file_is_valid(const gchar * data_file)
     else
     {
         ++p;
-        if (strcmp(p, "D") == 0 ||
-            strcmp(p, "img") == 0 ||
-            /*strcmp(p, "L") == 0 ||*/
-            /*strcmp(p, "meta") == 0 ||*/
-            strcmp(p, "raw") == 0 ||
-            strcmp(p, "000") == 0)
+        if (strcasecmp(p, "D") == 0 ||
+            strcasecmp(p, "img") == 0 ||
+            /*strcasecmp(p, "L") == 0 ||*/
+            /*strcasecmp(p, "meta") == 0 ||*/
+            strcasecmp(p, "raw") == 0 ||
+            strcasecmp(p, "000") == 0)
         {
             return TRUE;
         }
