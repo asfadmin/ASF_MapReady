@@ -57,7 +57,6 @@ LIBS
 	asf_odl
 	asf_fft
 	libjpeg
-	libpng
 	libtiff
 	libgeotiff
 	libz
@@ -73,7 +72,6 @@ LIBS
 PROGRAMS
 {
 @src/
-  asf_convert { }
 	asf_export { }
 	asf_import { }
 	stats { }
@@ -83,9 +81,11 @@ PROGRAMS
 #		convert2jpeg Makefile
 	convert2jpeg { }
 	convert2ppm { }
+	corner_coords { }
 	deskew { }
 	dspddr { }
 	fftMatch { }
+	filter { }
 	makeddr { }
 	meta2ddr { BINS ddr2meta }
 	metadata { }
@@ -113,6 +113,19 @@ PROGRAMS
 		PROGRAMS
 			remap
 			fit_quadratic
+	}
+
+# Down here because it depends on geocode
+@src/
+	asf_convert
+	{
+		PROGRAMS
+			asf_export
+			asf_import
+			corner_coords
+			filter
+			geocode
+			projprm
 	}
 
 @src_ifm/
