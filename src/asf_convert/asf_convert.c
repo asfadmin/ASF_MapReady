@@ -6,7 +6,7 @@
 
 <synopsis>
    asf_convert [ -config <configuration file> |
-                 -config_init <configuration file> ] |
+                 -init_config <configuration file> ] |
                [ -input <format> <dataFile> <metaFile>
                  -output <format> <outFile> ]
 </synopsis>
@@ -49,7 +49,7 @@
 
 <options>
    -config        runs asf_convert from a configuration file.
-   -config_init   creates only a configuration file and exits.
+   -init_config   creates only a configuration file and exits.
    -input         input format and input data and metadata files.
    -output        output format and output filename.
 </options>
@@ -112,6 +112,7 @@
 </documentation>
 
 PROGRAM HISTORY:
+
     VERS:   DATE:   AUTHOR:   PURPOSE:
     ----------------------------------------------------------------------
     0.1     10/02   R. Gens   Original development
@@ -119,7 +120,7 @@ PROGRAM HISTORY:
     0.3     05/04   R. Gens   Overhaul for new metadata, added resampling
     0.4     05/04   R. Gens   Added batch mode
     0.5     06/04   R. Gens   Renamed to asf_convert, added alternative
-                                 command line
+                              command line
 
 *******************************************************************************/
 
@@ -131,7 +132,7 @@ PROGRAM HISTORY:
 #include "proj.h"
 #include <unistd.h>
 
-#define VERSION 1.4
+#define VERSION 0.5
 #define REQUIRED_ARGS 1
 
 void usage(char *name)
@@ -490,9 +491,9 @@ int main(int argc, char *argv[])
       break;
     }
 
-    /* Remove temporary files *
+    /* Remove temporary files */
     sprintf(cmd, "rm -f tmp%d*", id);
-    system(cmd);*/
+    system(cmd);
 
   }
   return(0);
