@@ -155,7 +155,9 @@ void print_splash_screen(int argc, char* argv[])
 		sprintf(temp2, " %s",argv[ii]);
 		strcat(temp1, temp2);
 	}
-	printf("%s\n", temp1);
+	strcat(temp1, "\n");
+	printf("%s", temp1);
+	printLog(temp1);
 	system("date");
 	printf("PID: %i\n", (int)getpid());
 }
@@ -335,6 +337,15 @@ main (int argc, char *argv[])
 	if(sizeFlag != FLAG_NOT_SET)
 		if(argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3)
 			usage();/*This exits with a failure*/
+	if(logFlag != FLAG_NOT_SET)
+	  if(argv[logFlag + 1][0] == '-' || logFlag >= argc - 3)
+	    usage();
+
+	if (logFlag != FLAG_NOT_SET)
+	  strcpy(logFile, argv[logFlag + 1]);
+	else
+	  sprintf(logFile, "tmp%i.log", (int)getpid());
+	fLog = FOPEN(logFile, "a");
 
 	/* We're good enough at this point... print the splash screen
 	   and start filling in whatever needs to be filled in.  */
@@ -345,6 +356,7 @@ main (int argc, char *argv[])
 		strcpy(command_line.format, argv[formatFlag + 1]);
 	else
 		strcpy(command_line.format, "geotiff");/*Default behavior: produce a geotiff*/
+
 	for(ii = 0; ii < strlen(command_line.format); ++ii)/*convert the string to upper case*/
 		command_line.format[ii] = toupper(command_line.format[ii]);
 
@@ -366,6 +378,7 @@ main (int argc, char *argv[])
 	strcat(command_line.in_meta_name, ".meta");
 	/*Grab the output name*/
 	strcpy(command_line.output_name, argv[argc - 1]);
+
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
   if ( strcmp (command_line.format, "ENVI") == 0 ) {
@@ -377,13 +390,19 @@ main (int argc, char *argv[])
   else if ( strcmp (command_line.format, "GEOTIFF") == 0 ||
     strcmp(command_line.format, "GEOTIF") == 0) {
     format = GEOTIFF;
+    strcpy(command_line.output_name,
+	   appendExt(command_line.output_name, ".tif"));
   }
   else if ( strcmp (command_line.format, "JPEG") == 0 ||
     strcmp(command_line.format, "JPG") == 0) {
     format = JPEG;
+    strcpy(command_line.output_name,
+	   appendExt(command_line.output_name, ".jpg"));
   }
   else if ( strcmp (command_line.format, "PPM") == 0 ) {
     format = PPM;
+    strcpy(command_line.output_name,
+	   appendExt(command_line.output_name, ".ppm"));
   }
   else {
     print_error("Unrecognized output format specified");
@@ -1594,9 +1613,12 @@ export_as_geotiff (const char *metadata_file_name,
   else {
     /* FIXME: we badly need to get the ellipsoid/datum mess sorted
        out.  This problem goes deeper than asf_export, however.  */
-    fprintf (stderr, "%s: warning: couldn't conclude which ellipsoid is "
+    char errmsg[512];
+    sprintf (errmsg, "%s: warning: couldn't conclude which ellipsoid is "
 	     "being used from ellipsoid axis dimensions in metadata, "
 	     "using user defined ellipsoid\n", ASF_NAME_STRING);
+    fprintf(stderr, errmsg);
+    printLog(errmsg);
     ellipsoid = USER_DEFINED;
   }
 
@@ -1644,6 +1666,7 @@ export_as_geotiff (const char *metadata_file_name,
 	       "being used from ellipsoid axis dimensions in metadata, "
 	       "assuming WGS84 ellipsoid\n");
       printf (temp);
+      printLog (temp);
       ellipsoid = WGS84;
     }
 
