@@ -181,12 +181,12 @@ void help_page()
   /* If we can, use less */
   sprintf (command, "echo '%s' | less --prompt='Type q to quit help, h for "
 	   "help with help browser'", happy_string);
-  if ( system(command) != -1 )
+  if ( system(command) == 0 )
     exit (EXIT_SUCCESS);
 
   /* Hmmm, less didn't work cause we got here, try using more */
   sprintf (command,"echo '%s' | more", happy_string);
-  if(system(command) != -1)
+  if(system(command) == 0)
     exit(EXIT_SUCCESS);
 
   /* Okay, neither less or more work (obviously if we made it here),
@@ -516,9 +516,11 @@ int main(int argc, char *argv[])
   if (strncmp(str2upper(format_out),"ASF",3) == 0) type_out = ASF;
   else if (strncmp(str2upper(format_out),"CEOS",4) == 0) type_out = CEOS;
   else if (strncmp(str2upper(format_out),"GEOTIFF",3) == 0) type_out = GEOTIFF;
-  else if (strncmp(str2upper(format_out),"JPEG",3) == 0) type_out = JPEG;
-  else if (strncmp(str2upper(format_out),"ENVI",3) == 0) type_out = ENVI;
-  else if (strncmp(str2upper(format_out),"ESRI",3) == 0) type_out = ESRI;
+  else if (strncmp(str2upper(format_out),"TIFF",3) == 0) type_out = TIFF;
+  else if (strncmp(str2upper(format_out),"JPEG",4) == 0) type_out = JPEG;
+  else if (strncmp(str2upper(format_out),"JPG",3) == 0) type_out = JPEG;
+  else if (strncmp(str2upper(format_out),"ENVI",4) == 0) type_out = ENVI;
+  else if (strncmp(str2upper(format_out),"ESRI",4) == 0) type_out = ESRI;
   else if (strncmp(str2upper(format_out),"PPM",3) == 0) type_out = PPM;
   else if (strncmp(str2upper(format_out),"PNG",3) == 0) type_out = PNG;
   else if (strncmp(str2upper(format_out),"LAS",3) == 0) type_out = LAS;
