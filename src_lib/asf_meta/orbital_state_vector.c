@@ -53,20 +53,24 @@ orbital_state_vector_get_keplerian_elements
   double r_mag = vector_magnitude (self->position);
   double v_mag = vector_magnitude (self->velocity);
   Vector *tmp1 = vector_copy (self->position);
-  vector_multiply (tmp1, pow (v_mag, 2) - gm / r_mag);
   Vector *tmp2 = vector_copy (self->velocity);
+  /* Fundamental vector 'e' ('_fv' is appended to dodge name clash).  */
+  Vector *e_fv;
+  double h_mag;
+  double n_mag;
+
+  vector_multiply (tmp1, pow (v_mag, 2) - gm / r_mag);
   vector_multiply (tmp2, r_dot_v);
   vector_subtract (tmp1, tmp2);
   vector_multiply (tmp1, (1.0 / gm));
-  /* Fundamental vector 'e' ('_fv' is appended to dodge name clash).  */
-  Vector *e_fv = vector_copy (tmp1);
+  e_fv = vector_copy (tmp1);
 
   /* Compute keplerian elements.  */
   *e = vector_magnitude (e_fv);
-  double h_mag = vector_magnitude (h);
+  h_mag = vector_magnitude (h);
   *a = (pow (h_mag, 2) / gm) / (1 - pow (*e, 2));
   *i = acos (vector_dot (h, Z) / h_mag);
-  double n_mag = vector_magnitude (n);
+  n_mag = vector_magnitude (n);
   *capital_omega = acos (vector_dot (n, X) / n_mag);
   *lower_case_omega = acos (vector_dot (n, e_fv) / (n_mag * (*e)));
   *nu = acos (vector_dot (e_fv, self->position) 
@@ -123,25 +127,31 @@ func (double t, const double y[], double f[], void *params)
   static Vector v_st;
   static Vector *p = &p_st;
   static Vector *v = &v_st;
+
+  double r;
+  double j2;
+  double a_j2_x, a_j2_y, a_j2_z;
+  double ksx, ksy, ksz;
+
   vector_set (p, y[0], y[1], y[2]);
   vector_set (v, y[3], y[4], y[5]);
 
   /* Current range to satellife from center of earth.  */
-  double r = vector_magnitude (p);
+  r = vector_magnitude (p);
 
   /* The so-called first zonal harmonic is used to account for the
      effects of earth oblatedness (see below for references).  */
-  double j2 = 1082.63e-6;	/* First zonal harmonic coefficient.  */
-  double a_j2_x = (gm * p->x / pow (r, 3)) * j2 * (3.0 / 2) * pow ((ae / r), 2)
+  j2 = 1082.63e-6;	/* First zonal harmonic coefficient.  */
+  a_j2_x = (gm * p->x / pow (r, 3)) * j2 * (3.0 / 2) * pow ((ae / r), 2)
     * (5.0 * (pow (p->z, 2) / pow (r, 2)) - 1.0);
-  double a_j2_y = (p->y / p->x) * a_j2_x;
-  double a_j2_z = (-gm * p->z / pow (r, 3)) * j2 * (3.0 / 2) 
+  a_j2_y = (p->y / p->x) * a_j2_x;
+  a_j2_z = (-gm * p->z / pow (r, 3)) * j2 * (3.0 / 2) 
     * pow ((ae / r), 2) * (3.0 - 5.0 * (pow (p->z, 2) / pow (r, 2)));
 
   /* Total perturbations.  */
-  double ksx = a_j2_x;
-  double ksy = a_j2_y;
-  double ksz = a_j2_z;
+  ksx = a_j2_x;
+  ksy = a_j2_y;
+  ksz = a_j2_z;
 
   f[0] = v->x;
   f[1] = v->y;
@@ -197,13 +207,13 @@ orbital_state_vector_propagate (OrbitalStateVector *self, double time)
   const double initial_step_size = GSL_SIGN (t1) * 1.0;
   double step_size = initial_step_size;
   double *y = malloc (dimension * sizeof (double));
+  double t = t0;		/* Current time.  */
   y[0] = self->position->x;
   y[1] = self->position->y;
   y[2] = self->position->z;
   y[3] = self->velocity->x;
   y[4] = self->velocity->y;
   y[5] = self->velocity->z;
-  double t = t0;		/* Current time.  */
   /* Here is the actual propagation.  */
   while ( fabs (t) < fabs (t1) ) {
     int status = gsl_odeiv_evolve_apply (ode_evolve, ode_control, ode_step, 
