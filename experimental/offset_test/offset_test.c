@@ -94,6 +94,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define borderY 80
 #define maxDisp 1.8	/* Forward and reverse correlations which differ 
 			   by more than this will be deleted.*/
+#define maxDxDy 1.0     /* Maximum allowed difference before point is 
+			   reported as moved */
 #define minSNR 0.3
 #define VERSION 1.0
 
@@ -144,7 +146,7 @@ int main(int argc, char *argv[])
   slaveMeta = meta_read(szImg2);
   if (masterMeta->general->line_count != slaveMeta->general->line_count ||
       masterMeta->general->sample_count != slaveMeta->general->sample_count) {
-    printf("\n  WARNING: Input images have different dimension!\n\n");
+    printf("\n   WARNING: Input images have different dimension!\n\n");
   }
   else if (masterMeta->general->data_type != slaveMeta->general->data_type) {
     printf("\n   ERROR: Input image have different data type!\n\n");
@@ -155,10 +157,8 @@ int main(int argc, char *argv[])
     printf("\n   ERROR: Cannot compare raw images for offsets!\n\n");
     exit(0);
   }
-  else {
-    lines = masterMeta->general->line_count;
-    samples = masterMeta->general->sample_count;
-  }
+  lines = masterMeta->general->line_count;
+  samples = masterMeta->general->sample_count;
   if (masterMeta->general->data_type == COMPLEX_REAL32) {
     srcSize = 32;
     ampFlag = FALSE;
@@ -193,6 +193,7 @@ int main(int argc, char *argv[])
 	      if (!(findPeak(x2,y2,szImg2,x1,y1,szImg1,&dxBW,&dyBW,&snrBW))) {
 		attemptedPoints--;
                 continue; /* next point if chip in complete background fill */
+	    printf("dxFW: %.2f, dyFW: %.2f\n", dxFW, dyFW);
 	      }
 	    }
 	    else {
@@ -204,19 +205,20 @@ int main(int argc, char *argv[])
 		(fabs(dxFW-dxBW) < maxDisp) &&
 		(fabs(dyFW-dyBW) < maxDisp))
 	      {
-		goodPoints++;
+		dx = (dxFW+dxBW)/2;
+		dy = (dyFW+dyBW)/2;
+		snr = snrFW*snrBW;
+		if (dx < maxDxDy && dy < maxDxDy) goodPoints++;
 	      }
-	    dx = (dxFW+dxBW)/2;
-	    dy = (dyFW+dyBW)/2;
-	    snr = snrFW*snrBW;
-	    fprintf(fp_output,"%6d %6d %8.5f %8.5f %4.2f\n",
-		    x1, y1, x2+dx, y2+dy, snr);
-	    fflush(fp_output);
 	  }
+	  fprintf(fp_output,"%6d %6d %8.5f %8.5f %4.2f\n",
+		  x1, y1, x2+dx, y2+dy, snr);
+	  fflush(fp_output);
 	}
       }
   if (goodPoints < attemptedPoints)
-    printf("\n   WARNING: %i out of %i points moved!\n\n", 
+    printf("\n   WARNING: %i out of %i points moved by "
+	   "more than one pixel!\n\n", 
 	   (attemptedPoints-goodPoints), attemptedPoints);
   else 
     printf("\n   There is no difference between the images\n\n");
