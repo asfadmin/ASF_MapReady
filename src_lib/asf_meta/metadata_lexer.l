@@ -1,4 +1,4 @@
-
+/* TODO: Deal with empty fields... fill with -2147483648, NaN, ?, or ??? */
 %{
 
 #include <ctype.h>
@@ -10,6 +10,10 @@
 
 int line_number = 1;		/* Position in source file.  */
 
+/* Flag true if we are looking a string of numbers that we want to parser to 
+ * interpret as a string pointer, not a double.  */
+int looking_at_numeric_string = 0;
+
 /* Appropriately prefixed version of yywrap.  */
 int meta_yywrap(void)
 {
@@ -20,11 +24,11 @@ int meta_yywrap(void)
 
 %option nomain
 
-DOUBLE_STRING      (-?([0-9]+)|(([0-9]*\.[0-9]+)([eE][-+]?[0-9]+)?)?)
+DOUBLE_STRING      (-?)((([0-9]+)|([0-9]+\.[0-9]*)|(\.[0-9]+))([eE][-+]?[0-9]+)?)|([nN][aA][nN])
 ID_STRING          [a-zA-Z]("["|"]"|[-a-zA-Z0-9'>=(),;/_ \t])*[^ \t\n]*
 FIELD_STRING       [^#\n]*[^#\n \t]
 
-%x FIELD_STATE
+%x FIELD_STATE NUMERIC_STRING_STATE
 
 %%
 
@@ -41,32 +45,59 @@ FIELD_STRING       [^#\n]*[^#\n \t]
                              last_nonspace--;
                            strncpy(meta_yylval.string_val, meta_yytext, 
                                    last_nonspace + 1);
-                           meta_yylval.string_val[last_nonspace + 1] = '\0'; 
-                           return NAME; }
+                           meta_yylval.string_val[last_nonspace + 1] = '\0';
+            /* Check list of numeric strings & see if ID_STRING qualifies */
+                           if ( !strcmp(meta_yylval.string_val, 
+                                        "satellite_binary_time") ) {
+                             looking_at_numeric_string = 1;
+                           }
+                           else if ( !strcmp(meta_yylval.string_val, 
+                                        "satellite_clock_time") ) {
+                             looking_at_numeric_string = 1;
+                           }
+			   else looking_at_numeric_string = 0;
+                           return NAME;
+                         }
 
  /* Gobble up spaces that are not already part of field or block id */
  /* strings (recall rules are tried in order.  */
-[ \t]*      { ; } 
+[ \t]*      { ; }
 
  /* Eat up spaces after field seperator , go to field state and return 
     seperator.  */
-:[ \t]*                  { BEGIN FIELD_STATE; return ':'; }
+:[ \t]*                  { if ( looking_at_numeric_string ) {
+                             BEGIN NUMERIC_STRING_STATE;
+                           }
+			   else { 
+                             BEGIN FIELD_STATE;
+                           } 
+                           return ':';
+			 }
  /* Eat up spaces after block opening character and return it.  */
 \{[ \t]*                 { return '{'; }
  /* Eat up spaces around block closing character and return it.  */
 [ \t]*\}[ \t]*           { return '}'; }
 
  /* Return a numeric value.  FIXME: needs errno ERANGE check added.  */
-<FIELD_STATE>{DOUBLE_STRING}/[ \t]*[#\n]   { BEGIN INITIAL;
-                                             meta_yylval.double_val 
-				               = strtod(meta_yytext, NULL); 
-                                             return DOUBLE; }
+<FIELD_STATE>{DOUBLE_STRING}/[ \t]*[#\n]   {
+                                 BEGIN INITIAL;
+                                 meta_yylval.double_val = strtod(meta_yytext, NULL); 
+                                 return DOUBLE;
+				 }
+
+ /* Return a numeric value as string.  FIXME: length check string.  */
+<NUMERIC_STRING_STATE>{DOUBLE_STRING}/[ \t]*[#\n]  { 
+                                 BEGIN INITIAL;
+                                 strcpy(meta_yylval.string_val, meta_yytext);
+                                 return STRING;
+				 }
 
  /* Return a pointer to a string.  FIXME: length check string.  */
-<FIELD_STATE>{FIELD_STRING}/[ \t]*[#\n]   { BEGIN INITIAL;
-                                            strcpy(meta_yylval.string_val, 
-                                                   meta_yytext);
-                                            return STRING; }
+<FIELD_STATE>{FIELD_STRING}/[ \t]*[#\n]   {
+                                 BEGIN INITIAL;
+                                 strcpy(meta_yylval.string_val, meta_yytext);
+                                 return STRING;
+				 }
 
 %%
 
