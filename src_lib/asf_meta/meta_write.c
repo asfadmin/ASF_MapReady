@@ -37,7 +37,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
 
   /* SAR block.  */
   fprintf(fp, "sar {\n");
-  fprintf(fp, "    proj_type: %c  # [S=slant range; G=ground range; P=map projected]\n", meta->sar->proj_type);
+  fprintf(fp, "    image_type: %c  # [S=slant range; G=ground range; P=map projected]\n", meta->sar->image_type);
   fprintf(fp, "    look_direction: %c  # (normally R) [R=right; L=left]\n", 
 	  meta->sar->look_direction);
   fprintf(fp, "    look_count: %d  # Number of looks from SLC\n", 
@@ -102,7 +102,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   fprintf(fp, "}\n");
 
   /* Projection parameters block, if appropriate.  */
-  if ( meta->sar->proj_type == 'P' ) {
+  if ( meta->sar->image_type == 'P' ) {
     fprintf(fp, "projection {\n");
     fprintf(fp, "    type: %c\n", meta->projection->type);
     fprintf(fp, "    startX: %f\n", meta->projection->startX);

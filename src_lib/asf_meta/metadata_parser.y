@@ -188,20 +188,20 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields which normally go in the sar block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "sar") ) {
-    if ( !strcmp(field_name, "proj_type") ) { 
+    if ( !strcmp(field_name, "image_type") ) { 
       if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) { 
-	MSAR->proj_type = 'S'; 
+	MSAR->image_type = 'S'; 
 	return; 
       }
       if ( !strcmp(VALP_AS_CHAR_POINTER, "G") ) { 
-	MSAR->proj_type = 'G'; 
+	MSAR->image_type = 'G'; 
 	return; 
       }
       if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) { 
-	MSAR->proj_type = 'P'; 
+	MSAR->image_type = 'P'; 
 	return; 
       }
-      yyerror("bad proj_type field in metadata file");
+      yyerror("bad image_type field in metadata file");
       exit(EXIT_FAILURE);
     }
     if ( !strcmp(field_name, "look_direction") ) { 
