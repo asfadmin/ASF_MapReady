@@ -331,13 +331,18 @@ main (int argc, char *argv[])
 
   if ( logFlag != FLAG_NOT_SET ) {
     strcpy (logFile, argv[logFlag + 1]);
+    fLog = fopen (logFile, "a");
+    if ( fLog == NULL ) {
+      logflag = FALSE;
+    }
+    else {
+      logflag = TRUE;
+    }
   }
   else {
-    sprintf (logFile, "tmp%i.log", (int) getpid ());
+    logflag = FALSE;
+    //    sprintf (logFile, "tmp%i.log", (int) getpid ());
   }
-  /* Since we always log, set the old school logflag to true.  */
-  logflag = TRUE;
-  fLog = FOPEN (logFile, "a");
 
   /* Set old school quiet flag (for use in our libraries) */
   quietflag = ( quietFlag != FLAG_NOT_SET ) ? TRUE : FALSE;
