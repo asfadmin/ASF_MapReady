@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <setjmp.h>
@@ -53,9 +52,9 @@ export_as_jpeg (const char *metadata_file_name,
   struct jpeg_compress_struct cinfo;
   struct jpeg_error_mgr jerr;
   FILE *ofp;
-  int return_code;
 
-  assert (md->general->data_type == REAL32);
+  asfRequire(md->general->data_type == REAL32,
+             "Can only ingest ASF format floating point data.");
 
   if ( (max_size > line_count && max_size > sample_count)
        || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
@@ -68,7 +67,8 @@ export_as_jpeg (const char *metadata_file_name,
   pixel_count = (size_t) line_count * sample_count;
 
   /* Get the image data.  */
-  assert (md->general->data_type == REAL32);
+  asfRequire(md->general->data_type == REAL32,
+             "Can only ingest ASF format floating point data.");
   daf = get_image_data (md, image_data_file_name);
 
   asfPrintStatus("Processing...\n");
@@ -83,11 +83,14 @@ export_as_jpeg (const char *metadata_file_name,
      form a scaled version of the input data.  */
   /* Here are some very funky checks to try to ensure that the JSAMPLE
      really is the type we expect, so we can scale properly.  */
-  assert (sizeof (unsigned char) == 1);
-  assert (sizeof (unsigned char) == sizeof (JSAMPLE));
+  asfRequire(sizeof(unsigned char) == 1,
+             "Size of the data type on this machine is different than expected.\n");
+  asfRequire(sizeof(unsigned char) == sizeof (JSAMPLE),
+             "Byte size on this machine is different than JPEG byte size.\n");
   test_jsample = 0;
   test_jsample--;
-  assert (test_jsample == UCHAR_MAX); /* Did we wrap?  */
+  asfRequire(test_jsample == UCHAR_MAX,
+             "Something wacky happened, like data overflow.\n");
   /* This space is resized later (with realloc) if the image is
      scaled.  */
   if (md->general->image_data_type == SIGMA_IMAGE ||
@@ -124,11 +127,8 @@ export_as_jpeg (const char *metadata_file_name,
   /* Open the output file to be used.  */
   ofp = fopen (output_file_name, "w");
   if ( ofp == NULL ) {
-    char *temp;
-        sprintf(temp, "Open of %s for writing failed: %s", 
-		output_file_name, strerror(errno));
-        print_error(temp);
-    exit (EXIT_FAILURE);
+    asfPrintError("Open of %s for writing failed: %s",
+                  output_file_name, strerror(errno));
   }
 
   /* Connect jpeg output to the output file to be used.  */
@@ -151,14 +151,14 @@ export_as_jpeg (const char *metadata_file_name,
     JSAMPROW *row_pointer = MALLOC (rows_to_write * sizeof (JSAMPROW));
     row_pointer[0] = &(pixels[cinfo.next_scanline * width]);
     rows_written = jpeg_write_scanlines (&cinfo, row_pointer, rows_to_write);
-    assert (rows_written == rows_to_write);
+    asfRequire(rows_written == rows_to_write,
+               "Failed to capture the correct number of lines.\n");
     asfLineMeter(cinfo.next_scanline, cinfo.image_height);
   }
 
   /* Finsh compression and close the jpeg.  */
   jpeg_finish_compress (&cinfo);
-  return_code = fclose (ofp);
-  assert (return_code == 0);
+  FCLOSE (ofp);
   jpeg_destroy_compress (&cinfo);
 
   free (pixels);
