@@ -120,7 +120,7 @@ void meta_free(meta_parameters *meta)
   if ( meta->projection != NULL ) 
     free(meta->projection);
   /* If any state vectors were allocated, free them.  */
-  if ( meta->state_vectors->num ) 
+  if ( meta->state_vectors->vector_count ) 
     free(meta->state_vectors->vecs);
   free(meta->state_vectors);
 
