@@ -12,54 +12,6 @@
 const char stf_metadata_extensions[][8] = {"",".PAR",".par"};
 const char stf_data_extensions[][8]     = {"",    "",    ""};
 
-/*****************************************************************************
- * has_stf_metadata_extension:
- * Returns TRUE if the file exists and has an accepted ASF STF metadata file
- * extension  */
-int has_stf_metadata_extension(const char *stfName)
-{
-  char dirName[256], fileName[256];
-  char metaTemp[1024];
-  char baseName[256];
-  char ext[256];
-  FILE *metaFP;
-  int begin=NO_STF_METADATA+1, end=NUM_STF_METADATA_EXTS;
-  int ii;
-
-  /* Separate the filename from the path (if there's a path there) */
-  split_dir_and_file(stfName, dirName, fileName);
-
-  for (ii=begin; ii<end; ii++) {
-    /* Check for suffix style extensions */
-    if (stf_metadata_extensions[ii][0] == EXTENSION_SEPARATOR) {
-      /* Assume stfName came to the function as a base name */
-      sprintf(metaTemp,"%s%s%s",dirName,fileName,stf_metadata_extensions[ii]);
-      if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
-        fclose(metaFP);
-        return TRUE;
-      }
-      /* Hmmm, didn't work, maybe it's got an extension on there already,
-       * nix it and try again */
-      split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
-      sprintf(metaTemp,"%s%s%s",dirName,baseName,stf_metadata_extensions[ii]);
-      if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
-        fclose(metaFP);
-        return TRUE;
-      }
-    }
-  }
-  /* If we haven't returned yet there ain't no metadata file */
-  return FALSE;
-}
-
-
-/*****************************************************************************
- * has_stf_data_extension:
- * Returns TRUE if the file exists and has an accepted ASF STF data file
- * extension
- * **Can't really have this function since the stf data file IS the base name**
- * int has_stf_data_extension(const char *stfName)
- */
 
 /******************************************************************************
  * get_stf_metadata_name:
@@ -167,21 +119,32 @@ stf_data_ext_t get_stf_data_name(const char *stfName, char *dataName)
   char baseName[256];
   char ext[256];
   FILE *dataFP;
-  int begin=NO_STF_DATA+1, end=NUM_STF_DATA_EXTS;
   stf_data_ext_t ii=STF_BLANK;
+  stf_metadata_ext_t jj;
+  stf_metadata_ext_t metaBegin=NO_STF_METADATA+1, metaEnd=NUM_STF_METADATA_EXTS;
 
   /* Separate the filename from the path (if there's a path there) */
   split_dir_and_file(stfName, dirName, fileName);
 
-  /* First assume we've got the base name */
-  sprintf(dataTemp,"%s%s%s",dirName,baseName,stf_data_extensions[ii]);
+  /* First & foremost make sure the stfName isn't a metafile, if it is, prune
+   * the extension (so we don't mistakenly open it, and think its a datafile */
+  split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
+  for (jj=metaBegin; jj<metaEnd; jj++) {
+    if (strcmp(ext,stf_metadata_extensions[jj])==0) {
+      strcpy(fileName,baseName);
+      break;
+    }
+  }
+
+  /* Assume the FILENAME is the base name (so just tack the extension on) */
+  sprintf(dataTemp,"%s%s%s",dirName,fileName,stf_data_extensions[ii]);
   if ((dataFP=fopen(stfName,"r"))!=NULL) {
     fclose(dataFP);
-    strcpy(dataName,stfName);
+    strcpy(dataName,dataTemp);
     return ii;
   }
-  /* Hmmm, guess its not a base name, lets try pruning off that extension */
-  split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
+  /* Mokay, the given filename didn't work. Lets try the filename minus any
+   * extention it may have had (ie BASENAME).  */
   sprintf(dataTemp,"%s%s%s",dirName,baseName,stf_data_extensions[ii]);
   if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
     fclose(dataFP);
@@ -209,17 +172,17 @@ stf_data_ext_t require_stf_data(const char *stfName, char *dataName)
     int ii;
 
     /* Prepare a very readable list of possible extensions */
-    sprintf(extensionList,"%s",stf_data_extensions[begin++]);
+    sprintf(extensionList,"'%s'",stf_data_extensions[begin++]);
     if (end-begin == 0)
       andFlag=FALSE;
     else
       end--;
     for (ii=begin; ii<end; ii++) {
-      sprintf(extensionList,"%s, %s",extensionList,
+      sprintf(extensionList,"%s, '%s'",extensionList,
                                      stf_data_extensions[ii]);
     }
     if (andFlag)
-      sprintf(extensionList,"%s, and %s",extensionList,
+      sprintf(extensionList,"%s, and '%s'",extensionList,
                                          stf_data_extensions[ii]);
 
     /* Report to user & exit */
@@ -270,49 +233,51 @@ stf_file_pairs_t get_stf_names(const char *stfName, char *dataName,
 stf_file_pairs_t require_stf_pair(const char *stfName, char *dataName,
                                     char *metaName)
 {
-  stf_file_pairs_t ret = get_stf_names(stfName, dataName, metaName);
+  char extensionList[128];
+  int andFlag=TRUE;
+  int begin=NO_STF_FILE_PAIR+1, end=NUM_STF_FILE_PAIRS;
+  int ii;
 
-  /* If we didn't find anything, report & leave */
-  if (ret == NO_STF_FILE_PAIR) {
-    char extensionList[128];
-    int andFlag=TRUE;
-    int begin=NO_STF_FILE_PAIR+1, end=NUM_STF_FILE_PAIRS;
-    int ii;
+  if (   require_stf_data(stfName, dataName)     == STF_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_PAR)
+    return STF_PAR_PAIR;
 
-    /* Prepare a very readable list of possible extension pairs */
-    sprintf(extensionList,"('%s' '%s')",stf_data_extensions[begin],
-                                        stf_metadata_extensions[begin]);
-    begin++;
-    if (end-begin == 0)
-      andFlag=FALSE;
-    else
-      end--;
-    for (ii=begin; ii<end; ii++) {
-      sprintf(extensionList,"%s, ('%s' '%s')",extensionList,
-                                              stf_data_extensions[ii],
-                                              stf_metadata_extensions[ii]);
-    }
-    if (andFlag)
-      sprintf(extensionList,"%s, and ('%s' '%s')",extensionList,
-                                                  stf_data_extensions[ii],
-                                                  stf_metadata_extensions[ii]);
+  if (   require_stf_data(stfName, dataName)     == STF_BLANK
+      && require_stf_metadata(stfName, metaName) == STF_par)
+    return STF_par_PAIR;
 
-    /* Report to user & exit */
-   sprintf(logbuf,
-           "**************************** ERROR! ****************************\n"
-           "*   This program was looking for the STF style SAR files,\n"
-           "*   %s and its associated file.\n"
-           "*   One or both files either do not exist or cannot be read.\n"
-           "*   Expected fileset extensions are:\n"
-           "*   %s\n"
-           "****************************************************************\n",
-           stfName, extensionList);
-    if (logflag)   {printLog(logbuf);}
-    printf(logbuf);
-    exit(EXIT_FAILURE);
-  }
+/****** We should never actually get here. The above code should either ******
+ ****** return or exit with an error message, BUT... just in case       ******/
 
-  /* If we found a file, return its extension type! */
+  /* Prepare a very readable list of possible extension pairs */
+  sprintf(extensionList,"('%s' '%s')",stf_data_extensions[begin],
+                                      stf_metadata_extensions[begin]);
+  begin++;
+  if (end-begin == 0)
+    andFlag=FALSE;
   else
-    return ret;
+    end--;
+  for (ii=begin; ii<end; ii++) {
+    sprintf(extensionList,"%s, ('%s' '%s')",extensionList,
+                                            stf_data_extensions[ii],
+                                            stf_metadata_extensions[ii]);
+  }
+  if (andFlag)
+    sprintf(extensionList,"%s, and ('%s' '%s')",extensionList,
+                                                stf_data_extensions[ii],
+                                                stf_metadata_extensions[ii]);
+
+  /* Report to user & exit */
+  sprintf(logbuf,
+          "**************************** ERROR! ****************************\n"
+          "*   This program was looking for the STF style SAR files,\n"
+          "*   %s and its associated file.\n"
+          "*   One or both files either do not exist or cannot be read.\n"
+          "*   Expected fileset extensions are:\n"
+          "*   %s\n"
+          "****************************************************************\n",
+          stfName, extensionList);
+  if (logflag)   {printLog(logbuf);}
+  printf(logbuf);
+  exit(EXIT_FAILURE);
 }
