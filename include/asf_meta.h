@@ -192,18 +192,18 @@ typedef struct {
     double rlocal;              /* Radius of earth at scene center (meters)*/
     double alpha1,alpha2,alpha3;/* Rotation angles, in degrees             */
   } proj_atct;
+ /* Lambert Azimuthal Equal Area. */
+  typedef struct {
+    double center_lon;   /* Longitude at center of projection */
+    double center_lat;   /* Latitude at center of projection  */
+  } proj_lamaz;
  /* Lambert Conformal Conic.*/
   typedef struct {
     double plat1;     /* First standard parallel  */
     double plat2;     /* Second standard parallel */
     double lat0;      /* Original lat             */
     double lon0;      /* Original lon             */
-  } proj_lambert;
- /* Lambert Azimuthal Equal Area. */
-  typedef struct {
-    double center_lon;   /* Longitude at center of projection */
-    double center_lat;   /* Latitude at center of projection  */
-  } proj_lamaz;
+  } proj_lamcc;
  /* Polar Sterographic.  */
   typedef struct {
     double slat;      /* Reference latitude for polar stereographic */
@@ -215,8 +215,10 @@ typedef struct {
   } proj_utm;
  /* Projection parameters for the projection in use.  */
   typedef union {
+    proj_albers   albers;   /* Albers Conical Equal Area     */
     proj_atct     atct;     /* Along-track/cross-track       */
-    proj_lambert  lambert;  /* Lambert Conformal Conic       */
+    proj_lamaz    lamaz;    /* Lambert Azimuthal Equal Area  */
+    proj_lamcc    lamcc;    /* Lambert Conformal Conic       */
     proj_ps       ps;       /* Polar Sterographic            */
     proj_utm      utm;      /* Universal Transverse Mercator */
   } param_t;
@@ -417,9 +419,7 @@ Geolocation Calls: in meta_get_geo.c.
 Here, latitude and longitude are always in degrees.*/
 
 /* Converts a given line and sample to that for the non-multilooked,
-   non-windowed, equivalent image.  This function shows how
-   gracelessly our metadata represents the different types of images
-   we have to cope with.  */
+   non-windowed, equivalent image.*/
 void meta_get_original_line_sample(meta_parameters *meta, int line, 
 				   int sample, int *original_line, 
 				   int *original_sample);
