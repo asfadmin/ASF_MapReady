@@ -53,6 +53,7 @@ static void verify_valid_latitude(double lat)
     if (lat > 90 || lat < -90)
     {
 	asfPrintWarning("Invalid Latitude: %f\n", lat);
+	lat = NAN; 
     }
 }
 
@@ -64,6 +65,7 @@ static void verify_valid_longitude(double lon)
     if (lon > 360 || lon < -360)
     {
 	asfPrintWarning("Invalid Longitude: %f\n", lon);
+        lon = NAN;
     }
 }
 
