@@ -114,8 +114,8 @@ typedef enum {
   GRS1980,
   INTERNATIONAL1924,
   INTERNATIONAL1967,
-  WGS72,
-  WGS84
+  WGS1972,
+  WGS1984
 } spheroid_type_t;
 
 typedef enum {
