@@ -25,16 +25,13 @@ BUGS:
 #include "paisp_defs.h"
 #include <mpi.h>
 
-#define SIGMA_0 2
-#define GAMMA_0 3
-#define BETA_0 4
-
 /* Prototypes (intensity, and calculateRCS are from calibrate.c [may 2002])*/
 void intensity(int n_range,float *pwrs,float *amps);
 void calculateRCS(int projectionFlag, meta_parameters *meta,
                   float *DNsquared, float *radarCrossSection,
                   int curLine,int numSamples, const satellite *s);
 
+extern struct AISP_PARAMS g;/*AISP Globals, defined in aisp_params.h*/
 
 extern int my_pe;
 
@@ -91,16 +88,20 @@ converts it to amplitude and phase.
 void debugWritePatch(const patch *p,char *basename)
 {
 	FILE *fp;
-	char name[255];
-	printf("Outputting Debugging image '%s'...\n",basename);
-	strcat(strcpy(name,basename),".cpx");
+	char name[255],outname[255];
+	
+	strcpy(outname,g.out);
+	strcat(strcat(outname,"_"),basename);
+	printf("   Outputting Debugging image '%s'...\n",outname);
+	strcat(strcpy(name,outname),".cpx");
+printf("patch.c:debugWritePatch:\n");
 	fp = fopenImage(name,"wb");
 	FWRITE(p->trans,sizeof(FCMPLX),p->n_az*p->n_range,fp);
 	FCLOSE(fp);
-	sprintf(name,"makeddr %s %i %i float\n",basename,p->n_range,p->n_az);
+	sprintf(name,"makeddr %s %i %i float\n",outname,p->n_range,p->n_az);
 	system(name);
-	printf("Converting Debugging image '%s' to polar form...\n",basename);
-	sprintf(name,"c2p %s %s\n",basename,basename);
+	printf("   Converting Debugging image '%s' to polar form...\n",outname);
+	sprintf(name,"c2p %s %s\n",outname,outname);
 	system(name);
 }
 
@@ -124,29 +125,30 @@ void processPatch(patch *p,const getRec *signalGetRec,const rangeRef *r,const sa
 	elapse(0,NULL); 
 	rciq(p,signalGetRec,r);
 /*	sprintf(msg,"PE %i: RC ",my_pe);
-	elapse(1,msg);*/
-	if (s->debugFlag & 8 && IM_DSP) debugWritePatch(p,"rangecomp");
+ *	elapse(1,msg);*/
+	if (s->debugFlag & AZ_RAW_T && IM_DSP) debugWritePatch(p,"az_raw_t");
 
 	if (IM_DSP) printf("   TRANSFORMING LINES...\n");
 	elapse(0,NULL);
 	cfft1d(p->n_az,NULL,0);
 	for (i=0; i<p->n_range; i++) cfft1d(p->n_az,&p->trans[i*p->n_az],-1);
 /*	sprintf(msg,"PE %i: TR ",my_pe);
-	elapse(1,msg);*/
-	if (s->debugFlag & 8 && IM_DSP) debugWritePatch(p,"rangefft");
-
-	if (IM_DSP) printf("   RANGE MIGRATION CORRECTION...\n");
-	elapse(0,NULL);
-	rmpatch(p,s);
-/*	sprintf(msg,"PE %i: RM ",my_pe);
-	elapse(1,msg);*/
-	if (s->debugFlag & 4 && IM_DSP) debugWritePatch(p,"migfft");
-
+ *	elapse(1,msg);*/
+	if (s->debugFlag & AZ_RAW_F && IM_DSP) debugWritePatch(p,"az_raw_f");
+        if (!(s->debugFlag & NO_RCM));
+	{
+		if (IM_DSP) printf("   RANGE MIGRATION CORRECTION...\n");
+		elapse(0,NULL);
+		rmpatch(p,s);
+/*		sprintf(msg,"PE %i: RM ",my_pe);
+ *		elapse(1,msg);*/
+		if (s->debugFlag & AZ_MIG_F && IM_DSP) debugWritePatch(p,"az_mig_f");
+	}
 	if (IM_DSP) printf("   AZIMUTH COMPRESSION...\n");
 	elapse(0,NULL);
 	acpatch(p,s);
 /*	sprintf(msg,"PE %i: AC ",my_pe);
-	elapse(1,msg);*/
+ *	elapse(1,msg);*/
 	
 /*	if (IM_DSP) printf("  Range-Doppler done...\n");*/
 }

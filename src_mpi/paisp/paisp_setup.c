@@ -28,6 +28,9 @@
 
   2/97  T. Logan	Included ability to estimate dopplers, read
 			doppler from file, & read offsets from file
+  6/03  J. Nicoll 	Updated to match aisp v 3.1 including deskew,
+			SAR Training Processor, and calibration.
+  
 ***********************************************************************/
 #include "asf.h"
 #include "ceos.h"
@@ -35,10 +38,10 @@
 #include "odl.h"
 #include <mpi.h>
 #include <math.h>
+#include "asf_meta.h"
 
 extern int my_pe;
 extern int n_pes;
-
 
 /*-------------------------------------------------------------------------*/
 /*    The following is the list of all parameters needed to run aisp.c      */
@@ -62,41 +65,40 @@ g-- Geolocation record, initialized with appropriate
 From equation B.1.16, p. 569, Curlander & McDonough SAR Bible
 by Orion Lawlor, olawlor@acm.org, 7/21/2000
 */
-double getDopplerRate(double r,double f0,GEOLOCATE_REC *g)
+double getDopplerRate(double r,double f0,GEOLOCATE_REC *my_g)
 {
   /*Get inertial coordinates vectors for everything (satellite and target)*/
   vector Rs,Vs,As;/*Spacecraft position, velocity, accelleration*/
   vector Rt,We={0,0,0};/*Target position, rotation vector of earth (rad/s)*/
-        
-  double Rvel=-0.5*f0*g->lambda; /*Slant range velocity of target (m/s)*/
+
+  double Rvel=-0.5*f0*g.wavl; /*Slant range velocity of target (m/s)*/
   double Racc;/*Slant range accelleration of target, (m/s^2)*/
   vector Rs_m_Rt,Vs_c_Rt,We_c_Rt,We_c_Rs;/*Temporary vectors*/
   double look,yaw,accMag;
-
   /*Find spacecraft, target position and velocity*/
-  Rs=g->stVec.pos;Vs=g->stVec.vel;
-  getLookYaw(g,r,f0,&look,&yaw);
-  getDoppler(g,look,yaw,NULL,NULL,&Rt,NULL);
+  Rs=my_g->stVec.pos;Vs=my_g->stVec.vel;
+  getLookYaw(my_g,r,f0,&look,&yaw);
+  getDoppler(my_g,look,yaw,NULL,NULL,&Rt,NULL);
 
   /*Spacecraft orbital acceleration is g*Me/r^2 toward center of earth*/
-  accMag=-g->gxMe/vecDot(Rs,Rs);
+  accMag=-my_g->gxMe/vecDot(Rs,Rs);
   As=Rs;
   vecNormalize(&As);
   vecScale(&As,accMag);
-  We.z=g->angularVelocity;
-  
+  We.z=my_g->angularVelocity;
+
   /*Compute the terms for Racc*/
   vecSub(Rs,Rt,&Rs_m_Rt);
   vecCross(Vs,Rt,&Vs_c_Rt);
   vecCross(We,Rt,&We_c_Rt);
   vecCross(We,Rs,&We_c_Rs);
-  Racc=(vecDot(As,Rs_m_Rt) + vecDot(Vs,Vs) + 2*vecDot(We,Vs_c_Rt)  
-        +vecDot(We_c_Rt,We_c_Rs) - Rvel*Rvel) / r;
-  return -2*Racc/g->lambda;
+  Racc=(vecDot(As,Rs_m_Rt) + vecDot(Vs,Vs) + 2*vecDot(We,Vs_c_Rt)
+	+vecDot(We_c_Rt,We_c_Rs) - Rvel*Rvel) / r;
+  return -2*Racc/g.wavl;
 }
-         
 
 
+		
 
 /******************************************************************
 We begin with a collection of small utility routines.
@@ -108,8 +110,11 @@ We begin with a collection of small utility routines.
 int smallestPow2(int num)
 {
 	int twoPower=2;
+
 	while (twoPower<num)
+	{
 		twoPower*=2;
+	}
 	return twoPower;
 }
 
@@ -122,10 +127,11 @@ satellite *newSatellite(void)
 {
 	float slantToLast;
 	int err=0; /* Error codes for the ODL interface */
-        char errC=0;
-        int cols; /* Dummy Variable to hold the number of columns in the antenna pattern correction vector */
-        satellite *s=(satellite *)MALLOC(sizeof(satellite));
-        ODL odl;
+	char errC=0;
+	int my_precomp; /* far range precompensation value */
+	int cols; /* Dummy Variable to hold the number of columns in the antenna pattern correction vector */
+	satellite *s=(satellite *)MALLOC(sizeof(satellite));
+	ODL odl;
 /*Copy over a few parameters.*/
 	s->wavl=g.wavl;
 	s->vel=g.vel;
@@ -190,6 +196,7 @@ satellite *newSatellite(void)
 	} else
 		s->pctbwaz=0;
 
+
 /* If there is a new filename in place of the initial "NO", then read in the look angle and
         the gain vectors and put them in the satellite structure */
         if((strcmp(g.CALPRMS,"NO")!=0))
@@ -222,7 +229,6 @@ s->noise=(double)ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.NOISE_F
 		if (IM_DSP) printf("   Calibration Parameters File Read, Elevation Angle and Gain Vectors stored\n");
         }
 
-
 /*Compute a few bizarre numbers.*/ 
  	/* s->a2*r*fd=amount of doppler deskewing in pixels.*/
 	if (s->ideskew==1)
@@ -231,19 +237,20 @@ s->noise=(double)ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.NOISE_F
 		s->a2=0.0;
 	
 	slantToLast=g.r00+(g.isave+g.nla)*rngpix;
-/*	if (IM_DSP) printf("Slant to first=%.2f; slant to last=%.2f\n",g.r00+g.isave*rngpix,slantToLast);*/
+	if (IM_DSP) printf("   Slant to first=%.2f; slant to last=%.2f\n",g.r00+g.isave*rngpix,slantToLast);
 	
 	s->refPerRange=refPerRange;
 	s->az_reflen=refPerRange*slantToLast;
-/*	if (IM_DSP) 
-	 printf("The azimuth reference function is at most %d lines long\n",s->az_reflen);*/
+	if (IM_DSP) printf("   The azimuth reference function is at most %d lines long\n",s->az_reflen);
 
-/*Trade doppler deskew for shifted line start.*/
+/*Shift patch to midpoint between near and far precompensation when deskew flag is on.*/
+	
 	s->dop_precomp=(int)(s->a2*g.fd*g.prf*g.r00);
-/*	if (s->ideskew==1)
- 	  if (IM_DSP)
-            printf("Precompensating by %d pixels for doppler deskew...\n",s->dop_precomp);*/
-
+	my_precomp = (int)(s->a2*(g.fd + g.fdd*g.nla + g.fddd*g.nla*g.nla)*g.prf*slantToLast);
+	s->dop_precomp=(s->dop_precomp + my_precomp)/2;
+		
+	if (IM_DSP && s->ideskew==1)
+		printf("   Precompensating by %d pixels for doppler deskew...\n",s->dop_precomp);
 /*Trade resampling offset for line/sample start.*/
 	g.ifirstline+=(int)g.intera;
 	g.intera-=(int)g.intera;
@@ -285,6 +292,7 @@ file *newFile(void)
 	f->rngpix=rngpix;
 	f->firstLineToProcess=g.ifirstline;
 	f->skipFile=g.ifirst+g.isave;
+
 	f->firstOutputLine = (n_az-g.na_valid)/2;
 	f->skipSamp=g.isave;
 	f->n_az_valid=g.na_valid;
@@ -309,60 +317,99 @@ patch *newPatch(int num_az,int num_range)
 	return p;
 }
 
+/*
+copyPatch:
+Copies a patch of data.  Sets relevant parameters from globals, 
+and allocates memory for a patch of the given size.
+*/
+patch *copyPatch(patch *oldPatch)
+{
+        FCMPLX *old_trans = oldPatch->trans;
+	patch *p=(patch *)MALLOC(sizeof(patch));
+	*p = *oldPatch;
+	p->trans =(FCMPLX *) MALLOC (p->n_range*p->n_az*sizeof(FCMPLX));
+	memcpy(p->trans,old_trans,p->n_range*p->n_az*sizeof(FCMPLX));
+	return p;
+}
+
+
 /*Find all other patch routines in patch.c*/
 
 
 /*****************************************************************
-parse_cla:
-	Performs all initialization and parameter determination
-for aisp.  Returns parameters in the given structures.
+
 */
 
 void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_range,
 	satellite **s,rangeRef **r,file **f,getRec **signalGetRec)
 {
-	int az_reflen;
-	float slantToLast;
+	int az_reflen, skew_lines;
+	float slantToLast, a2;
 
 /*Set parameters*/
 	g=*g_in;
+
+	
+
 	
 /*Compute a few bizarre numbers.*/
-	if (g.n_az == -99)
-		n_az = default_n_az;      /* number of azimuth output lines per patch */
-	else 
-		n_az = g.n_az;
+	n_az = default_n_az;      /* number of azimuth output lines per patch */
+	
+	/*	velFix=g.vel*sqrt(g.re/(g.re+g.ht)); <- ?? */
 	
 	azpix=(g.vel*g.re/(g.re+g.ht))/g.prf;
+
 	rngpix=speedOfLight/(g.fs*2.0);
+
 	refPerRange= g.wavl/(2.0*g.azres*azpix); /* for acpatch's np- the length of 
 			the azimuth reference function	*/
+
 	slantToLast=g.r00+(g.isave+g.nla)*rngpix;
-	az_reflen=refPerRange*slantToLast;
+	/* For deskewed data, azimuth reference length must include the shift due to deskewing */
+	if (g.deskew==1)
+		a2= g.wavl/(2.0*g.vel*azpix);
+	else
+		a2=0.0;
+	 skew_lines=fabs(a2 *(g.fd + g.fdd*g.nla + g.fddd*g.nla*g.nla)*g.prf*slantToLast- a2 *g.fd*g.prf*g.r00);
+
+	az_reflen=(int)(refPerRange*slantToLast+skew_lines);
+
+
 	
 	if (g.na_valid<0)
 	{/*Automatically determine number of valid lines.*/
 		/*set valid lines based on n_az.*/
+
 		g.na_valid=n_az-az_reflen;
+
+
 
 		/*Make g.na_valid an even multiple of g.nlooks.*/
 		g.na_valid/=g.nlooks;
+
 		g.na_valid*=g.nlooks;
+
 	} else
 	/*set n_az based on valid lines.*/
+
 		n_az=smallestPow2(g.na_valid+az_reflen);
 	
+
 	meta->geo->slantShift=0;
+
 	meta->geo->timeShift=(n_az-g.na_valid)/g.prf/2.0;
 	if (meta->info)
 	/*Write the version of AISP*/
+
 		sprintf(meta->info->processor,"ASF/AISP/%.2f",VERSION);
+
 
 	*signalGetRec=fillOutGetRec(g.in1);
 
 	/* Add secondary range compression */
-	{	
-	  float r1, fr1, dp1;
+        {
+          float r1, fr1, dp1;
+          /*float slope;*/
 
 /*	  if (my_pe == 0) printf("Applying secondary range migration\n");*/
 
@@ -378,6 +425,7 @@ void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_
 	meta->ifm->orig_nLines=signalGetRec[0]->nLines;
 	MPI_Barrier(MPI_COMM_WORLD);
 	if (IM_DSP) meta_write(meta,g.out);
+
 
 /*Write out parameters/structures for main routine to use:*/
 	*r=newRangeRef(g.nla);
@@ -431,9 +479,9 @@ void calc_range_ref(FCMPLX *ref,int rangeFFT,int chirpSamples)
 /*	if (IM_DSP) printf("\nRange reference function calculated in time domain\n");*/
 	
 /*Output the reference function (for debugging)*/
-	if (g.iflag&2)
+	if (g.iflag & RANGE_REF_T)
 	{
-		refFP=fopen("reference_time","w");
+		refFP=FOPEN("range_ref_t","w");
 		for (i=0;i<chirpSamples;i++)
 			fprintf(refFP,"%i  %f %f  %f %f\n",i,Cabs(ref[i]),atan2(ref[i].i,ref[i].r),
 				ref[i].r,ref[i].i);
@@ -463,9 +511,9 @@ void calc_range_ref(FCMPLX *ref,int rangeFFT,int chirpSamples)
 	}
 
 /*Output the FFT'd reference function (for debugging)*/
-	if (g.iflag&2)
+	if (g.iflag & RANGE_REF_F)
 	{
-		refFP=fopen("reference_freq","w");
+		refFP=FOPEN("range_ref_f","w");
 		for (i=0;i<rangeFFT;i++)
 			fprintf(refFP,"%i  %f %f  %f %f\n",i,Cabs(ref[i]),atan2(ref[i].i,ref[i].r),
 			    ref[i].r,ref[i].i);

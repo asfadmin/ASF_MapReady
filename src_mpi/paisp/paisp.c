@@ -105,8 +105,7 @@ void give_usage(char *name)
 	printf("   Argument     Default  Description\n");
 	printf("   ----------------------------------------------------------------\n");
 	printf("   -l first_line   1     First line to process (from 0)\n");
-	printf("   -p patches      8     Number of patches to process\n");
-	printf("   -a azi_lines	   4096  Number of azimuth lines per patch\n");
+	printf("   -p patches      8     Number of patches to process (@ 4K lines)\n");
 	printf("   -v valid_lines  3000  Valid output lines per patch\n");
 	printf("   -s skip_samp    0     range samples to skip (of INVALID samps)\n");
 	printf("   -f first_samp   0     1st range samp to process (of VALID samps)\n");
@@ -114,24 +113,73 @@ void give_usage(char *name)
 	printf("   -n num_samps    META  Number of range samples to process\n");
 	printf("                         (Default is read from metadata)\n");
 	printf("   -r output_res   8.0   Desired output azimuth resolution (m)\n");
-	printf("   -d dbg_flg      1     Debug: 1=amplitude,2=ref_fcn,4=rangemig\n");
-	printf("                                8=rangecomp,16=rangespecs,64=acpatch\n");
 	printf("   -c dfile        NO    Read doppler centroid from dfile\n");
 	printf("   -o off_file     NO    Read resampling coeg.fs from off_file\n");
-	printf("   -h hamming	   NO    Use a Hamming window on the az. ref. func.\n");
-/*	printf("   -k kaiser	   NO    Use a Kaiser  window on the az. ref. func.\n"); */
+	printf("   -hamming 	   NO    Use a Hamming window instead of a rectangular one\n");
+	printf("                         for the azimuth reference function weighting\n");
+/*	printf("   -kaiser	   NO    Use a Kaiser window instead of a rectangular one\n");
+	printf("                         for the azimuth reference function weighting\n"); */
 	printf("   -m CAL_PARAMS   NO    Read the Elevation Angle and Gain vectors from the\n");
-        printf("                         CAL_PARAMS file to correct for the antenna gain\n");
-	printf("   -x LOGFILE	   NO    Allows the output to be written to a log file\n");
-	printf("   -q 1		   NO    Suppresses the output to the essential\n");
-	printf("   -z 1		   NO	 Calculates power image\n");
-	printf("\n   Version %3.1f, ASF Tools\n\n\n",VERSION);
+	printf("			 CAL_PARAMS file to correct for the antenna gain\n");
+	printf("   -debug dbg_flg  1     Debug: for options enter -debug 0\n");
+	printf("   -log logfile	   NO	 Allows output to be written to a log file\n");
+	printf("   -quiet	   NO	 Suppresses the output to the essential\n");
+	printf("   -power	   NO	 Creates a power image\n");
+	printf("   -sigma	   NO	 Creates a sigma image\n");
+	printf("   -gamma	   NO	 Creates a gamma image\n");
+	printf("   -beta	   NO	 Creates a beta image\n");
+	printf("\nVersion %3.1f, ASF SAR TOOL\n\n",VERSION);
  }
 	
 	MPI_Finalize();
 	exit(1);
 }
 
+/* If debug flag is set to 0, then show debug usage */
+
+void give_debug_usage(void)
+{
+ if (IM_DSP) {
+	printf("\n\n\n\n");
+	printf("   Welcome to DEBUG!\n\n");
+	printf("   You have entered '-debug 0', which shows the usage for the\n");
+	printf("   debug option. The debug option has been expanded to help\n");
+	printf("   you learn the inner workings of Range-Doppler processing.\n"); 
+	printf("   \n");
+	printf("   You use the debugger by entering '-debug dbg_flg'.\n");
+	printf("   'dbg_flg' is any combination of the flags listed below.\n");
+	printf("   As an example, if you want to output a patch of the azimuth \n");
+	printf("   reference function (time domain) and a patch of the raw data, \n");
+	printf("   'dbg_flg' would be 16 + 8192 = 8208\n"); 
+	printf("   \n"); 
+	printf("   \n");
+	printf("   Flag  Output ext.    Description\n");
+	printf("   ----	 -------------  ------------------------------------------------\n");
+	printf("   %i	 *_range_raw_t	Raw data after ingestion but before processing\n",RANGE_RAW_T);
+	printf("   %i	 *_range_raw_f	Raw data after range FFT\n",RANGE_RAW_F);
+	printf("   %i	 *_range_ref_t	Range reference function in time domain\n",RANGE_REF_T);
+	printf("   %i	 *_range_ref_f	Range reference function in freq domain\n",RANGE_REF_F);
+	printf("   %i	 *_range_X_f	Data after range compression in freq domain\n",RANGE_X_F);
+	printf("   %i	 n/a		If used, *_range_ref_map will be a patch,\n",RANGE_REF_MAP);
+	printf("   			if not, *_range_ref_f will be a LUT\n"); 
+	printf("   %i	 *_az_raw_t	Data after range compression in time domain\n",AZ_RAW_T);
+	printf("   %i	 *_az_raw_f	Data after azimuth FFT in frequency domain\n",AZ_RAW_F);
+	printf("   %i	 *_az_mig_f	Data after range cell migration in freq domain\n",AZ_MIG_F);
+	printf("   %i	 *_az_ref_t	Azimuth reference function in time domain\n",AZ_REF_T);
+	printf("   %i	 *_az_ref_f	Azimuth reference function in freq domain\n",AZ_REF_F);
+	printf("   %i	 *_az_X_f	Data after azimuth compression in freq domain\n",AZ_X_F);
+	printf("   %i	 *_az_X_t 	Data after azimuth compression in time domain\n",AZ_X_T);
+
+	printf("   %i  n/a		No range compression\n",NO_RANGE);
+	printf("   %i  n/a		No range cell migration\n",NO_RCM);
+	printf("   %i  n/a		No azimuth compression\n",NO_AZIMUTH);
+	printf("   ----	 -------------  ------------------------------------------------\n");
+	
+ }
+	
+	MPI_Finalize();
+	exit(1);
+}
 int main (int argc, char *argv [])
 {
 /*Structures: these are passed to the sub-routines which need them.*/

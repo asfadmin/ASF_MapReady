@@ -21,13 +21,12 @@ void getSignalLine(getRec *r,long long lineNo,FCMPLX *destArr,int readStart,int 
 
 /* Pre-determine which version of ftell64 & fseek64 to use */
 #if defined(irix)
-#define FTELL_64(X) ftell64(X)
-#define FSEEK_64(X,Y,Z) fseek64(X,Y,Z)
+#define FTELL__64(X) ftell64(X)
+#define FSEEK__64(X,Y,Z) fseek64(X,Y,Z)
 #else
-#define FTELL_64(X) ftello64(X)
-#define FSEEK_64(X,Y,Z) fseeko64(X,Y,Z)
+#define FTELL__64(X) ftello64(X)
+#define FSEEK__64(X,Y,Z) fseeko64(X,Y,Z)
 #endif
-
 
 /****************************************
 getSignalFormat:
@@ -131,9 +130,9 @@ getRec * fillOutGetRec(char file[])
 		skip_second_if=1;
 		r->lineSize=ifiledr.reclen;
 		r->nSamples=ifiledr.datgroup;
-		FSEEK_64(r->fp_in,0,SEEK_END);
-		r->nLines=FTELL_64(r->fp_in)/r->lineSize;/*Automatically determine lines in file.*/
-		r->header=ifiledr.reclen+(ifiledr.reclen - ifiledr.sardata);
+		FSEEK__64(r->fp_in,0,SEEK_END);
+		r->nLines = FTELL__64(r->fp_in)/r->lineSize;/*Automatically determine lines in file.*/
+		r->header = ifiledr.reclen+(ifiledr.reclen - ifiledr.sardata);
 		r->dcOffsetI=r->dcOffsetQ=15.5;
 		}
 	}
@@ -148,8 +147,8 @@ getRec * fillOutGetRec(char file[])
 		r->flipIQ='n';
 		r->sampleSize=2;
 		r->fp_in=fp_RAW;
-		FSEEK_64(r->fp_in,0,SEEK_END);
-		bytesInFile=FTELL_64(r->fp_in);
+		FSEEK__64(r->fp_in,0,SEEK_END);
+		bytesInFile = FTELL__64(r->fp_in);
 		
 		getSignalFormat(file,bytesInFile,r);
 	} else
@@ -208,7 +207,7 @@ void getSignalLine(const getRec *r,long long lineNo,FCMPLX *destArr,int readStar
 	printf("Read offset is %lli\n",offset);
 */
 
-	FSEEK_64(r->fp_in,offset,0);
+	FSEEK__64(r->fp_in,offset,0);
 	if (rightClip-leftClip!=
 	    fread(r->inputArr,r->sampleSize,rightClip-leftClip,r->fp_in))
 		{fprintf(stderr,"Error reading signal data file at line %lld!\n",lineNo);exit(1);}
