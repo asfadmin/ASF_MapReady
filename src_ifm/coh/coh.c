@@ -54,6 +54,7 @@ PROGRAM HISTORY:
     2.0     5/03    P. Denny    Use get_*_line and put_*_line instead of FREAD
                                   and FWRITE. Change FComplex data type to
                                   complexFloat. Use new meta, kill DDR.
+    2.1     2/04    R. Gens     Added log switch
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -89,7 +90,7 @@ BUGS:
 #include "asf_complex.h"
 #include "ifm.h" /* For Cabs() function */
 
-#define VERSION      2.0
+#define VERSION      2.1
 #define WINDOW_SIZE  3
 #define HIST_SIZE   10
 
@@ -113,6 +114,7 @@ int main(int argc, char *argv[])
   int cnt;                              /* Histogram counter                  */
   float	bin_high, bin_low;              /* Histogram ranges                   */
   float	average;                        /* Average Correlation                */
+  float max=0.0;                        /* Maximum coherence                  */
   double hist_sum=0.0;                  /* Histogram sum                      */
   double percent, percent_sum;          /* Percent of correlation levels      */
   long long hist_val[HIST_SIZE];        /* Histogram value table              */
@@ -122,10 +124,18 @@ int main(int argc, char *argv[])
   complexFloat *igram_sum;
   float *rho, *rP;                      /* Output data buffer & extra pointer */
 
+  logflag = 0;
+
   /* parse command line */
   while (currArg < (argc-3)) {
     char *key = argv[currArg++];
-    if (strmatch(key,"-look")) {
+    if (strmatch(key,"-log")) {
+      CHECK_ARG(1);
+      strcpy(logFile,GET_ARG(1));
+      fLog = FOPEN(logFile, "a");
+      logflag = 1;
+    }
+    else if (strmatch(key,"-look")) {
       CHECK_ARG(1)
       if (2!=sscanf(GET_ARG(1),"%dx%d",&lookLine,&lookSample)) {
 	printf("**ERROR: -look '%s' does not look like line x sample (e.g. '10x2').\n",GET_ARG(1));
@@ -141,11 +151,16 @@ int main(int argc, char *argv[])
       }
       stepFlag=TRUE;
     }
-    else {printf("\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
+    else {printf("\n   ***Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
   }
-  if ((argc-currArg) < 3) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+  if ((argc-currArg) < 3) {printf("   Insufficient arguments.\n"); usage(argv[0]);}
 
-  StartWatch();
+  system("date");
+  printf("Program: coh\n\n");
+  if (logflag) {
+    StartWatchLog(fLog);
+    printLog("Program: coh\n\n");
+  }
 
   create_name(inName1, argv[currArg],  ".cpx");
   create_name(inName2, argv[currArg+1],".cpx");
@@ -195,7 +210,6 @@ int main(int argc, char *argv[])
   inFile2 = fopenImage(inName2,"rb");
   outFile = fopenImage(outName,"wb");
 
-  printf("\n");
   printf("Input Size    => line: %5d  sample: %5d\n",num_lines,num_samples);
   printf("Step Interval => line: %5d  sample: %5d\n",stepLine,stepSample);
   printf("Window Size   => line: %5d  sample: %5d\n\n",lookLine,lookSample);
@@ -294,6 +308,7 @@ int main(int argc, char *argv[])
       hist_val[tmp]++;        /* Increment that bin for the histogram */
       hist_sum += rho[cnt];   /* Add up the values for the sum */
       hist_cnt++;             /* Keep track of the total number of values */
+      if (rho[cnt]>max) max = rho[cnt];  /* Calculate maximum coherence */
     }
   } /* End for line */
 
@@ -302,7 +317,13 @@ int main(int argc, char *argv[])
   /* Sum and print the statistics */
   percent_sum = 0.0;
   printf("   Coherence  :  Occurrences  :  Percent\n");
-  printf("---------------------------------------\n");
+  printf("   ---------------------------------------\n");
+  if (logflag) {
+    sprintf(logbuf,"   Wrote %d bytes of data\n\n", num_samples*num_lines*4/stepLine);
+    printLog(logbuf);
+    printLog("   Coherence     :  Occurances  :  Percent\n");
+    printLog("   ---------------------------------------\n");
+  }
   for (cnt = 0; cnt < HIST_SIZE; cnt++)
   {
 	  bin_low  = (float)(cnt)/(float)HIST_SIZE;
@@ -310,12 +331,23 @@ int main(int argc, char *argv[])
 	  percent  = (double)hist_val[cnt]/(double)hist_cnt;
 	  percent_sum += (float)100*percent;
 	  printf(" %.2f -> %.2f :   %.8lld       %2.3f \n",
-		  bin_low,bin_high, (long long) hist_val[cnt],100*percent); 
+		  bin_low,bin_high, (long long) hist_val[cnt],100*percent);
+	  if (logflag) {
+	    sprintf(logbuf,"    %.2f -> %.2f :   %.8lld       %.3lf \n",
+		    bin_low,bin_high, (long long) hist_val[cnt],100*percent);
+	    printLog(logbuf);
+	  }
   }
   average = (float)hist_sum/(float)hist_cnt;
-  printf("---------------------------------------\n");
-  printf("Average Coherence: %.3f  (%.1f / %lld) %f\n",average,hist_sum,hist_cnt,percent_sum);
-
+  printf("   ---------------------------------------\n");
+  printf("   Maximum Coherence: %.3f\n", max);
+  printf("   Average Coherence: %.3f  (%.1f / %lld) %f\n",average,hist_sum,hist_cnt,percent_sum);
+  if (logflag) {
+    sprintf(logbuf,"   Maximum Coherence: %.3f\n", max);
+    printLog(logbuf);
+    sprintf(logbuf,"   Average Coherence: %.3f  (%.1f / %lld) %f\n\n",average,hist_sum,hist_cnt,percent_sum);
+    printLog(logbuf);
+  }
   /* Free and halt */
   FREE(rho); 
   FREE(inBuf1); 
@@ -326,7 +358,6 @@ int main(int argc, char *argv[])
   meta_free(inMeta1);
   meta_free(inMeta2);
   meta_free(outMeta);
-  StopWatch();
   return(0);
 }
 
