@@ -181,26 +181,28 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
 	}
 
 /*Copy fields from AISP_PARAMS struct to meta_parameters struct.*/
-	meta->ifm->er=g->re;
-	meta->ifm->ht=g->re+g->ht;
-	meta->ifm->nLooks=g->nlooks;
-	
-	meta->geo->type='S';/*Slant range image*/
-	meta->geo->deskew=g->deskew;
-	meta->geo->rngPixTime=1.0/g->fs;
-	meta->geo->azPixTime=1.0/g->prf;
-	meta->geo->xPix=meta->geo->rngPixTime*(speedOfLight/2.0);
-	meta->geo->yPix=meta->geo->azPixTime*g->vel*(meta->ifm->er/meta->ifm->ht);
-	meta->geo->slantFirst=g->r00;
-	meta->geo->wavelen=g->wavl;
-	meta->geo->dopRange[0]=g->fd*g->prf;
-	meta->geo->dopRange[1]=g->fdd*g->prf;
-	meta->geo->dopRange[2]=g->fddd*g->prf;
-	meta->geo->dopAz[0]=g->fd*g->prf;
-	meta->geo->dopAz[1]=0;
-	meta->geo->dopAz[2]=0;
-	
-	*meta_out=meta;
+	meta->sar->image_type = 'S';/*Slant range image*/
+	meta->sar->look_count = g->nlooks;
+	meta->sar->deskewed = g->deskew;
+	meta->sar->range_time_per_pixel  =  1.0/g->fs;
+	meta->sar->azimuth_time_per_pixel = 1.0/g->prf;
+	meta->sar->slant_range_first_pixel = g->r00;
+	meta->sar->wavelength = g->wavl;
+	meta->sar->range_doppler_coefficients[0] = g->fd*g->prf;
+	meta->sar->range_doppler_coefficients[1] = g->fdd*g->prf;
+	meta->sar->range_doppler_coefficients[2] = g->fddd*g->prf;
+	meta->sar->azimuth_doppler_coefficients[0] = g->fd*g->prf;
+	meta->sar->azimuth_doppler_coefficients[1] = 0.0;
+	meta->sar->azimuth_doppler_coefficients[2] = 0.0;
+
+	strcpy (meta->general->system, meta_get_system());
+	meta->general->data_type = REAL32;
+	meta->general->band_number = 0;
+	meta->general->x_pixel_size = meta->sar->range_time_per_pixel*(speedOfLight/2.0);
+	meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel
+/* DO I WANT TO USE THE META FUNCTIONS? */	* g->vel * (g->re/g->ht);
+
+	*meta_out = meta;
 
 	return 1;
 }
@@ -269,10 +271,10 @@ void get_params(char *file,struct AISP_PARAMS *g,meta_parameters **meta_out)
 /*Finally, add the computed parameters:*/
 	
 	/*Compute the spacecraft height from the state vector.*/
-	g->ht=vecMagnitude(meta->stVec->vecs[0].vec.pos)-g->re;
+	g->ht=vecMagnitude(meta->state_vectors->vecs[0].vec.pos)-g->re;
 
 	/*Magnitude of s/c orbital velocity (m/sec)*/
-	g->vel=vecMagnitude(meta->stVec->vecs[0].vec.vel);
+	g->vel=vecMagnitude(meta->state_vectors->vecs[0].vec.vel);
 
 	g->nla-=g->pulsedur*g->fs;/*Subtract off the (wasted) pulse length samples*/
 	
