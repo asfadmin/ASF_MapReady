@@ -144,8 +144,7 @@ int main(int argc, char *argv[])
   slaveMeta = meta_read(szImg2);
   if (masterMeta->general->line_count != slaveMeta->general->line_count ||
       masterMeta->general->sample_count != slaveMeta->general->sample_count) {
-    printf("\n  ERROR: Input images have different dimension!\n\n");
-    exit(0);
+    printf("\n  WARNING: Input images have different dimension!\n\n");
   }
   else if (masterMeta->general->data_type != slaveMeta->general->data_type) {
     printf("\n   ERROR: Input image have different data type!\n\n");
