@@ -741,6 +741,8 @@ prepare_pixel (FloatImage *self, size_t x, size_t y)
     // Put the new tile address into the index, and put the index into
     // the load order queue.
     self->tile_addresses[tile_offset] = tile_address;
+    // Stash in queue by converting to a pointer (so it must fit in an int).
+    g_assert (tile_offset < INT_MAX);
     g_queue_push_head (self->tile_queue, 
 		       GINT_TO_POINTER ((int) tile_offset));
 
@@ -798,6 +800,8 @@ float_image_get_pixel (FloatImage *self, ssize_t x, ssize_t y)
     // Put the new tile address into the index, and put the index into
     // the load order queue.
     self->tile_addresses[tile_offset] = tile_address;
+    // Stash in queue by converting to a pointer (so it must fit in an int).
+    g_assert (tile_offset < INT_MAX);
     g_queue_push_head (self->tile_queue, 
 		       GINT_TO_POINTER ((int) tile_offset));
 
@@ -858,6 +862,8 @@ float_image_set_pixel (FloatImage *self, ssize_t x, ssize_t y, float value)
     // Put the new tile address into the index, and put the index into
     // the load order queue.
     self->tile_addresses[tile_offset] = tile_address;
+    // Stash in queue by converting to a pointer (so it must fit in an int).
+    g_assert (tile_offset < INT_MAX);
     g_queue_push_head (self->tile_queue, 
 		       GINT_TO_POINTER ((int) tile_offset));
 
@@ -1326,7 +1332,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   }
   g_free (row_pointer);
 
-  /* Finsh compression and close the jpeg.  */
+  // Finsh compression and close the jpeg.
   jpeg_finish_compress (&cinfo);
   int return_code = fclose (fp);
   g_assert (return_code == 0);
@@ -1351,7 +1357,7 @@ float_image_get_cache_size (FloatImage *self)
 void
 float_image_set_cache_size (FloatImage *self, size_t size)
 {
-  g_assert_not_reached ();	// Stubbed out for now.}
+  g_assert_not_reached ();	// Stubbed out for now.
   // Compiler reassurance.
   self = self; size = size;
 }
