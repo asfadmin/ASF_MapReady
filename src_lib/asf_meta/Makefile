@@ -5,6 +5,14 @@
 
 include ../../make_support/system_rules
 
+# Static libraries used by this library.  These get pulled out of the
+# library repository and expanded, then recombined together with the
+# objects from this library to save user having to link against all
+# libraries used by this library and give some semblance of modularity
+# to this benighted C language.
+LIBS = asf.a \
+       regex_wrapper.a
+
 # Things used/needed by make's implicit rules for lex and yacc.
 # Need the GNU flex and bison, others are broken in variety of ways.
 LEX = flex
@@ -13,7 +21,6 @@ YACC = bison -y			# -y means use yacc file name conventions.
 #LDEBUG_FLAGS = -d      # Uncomment this line to debug lexer
 YFLAGS = $(YDEBUG_FLAGS) -d
 LFLAGS = $(LDEBUG_FLAGS)
-LDLIBS = -lfl -lregex_wrapper
 
 YACC_SOURCES = metadata_parser.y
 LEX_SOURCES = metadata_lexer.l
@@ -24,6 +31,7 @@ LEX_YACC_OBJS =  $(patsubst %.y, %.o, $(YACC_SOURCES)) \
 OBJS =  coniFetch.o \
 	getLatLong.o \
 	getLoc.o \
+	err_die.o \
 	fixed2gei.o \
 	gei2fixed.o \
 	interp_stVec.o \
@@ -61,22 +69,35 @@ OBJS =  coniFetch.o \
 
 all: asf_meta clean
 
-asf_meta: $(OBJS)
-	 ar rv asf_meta.a $(OBJS) 
-	 $(RANLIB) asf_meta.a
+asf_meta: build_only
 	 mv asf_meta.a $(LIBDIR)
 	 # Make a link obeying the usual naming convention.
 	 ln -s -f $(LIBDIR)/asf_meta.a $(LIBDIR)/libasf_meta.a
 
-# Small independent testing program for the parser itself.
-parser_tester: $(OBJS) parser_tester.o
+build_only: $(OBJS) cook_libs
+	ar rv asf_meta.a $(OBJS) $(wildcard ./library_cooking_pot/*.o) 
+	$(RANLIB) asf_meta.a
+
+cook_libs: $(addprefix $(LIBDIR)/, $(LIBS)) library_cooking_pot
+	cd library_cooking_pot; \
+	for lib in $(LIBS); do \
+	  ar xv ../$(LIBDIR)/$$lib; \
+	done
+
+library_cooking_pot:
+	mkdir library_cooking_pot
 
 # Rebuild everything if makefile or any ASF header or any lex or yacc
 # file has changed.
 $(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) \
          $(YACC_SOURCES) $(LEX_SOURCES)
 
-check: $(OBJS) tests.c
+
+check: unit_tests.c build_only
+	$(CC) $(CFLAGS) -I/export/home/bkerin/local/include $< \
+	      -L/export/home/bkerin/local/lib asf_meta.a -lm -lcheck \
+	      $(LDFLAGS) -o asf_meta_tester 
+	./asf_meta_tester
 
 clean:
 	rm -f $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
