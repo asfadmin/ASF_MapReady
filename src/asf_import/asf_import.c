@@ -374,8 +374,8 @@ int main(int argc, char *argv[])
       pixel_type_flag_looker(&flag_count, flags_used, "lut");
     }
     if (flag_count > 1) {
-      sprintf(logBuf, "Cannot mix the %s flags.", flags_used);
-      print_error(logBuf);
+      sprintf(logbuf, "Cannot mix the %s flags.", flags_used);
+      print_error(logbuf);
     }
   } /* END: Check for conflict between pixel type flags */
 
@@ -402,36 +402,36 @@ int main(int argc, char *argv[])
 
   /* Log what we got from the commandline */
   StartWatchLog(fLog);
-  strcpy(logBuf,"Command line:");
+  strcpy(logbuf,"Command line:");
   for (ii=0; ii<argc; ii++) {
-    sprintf(logBuf, "%s %s",logBuf,argv[ii]);
+    sprintf(logbuf, "%s %s",logbuf,argv[ii]);
   }
-  strcat(logBuf,"\n");
-  printLog(logBuf);
+  strcat(logbuf,"\n");
+  printLog(logbuf);
 
   /* Check whether options are chosen correctly */
   if (strncmp(format_type, "STF", 3)!=0) {
     if (flags[f_PRC] != FLAG_NOT_SET) {
-      sprintf(logBuf,
+      sprintf(logbuf,
               "WARNING: No precision state vectors used for this image type!\n");
-      if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
-      printLog(logBuf);
+      if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
+      printLog(logbuf);
       flags[f_PRC]=FLAG_NOT_SET;
     }
     if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
-      sprintf(logBuf,
+      sprintf(logbuf,
               "WARNING: No latitude constraints for this image type!\n");
-      if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
-      printLog(logBuf);
+      if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
+      printLog(logbuf);
       flags[f_LAT_CONSTRAINT]=FLAG_NOT_SET;
     }
   }
 
   /* Ingest all sorts of flavors of CEOS data */
   if (strncmp(format_type, "CEOS", 4) == 0) {
-    sprintf(logBuf,"   Data format: CEOS\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
-    printLog(logBuf);
+    sprintf(logbuf,"   Data format: CEOS\n");
+    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
+    printLog(logbuf);
     if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
       require_ceos_pair(inBaseName, inDataName, inMetaName);
     else {
@@ -443,17 +443,17 @@ int main(int argc, char *argv[])
   }
   /* Ingest ENVI format data */
   else if (strncmp(format_type, "ENVI", 4) == 0) {
-    sprintf(logBuf,"   Data format: ENVI\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
-    printLog(logBuf);
+    sprintf(logbuf,"   Data format: ENVI\n");
+    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
+    printLog(logbuf);
 
     import_envi(inDataName, inMetaName, outBaseName, flags);
   }
   /* Ingest ESRI format data */
   else if (strncmp(format_type, "ESRI", 4) == 0) {
-    sprintf(logBuf,"   Data format: ESRI\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
-    printLog(logBuf);
+    sprintf(logbuf,"   Data format: ESRI\n");
+    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
+    printLog(logbuf);
 
     import_esri(inDataName, inMetaName, outBaseName, flags);
   }
@@ -463,9 +463,9 @@ int main(int argc, char *argv[])
       print_error("Data is level 0, sprocket can not use this.");
       exit(EXIT_FAILURE);
     }
-    sprintf(logBuf,"   Data format: STF\n");
-    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logBuf);
-    printLog(logBuf);
+    sprintf(logbuf,"   Data format: STF\n");
+    if(flags[f_QUIET] == FLAG_NOT_SET) printf(logbuf);
+    printLog(logbuf);
     if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
       require_stf_pair(inBaseName, inDataName, inMetaName);
     else {
@@ -478,9 +478,9 @@ int main(int argc, char *argv[])
   }
   /* Don't recognize this data format; report & quit */
   else {
-    sprintf(logBuf,"Unrecognized data format: '%s'",format_type);
-    print_error(logBuf);
-    printLog(logBuf);
+    sprintf(logbuf,"Unrecognized data format: '%s'",format_type);
+    print_error(logbuf);
+    printLog(logbuf);
   }
 
   /* If the user asked for sprocket layers, create sprocket data layers
