@@ -67,7 +67,7 @@
 
 */
 
-project_parameters_t * get_geocode_options(int argc, char *argv[],
+project_parameters_t * get_geocode_options(int *argc, char ***argv,
 					   projection_type_t * proj_type);
 
 #endif
