@@ -132,6 +132,13 @@ do_cmd_does_not_work(char *cmd)
 }
 */
 
+gboolean check_for_error(gchar * txt)
+{
+  /* kludge */
+  return strstr(txt, "rror") != NULL || 
+         strstr(txt, "RROR") != NULL;
+}
+
 void
 append_output(gchar * txt)
 {
@@ -183,9 +190,10 @@ process_item(GtkTreeIter *iter,
   
   if (strcmp(status, "Done") != 0)
   {
-    gchar *basename, *in_meta, *p;
+    gchar *basename, *in_meta, *p, *done;
     gchar convert_cmd[4096];
     gchar log_file[128];
+    gboolean err;
 
     in_meta = meta_file_name(in_data);
 
@@ -205,7 +213,7 @@ process_item(GtkTreeIter *iter,
 
       g_snprintf(log_file, sizeof(log_file), "tmp%d.log", pid);
 
-      /* later we will use this version:
+      /* later we will use this version: */
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
 	"asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
 		 settings_get_data_type_string(user_settings),
@@ -214,9 +222,8 @@ process_item(GtkTreeIter *iter,
 		 log_file,
 		 basename,
 		 basename);
-      */
 
-      /* for now we use this version: */
+      /* for now we use this version: 
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
       "asf_import -%s -format %s %s -log \"%s\" \"%s\" \"%s\" \"%s\" 2>&1",
 		 settings_get_data_type_string(user_settings),
@@ -226,8 +233,10 @@ process_item(GtkTreeIter *iter,
 		 in_data,
 		 in_meta,
 		 basename);
-    
+      */
+ 
       cmd_output = do_cmd(convert_cmd, log_file);
+      err = check_for_error(cmd_output);
 
       append_output(cmd_output);
 
@@ -238,8 +247,9 @@ process_item(GtkTreeIter *iter,
       
       if (!settings_get_run_export(user_settings))
       {
+	done = err ? "Error" : "Done";
 	gtk_list_store_set(list_store, iter, 1, out_name_full, -1);
-	gtk_list_store_set(list_store, iter, 2, "Done", -1);
+	gtk_list_store_set(list_store, iter, 2, done, -1);
       }
 
       g_free(out_name_full);
@@ -264,9 +274,12 @@ process_item(GtkTreeIter *iter,
 	       out_full);
       
       cmd_output = do_cmd(convert_cmd, log_file);
+      err = err || check_for_error(cmd_output);
+
       append_output(cmd_output);
-      
-      gtk_list_store_set(list_store, iter, 2, "Done", -1);
+     
+      done = err ? "Error" : "Done"; 
+      gtk_list_store_set(list_store, iter, 2, done, -1);
       
       g_free(cmd_output);
     }
