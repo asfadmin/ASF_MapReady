@@ -66,8 +66,8 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 default: $(OBJS) doc
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)
-	cp $(TARGET).glade $(BINDIR)
-	cp $(TARGET).ico $(BINDIR)
+	cp $(TARGET).glade $(SHAREDIR)
+	cp $(TARGET).ico $(SHAREDIR)
 
 %.c: %.h
 
@@ -75,10 +75,11 @@ doc: asf_convert_gui.txt
 
 asf_convert_gui.txt:
 	docbook2txt asf_convert_gui.sgml
-	cp $(TARGET).txt $(BINDIR)
+	cp $(TARGET).txt $(DOCDIR)
 
 clean:
-	rm -f *.o $(BINDIR)/$(TARGET)* $(TARGET).txt
+	rm -f *.o $(BINDIR)/$(TARGET)* $(TARGET).txt \
+	    $(SHAREDIR)/$(TARGET)* $(DOCDIR)/$(TARGET)*
 
 ### End Unix Section
 

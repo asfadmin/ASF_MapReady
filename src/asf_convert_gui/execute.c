@@ -523,6 +523,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     gchar *basename, *before_geocoding_basename, *output_dir,
 	*out_basename, *p, *done, *err_string, *cd_dir;
     gchar convert_cmd[4096];
+    gchar executable[256];
     gchar log_file[1024];
     gboolean err;
 
@@ -601,9 +602,12 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 	 strcat(out_basename, "_out");
       }
 
+      sprintf(executable, "%s%casf_import", get_asf_bin_dir(), DIR_SEPARATOR);
+
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
-    "cd \"%s\"; asf_import %s -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
+    "cd \"%s\"; %s %s -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
 	 cd_dir,
+	 executable,
          settings_get_data_type_arg_string(user_settings),
          settings_get_input_data_format_string(user_settings),
          settings_get_latitude_argument(user_settings),
@@ -636,10 +640,14 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
       gtk_list_store_set(list_store, iter, COL_STATUS, "Geocoding...", -1);
 
       g_snprintf(log_file, sizeof(log_file), "%stmpg%d.log", output_dir, pid);
+
+      g_snprintf(executable, sizeof(executable), 
+		 "%s%casf_geocode", get_asf_bin_dir(), DIR_SEPARATOR);
     
       snprintf(convert_cmd, sizeof(convert_cmd),
-           "cd \"%s\"; asf_geocode %s -log \"%s\" \"%s\" \"%s\" 2>&1",
+           "cd \"%s\"; %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
 	   cd_dir,
+	   executable,
            settings_get_geocode_options(user_settings),
            log_file,
            before_geocoding_basename,
@@ -677,9 +685,13 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     
       gtk_list_store_set(list_store, iter, COL_STATUS, "Exporting...", -1);
 
+      g_snprintf(executable, sizeof(executable), 
+		 "%s%casf_export", get_asf_bin_dir(), DIR_SEPARATOR);
+
       snprintf(convert_cmd, sizeof(convert_cmd),
-           "cd \"%s\"; asf_export -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
+           "cd \"%s\"; %s -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
 	   cd_dir,
+	   executable,
            settings_get_output_format_string(user_settings),
            settings_get_size_argument(user_settings),
            settings_get_output_bytes_argument(user_settings),

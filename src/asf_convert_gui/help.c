@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include "asf_convert_gui.h"
 #include "asf_version.h"
+#include "asf.h"
 #include <gdk/gdkkeysyms.h>
 
 static const int max_line_len = 2048;
@@ -33,7 +34,7 @@ on_help_button_clicked(GtkWidget *widget)
 
   //help_filename = (gchar *)find_in_path("asf_convert_gui.txt");
   //help_file = fopen(help_filename, "rt");
-  help_file = fopen_share_dir(help_filename, "rt");
+  help_file = fopen_share_file(help_filename, "rt");
   if (help_file)
   {
     gchar * buffer = (gchar *) g_malloc(sizeof(gchar) * max_line_len);
