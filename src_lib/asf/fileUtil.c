@@ -43,8 +43,7 @@ char *appendExt(const char *name, const char *newExt)
 {
   char *ret = (char *) MALLOC (sizeof(char) 
 			       * (MAX_APPENDEXT_RESULT_STRING_LENGTH + 1));
-  assert (strnlen (name, MAX_APPENDEXT_RESULT_STRING_LENGTH + 1) 
-	  <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
+  assert (strlen (name) <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
   strcpy (ret, name);
 	
   char *ext = findExt (ret);
