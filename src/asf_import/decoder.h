@@ -33,9 +33,9 @@ typedef struct {
 	double dwp;			/* Delay between PRF trigger and recieve window start (s)*/
 	int dwp_code;			/* Satellite binary code for DWP*/
 	double range_gate;		/* Delay between chirp transmission and reception (s) */
-	double time_code;		/* Satellite time code at first line: 
-					   ERS-- ticks (32-bit counter, 256 ticks/sec); 
-					   JRS-- seconds (27-bit counter, 0==mission start?); 
+	double time_code;		/* Satellite time code at first line:
+					   ERS-- ticks (32-bit counter, 256 ticks/sec);
+					   JRS-- seconds (27-bit counter, 0==mission start?);
 					   RSAT-- seconds past GMT midnight*/
 
 /*Fields used during processing*/
@@ -46,12 +46,12 @@ typedef struct {
 	long long bytesInFile;		/* Number of bytes in entire file*/
 	void *missing;			/* "Missing" data pointer (see missing.c)*/
 	int readStatus;			/* Status of current data: 0 - bad, 1 - good */
-	
+
 /*Fields filled out/used by lz/ceos2raw during processing*/
 	int nValid;			/* Number of valid output samples (nSamp-replica length)*/
 	double estDop;			/* Estimated doppler, in PRF (based on nominal pointing).*/
 	double I_BIAS,Q_BIAS; 		/* DC bias for I and Q channels.*/
-	
+
 	double re;			/* Local earth radius (m) */
 	double vel;			/* Satellite orbital velocity (m/s) */
 	double ht;			/* Satellite height above earth's surface (m)*/
@@ -60,9 +60,7 @@ typedef struct {
 	double azres;			/* SAR Azimuth resolution (m) */
 	int nLooks;			/* Number of looks in azimuth to make square pixels */
 
-	FILE *dotFMT;			/* ASCII .fmt file pointer (write)*/	
-	FILE *fperr;			/* Output error log file pointer (write) */
-	FILE *fpOut;			/* Output raw SAR data file (write) */
+	FILE *dotFMT;			/* ASCII .fmt file pointer (write)*/
 	int nLines;			/* Number of lines written so far */
 
 /*Fields used by lops_qc during processing*/
@@ -74,7 +72,7 @@ bin_state *new_bin_state(void);
 void delete_bin_state(bin_state *s);
 /*
 The global satellite structure above is initialized
-by new_satellite_ptr; called by the ####_decoder_init() 
+by new_satellite_ptr; called by the ####_decoder_init()
 routines below.  It is read-only to all other routines.
 */
 
@@ -99,7 +97,7 @@ bin_state *ERS_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader);
 /******************************** Metadata-type utilities
 updateAGC_window:
 	Writes the given AGC value (floating-point amplitude
-amplification that should be applied to this image) and 
+amplification that should be applied to this image) and
 window position (starting offset of this row in pixels) to
 the .fmt file.  Uses s->dotFMT and s->nLines.
 */
