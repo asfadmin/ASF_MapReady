@@ -217,7 +217,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
 /*FILE *latFp=NULL, *lonFp=NULL;*/
   FILE *inFp=NULL;
   struct dataset_sum_rec *dssr=NULL;
-  meta_parameters *metaIn, *metaOut;
+  meta_parameters *metaIn=NULL, *metaOut=NULL;
   stateVector stVec;
   cal_params *cal_param=NULL;
   int nl, ns;
@@ -247,7 +247,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
   }
 
   /* Tell user we're starting */
-  printAndLog("Now creating SProCKET metadata and data planes...\n");
+  printAndLog("Now creating SProCKET metadata and data layers...\n");
 
   /* Set up file names */
   strcat(strcpy(metaName, asfName), ".meta");
@@ -323,12 +323,12 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
     size = CHUNK_OF_LINES;
 
     /* create layers */
-    printAndLog("Creating look layer:\n");
+    printAndLog("Creating look angle layer:\n");
     for (chunk=0; chunk<nl; chunk+=size) {
       if ((nl-chunk)<CHUNK_OF_LINES)
         size = nl-chunk;
       for (yy=0; yy<size; yy++) {
-        percent_meter((double)(chunk+yy)/(double)nl);
+        percent_meter((double)(chunk+yy+1)/(double)nl);
         for (xx=0; xx<ns; xx++) {
           px = metaIn->projection->startX
                + metaIn->projection->perX * xx;
@@ -434,7 +434,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
       if ((nl-ii)<CHUNK_OF_LINES)
         size = nl-ii;
       for (ll=0; ll<size; ll++) {
-        percent_meter((double)(ii+ll)/(double)nl);
+        percent_meter((double)(ii+ll+1)/(double)nl);
         for (kk=0; kk<ns; kk++) {
           x = ii + ll;
           y = kk;
@@ -469,7 +469,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
  *      if ((nl-ii)<CHUNK_OF_LINES)
  *        size = nl-ii;
  *      for (ll=0; ll<size; ll++) {
- *        percent_meter((double)(ii+ll)/(double)nl);
+ *        percent_meter((double)(ii+ll+1)/(double)nl);
  *        for (kk=0; kk<ns; kk++) {
  *          x = ii + ll;
  *          y = kk;
@@ -501,7 +501,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
  *    for (ii=0; ii<nl; ii+=size) {
  *      if ((nl-ii)<CHUNK_OF_LINES) size = nl-ii;
  *      for (ll=0; ll<size; ll++) {
- *        percent_meter((double)(ii+ll)/(double)nl);
+ *        percent_meter((double)(ii+ll+1)/(double)nl);
  *        for (kk=0; kk<ns; kk++) {
  *          x = ii + ll;
  *          y = kk;
@@ -526,7 +526,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
  * lat, lon, and incidence angle layers)
    --------------------------------------------------------------------------*/
 
-  /* Create I & Q data planes if we got complex data */
+  /* Create I & Q data layers if we got complex data */
   if (doComplex) {
     if (!rsiCeos) {
       char IName[256], QName[256];
@@ -548,16 +548,16 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
       ampBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
       sigmaBuf = (float *) MALLOC (sizeof(float) * ns * CHUNK_OF_LINES);
 
-      /* Break complex data into I and Q data planes and create amp & sigma0*/
+      /* Break complex data into I and Q data layers and create amp & sigma0*/
       size = CHUNK_OF_LINES;
-      printAndLog("Creating I, Q, amp, & sigma0 planes:\n");
+      printAndLog("Creating I, Q, amp, & sigma0 layers:\n");
       for (chunk=0; chunk<nl; chunk+=size) {
         if ((nl-chunk)<CHUNK_OF_LINES)
           size = nl-chunk;
         get_complexFloat_lines(inFp, metaIn, chunk, size, iqBuf);
         for (yy=0; yy<size; yy++) {
           overall_line = chunk+yy;
-          percent_meter((double)overall_line/(double)nl);
+          percent_meter((double)(overall_line+1)/(double)nl);
           /*Allocate noise table entries and/or update if needed.*/
           if (overall_line==0
               || (overall_line%(nl/tableRes)==0
@@ -612,14 +612,14 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
 
     /* What to do if it's in ASF CEOS format */
     if (!rsiCeos) {
-      printAndLog("Creating sigma0 plane:\n");
+      printAndLog("Creating sigma0 layer:\n");
       for (chunk=0; chunk<nl; chunk+=size) {
         if ((nl-chunk)<CHUNK_OF_LINES)
           size = nl-chunk;
         get_float_lines(inFp, metaIn, chunk, size, ampBuf);
         for (yy=0; yy<size; yy++) {
           overall_line = chunk+yy;
-          percent_meter((double)overall_line/(double)nl);
+          percent_meter((double)(overall_line+1)/(double)nl);
           /*Allocate noise table entries and/or update if needed.*/
           if (overall_line==0
               || (overall_line%(nl/tableRes)==0
@@ -660,14 +660,14 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
       get_rsi_raddr(leaderName, &rdr);
       scalingGain = create_rsi_scaling_table(rdr, dir, ns);
 
-      printAndLog("Creating sigma0 plane:\n");
+      printAndLog("Creating sigma0 layer:\n");
       for (chunk=0; chunk<nl; chunk+=size) {
         if ((nl-chunk)<CHUNK_OF_LINES)
         size = nl-chunk;
         get_float_lines(inFp, metaIn, chunk, size, ampBuf);
         for (yy=0; yy<size; yy++) {
           overall_line = chunk+yy;
-          percent_meter((double)overall_line/(double)nl);
+          percent_meter((double)(overall_line+1)/(double)nl);
           for (xx=0; xx<ns; xx++) {
             int bufInd = yy*ns+xx;
             float sinIncid = ht * sin((D2R*lookLayerBuf[xx])/Re);
@@ -692,9 +692,8 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
     FCLOSE(sigmaFp); FREE(sigmaBuf);
   }
 
-
-  /* Clean up & report */
+  /* Clean up a bit & report */
   FREE(lookLayerBuf);
-  meta_free(metaIn);
-  meta_free(metaOut);
+  
+  printAndLog("Finished creating SProCKET layers.\n");
 }
