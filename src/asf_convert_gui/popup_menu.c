@@ -1,21 +1,30 @@
 #include "asf_convert_gui.h"
 
+static const int popup_menu_item_remove = 0;
+static const int popup_menu_item_process = 1;
+static const int popup_menu_item_view_output = 5;
+
+
 static void
-enable_all_items(GtkMenu * menu)
+enable_menu_items(GtkMenu * menu, gboolean enable_view_output)
 {
     GList * children;
     GList * iter;
-    
+    int n = 0;
+
     children = gtk_container_get_children(GTK_CONTAINER(menu));
     iter = children;
 
     while (iter)
     {
+	gboolean enable;
 	GtkWidget * item = GTK_WIDGET(iter->data);
 
-	gtk_widget_set_sensitive(item, TRUE);
+	enable = n != popup_menu_item_view_output || enable_view_output;
+	gtk_widget_set_sensitive(item, enable);
 
 	iter = g_list_next(iter);
+	++n;
     }
 
     g_list_free(children);
@@ -26,7 +35,6 @@ disable_for_multiple_selected(GtkMenu * menu)
 {
     GList * children;
     GList * iter;
-    gboolean enable;
     int n = 0;
 
     children = gtk_container_get_children(GTK_CONTAINER(menu));
@@ -34,9 +42,10 @@ disable_for_multiple_selected(GtkMenu * menu)
 
     while (iter)
     {
+	gboolean enable;
 	GtkMenuItem * item = GTK_MENU_ITEM(iter->data);
 
-	enable = n == 0 || n == 1;
+	enable = n == popup_menu_item_remove || n == popup_menu_item_process;
 	gtk_widget_set_sensitive(GTK_WIDGET(item), enable);
 
 	++n;
@@ -82,6 +91,7 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 					      &path, NULL, NULL, NULL))
 	    {
 		gchar * status;
+		gboolean show_view_output_menu_item = FALSE;
 
 		gtk_tree_selection_unselect_all(selection);
 		gtk_tree_selection_select_path(selection, path);
@@ -98,6 +108,17 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 		}
 
 		gtk_tree_path_free(path);
+
+		if (strcmp(status, "Done") == 0)
+		{
+		    Settings * s = settings_get_from_gui();
+		    if (settings_get_output_format_can_be_thumbnailed(s))
+		    {
+			show_view_output_menu_item = TRUE;
+		    }
+		}
+		
+		enable_menu_items(menu, show_view_output_menu_item);
 	    }
 	    else
 	    {
@@ -106,8 +127,6 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 
 		return FALSE;
 	    }
-
-	    enable_all_items(menu);
 	}
 	else
 	{
@@ -362,6 +381,27 @@ popup_menu_rename(GtkWidget *widget, GdkEvent *event)
     return (gint) rename_selected_output_filename();
 }
 
+SIGNAL_CALLBACK gint
+popup_menu_view_output(GtkWidget *widget, GdkEvent *event)
+{
+    GtkWidget *files_list;
+    GtkTreeIter iter;
+    
+    files_list = glade_xml_get_widget(glade_xml, "files_list");
+
+    if (get_iter_to_first_selected_row(files_list, &iter))
+    {
+	gchar * out_name;
+
+	gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
+			   1, &out_name, -1);
+
+        show_output_image(out_name);
+    }
+
+    return TRUE;
+}
+
 void
 setup_popup_menu()
 {
@@ -400,6 +440,12 @@ setup_popup_menu()
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
     g_signal_connect_swapped(G_OBJECT(item), "activate",
 			     G_CALLBACK(popup_menu_metadata), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View Output");
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+			     G_CALLBACK(popup_menu_view_output), NULL);
     gtk_widget_show(item);
     
     gtk_widget_show(menu);

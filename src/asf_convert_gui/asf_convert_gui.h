@@ -98,6 +98,7 @@ enum Datums
 #include "geocode.h"
 #include "win_font.h"
 #include "projfile.h"
+#include "view_output.h"
 
 extern const char DIR_SEPARATOR;
 extern const char PATH_SEPATATOR;

@@ -88,6 +88,7 @@
 		      <child>
 			<widget class="GtkCheckButton" id="latitude_checkbutton">
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Restrict the latitudes that will be processed.  Please be sure that the Low &amp; Hi values are within the image.</property>
 			  <property name="can_focus">True</property>
 			  <property name="label" translatable="yes">Latitude:</property>
 			  <property name="use_underline">True</property>
@@ -184,6 +185,7 @@
 		      <child>
 			<widget class="GtkOptionMenu" id="input_data_format_combobox">
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Format of the input data.</property>
 			  <property name="can_focus">True</property>
 			  <property name="history">0</property>
 
@@ -242,6 +244,7 @@
 			<widget class="GtkEntry" id="latitude_low_entry">
 			  <property name="width_request">80</property>
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Image data below this latitude will be discarded.</property>
 			  <property name="can_focus">True</property>
 			  <property name="editable">True</property>
 			  <property name="visibility">True</property>
@@ -266,6 +269,7 @@
 			<widget class="GtkEntry" id="latitude_hi_entry">
 			  <property name="width_request">80</property>
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Image data above this latitude will be discarded.</property>
 			  <property name="can_focus">True</property>
 			  <property name="editable">True</property>
 			  <property name="visibility">True</property>
@@ -331,6 +335,7 @@
 		  <child>
 		    <widget class="GtkOptionMenu" id="input_data_type_combobox">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Radiometry setting for the image.</property>
 		      <property name="can_focus">True</property>
 		      <property name="history">0</property>
 		      <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:52:39 GMT"/>
@@ -463,6 +468,7 @@
 			  <child>
 			    <widget class="GtkCheckButton" id="geocode_checkbutton">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Geocode the image.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes"></property>
 			      <property name="use_underline">True</property>
@@ -504,6 +510,7 @@
 			  <child>
 			    <widget class="GtkOptionMenu" id="projection_option_menu">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">The projection to use for geocoding.</property>
 			      <property name="can_focus">True</property>
 			      <property name="history">0</property>
 
@@ -589,6 +596,7 @@
 			    <widget class="GtkOptionMenu" id="predefined_projection_option_menu">
 			      <property name="width_request">210</property>
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Some peojections have predefined settings.  To use your own settings, use &quot;User Defined&quot;.</property>
 			      <property name="can_focus">True</property>
 			      <property name="history">0</property>
 			      <signal name="changed" handler="on_predefined_projection_option_menu_changed" last_modification_time="Thu, 18 Nov 2004 00:27:21 GMT"/>
@@ -936,6 +944,7 @@
 			      <child>
 				<widget class="GtkCheckButton" id="average_height_checkbutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Projection calculations can be more accurate if you know the average height of the projected area.</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">Specify Height</property>
 				  <property name="use_underline">True</property>
@@ -985,6 +994,7 @@
 				    <widget class="GtkEntry" id="average_height_entry">
 				      <property name="width_request">120</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Average Height, in meters.</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -1012,6 +1022,7 @@
 			      <child>
 				<widget class="GtkCheckButton" id="pixel_size_checkbutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Scales the output image so that each pixel has the given size (in meters) in projection coordinates.</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">Specify Pixel Size</property>
 				  <property name="use_underline">True</property>
@@ -1061,6 +1072,7 @@
 				    <widget class="GtkEntry" id="pixel_size_entry">
 				      <property name="width_request">120</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Size, in meters, of each pixel in the projected image.</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -1115,6 +1127,7 @@
 				  <child>
 				    <widget class="GtkOptionMenu" id="datum_option_menu">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Datum to use for the projected data.</property>
 				      <property name="can_focus">True</property>
 				      <property name="history">0</property>
 
@@ -1247,6 +1260,7 @@
 		      <child>
 			<widget class="GtkOptionMenu" id="output_format_combobox">
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Image format to output.</property>
 			  <property name="can_focus">True</property>
 			  <property name="history">0</property>
 
@@ -1308,6 +1322,7 @@
 		  <child>
 		    <widget class="GtkCheckButton" id="output_bytes_checkbutton">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">With GeoTIFF images, the output can be either floating point, or byte.  Floating point is more accurate however not all software understands it.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label" translatable="yes">Output Bytes</property>
 		      <property name="use_underline">True</property>
@@ -1355,6 +1370,7 @@
 		      <child>
 			<widget class="GtkOptionMenu" id="scaling_method_combobox">
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">How should the floating point values be scaled to byte range?</property>
 			  <property name="can_focus">True</property>
 			  <property name="history">0</property>
 			  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:29:43 GMT"/>
@@ -1405,6 +1421,7 @@
 		  <child>
 		    <widget class="GtkCheckButton" id="scale_checkbutton">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Scale the image so that the largest dimension is at most the given size.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label" translatable="yes">Scale output image</property>
 		      <property name="use_underline">True</property>
@@ -1451,17 +1468,17 @@
 
 		      <child>
 			<widget class="GtkSpinButton" id="longest_dimension_spinbutton">
-			  <property name="width_request">84</property>
+			  <property name="width_request">80</property>
 			  <property name="visible">True</property>
 			  <property name="can_focus">True</property>
 			  <property name="climb_rate">1</property>
 			  <property name="digits">0</property>
-			  <property name="numeric">True</property>
+			  <property name="numeric">False</property>
 			  <property name="update_policy">GTK_UPDATE_ALWAYS</property>
 			  <property name="snap_to_ticks">False</property>
 			  <property name="wrap">False</property>
-			  <property name="adjustment">1000 100 100000 1 10 10</property>
-			  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:29:28 GMT"/>
+			  <property name="adjustment">1000 1 999999 1 10 10</property>
+			  <signal name="changed" handler="update_summary" last_modification_time="Wed, 24 Nov 2004 21:04:58 GMT"/>
 			</widget>
 			<packing>
 			  <property name="padding">0</property>
@@ -1638,6 +1655,7 @@ Export: JPEG (size 1000)
 		      <child>
 			<widget class="GtkEntry" id="input_entry">
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Enter the name of a file to add to the list.</property>
 			  <property name="can_focus">True</property>
 			  <property name="editable">True</property>
 			  <property name="visibility">True</property>
@@ -1657,6 +1675,7 @@ Export: JPEG (size 1000)
 		      <child>
 			<widget class="GtkButton" id="Add">
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Add the file that you've entered.</property>
 			  <property name="can_focus">True</property>
 			  <property name="label">gtk-add</property>
 			  <property name="use_stock">True</property>
@@ -1696,6 +1715,7 @@ Export: JPEG (size 1000)
 			<widget class="GtkButton" id="browse_input_files_button">
 			  <property name="height_request">24</property>
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Search for files to add to the list.</property>
 			  <property name="can_focus">True</property>
 			  <property name="label" translatable="yes">Browse...</property>
 			  <property name="use_underline">True</property>
@@ -1755,6 +1775,7 @@ Export: JPEG (size 1000)
 		      <child>
 			<widget class="GtkButton" id="change_output_directory_button">
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Change the location where the output files are stored.</property>
 			  <property name="can_focus">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
 			  <property name="focus_on_click">True</property>
@@ -1851,6 +1872,7 @@ Export: JPEG (size 1000)
 		      <child>
 			<widget class="GtkButton" id="button_change_output_naming_scheme">
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Add a fixed prefix or suffix that is applied to all of the output file names.</property>
 			  <property name="can_focus">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
 			  <property name="focus_on_click">True</property>
@@ -2049,6 +2071,7 @@ Export: JPEG (size 1000)
 		  <child>
 		    <widget class="GtkButton" id="execute_button">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Process all files.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label">gtk-execute</property>
 		      <property name="use_stock">True</property>
@@ -2087,6 +2110,7 @@ Export: JPEG (size 1000)
 		  <child>
 		    <widget class="GtkButton" id="stop_button">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Halt processing after the current file.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label">gtk-stop</property>
 		      <property name="use_stock">True</property>
@@ -2130,6 +2154,7 @@ Export: JPEG (size 1000)
 		  <child>
 		    <widget class="GtkButton" id="save_button">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Save the current settings.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label">gtk-save</property>
 		      <property name="use_stock">True</property>
@@ -2168,6 +2193,7 @@ Export: JPEG (size 1000)
 		  <child>
 		    <widget class="GtkButton" id="load_button">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Load settings that you've previously saved.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label" translatable="yes">  _Load  </property>
 		      <property name="use_underline">True</property>
@@ -2206,6 +2232,7 @@ Export: JPEG (size 1000)
 		  <child>
 		    <widget class="GtkButton" id="help_button">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Load the Help page.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label">gtk-help</property>
 		      <property name="use_stock">True</property>
@@ -2435,6 +2462,7 @@ Export: JPEG (size 1000)
 	  <child>
 	    <widget class="GtkEntry" id="entry_new_output_filename">
 	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">New name for the output file.</property>
 	      <property name="can_focus">True</property>
 	      <property name="editable">True</property>
 	      <property name="visibility">True</property>
@@ -2718,6 +2746,7 @@ Export: JPEG (size 1000)
 	  <child>
 	    <widget class="GtkEntry" id="entry_new_output_directory">
 	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">New location for the output files.</property>
 	      <property name="can_focus">True</property>
 	      <property name="editable">True</property>
 	      <property name="visibility">True</property>
@@ -2771,6 +2800,7 @@ Export: JPEG (size 1000)
 
 <widget class="GtkDialog" id="dialog_cons">
   <property name="border_width">8</property>
+  <property name="tooltip" translatable="yes">String that is added to the beginning of all output filenames.</property>
   <property name="title" translatable="yes">Output File Naming Scheme</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
@@ -2923,6 +2953,7 @@ Export: JPEG (size 1000)
 	      <child>
 		<widget class="GtkEntry" id="dialog_cons_suffix_entry">
 		  <property name="visible">True</property>
+		  <property name="tooltip" translatable="yes">String that is added to the end of all output filenames.</property>
 		  <property name="can_focus">True</property>
 		  <property name="editable">True</property>
 		  <property name="visibility">True</property>
@@ -3285,6 +3316,93 @@ If you proceed, they will be overwritten.</property>
 	      <property name="expand">True</property>
 	      <property name="fill">True</property>
 	    </packing>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">True</property>
+	  <property name="fill">True</property>
+	</packing>
+      </child>
+    </widget>
+  </child>
+</widget>
+
+<widget class="GtkDialog" id="output_image_dialog">
+  <property name="title" translatable="yes">Output Image</property>
+  <property name="type">GTK_WINDOW_TOPLEVEL</property>
+  <property name="window_position">GTK_WIN_POS_NONE</property>
+  <property name="modal">False</property>
+  <property name="resizable">True</property>
+  <property name="destroy_with_parent">False</property>
+  <property name="decorated">True</property>
+  <property name="skip_taskbar_hint">False</property>
+  <property name="skip_pager_hint">False</property>
+  <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="has_separator">True</property>
+  <signal name="destroy" handler="on_output_image_dialog_destroy" last_modification_time="Wed, 24 Nov 2004 19:03:13 GMT"/>
+  <signal name="destroy_event" handler="on_output_image_dialog_destroy_event" last_modification_time="Wed, 24 Nov 2004 19:03:24 GMT"/>
+  <signal name="delete_event" handler="on_output_image_dialog_delete_event" last_modification_time="Wed, 24 Nov 2004 19:03:35 GMT"/>
+  <signal name="key_press_event" handler="on_output_image_dialog_key_press_event" last_modification_time="Wed, 24 Nov 2004 19:03:46 GMT"/>
+
+  <child internal-child="vbox">
+    <widget class="GtkVBox" id="dialog-vbox7">
+      <property name="visible">True</property>
+      <property name="homogeneous">False</property>
+      <property name="spacing">0</property>
+
+      <child internal-child="action_area">
+	<widget class="GtkHButtonBox" id="dialog-action_area7">
+	  <property name="visible">True</property>
+	  <property name="layout_style">GTK_BUTTONBOX_END</property>
+
+	  <child>
+	    <widget class="GtkButton" id="output_image_dialog_ok_button">
+	      <property name="visible">True</property>
+	      <property name="can_default">True</property>
+	      <property name="can_focus">True</property>
+	      <property name="label">gtk-ok</property>
+	      <property name="use_stock">True</property>
+	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
+	      <property name="response_id">-5</property>
+	      <signal name="clicked" handler="on_output_image_dialog_ok_button_clicked" last_modification_time="Wed, 24 Nov 2004 19:02:17 GMT"/>
+	    </widget>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">False</property>
+	  <property name="fill">True</property>
+	  <property name="pack_type">GTK_PACK_END</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkScrolledWindow" id="scrolledwindow6">
+	  <property name="visible">True</property>
+	  <property name="can_focus">True</property>
+	  <property name="hscrollbar_policy">GTK_POLICY_ALWAYS</property>
+	  <property name="vscrollbar_policy">GTK_POLICY_ALWAYS</property>
+	  <property name="shadow_type">GTK_SHADOW_NONE</property>
+	  <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
+
+	  <child>
+	    <widget class="GtkViewport" id="viewport1">
+	      <property name="visible">True</property>
+	      <property name="shadow_type">GTK_SHADOW_IN</property>
+
+	      <child>
+		<widget class="GtkImage" id="output_image">
+		  <property name="visible">True</property>
+		  <property name="xalign">0.5</property>
+		  <property name="yalign">0.5</property>
+		  <property name="xpad">0</property>
+		  <property name="ypad">0</property>
+		</widget>
+	      </child>
+	    </widget>
 	  </child>
 	</widget>
 	<packing>
