@@ -147,8 +147,30 @@ void meta_write(meta_parameters *meta, const char *file_name)
 
 /* Projection parameters block, if appropriate.  */
   if ( meta->sar->image_type == 'P' ) {
-    meta_put_string(fp,"projection {","","Map Projection parameters");
-    meta_put_char  (fp,"type:",meta->projection->type,"Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]");
+    meta_put_string(fp,"projection {","","Map Projection parameters");    
+    switch (meta->projection->type) {
+      case UNIVERSAL_TRANSVERSE_MERCATOR: 
+	meta_put_string(fp,"type:","UNIVERSAL_TRANSVERSE_MERCATOR","Projection Type");
+	break;
+      case POLAR_STEREOGRAPHIC:
+	meta_put_string(fp,"type:","POLAR_STEREOGRAPHIC","Projection Type");
+        break;
+      case ALBERS_EQUAL_AREA: 
+	meta_put_string(fp,"type:","ALBERS_EQUAL_AREA","Projection Type");
+	break;
+      case LAMBERT_CONFORMAL_CONIC:
+	meta_put_string(fp,"type:","LAMBERT_CONFORMAL_CONIC","Projection Type");
+	break;
+      case LAMBERT_AZIMUTHAL_EQUAL_AREA: 
+	meta_put_string(fp,"type:","LAMBERT_AZIMUTHAL_EQUAL_AREA","Projection Type");
+	break;
+      case STATE_PLANE:
+	meta_put_string(fp,"type:","STATE_PLANE","Projection Type");
+	break;
+      case SCANSAR_PROJECTION:
+	meta_put_string(fp,"type:","SCANSAR_PROJECTION","Projection Type");
+	break;
+    }
     meta_put_double(fp,"startX:",meta->projection->startX,"Projection Coordinate at top-left, X direction");
     meta_put_double(fp,"startY:",meta->projection->startY,"Projection Coordinate at top-left, Y direction");
     meta_put_double(fp,"perX:",meta->projection->perX,"Projection Coordinate per pixel, X direction");
@@ -159,7 +181,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_double(fp,"re_minor:",meta->projection->re_minor,"Minor Axis (polar) of earth [m]");
     meta_put_string(fp,"param {","","Projection specific parameters");
     switch ( meta->projection->type ) {
-    case 'A': /* Along-track/cross-track projection.  */
+    case SCANSAR_PROJECTION: /* Along-track/cross-track projection.  */
       meta_put_string(fp,"atct {","","Begin along-track/cross-track projection");
       meta_put_double(fp,"rlocal:",meta->projection->param.atct.rlocal,"Local earth radius [m]");
       meta_put_double(fp,"alpha1:",meta->projection->param.atct.alpha1,"First rotation angle [degrees]");
@@ -167,7 +189,21 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,"alpha3:",meta->projection->param.atct.alpha3,"Third rotation angle [degrees]");
       meta_put_string(fp,"}","","End atct");
       break;
-    case'L':/*Lambert conformal conic projection.*/
+    case ALBERS_EQUAL_AREA:
+      meta_put_string(fp,"albers {","","Begin Albers Conical Equal Area projection");
+      meta_put_double(fp,"std_parallel1:",meta->projection->param.albers.std_parallel1,"First standard parallel [degrees]");
+      meta_put_double(fp,"std_parallel2:",meta->projection->param.albers.std_parallel2,"Second standard parallel [degrees]");
+      meta_put_double(fp,"center_meridian:",meta->projection->param.albers.center_meridian,"Longitude of center meridian [degrees]");
+      meta_put_double(fp,"orig_latitude:",meta->projection->param.albers.orig_latitude,"Latitude of the projection origin [degrees]");
+      meta_put_string(fp,"}","","End albers");
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      meta_put_string(fp,"lamaz {","","Begin Lambert Azimuthal Equal Area projection");
+      meta_put_double(fp,"center_lon:",meta->projection->param.lamaz.center_lon,"Longitude at center of projection");
+      meta_put_double(fp,"center_lat:",meta->projection->param.lamaz.center_lat,"Latitude at center of projection");
+      meta_put_string(fp,"}","","End lamaz");
+      break;
+    case LAMBERT_CONFORMAL_CONIC:/*Lambert conformal conic projection.*/
       meta_put_string(fp,"lamcc {","","Begin Lambert Conformal Conic projection");
       meta_put_double(fp,"plat1:",meta->projection->param.lamcc.plat1,"First standard parallel");
       meta_put_double(fp,"plat2:",meta->projection->param.lamcc.plat2,"Second standard parallel");
@@ -175,16 +211,21 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,"lon0:",meta->projection->param.lamcc.lon0,"Original longitude");
       meta_put_string(fp,"}","","End lamcc");
       break;
-    case'P':/*Polar stereographic projection.*/
+    case POLAR_STEREOGRAPHIC:/*Polar stereographic projection.*/
       meta_put_string(fp,"ps {","","Begin Polar Stereographic Projection");
       meta_put_double(fp,"slat:",meta->projection->param.ps.slat,"Reference Latitude");
       meta_put_double(fp,"slon:",meta->projection->param.ps.slon,"Reference Longitude");
       meta_put_string(fp,"}","","End ps");
       break;
-    case'U':/*Universal transverse mercator projection.*/
+    case UNIVERSAL_TRANSVERSE_MERCATOR:/*Universal transverse mercator projection.*/
       meta_put_string(fp,"utm {","","Begin Universal Transverse Mercator Projection");
       meta_put_int   (fp,"zone:",meta->projection->param.utm.zone,"Zone Code");
       meta_put_string(fp,"}","","End utm");
+      break;
+    case STATE_PLANE:/*State plane coordinates projection.*/
+      meta_put_string(fp,"state {","","Begin State Plane Coordinates Projection");
+      meta_put_int   (fp,"zone:",meta->projection->param.state.zone,"Zone Code");
+      meta_put_string(fp,"}","","End state");
       break;
    default: 
       printf("WARNING in asf_meta library function '%s': unknown projection type '%c'.\n",

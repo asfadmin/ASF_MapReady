@@ -61,9 +61,9 @@ int earth_radius2datum(double re_major, double re_minor)
 		return minor_index;
 	}
 
-	printf("\n"
+/*	printf("\n"
 	       "WARNING: Function earth_radius2datum was unable to figure\n"
-	       "         supported datum... setting DDR datum code to -1\n");
+	       "         supported datum... setting DDR datum code to -1\n");*/
 	return (-1);
 }
 
@@ -144,15 +144,28 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 	 *  Entire coefficients array is 0.0 for Geographic and UTM;
 	 *  meta structure does not currently support geographic or albers projections */
 		switch (proj->type) {
-		    case 'A': /* Along-track/cross-track... ddr has no atct projection, default to UTM */
+		    case SCANSAR_PROJECTION: /* Along-track/cross-track... ddr has no atct projection, default to UTM */
 			/*Can't do anything here until we add AT/CT to asf_geolib.*/
 			proj_invalid=1;
-	        	printf("Warning in asf_meta library function meta2ddr:\n"
+/*	        	printf("Warning in asf_meta library function meta2ddr:\n"
 			       "    DDR files do not support JPL's along-track/cross-track projection.\n"
 			       "    For valid DDR data, you should geocode your data under a different\n"
-			       "    projection (use ASF tool 'geocode').\n");
+			       "    projection (use ASF tool 'geocode').\n");*/
 			break;
-		    case 'L':/* Lambert Conformal Conic */
+		    case ALBERS_EQUAL_AREA:/* Albers Conic Equal Area */
+			ddr->proj_code = ALBERS;
+			ddr->valid[DDPCV] = VALID;
+			ddr->proj_coef[0] = proj->re_major;
+			ddr->proj_coef[1] = proj->re_minor;
+			ddr->proj_coef[2] = packed_deg(proj->param.albers.std_parallel1); /*standard parallel1*/
+			ddr->proj_coef[3] = packed_deg(proj->param.albers.std_parallel2); /*standard parallel2*/
+			ddr->proj_coef[4] = packed_deg(proj->param.albers.center_meridian);  /*Center longitude of proj*/
+			ddr->proj_coef[5] = packed_deg(proj->param.albers.orig_latitude);  /*Center latitude of proj*/
+			ddr->proj_coef[6] = 0.0; /*False Easting*/
+			ddr->proj_coef[7] = 0.0; /*False Northing*/
+			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
+			break;
+		    case LAMBERT_CONFORMAL_CONIC:/* Lambert Conformal Conic */
 			ddr->proj_code = LAMCC;
 			ddr->valid[DDPCV] = VALID;
 			ddr->proj_coef[0] = proj->re_major;
@@ -165,7 +178,7 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 			ddr->proj_coef[7] = 0.0; /*False Northing*/
 			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
 			break;
-		    case 'P':/* Polar Stereographic */
+		    case POLAR_STEREOGRAPHIC:/* Polar Stereographic */
 			ddr->proj_code = PS;
 			ddr->valid[DDPCV] = VALID;
 			ddr->proj_coef[0] = proj->re_major;
@@ -176,7 +189,7 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 			ddr->proj_coef[7] = 0.0; /*False Northing*/
 			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
 			break;
-		    case 'U':/* Universal Transverse Mercator */
+		    case UNIVERSAL_TRANSVERSE_MERCATOR:/* Universal Transverse Mercator */
 			ddr->proj_code = UTM;
 			ddr->valid[DDPCV] = VALID;
 		    /*Unnecessary since the zone is specified*/
