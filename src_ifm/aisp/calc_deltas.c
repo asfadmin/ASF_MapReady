@@ -147,7 +147,8 @@ void usage (char *name)
 {
  printf("\n"
 	"USAGE:\n"
-	"   %s [-log <file>] <linePatch1> <linePatchL> <numLines> <output_deltas>\n",
+	"   %s [-log <file>]\n"
+	"               <linePatch1> <linePatchL> <numLines> <output_deltas>\n",
 	name);
  printf("\n"
  	"REQUIRED ARGUMENTS:\n"
