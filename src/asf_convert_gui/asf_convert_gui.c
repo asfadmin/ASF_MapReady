@@ -29,7 +29,7 @@ main(int argc, char **argv)
 
     /* thumbnails supported in GTK 2.4 or greater, also require threading */
 #ifdef G_THREADS_ENABLED
-    use_thumbnails = gtk_major_version >= 2 && gtk_minor_version >= 6;
+    use_thumbnails = gtk_major_version >= 2 && gtk_minor_version >= 4;
 #else
     use_thumbnails = false;
 #endif
