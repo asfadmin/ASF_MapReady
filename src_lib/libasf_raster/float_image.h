@@ -165,18 +165,15 @@ float_image_get_pixel_with_reflection (FloatImage *self, ssize_t x, ssize_t y);
 ///////////////////////////////////////////////////////////////////////////////
 
 // Finds the minimum and maximum pixel values in the image, and the
-// mean and standard deviation of all pixels.  This function sucks
-// every pixel in the image into memory at the moment (this needs
-// fixing).
+// mean and standard deviation of all pixels.  This function considers
+// every pixel in the image.
 void
 float_image_statistics (FloatImage *self, float *min, float *max, float *mean, 
 			float *standard_deviation);
 
 // Compute an efficient estimate of the mean and standard deviation of
 // the pixels in the image, by sampling every stride th pixel in each
-// dimension.  The whole array of sample pixels ends up in memory, so
-// stride probably needs to be something other than one or some other
-// low number for large images.
+// dimension.
 void
 float_image_approximate_statistics (FloatImage *self, size_t stride, 
 				    float *mean, float *standard_deviation);

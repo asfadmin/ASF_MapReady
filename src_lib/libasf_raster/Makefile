@@ -33,26 +33,43 @@ float_image.o: CFLAGS := $(CFLAGS) -Werror -Wall -W -Wmissing-prototypes \
 # Test program useful for verifying that the float_image class works
 # as expected.
 brighten_float_image: brighten_float_image.o
-	$(CC) $^ \
+	$(CC) -Wall -g3 $^ \
               $(LIBDIR)/libasf_meta.a \
                $(LIBDIR)/libasf_raster.a \
               $(LIBDIR)/libgsl.a \
               `pkg-config --libs glib-2.0` \
               $(LIBDIR)/libgslcblas.a \
+	      $(LIBDIR)/libjpeg.a \
               -lm \
               -o $@
 
 # Test program useful for checking the speed of float_image pixel
 # lookups.
 brighten_in_memory: brighten_in_memory.o
-	$(CC) $^ \
+	$(CC) -Wall -g3 $^ \
               $(LIBDIR)/libasf_meta.a \
               $(LIBDIR)/libasf_raster.a \
               $(LIBDIR)/libgsl.a \
               `pkg-config --libs glib-2.0` \
               $(LIBDIR)/libgslcblas.a \
+	      $(LIBDIR)/libjpeg.a \
               -lm \
               -o $@
+
+# FIXME: remove the stupid PKG_CONFIG_PATH environment var setting
+# once it is sorted out how to have pkg-config know where to find the
+# .pc file that the glib module should be installing.
+test_float_image_statistics: test_float_image_statistics.o
+	$(CC) -Wall -g $^ \
+              $(LIBDIR)/libasf_meta.a \
+              $(LIBDIR)/libasf_raster.a \
+              $(LIBDIR)/libgsl.a \
+              `PKG_CONFIG_PATH=/usr/lib/pkgconfig pkg-config --libs glib-2.0` \
+              $(LIBDIR)/libgslcblas.a \
+	      $(LIBDIR)/libjpeg.a \
+              -lm \
+              -o $@
+	./$@
 
 # Rebuild everything if makefile or any local of ASF header or library
 # has changed.
@@ -61,7 +78,8 @@ $(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) \
 
 clean:
 	rm -rf $(OBJS) rm brighten_float_image.o brighten_float_image \
-               brighten_in_memory.o brighten_in_memory libasf_raster.a
+               brighten_in_memory.o brighten_in_memory libasf_raster.a \
+               test_float_image_statistics
 
 test: interpolate.t.c all
 	$(CC) $(CFLAGS) interpolate.t.c $(LIBDIR)/libasf_raster.a $(LIBS) -o interpolate.t

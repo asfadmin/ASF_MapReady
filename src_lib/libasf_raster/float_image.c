@@ -1,9 +1,11 @@
 // Implementation of the interface in float_image.h.
 
 #include <errno.h>
+#include <float.h>
 #include <limits.h>
 #include <math.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -12,8 +14,7 @@
 
 #include <glib.h>
 #include <gsl/gsl_spline.h>
-#include <gsl/gsl_statistics.h>
-#include <gsl/gsl_vector.h>
+
 #include <jpeglib.h>
 
 #include "float_image.h"
@@ -1041,32 +1042,45 @@ float_image_get_pixel_with_reflection (FloatImage *self, ssize_t x, ssize_t y)
 }
 
 
-void float_image_statistics (FloatImage *self, float *min, float *max, 
-			     float *mean, float *standard_deviation)
+void 
+float_image_statistics (FloatImage *self, float *min, float *max, 
+			float *mean, float *standard_deviation)
 {
-  // Pixels in image.
-  size_t pixel_count = self->size_x * self->size_y;
+  *min = FLT_MAX;
+  *max = -FLT_MAX;
 
-  // Suck all pixels into a vector.
-  gsl_vector_float *pvs = gsl_vector_float_alloc (pixel_count);
-  size_t ii;
-  size_t current_pixel = 0;
+  // Buffer for one row of samples.
+  float *row_buffer = g_new (float, self->size_x);
+
+  // Its best to keep track of things internally using doubles in
+  // order to minimuze error buildup.
+  double mean_as_double = 0;
+  double s = 0;
+
+  size_t sample_count = 0;	// Samples considered so far.
+  size_t ii, jj;
   for ( ii = 0 ; ii < self->size_y ; ii++ ) {
-    size_t jj;
+    float_image_get_row (self, ii, row_buffer);
     for ( jj = 0 ; jj < self->size_x ; jj++ ) {
-      gsl_vector_float_set (pvs, current_pixel,
-			    float_image_get_pixel (self, jj, ii));
-      current_pixel++;
+      float cs = row_buffer[jj];   // Current sample. 
+      if ( G_UNLIKELY (cs < *min) ) { *min = cs; }
+      if ( G_UNLIKELY (cs > *max) ) { *max = cs; }
+      double old_mean = mean_as_double;
+      mean_as_double += (cs - mean_as_double) / (sample_count + 1);
+      s += (cs - old_mean) * (cs - mean_as_double);
+      sample_count++;
     }
   }
 
-  *min = gsl_vector_float_min (pvs);
-  *max = gsl_vector_float_max (pvs);
-  *mean = gsl_stats_float_mean (pvs->data, pvs->stride, pvs->size);
-  *standard_deviation
-    = gsl_stats_float_sd_m (pvs->data, pvs->stride, pvs->size, *mean);
+  g_free (row_buffer);
 
-  gsl_vector_float_free (pvs);
+  double standard_deviation_as_double = sqrt (s / (sample_count - 1));
+
+  g_assert (fabs (mean_as_double) <= FLT_MAX);
+  g_assert (fabs (standard_deviation_as_double) <= FLT_MAX);
+
+  *mean = mean_as_double;
+  *standard_deviation = standard_deviation_as_double;
 }
 
 void
@@ -1079,25 +1093,30 @@ float_image_approximate_statistics (FloatImage *self, size_t stride,
   // Total number of samples.
   size_t sample_count = sample_columns * sample_rows;
 
-  gsl_vector_float *pvs = gsl_vector_float_alloc (sample_count);
-
   // Load the sample values.
+  // Create an image holding the sample values.
+  FloatImage *sample_image = float_image_new (sample_rows, sample_columns);
+
   size_t current_sample = 0;
   size_t ii;
   for ( ii = 0 ; ii < self->size_y ; ii += stride ) {
     size_t jj;
     for ( jj = 0 ; jj < self->size_x ; jj += stride ) {
-      gsl_vector_float_set (pvs, current_sample, 
-			    float_image_get_pixel (self, jj, ii));
+      float_image_set_pixel (sample_image, jj / stride, ii / stride,
+			     float_image_get_pixel (self, jj, ii));
       current_sample++;
     }
   }
 
-  *mean = gsl_stats_float_mean (pvs->data, pvs->stride, pvs->size);
-  *standard_deviation
-    = gsl_stats_float_sd_m (pvs->data, pvs->stride, pvs->size, *mean);
+  // Ensure that we got the right number of samples in our image.
+  g_assert (current_sample == sample_count);
 
-  gsl_vector_float_free (pvs);
+  // Compute the exact statistics of the sampled version of the image.
+  // The _statistics method wants to compute min and max, so we let
+  // it, even though we don't do anything with them (since they are
+  // inaccurate).
+  float min, max;		
+  float_image_statistics (sample_image, &min, &max, mean, standard_deviation);
 }
 
 float
