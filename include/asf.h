@@ -64,7 +64,10 @@ void StopWatchLog(FILE *fLog);
  * A collection of file name and I/O utilities. Implemented * in
  * asf.a/fileUtil.c */
 
-char *findExt(char *name);
+/* Return a pointer into string name pointing to the dot ('.')
+   character in the trailing dot extension, or a NULL pointer if name
+   doesn't include any dots.  */
+char *findExt(const char *name);
 /* The maximum allowable length in characters (not including trailing
    null character) of result strings from the appendExt routine.  */
 #define MAX_APPENDEXT_RESULT_STRING_LENGTH 255
