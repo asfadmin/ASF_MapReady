@@ -19,7 +19,6 @@ typedef struct
 	char *batchFile;		/* batch file name */
 	char *units;			/* units as defined in the default values file */
 } s_general;
-//Joe needs to call cambridge@718-858-5002
 
 typedef struct
 {

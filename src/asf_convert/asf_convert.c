@@ -261,22 +261,19 @@ int main(int argc, char *argv[])
 	if(configInitFlag != -1)
 		strcpy(configFile, argv[configInitFlag + 1]);
 
+	//Get files from command line if we're not doing a config file
 	if(configFlag == -1 && configInitFlag == -1)
 	{
-		strcpy(data_file, argv[argc - 3]);
-		strcpy(meta_file, argv[argc - 2]);
-		strcpy(out_file, argv[argc - 1]);
-		//WARNING: THIS IS A TOTAL HACK :D
-		//Find the end of the string
-		for(ii = 0; ii < 255; ++ii)
-			if(argv[argc - 2][ii] == '\0')
-				break;
-		if(argv[argc - 2][ii - 1] == 'L')//If it ends in .L, it's a CEOS image
-			strcpy(format_in, "CEOS");
-		else if(strcmp("meta", argv[argc-2][ii - 4]))
-			strcpy(format_in, "ASF");
+		strcpy(data_file, argv[argc - 3]);//The first of the last three arguments
+		strcpy(meta_file, argv[argc - 2]);//The second of the last three arguments
+		strcpy(out_file, argv[argc - 1]);//The third of the last three arguments
+
+		if(!strcmp(".D", strrchr(data_file, '.')))//If the file ends in .D
+			strcpy(format_in, "CEOS");//It must be a CEOS image
+		else if(!strcmp(".img", strrchr(data_file, '.')))//If the file ends in .img
+			strcpy(format_in, "ASF");//It must be an ASF internal format file
 		else
-			check_return(-1, "Unrecognized input file type\n");
+			check_return(-1, "Unrecognized input file format");//Otherwise, we have no idea
 	}
 //**********************END COMMAND LINE PARSING STUFF**********************//
 
