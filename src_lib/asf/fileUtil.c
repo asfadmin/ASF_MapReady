@@ -9,16 +9,16 @@ int extExists(const char *name, const char *newExt)
 {
   char *fName = appendExt (name,newExt);
   int exists = fileExists (fName);
-  free(fName);
+  free (fName);
   return exists;
 }
 
 int fileExists(const char *name)
 {
-  FILE *f = fopen(name,"r");
+  FILE *f = fopen (name,"r");
   if (f == NULL)
     return 0;
-  fclose(f);
+  fclose (f);
   return 1;
 }
 
@@ -43,7 +43,8 @@ char *appendExt(const char *name, const char *newExt)
 {
   char *ret = (char *) MALLOC (sizeof(char) 
 			       * (MAX_APPENDEXT_RESULT_STRING_LENGTH + 1));
-  assert (strlen (name) <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
+  assert (strnlen (name, MAX_APPENDEXT_RESULT_STRING_LENGTH + 1) 
+	  <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
   strcpy (ret, name);
 	
   char *ext = findExt (ret);
@@ -54,7 +55,8 @@ char *appendExt(const char *name, const char *newExt)
     return ret;
 
   if ( ext != NULL )
-    /* We found an existing extension, clip it off.  */
+    /* We found an existing dot extension, clip it off (the dot itself
+       it clipped).  */
     *ext = '\0';	
 
   /* Put new extension on the end.  */
