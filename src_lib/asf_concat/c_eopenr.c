@@ -116,13 +116,6 @@ if ((fd->acc == IREAD) || (fd->acc == IUPDATE))
 /*  Compare the system that the data is stored on and the system that will
     process the data.
 --------------------------------------------------------------------------*/
-        stati = c_comsys(fname,&dflag);
-	if (stati == E_FAIL)
-	   {
-	   c_errmsg("Error returned from comsys",
-	           "eopenr-call",NON_FATAL);
-	   return(E_FAIL);
-	   }
 	stati = c_getddr(fname, &ddr);
 	if ((dflag == 3) || 
             ((dflag == 1) && (ddr.dtype == EREAL)) ||
