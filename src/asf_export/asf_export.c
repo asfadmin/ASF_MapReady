@@ -55,15 +55,19 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "\n"\
 "   -byte <sample mapping option>\n"\
 "        Converts output image to byte using the following options:\n"\
-"             truncate - truncates the input values regardless of their\n"\
-"                        value range.\n"\
-"             minmax   - determines the minimum and maximum values of the\n"\
-"                        input image and maps those values to the byte range\n"\
-"                        of 0 to 255.\n"\
-"             sigma    - determines the mean and standard deviation of an\n"\
-"                        image and applies a buffer of 2 sigma around the\n"\
-"                        mean value (it adjusts this buffer if the 2 sigma\n"\
-"                        buffer is outside the value range)."
+"             truncate\n"\
+"                  truncates the input values regardless of their value range.\n"\
+"             minmax\n"\
+"                  determines the minimum and maximum values of the input image\n"\
+"                  and maps those values to the byte range of 0 to 255.\n"\
+"             sigma\n"\
+"                  determines the mean and standard deviation of an image and\n"\
+"                  applies a buffer of 2 sigma around the mean value (it\n"\
+"                  adjusts this buffer if the 2 sigma buffer is outside the\n"\
+"                  value range).\n"\
+"             histogram_equalize\n"\
+"                  produces an image with equally distributed brightness levels\n"\
+"                  over the entire brightness scale which increases contrast."
 
 #define ASF_EXAMPLES_STRING \
 "   To export to the default geotiff format from file1.img and file1.meta\n"\
@@ -167,7 +171,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include <asf_reporting.h>
 
 
-/* Print invocation information.  */
+// Print invocation information.
 void usage()
 {
   printf ("\n"
@@ -185,7 +189,7 @@ void help_page()
   char happy_string[4066];
   char command[4096];
 
-  /* What to print out for help */
+  // What to print out for help
   sprintf(happy_string,
           "\n\n\n"
           "Tool name:\n" ASF_NAME_STRING "\n\n\n"
@@ -200,19 +204,19 @@ void help_page()
           "Version:\n" CONVERT_PACKAGE_VERSION_STRING "\n\n\n"
           "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n");
 
-  /* If we can, use less */
+  // If we can, use less
   sprintf (command, "echo '%s' | less --prompt='Type q to quit help, h for "
 	   "help with help browser'", happy_string);
   if ( system (command) == 0 )
     exit (EXIT_SUCCESS);
 
-  /* Hmmm, less didn't work cause we got here, try using more */
+  // Hmmm, less didn't work cause we got here, try using more
   sprintf (command,"echo '%s' | more",happy_string);
   if ( system (command) == 0 )
     exit (EXIT_SUCCESS);
 
-  /* Okay, neither less or more work (obviously if we made it here),
-   * just print the info straight to stdout and exit */
+  // Okay, neither less or more work (obviously if we made it here),
+  // just print the info straight to stdout and exit
   printf (happy_string);
   exit (EXIT_SUCCESS);
 }
@@ -231,8 +235,8 @@ checkForOption (char *key, int argc, char *argv[])
 }
 
 
-/* Check the return value of a function and display an error message
-   if it's a bad return.*/
+// Check the return value of a function and display an error message
+// if it's a bad return.
 void
 check_return (int ret, char *msg)
 {
@@ -241,24 +245,34 @@ check_return (int ret, char *msg)
 }
 
 
-/* Main program body. */
+// Main program body.
 int
 main (int argc, char *argv[])
 {
-
-  output_format_t format = UNSET;
+  output_format_t format = 0;
   meta_parameters *md;
 
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
-  /* Command line input goes in it's own structure.  */
+  // Command line input goes in it's own structure.
   command_line_parameters_t command_line;
+  strcpy (command_line.format, "");
+  command_line.size = NO_MAXIMUM_OUTPUT_SIZE;
+  strcpy (command_line.in_data_name, "");
+  strcpy (command_line.in_meta_name, "");
+  strcpy (command_line.output_name, "");
+  command_line.verbose = FALSE;
+  command_line.quiet = FALSE;
+  strcpy (command_line.leader_name, "");
+  strcpy (command_line.cal_params_file, "");
+  strcpy (command_line.cal_comment, "");
+  command_line.sample_mapping = 0;
 
   int formatFlag, sizeFlag, logFlag, quietFlag, lutFlag, byteFlag;
-  int needed_args = 3;/*command & argument & argument*/
+  int needed_args = 3;  //command & argument & argument
   int ii;
   char sample_mapping_string[25];
 
-  /*Check to see which options were specified*/
+  //Check to see which options were specified
   if ( checkForOption ("-help", argc, argv) != -1
        || checkForOption ("--help", argc, argv) != -1 ) {
     help_page ();
@@ -270,38 +284,38 @@ main (int argc, char *argv[])
   lutFlag = checkForOption ("-lut", argc, argv);
   byteFlag = checkForOption ("-byte", argc, argv);
 
-  if ( formatFlag != FLAG_NOT_SET ) { 
-    needed_args += 2;		/* Option & parameter.  */ 
+  if ( formatFlag != FLAG_NOT_SET ) {
+    needed_args += 2;		// Option & parameter.
   }
   if ( sizeFlag != FLAG_NOT_SET ) {
-    needed_args += 2;		/* Option & parameter.  */
+    needed_args += 2;		// Option & parameter.
   }
   if ( quietFlag != FLAG_NOT_SET ) {
-    needed_args += 1;		/* Option & parameter.  */
+    needed_args += 1;		// Option & parameter.
   }
   if ( logFlag != FLAG_NOT_SET ) {
-    needed_args += 2;		/* Option & parameter.  */
+    needed_args += 2;		// Option & parameter.
   }
   if ( lutFlag != FLAG_NOT_SET ) {
-    needed_args += 4;		/* Option & parameters.  */
+    needed_args += 4;		// Option & parameters.
   }
   if ( byteFlag != FLAG_NOT_SET ) {
-    needed_args += 2;		/* Option & parameter.  */
+    needed_args += 2;		// Option & parameter.
   }
 
   if ( argc != needed_args ) {
-    usage ();			/* This exits with a failure.  */
+    usage ();			// This exits with a failure.
   }
 
-  /* We also need to make sure the last three options are close to
-     what we expect.  */
+  // We also need to make sure the last three options are close to
+  // what we expect.
   if ( argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-' ) {
-    usage (); /* This exits with a failure.  */
+    usage (); // This exits with a failure.
   }
 
-  /* Make sure any options that have parameters are followed by
-     parameters (and not other options) Also make sure options'
-     parameters don't bleed into required arguments.  */
+  // Make sure any options that have parameters are followed by
+  // parameters (and not other options) Also make sure options'
+  // parameters don't bleed into required arguments.
   if ( formatFlag != FLAG_NOT_SET ) {
     if ( argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3 ) {
       usage ();
@@ -341,30 +355,31 @@ main (int argc, char *argv[])
   }
   else {
     logflag = FALSE;
-    //    sprintf (logFile, "tmp%i.log", (int) getpid ());
+    // sprintf (logFile, "tmp%i.log", (int) getpid ());
   }
 
-  /* Set old school quiet flag (for use in our libraries) */
+  // Set old school quiet flag (for use in our libraries)
   quietflag = ( quietFlag != FLAG_NOT_SET ) ? TRUE : FALSE;
 
-  /* We're good enough at this point... print the splash screen.  */
+  // We're good enough at this point... print the splash screen.
   asfSplashScreen (argc, argv);
 
+  // Set default output type
   if( formatFlag != FLAG_NOT_SET ) {
     strcpy (command_line.format, argv[formatFlag + 1]);
   }
   else {
-    /* Default behavior: produce a geotiff.  */
+    // Default behavior: produce a geotiff.
     strcpy (command_line.format, "geotiff");
   }
 
-  /* Convert the string to upper case.  */
+  // Convert the string to upper case.
   for ( ii = 0 ; ii < strlen (command_line.format) ; ++ii ) {
     command_line.format[ii] = toupper (command_line.format[ii]);
   }
 
-  /* Set the default byte scaling mechanisms */
-  if ( strcmp (command_line.format, "TIFF") == 0 
+  // Set the default byte scaling mechanisms
+  if ( strcmp (command_line.format, "TIFF") == 0
        || strcmp (command_line.format, "TIF") == 0
        || strcmp (command_line.format, "JPEG") == 0
        || strcmp (command_line.format, "JPG") == 0
@@ -389,27 +404,33 @@ main (int argc, char *argv[])
     strcpy(command_line.cal_params_file, argv[lutFlag + 2]);
     strcpy(command_line.cal_comment, argv[lutFlag + 3]);
   }
+
+  // Set scaling mechanism
   if ( byteFlag != FLAG_NOT_SET ) {
     strcpy (sample_mapping_string, argv[byteFlag + 1]);
-    for ( ii = 0 ; ii < strlen (sample_mapping_string) ; ii++)
+    for ( ii = 0; ii < strlen(sample_mapping_string); ii++) {
       sample_mapping_string[ii] = toupper (sample_mapping_string[ii]);
-
-    /* Set scaling mechanism */
+    }
     if ( strcmp (sample_mapping_string, "TRUNCATE") == 0 )
       command_line.sample_mapping = TRUNCATE;
     else if ( strcmp(sample_mapping_string, "MINMAX") == 0 )
       command_line.sample_mapping = MINMAX;
     else if ( strcmp(sample_mapping_string, "SIGMA") == 0 )
       command_line.sample_mapping = SIGMA;
+    else if ( strcmp(sample_mapping_string, "HISTOGRAM_EQUALIZE") == 0 )
+      command_line.sample_mapping = HISTOGRAM_EQUALIZE;
+    else
+      asfPrintError("Unrecognized byte scaling method '%s'.\n",
+                    sample_mapping_string);
   }
 
-  /*Grab/construct the data file name*/
+  //Grab/construct the data file name
   strcpy (command_line.in_data_name, argv[argc - 2]);
   strcat (command_line.in_data_name, ".img");
-  /*Grab/construct the meta file name*/
+  //Grab/construct the meta file name
   strcpy (command_line.in_meta_name, argv[argc - 2]);
   strcat (command_line.in_meta_name, ".meta");
-  /*Grab the output name*/
+  //Grab the output name
   strcpy (command_line.output_name, argv[argc - 1]);
 
 
