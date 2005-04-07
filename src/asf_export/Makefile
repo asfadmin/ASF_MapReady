@@ -36,10 +36,6 @@ SOURCES := asf_export.c \
 
 CC := gcc
 
-INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) $(GLIB_INCLUDE)
-
-CPPFLAGS := $(INCLUDE_FLAGS)
-
 LIBS  = $(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
