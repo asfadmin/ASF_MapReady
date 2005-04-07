@@ -685,10 +685,6 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
   else {
     self->tile_addresses[0] = self->cache;
 
-    // FIXME: this path is untested at the moment, it must be tested
-    // before use.
-    g_assert_not_reached ();
-
     size_t ii;
     for ( ii = 0 ; ii < self->size_y ; ii++ ) {
       // Address where the current row of pixels should end up.
