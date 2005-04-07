@@ -6,7 +6,6 @@
 
 #include <asf_endian.h>
 #include <asf_meta.h>
-#include <asf_nan.h>
 #include <asf_reporting.h>
 #include <asf_raster.h>
 #include <asf_export.h>
@@ -16,31 +15,29 @@
 
 void
 export_as_tiff (const char *metadata_file_name,
-		const char *image_data_file_name,
-		const char *output_file_name, long max_size, 
-		sample_mapping_t sample_mapping)
+                const char *image_data_file_name,
+                const char *output_file_name, long max_size,
+                scale_t sample_mapping)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
   /* Scale factor needed to satisfy max_size argument.  */
-  size_t scale_factor;  
+  size_t scale_factor;
   TIFF *otif;
-  /* The maximum color value for unsigned byte valued tiff images.  */
-  const int max_color_value = 255;
-  size_t ii, jj;		/* Index variables.  */
+  size_t ii, jj;                /* Index variables.  */
 
   asfRequire(md->general->data_type == REAL32,
              "Input data type must be in big endian 32-bit floating point "
-	     "format.\n");
+             "format.\n");
 
   /* Get the image data.  */
   asfPrintStatus ("Loading image...\n");
   const off_t start_of_file_offset = 0;
-  FloatImage *iim 
+  FloatImage *iim
     = float_image_new_from_file (md->general->sample_count,
-				 md->general->line_count, 
-				 image_data_file_name, start_of_file_offset,
-				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+                                 md->general->line_count,
+                                 image_data_file_name, start_of_file_offset,
+                                 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
   /* We want to scale the image st the long dimension is less than or
      equal to the prescribed maximum, if any.  */
@@ -49,8 +46,8 @@ export_as_tiff (const char *metadata_file_name,
     scale_factor = 1;
   }
   else {
-    scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y) 
-			 / max_size);
+    scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y)
+                         / max_size);
     /* The scaling code we intend to use needs odd scale factors.  */
     if ( scale_factor % 2 != 1 ) {
       scale_factor++;
@@ -76,7 +73,7 @@ export_as_tiff (const char *metadata_file_name,
   /* Make sure the unsigned char is the size we expect.  */
   asfRequire (sizeof(unsigned char) == 1,
               "Size of the unsigned char data type on this machine is "
-	      "different than expected.\n");
+              "different than expected.\n");
 
   /* Gather some statistics to help with the mapping.  Note that if
      min_sample and max_sample will actually get used for anything
@@ -84,32 +81,24 @@ export_as_tiff (const char *metadata_file_name,
   float mean, standard_deviation;
   const int default_sampling_stride = 30;
   const int minimum_samples_in_direction = 10;
-  int sampling_stride = GSL_MIN (default_sampling_stride, 
-				 GSL_MIN (si->size_x, si->size_y) 
-				 / minimum_samples_in_direction);
-  float min_sample = -1.0, max_sample = -1.0;  
+  int sampling_stride = GSL_MIN (default_sampling_stride,
+                                 GSL_MIN (si->size_x, si->size_y)
+                                 / minimum_samples_in_direction);
+  float min_sample = -1.0, max_sample = -1.0;
   /* Lower and upper extents of the range of float values which are to
      be mapped linearly into the output space.  */
   float omin, omax;
-  if ( sample_mapping == SIGMA ) {
-    float_image_approximate_statistics (si, sampling_stride, &mean, 
-					&standard_deviation);
-    omin = mean - 2 * standard_deviation;
-    omax = mean + 2 * standard_deviation;
-  }
-  else if ( sample_mapping == MINMAX ) {
-    float_image_statistics (si, &min_sample, &max_sample, &mean,
-			    &standard_deviation);
-    omin = min_sample;
-    omax = max_sample;
-  }
+  gsl_histogram *my_hist = NULL;
+  get_statistics (si, sample_mapping, sampling_stride, &mean,
+                  &standard_deviation, &min_sample, &max_sample, &omin, &omax,
+                  &my_hist);
 
   /* We might someday want to mask out certain valus for some type of
      images, so they don't corrupt the statistics used for mapping
      floats to JSAMPLEs.  Eanbling this will require changes to the
      statistics routines and the code that does the mapping from
      floats to JSAMPLEs.  */
-  /* 
+  /*
    * double mask;
    * if ( md->general->image_data_type == SIGMA_IMAGE
    *      || md->general->image_data_type == GAMMA_IMAGE
@@ -152,35 +141,19 @@ export_as_tiff (const char *metadata_file_name,
   float *float_row = g_new (float, si->size_x);
   unsigned char *byte_row = g_new (unsigned char, si->size_x);
 
+  // Stuff for histogram equalization
+  gsl_histogram_pdf *my_hist_pdf = NULL;
+  if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+    my_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
+    gsl_histogram_pdf_init (my_hist_pdf, my_hist);
+  }
+
   /* Write the actual image data.  */
   for ( ii = 0 ; ii < si->size_y ; ii++ ) {
     float_image_get_row (si, ii, float_row);
     for ( jj = 0 ; jj < si->size_x ; jj++ ) {
-      double paf = float_row[jj];
-      unsigned char pab;
-      switch ( sample_mapping ) {
-      case TRUNCATE:
-	if ( paf <= 0.0 ) { pab = 0; }
-	else if ( paf >= 255.0 ) { pab = 255; }
-	else { pab = (unsigned char) paf; }
-	break;
-      case MINMAX:
-      case SIGMA:
-	if ( paf < omin ) {
-	  pab = 0;
-	}
-	  else if ( paf > omax ) {
-	    pab = max_color_value;
-	  }
-	else {
-	  pab = round (((paf - omin) / (omax - omin)) * max_color_value);
-	}
-	break;
-      default:
-	g_assert_not_reached ();
-	break;
-      }
-      byte_row[jj] = pab;
+      byte_row[jj] = pixel_float2byte(float_row[jj], sample_mapping, omin,
+                                      omax, my_hist, my_hist_pdf);
     }
     if ( TIFFWriteScanline (otif, byte_row, ii, 0) < 0 ) {
       asfPrintError ("Error writing to output tiff file %s", output_file_name);
@@ -199,7 +172,7 @@ export_as_tiff (const char *metadata_file_name,
   if ( si != iim) {
     float_image_free (si);
   }
- 
+
   float_image_free (iim);
 
   meta_free (md);

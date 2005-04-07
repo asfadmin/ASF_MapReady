@@ -18,23 +18,18 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_statistics.h>
 #include <jpeglib.h>
-/*#include <proj_api.h>*/
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
 
 #include <asf.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
-#include "asf_nan.h"
-#include "asf_reporting.h"
+#include <asf_reporting.h>
 #include <asf_export.h>
-#include "asf_raster.h"
+#include <asf_raster.h>
 
 void
 export_as_jpeg (const char *metadata_file_name,
                 const char *image_data_file_name, const char *output_file_name,
-                long max_size, sample_mapping_t sample_mapping)
+                long max_size, scale_t sample_mapping)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
@@ -47,17 +42,17 @@ export_as_jpeg (const char *metadata_file_name,
   FILE *ofp;
 
   asfRequire (md->general->data_type == REAL32,
-	      "Input data type must be in big endian 32-bit floating point "
-	      "format.\n");
+              "Input data type must be in big endian 32-bit floating point "
+              "format.\n");
 
   /* Get the image data.  */
   asfPrintStatus ("Loading image...\n");
   const off_t start_of_file_offset = 0;
-  FloatImage *iim 
+  FloatImage *iim
     = float_image_new_from_file (md->general->sample_count,
-				 md->general->line_count, 
-				 image_data_file_name, start_of_file_offset,
-				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+                                 md->general->line_count,
+                                 image_data_file_name, start_of_file_offset,
+                                 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
   /* We want to scale the image st the long dimension is less than or
      equal to the prescribed maximum, if any.  */
@@ -66,8 +61,8 @@ export_as_jpeg (const char *metadata_file_name,
     scale_factor = 1;
   }
   else {
-    scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y) 
-			 / max_size);
+    scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y)
+                         / max_size);
     /* The scaling code we intend to use needs odd scale factors.  */
     if ( scale_factor % 2 != 1 ) {
       scale_factor++;
@@ -89,7 +84,7 @@ export_as_jpeg (const char *metadata_file_name,
      floats to JSAMPLEs.  Eanbling this will require changes to the
      statistics routines and the code that does the mapping from
      floats to JSAMPLEs.  */
-  /* 
+  /*
    * double mask;
    * if ( md->general->image_data_type == SIGMA_IMAGE
    *      || md->general->image_data_type == GAMMA_IMAGE
@@ -112,15 +107,14 @@ export_as_jpeg (const char *metadata_file_name,
      really is the type we expect, so we can scale properly.  */
   asfRequire(sizeof(unsigned char) == 1,
              "Size of the unsigned char data type on this machine is "
-	     "different than expected.\n");
+             "different than expected.\n");
   asfRequire(sizeof(unsigned char) == sizeof (JSAMPLE),
              "Size of unsigned char data type on this machine is different "
-	     "than JPEG byte size.\n");
+             "than JPEG byte size.\n");
   JSAMPLE test_jsample = 0;
   test_jsample--;
   asfRequire(test_jsample == UCHAR_MAX,
              "Something wacky happened, like data overflow.\n");
-  const int jsample_max = UCHAR_MAX;
 
   /* Gather some statistics to help with the mapping.  Note that if
      min_sample and max_sample will actually get used for anything
@@ -130,24 +124,16 @@ export_as_jpeg (const char *metadata_file_name,
   float mean, standard_deviation;
   const int default_sampling_stride = 30;
   const int minimum_samples_in_direction = 10;
-  int sampling_stride = GSL_MIN (default_sampling_stride, 
-				 GSL_MIN (si->size_x, si->size_y) 
-				 / minimum_samples_in_direction);
+  int sampling_stride = GSL_MIN (default_sampling_stride,
+                                 GSL_MIN (si->size_x, si->size_y)
+                                 / minimum_samples_in_direction);
   /* Lower and upper extents of the range of float values which are to
      be mapped linearly into the output space.  */
   float omin, omax;
-  if ( sample_mapping == SIGMA ) {
-    float_image_approximate_statistics (si, sampling_stride, &mean, 
-					&standard_deviation);
-    omin = mean - 2 * standard_deviation;
-    omax = mean + 2 * standard_deviation;
-  }
-  else if ( sample_mapping == MINMAX ) {
-    float_image_statistics (si, &min_sample, &max_sample, &mean,
-			    &standard_deviation);
-    omin = min_sample;
-    omax = max_sample;
-  }
+  gsl_histogram *my_hist = NULL;
+  get_statistics (si, sample_mapping, sampling_stride, &mean,
+                  &standard_deviation, &min_sample, &max_sample, &omin, &omax,
+                  &my_hist);
 
   asfPrintStatus("Writing Output File...\n");
 
@@ -174,6 +160,13 @@ export_as_jpeg (const char *metadata_file_name,
   /* Reassure libjpeg that we will be writing a complete JPEG file.  */
   jpeg_start_compress (&cinfo, TRUE);
 
+  // Stuff for histogram equalization
+  gsl_histogram_pdf *my_hist_pdf = NULL;
+  if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+    my_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
+    gsl_histogram_pdf_init (my_hist_pdf, my_hist);
+  }
+
   /* Write the jpeg.  */
   float *float_row = g_new (float, si->size_x);
   JSAMPLE *jsample_row = g_new (JSAMPLE, si->size_x);
@@ -184,31 +177,9 @@ export_as_jpeg (const char *metadata_file_name,
     JSAMPROW *row_pointer = MALLOC (rows_to_write * sizeof (JSAMPROW));
     float_image_get_row (si, cinfo.next_scanline, float_row);
     for ( jj = 0 ; jj < si->size_x ; jj++ ) {
-      double paf = float_row[jj];
-      JSAMPLE pajs;		/* Pixel as jsample.  */
-      switch ( sample_mapping ) {
-      case TRUNCATE:
-	if ( paf <= 0.0 ) { pajs = 0; }
-	else if ( paf >= jsample_max ) { pajs = jsample_max; }
-	else { pajs = (JSAMPLE) paf;}
-	break;
-      case MINMAX:
-      case SIGMA:
-	if ( paf < omin ) { 
-	  pajs = 0; 
-	}
-	else if ( paf > omax ) {
-	  pajs = jsample_max;
-	}
-	else {
-	  pajs = round (((paf - omin) / (omax - omin)) * jsample_max);
-	}
-	break;
-      default:
-	g_assert_not_reached ();
-	break;
-      }
-      jsample_row[jj] = pajs;
+      jsample_row[jj] = (JSAMPLE) pixel_float2byte(float_row[jj],
+                                                   sample_mapping, omin, omax,
+                                                   my_hist, my_hist_pdf);
     }
     row_pointer[0] = jsample_row;
     rows_written = jpeg_write_scanlines (&cinfo, row_pointer, rows_to_write);

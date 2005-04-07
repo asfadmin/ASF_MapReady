@@ -18,7 +18,6 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_statistics.h>
 #include <jpeglib.h>
-/*#include <proj_api.h>*/
 #include <tiff.h>
 #include <tiffio.h>
 #include <xtiffio.h>
@@ -35,35 +34,35 @@
 
 
 void
-export_as_ppm (const char *metadata_file_name, 
-	       const char *image_data_file_name,const char *output_file_name,
-               long max_size, sample_mapping_t sample_mapping)
+export_as_ppm (const char *metadata_file_name,
+               const char *image_data_file_name,const char *output_file_name,
+               long max_size, scale_t sample_mapping)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
   /* Scale factor needed to satisfy max_size argument.  */
   size_t scale_factor;
-  FILE *ofp;			/* Output file pointer.  */
+  FILE *ofp;                    /* Output file pointer.  */
   const char *ppm_magic_number = PPM_MAGIC_NUMBER;
-  int print_count;		/* For return from printf().  */
+  int print_count;              /* For return from printf().  */
   /* The maximum color value for unsigned byte valued ppm images.  */
   const int max_color_value = 255;
-  size_t ii;			/* Index variable.  */
+  size_t ii;                    /* Index variable.  */
 
   asfRequire(md->general->data_type == REAL32,
              "Input data type must be in big endian 32-bit floating point "
-	     "format.\n");
+             "format.\n");
 
   /* Get the image data.  */
   asfPrintStatus ("Loading image...\n");
   const off_t start_of_file_offset = 0;
   asfRequire (md->general->data_type == REAL32,
-	      "Input data type must be in 32-bit floating point format.\n");
-  FloatImage *iim 
+              "Input data type must be in 32-bit floating point format.\n");
+  FloatImage *iim
     = float_image_new_from_file (md->general->sample_count,
-				 md->general->line_count, 
-				 image_data_file_name, start_of_file_offset,
-				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+                                 md->general->line_count,
+                                 image_data_file_name, start_of_file_offset,
+                                 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
   /* We want to scale the image st the long dimension is less than or
      equal to the prescribed maximum, if any.  */
@@ -72,8 +71,8 @@ export_as_ppm (const char *metadata_file_name,
     scale_factor = 1;
   }
   else {
-    scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y) 
-			 / max_size);
+    scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y)
+                         / max_size);
     /* The scaling code we intend to use needs odd scale factors.  */
     if ( scale_factor % 2 != 1 ) {
       scale_factor++;
@@ -98,7 +97,7 @@ export_as_ppm (const char *metadata_file_name,
   /* Make sure the unsigned char is the size we expect.  */
   asfRequire (sizeof(unsigned char) == 1,
               "Size of the unsigned char data type on this machine is "
-	      "different than expected.\n");
+              "different than expected.\n");
 
   /* Gather some statistics to help with the mapping.  Note that if
      min_sample and max_sample will actually get used for anything
@@ -106,75 +105,51 @@ export_as_ppm (const char *metadata_file_name,
   float mean, standard_deviation;
   const int default_sampling_stride = 30;
   const int minimum_samples_in_direction = 10;
-  int sampling_stride = GSL_MIN (default_sampling_stride, 
-				 GSL_MIN (si->size_x, si->size_y) 
-				 / minimum_samples_in_direction);
-  float min_sample = -1.0, max_sample = -1.0;  
+  int sampling_stride = GSL_MIN (default_sampling_stride,
+                                 GSL_MIN (si->size_x, si->size_y)
+                                 / minimum_samples_in_direction);
+  float min_sample = -1.0, max_sample = -1.0;
+  gsl_histogram *my_hist = NULL;
   /* Lower and upper extents of the range of float values which are to
      be mapped linearly into the output space.  */
   float omin, omax;
-  if ( sample_mapping == SIGMA ) {
-    float_image_approximate_statistics (si, sampling_stride, &mean, 
-					&standard_deviation);
-    omin = mean - 2 * standard_deviation;
-    omax = mean + 2 * standard_deviation;
-  }
-  else if ( sample_mapping == MINMAX ) {
-    float_image_statistics (si, &min_sample, &max_sample, &mean,
-			    &standard_deviation);
-    omin = min_sample;
-    omax = max_sample;
-  }
-
+  get_statistics (si, sample_mapping, sampling_stride, &mean,
+                  &standard_deviation, &min_sample, &max_sample, &omin, &omax,
+                  &my_hist);
   asfPrintStatus ("Writing output file...\n");
 
   /* Open the output file to be used.  */
   ofp = fopen (output_file_name, "w");
   if ( ofp == NULL )
     asfPrintError ("Open of %s for writing failed: %s", output_file_name,
-		   strerror(errno));
+                   strerror(errno));
 
   /* Write the ppm header.  */
   print_count = fprintf (ofp, PPM_MAGIC_NUMBER);
-  /* After this we will assume that writing to the new file will work
-     correctly.  */
+  // After this we will assume that writing to the new file will work
+  // correctly.
   asfRequire (print_count == strlen (ppm_magic_number),
-	      "Error writing to file.\n");
+              "Error writing to file.\n");
   fprintf (ofp, "\n");
-  asfRequire (sizeof (long int) >= sizeof (size_t), 
-	      "size of C type 'long int' less than size of C type 'size_t");
+  asfRequire (sizeof (long int) >= sizeof (size_t),
+              "size of C type 'long int' less than size of C type 'size_t'");
   fprintf (ofp, "%ld\n", (long int) si->size_x);
   fprintf (ofp, "%ld\n", (long int) si->size_y);
   fprintf (ofp, "%d\n", max_color_value);
 
+  // Stuff for histogram equalization
+  gsl_histogram_pdf *my_hist_pdf = NULL;
+  if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+    my_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
+    gsl_histogram_pdf_init (my_hist_pdf, my_hist);
+  }
   /* Write the pixels themselves.  */
   for ( ii = 0 ; ii < si->size_y ; ii++ ) {
     size_t jj;
     for ( jj = 0 ; jj < si->size_x ; jj++ ) {
       double paf = float_image_get_pixel (si, jj, ii); /* Pixels as float.  */
-      unsigned char pab;	/* Pixel as byte.  */
-      switch ( sample_mapping ) {
-      case TRUNCATE:
-	if ( paf <= 0.0 ) { pab = 0; }
-	else if ( paf >= 255.0 ) { pab = 255; }
-	else { pab = (unsigned char) paf; }
-	break;
-      case MINMAX:
-      case SIGMA:
-	if ( paf < omin ) {
-	  pab = 0;
-	}
-	  else if ( paf > omax ) {
-	    pab = max_color_value;
-	  }
-	else {
-	  pab = round (((paf - omin) / (omax - omin)) * max_color_value);
-	}
-	break;
-      default:
-	g_assert_not_reached ();
-	break;
-      }
+      unsigned char pab = pixel_float2byte(paf, sample_mapping, omin, omax,
+                                           my_hist, my_hist_pdf);
       /* Write red, green, and blue the same to get grey scale.  */
       fwrite (&pab, 1, 1, ofp);
       fwrite (&pab, 1, 1, ofp);
