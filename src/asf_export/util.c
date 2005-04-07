@@ -18,7 +18,6 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_statistics.h>
 #include <jpeglib.h>
-/*#include <proj_api.h>*/
 #include <tiff.h>
 #include <tiffio.h>
 #include <xtiffio.h>
@@ -283,3 +282,97 @@ unsigned char *scale_unsigned_char_image_dimensions (unsigned char *pixels,
   return pixels;
 }
 
+
+/* Figure basic statistics for the image as needed for the different data
+   scaling techniques available to the user */
+void
+get_statistics (FloatImage *si, scale_t sample_mapping, int sampling_stride,
+                float *mean, float *standard_deviation,
+                float *min_sample, float *max_sample,
+                float *omin, float *omax, gsl_histogram **hist)
+{
+
+  if ( sample_mapping == SIGMA ) {
+    float_image_approximate_statistics (si, sampling_stride, mean,
+                                        standard_deviation);
+    *omin = *mean - 2 * (*standard_deviation);
+    *omax = *mean + 2 * (*standard_deviation);
+  }
+
+  else if ( sample_mapping == MINMAX ) {
+    float_image_statistics (si, min_sample, max_sample, mean,
+                            standard_deviation);
+    *omin = *min_sample;
+    *omax = *max_sample;
+  }
+
+  else if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+    float_image_statistics (si, min_sample, max_sample, mean,
+                            standard_deviation);
+    // Add a little bit of tail padding on the histgram to avoid problems
+    // when searching for image min or max in the histogram (gsl histogram
+    // limitation)
+    *omin = *min_sample * 0.025 * (*min_sample);
+    *omax = *max_sample * 0.025 * (*max_sample);
+    *hist = float_image_histogram (si, *omin, *omax, NUM_HIST_BINS);
+  }
+}
+
+
+#ifndef linux
+#ifndef win32
+static double
+round (double arg)
+{
+  return floor (arg + 0.5);
+}
+#endif // #ifndef win32
+#endif // #ifndef linux
+
+/* Create a byte value based on the floating point value and whatever scaling
+   method the user chose */
+unsigned char
+pixel_float2byte(float paf, scale_t sample_mapping,
+                 float omin, float omax, gsl_histogram *hist,
+                 gsl_histogram_pdf *hist_pdf)
+{
+  const unsigned char min_brightness=0;          // Minimum brightess via byte
+  const unsigned char max_brightness=UCHAR_MAX;  // Maximum brightess via byte
+  unsigned char pab;                             // Pixel As Byte.
+  size_t hist_bin;                       // histogram bin for given float value
+
+  switch ( sample_mapping ) {
+  case TRUNCATE:
+    if ( paf <= (float) min_brightness ) {
+      pab = min_brightness;
+    }
+    else if ( paf >= (float) max_brightness ) {
+      pab = max_brightness;
+    }
+    else {
+      pab = (unsigned char) paf;
+    }
+    break;
+  case MINMAX:
+  case SIGMA:
+    if ( paf < omin ) {
+      pab = min_brightness;
+    }
+    else if ( paf > omax ) {
+      pab = max_brightness;
+    }
+    else {
+      pab = round (((paf - omin) / (omax - omin)) * max_brightness);
+    }
+    break;
+  case HISTOGRAM_EQUALIZE:
+    gsl_histogram_find (hist, paf, &hist_bin);
+    double pdf_at_index = gsl_histogram_get ((gsl_histogram*)hist_pdf, hist_bin);
+    pab = (unsigned char)(max_brightness * pdf_at_index);
+    break;
+  default:
+    g_assert_not_reached ();
+    break;
+  }
+  return pab;
+}
