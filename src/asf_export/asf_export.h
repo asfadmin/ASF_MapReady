@@ -1,14 +1,5 @@
 #include "asf_raster.h"
 
-#ifndef linux
-#ifndef win32
-static double
-round (double arg)
-{
-  return floor (arg + 0.5);
-}
-#endif // #ifndef win32
-#endif // #ifndef linux
 
 /* Evaluate to true if floats are within tolerance of each other.  */
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
@@ -38,16 +29,17 @@ round (double arg)
 
 #define FLAG_NOT_SET -1
 
+#define NUM_HIST_BINS UCHAR_MAX
+
 /* Output format to use.  */
 typedef enum {
-  ENVI,                         /* ENVI software package.  */
+  ENVI=1,                       /* ENVI software package.  */
   ESRI,                         /* ESRI GIS package.  */
   GEOTIFF,                      /* Geotiff.  */
   TIF,                          /* Tiff. */
   JPEG,                         /* Joint Photographic Experts Group.  */
   PPM,                          /* Portable PixMap.  */
-  CEOS,				/* CEOS format */
-  UNSET				/* Output format not set.  */
+  CEOS                          /* CEOS format */
 } output_format_t;
 
 /* Ellipsoid used for the data.  */
@@ -58,14 +50,6 @@ typedef enum {
   WGS66,                        /* Ancient crummy ellipsoid.  */
   USER_DEFINED                  /* Some unknown user defined ellipsoid.  */
 } asf_export_ellipsoid_t;
-
-/* Type describing how floating point values are to be mapped into
-   bytes.  */
-typedef enum {
-  SAMPLE_MAPPING_SIGMA,
-  SAMPLE_MAPPING_MINMAX,
-  SAMPLE_MAPPING_TRUNCATE
-} sample_mapping_t;
 
 /* Structure to hold elements of the command line.  */
 typedef struct {
@@ -86,7 +70,7 @@ typedef struct {
   char leader_name[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   char cal_params_file[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   char cal_comment[MAX_COMMENT_LENGTH];
-  sample_mapping_t sample_mapping;
+  scale_t sample_mapping;
 } command_line_parameters_t;
 
 /* Prototypes */
@@ -103,6 +87,15 @@ unsigned char *scale_unsigned_char_image_dimensions (unsigned char *pixels, \
                                       unsigned long max_large_dimension, \
                                       unsigned long *width, \
                                       unsigned long *height);
+void get_statistics (FloatImage *si, scale_t sample_mapping, \
+                    int sampling_stride, float *mean, \
+                    float *standard_deviation, float *min_sample, \
+                    float *max_sample, float *omin, float *omax, \
+                    gsl_histogram **hist);
+unsigned char pixel_float2byte (float paf, scale_t sample_mapping, float omin,\
+                                float omax, gsl_histogram *hist, \
+                                gsl_histogram_pdf *my_hist_pdf);
+
 void export_as_envi (const char *metadata_file_name,
                      const char *image_data_file_name,
                      const char *output_file_name);
@@ -114,20 +107,20 @@ void export_as_esri (const char *metadata_file_name,
 void export_as_geotiff (const char *metadata_file_name,
                         const char *image_data_file_name,
                         const char *output_file_name,
-			long max_size,
-                        sample_mapping_t sample_mapping);
+                        long max_size,
+                        scale_t sample_mapping);
 
 void export_as_jpeg (const char *metadata_file_name,
                      const char *image_data_file_name,
                      const char *output_file_name,
                      long max_size,
-                     sample_mapping_t sample_mapping);
+                     scale_t sample_mapping);
 
 void export_as_ppm (const char *metadata_file_name,
                     const char *image_data_file_name,
                     const char *output_file_name,
                     long max_size,
-		    sample_mapping_t sample_mapping);
+                    scale_t sample_mapping);
 
 void export_as_ceos (const char *metadata_file_name,
                      const char *image_data_file_name,
@@ -140,4 +133,4 @@ void export_as_tiff (const char *metadata_file_name,
                      const char *image_data_file_name,
                      const char *output_file_name,
                      long max_size,
-                     sample_mapping_t sample_mapping);
+                     scale_t sample_mapping);
