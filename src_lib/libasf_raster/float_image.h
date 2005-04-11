@@ -195,14 +195,17 @@ float_image_get_pixel_with_reflection (FloatImage *self, ssize_t x, ssize_t y);
 
 // Finds the minimum and maximum pixel values in the image, and the
 // mean and standard deviation of all pixels.  This function considers
-// every pixel in the image.
+// every pixel in the image when mask is NAN, otherwise it discounts
+// all values within .00000000001 of the mask
 void
 float_image_statistics (FloatImage *self, float *min, float *max, float *mean,
                         float *standard_deviation, float mask);
 
 // Compute an efficient estimate of the mean and standard deviation of
 // the pixels in the image, by sampling every stride th pixel in each
-// dimension, beginning with pixel (0, 0).
+// dimension, beginning with pixel (0, 0). If the mask is a non-NAN
+// value, this function will discount all values within .00000000001
+// of the mask
 void
 float_image_approximate_statistics (FloatImage *self, size_t stride,
                                     float *mean, float *standard_deviation,
