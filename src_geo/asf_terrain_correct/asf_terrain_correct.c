@@ -28,7 +28,7 @@ typedef struct {
 } target_distance_params;
 
 // Range function we want to minimize.
-static double 
+static double
 target_distance (double time, void *params)
 {
   Vector *target = ((target_distance_params *) params)->target;
@@ -38,7 +38,7 @@ target_distance (double time, void *params)
   ITRS_platform_path_position_at_time (pp, time, &platform_position);
 
   static Vector difference;
-  vector_set (&difference, platform_position.x, platform_position.y, 
+  vector_set (&difference, platform_position.x, platform_position.y,
 	      platform_position.z);
 
   vector_subtract (&difference, target);
@@ -62,8 +62,8 @@ main (int argc, char **argv)
   // A small test DEM custom made by Joanne.  The number from the LAS
   // data descriptor record are wired in here.
   const size_t tdsx = 700, tdsy = 220; /* Test DEM size x and size y.  */
-  FloatImage *td 
-    = (float_image_new_from_file_with_sample_type 
+  FloatImage *td
+    = (float_image_new_from_file_with_sample_type
        (tdsx, tdsy, "test_data/dem_over_delta/cut1.img",
 	0, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN,
 	FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER));
@@ -92,10 +92,10 @@ main (int argc, char **argv)
 
   // We will need a slant range version of the image being terrain
   // corrected.
-  SlantRangeImage *sri 
+  SlantRangeImage *sri
     = slant_range_image_new_from_ground_range_image (input_meta_file->str,
 						     input_data_file->str);
-  
+
   meta_parameters *imd = meta_read (input_meta_file->str);
 
   int svc = imd->state_vectors->vector_count;   // State vector count.
@@ -103,7 +103,7 @@ main (int argc, char **argv)
 
   double *observation_times = g_new (double, svc);
   OrbitalStateVector **observations = g_new (OrbitalStateVector *, svc);
-  
+
   // Load the observation times, positions, and velocities from the
   // metadata, converting the latter into Geocentric equitorial
   // inertial coordinates.
@@ -138,7 +138,7 @@ main (int argc, char **argv)
     // Otherwise, just add thee difference in observations times to
     // the previous date.
     else {
-      date_time_add_seconds (observation_date, (observation_times[ii] 
+      date_time_add_seconds (observation_date, (observation_times[ii]
 						- observation_times[ii - 1]));
     }
 
@@ -174,18 +174,18 @@ main (int argc, char **argv)
 
     // Perform rotation from earth fixed back to GEI coordinates.
     gsl_vector_set_zero (gei_pos);
-    int return_code = gsl_blas_dgemv (CblasNoTrans, 1.0, earm, itrs_pos, 0.0, 
+    int return_code = gsl_blas_dgemv (CblasNoTrans, 1.0, earm, itrs_pos, 0.0,
 				      gei_pos);
     g_assert (return_code == GSL_SUCCESS);
 
     // The fixed earth velocity vectors are affected by the rotation
     // of the earth itself, so first we have to subtract this term
     // out.
-    gsl_vector_set (tmp, xi, (gsl_vector_get (itrs_vel, xi) 
-			      - (EARTH_ROTATION_RATE 
+    gsl_vector_set (tmp, xi, (gsl_vector_get (itrs_vel, xi)
+			      - (EARTH_ROTATION_RATE
 				 * gsl_vector_get (itrs_pos, yi))));
-    gsl_vector_set (tmp, yi, (gsl_vector_get (itrs_vel, yi) 
-			      + (EARTH_ROTATION_RATE 
+    gsl_vector_set (tmp, yi, (gsl_vector_get (itrs_vel, yi)
+			      + (EARTH_ROTATION_RATE
 				 * gsl_vector_get (itrs_pos, xi))));
     gsl_vector_set (tmp, zi, gsl_vector_get (itrs_vel, zi));
 
@@ -196,7 +196,7 @@ main (int argc, char **argv)
     // components -- generally not an issue for a 15 second frame but
     // bad practice nevertheless.  We ought to change things so the
     // correct values are used everywhere.
-    return_code = gsl_blas_dgemv (CblasNoTrans, 1.0, earm, tmp, 0.0, 
+    return_code = gsl_blas_dgemv (CblasNoTrans, 1.0, earm, tmp, 0.0,
 				  gei_vel);
     g_assert (return_code == GSL_SUCCESS);
 
@@ -262,14 +262,14 @@ main (int argc, char **argv)
 				       UTC);
 
   // Create orbital arc model.
-  ITRSPlatformPath *pp_fixed 
+  ITRSPlatformPath *pp_fixed
     = ITRS_platform_path_new (cpc, observation_times[0] - gt,
   			      observation_times[svc - 1] + gt,
   			      svc, base_date, observation_times, observations);
 
   double target_point_albers_x;
   double target_point_albers_y;
-  int return_code = project_albers (&projection_parameters, 
+  int return_code = project_albers (&projection_parameters,
 				    63.80514 * M_PI / 180.0,
 				    -145.006 * M_PI / 180.0,
 				    &target_point_albers_x,
@@ -279,25 +279,25 @@ main (int argc, char **argv)
   // FIXME: This is a test point for a single location in delta
   // junction.  Eventually a computation like this will have to be
   // done for evey pixel in the image.
-  ITRSPoint *target_point 
+  ITRSPoint *target_point
     = ITRS_point_new_from_geodetic_lat_long_height (63.80514 * M_PI / 180.0,
 						    -145.006 * M_PI / 180.0,
 						    448.4);
-  //  double target_height_according_to_dem 
+  //  double target_height_according_to_dem
   //    = dem_get_height (dem, 63.80514 * M_PI / 180.0, -145.006 * M_PI / 180.0);
   //  printf ("target height according to dem: %lf\n",
   //	  target_height_according_to_dem);
-  Vector *target = vector_new (target_point->x, target_point->y, 
+  Vector *target = vector_new (target_point->x, target_point->y,
 			       target_point->z);
 
   // Find the time of the point of closest approach for this pixel.
   int status;   // Status of the solver.
   // Current iteration, maximum number of iterations.
-  int iteration = 0, max_iterations = 100;  
+  int iteration = 0, max_iterations = 100;
   const gsl_min_fminimizer_type *mimimizer_type = gsl_min_fminimizer_brent;
   gsl_min_fminimizer *minimizer = gsl_min_fminimizer_alloc (mimimizer_type);
-  gsl_function distance_function; 
-  distance_function.function = &target_distance; 
+  gsl_function distance_function;
+  distance_function.function = &target_distance;
   target_distance_params tdp;
   tdp.target = target;
   tdp.pp = pp_fixed;
@@ -314,36 +314,36 @@ main (int argc, char **argv)
 
   printf ("using %s method\n",
 	  gsl_min_fminimizer_name (minimizer));
-  
+
   printf ("%5s [%9s, %9s] %9s %9s\n",
 	  "iter", "lower", "upper", "min", "err(est)");
-  
+
   printf ("%5d [%.7f, %.7f] %.7f %.7f\n",
 	  iteration, sor, eor, min, eor - sor);
 
   do {
     iteration++;
     status = gsl_min_fminimizer_iterate (minimizer);
-    
+
     min = gsl_min_fminimizer_x_minimum (minimizer);
     sor = gsl_min_fminimizer_x_lower (minimizer);
     eor = gsl_min_fminimizer_x_upper (minimizer);
-    
+
     status = gsl_min_test_interval (sor, eor, 0.001, 0.0);
-    
+
     if (status == GSL_SUCCESS)
       printf ("Converged:\n");
-    
+
     printf ("%5d [%.7f, %.7f] %.7f %.7f\n",
     	    iteration, sor, eor, min, eor - sor);
   }
   while (status == GSL_CONTINUE && iteration < max_iterations);
-  
-  // We need to have the convergence work.  
+
+  // We need to have the convergence work.
   assert (status == GSL_SUCCESS);
 
   printf ("Imaging time for CR1: %lf +/- %lf\n", min, eor - sor);
-  
+
   double time_of_cr_pixel = meta_get_time (imd, 4293, 1933);
   double opt = meta_get_time (imd, 4293, 6000);
   opt=opt;
@@ -388,7 +388,7 @@ main (int argc, char **argv)
     }
     g_assert (tdsx < LONG_MAX);
     return_code = project_albers_arr_inv (&projection_parameters,
-					  x_buffer, y_buffer, &lats, 
+					  x_buffer, y_buffer, &lats,
 					  &lons, tdsx);
     g_assert (return_code == TRUE);
 
@@ -414,15 +414,15 @@ main (int argc, char **argv)
     // for the test case above.
     tdp.target = &cp_target;
     double *tdifs = g_new (double, tdsx); /* FIXME REMOVE DEBUG SCHLOP */
-    double *poca_x = g_new (double, tdsx); // FIXME REMOVE DEBUG 
-    double *poca_y = g_new (double, tdsx); // FIXME REMOVE DEBUG 
-    double *poca_z = g_new (double, tdsx); // FIXME REMOVE DEBUG 
+    double *poca_x = g_new (double, tdsx); // FIXME REMOVE DEBUG
+    double *poca_y = g_new (double, tdsx); // FIXME REMOVE DEBUG
+    double *poca_z = g_new (double, tdsx); // FIXME REMOVE DEBUG
     for ( jj = 0 ; jj < tdsx ; jj++ ) {
       double p_lat = lats[jj];
       double p_lon = lons[jj];
       double p_height = float_image_get_pixel (td, jj, ii);
       ITRSPoint *ctp
-	= ITRS_point_new_from_geodetic_lat_long_height (p_lat, p_lon, 
+	= ITRS_point_new_from_geodetic_lat_long_height (p_lat, p_lon,
 							p_height);
       cp_target.x = ctp->x;
       cp_target.y = ctp->y;
@@ -433,7 +433,7 @@ main (int argc, char **argv)
       tdifs[jj] = sqrt (pow (cp_target.x - target->x, 2)
 			+ pow (cp_target.y - target->y, 2)
 			+ pow (cp_target.z - target->z, 2));
-      
+
       ITRS_point_free (ctp);
 
       iteration = 0;
@@ -444,32 +444,32 @@ main (int argc, char **argv)
 
       //      printf ("using %s method\n",
       //	      gsl_min_fminimizer_name (minimizer));
-  
+
       //      printf ("%5s [%9s, %9s] %9s %9s\n",
       //	      "iter", "lower", "upper", "min", "err(est)");
-      
+
       //      printf ("%5d [%.7f, %.7f] %.7f %.7f\n",
       //	      iteration, sor, eor, min, eor - sor);
 
       do {
 	iteration++;
 	status = gsl_min_fminimizer_iterate (minimizer);
-    
+
 	min = gsl_min_fminimizer_x_minimum (minimizer);
 	sor = gsl_min_fminimizer_x_lower (minimizer);
 	eor = gsl_min_fminimizer_x_upper (minimizer);
-    
+
 	status = gsl_min_test_interval (sor, eor, 0.001, 0.0);
-    
+
 	//	if (status == GSL_SUCCESS)
 	  //	  printf ("Converged:\n");
-    
+
 	  //	printf ("%5d [%.7f, %.7f] %.7f %.7f\n",
 	  //		iteration, sor, eor, min, eor - sor);
       }
       while (status == GSL_CONTINUE && iteration < max_iterations);
-  
-      // We need to have the convergence work.  
+
+      // We need to have the convergence work.
       assert (status == GSL_SUCCESS);
 
       // The resulting minimum is time in the arc model of the point
@@ -480,7 +480,7 @@ main (int argc, char **argv)
       // The slant range can be found from the distance between the
       // target and the platform at the point of closest approach.
       // FIXME: this delcaration currently shadows declaration in test case
-      //      Vector poca; 
+      //      Vector poca;
       ITRS_platform_path_position_at_time (pp_fixed, solved_time, &poca);
       // FIXME: this delcaration currently shadows declaration in test case
       //      Vector *
@@ -498,14 +498,14 @@ main (int argc, char **argv)
 
       // Look up the backscatter value for the found slant range and
       // time.
-      float backscatter 
+      float backscatter
       	= slant_range_image_sample (sri, solved_time, solved_slant_range,
       				    FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR);
 
       // Take a look at the range and time images (FIXME: remove debug).
       float_image_set_pixel (range_image, jj, ii, solved_slant_range);
       if ( ii % 10 == 0 && (tdsy - jj - 1) % 10 == 0 ) {
-	printf ("range(%ld, %ld): %lf\n", (long) ii, (long) jj, 
+	printf ("range(%ld, %ld): %lf\n", (long) ii, (long) jj,
 		solved_slant_range);
       }
       float_image_set_pixel (time_image, jj, ii, solved_time);
@@ -540,19 +540,19 @@ main (int argc, char **argv)
 
   float_image_export_as_jpeg (pd, "painted_dem.jpg", GSL_MAX (pd->size_x,
 							      pd->size_y));
-  float_image_export_as_jpeg (range_image, "range_image.jpg", 
+  float_image_export_as_jpeg (range_image, "range_image.jpg",
 			      GSL_MAX (pd->size_x, pd->size_y));
   float range_min, range_max, range_mean, range_sdev;
   float_image_statistics (range_image, &range_min, &range_max, &range_mean,
-			  &range_sdev);
+			  &range_sdev, FLOAT_IMAGE_DEFAULT_MASK);
   printf ("range_min: %f, range_max: %f, range_mean: %f, range_sdev: %f\n",
 	  range_min, range_max, range_mean, range_sdev);
 
-  float_image_export_as_jpeg (time_image, "time_image.jpg", 
+  float_image_export_as_jpeg (time_image, "time_image.jpg",
 			      GSL_MAX (pd->size_x, pd->size_y));
   float time_min, time_max, time_mean, time_sdev;
   float_image_statistics (time_image, &time_min, &time_max, &time_mean,
-			  &time_sdev);
+			  &time_sdev, FLOAT_IMAGE_DEFAULT_MASK);
   printf ("time_min: %f, time_max: %f, time_mean: %f, time_sdev: %f\n",
 	  time_min, time_max, time_mean, time_sdev);
 
