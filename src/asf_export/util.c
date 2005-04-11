@@ -294,27 +294,28 @@ get_statistics (FloatImage *si, scale_t sample_mapping, int sampling_stride,
 
   if ( sample_mapping == SIGMA ) {
     float_image_approximate_statistics (si, sampling_stride, mean,
-                                        standard_deviation);
+                                        standard_deviation,
+                                        FLOAT_IMAGE_DEFAULT_MASK);
     *omin = *mean - 2 * (*standard_deviation);
     *omax = *mean + 2 * (*standard_deviation);
   }
 
   else if ( sample_mapping == MINMAX ) {
     float_image_statistics (si, min_sample, max_sample, mean,
-                            standard_deviation);
+                            standard_deviation, FLOAT_IMAGE_DEFAULT_MASK);
     *omin = *min_sample;
     *omax = *max_sample;
   }
 
   else if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
     float_image_statistics (si, min_sample, max_sample, mean,
-                            standard_deviation);
+                            standard_deviation, FLOAT_IMAGE_DEFAULT_MASK);
     // Add a little bit of tail padding on the histgram to avoid problems
     // when searching for image min or max in the histogram (gsl histogram
     // limitation)
     *omin = *min_sample * 0.025 * (*min_sample);
     *omax = *max_sample * 0.025 * (*max_sample);
-    *hist = float_image_histogram (si, *omin, *omax, NUM_HIST_BINS);
+    *hist = float_image_gsl_histogram (si, *omin, *omax, NUM_HIST_BINS);
   }
 }
 
@@ -366,9 +367,18 @@ pixel_float2byte(float paf, scale_t sample_mapping,
     }
     break;
   case HISTOGRAM_EQUALIZE:
-    gsl_histogram_find (hist, paf, &hist_bin);
-    double pdf_at_index = gsl_histogram_get ((gsl_histogram*)hist_pdf, hist_bin);
-    pab = (unsigned char)(max_brightness * pdf_at_index);
+    // Since we used a mask when we called float_image_statistics() earlier,
+    // we've got to account for it when writing the image out. The only way we
+    // could think to do that was casting the mask value to byte :(.
+    if (0==gsl_fcmp(paf, FLOAT_IMAGE_DEFAULT_MASK, 0.00000000001)) {
+      pab = (unsigned char)FLOAT_IMAGE_DEFAULT_MASK;
+    }
+    else {
+      gsl_histogram_find (hist, paf, &hist_bin);
+      double pdf_at_index = gsl_histogram_get ((gsl_histogram*)hist_pdf,
+                                               hist_bin);
+      pab = (unsigned char)(max_brightness * pdf_at_index);
+    }
     break;
   default:
     g_assert_not_reached ();
