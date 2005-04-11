@@ -124,7 +124,7 @@ typedef enum {
 // floating point representation is possible).  The other arguments
 // are like those of the new_from_file method.
 FloatImage *
-float_image_new_from_file_with_sample_type 
+float_image_new_from_file_with_sample_type
   (ssize_t size_x, ssize_t size_y, const char *file, off_t offset,
    float_image_byte_order_t byte_order, float_image_sample_type sample_type);
 
@@ -190,25 +190,29 @@ float_image_get_pixel_with_reflection (FloatImage *self, ssize_t x, ssize_t y);
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+// Default mask value when figuring image stats
+#define FLOAT_IMAGE_DEFAULT_MASK (0.0)
+
 // Finds the minimum and maximum pixel values in the image, and the
 // mean and standard deviation of all pixels.  This function considers
 // every pixel in the image.
 void
 float_image_statistics (FloatImage *self, float *min, float *max, float *mean,
-                        float *standard_deviation);
+                        float *standard_deviation, float mask);
 
 // Compute an efficient estimate of the mean and standard deviation of
 // the pixels in the image, by sampling every stride th pixel in each
 // dimension, beginning with pixel (0, 0).
 void
 float_image_approximate_statistics (FloatImage *self, size_t stride,
-                                    float *mean, float *standard_deviation);
+                                    float *mean, float *standard_deviation,
+                                    float mask);
 
 // Creates a gsl_histogram with 'num_bins' bins evenly spaced between
 // 'min' and 'max'.  This function considers every pixel in the image.
 gsl_histogram *
-float_image_histogram (FloatImage *self, float min, float max,
-                       size_t num_bins);
+float_image_gsl_histogram (FloatImage *self, float min, float max,
+                           size_t num_bins);
 
 ///////////////////////////////////////////////////////////////////////////////
 //

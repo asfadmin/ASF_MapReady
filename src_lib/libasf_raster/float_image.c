@@ -18,9 +18,10 @@
 #endif
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_histogram.h>
+#include <gsl/gsl_math.h>
 
 #include <jpeglib.h>
-
+#include "asf_nan.h"
 #include "float_image.h"
 
 #ifndef linux
@@ -80,13 +81,13 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
     self->cache = g_new (float, self->cache_area);
 
 	  // Address where the current row of pixels should end up.
-    //	  float *row_address 
+    //	  float *row_address
     //	    = self->tile_addresses[0] + ii * self->tile_size * sizeof (float);
 
 
     size_t ii, jj;
     for ( ii = 0 ; ii < self->size_y ; ii++ ) {
-      float *row_address 
+      float *row_address
 	= self->cache + ii * self->tile_size;
       for ( jj = 0 ; jj < self->size_x ; jj++ ) {
 	row_address[jj] = -42.0;
@@ -529,7 +530,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
-  g_assert (file_pointed_to_larger_than (file_pointer, 
+  g_assert (file_pointed_to_larger_than (file_pointer,
 					 offset + ((off_t) size_x * size_y
 						   * sizeof (float))));
 
@@ -671,7 +672,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
     }
 
     // Did we write the correct total amount of data?
-    g_assert (ftello (self->tile_file) 
+    g_assert (ftello (self->tile_file)
 	      == (off_t) self->tile_area * self->tile_count * sizeof (float));
 
     // Free temporary buffers.
@@ -689,9 +690,9 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
     for ( ii = 0 ; ii < self->size_y ; ii++ ) {
       // Address where the current row of pixels should end up.
       float *row_address = self->tile_addresses[0] + ii * self->tile_size;
-      
+
       // Read the data.
-      size_t read_count = fread (row_address, sizeof (float), self->size_x, 
+      size_t read_count = fread (row_address, sizeof (float), self->size_x,
 				 fp);
       g_assert (read_count == self->size_x);
 
@@ -729,16 +730,16 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
 
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
-  g_assert (is_large_enough (file, 
-			     offset + ((off_t) original_size_x 
+  g_assert (is_large_enough (file,
+			     offset + ((off_t) original_size_x
 				       * original_size_y
 				       * sizeof (float))));
-  
+
   // Find the stride that we need to use in each dimension to evenly
   // cover the original image space.
-  double stride_x = (size_x == 1 ? 0.0 
+  double stride_x = (size_x == 1 ? 0.0
 		     : (double) (original_size_x - 1) / (size_x - 1));
-  double stride_y = (size_y == 1 ? 0.0 
+  double stride_y = (size_y == 1 ? 0.0
 		     : (double) (original_size_y - 1) / (size_y - 1));
 
   // Open the file to read data from.
@@ -801,8 +802,8 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
       }
       g_assert (in_ul_x < original_size_x);
       size_t in_ul_y = in_ray;
-      off_t sample_offset 
-	= offset + sizeof (float) * ((off_t) in_ul_y * original_size_x 
+      off_t sample_offset
+	= offset + sizeof (float) * ((off_t) in_ul_y * original_size_x
 				     + in_ul_x);
       return_code = fseeko (fp, sample_offset, SEEK_SET);
       g_assert (return_code == 0);
@@ -832,7 +833,7 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
       g_assert (in_ll_x < original_size_x);
       size_t in_ll_y = in_rby;
       off_t sample_offset
-	= offset + sizeof (float) * ((off_t) in_ll_y * original_size_x 
+	= offset + sizeof (float) * ((off_t) in_ll_y * original_size_x
 				     + in_ll_x);
       return_code = fseeko (fp, sample_offset, SEEK_SET);
       g_assert (return_code == 0);
@@ -918,7 +919,7 @@ float_image_new_from_file_pointer_with_sample_type
   // still need to check return codes as we read() data, of course).
   switch ( sample_type ) {
   case FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER:
-    g_assert (file_pointed_to_larger_than (file_pointer, 
+    g_assert (file_pointed_to_larger_than (file_pointer,
 					   offset + ((off_t) size_x * size_y
 						     * sizeof (int16_t))));
     break;
@@ -932,7 +933,7 @@ float_image_new_from_file_pointer_with_sample_type
 
   // Seek to the indicated offset in the file.
   int return_code = fseeko (fp, offset, SEEK_CUR);
-  g_assert (return_code == 0);  
+  g_assert (return_code == 0);
 
   // If we need a tile file for an image of this size, we will load
   // the data straight into it.
@@ -949,7 +950,7 @@ float_image_new_from_file_pointer_with_sample_type
     // the image itself, we need to make the available zero fill the
     // size of the tile instead of the size of the file.
     g_assert (self->tile_size <= SSIZE_MAX);
-    float *zero_line = g_new0 (float, (size_x > (ssize_t) self->tile_size ? 
+    float *zero_line = g_new0 (float, (size_x > (ssize_t) self->tile_size ?
 				       (size_t) size_x : self->tile_size));
     g_assert (0.0 == 0x0);
 
@@ -967,7 +968,7 @@ float_image_new_from_file_pointer_with_sample_type
 
     // Buffer capable of holding a full strip of floats.
     float *buffer = g_new (float, self->tile_size * self->size_x);
-    
+
     // Reorganize data into tiles in tile oriented disk file.
     size_t ii = 0;
     for ( ii = 0 ; ii < self->tile_count_y ; ii++ ) {
@@ -977,7 +978,7 @@ float_image_new_from_file_pointer_with_sample_type
       // junk to fill up the extra part of the tile (which should
       // never be accessed).
       size_t effective_height;
-      if ( ii < self->tile_count_y - 1 
+      if ( ii < self->tile_count_y - 1
 	   || self->size_y % self->tile_size == 0 ) {
 	effective_height = self->tile_size;
       }
@@ -986,7 +987,7 @@ float_image_new_from_file_pointer_with_sample_type
       }
       // Total area of the current strip.
       size_t strip_area = effective_height * self->size_x;
-      
+
       // Read one strip of tiles worth of data from the file.
       size_t read_count = -1;	// Initializer reassures compiler.
       switch ( sample_type ) {
@@ -1006,7 +1007,7 @@ float_image_new_from_file_pointer_with_sample_type
 	    g_assert (sizeof (int16_t) == 2);
 	    size_t idx;
 	    for ( idx = 0 ; idx < strip_area ; idx++ ) {
-	      swap_bytes_16 
+	      swap_bytes_16
 		((unsigned char *) &(((int16_t *) input_buffer)[idx]));
 	    }
 	    break;
@@ -1031,7 +1032,7 @@ float_image_new_from_file_pointer_with_sample_type
       for ( jj = 0 ; jj < self->tile_count_x ; jj++ ) {
 	// This is roughly analogous to effective_height.
 	size_t effective_width;
-	if ( jj < self->tile_count_x - 1 
+	if ( jj < self->tile_count_x - 1
 	     || self->size_x % self->tile_size == 0) {
 	  effective_width = self->tile_size;
 	}
@@ -1041,15 +1042,15 @@ float_image_new_from_file_pointer_with_sample_type
 	size_t write_count;	// For return of fwrite() calls.
 	size_t kk;
 	for ( kk = 0 ; kk < effective_height ; kk++ ) {
-	  write_count 
-	    = fwrite (buffer + kk * self->size_x + jj * self->tile_size, 
+	  write_count
+	    = fwrite (buffer + kk * self->size_x + jj * self->tile_size,
 		      sizeof (float), effective_width, self->tile_file);
 	  // If we wrote less than expected,
 	  if ( write_count < effective_width ) {
 	    // it must have been a write error (probably no space left),
 	    g_assert (ferror (self->tile_file));
 	    // so print an error message,
-	    fprintf (stderr, 
+	    fprintf (stderr,
 		     "Error creating tile cache file for float_image "
 		     "instance: %s\n", strerror (errno));
 	    // and exit.
@@ -1065,7 +1066,7 @@ float_image_new_from_file_pointer_with_sample_type
 	      // it must have been a write error (probably no space left),
 	      g_assert (ferror (self->tile_file));
 	      // so print an error message,
-	      fprintf (stderr, 
+	      fprintf (stderr,
 		       "Error creating tile cache file for float_image "
 		       "instance: %s\n", strerror (errno));
 	      // and exit.
@@ -1085,7 +1086,7 @@ float_image_new_from_file_pointer_with_sample_type
 	    // it must have been a write error (probably no space left),
 	    g_assert (ferror (self->tile_file));
 	    // so print an error message,
-	    fprintf (stderr, 
+	    fprintf (stderr,
 		     "Error creating tile cache file for float_image "
 		     "instance: %s\n", strerror (errno));
 	    // and exit.
@@ -1096,7 +1097,7 @@ float_image_new_from_file_pointer_with_sample_type
     }
 
     // Did we write the correct total amount of data?
-    g_assert (ftello (self->tile_file) 
+    g_assert (ftello (self->tile_file)
 	      == (off_t) self->tile_area * self->tile_count * sizeof (float));
 
     // Free temporary buffers.
@@ -1112,7 +1113,7 @@ float_image_new_from_file_pointer_with_sample_type
     self->tile_addresses[0] = self->cache;
     switch ( sample_type ) {
     case FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER:
-      {  
+      {
 	// Buffer capable of holding a row of samples in the input
 	// sample format.
 	int16_t *input_row_16 = g_new (int16_t, self->size_x);
@@ -1120,7 +1121,7 @@ float_image_new_from_file_pointer_with_sample_type
 	size_t ii;
 	for ( ii = 0 ; ii < self->size_y ; ii++ ) {
 	  // Read the data.
-	  size_t read_count = fread (input_row_16, sizeof (int16_t), 
+	  size_t read_count = fread (input_row_16, sizeof (int16_t),
 				     self->size_x, fp);
 	  g_assert (read_count == self->size_x);
 	  // Convert from the byte order on disk to the host byte
@@ -1183,10 +1184,10 @@ float_image_new_from_file_with_sample_type
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
-  FloatImage *self = float_image_new_from_file_pointer_with_sample_type 
-    (size_x, size_y, fp, offset, byte_order, 
+  FloatImage *self = float_image_new_from_file_pointer_with_sample_type
+    (size_x, size_y, fp, offset, byte_order,
      FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER);
-  
+
   // Close file we read image from.
   int return_code = fclose (fp);
   g_assert (return_code == 0);
@@ -1200,8 +1201,8 @@ float_image_new_from_file_with_sample_type
 static void
 cached_tile_to_disk (FloatImage *self, size_t tile_offset)
 {
-  int return_code 
-    = fseeko (self->tile_file, 
+  int return_code
+    = fseeko (self->tile_file,
 	      (off_t) tile_offset * self->tile_area * sizeof (float),
 		SEEK_SET);
     g_assert (return_code == 0);
@@ -1404,7 +1405,7 @@ float_image_get_pixel_with_reflection (FloatImage *self, ssize_t x, ssize_t y)
 
 void
 float_image_statistics (FloatImage *self, float *min, float *max,
-                        float *mean, float *standard_deviation)
+                        float *mean, float *standard_deviation, float mask)
 {
   *min = FLT_MAX;
   *max = -FLT_MAX;
@@ -1413,7 +1414,7 @@ float_image_statistics (FloatImage *self, float *min, float *max,
   float *row_buffer = g_new (float, self->size_x);
 
   // Its best to keep track of things internally using doubles in
-  // order to minimuze error buildup.
+  // order to minimize error buildup.
   double mean_as_double = 0;
   double s = 0;
 
@@ -1423,6 +1424,8 @@ float_image_statistics (FloatImage *self, float *min, float *max,
     float_image_get_row (self, ii, row_buffer);
     for ( jj = 0 ; jj < self->size_x ; jj++ ) {
       float cs = row_buffer[jj];   // Current sample.
+      if ( !ISNAN(mask) && (0==gsl_fcmp(cs, mask, 0.00000000001)) )
+        continue;
       if ( G_UNLIKELY (cs < *min) ) { *min = cs; }
       if ( G_UNLIKELY (cs > *max) ) { *max = cs; }
       double old_mean = mean_as_double;
@@ -1445,7 +1448,8 @@ float_image_statistics (FloatImage *self, float *min, float *max,
 
 void
 float_image_approximate_statistics (FloatImage *self, size_t stride,
-                                    float *mean, float *standard_deviation)
+                                    float *mean, float *standard_deviation,
+                                    float mask)
 {
   // Rows and columns of samples that fit in image given stride
   // stride.
@@ -1477,14 +1481,16 @@ float_image_approximate_statistics (FloatImage *self, size_t stride,
   // it, even though we don't do anything with them (since they are
   // inaccurate).
   float min, max;
-  float_image_statistics (sample_image, &min, &max, mean, standard_deviation);
+  float_image_statistics (sample_image, &min, &max, mean, standard_deviation,
+                          mask);
 
   float_image_free (sample_image);
 }
 
 
 gsl_histogram *
-float_image_histogram (FloatImage *self, float min, float max, size_t num_bins)
+float_image_gsl_histogram (FloatImage *self, float min, float max,
+                           size_t num_bins)
 {
   // Initialize the histogram.
   gsl_histogram *hist = gsl_histogram_alloc (num_bins);
@@ -1781,7 +1787,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   // Gather image statistics so we know how to map image values into
   // the output.
   float min, max, mean, standard_deviation;
-  float_image_statistics (self, &min, &max, &mean, &standard_deviation);
+  float_image_statistics (self, &min, &max, &mean, &standard_deviation, NAN);
 
   // If the statistics don't work, something is beastly wrong and we
   // don't want to deal with it.
