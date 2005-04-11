@@ -367,6 +367,7 @@ static void dialog_cons_button_ok_clicked()
 {
     GtkWidget * dialog_cons_prefix_entry;
     GtkWidget * dialog_cons_suffix_entry;
+    GtkWidget * files_list;
     NamingScheme * old_naming_scheme;
     
     assert(current_naming_scheme);
@@ -403,6 +404,10 @@ static void dialog_cons_button_ok_clicked()
     apply_naming_scheme(current_naming_scheme, old_naming_scheme);
 
     naming_scheme_delete(old_naming_scheme);
+
+    /* refresh the grid */
+    files_list = glade_xml_get_widget(glade_xml, "files_list");
+    gtk_widget_queue_draw(files_list);
 }
 
 SIGNAL_CALLBACK void
