@@ -21,15 +21,13 @@ const char * resample_method_string(int resample_method)
   case RESAMPLE_NEAREST_NEIGHBOR:
     return "nearest_neighbor";
     break;
+  default:
   case RESAMPLE_BILINEAR:
     return "bilinear";
     break;
   case RESAMPLE_BICUBIC:
     return "bicubic";
     break;
-  default:
-    g_assert_not_reached ();
-    return ""; /* to quiet the warning */
   }
 }
 

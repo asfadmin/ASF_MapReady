@@ -159,6 +159,7 @@ settings_apply_to_gui(const Settings * s)
 	  GtkWidget * false_easting_entry;
 	  GtkWidget * average_height_checkbutton;
 	  GtkWidget * datum_option_menu;
+	  GtkWidget * resample_option_menu;
 
 	  projection_option_menu =
 	      glade_xml_get_widget(glade_xml, "projection_option_menu");
@@ -237,6 +238,11 @@ settings_apply_to_gui(const Settings * s)
 	      glade_xml_get_widget(glade_xml, "datum_option_menu");
 
 	  set_combo_box_item(datum_option_menu, s->datum);
+
+	  resample_option_menu =
+	      glade_xml_get_widget(glade_xml, "resample_option_menu");
+
+	  set_combo_box_item(resample_option_menu, s->resample_method);
       }
   }
 }
