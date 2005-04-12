@@ -552,7 +552,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
     {
 	cd_dir = g_strdup(output_dir);
 	p = strrchr(cd_dir, DIR_SEPARATOR);
-	if (p)
+	if (p && p != cd_dir)
 	    *p = '\0';
     }
 
