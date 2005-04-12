@@ -823,8 +823,8 @@ main (int argc, char **argv)
       if ( y[ii] > max_y ) { max_y = y[ii]; }
     }
 
-    g_free (y);
-    g_free (x);
+    free (y);
+    free (x);
     g_free (lons);
     g_free (lats);
   }
