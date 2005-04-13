@@ -982,8 +982,8 @@ export_as_geotiff (const char *metadata_file_name,
   float *line_buffer = g_new (float, si->size_x);
   unsigned char *byte_line_buffer = g_new (unsigned char, si->size_x);
   for ( ii = 0 ; ii < si->size_y ; ii++ ) {
-    float_image_get_row (si, ii, line_buffer);
     if ( sample_mapping == NONE ) {
+      float_image_get_row (si, ii, line_buffer);
       if ( TIFFWriteScanline (otif, line_buffer, ii, 0) < 0 ) {
         asfPrintError("Error writing to output geotiff file %s",
                       output_file_name);
@@ -991,8 +991,7 @@ export_as_geotiff (const char *metadata_file_name,
     }
     else {
       for ( jj = 0 ; jj < si->size_x ; jj++ ) {
-        /* Pixel as floatl.  */
-        double paf = float_image_get_pixel (si, jj, ii);
+        float paf = float_image_get_pixel (si, jj, ii);     // Pixel as float.
         byte_line_buffer[jj] = pixel_float2byte(paf, sample_mapping, omin,
                                                 omax, my_hist, my_hist_pdf);
       }
