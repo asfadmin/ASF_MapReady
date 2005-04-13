@@ -13,15 +13,15 @@ include ../../make_support/system_rules
 ###############################################################################
 
 SOURCES := asf_export.c \
-	   ceos_util.c \
-	   export_as_ceos.c \
-	   export_as_envi.c \
-	   export_as_esri.c \
-	   export_as_geotiff.c \
-	   export_as_jpeg.c \
-	   export_as_ppm.c \
-	   export_as_tiff.c \
-	   util.c
+	ceos_util.c \
+	export_as_ceos.c \
+	export_as_envi.c \
+	export_as_esri.c \
+	export_as_geotiff.c \
+	export_as_jpeg.c \
+	export_as_ppm.c \
+	export_as_tiff.c \
+	util.c
 
 ###############################################################################
 #
@@ -38,7 +38,6 @@ CC := gcc
 
 LIBS  = $(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_reporting.a \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libgeotiff.a \
