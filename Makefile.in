@@ -40,7 +40,7 @@ MODULES = src_lib/asf \
 all:
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE);)
 
-install:
+install: all
 	mkdir -p @BINDIR@ @prefix@/lib @SHAREDIR@
 	cp bin/@sys@/* @BINDIR@
 	cp -R lib/@sys@/* @prefix@/lib
@@ -54,3 +54,6 @@ clean:
 release:
 	cd make_support; make; ./makemake @sys@; cd ..
 
+oldtools:
+	cd make_support; make; ./makemake @sys; cd ..
+	make --makefile=Makefile.old
