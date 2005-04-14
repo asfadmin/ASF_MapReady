@@ -256,7 +256,8 @@ export_as_geotiff (const char *metadata_file_name,
   TIFFSetField(otif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
   TIFFSetField(otif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
   TIFFSetField(otif, TIFFTAG_SAMPLEFORMAT, sample_format);
-  TIFFSetField(otif, TIFFTAG_DATATYPE, sample_format);
+  // Setting this tag screws up byte images
+  // TIFFSetField(otif, TIFFTAG_DATATYPE, sample_format);
 
   /* Set the GeoTIFF extension image tags.  */
 
