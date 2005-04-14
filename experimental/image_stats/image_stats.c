@@ -52,15 +52,15 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "		(not implemented yet).\n"\
 "-min		Minimum value to be considered for statistics.\n"\
 "-max		Maximum value to be considered for statistics.\n"\
-"-bins		Number of bins for calculating the statistics.\n"\
+"-bins		Number of bins for calculating the statistics (default: 256).\n"\
 "-interval	Size of interval for binning the image values\n"\
 "		(supersedes setting number of bins).\n"\
 "-startLine	Starting line for subsetting the input image.\n"\
 "-startSample	Starting sample for subsetting the input image.\n"\
-"-height		Height of the image subset.\n"\
+"-height	Height of the image subset.\n"\
 "-width		Width of the image subset.\n"\
 "-mask		Name of the mask file to be applied.\n"\
-"-compare        Name of the data file to be compared to."
+"-compare       Name of the data file to be compared to."
 
 #define ASF_EXAMPLES_STRING \
 "image_stats -look rsat.img analysis"
@@ -200,7 +200,8 @@ int main(int argc, char *argv[])
   stateVector stVec;
   int ii, kk, ll, size;
   char inFile[255], metaFile[255], dataFile[255], outLook[255], *outIncid=NULL;
-  char outRange[255], *maskFile=NULL, *compFile=NULL, outFile[255]; 
+  char outRange[255], *maskFile=NULL, *compFile=NULL, outBase[255], outFile[255]; 
+  char cmd[255];
   float *bufLook=NULL, *bufIncid=NULL, *bufRange=NULL;
   double latitude, longitude, time, doppler, earth_radius, satellite_height, range;
   double look_angle, incidence_angle;
@@ -299,7 +300,7 @@ int main(int argc, char *argv[])
 
   /* Fetch required arguments */
   strcpy(inFile,argv[argc - 2]);
-  strcpy(outFile,argv[argc - 1]);
+  strcpy(outBase,argv[argc - 1]);
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
   create_name(metaFile, inFile, ".meta");
@@ -361,8 +362,6 @@ int main(int argc, char *argv[])
 	  earth_radius = get_earth_radius(time, stVec, re, rp);
 	  satellite_height = get_satellite_height(time, stVec);
 	  look_angle = get_look_angle(earth_radius, satellite_height, range);
-	  incidence_angle = get_incidence_angle(earth_radius, satellite_height, 
-						range);
 	  incidence_angle = meta_incid(meta, ii+ll, kk);
 	  
 	  if (flags[f_LOOK] != FLAG_NOT_SET) 
@@ -379,8 +378,6 @@ int main(int argc, char *argv[])
 	FWRITE(bufIncid, sizeof(float), samples*size, fpIncid);
       if (flags[f_RANGE] != FLAG_NOT_SET)
 	FWRITE(bufRange, sizeof(float), samples*size, fpRange);
-      
-      printf("   Completed %3.0f percent\n", (float)((ii+ll)*100/lines));
     }
     if (flags[f_LOOK] != FLAG_NOT_SET) {
       FCLOSE(fpLook);
@@ -431,6 +428,14 @@ int main(int argc, char *argv[])
 	  firstLook = look_angle * R2D;
 	  firstIncid = incidence_angle * R2D;
 	  firstRange = range;
+  	  if (flags[f_LOOK] != FLAG_NOT_SET)
+            fprintf(fpLook, "Look angle\n");
+	  if (flags[f_INCIDENCE] != FLAG_NOT_SET ||
+	      meta->general->image_data_type == SIGMA_IMAGE ||
+	      meta->general->image_data_type == BETA_IMAGE) 
+            fprintf(fpIncid, "Incidence angle\n");
+	  if (flags[f_RANGE] != FLAG_NOT_SET)
+            fprintf(fpRange, "Range"); 
 	}
 
 	if (flags[f_LOOK] != FLAG_NOT_SET)
@@ -453,17 +458,27 @@ int main(int argc, char *argv[])
     if (flags[f_RANGE] != FLAG_NOT_SET) FCLOSE(fpRange);
 
     /* Calculate plots */
-    if (flags[f_LOOK] != FLAG_NOT_SET) 
+    if (flags[f_LOOK] != FLAG_NOT_SET) {
+      create_name(outFile, outBase, "_look.plot");
       calculate_plot(outLook, dataFile, compFile, maskFile, outFile, meta, 
 		     firstLook);
-    if (flags[f_INCIDENCE] != FLAG_NOT_SET)
+    }
+    if (flags[f_INCIDENCE] != FLAG_NOT_SET) {
+      create_name(outFile, outBase, "_incid.plot");
       calculate_plot(outIncid, dataFile, compFile, maskFile, outFile, meta, 
 		     firstIncid);
-    if (flags[f_RANGE] != FLAG_NOT_SET) 
+    }
+    if (flags[f_RANGE] != FLAG_NOT_SET) {
+      create_name(outFile, outBase, "_range.plot");
       calculate_plot(outRange, dataFile, compFile, maskFile, outFile, meta, 
 		     firstRange);
+    }
 
   }
+
+  /* Clean up */
+  sprintf(cmd, "rm -rf tmp*");
+  system(cmd);
 
   exit(0);
 }

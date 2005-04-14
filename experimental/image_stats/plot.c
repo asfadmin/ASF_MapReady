@@ -13,7 +13,7 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
   quadratic_2d q;
   plot_t *plot;
   int maskFlag=FALSE, ii, kk, ll, size=BUFSIZE, points=0, x, y, index;
-  char cmd[255], inLine[255], *mask=NULL; 
+  char axis[255], cmd[255], inLine[255], *mask=NULL; 
   float *bufImage=NULL, *bufComp=NULL, temp;
   double xValue, slope, offset, *l, *s, *value;
   
@@ -26,6 +26,7 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
      using least squares approach */
   points = 0;
   fpIn = FOPEN(gridFile, "r");
+  fgets(axis, 20, fpIn);
   while (NULL!=(fgets(inLine, 255, fpIn))) {
     sscanf(inLine,"%lf%lf%lf", &value[points], &l[points], &s[points]); 
     points++;
@@ -61,6 +62,8 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
 	if (xValue < min) min = xValue;
       }
     }
+
+  /* Determine parameters for binning */
   if (interval > 0.0) 
     bins = ((max-min) / interval) + 0.5; /* interval supersedes number of bins */
   if (bins < 2 || bins > 1024) bins = 256;
@@ -102,7 +105,7 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
 
 	if (compFile) {
 	  temp = bufImage[ll*samples+kk];
-	  if (FLOAT_EQUIVALENT(temp, 0.0))
+	  if (FLOAT_EQUIVALENT((temp+bufComp[ll+samples+kk]), 0.0))
 	    bufImage[ll*samples+kk] = 0.0;
 	  else
 	    bufImage[ll*samples+kk] = (temp-bufComp[ll*samples+kk])/
@@ -172,25 +175,24 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
   
   /* Prepare output file for writing */
   fpOut = FOPEN(outFile, "w");
+  fprintf(fpOut, "%s", axis);
 
   if (meta->general->image_data_type == SIGMA_IMAGE ||
       meta->general->image_data_type == GAMMA_IMAGE ||
       meta->general->image_data_type == BETA_IMAGE) {
+    fprintf(fpOut, "\tMean value\tdB value\tCount\tStandard deviation\n");
     for (ii=0; ii<bins; ii++)
-      fprintf(fpOut, "%.3f\t%.3lf\t%.3lf\t%li\t%.3lf\n", 
+      fprintf(fpOut, "%10.4f\t%10.4lf\t%10.4lf\t%10li\t%10.4lf\n", 
 	      (min+ii*interval), plot[ii].mean, 10*log10(plot[ii].mean), 
 	      plot[ii].count, plot[ii].stdDev);
   }
   else {
+    fprintf(fpOut, "\tMean value\tCount\tStandard deviation\n");
     for (ii=0; ii<bins; ii++)
-      fprintf(fpOut, "%.3f\t%.3lf\t%li\t%.3lf\n", (min+ii*interval),
+      fprintf(fpOut, "%10.4f\t%10.4lf\t%10li\t%10.4lf\n", (min+ii*interval),
 	      plot[ii].mean, plot[ii].count, plot[ii].stdDev);
   }
 
   FCLOSE(fpOut);
   
-  /* Clean up */
-  sprintf(cmd, "rm -rf tmp*");
-  system(cmd);
-
 }
