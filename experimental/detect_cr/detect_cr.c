@@ -20,7 +20,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "detect_cr"
 
 #define ASF_USAGE_STRING \
-"[ -chips ] [ chop_size ] [ -text ] [ -profile ] <image> "\
+"[ -chips ] [ chip_size <value> ] [ -text ] [ -profile ] <image> "\
 "<corner reflector locations> <peak search file>\n"\
 "\n"\
 "Additional option: -help"
@@ -269,8 +269,9 @@ int main(int argc, char *argv[])
   /* Handle input and output file */
   fpIn = FOPEN(szCrList, "r");
   fpOut = FOPEN(szOut, "w");
-  fprintf(fpOut, "ID\tLatitude\tLongitude\tElevation\tPeak line\tPeak sample\tLine off [m]\t"
-	  "Sample off[m]\tMagnitude [m]\tLine off [pix]\tSample off [pix]\n");
+  fprintf(fpOut, "ID\tReference Lat\tReference Lon\tElevation\tReference line"
+	  "\tReference sample\tLine offset [m]\tSample offset [m]\tMagnitude [m]"
+	  "\tLine offset [pix]\tSample offset [pix]\n");
   
   /* Loop through corner reflector location file */
   while (fgets(buffer, 1000, fpIn))
@@ -292,7 +293,8 @@ int main(int argc, char *argv[])
 	dx_m = dx_pix * meta->general->x_pixel_size;
 	dy_m = dy_pix * meta->general->y_pixel_size;
 	magnitude = sqrt(dx_m*dx_m + dy_m*dy_m);
-	fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.0lf\t%8.1f\t%8.1f\t%8.2f\t%8.2f\t%8.2f\t%8.2f\t%8.2f\n",
+	fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.0lf\t%10.1f\t%10.1f\t%10.2f\t%10.2f"
+		"\t%10.2f\t%10.2f\t%10.2f\n",
 		crID, lat, lon, elev, posY, posX, dy_m, dx_m, magnitude, dy_pix, dx_pix);
 	fflush(fpOut);
       }
@@ -368,7 +370,7 @@ bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY,
     metaText->general->line_count = srcSize;
     metaText->general->sample_count = srcSize;
     meta_write(metaText, text);
-    sprintf(szText, "%s.txt", text);
+    sprintf(szText, "%s_chip.txt", text);
     fpText = FOPEN(szText, "w");
     for (ii=0; ii<srcSize; ii++) {
       for (kk=0; kk<srcSize; kk++)
