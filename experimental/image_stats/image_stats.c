@@ -22,9 +22,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_USAGE_STRING \
 "[-look] [-incidence] [-range] [-tolerance <value>]\n"\
 "[-min <value>] [-max <value>] [-bins <value>]\n"\
-"[-interval <value>] [-startLine <value>] \n"\
-"[-startSample <value>] [-height <value>]  \n"\
-"[-width <value>] [-mask <file>] [-compare <file>]\n"\
+"[-interval <value>] [-mask <file>] [-compare <file>]\n"\
 "<infile> <outfile>\n"\
 "\n"\
 "Additional option: -help"
@@ -55,10 +53,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "-bins		Number of bins for calculating the statistics (default: 256).\n"\
 "-interval	Size of interval for binning the image values\n"\
 "		(supersedes setting number of bins).\n"\
-"-startLine	Starting line for subsetting the input image.\n"\
-"-startSample	Starting sample for subsetting the input image.\n"\
-"-height	Height of the image subset.\n"\
-"-width		Width of the image subset.\n"\
 "-mask		Name of the mask file to be applied.\n"\
 "-compare       Name of the data file to be compared to."
 
@@ -226,10 +220,6 @@ int main(int argc, char *argv[])
   flags[f_TOLERANCE] = checkForOption("-tolerance", argc, argv);
   flags[f_BINS] = checkForOption("-bins", argc, argv);
   flags[f_INTERVAL] = checkForOption("-interval", argc, argv);
-  flags[f_START_LINE] = checkForOption("-startLine", argc, argv);
-  flags[f_START_SAMPLE] = checkForOption("-startSample", argc, argv);
-  flags[f_HEIGHT] = checkForOption("-height", argc, argv);
-  flags[f_WIDTH] = checkForOption("-width", argc, argv);
   flags[f_MASK] = checkForOption("-mask", argc, argv);
   flags[f_COMPARE] = checkForOption("-compare", argc, argv);
 
@@ -247,10 +237,6 @@ int main(int argc, char *argv[])
     if (flags[f_TOLERANCE] != FLAG_NOT_SET) needed_args += 2; /* option & value */
     if (flags[f_BINS] != FLAG_NOT_SET) needed_args += 2; /* option & value */
     if (flags[f_INTERVAL] != FLAG_NOT_SET) needed_args += 2; /* option & value */
-    if (flags[f_START_LINE] != FLAG_NOT_SET) needed_args += 2; /* option & value */
-    if (flags[f_START_SAMPLE] != FLAG_NOT_SET) needed_args += 2; /* option & value */
-    if (flags[f_HEIGHT] != FLAG_NOT_SET) needed_args += 2; /* option & value */
-    if (flags[f_WIDTH] != FLAG_NOT_SET) needed_args += 2; /* option & value */
     if (flags[f_MASK] != FLAG_NOT_SET) needed_args += 2; /* option & value */
     if (flags[f_COMPARE] != FLAG_NOT_SET) needed_args += 2; /*option & value */
 
@@ -271,14 +257,6 @@ int main(int argc, char *argv[])
     bins = atoi(argv[flags[f_BINS] + 1]);
   if (flags[f_INTERVAL] != FLAG_NOT_SET)
     interval = atof(argv[flags[f_INTERVAL] + 1]);
-  if (flags[f_START_LINE] != FLAG_NOT_SET)
-    startLine = atoi(argv[flags[f_START_LINE] + 1]);
-  if (flags[f_START_SAMPLE] != FLAG_NOT_SET)
-    startSample = atoi(argv[flags[f_START_SAMPLE] + 1]);
-  if (flags[f_HEIGHT] != FLAG_NOT_SET)
-    height = atoi(argv[flags[f_HEIGHT] + 1]);
-  if (flags[f_WIDTH] != FLAG_NOT_SET)
-    width = atoi(argv[flags[f_WIDTH] + 1]);
   if (flags[f_MASK] != FLAG_NOT_SET) {
     maskFile = (char *) MALLOC(255 * sizeof(char));
     strcpy(maskFile, argv[flags[f_MASK] + 1]);
@@ -323,12 +301,6 @@ int main(int argc, char *argv[])
 
   /* Set some values */
   doppler = 0.0;
-  if (startLine < 0 || startLine > lines) startLine = 0;
-  if (startSample < 0 || startSample > samples) startSample = 0;
-  if (height <= 0) height = lines;
-  if ((startLine+height) > lines) height = lines - startLine;
-  if (width <= 0) width = samples;
-  if ((startSample+width) > samples) width = samples - startSample;  
 
   if (meta->sar->image_type=='P') {
     /* Calculation in case the imagery is map projected */

@@ -27,6 +27,7 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
   points = 0;
   fpIn = FOPEN(gridFile, "r");
   fgets(axis, 20, fpIn);
+  axis[16] = '\0';
   while (NULL!=(fgets(inLine, 255, fpIn))) {
     sscanf(inLine,"%lf%lf%lf", &value[points], &l[points], &s[points]); 
     points++;
