@@ -20,10 +20,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "image_stats"
 
 #define ASF_USAGE_STRING \
-"[-look] [-incidence] [-range] [-tolerance <value>]\n"\
-"[-min <value>] [-max <value>] [-bins <value>]\n"\
-"[-interval <value>] [-mask <file>] [-compare <file>]\n"\
-"<infile> <outfile>\n"\
+"[ -look ] [ -incidence ] [ -range ]\n"\
+"[ -min <value> ] [ -max <value> ] [ -bins <value> ]\n"\
+"[ -interval <value> ] <infile> <outfile>\n"\
 "\n"\
 "Additional option: -help"
 
@@ -39,22 +38,18 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_OUTPUT_STRING \
 "<outfile>\n"\
-"Basename of plot file. Extensions (.look, .incid and .range) are\n"\
+"Basename of plot file. Extensions (_look.plot, _incid.plot and _range.plot) are\n"\
 "appended when used with the respective flags."
 
 #define ASF_OPTIONS_STRING \
 "-look		Plot image values versus look angle.\n"\
 "-incidence	Plot image values versus incidence angle.\n"\
 "-range		Plot image values versus range.\n"\
-"-tolerance	Tolerance level applied for statistcs\n"\
-"		(not implemented yet).\n"\
 "-min		Minimum value to be considered for statistics.\n"\
 "-max		Maximum value to be considered for statistics.\n"\
 "-bins		Number of bins for calculating the statistics (default: 256).\n"\
 "-interval	Size of interval for binning the image values\n"\
-"		(supersedes setting number of bins).\n"\
-"-mask		Name of the mask file to be applied.\n"\
-"-compare       Name of the data file to be compared to."
+"		(supersedes setting number of bins).\n"
 
 #define ASF_EXAMPLES_STRING \
 "image_stats -look rsat.img analysis"
@@ -119,8 +114,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define VERSION 1.0
 
 /* Global variables */
-int lines, samples, startLine=0, startSample=0, height=0, width=0, bins=256;
-double tolerance, min, max, interval=0.0;
+int lines, samples, bins=256;
+double min, max, interval=0.0;
 
 /* usage - enter here on command-line usage error*/
 void usage(void)
@@ -189,14 +184,14 @@ void help_page()
 /* Main program */
 int main(int argc, char *argv[])
 {
-  FILE *fpLook=NULL, *fpIncid=NULL, *fpRange=NULL;
+  FILE *fpLook=NULL, *fpIncid=NULL, *fpRange=NULL, *fpIn=NULL, *fpMask=NULL;
   meta_parameters *meta, *metaMask;
   stateVector stVec;
   int ii, kk, ll, size;
   char inFile[255], metaFile[255], dataFile[255], outLook[255], *outIncid=NULL;
-  char outRange[255], *maskFile=NULL, *compFile=NULL, outBase[255], outFile[255]; 
+  char outRange[255], outBase[255], outFile[255], *maskFile=NULL; 
   char cmd[255];
-  float *bufLook=NULL, *bufIncid=NULL, *bufRange=NULL;
+  float *bufImage=NULL, *bufMask=NULL, *bufLook=NULL, *bufIncid=NULL, *bufRange=NULL;
   double latitude, longitude, time, doppler, earth_radius, satellite_height, range;
   double look_angle, incidence_angle;
   double line, sample, re=6378144.0, rp=6356754.9, px, py;
@@ -217,11 +212,8 @@ int main(int argc, char *argv[])
   flags[f_RANGE] = checkForOption("-range", argc, argv);
   flags[f_MIN] = checkForOption("-min", argc, argv);
   flags[f_MAX] = checkForOption("-max", argc, argv);
-  flags[f_TOLERANCE] = checkForOption("-tolerance", argc, argv);
   flags[f_BINS] = checkForOption("-bins", argc, argv);
   flags[f_INTERVAL] = checkForOption("-interval", argc, argv);
-  flags[f_MASK] = checkForOption("-mask", argc, argv);
-  flags[f_COMPARE] = checkForOption("-compare", argc, argv);
 
   /* Make sure to set log & quiet flags (for use in our libraries) */
   logflag = (flags[f_LOG]!=FLAG_NOT_SET) ? TRUE : FALSE;
@@ -234,11 +226,8 @@ int main(int argc, char *argv[])
     if (flags[f_RANGE] != FLAG_NOT_SET) needed_args += 1; /* option */
     if (flags[f_MIN] != FLAG_NOT_SET) needed_args += 2; /* option & value */
     if (flags[f_MAX] != FLAG_NOT_SET) needed_args += 2; /* option & value */
-    if (flags[f_TOLERANCE] != FLAG_NOT_SET) needed_args += 2; /* option & value */
     if (flags[f_BINS] != FLAG_NOT_SET) needed_args += 2; /* option & value */
     if (flags[f_INTERVAL] != FLAG_NOT_SET) needed_args += 2; /* option & value */
-    if (flags[f_MASK] != FLAG_NOT_SET) needed_args += 2; /* option & value */
-    if (flags[f_COMPARE] != FLAG_NOT_SET) needed_args += 2; /*option & value */
 
     /*Make sure we have enough arguments*/
     if (argc != needed_args)
@@ -251,20 +240,10 @@ int main(int argc, char *argv[])
     min = atof(argv[flags[f_MIN] + 1]);
   if (flags[f_MAX] != FLAG_NOT_SET)
     max = atof(argv[flags[f_MAX] + 1]);
-  if (flags[f_TOLERANCE] != FLAG_NOT_SET)
-    tolerance = atof(argv[flags[f_TOLERANCE] + 1]);
   if (flags[f_BINS] != FLAG_NOT_SET)
     bins = atoi(argv[flags[f_BINS] + 1]);
   if (flags[f_INTERVAL] != FLAG_NOT_SET)
     interval = atof(argv[flags[f_INTERVAL] + 1]);
-  if (flags[f_MASK] != FLAG_NOT_SET) {
-    maskFile = (char *) MALLOC(255 * sizeof(char));
-    strcpy(maskFile, argv[flags[f_MASK] + 1]);
-  }
-  if (flags[f_COMPARE] != FLAG_NOT_SET) {
-    compFile = (char *) MALLOC(255 * sizeof(char));
-    strcpy(compFile, argv[flags[f_COMPARE] + 1]);
-  }
 
   if (flags[f_QUIET] == FLAG_NOT_SET)
     /* display splash screen if not quiet */
@@ -288,16 +267,6 @@ int main(int argc, char *argv[])
   meta = meta_read(inFile);
   lines = meta->general->line_count;
   samples = meta->general->sample_count;
-  if (flags[f_MASK] != FLAG_NOT_SET) {
-    metaMask = meta_read(maskFile);
-    if (metaMask->general->line_count != lines ||
-	metaMask->general->sample_count != samples) {
-      printf("\n   WARNING: Mask image is not the same size as input image!\n");
-      printf("            Mask will be ignored.\n");
-      flags[f_MASK] = FLAG_NOT_SET;
-    }
-    else create_name(maskFile, maskFile, ".img");
-  }  
 
   /* Set some values */
   doppler = 0.0;
@@ -308,6 +277,27 @@ int main(int argc, char *argv[])
     re = meta->projection->re_major;
     rp = meta->projection->re_minor;
     
+    /* Prepare input image for reading */
+    fpIn = fopenImage(inFile, "rb");
+    bufImage = (float *) MALLOC(samples * sizeof(float) * BUFSIZE);
+
+    /* Create a mask file for background fill */
+    maskFile = (char *) MALLOC(255*sizeof(char));
+    sprintf(maskFile, "tmp%i.mask", (int)getpid());
+    fpMask = fopenImage(maskFile, "wb");
+    bufMask = (float *) MALLOC(samples * sizeof(char) * BUFSIZE);
+    for (ii=0; ii<lines; ii+=size) {
+      get_float_lines(fpIn, meta, ii, size, bufImage);
+      for (kk=0; kk<size; kk++) {
+	if (bufImage[kk]>0.0)
+	  bufMask[kk] = 1;
+	else
+	  bufMask[kk] = 0;
+      }      
+      FWRITE(bufMask, sizeof(char), size, fpMask);
+    }
+
+    /* Get the output images set up */
     if (flags[f_LOOK] != FLAG_NOT_SET) {
       fpLook = fopenImage(outLook,"wb");
       bufLook = (float *) MALLOC(samples * sizeof(float) * BUFSIZE);        
@@ -432,18 +422,15 @@ int main(int argc, char *argv[])
     /* Calculate plots */
     if (flags[f_LOOK] != FLAG_NOT_SET) {
       create_name(outFile, outBase, "_look.plot");
-      calculate_plot(outLook, dataFile, compFile, maskFile, outFile, meta, 
-		     firstLook);
+      calculate_plot(outLook, dataFile, maskFile, outFile, meta, firstLook);
     }
     if (flags[f_INCIDENCE] != FLAG_NOT_SET) {
       create_name(outFile, outBase, "_incid.plot");
-      calculate_plot(outIncid, dataFile, compFile, maskFile, outFile, meta, 
-		     firstIncid);
+      calculate_plot(outIncid, dataFile, maskFile, outFile, meta, firstIncid);
     }
     if (flags[f_RANGE] != FLAG_NOT_SET) {
       create_name(outFile, outBase, "_range.plot");
-      calculate_plot(outRange, dataFile, compFile, maskFile, outFile, meta, 
-		     firstRange);
+      calculate_plot(outRange, dataFile, maskFile, outFile, meta, firstRange);
     }
 
   }

@@ -3,10 +3,10 @@
 #include "matrix.h"
 
 /* Global variables */
-extern int lines, samples, startLine, startSample, height, width, bins;
-extern double tolerance, min, max, interval;
+extern int lines, samples, bins;
+extern double min, max, interval;
 
-void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFile, 
+void calculate_plot(char *gridFile, char *dataFile, char *maskFile, 
 		    char *outFile, meta_parameters *meta, float xConstant)
 {
   FILE *fpIn=NULL, *fpImg=NULL, *fpOut=NULL, *fpMask=NULL, *fpComp=NULL;
@@ -42,13 +42,15 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
   if (maskFlag) {
     fpMask = fopenImage(maskFile, "rb");
     mask = (unsigned char *) MALLOC(lines * samples * sizeof(char));
+    FREAD(mask, sizeof(char), lines*samples, fpMask);
+    FCLOSE(fpMask);
   }
   
   /* Determine minimum and maximum xValue for binning */
   min = 100000000;
   max = -100000000;
-  for (ii=startLine; ii<height; ii++)
-    for (kk=startSample; kk<width; kk++) {
+  for (ii=0; ii<lines; ii++)
+    for (kk=0; kk<samples; kk++) {
       x = ii;
       y = kk;
       xValue = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y;
@@ -80,23 +82,17 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
     plot[ii].stdDev = 0.0;
   }
   
-  /* Prepare input image(s) for reading */
+  /* Prepare input image for reading */
   fpImg = fopenImage(dataFile, "rb");
   bufImage = (float *) MALLOC(samples * sizeof(float) * BUFSIZE);
-  if (compFile) {
-    fpComp = fopenImage(compFile, "rb");
-    bufComp = (float *) MALLOC(samples * sizeof(float) * BUFSIZE);
-  }
   
   /* First data sweep: Calculate mean values and get the counts */
   printf("   First data sweep: Calculate mean values and get the counts ...\n");
-  for (ii=startLine; ii<height; ii+=size) {
-    if ((height-ii)<BUFSIZE) size = height-ii;
+  for (ii=0; ii<lines; ii+=size) {
+    if ((lines-ii)<BUFSIZE) size = lines-ii;
     get_float_lines(fpImg, meta, ii, size, bufImage);
-    if (compFile) 
-      get_float_lines(fpComp, meta, ii, size, bufComp);
     for (ll=0; ll<size; ll++) 
-      for (kk=startSample; kk<width; kk++) {
+      for (kk=0; kk<samples; kk++) {
 	x = ii + ll;
 	y = kk;
 	xValue = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y;
@@ -104,14 +100,6 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
 	xValue += q.J*x*x*x + q.K*y*y*y;
 	index = (int) (slope*xValue + offset);
 
-	if (compFile) {
-	  temp = bufImage[ll*samples+kk];
-	  if (FLOAT_EQUIVALENT((temp+bufComp[ll+samples+kk]), 0.0))
-	    bufImage[ll*samples+kk] = 0.0;
-	  else
-	    bufImage[ll*samples+kk] = (temp-bufComp[ll*samples+kk])/
-	      (temp+bufComp[ll+samples+kk]);
-	}
 	if (maskFlag) {
 	  if (mask[x*samples+y]) {
 	    plot[index].mean += bufImage[ll*samples+kk];
@@ -128,20 +116,15 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
     plot[ii].mean /= plot[ii].count;
   
   FCLOSE(fpImg);
-  if (compFile) FCLOSE(fpComp);
   
   /* Second data sweep: Calculate standard deviations */
   printf("   Second data sweep: Calculating standard deviations ...\n\n");
   fpImg = fopenImage(dataFile, "rb");
-  if (compFile)
-    fpComp = fopenImage(compFile, "rb");
-  for (ii=startLine; ii<height; ii+=size) {
-    if ((height-ii)<BUFSIZE) size = height-ii;
+  for (ii=0; ii<lines; ii+=size) {
+    if ((lines-ii)<BUFSIZE) size = lines-ii;
     get_float_lines(fpImg, meta, ii, size, bufImage);
-    if (compFile) 
-      get_float_lines(fpComp, meta, ii, size, bufComp);
     for (ll=0; ll<size; ll++) 
-      for (kk=startSample; kk<width; kk++) {
+      for (kk=0; kk<samples; kk++) {
 	x = ii + ll;
 	y = kk;
 	xValue = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y;
@@ -149,14 +132,6 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
 	xValue += q.J*x*x*x + q.K*y*y*y;
 	index = (int) (slope*xValue + offset);
 
-	if (compFile) {
-	  temp = bufImage[ll*samples+kk];
-	  if (FLOAT_EQUIVALENT(temp, 0.0))
-	    bufImage[ll*samples+kk] = 0.0;
-	  else
-	    bufImage[ll*samples+kk] = (temp-bufComp[ll*samples+kk])/
-	      (temp+bufComp[ll+samples+kk]);
-	}
 	if (maskFlag) {
 	  if (mask[x*samples+y]) 
 	    plot[index].stdDev +=
@@ -172,7 +147,6 @@ void calculate_plot(char *gridFile, char *dataFile, char *compFile, char *maskFi
     plot[ii].stdDev = sqrt(plot[ii].stdDev / (plot[ii].count-1));
   
   FCLOSE(fpImg);
-  if (compFile) FCLOSE(fpComp);
   
   /* Prepare output file for writing */
   fpOut = FOPEN(outFile, "w");

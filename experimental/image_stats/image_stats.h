@@ -29,11 +29,8 @@ typedef enum {
   f_RANGE,
   f_MIN,
   f_MAX,
-  f_TOLERANCE,
   f_BINS,
   f_INTERVAL,
-  f_MASK,
-  f_COMPARE,
   f_LOG,
   f_QUIET,
   NUM_FLAGS
@@ -63,7 +60,7 @@ double get_look_angle(double er, double ht, double sr);
 double get_incidence_angle(double er, double ht, double sr);
 
 /* Prototypes out of plot.c */
-void calculate_plot(char *gridFile, char *inFile, char *compFile, char *maskFile, 
+void calculate_plot(char *gridFile, char *inFile, char *maskFile, 
 		    char *outFile, meta_parameters *meta, float xConstant);
 
 #endif
