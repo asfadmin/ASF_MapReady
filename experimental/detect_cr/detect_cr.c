@@ -20,7 +20,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "detect_cr"
 
 #define ASF_USAGE_STRING \
-"[ -chips ] [ chip_size <value> ] [ -text ] [ -profile ] <image> "\
+"[ -chips ] [ -chip_size <value> ] [ -text ] [ -profile ] <image> "\
 "<corner reflector locations> <peak search file>\n"\
 "\n"\
 "Additional option: -help"
@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
   fpIn = FOPEN(szCrList, "r");
   fpOut = FOPEN(szOut, "w");
   fprintf(fpOut, "ID\tReference Lat\tReference Lon\tElevation\tReference line"
-	  "\tReference sample\tLine offset [m]\tSample offset [m]\tMagnitude [m]"
+	  "\tReference sample\tLine offset [m]\tSample offset [m]\tAbs. error [m]"
 	  "\tLine offset [pix]\tSample offset [pix]\n");
   
   /* Loop through corner reflector location file */
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
     if (!(outOfBounds(posX, posY, srcSize)))
       {
 	/* Find peak */ 
-	findPeak(posX+0.5, posY+0.5, szImg, &dx_pix, &dy_pix, chips, text, profile);
+	findPeak(posX+0.5, posY+0.5, szImg, &dy_pix, &dx_pix, chips, text, profile);
 	dx_m = dx_pix * meta->general->x_pixel_size;
 	dy_m = dy_pix * meta->general->y_pixel_size;
 	magnitude = sqrt(dx_m*dx_m + dy_m*dy_m);
