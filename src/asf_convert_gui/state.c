@@ -83,7 +83,10 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
       gchar *data_file, *output_file, *status;
 
       gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-             0, &data_file, 1, &output_file, 2, &status, -1);
+			 COL_DATA_FILE, &data_file, 
+			 COL_OUTPUT_FILE, &output_file,
+			 COL_STATUS, &status,
+			 -1);
 
       if (strstr(status, "...") != NULL)
       {
