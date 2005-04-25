@@ -75,5 +75,5 @@ meta_file_name(const gchar * data_file_name)
     return ret;
   }
 
-  return "";
+  return g_strdup("");
 }
