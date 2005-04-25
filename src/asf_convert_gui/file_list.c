@@ -149,19 +149,27 @@ thumbnail_thread (GString *file, gpointer user_data)
 gboolean
 add_to_files_list(const gchar * data_file)
 {
+  GtkTreeIter iter;
+  gboolean ret = add_to_files_list_iter(data_file, &iter);
+  return ret;
+}
+
+gboolean
+add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
+{
     if (file_is_valid(data_file))
     {
         GtkWidget *files_list;
-        GtkTreeIter iter;
+//        GtkTreeIter iter = *iter_p;
         gchar * out_name_full;
 
         files_list =
             glade_xml_get_widget(glade_xml, "files_list");
     
 	LSL;
-        gtk_list_store_append(list_store, &iter);
+        gtk_list_store_append(list_store, iter_p);
     
-        gtk_list_store_set(list_store, &iter,
+        gtk_list_store_set(list_store, iter_p,
                            COL_DATA_FILE, data_file,
 			   COL_STATUS, "-", -1);
 	LSU;
@@ -187,7 +195,7 @@ add_to_files_list(const gchar * data_file)
 
         out_name_full = determine_default_output_file_name(data_file);
     
-        set_output_name(&iter, out_name_full);
+        set_output_name(iter_p, out_name_full);
     
         g_free(out_name_full);
 

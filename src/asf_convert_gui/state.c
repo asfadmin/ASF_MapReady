@@ -200,8 +200,11 @@ static void read_ver_1_0(FILE *f)
       *newline = '\0';
     
     gtk_list_store_append(list_store, &iter);
-    gtk_list_store_set(list_store, &iter,
-               0, data_file_p, 1, output_file_p, 2, status_p, -1);
+    gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+		       COL_DATA_FILE, &data_file, 
+		       COL_OUTPUT_FILE, &output_file,
+		       COL_STATUS, &status,
+		       -1);
 
     g_free(status);
     g_free(output_file);
@@ -603,6 +606,12 @@ static void read_ver_2_1(FILE *f)
   readline(f, line, sizeof(line));
   output_directory = g_strdup(line);
 
+  if (strcmp(output_directory, "(null)") == 0)
+  {
+    g_free(output_directory);
+    output_directory = NULL;
+  }
+
   fscanf(f, "\n");
             
   /* files */
@@ -646,9 +655,12 @@ static void read_ver_2_1(FILE *f)
             continue;
         ++status_p;
 
-        gtk_list_store_append(list_store, &iter);
-        gtk_list_store_set(list_store, &iter,
-               0, data_file_p, 1, output_file_p, 2, status_p, -1);
+	add_to_files_list_iter(data_file_p, &iter);
+
+	gtk_list_store_set(list_store, &iter,
+			   COL_OUTPUT_FILE, output_file_p,
+			   COL_STATUS, status_p,
+			   -1);
 
         g_free(status);
         g_free(output_file);
