@@ -200,15 +200,26 @@
     <title>Radiometry</title>
     <para>The only option here is "Data type":</para>
     <simplelist>
-	<member>amplitude: Create an amplitude image. This is the
-          default behavior.</member>
-	<member>sigma: Create a calibrated image (sigma power scale 
+	<member>amplitude: Create an amplitude image.  The pixels of
+          an amplitude image represent radar backscatter intensity
+          values.  This is the default behavior.</member>
+	<member>sigma: Create a calibrated image.  The pixels of these
+          images are corrected for the gain variability of the radar
+          antenna in the range direction, and normalized with respect
+          to the area per pixel in the ground plane.
           values).</member>
-	<member>gamma: Create a calibrated image (gamma power scale 
-          values).</member>
-	<member>beta: Create a calibrated image (beta power scale 
-          values).</member>
-	<member>power: Create a power image.</member>
+	<member>gamma: Create a calibrated image similar to a sigma
+          image (described above), but with pixels normalized with
+          respect to the pixel area in a direction perpendicular to
+          the radar look direction.
+          </member>
+	<member>beta: Create a calibrated image similar to a sigma
+          image (described above), but with pixels normalized with
+          respect to the pixel area in the radar look direction.
+          </member>
+	<member>power: Create a power image.  The pixels of a power
+	  image are given by the squares of the amplitude
+	  (backscatter) values. </member>
     </simplelist>
   </chapter>
   <chapter id="geocode">
