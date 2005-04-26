@@ -218,19 +218,19 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     else if (flags[f_SIGMA] != FLAG_NOT_SET) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
-              "   Output data type: calibrated image (sigma dB values)\n\n");
+              "   Output data type: calibrated image (sigma power scale values)\n\n");
       meta->general->image_data_type = SIGMA_IMAGE;
     }
     else if (flags[f_GAMMA] != FLAG_NOT_SET) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
-              "   Output data type: calibrated image (gamma dB values)\n\n");
+              "   Output data type: calibrated image (gamma power scale values)\n\n");
       meta->general->image_data_type = GAMMA_IMAGE;
     }
     else if (flags[f_BETA] != FLAG_NOT_SET) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
-              "   Output data type: calibrated image (beta dB values)\n\n");
+              "   Output data type: calibrated image (beta power scale values)\n\n");
       meta->general->image_data_type = BETA_IMAGE;
     }
     else if (flags[f_LUT] != FLAG_NOT_SET) {

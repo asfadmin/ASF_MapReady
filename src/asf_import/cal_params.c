@@ -191,7 +191,7 @@ cal_params *create_cal_params(const char *inSAR)
 /*----------------------------------------------------------------------
   Get_cal_dn:
         Convert amplitude image data number into calibrated image data
-        number (in dB), given the current noise value.
+        number (in power scale), given the current noise value.
 ----------------------------------------------------------------------*/
 float get_cal_dn(cal_params *p,double noiseValue,double invIncAngle,int inDn)
 {
