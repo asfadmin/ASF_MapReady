@@ -15,7 +15,10 @@ determine_default_output_file_name(const gchar * data_file_name)
   Settings * user_settings;
   const gchar * ext;
   gchar * output_name_full;
+  gchar * path;
   gchar * basename;
+  gchar * filename;
+  gchar * schemed_filename;
   gchar * p;
 
   basename = g_strdup(data_file_name);
@@ -23,25 +26,37 @@ determine_default_output_file_name(const gchar * data_file_name)
   if (p)
     *p = '\0';
 
+  filename = g_path_get_basename(basename);
+  schemed_filename = naming_scheme_apply(current_naming_scheme, filename);
+
   if (output_directory && strlen(output_directory) > 0)
   {
-      gchar * filename;
-      
-      filename = g_path_get_basename(basename);
-
-      basename = (gchar *) g_realloc(basename,
-            sizeof(gchar) * (strlen(output_directory) + strlen(filename) + 2));
-
-      sprintf(basename, "%s%s", output_directory, filename);
-      
-      g_free(filename);
+    path = g_strdup(output_directory);
   }
+  else
+  {
+    gchar * tmp = g_path_get_dirname(basename);
+    path = g_malloc( sizeof(gchar) * (strlen(tmp) + 1) );
+    g_sprintf(path, "%s%c", tmp, DIR_SEPARATOR);
+    g_free(tmp);
+  }
+
+  basename = (gchar *) 
+    g_realloc(basename,
+	      sizeof(gchar) * (strlen(path) + strlen(schemed_filename) + 2));
+
+  sprintf(basename, "%s%s", path, schemed_filename);
+      
+  g_free(schemed_filename);
+  g_free(filename);
+  g_free(path);
 
   user_settings = settings_get_from_gui();
   ext = settings_get_output_format_extension(user_settings);
 
   output_name_full = 
-    (gchar *) g_malloc(sizeof(gchar) * (strlen(basename) + strlen(ext) + 2));
+    (gchar *) g_malloc(sizeof(gchar) * 
+		       (strlen(basename) + strlen(ext) + 2));
 
   g_sprintf(output_name_full, "%s.%s", basename, ext);
 

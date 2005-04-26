@@ -62,6 +62,9 @@ gchar * naming_scheme_apply( const NamingScheme * ns,
     gchar work[1024];
     int i, j, len;
 
+    if (!ns)
+      return g_strdup(basename);
+
     assert(ns->prefix && ns->suffix && ns->scheme);
     
     strcpy(work, ns->prefix);
