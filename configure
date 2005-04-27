@@ -1313,7 +1313,7 @@ have_pkg_config="yes"
 have_glib="no"
 have_proj="no"
 try_gtk="yes"
-have_gtk="yes"
+have_gtk="no"
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'

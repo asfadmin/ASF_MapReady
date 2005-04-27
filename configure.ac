@@ -18,7 +18,7 @@ have_pkg_config="yes"
 have_glib="no"
 have_proj="no"
 try_gtk="yes"
-have_gtk="yes"
+have_gtk="no"
 
 AC_PROG_CC
 AC_PROG_LEX
