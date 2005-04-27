@@ -21,6 +21,8 @@ try_gtk="yes"
 have_gtk="yes"
 
 AC_PROG_CC
+AC_PROG_LEX
+AC_PROG_YACC
 
 cc="cc"
 osType=`uname`
