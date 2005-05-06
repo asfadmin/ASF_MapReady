@@ -76,18 +76,18 @@ void update_summary()
     {
 	switch (s->projection)
 	{
-	    case UNIVERSAL_TRANSVERSE_MERCATOR:
+	    case PROJ_UTM:
 		sprintf(text, "%sUTM\n   Zone: %d\n",
 			text, s->zone);
 		break;
 
-	    case POLAR_STEREOGRAPHIC:
+	    case PROJ_PS:
 		sprintf(text, "%sPolar Stereo\n"
 			"   Center: (%f, %f)\n",
 			text, s->lat0, s->lon0);
 		break;
 
-	    case LAMBERT_CONFORMAL_CONIC:
+	    case PROJ_LAMCC:
 		sprintf(text, "%sLambert Conformal Conic\n"
 			"   Center: (%f, %f)\n"
 			"   Standard Parallels: (%f, %f)\n",
@@ -95,13 +95,13 @@ void update_summary()
 			s->plat1, s->plat2);
 		break;
 
-	    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	    case PROJ_LAMAZ:
 		sprintf(text, "%sLambert Azimuthal Equal Area\n"
 			"   Center: (%f, %f)\n",
 			text, s->lat0, s->lon0);
 		break;
 
-	    case ALBERS_EQUAL_AREA:
+	    case PROJ_ALBERS:
 		sprintf(text, "%sAlbers Conical Equal Area\n"
 			"   Center: (%f, %f)\n"
 			"   Standard Parallels: (%f, %f)\n",

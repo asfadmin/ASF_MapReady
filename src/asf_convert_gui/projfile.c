@@ -14,23 +14,23 @@ static char * projection_directory(int projection)
 
     switch (projection)
     {
-	case UNIVERSAL_TRANSVERSE_MERCATOR:
+	case PROJ_UTM:
 	    location = "utm";
 	    break;
 	    
-	case POLAR_STEREOGRAPHIC:
+	case PROJ_PS:
 	    location = "polar_stereographic";
 	    break;
 	    
-	case LAMBERT_CONFORMAL_CONIC:
+	case PROJ_LAMCC:
 	    location = "lambert_conformal_conic";
 	    break;
 	    
-	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	case PROJ_LAMAZ:
 	    location = "lambert_azimuthal_equal_area";
 	    break;
 	    
-	case ALBERS_EQUAL_AREA:
+	case PROJ_ALBERS:
 	    location = "albers_equal_area_conic";
 	    break;
     }
@@ -75,19 +75,19 @@ static const char * projection_file_prefix(int projection)
     switch (projection)
     {
 	default:
-	case UNIVERSAL_TRANSVERSE_MERCATOR:
+	case PROJ_UTM:
 	    return "utm_";
 	    
-	case POLAR_STEREOGRAPHIC:
+	case PROJ_PS:
 	    return "polar_stereographic_";
 	    
-	case LAMBERT_CONFORMAL_CONIC:
+	case PROJ_LAMCC:
 	    return "lambert_conformal_conic_";
 	    
-	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	case PROJ_LAMAZ:
 	    return "lambert_azimuthal_equal_area_";
 	    
-	case ALBERS_EQUAL_AREA:
+	case PROJ_ALBERS:
 	    return "albers_equal_area_conic_";
     }
 }
@@ -96,7 +96,7 @@ static char * fudge_the_name(int projection, const char * name)
 {
     static char buf[256];
 
-    if (projection == UNIVERSAL_TRANSVERSE_MERCATOR)
+    if (projection == PROJ_UTM)
     {
 	return strdup(name);
     }
@@ -140,7 +140,7 @@ static GtkWidget * populate_predefined_projections(int projection)
 
     /* do not populate the predefined projections for UTM -- too many,
        the large dropdownlist causes crashes on windows */
-    if (proj_dir && projection != UNIVERSAL_TRANSVERSE_MERCATOR)
+    if (proj_dir && projection != PROJ_UTM)
     {
 	dir = g_dir_open(proj_dir, 0, NULL);
 	
@@ -205,19 +205,19 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
 {
     switch (proj_type)
     {
-	case UNIVERSAL_TRANSVERSE_MERCATOR:
+	case PROJ_UTM:
 	    return "[Universal Transverse Mercator]";
 
-	case POLAR_STEREOGRAPHIC:
+	case PROJ_PS:
 	    return "[Polar Stereographic]";
 
-	case ALBERS_EQUAL_AREA:
+	case PROJ_ALBERS:
 	    return "[Albers Conical Equal Area]";
 
-	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	case PROJ_LAMAZ:
 	    return "[Lambert Azimuthal Equal Area]";
 
-	case LAMBERT_CONFORMAL_CONIC:
+	case PROJ_LAMCC:
 	    return "[Lambert Conformal Conic]";
 
 	default:
@@ -252,19 +252,19 @@ void set_predefined_projections(int projection)
     {
 	/* populate all the predefined projection menus */
 	utm_menu =
-	    populate_predefined_projections(UNIVERSAL_TRANSVERSE_MERCATOR);
+	    populate_predefined_projections(PROJ_UTM);
 
 	ps_menu =
-	    populate_predefined_projections(POLAR_STEREOGRAPHIC);
+	    populate_predefined_projections(PROJ_PS);
 
 	lamcc_menu =
-	    populate_predefined_projections(LAMBERT_CONFORMAL_CONIC);
+	    populate_predefined_projections(PROJ_LAMCC);
 
 	lamaz_menu =
-	    populate_predefined_projections(LAMBERT_AZIMUTHAL_EQUAL_AREA);
+	    populate_predefined_projections(PROJ_LAMAZ);
 
 	albers_menu =
-	    populate_predefined_projections(ALBERS_EQUAL_AREA);
+	    populate_predefined_projections(PROJ_ALBERS);
 
 	g_object_ref(utm_menu);
 	g_object_ref(ps_menu);
@@ -279,23 +279,23 @@ void set_predefined_projections(int projection)
 
     switch (projection)
     {
-	case UNIVERSAL_TRANSVERSE_MERCATOR:
+	case PROJ_UTM:
 	    menu = utm_menu;
 	    break;
 	    
-	case POLAR_STEREOGRAPHIC:
+	case PROJ_PS:
 	    menu = ps_menu;
 	    break;
 	    
-	case LAMBERT_CONFORMAL_CONIC:
+	case PROJ_LAMCC:
 	    menu = lamcc_menu;
 	    break;
 	    
-	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	case PROJ_LAMAZ:
 	    menu = lamaz_menu;
 	    break;
 	    
-	case ALBERS_EQUAL_AREA:
+	case PROJ_ALBERS:
 	    menu = albers_menu;
 	    break;
     }
@@ -442,10 +442,10 @@ static int parse_proj_args_file(char * file, project_parameters_t * pps,
     readline(fp, buf, sizeof(buf));
     ret = TRUE;
 
-    if (strcmp(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
+    if (strcmp(buf, bracketed_projection_name(PROJ_ALBERS)) == 0 ||
 	strcmp(buf, "[Albers Equal Area Conic]") == 0)
     {
-	*proj_type = ALBERS_EQUAL_AREA;
+	*proj_type = PROJ_ALBERS;
 	get_fields(fp,
 		   "First standard parallel", &pps->albers.std_parallel1,
 		   "Second standard parallel", &pps->albers.std_parallel2,
@@ -455,10 +455,9 @@ static int parse_proj_args_file(char * file, project_parameters_t * pps,
 		   "False Northing", &pps->albers.false_northing,
 		   NULL);
     }
-    else if (strcmp(buf, bracketed_projection_name(
-			LAMBERT_AZIMUTHAL_EQUAL_AREA)) == 0)
+    else if (strcmp(buf, bracketed_projection_name(PROJ_LAMAZ)) == 0)
     {
-	*proj_type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
+	*proj_type = PROJ_LAMAZ;
 	get_fields(fp,
 		   "Central Meridian", &pps->lamaz.center_lon,
 		   "Latitude of Origin", &pps->lamaz.center_lat,
@@ -466,10 +465,9 @@ static int parse_proj_args_file(char * file, project_parameters_t * pps,
 		   "False Northing", &pps->lamaz.false_northing,
 		   NULL);
     }
-    else if (strcmp(buf, bracketed_projection_name(
-			LAMBERT_CONFORMAL_CONIC)) == 0)
+    else if (strcmp(buf, bracketed_projection_name(PROJ_LAMCC)) == 0)
     {
-	*proj_type = LAMBERT_CONFORMAL_CONIC;
+	*proj_type = PROJ_LAMCC;
 	get_fields(fp,
 		   "First standard parallel", &pps->lamcc.plat1,
 		   "Second standard parallel", &pps->lamcc.plat2,
@@ -480,10 +478,10 @@ static int parse_proj_args_file(char * file, project_parameters_t * pps,
 		   /* "Scale Factor", &pps->lamcc.scale_factor, */
 		   NULL);
     }
-    else if (strcmp(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
+    else if (strcmp(buf, bracketed_projection_name(PROJ_PS)) == 0)
     {
 	double is_north_pole;
-	*proj_type = POLAR_STEREOGRAPHIC;
+	*proj_type = PROJ_PS;
 	get_fields(fp,
 		   "First standard parallel", &pps->ps.slat,
 		   "Standard Parallel", &pps->ps.slat,
@@ -494,11 +492,10 @@ static int parse_proj_args_file(char * file, project_parameters_t * pps,
 		   NULL);
 	pps->ps.is_north_pole = (int) is_north_pole;
     }
-    else if (strcmp(buf, bracketed_projection_name(
-			UNIVERSAL_TRANSVERSE_MERCATOR)) == 0)
+    else if (strcmp(buf, bracketed_projection_name(PROJ_UTM)) == 0)
     {
 	double zone;
-	*proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
+	*proj_type = PROJ_UTM;
 	get_fields(fp,
 		   "Scale Factor", &pps->utm.scale_factor,
 		   "Central Meridian", &pps->utm.lon0,

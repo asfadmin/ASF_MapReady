@@ -246,8 +246,8 @@
       original image.  The pixels in the original image nearest to
       this location are then resampled to produce the value of the
       pixel in the geocoded image.  This resampling is done using
-      cubic splines, and the resulting image can therefore look as
-      if it has been low pass filtered.</para>
+      the method selected in the "Resampling Method" dropdown
+      list.</para>
 
     <orderedlist>
       <listitem><para>UTM</para>
@@ -344,6 +344,21 @@
 
 	<para>Specifies the datum that is used when projecting.  The
           datum applies to the target coordinate system.</para>
+
+      </listitem>
+      <listitem><para>Resample</para>
+
+	<para>Selects the method used to resample the data.  In the
+          geocoding process, the pixel values in the geocoded image are
+          determined by locating the corresponding point in the
+          original, and resampling the original image pixels
+          closest to this point.  "Nearest Neighbor" simply selects
+          the pixel closest to the point, "Bilinear" does linear
+          interpolation between the nearest pixels, and "Bicubic"
+          fits a cubic spline through the nearest pixels.  The
+          bicubic method is the most accurate, however it is also
+          the slowest, and can also have the effect of low-pass
+          filtering the image.</para>
 
       </listitem>
     </orderedlist>

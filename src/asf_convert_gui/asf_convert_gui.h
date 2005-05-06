@@ -56,16 +56,16 @@ enum ScalingMethod
     SCALING_METHOD_MINMAX = 1,
     SCALING_METHOD_TRUNCATE = 2
 };
-/*    
+    
 enum ProjectionOptions
 {
-    UNIVERSAL_TRANSVERSE_MERCATOR = 0,
-    POLAR_STEREOGRAPHIC = 1,
-    LAMBERT_AZIMUTHAL_EQUAL_AREA = 2,
-    LAMBERT_CONFORMAL_CONIC = 3,
-    ALBERS_CONICAL_EQUAL_AREA = 4
+  PROJ_UTM = 0,
+  PROJ_PS = 1,
+  PROJ_ALBERS = 2,
+  PROJ_LAMAZ = 3,
+  PROJ_LAMCC = 4 // currently unavailable through GUI
 };
-*/
+
 enum Datums
 {
     DATUM_WGS84 = 0,

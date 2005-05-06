@@ -54,13 +54,13 @@ const char * geocode_options_string(const Settings * settings)
 
 	switch (settings->projection)
 	{
-	    case UNIVERSAL_TRANSVERSE_MERCATOR:
+	    case PROJ_UTM:
 		strcpy(ret, "--projection utm");
 		enable_utm_zone =
 		    entry_has_text("utm_zone_entry");
 		break;
 
-	    case POLAR_STEREOGRAPHIC:
+	    case PROJ_PS:
 		strcpy(ret, "--projection ps");
 		enable_central_meridian =
 		    entry_has_text("central_meridian_entry");
@@ -72,7 +72,7 @@ const char * geocode_options_string(const Settings * settings)
 		    entry_has_text("false_easting_entry");
 		break;
 
-	    case LAMBERT_CONFORMAL_CONIC:
+	    case PROJ_LAMCC:
 		strcpy(ret, "--projection lamcc");
 		enable_first_standard_parallel =
 		    entry_has_text("first_standard_parallel_entry");
@@ -88,7 +88,7 @@ const char * geocode_options_string(const Settings * settings)
 		    entry_has_text("false_easting_entry");
 		break;
 
-	    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	    case PROJ_LAMAZ:
 		strcpy(ret, "--projection lamaz");
 		enable_central_meridian =
 		    entry_has_text("central_meridian_entry");
@@ -100,7 +100,7 @@ const char * geocode_options_string(const Settings * settings)
 		    entry_has_text("false_easting_entry");
 		break;
 
-	    case ALBERS_EQUAL_AREA:
+	    case PROJ_ALBERS:
 		strcpy(ret, "--projection albers");
 		enable_first_standard_parallel =
 		    entry_has_text("first_standard_parallel_entry");
@@ -279,7 +279,7 @@ void geocode_options_changed()
 	gtk_option_menu_get_history(GTK_OPTION_MENU(projection_option_menu));
 
     enable_table_utm_projection_options =
-	projection == UNIVERSAL_TRANSVERSE_MERCATOR;
+	projection == PROJ_UTM;
 
     if (geocode_projection_is_checked)
     {	
@@ -319,13 +319,13 @@ void geocode_options_changed()
 
 		switch (projection)
 		{
-		    case UNIVERSAL_TRANSVERSE_MERCATOR:
+		    case PROJ_UTM:
 			/* no UTM predefined projections -- better to use
 			   the "zone" entry */
 			assert(FALSE);
 			break;
 			
-		    case POLAR_STEREOGRAPHIC:
+		    case PROJ_PS:
 			gtk_entry_set_text(
 			    GTK_ENTRY(central_meridian_entry),
 			    double_to_string(pps->ps.slon));
@@ -340,7 +340,7 @@ void geocode_options_changed()
 			    double_to_string(pps->ps.false_easting));
 			break;
 		    
-		    case LAMBERT_CONFORMAL_CONIC:
+		    case PROJ_LAMCC:
 			gtk_entry_set_text(
 			    GTK_ENTRY(first_standard_parallel_entry),
 			    double_to_string(pps->lamcc.plat1));
@@ -361,7 +361,7 @@ void geocode_options_changed()
 			    double_to_string(pps->lamcc.false_easting));
 			break;
 		    
-		    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+		    case PROJ_LAMAZ:
 			gtk_entry_set_text(
 			    GTK_ENTRY(central_meridian_entry),
 			    double_to_string(pps->lamaz.center_lon));
@@ -376,7 +376,7 @@ void geocode_options_changed()
 			    double_to_string(pps->lamaz.false_easting));
 			break;
 			
-		    case ALBERS_EQUAL_AREA:
+		    case PROJ_ALBERS:
 			gtk_entry_set_text(
 			    GTK_ENTRY(first_standard_parallel_entry),
 			    double_to_string(pps->albers.std_parallel1));
@@ -404,11 +404,11 @@ void geocode_options_changed()
 	{	    
 	    switch (projection)
 	    {
-		case UNIVERSAL_TRANSVERSE_MERCATOR:
+		case PROJ_UTM:
 		    enable_utm_zone = TRUE;
 		    break;
 		    
-		case POLAR_STEREOGRAPHIC:
+		case PROJ_PS:
 		    enable_central_meridian = TRUE;
 		    enable_first_standard_parallel = TRUE;
 		    enable_false_northing = TRUE;
@@ -421,7 +421,7 @@ void geocode_options_changed()
 
 		    break;
 		    
-		case LAMBERT_CONFORMAL_CONIC:
+		case PROJ_LAMCC:
 		    enable_first_standard_parallel = TRUE;
 		    enable_second_standard_parallel = TRUE;
 		    enable_central_meridian = TRUE;
@@ -430,7 +430,7 @@ void geocode_options_changed()
 		    enable_false_easting = TRUE;
 		    break;
 		    
-		case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+		case PROJ_LAMAZ:
 		    enable_central_meridian = TRUE;
 		    enable_latitude_of_origin = TRUE;
 		    enable_false_northing = TRUE;
@@ -443,7 +443,7 @@ void geocode_options_changed()
 
 		    break;
 		    
-		case ALBERS_EQUAL_AREA:
+		case PROJ_ALBERS:
 		    enable_first_standard_parallel = TRUE;
 		    enable_second_standard_parallel = TRUE;
 		    enable_central_meridian = TRUE;

@@ -839,15 +839,15 @@ settings_get_projection_abbrev(const Settings *s)
     {
 	default:
 	    return "";
-	case UNIVERSAL_TRANSVERSE_MERCATOR:
+	case PROJ_UTM:
 	    return "utm";
-	case POLAR_STEREOGRAPHIC:
+	case PROJ_PS:
 	    return "ps";
-	case LAMBERT_CONFORMAL_CONIC:
+	case PROJ_LAMCC:
 	    return "lamcc";
-	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	case PROJ_LAMAZ:
 	    return "lamaz";
-	case ALBERS_EQUAL_AREA:
+	case PROJ_ALBERS:
 	    return "albers";
     }
 }

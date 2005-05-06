@@ -66,6 +66,16 @@ determine_default_output_file_name(const gchar * data_file_name)
   return output_name_full;
 }
 
+gboolean is_L_file(const gchar * data_file)
+{
+    gchar * p = strrchr(data_file, '.');
+
+    if (!p)
+        return FALSE;
+    else
+        return strcasecmp(p + 1, "L") == 0;
+}
+
 static gboolean file_is_valid(const gchar * data_file)
 {
     /* not sure how much error checking we want to do */
