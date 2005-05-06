@@ -20,6 +20,10 @@
 #  define THUMB_SIZE 48
 #endif
 
+#if ( GTK_MAJOR_VERSION >= 2 && GTK_MINOR_VERSION >= 6 )
+#  define FILE_CHOOSER_AVAILABLE
+#endif
+
 enum OutputFormat
 {
     OUTPUT_FORMAT_JPEG = 0,
