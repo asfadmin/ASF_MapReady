@@ -10,6 +10,191 @@
 #include "slant_range_image.h"
 
 SlantRangeImage *
+slant_range_image_thaw (const char *file)
+{
+  // This method is untested.
+  //g_assert_not_reached ();
+
+  SlantRangeImage *self = g_new (SlantRangeImage, 1);
+
+  FILE *sv = fopen (file, "r");   // Serialized version.
+  g_assert (sv != NULL);
+
+  // Read the title portion.
+  int assignment_count 
+    = fscanf (sv, "Serialized slant_range_image instance\n");
+  g_assert (assignment_count == 0);
+
+  // Read the metadata.  We don't really want to keep this since being
+  // text we may not get back out a bit-for-bit version of what we put
+  // in, but we read it as a simple way of getting through it.
+  long int dummy_long_int;
+  assignment_count = fscanf (sv, "range_direction_pixel_count: %ld\n",
+			     &dummy_long_int);
+  g_assert (assignment_count == 1);
+  assignment_count = fscanf (sv, "time_direction_pixel_count: %ld\n",
+			     &dummy_long_int);
+  double dummy_double;
+  assignment_count = fscanf (sv, "upper_left_pixel_time: %lf\n", 
+			     &dummy_double);
+  g_assert (assignment_count == 1);
+  assignment_count = fscanf (sv, "upper_left_pixel_range: %lf\n",
+			     &dummy_double);
+  g_assert (assignment_count == 1);
+  assignment_count = fscanf (sv, "time_per_pixel: %lf\n", &dummy_double);
+  g_assert (assignment_count == 1);
+  assignment_count = fscanf (sv, "slant_range_per_pixel: %lf\n", 
+			     &dummy_double);
+  g_assert (assignment_count == 1);
+
+  // Read the little text that introduces the binary data part:
+  assignment_count = fscanf (sv, "Binary data follows:\n");
+  g_assert (assignment_count == 0);
+
+  // Read the binary form of the above metadata.
+  size_t size_x, size_y;
+  size_t read_count = fread (&size_x, sizeof (size_t), 1, sv);
+  g_assert (read_count == 1);
+  g_assert (size_x < SSIZE_MAX);
+  read_count = fread (&size_y, sizeof (size_t), 1, sv);
+  g_assert (read_count == 1);
+  g_assert (size_y < SSIZE_MAX);
+  read_count = fread (&(self->upper_left_pixel_time), sizeof (double), 1, sv);
+  g_assert (read_count == 1);
+  read_count = fread (&(self->upper_left_pixel_range), sizeof (double), 1, sv);
+  g_assert (read_count == 1);
+  read_count = fread (&(self->time_per_pixel), sizeof (double), 1, sv);
+  g_assert (read_count == 1);
+  read_count = fread (&(self->slant_range_per_pixel), sizeof (double), 1, sv);
+  g_assert (read_count == 1);
+
+  // Read the binary floating point image.
+  self->data = float_image_new_from_file_pointer 
+    (size_x, size_y, sv, 0, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+
+  // If everything worked right that should have been all the data in
+  // the file, so make sure we have.
+  int8_t dummy_byte;
+  read_count = fread (&dummy_byte, sizeof (int8_t), 1, sv);
+  g_assert (read_count == 0);
+  g_assert (feof (sv));
+
+  // Done with the serialized instance, close it.
+  int return_code = fclose (sv);
+  g_assert (return_code == 0);
+
+  return self;
+}
+
+// Return true iff byte_order is not the native byte order on the
+// current platform.
+static gboolean
+non_native_byte_order (float_image_byte_order_t byte_order)
+{
+  return ((G_BYTE_ORDER == G_LITTLE_ENDIAN
+           && byte_order == FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN)
+          || (G_BYTE_ORDER == G_BIG_ENDIAN
+              && byte_order == FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN));
+}
+
+// Swap the byte order of a 32 bit value, hopefully converting from
+// big endian to little endian or vice versa.  There is unfortunately
+// some question whether or not this always works right for floating
+// point values.
+static void
+swap_bytes_32 (unsigned char *in)
+{
+  g_assert (sizeof (unsigned char) == 1);
+  int tmp = in[0];
+  in[0] = in[3];
+  in[3] = tmp;
+  tmp = in[1];
+  in[1] = in[2];
+  in[2] = tmp;
+}
+
+void
+slant_range_image_freeze (SlantRangeImage *self, const char *file)
+{
+  // This method is untested.
+  //  g_assert_not_reached ();
+
+  FILE *sv = fopen (file, "w");   // Serialized version.
+  g_assert (sv != NULL);
+
+  // Write the title portion.
+  int print_count = fprintf (sv, "Serialized slant_range_image instance\n");
+  g_assert (print_count > 0);
+
+  // Write the metadata as text.
+  g_assert (self->data->size_x < LONG_MAX);  // FIXME: is this right check?
+  print_count = fprintf (sv, "range_direction_pixel_count: %ld\n",
+			 (long int) self->data->size_x);
+  g_assert (print_count > 0);
+  g_assert (self->data->size_y < LONG_MAX);  // FIXME: is this right check?
+  print_count = fprintf (sv, "time_direction_pixel_count: %ld\n",
+			 (long int) self->data->size_y);
+  g_assert (print_count > 0);
+  print_count = fprintf (sv, "upper_left_pixel_time: %.16le\n",
+			 self->upper_left_pixel_time);
+  g_assert (print_count > 0);
+  print_count = fprintf (sv, "upper_left_pixel_range: %.16le\n",
+			 self->upper_left_pixel_range);
+  g_assert (print_count > 0);
+  print_count = fprintf (sv, "time_per_pixel: %.16le\n",
+			 self->time_per_pixel);
+  g_assert (print_count > 0);
+  print_count = fprintf (sv, "slant_range_per_pixel: %.16le\n",
+			self->slant_range_per_pixel);
+  g_assert (print_count > 0);
+
+  // Write the little text that introduces the binary data part:
+  print_count
+    = fprintf (sv, "Binary data follows:\n");
+  g_assert (print_count > 0);
+
+  // Write the metadata in binary form.
+  size_t write_count = fwrite (&(self->data->size_x), sizeof (size_t), 1, sv);
+  g_assert (write_count == 1);
+  write_count = fwrite (&(self->data->size_y), sizeof (size_t), 1, sv);
+  g_assert (write_count == 1);
+  write_count = fwrite (&(self->upper_left_pixel_time), sizeof (double), 1, 
+			sv);
+  g_assert (write_count == 1);
+  write_count = fwrite (&(self->upper_left_pixel_range), sizeof (double), 1, 
+			sv);
+  g_assert (write_count == 1);
+  write_count = fwrite (&(self->time_per_pixel), sizeof (double), 1, sv);
+  g_assert (write_count == 1);
+  write_count = fwrite (&(self->slant_range_per_pixel), sizeof (double), 1, 
+			sv);
+  g_assert (write_count == 1);
+
+  // Write the binary floating point image data.
+  float *row_buffer = g_new (float, self->data->size_x);
+  size_t ii;
+  for ( ii = 0 ; ii < self->data->size_y ; ii++ ) {
+    // Fetch an image row.
+    float_image_get_row (self->data, ii, row_buffer);
+    // Swap bytes if required.
+    if ( non_native_byte_order (FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN) ) {
+      size_t jj;
+      for ( jj = 0 ; jj < self->data->size_x ; jj++ ) {
+	swap_bytes_32 ((unsigned char *) &(row_buffer[jj]));
+      }
+    }
+    // Write the data to the file.
+    write_count = fwrite (row_buffer, sizeof (float), self->data->size_x, sv);
+    g_assert (write_count == self->data->size_x);
+  }
+  g_free (row_buffer);
+
+  // Done with the serialized instance, close it.
+  int return_code = fclose (sv);
+  g_assert (return_code == 0);
+}
+
+SlantRangeImage *
 slant_range_image_new_from_ground_range_image (char *metadata_file,
 					       char *data_file)
 {
@@ -93,21 +278,143 @@ slant_range_image_new_from_ground_range_image (char *metadata_file,
   int return_code 
     = float_image_export_as_jpeg (self->data, "test_file.jpg",
 				  GSL_MAX (self->data->size_x / 6, 
-					   self->data->size_y / 6));
+					   self->data->size_y / 6), 0.0);
   g_assert (return_code == 0);
 
   return self;
 }
 
+// Form a new instance which is a rectanglar slice taken out of an
+// existend model.
+SlantRangeImage *
+slant_range_image_new_subimage (SlantRangeImage *model, ssize_t start_x,
+				ssize_t width, ssize_t start_y, ssize_t height)
+{
+  SlantRangeImage *self = g_new (SlantRangeImage, 1);
+
+  // Convenience variables.
+  g_assert (model->data->size_x < SSIZE_MAX);
+  ssize_t mw = model->data->size_x;
+  g_assert (model->data->size_y < SSIZE_MAX);
+  ssize_t mh = model->data->size_y;
+
+  // Ensure that we have valid subimage indicies.
+  g_assert (start_x >= 0);
+  g_assert (width >= 1);
+  g_assert (start_x + width < mw);
+  g_assert (start_y >= 0);
+  g_assert (height >= 1);
+  g_assert (start_y + height < mh);
+
+  // Compute the pixel to time/slant range relationships for the new
+  // instance.
+  self->upper_left_pixel_time 
+    = model->upper_left_pixel_time + model->time_per_pixel * start_y;
+  self->upper_left_pixel_range
+    = model->upper_left_pixel_range + model->slant_range_per_pixel * start_x;
+  self->time_per_pixel = model->time_per_pixel;
+  self->slant_range_per_pixel = model->slant_range_per_pixel;
+  
+  // Copy the pixels of interest between instances.
+  self->data = float_image_new (width, height);
+  ssize_t ii;
+  for ( ii = 0 ; ii < height ; ii++ ) {
+    ssize_t jj;
+    for ( jj = 0 ; jj < width ; jj++ ) {
+      float_image_set_pixel (self->data, jj, ii,
+			     float_image_get_pixel (model->data, start_x + jj,
+						    start_y + ii));
+    }
+  }
+
+  return self;
+}
+
+// Return true iff arg is inside l1 and l2 by at least epsilon =
+// relative_guard * fabs (l2 - l1), in other words, return true iff
+// arg is in [l1 + epsilon, l2 - epsilon] if l2 >= l1, or arg is in
+// [l2 + epsilon, l1 - epsilon] if l1 > l2.
+static gboolean
+is_in_range (double arg, double l1, double l2, double relative_guard)
+{
+  double epsilon = relative_guard * fabs (l2 - l1);
+
+  if ( l2 >= l1 ) {
+    return l1 + epsilon <= arg && arg <= l2 - epsilon;
+  }
+  else {
+    return l2 + epsilon <= arg && arg <= l1 - epsilon;
+  }
+}
+
+gboolean
+slant_range_image_contains (SlantRangeImage *self, double range, double time,
+			    double relative_guard)
+{
+  // Convenience aliases.
+  double ulpr = self->upper_left_pixel_range;
+  double ulpt = self->upper_left_pixel_time;
+  double rpp = self->slant_range_per_pixel;
+  double tpp = self->time_per_pixel;
+
+  // Make sure the time/slant range we want to sample is in the image.
+  return (is_in_range (range, ulpr, ulpr + rpp * self->data->size_x,
+		       relative_guard)
+	  && is_in_range (time, ulpt, ulpt + tpp * self->data->size_y, 
+			  relative_guard));
+}
+    
 double
-slant_range_image_sample (SlantRangeImage *self, double time, double range,
+slant_range_image_sample (SlantRangeImage *self, double range, double time,
 			  float_image_sample_method_t sample_method)
 {
+  // We insist that the requested (range, time) be within the extent
+  // of the image by at least this fraction of the image size.
+  const double relative_guard = 1e-3;
+  g_assert (slant_range_image_contains (self, range, time, relative_guard));
+
   double x = ((range - self->upper_left_pixel_range)
 	      / self->slant_range_per_pixel);
   double y = ((time - self->upper_left_pixel_time) / self->time_per_pixel);
 
   return float_image_sample (self->data, x, y, sample_method);
+}
+
+gboolean
+slant_range_image_equal (SlantRangeImage *self, SlantRangeImage *other)
+{
+  // Compare the slant range specific metadata.
+  if ( self->upper_left_pixel_time != other->upper_left_pixel_time ) {
+    return FALSE;
+  }
+  if ( self->upper_left_pixel_range != other->upper_left_pixel_range ) {
+    return FALSE;
+  }
+  if ( self->time_per_pixel != other->time_per_pixel ) {
+    return FALSE;
+  }
+  if ( self->slant_range_per_pixel != other->slant_range_per_pixel ) {
+    return FALSE;
+  }
+
+  // Compare the actual floating point images.
+  if ( self->data->size_x != other->data->size_x ) {
+    return FALSE;
+  }
+  if ( self->data->size_y != other->data->size_y ) {
+    return FALSE;
+  }
+  size_t ii, jj;
+  for ( ii = 0 ; ii < self->data->size_y ; ii++ ) {
+    for ( jj = 0 ; jj < self->data->size_x ; jj++ ) {
+      if ( float_image_get_pixel (self->data, jj, ii)
+	   != float_image_get_pixel (other->data, jj, ii) ) {
+	return FALSE;
+      }
+    }
+  }
+
+  return TRUE;
 }
 
 void

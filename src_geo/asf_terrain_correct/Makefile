@@ -20,6 +20,7 @@ PROGRAM_C_SOURCE = $(addsuffix .c, $(PROGRAM))
 # Classes.  Each entry here has a corresponding .h and .c file.
 CLASSES := date_time \
 	   dem \
+	   map_projected_dem \
            orbital_state_vector \
 	   platform_path \
            slant_range_image \
@@ -35,8 +36,8 @@ OTHER_C_SOURCES := utilities.c
 IERS_BULLETIN_B_MASHER := ./scan_IERS_bulletin_Bs.pl
 
 # Sources from which static data files needed by the library code are
-# derived.
-STATIC_DATA_FILE_SOURCES = IERS_Bulletin_Bs
+# derived live in this directory.
+IERS_BULLETIN_B_DIR := IERS_Bulletin_Bs
 
 ###############################################################################
 #
@@ -49,7 +50,12 @@ STATIC_DATA_FILE_SOURCES = IERS_Bulletin_Bs
 #
 ###############################################################################
 
-INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR)
+# The ScratchPlot library allows us to draw quick plots of data,
+# images, etc.  Useful for development work.
+SCRATCHPLOT_INCLUDE_DIR := /tmp/test/include
+
+INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) -I$(SCRATCHPLOT_INCLUDE_DIR) \
+                 $(shell pkg-config --cflags-only-I glib-2.0)
 
 CPPFLAGS := $(INCLUDE_FLAGS)
 
@@ -58,9 +64,23 @@ CPPFLAGS := $(INCLUDE_FLAGS)
 # take type float (still get a complaint about argument being passed
 # as float due to prototype rather than double.
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
-CFLAGS += -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
-          -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
-          -Wwrite-strings -Wnested-externs -fno-common
+CFLAGS += -Werror -Wall -W -g -O2 -Wmissing-prototypes -Wstrict-prototypes \
+          -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
+          -Wnested-externs -fno-common \
+          $(shell pkg-config --cflags-only-other glib-2.0)
+
+# Note that debugging builds turn optimization off, which
+# unfortunately causes gcc not to catch certain warnings (because the
+# optimizer doesn't run).
+ifneq ($(CFLAGS),0)
+  CFLAGS += -O0
+endif 
+
+LDFLAGS := $(shell pkg-config --libs-only-other glib-2.0)
+
+# The ScratchPlot library allows us to draw quick plots of data,
+# images, etc.  Useful for development work.
+SCRATCHPLOT_LIB_DIR := /tmp/test/lib
 
 # Libraries needed by this program.
 LDLIBS := $(LIBDIR)/asf.a \
@@ -73,8 +93,10 @@ LDLIBS := $(LIBDIR)/asf.a \
 	  $(LIBDIR)/libgsl.a \
 	  $(LIBDIR)/libgslcblas.a \
 	  $(LIBDIR)/libjpeg.a \
-	  $(LIBDIR)/libglib-2.0.a \
-	  $(LIBDIR)/libiconv.a \
+	  $(shell pkg-config --libs-only-L glib-2.0) \
+          $(shell pkg-config --libs-only-l glib-2.0) \
+	  -Wl,--rpath,$(SCRATCHPLOT_LIB_DIR) \
+	  -L$(SCRATCHPLOT_LIB_DIR) -lscratchplot \
 	  -lm
 
 # Defines needed by this module.  For defining the location of the
@@ -92,7 +114,6 @@ CPPFLAGS += $(DEFINE_FLAGS)
 # classes are added its good to add tests.
 #
 ###############################################################################
-
 
 # To test, we must have everything built, and any tools we intend to
 # call installed.
@@ -152,14 +173,25 @@ OBJS := $(patsubst %.c, %.o, $(SRCS))
 NONMAIN_OBJS := $(patsubst %.c, %.o, $(OTHER_C_SOURCES) \
                 $(addsuffix .c, $(CLASSES)))
 
+# Some options to link in the scratchplot library, used to take a look
+# at data.
+DRAW_OPTS := -Wl,-rpath,/tmp/test/lib -L/tmp/test/lib -lscratchplot
+
 # Building depends on having all the individual files compiled, and on
 # having depended on libraries installed.  Actually, since the
 # libraries are all static, we can build fine without them, but its ok
 # to insist on what will logically be required anyway.  We also need
 # to have the static data files we need built.
 build_stamp: $(OBJS) $(LIBS) static_data_file_build_stamp
-	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $(PROGRAM)
+	$(CC) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $(PROGRAM)
 	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
+	touch $@
+
+test_drawer_stamp: test.c
+	echo $(CFLAGS)
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< 
+	$(CC) $(LDFLAGS) test.o $(LDLIBS) -o test
+	./test
 	touch $@
 
 static_data_file_build_stamp: time_scale_offsets
@@ -167,7 +199,7 @@ static_data_file_build_stamp: time_scale_offsets
 
 # Script which concatenates International Earth Rotation Service
 # Bulletin B issues into a data file.
-time_scale_offsets: IERS_Bulletin_Bs \
+time_scale_offsets: $(IERS_BULLETIN_B_DIR) \
                     $(IERS_BULLETIN_B_MASHER)
 	$(IERS_BULLETIN_B_MASHER) $< $@
 

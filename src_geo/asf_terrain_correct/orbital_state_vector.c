@@ -15,6 +15,10 @@
 #include "earth_constants.h"
 #include "orbital_state_vector.h"
 
+//FIXME: remove debug schlop.
+#include <glib.h>
+#include <scratchplot.h>
+
 OrbitalStateVector *
 orbital_state_vector_new (double x, double y, double z, double vx, double vy,
 			  double vz)
@@ -170,10 +174,9 @@ func (double t, const double y[], double f[], void *params)
   t = t;
   params = params;
   
-
   /* Shorthand for some earth constants.  */
-  static const double gm = EARTH_GRAVITATIONAL_CONSTANT;
-  static const double ae = EARTH_SEMIMAJOR_AXIS;
+  static const long double gm = EARTH_GRAVITATIONAL_CONSTANT;
+  static const long double ae = EARTH_SEMIMAJOR_AXIS;
 
   /* Create position and velocity vectors.  We use static vectors to
      avoid allocation overhead.  */
@@ -185,16 +188,38 @@ func (double t, const double y[], double f[], void *params)
   vector_set (v, y[3], y[4], y[5]);
 
   /* Current range to satellife from center of earth.  */
-  double r = vector_magnitude (p);
+  long double r = vector_magnitude (p);
 
-  /* The so-called first zonal harmonic is used to account for the
+  /* The so-called first zonal harmonics are used to account for the
      effects of earth oblatedness (see below for references).  */
-  double j2 = 1082.63e-6;	/* First zonal harmonic coefficient.  */
-  double a_j2_x = (gm * p->x / pow (r, 3)) * j2 * (3.0 / 2) * pow ((ae / r), 2)
-    * (5.0 * (pow (p->z, 2) / pow (r, 2)) - 1.0);
-  double a_j2_y = (p->y / p->x) * a_j2_x;
-  double a_j2_z = (-gm * p->z / pow (r, 3)) * j2 * (3.0 / 2) 
-    * pow ((ae / r), 2) * (3.0 - 5.0 * (pow (p->z, 2) / pow (r, 2)));
+  long double j2 = 1082.63e-6;	/* First zonal harmonic coefficient.  */
+  long double j3 = -2.54e-6;
+
+  /* Shorthand for some terms that show up in the expressions for the
+     perturbations.  */
+  long double r2 = powl (r, 2);
+  long double r3 = powl (r, 3);
+  long double px = p->x;
+  long double py = p->y;
+  long double pz = p->z;
+  long double pz2 = powl (p->z, 2);
+  long double pz3 = powl (p->z, 3);
+
+  /* Perturbations due to earth oblatedness.  */
+  long double a_j2_x = ((gm * px / r3)
+			* ((j2 * (3.0 / 2)
+			    * powl ((ae / r), 2)
+			    * (5.0 * pz2 / r2 - 1.0))
+			   + (j3 * (5.0 / 2) * powl ((ae / r), 3)
+			      * (3.0 * pz / r - 7 * pz3 / r3))));
+  long double a_j2_y = py / px * a_j2_x;
+  long double a_j2_z = ((-gm * pz / r3)
+			* ((j2 * (3.0 / 2)
+			    * powl ((ae / r), 2)
+			    * (3.0 - 5.0 * pz2 / r2))
+			   + (j3 * (3.0 / 2) * pow ((ae / r), 3)
+			      * (10 * r / pz - (35.0 / 3) * (pz3 / r3) 
+				 - r / pz))));
 
   /* Total perturbations.  */
   double ksx = a_j2_x;
@@ -204,9 +229,9 @@ func (double t, const double y[], double f[], void *params)
   f[0] = v->x;
   f[1] = v->y;
   f[2] = v->z;
-  f[3] = ksx - gm * (p->x / pow (r, 3));
-  f[4] = ksy - gm * (p->y / pow (r, 3));
-  f[5] = ksz - gm * (p->z / pow (r, 3));
+  f[3] = ksx - gm * (p->x / powl (r, 3));
+  f[4] = ksy - gm * (p->y / powl (r, 3));
+  f[5] = ksz - gm * (p->z / powl (r, 3));
 
   return GSL_SUCCESS;
 }
@@ -231,28 +256,33 @@ orbital_state_vector_propagate (OrbitalStateVector *self, double time)
 
      with initial conditions given by the current state.  The values
      ksx, ksy, and ksz represent the perturbations due to earth
-     oblatedness as described in section 3.2.2.3 respectively of
-     "Satellite Geodesy", 2nd edition, by Gunter Seeber.  An ordinary
+     oblatedness as described in section 3.2.2.3 of "Satellite
+     Geodesy", 2nd edition, by Gunter Seeber.  An ordinary
      differential equation solver from the GNU Scientific Library
      (GSL) is used to solve the system.  It is well described in the
      GSL documentation section "Ordinary Differential Equations".  */
 
   const int dimension = 6;
   /* Create some things the ODE solver uses.  */
-  const gsl_odeiv_step_type *step_type = gsl_odeiv_step_rkf45;  
+  //  const gsl_odeiv_step_type *step_type = gsl_odeiv_step_rkf45;  
+  const gsl_odeiv_step_type *step_type = gsl_odeiv_step_rk4;
   gsl_odeiv_step *ode_step = gsl_odeiv_step_alloc (step_type, dimension);
   /* Hold the absolute integration error for each coordinate for each
      step to within this value.  This value was chosen using the
      following sophisticated methodology: Keep tightening the
      tolerance until the answer no longer changes with further
-     tightenings, for an short (~2.5 minute) propagation.  */
-  double mae = 0.000001;
-  gsl_odeiv_control *ode_control = gsl_odeiv_control_y_new (mae, 0.0);
+     tightenings, for a short (~2.5 minute) propagation.  */
+  double mae = 0.0000000;
+  double mre = 0.0000001;
+  gsl_odeiv_control *ode_control 
+    = gsl_odeiv_control_standard_new (mae, mre, 1.0, 1.0);
   gsl_odeiv_evolve *ode_evolve = gsl_odeiv_evolve_alloc (dimension);
-  gsl_odeiv_system ode_system = {func, NULL, dimension, NULL};
+  const gsl_odeiv_system ode_system = {func, NULL, dimension, NULL};
   double t0 = 0.0, t1 = time;	/* Start and end times.  */
  /* Initial guess for step size.  */
-  const double initial_step_size = GSL_SIGN (t1) * 1.0;
+  // FIXME: settle on a choice for step size.
+  //  const double initial_step_size = GSL_SIGN (t1) * 1.0;
+  const double initial_step_size = GSL_SIGN (t1) * 0.0001;
   double step_size = initial_step_size;
   double *y = malloc (dimension * sizeof (double));
   y[0] = self->position->x;
@@ -263,11 +293,38 @@ orbital_state_vector_propagate (OrbitalStateVector *self, double time)
   y[5] = self->velocity->z;
   double t = t0;		/* Current time.  */
   /* Here is the actual propagation.  */
+  // FIXME: remove debugging schlop.
+  /*
+    int pc = 0;
+    double *p_times = g_new (double, 6000);
+    double *p_y = g_new (double, 6000);
+    double *p_vy = g_new (double, 6000);
+  */
   while ( fabs (t) < fabs (t1) ) {
     int status = gsl_odeiv_evolve_apply (ode_evolve, ode_control, ode_step, 
-					 &ode_system, &t, t1, &step_size, y);
+    					 &ode_system, &t, t1, &step_size, y);
+
+    /*
+    double yerr[6];
+    int status = gsl_odeiv_step_apply (ode_step, t, step_size, y, yerr, NULL,
+    				       NULL, &ode_system);
+
+        if ( pc < 5000 ) {
+          p_times[pc] = t;
+          p_y[pc] = y[1];
+          p_vy[pc] = y[4];
+          pc++;
+        }
+    t += step_size;
+    if ( pc % 50 == 0 ) { printf ("Finished step %d\n", pc); }
+    */
     assert (status == GSL_SUCCESS);
   }
+  //  sp_basic_plot (899, &p_times[4000], &p_y[4000], "line");
+  //  sp_basic_plot (899, &p_times[4000], &p_vy[4000], "line");
+  //  g_free (p_times);
+  //  g_free (p_y);
+  //  g_free (p_vy);
   self->position->x = y[0];
   self->position->y = y[1];
   self->position->z = y[2];

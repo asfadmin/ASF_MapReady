@@ -37,6 +37,16 @@ platform_path_new (int control_point_count, double start_time, double end_time,
 
   PlatformPath *self = calloc (1, sizeof (PlatformPath));
 
+  // Record the interval modeled in the object.
+  self->start_time = start_time;
+  self->end_time = end_time;
+
+  // To avoid problems with floating point comparisons, we will
+  // actually model a slightly larger time window that advertised.
+  const double time_window_guard_time = 0.0001;
+  double true_start_time = start_time - time_window_guard_time;
+  double true_end_time = end_time + time_window_guard_time;
+
   // Storage for the data the splines will be based on (x control
   // points, etc.).
   double *times = calloc (control_point_count, sizeof (double));
@@ -44,7 +54,7 @@ platform_path_new (int control_point_count, double start_time, double end_time,
   double *ycp = calloc (control_point_count, sizeof (double));
   double *zcp = calloc (control_point_count, sizeof (double));
 
-  double time_range = end_time - start_time;
+  double time_range = true_end_time - true_start_time;
 
   int ii, jj;			// Index variables.
 
@@ -54,7 +64,7 @@ platform_path_new (int control_point_count, double start_time, double end_time,
 
   // Initialize an array of control point times.
   for ( ii = 0 ; ii < control_point_count ; ii++ ) {
-    times[ii] = start_time + ii * cp_separation;
+    times[ii] = true_start_time + ii * cp_separation;
   }
 
   // Find the values of interest at all the control points.
@@ -180,6 +190,9 @@ void
 platform_path_position_at_time (PlatformPath *self, double time, 
 				Vector *position)
 {
+  // Ensure that the time queried is within the interval modeled.
+  assert (time >= self->start_time && time <= self->end_time);
+
   int return_code = gsl_spline_eval_e (self->xp, time, self->xp_accel, 
 				       &(position->x));
   assert (return_code == GSL_SUCCESS);
@@ -197,6 +210,9 @@ void
 platform_path_velocity_at_time (PlatformPath *self, double time, 
 				Vector *velocity)
 {
+  // Ensure that the time queried is within the interval modeled.
+  assert (time >= self->start_time && time <= self->end_time);
+
   int return_code = gsl_spline_eval_deriv_e (self->xp, time, self->xp_accel,
 					     &(velocity->x));
   assert (return_code == GSL_SUCCESS);

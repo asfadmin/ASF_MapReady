@@ -9,6 +9,10 @@
 
 #include "ITRS_platform_path.h"
 
+// FIXME: remove this debug schlop.
+#include <glib.h>
+#include <scratchplot.h>
+
 ITRSPlatformPath *
 ITRS_platform_path_new (int control_point_count, double start_time, 
 			double end_time, int observation_count, 
@@ -38,6 +42,16 @@ ITRS_platform_path_new (int control_point_count, double start_time,
 
   ITRSPlatformPath *self = calloc (1, sizeof (ITRSPlatformPath));
 
+  // Record the interval modeled in the object.
+  self->start_time = start_time;
+  self->end_time = end_time;
+
+  // To avoid problems with floating point comparisons, we will
+  // actually model a slightly larger time window that advertised.
+  const double time_window_guard_time = 0.0001;
+  double true_start_time = start_time - time_window_guard_time;
+  double true_end_time = end_time + time_window_guard_time;
+
   // Storage for the data the splines will be based on (x control
   // points, etc.).
   double *times = calloc (control_point_count, sizeof (double));
@@ -45,7 +59,7 @@ ITRS_platform_path_new (int control_point_count, double start_time,
   double *ycp = calloc (control_point_count, sizeof (double));
   double *zcp = calloc (control_point_count, sizeof (double));
 
-  double time_range = end_time - start_time;
+  double time_range = true_end_time - true_start_time;
 
   int ii, jj;			// Index variables.
 
@@ -54,7 +68,7 @@ ITRS_platform_path_new (int control_point_count, double start_time,
   double cp_separation = time_range / (control_point_count - 1);
 
   // Initialize an array of control point times.
-  times[0] = start_time;
+  times[0] = true_start_time;
   for ( ii = 1 ; ii < control_point_count ; ii++ ) {
     times[ii] = times[ii - 1] + cp_separation;
   }
@@ -146,6 +160,8 @@ ITRS_platform_path_new (int control_point_count, double start_time,
       // entirely, x == 1 => y == 1 => trust the next observation
       // entirely).
 
+      /*
+
       // "Fraction of path", except we make this term wrong by
       // immediately mapping it into [-1, 1].
       double fop = ((ct - current_segment_start) 
@@ -170,19 +186,79 @@ ITRS_platform_path_new (int control_point_count, double start_time,
 				    + no->velocity->y * wono,
 				    lo->velocity->z * (1.0 - wono) 
 				    + no->velocity->z * wono);
-				  				    
+
+      */
+	
+      // Create the weighted average state vector.
+      double fop = ((ct - current_segment_start) 
+		    / (current_segment_end - current_segment_start));
+      OrbitalStateVector *average
+	= orbital_state_vector_new (lo->position->x * (1.0 - fop)
+				    + no->position->x * (fop),
+				    lo->position->y * (1.0 - fop)
+				    + no->position->y * (fop),
+				    lo->position->z * (1.0 - fop)
+				    + no->position->z * (fop),
+				    lo->velocity->x * (1.0 - fop) 
+				    + no->velocity->x * (fop),
+				    lo->velocity->y * (1.0 - fop) 
+				    + no->velocity->y * (fop),
+				    lo->velocity->z * (1.0 - fop) 
+				    + no->velocity->z * (fop));
+			  				    
       // Store the equivalent International Terrestrial Reference
       // System (ITRS) coordinates as the spline control point.
       DateTime *control_point_time = date_time_copy (base_date);
       date_time_add_seconds (control_point_time, ct);
       double earth_angle = date_time_earth_angle (control_point_time);
       date_time_free (control_point_time);
-      orbital_state_vector_get_itrs_coordinates (average, earth_angle, 
+      orbital_state_vector_get_itrs_coordinates (average, earth_angle,
 						 &(xcp[ii]), &(ycp[ii]), 
 						 &(zcp[ii]));
       orbital_state_vector_free (average);
     }
   }
+
+  // FIXME: debug hack: plot the first little bit worth of y position
+  // and velocity points.
+  size_t pc = control_point_count * 0.08 / (self->end_time - self->start_time);
+  double *s_times = g_new (double, pc);
+  double *earth_angles = g_new (double, pc);
+  double *earth_angles_p = g_new (double, pc);
+  double *y_poss = g_new (double, pc);
+  double *y_vels = g_new (double, pc);
+  size_t midx;
+  double mct = true_start_time;
+  DateTime *cdt = date_time_copy (base_date);
+  for ( midx = 0 ; midx < pc ; midx++ ) {
+    s_times[midx] = mct;
+    earth_angles[midx] = date_time_earth_angle (cdt);
+    y_poss[midx] = ycp[midx];
+    if ( midx != 0 ) {
+      earth_angles_p[midx] = earth_angles[midx] - earth_angles[midx - 1];
+      y_vels[midx] = ycp[midx] - ycp[midx - 1];
+    }
+    mct += cp_separation;
+    date_time_add_seconds (cdt, cp_separation);
+  }
+  y_vels[0] = y_vels[1];
+  earth_angles_p[0] = earth_angles_p[1];
+  //  sp_basic_plot (pc, s_times, earth_angles, "line");
+  //  sp_basic_plot (pc, s_times, earth_angles_p, "line");
+  //  sp_basic_plot (pc, s_times, y_poss, "line");
+  //  sp_basic_plot (pc, s_times, y_vels, "line");
+  //  sp_basic_plot (pc, NULL, y_vels, "line");
+  //  sp_basic_plot (10, NULL, &(earth_angles[8]), "line");
+  //  sp_basic_plot (10, NULL, &y_vels[8], "line");
+  for ( midx = 9 ; midx < 16 ; midx++ ) {
+    printf ("midx: %ld, y_poss[midx]: %.12lg, y_vels[midx]: %.12lg\n", 
+	    (long int) midx, y_poss[midx], y_vels[midx]);
+  }
+  g_free (s_times);
+  g_free (earth_angles);
+  g_free (earth_angles_p);
+  g_free (y_poss);
+  g_free (y_vels);
 
   self->xp_accel = gsl_interp_accel_alloc ();
   self->yp_accel = gsl_interp_accel_alloc ();
@@ -206,6 +282,9 @@ void
 ITRS_platform_path_position_at_time (ITRSPlatformPath *self, double time, 
 				     Vector *position)
 {
+  // Ensure that the time queried is within the interval modeled.
+  assert (time >= self->start_time && time <= self->end_time);
+
   int return_code = gsl_spline_eval_e (self->xp, time, self->xp_accel, 
 				       &(position->x));
   assert (return_code == GSL_SUCCESS);
@@ -224,6 +303,9 @@ void
 ITRS_platform_path_velocity_at_time (ITRSPlatformPath *self, double time, 
 				     Vector *velocity)
 {
+  // Ensure that the time queried is within the interval modeled.
+  assert (time >= self->start_time && time <= self->end_time);
+
   int return_code = gsl_spline_eval_deriv_e (self->xp, time, self->xp_accel,
 					     &(velocity->x));
   assert (return_code == GSL_SUCCESS);

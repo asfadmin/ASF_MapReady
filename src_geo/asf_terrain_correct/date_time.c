@@ -801,8 +801,12 @@ date_time_earth_angle (DateTime *self)
     change_over_date = date_time_new (2003, 1, 0, UTC);
   }
 
-  if ( date_time_is_before (self, change_over_date) ) {
-    static DateTime *standard_epoch = NULL;
+  // FIXME: For some goofy reason, to match the hour angle embedded in
+  // the data, we need to use the old pre-2003 way of computing the
+  // hour angle.  I suspect this is just what the processor does and
+  // has never been fixed.  So for now we have this || 1 crap here.
+  if ( date_time_is_before (self, change_over_date) || 1) {
+      static DateTime *standard_epoch = NULL;
     if ( standard_epoch == NULL ) {
       standard_epoch = date_time_new (2000, 1, 12 * SECONDS_PER_HOUR, UT1R);
     }
