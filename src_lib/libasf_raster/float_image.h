@@ -135,6 +135,13 @@ float_image_new_from_file_pointer_with_sample_type
   (ssize_t size_x, ssize_t size_y, FILE *file_pointer, off_t offset,
    float_image_byte_order_t byte_order, float_image_sample_type sample_type);
 
+// Create a new image by copying the portion of model with upper left
+// corner at model coordinates (x, y), width size_x, and height
+// size_y.
+FloatImage *
+float_image_new_subimage (FloatImage *model, ssize_t x, ssize_t y,
+			  ssize_t size_x, ssize_t size_y);
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Getting and Setting Image Pixels and Regions
@@ -285,14 +292,16 @@ float_image_store (FloatImage *self, const char *file,
 // gray scale output pixels is limited to [0, 255].  Image pixel
 // values inside two standard deviations of the mean pixel value are
 // mapped linearly into this range; image pixel values outside two
-// standard are clamped at the appropriate limit.  If all image pixels
-// have the same value, the output is made black if the pixels have
-// value 0.0, and white otherwise.  This routine slurps the whole
-// image into memory, so beware.  Returns 0 on success, nonzero on
-// error.
+// standard are clamped at the appropriate limit.  In determining the
+// image sttistics (mean and standard deviation), values equal to mask
+// are not considered, unless mask is NAN, in which case mask has no
+// effect.  If all image pixels have the same value, the output is
+// made black if the pixels have value 0.0, and white otherwise.  This
+// routine slurps the whole image into memory, so beware.  Returns 0
+// on success, nonzero on error.
 int
 float_image_export_as_jpeg (FloatImage *self, const char *file,
-			    size_t max_dimension);
+			    size_t max_dimension, double mask);
 
 ///////////////////////////////////////////////////////////////////////////////
 //

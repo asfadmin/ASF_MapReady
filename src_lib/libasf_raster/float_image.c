@@ -79,22 +79,6 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
     self->tile_count = 1;
     self->tile_area = self->tile_size * self->tile_size;
     self->cache = g_new (float, self->cache_area);
-
-	  // Address where the current row of pixels should end up.
-    //	  float *row_address
-    //	    = self->tile_addresses[0] + ii * self->tile_size * sizeof (float);
-
-
-    size_t ii, jj;
-    for ( ii = 0 ; ii < self->size_y ; ii++ ) {
-      float *row_address
-	= self->cache + ii * self->tile_size;
-      for ( jj = 0 ; jj < self->size_x ; jj++ ) {
-	row_address[jj] = -42.0;
-      }
-    }
-
-
     self->tile_addresses = g_new0 (float *, self->tile_count);
     g_assert (NULL == 0x0);     // Ensure g_new0 effectively sets to NULL.
     // The tile queue shouldn't ever be needed in this case.
@@ -1195,6 +1179,36 @@ float_image_new_from_file_with_sample_type
   return self;
 }
 
+FloatImage *
+float_image_new_subimage (FloatImage *model, ssize_t x, ssize_t y,
+			  ssize_t size_x, ssize_t size_y)
+{
+  // Upper left corner must be in model.
+  g_assert (x >= 0 && y >= 0);
+
+  // Size of image to be created must be strictly positive.
+  g_assert (size_x >= 1 && size_y >= 1);
+
+  // Given model must be big enough to allow a subimage of the
+  // requested size to fit.
+  g_assert (model->size_x <= SSIZE_MAX && model->size_y <= SSIZE_MAX);
+  g_assert (x + size_x <= (ssize_t) model->size_x);
+  g_assert (y + size_y <= (ssize_t) model->size_y);
+
+  FloatImage *self = float_image_new (size_x, size_y);
+
+  // Copy the image pixels from the model.
+  ssize_t ii, jj;
+  for ( ii = 0 ; ii < (ssize_t) self->size_x ; ii++ ) {
+    for ( jj = 0 ; jj < (ssize_t) self->size_y ; jj++ ) {
+      float pv = float_image_get_pixel (model, x + ii, y + jj);
+      float_image_set_pixel (self, ii, jj, pv);
+    }
+  }
+
+  return self;
+}
+
 // Flush the contents of tile with flattened offset tile_offset from
 // the memory cache to the disk file.  Its probably easiest to
 // understand this function by looking at how its used.
@@ -1725,7 +1739,7 @@ float_image_store (FloatImage *self, const char *file,
 
 int
 float_image_export_as_jpeg (FloatImage *self, const char *file,
-                            size_t max_dimension)
+                            size_t max_dimension, double mask)
 {
   size_t scale_factor;          // Scale factor to use for output image.
   if ( self->size_x > self->size_y ) {
@@ -1787,7 +1801,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   // Gather image statistics so we know how to map image values into
   // the output.
   float min, max, mean, standard_deviation;
-  float_image_statistics (self, &min, &max, &mean, &standard_deviation, NAN);
+  float_image_statistics (self, &min, &max, &mean, &standard_deviation, mask);
 
   // If the statistics don't work, something is beastly wrong and we
   // don't want to deal with it.
@@ -1804,6 +1818,9 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   // good chance that the user would like zero to correspond to black,
   // so we do that.  Anything else will be pure white.
   if ( min == max ) {
+    // FIXME: this path seems to be broken somehow -- we end up with
+    // jpegs of size zero.
+    g_assert_not_reached ();
     unsigned char oval;         // Output value to use.
     if ( min == 0.0 ) {
       oval = 0;
