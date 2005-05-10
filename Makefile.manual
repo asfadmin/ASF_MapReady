@@ -32,6 +32,7 @@ MODULES = src_lib/asf \
           src/asf_export \
           src/asf_import \
           src_geo/asf_geocode \
+	  src_geo/asf_terrain_correct \
           src/asf_convert \
           src/asf_convert_gui \
 	  src_x/sarview
