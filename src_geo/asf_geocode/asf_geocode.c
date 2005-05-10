@@ -1207,8 +1207,10 @@ main (int argc, char **argv)
   // Store the output image, and free image resources.
   GString *output_data_file = g_string_new (output_image->str);
   g_string_append (output_data_file, ".img");
+  asfPrintStatus ("Storing geocoded image...\n");
   return_code = float_image_store (oim, output_data_file->str,
 				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  asfPrintStatus ("\nDone storing geocoded image.\n\n");
   asfRequire (return_code == 0, "Error saving image.\n");
   float_image_free (oim);
   g_string_free (output_data_file, TRUE);
