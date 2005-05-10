@@ -188,8 +188,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	     || meta->projection->hem == 'S' ) {
 	  asfPrintError("Import of map projected (Level 2) CEOS images other "
 			"than northern hemisphere polar stereo images is "
-			"prohibitd, because these products are broken.  Don't "
-			"use them.\n");
+			"prohibited, because these products are broken.  "
+			"Don't use them.\n");
 	}
         sprintf(logbuf,
                 "   Input data type: level two data\n"
