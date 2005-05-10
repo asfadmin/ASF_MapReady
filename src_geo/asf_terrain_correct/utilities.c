@@ -7,11 +7,8 @@
 
 #include <glib.h>
 
+#include "asf.h"
 #include "utilities.h"
-
-#ifndef ASF_SHAREDIR
-#  error "ASF_SHAREDIR must be defined by the build system."
-#endif 
 
 char *
 datafile_path (const char *relative_path)
@@ -27,7 +24,7 @@ datafile_path (const char *relative_path)
      the standard datafile location first.  */
 #ifdef FINAL_PRODUCTION_BUILD
 
-  path = g_strdup (ASF_SHAREDIR);
+  path = g_strdup (get_asf_share_dir ());
   
   /* Add a '/' to path if it isn't there already.  */
   if ( path[strlen (path) - 1] != '/' ) {
