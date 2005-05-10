@@ -186,10 +186,9 @@ func (double t, const double y[], double f[], void *params)
   /* Current range to satellife from center of earth.  */
   long double r = vector_magnitude (p);
 
-  /* The so-called first zonal harmonics are used to account for the
+  /* The so-called first zonal harmonic is used to account for the
      effects of earth oblatedness (see below for references).  */
   long double j2 = 1082.63e-6;	/* First zonal harmonic coefficient.  */
-  long double j3 = -2.54e-6;
 
   /* Shorthand for some terms that show up in the expressions for the
      perturbations.  */
@@ -199,23 +198,17 @@ func (double t, const double y[], double f[], void *params)
   long double py = p->y;
   long double pz = p->z;
   long double pz2 = powl (p->z, 2);
-  long double pz3 = powl (p->z, 3);
 
   /* Perturbations due to earth oblatedness.  */
   long double a_j2_x = ((gm * px / r3)
 			* ((j2 * (3.0 / 2)
 			    * powl ((ae / r), 2)
-			    * (5.0 * pz2 / r2 - 1.0))
-			   + (j3 * (5.0 / 2) * powl ((ae / r), 3)
-			      * (3.0 * pz / r - 7 * pz3 / r3))));
+			    * (5.0 * pz2 / r2 - 1.0))));
   long double a_j2_y = py / px * a_j2_x;
   long double a_j2_z = ((-gm * pz / r3)
 			* ((j2 * (3.0 / 2)
 			    * powl ((ae / r), 2)
-			    * (3.0 - 5.0 * pz2 / r2))
-			   + (j3 * (3.0 / 2) * pow ((ae / r), 3)
-			      * (10 * r / pz - (35.0 / 3) * (pz3 / r3) 
-				 - r / pz))));
+			    * (3.0 - 5.0 * pz2 / r2))));
 
   /* Total perturbations.  */
   double ksx = a_j2_x;
@@ -263,22 +256,19 @@ orbital_state_vector_propagate (OrbitalStateVector *self, double time)
   //  const gsl_odeiv_step_type *step_type = gsl_odeiv_step_rkf45;  
   const gsl_odeiv_step_type *step_type = gsl_odeiv_step_rk4;
   gsl_odeiv_step *ode_step = gsl_odeiv_step_alloc (step_type, dimension);
-  /* Hold the absolute integration error for each coordinate for each
-     step to within this value.  This value was chosen using the
-     following sophisticated methodology: Keep tightening the
-     tolerance until the answer no longer changes with further
-     tightenings, for a short (~2.5 minute) propagation.  */
-  double mae = 0.0000000;
-  double mre = 0.0000001;
+  /* Set the absolute and relative integration error bounds for each
+     step.  See the GNU Scientific Library documentation for
+     detaile.  */
+  double mae = 0.000001;
+  double mre = 0.0001;
   gsl_odeiv_control *ode_control 
     = gsl_odeiv_control_standard_new (mae, mre, 1.0, 1.0);
+    //  gsl_odeiv_control *ode_control = gsl_odeiv_control_y_new (mae, 0.0);
   gsl_odeiv_evolve *ode_evolve = gsl_odeiv_evolve_alloc (dimension);
   const gsl_odeiv_system ode_system = {func, NULL, dimension, NULL};
   double t0 = 0.0, t1 = time;	/* Start and end times.  */
  /* Initial guess for step size.  */
-  // FIXME: settle on a choice for step size.
-  //  const double initial_step_size = GSL_SIGN (t1) * 1.0;
-  const double initial_step_size = GSL_SIGN (t1) * 0.0001;
+  const double initial_step_size = GSL_SIGN (t1) * 1.0;
   double step_size = initial_step_size;
   double *y = malloc (dimension * sizeof (double));
   y[0] = self->position->x;
@@ -289,38 +279,11 @@ orbital_state_vector_propagate (OrbitalStateVector *self, double time)
   y[5] = self->velocity->z;
   double t = t0;		/* Current time.  */
   /* Here is the actual propagation.  */
-  // FIXME: remove debugging schlop.
-  /*
-    int pc = 0;
-    double *p_times = g_new (double, 6000);
-    double *p_y = g_new (double, 6000);
-    double *p_vy = g_new (double, 6000);
-  */
   while ( fabs (t) < fabs (t1) ) {
     int status = gsl_odeiv_evolve_apply (ode_evolve, ode_control, ode_step, 
     					 &ode_system, &t, t1, &step_size, y);
-
-    /*
-    double yerr[6];
-    int status = gsl_odeiv_step_apply (ode_step, t, step_size, y, yerr, NULL,
-    				       NULL, &ode_system);
-
-        if ( pc < 5000 ) {
-          p_times[pc] = t;
-          p_y[pc] = y[1];
-          p_vy[pc] = y[4];
-          pc++;
-        }
-    t += step_size;
-    if ( pc % 50 == 0 ) { printf ("Finished step %d\n", pc); }
-    */
     assert (status == GSL_SUCCESS);
   }
-  //  sp_basic_plot (899, &p_times[4000], &p_y[4000], "line");
-  //  sp_basic_plot (899, &p_times[4000], &p_vy[4000], "line");
-  //  g_free (p_times);
-  //  g_free (p_y);
-  //  g_free (p_vy);
   self->position->x = y[0];
   self->position->y = y[1];
   self->position->z = y[2];
