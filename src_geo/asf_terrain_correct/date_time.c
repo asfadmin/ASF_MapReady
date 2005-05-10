@@ -304,12 +304,17 @@ lookup_time_offset (const char *lookup_table_file,
    time scales.  */
 static const char *time_scale_lookup_table_file = "time_scale_offsets";
 
+/* Some functions in this library use a static data file, the path of
+   which is determnined at run time.  This variable holds the name of
+   the path, or NULL to indicate that it hasn't been looked up
+   yet.  */
+static char *lookup_table_file = NULL;
+
 /* Convert a modified julian day in time_scale to TDT.  */
 static long double 
 convert_to_terrestrial_dynamical_time (long double mjd, 
 				       time_scale_t time_scale)
 {
-  static char *lookup_table_file = NULL;
   if ( lookup_table_file == NULL ) {
     lookup_table_file = datafile_path (time_scale_lookup_table_file);
   }
@@ -348,7 +353,6 @@ static long double
 convert_from_terrestrial_dynamical_time (long double mjd, 
 					 time_scale_t time_scale)
 {
-  static char *lookup_table_file = NULL;
   if ( lookup_table_file == NULL ) {
     lookup_table_file = datafile_path (time_scale_lookup_table_file);
   }
