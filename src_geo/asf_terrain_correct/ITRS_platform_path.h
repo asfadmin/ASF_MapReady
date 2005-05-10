@@ -54,4 +54,8 @@ void
 ITRS_platform_path_velocity_at_time (ITRSPlatformPath *self, double time, 
 				     Vector *velocity);
 
+// Free self.
+void
+ITRS_platform_path_free (ITRSPlatformPath *self);
+
 #endif // ITRS_PLATFORM_PATH_H

@@ -96,3 +96,10 @@ map_projected_dem_get_latitudes_longitudes_heights
   g_free (proj_y);
   g_free (proj_x);
 }
+
+void
+map_projected_dem_free (MapProjectedDEM *self)
+{
+  float_image_free (self->data);
+  g_free (self);
+}

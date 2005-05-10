@@ -48,6 +48,9 @@ map_projected_dem_get_latitudes_longitudes_heights
   (MapProjectedDEM *self, ssize_t row, double *latitudes, double *longitudes,
    double *heights);
 
+// Free self.
+void
+map_projected_dem_free (MapProjectedDEM *self);
 
 #endif // #ifndef MAP_PROJECTED_DEM_H
 

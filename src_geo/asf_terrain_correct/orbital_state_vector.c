@@ -15,10 +15,6 @@
 #include "earth_constants.h"
 #include "orbital_state_vector.h"
 
-//FIXME: remove debug schlop.
-#include <glib.h>
-#include <scratchplot.h>
-
 OrbitalStateVector *
 orbital_state_vector_new (double x, double y, double z, double vx, double vy,
 			  double vz)

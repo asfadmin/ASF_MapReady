@@ -1,8 +1,13 @@
-// Placeholder file for the moment.
+// The essential function of this program is to take a SAR image,
+// complete with information about the orbital geometry from which it
+// was acquired, and use it to color the pixels of a map projected
+// digital elevation model (DEM) with radad backscatter values.
 
+// Standard headers.
 #include <assert.h>
 #include <stdlib.h>
 
+// Headers from external libraries.
 #include <glib.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_errno.h>
@@ -11,6 +16,7 @@
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_vector.h>
 
+// Headers from custom ASF libraries and code in this package.
 #include "ITRS_platform_path.h"
 #include "ITRS_point.h"
 #include <asf_meta.h>
@@ -19,9 +25,23 @@
 #include "map_projected_dem.h"
 #include "orbital_state_vector.h"
 #include "platform_path.h"
-#include "scratchplot.h"
+#ifdef BK_DEBUG
+#  include "scratchplot.h"
+#endif
 #include "slant_range_image.h"
 
+// Print user information to error output location and exit with a
+// non-zero exit code.
+static void
+usage (void)
+{
+  g_printerr ("usage: asf_terrain_correct dem_base_name image_base_name "
+	      "output_base_name");
+  exit (EXIT_FAILURE);
+}
+
+// Marshalled form of arguments that need to go to a callback (see
+// below).
 typedef struct {
   Vector *target;
   ITRSPlatformPath *pp;
@@ -48,20 +68,38 @@ target_distance (double time, void *params)
   return vector_magnitude (&difference);
 }
 
+// Main program.
 int
 main (int argc, char **argv)
 {
-  assert (argc == 4);
+  // Three arguments are required.
+  if ( argc != 4 ) {
+    usage ();
+  }
 
+  // Get the reference DEM base name argument.
   GString *reference_dem = g_string_new (argv[argc - 3]);
   reference_dem = reference_dem; /* Remove this compiler reassurance.  */
 
+  // Form the names of the input data and metadata files by adding
+  // extensions to the image_base_name argument.
   GString *input_meta_file = g_string_new (argv[argc - 2]);
   g_string_append_printf (input_meta_file, ".meta");
   GString *input_data_file = g_string_new (argv[argc - 2]);
   g_string_append_printf (input_data_file, ".img");
 
-  // Load the reference DEM.
+  // Form the names of the output metadata and data files by adding
+  // extensions to the output_base_name argument.
+  GString *output_meta_file = g_string_new (argv[argc - 1]);
+  g_string_append_printf (output_meta_file, ".meta");
+  GString *output_data_file = g_string_new (argv[argc - 1]);
+  g_string_append_printf (output_data_file, ".img");
+  GString *output_jpeg_file = g_string_new (argv[argc - 1]);
+  g_string_append_printf (output_jpeg_file, ".jpg");
+
+  // Load the reference DEM.  FIXME: at the moment we can only handle
+  // LAS dems in UTM projection.  Obviously this must change.
+  g_print ("Loading reference DEM... ");
   GString *reference_dem_ddr = g_string_new (reference_dem->str);
   g_string_append (reference_dem_ddr, ".ddr");
   GString *reference_dem_img = g_string_new (reference_dem->str);
@@ -69,20 +107,33 @@ main (int argc, char **argv)
   MapProjectedDEM *dem
     = map_projected_dem_new_from_las (reference_dem->str,
 				      reference_dem_img->str);
+  g_print ("done.\n");
   // Take a quick look at the DEM for FIXME: debug purposes.
-  float_image_export_as_jpeg (dem->data, "dem_view.jpg", 2000, 0.0);
+  //  float_image_export_as_jpeg (dem->data, "dem_view.jpg", 2000, 0.0);
 
   // We will need a slant range version of the image being terrain
   // corrected.
-#ifdef BK_DEBUG
+#ifndef BK_DEBUG
+  g_print ("Loading SAR image and converting to slant range... ");
   SlantRangeImage *sri 
     = slant_range_image_new_from_ground_range_image (input_meta_file->str,
 						     input_data_file->str);
+  g_print ("done.\n");
 #else
-  //  slant_range_image_freeze (sri, "test_sri_freeze");
-  SlantRangeImage *sri = slant_range_image_thaw ("test_sri_freeze");
+  if ( g_file_test ("bk_debug_sri_freeze", G_FILE_TEST_EXISTS) ) {
+    SlantRangeImage *sri = slant_range_image_thaw ("test_sri_freeze");
+  }
+  else {
+    SlantRangeImage *sri 
+      = slant_range_image_new_from_ground_range_image (input_meta_file->str,
+						       input_data_file->str);
+    slant_range_image_freeze (sri, "test_sri_freeze");
+  }
 #endif
-  //  FloatImage *volcano_sri = float_image_new_subimage (sri->data, 2100, 3100, 
+
+  // FIXME: this is debugging schlop that can go away soon.
+  //  FloatImage *volcano_sri 
+  // = float_image_new_subimage (sri->data, 2100, 3100, 
   ///						      300, 300);
   //float_image_export_as_jpeg (volcano_sri, "volcano_sri.jpg",
   //			      GSL_MAX (volcano_sri->size_x,
@@ -91,8 +142,9 @@ main (int argc, char **argv)
 
   // Take a quick look at the slant range image for FIXME: debug
   // purposes.
-  // float_image_export_as_jpeg (sri->data, "sri_view.jpg", 2000);
+  //float_image_export_as_jpeg (sri->data, "sri_view.jpg", 2000);
 
+  // Read the image metadata.
   meta_parameters *imd = meta_read (input_meta_file->str);
 
   int svc = imd->state_vectors->vector_count;   // State vector count.
@@ -213,10 +265,7 @@ main (int argc, char **argv)
   gsl_vector_free (itrs_vel);
   gsl_vector_free (itrs_pos);
 
-  // FIXME: debug test case.
-#ifdef BK_DEBUG
-  orbital_state_vector_propagate (observations[0], -0.49);
-#endif
+  g_print ("Creating orbital arc model...");
 
   // Number of control points to use for the cubic splines that
   // approximate the satellite motion in the ITRSPlatformPath.
@@ -237,6 +286,31 @@ main (int argc, char **argv)
     = ITRS_platform_path_new (cpc, observation_times[0] - gt,
   			      observation_times[svc - 1] + gt,
   			      svc, base_date, observation_times, observations);
+
+  g_print ("done.\n");
+
+#ifdef BK_DEBUG
+
+  // For debuggin purposes, this code lets you take a look at the
+  // behavior of the arc model.  There is an irritating problem here:
+  // the ITRSPlatformPath model works by getting the earth angle for
+  // each spline control point independently, using
+  // date_time_earth_angle, and then rotating each control point from
+  // GEI to ITRS (earth fixed) coordinates.  Unfortunately this
+  // calculation seems to be highly sensitive at a fine scale, at
+  // least for the pre-2003 definition of universal time (UT1).  This
+  // creates tiny discontinuities in the earth angle as a function of
+  // time, which propagate into other calculations and keep the point
+  // of closest approach algorithm from converging to as tight a
+  // solution as we would like.  The solution is to rewrite things to
+  // use a fixed earth rotation rate over the time span of the image,
+  // and just add to the earth angle increment between time steps in
+  // the ITRSPlatformPath model, performing rotations bach to ITRS in
+  // that class, rather than in the OrbitalStateVector class.  As an
+  // interim measure, using double precision in the earth angle
+  // computations helps things quite a bit, so now almost all pixels
+  // converge to within 0.0001 seconds (~ 1/20 pixel in time direction
+  // for ERS-1/2 images).
 
   double *sxvs = g_new (double, 500);
   double *syvs = g_new (double, 500);
@@ -272,17 +346,20 @@ main (int argc, char **argv)
   sy_pp[0] = sy_pp[1];
   sz_pp[0] = sz_pp[1];
 
-  //  sp_basic_plot (500, stimes, sxvs, "line");
-  //  sp_basic_plot (500, stimes, syvs, "line");
-  //  sp_basic_plot (500, stimes, szvs, "line");
-  //  sp_basic_plot (500, stimes, sx_vels, "line");
-  //  sp_basic_plot (500, stimes, sy_vels, "line");
-  //  sp_basic_plot (500, stimes, sz_vels, "line");
-  //  sp_basic_plot (500, stimes, sx_pp, "line");
-  //  sp_basic_plot (500, stimes, sy_pp, "line");
-  //  sp_basic_plot (500, stimes, sz_pp, "line");
+  // sp_basic_plot (500, stimes, sxvs, "line");
+  // sp_basic_plot (500, stimes, syvs, "line");
+  // sp_basic_plot (500, stimes, szvs, "line");
+  // sp_basic_plot (500, stimes, sx_vels, "line");
+  // sp_basic_plot (500, stimes, sy_vels, "line");
+  // sp_basic_plot (500, stimes, sz_vels, "line");
+  // sp_basic_plot (500, stimes, sx_pp, "line");
+  // sp_basic_plot (500, stimes, sy_pp, "line");
+  // sp_basic_plot (500, stimes, sz_pp, "line");
+
+#endif // BK_DEBUG
 
   // Now we are ready to actually paint the DEM with backscatter.
+  g_print ("Painting DEM with SAR image pixels values...\n");
 
   // Backscatter painted DEM.
   FloatImage *pd = float_image_new (dem->size_x, dem->size_y);  
@@ -292,32 +369,6 @@ main (int argc, char **argv)
   double *lats = g_new (double, dem->size_x);
   double *lons = g_new (double, dem->size_x);
   double *heights = g_new (double, dem->size_x);
-
-  // Test crud.
-  {
-    map_projected_dem_get_latitudes_longitudes_heights (dem, 3201, lats, lons, 
-							heights);
-    //    sp_basic_plot (dem->size_x, NULL, heights, "line");
-
-    double px, py, ph;
-    map_projected_dem_get_x_y_h (dem, 2262.085, 3201.407, &px, &py, &ph);
-    //    printf ("x: %lg, y: %lg, h: %lg\n", px, py, ph);
-    ITRSPoint *ttp
-      = ITRS_point_new_from_geodetic_lat_long_height (lats[2262], lons[2262], 
-						      heights[2262]);
-    target_distance_params tpparms;
-    tpparms.target = vector_new (ttp->x, ttp->y, ttp->z);
-    tpparms.pp = pp_fixed;
-    double *times = g_new (double, dem->size_x);
-    double *ranges = g_new (double, dem->size_x);
-    size_t ts;
-    for ( ts = 0 ; ts < dem->size_x ; ts++ ) {
-      times[ts] = ts * 16.0 / dem->size_x;
-      ranges[ts] = target_distance (times[ts], &tpparms);
-    }
-
-    //    sp_basic_plot (dem->size_x, times, ranges, "line");
-  }
 
   // Find the closest point of approach for each DEM pixel, look up
   // the corresponding backscatter value from the slant range image,
@@ -338,14 +389,19 @@ main (int argc, char **argv)
   tdp.target = &cp_target;
   tdp.pp = pp_fixed;
   distance_function.params = &tdp;
-
-  double *solved_time_plot = g_new (double, 100);
+  // Convergence tolerance we will try for.  This amounts to about
+  // 1/20 th of a pixel in the time direction for your average ERS-1
+  // or ERS-2 image.
+  double tolerance = 0.0001;
+  // Worst accuracy we will tolerate for a pixel without aborting the
+  // program.
+  double worst_allowable_tolerance = 10 * tolerance;
+  // Count of number of pixels which fail to meet the convergence
+  // tolerance requirements.
+  long int failed_pixel_count = 0;
 
   // For each DEM row...
-  //FIXME: remove  for ( ii = 3201 ; (size_t) ii < dem->size_y ; ii++ ) {
-  // for ( ii = 2212 ; (size_t) ii < dem->size_y ; ii++ ) {
-  for ( ii = 1500 ; (size_t) ii < dem->size_y ; ii++ ) {
-      //for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
+  for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
 
     // Get the latitude and longitude of each pixel in this row.
     g_assert (ii <= SSIZE_MAX);
@@ -355,11 +411,10 @@ main (int argc, char **argv)
     // The time of the point of closest approach (minimum discovered
     // by solver) for a DEM pixel.  We have this outside the loop so
     // we can use it as the starting point for solution to
-    // neighborint pixels and save some iterations.
+    // neighboring pixels and save some iterations.
     double min = -DBL_MAX;
 
     size_t jj;
-    //FIXME:remove    for ( jj = 2262 ; jj < dem->size_x ; jj++ ) {
     for ( jj = 0 ; jj < dem->size_x ; jj++ ) {
       double cp_lat = lats[jj];   // Current pixel latitude.
       double cp_lon = lons[jj];   // Current pixel longitude.
@@ -407,15 +462,15 @@ main (int argc, char **argv)
 	  eor = observation_times[svc - 1] + gt;
 	}
       }
+
       gsl_set_error_handler_off ();
+
       int return_code = gsl_min_fminimizer_set (minimizer, &distance_function, 
 						min, sor, eor);
-      // If there is no minimum in this range, just set the painted
-      // dem pixel to zero and go on to the next pixel (FIXME:
-      // probably need to do something smarter here).
+      // If there is no minimum in this range, it means our orbital
+      // arc model doesn't cover this part of the DEM, so just set the
+      // painted dem pixel to zero and go on to the next pixel.
       if ( return_code == GSL_FAILURE ) {
-	fprintf (stderr, "No minimum in starting range for pixel %ld, %ld\n",
-		 (long int) jj, (long int) ii);
 	float_image_set_pixel (pd, jj, ii, 0.0);
 	break;
       }
@@ -430,105 +485,24 @@ main (int argc, char **argv)
 	sor = gsl_min_fminimizer_x_lower (minimizer);
 	eor = gsl_min_fminimizer_x_upper (minimizer);
     
-	status = gsl_min_test_interval (sor, eor, 0.0001, 0.0);
+	status = gsl_min_test_interval (sor, eor, tolerance, 0.0);
       }
       while (status == GSL_CONTINUE && iteration < max_iterations);
 
-      // We need to have the convergence work.  
+      // We want to keep some statistics on how many pixels fail to
+      // converge to within our desired tolerance.
       if ( status != GSL_SUCCESS ) {
-	fprintf (stderr, "Convergence failed for pixel %ld, %ld: %s\n", 
-		 (long int) jj, (long int) ii, gsl_strerror (status));
-      	fprintf (stderr, "sor: %lf, eor: %lf\n", sor, eor);
-	
-	if ( fabs (sor - (-0.48025236508010827)) < 0.001 ) {
-	  printf ("Yep that's a bad one\n");
+	if ( fabs (sor - eor) < worst_allowable_tolerance ) {
+	  failed_pixel_count++;
 	}
-
-	printf ("DEM pixel: %ld, %ld\n", (long int) jj, (long int) ii);
-
-  double *t_sxvs = g_new (double, 500);
-  double *t_syvs = g_new (double, 500);
-  double *t_szvs = g_new (double, 500);
-  double *t_sx_vels = g_new (double, 500);
-  double *t_sy_vels = g_new (double, 500);
-  double *t_prop_sy_vels = g_new (double, 500);
-  t_prop_sy_vels = t_prop_sy_vels;
-  double *t_sz_vels = g_new (double, 500);
-  double *t_sx_pp = g_new (double, 500);
-  double *t_sy_pp = g_new (double, 500);
-  double *t_sz_pp = g_new (double, 500);
-  double *t_stimes = g_new (double, 500);
-  size_t t_zz;
-  for ( t_zz = 0 ; t_zz < 500 ; t_zz++ ) {
-    Vector this_pos;
-    double mr = (eor + sor) / 2.0; /* Middle of x range to plot.  */
-    double spr = mr - 0.1; /* Start of range to plot.  */
-    if ( spr < pp_fixed->start_time ) { spr = pp_fixed->start_time; }
-    double epr = mr + 0.1; /* End of range to plot.  */
-    if ( epr > pp_fixed->end_time ) { epr = pp_fixed->end_time; }
-    
-    double ct = spr + (epr - spr) * t_zz / 500.0;
-
-    t_stimes[t_zz] = ct;
-    ITRS_platform_path_position_at_time (pp_fixed, ct, &this_pos);
-    t_sxvs[t_zz] = this_pos.x;
-    t_syvs[t_zz] = this_pos.y;
-    t_szvs[t_zz] = this_pos.z;
-    Vector this_vel;
-    ITRS_platform_path_velocity_at_time (pp_fixed, ct, &this_vel);
-    t_sx_vels[t_zz] = this_vel.x;
-    t_sy_vels[t_zz] = this_vel.y;
-    t_sz_vels[t_zz] = this_vel.z;
-    if ( t_zz != 0 ) {
-      t_sx_pp[t_zz] = t_sx_vels[t_zz] - t_sx_vels[t_zz - 1];
-      t_sy_pp[t_zz] = t_sy_vels[t_zz] - t_sy_vels[t_zz - 1];
-      t_sz_pp[t_zz] = t_sz_vels[t_zz] - t_sz_vels[t_zz - 1];
-    }
-  }
-  t_sx_pp[0] = t_sx_pp[1];
-  t_sy_pp[0] = t_sy_pp[1];
-  t_sz_pp[0] = t_sz_pp[1];
-
-  //  sp_basic_plot (500, t_stimes, t_sxvs, "line");
-  //  sp_basic_plot (500, t_stimes, t_syvs, "line");
-  //  sp_basic_plot (500, t_stimes, t_szvs, "line");
-  //  sp_basic_plot (500, t_stimes, t_sx_vels, "line");
-  //  sp_basic_plot (500, t_stimes, t_sy_vels, "line");
-  //  sp_basic_plot (500, t_stimes, t_sz_vels, "line");
-  //  sp_basic_plot (500, t_stimes, t_sx_pp, "line");
-  //  sp_basic_plot (500, t_stimes, t_sy_pp, "line");
-  //  sp_basic_plot (500, t_stimes, t_sz_pp, "line");
-  g_free (t_sxvs);
-  g_free (t_syvs);
-  g_free (t_szvs);
-  g_free (t_sx_vels);
-  g_free (t_sy_vels);
-  g_free (t_prop_sy_vels);
-  g_free (t_sz_vels);
-  g_free (t_sx_pp);
-  g_free (t_sy_pp);
-  g_free (t_sz_pp);
-  g_free (t_stimes);
-
-	ITRSPoint *ttp
-	  = ITRS_point_new_from_geodetic_lat_long_height (lats[2190], 
-							  lons[2190], 
-							  heights[2190]);
-	target_distance_params tpparms;
-	tpparms.target = vector_new (ttp->x, ttp->y, ttp->z);
-	tpparms.pp = pp_fixed;
-	double *times = g_new (double, dem->size_x);
-	double *ranges = g_new (double, dem->size_x);
-	size_t ts;
-	for ( ts = 0 ; ts < dem->size_x ; ts++ ) {
-	  times[ts] = ts * 16.0 / dem->size_x;
-	  ranges[ts] = target_distance (times[ts], &tpparms);
+	else {
+	  g_printerr (
+"Point of closest approach convergence calculation failed badly for DEM "
+"pixel %ld, %ld: %s\n", (long int) jj, (long int) ii, gsl_strerror (status));
+	  g_assert_not_reached ();
 	}
-	g_free (times);
-	g_free (ranges);
-	//	sp_basic_plot (dem->size_x, times, ranges, "line");
       }
-
+    
       // The resulting minimum is time in the arc model of the point
       // of closest approach.  FIXME: how to verify input images are
       // zero-doppler processed?
@@ -550,38 +524,33 @@ main (int argc, char **argv)
 				       solved_time, 1e-3) ) {
 	backscatter 
 	  = slant_range_image_sample (sri, solved_slant_range, solved_time,
-				      FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR);
+				      FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC);
       }
       else {
 	// We don't have image over this part of the DEM, so set to
-	// the mask value (FIXME: better mask handling neede).
-	if ( ii % 1000 == 0 && jj % 1000 == 0 ) {
-	  printf ("No image at %ld, %ld\n", (long int) jj, (long int) ii);
-	  printf ("(Slant range %lg, time %lg)\n", solved_slant_range,
-		  solved_time);
-	}
+	// the mask value (FIXME: better mask handling needed).
 	backscatter = 0.0;
       }
 
       // Set the pixel in the painted dem.
       float_image_set_pixel (pd, jj, ii, backscatter);
-      if ( backscatter != 0 ) {
-	//	printf ("Backscatter: %g\n", backscatter);
-      }
-
-      if ( jj == 2200 && ii >= 3200 && ii < 3300 ) {
-	solved_time_plot[ii - 3200] = solved_time;
-      }
     }
 
-    if ( (ii + 1) % 100 == 0 ) {
-      printf ("Finished row %d\n", ii + 1);
+    // Print progress message every so many lines.
+    const int lines_per_progress_message = 100;
+    if ( (ii + 1) % lines_per_progress_message == 0 ) {
+      g_print ("Finished painting DEM row %d\n", ii + 1);
     }
   }
+  g_print ("Done painting DEM.\n");
 
-  //  sp_basic_plot (100, NULL, solved_time_plot, "line");
-  g_free (solved_time_plot);
+  g_print ("For a total of %ld pixels, the time of point of closes approach\n"
+	   "minimization (TOPOCAM) did not converge to with the desired\n"
+	   "precision of %lg seconds.\n", failed_pixel_count, tolerance);
+  g_print ("For no pixels did the the TOPOCAM fail to converge to within\n"
+	   "%lg seconds.\n", worst_allowable_tolerance);
 
+  g_print ("Log scaling the painted DEM... ");
   // Log scale the painted DEM.
   size_t jj;
   for ( ii = 0 ; ii < (int) pd->size_x ; ii++ ) {
@@ -596,18 +565,46 @@ main (int argc, char **argv)
       }
     }
   }
+  g_print ("done.\n");
 
-  float_image_export_as_jpeg (pd, "painted_dem.jpg", 
+  g_print ("Exporting painted DEM as a JPEG image... ");
+  float_image_export_as_jpeg (pd, output_jpeg_file->str, 
 			      GSL_MAX (pd->size_x, pd->size_y), 0.0);
+  g_print ("done.\n");
 
+  // FIXME: this debugging schlop can safely be removed.
   /*
   FloatImage *volcano = float_image_new_subimage (pd, 2100, 3100, 300, 300);
   float_image_export_as_jpeg (volcano, "volcano.jpg",
 			      GSL_MAX (volcano->size_x, volcano->size_y), 0.0);
   */
 
-  /* FIXME: MOSTLY NOTHING IS (g_)free () 'd.  If this should become a
-     library function this would have to change.  */
+  // Free all the memory and resources we used.
+  g_print ("Freeing resources... ");
+  g_string_free (reference_dem, TRUE);
+  g_string_free (input_meta_file, TRUE);
+  g_string_free (input_data_file, TRUE);
+  g_string_free (output_meta_file, TRUE);
+  g_string_free (output_data_file, TRUE);
+  g_string_free (output_jpeg_file, TRUE);
+  g_string_free (reference_dem_ddr, TRUE);
+  g_string_free (reference_dem_img, TRUE);
+  map_projected_dem_free (dem);
+  slant_range_image_free (sri);
+  meta_free (imd);
+  g_free (observation_times);
+  for ( ii = 0 ; ii < svc ; ii++ ) {
+    orbital_state_vector_free (observations[ii]);
+  }
+  g_free (observations);
+  date_time_free (base_date);
+  ITRS_platform_path_free (pp_fixed);
+  float_image_free (pd);
+  g_free (lats);
+  g_free (lons);
+  g_free (heights);
+  gsl_min_fminimizer_free (minimizer);
+  g_print ("done.\n");
 
   exit (EXIT_SUCCESS);
 }

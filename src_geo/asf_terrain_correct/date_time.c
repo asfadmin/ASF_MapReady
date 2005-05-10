@@ -570,7 +570,7 @@ date_time_jds (DateTime *self, time_scale_t time_scale)
    radians.  See "Satellite Orbits: Models, Methods, and
    Applications", section 5.3.2, by Oliver Montenbruck and Eberhard
    Gill for details.  */
-static double
+static long double
 mean_obliquity (double long mjd_tt)
 {
   static DateTime *standard_epoch = NULL;
@@ -578,26 +578,26 @@ mean_obliquity (double long mjd_tt)
     standard_epoch = date_time_new (2000, 1, 12 * SECONDS_PER_HOUR, TDT);
   }
 
-  const double julian_century = 36525.0;
+  const long double julian_century = 36525.0;
 
   long double T = ((mjd_tt - date_time_mjd (standard_epoch, TDT)) 
 		   / julian_century);
 
   return (M_PI / 180.0) * (23.43929111 
 			   - ((46.8150 + (0.00059 - 0.001813 * T) * T) 
-			      * T/3600.0));
+			      * T / 3600.0));
 }
 
 // Fractional part of a number.
-static double 
-fractional_part (double x)
+static long double 
+fractional_part (long double x)
 { 
-  return fmod (x, 1.0);
+  return fmodl (x, 1.0);
 }
 
 // The floating point remainder of x / y.
-static double 
-float_modulo (double x, double y)
+static long double 
+float_modulo (long double x, long double y)
 { 
   return y * fractional_part (x / y);
 }
@@ -605,7 +605,7 @@ float_modulo (double x, double y)
 /* Determine the nutation in longitude counted in the ecliptic.  This
    uses the 1980 International Astronomical Union (IAU) nutation
    theory.  See "Satellite Geodesy 2nd Edition" by Gunter Seeber.  */
-static double
+static long double
 delta_psi (long double mjd_tt)
 {
   static DateTime *standard_epoch = NULL;
@@ -614,14 +614,14 @@ delta_psi (long double mjd_tt)
   }
 
   // Length of one julian century in days.
-  const double one_julian_century = 36525.0;
+  const long double one_julian_century = 36525.0;
 
   // Constants
-  const double t  = ((mjd_tt - date_time_mjd (standard_epoch, TDT)) 
-		     / one_julian_century);
-  const double t2 = t *t;
-  const double t3 = t2 * t;
-  const double asprev = 360.0 * 3600.0;  // Arcseconds per revolution.
+  const long double t  = ((mjd_tt - date_time_mjd (standard_epoch, TDT)) 
+			  / one_julian_century);
+  const long double t2 = t *t;
+  const long double t3 = t2 * t;
+  const long double asprev = 360.0 * 3600.0;  // Arcseconds per revolution.
 
   // Number of coefficients in series.
 #define COEFFICIENT_COUNT 106
@@ -742,12 +742,12 @@ delta_psi (long double mjd_tt)
 
   // Mean arguments of luni-solar motion
 
-  double l;			// Mean anomaly of the moon.
-  double lp;			// Mean anomaly of the sun.
-  double F;			// Mean argument of latitude.
+  long double l;		      // Mean anomaly of the moon.
+  long double lp;		      // Mean anomaly of the sun.
+  long double F;		      // Mean argument of latitude.
   // Mean longitude elongation fo the moon from the sun.
-  double D;
-  double Om;			// Mean longitude of the ascending node.
+  long double D;
+  long double Om;		      // Mean longitude of the ascending node.
   
   l  = float_modulo (485866.733 + (1325.0 * asprev +  715922.633) * t    
 		     + 31.310 * t2 + 0.064 * t3, asprev);
@@ -760,18 +760,18 @@ delta_psi (long double mjd_tt)
   Om = float_modulo (450160.280 - (   5.0 * asprev +  482890.539) * t    
 		     + 7.455 * t2 + 0.008 * t3, asprev);
 
-  double asprad = 3600.0 * 180.0 / M_PI;     // Arcseconds per radian.
+  long double asprad = 3600.0 * 180.0 / M_PI;     // Arcseconds per radian.
 
   // Nutation in longitude, in radians, to be returned.
-  double result = 0.0;
+  long double result = 0.0;
 
   int ii;
   for ( ii = 0;  ii < COEFFICIENT_COUNT ; ii++ ) {
     // Angle argument.
-    double arg  
+    long double arg  
       = (c[ii][0] * l + c[ii][1] * lp + c[ii][2] * F + c[ii][3] * D 
 	 + c[ii][4] * Om ) / asprad;
-    result += ( c[ii][5] + c[ii][6] * t ) * sin (arg);
+    result += ( c[ii][5] + c[ii][6] * t ) * sinl (arg);
     // We don't need delta_epsilon at the moment.
     // deps += ( c[ii][7] + c[ii][8] * t ) * cos (arg);
   };
@@ -788,7 +788,7 @@ delta_psi (long double mjd_tt)
 static double
 equation_of_equinoxes (long double mjd_tt)
 {
-  return delta_psi (mjd_tt) * cos (mean_obliquity (mjd_tt));
+  return delta_psi (mjd_tt) * cosl (mean_obliquity (mjd_tt));
 }
 
 double
@@ -813,23 +813,23 @@ date_time_earth_angle (DateTime *self)
     /* Here we trust the magic in "Satellite Geodesy 2nd Edition",
        section 2.2.2.  */
     /* Julian century length in days. */
-    const double one_julian_century = 36525.0;
+    const long double one_julian_century = 36525.0;
     /* Current modified julian day in sidereal time.  */
-    double cmjd = date_time_mjd (self, UT1R);
+    long double cmjd = date_time_mjd (self, UT1R);
     /* Sidereal time of start of current day in julian centuries from
        standard epoch.  */
-    double t0 = ((floor (cmjd) - date_time_mjd (standard_epoch, UT1R)) 
-		 / one_julian_century);
+    long double t0 = ((floorl (cmjd) - date_time_mjd (standard_epoch, UT1R)) 
+		      / one_julian_century);
     /* Current sidereal time in julian centuries from standard
        epoch.  */
-    double tu = ((cmjd - date_time_mjd (standard_epoch, UT1R)) 
-		 / one_julian_century);
+    long double tu = ((cmjd - date_time_mjd (standard_epoch, UT1R)) 
+		      / one_julian_century);
     /* Greenwich mean sidereal time in radians.  */
-    double gmst = (6 * SECONDS_PER_HOUR + 41 * SECONDS_PER_MINUTE + 50.54841
-		   + (1.002737909350795 * (cmjd - floor (cmjd)) 
-		      * SECONDS_PER_DAY)
-		   + 8640184.812866 * t0 + 0.093104 * pow (tu, 2.0) 
-		   - 6.2e-6 * pow (tu, 3.0));
+    long double gmst = (6 * SECONDS_PER_HOUR + 41 * SECONDS_PER_MINUTE 
+			+ 50.54841 + (1.002737909350795 * (cmjd - floor (cmjd))
+				      * SECONDS_PER_DAY)
+			+ 8640184.812866 * t0 + 0.093104 * powl (tu, 2.0) 
+			- 6.2e-6 * powl (tu, 3.0));
     gmst = 2 * M_PI * fractional_part (gmst / SECONDS_PER_DAY);
 
     double gast = fmod (gmst 

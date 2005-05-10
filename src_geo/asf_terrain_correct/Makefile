@@ -52,10 +52,14 @@ IERS_BULLETIN_B_DIR := IERS_Bulletin_Bs
 
 # The ScratchPlot library allows us to draw quick plots of data,
 # images, etc.  Useful for development work.
-SCRATCHPLOT_INCLUDE_DIR := /tmp/test/include
+ifeq ($(BK_DEBUG), 1)
+  SCRATCHPLOT_INCLUDE_DIR := /tmp/test/include
 
-INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) -I$(SCRATCHPLOT_INCLUDE_DIR) \
-                 $(shell pkg-config --cflags-only-I glib-2.0)
+  INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) -I$(SCRATCHPLOT_INCLUDE_DIR) \
+                   $(shell pkg-config --cflags-only-I glib-2.0)
+else 
+  INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR)
+endif
 
 CPPFLAGS := $(INCLUDE_FLAGS)
 
@@ -66,38 +70,53 @@ CPPFLAGS := $(INCLUDE_FLAGS)
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
 CFLAGS += -Werror -Wall -W -g -O2 -Wmissing-prototypes -Wstrict-prototypes \
           -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
-          -Wnested-externs -fno-common \
-          $(shell pkg-config --cflags-only-other glib-2.0)
+          -Wnested-externs -fno-common
 
-# Note that debugging builds turn optimization off, which
-# unfortunately causes gcc not to catch certain warnings (because the
-# optimizer doesn't run).
-ifneq ($(CFLAGS),0)
-  CFLAGS += -O0
+ifeq ($(BK_DEBUG), 1)
+  # Note that debugging builds turn optimization off, which
+  # unfortunately causes gcc not to catch certain warnings (because the
+  # optimizer doesn't run).
+  CFLAGS += $(shell pkg-config --cflags-only-other glib-2.0) -O0
+
+  LDFLAGS := $(shell pkg-config --libs-only-other glib-2.0)
+
+  # The ScratchPlot library allows us to draw quick plots of data,
+  # images, etc.  Useful for development work.
+  SCRATCHPLOT_LIB_DIR := /tmp/test/lib
 endif 
 
-LDFLAGS := $(shell pkg-config --libs-only-other glib-2.0)
-
-# The ScratchPlot library allows us to draw quick plots of data,
-# images, etc.  Useful for development work.
-SCRATCHPLOT_LIB_DIR := /tmp/test/lib
-
 # Libraries needed by this program.
-LDLIBS := $(LIBDIR)/asf.a \
-	  $(LIBDIR)/asf_meta.a \
-	  $(LIBDIR)/libasf_proj.a \
-	  $(LIBDIR)/libproj.a \
-          $(LIBDIR)/libasf_reporting.a \
-	  $(LIBDIR)/libasf_raster.a \
-	  $(LIBDIR)/asf.a \
-	  $(LIBDIR)/libgsl.a \
-	  $(LIBDIR)/libgslcblas.a \
-	  $(LIBDIR)/libjpeg.a \
-	  $(shell pkg-config --libs-only-L glib-2.0) \
-          $(shell pkg-config --libs-only-l glib-2.0) \
-	  -Wl,--rpath,$(SCRATCHPLOT_LIB_DIR) \
-	  -L$(SCRATCHPLOT_LIB_DIR) -lscratchplot \
-	  -lm
+ifeq ($(BK_DEBUG), 1)
+  LDLIBS := $(LIBDIR)/asf.a \
+	    $(LIBDIR)/asf_meta.a \
+	    $(LIBDIR)/libasf_proj.a \
+	    $(LIBDIR)/libproj.a \
+            $(LIBDIR)/libasf_reporting.a \
+	    $(LIBDIR)/libasf_raster.a \
+	    $(LIBDIR)/asf.a \
+	    $(LIBDIR)/libgsl.a \
+	    $(LIBDIR)/libgslcblas.a \
+	    $(LIBDIR)/libjpeg.a \
+	    $(shell pkg-config --libs-only-L glib-2.0) \
+            $(shell pkg-config --libs-only-l glib-2.0) \
+	    -Wl,--rpath,$(SCRATCHPLOT_LIB_DIR) \
+	    -L$(SCRATCHPLOT_LIB_DIR) -lscratchplot \
+	    -lm
+else
+  LDLIBS := $(LIBDIR)/asf.a \
+	    $(LIBDIR)/asf_meta.a \
+	    $(LIBDIR)/libasf_proj.a \
+	    $(LIBDIR)/libproj.a \
+            $(LIBDIR)/libasf_reporting.a \
+	    $(LIBDIR)/libasf_raster.a \
+	    $(LIBDIR)/asf.a \
+	    $(LIBDIR)/libgsl.a \
+	    $(LIBDIR)/libgslcblas.a \
+	    $(LIBDIR)/libjpeg.a \
+            $(LIBDIR)/libglib-2.0.a \
+	    $(LIBDIR)/libiconv.a \
+	    -lm
+endif
 
 # Defines needed by this module.  For defining the location of the
 # shared data archive, etc.
@@ -111,7 +130,7 @@ CPPFLAGS += $(DEFINE_FLAGS)
 # Tests
 #
 # Rules which say how to test the features of the library.  As new
-# classes are added its good to add tests.
+# classes are added it is good to add tests.
 #
 ###############################################################################
 
@@ -173,9 +192,11 @@ OBJS := $(patsubst %.c, %.o, $(SRCS))
 NONMAIN_OBJS := $(patsubst %.c, %.o, $(OTHER_C_SOURCES) \
                 $(addsuffix .c, $(CLASSES)))
 
-# Some options to link in the scratchplot library, used to take a look
-# at data.
-DRAW_OPTS := -Wl,-rpath,/tmp/test/lib -L/tmp/test/lib -lscratchplot
+ifeq ($(BK_DEBUG), 1)
+  # Some options to link in the scratchplot library, used to take a look
+  # at data.
+  DRAW_OPTS := -Wl,-rpath,/tmp/test/lib -L/tmp/test/lib -lscratchplot
+endif
 
 # Building depends on having all the individual files compiled, and on
 # having depended on libraries installed.  Actually, since the
@@ -187,12 +208,12 @@ build_stamp: $(OBJS) $(LIBS) static_data_file_build_stamp
 	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
 	touch $@
 
-test_drawer_stamp: test.c
-	echo $(CFLAGS)
-	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< 
-	$(CC) $(LDFLAGS) test.o $(LDLIBS) -o test
-	./test
-	touch $@
+ifeq ($(BK_DEBUG), 1)
+# This is a target for a somewhat isolated test of the orbit model.
+  test_model: $(OBJS) $(LIBS) static_data_file_build_stamp test_model.o
+	      $(CC) $(LDFLAGS) $(patsubst asf_terrain_correct.o, , $(OBJS)) \
+                    test_model.o $(LDLIBS) -o test_model
+endif
 
 static_data_file_build_stamp: time_scale_offsets
 	touch $@
@@ -241,6 +262,8 @@ clean:
 	       *_stamp \
                core.* \
 	       core \
+	       test_model.o \
+	       test_model \
                time_scale_offsets \
 	       test_orbital_state_vector \
                test_platform_path \

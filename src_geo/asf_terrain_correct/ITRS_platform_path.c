@@ -9,10 +9,6 @@
 
 #include "ITRS_platform_path.h"
 
-// FIXME: remove this debug schlop.
-#include <glib.h>
-#include <scratchplot.h>
-
 ITRSPlatformPath *
 ITRS_platform_path_new (int control_point_count, double start_time, 
 			double end_time, int observation_count, 
@@ -160,7 +156,9 @@ ITRS_platform_path_new (int control_point_count, double start_time,
       // entirely, x == 1 => y == 1 => trust the next observation
       // entirely).
 
-      /*
+      /* FIXME this exponential crap seems to have a problem
+	 somewhere, so for the moment we just use a linear arrangment
+	 instead (see below).
 
       // "Fraction of path", except we make this term wrong by
       // immediately mapping it into [-1, 1].
@@ -219,47 +217,6 @@ ITRS_platform_path_new (int control_point_count, double start_time,
     }
   }
 
-  // FIXME: debug hack: plot the first little bit worth of y position
-  // and velocity points.
-  size_t pc = control_point_count * 0.08 / (self->end_time - self->start_time);
-  double *s_times = g_new (double, pc);
-  double *earth_angles = g_new (double, pc);
-  double *earth_angles_p = g_new (double, pc);
-  double *y_poss = g_new (double, pc);
-  double *y_vels = g_new (double, pc);
-  size_t midx;
-  double mct = true_start_time;
-  DateTime *cdt = date_time_copy (base_date);
-  for ( midx = 0 ; midx < pc ; midx++ ) {
-    s_times[midx] = mct;
-    earth_angles[midx] = date_time_earth_angle (cdt);
-    y_poss[midx] = ycp[midx];
-    if ( midx != 0 ) {
-      earth_angles_p[midx] = earth_angles[midx] - earth_angles[midx - 1];
-      y_vels[midx] = ycp[midx] - ycp[midx - 1];
-    }
-    mct += cp_separation;
-    date_time_add_seconds (cdt, cp_separation);
-  }
-  y_vels[0] = y_vels[1];
-  earth_angles_p[0] = earth_angles_p[1];
-  //  sp_basic_plot (pc, s_times, earth_angles, "line");
-  //  sp_basic_plot (pc, s_times, earth_angles_p, "line");
-  //  sp_basic_plot (pc, s_times, y_poss, "line");
-  //  sp_basic_plot (pc, s_times, y_vels, "line");
-  //  sp_basic_plot (pc, NULL, y_vels, "line");
-  //  sp_basic_plot (10, NULL, &(earth_angles[8]), "line");
-  //  sp_basic_plot (10, NULL, &y_vels[8], "line");
-  for ( midx = 9 ; midx < 16 ; midx++ ) {
-    printf ("midx: %ld, y_poss[midx]: %.12lg, y_vels[midx]: %.12lg\n", 
-	    (long int) midx, y_poss[midx], y_vels[midx]);
-  }
-  g_free (s_times);
-  g_free (earth_angles);
-  g_free (earth_angles_p);
-  g_free (y_poss);
-  g_free (y_vels);
-
   self->xp_accel = gsl_interp_accel_alloc ();
   self->yp_accel = gsl_interp_accel_alloc ();
   self->zp_accel = gsl_interp_accel_alloc ();
@@ -316,4 +273,17 @@ ITRS_platform_path_velocity_at_time (ITRSPlatformPath *self, double time,
   return_code = gsl_spline_eval_deriv_e (self->zp, time, self->zp_accel,
 					 &(velocity->z));
   assert (return_code == GSL_SUCCESS);
+}
+
+void
+ITRS_platform_path_free (ITRSPlatformPath *self)
+{
+  gsl_interp_accel_free (self->xp_accel);
+  gsl_spline_free (self->xp);
+  gsl_interp_accel_free (self->yp_accel);
+  gsl_spline_free (self->yp);
+  gsl_interp_accel_free (self->zp_accel);
+  gsl_spline_free (self->zp);
+
+  free (self);
 }

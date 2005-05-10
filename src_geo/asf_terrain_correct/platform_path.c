@@ -63,8 +63,9 @@ platform_path_new (int control_point_count, double start_time, double end_time,
   double cp_separation = time_range / (control_point_count - 1);
 
   // Initialize an array of control point times.
-  for ( ii = 0 ; ii < control_point_count ; ii++ ) {
-    times[ii] = true_start_time + ii * cp_separation;
+  times[0] = true_start_time;
+  for ( ii = 1 ; ii < control_point_count ; ii++ ) {
+    times[ii] = times[ii - 1] + cp_separation; 
   }
 
   // Find the values of interest at all the control points.
@@ -151,6 +152,10 @@ platform_path_new (int control_point_count, double start_time, double end_time,
       // entirely, x == 1 => y == 1 => trust the next observation
       // entirely).
 
+      /* FIXME this exponential crap seems to have a problem
+	 somewhere, so for the moment we just use a linear arrangment
+	 instead (see below).
+
       // "Fraction of path", except we make this term wrong by
       // immediately mapping it into [-1, 1].
       double fop = ((ct - current_segment_start) 
@@ -160,11 +165,29 @@ platform_path_new (int control_point_count, double start_time, double end_time,
       // "Weighting of next observation".  Here we apply the function
       // discussed above, then map the result back into [0, 1].
       double wono = ((GSL_SIGN (fop) * pow (fabs (fop), 1.0 / 3.0)) + 1) / 2.0;
-      
-      // Finally we can compute the control point for this time.
-      xcp[ii] = lo->position->x * (1.0 - wono) + no->position->x * wono;
-      ycp[ii] = lo->position->y * (1.0 - wono) + no->position->y * wono;
-      zcp[ii] = lo->position->z * (1.0 - wono) + no->position->z * wono;
+
+      // Create the weighted average state vector.
+      OrbitalStateVector *average
+	= orbital_state_vector_new (lo->position->x * (1.0 - wono) 
+				    + no->position->x * wono,
+				    lo->position->y * (1.0 - wono) 
+				    + no->position->y * wono,
+				    lo->position->z * (1.0 - wono) 
+				    + no->position->z * wono,
+				    lo->velocity->x * (1.0 - wono) 
+				    + no->velocity->x * wono,
+				    lo->velocity->y * (1.0 - wono) 
+				    + no->velocity->y * wono,
+				    lo->velocity->z * (1.0 - wono) 
+				    + no->velocity->z * wono);
+      */
+
+      // Compute the weighted average position vector.
+      double fop = ((ct - current_segment_start) 
+		    / (current_segment_end - current_segment_start));
+      xcp[ii] = lo->position->x * (1.0 - fop) + no->position->x * (fop);
+      ycp[ii] = lo->position->y * (1.0 - fop) + no->position->y * (fop);
+      zcp[ii] = lo->position->z * (1.0 - fop) + no->position->z * (fop);
     }
   }
 

@@ -252,13 +252,6 @@ slant_range_image_new_from_ground_range_image (char *metadata_file,
 	= gsl_spline_eval (spline, sr_fs + jj * sr_spacing, accel);
       float_image_set_pixel (self->data, jj, ii, sample_value);
     }
-
-    // FIXME: remove this development metering.
-    if ( ii % 100 == 0 ) {
-      g_assert (sizeof (long long int) >= sizeof (size_t));
-      printf ("Done with line %lld\n", (long long int) ii);
-    }
-
   }
 
   g_free (cp_ys);
@@ -273,13 +266,6 @@ slant_range_image_new_from_ground_range_image (char *metadata_file,
   self->slant_range_per_pixel = sr_spacing;
 
   meta_free (imd);
-
-  // FIXME: remove this debugging dumpage.
-  int return_code 
-    = float_image_export_as_jpeg (self->data, "test_file.jpg",
-				  GSL_MAX (self->data->size_x / 6, 
-					   self->data->size_y / 6), 0.0);
-  g_assert (return_code == 0);
 
   return self;
 }
