@@ -8,11 +8,12 @@
    function is compiled differently depending on whether
    FINAL_PRODUCTION_BUILD is defined of not.  If
    FINAL_PRODUCTION_BUILD is defined, this function looks for
-   relative_path in ASF_SHAREDIR as supplied by the build environment,
-   and then for relative_path in the current directory, and finally
-   for the file name part of relative_path in the current directory.
-   If FINAL_PRODUCTION_BUILD is not defined, the check in SHAREDIR is
-   not performed.  If the file is found in the current directory, a
+   relative_path in the standard location as supplied by
+   get_asf_share_dir(), and then for relative_path in the current
+   directory, and finally for the file name part of relative_path in
+   the current directory.  If FINAL_PRODUCTION_BUILD is not defined,
+   the check in the standard location supplied by get_asf_share_dir ()
+   is not performed.  If the file is found in the current directory, a
    notice to that effect is printed.  This function is intended to
    handle a problem with static data files: if their installation
    location is hardcoded, they must be installed before they can be
