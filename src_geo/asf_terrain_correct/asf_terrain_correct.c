@@ -36,7 +36,7 @@ static void
 usage (void)
 {
   g_printerr ("usage: asf_terrain_correct dem_base_name image_base_name "
-	      "output_base_name");
+	      "output_base_name\n");
   exit (EXIT_FAILURE);
 }
 
