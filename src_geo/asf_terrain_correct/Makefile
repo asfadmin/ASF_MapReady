@@ -2,9 +2,6 @@ PROGRAM := asf_terrain_correct
 
 include ../../make_support/system_rules
 
-# Where to put text data if FINAL_PRODUCTION_BUILD is defined.
-SHARE_DIR := '.'
-
 ###############################################################################
 #                                                                             
 # List of Sources                                                             
@@ -63,6 +60,10 @@ endif
 
 CPPFLAGS := $(INCLUDE_FLAGS)
 
+ifndef $(DEBUG_BUILD)
+  CPPFLAGS += -DFINAL_PRODUCTION_BUILD
+endif
+
 # I'd like to use -Wconversion as advised by the GSL, but it seems to
 # make it impossible to pass arguments of type float to functions that
 # take type float (still get a complaint about argument being passed
@@ -71,6 +72,10 @@ CPPFLAGS := $(INCLUDE_FLAGS)
 CFLAGS += -Werror -Wall -W -g -O2 -Wmissing-prototypes -Wstrict-prototypes \
           -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
           -Wnested-externs -fno-common
+
+ifeq ($(DEBUG_BUILD), 2)
+  CFLAGS += -O0
+endif
 
 ifeq ($(BK_DEBUG), 1)
   # Note that debugging builds turn optimization off, which
@@ -124,6 +129,19 @@ DEFINE_FLAGS := -DASF_SHAREDIR=\"$(SHAREDIR)/$(MN)\"
 
 # Add the define flags to the other cpp flags.
 CPPFLAGS += $(DEFINE_FLAGS)
+
+###############################################################################
+#
+# Install
+#
+# Install built and tested program and supporting files into standard
+# staging area.
+#
+###############################################################################
+
+# Note that build_stamp actually installs in this case.
+install: build_stamp
+	cp time_scale_offsets $(SHAREDIR)
 
 ###############################################################################
 #
