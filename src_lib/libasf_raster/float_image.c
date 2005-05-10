@@ -21,7 +21,6 @@
 #include <gsl/gsl_math.h>
 
 #include <jpeglib.h>
-#include "asf_nan.h"
 #include "float_image.h"
 
 #ifndef linux
@@ -1438,7 +1437,7 @@ float_image_statistics (FloatImage *self, float *min, float *max,
     float_image_get_row (self, ii, row_buffer);
     for ( jj = 0 ; jj < self->size_x ; jj++ ) {
       float cs = row_buffer[jj];   // Current sample.
-      if ( !ISNAN(mask) && (0==gsl_fcmp(cs, mask, 0.00000000001)) )
+      if ( !isnan(mask) && (0==gsl_fcmp(cs, mask, 0.00000000001)) )
         continue;
       if ( G_UNLIKELY (cs < *min) ) { *min = cs; }
       if ( G_UNLIKELY (cs > *max) ) { *max = cs; }
