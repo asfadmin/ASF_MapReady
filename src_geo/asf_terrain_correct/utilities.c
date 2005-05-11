@@ -36,7 +36,7 @@ datafile_path (const char *relative_path)
     path[tmp + 1] = '\0';
   }
     
-  /* Form the full path name based on ASF_SHAREDIR.  */
+  /* Form the full path name.  */
   path = realloc (path, ((strlen (path) + strlen (relative_path) + 1) 
 			 * sizeof (char)));
   strcat (path, relative_path);
@@ -55,8 +55,8 @@ datafile_path (const char *relative_path)
      looking.  */
   static int first_time_through = TRUE;
   if ( first_time_through ) {
-    fprintf (stderr, "Note: Looking for data file %s in './' instead of '"
-	     ASF_SHAREDIR "' ... ", relative_path);
+    fprintf (stderr, "Note: Looking for data file in './' instead of "
+	     "its install location... ");
   }
   path = g_strdup_printf ("./%s", relative_path);
   if ( g_file_test (path, G_FILE_TEST_EXISTS) ) {
