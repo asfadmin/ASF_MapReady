@@ -116,8 +116,9 @@ main (int argc, char **argv)
 #ifndef BK_DEBUG
   g_print ("Loading SAR image and converting to slant range... ");
   SlantRangeImage *sri 
-    = slant_range_image_new_from_ground_range_image (input_meta_file->str,
-						     input_data_file->str);
+    ;//    = slant_range_image_new_from_ground_range_image (input_meta_file->str,
+  //						     input_data_file->str);
+  sri = NULL;
   g_print ("done.\n");
 #else
   if ( g_file_test ("bk_debug_sri_freeze", G_FILE_TEST_EXISTS) ) {
