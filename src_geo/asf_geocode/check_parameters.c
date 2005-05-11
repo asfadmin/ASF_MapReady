@@ -68,16 +68,17 @@ void check_parameters(projection_type_t projection_type,
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
-      meta_get_latLon(meta, 0, meta->general->sample_count, 0.0, &lat, &lon);
+      meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0, &lat, 
+		      &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
-      meta_get_latLon(meta, meta->general->line_count, 0, 0.0, &lat, &lon);
+      meta_get_latLon(meta, meta->general->line_count - 1, 0, 0.0, &lat, &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
-      meta_get_latLon(meta, meta->general->line_count, meta->general->sample_count,
-                      0.0, &lat, &lon);
+      meta_get_latLon(meta, meta->general->line_count - 1,
+		      meta->general->sample_count - 1, 0.0, &lat, &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
