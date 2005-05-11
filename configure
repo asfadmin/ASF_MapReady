@@ -3528,7 +3528,7 @@ fi
 
 if test "$have_gsl" = "no" ; then
    ASF_LIB_GSL="src_lib/libgsl"
-   GSL_LIBS="\$(LIBDIR)/libgsl.a"
+   GSL_LIBS="\$(LIBDIR)/libgsl.a \$(LIBDIR)/libgslcblas.a"
 else
    GSL_LIBS="-lgsl -lgslcblas"
 fi

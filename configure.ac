@@ -83,7 +83,7 @@ AC_CHECK_LIB(gsl,main,have_gsl="yes",have_gsl="no")
 
 if test "$have_gsl" = "no" ; then
    ASF_LIB_GSL="src_lib/libgsl"
-   GSL_LIBS="\$(LIBDIR)/libgsl.a"
+   GSL_LIBS="\$(LIBDIR)/libgsl.a \$(LIBDIR)/libgslcblas.a"
 else
    GSL_LIBS="-lgsl -lgslcblas"
 fi
