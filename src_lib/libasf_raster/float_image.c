@@ -1437,7 +1437,7 @@ float_image_statistics (FloatImage *self, float *min, float *max,
     float_image_get_row (self, ii, row_buffer);
     for ( jj = 0 ; jj < self->size_x ; jj++ ) {
       float cs = row_buffer[jj];   // Current sample.
-      if ( !isnan(mask) && (0==gsl_fcmp(cs, mask, 0.00000000001)) )
+      if ( !isnan(mask) && (gsl_fcmp(cs, mask, 0.00000000001) == 0) )
         continue;
       if ( G_UNLIKELY (cs < *min) ) { *min = cs; }
       if ( G_UNLIKELY (cs > *max) ) { *max = cs; }
@@ -1449,6 +1449,65 @@ float_image_statistics (FloatImage *self, float *min, float *max,
   }
 
   g_free (row_buffer);
+
+  g_assert (*min != FLT_MAX);
+  g_assert (*max != -FLT_MAX);
+
+  double standard_deviation_as_double = sqrt (s / (sample_count - 1));
+
+  g_assert (fabs (mean_as_double) <= FLT_MAX);
+  g_assert (fabs (standard_deviation_as_double) <= FLT_MAX);
+
+  *mean = mean_as_double;
+  *standard_deviation = standard_deviation_as_double;
+}
+
+void
+float_image_statistics_with_mask_interval (FloatImage *self, float *min, 
+					   float *max, float *mean, 
+					   float *standard_deviation, 
+					   double interval_start, 
+					   double interval_end)
+{
+  // This method is a trivial clone-and-modify of
+  // float_image_statistics, but it is totally untested at the moment.
+  g_assert_not_reached ();
+
+  *min = FLT_MAX;
+  *max = -FLT_MAX;
+
+  // Buffer for one row of samples.
+  float *row_buffer = g_new (float, self->size_x);
+
+  // Its best to keep track of things internally using doubles in
+  // order to minimize error buildup.
+  double mean_as_double = 0;
+  double s = 0;
+
+  size_t sample_count = 0;      // Samples considered so far.
+  size_t ii, jj;
+  for ( ii = 0 ; ii < self->size_y ; ii++ ) {
+    float_image_get_row (self, ii, row_buffer);
+    for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+      float cs = row_buffer[jj];   // Current sample.
+      // If in the mask interval, do not consider this pixel and
+      // further.
+      if ( cs < interval_start && cs > interval_end ) {
+	continue;
+      }
+      if ( G_UNLIKELY (cs < *min) ) { *min = cs; }
+      if ( G_UNLIKELY (cs > *max) ) { *max = cs; }
+      double old_mean = mean_as_double;
+      mean_as_double += (cs - mean_as_double) / (sample_count + 1);
+      s += (cs - old_mean) * (cs - mean_as_double);
+      sample_count++;
+    }
+  }
+
+  g_free (row_buffer);
+
+  g_assert (*min != FLT_MAX);
+  g_assert (*max != -FLT_MAX);
 
   double standard_deviation_as_double = sqrt (s / (sample_count - 1));
 
@@ -1500,6 +1559,52 @@ float_image_approximate_statistics (FloatImage *self, size_t stride,
   float_image_free (sample_image);
 }
 
+void
+float_image_approximate_statistics_with_mask_interval 
+  (FloatImage *self, size_t stride, float *mean, float *standard_deviation, 
+   double interval_start, double interval_end)
+{
+  // This method is a trivial clone-and-modify of
+  // float_image_approximate_statistics, but it is totally untested at
+  // the moment.
+  g_assert_not_reached ();
+
+  // Rows and columns of samples that fit in image given stride
+  // stride.
+  size_t sample_columns = ceil (self->size_x / stride);
+  size_t sample_rows = ceil (self->size_y / stride);
+  // Total number of samples.
+  size_t sample_count = sample_columns * sample_rows;
+
+  // Create an image holding the sample values.
+  FloatImage *sample_image = float_image_new (sample_columns, sample_rows);
+
+  // Load the sample values.
+  size_t current_sample = 0;
+  size_t ii;
+  for ( ii = 0 ; ii < sample_columns ; ii++ ) {
+    size_t jj;
+    for ( jj = 0 ; jj < sample_rows ; jj++ ) {
+      double sample = float_image_get_pixel (self, ii * stride, jj * stride);
+      float_image_set_pixel (sample_image, ii, jj, sample);
+      current_sample++;
+    }
+  }
+
+  // Ensure that we got the right number of samples in our image.
+  g_assert (current_sample == sample_count);
+
+  // Compute the exact statistics of the sampled version of the image.
+  // The _statistics method wants to compute min and max, so we let
+  // it, even though we don't do anything with them (since they are
+  // inaccurate).
+  float min, max;
+  float_image_statistics_with_mask_interval (sample_image, &min, &max, 
+					     mean, standard_deviation,
+					     interval_start, interval_end);
+
+  float_image_free (sample_image);
+}
 
 gsl_histogram *
 float_image_gsl_histogram (FloatImage *self, float min, float max,
