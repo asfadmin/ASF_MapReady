@@ -208,6 +208,16 @@ void
 float_image_statistics (FloatImage *self, float *min, float *max, float *mean,
                         float *standard_deviation, float mask);
 
+// This method works like the statistics method, except values in the
+// interval [interval_start, interval_end] are not considered at all
+// for the purposes of determining any of the outputs.
+void
+float_image_statistics_with_mask_interval (FloatImage *self, float *min, 
+					   float *max, float *mean, 
+					   float *standard_deviation, 
+					   double interval_start, 
+					   double interval_end);
+
 // Compute an efficient estimate of the mean and standard deviation of
 // the pixels in the image, by sampling every stride th pixel in each
 // dimension, beginning with pixel (0, 0). If the mask is a non-NAN
@@ -217,6 +227,13 @@ void
 float_image_approximate_statistics (FloatImage *self, size_t stride,
                                     float *mean, float *standard_deviation,
                                     float mask);
+
+// This method is a logical combination of the
+// statistics_with_mask_interval and approximate_statistics methods.
+void
+float_image_approximate_statistics_with_mask_interval 
+  (FloatImage *self, size_t stride, float *mean, float *standard_deviation, 
+   double interval_start, double interval_end);
 
 // Creates a gsl_histogram with 'num_bins' bins evenly spaced between
 // 'min' and 'max'.  This function considers every pixel in the image.
@@ -293,7 +310,7 @@ float_image_store (FloatImage *self, const char *file,
 // values inside two standard deviations of the mean pixel value are
 // mapped linearly into this range; image pixel values outside two
 // standard are clamped at the appropriate limit.  In determining the
-// image sttistics (mean and standard deviation), values equal to mask
+// image statistics (mean and standard deviation), values equal to mask
 // are not considered, unless mask is NAN, in which case mask has no
 // effect.  If all image pixels have the same value, the output is
 // made black if the pixels have value 0.0, and white otherwise.  This
@@ -302,6 +319,24 @@ float_image_store (FloatImage *self, const char *file,
 int
 float_image_export_as_jpeg (FloatImage *self, const char *file,
 			    size_t max_dimension, double mask);
+
+// This method works like the export_as_jpeg method, but all values in
+// the interval [interval_start, interval_end] are considered to be
+// uninteresting low values which should be mapped to zero in the
+// output image, and should not be included in the calculations which
+// determine the image statistics used to map the other floating point
+// values into bytes.  For example, if one has an a bright island
+// surrounded by very dark water in a radar image, setting the dark
+// water covered areas to zero and not including them in the mean and
+// standard deviation calculations will prevent the more interesting
+// land areas from being driven into saturation in the generated
+// image.
+int
+float_image_export_as_jpeg_with_mask_interval (FloatImage *self, 
+					       const char *file,
+					       ssize_t max_dimension,
+					       double interval_start,
+					       double interval_end);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
