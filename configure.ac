@@ -1,4 +1,8 @@
+AC_PREREQ(2.59)
 AC_INIT
+# The most recent version of aclocal doesn't seem to work if this
+# macro isn't called.
+AM_INIT_AUTOMAKE
 AC_LANG(C)
 
 PACKAGE=convert
@@ -120,7 +124,7 @@ AC_SUBST(ASF_PKG_CONFIG)
 
 # glib check
 if test "$have_pkg_config" = "yes" ; then
-   PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.4.0,
+   PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.4.0],
       have_glib="yes", have_glib="no")
 fi
 
