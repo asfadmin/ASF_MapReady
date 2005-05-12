@@ -1,25 +1,28 @@
 /*SARview image.c:
 The histogram routines.  Our histograms are divided into "bins",
-which store the number of occurences of values for (in this case) 
+which store the number of occurences of values for (in this case)
 image brightness.
 
 Orion Sky Lawlor, 5/16/99
 */
 #include "main.h"
+#include <asf_raster.h>
+#include <limits.h>
 
 /*Create a histogram structure with the given number of bins*/
 histogram *createHist(int nBins,double min,double max)
 {
 	int i;
-	histogram *h=(histogram *)MALLOC(sizeof(histogram));
-	h->nBins=nBins;
-	h->bins=(int *)MALLOC(sizeof(int)*h->nBins);
-	for (i=0;i<h->nBins;i++) 
-		h->bins[i]=0;
-	h->min=min;h->max=max;
-	h->slope=h->nBins/(h->max-h->min);
-	h->offset=-h->min*h->slope;
-	h->nPixels=0;
+	histogram *h = (histogram *)MALLOC(sizeof(histogram));
+	h->nBins   = nBins;
+	h->min     = min;
+	h->max     = max;
+	h->slope   = h->nBins / (h->max - h->min);
+	h->offset  = -h->min * h->slope;
+	h->nPixels = 0;
+	h->bins    = (int*)MALLOC(sizeof(int)*h->nBins);
+	for (i=0; i<h->nBins; i++)
+		h->bins[i] = 0;
 	return h;
 }
 
@@ -32,7 +35,9 @@ void addToHist(histogram *h,float *vals,int nVals)
 	register double slope=h->slope,offset=h->offset;
 	for (i=nVals-1;i>=0;i--)
 	{
-		register int dex=(int)(slope*vals[i]+offset);
+		register int dex;
+		if ( FLOAT_EQUIVALENT(0.0, vals[i]) ) continue;
+		dex=(int)(slope*vals[i]+offset);
 		if (dex<0) dex=0;
 		if (dex>=nBins) dex=nBins-1;
 		bins[dex]++;
@@ -41,7 +46,7 @@ void addToHist(histogram *h,float *vals,int nVals)
 }
 
 /*Compute the trimmed max & min values.
-  minDex & maxDex should be the image minimum and maximum if we removed 
+  minDex & maxDex should be the image minimum and maximum if we removed
   the trimFraction smallest and trimFraction largest pixels.*/
 void trimMaxMin(const histogram *h,double trimFraction,double *Tmin,double *Tmax)
 {
@@ -54,9 +59,9 @@ void trimMaxMin(const histogram *h,double trimFraction,double *Tmin,double *Tmax
 	minDex=0;
 	while (sum<nPix)
 		sum+=bins[minDex++];
-	if (minDex-1>=0) 
-		overshoot=(double)(nPix-sum)/bins[minDex-1]; 
-	else 
+	if (minDex-1>=0)
+		overshoot=(double)(nPix-sum)/bins[minDex-1];
+	else
 		overshoot=0;
 	*Tmin=bin2val(minDex-overshoot);
 
@@ -64,9 +69,9 @@ void trimMaxMin(const histogram *h,double trimFraction,double *Tmin,double *Tmax
 	maxDex=h->nBins-1;
 	while (sum<nPix)
 		sum+=bins[maxDex--];
-	if (maxDex+1<h->nBins) 
+	if (maxDex+1<h->nBins)
 		overshoot=(double)(nPix-sum)/bins[maxDex+1];
-	else 
+	else
 		overshoot=0;
 	*Tmax=bin2val(maxDex+1+overshoot);
 }
@@ -96,10 +101,12 @@ void renderHist(histogram *src,double min,double max,
 {
 	int x,y;
 	histogram *h=createHist(width,min,max);
-	int highOccurance=-1, lowOccurance=2147453647;
+	int highOccurance=LONG_MIN, lowOccurance=LONG_MAX;
 	double sum=0.0;
 	int denominator=0;
+
 	copyHist(h,src);
+
 /*Run through data to get lowest and highest value Occurance*/
 	for (x=0;x<width;x++)
 	{
@@ -108,8 +115,10 @@ void renderHist(histogram *src,double min,double max,
 		sum += bin2val((double)x) * (double)(h->bins[x]); /*bin2val macro in main.h*/
 		denominator += h->bins[x];
 	}
+
 /* Figure Mean */
 	*mean = sum / (double)denominator;
+
 /*Render data into buffer-- erasing as we go*/
 	for (x=0;x<width;x++)
 	{
@@ -119,6 +128,7 @@ void renderHist(histogram *src,double min,double max,
 		for (;y>=0;y--)
 			dest[y*width+x]=bg;
 	}
+
 /*Record lowest & highest value*/
 	*lowest =lowOccurance;
 	*highest=highOccurance;
