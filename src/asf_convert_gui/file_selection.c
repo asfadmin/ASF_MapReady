@@ -1,3 +1,17 @@
+#ifdef win32
+
+/* ugly hack here... windef.h and asf_meta.h both define a BYTE symbol. */
+/* since we don't use the BYTE from asf_meta.h here, we'll #define BYTE */
+/* to something else during the processing of that header, leaving BYTE */
+/* defined in windef.h alone (that's the one we want)                   */
+
+#define BYTE __byte
+#include "asf.h"
+#undef BYTE
+#include <windows.h>
+#undef DIR_SEPARATOR
+#endif
+
 #include "asf_convert_gui.h"
 
 SIGNAL_CALLBACK void
@@ -71,7 +85,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 #endif
 
   of.hwndOwner = NULL;
-  of.lpstrFilter = "CEOS Data Files(*.D)\0*.D\0all files\0*\0";
+  of.lpstrFilter = "CEOS Data Files (*.D)\0*.D\0all files\0*\0";
   of.lpstrCustomFilter = NULL;
   of.nFilterIndex = 1;
   of.lpstrFile = fname;
@@ -80,20 +94,30 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
   of.lpstrInitialDir = ".";
   of.lpstrTitle = "Select File";
   of.lpstrDefExt = NULL;
-  of.Flags = OFN_HIDEREADONLY;
+  of.Flags = OFN_HIDEREADONLY | OFN_ALLOWMULTISELECT | OFN_EXPLORER;
   
-  if (action < END_OPEN)
-	retval = GetOpenFileName(&of);
-  else  /* a file save action */
-    retval = GetSaveFileName(&of);
+  retval = GetOpenFileName(&of);
   
   if (!retval) {
     if (CommDlgExtendedError())
       message_box("File dialog box error");
     return;
   }
-  
-  printf("File: %s\n", fname);
+
+  /* the returned "fname" has the following form:            */
+  /*   <directory>\0<first file>\0<second file>\0<third ...  */ 
+  char * dir = strdup(fname);
+  char * p = fname + strlen(dir) + 1;
+ 
+  while (*p) {
+    char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
+    sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
+    add_to_files_list(dir_and_file);
+    p += strlen(p) + 1;
+    free(dir_and_file);
+  }
+
+  free(dir);
 
 #else
   GtkWidget *file_selection_dialog =
