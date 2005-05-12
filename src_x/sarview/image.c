@@ -6,6 +6,10 @@ Currently, LAS and CEOS images are supported.
 #include "main.h"
 #include "image.h"
 
+#include <asf_raster.h> // for FLOAT_EQUIVALENT macro
+
+#include <limits.h>
+
 image_info image;/*Global image info structure*/
 image_type type=image_none;
 struct DDR *ddr=NULL;
@@ -120,41 +124,32 @@ void image_readLine(float *dest,int lineY,int bandNo)
 
 /*********************************************************
  * image_slopeOffset:
- * Compute the pixel scaling slope and offset, and write 
- * them to link_slope and link_offset*/
+ * Compute the pixel scaling slope and offset, and write
+ * them to link_slope and link_offset
+ * Actually this calculates the histogram too, so watch out! */
 void image_slopeOffset(void)
 {
-	const int nLines=100;/*Number of lines of data to examine*/
-
+	const int num_lines_to_examine = image.height;
 	float *inBuf;
 	histogram *h;
 	int yCounter,lineY,x;
-	double min=200000000000000000.0,max=-200000000000000000.0;
+	double min=DBL_MAX, max=DBL_MIN;
 	double width;
+	int step_size = (image.height-1) / (num_lines_to_examine-1);
+	const int hist_size = 1024;
 
-/*Make a quick check for byte data.*/
-/* Commented out so histogram will always be calculated
-	if (ddr->dtype==1)
-	{ We have *byte* data-- hardcode slope & offset, and return.
-		image.min=0;
-		image.max=255;
-		image.slope =image.r_slope=1.0;
-		image.offset=image.r_offset=0.0;
-		return;
-	}
-*/
-		
-/*If not byte data, we'll have to read in some data to find the max and min*/
+/*Read in data to find the max and min*/
 	inBuf=(float *)MALLOC(sizeof(float)*image.width);
 
 /*Loop through data & compute max/min*/
-	for (yCounter=0;yCounter<nLines;yCounter++)
+	for (yCounter=0; yCounter<num_lines_to_examine; yCounter++)
 	{
-		lineY=yCounter*(image.height-1)/(nLines-1);
-		image_readLine(inBuf,lineY,0);
-		for (x=0;x<image.width;x++)
+		lineY = yCounter * step_size;
+		image_readLine(inBuf, lineY, 0);
+		for (x=0; x<image.width; x++)
 		{
-			double val=inBuf[x];
+			double val = inBuf[x];
+			if ( FLOAT_EQUIVALENT(0.0, val) ) continue;
 			if (min>val) min=val;
 			if (max<val) max=val;
 		}
@@ -164,18 +159,16 @@ void image_slopeOffset(void)
 	image.max=max;
 
 /*Loop through data *again* and compute histogram*/
-	h=createHist(1024,min,max);
-
-	for (yCounter=0;yCounter<nLines;yCounter++)
-	{
-		lineY=yCounter*(image.height-1)/(nLines-1);
-		image_readLine(inBuf,lineY,0);
-		addToHist(h,inBuf,image.width);
+	h = createHist(hist_size, min, max);
+	for (yCounter=0; yCounter<num_lines_to_examine; yCounter++) {
+		lineY = yCounter * step_size;
+		image_readLine(inBuf, lineY, 0);
+		addToHist(h, inBuf, image.width);
 	}
 
 /*Copy histogram of entire data set for display when requested*/
-	data_hist=createHist(1024,min,max);
-	copyHist(data_hist,h);
+	data_hist = createHist(hist_size, min, max);
+	copyHist(data_hist, h);
 
 /*Re-set min and max based on the histogram-- this trimmed max & min
   work better because they ignore a few outlying pixels, and correctly
@@ -186,22 +179,22 @@ void image_slopeOffset(void)
   images come out right by reversing the trimming)*/
 	width=(max-min)*(1/(1.0-2*0.04)-1);
 	min-=width/2;max+=width/2;
-	
+
 	if ((max-min)<0.01*(image.max-image.min))
 		{max=image.max;min=image.min;}/*Don't mess with highly compressed images' min/max values*/
-	if (image.min==0.0) 
+	if (image.min==0.0)
 		min=0.0;/*Set minimum back to zero if it started there*/
 	if (min==max)
 		max=min+0.0000001;/*Put a *little* space between min and max*/
 
-/*Now set slope and offset, to map pixels onto [0..255].  byte=slope*in+offset, so 
+/*Now set slope and offset, to map pixels onto [0..255].  byte=slope*in+offset, so
 	0=slope*min+offset and
 	255=slope*max+offset.
 	Thus */
-	image.slope =image.r_slope=255.0/(max-min);
-	image.offset=image.r_offset=-image.r_slope*min;
-	
+	image.slope  = image.r_slope  = 255.0/(max-min);
+	image.offset = image.r_offset = -image.r_slope*min;
+
 	deleteHist(h);
-	FREE(inBuf);	
+	FREE(inBuf);
 }
 
