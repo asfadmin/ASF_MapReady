@@ -3,6 +3,9 @@
 // was acquired, and use it to color the pixels of a map projected
 // digital elevation model (DEM) with radad backscatter values.
 
+#include <time.h>
+#include "progress_meter.h"
+
 // Standard headers.
 #include <assert.h>
 #include <stdlib.h>
@@ -72,6 +75,14 @@ target_distance (double time, void *params)
 int
 main (int argc, char **argv)
 {
+  ProgressMeter *pm = progress_meter_new (stdout, 100);
+  int jug;
+  for ( jug = 0 ; jug < 100 ; jug++ ) {
+    struct timespec ms = {0, 10000000};
+    nanosleep(&ms, NULL);
+    progress_meter_advance (pm, 1);
+  }
+
   // Three arguments are required.
   if ( argc != 4 ) {
     usage ();
@@ -404,7 +415,7 @@ main (int argc, char **argv)
   long int failed_pixel_count = 0;
 
   // For each DEM row...
-  for ( ii = 1700 ; (size_t) ii < dem->size_y ; ii++ ) {
+  for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
 
     // Get the latitude and longitude of each pixel in this row.
     g_assert (ii <= SSIZE_MAX);
