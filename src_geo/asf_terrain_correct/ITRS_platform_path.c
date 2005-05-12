@@ -95,12 +95,16 @@ ITRS_platform_path_new (int control_point_count, double start_time,
 	tmp = orbital_state_vector_copy (observations[jj - 1]);
 	orbital_state_vector_propagate (tmp, ct - observation_times[jj - 1]);
       }
-      DateTime *control_point_time = date_time_copy (base_date);
-      date_time_add_seconds (control_point_time, ct);
-      double earth_angle = date_time_earth_angle (control_point_time);
-      date_time_free (control_point_time);
-      orbital_state_vector_get_itrs_coordinates (tmp, earth_angle, &(xcp[ii]),
-						 &(ycp[ii]), &(zcp[ii]));
+
+      // Store the geocentric equitorial inertial (GEI) form of the
+      // spline control point.  We still need to transform this to the
+      // international terrestrial reference system (ITRS) earth fixed
+      // form, but we will do that later once all the GEI contol points
+      // have been computed.
+      xcp[ii] = tmp->position->x;
+      ycp[ii] = tmp->position->y;
+      zcp[ii] = tmp->position->z;
+
       orbital_state_vector_free (tmp);      
     }
 
@@ -204,18 +208,102 @@ ITRS_platform_path_new (int control_point_count, double start_time,
 				    lo->velocity->z * (1.0 - fop) 
 				    + no->velocity->z * (fop));
 			  				    
-      // Store the equivalent International Terrestrial Reference
-      // System (ITRS) coordinates as the spline control point.
-      DateTime *control_point_time = date_time_copy (base_date);
-      date_time_add_seconds (control_point_time, ct);
-      double earth_angle = date_time_earth_angle (control_point_time);
-      date_time_free (control_point_time);
-      orbital_state_vector_get_itrs_coordinates (average, earth_angle,
-						 &(xcp[ii]), &(ycp[ii]), 
-						 &(zcp[ii]));
-      orbital_state_vector_free (average);
+      // Store the GEI form of the spline control point.  We still
+      // need to transform this to the ITRS earth fixed form, but we
+      // will do that later once all the GEI contol points have been
+      // computed.
+      xcp[ii] = average->position->x;
+      ycp[ii] = average->position->y;
+      zcp[ii] = average->position->z;
     }
   }
+
+  // Now we need to rotate the spline control points from GEI space to
+  // ITRS space.  To do this, we need to determine the angle between
+  // coordinate systems at each point in time.  Unfortunately, the
+  // earch angle computation available in date_time_earth_angle
+  // contains some complicated calculations and is not completely
+  // smooth at a fine scale, which can make trouble for algorithms
+  // that expect a completely smooth orbit trajectory (point of closes
+  // approach minimization algorithms, for example).  To get around
+  // this problem, we find the average earth rotation rate (the
+  // rotation rate should be almost constant over the time span
+  // modeled by a given platform path) and increment the earth angle
+  // between spline control points.
+
+  // The assumption that the earth rotation rate is constant is only
+  // good if the platform path segment we are modeling isn't that
+  // long.  This class could otherwise model paths of arbitrary
+  // length.  But we don't need to do that at the moment anyway.  If
+  // we ever did, we could just take local averages rather than the
+  // single average used below.
+  const double half_day = 60.0 * 60.0 * 12.0;
+  assert (end_time - start_time < half_day);
+
+  // We will further assume that a reasonable number of control points
+  // are being used.
+  const int minimum_control_point_count = 100; 
+  assert (control_point_count > minimum_control_point_count);
+
+  // We will take the average rotation rate over this many different
+  // segments.
+  const int segments_to_average = 10;
+  // Initializer here is just to reassure compiler.
+  long double mean_rotation_rate = 0;
+  for ( ii = 0 ; ii < segments_to_average ; ii++ ) {
+
+    // First contol point index.
+    int fcp = ii * control_point_count / segments_to_average;
+    assert (fcp < control_point_count);
+    // Second control point intex.
+    int scp = (ii + 1) * control_point_count / segments_to_average - 1;
+    assert (scp < control_point_count);
+
+    // Get the earth angle at each of the control points which define
+    // the end points of this segment.
+    DateTime *tmp = date_time_copy (base_date);
+    date_time_add_seconds (tmp, times[fcp]);
+    long double fcp_earth_angle = date_time_earth_angle (tmp);
+    date_time_add_seconds (tmp, times[scp] - times[fcp]);
+    long double scp_earth_angle = date_time_earth_angle (tmp);
+    date_time_free (tmp);
+
+    long double rotation_rate_this_segment
+      = (scp_earth_angle - fcp_earth_angle) / (times[scp] - times[fcp]);
+
+    // Refine out notion of the mean rotation rate.
+    if ( ii == 0 ) {
+      mean_rotation_rate = rotation_rate_this_segment;
+    }
+    else {
+      mean_rotation_rate 
+	+= (rotation_rate_this_segment - mean_rotation_rate) / (ii + 1);
+    }
+  }
+
+  // Contol point separation in time as a long double.
+  long double cp_separation_ld 
+    = (long double) time_range / (control_point_count - 1);
+
+  // Earth rotation per control point.
+  long double earth_rotation_per_cp = cp_separation_ld * mean_rotation_rate;
+
+  // Find the earth angle at the first control point.
+  DateTime *tmp = date_time_copy (base_date);
+  date_time_add_seconds (tmp, times[0]);
+  long double earth_angle_at_start_time = date_time_earth_angle (tmp);
+  date_time_free (tmp);
+
+  // Now we are ready to rotate all the contol points into ITRS.
+  long double earth_angle = earth_angle_at_start_time;
+  for ( ii = 0 ; ii < control_point_count ; ii++ ) {
+    double tmp2 = xcp[ii];
+    xcp[ii] = xcp[ii] * cosl (earth_angle) + ycp[ii] * sinl (earth_angle);
+    ycp[ii] = ycp[ii] * cosl (earth_angle) - tmp2 * sinl (earth_angle);
+    earth_angle += earth_rotation_per_cp;
+  }
+
+  // Now we are ready to create the splines.
 
   self->xp_accel = gsl_interp_accel_alloc ();
   self->yp_accel = gsl_interp_accel_alloc ();

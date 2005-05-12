@@ -117,7 +117,7 @@ main (int argc, char **argv)
   g_print ("Loading SAR image and converting to slant range... ");
   SlantRangeImage *sri 
     = slant_range_image_new_from_ground_range_image (input_meta_file->str,
-  						     input_data_file->str);
+    						     input_data_file->str);
   g_print ("done.\n");
 #else
   if ( g_file_test ("bk_debug_sri_freeze", G_FILE_TEST_EXISTS) ) {
@@ -155,7 +155,10 @@ main (int argc, char **argv)
   
   // Load the observation times, positions, and velocities from the
   // metadata, converting the latter into Geocentric equitorial
-  // inertial coordinates.
+  // inertial coordinates.  Ssing the matrix method to convert things
+  // is overkill for this simple case, but it corresponds closely with
+  // the way these operation are described in the literature, so we do
+  // it.
   int ii;
   // International terrestrial reference system (ITRS) coordinates of
   // state vector (the form they come in in the metadata).
@@ -359,7 +362,7 @@ main (int argc, char **argv)
 #endif // BK_DEBUG
 
   // Now we are ready to actually paint the DEM with backscatter.
-  g_print ("Painting DEM with SAR image pixels values...\n");
+  g_print ("Painting DEM with SAR image pixel values...\n");
 
   // Backscatter painted DEM.
   FloatImage *pd = float_image_new (dem->size_x, dem->size_y);  
@@ -401,7 +404,7 @@ main (int argc, char **argv)
   long int failed_pixel_count = 0;
 
   // For each DEM row...
-  for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
+  for ( ii = 1700 ; (size_t) ii < dem->size_y ; ii++ ) {
 
     // Get the latitude and longitude of each pixel in this row.
     g_assert (ii <= SSIZE_MAX);
@@ -537,7 +540,7 @@ main (int argc, char **argv)
     }
 
     // Print progress message every so many lines.
-    const int lines_per_progress_message = 100;
+    const int lines_per_progress_message = 1;
     if ( (ii + 1) % lines_per_progress_message == 0 ) {
       g_print ("Finished painting DEM row %d\n", ii + 1);
     }
