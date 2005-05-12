@@ -55,20 +55,52 @@ on_add_button_clicked(GtkWidget *widget)
 SIGNAL_CALLBACK void
 on_browse_input_files_button_clicked(GtkWidget *widget)
 {
-#ifdef FILE_CHOOSER_AVAILABLE
-  GtkWidget *file_selection_dialog =
-    glade_xml_get_widget(glade_xml, "input_file_chooser");
+#ifdef win32
+  OPENFILENAME of;
+  int retval;
+  char fname[1024];
 
-  GtkFileFilter *filter = gtk_file_filter_new();
-  gtk_file_filter_add_pattern(filter, "*.D"); // FIXME
+  fname[0] = '\0';
 
-  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(file_selection_dialog), filter);
+  memset(&of, 0, sizeof(of));
+
+#ifdef OPENFILENAME_SIZE_VERSION_400
+  of.lStructSize = OPENFILENAME_SIZE_VERSION_400;
+#else
+  of.lStructSize = sizeof(of);
+#endif
+
+  of.hwndOwner = NULL;
+  of.lpstrFilter = "CEOS Data Files(*.D)\0*.D\0all files\0*\0";
+  of.lpstrCustomFilter = NULL;
+  of.nFilterIndex = 1;
+  of.lpstrFile = fname;
+  of.nMaxFile = sizeof(fname);
+  of.lpstrFileTitle = NULL;
+  of.lpstrInitialDir = ".";
+  of.lpstrTitle = "Select File";
+  of.lpstrDefExt = NULL;
+  of.Flags = OFN_HIDEREADONLY;
+  
+  if (action < END_OPEN)
+	retval = GetOpenFileName(&of);
+  else  /* a file save action */
+    retval = GetSaveFileName(&of);
+  
+  if (!retval) {
+    if (CommDlgExtendedError())
+      message_box("File dialog box error");
+    return;
+  }
+  
+  printf("File: %s\n", fname);
+
 #else
   GtkWidget *file_selection_dialog =
     glade_xml_get_widget(glade_xml, "input_file_selection");
-#endif
 
   gtk_widget_show(file_selection_dialog);
+#endif
 }
 
 void
