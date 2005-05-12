@@ -55,7 +55,7 @@ ifeq ($(BK_DEBUG), 1)
   INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) -I$(SCRATCHPLOT_INCLUDE_DIR) \
                    $(shell pkg-config --cflags-only-I glib-2.0)
 else 
-  INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR)
+  INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) $(GLIB_CFLAGS)
 endif
 
 CPPFLAGS := $(INCLUDE_FLAGS)
@@ -115,12 +115,10 @@ else
             $(LIBDIR)/libasf_reporting.a \
 	    $(LIBDIR)/libasf_raster.a \
 	    $(LIBDIR)/asf.a \
-	    $(LIBDIR)/libgsl.a \
-	    $(LIBDIR)/libgslcblas.a \
+	    $(GSL_LIBS) \
 	    $(LIBDIR)/libjpeg.a \
-            $(LIBDIR)/libglib-2.0.a \
-	    $(LIBDIR)/libiconv.a \
-	    -lm
+	    $(GLIB_LIBS)
+
 endif
 
 # Defines needed by this module.  For defining the location of the
