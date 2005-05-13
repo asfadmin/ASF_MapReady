@@ -3,9 +3,6 @@
 // was acquired, and use it to color the pixels of a map projected
 // digital elevation model (DEM) with radad backscatter values.
 
-#include <time.h>
-#include "progress_meter.h"
-
 // Standard headers.
 #include <assert.h>
 #include <stdlib.h>
@@ -28,6 +25,7 @@
 #include "map_projected_dem.h"
 #include "orbital_state_vector.h"
 #include "platform_path.h"
+#include "progress_meter.h"
 #ifdef BK_DEBUG
 #  include "scratchplot.h"
 #endif
@@ -75,14 +73,6 @@ target_distance (double time, void *params)
 int
 main (int argc, char **argv)
 {
-  ProgressMeter *pm = progress_meter_new (stdout, 100);
-  int jug;
-  for ( jug = 0 ; jug < 100 ; jug++ ) {
-    struct timespec ms = {0, 10000000};
-    nanosleep(&ms, NULL);
-    progress_meter_advance (pm, 1);
-  }
-
   // Three arguments are required.
   if ( argc != 4 ) {
     usage ();
@@ -103,6 +93,7 @@ main (int argc, char **argv)
   // extensions to the output_base_name argument.
   GString *output_meta_file = g_string_new (argv[argc - 1]);
   g_string_append_printf (output_meta_file, ".meta");
+  GString *output_ddr_file_base_name = g_string_new (argv[argc - 1]);
   GString *output_data_file = g_string_new (argv[argc - 1]);
   g_string_append_printf (output_data_file, ".img");
   GString *output_jpeg_file = g_string_new (argv[argc - 1]);
@@ -120,7 +111,7 @@ main (int argc, char **argv)
 				      reference_dem_img->str);
   g_print ("done.\n");
   // Take a quick look at the DEM for FIXME: debug purposes.
-  //  float_image_export_as_jpeg (dem->data, "dem_view.jpg", 2000, 0.0);
+  float_image_export_as_jpeg (dem->data, "dem_view.jpg", 2000, 0.0);
 
   // We will need a slant range version of the image being terrain
   // corrected.
@@ -129,6 +120,9 @@ main (int argc, char **argv)
   SlantRangeImage *sri 
     = slant_range_image_new_from_ground_range_image (input_meta_file->str,
     						     input_data_file->str);
+  float sri_min, sri_max, sri_mean, sri_standard_deviation;
+  float_image_statistics (sri->data, &sri_min, &sri_max, &sri_mean, 
+			  &sri_standard_deviation, 0.0);
   g_print ("done.\n");
 #else
   if ( g_file_test ("bk_debug_sri_freeze", G_FILE_TEST_EXISTS) ) {
@@ -373,7 +367,9 @@ main (int argc, char **argv)
 #endif // BK_DEBUG
 
   // Now we are ready to actually paint the DEM with backscatter.
-  g_print ("Painting DEM with SAR image pixel values...\n");
+  g_assert (dem->size_y <= LONG_MAX);
+  g_print ("Painting %ld DEM pixel rows with SAR image pixel values...\n",
+	   (long int) dem->size_y);
 
   // Backscatter painted DEM.
   FloatImage *pd = float_image_new (dem->size_x, dem->size_y);  
@@ -413,6 +409,12 @@ main (int argc, char **argv)
   // Count of number of pixels which fail to meet the convergence
   // tolerance requirements.
   long int failed_pixel_count = 0;
+  // Pixels which don't even converge to within ten times the desired
+  // tolerance.
+  long int extra_bad_pixel_count = 0;
+
+  ProgressMeter *progress_meter 
+    = progress_meter_new_with_callback (g_print, dem->size_y);
 
   // For each DEM row...
   for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
@@ -448,7 +450,7 @@ main (int argc, char **argv)
       ITRS_point_free (ctp);
 
       // Current iteration, maximum number of iterations to try.
-      int iteration = 0, max_iterations = 80;  
+      int iteration = 0, max_iterations = 200;  
 
       double sor;   // Start of time range in which to look for minimum.
       double eor;   // End of time range in which to look for minimum.
@@ -510,10 +512,7 @@ main (int argc, char **argv)
 	  failed_pixel_count++;
 	}
 	else {
-	  g_printerr (
-"Point of closest approach convergence calculation failed badly for DEM "
-"pixel %ld, %ld: %s\n", (long int) jj, (long int) ii, gsl_strerror (status));
-	  g_assert_not_reached ();
+	  extra_bad_pixel_count++;
 	}
       }
     
@@ -550,19 +549,22 @@ main (int argc, char **argv)
       float_image_set_pixel (pd, jj, ii, backscatter);
     }
 
-    // Print progress message every so many lines.
-    const int lines_per_progress_message = 1;
-    if ( (ii + 1) % lines_per_progress_message == 0 ) {
-      g_print ("Finished painting DEM row %d\n", ii + 1);
+    // Print progress update every so many lines.
+    const int lines_per_progress_update = 100;
+    if ( (ii + 1) % lines_per_progress_update == 0 
+	 || (size_t) (ii + 1) == dem->size_y ) {
+      progress_meter_advance (progress_meter, 100);
     }
   }
   g_print ("Done painting DEM.\n");
 
-  g_print ("For a total of %ld pixels, the time of point of closes approach\n"
-	   "minimization (TOPOCAM) did not converge to with the desired\n"
-	   "precision of %lg seconds.\n", failed_pixel_count, tolerance);
-  g_print ("For no pixels did the the TOPOCAM fail to converge to within\n"
-	   "%lg seconds.\n", worst_allowable_tolerance);
+  g_print ("For a total of %ld pixel(s), the time of point of closes\n"
+	   "approach minimization (TOPOCAM) did not converge to with the\n"
+	   "desired precision of %lg seconds.\n", failed_pixel_count, 
+	   tolerance);
+  g_print ("For a total of %ld pixel(s) the TOPOCAM did not even converge to\n"
+	   "within %lg seconds.\n", extra_bad_pixel_count, 
+	   worst_allowable_tolerance);
 
   g_print ("Log scaling the painted DEM... ");
   // Log scale the painted DEM.
@@ -584,6 +586,21 @@ main (int argc, char **argv)
   g_print ("Exporting painted DEM as a JPEG image... ");
   float_image_export_as_jpeg (pd, output_jpeg_file->str, 
 			      GSL_MAX (pd->size_x, pd->size_y), 0.0);
+  g_print ("done.\n");
+
+  // Generate a LAS version of the output metadata.  The only works if
+  // we have a LAS DEM given as the input.  It intended for testint
+  // work with Joanne.
+  struct DDR output_ddr;
+  lasErr error_code = c_getddr (reference_dem->str, &output_ddr);
+  g_assert (error_code == 0);
+  output_ddr.dtype = 4;		/* Means floating point samples.  */
+  error_code = c_putddr (output_ddr_file_base_name->str, &output_ddr);
+  g_assert (error_code == 0);
+  
+  g_print ("Saving painted DEM as raw data... ");
+  float_image_store (pd, output_data_file->str,
+		     FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   g_print ("done.\n");
 
   // FIXME: this debugging schlop can safely be removed.
