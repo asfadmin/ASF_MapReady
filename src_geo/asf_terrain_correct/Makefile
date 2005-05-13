@@ -20,6 +20,7 @@ CLASSES := date_time \
 	   map_projected_dem \
            orbital_state_vector \
 	   platform_path \
+           progress_meter \
            slant_range_image \
 	   vector \
            ITRS_platform_path \
