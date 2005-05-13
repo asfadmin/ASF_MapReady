@@ -25,7 +25,7 @@ EXISTING_GSL_ROOT := $(strip $(shell ./find_gsl.sh))
 
 # If we find we have to build the GSL, these variables specify the
 # tarball and what it unpacks into.
-UNPACK_DIR := gsl-1.4
+UNPACK_DIR := gsl-1.6
 TARFILE := $(UNPACK_DIR).tar
 ZIPFILE := $(TARFILE).gz
 
