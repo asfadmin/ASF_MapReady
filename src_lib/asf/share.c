@@ -123,8 +123,27 @@ get_asf_bin_dir()
       /* on windows, pull the install dir from the registry */
 
     char str_value[REG_VALUE_SIZE];
+    char str_value_fixed[REG_VALUE_SIZE];
+    int i,j;
+ 
     get_string_from_registry(s_asf_install_dir_key, str_value);
-    s_bin_dir = strdup(str_value);
+    for (i = j = 0; i <= strlen(str_value); ++i, ++j) {
+      switch (str_value[i]) {
+        case ' ':
+          str_value_fixed[j] = '\\';
+          str_value_fixed[j+1] = ' ';
+          ++j;
+          break;
+        case '\\':
+          str_value_fixed[j] = '/';
+          break;
+        default:
+          str_value_fixed[j] = str_value[i];
+          break;
+      }
+    }
+          
+    s_bin_dir = strdup(str_value_fixed);
 
 #else
 
