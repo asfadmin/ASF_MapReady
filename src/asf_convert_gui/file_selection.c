@@ -85,7 +85,11 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 #endif
 
   of.hwndOwner = NULL;
-  of.lpstrFilter = "CEOS Data Files (*.D)\0*.D\0all files\0*\0";
+  of.lpstrFilter = "CEOS Level 1 Data Files (*.D)\0*.D\0"
+                   "CEOS Level 0 Data Files (*.raw)\0*.raw\0"
+                   "STF Files (*.000)\0*.000\0"
+                   "Complex Files (*.cpx)\0*.cpx\0"
+                   "All Files\0*\0";
   of.lpstrCustomFilter = NULL;
   of.nFilterIndex = 1;
   of.lpstrFile = fname;
@@ -108,13 +112,18 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
   /*   <directory>\0<first file>\0<second file>\0<third ...  */ 
   char * dir = strdup(fname);
   char * p = fname + strlen(dir) + 1;
- 
-  while (*p) {
-    char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
-    sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
-    add_to_files_list(dir_and_file);
-    p += strlen(p) + 1;
-    free(dir_and_file);
+
+  if (*p) { 
+    while (*p) {
+      char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
+      sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
+      printf("Adding: %s\n", dir_and_file);
+      add_to_files_list(dir_and_file);
+      p += strlen(p) + 1;
+      free(dir_and_file);
+    }
+  } else {
+    add_to_files_list(dir);
   }
 
   free(dir);
