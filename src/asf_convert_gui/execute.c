@@ -12,6 +12,8 @@
 #include <time.h>
 #include <sys/stat.h>
 
+#include "asf.h"
+
 static gboolean keep_going = TRUE;
 
 static gboolean confirm_overwrite()
@@ -602,7 +604,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 	 strcat(out_basename, "_out");
       }
 
-      sprintf(executable, "%s%casf_import", get_asf_bin_dir(), DIR_SEPARATOR);
+      sprintf(executable, "%s/asf_import", get_asf_bin_dir());
 
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
     "cd \"%s\"; %s %s -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
@@ -642,7 +644,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
       g_snprintf(log_file, sizeof(log_file), "%stmpg%d.log", output_dir, pid);
 
       g_snprintf(executable, sizeof(executable), 
-		 "%s%casf_geocode", get_asf_bin_dir(), DIR_SEPARATOR);
+		 "%s/asf_geocode", get_asf_bin_dir());
     
       snprintf(convert_cmd, sizeof(convert_cmd),
            "cd \"%s\"; %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
@@ -686,7 +688,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
       gtk_list_store_set(list_store, iter, COL_STATUS, "Exporting...", -1);
 
       g_snprintf(executable, sizeof(executable), 
-		 "%s%casf_export", get_asf_bin_dir(), DIR_SEPARATOR);
+		 "%s/asf_export", get_asf_bin_dir());
 
       snprintf(convert_cmd, sizeof(convert_cmd),
            "cd \"%s\"; %s -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
