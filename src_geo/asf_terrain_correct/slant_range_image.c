@@ -241,11 +241,13 @@ slant_range_image_new_from_ground_range_image (char *metadata_file,
     // as the one for line zero, which we are considering the basis
     // for the whole image.
     double current_sr_fs = meta_get_slant (imd, ii, 0);
-    g_assert (gsl_fcmp (current_sr_fs, sr_fs, 1e-16) == 0);
+    g_assert (gsl_fcmp (current_sr_fs, sr_fs, 1e-12) == 0);
     double current_sr_ls = meta_get_slant (imd, ii, sc - 1);
-    g_assert (gsl_fcmp (current_sr_ls, sr_ls, 1e-16) == 0);
+    g_assert (gsl_fcmp (current_sr_ls, sr_ls, 1e-12) == 0);
     double current_sr_spacing = (sr_ls - sr_fs) / (sc - 1);
-    g_assert (gsl_fcmp (current_sr_spacing, sr_spacing, 1e-16) == 0);    
+    if ( gsl_fcmp (current_sr_spacing, sr_spacing, 1e-12) == 0 ) {
+      g_assert (gsl_fcmp (current_sr_spacing, sr_spacing, 1e-12) == 0);
+    }
 
     for ( jj = 0 ; jj < sc ; jj++ ) {
       double sample_value 
