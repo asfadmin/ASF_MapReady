@@ -72,12 +72,16 @@ typedef enum {
 } float_image_byte_order_t;
 
 // Form reduced resolution version of the model.  The scale_factor
-// must be positive and odd.  The new image will be
-// ceil (model->size_x / scale_factor) pixels by
-// ceil (model->size_y / scale_factor) pixels.  Scaling is performed by
-// averaging blocks of pixels together, using odd pixel reflection
-// around the image edges (see the description of the apply_kernel
-// method).
+// must be positive and odd.  The new image will be ceil
+// (model->size_x / scale_factor) pixels by ceil (model->size_y /
+// scale_factor) pixels.  Scaling is performed by averaging blocks of
+// pixels together, using odd pixel reflection around the image edges
+// (see the description of the apply_kernel method).  The upper and
+// leftmost blocks of pixels averaged together are always centered at
+// the 0 index in the direction in question, so reflection is always
+// used for these edges.  Whether reflection is used for the right and
+// lower edges depends on the relationship between the model
+// dimensions and the scale factor.
 FloatImage *
 float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor);
 
