@@ -2007,7 +2007,180 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   return 0;                     // Return success indicator.
 }
 
+int
+float_image_export_as_jpeg_with_mask_interval (FloatImage *self, 
+					       const char *file,
+					       size_t max_dimension, 
+					       double interval_start,
+					       double interval_end);
+{
+  // This method is probably find, but it hasn't been tested yet.
+  g_assert_not_reached ();
 
+  size_t scale_factor;          // Scale factor to use for output image.
+  if ( self->size_x > self->size_y ) {
+    scale_factor = ceil ((double) self->size_x / max_dimension);
+  }
+  else {
+    scale_factor = ceil ((double) self->size_y / max_dimension);
+  }
+
+  // We want the scale factor to be odd, so that we can easily use a
+  // standard kernel to average things.
+  if ( scale_factor % 2 == 0 ) {
+    scale_factor++;
+  }
+
+  // Output JPEG x and y dimensions.
+  size_t osx = self->size_x / scale_factor;
+  size_t osy = self->size_y / scale_factor;
+
+  // Number of pixels in output image.
+  size_t pixel_count = osx * osy;
+
+  // Pixels of the output image.
+  unsigned char *pixels = g_new (unsigned char, pixel_count);
+
+  JSAMPLE test_jsample;         // For verifying properties of JSAMPLE type.
+  /* Here are some very funky checks to try to ensure that the JSAMPLE
+     really is the type we expect, so we can scale properly.  */
+  g_assert (sizeof (unsigned char) == 1);
+  g_assert (sizeof (unsigned char) == sizeof (JSAMPLE));
+  test_jsample = 0;
+  test_jsample--;
+  g_assert (test_jsample == UCHAR_MAX);
+
+  // Stuff needed by libjpeg.
+  struct jpeg_compress_struct cinfo;
+  struct jpeg_error_mgr jerr;
+  cinfo.err = jpeg_std_error (&jerr);
+  jpeg_create_compress (&cinfo);
+
+  // Open output file.
+  FILE *fp = fopen (file, "w");
+  if ( fp == NULL ) { perror ("error opening file"); }
+  // FIXME: we need some error handling and propagation here.
+  g_assert (fp != NULL);
+
+  // Connect jpeg output to the output file to be used.
+  jpeg_stdio_dest (&cinfo, fp);
+
+  // Set image parameters that libjpeg needs to know about.
+  cinfo.image_width = osx;
+  cinfo.image_height = osy;
+  cinfo.input_components = 1;   // Grey scale => 1 color component / pixel.
+  cinfo.in_color_space = JCS_GRAYSCALE;
+  jpeg_set_defaults (&cinfo);   // Use default compression parameters.
+  // Reassure libjpeg that we will be writing a complete JPEG file.
+  jpeg_start_compress (&cinfo, TRUE);
+
+  // Gather image statistics so we know how to map image values into
+  // the output.
+  float min, max, mean, standard_deviation;
+  float_image_statistics_with_mask_interval (self, &min, &max, &mean, 
+					     &standard_deviation,
+					     interval_start,
+					     interval_end);
+
+  // If the statistics don't work, something is beastly wrong and we
+  // don't want to deal with it.
+#ifndef solaris
+#ifndef win32
+  // Solaris doesn't have isfinite().
+  g_assert (isfinite (min) && isfinite (max) && isfinite (mean)
+            && isfinite (standard_deviation));
+#endif
+#endif
+
+  // If min == max, the pixel values are all the same.  There is no
+  // reason to average or scale anything, so we don't.  There is a
+  // good chance that the user would like zero to correspond to black,
+  // so we do that.  Anything else will be pure white.
+  if ( min == max ) {
+    // FIXME: this path seems to be broken somehow -- we end up with
+    // jpegs of size zero.
+    g_assert_not_reached ();
+    unsigned char oval;         // Output value to use.
+    if ( min == 0.0 ) {
+      oval = 0;
+    }
+    else {
+      oval = UCHAR_MAX;
+    }
+    size_t ii, jj;
+    for ( ii = 0 ; ii < osy ; ii++ ) {
+      for ( jj = 0 ; jj < osx ; jj++ ) {
+        pixels[ii * osx + jj] = oval;
+      }
+    }
+    return 0;
+  }
+
+  // Range of input pixel values which are to be linearly scaled into
+  // the output (values outside this range will be clamped).
+  double lin_min = mean - 2 * standard_deviation;
+  double lin_max = mean + 2 * standard_deviation;
+
+  // As advertised, we will average pixels together.
+  g_assert (scale_factor % 2 != 0);
+  size_t kernel_size = scale_factor;
+  gsl_matrix_float *averaging_kernel
+    = gsl_matrix_float_alloc (kernel_size, kernel_size);
+  float kernel_value = 1.0 / pow (kernel_size, 2.0);
+  size_t ii, jj;                // Index values.
+  for ( ii = 0 ; ii < averaging_kernel->size1 ; ii++ ) {
+    for ( jj = 0 ; jj < averaging_kernel->size2 ; jj++ ) {
+      gsl_matrix_float_set (averaging_kernel, ii, jj, kernel_value);
+    }
+  }
+
+  // Sample input image, putting scaled results into output image.
+  size_t sample_stride = scale_factor;
+  for ( ii = 0 ; ii < osy ; ii++ ) {
+    for ( jj = 0 ; jj < osx ; jj++ ) {
+      // Input image average pixel value.
+      float ival = float_image_apply_kernel (self, jj * sample_stride,
+                                             ii * sample_stride,
+                                             averaging_kernel);
+      unsigned char oval;       // Output value.
+      if ( ival < lin_min ) {
+        oval = 0;
+      }
+      else if ( ival > lin_max) {
+        oval = UCHAR_MAX;
+      }
+      else {
+        int oval_int
+          = round (((ival - lin_min) / (lin_max - lin_min)) * UCHAR_MAX);
+        // Make sure we haven't screwed up the scaling.
+        g_assert (oval_int >= 0 && oval_int <= UCHAR_MAX);
+        oval = oval_int;
+      }
+      pixels[ii * osx + jj] = oval;
+    }
+  }
+
+  // Write the jpeg, one row at a time.
+  const int rows_to_write = 1;
+  JSAMPROW *row_pointer = g_new (JSAMPROW, rows_to_write);
+  while ( cinfo.next_scanline < cinfo.image_height ) {
+    int rows_written;
+    row_pointer[0] = &(pixels[cinfo.next_scanline * osx]);
+    rows_written = jpeg_write_scanlines (&cinfo, row_pointer, rows_to_write);
+    g_assert (rows_written == rows_to_write);
+  }
+  g_free (row_pointer);
+
+  // Finsh compression and close the jpeg.
+  jpeg_finish_compress (&cinfo);
+  int return_code = fclose (fp);
+  g_assert (return_code == 0);
+  jpeg_destroy_compress (&cinfo);
+
+  g_free (pixels);
+
+  return 0;                     // Return success indicator.
+}
 
 size_t
 float_image_get_cache_size (FloatImage *self)
