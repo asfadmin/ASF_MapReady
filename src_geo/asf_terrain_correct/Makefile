@@ -22,6 +22,7 @@ CLASSES := date_time \
 	   platform_path \
            progress_meter \
            slant_range_image \
+	   slant_range_image_cspline \
 	   vector \
            ITRS_platform_path \
            ITRS_point

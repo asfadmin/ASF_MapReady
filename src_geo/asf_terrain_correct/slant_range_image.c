@@ -211,10 +211,14 @@ slant_range_image_new_from_ground_range_image (char *metadata_file,
     = float_image_new_from_file (sc, lc, data_file, 0,
 				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
-  // We will use a cubic spline along each line of samples to perform
-  // the resampling into slant range.
+  // It might be nice to use cubic splines to interpolate instead of
+  // plain linear interpolation, but some images have unatural
+  // discontinuities (for example where there is a fringe of black
+  // pixels set to zero) that can result in nasty big overshoots at
+  // discontinuities unless we use linear interpolation.
   gsl_interp_accel *accel = gsl_interp_accel_alloc ();
-  gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, sc);
+  gsl_spline *spline = gsl_spline_alloc (gsl_interp_linear, sc);
+  //gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, sc);
 
   // The slant range to the first sample and last sample in the first
   // line, and the implied slant range sample spacing.
@@ -318,6 +322,24 @@ slant_range_image_new_subimage (SlantRangeImage *model, ssize_t start_x,
   return self;
 }
 
+SlantRangeImage *
+slant_range_image_new_from_model_scaled (SlantRangeImage *model, 
+					 ssize_t scale_factor)
+{
+  g_assert (scale_factor > 0);
+  g_assert (scale_factor % 2 == 1);
+
+  SlantRangeImage *self = g_new (SlantRangeImage, 1);
+
+  self->upper_left_pixel_time = model->upper_left_pixel_time;
+  self->upper_left_pixel_range = model->upper_left_pixel_range;
+  self->time_per_pixel = model->time_per_pixel * scale_factor;
+  self->slant_range_per_pixel = model->slant_range_per_pixel * scale_factor;
+  self->data = float_image_new_from_model_scaled (model->data, scale_factor);
+  
+  return self;
+}
+
 // Return true iff arg is inside l1 and l2 by at least epsilon =
 // relative_guard * fabs (l2 - l1), in other words, return true iff
 // arg is in [l1 + epsilon, l2 - epsilon] if l2 >= l1, or arg is in
@@ -346,19 +368,19 @@ slant_range_image_contains (SlantRangeImage *self, double range, double time,
   double tpp = self->time_per_pixel;
 
   // Make sure the time/slant range we want to sample is in the image.
-  return (is_in_range (range, ulpr, ulpr + rpp * self->data->size_x,
+  return (is_in_range (range, ulpr, ulpr + rpp * (self->data->size_x - 1),
 		       relative_guard)
-	  && is_in_range (time, ulpt, ulpt + tpp * self->data->size_y, 
+	  && is_in_range (time, ulpt, ulpt + tpp * (self->data->size_y - 1), 
 			  relative_guard));
 }
-    
+
 double
 slant_range_image_sample (SlantRangeImage *self, double range, double time,
 			  float_image_sample_method_t sample_method)
 {
   // We insist that the requested (range, time) be within the extent
   // of the image by at least this fraction of the image size.
-  const double relative_guard = 1e-3;
+  const double relative_guard = 1e-6;
   g_assert (slant_range_image_contains (self, range, time, relative_guard));
 
   double x = ((range - self->upper_left_pixel_range)

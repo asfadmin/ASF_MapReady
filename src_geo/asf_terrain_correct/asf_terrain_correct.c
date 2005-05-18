@@ -3,6 +3,8 @@
 // was acquired, and use it to color the pixels of a map projected
 // digital elevation model (DEM) with radad backscatter values.
 
+#include "slant_range_image_cspline.h"
+
 // Standard headers.
 #include <assert.h>
 #include <stdlib.h>
@@ -67,6 +69,9 @@ target_distance (double time, void *params)
   vector_subtract (&difference, target);
 
   return vector_magnitude (&difference);
+  // For variety lets try minimizing just the sum of squares, on the
+  // hope that it will be a slightly smoother function.
+  //return powl (target->x, 2.0) + powl (target->y, 2.0) + powl (target->z, 2.0);
 }
 
 // Main program.
@@ -111,7 +116,7 @@ main (int argc, char **argv)
 				      reference_dem_img->str);
   g_print ("done.\n");
   // Take a quick look at the DEM for FIXME: debug purposes.
-  float_image_export_as_jpeg (dem->data, "dem_view.jpg", 2000, 0.0);
+  //  float_image_export_as_jpeg (dem->data, "dem_view.jpg", 2000, 0.0);
 
   // We will need a slant range version of the image being terrain
   // corrected.
@@ -120,9 +125,113 @@ main (int argc, char **argv)
   SlantRangeImage *sri 
     = slant_range_image_new_from_ground_range_image (input_meta_file->str,
     						     input_data_file->str);
+
+  /*
+  SlantRangeImageCspline *sric
+    = slant_range_image_cspline_new_from_ground_range_image 
+        (input_meta_file->str, input_data_file->str);
+  g_assert (sric->data->size_x == sri->data->size_x);
+  g_assert (sric->data->size_y == sri->data->size_y);
+  FloatImage *diff_image = float_image_new (sri->data->size_x, 
+					    sri->data->size_y);
+
+  FloatImage *negative_image = float_image_new (sri->data->size_x, 
+						sri->data->size_y);
+  int zz1, zz2;
+  for ( zz1 = 0 ; (size_t) zz1 < sric->data->size_x ; zz1++ ) {
+    for ( zz2 = 0 ; (size_t) zz2 < sric->data->size_y ; zz2++ ) {
+      float pv = float_image_get_pixel (sric->data, zz1, zz2);
+      if ( pv < 0.0 ) {
+	float_image_set_pixel (negative_image, zz1, zz2, 100);
+      }
+      else {
+	float_image_set_pixel (negative_image, zz1, zz2, 0.0);
+      }
+    }
+  }
+  printf ("exporting cspline_negative_image.jpg...\n");
+  int my_return_code 
+    = float_image_export_as_jpeg (negative_image, "cspline_negative_image.jpg",
+				  GSL_MAX (negative_image->size_x, 
+					   negative_image->size_y),
+				  NAN);
+  g_assert (my_return_code == 0);
+
+
+  for ( zz1 = 0 ; (size_t) zz1 < sri->data->size_x ; zz1++ ) {
+    for ( zz2 = 0 ; (size_t) zz2 < sri->data->size_y ; zz2++ ) {
+      float pv = float_image_get_pixel (sri->data, zz1, zz2);
+      if ( pv < 0.0 ) {
+	g_assert_not_reached ();
+	float_image_set_pixel (negative_image, zz1, zz2, 100);
+      }
+      else {
+	float_image_set_pixel (negative_image, zz1, zz2, 0.0);
+      }
+    }
+  }
+  printf ("exporting linear_negative_image.jpg...\n");
+  my_return_code 
+    = float_image_export_as_jpeg (negative_image, "linear_negative_image.jpg",
+				  GSL_MAX (negative_image->size_x, 
+					   negative_image->size_y),
+				  NAN);
+  g_assert (my_return_code == 0);
+
+
+
+  for ( zz1 = 0 ; (size_t) zz1 < sri->data->size_x ; zz1++ ) {
+    for ( zz2 = 0 ; (size_t) zz2 < sri->data->size_y ; zz2++ ) {
+      float diff = fabsf(float_image_get_pixel (sri->data, zz1, zz2)
+			 - float_image_get_pixel (sric->data, zz1, zz2));
+      float_image_set_pixel (diff_image, zz1, zz2, diff);
+    }
+  }
+  float diff_min, diff_max, diff_mean, diff_standard_deviation;
+  float_image_statistics (diff_image, &diff_min, &diff_max, &diff_mean, 
+			  &diff_standard_deviation, 0.0);
+  g_print ("\n\ndiff_min: %g, diff_max: %g, diff_mean: %g, "
+	   "diff_standard_deviation: %g\n\n", diff_min, diff_max, diff_mean,
+	   diff_standard_deviation);
+  float_image_export_as_jpeg (diff_image, "diff_image.jpg",
+			      GSL_MAX (diff_image->size_x, diff_image->size_y),
+			      NAN);
+  float_image_free (diff_image);
+
+  FloatImage *rhdiff_image = float_image_new (sri->data->size_x / 2,
+					      sri->data->size_y);
+  FloatImage *srirh = float_image_new_subimage (sri->data, 0, 0, 
+						sri->data->size_x / 2, 
+						sri->data->size_y);
+  FloatImage *sricrh = float_image_new_subimage (sric->data, 0, 0, 
+						 sric->data->size_x / 2, 
+						 sric->data->size_y);
+  for ( zz1 = 0 ; (size_t) zz1 < srirh->size_x ; zz1++ ) {
+    for ( zz2 = 0 ; (size_t) zz2 < srirh->size_y ; zz2++ ) {
+      float diff = fabsf(float_image_get_pixel (srirh, zz1, zz2)
+			 - float_image_get_pixel (sricrh, zz1, zz2));
+      float_image_set_pixel (rhdiff_image, zz1, zz2, diff);
+    }
+  }
+  float rhdiff_min, rhdiff_max, rhdiff_mean, rhdiff_standard_deviation;
+  float_image_statistics (rhdiff_image, &rhdiff_min, &rhdiff_max, 
+			  &rhdiff_mean, &rhdiff_standard_deviation, 0.0);
+  g_print ("\n\nrhdiff_min: %g, rhdiff_max: %g, rhdiff_mean: %g, "
+	   "rhdiff_standard_deviation: %g\n\n", rhdiff_min, rhdiff_max, 
+	   rhdiff_mean, rhdiff_standard_deviation);
+  float_image_export_as_jpeg (rhdiff_image, "rhdiff_image.jpg",
+			      GSL_MAX (rhdiff_image->size_x, 
+				       rhdiff_image->size_y),
+			      NAN);
+  float_image_free (rhdiff_image);
+
+
+
   float sri_min, sri_max, sri_mean, sri_standard_deviation;
   float_image_statistics (sri->data, &sri_min, &sri_max, &sri_mean, 
 			  &sri_standard_deviation, 0.0);
+  */
+
   g_print ("done.\n");
 #else
   if ( g_file_test ("bk_debug_sri_freeze", G_FILE_TEST_EXISTS) ) {
@@ -136,21 +245,44 @@ main (int argc, char **argv)
   }
 #endif
 
-  // FIXME: this is debugging schlop that can go away soon.
-  //  FloatImage *volcano_sri 
-  // = float_image_new_subimage (sri->data, 2100, 3100, 
-  ///						      300, 300);
-  //float_image_export_as_jpeg (volcano_sri, "volcano_sri.jpg",
-  //			      GSL_MAX (volcano_sri->size_x,
-  //				       volcano_sri->size_y), 0.0); 
-  //g_assert (slant_range_image_equal (sri, thawed));
-
   // Take a quick look at the slant range image for FIXME: debug
   // purposes.
-  //float_image_export_as_jpeg (sri->data, "sri_view.jpg", 2000);
+  //  float_image_export_as_jpeg (sri->data, "sri_view.jpg", 2000, NAN);
 
   // Read the image metadata.
   meta_parameters *imd = meta_read (input_meta_file->str);
+  // We are expecting a ground range SAR image.
+  g_assert (imd->sar->image_type == 'G');
+
+  // If the DEM is significanly lower resolution than the SAR image,
+  // we will need to generate a lower resolution version of the image
+  // by averaging pixels together.  The trouble is sparsely sampling a
+  // speckled thing like a SAR image gives really bad results.
+  double dem_pixel_size = GSL_MAX (dem->projection_coordinates_per_x_pixel,
+				   dem->projection_coordinates_per_y_pixel);
+  double sar_pixel_size = GSL_MAX (imd->general->x_pixel_size, 
+				   imd->general->y_pixel_size);
+  // FIXME: look into this 1.5 ruls of thumb and verify that its a
+  // decent way to go.
+  if ( dem_pixel_size > 1.5 * sar_pixel_size ) {
+    long int scale_factor = ceil (dem_pixel_size / sar_pixel_size);
+    if ( scale_factor % 2 != 1 ) {
+      scale_factor++;
+    }
+    g_print ("SAR image resolution is significantly higher than DEM\n"
+	     "resolution.  Scaling SAR image by a factor of %ld by \n"
+	     "averaging blocks of image pixels together... ", 
+	     scale_factor);
+    SlantRangeImage *sri_reduced
+      = slant_range_image_new_from_model_scaled (sri, scale_factor);
+    g_print ("done.\n");
+    slant_range_image_free (sri);
+    sri = sri_reduced;
+
+    // Take a quick look at the reduced resolution slant range image
+    // for FIXME: debug purposes.
+    float_image_export_as_jpeg (sri->data, "sri_reduced_view.jpg", 2000, NAN);
+  }
 
   int svc = imd->state_vectors->vector_count;   // State vector count.
   g_assert (svc >= 3);
@@ -403,15 +535,18 @@ main (int argc, char **argv)
   // 1/20 th of a pixel in the time direction for your average ERS-1
   // or ERS-2 image.
   double tolerance = 0.0001;
-  // Worst accuracy we will tolerate for a pixel without aborting the
-  // program.
-  double worst_allowable_tolerance = 10 * tolerance;
+  // Pixels that don't converge at least this well are extra bad, we
+  // coun them separately.
+  double bad_tolerance = 10 * tolerance;
   // Count of number of pixels which fail to meet the convergence
   // tolerance requirements.
   long int failed_pixel_count = 0;
   // Pixels which don't even converge to within ten times the desired
   // tolerance.
   long int extra_bad_pixel_count = 0;
+  // We will keep track of the mean tolerance of the convergence of
+  // the different pixels so we can report that as well.
+  long double mean_tolerance = 0;
 
   ProgressMeter *progress_meter 
     = progress_meter_new_with_callback (g_print, dem->size_y);
@@ -505,20 +640,36 @@ main (int argc, char **argv)
       }
       while (status == GSL_CONTINUE && iteration < max_iterations);
 
+      // How close did the convergence come to perfection?
+      double error = sor - eor;
+
       // We want to keep some statistics on how many pixels fail to
       // converge to within our desired tolerance.
       if ( status != GSL_SUCCESS ) {
-	if ( fabs (sor - eor) < worst_allowable_tolerance ) {
+	if ( fabs (sor - eor) < bad_tolerance ) {
 	  failed_pixel_count++;
 	}
 	else {
 	  extra_bad_pixel_count++;
 	}
       }
+
+      // Update our notion of the mean tolerance.
+      if ( G_UNLIKELY (ii == 0 && jj == 0) ) {
+	mean_tolerance = error;
+      }
+      else {
+	// The recurence relation we use to compute the running mean
+	// needs the current 1-based pixel number.
+	unsigned long int pixel_number = ii * dem->size_x + jj + 1;
+	mean_tolerance += (error - mean_tolerance) / pixel_number;
+      }
     
       // The resulting minimum is time in the arc model of the point
       // of closest approach.  FIXME: how to verify input images are
-      // zero-doppler processed?
+      // zero-doppler processed?  Possible with meta->sar->deskewed.
+      // Also probably need to check meta->sar->look_count and make
+      // sure it's 1.
       double solved_time = min;
 
       // The slant range can be found from the distance between the
@@ -558,13 +709,16 @@ main (int argc, char **argv)
   }
   g_print ("Done painting DEM.\n");
 
-  g_print ("For a total of %ld pixel(s), the time of point of closes\n"
-	   "approach minimization (TOPOCAM) did not converge to with the\n"
-	   "desired precision of %lg seconds.\n", failed_pixel_count, 
+  g_print ("Average convergence tolerance of the time of point of closest\n"
+	   "approach minimization (TOPOCAM) was %Lg seconds.\n",
+	   mean_tolerance);
+  g_print ("For a total of %ld pixel(s), the TOPOCAM did not converge to\n"
+	   "within the desired precision of %lg seconds.\n", 
+	   failed_pixel_count, 
 	   tolerance);
   g_print ("For a total of %ld pixel(s) the TOPOCAM did not even converge to\n"
 	   "within %lg seconds.\n", extra_bad_pixel_count, 
-	   worst_allowable_tolerance);
+	   bad_tolerance);
 
   g_print ("Log scaling the painted DEM... ");
   // Log scale the painted DEM.
@@ -589,7 +743,7 @@ main (int argc, char **argv)
   g_print ("done.\n");
 
   // Generate a LAS version of the output metadata.  The only works if
-  // we have a LAS DEM given as the input.  It intended for testint
+  // we have a LAS DEM given as the input.  It intended for testing
   // work with Joanne.
   struct DDR output_ddr;
   lasErr error_code = c_getddr (reference_dem->str, &output_ddr);
@@ -635,6 +789,7 @@ main (int argc, char **argv)
   g_free (lons);
   g_free (heights);
   gsl_min_fminimizer_free (minimizer);
+  progress_meter_free (progress_meter);
   g_print ("done.\n");
 
   exit (EXIT_SUCCESS);

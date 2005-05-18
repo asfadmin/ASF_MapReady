@@ -37,10 +37,19 @@ SlantRangeImage *
 slant_range_image_new_from_ground_range_image (char *metadata_file,
 					       char *data_file);
 
+// Create a new subimage by taking a width by height window in model
+// with upper left corner (start_x, start_y).
 SlantRangeImage *
 slant_range_image_new_subimage (SlantRangeImage *model, ssize_t start_x,
 				ssize_t width, ssize_t start_y, 
 				ssize_t height);
+
+// Create a scaled down (by a factor of scale_factor) copy of model.
+// The scale_factor must be positive and odd.  The actual scaling of
+// the data samples is performed by float_image_new_from_model_scaled.
+SlantRangeImage *
+slant_range_image_new_from_model_scaled (SlantRangeImage *model, 
+					 ssize_t scale_factor);
 
 // Return true iff self contains (slant_range, time) by at least
 // relative_guard * (supported_range) in each dimension.  The
@@ -55,8 +64,11 @@ gboolean
 slant_range_image_contains (SlantRangeImage *self, double range, double time,
 			    double relative_guard);
 
-// Sample the image at (slant_range, time) using sample_method.
-// Requires slant_range_image_contains to be true.
+// Sample the image at (slant_range, time) using sample_method.  It is
+// required that slant_range_image_contains to be true for a
+// relative_guard of 1e-6.  To ensure that this is the case,
+// slant_range_image_contains should be called before this method with
+// a larger relative_guard.
 double
 slant_range_image_sample (SlantRangeImage *self, double range, double time, 
 			  float_image_sample_method_t sample_method);

@@ -6,7 +6,7 @@
 #include <asf_meta.h>
 #include <float_image.h>
 
-// Instance structure.  All members should be considered read
+// Instance structure.  All members should be considered read only.
 typedef struct {
   // Size of DEM, in pixels (these better be identical to the sizes in
   // the data element, and are repeated here only for convenience).

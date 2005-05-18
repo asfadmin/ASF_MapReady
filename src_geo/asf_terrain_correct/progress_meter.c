@@ -102,3 +102,9 @@ progress_meter_advance (ProgressMeter *self, size_t units_of_work)
     }
   }
 }
+
+void
+progress_meter_free (ProgressMeter *self)
+{
+  free (self);
+}
