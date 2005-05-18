@@ -25,7 +25,9 @@ CLASSES := date_time \
 	   slant_range_image_cspline \
 	   vector \
            ITRS_platform_path \
-           ITRS_point
+           ITRS_point \
+	   lsm \
+	   dem_geom_info
 
 # Non-main, non-class source files that need building.
 OTHER_C_SOURCES := utilities.c

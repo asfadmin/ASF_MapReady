@@ -32,6 +32,8 @@
 #  include "scratchplot.h"
 #endif
 #include "slant_range_image.h"
+#include "dem_geom_info.h"
+#include "lsm.h"
 
 // Print user information to error output location and exit with a
 // non-zero exit code.
@@ -500,8 +502,6 @@ main (int argc, char **argv)
 
   // Now we are ready to actually paint the DEM with backscatter.
   g_assert (dem->size_y <= LONG_MAX);
-  g_print ("Painting %ld DEM pixel rows with SAR image pixel values...\n",
-	   (long int) dem->size_y);
 
   // Backscatter painted DEM.
   FloatImage *pd = float_image_new (dem->size_x, dem->size_y);  
@@ -562,12 +562,7 @@ main (int argc, char **argv)
 				   sri->data->size_y);
   sim_img = sim_img;		/* FIXME: remove warning silencer.  */
 
-  ProgressMeter *progress_meter 
-    = progress_meter_new_with_callback (g_print, dem->size_y);
-
-
-
-
+  DEMGeomInfo * dgi = dem_geom_info_new(dem->size_y, dem->size_x);
 
   // For each DEM row...
   for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
@@ -699,6 +694,36 @@ main (int argc, char **argv)
       double solved_slant_range = vector_magnitude (poca_to_target);
       vector_free (poca_to_target);
 
+      dem_geom_info_set(dgi, ii, jj, &cp_target, solved_time, 
+			solved_slant_range, poca.z);
+    }
+  }
+
+  FloatImage * lsm = lsm_generate_mask(dgi);
+  lsm = lsm;
+
+  // FIXME: coregistration goes here!
+
+  g_print ("Painting %ld DEM pixel rows with SAR image pixel values...\n",
+	   (long int) dem->size_y);
+
+  ProgressMeter *progress_meter 
+    = progress_meter_new_with_callback (g_print, dem->size_y);
+
+  // For each DEM row...
+  for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
+
+    g_assert (ii <= SSIZE_MAX);
+
+    size_t jj;
+    for ( jj = 0 ; jj < dem->size_x ; jj++ ) {
+
+      // Pull out previously calculated values
+      double solved_slant_range =
+	dem_geom_info_get_slant_range_value(dgi, ii, jj);
+      double solved_time =
+	dem_geom_info_get_imaging_time(dgi, ii, jj);
+
       // Look up the backscatter value for the found slant range and
       // time.
       float backscatter;
@@ -725,6 +750,7 @@ main (int argc, char **argv)
       progress_meter_advance (progress_meter, 100);
     }
   }
+
   g_print ("Done painting DEM.\n");
 
   g_print ("Average convergence tolerance of the time of point of closest\n"
