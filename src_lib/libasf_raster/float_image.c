@@ -2010,9 +2010,9 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
 int
 float_image_export_as_jpeg_with_mask_interval (FloatImage *self, 
 					       const char *file,
-					       size_t max_dimension, 
+					       ssize_t max_dimension, 
 					       double interval_start,
-					       double interval_end);
+					       double interval_end)
 {
   // This method is probably find, but it hasn't been tested yet.
   g_assert_not_reached ();
