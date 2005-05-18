@@ -695,7 +695,7 @@ main (int argc, char **argv)
       vector_free (poca_to_target);
 
       dem_geom_info_set(dgi, ii, jj, &cp_target, solved_time, 
-			solved_slant_range, poca.z);
+			solved_slant_range, &poca);
     }
   }
 
