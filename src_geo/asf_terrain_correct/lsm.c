@@ -209,6 +209,35 @@ lsm_free(LSM *self)
 }
 
 */
+
+int
+lsm_mask_value_is_layover(int mask_value)
+{
+  return 
+    mask_value == MASK_ACTIVE_LAYOVER_VALUE ||
+    mask_value == MASK_PASSIVE_LAYOVER_VALUE;
+}
+
+int
+lsm_mask_value_is_shadow(int mask_value)
+{
+  return 
+    mask_value == MASK_ACTIVE_SHADOW_VALUE ||
+    mask_value == MASK_PASSIVE_SHADOW_VALUE;
+}
+
+int
+lsm_image_mask_value_is_layover(FloatImage *mask, int row, int col)
+{
+  return lsm_mask_value_is_layover(float_image_get_pixel(mask, row, col));
+}
+
+int
+lsm_image_mask_value_is_show(FloatImage *mask, int row, int col)
+{
+  return lsm_mask_value_is_shadow(float_image_get_pixel(mask, row, col));
+}
+
 FloatImage *
 lsm_generate_mask(DEMGeomInfo *dgi)
 {
