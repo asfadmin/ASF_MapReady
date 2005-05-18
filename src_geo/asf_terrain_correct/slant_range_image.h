@@ -6,14 +6,15 @@
 #include <float_image.h>
 
 typedef struct {
-  // Imaging time of upper left pixel.
-  double upper_left_pixel_time;
   // Range of upper left pixel.
   double upper_left_pixel_range;
-  // Time per pixel in -y direction.
-  double time_per_pixel;
+  // Imaging time of upper left pixel.
+  double upper_left_pixel_time;
   // Slant range per pixel in x direction.
   double slant_range_per_pixel;
+  // Time per pixel in -y direction.
+  double time_per_pixel;
+  // Actual image data.
   FloatImage *data;
 } SlantRangeImage;
 
@@ -28,6 +29,22 @@ slant_range_image_thaw (const char *file);
 // fully usable after this method returns.
 void
 slant_range_image_freeze (SlantRangeImage *self, const char *file);
+
+// Create a new slant range image covering [upper_left_pixel_time,
+// time_per_pixel * time_pixels] in time and
+// [upper_left_pixel_slant_range, slant_range_per_pixel *
+// slant_range_pixels] in slant range.  Note that due to floating
+// point inexactness, you probably won't want to refer to the very
+// edges of the covered range (see the slant_range_image_contains
+// method).  The pixels of the new image are all set to 0.0.
+SlantRangeImage *
+slant_range_image_new_empty (double upper_left_pixel_slant_range,
+			     double upper_left_pixel_time, 
+			     double slant_range_per_pixel,
+			     double time_per_pixel,
+			     ssize_t slant_range_pixels,  
+			     ssize_t time_pixels);
+
 
 // Create a new instance from the Alaska Satellite Facility (ASF)
 // internal format metadata_file and data_file.  The new instance will

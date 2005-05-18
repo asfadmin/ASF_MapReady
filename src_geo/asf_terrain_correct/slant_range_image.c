@@ -195,6 +195,33 @@ slant_range_image_freeze (SlantRangeImage *self, const char *file)
 }
 
 SlantRangeImage *
+slant_range_image_new_empty (double upper_left_pixel_slant_range,
+			     double upper_left_pixel_time, 
+			     double slant_range_per_pixel,
+			     double time_per_pixel,
+			     ssize_t slant_range_pixels,
+			     ssize_t time_pixels)
+{
+  // Convenience aliases.
+  double ult = upper_left_pixel_time;
+  double ulr = upper_left_pixel_slant_range;
+  double tpp = time_per_pixel;
+  double rpp = slant_range_per_pixel;
+  double tpc = time_pixels;
+  double rpc = slant_range_pixels;
+
+  SlantRangeImage *self = g_new (SlantRangeImage, 1);
+
+  self->upper_left_pixel_time = ult;
+  self->upper_left_pixel_range = ulr;
+  self->time_per_pixel = tpp;
+  self->slant_range_per_pixel = rpp;
+  self->data = float_image_new_with_value (rpc, tpc, 0.0);
+
+  return self;
+}
+
+SlantRangeImage *
 slant_range_image_new_from_ground_range_image (char *metadata_file,
 					       char *data_file)
 {

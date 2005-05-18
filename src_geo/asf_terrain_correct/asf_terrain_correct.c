@@ -548,8 +548,26 @@ main (int argc, char **argv)
   // the different pixels so we can report that as well.
   long double mean_tolerance = 0;
 
+  // Because the geolocation of images is often quite bad, we will
+  // create a simulated SAR image as we march through the DEM, then
+  // measure the offset of the simulated image from the actual slant
+  // range image.  We can then subject the slant range image pixel
+  // lookups used to color the DEM to the discovered offset.
+  SlantRangeImage *sim_img 
+    = slant_range_image_new_empty (sri->upper_left_pixel_range,
+				   sri->upper_left_pixel_time,
+				   sri->slant_range_per_pixel,
+				   sri->time_per_pixel,
+				   sri->data->size_x,
+				   sri->data->size_y);
+  sim_img = sim_img;		/* FIXME: remove warning silencer.  */
+
   ProgressMeter *progress_meter 
     = progress_meter_new_with_callback (g_print, dem->size_y);
+
+
+
+
 
   // For each DEM row...
   for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
