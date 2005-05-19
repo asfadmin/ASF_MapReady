@@ -7,6 +7,8 @@
 
 typedef struct dem_geom_info {
     int nrows, ncols;
+    FloatImage * cp_target_x;
+    FloatImage * cp_target_y;
     FloatImage * cp_target_z;
     FloatImage * nadir_distance;
     FloatImage * slant_range_value;
@@ -30,6 +32,16 @@ dem_geom_info_get_slant_range_value(DEMGeomInfo * self, int row, int col);
 
 double
 dem_geom_info_get_imaging_time(DEMGeomInfo * self, int row, int col);
+
+// returns a vector that should be freed, with vector_free
+Vector *
+dem_geom_info_get_cp_target(DEMGeomInfo * self, int row, int col);
+
+double
+dem_geom_info_get_x(DEMGeomInfo * self, int row, int col);
+
+double
+dem_geom_info_get_y(DEMGeomInfo * self, int row, int col);
 
 double
 dem_geom_info_get_z(DEMGeomInfo * self, int row, int col);
