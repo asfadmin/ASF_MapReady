@@ -29,7 +29,7 @@ lsm_image_mask_value_is_layover(FloatImage *mask, int row, int col)
 }
 
 int
-lsm_image_mask_value_is_show(FloatImage *mask, int row, int col)
+lsm_image_mask_value_is_shadow(FloatImage *mask, int row, int col)
 {
   return lsm_mask_value_is_shadow(float_image_get_pixel(mask, row, col));
 }

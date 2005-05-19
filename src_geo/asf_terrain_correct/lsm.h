@@ -23,7 +23,7 @@ int
 lsm_image_mask_value_is_layover(FloatImage *mask, int row, int col);
 
 int
-lsm_image_mask_value_is_show(FloatImage *mask, int row, int col);
+lsm_image_mask_value_is_shadow(FloatImage *mask, int row, int col);
 
 FloatImage *
 lsm_generate_mask(DEMGeomInfo *dgi);
