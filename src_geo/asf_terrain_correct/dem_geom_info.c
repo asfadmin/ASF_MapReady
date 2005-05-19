@@ -23,6 +23,7 @@ dem_geom_info_new(int nrows, int ncols)
   self->slant_range_value = float_image_new(nrows, ncols);
   self->imaging_time = float_image_new(nrows, ncols);
   self->satellite_height = float_image_new(nrows, ncols);
+  self->dem_height = float_image_new(nrows, ncols);
   self->nadir_distance = float_image_new(nrows, ncols);
 
   return self;
@@ -34,6 +35,7 @@ dem_geom_info_set(DEMGeomInfo * self,
 		  Vector *cp_target,
 		  double imaging_time,
 		  double slant_range_value,
+		  double dem_height,
 		  Vector *poca)
 {
   g_assert(self);
@@ -55,6 +57,9 @@ dem_geom_info_set(DEMGeomInfo * self,
 
   g_assert(self->satellite_height);
   float_image_set_pixel(self->satellite_height, row, col, poca->z);
+
+  g_assert(self->dem_height);
+  float_image_set_pixel(self->satellite_height, row, col, dem_height);
 
   g_assert(self->nadir_distance);
   double d = hypot(poca->x - cp_target->x, poca->y - cp_target->y);
@@ -141,13 +146,26 @@ dem_geom_info_get_satellite_height(DEMGeomInfo * self, int row, int col)
   return float_image_get_pixel(self->satellite_height, row, col);
 }
 
+double
+dem_geom_info_get_dem_height(DEMGeomInfo * self, int row, int col)
+{
+  g_assert(self);
+  g_assert(self->dem_height);
+
+  return float_image_get_pixel(self->dem_height, row, col);
+}
+
+
 void
 dem_geom_info_free(DEMGeomInfo * self)
 {
+  float_image_free(self->cp_target_x);
+  float_image_free(self->cp_target_y);
   float_image_free(self->cp_target_z);
   float_image_free(self->slant_range_value);
   float_image_free(self->imaging_time);
   float_image_free(self->satellite_height);
+  float_image_free(self->dem_height);
   float_image_free(self->nadir_distance);
 
   g_free(self);

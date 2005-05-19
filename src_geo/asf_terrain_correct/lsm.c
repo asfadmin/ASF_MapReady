@@ -43,6 +43,7 @@ lsm_generate_mask(DEMGeomInfo *dgi)
   g_assert(dgi->slant_range_value);
   g_assert(dgi->imaging_time);
   g_assert(dgi->satellite_height);
+  g_assert(dgi->dem_height);
   g_assert(dgi->nadir_distance);
 
   g_assert(dgi->nrows > 0);
@@ -58,13 +59,13 @@ lsm_generate_mask(DEMGeomInfo *dgi)
   for (row = 0; row < dgi->nrows; ++row) {
 
     for (col = 0; col < dgi->ncols; ++col) {
-      double z = dem_geom_info_get_z(dgi, row, col);
+      double z = dem_geom_info_get_dem_height(dgi, row, col);
       double d = dem_geom_info_get_nadir_distance(dgi, row, col);
 
-      double zn = dem_geom_info_get_z(dgi, row - 1, col);
-      double zs = dem_geom_info_get_z(dgi, row + 1, col);
-      double zw = dem_geom_info_get_z(dgi, row, col - 1);
-      double ze = dem_geom_info_get_z(dgi, row, col + 1);
+      double zn = dem_geom_info_get_dem_height(dgi, row - 1, col);
+      double zs = dem_geom_info_get_dem_height(dgi, row + 1, col);
+      double zw = dem_geom_info_get_dem_height(dgi, row, col - 1);
+      double ze = dem_geom_info_get_dem_height(dgi, row, col + 1);
 
       double tn = dem_geom_info_get_imaging_time(dgi, row - 1, col);
       double ts = dem_geom_info_get_imaging_time(dgi, row + 1, col);

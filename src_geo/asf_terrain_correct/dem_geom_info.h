@@ -14,6 +14,7 @@ typedef struct dem_geom_info {
     FloatImage * slant_range_value;
     FloatImage * imaging_time;
     FloatImage * satellite_height;
+    FloatImage * dem_height;
 } DEMGeomInfo;
 
 DEMGeomInfo *
@@ -25,6 +26,7 @@ dem_geom_info_set(DEMGeomInfo * self,
 		  Vector *cp_target,
 		  double imaging_time,
 		  double slant_range_value,
+		  double dem_height,
 		  Vector *poca);
 
 double
@@ -51,6 +53,9 @@ dem_geom_info_get_nadir_distance(DEMGeomInfo * self, int row, int col);
 
 double
 dem_geom_info_get_satellite_height(DEMGeomInfo * self, int row, int col);
+
+double
+dem_geom_info_get_dem_height(DEMGeomInfo * self, int row, int col);
 
 void
 dem_geom_info_free(DEMGeomInfo * self);
