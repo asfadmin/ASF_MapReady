@@ -23,15 +23,15 @@ lsm_mask_value_is_shadow(int mask_value)
 }
 
 int
-lsm_image_mask_value_is_layover(FloatImage *mask, int row, int col)
+lsm_image_mask_value_is_layover(FloatImage *mask, int x, int y)
 {
-  return lsm_mask_value_is_layover(float_image_get_pixel(mask, row, col));
+  return lsm_mask_value_is_layover(float_image_get_pixel(mask, x, y));
 }
 
 int
-lsm_image_mask_value_is_shadow(FloatImage *mask, int row, int col)
+lsm_image_mask_value_is_shadow(FloatImage *mask, int x, int y)
 {
-  return lsm_mask_value_is_shadow(float_image_get_pixel(mask, row, col));
+  return lsm_mask_value_is_shadow(float_image_get_pixel(mask, x, y));
 }
 
 FloatImage *
@@ -50,55 +50,67 @@ lsm_generate_mask(DEMGeomInfo *dgi)
   g_assert(dgi->ncols > 0);
 
   int row, col;
+  int nshad = 0;
+  int nlay = 0;
+  int nnorm = 0;
 
-  FloatImage *mask = float_image_new (dgi->nrows, dgi->ncols);
+  FloatImage *mask = float_image_new (dgi->ncols, dgi->nrows);
 
-  for (row = 0; row < dgi->nrows; ++row) {
-    for (col = 0; col < dgi->ncols; ++col) {
+  for (y = 0; y < dgi->nrows; ++y) {
+    for (x = 0; x < dgi->ncols; ++x) {
       lsm_mask_value_t pixel_value;
 
-      if (row == 0 || row == dgi->nrows - 1 || 
-	  col == 0 || col == dgi->ncols - 1) {
+      if (y == 0 || y == dgi->nrows - 1 || 
+	  x == 0 || x == dgi->ncols - 1) {
 	pixel_value = MASK_NORMAL_VALUE;
       } 
       else {
-	double z = dem_geom_info_get_dem_height(dgi, row, col);
-	double d = dem_geom_info_get_nadir_distance(dgi, row, col);
+	double z = dem_geom_info_get_dem_height(dgi, x, y);
+	double d = dem_geom_info_get_nadir_distance(dgi, x, y);
 	
-	double zn = dem_geom_info_get_dem_height(dgi, row - 1, col);
-	double zs = dem_geom_info_get_dem_height(dgi, row + 1, col);
-	double zw = dem_geom_info_get_dem_height(dgi, row, col - 1);
-	double ze = dem_geom_info_get_dem_height(dgi, row, col + 1);
+	double zn = dem_geom_info_get_dem_height(dgi, x - 1, y);
+	double zs = dem_geom_info_get_dem_height(dgi, x + 1, y);
+	double zw = dem_geom_info_get_dem_height(dgi, x, y - 1);
+	double ze = dem_geom_info_get_dem_height(dgi, x, y + 1);
 	
-	double tn = dem_geom_info_get_imaging_time(dgi, row - 1, col);
-	double ts = dem_geom_info_get_imaging_time(dgi, row + 1, col);
-	double tw = dem_geom_info_get_imaging_time(dgi, row, col - 1);
-	double te = dem_geom_info_get_imaging_time(dgi, row, col + 1);
+	double tn = dem_geom_info_get_imaging_time(dgi, x - 1, y);
+	double ts = dem_geom_info_get_imaging_time(dgi, x + 1, y);
+	double tw = dem_geom_info_get_imaging_time(dgi, x, y - 1);
+	double te = dem_geom_info_get_imaging_time(dgi, x, y + 1);
 	
-	double dx = ( dem_geom_info_get_x(dgi, row + 1, col) -
-		      dem_geom_info_get_x(dgi, row - 1, col) );
+	double dx = ( dem_geom_info_get_x(dgi, x + 1, y) -
+		      dem_geom_info_get_x(dgi, x - 1, y) );
 	
-	double dy = ( dem_geom_info_get_y(dgi, row, col + 1) -
-		      dem_geom_info_get_y(dgi, row, col - 1) );
+	double dy = ( dem_geom_info_get_y(dgi, x, y + 1) -
+		      dem_geom_info_get_y(dgi, x, y - 1) );
 	
 	double dd = (ze - zw)/dx * (te - tw)/dx + (zn - zs)/dy * (tn - ts)/dy;
 	
-	double z_s = dem_geom_info_get_satellite_height(dgi, row, col);
+	double z_s = dem_geom_info_get_satellite_height(dgi, x, y);
 	
 	double R = d - (z_s - z) * dd;
 	double A = (z_s - z) + d * dd;
       
-	if (A <= 0)
+	if (A <= 0) {
+	  ++nshad;
 	  pixel_value = MASK_ACTIVE_SHADOW_VALUE;
-	else if (R <= 0)
+	}
+	else if (R <= 0) {
+	  ++nlay;
 	  pixel_value = MASK_ACTIVE_LAYOVER_VALUE;
-	else
+	}
+	else {
+	  ++nnorm;
 	  pixel_value = MASK_NORMAL_VALUE;
+        }
       }
 
-      float_image_set_pixel(mask, row, col, pixel_value);
+      float_image_set_pixel(mask, x, y, pixel_value);
     }
   }
+
+  printf("Out of %d pixels:\n %4d shadow\n %4d layover\n %4d other\n",
+	 nshad + nlay + nnorm, nshad, nlay, nnorm);
 
   int max_dim = dgi->nrows > dgi->ncols ? dgi->nrows : dgi->ncols;
   float_image_export_as_jpeg(mask, "lsm.jpg", max_dim, NAN);

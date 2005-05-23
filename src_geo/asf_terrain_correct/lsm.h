@@ -20,10 +20,10 @@ int
 lsm_mask_value_is_shadow(int mask_value);
 
 int
-lsm_image_mask_value_is_layover(FloatImage *mask, int row, int col);
+lsm_image_mask_value_is_layover(FloatImage *mask, int x, int y);
 
 int
-lsm_image_mask_value_is_shadow(FloatImage *mask, int row, int col);
+lsm_image_mask_value_is_shadow(FloatImage *mask, int x, int y);
 
 FloatImage *
 lsm_generate_mask(DEMGeomInfo *dgi);
