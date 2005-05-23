@@ -18,7 +18,7 @@ typedef struct dem_geom_info {
 } DEMGeomInfo;
 
 DEMGeomInfo *
-dem_geom_info_new(int nrows, int ncols);
+dem_geom_info_new(int size_x, int size_y);
 
 void
 dem_geom_info_set(DEMGeomInfo * self,
