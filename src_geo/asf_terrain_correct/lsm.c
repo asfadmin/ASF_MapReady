@@ -46,22 +46,22 @@ lsm_generate_mask(DEMGeomInfo *dgi)
   g_assert(dgi->dem_height);
   g_assert(dgi->nadir_distance);
 
-  g_assert(dgi->nrows > 0);
-  g_assert(dgi->ncols > 0);
+  g_assert(dgi->size_x > 0);
+  g_assert(dgi->size_y > 0);
 
-  int row, col;
+  int x, y;
   int nshad = 0;
   int nlay = 0;
   int nnorm = 0;
 
-  FloatImage *mask = float_image_new (dgi->ncols, dgi->nrows);
+  FloatImage *mask = float_image_new (dgi->size_x, dgi->size_y);
 
-  for (y = 0; y < dgi->nrows; ++y) {
-    for (x = 0; x < dgi->ncols; ++x) {
+  for (y = 0; y < dgi->size_y; ++y) {
+    for (x = 0; x < dgi->size_x; ++x) {
       lsm_mask_value_t pixel_value;
 
-      if (y == 0 || y == dgi->nrows - 1 || 
-	  x == 0 || x == dgi->ncols - 1) {
+      if (y == 0 || y == dgi->size_y - 1 || 
+	  x == 0 || x == dgi->size_x - 1) {
 	pixel_value = MASK_NORMAL_VALUE;
       } 
       else {
@@ -112,7 +112,7 @@ lsm_generate_mask(DEMGeomInfo *dgi)
   printf("Out of %d pixels:\n %4d shadow\n %4d layover\n %4d other\n",
 	 nshad + nlay + nnorm, nshad, nlay, nnorm);
 
-  int max_dim = dgi->nrows > dgi->ncols ? dgi->nrows : dgi->ncols;
+  int max_dim = dgi->size_y > dgi->size_x ? dgi->size_y : dgi->size_x;
   float_image_export_as_jpeg(mask, "lsm.jpg", max_dim, NAN);
   return mask;
 }

@@ -6,7 +6,7 @@
 #include "float_image.h"
 
 typedef struct dem_geom_info {
-    int nrows, ncols;
+    int size_x, size_y;
     FloatImage * cp_target_x;
     FloatImage * cp_target_y;
     FloatImage * cp_target_z;
