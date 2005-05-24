@@ -59,7 +59,7 @@ dem_geom_info_set(DEMGeomInfo * self,
   float_image_set_pixel(self->satellite_height, x, y, poca->z);
 
   g_assert(self->dem_height);
-  float_image_set_pixel(self->satellite_height, x, y, dem_height);
+  float_image_set_pixel(self->dem_height, x, y, dem_height);
 
   g_assert(self->nadir_distance);
   double d = hypot(poca->x - cp_target->x, poca->y - cp_target->y);
