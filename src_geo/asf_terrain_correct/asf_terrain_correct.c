@@ -699,9 +699,11 @@ main (int argc, char **argv)
     }
   }
 
+  g_print("Generating layover/shadow mask... \n");
   FloatImage * lsm = lsm_generate_mask(dgi);
   lsm = lsm;
-
+  g_print("done\n");
+  
   // FIXME: coregistration goes here!
 
   g_print ("Painting %ld DEM pixel rows with SAR image pixel values...\n",
