@@ -50,6 +50,14 @@ typedef struct {
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+// Thaw out a previously frozen instance (produced with
+// float_image_freeze) using data pointed to by file_pointer.  Frozen
+// instances aren't portable between platforms.  After thawing
+// file_pointer points to the data immediately following the data from
+// the thawed instance (or to the end of the file).
+FloatImage *
+float_image_thaw (FILE *file_pointer);
+
 // Create a new image filled with zero pixel values.
 FloatImage *
 float_image_new (ssize_t size_x, ssize_t size_y);
@@ -284,12 +292,30 @@ float_image_sample (FloatImage *self, float x, float y,
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Comparing Images
+//
+///////////////////////////////////////////////////////////////////////////////
+
+// Return true iff self and other have identical sizes and pixels that
+// are all approximately equal to relative accuracy epsilon, as
+// understood by the GNU Scientific Library function gsl_fcmp.
+gboolean
+float_image_equals (FloatImage *self, FloatImage *other, float epsilon);
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Storing Images in Files
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Store image in file.  The image is stored in the usual order,
-// i.e. contiguous rows of pixels in the x direction are stored
+// Store instance self at position pointed to by file_pointer, for
+// later retrieval using float_image_thaw.  The serialized version of
+// self is not portable between platforms.
+void
+float_image_freeze (FloatImage *self, FILE *file_pointer);
+
+// Store image pixels in file.  The image is stored in the usual
+// order, i.e. contiguous rows of pixels in the x direction are stored
 // contiguously in memory.  Individual pixels are stored in byte order
 // byte_order.  Returns 0 on success, nonzero on error.
 int

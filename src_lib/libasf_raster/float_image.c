@@ -44,6 +44,87 @@ static unsigned long current_tile_file_number = 0;
 // names.
 G_LOCK_DEFINE_STATIC (current_tile_file_number);
 
+// We don't want to let multiple threads twiddle the signal block mask
+// concurrently, or we might end up with the wrong set of signals
+// blocked.  This lock is used to gaurantee this can't happen (see the
+// usage for a better explanation).
+G_LOCK_DEFINE_STATIC (signal_block_activity);
+
+// Return a FILE pointer refering to a new, already unlinked file in a
+// location which hopefully has enough free space to serve as a block
+// cache.
+static FILE *
+initialize_tile_cache_file (void)
+{
+  // Create the temporary tile oriented storage file.  This gets
+  // filled in in different ways depending on which creation routine
+  // we are using.
+  GString *tile_file_name = g_string_new ("");
+  gchar *current_dir = g_get_current_dir ();
+
+  // Here we do a slightly weird thing: if the current directory is
+  // writable, we create a temporary file in the current directory.
+  // We do this because the temporary file could well be pretty big
+  // and /tmp often maps to a small file system.  The idea is that the
+  // directory the user is in is more likely to have the extra space
+  // required to hold the temporary file.  Of course, if they have
+  // been carefully calculating their space requirements, they may be
+  // disappointed.  We use a weird name that no sane user would ever
+  // use for one of their files, we hope.
+  G_LOCK (current_tile_file_number);
+  g_assert (sizeof (long) >= sizeof (pid_t));
+  g_string_append_printf (tile_file_name,
+                          "%s/.float_image_tile_file_uNiQuIfY_nAmE_%ld_%lu",
+                          current_dir, (long) getpid (),
+                          current_tile_file_number);
+  g_free (current_dir);
+  // This hard coded limit on the current number used to uniqueify
+  // file names limits us to creating no more than ULONG_MAX instances
+  // during a process.
+  g_assert (current_tile_file_number < ULONG_MAX);
+  current_tile_file_number++;
+  G_UNLOCK (current_tile_file_number);
+  // We block signals while we create and unlink this file, so we
+  // don't end up leaving a huge temporary file somewhere.
+  // Theoretically, two parallel instantiations of image could end up
+  // in a race condition which would result in all signals ending up
+  // blocked after both were done with this section, so we consider
+  // this section critical and protect it with a lock.
+  G_LOCK (signal_block_activity);
+  sigset_t all_signals, old_set;
+  int return_code = sigfillset (&all_signals);
+  g_assert (return_code == 0);
+  return_code = sigprocmask (SIG_SETMASK, &all_signals, &old_set);
+  // FIXME?: It might be faster to use file descriptor based I/O
+  // everywhere, or at least for the big transfers.  I'm not sure its
+  // worth the trouble though.
+  FILE *tile_file = fopen (tile_file_name->str, "w+");
+  if ( tile_file == NULL ) {
+    if ( errno != EACCES ) {
+      g_warning ("couldn't create file in current directory, and it wasn't"
+                 "just a permissions problem");
+    }
+    else {
+      // Couldn't open in current directory, so try using tmpfile,
+      // which opens the file in the standardish place for the system.
+      // See the comment above about why opening in /tmp or the like
+      // is potentially bad.
+      tile_file = tmpfile ();
+      g_assert (tile_file != NULL);
+    }
+  }
+  else {
+    return_code = unlink (tile_file_name->str);
+    g_assert (return_code == 0);
+  }
+  g_assert (tile_file != NULL);
+  return_code = sigprocmask (SIG_SETMASK, &old_set, NULL);
+  G_UNLOCK (signal_block_activity);
+  g_string_free (tile_file_name, TRUE);
+
+  return tile_file;
+}
+
 // This routine does the work common to several of the differenct
 // creation routines.  Basicly, it does everything but fill in the
 // contents of the disk tile store.
@@ -162,68 +243,96 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   // longest ago.
   self->tile_queue = g_queue_new ();
 
-  // Create the temporary tile oriented storage file.  This gets
-  // filled in in different ways depending on which creation routine
-  // we are using.
-  GString *tile_file_name = g_string_new ("");
-  gchar *current_dir = g_get_current_dir ();
-
-  // Here we do a slightly weird thing: if the current directory is
-  // writable, we create a temporary file in the current directory.
-  // We do this because the temporary file could well be pretty big
-  // and /tmp often maps to a small file system.  The idea is that the
-  // directory the user is in is more likely to have the extra space
-  // required to hold the temporary file.  Of course, if they have
-  // been carefully calculating their space requirements, they may be
-  // disappointed.  We use a weird name that no sane user would ever
-  // use for one of their files, we hope.
-  G_LOCK (current_tile_file_number);
-  g_assert (sizeof (long) >= sizeof (pid_t));
-  g_string_append_printf (tile_file_name,
-                          "%s/.float_image_tile_file_uNiQuIfY_nAmE_%ld_%lu",
-                          current_dir, (long) getpid (),
-                          current_tile_file_number);
-  g_free (current_dir);
-  // This hard coded limit on the current number used to uniqueify
-  // file names limits us to creating no more than ULONG_MAX instances
-  // during a process.
-  g_assert (current_tile_file_number < ULONG_MAX);
-  current_tile_file_number++;
-  G_UNLOCK (current_tile_file_number);
-  // We block signals while we create and unlink this file, so we
-  // don't end up leaving a huge temporary file somewhere.
-  sigset_t all_signals, old_set;
-  int return_code = sigfillset (&all_signals);
-  g_assert (return_code == 0);
-  return_code = sigprocmask (SIG_SETMASK, &all_signals, &old_set);
-  // FIXME?: It might be faster to use file descriptor based I/O
-  // everywhere, or at least for the big transfers.  I'm not sure its
-  // worth the trouble though.
-  self->tile_file = fopen (tile_file_name->str, "w+");
-  if ( self->tile_file == NULL ) {
-    if ( errno != EACCES ) {
-      g_warning ("couldn't create file in current directory, and it wasn't"
-                 "just a permissions problem");
-    }
-    else {
-      // Couldn't open in current directory, so try using tmpfile,
-      // which opens the file in the standardish place for the system.
-      // See the comment above about why opening in /tmp or the like
-      // is potentially bad.
-      self->tile_file = tmpfile ();
-      g_assert (self->tile_file != NULL);
-    }
-  }
-  else {
-    return_code = unlink (tile_file_name->str);
-    g_assert (return_code == 0);
-  }
-  g_assert (self->tile_file != NULL);
-  return_code = sigprocmask (SIG_SETMASK, &old_set, NULL);
-  g_string_free (tile_file_name, TRUE);
+  // Get a new empty tile cache file pointer.
+  self->tile_file = initialize_tile_cache_file ();
 
   return self;
 }
+
+FloatImage *
+float_image_thaw (FILE *file_pointer)
+{
+  FILE *fp = file_pointer;	// Convenience alias.
+
+  g_assert (file_pointer != NULL);
+
+  FloatImage *self = g_new (FloatImage, 1);
+
+  size_t read_count = fread (&(self->size_x), sizeof (size_t), 1, fp);
+  g_assert (read_count == 1);
+
+  read_count = fread (&(self->size_y), sizeof (size_t), 1, fp);
+  g_assert (read_count == 1);
+
+  read_count = fread (&(self->cache_space), sizeof (size_t), 1, fp);
+  g_assert (read_count == 1);
+
+  read_count = fread (&(self->cache_area), sizeof (size_t), 1, fp);
+  g_assert (read_count == 1);
+
+  read_count = fread (&(self->tile_size), sizeof (size_t), 1, fp);
+  g_assert (read_count == 1);
+
+  read_count = fread (&(self->cache_size_in_tiles), sizeof (size_t), 1, fp);
+  g_assert (read_count == 1);
+
+  read_count = fread (&(self->tile_count_x), sizeof (size_t), 1, fp);
+  g_assert (read_count == 1);
+
+  read_count = fread (&(self->tile_count_y), sizeof (size_t), 1, fp);
+  g_assert (read_count == 1);
+
+  read_count = fread (&(self->tile_count), sizeof (size_t), 1, fp);
+  g_assert (read_count == 1);
+
+  read_count = fread (&(self->tile_area), sizeof (size_t), 1, fp);
+  g_assert (read_count == 1);
+
+  // The cache isn't serialized -- its a bit of a pain and probably
+  // almost never worth it.
+  self->cache = g_new (float, self->cache_area);
+
+  self->tile_addresses = g_new0 (float *, self->tile_count);
+  
+  // We don't actually keep the tile queue in the serialized instance,
+  // but if the serialized pointer to it is NULL, we know we aren't
+  // using a tile cache file (i.e. the whole image fits in the memory
+  // cache).
+  read_count = fread (&(self->tile_queue), sizeof (GQueue *), 1, fp);
+  g_assert (read_count == 1);
+
+  // If there was no cache file...
+  if ( self->tile_queue == NULL ) {
+    // The tile_file structure field should also be NULL.
+    self->tile_file = NULL;
+    // we restore the file directly into the first and only tile (see
+    // the end of the float_image_new method).
+    self->tile_addresses[0] = self->cache;
+    read_count = fread (self->tile_addresses[0], sizeof (float), 
+			self->tile_area, fp);
+    g_assert (read_count == self->tile_area);
+  }
+  // otherwise, an empty tile queue needs to be initialized, and the
+  // remainder of the serialized version is the tile block cache.
+  else {
+    self->tile_queue = g_queue_new (); 
+    self->tile_file = initialize_tile_cache_file ();
+    float *buffer = g_new (float, self->tile_area);
+    size_t ii;
+    for ( ii = 0 ; ii < self->tile_count ; ii++ ) {
+      read_count = fread (buffer, sizeof (float), self->tile_area, fp);
+      g_assert (read_count == self->tile_area);
+      size_t write_count = fwrite (buffer, sizeof (float), self->tile_area,
+				   self->tile_file);
+      g_assert (write_count == self->tile_area);
+    }
+    g_free (buffer);
+  }
+
+  return self;
+}
+
+
 
 FloatImage *
 float_image_new (ssize_t size_x, ssize_t size_y)
@@ -1784,6 +1893,107 @@ float_image_sample (FloatImage *self, float x, float y,
   }
 }
 
+gboolean
+float_image_equals (FloatImage *self, FloatImage *other, float epsilon)
+{
+  if ( self->size_x != other->size_x ) {
+    return FALSE;
+  }
+
+  if ( self->size_y != other->size_y ) {
+    return FALSE;
+  }
+
+  size_t sz = self->size_x;	// Convenience alias.
+
+  size_t ii, jj;
+  for ( ii = 0 ; ii < sz ; ii++ ) {
+    for ( jj = 0 ; jj < sz ; jj++ ) {
+      if ( G_UNLIKELY (gsl_fcmp (float_image_get_pixel (self, jj, ii),
+				 float_image_get_pixel (other, jj, ii),
+				 epsilon) != 0) ) {
+	return FALSE;
+      }
+    }
+  }
+
+  return TRUE;
+}
+
+void
+float_image_freeze (FloatImage *self, FILE *file_pointer)
+{
+  FILE *fp = file_pointer;	// Convenience alias.
+
+  g_assert (file_pointer != NULL);
+
+  size_t write_count = fwrite (&(self->size_x), sizeof (size_t), 1, fp);
+  g_assert (write_count == 1);
+
+  write_count = fwrite (&(self->size_y), sizeof (size_t), 1, fp);
+  g_assert (write_count == 1);
+
+  write_count = fwrite (&(self->cache_space), sizeof (size_t), 1, fp);
+  g_assert (write_count == 1);
+
+  write_count = fwrite (&(self->cache_area), sizeof (size_t), 1, fp);
+  g_assert (write_count == 1);
+
+  write_count = fwrite (&(self->tile_size), sizeof (size_t), 1, fp);
+  g_assert (write_count == 1);
+
+  write_count = fwrite (&(self->cache_size_in_tiles), sizeof (size_t), 1, fp);
+  g_assert (write_count == 1);
+
+  write_count = fwrite (&(self->tile_count_x), sizeof (size_t), 1, fp);
+  g_assert (write_count == 1);
+
+  write_count = fwrite (&(self->tile_count_y), sizeof (size_t), 1, fp);
+  g_assert (write_count == 1);
+
+  write_count = fwrite (&(self->tile_count), sizeof (size_t), 1, fp);
+  g_assert (write_count == 1);
+
+  write_count = fwrite (&(self->tile_area), sizeof (size_t), 1, fp);
+  g_assert (write_count == 1);
+
+  // We don't bother serializing the cache -- its a pain to keep track
+  // of and probably almost never worth it.
+
+  // We write the tile queue pointer away, so that when we later thaw
+  // the serialized version, we can tell if a cache file is in use or
+  // not (it it isn't tile_queue will be NULL).
+  write_count = fwrite (&(self->tile_queue), sizeof (GQueue *), 1, fp);
+  g_assert (write_count == 1);
+
+  // If there was no cache file...
+  if ( self->tile_queue == NULL ) {
+    // We store the contents of the first tile and are done.
+    write_count == fwrite (self->tile_addresses[0], sizeof (float), 
+			   self->tile_area, fp);
+    g_assert (write_count == self->tile_area);
+  }
+  // otherwise, the tile block cache needs to be saved in the
+  // serialized version of self.
+  else {
+    float *buffer = g_new (float, self->tile_area);
+    size_t ii;
+    off_t tmp = ftello (self->tile_file);
+    int return_code = fseeko (self->tile_file, 0, SEEK_SET);
+    g_assert (return_code == 0);
+    for ( ii = 0 ; ii < self->tile_count ; ii++ ) {
+      size_t read_count = fread (buffer, sizeof (float), self->tile_area, 
+				 self->tile_file);
+      g_assert (read_count == self->tile_area);
+      write_count = fwrite (buffer, sizeof (float), self->tile_area, fp);
+      g_assert (write_count == self->tile_area);
+    }
+    return_code == fseeko (self->tile_file, tmp, SEEK_SET);
+    g_assert (return_code == 0);
+    g_free (buffer);
+  }
+}
+
 int
 float_image_store (FloatImage *self, const char *file,
                    float_image_byte_order_t byte_order)
@@ -2014,7 +2224,7 @@ float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
 					       double interval_start,
 					       double interval_end)
 {
-  // This method is probably find, but it hasn't been tested yet.
+  // This method is probably fine, but it hasn't been tested yet.
   g_assert_not_reached ();
 
   size_t scale_factor;          // Scale factor to use for output image.
