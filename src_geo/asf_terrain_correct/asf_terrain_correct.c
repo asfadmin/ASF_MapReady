@@ -6,10 +6,11 @@
 #include "slant_range_image_cspline.h"
 
 // Standard headers.
-#include <assert.h>
+#include <complex.h>
 #include <stdlib.h>
 
 // Headers from external libraries.
+#include <fftw3.h>
 #include <glib.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_errno.h>
@@ -29,11 +30,17 @@
 #include "platform_path.h"
 #include "progress_meter.h"
 #ifdef BK_DEBUG
-#  include "scratchplot.h"
+#  include <scratchplot.h>
 #endif
 #include "slant_range_image.h"
 #include "dem_geom_info.h"
 #include "lsm.h"
+
+// We use the FloatImage class a lot, so we have these convenience
+// macros.
+#define SP(i, xi, yi, pv) float_image_set_pixel (i, xi, yi, pv)
+#define GP(i, xi, yi) (float_image_get_pixel (i, xi, yi))
+
 
 // Print user information to error output location and exit with a
 // non-zero exit code.
@@ -71,9 +78,255 @@ target_distance (double time, void *params)
   vector_subtract (&difference, target);
 
   return vector_magnitude (&difference);
-  // For variety lets try minimizing just the sum of squares, on the
-  // hope that it will be a slightly smoother function.
-  //return powl (target->x, 2.0) + powl (target->y, 2.0) + powl (target->z, 2.0);
+}
+
+// Compute a score that increases as the autocorrelation of square
+// image under rotation increases.  The score is nothing standard, but
+// is useful for comparing to the scores of other images.  The basic
+// idea here is to use the fact that since mountains are bright on one
+// side, they decorrelate nicely under rotation.  This lets us find
+// the nice mountainous regions in SAR images simulated from DEMs that
+// we expect will coregister well with real SAR images (since radar
+// backscatter is determined mostly from terrain incidence angle only
+// in steeper regions, and is dominated by land cover radiometric
+// characteristics elsewhere).
+static long double
+rotational_autocorrelation_score (FloatImage *image)
+{
+  g_assert (image->size_x == image->size_y);
+
+  FloatImage *im = image;	// Convenience alias.
+
+  size_t sz = im->size_x;	// Convenience alias.
+
+  // Form normalized version of the image (pixels sum to 1.0).
+  FloatImage *ni = float_image_new (sz, sz);
+  double pixel_sum = 0;
+  size_t ii, jj;
+  for ( ii = 0 ; ii < sz; ii++ ) {
+    for ( jj = 0 ; jj < sz ;  jj++ ) {
+      pixel_sum += GP (im, jj, ii);
+    }
+  }
+  for ( ii = 0 ; ii < sz ; ii++ ) {
+    for ( jj = 0 ; jj < sz ;  jj++ ) {
+      SP (ni, jj, ii, GP (im, jj, ii) / pixel_sum);
+    }
+  }
+
+  // We will sample the images every sample_stride, rather than
+  // computing correlations based on every pixel in the image.
+  const int sample_stride = 3;
+
+  // Compute unrotated autocorrelation as the sum of pixel values
+  // squared, for a sparse subset of pixels.
+  long double correlation_0 = 0;
+  for ( ii = 0 ; ii < sz ; ii += sample_stride ) {
+    for ( jj = 0 ; jj < sz ; jj += sample_stride ) {
+      correlation_0 += pow (GP (ni, jj, ii), 2);
+    }
+  }
+
+  // Form a version of the normalized image tile rotated clockwise
+  // ninety degrees.
+  FloatImage *rni = float_image_new (sz, sz);
+  for ( ii = 0 ; ii < sz ; ii++ ) {
+    for ( jj = 0 ; jj < sz ; jj++ ) {
+      SP (rni, jj, ii, GP (ni, ii, sz - jj - 1));
+    }
+  }
+
+  // Compute the correlation between the rotated and unrotated
+  // normalized images.
+  long double correlation_90 = 0;
+  for ( ii = 0 ; ii < sz ; ii += sample_stride ) {
+    for ( jj = 0 ; jj < sz ; jj += sample_stride ) {
+      correlation_90 += GP (ni, jj, ii) * GP (rni, jj, ii);
+    }
+  }  
+
+  // We are done with the intermediate images.
+  float_image_free (ni);
+  float_image_free (rni);
+
+  // The score we are interested in is hopefully ordered about the
+  // same as this ratio of characteristics.
+  return correlation_90 / correlation_0;
+}
+
+
+// Type to hold some information about a tile of a SAR image, a
+// corresponding tile of a simulated image, and a score indicating the
+// autocorrelation of the simulated image tile with itself under
+// rotation.
+typedef struct {
+  // Rotational autocorrelation score (see above).
+  long double ras;
+  FloatImage *sim_img;		// Simulated image tile.
+  FloatImage *sri_img;		// Slant range SAR image tile.
+} image_tile_record_type;
+
+// Compare the autocorrelation scores of *a and *b, returning -1 if
+// (*a)->ras < (*b)->ras, 0 if (*a)->ras == (*b)->ras, or 1 if
+// (*a)->ras > (*b)->ras.
+static gint
+compare_rotational_autocorrelation_scores (image_tile_record_type **a,
+					   image_tile_record_type **b)
+{
+  if ( (*a)->ras < (*b)->ras ) {
+    return -1;
+  }
+  else if ( (*a)->ras > (*b)->ras ) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
+// Find the offset of square image b from square image a.  Images a
+// and b must be equal sized.  The output values x_offset and y_offset
+// are the distances that the pixels of b are offset from the pixels
+// of a, in the FloatImage coordinate directions (i.e. top left pixel
+// is (0, 0), and x increases as we move right and y increases as we
+// move down).  The coregistration is done in memory using the fftw
+// library.  On success 0 is returned, otherwise nonzero is returned.
+static int
+coregister (double *x_offset, double *y_offset, FloatImage *a, FloatImage *b)
+{
+  g_assert (a->size_x == a->size_y);
+  g_assert (b->size_x == b->size_y);
+  g_assert (a->size_x == b->size_x);
+
+  size_t sz = a->size_x;	// Convenience alias.
+
+  // FIXME: fftw supports real-data-specific trasforms which expoit
+  // hermitian symetry, in-place transforms, better performance at
+  // certain transform sizes, etc., but these are a pain to sort out
+  // and I'm lazy.
+
+  // Memory gauranteed to have fftw preferred alignment.
+  fftw_complex *a_in = fftw_malloc (sz * sz * sizeof (fftw_complex));
+  fftw_complex *b_in = fftw_malloc (sz * sz * sizeof (fftw_complex));
+  fftw_complex *a_out = fftw_malloc (sz * sz * sizeof (fftw_complex));
+  fftw_complex *b_out = fftw_malloc (sz * sz * sizeof (fftw_complex));
+
+  size_t ii, jj;
+  for ( ii = 0 ; ii < sz ; ii++ ) {
+    for ( jj = 0 ; jj < sz ; jj++ ) {
+      a_in[sz * ii + jj] = GP (a, jj, ii) + I * 0.0;
+      b_in[sz * ii + jj] = GP (b, jj, ii) + I * 0.0;
+    }
+  }
+
+  fftw_plan a_plan = fftw_plan_dft_2d (sz, sz, a_in, a_out, FFTW_FORWARD,
+				       FFTW_MEASURE);
+  fftw_execute (a_plan);
+  fftw_plan b_plan = fftw_plan_dft_2d (sz, sz, b_in, b_out, FFTW_FORWARD,
+				       FFTW_MEASURE);
+  fftw_execute (b_plan);
+
+  // Conjugate b_out.
+  for ( ii = 0 ; ii < sz ; ii++ ) {
+    for ( jj = 0 ; jj < sz ; jj++ ) {
+      size_t ci = sz * ii + jj;   // Current index.
+      b_out[ci] = creal (b_out[ci]) - cimag (b_out[ci]);
+    }
+  }
+
+  fftw_complex *a_by_b_freq = fftw_malloc (sz * sz * sizeof (fftw_complex));
+
+  for ( ii = 0 ; ii < sz ; ii++ ) {
+    for ( jj = 0 ; jj < sz ; jj++ ) {
+      a_by_b_freq[sz * ii + jj] = a_out[sz * ii + jj] * b_out[sz * ii + jj];
+    }
+  }
+
+  fftw_complex *a_convolve_b = fftw_malloc (sz * sz * sizeof (fftw_complex));
+
+  fftw_plan reverse_plan = fftw_plan_dft_2d (sz, sz, a_by_b_freq, a_convolve_b,
+					     FFTW_BACKWARD, FFTW_MEASURE);
+  fftw_execute (reverse_plan);
+
+  FloatImage *correlation_image = float_image_new (sz, sz);
+
+  for ( ii = 0 ; ii < sz ; ii++ ) {
+    for ( jj = 0 ; jj < sz ; jj++ ) {
+      SP (correlation_image, jj, ii, 
+	  (float) creal (a_convolve_b[sz * ii + jj]));
+    }
+  }
+
+  // FIXME: For debugging purposes, take a look at the correlation image.
+  float_image_export_as_jpeg (a, "image_tiles/image_a.jpg", sz, NAN);
+  float_image_export_as_jpeg (b, "image_tiles/image_b.jpg", sz, NAN);
+  float_image_export_as_jpeg (correlation_image, 
+			      "image_tiles/correlation_image.jpg", sz, NAN);
+
+  // Form an image which shows the peak(s) in the correlation image.
+  float cmin, cmax, cmean, csdev;
+  float_image_statistics (correlation_image, &cmin, &cmax, &cmean, &csdev,
+			  NAN);
+  FloatImage *corr_peaks = float_image_new (sz, sz);
+  for ( ii = 0 ; ii < sz ; ii++ ) {
+    for ( jj = 0 ; jj < sz ; jj++ ) {
+      float pv = GP (correlation_image, jj, ii);
+      if ( pv > cmax - csdev ) {
+	SP (corr_peaks, jj, ii, pv - (cmax - csdev));
+      }
+      else {
+	SP (corr_peaks, jj, ii, 0.0);
+      }
+    }
+  }
+  float_image_export_as_jpeg (corr_peaks, "image_tiles/corr_peaks.jpg", sz, 
+			      NAN);
+
+  // Find the actual peak of the correlation image.
+  size_t peak_x = -1000, peak_y = -1000; /* Initializers reassure compiler.  */
+  float peak_value = -100000000;
+  for ( ii = 0 ; ii < sz ; ii++ ) {
+    for ( jj = 0 ; jj < sz ; jj++ ) {
+      float cv = GP (correlation_image, jj, ii);
+      if ( cv > peak_value ) {
+	peak_x = jj;
+	peak_y = ii;
+	peak_value = cv;
+      }
+    }
+  }
+  g_print ("Peak position: %ld, %ld\n", (long int) peak_x, (long int) peak_y);
+  g_print ("Peak value: %g\n", peak_value);
+  ssize_t ia = peak_y - 1, ib = peak_y + 1, il = peak_x - 1, ir = peak_x + 1;
+  g_assert (sz <= SSIZE_MAX);
+  if ( ib >= 0 && ia <= (ssize_t) sz - 1 && il >= 0 
+       && ir <= (ssize_t)sz - 1 ) {
+    g_print ("Neighbors: %g %g %g %g %g %g %g %g\n",
+	     GP (correlation_image, il, ia),
+	     GP (correlation_image, peak_x, ia),
+	     GP (correlation_image, ir, ia),
+	     GP (correlation_image, il, peak_y),
+	     GP (correlation_image, ir, peak_y),
+	     GP (correlation_image, il, ib),
+	     GP (correlation_image, peak_x, ib),
+	     GP (correlation_image, ir, ib));
+  }
+
+
+  float_image_free (correlation_image);
+  float_image_free (corr_peaks);
+
+  fftw_free (a_in);
+  fftw_free (b_in);
+  fftw_free (a_out);
+  fftw_free (b_out);
+  fftw_free (a_by_b_freq);
+  fftw_free (a_convolve_b);
+
+  // FIXME: these aren't filled in yet.  
+  *x_offset = -DBL_MAX;
+  *y_offset = -DBL_MAX;
+  return 0;			// Return success code;
 }
 
 // Main program.
@@ -117,8 +370,25 @@ main (int argc, char **argv)
     = map_projected_dem_new_from_las (reference_dem->str,
 				      reference_dem_img->str);
   g_print ("done.\n");
+
+  FILE *tsf_fp = fopen ("tsf", "w");
+  g_assert (tsf_fp != NULL);
+  float_image_freeze (dem->data, tsf_fp);
+  int return_code = fclose (tsf_fp);
+  g_assert (return_code == 0);
+  tsf_fp = fopen ("tsf", "r");
+  g_assert (tsf_fp != NULL);
+  FloatImage *thawed_instance = float_image_thaw (tsf_fp);
+  return_code = fclose (tsf_fp);
+  g_assert (return_code == 0);
+  gboolean freeze_thaw_work 
+    = float_image_equals (dem->data, thawed_instance, 1e-8);
+  g_assert (freeze_thaw_work);
+
   // Take a quick look at the DEM for FIXME: debug purposes.
-  //  float_image_export_as_jpeg (dem->data, "dem_view.jpg", 2000, 0.0);
+  float_image_export_as_jpeg (dem->data, "dem_view.jpg", 
+			      GSL_MAX (dem->data->size_x, dem->data->size_y), 
+			      0.0);
 
   // We will need a slant range version of the image being terrain
   // corrected.
@@ -127,123 +397,22 @@ main (int argc, char **argv)
   SlantRangeImage *sri 
     = slant_range_image_new_from_ground_range_image (input_meta_file->str,
     						     input_data_file->str);
-
-  /*
-  SlantRangeImageCspline *sric
-    = slant_range_image_cspline_new_from_ground_range_image 
-        (input_meta_file->str, input_data_file->str);
-  g_assert (sric->data->size_x == sri->data->size_x);
-  g_assert (sric->data->size_y == sri->data->size_y);
-  FloatImage *diff_image = float_image_new (sri->data->size_x, 
-					    sri->data->size_y);
-
-  FloatImage *negative_image = float_image_new (sri->data->size_x, 
-						sri->data->size_y);
-  int zz1, zz2;
-  for ( zz1 = 0 ; (size_t) zz1 < sric->data->size_x ; zz1++ ) {
-    for ( zz2 = 0 ; (size_t) zz2 < sric->data->size_y ; zz2++ ) {
-      float pv = float_image_get_pixel (sric->data, zz1, zz2);
-      if ( pv < 0.0 ) {
-	float_image_set_pixel (negative_image, zz1, zz2, 100);
-      }
-      else {
-	float_image_set_pixel (negative_image, zz1, zz2, 0.0);
-      }
-    }
-  }
-  printf ("exporting cspline_negative_image.jpg...\n");
-  int my_return_code 
-    = float_image_export_as_jpeg (negative_image, "cspline_negative_image.jpg",
-				  GSL_MAX (negative_image->size_x, 
-					   negative_image->size_y),
-				  NAN);
-  g_assert (my_return_code == 0);
-
-
-  for ( zz1 = 0 ; (size_t) zz1 < sri->data->size_x ; zz1++ ) {
-    for ( zz2 = 0 ; (size_t) zz2 < sri->data->size_y ; zz2++ ) {
-      float pv = float_image_get_pixel (sri->data, zz1, zz2);
-      if ( pv < 0.0 ) {
-	g_assert_not_reached ();
-	float_image_set_pixel (negative_image, zz1, zz2, 100);
-      }
-      else {
-	float_image_set_pixel (negative_image, zz1, zz2, 0.0);
-      }
-    }
-  }
-  printf ("exporting linear_negative_image.jpg...\n");
-  my_return_code 
-    = float_image_export_as_jpeg (negative_image, "linear_negative_image.jpg",
-				  GSL_MAX (negative_image->size_x, 
-					   negative_image->size_y),
-				  NAN);
-  g_assert (my_return_code == 0);
-
-
-
-  for ( zz1 = 0 ; (size_t) zz1 < sri->data->size_x ; zz1++ ) {
-    for ( zz2 = 0 ; (size_t) zz2 < sri->data->size_y ; zz2++ ) {
-      float diff = fabsf(float_image_get_pixel (sri->data, zz1, zz2)
-			 - float_image_get_pixel (sric->data, zz1, zz2));
-      float_image_set_pixel (diff_image, zz1, zz2, diff);
-    }
-  }
-  float diff_min, diff_max, diff_mean, diff_standard_deviation;
-  float_image_statistics (diff_image, &diff_min, &diff_max, &diff_mean, 
-			  &diff_standard_deviation, 0.0);
-  g_print ("\n\ndiff_min: %g, diff_max: %g, diff_mean: %g, "
-	   "diff_standard_deviation: %g\n\n", diff_min, diff_max, diff_mean,
-	   diff_standard_deviation);
-  float_image_export_as_jpeg (diff_image, "diff_image.jpg",
-			      GSL_MAX (diff_image->size_x, diff_image->size_y),
-			      NAN);
-  float_image_free (diff_image);
-
-  FloatImage *rhdiff_image = float_image_new (sri->data->size_x / 2,
-					      sri->data->size_y);
-  FloatImage *srirh = float_image_new_subimage (sri->data, 0, 0, 
-						sri->data->size_x / 2, 
-						sri->data->size_y);
-  FloatImage *sricrh = float_image_new_subimage (sric->data, 0, 0, 
-						 sric->data->size_x / 2, 
-						 sric->data->size_y);
-  for ( zz1 = 0 ; (size_t) zz1 < srirh->size_x ; zz1++ ) {
-    for ( zz2 = 0 ; (size_t) zz2 < srirh->size_y ; zz2++ ) {
-      float diff = fabsf(float_image_get_pixel (srirh, zz1, zz2)
-			 - float_image_get_pixel (sricrh, zz1, zz2));
-      float_image_set_pixel (rhdiff_image, zz1, zz2, diff);
-    }
-  }
-  float rhdiff_min, rhdiff_max, rhdiff_mean, rhdiff_standard_deviation;
-  float_image_statistics (rhdiff_image, &rhdiff_min, &rhdiff_max, 
-			  &rhdiff_mean, &rhdiff_standard_deviation, 0.0);
-  g_print ("\n\nrhdiff_min: %g, rhdiff_max: %g, rhdiff_mean: %g, "
-	   "rhdiff_standard_deviation: %g\n\n", rhdiff_min, rhdiff_max, 
-	   rhdiff_mean, rhdiff_standard_deviation);
-  float_image_export_as_jpeg (rhdiff_image, "rhdiff_image.jpg",
-			      GSL_MAX (rhdiff_image->size_x, 
-				       rhdiff_image->size_y),
-			      NAN);
-  float_image_free (rhdiff_image);
-
-
-
-  float sri_min, sri_max, sri_mean, sri_standard_deviation;
-  float_image_statistics (sri->data, &sri_min, &sri_max, &sri_mean, 
-			  &sri_standard_deviation, 0.0);
-  */
-
   g_print ("done.\n");
 #else
+  SlantRangeImage *sri;
   if ( g_file_test ("bk_debug_sri_freeze", G_FILE_TEST_EXISTS) ) {
-    SlantRangeImage *sri = slant_range_image_thaw ("test_sri_freeze");
+    g_print ("Loading serialized slant range image file... ");
+    sri = slant_range_image_thaw ("bk_debug_sri_freeze");
+    g_print ("done.\n");
   }
   else {
-    SlantRangeImage *sri 
-      = slant_range_image_new_from_ground_range_image (input_meta_file->str,
-						       input_data_file->str);
-    slant_range_image_freeze (sri, "test_sri_freeze");
+    g_print ("Loading SAR image and converting to slant range... ");    
+    sri = slant_range_image_new_from_ground_range_image (input_meta_file->str,
+							 input_data_file->str);
+    g_print ("done.\n");
+    g_print ("Serializing SAR slant range image for future use... ");
+    slant_range_image_freeze (sri, "bk_debug_sri_freeze");
+    g_print ("done.\n");
   }
 #endif
 
@@ -407,7 +576,7 @@ main (int argc, char **argv)
   gsl_vector_free (itrs_vel);
   gsl_vector_free (itrs_pos);
 
-  g_print ("Creating orbital arc model...");
+  g_print ("Creating orbital arc model... ");
 
   // Number of control points to use for the cubic splines that
   // approximate the satellite motion in the ITRSPlatformPath.
@@ -548,21 +717,7 @@ main (int argc, char **argv)
   // the different pixels so we can report that as well.
   long double mean_tolerance = 0;
 
-  // Because the geolocation of images is often quite bad, we will
-  // create a simulated SAR image as we march through the DEM, then
-  // measure the offset of the simulated image from the actual slant
-  // range image.  We can then subject the slant range image pixel
-  // lookups used to color the DEM to the discovered offset.
-  SlantRangeImage *sim_img 
-    = slant_range_image_new_empty (sri->upper_left_pixel_range,
-				   sri->upper_left_pixel_time,
-				   sri->slant_range_per_pixel,
-				   sri->time_per_pixel,
-				   sri->data->size_x,
-				   sri->data->size_y);
-  sim_img = sim_img;		/* FIXME: remove warning silencer.  */
-
-  DEMGeomInfo * dgi = dem_geom_info_new(dem->size_y, dem->size_x);
+  DEMGeomInfo * dgi = dem_geom_info_new(dem->size_x, dem->size_y);
 
   // For each DEM row...
   for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
@@ -594,6 +749,11 @@ main (int argc, char **argv)
       cp_target.x = ctp->x;
       cp_target.y = ctp->y;
       cp_target.z = ctp->z;
+
+      if ( ii == 1685 && jj == 1683 ) {
+	g_print ("we're here!! x: %lg, y: %lg, z: %lg\n", cp_target.x,
+		 cp_target.y, cp_target.z);
+      }
 
       ITRS_point_free (ctp);
 
@@ -633,9 +793,11 @@ main (int argc, char **argv)
 						min, sor, eor);
       // If there is no minimum in this range, it means our orbital
       // arc model doesn't cover this part of the DEM, so just set the
-      // painted dem pixel to zero and go on to the next pixel.
+      // painted dem pixel to zero, set a sentinal value in the dem
+      // geometry informationi record, and go on to the next pixel.
       if ( return_code == GSL_FAILURE ) {
 	float_image_set_pixel (pd, jj, ii, 0.0);
+	float_image_set_pixel (dgi->slant_range_value, jj, ii, -1);
 	break;
       }
 	
@@ -694,18 +856,286 @@ main (int argc, char **argv)
       double solved_slant_range = vector_magnitude (poca_to_target);
       vector_free (poca_to_target);
 
-      dem_geom_info_set(dgi, ii, jj, &cp_target, solved_time, 
-			solved_slant_range, cp_height, &poca);
+      if ( jj == 1500 && ii == 1800 ) {
+	g_print ("At pixel (1500, 1800), give or take.\n");
+      }
+
+      if ( jj == 1354 && ii == 1806 ) {
+	g_print ("At pixel ( 1353, 1806).\n");
+      }
+
+      // If the DEM pixel fallis in the slant range image, set the
+      // discovered geometry information.
+      if ( slant_range_image_contains (sri, solved_slant_range, 
+				       solved_time, 1e-3) ) {
+	// FIXME: is cp_height (the height above the WGS84 ellipsoid)
+	// really what's wanted here?
+	dem_geom_info_set (dgi, jj, ii, &cp_target, solved_time, 
+			   solved_slant_range, cp_height, &poca);
+      }
+      else {
+	// otherwise, since we aren't absolutely sure we have image
+	// over this portion of the DEM, set a sentinal value in the
+	// geometry information to indicate this,
+	float_image_set_pixel (dgi->slant_range_value, jj, ii, -1);
+      }
     }
   }
+
+
+  // Make a quick jpeg showing the part of the DEM we believe the
+  // image covers.
+  FloatImage *dem_coverage = float_image_new (dem->size_x, dem->size_y);
+  // For each DEM row except the first and last...
+  for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
+    long int jj;
+    // For every other DEM pixel except the first and last two...
+    for ( jj = 0 ; (size_t) jj < dem->size_x ; jj++ ) {
+      if ( dem_geom_info_get_slant_range_value (dgi, jj, ii) < 0 ) {
+	SP (dem_coverage, jj, ii, GP (dem->data, jj, ii));
+      }
+      else {
+	SP (dem_coverage, jj, ii, 2 * GP (dem->data, jj, ii));
+      }
+    }
+  }
+  float_image_export_as_jpeg (dem_coverage, "dem_coverage.jpg",
+			      GSL_MAX (dem_coverage->size_x,
+				       dem_coverage->size_y), NAN);
+
+  //  FloatImage * lsm = lsm_generate_mask(dgi);
+  //  lsm = lsm;			/* FIXME: remove compiler reassurance.  */
+
+  // Because the geolocation of images is often quite bad, we will
+  // march throught the DEM and create a simulated SAR image, then
+  // measure the offset of the simulated image from the actual slant
+  // range image.  We can then subject the slant range image pixel
+  // lookups used to color the DEM to the discovered offset.
+  g_print ("Generating simulated SAR image... ");
+  SlantRangeImage *sim_img 
+    = slant_range_image_new_empty (sri->upper_left_pixel_range,
+				   sri->upper_left_pixel_time,
+				   sri->slant_range_per_pixel,
+				   sri->time_per_pixel,
+				   sri->data->size_x,
+				   sri->data->size_y);
+
+  // We can hopefully get away with ignoring the backscatter
+  // contributions of the very edge facets, which saves the pain of
+  // special handling for them.
+
+  // For each DEM row except the first and last...
+  for ( ii = 1 ; (size_t) ii < dem->size_y  - 1; ii++ ) {
+    long int jj;
+    // For every other DEM pixel except the first and last two...
+    //    for ( jj = 1 ; (size_t) jj < dem->size_x - 2; jj += 2 ) {
+    for ( jj = 1 ; (size_t) jj < dem->size_x - 1; jj++ ) {
+
+
+      // We are interested in the four triangular facets defined by
+      // the non-diagonal neighbors, so to entirely cover the image,
+      // we need only considerer every other pixel in each row.  We
+      // need to cover even pixels in one row, odd pixels in the next,
+      // etc.  So here we compute the DEM x index being considered the
+      // center of the four facet for each pixel in this row of
+      // pixels.
+      size_t xi;
+      if ( ii % 2 == 1 ) {
+	xi = jj;
+      }
+      else {
+	xi = jj + 1;
+      }
+
+      if ( ii == 1685 && xi == 1683 ) {
+	g_print ("We're here 2!\n");
+      }
+
+      // If we are in shadow this DEM pixel contributes nothing to the
+      // backscatter in the simulated image.
+      /* For the moment we just assume this doesn't happen.
+      if ( lsm_image_mask_value_is_shadow (lsm, ii, xi) ) {
+	continue;
+      }
+      */
+
+      // If this DEM pixel and all its neighbors that we will be
+      // considering don't all fall in the image, it contributes
+      // nothing.
+      if ( dem_geom_info_get_slant_range_value (dgi, xi, ii) < 0 
+	   || dem_geom_info_get_slant_range_value (dgi, xi, ii - 1) < 0 
+	   || dem_geom_info_get_slant_range_value (dgi, xi + 1, ii) < 0 
+	   || dem_geom_info_get_slant_range_value (dgi, xi, ii + 1) < 0 
+	   || dem_geom_info_get_slant_range_value (dgi, xi - 1, ii) < 0 ) {
+	continue;
+      }
+
+      if ( xi == 1500 && ii == 1800 ) {
+	g_print ("At xi == 1500, ii = 1800 in simulator.\n");
+      }
+
+      // We want to compute the normals of the upper left, upper
+      // right, lower left, and lower right triangular facets, then
+      // average them together to get a normal at a given dem pixel.
+      // We can do this by forming vectors from the current dem pixel
+      // to its four non-diagonal neighbors, then taking cross
+      // products of adjacent pairs of vectors, then adding the
+      // results together and normalizing.
+
+      // Vectors for the current DEM pixel, and the pixels above, to
+      // the right, below, and to the left respectively, in ITRS
+      // coordinates.
+      Vector c, a, r, b, l;
+      vector_set (&c, float_image_get_pixel (dgi->cp_target_x, xi,  ii),
+		  float_image_get_pixel (dgi->cp_target_y, xi, ii),
+		  float_image_get_pixel (dgi->cp_target_z, xi, ii));
+      vector_set (&a, float_image_get_pixel (dgi->cp_target_x, xi, ii - 1),
+		  float_image_get_pixel (dgi->cp_target_y, xi, ii - 1),
+		  float_image_get_pixel (dgi->cp_target_z, xi, ii - 1));
+      vector_set (&r, float_image_get_pixel (dgi->cp_target_x, xi + 1, ii),
+		  float_image_get_pixel (dgi->cp_target_y, xi + 1, ii),
+		  float_image_get_pixel (dgi->cp_target_z, xi + 1, ii));
+      vector_set (&b, float_image_get_pixel (dgi->cp_target_x, xi, ii + 1),
+		  float_image_get_pixel (dgi->cp_target_y, xi, ii + 1),
+		  float_image_get_pixel (dgi->cp_target_z, xi, ii + 1));
+      vector_set (&l, float_image_get_pixel (dgi->cp_target_x, xi - 1, ii),
+		  float_image_get_pixel (dgi->cp_target_y, xi - 1, ii),
+		  float_image_get_pixel (dgi->cp_target_z, xi - 1, ii));
+
+      // We now change the vectors to the neighbors st instead of
+      // pointing from the ITRS origin to the target DEM pixel, they
+      // point from the target DEM pixel to the appropriate neighbor
+      // DEM pixel.
+      vector_subtract (&a, &c);
+      vector_subtract (&r, &c);
+      vector_subtract (&b, &c);
+      vector_subtract (&l, &c);
+
+      // Compute the normal vectors for each of the facets.
+      Vector *uln = vector_cross (&a, &l);
+      Vector *urn = vector_cross (&r, &a);
+      Vector *lrn = vector_cross (&b, &r);
+      Vector *lln = vector_cross (&l, &b);
+
+      Vector *n = vector_copy (uln);
+      vector_add (n, urn);
+      vector_add (n, lrn);
+      vector_add (n, lln);
+
+      if ( vector_magnitude (n) < 0.00000001 ) {
+	g_warning ("really tiny normal vector magnitude\n");
+	g_print ("c: %lf %lf %lf  \n"
+		 "a: %lf %lf %lf  \n"
+		 "r: %lf %lf %lf  \n"
+		 "b: %lf %lf %lf  \n"
+		 "l: %lf %lf %lf  \n",
+		 c.x, c.y, c.z,
+		 a.x, a.y, a.z,
+		 r.x, r.y, r.z,
+		 b.x, b.y, b.z,
+		 l.x, l.y, l.z);
+      }
+      else {
+	vector_multiply (n, 1.0 / vector_magnitude (n));
+      }
+      /*
+      vector_multiply (n, 1.0 / vector_magnitude (n));
+      g_assert (vector_magnitude (n) > 0.5);
+      */
+
+      // Recall the slant range and imaging time for this DEM pixel.
+      double sr = dem_geom_info_get_slant_range_value (dgi, xi, ii);
+      double it = dem_geom_info_get_imaging_time (dgi, xi, ii);
+
+      // Compute a vector from the current target to the platform at
+      // the point of closest aproach.
+      Vector pp;
+      ITRS_platform_path_position_at_time (pp_fixed, it, &pp);
+      Vector *target_to_poca = vector_copy (&pp);
+      vector_subtract (target_to_poca, &c);
+
+      // The incidence angle is the angle between the mean normal of
+      // the facets and the line between the current target (DEM
+      // pixel) and the point of closest approach.
+      double incidence_angle = vector_angle (n, target_to_poca);
+
+      // We will assume that the backscatter returned by the dirt in
+      // this DEM pixel is proportional to the cosine of the angle
+      // between the normal vector and the vector between the
+      // platform and the target, i.e. the return is proportional to
+      // the cosine of the local incidence angle at the point of
+      // closest approach.
+      
+      // FIXME: for the moment we exclude backslopes this way, since
+      // the shadow mask isn't finished yet.
+      if ( !(incidence_angle > M_PI) ) {
+	if ( slant_range_image_contains (sim_img, sr, it, 1e-3) ) {
+	  slant_range_image_add_energy (sim_img, sr, it, 
+					cos (incidence_angle));
+	}
+      }
+
+      vector_free (uln);
+      vector_free (urn);
+      vector_free (lrn);
+      vector_free (lln);
+      vector_free (n);
+      vector_free (target_to_poca);
+    }
+  }
+  g_print ("done.\n");
+
+  const int tile_size = 100;
+  GPtrArray *image_tile_records = g_ptr_array_new ();
+  for ( ii = 0 ; (size_t) ii < sim_img->data->size_y / tile_size ; ii++ ) {
+    size_t jj;
+    for ( jj = 0 ; (size_t) jj < sim_img->data->size_x / tile_size ; jj++ ) {
+      FloatImage *cst = float_image_new_subimage (sim_img->data, 
+						  jj * tile_size,
+						  ii * tile_size, tile_size,
+						  tile_size);
+      FloatImage *cit = float_image_new_subimage (sri->data, jj * tile_size,
+						  ii * tile_size, tile_size,
+						  tile_size);
+      image_tile_record_type *itr = g_new (image_tile_record_type, 1);
+      itr->ras = rotational_autocorrelation_score (cst);
+      itr->sim_img = cst;
+      itr->sri_img = cit;
+      g_ptr_array_add (image_tile_records, itr);
+    }
+  }
+
+  g_ptr_array_sort (image_tile_records, 
+		    (GCompareFunc) compare_rotational_autocorrelation_scores);
+
+  for ( ii = 0 ; (size_t) ii < image_tile_records->len ; ii++ ) {
+    GString *ctn = g_string_new ("image_tiles/image_tile_");
+    g_string_append_printf (ctn, "%d.jpg", (int) ii);
+    FloatImage *csimt = ((image_tile_record_type *) 
+			 g_ptr_array_index (image_tile_records, ii))->sim_img;
+    float_image_export_as_jpeg (csimt, ctn->str, GSL_MAX (csimt->size_x, 
+							  csimt->size_y), NAN);
+    g_string_free (ctn, TRUE);
+  }
+
+  for ( ii = 0 ; (size_t) ii < image_tile_records->len ; ii++ ) {
+    double x_offset, y_offset;
+    image_tile_record_type *itr = g_ptr_array_index (image_tile_records, ii);
+    int return_code 
+      = coregister (&x_offset, &y_offset, itr->sim_img, itr->sri_img);
+    g_assert (return_code == 0);
+  }
+
+  // Take a look at the simulated image for (FIXME) debug purposes.
+  float_image_export_as_jpeg (sim_img->data, "sim_img.jpg",
+			      GSL_MIN (sim_img->data->size_x,
+				       sim_img->data->size_y), NAN);
 
   g_print("Generating layover/shadow mask... \n");
   FloatImage * lsm = lsm_generate_mask(dgi);
   lsm = lsm;
   g_print("done\n");
   
-  // FIXME: coregistration goes here!
-
   g_print ("Painting %ld DEM pixel rows with SAR image pixel values...\n",
 	   (long int) dem->size_y);
 
@@ -718,13 +1148,14 @@ main (int argc, char **argv)
     g_assert (ii <= SSIZE_MAX);
 
     size_t jj;
+    // For each pixel in the row...
     for ( jj = 0 ; jj < dem->size_x ; jj++ ) {
 
       // Pull out previously calculated values
       double solved_slant_range =
-	dem_geom_info_get_slant_range_value(dgi, ii, jj);
+	dem_geom_info_get_slant_range_value(dgi, jj, ii);
       double solved_time =
-	dem_geom_info_get_imaging_time(dgi, ii, jj);
+	dem_geom_info_get_imaging_time(dgi, jj, ii);
 
       // Look up the backscatter value for the found slant range and
       // time.
