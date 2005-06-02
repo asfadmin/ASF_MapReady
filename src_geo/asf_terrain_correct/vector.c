@@ -89,7 +89,8 @@ vector_magnitude (Vector *self)
 double
 vector_angle (Vector *self, Vector *other)
 {
-  assert (vector_magnitude (self) > 0.0 && vector_magnitude (other) > 0.0);
+  assert (vector_magnitude (self) > 0.0);
+  assert (vector_magnitude (other) > 0.0);
 
   return acos (vector_dot (self, other) / (vector_magnitude (self) 
 					   * vector_magnitude (other)));
