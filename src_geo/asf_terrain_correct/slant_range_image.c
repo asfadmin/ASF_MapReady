@@ -417,6 +417,50 @@ slant_range_image_sample (SlantRangeImage *self, double range, double time,
   return float_image_sample (self->data, x, y, sample_method);
 }
 
+void
+slant_range_image_add_energy (SlantRangeImage *self, double range, double time,
+			      double energy)
+{
+  // We insist that the requested (range, time) be within the extent
+  // of the image by at least this fraction of the image size.
+  const double relative_guard = 1e-6;
+  g_assert (slant_range_image_contains (self, range, time, relative_guard));
+
+  double x = ((range - self->upper_left_pixel_range)
+	      / self->slant_range_per_pixel);
+  double y = ((time - self->upper_left_pixel_time) / self->time_per_pixel);
+
+  // Fraction of added energy to put in the pixels above the point supplied.
+  double uf = ceil (y) - y;
+  
+  // Fraction of added energy to put in the pixels left of the point supplied.
+  double lf = ceil (x) - x;
+
+  // Energy to be distributed to pixels above and below the given point.
+  double energy_above = uf * energy;
+  double energy_below = energy - energy_above;
+
+  // Convenience aliases for surrounding pixel indicies.
+  ssize_t lx = floor (x);
+  ssize_t rx = lx + 1;
+  ssize_t ay = floor (y);
+  ssize_t by = ay + 1;
+
+  // Add the energy to the neighboring pixels.
+  float_image_set_pixel (self->data, lx, ay, 
+			 float_image_get_pixel (self->data, lx, ay)
+			 + energy_above * lf);
+  float_image_set_pixel (self->data, rx, ay, 
+			 float_image_get_pixel (self->data, rx, ay)
+			 + energy_above * (1.0 - lf));
+  float_image_set_pixel (self->data, lx, by, 
+			 float_image_get_pixel (self->data, lx, by)
+			 + energy_below * lf);
+  float_image_set_pixel (self->data, rx, by, 
+			 float_image_get_pixel (self->data, rx, by)
+			 + energy_below * (1.0 - lf));
+}
+
 gboolean
 slant_range_image_equal (SlantRangeImage *self, SlantRangeImage *other)
 {
