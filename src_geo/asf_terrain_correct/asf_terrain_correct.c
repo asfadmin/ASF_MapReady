@@ -299,8 +299,8 @@ coregister (double *x_offset, double *y_offset, FloatImage *a, FloatImage *b)
   g_print ("Peak value: %g\n", peak_value);
   ssize_t ia = peak_y - 1, ib = peak_y + 1, il = peak_x - 1, ir = peak_x + 1;
   g_assert (sz <= SSIZE_MAX);
-  if ( ib >= 0 && ia <= (ssize_t) sz - 1 && il >= 0 
-       && ir <= (ssize_t)sz - 1 ) {
+  if ( ia >= 0 && ib <= (ssize_t) sz - 1 && il >= 0 
+       && ir <= (ssize_t) sz - 1 ) {
     g_print ("Neighbors: %g %g %g %g %g %g %g %g\n",
 	     GP (correlation_image, il, ia),
 	     GP (correlation_image, peak_x, ia),
@@ -371,24 +371,10 @@ main (int argc, char **argv)
 				      reference_dem_img->str);
   g_print ("done.\n");
 
-  FILE *tsf_fp = fopen ("tsf", "w");
-  g_assert (tsf_fp != NULL);
-  float_image_freeze (dem->data, tsf_fp);
-  int return_code = fclose (tsf_fp);
-  g_assert (return_code == 0);
-  tsf_fp = fopen ("tsf", "r");
-  g_assert (tsf_fp != NULL);
-  FloatImage *thawed_instance = float_image_thaw (tsf_fp);
-  return_code = fclose (tsf_fp);
-  g_assert (return_code == 0);
-  gboolean freeze_thaw_work 
-    = float_image_equals (dem->data, thawed_instance, 1e-8);
-  g_assert (freeze_thaw_work);
-
   // Take a quick look at the DEM for FIXME: debug purposes.
-  float_image_export_as_jpeg (dem->data, "dem_view.jpg", 
-			      GSL_MAX (dem->data->size_x, dem->data->size_y), 
-			      0.0);
+  //float_image_export_as_jpeg (dem->data, "dem_view.jpg", 
+  //			      GSL_MAX (dem->data->size_x, dem->data->size_y), 
+  //			      0.0);
 
   // We will need a slant range version of the image being terrain
   // corrected.
@@ -415,6 +401,17 @@ main (int argc, char **argv)
     g_print ("done.\n");
   }
 #endif
+
+  FILE *tf = fopen ("test_ft", "w");
+  g_assert (tf != NULL);
+  float_image_freeze (sri->data, tf);
+  int return_code = fclose (tf);
+  g_assert (return_code == 0);
+  
+  tf = fopen ("test_ft", "r");
+  g_assert (tf != NULL);
+  FloatImage *ci = float_image_thaw (tf);
+  g_assert (float_image_equals (sri->data, ci, 1e-4));
 
   // Take a quick look at the slant range image for FIXME: debug
   // purposes.
@@ -717,7 +714,27 @@ main (int argc, char **argv)
   // the different pixels so we can report that as well.
   long double mean_tolerance = 0;
 
-  DEMGeomInfo * dgi = dem_geom_info_new(dem->size_x, dem->size_y);
+  // We now go through the DEM and sort out a bunch of useful
+  // information from the geometrical relationships of things.
+  DEMGeomInfo *dgi;
+
+  // If possible, we just restore a debugging version that we have
+  // around.
+  if ( g_file_test ("bk_debug_dgi_freeze", G_FILE_TEST_EXISTS) ) {
+    FILE *tmp = fopen ("bk_debug_dgi_freeze", "r");
+    g_assert (tmp != NULL);
+    dgi = dem_geom_info_thaw (tmp);
+    int return_code = fclose (tmp);
+    g_assert (return_code == 0);
+
+
+  } else {
+    // Otherwise, we have to actually calculate a new instance.
+    dgi = dem_geom_info_new(dem->size_x, dem->size_y);
+
+  g_print ("Gathering DEM geometry information: \n");
+  ProgressMeter *progress_meter 
+    = progress_meter_new_with_callback (g_print, dem->size_y);
 
   // For each DEM row...
   for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
@@ -864,7 +881,7 @@ main (int argc, char **argv)
 	g_print ("At pixel ( 1353, 1806).\n");
       }
 
-      // If the DEM pixel fallis in the slant range image, set the
+      // If the DEM pixel falls in the slant range image, set the
       // discovered geometry information.
       if ( slant_range_image_contains (sri, solved_slant_range, 
 				       solved_time, 1e-3) ) {
@@ -880,11 +897,37 @@ main (int argc, char **argv)
 	float_image_set_pixel (dgi->slant_range_value, jj, ii, -1);
       }
     }
+
+    // Print progress update every so many lines.
+    const int lines_per_progress_update = 100;
+    if ( (ii + 1) % lines_per_progress_update == 0 
+	 || (size_t) (ii + 1) == dem->size_y ) {
+      progress_meter_advance (progress_meter, 100);
+    }
   }
 
+  progress_meter_free (progress_meter);
+
+  FILE *tmp = fopen ("bk_debug_dgi_freeze", "w");
+  g_assert (tmp != NULL);
+  dem_geom_info_freeze (dgi, tmp);
+  int return_code = fclose (tmp);
+  g_assert (return_code == 0);
+
+
+  tmp = fopen ("bk_debug_dgi_freeze", "r");
+  g_assert (tmp != NULL);
+  DEMGeomInfo *dgi_revived = dem_geom_info_thaw (tmp);
+  return_code = fclose (tmp);
+  g_assert (return_code == 0);
+
+  g_assert (dem_geom_info_equals (dgi, dgi_revived, 1e-10));
+
+  } // End of dgi construction by calculation.
 
   // Make a quick jpeg showing the part of the DEM we believe the
   // image covers.
+  /*
   FloatImage *dem_coverage = float_image_new (dem->size_x, dem->size_y);
   // For each DEM row except the first and last...
   for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
@@ -902,6 +945,7 @@ main (int argc, char **argv)
   float_image_export_as_jpeg (dem_coverage, "dem_coverage.jpg",
 			      GSL_MAX (dem_coverage->size_x,
 				       dem_coverage->size_y), NAN);
+  */
 
   //  FloatImage * lsm = lsm_generate_mask(dgi);
   //  lsm = lsm;			/* FIXME: remove compiler reassurance.  */
@@ -1023,7 +1067,8 @@ main (int argc, char **argv)
       vector_add (n, lln);
 
       if ( vector_magnitude (n) < 0.00000001 ) {
-	g_warning ("really tiny normal vector magnitude\n");
+	g_warning ("tiny normal vector magnitude at DEM pixel %ld, %ld\n",
+		   (long int) jj, (long int) ii);
 	g_print ("c: %lf %lf %lf  \n"
 		 "a: %lf %lf %lf  \n"
 		 "r: %lf %lf %lf  \n"
@@ -1085,6 +1130,11 @@ main (int argc, char **argv)
   }
   g_print ("done.\n");
 
+  // Take a look at the simulated image for (FIXME) debug purposes.
+  float_image_export_as_jpeg (sim_img->data, "sim_img.jpg",
+			      GSL_MIN (sim_img->data->size_x,
+				       sim_img->data->size_y), NAN);
+
   const int tile_size = 100;
   GPtrArray *image_tile_records = g_ptr_array_new ();
   for ( ii = 0 ; (size_t) ii < sim_img->data->size_y / tile_size ; ii++ ) {
@@ -1113,8 +1163,13 @@ main (int argc, char **argv)
     g_string_append_printf (ctn, "%d.jpg", (int) ii);
     FloatImage *csimt = ((image_tile_record_type *) 
 			 g_ptr_array_index (image_tile_records, ii))->sim_img;
-    float_image_export_as_jpeg (csimt, ctn->str, GSL_MAX (csimt->size_x, 
-							  csimt->size_y), NAN);
+    float min, max, mean, sdev;
+    float_image_statistics (csimt, &min, &max, &mean, &sdev, NAN);
+    if ( min != max ) {
+      float_image_export_as_jpeg (csimt, ctn->str, 
+				  GSL_MAX (csimt->size_x, csimt->size_y), 
+				  NAN);
+    }
     g_string_free (ctn, TRUE);
   }
 
@@ -1125,11 +1180,6 @@ main (int argc, char **argv)
       = coregister (&x_offset, &y_offset, itr->sim_img, itr->sri_img);
     g_assert (return_code == 0);
   }
-
-  // Take a look at the simulated image for (FIXME) debug purposes.
-  float_image_export_as_jpeg (sim_img->data, "sim_img.jpg",
-			      GSL_MIN (sim_img->data->size_x,
-				       sim_img->data->size_y), NAN);
 
   g_print("Generating layover/shadow mask... \n");
   FloatImage * lsm = lsm_generate_mask(dgi);
