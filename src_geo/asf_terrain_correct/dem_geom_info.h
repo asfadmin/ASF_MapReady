@@ -20,6 +20,24 @@ typedef struct dem_geom_info {
 DEMGeomInfo *
 dem_geom_info_new(int size_x, int size_y);
 
+// Serialize self to file_pointer (which must point into a file open
+// for writing).
+void
+dem_geom_info_freeze(DEMGeomInfo *self, FILE *file_pointer);
+
+// Recover previously serialized (with dem_geom_info_freeze) instance
+// from data at file_pointer (which must point into a file open for
+// reading).
+DEMGeomInfo *
+dem_geom_info_thaw (FILE *file_pointer);
+
+// Return true iff self and other have identical sizes and constituent
+// image pixels that are all approximately equal to relative accuracy
+// epsilon, as understood by the GNU Scientific Library function
+// gsl_fcmp.
+gboolean
+dem_geom_info_equals (DEMGeomInfo *self, DEMGeomInfo *other, float epsilon);
+
 void
 dem_geom_info_set(DEMGeomInfo * self,
 		  int x, int y,

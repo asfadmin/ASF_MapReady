@@ -29,6 +29,82 @@ dem_geom_info_new(int size_x, int size_y)
   return self;
 }
 
+// WARNING: this routing MUST be kept in sync with the actual instance
+// structure contents and with the behavior of dem_geom_info_thaw().
+void
+dem_geom_info_freeze(DEMGeomInfo *self, FILE *file_pointer)
+{
+  size_t write_count = fwrite (&(self->size_x), sizeof (int), 1, file_pointer);
+  g_assert (write_count == 1);
+
+  write_count = fwrite (&(self->size_y), sizeof (int), 1, file_pointer);
+  g_assert (write_count == 1);
+
+  float_image_freeze (self->cp_target_x, file_pointer);
+  float_image_freeze (self->cp_target_y, file_pointer);
+  float_image_freeze (self->cp_target_z, file_pointer);
+  float_image_freeze (self->nadir_distance, file_pointer);
+  float_image_freeze (self->slant_range_value, file_pointer);
+  float_image_freeze (self->imaging_time, file_pointer);
+  float_image_freeze (self->satellite_height, file_pointer);
+  float_image_freeze (self->dem_height, file_pointer);
+}
+  
+// WARNING: this routing MUST be kept in sync with the actual instance
+// structure contents and with the behavior of dem_geom_info_freeze().
+DEMGeomInfo *
+dem_geom_info_thaw (FILE *file_pointer)
+{
+  DEMGeomInfo *self = g_new (DEMGeomInfo, 1);
+
+  size_t read_count = fread (&(self->size_x), sizeof (int), 1, file_pointer);
+  g_assert (read_count == 1);
+
+  read_count = fread (&(self->size_y), sizeof (int), 1, file_pointer);
+  g_assert (read_count == 1);
+
+  self->cp_target_x = float_image_thaw (file_pointer);
+  self->cp_target_y = float_image_thaw (file_pointer);
+  self->cp_target_z = float_image_thaw (file_pointer);
+  self->nadir_distance = float_image_thaw (file_pointer);
+  self->slant_range_value = float_image_thaw (file_pointer);
+  self->imaging_time = float_image_thaw (file_pointer);
+  self->satellite_height = float_image_thaw (file_pointer);
+  self->dem_height = float_image_thaw (file_pointer);
+
+  return self;
+}
+
+gboolean
+dem_geom_info_equals (DEMGeomInfo *self, DEMGeomInfo *other, float epsilon)
+{
+  if ( self->size_x != other->size_x ) {
+    return FALSE;
+  }
+
+  if ( self->size_y != other->size_y ) {
+    return FALSE;
+  }
+
+  if (    !float_image_equals (self->cp_target_x, other->cp_target_x, epsilon)
+       || !float_image_equals (self->cp_target_y, other->cp_target_y, epsilon)
+       || !float_image_equals (self->cp_target_z, other->cp_target_z, epsilon)
+       || !float_image_equals (self->nadir_distance, other->nadir_distance, 
+			       epsilon)
+       || !float_image_equals (self->slant_range_value, 
+			       other->slant_range_value, epsilon)
+       || !float_image_equals (self->imaging_time, other->imaging_time, 
+			       epsilon)
+       || !float_image_equals (self->satellite_height, other->satellite_height,
+			       epsilon)
+       || !float_image_equals (self->dem_height, other->dem_height, 
+			       epsilon) ) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 void
 dem_geom_info_set(DEMGeomInfo * self,
 		  int x, int y,
