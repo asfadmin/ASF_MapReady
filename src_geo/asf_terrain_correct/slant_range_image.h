@@ -81,7 +81,7 @@ gboolean
 slant_range_image_contains (SlantRangeImage *self, double range, double time,
 			    double relative_guard);
 
-// Sample the image at (slant_range, time) using sample_method.  It is
+// Sample the image at (range, time) using sample_method.  It is
 // required that slant_range_image_contains to be true for a
 // relative_guard of 1e-6.  To ensure that this is the case,
 // slant_range_image_contains should be called before this method with
@@ -89,6 +89,16 @@ slant_range_image_contains (SlantRangeImage *self, double range, double time,
 double
 slant_range_image_sample (SlantRangeImage *self, double range, double time, 
 			  float_image_sample_method_t sample_method);
+
+// Add energy to slant range image at radar coordinate (range, time).
+// It is required that slant_range_image_contains to be true for a
+// relative_guard of 1e-6.  To ensure that this is the case,
+// slant_range_image_contains should be called before this method with
+// a larger relative_guard.  The added energy is distributed between
+// the four neighbor image pixels in bilinear fashion.
+void
+slant_range_image_add_energy (SlantRangeImage *self, double range, double time,
+			      double energy);
 
 // Return true iff self is bit-for-bit identical to other.  This
 // method uses exact comparison of the floating point slant range
