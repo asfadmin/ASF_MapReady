@@ -54,7 +54,7 @@ IERS_BULLETIN_B_DIR := IERS_Bulletin_Bs
 # The ScratchPlot library allows us to draw quick plots of data,
 # images, etc.  Useful for development work.
 ifeq ($(BK_DEBUG), 1)
-  SCRATCHPLOT_INCLUDE_DIR := /tmp/test/include
+  SCRATCHPLOT_INCLUDE_DIR := /tmp/test_scratchplot/include
 
   INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) -I$(SCRATCHPLOT_INCLUDE_DIR) \
                    $(shell pkg-config --cflags-only-I glib-2.0)
@@ -73,8 +73,14 @@ endif
 # take type float (still get a complaint about argument being passed
 # as float due to prototype rather than double.
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
+# For the moment we don't have -Wshadow in either, since fftw 3.0.1 at
+# least ends up redefining some things when compiled with
+# -D_ISOC99_SOURCE.
+#CFLAGS += -Werror -Wall -W -g -O2 -Wmissing-prototypes -Wstrict-prototypes \
+#          -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
+#          -Wnested-externs -fno-common
 CFLAGS += -Werror -Wall -W -g -O2 -Wmissing-prototypes -Wstrict-prototypes \
-          -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
+          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
           -Wnested-externs -fno-common
 
 ifeq ($(DEBUG_BUILD), 2)
@@ -91,7 +97,7 @@ ifeq ($(BK_DEBUG), 1)
 
   # The ScratchPlot library allows us to draw quick plots of data,
   # images, etc.  Useful for development work.
-  SCRATCHPLOT_LIB_DIR := /tmp/test/lib
+  SCRATCHPLOT_LIB_DIR := /tmp/test_scratchplot/lib
 endif 
 
 # Libraries needed by this program.
@@ -106,6 +112,7 @@ ifeq ($(BK_DEBUG), 1)
 	    $(LIBDIR)/libgsl.a \
 	    $(LIBDIR)/libgslcblas.a \
 	    $(LIBDIR)/libjpeg.a \
+	    $(LIBDIR)/libfftw3.a \
 	    $(shell pkg-config --libs-only-L glib-2.0) \
             $(shell pkg-config --libs-only-l glib-2.0) \
 	    -Wl,--rpath,$(SCRATCHPLOT_LIB_DIR) \
@@ -121,6 +128,7 @@ else
 	    $(LIBDIR)/asf.a \
 	    $(GSL_LIBS) \
 	    $(LIBDIR)/libjpeg.a \
+	    $(LIBDIR)/libfftw3.a \
 	    $(GLIB_LIBS)
 
 endif
@@ -128,6 +136,10 @@ endif
 # Defines needed by this module.  For defining the location of the
 # shared data archive, etc.
 DEFINE_FLAGS := -DASF_SHAREDIR=\"$(SHAREDIR)/$(MN)\"
+ifeq ($(BK_DEBUG), 1)
+  DEFINE_FLAGS += -DBK_DEBUG
+endif
+
 
 # Add the define flags to the other cpp flags.
 CPPFLAGS += $(DEFINE_FLAGS)
@@ -231,8 +243,13 @@ build_stamp: $(OBJS) $(LIBS) static_data_file_build_stamp
 ifeq ($(BK_DEBUG), 1)
 # This is a target for a somewhat isolated test of the orbit model.
   test_model: $(OBJS) $(LIBS) static_data_file_build_stamp test_model.o
-	      $(CC) $(LDFLAGS) $(patsubst asf_terrain_correct.o, , $(OBJS)) \
-                    test_model.o $(LDLIBS) -o test_model
+	$(CC) $(LDFLAGS) $(patsubst asf_terrain_correct.o, , $(OBJS)) \
+              test_model.o $(LDLIBS) -o $@
+
+# This is a target for a somewhat isolated test of fft coregistration.
+  test_coreg: $(OBJS) $(LIBS) test_coreg.o
+	$(CC) $(LDFLAGS) $(patsubst asf_terrain_correct.o, , $(OBJS)) \
+              test_coreg.o $(LDLIBS) -o $@
 endif
 
 static_data_file_build_stamp: time_scale_offsets
@@ -280,6 +297,7 @@ clean:
 	rm -rf $(OBJS) \
 	       $(DEPEND_FILES) \
 	       *_stamp \
+               bk_debug_*_freeze \
                core.* \
 	       core \
 	       test_model.o \
