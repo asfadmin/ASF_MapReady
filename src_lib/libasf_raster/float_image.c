@@ -1317,12 +1317,23 @@ float_image_new_subimage (FloatImage *model, ssize_t x, ssize_t y,
   return self;
 }
 
-// Flush the contents of tile with flattened offset tile_offset from
+// Copy the contents of tile with flattened offset tile_offset from
 // the memory cache to the disk file.  Its probably easiest to
 // understand this function by looking at how its used.
 static void
 cached_tile_to_disk (FloatImage *self, size_t tile_offset)
 {
+  // If we aren't using a tile file, this operation doesn't make
+  // sense.
+  g_assert (self->tile_file != NULL);
+
+  // We must have a legitimate tile_offset.
+  g_assert (tile_offset < self->tile_count);
+
+  // The tile we are trying to copy from cache to disk must be loaded
+  // in the cache for this operation to make sense.
+  g_assert (self->tile_addresses[tile_offset] != NULL);
+
   int return_code
     = fseeko (self->tile_file,
 	      (off_t) tile_offset * self->tile_area * sizeof (float),
@@ -1920,6 +1931,23 @@ float_image_equals (FloatImage *self, FloatImage *other, float epsilon)
   return TRUE;
 }
 
+// Bring the tile cache file on the disk fully into sync with the
+// latest image data stored in the memory cache.
+static void
+synchronize_tile_file_with_memory_cache (FloatImage *self)
+{
+  // If we aren't using a tile file, this operation doesn't make
+  // sense.
+  g_assert (self->tile_file != NULL);
+
+  guint ii;
+  for ( ii = 0 ; ii < self->tile_queue->length ; ii++ ) {
+    size_t tile_offset = GPOINTER_TO_INT (g_queue_peek_nth (self->tile_queue, 
+							    ii));
+    cached_tile_to_disk (self, tile_offset);
+  }
+}
+
 void
 float_image_freeze (FloatImage *self, FILE *file_pointer)
 {
@@ -1962,7 +1990,7 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
 
   // We write the tile queue pointer away, so that when we later thaw
   // the serialized version, we can tell if a cache file is in use or
-  // not (it it isn't tile_queue will be NULL).
+  // not (if it isn't tile_queue will be NULL).
   write_count = fwrite (&(self->tile_queue), sizeof (GQueue *), 1, fp);
   g_assert (write_count == 1);
 
@@ -1973,9 +2001,10 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
 			   self->tile_area, fp);
     g_assert (write_count == self->tile_area);
   }
-  // otherwise, the tile block cache needs to be saved in the
-  // serialized version of self.
+  // otherwise, the in memory cache needs to be copied into the tile
+  // file and the tile file saved in the serialized version of self.
   else {
+    synchronize_tile_file_with_memory_cache (self);
     float *buffer = g_new (float, self->tile_area);
     size_t ii;
     off_t tmp = ftello (self->tile_file);
