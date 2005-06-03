@@ -753,14 +753,7 @@ main (int argc, char **argv)
 	return_code = unproject_input (ipp, xpc, ypc,
 				       &(lats[current_edge_point]),
 				       &(lons[current_edge_point]));
-	// FIXME: remove this debugging trap of the error return
-	// condition.
-	if ( !return_code ) {
-	  return_code = unproject_input (ipp, xpc, ypc,
-					 &(lats[current_edge_point]),
-					 &(lons[current_edge_point]));
-	  g_assert (return_code);
-	}
+	g_assert (return_code);
       }
       else {
 	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
