@@ -438,7 +438,15 @@ void fill_structure_field(char *field_name, void *valp)
       { MSAR->azimuth_doppler_coefficients[1] = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "dopAzQuad") )
       { MSAR->azimuth_doppler_coefficients[2] = VALP_AS_DOUBLE; return; }
- }
+    if ( !strcmp(field_name, "azimuth_bandwidth") )
+      { MSAR->azimuth_processing_bandwidth = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "chirp_rate") )
+      { MSAR->chirp_rate = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "pulse_duration") )
+      { MSAR->pulse_duration = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "range_samp_rate") )
+      { MSAR->range_sampling_rate = VALP_AS_DOUBLE; return; }
+}
 
   /* Fields which normally go in the state block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "state") ) {
