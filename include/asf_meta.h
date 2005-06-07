@@ -221,6 +221,10 @@ typedef struct {
   double range_doppler_coefficients[3];
     /* Doppler centroid, doppler per pixel, and doppler per pixel squared.  */
   double azimuth_doppler_coefficients[3];
+  double azimuth_processing_bandwidth; /* version 1.4 */
+  double chirp_rate;                   /* version 1.4 */
+  double pulse_duration;               /* version 1.4 */
+  double range_sampling_rate;          /* version 1.4 */
 } meta_sar;
 
 
