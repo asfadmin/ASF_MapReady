@@ -1,0 +1,87 @@
+meta_version: 0.9
+
+geo {                                      # begin parameters used in geolocating the image.
+    type: P                                    # Image type: [S=slant range; G=ground range; P=map projected]
+    proj {                                     # Map Projection parameters
+        type: P                                    # Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]
+        startX: -3040219.5542                      # Projection Coordinate at top-left, X direction
+        startY: -807841.53142                      # Projection Coordinate at top-left, Y direction
+        perX: 17.52594237                          # Projection Coordinate per pixel, X direction
+        perY: -17.570492754                        # Projection Coordinate per pixel, X direction
+        hem: N                                     # Hemisphere: [N=northern hemisphere; S=southern hemisphere]
+        re_major: 6378137                          # Major (equator) Axis of earth (meters)
+        re_minor: 6377994.0812                     # Minor (polar) Axis of earth (meters)
+        ps_lat: 70                                 # Polar Stereographic reference Latitude
+        ps_lon: -45                                # Polar Stereographic reference Longitude
+    }                                          # end proj
+    lookDir: R                                 # SAR Satellite look direction (normally R) [R=right; L=left]
+    deskew: 1                                  # Image moved to zero doppler? [1=yes; 0=no]
+    xPix: 12.5                                 # Pixel size in X direction [m]
+    yPix: 12.5                                 # Pixel size in Y direction [m]
+    rngPixTime: 5.4150940624e-08               # Time/pixel, range (xPix/(c/2.0), or 1/fs) [s]
+    azPixTime: -0.001889111376                 # Time/pixel, azimuth (yPix/swathVel, or 1/prf) [s]
+    slantShift: 0                              # Error correction factor, in slant range [m]
+    timeShift: 15.475600392                    # Error correction factor, in time [s]
+    slantFirst: 842457.3975                    # Slant range to first image pixel [m]
+    wavelength: 0.0565646                      # SAR Carrier Wavelength [m]
+    dopRangeCen: -2061.0571289                 # Doppler centroid [Hz]
+    dopRangeLin: -0.3912875                    # Doppler per range pixel [Hz/pixel]
+    dopRangeQuad: 0                            # Doppler per range pixel sq. [Hz/(pixel^2)]
+    dopAzCen: -2061.0571289                    # Doppler centroid [Hz]
+    dopAzLin: 0                                # Doppler per azimuth pixel [Hz/pixel]
+    dopAzQuad: 0                               # Doppler per azimuth pixel sq. [Hz/(pixel^2)]
+}                                          # end geo
+
+ifm {                                      # begin interferometry-related parameters
+    er: 6361407.2266                           # Local earth radius [m]
+    ht: 7162785.0953                           # Satellite height, from center of earth [m]
+    nLooks: 4                                  # Number of looks to take from SLC
+    orig_lines: 8192                           # Number of lines in original image
+    orig_samples: 8192                         # Number of samples in original image
+}                                          # end ifm
+
+state {                                    # begin list of state vectors for satellite, over image
+    year: 1998                                 # Year of image start
+    day: 169                                   # Julian day of the year for image start
+    second: 4947.4052                          # Second of the day for image start
+    number: 3                                  # Number of state vectors below
+    vector {                                   # begin a single state vector
+        time: 0                                    # Time, relative to image start [s]
+        x: -2053137.8415                           # X Coordinate, earth-fixed [m]
+        y: -2813848.3173                           # Y Coordinate, earth-fixed [m]
+        z: 6259071.7773                            # Z Coordinate, earth-fixed [m]
+        vx: 1604.7850334                           # X Velocity, earth-fixed [m/s]
+        vy: 6512.3990585                           # Y Velocity, earth-fixed [m/s]
+        vz: 3446.6062012                           # Z Velocity, earth-fixed [m/s]
+    }                                          # end vector
+    vector {                                   # begin a single state vector
+        time: 7.7377929688                         # Time, relative to image start [s]
+        x: -2040621.3847                           # X Coordinate, earth-fixed [m]
+        y: -2763376.6543                           # Y Coordinate, earth-fixed [m]
+        z: 6285537.5977                            # Z Coordinate, earth-fixed [m]
+        vx: 1629.2297614                           # X Velocity, earth-fixed [m/s]
+        vy: 6533.8642575                           # Y Velocity, earth-fixed [m/s]
+        vz: 3393.9685059                           # Z Velocity, earth-fixed [m/s]
+    }                                          # end vector
+    vector {                                   # begin a single state vector
+        time: 15.475585938                         # Time, relative to image start [s]
+        x: -2027916.26                             # X Coordinate, earth-fixed [m]
+        y: -2712740.3723                           # Y Coordinate, earth-fixed [m]
+        z: 6311594.7266                            # Z Coordinate, earth-fixed [m]
+        vx: 1653.5935246                           # X Velocity, earth-fixed [m/s]
+        vy: 6554.8803205                           # Y Velocity, earth-fixed [m/s]
+        vz: 3341.109375                            # Z Velocity, earth-fixed [m/s]
+    }                                          # end vector
+}                                          # end of list of state vectors
+
+extra {                                    # begin extra sensor information
+    sensor: RSAT-1                             # Imaging sensor
+    mode: ST1                                  # Imaging mode
+    processor: ASF-PGS/PREC/VERS3.4            # Name & Version of SAR Processor
+    orbit: 13670                               # Orbit Number for this datatake
+    bitErrorRate: 8e-07                        # Bit Error Rate
+    satBinTime: ???                            # Satellite Binary Time
+    satClkTime: ???                            # Satellite Clock Time (UTC)
+    prf: 1296.4686279                          # Pulse Repition Frequency
+}                                          # end extra
+
