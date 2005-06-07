@@ -1,0 +1,16 @@
+mode = DEM
+reference dem = /3dsar2/tlogan/dem/alaska_fixed.img
+data type = STF
+coregistration = PATCH
+doppler = average
+deskew = 0
+maximum offset = 3
+precise master = /3dsar2/tlogan/PRC/ERS2
+precise slave = /3dsar2/tlogan/PRC/ERS1
+minimum coherence = 0.3
+phase unwrapping = snaphu_v3
+tiles per degree = 10
+tile overlap = 100
+projection file = /test/home/jgroves/delta_utm6_dem/my.proj
+projection key = albers
+pixel spacing = 20
