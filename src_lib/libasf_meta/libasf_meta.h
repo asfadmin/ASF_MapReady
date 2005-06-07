@@ -1,6 +1,20 @@
 #ifndef __LIBASF_META_H__
 #define __LIBASF_META_H__
 
+/****************************************************
+
+  Important: Don't link this library to asf_meta.
+  The metadata calculation portion of asf_meta needs
+  to be extracted out of there first. The library
+  functions here just take care of the reading and
+  converting the various metadata versions around.
+  For the moment it is only used by a stand-alone
+  program that converts between as required for parts
+  of the InSAR driver program.
+  Have not looked into ScanSAR data either. - Rudi
+
+****************************************************/
+
 #include "asf_reporting.h"
 #include "geolocate.h"		/* For stateVector.  */
 #include "ceos.h"
