@@ -5,6 +5,7 @@ include ../../make_support/system_rules
 OBJS = interpolate.o \
        kernel.o \
        float_image.o \
+       uint8_image.o \
        scaling.o \
        stats.o
 
@@ -17,7 +18,7 @@ LIBS = $(LIBDIR)/asf.a \
 
 all: build_only
 	cp libasf_raster.a $(LIBDIR)
-	cp asf_raster.h float_image.h $(ASF_INCLUDE_DIR)
+	cp asf_raster.h float_image.h uint8_image.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f libasf_raster.a
