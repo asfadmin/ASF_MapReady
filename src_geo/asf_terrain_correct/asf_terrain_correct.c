@@ -24,7 +24,7 @@
 #include "ITRS_point.h"
 #include <asf_meta.h>
 #include "earth_constants.h"
-#include "libasf_proj.h"
+#include <libasf_proj.h>
 #include "map_projected_dem.h"
 #include "orbital_state_vector.h"
 #include "platform_path.h"
@@ -41,6 +41,9 @@
 #define SP(i, xi, yi, pv) float_image_set_pixel (i, xi, yi, pv)
 #define GP(i, xi, yi) (float_image_get_pixel (i, xi, yi))
 
+// Factors for going between degrees and radians.
+#define RAD_TO_DEG	57.29577951308232
+#define DEG_TO_RAD	0.0174532925199432958
 
 // Print user information to error output location and exit with a
 // non-zero exit code.
@@ -200,93 +203,131 @@ coregister (double *x_offset, double *y_offset, FloatImage *a, FloatImage *b)
 
   size_t sz = a->size_x;	// Convenience alias.
 
-  // FIXME: fftw supports real-data-specific trasforms which expoit
+  // Discrete FFTs have the effect of making the data look periodic
+  // when we go to correlate things, which is bad.  In order to ensure
+  // that we the coregistered tiles are matching wrapped version of
+  // themselves, we pad them both out with an image worth of zeros all
+  // around.
+  size_t psz = 3 * sz;
+
+  // FIXME: fftw supports real-data-specific trasforms which exploit
   // hermitian symetry, in-place transforms, better performance at
   // certain transform sizes, etc., but these are a pain to sort out
   // and I'm lazy.
 
-  // Memory gauranteed to have fftw preferred alignment.
-  fftw_complex *a_in = fftw_malloc (sz * sz * sizeof (fftw_complex));
-  fftw_complex *b_in = fftw_malloc (sz * sz * sizeof (fftw_complex));
-  fftw_complex *a_out = fftw_malloc (sz * sz * sizeof (fftw_complex));
-  fftw_complex *b_out = fftw_malloc (sz * sz * sizeof (fftw_complex));
+  // Allocate memory and fftw transform plans, if required, or reuse
+  // existing ones if the images have the same dimensions as last time
+  // through.
+  static ssize_t a_sz_x = -1, a_sz_y = -1, b_sz_x = -1, b_sz_y = -1;
+  static fftw_complex *pa_in = NULL;
+  static fftw_complex *pb_in = NULL;
+  static fftw_complex *pa_out = NULL;
+  static fftw_complex *pb_out = NULL;
+  static fftw_complex *a_by_b_freq = NULL;
+  static fftw_complex *a_convolve_b = NULL;
+  static fftw_plan a_plan, b_plan, reverse_plan;
+  static FloatImage *pa = NULL, *pb = NULL, *correlation_image = NULL;
+  // If the dimensions this time aren't the same as last time, we have
+  // to (re)allocate the memory and plan resources.
+  g_assert (a->size_x <= SSIZE_MAX && a->size_y <= SSIZE_MAX 
+	    && b->size_x <= SSIZE_MAX && b->size_y <= SSIZE_MAX);
+  if ( !((ssize_t) a->size_x == a_sz_x 
+	 && (ssize_t) a->size_y == b_sz_y 
+	 && (ssize_t) b->size_x == b_sz_x 
+	 && (ssize_t) b->size_y == b_sz_y) ) {
+    // If this isn't out first time through, 
+    if ( pa_in != NULL ) {
+      // free all the existing memory and plan resources.
+      fftw_free (pa_in);
+      fftw_free (pb_in);
+      fftw_free (pa_out);
+      fftw_free (pb_out);
+      fftw_free (a_by_b_freq);
+      fftw_free (a_convolve_b);
+      fftw_destroy_plan (a_plan);
+      fftw_destroy_plan (b_plan);
+      fftw_destroy_plan (reverse_plan);
+      float_image_free (pa);
+      float_image_free (pb);
+      float_image_free (correlation_image);
+    }
+    size_t array_size = psz * psz * sizeof (fftw_complex);
+    pa_in = fftw_malloc (array_size);
+    pb_in = fftw_malloc (array_size);
+    pa_out = fftw_malloc (array_size);
+    pb_out = fftw_malloc (array_size);
+    a_by_b_freq = fftw_malloc (array_size);
+    a_convolve_b = fftw_malloc (array_size);
+    a_plan = fftw_plan_dft_2d (psz, psz, pa_in, pa_out, FFTW_FORWARD,
+			       FFTW_MEASURE);    
+    b_plan = fftw_plan_dft_2d (psz, psz, pb_in, pb_out, FFTW_FORWARD, 
+			       FFTW_MEASURE);
+    reverse_plan = fftw_plan_dft_2d (psz, psz, a_by_b_freq, a_convolve_b, 
+				     FFTW_BACKWARD, FFTW_MEASURE);
+    pa = float_image_new_with_value (psz, psz, 0.0);
+    pb = float_image_new_with_value (psz, psz, 0.0);
+    correlation_image = float_image_new (psz, psz);      
+    a_sz_x = a->size_x;
+    a_sz_y = a->size_y;
+    b_sz_x = b->size_x;
+    b_sz_y = b->size_y;
+  }
 
+  // Form the padded versions of a and b by writing the pixels of a
+  // and b into the middle of the existing field of zeros.
   size_t ii, jj;
   for ( ii = 0 ; ii < sz ; ii++ ) {
     for ( jj = 0 ; jj < sz ; jj++ ) {
-      a_in[sz * ii + jj] = GP (a, jj, ii) + I * 0.0;
-      b_in[sz * ii + jj] = GP (b, jj, ii) + I * 0.0;
+      SP (pa, jj + sz, ii + sz, GP (a, jj, ii));
+      SP (pb, jj + sz, ii + sz, GP (b, jj, ii));
     }
   }
 
-  fftw_plan a_plan = fftw_plan_dft_2d (sz, sz, a_in, a_out, FFTW_FORWARD,
-				       FFTW_MEASURE);
+  // Write padded images into fftw-ready memory.
+  for ( ii = 0 ; ii < psz ; ii++ ) {
+    for ( jj = 0 ; jj < psz ; jj++ ) {
+      pa_in[psz * ii + jj] = GP (pa, jj, ii) + I * 0.0;
+      pb_in[psz * ii + jj] = GP (pb, jj, ii) + I * 0.0;
+    }
+  }
+
+  // Transform the padded input images.
   fftw_execute (a_plan);
-  fftw_plan b_plan = fftw_plan_dft_2d (sz, sz, b_in, b_out, FFTW_FORWARD,
-				       FFTW_MEASURE);
   fftw_execute (b_plan);
 
   // Conjugate b_out.
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
-      size_t ci = sz * ii + jj;   // Current index.
-      b_out[ci] = creal (b_out[ci]) - cimag (b_out[ci]);
+  for ( ii = 0 ; ii < psz ; ii++ ) {
+    for ( jj = 0 ; jj < psz ; jj++ ) {
+      size_t ci = psz * ii + jj;   // Current index.
+      pb_out[ci] = creal (pb_out[ci]) - cimag (pb_out[ci]);
     }
   }
 
-  fftw_complex *a_by_b_freq = fftw_malloc (sz * sz * sizeof (fftw_complex));
-
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
-      a_by_b_freq[sz * ii + jj] = a_out[sz * ii + jj] * b_out[sz * ii + jj];
+  // Perform frequency domain multiplication.
+  for ( ii = 0 ; ii < psz ; ii++ ) {
+    for ( jj = 0 ; jj < psz ; jj++ ) {
+      a_by_b_freq[psz * ii + jj] = (pa_out[psz * ii + jj] 
+				    * pb_out[psz * ii + jj]);
     }
   }
 
-  fftw_complex *a_convolve_b = fftw_malloc (sz * sz * sizeof (fftw_complex));
-
-  fftw_plan reverse_plan = fftw_plan_dft_2d (sz, sz, a_by_b_freq, a_convolve_b,
-					     FFTW_BACKWARD, FFTW_MEASURE);
+  // Perform reverse transformation on the result of the frequency
+  // domain multiplication.
   fftw_execute (reverse_plan);
 
-  FloatImage *correlation_image = float_image_new (sz, sz);
-
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
+  // Form correlation image..
+  for ( ii = 0 ; ii < psz ; ii++ ) {
+    for ( jj = 0 ; jj < psz ; jj++ ) {
       SP (correlation_image, jj, ii, 
-	  (float) creal (a_convolve_b[sz * ii + jj]));
+	  (float) creal (a_convolve_b[psz * ii + jj]));
     }
   }
-
-  // FIXME: For debugging purposes, take a look at the correlation image.
-  float_image_export_as_jpeg (a, "image_tiles/image_a.jpg", sz, NAN);
-  float_image_export_as_jpeg (b, "image_tiles/image_b.jpg", sz, NAN);
-  float_image_export_as_jpeg (correlation_image, 
-			      "image_tiles/correlation_image.jpg", sz, NAN);
-
-  // Form an image which shows the peak(s) in the correlation image.
-  float cmin, cmax, cmean, csdev;
-  float_image_statistics (correlation_image, &cmin, &cmax, &cmean, &csdev,
-			  NAN);
-  FloatImage *corr_peaks = float_image_new (sz, sz);
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
-      float pv = GP (correlation_image, jj, ii);
-      if ( pv > cmax - csdev ) {
-	SP (corr_peaks, jj, ii, pv - (cmax - csdev));
-      }
-      else {
-	SP (corr_peaks, jj, ii, 0.0);
-      }
-    }
-  }
-  float_image_export_as_jpeg (corr_peaks, "image_tiles/corr_peaks.jpg", sz, 
-			      NAN);
 
   // Find the actual peak of the correlation image.
   size_t peak_x = -1000, peak_y = -1000; /* Initializers reassure compiler.  */
-  float peak_value = -100000000;
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
+  float peak_value = -FLT_MAX;
+  for ( ii = 0 ; ii < psz ; ii++ ) {
+    for ( jj = 0 ; jj < psz ; jj++ ) {
       float cv = GP (correlation_image, jj, ii);
       if ( cv > peak_value ) {
 	peak_x = jj;
@@ -312,21 +353,167 @@ coregister (double *x_offset, double *y_offset, FloatImage *a, FloatImage *b)
 	     GP (correlation_image, ir, ib));
   }
 
-
-  float_image_free (correlation_image);
-  float_image_free (corr_peaks);
-
-  fftw_free (a_in);
-  fftw_free (b_in);
-  fftw_free (a_out);
-  fftw_free (b_out);
-  fftw_free (a_by_b_freq);
-  fftw_free (a_convolve_b);
-
   // FIXME: these aren't filled in yet.  
   *x_offset = -DBL_MAX;
   *y_offset = -DBL_MAX;
-  return 0;			// Return success code;
+  return 0;			// Return success code.
+}
+
+// Determine the extent of ground range image with metadata imd in
+// projection coordinates space of projection_type having
+// projection_parameters, returning results in *min_x, *min_y, *max_x,
+// *max_y.
+static void
+get_extents_in_projection_coordinate_space 
+  (meta_parameters *imd, 
+   MapProjectedDEM *dem,
+   double *min_x, double *max_x,
+   double *min_y, double *max_y)
+{
+  // We are expecting a ground range SAR image.
+  g_assert (imd->sar->image_type == 'G');
+
+  // Determine the projection function to use to convert lat/longs to
+  // map projection coordinates.
+  int (*project_arr) (project_parameters_t *pps, double *lat, double *lon,
+		      double **projected_x, double **projected_y, 
+		      long length);
+  switch ( dem->projection_type ) {
+  case UNIVERSAL_TRANSVERSE_MERCATOR:
+    project_arr = project_utm_arr;
+    break;
+  case POLAR_STEREOGRAPHIC:
+    project_arr = project_ps_arr;
+    break;
+  case ALBERS_EQUAL_AREA:
+    project_arr = project_albers_arr;
+    break;
+  case LAMBERT_CONFORMAL_CONIC:
+    project_arr = project_lamcc_arr;
+    break;
+  case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+    project_arr = project_lamaz_arr;
+    break;
+  default:
+    g_assert_not_reached ();
+    break;
+  }
+
+  *min_x = DBL_MAX;
+  *max_x = -DBL_MAX;
+  *min_y = DBL_MAX;
+  *max_y = -DBL_MAX;
+
+  // Input image dimensions in pixels in x and y directions.
+  size_t ii_size_x = imd->general->sample_count;
+  size_t ii_size_y = imd->general->line_count;
+
+  // Index variables.
+  size_t ii, jj;
+
+  // We will need to find the lat/long of every image edge pixel at
+  // both the minimum and maximum height present in the DEM, to be
+  // sure we don't miss any portion of the image due to the height
+  // argument required by meta_get_latLon.
+  double min_height = DBL_MAX, max_height = -DBL_MAX;
+  for ( ii = 0 ; ii < dem->data->size_y ; ii++ ) {
+    for ( jj = 0 ; jj < dem->data->size_x ; jj++ ) {
+      float ch = GP (dem->data, jj, ii);
+      if ( ch < min_height ) { min_height = ch; }
+      if ( ch > max_height ) { max_height = ch; }
+    }
+  }
+
+  // The actual number of edge points of the ground range image the
+  // projection coordinates of which we will be considereing.  We need
+  // twice as many lat/lon storage positions as we have edge pixels
+  // because we will be computing the lat lon for each image edge
+  // pixel at both the minimum and maximum elevations found in the
+  // DEM.
+  size_t edge_point_count = 2 * (2 * ii_size_x + 2 * ii_size_y - 4);
+  double *lats = g_new (double, edge_point_count);
+  double *lons = g_new (double, edge_point_count);
+  size_t current_edge_point = 0;
+  ii = 0;
+  jj = 0;
+  for ( ; ii < ii_size_x - 1 ; ii++ ) {
+    meta_get_latLon (imd, (double) jj, (double) ii, min_height, 
+		     &(lats[current_edge_point]), 
+		     &(lons[current_edge_point]));
+    lats[current_edge_point] *= DEG_TO_RAD;
+    lons[current_edge_point] *= DEG_TO_RAD;
+    current_edge_point++;
+    meta_get_latLon (imd, (double) jj, (double) ii, max_height, 
+		     &(lats[current_edge_point]), 
+		     &(lons[current_edge_point]));
+    lats[current_edge_point] *= DEG_TO_RAD;
+    lons[current_edge_point] *= DEG_TO_RAD;
+    current_edge_point++;
+  }
+  for ( ; jj < ii_size_y - 1 ; jj++ ) {
+    meta_get_latLon (imd, (double)jj, (double)ii, min_height,
+		     &(lats[current_edge_point]), 
+		     &(lons[current_edge_point]));
+    lats[current_edge_point] *= DEG_TO_RAD;
+    lons[current_edge_point] *= DEG_TO_RAD;
+    current_edge_point++;
+    meta_get_latLon (imd, (double)jj, (double)ii, max_height,
+		     &(lats[current_edge_point]), 
+		     &(lons[current_edge_point]));
+    lats[current_edge_point] *= DEG_TO_RAD;
+    lons[current_edge_point] *= DEG_TO_RAD;
+    current_edge_point++;
+  }
+  for ( ; ii > 0 ; ii-- ) {
+    meta_get_latLon (imd, (double)jj, (double)ii, min_height,
+		     &(lats[current_edge_point]), 
+		     &(lons[current_edge_point]));
+    lats[current_edge_point] *= DEG_TO_RAD;
+    lons[current_edge_point] *= DEG_TO_RAD;
+    current_edge_point++;
+    meta_get_latLon (imd, (double)jj, (double)ii, max_height,
+		     &(lats[current_edge_point]), 
+		     &(lons[current_edge_point]));
+    lats[current_edge_point] *= DEG_TO_RAD;
+    lons[current_edge_point] *= DEG_TO_RAD;
+    current_edge_point++;
+  }
+  for ( ; jj > 0 ; jj-- ) {
+    meta_get_latLon (imd, (double)jj, (double)ii, min_height,
+		     &(lats[current_edge_point]), 
+		     &(lons[current_edge_point]));
+    lats[current_edge_point] *= DEG_TO_RAD;
+    lons[current_edge_point] *= DEG_TO_RAD;
+    current_edge_point++;
+    meta_get_latLon (imd, (double)jj, (double)ii, max_height,
+		     &(lats[current_edge_point]), 
+		     &(lons[current_edge_point]));
+    lats[current_edge_point] *= DEG_TO_RAD;
+    lons[current_edge_point] *= DEG_TO_RAD;
+    current_edge_point++;
+  }
+  g_assert (current_edge_point == edge_point_count);
+
+  // Pointers to arrays of projected coordinates to be filled in.
+  // The projection function will allocate this memory itself.
+  double *x = NULL, *y = NULL;
+  x = y = NULL;
+  // Project all the edge pixels.
+  int return_code = project_arr (&(dem->projection_parameters), lats, lons, &x,
+				 &y, edge_point_count);
+  g_assert (return_code == TRUE);
+  // Find the extents of the image in projection coordinates.
+  for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
+    if ( x[ii] < *min_x ) { *min_x = x[ii]; }
+    if ( x[ii] > *max_x ) { *max_x = x[ii]; }
+    if ( y[ii] < *min_y ) { *min_y = y[ii]; }
+    if ( y[ii] > *max_y ) { *max_y = y[ii]; }
+  }
+  
+  free (y);
+  free (x);
+  g_free (lons);
+  g_free (lats);
 }
 
 // Main program.
@@ -402,17 +589,6 @@ main (int argc, char **argv)
   }
 #endif
 
-  FILE *tf = fopen ("test_ft", "w");
-  g_assert (tf != NULL);
-  float_image_freeze (sri->data, tf);
-  int return_code = fclose (tf);
-  g_assert (return_code == 0);
-  
-  tf = fopen ("test_ft", "r");
-  g_assert (tf != NULL);
-  FloatImage *ci = float_image_thaw (tf);
-  g_assert (float_image_equals (sri->data, ci, 1e-4));
-
   // Take a quick look at the slant range image for FIXME: debug
   // purposes.
   //  float_image_export_as_jpeg (sri->data, "sri_view.jpg", 2000, NAN);
@@ -422,6 +598,24 @@ main (int argc, char **argv)
   // We are expecting a ground range SAR image.
   g_assert (imd->sar->image_type == 'G');
 
+  // We will essentially be coloring the DEM with radar backscatter
+  // values.  But we won't need to worry about portions of the DEM for
+  // which we don't have corresponding imagery.  So here we determine
+  // the part of the DEM which is covered by the image and crop off
+  // the parts of the DEM that we don't need.
+  double min_x, max_x, min_y, max_y; // Projection coordinate range endpoints.
+  get_extents_in_projection_coordinate_space (imd, dem, &min_x, &max_x,
+					      &min_y, &max_y);
+  MapProjectedDEM *tmp_dem = map_projected_dem_new_subdem (dem, min_x, max_x,
+							   min_y, max_y);
+  map_projected_dem_free (dem);
+  dem = tmp_dem;
+
+  // Take a look at the cropped DEM.
+  float_image_export_as_jpeg (dem->data, "cropped_dem.jpg", 
+			      GSL_MAX (dem->data->size_x, dem->data->size_y),
+			      NAN);
+
   // If the DEM is significanly lower resolution than the SAR image,
   // we will need to generate a lower resolution version of the image
   // by averaging pixels together.  The trouble is sparsely sampling a
@@ -430,7 +624,7 @@ main (int argc, char **argv)
 				   dem->projection_coordinates_per_y_pixel);
   double sar_pixel_size = GSL_MAX (imd->general->x_pixel_size, 
 				   imd->general->y_pixel_size);
-  // FIXME: look into this 1.5 ruls of thumb and verify that its a
+  // FIXME: look into this 1.5 rule of thumb and verify that its a
   // decent way to go.
   if ( dem_pixel_size > 1.5 * sar_pixel_size ) {
     long int scale_factor = ceil (dem_pixel_size / sar_pixel_size);
@@ -913,15 +1107,16 @@ main (int argc, char **argv)
   dem_geom_info_freeze (dgi, tmp);
   int return_code = fclose (tmp);
   g_assert (return_code == 0);
-
-
+  
+  // Test to see if the thaw 'ed version is is the same as the one we
+  // just froze.
   tmp = fopen ("bk_debug_dgi_freeze", "r");
   g_assert (tmp != NULL);
-  DEMGeomInfo *dgi_revived = dem_geom_info_thaw (tmp);
+  DEMGeomInfo *dgi_thaw_test = dem_geom_info_thaw (tmp);
   return_code = fclose (tmp);
   g_assert (return_code == 0);
 
-  g_assert (dem_geom_info_equals (dgi, dgi_revived, 1e-10));
+  g_assert (dem_geom_info_equals (dgi, dgi_thaw_test, 0.0000001));
 
   } // End of dgi construction by calculation.
 
@@ -1135,7 +1330,7 @@ main (int argc, char **argv)
 			      GSL_MIN (sim_img->data->size_x,
 				       sim_img->data->size_y), NAN);
 
-  const int tile_size = 100;
+  const int tile_size = 200;
   GPtrArray *image_tile_records = g_ptr_array_new ();
   for ( ii = 0 ; (size_t) ii < sim_img->data->size_y / tile_size ; ii++ ) {
     size_t jj;
