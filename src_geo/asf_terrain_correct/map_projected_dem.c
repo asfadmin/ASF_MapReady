@@ -1,5 +1,9 @@
 // Implementation of the interface described in map_projected_dem.h.
 
+#include <math.h>
+
+#include <gsl/gsl_math.h>
+
 #include <ddr.h>
 #include <libasf_proj.h>
 #include "map_projected_dem.h"
@@ -25,7 +29,7 @@ map_projected_dem_new_from_las (const char *las_header_file,
   // according to the scheme LAS uses.
   const int projection_code_utm = 1;
 
-  // For now we only handle UTM, since this is really just intended to
+  // For now we only handle UTM, since this is reall just intended to
   // test things out.
   g_assert (ddr.proj_code == projection_code_utm);
   self->projection_type = UNIVERSAL_TRANSVERSE_MERCATOR;
@@ -38,10 +42,88 @@ map_projected_dem_new_from_las (const char *las_header_file,
      FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN, 
      FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER);
 
+  // The signed 16 bit LAS DEMs use this magic number to mean "no
+  // data".  It stays about the same in floating point after ingest,
+  // and we check for it and use it to set the invalid_data_mask.
+  const float no_data_value = -9999.0;
+  self->invalid_data_mask = uint8_image_new (self->size_x, self->size_y);
+  size_t ii, jj;
+  for ( ii = 0 ; ii < self->size_y ; ii++ ) {
+    for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+      if ( gsl_fcmp (float_image_get_pixel (self->data, jj, ii), no_data_value,
+		     0.0001) == 0) {
+	uint8_image_set_pixel (self->invalid_data_mask, jj, ii,
+			       MAP_PROJECTED_DEM_INVALID);
+      }
+      else {
+	uint8_image_set_pixel (self->invalid_data_mask, jj, ii,
+			       MAP_PROJECTED_DEM_VALID);	
+      }
+    }
+  }
+
   // For internal consistency, the size of the image that stores the
   // data had better be the same as the size of this instance.
   g_assert (self->size_x == self->data->size_x
 	    && self->size_y == self->data->size_y);
+
+  return self;
+}
+
+MapProjectedDEM *
+map_projected_dem_new_subdem (MapProjectedDEM *model, double x_start, 
+			      double x_end, double y_start, double y_end)
+{
+  g_assert (x_start < x_end);
+  g_assert (y_start < y_end);
+
+  MapProjectedDEM *self = g_new (MapProjectedDEM, 1);
+
+  // Convenience aliases.
+  double pcpxp = model->projection_coordinates_per_x_pixel;
+  double pcpyp = model->projection_coordinates_per_y_pixel;
+
+  // Pixel indicies in model->data of subimage to be extracted, and
+  // width and heiht of subimage to be extracted.
+  size_t xps, width, yps, height;
+
+  // Find the corner and extent of the new subdem in the x direction.
+  if ( x_start <= model->upper_left_x ) {
+    xps = 0;
+  }
+  else {
+    xps = floor ((x_start - model->upper_left_x) / pcpxp);
+  }
+  self->upper_left_x = model->upper_left_x + xps * pcpxp;
+  width = ceil ((x_end - self->upper_left_x) / pcpxp);
+  if ( xps + width > model->size_x ) {
+    width = model->size_x - xps;
+  }
+  self->size_x = width;
+  self->projection_coordinates_per_x_pixel = pcpxp;
+  
+  // Find the corner and extent of the new subdem in the y direction.
+  // This is a bit different than the x direction computations because
+  // the FloatImage y index increases in a downward direction, and map
+  // projection y coordinates increase in an upward direction.
+  if ( y_end >= model->upper_left_y ) {
+    yps = 0;
+  }
+  else {
+    yps = floor ((model->upper_left_y - y_end) / pcpyp);
+  }
+  self->upper_left_y = model->upper_left_y - yps * pcpyp;
+  height = ceil ((self->upper_left_y - y_start) / pcpyp);
+  if ( yps + height > model->size_y ) {
+    height = model->size_y - yps;
+  }
+  self->size_y = height;
+  self->projection_coordinates_per_y_pixel = pcpyp;
+
+  self->data = float_image_new_subimage (model->data, xps, yps, width, height);
+
+  self->projection_type = model->projection_type;
+  self->projection_parameters = model->projection_parameters;
 
   return self;
 }
@@ -101,5 +183,6 @@ void
 map_projected_dem_free (MapProjectedDEM *self)
 {
   float_image_free (self->data);
+  uint8_image_free (self->invalid_data_mask);
   g_free (self);
 }

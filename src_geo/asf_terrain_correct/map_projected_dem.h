@@ -5,6 +5,11 @@
 
 #include <asf_meta.h>
 #include <float_image.h>
+#include <uint8_image.h>
+
+// These values are used for the pixels of self->invalid_data_mask.
+#define MAP_PROJECTED_DEM_VALID 0
+#define MAP_PROJECTED_DEM_INVALID 1
 
 // Instance structure.  All members should be considered read only.
 typedef struct {
@@ -21,8 +26,13 @@ typedef struct {
   projection_type_t projection_type;
   // Projection parameters defining the projection.
   project_parameters_t projection_parameters;
-  // The actual data.
+  // The actual height data.
   FloatImage *data;
+  // Mask showing which pixels of the DEM have valid data.  If a pixel
+  // of invalid_data_mask is MAP_PROJECTED_DEM_VALID, the DEM has
+  // valid data at that pixel, if it is MAP_PROJECTED_DEM_INVALID, it
+  // doesn't.
+  UInt8Image *invalid_data_mask;
 } MapProjectedDEM;
 
 // Create a new instance from a Land Analysis System (LAS) header
@@ -31,6 +41,19 @@ typedef struct {
 MapProjectedDEM *
 map_projected_dem_new_from_las (const char *las_header_file_without_extension, 
 				const char *las_data_file);
+
+// Create a new DEM of minimal size covering as much as possible of
+// projection coordinate ranges [x_start, x_end] in x projection
+// coordinates and [y_start, y_end] in y projection coordinates.  If
+// the model supplied doesn't cover part of the requested area, the
+// new instance will cover as much as possible given the limitations
+// of the model.  Note that the area covered by the new image is
+// gauranteed to be inclusive of the above range end points provided
+// they are in the model, but may extend slight them by a fraction of
+// a pixel, possibly slightly more if there is rounding error.
+MapProjectedDEM *
+map_projected_dem_new_subdem (MapProjectedDEM *model, double x_start, 
+			      double x_end, double y_start, double y_end);
 
 // Get the x and y projection coordinates and height h above the
 // reference datum of zero indexed DEM pixel (pixel_x, pixel_y).
