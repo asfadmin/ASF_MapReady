@@ -194,10 +194,6 @@ int main(int argc, char *argv[])
   inMeta2 = meta_read(inName2);
   num_lines = inMeta1->general->line_count; 
   num_samples = inMeta1->general->sample_count;
-  /* Since we're assuming data is complex, make sure metadata reflects that...
-   * particularly so get/put_complexFloat_line() work... needs to be here thanks to DDRs */
-  inMeta1->general->data_type = meta_polar2complex(inMeta1->general->data_type);
-  inMeta2->general->data_type = meta_polar2complex(inMeta2->general->data_type);
 
   /* Figure multilooking values if necessary */
   if (!stepFlag) {
@@ -210,10 +206,11 @@ int main(int argc, char *argv[])
   }
 
   /*  Create & write output meta file */
-  outMeta = meta_copy(inMeta1);
+  outMeta = meta_read(inName1);
   outMeta->general->line_count   = num_lines / stepLine;
   outMeta->general->sample_count = num_samples / stepSample;
-  outMeta->general->data_type = meta_complex2polar(inMeta1->general->data_type);
+  outMeta->general->data_type = REAL32;
+  outMeta->general->image_data_type = COHERENCE_IMAGE;
   outMeta->general->x_pixel_size *= stepSample;
   outMeta->general->y_pixel_size *= stepLine;
   outMeta->sar->line_increment   *= stepLine;
