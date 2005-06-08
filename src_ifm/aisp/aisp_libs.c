@@ -257,7 +257,6 @@ void save_meta(meta_parameters *meta, const char *fname,
   meta->general->start_sample = ss;
   meta->general->x_pixel_size = pdx;
   meta->general->y_pixel_size = pdy;
-  meta->general->data_type = REAL32;
   meta->sar->line_increment = (double) li;
   meta->sar->sample_increment = 1.0;
   meta_write(meta, fname);

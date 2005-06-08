@@ -338,11 +338,13 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const fi
                 }
 	}
 	FCLOSE(fp_cpx);
+	meta->general->data_type = COMPLEX_REAL32;
         meta->general->image_data_type = COMPLEX_IMAGE;
 	save_meta(meta,f->out_cpx,f->n_az_valid*patchNo,p->n_range,
 		 f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
 		 f->rngpix,f->azpix,1);
 	FCLOSE(fp_amp);
+	meta->general->data_type = REAL32;
 	meta->general->image_data_type = AMPLITUDE_IMAGE;
 	save_meta(meta,f->out_amp,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
                  f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
