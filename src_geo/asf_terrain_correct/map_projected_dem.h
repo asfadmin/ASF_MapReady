@@ -57,6 +57,8 @@ map_projected_dem_new_subdem (MapProjectedDEM *model, double x_start,
 
 // Get the x and y projection coordinates and height h above the
 // reference datum of zero indexed DEM pixel (pixel_x, pixel_y).
+// WARNING: this method will happily return the xyh of a pixel for
+// which invalid_data_mask is set.
 void
 map_projected_dem_get_x_y_h (MapProjectedDEM *self, ssize_t pixel_x,
 			     ssize_t pixel_y, double *x, double *y, double *h);
@@ -65,7 +67,8 @@ map_projected_dem_get_x_y_h (MapProjectedDEM *self, ssize_t pixel_x,
 // ellipsoid of all DEM pixels in row.  The 'latitudes' and
 // 'longitudes' arguments must be pointers to arrays large enough to
 // hold a rows worth of values, i.e. pointers to space sufficient to
-// hold self->size_x doubles.
+// hold self->size_x doubles.  WARNING: this method ouput values for
+// pixels for which invalid_data_mask is set.
 void
 map_projected_dem_get_latitudes_longitudes_heights 
   (MapProjectedDEM *self, ssize_t row, double *latitudes, double *longitudes,

@@ -122,6 +122,9 @@ map_projected_dem_new_subdem (MapProjectedDEM *model, double x_start,
 
   self->data = float_image_new_subimage (model->data, xps, yps, width, height);
 
+  self->invalid_data_mask = uint8_image_new_subimage (model->invalid_data_mask,
+						      xps, yps, width, height);
+
   self->projection_type = model->projection_type;
   self->projection_parameters = model->projection_parameters;
 
