@@ -395,6 +395,7 @@ get_extents_in_projection_coordinate_space
     project_arr = project_lamaz_arr;
     break;
   default:
+    project_arr = NULL;
     g_assert_not_reached ();
     break;
   }
