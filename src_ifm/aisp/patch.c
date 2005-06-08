@@ -338,16 +338,19 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const fi
                 }
 	}
 	FCLOSE(fp_cpx);
+        meta->general->image_data_type = COMPLEX_IMAGE;
 	save_meta(meta,f->out_cpx,f->n_az_valid*patchNo,p->n_range,
 		 f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
 		 f->rngpix,f->azpix,1);
 	FCLOSE(fp_amp);
+	meta->general->image_data_type = AMPLITUDE_IMAGE;
 	save_meta(meta,f->out_amp,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
                  f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
                  f->rngpix,f->azpix,f->nlooks);
 	if (s->imageType.power) 
 	{
 	  FCLOSE(fp_pwr);
+	  meta->general->image_data_type = POWER_IMAGE;
 	  save_meta(meta,f->out_pwr,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
                  f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
                  f->rngpix,f->azpix,f->nlooks);
@@ -356,6 +359,7 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const fi
 	if (s->imageType.sigma) 
 	{
 	  FCLOSE(fp_sig);
+	  meta->general->image_data_type = SIGMA_IMAGE;
 	  save_meta(meta,f->out_sig,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
                  f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
                  f->rngpix,f->azpix,f->nlooks);
@@ -364,12 +368,14 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const fi
 	if (s->imageType.gamma) 
 	{
 	  FCLOSE(fp_gam);
+	  meta->general->image_data_type = GAMMA_IMAGE;
 	  save_meta(meta,f->out_gam,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
                  f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
                  f->rngpix,f->azpix,f->nlooks);
 	}if (s->imageType.beta) 
 	{
 	  FCLOSE(fp_bet);
+	  meta->general->image_data_type = BETA_IMAGE;
 	  save_meta(meta,f->out_bet,(f->n_az_valid/f->nlooks)*patchNo,p->n_range,
                  f->firstLineToProcess+s->dop_precomp+1,f->skipFile+1,
                  f->rngpix,f->azpix,f->nlooks);
