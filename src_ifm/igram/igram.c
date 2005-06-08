@@ -100,7 +100,8 @@ void usage(char *name);
 
 int main(int argc, char *argv[])
 {
-  char fnm[256];
+  meta_parameters *meta;
+  char fnm[256], master[255], igram_amp[255], igram_phase[255];
   int count = 0,len;
   FILE *inFile1, *inFile2, *outFileAmp, *outFilePhase;
   long bytesRead=0;
@@ -149,6 +150,7 @@ int main(int argc, char *argv[])
    * open input files 
    */
   create_name(fnm,argv[currArg++],".cpx");
+  sprintf(master, "%s", fnm);
   inFile1=fopenImage(fnm, "rb");
   c_getddr(fnm,&inDDR1);  
 
@@ -157,9 +159,11 @@ int main(int argc, char *argv[])
   c_getddr(fnm,&inDDR2); 
 
   create_name(fnm,argv[currArg],"_amp.img");
+  sprintf(igram_amp, "%s", fnm);
   outFileAmp=fopenImage(fnm, "wb");
   
   create_name(fnm,argv[currArg],"_phase.img");
+  sprintf(igram_phase, "%s", fnm);
   outFilePhase=fopenImage(fnm, "wb");
 
   /*
@@ -245,9 +249,18 @@ int main(int argc, char *argv[])
   else
   {
   	printf("\n");
+	/*
   	sprintf(cmd,"cp %s.meta %s_amp.meta\n",argv[currArg-2],argv[currArg]);
+        system(cmd);
   	sprintf(cmd,"cp %s.meta %s_phase.meta\n",argv[currArg-2],argv[currArg]);
   	system(cmd);
+	*/
+	meta = meta_read(master);
+	meta->general->data_type = REAL32;
+	meta->general->image_data_type = AMPLITUDE_IMAGE;
+	meta_write(meta, igram_amp);
+	meta->general->image_data_type = PHASE_IMAGE;
+	meta_write(meta, igram_phase);
   }
 
   FCLOSE(inFile1);FCLOSE(inFile2);
