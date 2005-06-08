@@ -1,9 +1,9 @@
 // A rectangular block of data of type float.  A transparent block
-// cache is used for each instance of this class, so the image can be
-// much bigger than will fit in memory, and pixels can still be
-// accessed and written efficiently, provided subsequent accesses are
-// spatially correlated.  A variety of useful methods are implemented
-// (filtering, subsetting, interpolating, etc.)
+// cache is used for each instance of this class if necessary, so the
+// image can be much bigger than will fit in memory, and pixels can
+// still be accessed and written efficiently, provided subsequent
+// accesses are spatially correlated.  A variety of useful methods are
+// implemented (filtering, subsetting, interpolating, etc.)
 //
 // Don't try to access the same instance concurrently.  Split your
 // images up into separate instances if you must parallelize things.
@@ -13,7 +13,6 @@
 // shooting themselves in the foor by accidently passing negative
 // values which don't yield warnings and can't be caught with
 // assertions.
-
 
 #ifndef FLOAT_IMAGE_H
 #define FLOAT_IMAGE_H
@@ -114,7 +113,8 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 // will be size_x by size_y pixels.  This method is like new_from_file
 // method, but gets its data by sampling in each dimension using
 // bilinear interpolation.  This is a decent way of forming quick
-// thumbnails of images, but not much else.
+// thumbnails of images, or of scaling images down just slightly (by a
+// factor of say 1.5 or less), but not much else.
 FloatImage *
 float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
 				  ssize_t original_size_x,

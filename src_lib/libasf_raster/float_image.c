@@ -214,7 +214,7 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   self->tile_count_x = (size_t) ceil ((double) self->size_x / self->tile_size);
   self->tile_count_y = (size_t) ceil ((double) self->size_y / self->tile_size);
 
-  // Total number of tiles image tiles image has been split into.
+  // Total number of image tiles image has been split into.
   self->tile_count = self->tile_count_x * self->tile_count_y;
 
   // We want to be able to pack a tile number into a pointer later, so
@@ -324,6 +324,20 @@ float_image_thaw (FILE *file_pointer)
       g_assert (read_count == self->tile_area);
       size_t write_count = fwrite (buffer, sizeof (float), self->tile_area,
 				   self->tile_file);
+      if ( write_count < self->tile_area ) {
+	if ( feof (self->tile_file) ) {
+	  fprintf (stderr,
+		   "Premature end of file while trying to thaw FloatImage "
+		   "instance\n");
+	}
+	else {
+	  g_assert (ferror (self->tile_file));
+	  fprintf (stderr,
+		   "Error writing tile cache file for FloatImage instance "
+		   "during thaw: %s\n", strerror (errno));	
+	}
+	exit (EXIT_FAILURE);
+      }
       g_assert (write_count == self->tile_area);
     }
     g_free (buffer);
@@ -365,8 +379,8 @@ float_image_new (ssize_t size_x, ssize_t size_y)
         g_assert (ferror (self->tile_file));
         // so print an error message,
         fprintf (stderr,
-                 "Error creating tile cache file for float_image instance: "
-                 "%s\n", strerror (errno));
+                 "Error writing tile cache file for FloatImage instance: %s\n",
+                 strerror (errno));
         // and exit.
         exit (EXIT_FAILURE);
       }
@@ -424,8 +438,8 @@ float_image_new_with_value (ssize_t size_x, ssize_t size_y, float value)
         g_assert (ferror (self->tile_file));
         // so print an error message,
         fprintf (stderr,
-                 "Error creating tile cache file for float_image instance: "
-                 "%s\n", strerror (errno));
+                 "Error writing tile cache file for FloatImage instance: %s\n",
+		 strerror (errno));
         // and exit.
         exit (EXIT_FAILURE);
       }
@@ -718,8 +732,8 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
             g_assert (ferror (self->tile_file));
             // so print an error message,
             fprintf (stderr,
-                     "Error creating tile cache file for float_image "
-                     "instance: %s\n", strerror (errno));
+                     "Error writing tile cache file for FloatImage instance: "
+                     "%s\n", strerror (errno));
             // and exit.
             exit (EXIT_FAILURE);
           }
@@ -734,7 +748,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
               g_assert (ferror (self->tile_file));
               // so print an error message,
               fprintf (stderr,
-                       "Error creating tile cache file for float_image "
+                       "Error writing tile cache file for FloatImage "
                        "instance: %s\n", strerror (errno));
               // and exit.
               exit (EXIT_FAILURE);
@@ -754,8 +768,8 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
             g_assert (ferror (self->tile_file));
             // so print an error message,
             fprintf (stderr,
-                     "Error creating tile cache file for float_image "
-                     "instance: %s\n", strerror (errno));
+                     "Error writing tile cache file for FloatImage instance: "
+                     "%s\n", strerror (errno));
             // and exit.
             exit (EXIT_FAILURE);
           }
@@ -1143,8 +1157,8 @@ float_image_new_from_file_pointer_with_sample_type
 	    g_assert (ferror (self->tile_file));
 	    // so print an error message,
 	    fprintf (stderr,
-		     "Error creating tile cache file for float_image "
-		     "instance: %s\n", strerror (errno));
+		     "Error writing tile cache file for float_image instance: "
+		     "%s\n", strerror (errno));
 	    // and exit.
 	    exit (EXIT_FAILURE);
 	  }
@@ -1159,7 +1173,7 @@ float_image_new_from_file_pointer_with_sample_type
 	      g_assert (ferror (self->tile_file));
 	      // so print an error message,
 	      fprintf (stderr,
-		       "Error creating tile cache file for float_image "
+		       "Error writing tile cache file for float_image "
 		       "instance: %s\n", strerror (errno));
 	      // and exit.
 	      exit (EXIT_FAILURE);
@@ -1179,8 +1193,8 @@ float_image_new_from_file_pointer_with_sample_type
 	    g_assert (ferror (self->tile_file));
 	    // so print an error message,
 	    fprintf (stderr,
-		     "Error creating tile cache file for float_image "
-		     "instance: %s\n", strerror (errno));
+		     "Error writing tile cache file for float_image instance: "
+		     "%s\n", strerror (errno));
 	    // and exit.
 	    exit (EXIT_FAILURE);
 	  }
@@ -1337,12 +1351,12 @@ cached_tile_to_disk (FloatImage *self, size_t tile_offset)
   int return_code
     = fseeko (self->tile_file,
 	      (off_t) tile_offset * self->tile_area * sizeof (float),
-		SEEK_SET);
-    g_assert (return_code == 0);
-    size_t write_count = fwrite (self->tile_addresses[tile_offset],
-                                 sizeof (float), self->tile_area,
-                                 self->tile_file);
-    g_assert (write_count == self->tile_area);
+	      SEEK_SET);
+  g_assert (return_code == 0);
+  size_t write_count = fwrite (self->tile_addresses[tile_offset],
+			       sizeof (float), self->tile_area,
+			       self->tile_file);
+  g_assert (write_count == self->tile_area);
 }
 
 // Return true iff tile (x, y) is already loaded into the memory cache.
@@ -1610,9 +1624,9 @@ float_image_statistics_with_mask_interval (FloatImage *self, float *min,
     float_image_get_row (self, ii, row_buffer);
     for ( jj = 0 ; jj < self->size_x ; jj++ ) {
       float cs = row_buffer[jj];   // Current sample.
-      // If in the mask interval, do not consider this pixel and
+      // If in the mask interval, do not consider this pixel any
       // further.
-      if ( cs < interval_start && cs > interval_end ) {
+      if ( cs >= interval_start && cs <= interval_end ) {
 	continue;
       }
       if ( G_UNLIKELY (cs < *min) ) { *min = cs; }
@@ -1907,19 +1921,21 @@ float_image_sample (FloatImage *self, float x, float y,
 gboolean
 float_image_equals (FloatImage *self, FloatImage *other, float epsilon)
 {
+  // Compare image sizes.
   if ( self->size_x != other->size_x ) {
     return FALSE;
   }
-
   if ( self->size_y != other->size_y ) {
     return FALSE;
   }
 
-  size_t sz = self->size_x;	// Convenience alias.
+  size_t sz_x = self->size_x;	// Convenience alias.
+  size_t sz_y = self->size_y;
 
+  // Compare image pixels.
   size_t ii, jj;
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
+  for ( ii = 0 ; ii < sz_y ; ii++ ) {
+    for ( jj = 0 ; jj < sz_x ; jj++ ) {
       if ( G_UNLIKELY (gsl_fcmp (float_image_get_pixel (self, jj, ii),
 				 float_image_get_pixel (other, jj, ii),
 				 epsilon) != 0) ) {
@@ -2077,6 +2093,7 @@ float_image_store (FloatImage *self, const char *file,
   int return_code = fclose (fp);
   g_assert (return_code == 0);
 
+  // Return success code.
   return 0;
 }
 
@@ -2161,8 +2178,9 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   // good chance that the user would like zero to correspond to black,
   // so we do that.  Anything else will be pure white.
   if ( min == max ) {
-    // FIXME: this path seems to be broken somehow -- we end up with
-    // jpegs of size zero.
+    // FIXME: this path is broken.  The trouble is that much of the
+    // stuff after this if shouldn't happen if we do this, but some of
+    // it should.  So for now its disabled.
     g_assert_not_reached ();
     unsigned char oval;         // Output value to use.
     if ( min == 0.0 ) {
@@ -2177,7 +2195,6 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
         pixels[ii * osx + jj] = oval;
       }
     }
-    return 0;
   }
 
   // Range of input pixel values which are to be linearly scaled into
