@@ -933,10 +933,6 @@ UInt8Image *
 uint8_image_new_subimage (UInt8Image *model, ssize_t x, ssize_t y,
 			  ssize_t size_x, ssize_t size_y)
 {
-  // Carefully clone-and-modified over from float_image.c, but not
-  // tested yet.
-  g_assert_not_reached ();
-
   // Upper left corner must be in model.
   g_assert (x >= 0 && y >= 0);
 
