@@ -6,7 +6,7 @@
 #include "float_image.h"
 #include "asf_nan.h"
 
-#define KH_DEBUG
+// #define KH_DEBUG
 
 int
 lsm_mask_value_is_layover(int mask_value)
