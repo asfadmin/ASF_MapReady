@@ -80,6 +80,7 @@ PROGRAM HISTORY:
     3.7    2/04  P. Denny     Changed name from ml to multilook, changed license
                                from GPL to our own ASF license.
     3.8    2/04  R. Gens      Updated command line parsing
+    3.9    6/05  R. Gens      First cut on conversion to new metadata
 
 HARDWARE/SOFTWARE LIMITATIONS:
 ALGORITHM DESCRIPTION:
@@ -94,7 +95,7 @@ BUGS:
 #include "multilook.h"
 
 /* local constants */
-#define VERSION      3.7
+#define VERSION      3.9
 
 /* function declaration */
 void parse_clas(int, char **,int *,int *,int *,int *,int *);
@@ -103,16 +104,15 @@ void usage(char *name);
 
 int main(int argc, char *argv[])
 {
+  meta_parameters *meta, *meta_old;
 	char fnm1[BUF],fnm2[BUF],fnm3[BUF],fnm4[BUF],outname[BUF];
-	char imgfile[BUF],metaFile[BUF];
+	char imgfile[BUF],metaFile[BUF],cmd[BUF],metaIn[BUF],metaOut[BUF];
 	FILE *fiamp, *fiphase, *foamp, *fophase, *flas;
-	long long inWid, inLen;
 	int ll=0, ls=1;   /* look line and sample */
 	int sl=STEPLINE, ss=STEPSAMPLE;   /* step line and sample */
 	int i,line, sample;
 	int row, col, ampFlag = 0;
-	long long nitems, newitems;
-	long long outWid, outLen;
+	long long nitems, newitems, inWid, inLen, outWid, outLen;
 	long long ds/*,samplesRead*/;       /* input data size, number of samples read so far.*/
 	long long red_offset, grn_offset, blu_offset;
 	register float *ampIn, *phaseIn, ampScale;
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 	RGBDATA *table, *imgData;
 	Uchar *redPtr, *grnPtr, *bluPtr;
 	complexFloat z;
-	struct DDR ddr,newddr;
+	struct DDR newddr;
 	register float tmp,zImag,zReal,ampI;
 	register int index,offset;
 	const float convers=256.0/(2*3.14159265358979);
@@ -177,35 +177,39 @@ int main(int argc, char *argv[])
 	  printLog("Program: multilook\n\n");
 	}
 
-	/* create filenames and open files for reading */
-	c_getddr(argv[currArg],&ddr);
-  
-	inWid=ddr.ns;
-  	inLen=ddr.nl;
+	/* Create filenames and open files for reading */
   	create_name(fnm1,argv[currArg],"_amp.img");
   	create_name(fnm2,argv[currArg],"_phase.img");
+	meta = meta_read(fnm2);
+	create_name(metaIn,argv[currArg],".meta");
   	strcpy(outname,argv[currArg++]);
   	create_name(fnm3,argv[currArg],"_amp.img");
   	create_name(fnm4,argv[currArg],"_phase.img");
   	create_name(imgfile,argv[currArg],"_rgb.img");
+	create_name(metaOut,argv[currArg],"_rgb.meta");
  	
-  	outWid  = inWid/ss;
-  	outLen = inLen / sl;
+	inWid = meta->general->sample_count;
+	inLen = meta->general->line_count;
+  	meta->general->sample_count /= ss;
+  	meta->general->line_count /= sl;
+	outWid = meta->general->sample_count;
+	outLen = meta->general->line_count;
   
-	/*Create the DDR for the amplitude and phase.*/
-	newddr=ddr;
-	newddr.nl=outLen;
-	newddr.ns=outWid;
-	newddr.dtype=EREAL;
-	newddr.nbands=1;
-	newddr.line_inc*=sl;
-	newddr.sample_inc*=ss;
-	newddr.pdist_x*=ss;
-	newddr.pdist_y*=sl;
-	c_putddr(outname,&newddr);
+	/* Create new metadata file for the amplitude and phase.*/
+	meta->sar->line_increment *= sl;
+	meta->sar->sample_increment *= ss;
+	meta->general->x_pixel_size *= ss;
+	meta->general->y_pixel_size *= sl;
+	meta_write(meta, outname);
   
-  
-	/*Create 3-band image's DDR.*/
+	/* Create 3-band image's DDR.
+	   Currently metadata file don't know anything about multiband imagery.
+	   We will need to convert the current version for single band amplitude
+	   image back to metadata version 0.9 and change a couple of values */
+	sprintf(cmd, "convert_meta %s 1.3 %s 0.9", metaIn, metaOut);
+	system(cmd);
+
+	c_getddr(imgfile, &newddr);
 	newddr.dtype=EBYTE;
 	newddr.nbands=3;
 	c_putddr(imgfile,&newddr);
@@ -362,9 +366,11 @@ int main(int argc, char *argv[])
 	*/
 /*	printf("\n\tdone with multilook\n");
 	printf("writing out LAS/RGB image file\n");*/
-	printf("   Completed 100 percent\n\n   Wrote %lld bytes of data\n\n", (long long)(outLen*outWid*4));
+	printf("   Completed 100 percent\n\n   Wrote %lld bytes of data\n\n", 
+	       (long long)(outLen*outWid*4));
 	if (logflag) {
-	  sprintf(logbuf, "   Wrote %lld bytes of data\n\n", (long long)(outLen*outWid*4));
+	  sprintf(logbuf, "   Wrote %lld bytes of data\n\n", 
+		  (long long)(outLen*outWid*4));
 	  printLog(logbuf);
 	  StopWatchLog(fLog);
 	  FCLOSE(fLog);
