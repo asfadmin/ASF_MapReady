@@ -7,6 +7,10 @@ OLIBS = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/asf_lt.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libifm.a
 LIBS = $(OLIBS) -lm
 

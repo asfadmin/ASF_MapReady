@@ -6,6 +6,9 @@ include ../../make_support/system_rules
 LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/asf.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
 OBJS  = calc_ranges.o \

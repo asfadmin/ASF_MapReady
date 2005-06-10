@@ -9,6 +9,9 @@ include ../../make_support/system_rules
 LIBS  = $(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a
 LIBC = $(LIBS) -lm 
 
