@@ -15,6 +15,7 @@ typedef enum {
 	invalidMap=100,
 	matrixMap,/*Linear 2x3 matrix map*/
 	quadraticMap, /*Quadratic 2D function map*/
+	polyMap, /*Polynomial 2D function map*/
 	warpMap /*Image-file-based warping function map*/
 } mappingType;
 typedef void (*mappingFunc)(void *map, fPoint in, fPoint *out);

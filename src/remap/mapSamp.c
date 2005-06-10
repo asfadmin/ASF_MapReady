@@ -7,6 +7,7 @@ sampling functions.
 #include "las.h"
 #include "remap.h"
 #include "quadratic.h"
+#include "poly.h"
 
 /***************** Mapping Functions: ***************
 A mapping function shows where to put the input pixels
@@ -31,10 +32,17 @@ typedef struct {
 	quadratic_2d outToInX,outToInY;
 } quadraticMapRec;
 
+typedef struct {
+	mappingStruct m;
+	poly_2d *inToOutX,*inToOutY;
+	poly_2d *outToInX,*outToInY;
+} polyMapRec;
+
 
 /*Prototypes:*/
 void matrix_doMap(matrixMapRec * map,fPoint  in, fPoint  *out);
 void quadratic_doMap(matrixMapRec * map,fPoint  in, fPoint  *out);
+void poly_doMap(matrixMapRec * map,fPoint  in, fPoint  *out);
 mappingFunction warp_createMap(char *fName);
 void warp_freeMap(mappingFunction map);
 
@@ -58,6 +66,18 @@ mappingFunction createMap(mappingType m,void *param)
 		q->m.type=m;
 		q->m.doMap=(mappingFunc)quadratic_doMap;
 		quadratic_read(&q->inToOutX,f);quadratic_read(&q->inToOutY,f);				quadratic_read(&q->outToInX,f);quadratic_read(&q->outToInY,f);
+		FCLOSE(f);
+		return (mappingFunction)q;
+	} else if (m==polyMap)
+	{/*Polynomial map type expects a file name parameter*/
+		FILE *f=FOPEN((char *)param,"r");
+		polyMapRec *q=(polyMapRec *)MALLOC(sizeof(polyMapRec));
+		q->m.type=m;
+		q->m.doMap=(mappingFunc)poly_doMap;
+		q->inToOutX=poly_read(f);
+		q->inToOutY=poly_read(f);				
+		q->outToInX=poly_read(f);
+		q->outToInY=poly_read(f);
 		FCLOSE(f);
 		return (mappingFunction)q;
 	} else if (m==warpMap)
@@ -128,8 +148,14 @@ void forwardMap(mappingFunction map, fPoint  in, fPoint  *out)
 		out->x=quadratic_eval(&q->inToOutX,in.x,in.y);
 		out->y=quadratic_eval(&q->inToOutY,in.x,in.y);
 	}
+	else if (map->type==polyMap)
+	{	
+		polyMapRec *q=(polyMapRec *)map;
+		out->x=poly_eval(q->inToOutX,in.x,in.y);
+		out->y=poly_eval(q->inToOutY,in.x,in.y);
+	}
 	else if (map->type==warpMap)
-		*out=in;/*Identity transformation (why not?)*/
+		*out=in;/* FIXME: Identity transformation *isn't* right, but it's close if displacements are small... */
 	else
 	{
 	  sprintf(errbuf, "   ERROR: Unknown map function passed to forwardMap.\n");
@@ -150,6 +176,12 @@ void quadratic_doMap(matrixMapRec * map,fPoint  in, fPoint  *out)
 	quadraticMapRec *q=(quadraticMapRec *)map;
 	out->x=quadratic_eval(&q->outToInX,in.x,in.y);
 	out->y=quadratic_eval(&q->outToInY,in.x,in.y);
+}
+void poly_doMap(matrixMapRec * map,fPoint  in, fPoint  *out)
+{
+	polyMapRec *q=(polyMapRec *)map;
+	out->x=poly_eval(q->outToInX,in.x,in.y);
+	out->y=poly_eval(q->outToInY,in.x,in.y);
 }
 
 /***************

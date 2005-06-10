@@ -154,7 +154,8 @@ void usage(char *name)
   "  %s\n"
   "    [-rotate <deg>] [-scale <sX> <sY>] [-translate <tX> <tY>]\n"
   "    [-matrix <matrixFile>] [-ppf <ppfFile>] [-deltas <deltaFile>]\n"
-  "    [-quadratic <quadFile>] [-warp <warpImages>] [-background <fill>]\n"
+  "    [-quadratic <quadFile>] [-poly <polyFile>] [-warp <warpImages>] \n"
+  "    [-background <fill>]\n"
   "    [-nearest | -bilinear | -sinc | -kernel <sizeX> <sizeY>\n"
   "                                       | -fileKernel <kernelFile>]\n"
   "    [-byte [-map <min> <max>] | -char [-map <min> <max>]\n"
@@ -181,7 +182,8 @@ void usage(char *name)
   "                             See man page for format\n"
   "           -ppf <ppfFile>: for a correlate(1) .ppf coefficients file\n"
   "      -deltas <deltaFile>: for a calc_deltas(1) offsets file\n"
-  "    -quadratic <quadFile>: from fit_quadratic\n"
+  "    -quadratic <quadFile>: read quadratic polynomial from fit_quadratic\n"
+  "         -poly <polyFile>: arbitrary polynomial (any degree) from fit_poly\n"
   "       -warp <warpImages>: images (.horiz & .vert) with pixel values reflecting\n"
   "                            which direction to \"warp\" the output pixels to\n"
   "Remapping algorithms:\n"
@@ -273,6 +275,10 @@ int process_CLAs(int argc, char *argv[],mappingFunction *map,
 		{
 			CHECK_ARG(1) /*one filename argument*/
 			*map=createMap(quadraticMap,(void *)GET_ARG(1));
+		}else if (strmatch(key,"-poly"))
+		{
+			CHECK_ARG(1) /*one filename argument*/
+			*map=createMap(polyMap,(void *)GET_ARG(1));
 		}else if (strmatch(key,"-warp"))
 		{
 			CHECK_ARG(1) /*one filename argument*/
