@@ -9,6 +9,9 @@ LIBS =	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgeotiff.a \
 	$(LIBDIR)/libtiff.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/libasf_reporting.a \
 	-L$(LIBDIR) -lgsl -lgslcblas \
 	-lm
 

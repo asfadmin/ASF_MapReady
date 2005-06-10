@@ -12,6 +12,9 @@ OTHER = -ldl -lsocket -lnsl
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/libjpeg.a \
 	$(LIBDIR)/libtcl8.1.a \
