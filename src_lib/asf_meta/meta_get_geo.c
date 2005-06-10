@@ -65,7 +65,8 @@ void meta_get_latLon(meta_parameters *meta,
 		double px,py;
 		px = meta->projection->startX + meta->projection->perX * xSample;
 		py = meta->projection->startY + meta->projection->perY * yLine;
-		proj_to_ll(meta->projection,meta->sar->look_direction,px,py,lat,lon);
+		proj_to_latlon(meta->projection, meta->sar->look_direction, px, py,
+			       lat,lon);
 	} else
 	{ /*Bogus image type.*/
 		printf("Error! Invalid image type '%c' passed to meta_get_latLon!\n",
