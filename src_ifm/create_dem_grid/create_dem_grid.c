@@ -42,6 +42,8 @@ PROGRAM HISTORY:
     1.0	     2/98    O. Lawlor	For demIFM. Initial development.
     1.01     7/01    R. Gens    Added logfile switch
     1.25     4/02    P. Denny   Standardized commandline parsing & usage()
+    1.3      6/05    R. Gens    Implemented the changes that Joe and Orion
+                                came up with.
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -78,9 +80,9 @@ BUGS:
 #include "cproj.h"
 #include "proj.h"
 
-#define VERSION 1.25
-#define gridResX 2
-#define gridResY 20
+#define VERSION 1.3
+#define gridResX 30
+#define gridResY 30
 
 
 int getNextSarPt(struct DDR *ddr,int gridNo,int *x,int *y);
@@ -116,6 +118,7 @@ int main(int argc,char *argv[])
 	FILE *out;
 	meta_parameters *meta;
 	struct DDR sar_ddr,dem_ddr;
+	double elev = 0.0;
 	forward_transform latLon2proj[100];
 
 	logflag=0;
@@ -146,6 +149,8 @@ int main(int argc,char *argv[])
 	out=FOPEN(outName,"w");
 	
 	c_getddr(sarName,&sar_ddr);
+	sar_ddr.ns += 400; /* Magic 400 samples to append to image right border,
+			      to prevent regged edge after reskew */
 	meta=meta_init(ceos);
 	
 	c_getddr(demName,&dem_ddr);
@@ -169,7 +174,7 @@ int main(int argc,char *argv[])
 		
 	/*Compute the latitude and longitude of this location on the ground.*/
 		meta_get_orig((void *)&sar_ddr,sar_y,sar_x,&orig_y,&orig_x);
-		meta_get_latLon(meta,(float)orig_y,(float)orig_x,0.0,&lat,&lon);
+		meta_get_latLon(meta,(float)orig_y,(float)orig_x,elev,&lat,&lon);
 		
 	/*Compute the projection coordinates of this location in the DEM.*/
 		latLon2proj[dem_ddr.proj_code](lon*D2R,lat*D2R,&demProj_x,&demProj_y);
@@ -206,8 +211,8 @@ int getNextSarPt(struct DDR *ddr,int gridNo,int *x,int *y)
 	xtmp = gridNo % gridResX;
 	ytmp = gridNo / gridResX;
 
-	*x = 1 + (float) xtmp / (float) (gridResX-1) * (ddr->ns-1);
-	*y = 1 + (float) ytmp / (float) (gridResY-1) * (ddr->nl-1);
+	*x = 1 + (float) xtmp / (float) (gridResX-1) * (ddr->ns);
+	*y = 1 + (float) ytmp / (float) (gridResY-1) * (ddr->nl);
 
 	return 1;
 }
