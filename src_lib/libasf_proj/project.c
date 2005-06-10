@@ -614,3 +614,78 @@ project_albers_arr_inv(project_parameters_t * pps,
     return project_worker_arr_inv(
 	albers_projection_desc(pps), x, y, lat, lon, length);
 }
+
+
+/*Convert projection units (meters) to geodetic latitude and longitude (degrees).*/
+void proj_to_latlon(meta_projection *proj, char look_dir, double x, double y, 
+		    double *lat, double *lon)
+{
+  if (proj==NULL)
+    bail("NULL projection parameter structure passed to proj_to_ll!\n");
+
+  project_set_datum(proj->datum);
+
+  switch(proj->type)
+    {
+    case SCANSAR_PROJECTION: 
+      ac_ll(proj,look_dir, y, x, lat, lon); 
+      break;
+    case ALBERS_EQUAL_AREA:
+      project_albers_inv(&(proj->param), x, y, lat, lon);
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      project_lamaz_inv(&(proj->param), x, y, lat, lon);
+      break;
+    case LAMBERT_CONFORMAL_CONIC: 
+      project_lamcc_inv(&(proj->param), x, y, lat, lon); 
+      break;
+    case POLAR_STEREOGRAPHIC: 
+      project_ps_inv(&(proj->param), x, y, lat, lon); 
+      break;
+    case UNIVERSAL_TRANSVERSE_MERCATOR: 
+      project_utm_inv(&(proj->param), x, y, lat, lon); 
+      break;
+    default:
+      printf("Unrecognized map projection '%c' passed to proj_to_latlon!\n",
+	     proj->type);
+      exit(1);
+    }
+}
+
+
+
+/*Convert projection units (meters) from geodetic latitude and longitude (degrees).*/
+void latlon_to_proj(meta_projection *proj, char look_dir, double lat, double lon,
+		    double *x,double *y)
+{
+  if (proj==NULL)
+    bail("NULL projection parameter structure passed to ll_to_proj!\n");
+
+  project_set_datum(proj->datum);
+
+  switch (proj->type)
+    {
+    case SCANSAR_PROJECTION: 
+      ll_ac(proj, look_dir, lat, lon, y, x); 
+      break;
+    case ALBERS_EQUAL_AREA:
+      project_albers(&(proj->param), lat, lon, x, y);
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      project_lamaz(&(proj->param), lat, lon, x, y);
+      break;
+    case LAMBERT_CONFORMAL_CONIC: 
+      project_lamcc(&(proj->param), lat, lon, x, y); 
+      break;
+    case POLAR_STEREOGRAPHIC: 
+      project_ps(&(proj->param), lat, lon, x, y); 
+      break;
+    case UNIVERSAL_TRANSVERSE_MERCATOR: 
+      project_utm(&(proj->param), lat, lon, x, y); 
+      break;
+    default:
+      printf("Unrecognized map projection '%c' passed to latlon_to_proj!\n",
+	     proj->type);
+      exit(1);
+    }
+}
