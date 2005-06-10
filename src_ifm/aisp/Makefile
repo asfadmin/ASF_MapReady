@@ -10,7 +10,10 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/asf_fft.a \
-	$(LIBDIR)/asf_odl.a
+	$(LIBDIR)/asf_odl.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/libasf_reporting.a
 LIBC = $(LIBS) -lm 
 
 OBJLIB = aisp_libs.o \
