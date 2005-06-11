@@ -293,7 +293,7 @@ int main(int argc, char **argv)
 	}
 
 /* Prepare output meta data for processing & writing */
-	outMeta = meta_copy(inMeta);
+	outMeta = meta_read(inMetaFileName);
 	outMeta->general->data_type = BYTE;
 
 /* Figure multilooking parameters if necessary */
