@@ -7,6 +7,11 @@ include ../../make_support/system_rules
 
 CFLAGS  = $(FLAGS) -DDECODE_CEOS -g
 LIBS    = $(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libgsl.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/libasf_reporting.a \
+	$(LIBDIR)/libgslcblas.a \
 	$(LIBDIR)/asf.a -lm
 
 OBJLIB	= config.o \
@@ -17,7 +22,7 @@ all:    ips clean
 
 ips: ips.c $(OBJLIB)
 	${CC} ${CFLAGS} ${LDFLAGS} -o ips ips.c $(OBJLIB) ${LIBS}
-	mv ips $(BINDIR)
+	cp ips $(BINDIR)
 #	cp ips.1 ../../man/cat1
 clean:
 	rm -f core ${OBJS} *.o
