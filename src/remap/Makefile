@@ -1,8 +1,6 @@
 # Makefile for		: remap
 # Module Author		: Orion Lawlor
 
-DEBUG_BUILD = 2
-
 include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf.a \
