@@ -310,8 +310,23 @@ int main(int argc, char *argv[])
 	  sprintf(logbuf,"   Output dimensions: %ix%i (LxS).\n",outDDR.nl,outDDR.ns);
 	  printLog(logbuf);
 	}
-	if (outPixelType)/*Set the output pixel type*/
-		outDDR.dtype=outPixelType;
+	if (outPixelType)/*Set the output pixel type*/ {
+	  outDDR.dtype=outPixelType;
+	  switch (outPixelType) {
+	  case 1:
+	    meta->general->data_type = BYTE;
+	    break;
+	  case 2:
+	    meta->general->data_type = INTEGER16;
+	    break;
+	  case 3:
+	    meta->general->data_type = INTEGER32;
+	    break;
+	  case 4:
+	    meta->general->data_type = REAL32;
+	    break;
+	  }
+	}
 	
    /*Now we write out the new DDR.
   	c_putddr(outfile,&outDDR); */
