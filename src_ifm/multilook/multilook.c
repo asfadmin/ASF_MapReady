@@ -162,7 +162,6 @@ int main(int argc, char *argv[])
       ll = sl = lzInt(metaFile, "sar.look_count:", NULL);
     }
     else if (strmatch(key,"-amplitude")) {
-      CHECK_ARG(1);
       printf("   Will remove amplitude part of color image\n");
       ampFlag = 1;
     }
@@ -181,9 +180,7 @@ int main(int argc, char *argv[])
   	create_name(fnm1,argv[currArg],"_amp.img");
   	create_name(fnm2,argv[currArg],"_phase.img");
 	meta = meta_read(fnm2);
-	create_name(metaIn,argv[currArg],".meta");
-  	strcpy(outname,argv[currArg++]);
-  	create_name(fnm3,argv[currArg],"_amp.img");
+  	create_name(fnm3,argv[++currArg],"_amp.img");
   	create_name(fnm4,argv[currArg],"_phase.img");
   	create_name(imgfile,argv[currArg],"_rgb.img");
 	create_name(metaOut,argv[currArg],"_rgb.meta");
@@ -200,7 +197,10 @@ int main(int argc, char *argv[])
 	meta->sar->sample_increment *= ss;
 	meta->general->x_pixel_size *= ss;
 	meta->general->y_pixel_size *= sl;
-	meta_write(meta, outname);
+	create_name(metaIn,argv[currArg],"_amp.meta");
+	meta_write(meta, metaIn);
+	create_name(metaIn,argv[currArg],"_phase.meta");
+	meta_write(meta, metaIn);
   
 	/* Create 3-band image's DDR.
 	   Currently metadata file don't know anything about multiband imagery.
