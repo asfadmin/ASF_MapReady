@@ -38,6 +38,7 @@ PROGRAM HISTORY:
     2.01    7/01	R. Gens   - Added log file switch
     2.15    4/02        P. Denny  - Standardized commandline parsing
                                       and usage()
+    2.5     6/05        R. Gens   - Getting rid of DDR dependency
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -78,7 +79,7 @@ BUGS:
 #include "ddr.h"
 
 /* local constants */
-#define VERSION 2.15
+#define VERSION 2.5
 
 void usage(char *name);
 
@@ -94,7 +95,7 @@ int main(int argc, char *argv[])
 	float percent=5.0;
 	
 	FILE  *fin, *fout;
-	char  szIn[256], szOut[256], *ddrIn;
+	char  szInPhase[255], szInAmp[255], szOutPhase[255], szOutAmp[255], *ddrIn;
 	float *data;
 	double *sflat,*cflat;
 	double derampDirection=1.0;/*1.0=forward deramping.  -1.0=backward deramping.*/
@@ -124,28 +125,37 @@ int main(int argc, char *argv[])
 	}
 	if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 	/* required args */
-	create_name(szIn, argv[currArg],  ".phase");
+	create_name(szInAmp, argv[currArg], "_amp.img");
+	create_name(szInPhase, argv[currArg], "_phase.img");
 	ddrIn    = argv[currArg];
 	ceos     = argv[currArg+1];
 	baseFile = argv[currArg+2];
-	create_name(szOut,argv[currArg+3],".phase");
 	
 	/* Get input scene size and windowing info, check validity */
-	meta = meta_init(ceos);
-	
+	meta = meta_read(ceos);
+
+	/*	
 	c_getddr(ddrIn, &ddr);
 	wid = ddr.ns;len = ddr.nl;
 	ss = ddr.master_sample - 1;sl = ddr.master_line - 1;
 	xScale=ddr.sample_inc;yScale=ddr.line_inc;
+	*/
+	wid = meta->general->sample_count;
+	len = meta->general->line_count;
+	ss = meta->general->start_sample - 1;
+	sl = meta->general->start_line - 1;
+	xScale = meta->sar->sample_increment;
+	yScale = meta->sar->line_increment;
 	
-	c_putddr(szOut,&ddr);
+	create_name(szOutAmp,argv[currArg+3],"_amp.img");
+	meta_write(meta, szOutAmp);
+	create_name(szOutPhase,argv[currArg+3],"_phase.img");
+	meta_write(meta, szOutPhase);
 	/*Link over ".amp" file, if it exists.*/
-	if (extExists(szIn,".amp")&&!extExists(szOut,".amp"))
+	if (fileExists(szInAmp)&&!fileExists(szOutAmp))
 	{
 		char command[1024];
-		sprintf(command,"ln -s %s %s\n",
-			appendExt(szIn,".amp"),
-			appendExt(szOut,".amp"));
+		sprintf(command,"ln -s %s %s\n", szInAmp, szOutAmp);
 		system(command);
 	}
 	
@@ -153,8 +163,8 @@ int main(int argc, char *argv[])
 	data = (float *)MALLOC(sizeof(float)*wid);
 	sflat = (double *)MALLOC(sizeof(double)*wid);
 	cflat = (double *)MALLOC(sizeof(double)*wid);
-	fin = fopenImage(szIn,"rb");
-	fout = fopenImage(szOut,"wb");
+	fin = fopenImage(szInPhase,"rb");
+	fout = fopenImage(szOutPhase,"wb");
 	
 	/* read in CEOS parameters & convert to meters */
 	base=read_baseline(baseFile);
