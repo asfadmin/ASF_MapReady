@@ -505,6 +505,24 @@ float_image_new_from_memory (ssize_t size_x, ssize_t size_y, float *buffer)
   return NULL;
 }
 
+FloatImage *
+float_image_copy (FloatImage *model)
+{
+  // FIXME: this could obviously be optimized a lot by copying the
+  // existed tile file, etc.
+  FloatImage *self = float_image_new (model->size_x, model->size_y);
+  
+  size_t ii, jj;
+  for ( ii = 0 ; ii < self->size_y ; ii++ ) {
+    for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+      float_image_set_pixel (self, jj, ii,
+			     float_image_get_pixel (model, jj, ii));
+    }
+  }
+
+  return self;
+}
+
 // Bilinear interpolation for a point delta_x, delta_y from the lower
 // left corner between values ul (upper left), ur (upper right), etc.
 // The corner are considered to be corners of a unit square.
@@ -526,8 +544,9 @@ float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor)
   g_assert (scale_factor > 0);
   g_assert (scale_factor % 2 == 1);
 
-  FloatImage *self = float_image_new (ceil (model->size_x / scale_factor),
-                                      ceil (model->size_y / scale_factor));
+  FloatImage *self 
+    = float_image_new (round ((double) model->size_x / scale_factor),
+		       round ((double) model->size_y / scale_factor));
 
   // Form an averaging kernel of the required size.
   size_t kernel_size = scale_factor;
@@ -553,8 +572,35 @@ float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor)
     }
   }
 
-  g_assert (self->size_x == ceil (model->size_x / scale_factor));
-  g_assert (self->size_y == ceil (model->size_y / scale_factor));
+  return self;
+}
+
+FloatImage *
+float_image_new_subimage (FloatImage *model, ssize_t x, ssize_t y,
+			  ssize_t size_x, ssize_t size_y)
+{
+  // Upper left corner must be in model.
+  g_assert (x >= 0 && y >= 0);
+
+  // Size of image to be created must be strictly positive.
+  g_assert (size_x >= 1 && size_y >= 1);
+
+  // Given model must be big enough to allow a subimage of the
+  // requested size to fit.
+  g_assert (model->size_x <= SSIZE_MAX && model->size_y <= SSIZE_MAX);
+  g_assert (x + size_x <= (ssize_t) model->size_x);
+  g_assert (y + size_y <= (ssize_t) model->size_y);
+
+  FloatImage *self = float_image_new (size_x, size_y);
+
+  // Copy the image pixels from the model.
+  ssize_t ii, jj;
+  for ( ii = 0 ; ii < (ssize_t) self->size_x ; ii++ ) {
+    for ( jj = 0 ; jj < (ssize_t) self->size_y ; jj++ ) {
+      float pv = float_image_get_pixel (model, x + ii, y + jj);
+      float_image_set_pixel (self, ii, jj, pv);
+    }
+  }
 
   return self;
 }
@@ -1301,36 +1347,6 @@ float_image_new_from_file_with_sample_type
   return self;
 }
 
-FloatImage *
-float_image_new_subimage (FloatImage *model, ssize_t x, ssize_t y,
-			  ssize_t size_x, ssize_t size_y)
-{
-  // Upper left corner must be in model.
-  g_assert (x >= 0 && y >= 0);
-
-  // Size of image to be created must be strictly positive.
-  g_assert (size_x >= 1 && size_y >= 1);
-
-  // Given model must be big enough to allow a subimage of the
-  // requested size to fit.
-  g_assert (model->size_x <= SSIZE_MAX && model->size_y <= SSIZE_MAX);
-  g_assert (x + size_x <= (ssize_t) model->size_x);
-  g_assert (y + size_y <= (ssize_t) model->size_y);
-
-  FloatImage *self = float_image_new (size_x, size_y);
-
-  // Copy the image pixels from the model.
-  ssize_t ii, jj;
-  for ( ii = 0 ; ii < (ssize_t) self->size_x ; ii++ ) {
-    for ( jj = 0 ; jj < (ssize_t) self->size_y ; jj++ ) {
-      float pv = float_image_get_pixel (model, x + ii, y + jj);
-      float_image_set_pixel (self, ii, jj, pv);
-    }
-  }
-
-  return self;
-}
-
 // Copy the contents of tile with flattened offset tile_offset from
 // the memory cache to the disk file.  Its probably easiest to
 // understand this function by looking at how its used.
@@ -1571,7 +1587,7 @@ float_image_statistics (FloatImage *self, float *min, float *max,
     float_image_get_row (self, ii, row_buffer);
     for ( jj = 0 ; jj < self->size_x ; jj++ ) {
       float cs = row_buffer[jj];   // Current sample.
-      if ( !isnan(mask) && (gsl_fcmp(cs, mask, 0.00000000001) == 0) )
+      if ( !isnan (mask) && (gsl_fcmp (cs, mask, 0.00000000001) == 0) )
         continue;
       if ( G_UNLIKELY (cs < *min) ) { *min = cs; }
       if ( G_UNLIKELY (cs > *max) ) { *max = cs; }
@@ -2179,8 +2195,8 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   // so we do that.  Anything else will be pure white.
   if ( min == max ) {
     // FIXME: this path is broken.  The trouble is that much of the
-    // stuff after this if shouldn't happen if we do this, but some of
-    // it should.  So for now its disabled.
+    // stuff after this if branch shouldn't happen if we do this, but
+    // some of it should.  So for now its disabled.
     g_assert_not_reached ();
     unsigned char oval;         // Output value to use.
     if ( min == 0.0 ) {
