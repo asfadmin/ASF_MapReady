@@ -64,7 +64,7 @@ int genab(char *datafile, char *basefile, char *metaName, char *matfile, char *v
 		needed to move the satellite's phase back to the control point's phase-- that is,
 		it's the satellite phase, compensated for the control point's height.
 		It's measured in radians.*/
-		b[i]=uwp[i]-(z[i]-z[1])/meta_phase_rate(meta,base,y[i],x[i]);
+		b[i]=uwp[i]-z[i]/meta_phase_rate(meta,base,y[i],x[i]);
 		
 		/* calculate matrix columns A[i][1-4]
 		 These terms are multiplied, respectively, by

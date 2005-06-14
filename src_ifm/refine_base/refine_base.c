@@ -152,7 +152,7 @@ int main(int argc,char *argv[])
   strcpy(oldbase_file, argv[currArg+3]);
   strcpy(newbase_file, argv[currArg+4]);
 
-  system("date");
+  printf("%s\n",date_time_stamp());
   printf("Program: refine_base\n\n");
   if (logflag) {
     StartWatchLog(fLog);
