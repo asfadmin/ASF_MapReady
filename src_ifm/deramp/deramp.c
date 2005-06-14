@@ -85,7 +85,7 @@ void usage(char *name);
 
 int main(int argc, char *argv[])
 {
-	char *ceos,*baseFile;
+	char *baseFile;
 	meta_parameters *meta;
 	baseline base;
 	int   wid, len,		/* Width and Length of input scene    */
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 	float percent=5.0;
 	
 	FILE  *fin, *fout;
-	char  szInPhase[255], szInAmp[255], szOutPhase[255], szOutAmp[255], *ddrIn;
+	char  szInPhase[255], szInAmp[255], szOutPhase[255], szOutAmp[255];
 	float *data;
 	double *sflat,*cflat;
 	double derampDirection=1.0;/*1.0=forward deramping.  -1.0=backward deramping.*/
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 /* process command line args */
 	currArg=1; /* from cla.h in asf.h */
 	/* optional args */
-	while (currArg < (argc-4)) {
+	while (currArg < (argc-3)) {
 		char *key = argv[currArg++];
 		if (strmatch(key,"-log")) {
 			CHECK_ARG(1);
@@ -123,23 +123,15 @@ int main(int argc, char *argv[])
 		}
 		else {printf("**Invalid option: %s\n",argv[currArg-1]); usage(argv[0]);}
 	}
-	if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+	if ((argc-currArg) < 3) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 	/* required args */
 	create_name(szInAmp, argv[currArg], "_amp.img");
 	create_name(szInPhase, argv[currArg], "_phase.img");
-	ddrIn    = argv[currArg];
-	ceos     = argv[currArg+1];
-	baseFile = argv[currArg+2];
+	baseFile = argv[currArg+1];
 	
 	/* Get input scene size and windowing info, check validity */
-	meta = meta_read(ceos);
+	meta = meta_read(szInPhase);
 
-	/*	
-	c_getddr(ddrIn, &ddr);
-	wid = ddr.ns;len = ddr.nl;
-	ss = ddr.master_sample - 1;sl = ddr.master_line - 1;
-	xScale=ddr.sample_inc;yScale=ddr.line_inc;
-	*/
 	wid = meta->general->sample_count;
 	len = meta->general->line_count;
 	ss = meta->general->start_sample - 1;
@@ -147,10 +139,11 @@ int main(int argc, char *argv[])
 	xScale = meta->sar->sample_increment;
 	yScale = meta->sar->line_increment;
 	
-	create_name(szOutAmp,argv[currArg+3],"_amp.img");
+	create_name(szOutAmp,argv[currArg+2],"_amp.img");
 	meta_write(meta, szOutAmp);
-	create_name(szOutPhase,argv[currArg+3],"_phase.img");
+	create_name(szOutPhase,argv[currArg+2],"_phase.img");
 	meta_write(meta, szOutPhase);
+
 	/*Link over ".amp" file, if it exists.*/
 	if (fileExists(szInAmp)&&!fileExists(szOutAmp))
 	{
