@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 	outfile  = argv[currArg++];
 	seedfile = argv[currArg];
 
-	system("date");
+	printf("%s\n",date_time_stamp());
 	printf("Program: elev\n\n");
 	if (logflag) {
 		StartWatchLog(fLog);

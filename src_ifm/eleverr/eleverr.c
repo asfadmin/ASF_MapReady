@@ -127,8 +127,7 @@ int main(int argc, char **argv)
 	strcpy(outfile, argv[currArg+2]);
 
 /* Start the program body! */
-	StartWatch();
-	system("date");
+        printf("%s\n",date_time_stamp());
 	printf("Program: eleverr\n\n");
 	if (logflag) {
 	  StartWatchLog(fLog);
@@ -225,11 +224,6 @@ int main(int argc, char **argv)
 	FCLOSE(fdata);
 	FCLOSE(fout);
 	if (maskflag) FCLOSE(fmask);
-
-	StopWatch();
-	if (logflag) {
-	  StopWatchLog(fLog);
-	}
 
 	exit(EXIT_SUCCESS);
 }
