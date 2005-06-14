@@ -81,8 +81,6 @@ BUGS:
 #include "asf_meta.h"
 #include "expression.h"
 
-#define END_OF_OPTIONAL_ARGS 3
-#define REQUIRED_ARGS 3
 #define MAXIMGS 20
 #define VERSION 1.5
 
@@ -127,30 +125,27 @@ int main(int argc,char **argv)
   fLog=NULL;
   logflag=FALSE;
 
-  printf("%s\n",date_time_stamp());
-
-  if(argc<REQUIRED_ARGS+1) usage(argv[0]);
-  while (currArg < END_OF_OPTIONAL_ARGS) {
+  if(argc<4) usage(argv[0]);
+  while (currArg < (argc-4)) {
     char *key = argv[currArg++];
     if (strmatch(key,"-log")) {
       CHECK_ARG(1); /*one string argument: log file */
       strcpy(logFile,GET_ARG(1));
       fLog = FOPEN(logFile,"a");
-      StartWatchLog(fLog);
       logflag=TRUE;
     }
-    else {
+    /*  else {
       printf("\n** Invalid option:  %s\n\n",argv[currArg-1]);
       usage(argv[0]);
-    }
+      }*/
   }
-  if ((argc-currArg) < REQUIRED_ARGS) {
-    printf("Insufficient arguments.\n");
-    usage(argv[0]);
-  }
+
   outfile = argv[currArg++];
   expr    = argv[currArg++];
   nInputs = argc - currArg;
+
+  printf("%s\n",date_time_stamp());
+  printf("Program: raster_calc\n\n");
 
   inMeta = meta_read(argv[currArg]);
   for (ii=0; ii<nInputs; ii++)
@@ -199,13 +194,13 @@ int main(int argc,char **argv)
     put_float_line(outF, outMeta, yy, outbuf);
 
     if ((yy%100)==0) {
-      printf(" Now Processing Line %d\r",yy);
+      printf("   Now Processing Line %d\r",yy);
       fflush(NULL);
     }
   }
-  printf("Processed %d Lines.          \n",yy);
+  printf("   Processed %d Lines.          \n\n",yy);
 
-  StopWatchLog(fLog);
+  /*  StopWatchLog(fLog);*/
 
   exit(EXIT_SUCCESS);
 }
