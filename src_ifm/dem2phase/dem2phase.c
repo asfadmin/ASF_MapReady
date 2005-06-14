@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 	StartWatch();*/
 	/* parse command line */
 	currArg=1; /*from cla.h in asf.h*/
-	while (currArg < (argc-4)) {
+	while (currArg < (argc-3)) {
 		char *key = argv[currArg++];
 		if (strmatch(key,"-log")) {
 			CHECK_ARG(1);
@@ -104,36 +104,30 @@ int main(int argc, char **argv)
  		}
 		else {printf("\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
 	}
-	if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+	if ((argc-currArg) < 3) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 	datafile = argv[currArg];
-	ceos     = argv[currArg+1];
-	basefile = argv[currArg+2];
-	outfile  = argv[currArg+3];
+	basefile = argv[currArg+1];
+	outfile  = argv[currArg+2];
 
 	system("date");
 	printf("Program: dem2phase\n\n");
 
-	/* Get input scene size and windowing info*/
-	c_getddr(datafile, &ddr);
-	ss = ddr.master_sample - 1;
-	sl = ddr.master_line - 1;
-	xScale=ddr.sample_inc;
-	yScale=ddr.line_inc;
-	nrows=ddr.nl;
-	ncols=ddr.ns;
+	meta = meta_read(datafile);
+	ss = meta->general->start_sample;
+	sl = meta->general->start_line;
+	xScale = meta->sar->sample_increment;
+	yScale = meta->sar->line_increment;
+	nrows = meta->general->line_count;
+	ncols = meta->general->sample_count;
 
-	/*Copy DDR fields over.*/
-	newddr=ddr;
-	newddr.dtype=4;
-	newddr.nbands=1;
-	c_putddr(outfile,&newddr);
+	meta_write(meta, outfile);
 
 	/* allocate space for vectors and matricies*/
 	f_uwp = (float *)MALLOC(sizeof(float)*ncols);
 	f_elev =(float *)MALLOC(sizeof(float)*ncols);
 
-	/* Read in values from CEOS */
-	meta=meta_init(ceos);
+	/* Read in values from CEOS 
+	   meta=meta_read(ceos);*/
 	k=meta_get_k(meta);/*Wavenumber K.*/
 
 	/* read in baseline values*/
