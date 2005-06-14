@@ -108,7 +108,7 @@ main(int argc, char *argv[])
 {
   int seedX=-1,seedY=-1; 
   char szWrap[MAXNAME], szUnwrap[MAXNAME];
-  struct DDR ddr,newddr;
+  meta_parameters *meta;
 
   /* check usage & set variables*/
   StartWatch();
@@ -118,27 +118,23 @@ main(int argc, char *argv[])
     case 4:
       seedX = atoi(argv[3]);
     case 3:
-      create_name(szWrap, argv[1], ".phase");
-      create_name(szUnwrap, argv[2], ".phase");
+      create_name(szWrap, argv[1], ".img");
+      create_name(szUnwrap, argv[2], ".img");
       break; 
     default:
       usage(argv[0]);
   }
 
-  if (0!=c_getddr(szWrap,&ddr)) 
-  	{printf("Couldn't open ddr file '%s.ddr'.\n",argv[1]);exit(1);}
-  wid=ddr.ns;
-  len=ddr.nl;
+  meta = meta_read(szWrap);
+  wid = meta->general->sample_count;
+  len = meta->general->line_count;
   if ((seedX==-1)&&(seedY==-1))
   {
   	seedX=wid/2;
   	seedY=len/2;
   }
   
-  newddr=ddr;
-  newddr.dtype=4;
-  newddr.nbands=1;
-  c_putddr(szUnwrap,&newddr);
+  meta_write(meta, szUnwrap);
   
 
   size = wid*len;
@@ -148,7 +144,10 @@ main(int argc, char *argv[])
   /*coh   = (float *)MALLOC(sizeof(float)*size);*/
 
   /* perform steps*/
-  printf("escher: begin unwrapping phase...\n");
+  printf("%s\n",date_time_stamp());
+  printf("Program: escher\n");
+
+  printf("\nbegin unwrapping phase...\n");
   loadWrappedPhase(szWrap);
   groundBorder();
   makeMask();
