@@ -21,6 +21,7 @@ PROGRAM HISTORY:
     ---------------------------------------------------------------
     1.0	    7/98   O. Lawlor    Filter interferometric phase.
     1.1     7/01   R. Gens	Added log file switch
+    1.2     6/05   R. Gens      Removed DDR dependency.
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -57,7 +58,7 @@ BUGS:
 #include "ddr.h"
 #include "filter.h"
 
-#define VERSION 1.1
+#define VERSION 1.2
 
 int nl,ns;
 
