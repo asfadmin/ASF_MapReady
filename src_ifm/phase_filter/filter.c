@@ -61,15 +61,15 @@ BUGS:
 
 int nl,ns;
 
-void las_filter(FILE *in,const struct DDR *inDDR,
-		FILE *out,const struct DDR *outDDR,float strength);
+void image_filter(FILE *in,meta_parameters *meta,
+		FILE *out,float strength);
 
 int main(int argc,char **argv)
 {
 	int i, optind=1;
 	FILE *in,*out;
 	char *inFile,*outFile;
-	struct DDR inDDR,outDDR;
+	meta_parameters *meta;
 	float strength;
 	
 	if (argc==1 || argc>6) 
@@ -113,8 +113,7 @@ int main(int argc,char **argv)
 	}
 	outFile=argv[i+2];
 
-	StartWatch();
-	system("date");
+	printf("%s\n",date_time_stamp());
 	printf("Program: phase_filter\n\n");
 	if (logflag) {
 	  StartWatchLog(fLog);
@@ -124,11 +123,11 @@ int main(int argc,char **argv)
 /*Open input files.*/
 	in=fopenImage(inFile,"rb");
 	out=fopenImage(outFile,"wb");
-	c_getddr(inFile,&inDDR);
+	meta = meta_read(inFile);
 	
 /*Round up to find image size which is an even number of output chunks..*/
-	ns=(inDDR.ns+ox-1)/ox*ox;
-	nl=(inDDR.nl+oy-1)/oy*oy;
+	ns=(meta->general->sample_count+ox-1)/ox*ox;
+	nl=(meta->general->line_count+oy-1)/oy*oy;
 	printf("   Output Size: %d samples by %d lines\n\n",ns,nl);
 	if (logflag) {
 	  sprintf(logbuf,"   Output Size: %d samples by %d lines\n\n",ns,nl);
@@ -136,44 +135,37 @@ int main(int argc,char **argv)
 	}
 	
 /*Set up output file.*/
-	outDDR=inDDR;
-	outDDR.dtype=4;
-	c_putddr(outFile,&outDDR);
+	meta_write(meta, outFile);
 	
 /*Perform the filtering, write out.*/
 	fft2dInit(dMy, dMx);
-	las_filter(in,&inDDR,out,&outDDR,strength);
+	image_filter(in,meta,out,strength);
 
 	printf("   Completed 100 percent\n\n");
 
-	StopWatch();
-	if (logflag) {
-	  StopWatchLog(fLog);
-	  FCLOSE(fLog);
-	}
 	return (0);
 }
 
 /**************************************************
- las_readImg: reads the image file given by in & ddr
+ read_image: reads the image file given by in & ddr
 into the (delX x delY) float array dest.  Reads pixels 
 into topleft corner of dest, starting
 at (startY , startX) in the input file.
 */
-void las_readImg(FILE *in,const struct DDR *ddr, float *dest, 
+void read_image(FILE *in,meta_parameters *meta, float *dest, 
 	int startX,int startY,int delX,int delY)
 {
 	register int x,y,l;
 	int stopY=delY,stopX=delX;
-	if ((stopY+startY)>ddr->nl)
-		stopY=ddr->nl-startY;
-	if ((stopX+startX)>ddr->ns)
-		stopX=ddr->ns-startX;
+	if ((stopY+startY)>meta->general->line_count)
+		stopY = meta->general->line_count - startY;
+	if ((stopX+startX)>meta->general->sample_count)
+		stopX = meta->general->sample_count - startX;
 /*Read portion of input image into topleft of dest array.*/
 	for (y=0;y<stopY;y++)
 	{
 		l=ns*y;
-		getFloatLine(in,ddr,startY+y,&dest[l]);
+		get_float_line(in,meta,startY+y,&dest[l]);
 		for (x=stopX;x<delX;x++)
 			dest[l+x]=0.0; /*Fill rest of line with zeros.*/
 	}
@@ -234,9 +226,9 @@ is equivalent to
 }
 
 /************************************************************
-las_filter: 
+image_filter: 
 	Applies the goldstein phase filter across an entire
-LAS image, and writes the result to another LAS image.
+image, and writes the result to another image.
 
 	The goldstein phase filter works best when applied
 to little pieces of the image.  But processing the image as
@@ -245,8 +237,8 @@ Hence we do a bilinear weighting of 4 overlapping filters
 to "feather" the edges.
 */
 
-void las_filter(FILE *in,const struct DDR *inDDR,
-		FILE *out,const struct DDR *outDDR,float strength)
+void image_filter(FILE *in,meta_parameters *meta,
+		FILE *out,float strength)
 {
 	int chunkX,chunkY,nChunkX,nChunkY;
 	int i,x,y;
@@ -293,7 +285,7 @@ void las_filter(FILE *in,const struct DDR *inDDR,
 	}
 
 	/*Read next chunk of input.*/
-		las_readImg(in,inDDR,inBuf,0,chunkY*ox,ns,dy);
+		read_image(in,meta,inBuf,0,chunkY*ox,ns,dy);
 
 	/*Convert polar image to complex chunk.*/
 		for (chunkX=0;chunkX<nChunkX;chunkX++)
@@ -316,8 +308,8 @@ void las_filter(FILE *in,const struct DDR *inDDR,
 	/*Blend and write out filtered data.*/
 		blendData(chunks,last_chunks,weight,outBuf);
 		for (y=0;y<oy;y++) {
-			if (chunkY*oy+y<outDDR->nl)
-				putFloatLine(out,outDDR,chunkY*oy+y,&outBuf[y*ns]);
+			if (chunkY*oy+y<meta->general->line_count)
+			  put_float_line(out,meta,chunkY*oy+y,&outBuf[y*ns]);
 		}
 		
 	/*Swap chunks and last_chunks.*/
@@ -328,7 +320,7 @@ void las_filter(FILE *in,const struct DDR *inDDR,
 	/*Write very last line of phase.*/
 	blendData(NULL,last_chunks,weight,outBuf);
 	for (y=0;y<oy;y++)
-		if (chunkY*oy+y<outDDR->nl)
-			putFloatLine(out,outDDR,chunkY*oy+y,&outBuf[y*ns]);
+		if (chunkY*oy+y<meta->general->line_count)
+		  put_float_line(out,meta,chunkY*oy+y,&outBuf[y*ns]);
 
 }
