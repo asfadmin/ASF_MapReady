@@ -213,6 +213,16 @@ void meta_write(meta_parameters *meta, const char *file_name)
 		  "Azimuth doppler per azimuth pixel [Hz/pixel]");
   meta_put_double(fp,"dopAzQuad:",meta->sar->azimuth_doppler_coefficients[2],
 		  "Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]");
+  if (META_VERSION >= 1.4) {
+    meta_put_double(fp,"azimuth_bandwidth:",meta->sar->azimuth_processing_bandwidth,
+                    "Azimuth processing bandwidth [Hz]");
+    meta_put_double(fp,"chirp_rate:",meta->sar->chirp_rate,
+                    "Chirp rate [Hz/sec]");
+    meta_put_double(fp,"pulse_duration:",meta->sar->pulse_duration,
+                    "Pulse duration [s]");
+    meta_put_double(fp,"range_samp_rate:",meta->sar->range_sampling_rate,
+                    "Range sampling rate [Hz]");
+  }
   meta_put_string(fp,"}","","End sar");
 
 /* State block.  */
@@ -471,9 +481,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_int   (fp,"zone:",meta->projection->param.state.zone,"Zone Code");
       meta_put_string(fp,"}","","End state");
       break;
-   default:
+      /*
+    default:
       printf("WARNING in asf_meta library function '%s': unknown projection type '%c'.\n",
              "meta_write", meta->projection->type);
+      */
     }
     meta_put_string(fp,"}","","End param");
     meta_put_string(fp,"}","","End projection");
