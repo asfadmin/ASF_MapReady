@@ -67,7 +67,8 @@ int main(int argc,char *argv[])
 	float *buf,*testbuf;
 	char *outfile,*infile,*testfile;
 	FILE *outF,*inF,*testF;
-	struct DDR outDDR,inDDR,testDDR;
+	meta_parameters *inMeta, *inTest;
+	/*	struct DDR outDDR,inDDR,testDDR;*/
 	int x,y;
 	int nl,ns;
 	
@@ -91,6 +92,9 @@ int main(int argc,char *argv[])
 		"\nVersion %.2f, ASF SAR TOOLS\n\n",VERSION);
 		exit(1);
 	}
+
+  printf("%s\n",date_time_stamp());
+  printf("Program: zeroify\n");
 	
 /*Open output files.*/
 	inF=fopenImage(infile,"rb");
@@ -98,26 +102,25 @@ int main(int argc,char *argv[])
 	outF=fopenImage(outfile,"wb");
 
 /*Read and copy over DDR.*/
-	c_getddr(infile,&inDDR);
-	c_getddr(testfile,&testDDR);
-	outDDR=inDDR;
-	c_putddr(outfile,&outDDR);
+	inMeta = meta_read(infile);
+	inTest = meta_read(testfile);
+	meta_write(inMeta, outfile);
 	
 /*Allocate buffers.*/
-	buf=(float *)MALLOC(sizeof(float)*inDDR.ns);
-	testbuf=(float *)MALLOC(sizeof(float)*testDDR.ns);
+	buf=(float *)MALLOC(sizeof(float)*inMeta->general->sample_count);
+	testbuf=(float *)MALLOC(sizeof(float)*inTest->general->sample_count);
 	
 /*Copy over each line of input to the output.*/
-	nl=inDDR.nl;
-	ns=inDDR.ns;
+	nl=inMeta->general->line_count;
+	ns=inMeta->general->sample_count;
 	for (y=0;y<nl;y++)
 	{
-		getFloatLine(inF,&inDDR,y,buf);
-		getFloatLine(testF,&testDDR,y,testbuf);
+		get_float_line(inF,inMeta,y,buf);
+		get_float_line(testF,inTest,y,testbuf);
 		for (x=0;x<ns;x++)
 			if (testbuf[x]==0)
 				buf[x]=0;
-		putFloatLine(outF,&outDDR,y,buf);
+		put_float_line(outF,inMeta,y,buf);
 	}
 /*Done!*/
 	return 0;
