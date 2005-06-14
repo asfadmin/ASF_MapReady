@@ -3,6 +3,8 @@
 #include <glib.h>
 #include <stdio.h>
 
+#include <gsl/gsl_min.h>
+
 #include "float_image.h"
 #include "asf_nan.h"
 
@@ -59,13 +61,14 @@ lsm_generate_mask(DEMGeomInfo *dgi)
 
   FloatImage *mask = float_image_new (dgi->size_x, dgi->size_y);
   FloatImage *A_vals = float_image_new (dgi->size_x, dgi->size_y);
+  FloatImage *R_vals = float_image_new (dgi->size_x, dgi->size_y);
 
   for (y = 0; y < dgi->size_y; ++y) {
 
     FILE * f = NULL;
 
 #ifdef KH_DEBUG
-    if (y%1000 == 0 && y>0) {
+    if (y%100 == 0 && y>0) {
       char fname[64];
       sprintf(fname, "lsm%04d.dat", y);
       f = fopen(fname, "wt");
@@ -102,28 +105,28 @@ lsm_generate_mask(DEMGeomInfo *dgi)
 #endif
 	  }
 	  else {
-	    
+
 	    double z = dem_geom_info_get_dem_height(dgi, x, y);
 	    double d = dem_geom_info_get_nadir_distance(dgi, x, y);
-	    
-	    double zn = dem_geom_info_get_dem_height(dgi, x - 1, y);
-	    double zs = dem_geom_info_get_dem_height(dgi, x + 1, y);
-	    double zw = dem_geom_info_get_dem_height(dgi, x, y - 1);
-	    double ze = dem_geom_info_get_dem_height(dgi, x, y + 1);
-	    
-	    double tn = dem_geom_info_get_imaging_time(dgi, x - 1, y);
-	    double ts = dem_geom_info_get_imaging_time(dgi, x + 1, y);
-	    double tw = dem_geom_info_get_imaging_time(dgi, x, y - 1);
-	    double te = dem_geom_info_get_imaging_time(dgi, x, y + 1);
-	    
+
+	    double zw = dem_geom_info_get_dem_height(dgi, x - 1, y);
+	    double ze = dem_geom_info_get_dem_height(dgi, x + 1, y);
+	    double zn = dem_geom_info_get_dem_height(dgi, x, y - 1);
+	    double zs = dem_geom_info_get_dem_height(dgi, x, y + 1);
+
+	    double tw = dem_geom_info_get_imaging_time(dgi, x - 1, y);
+	    double te = dem_geom_info_get_imaging_time(dgi, x + 1, y);
+	    double tn = dem_geom_info_get_imaging_time(dgi, x, y - 1);
+	    double ts = dem_geom_info_get_imaging_time(dgi, x, y + 1);
+
 	    double dd = (ze - zw)/dx * (te - tw)/dx + 
-	      (zn - zs)/dy * (tn - ts)/dy;
-	    
+                	(zn - zs)/dy * (tn - ts)/dy;
+
 	    double z_s = dem_geom_info_get_satellite_height(dgi, x, y);
-	    
+
 	    double R = d - (z_s - z) * dd;
 	    double A = (z_s - z) + d * dd;
-	    
+
 	    if (A <= 0) {
 	      ++nshad;
 	      pixel_value = MASK_ACTIVE_SHADOW_VALUE;
@@ -136,8 +139,9 @@ lsm_generate_mask(DEMGeomInfo *dgi)
 	      ++nnorm;
 	      pixel_value = MASK_NORMAL_VALUE;
 	    }
-	    
+
 	    float_image_set_pixel(A_vals, x, y, A);
+	    float_image_set_pixel(R_vals, x, y, R <= 0 ? 1.0 : 0.0);
 
 	    if (f)
 	      fprintf(f, "%d %g %g %g %g %d \n", x, d, z, A, R, pixel_value);
@@ -154,15 +158,6 @@ lsm_generate_mask(DEMGeomInfo *dgi)
 
   printf("Out of %d pixels:\n %12d shadow\n %12d layover\n %12d other\n",
 	 nshad + nlay + nnorm, nshad, nlay, nnorm);
-
-#ifdef KH_DEBUG
-  int max_dim = dgi->size_y > dgi->size_x ? dgi->size_y : dgi->size_x;
-  printf("max_dim = %d\n", max_dim);
-  float_image_export_as_jpeg(mask, "lsm.jpg", max_dim, NAN);
-  float_image_export_as_jpeg(mask, "lsm1k.jpg", 1000, NAN);
-
-  g_print("phase 2 ...");
-#endif
 
   int pscount = 0;
   int plcount = 0;
@@ -346,6 +341,66 @@ lsm_generate_mask(DEMGeomInfo *dgi)
   printf("Added %d passive shadow, %d passive layover pixels.\n", 
 	 pscount, plcount);
 
+#ifdef KH_DEBUG
+  float_image_set_pixel(A_vals, 0, 0, 0);
+  float_image_set_pixel(A_vals, 1, 1, 1);
+
+  float_image_set_pixel(R_vals, 0, 0, 0);
+  float_image_set_pixel(R_vals, 1, 1, 1);
+
+  float_image_set_pixel(mask, 0, 0, 0);
+  float_image_set_pixel(mask, 1, 1, 1);
+
+  float_image_export_as_jpeg (A_vals, "a_vals.jpg", 800, NAN);
   float_image_free(A_vals);
+
+  float_image_export_as_jpeg (R_vals, "r_vals.jpg", 800, NAN);
+  float_image_free(R_vals);
+
+  float_image_export_as_jpeg (mask, "lsm1k.jpg", 800, NAN);
+  float_image_free(mask);
+#endif
+
   return mask;
+}
+
+void
+lsm_test()
+{
+  int size_x = 800;
+  int size_y = 800;
+
+  DEMGeomInfo * dgi = dem_geom_info_new(size_x, size_y);
+
+  int x, y;
+
+  for (y = 0; y < size_y; ++y) {
+    for (x = 0; x < size_x; ++x) {
+      double imaging_time = (double)x / (double)size_x * 20;
+      double slant_range_value = 1;
+      double satellite_height = 5e+06;
+
+      double h = (x - size_x/2.0) / (size_x/2.0);
+      double f = 1 + (double)y / (double)size_y * 20;
+      double dem_height = 1000.0 * f * exp ( - f * h*h );
+
+//      printf("h = %g dh = %g\n", h, dem_height);
+
+      Vector * poca = vector_new(0, -y * 1e+03, satellite_height);
+      Vector * cp_target = vector_new(-x * 1e+03, -y * 1e+03, 0);
+
+      dem_geom_info_set(dgi, x, y, cp_target, imaging_time,
+			slant_range_value, dem_height, poca);
+
+      vector_free(poca);
+      vector_free(cp_target);
+    }
+  }
+
+  float_image_export_as_jpeg(dgi->dem_height, "dem.jpg", 800, NAN);
+
+  lsm_generate_mask(dgi);
+  dem_geom_info_free(dgi);
+
+  exit(0);
 }
