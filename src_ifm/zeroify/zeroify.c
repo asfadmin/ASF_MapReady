@@ -68,7 +68,6 @@ int main(int argc,char *argv[])
 	char *outfile,*infile,*testfile;
 	FILE *outF,*inF,*testF;
 	meta_parameters *inMeta, *inTest;
-	/*	struct DDR outDDR,inDDR,testDDR;*/
 	int x,y;
 	int nl,ns;
 	
