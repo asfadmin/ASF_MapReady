@@ -37,6 +37,7 @@ MODULES = src_lib/asf \
           src/asf_convert_gui \
 	  src_x/sarview
 
+# Build all the modules, stopping if any one of them fails.
 all:
-	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE);)
+	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
 
