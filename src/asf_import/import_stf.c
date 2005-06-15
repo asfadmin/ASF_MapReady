@@ -34,6 +34,8 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   iqType *iqBuf;             /* Buffer containing the complex i & q channels */
   readPulseFunc readNextPulse; /* Pointer to function that reads the next line of CEOS Data */
   int tempFlag=FALSE;
+  meta_parameters *meta;
+  double lat, lon;
 
   if (flags[f_SPROCKET] != FLAG_NOT_SET) {
     asfPrintError("Data is level 0, sprocket can not use this.\n");
@@ -154,4 +156,12 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   FREE(iqBuf);
   FCLOSE(fpOut);
   delete_bin_state(s);
+
+  /* Determine center latitude and longitude */
+  meta = meta_read(outMetaName);
+  meta_get_latLon(meta, meta->general->line_count/2, meta->general->sample_count,
+		  0.0, &lat, &lon);
+  meta->general->center_latitude = lat;
+  meta->general->center_longitude = lon;
+  meta_write(meta, outMetaName);
 }
