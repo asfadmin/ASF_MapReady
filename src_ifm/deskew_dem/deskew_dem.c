@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 
 /*Extract metadata*/
 	inDemMeta = meta_read(inDemName);
-	outMeta = meta_copy(inDemMeta);
+	outMeta = meta_read(inDemName);
 
 	if (inDemMeta->sar->image_type=='P') {
 		printf("DEM cannot be map projected for this program to work!\n");
