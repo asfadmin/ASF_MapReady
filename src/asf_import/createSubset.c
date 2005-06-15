@@ -354,8 +354,6 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
   lat2time(locVec, loc_sec, upperLat, range, *fd, &upperTime);
   line = (upperTime - imgTime) / azPixTime;
   *imgStart = (long)line;
-  asfPrintStatus("   Starting line of subset: %ld (time: %lf)\n",
-                 *imgStart, upperTime);
 
   /* Propagate a state vector to lower latitude */
   lat2stVec(inN, lowerLat, &locVec, &loc_sec, &nLoc, &lowerVec);
@@ -364,7 +362,6 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
   lat2time(locVec, loc_sec, lowerLat, range, *fd, &lowerTime);
   line = (lowerTime - imgTime) / azPixTime;
   *imgEnd = (long)line;
-  asfPrintStatus("   End line of subset: %ld (time:%lf)\n", *imgEnd, lowerTime);
 
   /* Calculate starting time string and state vector */
   imgTime = (lowerTime < upperTime) ? lowerTime : upperTime;
@@ -376,4 +373,18 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
   sprintf(imgTimeStr, "%s%s", ymdStr, tmp);
 
   *nVec = (lowerVec < upperVec) ? lowerVec : upperVec;
+
+  /* Swap start line and end line if necessary */
+  if (*imgStart > *imgEnd) {
+    line = *imgStart;
+    *imgStart = *imgEnd;
+    *imgEnd = line;
+    line = lowerTime;
+    lowerTime = upperTime;
+    upperTime = line;
+  }
+  asfPrintStatus(logbuf,"   Starting line of subset: %ld (%lf)\n", 
+		 *imgStart, upperTime);
+  asfPrintStatus(logbuf, "   End line of subset: %ld (%lf)\n", *imgEnd, lowerTime);
+
 }
