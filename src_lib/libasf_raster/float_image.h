@@ -47,6 +47,9 @@ typedef struct {
 //
 // Creating New Instances
 //
+// Includeing methods which create new instances by copying existing
+// ones.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 // Thaw out a previously frozen instance (produced with
@@ -71,26 +74,37 @@ float_image_new_with_value (ssize_t size_x, ssize_t size_y, float value);
 FloatImage *
 float_image_new_from_memory (ssize_t size_x, ssize_t size_y, float *buffer);
 
+// Create a new independent copy of model.
+FloatImage *
+float_image_copy (FloatImage *model);
+
+// Form reduced resolution version of the model.  The scale_factor
+// must be positive and odd.  The new image will be round ((double)
+// model->size_x / scale_factor) pixels by round ((double)
+// model->size_y / scale_factor) pixels.  Scaling is performed by
+// averaging blocks of pixels together, using odd pixel reflection
+// around the image edges (see the description of the apply_kernel
+// method).  The upper and leftmost blocks of pixels averaged together
+// are always centered at the 0 index in the direction in question, so
+// reflection is always used for these edges.  Whether reflection is
+// used for the right and lower edges depends on the relationship
+// between the model dimensions and the scale factor.
+FloatImage *
+float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor);
+
+// Create a new image by copying the portion of model with upper left
+// corner at model coordinates (x, y), width size_x, and height
+// size_y.
+FloatImage *
+float_image_new_subimage (FloatImage *model, ssize_t x, ssize_t y,
+			  ssize_t size_x, ssize_t size_y);
+
 // Type used to specify whether disk files should be in big or little
 // endian byte order.
 typedef enum {
   FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN,
   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN
 } float_image_byte_order_t;
-
-// Form reduced resolution version of the model.  The scale_factor
-// must be positive and odd.  The new image will be ceil
-// (model->size_x / scale_factor) pixels by ceil (model->size_y /
-// scale_factor) pixels.  Scaling is performed by averaging blocks of
-// pixels together, using odd pixel reflection around the image edges
-// (see the description of the apply_kernel method).  The upper and
-// leftmost blocks of pixels averaged together are always centered at
-// the 0 index in the direction in question, so reflection is always
-// used for these edges.  Whether reflection is used for the right and
-// lower edges depends on the relationship between the model
-// dimensions and the scale factor.
-FloatImage *
-float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor);
 
 // Create a new image from data at byte offset in file.  The pixel
 // layout in the file is assumed to be the same as for the
@@ -146,13 +160,6 @@ FloatImage *
 float_image_new_from_file_pointer_with_sample_type
   (ssize_t size_x, ssize_t size_y, FILE *file_pointer, off_t offset,
    float_image_byte_order_t byte_order, float_image_sample_type sample_type);
-
-// Create a new image by copying the portion of model with upper left
-// corner at model coordinates (x, y), width size_x, and height
-// size_y.
-FloatImage *
-float_image_new_subimage (FloatImage *model, ssize_t x, ssize_t y,
-			  ssize_t size_x, ssize_t size_y);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
