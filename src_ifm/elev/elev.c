@@ -3,7 +3,7 @@ NAME:  elev
 
 SYNOPSIS:  
 
-  elev [-log <file>] [-quiet] <phase> <base> <meta> <outfile> <seed_file>
+  elev [-log <file>] [-quiet] <phase> <base> <outfile> <seed_file>
 
 DESCRIPTION:
 
@@ -79,7 +79,7 @@ void usage(char *name)
 {
  printf("\n"
 	"USAGE:\n"
-	"   %s [-log <file>] [-quiet] <phase> <base> <meta> <outfile> <seed_file>\n",name);
+	"   %s [-log <file>] [-quiet] <phase> <base> <outfile> <seed_file>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
 	"    phase:      Unwrapped phase file (.phase and .meta)\n"
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
 	double k;
 	double *phase2elevBase,*sinFlat,*cosFlat;
 	baseline base;
-	meta_parameters *meta, *meta_out;
+	meta_parameters *meta;
 	char *datafile, *basefile, *metafile, *outfile,*seedfile;
 	FILE *fdata, *fout,*fseed;
 	float *f_uwp,*f_elev;
@@ -123,7 +123,7 @@ int main(int argc, char **argv)
 	logflag=quietflag=0;
 
 /* parse command line */
-	while (currArg < (argc-5)) {
+	while (currArg < (argc-4)) {
 		char *key = argv[currArg++];
 		if (strmatch(key,"-log")) {
 			CHECK_ARG(1)
@@ -134,12 +134,17 @@ int main(int argc, char **argv)
 		else if (strmatch(key,"-quiet")) {
 			quietflag=1;
 		}
-		else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
+		else {
+		  printf( "\n**Invalid option:  %s\n",argv[currArg-1]); 
+		  usage(argv[0]);
+		}
 	}
-	if ((argc-currArg) < 5) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+	if ((argc-currArg) < 4) {
+	  printf("Insufficient arguments.\n"); 
+	  usage(argv[0]);
+	}
 	datafile = argv[currArg++];
 	basefile = argv[currArg++];
-	metafile = argv[currArg++];
 	outfile  = argv[currArg++];
 	seedfile = argv[currArg];
 
@@ -158,22 +163,8 @@ int main(int argc, char **argv)
 	ss     = meta->general->start_sample;
 	yScale = meta->sar->line_increment;
 	xScale = meta->sar->sample_increment;
-
-/* In case this is old style data (DDR), make sure to get the specified legit metadata */
-	meta_free(meta);
-	meta = meta_read(metafile);
-	meta->general->line_count   = nrows;
-	meta->general->sample_count = ncols;
-	meta->general->start_line   = sl;
-	meta->general->start_sample = ss;
-	meta->sar->line_increment   = yScale;
-	meta->sar->sample_increment = xScale;
 	
-/* Copy meta fields to a separate meta structure & write out.*/
-	meta_out = meta_copy(meta);
-	meta_out->general->data_type = REAL32;
-	meta_write(meta_out, outfile);
-	meta_free(meta_out);
+	meta_write(meta, outfile);
 
 /* Allocate space for vectors and matricies*/
 	f_uwp  = (float *)MALLOC(sizeof(float)*ncols);
