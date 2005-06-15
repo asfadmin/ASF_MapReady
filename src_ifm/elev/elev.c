@@ -85,8 +85,6 @@ void usage(char *name)
 	"    phase:      Unwrapped phase file (.phase and .meta)\n"
 	"    base:       File containing baseline params. used to unwrap\n"
 	"                  format:  Bn_c   dBn   Bp_c   dBp \n"
-	"    meta:       The name of the file that contains the \n"
-	"                  metadata for image 1 of the interferogram pair.\n"
 	"    outfile:    Output file containing elevations.\n"
 	"    seed_file:  Tandem_ifm style seed file.\n");
  printf("\n"
