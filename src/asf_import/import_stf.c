@@ -138,8 +138,8 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
             s->nLines++;
         }
       }
-      /* Write status information to screen. */
-      asfLineMeter(outLine,nTotal);
+      /* Write status information to screen. 
+      asfLineMeter(outLine,nTotal);*/
   }
 
   if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
