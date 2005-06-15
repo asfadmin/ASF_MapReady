@@ -1,11 +1,14 @@
 /****************************************************************
 NAME: escher
 
-SYNOPSIS:  escher <source.phase> <output.phase> [X Y]
+SYNOPSIS:  escher [-log <file>] [-x seedX] [-y seedY] 
+                  <source.phase> <output.phase>
   	
 	<source.phase>  is an input phase file (.phase and .ddr).
   	<output.phase>  is an output unwrapped phase file.
-        [X, Y]		is the unwrapping start location. (default: center)
+        [-log <file>]   allows the output to be written to a log file.
+        [-x seedX ]	is the unwrapping start location in x. (default: center)
+        [-y seedY ]     is the unwrapping start location in y. (default: center)
     
 DESCRIPTION:
        Escher, named after the famous Dutch artist M.C. Escher, 
@@ -49,6 +52,8 @@ PROGRAM HISTORY:
     2.2		       O. Lawlor  - Ground areas of zero phase.
     2.3	     2/16/99   O. Lawlor  - Check more carefully for bad seed points.
                                     Use only 1 phase array (50% less memory!)
+    2.5         6/05   R. Gens    - Added some logfile capabilities.
+                                    Removed dependency of DDR.
  
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -89,7 +94,7 @@ BUGS:
 
 #include "escher.h"
 
-#define VERSION         2.3
+#define VERSION         2.5
 
 /* globals */
 PList list;
@@ -110,19 +115,37 @@ main(int argc, char *argv[])
   char szWrap[MAXNAME], szUnwrap[MAXNAME];
   meta_parameters *meta;
 
-  /* check usage & set variables*/
-  StartWatch();
-  switch (argc) {
-    case 5:
-      seedY = atoi(argv[4]);
-    case 4:
-      seedX = atoi(argv[3]);
-    case 3:
-      create_name(szWrap, argv[1], ".img");
-      create_name(szUnwrap, argv[2], ".img");
-      break; 
-    default:
+  logflag=0;
+
+  while (currArg < (argc-2)) {
+    char *key = argv[currArg++];
+    if (strmatch(key,"-log")) {
+      CHECK_ARG(1);
+      strcpy(logFile,GET_ARG(1));
+      fLog = FOPEN(logFile, "a");
+      logflag = 1;
+    }
+    else if (strmatch(key,"-x")) {
+      CHECK_ARG(1);
+      sscanf(GET_ARG(1), "%d", &seedX);
+    }
+    else if (strmatch(key,"-y")) {
+      CHECK_ARG(1);
+      sscanf(GET_ARG(1), "%d", &seedY);
+    }
+    else {
+      printf("\n   ***Invalid option: %s\n", argv[currArg-1]);
       usage(argv[0]);
+    }
+  }
+  create_name(szWrap, argv[currArg++], ".img");
+  create_name(szUnwrap, argv[currArg], ".img");
+
+  printf("%s\n",date_time_stamp());
+  printf("Program: escher\n\n");
+  if (logflag) {
+    StartWatchLog(fLog);
+    printLog("Program: escher\n\n");
   }
 
   meta = meta_read(szWrap);
@@ -144,9 +167,6 @@ main(int argc, char *argv[])
   /*coh   = (float *)MALLOC(sizeof(float)*size);*/
 
   /* perform steps*/
-  printf("%s\n",date_time_stamp());
-  printf("Program: escher\n");
-
   printf("\nbegin unwrapping phase...\n");
   loadWrappedPhase(szWrap);
   groundBorder();
@@ -189,11 +209,13 @@ main(int argc, char *argv[])
 void usage(char *name)
 {
   printf("\n");
-  printf("USAGE:  %s <source.phase> <output.phase> [X Y]\n\n",name);
+  printf("USAGE:  %s [-log <file>] [-x seedX] [-y seedY] <source.phase> <output.phase>\n\n",name);
   printf("  <source.phase> is an input phase file (.phase and .ddr).\n");
   printf("  <output.phase> is an output unwrapped phase file.\n");
-  printf("          (X, Y) is the unwrapping start location. (default: center)\n");
-  printf("  (escher will also generate a mask file 'output.phase.mask.)\n");
+  printf("  [-log <file>]  allows the output to be written to a log file.\n");
+  printf("  [-x seedX]     is the unwrapping start location in x. (default: center)\n");
+  printf("  [-y seedY]     is the unwrapping start location in y. (default: center)\n");
+  printf("  (escher will also generate a mask file 'output_phase.mask.)\n");
   printf("\n"
   "Escher uses Goldstein branch-cut phase unwrapping\n"
   "to unwrap the given [-pi,pi) input file into the phase-\n"
