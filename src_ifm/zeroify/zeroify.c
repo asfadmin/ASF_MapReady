@@ -70,6 +70,8 @@ int main(int argc,char *argv[])
 	meta_parameters *inMeta, *inTest;
 	int x,y;
 	int nl,ns;
+
+	logflag=0;
 	
 /*Parse CLA's.*/
 	switch (argc)
@@ -79,9 +81,17 @@ int main(int argc,char *argv[])
 		testfile=argv[2];
 		outfile=argv[3];
 		break;
+	case 6:
+	  sprintf(logFile, "%s", argv[2]);
+	  fLog = FOPEN(logFile, "a");
+	  logflag=1;
+	  infile=argv[3];
+	  testfile=argv[4];
+	  outfile=argv[5];
+	  break;
 	default:
 		printf("\nUsage:  "
-		"zeroify  <input image> <test image> <output image>\n"
+		"zeroify  [-log <logFile>] <input image> <test image> <output image>\n"
 		"\t      All images are arbitrary one-banded LAS images.\n"
 		"\t      The input and test images must exist.\n"
 		"\n"
@@ -94,6 +104,10 @@ int main(int argc,char *argv[])
 
   printf("%s\n",date_time_stamp());
   printf("Program: zeroify\n");
+  if (logflag) {
+    StartWatchLog(fLog);
+    printLog("Program: zeroify\n\n");
+  }
 	
 /*Open output files.*/
 	inF=fopenImage(infile,"rb");
