@@ -38,7 +38,7 @@ MODULES = src_lib/asf \
 
 
 all:
-	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE);)
+	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
 
 install: all
 	mkdir -p @BINDIR@ @prefix@/lib @SHAREDIR@
