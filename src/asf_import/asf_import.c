@@ -446,6 +446,12 @@ int main(int argc, char *argv[])
     }
   }
 
+  printf("%s\n",date_time_stamp());
+  printf("Program: asf_import\n\n");
+  if (logflag) {
+    printLog("Program: asf_import\n\n");
+  }
+
   /* Ingest all sorts of flavors of CEOS data */
   if (strncmp(format_type, "CEOS", 4) == 0) {
     asfPrintStatus("   Data format: %s\n", format_type);
