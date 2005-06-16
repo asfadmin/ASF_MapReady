@@ -55,6 +55,9 @@ CFLAGS = -Wall -O0 -g $(shell /usr/bin/pkg-config --cflags gtk+-2.0) \
 LDLIBS = $(LIBDIR)/asf_meta.a \
          $(LIBDIR)/libasf_raster.a \
 	 $(LIBDIR)/libgsl.a \
+	 $(LIBDIR)/libasf_proj.a \
+	 $(LIBDIR)/libproj.a \
+	 $(LIBDIR)/libasf_reporting.a \
          $(LIBDIR)/libgslcblas.a \
 	 $(LIBDIR)/libjpeg.a \
          $(shell /usr/bin/pkg-config --libs gtk+-2.0) \
