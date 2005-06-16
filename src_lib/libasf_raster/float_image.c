@@ -2029,8 +2029,15 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
   // If there was no cache file...
   if ( self->tile_queue == NULL ) {
     // We store the contents of the first tile and are done.
-    write_count == fwrite (self->tile_addresses[0], sizeof (float), 
-			   self->tile_area, fp);
+    write_count = fwrite (self->tile_addresses[0], sizeof (float), 
+			  self->tile_area, fp);
+    if ( write_count < self->tile_area ) {
+      if ( ferror (fp) ) {
+	fprintf (stderr, "Error writing serialized FloatImage instance during "
+		 "freeze: %s\n", strerror (errno));
+	exit (EXIT_FAILURE);
+      }
+    }
     g_assert (write_count == self->tile_area);
   }
   // otherwise, the in memory cache needs to be copied into the tile
