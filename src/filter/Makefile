@@ -1,11 +1,16 @@
 # Makefile for 		:  filter
 # Module Author 	:  Rudi Gens
 
+DEBUG_BUILD = 2
+
 include ../../make_support/system_rules
 
 OLIBS = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libgsl.a
+	$(LIBDIR)/libgsl.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/libasf_reporting.a
 
 LIBS  = $(OLIBS) \
 	-lm
