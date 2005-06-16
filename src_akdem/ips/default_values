@@ -13,4 +13,5 @@ tiles per degree = 10
 tile overlap = 100
 projection file = /export/apd/rgens/ips/albers_equal_area_conic_alaska.proj
 projection name = albers
+resampling method = bilinear
 pixel spacing = 20
