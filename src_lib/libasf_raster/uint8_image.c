@@ -501,6 +501,29 @@ bilinear_interpolate (double delta_x, double delta_y, float ul, float ur,
 }
 
 UInt8Image *
+uint8_image_copy (UInt8Image *model)
+{
+  // This method should be totally fine, it is extremely trivial clone
+  // and modify from the corresponding method in float_image.c, but
+  // since its untested I disable it for the moment.
+  g_assert_not_reached ();
+
+  // FIXME: this could obviously be optimized a lot by copying the
+  // existed tile file, etc.
+  UInt8Image *self = uint8_image_new (model->size_x, model->size_y);
+  
+  size_t ii, jj;
+  for ( ii = 0 ; ii < self->size_y ; ii++ ) {
+    for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+      uint8_image_set_pixel (self, jj, ii,
+			     uint8_image_get_pixel (model, jj, ii));
+    }
+  }
+
+  return self;
+}
+
+UInt8Image *
 uint8_image_new_from_model_scaled (UInt8Image *model, ssize_t scale_factor)
 {
   g_assert (model->size_x > 0 && model->size_y > 0);
@@ -508,13 +531,44 @@ uint8_image_new_from_model_scaled (UInt8Image *model, ssize_t scale_factor)
   g_assert (scale_factor > 0);
   g_assert (scale_factor % 2 == 1);
 
-  UInt8Image *self = uint8_image_new (ceil (model->size_x / scale_factor),
-                                      ceil (model->size_y / scale_factor));
+  UInt8Image *self 
+    = uint8_image_new (round ((double) model->size_x / scale_factor),
+		       round ((double) model->size_y / scale_factor));
 
   // This method hasn't yet made the jump from FloatImage to here.
   // The implementation should ultimately follow the one in FloatImage
   // to achieve the interface description given in uint8_image.h.
   g_assert_not_reached ();
+
+  return self;
+}
+
+UInt8Image *
+uint8_image_new_subimage (UInt8Image *model, ssize_t x, ssize_t y,
+			  ssize_t size_x, ssize_t size_y)
+{
+  // Upper left corner must be in model.
+  g_assert (x >= 0 && y >= 0);
+
+  // Size of image to be created must be strictly positive.
+  g_assert (size_x >= 1 && size_y >= 1);
+
+  // Given model must be big enough to allow a subimage of the
+  // requested size to fit.
+  g_assert (model->size_x <= SSIZE_MAX && model->size_y <= SSIZE_MAX);
+  g_assert (x + size_x <= (ssize_t) model->size_x);
+  g_assert (y + size_y <= (ssize_t) model->size_y);
+
+  UInt8Image *self = uint8_image_new (size_x, size_y);
+
+  // Copy the image pixels from the model.
+  ssize_t ii, jj;
+  for ( ii = 0 ; ii < (ssize_t) self->size_x ; ii++ ) {
+    for ( jj = 0 ; jj < (ssize_t) self->size_y ; jj++ ) {
+      uint8_t pv = uint8_image_get_pixel (model, x + ii, y + jj);
+      uint8_image_set_pixel (self, ii, jj, pv);
+    }
+  }
 
   return self;
 }
@@ -925,36 +979,6 @@ uint8_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
   // Now that we have an instantiated version of the image we are done
   // with this temporary file.
   return_code = fclose (reduced_image);
-
-  return self;
-}
-
-UInt8Image *
-uint8_image_new_subimage (UInt8Image *model, ssize_t x, ssize_t y,
-			  ssize_t size_x, ssize_t size_y)
-{
-  // Upper left corner must be in model.
-  g_assert (x >= 0 && y >= 0);
-
-  // Size of image to be created must be strictly positive.
-  g_assert (size_x >= 1 && size_y >= 1);
-
-  // Given model must be big enough to allow a subimage of the
-  // requested size to fit.
-  g_assert (model->size_x <= SSIZE_MAX && model->size_y <= SSIZE_MAX);
-  g_assert (x + size_x <= (ssize_t) model->size_x);
-  g_assert (y + size_y <= (ssize_t) model->size_y);
-
-  UInt8Image *self = uint8_image_new (size_x, size_y);
-
-  // Copy the image pixels from the model.
-  ssize_t ii, jj;
-  for ( ii = 0 ; ii < (ssize_t) self->size_x ; ii++ ) {
-    for ( jj = 0 ; jj < (ssize_t) self->size_y ; jj++ ) {
-      uint8_t pv = uint8_image_get_pixel (model, x + ii, y + jj);
-      uint8_image_set_pixel (self, ii, jj, pv);
-    }
-  }
 
   return self;
 }
@@ -1697,8 +1721,15 @@ uint8_image_freeze (UInt8Image *self, FILE *file_pointer)
   // If there was no cache file...
   if ( self->tile_queue == NULL ) {
     // We store the contents of the first tile and are done.
-    write_count == fwrite (self->tile_addresses[0], sizeof (uint8_t), 
-			   self->tile_area, fp);
+    write_count = fwrite (self->tile_addresses[0], sizeof (uint8_t), 
+			  self->tile_area, fp);
+    if ( write_count < self->tile_area ) {
+      if ( ferror (fp) ) {
+	fprintf (stderr, "Error writing serialized UInt8Image instance during "
+		 "freeze: %s\n", strerror (errno));
+	exit (EXIT_FAILURE);
+      }
+    }
     g_assert (write_count == self->tile_area);
   }
   // otherwise, the in memory cache needs to be copied into the tile
