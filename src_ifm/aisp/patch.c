@@ -99,9 +99,11 @@ void debugWritePatch(const patch *p,char *basename)
 	meta->general->data_type    = REAL32;
 	meta_write(meta, outname);
 	meta_free(meta);
+/* taking this out... doesn't work with current c2p    -- kh 
 	printf("   Converting Debugging image '%s' to polar form...\n",outname);
 	sprintf(name,"c2p %s %s\n",outname,outname);
 	system(name);
+*/
 }
 
 /*
