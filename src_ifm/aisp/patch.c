@@ -83,30 +83,36 @@ converts it to amplitude and phase.
 void debugWritePatch(const patch *p,char *basename)
 {
 	FILE *fp;
-	char cmd[512],name[320],outname[256],multilookname[320];
-	meta_parameters *meta = raw_init();
+	char cmd[512],name[320],outname[256],multilookname[320],exportname[320];
+	/*	meta_parameters *meta = raw_init();*/
+	meta_parameters *meta;
 
 	strcpy(outname,g.out);
 	strcat(strcat(outname,"_"),basename);
 	printf("   Outputting Debugging image '%s'...\n",outname);
-	strcat(strcpy(name,outname),"_cpx.img");
+	strcat(strcpy(name,outname),".img");
 	fp = fopenImage(name,"wb");
 	
 	FWRITE(p->trans,sizeof(complexFloat),p->n_az*p->n_range,fp);
 	FCLOSE(fp);
+	meta = meta_read(g.in1);
 	meta->general->line_count = p->n_range;
-	meta->general->sample_count   = p->n_az;
-	meta->general->data_type    = REAL32;
+	meta->general->sample_count = p->n_az;
+	meta->general->data_type = COMPLEX_REAL32;
+	meta->general->image_data_type = COMPLEX_IMAGE;
 	meta_write(meta, name);
 	meta_free(meta);
-	printf("   Converting Debugging image '%s' to polar form...\n",outname);
 	sprintf(cmd,"c2p %s %s\n", name, outname);
 	system(cmd);
-	sprintf(multilookname, "%s_mlk.img", outname);
+	sprintf(multilookname, "%s_ml.img", outname);
         sprintf(cmd,"multilook -look 2x2 -step 1x1 %s %s\n", 
                 outname, multilookname);
-        printf("   %s\n", cmd);
         system(cmd);
+	sprintf(exportname, "%s_ml_rgb.img", outname);
+	sprintf(cmd,"convert2jpeg %s %s\n", exportname, outname);
+	system(cmd);
+	sprintf(cmd, "rm %s_* %s.meta %s.img\n", outname, outname, outname);
+	system(cmd);
 }
 
 /*
