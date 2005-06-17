@@ -615,6 +615,16 @@ help_text(int step)
   sprintf(label_text, "\n%s\n\n%s\n", title, help_text);
 
   gtk_label_set_text(GTK_LABEL(help_label), label_text);
+
+  GtkWidget * flowchart_image;
+
+  flowchart_image =
+    glade_xml_get_widget(glade_xml, "flowchart_image");
+
+  char image_file[128];
+  sprintf(image_file, "step%d.gif", step);
+
+  gtk_image_set_from_file(GTK_IMAGE(flowchart_image), image_file);
 }
 
 SIGNAL_CALLBACK void
