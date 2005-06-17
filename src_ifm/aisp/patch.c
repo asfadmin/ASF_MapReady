@@ -83,13 +83,13 @@ converts it to amplitude and phase.
 void debugWritePatch(const patch *p,char *basename)
 {
 	FILE *fp;
-	char name[255],outname[255];
+	char cmd[512],name[320],outname[256],multilookname[320];
 	meta_parameters *meta = raw_init();
 
 	strcpy(outname,g.out);
 	strcat(strcat(outname,"_"),basename);
 	printf("   Outputting Debugging image '%s'...\n",outname);
-	strcat(strcpy(name,outname),".cpx");
+	strcat(strcpy(name,outname),"_cpx.img");
 	fp = fopenImage(name,"wb");
 	
 	FWRITE(p->trans,sizeof(complexFloat),p->n_az*p->n_range,fp);
@@ -97,13 +97,16 @@ void debugWritePatch(const patch *p,char *basename)
 	meta->general->line_count = p->n_range;
 	meta->general->sample_count   = p->n_az;
 	meta->general->data_type    = REAL32;
-	meta_write(meta, outname);
+	meta_write(meta, name);
 	meta_free(meta);
-/* taking this out... doesn't work with current c2p    -- kh 
 	printf("   Converting Debugging image '%s' to polar form...\n",outname);
-	sprintf(name,"c2p %s %s\n",outname,outname);
-	system(name);
-*/
+	sprintf(cmd,"c2p %s %s\n", name, outname);
+	system(cmd);
+	sprintf(multilookname, "%s_mlk.img", outname);
+        sprintf(cmd,"multilook -look 2x2 -step 1x1 %s %s\n", 
+                outname, multilookname);
+        printf("   %s\n", cmd);
+        system(cmd);
 }
 
 /*
