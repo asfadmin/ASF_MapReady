@@ -91,18 +91,19 @@ int main (int argc, char *argv[])
   }
   
 /* Get commandline args */
-  create_name (cpxfile, argv[1], ".cpx");
-  create_name (ampfile, argv[2], ".amp"); 
-  create_name (phsfile, argv[2], ".phase"); 
+  create_name (cpxfile, argv[1], ".img");
+  create_name (ampfile, argv[2], "_amp.img"); 
+  create_name (phsfile, argv[2], "_phase.img"); 
 
 /* Read the input meta data. Assume data_type is COMPLEX_* & make it so. */
   inMeta = meta_read(argv[1]);
   inMeta->general->data_type = meta_polar2complex(inMeta->general->data_type);
   
 /* Create & write a meta file for the output images */
-  outMeta = meta_copy(inMeta);
+  outMeta = meta_read(argv[1]);
   outMeta->general->data_type = meta_complex2polar(inMeta->general->data_type);
-  meta_write(outMeta,argv[2]);
+  meta_write(outMeta,ampfile);
+  meta_write(outMeta,phsfile);
   
 /* malloc buffers, check and open files */
   cpx = (complexFloat *) MALLOC (sizeof(complexFloat)
