@@ -24,6 +24,17 @@
 
 GladeXML *glade_xml;
 
+static void set_help_image(int step)
+{
+    char widget_name[256];
+    sprintf(widget_name, "step%d_help_image", step);
+
+    GtkWidget * w =
+      glade_xml_get_widget(glade_xml, widget_name);
+
+    gtk_image_set_from_file(GTK_IMAGE(w), "info_on_sml.gif");    
+}
+
 static void set_images()
 {
     GtkWidget * range_compression_image;
@@ -45,6 +56,10 @@ static void set_images()
     
     gtk_image_set_from_file(GTK_IMAGE(flowchart_image),
 			    "range_compression.gif");
+    
+    int i;
+    for (i = 1; i <= 12; ++i)
+      set_help_image(i);
 }
 
 SIGNAL_CALLBACK void
@@ -318,6 +333,29 @@ execute_flag(const char *id, int value)
 	return value;
 }
 
+static void
+set_widgets_sensitive(gboolean setting)
+{
+    set_widget_sensitive("execute_button", setting);
+    set_widget_sensitive("azimuth_complex_multiply_checkbutton", setting);
+    set_widget_sensitive("range_complex_multiply_checkbutton", setting);
+    set_widget_sensitive("range_migration_checkbutton", setting);
+    set_widget_sensitive("step1_togglebutton", setting);
+    set_widget_sensitive("step2_togglebutton", setting);
+    set_widget_sensitive("step3_togglebutton", setting);
+    set_widget_sensitive("step4_togglebutton", setting);
+    set_widget_sensitive("step5_togglebutton", setting);
+    set_widget_sensitive("step6_togglebutton", setting);
+    set_widget_sensitive("step7_togglebutton", setting);
+    set_widget_sensitive("step8_togglebutton", setting);
+    set_widget_sensitive("step9_togglebutton", setting);
+    set_widget_sensitive("step10_togglebutton", setting);
+    set_widget_sensitive("step11_togglebutton", setting);
+    set_widget_sensitive("step12_togglebutton", setting);
+    set_widget_sensitive("input_file_entry", setting);
+    set_widget_sensitive("input_file_browse_button", setting);
+}
+
 void
 execute()
 {
@@ -363,6 +401,8 @@ execute()
 	sprintf(output_file, "%s%s", input_file, "_output");
     }
 
+    set_widgets_sensitive(FALSE);
+
     char cmd[1024];
     sprintf(cmd, "aisp -p 1 -debug %d %s %s",
 	    debug_flag, input_file, output_file);
@@ -371,36 +411,13 @@ execute()
     printf("%s\n", cmd);
 
     system(cmd);
-}
 
-static void
-set_widgets_sensitive(gboolean setting)
-{
-    set_widget_sensitive("execute_button", setting);
-    set_widget_sensitive("azimuth_complex_multiply_checkbutton", setting);
-    set_widget_sensitive("range_complex_multiply_checkbutton", setting);
-    set_widget_sensitive("range_migration_checkbutton", setting);
-    set_widget_sensitive("step1_togglebutton", setting);
-    set_widget_sensitive("step2_togglebutton", setting);
-    set_widget_sensitive("step3_togglebutton", setting);
-    set_widget_sensitive("step4_togglebutton", setting);
-    set_widget_sensitive("step5_togglebutton", setting);
-    set_widget_sensitive("step6_togglebutton", setting);
-    set_widget_sensitive("step7_togglebutton", setting);
-    set_widget_sensitive("step8_togglebutton", setting);
-    set_widget_sensitive("step9_togglebutton", setting);
-    set_widget_sensitive("step10_togglebutton", setting);
-    set_widget_sensitive("step11_togglebutton", setting);
-    set_widget_sensitive("step12_togglebutton", setting);
-    set_widget_sensitive("input_file_entry", setting);
-    set_widget_sensitive("input_file_browse_button", setting);
+    set_widgets_sensitive(TRUE);
 }
 
 SIGNAL_CALLBACK void
 on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 {
-    set_widgets_sensitive(FALSE);
-
     int pid = fork();
 
     if (pid == 0)
@@ -418,8 +435,6 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 	g_usleep(50);
       }
     }
-
-    set_widgets_sensitive(TRUE);
 }
 
 void
@@ -752,6 +767,9 @@ main(int argc, char **argv)
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
     g_free(glade_xml_file);
+
+    if (argc > 1)
+      add_file(argv[1]);
 
     set_images();
     set_toggles();

@@ -7,7 +7,7 @@
   <property name="width_request">1024</property>
   <property name="height_request">784</property>
   <property name="visible">True</property>
-  <property name="title" translatable="yes">AISP</property>
+  <property name="title" translatable="yes">SAR Training Processor</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
@@ -918,6 +918,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step2_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -925,7 +927,7 @@
 				      <signal name="clicked" handler="on_step2_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:13:58 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image2">
+					<widget class="GtkImage" id="step2_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -995,6 +997,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step3_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -1002,7 +1006,7 @@
 				      <signal name="clicked" handler="on_step3_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:13:50 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image4">
+					<widget class="GtkImage" id="step3_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -1072,6 +1076,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step4_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -1079,7 +1085,7 @@
 				      <signal name="clicked" handler="on_step4_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:14:39 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image5">
+					<widget class="GtkImage" id="step4_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -1150,6 +1156,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step5_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -1157,7 +1165,7 @@
 				      <signal name="clicked" handler="on_step5_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:13:30 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image6">
+					<widget class="GtkImage" id="step5_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -1227,6 +1235,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step6_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -1234,7 +1244,7 @@
 				      <signal name="clicked" handler="on_step6_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:13:20 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image7">
+					<widget class="GtkImage" id="step6_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -1340,6 +1350,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step1_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -1347,7 +1359,7 @@
 				      <signal name="clicked" handler="on_step1_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:14:07 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image3">
+					<widget class="GtkImage" id="step1_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -1631,6 +1643,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step7_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -1638,7 +1652,7 @@
 				      <signal name="clicked" handler="on_step7_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:13:09 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image8">
+					<widget class="GtkImage" id="step7_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -1708,6 +1722,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step8_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -1715,7 +1731,7 @@
 				      <signal name="clicked" handler="on_step8_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:13:01 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image9">
+					<widget class="GtkImage" id="step8_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -1784,6 +1800,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step9_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -1791,7 +1809,7 @@
 				      <signal name="clicked" handler="on_step9_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:12:52 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image10">
+					<widget class="GtkImage" id="step9_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -1861,6 +1879,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step10_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -1868,7 +1888,7 @@
 				      <signal name="clicked" handler="on_step10_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:12:43 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image11">
+					<widget class="GtkImage" id="step10_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -1937,6 +1957,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step11_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -1944,7 +1966,7 @@
 				      <signal name="clicked" handler="on_step11_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:12:23 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image12">
+					<widget class="GtkImage" id="step11_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -2013,6 +2035,8 @@
 
 				  <child>
 				    <widget class="GtkButton" id="step12_help_button">
+				      <property name="width_request">20</property>
+				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -2020,7 +2044,7 @@
 				      <signal name="clicked" handler="on_step12_help_button_clicked" last_modification_time="Thu, 16 Jun 2005 22:12:34 GMT"/>
 
 				      <child>
-					<widget class="GtkImage" id="image13">
+					<widget class="GtkImage" id="step12_help_image">
 					  <property name="visible">True</property>
 					  <property name="stock">gtk-help</property>
 					  <property name="icon_size">4</property>
@@ -2689,12 +2713,35 @@
 		      <property name="spacing">0</property>
 
 		      <child>
+			<widget class="GtkLabel" id="label67">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">
+
+</property>
+			  <property name="use_underline">False</property>
+			  <property name="use_markup">False</property>
+			  <property name="justify">GTK_JUSTIFY_LEFT</property>
+			  <property name="wrap">False</property>
+			  <property name="selectable">False</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">False</property>
+			  <property name="fill">False</property>
+			</packing>
+		      </child>
+
+		      <child>
 			<widget class="GtkImage" id="flowchart_image">
 			  <property name="width_request">400</property>
 			  <property name="height_request">346</property>
 			  <property name="visible">True</property>
 			  <property name="xalign">0.5</property>
-			  <property name="yalign">0.5</property>
+			  <property name="yalign">0</property>
 			  <property name="xpad">0</property>
 			  <property name="ypad">0</property>
 			</widget>
