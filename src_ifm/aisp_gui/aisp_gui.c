@@ -37,6 +37,14 @@ static void set_images()
 
     gtk_image_set_from_file(GTK_IMAGE(range_compression_image), "rc.png");
     gtk_image_set_from_file(GTK_IMAGE(azimuth_compression_image), "ac.png");
+
+    GtkWidget * flowchart_image;
+
+    flowchart_image =
+	glade_xml_get_widget(glade_xml, "flowchart_image");
+    
+    gtk_image_set_from_file(GTK_IMAGE(flowchart_image),
+			    "range_compression.gif");
 }
 
 SIGNAL_CALLBACK void
@@ -298,9 +306,9 @@ execute_flag(const char *id, int value)
 	glade_xml_get_widget(glade_xml, button_id);
 
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbutton)))
-	return value;
-    else
 	return 0;
+    else
+	return value;
 }
 
 void
@@ -338,15 +346,16 @@ execute()
 	char * ext = strdup(p + 1);
 	strcpy(output_file, input_file);
 	*(output_file + (p - input_file)) = '\0';
-	strcat(output_file, "_output.");
-	strcat(output_file, ext);
+	strcat(output_file, "_cpx");
+	//strcat(output_file, ext);
 	free(ext);
     } else {
 	sprintf(output_file, "%s%s", input_file, "_output");
     }
 
     char cmd[1024];
-    sprintf(cmd, "aisp -debug %d %s %s", debug_flag, input_file, output_file);
+    sprintf(cmd, "aisp -p 1 -debug %d %s %s",
+	    debug_flag, input_file, output_file);
 
     free(output_file);
     printf("%s\n", cmd);
@@ -358,7 +367,7 @@ SIGNAL_CALLBACK void
 on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 {
     GtkWidget *aisp_main_scrolledwindow =
-      glade_xml_get_widget(glade_xml, "aisp_main_scrolledwindow");
+      glade_xml_get_widget(glade_xml, "execute_button");
 
     gtk_widget_set_sensitive(aisp_main_scrolledwindow, FALSE);
 
@@ -408,6 +417,276 @@ set_toggles()
     int i;
     for (i = 1; i <= 12; ++i)
 	set_underlines_off(i);
+}
+
+void
+help_text(int step)
+{
+  static const char * step1_help_title =
+    "Step 1: Raw data (time)";
+
+  static const char * step1_help =
+    "The raw data is, at its simplest, a series of complex numbers "
+    "(I and Q) that were sampled at the instrument and recorded at "
+    "the ground station. By the time the data gets to the processor, "
+    "it typically is digitized and stripped of encoding and metadata. "
+    "Values are generally 4-bit or 5-bit.";
+
+  static const char * step2_help_title =
+    "Step 2: Range FFT";
+
+  static const char * step2_help =
+    "A fast Fourier transform converts the data from time domain (the "
+    "way it was recorded at the receiver) to frequency domain. The data "
+    "were acquired as a function of range, so each range line is "
+    "transformed one at a time.\n"
+    "\n"
+    "This raw data set has the same information as the one in the time "
+    "domain, but is now in the frequency domain.";
+
+  static const char * step3_help_title =
+    "Step 3: Range reference function";
+
+  static const char * step3_help =
+    "The range reference function is a series of complex numbers that "
+    "represents the original chirp transmitted by the antenna. It is "
+    "sampled at the same rate as the raw data, and is either pulled "
+    "from the raw data or generated from metadata values such as chirp "
+    "rate, center frequency, or bandwidth.";
+
+  static const char * step4_help_title =
+    "Step 4: Range reference function (frequency domain)";
+
+  static const char * step4_help =
+    "This range reference function has the same information as the one "
+    "in the time domain, but is now in the frequency domain.";
+
+  static const char * step5_help_title =
+    "Step 5: Complex multiplication";
+
+  static const char * step5_help =
+    "Each element of the raw data (in frequency domain) is multiplied "
+    "by the complex conjugate of the corresponding element of the "
+    "range reference function (in frequency domain).\n"
+    "\n"
+    "The result from the complex multiplication is now ready for an "
+    "inverse FFT.";
+
+  static const char * step6_help_title =
+    "Step 6: Range Inverse FFT";
+
+  static const char * step6_help =
+    "The result from the complex multiplication is converted back to "
+    "time domain with the inverse fast Fourier transform.\n"
+    "\n"
+    "Range compressed data consists of the convolution of the range "
+    "reference function with the raw data in the range direction. "
+    "According to convolution theorem, converting two functions to "
+    "frequency domain followed by a complex multiply, and converting "
+    "back to time domain is the equivalent of the convolution of the "
+    "two functions. The data is said to be 'compressed' because the "
+    "chirp has been removed and all the signal returns from a single "
+    "target are compressed into a single area. ";
+
+  static const char * step7_help_title =
+    "Step 7: Azimuth FFT";
+
+  static const char * step7_help =
+    "A fast Fourier transform converts the data from time domain (the "
+    "way it was recorded at the receiver) to frequency domain. The "
+    "data are typically corner-turned so that what was a column of "
+    "data in the raw data array is now a row. This is the physical "
+    "equivalent of ordering values from different pulses that were "
+    "acquired at the same relative time within the pulse. These "
+    "iso-range azimuth lines are transformed one at a time.\n"
+    "\n"
+    "This data set has the same information as the one in the time "
+    "domain, but is now in the frequency domain after the time domain "
+    "data was corner turned, changing the orientation from range to "
+    "azimuth.";
+
+  static const char * step8_help_title =
+    "Step 8: Range Cell migration";
+
+  static const char * step8_help =
+    "As a target was sampled in the azimuth direction, the returns "
+    "are not necessarily contained within a signal iso-range line. "
+    "The migration of the signal from one bin into another means "
+    "that some of the power you want to compress is in a completely "
+    "different column of data. Range cell migration realigns all "
+    "the returns for a single target into an appropriate single "
+    "line of data in preparation for azimuth compression.\n"
+    "\n"
+    "All the azimuth returns from a single target have now been "
+    "shifted into their respective lines so that azimuth compression "
+    "will lead to well-focussed data. If you leave out range cell "
+    "migration, returns from targets can be distributed across two "
+    "or three azimuth lines. The result in the final image is "
+    "poor resolution and smearing of the target in the range "
+    "direction.";
+
+  static const char * step9_help_title =
+    "Step 9: Azimuth reference function (time)";
+
+  static const char * step9_help =
+    "The azimuth reference function is similar to the range reference "
+    "function. In this case, however, the geometry of the satellite "
+    "moving past the target changes the frequency on the return signal "
+    "in the azimuth direction.  This Doppler effect, with higher "
+    "frequencies as the satellite is moving toward the target, and "
+    "lower frequencies as it moves away, is a sort of 'chirp'. The "
+    "azimuth reference function is an array of numbers that represent "
+    "the chirp, and is calculated uniquely for each image, and each "
+    "iso-range line in the azimuth direction.\n"
+    "\n"
+    "It is critical that the geometry is estimated accurately, but this "
+    "can be difficult, especially for low signal-to-noise data. Most "
+    "processing errors come from getting this geometry wrong. The "
+    "geometry is also referred to as the Doppler Centroid.";
+
+  static const char * step10_help_title =
+    "Step 10: Azimuth reference function (frequency)";
+
+  static const char * step10_help =
+    "This azimuth reference function has the same information as the "
+    "one in the time domain, but is now in the frequency domain.";
+
+  static const char * step11_help_title =
+    "Step 11: Complex multiplication";
+
+  static const char * step11_help =
+    "Each element of the data (in frequency domain) is multiplied by "
+    "the complex conjugate of the corresponding element of the "
+    "azimuth reference function (in frequency domain).";
+
+  static const char * step12_help_title =
+    "Step 12: Azimuth compressed data (time domain - final product)";
+
+  static const char * step12_help =
+    "The result from the complex multiplication is converted back to "
+    "time domain with the inverse fast Fourier transform.\n"
+    "\n"
+    "The data have now been compressed in both dimensions (range "
+    "and azimuth) and include adjustments for range-cell migration. "
+    "A few steps remain to get the final image. The data are typically "
+    "corner turned again (to return it to the recognizable range-azimuth "
+    "direction), and then converted from complex data to an amplitude "
+    "and a phase image. The images are then resampled to the desired "
+    "pixel size, and any radiometric calibration or adjustments are "
+    "applied. For visualization purposes, we have taken the phase "
+    "image and converted it to color assigned by phase range.";
+
+  const char *title;
+  const char *help_text;
+
+  switch (step) {
+    default:
+      title = "";                help_text = "";          break;
+    case 1:
+      title = step1_help_title;  help_text = step1_help;  break;
+    case 2:
+      title = step2_help_title;  help_text = step2_help;  break;
+    case 3:
+      title = step3_help_title;  help_text = step3_help;  break;
+    case 4:
+      title = step4_help_title;  help_text = step4_help;  break;
+    case 5:
+      title = step5_help_title;  help_text = step5_help;  break;
+    case 6:
+      title = step6_help_title;  help_text = step6_help;  break;
+    case 7:
+      title = step7_help_title;  help_text = step7_help;  break;
+    case 8:
+      title = step8_help_title;  help_text = step8_help;  break;
+    case 9:
+      title = step9_help_title;  help_text = step9_help;  break;
+    case 10:
+      title = step10_help_title; help_text = step10_help; break;
+    case 11:
+      title = step11_help_title; help_text = step11_help; break;
+    case 12:
+      title = step12_help_title; help_text = step12_help; break;
+  }
+
+  GtkWidget * help_label =
+    glade_xml_get_widget(glade_xml, "help_label");
+
+  char label_text[2048];
+  sprintf(label_text, "\n%s\n\n%s\n", title, help_text);
+
+  gtk_label_set_text(GTK_LABEL(help_label), label_text);
+}
+
+SIGNAL_CALLBACK void
+on_step1_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(1);
+}
+
+SIGNAL_CALLBACK void
+on_step2_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(2);
+}
+
+SIGNAL_CALLBACK void
+on_step3_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(3);
+}
+
+SIGNAL_CALLBACK void
+on_step4_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(4);
+}
+
+SIGNAL_CALLBACK void
+on_step5_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(5);
+}
+
+SIGNAL_CALLBACK void
+on_step6_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(6);
+}
+
+SIGNAL_CALLBACK void
+on_step7_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(7);
+}
+
+SIGNAL_CALLBACK void
+on_step8_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(8);
+}
+
+SIGNAL_CALLBACK void
+on_step9_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(9);
+}
+
+SIGNAL_CALLBACK void
+on_step10_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(10);
+}
+
+SIGNAL_CALLBACK void
+on_step11_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(11);
+}
+
+SIGNAL_CALLBACK void
+on_step12_help_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  help_text(12);
 }
 
 int
