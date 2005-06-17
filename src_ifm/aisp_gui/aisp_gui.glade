@@ -4,8 +4,8 @@
 <glade-interface>
 
 <widget class="GtkWindow" id="aisp_main">
-  <property name="width_request">1000</property>
-  <property name="height_request">750</property>
+  <property name="width_request">1024</property>
+  <property name="height_request">784</property>
   <property name="visible">True</property>
   <property name="title" translatable="yes">AISP</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
@@ -2691,7 +2691,7 @@
 		      <child>
 			<widget class="GtkImage" id="flowchart_image">
 			  <property name="width_request">400</property>
-			  <property name="height_request">400</property>
+			  <property name="height_request">346</property>
 			  <property name="visible">True</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0.5</property>

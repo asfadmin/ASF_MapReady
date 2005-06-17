@@ -101,8 +101,6 @@ add_file (const gchar * filename)
 	glade_xml_get_widget(glade_xml, "input_file_entry");
 
     gtk_entry_set_text(GTK_ENTRY(input_file_entry), filename);
-
-    /* FIXME: Update all the temp output file labels */
 }
 
 SIGNAL_CALLBACK void
@@ -181,7 +179,7 @@ range_migration_checkbutton_toggled()
 	gtk_toggle_button_get_active(
 	    GTK_TOGGLE_BUTTON(range_migration_checkbutton));
 
-    set_step_enabled(7, is_checked);
+//  set_step_enabled(7, is_checked);
     set_step_enabled(8, is_checked);
 }
 
@@ -235,6 +233,13 @@ set_button_text(int step, const char *file, const char *postfix)
     gtk_button_set_label(GTK_BUTTON(button), tmp);
 }
 
+static void
+set_widget_sensitive(const char * w, gboolean setting)
+{
+    GtkWidget *aisp_main_scrolledwindow = glade_xml_get_widget(glade_xml, w);
+    gtk_widget_set_sensitive(aisp_main_scrolledwindow, setting);
+}
+
 void
 update_buttons()
 {
@@ -244,10 +249,12 @@ update_buttons()
     const gchar * input_file_and_path =
 	gtk_entry_get_text(GTK_ENTRY(input_file_entry));
 
+    set_widget_sensitive("execute_button", strlen(input_file_and_path) > 0);
+
     gchar * input_file =
 	g_path_get_basename(input_file_and_path);
 
-    if (strlen(input_file) == 0) {
+    if (strlen(input_file_and_path) == 0 || strlen(input_file) == 0) {
 	g_free(input_file);
 	input_file = g_strdup("*");
     } else {
@@ -331,6 +338,9 @@ execute()
 	execute_flag("azimuth_complex_multiply", 32768) |
 	execute_flag("range_migration", 65536);
 
+    if (debug_flag == 0)
+      debug_flag = 1;
+
     GtkWidget * input_file_entry =
 	glade_xml_get_widget(glade_xml, "input_file_entry");
 
@@ -363,13 +373,33 @@ execute()
     system(cmd);
 }
 
+static void
+set_widgets_sensitive(gboolean setting)
+{
+    set_widget_sensitive("execute_button", setting);
+    set_widget_sensitive("azimuth_complex_multiply_checkbutton", setting);
+    set_widget_sensitive("range_complex_multiply_checkbutton", setting);
+    set_widget_sensitive("range_migration_checkbutton", setting);
+    set_widget_sensitive("step1_togglebutton", setting);
+    set_widget_sensitive("step2_togglebutton", setting);
+    set_widget_sensitive("step3_togglebutton", setting);
+    set_widget_sensitive("step4_togglebutton", setting);
+    set_widget_sensitive("step5_togglebutton", setting);
+    set_widget_sensitive("step6_togglebutton", setting);
+    set_widget_sensitive("step7_togglebutton", setting);
+    set_widget_sensitive("step8_togglebutton", setting);
+    set_widget_sensitive("step9_togglebutton", setting);
+    set_widget_sensitive("step10_togglebutton", setting);
+    set_widget_sensitive("step11_togglebutton", setting);
+    set_widget_sensitive("step12_togglebutton", setting);
+    set_widget_sensitive("input_file_entry", setting);
+    set_widget_sensitive("input_file_browse_button", setting);
+}
+
 SIGNAL_CALLBACK void
 on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 {
-    GtkWidget *aisp_main_scrolledwindow =
-      glade_xml_get_widget(glade_xml, "execute_button");
-
-    gtk_widget_set_sensitive(aisp_main_scrolledwindow, FALSE);
+    set_widgets_sensitive(FALSE);
 
     int pid = fork();
 
@@ -389,7 +419,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
       }
     }
 
-    gtk_widget_set_sensitive(aisp_main_scrolledwindow, TRUE);
+    set_widgets_sensitive(TRUE);
 }
 
 void
@@ -406,9 +436,20 @@ set_underlines_off(int step)
 }
 
 void
+toggle_button(const char * name, gboolean setting)
+{
+    GtkWidget * btn =
+      glade_xml_get_widget(glade_xml, name);
+
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(btn), setting);
+}
+
+void
 set_toggles()
 {
-    // FIXME set default checkboxes here...
+    toggle_button("range_migration_checkbutton", TRUE);
+    toggle_button("range_complex_multiply_checkbutton", TRUE);
+    toggle_button("azimuth_complex_multiply_checkbutton", TRUE);
 
     range_complex_multiply_checkbutton_toggled();
     range_migration_checkbutton_toggled();
@@ -714,6 +755,8 @@ main(int argc, char **argv)
 
     set_images();
     set_toggles();
+    help_text(1);
+    update_buttons();
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
