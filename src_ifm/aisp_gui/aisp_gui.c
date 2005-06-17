@@ -24,6 +24,21 @@
 
 GladeXML *glade_xml;
 
+/* danger: returns pointer to static data!! */
+static const char * imgloc(char * file)
+{
+    static char loc[1024];
+    gchar * tmp = find_in_path(file);
+    if (tmp) {
+      strcpy(loc, tmp);
+      g_free(tmp);
+    } else {
+      strcpy(loc, file);
+    }
+
+    return loc;
+}
+
 static void set_help_image(int step)
 {
     char widget_name[256];
@@ -32,7 +47,7 @@ static void set_help_image(int step)
     GtkWidget * w =
       glade_xml_get_widget(glade_xml, widget_name);
 
-    gtk_image_set_from_file(GTK_IMAGE(w), "info_on_sml.gif");    
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("info_on_sml.gif"));
 }
 
 static void set_images()
@@ -46,16 +61,15 @@ static void set_images()
     azimuth_compression_image =
 	glade_xml_get_widget(glade_xml, "azimuth_compression_image");
 
-    gtk_image_set_from_file(GTK_IMAGE(range_compression_image), "rc.png");
-    gtk_image_set_from_file(GTK_IMAGE(azimuth_compression_image), "ac.png");
+    gtk_image_set_from_file(GTK_IMAGE(range_compression_image),
+			    imgloc("rc.png"));
+    gtk_image_set_from_file(GTK_IMAGE(azimuth_compression_image),
+			    imgloc("ac.png"));
 
     GtkWidget * flowchart_image;
 
     flowchart_image =
 	glade_xml_get_widget(glade_xml, "flowchart_image");
-    
-    gtk_image_set_from_file(GTK_IMAGE(flowchart_image),
-			    "range_compression.gif");
     
     int i;
     for (i = 1; i <= 12; ++i)
@@ -680,7 +694,7 @@ help_text(int step)
   char image_file[128];
   sprintf(image_file, "step%d.gif", step);
 
-  gtk_image_set_from_file(GTK_IMAGE(flowchart_image), image_file);
+  gtk_image_set_from_file(GTK_IMAGE(flowchart_image), imgloc(image_file));
 }
 
 SIGNAL_CALLBACK void
