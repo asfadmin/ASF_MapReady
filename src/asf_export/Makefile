@@ -37,9 +37,11 @@ SOURCES := asf_export.c \
 CC := gcc
 
 LIBS  = $(LIBDIR)/libasf_raster.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libproj.a \
 	$(LIBDIR)/libgeotiff.a \
 	$(LIBDIR)/libtiff.a \
 	$(LIBDIR)/libjpeg.a \
