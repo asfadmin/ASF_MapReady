@@ -93,6 +93,9 @@ BUGS:
 #include "ifm.h"
 #include "asf_meta.h"
 #include "multilook.h"
+#include "lzFetch.h"
+
+#include "../../include/asf_endian.h"
 
 /* local constants */
 #define VERSION      3.9
@@ -179,6 +182,7 @@ int main(int argc, char *argv[])
 	/* Create filenames and open files for reading */
   	create_name(fnm1,argv[currArg],"_amp.img");
   	create_name(fnm2,argv[currArg],"_phase.img");
+	meta_old = meta_read(fnm2);
 	meta = meta_read(fnm2);
   	create_name(fnm3,argv[++currArg],"_amp.img");
   	create_name(fnm4,argv[currArg],"_phase.img");
@@ -286,8 +290,10 @@ int main(int argc, char *argv[])
 		FSEEK64(fiphase,foffset,SEEK_SET);
 
 		/* Read in a ll*inWid size chunk */
-		FREAD(ampIn,ds,ll*inWid,fiamp);
-		FREAD(phaseIn,ds,ll*inWid,fiphase);
+		get_float_line (fiamp, meta_old, line, ampIn);
+		get_float_line (fiphase, meta_old, line, phaseIn);
+//		FREAD(ampIn,ds,ll*inWid,fiamp);
+//		FREAD(phaseIn,ds,ll*inWid,fiphase);
 		
 		/* begin adding data */
 		for (sample=0; sample<outWid; sample++)
@@ -326,8 +332,11 @@ int main(int argc, char *argv[])
 			Exit("ml: Error in c2i()");
 
 		/* write out data to file */
-		FWRITE(ampOut,ds,outWid,foamp);
-		FWRITE(phaseOut,ds,outWid,fophase);   
+		put_float_line(foamp, meta_old, line, ampOut);
+		put_float_line(fophase, meta_old, line, phaseOut);
+
+		//FWRITE(ampOut,ds,outWid,foamp);
+		//FWRITE(phaseOut,ds,outWid,fophase);
 
 		if ((line*100/outLen)>percent) {
 			printf("   Completed %3.0f percent\n", percent);
@@ -342,7 +351,7 @@ int main(int argc, char *argv[])
 		} 
 		red_offset=(long long)(line*outWid);
 		grn_offset=(long long)(line*outWid+outWid*outLen);
-		blu_offset=(long long)(line*outWid+(2*outWid*outLen));		
+		blu_offset=(long long)(line*outWid+(2*outWid*outLen));
 
 		FSEEK64(flas,red_offset,SEEK_SET);
 		FWRITE(redPtr,1,outWid,flas);
