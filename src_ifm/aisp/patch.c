@@ -91,17 +91,19 @@ void debugWritePatch(const patch *p,char *basename)
 	strcat(strcat(outname,"_"),basename);
 	printf("   Outputting Debugging image '%s'...\n",outname);
 	strcat(strcpy(name,outname),".img");
-	fp = fopenImage(name,"wb");
-	
-	FWRITE(p->trans,sizeof(complexFloat),p->n_az*p->n_range,fp);
-	FCLOSE(fp);
+
 	meta = meta_read(g.in1);
 	meta->general->line_count = p->n_range;
 	meta->general->sample_count = p->n_az;
 	meta->general->data_type = COMPLEX_REAL32;
 	meta->general->image_data_type = COMPLEX_IMAGE;
 	meta_write(meta, name);
-	meta_free(meta);
+
+	fp = fopenImage(name,"wb");
+
+	put_complexFloat_lines(fp, meta, 0, p->n_range, p->trans);
+
+	FCLOSE(fp);
 	sprintf(cmd,"c2p %s %s\n", name, outname);
 	system(cmd);
 	sprintf(multilookname, "%s_ml.img", outname);
@@ -111,8 +113,10 @@ void debugWritePatch(const patch *p,char *basename)
 	sprintf(exportname, "%s_ml_rgb.img", outname);
 	sprintf(cmd,"convert2jpeg %s %s\n", exportname, outname);
 	system(cmd);
-	sprintf(cmd, "rm %s_* %s.meta %s.img\n", outname, outname, outname);
-	system(cmd);
+	//sprintf(cmd, "rm %s_* %s.meta %s.img\n", outname, outname, outname);
+	//system(cmd);
+
+	meta_free(meta);
 }
 
 /*
