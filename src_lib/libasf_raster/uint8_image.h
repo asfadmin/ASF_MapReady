@@ -20,10 +20,7 @@
 
 #ifndef solaris
 #  include <stdint.h>
-#else
-typedef unsigned char uint8_t;
 #endif
-
 #include <stdio.h>
 #include <sys/types.h>
 
