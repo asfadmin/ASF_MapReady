@@ -18,7 +18,12 @@
 #ifndef UINT8_IMAGE_H
 #define UINT8_IMAGE_H
 
-#include <stdint.h>
+#ifndef solaris
+#  include <stdint.h>
+#else
+typedef unsigned char uint8_t;
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -73,21 +78,32 @@ uint8_image_new_with_value (ssize_t size_x, ssize_t size_y, uint8_t value);
 UInt8Image *
 uint8_image_new_from_memory (ssize_t size_x, ssize_t size_y, uint8_t *buffer);
 
+// Create a new independent copy of model.
+UInt8Image *
+uint8_image_copy (UInt8Image *model);
+
 // Form reduced resolution version of the model.  The scale_factor
-// must be positive and odd.  The new image will be ceil
-// (model->size_x / scale_factor) pixels by ceil (model->size_y /
-// scale_factor) pixels.  Scaling is performed by averaging blocks of
-// pixels together, using odd pixel reflection around the image edges
-// (see the description of the apply_kernel method).  The average for
-// a block of pixels is first computed as a double precision floating
-// point number, then rounded with the C99 round() function.  The
-// upper and leftmost blocks of pixels averaged together are always
-// centered at the 0 index in the direction in question, so reflection
-// is always used for these edges.  Whether reflection is used for the
-// right and lower edges depends on the relationship between the model
-// dimensions and the scale factor.
+// must be positive and odd.  The new image will be round ((double)
+// model->size_x / scale_factor) pixels by round ((double)
+// model->size_y / scale_factor) pixels.  Scaling is performed by
+// averaging blocks of pixels together, using odd pixel reflection
+// around the image edges (see the description of the apply_kernel
+// method).  The average for a block of pixels is first computed as a
+// double precision floating point number, then rounded with the C99
+// round() function.  The upper and leftmost blocks of pixels averaged
+// together are always centered at the 0 index in the direction in
+// question, so reflection is always used for these edges.  Whether
+// reflection is used for the right and lower edges depends on the
+// relationship between the model dimensions and the scale factor.
 UInt8Image *
 uint8_image_new_from_model_scaled (UInt8Image *model, ssize_t scale_factor);
+
+// Create a new image by copying the portion of model with upper left
+// corner at model coordinates (x, y), width size_x, and height
+// size_y.
+UInt8Image *
+uint8_image_new_subimage (UInt8Image *model, ssize_t x, ssize_t y,
+			  ssize_t size_x, ssize_t size_y);
 
 // Create a new image from data at byte offset in file.  The pixel
 // layout in the file is assumed to be the same as for the
@@ -117,13 +133,6 @@ uint8_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
 				  ssize_t original_size_x,
 				  ssize_t original_size_y,
 				  const char *file, off_t offset);
-
-// Create a new image by copying the portion of model with upper left
-// corner at model coordinates (x, y), width size_x, and height
-// size_y.
-UInt8Image *
-uint8_image_new_subimage (UInt8Image *model, ssize_t x, ssize_t y,
-			  ssize_t size_x, ssize_t size_y);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
