@@ -102,5 +102,5 @@ asf_geolib.a:	$(SUBS)
 		ar rv asf_geolib.a $(SUBS)
 		$(RANLIB) asf_geolib.a
 		mv asf_geolib.a $(LIBDIR)
-		cp asf_geolib.man ../../man/cat1/asf_geolib.1
+#		cp asf_geolib.man ../../man/cat1/asf_geolib.1
 

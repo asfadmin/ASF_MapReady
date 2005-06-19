@@ -24,6 +24,6 @@ asf_lt.a:	$(SUBS)
 		ar rv asf_lt.a $(SUBS)
 		$(RANLIB) asf_lt.a
 		mv asf_lt.a $(LIBDIR) 
-		cp asf_lt.man ../../man/cat1/asf_lt.1
+#		cp asf_lt.man ../../man/cat1/asf_lt.1
 		rm *.o
 
