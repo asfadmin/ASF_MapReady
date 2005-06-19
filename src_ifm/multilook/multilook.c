@@ -107,7 +107,7 @@ void usage(char *name);
 
 int main(int argc, char *argv[])
 {
-  meta_parameters *meta, *meta_old;
+  meta_parameters *meta, *meta_old, *meta_stat;
 	char fnm1[BUF],fnm2[BUF],fnm3[BUF],fnm4[BUF],outname[BUF];
 	char imgfile[BUF],metaFile[BUF],cmd[BUF],metaIn[BUF],metaOut[BUF];
 	FILE *fiamp, *fiphase, *foamp, *fophase, *flas;
@@ -182,6 +182,7 @@ int main(int argc, char *argv[])
 	/* Create filenames and open files for reading */
   	create_name(fnm1,argv[currArg],"_amp.img");
   	create_name(fnm2,argv[currArg],"_phase.img");
+	meta_stat = meta_read(fnm1);
 	meta_old = meta_read(fnm2);
 	meta = meta_read(fnm2);
   	create_name(fnm3,argv[++currArg],"_amp.img");
@@ -225,9 +226,6 @@ int main(int argc, char *argv[])
 	fophase = fopenImage(fnm4,"wb");
 	flas = fopenImage(imgfile,"wb");
 
-	/* get mean from input amplitude file */
-	avg = get_mean(fiamp,inWid,inLen,TRUE);
- 
 	/*
 	* create data buffers 
 	*/
@@ -255,6 +253,15 @@ int main(int argc, char *argv[])
 	grnPtr   = (Uchar *)MALLOC(sizeof(Uchar)*outWid);
 	bluPtr   = (Uchar *)MALLOC(sizeof(Uchar)*outWid);
 	
+        /* calculate mean value */
+        if (meta_stat->stats)
+          avg = meta_stat->stats->mean;
+        else {
+          sprintf(cmd, "stats -overmeta -overstat %s\n", fnm1);
+          system(cmd);
+          meta_stat = meta_read(fnm1);
+          avg = meta_stat->stats->mean;
+        }
 
 	/* create a colortable to be used with c2i */
 	colortable(table);
@@ -366,7 +373,6 @@ int main(int argc, char *argv[])
 		FWRITE(grnPtr,1,outWid,flas);
 		FSEEK64(flas,blu_offset,SEEK_SET);
 		FWRITE(bluPtr,1,outWid,flas);
-		
     
 		/* reposition data for next read */
 		for (i=0;i<nitems;i++)
