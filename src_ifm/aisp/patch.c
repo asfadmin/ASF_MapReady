@@ -107,14 +107,14 @@ void debugWritePatch(const patch *p,char *basename)
 	sprintf(cmd,"c2p %s %s\n", name, outname);
 	system(cmd);
 	sprintf(multilookname, "%s_ml.img", outname);
-        sprintf(cmd,"multilook -look 2x2 -step 1x1 %s %s\n", 
+        sprintf(cmd,"multilook -look 1x1 -step 2x2 %s %s\n", 
                 outname, multilookname);
         system(cmd);
 	sprintf(exportname, "%s_ml_rgb.img", outname);
 	sprintf(cmd,"convert2jpeg %s %s\n", exportname, outname);
 	system(cmd);
-	//sprintf(cmd, "rm %s_* %s.meta %s.img\n", outname, outname, outname);
-	//system(cmd);
+	sprintf(cmd, "rm %s_* %s.meta %s.img\n", outname, outname, outname);
+	system(cmd);
 
 	meta_free(meta);
 }
