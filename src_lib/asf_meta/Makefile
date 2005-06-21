@@ -133,7 +133,7 @@ all: asf_meta
 asf_meta: build_only
 	mv asf_meta.a $(LIBDIR)
 	# Make a link obeying the usual naming convention.
-	ln -s -f $(LIBDIR)/asf_meta.a $(LIBDIR)/libasf_meta.a
+#	ln -s -f $(LIBDIR)/asf_meta.a $(LIBDIR)/libasf_meta.a
 
 build_only: $(OBJS) cook_libs
 	rm -rf asf_meta.a	# Get rid of all stale symbols.
