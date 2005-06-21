@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include "functions.h"
 
-int asf_import(char *inFile, char *outFile, char *prcOrbits, int prcFlag, 
+int asf_import(char *inFile, char *outFile, char *format,
+               char *prcOrbits, int prcFlag, 
 	       double lat_begin, double lat_end)
 {
         char options[255]="", command[255];
@@ -15,7 +16,8 @@ int asf_import(char *inFile, char *outFile, char *prcOrbits, int prcFlag,
 	if (prcFlag) sprintf (options, "%s -prc %s", options, prcOrbits); 
 	if (lat_begin!=-99.0 && lat_end!=99.0) 
 	  sprintf(options, "%s -lat %lf %lf", options, lat_begin, lat_end);
-        sprintf(command, "stf2raw %s %s %s", options, inFile, outFile);
+        sprintf(command, "asf_import -format %s %s %s %s", 
+		format, options, inFile, outFile);
 
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -124,7 +126,8 @@ int coregister_coarse(char *inFile1, char *inFile2, char *outFile, char *maskFil
 	return ret;
 }
 
-int coregister_fine(char *inFile1, char *inFile2, char *inCtrlFile, char *outFile, char *maskFile, int gridSize, int useFFT)
+int coregister_fine(char *inFile1, char *inFile2, char *inCtrlFile, char *outFile, 
+		    char *maskFile, int gridSize, int useFFT)
 {
 	char options[255]="", command[255];
 	int ret;
@@ -302,6 +305,25 @@ int fit_plane(char *inFile, char *outFile, double fraction)
         return ret;
 }       
 
+int fit_poly(char *inFile, char *outFile, int degree)
+{       
+        char options[255]="", command[255];
+        int ret;
+        
+/* Keep log file extension for later. Need first something that works.
+        sprintf(options, "-log %s -k %.1lf", logFile);*/
+        sprintf(command, "fit_poly %s %i %s", inFile, degree, outFile);
+        
+        printf("\nCommand line: %s\nDate: ", command);
+        fLog = FOPEN(logFile, "a");
+        sprintf(logbuf,"\nCommand line: %s\n", command);
+        printLog(logbuf);
+        FCLOSE(fLog);
+        ret = system(command);
+        
+        return ret;
+}       
+        
 int fit_warp(char *inFile1, char *inFile2, char *outFile)
 {
         char command[255];
@@ -355,14 +377,14 @@ int make_ddr(char *outFile, int nl, int ns, char *type)
         return ret;
 }
 
-int reskew_dem(char *demFile, char *metaFile, char *outFile1, char *outFile2)
+int reskew_dem(char *metaFile, char *demFile, char *outFile1, char *outFile2)
 {       
         char options[255]="", command[255];
         int ret;
                             
 	sprintf(options, "-log %s", logFile);
         sprintf(command, "reskew_dem %s %s %s %s %s", 
-		options, demFile, metaFile, outFile1, outFile2);
+		options, metaFile, demFile, outFile1, outFile2);
         
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -421,7 +443,7 @@ int dem2phase(char *demFile, char *metaFile, char *baseFile, char *phaseFile)
         int ret;
         
 	sprintf(options, "-log %s", logFile);
-        sprintf(command, "dem2phase %s %s %s %s", 
+        sprintf(command, "dem2phase %s %s %s %s %s", 
 		options, demFile, metaFile, baseFile, phaseFile);
         
         printf("\nCommand line: %s\nDate: ", command);
@@ -444,7 +466,7 @@ int dem2seeds(char *demFile, char *ampFile, char *seedsFile, int fft)
           sprintf(command, "dem2seeds_fft %s %s %s", demFile, ampFile, seedsFile);
         else 
           sprintf(command, "dem2seeds %s %s %s %s", 
-		  logFile, demFile, ampFile, seedsFile);
+		  options, demFile, ampFile, seedsFile);
 
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -456,7 +478,7 @@ int dem2seeds(char *demFile, char *ampFile, char *seedsFile, int fft)
         return ret;
 }
 
-int deramp(char *demFile, char *metaFile, char *baseFile, char *outFile, int back)
+int deramp(char *demFile, char *baseFile, char *outFile, int back)
 {       
         char options[255]="", command[255];
         int ret;
@@ -464,7 +486,7 @@ int deramp(char *demFile, char *metaFile, char *baseFile, char *outFile, int bac
 	sprintf(options, "-log %s", logFile);
 	if (back) sprintf(options, "%s -backward", options);
         sprintf(command, "deramp %s %s %s %s", 
-		options, demFile, metaFile, baseFile, outFile);
+		options, demFile, baseFile, outFile);
         
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -503,15 +525,14 @@ int snaphu(char *snaphu_version, char *phaseFile, char *ampFile, char *pwrFile1,
         return ret;
 }
 
-int refine_base(char *phaseFile, char *seeds, char *metaFile, char *oldBase, 
-		char *newBase)
+int refine_base(char *phaseFile, char *seeds, char *oldBase, char *newBase)
 {
         char options[255]="", command[255];
         int ret;
         
 	sprintf(options, "-log %s -quiet", logFile);
-        sprintf(command, "refine_base %s %s %s %s %s %s\n", 
-		options, phaseFile, seeds, metaFile, oldBase, newBase);
+        sprintf(command, "refine_base %s %s %s %s %s\n", 
+		options, phaseFile, seeds, oldBase, newBase);
 
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -546,7 +567,7 @@ int convert2ppm(char *inFile, char *outFile)
         char command[255];
 	int ret;
 
-        sprintf(command, "convert2ppm -m %s %s", inFile, outFile);
+        sprintf(command, "convert2ppm -mask %s %s", inFile, outFile);
 
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -564,7 +585,8 @@ int phase_filter(char *inFile, double strength, char *outFile)
 	int ret;
           
 	sprintf(options, "-log %s", logFile);
-        sprintf(command, "phase_filter %s %.1lf %s", inFile, strength, outFile);
+        sprintf(command, "phase_filter %s %s %.1lf %s", 
+		options, inFile, strength, outFile);
         
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -578,10 +600,12 @@ int phase_filter(char *inFile, double strength, char *outFile)
 
 int zeroify(char *phaseFile1, char *phaseFile2, char *outFile)
 {
-        char command[255];
+        char options[255]="", command[255];
 	int ret;
 
-        sprintf(command, "zeroify %s %s %s", phaseFile1, phaseFile2, outFile);
+	sprintf(options, "-log %s", logFile);
+        sprintf(command, "zeroify %s %s %s %s", 
+		options, phaseFile1, phaseFile2, outFile);
         
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -595,10 +619,11 @@ int zeroify(char *phaseFile1, char *phaseFile2, char *outFile)
 
 int escher(char *inFile, char *outFile)
 {       
-        char command[255];
+        char options[255]="", command[255];
         int ret;
         
-        sprintf(command, "escher %s %s", inFile, outFile);
+	sprintf(options, "-log %s", logFile);
+        sprintf(command, "escher %s %s %s", options, inFile, outFile);
         
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -610,14 +635,14 @@ int escher(char *inFile, char *outFile)
         return ret;
 }
 
-int elev(char *phaseFile, char *baseFile, char *metaFile, char *outFile, char *seeds)
+int elev(char *phaseFile, char *baseFile, char *outFile, char *seeds)
 {       
         char options[255]="", command[255];
         int ret;
         
 	sprintf(options, "-log %s -quiet", logFile);
-        sprintf(command, "elev %s %s %s %s %s %s", 
-		options, phaseFile, baseFile, metaFile, outFile, seeds);
+        sprintf(command, "elev %s %s %s %s %s", 
+		options, phaseFile, baseFile, outFile, seeds);
         
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -629,16 +654,16 @@ int elev(char *phaseFile, char *baseFile, char *metaFile, char *outFile, char *s
         return ret;
 }
 
-int eleverr(char *cohFile, char *baseFile, char *metaFile, char *maskFile, 
-	    char *outFile)
+int eleverr(char *cohFile, char *baseFile, char *maskFile, char *outFile)
 {                       
         char options[255]="", command[255];
 	int ret;
  
 	sprintf(options, "-log %s", logFile);
-	if (maskFile!=NULL) sprintf(options, "-mask %s %s", maskFile, options); 
-        sprintf(command, "eleverr %s %s %s %s %s", 
-		options, cohFile, baseFile, metaFile, outFile);
+	if (maskFile!=NULL) 
+	  sprintf(options, "-log %s -mask %s", logFile, maskFile); 
+        sprintf(command, "eleverr %s %s %s %s", 
+		options, cohFile, baseFile, outFile);
 
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -650,8 +675,7 @@ int eleverr(char *cohFile, char *baseFile, char *metaFile, char *maskFile,
         return ret;
 }
           
-int deskew_dem(char *inFile1, char *metaFile, char *outFile, char *inFile2, 
-	       int radiometric)
+int deskew_dem(char *inFile1, char *outFile, char *inFile2, int radiometric)
 {
         char options[255]="", command[255];
         int ret;
@@ -659,8 +683,8 @@ int deskew_dem(char *inFile1, char *metaFile, char *outFile, char *inFile2,
 	sprintf(options, "-log %s", logFile);
         if (strcmp(inFile2,"")!=0) 
 	  sprintf(options, "-i %s %d", inFile2, radiometric); 
-        sprintf(command, "deskew_dem %s %s %s %s", 
-		options, inFile1, metaFile, outFile);
+        sprintf(command, "deskew_dem %s %s %s", 
+		options, inFile1, outFile);
          
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");
@@ -672,34 +696,12 @@ int deskew_dem(char *inFile1, char *metaFile, char *outFile, char *inFile2,
         return ret;
 }
 
-int projprm(char *projection, char *projkey, char *outFile, char *parameters)
-{       
-        char options[255]="", command[255];
-        int ret;
-            
-	sprintf(options, "-log %s", logFile);
-        sprintf(command, "projprm %s %s %s %s %s", 
-		options, projection, projkey, outFile, parameters);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-	fLog = FOPEN(logFile, "a");
-	sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-	printLog(logbuf);
-	FCLOSE(fLog);
-        ret = system(command);
-        
-        return ret;
-}       
-
-int asf_geocode(char *metaFile, char *inFile, char *projFile, char *projkey, 
-		int pix_size, char *outFile)
+int asf_geocode(char *options, char *inFile, char *outFile)
 {
-        char options[255]="", command[255];
+        char command[255];
         int ret;
         
-	sprintf(options, "-p %d -log %s", pix_size, logFile);
-        sprintf(command, "geocode %s %s %s %s %s %s", 
-		options, metaFile, inFile, projFile, projkey, outFile);
+        sprintf(command, "asf_geocode %s %s %s", options, inFile, outFile);
 
         printf("\nCommand line: %s\nDate: ", command);
 	fLog = FOPEN(logFile, "a");

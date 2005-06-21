@@ -32,15 +32,7 @@ typedef struct {
   char *prc_slave;	/* precise orbits for slave image */
   int prcflag;		/* flag for using precise orbits */
   char *status;		/* status of processing */
-} s_stf2raw;
-
-typedef struct {
-  int line;		/* start line of image window */
-  int sample;		/* start sample of image window */
-  long length;		/* length of image window */
-  long width;		/* width of image window */
-  char *status;		/* status of processing */
-} s_trim_slc;
+} s_ingest;
 
 typedef struct {
   char *status;		/* status of processing */
@@ -122,21 +114,29 @@ typedef struct {
   char *amp;		/* name of geocoded amplitude */
   char *error;		/* name of geocoded error map */
   char *coh;		/* name of geocoded coherence image */
+  char *name;		/* name of projection */
   char *proj;		/* name of projection file */
-  char *key;		/* projection key */
-  int pix_spacing;	/* pixel spacing */
+  char *resample;       /* resampling method: nearest neighbor, bilinear, bicubic */
   char *status;         /* status of processing */	
 } s_geocode;
+
+typedef struct {
+  int pixel_spacing;	/* pixel spacing */
+  char *status;         /* status of processing */
+} s_resample;
+
+typedef struct {
+  char *format;         /* export format: geotiff, jpeg etc. */
+  char *status;         /* status of processing */
+} s_export;
 
 typedef struct {
   char comment[255];		/* first line for comments */
   s_general *general;		/* general processing details */
   s_image *master;		/* master image */
   s_image *slave;	       	/* slave image */
-  s_stf2raw *stf2raw;		/* ingest STF data */
-  s_status *ceos2raw;		/* ingest CEOS raw data */
-  s_trim_slc *trim_slc;		/* ingest CEOS SLC data */
-  s_status *avg_in_dop;		/* average Doppler processing */
+  s_ingest *ingest;		/* ingest STF data */
+  s_status *doppler;		/* average Doppler processing */
   s_status *doppler_per_patch;	/* updated Doppler processing */
   s_coreg *coreg_p1;		/* coregistration of first patch */
   s_coreg *coreg_pL;		/* coregistration of last patch */
@@ -154,6 +154,8 @@ typedef struct {
   s_elev *elevation;		/* elevation and elevation error */
   s_status *ground_range;      	/* ground range DEM */
   s_geocode *geocode;		/* geocoding */
+  s_resample *resample;         /* resampling geocoded images */
+  s_export *export;             /* export from internal to external format */
 } dem_config;
 
 

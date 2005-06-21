@@ -121,10 +121,8 @@ dem_config *init_fill_config(char *configFile)
   cfg->general = newStruct(s_general);
   cfg->master = newStruct(s_image);
   cfg->slave = newStruct(s_image);
-  cfg->stf2raw = newStruct(s_stf2raw);
-  cfg->ceos2raw = newStruct(s_status);
-  cfg->trim_slc = newStruct(s_trim_slc);
-  cfg->avg_in_dop = newStruct(s_status);
+  cfg->ingest = newStruct(s_ingest);
+  cfg->doppler = newStruct(s_status);
   cfg->coreg_p1 = newStruct(s_coreg);
   cfg->coreg_pL = newStruct(s_coreg);
   cfg->doppler_per_patch = newStruct(s_status);
@@ -142,6 +140,8 @@ dem_config *init_fill_config(char *configFile)
   cfg->elevation = newStruct(s_elev);
   cfg->ground_range = newStruct(s_status);
   cfg->geocode = newStruct(s_geocode);
+  cfg->resample = newStruct(s_resample);
+  cfg->export = newStruct(s_export);
   
   /* initialize structure */
   strcpy(cfg->comment, "create_dem: configuration file");
@@ -185,26 +185,16 @@ dem_config *init_fill_config(char *configFile)
   cfg->slave->meta = (char *)MALLOC(sizeof(char)*255);
   cfg->slave->meta = "";
   
-  cfg->stf2raw->prc_master = (char *)MALLOC(sizeof(char)*255);
-  cfg->stf2raw->prc_master = "";
-  cfg->stf2raw->prc_slave = (char *)MALLOC(sizeof(char)*255);
-  cfg->stf2raw->prc_slave = "";
-  cfg->stf2raw->prcflag = 1;
-  cfg->stf2raw->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->stf2raw->status, "new");
+  cfg->ingest->prc_master = (char *)MALLOC(sizeof(char)*255);
+  cfg->ingest->prc_master = "";
+  cfg->ingest->prc_slave = (char *)MALLOC(sizeof(char)*255);
+  cfg->ingest->prc_slave = "";
+  cfg->ingest->prcflag = 1;
+  cfg->ingest->status = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->ingest->status, "new");
   
-  cfg->ceos2raw->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->ceos2raw->status, "new");
-  
-  cfg->trim_slc->line = 0;
-  cfg->trim_slc->sample = 0;
-  cfg->trim_slc->length = -99;
-  cfg->trim_slc->width = -99;
-  cfg->trim_slc->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->trim_slc->status, "new");
-  
-  cfg->avg_in_dop->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->avg_in_dop->status, "new");
+  cfg->doppler->status = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->doppler->status, "new");
   
   cfg->coreg_p1->patches = 1;
   cfg->coreg_p1->start_master = 0;
@@ -320,14 +310,24 @@ dem_config *init_fill_config(char *configFile)
   strcpy(cfg->geocode->error, "");
   cfg->geocode->coh = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->geocode->coh, "");
+  cfg->geocode->name = (char *)MALLOC(sizeof(char)*255);
+  strcpy(cfg->geocode->name, "");
   cfg->geocode->proj = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->geocode->proj, "");
-  cfg->geocode->key = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->key, "");
-  cfg->geocode->pix_spacing = 100;
+  cfg->geocode->resample = (char *)MALLOC(sizeof(char)*255);
+  strcpy(cfg->geocode->resample, "");
   cfg->geocode->status = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->geocode->status, "new");
   
+  cfg->resample->pixel_spacing = 100;
+  cfg->resample->status = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->resample->status, "new");
+
+  cfg->export->status = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->export->format, "");
+  cfg->export->status = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->export->status, "new");
+
   fConfig = FOPEN(configFile, "r");
   i=0;
   while (fgets(line, 255, fConfig) != NULL) {
@@ -364,9 +364,9 @@ dem_config *init_fill_config(char *configFile)
       if (strncmp(test, "maximum offset", 14)==0) 
 	cfg->general->max_off = read_int(line, "maximum offset");
       if (strncmp(test, "precise master", 14)==0) 
-	cfg->stf2raw->prc_master = read_str(line, "precise master"); 
+	cfg->ingest->prc_master = read_str(line, "precise master"); 
       if (strncmp(test, "precise slave", 13)==0) 
-	cfg->stf2raw->prc_slave = read_str(line, "precise slave");
+	cfg->ingest->prc_slave = read_str(line, "precise slave");
       if (strncmp(test, "minimum coherence", 17)==0) 
 	cfg->igram_coh->min = read_double(line, "minimum coherence");
       if (strncmp(test, "phase unwrapping", 16)==0) 
@@ -377,12 +377,14 @@ dem_config *init_fill_config(char *configFile)
 	cfg->unwrap->overlap_azimuth = read_int(line, "tile overlap");
 	cfg->unwrap->overlap_range = cfg->unwrap->overlap_azimuth;
       }
+      if (strncmp(test, "projection name", 15)==0) 
+	cfg->geocode->name = read_str(line, "projection name");
       if (strncmp(test, "projection file", 15)==0) 
 	cfg->geocode->proj = read_str(line, "projection file");
-      if (strncmp(test, "projection key", 14)==0) 
-	cfg->geocode->key = read_str(line, "projection key");
+      if (strncmp(test, "resampling method", 17)==0)
+	cfg->geocode->resample = read_str(line, "resampling method");
       if (strncmp(test, "pixel spacing", 13)==0) 
-	cfg->geocode->pix_spacing = read_int(line, "pixel spacing");
+	cfg->resample->pixel_spacing = read_int(line, "pixel spacing");
     }
     FCLOSE(fDefaults);
   }
@@ -523,46 +525,24 @@ dem_config *read_config(char *configFile, int cFlag)
 	cfg->slave->meta = read_str(line, "metadata file");
     }
     
-    if (strncmp(line, "[stf2raw]", 9)==0) strcpy(params, "stf2raw");
-    if (strcmp(params, "stf2raw")==0) {
+    if (strncmp(line, "[Ingest]", 8)==0) strcpy(params, "ingest");
+    if (strcmp(params, "ingest")==0) {
       test = read_param(line);
       if (strncmp(test, "precise master", 14)==0) 
-	cfg->stf2raw->prc_master = read_str(line, "precise master"); 
+	cfg->ingest->prc_master = read_str(line, "precise master"); 
       if (strncmp(test, "precise slave", 13)==0) 
-	cfg->stf2raw->prc_slave = read_str(line, "precise slave");
+	cfg->ingest->prc_slave = read_str(line, "precise slave");
       if (strncmp(test, "precise orbits", 14)==0) 
-	cfg->stf2raw->prcflag = read_int(line, "precise orbits");
+	cfg->ingest->prcflag = read_int(line, "precise orbits");
       if (strncmp(test, "status", 6)==0) 
-	cfg->stf2raw->status = read_str(line, "status");
+	cfg->ingest->status = read_str(line, "status");
     }
     
-    if (strncmp(line, "[ceos2raw]", 8)==0) strcpy(params, "ceos2raw");
-    if (strcmp(params, "ceos2raw")==0) {
+    if (strncmp(line, "[Doppler]", 9)==0) strcpy(params, "doppler");
+    if (strcmp(params, "doppler")==0) {
       test = read_param(line);
       if (strncmp(test, "status", 6)==0) 
-	cfg->ceos2raw->status = read_str(line, "status");
-    }
-    
-    if (strncmp(line, "[trim_slc]", 8)==0) strcpy(params, "trim_slc");
-    if (strcmp(params, "trim_slc")==0) {
-      test = read_param(line);
-      if (strncmp(test, "start line", 10)==0) 
-	cfg->trim_slc->line = read_int(line, "start line"); 
-      if (strncmp(test, "start sample", 12)==0) 
-	cfg->trim_slc->sample = read_int(line, "start sample"); 
-      if (strncmp(test, "length", 6)==0) 
-	cfg->trim_slc->length = read_int(line, "length"); 
-      if (strncmp(test, "width", 5)==0) 
-	cfg->trim_slc->width = read_int(line, "width"); 
-      if (strncmp(test, "status", 6)==0) 
-	cfg->trim_slc->status = read_str(line, "status");
-    }
-    
-    if (strncmp(line, "[avg_in_dop]", 12)==0) strcpy(params, "avg_in_dop");
-    if (strcmp(params, "avg_in_dop")==0) {
-      test = read_param(line);
-      if (strncmp(test, "status", 6)==0) 
-	cfg->avg_in_dop->status = read_str(line, "status");
+	cfg->doppler->status = read_str(line, "status");
     }
     
     if (strncmp(line, "[Coregister first patch]", 24)==0) strcpy(params, "coreg_p1");
@@ -650,7 +630,8 @@ dem_config *read_config(char *configFile, int cFlag)
       test = read_param(line);
       if (strncmp(test, "grid", 4)==0) 
 	cfg->coreg_slave->grid = read_int(line, "grid"); 
-      if (strncmp(test, "fft", 3)==0) cfg->coreg_slave->fft = read_int(line, "fft"); 
+      if (strncmp(test, "fft", 3)==0) 
+	cfg->coreg_slave->fft = read_int(line, "fft"); 
       if (strncmp(test, "sinc", 4)==0) 
 	cfg->coreg_slave->sinc = read_int(line, "sinc"); 
       if (strncmp(test, "warp", 4)==0) 
@@ -774,16 +755,31 @@ dem_config *read_config(char *configFile, int cFlag)
 	cfg->geocode->amp = read_str(line, "amplitude");
       if (strncmp(test, "coherence", 9)==0) 
 	cfg->geocode->coh = read_str(line, "coherence");
+      if (strncmp(test, "projection name", 15)==0) 
+	cfg->geocode->name = read_str(line, "projection name");
       if (strncmp(test, "projection file", 15)==0) 
 	cfg->geocode->proj = read_str(line, "projection file");
-      if (strncmp(test, "projection key", 14)==0) 
-	cfg->geocode->key = read_str(line, "projection key");
-      if (strncmp(test, "pixel spacing", 13)==0) 
-	cfg->geocode->pix_spacing = read_int(line, "pixel spacing");
+      if (strncmp(test, "resampling method", 17)==0)
+	cfg->geocode->resample = read_str(line, "resampling method");
       if (strncmp(test, "status", 6)==0) 
 	cfg->geocode->status = read_str(line, "status");   
     }
     
+    if (strncmp(line, "[Resample]", 10)==0) strcpy(params, "resample");
+    if (strcmp(params, "resample")==0) {
+      if (strncmp(test, "pixel spacing", 13)==0) 
+	cfg->resample->pixel_spacing = read_int(line, "pixel spacing");
+      if (strncmp(test, "status", 6)==0)
+	cfg->resample->status = read_str(line, "status");
+    } 
+
+    if (strncmp(line, "[Export]", 8)==0) strcpy(params, "export");
+    if (strcmp(params, "export")==0) {
+      if (strncmp(test, "format", 6)==0)
+	cfg->export->format = read_str(line, "format");
+      if (strncmp(test, "status", 6)==0)
+	cfg->export->status = read_str(line, "status");
+    }
   }
   FCLOSE(fConfig);
   
@@ -824,14 +820,14 @@ int write_config(char *configFile, dem_config *cfg)
   fprintf(fConfig, "data file = %s\n", cfg->slave->data);
   fprintf(fConfig, "metadata file = %s\n\n", cfg->slave->meta);
   if (strncmp(cfg->general->data_type, "STF", 3)==0) {
-    fprintf(fConfig, "[stf2raw]\n");
-    fprintf(fConfig, "precise master = %s\n", cfg->stf2raw->prc_master);
-    fprintf(fConfig, "precise slave = %s\n", cfg->stf2raw->prc_slave);
-    fprintf(fConfig, "precise orbits = %d\n", cfg->stf2raw->prcflag);
-    fprintf(fConfig, "status = %s\n\n", cfg->stf2raw->status);
+    fprintf(fConfig, "[Ingest]\n");
+    fprintf(fConfig, "precise master = %s\n", cfg->ingest->prc_master);
+    fprintf(fConfig, "precise slave = %s\n", cfg->ingest->prc_slave);
+    fprintf(fConfig, "precise orbits = %d\n", cfg->ingest->prcflag);
+    fprintf(fConfig, "status = %s\n\n", cfg->ingest->status);
     if (strncmp(cfg->general->doppler, "average", 7)==0) {
-      fprintf(fConfig, "[avg_in_dop]\n");
-      fprintf(fConfig, "status = %s\n\n", cfg->avg_in_dop->status);
+      fprintf(fConfig, "[Doppler]\n");
+      fprintf(fConfig, "status = %s\n\n", cfg->doppler->status);
     }
     fprintf(fConfig, "[Coregister first patch]\n");
     fprintf(fConfig, "patches = %d\n", cfg->coreg_p1->patches);
@@ -871,11 +867,11 @@ int write_config(char *configFile, dem_config *cfg)
     fprintf(fConfig, "status = %s\n\n", cfg->aisp_slave->status);
   }
   if (strncmp(cfg->general->data_type, "RAW", 3)==0) {
-    fprintf(fConfig, "[ceos2raw]\n");
-    fprintf(fConfig, "status = %s\n\n", cfg->ceos2raw->status);
+    fprintf(fConfig, "[Ingest]\n");
+    fprintf(fConfig, "status = %s\n\n", cfg->ingest->status);
     if (strncmp(cfg->general->doppler, "average", 7)==0) {
-      fprintf(fConfig, "[avg_in_dop]\n");
-      fprintf(fConfig, "status = %s\n\n", cfg->avg_in_dop->status);
+      fprintf(fConfig, "[Doppler]\n");
+      fprintf(fConfig, "status = %s\n\n", cfg->doppler->status);
     }
     fprintf(fConfig, "[Coregister first patch]\n");
     fprintf(fConfig, "patches = %d\n", cfg->coreg_p1->patches);
@@ -915,12 +911,8 @@ int write_config(char *configFile, dem_config *cfg)
     fprintf(fConfig, "status = %s\n\n", cfg->aisp_slave->status);
   }
   if (strncmp(cfg->general->data_type, "SLC", 3)==0) {
-    fprintf(fConfig, "[trim_slc]\n");
-    fprintf(fConfig, "start line = %ld\n", cfg->trim_slc->line);
-    fprintf(fConfig, "start sample = %ld\n", cfg->trim_slc->sample);
-    fprintf(fConfig, "length = %ld\n", cfg->trim_slc->length);
-    fprintf(fConfig, "width = %ld\n", cfg->trim_slc->width);
-    fprintf(fConfig, "status = %s\n\n", cfg->trim_slc->status);
+    fprintf(fConfig, "[Ingest]\n");
+    fprintf(fConfig, "status = %s\n\n", cfg->ingest->status);
     fprintf(fConfig, "[Coregister slave]\n");
     fprintf(fConfig, "grid = %ld\n", cfg->coreg_slave->grid);
     fprintf(fConfig, "fft = %d\n", cfg->coreg_slave->fft);
@@ -975,10 +967,18 @@ int write_config(char *configFile, dem_config *cfg)
     fprintf(fConfig, "error map = %s\n", cfg->geocode->error);
     fprintf(fConfig, "amplitude = %s\n", cfg->geocode->amp);
     fprintf(fConfig, "coherence = %s\n", cfg->geocode->coh);
+    fprintf(fConfig, "projection name = %s\n", cfg->geocode->name);
     fprintf(fConfig, "projection file = %s\n", cfg->geocode->proj);
-    fprintf(fConfig, "projection key = %s\n", cfg->geocode->key);
-    fprintf(fConfig, "pixel spacing = %d\n", cfg->geocode->pix_spacing);
+    fprintf(fConfig, "resampling method = %s\n", cfg->geocode->resample);
     fprintf(fConfig, "status = %s\n\n", cfg->geocode->status);
+    /* Resampling of geocoded images before exporting still to be implemented 
+    fprintf(fConfig, "[Resample]\n");
+    fprintf(fConfig, "pixel spacing = %s\n", cfg->resample->pixel_spacing);
+    fprintf(fConfig, "status = %s\n\n", cfg->resample->status);
+    ***************************************************************************/
+    fprintf(fConfig, "[Export]\n");
+    fprintf(fConfig, "format = %s\n", cfg->export->format);
+    fprintf(fConfig, "status = %s\n\n", cfg->export->status);
   }
   
   FCLOSE(fConfig);
