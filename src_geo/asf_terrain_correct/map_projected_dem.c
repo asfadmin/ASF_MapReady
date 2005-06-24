@@ -45,7 +45,7 @@ map_projected_dem_new_from_las (const char *las_header_file,
   // The signed 16 bit LAS DEMs use this magic number to mean "no
   // data".  It stays about the same in floating point after ingest,
   // and we check for it and use it to set the invalid_data_mask.
-  const float no_data_value = -9999.0;
+  const float no_data_value = 0.0;
   self->invalid_data_mask = uint8_image_new (self->size_x, self->size_y);
   size_t ii, jj;
   for ( ii = 0 ; ii < self->size_y ; ii++ ) {
@@ -62,10 +62,13 @@ map_projected_dem_new_from_las (const char *las_header_file,
     }
   }
 
-  // For internal consistency, the size of the image that stores the
-  // data had better be the same as the size of this instance.
+  // For internal consistency, the size of the images that store the
+  // data and the mask had better be the same as the size of this
+  // instance.
   g_assert (self->size_x == self->data->size_x
-	    && self->size_y == self->data->size_y);
+	    && self->size_y == self->data->size_y
+	    && self->size_x == self->invalid_data_mask->size_x
+	    && self->size_y == self->invalid_data_mask->size_y);
 
   return self;
 }
