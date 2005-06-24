@@ -250,6 +250,12 @@ ifeq ($(BK_DEBUG), 1)
   test_coreg: $(OBJS) $(LIBS) test_coreg.o
 	$(CC) $(LDFLAGS) $(patsubst asf_terrain_correct.o, , $(OBJS)) \
               test_coreg.o $(LDLIBS) -o $@
+
+  test_vector_wmc: vector_wmc.o test_vector_wmc.o $(LIBS)
+	$(CC) $(LDFLAGS) vector_wmc.o test_vector_wmc.o $(LDLIBS) -o $@
+
+  test_vector: vector.o test_vector.o $(LIBS)
+	$(CC) $(LDFLAGS) vector.o test_vector.o $(LDLIBS) -o $@
 endif
 
 static_data_file_build_stamp: time_scale_offsets
@@ -295,6 +301,7 @@ $(OBJS): %.o: %.c
 .PHONY: clean
 clean:
 	rm -rf $(OBJS) \
+               *.o \
 	       $(DEPEND_FILES) \
 	       *_stamp \
                bk_debug_*_freeze \
