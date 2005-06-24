@@ -52,6 +52,9 @@ pop_chunk (void)
 static Vector *
 vector_new_uninitialized (void)
 {
+  // This class hasn't been thouroughly tested yet.
+  g_assert_not_reached ();
+
   if ( G_UNLIKELY (memchunk_queue == NULL) ) {
     memchunk_queue = g_queue_new ();
     push_chunk ();
