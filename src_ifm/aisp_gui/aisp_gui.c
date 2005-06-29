@@ -23,6 +23,7 @@
 #endif
 
 GladeXML *glade_xml;
+gboolean user_modified_output_file = FALSE;
 
 /* danger: returns pointer to static data!! */
 static const char * imgloc(char * file)
@@ -269,6 +270,40 @@ set_widget_sensitive(const char * w, gboolean setting)
     gtk_widget_set_sensitive(aisp_main_scrolledwindow, setting);
 }
 
+const gchar *
+update_output_filename(const gchar * input_file_and_path)
+{
+    GtkWidget * output_file_entry =
+	glade_xml_get_widget(glade_xml, "output_file_entry");
+
+    if (user_modified_output_file || strlen(input_file_and_path) == 0) {
+        return gtk_entry_get_text(GTK_ENTRY(output_file_entry));
+    }
+    
+    gchar *output_file_and_path;
+
+    output_file_and_path = 
+      (gchar *) g_malloc(strlen(input_file_and_path) + 32);
+
+    strcpy(output_file_and_path, input_file_and_path);
+
+    char * p = strrchr(input_file_and_path, '.');
+
+    if (p) {
+        gchar * ext = g_strdup(p + 1);
+	*p = '\0';
+	strcat(output_file_and_path, "_cpx.");
+	strcat(output_file_and_path, ext);
+	g_free (ext);
+    } else {
+        strcat(output_file_and_path, "_cpx");
+    }
+
+    gtk_entry_set_text(GTK_ENTRY(output_file_entry), output_file_and_path);
+
+    return output_file_and_path;
+}
+
 void
 update_buttons()
 {
@@ -280,10 +315,13 @@ update_buttons()
 
     set_widget_sensitive("execute_button", strlen(input_file_and_path) > 0);
 
-    gchar * input_file =
-	g_path_get_basename(input_file_and_path);
+    const gchar * output_file_and_path =
+        update_output_filename(input_file_and_path);
 
-    if (strlen(input_file_and_path) == 0 || strlen(input_file) == 0) {
+    gchar * input_file =
+	g_path_get_basename(output_file_and_path);
+
+    if (strlen(output_file_and_path) == 0 || strlen(input_file) == 0) {
 	g_free(input_file);
 	input_file = g_strdup("*");
     } else {
@@ -312,6 +350,13 @@ SIGNAL_CALLBACK void
 on_input_file_entry_changed(GtkEditable *editable, gpointer user_data)
 {
     update_buttons();
+}
+
+SIGNAL_CALLBACK gboolean
+on_output_file_entry_key_press_event(GtkEditable *editable, gpointer user_data)
+{
+    user_modified_output_file = TRUE;
+    return FALSE;
 }
 
 int
@@ -387,8 +432,8 @@ execute()
 	keep_flag(11, 4) |
 	keep_flag(12, 2) |
 	execute_flag("range_complex_multiply", 16384) |
-	execute_flag("azimuth_complex_multiply", 32768) |
-	execute_flag("range_migration", 65536);
+	execute_flag("range_migration", 32768) |
+        execute_flag("azimuth_complex_multiply", 65536);
 
     if (debug_flag == 0)
       debug_flag = 1;
