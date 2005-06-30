@@ -332,8 +332,8 @@ update_buttons()
 
     set_button_text(1, input_file, "_range_raw_t");
     set_button_text(2, input_file, "_range_raw_f");
-    set_button_text(3, input_file, "_range_ref_t");
-    set_button_text(4, input_file, "_range_ref_f");
+    set_button_text(3, "", "range_ref_t");
+    set_button_text(4, "", "range_ref_f");
     set_button_text(5, input_file, "_range_X_f");
     set_button_text(6, input_file, "_az_raw_t");
     set_button_text(7, input_file, "_az_raw_f");
