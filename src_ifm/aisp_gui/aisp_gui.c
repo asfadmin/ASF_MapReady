@@ -154,7 +154,7 @@ on_file_selection_dialog_ok_button_clicked(GtkWidget *w)
 	add_file(*current);
 	++current;
     }
-    
+
     g_strfreev(selections);
     gtk_widget_hide(file_selection_dialog);
 }
@@ -287,7 +287,7 @@ update_output_filename(const gchar * input_file_and_path)
 
     strcpy(output_file_and_path, input_file_and_path);
 
-    char * p = strrchr(input_file_and_path, '.');
+    char * p = strrchr(output_file_and_path, '.');
 
     if (p) {
         gchar * ext = g_strdup(p + 1);
@@ -814,6 +814,258 @@ on_step12_help_button_clicked(GtkWidget *button, gpointer user_data)
   help_text(12);
 }
 
+static void
+hide_doppler_parameters_dialog ()
+{
+    GtkWidget *doppler_parameters_dialog =
+	glade_xml_get_widget(glade_xml, "doppler_parameters_dialog");
+ 
+    gtk_widget_hide(doppler_parameters_dialog);
+}
+
+SIGNAL_CALLBACK void
+on_doppler_parameters_dialog_cancel_button_clicked(GtkWidget *w)
+{
+    hide_doppler_parameters_dialog ();
+}
+
+SIGNAL_CALLBACK gboolean
+on_doppler_parameters_dialog_delete_event(GtkWidget *w)
+{
+    hide_doppler_parameters_dialog ();
+    return TRUE;
+}
+ 
+SIGNAL_CALLBACK gboolean
+on_doppler_parameters_dialog_destroy_event(GtkWidget *w)
+{
+    hide_doppler_parameters_dialog ();
+    return TRUE;
+}
+
+SIGNAL_CALLBACK gboolean
+on_doppler_parameters_dialog_destroy(GtkWidget *w)
+{
+    hide_file_selection_dialog ();
+    return TRUE;
+}
+
+gchar *
+change_extension(const gchar * file, const gchar * ext)
+{
+    gchar * replaced = (gchar *)
+        g_malloc(sizeof(gchar) * (strlen(file) + strlen(ext) + 10));
+
+    strcpy(replaced, file);
+    char * p = strrchr(replaced, '.');
+
+    if (p)
+    {
+        *p = '\0';
+    }
+
+    strcat(replaced, ".");
+    strcat(replaced, ext);
+
+    return replaced;
+}
+
+static void readline(FILE * f, gchar * buffer, size_t n)
+{
+    gchar * p;
+    gchar * newline;
+
+    p = fgets(buffer, n, f);
+
+    if (!p)
+    {
+        strcpy(buffer, "");
+    }
+    else
+    {
+        newline = strrchr(buffer, '\n');
+	if (newline)
+	    *newline = '\0';
+    }
+}
+
+static void
+read_doppler_parameters(const gchar * filename, double *constant,
+			double *linear, double *quadratic)
+{
+    FILE * fp = fopen(filename, "rt");
+    gboolean found = FALSE;
+
+    while (fp && !feof(fp))
+    {
+        gchar buf[256];
+        readline(fp, buf, 256);
+
+	char * p = strstr(buf, "Dopp quad coefs(Hz/prf)");
+	if (p)
+	{
+	    int n = sscanf(buf, "%lg %lg %lg", constant, linear, quadratic);
+	    if (n == 3) {
+	        found = TRUE;
+		break;
+	    }
+	}
+    }
+
+    fclose(fp);
+
+    if (!found)
+    {
+        *constant = 0.0;
+	*linear = 0.0;
+	*quadratic = 0.0;
+    }
+}
+
+static gchar *
+generate_org_filename(const gchar * filename)
+{
+    gchar * org_filename = (gchar *)
+        g_malloc(sizeof(gchar) * (strlen(filename) + 5));
+
+    strcpy(org_filename, filename);
+    strcat(org_filename, ".org");
+
+    return org_filename;
+}
+
+static gchar *
+get_in_file_name()
+{
+    GtkWidget * input_file_entry =
+	glade_xml_get_widget (glade_xml, "input_file_entry");
+
+    const gchar * input_file =
+        gtk_entry_get_text(GTK_ENTRY(input_file_entry));
+
+    gchar * in_file = change_extension(input_file, "in");
+
+    return in_file;
+}
+
+static void
+generate_org_file_if_needed()
+{
+    const gchar * filename = get_in_file_name();
+
+    gchar * org_filename = generate_org_filename(filename);
+
+    if (!g_file_test(org_filename, G_FILE_TEST_EXISTS ))
+    {
+        gchar buf[1024];
+	sprintf(buf, "cp %s %s\n", filename, org_filename);
+	system(buf);
+    }
+
+    g_free(org_filename);
+}
+
+static void
+write_doppler_parameters(const gchar * filename, double constant,
+			 double linear, double quadratic)
+{
+    gchar * org_filename = generate_org_filename(filename);
+ 
+    FILE * ifp = fopen(org_filename, "rt");
+    FILE * ofp = fopen(filename, "wt");
+
+    while (ifp && !feof(ifp))
+    {
+        gchar buf[256];
+        readline(ifp, buf, 256);
+
+	char * p = strstr(buf, "Dopp quad coefs(Hz/prf)");
+	if (p)
+	{
+	    fprintf(ofp, "%g %g %g\t\t! Dopp quad coefs(Hz/prf)\n",
+		    constant, linear, quadratic); 
+	}
+	else
+	{
+	    fprintf(ofp, "%s\n", buf);
+	}
+    }
+
+    fclose(ifp);
+    fclose(ofp);
+}
+
+static void
+set_entry_with_double_value(const gchar * entry_name, double value)
+{
+    gchar s[64];
+    sprintf(s, "%g", value);
+
+    GtkWidget * w = glade_xml_get_widget (glade_xml, entry_name);
+    gtk_entry_set_text(GTK_ENTRY(w), s);
+}
+
+SIGNAL_CALLBACK void
+on_edit_doppler_parameters_button_clicked(GtkWidget *w)
+{
+    GtkWidget * doppler_parameters_dialog =
+	glade_xml_get_widget (glade_xml, "doppler_parameters_dialog");
+
+    gtk_widget_show (doppler_parameters_dialog);
+
+    gchar * in_file = get_in_file_name();
+
+    double constant, linear, quadratic;
+    read_doppler_parameters(in_file, &constant, &linear, &quadratic);
+
+    set_entry_with_double_value("constant_entry", constant);
+    set_entry_with_double_value("linear_entry", linear);
+    set_entry_with_double_value("quadratic_entry", quadratic);
+
+    g_free(in_file);
+}
+
+static void
+get_entry_with_double_value(const char * entry_name, double * value)
+{
+    GtkWidget * w = glade_xml_get_widget (glade_xml, entry_name);
+    const gchar * s = gtk_entry_get_text(GTK_ENTRY(w));
+    sscanf(s, "%lg", value);
+}
+
+SIGNAL_CALLBACK void
+on_doppler_parameters_dialog_ok_button_clicked(GtkWidget *w)
+{
+    generate_org_file_if_needed();
+
+    double constant, linear, quadratic;
+    get_entry_with_double_value("constant_entry", &constant);
+    get_entry_with_double_value("linear_entry", &linear);
+    get_entry_with_double_value("quadratic_entry", &quadratic);
+
+    const gchar * filename = get_in_file_name();
+    write_doppler_parameters(filename, constant, linear, quadratic);
+
+    hide_doppler_parameters_dialog();
+}
+
+SIGNAL_CALLBACK void
+on_doppler_parameters_dialog_restore_button_clicked(GtkWidget *w)
+{
+    gchar * in_file = get_in_file_name();
+    gchar * org_file = generate_org_filename(in_file);
+    
+    double constant, linear, quadratic;
+    read_doppler_parameters(org_file, &constant, &linear, &quadratic);
+
+    set_entry_with_double_value("constant_entry", constant);
+    set_entry_with_double_value("linear_entry", linear);
+    set_entry_with_double_value("quadratic_entry", quadratic);
+
+    g_free(in_file);
+    g_free(org_file);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -828,7 +1080,7 @@ main(int argc, char **argv)
     g_free(glade_xml_file);
 
     if (argc > 1)
-      add_file(argv[1]);
+        add_file(argv[1]);
 
     set_images();
     set_toggles();
