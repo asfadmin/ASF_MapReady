@@ -12,7 +12,6 @@
 
 #include "find_in_path.h"
 
-
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
 #  if defined(win32)
@@ -21,6 +20,106 @@
 #    define SIGNAL_CALLBACK
 #  endif
 #endif
+
+/* for win32, set the font to the standard windows one */
+#if defined(win32)
+#include <pango/pango.h>
+#include <Windows.h>
+
+static char appfontname[128] = "tahoma 8"; /* fallback value */
+
+static void set_app_font (const char *fontname)
+{
+    GtkSettings *settings;
+
+    if (fontname != NULL && *fontname == 0) return;
+
+    settings = gtk_settings_get_default();
+
+    if (fontname == NULL) {
+	g_object_set(G_OBJECT(settings), "gtk-font-name", appfontname, NULL);
+    } else {
+	GtkWidget *w;
+	PangoFontDescription *pfd;
+	PangoContext *pc;
+	PangoFont *pfont;
+
+	w = gtk_label_new(NULL);
+	pfd = pango_font_description_from_string(fontname);
+	pc = gtk_widget_get_pango_context(w);
+	pfont = pango_context_load_font(pc, pfd);
+
+	if (pfont != NULL) {
+	    strcpy(appfontname, fontname);
+	    g_object_set(G_OBJECT(settings), "gtk-font-name", appfontname,
+			 NULL);
+	}
+
+	gtk_widget_destroy(w);
+	pango_font_description_free(pfd);
+    }
+}
+
+char *default_windows_menu_fontspec (void)
+{
+    gchar *fontspec = NULL;
+    NONCLIENTMETRICS ncm;
+
+    memset(&ncm, 0, sizeof ncm);
+    ncm.cbSize = sizeof ncm;
+
+    if (SystemParametersInfo(SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0)) {
+	HDC screen = GetDC(0);
+	double y_scale = 72.0 / GetDeviceCaps(screen, LOGPIXELSY);
+	int point_size = (int) (ncm.lfMenuFont.lfHeight * y_scale);
+
+	if (point_size < 0) point_size = -point_size;
+	fontspec = g_strdup_printf("%s %d", ncm.lfMenuFont.lfFaceName,
+				   point_size);
+	ReleaseDC(0, screen);
+    }
+
+    return fontspec;
+}
+
+static void try_to_get_windows_font (void)
+{
+    gchar *fontspec = default_windows_menu_fontspec();
+
+    if (fontspec != NULL) {
+	int match = 0;
+	PangoFontDescription *pfd;
+	PangoFont *pfont;
+	PangoContext *pc;
+	GtkWidget *w;
+
+	pfd = pango_font_description_from_string(fontspec);
+
+	w = gtk_label_new(NULL);
+	pc = gtk_widget_get_pango_context(w);
+	pfont = pango_context_load_font(pc, pfd);
+	match = (pfont != NULL);
+
+	pango_font_description_free(pfd);
+	g_object_unref(G_OBJECT(pc));
+	gtk_widget_destroy(w);
+
+	if (match) set_app_font(fontspec);
+	g_free(fontspec);
+    }
+}
+
+void set_font ()
+{
+    try_to_get_windows_font();
+}
+
+#else /* defined(win32) */
+
+/* on unix, GTK will select the appropriate fonts */
+void set_font () {}
+
+#endif /* defined(win32) */
 
 GladeXML *glade_xml;
 gboolean user_modified_output_file = FALSE;
@@ -80,10 +179,73 @@ static void set_images()
 SIGNAL_CALLBACK void
 on_input_file_browse_button_clicked(GtkWidget *button)
 {
+#if defined(win32)
+  OPENFILENAME of;
+  int retval;
+  char fname[1024];
+
+  fname[0] = '\0';
+
+  memset(&of, 0, sizeof(of));
+
+#ifdef OPENFILENAME_SIZE_VERSION_400
+  of.lStructSize = OPENFILENAME_SIZE_VERSION_400;
+#else
+  of.lStructSize = sizeof(of);
+#endif
+
+  of.hwndOwner = NULL;
+  of.lpstrFilter = //"CEOS Level 1 Data Files (*.D)\0*.D\0"
+                   "CEOS Level 0 Data Files (*.raw)\0*.raw\0"
+                   //"STF Files (*.000)\0*.000\0"
+                   //"Complex Files (*.cpx)\0*.cpx\0"
+                   "All Files\0*\0";
+  of.lpstrCustomFilter = NULL;
+  of.nFilterIndex = 1;
+  of.lpstrFile = fname;
+  of.nMaxFile = sizeof(fname);
+  of.lpstrFileTitle = NULL;
+  of.lpstrInitialDir = ".";
+  of.lpstrTitle = "Select File";
+  of.lpstrDefExt = NULL;
+  of.Flags = OFN_HIDEREADONLY | OFN_EXPLORER;
+  
+  retval = GetOpenFileName(&of);
+  
+  if (!retval) {
+    if (CommDlgExtendedError())
+      message_box("File dialog box error");
+    return;
+  }
+
+  /* the returned "fname" has the following form:            */
+  /*   <directory>\0<first file>\0<second file>\0<third ...  */ 
+  char * dir = strdup(fname);
+  char * p = fname + strlen(dir) + 1;
+
+  if (*p) { 
+    while (*p) {
+      char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
+      sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
+      printf("Adding: %s\n", dir_and_file);
+      add_file(dir_and_file);
+      p += strlen(p) + 1;
+      free(dir_and_file);
+    }
+  } else {
+    add_file(dir);
+  }
+
+  free(dir);
+
+#else
+
     GtkWidget * file_selection_dialog =
 	glade_xml_get_widget (glade_xml, "file_selection_dialog");
 
     gtk_widget_show (file_selection_dialog);
+
+#endif
 }
 
 static void
@@ -1082,6 +1244,7 @@ main(int argc, char **argv)
     if (argc > 1)
         add_file(argv[1]);
 
+    set_font();
     set_images();
     set_toggles();
     help_text(1);
