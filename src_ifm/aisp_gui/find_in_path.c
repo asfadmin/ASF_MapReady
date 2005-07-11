@@ -17,10 +17,10 @@ find_in_path(gchar * file)
   int len, pathlen;
 
   /* first see if file is in current directory */
-  if (g_file_test(file, G_FILE_TEST_EXISTS))
-  {
-    return g_strdup(file);
-  }
+//  if (g_file_test(file, G_FILE_TEST_EXISTS))
+//  {
+//    return g_strdup(file);
+//  }
 
   path = (gchar *)g_getenv("PATH");
 

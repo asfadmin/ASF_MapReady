@@ -176,6 +176,17 @@ static void set_images()
       set_help_image(i);
 }
 
+static void
+add_file (const gchar * filename)
+{
+    GtkWidget *input_file_entry;
+
+    input_file_entry =
+	glade_xml_get_widget(glade_xml, "input_file_entry");
+
+    gtk_entry_set_text(GTK_ENTRY(input_file_entry), filename);
+}
+
 SIGNAL_CALLBACK void
 on_input_file_browse_button_clicked(GtkWidget *button)
 {
@@ -214,7 +225,7 @@ on_input_file_browse_button_clicked(GtkWidget *button)
   
   if (!retval) {
     if (CommDlgExtendedError())
-      message_box("File dialog box error");
+      printf("File dialog box error");
     return;
   }
 
@@ -226,7 +237,7 @@ on_input_file_browse_button_clicked(GtkWidget *button)
   if (*p) { 
     while (*p) {
       char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
-      sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
+      sprintf(dir_and_file, "%s/%s", dir, p);
       printf("Adding: %s\n", dir_and_file);
       add_file(dir_and_file);
       p += strlen(p) + 1;
@@ -282,17 +293,6 @@ on_file_selection_dialog_destroy(GtkWidget *w)
 {
     hide_file_selection_dialog ();
     return TRUE;
-}
-
-static void
-add_file (const gchar * filename)
-{
-    GtkWidget *input_file_entry;
-
-    input_file_entry =
-	glade_xml_get_widget(glade_xml, "input_file_entry");
-
-    gtk_entry_set_text(GTK_ENTRY(input_file_entry), filename);
 }
 
 SIGNAL_CALLBACK void
@@ -439,7 +439,9 @@ update_output_filename(const gchar * input_file_and_path)
 	glade_xml_get_widget(glade_xml, "output_file_entry");
 
     if (user_modified_output_file || strlen(input_file_and_path) == 0) {
-        return gtk_entry_get_text(GTK_ENTRY(output_file_entry));
+        const gchar * r = gtk_entry_get_text(GTK_ENTRY(output_file_entry));
+        if (!r) r = "";
+        return r;
     }
     
     gchar *output_file_and_path;
@@ -475,7 +477,11 @@ update_buttons()
     const gchar * input_file_and_path =
 	gtk_entry_get_text(GTK_ENTRY(input_file_entry));
 
-    set_widget_sensitive("execute_button", strlen(input_file_and_path) > 0);
+    if (!input_file_and_path)
+        input_file_and_path = "";
+
+    set_widget_sensitive("execute_button", 
+        strlen(input_file_and_path) > 0);
 
     const gchar * output_file_and_path =
         update_output_filename(input_file_and_path);
@@ -1234,7 +1240,6 @@ main(int argc, char **argv)
     gchar *glade_xml_file;
 
     gtk_init(&argc, &argv);
-    // set_font();
 
     glade_xml_file = (gchar *) find_in_path("aisp_gui.glade");
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
@@ -1250,8 +1255,11 @@ main(int argc, char **argv)
     help_text(1);
     update_buttons();
 
+    printf("1\n");
     glade_xml_signal_autoconnect(glade_xml);
+    printf("2\n");
     gtk_main ();
+    printf("3\n");
     
     exit (EXIT_SUCCESS);
 }

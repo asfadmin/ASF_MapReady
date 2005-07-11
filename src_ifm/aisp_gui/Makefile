@@ -3,6 +3,39 @@ include ../../make_support/system_rules
 TARGET = aisp_gui
 SRCS = aisp_gui.c find_in_path.c
 
+# different procedures for win/unix
+ifeq ($(SYS),win32)
+
+GCC = gcc
+GTK_DIR = ../../src/asf_convert_gui/gtkwin32
+GTK_ZIP = ../../src/asf_convert_gui/gtkwin32zip
+
+GTK_INC = $(GTK_DIR)/include
+GTK_LIB = $(GTK_DIR)/lib
+
+ASF_LIB = ../../lib/win32
+
+INCLUDE = -I$(GTK_INC) -I$(GTK_INC)/glib-2.0 -I$(GTK_INC)/pango-1.0 -I$(GTK_INC)/gtk-2.0 -I$(GTK_INC)/freetype2/freetype -I$(GTK_LIB)/glib-2.0/include -I$(GTK_LIB)/gtk-2.0/include -I$(GTK_INC)/atk-1.0 -I$(GTK_INC)/libglade-2.0 -I$(ASF_INCLUDE_DIR)
+
+LIB = $(LDFLAGS) -L$(GTK_LIB) -L$(GTK_LIB)/glib-2.0 -L$(GTK_LIB)/gtk-2.0 -L$(GTK_LIB)/pango -L$(GTK_LIB)/libglade -llibgthread-2.0 -lpthread -lintl -liconv -lm -lgtk-win32-2.0 -lgobject-2.0 -llibglade-2.0 -llibgdk_pixbuf-2.0 -lpango-1.0 -L/usr/lib/w32api -lgdi32 -llibgdk-win32-2.0 $(ASF_LIB)/libasf_raster.a $(ASF_LIB)/libasf_meta.a $(ASF_LIB)/libasf.a $(GSL_LIBS) $(ASF_LIB)/libjpeg.a -lglib-2.0 -lcomdlg32
+
+CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
+
+$(TARGET).exe: $(TARGET).c
+	if [ ! -f $(GTK_DIR)/README.txt ]; then\
+	  for f in $(GTK_ZIP)/*.zip; do( yes| unzip $$f -d $(GTK_DIR) ); done;\
+	  chmod +x $(GTK_DIR)/bin/*.dll; \
+	fi
+	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
+	mv $(TARGET).exe ../../bin/win32
+	cp $(TARGET).glade ../../bin/win32
+#	cp $(TARGET).ico $(BINDIR)
+
+clean:
+	rm $(TARGET).exe core.*
+
+else
+
 CFLAGS = -Wall -O0 -g $(shell /usr/bin/pkg-config --cflags gtk+-2.0) \
          $(shell /usr/bin/pkg-config --cflags libglade-2.0) \
          -I$(ASF_INCLUDE_DIR)
@@ -19,8 +52,11 @@ default: $(OBJS)
 	cp $(TARGET).glade $(BINDIR)
 #	cp $(TARGET).ico $(BINDIR)
 
-%.c: %.h
-
 clean:
 	rm -f *.o $(BINDIR)/$(TARGET)*
+
+endif
+
+%.c: %.h
+
 
