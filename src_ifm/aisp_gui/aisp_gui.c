@@ -128,6 +128,9 @@ gboolean user_modified_output_file = FALSE;
 static const char * imgloc(char * file)
 {
     static char loc[1024];
+#if defined(win32)
+    strcpy(loc, file);
+#else
     gchar * tmp = find_in_path(file);
     if (tmp) {
       strcpy(loc, tmp);
@@ -136,6 +139,24 @@ static const char * imgloc(char * file)
       strcpy(loc, file);
     }
 
+    tmp = g_strdup(loc);
+
+    int i, j;
+    for (i = 0, j = 0; i <= strlen(tmp); ++i, ++j) {
+      if (tmp[i] == ' ') {
+          loc[j++] = '\\';
+          loc[j] = ' ';
+      } else if (tmp[i] == '\\') {
+          loc[j] = '/';
+      } else {
+          loc[j] = tmp[i];
+      }
+    }
+
+    g_free(tmp);
+#endif
+ 
+    printf("Loc: %s\n", loc);
     return loc;
 }
 
@@ -1255,11 +1276,8 @@ main(int argc, char **argv)
     help_text(1);
     update_buttons();
 
-    printf("1\n");
     glade_xml_signal_autoconnect(glade_xml);
-    printf("2\n");
     gtk_main ();
-    printf("3\n");
     
     exit (EXIT_SUCCESS);
 }
