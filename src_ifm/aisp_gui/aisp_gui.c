@@ -128,9 +128,6 @@ gboolean user_modified_output_file = FALSE;
 static const char * imgloc(char * file)
 {
     static char loc[1024];
-#if defined(win32)
-    strcpy(loc, file);
-#else
     gchar * tmp = find_in_path(file);
     if (tmp) {
       strcpy(loc, tmp);
@@ -139,23 +136,6 @@ static const char * imgloc(char * file)
       strcpy(loc, file);
     }
 
-    tmp = g_strdup(loc);
-
-    int i, j;
-    for (i = 0, j = 0; i <= strlen(tmp); ++i, ++j) {
-      if (tmp[i] == ' ') {
-          loc[j++] = '\\';
-          loc[j] = ' ';
-      } else if (tmp[i] == '\\') {
-          loc[j] = '/';
-      } else {
-          loc[j] = tmp[i];
-      }
-    }
-
-    g_free(tmp);
-#endif
- 
     printf("Loc: %s\n", loc);
     return loc;
 }
@@ -227,10 +207,7 @@ on_input_file_browse_button_clicked(GtkWidget *button)
 #endif
 
   of.hwndOwner = NULL;
-  of.lpstrFilter = //"CEOS Level 1 Data Files (*.D)\0*.D\0"
-                   "CEOS Level 0 Data Files (*.raw)\0*.raw\0"
-                   //"STF Files (*.000)\0*.000\0"
-                   //"Complex Files (*.cpx)\0*.cpx\0"
+  of.lpstrFilter = "ASF Internal Format (*.raw)\0*.raw\0"
                    "All Files\0*\0";
   of.lpstrCustomFilter = NULL;
   of.nFilterIndex = 1;
@@ -250,8 +227,13 @@ on_input_file_browse_button_clicked(GtkWidget *button)
     return;
   }
 
-  /* the returned "fname" has the following form:            */
-  /*   <directory>\0<first file>\0<second file>\0<third ...  */ 
+  add_file(fname);
+
+  /* leaving this code for multiple filenames here ... 
+    we may wish to use it again at some point 
+
+  // the returned "fname" has the following form:            
+  //   <directory>\0<first file>\0<second file>\0<third ...  
   char * dir = strdup(fname);
   char * p = fname + strlen(dir) + 1;
 
@@ -269,6 +251,7 @@ on_input_file_browse_button_clicked(GtkWidget *button)
   }
 
   free(dir);
+  */
 
 #else
 
@@ -1147,7 +1130,12 @@ generate_org_file_if_needed()
     if (!g_file_test(org_filename, G_FILE_TEST_EXISTS ))
     {
         gchar buf[1024];
-	sprintf(buf, "cp %s %s\n", filename, org_filename);
+#ifdef win32
+	sprintf(buf, "/bin/cp.exe \"%s\" \"%s\"", filename, org_filename);
+#else
+	sprintf(buf, "cp \"%s\" \"%s\"", filename, org_filename);
+#endif
+        printf("%s\n", buf);
 	system(buf);
     }
 
@@ -1203,6 +1191,7 @@ on_edit_doppler_parameters_button_clicked(GtkWidget *w)
     gtk_widget_show (doppler_parameters_dialog);
 
     gchar * in_file = get_in_file_name();
+    printf("F: %s\n", in_file);
 
     double constant, linear, quadratic;
     read_doppler_parameters(in_file, &constant, &linear, &quadratic);
