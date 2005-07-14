@@ -1131,12 +1131,27 @@ generate_org_file_if_needed()
     {
         gchar buf[1024];
 #ifdef win32
-	sprintf(buf, "/bin/cp.exe \"%s\" \"%s\"", filename, org_filename);
+	/* on windows, we seem to have to brute force the file copy */
+	FILE * in = fopen(filename, "rt");
+	FILE * out = fopen(org_filename, "wt");
+
+	if (!in || !out) {
+	  printf("Error creating .org file.\n");
+	}
+	else
+	{
+	  while (!foef(in)) {
+	    readline(in, buf, 1024);
+	    fprintf(out, "%s\n", buf);
+	  }
+	}
+
+	if (in) fclose(in);
+	if (out) fclose(out);
 #else
 	sprintf(buf, "cp \"%s\" \"%s\"", filename, org_filename);
-#endif
-        printf("%s\n", buf);
 	system(buf);
+#endif
     }
 
     g_free(org_filename);
@@ -1168,8 +1183,8 @@ write_doppler_parameters(const gchar * filename, double constant,
 	}
     }
 
-    fclose(ifp);
-    fclose(ofp);
+    if (ifp) fclose(ifp);
+    if (ofp) fclose(ofp);
 }
 
 static void
