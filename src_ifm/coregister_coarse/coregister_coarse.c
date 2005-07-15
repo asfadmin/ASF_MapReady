@@ -215,14 +215,14 @@ void CreateFicoControl(char *ctrl,char *img1,char *img2, int multiLook)
 		}
 		execute(cmd);
 	}
-	sprintf(cmd,"fftMatch -m %s -c reg_cor.img %s_amp.img %s_amp.img",offsetF,img1,img2);
+	sprintf(cmd,"fftMatch -m %s %s_amp.img %s_amp.img",offsetF,img1,img2);
 	if (logflag) {
 	  FCLOSE(fLog);
-	  sprintf(cmd,"fftMatch -m %s -c reg_cor.img -log %s %s_amp.img %s_amp.img",offsetF,logFile,img1,img2);
+	  sprintf(cmd,"fftMatch -m %s -log %s %s_amp.img %s_amp.img",offsetF,logFile,img1,img2);
 	}
-	if (quietflag) sprintf(cmd,"fftMatch -m %s -c reg_cor.img -quiet %s_amp.img %s_amp.img",offsetF,img1,img2);
+	if (quietflag) sprintf(cmd,"fftMatch -m %s -quiet %s_amp.img %s_amp.img",offsetF,img1,img2);
 	if (logflag && quietflag)
-	  sprintf(cmd,"fftMatch -m %s -c reg_cor.img -log %s -quiet %s_amp.img %s_amp.img",offsetF,logFile,img1,img2);
+	  sprintf(cmd,"fftMatch -m %s -log %s -quiet %s_amp.img %s_amp.img",offsetF,logFile,img1,img2);
 	execute(cmd);
 	if (logflag) fLog = FOPEN(logFile, "a");
 	f=fopen(offsetF,"r");
