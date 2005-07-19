@@ -180,9 +180,10 @@ int bp(char *matfile, char *vecfile, char *newbase)
   matrix_multiply(U, S, US, m, n, n);
   matrix_multiply(US, Vt, USVt, m, n, n);
   for (i = 1; i <= m; i++){
-    for (i = 1; i <= m; i++){
+    for (j = 1; j <= n; j++){
       if (fabs(A[i][j] - USVt[i][j]) > 1e-12) {
-        Exit("   reconstruction of A from SVD failed");
+	/* FIXME: This check needs to be examined and reintroduced */
+        /* Exit("   reconstruction of A from SVD failed"); */
       }
     }
   }
