@@ -90,12 +90,12 @@ int searchX,searchY;         /*Maximum distance to search for peak*/
 /**** PROTOTYPES ****/
 void findPeak(float *corrImage,float *dx,float *dy,float *doubt);
 void topOffPeak(float *peaks,int i,int j,int maxI,float *dx,float *dy);
-void las_readImg(FILE *in,const struct DDR *ddr, 
+void readImage(FILE *in,meta_parameters *meta, 
 	int startX,int startY,int delX,int delY,
 	float add,float *sum, float *dest);
 /*void dump(float *img,char *name);*/
-void las_fftProd(FILE *in1F,const struct DDR *inDDR1,
-		FILE *in2F,const struct DDR *inDDR2,float **corrImage);
+void fftProd(FILE *in1F,meta_parameters *metaMaster,
+		FILE *in2F,meta_parameters *metaSlave,float **corrImage);
 void status(char *message);
 void usage(char *name);
 
@@ -108,6 +108,7 @@ int main(int argc,char **argv)
 	char *corrFile=NULL,*descFile=NULL,*inFile1,*inFile2;
 	FILE *corrF=NULL,*descF,*in1F,*in2F;
 	struct DDR inDDR1,inDDR2,outDDR;
+	meta_parameters *metaMaster, *metaSlave, *metaOut;
 	extern int optind;            /* argv index of the next argument */
 	extern char *optarg;          /* current argv[] */
 	int c;                        /* option letter from getopt() */
@@ -173,12 +174,12 @@ int main(int argc,char **argv)
 Open input files.*/
 	in1F=fopenImage(inFile1,"rb");
 	in2F=fopenImage(inFile2,"rb");
-	c_getddr(inFile1,&inDDR1);
-	c_getddr(inFile2,&inDDR2);
+	metaMaster = meta_read(inFile1);
+	metaSlave = meta_read(inFile2);
 	
 /*Round to find nearest power of 2 for FFT size.*/
-	mX=(int)(log((float)(inDDR1.ns))/log(2.0)+0.5);
-	mY=(int)(log((float)(inDDR1.nl))/log(2.0)+0.5);
+	mX=(int)(log((float)(metaMaster->general->sample_count))/log(2.0)+0.5);
+	mY=(int)(log((float)(metaMaster->general->line_count))/log(2.0)+0.5);
 
 	/* Keep size of fft's reasonable */	
 	if (mX > 13) mX = 13;
@@ -193,28 +194,28 @@ Open input files.*/
 		"   You may want to try smaller images.\n",ns*nl*2*sizeof(float)/(1024*1024));
 	
 /*Set up search chip size.*/
-	chipDX=MIN(inDDR2.ns,ns)*3/4;
-	chipDY=MIN(inDDR2.nl,nl)*3/4;
-	chipX=MIN(inDDR2.ns,ns)/8;
-	chipY=MIN(inDDR2.nl,nl)/8;
-	searchX=MIN(inDDR2.ns,ns)*3/8;
-	searchY=MIN(inDDR2.nl,nl)*3/8;
+	chipDX=MIN(metaSlave->general->sample_count,ns)*3/4;
+	chipDY=MIN(metaSlave->general->line_count,nl)*3/4;
+	chipX=MIN(metaSlave->general->sample_count,ns)/8;
+	chipY=MIN(metaSlave->general->line_count,nl)/8;
+	searchX=MIN(metaSlave->general->sample_count,ns)*3/8;
+	searchY=MIN(metaSlave->general->line_count,nl)*3/8;
 	
 	if (!quietflag) printf("\tChip at %dx%d, size=%dx%d\n",chipX,chipY,chipDX,chipDY);
 	
 /*Optionally open the correlation image file.*/
 	if (corrFile)
 	{
-		outDDR=inDDR1;
-		outDDR.dtype=4;
-		outDDR.nl=2*searchY;
-		outDDR.ns=2*searchX;
+		metaOut = meta_read(inFile1);
+		metaOut->general->data_type= REAL32;
+		metaOut->general->line_count = 2*searchY;
+		metaOut->general->sample_count = 2*searchX;
 		corrF=fopenImage(corrFile,"w");
-		c_putddr(corrFile,&outDDR);
+		meta_write(metaOut, corrFile);
 	}
 	
 /*Perform the correlation.*/
-	las_fftProd(in1F,&inDDR1,in2F,&inDDR2,&corrImage);
+	fftProd(in1F,metaMaster,in2F,metaSlave,&corrImage);
 
 /*Optionally write out correlation image.*/
 	if (corrFile)
@@ -227,7 +228,7 @@ Open input files.*/
 			int outX=0;
 			for (x=chipX-searchX;x<chipX+searchX;x++)
 				outBuf[outX++]=corrImage[index+modX(x)];
-			putFloatLine(corrF,&outDDR,outY++,outBuf);
+			put_float_line(corrF,metaOut,outY++,outBuf);
 		}
 		FREE(outBuf);
 	}
@@ -329,18 +330,18 @@ into the (nl x ns) float array dest.  Reads a total of
 (delY x delX) pixels into topleft corner of dest, starting
 at (startY , startX) in the input file.
 */
-void las_readImg(FILE *in,const struct DDR *ddr, 
+void readImage(FILE *in,meta_parameters *meta, 
 	int startX,int startY,int delX,int delY,
 	float add,float *sum, float *dest)
 {
-	float *inBuf=(float *)MALLOC(sizeof(float)*(ddr->ns));
+	float *inBuf=(float *)MALLOC(sizeof(float)*(meta->general->sample_count));
 	register int x,y,l;
 	double tempSum=0;
 /*Read portion of input image into topleft of dest array.*/
 	for (y=0;y<delY;y++)
 	{
 		l=ns*y;
-		getFloatLine(in,ddr,startY+y,inBuf);
+		get_float_line(in,meta,startY+y,inBuf);
 		if (sum==NULL)
 			for (x=0;x<delX;x++)
 				dest[l+x]=inBuf[startX+x]+add;
@@ -382,8 +383,8 @@ void dump(float *img,char *name)
 
 /* las_fftProd: reads both given files, and correlates them into the 
 created outReal (nl x ns) float array.*/
-void las_fftProd(FILE *in1F,const struct DDR *inDDR1,
-		FILE *in2F,const struct DDR *inDDR2,float *outReal[])
+void fftProd(FILE *in1F,meta_parameters *metaMaster,
+		FILE *in2F,meta_parameters *metaSlave,float *outReal[])
 {
 	float scaleFact=1.0/(chipDX*chipDY);
 	register float *in1,*in2,*out;
@@ -397,7 +398,7 @@ void las_fftProd(FILE *in1F,const struct DDR *inDDR1,
 	
 /*Read image 2 (chip)*/
 	if (!quietflag) status("Reading Image 2");
-	las_readImg(in2F,inDDR2,
+	readImage(in2F,metaSlave,
 		chipX,chipY,chipDX,chipDY,
 		0.0,&aveChip,in2);
 /*	dump(in2,"in2_in");*/
@@ -419,8 +420,9 @@ void las_fftProd(FILE *in1F,const struct DDR *inDDR1,
 
 /*Read image 1: Much easier, now that we know the average brightness. */
 	if (!quietflag) status("Reading Image 1");
-	las_readImg(in1F,inDDR1,
-		0,0,MIN(inDDR1->ns,ns),MIN(inDDR1->nl,nl),
+	readImage(in1F,metaMaster,
+		0,0,MIN(metaMaster->general->sample_count,ns),
+		MIN(metaMaster->general->line_count,nl),
 		aveChip,NULL,in1);
 /*	dump(in1,"in1_in");*/
 
