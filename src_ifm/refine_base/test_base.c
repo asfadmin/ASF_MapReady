@@ -27,7 +27,7 @@ int test_base(char *basefile, char *matfile, char *vecfile)
   A   = dmatrix(1, m, 1, n);
   b   = dvector(1, m);
   x   = dvector(1, n);
-  Ax  = dvector(1, n);
+  Ax  = dvector(1, m);
 
   /* read data */
 /*  printf("Reading MatrixA from file %s\n",matfile);*/
