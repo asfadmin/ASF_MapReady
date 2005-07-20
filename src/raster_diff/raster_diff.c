@@ -152,7 +152,7 @@ int main(int argc, char **argv)
 /* If user wants a diff image, prepare it */
 	if (diff_file_name)
 	{
-		diff_meta = meta_copy(meta1);
+		diff_meta = meta_read(in_file_name1);
 		if (diff_meta->general->data_type == BYTE) {
 			diff_meta->general->data_type = INTEGER16;
 		}
