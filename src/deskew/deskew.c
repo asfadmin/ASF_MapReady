@@ -66,92 +66,88 @@ BUGS:
 
 int main(int argc,char *argv[])
 {
-	double	yaw, look, fac;
-	struct   DDR       ddr;         /* ddr structure                  */
-	int      np, nl,                /* in number of pixels,lines      */
-	i, line, out_line;
-	/*char     tfile[256];*/
-	FILE        *fpi, *fpo;
-	unsigned char *ibuf;
-	unsigned char *obuf;
-	float	*skew;
-	int *lower;
-	char		*infile,*inmeta, *outfile,*outmeta;
-	
-	if (argc != 4)
-	{ 
-	  printf("\nUsage: %s <infile> <inmeta> <outfile> <outmeta>\n",argv[0]);
-	  printf("       <infile> 	input file name (.img,.ddr)\n");
-	  printf("       <inmeta>   input image metadata\n");
-	  printf("       <outfile>  output file name (.img,.ddr)\n");
-	  printf("       <outmeta>  output image metadata (.meta)\n");
-	  printf("\n"
-	         "Removes doppler skew from image.\n");
-	  printf("Version %.2f, ASF SAR TOOLS\n\n",VERSION);
-	  exit(1);
-	}
-	infile=argv[1];
-	inmeta=argv[2];
-	outfile=argv[3];
-	outmeta=argv[4];
-	c_getddr(infile, &ddr); 
-	nl = ddr.nl; np = ddr.ns;
-	c_putddr(outfile,&ddr);
-	
+  double	yaw, look, fac;
+  meta_parameters *meta_img;
+  int      np, nl,                /* in number of pixels,lines      */
+    i, line, out_line;
+  /*char     tfile[256];*/
+  FILE        *fpi, *fpo;
+  float *ibuf, *obuf;
+  float	*skew;
+  int *lower;
+  char infile[255], inmeta[255], outfile[255], outmeta[255];
+  
+  if (argc != 3)
+    { 
+      printf("\nUsage: %s <infile> <outfile>\n",argv[0]);
+      printf("       <infile> 	input file name (.img,.meta)\n");
+      printf("       <outfile>  output file name (.img,.meta)\n");
+      printf("\n"
+	     "Removes doppler skew from image.\n");
+      printf("Version %.2f, ASF SAR TOOLS\n\n",VERSION);
+      exit(1);
+    }
+
+  create_name(infile, argv[1], ".img");
+  create_name(outfile, argv[2], ".img");
+  meta_img = meta_read(infile); 
+  nl = meta_img->general->line_count;
+  np = meta_img->general->sample_count;
+  
+  {
+    meta_parameters *meta=meta_init(infile);
+    GEOLOCATE_REC *g;
+    stateVector stVec=meta_get_stVec(meta,0.0);
+    if (meta->sar->deskewed!=0)
+      {
+	printf("The image %s is already deskewed!\n", infile);
+	exit(30);
+      }
+    
+    g=init_geolocate_meta(&stVec,meta);
+    getLookYaw(g,
+	       meta_get_slant(meta,0,0),
+	       meta_get_dop(meta,0,0),
+	       &look,&yaw);
+    free_geolocate(g);
+    
+    meta->sar->deskewed = 1;
+    meta_write(meta, outfile);
+  }
+  
+  fac = sin(look)*sin(yaw);
+  
+  skew =  (float *) MALLOC (np * sizeof(float));
+  lower =  (int *) MALLOC (np * sizeof(int));
+  
+  for (i=0; i<np; i++)
+    {
+      skew[i] = (float)i * fac;
+      lower[i] = (int) skew[i];
+    }
+  printf("Maximum Skew = %f\n", skew[np-1]);
+  
+  ibuf =  (float *) MALLOC (np * sizeof(float));
+  obuf =  (float *) MALLOC (nl*np * sizeof(float));
+  
+  fpi=fopenImage(infile,"rb");
+  
+  for (line = 0; line < nl; line++)  
+    {
+      get_float_line(fpi, meta_img, line, ibuf);
+      for (i=0; i<np; i++)
 	{
-		meta_parameters *meta=meta_init(inmeta);
-		GEOLOCATE_REC *g;
-		stateVector stVec=meta_get_stVec(meta,0.0);
-		if (meta->geo->deskew!=0)
-		{
-			printf("The image %s/%s is already deskewed!\n",
-				infile,inmeta);
-			exit(30);
-		}
-		
-		g=init_geolocate_meta(&stVec,meta);
-		getLookYaw(g,
-			meta_get_slant(meta,0,0),
-			meta_get_dop(meta,0,0),
-			&look,&yaw);
-		free_geolocate(g);
-		
-		meta->geo->deskew=1;
-		meta_write(meta,outmeta);
+	  out_line = line + lower[i];
+	  if (out_line >= 0 && out_line < nl) 
+	    obuf[out_line*np+i] = ibuf[i];
 	}
-	
-	fac = sin(look)*sin(yaw);
-	
-	skew =  (float *) MALLOC (np * sizeof(float));
-	lower =  (int *) MALLOC (np * sizeof(int));
-	
-	for (i=0; i<np; i++)
-	{
-		skew[i] = (float)i * fac;
-		lower[i] = (int) skew[i];
-	}
-	printf("Maximum Skew = %f\n", skew[np-1]);
-	
-	ibuf =  (unsigned char *) MALLOC (np * sizeof(unsigned char));
-	obuf =  (unsigned char *) MALLOC (nl*np * sizeof(unsigned char));
-	
-	fpi=fopenImage(infile,"rb");
-	
-	for (line = 0; line < nl; line++)  
-	{
-		FREAD(ibuf,np,1,fpi);
-		for (i=0; i<np; i++)
-		{
-			out_line = line + lower[i];
-			if (out_line >= 0 && out_line < nl) 
-				obuf[out_line*np+i] = ibuf[i];
-		}
-		if (line%1000==0) printf("Reading Line %i\n",line);
-	}
-	FCLOSE(fpi);
-	
-	fpo=fopenImage(outfile,"wb");
-	FWRITE(obuf,np,1,fpo);
-	FCLOSE(fpo);
-	return 0;
+      if (line%1000==0) printf("Reading Line %i\n",line);
+    }
+  FCLOSE(fpi);
+  
+  fpo=fopenImage(outfile,"wb");
+  put_float_lines(fpo, meta_img, 0, nl, obuf);
+  FCLOSE(fpo);
+
+  return 0;
 }
