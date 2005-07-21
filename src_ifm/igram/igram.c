@@ -49,6 +49,8 @@ PROGRAM HISTORY:
 				      amplitude of interferogram, also removed
 				      the extra square root.
     3.5      2/04	 R. Gens    - Added log switch
+    3.6      7/05        R. Gens    - Removed DDR dependency. Took care of
+                                      endianess issue.
 
 
 HARDWARE/SOFTWARE LIMITATIONS:
@@ -91,8 +93,8 @@ BUGS:
 /* 
  *  Buffer Size
  */
-#define  BSZ     65535
-#define VERSION  3.5
+#define BSZ      512
+#define VERSION  3.6
 #define ampScale 200
 
 /* function declaration */
@@ -100,13 +102,11 @@ void usage(char *name);
 
 int main(int argc, char *argv[])
 {
-  meta_parameters *meta;
+  meta_parameters *metaIn, *metaOut;
   char fnm[256], master[255], igram_amp[255], igram_phase[255];
-  int count = 0,len;
   FILE *inFile1, *inFile2, *outFileAmp, *outFilePhase;
-  long bytesRead=0;
-  int bailout=0;
-  struct DDR inDDR1, inDDR2;
+  int ii, x, len, lines;
+  float percent=5.0;
 	
   complexFloat *in1,*in2;
   float *outAmp,*outPhase;
@@ -131,21 +131,13 @@ int main(int argc, char *argv[])
     else {printf("\n   ***Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
   }
 
-  system("date");
+  printf("%s\n",date_time_stamp());
   printf("Program: igram\n\n");
   if (logflag) {
     StartWatchLog(fLog);
     printLog("Program: igram\n\n");
   }
 
-  /* 
-   * establish buffers
-   */
-  in1=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ);
-  in2=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ);
-  outAmp=(float *)MALLOC(sizeof(float)*BSZ);
-  outPhase=(float *)MALLOC(sizeof(float)*BSZ);
-  
   /* 
    * open input files 
    */
@@ -164,43 +156,34 @@ int main(int argc, char *argv[])
   sprintf(igram_phase, "%s", fnm);
   outFilePhase=fopenImage(fnm, "wb");
 
+  /* Read and write metadata information */
+  metaIn = meta_read(master);
+  metaOut = meta_read(master);
+  metaOut->general->data_type = REAL32;
+  metaOut->general->image_data_type = AMPLITUDE_IMAGE;
+  meta_write(metaOut, igram_amp);
+  metaOut->general->image_data_type = PHASE_IMAGE;
+  meta_write(metaOut, igram_phase);
+  lines = metaIn->general->line_count;
+
+  /* 
+   * establish buffers
+   */
+  in1=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ*lines);
+  in2=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ*lines);
+  outAmp=(float *)MALLOC(sizeof(float)*BSZ*lines);
+  outPhase=(float *)MALLOC(sizeof(float)*BSZ*lines);
+  
   /*
    * Loop through each chunk of data 
    */
-  do {
-    int i,j,x;
-    count++;  /* used in diagnostic */
-
-    /* 
-     * read next chunk of data, check and calculate 
-     * how many values were read
-     */
-    i = fread(in1, 1, BSZ*sizeof(complexFloat),inFile1);
-    j = fread(in2, 1, BSZ*sizeof(complexFloat),inFile2);
-  
-    /*if( i != j ) bail("One input file was too short"); */
-
-    /* If the first input was shorter than the second */
-    if ( i < j )
-    {
-	bailout=-1;
-    }
-    /* If the second input was shorter than the first */
-    if ( i > j )
-      {
-	bailout=1;
-	i = j;	
-    }
- 
-
-    /* calculate how many values were read, print a brief diagnostic message */
-    len = i/sizeof(complexFloat);
-    bytesRead += (len * sizeof(complexFloat));
-    
-    printf("\tRead chunk %d, %ld total bytes read\r", count, bytesRead);
+  for (ii=0; ii<lines; ii+=BSZ) {
+    len = (ii+BSZ < lines) ? BSZ : lines-ii;
+    get_complexFloat_lines(inFile1, metaIn, ii, len, in1);
+    get_complexFloat_lines(inFile2, metaIn, ii, len, in2);
 
     /* if any data were obtained... */
-    for (x=0;x<len;x++)
+    for (x=0;x<len*lines;x++)
     {
     /*Take complex product of img1 and the conjugate of img2.*/
     	double igram_real,igram_imag;
@@ -217,52 +200,25 @@ int main(int argc, char *argv[])
     		outPhase[x]=0;
     }
     
-    /* save this batch */
-    FWRITE(outAmp, 1, len*sizeof(float),outFileAmp);
-    FWRITE(outPhase, 1, len*sizeof(float),outFilePhase);
-/*  printf("\r"); */
-  } while ((len == BSZ) && (bailout==0));    /* while we have any action */
+    put_float_lines(outFileAmp, metaOut, ii, len, outAmp);
+    put_float_lines(outFilePhase, metaOut, ii, len, outPhase);
 
-  /* 
-   * close files, free buffers, scram 
-   */
-  if(bailout != 0)
-  {
-	if(bailout==1)
-	{	
-		printf("\n\nWarning, file %s is shorter than %s!\n",argv[2],argv[1]);
-  		printf("Output will be truncated to the length of %s\n",argv[2]);
-		sprintf(cmd,"cp %s.ddr %s.ddr\n",argv[2],argv[3]);
-  		system(cmd);
-	}
-	else
-	{
-		printf("\n\nWarning, file %s is shorter than %s!\n",argv[1],argv[2]);
-                sprintf(cmd,"cp %s.ddr %s.ddr\n",argv[1],argv[3]);
-  		printf("Output will be truncated to the length of %s\n",argv[1]);
-                system(cmd);	
-	}
-	
+    if ((ii*100/lines)>percent) {
+      printf("   Completed %3.0f percent\n", percent);
+      percent+=5.0;
+    }
   }
-  else
-  {
-  	printf("\n");
-	meta = meta_read(master);
-	meta->general->data_type = REAL32;
-	meta->general->image_data_type = AMPLITUDE_IMAGE;
-	meta_write(meta, igram_amp);
-	meta->general->image_data_type = PHASE_IMAGE;
-	meta_write(meta, igram_phase);
-  }
+  printf("   Completed 100 percent\n\n");
 
   FCLOSE(inFile1);FCLOSE(inFile2);
   FCLOSE(outFileAmp);FCLOSE(outFilePhase);
   FREE(in1);FREE(in2);
   FREE(outAmp);FREE(outPhase);
+  FREE(metaIn);FREE(metaOut);
   
 /*  printf("\nigram:  Ends successfully\n");*/
   if (logflag) {
-     sprintf(logbuf, "   Wrote %ld bytes of data\n\n",bytesRead);
+     sprintf(logbuf, "   Wrote %ld lines of data\n\n", lines);
      printLog(logbuf);
   }
   return 0;
