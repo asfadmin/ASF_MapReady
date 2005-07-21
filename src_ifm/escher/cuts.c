@@ -18,10 +18,10 @@ cutMask(void)
    */
 
 #if 0
-  printf("starting binary filter preprocessor [cutMask()]...\n");
+  printf("   starting binary filter preprocessor [cutMask()]...\n");
   for (j = 1; j < len-2; j++) {     
 
-    if (!(j%(len/6))) printf ("  ...binary clobber at %d of %d\n", j, len);
+    if (!(j%(len/6))) printf ("    ...binary clobber at %d of %d\n", j, len);
 
     for (i = 1; i < wid-2; i++) { 
 
@@ -54,10 +54,10 @@ cutMask(void)
   list.n = 0;
 
   /* loop over (wid-3)x(len-3) residue sites */
-  printf("starting branch cut scan [cutMask()]...\n");
+  printf("   starting branch cut scan [cutMask()]...\n");
   for (j = 1; j < len-2; j++) {
     register Uchar *maskLineStart=mask+wid*j;
-    if (!(j%(len/8)))  printf("  ...at %d of %d\n", j, len); 
+    if (!(j%(len/8)))  printf("     ...at %d of %d\n", j, len); 
     for (i = 1; i < wid-2; i++) { 
       /* 
        * this will be a point to cut if it has some charge 
@@ -69,7 +69,7 @@ cutMask(void)
     }
   }   
 
-  printf(" - finished branch cutting\n");
+  printf("    - finished branch cutting\n");
   return;
 }
 
@@ -100,7 +100,7 @@ generateCut(int i, int j)
   else if (mask[ j*wid + i] & NEGATIVE_CHARGE) 
     tC = -1; 
   else  
-    Exit("generateCut() called with no charge at (%d,%d)",i,j); 
+    Exit("   generateCut() called with no charge at (%d,%d)",i,j); 
 
   /* calculate the maximum possible radius box around this point */
   maxR = min(i + 1, j + 1);
@@ -301,20 +301,20 @@ generateCut(int i, int j)
     if (!(mask[ point_j*wid + point_i] & IN_CUT)) { count++; }
   }
   if (count) {
-    printf("at point (%d, %d), the debug test for IN_CUT returned:\n",i,j);
-    printf("\t%d bad of %d in the list\n", count, list.n);
+    printf("   at point (%d, %d), the debug test for IN_CUT returned:\n",i,j);
+    printf("   \t%d bad of %d in the list\n", count, list.n);
     for (point = 0; point < list.n; point++) {
       point_i = list.p[point].i;
       point_j = list.p[point].j;
       if (!(mask[ point_j*wid + point_i] & IN_CUT)) { count++; }
-      printf("%d: (%d, %d)\n\tmask %d\n\tmask & IN_CUT %d\n",
+      printf("   %d: (%d, %d)\n\tmask %d\n\tmask & IN_CUT %d\n",
         point, point_i, point_j, (int)(mask[point_j*wid+point_i)),
         (int)(mask[point_j*wid+point_i] & IN_CUT));
-      printf("\tmask & GROUNDED %d\n\tmask & SOME_CHARGE %d\n",
+      printf("   \tmask & GROUNDED %d\n\tmask & SOME_CHARGE %d\n",
         (int)(mask[point_j*wid+point_i] & GROUNDED),
         (int)(mask[point_j*wid+point_i] & SOME_CHARGE));
     }
-    Exit("generateCut() failed logical test");
+    Exit("   generateCut() failed logical test");
   }
 #endif
 

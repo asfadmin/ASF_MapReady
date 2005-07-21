@@ -2,22 +2,23 @@
 Utilities for loading/saving arrays to files,
 etc.*/
 #include "escher.h"
-
+#include "asf_endian.h"
 
 
 void 
 loadWrappedPhase(char *f)
 {
   FILE * fd;
-  /*int x,y;*/
+  meta_parameters *meta;
 
-  printf ("loading wrapped phase...\n");
+  printf ("   loading wrapped phase...\n");
 
   fd = FOPEN(f, "rb");
-  FREAD(phase, size,sizeof(float),fd);
+  meta = meta_read(f);
+  get_float_lines(fd, meta, 0, len, phase);
   FCLOSE(fd);
 
-  printf("wrapped phase data loaded...\n");
+  printf("   wrapped phase data loaded...\n");
   return;
 }
 
@@ -39,7 +40,7 @@ void groundBorder()
     mask[(len-1)*wid+i] |= GROUNDED;
   }
 
-  printf(" - grounded border\n");
+  printf("    - grounded border\n");
   return;
 }
 
@@ -47,13 +48,6 @@ void groundBorder()
 float 
 phaseRemap(float p)
 {
-  /*
-  while (p < -PI) { 
-    p += TWOPI; 
-  }
-  while (p >=  PI) { 
-    p -= TWOPI; 
-  }*/
   p=(double)fmod((double)p,(double)TWOPI);
   if (p>PI) p-=TWOPI;
   if (p<-PI) p+=TWOPI;
@@ -84,13 +78,13 @@ void checkSeed(int *x, int *y)
   /* adjust seed point to reside on a usable (mask == ZERO) pixel */
   while (!isGoodSeed(*x,*y)) 
   { 
-    printf("\nseed point (%d, %d) is not ZERO.\n", *x, *y);
+    printf("\n   seed point (%d, %d) is not ZERO.\n", *x, *y);
     /*Pick a new, random seed point.*/
     *x=(rand()&0x7fff)*wid/0x7fff;
     *y=(rand()&0x7fff)*len/0x7fff;
-    printf("\nauto-adjusted seed point to (%d, %d).\n", *x, *y);
+    printf("\n   auto-adjusted seed point to (%d, %d).\n", *x, *y);
   }
-  printf("\ncheckSeed() finished\n\n");
+  printf("\n   checkSeed() finished\n\n");
   return;
 }
 
@@ -124,22 +118,23 @@ void doStats(char *msg)
     }
   }
 
-  printf ("                        \n");
-  printf ("doStats():  %s          \n", msg);
-  printf ("                        \n");
+  printf ("                           \n");
+  printf ("   doStats():  %s          \n", msg);
+  printf ("                           \n");
 
-  printf ("    %9d pixels                         \n", (int)(total));
-  printf ("    %9d unknown     %7.3f %%\n", nZero, 100.0*(float)(nZero)/total);
-  printf ("    %9d unwrapped   %7.3f %%\n", nInteg, 100.0*(float)(nInteg)/total);
-  printf ("    %9d residues    %7.3f %%\n", nPlus + nMinus, 100.0*(float)(nPlus + nMinus)/total);
-  printf ("->  %9d +residues   %7.3f %%\n", nPlus, 100.0*(float)(nPlus)/total);
-  printf ("->  %9d -residues   %7.3f %%\n", nMinus, 100.0*(float)(nMinus)/total);
-  printf ("    %9d grounds     %7.3f %%\n", nGround, 100.0*(float)(nGround)/total);
-  printf ("    %9d in tree     %7.3f %%\n", nInTree, 100.0*(float)(nInTree)/total);
-  printf ("    %9d cuts        %7.3f %%\n", nCut, 100.0*(float)(nCut)/total);
-  printf ("                                   \n");
+  printf ("       %9d pixels                         \n", (int)(total));
+  printf ("       %9d unknown     %7.3f %%\n", nZero, 100.0*(float)(nZero)/total);
+  printf ("       %9d unwrapped   %7.3f %%\n", nInteg, 100.0*(float)(nInteg)/total);
+  printf ("       %9d residues    %7.3f %%\n", nPlus + nMinus, 
+	  100.0*(float)(nPlus + nMinus)/total);
+  printf ("   ->  %9d +residues   %7.3f %%\n", nPlus, 100.0*(float)(nPlus)/total);
+  printf ("   ->  %9d -residues   %7.3f %%\n", nMinus, 100.0*(float)(nMinus)/total);
+  printf ("       %9d grounds     %7.3f %%\n", nGround, 100.0*(float)(nGround)/total);
+  printf ("       %9d in tree     %7.3f %%\n", nInTree, 100.0*(float)(nInTree)/total);
+  printf ("       %9d cuts        %7.3f %%\n", nCut, 100.0*(float)(nCut)/total);
+  printf ("                                      \n");
 
-  if (nInTree) { printf ("\n\n  note that number in tree != 0.\n\n"); }
+  if (nInTree) { printf ("\n\n   note that number in tree != 0.\n\n"); }
 
   return;
 }

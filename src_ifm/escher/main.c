@@ -53,7 +53,8 @@ PROGRAM HISTORY:
     2.3	     2/16/99   O. Lawlor  - Check more carefully for bad seed points.
                                     Use only 1 phase array (50% less memory!)
     2.5         6/05   R. Gens    - Added some logfile capabilities.
-                                    Removed dependency of DDR.
+                                    Removed dependency of DDR. Took care of
+                                    endianess.
  
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -167,17 +168,17 @@ main(int argc, char *argv[])
   /*coh   = (float *)MALLOC(sizeof(float)*size);*/
 
   /* perform steps*/
-  printf("\nbegin unwrapping phase...\n");
+  printf("\n   begin unwrapping phase...\n");
   loadWrappedPhase(szWrap);
   groundBorder();
   makeMask();
   
-  doStats("after makeMask():");
+  doStats("   after makeMask():");
 
   installCordon("cordon");
   cutMask();
 
-  doStats("after cutMask():");
+  doStats("   after cutMask():");
 
 #if DO_DEBUG_CHECKS
   saveMask((char *)mask, "test");
@@ -189,7 +190,7 @@ main(int argc, char *argv[])
 
   integratePhase(seedX, seedY);
 
-  doStats("after integratePhase():");
+  doStats("   after integratePhase():");
 
   finishUwp();
 
@@ -201,7 +202,6 @@ main(int argc, char *argv[])
   free(mask);
   free(im);
   free(phase);
-  StopWatch();
   return(0);
 }
 

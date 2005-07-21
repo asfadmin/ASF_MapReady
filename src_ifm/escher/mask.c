@@ -9,7 +9,7 @@ makeMask()
   int i, j;
   float p0, p1, p2, p3;
 
-  printf("starting to make mask...\n");
+  printf("   starting to make mask...\n");
   for (j = 1; j < len - 2; j++) {
     for (i = 1; i < wid - 2; i++) {
       if (0.0==phase[wid*(j  )+i])
@@ -21,7 +21,7 @@ makeMask()
       mask[j*wid+i] |= chargeCalc(p0,p1,p2,p3);
     } 
   }
-  printf (" - made mask\n");
+  printf ("    - made mask\n");
   return;
 }
 
@@ -114,16 +114,16 @@ void saveMask(unsigned char *m, char *f)
   
   create_name(fnm,f,"_phase.mask");
   writeVector(m, fnm, CHAR, size);
-  printf("saved a mask array to the file %s ...", fnm);
+  printf("   saved a mask array to the file %s ...", fnm);
   return;
 }
 
 void readMask(unsigned char *m, char *fnm)
 {
   if (!size) 
-    Exit("escher:  readMask():  zero mask size");
+    Exit("   escher:  readMask():  zero mask size");
   readVector(m, fnm, CHAR, size);
-  printf("read mask from file %s ...\n", fnm);
+  printf("   read mask from file %s ...\n", fnm);
   return;
 }
 

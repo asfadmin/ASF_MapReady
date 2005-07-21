@@ -1,29 +1,32 @@
 /*Escher:
 Perform phase integration, avoiding the (already laid-out) cuts.*/
 #include "escher.h"
-
+#include "asf_endian.h"
 
 void finishUwp(void)
 {
   int i, j;
-  printf("\nZeroing out un-unwrapped phase\n");
+  printf("\n   Zeroing out un-unwrapped phase\n");
   for (j = 0; j < len; j++) {
     register float *lineStart=&phase[wid*j];
     for (i = 0; i < wid; i++) 
       if (!(mask[j*wid+i]&INTEGRATED))
        *(lineStart+i) = 0.0;/*Set non-integrated phases to zero*/
   }
-  printf("\nZero'd out un-unwrapped phase\n");
+  printf("\n   Zero'd out un-unwrapped phase\n");
   return;
 }
 
 void saveUwp(char *f)
 {
+  meta_parameters *meta;
+
   FILE *fd = FOPEN(f, "wb");
-  FWRITE(phase, size,sizeof(float),fd);
+  meta = meta_read(f);
+  put_float_lines(fd, meta, 0, len, phase);
   FCLOSE(fd);
 
-  printf("saved unwrapped phase...\n");
+  printf("   saved unwrapped phase...\n");
   return;
 }
 
@@ -36,7 +39,7 @@ void integratePhase(int i, int j)
   int    madeJump;  /* indicates an integration jump has been made        */
 
   /* diagnostic */ 
-  printf ("\nstarting integratePhase() at (%d, %d)\n\n", i, j);
+  printf ("\n   starting integratePhase() at (%d, %d)\n\n", i, j);
 
   /* initialize things */
   /* set 'source' bits for seed point in 'im' to 0; no source! */
@@ -67,7 +70,7 @@ void integratePhase(int i, int j)
     phase[v*wid + u]  = phase[j*wid+i] + 
 			   phaseRemap((phase[v*wid+u]) - 
 			   (phase[j*wid+i]));
-    printf("from seed point, started out by going up...");
+    printf("   from seed point, started out by going up...");
   }
 
   /* try 2:  go right one pixel to (i + 1, j) */
@@ -79,7 +82,7 @@ void integratePhase(int i, int j)
     phase[ v*wid + u]  = phase[j*wid+i] + 
 			   phaseRemap((phase[v*wid+u]) - 
 			   (phase[j*wid+i]));
-    printf("from seed point, started out by going right...\n");
+    printf("   from seed point, started out by going right...\n");
   }
 
   /* try 3:  go down one pixel to (i, j + 1) */
@@ -91,7 +94,7 @@ void integratePhase(int i, int j)
     phase[ v*wid + u]  = phase[j*wid+i] + 
 			   phaseRemap((phase[v*wid+u]) - 
 			   (phase[j*wid+i]));
-    printf("from seed point, started out by going down...\n");
+    printf("   from seed point, started out by going down...\n");
   }
 
   /* try 4:  go left one pixel to (i - 1, j) */
@@ -103,7 +106,7 @@ void integratePhase(int i, int j)
     phase[ v*wid + u]  = phase[j*wid+i] + 
 			   phaseRemap((phase[v*wid+u]) -
 			   (phase[j*wid+i]));
-    printf("\nfrom seed point, started out by going left...\n");
+    printf("\n   from seed point, started out by going left...\n");
   }
 
   /* fall through:  No good 4-nbrs found */
@@ -122,7 +125,7 @@ void integratePhase(int i, int j)
    */
   while (u != i || v != j || !(im[j*wid+i] & TRIED_L)){
 
-    if (!(t%100000)) printf ("\r  total integrated = %d", t);
+    if (!(t%100000)) printf ("\r   total integrated = %d", t);
 
     /* s = temp value of 'im' at pixel (u, v) */
     s        = im[v*wid + u];
@@ -236,7 +239,7 @@ void integratePhase(int i, int j)
 
   }  /* end of the big 'while-not-done' loop */
 
-  printf("\nintegratePhase() unwrapped %d pixels...\n", t);
+  printf("\n   integratePhase() unwrapped %d pixels...\n", t);
   return;
 }
 
