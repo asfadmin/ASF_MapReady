@@ -94,7 +94,7 @@ int main (int argc, char *argv[])
   
 /* Read the meta data. Write output meta with COMPLEX_* data type. */
   inMeta = meta_read(argv[1]);
-  outMeta = meta_copy(inMeta);
+  outMeta = meta_read(argv[1]);
   outMeta->general->data_type = meta_polar2complex(inMeta->general->data_type);
   meta_write(outMeta,argv[2]);
 
