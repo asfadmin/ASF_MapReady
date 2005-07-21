@@ -2908,7 +2908,7 @@
 		      <child>
 			<widget class="GtkImage" id="flowchart_image">
 			  <property name="width_request">400</property>
-			  <property name="height_request">346</property>
+			  <property name="height_request">370</property>
 			  <property name="visible">True</property>
 			  <property name="xalign">0.5</property>
 			  <property name="yalign">0</property>
