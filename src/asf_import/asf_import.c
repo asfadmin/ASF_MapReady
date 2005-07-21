@@ -23,7 +23,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "[-amplitude | -sigma | -gamma | -beta | -power]\n"\
 "              [-prc] [-old] [-format <inputFormat>] [-lat <lower> <upper>]\n"\
 "              [-lut <file> ] [-log <logFile>] [-quiet] [-help] \n"\
-"	      <inBaseName> <outBaseName>"
+"	       <inBaseName> <outBaseName>"
 
 #define ASF_DESCRIPTION_STRING \
 "   Ingests all varieties of CEOS and STF data formats and outputs ASF\n"\
@@ -141,9 +141,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "    0.7     7/04   G. Short    New usage/help style.\n"\
 "    1.0     8/04   P. Denny    Create functions to do each of the different\n"\
 "                                filetype imports... ready for release."
-
-#define ASF_VERSION_MAJOR_STRING \
-"   0.40"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
@@ -439,7 +436,7 @@ int main(int argc, char *argv[])
       create_sprocket_layers(outBaseName, inMetaName);
       /* Nix the log file if the user didn't ask for it */
       if (flags[f_LOG] == FLAG_NOT_SET) {
-	fclose (fLog);
+        fclose (fLog);
         remove(logFile);
       }
       exit(EXIT_SUCCESS);
