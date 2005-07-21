@@ -23,7 +23,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 {
   char outDataName[256], outMetaName[256];              /* Output file names */
   int nl=MAGIC_UNSET_INT, ns=MAGIC_UNSET_INT;     /* Number of lines/samples */
-  long long ii, kk;                                               /* loop indices */
+  long long ii, kk;                                          /* loop indices */
   int headerBytes;                       /* Number of bytes in a CEOS header */
   int tempFlag=FALSE;             /* Flag on whether or not to print warning */
   long long offset;
@@ -180,27 +180,27 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       /* This must be ScanSAR */
       if (meta->projection->type!=SCANSAR_PROJECTION) {
         /* This is actually geocoded.  We don't trust any
-	   already-geocoded products other than polar stereo in the
-	   northern hemisphere (because of the RGPS Ice tracking
-	   project, these have been tested a lot and actually work
-	   correctly). */
-	if ( meta->projection->type != POLAR_STEREOGRAPHIC
-	     || meta->projection->hem == 'S' ) {
-	  asfPrintError("Import of map projected (Level 2) CEOS images other "
-			"than northern hemisphere polar stereo images is "
-			"prohibited, because these products are broken.  "
-			"Don't use them.\n");
-	}
+           already-geocoded products other than polar stereo in the
+           northern hemisphere (because of the RGPS Ice tracking
+           project, these have been tested a lot and actually work
+           correctly). */
+        if ( meta->projection->type != POLAR_STEREOGRAPHIC
+             || meta->projection->hem == 'S' ) {
+          asfPrintError("Import of map projected (Level 2) CEOS images other "
+                        "than northern hemisphere polar stereo images is "
+                        "prohibited, because these products are broken.  "
+                        "Don't use them.\n");
+        }
         sprintf(logbuf,
                 "   Input data type: level two data\n"
                 "   Output data type: geocoded amplitude image\n\n");
-	meta->general->image_data_type = GEOCODED_IMAGE;
+        meta->general->image_data_type = GEOCODED_IMAGE;
       }
       else {
-	sprintf(logbuf,
-		"   Input data type: level one data\n"
-		"   Output data type: amplitude image\n\n");
-	meta->general->image_data_type = AMPLITUDE_IMAGE;
+        sprintf(logbuf,
+                "   Input data type: level one data\n"
+                "   Output data type: amplitude image\n\n");
+        meta->general->image_data_type = AMPLITUDE_IMAGE;
       }
     }
     else if (flags[f_AMP] != FLAG_NOT_SET) {
@@ -282,7 +282,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       double incid_table[MAX_tableRes];                  /* Incidence angle */
       double scale_table[MAX_tableRes];                   /* Scaling factor */
       double incid[MAX_tableRes], old, new;
-      double UL_incid, UR_incid, LL_incid, LR_incid; 
+      double UL_incid, UR_incid, LL_incid, LR_incid;
       double min_incid=100.0, max_incid=0.0;
       char line[255];
       int nLut=0, n, tableRes=MAX_tableRes, tablePix=0, ll, min, max;
@@ -290,12 +290,12 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       /**** Read look up table ****/
       fpLut = FOPEN(lutName, "r");
       for (ii=0; ii<MAX_tableRes; ii++) {
-	incid_table[ii] = 0.0;
-	scale_table[ii] = 0.0;
+        incid_table[ii] = 0.0;
+        scale_table[ii] = 0.0;
       }
       while(fgets(line, 255, fpLut)) {
-	sscanf(line, "%lf\t%lf", &incid_table[nLut], &scale_table[nLut]);
-	nLut++;
+        sscanf(line, "%lf\t%lf", &incid_table[nLut], &scale_table[nLut]);
+        nLut++;
       }
 
       /* Calculate minimum and maximum incidence angle */
@@ -318,12 +318,12 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       n = 0;
       old = 100000000;
       for (ii=0; ii<nLut; ii++) {
-	new = min_incid - incid_table[ii];
-	if (fabs(new) < fabs(old)) {
-	  old = new;
-	  n++;
-	}
-	else break;
+        new = min_incid - incid_table[ii];
+        if (fabs(new) < fabs(old)) {
+          old = new;
+          n++;
+        }
+        else break;
       }
       min = n;
 
@@ -331,21 +331,21 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       n = 0;
       old = 100000000;
       for (ii=0; ii<nLut; ii++) {
-	new = max_incid - incid_table[ii];
-	if (fabs(new) < fabs(old)) {
-	  old = new;
-	  n++;
-	}
-	else break;
+        new = max_incid - incid_table[ii];
+        if (fabs(new) < fabs(old)) {
+          old = new;
+          n++;
+        }
+        else break;
       }
       max = n;
 
       /**** Read 16 bit data and apply look up table ****/
       if (ceos_data_type == INTEGER16) {
 
-	if (nl<1500) tableRes=128;
-	else if (nl<3000) tableRes=256;
-	tablePix=((ns+(tableRes-1))/tableRes);
+        if (nl<1500) tableRes=128;
+        else if (nl<3000) tableRes=256;
+        tablePix=((ns+(tableRes-1))/tableRes);
 
         for (ii=0; ii<nl; ii++) {
           /* Can't use get_float_line() for CEOS data, so we have to use FSEEK,
@@ -354,90 +354,89 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
           FSEEK64(fpIn, offset, SEEK_SET);
           FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
 
-	  /* Allocate incidence table entries or update */
-	  if (ii==0 || (ii%(nl/tableRes)==0 && meta->projection != NULL))
-	    for (kk=0;kk<tableRes;kk++)
-	      incid[kk] = meta_incid(meta, kk*tablePix, ii);
+          /* Allocate incidence table entries or update */
+          if (ii==0 || (ii%(nl/tableRes)==0 && meta->projection != NULL))
+            for (kk=0;kk<tableRes;kk++)
+              incid[kk] = meta_incid(meta, kk*tablePix, ii);
 
-	  /* Calculate output values */
-	  for (kk=0; kk<ns; kk++) {
-	    if (short_buf[kk]) {
+          /* Calculate output values */
+          for (kk=0; kk<ns; kk++) {
+            if (short_buf[kk]) {
               double index=(double)kk/tablePix;
               int    base=(int)index;
               double frac=index-base;
-	      double interp = incid[base]+frac*(incid[base+1]-incid[base]);
-	      big16(short_buf[kk]);
-	      old = 10000000;
+              double interp = incid[base]+frac*(incid[base+1]-incid[base]);
+              big16(short_buf[kk]);
+              old = 10000000;
 
-	      for (ll=min; ll<max; ll++)
-		if (interp < incid_table[ll]) break;
+              for (ll=min; ll<max; ll++)
+                if (interp < incid_table[ll]) break;
 
-	      out_buf[kk] = short_buf[kk] *
-		(((scale_table[ll]-scale_table[ll-1]) /
-		  (incid_table[ll]-incid_table[ll-1])) *
-		  (interp-incid_table[ll-1]) + scale_table[ll-1]);
-	    }
-	    else
-	      out_buf[kk] = 0;
-	  }
+              out_buf[kk] = short_buf[kk] *
+                (((scale_table[ll]-scale_table[ll-1]) /
+                  (incid_table[ll]-incid_table[ll-1])) *
+                  (interp-incid_table[ll-1]) + scale_table[ll-1]);
+            }
+            else
+              out_buf[kk] = 0;
+          }
 
           put_float_line(fpOut, meta, ii, out_buf);
           asfLineMeter(ii,nl);
-	}
+        }
 
       } /**** End processing of 16 bit input data ****/
 
       /**** Read 8 bit data and apply look up table ****/
       else if (ceos_data_type == BYTE) {
-	if (nl<1500) tableRes=128;
-	else if (nl<3000) tableRes=256;
-	tablePix=((ns+(tableRes-1))/tableRes);
-
+        if (nl<1500) tableRes=128;
+        else if (nl<3000) tableRes=256;
+        tablePix=((ns+(tableRes-1))/tableRes);
 
         for (ii=0; ii<nl; ii++) {
-	  /* Read image line */
+          /* Read image line */
           offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
           FSEEK64(fpIn, offset, SEEK_SET);
           FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
 
-	  /* Allocate incidence table entries or update */
-	  if (ii==0 || (ii%(nl/tableRes)==0 && meta->projection != NULL))
-	    for (kk=0;kk<tableRes;kk++)
-	      incid[kk] = meta_incid(meta, ii, kk*tablePix);
+          /* Allocate incidence table entries or update */
+          if (ii==0 || (ii%(nl/tableRes)==0 && meta->projection != NULL))
+            for (kk=0;kk<tableRes;kk++)
+              incid[kk] = meta_incid(meta, ii, kk*tablePix);
 
-	  /* Calculate output values */
+          /* Calculate output values */
           for (kk=0; kk<ns; kk++) {
             if (byte_buf[kk]) {
               /* Interpolate incidence angle */
               double index=(double)kk/tablePix;
               int    base=(int)index;
               double frac=index-base;
-	      double interp= (incid[base]+frac*(incid[base+1]-incid[base]))*R2D;
+              double interp= (incid[base]+frac*(incid[base+1]-incid[base]))*R2D;
 
-	      old = 10000000;
-	      for (ll=min; ll<=max; ll++)
-		if (interp < incid_table[ll]) break;
+              old = 10000000;
+              for (ll=min; ll<=max; ll++)
+                if (interp < incid_table[ll]) break;
 
-	      out_buf[kk] = byte_buf[kk] * 
-		(((scale_table[ll]-scale_table[ll-1]) /
-		  (incid_table[ll]-incid_table[ll-1])) *
-		  (interp-incid_table[ll-1]) + scale_table[ll-1]);
-	    }
-	    else
-	      out_buf[kk] = 0;
-	  }
+              out_buf[kk] = byte_buf[kk] *
+                (((scale_table[ll]-scale_table[ll-1]) /
+                  (incid_table[ll]-incid_table[ll-1])) *
+                  (interp-incid_table[ll-1]) + scale_table[ll-1]);
+            }
+            else
+              out_buf[kk] = 0;
+          }
           put_float_line(fpOut, meta, ii, out_buf);
           asfLineMeter(ii,nl);
-	}
+        }
 
       } /**** End processing of byte input data ****/
     } /**** End LUT output section ****/
 
 
 
-  /**** Create calibrated (sigma, gamma, or beta naught) dB image ****/
+  /**** Create calibrated (sigma, gamma, or beta naught) image ****/
     else if ( (flags[f_SIGMA]!=FLAG_NOT_SET) || (flags[f_GAMMA]!=FLAG_NOT_SET)
-	      || (flags[f_BETA]!=FLAG_NOT_SET) ) {
+              || (flags[f_BETA]!=FLAG_NOT_SET) ) {
       int tableRes=MAX_tableRes, tablePix=0;        /* Calibration variables */
       double noise_table[MAX_tableRes];       /* Noise table for calibration */
       double incid_cos[MAX_tableRes];       /* Cosine of the incidence angle */
@@ -493,7 +492,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
                 double noise=noise_table[base]+frac*(noise_table[base+1]-noise_table[base]);
                 double incid=1.0;
                 if (cal_param->output_type==gamma_naught)
-                  incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
+                 incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
                 if (cal_param->output_type==beta_naught)
                  incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
                 out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
@@ -501,7 +500,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
           }
 
           put_float_line(fpOut, meta, ii, out_buf);
-
           asfLineMeter(ii,nl);
         }
       } /**** End processing of 16 bit input data ****/
@@ -544,7 +542,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
           }
 
           put_float_line(fpOut, meta, ii, out_buf);
-
           asfLineMeter(ii,nl);
         }
       } /**** End processing of byte input data ****/
@@ -568,7 +565,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         }
 
         put_float_line(fpOut, meta, ii, out_buf);
-
         asfLineMeter(ii,nl);
       }
     }
@@ -589,7 +585,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         }
 
         put_float_line(fpOut, meta, ii, out_buf);
-
         asfLineMeter(ii,nl);
       }
     }
@@ -600,8 +595,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   if(flags[f_OLD_META] != FLAG_NOT_SET) {
     char ddrName[256];
     struct DDR ddr;
-		strcpy(ddrName, outBaseName);
-		strcat(ddrName, ".ddr");
+    strcpy(ddrName, outBaseName);
+    strcat(ddrName, ".ddr");
     meta2ddr(meta, &ddr);
     c_putddr(ddrName, &ddr);
     meta_new2old(meta);
@@ -611,7 +606,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   meta_free(meta);
 
   if (fpIn) /* CEOS L0 doesn't set fpIn, will still be NULL */
-      FCLOSE(fpIn);
+    FCLOSE(fpIn);
   FCLOSE(fpOut);
 
   asfPrintStatus("Finished.\n\n");
