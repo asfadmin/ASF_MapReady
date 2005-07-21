@@ -33,6 +33,7 @@ PROGRAM HISTORY:
     ---------------------------------------------------------------
     1.0     5/99   O. Lawlor	Modified from fit_plane, for mesh-based
     				antarctic ice sheet interferometry.
+    1.1     7/05   R. Gens      Removed DDR dependency. Took care of endianess
 
 HARDWARE/SOFTWARE LIMITATIONS: none
 
@@ -66,9 +67,8 @@ BUGS: none known
 
 
 #include "asf.h"
-#include "ddr.h"
 
-float version=1.0;
+float version=1.1;
 
 void usage(char *name);
 
@@ -129,16 +129,15 @@ findOffset for every possible offset.
 */
 int main(int argc,char **argv)
 {
-	int x,y;
+	int x,y,line_count,sample_count;
 	char line[255],*outName;
 	FILE *in,*outH,*outV;
 	float *bufH,*bufV;
-	/*int curDir;*/
-	struct DDR ddr;
+	meta_parameters *meta;
 	if (argc!=4) usage(argv[0]);
 	
 	in=FOPEN(argv[1],"r");
-	c_getddr(argv[2],&ddr);
+	meta = meta_read(argv[2]);
 	outName=argv[3];
 	
 /*add mapping points */
@@ -156,26 +155,32 @@ int main(int argc,char **argv)
 	printf("%d points read\n",nPoints);
 	
 /*Create offset images*/
-	ddr.nl=(int)ceil(ddr.nl/((float)REMAP_CHIP));
-	ddr.ns=(int)ceil(ddr.ns/((float)REMAP_CHIP));
-	c_putddr(outName,&ddr);/*Horiz & vert share a single DDR*/
+	line_count = meta->general->line_count;
+	sample_count = meta->general->sample_count;
+	meta->general->line_count = (int) ceil(line_count/((float) REMAP_CHIP));
+	meta->general->sample_count = (int) ceil(sample_count/((float) REMAP_CHIP));
+	meta_write(meta, appendExt(outName,"_horiz"));
+	meta_write(meta, appendExt(outName,"_vert"));
+	line_count = meta->general->line_count;
+	sample_count = meta->general->sample_count;
 	
-	printf("Output warping images will be %d lines by %d samples\n",ddr.nl,ddr.ns);
-	outH=FOPEN(appendExt(outName,".horiz"),"wb");
-	outV=FOPEN(appendExt(outName,".vert"),"wb");
+	printf("Output warping images will be %d lines by %d samples\n",
+	       line_count, sample_count);
+	outH=FOPEN(appendExt(outName,"_horiz.img"),"wb");
+	outV=FOPEN(appendExt(outName,"_vert.img"),"wb");
 	
-	bufH=(float *)MALLOC(sizeof(float)*ddr.ns);
-	bufV=(float *)MALLOC(sizeof(float)*ddr.ns);
+	bufH=(float *)MALLOC(sizeof(float)*sample_count);
+	bufV=(float *)MALLOC(sizeof(float)*sample_count);
 
 /*Find & write offsets for each pixel*/
 	/*Loop over each line in the (zoomed-out) output file*/
-	for (y=0;y<ddr.nl;y++)
+	for (y=0;y<line_count;y++)
 	{
-		for (x=0;x<ddr.ns;x++)
+		for (x=0;x<sample_count;x++)
 			findOffset(x,y,&bufH[x],&bufV[x]);
 		printf(".");fflush(stdout);
-		putFloatLine(outH,&ddr,y,bufH);
-		putFloatLine(outV,&ddr,y,bufV);
+		put_float_line(outH, meta, y, bufH);
+		put_float_line(outV, meta, y, bufV);
 	}
 	printf("\n");
 	
@@ -191,11 +196,11 @@ void usage(char *name)
 {
 		printf("\n\
 Usage: %s <in> <image> <out>\n\
-\t<in> input: a correlation point file (from fico)\n\
-\t<image> input: a LAS image (to set output size)\n\
+\t<in> input: a correlation point file (from coregister_fine)\n\
+\t<image> input: an image (to set output size)\n\
 \t<out> output: a remap-compatible set of warping files.\n\
 \n\
-Fit_warp takes, as an input, correlation points from fico and \n\
+Fit_warp takes, as an input, correlation points from coregister_fine and \n\
 produces as output a horizontal and vertical warping offset image\n\
 for use with remap.\n\
 \nVersion %4.2f, ASF SAR Tools\n\n",name,version);
