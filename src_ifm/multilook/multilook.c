@@ -284,31 +284,11 @@ int main(int argc, char *argv[])
 	*/
 	for(line=0; line<outLen; line++)
 	{
-		long long foffset = sl*inWid*ds*line;
-		long long ftotal = inWid*inLen*ds;
-		int bytesPerChunk = ll*inWid*ds;
-
-		if(foffset>=ftotal-bytesPerChunk)
-			foffset=ftotal-bytesPerChunk;
-		/*
-		printf("inWid: %lli, inLen: %lli, ll: %i, sl: %i, ds: %i\n", 
-		       inWid, inLen, ll, sl, ds);
-		printf("foffset: %lli, ftotal: %lli, bytesPerChunk: %i\n", 
-		       foffset, ftotal, bytesPerChunk);
-		*/
-			
-		/* Seek to the correct line to read a ll*inWid chunk from */
-		FSEEK64(fiamp,foffset,SEEK_SET);
-		FSEEK64(fiphase,foffset,SEEK_SET);
 
 		/* Read in a ll*inWid size chunk */
 		get_float_lines(fiamp, meta_old, line*sl, ll, ampIn);
 		get_float_lines(fiphase, meta_old, line*sl, ll, phaseIn);
-//		FREAD(ampIn,ds,ll*inWid,fiamp);
-//		FREAD(phaseIn,ds,ll*inWid,fiphase);
-		
-/*if (line==5) exit(0);
-*/
+
 		/* begin adding data */
 		for (sample=0; sample<outWid; sample++)
 		{ 
@@ -348,9 +328,6 @@ int main(int argc, char *argv[])
 		/* write out data to file */
 		put_float_line(foamp, meta, line, ampOut);
 		put_float_line(fophase, meta, line, phaseOut);
-
-		//FWRITE(ampOut,ds,outWid,foamp);
-		//FWRITE(phaseOut,ds,outWid,fophase);
 
 		if ((line*100/outLen)>percent) {
 			printf("   Completed %3.0f percent\n", percent);
