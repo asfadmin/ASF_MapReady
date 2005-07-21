@@ -29,6 +29,8 @@ $(TARGET).exe: $(TARGET).c
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe ../../bin/win32
 	cp $(TARGET).glade ../../bin/win32
+	cp *.png ../../share
+	cp *.gif ../../share
 #	cp $(TARGET).ico $(BINDIR)
 
 clean:
@@ -51,6 +53,8 @@ default: $(OBJS)
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(BINDIR)
+	cp *.png ../../share
+	cp *.gif ../../share
 #	cp $(TARGET).ico $(BINDIR)
 
 clean:
