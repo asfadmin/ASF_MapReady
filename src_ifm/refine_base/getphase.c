@@ -7,10 +7,9 @@ int getphase(char *phasein, char *tiept, char *outfile)
 {
   char metaName[255];
   FILE *fphase, *fout, *ftie;
-  float phase;
+  float phase, *phase_line;
   int ii=0;
   int wid, len;
-  int seek_byte;
   float x, y, ht;
   meta_parameters *meta;
 
@@ -26,6 +25,9 @@ int getphase(char *phasein, char *tiept, char *outfile)
   fout = FOPEN(outfile,"w");
   fphase = fopenImage(phasein,"rb");
 
+  /* Allocate memory for line buffer */
+  phase_line = (float *) MALLOC(wid*sizeof(float));
+
   /* get phase for each tie pt. location*/
   while (fscanf(ftie,"%f %f %f\n",&x,&y,&ht) != EOF) {
      double orig_x = x;
@@ -38,11 +40,11 @@ int getphase(char *phasein, char *tiept, char *outfile)
        printf("   ERROR: Tie point not within image bounds. Discarding.\n");
        continue;
      }
-     seek_byte = ((int)(y) * wid + (int)(x)) * sizeof(float);
-     FSEEK(fphase,seek_byte,0);
-     FREAD(&phase,sizeof(float),1,fphase);
+     get_float_line(fphase, meta, y, phase_line);
+     phase = phase_line[(int)x];
      if (fabs(phase)<0.0001) {
-       printf("   ERROR: Phase equals zero. Discarding-- Escher couldn't unwrap this tie point..\n");
+       printf("   ERROR: Phase equals zero. Discarding-- "
+	      "Escher couldn't unwrap this tie point..\n");
        continue;
      }
      fprintf(fout,"%4d  %9.2f  %9.2f  %10.3f  %.8f\n",ii,orig_x,orig_y,ht,phase);
