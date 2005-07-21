@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = aisp_gui
-SRCS = aisp_gui.c find_in_path.c
+SRCS = aisp_gui.c
 
 # different procedures for win/unix
 ifeq ($(SYS),win32)
@@ -40,7 +40,8 @@ CFLAGS = -Wall -O0 -g $(shell /usr/bin/pkg-config --cflags gtk+-2.0) \
          $(shell /usr/bin/pkg-config --cflags libglade-2.0) \
          -I$(ASF_INCLUDE_DIR)
 
-LDLIBS = $(shell /usr/bin/pkg-config --libs gtk+-2.0) \
+LDLIBS = $(LIBDIR)/asf_meta.a \
+         $(shell /usr/bin/pkg-config --libs gtk+-2.0) \
 	 $(shell /usr/bin/pkg-config --libs libglade-2.0) \
          $(shell /usr/bin/pkg-config --libs gthread-2.0)
 

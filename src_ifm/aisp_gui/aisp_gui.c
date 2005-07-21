@@ -10,8 +10,6 @@
 #include <glib/gprintf.h>
 #include <sys/wait.h>
 
-#include "find_in_path.h"
-
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
 #  if defined(win32)
@@ -24,6 +22,10 @@
 /* for win32, set the font to the standard windows one */
 #if defined(win32)
 #include <pango/pango.h>
+
+#define BYTE __byte
+#include "asf.h"
+#undef BYTE
 #include <Windows.h>
 
 static char appfontname[128] = "tahoma 8"; /* fallback value */
@@ -124,11 +126,20 @@ void set_font () {}
 GladeXML *glade_xml;
 gboolean user_modified_output_file = FALSE;
 
+static char *
+find_in_share(const char * filename)
+{
+    char * ret = (char *) malloc(sizeof(char) *
+                      (strlen(get_asf_share_dir()) + strlen(filename) + 5));
+    sprintf(ret, "%s/%s", get_asf_share_dir(), filename);
+    return ret;
+}
+
 /* danger: returns pointer to static data!! */
 static const char * imgloc(char * file)
 {
     static char loc[1024];
-    gchar * tmp = find_in_path(file);
+    gchar * tmp = find_in_share(file);
     if (tmp) {
       strcpy(loc, tmp);
       g_free(tmp);
@@ -136,7 +147,6 @@ static const char * imgloc(char * file)
       strcpy(loc, file);
     }
 
-    printf("Loc: %s\n", loc);
     return loc;
 }
 
@@ -564,7 +574,7 @@ execute_flag(const char *id, int value)
 	return value;
 }
 
-static void
+void
 set_widgets_sensitive(gboolean setting)
 {
     set_widget_sensitive("execute_button", setting);
@@ -587,8 +597,8 @@ set_widgets_sensitive(gboolean setting)
     set_widget_sensitive("input_file_browse_button", setting);
 }
 
-void
-execute()
+SIGNAL_CALLBACK void
+on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 {
     int debug_flag = 
 	keep_flag(1, 8192) |
@@ -604,7 +614,7 @@ execute()
 	keep_flag(11, 4) |
 	keep_flag(12, 2) |
 	execute_flag("range_complex_multiply", 16384) |
-	execute_flag("range_migration", 32768) |
+	execute_flag("range_migration", 32768) | 
         execute_flag("azimuth_complex_multiply", 65536);
 
     if (debug_flag == 0)
@@ -620,7 +630,7 @@ execute()
 
     char * output_file =
 	(char *) malloc(sizeof(char) * (strlen(input_file) + 20));
-    
+
     if (p) {
 	char * ext = strdup(p + 1);
 	strcpy(output_file, input_file);
@@ -629,31 +639,23 @@ execute()
 	//strcat(output_file, ext);
 	free(ext);
     } else {
-	sprintf(output_file, "%s%s", input_file, "_output");
+	sprintf(output_file, "%s%s", input_file, "_cpx");
     }
 
-    set_widgets_sensitive(FALSE);
-
     char cmd[1024];
-    sprintf(cmd, "aisp -p 1 -debug %d %s %s",
-	    debug_flag, input_file, output_file);
+    sprintf(cmd, "%s/aisp -p 1 -debug %d %s %s", get_asf_bin_dir(),
+            debug_flag, input_file, output_file);
 
-    free(output_file);
-    printf("%s\n", cmd);
+    int i;
+    for (i = 0; i < strlen(cmd); ++i)
+      if (cmd[i] == '\\' && cmd[i+1] != ' ') cmd[i] = '/';
 
-    system(cmd);
-
-    set_widgets_sensitive(TRUE);
-}
-
-SIGNAL_CALLBACK void
-on_execute_button_clicked(GtkWidget *button, gpointer user_data)
-{
     int pid = fork();
 
     if (pid == 0)
     {
-      execute();
+      printf("cmd: %s\n", cmd);
+      system(cmd);
       exit(EXIT_SUCCESS);
     }
     else
@@ -666,6 +668,8 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 	g_usleep(50);
       }
     }
+    
+    free(output_file);
 }
 
 void
@@ -1140,7 +1144,7 @@ generate_org_file_if_needed()
 	}
 	else
 	{
-	  while (!foef(in)) {
+	  while (!feof(in)) {
 	    readline(in, buf, 1024);
 	    fprintf(out, "%s\n", buf);
 	  }
@@ -1206,7 +1210,6 @@ on_edit_doppler_parameters_button_clicked(GtkWidget *w)
     gtk_widget_show (doppler_parameters_dialog);
 
     gchar * in_file = get_in_file_name();
-    printf("F: %s\n", in_file);
 
     double constant, linear, quadratic;
     read_doppler_parameters(in_file, &constant, &linear, &quadratic);
@@ -1266,7 +1269,7 @@ main(int argc, char **argv)
 
     gtk_init(&argc, &argv);
 
-    glade_xml_file = (gchar *) find_in_path("aisp_gui.glade");
+    glade_xml_file = (gchar *) find_in_share("aisp_gui.glade");
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
     g_free(glade_xml_file);
