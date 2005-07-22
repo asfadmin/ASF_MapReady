@@ -65,6 +65,7 @@ BUGS:
 
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_endian.h"
 
 #define VERSION 2.25
 
@@ -164,7 +165,7 @@ int main(int argc, char **argv)
 		double Bn_y,Bp_y;
 
 		/* read in data */
-		FREAD(f_elev,sizeof(float),ncols,fdata);
+		get_float_line(fdata, meta, y, f_elev);
 		
 		/* calculate baseline for this row*/
 		meta_interp_baseline(meta,base,y*(int)yScale+sl,&Bn_y,&Bp_y);
@@ -173,7 +174,7 @@ int main(int argc, char **argv)
 		for (x=0;x<ncols;x++) {
 			f_uwp[x]=f_elev[x]/phase2elevBase[x]*(-Bp_y*sinFlat[x]-Bn_y*cosFlat[x]);
 		}
-		FWRITE(f_uwp,sizeof(float),ncols,fout);
+		put_float_line(fout, meta, y, f_uwp);
 		if ((y*100/nrows)==percent) {
 		  printf("   Completed %3d percent\n", percent);
 		  percent+=5;
@@ -192,7 +193,6 @@ int main(int argc, char **argv)
 	FREE(f_elev);
 	FCLOSE(fout);
 	FCLOSE(fdata);
-/*	StopWatch();*/
 	return(0);
 }
 

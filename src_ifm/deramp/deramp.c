@@ -77,6 +77,7 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "ddr.h"
+#include "asf_endian.h"
 
 /* local constants */
 #define VERSION 2.5
@@ -177,7 +178,7 @@ int main(int argc, char *argv[])
 		double twok=derampDirection*2.0*meta_get_k(meta);
 		meta_interp_baseline(meta,base,y*(int)yScale+sl,&Bn_y,&Bp_y);
 		/* read in the next row of data */
-		FREAD(data,sizeof(float),wid,fin);
+		get_float_line(fin, meta, y, data);
 		
 		/* calculate flat-earth range phase term & remove it */ 
 		for (x = 0; x < wid; x++)
@@ -190,8 +191,7 @@ int main(int argc, char *argv[])
 		}
 		
 		/* write out this row of data */
-		FWRITE(data,sizeof(float),wid,fout);
-		
+		put_float_line(fout, meta, y, data);
 		if (y*100/len==percent) {
 		  printf("   Completed %3.0f percent\n", percent);
 		  percent+=5.0;
