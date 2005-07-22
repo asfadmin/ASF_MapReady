@@ -200,16 +200,6 @@ int main(int argc, char **argv)
 		seek_y=(int)((seed_y-sl)/yScale);
 		get_float_line(fdata, meta, seek_x, phase_line);
 		phase = phase_line[seek_y];
-		/*
-		FSEEK64(fdata,sizeof(float)*(seek_y*ncols+seek_x),0);
-		fread(&phase,sizeof(float),1,fdata);
-
-* FIX ME: Hack for endianess *********
-
-                        ieee_big32( phase );
-
-/******** end of hack ******************/
-
 		if (phase==0)
 			continue;/*Escher couldn't unwrap this tie point.*/
 
@@ -247,7 +237,6 @@ int main(int argc, char **argv)
 	seed_height = (e*(-c)+f*a)/det;
    }
 
-   //	FSEEK64(fdata,0,0);
 	if (!quietflag) 
 	  printf("   Seed Phase: %f\n   Elevation: %f\n",seed_phase,seed_height);
 
@@ -277,16 +266,6 @@ int main(int argc, char **argv)
 	*/
 	for (y=0;y<nrows;y++) {
 		double Bn_y,Bp_y;
-		/* read in data *
-		FREAD(f_uwp,sizeof(float),ncols,fdata);
-
-* FIX ME: Hack for endianess *********
-
-               for(x=0;x<ncols;x++) {
-                        ieee_big32( f_uwp[x] );
-                }
-
-/******** end of hack ******************/
 		/* read in data */
 		get_float_line(fdata, meta, y, f_uwp);
 		
@@ -305,16 +284,6 @@ int main(int argc, char **argv)
 				f_elev[x] = 0.0;
 		}
 
-/* FIX ME: Hack for endianess *********
-
-               for(x=0;x<ncols;x++) {
-                        ieee_big32( f_elev[x] );
-                }
-
-******** end of hack ******************
-
-FWRITE(f_elev,sizeof(float),ncols,fout);
-*/
 		put_float_line(fout, meta, y, f_elev);
 		if ((y*100/nrows)>percent) {
 		  printf("   Completed %3.0f percent\n", percent);
