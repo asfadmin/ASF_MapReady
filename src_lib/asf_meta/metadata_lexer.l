@@ -36,7 +36,8 @@ FIELD_STRING       [^#\n]*[^#\n \t]
 \#.*        { ; }
 
  /* Eat up trailing blanks and new lines.  */
-[ \t]*\n    { line_number++; }
+
+[ \t\r]*\n    { line_number++; }
 
  /* Name tokens name blocks or fields.  */
 {ID_STRING}[ \t]*/[:{]   { int last_nonspace = meta_yyleng - 1;
