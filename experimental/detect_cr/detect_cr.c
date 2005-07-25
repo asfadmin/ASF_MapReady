@@ -360,7 +360,7 @@ bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY,
     sprintf(szChip, "%s.img", chip);
     fpChip = FOPEN(szChip, "wb");
     size = srcSize*srcSize*sizeof(float);
-    FWRITE(s, size, 1, fpChip);
+    put_float_lines(fpChip, metaChip, 0, srcSize, s);
     FCLOSE(fpChip);
   }
 
