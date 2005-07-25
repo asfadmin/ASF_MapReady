@@ -116,9 +116,7 @@ int main(int argc,char *argv[])
   char *demName,*sarName,*ceos,*outName;
   FILE *out;
   meta_parameters *metaSar, *metaDem;
-  //struct DDR sar_ddr,dem_ddr;
   double elev = 0.0;
-  //forward_transform latLon2proj[100];
   
   logflag=0;
   
