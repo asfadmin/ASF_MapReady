@@ -14,9 +14,9 @@ SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY: Written 3/17/94 by Tom Logan (ASF)
 		 Ported to Suns and modified for small buffers 4/95
 *******************************************************************/
-unsigned char filter(
+float filter(
                           /****************************************/
-    unsigned char *inbuf, /* input image buffer                   */
+    float *inbuf, /* input image buffer                   */
     int    nl,            /* number of lines for inbuf            */
     int    ns,            /* number of samples per line for inbuf */
     int    x,             /* sample in desired line               */
@@ -34,7 +34,7 @@ unsigned char filter(
          {
           if (inbuf[base] != 0 && j < ns)
            {
-             kersum += (float) inbuf[base];
+             kersum += inbuf[base];
              total  += 1;
            }
           base++;
@@ -43,5 +43,5 @@ unsigned char filter(
        base -= nsk;
       }
     if (total != 0) kersum /= (float) total;
-    return ((unsigned char) (kersum + .5));
+    return (kersum);
 }

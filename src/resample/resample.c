@@ -23,9 +23,6 @@ DESCRIPTION:
 EXTERNAL ASSOCIATES:
     NAME:                USAGE:
     ---------------------------------------------------------------
-    c_getddr()		 reads values from ddr file
-    c_putddr()		 updates existing ddr file (if input is .img)
-    create_ddr()	 creates a new ddr file (if input is .dat)
     filter()		 finds a kernel average at a given point
 
 PROGRAM HISTORY:
@@ -43,6 +40,8 @@ PROGRAM HISTORY:
     3.4     6/98         Fixed non-ANSI timer routine.      
     4.0     12/98        Paradoxically, removed ASF capability to make
                          cross-dataset capability easier to implement.
+    4.5     07/05        Removed DDR dependency and made the tool to work
+                         with floating point values
     
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -110,17 +109,16 @@ AUTHOR:   T. Logan
 
 #include "asf.h"
 #include "ceos.h"
-#include "ddr.h"
-#include "worgen.h"
+#include "asf_meta.h"
 
-unsigned char filter(    /****************************************/
-    unsigned char *inbuf, /* input image buffer                   */
+float filter(    /****************************************/
+    float *inbuf, /* input image buffer                   */
     int    nl,            /* number of lines for inbuf            */
     int    ns,            /* number of samples per line for inbuf */
     int    x,             /* sample in desired line               */
     int    nsk);
  
-#define VERSION 4.0
+#define VERSION 4.5
 
 int main(argc,argv)
     int      argc;
@@ -129,9 +127,9 @@ int main(argc,argv)
     FILE            *fpin, *fpout;  /* file pointer                   */
     static   char   infile[255],     /* name of input SAR image file   */
                     outfile[255];    /* name of output RAW file        */
-    unsigned char   *inbuf,         /* stripped input buffer          */
+    float           *inbuf,         /* stripped input buffer          */
                     *outbuf;        /* stripped output buffer         */
-    struct   DDR       ddr;         /* ddr structure 		      */
+    meta_parameters *metaIn, *metaOut;
     int      np, nl,                /* in number of pixels,lines      */
              onp, onl,              /* out number of pixels,lines     */
              nsk,                   /* kernel size in samples         */
@@ -147,17 +145,16 @@ int main(argc,argv)
              base,                  /* base sample/line               */
              rate;                  /* # input pixels/output pixel    */
 
-    StartWatch();
 
    /*--------  Process Command Line Inputs -------------*/
     if (argc != 4)
      {
       printf("\nUsage: %s <infile> <outfile> <pixsiz>\n"
-      "     <infile>     LAS 6.0 input image file\n"
-      "     <outfile>    LAS 6.0 output image file \n"
+      "     <infile>     Input image file\n"
+      "     <outfile>    Output image file \n"
       "     <pixsiz>     Pixel size in meters of output image (m)\n"
       "\n"
-      "Resamples, via a centered kernel, the given LAS image to\n"
+      "Resamples, via a centered kernel, the given image to\n"
       "the given new size.\n",argv[0]);
       printf("\nVersion %.2f, ASF SAR TOOLS\n\n",VERSION);
       exit(1);
@@ -172,21 +169,13 @@ int main(argc,argv)
     printf(" Output image is %s\n",outfile);
     printf(" Output pixel size is %f meters\n",pixsiz);
    
-	c_getddr(infile, &ddr);
-	if (ddr.dtype!=1)
-	{
-		printf("ERROR!  resample only works with byte images.\n"
-			"You can convert the image to a byte image using remap's\n"
-			"-byte and -map options, or use amp2img\n"
-			"Exiting...\n");
-		exit(1);
-	}
-	nl = ddr.nl;
-	np = ddr.ns;
-	
-	scalfact = 1.0/(pixsiz/ddr.pdist_x);
-        nsk = (int) (pixsiz/ddr.pdist_x + 0.5);
-        if (nsk%2 == 0) nsk++;              /* Must be odd sized kernel */
+    metaIn = meta_read(infile);
+    metaOut = meta_read(infile);
+    nl = metaIn->general->line_count;
+    np = metaIn->general->sample_count;
+    scalfact = 1.0/(pixsiz/metaIn->general->x_pixel_size);
+    nsk = (int) (pixsiz/metaIn->general->x_pixel_size + 0.5);
+    if (nsk%2 == 0) nsk++;              /* Must be odd sized kernel */
 
     onp = (np) * scalfact;
     onl = (nl) * scalfact;
@@ -195,18 +184,25 @@ int main(argc,argv)
     half = (nsk-1)/2;
     n_lines = nsk;
  
-    inbuf= (unsigned char*) MALLOC ((unsigned)nsk*np*sizeof(char));
-    outbuf = (unsigned char*) MALLOC ((unsigned)onp*sizeof(char));
+    inbuf= (float *) MALLOC (nsk*np*sizeof(float));
+    outbuf = (float *) MALLOC (onp*sizeof(float));
  
    /*----------  Open the Input & Output Files ---------------------*/
     fpin=fopenImage(infile,"rb");
     fpout=fopenImage(outfile,"wb");
- 
-   /*--------  Process inbuf to give outbuf ------------------------*/
-    printf(" Scale Factor : %f\n",scalfact);
-    printf(" Kernel Size  : %i\n",nsk);
-    printf(" base-- %f rate-- %f\n\n",base,rate);
-    printf("Writing raw byte image file %i samples by %i lines\n\n",onp,onl);
+
+    /* Write output metadata file */ 
+    metaOut->general->line_count = onl;
+    metaOut->general->sample_count = onp;
+    metaOut->general->x_pixel_size = pixsiz;
+    metaOut->general->y_pixel_size = pixsiz;
+    meta_write(metaOut, outfile);
+
+  /*--------  Process inbuf to give outbuf ------------------------*/
+    printf("   Scale Factor : %f\n",scalfact);
+    printf("   Kernel Size  : %i\n",nsk);
+    printf("   base-- %f rate-- %f\n\n",base,rate);
+    printf("   Writing image file %i samples by %i lines\n\n",onp,onl);
  
     for (i = 0; i < onl; i++)
       {
@@ -216,8 +212,8 @@ int main(argc,argv)
        if (s_line < 0) s_line = 0;
        if (nl < nsk+s_line) n_lines = nl-s_line;
       
-       FSEEK(fpin,s_line*np,0);
-       FREAD(inbuf,np*n_lines,1,fpin);
+       get_float_lines(fpin, metaIn, s_line, n_lines, inbuf);
+
        /*--------- Produce the output line and write to disk -------*/ 
        for (j = 0; j < onp; j++)
          {
@@ -225,20 +221,13 @@ int main(argc,argv)
           outbuf[j] = filter(inbuf,n_lines,np,xi,nsk);
          }
        
-       FWRITE(&outbuf[0],onp,1,fpout);
-       if (i%40==0) 
+       put_float_line(fpout, metaOut, i, outbuf);
+       if (i%500==0) 
           printf(" Processing Output Line %i\n",i);
       }
         
-   /*----------  Close Files and Exit  -----------------------------*/
-	ddr.nl = onl;
-	ddr.ns = onp;
-	ddr.pdist_x = pixsiz;
-	ddr.pdist_y = pixsiz;
-	j = c_putddr(outfile,&ddr);
-
     FCLOSE(fpin);                 
     FCLOSE(fpout);
-    StopWatch();
+
     return(0);
 }
