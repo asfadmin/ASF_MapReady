@@ -5,7 +5,8 @@
 #include "worgen.h"
 
 void airsar2ddr(char *airsarname, struct DDR *ddrOut);
-void readAirSARLine(FILE *fp,int *dest,int hb,int lb,int y,struct DDR *ddr);
+void airsar2meta(char *airsarname, meta_parameters *meta);
+void readAirSARLine(FILE *fp,int *dest,int hb,int lb,int y,meta_parameters *meta);
 char* get_airsar(char *fname, char *Header, char *Record);
 char* linetail(char* strIn);
 
