@@ -79,7 +79,8 @@ void airsar2ddr(char* airsarname, struct DDR *ddrOut)
 printf("Starting AirSAR Header -> DDR conversion!\n");
 /* The necessary parts of a DDR file: setting up. *
  *------------------------------------------------*
- **************************************************/
+ ********************void airsar2ddr(char* airsarname, struct DDR *ddrOut)
+******************************/
     c_intddr(ddrOut);
 
     /* number of lines in image	*/
@@ -163,3 +164,65 @@ printf("Starting AirSAR Header -> DDR conversion!\n");
 
     return;
 }
+
+void airsar2meta(char* airsarname, meta_parameters *meta)
+{
+    char dtype[50];
+    int dt, i;
+
+    strcpy(meta->general->sensor, "AirSAR");
+
+    /* number of lines in image	*/
+    meta->general->line_count = 
+      atoi(get_airsar(airsarname, "FIRST", "NUMBER OF LINES IN IMAGE"));
+    printf(".");
+
+    /* number of samples in image */
+    meta->general->sample_count = 
+      atoi(get_airsar(airsarname, "FIRST", "NUMBER OF SAMPLES PER RECORD"));
+    printf(".");
+
+    /* number of bands in image	*/
+    meta->general->band_number = 0; 
+    printf(".");
+
+    meta->general->y_pixel_size = 
+      atof(get_airsar(airsarname, "FIRST", "AZIMUTH PIXEL SPACING (METERS)"));
+    printf(".");
+    meta->general->x_pixel_size = 
+      atof(get_airsar(airsarname, "FIRST", "RANGE PIXEL SPACING (METERS)"));
+    printf(".");
+
+    /* data type of pixels (unsigned char, short int, float)*/
+    strcpy(dtype, get_airsar(airsarname, "FIRST", "DATA TYPE"));
+    if(!strcmp(dtype, "BYTE")) meta->general->data_type = BYTE;
+    else if(!strcmp(dtype, "INTEGER*2")) meta->general->data_type = INTEGER16;
+    else if(!strcmp(dtype, "INTEGER*4")) meta->general->data_type = INTEGER32;
+    else if(!strcmp(dtype, "REAL*4")) meta->general->data_type = REAL32;
+    else if(!strcmp(dtype, "REAL*8")) meta->general->data_type = REAL64;
+    printf(".");
+
+    /* computer system data is on */
+    strcpy(meta->general->system, "ieee_std");
+    printf(".");
+
+    /* line relative to master image. */
+    meta->general->start_line = 0; 
+    printf(".");
+
+    /* sample relative to master image */
+    meta->general->start_sample = 0; 
+    printf(".");
+
+    /* line increment for sampling */
+    meta->sar->line_increment = 1; 
+    printf(".");
+
+    /* sample increment for sampling */
+    meta->sar->sample_increment = 1; 
+    printf(".\n");
+
+    return;
+}
+
+

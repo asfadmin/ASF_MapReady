@@ -1,13 +1,13 @@
 /******************************************************************
 NAME:    airsarin.c
   
-SYNOPSIS: airsarin sar_infile las_outfile
+SYNOPSIS: airsarin sar_infile outfile
   
 DESCRIPTION:
-     This program reads AIRSAR images and converts them to LAS 6.0 
-     DAL images.  The program takes any AIRSAR input file, and 
-     creates a LAS .img output file with a .ddr metadata file.  After 
-     the image is ingested, the LAS image can be geocoded using the
+     This program reads AIRSAR images and converts them to images.  
+     The program takes any AIRSAR input file, and 
+     creates a .img output file with a .meta metadata file.  After 
+     the image is ingested, the image can be geocoded using the
      program airsargeo
   
 PROGRAM HISTORY:
@@ -18,6 +18,7 @@ VERSION         DATE   AUTHOR
 					   a template
 1.1		6/01	T. Logan	   Modified subroutines to make
 					   more reliable
+1.2             7/05    R. Gens            Removed DDR dependencies.
 
 *******************************************************************************
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
@@ -60,7 +61,7 @@ VERSION         DATE   AUTHOR
 #include "airsar_io.h"
 #include "asf_meta.h"
 
-#define VERSION 1.1
+#define VERSION 1.2
 
 int main(int argc, char *argv[])
 {
@@ -87,9 +88,8 @@ int main(int argc, char *argv[])
   float incr=1;
   float offset=0;
 
-  struct DDR ddr;		/* Data Record file			*/
+  meta_parameters *meta;
 
-  StartWatch();
   if(argc != 3){
     printf("Usage:	%s inSARfile outLASfile\n",argv[0]);
     printf("\tinput: inSARfile, an AirSAR image\n");
@@ -116,17 +116,16 @@ int main(int argc, char *argv[])
   else printf("Hrmmm....\n");
 
 /* Create the output ddr */
-  airsar2ddr(airsarname, &ddr);
+  meta = raw_init();
+  airsar2meta(airsarname, meta);
+  if (demi2)
+    meta->general->image_data_type = DEM;
+  else
+    meta->general->image_data_type = AMPLITUDE_IMAGE;
+  meta_write(meta, outname);
   fpOut = fopenImage(outname, "wb");
-  stati = c_putddr(outname, &ddr);
-
-  if (stati != E_SUCC)
-  {
-	printf("Error returned from putddr\n");
-  }
-
-  ns = ddr.ns;
-  nl = ddr.nl;
+  ns = meta->general->sample_count;
+  nl = meta->general->line_count;
 
 /* Allocate buffer space */
   ibuff = (int *) malloc(ns * sizeof(int));
@@ -157,39 +156,34 @@ int main(int argc, char *argv[])
 
   printf("\nBeginning IMG conversion...\n");
 
-  fpIn = fopen(airsarname, "r");
+  fpIn = FOPEN(airsarname, "r");
 
 /* Read input file, convert, and write to output file */
   for (y = 0; y< nl; y++)
   {
-	readAirSARLine(fpIn, ibuff, hb, lb, y, &ddr);
-
-	if( ddr.dtype==DTYPE_BYTE) {
-		for (x = 0; x< ns; x++)
-			obuff_char[x]=(unsigned char)ibuff[x];
-		FWRITE(obuff_char, ns, 1, fpOut);
-	}
-	else {
-		for (x = 0; x < ns; x++){
-			obuff[x]=(float)ibuff[x];
-      
-      if(obuff[x]!=49152)obuff[x]=obuff[x]*incr+offset;
-      else obuff[x]=0;
+    readAirSARLine(fpIn, ibuff, hb, lb, y, meta);
+    
+    if( meta->general->data_type == BYTE) {
+      for (x = 0; x< ns; x++)
+	obuff_char[x]=(unsigned char)ibuff[x];
+      FWRITE(obuff_char, ns, 1, fpOut);
     }
-		putFloatLine(fpOut, &ddr, y, obuff);
-	}
-	if ((y % 100) == 0)
-		printf("Now Processing Line No = %d \n", y);
+    else {
+      for (x = 0; x < ns; x++){
+	obuff[x]=(float)ibuff[x];
+	
+	if(obuff[x]!=49152)obuff[x]=obuff[x]*incr+offset;
+	else obuff[x]=0;
+      }
+      put_float_line(fpOut, meta, y, obuff);
+    }
+    if ((y % 500) == 0)
+      printf("Now Processing Line No = %d \n", y);
   }
-
-      printf("Version 1.1\n");
-
 
   FCLOSE(fpOut);
   FCLOSE(fpIn);
-  printf("Finished!\n");
 
-  StopWatch();
   return 0;
 }
 

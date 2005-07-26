@@ -22,7 +22,7 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include "airsar_io.h"
 
-void readAirSARLine(FILE *fp,int *dest,int hb,int lb,int y,struct DDR *ddr)
+void readAirSARLine(FILE *fp,int *dest,int hb,int lb,int y,meta_parameters *meta)
 {
     int ns;
     int linelen;
@@ -32,9 +32,9 @@ void readAirSARLine(FILE *fp,int *dest,int hb,int lb,int y,struct DDR *ddr)
     int headerBytes = hb;
     int lineBytes = lb;
 
-    ns = ddr->ns;
-    linelen = ns*dtype2dsize(ddr->dtype, NULL);
-    buf=(unsigned char*)malloc(linelen);
+    ns = meta->general->sample_count;
+    linelen = ns * meta->general->data_type;
+    buf=(unsigned char*)MALLOC(linelen);
 
     if(fp == NULL) {
 	printf("NULL File Pointer!\n");
@@ -43,16 +43,15 @@ void readAirSARLine(FILE *fp,int *dest,int hb,int lb,int y,struct DDR *ddr)
 
     FSEEK(fp, headerBytes+y*lineBytes, 0);
     FREAD(buf, 1, linelen, fp);
-    if (ddr->dtype==DTYPE_BYTE)
+    if (meta->general->data_type == BYTE)
 	for( i = 0; i < ns; i++ )
 		dest[i]=buf[i];
 
-    else if (ddr->dtype==DTYPE_SHORT)
+    else if (meta->general->data_type == INTEGER16)
 	for( i = 0; i < ns; i++)
 		dest[i]=(buf[2*i]<<8)+buf[2*i+1];
     else {
-	printf("Attempted to read unsupported data type %d\n",ddr->dtype);
-	printf("from image file!\n");
+	printf("Attempted to read unsupported data type from image file!\n");
    	fclose(fp);
 	exit(1);
     }
@@ -94,7 +93,7 @@ char* get_airsar(char* fname, char* Header, char* Record)
 	    }
           }
 	}
-	close(fp);
+	FCLOSE(fp);
 	return chOut;
 }	
 
