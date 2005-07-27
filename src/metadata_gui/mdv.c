@@ -20,18 +20,15 @@
 #  endif
 #endif
 
-#ifdef win32
-const char PATH_SEPARATOR = ';';
-const char DIR_SEPARATOR = '\\';
-#else
-const char PATH_SEPARATOR = ':';
-const char DIR_SEPARATOR = '/';
-#endif
-
 /* for win32, set the font to the standard windows one */
 #if defined(win32)
 #include <pango/pango.h>
-#include <Windows.h>
+
+#define BYTE __byte
+#include "asf.h"
+#undef BYTE
+#include <windows.h>
+#undef DIR_SEPARATOR
 
 static char appfontname[128] = "tahoma 8"; /* fallback value */
 
@@ -127,6 +124,14 @@ void set_font ()
 void set_font () {}
 
 #endif /* defined(win32) */
+
+#ifdef win32
+const char PATH_SEPARATOR = ';';
+const char DIR_SEPARATOR = '\\';
+#else
+const char PATH_SEPARATOR = ':';
+const char DIR_SEPARATOR = '/';
+#endif
 
 GladeXML *glade_xml;
 
@@ -379,6 +384,34 @@ put_file_in_textview(const char * file, const char * ext, const char * tv)
   g_free(txt);
 }
 
+static void
+put_text_in_textview(const char * text, const char * tv)
+{
+  gchar widget_name[128];
+  sprintf(widget_name, "%s_textview", tv);
+
+  GtkWidget * w = glade_xml_get_widget(glade_xml, widget_name);
+  if (!w) { printf("Bad: %s\n", widget_name); return; }
+
+  append_output(text, w);
+}
+
+void error(const char * t)
+{
+  put_text_in_textview(t, "data_set_summary");
+  put_text_in_textview(t, "map_projection_data");
+  put_text_in_textview(t, "platform_position_data");
+  put_text_in_textview(t, "attitude_data");
+  put_text_in_textview(t, "radiometric_data");
+  put_text_in_textview(t, "data_quality_summary");
+  put_text_in_textview(t, "processed_data_histograms");
+  put_text_in_textview(t, "signal_data_histograms");
+  put_text_in_textview(t, "range_spectra");
+  put_text_in_textview(t, "facility_related_data");
+  put_text_in_textview(t, "image_file_descriptor");
+  put_text_in_textview(t, "leader_file_descriptor");
+}
+
 static void execute()
 {
   GtkWidget * input_file_entry =
@@ -386,59 +419,25 @@ static void execute()
   
   const char * input_file =
     gtk_entry_get_text(GTK_ENTRY(input_file_entry));
+
+  gchar cmd[1024];
+    
+  sprintf(cmd, "%s/metadata -f umlarqphsfib %s", 
+	  get_asf_bin_dir(), input_file);
   
-  gchar *cmd, *fmt, *tmp;
-
-  gchar * metadata = find_in_path("metadata");
-
-  int cmd_len = strlen(input_file) + strlen(metadata) + 10;
-  fmt = (gchar *) g_malloc(sizeof(gchar) * cmd_len);
-  tmp = (gchar *) g_malloc(sizeof(gchar) * cmd_len);
-  cmd = (gchar *) g_malloc(sizeof(gchar) * cmd_len * 12 + 100);
-
-  strcpy(fmt, metadata);
-  strcat(fmt, " -f %c ");
-  strcat(fmt, input_file);
-  strcat(fmt, "; ");
-
-  sprintf(tmp, fmt, 'u');
-  strcpy(cmd, tmp);
-
-  sprintf(tmp, fmt, 'm');
-  strcat(cmd, tmp);
-
-  sprintf(tmp, fmt, 'l');
-  strcat(cmd, tmp);
-
-  sprintf(tmp, fmt, 'a');
-  strcat(cmd, tmp);
-
-  sprintf(tmp, fmt, 'r');
-  strcat(cmd, tmp);
-
-  sprintf(tmp, fmt, 'q');
-  strcat(cmd, tmp);
-
-  sprintf(tmp, fmt, 'p');
-  strcat(cmd, tmp);
-
-  sprintf(tmp, fmt, 'h');
-  strcat(cmd, tmp);
-
-  sprintf(tmp, fmt, 's');
-  strcat(cmd, tmp);
-
-  sprintf(tmp, fmt, 'f');
-  strcat(cmd, tmp);
-
-  sprintf(tmp, fmt, 'i');
-  strcat(cmd, tmp);
-
-  sprintf(tmp, fmt, 'b');
-  strcat(cmd, tmp);
-
+  int i;
+  for (i = 0; i < strlen(cmd); ++i)
+    if (cmd[i] == '\\' && cmd[i+1] != ' ') cmd[i] = '/';
+    
   printf("%s\n", cmd);
-  system(cmd);
+
+  int ret = system(cmd);
+    
+  printf("ret = %d\n", ret);
+  if (ret != 0) {
+    printf("errno = %d\n", errno);
+    printf("err = %s\n", strerror(errno));
+  }
 
   put_file_in_textview(input_file, "dssr", "data_set_summary");
   put_file_in_textview(input_file, "mpdr", "map_projection_data");
