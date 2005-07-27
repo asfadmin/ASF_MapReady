@@ -271,7 +271,7 @@ all of the input data.
 		/*Update patch parameters for location.*/
 		setPatchLoc(p,s,meta,f->skipFile,f->skipSamp,lineToBeRead);
 		processPatch(p,signalGetRec,r,s);/*SAR Process patch.*/
-		writePatch(p,s,meta,f,patchNo);/*Output patch data to file.*/
+		writePatch(p,s,f,patchNo);/*Output patch data to file.*/
 	} /***********************end patch loop***********************************/
 
 

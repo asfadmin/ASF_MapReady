@@ -181,7 +181,7 @@ void setPatchLoc(patch *p,satellite *s,meta_parameters *meta,int leftFile,int le
 void debugWritePatch(const patch *p,char *basename);
 void processPatch(patch *p,const getRec *signalGetRec,
 	const rangeRef *r,const satellite *s);
-void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const file *f,int patchNo);
+void writePatch(const patch *p,const satellite *s,const file *f,int patchNo);
 void destroyPatch(patch *p);
 
 /*-------Routines to manipulate patches.----------*/

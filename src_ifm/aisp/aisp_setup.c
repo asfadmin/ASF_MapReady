@@ -294,7 +294,7 @@ file *newFile(void)
 {
 	file *f=(file *)MALLOC(sizeof(file));
 	strcpy(f->in,g.in1);
-	strcat(strcpy(f->out_cpx,g.out),".cpx");
+	strcat(strcpy(f->out_cpx,g.out),"_cpx.img");
 	strcat(strcpy(f->out_amp,g.out),"_amp.img");
 	strcat(strcpy(f->out_pwr,g.out),"_pwr.img");
 	strcat(strcpy(f->out_sig,g.out),"_sig.img");
