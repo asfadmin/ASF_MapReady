@@ -115,6 +115,7 @@ BUGS:
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <errno.h>
 #include "ceos.h"
 #include "asf.h"
 #include "get_ceos_names.h"
@@ -280,7 +281,7 @@ int main(int argc, char **argv)
      default:    printf("Not Valid Record Type: %d\n",itype);
     }  /* End SWITCH reqrec */
   } /* End FOR j < nrecs */
-  return 0;
+  exit (0);
 }
 
 void usage(char *name)
@@ -364,8 +365,11 @@ void write_to_file(char *exe, char *rectypes, char *infile)
     }
     if (reqrec > 0)
     {
-      sprintf(cmd,"%s %c %s > %s\n",exe,rectypes[j],name,outfile);
-      if (system(cmd) != 0) {printf("Error calling metadata\n"); exit(0);}
+      sprintf(cmd,"\"%s\" %c %s > %s\n",exe,rectypes[j],name,outfile);
+      if (system(cmd) != 0) {
+	printf("Error calling metadata: %s\n", strerror(errno)); 
+	exit(0);
+      }
     }
   }
   exit(0);
