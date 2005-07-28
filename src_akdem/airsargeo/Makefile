@@ -14,7 +14,7 @@ OLIBS = $(LIBDIR)/asf.a \
 	$(LIBDIR)/libifm.a
 LIBS = $(OLIBS) -lm
 
-OBJS = airsargeo.o
+OBJS = airsargeo.o utils.o
 POBJS = proj_pix.o proj_win.o proj_prm.o proj.o proj_grid.o projectGeo.o
 
 all: projectGeo airsargeo
@@ -29,7 +29,7 @@ airsargeo: $(OBJS)
 	rm *.o
 	mv airsargeo $(BIN_POSTFIX) $(BINDIR)
 	cp airsargeo.1 ../../man/cat1
-	cp geocode_airsar ../../bin/irix
+	cp geocode_airsar $(BIN_POSTFIX) $(BINDIR)
 	cp geocode_airsar.1 ../../man/cat1
 
 clean:	
