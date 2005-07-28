@@ -51,7 +51,8 @@ double
 vector_magnitude (Vector *self);
 
 /* Get the angle between self and other, in radians.  Both self and
-   other must have magnitude greater than zero.  */
+   other must have magnitude greater than zero.  
+   Returns a value between 0 and PI. */
 double
 vector_angle (Vector *self, Vector *other);
 

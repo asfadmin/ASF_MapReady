@@ -19,6 +19,7 @@ YACC = bison -y			# -y means use yacc file name conventions.
 
 # Build with this defined to enable parser diagnostics.  Note that
 # this doesn't automaticly clean or otherwise force a rebuild.
+# DEBUG_METADATA_PARSER = defined
 ifdef DEBUG_METADATA_PARSER
   YDEBUG_FLAGS = -t -v
   LDEBUG_FLAGS = -d
