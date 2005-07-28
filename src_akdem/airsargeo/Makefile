@@ -14,7 +14,7 @@ OLIBS = $(LIBDIR)/asf.a \
 	$(LIBDIR)/libifm.a
 LIBS = $(OLIBS) -lm
 
-OBJS = airsargeo.o utils.o
+OBJS = airsargeo.o
 POBJS = proj_pix.o proj_win.o proj_prm.o proj.o proj_grid.o projectGeo.o
 
 all: projectGeo airsargeo
