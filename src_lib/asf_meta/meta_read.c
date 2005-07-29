@@ -187,6 +187,14 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 			projection->type = STATE_PLANE;
 		else if ( !strcmp(projection_type, "SCANSAR_PROJECTION") ) 
 			projection->type = SCANSAR_PROJECTION;
+		else if ( !strcmp(projection_type, "U") ) 
+			projection->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+		else if ( !strcmp(projection_type, "P") ) 
+			projection->type = POLAR_STEREOGRAPHIC;
+		else if ( !strcmp(projection_type, "L") ) 
+			projection->type = LAMBERT_CONFORMAL_CONIC;
+		else if ( !strcmp(projection_type, "A") ) 
+			projection->type = SCANSAR_PROJECTION;
 		else  projection->type = -1;
 		coniIO_double(coni,"geo.proj.","startX:",&projection->startX,"Projection Coordinate at top-left, X direction");
 		coniIO_double(coni,"geo.proj.","startY:",&projection->startY,"Projection Coordinate at top-left, Y direction");
@@ -203,23 +211,23 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 			projection->re_minor=6356754.9;
 		}
 		switch(projection->type) {
-		case 'A':/*Along-track/cross-track projection.*/
+		case SCANSAR_PROJECTION:
 		  coniIO_double(coni,"geo.proj.","rlocal:",     &projection->param.atct.rlocal,"Local earth radius [m]");
 		  coniIO_double(coni,"geo.proj.","atct_alpha1:",&projection->param.atct.alpha1,"at/ct projection parameter");
 		  coniIO_double(coni,"geo.proj.","atct_alpha2:",&projection->param.atct.alpha2,"at/ct projection parameter");
 		  coniIO_double(coni,"geo.proj.","atct_alpha3:",&projection->param.atct.alpha3,"at/ct projection parameter");
 		  break;
-		case 'L':/*Lambert Conformal Conic projection.*/
+		case LAMBERT_CONFORMAL_CONIC:
 		  coniIO_double(coni,"geo.proj.","lam_plat1:",&projection->param.lamcc.plat1,"Lambert first standard parallel");
 		  coniIO_double(coni,"geo.proj.","lam_plat2:",&projection->param.lamcc.plat2,"Lambert second standard parallel");
 		  coniIO_double(coni,"geo.proj.","lam_lat:",  &projection->param.lamcc.lat0, "Lambert original latitude");
 		  coniIO_double(coni,"geo.proj.","lam_lon:",  &projection->param.lamcc.lon0, "Lambert original longitude");
 		  break;
-		case 'P':/*Polar Stereographic Projection.*/
+		case POLAR_STEREOGRAPHIC:
 		  coniIO_double(coni,"geo.proj.","ps_lat:",&projection->param.ps.slat,"Polar Stereographic reference Latitude");
 		  coniIO_double(coni,"geo.proj.","ps_lon:",&projection->param.ps.slon,"Polar Stereographic reference Longitude");
 		  break;
-		case 'U':/*Universal Transverse Mercator Projection.*/
+		case UNIVERSAL_TRANSVERSE_MERCATOR:
 		  coniIO_int(coni,"geo.proj.","utm_zone:",&projection->param.utm.zone,"UTM Zone Code");
 		  break;
 		default:
