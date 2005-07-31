@@ -357,6 +357,7 @@ void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_
 {
 	int az_reflen, skew_lines;
 	float slantToLast, a2;
+        char tmpOut[255];
 
 /*Set parameters*/
 	g=*g_in;
@@ -433,7 +434,8 @@ void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_
 /*Print out the parameters to .in and .meta files*/
 	print_params(g.out,&g,"aisp");
 	meta->sar->original_line_count = signalGetRec[0]->nLines;
-	meta_write(meta,g.out);
+        sprintf(tmpOut, "%s_cpx", g.out);
+	meta_write(meta,tmpOut);
 
 /*Write out parameters/structures for main routine to use:*/
 	*r=newRangeRef(g.nla);
