@@ -32,7 +32,7 @@
 ***********************************************************************/
 #include "asf.h"
 #include "ceos.h"
-#include "aisp_defs.h"
+#include "atdp_defs.h"
 #include "asf_meta.h"
 #include "odl.h"
 #include <math.h>
@@ -74,14 +74,14 @@ double getDopplerRate(double r,double f0,GEOLOCATE_REC *my_g)
   Rs=my_g->stVec.pos;Vs=my_g->stVec.vel;
   getLookYaw(my_g,r,f0,&look,&yaw);
   getDoppler(my_g,look,yaw,NULL,NULL,&Rt,NULL);
-
+  
   /*Spacecraft orbital acceleration is g*Me/r^2 toward center of earth*/
   accMag=-my_g->gxMe/vecDot(Rs,Rs);
   As=Rs;
   vecNormalize(&As);
   vecScale(&As,accMag);
   We.z=my_g->angularVelocity;
-
+  
   /*Compute the terms for Racc*/
   vecSub(Rs,Rt,&Rs_m_Rt);
   vecCross(Vs,Rt,&Vs_c_Rt);
@@ -93,14 +93,14 @@ double getDopplerRate(double r,double f0,GEOLOCATE_REC *my_g)
 }
 
 
-		
+
 
 /******************************************************************
 We begin with a collection of small utility routines.
 */
 
 /*SmallestPow2:
-	Returns the smallest power of 2 larger than the given number.
+  Returns the smallest power of 2 larger than the given number.
 */
 int smallestPow2(int num)
 {
@@ -124,7 +124,8 @@ satellite *newSatellite(void)
   int err=0; /* Error codes for the ODL interface */
   char errC=0;
   int my_precomp; /* far range precompensation value */
-  int cols; /* Dummy Variable to hold the number of columns in the antenna pattern correction vector */
+  int cols; /* Dummy Variable to hold the number of columns in the antenna pattern 
+	       correction vector */
   satellite *s=(satellite *)MALLOC(sizeof(satellite));
   ODL odl;
   /*Copy over a few parameters.*/
@@ -150,7 +151,8 @@ satellite *newSatellite(void)
       printf("   You can't have both a Kaiser and a Hamming window simultaneously\n");
       printf("   Using a rectangular window in azimuth\n");
       if (logflag) {
-	printLog("   You can't have both a Kaiser and a Hamming window simultaneously\n");
+	printLog("   You can't have both a Kaiser and a Hamming window "
+		 "simultaneously\n");
 	printLog("   Using a rectangular window in azimuth\n");
       }
       s->hamming=0;
@@ -184,7 +186,8 @@ satellite *newSatellite(void)
   
   /* Check to make sure the bandwidth truncation values are in the correct range */
   if(s->pctbw<1 && s->pctbw>0) {
-    if (!quietflag) printf("   Truncating range bandwidth by %.1f percent\n",s->pctbw*100);
+    if (!quietflag) 
+      printf("   Truncating range bandwidth by %.1f percent\n",s->pctbw*100);
     if (logflag) {
       sprintf(logbuf,"   Truncating range bandwidth by %.1f percent\n",s->pctbw*100);
       printLog(logbuf);
@@ -194,9 +197,11 @@ satellite *newSatellite(void)
     s->pctbw=0;
   
   if(s->pctbwaz<1 && s->pctbwaz>0) {
-    if (!quietflag) printf("   Truncating azimuthal bandwidth by %.1f percent\n",s->pctbwaz*100);
+    if (!quietflag) 
+      printf("   Truncating azimuthal bandwidth by %.1f percent\n",s->pctbwaz*100);
     if (logflag) {
-      sprintf(logbuf,"   Truncating azimuthal bandwidth by %.1f percent\n",s->pctbwaz*100);
+      sprintf(logbuf,"   Truncating azimuthal bandwidth by %.1f percent\n",
+	      s->pctbwaz*100);
       printLog(logbuf);
     }
   }
@@ -206,12 +211,13 @@ satellite *newSatellite(void)
   
   
   
-  /* If there is a new filename in place of the initial "NO", then read in the look angle and 
-     the gain vectors and put them in the satellite structure */
+  /* If there is a new filename in place of the initial "NO", then read in the 
+     look angle and the gain vectors and put them in the satellite structure */
   if(strcmp(g.CALPRMS,"NO")!=0)
     {
-      /* If we have a CalParams file, then lets allocate the required memory for the vectors,
-	 255 was chosen as an arbitrary length, I think that they are less than 100 entries but...*/
+      /* If we have a CalParams file, then lets allocate the required memory 
+	 for the vectors 255 was chosen as an arbitrary length, I think that 
+	 they are less than 100 entries but...*/
       s->ang_vec=(double *)MALLOC(sizeof(double)*255);
       s->gain_vec=(double *)MALLOC(sizeof(double)*255);
       
@@ -222,23 +228,31 @@ satellite *newSatellite(void)
       }
       odl=ODLparse(g.CALPRMS,0,&errC);
       if(errC!=0) {
-	sprintf(errbuf, "   ERROR: Could not Parse the ODL Structure, Possible Invalid CAL_PARAMS file, exiting\n");
+	sprintf(errbuf, "   ERROR: Could not Parse the ODL Structure, "
+		"Possible Invalid CAL_PARAMS file, exiting\n");
 	printErr(errbuf);
       }
       
       /* We opened the CAL_PARAMS file, read in the vectors */
-      s->ang_vec=(double *)ODLGetArrayDouble(odl,"CAL_PARAM.DETAILED_METADATA.ANTPTN_OBJ.ELEVANG_VEC",0,&cols,&s->vecLen);
-      s->gain_vec=(double *)ODLGetArrayDouble(odl,"CAL_PARAM.DETAILED_METADATA.ANTPTN_OBJ.GAIN_VEC",0,&cols,&s->vecLen);
-      s->noise=(double)ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.NOISE_FACT",&err);
-      s->gain=(double)ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.LINEAR_CONV_FACT",&err);
+      s->ang_vec=(double *)
+	ODLGetArrayDouble(odl,"CAL_PARAM.DETAILED_METADATA.ANTPTN_OBJ.ELEVANG_VEC",
+			  0,&cols,&s->vecLen);
+      s->gain_vec=(double *)
+	ODLGetArrayDouble(odl,"CAL_PARAM.DETAILED_METADATA.ANTPTN_OBJ.GAIN_VEC",
+			  0,&cols,&s->vecLen);
+      s->noise=(double)
+	ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.NOISE_FACT",&err);
+      s->gain=(double)
+	ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.LINEAR_CONV_FACT",&err);
       /* Convert the look angle to radians to match the output of meta_look */
       for(cols=0;cols<s->vecLen;cols++)
 	{
 	  s->ang_vec[cols]=(s->ang_vec[cols]/180)*pi;
 	  s->gain_vec[cols]=pow(10,-2*s->gain_vec[cols]/10);
-	  /*			printf("%f %f\n",s->ang_vec[cols],s->gain_vec[cols]); */
+	  /*printf("%f %f\n",s->ang_vec[cols],s->gain_vec[cols]); */
 	}
-      printf("   Calibration Parameters File Read, Elevation Angle and Gain Vectors stored\n");
+      printf("   Calibration Parameters File Read, "
+	     "Elevation Angle and Gain Vectors stored\n");
     }
   
   /*Compute a few bizarre numbers.*/ 
@@ -249,13 +263,17 @@ satellite *newSatellite(void)
     s->a2=0.0;
   
   slantToLast=g.r00+(g.isave+g.nla)*rngpix;
-  if (!quietflag) printf("   Slant to first=%.2f; slant to last=%.2f\n",g.r00+g.isave*rngpix,slantToLast);
+  if (!quietflag) 
+    printf("   Slant to first=%.2f; slant to last=%.2f\n",
+	   g.r00+g.isave*rngpix,slantToLast);
   
   s->refPerRange=refPerRange;
   s->az_reflen=refPerRange*slantToLast;
-  if (!quietflag) printf("   The azimuth reference function is at most %d lines long\n",s->az_reflen);
+  if (!quietflag) 
+    printf("   The azimuth reference function is at most %d lines long\n",s->az_reflen);
   
-  /*Shift patch to midpoint between near and far precompensation when deskew flag is on.*/
+  /*Shift patch to midpoint between near and far precompensation 
+    when deskew flag is on.*/
   
   s->dop_precomp=(int)(s->a2*g.fd*g.prf*g.r00);
   my_precomp = (int)(s->a2*(g.fd + g.fdd*g.nla + g.fddd*g.nla*g.nla)*g.prf*slantToLast);
@@ -294,7 +312,7 @@ file *newFile(void)
 {
   file *f=(file *)MALLOC(sizeof(file));
   strcpy(f->in,g.in1);
-  strcat(strcpy(f->out_cpx,g.out),".cpx");
+  strcat(strcpy(f->out_cpx,g.out),"_cpx.img");
   strcat(strcpy(f->out_amp,g.out),"_amp.img");
   strcat(strcpy(f->out_pwr,g.out),"_pwr.img");
   strcat(strcpy(f->out_sig,g.out),"_sig.img");
@@ -352,12 +370,13 @@ patch *copyPatch(patch *oldPatch)
 
 */
 
-void aisp_setup(struct AISP_PARAMS *g_in, meta_parameters *meta, int *N_az,
+void atdp_setup(struct AISP_PARAMS *g_in, meta_parameters *meta, int *N_az,
 		int *N_range, satellite **s, rangeRef **r, file **f,
 		getRec **signalGetRec)
 {
   int az_reflen, skew_lines;
   float slantToLast, a2;
+  char tmpOut[255];
   
   /*Set parameters*/
   g=*g_in;
@@ -427,13 +446,15 @@ void aisp_setup(struct AISP_PARAMS *g_in, meta_parameters *meta, int *N_az,
     fr1 = -2.0 *g.vel*g.vel / (g.wavl*r1);
     dp1 = g.fd + g.fdd*r1 + g.fddd * r1*r1;
     
-    g.slope = g.slope / (1.0 + g.slope * g.wavl*g.wavl*dp1*dp1 / fr1 / pow(speedOfLight,2.0)); 
+    g.slope = g.slope / (1.0 + g.slope * g.wavl*g.wavl*dp1*dp1 / fr1 / 
+			 pow(speedOfLight,2.0)); 
   }
   
   /*Print out the parameters to .in and .meta files*/
-  print_params(g.out,&g,"aisp");
+  //print_params(g.out,&g,"atdp");
   meta->sar->original_line_count = signalGetRec[0]->nLines;
-  meta_write(meta,g.out);
+  sprintf(tmpOut, "%s_cpx", g.out);
+  meta_write(meta,tmpOut);
   
   /*Write out parameters/structures for main routine to use:*/
   *r=newRangeRef(g.nla);

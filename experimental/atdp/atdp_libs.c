@@ -46,7 +46,7 @@ PROGRAM HISTORY:  Ver 1.0  T. Logan - Most routines are new
 ****************************************************************************/
 #include "asf.h"
 #include <sys/time.h>
-#include "aisp_defs.h"
+#include "atdp_defs.h"
 #include "las.h"
 #include "locinc.h"
 
@@ -113,19 +113,19 @@ DESCRIPTION:
 HISTORY: 1.0 - Tom Logan   4/97  Modified from stopwatch functions
 ****************************************************************/
 void elapse(int fnc)
-  {
-    struct timeval tp2;
-    struct timezone tzp2,tzp1;
-    static struct timeval tp1;
-
-    if (fnc == 0)
-      gettimeofday(&tp1,&tzp1);
-    else
-      { 
-	gettimeofday(&tp2,&tzp2);
-        printf("   elapsed time = %i seconds.\n\n",(int)(tp2.tv_sec-tp1.tv_sec));
-      }
-  }
+{
+  struct timeval tp2;
+  struct timezone tzp2,tzp1;
+  static struct timeval tp1;
+  
+  if (fnc == 0)
+    gettimeofday(&tp1,&tzp1);
+  else
+    { 
+      gettimeofday(&tp2,&tzp2);
+      printf("   elapsed time = %i seconds.\n\n",(int)(tp2.tv_sec-tp1.tv_sec));
+    }
+}
 
 /******************************************************************************
 NAME: 		yaxb.c
@@ -144,27 +144,27 @@ ALGORITHM REF:  Cheney, Ward & D. Kincaid, Numerical Mathematics and Computing,
 		2nd Editn. pp 360-362. Brooks/Cole Pub. Co., Pacific Grove, Ca.
 ******************************************************************************/
 void yaxb(float x_vec[], float y_vec[], int n, float *a, float *b)
-  {
-   double sum_x=0.0, sum_xx=0.0, sum_xy=0.0, sum_y=0.0;
-   double d, at, bt;
-   int   i;
-
-   for (i=0; i<n; i++)
+{
+  double sum_x=0.0, sum_xx=0.0, sum_xy=0.0, sum_y=0.0;
+  double d, at, bt;
+  int   i;
+  
+  for (i=0; i<n; i++)
     {
       sum_x  += x_vec[i];
       sum_y  += y_vec[i];
       sum_xx += x_vec[i] * x_vec[i];
       sum_xy += x_vec[i] * y_vec[i];
-     }
-   d =  n*sum_xx - sum_x*sum_x;
-   at = n*sum_xy - sum_x*sum_y;
-   bt = sum_xx * sum_y - sum_x * sum_xy;
-
-   *a = at/d;
-   *b = bt/d;
-
-   return;
-  }
+    }
+  d =  n*sum_xx - sum_x*sum_x;
+  at = n*sum_xy - sum_x*sum_y;
+  bt = sum_xx * sum_y - sum_x * sum_xy;
+  
+  *a = at/d;
+  *b = bt/d;
+  
+  return;
+}
 
 /******************************************************************************
 NAME: 		yax2bxc.c
@@ -186,16 +186,16 @@ ALGORITHM REF: 	Cheney, Ward & D. Kincaid, Numerical Mathematics and Computing,
 ******************************************************************************/
 void yax2bxc(float x_vec[],float y_vec[],int n,float *a,float *b,float *c)
 {
- double x1, x2, x3, x4,		/* Sum of x, x^2, x^3, x^4 */
-       y1, yx, yx2;		/* Sum of y, y*x, y*x^2    */
- double d1, d2, d3, d4, d5;      /* Intermediate Values     */
- double t1, t2, t3;		/* Equation Solutions      */
- int   i;
-
- /* Calculate all of the first order sums */
- x1 = x2 = x3 = x4 = y1 = yx = yx2 = 0.0;
-
- for (i=0; i<n; i++) {
+  double x1, x2, x3, x4,		/* Sum of x, x^2, x^3, x^4 */
+    y1, yx, yx2;		/* Sum of y, y*x, y*x^2    */
+  double d1, d2, d3, d4, d5;      /* Intermediate Values     */
+  double t1, t2, t3;		/* Equation Solutions      */
+  int   i;
+  
+  /* Calculate all of the first order sums */
+  x1 = x2 = x3 = x4 = y1 = yx = yx2 = 0.0;
+  
+  for (i=0; i<n; i++) {
     x1  += x_vec[i];
     x2  += x_vec[i] * x_vec[i];
     x3  += x_vec[i] * x_vec[i] * x_vec[i];
@@ -204,22 +204,22 @@ void yax2bxc(float x_vec[],float y_vec[],int n,float *a,float *b,float *c)
     yx  += y_vec[i] * x_vec[i];
     yx2 += y_vec[i] * x_vec[i] * x_vec[i];
   }
-
- d1 = n*x2  - x1*x1;
- d2 = n*x3  - x1*x2;
- d3 = n*x4  - x2*x2;
- d4 = n*yx  - x1*y1;
- d5 = n*yx2 - x2*y1;
-
- t1 = (d1*d5 - d2*d4) / (d1*d3 - d2*d2);
- t2 = (d4 - d2*t1) / d1;
- t3 = (y1 - x2*t1 - x1*t2) / n;
-
- *a = t1;
- *b = t2;
- *c = t3;
-
- return;
+  
+  d1 = n*x2  - x1*x1;
+  d2 = n*x3  - x1*x2;
+  d3 = n*x4  - x2*x2;
+  d4 = n*yx  - x1*y1;
+  d5 = n*yx2 - x2*y1;
+  
+  t1 = (d1*d5 - d2*d4) / (d1*d3 - d2*d2);
+  t2 = (d4 - d2*t1) / d1;
+  t3 = (y1 - x2*t1 - x1*t2) / n;
+  
+  *a = t1;
+  *b = t2;
+  *c = t3;
+  
+  return;
 }
 
 /***************************************************************************
@@ -260,6 +260,6 @@ void save_meta(meta_parameters *meta, const char *fname,
   meta->sar->line_increment = (double) li;
   meta->sar->sample_increment = 1.0;
   meta_write(meta, fname);
-
+  
   return;
 }

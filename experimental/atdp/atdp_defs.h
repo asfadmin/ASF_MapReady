@@ -26,8 +26,6 @@
 /* define complex variable type if not already defined */
 /*-----------------------------------------------------*/
 #include "asf_complex.h"
-
-
 #include "read_signal.h"
 #include "geolocate.h"
 #include "asf_meta.h"
@@ -96,8 +94,8 @@ void calc_range_ref(complexFloat *range_ref, int rangeFFT, int refLen);
 void elapse(int fnc);
 void multilook(complexFloat *patch,int n_range,int nlooks, float *pwrs);
 void save_meta(meta_parameters *meta, const char *fname,
-	int nl,int ns,int sl,int ss,
-	double pdx,double pdy, int li);
+	       int nl,int ns,int sl,int ss,
+	       double pdx,double pdy, int li);
 
 /*-------------Structures:---------------
 patch: a chunk of SAR data, throughout the processor.
@@ -106,20 +104,20 @@ satellite: sundry imaging-related parameters, for rmpatch and acpatch.
 file: parameters describing output file.
 */
 typedef struct {
-	int n_az,n_range;/*Number of samples in azimuth and range directions.*/
-	complexFloat *trans;/*Complex buffer-- indexed as trans[x*n_az+y].*/
-	float slantToFirst,slantPer;/*Slant range (m) to first pixel; per pixel.*/
-	float fd,fdd,fddd;/*Doppler coefficients (Hz; Hz/pixel; Hz/pixel/pixel)*/
-	GEOLOCATE_REC *g;/*Initialized with appropriate inertial state vector*/
-	float xResampScale,xResampOffset;/*Resampling range coefficients.*/
-	float yResampScale,yResampOffset;/*Resampling azimuth coefficients.*/
-	int fromSample,fromLine;/*Patch's location in original file.*/
+  int n_az,n_range;/*Number of samples in azimuth and range directions.*/
+  complexFloat *trans;/*Complex buffer-- indexed as trans[x*n_az+y].*/
+  float slantToFirst,slantPer;/*Slant range (m) to first pixel; per pixel.*/
+  float fd,fdd,fddd;/*Doppler coefficients (Hz; Hz/pixel; Hz/pixel/pixel)*/
+  GEOLOCATE_REC *g;/*Initialized with appropriate inertial state vector*/
+  float xResampScale,xResampOffset;/*Resampling range coefficients.*/
+  float yResampScale,yResampOffset;/*Resampling azimuth coefficients.*/
+  int fromSample,fromLine;/*Patch's location in original file.*/
 } patch;
 
 typedef struct {
-	int refLen;/*Length of reference function, in samples.*/
-	int rangeFFT;/*Length of FFTs for range reference function.*/
-	complexFloat *ref;/*FFT'd range reference function.*/
+  int refLen;/*Length of reference function, in samples.*/
+  int rangeFFT;/*Length of FFTs for range reference function.*/
+  complexFloat *ref;/*FFT'd range reference function.*/
 } rangeRef;
 
 typedef struct {
@@ -132,38 +130,41 @@ typedef struct {
 } imageFlag;
 
 typedef struct {
-	float wavl,vel;/*Radar wavelength (m); fixed-earth velocity (m/s)*/
-	float prf;/*Pulse repetition frequency (Hz)*/
-	float a2;/*Azimuth doppler deskew coefficient.*/
-	int dop_precomp;/*Amount of doppler deskew already removed.*/
-	float refPerRange;/*Number of pixels of azimuth reference function per meter of slant range..*/
-	int az_reflen;/*Maximum length of azimuth reference function, in pixels.*/
-	int ideskew;/*Deskew image? 0-- no; 1-- yes.*/
-	int debugFlag;/*Debugging flag, with various bitwise meanings.*/
-/*These parameters apply to the "original" SAR image-- before windowing.*/
-	float orig_slantToFirst,orig_fd,orig_fdd,orig_fddd;/*Original image slant, doppler.*/
-	float sloper,interr,slopea,intera;/*Resampling coefficents (original).*/
-	double dsloper,dinterr,dslopea,dintera;/*Resampling deltas.*/
-	int hamming;/*hamming window flag*/
-	int kaiser;/*kaiser window flag*/
-        imageFlag imageType;/* Image type flag -- 0= intensity, 1=power, 2=sigma_0, 3=gamma_0, 4=beta_0 */
-	double *ang_vec;/* Look angle vector from the CAL_PARAMS file */
-	double *gain_vec;/* Gain vector from the CAL_PARAMS file */
-	int vecLen;/* Cal Params vectors length */
-        double noise;/* Noise factor applied to noise vector*/
-        double gain;/* Linear scale factor to convert DNs to RCS */
-	float pctbw; /* Fraction of range bandwith to remove */
-	float pctbwaz; /* Fraction of azimuth bandwidth to remove */
+  float wavl,vel;/*Radar wavelength (m); fixed-earth velocity (m/s)*/
+  float prf;/*Pulse repetition frequency (Hz)*/
+  float a2;/*Azimuth doppler deskew coefficient.*/
+  int dop_precomp;/*Amount of doppler deskew already removed.*/
+  float refPerRange;/*Number of pixels of azimuth reference function 
+		      per meter of slant range..*/
+  int az_reflen;/*Maximum length of azimuth reference function, in pixels.*/
+  int ideskew;/*Deskew image? 0-- no; 1-- yes.*/
+  int debugFlag;/*Debugging flag, with various bitwise meanings.*/
+  /*These parameters apply to the "original" SAR image-- before windowing.*/
+  float orig_slantToFirst,orig_fd,orig_fdd,orig_fddd;/*Original image slant, doppler.*/
+  float sloper,interr,slopea,intera;/*Resampling coefficents (original).*/
+  double dsloper,dinterr,dslopea,dintera;/*Resampling deltas.*/
+  int hamming;/*hamming window flag*/
+  int kaiser;/*kaiser window flag*/
+  imageFlag imageType;/* Image type flag -- 0= intensity, 1=power, 2=sigma_0, 3=gamma_0, 
+			 4=beta_0 */
+  double *ang_vec;/* Look angle vector from the CAL_PARAMS file */
+  double *gain_vec;/* Gain vector from the CAL_PARAMS file */
+  int vecLen;/* Cal Params vectors length */
+  double noise;/* Noise factor applied to noise vector*/
+  double gain;/* Linear scale factor to convert DNs to RCS */
+  float pctbw; /* Fraction of range bandwith to remove */
+  float pctbwaz; /* Fraction of azimuth bandwidth to remove */
 } satellite;
 
 typedef struct {
-	char in[255]; /*Input file.*/
-	char out_cpx[255],out_amp[255]; /*Complex and Amplitude output names.*/
-        char out_pwr[255], out_sig[255], out_gam[255], out_bet[255];  /*Power or RCS (dB) output names.*/
-	float azpix,rngpix; /*Azimuth and range pixel size.*/
-	int firstLineToProcess,firstOutputLine,skipFile,skipSamp;
-	int n_az_valid,nlooks;
-	int nPatches;
+  char in[255]; /*Input file.*/
+  char out_cpx[255],out_amp[255]; /*Complex and Amplitude output names.*/
+  char out_pwr[255], out_sig[255], out_gam[255], out_bet[255];  /*Power or RCS (dB) 
+								  output names.*/
+  float azpix,rngpix; /*Azimuth and range pixel size.*/
+  int firstLineToProcess,firstOutputLine,skipFile,skipSamp;
+  int n_az_valid,nlooks;
+  int nPatches;
 } file;
 
 
@@ -171,23 +172,26 @@ typedef struct {
 #include "aisp_params.h"
 int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta_out);
 void aisp_setup(struct AISP_PARAMS *g,meta_parameters *meta,int *N_az,int *N_range,
-	satellite **s,rangeRef **r,file **f,getRec **signalGetRec);
+		satellite **s,rangeRef **r,file **f,getRec **signalGetRec);
 patch *newPatch(int n_az,int n_range);
 patch *copyPatch(patch *oldPatch);
 double getDopplerRate(double r,double f0,GEOLOCATE_REC *g);
 
 /*---------Global-free Patch Routines:--------*/
-void setPatchLoc(patch *p,satellite *s,meta_parameters *meta,int leftFile,int leftSamp,int top);
+void setPatchLoc(patch *p,satellite *s,meta_parameters *meta,int leftFile,
+		 int leftSamp,int top);
 void debugWritePatch(const patch *p,char *basename);
 void processPatch(patch *p,const getRec *signalGetRec,
 	const rangeRef *r,const satellite *s);
-void writePatch(const patch *p,const satellite *s,meta_parameters *meta,const file *f,int patchNo);
+void writePatch(const patch *p,const satellite *s,meta_parameters *meta,
+		const file *f,int patchNo);
 void destroyPatch(patch *p);
 
 /*-------Routines to manipulate patches.----------*/
 void rciq(patch *p,const getRec *signalGetRec,const rangeRef *r);
 void rmpatch(patch *p,const satellite *s);
 void acpatch(patch *p,const satellite *s);
-void antptn_correct(meta_parameters *meta,complexFloat *outputBuf,int curLine,int numSamples,const satellite *s);
+void antptn_correct(meta_parameters *meta,complexFloat *outputBuf,int curLine,
+		    int numSamples,const satellite *s);
 void writeTable(meta_parameters *meta, const satellite *s, int numSamples);
 #endif
