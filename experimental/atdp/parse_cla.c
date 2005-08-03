@@ -167,17 +167,7 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
     fscanf(fp,"%f %f %f", &g->fd,&g->fdd,&g->fddd);
     FCLOSE(fp);
   }
-  
-  if (g->fdd==-99.0)
-    {
-      double old_dop=g->fd;
-      /*Estimate Doppler in scene center.*/
-      estdop(g->in1, 1000, &g->fd,&g->fdd,&g->fddd);
-      /*De-ambiguify doppler based on old value*/
-      while (g->fd-old_dop<-0.5) g->fd+=1.0;
-      while (g->fd-old_dop> 0.5) g->fd-=1.0;
-    }
-  
+    
   /*Copy fields from AISP_PARAMS struct to meta_parameters struct.*/
   meta->sar->image_type              = 'S';          /*Slant range image*/
   meta->sar->look_count              = g->nlooks;

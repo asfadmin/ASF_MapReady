@@ -72,12 +72,9 @@ double rect(double range_time, double pulse_duration)
 main (int argc, char *argv [])
 {
   FILE *fp;
-  patch *p;
-  satellite *s;
-  rangeRef *ref;
   getRec *signalGetRec;
   file *f;
-  int ii, kk, ll, mm, n_az, n_range, give_usage_action=0, offset;
+  int ii, kk, ll, mm, give_usage_action=0, offset;
   int filter_azimuth, filter_range, filter_size;
   struct AISP_PARAMS params;
   meta_parameters *meta;
@@ -105,10 +102,10 @@ main (int argc, char *argv [])
   printf("   Initialization ...\n"); 
 
   /* Read input out of SAR processing parameter file */
-  atdp_setup(&params,meta,&n_az,&n_range,&s,&ref,&f,&signalGetRec);
+  atdp_setup(&params,meta,&f,&signalGetRec);
   
   /* Define some parameters */
-  beam_center_time = n_az * lines / 2;
+  beam_center_time = samples * lines / 2; // check!!!
   pulse_duration = params.pulsedur;
   wavelength = params.wavl;
   chirp_slope = params.slope;

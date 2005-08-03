@@ -27,6 +27,15 @@ I and Q DC offset, and i/q flip parameters from
 */
 #define FILL(A,B,C)	if (fgets((A),(B),(C))!=NULL) 
 
+complexFloat x;
+
+complexFloat Czero()
+{
+  x.real = 0.0;
+  x.imag = 0.0;
+  return x;
+}
+
 void getSignalFormat(char *baseName,long long bytesInFile,getRec *r)
 {
   char name[255];
@@ -236,26 +245,4 @@ void freeGetRec(getRec *r)
     FREE((void *)r->lines);
   free((void *)r->inputArr);
   free((void *)r);
-}
-
-/***************************************
-fetchReferenceFunction:
-	Reads in and returns a range reference function.
-*/
-void fetchReferenceFunction(char *fname,complexFloat *ref,int refLen)
-{
-  int i;
-  FILE *in;
-  char name_REPLICA[255],line[255];
-  create_name(name_REPLICA,fname,".replica");
-  in=FOPEN(name_REPLICA,"rb");
-  
-  if (!quietflag) printf("   Reading pulse replica from '%s'.\n",name_REPLICA);
-  fgets(line,255,in);
-  for (i=0;i<refLen;i++)
-    {
-      fgets(line,255,in);
-      sscanf(line,"%f%f",&(ref[i].real),&(ref[i].imag));
-    }
-  FCLOSE(in);
 }

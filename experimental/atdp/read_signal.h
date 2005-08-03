@@ -31,7 +31,4 @@ void getSignalLine(const getRec *r,long long lineNo,complexFloat *destArr,
 		   int readStart,int readLen);
 void freeGetRec(getRec *r);
 
-/*For fetching the range pulse replica (range reference function).*/
-void fetchReferenceFunction(char *fname,complexFloat *ref,int refLen);
-
 #endif

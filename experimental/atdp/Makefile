@@ -16,7 +16,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_reporting.a
 LIBC = $(LIBS) -lm 
 
-ASPLIB = atdp_setup.o atdp_libs.o read_signal.o parse_cla.o estdop.o cfft1d_risc.o
+ASPLIB = atdp_setup.o read_signal.o parse_cla.o
 
 # Filter out the ISOC99 FLAGS which causes some problems.
 CFLAGS := $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
