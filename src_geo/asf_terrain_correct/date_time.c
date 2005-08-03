@@ -162,6 +162,16 @@ lookup_time_offset (const char *lookup_table_file,
 		    lookup_table_column_t lookup_table_column, 
 		    long double mjd) 
 {
+  /* At the moment, we only have time offset data back to about
+     November 2nd, 1995 (MJD 50023), and up to about Jan. 26, 2005
+     (MJD 53396).  More data can easily be obtained for later dates
+     from the International Earth Rotation Service (ITRS), for earlier
+     dates a different bulletin format may be used which might make
+     this difficult.  If the table is expanded these assertions will
+     have to change.  */
+  assert (mjd > 50023);
+  assert (mjd < 53396);
+
   /* Properties of the lookup table.  */
   static const int table_columns = 4;
   static const int ut1_minus_utc_column_index = 0; 
