@@ -1,4 +1,4 @@
-# Makefile for hdr2ddr
+# Makefile
 # Author Rudi Gens
 
 include ../../make_support/system_rules
@@ -11,13 +11,23 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
-OBJS = hdr2ddr.o
+HDR_OBJS = get_hdr.o \
+	hdr2ddr.o \
+	hdr2ddr_main.o
 
-all: hdr2ddr clean
+DDR_OBJS = ddr2hdr.o \
+	ddr2hdr_main.o \
+	put_hdr.o
 
-hdr2ddr: $(OBJS)
-	$(CC) $(CFLAGS) $(LFLAGS) -o hdr2ddr $(OBJS) $(LIBS) $(LDFLAGS)
+all: hdr2ddr ddr2hdr clean
+
+hdr2ddr: $(HDR_OBJS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o hdr2ddr $(HDR_OBJS) $(LIBS) $(LDFLAGS)
 	mv hdr2ddr$(BIN_POSTFIX) $(BINDIR)
 
+ddr2hdr: $(DDR_OBJS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o ddr2hdr $(DDR_OBJS) $(LIBS) $(LDFLAGS)
+	mv ddr2hdr$(BIN_POSTFIX) $(BINDIR)
+
 clean:
-	rm -f $(OBJS) core
+	rm -f *.o core
