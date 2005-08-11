@@ -253,10 +253,6 @@ initialize_uint8_image_structure (ssize_t size_x, ssize_t size_y)
 UInt8Image *
 uint8_image_thaw (FILE *file_pointer)
 {
-  // Carefully clone-and-modified over from float_image.c, but not
-  // tested yet.
-  g_assert_not_reached ();
-
   FILE *fp = file_pointer;	// Convenience alias.
 
   g_assert (file_pointer != NULL);
@@ -1623,10 +1619,6 @@ uint8_image_sample (UInt8Image *self, double x, double y,
 gboolean
 uint8_image_equals (UInt8Image *self, UInt8Image *other)
 {
-  // Carefully clone-and-modified over from float_image.c, but not
-  // tested yet.
-  g_assert_not_reached ();
-
   // Compare image sizes.
   if ( self->size_x != other->size_x ) {
     return FALSE;
@@ -1671,10 +1663,6 @@ synchronize_tile_file_with_memory_cache (UInt8Image *self)
 void
 uint8_image_freeze (UInt8Image *self, FILE *file_pointer)
 {
-  // Carefully clone-and-modified over from float_image.c, but not
-  // tested yet.
-  g_assert_not_reached ();
-
   FILE *fp = file_pointer;	// Convenience alias.
 
   g_assert (file_pointer != NULL);
