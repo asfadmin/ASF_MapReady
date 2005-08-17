@@ -118,6 +118,8 @@ void set_font ()
 
 #else /* defined(win32) */
 
+#include "asf.h"
+
 /* on unix, GTK will select the appropriate fonts */
 void set_font () {}
 
@@ -126,20 +128,63 @@ void set_font () {}
 GladeXML *glade_xml;
 gboolean user_modified_output_file = FALSE;
 
-static char *
-find_in_share(const char * filename)
+static gchar *
+find_in_path(gchar * file)
 {
-    char * ret = (char *) malloc(sizeof(char) *
-                      (strlen(get_asf_share_dir()) + strlen(filename) + 5));
-    sprintf(ret, "%s/%s", get_asf_share_dir(), filename);
-    return ret;
+  gchar *path, *buf, *name, *p;
+  int len, pathlen;
+
+  path = (gchar *)g_getenv("PATH");
+
+  len = strlen(file) + 1;
+  pathlen = strlen(path);
+
+  /* work area */
+  buf = (gchar *) g_malloc( sizeof(gchar) * (pathlen + len + 2) ); 
+
+  /* put separator + filename at the end of the buffer */
+  name = buf + pathlen + 1;
+  *name = DIR_SEPARATOR;
+  memcpy(name + 1, file, len);
+
+  /* now try each path item, prepended to the filename in the work area */
+  p = path;
+  do
+  {
+    gchar * start;
+    gchar * q = strchr(p + 1, PATH_SEPARATOR);
+
+    /* if separator not found, point to the end */
+    if ( !q ) 
+      q = path + pathlen;
+
+    start = name - (q - p);
+
+    /* copy path portion to the work area */
+    memcpy( start, p, q - p );
+
+    if (g_file_test( start, G_FILE_TEST_EXISTS ))
+    {
+      gchar * ret = g_strdup(start);
+      g_free(buf);
+      return ret; 
+    }
+
+    p = q;
+  } 
+  while (*p++ != '\0');
+
+  /* not found! */ 
+  g_free(buf);
+  return NULL;
 }
+
 
 /* danger: returns pointer to static data!! */
 static const char * imgloc(char * file)
 {
     static char loc[1024];
-    gchar * tmp = find_in_share(file);
+    gchar * tmp = find_in_path(file);
     if (tmp) {
       strcpy(loc, tmp);
       g_free(tmp);
@@ -1269,7 +1314,7 @@ main(int argc, char **argv)
 
     gtk_init(&argc, &argv);
 
-    glade_xml_file = (gchar *) find_in_share("aisp_gui.glade");
+    glade_xml_file = (gchar *) find_in_path("aisp_gui.glade");
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
     g_free(glade_xml_file);
