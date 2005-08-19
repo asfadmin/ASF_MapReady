@@ -194,6 +194,7 @@ int main(argc,argv)
     /* Write output metadata file */ 
     metaOut->general->line_count = onl;
     metaOut->general->sample_count = onp;
+    metaOut->general->data_type = REAL32;
     metaOut->general->x_pixel_size = pixsiz;
     metaOut->general->y_pixel_size = pixsiz;
     meta_write(metaOut, outfile);
