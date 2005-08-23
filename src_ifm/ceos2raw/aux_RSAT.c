@@ -1,7 +1,7 @@
 /*RADARSAT Auxiliary data decoding utilites.*/
 #include "asf.h"
 #include "decoder.h"
-#include "aux.h"
+#include "auxiliary.h"
 
 /*******************************************************************************
  * Information about RSAT_raw_aux for function: RSAT_decodeAux()
