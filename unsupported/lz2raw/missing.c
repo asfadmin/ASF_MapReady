@@ -6,7 +6,7 @@ Implements all routines listed in "missing.h"
 */
 #include "asf.h"
 #include "decoder.h"
-#include "aux.h"
+#include "auxiliary.h"
 
 
 /*************** A small linked list class, which is used below********/
