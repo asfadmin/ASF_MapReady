@@ -1,9 +1,0 @@
-*.x: 200
-*.y: 500
-*.fontList: helvb14
-*background: yellow
-
-.*.CopyrightInfo.borderWidth: 5
-.*.CopyrightInfo.borderColor: blue
-
-

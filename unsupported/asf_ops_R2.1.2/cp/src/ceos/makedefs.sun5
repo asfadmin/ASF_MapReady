@@ -1,8 +1,0 @@
-#
-# makefile definitions for Sun Sparc SunOS 5
-#
-COMPILE.cc  = cc
-CFLAGS = -g
-
-
-

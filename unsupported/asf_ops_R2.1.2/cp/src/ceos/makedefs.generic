@@ -1,8 +1,0 @@
-#
-# makefile definitions for generic systems (give it a try)
-#
-COMPILE.cc  = cc 
-CFLAGS = -g
- 
-
-

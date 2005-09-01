@@ -1,8 +1,0 @@
-#
-# makefile definitions for Sun Sparc SunOS 4
-#
-COMPILE.cc  = acc
-LINK_FLAGS = -g
-
-
-

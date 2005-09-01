@@ -1,6 +1,0 @@
-setenv SAR_SCR ~/delft/Orbit_package       # where to find the scripts *.scr
-setenv SAR_BIN_DIR ~/delft/Orbit_package   # where to find the executables
-setenv SAR_PRC_DIR /d0/amelung/orbits/PRC       # has ERS1 and ERS2 as subdirectories
-setenv SAR_PRL_DIR /d0/amelung/orbits/PRL       # has ERS1 and ERS2 as subdirectories
-setenv SAR_ODR_DIR /home/amelung/delft          # has ERS1 and ERS2 as subdirectories
-

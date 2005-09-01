@@ -1,9 +1,0 @@
-This directory has sat dormant for quite some time. Perhaps it is completely
-useless, but it seems prudent to keep it around for an excessive amount of time
-before completely doing away with it. The binaries you'll find in the two
-subdirectories (snaphu and tandem_ifm_snaphu) were created on an IRIX64 6.5
-(on an Origin 2000) system. It was moved here
-(unsupported/dont_compile_tandem_snaphu) in February 2003 from its original
-location in asf_tools/src_akdem/DO_NOT_COMPILE_THIS_CODE .
-The snaphu source was never actually maintained by us, it was written by Curtis
-Chen. Check out http://www-star.stanford.edu/sar_group/snaphu.

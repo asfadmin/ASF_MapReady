@@ -1,5 +1,0 @@
-#
-# makefile definitions for DEC-AXP OSF
-#
-COMPILE.cc  = cc 
-CFLAGS = -g

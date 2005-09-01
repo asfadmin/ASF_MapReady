@@ -1,8 +1,0 @@
-#
-# makefile definitions for HP 9000/700 HP-UX 9
-#
-COMPILE.cc  = cc -Aa
-CFLAGS = -g
-
-
-
