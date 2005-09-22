@@ -1,0 +1,28 @@
+# This make file lists all the external libraries used by the latest
+# tools in one flat list, making no attempt to sort out the build
+# order automatically.
+
+# Note also that this simplistic build scheme takes the traditional
+# built-too-much approach: building the default target all will
+# rebuild everything.  So if you want to be sure all the prerequisite
+# to your tool are rebuilt, you should do a make all.  On the other
+# hand, if you want to rebuild just the module you are working on,
+# just do a make in that subdirectory.
+
+MODULES = \
+	@ASF_GLIB@ \
+	@ASF_PKG_CONFIG@ \
+	@ASF_LIB_GSL@ \
+	@ASF_LIB_PROJ@ \
+	@ASF_LIB_JPEG@ \
+	@ASF_LIB_TIFF@ \
+	@ASF_LIB_GEOTIFF@ \
+	@ASF_LIB_TCL_TK@
+
+
+all:
+	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
+
+clean:
+	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) clean &&) true
+	rm -rf bin/ include/ info/ lib/ man/ share/
