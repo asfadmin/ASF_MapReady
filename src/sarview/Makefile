@@ -8,19 +8,27 @@ include ../../make_support/system_rules
 LDFLAGS := -L$(XHOME) $(LDFLAGS)
 
  # ldl, lsocket, and lnsl are necessary for Solaris, but break sarview on irix
-OTHER = -ldl -lsocket -lnsl
-LIBS  = $(LIBDIR)/asf.a \
+SOLARIS_LIBS = -ldl -lsocket -lnsl
+REQUIRED_LIBS = \
+	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libgsl.a \
+	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libproj.a \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_geolib.a \
-	$(LIBDIR)/libjpeg.a \
-	$(LIBDIR)/libtcl8.1.a \
-	$(LIBDIR)/libtk8.1.a \
+	$(JPEG_LIBS) \
+	$(TCL_TK_LIBS) \
 	-lX11 -lm
-
+LIBS = \
+	$(shell \
+	if [ "$(SYS)" = "solaris" ] ; then \
+		echo $(REQUIRED_LIBS) $(SOLARIS_LIBS) ; \
+	else \
+		echo $(REQUIRED_LIBS) ; \
+	fi \
+	)
+	
 OBJS = \
 	cproc.o cproc_desc.o cproc_hist.o \
 	hist.o sel.o \
@@ -29,19 +37,16 @@ OBJS = \
 	poly.o \
 	tkAppInit.o tkCommand.o
 
+
 all: sarview clean
 
 # if system is solaris include extra libraries
 sarview: $(OBJS)
-	if [ "$(SYS)" = "solaris" ] ; then \
-		$(CC) $(CFLAGS) $(LDFLAGS) -o sarview_bin $(OBJS) $(LIBS) $(OTHER) ; \
-	else \
-		$(CC) $(CFLAGS) $(LDFLAGS) -o sarview_bin $(OBJS) $(LIBS) ; \
-	fi
+	$(CC) $(CFLAGS) $(LDFLAGS) -o sarview_bin $(OBJS) $(LIBS)
 	mv sarview_bin$(BIN_POSTFIX) $(BINDIR)
 	cp sarview.sh $(BINDIR)/sarview
 	chmod 775 $(BINDIR)/sarview
-	-rm -r $(BINDIR)/support
+	-rm -rf $(BINDIR)/support
 	-cp -r ./support $(BINDIR)
 
 clean:

@@ -41,13 +41,12 @@ CFLAGS += -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
           -Wwrite-strings -Wnested-externs -fno-common
 
 LIBS :=	$(LIBDIR)/libasf_reporting.a \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
-	$(LIBDIR)/libjpeg.a \
+	$(JPEG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	-lm
@@ -70,6 +69,7 @@ OBJS := $(patsubst %.c, %.o, $(SOURCES))
 $(PROGRAM): $(OBJS)
 	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
 	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
+	rm -rf $(SHAREDIR)/projections
 	cp -R projections/ $(SHAREDIR)
 
 .PHONY: clean
