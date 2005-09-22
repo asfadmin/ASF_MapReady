@@ -2,7 +2,7 @@ AC_PREREQ(2.59)
 AC_INIT
 # The most recent version of aclocal doesn't seem to work if this
 # macro isn't called.
-AM_INIT_AUTOMAKE
+#AM_INIT_AUTOMAKE
 AC_LANG(C)
 
 PACKAGE=convert
@@ -21,6 +21,10 @@ have_gsl="no"
 have_pkg_config="yes"
 have_glib="no"
 have_proj="no"
+have_jpeg="no"
+have_tiff="no"
+have_geotiff="no"
+have_tcl_tk="no"
 try_gtk="yes"
 have_gtk="no"
 
@@ -36,9 +40,6 @@ versMinor=`uname -r | awk -F. '{print $2}'`
 ranlib="@echo do not need to run ranlib on this system on file: "
 optFlag="-O"
 case "${osType}:${versMajor}:${versMinor}" in
-	IRIX*:*:*)
-		sys="irix"
-		optFlag="-O -n32";;
 	SunOS:*:*)
 		sys="solaris" ;;
 	Linux:*:*)
@@ -46,8 +47,13 @@ case "${osType}:${versMajor}:${versMinor}" in
 	CYGWIN*:*:*)
 		sys="win32"
 		makeExtra="BIN_POSTFIX = .exe" ;;
+	IRIX*:*:*)
+		sys="irix"
+		if [ "$CC" == "cc" ]; then
+			optFlag="-O -n32"
+		fi ;;
 	*:*:*)
-		echo "ASF tools are only supported on IRIX, Solaris, Linux, and Windows (Cygwin)"
+		echo "ASF tools are only supported on Solaris, Linux, and Windows (Cygwin)"
 		echo "Your system appears to be '" $osType "'."
 		echo "Exiting..."
 		exit 1 ;;
@@ -56,23 +62,9 @@ esac
 AC_SUBST(sys)
 
 # Make the install directories for the libraries and binaries.
-mkdir -p lib/$sys
-mkdir -p bin/$sys
-mkdir -p java
+mkdir -p lib
+mkdir -p bin
 mkdir -p share
-
-######## Ask about GCC ############
-#if [[ ! $cc = "gcc" -a ! $batch_mode = "true" ]]; then
-#    printf "Would you like to use the GNU C Compiler 'gcc' (y/n)? "
-#    read resp
-#    if [[ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]]; then
-#        cc="gcc"
-#	optFlag="-O"
-#    fi
-#else
-#    cc="gcc"
-#    optFlag="-O4"
-#fi
 
 asfDir=`pwd`
 
@@ -81,32 +73,30 @@ AC_CHECK_LIB(c,fopen)
 AC_CHECK_LIB(m,main)
 AC_CHECK_HEADERS(unistd.h)
 
-# GSL
+ext_lib_src_dir=${asfDir}/external/work_dir
+
+#### GSL check ####
 AC_CHECK_LIB(gslcblas,main)
 AC_CHECK_LIB(gsl,main,have_gsl="yes",have_gsl="no")
-
 if test "$have_gsl" = "no" ; then
-   ASF_LIB_GSL="src_lib/libgsl"
+   ASF_LIB_GSL="${ext_lib_src_dir}/libgsl"
    GSL_LIBS="\$(LIBDIR)/libgsl.a \$(LIBDIR)/libgslcblas.a"
 else
    GSL_LIBS="-lgsl -lgslcblas"
 fi
-
 AC_SUBST(ASF_LIB_GSL)
 
-# Proj
+#### libproj check ####
 AC_CHECK_LIB(proj,pj_transform,have_proj="yes",have_proj="no")
-
 if test "$have_proj" = "no" ; then
-   ASF_LIB_PROJ="src_lib/libproj"
+   ASF_LIB_PROJ="${ext_lib_src_dir}/libproj"
    PROJ_LIBS="\$(LIBDIR)/libproj.a"
 else
    PROJ_LIBS="-lproj"
 fi
-
 AC_SUBST(ASF_LIB_PROJ)
 
-# check for pkg-config
+#### pkg-config check ####
 if test -z "$PKG_CONFIG"; then
    AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
 fi
@@ -115,29 +105,68 @@ if test "$PKG_CONFIG" = "no" ; then
    try_gtk="no"
    have_pkg_config="no"
 fi
-
 if test "$have_pkg_config" = "no" ; then
-   ASF_PKG_CONFIG="src/pkgconfig"
+   ASF_PKG_CONFIG="${ext_lib_src_dir}/pkgconfig"
 fi
-
 AC_SUBST(ASF_PKG_CONFIG)
 
-# glib check
+#### glib check ####
 if test "$have_pkg_config" = "yes" ; then
    PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.4.0],
       have_glib="yes", have_glib="no")
 fi
 
 if test "$have_glib" = "no" ; then
-   ASF_GLIB="src_lib/libglib-2.0"
+   ASF_GLIB="${ext_lib_src_dir}/libglib-2.0"
    GLIB_LIBS="\$(LIBDIR)/libglib-2.0.a \$(LIBDIR)/libiconv.a"
 else
    GLIB_LIBS="-lglib-2.0"
 fi
-
 AC_SUBST(ASF_GLIB)
 
-# gtk 2.4 check
+#### libjpeg check ####
+AC_CHECK_LIB(jpeg,main,have_jpeg="yes",have_jpeg="no")
+if test "$have_jpeg" = "no" ; then
+   ASF_LIB_JPEG="${ext_lib_src_dir}/libjpeg"
+   JPEG_LIBS="\$(LIBDIR)/libjpeg.a"
+else
+   JPEG_LIBS="-ljpeg"
+fi
+AC_SUBST(ASF_LIB_JPEG)
+
+#### libtiff check ####
+AC_CHECK_LIB(tiff,main,have_tiff="yes",have_tiff="no")
+if test "$have_tiff" = "no" ; then
+   ASF_LIB_TIFF="${ext_lib_src_dir}/libtiff"
+   TIFF_LIBS="\$(LIBDIR)/libtiff.a"
+else
+   TIFF_LIBS="-ltiff"
+fi
+AC_SUBST(ASF_LIB_TIFF)
+
+#### libgeotiff check ####
+AC_CHECK_LIB(geotiff,main,have_geotiff="yes",have_geotiff="no")
+if test "$have_geotiff" = "no" ; then
+   ASF_LIB_GEOTIFF="${ext_lib_src_dir}/libgeotiff"
+   GEOTIFF_LIBS="\$(LIBDIR)/libgeotiff.a"
+else
+   GEOTIFF_LIBS="-lgeotiff"
+fi
+AC_SUBST(ASF_LIB_GEOTIFF)
+
+#### TCL/TK check ####
+###### FIXME ###### Need to make sure we've got tcl/tk 8.1.1 ###############
+AC_CHECK_LIB(tcl8.1,main)
+AC_CHECK_LIB(tk8.1,main,have_tcl_tk="yes",have_tcl_tk="no")
+if test "$have_tcl_tk" = "no" ; then
+   ASF_LIB_TCL_TK="${ext_lib_src_dir}/tcl_tk"
+   TCL_TK_LIBS="\$(LIBDIR)/libtcl8.1.a \$(LIBDIR)/libtk8.1.a"
+else
+   TCL_TK_LIBS="-ltcl8.1 -ltk8.1"
+fi
+AC_SUBST(ASF_LIB_TCL_TK)
+
+#### gtk 2.4 check ####
 orig_CFLAGS=$CFLAGS
 if test "$try_gtk" = "yes" ; then
     PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.4.0,
@@ -149,21 +178,20 @@ if test "$try_gtk" = "yes" ; then
     )
 fi
 
-# libglade check
+#### libglade check ####
 if test "$have_gtk" = "yes" ; then
    PKG_CHECK_MODULES(LIBGLADE, libglade-2.0 > 2.0.0,
        have_libglade="yes", have_libglade="no")
 fi
 
+#### whether or not to build the ASF Convert GUI ####
 if test "$have_libglade" = "yes" ; then
     ASF_GUI="src/asf_convert_gui"
 fi
-
 # we always build the GUI on windows, as we provide our own gtk libraries.
 if test "$sys" = "win32" ; then
     ASF_GUI="src/asf_convert_gui"
 fi
-
 AC_SUBST(ASF_GUI)
 
 echo "########## Determining machine characteristics #############"
@@ -221,11 +249,10 @@ ifeq ($(CC),gcc)
   endif
 endif
 
-LIBDIR  = ../../lib/$(SYS)
-BINDIR  = ../../bin/$(SYS)
+LIBDIR  = ../../lib
+BINDIR  = ../../bin
 SHAREDIR = ../../share
 DOCDIR = $(SHAREDIR)/doc
-JAVADIR = ../../java
 
 EOF
 
@@ -240,6 +267,18 @@ GLIB_CFLAGS = $GLIB_CFLAGS
 
 PROJ_LIBS = $PROJ_LIBS
 PROJ_CFLAGS = $PROJ_CFLAGS
+
+JPEG_LIBS = $JPEG_LIBS
+JPEG_CFLAGS = $JPEG_CFLAGS
+
+TIFF_LIBS = $TIFF_LIBS
+TIFF_CFLAGS = $TIFF_CFLAGS
+
+GEOTIFF_LIBS = $GEOTIFF_LIBS
+GEOTIFF_CFLAGS = $GEOTIFF_CFLAGS
+
+TCL_TK_LIBS = $TCL_TK_LIBS
+TCL_TK_CFLAGS = $TCL_TK_CFLAGS
 
 EOF
 
@@ -290,10 +329,11 @@ AC_SUBST(BINDIR)
 AC_OUTPUT([
 Makefile
 include/config.h
+external/Makefile
 ])
 
 echo "########### Automatic configuration complete ###########"
-directory=$asfDir'/bin/'$sys'/'
+directory=${asfDir}/bin/
 echo ""
 echo "The ASF tools Makefile is now fully prepared."
 echo ""

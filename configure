@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG ASF_PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB GTK_CFLAGS GTK_LIBS LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI SHAREDIR BINDIR LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG ASF_PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB ASF_LIB_JPEG ASF_LIB_TIFF ASF_LIB_GEOTIFF ASF_LIB_TCL_TK GTK_CFLAGS GTK_LIBS LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI SHAREDIR BINDIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1283,6 +1283,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+# The most recent version of aclocal doesn't seem to work if this
+# macro isn't called.
+#AM_INIT_AUTOMAKE
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -1312,6 +1315,10 @@ have_gsl="no"
 have_pkg_config="yes"
 have_glib="no"
 have_proj="no"
+have_jpeg="no"
+have_tiff="no"
+have_geotiff="no"
+have_tcl_tk="no"
 try_gtk="yes"
 have_gtk="no"
 
@@ -2570,9 +2577,6 @@ versMinor=`uname -r | awk -F. '{print $2}'`
 ranlib="@echo do not need to run ranlib on this system on file: "
 optFlag="-O"
 case "${osType}:${versMajor}:${versMinor}" in
-	IRIX*:*:*)
-		sys="irix"
-		optFlag="-O -n32";;
 	SunOS:*:*)
 		sys="solaris" ;;
 	Linux:*:*)
@@ -2580,8 +2584,13 @@ case "${osType}:${versMajor}:${versMinor}" in
 	CYGWIN*:*:*)
 		sys="win32"
 		makeExtra="BIN_POSTFIX = .exe" ;;
+	IRIX*:*:*)
+		sys="irix"
+		if  "$CC" == "cc" ; then
+			optFlag="-O -n32"
+		fi ;;
 	*:*:*)
-		echo "ASF tools are only supported on IRIX, Solaris, Linux, and Windows (Cygwin)"
+		echo "ASF tools are only supported on Solaris, Linux, and Windows (Cygwin)"
 		echo "Your system appears to be '" $osType "'."
 		echo "Exiting..."
 		exit 1 ;;
@@ -2590,23 +2599,9 @@ esac
 
 
 # Make the install directories for the libraries and binaries.
-mkdir -p lib/$sys
-mkdir -p bin/$sys
-mkdir -p java
+mkdir -p lib
+mkdir -p bin
 mkdir -p share
-
-######## Ask about GCC ############
-#if [[ ! $cc = "gcc" -a ! $batch_mode = "true" ]]; then
-#    printf "Would you like to use the GNU C Compiler 'gcc' (y/n)? "
-#    read resp
-#    if [[ $resp = "y" -o $resp = "Y" -o $resp = "yes" ]]; then
-#        cc="gcc"
-#	optFlag="-O"
-#    fi
-#else
-#    cc="gcc"
-#    optFlag="-O4"
-#fi
 
 asfDir=`pwd`
 
@@ -3392,7 +3387,9 @@ fi
 done
 
 
-# GSL
+ext_lib_src_dir=${asfDir}/external/work_dir
+
+#### GSL check ####
 
 echo "$as_me:$LINENO: checking for main in -lgslcblas" >&5
 echo $ECHO_N "checking for main in -lgslcblas... $ECHO_C" >&6
@@ -3525,17 +3522,15 @@ else
   have_gsl="no"
 fi
 
-
 if test "$have_gsl" = "no" ; then
-   ASF_LIB_GSL="src_lib/libgsl"
+   ASF_LIB_GSL="${ext_lib_src_dir}/libgsl"
    GSL_LIBS="\$(LIBDIR)/libgsl.a \$(LIBDIR)/libgslcblas.a"
 else
    GSL_LIBS="-lgsl -lgslcblas"
 fi
 
 
-
-# Proj
+#### libproj check ####
 echo "$as_me:$LINENO: checking for pj_transform in -lproj" >&5
 echo $ECHO_N "checking for pj_transform in -lproj... $ECHO_C" >&6
 if test "${ac_cv_lib_proj_pj_transform+set}" = set; then
@@ -3606,17 +3601,15 @@ else
   have_proj="no"
 fi
 
-
 if test "$have_proj" = "no" ; then
-   ASF_LIB_PROJ="src_lib/libproj"
+   ASF_LIB_PROJ="${ext_lib_src_dir}/libproj"
    PROJ_LIBS="\$(LIBDIR)/libproj.a"
 else
    PROJ_LIBS="-lproj"
 fi
 
 
-
-# check for pkg-config
+#### pkg-config check ####
 if test -z "$PKG_CONFIG"; then
    # Extract the first word of "pkg-config", so it can be a program name with args.
 set dummy pkg-config; ac_word=$2
@@ -3664,14 +3657,12 @@ if test "$PKG_CONFIG" = "no" ; then
    try_gtk="no"
    have_pkg_config="no"
 fi
-
 if test "$have_pkg_config" = "no" ; then
-   ASF_PKG_CONFIG="src/pkgconfig"
+   ASF_PKG_CONFIG="${ext_lib_src_dir}/pkgconfig"
 fi
 
 
-
-# glib check
+#### glib check ####
 if test "$have_pkg_config" = "yes" ; then
 
   succeeded=no
@@ -3772,15 +3763,375 @@ echo "${ECHO_T}$GLIB_LIBS" >&6
 fi
 
 if test "$have_glib" = "no" ; then
-   ASF_GLIB="src_lib/libglib-2.0"
+   ASF_GLIB="${ext_lib_src_dir}/libglib-2.0"
    GLIB_LIBS="\$(LIBDIR)/libglib-2.0.a \$(LIBDIR)/libiconv.a"
 else
    GLIB_LIBS="-lglib-2.0"
 fi
 
 
+#### libjpeg check ####
+echo "$as_me:$LINENO: checking for main in -ljpeg" >&5
+echo $ECHO_N "checking for main in -ljpeg... $ECHO_C" >&6
+if test "${ac_cv_lib_jpeg_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ljpeg  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
 
-# gtk 2.4 check
+
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_jpeg_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_jpeg_main=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_jpeg_main" >&5
+echo "${ECHO_T}$ac_cv_lib_jpeg_main" >&6
+if test $ac_cv_lib_jpeg_main = yes; then
+  have_jpeg="yes"
+else
+  have_jpeg="no"
+fi
+
+if test "$have_jpeg" = "no" ; then
+   ASF_LIB_JPEG="${ext_lib_src_dir}/libjpeg"
+   JPEG_LIBS="\$(LIBDIR)/libjpeg.a"
+else
+   JPEG_LIBS="-ljpeg"
+fi
+
+
+#### libtiff check ####
+echo "$as_me:$LINENO: checking for main in -ltiff" >&5
+echo $ECHO_N "checking for main in -ltiff... $ECHO_C" >&6
+if test "${ac_cv_lib_tiff_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltiff  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_tiff_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_tiff_main=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_tiff_main" >&5
+echo "${ECHO_T}$ac_cv_lib_tiff_main" >&6
+if test $ac_cv_lib_tiff_main = yes; then
+  have_tiff="yes"
+else
+  have_tiff="no"
+fi
+
+if test "$have_tiff" = "no" ; then
+   ASF_LIB_TIFF="${ext_lib_src_dir}/libtiff"
+   TIFF_LIBS="\$(LIBDIR)/libtiff.a"
+else
+   TIFF_LIBS="-ltiff"
+fi
+
+
+#### libgeotiff check ####
+echo "$as_me:$LINENO: checking for main in -lgeotiff" >&5
+echo $ECHO_N "checking for main in -lgeotiff... $ECHO_C" >&6
+if test "${ac_cv_lib_geotiff_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgeotiff  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_geotiff_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_geotiff_main=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_geotiff_main" >&5
+echo "${ECHO_T}$ac_cv_lib_geotiff_main" >&6
+if test $ac_cv_lib_geotiff_main = yes; then
+  have_geotiff="yes"
+else
+  have_geotiff="no"
+fi
+
+if test "$have_geotiff" = "no" ; then
+   ASF_LIB_GEOTIFF="${ext_lib_src_dir}/libgeotiff"
+   GEOTIFF_LIBS="\$(LIBDIR)/libgeotiff.a"
+else
+   GEOTIFF_LIBS="-lgeotiff"
+fi
+
+
+#### TCL/TK check ####
+###### FIXME ###### Need to make sure we've got tcl/tk 8.1.1 ###############
+
+echo "$as_me:$LINENO: checking for main in -ltcl8.1" >&5
+echo $ECHO_N "checking for main in -ltcl8.1... $ECHO_C" >&6
+if test "${ac_cv_lib_tcl8_1_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltcl8.1  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_tcl8_1_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_tcl8_1_main=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_tcl8_1_main" >&5
+echo "${ECHO_T}$ac_cv_lib_tcl8_1_main" >&6
+if test $ac_cv_lib_tcl8_1_main = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBTCL8_1 1
+_ACEOF
+
+  LIBS="-ltcl8.1 $LIBS"
+
+fi
+
+echo "$as_me:$LINENO: checking for main in -ltk8.1" >&5
+echo $ECHO_N "checking for main in -ltk8.1... $ECHO_C" >&6
+if test "${ac_cv_lib_tk8_1_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltk8.1  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_tk8_1_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_tk8_1_main=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_tk8_1_main" >&5
+echo "${ECHO_T}$ac_cv_lib_tk8_1_main" >&6
+if test $ac_cv_lib_tk8_1_main = yes; then
+  have_tcl_tk="yes"
+else
+  have_tcl_tk="no"
+fi
+
+if test "$have_tcl_tk" = "no" ; then
+   ASF_LIB_TCL_TK="${ext_lib_src_dir}/tcl_tk"
+   TCL_TK_LIBS="\$(LIBDIR)/libtcl8.1.a \$(LIBDIR)/libtk8.1.a"
+else
+   TCL_TK_LIBS="-ltcl8.1 -ltk8.1"
+fi
+
+
+#### gtk 2.4 check ####
 orig_CFLAGS=$CFLAGS
 if test "$try_gtk" = "yes" ; then
 
@@ -3888,7 +4239,7 @@ _ACEOF
 
 fi
 
-# libglade check
+#### libglade check ####
 if test "$have_gtk" = "yes" ; then
 
   succeeded=no
@@ -3988,15 +4339,14 @@ echo "${ECHO_T}$LIBGLADE_LIBS" >&6
 
 fi
 
+#### whether or not to build the ASF Convert GUI ####
 if test "$have_libglade" = "yes" ; then
     ASF_GUI="src/asf_convert_gui"
 fi
-
 # we always build the GUI on windows, as we provide our own gtk libraries.
 if test "$sys" = "win32" ; then
     ASF_GUI="src/asf_convert_gui"
 fi
-
 
 
 echo "########## Determining machine characteristics #############"
@@ -4054,11 +4404,10 @@ ifeq ($(CC),gcc)
   endif
 endif
 
-LIBDIR  = ../../lib/$(SYS)
-BINDIR  = ../../bin/$(SYS)
+LIBDIR  = ../../lib
+BINDIR  = ../../bin
 SHAREDIR = ../../share
 DOCDIR = $(SHAREDIR)/doc
-JAVADIR = ../../java
 
 EOF
 
@@ -4073,6 +4422,18 @@ GLIB_CFLAGS = $GLIB_CFLAGS
 
 PROJ_LIBS = $PROJ_LIBS
 PROJ_CFLAGS = $PROJ_CFLAGS
+
+JPEG_LIBS = $JPEG_LIBS
+JPEG_CFLAGS = $JPEG_CFLAGS
+
+TIFF_LIBS = $TIFF_LIBS
+TIFF_CFLAGS = $TIFF_CFLAGS
+
+GEOTIFF_LIBS = $GEOTIFF_LIBS
+GEOTIFF_CFLAGS = $GEOTIFF_CFLAGS
+
+TCL_TK_LIBS = $TCL_TK_LIBS
+TCL_TK_CFLAGS = $TCL_TK_CFLAGS
 
 EOF
 
@@ -4123,7 +4484,7 @@ SHAREDIR="$prefix/share"
 BINDIR="$prefix/bin"
 
 
-                    ac_config_files="$ac_config_files Makefile include/config.h"
+                              ac_config_files="$ac_config_files Makefile include/config.h external/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -4676,6 +5037,7 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "include/config.h" ) CONFIG_FILES="$CONFIG_FILES include/config.h" ;;
+  "external/Makefile" ) CONFIG_FILES="$CONFIG_FILES external/Makefile" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
@@ -4782,6 +5144,10 @@ s,@ASF_PKG_CONFIG@,$ASF_PKG_CONFIG,;t t
 s,@GLIB_CFLAGS@,$GLIB_CFLAGS,;t t
 s,@GLIB_LIBS@,$GLIB_LIBS,;t t
 s,@ASF_GLIB@,$ASF_GLIB,;t t
+s,@ASF_LIB_JPEG@,$ASF_LIB_JPEG,;t t
+s,@ASF_LIB_TIFF@,$ASF_LIB_TIFF,;t t
+s,@ASF_LIB_GEOTIFF@,$ASF_LIB_GEOTIFF,;t t
+s,@ASF_LIB_TCL_TK@,$ASF_LIB_TCL_TK,;t t
 s,@GTK_CFLAGS@,$GTK_CFLAGS,;t t
 s,@GTK_LIBS@,$GTK_LIBS,;t t
 s,@LIBGLADE_CFLAGS@,$LIBGLADE_CFLAGS,;t t
@@ -5056,7 +5422,7 @@ fi
 
 
 echo "########### Automatic configuration complete ###########"
-directory=$asfDir'/bin/'$sys'/'
+directory=${asfDir}/bin/
 echo ""
 echo "The ASF tools Makefile is now fully prepared."
 echo ""

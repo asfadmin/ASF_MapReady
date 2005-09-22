@@ -10,50 +10,48 @@
 # hand, if you want to rebuild just the module you are working on,
 # just do a make in that subdirectory.
 
-# FIXME: I think asf_import has some run time dependencies on tools
-# that I don't know about, these tools must be added to this list.
-MODULES = src_lib/asf \
-          @ASF_LIB_GSL@ \
-          src_lib/asf_meta \
-          src_lib/asf_lt \
-          src_lib/asf_geolib \
-          src_lib/asf_odl \
-          src_lib/asf_fft \
-          @ASF_LIB_PROJ@ \
-          @ASF_PKG_CONFIG@ \
-          @ASF_GLIB@ \
-          src_lib/libasf_proj \
-          src_lib/libasf_raster \
-          src_lib/libasf_reporting \
-          src_lib/libjpeg \
-          src_lib/libtiff \
-          src_lib/libgeotiff \
-          src/asf_export \
-          src/asf_import \
-          src_geo/asf_geocode \
-          src/asf_convert \
-          @ASF_GUI@ \
-#         src_lib/tclTk \
-#	  src_x/sarview
+MODULES = \
+	src/asf \
+	src/asf_meta \
+	src/asf_lt \
+	src/asf_geolib \
+	src/asf_odl \
+	src/asf_fft \
+	src/libasf_proj \
+	src/libasf_raster \
+	src/libasf_reporting \
+	src/asf_export \
+	src/asf_import \
+	src/asf_geocode \
+	src/asf_convert \
+	@ASF_GUI@
+# src_x/sarview
 
 
-all:
+all: external_libs
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
 
 install: all
 	mkdir -p @BINDIR@ @prefix@/lib @SHAREDIR@
-	cp bin/@sys@/* @BINDIR@
-	cp -R lib/@sys@/* @prefix@/lib
+	cp bin/* @BINDIR@
+	cp -R lib/* @prefix@/lib
 	cp -R share/* @SHAREDIR@
 #	chmod 755 @BINDIR@/*
 #	chmod -R 644 @SHAREDIR@/*
 
+external_libs:
+	$(MAKE) -C external
+	cp -R external/lib/* lib
+	chmod -R ug+w lib
+	cp -R external/include/* include
+	chmod -R ug+w include
+
 clean:
-	rm -rf bin/@sys@/* lib/@sys@/*
+	rm -rf bin/* lib/*
 
 release:
 	cd make_support; make; ./makemake @sys@; cd ..
 
 oldtools:
-	cd make_support; make; ./makemake @sys; cd ..
+	cd make_support; make; ./makemake @sys@; cd ..
 	make --makefile=Makefile.old
