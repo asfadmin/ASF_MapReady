@@ -1,40 +1,27 @@
-# This make file controls the build and install of the pkg-config
-# utility which glib and friends need.
+# Build and install a copy of the library into the standard location of
+# the ASF tool tree.
 
-include ../../make_support/system_rules
+# Where we stage the library so the main build system can nab it
+ROOT_DIR := $(shell cd ../.. ; pwd)
+LIB_DIR := $(ROOT_DIR)/lib
+INCLUDE_DIR := $(ROOT_DIR)/include
 
-# Where we temporarily stage the GSL on the way to installing it in
-# the ASF tree.
-ROOT_STAGEDIR := stage_dir
-BIN_STAGEDIR := $(ROOT_STAGEDIR)/bin
-SHARE_STAGEDIR := $(ROOT_STAGEDIR)/share
-
-# If we find we have to build the GSL, these variables specify the
-# tarball and what it unpacks into.
+# These variables specify the pkgconfig tarball and what it unpacks into.
 UNPACK_DIR := pkgconfig-0.15.0
-TARFILE := $(UNPACK_DIR).tar
-ZIPFILE := $(TARFILE).gz
+ZIPFILE := $(UNPACK_DIR).tar.gz
 
-ifneq ($(SYS),win32)
+build: build_stamp
 
-# Install from the staging area to the ASF binary location.
-install_pkgconfig: stage_pkgconfig_stamp
-	cp $(BIN_STAGEDIR)/pkg-config $(BINDIR)
-
-# Copy an already build GSL into the staging area, or build it there
-# if a copy doesn't appear to be available.
-stage_pkgconfig_stamp:
-	mkdir $(ROOT_STAGEDIR)
-	gunzip --to-stdout $(ZIPFILE) >$(TARFILE)
-	tar xvf $(TARFILE)
-	(cd $(UNPACK_DIR) ; \
-	    ./configure --prefix=`pwd`/../$(ROOT_STAGEDIR) ; \
-            make ; \
-            make check ; \
-            make install) ; \
-        touch $@
-
-endif
+# Create the library & necessary components in the proper place for retrieval
+build_stamp:
+	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
+	gunzip --to-stdout $(ZIPFILE) |	tar xv
+	(   cd $(UNPACK_DIR) ; \
+	    ./configure --prefix=$(ROOT_DIR) ; \
+	    make ; \
+	    make install ; \
+	)
+	touch $@
 
 clean:
-	rm -rf $(ROOT_STAGEDIR) $(TARFILE) $(UNPACK_DIR) stage_pkgconfig_stamp
+	rm -rf $(UNPACK_DIR) build_stamp
