@@ -375,6 +375,12 @@ float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
 					       double interval_start,
 					       double interval_end);
 
+// This method exports the float image data as an ascii CSV file.
+// Don't use this method on large sections of data - it will give
+// an assertion failure if either dimension is larger than 255.
+int
+float_image_export_as_csv (FloatImage *self, const char *file);
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Controlling Image Data Caching

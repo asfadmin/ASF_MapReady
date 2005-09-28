@@ -2165,7 +2165,11 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
 
   // Open output file.
   FILE *fp = fopen (file, "w");
-  if ( fp == NULL ) { perror ("error opening file"); }
+  if ( fp == NULL ) {
+    printf("Attempting to open file: %s\n", file);
+    perror ("error opening file");
+  }
+
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
@@ -2459,6 +2463,31 @@ float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
   g_free (pixels);
 
   return 0;                     // Return success indicator.
+}
+
+int
+float_image_export_as_csv (FloatImage *self, const char * filename)
+{
+  size_t ii, jj;
+
+  g_assert (self->size_x < 256);
+  g_assert (self->size_y < 256);
+
+  FILE *fout = fopen (filename, "wt");
+  if ( fout == NULL ) {
+    printf("Attempting to create csv file: %s\n", filename);
+    perror ("error opening file");
+  }
+
+  for (ii = 0; ii < self->size_x; ++ii) {
+    for (jj = 0; jj < self->size_y; ++jj) {
+      fprintf(fout, "%5.3f%c", float_image_get_pixel(self, ii, jj),
+	      jj == self->size_y - 1 ? '\n' : ',');
+    }
+  }
+
+  fclose(fout);
+  return 0;
 }
 
 size_t
