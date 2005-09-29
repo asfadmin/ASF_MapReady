@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG ASF_PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB ASF_LIB_JPEG ASF_LIB_TIFF ASF_LIB_GEOTIFF ASF_LIB_TCL_TK GTK_CFLAGS GTK_LIBS LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI SHAREDIR BINDIR LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG ASF_PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB ASF_LIB_JPEG ASF_LIB_TIFF LIBTIFF_LOCATION ASF_LIB_GEOTIFF ASF_LIB_TCL_TK GTK_CFLAGS GTK_LIBS LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI SHAREDIR BINDIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -3844,9 +3844,9 @@ fi
 
 
 #### libtiff check ####
-echo "$as_me:$LINENO: checking for main in -ltiff" >&5
-echo $ECHO_N "checking for main in -ltiff... $ECHO_C" >&6
-if test "${ac_cv_lib_tiff_main+set}" = set; then
+echo "$as_me:$LINENO: checking for TIFFGetTagListCount in -ltiff" >&5
+echo $ECHO_N "checking for TIFFGetTagListCount in -ltiff... $ECHO_C" >&6
+if test "${ac_cv_lib_tiff_TIFFGetTagListCount+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -3858,11 +3858,17 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char TIFFGetTagListCount ();
 int
 main ()
 {
-main ();
+TIFFGetTagListCount ();
   ;
   return 0;
 }
@@ -3889,20 +3895,20 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_lib_tiff_main=yes
+  ac_cv_lib_tiff_TIFFGetTagListCount=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_lib_tiff_main=no
+ac_cv_lib_tiff_TIFFGetTagListCount=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_tiff_main" >&5
-echo "${ECHO_T}$ac_cv_lib_tiff_main" >&6
-if test $ac_cv_lib_tiff_main = yes; then
+echo "$as_me:$LINENO: result: $ac_cv_lib_tiff_TIFFGetTagListCount" >&5
+echo "${ECHO_T}$ac_cv_lib_tiff_TIFFGetTagListCount" >&6
+if test $ac_cv_lib_tiff_TIFFGetTagListCount = yes; then
   have_tiff="yes"
 else
   have_tiff="no"
@@ -3911,9 +3917,12 @@ fi
 if test "$have_tiff" = "no" ; then
    ASF_LIB_TIFF="${ext_lib_src_dir}/libtiff"
    TIFF_LIBS="\$(LIBDIR)/libtiff.a"
+   LIBTIFF_LOCATION="-with-libtiff=../../.."
 else
    TIFF_LIBS="-ltiff"
+   LIBTIFF_LOCATION=""
 fi
+
 
 
 #### libgeotiff check ####
@@ -4484,7 +4493,7 @@ SHAREDIR="$prefix/share"
 BINDIR="$prefix/bin"
 
 
-                              ac_config_files="$ac_config_files Makefile include/config.h external/Makefile"
+                                        ac_config_files="$ac_config_files Makefile include/config.h external/Makefile external/work_dir/libgeotiff/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -5038,6 +5047,7 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "include/config.h" ) CONFIG_FILES="$CONFIG_FILES include/config.h" ;;
   "external/Makefile" ) CONFIG_FILES="$CONFIG_FILES external/Makefile" ;;
+  "external/work_dir/libgeotiff/Makefile" ) CONFIG_FILES="$CONFIG_FILES external/work_dir/libgeotiff/Makefile" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
@@ -5146,6 +5156,7 @@ s,@GLIB_LIBS@,$GLIB_LIBS,;t t
 s,@ASF_GLIB@,$ASF_GLIB,;t t
 s,@ASF_LIB_JPEG@,$ASF_LIB_JPEG,;t t
 s,@ASF_LIB_TIFF@,$ASF_LIB_TIFF,;t t
+s,@LIBTIFF_LOCATION@,$LIBTIFF_LOCATION,;t t
 s,@ASF_LIB_GEOTIFF@,$ASF_LIB_GEOTIFF,;t t
 s,@ASF_LIB_TCL_TK@,$ASF_LIB_TCL_TK,;t t
 s,@GTK_CFLAGS@,$GTK_CFLAGS,;t t

@@ -135,14 +135,17 @@ fi
 AC_SUBST(ASF_LIB_JPEG)
 
 #### libtiff check ####
-AC_CHECK_LIB(tiff,main,have_tiff="yes",have_tiff="no")
+AC_CHECK_LIB(tiff,TIFFGetTagListCount,have_tiff="yes",have_tiff="no")
 if test "$have_tiff" = "no" ; then
    ASF_LIB_TIFF="${ext_lib_src_dir}/libtiff"
    TIFF_LIBS="\$(LIBDIR)/libtiff.a"
+   LIBTIFF_LOCATION="-with-libtiff=../../.."
 else
    TIFF_LIBS="-ltiff"
+   LIBTIFF_LOCATION=""
 fi
 AC_SUBST(ASF_LIB_TIFF)
+AC_SUBST(LIBTIFF_LOCATION)
 
 #### libgeotiff check ####
 AC_CHECK_LIB(geotiff,main,have_geotiff="yes",have_geotiff="no")
@@ -330,6 +333,7 @@ AC_OUTPUT([
 Makefile
 include/config.h
 external/Makefile
+external/work_dir/libgeotiff/Makefile
 ])
 
 echo "########### Automatic configuration complete ###########"
