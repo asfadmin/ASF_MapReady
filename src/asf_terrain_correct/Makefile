@@ -3,31 +3,31 @@ PROGRAM := asf_terrain_correct
 include ../../make_support/system_rules
 
 ###############################################################################
-#                                                                             
-# List of Sources                                                             
-#                                                                             
+#
+# List of Sources
+#
 # Here are the variables that list all the sources that need building
 # and public headers that need installing.  When new source files are
 # added, something in here will need to change.
-#                                                                             
+#
 ###############################################################################
 
 PROGRAM_C_SOURCE = $(addsuffix .c, $(PROGRAM))
 
 # Classes.  Each entry here has a corresponding .h and .c file.
-CLASSES := date_time \
-	   dem \
-	   map_projected_dem \
-           orbital_state_vector \
-	   platform_path \
-           progress_meter \
-           slant_range_image \
-	   slant_range_image_cspline \
-	   vector \
-           ITRS_platform_path \
-           ITRS_point \
-	   lsm \
-	   dem_geom_info
+CLASSES := \
+	date_time \
+	dem \
+	map_projected_dem \
+	orbital_state_vector \
+	platform_path \
+	progress_meter \
+	slant_range_image \
+	vector \
+	ITRS_platform_path \
+	ITRS_point \
+	lsm \
+	dem_geom_info
 
 # Non-main, non-class source files that need building.
 OTHER_C_SOURCES := utilities.c
@@ -58,7 +58,7 @@ ifeq ($(BK_DEBUG), 1)
 
   INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) -I$(SCRATCHPLOT_INCLUDE_DIR) \
                    $(shell pkg-config --cflags-only-I glib-2.0)
-else 
+else
   INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) $(GLIB_CFLAGS)
 endif
 
@@ -98,7 +98,7 @@ ifeq ($(BK_DEBUG), 1)
   # The ScratchPlot library allows us to draw quick plots of data,
   # images, etc.  Useful for development work.
   SCRATCHPLOT_LIB_DIR := /tmp/test_scratchplot/lib
-endif 
+endif
 
 # Libraries needed by this program.
 ifeq ($(BK_DEBUG), 1)
