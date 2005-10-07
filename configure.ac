@@ -117,7 +117,7 @@ if test "$have_pkg_config" = "yes" ; then
 fi
 
 if test "$have_glib" = "no" ; then
-   ASF_GLIB="${ext_lib_src_dir}/libglib-2.0"
+   ASF_GLIB="${ext_lib_src_dir}/libglib"
    GLIB_LIBS="\$(LIBDIR)/libglib-2.0.a \$(LIBDIR)/libiconv.a"
 else
    GLIB_LIBS="-lglib-2.0"
