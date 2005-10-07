@@ -83,7 +83,7 @@ vector_multiply (Vector *self, double factor)
 double
 vector_magnitude (Vector *self)
 {
-  return sqrtl (powl (self->x, 2) + powl (self->y, 2) + powl (self->z, 2));
+  return sqrt (pow (self->x, 2) + pow (self->y, 2) + pow (self->z, 2));
 }
 
 double

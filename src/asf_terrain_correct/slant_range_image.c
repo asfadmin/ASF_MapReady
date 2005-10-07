@@ -354,7 +354,7 @@ slant_range_image_new_from_model_scaled (SlantRangeImage *model,
 					 ssize_t scale_factor)
 {
   g_assert (scale_factor > 0);
-  g_assert (scale_factor % 2 == 1);
+  //g_assert (scale_factor % 2 == 1);
 
   SlantRangeImage *self = g_new (SlantRangeImage, 1);
 

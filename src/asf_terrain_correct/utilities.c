@@ -89,6 +89,9 @@ datafile_path (const char *relative_path)
   }
 
   first_time_through = FALSE;
+
+  // HACK
+  return NULL;
 }
 
 size_t

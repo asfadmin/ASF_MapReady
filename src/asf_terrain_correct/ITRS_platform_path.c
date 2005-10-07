@@ -249,7 +249,7 @@ ITRS_platform_path_new (int control_point_count, double start_time,
   // segments.
   const int segments_to_average = 10;
   // Initializer here is just to reassure compiler.
-  long double mean_rotation_rate = 0;
+  double mean_rotation_rate = 0;
   for ( ii = 0 ; ii < segments_to_average ; ii++ ) {
 
     // First contol point index.
@@ -263,12 +263,12 @@ ITRS_platform_path_new (int control_point_count, double start_time,
     // the end points of this segment.
     DateTime *tmp = date_time_copy (base_date);
     date_time_add_seconds (tmp, times[fcp]);
-    long double fcp_earth_angle = date_time_earth_angle (tmp);
+    double fcp_earth_angle = date_time_earth_angle (tmp);
     date_time_add_seconds (tmp, times[scp] - times[fcp]);
-    long double scp_earth_angle = date_time_earth_angle (tmp);
+    double scp_earth_angle = date_time_earth_angle (tmp);
     date_time_free (tmp);
 
-    long double rotation_rate_this_segment
+    double rotation_rate_this_segment
       = (scp_earth_angle - fcp_earth_angle) / (times[scp] - times[fcp]);
 
     // Refine out notion of the mean rotation rate.
@@ -281,25 +281,25 @@ ITRS_platform_path_new (int control_point_count, double start_time,
     }
   }
 
-  // Contol point separation in time as a long double.
-  long double cp_separation_ld 
-    = (long double) time_range / (control_point_count - 1);
+  // Contol point separation in time as a double.
+  double cp_separation_ld 
+    = (double) time_range / (control_point_count - 1);
 
   // Earth rotation per control point.
-  long double earth_rotation_per_cp = cp_separation_ld * mean_rotation_rate;
+  double earth_rotation_per_cp = cp_separation_ld * mean_rotation_rate;
 
   // Find the earth angle at the first control point.
   DateTime *tmp = date_time_copy (base_date);
   date_time_add_seconds (tmp, times[0]);
-  long double earth_angle_at_start_time = date_time_earth_angle (tmp);
+  double earth_angle_at_start_time = date_time_earth_angle (tmp);
   date_time_free (tmp);
 
   // Now we are ready to rotate all the contol points into ITRS.
-  long double earth_angle = earth_angle_at_start_time;
+  double earth_angle = earth_angle_at_start_time;
   for ( ii = 0 ; ii < control_point_count ; ii++ ) {
     double tmp2 = xcp[ii];
-    xcp[ii] = xcp[ii] * cosl (earth_angle) + ycp[ii] * sinl (earth_angle);
-    ycp[ii] = ycp[ii] * cosl (earth_angle) - tmp2 * sinl (earth_angle);
+    xcp[ii] = xcp[ii] * cos (earth_angle) + ycp[ii] * sin (earth_angle);
+    ycp[ii] = ycp[ii] * cos (earth_angle) - tmp2 * sin (earth_angle);
     earth_angle += earth_rotation_per_cp;
   }
 

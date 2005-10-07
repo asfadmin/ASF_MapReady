@@ -171,8 +171,8 @@ func (double t, const double y[], double f[], void *params)
   params = params;
   
   /* Shorthand for some earth constants.  */
-  static const long double gm = EARTH_GRAVITATIONAL_CONSTANT;
-  static const long double ae = EARTH_SEMIMAJOR_AXIS;
+  static const double gm = EARTH_GRAVITATIONAL_CONSTANT;
+  static const double ae = EARTH_SEMIMAJOR_AXIS;
 
   /* Create position and velocity vectors.  We use static vectors to
      avoid allocation overhead.  */
@@ -184,30 +184,30 @@ func (double t, const double y[], double f[], void *params)
   vector_set (v, y[3], y[4], y[5]);
 
   /* Current range to satellife from center of earth.  */
-  long double r = vector_magnitude (p);
+  double r = vector_magnitude (p);
 
   /* The so-called first zonal harmonic is used to account for the
      effects of earth oblatedness (see below for references).  */
-  long double j2 = 1082.63e-6;	/* First zonal harmonic coefficient.  */
+  double j2 = 1082.63e-6;	/* First zonal harmonic coefficient.  */
 
   /* Shorthand for some terms that show up in the expressions for the
      perturbations.  */
-  long double r2 = powl (r, 2);
-  long double r3 = powl (r, 3);
-  long double px = p->x;
-  long double py = p->y;
-  long double pz = p->z;
-  long double pz2 = powl (p->z, 2);
+  double r2 = pow (r, 2);
+  double r3 = pow (r, 3);
+  double px = p->x;
+  double py = p->y;
+  double pz = p->z;
+  double pz2 = pow (p->z, 2);
 
   /* Perturbations due to earth oblatedness.  */
-  long double a_j2_x = ((gm * px / r3)
+  double a_j2_x = ((gm * px / r3)
 			* ((j2 * (3.0 / 2)
-			    * powl ((ae / r), 2)
+			    * pow ((ae / r), 2)
 			    * (5.0 * pz2 / r2 - 1.0))));
-  long double a_j2_y = py / px * a_j2_x;
-  long double a_j2_z = ((-gm * pz / r3)
+  double a_j2_y = py / px * a_j2_x;
+  double a_j2_z = ((-gm * pz / r3)
 			* ((j2 * (3.0 / 2)
-			    * powl ((ae / r), 2)
+			    * pow ((ae / r), 2)
 			    * (3.0 - 5.0 * pz2 / r2))));
 
   /* Total perturbations.  */
@@ -218,9 +218,9 @@ func (double t, const double y[], double f[], void *params)
   f[0] = v->x;
   f[1] = v->y;
   f[2] = v->z;
-  f[3] = ksx - gm * (p->x / powl (r, 3));
-  f[4] = ksy - gm * (p->y / powl (r, 3));
-  f[5] = ksz - gm * (p->z / powl (r, 3));
+  f[3] = ksx - gm * (p->x / pow (r, 3));
+  f[4] = ksy - gm * (p->y / pow (r, 3));
+  f[5] = ksz - gm * (p->z / pow (r, 3));
 
   return GSL_SUCCESS;
 }

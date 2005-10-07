@@ -53,7 +53,7 @@ year_day_of_year_to_year_month_day (int year, int day_of_year, int *month,
 
 /* Given a year, day of year, and second of day, return a modified
    julian day.  */
-static long double
+static double
 year_day_second_to_mjd (int year, int day_of_year, double second_of_day)
 {
   /* Convert year and day of year to year, month, and day of month.  */
@@ -64,12 +64,12 @@ year_day_second_to_mjd (int year, int day_of_year, double second_of_day)
   /* Convert to julian day using the expression from "A Machine
      Algorithm for Processing Calendar Dates" by Henry Fleigel and
      Thomas Van Flandern.  */
-  long double jd = d - 32075 + 1461 * (y + 4800 + (m - 14) / 12) / 4
+  double jd = d - 32075 + 1461 * (y + 4800 + (m - 14) / 12) / 4
     + 367 * (m - 2 - (m - 14) / 12 * 12) / 12 
     - 3 * ((y + 4900 + (m - 14) / 12) / 100) / 4 - 0.5;
 
   /* Return the modified julian day.  */
-  return jd - MJD_OFFSET + (long double) second_of_day / SECONDS_PER_DAY;
+  return jd - MJD_OFFSET + (double) second_of_day / SECONDS_PER_DAY;
 }
 
 /* Converts a given year, month, and day of month into a day of year.  */
@@ -89,7 +89,7 @@ year_month_day_to_day_of_year (int year, int month, int day)
 }
 
 static void
-mjd_to_year_day_second (long double mjd, int *year, int *day_of_year, 
+mjd_to_year_day_second (double mjd, int *year, int *day_of_year, 
 			double *second_of_day)
 {
   /* I'm not sure the algorithm used here can handle negative days,
@@ -97,18 +97,18 @@ mjd_to_year_day_second (long double mjd, int *year, int *day_of_year,
   assert (mjd >= 0);
  
   /* Compute the julain day equivalent to the mjd.  */
-  long double jd = mjd + MJD_OFFSET;
+  double jd = mjd + MJD_OFFSET;
   assert (jd <= INT_MAX + 1.0);
 
  /* Use Jean Meeus algorithm from "Astronomical Formulae for
     Calculators" to get the calendar date.  */
-  long double z_as_long_double;
+  double z_as_long_double;
   /* FIXME: The code between this comment and the line containing the
      commented out modfl call can be replaced by the modfl call when
      we have better C99 compliance.  */
-  long double f = jd + 0.5 - floor (jd + 0.5);
+  double f = jd + 0.5 - floor (jd + 0.5);
   z_as_long_double = floor (jd + 0.5);
-  /* long double f = modfl (jd + 0.5, &z_as_long_double); */
+  /* double f = modfl (jd + 0.5, &z_as_long_double); */
   int z = z_as_long_double;
   int a;
   if ( z < 2299161 ) {
@@ -121,7 +121,7 @@ mjd_to_year_day_second (long double mjd, int *year, int *day_of_year,
   int c = (b - 122.1) / 365.25;
   int d = 365.25 * c;
   int e = (b - d) / 30.6001;
-  long double day_of_month = b - d - floor (30.6001 * e) + f;
+  double day_of_month = b - d - floor (30.6001 * e) + f;
   int month;
   if ( e <= 13 ) {
     month = e - 1;
@@ -160,7 +160,7 @@ typedef enum {
 static double
 lookup_time_offset (const char *lookup_table_file, 
 		    lookup_table_column_t lookup_table_column, 
-		    long double mjd) 
+		    double mjd) 
 {
   /* At the moment, we only have time offset data back to about
      November 2nd, 1995 (MJD 50023), and up to about Jan. 26, 2005
@@ -244,7 +244,7 @@ lookup_time_offset (const char *lookup_table_file,
   if ( mjd >= INT_MAX ) {
     assert (mjd < INT_MAX);
   }
-  int mjd_int = lround (mjd);
+  int mjd_int = (int) (mjd + 0.5);
   int min_index = 0;
   int max_index = table_lines - 1;
   int cli = table_lines / 2;
@@ -287,7 +287,7 @@ lookup_time_offset (const char *lookup_table_file,
   int ia = cli < neighbor_index ? neighbor_index : cli;
 
   /* Column of interest.  */
-  int column_index;	
+  int column_index=0;	
   if ( lookup_table_column == UT1_MINUS_UTC ) {
     column_index = ut1_minus_utc_column_index;
   } 
@@ -321,8 +321,8 @@ static const char *time_scale_lookup_table_file = "time_scale_offsets";
 static char *lookup_table_file = NULL;
 
 /* Convert a modified julian day in time_scale to TDT.  */
-static long double 
-convert_to_terrestrial_dynamical_time (long double mjd, 
+static double 
+convert_to_terrestrial_dynamical_time (double mjd, 
 				       time_scale_t time_scale)
 {
   if ( lookup_table_file == NULL ) {
@@ -331,36 +331,37 @@ convert_to_terrestrial_dynamical_time (long double mjd,
 
   /* Offsets between various time scales.  Converting involves solving
      some equations involving these differences.  */
-  const long double tdt_minus_tai = 32.184;
-  long double ut1_minus_utc = lookup_time_offset (lookup_table_file,
+  const double tdt_minus_tai = 32.184;
+  double ut1_minus_utc = lookup_time_offset (lookup_table_file,
 						  UT1_MINUS_UTC, mjd);
-  long double ut1_minus_ut1r = lookup_time_offset (lookup_table_file,
+  double ut1_minus_ut1r = lookup_time_offset (lookup_table_file,
 						   UT1_MINUS_UT1R, mjd);
-  long double tai_minus_utc = lookup_time_offset (lookup_table_file, 
+  double tai_minus_utc = lookup_time_offset (lookup_table_file, 
 						  TAI_MINUS_UTC, mjd);
   if ( time_scale == TDT ) {
     return mjd;
   } else if ( time_scale == UT1R ) {
     // FIXME: these methods don't have test cases.
-    long double ut1r_minus_tai 
+    double ut1r_minus_tai 
       = ut1_minus_utc - ut1_minus_ut1r - tai_minus_utc;
-    long double ut1r_minus_tdt = ut1r_minus_tai - tdt_minus_tai;
-    return mjd - ( (long double) ut1r_minus_tdt / SECONDS_PER_DAY);
+    double ut1r_minus_tdt = ut1r_minus_tai - tdt_minus_tai;
+    return mjd - ( (double) ut1r_minus_tdt / SECONDS_PER_DAY);
   } else if ( time_scale == UTC ) {
     // FIXME: these methods don't have test cases.
-    long double tdt_minus_utc = tdt_minus_tai + tai_minus_utc;
-    return mjd + ( (long double) tdt_minus_utc / SECONDS_PER_DAY);
+    double tdt_minus_utc = tdt_minus_tai + tai_minus_utc;
+    return mjd + ( (double) tdt_minus_utc / SECONDS_PER_DAY);
     assert (FALSE);
   } else {
     assert (FALSE);		/* Shouldn't be here.  */
   }
+  return 0.0;
 }
 
 /* Convert a modified julian day in DTD to an mjd in time_scale.  This
    routine is almost completely symmetric with the
    convert_to_terrestrial_dynamical_time function.*/
-static long double
-convert_from_terrestrial_dynamical_time (long double mjd, 
+static double
+convert_from_terrestrial_dynamical_time (double mjd, 
 					 time_scale_t time_scale)
 {
   if ( lookup_table_file == NULL ) {
@@ -369,26 +370,27 @@ convert_from_terrestrial_dynamical_time (long double mjd,
 
   /* Offsets between various time scales.  Converting involves solving
      some equations involving these differences.  */
-  const long double tdt_minus_tai = 32.184;
-  long double ut1_minus_utc = lookup_time_offset (lookup_table_file,
+  const double tdt_minus_tai = 32.184;
+  double ut1_minus_utc = lookup_time_offset (lookup_table_file,
 						  UT1_MINUS_UTC, mjd);
-  long double ut1_minus_ut1r = lookup_time_offset (lookup_table_file,
+  double ut1_minus_ut1r = lookup_time_offset (lookup_table_file,
 						   UT1_MINUS_UT1R, mjd);
-  long double tai_minus_utc = lookup_time_offset (lookup_table_file, 
+  double tai_minus_utc = lookup_time_offset (lookup_table_file, 
 						  TAI_MINUS_UTC, mjd);
   if ( time_scale == TDT ) {
     return mjd;
   } else if ( time_scale == UT1R ) {
-    long double ut1r_minus_tai 
+    double ut1r_minus_tai 
       = ut1_minus_utc - ut1_minus_ut1r - tai_minus_utc;
-    long double ut1r_minus_tdt = ut1r_minus_tai - tdt_minus_tai;
-    return mjd + ( (long double) ut1r_minus_tdt / SECONDS_PER_DAY);
+    double ut1r_minus_tdt = ut1r_minus_tai - tdt_minus_tai;
+    return mjd + ( (double) ut1r_minus_tdt / SECONDS_PER_DAY);
   } else if ( time_scale == UTC ) {
-    long double tdt_minus_utc = tdt_minus_tai + tai_minus_utc;
-    return mjd - ( (long double) tdt_minus_utc / SECONDS_PER_DAY);
+    double tdt_minus_utc = tdt_minus_tai + tai_minus_utc;
+    return mjd - ( (double) tdt_minus_utc / SECONDS_PER_DAY);
   } else {
     assert (FALSE);		/* Shouldn't be here.  */
   }
+  return 0.0;
 }
 
 DateTime *
@@ -407,7 +409,7 @@ date_time_new (int year, int day_of_year, double second_of_day,
 }
   
 DateTime *
-date_time_new_from_mjd (long double mjd, time_scale_t time_scale)
+date_time_new_from_mjd (double mjd, time_scale_t time_scale)
 {
   /* I'm not sure the algorithm used here can handle negative days,
      and they shouldn't ever come up anyway.  */
@@ -438,13 +440,13 @@ date_time_new_from_ymds (int year, int month, int day, double second_of_day,
 }
 
 DateTime *
-date_time_new_from_jd (long double jd, time_scale_t time_scale)
+date_time_new_from_jd (double jd, time_scale_t time_scale)
 {
   return date_time_new_from_mjd (jd - MJD_OFFSET, time_scale);
 }
 
 DateTime *
-date_time_new_from_jds (long double jds, time_scale_t time_scale)
+date_time_new_from_jds (double jds, time_scale_t time_scale)
 {
   return date_time_new_from_mjd (jds + JDS_OFFSET - MJD_OFFSET, time_scale);
 }
@@ -464,11 +466,11 @@ date_time_copy (DateTime *self)
 
 /* Convert a MJD in TDT to year, month, day_of_month in time_scale.  */
 static void
-mjd_tdt_to_year_month_day (long double mjd_tdt, int *year, int *month, 
+mjd_tdt_to_year_month_day (double mjd_tdt, int *year, int *month, 
 			   int *day_of_month, time_scale_t time_scale)
 {
   /* MJD in terrestrial dynamical time.  */
-  long double mjd
+  double mjd
     = convert_from_terrestrial_dynamical_time (mjd_tdt, time_scale);
   int day_of_year;
   double second_of_day;
@@ -512,11 +514,11 @@ date_time_day_of_month (DateTime *self, time_scale_t time_scale)
 }
 
 static void
-mjd_tdt_to_year_day_second (long double mjd_tdt, int *year, int *day, 
+mjd_tdt_to_year_day_second (double mjd_tdt, int *year, int *day, 
 			    double *second_of_day, time_scale_t time_scale)
 {
   /* MJD in desired time scale.  */
-  long double mjd
+  double mjd
     = convert_from_terrestrial_dynamical_time (mjd_tdt, time_scale);
   mjd_to_year_day_second (mjd, year, day, second_of_day);
 }
@@ -560,20 +562,20 @@ date_time_second_of_minute (DateTime *self, time_scale_t time_scale)
 			  * floor (second_of_day / SECONDS_PER_MINUTE));
 }
 
-long double
+double
 date_time_mjd (DateTime *self, time_scale_t time_scale)
 {
   return convert_from_terrestrial_dynamical_time (self->mjd, time_scale);
 }
 
-long double
+double
 date_time_jd (DateTime *self, time_scale_t time_scale)
 {
   return (convert_from_terrestrial_dynamical_time (self->mjd, time_scale)
 	  + MJD_OFFSET);
 }
 
-long double
+double
 date_time_jds (DateTime *self, time_scale_t time_scale)
 {
   return (convert_from_terrestrial_dynamical_time (self->mjd, time_scale) 
@@ -584,7 +586,7 @@ date_time_jds (DateTime *self, time_scale_t time_scale)
    radians.  See "Satellite Orbits: Models, Methods, and
    Applications", section 5.3.2, by Oliver Montenbruck and Eberhard
    Gill for details.  */
-static long double
+static double
 mean_obliquity (double long mjd_tt)
 {
   static DateTime *standard_epoch = NULL;
@@ -592,9 +594,9 @@ mean_obliquity (double long mjd_tt)
     standard_epoch = date_time_new (2000, 1, 12 * SECONDS_PER_HOUR, TDT);
   }
 
-  const long double julian_century = 36525.0;
+  const double julian_century = 36525.0;
 
-  long double T = ((mjd_tt - date_time_mjd (standard_epoch, TDT)) 
+  double T = ((mjd_tt - date_time_mjd (standard_epoch, TDT)) 
 		   / julian_century);
 
   return (M_PI / 180.0) * (23.43929111 
@@ -603,15 +605,15 @@ mean_obliquity (double long mjd_tt)
 }
 
 // Fractional part of a number.
-static long double 
-fractional_part (long double x)
+static double 
+fractional_part (double x)
 { 
-  return fmodl (x, 1.0);
+  return fmod (x, 1.0);
 }
 
 // The floating point remainder of x / y.
-static long double 
-float_modulo (long double x, long double y)
+static double 
+float_modulo (double x, double y)
 { 
   return y * fractional_part (x / y);
 }
@@ -619,8 +621,8 @@ float_modulo (long double x, long double y)
 /* Determine the nutation in longitude counted in the ecliptic.  This
    uses the 1980 International Astronomical Union (IAU) nutation
    theory.  See "Satellite Geodesy 2nd Edition" by Gunter Seeber.  */
-static long double
-delta_psi (long double mjd_tt)
+static double
+delta_psi (double mjd_tt)
 {
   static DateTime *standard_epoch = NULL;
   if ( standard_epoch == NULL ) {
@@ -628,14 +630,14 @@ delta_psi (long double mjd_tt)
   }
 
   // Length of one julian century in days.
-  const long double one_julian_century = 36525.0;
+  const double one_julian_century = 36525.0;
 
   // Constants
-  const long double t  = ((mjd_tt - date_time_mjd (standard_epoch, TDT)) 
+  const double t  = ((mjd_tt - date_time_mjd (standard_epoch, TDT)) 
 			  / one_julian_century);
-  const long double t2 = t *t;
-  const long double t3 = t2 * t;
-  const long double asprev = 360.0 * 3600.0;  // Arcseconds per revolution.
+  const double t2 = t *t;
+  const double t3 = t2 * t;
+  const double asprev = 360.0 * 3600.0;  // Arcseconds per revolution.
 
   // Number of coefficients in series.
 #define COEFFICIENT_COUNT 106
@@ -756,12 +758,12 @@ delta_psi (long double mjd_tt)
 
   // Mean arguments of luni-solar motion
 
-  long double l;		      // Mean anomaly of the moon.
-  long double lp;		      // Mean anomaly of the sun.
-  long double F;		      // Mean argument of latitude.
+  double l;		      // Mean anomaly of the moon.
+  double lp;		      // Mean anomaly of the sun.
+  double F;		      // Mean argument of latitude.
   // Mean longitude elongation fo the moon from the sun.
-  long double D;
-  long double Om;		      // Mean longitude of the ascending node.
+  double D;
+  double Om;		      // Mean longitude of the ascending node.
   
   l  = float_modulo (485866.733 + (1325.0 * asprev +  715922.633) * t    
 		     + 31.310 * t2 + 0.064 * t3, asprev);
@@ -774,18 +776,18 @@ delta_psi (long double mjd_tt)
   Om = float_modulo (450160.280 - (   5.0 * asprev +  482890.539) * t    
 		     + 7.455 * t2 + 0.008 * t3, asprev);
 
-  long double asprad = 3600.0 * 180.0 / M_PI;     // Arcseconds per radian.
+  double asprad = 3600.0 * 180.0 / M_PI;     // Arcseconds per radian.
 
   // Nutation in longitude, in radians, to be returned.
-  long double result = 0.0;
+  double result = 0.0;
 
   int ii;
   for ( ii = 0;  ii < COEFFICIENT_COUNT ; ii++ ) {
     // Angle argument.
-    long double arg  
+    double arg  
       = (c[ii][0] * l + c[ii][1] * lp + c[ii][2] * F + c[ii][3] * D 
 	 + c[ii][4] * Om ) / asprad;
-    result += ( c[ii][5] + c[ii][6] * t ) * sinl (arg);
+    result += ( c[ii][5] + c[ii][6] * t ) * sin (arg);
     // We don't need delta_epsilon at the moment.
     // deps += ( c[ii][7] + c[ii][8] * t ) * cos (arg);
   };
@@ -800,9 +802,9 @@ delta_psi (long double mjd_tt)
    Time, for a given time.  The result is in seconds.  See "Satellite
    Geodesy Second Edition", Section 2.2.2 for details. */
 static double
-equation_of_equinoxes (long double mjd_tt)
+equation_of_equinoxes (double mjd_tt)
 {
-  return delta_psi (mjd_tt) * cosl (mean_obliquity (mjd_tt));
+  return delta_psi (mjd_tt) * cos (mean_obliquity (mjd_tt));
 }
 
 double
@@ -827,23 +829,23 @@ date_time_earth_angle (DateTime *self)
     /* Here we trust the magic in "Satellite Geodesy 2nd Edition",
        section 2.2.2.  */
     /* Julian century length in days. */
-    const long double one_julian_century = 36525.0;
+    const double one_julian_century = 36525.0;
     /* Current modified julian day in sidereal time.  */
-    long double cmjd = date_time_mjd (self, UT1R);
+    double cmjd = date_time_mjd (self, UT1R);
     /* Sidereal time of start of current day in julian centuries from
        standard epoch.  */
-    long double t0 = ((floorl (cmjd) - date_time_mjd (standard_epoch, UT1R)) 
+    double t0 = ((floor (cmjd) - date_time_mjd (standard_epoch, UT1R)) 
 		      / one_julian_century);
     /* Current sidereal time in julian centuries from standard
        epoch.  */
-    long double tu = ((cmjd - date_time_mjd (standard_epoch, UT1R)) 
+    double tu = ((cmjd - date_time_mjd (standard_epoch, UT1R)) 
 		      / one_julian_century);
     /* Greenwich mean sidereal time in radians.  */
-    long double gmst = (6 * SECONDS_PER_HOUR + 41 * SECONDS_PER_MINUTE 
+    double gmst = (6 * SECONDS_PER_HOUR + 41 * SECONDS_PER_MINUTE 
 			+ 50.54841 + (1.002737909350795 * (cmjd - floor (cmjd))
 				      * SECONDS_PER_DAY)
-			+ 8640184.812866 * t0 + 0.093104 * powl (tu, 2.0) 
-			- 6.2e-6 * powl (tu, 3.0));
+			+ 8640184.812866 * t0 + 0.093104 * pow (tu, 2.0) 
+			- 6.2e-6 * pow (tu, 3.0));
     gmst = 2 * M_PI * fractional_part (gmst / SECONDS_PER_DAY);
 
     double gast = fmod (gmst 
@@ -872,7 +874,7 @@ date_time_difference (DateTime *self, DateTime *other)
 void
 date_time_add_seconds (DateTime *self, double seconds)
 {
-  self->mjd += (long double) seconds / SECONDS_PER_DAY;
+  self->mjd += (double) seconds / SECONDS_PER_DAY;
   mjd_to_year_day_second (self->mjd, &(self->year), &(self->day_of_year), 
 			  &(self->second_of_day));
 }
@@ -881,7 +883,7 @@ date_time_add_seconds (DateTime *self, double seconds)
 void
 date_time_subtract_seconds (DateTime *self, double seconds)
 {
-  self->mjd -= (long double) seconds / SECONDS_PER_DAY;
+  self->mjd -= (double) seconds / SECONDS_PER_DAY;
   assert (self->mjd >= 0);
   mjd_to_year_day_second (self->mjd, &(self->year), &(self->day_of_year), 
 			  &(self->second_of_day));

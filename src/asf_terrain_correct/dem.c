@@ -6,16 +6,6 @@
 #include <glib.h>
 #include <gsl/gsl_math.h>
 
-#ifndef linux
-#ifndef win32
-static double
-round (double arg)
-{
-  return floor (arg + 0.5);
-}
-#endif // #ifndef win32
-#endif // #ifndef linux
-
 /* Forward declarations for static methods */
 
 static void 

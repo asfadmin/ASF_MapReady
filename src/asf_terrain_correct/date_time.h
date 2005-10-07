@@ -55,9 +55,9 @@
 #define HOURS_PER_DAY 24
 #define SECONDS_PER_DAY (SECONDS_PER_HOUR * HOURS_PER_DAY)
 /* Modified julian day zero is julian day MJD_OFFSET.  */
-#define MJD_OFFSET ( (long double) 2400000.5)
+#define MJD_OFFSET ( (double) 2400000.5)
 /* Julian date for science day zero is julian day JDS_OFFSET.  */
-#define JDS_OFFSET ( (long double) 2436099.5)
+#define JDS_OFFSET ( (double) 2436099.5)
 
 /* These class data members may be read directly from the structure,
    but should not be modified or created except with the interface
@@ -70,7 +70,7 @@ typedef struct {
   int day_of_year;		/* Counting from 1.  */
   double second_of_day;
   /* Equivalent time in modified julian days.  */
-  long double mjd;		
+  double mjd;		
 } DateTime;
 
 /* All the member functions that take or return a time include an
@@ -91,7 +91,7 @@ date_time_new (int year, int day_of_year, double second_of_day,
 /* Create a new DateTime object from a modified julian day.  Modified
    julian days begin at midnight November 17, 1858.  */
 DateTime *
-date_time_new_from_mjd (long double mjd, time_scale_t time_scale);
+date_time_new_from_mjd (double mjd, time_scale_t time_scale);
 
 /* Create a new DateTime object from a year, month, day, and second of
    day.  */
@@ -103,7 +103,7 @@ date_time_new_from_ymds (int year, int month, int day, double second_of_day,
    at noon January 1, 4713 BC (making noon January 2, 4713 BC julian
    day number 1.0).  */
 DateTime *
-date_time_new_from_jd (long double jd, time_scale_t time_scale);
+date_time_new_from_jd (double jd, time_scale_t time_scale);
 
 /* Create a new DateTime object from a so-called "Julian Date for
    Space".  This system starts at midnight on September 17, 1957.  I
@@ -112,7 +112,7 @@ date_time_new_from_jd (long double jd, time_scale_t time_scale);
    julian days into thinking modified julian days are what they
    want.  */
 DateTime *
-date_time_new_from_jds (long double jds, time_scale_t time_scale);
+date_time_new_from_jds (double jds, time_scale_t time_scale);
 
 /* Create a new independent DateTime object from an existing model.  */
 DateTime *
@@ -151,15 +151,15 @@ double
 date_time_second_of_minute (DateTime *self, time_scale_t time_scale);
 
 /* Get time in modified julian days.  */
-long double
+double
 date_time_mjd (DateTime *self, time_scale_t time_scale);
 
 /* Get time in julian days.  */
-long double
+double
 date_time_jd (DateTime *self, time_scale_t time_scale);
 
 /* Get time as a so-called "Julian Date for Space".  */
-long double
+double
 date_time_jds (DateTime *self, time_scale_t time_scale);
 
 /* Get the rotation angle in radians of the earth relative to the
