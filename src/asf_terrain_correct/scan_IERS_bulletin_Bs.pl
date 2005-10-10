@@ -1,4 +1,7 @@
-#!/usr/local/bin/perl -w
+# Don't set the path to perl since different machines have it in different
+# places. Rather let make find perl for us, and call this script with that
+# #!/usr/local/bin/perl -w  ==> solaris
+# #!/usr/bin/perl -w        ==> linux
 
 use Math::Trig qw( pi );
 
