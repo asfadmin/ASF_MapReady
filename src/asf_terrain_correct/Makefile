@@ -3,38 +3,40 @@ PROGRAM := asf_terrain_correct
 include ../../make_support/system_rules
 
 ###############################################################################
-#                                                                             
-# List of Sources                                                             
-#                                                                             
+#
+# List of Sources
+#
 # Here are the variables that list all the sources that need building
 # and public headers that need installing.  When new source files are
 # added, something in here will need to change.
-#                                                                             
+#
 ###############################################################################
 
 PROGRAM_C_SOURCE = $(addsuffix .c, $(PROGRAM))
 
 # Classes.  Each entry here has a corresponding .h and .c file.
-CLASSES := date_time \
-	   dem \
-	   map_projected_dem \
-           orbital_state_vector \
-	   platform_path \
-           progress_meter \
-           slant_range_image \
-	   vector \
-           ITRS_platform_path \
-           ITRS_point \
-	   lsm \
-	   dem_geom_info \
-	   polygon
+CLASSES := \
+	ITRS_platform_path \
+	ITRS_point \
+	date_time \
+	dem \
+	dem_geom_info \
+	lsm \
+	map_projected_dem \
+	orbital_state_vector \
+	platform_path \
+	polygon \
+	progress_meter \
+	slant_range_image \
+	vector
 
 # Non-main, non-class source files that need building.
 OTHER_C_SOURCES := utilities.c
 
 # We have a special little program which we run to mash a bunch of
 # International Earth Rotation Service Bulletin B issues together.
-IERS_BULLETIN_B_MASHER := ./scan_IERS_bulletin_Bs.pl
+PERL = perl -w
+IERS_BULLETIN_B_MASHER := scan_IERS_bulletin_Bs.pl
 
 # Sources from which static data files needed by the library code are
 # derived live in this directory.
@@ -58,7 +60,7 @@ ifeq ($(BK_DEBUG), 1)
 
   INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) -I$(SCRATCHPLOT_INCLUDE_DIR) \
                    $(shell pkg-config --cflags-only-I glib-2.0)
-else 
+else
   INCLUDE_FLAGS := -I$(ASF_INCLUDE_DIR) $(GLIB_CFLAGS)
 endif
 
@@ -71,16 +73,9 @@ endif
 # I'd like to use -Wconversion as advised by the GSL, but it seems to
 # make it impossible to pass arguments of type float to functions that
 # take type float (still get a complaint about argument being passed
-# as float due to prototype rather than double.
-#          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
-# For the moment we don't have -Wshadow in either, since fftw 3.0.1 at
-# least ends up redefining some things when compiled with
-# -D_ISOC99_SOURCE.
-#CFLAGS += -Werror -Wall -W -g -O2 -Wmissing-prototypes -Wstrict-prototypes \
-#          -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
-#          -Wnested-externs -fno-common
+# as float due to prototype rather than double.)
 CFLAGS += -Wall -W -g -O2 -Wmissing-prototypes -Wstrict-prototypes \
-          -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
+          -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
           -Wnested-externs -fno-common
 
 ifeq ($(DEBUG_BUILD), 2)
@@ -98,39 +93,26 @@ ifeq ($(BK_DEBUG), 1)
   # The ScratchPlot library allows us to draw quick plots of data,
   # images, etc.  Useful for development work.
   SCRATCHPLOT_LIB_DIR := /tmp/test_scratchplot/lib
-endif 
+endif
 
 # Libraries needed by this program.
+LDLIBS := \
+	$(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf_fft.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libasf_reporting.a \
+	$(LIBDIR)/libasf_raster.a \
+	$(PROJ_LIBS) \
+	$(GSL_LIBS) \
+	$(JPEG_LIBS) \
+	$(GLIB_LIBS)
 ifeq ($(BK_DEBUG), 1)
-  LDLIBS := $(LIBDIR)/asf.a \
-	    $(LIBDIR)/asf_meta.a \
-	    $(LIBDIR)/asf_fft.a \
-	    $(LIBDIR)/libasf_proj.a \
-	    $(LIBDIR)/libproj.a \
-            $(LIBDIR)/libasf_reporting.a \
-	    $(LIBDIR)/libasf_raster.a \
-	    $(LIBDIR)/libgsl.a \
-	    $(LIBDIR)/libgslcblas.a \
-	    $(LIBDIR)/libjpeg.a \
-	    $(LIBDIR)/libfftw3.a \
-	    $(shell pkg-config --libs-only-L glib-2.0) \
-            $(shell pkg-config --libs-only-l glib-2.0) \
-	    -Wl,--rpath,$(SCRATCHPLOT_LIB_DIR) \
-	    -L$(SCRATCHPLOT_LIB_DIR) -lscratchplot \
-	    -lm
-else
-  LDLIBS := $(LIBDIR)/asf.a \
-	    $(LIBDIR)/asf_meta.a \
-	    $(LIBDIR)/asf_fft.a \
-	    $(LIBDIR)/libasf_proj.a \
-	    $(LIBDIR)/libproj.a \
-            $(LIBDIR)/libasf_reporting.a \
-	    $(LIBDIR)/libasf_raster.a \
-	    $(GSL_LIBS) \
-	    $(LIBDIR)/libjpeg.a \
-	    $(LIBDIR)/libfftw3.a \
-	    $(GLIB_LIBS)
-
+  LDLIBS := \
+	$(LDLIBS) \
+	-Wl,--rpath,$(SCRATCHPLOT_LIB_DIR) \
+	-L$(SCRATCHPLOT_LIB_DIR) -lscratchplot \
+	-lm
 endif
 
 # Defines needed by this module.  For defining the location of the
@@ -178,7 +160,7 @@ test_stamp: test_orbital_state_vector_stamp \
 # Build and run the date_time class test.
 test_date_time_stamp: test_date_time.c $(TEST_PREREQUISITES)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(NONMAIN_OBJS) $(LDLIBS) \
-              -o test_date_time
+		-o test_date_time
 	./test_date_time
 	touch $@
 
@@ -186,7 +168,7 @@ test_date_time_stamp: test_date_time.c $(TEST_PREREQUISITES)
 test_orbital_state_vector_stamp: test_orbital_state_vector.c \
                                  $(TEST_PREREQUISITES)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(NONMAIN_OBJS) $(LDLIBS) \
-              -o test_orbital_state_vector
+		-o test_orbital_state_vector
 	./test_orbital_state_vector;
 	touch $@
 
@@ -194,7 +176,7 @@ test_platform_path_stamp: test_platform_path.c \
                           test_orbital_state_vector_stamp \
                           $(TEST_PREREQUISITES)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(NONMAIN_OBJS) $(LDLIBS) \
-              -o test_platform_path
+		-o test_platform_path
 	./test_platform_path
 	touch $@
 
@@ -202,7 +184,7 @@ test_platform_path_stamp: test_platform_path.c \
 # Build (and don't run... yet) the test_dem class test.
 test_dem_stamp: test_dem.c $(TEST_PREREQUISITES)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(NONMAIN_OBJS) $(LDLIBS) dem.o \
-	      -o test_dem
+		-o test_dem
 	touch $@
 
 ###############################################################################
@@ -221,8 +203,8 @@ SRCS := $(PROGRAM_C_SOURCE) $(OTHER_C_SOURCES) $(addsuffix .c, $(CLASSES))
 OBJS := $(patsubst %.c, %.o, $(SRCS))
 
 # Objects other than the one containing the main program.
-NONMAIN_OBJS := $(patsubst %.c, %.o, $(OTHER_C_SOURCES) \
-                $(addsuffix .c, $(CLASSES)))
+NONMAIN_OBJS := \
+	$(patsubst %.c, %.o, $(OTHER_C_SOURCES) $(addsuffix .c, $(CLASSES)))
 
 ifeq ($(BK_DEBUG), 1)
   # Some options to link in the scratchplot library, used to take a look
@@ -244,12 +226,12 @@ ifeq ($(BK_DEBUG), 1)
 # This is a target for a somewhat isolated test of the orbit model.
   test_model: $(OBJS) $(LIBS) static_data_file_build_stamp test_model.o
 	$(CC) $(LDFLAGS) $(patsubst asf_terrain_correct.o, , $(OBJS)) \
-              test_model.o $(LDLIBS) -o $@
+		test_model.o $(LDLIBS) -o $@
 
 # This is a target for a somewhat isolated test of fft coregistration.
   test_coreg: $(OBJS) $(LIBS) test_coreg.o
 	$(CC) $(LDFLAGS) $(patsubst asf_terrain_correct.o, , $(OBJS)) \
-              test_coreg.o $(LDLIBS) -o $@
+		test_coreg.o $(LDLIBS) -o $@
 
   test_vector_wmc: vector_wmc.o test_vector_wmc.o $(LIBS)
 	$(CC) $(LDFLAGS) vector_wmc.o test_vector_wmc.o $(LDLIBS) -o $@
@@ -263,9 +245,8 @@ static_data_file_build_stamp: time_scale_offsets
 
 # Script which concatenates International Earth Rotation Service
 # Bulletin B issues into a data file.
-time_scale_offsets: $(IERS_BULLETIN_B_DIR) \
-                    $(IERS_BULLETIN_B_MASHER)
-	$(IERS_BULLETIN_B_MASHER) $< $@
+time_scale_offsets: $(IERS_BULLETIN_B_DIR) $(IERS_BULLETIN_B_MASHER)
+	$(PERL) $(IERS_BULLETIN_B_MASHER) $< $@
 
 # Include the C include dependencies.  This mechanism depends on a
 # useful GNU make feature: if, after a make file has been read, any of
@@ -300,16 +281,17 @@ $(OBJS): %.o: %.c
 # archive itself, the test program or programs, and all stamps.
 .PHONY: clean
 clean:
-	rm -rf $(OBJS) \
-               *.o \
-	       $(DEPEND_FILES) \
-	       *_stamp \
-               bk_debug_*_freeze \
-               core.* \
-	       core \
-	       test_model.o \
-	       test_model \
-               time_scale_offsets \
-	       test_orbital_state_vector \
-               test_platform_path \
-	       test_date_time
+	rm -rf \
+		$(OBJS) \
+		$(DEPEND_FILES) \
+		*.o \
+		*_stamp \
+		bk_debug_*_freeze \
+		core.* \
+		core \
+		test_model.o \
+		test_model \
+		time_scale_offsets \
+		test_orbital_state_vector \
+		test_platform_path \
+		test_date_time
