@@ -116,8 +116,6 @@ vector_project (Vector *self, Vector *other1, Vector *other2)
   vector_normalize(n);
 
   assert (vector_magnitude (n) > 0.0);
-  assert (is_relatively_small(vector_dot (n, other1), m));
-  assert (is_relatively_small(vector_dot (n, other2), m));
 
   Vector *ns = vector_cross (n, self);
   vector_normalize(ns);
@@ -126,14 +124,9 @@ vector_project (Vector *self, Vector *other1, Vector *other2)
   vector_normalize(s2);
 
   assert (vector_magnitude (ns) > 0.0);
-  assert (is_relatively_small(vector_dot (ns, n), m));
-  assert (is_relatively_small(vector_dot (ns, s2), m));
 
   Vector *ret = vector_cross (ns, n);
   vector_normalize(ret);
-
-  assert (is_relatively_small(vector_dot (ret, n), m));
-  assert (is_relatively_small(vector_dot (ret, ns), m));
 
   double a = vector_angle (ret, self);
 
