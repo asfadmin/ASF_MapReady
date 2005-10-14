@@ -21,13 +21,13 @@ CLASSES := \
 	date_time \
 	dem \
 	dem_geom_info \
-	lsm \
 	map_projected_dem \
 	orbital_state_vector \
 	platform_path \
 	polygon \
 	progress_meter \
 	slant_range_image \
+        mask_image \
 	vector
 
 # Non-main, non-class source files that need building.
