@@ -56,6 +56,11 @@ vector_magnitude (Vector *self);
 double
 vector_angle (Vector *self, Vector *other);
 
+/* Return a newly allocated vector that is the projection of self
+   to the plane defined by other1 and other2. */
+Vector *
+vector_project (Vector *self, Vector *other1, Vector *other2);
+
 /* Free a vector.  */
 void
 vector_free (Vector *self);
