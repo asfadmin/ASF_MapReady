@@ -8,7 +8,6 @@
 #include <stdlib.h>
 
 // Headers from external libraries.
-#include <fftw3.h>
 #include <glib.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_errno.h>
@@ -22,6 +21,7 @@
 #include "ITRS_platform_path.h"
 #include "ITRS_point.h"
 #include <asf_meta.h>
+#include <asf_nan.h>
 #include "earth_constants.h"
 #include <libasf_proj.h>
 #include "map_projected_dem.h"
@@ -33,7 +33,7 @@
 #endif
 #include "slant_range_image.h"
 #include "dem_geom_info.h"
-#include "lsm.h"
+#include "mask_image.h"
 
 // Print user information to error output location and exit with a
 // non-zero exit code.
@@ -46,11 +46,13 @@ usage (void)
 }
 
 // Convenience functions so we don't have to type long method names.
+/*  commented out for now, since it doesn't appear to be used. --KH
 static void
 SP (FloatImage *i, ssize_t xi, ssize_t yi, float value)
 {
   float_image_set_pixel (i, xi, yi, value);
 }
+*/
 static float
 GP (FloatImage *i, ssize_t xi, ssize_t yi)
 {
@@ -89,80 +91,6 @@ target_distance (double time, void *params)
   return vector_magnitude (&difference);
 }
 
-// Compute a score that increases as the autocorrelation of square
-// image under rotation increases.  The score is nothing standard, but
-// is useful for comparing to the scores of other images.  The basic
-// idea here is to use the fact that since mountains are bright on one
-// side, they decorrelate nicely under rotation.  This lets us find
-// the nice mountainous regions in SAR images simulated from DEMs that
-// we expect will coregister well with real SAR images (since radar
-// backscatter is determined mostly from terrain incidence angle only
-// in steeper regions, and is dominated by land cover radiometric
-// characteristics elsewhere).
-static long double
-rotational_autocorrelation_score (FloatImage *image)
-{
-  g_assert (image->size_x == image->size_y);
-
-  FloatImage *im = image;	// Convenience alias.
-
-  size_t sz = im->size_x;	// Convenience alias.
-
-  // Form normalized version of the image (pixels sum to 1.0).
-  FloatImage *ni = float_image_new (sz, sz);
-  double pixel_sum = 0;
-  size_t ii, jj;
-  for ( ii = 0 ; ii < sz; ii++ ) {
-    for ( jj = 0 ; jj < sz ;  jj++ ) {
-      pixel_sum += GP (im, jj, ii);
-    }
-  }
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ;  jj++ ) {
-      SP (ni, jj, ii, GP (im, jj, ii) / pixel_sum);
-    }
-  }
-
-  // We will sample the images every sample_stride, rather than
-  // computing correlations based on every pixel in the image.
-  const int sample_stride = 3;
-
-  // Compute unrotated autocorrelation as the sum of pixel values
-  // squared, for a sparse subset of pixels.
-  long double correlation_0 = 0;
-  for ( ii = 0 ; ii < sz ; ii += sample_stride ) {
-    for ( jj = 0 ; jj < sz ; jj += sample_stride ) {
-      correlation_0 += pow (GP (ni, jj, ii), 2);
-    }
-  }
-
-  // Form a version of the normalized image tile rotated clockwise
-  // ninety degrees.
-  FloatImage *rni = float_image_new (sz, sz);
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
-      SP (rni, jj, ii, GP (ni, ii, sz - jj - 1));
-    }
-  }
-
-  // Compute the correlation between the rotated and unrotated
-  // normalized images.
-  long double correlation_90 = 0;
-  for ( ii = 0 ; ii < sz ; ii += sample_stride ) {
-    for ( jj = 0 ; jj < sz ; jj += sample_stride ) {
-      correlation_90 += GP (ni, jj, ii) * GP (rni, jj, ii);
-    }
-  }  
-
-  // We are done with the intermediate images.
-  float_image_free (ni);
-  float_image_free (rni);
-
-  // The score we are interested in is hopefully ordered about the
-  // same as this ratio of characteristics.
-  return correlation_90 / correlation_0;
-}
-
 // Type to hold some information about a tile of a SAR image, a
 // corresponding tile of a simulated image, and a score indicating the
 // autocorrelation of the simulated image tile with itself under
@@ -174,638 +102,6 @@ typedef struct {
   FloatImage *sri_img;		// Slant range SAR image tile.
   size_t txi, tyi;		// x and y indicies of tile in image.
 } image_tile_record_type;
-
-// Compare the autocorrelation scores of *a and *b, returning -1 if
-// (*a)->ras < (*b)->ras, 0 if (*a)->ras == (*b)->ras, or 1 if
-// (*a)->ras > (*b)->ras.
-static gint
-compare_rotational_autocorrelation_scores (image_tile_record_type **a,
-					   image_tile_record_type **b)
-{
-  if ( (*a)->ras < (*b)->ras ) {
-    return -1;
-  }
-  else if ( (*a)->ras > (*b)->ras ) {
-    return 1;
-  }
-  else {
-    return 0;
-  }
-}
-
-// Create a 2D Kaiser window image of size size with smoothing
-// coefficient beta.  The weights of the window are
-//
-//      w(x, y) 
-//        = I0 (beta * sqrt (1 - pow (2 * hypot (x - (size - 1.0) / 2.0,
-//						 y - (size - 1.0) / 2.0)
-//                                    / hypot (size, size), 2))
-//          / I0 (beta)
-//
-// Where I0 is the regular modied cylindrical Bessel function of
-// zeroth order.
-//
-// This window is useful for avoiding edge effects in FFTs and the like.
-//
-// The returned FloatImage must be released with float_image_free when
-// no longer needed.
-static FloatImage *
-kaiser_window (size_t size, double beta)
-{
-  FloatImage *result = float_image_new (size, size);
-  size_t ii, jj;
-  for ( ii = 0 ; ii < size ; ii++ ) {
-    for ( jj = 0 ; jj < size ; jj++ ) {
-      // This value must stay greater than or equal to zero.  So we
-      // make sure floating point problems don't cause it to fail to
-      // do so.
-      double tmp 
-	= 1.0 - pow (2.0 * hypot ((jj - (size - 1.0) / 2.0),
-				  (ii - (size - 1.0) / 2.0))
-		     / hypot (size, size),
-		     2.0);
-      if ( G_UNLIKELY (tmp < 0.0) ) {
-	tmp = 0.0;
-      }
-      SP (result, jj, ii, (gsl_sf_bessel_I0 (beta * sqrt (tmp))
-			   / gsl_sf_bessel_I0 (beta)));
-    }
-  }
-  
-  return result;
-}
-
-// Multiply the pixels of self by the pixels of other.  For
-// convenience, return a pointer to self.
-static FloatImage *
-float_image_multiply (FloatImage *self, FloatImage *other)
-{
-  g_assert (self->size_x == other->size_x);
-  g_assert (self->size_y == other->size_y);
-
-  size_t sz_x = self->size_x, sz_y = self->size_y;
-
-  size_t ii, jj;
-  for ( ii = 0 ; ii < sz_y ; ii++ ) {
-    for ( jj = 0 ; jj < sz_x ; jj++ ) {
-      SP (self, jj, ii, GP (self, jj, ii) * GP (other, jj, ii));
-    }
-  }
-
-  return self;
-}
-
-
-// Given poins (x[0], y[0]), (x[1], y[1]), and (x[2], y[2]), return
-// coefficients a, b, and d of parabolic fit y = ax^2 + bx + c.  This
-// routine is called 'bad_fit_parabola' because it doesn't seem to
-// work very well when the three points being fit are close to one
-// another and far from zero.  Probably there is some sensitivity that
-// kill us when using the naive algebraic solution used here.  It may
-// fail in other cases as well.  But for finding the peak of the
-// parabola which intersects three evenly space points around zero it
-// works fine, and that's all we need.
-static void
-bad_fit_parabola (double *a, double *b, double *c, double x[3], double y[3])
-{
-  // Try to catch stupid errors (may still fail to catch them due to
-  // floating point wierdness -- a float doesn't necessarily even
-  // compare equal to itself, depending on whether its stored in
-  // memory or in a register).
-  g_assert (x[0] != x[1]);
-  g_assert (x[0] != x[2]);
-  g_assert (x[1] != x[2]);
-
-  *a = ((y[0] - y[2] - ((y[1] - y[2]) / (x[1] - x[2])) * (x[0] - x[2]))
-	/ ((pow (x[0], 2) - pow (x[2], 2)) + ((-pow (x[1], 2) + pow (x[2], 2))
-					      * (x[0] - x[2])
-					      / (x[1] - x[2]))));
-  *b = ((y[1] - y[2] + *a * (-pow (x[1], 2), pow (x[2], 2)))
-	/ (x[1] - x[2]));
-  *c = y[2] - *a * pow (x[2], 2) - *b * x[2];
-}
-
-// Find the offset of square image b from square image a.  The images
-// must overlatp by at least 50%.  After the first call, this funcion
-// keeps a some image-sized chunks of memory lying around -- you might
-// want to look into it if you are trying to coregister huge images.
-// Images a and b must be equal sized.  The output values x_offset and
-// y_offset are the distances that the pixels of b are offset from the
-// pixels of a, in the FloatImage coordinate directions (i.e. top left
-// pixel is (0, 0), and x increases as we move right and y increases
-// as we move down).  The coregistration is done in memory using the
-// fftw library.  On success 0 is returned, otherwise nonzero is
-// returned.  FIXME: at least for SAR images, this routine doesn't
-// work very well (it doesn't give the same results as brute force
-// coregistration).
-static int
-coregister (double *x_offset, double *y_offset, FloatImage *a, FloatImage *b)
-{
-  g_assert (a->size_x == a->size_y);
-  g_assert (b->size_x == b->size_y);
-  g_assert (a->size_x == b->size_x);
-
-  size_t sz = a->size_x;	// Convenience alias.
-
-  // Discrete FFTs have the effect of making the data look periodic
-  // when we go to correlate things, which is bad.  In order to ensure
-  // that we the coregistered tiles are matching wrapped version of
-  // themselves, we pad them both out with an image worth of zeros all
-  // around.
-  size_t psz = 3 * sz;
-
-  // We need to window the input data to avoid edge effects when we
-  // zero pad the input images.  The value of beta determines how
-  // quicly the window rolls off (i.e. how much of and how much the
-  // edges are attenuated).
-  double beta = 8;
-  FloatImage *kw = kaiser_window (sz, beta);
-  FloatImage *a_w = float_image_copy (a);   // Windowed version of image a.
-  float_image_multiply (a_w, kw);
-  FloatImage *b_w = float_image_copy (b);   // Windowed version of image b.
-  float_image_multiply (b_w, kw);
-
-  // FIXME: fftw supports real-data-specific trasforms which exploit
-  // hermitian symetry, in-place transforms, better performance at
-  // certain transform sizes, etc., but these are a pain to sort out
-  // and I'm lazy.
-
-  // Allocate memory and fftw transform plans, if required, or reuse
-  // existing ones if the images have the same dimensions as last time
-  // through.  The uses of these memory regions are described when
-  // they are used, rather than here.
-  static ssize_t a_sz_x = -1, a_sz_y = -1, b_sz_x = -1, b_sz_y = -1;
-  static fftw_complex *pwa_in = NULL;
-  static fftw_complex *pwb_in = NULL;
-  static fftw_complex *pwa_out = NULL;
-  static fftw_complex *pwb_out = NULL;
-  static fftw_complex *pwb_out_conj = NULL;
-  static fftw_complex *pwa_by_pwb_conj_freq = NULL;
-  static fftw_complex *pwa_correlate_pwb = NULL;
-  static fftw_plan pwa_plan, pwb_plan, reverse_plan;
-  static FloatImage *pwa = NULL, *pwb = NULL, *correlation_image = NULL;
-  // If the dimensions this time aren't the same as last time, we have
-  // to (re)allocate the memory and plan resources.
-  g_assert (a->size_x <= SSIZE_MAX && a->size_y <= SSIZE_MAX 
-	    && b->size_x <= SSIZE_MAX && b->size_y <= SSIZE_MAX);
-  if ( !((ssize_t) a->size_x == a_sz_x 
-	 && (ssize_t) a->size_y == b_sz_y 
-	 && (ssize_t) b->size_x == b_sz_x 
-	 && (ssize_t) b->size_y == b_sz_y) ) {
-    // If this isn't out first time through, 
-    if ( pwa_in != NULL ) {
-      // free all the existing memory and plan resources.
-      fftw_free (pwa_in);
-      fftw_free (pwb_in);
-      fftw_free (pwa_out);
-      fftw_free (pwb_out);
-      fftw_free (pwb_out_conj);
-      fftw_free (pwa_by_pwb_conj_freq);
-      fftw_free (pwa_correlate_pwb);
-      fftw_destroy_plan (pwa_plan);
-      fftw_destroy_plan (pwb_plan);
-      fftw_destroy_plan (reverse_plan);
-      float_image_free (pwa);
-      float_image_free (pwb);
-      float_image_free (correlation_image);
-    }
-    size_t array_size = psz * psz * sizeof (fftw_complex);
-    pwa_in = fftw_malloc (array_size);
-    pwb_in = fftw_malloc (array_size);
-    pwa_out = fftw_malloc (array_size);
-    pwb_out = fftw_malloc (array_size);
-    pwb_out_conj = fftw_malloc (array_size);
-    pwa_by_pwb_conj_freq = fftw_malloc (array_size);
-    pwa_correlate_pwb = fftw_malloc (array_size);
-    pwa_plan = fftw_plan_dft_2d (psz, psz, pwa_in, pwa_out, FFTW_FORWARD,
-			       FFTW_MEASURE);    
-    pwb_plan = fftw_plan_dft_2d (psz, psz, pwb_in, pwb_out, FFTW_FORWARD, 
-				 FFTW_MEASURE);
-    reverse_plan = fftw_plan_dft_2d (psz, psz, pwa_by_pwb_conj_freq, 
-				     pwa_correlate_pwb, FFTW_BACKWARD,
-				     FFTW_MEASURE);
-    pwa = float_image_new_with_value (psz, psz, 0.0);
-    pwb = float_image_new_with_value (psz, psz, 0.0);
-    correlation_image = float_image_new (psz, psz);      
-    a_sz_x = a->size_x;
-    a_sz_y = a->size_y;
-    b_sz_x = b->size_x;
-    b_sz_y = b->size_y;
-  }
-
-  // Form the padded versions of the windowed a and b images by
-  // writing the pixels of a and b into the middle of the existing
-  // field of zeros.
-  size_t ii, jj;
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
-      SP (pwa, jj + sz, ii + sz, GP (a_w, jj, ii));
-      SP (pwb, jj + sz, ii + sz, GP (b_w, jj, ii));
-    }
-  }
-
-  // Done with the windowed versions of the input.
-  float_image_free (a_w);
-  float_image_free (b_w);
-
-  // Write padded images into fftw-ready memory.
-  for ( ii = 0 ; ii < psz ; ii++ ) {
-    for ( jj = 0 ; jj < psz ; jj++ ) {
-      pwa_in[psz * ii + jj] = GP (pwa, jj, ii) + I * 0.0;
-      pwb_in[psz * ii + jj] = GP (pwb, jj, ii) + I * 0.0;
-    }
-  }
-
-  // Transform the padded input images.
-  fftw_execute (pwa_plan);
-  fftw_execute (pwb_plan);
-
-  // Conjugate b_out.
-  for ( ii = 0 ; ii < psz ; ii++ ) {
-    for ( jj = 0 ; jj < psz ; jj++ ) {
-      size_t ci = psz * ii + jj;   // Current index.
-      pwb_out_conj[ci] = creal (pwb_out[ci]) - cimag (pwb_out[ci]);
-    }
-  }
-
-  // Perform frequency domain multiplication.
-  for ( ii = 0 ; ii < psz ; ii++ ) {
-    for ( jj = 0 ; jj < psz ; jj++ ) {
-      pwa_by_pwb_conj_freq[psz * ii + jj] = (pwa_out[psz * ii + jj] 
-					     * pwb_out_conj[psz * ii + jj]);
-    }
-  }
-
-  // Perform reverse transformation on the result of the frequency
-  // domain multiplication.
-  fftw_execute (reverse_plan);
-
-  // Form correlation image..
-  for ( ii = 0 ; ii < psz ; ii++ ) {
-    for ( jj = 0 ; jj < psz ; jj++ ) {
-      SP (correlation_image, jj, ii, 
-	  (float) creal (pwa_correlate_pwb[psz * ii + jj]));
-    }
-  }
-
-  // The correlation image needs to be normalized such that when we
-  // look for the peak, favor is not given to offsets which feature
-  // more overlapping pixels.  We will only be searching for matches
-  // with overlaps of at least 50%, so we only have to normalize half
-  // of the padded image corners.
-  FloatImage *nci = float_image_copy (correlation_image);
-  // FIXME Just so we can take good look at the correlation image, we
-  // pseudo-normalize the whold image by dividing everything by the
-  // largest normalization factor, then undo this with a multiply for
-  // the pixels that are actually getting normalized for the degree of
-  // overlap.  This isn't needed except to keep export_as_jpeg method
-  // working correctly.
-  float tmin, tmax, tmean, tsdev;
-  float_image_statistics (correlation_image, &tmin, &tmax, &tmean, &tsdev,
-			  NAN);
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
-      SP (nci, jj, ii, tmean / ((sz - 1) * (sz - 1)));
-    }
-  }
-  for ( ii = 0 ; ii < sz / 2 + 1 ; ii++ ) {
-    for ( jj = 0 ; jj < sz / 2 + 1 ; jj++ ) {
-
-      // FIXME: we stupidly used size_t for the normalization factor
-      // below, so we better not overflow that type with the square of
-      // the chip size on a side.
-      g_assert ((double) sz * sz <= SIZE_MAX);
-      // FIXME: we have here the stupid pseudo-normalization factor
-      // referred to above (so we can undo it for pixels that are
-      // actually getting normalized).
-      double pnf = ((double) sz - 1) * (sz - 1);
-
-      // Normalization factor for pixels in the upper left corner of
-      // the correlation image.  This is the number of pixels of
-      // overlap we have between the images being correlated for this
-      // offset.
-      size_t nf = (sz - jj) * (sz - ii);
-      // Unnormalized pixel value.
-      float upv = pnf * GP (correlation_image, jj, ii);
-      float npv = upv / nf;	// Normalized pixel value.
-      SP (nci, jj, ii, npv);	// Set normalized correlation image pixel.
-
-      // Analogous to the above, for the upper right corner.
-      nf = (sz - jj - 1) * (sz - ii);
-      upv = pnf * GP (correlation_image, psz - jj - 1, ii);
-      npv = upv / nf;
-      SP (nci, psz - jj - 1, ii, npv);
-
-      // Analogous to the above, for the lower right corner.
-      nf = (sz - jj - 1) * (sz - ii - 1);
-      upv = pnf * GP (correlation_image, psz - jj - 1, psz - ii - 1);
-      npv = upv / nf;
-      SP (nci, psz - jj - 1, psz - ii - 1, npv);
-
-      // Analogous to the above, for the lower left corner.
-      nf = (sz - jj) * (sz - ii - 1);
-      upv = pnf * GP (correlation_image, jj, psz - ii - 1);
-      npv = upv / nf;
-      SP (nci, jj, psz - ii - 1, npv);
-    }
-  }
-
-  float_image_export_as_jpeg (nci, "nci.jpg", psz, 0.0);
-
-  // Find the largest pixel of the normalized part of the correlation
-  // image.
-  float normalized_correlation_max = -FLT_MAX;
-  // Location of correlation peak, with compiler reassurance
-  // initializers.
-  size_t normalized_max_x = -1, normalized_max_y = -1;	
-  for ( ii = 0 ; ii < sz / 2 + 1 ; ii++ ) {
-    for ( jj = 0 ; jj < sz / 2 + 1 ; jj++ ) {
-      // Search for a peak in this pixel in the upper left corner
-      float pv = float_image_get_pixel (nci, jj, ii);
-      if ( pv > normalized_correlation_max ) {
-	normalized_correlation_max = pv;
-	normalized_max_x = jj;
-	normalized_max_y = ii;
-      }
-
-      // Search for a peak in the upper right corner.
-      /* These searches are commented out because they aren't needed
-      pv = float_image_get_pixel (nci, psz - jj - 1, ii);
-      if ( pv > normalized_correlation_max ) {
-	normalized_correlation_max = pv;
-	normalized_max_x = psz - jj - 1;
-	normalized_max_y = ii;
-      }
-      */
-
-      // Search for a peak in the lower right corner.
-      /*
-      pv = float_image_get_pixel (nci, psz - jj - 1, psz - ii - 1);
-      if ( pv > normalized_correlation_max ) {
-	normalized_correlation_max = pv;
-	normalized_max_x = psz - jj - 1;
-	normalized_max_y = psz - ii - 1;
-      }
-      */
-
-      // Search for a peak in the lower left corner.
-      pv = float_image_get_pixel (nci, jj, psz - ii - 1);
-      if ( pv > normalized_correlation_max ) {
-	normalized_correlation_max = pv;
-	normalized_max_x = jj;
-	normalized_max_y = psz - ii - 1;
-      }
-    }
-  }
-
-  // Get the indicies of the pixels on the four sides of the pixel
-  // with the maximum value in the correlation image.  We may wrap
-  // around an image edge in doing this, which is ok.
-  ssize_t ia = normalized_max_y - 1; // Index above.
-  if ( ia == -1 ) { ia = psz - 1; }
-  ssize_t ib = normalized_max_y + 1; // Index below.
-  g_assert (psz < SSIZE_MAX);
-  if ( ib == (ssize_t) psz ) { ib = 0; }
-  ssize_t il = normalized_max_x - 1; // Index left.
-  if ( il == -1 ) { il = psz - 1; }
-  ssize_t ir = normalized_max_x + 1; // Index right.
-  if ( ir == (ssize_t) psz ) { ir = 0; }
-
-  // We want to find the peak of a parabola fitted to the maximum
-  // pixel and its two neighbors, in each dimension.  The locations of
-  // the peaks of the parabolas will be considered the best estimation
-  // of the optimal match location.
-  double *index = g_new (double, 3);
-  double *value = g_new (double, 3);
-  double d, e, f;		// Coefficients of parabola.
-  // The pixels are evenly spaced, and our parabolic fit function
-  // works best for argument values, so we solve things around zero
-  // and then adjust back to the true index position later.
-  index[0] = -1.0;
-  index[1] = 0.0;
-  index[2] = 1.0;
-  value[0] = GP (nci, il, normalized_max_y);
-  value[1] = normalized_correlation_max;
-  value[2] = GP (nci, ir, normalized_max_y);
-  bad_fit_parabola (&d, &e, &f, index, value);
-  // Location of peak of parabola in x direction.
-  double peak_x = -e / (2 * d) + normalized_max_x;
-  value[0] = GP (nci, normalized_max_x, ia);
-  value[1] = normalized_correlation_max;
-  value[2] = GP (nci, normalized_max_x, ib);
-  bad_fit_parabola (&d, &e, &f, index, value);  
-  // Location of peak of parabola in y direction.
-  double peak_y = -e / (2 * d) + normalized_max_y;
-  g_free (index);
-  g_free (value);
-
-  // If the parabolic peak interpolation worked, the peak better be
-  // somewhere between the neighboring indicies in both directions.
-  g_assert (peak_x >= -1.0);
-  g_assert (peak_x <= 1.0);
-  g_assert (peak_y >= -1.0);
-  g_assert (peak_y <= 1.0);
-
-  // FIXME: for debugging purposes, we take a look at the "normalized"
-  // correlation image.  Note that since the nci isn't actually
-  // normalized everywhere, there is goind to be quite a bit of
-  // saturation.
-  float_image_export_as_jpeg (nci, "correlation.jpg", sz, 0.0);
-
-  float_image_free (nci);
-
-  // Fill in the discovered offsets.
-  if ( peak_x <= psz / 2 ) {
-    *x_offset = -peak_x;
-  }
-  else {
-    *x_offset = psz - peak_x;
-  }
-  if ( peak_y <= psz / 2 ) {
-    *y_offset = -peak_y;
-  }
-  else {
-    *y_offset = psz - peak_y;
-  }
-
-  return 0;			// Return success code.
-}
-
-// Add up all term_count terms in terms_to_sum in place, in pairwise
-// fashion to avoid adding big and small numbers and losing accuracy.
-// Note that the terms_to_sum array is permuted continually, and in
-// the end only terms_to_sum[0] will have any meaning (it will be
-// equal to the return value).
-static double 
-sum_terms (double *terms_to_sum, size_t term_count)
-{
-  while ( term_count > 1 ) {
-    size_t ii;
-    for ( ii = 0 ; ii < term_count / 2 ; ii++ ) {
-      terms_to_sum[ii] = terms_to_sum[ii * 2] + terms_to_sum[ii * 2 + 1];
-    }
-    if ( term_count % 2 == 1 ) {
-      terms_to_sum[ii - 1] += terms_to_sum[ii * 2];
-    }
-    term_count /= 2;
-  }
-
-  return terms_to_sum[0];
-}
-
-// Brute force coregistration of a cropped version of image b with
-// image a.  This routine is like coregister, but it used brute force
-// correlation instead of FFTs, doesn't use all of image b, only
-// searches for offset up to 20 pixels, doesn't use normalization, and
-// doesn't bother doing parabolic peak interpolation.  It seems to
-// give the same results as bf_coregister, below.
-static int
-bf_coregister_b_cropped (double *x_offset, double *y_offset, FloatImage *a,
-			 FloatImage *b)
-{
-  g_assert (a->size_x <= SSIZE_MAX);
-  ssize_t sz = a->size_x;
-  g_assert (sz == (ssize_t) a->size_y);
-  g_assert (b->size_x == a->size_x);
-  g_assert (b->size_y == a->size_y);
-
-  // Form a cropped zero padded version of image b.
-  FloatImage *b_cropped = float_image_new (b->size_x, b->size_y);
-  ssize_t ii, jj;
-  g_assert (sz < SSIZE_MAX);
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
-      if ( jj < 20 || jj >= sz - 20 || ii < 20 || ii >= sz - 20 ) {
-	SP (b_cropped, jj, ii, 0.0);
-      }
-      else {
-	SP (b_cropped, jj, ii, GP (b, jj, ii));
-      }
-    }
-  }
-
-  FloatImage *mc = float_image_new (40, 40);
-
-  double *terms_to_sum = g_new (double, sz * sz);
-  size_t current_term = 0;
-
-  for ( ii = -20 ; ii < 20 ; ii++ ) {
-    for ( jj = -20 ; jj < 20 ; jj++ ) {
-      ssize_t kk, ll;
-      for ( kk = 0 ; kk < sz ; kk++ ) {
-	for ( ll = 0 ; ll < sz ; ll++ ) {
-	  float p1;
-	  if ( jj + ll >= 0 && jj + ll < sz && ii + kk >= 0 && ii + kk < sz ) {
-	    p1 = GP (a, jj + ll, ii + kk);
-	  }
-	  else {
-	    p1 = 0.0;
-	  }
-	  float p2 = GP (b_cropped, ll, kk);
-	  terms_to_sum[current_term] = p1 * p2;
-	  current_term++;
-	}
-      }
-      double sum = sum_terms (terms_to_sum, current_term);
-      SP (mc, jj + 20, ii + 20, sum);
-      current_term = 0;
-    }
-  }
-
-  g_free (terms_to_sum);
-
-  // Maximum correlation pixel value.
-  float mcpv = -FLT_MAX;
-  int mcpx = -1, mcpy = -1;	// Compiler reassurance.
-  g_assert (mc->size_y <= INT_MAX);
-  for ( ii = 0 ; ii < (int) mc->size_y ; ii++ ) {
-    g_assert (mc->size_x <= INT_MAX);
-    for ( jj = 0 ; jj < (int) mc->size_x ; jj++ ) {
-      float cp = GP (mc, jj, ii);
-      if ( cp > mcpv ) {
-	mcpv = cp;
-	mcpx = jj;
-	mcpy = ii;
-      }
-    }
-  }
-
-  do {
-    float_image_free (mc); mc = NULL;
-  } while ( 0 );
-
-  // Return offsets of tile b with respect to tile a.
-  *x_offset = 20 - mcpx;
-  *y_offset = 20 - mcpy;
-
-  return 0;			// Return success code.
-}
-
-/*  Brute forc coregistration of image a and image b, with
-    normalization.  This is like bf_coregister_b_cropped, except b
-    isn't cropped, normalization is used, and a wider area is searched
-    for a peak.
-static int
-bf_coregister (double *x_offset, double *y_offset, FloatImage *a,
-	       FloatImage *b)
-{
-  size_t sz = a->size_x;
-
-  g_assert (sz % 2 == 0);
-
-  FloatImage *mc = float_image_new (sz, sz);
-
-  size_t ii, jj;
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
-      int offx = jj - sz / 2;
-      int offy = ii - sz / 2;
-      size_t kk, ll;
-      long double sum = 0;
-      for ( kk = 0 ; kk < sz - abs (offy) - 1 ; kk++ ) {
-	for ( ll = 0 ; ll < sz - abs (offx) - 1 ; ll++ ) {
-	  float p1 = GP (a, offx < 0 ? ll : offx + ll, 
-			    offy < 0 ? kk : offy + kk);
-	  if ( (offx < 0 ? -offx + (int) ll : (int) ll) < 0
-	       || (offx < 0 ? -offx + (int) ll : (int) ll) >= (int) sz ) {
-	    g_assert_not_reached ();
-	  }
-	  if ( (offy < 0 ? -offy + (int) kk : (int) kk) < 0
-	       || (offy < 0 ? -offy + (int) kk : (int) kk) >= (int) sz ) {
-	    g_assert_not_reached ();
-	  }
-	  float p2 = GP (b, offx < 0 ? -offx + (int) ll : (int) ll,
-			    offy < 0 ? -offy + (int) kk : (int) kk);
-	  sum += p1 * p2;
-	}
-      }
-      sum /= (sz - abs (offx)) * (sz - abs (offy));
-      SP (mc, jj, ii, sum);
-    }
-  }
-
-  float_image_export_as_jpeg (mc, "bf_correlation.jpg", sz, 0.0);
-
-  // Maximum correlation pixel value.
-  float mcpv = -FLT_MAX;
-  size_t mcpx, mcpy;
-  for ( ii = 0 ; ii < sz ; ii++ ) {
-    for ( jj = 0 ; jj < sz ; jj++ ) {
-      float cp = GP (mc, jj, ii);
-      if ( cp > mcpv ) {
-	mcpv = cp;
-	mcpx = jj;
-	mcpy = ii;
-      }
-    }
-  }
-
-  *x_offset = (ssize_t) sz / 2 - mcpx;
-  *y_offset = (ssize_t) sz / 2 - mcpy;
-
-  return 0;			// Return success code.
-}
-*/
 
 // Determine the extent of ground range image with metadata imd in
 // projection coordinates space of projection_type having
@@ -969,44 +265,6 @@ get_extents_in_projection_coordinate_space
 int
 main (int argc, char **argv)
 {
-  // This block tries to open a file containing frozen versions of
-  // test images and coregister them a couple of different ways.  Some
-  // later test code generated these so you don't have to wait to get
-  // to the point in the routine where the coregistration happens to
-  // test things out.  FIXME: remove this debug junk.
-  /* 
-  {
-    FILE *ttmp = fopen ("frozen_test_images", "r");
-    g_assert (ttmp != NULL);
-    FloatImage *tia = float_image_thaw (ttmp);
-    float_image_export_as_jpeg (tia, "tia.jpg", tia->size_x, NAN);
-    FloatImage *tib = float_image_thaw (ttmp);
-    float_image_export_as_jpeg (tib, "tib.jpg", tib->size_x, NAN);
-    int rreturn_code = fclose (ttmp);
-    g_assert (rreturn_code == 0);
-    double x_offset, y_offset;
-    // Regular coregistration.
-    {
-      float min_a, max_a, mean_a, sdev_a;
-      float_image_statistics (tia, &min_a, &max_a, &mean_a, &sdev_a, NAN);    
-      float min_b, max_b, mean_b, sdev_b;
-      float_image_statistics (tib, &min_b, &max_b, &mean_b, &sdev_b, NAN);    
-      size_t ii, jj;
-      for ( ii = 0 ; ii < tia->size_y ; ii++ ) {
-	for ( jj = 0 ; jj < tia->size_x ; jj++ ) {
-	  SP (tia, jj, ii, GP (tia, jj, ii) * mean_b / mean_a);
-	}
-      }
-    }
-    rreturn_code = coregister (&x_offset, &y_offset, tia, tib);
-    // Out of curiosity, see what a brute force coregister returns.
-    //  rreturn_code = bf_coregister (&x_offset, &y_offset, tia, tib);
-    rreturn_code = bf_coregister_b_cropped (&x_offset, &y_offset, tia, tib);
-    float_image_free (tia);
-    float_image_free (tib);
-  }
-  */
-
   // Three arguments are required.
   if ( argc != 4 ) {
     usage ();
@@ -1082,6 +340,13 @@ main (int argc, char **argv)
   // Take a quick look at the slant range image for FIXME: debug
   // purposes.
   float_image_export_as_jpeg (sri->data, "sri.jpg", 2000, NAN);
+
+  char cmd[256];
+  float_image_store(sri->data, "sri.img",
+		    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  sprintf(cmd, "makeddr sri.ddr %i %i float", sri->data->size_x,
+	  sri->data->size_y);
+  system(cmd);
 
   // Read the image metadata.
   meta_parameters *imd = meta_read (input_meta_file->str);
@@ -1161,7 +426,7 @@ main (int argc, char **argv)
   // Earth angle rotation matrix (see below for details).
   gsl_matrix *earm = gsl_matrix_alloc (3,3);
   // Temporary vector.
-  gsl_vector *tmp = gsl_vector_alloc (3);
+  gsl_vector *vtmp = gsl_vector_alloc (3);
   DateTime *observation_date = NULL;
   for ( ii = 0 ; ii < svc ; ii++ ) {
 
@@ -1223,13 +488,13 @@ main (int argc, char **argv)
     // The fixed earth velocity vectors are affected by the rotation
     // of the earth itself, so first we have to subtract this term
     // out.
-    gsl_vector_set (tmp, xi, (gsl_vector_get (itrs_vel, xi) 
+    gsl_vector_set (vtmp, xi, (gsl_vector_get (itrs_vel, xi) 
 			      - (EARTH_ROTATION_RATE 
 				 * gsl_vector_get (itrs_pos, yi))));
-    gsl_vector_set (tmp, yi, (gsl_vector_get (itrs_vel, yi) 
+    gsl_vector_set (vtmp, yi, (gsl_vector_get (itrs_vel, yi) 
 			      + (EARTH_ROTATION_RATE 
 				 * gsl_vector_get (itrs_pos, xi))));
-    gsl_vector_set (tmp, zi, gsl_vector_get (itrs_vel, zi));
+    gsl_vector_set (vtmp, zi, gsl_vector_get (itrs_vel, zi));
 
     // Now we can rotate the remaining velocity back into the GEI
     // system.  FIXME: we use a slightly different (by ~10
@@ -1238,7 +503,7 @@ main (int argc, char **argv)
     // components -- generally not an issue for a 15 second frame but
     // bad practice nevertheless.  We ought to change things so the
     // correct values are used everywhere.
-    return_code = gsl_blas_dgemv (CblasNoTrans, 1.0, earm, tmp, 0.0, 
+    return_code = gsl_blas_dgemv (CblasNoTrans, 1.0, earm, vtmp, 0.0, 
 				  gei_vel);
     g_assert (return_code == GSL_SUCCESS);
 
@@ -1251,7 +516,7 @@ main (int argc, char **argv)
 						 gsl_vector_get (gei_vel, 2));
   }
   date_time_free (observation_date);
-  gsl_vector_free (tmp);
+  gsl_vector_free (vtmp);
   gsl_matrix_free (earm);
   gsl_vector_free (gei_vel);
   gsl_vector_free (gei_pos);
@@ -1336,6 +601,12 @@ main (int argc, char **argv)
   // the different pixels so we can report that as well.
   long double mean_tolerance = 0;
 
+  // stats on number of iterations
+  int total_iterations = 0;
+  int iteration_count = 0;
+  int min_iters = 200;
+  int max_iters = 0;
+
   // We now go through the DEM and sort out a bunch of useful
   // information from the geometrical relationships of things.
   DEMGeomInfo *dgi;
@@ -1382,6 +653,16 @@ main (int argc, char **argv)
       ITRSPoint *ctp
 	= ITRS_point_new_from_geodetic_lat_long_height (cp_lat, cp_lon, 
 							cp_height);
+
+#ifdef KH_DEBUG
+      {
+	double test_lat, test_lon;
+	ITRS_point_get_geodetic_lat_long(ctp, &test_lat, &test_lon);
+	if (fabs(cp_lat - test_lat) > .0001 || fabs(cp_lon - test_lon) > .0001)
+	  printf("Gah! %d %d %g %g %g %g\n", ii, jj, test_lat, cp_lat,
+		 test_lon, cp_lon);
+      }
+#endif
 
       // Copy earth fixed coordinate values to the current pixel
       // target vector.
@@ -1448,6 +729,11 @@ main (int argc, char **argv)
 	status = gsl_min_test_interval (sor, eor, tolerance, 0.0);
       }
       while (status == GSL_CONTINUE && iteration < max_iterations);
+
+      iteration_count++;
+      total_iterations += iteration;
+      if (iteration < min_iters) min_iters = iteration;
+      if (iteration > max_iters) max_iters = iteration;
 
       // How close did the convergence come to perfection?
       double error = sor - eor;
@@ -1517,6 +803,10 @@ main (int argc, char **argv)
 
   progress_meter_free (progress_meter);
 
+  printf("Iteration statistics:\n Avg: %g\n Max: %d\n Min: %d\n",
+	 (double) total_iterations / iteration_count,
+	 max_iters, min_iters);
+
   FILE *tmp = fopen ("bk_debug_dgi_freeze", "w");
   g_assert (tmp != NULL);
   dem_geom_info_freeze (dgi, tmp);
@@ -1557,9 +847,6 @@ main (int argc, char **argv)
 				       dem_coverage->size_y), NAN);
   */
 
-  //  FloatImage * lsm = lsm_generate_mask(dgi);
-  //  lsm = lsm;		    /* FIXME: remove compiler reassurance.  */
-
   // Because the geolocation of images is often quite bad, we will
   // march throught the DEM and create a simulated SAR image, then
   // measure the offset of the simulated image from the actual slant
@@ -1574,17 +861,28 @@ main (int argc, char **argv)
 				   sri->data->size_x,
 				   sri->data->size_y);
 
+  MaskImage *mask = mask_image_new (dem->size_x, dem->size_y);
+  FloatImage *angles = float_image_new (dem->size_x, dem->size_y);
+
   // We can hopefully get away with ignoring the backscatter
   // contributions of the very edge facets, which saves the pain of
   // special handling for them.
 
+#ifdef KH_DEBUG
+  int countem = 0;
+#endif
+
   // For each DEM row except the first and last...
   int neg_sim_pixels = 0;
+  double max_lams = -10;
+  int nlayover = 0, nshadow = 0;
+  printf("size: %d,%d\n", dem->size_y, dem->size_x);
+
   for ( ii = 1 ; (size_t) ii < dem->size_y  - 1; ii++ ) {
     long int jj;
     // For every other DEM pixel except the first and last two...
     //    for ( jj = 1 ; (size_t) jj < dem->size_x - 2; jj += 2 ) {
-    for ( jj = 1 ; (size_t) jj < dem->size_x - 1; jj++ ) {
+    for ( jj = 1 ; (size_t) jj < dem->size_x - 2; jj++ ) {
 
 
       // We are interested in the four triangular facets defined by
@@ -1602,13 +900,16 @@ main (int argc, char **argv)
 	xi = jj + 1;
       }
 
+      // FIXME: above should be replaced with this, eh??
+      xi = jj;
+
       // If we are in shadow this DEM pixel contributes nothing to the
       // backscatter in the simulated image.
-      /* For the moment we just assume this doesn't happen.
-      if ( lsm_image_mask_value_is_shadow (lsm, ii, xi) ) {
-	continue;
-      }
-      */
+      // For the moment we just assume this doesn't happen.
+      //if ( lsm_image_mask_value_is_shadow (lsm, ii, xi) ) {
+      //continue;
+      //}
+      
 
       // If this DEM pixel and all its neighbors that we will be
       // considering don't all fall in the image, it contributes
@@ -1686,10 +987,10 @@ main (int argc, char **argv)
       else {
 	vector_multiply (n, 1.0 / vector_magnitude (n));
       }
-      /*
-      vector_multiply (n, 1.0 / vector_magnitude (n));
-      g_assert (vector_magnitude (n) > 0.5);
-      */
+      
+      //vector_multiply (n, 1.0 / vector_magnitude (n));
+      //g_assert (vector_magnitude (n) > 0.5);
+      
 
       // Recall the slant range and imaging time for this DEM pixel.
       double sr = dem_geom_info_get_slant_range_value (dgi, xi, ii);
@@ -1697,10 +998,124 @@ main (int argc, char **argv)
 
       // Compute a vector from the current target to the platform at
       // the point of closest aproach.
-      Vector pp;
-      ITRS_platform_path_position_at_time (pp_fixed, it, &pp);
-      Vector *target_to_poca = vector_copy (&pp);
+      Vector poca;
+      ITRS_platform_path_position_at_time (pp_fixed, it, &poca);
+      Vector *target_to_poca = vector_copy (&poca);
       vector_subtract (target_to_poca, &c);
+
+      // compute some more stuff
+      ITRSPoint *sat_loc = ITRS_point_new(poca.x, poca.y, poca.z);
+      double poca_lat, poca_lon;
+      ITRS_point_get_geodetic_lat_long (sat_loc, &poca_lat, &poca_lon);
+      ITRS_point_free (sat_loc);
+
+      ITRSPoint *poca0 =
+	ITRS_point_new_from_geodetic_lat_long_height(poca_lat, poca_lon, 0);
+  
+      Vector *poca_to_poca0 = vector_new (poca0->x, poca0->y, poca0->z);
+      vector_subtract (poca_to_poca0, &poca);
+
+      // double satellite_height = vector_magnitude(poca_to_poca0);
+
+      Vector * projected_normal =
+	vector_project (n, target_to_poca, poca_to_poca0);
+
+      Vector *vertical = vector_copy(poca_to_poca0);
+      vector_multiply(vertical, -1.0);
+      double slope = vector_angle(projected_normal, vertical);
+
+      Vector * target_to_poca0 = vector_new(poca0->x, poca0->y, poca0->z);
+      vector_subtract (target_to_poca0, &c);
+      
+      // negative slope means back-facing
+      if (vector_angle(target_to_poca0, projected_normal) >= M_PI / 2.0)
+	slope = -slope;
+
+      double look_angle = M_PI - vector_angle(target_to_poca, poca_to_poca0);
+
+#ifdef KH_DEBUG
+      /* validate the look angle! */
+      double o_look_angle = 0;
+      
+      ITRSPoint * cp_target = ITRS_point_new(c.x, c.y, c.z);
+      double cp_target_lat, cp_target_lon;
+      ITRS_point_get_geodetic_lat_long(cp_target, &cp_target_lat,
+				       &cp_target_lon);
+      double line, samp;
+      double meta_time = 0, meta_slant = 0;
+      if (!ISNAN(line) && !ISNAN(samp))
+      {
+	meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D,
+			  dem_geom_info_get_dem_height(dgi, xi, ii),
+			  &line, &samp);
+	o_look_angle = meta_look(imd, line, samp);
+	meta_time = meta_get_time(imd, line, samp);
+	meta_slant = meta_get_slant(imd, line, samp);
+
+	float_image_set_pixel(angles, xi, ii, meta_time - it);
+      }
+      else
+      {
+	float_image_set_pixel(angles, xi, ii, 0);
+      }
+
+      if (countem < 10 && ii > 500 && jj > 500) {
+
+	++countem;
+	printf("sr: %g\n", sr);
+	printf("m_sr: %g\n", meta_slant);
+	printf("it: %g\n", it);
+	printf("m_it: %g\n", meta_time);
+	printf("time diff: %g\n", meta_time - it);
+	printf("poca: %g %g %g\n", poca.x, poca.y, poca.z);
+	printf("c: %g %g %g\n", c.x, c.y, c.z);
+	printf("poca0: %g %g %g\n", poca0->x, poca0->y, poca0->z);
+	printf("target_to_poca: %g %g %g\n", target_to_poca->x,
+	       target_to_poca->y, target_to_poca->z);
+	printf("poca_to_poca0: %g %g %g\n", poca_to_poca0->x,
+	       poca_to_poca0->y, poca_to_poca0->z);
+	printf("n: %g %g %g\n", n->x, n->y, n->z);
+	printf("projected n: %g %g %g\n", projected_normal->x,
+	       projected_normal->y, projected_normal->z);
+	printf("vertical: %g %g %g\n", vertical->x,
+	       vertical->y, vertical->z);
+	printf("satellite height: %g\n", satellite_height);
+	printf("slope: %g\n", slope * 180.0 / M_PI);
+	printf("angle between normal & look vector: %g\n",
+	       180.0 / M_PI * vector_angle(target_to_poca0, n));
+	printf("look_angle: %g\n", look_angle * 180.0 / M_PI);
+	printf("target lat,lon: %g, %g\n", cp_target_lat, cp_target_lon);
+	printf("target line,samp: %g, %g\n", line, samp);
+	printf("o_look_angle: %g\n", o_look_angle * 180.0 / M_PI);
+	if (look_angle - slope > M_PI / 2)
+	  printf("SHADOW!!\n");
+	else if (slope > look_angle)
+	  printf("LAYOVER!!\n");
+	printf("\n\n");
+      }
+#else
+      float_image_set_pixel(angles, xi, ii, slope);
+#endif
+
+      vector_free(vertical);
+      vector_free(projected_normal);
+      vector_free(poca_to_poca0);
+      vector_free(target_to_poca0);
+      ITRS_point_free(poca0);
+
+      if (look_angle - slope > max_lams)
+	max_lams = look_angle - slope;
+
+      if (look_angle - slope > M_PI / 2)
+      {
+	++nshadow;
+	mask_image_set_pixel_shadow(mask, xi, ii);
+      }
+      else if (slope > look_angle)
+      {
+	++nlayover;
+	mask_image_set_pixel_layover(mask, xi, ii);
+      }
 
       // The incidence angle is the angle between the mean normal of
       // the facets and the line between the current target (DEM
@@ -1736,182 +1151,31 @@ main (int argc, char **argv)
       vector_free (target_to_poca);
     }
   }
+  
+  printf("Layover pixels: %d\n", nlayover);
+  printf("Shadow pixels: %d\n", nshadow);
+
   g_print ("done.\n");
-  g_print ("Negative simulator energy addiions: %d\n", neg_sim_pixels);
+  g_print ("Negative simulator energy additions: %d\n", neg_sim_pixels);
 
   // Take a look at the simulated image for (FIXME) debug purposes.
   float_image_export_as_jpeg (sim_img->data, "sim_img.jpg",
 			      GSL_MIN (sim_img->data->size_x,
 				       sim_img->data->size_y), NAN);
 
-  // Break slant range and simulated images up into tiles.
-  const int tile_size = 200;	// Tile size in pixels.
-  GPtrArray *image_tile_records = g_ptr_array_new ();
-  for ( ii = 0 ; (size_t) ii < sim_img->data->size_y / tile_size ; ii++ ) {
-    size_t jj;
-    for ( jj = 0 ; (size_t) jj < sim_img->data->size_x / tile_size ; jj++ ) {
+  float_image_store(sim_img->data, "sim_img.img",
+		    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  sprintf(cmd, "makeddr sim_img.ddr %i %i float", sim_img->data->size_x,
+	  sim_img->data->size_y);
+  system(cmd);
 
-      // Simulated image tile.
-      FloatImage *cst = float_image_new_subimage (sim_img->data, 
-						  jj * tile_size,
-						  ii * tile_size, tile_size,
-						  tile_size);
-      // How many zeros are there in the simulated image tile?  If
-      // there are too many this tile falls partly outside the DEM or
-      // in a big hole we don't want to use it for coregistration, so
-      // we go on to the next tile.  We have to specificly exclude
-      // such tiles, since they are likely to have low autocorrelation
-      // under rotation scores (see elsewhere).
-      int zero_count = 0;
-      size_t kk, ll;
-      for ( kk = 0 ; kk < cst->size_y ; kk++ ) {
-	for ( ll = 0 ; ll < cst->size_x ; ll++ ) {
-	  if ( GP (cst, ll, kk) == 0.0 ) {
-	    zero_count++;
-	  }
-	}
-      }
-      double max_zero_fraction = 0.05;
-      if ( (double) zero_count / (tile_size * tile_size) 
-	   > max_zero_fraction ) {
-	float_image_free (cst);
-	continue;
-      }
-	
-      // Corresponding tile in slant range image.
-      FloatImage *cit = float_image_new_subimage (sri->data, jj * tile_size,
-						  ii * tile_size, tile_size,
-						  tile_size);
-      image_tile_record_type *itr = g_new (image_tile_record_type, 1);
-      itr->ras = rotational_autocorrelation_score (cst);
-      itr->sim_img = cst;
-      itr->sri_img = cit;
-      itr->txi = jj;
-      itr->tyi = ii;
-      g_ptr_array_add (image_tile_records, itr);
-    }
-  }
+  float_image_store(angles, "angles.img", FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  sprintf(cmd, "makeddr angles.ddr %i %i float", angles->size_y,
+	  angles->size_x);
+  system(cmd);
 
-  g_ptr_array_sort (image_tile_records, 
-		    (GCompareFunc) compare_rotational_autocorrelation_scores);
+  mask_image_export_as_ppm(mask, "mask.ppm");
 
-  FloatImage *translation_map_x 
-    = float_image_new (sim_img->data->size_x / tile_size,
-		       sim_img->data->size_y / tile_size);
-
-  FloatImage *translation_map_y 
-    = float_image_new (sim_img->data->size_x / tile_size,
-		       sim_img->data->size_y / tile_size);
-
-  for ( ii = 0 ; (size_t) ii < image_tile_records->len ; ii++ ) {
-    GString *cstn = g_string_new ("image_tiles/sim_image_tile_");
-    g_string_append_printf (cstn, "%d.jpg", (int) ii);
-    FloatImage *csimt = ((image_tile_record_type *) 
-			 g_ptr_array_index (image_tile_records, ii))->sim_img;
-    float min, max, mean, sdev;
-    float_image_statistics (csimt, &min, &max, &mean, &sdev, NAN);
-    if ( min != max ) {
-      float_image_export_as_jpeg (csimt, cstn->str, 
-				  GSL_MAX (csimt->size_x, csimt->size_y), 
-				  NAN);
-    }
-    g_string_free (cstn, TRUE);
-    GString *citn = g_string_new ("image_tiles/image_tile_");
-    g_string_append_printf (citn, "%d.jpg", (int) ii);
-    FloatImage *cimt = ((image_tile_record_type *) 
-			g_ptr_array_index (image_tile_records, ii))->sri_img;
-    float_image_statistics (cimt, &min, &max, &mean, &sdev, NAN);
-    if ( min != max ) {
-      float_image_export_as_jpeg (cimt, citn->str, 
-				  GSL_MAX (cimt->size_x, cimt->size_y), 
-				  NAN);
-    }
-    g_string_free (citn, TRUE);
-  }
-
-  for ( ii = 0 ; (size_t) ii < image_tile_records->len ; ii++ ) {
-    double x_offset, y_offset;
-    image_tile_record_type *itr = g_ptr_array_index (image_tile_records, ii);
-    int return_code 
-      = coregister (&x_offset, &y_offset, itr->sim_img, itr->sri_img);
-    g_assert (return_code == 0);
-
-    GString *ditscs = g_string_new ("eog image_tiles/image_tile_");
-    g_string_append_printf (ditscs, "%d.jpg", (int) ii);
-    //    pid_t pid = fork ();
-    /*
-    if ( pid == 0 ) { 
-      system (ditscs->str); 
-      exit (EXIT_SUCCESS);
-    }
-    */
-    g_string_free (ditscs, TRUE);
-
-    GString *dstscs = g_string_new ("eog image_tiles/sim_image_tile_");
-    g_string_append_printf (dstscs, "%d.jpg", (int) ii);
-    /*
-    pid = fork ();
-    if ( pid == 0 ) {
-      system (dstscs->str);
-      exit (EXIT_SUCCESS);
-    }
-    */
-    g_string_free (dstscs, TRUE);
-
-    g_print ("Tile %lld offsets: %lg, %lg\n", (long long int) ii, x_offset,
-	     y_offset);
-
-    // FIXME: remove debug
-    FILE *tmp = fopen ("frozen_test_images", "w");
-    g_assert (tmp != NULL);
-    float_image_freeze (itr->sim_img, tmp);
-    float_image_freeze (itr->sri_img, tmp);
-    return_code = fclose (tmp);
-    g_assert (return_code == 0);
-
-    tmp = fopen ("frozen_test_images", "r");
-    g_assert (tmp != NULL);
-    FloatImage *tia = float_image_thaw (tmp);
-    FloatImage *tib = float_image_thaw (tmp);
-    return_code = fclose (tmp);
-    g_assert (return_code == 0);
-    g_assert (float_image_equals (itr->sim_img, tia, 0.00001));
-    g_assert (float_image_equals (itr->sri_img, tib, 0.00001));
-
-    // Out of curiosity, see what a brute force coregister returns.
-    /*
-    return_code = bf_coregister (&x_offset, &y_offset, itr->sim_img,
-				 itr->sri_img);
-    g_assert (return_code == 0);
-    g_print ("Tile %lld brute force offsets: %lg, %lg\n", (long long int) ii,
-	     x_offset, y_offset);
-    */
-
-    // Brute for coregistration with cropped b image method.
-    bf_coregister_b_cropped (&x_offset, &y_offset, itr->sim_img,
-			     itr->sri_img);
-    g_assert (return_code == 0);
-    g_print ("Tile %lld cropped unnormalized brute force offsets: %lg, %lg\n",
-	     (long long int) ii, x_offset, y_offset);
-    g_print ("Tile %lld coordinates: %lld, %lld\n", (long long int) ii,
-	     (long long int) itr->txi, (long long int) itr->tyi);
-    SP (translation_map_x, itr->txi, itr->tyi, x_offset);
-    SP (translation_map_y, itr->txi, itr->tyi, y_offset);
-  }
-
-  float_image_export_as_jpeg (translation_map_x, "translation_map_x.jpg",
-			      GSL_MAX (translation_map_x->size_x,
-				       translation_map_x->size_y), NAN);
-
-  float_image_export_as_jpeg (translation_map_y, "translation_map_y.jpg",
-			      GSL_MAX (translation_map_y->size_x,
-				       translation_map_y->size_y), NAN);
-
-  g_print("Generating layover/shadow mask... \n");
-  FloatImage * lsm = lsm_generate_mask(dgi);
-  lsm = lsm;
-  g_print("done\n");
-  
   g_print ("Painting %ld DEM pixel rows with SAR image pixel values...\n",
 	   (long int) dem->size_y);
 
@@ -2002,6 +1266,8 @@ main (int argc, char **argv)
   lasErr error_code = c_getddr (reference_dem->str, &output_ddr);
   g_assert (error_code == 0);
   output_ddr.dtype = 4;		/* Means floating point samples.  */
+  output_ddr.nl = pd->size_y;
+  output_ddr.ns = pd->size_x;
   error_code = c_putddr (output_ddr_file_base_name->str, &output_ddr);
   g_assert (error_code == 0);
   
@@ -2009,6 +1275,7 @@ main (int argc, char **argv)
   float_image_store (pd, output_data_file->str,
 		     FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   g_print ("done.\n");
+  printf("Wrote image: %d by %d\n", pd->size_x, pd->size_y);
 
   // FIXME: this debugging schlop can safely be removed.
   /*
