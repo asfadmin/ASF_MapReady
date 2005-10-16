@@ -505,6 +505,26 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_string(fp,"}","","End stats");
   }
 
+  /* Write out location block - version 1.5 */
+  meta_put_string(fp,"location {","","Block containing image corner coordinates");
+  meta_put_double(fp,"lat_start_near_range:",meta->location->lat_start_near_range,
+		  "Latitude at image start in near range");
+  meta_put_double(fp,"lon_start_near_range:",meta->location->lon_start_near_range,
+		  "Longitude at image start in near range");
+  meta_put_double(fp,"lat_start_far_range:",meta->location->lat_start_far_range,
+		  "Latitude at image start in far range");
+  meta_put_double(fp,"lon_start_far_range:",meta->location->lon_start_far_range,
+		  "Longitude at image start in far range");
+  meta_put_double(fp,"lat_end_near_range:",meta->location->lat_end_near_range,
+		  "Latitude at image end in near range");
+  meta_put_double(fp,"lon_end_near_range:",meta->location->lon_end_near_range,
+		  "Longitude at image end in near range");
+  meta_put_double(fp,"lat_end_far_range:",meta->location->lat_end_far_range,
+		  "Latitude at image end in far range");
+  meta_put_double(fp,"lon_end_far_range:",meta->location->lon_end_far_range,
+		  "Longitude at image end in far range");
+  meta_put_string(fp,"}","","End location");
+
   FCLOSE(fp);
 
   return;

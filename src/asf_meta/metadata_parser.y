@@ -139,6 +139,7 @@ void error_message(const char *err_mes, ...)
 #define MPROJ ( (meta_projection *) current_block)
 #define MPARAM ( (param_t *) current_block)
 #define MSTATS ( (meta_stats *) current_block)
+#define MLOCATION ( (meta_location *) current_block)
 
 void select_current_block(char *block_name)
 {
@@ -192,6 +193,9 @@ void select_current_block(char *block_name)
     current_block = MTL->stats;
     goto MATCHED;
   }
+
+  if ( !strcmp(block_name, "location") )
+    { current_block = MTL->location; goto MATCHED; }
 
   /* Got an unknown block name, so report.  */
   warning_message("unknown block name: %s", block_name);
@@ -684,6 +688,26 @@ void fill_structure_field(char *field_name, void *valp)
       { (MSTATS)->std_deviation = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "mask") )
       { (MSTATS)->mask = VALP_AS_DOUBLE; return; }
+  }
+
+  /* Fields which go in the location block of the metadata file. */
+  if ( !strcmp(stack_top->block_name, "location") ) {
+    if ( !strcmp(field_name, "lat_start_near_range") )
+      { (MLOCATION)->lat_start_near_range = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "lon_start_near_range") )
+      { (MLOCATION)->lon_start_near_range = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "lat_start_far_range") )
+      { (MLOCATION)->lat_start_far_range = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "lon_start_far_range") )
+      { (MLOCATION)->lon_start_far_range = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "lat_end_near_range") )
+      { (MLOCATION)->lat_end_near_range = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "lon_end_near_range") )
+      { (MLOCATION)->lon_end_near_range = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "lat_end_far_range") )
+      { (MLOCATION)->lat_end_far_range = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "lon_end_far_range") )
+      { (MLOCATION)->lon_end_far_range = VALP_AS_DOUBLE; return; }
   }
 
   /* Got an unknown field name, so report & choke */

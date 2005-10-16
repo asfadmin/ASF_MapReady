@@ -169,6 +169,24 @@ meta_stats *meta_stats_init(void)
   return stats;
 }
 
+/*******************************************************************
+ * meta_location_init():
+ * Allocate memory for and initialize elements of a meta
+ * location structure */
+meta_location *meta_location_init(void)
+{
+  meta_location *location = (meta_location *)MALLOC(sizeof(meta_location));
+  location->lat_start_near_range = MAGIC_UNSET_DOUBLE;
+  location->lon_start_near_range = MAGIC_UNSET_DOUBLE;
+  location->lat_start_far_range = MAGIC_UNSET_DOUBLE;
+  location->lon_start_far_range = MAGIC_UNSET_DOUBLE;
+  location->lat_end_near_range = MAGIC_UNSET_DOUBLE;
+  location->lon_end_near_range = MAGIC_UNSET_DOUBLE;
+  location->lat_end_far_range = MAGIC_UNSET_DOUBLE;
+  location->lon_end_far_range = MAGIC_UNSET_DOUBLE;
+  return location;
+}
+
 /****************************************************
  * raw_init:
  * Allocate memory for a fresh meta structure and fill
@@ -181,9 +199,10 @@ meta_parameters *raw_init(void)
   meta->optical         = NULL;  /* Not yet in use */
   meta->thermal         = NULL;  /* Not yet in use */
   meta->projection      = NULL;  /* Allocated later if geocoded */
-  meta->stats           = NULL;  /* Not yet in use */
+  meta->stats           = NULL;
   meta->state_vectors   = NULL;  /* Allocated upon discovery of state vectors */
-  
+  meta->location        = meta_location_init();  
+
   meta->meta_version = META_VERSION;
 
 /* Initialize deprecated structure elements: Creates and initializes a
@@ -319,6 +338,8 @@ void meta_free(meta_parameters *meta)
     meta->stats = NULL;
     FREE(meta->state_vectors);
     meta->state_vectors = NULL;
+    FREE(meta->location);
+    meta->location = NULL;
 
     FREE(meta->geo);
     meta->geo = NULL;
