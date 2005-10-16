@@ -30,7 +30,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 1.3
+#define META_VERSION 1.5
 
 /******************Baseline Utilities******************/
 typedef struct {
@@ -368,6 +368,23 @@ typedef struct {
 } meta_state_vectors;
 
 
+/*********************************************************************
+ * Location: Stores the corner coordinates of the image in latitude
+ * and longitude. This feature has been requested by users a large
+ * number of times. Having these coordinates around can be handy.
+ */
+typedef struct {
+  double lat_start_near_range;   /* Latitude at image start in near range */
+  double lon_start_near_range;   /* Longitude at image start in near range */
+  double lat_start_far_range;    /* Latitude at image start in far range */
+  double lon_start_far_range;    /* Longitude at image start in far range */
+  double lat_end_near_range;     /* Latitude at image end in near range */
+  double lon_end_near_range;     /* Longitude at image end in near range */
+  double lat_end_far_range;      /* Latitude at image end in far range */
+  double lon_end_far_range;      /* Longitude at image end in far range */
+} meta_location;
+
+
 /* DEPRECATED */
 /*Geo_parameters: These are used in geolocating the image.*/
 typedef struct {
@@ -422,6 +439,7 @@ typedef struct {
   meta_projection    *projection;      /* Can be NULL (check!).  */
   meta_stats         *stats;
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
+  meta_location      *location;
     /* Deprecated elements from old metadata format.  */
   meta_state_vectors *stVec;	       /* Can be NULL (check!).  */
   geo_parameters  *geo;
