@@ -102,15 +102,15 @@ mask_image_export_as_ppm (MaskImage *self, const char *filename)
   for (i = 0; i < 32; ++i)
     rgb_set(&table[i], 0, 0, 0);
   
-  rgb_set(&table[1], 128, 128, 128);
-  rgb_set(&table[2], 64,  64,  64);
-  rgb_set(&table[3], 0,   0,   0);
-  rgb_set(&table[4], 0,   128,   0);
-  rgb_set(&table[5], 128,  128,  0);
-//  rgb_set(&table[5], 255,  255,  255);
-  rgb_set(&table[6], 128, 0,   0);
-  rgb_set(&table[7], 128, 0,   128);
-  rgb_set(&table[8], 255, 0,   255);
+  rgb_set(&table[1], 128, 128, 128);   // NO_DEM_DATA
+  rgb_set(&table[2], 64,  64,  64);    // BACKGROUND_FILL
+  rgb_set(&table[3], 0,   128,   0);   // LAYOVER_ACTIVE
+  rgb_set(&table[4], 128, 128,   0);   // LAYOVER_PASSIVE
+  rgb_set(&table[5], 128, 0,     0);   // SHADOW_ACTIVE
+  rgb_set(&table[5], 128, 0,   128);   // SHADOW_PASSIVE
+//  rgb_set(&table[6], 128, 0,   0);     
+//  rgb_set(&table[7], 128, 0,   128);
+//  rgb_set(&table[8], 255, 0,   255);
 
   FILE * fout = FOPEN(filename, "w");
 
