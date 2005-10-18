@@ -1,13 +1,13 @@
-# Makefile for          :  All ASF-STEP Tools 
+# Makefile for          :  All ASF Tools 
 # Module Author(s)      :  asf_tools/make_support/makemake
 # Makefile Date         :  6/99
 #
-#        The Zen and the Art of ASF STEP Makefiles:
+#        The Zen and the Art of ASF Makefiles:
 #
 #    Overview: a "makefile" is a sort of script which is
 # read by the UNIX "make" utility.  The purpose of a 
 # makefile is to quickly and automatically compile a 
-# piece of software.  For the ASF STEP tools, there is 
+# piece of software.  For the ASF tools, there is 
 # one makefile in each tool's directory, and one central 
 # makefile (this file) in the asf_tools directory.  
 #
@@ -17,12 +17,10 @@
 #
 #    If you're a user, your life is simple: always make 
 # everything from the asf_tools directory, by typing:
-#        make <toolname>
+#        make -f Makefile.old <toolname>
 #
-#    If you're an ASF programmer, however, since you're
-# working on these tools, your life is (of course) 
-# more complex.  When you modify a tool, you don't 
-# need to change anything but that tool's makefile.  
+#    As an ASF programmer when you modify a tool, you
+# don't need to change anything but that tool's makefile.  
 # But if you add a tool, or change a tool's name, 
 # you need to modify several other files, as well.
 #
