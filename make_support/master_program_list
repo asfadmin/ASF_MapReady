@@ -46,29 +46,27 @@
 ######################### A listing of libraries (easy). ######################
 LIBS
 {
-@src_lib/
+@external/work_dir/
+	libgsl
+	libproj	
+	pkgconfig
+	libglib
+	libjpeg
+	libtiff
+	libgeotiff
+	tclTk
+@src/
 	asf
 	regex_wrapper
-	libgsl
 	asf_meta
 	asf_concat
 	asf_lt
 	asf_geolib
 	asf_odl
 	asf_fft
-	libproj
-# pkgconfig is actually a program, not a library, but glib needs it to
-# build, so we trick the build system by putting it here.
-	pkgconfig
-	libglib-2.0
 	libasf_proj
 	libasf_raster
 	libasf_reporting
-	libjpeg
-	libtiff
-	libgeotiff
-	tclTk
-@src_ifm/
 	libifm
 @src_tc/
 	sarmodel
@@ -103,9 +101,6 @@ PROGRAMS
 	resample { }
 	sarout { }
 	sr2gr { }
-	trim { }
-
-@src_geo/
 	accum_offset { }
         asf_geocode { }
 	concat { }
@@ -121,7 +116,6 @@ PROGRAMS
 # Down here because it depends on geocode
 # Also note: corner_coords, filter, geocode, and projprm are only used by
 # asf_convert's hidden options and we don't want to include them in the release
-@src/
 	asf_convert
 	{
 		PROGRAMS
@@ -137,8 +131,7 @@ PROGRAMS
 #			projprm
 
 
-@src_ifm/
-	aisp
+	ardop
 	{
 		BINS
 			calc_deltas
@@ -204,7 +197,7 @@ PROGRAMS
 
 
 # X-Windows source code
-@src_x/
+@src/
 	sarview { BINS sarview_bin support }
 #	sprocket { BINS complex iq standard vexcel_complex geo target_selector
 #			list_ground_targets.sql list_sites.sql convert_standard
@@ -212,7 +205,7 @@ PROGRAMS
 #			vexcel_complex_data_planes xy_plotter }
 #
 
-@experimental/
+#@experimental/
 #	cpx_spectrum { }
 #	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
 	image_stats { }
@@ -221,7 +214,6 @@ PROGRAMS
 
 # Build this very last since it depends on the plethora of gtk2 libraries, and
 # tends to kill the build
-@src/
 	asf_convert_gui
 	{
 		PROGRAMS
@@ -256,7 +248,6 @@ CATEGORIES
   }
 
 # Open - Anybody can get this stuff (BSD license)
-#        src & src_geo
 	open
 	{
 		asf_convert asf_export asf_import stats convert2byte convert2geotiff
@@ -269,11 +260,10 @@ CATEGORIES
 # Just use the prior sarview PROGRAM declaration for autotar or make.
 
 # Restricted - open + ASF controlled + gov't restricted (BSD/ASF license)
-#              src, src_geo, src_ifm, & src_tc
 	restricted
 	{
 		open
-		aisp avg_in_dop c2p coh coregister_coarse coregister_fine
+		ardop avg_in_dop c2p coh coregister_coarse coregister_fine
 		create_dem_grid dem2phase dem2seeds deskew_dem reskew_dem
 		deramp elev eleverr escher fit_line fit_plane fit_warp igram
 		multilook p2c phase_filter refine_base refine_offset zeroify

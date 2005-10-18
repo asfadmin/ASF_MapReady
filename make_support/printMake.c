@@ -11,12 +11,12 @@ void printMake(FILE *f,char *platform)
 	int i;
 	lib *l;prog *p;prog *c;
 	fputs("\n"
-	"#####################################################################\n"
-	"# Listing of all step tools.  This file is automagically generated. #\n"
-	"#####################################################################\n"
+	"################################################################\n"
+	"# Listing of all tools.  This file is automagically generated. #\n"
+	"################################################################\n"
 	"\n"
-	"B = bin/$(SYS)\n"
-	"L = lib/$(SYS)\n"
+	"B = bin\n"
+	"L = lib\n"
 	"FILES=\\\n"
 	"	bin_create\\\n",f);
 	for (i=0;i<numLibs;i++)
