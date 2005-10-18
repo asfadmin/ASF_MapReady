@@ -62,6 +62,9 @@ mask_image_set_pixel_shadow (MaskImage *self, int x, int y);
 void
 mask_image_set_pixel_layover (MaskImage *self, int x, int y);
 
+void
+mask_image_set_pixel_no_dem_data (MaskImage *self, int x, int y);
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Storing Masks in Files

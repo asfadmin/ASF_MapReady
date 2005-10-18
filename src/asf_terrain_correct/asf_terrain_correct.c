@@ -878,11 +878,11 @@ main (int argc, char **argv)
   int nlayover = 0, nshadow = 0;
   printf("size: %d,%d\n", dem->size_y, dem->size_x);
 
-  for ( ii = 1 ; (size_t) ii < dem->size_y  - 1; ii++ ) {
+  for ( ii = 0 ; (size_t) ii < dem->size_y; ii++ ) {
     long int jj;
     // For every other DEM pixel except the first and last two...
     //    for ( jj = 1 ; (size_t) jj < dem->size_x - 2; jj += 2 ) {
-    for ( jj = 1 ; (size_t) jj < dem->size_x - 2; jj++ ) {
+    for ( jj = 0 ; (size_t) jj < dem->size_x; jj++ ) {
 
 
       // We are interested in the four triangular facets defined by
@@ -913,12 +913,15 @@ main (int argc, char **argv)
 
       // If this DEM pixel and all its neighbors that we will be
       // considering don't all fall in the image, it contributes
-      // nothing.
-      if ( dem_geom_info_get_slant_range_value (dgi, xi, ii) < 0 
+      // nothing.  The image edges are a special case of this.
+      if ( ii == 0 || xi == 0
+	   || (size_t) ii == dem->size_y - 1 || xi == dem->size_x - 1
+	   || dem_geom_info_get_slant_range_value (dgi, xi, ii) < 0 
 	   || dem_geom_info_get_slant_range_value (dgi, xi, ii - 1) < 0 
 	   || dem_geom_info_get_slant_range_value (dgi, xi + 1, ii) < 0 
 	   || dem_geom_info_get_slant_range_value (dgi, xi, ii + 1) < 0 
 	   || dem_geom_info_get_slant_range_value (dgi, xi - 1, ii) < 0 ) {
+	mask_image_set_pixel_no_dem_data(mask, xi, ii);
 	continue;
       }
 
@@ -1133,7 +1136,7 @@ main (int argc, char **argv)
       // the shadow mask isn't finished yet.  FIXME: should be M_PI /
       // 2.0, but I don't want to change it at the moment while trying
       // to sort out coregistration issues.
-      if ( !(incidence_angle > M_PI ) ) {
+      if ( !(incidence_angle > M_PI / 2 ) ) {
 	if ( slant_range_image_contains (sim_img, sr, it, 1e-3) ) {
 	  if ( cos (incidence_angle) < 0 ) {
 	    neg_sim_pixels++;
@@ -1152,11 +1155,53 @@ main (int argc, char **argv)
     }
   }
   
+  g_print ("done.\n");
   printf("Layover pixels: %d\n", nlayover);
   printf("Shadow pixels: %d\n", nshadow);
 
-  g_print ("done.\n");
   g_print ("Negative simulator energy additions: %d\n", neg_sim_pixels);
+
+  int bg_fill_count = 0;
+
+  // Change no_dem_data values to background_fill
+/*  Skip this for now... 
+  mask_image_export_as_ppm(mask, "mask1.ppm");
+  for ( ii = 0 ; (size_t) ii < dem->size_y; ii++ ) {
+    size_t jj = 0;
+    while (mask_image_get_pixel(mask, jj, ii) == MASK_NO_DEM_DATA &&
+           jj < dem->size_x - 2) {
+      ++bg_fill_count;
+      mask_image_set_pixel(mask, jj, ii, MASK_BACKGROUND_FILL);
+      ++jj;
+    }
+    jj = dem->size_x - 1;
+    while (mask_image_get_pixel(mask, jj, ii) == MASK_NO_DEM_DATA && jj > 0) {
+      ++bg_fill_count;
+      mask_image_set_pixel(mask, jj, ii, MASK_BACKGROUND_FILL);
+      --jj;
+    }
+  }
+  for ( ii = 0 ; (size_t) ii < dem->size_x; ii++ ) {
+    size_t jj = 0;
+    while ((mask_image_get_pixel(mask, ii, jj) == MASK_NO_DEM_DATA ||
+	    mask_image_get_pixel(mask, ii, jj) == MASK_BACKGROUND_FILL) &&
+           jj < dem->size_y - 2) {
+      ++bg_fill_count;
+      mask_image_set_pixel(mask, ii, jj, MASK_BACKGROUND_FILL);
+      ++jj;
+    }
+    jj = dem->size_y - 1;
+    while ((mask_image_get_pixel(mask, ii, jj) == MASK_NO_DEM_DATA ||
+	    mask_image_get_pixel(mask, ii, jj) == MASK_BACKGROUND_FILL) &&
+	    jj > 0) {
+      ++bg_fill_count;
+      mask_image_set_pixel(mask, ii, jj, MASK_BACKGROUND_FILL);
+      --jj;
+    }
+  }
+*/
+  printf("Converted %d pixels from no_dem_data to background fill.\n",
+	 bg_fill_count);
 
   // Take a look at the simulated image for (FIXME) debug purposes.
   float_image_export_as_jpeg (sim_img->data, "sim_img.jpg",

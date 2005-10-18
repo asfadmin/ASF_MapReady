@@ -70,6 +70,12 @@ mask_image_set_pixel_layover (MaskImage *self, int x, int y)
 }
 
 void
+mask_image_set_pixel_no_dem_data (MaskImage *self, int x, int y)
+{
+  mask_image_set_pixel(self, x, y, MASK_NO_DEM_DATA);
+}
+
+void
 mask_image_store (MaskImage *self, const char *filename)
 {
   // FIXME
@@ -103,11 +109,11 @@ mask_image_export_as_ppm (MaskImage *self, const char *filename)
     rgb_set(&table[i], 0, 0, 0);
   
   rgb_set(&table[1], 128, 128, 128);   // NO_DEM_DATA
-  rgb_set(&table[2], 64,  64,  64);    // BACKGROUND_FILL
+  rgb_set(&table[2], 0,   255, 255);    // BACKGROUND_FILL
   rgb_set(&table[3], 0,   128,   0);   // LAYOVER_ACTIVE
   rgb_set(&table[4], 128, 128,   0);   // LAYOVER_PASSIVE
   rgb_set(&table[5], 128, 0,     0);   // SHADOW_ACTIVE
-  rgb_set(&table[5], 128, 0,   128);   // SHADOW_PASSIVE
+  rgb_set(&table[6], 128, 0,   128);   // SHADOW_PASSIVE
 //  rgb_set(&table[6], 128, 0,   0);     
 //  rgb_set(&table[7], 128, 0,   128);
 //  rgb_set(&table[8], 255, 0,   255);
