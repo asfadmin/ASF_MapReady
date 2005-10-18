@@ -171,6 +171,12 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
      meta->general->orbit_direction = 
        (meta->general->frame>=1791 && meta->general->frame<=5391) ? 'D' : 'A';
    meta->general->line_count       = iof->numofrec;
+
+   /* Determing the number of samples requires a new logic.
+      Old did not account for right and left fill.
+      Definitely needs some thorough testing with all different 
+      CEOS flavors around.*/
+   /*
    if (asf_facdr)
       meta->general->sample_count  = asf_facdr->npixels;
    else if (((iof->reclen-iof->predata-iof->sufdata)/iof->bytgroup) == 
@@ -179,6 +185,15 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 	(iof->reclen-iof->predata-iof->sufdata)/iof->bytgroup;
    else
       meta->general->sample_count  = iof->sardata/iof->bytgroup;
+   */
+   meta->general->sample_count  = 
+     (iof->reclen       // record length
+      -iof->predata     // prefix data
+      -iof->sufdata     // suffix data
+      -iof->lbrdrpxl    // left border pixels
+      -iof->rbrdrpxl)    // right border pixels
+     /iof->bytgroup;
+
    meta->general->start_line       = 0;
    meta->general->start_sample     = 0;
    meta->general->x_pixel_size     = dssr->pixel_spacing;
@@ -248,20 +263,24 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       meta->sar->deskewed = 1;
    else
       meta->sar->deskewed = 0;
+   /* Does not work for left and right fill ******
+      Up for testing *****************************
    if (asf_facdr) {
       meta->sar->original_line_count   = asf_facdr->nlines;
       meta->sar->original_sample_count = asf_facdr->apixels;
    }
    else {
-      meta->sar->original_line_count   = iof->numofrec;
-      meta->sar->original_sample_count = (iof->reclen-iof->predata-iof->sufdata)
-                                         / iof->bytgroup;
-      if ( meta->sar->original_line_count==0
-          || meta->sar->original_sample_count==0) {
-         meta->sar->original_line_count   = dssr->sc_lin*2;
-         meta->sar->original_sample_count = dssr->sc_pix*2;
-      }
+   */
+   meta->sar->original_line_count   = iof->numofrec;
+   meta->sar->original_sample_count = 
+     (iof->reclen-iof->predata-iof->sufdata-iof->lbrdrpxl-iof->rbrdrpxl)
+     / iof->bytgroup;
+   if ( meta->sar->original_line_count==0
+	|| meta->sar->original_sample_count==0) {
+     meta->sar->original_line_count   = dssr->sc_lin*2;
+     meta->sar->original_sample_count = dssr->sc_pix*2;
    }
+   //}
    /* FOCUS precision image data need correct number of samples */
    if (ceos->processor==FOCUS && ceos->product==PRI) {
       meta->sar->original_sample_count = iof->datgroup;
