@@ -25,6 +25,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   int nl=MAGIC_UNSET_INT, ns=MAGIC_UNSET_INT;     /* Number of lines/samples */
   long long ii, kk;                                          /* loop indices */
   int headerBytes;                       /* Number of bytes in a CEOS header */
+  int leftFill;
+  int rightFill;
   int tempFlag=FALSE;             /* Flag on whether or not to print warning */
   long long offset;
   meta_parameters *meta=NULL;                         /* Meta data structure */
@@ -36,7 +38,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
   /* Fill output names (don't add extention to data name because it differs
    * for raw, complex, and 'image' */
- strcpy(outDataName, outBaseName);
+  strcpy(outDataName, outBaseName);
   strcpy(outMetaName, outBaseName);
   strcat(outMetaName, TOOLS_META_EXT);
 
@@ -140,9 +142,17 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
     /* Read single look complex data */
     get_ifiledr(inDataName,&image_fdr);
-    /* file + line header */
+    /* file + line header *
+       Same change as for regular imagery. To be tested. */
+    leftFill = image_fdr.lbrdrpxl;
+    rightFill = image_fdr.rbrdrpxl;
+    headerBytes = firstRecordLen(inDataName)
+                  + (image_fdr.reclen - (ns + leftFill + rightFill) 
+		     * image_fdr.bytgroup);
+    /*
     headerBytes = firstRecordLen(inDataName)
                   + (image_fdr.reclen - ns * image_fdr.bytgroup);
+    */
     for (ii=0; ii<nl; ii++) {
       offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
       FSEEK64(fpIn, offset, SEEK_SET);
@@ -254,8 +264,11 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
     /* Check size of the header */
     get_ifiledr(inDataName,&image_fdr);
+    leftFill = image_fdr.lbrdrpxl;
+    rightFill = image_fdr.rbrdrpxl;
     headerBytes = firstRecordLen(inDataName)
-                  + (image_fdr.reclen - ns * image_fdr.bytgroup);
+                  + (image_fdr.reclen - (ns + leftFill + rightFill) 
+		     * image_fdr.bytgroup);
 
     /* Allocate memory for 16 bit amplitude data */
     if (meta->general->data_type==INTEGER16) { /* 16 bit amplitude data */
