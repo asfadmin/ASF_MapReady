@@ -1,6 +1,9 @@
 # Build and install a copy of the library into the standard location of
 # the ASF tool tree.
 
+# this provides the $(BIN_POSTFIX) (.exe) if we're on win32
+include ../../../make_support/system_rules
+
 # Where we stage the library so the main build system can nab it
 ROOT_DIR := $(shell cd ../.. ; pwd)
 LIB_DIR := $(ROOT_DIR)/lib
@@ -19,6 +22,7 @@ build_stamp:
 	(   cd $(UNPACK_DIR) ; \
 	    ./configure --prefix=$(ROOT_DIR) @LIBTIFF_LOCATION@ ; \
 	    make libgeotiff.a ; \
+	    touch bin/listgeo$(BIN_POSTFIX) bin/geotifcp$(BIN_POSTFIX) ; \
 	    make install ; \
 	)
 	touch $@
