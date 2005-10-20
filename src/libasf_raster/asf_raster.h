@@ -78,4 +78,11 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
 float interpolate(interpolate_type_t interpolation, FloatImage *inbuf, float yLine,
 		  float xSample, weighting_type_t weighting, int sinc_points);
 
+/* Prototypes from trim.c ****************************************************/
+void trim(char *infile, char *outfile, long long startX, long long startY,
+          long long endX, long long endY);
+
+/* Prototypes from fftMatch.c ************************************************/
+void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile);
+
 #endif
