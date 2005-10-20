@@ -20,6 +20,8 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(JPEG_LIBS) \
 	-lm
 
+CFLAGS := $(GLIB_CFLAGS) $(CFLAGS)
+
 all: build_only
 	cp libasf_raster.a $(LIBDIR)
 	cp asf_raster.h float_image.h uint8_image.h $(ASF_INCLUDE_DIR)
