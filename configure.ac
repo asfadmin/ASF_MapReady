@@ -97,18 +97,18 @@ fi
 AC_SUBST(ASF_LIB_PROJ)
 
 #### pkg-config check ####
-if test -z "$PKG_CONFIG"; then
-   AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
-fi
-if test "$PKG_CONFIG" = "no" ; then
-   echo "*** pkg-config not found, can't build with gtk 2.0" 
-   try_gtk="no"
-   have_pkg_config="no"
-fi
-if test "$have_pkg_config" = "no" ; then
-   ASF_PKG_CONFIG="${ext_lib_src_dir}/pkgconfig"
-fi
-AC_SUBST(ASF_PKG_CONFIG)
+#if test -z "$PKG_CONFIG"; then
+#   AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+#fi
+#if test "$PKG_CONFIG" = "no" ; then
+#   echo "*** pkg-config not found, can't build with gtk 2.0"
+#   try_gtk="no"
+#   have_pkg_config="no"
+#fi
+#if test "$have_pkg_config" = "no" ; then
+#   ASF_PKG_CONFIG="${ext_lib_src_dir}/pkgconfig"
+#fi
+#AC_SUBST(ASF_PKG_CONFIG)
 
 #### glib check ####
 if test "$have_pkg_config" = "yes" ; then
@@ -119,6 +119,7 @@ fi
 if test "$have_glib" = "no" ; then
    ASF_GLIB="${ext_lib_src_dir}/libglib"
    GLIB_LIBS="\$(LIBDIR)/libglib-2.0.a \$(LIBDIR)/libiconv.a"
+   GLIB_CFLAGS="-I../../include/glib-2.0 -I../../lib/glib-2.0/include"
 else
    GLIB_LIBS="-lglib-2.0"
 fi
@@ -158,7 +159,6 @@ fi
 AC_SUBST(ASF_LIB_GEOTIFF)
 
 #### TCL/TK check ####
-###### FIXME ###### Need to make sure we've got tcl/tk 8.1.1 ###############
 AC_CHECK_LIB(tcl8.1,main)
 AC_CHECK_LIB(tk8.1,main,have_tcl_tk="yes",have_tcl_tk="no")
 if test "$have_tcl_tk" = "no" ; then
@@ -170,14 +170,11 @@ fi
 AC_SUBST(ASF_LIB_TCL_TK)
 
 #### gtk 2.4 check ####
-orig_CFLAGS=$CFLAGS
 if test "$try_gtk" = "yes" ; then
     PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.4.0,
-      CFLAGS="$CFLAGS $GTK_CFLAGS"
-      LIBS="$LIBS $GTK_LIBS"
       have_gtk="yes"
       AC_DEFINE(USE_GTK),
-      have_gtk="no"      
+      have_gtk="no"
     )
 fi
 
@@ -261,6 +258,9 @@ EOF
 
 # EOF (without quotes) makes cat print out strings with expanded variables
 cat <<EOF >>system_rules
+
+GTK_LIBS = $GTK_LIBS
+GTK_CFLAGS = $GTK_CFLAGS
 
 GSL_LIBS = $GSL_LIBS
 GSL_CFLAGS = $GSL_CFLAGS
