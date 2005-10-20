@@ -2,6 +2,8 @@
 
 include ../../make_support/system_rules
 
+CFLAGS := $(GLIB_CFLAGS) $(CFLAGS)
+
 OBJS = interpolate.o \
        kernel.o \
        float_image.o \
@@ -78,7 +80,7 @@ test_float_image_statistics: test_float_image_statistics.o
 
 # Rebuild everything if makefile or any local of ASF header or library
 # has changed.
-$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h) 
+$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h)
 #	 $(LIBS)
 
 clean:
