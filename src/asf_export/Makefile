@@ -34,21 +34,22 @@ SOURCES := asf_export.c \
 #
 ###############################################################################
 
-CC := gcc
+CFLAGS := $(GLIB_CFLAGS) $(CFLAGS)
 
-LIBS  = $(LIBDIR)/libasf_raster.a \
+LIBS  = \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libasf_reporting.a \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/libasf_reporting.a \
+	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/asf.a \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
-	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
-	-lm
+	$(GSL_LIBS) \
+	-lm \
+	-lz
 
 LDLIBS := $(LIBS)
 
