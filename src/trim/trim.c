@@ -50,6 +50,8 @@ PROGRAM HISTORY:
     1.11    7/01   Rudi Gens	Added logfile switch
     1.3     3/02   Pat Denny    Updated Command line parsing
     1.5     3/04   Rudi Gens    Removed DDR dependency
+    2.0     10/05  Rudi Gens    Moved trim into libasf_raster.
+				Tool now using function call.
 
 HARDWARE/SOFTWARE LIMITATIONS: none
 
@@ -101,25 +103,17 @@ BUGS: none known
 ******************************************************************************/
 
 #include "asf.h"
-#include "las.h"
+#include "asf_meta.h"
+#include "asf_raster.h"
 
 #define VERSION 1.3
-#define MIN(a,b) (((a)<(b))?(a):(b))
-#define MAX(a,b) (((a)>(b))?(a):(b))
 
 void usage(char *name);
 
 int main(int argc, char *argv[])
 {
-  struct DDR inDDR,outDDR;
-  meta_parameters *metaIn, *metaOut;
-  int isComplex;
-  long long pixelSize, offset;
-  long long x,y,startX,startY,endX=-1,endY=-1,
-      	    inMaxX,inMaxY,outMaxX,outMaxY,
-      	    lastReadY,firstReadX,numInX;
-  FILE *in,*out;
-  char *buffer;
+  meta_parameters *metaIn;
+  long long startX,startY,endX=-1,endY=-1,inMaxX,inMaxY;
   char *infile,*outfile;
 
   logflag=0;
@@ -141,7 +135,7 @@ int main(int argc, char *argv[])
     } 
     else if (strmatch(key,"-log")) {
       CHECK_ARG(1) /*one string argument: logfile name */
-      strcpy(logFile,GET_ARG(1));  c_putddr(outfile,&outDDR);
+      strcpy(logFile,GET_ARG(1));
 
       fLog = FOPEN(logFile, "a");
       logflag=1;
@@ -154,104 +148,18 @@ int main(int argc, char *argv[])
 
  /*Compute filenames*/
   infile=argv[currArg];
-  isComplex=(findExt(infile)&&(0==strcmp(findExt(infile),".cpx")));
   outfile=argv[currArg+1];
-  in=fopenImage(infile,"rb");
-  out=fopenImage(outfile,"wb");
-  
-  metaIn = meta_read(infile);
-  pixelSize = metaIn->general->data_type;
-  if (pixelSize==3) pixelSize=4;
-  if (pixelSize==5) pixelSize=8;
-  if (isComplex)    pixelSize*=2;
-
-  inMaxX = metaIn->general->sample_count;
-  inMaxY = metaIn->general->line_count;	
   startX=atoi(argv[currArg+3]);
   startY=atoi(argv[currArg+2]);
-
+  metaIn = meta_read(infile);
+  inMaxX = metaIn->general->sample_count;
+  inMaxY = metaIn->general->line_count;
   endX = (endX!=-1) ? endX+startX : inMaxX;
   endY = (endY!=-1) ? endY+startY : inMaxY;
 
-  outMaxX=endX-startX;
-  outMaxY=endY-startY;
+  /* Call library function */
+  trim(infile, outfile, startX, startY, endX, endY);
 
-/*Write out our outDDR*/
-  metaOut = meta_copy(metaIn);
-  metaOut->general->line_count = outMaxY;
-  metaOut->general->sample_count = outMaxX;
-  metaOut->general->start_line += startY * metaOut->sar->line_increment;
-  metaOut->general->start_sample += startX * metaOut->sar->sample_increment;
-
-  /*Some sort of conditional on the validity of the corner coordinates would be nice here.*/
-  if (metaIn->projection)
-  {
-  	double bX, mX, bY, mY;
-	bY = metaIn->projection->startY;
-	bX = metaIn->projection->startX;
-  	mY = metaIn->projection->perY;
-  	mX = metaIn->projection->perX;  	
-	metaOut->projection->startY = bY + mY * startY;
-	metaOut->projection->startX = bX + mX * startX;
-  }
-
-  meta_write(metaOut, outfile);  
-    
-/*If everything's OK, then allocate a buffer big enough for one line of output data.*/
-  buffer= (char *)MALLOC(pixelSize*(outMaxX));
-  
-/*Let the user know what's going on.
-  printf("%s is now copying pixels from %s to %s.\n",argv[0],argv[1],argv[2]);*/
-  
-/*If necessary, fill the top of the output with zeros, by loading up a buffer and writing.*/
-  for (x=0;x<outMaxX*pixelSize;x++)
-  	buffer[x]=0;
-  for (y=0;y<-startY && y<outMaxY;y++)
-  {
-  	FWRITE(buffer,pixelSize,outMaxX,out);
-  	if (y==0) printf("   Filling zeros at beginning of output image\n");
-  }
-
-/*Do some calculations on where we should read.*/
-  firstReadX=MAX(0,-startX);
-  numInX=MIN(MIN(outMaxX,inMaxX-(firstReadX+startX)),outMaxX-firstReadX);
-  lastReadY=MIN(outMaxY,inMaxY-startY);
-  offset=0;
-
-  for (;y<lastReadY;y++)
-  {
-  	int inputY=y+startY,
-  		inputX=firstReadX+startX,
-  		outputX=firstReadX;
-
-	offset=pixelSize*(inputY*inMaxX+inputX);
-
-  	if (y==lastReadY) printf("   Writing output image\n");
-
-	FSEEK64(in,offset,SEEK_SET);
-
-  	FREAD(buffer+outputX*pixelSize,pixelSize,numInX,in);
-  	FWRITE(buffer,pixelSize,outMaxX,out); 
-  }
-/*Reset buffer to zeros and fill remaining pixels.*/
-  for (x=0;x<outMaxX*pixelSize;x++)
-  	buffer[x]=0;
-  for (;y<outMaxY;y++)
-  {
-  	FWRITE(buffer,pixelSize,outMaxX,out);
-  	if (y==outMaxY) printf("   Filled zeros after writing output image\n");
-  }
-
-  printf("   Wrote %lld lines of data\n\n", outMaxY);
-  if (logflag) {
-    sprintf(logbuf, "   Wrote %lld lines of data\n\n", outMaxY);
-    printLog(logbuf);
-  }
-    
-/*Now close the files & free memory 'cause we're done.*/
-  FREE(buffer);
-  FCLOSE(in);
-  FCLOSE(out);
   return(0);
 }
 
