@@ -36,9 +36,10 @@ CPPFLAGS := $(INCLUDE_FLAGS)
 # take type float (still get a complaint about argument being passed
 # as float due to prototype rather than double.
 #          -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align
-CFLAGS += -Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
-          -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
-          -Wwrite-strings -Wnested-externs -fno-common
+CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) \
+	-Werror -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
+	-Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
+	-Wwrite-strings -Wnested-externs -fno-common
 
 LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_meta.a \

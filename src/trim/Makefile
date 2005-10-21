@@ -7,12 +7,12 @@ LIBS =  $(LIBDIR)/libasf_raster.a \
         $(LIBDIR)/asf.a \
         $(LIBDIR)/asf_meta.a \
         $(LIBDIR)/libasf_proj.a \
-        $(LIBDIR)/libproj.a \
         $(LIBDIR)/libasf_reporting.a \
         $(LIBDIR)/asf.a \
-        $(LIBDIR)/libgsl.a \
+        $(PROJ_LIBS) \
+        $(GSL_LIBS) \
 	-lm
-
+CFLAGS += $(PROJ_CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS)
 all: trim
 
 trim: trim.c

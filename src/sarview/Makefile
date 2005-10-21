@@ -37,6 +37,7 @@ OBJS = \
 	poly.o \
 	tkAppInit.o tkCommand.o
 
+CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(TCL_TK_CFLAGS) $(GLIB_CFLAGS)
 
 all: sarview clean
 

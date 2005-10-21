@@ -6,21 +6,22 @@
 
 include ../../make_support/system_rules
 
-LIBS =	$(LIBDIR)/libasf_raster.a \
-	$(LIBDIR)/asf.a \
+LIBS =	\
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libproj.a \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf.a \
-	$(LIBDIR)/libgsl.a 
-LIBC = $(LIBS) -lm 
+	$(PROJ_LIBS) \
+	$(GSL_LIBS) \
+	-lm 
+CFLAGS += $(PROJ_CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS)
 
 all: fftMatch clean
 
 fftMatch: $(OBJLIB) $(LIBS)
-	$(CC) $(CFLAGS) -o fftMatch fftMatch.c $(LIBC) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o fftMatch fftMatch.c $(LIBS) $(LDFLAGS)
 	mv fftMatch$(BIN_POSTFIX) $(BINDIR)
 	cp fftMatch.man ../../man/cat1/fftMatch.1
 
