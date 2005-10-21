@@ -17,8 +17,8 @@ void printMake(FILE *f,char *platform)
 	"\n"
 	"B = bin\n"
 	"L = lib\n"
-	"FILES=\\\n"
-	"	bin_create\\\n",f);
+	"LIBS_TO_BUILD=\\\n"
+	"	lib_create\\\n",f);
 	for (i=0;i<numLibs;i++)
 	{
 		l=libs[i];
@@ -27,6 +27,9 @@ void printMake(FILE *f,char *platform)
 		else
 			printf("Library '%s' does not exist in '%s' (not downloaded?).\n",l->name,l->path);
 	}
+	fputs("\n"
+	"BINS_TO_BUILD=\\\n"
+	"	bin_create\\\n",f);
 	for (i=0;i<numProgs;i++)
 	{
 		p=progs[i];
@@ -42,11 +45,11 @@ void printMake(FILE *f,char *platform)
 	"#####################################################################\n"
 	"# Make Rules-- all and clean.  This file is automagically generated.#\n"
 	"#####################################################################\n"
-	"all:	$(FILES)\n"
+	"all: external_libs $(LIBS_TO_BUILD) $(BINS_TO_BUILD)\n"
 	"\n"
 	"done:\n"
 	"	@ echo\n"
-	"	@ echo XXXXXXXXXXXXXX   ALL STEP TOOLS COMPILED   XXXXXXXXXXXXX\n"
+	"	@ echo XXXXXXXXXXXXXX   ALL TOOLS COMPILED   XXXXXXXXXXXXX\n"
 	"	@ echo\n"
 	"\n"
 	"clean:\n"
@@ -57,19 +60,27 @@ void printMake(FILE *f,char *platform)
 	"	- rm -fr $(B)/*\n"
 	"	- rm -fr man/*\n"
 	"\n"
+	"external_libs:\n"
+	"	cd external\n"
+	"	$(MAKE)\n"
+	"	cp -R external/lib/* lib\n"
+	"	chmod -R ug+w lib\n"
+	"	cp -R external/include/* include\n"
+	"	chmod -R ug+w include\n"
+	"\n"
 	"man_create:\n"
 	"	@ test -d man || mkdir man\n"
 	"	@ test -d man/cat1 || mkdir man/cat1\n"
 	"	@ test -d man/man1 || mkdir man/man1\n"
 	"\n"
-	"lib_create: 	\n"
+	"lib_create:\n"
 	"	@ test -d man || mkdir man\n"
 	"	@ test -d man/cat1 || mkdir man/cat1\n"
 	"	@ test -d man/man1 || mkdir man/man1\n"
 	"	@ test -d lib || mkdir lib\n"
 	"	@ test -d $(L) || mkdir $(L)\n"
 	"\n"
-	"bin_create :	\n"
+	"bin_create:\n"
 	"	@ test -d man || mkdir man\n"
 	"	@ test -d man/cat1 || mkdir man/cat1\n"
 	"	@ test -d man/man1 || mkdir man/man1\n"
@@ -80,8 +91,7 @@ void printMake(FILE *f,char *platform)
 	"\n"
 	"#####################################################################\n"
 	"# LIBRARIES:                                                        #\n"
-	"#####################################################################\n"
-	,f);
+	"#####################################################################\n",f);
 	
 	
 /******THIS IS THE LIBRARIES SECTION********/
