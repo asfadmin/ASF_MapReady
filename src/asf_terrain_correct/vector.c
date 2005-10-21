@@ -3,8 +3,11 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
-#include <stdio.h> // FIXME can take this out
 #include "vector.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 Vector *
 vector_new (double x, double y, double z)
@@ -96,7 +99,7 @@ vector_angle (Vector *self, Vector *other)
 					   * vector_magnitude (other)));
 }
 
-static void
+void
 vector_normalize(Vector *self)
 {
   vector_multiply (self, 1.0/vector_magnitude(self));
@@ -108,8 +111,6 @@ vector_project (Vector *self, Vector *other1, Vector *other2)
   assert (vector_magnitude (self) > 0.0);
   assert (vector_magnitude (other1) > 0.0);
   assert (vector_magnitude (other2) > 0.0);
-
-  double m = vector_magnitude (other1);
 
   /* compute the normal for the plane */
   Vector *n = vector_cross (other1, other2);
@@ -130,7 +131,7 @@ vector_project (Vector *self, Vector *other1, Vector *other2)
 
   double a = vector_angle (ret, self);
 
-  if (a > 3.141592654)
+  if (a > M_PI)
     vector_multiply (ret, -1);
 
   assert (vector_angle(ret, self) < 1.6);

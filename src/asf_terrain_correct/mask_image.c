@@ -109,7 +109,7 @@ mask_image_export_as_ppm (MaskImage *self, const char *filename)
     rgb_set(&table[i], 0, 0, 0);
   
   rgb_set(&table[1], 128, 128, 128);   // NO_DEM_DATA
-  rgb_set(&table[2], 0,   255, 255);    // BACKGROUND_FILL
+  rgb_set(&table[2], 0,   255, 255);   // BACKGROUND_FILL
   rgb_set(&table[3], 0,   128,   0);   // LAYOVER_ACTIVE
   rgb_set(&table[4], 128, 128,   0);   // LAYOVER_PASSIVE
   rgb_set(&table[5], 128, 0,     0);   // SHADOW_ACTIVE

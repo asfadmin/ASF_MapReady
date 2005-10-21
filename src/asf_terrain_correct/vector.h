@@ -56,6 +56,10 @@ vector_magnitude (Vector *self);
 double
 vector_angle (Vector *self, Vector *other);
 
+/* scale the vector so that its magnitude is 1 */
+void
+vector_normalize(Vector *self);
+
 /* Return a newly allocated vector that is the projection of self
    to the plane defined by other1 and other2. */
 Vector *

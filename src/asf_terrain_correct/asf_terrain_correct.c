@@ -35,6 +35,8 @@
 #include "dem_geom_info.h"
 #include "mask_image.h"
 
+#define KH_DEBUG2
+
 // Print user information to error output location and exit with a
 // non-zero exit code.
 static void
@@ -261,6 +263,203 @@ get_extents_in_projection_coordinate_space
   g_free (lats);
 }
 
+static Vector *
+calculate_geometry(Vector *n, ITRSPlatformPath *pp_fixed, Vector *c, 
+		   meta_parameters *imd, double it, 
+		   double *look_angle, double *slope, double *incidence_angle)
+{
+#ifdef KH_DEBUG
+  ITRSPoint * cp_target = ITRS_point_new(c->x, c->y, c->z);
+  double cp_target_lat, cp_target_lon;
+  ITRS_point_get_geodetic_lat_long(cp_target, &cp_target_lat,
+				   &cp_target_lon);
+  double line, samp;
+  meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D, 0,
+		    &line, &samp);
+//  double o_look_angle = meta_look(imd, line, samp);
+  it = meta_get_time(imd, line, samp);
+//  meta_slant = meta_get_slant(imd, line, samp);
+#else
+  imd = imd;
+#endif
+
+  // Compute a vector from the current target to the platform at
+  // the point of closest aproach.
+  Vector poca;
+  ITRS_platform_path_position_at_time (pp_fixed, it, &poca);
+  Vector *target_to_poca = vector_copy (&poca);
+  vector_subtract (target_to_poca, c);
+
+  // compute some more stuff
+  ITRSPoint *sat_loc = ITRS_point_new(poca.x, poca.y, poca.z);
+  double poca_lat, poca_lon;
+  ITRS_point_get_geodetic_lat_long (sat_loc, &poca_lat, &poca_lon);
+  ITRS_point_free (sat_loc);
+
+  ITRSPoint *poca0 =
+    ITRS_point_new_from_geodetic_lat_long_height(poca_lat, poca_lon, 0);
+  
+  Vector *poca_to_poca0 = vector_new (poca0->x, poca0->y, poca0->z);
+  vector_subtract (poca_to_poca0, &poca);
+
+  // double satellite_height = vector_magnitude(poca_to_poca0);
+  Vector * projected_normal =
+    vector_project (n, target_to_poca, poca_to_poca0);
+
+  Vector *vertical = vector_copy(poca_to_poca0);
+  vector_multiply(vertical, -1.0);
+  *slope = vector_angle(projected_normal, vertical);
+
+  Vector * target_to_poca0 = vector_new(poca0->x, poca0->y, poca0->z);
+  vector_subtract (target_to_poca0, c);
+      
+  // negative slope means back-facing
+  if (vector_angle(target_to_poca0, projected_normal) >= M_PI / 2.0)
+    *slope = - *slope;
+
+  *look_angle = M_PI - vector_angle(target_to_poca, poca_to_poca0);
+
+  vector_free(vertical);
+  vector_free(projected_normal);
+  vector_free(poca_to_poca0);
+  ITRS_point_free(poca0);
+  
+  // The incidence angle is the angle between the mean normal of
+  // the facets and the line between the current target (DEM
+  // pixel) and the point of closest approach.
+  *incidence_angle = vector_angle (n, target_to_poca);
+
+  vector_normalize(target_to_poca0);
+  return target_to_poca0;
+}
+
+static Vector *
+compute_normal_at(DEMGeomInfo *dgi, size_t jj, size_t ii)
+{
+  // Vectors for the current DEM pixel, and the pixels above, to
+  // the right, below, and to the left respectively, in ITRS
+  // coordinates.
+  Vector c, a, r, b, l;
+  vector_set (&c, float_image_get_pixel (dgi->cp_target_x, jj,  ii),
+	      float_image_get_pixel (dgi->cp_target_y, jj, ii),
+	      float_image_get_pixel (dgi->cp_target_z, jj, ii));
+  vector_set (&a, float_image_get_pixel (dgi->cp_target_x, jj, ii - 1),
+	      float_image_get_pixel (dgi->cp_target_y, jj, ii - 1),
+	      float_image_get_pixel (dgi->cp_target_z, jj, ii - 1));
+  vector_set (&r, float_image_get_pixel (dgi->cp_target_x, jj + 1, ii),
+	      float_image_get_pixel (dgi->cp_target_y, jj + 1, ii),
+	      float_image_get_pixel (dgi->cp_target_z, jj + 1, ii));
+  vector_set (&b, float_image_get_pixel (dgi->cp_target_x, jj, ii + 1),
+	      float_image_get_pixel (dgi->cp_target_y, jj, ii + 1),
+	      float_image_get_pixel (dgi->cp_target_z, jj, ii + 1));
+  vector_set (&l, float_image_get_pixel (dgi->cp_target_x, jj - 1, ii),
+	      float_image_get_pixel (dgi->cp_target_y, jj - 1, ii),
+	      float_image_get_pixel (dgi->cp_target_z, jj - 1, ii));
+  
+  // We now change the vectors to the neighbors st instead of
+  // pointing from the ITRS origin to the target DEM pixel, they
+  // point from the target DEM pixel to the appropriate neighbor
+  // DEM pixel.
+  vector_subtract (&a, &c);
+  vector_subtract (&r, &c);
+  vector_subtract (&b, &c);
+  vector_subtract (&l, &c);
+  
+  // Compute the normal vectors for each of the facets.
+  Vector *uln = vector_cross (&a, &l);
+  Vector *urn = vector_cross (&r, &a);
+  Vector *lrn = vector_cross (&b, &r);
+  Vector *lln = vector_cross (&l, &b);
+  
+  Vector *n = vector_copy (uln);
+  vector_add (n, urn);
+  vector_add (n, lrn);
+  vector_add (n, lln);
+  
+  if ( vector_magnitude (n) < 0.00000001 ) {
+    g_warning ("tiny normal vector magnitude at DEM pixel %ld, %ld\n",
+	       (long int) jj, (long int) ii);
+    g_print ("c: %lf %lf %lf  \n"
+	     "a: %lf %lf %lf  \n"
+	     "r: %lf %lf %lf  \n"
+	     "b: %lf %lf %lf  \n"
+	     "l: %lf %lf %lf  \n",
+	     c.x, c.y, c.z,
+	     a.x, a.y, a.z,
+	     r.x, r.y, r.z,
+	     b.x, b.y, b.z,
+	     l.x, l.y, l.z);
+  }
+  else {
+    vector_normalize (n);
+  }
+  
+  vector_free (uln);
+  vector_free (urn);
+  vector_free (lrn);
+  vector_free (lln);
+
+  return n;
+}
+
+static Vector *
+compute_pixel_offsets_to_satellite(size_t size_x, size_t size_y,
+				   meta_parameters *imd, DEMGeomInfo *dgi,
+				   ITRSPlatformPath *pp_fixed)
+{
+  size_t center_x = size_x / 2;
+  size_t center_y = size_y / 2;
+
+  Vector *c = dem_geom_info_get_cp_target (dgi, center_y, center_x);
+  Vector *c2 = dem_geom_info_get_cp_target (dgi, center_y + 25, center_x + 25);
+  vector_subtract(c2, c);
+  double f = vector_magnitude(c2);
+
+  Vector *n = compute_normal_at (dgi, center_y, center_x);
+  double it =
+    dem_geom_info_get_imaging_time (dgi, center_y, center_x);
+
+  double look_angle, slope, incidence_angle;
+  Vector *d =
+    calculate_geometry(n, pp_fixed, c, imd, it,
+		       &look_angle, &slope, &incidence_angle);
+
+  vector_normalize (d);
+  vector_multiply(d, f);
+
+  Vector *p = vector_copy(c);
+  vector_add(p, d);
+
+  ITRSPoint * cp_target = ITRS_point_new(p->x, p->y, p->z);
+
+  double cp_target_lat, cp_target_lon;
+  ITRS_point_get_geodetic_lat_long(cp_target, &cp_target_lat, &cp_target_lon);
+
+  double line2, samp2;
+  meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D,
+		    0, &line2, &samp2);
+  ITRS_point_free(cp_target);
+
+  cp_target = ITRS_point_new(c->x, c->y, c->z);
+  ITRS_point_get_geodetic_lat_long(cp_target, &cp_target_lat, &cp_target_lon);
+  ITRS_point_free(cp_target);
+
+  double line, samp;
+  meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D,
+		    0, &line, &samp);
+
+  Vector *v = vector_new(samp - samp2, line - line2, 0);
+  vector_normalize(v);
+
+  vector_free(c);
+  vector_free(c2);
+  vector_free(n);
+  vector_free(d);
+  vector_free(p);
+
+  return v;
+}
+
 // Main program.
 int
 main (int argc, char **argv)
@@ -303,11 +502,6 @@ main (int argc, char **argv)
     = map_projected_dem_new_from_las (reference_dem->str,
 				      reference_dem_img->str);
   g_print ("done.\n");
-
-  // Take a quick look at the DEM for FIXME: debug purposes.
-  //float_image_export_as_jpeg (dem->data, "dem_view.jpg", 
-  //			      GSL_MAX (dem->data->size_x, dem->data->size_y), 
-  //			      0.0);
 
   // We will need a slant range version of the image being terrain
   // corrected.  Defining BK_DEBUG will cause the program to try to
@@ -780,8 +974,6 @@ main (int argc, char **argv)
       // discovered geometry information.
       if ( slant_range_image_contains (sri, solved_slant_range, 
 				       solved_time, 1e-3) ) {
-	// FIXME: is cp_height (the height above the WGS84 ellipsoid)
-	// really what's wanted here?
 	dem_geom_info_set (dgi, jj, ii, &cp_target, solved_time, 
 			   solved_slant_range, cp_height, &poca);
       }
@@ -825,34 +1017,12 @@ main (int argc, char **argv)
 
   } // End of dgi construction by calculation.
 
-  // Make a quick jpeg showing the part of the DEM we believe the
-  // image covers for FIXME debug purposes.
-  /*
-  FloatImage *dem_coverage = float_image_new (dem->size_x, dem->size_y);
-  // For each DEM row except the first and last...
-  for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
-    long int jj;
-    // For every other DEM pixel except the first and last two...
-    for ( jj = 0 ; (size_t) jj < dem->size_x ; jj++ ) {
-      if ( dem_geom_info_get_slant_range_value (dgi, jj, ii) < 0 ) {
-	SP (dem_coverage, jj, ii, GP (dem->data, jj, ii));
-      }
-      else {
-	SP (dem_coverage, jj, ii, 2 * GP (dem->data, jj, ii));
-      }
-    }
-  }
-  float_image_export_as_jpeg (dem_coverage, "dem_coverage.jpg",
-			      GSL_MAX (dem_coverage->size_x,
-				       dem_coverage->size_y), NAN);
-  */
-
   // Because the geolocation of images is often quite bad, we will
   // march throught the DEM and create a simulated SAR image, then
   // measure the offset of the simulated image from the actual slant
   // range image.  We can then subject the slant range image pixel
   // lookups used to color the DEM to the discovered offset.
-  g_print ("Generating simulated SAR image... ");
+  g_print ("Generating simulated SAR image...\n");
   SlantRangeImage *sim_img 
     = slant_range_image_new_empty (sri->upper_left_pixel_range,
 				   sri->upper_left_pixel_time,
@@ -876,7 +1046,12 @@ main (int argc, char **argv)
   int neg_sim_pixels = 0;
   double max_lams = -10;
   int nlayover = 0, nshadow = 0;
-  printf("size: %d,%d\n", dem->size_y, dem->size_x);
+  g_print ("Size: %d,%d\n", dem->size_y, dem->size_x);
+
+  // find a vector from the center of the image, to the point on
+  // the ground below the satellite
+  Vector *poff = compute_pixel_offsets_to_satellite(dem->size_x, dem->size_y,
+						    imd, dgi, pp_fixed);
 
   for ( ii = 0 ; (size_t) ii < dem->size_y; ii++ ) {
     long int jj;
@@ -884,24 +1059,7 @@ main (int argc, char **argv)
     //    for ( jj = 1 ; (size_t) jj < dem->size_x - 2; jj += 2 ) {
     for ( jj = 0 ; (size_t) jj < dem->size_x; jj++ ) {
 
-
-      // We are interested in the four triangular facets defined by
-      // the non-diagonal neighbors, so to entirely cover the image,
-      // we need only considerer every other pixel in each row.  We
-      // need to cover even pixels in one row, odd pixels in the next,
-      // etc.  So here we compute the DEM x index being considered the
-      // center of the four facet for each pixel in this row of
-      // pixels.
-      size_t xi;
-      if ( ii % 2 == 1 ) {
-	xi = jj;
-      }
-      else {
-	xi = jj + 1;
-      }
-
-      // FIXME: above should be replaced with this, eh??
-      xi = jj;
+      size_t xi = jj;
 
       // If we are in shadow this DEM pixel contributes nothing to the
       // backscatter in the simulated image.
@@ -933,178 +1091,20 @@ main (int argc, char **argv)
       // products of adjacent pairs of vectors, then adding the
       // results together and normalizing.
 
-      // Vectors for the current DEM pixel, and the pixels above, to
-      // the right, below, and to the left respectively, in ITRS
-      // coordinates.
-      Vector c, a, r, b, l;
-      vector_set (&c, float_image_get_pixel (dgi->cp_target_x, xi,  ii),
-		  float_image_get_pixel (dgi->cp_target_y, xi, ii),
-		  float_image_get_pixel (dgi->cp_target_z, xi, ii));
-      vector_set (&a, float_image_get_pixel (dgi->cp_target_x, xi, ii - 1),
-		  float_image_get_pixel (dgi->cp_target_y, xi, ii - 1),
-		  float_image_get_pixel (dgi->cp_target_z, xi, ii - 1));
-      vector_set (&r, float_image_get_pixel (dgi->cp_target_x, xi + 1, ii),
-		  float_image_get_pixel (dgi->cp_target_y, xi + 1, ii),
-		  float_image_get_pixel (dgi->cp_target_z, xi + 1, ii));
-      vector_set (&b, float_image_get_pixel (dgi->cp_target_x, xi, ii + 1),
-		  float_image_get_pixel (dgi->cp_target_y, xi, ii + 1),
-		  float_image_get_pixel (dgi->cp_target_z, xi, ii + 1));
-      vector_set (&l, float_image_get_pixel (dgi->cp_target_x, xi - 1, ii),
-		  float_image_get_pixel (dgi->cp_target_y, xi - 1, ii),
-		  float_image_get_pixel (dgi->cp_target_z, xi - 1, ii));
-
-      // We now change the vectors to the neighbors st instead of
-      // pointing from the ITRS origin to the target DEM pixel, they
-      // point from the target DEM pixel to the appropriate neighbor
-      // DEM pixel.
-      vector_subtract (&a, &c);
-      vector_subtract (&r, &c);
-      vector_subtract (&b, &c);
-      vector_subtract (&l, &c);
-
-      // Compute the normal vectors for each of the facets.
-      Vector *uln = vector_cross (&a, &l);
-      Vector *urn = vector_cross (&r, &a);
-      Vector *lrn = vector_cross (&b, &r);
-      Vector *lln = vector_cross (&l, &b);
-
-      Vector *n = vector_copy (uln);
-      vector_add (n, urn);
-      vector_add (n, lrn);
-      vector_add (n, lln);
-
-      if ( vector_magnitude (n) < 0.00000001 ) {
-	g_warning ("tiny normal vector magnitude at DEM pixel %ld, %ld\n",
-		   (long int) jj, (long int) ii);
-	g_print ("c: %lf %lf %lf  \n"
-		 "a: %lf %lf %lf  \n"
-		 "r: %lf %lf %lf  \n"
-		 "b: %lf %lf %lf  \n"
-		 "l: %lf %lf %lf  \n",
-		 c.x, c.y, c.z,
-		 a.x, a.y, a.z,
-		 r.x, r.y, r.z,
-		 b.x, b.y, b.z,
-		 l.x, l.y, l.z);
-      }
-      else {
-	vector_multiply (n, 1.0 / vector_magnitude (n));
-      }
-      
-      //vector_multiply (n, 1.0 / vector_magnitude (n));
-      //g_assert (vector_magnitude (n) > 0.5);
-      
+      Vector *c = dem_geom_info_get_cp_target(dgi, xi, ii);
+      Vector *n = compute_normal_at(dgi, xi, ii);      
 
       // Recall the slant range and imaging time for this DEM pixel.
       double sr = dem_geom_info_get_slant_range_value (dgi, xi, ii);
       double it = dem_geom_info_get_imaging_time (dgi, xi, ii);
 
-      // Compute a vector from the current target to the platform at
-      // the point of closest aproach.
-      Vector poca;
-      ITRS_platform_path_position_at_time (pp_fixed, it, &poca);
-      Vector *target_to_poca = vector_copy (&poca);
-      vector_subtract (target_to_poca, &c);
+      // Calculate!
+      double look_angle, slope, incidence_angle;
+      Vector *target_to_poca0 =
+	calculate_geometry(n, pp_fixed, c, imd, it,
+			   &look_angle, &slope, &incidence_angle);
 
-      // compute some more stuff
-      ITRSPoint *sat_loc = ITRS_point_new(poca.x, poca.y, poca.z);
-      double poca_lat, poca_lon;
-      ITRS_point_get_geodetic_lat_long (sat_loc, &poca_lat, &poca_lon);
-      ITRS_point_free (sat_loc);
-
-      ITRSPoint *poca0 =
-	ITRS_point_new_from_geodetic_lat_long_height(poca_lat, poca_lon, 0);
-  
-      Vector *poca_to_poca0 = vector_new (poca0->x, poca0->y, poca0->z);
-      vector_subtract (poca_to_poca0, &poca);
-
-      // double satellite_height = vector_magnitude(poca_to_poca0);
-
-      Vector * projected_normal =
-	vector_project (n, target_to_poca, poca_to_poca0);
-
-      Vector *vertical = vector_copy(poca_to_poca0);
-      vector_multiply(vertical, -1.0);
-      double slope = vector_angle(projected_normal, vertical);
-
-      Vector * target_to_poca0 = vector_new(poca0->x, poca0->y, poca0->z);
-      vector_subtract (target_to_poca0, &c);
-      
-      // negative slope means back-facing
-      if (vector_angle(target_to_poca0, projected_normal) >= M_PI / 2.0)
-	slope = -slope;
-
-      double look_angle = M_PI - vector_angle(target_to_poca, poca_to_poca0);
-
-#ifdef KH_DEBUG
-      /* validate the look angle! */
-      double o_look_angle = 0;
-      
-      ITRSPoint * cp_target = ITRS_point_new(c.x, c.y, c.z);
-      double cp_target_lat, cp_target_lon;
-      ITRS_point_get_geodetic_lat_long(cp_target, &cp_target_lat,
-				       &cp_target_lon);
-      double line, samp;
-      double meta_time = 0, meta_slant = 0;
-      if (!ISNAN(line) && !ISNAN(samp))
-      {
-	meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D,
-			  dem_geom_info_get_dem_height(dgi, xi, ii),
-			  &line, &samp);
-	o_look_angle = meta_look(imd, line, samp);
-	meta_time = meta_get_time(imd, line, samp);
-	meta_slant = meta_get_slant(imd, line, samp);
-
-	float_image_set_pixel(angles, xi, ii, meta_time - it);
-      }
-      else
-      {
-	float_image_set_pixel(angles, xi, ii, 0);
-      }
-
-      if (countem < 10 && ii > 500 && jj > 500) {
-
-	++countem;
-	printf("sr: %g\n", sr);
-	printf("m_sr: %g\n", meta_slant);
-	printf("it: %g\n", it);
-	printf("m_it: %g\n", meta_time);
-	printf("time diff: %g\n", meta_time - it);
-	printf("poca: %g %g %g\n", poca.x, poca.y, poca.z);
-	printf("c: %g %g %g\n", c.x, c.y, c.z);
-	printf("poca0: %g %g %g\n", poca0->x, poca0->y, poca0->z);
-	printf("target_to_poca: %g %g %g\n", target_to_poca->x,
-	       target_to_poca->y, target_to_poca->z);
-	printf("poca_to_poca0: %g %g %g\n", poca_to_poca0->x,
-	       poca_to_poca0->y, poca_to_poca0->z);
-	printf("n: %g %g %g\n", n->x, n->y, n->z);
-	printf("projected n: %g %g %g\n", projected_normal->x,
-	       projected_normal->y, projected_normal->z);
-	printf("vertical: %g %g %g\n", vertical->x,
-	       vertical->y, vertical->z);
-	printf("satellite height: %g\n", satellite_height);
-	printf("slope: %g\n", slope * 180.0 / M_PI);
-	printf("angle between normal & look vector: %g\n",
-	       180.0 / M_PI * vector_angle(target_to_poca0, n));
-	printf("look_angle: %g\n", look_angle * 180.0 / M_PI);
-	printf("target lat,lon: %g, %g\n", cp_target_lat, cp_target_lon);
-	printf("target line,samp: %g, %g\n", line, samp);
-	printf("o_look_angle: %g\n", o_look_angle * 180.0 / M_PI);
-	if (look_angle - slope > M_PI / 2)
-	  printf("SHADOW!!\n");
-	else if (slope > look_angle)
-	  printf("LAYOVER!!\n");
-	printf("\n\n");
-      }
-#else
       float_image_set_pixel(angles, xi, ii, slope);
-#endif
-
-      vector_free(vertical);
-      vector_free(projected_normal);
-      vector_free(poca_to_poca0);
-      vector_free(target_to_poca0);
-      ITRS_point_free(poca0);
 
       if (look_angle - slope > max_lams)
 	max_lams = look_angle - slope;
@@ -1113,17 +1113,70 @@ main (int argc, char **argv)
       {
 	++nshadow;
 	mask_image_set_pixel_shadow(mask, xi, ii);
+
+	int iii, jjj, kkk = 0;
+	while (1) {
+	  ++kkk;
+	  iii = (int) round(ii - kkk * poff->y);
+	  jjj = (int) round(xi - kkk * poff->x);
+
+	  if (iii < 0 || iii > (int) dem->size_y - 1) break;
+	  if (jjj < 0 || jjj > (int) dem->size_x - 1) break;
+
+	  double sr_val = dem_geom_info_get_slant_range_value(dgi, jjj, iii);
+
+	  // if we reach a dem hole, quit now
+	  if (sr_val < 0)
+	    break;
+	  if (kkk > 200)
+	    break;
+
+	  Vector *c2 = dem_geom_info_get_cp_target(dgi, jjj, iii);      
+	  Vector *n2 = compute_normal_at(dgi, jjj, iii);      
+
+	  // Calculate!
+	  double look_angle2, slope2, incidence_angle2;
+	  calculate_geometry(n2, pp_fixed, c2, imd,
+			     dem_geom_info_get_imaging_time (dgi, jjj, iii),
+			     &look_angle2, &slope2, &incidence_angle2);
+
+	  vector_free(c2);
+	  vector_free(n2);
+
+	  if (look_angle2 >= look_angle)
+	    break;
+
+	  if (mask_image_get_pixel(mask, jjj, iii) == MASK_NORMAL_VALUE)
+	    mask_image_set_pixel(mask, jjj, iii, MASK_SHADOW_PASSIVE);
+	}
       }
       else if (slope > look_angle)
       {
 	++nlayover;
 	mask_image_set_pixel_layover(mask, xi, ii);
+
+	int iii, jjj, kkk = 0;
+	while (1) {
+	  ++kkk;
+	  iii = (int) round(ii + kkk * poff->y);
+	  jjj = (int) round(xi + kkk * poff->x);
+
+	  if (iii < 0 || iii > (int) dem->size_y - 1) break;
+	  if (jjj < 0 || jjj > (int) dem->size_x - 1) break;
+
+	  double sr_val = dem_geom_info_get_slant_range_value(dgi, jjj, iii);
+
+	  if (sr_val <= sr)
+	    break;
+	  if (kkk > 200)
+	    break;
+
+	  if (mask_image_get_pixel(mask, jjj, iii) == MASK_NORMAL_VALUE)
+	    mask_image_set_pixel(mask, jjj, iii, MASK_LAYOVER_PASSIVE);
+	}
       }
 
-      // The incidence angle is the angle between the mean normal of
-      // the facets and the line between the current target (DEM
-      // pixel) and the point of closest approach.
-      double incidence_angle = vector_angle (n, target_to_poca);
+      vector_free(target_to_poca0);
 
       // We will assume that the backscatter returned by the dirt in
       // this DEM pixel is proportional to the cosine of the angle
@@ -1133,9 +1186,7 @@ main (int argc, char **argv)
       // closest approach.
       
       // FIXME: for the moment we exclude backslopes this way, since
-      // the shadow mask isn't finished yet.  FIXME: should be M_PI /
-      // 2.0, but I don't want to change it at the moment while trying
-      // to sort out coregistration issues.
+      // the shadow mask isn't finished yet.
       if ( !(incidence_angle > M_PI / 2 ) ) {
 	if ( slant_range_image_contains (sim_img, sr, it, 1e-3) ) {
 	  if ( cos (incidence_angle) < 0 ) {
@@ -1146,25 +1197,21 @@ main (int argc, char **argv)
 	}
       }
   
-      vector_free (uln);
-      vector_free (urn);
-      vector_free (lrn);
-      vector_free (lln);
+      vector_free (c);
       vector_free (n);
-      vector_free (target_to_poca);
     }
   }
   
   g_print ("done.\n");
-  printf("Layover pixels: %d\n", nlayover);
-  printf("Shadow pixels: %d\n", nshadow);
-
   g_print ("Negative simulator energy additions: %d\n", neg_sim_pixels);
 
+  g_print ("Layover pixels: %d\n", nlayover);
+  g_print ("Shadow pixels: %d\n", nshadow);
+
+/*  Skip this for now... 
+  // Change no_dem_data values to background_fill
   int bg_fill_count = 0;
 
-  // Change no_dem_data values to background_fill
-/*  Skip this for now... 
   mask_image_export_as_ppm(mask, "mask1.ppm");
   for ( ii = 0 ; (size_t) ii < dem->size_y; ii++ ) {
     size_t jj = 0;
@@ -1199,9 +1246,9 @@ main (int argc, char **argv)
       --jj;
     }
   }
+  g_print ("Converted %d pixels from no_dem_data to background fill.\n",
+	   bg_fill_count);
 */
-  printf("Converted %d pixels from no_dem_data to background fill.\n",
-	 bg_fill_count);
 
   // Take a look at the simulated image for (FIXME) debug purposes.
   float_image_export_as_jpeg (sim_img->data, "sim_img.jpg",
@@ -1320,14 +1367,7 @@ main (int argc, char **argv)
   float_image_store (pd, output_data_file->str,
 		     FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   g_print ("done.\n");
-  printf("Wrote image: %d by %d\n", pd->size_x, pd->size_y);
-
-  // FIXME: this debugging schlop can safely be removed.
-  /*
-  FloatImage *volcano = float_image_new_subimage (pd, 2100, 3100, 300, 300);
-  float_image_export_as_jpeg (volcano, "volcano.jpg",
-			      GSL_MAX (volcano->size_x, volcano->size_y), 0.0);
-  */
+  g_print ("Wrote image: %d by %d\n", pd->size_x, pd->size_y);
 
   // Free all the memory and resources we used.
   g_print ("Freeing resources... ");
