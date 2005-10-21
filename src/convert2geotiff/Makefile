@@ -11,9 +11,11 @@ LIBS =	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libproj.a \
 	$(LIBDIR)/libasf_reporting.a \
 	$(GSL_LIBS) \
-	$(GEOTIFF_LIBS) \
+	$(JPEG_LIBS) \
 	$(TIFF_LIBS) \
-	-lm
+	$(GEOTIFF_LIBS) \
+	-lm \
+	-lz
 
 OBJS =	get_tiepoints.o \
 	c_decdeg.o \
