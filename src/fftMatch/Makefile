@@ -25,4 +25,4 @@ fftMatch: $(OBJLIB) $(LIBS)
 	cp fftMatch.man ../../man/cat1/fftMatch.1
 
 clean:
-	rm *.o
+	rm -f *.o
