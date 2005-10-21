@@ -288,7 +288,7 @@ EOF
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
 cat <<'EOF' >>system_rules
 
-CFLAGS  := $(CFLAGS) $(FLAGS) $(DEBUGFLAGS) $(GLIB_CFLAGS)
+CFLAGS  := $(CFLAGS) $(FLAGS) $(DEBUGFLAGS)
 LDFLAGS := $(LDFLAGS) $(DEBUGLIBS) -lm
 
 EOF
