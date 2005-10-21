@@ -49,12 +49,11 @@ LIBS
 @external/work_dir/
 	libgsl
 	libproj	
-	pkgconfig
 	libglib
 	libjpeg
 	libtiff
 	libgeotiff
-	tclTk
+	tcl_tk
 @src/
 	asf
 	regex_wrapper
@@ -80,6 +79,8 @@ PROGRAMS
 @src/
 	asf_export { }
 	asf_import { }
+        asf_geocode { }
+	asf_convert { PROGRAMS asf_export asf_import asf_geocode }
 	stats { }
 	convert2byte { PROGRAMS stats }
 	convert2geotiff { }
@@ -101,42 +102,15 @@ PROGRAMS
 	resample { }
 	sarout { }
 	sr2gr { }
+	trim { }
 	accum_offset { }
-        asf_geocode { }
 	concat { }
 	concat_dem { }
 	concatm { }
 	fit_quadratic { }
 	idimage { BINS idtable }
 	projprm { }
-#		Because makemake parses this file from top-to-bottom,
-#		you can't reference not-yet-listed programs.
-#		Hence the scripts are at the end.
-
-# Down here because it depends on geocode
-# Also note: corner_coords, filter, geocode, and projprm are only used by
-# asf_convert's hidden options and we don't want to include them in the release
-	asf_convert
-	{
-		PROGRAMS
-			asf_export
-			asf_import
-			asf_geocode
-	}
-# These programs are only used by asf_convert's hidden options and we
-# don't want to include them in the release
-#			corner_coords
-#			filter
-#			geocode
-#			projprm
-
-
-	ardop
-	{
-		BINS
-			calc_deltas
-			spectra
-	}
+	ardop { BINS calc_deltas spectra }
 	avg_in_dop { }
 	c2p { }
 	coh { }
@@ -161,6 +135,11 @@ PROGRAMS
 	refine_base { }
 	refine_offset { }
 	zeroify { }
+	sarview { BINS sarview_bin support }
+	image_stats { }
+	offset_test { }
+	detect_cr { }
+
 
 @src_tc/
 	2dmap { }
@@ -196,24 +175,9 @@ PROGRAMS
 	}
 
 
-# X-Windows source code
-@src/
-	sarview { BINS sarview_bin support }
-#	sprocket { BINS complex iq standard vexcel_complex geo target_selector
-#			list_ground_targets.sql list_sites.sql convert_standard
-#			image2pgm image_mask vexcel_complex_metadata
-#			vexcel_complex_data_planes xy_plotter }
-#
-
-#@experimental/
-#	cpx_spectrum { }
-#	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
-	image_stats { }
-	offset_test { }
-	detect_cr { }
-
 # Build this very last since it depends on the plethora of gtk2 libraries, and
 # tends to kill the build
+@src/
 	asf_convert_gui
 	{
 		PROGRAMS
@@ -227,6 +191,16 @@ PROGRAMS
 			projections/polar_stereographic/
 			projections/utm/
 	}
+
+# Stuff we don't really care to build
+#@src/
+#	sprocket { BINS complex iq standard vexcel_complex geo target_selector
+#			list_ground_targets.sql list_sites.sql convert_standard
+#			image2pgm image_mask vexcel_complex_metadata
+#			vexcel_complex_data_planes xy_plotter }
+#	cpx_spectrum { }
+#	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
+
 
 }
 ############################### END OF PROGRAMS ###############################
@@ -250,10 +224,11 @@ CATEGORIES
 # Open - Anybody can get this stuff (BSD license)
 	open
 	{
-		asf_convert asf_export asf_import stats convert2byte convert2geotiff
-		convert2jpeg convert2ppm deskew dspddr fftMatch makeddr meta2ddr metadata
-		raster_calc raster_diff remap resample sarout sr2gr trim accum_offset
-		concat concat_dem concatm fit_quadratic idimage projprm geocode
+		asf_convert asf_export asf_import asf_geocode stats
+		convert2byte convert2geotiff convert2jpeg convert2ppm deskew
+		dspddr fftMatch makeddr meta2ddr metadata raster_calc
+		raster_diff remap resample sarout sr2gr trim accum_offset
+		concat concat_dem concatm fit_quadratic idimage projprm
 	}
 
 # Sarview needs to be its own category because of its tcl/tk dependency.
