@@ -95,13 +95,7 @@ void usage(char *name);
 
 int main(int argc,char **argv)
 {
-  int x,y;
-  float bestLocX,bestLocY,doubt;
-  float *corrImage=NULL;
   char *corrFile=NULL,*descFile=NULL,*inFile1,*inFile2;
-  FILE *corrF=NULL,*descF,*in1F,*in2F;
-  struct DDR inDDR1,inDDR2,outDDR;
-  meta_parameters *metaMaster, *metaSlave, *metaOut;
   extern int optind;            /* argv index of the next argument */
   extern char *optarg;          /* current argv[] */
   int c;                        /* option letter from getopt() */
