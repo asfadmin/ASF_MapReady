@@ -27,6 +27,7 @@
 #include "asf.h"
 #undef BYTE
 #include <Windows.h>
+#undef DIR_SEPARATOR
 
 static char appfontname[128] = "tahoma 8"; /* fallback value */
 
@@ -119,72 +120,40 @@ void set_font ()
 #else /* defined(win32) */
 
 #include "asf.h"
+#if defined(DIR_SEPARATOR)
+#undef DIR_SEPARATOR
+#endif
 
 /* on unix, GTK will select the appropriate fonts */
 void set_font () {}
 
 #endif /* defined(win32) */
 
+#ifdef win32
+const char PATH_SEPARATOR = ';';
+const char DIR_SEPARATOR = '\\';
+#else
+const char PATH_SEPARATOR = ':';
+const char DIR_SEPARATOR = '/';
+#endif
+
 GladeXML *glade_xml;
 gboolean user_modified_output_file = FALSE;
 
-static gchar *
-find_in_path(gchar * file)
+static char *
+find_in_share(const char * filename)
 {
-  gchar *path, *buf, *name, *p;
-  int len, pathlen;
-
-  path = (gchar *)g_getenv("PATH");
-
-  len = strlen(file) + 1;
-  pathlen = strlen(path);
-
-  /* work area */
-  buf = (gchar *) g_malloc( sizeof(gchar) * (pathlen + len + 2) ); 
-
-  /* put separator + filename at the end of the buffer */
-  name = buf + pathlen + 1;
-  *name = DIR_SEPARATOR;
-  memcpy(name + 1, file, len);
-
-  /* now try each path item, prepended to the filename in the work area */
-  p = path;
-  do
-  {
-    gchar * start;
-    gchar * q = strchr(p + 1, PATH_SEPARATOR);
-
-    /* if separator not found, point to the end */
-    if ( !q ) 
-      q = path + pathlen;
-
-    start = name - (q - p);
-
-    /* copy path portion to the work area */
-    memcpy( start, p, q - p );
-
-    if (g_file_test( start, G_FILE_TEST_EXISTS ))
-    {
-      gchar * ret = g_strdup(start);
-      g_free(buf);
-      return ret; 
-    }
-
-    p = q;
-  } 
-  while (*p++ != '\0');
-
-  /* not found! */ 
-  g_free(buf);
-  return NULL;
+    char * ret = (char *) malloc(sizeof(char) *
+                      (strlen(get_asf_share_dir()) + strlen(filename) + 5));
+    sprintf(ret, "%s/%s", get_asf_share_dir(), filename);
+    return ret;
 }
-
 
 /* danger: returns pointer to static data!! */
 static const char * imgloc(char * file)
 {
     static char loc[1024];
-    gchar * tmp = find_in_path(file);
+    gchar * tmp = find_in_share(file);
     if (tmp) {
       strcpy(loc, tmp);
       g_free(tmp);
@@ -241,6 +210,30 @@ add_file (const gchar * filename)
 	glade_xml_get_widget(glade_xml, "input_file_entry");
 
     gtk_entry_set_text(GTK_ENTRY(input_file_entry), filename);
+}
+
+void
+message_box(const gchar * message)
+{
+  GtkWidget *dialog, *label;
+
+  dialog = gtk_dialog_new_with_buttons( "Message",
+	NULL,
+	GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+	GTK_STOCK_OK,
+	GTK_RESPONSE_NONE,
+	NULL);
+
+  label = gtk_label_new(message);
+
+  g_signal_connect_swapped(dialog, 
+			   "response", 
+			   G_CALLBACK(gtk_widget_destroy),
+			   dialog);
+
+  gtk_container_add(GTK_CONTAINER(GTK_DIALOG(dialog)->vbox), label);
+
+  gtk_widget_show_all(dialog);
 }
 
 SIGNAL_CALLBACK void
@@ -642,6 +635,79 @@ set_widgets_sensitive(gboolean setting)
     set_widget_sensitive("input_file_browse_button", setting);
 }
 
+gchar *
+change_extension(const gchar * file, const gchar * ext)
+{
+    gchar * replaced = (gchar *)
+        g_malloc(sizeof(gchar) * (strlen(file) + strlen(ext) + 10));
+
+    strcpy(replaced, file);
+    char * p = strrchr(replaced, '.');
+
+    if (p)
+    {
+        *p = '\0';
+    }
+
+    strcat(replaced, ".");
+    strcat(replaced, ext);
+
+    return replaced;
+}
+
+static int
+check_files(const char * input_file)
+{
+    const int STATUS_OK = 1;
+    const int STATUS_NOT_OK = 2;
+    const int STATUS_LDR_INSTEAD = 3;
+
+    int status;
+
+    gchar * meta_file = change_extension(input_file, "meta");
+    gchar * in_file = change_extension(input_file, "in");
+    gchar * fmt_file = change_extension(input_file, "fmt");
+
+    if (!g_file_test(input_file, G_FILE_TEST_EXISTS))
+      status = STATUS_NOT_OK;
+
+    int ret = 0;
+
+    if (g_file_test(meta_file, G_FILE_TEST_EXISTS))
+      ret = 0;
+
+    gchar * ldr_file = change_extension(input_file, "ldr");
+
+    if (g_file_test(ldr_file, G_FILE_TEST_EXISTS))
+      ret = 1;
+
+    g_free(ldr_file);
+
+    if (!ret)
+    {
+      ldr_file = change_extension(input_file, "LDR");
+
+      if (g_file_test(ldr_file, G_FILE_TEST_EXISTS))
+	ret = 1;
+
+      g_free(ldr_file);
+    }
+
+    if (status == STATUS_NOT_OK)
+    {
+
+    }
+    else if (status == STATUS_LDR_INSTEAD)
+    {
+      message_box("It looks like you have selected a Level 0 CEOS File.\n"
+		  "This tool requires that you first import the data into\n"
+		  "ASF Internal Format.  You will need to run the ASF\n"
+		  "Convert tool first.");
+    }
+
+    return status == STATUS_OK;
+}
+
 SIGNAL_CALLBACK void
 on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 {
@@ -670,6 +736,10 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
     const char * input_file =
 	gtk_entry_get_text(GTK_ENTRY(input_file_entry));
+
+    /* check that we have all the required files */
+    if (!check_files(input_file))
+        return;
 
     char * p = strrchr(input_file, '.');
 
@@ -1071,26 +1141,6 @@ on_doppler_parameters_dialog_destroy(GtkWidget *w)
     return TRUE;
 }
 
-gchar *
-change_extension(const gchar * file, const gchar * ext)
-{
-    gchar * replaced = (gchar *)
-        g_malloc(sizeof(gchar) * (strlen(file) + strlen(ext) + 10));
-
-    strcpy(replaced, file);
-    char * p = strrchr(replaced, '.');
-
-    if (p)
-    {
-        *p = '\0';
-    }
-
-    strcat(replaced, ".");
-    strcat(replaced, ext);
-
-    return replaced;
-}
-
 static void readline(FILE * f, gchar * buffer, size_t n)
 {
     gchar * p;
@@ -1314,7 +1364,7 @@ main(int argc, char **argv)
 
     gtk_init(&argc, &argv);
 
-    glade_xml_file = (gchar *) find_in_path("aisp_gui.glade");
+    glade_xml_file = (gchar *) find_in_share("aisp_gui.glade");
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
     g_free(glade_xml_file);
