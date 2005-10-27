@@ -26,7 +26,25 @@ gchar * build_metadata_filename(gchar * name)
     }
 }
 
-void show_meta_data(gchar * out_name)
+static gchar *
+change_extension(const gchar * file, const gchar * ext)
+{
+    gchar * replaced = (gchar *)
+        g_malloc(sizeof(gchar) * (strlen(file) + strlen(ext) + 10));
+
+    strcpy(replaced, file);
+    char * p = strrchr(replaced, '.');
+
+    if (p)
+        *p = '\0';
+
+    strcat(replaced, ".");
+    strcat(replaced, ext);
+
+    return replaced;
+}
+
+static void show_meta_data_no_extern(gchar * out_name)
 {
     GtkWidget *metadata_dialog;
     GtkWidget *metadata_text;
@@ -91,6 +109,57 @@ void show_meta_data(gchar * out_name)
 
     g_free(label_text);
     g_free(metadata_filename);
+}
+
+#ifdef THUMBNAILS
+static void mdv_thread (GString *file, gpointer user_data)
+{
+#ifdef win32
+    gchar * mdv = find_in_path("mdv.exe");
+#else
+    gchar * mdv = find_in_path("mdv");
+#endif
+
+    char buf[1024];
+    sprintf(buf, "%s %s", mdv, file->str);
+//  printf("%s\n", buf);
+    system(buf);
+    g_string_free(file, TRUE);
+}
+#endif
+
+void show_meta_data(gchar * out_name)
+{
+#ifdef win32
+    gchar * mdv = find_in_path("mdv.exe");
+#else
+    gchar * mdv = find_in_path("mdv");
+#endif
+
+    if (mdv && use_thumbnails)
+    {
+#ifdef THUMBNAILS
+        gchar * metadata_filename = change_extension(out_name, "L");
+
+	static GThreadPool *ttp = NULL;
+	GError *err = NULL;
+
+	if (!ttp)
+	{
+	  if (!g_thread_supported ()) g_thread_init (NULL);
+	  ttp = g_thread_pool_new ((GFunc) mdv_thread, NULL, 4, TRUE, &err);
+	  g_assert(!err);
+	}
+	g_thread_pool_push (ttp, g_string_new (metadata_filename), &err);
+	g_assert(!err);
+
+	g_free(metadata_filename);
+#endif
+    }
+    else
+    {
+        show_meta_data_no_extern(out_name);
+    }
 }
 
 void
