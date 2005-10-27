@@ -120,6 +120,8 @@ void set_font ()
 
 #else /* defined(win32) */
 
+#include "asf.h"
+
 /* on unix, GTK will select the appropriate fonts */
 void set_font () {}
 
@@ -129,11 +131,26 @@ void set_font () {}
 const char PATH_SEPARATOR = ';';
 const char DIR_SEPARATOR = '\\';
 #else
+#ifdef PATH_SEPARATOR
+#undef PATH_SEPARATOR
+#endif
+#ifdef DIR_SEPARATOR
+#undef DIR_SEPARATOR
+#endif
 const char PATH_SEPARATOR = ':';
 const char DIR_SEPARATOR = '/';
 #endif
 
 GladeXML *glade_xml;
+
+static char *
+find_in_share(const char * filename)
+{
+    char * ret = (char *) malloc(sizeof(char) *
+                      (strlen(get_asf_share_dir()) + strlen(filename) + 5));
+    sprintf(ret, "%s/%s", get_asf_share_dir(), filename);
+    return ret;
+}
 
 gchar *
 find_in_path(gchar * file)
@@ -184,17 +201,6 @@ find_in_path(gchar * file)
   /* not found! */ 
   g_free(buf);
   return NULL;
-}
-
-static void
-add_file (const gchar * filename)
-{
-    GtkWidget *input_file_entry;
-
-    input_file_entry =
-	glade_xml_get_widget(glade_xml, "input_file_entry");
-
-    gtk_entry_set_text(GTK_ENTRY(input_file_entry), filename);
 }
 
 SIGNAL_CALLBACK void
@@ -453,6 +459,19 @@ static void execute()
   put_file_in_textview(input_file, "fdr", "leader_file_descriptor");
 }
 
+static void
+add_file (const gchar * filename)
+{
+    GtkWidget *input_file_entry;
+
+    input_file_entry =
+	glade_xml_get_widget(glade_xml, "input_file_entry");
+
+    gtk_entry_set_text(GTK_ENTRY(input_file_entry), filename);
+
+    execute();
+}
+
 SIGNAL_CALLBACK void
 on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 {
@@ -515,7 +534,7 @@ main(int argc, char **argv)
 
     gtk_init(&argc, &argv);
 
-    glade_xml_file = (gchar *) find_in_path("mdv.glade");
+    glade_xml_file = (gchar *) find_in_share("mdv.glade");
     printf("%s\n", glade_xml_file);
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
