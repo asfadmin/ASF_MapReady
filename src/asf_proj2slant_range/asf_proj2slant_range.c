@@ -138,6 +138,5 @@ int main(int argc, char *argv[])
   // Determine the offset to evaluate quality 
   fftMatch(sarByteName, simByteName, NULL, "offset");
 
-  printf("%s\n",date_time_stamp());
   exit(0);
 }
