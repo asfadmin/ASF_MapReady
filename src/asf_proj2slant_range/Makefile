@@ -6,6 +6,7 @@ include ../../make_support/system_rules
 
 OBJS  = asf_proj2slant_range.o \
 	create_dem_grid.o \
+	fit_plane.o \
 	fit_poly.o \
 	reskew_dem.o
 

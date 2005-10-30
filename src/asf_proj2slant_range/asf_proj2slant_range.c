@@ -12,7 +12,8 @@ void usage(char *name)
 {
  printf("\n"
         "USAGE:\n"
-        "   %s <sarName> <mapDemName> <slantDemName> <simAmpName>\n",name);
+        "   %s -polynomial | -least-square <sarName> <mapDemName> "
+	"<slantDemName> <simAmpName>\n",name);
  printf("\n"
         "REQUIRED ARGUMENTS:\n"
         "   <sarName>        slant range SAR image\n"
@@ -22,8 +23,9 @@ void usage(char *name)
 	"   All filenames require extensions.\n");
    printf("\n"
         "DESCRIPTION:\n"
-        "   Reprojects a DEM and simulates an amplitude image in slant range geometry\n"
-	"   using a map projected reference DEM.\n");
+	"   Reprojects a DEM and simulates an amplitude image in slant range geometry\n"
+	"   using a map projected reference DEM. The mapping can be done using\n"
+	"   a polynomial or a least-square fitting approach.\n");
  printf("\n"
         "Version %.2f, ASF SAR TOOLS\n"
         "\n",VERSION);
@@ -35,6 +37,7 @@ int main(int argc, char *argv[])
 {
   char sarName[255]="", mapDemName[255]="", slantDemName[255]="", simAmpName[255]="";
   char gridName[255]="", sarByteName[255]="", simByteName[255]="", cmd[255];
+  char option[25]="";
   int ii, nSamples, nLines;
   float *float_data;
   unsigned char *byte_data;
@@ -48,9 +51,10 @@ int main(int argc, char *argv[])
   printf("%s\n",date_time_stamp());
   printf("Program: asf_proj2slant_range\n\n");  
 
-  if ((argc-currArg) < 4) {printf("   Insufficient arguments.\n"); usage(argv[0]);}
+  if ((argc-currArg) < 5) {printf("   Insufficient arguments.\n"); usage(argv[0]);}
 
   /* Fetch required arguments */
+  strcpy(option, argv[argc - 5]);
   strcpy(sarName, argv[argc - 4]);
   strcpy(mapDemName, argv[argc - 3]);
   strcpy(slantDemName, argv[argc - 2]);
@@ -87,20 +91,32 @@ int main(int argc, char *argv[])
   create_name(gridName, mapDemName, ".grid");
   create_dem_grid(mapDemName, sarByteName, gridName);
 
-  // Generate mapping function for remap
-  fit_poly(gridName, 5, "poly.5");
-
-  // Cutting out the DEM subset we need
-  /* Running remap with 5th order polynomial fit is dreadfully slow. We might want
-     do something about that in future. -RG */
-  sprintf(cmd, "remap -width %i -height %i -poly poly.5 -float %s dem_big.dem", 
-          nSamples, nLines, mapDemName);
-  system(cmd);
+  if (strcmp(option, "-polynomial")==0) {
+    // Generate polynomial mapping function for remap
+    fit_poly(gridName, 5, "poly.5");
+    // Cutting out the DEM subset we need
+    /* Running remap with 5th order polynomial fit is dreadfully slow. We might want
+       do something about that in future. -RG */
+    sprintf(cmd, "remap -width %i -height %i -poly poly.5 -float %s dem_big.dem", 
+	    nSamples, nLines, mapDemName);
+    system(cmd);
+  }
+  else if (strcmp(option, "-least-square")==0) {
+    // Generate least-square mapping function for reamp
+    fit_plane(gridName, "dem_plane");
+    // Cutting out the DEM subset we need
+    sprintf(cmd, "remap -width %i -height %i -matrix dem_plane -float %s dem_big.dem",
+	    nSamples, nLines, mapDemName);
+    system(cmd);
+  }
+  else 
+    asfPrintError("   Fitting option '%s' not supported!", option);
 
   // Mapping DEM from projection into slant range
   reskew_dem(sarName, "dem_big.dem", slantDemName, simAmpName);
 
   // Converting simulated amplitude image to byte
+  printf("   Converting simulated amplitude image to byte\n");
   metaSAR = meta_read(sarName);
   create_name(simByteName, simAmpName, "_byte.img");
   float_data = (float *) MALLOC(sizeof(float)*nLines*nSamples);
@@ -122,5 +138,6 @@ int main(int argc, char *argv[])
   // Determine the offset to evaluate quality 
   fftMatch(sarByteName, simByteName, NULL, "offset");
 
+  printf("%s\n",date_time_stamp());
   exit(0);
 }

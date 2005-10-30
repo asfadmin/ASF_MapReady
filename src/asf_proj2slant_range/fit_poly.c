@@ -3,12 +3,60 @@
 
 #define VERSION 1.25
 
-FILE *pointOutput=NULL;
+typedef struct {
+        int rows;/*# of rows (horiz. lines) in matrix*/
+        int columns;/*# of columns (vert. lines) in matrix*/
+        double **coeff;/*a [rows][columns] array of matrix coefficents.*/
+} matrix;
 
-void usage(char *name);
+typedef struct {
+  /**
+     Degree of polynomial: 
+     0 is constant: 
+     v[0]
+     1 is linear:
+     v[0] + v[1]*x+v[2]*y
+     2 is quadratic:
+     v[0] + v[1]*x+v[2]*y + v[3]*x*x+v[4]*x*y+v[5]*y*y
+     3 is cubic, etc. 
+  */
+  int degree;
+  
+  /**
+     Number of terms in polynomial.
+     degree 0: 1
+     degree 1: 3
+     degree 2: 6
+  */
+  int nTerms;
+  
+  /** 
+      Coefficients that go with each term of the polynomial.
+      nTerms, allocated using malloc.
+  */
+        double *v;
+} poly_2d;
+
+static FILE *pointOutput=NULL;
+
 double get_term(int termNo,double x,double y);
 poly_2d *find_poly(int degree,const double *out, const double *x,
                             const double *y, int numPts);
+matrix *matrix_alloc(int rows,int columns);
+matrix *matrix_dup(const matrix *source);
+void matrix_free(matrix *doomed);
+void matrix_print(matrix *this,const char *message,FILE *stream);
+void matrix_rowSwap(matrix *this,int A,int B);
+void matrix_rowScale(matrix *this,int dest,double scale);
+void matrix_rowAddScale(matrix *this,int dest,double scale,int source);
+void matrix_solve(matrix *this);
+double poly_term(int termNo,double x,double y);
+poly_2d *poly_allocate(int degree);
+void poly_delete(poly_2d *c);
+double poly_eval(const poly_2d *c,double x,double y);
+void poly_write(const poly_2d *c,FILE *stream);
+poly_2d *poly_read(FILE *stream);
+
 
 void fit_poly(char *inName, int degree, char *outName)
 {
