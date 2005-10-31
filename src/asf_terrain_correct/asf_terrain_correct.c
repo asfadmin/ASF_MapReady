@@ -47,6 +47,16 @@ usage (void)
   exit (EXIT_FAILURE);
 }
 
+#ifndef linux
+#ifndef win32
+static double
+round (double arg)
+{
+  return floor (arg + 0.5);
+}
+#endif // #ifndef win32
+#endif // #ifndef linux
+
 // Convenience functions so we don't have to type long method names.
 /*  commented out for now, since it doesn't appear to be used. --KH
 static void
