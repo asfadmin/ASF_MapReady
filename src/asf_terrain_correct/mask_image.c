@@ -3,11 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include <glib.h>
 
 #include "mask_image.h"
 #include "asf.h"
+#include "float_image.h"
 
 MaskImage *
 mask_image_new (int size_x, int size_y)
@@ -142,23 +144,26 @@ mask_image_export_as_ppm (MaskImage *self, const char *filename)
 int
 mask_image_export_as_ppm_with_transparency (MaskImage *self,
 					    const char *filename,
-					    unsigned char *ivals)
+					    FloatImage *f)
 {
+  printf("Mask size: %d %d\n", self->size_x, self->size_y);
+  printf("FI size: %d %d\n", f->size_x, f->size_y);
+
+  assert((int)f->size_x == self->size_x);
+  assert((int)f->size_y == self->size_y);
+
   RGBDATA table[32];
-  int i;
+  int i, j, k;
 
   for (i = 0; i < 32; ++i)
     rgb_set(&table[i], 0, 0, 0);
   
-  rgb_set(&table[1], 32,  32,  32);
-  rgb_set(&table[2], 64,  64,  64);
-  rgb_set(&table[3], 0,   0,   0);
-  rgb_set(&table[4], 0,   128,   0);
-  rgb_set(&table[5], 128,  128,  0);
-//  rgb_set(&table[5], 255,  255,  255);
-  rgb_set(&table[6], 128, 0,   0);
-  rgb_set(&table[7], 128, 0,   128);
-  rgb_set(&table[8], 255, 0,   255);
+  rgb_set(&table[1], 0,   0,     0);   // NO_DEM_DATA
+  rgb_set(&table[2], 0,   255, 255);   // BACKGROUND_FILL
+  rgb_set(&table[3], 0,   255,   0);   // LAYOVER_ACTIVE
+  rgb_set(&table[4], 255, 255,   0);   // LAYOVER_PASSIVE
+  rgb_set(&table[5], 255, 0,     0);   // SHADOW_ACTIVE
+  rgb_set(&table[6], 255, 0,   255);   // SHADOW_PASSIVE
 
   FILE * fout = FOPEN(filename, "w");
 
@@ -172,12 +177,29 @@ mask_image_export_as_ppm_with_transparency (MaskImage *self,
     MALLOC(self->size_x * self->size_y * sizeof(RGBDATA));
 
   int len = self->size_x * self->size_y - 1;
-  for (i = 0; i < len; ++i)
-  {
-    out[i].red = table[self->data[i]].red | ivals[i];
-    out[i].green = table[self->data[i]].green | ivals[i];
-    out[i].blue = table[self->data[i]].blue | ivals[i];
-  }
+  float f_max = float_image_get_pixel(f, 0, 0);
+  float f_min = f_max;
+
+  for (i = 0; i < (int)f->size_x; ++i)
+    for (j = 0; j < (int)f->size_y; ++j)
+    {
+      float v = float_image_get_pixel(f, i, j);
+      if (f_max < v) f_max = v;
+      if (f_min > v) f_min = v;
+    }
+
+  k = 0;
+  for (j = 0; j < self->size_y; ++j)
+    for (i = 0; i < self->size_x; ++i)
+    {
+      float v = float_image_get_pixel(f, i, j);
+      int n = (int) floor((v - f_min)/(f_max - f_min) * 255);
+      
+      out[k].red = table[self->data[k]].red | n;
+      out[k].green = table[self->data[k]].green | n;
+      out[k].blue = table[self->data[k]].blue | n;
+      ++k;
+    }
 
   fwrite(out, sizeof(RGBDATA), len, fout);
   fclose(fout);

@@ -88,6 +88,11 @@ DateTime *
 date_time_new (int year, int day_of_year, double second_of_day, 
 	       time_scale_t time_scale);
 
+/* Given a year, day of year, and second of day, return a modified
+   julian day.  */
+double
+year_day_second_to_mjd (int year, int day_of_year, double second_of_day);
+
 /* Create a new DateTime object from a modified julian day.  Modified
    julian days begin at midnight November 17, 1858.  */
 DateTime *

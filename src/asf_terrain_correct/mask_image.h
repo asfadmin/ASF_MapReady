@@ -2,6 +2,7 @@
 #define MASK_IMAGE_H
 
 #include <stdio.h>
+#include "float_image.h"
 
 enum MaskValues
 {
@@ -86,7 +87,7 @@ mask_image_export_as_ppm (MaskImage *self, const char *filename);
 int
 mask_image_export_as_ppm_with_transparency (MaskImage *self,
 					    const char *filename,
-					    unsigned char *ivals);
+					    FloatImage *f);
 
 ///////////////////////////////////////////////////////////////////////////////
 //

@@ -117,7 +117,7 @@ get_extents_in_projection_coordinate_space
    double *min_y, double *max_y)
 {
   // We are expecting a ground range SAR image.
-  g_assert (imd->sar->image_type == 'G');
+  // g_assert (imd->sar->image_type == 'G');
 
   // Determine the projection function to use to convert lat/longs to
   // map projection coordinates.
@@ -403,15 +403,17 @@ compute_normal_at(DEMGeomInfo *dgi, size_t jj, size_t ii)
 }
 
 static Vector *
-compute_pixel_offsets_to_satellite(size_t size_x, size_t size_y,
-				   meta_parameters *imd, DEMGeomInfo *dgi,
+compute_pixel_offsets_to_satellite(meta_parameters *imd,
+				   MapProjectedDEM *mpd, DEMGeomInfo *dgi,
 				   ITRSPlatformPath *pp_fixed)
 {
-  size_t center_x = size_x / 2;
-  size_t center_y = size_y / 2;
+  
+  size_t center_x = mpd->size_x / 2;
+  size_t center_y = mpd->size_y / 2;
 
   Vector *c = dem_geom_info_get_cp_target (dgi, center_y, center_x);
-  Vector *c2 = dem_geom_info_get_cp_target (dgi, center_y + 25, center_x + 25);
+  Vector *c2 = dem_geom_info_get_cp_target (dgi, center_y+250, center_x+250);
+  printf("c2: (%g,%g,%g)\n", c2->x, c2->y, c2->z);
   vector_subtract(c2, c);
   double f = vector_magnitude(c2);
 
@@ -424,6 +426,10 @@ compute_pixel_offsets_to_satellite(size_t size_x, size_t size_y,
     calculate_geometry(n, pp_fixed, c, imd, it,
 		       &look_angle, &slope, &incidence_angle);
 
+  printf("d = (%g,%g,%g)\n", d->x, d->y, d->z);
+  printf("center: (%g,%g,%g)\n", c->x, c->y, c->z);
+  printf("center -> c2: (%g,%g,%g)\n", c2->x, c2->y, c2->z);
+
   vector_normalize (d);
   vector_multiply(d, f);
 
@@ -431,22 +437,36 @@ compute_pixel_offsets_to_satellite(size_t size_x, size_t size_y,
   vector_add(p, d);
 
   ITRSPoint * cp_target = ITRS_point_new(p->x, p->y, p->z);
+  printf("p = (%g,%g,%g)\n", p->x, p->y, p->z);
 
   double cp_target_lat, cp_target_lon;
   ITRS_point_get_geodetic_lat_long(cp_target, &cp_target_lat, &cp_target_lon);
 
+  printf("Off-Center -> lat = %g, lon = %g\n", cp_target_lat * R2D,
+	 cp_target_lon * R2D);
+
   double line2, samp2;
-  meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D,
-		    0, &line2, &samp2);
+  map_projected_dem_get_line_samp_from_latitude_longitude(mpd, cp_target_lat,
+	 cp_target_lon, 0, &line2, &samp2);
+//  meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D,
+//		    0, &line2, &samp2);
   ITRS_point_free(cp_target);
 
   cp_target = ITRS_point_new(c->x, c->y, c->z);
   ITRS_point_get_geodetic_lat_long(cp_target, &cp_target_lat, &cp_target_lon);
   ITRS_point_free(cp_target);
 
+  printf("Center -> lat = %g, lon = %g\n", cp_target_lat * R2D,
+	 cp_target_lon * R2D);
+
   double line, samp;
-  meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D,
-		    0, &line, &samp);
+  map_projected_dem_get_line_samp_from_latitude_longitude(mpd, cp_target_lat,
+	 cp_target_lon, 0, &line, &samp);
+//  meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D,
+//		    0, &line, &samp);
+
+  printf("Center: %g %g\n", line, samp);
+  printf("Off-Center: %g %g\n", line2, samp2);
 
   Vector *v = vector_new(samp - samp2, line - line2, 0);
   vector_normalize(v);
@@ -464,6 +484,8 @@ compute_pixel_offsets_to_satellite(size_t size_x, size_t size_y,
 int
 main (int argc, char **argv)
 {
+  char cmd[1024];
+
   // Three arguments are required.
   if ( argc != 4 ) {
     usage ();
@@ -535,17 +557,20 @@ main (int argc, char **argv)
   // purposes.
   float_image_export_as_jpeg (sri->data, "sri.jpg", 2000, NAN);
 
-  char cmd[256];
-  float_image_store(sri->data, "sri.img",
-		    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  sprintf(cmd, "makeddr sri.ddr %i %i float", sri->data->size_x,
-	  sri->data->size_y);
-  system(cmd);
-
   // Read the image metadata.
   meta_parameters *imd = meta_read (input_meta_file->str);
+
   // We are expecting a ground range SAR image.
   g_assert (imd->sar->image_type == 'G');
+  printf("Slant range spacing: %g\n", sri->slant_range_per_pixel);
+
+//  char cmd[256];
+//  sprintf(cmd, "makeddr sri.ddr %i %i float", sri->data->size_x,
+//	  sri->data->size_y);
+//  system(cmd);
+
+//  imd = meta_read (input_meta_file->str);
+
 
   // We will essentially be coloring the DEM with radar backscatter
   // values.  But we won't need to worry about portions of the DEM for
@@ -565,6 +590,7 @@ main (int argc, char **argv)
 			      GSL_MAX (dem->data->size_x, dem->data->size_y),
 			      NAN);
 
+#ifdef DO_DEM_SCALING
   // If the DEM is significanly lower resolution than the SAR image,
   // we will need to generate a lower resolution version of the image
   // by averaging pixels together.  The trouble is sparsely sampling a
@@ -595,6 +621,7 @@ main (int argc, char **argv)
     float_image_export_as_jpeg (sri->data, "sri_reduced_res_view.jpg", 2000,
 				NAN);
   }
+#endif
 
   int svc = imd->state_vectors->vector_count;   // State vector count.
   g_assert (svc >= 3);
@@ -621,6 +648,7 @@ main (int argc, char **argv)
   gsl_matrix *earm = gsl_matrix_alloc (3,3);
   // Temporary vector.
   gsl_vector *vtmp = gsl_vector_alloc (3);
+  double average_offset = 0.0;
   DateTime *observation_date = NULL;
   for ( ii = 0 ; ii < svc ; ii++ ) {
 
@@ -642,6 +670,13 @@ main (int argc, char **argv)
       date_time_add_seconds (observation_date, (observation_times[ii] 
 						- observation_times[ii - 1]));
     }
+
+    double mjd = year_day_second_to_mjd(imd->state_vectors->year,
+					imd->state_vectors->julDay,
+					imd->state_vectors->second);
+    double offset = (observation_date->mjd - mjd) * SECONDS_PER_DAY;
+    printf("SV #%d - offset: %g\n", ii, offset);
+    average_offset += offset;
 
     // Indicies of x, y, and z vector components in gsl_vector type.
     const size_t xi = 0, yi = 1, zi = 2;
@@ -716,6 +751,20 @@ main (int argc, char **argv)
   gsl_vector_free (gei_pos);
   gsl_vector_free (itrs_vel);
   gsl_vector_free (itrs_pos);
+
+  average_offset /= svc;
+  printf("Average Time Offset: %g\n", average_offset);
+
+  // We converted to slant range
+  imd->sar->image_type = 'S';
+  imd->general->x_pixel_size = sri->slant_range_per_pixel;
+
+  // Apply estimated time shift to the metadata for the slant-range image
+//  imd->sar->time_shift += average_offset;
+  meta_write(imd, "sri.meta");
+
+  float_image_store(sri->data, "sri.img",
+		    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
   g_print ("Creating orbital arc model... ");
 
@@ -1033,6 +1082,7 @@ main (int argc, char **argv)
 
   MaskImage *mask = mask_image_new (dem->size_x, dem->size_y);
   FloatImage *angles = float_image_new (dem->size_x, dem->size_y);
+  FloatImage *langles = float_image_new (dem->size_x, dem->size_y);
 
   // We can hopefully get away with ignoring the backscatter
   // contributions of the very edge facets, which saves the pain of
@@ -1050,8 +1100,8 @@ main (int argc, char **argv)
 
   // find a vector from the center of the image, to the point on
   // the ground below the satellite
-  Vector *poff = compute_pixel_offsets_to_satellite(dem->size_x, dem->size_y,
-						    imd, dgi, pp_fixed);
+  Vector *poff = compute_pixel_offsets_to_satellite(imd, dem, dgi, pp_fixed);
+  printf("poff = (%g,%g,%g)\n", poff->x, poff->y, poff->z);
 
   for ( ii = 0 ; (size_t) ii < dem->size_y; ii++ ) {
     long int jj;
@@ -1073,12 +1123,12 @@ main (int argc, char **argv)
       // considering don't all fall in the image, it contributes
       // nothing.  The image edges are a special case of this.
       if ( ii == 0 || xi == 0
-	   || (size_t) ii == dem->size_y - 1 || xi == dem->size_x - 1
+	   || ii >= dgi->size_y - 1 || xi >= (size_t) dgi->size_x - 1
 	   || dem_geom_info_get_slant_range_value (dgi, xi, ii) < 0 
 	   || dem_geom_info_get_slant_range_value (dgi, xi, ii - 1) < 0 
-	   || dem_geom_info_get_slant_range_value (dgi, xi + 1, ii) < 0 
-	   || dem_geom_info_get_slant_range_value (dgi, xi, ii + 1) < 0 
-	   || dem_geom_info_get_slant_range_value (dgi, xi - 1, ii) < 0 ) {
+	   || dem_geom_info_get_slant_range_value (dgi, xi - 1, ii) < 0
+	   || dem_geom_info_get_slant_range_value (dgi, xi + 1, ii) < 0
+	   || dem_geom_info_get_slant_range_value (dgi, xi, ii + 1) < 0) { 
 	mask_image_set_pixel_no_dem_data(mask, xi, ii);
 	continue;
       }
@@ -1104,7 +1154,8 @@ main (int argc, char **argv)
 	calculate_geometry(n, pp_fixed, c, imd, it,
 			   &look_angle, &slope, &incidence_angle);
 
-      float_image_set_pixel(angles, xi, ii, slope);
+      float_image_set_pixel(angles, xi, ii, slope * R2D);
+      float_image_set_pixel(langles, xi, ii, look_angle * R2D);
 
       if (look_angle - slope > max_lams)
 	max_lams = look_angle - slope;
@@ -1117,8 +1168,8 @@ main (int argc, char **argv)
 	int iii, jjj, kkk = 0;
 	while (1) {
 	  ++kkk;
-	  iii = (int) round(ii - kkk * poff->y);
-	  jjj = (int) round(xi - kkk * poff->x);
+	  iii = (int) round(ii + kkk * poff->y);
+	  jjj = (int) round(xi + kkk * poff->x);
 
 	  if (iii < 0 || iii > (int) dem->size_y - 1) break;
 	  if (jjj < 0 || jjj > (int) dem->size_x - 1) break;
@@ -1126,13 +1177,20 @@ main (int argc, char **argv)
 	  double sr_val = dem_geom_info_get_slant_range_value(dgi, jjj, iii);
 
 	  // if we reach a dem hole, quit now
-	  if (sr_val < 0)
+	  if ((int)floor(sr_val) <= 0)
 	    break;
 	  if (kkk > 200)
 	    break;
 
-	  Vector *c2 = dem_geom_info_get_cp_target(dgi, jjj, iii);      
 	  Vector *n2 = compute_normal_at(dgi, jjj, iii);      
+
+	  if (vector_magnitude(n2) == 0)
+	  {
+	    vector_free(n2);
+	    break;
+	  }
+
+	  Vector *c2 = dem_geom_info_get_cp_target(dgi, jjj, iii);      
 
 	  // Calculate!
 	  double look_angle2, slope2, incidence_angle2;
@@ -1158,8 +1216,8 @@ main (int argc, char **argv)
 	int iii, jjj, kkk = 0;
 	while (1) {
 	  ++kkk;
-	  iii = (int) round(ii + kkk * poff->y);
-	  jjj = (int) round(xi + kkk * poff->x);
+	  iii = (int) round(ii - kkk * poff->y);
+	  jjj = (int) round(xi - kkk * poff->x);
 
 	  if (iii < 0 || iii > (int) dem->size_y - 1) break;
 	  if (jjj < 0 || jjj > (int) dem->size_x - 1) break;
@@ -1208,7 +1266,13 @@ main (int argc, char **argv)
   g_print ("Layover pixels: %d\n", nlayover);
   g_print ("Shadow pixels: %d\n", nshadow);
 
-/*  Skip this for now... 
+  sprintf(cmd, "asf_proj2slant_range -least-square %s %s.img %s %s\n",
+	  "sri.img", reference_dem->str, "slant_dem.img", "sim_amp.img");
+  printf("Executing: %s\n", cmd);
+  system(cmd);
+
+#ifdef DO_BACKGROUND_FILL
+  // Skip this for now... 
   // Change no_dem_data values to background_fill
   int bg_fill_count = 0;
 
@@ -1248,7 +1312,7 @@ main (int argc, char **argv)
   }
   g_print ("Converted %d pixels from no_dem_data to background fill.\n",
 	   bg_fill_count);
-*/
+#endif
 
   // Take a look at the simulated image for (FIXME) debug purposes.
   float_image_export_as_jpeg (sim_img->data, "sim_img.jpg",
@@ -1266,7 +1330,10 @@ main (int argc, char **argv)
 	  angles->size_x);
   system(cmd);
 
-  mask_image_export_as_ppm(mask, "mask.ppm");
+  float_image_store(langles, "langles.img", FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  sprintf(cmd, "makeddr langles.ddr %i %i float", langles->size_y,
+	  langles->size_x);
+  system(cmd);
 
   g_print ("Painting %ld DEM pixel rows with SAR image pixel values...\n",
 	   (long int) dem->size_y);
@@ -1345,6 +1412,10 @@ main (int argc, char **argv)
     }
   }
   g_print ("done.\n");
+
+  mask_image_export_as_ppm_with_transparency(mask,"mask_overlay.ppm", pd);
+  mask_image_export_as_ppm_with_transparency(mask,"mask_overlay2.ppm", angles);
+  mask_image_export_as_ppm(mask, "mask.ppm");
 
   g_print ("Exporting painted DEM as a JPEG image... ");
   float_image_export_as_jpeg (pd, output_jpeg_file->str, 

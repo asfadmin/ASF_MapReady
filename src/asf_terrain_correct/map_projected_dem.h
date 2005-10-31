@@ -74,6 +74,12 @@ map_projected_dem_get_latitudes_longitudes_heights
   (MapProjectedDEM *self, ssize_t row, double *latitudes, double *longitudes,
    double *heights);
 
+// Get the line & sample values for the given latitude, longitude and height.
+void
+map_projected_dem_get_line_samp_from_latitude_longitude
+(MapProjectedDEM *self, double latitude, double longitude, double height,
+ double *line, double *samp);
+
 // Free self.
 void
 map_projected_dem_free (MapProjectedDEM *self);

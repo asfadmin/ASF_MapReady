@@ -53,7 +53,7 @@ year_day_of_year_to_year_month_day (int year, int day_of_year, int *month,
 
 /* Given a year, day of year, and second of day, return a modified
    julian day.  */
-static double
+double
 year_day_second_to_mjd (int year, int day_of_year, double second_of_day)
 {
   /* Convert year and day of year to year, month, and day of month.  */
@@ -169,8 +169,8 @@ lookup_time_offset (const char *lookup_table_file,
      dates a different bulletin format may be used which might make
      this difficult.  If the table is expanded these assertions will
      have to change.  */
-  assert (mjd > 50023);
-  assert (mjd < 53396);
+//  assert (mjd > 50023);
+//  assert (mjd < 53396);
 
   /* Properties of the lookup table.  */
   static const int table_columns = 4;
@@ -255,6 +255,14 @@ lookup_time_offset (const char *lookup_table_file,
       min_index = cli;
     }
     cli = (max_index - min_index) / 2 + min_index;
+  }
+
+  // outside the range of the table
+  if (cli == 0 || cli == table_lines - 1)
+  {
+    printf("Warning: "
+	   "Do not have time offsets available for this date/time.\n");
+    return 0.0;
   }
 
   /* Index of neighbor we will interpolate with.  */

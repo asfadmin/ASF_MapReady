@@ -186,6 +186,32 @@ map_projected_dem_get_latitudes_longitudes_heights
 }
 
 void
+map_projected_dem_get_line_samp_from_latitude_longitude
+(MapProjectedDEM *self, double latitude, double longitude, double height,
+ double *line, double *samp)
+{
+  // Routine to use to inverse project an array of points.
+  int (*project) (project_parameters_t *pps, double lat, double lon,
+		  double *x, double *y);
+  project = NULL;   // Compiler reassurance.
+  switch ( self->projection_type ) {
+  case UNIVERSAL_TRANSVERSE_MERCATOR:
+    project = project_utm;
+    break;
+  default:
+    g_assert_not_reached ();
+    break;
+  }
+
+  double x, y;
+  project_set_avg_height(height);
+  project (&(self->projection_parameters), latitude, longitude, &x, &y);
+
+  *samp = (x - self->upper_left_x) / self->projection_coordinates_per_x_pixel;
+  *line = (self->upper_left_y - y) / self->projection_coordinates_per_y_pixel;
+}
+
+void
 map_projected_dem_free (MapProjectedDEM *self)
 {
   float_image_free (self->data);

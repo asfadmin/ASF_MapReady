@@ -297,6 +297,7 @@ slant_range_image_new_from_ground_range_image (char *metadata_file,
   self->time_per_pixel = imd->sar->azimuth_time_per_pixel;
   self->upper_left_pixel_range = sr_fs;
   self->slant_range_per_pixel = sr_spacing;
+  printf("sr_spacing: %g\n", sr_spacing);
 
   meta_free (imd);
 

@@ -7,4 +7,6 @@
 #file ./test_orbital_state_vector
 #file ./test_model
 file ../../bin/asf_terrain_correct
-set args  nga_srtm3_utmz10_90m E205421306G1S005 p
+#set args  nga_srtm3_utmz10_90m E205421306G1S005 p
+set args brooks_utmz06 E122267173G1S003 p
+

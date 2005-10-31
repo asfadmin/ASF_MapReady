@@ -74,7 +74,7 @@ endif
 # make it impossible to pass arguments of type float to functions that
 # take type float (still get a complaint about argument being passed
 # as float due to prototype rather than double.)
-CFLAGS += -Wall -W -g -O2 -Wmissing-prototypes -Wstrict-prototypes \
+CFLAGS += -Wall -W -g -Wmissing-prototypes -Wstrict-prototypes \
           -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings \
           -Wnested-externs -fno-common
 
