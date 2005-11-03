@@ -9,7 +9,8 @@
 */
 #include "asf.h"
 #include "las.h"
-#include "ddr.h"
+#include "asf_meta.h"
+#include "asf_endian.h"
 
 int dtype2dsize(int dtype,char **description)
 {
@@ -45,38 +46,42 @@ converting if necessary. Lines and bands are indexed from zero.*/
 void getFloatLine_mb(FILE *f,const struct DDR *ddr,int yLine,int bandNo,float *dest)
 {
 	int x,maxX=ddr->ns;
-
 	int dsize=dtype2dsize(ddr->dtype,NULL);	
-	int doConversion=(0!=strcmp(ddr->system,c_getsys())),ddrSys=0;
-	if (doConversion)
-		c_sysset(ddr->system,&ddrSys);
+	void *inputBuf = MALLOC(dsize*maxX);
+
 	FSEEK64(f,seekLoc(ddr,yLine,bandNo),0);
-	if (ddr->dtype==DTYPE_FLOAT) 
-	{
-		FREAD(dest,dsize,maxX,f);
-		if (doConversion) /*Data needs to have its format converted*/
-			c_pxsys(ddrSys,(unsigned char *)dest,ddr->dtype,maxX);
+	FREAD(inputBuf,dsize,maxX,f);		
+
+	if (ddr->dtype==DTYPE_FLOAT) {
+		for (x=0;x<maxX;x++) {
+			ieee_big32(((float*)inputBuf)[x]);
+			dest[x]=((float*)inputBuf)[x];
+		}
 	}
-	else {
-		float *inputBuf=(float *)MALLOC(dsize*maxX);
-		FREAD(inputBuf,dsize,maxX,f);		
-		if (doConversion) /*Data needs to have its format converted*/
-			c_pxsys(ddrSys,(unsigned char *)inputBuf,ddr->dtype,maxX);
-		
-		if (ddr->dtype==DTYPE_BYTE)
-			for (x=0;x<maxX;x++)
-				dest[x]=((unsigned char *)inputBuf)[x];
-		else if (ddr->dtype==DTYPE_SHORT)
-			for (x=0;x<maxX;x++)
-				dest[x]=((short *)inputBuf)[x];
-		else if (ddr->dtype==DTYPE_LONG)
-			for (x=0;x<maxX;x++)
-				dest[x]=((int *)inputBuf)[x];
-		else if (ddr->dtype==DTYPE_DOUBLE)
-			for (x=0;x<maxX;x++)
-				dest[x]=((double *)inputBuf)[x];
-		FREE(inputBuf);
+	else if (ddr->dtype==DTYPE_BYTE) {
+		for (x=0;x<maxX;x++) {
+			dest[x] = ((unsigned char *)inputBuf)[x];
+		}
 	}
+	else if (ddr->dtype==DTYPE_SHORT) {
+		for (x=0;x<maxX;x++) {
+			big16(((short int *)inputBuf)[x]);
+			dest[x]=((short int *)inputBuf)[x];
+		}
+	}
+	else if (ddr->dtype==DTYPE_LONG) {
+		for (x=0;x<maxX;x++) {
+			big32(((int *)inputBuf)[x]);
+			dest[x]=((int *)inputBuf)[x];
+		}
+	}
+	else if (ddr->dtype==DTYPE_DOUBLE) {
+		for (x=0;x<maxX;x++) {
+			ieee_big64(((double *)inputBuf)[x]);
+			dest[x]=((double *)inputBuf)[x];
+		}
+	}
+	FREE(inputBuf);
 }
 void getFloatLine(FILE *f,const struct DDR *ddr,int yLine,float *dest)
 {/*As above, but assume band #0*/
@@ -89,29 +94,41 @@ void putFloatLine_mb(FILE *f,const struct DDR *ddr,int yLine,int bandNo,const fl
 {
 	int x,maxX=ddr->ns;
 	int dsize=dtype2dsize(ddr->dtype,NULL);
+	void *outputBuf = MALLOC(dsize*maxX);
 	
 	FSEEK64(f,seekLoc(ddr,yLine,bandNo),0);
-	if (ddr->dtype==DTYPE_FLOAT)
-	/*No conversion necessary for floats.*/
-		FWRITE(source,dsize,maxX,f);
-	else {
-		void *outputBuf = MALLOC(dsize*maxX);
-		/*Writes are always in native format*/
-		if (ddr->dtype==DTYPE_BYTE)
-			for (x=0;x<maxX;x++)
-				((unsigned char *)outputBuf)[x]=source[x];
-		else if (ddr->dtype==DTYPE_SHORT)
-			for (x=0;x<maxX;x++)
-				((short *)outputBuf)[x]=source[x];
-		else if (ddr->dtype==DTYPE_LONG)
-			for (x=0;x<maxX;x++)
-				((int *)outputBuf)[x]=source[x];
-		else if (ddr->dtype==DTYPE_DOUBLE)
-			for (x=0;x<maxX;x++)
-				((double *)outputBuf)[x]=source[x];
-		FWRITE(outputBuf,dsize,maxX,f);
-		FREE(outputBuf);
+
+	if (ddr->dtype==DTYPE_FLOAT) {
+		for (x=0;x<maxX;x++) {
+			((float *)outputBuf)[x] = source[x];
+			ieee_big32( ((float *)outputBuf)[x] );
+		}
 	}
+	else if (ddr->dtype==DTYPE_BYTE) {
+		for (x=0;x<maxX;x++) {
+			((unsigned char *)outputBuf)[x] = source[x];
+		}
+	}
+	else if (ddr->dtype==DTYPE_SHORT) {
+		for (x=0;x<maxX;x++) {
+			((short *)outputBuf)[x] = source[x];
+			big16( ((short *)outputBuf)[x] );
+		}
+	}
+	else if (ddr->dtype==DTYPE_LONG) {
+		for (x=0;x<maxX;x++) {
+			((int *)outputBuf)[x]=source[x];
+			big32( ((int *)outputBuf)[x] );
+		}
+	}
+	else if (ddr->dtype==DTYPE_DOUBLE) {
+		for (x=0;x<maxX;x++) {
+			((double *)outputBuf)[x] = source[x];
+			ieee_big32( ((double*)outputBuf)[x] );
+		}
+	}
+	FWRITE(outputBuf,dsize,maxX,f);
+	FREE(outputBuf);
 }
 void putFloatLine(FILE *f,const struct DDR *ddr,int yLine,const float *source)
 {/*As above, but assume band #0*/
