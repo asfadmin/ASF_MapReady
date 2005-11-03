@@ -111,6 +111,7 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile)
   if (descFile) {
     descF=FOPEN(descFile,"w");
     fprintf(descF,"%f\t%f\t%f\n",bestLocX,bestLocY,100*(1-doubt));
+    FCLOSE(descF);
   }
 }
 
