@@ -143,6 +143,7 @@ const char DIR_SEPARATOR = '/';
 
 GladeXML *glade_xml;
 
+#ifdef ENABLE_FIND_IN_SHARE
 static char *
 find_in_share(const char * filename)
 {
@@ -151,6 +152,7 @@ find_in_share(const char * filename)
     sprintf(ret, "%s/%s", get_asf_share_dir(), filename);
     return ret;
 }
+#endif
 
 gchar *
 find_in_path(gchar * file)
@@ -427,10 +429,14 @@ static void execute()
     gtk_entry_get_text(GTK_ENTRY(input_file_entry));
 
   gchar cmd[1024];
-    
+   
+#ifdef ENABLE_FIND_IN_SHARE 
   sprintf(cmd, "%s/metadata -f umlarqphsfib %s", 
 	  get_asf_bin_dir(), input_file);
-  
+#else
+  sprintf(cmd, "metadata -f umlarqphsfib %s", input_file);
+#endif
+ 
   int i;
   for (i = 0; i < strlen(cmd); ++i)
     if (cmd[i] == '\\' && cmd[i+1] != ' ') cmd[i] = '/';
@@ -534,7 +540,7 @@ main(int argc, char **argv)
 
     gtk_init(&argc, &argv);
 
-    glade_xml_file = (gchar *) find_in_share("mdv.glade");
+    glade_xml_file = (gchar *) find_in_path("mdv.glade");
     printf("%s\n", glade_xml_file);
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
