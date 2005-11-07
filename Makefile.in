@@ -25,6 +25,7 @@ MODULES = \
 	src/asf_geocode \
 	src/asf_terrain_correct \
 	src/asf_convert \
+        src/metadata \
 	@ASF_GUI@
 # src_x/sarview
 
