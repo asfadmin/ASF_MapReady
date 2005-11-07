@@ -36,6 +36,7 @@
 #include "mask_image.h"
 
 #define KH_DEBUG2
+#define KH_DEBUG3
 
 // Print user information to error output location and exit with a
 // non-zero exit code.
@@ -279,6 +280,7 @@ calculate_geometry(Vector *n, ITRSPlatformPath *pp_fixed, Vector *c,
 		   double *look_angle, double *slope, double *incidence_angle)
 {
 #ifdef KH_DEBUG
+  printf("Debug version of calculate_geometry -- deprecated.\n");
   ITRSPoint * cp_target = ITRS_point_new(c->x, c->y, c->z);
   double cp_target_lat, cp_target_lon;
   ITRS_point_get_geodetic_lat_long(cp_target, &cp_target_lat,
@@ -308,7 +310,7 @@ calculate_geometry(Vector *n, ITRSPlatformPath *pp_fixed, Vector *c,
 
   ITRSPoint *poca0 =
     ITRS_point_new_from_geodetic_lat_long_height(poca_lat, poca_lon, 0);
-  
+
   Vector *poca_to_poca0 = vector_new (poca0->x, poca0->y, poca0->z);
   vector_subtract (poca_to_poca0, &poca);
 
@@ -340,6 +342,7 @@ calculate_geometry(Vector *n, ITRSPlatformPath *pp_fixed, Vector *c,
   *incidence_angle = vector_angle (n, target_to_poca);
 
   vector_normalize(target_to_poca0);
+  vector_free(target_to_poca);
   return target_to_poca0;
 }
 
@@ -423,7 +426,6 @@ compute_pixel_offsets_to_satellite(meta_parameters *imd,
 
   Vector *c = dem_geom_info_get_cp_target (dgi, center_y, center_x);
   Vector *c2 = dem_geom_info_get_cp_target (dgi, center_y+250, center_x+250);
-  printf("c2: (%g,%g,%g)\n", c2->x, c2->y, c2->z);
   vector_subtract(c2, c);
   double f = vector_magnitude(c2);
 
@@ -436,10 +438,6 @@ compute_pixel_offsets_to_satellite(meta_parameters *imd,
     calculate_geometry(n, pp_fixed, c, imd, it,
 		       &look_angle, &slope, &incidence_angle);
 
-  printf("d = (%g,%g,%g)\n", d->x, d->y, d->z);
-  printf("center: (%g,%g,%g)\n", c->x, c->y, c->z);
-  printf("center -> c2: (%g,%g,%g)\n", c2->x, c2->y, c2->z);
-
   vector_normalize (d);
   vector_multiply(d, f);
 
@@ -447,13 +445,9 @@ compute_pixel_offsets_to_satellite(meta_parameters *imd,
   vector_add(p, d);
 
   ITRSPoint * cp_target = ITRS_point_new(p->x, p->y, p->z);
-  printf("p = (%g,%g,%g)\n", p->x, p->y, p->z);
 
   double cp_target_lat, cp_target_lon;
   ITRS_point_get_geodetic_lat_long(cp_target, &cp_target_lat, &cp_target_lon);
-
-  printf("Off-Center -> lat = %g, lon = %g\n", cp_target_lat * R2D,
-	 cp_target_lon * R2D);
 
   double line2, samp2;
   map_projected_dem_get_line_samp_from_latitude_longitude(mpd, cp_target_lat,
@@ -466,17 +460,11 @@ compute_pixel_offsets_to_satellite(meta_parameters *imd,
   ITRS_point_get_geodetic_lat_long(cp_target, &cp_target_lat, &cp_target_lon);
   ITRS_point_free(cp_target);
 
-  printf("Center -> lat = %g, lon = %g\n", cp_target_lat * R2D,
-	 cp_target_lon * R2D);
-
   double line, samp;
   map_projected_dem_get_line_samp_from_latitude_longitude(mpd, cp_target_lat,
 	 cp_target_lon, 0, &line, &samp);
 //  meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D,
 //		    0, &line, &samp);
-
-  printf("Center: %g %g\n", line, samp);
-  printf("Off-Center: %g %g\n", line2, samp2);
 
   Vector *v = vector_new(samp - samp2, line - line2, 0);
   vector_normalize(v);
@@ -490,12 +478,28 @@ compute_pixel_offsets_to_satellite(meta_parameters *imd,
   return v;
 }
 
+static void
+float_image_quick_export_4sarview(FloatImage *f, const char *basename)
+{
+  char tmp[1024];
+
+  sprintf(tmp, "%s.img", basename);
+  float_image_store(f, tmp, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+
+  meta_parameters *mp = raw_init();
+  mp->general->line_count = f->size_y;
+  mp->general->sample_count = f->size_x;
+  mp->general->data_type = REAL32;
+
+  sprintf(tmp, "%s.meta", basename);
+  meta_write(mp, tmp);
+  meta_free(mp);
+}
+
 // Main program.
 int
 main (int argc, char **argv)
 {
-  char cmd[1024];
-
   // Three arguments are required.
   if ( argc != 4 ) {
     usage ();
@@ -685,7 +689,6 @@ main (int argc, char **argv)
 					imd->state_vectors->julDay,
 					imd->state_vectors->second);
     double offset = (observation_date->mjd - mjd) * SECONDS_PER_DAY;
-    printf("SV #%d - offset: %g\n", ii, offset);
     average_offset += offset;
 
     // Indicies of x, y, and z vector components in gsl_vector type.
@@ -754,6 +757,7 @@ main (int argc, char **argv)
 						 gsl_vector_get (gei_vel, 1),
 						 gsl_vector_get (gei_vel, 2));
   }
+
   date_time_free (observation_date);
   gsl_vector_free (vtmp);
   gsl_matrix_free (earm);
@@ -862,75 +866,63 @@ main (int argc, char **argv)
 
   // We now go through the DEM and sort out a bunch of useful
   // information from the geometrical relationships of things.
-  DEMGeomInfo *dgi;
-
-  // If possible, we just restore a debugging version that we have
-  // around.
-  if ( g_file_test ("bk_debug_dgi_freeze", G_FILE_TEST_EXISTS) ) {
-    FILE *tmp = fopen ("bk_debug_dgi_freeze", "r");
-    g_assert (tmp != NULL);
-    dgi = dem_geom_info_thaw (tmp);
-    int return_code = fclose (tmp);
-    g_assert (return_code == 0);
-
-
-  } else {
-    // Otherwise, we have to actually calculate a new instance.
-    dgi = dem_geom_info_new(dem->size_x, dem->size_y);
+  DEMGeomInfo *dgi = dem_geom_info_new(dem->size_x, dem->size_y);
 
   g_print ("Gathering DEM geometry information: \n");
   ProgressMeter *progress_meter 
     = progress_meter_new_with_callback (g_print, dem->size_y);
-
+  
   // For each DEM row...
   for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
-
+    
     // Get the latitude and longitude of each pixel in this row.
     g_assert (ii <= SSIZE_MAX);
     map_projected_dem_get_latitudes_longitudes_heights (dem, ii, lats, lons, 
 							heights);
-
+    
     // The time of the point of closest approach (minimum discovered
     // by solver) for a DEM pixel.  We have this outside the loop so
     // we can use it as the starting point for solution to
     // neighboring pixels and save some iterations.
     double min = -DBL_MAX;
-
+    
     size_t jj;
     for ( jj = 0 ; jj < dem->size_x ; jj++ ) {
-      double cp_lat = lats[jj];   // Current pixel latitude.
-      double cp_lon = lons[jj];   // Current pixel longitude.
-      // Current pixel height.
-      double cp_height = heights[jj];
+      double cp_lat = lats[jj];        // Current pixel latitude.
+      double cp_lon = lons[jj];        // Current pixel longitude.
+      double cp_height = heights[jj];  // Current pixel height.
+
       // Current target point in earth fixed coordinates.
       ITRSPoint *ctp
 	= ITRS_point_new_from_geodetic_lat_long_height (cp_lat, cp_lon, 
 							cp_height);
-
-#ifdef KH_DEBUG
+      
+#ifdef KH_DEBUG3
       {
+	// double-check the values
 	double test_lat, test_lon;
 	ITRS_point_get_geodetic_lat_long(ctp, &test_lat, &test_lon);
-	if (fabs(cp_lat - test_lat) > .0001 || fabs(cp_lon - test_lon) > .0001)
+	if (fabs(cp_lat - test_lat) > .0001 ||
+	    fabs(cp_lon - test_lon) > .0001)
 	  printf("Gah! %d %d %g %g %g %g\n", ii, jj, test_lat, cp_lat,
 		 test_lon, cp_lon);
       }
 #endif
-
+      
       // Copy earth fixed coordinate values to the current pixel
       // target vector.
       cp_target.x = ctp->x;
       cp_target.y = ctp->y;
       cp_target.z = ctp->z;
-
+      
       ITRS_point_free (ctp);
-
+      
       // Current iteration, maximum number of iterations to try.
       int iteration = 0, max_iterations = 200;  
-
+      
       double sor;   // Start of time range in which to look for minimum.
       double eor;   // End of time range in which to look for minimum.
-
+      
       // If this is the first pixel in a row, we are conservative and
       // search the whole orbital arc segment for the point of closest
       // approach,
@@ -954,11 +946,11 @@ main (int argc, char **argv)
 	  eor = observation_times[svc - 1] + gt;
 	}
       }
-
+      
       gsl_set_error_handler_off ();
-
-      int return_code = gsl_min_fminimizer_set (minimizer, &distance_function, 
-						min, sor, eor);
+	
+      int return_code = gsl_min_fminimizer_set(minimizer, &distance_function,
+					       min, sor, eor);
       // If there is no minimum in this range, it means our orbital
       // arc model doesn't cover this part of the DEM, so just set the
       // painted dem pixel to zero, set a sentinal value in the dem
@@ -968,29 +960,29 @@ main (int argc, char **argv)
 	float_image_set_pixel (dgi->slant_range_value, jj, ii, -1);
 	break;
       }
-	
+      
       gsl_set_error_handler (NULL);
-
+      
       do {
 	iteration++;
 	status = gsl_min_fminimizer_iterate (minimizer);
-    
+	
 	min = gsl_min_fminimizer_x_minimum (minimizer);
 	sor = gsl_min_fminimizer_x_lower (minimizer);
 	eor = gsl_min_fminimizer_x_upper (minimizer);
-    
+	
 	status = gsl_min_test_interval (sor, eor, tolerance, 0.0);
       }
       while (status == GSL_CONTINUE && iteration < max_iterations);
-
+      
       iteration_count++;
       total_iterations += iteration;
       if (iteration < min_iters) min_iters = iteration;
       if (iteration > max_iters) max_iters = iteration;
-
+      
       // How close did the convergence come to perfection?
       double error = sor - eor;
-
+      
       // We want to keep some statistics on how many pixels fail to
       // converge to within our desired tolerance.
       if ( status != GSL_SUCCESS ) {
@@ -1001,25 +993,19 @@ main (int argc, char **argv)
 	  extra_bad_pixel_count++;
 	}
       }
-
-      // Update our notion of the mean tolerance.
-      if ( G_UNLIKELY (ii == 0 && jj == 0) ) {
-	mean_tolerance = error;
-      }
-      else {
-	// The recurence relation we use to compute the running mean
-	// needs the current 1-based pixel number.
-	unsigned long int pixel_number = ii * dem->size_x + jj + 1;
-	mean_tolerance += (error - mean_tolerance) / pixel_number;
-      }
-    
+      
+      // The recurence relation we use to compute the running mean
+      // needs the current 1-based pixel number.
+      unsigned long int pixel_number = ii * dem->size_x + jj + 1;
+      mean_tolerance += (error - mean_tolerance) / pixel_number;
+      
       // The resulting minimum is time in the arc model of the point
       // of closest approach.  FIXME: how to verify input images are
       // zero-doppler processed?  Possible with meta->sar->deskewed.
       // Also probably need to check meta->sar->look_count and make
       // sure it's 1.
       double solved_time = min;
-
+      
       // The slant range can be found from the distance between the
       // target and the platform at the point of closest approach.
       Vector poca; 
@@ -1028,13 +1014,13 @@ main (int argc, char **argv)
       vector_subtract (poca_to_target, &cp_target);
       double solved_slant_range = vector_magnitude (poca_to_target);
       vector_free (poca_to_target);
-
+      
       // If the DEM pixel falls in the slant range image, set the
       // discovered geometry information.
       if ( slant_range_image_contains (sri, solved_slant_range, 
 				       solved_time, 1e-3) ) {
 	dem_geom_info_set (dgi, jj, ii, &cp_target, solved_time, 
-			   solved_slant_range, cp_height, &poca);
+			   solved_slant_range);
       }
       else {
 	// otherwise, since we aren't absolutely sure we have image
@@ -1043,7 +1029,7 @@ main (int argc, char **argv)
 	float_image_set_pixel (dgi->slant_range_value, jj, ii, -1);
       }
     }
-
+      
     // Print progress update every so many lines.
     const int lines_per_progress_update = 100;
     if ( (ii + 1) % lines_per_progress_update == 0 
@@ -1051,30 +1037,21 @@ main (int argc, char **argv)
       progress_meter_advance (progress_meter, 100);
     }
   }
-
-  progress_meter_free (progress_meter);
-
-  printf("Iteration statistics:\n Avg: %g\n Max: %d\n Min: %d\n",
-	 (double) total_iterations / iteration_count,
-	 max_iters, min_iters);
-
-  FILE *tmp = fopen ("bk_debug_dgi_freeze", "w");
-  g_assert (tmp != NULL);
-  dem_geom_info_freeze (dgi, tmp);
-  int return_code = fclose (tmp);
-  g_assert (return_code == 0);
   
-  // Test to see if the thaw 'ed version is is the same as the one we
-  // just froze.
-  tmp = fopen ("bk_debug_dgi_freeze", "r");
-  g_assert (tmp != NULL);
-  DEMGeomInfo *dgi_thaw_test = dem_geom_info_thaw (tmp);
-  return_code = fclose (tmp);
-  g_assert (return_code == 0);
+  progress_meter_free (progress_meter);
+  gsl_min_fminimizer_free (minimizer);
+  minimizer = NULL;
 
-  g_assert (dem_geom_info_equals (dgi, dgi_thaw_test, 0.0000001));
+  g_free (lats);
+  g_free (lons);
+  g_free (heights);
 
-  } // End of dgi construction by calculation.
+  lats = NULL;
+  lons = NULL;
+  heights = NULL;
+
+  size_t dem_size_x = dem->size_x;
+  size_t dem_size_y = dem->size_y;
 
   // Because the geolocation of images is often quite bad, we will
   // march throught the DEM and create a simulated SAR image, then
@@ -1090,10 +1067,6 @@ main (int argc, char **argv)
 				   sri->data->size_x,
 				   sri->data->size_y);
 
-  MaskImage *mask = mask_image_new (dem->size_x, dem->size_y);
-  FloatImage *angles = float_image_new (dem->size_x, dem->size_y);
-  FloatImage *langles = float_image_new (dem->size_x, dem->size_y);
-
   // We can hopefully get away with ignoring the backscatter
   // contributions of the very edge facets, which saves the pain of
   // special handling for them.
@@ -1106,28 +1079,26 @@ main (int argc, char **argv)
   int neg_sim_pixels = 0;
   double max_lams = -10;
   int nlayover = 0, nshadow = 0;
-  g_print ("Size: %d,%d\n", dem->size_y, dem->size_x);
 
   // find a vector from the center of the image, to the point on
   // the ground below the satellite
   Vector *poff = compute_pixel_offsets_to_satellite(imd, dem, dgi, pp_fixed);
-  printf("poff = (%g,%g,%g)\n", poff->x, poff->y, poff->z);
 
-  for ( ii = 0 ; (size_t) ii < dem->size_y; ii++ ) {
+  // Can free the dem now
+  map_projected_dem_free (dem);
+  dem = NULL;
+
+  MaskImage *mask = mask_image_new (dem_size_x, dem_size_y);
+  FloatImage *angles = float_image_new (dem_size_x, dem_size_y);
+  FloatImage *langles = float_image_new (dem_size_x, dem_size_y);
+
+  for ( ii = 0 ; (size_t) ii < dem_size_y; ii++ ) {
     long int jj;
     // For every other DEM pixel except the first and last two...
-    //    for ( jj = 1 ; (size_t) jj < dem->size_x - 2; jj += 2 ) {
-    for ( jj = 0 ; (size_t) jj < dem->size_x; jj++ ) {
+    //    for ( jj = 1 ; (size_t) jj < dem_size_x - 2; jj += 2 ) {
+    for ( jj = 0 ; (size_t) jj < dem_size_x; jj++ ) {
 
       size_t xi = jj;
-
-      // If we are in shadow this DEM pixel contributes nothing to the
-      // backscatter in the simulated image.
-      // For the moment we just assume this doesn't happen.
-      //if ( lsm_image_mask_value_is_shadow (lsm, ii, xi) ) {
-      //continue;
-      //}
-      
 
       // If this DEM pixel and all its neighbors that we will be
       // considering don't all fall in the image, it contributes
@@ -1181,8 +1152,8 @@ main (int argc, char **argv)
 	  iii = (int) round(ii + kkk * poff->y);
 	  jjj = (int) round(xi + kkk * poff->x);
 
-	  if (iii < 0 || iii > (int) dem->size_y - 1) break;
-	  if (jjj < 0 || jjj > (int) dem->size_x - 1) break;
+	  if (iii < 0 || iii > (int) dem_size_y - 1) break;
+	  if (jjj < 0 || jjj > (int) dem_size_x - 1) break;
 
 	  double sr_val = dem_geom_info_get_slant_range_value(dgi, jjj, iii);
 
@@ -1229,8 +1200,8 @@ main (int argc, char **argv)
 	  iii = (int) round(ii - kkk * poff->y);
 	  jjj = (int) round(xi - kkk * poff->x);
 
-	  if (iii < 0 || iii > (int) dem->size_y - 1) break;
-	  if (jjj < 0 || jjj > (int) dem->size_x - 1) break;
+	  if (iii < 0 || iii > (int) dem_size_y - 1) break;
+	  if (jjj < 0 || jjj > (int) dem_size_x - 1) break;
 
 	  double sr_val = dem_geom_info_get_slant_range_value(dgi, jjj, iii);
 
@@ -1255,31 +1226,35 @@ main (int argc, char **argv)
       
       // FIXME: for the moment we exclude backslopes this way, since
       // the shadow mask isn't finished yet.
-      if ( !(incidence_angle > M_PI / 2 ) ) {
-	if ( slant_range_image_contains (sim_img, sr, it, 1e-3) ) {
-	  if ( cos (incidence_angle) < 0 ) {
-	    neg_sim_pixels++;
-	  }
-	  slant_range_image_add_energy (sim_img, sr, it, 
-					pow (cos (incidence_angle), 2.0));
+//      if ( !(incidence_angle > M_PI / 2 ) ) {
+      if ( slant_range_image_contains (sim_img, sr, it, 1e-3) ) {
+	if ( cos (incidence_angle) < 0 ) {
+	  neg_sim_pixels++;
 	}
+	slant_range_image_add_energy (sim_img, sr, it, 
+				      pow (cos (incidence_angle), 2.0));
       }
-  
+//      }
+
       vector_free (c);
       vector_free (n);
     }
   }
   
   g_print ("done.\n");
-  g_print ("Negative simulator energy additions: %d\n", neg_sim_pixels);
 
+  vector_free (poff);
+
+  g_print ("Negative simulator energy additions: %d\n", neg_sim_pixels);
   g_print ("Layover pixels: %d\n", nlayover);
   g_print ("Shadow pixels: %d\n", nshadow);
 
+#ifdef DO_PROJ2SLANT
   sprintf(cmd, "asf_proj2slant_range -least-square %s %s.img %s %s\n",
 	  "sri.img", reference_dem->str, "slant_dem.img", "sim_amp.img");
   printf("Executing: %s\n", cmd);
   system(cmd);
+#endif
 
 #ifdef DO_BACKGROUND_FILL
   // Skip this for now... 
@@ -1287,31 +1262,31 @@ main (int argc, char **argv)
   int bg_fill_count = 0;
 
   mask_image_export_as_ppm(mask, "mask1.ppm");
-  for ( ii = 0 ; (size_t) ii < dem->size_y; ii++ ) {
+  for ( ii = 0 ; (size_t) ii < dem_size_y; ii++ ) {
     size_t jj = 0;
     while (mask_image_get_pixel(mask, jj, ii) == MASK_NO_DEM_DATA &&
-           jj < dem->size_x - 2) {
+           jj < dem_size_x - 2) {
       ++bg_fill_count;
       mask_image_set_pixel(mask, jj, ii, MASK_BACKGROUND_FILL);
       ++jj;
     }
-    jj = dem->size_x - 1;
+    jj = dem_size_x - 1;
     while (mask_image_get_pixel(mask, jj, ii) == MASK_NO_DEM_DATA && jj > 0) {
       ++bg_fill_count;
       mask_image_set_pixel(mask, jj, ii, MASK_BACKGROUND_FILL);
       --jj;
     }
   }
-  for ( ii = 0 ; (size_t) ii < dem->size_x; ii++ ) {
+  for ( ii = 0 ; (size_t) ii < dem_size_x; ii++ ) {
     size_t jj = 0;
     while ((mask_image_get_pixel(mask, ii, jj) == MASK_NO_DEM_DATA ||
 	    mask_image_get_pixel(mask, ii, jj) == MASK_BACKGROUND_FILL) &&
-           jj < dem->size_y - 2) {
+           jj < dem_size_y - 2) {
       ++bg_fill_count;
       mask_image_set_pixel(mask, ii, jj, MASK_BACKGROUND_FILL);
       ++jj;
     }
-    jj = dem->size_y - 1;
+    jj = dem_size_y - 1;
     while ((mask_image_get_pixel(mask, ii, jj) == MASK_NO_DEM_DATA ||
 	    mask_image_get_pixel(mask, ii, jj) == MASK_BACKGROUND_FILL) &&
 	    jj > 0) {
@@ -1329,36 +1304,24 @@ main (int argc, char **argv)
 			      GSL_MIN (sim_img->data->size_x,
 				       sim_img->data->size_y), NAN);
 
-  float_image_store(sim_img->data, "sim_img.img",
-		    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  sprintf(cmd, "makeddr sim_img.ddr %i %i float", sim_img->data->size_x,
-	  sim_img->data->size_y);
-  system(cmd);
-
-  float_image_store(angles, "angles.img", FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  sprintf(cmd, "makeddr angles.ddr %i %i float", angles->size_y,
-	  angles->size_x);
-  system(cmd);
-
-  float_image_store(langles, "langles.img", FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  sprintf(cmd, "makeddr langles.ddr %i %i float", langles->size_y,
-	  langles->size_x);
-  system(cmd);
+  float_image_quick_export_4sarview(sim_img->data, "sim_img");
+  float_image_quick_export_4sarview(angles, "angles");
+  float_image_quick_export_4sarview(langles, "langles");
 
   g_print ("Painting %ld DEM pixel rows with SAR image pixel values...\n",
-	   (long int) dem->size_y);
+	   (long int) dem_size_y);
 
-  ProgressMeter *progress_meter 
-    = progress_meter_new_with_callback (g_print, dem->size_y);
+  progress_meter 
+    = progress_meter_new_with_callback (g_print, dem_size_y);
 
   // For each DEM row...
-  for ( ii = 0 ; (size_t) ii < dem->size_y ; ii++ ) {
+  for ( ii = 0 ; (size_t) ii < dem_size_y ; ii++ ) {
 
     g_assert (ii <= SSIZE_MAX);
 
     size_t jj;
     // For each pixel in the row...
-    for ( jj = 0 ; jj < dem->size_x ; jj++ ) {
+    for ( jj = 0 ; jj < dem_size_x ; jj++ ) {
 
       // Pull out previously calculated values
       double solved_slant_range =
@@ -1388,7 +1351,7 @@ main (int argc, char **argv)
     // Print progress update every so many lines.
     const int lines_per_progress_update = 100;
     if ( (ii + 1) % lines_per_progress_update == 0 
-	 || (size_t) (ii + 1) == dem->size_y ) {
+	 || (size_t) (ii + 1) == dem_size_y ) {
       progress_meter_advance (progress_meter, 100);
     }
   }
@@ -1460,21 +1423,18 @@ main (int argc, char **argv)
   g_string_free (output_jpeg_file, TRUE);
   g_string_free (reference_dem_ddr, TRUE);
   g_string_free (reference_dem_img, TRUE);
-  map_projected_dem_free (dem);
+  dem_geom_info_free (dgi);
   slant_range_image_free (sri);
   meta_free (imd);
+  mask_image_free (mask);
+  date_time_free (base_date);
+  ITRS_platform_path_free (pp_fixed);
   g_free (observation_times);
   for ( ii = 0 ; ii < svc ; ii++ ) {
     orbital_state_vector_free (observations[ii]);
   }
   g_free (observations);
-  date_time_free (base_date);
-  ITRS_platform_path_free (pp_fixed);
   float_image_free (pd);
-  g_free (lats);
-  g_free (lons);
-  g_free (heights);
-  gsl_min_fminimizer_free (minimizer);
   progress_meter_free (progress_meter);
   g_print ("done.\n");
 

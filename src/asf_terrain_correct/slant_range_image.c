@@ -250,8 +250,8 @@ slant_range_image_new_from_ground_range_image (char *metadata_file,
   // The slant range to the first sample and last sample in the first
   // line, and the implied slant range sample spacing.
   double sr_fs = meta_get_slant (imd, 0, 0);
-  double sr_ls = meta_get_slant (imd, 0, sc - 1);
-  double sr_spacing = (sr_ls - sr_fs) / (sc - 1);
+  double sr_ls = meta_get_slant (imd, 0, sc);
+  double sr_spacing = (sr_ls - sr_fs) / sc;
 
   size_t ii;
   // Control point x values for a line.
@@ -273,9 +273,9 @@ slant_range_image_new_from_ground_range_image (char *metadata_file,
     // for the whole image.
     double current_sr_fs = meta_get_slant (imd, ii, 0);
     g_assert (gsl_fcmp (current_sr_fs, sr_fs, 1e-12) == 0);
-    double current_sr_ls = meta_get_slant (imd, ii, sc - 1);
+    double current_sr_ls = meta_get_slant (imd, ii, sc);
     g_assert (gsl_fcmp (current_sr_ls, sr_ls, 1e-12) == 0);
-    double current_sr_spacing = (sr_ls - sr_fs) / (sc - 1);
+    double current_sr_spacing = (sr_ls - sr_fs) / sc;
     if ( gsl_fcmp (current_sr_spacing, sr_spacing, 1e-12) == 0 ) {
       g_assert (gsl_fcmp (current_sr_spacing, sr_spacing, 1e-12) == 0);
     }
@@ -297,7 +297,6 @@ slant_range_image_new_from_ground_range_image (char *metadata_file,
   self->time_per_pixel = imd->sar->azimuth_time_per_pixel;
   self->upper_left_pixel_range = sr_fs;
   self->slant_range_per_pixel = sr_spacing;
-  printf("sr_spacing: %g\n", sr_spacing);
 
   meta_free (imd);
 
