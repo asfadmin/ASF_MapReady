@@ -66,6 +66,10 @@ mkdir -p lib
 mkdir -p bin
 mkdir -p share
 
+# Make the install directories for man pages (necessary for older tools)
+mkdir -p man/cat1
+mkdir -p man/man1
+
 asfDir=`pwd`
 
 # basic libraries check

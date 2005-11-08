@@ -2603,6 +2603,10 @@ mkdir -p lib
 mkdir -p bin
 mkdir -p share
 
+# Make the install directories for man pages (necessary for older tools)
+mkdir -p man/cat1
+mkdir -p man/man1
+
 asfDir=`pwd`
 
 # basic libraries check
@@ -4314,11 +4318,11 @@ fi
 
 #### whether or not to build the ASF Convert GUI ####
 if test "$have_libglade" = "yes" ; then
-    ASF_GUI="src/asf_convert_gui"
+    ASF_GUI="src/asf_convert_gui src/metadata_gui"
 fi
 # we always build the GUI on windows, as we provide our own gtk libraries.
 if test "$sys" = "win32" ; then
-    ASF_GUI="src/asf_convert_gui"
+    ASF_GUI="src/asf_convert_gui src/metadata_gui"
 fi
 
 
