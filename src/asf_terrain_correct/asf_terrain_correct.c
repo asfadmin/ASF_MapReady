@@ -43,8 +43,15 @@
 static void
 usage (void)
 {
-  g_printerr ("usage: asf_terrain_correct dem_base_name image_base_name "
-	      "output_base_name\n");
+  g_printerr ("Usage:\nasf_terrain_correct [ -check-coreg | -do-coreg ] "
+	      "dem image output\n\n"
+	      "  dem:    DEM base name\n"
+	      "  input:  Input image base name\n"
+	      "  output: Output image base name\n\n"
+              "Specifying -check-coreg will coregister with the DEM and "
+              "report the\noffsets, but not apply them.  do-coreg will "
+              "apply the offsets.\n");
+
   exit (EXIT_FAILURE);
 }
 
@@ -495,19 +502,66 @@ float_image_quick_export_4sarview(FloatImage *f, const char *basename)
   meta_write(mp, tmp);
   meta_free(mp);
 }
+/*
+static void remove_args(int start, int end, int *argc, char **argv[])
+{
+    int i, j, nargs;
 
+    nargs = end - start + 1;
+    i = start;
+    j = start + nargs;
+
+    while (j < *argc)
+    {
+	char * tmp = (*argv)[i];
+	(*argv)[i] = (*argv)[j];
+	(*argv)[j] = tmp;
+	
+	++i;
+	++j;
+    }
+
+    *argc -= nargs;
+}
+*/
 // Main program.
 int
 main (int argc, char **argv)
 {
-  // Three arguments are required.
+  int ii;
+/*
+  int check_coreg = FALSE, do_coreg = FALSE;
+
+  for (ii = 0; ii < argc; ++ii) {
+    if (strcmp(argv[ii], "-check-coreg") == 0) {
+      check_coreg = TRUE;
+      remove_args(ii - 1, ii, &argc, &argv);
+      break;
+    }
+  }
+
+  for (ii = 0; ii < argc; ++ii) {
+    if (strcmp(argv[ii], "-do-coreg") == 0) {
+      do_coreg = TRUE;
+      remove_args(ii - 1, ii, &argc, &argv);
+      break;
+    }
+  }
+
+  printf("Args: Check %d, Do: %d\n", check_coreg, do_coreg);
+  for (ii = 0; ii < argc; ++ii) {
+    printf("  %s\n", argv[ii]);
+  }
+ */
+  // Three arguments are required, after removing the coreg ones.
   if ( argc != 4 ) {
     usage ();
   }
 
+//  exit(1);
+
   // Get the reference DEM base name argument.
   GString *reference_dem = g_string_new (argv[argc - 3]);
-  reference_dem = reference_dem; /* Remove this compiler reassurance.  */
 
   // Form the names of the input data and metadata files by adding
   // extensions to the image_base_name argument.
@@ -526,18 +580,10 @@ main (int argc, char **argv)
   GString *output_jpeg_file = g_string_new (argv[argc - 1]);
   g_string_append_printf (output_jpeg_file, ".jpg");
 
-  // Load the reference DEM.  FIXME: at the moment we can only handle
-  // LAS dems in UTM projection, as provided by Joanne Groves
-  // Obviously this must change.
-  g_print ("Loading reference DEM... ");
   GString *reference_dem_ddr = g_string_new (reference_dem->str);
   g_string_append (reference_dem_ddr, ".ddr");
   GString *reference_dem_img = g_string_new (reference_dem->str);
   g_string_append (reference_dem_img, ".img");
-  MapProjectedDEM *dem
-    = map_projected_dem_new_from_las (reference_dem->str,
-				      reference_dem_img->str);
-  g_print ("done.\n");
 
   // We will need a slant range version of the image being terrain
   // corrected.  Defining BK_DEBUG will cause the program to try to
@@ -578,13 +624,55 @@ main (int argc, char **argv)
   g_assert (imd->sar->image_type == 'G');
   printf("Slant range spacing: %g\n", sri->slant_range_per_pixel);
 
-//  char cmd[256];
-//  sprintf(cmd, "makeddr sri.ddr %i %i float", sri->data->size_x,
-//	  sri->data->size_y);
-//  system(cmd);
+  // We converted to slant range
+  imd->sar->image_type = 'S';
+  imd->general->x_pixel_size = sri->slant_range_per_pixel;
 
-//  imd = meta_read (input_meta_file->str);
+  // Apply estimated time shift to the metadata for the slant-range image
+//  imd->sar->time_shift += average_offset;
+  meta_write(imd, "sri.meta");
 
+  float_image_store(sri->data, "sri.img",
+		    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+
+#define DO_PROJ2SLANT
+#ifdef DO_PROJ2SLANT
+  char cmd[1024];
+  sprintf(cmd, "asf_proj2slant_range -least-square %s %s.img %s %s\n",
+	  "sri.img", reference_dem->str, "slant_dem.img", "sim_amp.img");
+  printf("Executing: %s\n", cmd);
+  system(cmd);
+
+  double offset_x, offset_y, cert;
+  FILE *offset_file = FOPEN("offset", "rt");
+  g_assert(offset_file);
+  fscanf(offset_file, "%lf %lf %lf", &offset_x, &offset_y, &cert);
+  FCLOSE(offset_file);
+  printf("Coregistration Offsets: %g %g\nCertainty: %g\n",
+	 -offset_x, -offset_y, cert);
+
+  sprintf(cmd, "remap -translate %f %f %s %s", -offset_x, -offset_y,
+	  "sri.img", "sri_coreg.img");
+  printf("%s\n", cmd);
+  system(cmd);
+
+  // HACK!  Replace the underlying float image with the translated one
+  ssize_t size_x = sri->data->size_x;
+  ssize_t size_y = sri->data->size_y;
+
+  float_image_free(sri->data);
+  sri->data = float_image_new_from_file(size_x, size_y, "sri_coreg.img",
+					0, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+#endif
+
+  // Load the reference DEM.  FIXME: at the moment we can only handle
+  // LAS dems in UTM projection, as provided by Joanne Groves
+  // Obviously this must change.
+  g_print ("Loading reference DEM... ");
+  MapProjectedDEM *dem
+    = map_projected_dem_new_from_las (reference_dem->str,
+				      reference_dem_img->str);
+  g_print ("done.\n");
 
   // We will essentially be coloring the DEM with radar backscatter
   // values.  But we won't need to worry about portions of the DEM for
@@ -649,7 +737,7 @@ main (int argc, char **argv)
   // is overkill for this simple case, but it corresponds closely with
   // the way these operation are described in the literature, so we do
   // it.
-  int ii;
+
   // International terrestrial reference system (ITRS) coordinates of
   // state vector (the form they come in in the metadata).
   gsl_vector *itrs_pos = gsl_vector_alloc (3);
@@ -768,17 +856,6 @@ main (int argc, char **argv)
 
   average_offset /= svc;
   printf("Average Time Offset: %g\n", average_offset);
-
-  // We converted to slant range
-  imd->sar->image_type = 'S';
-  imd->general->x_pixel_size = sri->slant_range_per_pixel;
-
-  // Apply estimated time shift to the metadata for the slant-range image
-//  imd->sar->time_shift += average_offset;
-  meta_write(imd, "sri.meta");
-
-  float_image_store(sri->data, "sri.img",
-		    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
   g_print ("Creating orbital arc model... ");
 
@@ -1248,13 +1325,6 @@ main (int argc, char **argv)
   g_print ("Negative simulator energy additions: %d\n", neg_sim_pixels);
   g_print ("Layover pixels: %d\n", nlayover);
   g_print ("Shadow pixels: %d\n", nshadow);
-
-#ifdef DO_PROJ2SLANT
-  sprintf(cmd, "asf_proj2slant_range -least-square %s %s.img %s %s\n",
-	  "sri.img", reference_dem->str, "slant_dem.img", "sim_amp.img");
-  printf("Executing: %s\n", cmd);
-  system(cmd);
-#endif
 
 #ifdef DO_BACKGROUND_FILL
   // Skip this for now... 
