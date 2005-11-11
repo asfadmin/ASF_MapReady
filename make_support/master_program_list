@@ -129,6 +129,7 @@ PROGRAMS
 	fit_plane { }
 	fit_warp { }
 	igram  { }
+	ips { }
 	multilook { }
 	p2c { }
 	phase_filter { }
