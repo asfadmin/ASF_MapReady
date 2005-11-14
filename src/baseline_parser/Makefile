@@ -1,7 +1,7 @@
 # Makefile for          :  baseline_parser
 # Module Author         :  Rudi Gens 
 
-DEBUG_BUILD = 2
+DEBUG_BUILD = 0
 
 include ../../make_support/system_rules
 
