@@ -36,7 +36,7 @@ build_only: $(OBJS)
 
 # This class is the source file corresponding to this target has lots
 # of tricky stuff, so I get some extra help from compiler warnings.
-float_image.o: CFLAGS := $(CFLAGS) -Werror -Wall -W -Wmissing-prototypes \
+float_image.o: CFLAGS := $(CFLAGS) -Wall -W -Wmissing-prototypes \
 			-Wstrict-prototypes -Wshadow -Wpointer-arith \
 			-Wcast-qual -Wcast-align -Wwrite-strings \
 			-Wnested-externs -fno-common
