@@ -12,7 +12,7 @@ LIBDIR  = ../../../lib/$(SYS)
 BINDIR  = ../../../bin/$(SYS)
 JAVADIR = ../../../java
 ifdef DEBUG_BUILD
-  JAVAC = javac -g -classpath $(JAVADIR):$(JAVADIR)/geotransform.jar:.
+  JAVAC = javac -source 1.3 -g -classpath $(JAVADIR):$(JAVADIR)/geotransform.jar:.
 else
-  JAVAC = javac -O -classpath $(JAVADIR):$(JAVADIR)/geotransform.jar:.
+  JAVAC = javac -source 1.3 -O -classpath $(JAVADIR):$(JAVADIR)/geotransform.jar:.
 endif
