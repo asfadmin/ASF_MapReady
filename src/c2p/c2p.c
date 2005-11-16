@@ -79,7 +79,7 @@ int main (int argc, char *argv[])
   int blockSize;                          /* Number of samples gotten         */
   float *amp, *aP, *phase, *pP;           /* Output data buffers              */
   complexFloat *cpx, *cP;                 /* Input data buffers               */
-  meta_parameters *inMeta, *outMeta;      /* In/Out meta structs              */
+  meta_parameters *inMeta, *ampMeta, *phsMeta; /* In/Out meta structs          */
 
 /* Make sure there are the correct number of args in the command line */
   if (argc != 3) { usage(argv[0]); }
@@ -91,7 +91,7 @@ int main (int argc, char *argv[])
   }
   
 /* Get commandline args */
-  create_name (cpxfile, argv[1], ".img");
+  create_name (cpxfile, argv[1], ".cpx");
   create_name (ampfile, argv[2], "_amp.img"); 
   create_name (phsfile, argv[2], "_phase.img"); 
 
@@ -99,18 +99,22 @@ int main (int argc, char *argv[])
   inMeta = meta_read(argv[1]);
   inMeta->general->data_type = meta_polar2complex(inMeta->general->data_type);
   
-/* Create & write a meta file for the output images */
-  outMeta = meta_read(argv[1]);
-  outMeta->general->data_type = meta_complex2polar(inMeta->general->data_type);
-  meta_write(outMeta,ampfile);
-  meta_write(outMeta,phsfile);
+/* Create & write a meta files for the output images */
+  ampMeta = meta_copy(inMeta);
+  ampMeta->general->data_type = meta_complex2polar(inMeta->general->data_type);
+  ampMeta->general->image_data_type = AMPLITUDE_IMAGE;
+  meta_write(ampMeta,ampfile);
+  phsMeta = meta_copy(inMeta);
+  phsMeta->general->data_type = meta_complex2polar(inMeta->general->data_type);
+  phsMeta->general->image_data_type = PHASE_IMAGE;
+  meta_write(phsMeta,phsfile);
   
 /* malloc buffers, check and open files */
   cpx = (complexFloat *) MALLOC (sizeof(complexFloat)
                          * inMeta->general->sample_count * CHUNK_OF_LINES);
-  amp = (float *) MALLOC (sizeof(float) * outMeta->general->sample_count
+  amp = (float *) MALLOC (sizeof(float) * ampMeta->general->sample_count
                   * CHUNK_OF_LINES);
-  phase = (float *) MALLOC (sizeof(float) * outMeta->general->sample_count
+  phase = (float *) MALLOC (sizeof(float) * phsMeta->general->sample_count
                     * CHUNK_OF_LINES);
   fdCpx = fopenImage(cpxfile, "rb");
   fdAmp = fopenImage(ampfile, "wb");  
@@ -139,8 +143,8 @@ int main (int argc, char *argv[])
       aP++;
       pP++;
     }
-    put_float_lines(fdAmp,   outMeta, line, CHUNK_OF_LINES, amp);
-    put_float_lines(fdPhase, outMeta, line, CHUNK_OF_LINES, phase);
+    put_float_lines(fdAmp,   ampMeta, line, CHUNK_OF_LINES, amp);
+    put_float_lines(fdPhase, phsMeta, line, CHUNK_OF_LINES, phase);
   }
   printf("\rConverted complex to amp and phase:  100%% complete.\n\n");
   
@@ -152,7 +156,8 @@ int main (int argc, char *argv[])
   FREE(amp);
   FREE(phase);
   meta_free(inMeta);
-  meta_free(outMeta);
+  meta_free(ampMeta);
+  meta_free(phsMeta);
   
   return 0;
 }
