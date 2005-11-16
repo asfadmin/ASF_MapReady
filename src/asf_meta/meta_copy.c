@@ -18,12 +18,9 @@ meta_parameters *meta_copy(meta_parameters *src)
     memcpy(ret->projection, src->projection, sizeof(meta_projection));
   }
   if (src->state_vectors) {
-    int ii;
-    ret->state_vectors = meta_state_vectors_init(src->state_vectors->vector_count);
-    memcpy(ret->state_vectors, src->state_vectors, sizeof(meta_state_vectors));
-    for (ii = 0; ii < ret->state_vectors->vector_count; ii++ ) {
-      memcpy(ret, src, sizeof(state_loc));
-    }
+    int vector_count = src->state_vectors->vector_count;
+    ret->state_vectors = meta_state_vectors_init(vector_count);
+    memcpy(ret->state_vectors, src->state_vectors, sizeof(meta_state_vectors)+vector_count*sizeof(state_loc));
   }
   if (src->stats) {
     ret->stats = meta_stats_init();
