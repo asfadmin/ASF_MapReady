@@ -46,14 +46,15 @@
 ######################### A listing of libraries (easy). ######################
 LIBS
 {
-@external/work_dir/
-	libgsl
-	libproj	
-	libglib
-	libjpeg
-	libtiff
-	libgeotiff
-	tcl_tk
+# The external libraries are built without the master_program_list
+#@external/work_dir/
+#	libgsl
+#	libproj	
+#	libglib
+#	libjpeg
+#	libtiff
+#	libgeotiff
+#	tcl_tk
 @src/
 	asf
 	regex_wrapper
