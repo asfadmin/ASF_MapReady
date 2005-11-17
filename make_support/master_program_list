@@ -94,6 +94,7 @@ PROGRAMS
 	dspddr { }
 	fftMatch { }
 	filter { }
+	image_layers { }
 	makeddr { }
 	meta2ddr { BINS ddr2meta }
 	metadata { }
