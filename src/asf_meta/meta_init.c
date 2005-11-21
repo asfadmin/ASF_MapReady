@@ -54,6 +54,7 @@ meta_general *meta_general_init(void)
   general->y_pixel_size = MAGIC_UNSET_DOUBLE;
   general->center_latitude = MAGIC_UNSET_DOUBLE;
   general->center_longitude = MAGIC_UNSET_DOUBLE;
+  general->average_height = 0.0;
   general->re_major = MAGIC_UNSET_DOUBLE;
   general->re_minor = MAGIC_UNSET_DOUBLE;
   general->bit_error_rate = MAGIC_UNSET_DOUBLE;

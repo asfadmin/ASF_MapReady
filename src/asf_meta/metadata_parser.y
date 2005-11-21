@@ -346,6 +346,8 @@ void fill_structure_field(char *field_name, void *valp)
       { MGENERAL->center_latitude = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "center_longitude") )
       { MGENERAL->center_longitude = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "average_height") )
+      { MGENERAL->average_height = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "re_major") )
       { MGENERAL->re_major = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "re_minor") )

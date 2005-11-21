@@ -115,6 +115,10 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       strcpy(meta->general->sensor,"JERS1");
       strcpy(meta->general->mode, "STD");
    }
+   else if (strncmp(dssr->sensor_id,"ALOS",4)==0) {
+     strcpy(meta->general->sensor,"ALOS");
+     strcpy(meta->general->mode, "???");
+   }
    else if (strncmp(dssr->sensor_id,"RSAT-1",6)==0) {
 /* probably need to check incidence angle to figure out what is going on */
       char beamname[32];
@@ -207,6 +211,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
    meta->general->center_latitude  = dssr->pro_lat;
    meta->general->center_longitude = dssr->pro_long;
+   // Average height of the scene is determined later
+   meta->general->average_height = 0.0;
 
    /* Calculate ASF frame number from latitude considering the orbit direction */
    meta->general->frame =
@@ -244,6 +250,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    switch (ceos->satellite) {
       case  ERS: meta->sar->look_count = 5; break;
       case JERS: meta->sar->look_count = 3; break;
+      case ALOS: meta->sar->look_count = 4; break;
       case RSAT:
          dssr->rng_samp_rate *= get_units(dssr->rng_samp_rate,EXPECTED_RSR);
          dssr->rng_gate *= get_units(dssr->rng_gate,EXPECTED_RANGEGATE);
@@ -301,9 +308,14 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       }
       date_dssr2date(dssr->inp_sctim, &date, &time);
       centerTime = date_hms2sec(&time);
+      /* Crude hack for ALOS testing */
+      if (ceos->facility == EOC) 
+	firstTime += centerTime + 7.5;
+      /******************************/
       meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
                                           / (meta->sar->original_line_count/2);
    }
+
    /* CEOS data does not account for slant_shift and time_shift errors so far as
     * we can tell.  Other ASF tools may later set these fields based on more
     * precise orbit data.  */
@@ -401,6 +413,11 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
  * }
  */
 
+   /* Initialize map projection for projected images */
+   if (meta->sar->image_type=='P') {
+      ceos_init_proj(meta, dssr, mpdr);
+   }
+
    /* Let's get the earth radius and satellite height straightened out */
    if (asf_facdr) {     /* Get earth radius & satellite height if we can */
       meta->sar->earth_radius = asf_facdr->eradcntr*1000.0;
@@ -424,7 +441,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       double data_int = meta->sar->original_line_count / 2
                          * fabs(meta->sar->azimuth_time_per_pixel);
       meta->state_vectors->vecs[0].time = get_timeDelta(ceos, ppdr, meta);
-      printf("delta: %f\n", get_timeDelta(ceos, ppdr, meta));
       if (ceos->processor != PREC) {
         while (fabs(data_int) > 15.0) {
           data_int /= 2;
@@ -433,10 +449,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
         /* propagate three state vectors: start, center, end */
         propagate_state(meta, vector_count, data_int);
       }
-   }
-
-   if (meta->sar->image_type=='P') {
-      ceos_init_proj(meta, dssr, mpdr);
    }
 
    /* Lets fill in the location block */
@@ -583,6 +595,7 @@ ceos_description *get_ceos_description(char *fName)
    if (0==strncmp(satStr,"E",1)) ceos->satellite=ERS;
    else if (0==strncmp(satStr,"J",1)) ceos->satellite=JERS;
    else if (0==strncmp(satStr,"R",1)) ceos->satellite=RSAT;
+   else if (0==strncmp(satStr,"A",1)) ceos->satellite=ALOS;
    else {
       printf("get_ceos_description Warning! Unknown sensor '%s'!\n",satStr);
       ceos->satellite=unknownSatellite;
@@ -612,6 +625,7 @@ ceos_description *get_ceos_description(char *fName)
       else if (0==strncmp(procStr,"PP",2)) ceos->processor=PP;
       else if (0==strncmp(procStr,"SP2",3)) ceos->processor=SP2;
       else if (0==strncmp(procStr,"AMM",3)) ceos->processor=AMM;
+      else if (0==strncmp(procStr,"DPS",3)) ceos->processor=DPS;
       /* VEXCEL Focus processor */
       else if (0==strncmp(procStr,"FOCUS",5)) ceos->processor=FOCUS;
       else if (0==strncmp(procStr,"SKY",3))
@@ -644,6 +658,7 @@ ceos_description *get_ceos_description(char *fName)
       else if (0==strncmp(prodStr, "SLANT RANGE COMPLEX",19)) ceos->product=SLC;
       else if (0==strncmp(prodStr, "SAR PRECISION IMAGE",19)) ceos->product=PRI;
       else if (0==strncmp(prodStr, "SAR GEOREF FINE",15)) ceos->product=SGF;
+      else if (0==strncmp(prodStr, "STANDARD GEOCODED IMAGE",23)) ceos->product=SGI;
       else {
          printf("get_ceos_description Warning! Unknown ASF product type '%s'!\n",
 		prodStr);
@@ -694,6 +709,10 @@ ceos_description *get_ceos_description(char *fName)
  *    ceos->facility=UK;
  * }
  */
+   else if (0==strncmp(ceos->dssr.fac_id,"EOC",3)) {
+     printf("   Data set processed by EOC\n");
+     ceos->facility=EOC;
+   }
    else {
       printf( "****************************************\n"
          "SEVERE WARNING!!!!  Unknown CEOS Facility '%s'!\n"
