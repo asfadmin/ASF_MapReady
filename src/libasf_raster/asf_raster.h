@@ -85,4 +85,7 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
 /* Prototypes from fftMatch.c ************************************************/
 void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile);
 
+/* Prototypes from shaded_relief.c *******************************************/
+void shaded_relief(char *inFile, char *outFile, int addSpeckle);
+
 #endif

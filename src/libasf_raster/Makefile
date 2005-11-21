@@ -12,7 +12,8 @@ OBJS = \
 	scaling.o \
 	stats.o \
 	trim.o \
-	fftMatch.o
+	fftMatch.o \
+	shaded_relief.o 
 
 LIBS = \
 	$(LIBDIR)/asf.a \
