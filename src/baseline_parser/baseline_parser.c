@@ -199,6 +199,7 @@ int main(int argc, char **argv)
 	  else 
 	    sprintf(tmpfile, "%s_0000%d.tmp", mode, rev);
 
+
 	  fpIn = FOPEN(tmpfile, "r");
 	  while (fgets(line, 1024, fpIn)) {
 	    sscanf(line, "%3s %3d %5d %3d %2d %24s %f %f %f %f %f %f %f %f %f %f",
