@@ -30,7 +30,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 1.5
+#define META_VERSION 1.6
 
 /******************Baseline Utilities******************/
 typedef struct {
@@ -186,6 +186,7 @@ typedef struct {
   double y_pixel_size;       /* Azimuth pixel size, in meters              */
   double center_latitude;    /* Approximate image center latitude.         */
   double center_longitude;   /* Approximage image center longitude.        */
+  double average_height;     /* Average height of the scene                */
   double re_major;           /* Semimajor axis length (equator) (meters).  */
   double re_minor;           /* Semiminor axis length (poles) (meters).    */
   double bit_error_rate;     /* Fraction of bits which are in error.       */
