@@ -35,7 +35,7 @@ find_extents ( seamless_meta_t *smeta, project_parameters_t *outProjPrms,
     lons[current_edge_point] = (xllcorner + cellsize * ii)
                                * DEG_TO_RAD;
     current_edge_point++;
- }
+  }
   // Right column  (v)
   for ( jj=(nrows-2); jj>0 ; jj-- ) {
     lats[current_edge_point] = (yllcorner + cellsize * jj)
@@ -50,7 +50,7 @@ find_extents ( seamless_meta_t *smeta, project_parameters_t *outProjPrms,
                                * DEG_TO_RAD;
     current_edge_point++;
   }
-  // Left row  (^)
+  // Left column  (^)
   for ( jj=1; jj<(nrows-1); jj++ ) {
     lats[current_edge_point] = (yllcorner + cellsize * jj)
                                * DEG_TO_RAD;
