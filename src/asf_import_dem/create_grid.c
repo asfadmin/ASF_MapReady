@@ -23,8 +23,9 @@ create_grid ( seamless_meta_t *smeta,  project_parameters_t *outProjPrms,
   asfPrintStatus ("Performing analytical projection of a spatially "
                   "distributed\nsubset of input image pixels... ");
   fflush (stdout);
-  double x_range_size = max_x - min_x, y_range_size = max_y - min_y;
-  g_assert (grid_size % 2 == 1);
+  double x_range_size = max_x - min_x;
+  double y_range_size = max_y - min_y;
+  g_assert (grid_size % 2 == 1);  // not sure why this has to happen
 
   // Determine the density and stride for the sparse grid.
   const int sparse_grid_sample_stride = 2;
@@ -32,7 +33,6 @@ create_grid ( seamless_meta_t *smeta,  project_parameters_t *outProjPrms,
   // Spacing between grid points, in projection coordinates.
   double x_spacing = x_range_size / (grid_size - 1);
   double y_spacing = y_range_size / (grid_size - 1);
-
 
   // put seamless meta info into variables to avoid repeated function calls
   double yllcorner = seamless_meta_get_yllcorner(smeta);
@@ -56,8 +56,8 @@ create_grid ( seamless_meta_t *smeta,  project_parameters_t *outProjPrms,
       lat *= RAD_TO_DEG;
       lon *= RAD_TO_DEG;
       // Corresponding pixel indicies in input image.
-      double y_pix = (yllcorner-lat)/cellsize;
-      double x_pix = (xllcorner-lon)/cellsize;
+      double y_pix = (lat-yllcorner)/cellsize;
+      double x_pix = (lon-xllcorner)/cellsize;
 
       dtf->x_proj[current_mapping] = cxproj;
       dtf->y_proj[current_mapping] = cyproj;
