@@ -9,6 +9,7 @@ OBJS := \
 	check_splines.o \
 	create_grid.o \
 	data_to_fit.o \
+	fill_proj_meta.o \
 	find_extents.o \
 	geocode_options.o \
 	gridFloat.o \
@@ -32,11 +33,15 @@ LIBS := $(LIBDIR)/asf.a \
 CFLAGS += -I/usr/include/pcre \
           $(PROJ_CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS) $(JPEG_CFLAGS)
 
-all: $(PROGRAM) #clean
+all: $(PROGRAM)
 
 $(PROGRAM): $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROGRAM) $(OBJS) $(LIBS) $(LDFLAGS)
 	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
+
+test: $(PROGRAM)
+	$(PROGRAM) -p utm --central-meridian -135.1 test_data/test \
+	           test_data/out_test
 
 clean:
 	rm -f $(OBJS)
