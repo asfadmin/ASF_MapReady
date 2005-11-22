@@ -30,8 +30,6 @@ write_asf_dem ( seamless_meta_t *smeta,
 
   int ncols = seamless_meta_get_ncols(smeta);
   int nrows = seamless_meta_get_nrows(smeta);
-  g_assert (ncols <= INT_MAX);
-  g_assert (nrows <= INT_MAX);
 
   // Projection coordinates per pixel in output image.  There is a
   // significant assumption being made here: we assume that the
@@ -84,40 +82,39 @@ write_asf_dem ( seamless_meta_t *smeta,
   default:
     g_assert_not_reached ();
   }
-
   // Convenience macros for getting a pixel.
 #define SET_PIXEL(x, y, value) float_image_set_pixel (outImage, x, y, value)
 #define IN_IMAGE_SAMPLE float_image_sample ( \
-              inImage, input_x_pixel, input_y_pixel, float_image_sample_method)
+              inImage, input_x_index, input_y_index, float_image_sample_method)
+
   // Set the pixels of the output image.
   int out_x_index, out_y_index;              // Output image pixel indicies.
   for ( out_y_index = 0 ; out_y_index <= out_y_max_index ; out_y_index++ ) {
     for ( out_x_index = 0 ; out_x_index <= out_x_max_index ; out_x_index++ ) {
       // Projection coordinates for the center of this pixel.
-      double out_x_index_pc = ((double) out_x_index / out_x_max_index)
+      double out_x_index_pc = ((double) out_x_index / (double)out_x_max_index)
                                * (max_x - min_x) + min_x;
       // We want projection coordinates to increase as we move from
       // the bottom of the image to the top, so that north ends up up.
-      double out_y_index_pc = (1.0 - (double) out_y_index / out_y_max_index)
+      double out_y_index_pc = (1.0 - (double) out_y_index / (double)out_y_max_index)
                               * (max_y - min_y) + min_y;
       // Determine pixel of interest in input image.  The fractional
       // part is desired, we will use some sampling method to
       // interpolate between pixel values.
-      double input_x_pixel = X_PIXEL (out_x_index_pc, out_y_index_pc);
-      double input_y_pixel = Y_PIXEL (out_x_index_pc, out_y_index_pc);
+      double input_x_index = X_PIXEL (out_x_index_pc, out_y_index_pc);
+      double input_y_index = Y_PIXEL (out_x_index_pc, out_y_index_pc);
       // If we are outside the extent of the input image, set to the
       // fill value.
       const float fill_value = 0.0;
-      if (    input_x_pixel < 0
-           || input_x_pixel > ncols - 1.0
-           || input_y_pixel < 0
-           || input_y_pixel > nrows - 1.0 ) {
+      if (    input_x_index < 0
+           || input_x_index > ncols - 1.0
+           || input_y_index < 0
+           || input_y_index > nrows - 1.0 ) {
         SET_PIXEL (out_x_index, out_y_index, (float) fill_value);
       }
       // Otherwise, set to the value from the appropriate position in
       // the input image.
       else {
-printf("else\n");
         SET_PIXEL (out_x_index, out_y_index, IN_IMAGE_SAMPLE);
       }
     }
@@ -127,7 +124,6 @@ printf("else\n");
 
   float_image_free (inImage);
 
-asfPrintError("Stopping early cause you're testing\n");
   // Store the output image, and free image resources.
   asfPrintStatus ("Storing geocoded image...\n");
   int return_code = float_image_store (outImage, outImageName,
@@ -142,10 +138,17 @@ asfPrintError("Stopping early cause you're testing\n");
   meta_parameters *outMeta = raw_init();
   outMeta->general->data_type = REAL32;
   outMeta->general->image_data_type = DEM;
-  outMeta->general->x_pixel_size = proj_coord_per_x;
-  outMeta->general->y_pixel_size = proj_coord_per_y;
+  outMeta->general->band_number = 0;
   outMeta->general->line_count = out_y_max_index + 1;
   outMeta->general->sample_count = out_x_max_index + 1;
+  outMeta->general->start_line = 0;
+  outMeta->general->start_sample = 0;
+  outMeta->general->x_pixel_size = proj_coord_per_x;
+  outMeta->general->y_pixel_size = proj_coord_per_y;
+  outMeta->general->center_latitude = seamless_meta_get_yllcorner(smeta)
+                             + (nrows * seamless_meta_get_cellsize(smeta) / 2);
+  outMeta->general->center_longitude = seamless_meta_get_xllcorner(smeta)
+                             + (ncols * seamless_meta_get_cellsize(smeta) / 2);
   outMeta->sar->image_type = 'P';
 
   outMeta->projection = MALLOC(sizeof(meta_projection));
