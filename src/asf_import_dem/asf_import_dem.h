@@ -29,6 +29,11 @@ seamless_meta_t *
 gridFloat_metadata_to_seamless_meta( char *baseName);
 
 void
+fill_proj_meta(projection_type_t pt, project_parameters_t *outProjPrms,
+               seamless_meta_t *smeta, PROJECT_T project,
+               double *average_height, double *pixel_size);
+
+void
 find_extents ( seamless_meta_t *smeta, project_parameters_t *outProjPrms,
                PROJECT_ARR_T project_arr,
                double *min_x, double *max_x, double *min_y, double *max_y);
