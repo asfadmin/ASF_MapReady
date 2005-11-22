@@ -30,24 +30,6 @@ void fill_proj_meta(projection_type_t pt, project_parameters_t *outProjPrms,
   double xllcorner = seamless_meta_get_xllcorner(smeta);
   double cellsize = seamless_meta_get_cellsize(smeta);
 
-  if (ISNAN(*average_height))
-    *average_height = 0.0;
-
-  if (ISNAN(*pixel_size)) {
-    double upper_lat = (yllcorner + cellsize * nrows) * DEG_TO_RAD;
-    double lower_lat = yllcorner * DEG_TO_RAD;
-    double left_lon = xllcorner * DEG_TO_RAD;
-    double right_lon = (xllcorner + cellsize * ncols) * DEG_TO_RAD;
-    double left_x, right_x, upper_y, lower_y;
-    project (outProjPrms, upper_lat, right_lon, &right_x, &upper_y);
-    project (outProjPrms, lower_lat, left_lon, &left_x, &lower_y);
-    double x_pixel_size = (right_x - left_x) / (double)ncols;
-    double y_pixel_size = (upper_y - lower_y) / (double)nrows;
-    asfRequire ( (x_pixel_size-y_pixel_size)<0.0001,
-                 "Pixel size not square, but it needs to be!\n");
-    *pixel_size = x_pixel_size;
-  }
-
   // Just calculate this once right here
   double center_lat = yllcorner + (nrows*cellsize / 2);
   double center_lon = xllcorner + (ncols*cellsize / 2);
@@ -125,4 +107,25 @@ void fill_proj_meta(projection_type_t pt, project_parameters_t *outProjPrms,
   default:
       asfPrintError("%s: illegal projection type!", __func__);
   }
+
+
+  if (ISNAN(*average_height))
+    *average_height = 0.0;
+
+  if (ISNAN(*pixel_size)) {
+    double upper_lat = (yllcorner + cellsize * nrows) * DEG_TO_RAD;
+    double lower_lat = yllcorner * DEG_TO_RAD;
+    double left_lon = xllcorner * DEG_TO_RAD;
+    double right_lon = (xllcorner + cellsize * ncols) * DEG_TO_RAD;
+    double left_x, right_x, upper_y, lower_y;
+    project (outProjPrms, upper_lat, right_lon, &right_x, &upper_y);
+    project (outProjPrms, lower_lat, left_lon, &left_x, &lower_y);
+    double x_pixel_size = (right_x - left_x) / (double)ncols;
+    double y_pixel_size = (upper_y - lower_y) / (double)nrows;
+    asfRequire ( (x_pixel_size-y_pixel_size)<0.0001,
+                 "Pixel size not square, but it needs to be!\n");
+    *pixel_size = x_pixel_size;
+  }
+
+
 }
