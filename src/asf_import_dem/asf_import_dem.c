@@ -102,42 +102,21 @@ int main(int argc, char **argv)
     break;
   }
 
-  // Load up the metadata
+  // Load the metadata
   seamless_meta_t *smeta = gridFloat_metadata_to_seamless_meta(argv[1]);
 
+  // Fill out the input meta using what we've gotten so far
+  fill_proj_meta(projection_type, outProjPrms, smeta, project, &average_height,
+                 &pixel_size);
   // Convert all angle measures in the project_parameters to radians.
   to_radians (projection_type, outProjPrms);
 
   // Set Projection Datum & Average Height
   datum = WGS84_DATUM;
   project_set_datum (datum);
-  if (ISNAN(average_height)) {
-    average_height = 0.0;
-  }
   project_set_avg_height (average_height);
 
-  // Set pixel_size if not already
-  if (ISNAN(pixel_size)) {
-    int ncols = seamless_meta_get_ncols(smeta);
-    int nrows = seamless_meta_get_nrows(smeta);
-    double yllcorner = seamless_meta_get_yllcorner(smeta);
-    double xllcorner = seamless_meta_get_xllcorner(smeta);
-    double cellsize = seamless_meta_get_cellsize(smeta);
-    double upper_lat = (yllcorner + cellsize * nrows) * DEG_TO_RAD;
-    double lower_lat = yllcorner * DEG_TO_RAD;
-    double left_lon = xllcorner * DEG_TO_RAD;
-    double right_lon = (xllcorner + cellsize * ncols) * DEG_TO_RAD;
-    double left_x, right_x, upper_y, lower_y;
-    project (outProjPrms, upper_lat, right_lon, &right_x, &upper_y);
-    project (outProjPrms, lower_lat, left_lon, &left_x, &lower_y);
-    double x_pixel_size = (right_x - left_x) / (double)ncols;
-    double y_pixel_size = (upper_y - lower_y) / (double)nrows;
-    asfRequire ( (x_pixel_size-y_pixel_size)<0.0001,
-                 "Pixel size not square, but it should be!\n");
-    pixel_size = x_pixel_size;
-  }
-
-  double min_x, max_x, min_y, max_y;
+  double min_x=DBL_MAX, max_x=DBL_MIN, min_y=DBL_MAX, max_y=DBL_MIN;
   find_extents (smeta, outProjPrms, project_arr,
                 &min_x, &max_x, &min_y, &max_y);
 
