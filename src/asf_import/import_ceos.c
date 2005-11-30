@@ -213,7 +213,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         meta->general->image_data_type = AMPLITUDE_IMAGE;
       }
     }
-    else if (flags[f_AMP] != FLAG_NOT_SET) {
+    if (flags[f_AMP] != FLAG_NOT_SET) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: amplitude image\n\n");
