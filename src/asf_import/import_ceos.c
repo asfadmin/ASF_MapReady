@@ -196,7 +196,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
            correctly). */
         if ( meta->projection->type != POLAR_STEREOGRAPHIC
              || meta->projection->hem == 'S' ) {
-          asfPrintError("Import of map projected (Level 2) CEOS images other "
+          asfPrintWarning("Import of map projected (Level 2) CEOS images other "
                         "than northern hemisphere polar stereo images is "
                         "prohibited, because these products are broken.  "
                         "Don't use them.\n");
