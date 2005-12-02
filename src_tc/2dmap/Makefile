@@ -1,5 +1,5 @@
 # Makefile for          :  2dmap
-# Module Author         :  Tom Logan   
+# Module Author         :  Tom Logan
 # Module Version        :  2.0
 
 include ../../make_support/system_rules
@@ -7,8 +7,10 @@ include ../../make_support/system_rules
 LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libgsl.a \
+	$(GSL_LIBS) \
 	-lm
+
+CFLAGS += $(GSL_CFLAGS)
 
 OBJS  = calc_coef.o \
 	calc_res.o \
