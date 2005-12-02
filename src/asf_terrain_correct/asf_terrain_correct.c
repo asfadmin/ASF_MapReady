@@ -37,6 +37,7 @@
 
 #define KH_DEBUG2
 #define KH_DEBUG3
+#define DO_MASKING
 
 // Print user information to error output location and exit with a
 // non-zero exit code.
@@ -189,6 +190,8 @@ get_extents_in_projection_coordinate_space
     }
   }
 
+  // printf("height - min = %g, max = %g\n", min_height, max_height);
+
   // The actual number of edge points of the ground range image the
   // projection coordinates of which we will be considereing.  We need
   // twice as many lat/lon storage positions as we have edge pixels
@@ -273,8 +276,18 @@ get_extents_in_projection_coordinate_space
     if ( x[ii] > *max_x ) { *max_x = x[ii]; }
     if ( y[ii] < *min_y ) { *min_y = y[ii]; }
     if ( y[ii] > *max_y ) { *max_y = y[ii]; }
+
+//    if (ii % 100 == 0) {
+//      printf("(%g,%g) -> (%g,%g)\n",
+//	     lats[ii] * RAD_TO_DEG, lons[ii] * RAD_TO_DEG, x[ii], y[ii]);
+//    }
   }
   
+  if (dem->projection_type == UNIVERSAL_TRANSVERSE_MERCATOR) {
+     *min_y -= 1e7;
+    *max_y -= 1e7;
+  }
+
   free (y);
   free (x);
   g_free (lons);
@@ -286,8 +299,9 @@ calculate_geometry(Vector *n, ITRSPlatformPath *pp_fixed, Vector *c,
 		   meta_parameters *imd, double it, 
 		   double *look_angle, double *slope, double *incidence_angle)
 {
-#ifdef KH_DEBUG
-  printf("Debug version of calculate_geometry -- deprecated.\n");
+// #define KH_DEBUG_G
+#ifdef KH_DEBUG_G
+//  printf("Debug version of calculate_geometry -- deprecated.\n");
   ITRSPoint * cp_target = ITRS_point_new(c->x, c->y, c->z);
   double cp_target_lat, cp_target_lon;
   ITRS_point_get_geodetic_lat_long(cp_target, &cp_target_lat,
@@ -296,8 +310,16 @@ calculate_geometry(Vector *n, ITRSPlatformPath *pp_fixed, Vector *c,
   meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D, 0,
 		    &line, &samp);
 //  double o_look_angle = meta_look(imd, line, samp);
-  it = meta_get_time(imd, line, samp);
+
+  double it2 = meta_get_time(imd, line, samp);
+  double diff = fabs(it2 - it);
+//  if (diff > 0.0001) {
+//    printf("diff: %g\n", diff);
+//  }
+
 //  meta_slant = meta_get_slant(imd, line, samp);
+
+  ITRS_point_free(cp_target);
 #else
   imd = imd;
 #endif
@@ -422,6 +444,7 @@ compute_normal_at(DEMGeomInfo *dgi, size_t jj, size_t ii)
   return n;
 }
 
+#ifdef DO_MASKING
 static Vector *
 compute_pixel_offsets_to_satellite(meta_parameters *imd,
 				   MapProjectedDEM *mpd, DEMGeomInfo *dgi,
@@ -484,6 +507,7 @@ compute_pixel_offsets_to_satellite(meta_parameters *imd,
 
   return v;
 }
+#endif
 
 static void
 float_image_quick_export_4sarview(FloatImage *f, const char *basename)
@@ -622,11 +646,11 @@ main (int argc, char **argv)
 
   // We are expecting a ground range SAR image.
   g_assert (imd->sar->image_type == 'G');
-  printf("Slant range spacing: %g\n", sri->slant_range_per_pixel);
+//  printf("Slant range spacing: %g\n", sri->slant_range_per_pixel);
 
   // We converted to slant range
-  imd->sar->image_type = 'S';
-  imd->general->x_pixel_size = sri->slant_range_per_pixel;
+//  imd->sar->image_type = 'S';
+//  imd->general->x_pixel_size = sri->slant_range_per_pixel;
 
   // Apply estimated time shift to the metadata for the slant-range image
 //  imd->sar->time_shift += average_offset;
@@ -635,16 +659,17 @@ main (int argc, char **argv)
   float_image_store(sri->data, "sri.img",
 		    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
-#define DO_PROJ2SLANT
-#ifdef DO_PROJ2SLANT
+// #define DO_CHECK_GEO
+#ifdef DO_CHECK_GEO
   char cmd[1024];
-  sprintf(cmd, "asf_proj2slant_range -least-square %s %s.img %s %s\n",
-	  "sri.img", reference_dem->str, "slant_dem.img", "sim_amp.img");
+  sprintf(cmd, "asf_check_geolocation %s %s.img offsets.txt %s %s\n",
+	  input_data_file->str, reference_dem->str,
+	  "sim_amp.img", "slant_dem.img");
   printf("Executing: %s\n", cmd);
   system(cmd);
 
   double offset_x, offset_y, cert;
-  FILE *offset_file = FOPEN("offset", "rt");
+  FILE *offset_file = FOPEN("offsets.txt", "rt");
   g_assert(offset_file);
   fscanf(offset_file, "%lf %lf %lf", &offset_x, &offset_y, &cert);
   FCLOSE(offset_file);
@@ -682,8 +707,15 @@ main (int argc, char **argv)
   double min_x, max_x, min_y, max_y; // Projection coordinate range endpoints.
   get_extents_in_projection_coordinate_space (imd, dem, &min_x, &max_x,
 					      &min_y, &max_y);
+//  printf("Extents: (%g,%g) (%g,%g)\n", min_x, max_x, min_y, max_y);
   MapProjectedDEM *tmp_dem = map_projected_dem_new_subdem (dem, min_x, max_x,
 							   min_y, max_y);
+
+//  printf("DEM Size: %d %d %d %d\n", tmp_dem->size_x, tmp_dem->size_y,
+//	 tmp_dem->data->size_x, tmp_dem->data->size_y);
+//  printf("Original DEM Size: %d %d %d %d\n", dem->size_x, dem->size_y,
+//	 dem->data->size_x, dem->data->size_y);
+
   map_projected_dem_free (dem);
   dem = tmp_dem;
 
@@ -692,6 +724,7 @@ main (int argc, char **argv)
 			      GSL_MAX (dem->data->size_x, dem->data->size_y),
 			      NAN);
 
+#define DO_DEM_SCALING
 #ifdef DO_DEM_SCALING
   // If the DEM is significanly lower resolution than the SAR image,
   // we will need to generate a lower resolution version of the image
@@ -722,6 +755,13 @@ main (int argc, char **argv)
     // for FIXME: debug purposes.
     float_image_export_as_jpeg (sri->data, "sri_reduced_res_view.jpg", 2000,
 				NAN);
+
+    float_image_store (sri->data, "sri_reduced.img",
+		       FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+    char cmdbuf[256];
+    sprintf(cmdbuf, "makeddr sri_reduced.ddr %d %d float",
+	    sri->data->size_y, sri->data->size_x);
+    system(cmdbuf);
   }
 #endif
 
@@ -855,7 +895,7 @@ main (int argc, char **argv)
   gsl_vector_free (itrs_pos);
 
   average_offset /= svc;
-  printf("Average Time Offset: %g\n", average_offset);
+//  printf("Average Time Offset: %g\n", average_offset);
 
   g_print ("Creating orbital arc model... ");
 
@@ -880,6 +920,18 @@ main (int argc, char **argv)
   			      svc, base_date, observation_times, observations);
 
   g_print ("done.\n");
+
+/*
+  for ( ii = 2000 ; ii < 8000 ; ++ii ) {
+    double t = pp_fixed->start_time +
+      ( (double)ii / 10000.0 ) * (pp_fixed->end_time - pp_fixed->start_time);
+    Vector pos;
+    ITRS_platform_path_position_at_time (pp_fixed, t, &pos);
+    printf("Pos: %g %g %g\n", pos.x, pos.y, pos.z);
+  }
+
+  exit (1);
+*/
 
   // Now we are ready to actually paint the DEM with backscatter.
   // FIXME: actually we aren't really ready to do that yet, since we
@@ -968,6 +1020,11 @@ main (int argc, char **argv)
       double cp_lat = lats[jj];        // Current pixel latitude.
       double cp_lon = lons[jj];        // Current pixel longitude.
       double cp_height = heights[jj];  // Current pixel height.
+
+//      if (ii % 100 == 0 && jj == dem->size_x / 2) {
+//	printf("(lat,lon) = (%g,%g) (%g,%g)\n", cp_lat, cp_lon,
+//	       cp_lat * RAD_TO_DEG, cp_lon * RAD_TO_DEG);
+//      }
 
       // Current target point in earth fixed coordinates.
       ITRSPoint *ctp
@@ -1083,6 +1140,16 @@ main (int argc, char **argv)
       // sure it's 1.
       double solved_time = min;
       
+#ifdef KH_DEBUG_G
+      ITRSPoint * zzz = ITRS_point_new (cp_target.x, cp_target.y,
+					cp_target.z);
+      double zzz_lat, zzz_lon;
+      ITRS_point_get_geodetic_lat_long(zzz, &zzz_lat, &zzz_lon);
+      double line, samp;
+      meta_get_lineSamp(imd, zzz_lat * R2D, zzz_lon * R2D, 0, &line, &samp);
+      solved_time = meta_get_time(imd, line, samp);
+#endif
+
       // The slant range can be found from the distance between the
       // target and the platform at the point of closest approach.
       Vector poca; 
@@ -1148,29 +1215,36 @@ main (int argc, char **argv)
   // contributions of the very edge facets, which saves the pain of
   // special handling for them.
 
+// #define DUMP_STUFF
+#ifdef DUMP_STUFF
+  double saved_slopes[1000];
+  double saved_looks[1000];
+#endif
+
 #ifdef KH_DEBUG
   int countem = 0;
 #endif
 
   // For each DEM row except the first and last...
   int neg_sim_pixels = 0;
-  double max_lams = -10;
-  int nlayover = 0, nshadow = 0;
 
+#ifdef DO_MASKING
   // find a vector from the center of the image, to the point on
   // the ground below the satellite
+  double max_lams = -10;
+  int nlayover = 0, nshadow = 0;
   Vector *poff = compute_pixel_offsets_to_satellite(imd, dem, dgi, pp_fixed);
+#endif
 
-  // Can free the dem now
-  map_projected_dem_free (dem);
-  dem = NULL;
-
+#ifdef DO_MASKING
   MaskImage *mask = mask_image_new (dem_size_x, dem_size_y);
   FloatImage *angles = float_image_new (dem_size_x, dem_size_y);
   FloatImage *langles = float_image_new (dem_size_x, dem_size_y);
+#endif
 
   for ( ii = 0 ; (size_t) ii < dem_size_y; ii++ ) {
     long int jj;
+
     // For every other DEM pixel except the first and last two...
     //    for ( jj = 1 ; (size_t) jj < dem_size_x - 2; jj += 2 ) {
     for ( jj = 0 ; (size_t) jj < dem_size_x; jj++ ) {
@@ -1187,7 +1261,9 @@ main (int argc, char **argv)
 	   || dem_geom_info_get_slant_range_value (dgi, xi - 1, ii) < 0
 	   || dem_geom_info_get_slant_range_value (dgi, xi + 1, ii) < 0
 	   || dem_geom_info_get_slant_range_value (dgi, xi, ii + 1) < 0) { 
+#ifdef DO_MASKING
 	mask_image_set_pixel_no_dem_data(mask, xi, ii);
+#endif
 	continue;
       }
 
@@ -1199,12 +1275,12 @@ main (int argc, char **argv)
       // products of adjacent pairs of vectors, then adding the
       // results together and normalizing.
 
-      Vector *c = dem_geom_info_get_cp_target(dgi, xi, ii);
-      Vector *n = compute_normal_at(dgi, xi, ii);      
-
       // Recall the slant range and imaging time for this DEM pixel.
       double sr = dem_geom_info_get_slant_range_value (dgi, xi, ii);
       double it = dem_geom_info_get_imaging_time (dgi, xi, ii);
+
+      Vector *c = dem_geom_info_get_cp_target(dgi, xi, ii);
+      Vector *n = compute_normal_at(dgi, xi, ii);      
 
       // Calculate!
       double look_angle, slope, incidence_angle;
@@ -1212,11 +1288,19 @@ main (int argc, char **argv)
 	calculate_geometry(n, pp_fixed, c, imd, it,
 			   &look_angle, &slope, &incidence_angle);
 
+#ifdef DO_MASKING
       float_image_set_pixel(angles, xi, ii, slope * R2D);
       float_image_set_pixel(langles, xi, ii, look_angle * R2D);
 
       if (look_angle - slope > max_lams)
 	max_lams = look_angle - slope;
+
+#ifdef DUMP_STUFF
+      if (ii == 834 && jj >= 900 && jj <= 950) {
+	saved_slopes[jj] = slope;
+	saved_looks[jj] = look_angle;
+      }
+#endif
 
       if (look_angle - slope > M_PI / 2)
       {
@@ -1291,6 +1375,7 @@ main (int argc, char **argv)
 	    mask_image_set_pixel(mask, jjj, iii, MASK_LAYOVER_PASSIVE);
 	}
       }
+#endif
 
       vector_free(target_to_poca0);
 
@@ -1313,18 +1398,22 @@ main (int argc, char **argv)
       }
 //      }
 
+#ifdef DO_MASKING
       vector_free (c);
       vector_free (n);
+#endif
     }
   }
   
   g_print ("done.\n");
 
+#ifdef DO_MASKING
   vector_free (poff);
-
-  g_print ("Negative simulator energy additions: %d\n", neg_sim_pixels);
   g_print ("Layover pixels: %d\n", nlayover);
   g_print ("Shadow pixels: %d\n", nshadow);
+#endif
+
+  g_print ("Negative simulator energy additions: %d\n", neg_sim_pixels);
 
 #ifdef DO_BACKGROUND_FILL
   // Skip this for now... 
@@ -1369,14 +1458,10 @@ main (int argc, char **argv)
 	   bg_fill_count);
 #endif
 
-  // Take a look at the simulated image for (FIXME) debug purposes.
-  float_image_export_as_jpeg (sim_img->data, "sim_img.jpg",
-			      GSL_MIN (sim_img->data->size_x,
-				       sim_img->data->size_y), NAN);
-
-  float_image_quick_export_4sarview(sim_img->data, "sim_img");
+#ifdef DO_MASKING
   float_image_quick_export_4sarview(angles, "angles");
   float_image_quick_export_4sarview(langles, "langles");
+#endif
 
   g_print ("Painting %ld DEM pixel rows with SAR image pixel values...\n",
 	   (long int) dem_size_y);
@@ -1402,8 +1487,8 @@ main (int argc, char **argv)
       // Look up the backscatter value for the found slant range and
       // time.
       float backscatter;
-      if ( slant_range_image_contains (sri, solved_slant_range, 
-				       solved_time, 1e-3) ) {
+      if (slant_range_image_contains (sri, solved_slant_range, 
+				      solved_time, 1e-3)) {
 	backscatter 
 	  = slant_range_image_sample (sri, solved_slant_range, solved_time,
 				      FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC);
@@ -1413,6 +1498,43 @@ main (int argc, char **argv)
 	// the mask value (FIXME: better mask handling needed).
 	backscatter = 0.0;
       }
+
+#ifdef DUMP_STUFF
+      if (ii == 834 && jj >= 900 && jj <= 950) {
+	double x, y;
+	slant_range_image_get_coords(sri, solved_slant_range, solved_time, 
+				     &x, &y);
+	int contains = slant_range_image_contains (sri, solved_slant_range, 
+						   solved_time, 1e-3);
+
+	double height, q, line, samp;
+	map_projected_dem_get_x_y_h(dem, jj, ii, &q, &q, &height);
+	Vector * c = dem_geom_info_get_cp_target(dgi, jj, ii);
+	ITRSPoint * targ = ITRS_point_new(c->x, c->y, c->z);
+	double cp_target_lat, cp_target_lon;
+	ITRS_point_get_geodetic_lat_long(targ, &cp_target_lat,
+					 &cp_target_lon);
+	vector_free(c);
+	ITRS_point_free(targ);
+
+	meta_get_lineSamp(imd, cp_target_lat * R2D, cp_target_lon * R2D,
+			  height, &line, &samp);
+	double slant2 = meta_get_slant(imd, line, samp);
+	double time2 = meta_get_time(imd, line, samp);
+
+	double x2, y2;
+	slant_range_image_get_coords(sri, slant2, time2, 
+				     &x2, &y2);
+
+	printf("%d %d %d %g %g %g %g %g %g %g %g %g %g %d %g %g\n",
+	       ii, jj, contains, 
+	       height,
+	       solved_slant_range, slant2, solved_time, time2,
+	       backscatter, y, y2, x, x2,
+	       mask_image_get_pixel(mask, jj, ii),
+	       saved_slopes[jj] * R2D, saved_looks[jj] * R2D);
+      }
+#endif
 
       // Set the pixel in the painted dem.
       float_image_set_pixel (pd, jj, ii, backscatter);
@@ -1456,14 +1578,11 @@ main (int argc, char **argv)
   }
   g_print ("done.\n");
 
+#ifdef DO_MASKING
   mask_image_export_as_ppm_with_transparency(mask,"mask_overlay.ppm", pd);
   mask_image_export_as_ppm_with_transparency(mask,"mask_overlay2.ppm", angles);
   mask_image_export_as_ppm(mask, "mask.ppm");
-
-  g_print ("Exporting painted DEM as a JPEG image... ");
-  float_image_export_as_jpeg (pd, output_jpeg_file->str, 
-			      GSL_MAX (pd->size_x, pd->size_y), 0.0);
-  g_print ("done.\n");
+#endif
 
   // Generate a LAS version of the output metadata.  The only works if
   // we have a LAS DEM given as the input.  It intended for testing
@@ -1474,6 +1593,22 @@ main (int argc, char **argv)
   output_ddr.dtype = 4;		/* Means floating point samples.  */
   output_ddr.nl = pd->size_y;
   output_ddr.ns = pd->size_x;
+
+  double loright_x = dem->upper_left_x +
+    dem->size_x * dem->projection_coordinates_per_x_pixel;
+
+  double loright_y = dem->upper_left_y +
+    dem->size_y * dem->projection_coordinates_per_y_pixel;
+
+  output_ddr.upleft[0] = dem->upper_left_y;
+  output_ddr.upleft[1] = dem->upper_left_x;
+  output_ddr.loleft[0] = loright_y;
+  output_ddr.loleft[1] = dem->upper_left_x;
+  output_ddr.upright[0] = dem->upper_left_y;
+  output_ddr.upright[1] = loright_x;
+  output_ddr.loright[0] = loright_y;
+  output_ddr.loright[1] = loright_x;
+
   error_code = c_putddr (output_ddr_file_base_name->str, &output_ddr);
   g_assert (error_code == 0);
   
@@ -1483,8 +1618,26 @@ main (int argc, char **argv)
   g_print ("done.\n");
   g_print ("Wrote image: %d by %d\n", pd->size_x, pd->size_y);
 
+  g_print ("Exporting painted DEM as a JPEG image... ");
+  float_image_export_as_jpeg (pd, output_jpeg_file->str, 
+			      GSL_MAX (pd->size_x, pd->size_y), 0.0);
+  g_print ("done.\n");
+
+  // Take a look at the simulated image for (FIXME) debug purposes.
+  float_image_export_as_jpeg (sim_img->data, "sim_img.jpg",
+			      GSL_MIN (sim_img->data->size_x,
+				       sim_img->data->size_y), NAN);
+
+  float_image_quick_export_4sarview(sim_img->data, "sim_img");
+
+
   // Free all the memory and resources we used.
   g_print ("Freeing resources... ");
+
+  // Can free the dem now
+  map_projected_dem_free (dem);
+  dem = NULL;
+
   g_string_free (reference_dem, TRUE);
   g_string_free (input_meta_file, TRUE);
   g_string_free (input_data_file, TRUE);
@@ -1496,7 +1649,11 @@ main (int argc, char **argv)
   dem_geom_info_free (dgi);
   slant_range_image_free (sri);
   meta_free (imd);
+#ifdef DO_MASKING
   mask_image_free (mask);
+  float_image_free(angles);
+  float_image_free(langles);
+#endif
   date_time_free (base_date);
   ITRS_platform_path_free (pp_fixed);
   g_free (observation_times);

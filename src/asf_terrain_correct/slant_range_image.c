@@ -401,6 +401,15 @@ slant_range_image_contains (SlantRangeImage *self, double range, double time,
 			  relative_guard));
 }
 
+void
+slant_range_image_get_coords(SlantRangeImage *self, double range, double time,
+			     double *x, double *y)
+{
+  *x = ((range - self->upper_left_pixel_range)
+	      / self->slant_range_per_pixel);
+  *y = ((time - self->upper_left_pixel_time) / self->time_per_pixel);
+}
+
 double
 slant_range_image_sample (SlantRangeImage *self, double range, double time,
 			  float_image_sample_method_t sample_method)

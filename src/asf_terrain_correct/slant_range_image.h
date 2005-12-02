@@ -90,6 +90,11 @@ double
 slant_range_image_sample (SlantRangeImage *self, double range, double time, 
 			  float_image_sample_method_t sample_method);
 
+// FIXME, delete this method
+void
+slant_range_image_get_coords(SlantRangeImage *self, double range, double time,
+			     double *x, double *y);
+
 // Add energy to slant range image at radar coordinate (range, time).
 // It is required that slant_range_image_contains to be true for a
 // relative_guard of 1e-6.  To ensure that this is the case,

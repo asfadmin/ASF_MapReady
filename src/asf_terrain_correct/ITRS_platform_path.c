@@ -328,7 +328,12 @@ ITRS_platform_path_position_at_time (ITRSPlatformPath *self, double time,
 				     Vector *position)
 {
   // Ensure that the time queried is within the interval modeled.
-  assert (time >= self->start_time && time <= self->end_time);
+  if (!(time >= self->start_time && time <= self->end_time)) {
+    printf("Outside time interval: %g   (%g,%g)\n", time,
+	   self->start_time, self->end_time);
+    if (time < self->start_time) time = self->start_time;
+    if (time > self->end_time) time = self->end_time;
+  }
 
   int return_code = gsl_spline_eval_e (self->xp, time, self->xp_accel, 
 				       &(position->x));
@@ -349,7 +354,12 @@ ITRS_platform_path_velocity_at_time (ITRSPlatformPath *self, double time,
 				     Vector *velocity)
 {
   // Ensure that the time queried is within the interval modeled.
-  assert (time >= self->start_time && time <= self->end_time);
+  if (!(time >= self->start_time && time <= self->end_time)) {
+    printf("Outside time interval: %g   (%g,%g)\n", time,
+	   self->start_time, self->end_time);
+    if (time < self->start_time) time = self->start_time;
+    if (time > self->end_time) time = self->end_time;
+  }
 
   int return_code = gsl_spline_eval_deriv_e (self->xp, time, self->xp_accel,
 					     &(velocity->x));

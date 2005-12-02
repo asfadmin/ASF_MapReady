@@ -134,7 +134,11 @@ vector_project (Vector *self, Vector *other1, Vector *other2)
   if (a > M_PI)
     vector_multiply (ret, -1);
 
-  assert (vector_angle(ret, self) < 1.6);
+
+  if (vector_angle(ret, self) > 1.6) {
+    printf("warning: unusually large projection angle: %g\n",
+	   vector_angle(ret, self));
+  }
 
   vector_free(n);
   vector_free(ns);
