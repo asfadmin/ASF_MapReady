@@ -123,6 +123,7 @@ BUGS:
 *									      *
 ******************************************************************************/
 #include "asf.h"
+#include "asf_reporting.h"
 #include <unistd.h>
 #include "ceos.h"
 #include "ddr.h"
@@ -137,14 +138,14 @@ void make_zero(void);
 int main(argc, argv)
         int argc; char **argv;
 {
-char cmd[255], temp[255], SAR[255], SARtrl[255], DEM[255],
-     cSAR[255], pSAR[255], mSAR[255], rSAR[255],
+char cmd[255], SAR[255],  DEM[255], cSAR[255], pSAR[255], mSAR[255], rSAR[255],
      SIM[255], fSIM[255], COR[255], rCOR[255];
-char metaExt[255], *imgExt=".img";
+char *metaExt=".meta", *imgExt=".img";
 char SIM_rtc[259], pSAR_mask[260];
  
 /*char    ascdesc;                 Ascending/Descending pass flag            */
 float   pixsiz;                 /* Processing pixel size in meters           */
+float   pixsizDEM, pixsizSAR;   /* Pixel size for input SAR and DEM images   */
 int     leave,                  /* Flag -- Leave temporary processing files? */
         clip,                   /* Flag -- Clip the DEM to match SAR image?  */
         mask,                   /* Flag -- Create a mask image?              */
@@ -155,18 +156,17 @@ int     leave,                  /* Flag -- Leave temporary processing files? */
 	skip;			/* Flag -- Skip SAR preprocessing?	     */
 int     error;                  /* Return status -- error checking           */
 int     i, j;                   /* A humble little loop counter              */
-struct  VFDRECV  asf_facdr;     /* Value of Facility Data Record             */
-struct  DDR	 ddr;		/* LAS Data Descriptor Record		     */
+meta_parameters *metaDEM=NULL, *metaSAR=NULL;	/* Metadata		     */
 /*****************************************************************************
                   S E T    U P    P R O C E S S I N G
 ******************************************************************************/
 StartWatch();
 
-printf("\n\n");
-printf("==================================================================\n");
-printf("        Terrain Correction Software for ASF ERS1 SAR images\n");
-printf("==================================================================\n");
-printf("\n");
+asfPrintStatus("\n\n");
+asfPrintStatus("==================================================================\n");
+asfPrintStatus("        Terrain Correction Software for ASF SAR images\n");
+asfPrintStatus("==================================================================\n");
+asfPrintStatus("\n");
  
 /* Get Inputs from Command Line 
  ------------------------------*/
@@ -198,7 +198,7 @@ if (argc >= 3)
                            rtcf = 1;
                            break;
                  default:
-                     printf("\n\7\7\n INVALID OPTION: %s\n\7\n",argv[i]);
+                     asfPrintStatus("\n\7\7\n INVALID OPTION: %s\n\7\n",argv[i]);
                      error = 1;
                      break;
                } 
@@ -213,25 +213,23 @@ else error = 1;
  
 if (error)
   {
-   printf(" Usage: %s [-cf{1-4}klms] SAR DEM\n\n",argv[0]);
-   printf(" The inputs to this shell are as follows:\n\n");
-   printf("   SAR         input SAR file, must be an original ASF \n");
-   printf("               groundstation LOW or FULL-RES image set\n");
-   printf("   DEM         input DEM file of SAR area of coverage, in LAS 6\n");
-   printf("               .img format.  The .meta metadata file is used also\n");
-   printf("\n");
-   printf(" The options accepted are:\n\n");
-   printf("   -c          Clip the DEM file to the area of the SAR image\n");
-   printf("               (thus reducing processing time).\n");
-   printf("   -f{1-4}     Apply radiometric terrain corrections using the\n");
-   printf("               formula requested (1 LI  2 GO  3 SQ  4 VX).\n");
-   printf("   -k          Create a mask value image.\n");
-   printf("   -l          Leave temporary processing files intact.\n");
-   printf("   -m          Modify radiometric calibration sigma0 range, \n");
-   printf("               coefficients, and noise vs. range LUT\n");
-   printf("   -s          Skip the SAR preprocessing steps\n");
-   printf("\n");
-   printf(" Version %.2f,  ASF SAR Tools\n\n",VERSION);
+   asfPrintStatus(" Usage: %s [-cf{1-4}klms] SAR DEM\n\n",argv[0]);
+   asfPrintStatus(" The inputs to this shell are as follows:\n\n");
+   asfPrintStatus("   SAR         input SAR file\n");
+   asfPrintStatus("   DEM         input DEM file\n");
+   asfPrintStatus("\n");
+   asfPrintStatus(" The options accepted are:\n\n");
+   asfPrintStatus("   -c          Clip the DEM file to the area of the SAR image\n");
+   asfPrintStatus("               (thus reducing processing time).\n");
+   asfPrintStatus("   -f{1-4}     Apply radiometric terrain corrections using the\n");
+   asfPrintStatus("               formula requested (1 LI  2 GO  3 SQ  4 VX).\n");
+   asfPrintStatus("   -k          Create a mask value image.\n");
+   asfPrintStatus("   -l          Leave temporary processing files intact.\n");
+   asfPrintStatus("   -m          Modify radiometric calibration sigma0 range, \n");
+   asfPrintStatus("               coefficients, and noise vs. range LUT\n");
+   asfPrintStatus("   -s          Skip the SAR preprocessing steps\n");
+   asfPrintStatus("\n");
+   asfPrintStatus(" Version %.2f,  ASF SAR Tools\n\n",VERSION);
    exit(EXIT_FAILURE);
   }
 
@@ -256,68 +254,53 @@ if (rtcf)
 
 /* Read DEM and SAR image metadata
  --------------------------------*/
-if (c_getddr(DEM, &ddr)!= 0)
-  { printf("Unable to get ddr file for image %s\n",DEM); exit(EXIT_FAILURE); }
-pixsiz = ddr.pdist_x;
+metaDEM = meta_read(DEM);
+if (metaDEM->projection == NULL) {
+  asfPrintError("No projection block in the .meta file for the DEM, exiting...\n");
+}
+pixsizDEM = metaDEM->projection->perX;
+pixsiz = pixsizDEM;
 
-era = set_era(SAR,SARtrl,2);
-get_asf_facdr(SARtrl,&asf_facdr);
-/*ascdesc = asf_facdr.ascdesc[0];*/
+metaSAR = meta_read(SAR);
+if (metaSAR->projection == NULL) {
+  asfPrintError("No projection block in the .meta file for the SAR, exiting...\n");
+}
+pixsizSAR = metaSAR->projection->perX;
 
-printf("Preprocessing the SAR image\n"); 
+asfPrintStatus("Preprocessing the SAR image\n"); 
 /*------------------------------------------------------------------------
                    Preprocess the input SAR image 
  ------------------------------------------------------------------------*/
   if (!skip)
    {
-    /* Apply Radiometric Calibration
-     ------------------------------*/
-    display("Applying Radiometric Calibration to SAR Image");
-    if (modify) sprintf(cmd,"calibrate %s %s -m\n",SAR,cSAR);
-    else sprintf(cmd,"calibrate %s %s\n",SAR,cSAR);
-    execute(cmd);
-
     /* Resample Image / Strip CEOS Header 
      -------------------------------------*/
-    if (asf_facdr.rapixspc < pixsiz)
+    if (pixsizSAR < pixsiz)
       {
 	display("Resampling and Low-Pass Filtering SAR Image");
         sprintf(cmd,"resample %s %s %f\n",cSAR,pSAR,pixsiz);
         execute(cmd);
 
-        printf("\n");
+        asfPrintStatus("\n");
         sprintf(cmd,"rm -f %s*\n",cSAR);
         if (system(cmd)==-1) bye();
       } 
-    else if (asf_facdr.rapixspc == pixsiz)
+    else if (pixsizSAR == pixsiz)
       {
-      	meta_or_ddr(metaExt,cSAR);
 	sprintf(cmd,"mv %s%s %s%s\n",cSAR,imgExt,pSAR,imgExt); execute(cmd);	
 	sprintf(cmd,"mv %s%s %s%s\n",cSAR,metaExt,pSAR,metaExt); execute(cmd);	
       }
     else
       {
-        printf("\nERROR: SAR image has a lower resolution than the DEM\n");
-        bye();
+        asfPrintError("SAR image has a lower resolution than the DEM\n");
       } 
  
     /* Copy metadata for resampled image
      -----------------------------------*/
-    printf("\n");
+    asfPrintStatus("\n");
     if (!era)
      {
-       sprintf(temp,".ldr");
-       sprintf(cmd,"cp %s%s %s%s\n",SAR,temp,pSAR,temp);
-       execute(cmd);
-       printf("\n");
-       sprintf(temp,".trl");
-       sprintf(cmd,"cp %s%s %s%s\n",SAR,temp,pSAR,temp);
-       execute(cmd);
-     }
-    else
-     {
-       sprintf(temp,".L");
-       sprintf(cmd,"cp %s%s %s%s\n",SAR,temp,pSAR,temp);
+       sprintf(cmd,"cp %s%s %s%s\n",SAR,metaExt,pSAR,metaExt);
        execute(cmd);
      }
 
@@ -338,7 +321,7 @@ printf("Preprocessing the SAR image\n");
 /*--------------------------------------------------------------------------
                  Create Simulated Image from DEM and original
  --------------------------------------------------------------------------*/
-  printf("\n");
+  asfPrintStatus("\n");
   display("Creating Simulated SAR image");
   if (mask && rtcf) sprintf(cmd,"sarsim %s %s %s -kr%i\n",pSAR,DEM,SIM,form);
   else if (mask)    sprintf(cmd,"sarsim %s %s %s -k\n",pSAR,DEM,SIM);
@@ -350,14 +333,12 @@ printf("Preprocessing the SAR image\n");
     {
      strcat(strcpy(SIM_rtc,SIM),"_rtc");
      sprintf(cmd,"mv %s%s %s%s\n",SIM_rtc,imgExt,rSAR,imgExt); execute(cmd);
-     meta_or_ddr(metaExt, SIM_rtc);
      sprintf(cmd,"mv %s%s %s%s\n",SIM_rtc,metaExt,rSAR,metaExt); execute(cmd);
     }
   if (mask)  /* Fix Mask Image File Name */
     {
      strcat(strcpy(pSAR_mask,pSAR),"_mask");
      sprintf(cmd,"mv %s%s %s%s\n",pSAR_mask,imgExt,SAR,imgExt); execute(cmd);
-     meta_or_ddr(metaExt, pSAR_mask);
      sprintf(cmd,"mv %s%s %s%s\n",pSAR_mask,metaExt,SAR,metaExt); execute(cmd);
     }
 
@@ -374,6 +355,7 @@ printf("Preprocessing the SAR image\n");
   display("Performing Correlation of Images");
   sprintf(cmd,"correlate %s %s coef %s\n",fSIM,pSAR,SAR);
   execute(cmd);
+
 /*--------------------------------------------------------------------------
                         Create Terrain Corrected Image 
  --------------------------------------------------------------------------*/
@@ -387,7 +369,6 @@ printf("Preprocessing the SAR image\n");
    {
      display("Creating Radiometrically Terrain Corrected Image");
      sprintf(cmd,"rtc_add %s %s %s\n",COR,rSAR,rCOR); execute(cmd);
-     meta_or_ddr(metaExt, COR);
      sprintf(cmd,"cp %s%s %s%s\n",COR,metaExt,rCOR,metaExt); execute(cmd);
    }
 
@@ -399,14 +380,12 @@ printf("Preprocessing the SAR image\n");
   if (!leave)
    {
     /* sprintf(cmd,"rm -f *.tpl\n"); execute(cmd); */
-    meta_or_ddr(metaExt, SIM);
     sprintf(cmd,"rm -f %s%s %s%s\n",SIM,imgExt,SIM,metaExt); execute(cmd);
     sprintf(cmd,"rm -f cor_sar?.* cor_sim?.*\n"); execute(cmd);
 
     if (clip)
      {
       sprintf(cmd,"rm -f %s%s\n",DEM,imgExt); execute(cmd);
-      meta_or_ddr(metaExt, DEM);
       sprintf(cmd,"rm -f %s%s\n",DEM,metaExt); execute(cmd);
      }
    }
@@ -414,71 +393,45 @@ printf("Preprocessing the SAR image\n");
   if (rtcf)
    {
      sprintf(cmd,"rm -f %s%s\n",rSAR,imgExt); execute(cmd);
-     meta_or_ddr(metaExt, rSAR);
      sprintf(cmd,"rm -f %s%s\n",rSAR,metaExt); execute(cmd);
    }
 
   if (!skip)
    {
-    if (!era)
-     {
-      sprintf(temp,".ldr"); sprintf(cmd,"rm -f %s%s\n",pSAR,temp); execute(cmd);
-      sprintf(temp,".trl"); sprintf(cmd,"rm -f %s%s\n",pSAR,temp); execute(cmd);
-     }
-    else
-     {sprintf(temp,".L"); sprintf(cmd,"rm -f %s%s\n",pSAR,temp); execute(cmd);}
+     sprintf(cmd,"rm -f %s%s\n",pSAR,metaExt); execute(cmd);
    }
 
 
 
 StopWatch();
 
-printf("\n\n");
-printf("==================================================================\n");
-printf("             End of Terrain Correction Process\n");
-printf("==================================================================\n");
-printf("\n\n");
+asfPrintStatus("\n\n");
+asfPrintStatus("==================================================================\n");
+asfPrintStatus("             End of Terrain Correction Process\n");
+asfPrintStatus("==================================================================\n");
+asfPrintStatus("\n\n");
 
 return(0);
 }
 
 
 
-void meta_or_ddr(char *whichOne, char *fileName)
-{
-  char metaName[255], ddrName[255];
-  
-  create_name(metaName, fileName, ".meta");
-  create_name(ddrName,  fileName, ".ddr");
-
-  if (fileExists(metaName)) {
-    strcpy (whichOne, ".meta");
-  }
-  else if (fileExists(ddrName)) {
-    strcpy (whichOne, ".ddr");
-  }
-  else { /* Default to .meta */
-    strcpy (whichOne, ".meta");
-  }
-}
-    
-
 void display(char *text)
 {
-  printf("\n-----------------------------------------------------------\n");
-  printf("%s\n",text);
-  printf("-----------------------------------------------------------\n\n");
+  asfPrintStatus("\n-----------------------------------------------------------\n");
+  asfPrintStatus("%s\n",text);
+  asfPrintStatus("-----------------------------------------------------------\n\n");
 }
 
 void execute(char *cmd) 
 {
-	printf("%s",cmd); 
+	asfPrintStatus("%s",cmd); 
 	fflush(stdin);
 	if (system(cmd)!=0) 
 		bye(); 
 }
 
-void bye(void) { printf("Program Aborted.\n"); exit(EXIT_FAILURE); }
+void bye(void) { asfPrintStatus("Program Aborted.\n"); exit(EXIT_FAILURE); }
 
 void make_zero(void)
 {
