@@ -153,7 +153,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_double(fp,"center_longitude:", meta->general->center_longitude,
 		  "Approximate image center longitude");
   if (META_VERSION >= 1.6)
-    meta_put_double(fp, "average height:", meta->general->average_height,
+    meta_put_double(fp, "average_height:", meta->general->average_height,
 		    "Average height [m]");
   meta_put_double(fp,"re_major:", meta->general->re_major,
 		  "Major (equator) Axis of earth [m]");
