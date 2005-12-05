@@ -2,7 +2,7 @@
  NAME:  refine_base
 
  SYNOPSIS:  refine_base [-k __iter__ ] [-log <file>] [-quiet] 
-                        <phase> <tie_points> <meta> <old_base> <new_base>
+                        <phase> <tie_points> <old_base> <new_base>
 
   -k __iter__    Keep intermediate products.  Iterations=__iter__
   -log <file>	 Allows the output to be written to a log file
@@ -10,7 +10,6 @@
 
        <phase>   unwrapped interferogram phase file" ;
   <tie_points>   tie-point location file.";
-        <meta>   filename containing interferogram's metadata.";
     <old_base>   baseline file containg four parameters:" ;
                  Bn delta_Bn Bp delta_Bp" ;
     <new_base>   refined baseline file containg four parameters:" ;
@@ -46,6 +45,9 @@
 				      Included external programs as functions
     1.5    12/03         P. Denny   - Bring commandline parsing to our standard
                                       Use meta 1.1 instead of DDR (genab.c)
+    2.0     7/05         R. Gens    - Removed DDR dependency. Took care of
+                                      endianess. Took metafile out of command
+                                      line.
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -93,12 +95,11 @@ void usage (char *name) {
  printf("\n"
  	"USAGE:\n"
 	"   %s [-keep <iter>] [-log <file>] [-quiet]\n"
-	"            <phase> <tie_points> <meta> <old_base> <new_base>\n",name);
+	"            <phase> <tie_points> <old_base> <new_base>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
 	"   phase        Unwrapped interferogram phase file\n"
 	"   tie_points   Tie-point location file.\n"
-	"   meta         Filename containing interferogram's metadata.\n"
 	"   old_base     Baseline file containg four parameters:\n"
 	"                  Bn delta_Bn Bp delta_Bp\n"
 	"   new_base     Refined baseline file containg four parameters:\n"
@@ -125,7 +126,7 @@ int main(int argc,char *argv[])
 
   /* Parse command line arguments */
   logflag=quietflag=FALSE;
-  while (currArg < (argc-5)) {
+  while (currArg < (argc-4)) {
      char *key = argv[currArg++];
      if (strmatch(key,"-keep")) {
         CHECK_ARG(1);
@@ -143,14 +144,13 @@ int main(int argc,char *argv[])
      }
      else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
   }
-  if ((argc-currArg) < 5) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+  if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 
   /* take care of required command line arguments */
   strcpy(phase_file,   argv[currArg]);
   strcpy(tp_file,      argv[currArg+1]);
-  strcpy(meta_file,    argv[currArg+2]); /* Do we need this argument?? */
-  strcpy(oldbase_file, argv[currArg+3]);
-  strcpy(newbase_file, argv[currArg+4]);
+  strcpy(oldbase_file, argv[currArg+2]);
+  strcpy(newbase_file, argv[currArg+3]);
 
   printf("%s\n",date_time_stamp());
   printf("Program: refine_base\n\n");
@@ -167,7 +167,7 @@ int main(int argc,char *argv[])
   getphase(phase_file, tp_file, ctrlpt_file);
 
   /* generate matricies from phases & tie points*/
-  genab(ctrlpt_file, oldbase_file, meta_file, matrix_file, vec_file);
+  genab(ctrlpt_file, oldbase_file, phase_file, matrix_file, vec_file);
  
   /* create baseline and test it */
   bp(matrix_file, vec_file, newbase_file);
