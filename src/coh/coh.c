@@ -185,8 +185,8 @@ int main(int argc, char *argv[])
     printLog("Program: coh\n\n");
   }
 
-  create_name(inName1, argv[currArg],  ".cpx");
-  create_name(inName2, argv[currArg+1],".cpx");
+  create_name(inName1, argv[currArg],  ".img");
+  create_name(inName2, argv[currArg+1],".img");
   create_name(outName, argv[currArg+2],".img");
 
   /* Read input meta files */
@@ -230,9 +230,9 @@ int main(int argc, char *argv[])
   inFile2 = fopenImage(inName2,"rb");
   outFile = fopenImage(outName,"wb");
 
-  printf("Input Size    => line: %5d  sample: %5d\n",num_lines,num_samples);
-  printf("Step Interval => line: %5d  sample: %5d\n",stepLine,stepSample);
-  printf("Window Size   => line: %5d  sample: %5d\n\n",lookLine,lookSample);
+  printf("   Input Size    => line: %5d  sample: %5d\n",num_lines,num_samples);
+  printf("   Step Interval => line: %5d  sample: %5d\n",stepLine,stepSample);
+  printf("   Window Size   => line: %5d  sample: %5d\n\n",lookLine,lookSample);
 
   for (cnt = 0; cnt<HIST_SIZE; cnt++) hist_val[cnt] = 0;
 
