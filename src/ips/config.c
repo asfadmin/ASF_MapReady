@@ -274,7 +274,7 @@ dem_config *init_fill_config(char *configFile)
   strcpy(cfg->deramp_ml->status, "new");
   
   cfg->unwrap->algorithm = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->unwrap->algorithm, "");
+  strcpy(cfg->unwrap->algorithm, "escher");
   cfg->unwrap->flattening = 1;
   cfg->unwrap->procs = 8;
   cfg->unwrap->tiles_azimuth = 0;
@@ -313,9 +313,9 @@ dem_config *init_fill_config(char *configFile)
   cfg->geocode->name = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->geocode->name, "");
   cfg->geocode->proj = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->proj, "");
+  strcpy(cfg->geocode->proj, "utm");
   cfg->geocode->resample = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->resample, "");
+  strcpy(cfg->geocode->resample, "bilinear");
   cfg->geocode->status = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->geocode->status, "new");
   

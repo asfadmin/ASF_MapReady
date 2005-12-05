@@ -379,18 +379,19 @@ main(int argc, char *argv[])
       if (cfg->general->mflag) {
 	strcat(strcpy(metaFile,"a"),".meta");
 	nLooks = lzInt(metaFile, "sar.look_count:", NULL);
-	strcat(strcpy(metaFile,"reg/a_p1"),".meta");
+	strcat(strcpy(metaFile,"reg/a_p1_cpx"),".meta");
 	nl = lzInt(metaFile, "general.line_count:", NULL);
 	ns = lzInt(metaFile, "general.sample_count:", NULL);
 	check_return(trim(cfg->general->mask, "reg/mask1", 
 			  cfg->coreg_p1->start_master/nLooks, 0,
 			  nl/nLooks, ns), "mask for first patch (trim)");
-	check_return(coregister_coarse("reg/a_p1", "reg/b_p1", "reg/ctrl1", 
-				       "reg/mask1"), 
+	check_return(coregister_coarse("reg/a_p1", "reg/b_p1", 
+				       "reg/ctrl1", "reg/mask1"), 
 		     "offset estimation first patch (coregister_coarse)");
       }
       else 
-	check_return(coregister_coarse("reg/a_p1", "reg/b_p1", "reg/ctrl1", NULL), 
+	check_return(coregister_coarse("reg/a_p1", "reg/b_p1", 
+				       "reg/ctrl1", NULL), 
 		     "offset estimation first patch (coregister_coarse)");
       if (cfg->coreg_p1->grid < 20 || cfg->coreg_p1->grid > 200) {
 	printf("\n   WARNING: grid size out of range - "
@@ -440,18 +441,19 @@ main(int argc, char *argv[])
       if (cfg->general->mflag) {
 	strcat(strcpy(metaFile,"a"),".meta");
 	nLooks = lzInt(metaFile, "sar.look_count:", NULL);
-	strcat(strcpy(metaFile,"reg/a_pL"),".meta");
+	strcat(strcpy(metaFile,"reg/a_pL_cpx"),".meta");
 	nl = lzInt(metaFile, "general.line_count:", NULL);
 	ns = lzInt(metaFile, "general.sample_count:", NULL);
 	check_return(trim(cfg->general->mask, "reg/maskL", 
 			  cfg->coreg_pL->start_master/nLooks, 0, 
 			  nl/nLooks, ns), "mask for last patch (trim)");
-	check_return(coregister_coarse("reg/a_pL", "reg/b_pL", "reg/ctrlL", 
-				       "reg/maskL"), 
+	check_return(coregister_coarse("reg/a_pL", "reg/b_pL", 
+				       "reg/ctrlL", "reg/maskL"), 
 		     "offset estimation last patch (coregister_coarse)");
       }
       else
-	check_return(coregister_coarse("reg/a_pL", "reg/b_pL", "reg/ctrlL", NULL), 
+	check_return(coregister_coarse("reg/a_pL", "reg/b_pL", 
+				       "reg/ctrlL", NULL), 
 		     "offset estimation last patch (coregister_coarse)");
       inFile = FOPEN("reg/ctrl1", "r");
       fscanf(inFile, "%d%d", &cfg->coreg_p1->off_rng, &cfg->coreg_p1->off_az);
@@ -493,21 +495,21 @@ main(int argc, char *argv[])
 		     "Could not update configuration file"); 
       }
       if (cfg->general->mflag) {
-	check_return(coregister_fine("reg/a_p1", "reg/b_p1", "reg/ctrl1", 
+	check_return(coregister_fine("reg/a_p1_cpx.img", "reg/b_p1_cpx.img", "reg/ctrl1", 
 				     "reg/fico1", "reg/mask1.img", 
 				     cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		     "fine coregistration first patch (coregister_fine)");
-	check_return(coregister_fine("reg/a_pL", "reg/b_pL", "reg/ctrlL", 
+	check_return(coregister_fine("reg/a_pL_cpx.img", "reg/b_pL_cpx.img", "reg/ctrlL", 
 				     "reg/ficoL", "reg/maskL.img",
 				     cfg->coreg_pL->grid, cfg->coreg_pL->fft), 
 		     "fine coregistration last patch (coregister_fine)");
       }
       else {
-	check_return(coregister_fine("reg/a_p1", "reg/b_p1", "reg/ctrl1", 
+	check_return(coregister_fine("reg/a_p1_cpx.img", "reg/b_p1_cpx.img", "reg/ctrl1", 
 				     "reg/fico1", NULL, 
 				     cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		     "fine coregistration first patch (coregister_fine)");
-	check_return(coregister_fine("reg/a_pL", "reg/b_pL", "reg/ctrlL", 
+	check_return(coregister_fine("reg/a_pL_cpx.img", "reg/b_pL_cpx.img", "reg/ctrlL", 
 				     "reg/ficoL", NULL,
 				     cfg->coreg_pL->grid, cfg->coreg_pL->fft), 
 		     "fine coregistration last patch (coregister_fine)");
@@ -574,13 +576,13 @@ main(int argc, char *argv[])
 			  cfg->aisp_slave->patches, "b", "b"), 
 		     "processing slave image (aisp)");
 	if (cfg->general->mflag) 
-	  check_return(coregister_fine("a", "b", "reg/ctrl", "reg/fico", 
+	  check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", 
 				       cfg->general->mask,
 				       cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		       "offset estimation slave image (coregister_fine)");
 	else 
-	  check_return(coregister_fine("a", "b", "reg/ctrl", "reg/fico", NULL, 
-				       cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
+	  check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", 
+				       NULL, cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		       "offset estimation slave image (coregister_fine)");
 	sprintf(cmd, "cp base.00 %s.base.00", cfg->general->base); system(cmd);
 	
@@ -620,24 +622,25 @@ main(int argc, char *argv[])
 	}
 	
 	if (cfg->general->mflag) {
-	  check_return(coregister_coarse("a", "b", "reg/ctrl", cfg->general->mask), 
+	  check_return(coregister_coarse("a_cpx.img", "b_cpx.img", "reg/ctrl", 
+					 cfg->general->mask), 
 		       "offset estimation slave image (coregister_coarse)");
-	  check_return(coregister_fine("a", "b", "reg/ctrl", "reg/fico", 
+	  check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", 
 				       cfg->general->mask, 
 				       cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		       "fine coregistration slave image (coregister_fine)");
 	}
 	else {
-	  check_return(coregister_coarse("a", "b", "reg/ctrl", NULL), 
+	  check_return(coregister_coarse("a_cpx.img", "b_cpx.img", "reg/ctrl", NULL), 
 		       "offset estimation slave image (coregister_coarse)");
-	  check_return(coregister_fine("a", "b", "reg/ctrl", "reg/fico", NULL, 
-				       cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
+	  check_return(coregister_fine("a_cpx.img", "b+cpx.img", "reg/ctrl", "reg/fico",
+				       NULL, cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		       "fine coregistration slave image (coregister_fine)");
 	}
 	check_return(fit_plane("reg/fico", "reg/matrix", 0.8), 
 		     "calculate transformation parameters (fit_plane)");
 	sprintf(tmp, "-matrix reg/matrix -sameSize");
-	check_return(remap("b.cpx", "b_corr.cpx", tmp), 
+	check_return(remap("b_cpx.img", "b_corr_cpx.img", tmp), 
 		     "resampling of slave image (remap)");		  
       }
       
@@ -730,15 +733,15 @@ main(int argc, char *argv[])
 			      cfg->ingest->prc_master, cfg->ingest->prcflag, 
 			      cfg->general->lat_begin, cfg->general->lat_end), 
  		   "ingesting slave image (asf_import)");
-      check_return(c2p("a", "a"), 
+      check_return(c2p("a_cpx", "a"), 
 		   "converting complex master image into phase and amplitude (c2p)");
-      meta = meta_init("a.meta");
-      check_return(convert2byte("a.amp", "a_amp.img", meta->ifm->nLooks, 1), 
+      meta = meta_init("a_cpx.meta");
+      check_return(convert2byte("a_amp.img", "a_amp_byte.img", meta->ifm->nLooks, 1), 
 		   "creating byte amplitude master image (convert2byte)");
-      check_return(c2p("b", "b"), 
+      check_return(c2p("b_cpx", "b"), 
 		   "converting complex slave image into phase and amplitude (c2p)");
-      meta = meta_init("b.meta");
-      check_return(convert2byte("b.amp", "b_amp.img", meta->ifm->nLooks, 1), 
+      meta = meta_init("b_cpx.meta");
+      check_return(convert2byte("b_amp.img", "b_amp_byte.img", meta->ifm->nLooks, 1), 
 		   "creating byte amplitude slave image (convert2byte)");
       sprintf(cfg->ingest->status, "success");
       check_return(write_config(configFile, cfg), 
@@ -748,17 +751,18 @@ main(int argc, char *argv[])
     /* Coregister slave image */
     if (check_status(cfg->coreg_slave->status)) {
       if (cfg->general->mflag) {
-	check_return(coregister_coarse("a", "b", "reg/ctrl", cfg->general->mask), 
+	check_return(coregister_coarse("a_cpx.img", "b_cpx.imh", "reg/ctrl", 
+				       cfg->general->mask), 
 		     "offset estimation (coregister_coarse)");
-	check_return(coregister_fine("a", "b", "reg/ctrl", "reg/fico", 
+	check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", 
 				     cfg->general->mask, 
 				     cfg->coreg_slave->grid, cfg->coreg_slave->fft), 
 		     "fine coregistration slave image (coregister_fine)");
       }
       else {
-	check_return(coregister_coarse("a", "b", "reg/ctrl", NULL), 
+	check_return(coregister_coarse("a_cpx.img", "b_cpx.img", "reg/ctrl", NULL), 
 		     "offset estimation (coregister_coarse)");
-	check_return(coregister_fine("a", "b", "reg/ctrl", "reg/fico", NULL, 
+	check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", NULL, 
 				     cfg->coreg_slave->grid, cfg->coreg_slave->fft), 
 		     "fine coregistration slave image (coregister_fine)");
       }
@@ -782,10 +786,10 @@ main(int argc, char *argv[])
       sprintf(cmd, "mv a_amp.img %s_a_amp.img", cfg->general->base); system(cmd);
       sprintf(cmd, "mv a_amp.meta %s_a_amp.meta", cfg->general->base); system(cmd);
       sprintf(cmd, "rm b_amp.img b_amp.meta"); system(cmd);
-      check_return(c2p("b_corr", "b_corr"), 
+      check_return(c2p("b_corr_cpx", "b_corr"), 
 		   "converting complex slave image into phase and amplitude (c2p)");
       sprintf(tmp, "%s_b_amp.img", cfg->general->base);
-      check_return(convert2byte("b_corr.amp", tmp, meta->ifm->nLooks, 1), 
+      check_return(convert2byte("b_corr_amp.img", tmp, meta->ifm->nLooks, 1), 
 		   "creating byte amplitude slave image (convert2byte)");
       sprintf(cfg->coreg_slave->status, "success");
       check_return(write_config(configFile, cfg), 
@@ -795,7 +799,7 @@ main(int argc, char *argv[])
   
   /* Calculate the interferogram and coherence */
   if (check_status(cfg->igram_coh->status)) {
-    check_return(igram("a", "b_corr", cfg->igram_coh->igram), 
+    check_return(igram("a_cpx.img", "b_corr_cpx.img", cfg->igram_coh->igram), 
 		 "interferogram generation (igram)");
     
     if (cfg->igram_coh->min < 0.0 || cfg->igram_coh->min > 1.0) {
@@ -805,7 +809,7 @@ main(int argc, char *argv[])
       check_return(write_config(configFile, cfg), 
 		   "Could not update configuration file"); 
     }
-    check_return(coh("a", "b_corr", cfg->igram_coh->coh), 
+    check_return(coh("a_cpx.img", "b_corr_cpx.img", cfg->igram_coh->coh), 
 		 "generating coherence image (coh)");
     if (fCoh = FOPEN(logFile, "r")) {
       while (fgets(tmp, 255, fCoh) != NULL) {
@@ -842,30 +846,30 @@ main(int argc, char *argv[])
   system(cmd);
   
   /* Refine the offset */
-  if (check_status(cfg->offset_match->status)) { 
-/*** supposedly no iteration required anymore ***
-    i = 0;
-    while (off) {
-********************/
+  if (check_status(cfg->offset_match->status)) {
+    /* 
+    // supposedly no iteration required anymore ***
+    //i = 0;
+    //while (off) {
       meta = meta_init("a.meta");
       sprintf(tmp, "%s_amp.img", cfg->igram_coh->igram);
       check_return(convert2byte(tmp, "sar_byte", meta->ifm->nLooks, 1), 
 		   "creating byte amplitude image (convert2byte)");
       strcat(strcpy(metaFile,"sar_byte"),".meta");
 
-      /*** Temporary fix: create a DDR file for sar_byte **
+      *** Temporary fix: create a DDR file for sar_byte **
 	   sprintf(cmd, "meta2ddr sar_byte tmp");
 	   system(cmd);
 	   sprintf(cmd, "mv tmp.ddr sar_byte.ddr");
 	   system(cmd);
-      ****************************************************/
+      ****************************************************
 
       nl = lzInt(metaFile, "general.line_count:", NULL);
       ns = lzInt(metaFile, "general.sample_count:", NULL);
-      /* if (!fileExists(cfg->general->dem)) check_return(1, 
-	 "reference DEM file does not exist"); */
+      * if (!fileExists(cfg->general->dem)) check_return(1, 
+	 "reference DEM file does not exist"); *
 
-/*** New procedure from Orion ******************/
+	 *** New procedure from Orion ******************
 
       check_return(create_dem_grid(cfg->general->dem, "sar_byte.img", "a.meta", 
 				   "dem_grid"), 
@@ -875,16 +879,16 @@ main(int argc, char *argv[])
       sprintf(tmp, "-width %d -height %d -poly poly.5 -float", ns, nl);
       check_return(remap(cfg->general->dem, "dem_big.dem", tmp),
 		   "creating subset of reference DEM (remap)");
-      /**** Needs change **************  
+      **** Needs change **************  
 	    check_return(make_ddr("dem_big.dem", nl, ns+500, "float"), 
 	    "creating DDR file for subset DEM (makeddr)"); 
-      ********************/
+      ********************
       sprintf(tmp, "%s_ml_phase", cfg->igram_coh->igram);
       check_return(reskew_dem(tmp, "dem_big.dem", "dem_slant.ht", "dem_sim.amp"), 
 		   "transformation subset of reference DEM into slant range "
 		   "(reskew_dem)");
 
-      /*** No iteration process anymore *********/
+      *** No iteration process anymore *********
       check_return(convert2byte("dem_sim.amp", "dem_simbyte.img", 1, 1), 
 		   "creating simulated byte amplitude image (convert2byte)");
       check_return(trim("dem_simbyte.img", "dem_trimsim.img", 0, 100, nl, ns), 
@@ -899,16 +903,21 @@ main(int argc, char *argv[])
       FCLOSE(fCorr);
       sprintf(tmp, "cp dem_corr offset.%d", i);
       system(tmp);
-      /*      i++;*/
+      *      i++;*
       if (fabs(xshift)<cfg->offset_match->max && 
 	  fabs(yshift)<cfg->offset_match->max) off = 0;
       meta = meta_init("a.meta");
       meta->geo->timeShift -= yshift * meta->geo->azPixTime;
       meta->geo->slantShift -= xshift * meta->geo->xPix;
       meta_write(meta, "a.meta");
-      /******
+      ******
     }
 ****** end of iterative business *************/
+
+    sprintf(tmp, "%s_amp.img", cfg->igram_coh->igram);
+    check_return(asf_check_geolocation(tmp, cfg->general->dem, "offset", 
+				       "dem_sim.img", "dem_slant.img"), 
+		 "refining the geolocation of the SAR image");
 
     sprintf(cfg->offset_match->status, "success");
     check_return(write_config(configFile, cfg), 
@@ -917,11 +926,12 @@ main(int argc, char *argv[])
   
   /* Simulated phase image and seed points */
   if (check_status(cfg->sim_phase->status)) { 
-    check_return(dem2phase("dem_lined.ht", "a.meta", 
+    check_return(dem2phase("dem_slant.img", "a.meta", 
 			   base2str(0, cfg->general->base), "out_dem_phase.img"), 
 		 "creating simulated phase (dem2phase)");
-    check_return(dem2seeds("dem_lined.ht", "sar_byte.img" , 
-			   cfg->sim_phase->seeds, 0), 
+
+    sprintf(tmp, "%s_amp_byte.img", cfg->igram_coh->igram);
+    check_return(dem2seeds("sar_byte.img", tmp, cfg->sim_phase->seeds, 0), 
 		 "creating seed points (dem2seeds)");
     
     sprintf(cfg->sim_phase->status, "success");
@@ -1004,8 +1014,8 @@ main(int argc, char *argv[])
 			  "unwrap_nod", 1), 
 		   "reramping unwrapped phase (deramp)");
       
-      system("ln -s unwrap_phase.meta unwrap_dem.phase.mask.meta");
-      system("ln -s unwrap_phase.meta unwrap_dem.phase.meta");
+      system("ln -s unwrap_phase.meta unwrap_dem_phase.mask.meta");
+      system("ln -s unwrap_phase.meta unwrap_dem_phase.meta");
       check_return(convert2ppm("unwrap_dem_phase.mask", "unwrap_mask.ppm"), 
 		   "colorized phase unwrapping mask (convert2ppm)");
     }
@@ -1014,7 +1024,7 @@ main(int argc, char *argv[])
       
       if (cfg->general->test == 1) {
 	if (cfg->unwrap->flattening==1) sprintf(tmp, "ml_dem.phase");
-	else sprintf(tmp, "ml.phase");
+	else sprintf(tmp, "ml_phase.img");
 	if (cfg->unwrap->filter < 0.0 || cfg->unwrap->filter > 3.0) {
 	  printf("\n   WARNING: phase filter value out of range - "
 		 "set to value of 1.6\n\n");
@@ -1028,15 +1038,15 @@ main(int argc, char *argv[])
 		       "phase filtering (phase_filter)");
 	  sprintf(tmp, "filtered_phase");
 	}
-	if (strcmp(tmp, "ml.phase")!=0) {
-	  check_return(zeroify(tmp, "ml.phase", "escher_in.phase"), 
+	if (strcmp(tmp, "ml_phase.img")!=0) {
+	  check_return(zeroify(tmp, "ml_phase", "escher_in_phase.img"), 
 		       "phase value cosmetics (zeroify)");
-	  sprintf(tmp, "escher_in.phase");
+	  sprintf(tmp, "escher_in_phase.img");
 	}
 	if (cfg->unwrap->flattening==1) {
 	  check_return(escher(tmp,"unwrap_dem"), "phase unwrapping (escher)");
 	  check_return(raster_calc("escher.phase", "\'(a+b)*(a/a)*(b/b)\' "
-				   "unwrap_dem.phase out_dem_phase.phase"),
+				   "unwrap_dem_phase.img out_dem_phase.img"),
 		       "adding terrain induced phase back (raster_calc)");
 	}
 	else
