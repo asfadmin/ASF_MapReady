@@ -174,8 +174,8 @@ int main(int argc, char *argv[])
   }
   if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
   
-  create_name(szImg1, argv[currArg++], ".cpx");
-  create_name(szImg2, argv[currArg++], ".cpx");
+  create_name(szImg1, argv[currArg++], ".img");
+  create_name(szImg2, argv[currArg++], ".img");
   strcpy(szCtrl,argv[currArg++]);
   strcpy(szOut,argv[currArg]);
   
