@@ -141,11 +141,11 @@ int main(int argc, char *argv[])
   /* 
    * open input files 
    */
-  create_name(fnm,argv[currArg++],".cpx");
+  create_name(fnm,argv[currArg++],".img");
   sprintf(master, "%s", fnm);
   inFile1=fopenImage(fnm, "rb");
 
-  create_name(fnm,argv[currArg++],".cpx");
+  create_name(fnm,argv[currArg++],".img");
   inFile2=fopenImage(fnm, "rb");
 
   create_name(fnm,argv[currArg],"_amp.img");
