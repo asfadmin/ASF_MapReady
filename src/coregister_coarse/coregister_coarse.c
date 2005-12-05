@@ -111,7 +111,7 @@ int main(int argc, char **argv)
   int multiLook;
   char img1[BUFFER],img2[BUFFER];
   char szBaseFile[BUFFER], szCtrlFile[BUFFER];
-  char metaFile[BUFFER];
+  char metaFile[BUFFER],meta1[BUFFER],meta2[BUFFER];
   meta_parameters *meta;
 
   /* Parse commandline */
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
   strcpy(img2,argv[currArg++]);
   strcpy(szBaseFile,argv[currArg++]);
   strcpy(szCtrlFile,argv[currArg++]);
-  create_name(metaFile, img1, ".meta");
+  create_name(metaFile, img1, "_amp.meta");
 
   if (logflag) {
     StartWatchLog(fLog);
@@ -151,9 +151,11 @@ int main(int argc, char **argv)
   meta_free(meta);
 
   /* get baseline, write it out. */
+  create_name(meta1, img1, "_amp");
+  create_name(meta2, img2, "_amp");
   WriteBaseline(
     szBaseFile,
-    find_baseline(img1,img2)
+    find_baseline(meta1,meta2)
   );
 
   CreateFicoControl(szCtrlFile,img1,img2,multiLook);
@@ -163,83 +165,96 @@ int main(int argc, char **argv)
 
 void execute(char *cmd)
 {
-	if (0!=system(cmd))
-	{
-		sprintf(errbuf,"   ERROR: Command '%s' returned in error!\n",cmd);
-		printErr(errbuf);
-	}
+  if (0!=system(cmd))
+    {
+      sprintf(errbuf,"   ERROR: Command '%s' returned in error!\n",cmd);
+      printErr(errbuf);
+    }
 }
 
 void CreateFicoControl(char *ctrl,char *img1,char *img2, int multiLook)
 {
-	float offX,offY;
-	char cmd[256],tmp[256],*offsetF="res_offsets";
-	FILE *f;
-
-	sprintf(cmd,"%s_amp.img",img1);
-	if (!fileExists(cmd))
-	{
-		sprintf(cmd,"c2p %s %s",img1,img1);
-		execute(cmd);
-		sprintf(cmd,"convert2byte -look %dx1 -step %dx1 %s.amp %s_amp.img",multiLook,multiLook,img1,img1);
-		if (logflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s %s.amp %s_amp.img",
-						multiLook, multiLook, logFile, img1, img1);
-		if (quietflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -quiet %s.amp %s_amp.img",multiLook,multiLook,img1,img1);
-		if (logflag && quietflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s -quiet %s.amp %s_amp.img",
-						multiLook, multiLook, logFile, img1, img1);
-		sprintf(tmp, "Command line: %s\n", cmd);
-		printf(tmp);
-		if (logflag) {
-		  printLog(tmp);
-		  FCLOSE(fLog);
-		}
-		execute(cmd);
-	}
-	sprintf(cmd,"%s_amp.img",img2);
-	if (!fileExists(cmd))
-	{
-		sprintf(cmd,"c2p %s %s",img2,img2);
-		execute(cmd);
-		sprintf(cmd,"convert2byte -look %dx1 -step %dx1 %s.amp %s_amp.img",multiLook,multiLook,img2,img2);
-		if (logflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s %s.amp %s_amp.img",
-						multiLook, multiLook, logFile, img2, img2);
-		if (quietflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -quiet %s.amp %s_amp.img",multiLook,multiLook,img2,img2);
-		if (logflag && quietflag) sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s -quiet %s.amp %s_amp.img",
-						multiLook, multiLook, logFile, img2, img2);
-		sprintf(tmp, "Command line: %s\n", cmd);
-		printf(tmp);
-		if (logflag) {
-		  fLog = FOPEN(logFile, "a");
-		  printLog(tmp);
-		  FCLOSE(fLog);
-		}
-		execute(cmd);
-	}
-	sprintf(cmd,"fftMatch -m %s %s_amp.img %s_amp.img",offsetF,img1,img2);
-	if (logflag) {
-	  FCLOSE(fLog);
-	  sprintf(cmd,"fftMatch -m %s -log %s %s_amp.img %s_amp.img",offsetF,logFile,img1,img2);
-	}
-	if (quietflag) sprintf(cmd,"fftMatch -m %s -quiet %s_amp.img %s_amp.img",offsetF,img1,img2);
-	if (logflag && quietflag)
-	  sprintf(cmd,"fftMatch -m %s -log %s -quiet %s_amp.img %s_amp.img",offsetF,logFile,img1,img2);
-	execute(cmd);
-	if (logflag) fLog = FOPEN(logFile, "a");
-	f=fopen(offsetF,"r");
-	if (f==NULL || 2!=fscanf(f,"%f%f",&offX,&offY))
-	{
-	  sprintf(errbuf,"   ERROR: Couldn't extract offset parameters from file %s!\n",offsetF);
-	  printErr(errbuf);;
-	}
-	fclose(f);
-	unlink(offsetF);
-	offY*=multiLook;
-	printf("   Complex image offset is %d rows, %d columns\n\n",(int)offY,(int)offX);
-	if (logflag) {
-	  sprintf(logbuf,"   Complex image offset is %d rows, %d columns\n\n",(int)offY,(int)offX);
-	  printLog(logbuf);
-	}
-	WriteFicoControl(ctrl,(int)offX,(int)offY);
+  float offX,offY;
+  char cmd[256],tmp[256],match1[256],match2[256],*offsetF="res_offsets";
+  FILE *f;
+  
+  sprintf(match1,"%s_amp.img",img1);
+  if (!fileExists(match1))
+    {
+      sprintf(cmd,"c2p %s_cpx %s",img1,img1);
+      execute(cmd);
+      sprintf(cmd,"convert2byte -look %dx1 -step %dx1 %s_amp.img %s_amp_byte.img",
+	      multiLook,multiLook,img1,img1);
+      if (logflag) 
+	sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s %s_amp.img %s_amp_byte.img",
+		multiLook, multiLook, logFile, img1, img1);
+      if (quietflag) 
+	sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -quiet %s_amp.img %s_amp_byte.img",
+		multiLook,multiLook,img1,img1);
+      if (logflag && quietflag) 
+	sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s -quiet %s_amp.img "
+		"%s_amp_byte.img", multiLook, multiLook, logFile, img1, img1);
+      sprintf(tmp, "Command line: %s\n", cmd);
+      printf(tmp);
+      if (logflag) {
+	printLog(tmp);
+	FCLOSE(fLog);
+      }
+      execute(cmd);
+      sprintf(match1,"%s_amp_byte.img",img1);
+    }
+  sprintf(match2,"%s_amp.img",img2);
+  if (!fileExists(match2))
+    {
+      sprintf(cmd,"c2p %s_cpx %s",img2,img2);
+      execute(cmd);
+      sprintf(cmd,"convert2byte -look %dx1 -step %dx1 %s_amp %s_amp_byte.img",
+	      multiLook,multiLook,img2,img2);
+      if (logflag) 
+	sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s %s_amp,img %s_amp_byte.img",
+		multiLook, multiLook, logFile, img2, img2);
+      if (quietflag) 
+	sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -quiet %s_amp %s_amp_byte.img",
+		multiLook,multiLook,img2,img2);
+      if (logflag && quietflag) 
+	sprintf(cmd,"convert2byte -look %dx1 -step %dx1 -log %s -quiet %s.amp "
+		"%s_amp_byte.img", multiLook, multiLook, logFile, img2, img2);
+      sprintf(tmp, "Command line: %s\n", cmd);
+      printf(tmp);
+      if (logflag) {
+	fLog = FOPEN(logFile, "a");
+	printLog(tmp);
+	FCLOSE(fLog);
+      }
+      execute(cmd);
+      sprintf(match2,"%s_amp_byte.img",img2);
+    }
+  sprintf(cmd,"fftMatch -m %s %s %s",offsetF,match1,match2);
+  if (logflag) {
+    FCLOSE(fLog);
+    sprintf(cmd,"fftMatch -m %s -log %s %s %s",offsetF,logFile,match1,match2);
+  }
+  if (quietflag) 
+    sprintf(cmd,"fftMatch -m %s -quiet %s %s",offsetF,match1,match2);
+  if (logflag && quietflag)
+    sprintf(cmd,"fftMatch -m %s -log %s -quiet %s %s",offsetF,logFile,match1,match2);
+  execute(cmd);
+  if (logflag) fLog = FOPEN(logFile, "a");
+  f=fopen(offsetF,"r");
+  if (f==NULL || 2!=fscanf(f,"%f%f",&offX,&offY))
+    {
+      sprintf(errbuf,"   ERROR: Couldn't extract offset parameters from file %s!\n",offsetF);
+      printErr(errbuf);;
+    }
+  fclose(f);
+  unlink(offsetF);
+  offY*=multiLook;
+  printf("   Complex image offset is %d rows, %d columns\n\n",(int)offY,(int)offX);
+  if (logflag) {
+    sprintf(logbuf,"   Complex image offset is %d rows, %d columns\n\n",(int)offY,(int)offX);
+    printLog(logbuf);
+  }
+  WriteFicoControl(ctrl,(int)offX,(int)offY);
 }
 
 void WriteFicoControl(char *fnm, int xoff, int yoff)
