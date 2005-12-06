@@ -8,11 +8,13 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/sarmodel.a \
 	$(LIBDIR)/tcobj.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libproj.a \
 	$(LIBDIR)/libasf_reporting.a \
+	$(GSL_LIBS) \
+	$(PROJ_LIBS) \
 	-lm
+
+CFLAGS += $(GSL_CFLAGS) $(PROJ_CLFAGS)
 
 #
 # Object libraries required to load the program
