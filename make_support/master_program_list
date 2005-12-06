@@ -113,6 +113,7 @@ PROGRAMS
 	idimage { BINS idtable }
 	projprm { }
 	ardop { BINS calc_deltas spectra }
+	asf_check_geolocation { }
 	avg_in_dop { }
 	c2p { }
 	coh { }
