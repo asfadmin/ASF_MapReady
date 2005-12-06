@@ -77,6 +77,8 @@ BUGS:
 #include <sys/types.h>
 #include "worgen.h"
 #include "dem.h"
+#include "asf_meta.h"
+#include "asf_reporting.h"
 
 /* constants */
 #define VERSION   1.0
@@ -109,10 +111,10 @@ main(int argc, char *argv[])
   char   demfile[BUFFER];       /* DEM file name                           */
   char   coeffile[BUFFER];      /* coefficients file name                  */
   char   dum1[20],dum2[4];      /* dummy read storage                      */
-  short  *dembuf;               /* Input Dem Buffer                        */
-  short  *demptr;               /* Input Dem Buffer Pointer                */
-  short  *outbuf;               /* Output buffer                           */
-  short  tmpval;                /* processing variable                     */
+  float  *dembuf;               /* Input Dem Buffer                        */
+  float  *demptr;               /* Input Dem Buffer Pointer                */
+  float  *outbuf;               /* Output buffer                           */
+  float  tmpval;                /* processing variable                     */
   int    dumi;                  /* dummy read storage                      */
   FILE   *fpout;	        /* File Pointer -- Used for Output file    */
   FILE   *fp;                   /* File Pointer -- Used for Demfile        */
@@ -139,11 +141,11 @@ main(int argc, char *argv[])
    ------------------------------*/
   // Read DEM metadata
   meta_parameters *metaDEM = meta_read(demfile);
-  *dem_ns = metaDEM->general->sample_count;
-  *dem_nl = metaDEM->general->line_count;
+  dem_ns = metaDEM->general->sample_count;
+  dem_nl = metaDEM->general->line_count;
   if (metaDEM->projection != NULL) {
     if ( meta_is_valid_int(metaDEM->projection->param.utm.zone) ) {
-      *zone = metaDEM->projection->param.utm.zone;
+      zone = metaDEM->projection->param.utm.zone;
     } else {
       asfPrintError("Invalid UTM zone code in the DEM metadata\n");
     }
@@ -158,7 +160,7 @@ main(int argc, char *argv[])
       asfPrintError("Invalid upper left X projection coordinate in the DEM metadata\n");
     }
     if (meta_is_valid_double(metaDEM->projection->perX)) {
-      *pixsiz = metaDEM->projection->perX;
+      pixsiz = metaDEM->projection->perX;
     } else {
       asfPrintError("Invalid projection distance in the DEM metadata\n");
     }
@@ -166,8 +168,8 @@ main(int argc, char *argv[])
 
   // Read SAR metadata
   meta_parameters *metaSAR = meta_read(sarfile);
-  *sar_ns = metaSAR->general->sample_count;
-  *sar_nl = metaSAR->general->line_count;
+  sar_ns = metaSAR->general->sample_count;
+  sar_nl = metaSAR->general->line_count;
 
   /* Read mapping coefficients file
    -------------------------------*/
@@ -209,7 +211,7 @@ main(int argc, char *argv[])
   proj_y = upleft[0];
   for (line = 0; line < dem_nl; line++, proj_y -= pixsiz)
    {
-     get_float_line(fp, metaDEM, line, dembuf)
+     get_float_line(fp, metaDEM, line, dembuf);
      demptr = dembuf;
      proj_x = upleft[1];
      for (sample = 0; sample < dem_ns; sample++, proj_x += pixsiz)
@@ -224,7 +226,6 @@ main(int argc, char *argv[])
         if (s_line>=0 && s_line<sar_nl && s_samp>=0 && s_samp<sar_ns)
           outbuf[(s_line*sar_ns)+s_samp] = tmpval;
       }
-     put_float_line(fpout,
      asfLineMeter(line, dem_nl);
   }
   put_data_lines(fpout, metaSAR, 0, sar_nl, outbuf, REAL32);
@@ -240,11 +241,11 @@ main(int argc, char *argv[])
   strcat(strcpy(sarfile,argv[2]),".meta");
   strcat(strcpy(outfile,argv[4]),".meta");
   copyfile(sarfile,outfile);
-  mod_ddr(outfile,EWORD);
 
   printf("\n\nDEMIMG completed. Version %.2f, ASF Tools\n",VERSION);
   StopWatch();
-  return(0);
+
+  exit(EXIT_SUCCESS);
 }
 
 void usage(char *name)
@@ -256,7 +257,7 @@ void usage(char *name)
   printf("              inSARfile.img   SAR image\n");
   printf("              inCOEFfile.ppf  Coefficients File\n");
   printf("      output: outfile.img  Terrain Corrected Image\n\n");
-  printf("      Version %.2f,  ASF STEP TOOLS\n\n",VERSION);
+  printf("      Version %.2f, ASF Tools\n\n",VERSION);
   exit(1);
 }
 
