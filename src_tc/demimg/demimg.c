@@ -1,15 +1,15 @@
 /****************************************************************************
 NAME:	 DEMIMG  -- Creates geometrically corrected SAR image
- 
-SYNOPSIS:  demimg inDEMfile inSARfile inCOEFfile outfile 
+
+SYNOPSIS:  demimg inDEMfile inSARfile inCOEFfile outfile
 
 	inDEMfile 	Input height file in UTM projection
 	inSARfile	Input SAR image file - used for metadata
 	inCOEFfile	Input coefficients file used for resampling
-	outfile		Output Slant range DEM file  
- 
-DESCRIPTION: 
- 
+	outfile		Output Slant range DEM file
+
+DESCRIPTION:
+
 EXTERNAL ASSOCIATES:
     NAME:                USAGE:
     ---------------------------------------------------------------
@@ -19,43 +19,43 @@ EXTERNAL ASSOCIATES:
     init_sar_model       intializes SARMODEL based on given SAR scene
     sar_sim              returns coordinates of SAR image corresponding
                          to the given lat,lon,height coordinates
- 
+
 FILE REFERENCES:
     NAME:                USAGE:
     ---------------------------------------------------------------
     inDEMfile.img        raw DEM file of doubles
     inDEMfile.ddr        DEM file's LAS data descriptor record file
-    inSARfile.img        SAR image 
+    inSARfile.img        SAR image
     inSARfile.trl        trailer file for SAR image
     inSARfile.ldr        leader file for SAR image
     inCOEFfile.ppf       Mapping Coefficients File
     outfile.img          Ouput Terrain Corrected Image
     outfile.ddr          Ouput Terrain Corrected Image Metadata
- 
+
 PROGRAM HISTORY:
     VERS:   DATE:   AUTHOR:       PROJECT:       PURPOSE:
     ---------------------------------------------------------------
     1.0	    7/96    M. Shindle    ifsar   Original - based on SARGEOM,
 				          version 5.0 written by Tom Logan
 
- 
+
 HARDWARE/SOFTWARE LIMITATIONS:
          The DEM file that is given to DEMIMG must be already clipped
-         to the proper area of coverage and pixel spacing corresponding 
+         to the proper area of coverage and pixel spacing corresponding
          to the input SAR image.  This can be accomplished by using the
  	 ASF software tool demclip.
- 
+
 ALGORITHM DESCRIPTION:
-    for each line in this DEM file 
+    for each line in this DEM file
       for each sample in this line
           find lon,lat coords from DEM x,y projection
           call SAR model routine sar_sim to get in_line, in_sample (from SAR)
           use DEM line, sample value for in_line, in_sample output pixel
- 
+
 ALGORITHM REFERENCES:
- 
+
 BUGS:
- 
+
 ****************************************************************************
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
@@ -137,13 +137,42 @@ main(int argc, char *argv[])
 
   /* Initialize image size globals
    ------------------------------*/
-  init_meta(demfile, sarfile, &sar_nl, &sar_ns, &dem_nl, &dem_ns,
-            &zone, &pixsiz, upleft);
- 
+  // Read DEM metadata
+  meta_parameters *metaDEM = meta_read(demfile);
+  *dem_ns = metaDEM->general->sample_count;
+  *dem_nl = metaDEM->general->line_count;
+  if (metaDEM->projection != NULL) {
+    if ( meta_is_valid_int(metaDEM->projection->param.utm.zone) ) {
+      *zone = metaDEM->projection->param.utm.zone;
+    } else {
+      asfPrintError("Invalid UTM zone code in the DEM metadata\n");
+    }
+    if (meta_is_valid_double(metaDEM->projection->startY)) {
+      upleft[0] = metaDEM->projection->startY;
+    } else {
+      asfPrintError("Invalid upper left Y projection coordinate in the DEM metadata\n");
+    }
+    if (meta_is_valid_double(metaDEM->projection->startX)) {
+      upleft[1] = metaDEM->projection->startX;
+    } else {
+      asfPrintError("Invalid upper left X projection coordinate in the DEM metadata\n");
+    }
+    if (meta_is_valid_double(metaDEM->projection->perX)) {
+      *pixsiz = metaDEM->projection->perX;
+    } else {
+      asfPrintError("Invalid projection distance in the DEM metadata\n");
+    }
+  }
+
+  // Read SAR metadata
+  meta_parameters *metaSAR = meta_read(sarfile);
+  *sar_ns = metaSAR->general->sample_count;
+  *sar_nl = metaSAR->general->line_count;
+
   /* Read mapping coefficients file
    -------------------------------*/
   if ((fp=fopen(coeffile,"r"))==0) {
-    bye(("Unable to open input file %s\n",coeffile)); 
+    bye(("Unable to open input file %s\n",coeffile));
   }
   fscanf(fp,"%s%s%i%lf",dum1,dum2,&dumi,&azcoef[1]);
   fscanf(fp,"%s%s%i%lf",dum1,dum2,&dumi,&azcoef[2]);
@@ -152,20 +181,20 @@ main(int argc, char *argv[])
   fscanf(fp,"%s%s%i%lf",dum1,dum2,&dumi,&grcoef[2]);
   fscanf(fp,"%s%s%i%lf",dum1,dum2,&dumi,&grcoef[3]);
   fclose(fp);
- 
+
   /* Report Processing Parameters and allocate/init buffer space
    ------------------------------------------------------------*/
   printf("Azcoefs = %f %f %f\n",azcoef[1],azcoef[2],azcoef[3]);
   printf("Grcoefs = %f %f %f\n",grcoef[1],grcoef[2],grcoef[3]);
-  dembuf = (short *)MALLOC(dem_ns*sizeof(short));
-  outbuf = (short *)MALLOC(sar_nl*sar_ns*sizeof(short)); 
-  for (i=0;i<sar_nl*sar_ns;i++) outbuf[i] = 0;
- 
+  dembuf = (float *)MALLOC(dem_ns*sizeof(float));
+  outbuf = (float *)MALLOC(sar_nl*sar_ns*sizeof(float));
+  for (i=0;i<sar_nl*sar_ns;i++) outbuf[i] = 0.0;
+
   /* Initialize the Projection Transformation Package & geometry model
    ------------------------------------------------------------------*/
   utm_init(zone);
   init_sar_model(azcoef, grcoef, pixsiz, sarfile, 0);
- 
+
   /* Open the output file and the DEM file
    --------------------------------------*/
   if ((fpout = fopenImage(outfile,"wb"))==NULL)
@@ -180,40 +209,40 @@ main(int argc, char *argv[])
   proj_y = upleft[0];
   for (line = 0; line < dem_nl; line++, proj_y -= pixsiz)
    {
-     if (fread(dembuf,dem_ns*sizeof(short),1,fp) == 0)
-       bye(("Demfile Read Error in dembuf. Line: %d\n",line));
+     get_float_line(fp, metaDEM, line, dembuf)
      demptr = dembuf;
      proj_x = upleft[1];
      for (sample = 0; sample < dem_ns; sample++, proj_x += pixsiz)
       {
-        tmpval = *demptr; 
+        tmpval = *demptr;
         height = (double)(*demptr++);
         tm_inverse(proj_x,proj_y,&lon,&lat);
         sar_sim(lat,lon,height,lat1,lon1,z1,lat2,lon2,z2,lat3,lon3,z3,lat4,
                 lon4,z4,viewflg,&intensity,&sini,&mask,&in_line,&in_samp);
         s_line = (int) (in_line - 0.5);
         s_samp = (int) (in_samp - 0.5);
-        if (s_line>=0 && s_line<sar_nl && s_samp>=0 && s_samp<sar_ns) 
+        if (s_line>=0 && s_line<sar_nl && s_samp>=0 && s_samp<sar_ns)
           outbuf[(s_line*sar_ns)+s_samp] = tmpval;
-      } 
-     if (line%100==0) printf("Processing Line %4i\n",line);
+      }
+     put_float_line(fpout,
+     asfLineMeter(line, dem_nl);
   }
-  fwrite(outbuf,sizeof(short),sar_ns*sar_nl,fpout);
+  put_data_lines(fpout, metaSAR, 0, sar_nl, outbuf, REAL32);
 
   /*
-   * Final Processing 
+   * Final Processing
    */
 
   fclose(fpout);
   free(dembuf);
   free(outbuf);
 
-  strcat(strcpy(sarfile,argv[2]),".ddr");
-  strcat(strcpy(outfile,argv[4]),".ddr");
+  strcat(strcpy(sarfile,argv[2]),".meta");
+  strcat(strcpy(outfile,argv[4]),".meta");
   copyfile(sarfile,outfile);
   mod_ddr(outfile,EWORD);
 
-  printf("\n\nDEMIMG completed. Version %.2f, ASF IFSAR Tools\n",VERSION);
+  printf("\n\nDEMIMG completed. Version %.2f, ASF Tools\n",VERSION);
   StopWatch();
   return(0);
 }
