@@ -142,7 +142,7 @@ int main(argc,argv)
     int  nl,ns,i,ok=0;		/* Number lines, samples in output DEM 	*/
     int   index, cnt;
     long long find;		/* modified for fseek64			*/
-    char  *obuf;		/* I/O buffer for transfer data 	*/
+    float  *obuf;		/* I/O buffer for transfer data 	*/
     forward_transform latLon2proj[100];
     int iflg=0,
         modflg=0;
@@ -255,11 +255,13 @@ int main(argc,argv)
     
     if (nl<0 || ns<0) { printf("ABORTED: nothing to clip...\n"); exit(1); }
     
-    obuf = (char *) MALLOC (nl*ns*2);
+    obuf = (float *) MALLOC (nl*ns*sizeof(float));
     fpi = fopenImage(inDEM,"rb");
-    for (index=0; index < nl*ns*2; index++) obuf[index] = 0;
+    for (index=0; index < nl*ns; index++) {
+      obuf[index] = 0.0;
+    }
 
-    find = (long long)(off[1]+ddr.ns*off[0])*2;
+    find = (long long)(off[1]+ddr.ns*off[0]);
     index = 0;
     counter = 0;
 
@@ -267,11 +269,11 @@ int main(argc,argv)
      {
        if (FSEEK64(fpi,find,0)!=0)
         { printf("Unable to seek byte %lli in input file",find); exit(1);}
-       if (fread(&obuf[index],ns*2,1,fpi)!= 1)
+       if (fread(&obuf[index],ns*sizeof(float),1,fpi)!= 1)
         { printf("Unable to read the input DEM file"); exit(1); }
 	
-       index += ns*2;
-       find  += ddr.ns*2;
+       index += ns;
+       find  += ddr.ns;
        if ((counter%1000)==0) { printf("Processed line %5i\n", counter); }
      }
     
@@ -286,21 +288,21 @@ int main(argc,argv)
 	    for (i=0; i<ns; i++) {
 	        east = ul[1] + i*ddr.pdist_x;
 	        if (east<minsmp || east>maxsmp) {
-		    obuf[index+i*2]=0; obuf[index+i*2+1]=0;
+		    obuf[index+i]=0.0;
 		}	    
 	    }
-	    index += ns*2;
+	    index += ns;
         } 
     }
 	
-    for (i = 0; i < nl*ns*2; i=i+2) { 
-        if (obuf[i]!=0||obuf[i+1]!=0)  { ok = 1; }
+    for (i = 0; i < nl*ns; ++i) { 
+        if (obuf[i]!=0)  { ok = 1; break; }
     }
     if (!ok) { printf("All points in the DEM file are zero!!!\n"); exit(1); }
     fclose(fpi);
     printf("Writing Output DEM...\n");
     fpo = fopenImage(outDEM,"wb");
-    fwrite(obuf,ns*nl*2,1,fpo);
+    fwrite(obuf,ns*nl*sizeof(float),1,fpo);
     fclose(fpo);    
     free(obuf);
     
