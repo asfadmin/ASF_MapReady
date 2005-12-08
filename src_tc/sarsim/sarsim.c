@@ -115,7 +115,7 @@ BUGS:
 #include "ddr.h"
 #include "ceos.h"
 #include "worgen.h"
- 
+
 #define SIMBUF(A,B)	*(simbuf + ((A-1) * ns) + (B-1))
 #define PHZBUF(A,B)	*(phsbuf + ((A-1) * ns) + (B-1))
 #define MSK		if (msk_flg)
@@ -126,6 +126,7 @@ BUGS:
 void bye(char *message);
 int init_support(double  *line_off,double *samp_off,int *zone_code,char *file);
 void meta_or_ddr(char *whichOne, char *fileName);
+meta_parameters *fake_meta(int sample_count, int line_count, int data_type);
 
 /*******************************************************/
 int     in_block_sl;  /* simulation start line         */
@@ -143,15 +144,15 @@ int main(argc, argv) int argc; char** argv;
 /**********************************************************************/
 int 	nl,ns;                  /* Num lines & samples in SAR image   */
 int 	sim_line, sim_samp;     /* Calculated SIM image coordinates   */
-int 	temp_val;               /* temp storage for real to int conv  */
+// int 	temp_val;               /* temp storage for real to int conv  */
 int 	i,j,line,sample;	/* Loop counters                      */
 int  	zone;                   /* DEM UTM zone code                  */
 double  proj_x, proj_y;	        /* X & Y coords input to UTM X-form   */
-short   *dembuf;      		/* DEM data buffer                    */
-short   *prev_dem_line;         /* pointer to previous DEM line       */
-short   *curr_dem_line;         /* pointer to current DEM line        */
-short   *next_dem_line;         /* pointer to next DEM line           */
-short   *temp;			/* temp pointer for pointer swapping  */
+float   *dembuf;      		/* DEM data buffer                    */
+float   *prev_dem_line;         /* pointer to previous DEM line       */
+float   *curr_dem_line;         /* pointer to current DEM line        */
+float   *next_dem_line;         /* pointer to next DEM line           */
+float   *temp;			/* temp pointer for pointer swapping  */
 double	lat[ELEVDIM],		/* Latitude for PT,N,E,S,W	      */
       	lon[ELEVDIM],		/* Longitude for PT,N,E,S,W	      */
        	h[ELEVDIM],             /* Height for PT,N,E,S,W              */
@@ -163,7 +164,7 @@ double	lat[ELEVDIM],		/* Latitude for PT,N,E,S,W	      */
                                 /*     dn   - decibel noise  	      */
                                 /*     sini - sine of incidence angle */
                                 /*     mask - shadowing/layover mask  */
-unsigned char *simbuf;		/* Output buffer -- Simulated Image   */
+float   *simbuf;		/* Output buffer -- Simulated Image   */
 unsigned char *maskbuf=NULL;	/* Output buffer -- Mask Values       */
 float   *rtcbuf=NULL;		/* Output buffer -- RTC  Values       */
 float   *phsbuf=NULL;		/* Output buffer -- Phase Values      */
@@ -181,7 +182,7 @@ int	all_out=1,		/* Test to see if all points outside  */
 	zeros=0,		/* How many zero points?	      */
         good=0,			/* How many non-zero points?          */
 	msk_flg=0,		/* Flag for creation of mask image    */
-	rtc_flg=0,		/* Flag for creation of RTC image     */	
+	rtc_flg=0,		/* Flag for creation of RTC image     */
 	phs_flg=0,		/* Flag for creation of phase image   */
 	error= 0,		/* Command line parameters check      */
 	form = 0,		/* Formula used from RTC	      */
@@ -190,7 +191,8 @@ int	all_out=1,		/* Test to see if all points outside  */
 				/* 0 - sargeom, 1 - sarsim,	      */
 				/* 2 - sim w/ mask, 3 - sim w/ RTC    */
 				/* 4 - sim w/ mask and RTC	      */
-struct  DDR ddr;                /* Data descriptor - image metadata   */
+struct  DDR img_ddr;            /* Data descriptor - image metadata   */
+struct  DDR dem_ddr;            /* Data descriptor - dem metadata     */
 struct  VFDRECV ofdr;           /* Define value of fac. data record   */
 char    metaExt[6];             /* .meta or .ddr extention to use     */
 /**********************************************************************/
@@ -246,14 +248,14 @@ PHS {
  else form = -1;
 }
 
-if (c_getddr(sarfile, &ddr)!= 0)
+if (c_getddr(sarfile, &img_ddr)!= 0)
   { printf("Unable to get ddr file for image %s\n",sarfile); exit(1); }
-nl = ddr.nl;
-ns = ddr.ns;
+nl = img_ddr.nl;
+ns = img_ddr.ns;
 
-if (c_getddr(demfile, &ddr)!= 0)
+if (c_getddr(demfile, &dem_ddr)!= 0)
   { printf("Unable to get ddr file for image %s\n",demfile); exit(1); }
-pixsiz = ddr.pdist_x;
+pixsiz = dem_ddr.pdist_x;
 
 printf("************STARTING SARSIM PROCESS************\n");
 printf("Processing resolution is %5.2f meters\n",pixsiz);
@@ -286,9 +288,9 @@ else  GROUND_RANGE = 0;
 if (GROUND_RANGE && form == -1)
   bye("Cannot perform ground and slant range functions simultaneously\n");
 
-simbuf = (unsigned char *) MALLOC (nl*ns);
+simbuf = (float *) MALLOC (nl*ns);
 
-for (sample = 0; sample < nl*ns; sample++) simbuf[sample] = 0;
+for (sample = 0; sample < nl*ns; sample++) simbuf[sample] = 0.0;
  
 MSK
   {
@@ -314,10 +316,13 @@ PHS
 
 /* Prepare the DEM buffer for the first pass 
  ------------------------------------------*/
-dembuf = (short *) MALLOC (3*dem_ns*sizeof(short));
+dembuf = (float *) MALLOC (3*dem_ns*sizeof(float));
 strcat(demfile,".img");
 dem_fp = fopenImage(demfile,"rb");
-FREAD(&dembuf[dem_ns],2*dem_ns*sizeof(short),1,dem_fp);
+
+//FREAD(&dembuf[dem_ns],2*dem_ns*sizeof(float),1,dem_fp);
+getFloatLine(dem_fp,&dem_ddr,0,&dembuf[dem_ns]);
+getFloatLine(dem_fp,&dem_ddr,1,&dembuf[2*dem_ns]);
 
 for (i=0; i<dem_ns; i++) dembuf[i] = dembuf[i+dem_ns];
 prev_dem_line = dembuf;
@@ -369,8 +374,9 @@ for (line = 0; line < dem_nl; line++, proj_y -= pixsiz)
       if ((sim_line>0)&&(sim_samp>0)&&(sim_line<=nl)&&(sim_samp<=ns))
         {
          all_out = 0;
-         temp_val = SIMBUF(sim_line,sim_samp) + dn;
-         SIMBUF(sim_line,sim_samp) = (temp_val > 255) ? 255: temp_val;
+//         temp_val = SIMBUF(sim_line,sim_samp) + dn;
+//         SIMBUF(sim_line,sim_samp) = (temp_val > 255) ? 255: temp_val;
+	 SIMBUF(sim_line,sim_samp) = SIMBUF(sim_line,sim_samp) + dn;
          PHS PHZBUF(sim_line,sim_samp) = (float) sini;
          MSK maskbuf[sample] = (unsigned char) mask;
          RTC rtcbuf[sample] = (float) sini;
@@ -388,8 +394,9 @@ for (line = 0; line < dem_nl; line++, proj_y -= pixsiz)
   next_dem_line = temp;	  
   if (line < dem_nl-2)
    {
-    if (fread(next_dem_line,dem_ns*sizeof(short),1,dem_fp)!=1)
-       bye("Demfile Read Error in dembuf\n");
+//    if (fread(next_dem_line,dem_ns*sizeof(float),1,dem_fp)!=1)
+//       bye("Demfile Read Error in dembuf\n");
+    getFloatLine(dem_fp,&dem_ddr,line,next_dem_line);
    }
   else next_dem_line = curr_dem_line;
   
@@ -421,7 +428,12 @@ if (all_out)
 strcat(strcpy(tempfile,argv[3]),".img");
 if ((sim_fp = fopenImage(tempfile,"wb"))==NULL)
   { printf("SARSIM:  Unable to open file %s\n",tempfile); exit(1); }
-fwrite(simbuf,nl*ns,1,sim_fp);
+
+//fwrite(simbuf,nl*ns*sizeof(float),1,sim_fp);
+for (i=0;i<nl;++i) {
+  putFloatLine(sim_fp,&img_ddr,i,simbuf+i*ns);
+}
+
 fclose(sim_fp);
 
 PHS {
@@ -515,3 +527,11 @@ void meta_or_ddr(char *whichOne, char *fileName)
   }
 }
     
+meta_parameters *fake_meta(int sample_count, int line_count, int data_type)
+{
+  meta_parameters *ret = raw_init();
+  ret->general->sample_count = sample_count;
+  ret->general->line_count = line_count;
+  ret->general->data_type = data_type;
+  return ret;
+}
