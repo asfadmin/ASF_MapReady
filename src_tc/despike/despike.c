@@ -107,13 +107,13 @@ int    klines, ksamps;              /* no. lines & samples in kernel  */
 int    nl, ns;                      /* no. lines & samples in image   */
 int    valsum;                      /* no. elements in the kernel     */
 int    xhalf, yhalf;                /* half kernel in x & y dimension */
-unsigned char low;                   /* lower limit for data           */
-unsigned char high;                  /* upper limit for data           */
-unsigned char *in_buf;               /* input image                    */ 
-unsigned char *out_buf;              /* output image                   */
-unsigned char *temp;		     /* temp pointer for buffer swap   */
-unsigned char *del_buf;              /* next line to del from kernel   */
-unsigned char *add_buf;              /* next line to add to kernel     */
+float low;                           /* lower limit for data           */
+float high;                          /* upper limit for data           */
+float *in_buf;                       /* input image                    */ 
+float *out_buf;                      /* output image                   */
+float *temp;		             /* temp pointer for buffer swap   */
+float *del_buf;                      /* next line to del from kernel   */
+float *add_buf;                      /* next line to add to kernel     */
 char    infile[255];	             /* name of input file	       */
 char    outfile[255];		     /* name of output file	       */
 char    inddr[255];	             /* name of input file ddr	       */
@@ -150,11 +150,11 @@ printf("\t output file : %s\n",outfile);
  
 /* Read the input file into memory 
  ------------------------------- */
-in_buf  = (unsigned char *) MALLOC (nl*ns);
-out_buf = (unsigned char *) MALLOC (nl*ns);
+in_buf  = (float *) MALLOC (nl*ns);
+out_buf = (float *) MALLOC (nl*ns);
 
 fpin = fopenImage(infile,"rb");
-FREAD(in_buf,ns*nl,1,fpin);
+FREAD(in_buf,ns*nl*sizeof(float),1,fpin);
 fclose(fpin);
  
 /* get remaining parameters
@@ -171,7 +171,7 @@ vsum  = (short *)  MALLOC (ns*sizeof(short));
 for (loop = 0; loop < 2; loop++)
  {
   /* Set parameters for this loop */
-  for (i = 0; i < nl*ns; i++) out_buf[i] = 0;
+  for (i = 0; i < nl*ns; i++) out_buf[i] = 0.0;
   if (loop == 0)
     {
       low = 0; high = 255; invld = 1; nstd = 1.5; tol = 50.0;
@@ -231,8 +231,8 @@ for (loop = 0; loop < 2; loop++)
 	  mydiff = in_buf[l] - mean;
 	  if (( mydiff*mydiff > nstd*nstd*variance) && (fabs(mydiff) > tol ))
 	   {
-	     if (invld == 1) out_buf[l] = 0;
-	     if (invld == 2) out_buf[l] = mean + 0.5;
+	     if (invld == 1) out_buf[l] = 0.0;
+	     if (invld == 2) out_buf[l] = mean;
 	   }
 	  else out_buf[l] = in_buf[l];
  
@@ -297,7 +297,7 @@ for (loop = 0; loop < 2; loop++)
 /* open, write, and close output image
  ------------------------------------ */
 fpout = fopenImage(outfile,"wb");
-fwrite(in_buf,nl*ns,1,fpout);
+fwrite(in_buf,nl*ns*sizeof(float),1,fpout);
 fclose(fpout);
 
 sprintf(cmd,"cp %s %s\n",inddr,outddr);
