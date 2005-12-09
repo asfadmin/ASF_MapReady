@@ -14,6 +14,7 @@ REFERENCES:
 1.0  LAS 4.0 GREYCORR & EDGECORR by R. White 6/83
 *****************************************************************************/
 #include "correlate.h"
+#include "asf_reporting.h"
 
 #define MAX_DIM  6		/* Maximum dimension (set at compile time) */
 #define U_OK     -99		/* Satisfactory return from subroutine 	   */
@@ -162,7 +163,7 @@ for(i=0;i<n;i++)
    for(j=0;j<n;j++)b[j]=0.0;
    b[i]=1.0;
    if (status == U_OK) back_solve(n, matrix, ipvt, b);
-   else printf("No solution--Matrix not invertible:  %d\n",status);
+   else asfPrintWarning("No solution--Matrix not invertible:  %d\n",status);
    for(j=0;j<n;j++)outA[j][i]=b[j];
    }
 }

@@ -87,6 +87,7 @@ BUGS:
 #include <math.h>
 #include "correlate.h"
 #include "asf_meta.h"
+#include "asf_reporting.h"
 
 #define VERSION     9.5
 
@@ -94,17 +95,17 @@ void usage(char *name)
 {
   printf("\nUsage: %s [-n nFile] [-o offFile] [-s minStrength] [-v]\n"
   	"                  reference search intpl outtpl \n\n",name);
-  printf("    options:\n"
+  asfPrintStatus("    options:\n"
   	 "            -n nFile       output 'number of points' file \n"
   	 "                              (# good,# bad,# out)\n"
   	 "            -o offFile     input 'image offset' file (x,y)\n"
   	 "            -s minStrength minimum correlation strength (default: 2.0)\n"
   	 "            -v             be verbose (print out correlations)\n");
-  printf("    inputs: reference.im   reference LAS image\n");
-  printf("            search.img     search LAS image\n");
-  printf("            intpl.tpl      input tie point locations\n\n");
-  printf("    output: outtpl.tpl     output tie point file\n");
-  printf("    Version %.2f,  ASF STEP TOOLS\n",VERSION);
+  asfPrintStatus("    inputs: reference.im   reference LAS image\n");
+  asfPrintStatus("            search.img     search LAS image\n");
+  asfPrintStatus("            intpl.tpl      input tie point locations\n\n");
+  asfPrintStatus("    output: outtpl.tpl     output tie point file\n");
+  asfPrintStatus("    Version %.2f,  ASF Tools\n",VERSION);
   exit(1);
 }
 
@@ -226,19 +227,20 @@ for (i = 0; i < 2; i++) nomoff[i] = (float) (npls[i]-nplr[i])/2.0;
 ref_chip=(float *)MALLOC((int)(sizeof(float)*nplr[0]*nplr[1]));
 sea_chip=(float *)MALLOC((int)(sizeof(float)*npls[0]*npls[1]));
 
-printf("Processing parameters:\n");
-printf(" ref_nl = %i   ref_ns = %i \n",ref_nl,ref_ns); 
-printf(" sea_nl = %i   sea_ns = %i \n",sea_nl,sea_ns); 
-printf(" mincorr = %f fitmeth = %i\n",mincorr,fitmeth);
-printf(" chip = %d; search = %d; maxOff = %f\n",nplr[0],npls[0],ioffrq[0]);
-printf(" nomoff[0] = %f\n", nomoff[0]);
-printf(" offset x = %f   offset y = %f\n",off_x,off_y);
+asfPrintStatus("Processing parameters:\n");
+asfPrintStatus(" ref_nl = %i   ref_ns = %i \n",ref_nl,ref_ns); 
+asfPrintStatus(" sea_nl = %i   sea_ns = %i \n",sea_nl,sea_ns); 
+asfPrintStatus(" mincorr = %f fitmeth = %i\n",mincorr,fitmeth);
+asfPrintStatus(" chip = %d; search = %d; maxOff = %f\n",
+	       nplr[0],npls[0],ioffrq[0]);
+asfPrintStatus(" nomoff[0] = %f\n", nomoff[0]);
+asfPrintStatus(" offset x = %f   offset y = %f\n",off_x,off_y);
 
 /*************************************************************/
 /* 		Process all tie point pairs		     */
 /*************************************************************/
 pt = 0;
-printf("\nBeginning Correlation Process\n"); 
+asfPrintStatus("\nBeginning Correlation Process\n"); 
 while (EOF!=fscanf(tplfp,"%f%f%f%f",&ry,&rx,&sy,&sx))
   {
     pt++;
@@ -279,7 +281,7 @@ while (EOF!=fscanf(tplfp,"%f%f%f%f",&ry,&rx,&sy,&sx))
 	    sea_pt[1] = sx + best_fit[1]-off_x;
             if (fprintf(fp,"%f %f %f %f\n",ref_pt[0],ref_pt[1],
 	                                   sea_pt[0],sea_pt[1])<0)
-                { printf("Unable to write tie point data\n");exit(1); }
+                { asfPrintError("Unable to write tie point data\n"); }
 	    num_good++;
             printf(".");
          } else { printf("x"); num_bad++;}
@@ -289,12 +291,13 @@ while (EOF!=fscanf(tplfp,"%f%f%f%f",&ry,&rx,&sy,&sx))
    fflush(stdout);
   }
 fclose(tplfp);
-printf("\n\nCorrelation was attempted at %i points\n",pt);
+asfPrintStatus("\n\nCorrelation was attempted at %i points\n",pt);
  
 /* Close Down Processing and Exit 
  --------------------------------*/
 fclose(fp);
-printf("\n\nCorrelate finished, wrote %i tie-points to file %s\n",num_good,out); 
+asfPrintStatus("\n\nCorrelate finished, wrote %i tie-points to file %s\n",
+	       num_good,out); 
 StopWatch();
 free(rf_buf);
 free(sf_buf);

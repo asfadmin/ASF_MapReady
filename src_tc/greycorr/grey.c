@@ -11,6 +11,7 @@ VERSION		DATE	AUTHOR
 *****************************************************************************/
 #include "correlate.h"
 #include "complex.h"
+#include "asf_reporting.h"
 
 /****************************************************************************
 NAME:				GCORR
@@ -63,7 +64,7 @@ eval(ncol,nrow,corr,peakLoc,streng,cpval,verbose);
 fitreg(cpval, mfit, pkoffs, tlerrs);
 if (verbose)
 {
-	printf("Peak offset=%.2f,%.2f\n",pkoffs[1],pkoffs[0]);
+	asfPrintStatus("Peak offset=%.2f,%.2f\n",pkoffs[1],pkoffs[0]);
 }
 bfoffs[0] = peakLoc[0] - nomoff[0] + pkoffs[0];
 bfoffs[1] = peakLoc[1] - nomoff[1] + pkoffs[1];

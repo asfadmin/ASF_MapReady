@@ -14,6 +14,7 @@ REFERENCES:
 1.0  LAS 4.0 GREYCORR and EDGECORR by R. White 6/83
 *****************************************************************************/
 #include "correlate.h"
+#include "asf_reporting.h"
 
 void eval(int ncol, int nrow, /*Number of rows and columns in correlation array below*/
 	float *corr,/*Image-Image correlation array*/
@@ -51,20 +52,21 @@ as well as the best one so far*/
 	
 	if (verbose)
 	{/*Print out the peak*/
-		printf("Peak at %d,%d in correlation image\n",peakX,peakY);
-		printf("Correlation Average=%.3f, peak=%.3f\n",corrAve,peakMax);
-		printf("Strength=%.3f\n",*strength);
-		for (y=0;y<nrow;y++)
-		{
-			for (x=0;x<ncol;x++)
-			{
-				char *table=" .:;!v@$";
-				int dex=(int)(7.5*(corr[y*ncol+x]-corrAve)/(peakMax-corrAve));
-				if (dex<0) dex=0;
-				printf("%c",table[dex]);
-			}
-			printf("\n");
-		}
+	  asfPrintStatus("Peak at %d,%d in correlation image\n",peakX,peakY);
+	  asfPrintStatus("Correlation Average=%.3f, peak=%.3f\n",
+			 corrAve,peakMax);
+	  asfPrintStatus("Strength=%.3f\n",*strength);
+	  for (y=0;y<nrow;y++)
+	  {
+	    for (x=0;x<ncol;x++)
+	    {
+	      char *table=" .:;!v@$";
+	      int dex=(int)(7.5*(corr[y*ncol+x]-corrAve)/(peakMax-corrAve));
+	      if (dex<0) dex=0;
+	      printf("%c",table[dex]);
+	    }
+	    printf("\n");
+	  }
 	}
 	
 
@@ -74,14 +76,14 @@ as well as the best one so far*/
 	
 /*Extract the 5x5 'hood of the peak*/
 	for (dy=0;dy<5;dy++)
-		for (dx=0;dx<5;dx++)
-		{
-			y=(dy-2)+peakY;
-			x=(dx-2)+peakX;
-			if ((y<0)||(y>=nrow)||(x<0)||(x>=ncol))
-				hood[dy*5+dx]=corrAve;/*out-of-bounds-- fill with average background*/
-			else
-				hood[dy*5+dx]=10.0*(corr[y*ncol+x]-corrAve)/(peakMax-corrAve);
-		}
+	  for (dx=0;dx<5;dx++)
+	  {
+	    y=(dy-2)+peakY;
+	    x=(dx-2)+peakX;
+	    if ((y<0)||(y>=nrow)||(x<0)||(x>=ncol))
+	      hood[dy*5+dx]=corrAve; /*out-of-bounds--fill with avg backgrnd*/
+	    else
+	      hood[dy*5+dx]=10.0*(corr[y*ncol+x]-corrAve)/(peakMax-corrAve);
+	  }
 
 }
