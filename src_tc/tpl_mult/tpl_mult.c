@@ -67,9 +67,9 @@ main(argc,argv)
     strcat(strcpy(ofile,argv[3]),".tpl");
 
     if ((fpin = fopen(ifile,"r")) == NULL)
-      { printf("tpl_mult:  Unable to open input file %s\n",ifile); exit(-1); }
+      { asfPrintError("tpl_mult:  Unable to open input file %s\n",ifile); }
     if ((fpout = fopen(ofile,"w")) == NULL)
-      { printf("tpl_mult:  Unable to open output file %s\n",ofile); exit(-1); }
+      { asfPrintError("tpl_mult:  Unable to open output file %s\n",ofile); }
 
     while (fscanf(fpin,"%f %f %f %f",&rx,&ry,&sx,&sy) != EOF) {
        rx *= fact; ry *= fact; sx *= fact; sy *= fact;
@@ -82,12 +82,12 @@ main(argc,argv)
 }
 
 give_usage() {
-   printf("Usage:  tpl_mult factor intpl outtpl\n");
-   printf("           factor      floating point multiplication factor\n");
-   printf("           intpl       input tie point location file\n");
-   printf("           outtpl      output tie point location file\n");
-   printf("\n  ASF STEP TOOLS, Version %.2f\n\n",VERSION);
-   exit(-1);
+   asfPrintStatus("Usage:  tpl_mult factor intpl outtpl\n");
+   asfPrintStatus("           factor      floating point multiplication factor\n");
+   asfPrintStatus("           intpl       input tie point location file\n");
+   asfPrintStatus("           outtpl      output tie point location file\n");
+   asfPrintStatus("\n  ASF Tools, Version %.2f\n\n",VERSION);
+   exit(1);
 } 
 
  
