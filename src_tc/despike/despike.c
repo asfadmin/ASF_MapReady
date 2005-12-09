@@ -81,8 +81,14 @@ BUGS:
 #include "asf.h"
 #include <sys/times.h>
 #include "ddr.h"
+#include "asf_reporting.h"
+#include "asf_nan.h"
 
 #define VERSION 7.1
+
+int is_valid(float val) {
+  return !ISNAN(val);
+}
 
 int
 main (argc,argv)
@@ -108,7 +114,7 @@ int    nl, ns;                      /* no. lines & samples in image   */
 int    valsum;                      /* no. elements in the kernel     */
 int    xhalf, yhalf;                /* half kernel in x & y dimension */
 float low;                           /* lower limit for data           */
-float high;                          /* upper limit for data           */
+//float high;                          /* upper limit for data           */
 float *in_buf;                       /* input image                    */ 
 float *out_buf;                      /* output image                   */
 float *temp;		             /* temp pointer for buffer swap   */
@@ -129,11 +135,11 @@ StartWatch();
  -----------------------------------*/
 if (argc != 3)
  {
-    printf("\nUsage: %s infile outfile\n",argv[0]);
-    printf("       inputs:  infile     .img (LAS 6.0 BYTE image)\n");
-    printf("      outputs:  outfile    .img (LAS 6.0 BYTE image)\n");
-    printf("\n");
-    printf("       Version %.2f,  ASF STEP TOOLS\n\n",VERSION);
+    asfPrintStatus("\nUsage: %s infile outfile\n",argv[0]);
+    asfPrintStatus("       inputs:  infile     .img (REAL32 image)\n");
+    asfPrintStatus("      outputs:  outfile    .img (REAL32 image)\n");
+    asfPrintStatus("\n");
+    asfPrintStatus("       Version %.2f,  ASF Tools\n\n",VERSION);
     exit(1);
  }
 strcat(strcpy(infile,argv[1]),".img");
@@ -141,12 +147,12 @@ strcat(strcpy(outfile,argv[2]),".img");
 strcat(strcpy(inddr,argv[1]),".meta");
 strcat(strcpy(outddr,argv[2]),".meta");
 i = c_getddr(argv[1], &ddr);
-if (i != 0) { printf("Unable to get ddr for file %s\n",infile); exit(1); }
+if (i != 0) { asfPrintError("Unable to get ddr for file %s\n",infile); }
 nl = ddr.nl;
 ns = ddr.ns;
-printf("Processing Parameters:\n");
-printf("\t input file %s is size %i*%i\n",infile,nl,ns);
-printf("\t output file : %s\n",outfile);
+asfPrintStatus("Processing Parameters:\n");
+asfPrintStatus("\t input file %s is size %i*%i\n",infile,nl,ns);
+asfPrintStatus("\t output file : %s\n",outfile);
  
 /* Read the input file into memory 
  ------------------------------- */
@@ -154,7 +160,8 @@ in_buf  = (float *) MALLOC (nl*ns);
 out_buf = (float *) MALLOC (nl*ns);
 
 fpin = fopenImage(infile,"rb");
-FREAD(in_buf,ns*nl*sizeof(float),1,fpin);
+for (i = 0; i < nl; ++i)
+  getFloatLine(fpin, &ddr, i, &in_buf[i*ns]);
 fclose(fpin);
  
 /* get remaining parameters
@@ -167,6 +174,7 @@ yhalf = (klines - 1) / 2;
 sum   = (double *) MALLOC (ns*sizeof(double));
 sqsum = (double *) MALLOC (ns*sizeof(double));
 vsum  = (short *)  MALLOC (ns*sizeof(short));
+low   = in_buf[0];
 
 for (loop = 0; loop < 2; loop++)
  {
@@ -174,14 +182,15 @@ for (loop = 0; loop < 2; loop++)
   for (i = 0; i < nl*ns; i++) out_buf[i] = 0.0;
   if (loop == 0)
     {
-      low = 0; high = 255; invld = 1; nstd = 1.5; tol = 50.0;
-      printf("\t low = %i high = %i\n",low,high);
-      printf("\t invld = %i, nstd = %f, tol = %f\n",invld,nstd,tol);
+      /* low = 0; high = 255; */ invld = 1; nstd = 1.5; tol = 50.0;
+      /* printf("\t low = %f high = %f\n",low,high); */
+      printf("\t invld = %i, nstd = %g, tol = %f\n",invld,nstd,tol);
     }
   else 
     {
-      low = 1; invld = 2; printf("\t low = %i high = %i\n",low,high);
-      printf("\t invld = %i, nstd = %f, tol = %f\n",invld,nstd,tol);
+      /* low = 1; */ invld = 2;
+      /* printf("\t low = %f high = %f\n",low,high); */
+      printf("\t invld = %i, nstd = %g, tol = %g\n",invld,nstd,tol);
     }
  
   /* prepare the initial kernel for filtering
@@ -194,8 +203,10 @@ for (loop = 0; loop < 2; loop++)
     }
   for (line = 0; line <= xhalf ; line++)
     for (k = 0, l = line*ns; k < ns ; k++, l++)
-      if (in_buf[l] >=  low  &&  in_buf[l] <=  high)
+      if (is_valid(in_buf[l]))
         {
+	  if (in_buf[l] < low) low = in_buf[l];
+
           sum[k] += (double) in_buf[l];
           vsum[k]++;
           sqsum[k] += ((double)in_buf[l]*(double)in_buf[l]);
@@ -221,21 +232,24 @@ for (loop = 0; loop < 2; loop++)
      {
        for (k = 0, l = line*ns; k < ns; k++,l++)
         {
-  	  divv = valsum - 1;
-	  if ((in_buf[l] < low) || (in_buf[l] > high)) divv = valsum;
-	  if (divv  ==  0) mean = 0;
-	  else mean = (kersum - (double)in_buf[l]) / divv;
-	  if (valsum != 0)
-	   variance = (varsum/valsum)-((kersum*kersum)/(valsum*valsum));
-	  else variance = 0.0;
-	  mydiff = in_buf[l] - mean;
-	  if (( mydiff*mydiff > nstd*nstd*variance) && (fabs(mydiff) > tol ))
-	   {
-	     if (invld == 1) out_buf[l] = 0.0;
-	     if (invld == 2) out_buf[l] = mean;
-	   }
-	  else out_buf[l] = in_buf[l];
- 
+	  if (ISNAN(in_buf[l]))
+	    out_buf[l] = in_buf[l];
+	  else {
+	    divv = valsum - 1;
+	    if (divv  ==  0) mean = 0;
+	    else mean = (kersum - (double)in_buf[l]) / divv;
+	    if (valsum != 0)
+	      variance = (varsum/valsum)-((kersum*kersum)/(valsum*valsum));
+	    else variance = 0.0;
+	    mydiff = in_buf[l] - mean;
+	    if (( mydiff*mydiff > nstd*nstd*variance) && (fabs(mydiff) > tol ))
+	    {
+	      if (invld == 1) out_buf[l] = NAN;
+	      if (invld == 2) out_buf[l] = mean;
+	    }
+	    else out_buf[l] = in_buf[l];
+	  }
+
          /* reset kernel sum and sum valid values
   	  ------------------------------------- */
          if (k < ns-(xhalf+1))
@@ -255,19 +269,19 @@ for (loop = 0; loop < 2; loop++)
        if (del_line >= 0)
         {
   	  for (k = 0; k < ns ; k++)
-	    if ( del_buf[k] >= low && del_buf[k] <= high)
-	      {
-	        sum[k] -= (double) del_buf[k];
-	        vsum[k]--;
-	        sqsum[k] -= ((double)del_buf[k]*(double)del_buf[k]);
-	      }
+	    if (is_valid(del_buf[k]))
+	    {
+	      sum[k] -= (double) del_buf[k];
+	      vsum[k]--;
+	      sqsum[k] -= ((double)del_buf[k]*(double)del_buf[k]);
+	    }
 	  del_buf += ns;
         }
        del_line++;
        if (add_line < nl)
         {
   	  for (k = 0; k < ns ; k++)
-	    if (add_buf[k] >= low && add_buf[k] <= high)
+	    if (is_valid(add_buf[k]))
 	      {
 	        sum[k] += (double) add_buf[k];
 	        vsum[k]++; 
@@ -294,17 +308,22 @@ for (loop = 0; loop < 2; loop++)
     out_buf = temp;  
   }
  
+  for (line = 0; line < nl; line++)
+    for (k = 0, l = line*ns; k < ns; k++,l++)
+      if (ISNAN(in_buf[l])) in_buf[l] = low;
+
 /* open, write, and close output image
  ------------------------------------ */
 fpout = fopenImage(outfile,"wb");
-fwrite(in_buf,nl*ns*sizeof(float),1,fpout);
+for (i = 0; i < nl; ++i)
+  putFloatLine(fpout, &ddr, i, &in_buf[i*ns]);
 fclose(fpout);
 
 sprintf(cmd,"cp %s %s\n",inddr,outddr);
 if (system(cmd) != 0)
-  { printf("Failure copying metadata: Program Exited\n\n"); exit(1); }
+  { asfPrintError("Failure copying metadata.\n\n"); }
 
-printf("\nDespike finished, wrote raw image %s\n",outfile);
+asfPrintStatus("\nDespike finished, wrote raw image %s\n",outfile);
 StopWatch();
 
 free(in_buf);
