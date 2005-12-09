@@ -69,6 +69,7 @@ BUGS:
 ******************************************************************************/
 #include "asf.h"
 #include "ddr.h"
+#include "asf_reporting.h"
 
 #define  VERSION	3.1
 
@@ -78,8 +79,8 @@ int main(argc,argv) int argc; char **argv;
 	      outfile[255];		/*  output tie point file name    */
 	FILE  *fpin, *fpout;		/*  File pointers 		  */
 	int   tpl[5000][2];		/*  List of valid tie points      */
-        unsigned char *buf;		/*  Input file buffer		  */
-        int   ibuf,ibuf2;		/*  int version of buffer values  */
+        float *buf;		        /*  Input file buffer		  */
+	double dbuf, dbuf2;             /*  double version of buf values  */
 	int   min;			/*  the minimum pixel value to be */
 					/*    accepted as a tie point     */
 	int   offset;			/*  Offset into the input buffer  */
@@ -95,12 +96,13 @@ int main(argc,argv) int argc; char **argv;
 
 if (argc != 4) 
   {
-    printf("\n");
-    printf("Usage:  %s a|d image outtpl \n",argv[0]);
-    printf("    inputs:  image    LAS 6.0 format SAR image (.img)\n");
-    printf("    outputs: outtpl   Tie point location file\n");
-    printf("    type:    a | d    Specify ascending or descending image\n\n");
-    printf("    Version %.2f,  ASF STEP TOOLS\n\n",VERSION);
+    asfPrintStatus("\n");
+    asfPrintStatus("Usage:  %s a|d image outtpl \n",argv[0]);
+    asfPrintStatus("    inputs:  image    LAS 6.0 format SAR image (.img)\n");
+    asfPrintStatus("    outputs: outtpl   Tie point location file\n");
+    asfPrintStatus("    type:    a | d    Specify ascending or "
+		   "descending image\n\n");
+    asfPrintStatus("    Version %.2f,  ASF Tools\n\n",VERSION);
     exit(1);
   }
 
@@ -114,22 +116,22 @@ if (opt == 'A' || opt == 'a') opt = 'A';
 else if (opt == 'D' || opt == 'd') opt = 'D'; 
 else
  {
-   printf("Invalid image type option : %c\n",opt);
-   printf("Image type is either a(scending) or d(escending)\n");
-   exit(1);
+   asfPrintStatus("Image type is either a(scending) or d(escending)\n");
+   asfPrintError("Invalid image type option : %c\n",opt);
  }
 
 if (c_getddr(argv[2], &ddr)!=0)
-  { printf("Unable to get ddr for file %s\n",infile); exit(1); }
+  { asfPrintError("Unable to get ddr for file %s\n",infile); }
 nl = ddr.nl; np = ddr.ns;
 
-printf("Image %s is type %c\n",infile,opt);
-printf("Image size is %i by %i\n",np,nl);
+asfPrintStatus("Image %s is type %c\n",infile,opt);
+asfPrintStatus("Image size is %i by %i\n",np,nl);
  
-buf = (unsigned char *) MALLOC (np*nl);
+buf = (float *) MALLOC (np*nl);
 
 fpin = fopenImage(infile,"rb");
-FREAD(buf,np*nl,1,fpin);
+for (i = 0; i < nl; ++i)
+  getFloatLine(fpin, &ddr, i, &buf[i*np]);
 FCLOSE(fpin);
 
 npts = 0;
@@ -138,22 +140,22 @@ npts = 0;
 /* line_skip =(int) ((float)line_skip * ((float)nl / 1024.0)); */
 /* samp_skip =(int) ((float)samp_skip * ((float)np / 1024.0)); */
  
-printf("Skipping %i pixels after a good point, every %i lines\n",
-	samp_skip, line_skip);
+asfPrintStatus("Skipping %i pixels after a good point, every %i lines\n",
+	       samp_skip, line_skip);
 
 for (min = 240; npts < 150 && min > 99; min -= 10)
   for (thresh = min-10; npts < 150 && thresh > 49; thresh -= 10) {
      for (i = 32,npts = 0,large = 0; i < (nl-32); i+=line_skip) {
         offset = i*np;
         for (j = 32; j < (np-64); j++) {
-          ibuf = (int) buf[offset+j];
-          if (ibuf > min) {
+          dbuf = (double) buf[offset+j];
+          if (dbuf > min) {
             large++;
-	    if (opt == 'A') ibuf2 = (int) buf[offset+j-1];
-	    else            ibuf2 = (int) buf[offset+j+1];
-            if ((ibuf-ibuf2)>thresh) 
+	    if (opt == 'A') dbuf2 = (double) buf[offset+j-1];
+	    else            dbuf2 = (double) buf[offset+j+1];
+            if ((dbuf-dbuf2)>thresh) 
 		{ tpl[npts][0] = i; tpl[npts][1] = j; npts++; j += samp_skip; }
-          }   /* ibuf > min */
+          }   /* dbuf > min */
         }   /* loop on j */
       }  /* loop on i */
     if (large < 200) thresh = 0;
@@ -165,7 +167,8 @@ for (i=0; i<npts; i++)
   fprintf(fpout,"%i %i %i %i\n",tpl[i][0],tpl[i][1],tpl[i][0],tpl[i][1]);
 fclose(fpout);
 
-printf("Tpl_search: #Pts >%i & >%i from neighbor = %i\n", min,thresh,npts);
+asfPrintStatus("Tpl_search: #Pts >%i & >%i from neighbor = %i\n",
+	       min,thresh,npts);
 StopWatch();
 exit(0);
 }
