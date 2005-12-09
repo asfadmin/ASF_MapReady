@@ -58,6 +58,7 @@ double get_invCosIncAngle(cal_params *p,int x, int y);
 double get_invSinIncAngle(cal_params *p,int x, int y);
 cal_params *create_cal_params(const char *inSAR);
 float get_cal_dn(cal_params*,double,double,int);
+float get_cal_dn_in_db(cal_params*,double,double,int);
 float sprocket_get_cal_dn(cal_params*,double,double,int);
 int check_cal(char*);
 
