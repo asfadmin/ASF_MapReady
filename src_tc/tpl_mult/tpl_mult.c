@@ -50,11 +50,13 @@ BUGS:
 ******************************************************************************/
 
 #include "asf.h"
+#include "asf_reporting.h"
 
 #define  VERSION	1.1
 
-main(argc,argv)
-  int argc; char **argv;
+void give_usage();
+
+int main(int argc,char **argv)
 {
     float rx,ry,sx,sy, fact;
     FILE  *fpin, *fpout;  
@@ -81,7 +83,7 @@ main(argc,argv)
     exit(0);
 }
 
-give_usage() {
+void give_usage() {
    asfPrintStatus("Usage:  tpl_mult factor intpl outtpl\n");
    asfPrintStatus("           factor      floating point multiplication factor\n");
    asfPrintStatus("           intpl       input tie point location file\n");
