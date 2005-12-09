@@ -122,7 +122,7 @@ cal_params *create_cal_params(const char *inSAR)
         /* Set Default values
          --------------------*/
         p->Dmax = 0.0;
-        p->Dmin = -25.5;
+        p->Dmin = -30.0;
         p->noise_len=256;
         p->output_type=sigma_naught;
 
@@ -195,19 +195,40 @@ cal_params *create_cal_params(const char *inSAR)
 ----------------------------------------------------------------------*/
 float get_cal_dn(cal_params *p,double noiseValue,double invIncAngle,int inDn)
 {
-
-
         double scaledPower;
 
         /* Convert (amplitude) data number to scaled, noise-removed power */
         scaledPower=(p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
 
         /* We don't want to convert the scaled power image into dB values
-	   since it messes up the statistics */
+          since it messes up the statistics */
         if (scaledPower > 0.0 && inDn > 0)
           return scaledPower;
         else
-	  return LOVAL;
+          return LOVAL;
+}
+
+//----------------------------------------------------------------------
+//Get_cal_dn_in_db:
+//      Convert amplitude image data number into calibrated image data
+//      number (in decibles), given the current noise value.
+//--------------------------------------------------------------------
+float get_cal_dn_in_db(cal_params *p,double noiseValue,double invIncAngle,int inDn)
+{
+  double scaledPower,db;
+
+  // Convert (amplitude) data number to scaled, noise-removed power
+  scaledPower=(p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+
+  // Convert power to decibles
+  if (scaledPower > 0.0)
+  {
+    db=10.0*log10(scaledPower);
+//    if (db > p->Dmin)
+      return db;
+  }
+  // Otherwise, set dB value to a floor
+  return p->Dmin;
 }
 
 /*----------------------------------------------------------------------
