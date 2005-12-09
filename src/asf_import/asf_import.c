@@ -72,7 +72,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   To import a STF fileset (fileSTF.000 & file.000.par) you will need to\n"\
 "   specify the -format option since STF is not the default.\n"\
 "        example> asf_import -format stf fileSTF.000 fileASF\n"\
-"\\n"
+"\n"
 
 #define ASF_LIMITATIONS_STRING \
 "   CEOS base name issue:\n"\
@@ -240,6 +240,7 @@ int main(int argc, char *argv[])
   flags[f_BETA] = checkForOption("-beta", argc, argv);
   flags[f_GAMMA] = checkForOption("-gamma", argc, argv);
   flags[f_POWER] = checkForOption("-power", argc, argv);
+  flags[f_DB] = checkForOption("-db", argc, argv);
   flags[f_SPROCKET] = checkForOption("-sprocket", argc, argv);
   flags[f_LUT] = checkForOption("-lut", argc, argv);
   flags[f_LAT_CONSTRAINT] = checkForOption("-lat", argc, argv);
@@ -261,7 +262,9 @@ int main(int argc, char *argv[])
     if(flags[f_SPROCKET] != FLAG_NOT_SET) temp++;
     if(flags[f_LUT] != FLAG_NOT_SET)      temp++;
     if(temp > 1)/*If more than one option was selected*/
-      usage();/*This exits with a failure*/
+
+      usage();
+
   }
   { /*We need to make sure the user specified the proper number of arguments*/
     int needed_args = REQUIRED_ARGS+1;/*command & in_base & out_base*/
@@ -270,6 +273,7 @@ int main(int argc, char *argv[])
     if(flags[f_BETA] != FLAG_NOT_SET)     needed_args += 1;/*option*/
     if(flags[f_GAMMA] != FLAG_NOT_SET)    needed_args += 1;/*option*/
     if(flags[f_POWER] != FLAG_NOT_SET)    needed_args += 1;/*option*/
+    if(flags[f_DB] != FLAG_NOT_SET)       needed_args += 1;/*option*/
     if(flags[f_SPROCKET] != FLAG_NOT_SET) needed_args += 1;/*option*/
     if(flags[f_LUT] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
     if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET)
@@ -293,7 +297,7 @@ int main(int argc, char *argv[])
       No check for '-' in the two following fields because negative numbers
       are legit (eg -lat -67.5 -70.25)*/
     if(flags[f_LAT_CONSTRAINT] >= argc - (REQUIRED_ARGS+1))
-       usage();
+      usage();
   if(flags[f_PRC] != FLAG_NOT_SET)
     /*Make sure the field following -prc isn't another option
       Also check for bleeding into required arguments*/
@@ -304,7 +308,7 @@ int main(int argc, char *argv[])
     /*Make sure the field following -metadata isn't another option*/
     if(   argv[flags[f_METADATA_FILE] + 1][0] == '-'
        || flags[f_METADATA_FILE] >= argc - REQUIRED_ARGS)
-      usage();/*This exits with a failure*/
+      usage();
   if(flags[f_LOG] != FLAG_NOT_SET)
     /*Make sure the field following -log isn't another option*/
     if(   argv[flags[f_LOG]+1][0] == '-'
@@ -387,6 +391,15 @@ int main(int argc, char *argv[])
       asfPrintError(logbuf);
     }
   } /* END: Check for conflict between pixel type flags */
+
+  if (   flags[f_DB] != FLAG_NOT_SET
+      && !(   flags[f_SIGMA] != FLAG_NOT_SET
+           || flags[f_GAMMA] != FLAG_NOT_SET
+           || flags[f_BETA] != FLAG_NOT_SET ) )
+  {
+    asfPrintWarning("-db flag must be specified with -sigma, -gamma, or -beta. Ignoring -db.\n");
+  }
+
 
   /* Get the input metadata name if the flag was specified (probably for a meta
    * name with a different base name than the data name) */
