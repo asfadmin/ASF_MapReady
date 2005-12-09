@@ -16,6 +16,7 @@ typedef enum {
     f_BETA,
     f_GAMMA,
     f_POWER,
+    f_DB,
     f_SPROCKET,
     f_LUT,
     f_LAT_CONSTRAINT,
