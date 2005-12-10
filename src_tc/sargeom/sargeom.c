@@ -83,11 +83,14 @@ BUGS:
 #include "sarsim.h"
 #include "worgen.h"
 #include "sarmodel.h"
+#include "asf_reporting.h"
 #define VERSION 5.0
 
  void bye (char *message); 
- void init_meta (char *demfile, char *sarfile, int *in_nl, int *in_ns, 
- 	int *dem_nl, int *dem_ns, int *zone, double *pixsiz, double *upleft);
+ void init_meta (struct DDR *dem_ddr, struct DDR *sar_ddr,
+		 int *in_nl, int *in_ns, 
+		 int *dem_nl, int *dem_ns, int *zone,
+		 double *pixsiz, double *upleft);
 
 int main(argc, argv)
     int argc; char** argv;
@@ -110,23 +113,25 @@ int    zone;                   /* Dem Zone Code                           */
 int    viewflg;                /* Return variables for Sar Model code     */
 int 	out_nl,out_ns;	        /* Number of lines and samples (output)    */
 int 	s_line,s_samp;          /* current line and sample (output)        */
-int 	line,sample;          /* Loop counters                           */
+int 	line,sample,i;          /* Loop counters                           */
 char 	sarfile[255];            /* Input file name                         */
 char	outfile[255];            /* Output file name                        */
 char	demfile[255];            /* DEM file name                           */
 char    coeffile[255];           /* coefficients file name                  */
 char	dum1[20],dum2[4];       /* dummy read storage                      */
-short   *dembuf;                /* Input Dem Buffer                        */
-short   *demptr;                /* Input Dem Buffer Pointer                */
-unsigned char *sarbuf;          /* Input buffer                            */
-unsigned char *outbuf;          /* Output buffer                           */
-unsigned char *outptr;          /* Output buffer pointer                   */
-unsigned char tmpval;           /* processing variable                     */
-unsigned char fill = 0;	        /* Background value                        */
+float   *dembuf;                /* Input Dem Buffer                        */
+float   *demptr;                /* Input Dem Buffer Pointer                */
+float   *sarbuf;                /* Input buffer                            */
+float   *outbuf;                /* Output buffer                           */
+float   *outptr;                /* Output buffer pointer                   */
+float   tmpval;                 /* processing variable                     */
+float   fill = 0;	        /* Background value                        */
 int     dumi;                   /* dummy read storage                      */
 int	good=0;			/* Test to see is any points are non-zero  */
 FILE    *fpout;			/* File Pointer -- Used for Output file    */
 FILE    *fp;                    /* File Pointer -- Used for Demfile        */
+struct DDR dem_ddr;             /* DDR record for the DEM                  */
+struct DDR sar_ddr;             /* DDR record for the SAR image            */
 /***************************************************************************
                   S E T    U P    P R O C E S S I N G
 ****************************************************************************/
@@ -136,13 +141,14 @@ FILE    *fp;                    /* File Pointer -- Used for Demfile        */
 StartWatch();
 if (argc != 5) 
  {
-  printf("\n");
-  printf("Usage:%s inDEMfile inSARfile inCOEFfile outCORfile\n", argv[0]);
-  printf("      inputs: inDEMfile.img   raw DEM file\n");
-  printf("              inSARfile.img   SAR image\n");
-  printf("              inCOEFfile.ppf  Coefficients File\n");
-  printf("      output: outCORfile.img  Terrain Corrected Image\n\n");
-  printf("      Version %.2f,  ASF STEP TOOLS\n\n",VERSION);
+  asfPrintStatus("\n");
+  asfPrintStatus("Usage:%s inDEMfile inSARfile inCOEFfile outCORfile\n",
+		 argv[0]);
+  asfPrintStatus("      inputs: inDEMfile.img   raw DEM file\n");
+  asfPrintStatus("              inSARfile.img   SAR image\n");
+  asfPrintStatus("              inCOEFfile.ppf  Coefficients File\n");
+  asfPrintStatus("      output: outCORfile.img  Terrain Corrected Image\n\n");
+  asfPrintStatus("      Version %.2f,  ASF Tools\n\n",VERSION);
   exit(1);
  }
 strcpy(demfile,argv[1]);
@@ -150,16 +156,22 @@ strcpy(sarfile,argv[2]);
 strcat(strcpy(coeffile,argv[3]),".ppf");
 strcat(strcpy(outfile,argv[4]),".img");
 
-printf("******* Starting SARGEOM Process *******\n");
+asfPrintStatus("******* Starting SARGEOM Process *******\n");
 
 /* Initialize image size globals
  ------------------------------*/
-init_meta(demfile,sarfile,&in_nl,&in_ns,&dem_nl,&dem_ns,&zone,&pixsiz,upleft);
+if (c_getddr(demfile, &dem_ddr)!= 0)
+ { asfPrintError("Unable to get ddr file for image %s\n",demfile); }
+if (c_getddr(sarfile, &sar_ddr)!= 0)
+ { asfPrintError("Unable to get ddr file for image %s\n",sarfile); }
+
+init_meta(&dem_ddr,&sar_ddr,&in_nl,&in_ns,&dem_nl,&dem_ns,
+	  &zone,&pixsiz,upleft);
  
 /* Read mapping coefficients file
  -------------------------------*/
 if ((fp=fopen(coeffile,"r"))==0)
-  {printf("Unable to open input file %s\n",coeffile); exit(1); }
+  {asfPrintError("Unable to open input file %s\n",coeffile); }
 fscanf(fp,"%s%s%i%lf",dum1,dum2,&dumi,&azcoef[1]);
 fscanf(fp,"%s%s%i%lf",dum1,dum2,&dumi,&azcoef[2]);
 fscanf(fp,"%s%s%i%lf",dum1,dum2,&dumi,&azcoef[3]);
@@ -170,12 +182,12 @@ fclose(fp);
  
 /* Report Processing Parameters and allocate buffer space
  -------------------------------------------------------*/
-printf("Azcoefs = %f %f %f\n",azcoef[1],azcoef[2],azcoef[3]);
-printf("Grcoefs = %f %f %f\n",grcoef[1],grcoef[2],grcoef[3]);
+asfPrintStatus("Azcoefs = %f %f %f\n",azcoef[1],azcoef[2],azcoef[3]);
+asfPrintStatus("Grcoefs = %f %f %f\n",grcoef[1],grcoef[2],grcoef[3]);
 out_ns = dem_ns;
 out_nl = dem_nl;
-dembuf = (short *) MALLOC (dem_ns*sizeof(short));
-outbuf = (unsigned char *) MALLOC (out_ns);
+dembuf = (float *) MALLOC (dem_ns*sizeof(float));
+outbuf = (float *) MALLOC (out_ns*sizeof(float));
  
 /* Initialize the Projection Transformation Package & geometry model
  ------------------------------------------------------------------*/
@@ -184,10 +196,11 @@ init_sar_model(azcoef, grcoef, pixsiz, sarfile, 0);
  
 /* Initialize input image and read into memory
  --------------------------------------------*/
-sarbuf = (unsigned char *) MALLOC (in_nl*in_ns);
+sarbuf = (float *) MALLOC (in_nl*in_ns);
 strcat(sarfile,".img");
 fp = fopenImage(sarfile,"rb");
-FREAD(sarbuf,in_ns,in_nl,fp);
+for (i = 0; i < in_nl; ++i)
+  getFloatLine(fp, &sar_ddr, i, &sarbuf[i*in_ns]);
 FCLOSE(fp);
  
 viewflg=0;
@@ -208,7 +221,7 @@ fp = fopenImage(demfile,"rb");
 proj_y = upleft[0];
 for (line = 0; line < dem_nl; line++, proj_y -= pixsiz)
  {
-   FREAD(dembuf,dem_ns*sizeof(short),1,fp);
+   getFloatLine(fp, &dem_ddr, 0, &dembuf[0]);
    demptr = dembuf;
    outptr = outbuf;
    proj_x = upleft[1];
@@ -229,9 +242,8 @@ for (line = 0; line < dem_nl; line++, proj_y -= pixsiz)
       }
      else *outptr++ = fill;
     }
-   if (fwrite(outbuf,out_ns,1,fpout)==0)
-     { printf("Failure writing output image %s\n",outfile); exit(1); }
-   if (line%100==0)  printf("Processing Line %4i\n",line);
+   putFloatLine(fpout,&sar_ddr,line,outbuf);
+   if (line%100==0)  asfPrintStatus("Processing Line %4i\n",line);
  }
 /****************************************************************************
                Final Processing 
@@ -246,10 +258,10 @@ strcat(strcpy(demfile,argv[1]),".ddr");
 strcat(strcpy(sarfile,argv[4]),".ddr");
 sprintf(dum1,"cp %s %s\n",demfile,sarfile);
 if (system(dum1) != 0)
-  { printf("Failure copying metadata: Program Exited\n\n"); exit(1); }
+  { asfPrintError("Failure copying metadata: Program Exited\n\n"); }
 mod_ddr(sarfile,EBYTE);
 
-printf("Sargeom sucessfully completed, wrote image %s\n",outfile);
+asfPrintStatus("Sargeom sucessfully completed, wrote image %s\n",outfile);
 StopWatch();
 exit(0);
 }
@@ -258,7 +270,7 @@ exit(0);
                         S U P P O R T   R O U T I N E S 
 *****************************************************************************/
 
-void bye(message) char *message; { printf("%s",message); exit(1); }
+void bye(message) char *message; { asfPrintError("%s",message); }
 
 /****************************************************************
 FUNCTION NAME: init_meta -- initializes image metadata
@@ -291,9 +303,9 @@ SPECIAL CONSIDERATIONS:
 ****************************************************************/
 #include "ddr.h"
 
-void init_meta(demfile,sarfile,in_nl,in_ns,dem_nl,dem_ns,zone,pixsiz,upleft)
-  char *demfile;
-  char *sarfile;
+void init_meta(dem_ddr,sar_ddr,in_nl,in_ns,dem_nl,dem_ns,zone,pixsiz,upleft)
+  struct DDR *dem_ddr;
+  struct DDR *sar_ddr;
   int *in_nl;
   int *in_ns;
   int *dem_nl;
@@ -302,29 +314,24 @@ void init_meta(demfile,sarfile,in_nl,in_ns,dem_nl,dem_ns,zone,pixsiz,upleft)
   double *pixsiz;
   double *upleft;
 {
-  struct DDR ddr;       /* DDR metedata structure        */
   double temp;
  
   /* Read DEM ddr metadata file 
    ---------------------------*/
-  if (c_getddr(demfile, &ddr)!= 0)
-    { printf("Unable to get ddr file for image %s\n",demfile); exit(1); }
-  if (ddr.valid[1] == INVAL) ddr.zone_code = 62;
-  if (ddr.valid[2] == INVAL) ddr.datum_code= 0;
-  *zone = ddr.zone_code;
-  *dem_ns = (int) ddr.ns;
-  *dem_nl = (int) ddr.nl;
-  upleft[0] = (double) ddr.upleft[0];
-  upleft[1] = (double) ddr.upleft[1];
-  temp = ddr.pdist_x;
+  if (dem_ddr->valid[1] == INVAL) dem_ddr->zone_code = 62;
+  if (dem_ddr->valid[2] == INVAL) dem_ddr->datum_code= 0;
+  *zone = dem_ddr->zone_code;
+  *dem_ns = (int) dem_ddr->ns;
+  *dem_nl = (int) dem_ddr->nl;
+  upleft[0] = (double) dem_ddr->upleft[0];
+  upleft[1] = (double) dem_ddr->upleft[1];
+  temp = dem_ddr->pdist_x;
 
   /* Read SAR ddr metadata file
    ---------------------------*/
-  if (c_getddr(sarfile, &ddr)!= 0)
-    { printf("Unable to get ddr file for image %s\n",sarfile); exit(1); }
-  *in_nl = ddr.nl;
-  *in_ns = ddr.ns;
-  *pixsiz = ddr.pdist_x;
+  *in_nl = sar_ddr->nl;
+  *in_ns = sar_ddr->ns;
+  *pixsiz = sar_ddr->pdist_x;
  
   if (*pixsiz != temp) bye("DEM and SAR resolutions mismatch\n\n");
 
