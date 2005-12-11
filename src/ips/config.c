@@ -81,10 +81,12 @@ int init_config(char *configFile)
 	  "if not used: -99.0 >\n");
   fprintf(fConfig, "coregistration = < PATCH | FRAME >\n");
   fprintf(fConfig, "maximum offset = < maximum offset allowed in initial "
-	  "co-registration >\n");  
+	  "co-registration >\n");
+  /* Keep the mask related stuff out until it is actually implemented
   fprintf(fConfig, "correlation mask = < flag for using a mask for co-registration: "
 	  "0 | 1 (not implemented yet) >\n");
   fprintf(fConfig, "mask file = < mask file location >\n");
+  */
   fprintf(fConfig, "default values = < default values file location >\n");
   fprintf(fConfig, "test mode = < test mode for internal use only - "
 	  "default value: 0 >\n");
@@ -189,7 +191,7 @@ dem_config *init_fill_config(char *configFile)
   cfg->ingest->prc_master = "";
   cfg->ingest->prc_slave = (char *)MALLOC(sizeof(char)*255);
   cfg->ingest->prc_slave = "";
-  cfg->ingest->prcflag = 1;
+  cfg->ingest->prcflag = 0;
   cfg->ingest->status = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->ingest->status, "new");
   
@@ -311,9 +313,9 @@ dem_config *init_fill_config(char *configFile)
   cfg->geocode->coh = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->geocode->coh, "");
   cfg->geocode->name = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->name, "");
+  strcpy(cfg->geocode->name, "utm");
   cfg->geocode->proj = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->proj, "utm");
+  strcpy(cfg->geocode->proj, "");
   cfg->geocode->resample = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->geocode->resample, "bilinear");
   cfg->geocode->status = (char *)MALLOC(sizeof(char)*25);
@@ -323,8 +325,8 @@ dem_config *init_fill_config(char *configFile)
   cfg->resample->status = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->resample->status, "new");
 
-  cfg->export->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->export->format, "");
+  cfg->export->format = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->export->format, "geotiff");
   cfg->export->status = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->export->status, "new");
 
@@ -806,8 +808,10 @@ int write_config(char *configFile, dem_config *cfg)
   fprintf(fConfig, "lat end = %.3f\n", cfg->general->lat_end);
   fprintf(fConfig, "coregistration = %s\n", cfg->general->coreg);
   fprintf(fConfig, "maximum offset = %d\n", cfg->general->max_off);
+  /* Leave the mask related stuff out until it is actually implemented
   fprintf(fConfig, "correlation mask = %d\n", cfg->general->mflag);
   fprintf(fConfig, "mask file = %s\n", cfg->general->mask);
+  */
   fprintf(fConfig, "default values = %s\n", cfg->general->def_val);
   fprintf(fConfig, "test mode = %d\n", cfg->general->test);
   fprintf(fConfig, "status = %s\n\n", cfg->general->status);
