@@ -66,14 +66,12 @@ int main(argc,argv)
 char	rtcf_file[255], sar_file[255], out_file[255], cmd[255];
 FILE	*fp_rtcf, *fp_sar, *fp_out;
 struct  DDR ddr;
-float   *rtcf_buf;
+float   *rtcf_buf, *inbuf;
 int	i, j, ns, nl;
 float   min, max, d_ave, l_ave;
 int	dark, light, neg;
-unsigned char	*inbuf, *outbuf;
 float	values[10];
 int	count[10];
-float   val;
 
 StartWatch();
 
@@ -83,7 +81,7 @@ if (argc!=4)
    printf("   inputs: sarfile.img  (.img extension assumed)\n");
    printf("           rtcfile.img  (.raw extension assumed)\n");
    printf("   output: outfile.img, Byte image in LAS 6.0 format\n");
-   printf("\n   Version %.2f,  ASF STEP TOOLS\n",VERSION);
+   printf("\n   Version %.2f,  ASF Tools\n",VERSION);
    exit(1);
   }
 
@@ -103,8 +101,7 @@ for (i = 0; i<10; i++) { values[i] = (float) i*0.2; count[i] = 0; }
 printf("Applying radiometric terrain correction factors.\n");
 printf("Factors: %s  Sar: %s  Output: %s\n",rtcf_file,sar_file,out_file);
 
-inbuf = (unsigned char *) MALLOC (ns * sizeof(unsigned char));
-outbuf = (unsigned char *) MALLOC (ns * sizeof(unsigned char));
+inbuf = (float *) MALLOC (ns * sizeof(float));
 rtcf_buf = (float *) MALLOC (ns * sizeof(float));
 
 fp_rtcf = fopenImage(rtcf_file,"rb");
@@ -113,21 +110,17 @@ fp_out = fopenImage(out_file,"wb");
 
 for (i = 0; i < nl; i++)
  {
-   FREAD(rtcf_buf,ns*sizeof(float),1,fp_rtcf);
-   FREAD(inbuf,ns,1,fp_sar);
+   getFloatLine(fp_rtcf, &ddr, i, rtcf_buf);
+   getFloatLine(fp_sar, &ddr, i, inbuf);
    for (j = 0; j < ns; j++)
       if (inbuf[j]>0)
        {
-        if (rtcf_buf[j]>(char)0)
-          rtcf_buf[j] = log10(rtcf_buf[j])*10.0 + ((float)inbuf[j]/10.0 - 25.5);
+        if (rtcf_buf[j]>0)
+          rtcf_buf[j] = log10(rtcf_buf[j])*10.0 + (inbuf[j]/10.0 - 25.5);
         else rtcf_buf[j] = 0;
-        val = 10.0*rtcf_buf[j]+255.0;
-        if (val > 255) outbuf[j] = 255;
-        else if (val < 0) outbuf[j] = 0;
-        else outbuf[j] = val+0.5;
        }
-      else outbuf[j] = 0;
-   fwrite(outbuf,ns,1,fp_out);
+      else rtcf_buf[j] = 0;
+   putFloatLine(fp_out, &ddr, i, rtcf_buf);
  }
 
 strcat(strcpy(sar_file,argv[1]),".ddr");
