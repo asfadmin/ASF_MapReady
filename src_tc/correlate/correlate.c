@@ -163,10 +163,10 @@ int main(int argc, char **argv)
   			if (log_fp) fprintf(log_fp,"Stage %d: zooming out.\n",stage);
 			pixsizSim *= zoomFactor;
 			pixsizSar *= zoomFactor;
-			sprintf(cmd,"resample %s %s %f > /dev/null\n",
+			sprintf(cmd,"resample_ddr %s %s %f > /dev/null\n",
 				sar(stage,buf1),sar(stage+1,buf2),pixsizSar);
 			execute(cmd);
-			sprintf(cmd,"resample %s %s %f > /dev/null\n",
+			sprintf(cmd,"resample_ddr %s %s %f > /dev/null\n",
 				sim(stage,buf1),sim(stage+1,buf2),pixsizSim);
  			execute(cmd);
 			tpl_mult(1.0/zoomFactor);
