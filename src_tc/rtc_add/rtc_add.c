@@ -116,7 +116,9 @@ for (i = 0; i < nl; i++)
       if (inbuf[j]>0)
        {
         if (rtcf_buf[j]>0)
-          rtcf_buf[j] = log10(rtcf_buf[j])*10.0 + (inbuf[j]/10.0 - 25.5);
+	  //  Changed, since inbuf is no longer 0-255. -kh
+          // rtcf_buf[j] = log10(rtcf_buf[j])*10.0 + (inbuf[j]/10.0 - 25.5);
+          rtcf_buf[j] = log10(rtcf_buf[j])*10.0 + inbuf[j];
         else rtcf_buf[j] = 0;
        }
       else rtcf_buf[j] = 0;
