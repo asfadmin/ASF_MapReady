@@ -226,12 +226,12 @@ main(int argc, char *argv[])
   }
   if (strncmp(uc(cfg->general->data_type), "SLC", 3)==0) {
     datatype = 2;
-    sprintf(format, "SLC");
+    sprintf(format, "CEOS");
   }
   
   /* Ingest the various data types: STF, RAW, or SLC */
   if (datatype==0) {
-    
+   
     /* Ingest of level zero STF data */
     if (check_status(cfg->ingest->status)) {
       if (cfg->general->lat_begin < -90.0 || cfg->general->lat_begin > 90.0) {
@@ -725,13 +725,11 @@ main(int argc, char *argv[])
 	  (vfdr1.datgroup < vfdr2.datgroup) ? vfdr1.datgroup : vfdr2.datgroup;
       }
 */
-      check_return(asf_import(cfg->master->data, "a", format,
-			      cfg->ingest->prc_master, cfg->ingest->prcflag, 
-			      cfg->general->lat_begin, cfg->general->lat_end), 
+      check_return(asf_import(cfg->master->data, "a_cpx", format,
+			      cfg->ingest->prc_master, 0, -99.0, -99.0), 
 		   "ingesting master image (asf_import)");
-      check_return(asf_import(cfg->slave->data, "b", format,
-			      cfg->ingest->prc_master, cfg->ingest->prcflag, 
-			      cfg->general->lat_begin, cfg->general->lat_end), 
+      check_return(asf_import(cfg->slave->data, "b_cpx", format,
+			      cfg->ingest->prc_master, 0, -99.0, -99.0), 
  		   "ingesting slave image (asf_import)");
       check_return(c2p("a_cpx", "a"), 
 		   "converting complex master image into phase and amplitude (c2p)");
@@ -751,7 +749,7 @@ main(int argc, char *argv[])
     /* Coregister slave image */
     if (check_status(cfg->coreg_slave->status)) {
       if (cfg->general->mflag) {
-	check_return(coregister_coarse("a_cpx.img", "b_cpx.imh", "reg/ctrl", 
+	check_return(coregister_coarse("a_cpx.img", "b_cpx.img", "reg/ctrl", 
 				       cfg->general->mask), 
 		     "offset estimation (coregister_coarse)");
 	check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", 
@@ -772,7 +770,7 @@ main(int argc, char *argv[])
 		     "calculating offset grids (fit_warp)");
 	sprintf(tmp, "-warp reg/warp -sameSize");
 	if (cfg->coreg_slave->sinc) strcat(tmp, " -sinc");
-	check_return(remap("b.cpx", "b_corr.cpx", tmp), 
+	check_return(remap("b_cpx.img", "b_corr_cpx.img", tmp), 
 		     "resampling of slave image (remap)");		  
       }
       else {
@@ -780,7 +778,7 @@ main(int argc, char *argv[])
 		     "calculating transformation parameters (fit_plane)");
 	sprintf(tmp, "-matrix reg/matrix -sameSize");
 	if (cfg->coreg_slave->sinc) strcat(tmp, " -sinc");
-	check_return(remap("b.cpx", "b_corr.cpx", tmp), 
+	check_return(remap("b_cpx.img", "b_corr_cpx.img", tmp), 
 		     "resampling of slave image (remap)");		  
       }
       sprintf(cmd, "mv a_amp.img %s_a_amp.img", cfg->general->base); system(cmd);
@@ -845,74 +843,12 @@ main(int argc, char *argv[])
   sprintf(cmd, "cp a.meta %s.meta", cfg->igram_coh->igram);
   system(cmd);
   
-  /* Refine the offset */
+  /* Refine the offset *
+
+// Taking out the offset estimation for the testing.
+// Need to check what's up with it, once I am back.
+
   if (check_status(cfg->offset_match->status)) {
-    /* 
-    // supposedly no iteration required anymore ***
-    //i = 0;
-    //while (off) {
-      meta = meta_init("a.meta");
-      sprintf(tmp, "%s_amp.img", cfg->igram_coh->igram);
-      check_return(convert2byte(tmp, "sar_byte", meta->ifm->nLooks, 1), 
-		   "creating byte amplitude image (convert2byte)");
-      strcat(strcpy(metaFile,"sar_byte"),".meta");
-
-      *** Temporary fix: create a DDR file for sar_byte **
-	   sprintf(cmd, "meta2ddr sar_byte tmp");
-	   system(cmd);
-	   sprintf(cmd, "mv tmp.ddr sar_byte.ddr");
-	   system(cmd);
-      ****************************************************
-
-      nl = lzInt(metaFile, "general.line_count:", NULL);
-      ns = lzInt(metaFile, "general.sample_count:", NULL);
-      * if (!fileExists(cfg->general->dem)) check_return(1, 
-	 "reference DEM file does not exist"); *
-
-	 *** New procedure from Orion ******************
-
-      check_return(create_dem_grid(cfg->general->dem, "sar_byte.img", "a.meta", 
-				   "dem_grid"), 
-		   "creating a grid (create_dem_grid)");
-      check_return(fit_poly("dem_grid", "poly.5", 5), 
-		   "transformation parameters for resampling (fit_poly)");
-      sprintf(tmp, "-width %d -height %d -poly poly.5 -float", ns, nl);
-      check_return(remap(cfg->general->dem, "dem_big.dem", tmp),
-		   "creating subset of reference DEM (remap)");
-      **** Needs change **************  
-	    check_return(make_ddr("dem_big.dem", nl, ns+500, "float"), 
-	    "creating DDR file for subset DEM (makeddr)"); 
-      ********************
-      sprintf(tmp, "%s_ml_phase", cfg->igram_coh->igram);
-      check_return(reskew_dem(tmp, "dem_big.dem", "dem_slant.ht", "dem_sim.amp"), 
-		   "transformation subset of reference DEM into slant range "
-		   "(reskew_dem)");
-
-      *** No iteration process anymore *********
-      check_return(convert2byte("dem_sim.amp", "dem_simbyte.img", 1, 1), 
-		   "creating simulated byte amplitude image (convert2byte)");
-      check_return(trim("dem_simbyte.img", "dem_trimsim.img", 0, 100, nl, ns), 
-		   "re-sizing simulated byte amplitude (trim)");
-      check_return(trim("dem_slant.ht", "dem_lined.ht", 0, 100, nl, ns), 
-		   "re-sizing slant range subset DEM (trim)");
-      check_return(fftMatch("sar_byte", "dem_trimsim.img", "dem_corr"), 
-		   "matching real and simulated amplitude (fftMatch)");
-      
-      fCorr = FOPEN("dem_corr", "r");
-      fscanf(fCorr, "%f %f", &xshift, &yshift);
-      FCLOSE(fCorr);
-      sprintf(tmp, "cp dem_corr offset.%d", i);
-      system(tmp);
-      *      i++;*
-      if (fabs(xshift)<cfg->offset_match->max && 
-	  fabs(yshift)<cfg->offset_match->max) off = 0;
-      meta = meta_init("a.meta");
-      meta->geo->timeShift -= yshift * meta->geo->azPixTime;
-      meta->geo->slantShift -= xshift * meta->geo->xPix;
-      meta_write(meta, "a.meta");
-      ******
-    }
-****** end of iterative business *************/
 
     sprintf(tmp, "%s_amp.img", cfg->igram_coh->igram);
     check_return(asf_check_geolocation(tmp, cfg->general->dem, "offset", 
@@ -923,6 +859,7 @@ main(int argc, char *argv[])
     check_return(write_config(configFile, cfg), 
 		 "Could not update configuration file");
   }
+  */
   
   /* Simulated phase image and seed points */
   if (check_status(cfg->sim_phase->status)) { 
