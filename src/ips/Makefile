@@ -1,11 +1,9 @@
 #	ips
 #	by Rudi Gens, ASF, 2001
 
-DEBUG_BUILD = 2
 
 include ../../make_support/system_rules
 
-CFLAGS  = $(FLAGS) -DDECODE_CEOS -g
 LIBS    = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libasf_proj.a \
