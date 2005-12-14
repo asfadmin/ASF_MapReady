@@ -1,25 +1,25 @@
 /*************************************************************************
 NAME:   terrcorr --  Terrain Correction Main Program
- 
-SYNOPSIS:  terrcorr [-cf{1-4}klms] SAR DEM  
+
+SYNOPSIS:  terrcorr [-cf{1-4}klms] SAR DEM
         -c              Clip the DEM file to the extents of the SAR image
-        -m              Modify radiometric calibration sigma0 range, 
+        -m              Modify radiometric calibration sigma0 range,
                         coefficients, and noise versus range LUT.
         -s              Skip the sar preprocessing step
         -k              Create a MASK value image
         -f{1-4}         Create a radiometrically terrain corrected product
-                        using the numbered formula (see SARSIM)         
-        -l              leave temporary files tiep.tpl, coef.ppf, 
-                        pdem.img, csar.dat, and sSAR.img 
+                        using the numbered formula (see SARSIM)
+        -l              leave temporary files tiep.tpl, coef.ppf,
+                        pdem.img, and sSAR.img
         SAR             Input SAR File -- ASF Type 100 or 200
         DEM             Input Digital Elevation Model file
- 
-DESCRIPTION: 
+
+DESCRIPTION:
        This shell incorporates all of the steps involved in performing terrain
     correction of low or full-resolution ASF SAR images at varying resolutions.
     This process includes DEM preprocesssing, SAR preprocessing, geocoding,
-    geometric rectification, and radiometric normalization.  
-      
+    geometric rectification, and radiometric normalization.
+
 EXTERNAL ASSOCIATES:
     NAME:                USAGE:
     ---------------------------------------------------------------
@@ -31,7 +31,7 @@ EXTERNAL ASSOCIATES:
     correlate		 performs image to image correlation
     sargeom              Creates terrain corrected SAR image
     rtc_add  		 Applies radiometric terrain correction factors
- 
+
 FILE REFERENCES:
     NAME:             USAGE:
     ---------------------------------------------------------------
@@ -40,12 +40,12 @@ N   SAR.ldr (or .L)   SAR leader file
 P   SAR.trl (or .L)   SAR trailer file
 U   DEM.img           SUN LAS format DEM image
 T   DEM.meta           SUN LAS format data descriptor record for DEM
-S   
-  
-T   cSAR.dat (or .D)  Calibrated SAR image
+S
+
+T
 M   sSAR.img          Simulated SAR image
 P   rSAR<form>.img    Radiometric Terrain Corection factors
- 
+
     pSAR.img          Preprocessed SAR
 O   pSAR.meta          Preprocessed SAR
 U   SAR_mask.img          Mask Value Image
@@ -56,27 +56,27 @@ T   SAR_cor<form>.img Radiometrically Terrain Corrected Image
 S   SAR_cor<form>.meta
     fsSAR.img         Filtered Simulated SAR image
     fsSAR.meta         Filtered Simulated SAR image
- 
+
 PROGRAM HISTORY:
     VERS:   DATE:    AUTHOR:    PURPOSE:
     ---------------------------------------------------------------
-    1.0     8/29/94  Tom Logan  Initial Implementation, converted 
+    1.0     8/29/94  Tom Logan  Initial Implementation, converted
                                 from original Unix C shell script
     1.1     2/95     T. Logan   Add scalable pixel size option
-                                Add las 6.0 (img DEM) option 
+                                Add las 6.0 (img DEM) option
     1.2     6/95     T. Logan   Added modify calibration option
                                 Modified to use new correlation process
-    1.3     8/95     T. Logan   Modified to pass Mask and RTC factor 
+    1.3     8/95     T. Logan   Modified to pass Mask and RTC factor
                                 switches to SARSIM.  Added call to rtc_mult.
-                                Renamed output files.  
+                                Renamed output files.
     2.0    10/95     T. Logan   Ported to Solaris
     2.1	    1/96     T. Logan   Added creation of zero coefficients file.
     2.2     5/96     T. Logan   Modified to use new metadata routines
     2.3     9/96     T. Logan   Modified to handle RADARSAT era data files
-    2.4     8/97     T. Logan   Incorporated two-pass correlation 
- 
+    2.4     8/97     T. Logan   Incorporated two-pass correlation
+
 HARDWARE/SOFTWARE LIMITATIONS:
- 
+
 ALGORITHM DESCRIPTION:
   Preprocess the input SAR image
     -- Apply radiometric calibrations
@@ -94,14 +94,14 @@ ALGORITHM DESCRIPTION:
     -- Correlate images to produce tie-points
     -- Edit tie-points and make 2D mapping function coefficients
   Create Terrain Corrected Image & Outputs
-    -- Using the coefficients found, locate SAR image pixel values in the 
+    -- Using the coefficients found, locate SAR image pixel values in the
        positions given by DEM file
     -- if (RTC) perform rtc_mult to create RTC SAR image
   Clean Up Processing Files
     -- Remove intermediate processing files
- 
+
 ALGORITHM REFERENCES:   Based on EDC code by Charles Wivell
- 
+
 BUGS:
 *************************************************************************/
 /******************************************************************************
@@ -138,11 +138,13 @@ void make_zero(void);
 int main(argc, argv)
         int argc; char **argv;
 {
-char cmd[255], SAR[255],  DEM[255], cSAR[255], pSAR[255], mSAR[255], rSAR[255],
+char cmd[255], SAR[255],  DEM[255], pSAR[255], mSAR[255], rSAR[255],
      SIM[255], fSIM[255], COR[255], rCOR[255];
 char *metaExt=".meta", *imgExt=".img";
+char *ddrExt=".ddr";
+char *tmp;
 char SIM_rtc[259], pSAR_mask[260];
- 
+
 /*char    ascdesc;                 Ascending/Descending pass flag            */
 float   pixsiz;                 /* Processing pixel size in meters           */
 float   pixsizDEM, pixsizSAR;   /* Pixel size for input SAR and DEM images   */
@@ -167,18 +169,18 @@ asfPrintStatus("================================================================
 asfPrintStatus("        Terrain Correction Software for ASF SAR images\n");
 asfPrintStatus("==================================================================\n");
 asfPrintStatus("\n");
- 
-/* Get Inputs from Command Line 
+
+/* Get Inputs from Command Line
  ------------------------------*/
 leave = 0;              /* Leave temporary processing files?    */
 modify = 0;             /* Modify calibration coefficients?     */
 clip = 0;               /* Clip the DEM file to match the SAR?  */
-error = 0;              
+error = 0;
 mask = 0;		/* Create mask image file?		*/
 rtcf = 0;		/* Create Radiometric TC file?          */
 form = 0;		/* Number of formula to use for RTC     */
 skip = 0;		/* Skip the SAR preprocessin step?	*/
- 
+
 if (argc >= 3)
   for (i = 1; i < argc; i++)
    {
@@ -192,7 +194,7 @@ if (argc >= 3)
                  case 'm': modify = 1; break;
 		 case 's': skip = 1; break;
                  case 'k': mask = 1; break;
-                 case 'f': 
+                 case 'f':
                            j++;
  			   form = atoi(&argv[i][j]);
                            rtcf = 1;
@@ -201,7 +203,7 @@ if (argc >= 3)
                      asfPrintStatus("\n\7\7\n INVALID OPTION: %s\n\7\n",argv[i]);
                      error = 1;
                      break;
-               } 
+               }
        }
      else
        {
@@ -210,7 +212,7 @@ if (argc >= 3)
        }
     }
 else error = 1;
- 
+
 if (error)
   {
    asfPrintStatus(" Usage: %s [-cf{1-4}klms] SAR DEM\n\n",argv[0]);
@@ -235,7 +237,6 @@ if (error)
 
 strcat(strcpy(SIM,"s"),SAR);
 strcat(strcpy(fSIM,"f"),SIM);
-strcat(strcpy(cSAR,"c"),SAR);
 strcat(strcpy(pSAR,"p"),SAR);
 strcat(strcpy(COR,SAR),"_cor");
 if (mask) strcat(strcpy(mSAR,"m"),SAR);
@@ -254,53 +255,76 @@ if (rtcf)
 
 /* Read DEM and SAR image metadata
  --------------------------------*/
+// NOTE: I'm a little queasy about this. Used to be assigned to ddr.pdist_x
+//       which is directly related to meta->projection->perX, but there is not
+//       always a projection block in the metadata. With the assurance,
+//       metaDEM->general->x_pixel_size should suffice (it is directly related
+//       to ddr.sample_inc)
 metaDEM = meta_read(DEM);
-if (metaDEM->projection == NULL) {
-  asfPrintError("No projection block in the .meta file for the DEM, exiting...\n");
-}
-pixsizDEM = metaDEM->projection->perX;
+if (metaDEM->projection != NULL)
+ {
+  pixsizDEM = metaDEM->projection->perX;
+ }
+else
+ {
+  pixsizDEM = metaDEM->general->x_pixel_size;
+ }
 pixsiz = pixsizDEM;
 
 metaSAR = meta_read(SAR);
-if (metaSAR->projection == NULL) {
-  asfPrintError("No projection block in the .meta file for the SAR, exiting...\n");
-}
-pixsizSAR = metaSAR->projection->perX;
+if (metaSAR->projection != NULL)
+ {
+  pixsizSAR = metaSAR->projection->perX;
+ }
+else
+ {
+  pixsizSAR = metaSAR->general->x_pixel_size;
+ }
 
-asfPrintStatus("Preprocessing the SAR image\n"); 
+asfPrintStatus("Preprocessing the SAR image\n");
 /*------------------------------------------------------------------------
-                   Preprocess the input SAR image 
+                   Preprocess the input SAR image
  ------------------------------------------------------------------------*/
   if (!skip)
    {
-    /* Resample Image / Strip CEOS Header 
+    /* Resample Image / Strip CEOS Header
      -------------------------------------*/
     if (pixsizSAR < pixsiz)
       {
 	display("Resampling and Low-Pass Filtering SAR Image");
-        sprintf(cmd,"resample %s %s %f\n",cSAR,pSAR,pixsiz);
+        sprintf(cmd,"resample %s %s %f\n",SAR,pSAR,pixsiz);
         execute(cmd);
 
         asfPrintStatus("\n");
-        sprintf(cmd,"rm -f %s*\n",cSAR);
+        sprintf(cmd,"rm -f %s*\n",SAR);
         if (system(cmd)==-1) bye();
-      } 
+      }
     else if (pixsizSAR == pixsiz)
       {
-	sprintf(cmd,"mv %s%s %s%s\n",cSAR,imgExt,pSAR,imgExt); execute(cmd);	
-	sprintf(cmd,"mv %s%s %s%s\n",cSAR,metaExt,pSAR,metaExt); execute(cmd);	
+	sprintf(cmd,"cp %s%s %s%s\n",SAR,imgExt,pSAR,imgExt); execute(cmd);
+	if ( fileExists( tmp=appendExt(SAR,metaExt) ) )
+	 {
+	  sprintf(cmd,"cp %s%s %s%s\n",SAR,metaExt,pSAR,metaExt); execute(cmd);
+	 }
+	FREE(tmp);
+	if ( fileExists( tmp=appendExt(SAR,ddrExt) ) )
+	 {
+	  sprintf(cmd,"cp %s%s %s%s\n",SAR,ddrExt,pSAR,ddrExt); execute(cmd);
+	 }
+	FREE(tmp);
       }
     else
       {
         asfPrintError("SAR image has a lower resolution than the DEM\n");
-      } 
- 
-    /* Copy metadata for resampled image
+      }
+
+    /* Copy CEOS metadata for resampled image
      -----------------------------------*/
     asfPrintStatus("\n");
     if (!era)
      {
-       sprintf(cmd,"cp %s%s %s%s\n",SAR,metaExt,pSAR,metaExt);
+       sprintf(cmd,"cp %s.L %s.L\n",SAR,pSAR);
+       sprintf(cmd,"cp %s.D %s.D\n",SAR,pSAR);
        execute(cmd);
      }
 
@@ -333,13 +357,31 @@ asfPrintStatus("Preprocessing the SAR image\n");
     {
      strcat(strcpy(SIM_rtc,SIM),"_rtc");
      sprintf(cmd,"mv %s%s %s%s\n",SIM_rtc,imgExt,rSAR,imgExt); execute(cmd);
-     sprintf(cmd,"mv %s%s %s%s\n",SIM_rtc,metaExt,rSAR,metaExt); execute(cmd);
+     if ( fileExists( tmp=appendExt(SIM_rtc,metaExt) ) )
+      {
+       sprintf(cmd,"mv %s%s %s%s\n",SIM_rtc,metaExt,rSAR,metaExt); execute(cmd);
+      }
+     FREE(tmp);
+     if ( fileExists( tmp=appendExt(SIM_rtc,ddrExt) ) )
+      {
+       sprintf(cmd,"mv %s%s %s%s\n",SIM_rtc,ddrExt,rSAR,ddrExt); execute(cmd);
+      }
+     FREE(tmp);
     }
   if (mask)  /* Fix Mask Image File Name */
     {
      strcat(strcpy(pSAR_mask,pSAR),"_mask");
      sprintf(cmd,"mv %s%s %s%s\n",pSAR_mask,imgExt,SAR,imgExt); execute(cmd);
-     sprintf(cmd,"mv %s%s %s%s\n",pSAR_mask,metaExt,SAR,metaExt); execute(cmd);
+     if ( fileExists( tmp=appendExt(pSAR_mask,metaExt) ) )
+      {
+       sprintf(cmd,"mv %s%s %s%s\n",pSAR_mask,metaExt,SAR,metaExt); execute(cmd);
+      }
+     FREE(tmp);
+     if ( fileExists( tmp=appendExt(pSAR_mask,ddrExt) ) )
+      {
+       sprintf(cmd,"mv %s%s %s%s\n",pSAR_mask,ddrExt,SAR,ddrExt); execute(cmd);
+      }
+     FREE(tmp);
     }
 
 
@@ -348,7 +390,7 @@ asfPrintStatus("Preprocessing the SAR image\n");
  -----------------------------------------------------------------------*/
   display("Despike Filtering SIM Image");
   sprintf(cmd,"despike %s %s\n",SIM,fSIM);  execute(cmd);
- 
+
 /*-----------------------------------------------------------------------
         Perform Correlation Process, Produce mapping Coefficients
  -----------------------------------------------------------------------*/
@@ -357,13 +399,13 @@ asfPrintStatus("Preprocessing the SAR image\n");
   execute(cmd);
 
 /*--------------------------------------------------------------------------
-                        Create Terrain Corrected Image 
+                        Create Terrain Corrected Image
  --------------------------------------------------------------------------*/
   display("Creating Terrain Corrected Image");
   sprintf(cmd,"sargeom %s %s coef %s\n",DEM,pSAR,COR); execute(cmd);
 
 /*--------------------------------------------------------------------------
-               Create Radiometrically Terrain Corrected Image 
+               Create Radiometrically Terrain Corrected Image
  --------------------------------------------------------------------------*/
   if (rtcf)
    {
@@ -377,28 +419,32 @@ asfPrintStatus("Preprocessing the SAR image\n");
  --------------------------------------------------------------------------*/
   display("Cleaning Processing Files");
 
-  if (!leave)
+ if (!leave)
    {
     /* sprintf(cmd,"rm -f *.tpl\n"); execute(cmd); */
     sprintf(cmd,"rm -f %s%s %s%s\n",SIM,imgExt,SIM,metaExt); execute(cmd);
     sprintf(cmd,"rm -f cor_sar?.* cor_sim?.*\n"); execute(cmd);
+    sprintf(cmd,"rm -f %s%s\n",SIM,ddrExt); execute(cmd);
 
     if (clip)
      {
       sprintf(cmd,"rm -f %s%s\n",DEM,imgExt); execute(cmd);
       sprintf(cmd,"rm -f %s%s\n",DEM,metaExt); execute(cmd);
+      sprintf(cmd,"rm -f %s%s\n",DEM,ddrExt); execute(cmd);
      }
    }
- 
+
   if (rtcf)
    {
      sprintf(cmd,"rm -f %s%s\n",rSAR,imgExt); execute(cmd);
      sprintf(cmd,"rm -f %s%s\n",rSAR,metaExt); execute(cmd);
+     sprintf(cmd,"rm -f %s%s\n",rSAR,ddrExt); execute(cmd);
    }
 
   if (!skip)
    {
      sprintf(cmd,"rm -f %s%s\n",pSAR,metaExt); execute(cmd);
+     sprintf(cmd,"rm -f %s%s\n",pSAR,ddrExt); execute(cmd);
    }
 
 
@@ -423,12 +469,12 @@ void display(char *text)
   asfPrintStatus("-----------------------------------------------------------\n\n");
 }
 
-void execute(char *cmd) 
+void execute(char *cmd)
 {
-	asfPrintStatus("%s",cmd); 
+	asfPrintStatus("%s",cmd);
 	fflush(stdin);
-	if (system(cmd)!=0) 
-		bye(); 
+	if (system(cmd)!=0)
+		bye();
 }
 
 void bye(void) { asfPrintStatus("Program Aborted.\n"); exit(EXIT_FAILURE); }
