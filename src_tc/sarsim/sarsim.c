@@ -288,10 +288,10 @@ else  GROUND_RANGE = 0;
 if (GROUND_RANGE && form == -1)
   bye("Cannot perform ground and slant range functions simultaneously\n");
 
-simbuf = (float *) MALLOC (nl*ns);
+simbuf = (float *) MALLOC (nl*ns*sizeof(float));
 
 for (sample = 0; sample < nl*ns; sample++) simbuf[sample] = 0.0;
- 
+
 MSK
   {
    maskbuf = (unsigned char *) MALLOC (dem_ns);
