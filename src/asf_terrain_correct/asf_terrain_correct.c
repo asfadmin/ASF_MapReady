@@ -614,10 +614,10 @@ main (int argc, char **argv)
   // use a serialized version of the slant range image, to save the
   // time otherwise needed to load it.  This speeds debgging.
 #ifndef BK_DEBUG
-  g_print ("Loading SAR image and converting to slant range... ");
+  g_print ("Loading SAR image...\n");
   SlantRangeImage *sri 
-    = slant_range_image_new_from_ground_range_image (input_meta_file->str,
-    						     input_data_file->str);
+    = slant_range_image_new_from_file (input_meta_file->str,
+				       input_data_file->str);
   g_print ("done.\n");
 #else
   SlantRangeImage *sri;

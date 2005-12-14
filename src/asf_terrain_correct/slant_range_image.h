@@ -47,12 +47,14 @@ slant_range_image_new_empty (double upper_left_pixel_slant_range,
 
 
 // Create a new instance from the Alaska Satellite Facility (ASF)
-// internal format metadata_file and data_file.  The new instance will
-// have the same dimensions as the image it is produced from, with the
-// pixels resampled at evenly spaced slant range intervals.
+// internal format metadata_file and data_file.  
+// If the image is already in slant range, it is merely loaded.
+// If the image is a ground range image (the usual case), the new
+// instance will have the same dimensions as the image it is produced
+// from, with the pixels resampled at evenly spaced slant range intervals.  
 SlantRangeImage *
-slant_range_image_new_from_ground_range_image (char *metadata_file,
-					       char *data_file);
+slant_range_image_new_from_file (char *metadata_file,
+				 char *data_file);
 
 // Create a new subimage by taking a width by height window in model
 // with upper left corner (start_x, start_y).

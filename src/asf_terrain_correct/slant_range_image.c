@@ -221,13 +221,35 @@ slant_range_image_new_empty (double upper_left_pixel_slant_range,
   return self;
 }
 
-SlantRangeImage *
-slant_range_image_new_from_ground_range_image (char *metadata_file,
-					       char *data_file)
+static SlantRangeImage *
+slant_range_image_new_from_slant_range_image(meta_parameters *imd,
+					     char *data_file)
 {
   SlantRangeImage *self = g_new (SlantRangeImage, 1);
 
-  meta_parameters *imd = meta_read (metadata_file);
+  // Convenience aliases.
+  size_t sc = imd->general->sample_count, lc = imd->general->line_count;
+
+  double sr_fs = meta_get_slant (imd, 0, 0);
+  double sr_ls = meta_get_slant (imd, 0, sc);
+
+  self->data
+    = float_image_new_from_file (sc, lc, data_file, 0,
+				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+
+  self->upper_left_pixel_time = meta_get_time (imd, 0, 0);
+  self->time_per_pixel = imd->sar->azimuth_time_per_pixel;
+  self->upper_left_pixel_range = sr_fs;
+  self->slant_range_per_pixel = (sr_ls - sr_fs) / sc;
+
+  return self;
+}
+
+static SlantRangeImage *
+slant_range_image_new_from_ground_range_image (meta_parameters *imd,
+					       char *data_file)
+{
+  SlantRangeImage *self = g_new (SlantRangeImage, 1);
 
   // Convenience aliases.
   size_t sc = imd->general->sample_count, lc = imd->general->line_count;
@@ -298,8 +320,24 @@ slant_range_image_new_from_ground_range_image (char *metadata_file,
   self->upper_left_pixel_range = sr_fs;
   self->slant_range_per_pixel = sr_spacing;
 
-  meta_free (imd);
+  return self;
+}
 
+SlantRangeImage *
+slant_range_image_new_from_file (char *metadata_file,
+				 char *data_file)
+{
+  meta_parameters *imd = meta_read (metadata_file);
+  SlantRangeImage *self;
+
+  if (imd->sar->image_type == 'G') {
+    g_print("Converting SAR image from ground range to slant range...\n");
+    self = slant_range_image_new_from_ground_range_image(imd, data_file);
+  } else {
+    self = slant_range_image_new_from_slant_range_image(imd, data_file);
+  }
+
+  meta_free (imd);
   return self;
 }
 
