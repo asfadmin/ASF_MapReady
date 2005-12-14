@@ -324,6 +324,7 @@ asfPrintStatus("Preprocessing the SAR image\n");
     if (!era)
      {
        sprintf(cmd,"cp %s.L %s.L\n",SAR,pSAR);
+       execute(cmd);
        sprintf(cmd,"cp %s.D %s.D\n",SAR,pSAR);
        execute(cmd);
      }
