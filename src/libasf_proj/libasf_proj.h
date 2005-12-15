@@ -42,7 +42,7 @@ void project_set_datum(datum_type_t datum);
    Please see project.t.c for usage examples
 */
 int project_utm(project_parameters_t * pps, double lat, double lon,
-		double *x, double *y);
+                double *x, double *y);
 
 /*--------------------------------------------------------------------------
    project_utm_arr
@@ -66,9 +66,9 @@ int project_utm(project_parameters_t * pps, double lat, double lon,
 */
 
 int project_utm_arr (project_parameters_t * pps,
-		     double *lat, double *lon, 
-		     double **projected_x, double **projected_y,
-		     long length);
+                     double *lat, double *lon,
+                     double **projected_x, double **projected_y,
+                     long length);
 
 /*--------------------------------------------------------------------------
    project_utm_inv
@@ -85,7 +85,7 @@ int project_utm_arr (project_parameters_t * pps,
    Please see project.t.c for usage examples
 */
 int project_utm_inv (project_parameters_t * pps, double x, double y,
-		     double *lat, double *lon);
+                     double *lat, double *lon);
 
 /*--------------------------------------------------------------------------
    project_utm_arr_inv
@@ -105,10 +105,10 @@ int project_utm_inv (project_parameters_t * pps, double x, double y,
 
    Please see project.t.c for usage examples
 */
-int project_utm_arr_inv (project_parameters_t * pps, 
-			 double *x, double *y,
-			 double **lat, double **lon,
-			 long length);
+int project_utm_arr_inv (project_parameters_t * pps,
+                         double *x, double *y,
+                         double **lat, double **lon,
+                         long length);
 
 /****************************************************************************
   Polar Stereographic
@@ -120,8 +120,8 @@ int project_utm_arr_inv (project_parameters_t * pps,
 
    pps : projection parameters structure with the "ps" union member
          populated, containing the latitude, longitude of the natural
-	 origin (ps.slat, ps.slon) in radians, and ps.is_north_pole set
-	 to 1 if the projection is centered on the north pole, 0 if
+         origin (ps.slat, ps.slon) in radians, and ps.is_north_pole set
+         to 1 if the projection is centered on the north pole, 0 if
          the south pole.
 
    lat : latitude of point to project (radians)
@@ -132,18 +132,18 @@ int project_utm_arr_inv (project_parameters_t * pps,
                  In this situation, *x and *y will be HUGE_VAL
 
    Please see project.t.c for usage examples
-*/ 
+*/
 int project_ps(project_parameters_t * pps,
-	       double lat, double lon,
-	       double *x, double *y);
+               double lat, double lon,
+               double *x, double *y);
 
 /*--------------------------------------------------------------------------
    project_ps_arr
 
    pps : projection parameters structure with the "ps" union member
          populated, containing the latitude, longitude of the natural
-	 origin (ps.slat, ps.slon) in radians, and ps.is_north_pole set
-	 to 1 if the projection is centered on the north pole, 0 if
+         origin (ps.slat, ps.slon) in radians, and ps.is_north_pole set
+         to 1 if the projection is centered on the north pole, 0 if
          the south pole.
 
    lat, lon : Array of points to transform.  Radians.
@@ -159,19 +159,19 @@ int project_ps(project_parameters_t * pps,
    return value: TRUE if point projected ok, FALSE if not.
 
    Please see project.t.c for usage examples
-*/ 
+*/
 int project_ps_arr(project_parameters_t * pps,
-		   double *lat, double *lon,
-		   double **projected_x, double **projected_y,
-		   long length);
+                   double *lat, double *lon,
+                   double **projected_x, double **projected_y,
+                   long length);
 
 /*--------------------------------------------------------------------------
    project_ps_inv
 
    pps : projection parameters structure with the "ps" union member
          populated, containing the latitude, longitude of the natural
-	 origin (ps.slat, ps.slon) in radians, and ps.is_north_pole set
-	 to 1 if the projection is centered on the north pole, 0 if
+         origin (ps.slat, ps.slon) in radians, and ps.is_north_pole set
+         to 1 if the projection is centered on the north pole, 0 if
          the south pole.
 
    x, y: Point to (inverse) project
@@ -182,7 +182,7 @@ int project_ps_arr(project_parameters_t * pps,
    Please see project.t.c for usage examples
 */
 int project_ps_inv(project_parameters_t * pps,
-		   double x, double y, double *lat, double *lon);
+                   double x, double y, double *lat, double *lon);
 
 /*--------------------------------------------------------------------------
    project_ps_arr_inv
@@ -205,70 +205,70 @@ int project_ps_inv(project_parameters_t * pps,
    Please see project.t.c for usage examples
 */
 int project_ps_arr_inv(project_parameters_t * pps,
-		       double *x, double *y,
-		       double **lat, double **lon,
-		       long length);
+                       double *x, double *y,
+                       double **lat, double **lon,
+                       long length);
 
 /****************************************************************************
   Lambert Azimuthal Equal Area
   www.remotesensing.org/geotiff/proj_list/lambert_azimuthal_equal_area.html
 ****************************************************************************/
 int project_lamaz(project_parameters_t * pps,
-		    double lat, double lon, double *x, double *y);
+                    double lat, double lon, double *x, double *y);
 int project_lamaz_arr(project_parameters_t * pps,
-		      double * lat, double * lon,
-		      double ** projected_x, double ** projected_y, 
-		      long length);
+                      double * lat, double * lon,
+                      double ** projected_x, double ** projected_y,
+                      long length);
 int project_lamaz_inv(project_parameters_t * pps,
-		      double x, double y, double *lat, double *lon);
+                      double x, double y, double *lat, double *lon);
 int project_lamaz_arr_inv(project_parameters_t * pps,
-			  double * x, double * y,
-			  double ** lat, double ** lon, 
-			  long length);
+                          double * x, double * y,
+                          double ** lat, double ** lon,
+                          long length);
 
 /****************************************************************************
   Lambert Conformal Conic
   www.remotesensing.org/geotiff/proj_list/lambert_conic_conformal_2sp.html
 ****************************************************************************/
 int project_lamcc(project_parameters_t * pps,
-		  double lat, double lon, double *x, double *y);
+                  double lat, double lon, double *x, double *y);
 int project_lamcc_arr(project_parameters_t * pps,
-		      double * lat, double * lon,
-		      double ** projected_x, double ** projected_y, 
-		      long length);
+                      double * lat, double * lon,
+                      double ** projected_x, double ** projected_y,
+                      long length);
 int project_lamcc_inv(project_parameters_t * pps,
-		      double x, double y, double *lat, double *lon);
+                      double x, double y, double *lat, double *lon);
 int project_lamcc_arr_inv(project_parameters_t * pps,
-			  double * x, double * y,
-			  double ** lat, double ** lon, 
-			  long length);
+                          double * x, double * y,
+                          double ** lat, double ** lon,
+                          long length);
 
 /****************************************************************************
   Albers Equal-Area Conic
   www.remotesensing.org/geotiff/proj_list/albers_equal_area_conic.html
 ****************************************************************************/
 int project_albers(project_parameters_t * pps,
-		   double lat, double lon, double *x, double *y);
+                   double lat, double lon, double *x, double *y);
 int project_albers_arr(project_parameters_t * pps,
-		       double * lat, double * lon,
-		       double ** projected_x, double ** projected_y, 
-		       long length);
+                       double * lat, double * lon,
+                       double ** projected_x, double ** projected_y,
+                       long length);
 int project_albers_inv(project_parameters_t * pps,
-		       double x, double y, double *lat, double *lon);
+                       double x, double y, double *lat, double *lon);
 int project_albers_arr_inv(project_parameters_t * pps,
-			   double * x, double * y,
-			   double ** lat, double ** lon, 
-			   long length);
+                           double * x, double * y,
+                           double ** lat, double ** lon,
+                           long length);
 
 
 /***************************************************************************
   General conversion functions between projection coordinates and geographic
   coordinates.
 ***************************************************************************/
-void proj_to_latlon(meta_projection *proj, char look_dir, double x, double y, 
-		    double *lat, double *lon);
+void proj_to_latlon(meta_projection *proj, char look_dir, double x, double y,
+                    double *lat, double *lon);
 void latlon_to_proj(meta_projection *proj, char look_dir, double lat, double lon,
-		    double *x,double *y);
+                    double *x,double *y);
 
 
 #endif
