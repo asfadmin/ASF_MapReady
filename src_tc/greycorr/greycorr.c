@@ -93,7 +93,7 @@ BUGS:
 
 void usage(char *name)
 {
-  printf("\nUsage: %s [-n nFile] [-o offFile] [-s minStrength] [-v]\n"
+  asfPrintStatus("\nUsage: %s [-n nFile] [-o offFile] [-s minStrength] [-v]\n"
   	"                  reference search intpl outtpl \n\n",name);
   asfPrintStatus("    options:\n"
   	 "            -n nFile       output 'number of points' file \n"
