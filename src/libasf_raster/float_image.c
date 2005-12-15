@@ -825,7 +825,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 
     // Did we write the correct total amount of data?
     g_assert (ftello (self->tile_file)
-	      == (off_t) self->tile_area * self->tile_count * sizeof (float));
+	      == (off_t) (self->tile_area * self->tile_count * sizeof (float)));
 
     // Free temporary buffers.
     g_free (buffer);
@@ -1250,7 +1250,7 @@ float_image_new_from_file_pointer_with_sample_type
 
     // Did we write the correct total amount of data?
     g_assert (ftello (self->tile_file)
-	      == (off_t) self->tile_area * self->tile_count * sizeof (float));
+	      == (off_t) (self->tile_area * self->tile_count * sizeof (float)));
 
     // Free temporary buffers.
     g_free (buffer);
