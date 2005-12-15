@@ -3,6 +3,8 @@
 
 #define VERSION 1.0
 
+void usage(char *name);
+
 int main (int argc, char **argv)
 {
 	char ceosName[256];
