@@ -39,8 +39,13 @@ typedef struct {
 // file/data file pair.  Note that the LAS header file name should not
 // include the ".ddr" extension (it is added automatically.
 MapProjectedDEM *
-map_projected_dem_new_from_las (const char *las_header_file_without_extension, 
+map_projected_dem_new_from_las (const char *las_header_file_without_extension,
 				const char *las_data_file);
+
+// Create a new instance from our internal file format (.img and .meta)
+MapProjectedDEM *
+map_projected_dem_new_from_asf_internal (const char *asf_header_file,
+                                         const char *asf_data_file);
 
 // Create a new DEM of minimal size covering as much as possible of
 // projection coordinate ranges [x_start, x_end] in x projection
@@ -52,7 +57,7 @@ map_projected_dem_new_from_las (const char *las_header_file_without_extension,
 // they are in the model, but may extend slight them by a fraction of
 // a pixel, possibly slightly more if there is rounding error.
 MapProjectedDEM *
-map_projected_dem_new_subdem (MapProjectedDEM *model, double x_start, 
+map_projected_dem_new_subdem (MapProjectedDEM *model, double x_start,
 			      double x_end, double y_start, double y_end);
 
 // Get the x and y projection coordinates and height h above the
@@ -70,7 +75,7 @@ map_projected_dem_get_x_y_h (MapProjectedDEM *self, ssize_t pixel_x,
 // hold self->size_x doubles.  WARNING: this method ouput values for
 // pixels for which invalid_data_mask is set.
 void
-map_projected_dem_get_latitudes_longitudes_heights 
+map_projected_dem_get_latitudes_longitudes_heights
   (MapProjectedDEM *self, ssize_t row, double *latitudes, double *longitudes,
    double *heights);
 
