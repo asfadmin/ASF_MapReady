@@ -267,11 +267,7 @@ int main(argc,argv)
 
     for (cnt = 0; cnt < nl; cnt++, counter++)
      {
-       if (FSEEK64(fpi,find,0)!=0)
-        { printf("Unable to seek byte %lli in input file",find); exit(1);}
-       if (fread(&obuf[index],ns*sizeof(float),1,fpi)!= 1)
-        { printf("Unable to read the input DEM file"); exit(1); }
-	
+       getFloatLine(fpi, &ddr, cnt, obuf+index);
        index += ns;
        find  += ddr.ns;
        if ((counter%1000)==0) { printf("Processed line %5i\n", counter); }
@@ -301,17 +297,20 @@ int main(argc,argv)
     if (!ok) { printf("All points in the DEM file are zero!!!\n"); exit(1); }
     fclose(fpi);
     printf("Writing Output DEM...\n");
-    fpo = fopenImage(outDEM,"wb");
-    fwrite(obuf,ns*nl*sizeof(float),1,fpo);
-    fclose(fpo);    
-    free(obuf);
-    
+
     ddr.upleft[0] = ul[0]; ddr.upleft[1] = ul[1];
     ddr.upright[0] = ul[0]; ddr.upright[1] = lr[1];
     ddr.loleft[0] = lr[0]; ddr.loleft[1] = ul[1];
     ddr.loright[0] = lr[0]; ddr.loright[1] = lr[1];
     ddr.nl = nl; ddr.ns = ns;
     c_putddr(outDEM,&ddr);
+
+    fpo = fopenImage(outDEM,"wb");
+    for (i = 0; i < nl; ++i) {
+      putFloatLine(fpo, &ddr, i, obuf+i*ns);
+    }
+    fclose(fpo);    
+    free(obuf);
     
     printf("\n DEMCLIP successfully completed.\n");
     StopWatch();
