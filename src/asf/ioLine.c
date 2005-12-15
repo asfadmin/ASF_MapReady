@@ -83,6 +83,30 @@ int get_data_lines(FILE *file, meta_parameters *meta, int line_number,
 
   /* Fill in destination array.  */
   switch (data_type) {
+    case REAL32:
+      for ( ii=0; ii<samples_gotten; ii++ ) {
+        ieee_big32(((float*)temp_buffer)[ii]);
+        switch (dest_data_type) {
+         case BYTE:((unsigned char*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case INTEGER16:((short int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case INTEGER32:((int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case REAL32:((float*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case REAL64:((double*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+        }
+      }
+      break;
+    case COMPLEX_REAL32:
+      for ( ii=0; ii<samples_gotten*2; ii++ ) {
+        ieee_big32(((float*)temp_buffer)[ii]);
+        switch (dest_data_type) {
+         case COMPLEX_BYTE:((unsigned char*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER16:((short int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case COMPLEX_INTEGER32:((int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case COMPLEX_REAL32:((float*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+         case COMPLEX_REAL64:((double*)dest)[ii] = ((float*)temp_buffer)[ii];break;
+        }
+      }
+      break;
     case BYTE:
       for ( ii=0; ii<samples_gotten; ii++ ) {
         switch (dest_data_type) {
@@ -115,18 +139,6 @@ int get_data_lines(FILE *file, meta_parameters *meta, int line_number,
          case INTEGER32:((int*)dest)[ii] = ((int*)temp_buffer)[ii];break;
          case REAL32:((float*)dest)[ii] = ((int*)temp_buffer)[ii];break;
          case REAL64:((double*)dest)[ii] = ((int*)temp_buffer)[ii];break;
-        }
-      }
-      break;
-    case REAL32:
-      for ( ii=0; ii<samples_gotten; ii++ ) {
-        ieee_big32(((float*)temp_buffer)[ii]);
-        switch (dest_data_type) {
-         case BYTE:((unsigned char*)dest)[ii] = ((float*)temp_buffer)[ii];break;
-         case INTEGER16:((short int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
-         case INTEGER32:((int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
-         case REAL32:((float*)dest)[ii] = ((float*)temp_buffer)[ii];break;
-         case REAL64:((double*)dest)[ii] = ((float*)temp_buffer)[ii];break;
         }
       }
       break;
@@ -173,18 +185,6 @@ int get_data_lines(FILE *file, meta_parameters *meta, int line_number,
          case COMPLEX_INTEGER32:((int*)dest)[ii] = ((int*)temp_buffer)[ii];break;
          case COMPLEX_REAL32:((float*)dest)[ii] = ((int*)temp_buffer)[ii];break;
          case COMPLEX_REAL64:((double*)dest)[ii] = ((int*)temp_buffer)[ii];break;
-        }
-      }
-      break;
-    case COMPLEX_REAL32:
-      for ( ii=0; ii<samples_gotten*2; ii++ ) {
-        ieee_big32(((float*)temp_buffer)[ii]);
-        switch (dest_data_type) {
-         case COMPLEX_BYTE:((unsigned char*)dest)[ii] = ((float*)temp_buffer)[ii];break;
-         case COMPLEX_INTEGER16:((short int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
-         case COMPLEX_INTEGER32:((int*)dest)[ii] = ((float*)temp_buffer)[ii];break;
-         case COMPLEX_REAL32:((float*)dest)[ii] = ((float*)temp_buffer)[ii];break;
-         case COMPLEX_REAL64:((double*)dest)[ii] = ((float*)temp_buffer)[ii];break;
         }
       }
       break;
@@ -307,6 +307,30 @@ int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
 
   /* Fill in destination array.  */
   switch (data_type) {
+    case REAL32:
+      for ( ii=0; ii<num_samples_to_put; ii++ ) {
+        switch (source_data_type) {
+         case BYTE:((float*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case INTEGER16:((float*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case INTEGER32:((float*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case REAL32:((float*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case REAL64:((float*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
+        ieee_big32( ((float*)out_buffer)[ii] );
+      }
+      break;
+    case COMPLEX_REAL32:
+      for ( ii=0; ii<num_samples_to_put*2; ii++ ) {
+        switch (source_data_type) {
+         case COMPLEX_BYTE:((float*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
+         case COMPLEX_INTEGER16:((float*)out_buffer)[ii] = ((short int*)source)[ii];break;
+         case COMPLEX_INTEGER32:((float*)out_buffer)[ii] = ((int*)source)[ii];break;
+         case COMPLEX_REAL32:((float*)out_buffer)[ii] = ((float*)source)[ii];break;
+         case COMPLEX_REAL64:((float*)out_buffer)[ii] = ((double*)source)[ii];break;
+        }
+        ieee_big32( ((float*)out_buffer)[ii] );
+      }
+      break;
     case BYTE:
       for ( ii=0; ii<num_samples_to_put; ii++ ) {
         switch (source_data_type) {
@@ -340,18 +364,6 @@ int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
          case REAL64:((int*)out_buffer)[ii] = ((double*)source)[ii];break;
         }
         big32( ((int*)out_buffer)[ii] );
-      }
-      break;
-    case REAL32:
-      for ( ii=0; ii<num_samples_to_put; ii++ ) {
-        switch (source_data_type) {
-         case BYTE:((float*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
-         case INTEGER16:((float*)out_buffer)[ii] = ((short int*)source)[ii];break;
-         case INTEGER32:((float*)out_buffer)[ii] = ((int*)source)[ii];break;
-         case REAL32:((float*)out_buffer)[ii] = ((float*)source)[ii];break;
-         case REAL64:((float*)out_buffer)[ii] = ((double*)source)[ii];break;
-        }
-        ieee_big32( ((float*)out_buffer)[ii] );
       }
       break;
     case REAL64:
@@ -398,18 +410,6 @@ int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
          case COMPLEX_REAL64:((int*)out_buffer)[ii] = ((double*)source)[ii];break;
         }
         big32( ((int*)out_buffer)[ii] );
-      }
-      break;
-    case COMPLEX_REAL32:
-      for ( ii=0; ii<num_samples_to_put*2; ii++ ) {
-        switch (source_data_type) {
-         case COMPLEX_BYTE:((float*)out_buffer)[ii] = ((unsigned char*)source)[ii];break;
-         case COMPLEX_INTEGER16:((float*)out_buffer)[ii] = ((short int*)source)[ii];break;
-         case COMPLEX_INTEGER32:((float*)out_buffer)[ii] = ((int*)source)[ii];break;
-         case COMPLEX_REAL32:((float*)out_buffer)[ii] = ((float*)source)[ii];break;
-         case COMPLEX_REAL64:((float*)out_buffer)[ii] = ((double*)source)[ii];break;
-        }
-        ieee_big32( ((float*)out_buffer)[ii] );
       }
       break;
     case COMPLEX_REAL64:
