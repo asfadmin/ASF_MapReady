@@ -85,8 +85,8 @@ int main(int argc,char *argv[])
      upper[ii] = lower[ii] + 1;
      ufrac[ii] = gr2sr[ii] - (float) lower[ii];
      lfrac[ii] = 1.0 - ufrac[ii];
-     if (lower[ii]>=onp) lower[ii]=onp-1; /* range clip */
-     if (upper[ii]>=onp) upper[ii]=onp-1; /* range clip */
+     if (lower[ii]>=np) lower[ii]=np-1; /* range clip */
+     if (upper[ii]>=np) upper[ii]=np-1; /* range clip */
      printf("%d %g %d %d %g\n", ii, gr2sr[ii], lower[ii], upper[ii], ufrac[ii] );
   }
   
