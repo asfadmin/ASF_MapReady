@@ -36,16 +36,11 @@ int main(int argc,char *argv[])
   int   onp, onl;       /* out number of pixels,lines     */
   int   ii;
   float gr2sr[MAX_IMG_SIZE];    /* GR 2 SR resampling vector for Range  */
-  float gr2ml[MAX_IMG_SIZE];    /* GR 2 SR resamp vector for Azimuth    */
-  int   a_lower[MAX_IMG_SIZE];  /* floor of gr2ml vector                */
-  int   a_upper[MAX_IMG_SIZE];  /* ceiling of gr2ml vector              */
-  float a_ufrac[MAX_IMG_SIZE];  /* Upper fraction from gr2ml vector     */
-  float a_lfrac[MAX_IMG_SIZE];  /* Lower fraction from gr2ml vector     */
   int   lower[MAX_IMG_SIZE];    /* floor of gr2sr vector                */
   int   upper[MAX_IMG_SIZE];    /* ceiling of gr2sr vector              */
   float ufrac[MAX_IMG_SIZE];    /* Upper fraction from gr2sr vector     */
   float lfrac[MAX_IMG_SIZE];    /* Lower fraction from gr2sr vector     */
-  float srPixSize=0.0;
+  float srPixSize=0.0; /* output pixel size */
 
   float *inBuf;         /* Input buffer                 */
   float *outBuf;        /* Output buffer                */
@@ -74,43 +69,40 @@ int main(int argc,char *argv[])
   nl = inMeta->general->line_count;
   np = inMeta->general->sample_count;
 
-  gr2sr_vec(inMeta, gr2sr);
-  gr2ml_vec(inMeta, gr2ml);
-
-  for (ii=MAX_IMG_SIZE; ii>0; ii--) if ((int)gr2sr[ii] > np) onp = ii;
-  for (ii=MAX_IMG_SIZE; ii>0; ii--) if ((int)gr2ml[ii] > nl) onl = ii;
-
+  onl=nl;
+  gr2sr_vec(inMeta, srPixSize, gr2sr);
+  
+  /* Determine the output image size */
+  onp = 0;
+  for (ii=0; ii<MAX_IMG_SIZE; ii++) {
+     if (gr2sr[ii]<np) onp=ii; /* gr input still in range-- keep output */
+     else break; /* gr input is off end of image-- stop sr output */
+  }
+  
+  /* Split gr2sr into resampling coefficients */
+  for (ii=0; ii<onp; ii++) {
+     lower[ii] = (int) gr2sr[ii];
+     upper[ii] = lower[ii] + 1;
+     ufrac[ii] = gr2sr[ii] - (float) lower[ii];
+     lfrac[ii] = 1.0 - ufrac[ii];
+     if (lower[ii]>=onp) lower[ii]=onp-1; /* range clip */
+     if (upper[ii]>=onp) upper[ii]=onp-1; /* range clip */
+     printf("%d %g %d %d %g\n", ii, gr2sr[ii], lower[ii], upper[ii], ufrac[ii] );
+  }
+  
   outMeta = meta_copy(inMeta);
   /* FIXME: These are stolen from sr2gr and haven't been updated to be inverse */
-	outMeta->sar->time_shift  += ((inMeta->general->start_line+1)
-                                * inMeta->sar->azimuth_time_per_pixel);
-	outMeta->sar->slant_shift += ((inMeta->general->start_sample+1)
+	outMeta->sar->slant_shift += ((inMeta->general->start_sample)
                                 * inMeta->general->x_pixel_size);
-	outMeta->general->start_line   = 0.0;
 	outMeta->general->start_sample = 0.0;
-	outMeta->sar->azimuth_time_per_pixel *= srPixSize
-                                          / inMeta->general->y_pixel_size;
-	outMeta->sar->line_increment   = 1.0;
   outMeta->sar->sample_increment = 1.0;
   outMeta->sar->image_type       = 'S';
 	outMeta->general->x_pixel_size = srPixSize;
-	outMeta->general->y_pixel_size = srPixSize;
-	outMeta->general->line_count   = onl;
 	outMeta->general->sample_count = onp;
 
   asfPrintStatus("Input  lines, samples: %i %i\n",nl,np);
   asfPrintStatus("Output lines, samples: %i %i\n",onl,onp);
 
-  for (ii=0; ii<MAX_IMG_SIZE; ii++) {
-     lower[ii] = (int) gr2sr[ii];
-     upper[ii] = lower[ii] + 1;
-     ufrac[ii] = gr2sr[ii] - (float) lower[ii];
-     lfrac[ii] = 1.0 - ufrac[ii];
-
-     a_lower[ii] = (int) gr2ml[ii];
-     a_ufrac[ii] = gr2ml[ii] - (float) a_lower[ii];
-     a_lfrac[ii] = 1.0 - a_ufrac[ii];
-  }
 
   fpi = FOPEN(infile,"rb");
   fpo = FOPEN(outfile,"wb");
@@ -118,10 +110,9 @@ int main(int argc,char *argv[])
   outBuf = (float *) MALLOC (onp*sizeof(float));
 
   for (line = 0; line < onl; line++) {
-    get_float_line(fpi, inMeta, a_lower[line], inBuf);
-    for (ii=0; ii<onp; ii++) {
-       float tmp = inBuf[lower[ii]]*lfrac[ii]+inBuf[upper[ii]]*ufrac[ii];
-       outBuf[ii] = tmp*a_lfrac[line] + tmp*a_ufrac[line];
+    get_float_line(fpi, inMeta, line, inBuf);
+    for (ii=0; ii<onp; ii++) { /* resample to slant range */
+       outBuf[ii] = inBuf[lower[ii]]*lfrac[ii]+inBuf[upper[ii]]*ufrac[ii];
     }
     put_float_line(fpo,outMeta,line,outBuf);
   }

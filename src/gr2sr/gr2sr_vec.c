@@ -65,7 +65,7 @@ PROGRAM HISTORY:
 ******************************************************************************/
 #include "gr2sr.h"
 
-void gr2sr_vec(meta_parameters *meta, float *gr2sr)
+void gr2sr_vec(meta_parameters *meta, float srinc, float *gr2sr)
 {
   FILE   *fp;
   char   outfile[40];   /* Output vector file                            */
@@ -73,9 +73,9 @@ void gr2sr_vec(meta_parameters *meta, float *gr2sr)
   float  r_sc;          /* radius from center of the earth for satellite */
   float  r_earth;       /* radius of the earth                           */
   float  r_close;       /* near slant range distance                     */
-  float  rg0, tmp;      /* Ground range to first pixel, G.R. to cur pix  */
+  float  rg0, rg;        /* Ground range to first pixel, G.R. to cur pix  */
   float  a, x, x2, y;   /* temporaries                                   */
-  float  srinc, grinc;  /* Slant and Ground range pixel spacings         */
+  float  grinc;  /* Slant and Ground range pixel spacings         */
   float  rslant;        /* slant range distance to current pixel         */
   const double speed_of_light = 299792458.0;
 
@@ -87,7 +87,6 @@ void gr2sr_vec(meta_parameters *meta, float *gr2sr)
 
   /* Set the ground range and slant range increments */
   grinc = meta->general->x_pixel_size;
-  srinc = speed_of_light / (2.0 * meta->sar->range_sampling_rate);
 
   printf("r_sc = %f; r_close = %f\n",r_sc,r_close);
   printf("r_earth = %f\n",r_earth);
@@ -101,10 +100,11 @@ void gr2sr_vec(meta_parameters *meta, float *gr2sr)
   rg0 = r_earth * acos((1.0 + x2 - y*y) / (2.0*x));
 
   /* begin loop */
-  for(i = 0, rslant = r_close; i<MAX_IMG_SIZE; i++, rslant+=srinc) {
+  for(i = 0; i<MAX_IMG_SIZE; i++) {
+    rslant = r_close + i *srinc;
     y = rslant/r_earth;
-    tmp = r_earth*acos((1.0+x2-y*y)/(2.0*x));
-    gr2sr[i] = (tmp - rg0)/grinc;
+    rg = r_earth*acos((1.0+x2-y*y)/(2.0*x));
+    gr2sr[i] = (rg - rg0)/grinc;
   }
 /* can likely nuke this
   for (i = 0; i < MAX_IMG_SIZE; i+=64) {
