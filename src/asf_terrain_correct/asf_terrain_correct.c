@@ -283,10 +283,10 @@ get_extents_in_projection_coordinate_space
 //    }
   }
   
-  if (dem->projection_type == UNIVERSAL_TRANSVERSE_MERCATOR) {
-     *min_y -= 1e7;
-    *max_y -= 1e7;
-  }
+//  if (dem->projection_type == UNIVERSAL_TRANSVERSE_MERCATOR) {
+//     *min_y -= 1e7;
+//    *max_y -= 1e7;
+//  }
 
   free (y);
   free (x);
@@ -645,7 +645,7 @@ main (int argc, char **argv)
   meta_parameters *imd = meta_read (input_meta_file->str);
 
   // We are expecting a ground range SAR image.
-  g_assert (imd->sar->image_type == 'G');
+//  g_assert (imd->sar->image_type == 'G');
 //  printf("Slant range spacing: %g\n", sri->slant_range_per_pixel);
 
   // We converted to slant range

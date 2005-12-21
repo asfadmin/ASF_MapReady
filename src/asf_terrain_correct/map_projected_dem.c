@@ -247,8 +247,8 @@ map_projected_dem_get_latitudes_longitudes_heights
                   - self->projection_coordinates_per_y_pixel * row);
 
     // kludge to work around some proj oddities
-    if (self->projection_type == UNIVERSAL_TRANSVERSE_MERCATOR)
-      proj_y[ii] += 1e7;
+//    if (self->projection_type == UNIVERSAL_TRANSVERSE_MERCATOR)
+//      proj_y[ii] += 1e7;
 
     heights[ii] = float_image_get_pixel (self->data, ii, row);
   }
