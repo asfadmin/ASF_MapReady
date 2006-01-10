@@ -873,11 +873,12 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     for (i = 0; i < strlen(cmd); ++i)
       if (cmd[i] == '\\' && cmd[i+1] != ' ') cmd[i] = '/';
 
+    printf("cmd: %s\n", cmd);
+
     int pid = fork();
 
     if (pid == 0)
     {
-      printf("cmd: %s\n", cmd);
       system(cmd);
       exit(EXIT_SUCCESS);
     }
