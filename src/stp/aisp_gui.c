@@ -140,6 +140,7 @@ const char DIR_SEPARATOR = '/';
 GladeXML *glade_xml;
 gboolean user_modified_output_file = FALSE;
 
+/*
 static char *
 find_in_bin(const char * filename)
 {
@@ -157,6 +158,7 @@ find_in_share(const char * filename)
     sprintf(ret, "%s/%s", get_asf_share_dir(), filename);
     return ret;
 }
+*/
 
 gchar *
 find_in_path(gchar * file)
@@ -725,8 +727,9 @@ static int
 check_files(const char * input_file)
 {
     const int STATUS_OK = 1;
-    const int STATUS_NOT_OK = 2;
-    const int STATUS_LDR_INSTEAD = 3;
+    const int STATUS_FILE_NOT_FOUND = 2;
+    const int STATUS_META_FILE_NOT_FOUND = 3;
+    const int STATUS_LDR_INSTEAD = 4;
 
     int status;
 
@@ -734,34 +737,67 @@ check_files(const char * input_file)
     gchar * in_file = change_extension(input_file, "in");
     gchar * fmt_file = change_extension(input_file, "fmt");
 
+    int meta_exists = g_file_test(meta_file, G_FILE_TEST_EXISTS);
+    int in_exists = g_file_test(in_file, G_FILE_TEST_EXISTS);
+    int fmt_exists = g_file_test(fmt_file, G_FILE_TEST_EXISTS);
+
     if (!g_file_test(input_file, G_FILE_TEST_EXISTS))
-      status = STATUS_NOT_OK;
-
-    int ret = 0;
-
-    if (g_file_test(meta_file, G_FILE_TEST_EXISTS))
-      ret = 0;
-
-    gchar * ldr_file = change_extension(input_file, "ldr");
-
-    if (g_file_test(ldr_file, G_FILE_TEST_EXISTS))
-      ret = 1;
-
-    g_free(ldr_file);
-
-    if (!ret)
     {
-      ldr_file = change_extension(input_file, "LDR");
+      status = STATUS_FILE_NOT_FOUND;
+    }
+    else
+    {
+      if (meta_exists && in_exists && fmt_exists)
+      {
+	status = STATUS_OK;
+      }
+      else
+      {
+	gchar * ldr_file = change_extension(input_file, "ldr");
+      
+	if (g_file_test(ldr_file, G_FILE_TEST_EXISTS))
+	{
+	  status = STATUS_LDR_INSTEAD;
+	}
+	else
+	{
+	  g_free(ldr_file);
+	  ldr_file = change_extension(input_file, "LDR");
+	  
+	  if (g_file_test(ldr_file, G_FILE_TEST_EXISTS))
+	    status = STATUS_LDR_INSTEAD;
+	  else
+	    status = STATUS_META_FILE_NOT_FOUND;
+	}
 
-      if (g_file_test(ldr_file, G_FILE_TEST_EXISTS))
-	ret = 1;
-
-      g_free(ldr_file);
+	g_free(ldr_file);
+      }
     }
 
-    if (status == STATUS_NOT_OK)
+    if (status == STATUS_FILE_NOT_FOUND)
     {
+      char msg[1024];
+      sprintf(msg, "Couldn't find the input file: %s", input_file);
+      message_box(msg);
+    }
+    else if (status == STATUS_META_FILE_NOT_FOUND)
+    {
+      char *meta_file_ok = meta_exists ? "FOUND" : "NOT FOUND";
+      char *in_file_ok = in_exists ? "FOUND" : "NOT FOUND";
+      char *fmt_file_ok = fmt_exists ? "FOUND" : "NOT FOUND";
 
+      char msg[2048];
+      sprintf(msg, "Not all of the required files were found.\n"
+	      "  %s: FOUND\n"
+	      "  %s: %s\n"
+	      "  %s: %s\n"
+	      "  %s: %s",
+	      input_file,
+	      meta_file, meta_file_ok,
+	      in_file, in_file_ok,
+	      fmt_file, fmt_file_ok);
+
+      message_box(msg);
     }
     else if (status == STATUS_LDR_INSTEAD)
     {
@@ -770,6 +806,10 @@ check_files(const char * input_file)
 		  "ASF Internal Format.  You will need to run the ASF\n"
 		  "Convert tool first.");
     }
+
+    g_free (meta_file);
+    g_free (in_file);
+    g_free (fmt_file);
 
     return status == STATUS_OK;
 }
@@ -824,7 +864,9 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     }
 
     char cmd[1024];
-    sprintf(cmd, "%s/aisp -p 1 -debug %d %s %s", get_asf_bin_dir(),
+//    sprintf(cmd, "%s/aisp -p 1 -debug %d %s %s", get_asf_bin_dir(),
+//            debug_flag, input_file, output_file);
+    sprintf(cmd, "%s -p 1 -debug %d %s %s", find_in_path("aisp"),
             debug_flag, input_file, output_file);
 
     int i;
