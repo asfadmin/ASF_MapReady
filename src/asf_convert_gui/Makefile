@@ -15,7 +15,7 @@ GTK_ZIP = gtkwin32zip
 GTK_INC = $(GTK_DIR)/include
 GTK_LIB = $(GTK_DIR)/lib
 
-ASF_LIB = ../../lib/win32
+ASF_LIB = ../../lib
 
 INCLUDE = \
 	-I$(GTK_INC) \
@@ -59,7 +59,7 @@ LIB = \
 
 CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
-$(TARGET).exe: $(TARGET).c doc
+$(TARGET).exe: $(TARGET).c
 	if [ ! -f $(GTK_DIR)/README.txt ]; then\
 	  for f in $(GTK_ZIP)/*.zip; do( yes| unzip $$f -d $(GTK_DIR) ); done;\
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
