@@ -3,7 +3,6 @@
 # and do interferometric processing on SAR images.
 #   Now incorporates asf_ceos library, as well.
 
-DEBUG_BUILD = 2
 include ../../make_support/system_rules
 
 CFLAGS += -O0
