@@ -29,6 +29,8 @@
 #include <Windows.h>
 #undef DIR_SEPARATOR
 
+#define STP_VERSION "1.0.3"
+
 static char appfontname[128] = "tahoma 8"; /* fallback value */
 
 static void set_app_font (const char *fontname)
@@ -864,10 +866,14 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     }
 
     char cmd[1024];
-//    sprintf(cmd, "%s/aisp -p 1 -debug %d %s %s", get_asf_bin_dir(),
-//            debug_flag, input_file, output_file);
+
+#ifdef win32
+    sprintf(cmd, "%s/aisp.exe -p 1 -debug %d %s %s", get_asf_bin_dir(),
+            debug_flag, input_file, output_file);
+#else
     sprintf(cmd, "%s -p 1 -debug %d %s %s", find_in_path("aisp"),
             debug_flag, input_file, output_file);
+#endif
 
     int i;
     for (i = 0; i < strlen(cmd); ++i)
@@ -1480,6 +1486,14 @@ main(int argc, char **argv)
 
     if (argc > 1)
         add_file(argv[1]);
+
+    /* add version number to window title */
+    char title[256];
+    sprintf(title,
+            "SAR Training Processor: Version %s", STP_VERSION);
+
+    GtkWidget *widget = glade_xml_get_widget (glade_xml, "aisp_main");
+    gtk_window_set_title(GTK_WINDOW(widget), title);
 
     set_font();
     set_images();
