@@ -120,7 +120,8 @@ int main(int argc,char *argv[])
 
 	sarName = argv[1];
 
-	printf("Program: xpix_ypix <.meta and .ddr file>\n\n");
+	printf("Program: xpix_ypix <.meta file>\n\n");
+	if (argc != 2) exit(1);
 
 	meta=meta_init(sarName);
 	
