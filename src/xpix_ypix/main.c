@@ -70,6 +70,25 @@ BUGS:
 #include "proj.h"
 #include "asf_meta.h"
 
+GEOLOCATE_REC * meta_make_geolocate(meta_parameters *meta,
+				    double time,double elev)
+{
+        stateVector st=meta_get_stVec(meta,time);
+        GEOLOCATE_REC *g=init_geolocate_meta(&st,meta);
+        g->re+=elev;
+        g->rp+=elev;
+        return g;
+}
+
+vector getLocCart(GEOLOCATE_REC *g,double range,double dop)
+{
+        double yaw=0,look=0;
+        vector target;
+        getLookYaw(g,range,dop,&look,&yaw);
+        getDoppler(g,look,yaw,NULL,NULL,&target,NULL);
+        return target;
+}
+
 double getPixSize(meta_parameters *meta,int axis,int *loc,float elev,float dop) {
 	GEOLOCATE_REC *g1, *g2;
 	int shift=1.0;
@@ -97,24 +116,22 @@ int main(int argc,char *argv[])
 	int axis;
 	const char *sarName;
 	meta_parameters *meta;
-	struct DDR sar_ddr;
-	double elev=0.0;
 	int loc[2];
 
 	sarName = argv[1];
 
-	system("date");
 	printf("Program: xpix_ypix <.meta and .ddr file>\n\n");
 
-	c_getddr(sarName,&sar_ddr);
 	meta=meta_init(sarName);
 	
-	printf("Along-the-ellipsoid pixel sizes (%d x %d pixel image)\n",sar_ddr.nl,sar_ddr.ns);
+	printf("Along-the-ellipsoid pixel sizes (%d x %d pixel image)\n",
+	       meta->general->line_count, meta->general->sample_count);
 	for (axis=0;axis<2;axis++) {
 		const char *axisNames[2]={"  range","azimuth"};
-		int sar_x=(int)(sar_ddr.ns/2);
-		int sar_y=(int)(sar_ddr.nl/2);
-		meta_get_orig((void *)&sar_ddr,sar_y,sar_x,&loc[1],&loc[0]);
+		int sar_x=(int)meta->general->sample_count/2;
+		int sar_y=(int)meta->general->line_count/2;
+		meta_get_original_line_sample(meta,sar_y,sar_x,
+					      &loc[1],&loc[0]);
 		
 		printf(     "%s pixel size at scene center: %.7f meters\n",
 			axisNames[axis], getPixSize(meta,axis,loc,0.0,0.0));
@@ -126,27 +143,32 @@ int main(int argc,char *argv[])
 			getPixSize(meta,axis,loc,1.0e3,1.0));
 		
 		sar_x=0;
-		meta_get_orig((void *)&sar_ddr,sar_y,sar_x,&loc[1],&loc[0]);
+		meta_get_original_line_sample(meta,sar_y,sar_x,
+					      &loc[1],&loc[0]);
 		printf("             ...at scene left edge: %.7f meters\n",
 			getPixSize(meta,axis,loc,0.0,0.0));
 
-		sar_x=sar_ddr.ns;
-		meta_get_orig((void *)&sar_ddr,sar_y,sar_x,&loc[1],&loc[0]);
+		sar_x=meta->general->sample_count;
+		meta_get_original_line_sample(meta,sar_y,sar_x,
+					      &loc[1],&loc[0]);
 		printf("            ...at scene right edge: %.7f meters\n",
 			getPixSize(meta,axis,loc,0.0,0.0));
 
 		sar_x=0; sar_y=0;
-		meta_get_orig((void *)&sar_ddr,sar_y,sar_x,&loc[1],&loc[0]);
+		meta_get_original_line_sample(meta,sar_y,sar_x,
+					      &loc[1],&loc[0]);
 		printf("              ...at scene top-left: %.7f meters\n",
 			getPixSize(meta,axis,loc,0.0,0.0));
 		
-		sar_x=sar_ddr.ns; sar_y=sar_ddr.nl;
-		meta_get_orig((void *)&sar_ddr,sar_y,sar_x,&loc[1],&loc[0]);
+		sar_x=meta->general->sample_count;
+		sar_y=meta->general->line_count;
+		meta_get_original_line_sample(meta,sar_y,sar_x,
+					      &loc[1],&loc[0]);
 		printf("          ...at scene bottom-right: %.7f meters\n",
 			getPixSize(meta,axis,loc,0.0,0.0));
 	}
 	
-	if (1) {
+	if (0) {
 		double azSize, azTime, azVel;
 		double t,dt,sc_vel,earth_rad,sc_rad,cos_earth_ang,swath_nr;
 		stateVector scFix,scGEI,ts;
