@@ -20,7 +20,10 @@ PROGRAM=$(LIBDIR)/libUtil.a \
 	$(BINDIR)/scripts
 
 
-all: $(PROGRAM)
+all: create_dirs $(PROGRAM)
+
+create_dirs:
+	mkdir ../../java
 
 clean: clean_message clean_libUtil clean_java_util clean_convert_standard \
 	clean_converter_vexcel_complex clean_image2pgm clean_image_mask \
