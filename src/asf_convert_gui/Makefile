@@ -51,9 +51,11 @@ LIB = \
 	-llibgdk-win32-2.0 \
 	$(ASF_LIB)/libasf_raster.a \
 	$(ASF_LIB)/libasf_meta.a \
-	$(ASF_LIB)/libasf.a \
+	$(ASF_LIB)/asf_meta.a \
+	$(ASF_LIB)/asf.a \
 	$(GSL_LIBS) \
 	$(JPEG_LIBS) \
+	$(GLIB_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32
 
@@ -65,10 +67,10 @@ $(TARGET).exe: $(TARGET).c
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
 	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
-	mv $(TARGET).exe ../../bin/win32
-	cp $(TARGET).glade ../../bin/win32
+	mv $(TARGET).exe ../../bin
+	cp $(TARGET).glade ../../bin
 	cp $(TARGET).ico $(BINDIR)
-	cp htmlhelp.chm ../../bin/win32/asf_convert_gui.chm
+	cp htmlhelp.chm ../../bin/asf_convert_gui.chm
 
 doc:
 	xsltproc --nonet /usr/share/docbook-xsl/htmlhelp/htmlhelp.xsl \
