@@ -17,7 +17,13 @@ void calculate_plot(char *gridFile, char *dataFile, char *maskFile,
   float *bufImage=NULL, *bufComp=NULL, temp;
   double xValue, slope, offset, *l, *s, *value;
   
-  /* Set things up for least square calculation */
+  /* ScanSAR images need to be treated as projected images */
+  //  if (meta->projection
+
+  /* Regular SAR geometry can use least square approach */
+
+
+  // Set things up for least square calculation
   value=(double *)MALLOC(sizeof(double)*MAX_PTS);
   l=(double *)MALLOC(sizeof(double)*MAX_PTS);
   s=(double *)MALLOC(sizeof(double)*MAX_PTS);
@@ -78,6 +84,8 @@ void calculate_plot(char *gridFile, char *dataFile, char *maskFile,
   plot = (plot_t *) MALLOC(bins * sizeof(plot_t));
   for (ii=0; ii<bins; ii++) {
     plot[ii].count = 0;
+    plot[ii].min = 100000000;
+    plot[ii].max = -100000000;
     plot[ii].mean = 0.0;
     plot[ii].stdDev = 0.0;
   }
@@ -102,11 +110,19 @@ void calculate_plot(char *gridFile, char *dataFile, char *maskFile,
 
 	if (maskFlag) {
 	  if (mask[x*samples+y]) {
+	    if (bufImage[ll*samples+kk] < plot[index].min)
+	      plot[index].min = bufImage[ll*samples+kk];
+	    if (bufImage[ll*samples+kk] > plot[index].max)
+	      plot[index].max = bufImage[ll*samples+kk];
 	    plot[index].mean += bufImage[ll*samples+kk];
 	    plot[index].count++;
 	  }
 	}
 	else {
+	  if (bufImage[ll*samples+kk] < plot[index].min)
+	    plot[index].min = bufImage[ll*samples+kk];
+	  if (bufImage[ll*samples+kk] > plot[index].max)
+	    plot[index].max = bufImage[ll*samples+kk];
 	  plot[index].mean += bufImage[ll*samples+kk];
 	  plot[index].count++;
 	}
@@ -155,16 +171,18 @@ void calculate_plot(char *gridFile, char *dataFile, char *maskFile,
   if (meta->general->image_data_type == SIGMA_IMAGE ||
       meta->general->image_data_type == GAMMA_IMAGE ||
       meta->general->image_data_type == BETA_IMAGE) {
-    fprintf(fpOut, "\tMean value\tdB value\tCount\tStandard deviation\n");
+    fprintf(fpOut, "\tMin value\tMax value\tMean value\tdB value\tCount"
+	    "\tStandard deviation\n");
     for (ii=0; ii<bins; ii++)
-      fprintf(fpOut, "%10.4f\t%10.4lf\t%10.4lf\t%10li\t%10.4lf\n", 
-	      (min+ii*interval), plot[ii].mean, 10*log10(plot[ii].mean), 
-	      plot[ii].count, plot[ii].stdDev);
+      fprintf(fpOut, "%10.4f\t%10.4lf\t%10.4lf\t%10.4lf\t%10.4lf\t%10li\t%10.4lf\n", 
+	      (min+ii*interval), plot[ii].min, plot[ii].max, plot[ii].mean, 
+	      10*log10(plot[ii].mean), plot[ii].count, plot[ii].stdDev);
   }
   else {
-    fprintf(fpOut, "\tMean value\tCount\tStandard deviation\n");
+    fprintf(fpOut, "\tMin value\tMax value\tMean value\tCount\tStandard deviation\n");
     for (ii=0; ii<bins; ii++)
-      fprintf(fpOut, "%10.4f\t%10.4lf\t%10li\t%10.4lf\n", (min+ii*interval),
+      fprintf(fpOut, "%10.4f\t%10.4lf\t%10.4lf\t%10.4lf\t%10li\t%10.4lf\n", 
+	      (min+ii*interval), plot[ii].min, plot[ii].max,
 	      plot[ii].mean, plot[ii].count, plot[ii].stdDev);
   }
 

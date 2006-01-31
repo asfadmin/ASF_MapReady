@@ -38,6 +38,8 @@ typedef enum {
 
 typedef struct {
   long count; /* number of pixels in plot bin */
+  double min; /* minimum value of plot bin */
+  double max; /* maximum value of plot bin */
   double mean; /* mean value of plot bin */
   double stdDev; /* standard deviation of plot bin */
 } plot_t;

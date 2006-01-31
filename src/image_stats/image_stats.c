@@ -282,19 +282,20 @@ int main(int argc, char *argv[])
     bufImage = (float *) MALLOC(samples * sizeof(float) * BUFSIZE);
 
     /* Create a mask file for background fill */
+    printf("   Generating mask file ...\n");
     maskFile = (char *) MALLOC(255*sizeof(char));
     sprintf(maskFile, "tmp%i.mask", (int)getpid());
     fpMask = fopenImage(maskFile, "wb");
     bufMask = (float *) MALLOC(samples * sizeof(char) * BUFSIZE);
-    for (ii=0; ii<lines; ii+=size) {
-      get_float_lines(fpIn, meta, ii, size, bufImage);
-      for (kk=0; kk<size; kk++) {
+    for (ii=0; ii<lines; ii++) {
+      get_float_line(fpIn, meta, ii, bufImage);
+      for (kk=0; kk<samples; kk++) {
 	if (bufImage[kk]>0.0)
 	  bufMask[kk] = 1;
 	else
 	  bufMask[kk] = 0;
       }      
-      FWRITE(bufMask, sizeof(char), size, fpMask);
+      FWRITE(bufMask, sizeof(char), samples, fpMask);
     }
 
     /* Get the output images set up */
@@ -397,7 +398,7 @@ int main(int argc, char *argv[])
 	      meta->general->image_data_type == BETA_IMAGE) 
             fprintf(fpIncid, "Incidence angle\n");
 	  if (flags[f_RANGE] != FLAG_NOT_SET)
-            fprintf(fpRange, "Range"); 
+            fprintf(fpRange, "Range\n"); 
 	}
 
 	if (flags[f_LOOK] != FLAG_NOT_SET)
@@ -413,11 +414,20 @@ int main(int argc, char *argv[])
       }
     
     /* Close files for now */
-    if (flags[f_LOOK] != FLAG_NOT_SET) FCLOSE(fpLook);
+    if (flags[f_LOOK] != FLAG_NOT_SET) {
+      FCLOSE(fpLook);
+      FREE(bufLook);
+    }
     if (flags[f_INCIDENCE] != FLAG_NOT_SET ||
 	meta->general->image_data_type == SIGMA_IMAGE ||
-	meta->general->image_data_type == BETA_IMAGE) FCLOSE(fpIncid);
-    if (flags[f_RANGE] != FLAG_NOT_SET) FCLOSE(fpRange);
+	meta->general->image_data_type == BETA_IMAGE) {
+      FCLOSE(fpIncid);
+      FREE(bufIncid);
+    }
+    if (flags[f_RANGE] != FLAG_NOT_SET) {
+      FCLOSE(fpRange);
+      FREE(bufLook);
+    }
 
     /* Calculate plots */
     if (flags[f_LOOK] != FLAG_NOT_SET) {
@@ -432,12 +442,11 @@ int main(int argc, char *argv[])
       create_name(outFile, outBase, "_range.plot");
       calculate_plot(outRange, dataFile, maskFile, outFile, meta, firstRange);
     }
-
-  }
+  }  
 
   /* Clean up */
   sprintf(cmd, "rm -rf tmp*");
-  system(cmd);
+  //system(cmd);
 
   exit(0);
 }
