@@ -26,12 +26,19 @@ typedef enum {
     f_METADATA_FILE,
     f_LOG,
     f_QUIET,
+    f_RANGE_SCALE,
+    f_AZIMUTH_SCALE,
     NUM_FLAGS
 } flag_indices_t;
+
+#define DEFAULT_RANGE_SCALE 1.0
+#define DEFAULT_AZIMUTH_SCALE 1.0
 
 /* Prototypes from utilities.c */
 int firstRecordLen(char *ceosName);
 int checkForOption(char* key, int argc, char* argv[]);
+int checkForOptionWithArg(char *key, int argc, char* argv[]);
+double getDoubleOptionArgWithDefault(char *arg, double def);
 void pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName);
 
 /* Prototypes from sprocket_layers.c */

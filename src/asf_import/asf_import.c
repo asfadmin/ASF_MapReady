@@ -23,6 +23,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "[-amplitude | -sigma | -gamma | -beta | -power]\n"\
 "              [-prc] [-old] [-format <inputFormat>] [-lat <lower> <upper>]\n"\
 "              [-lut <file> ] [-log <logFile>] [-quiet] [-help] \n"\
+"              [-range-scale [<scale>]] -[azimuth-scale [<scale>]] \n"\
 "	       <inBaseName> <outBaseName>"
 
 #define ASF_DESCRIPTION_STRING \
@@ -63,7 +64,15 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   -prc Replace the restituted state vectors from the original raw data\n"\
 "        acquired by the ERS satellites with preceision\n"\
 "   -lut Applies a user defined look up table to the data. Look up contains\n"\
-"        incidence angle dependent scaling factor."
+"        incidence angle dependent scaling factor.\n"\
+"   -range-scale <scale-factor>\n"\
+"        Apply the provided range scale factor to the imported data.  If\n"\
+"        the option is specified without an argument, a default value of\n"\
+"        %f will be used.\n"\
+"   -range-scale <scale-factor>\n"\
+"        Apply the provided azimuth scale factor to the imported data.  If\n"\
+"        the option is specified without an argument, a default value of\n"\
+"        %f will be used.\n"
 
 #define ASF_EXAMPLES_STRING \
 "   To import CEOS format to the ASF tools internal format run:\n"\
@@ -157,6 +166,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define REQUIRED_ARGS 2
 
+int resample(char *, char *, double, double);
+
 /* usage - enter here on command-line usage error*/
 void usage(void)
 {
@@ -188,7 +199,8 @@ void help_page()
           "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
           "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
           "Version:\n" CONVERT_PACKAGE_VERSION_STRING "\n\n\n"
-          "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n");
+          "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n",
+	  DEFAULT_RANGE_SCALE, DEFAULT_AZIMUTH_SCALE);
 
   /* If we can, use less */
   sprintf (command, "echo '%s' | less --prompt='Type q to quit help, h for "
@@ -216,12 +228,14 @@ int main(int argc, char *argv[])
   char inBaseName[256]="";
   char inDataName[256]="", inMetaName[256]="";
   char outBaseName[256]="";
+  char unscaledBaseName[256]="";
   char inMetaNameOption[256], prcPath[256]="";
   char *lutName=NULL;
   char format_type[256]="";
   int ii;
   int flags[NUM_FLAGS];
   double lowerLat=NAN, upperLat=NAN;
+  int do_resample;
 
   /* Set all flags to 'not set' */
   for (ii=0; ii<NUM_FLAGS; ii++) {
@@ -251,6 +265,17 @@ int main(int argc, char *argv[])
   flags[f_LOG] = checkForOption("-log", argc, argv);
   flags[f_QUIET] = checkForOption("-quiet", argc, argv);
   flags[f_FORMAT] = checkForOption("-format", argc, argv);
+
+  flags[f_RANGE_SCALE] = checkForOptionWithArg("-range-scale", argc, argv);
+  if (flags[f_RANGE_SCALE] == FLAG_NOT_SET)
+    flags[f_RANGE_SCALE] = checkForOptionWithArg("-range_scale", argc, argv);
+
+  flags[f_AZIMUTH_SCALE] = checkForOptionWithArg("-azimuth-scale", argc, argv);
+  if (flags[f_AZIMUTH_SCALE] == FLAG_NOT_SET)
+    flags[f_AZIMUTH_SCALE] = checkForOptionWithArg("-azimuth_scale", argc, argv);
+
+  do_resample = flags[f_RANGE_SCALE] != FLAG_NOT_SET ||
+                flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET;
 
   { /*Check for mutually exclusive options: we can only have one of these*/
     int temp = 0;
@@ -284,7 +309,9 @@ int main(int argc, char *argv[])
     if(flags[f_LOG] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
     if(flags[f_QUIET] != FLAG_NOT_SET)    needed_args += 1;/*option*/
     if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
-
+    if(flags[f_RANGE_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
+    if(flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
+    
     /*Make sure we have enough arguments*/
     if(argc != needed_args)
       usage();/*This exits with a failure*/
@@ -462,6 +489,11 @@ int main(int argc, char *argv[])
     printLog("Program: asf_import\n\n");
   }
 
+  strcpy(unscaledBaseName, outBaseName);
+  if (do_resample) {
+    strcat(unscaledBaseName, "_unscaled");
+  }
+
   /* Ingest all sorts of flavors of CEOS data */
   if (strncmp(format_type, "CEOS", 4) == 0) {
     asfPrintStatus("   Data format: %s\n", format_type);
@@ -472,17 +504,17 @@ int main(int argc, char *argv[])
       require_ceos_data(inBaseName, inDataName);
       require_ceos_metadata(inMetaNameOption, inMetaName);
     }
-    import_ceos(inDataName, inMetaName, lutName, outBaseName, flags);
+    import_ceos(inDataName, inMetaName, lutName, unscaledBaseName, flags);
   }
   /* Ingest ENVI format data */
   else if (strncmp(format_type, "ENVI", 4) == 0) {
     asfPrintStatus("   Data format: %s\n", format_type);
-    import_envi(inDataName, inMetaName, outBaseName, flags);
+    import_envi(inDataName, inMetaName, unscaledBaseName, flags);
   }
   /* Ingest ESRI format data */
   else if (strncmp(format_type, "ESRI", 4) == 0) {
     asfPrintStatus("   Data format: %s\n", format_type);
-    import_esri(inDataName, inMetaName, outBaseName, flags);
+    import_esri(inDataName, inMetaName, unscaledBaseName, flags);
   }
   /* Ingest Vexcel Sky Telemetry Format (STF) data */
   else if (strncmp(format_type, "STF", 3) == 0) {
@@ -494,12 +526,29 @@ int main(int argc, char *argv[])
       require_stf_data(inBaseName, inDataName);
       require_stf_metadata(inMetaNameOption, inMetaName);
     }
-    import_stf(inDataName, inMetaName, outBaseName, flags,
+    import_stf(inDataName, inMetaName, unscaledBaseName, flags,
                lowerLat, upperLat, prcPath);
   }
   /* Don't recognize this data format; report & quit */
   else {
     asfPrintError("Unrecognized data format: '%s'",format_type);
+  }
+
+  /* resample, if necessary */
+  if (do_resample)
+  {
+    double range_scale =
+      getDoubleOptionArgWithDefault(argv[flags[f_RANGE_SCALE]],
+				    DEFAULT_RANGE_SCALE);
+
+    double azimuth_scale =
+      getDoubleOptionArgWithDefault(argv[flags[f_AZIMUTH_SCALE]],
+				    DEFAULT_AZIMUTH_SCALE);
+
+    asfPrintStatus("Resampling with scale factors: %g range, %g azimuth.\n",
+		   range_scale, azimuth_scale);
+
+    resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
   }
 
   /* If the user asked for sprocket layers, create sprocket data layers
