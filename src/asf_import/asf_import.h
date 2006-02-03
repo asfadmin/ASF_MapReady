@@ -31,8 +31,8 @@ typedef enum {
     NUM_FLAGS
 } flag_indices_t;
 
-#define DEFAULT_RANGE_SCALE 1.0
-#define DEFAULT_AZIMUTH_SCALE 1.0
+#define DEFAULT_RANGE_SCALE 1.00343642612
+#define DEFAULT_AZIMUTH_SCALE 1.003333505
 
 /* Prototypes from utilities.c */
 int firstRecordLen(char *ceosName);
