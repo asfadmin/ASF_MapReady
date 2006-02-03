@@ -76,7 +76,7 @@ static float filter(      /****************************************/
     return (kersum);
 }
 
-int resample(char *infile, char *outfile, float xscalfact, float yscalfact)
+int resample(char *infile, char *outfile, double xscalfact, double yscalfact)
 {
     FILE            *fpin, *fpout;  /* file pointer                   */
     float           *inbuf,         /* stripped input buffer          */
