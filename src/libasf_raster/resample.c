@@ -6,7 +6,11 @@
    Here are the comments from that program, edited to reflect that it
    is no longer a standalone program.  It still operates on files
    instead of on in-memory images, however.
-  
+
+   Also modified to use separate scale factors in the  x and y
+   directions, as well as taking scale factors as arguments instead
+   of pixel sizes.
+
 DESCRIPTION:
         Resamples the input file to a desired output pixel resolution
     (assumed to be in meters).  Images are downsized by a factor equal
