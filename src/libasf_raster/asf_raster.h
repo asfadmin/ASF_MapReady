@@ -88,4 +88,7 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile);
 /* Prototypes from shaded_relief.c *******************************************/
 void shaded_relief(char *inFile, char *outFile, int addSpeckle);
 
+/* Prototype from resample.c *************************************************/
+int resample(char *infile, char *outfile, float xscalfact, float yscalfact);
+
 #endif
