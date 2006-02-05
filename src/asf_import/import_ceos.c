@@ -35,7 +35,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   data_type_t ceos_data_type;                     /* Data type for CEOS File */
   FILE *fpIn=NULL, *fpOut=NULL;              /* In/output data file pointers */
 
-
   /* Fill output names (don't add extention to data name because it differs
    * for raw, complex, and 'image' */
   strcpy(outDataName, outBaseName);
@@ -499,22 +498,26 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
                 incid_sin[kk]=get_invSinIncAngle(cal_param,kk*tablePix,ii);
 
           for (kk=0; kk<ns; kk++) {
-            /*Interpolate noise table to find this pixel's noise.*/
-            double index=(float)kk/tablePix;
-            int    base=(int)index;
-            double frac=index-base;
-            double noise=noise_table[base]+frac*(noise_table[base+1]-noise_table[base]);
-            double incid=1.0;
-            if (cal_param->output_type==gamma_naught)
-              incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
-            if (cal_param->output_type==beta_naught)
-              incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
-            if (flags[f_DB] == FLAG_NOT_SET) {
-              out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
-            }
-            else {
-              out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)short_buf[kk]);
-            }
+            if (short_buf[kk]) {
+	      /*Interpolate noise table to find this pixel's noise.*/
+	      double index=(float)kk/tablePix;
+	      int    base=(int)index;
+	      double frac=index-base;
+	      double noise=noise_table[base]+frac*(noise_table[base+1]-noise_table[base]);
+	      double incid=1.0;
+	      if (cal_param->output_type==gamma_naught)
+		incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
+	      if (cal_param->output_type==beta_naught)
+		incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
+	      if (flags[f_DB] == FLAG_NOT_SET) {
+		out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
+	      }
+	      else {
+		out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)short_buf[kk]);
+	      }
+	    }
+            else
+              out_buf[kk]= 0.0;
           }
 
           put_float_line(fpOut, meta, ii, out_buf);
@@ -546,22 +549,26 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
                 incid_sin[kk]=get_invSinIncAngle(cal_param,kk*tablePix,ii);
 
           for (kk=0; kk<ns; kk++) {
-            /*Interpolate noise table to find this pixel's noise.*/
-            double index=(float)kk/tablePix;
-            int    base=(int)index;
-            double frac=index-base;
-            double noise=noise_table[base]+frac*(noise_table[base+1]-noise_table[base]);
-            double incid=1.0;
-            if (cal_param->output_type==gamma_naught)
-              incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
-            if (cal_param->output_type==beta_naught)
-              incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
-            if (flags[f_DB] == FLAG_NOT_SET) {
-              out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)byte_buf[kk]);
+            if (byte_buf[kk]) {
+              /*Interpolate noise table to find this pixel's noise.*/
+              double index=(float)kk/tablePix;
+              int    base=(int)index;
+              double frac=index-base;
+              double noise=noise_table[base]+frac*(noise_table[base+1]-noise_table[base]);
+              double incid=1.0;
+              if (cal_param->output_type==gamma_naught)
+                incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
+              if (cal_param->output_type==beta_naught)
+                incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
+              if (flags[f_DB] == FLAG_NOT_SET) {
+                out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)byte_buf[kk]);
+              }
+              else {
+                out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)byte_buf[kk]);
+              }
             }
-            else {
-              out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)byte_buf[kk]);
-            }
+            else
+              out_buf[kk]= 0.0;
           }
 
           put_float_line(fpOut, meta, ii, out_buf);
