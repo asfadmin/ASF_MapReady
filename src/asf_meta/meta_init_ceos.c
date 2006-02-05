@@ -193,10 +193,10 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    meta->general->sample_count  = 
      (iof->reclen       // record length
       -iof->predata     // prefix data
-      -iof->sufdata     // suffix data
+      -iof->sufdata)    // suffix data
+     /iof->bytgroup
       -iof->lbrdrpxl    // left border pixels
-      -iof->rbrdrpxl)    // right border pixels
-     /iof->bytgroup;
+      -iof->rbrdrpxl;   // right border pixels
 
    meta->general->start_line       = 0;
    meta->general->start_sample     = 0;
@@ -413,11 +413,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
  * }
  */
 
-   /* Initialize map projection for projected images */
-   if (meta->sar->image_type=='P') {
-      ceos_init_proj(meta, dssr, mpdr);
-   }
-
    /* Let's get the earth radius and satellite height straightened out */
    if (asf_facdr) {     /* Get earth radius & satellite height if we can */
       meta->sar->earth_radius = asf_facdr->eradcntr*1000.0;
@@ -433,6 +428,10 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 						       meta->general->sample_count/2);
    }
 
+   /* Initialize map projection for projected images */
+   if (meta->sar->image_type=='P') {
+      ceos_init_proj(meta, dssr, mpdr);
+   }
 
    /* Propagate state vectors if they are covering more than frame size in case
     * you have raw or complex data. */
