@@ -6,42 +6,16 @@
 extern int lines, samples, bins;
 extern double min, max, interval;
 
-void calculate_plot(char *gridFile, char *dataFile, char *maskFile, 
+void calculate_plot(char *axis, char *gridFile, char *dataFile, char *maskFile, 
 		    char *outFile, meta_parameters *meta, float xConstant)
 {
   FILE *fpIn=NULL, *fpImg=NULL, *fpOut=NULL, *fpMask=NULL, *fpComp=NULL;
   quadratic_2d q;
   plot_t *plot;
   int maskFlag=FALSE, ii, kk, ll, size=BUFSIZE, points=0, x, y, index;
-  char axis[255], cmd[255], inLine[255], *mask=NULL; 
-  float *bufImage=NULL, *bufComp=NULL, temp;
+  char cmd[255], inLine[255], *mask=NULL; 
+  float *bufImage=NULL, *bufRef=NULL, *bufComp=NULL, temp;
   double xValue, slope, offset, *l, *s, *value;
-  
-  /* ScanSAR images need to be treated as projected images */
-  //  if (meta->projection
-
-  /* Regular SAR geometry can use least square approach */
-
-
-  // Set things up for least square calculation
-  value=(double *)MALLOC(sizeof(double)*MAX_PTS);
-  l=(double *)MALLOC(sizeof(double)*MAX_PTS);
-  s=(double *)MALLOC(sizeof(double)*MAX_PTS);
-
-  /* Read xValue grid points and estimate parameter for xValue calculation 
-     using least squares approach */
-  points = 0;
-  fpIn = FOPEN(gridFile, "r");
-  fgets(axis, 20, fpIn);
-  axis[16] = '\0';
-  while (NULL!=(fgets(inLine, 255, fpIn))) {
-    sscanf(inLine,"%lf%lf%lf", &value[points], &l[points], &s[points]); 
-    points++;
-  }
-  FCLOSE(fpIn);
-  
-  q = find_quadratic(value, l, s, points);
-  q.A = xConstant;
   
   /* Prepare mask image for reading */
   if (maskFile != NULL) maskFlag = TRUE;
@@ -52,10 +26,28 @@ void calculate_plot(char *gridFile, char *dataFile, char *maskFile,
     FCLOSE(fpMask);
   }
   
+  /* Set things up for least square calculation */
+  value=(double *)MALLOC(sizeof(double)*MAX_PTS);
+  l=(double *)MALLOC(sizeof(double)*MAX_PTS);
+  s=(double *)MALLOC(sizeof(double)*MAX_PTS);
+  
+  /* Read xValue grid points and estimate parameter for xValue calculation 
+     using least squares approach */
+  points = 0;
+  fpIn = FOPEN(gridFile, "r");
+  while (NULL!=(fgets(inLine, 255, fpIn))) {
+    sscanf(inLine,"%lf%lf%lf", &value[points], &l[points], &s[points]); 
+    points++;
+  }
+  FCLOSE(fpIn);
+  
+  q = find_quadratic(value, l, s, points);
+  q.A = xConstant; 
+  
   /* Determine minimum and maximum xValue for binning */
   min = 100000000;
   max = -100000000;
-  for (ii=0; ii<lines; ii++)
+  for (ii=0; ii<lines; ii++) {
     for (kk=0; kk<samples; kk++) {
       x = ii;
       y = kk;
@@ -71,6 +63,7 @@ void calculate_plot(char *gridFile, char *dataFile, char *maskFile,
 	if (xValue < min) min = xValue;
       }
     }
+  }
 
   /* Determine parameters for binning */
   if (interval > 0.0) 

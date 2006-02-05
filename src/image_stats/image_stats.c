@@ -20,7 +20,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "image_stats"
 
 #define ASF_USAGE_STRING \
-"[ -look ] [ -incidence ] [ -range ]\n"\
+"-look | -incidence | -range\n"\
 "[ -min <value> ] [ -max <value> ] [ -bins <value> ]\n"\
 "[ -interval <value> ] <infile> <outfile>\n"\
 "\n"\
@@ -190,8 +190,8 @@ int main(int argc, char *argv[])
   int ii, kk, ll, size;
   char inFile[255], metaFile[255], dataFile[255], outLook[255], *outIncid=NULL;
   char outRange[255], outBase[255], outFile[255], *maskFile=NULL; 
-  char cmd[255];
-  float *bufImage=NULL, *bufMask=NULL, *bufLook=NULL, *bufIncid=NULL, *bufRange=NULL;
+  char cmd[255], *bufMask=NULL;
+  float *bufImage=NULL, *bufLook=NULL, *bufIncid=NULL, *bufRange=NULL;
   double latitude, longitude, time, doppler, earth_radius, satellite_height, range;
   double look_angle, incidence_angle;
   double line, sample, re=6378144.0, rp=6356754.9, px, py;
@@ -220,10 +220,7 @@ int main(int argc, char *argv[])
   quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
 
   { /* We need to make sure the user specified the proper number of arguments */
-    int needed_args = 3;/*command & in_base & out_base */
-    if (flags[f_LOOK] != FLAG_NOT_SET) needed_args += 1; /* option */
-    if (flags[f_INCIDENCE] != FLAG_NOT_SET) needed_args += 1; /* option */
-    if (flags[f_RANGE] != FLAG_NOT_SET) needed_args += 1; /* option */
+    int needed_args = 4;/*command & in_base & out_base */
     if (flags[f_MIN] != FLAG_NOT_SET) needed_args += 2; /* option & value */
     if (flags[f_MAX] != FLAG_NOT_SET) needed_args += 2; /* option & value */
     if (flags[f_BINS] != FLAG_NOT_SET) needed_args += 2; /* option & value */
@@ -271,183 +268,146 @@ int main(int argc, char *argv[])
   /* Set some values */
   doppler = 0.0;
 
+  /* Determine what kind of image it is */
   if (meta->sar->image_type=='P') {
-    /* Calculation in case the imagery is map projected */
-    size = BUFSIZE;
-    re = meta->projection->re_major;
-    rp = meta->projection->re_minor;
-    
-    /* Prepare input image for reading */
-    fpIn = fopenImage(inFile, "rb");
-    bufImage = (float *) MALLOC(samples * sizeof(float) * BUFSIZE);
+    if (meta->projection->type==SCANSAR_PROJECTION)
+      printf("   Detected ScanSAR ");
+  }
+  else if (meta->sar->image_type=='S')
+    printf("   Detected slant range ");
+  else if (meta->sar->image_type=='G')
+    printf("   Detected ground range ");
 
-    /* Create a mask file for background fill */
-    printf("   Generating mask file ...\n");
-    maskFile = (char *) MALLOC(255*sizeof(char));
-    sprintf(maskFile, "tmp%i.mask", (int)getpid());
-    fpMask = fopenImage(maskFile, "wb");
-    bufMask = (float *) MALLOC(samples * sizeof(char) * BUFSIZE);
-    for (ii=0; ii<lines; ii++) {
-      get_float_line(fpIn, meta, ii, bufImage);
-      for (kk=0; kk<samples; kk++) {
-	if (bufImage[kk]>0.0)
-	  bufMask[kk] = 1;
-	else
-	  bufMask[kk] = 0;
-      }      
-      FWRITE(bufMask, sizeof(char), samples, fpMask);
+  switch (meta->general->image_data_type) 
+    {
+    case AMPLITUDE_IMAGE: 
+      printf("amplitude image ...\n");
+      break;
+    case SIGMA_IMAGE:
+      printf("sigma image ...\n");
+      break;
+    case GAMMA_IMAGE:
+      printf("gamma image ...\n");
+      break;
+    case BETA_IMAGE:
+      printf("beta image ...\n");
+      break;
     }
 
-    /* Get the output images set up */
-    if (flags[f_LOOK] != FLAG_NOT_SET) {
-      fpLook = fopenImage(outLook,"wb");
-      bufLook = (float *) MALLOC(samples * sizeof(float) * BUFSIZE);        
-    }
-    if (flags[f_INCIDENCE] != FLAG_NOT_SET) {
-      fpIncid = fopenImage(outIncid,"wb");
-      bufIncid = (float *) MALLOC(samples * sizeof(float) * BUFSIZE);
-    }        
-    if (flags[f_RANGE] != FLAG_NOT_SET) {
-      fpRange = fopenImage(outRange,"wb");
-      bufRange = (float *) MALLOC(samples * sizeof(float) * BUFSIZE);        
-    }
-    
-    for (ii=0; ii<lines; ii+=size) {
-      if ((lines-ii)<BUFSIZE) size = lines-ii;
-      for (ll=0; ll<size; ll++) 
+  /* Create a mask file for background fill - required only for ScanSAR */
+  if (meta->sar->image_type=='P') {
+    if (meta->projection->type==SCANSAR_PROJECTION) {
+      fpIn = fopenImage(inFile, "rb");
+      bufImage = (float *) MALLOC(samples * sizeof(float));
+      printf("   Generating mask file ...\n");
+      maskFile = (char *) MALLOC(255*sizeof(char));
+      sprintf(maskFile, "tmp%i.mask", (int)getpid());
+      fpMask = fopenImage(maskFile, "wb");
+      bufMask = (unsigned char *) MALLOC(samples * sizeof(char));
+      for (ii=0; ii<lines; ii++) {
+	get_float_line(fpIn, meta, ii, bufImage);
 	for (kk=0; kk<samples; kk++) {
-	  px = meta->projection->startX + meta->projection->perX * kk;
-	  py = meta->projection->startY + meta->projection->perY * (ii+ll);
-	  proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
-		     &latitude, &longitude);
-	  latLon2timeSlant(meta, latitude, longitude, &time, &range, &doppler);
-	  stVec = meta_get_stVec(meta, time);
-	  earth_radius = get_earth_radius(time, stVec, re, rp);
-	  satellite_height = get_satellite_height(time, stVec);
-	  look_angle = get_look_angle(earth_radius, satellite_height, range);
-	  incidence_angle = meta_incid(meta, ii+ll, kk);
-	  
-	  if (flags[f_LOOK] != FLAG_NOT_SET) 
-	    bufLook[kk+ll*samples] = (float) look_angle*R2D;
-	  if (flags[f_INCIDENCE] != FLAG_NOT_SET) 
-	    bufIncid[kk+ll*samples] = (float) incidence_angle*R2D;
-	  if (flags[f_RANGE] != FLAG_NOT_SET) 
-	    bufRange[kk+ll*samples] = (float) range;
-	}
-      
-      if (flags[f_LOOK] != FLAG_NOT_SET) 
-	FWRITE(bufLook, sizeof(float), samples*size, fpLook);
-      if (flags[f_INCIDENCE] != FLAG_NOT_SET) 
-	FWRITE(bufIncid, sizeof(float), samples*size, fpIncid);
-      if (flags[f_RANGE] != FLAG_NOT_SET)
-	FWRITE(bufRange, sizeof(float), samples*size, fpRange);
-    }
-    if (flags[f_LOOK] != FLAG_NOT_SET) {
-      FCLOSE(fpLook);
-      FREE(bufLook);
-    }
-    if (flags[f_INCIDENCE] != FLAG_NOT_SET) {
-      FCLOSE(fpIncid);
-      FREE(bufIncid);
-    }
-    if (flags[f_RANGE] != FLAG_NOT_SET) {
-      FCLOSE(fpRange);
-      FREE(bufRange);
+	  if (bufImage[kk]>0.0)
+	    bufMask[kk] = 1;
+	  else
+	    bufMask[kk] = 0;
+	}      
+	FWRITE(bufMask, sizeof(char), samples, fpMask);
+      }
+      FCLOSE(fpMask);
+      FREE(bufMask);
+      FCLOSE(fpIn);
+      FREE(bufImage);
     }
   }
+
+  /* Create grid for least square approach */
+  printf("   Initialization ...\n");
+  if (flags[f_LOOK] != FLAG_NOT_SET) {
+    sprintf(outLook, "tmp%i.look", (int)getpid());
+    fpLook = FOPEN(outLook, "w");
+  }
+  if (flags[f_INCIDENCE] != FLAG_NOT_SET) {
+    sprintf(outIncid, "tmp%i.incid", (int)getpid());
+    fpIncid = FOPEN(outIncid, "w");
+  }
+  if (flags[f_RANGE] != FLAG_NOT_SET) {
+    sprintf(outRange, "tmp%i.range", (int)getpid());
+    fpRange = FOPEN(outRange, "w");
+  }
   
-  else {
-    /* Calculation in case the imagery is in slant range or ground range */
-    printf("   Initialization ...\n");
-    if (flags[f_LOOK] != FLAG_NOT_SET) {
-      sprintf(outLook, "tmp%i.look", (int)getpid());
-      fpLook = FOPEN(outLook, "w");
-    }
-    if (flags[f_INCIDENCE] != FLAG_NOT_SET ||
-	meta->general->image_data_type == SIGMA_IMAGE ||
-	meta->general->image_data_type == BETA_IMAGE) {
-      outIncid = (char *) MALLOC(255 * sizeof(char)); 
-      sprintf(outIncid, "tmp%i.incid", (int)getpid());
-      fpIncid = FOPEN(outIncid, "w");
-    }
-    if (flags[f_RANGE] != FLAG_NOT_SET) {
-      sprintf(outRange, "tmp%i.range", (int)getpid());
-      fpRange = FOPEN(outRange, "w");
-    }
-    
-    for (ll=0; ll<=RES_X; ll++)
-      for (kk=0; kk<=RES_Y; kk++) {
-	line = ll * lines / RES_Y;
-	sample = kk * samples / RES_X;
-	time = meta_get_time(meta, line, sample);
-	stVec = meta_get_stVec(meta, time);
-	earth_radius = get_earth_radius(time, stVec, re, rp);
-	satellite_height = get_satellite_height(time, stVec);
-	range = get_slant_range(meta, earth_radius, satellite_height, sample);
-	look_angle = get_look_angle(earth_radius, satellite_height, range);
-	incidence_angle = get_incidence_angle(earth_radius, satellite_height, range);
-	
-	if (ll==0 && kk==0) {
-	  firstLook = look_angle * R2D;
-	  firstIncid = incidence_angle * R2D;
-	  firstRange = range;
-  	  if (flags[f_LOOK] != FLAG_NOT_SET)
-            fprintf(fpLook, "Look angle\n");
-	  if (flags[f_INCIDENCE] != FLAG_NOT_SET ||
-	      meta->general->image_data_type == SIGMA_IMAGE ||
-	      meta->general->image_data_type == BETA_IMAGE) 
-            fprintf(fpIncid, "Incidence angle\n");
-	  if (flags[f_RANGE] != FLAG_NOT_SET)
-            fprintf(fpRange, "Range\n"); 
-	}
+  for (ll=0; ll<=RES_X; ll++)
+    for (kk=0; kk<=RES_Y; kk++) {
+      line = ll * lines / RES_Y;
+      sample = kk * samples / RES_X;
 
-	if (flags[f_LOOK] != FLAG_NOT_SET)
-	  fprintf(fpLook, "%.18f %.12f %.12f\n", (float)look_angle*R2D, 
-		  line, sample);
-	if (flags[f_INCIDENCE] != FLAG_NOT_SET ||
-	    meta->general->image_data_type == SIGMA_IMAGE ||
-	    meta->general->image_data_type == BETA_IMAGE) 
-	  fprintf(fpIncid, "%.18f %.12f %.12f\n", (float)incidence_angle*R2D, 
-		  line, sample);
-	if (flags[f_RANGE] != FLAG_NOT_SET) 
-	  fprintf(fpRange, "%.18f %.12f %.12f\n", (float)range, line, sample);
+      if (meta->sar->image_type=='P') {
+	px = meta->projection->startX + meta->projection->perX * kk;
+	py = meta->projection->startY + meta->projection->perY * (ii+ll);
+	proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
+		   &latitude, &longitude);
+	latLon2timeSlant(meta, latitude, longitude, &time, &range, &doppler);
       }
-    
-    /* Close files for now */
-    if (flags[f_LOOK] != FLAG_NOT_SET) {
-      FCLOSE(fpLook);
-      FREE(bufLook);
-    }
-    if (flags[f_INCIDENCE] != FLAG_NOT_SET ||
-	meta->general->image_data_type == SIGMA_IMAGE ||
-	meta->general->image_data_type == BETA_IMAGE) {
-      FCLOSE(fpIncid);
-      FREE(bufIncid);
-    }
-    if (flags[f_RANGE] != FLAG_NOT_SET) {
-      FCLOSE(fpRange);
-      FREE(bufLook);
-    }
+      else
+	time = meta_get_time(meta, line, sample);
 
-    /* Calculate plots */
-    if (flags[f_LOOK] != FLAG_NOT_SET) {
-      create_name(outFile, outBase, "_look.plot");
-      calculate_plot(outLook, dataFile, maskFile, outFile, meta, firstLook);
+      stVec = meta_get_stVec(meta, time);
+      earth_radius = get_earth_radius(time, stVec, re, rp);
+      satellite_height = get_satellite_height(time, stVec);
+      range = get_slant_range(meta, earth_radius, satellite_height, sample);
+      look_angle = get_look_angle(earth_radius, satellite_height, range);
+      incidence_angle = get_incidence_angle(earth_radius, satellite_height, range);
+      
+      if (ll==0 && kk==0) {
+	firstLook = look_angle * R2D;
+	firstIncid = incidence_angle * R2D;
+	firstRange = range;
+      }
+      
+      if (flags[f_LOOK] != FLAG_NOT_SET)
+	fprintf(fpLook, "%.18f %.12f %.12f\n", (float)look_angle*R2D, 
+		line, sample);
+      if (flags[f_INCIDENCE] != FLAG_NOT_SET)
+	fprintf(fpIncid, "%.18f %.12f %.12f\n", (float)incidence_angle*R2D, 
+		line, sample);
+      if (flags[f_RANGE] != FLAG_NOT_SET) 
+	fprintf(fpRange, "%.18f %.12f %.12f\n", (float)range, line, sample);
     }
-    if (flags[f_INCIDENCE] != FLAG_NOT_SET) {
-      create_name(outFile, outBase, "_incid.plot");
-      calculate_plot(outIncid, dataFile, maskFile, outFile, meta, firstIncid);
-    }
-    if (flags[f_RANGE] != FLAG_NOT_SET) {
-      create_name(outFile, outBase, "_range.plot");
-      calculate_plot(outRange, dataFile, maskFile, outFile, meta, firstRange);
-    }
-  }  
-
+  
+  /* Close files for now */
+  if (flags[f_LOOK] != FLAG_NOT_SET) {
+    FCLOSE(fpLook);
+    FREE(bufLook);
+  }
+  if (flags[f_INCIDENCE] != FLAG_NOT_SET) {
+    FCLOSE(fpIncid);
+    FREE(bufIncid);
+  }
+  if (flags[f_RANGE] != FLAG_NOT_SET) {
+    FCLOSE(fpRange);
+    FREE(bufRange);
+  }
+  
+  /* Calculate plots */
+  if (flags[f_LOOK] != FLAG_NOT_SET) {
+    create_name(outFile, outBase, "_look.plot");
+    calculate_plot("Look angle", outLook, dataFile, maskFile, outFile, 
+		   meta, firstLook);
+  }
+  if (flags[f_INCIDENCE] != FLAG_NOT_SET) {
+    create_name(outFile, outBase, "_incid.plot");
+    calculate_plot("Incidence angle", outIncid, dataFile, maskFile, outFile, 
+		   meta, firstIncid);
+  }
+  if (flags[f_RANGE] != FLAG_NOT_SET) {
+    create_name(outFile, outBase, "_range.plot");
+    calculate_plot("Range", outRange, dataFile, maskFile, outFile, 
+		   meta, firstRange);
+  }
+  
   /* Clean up */
   sprintf(cmd, "rm -rf tmp*");
-  //system(cmd);
-
+  system(cmd);
+  
   exit(0);
 }
-
