@@ -29,6 +29,22 @@ BUGS:
 #define VERSION 0.1
 #define CLIGHT   2.997924562e8
 
+static void usage(char *progname)
+{
+    asfPrintStatus("\n");
+    asfPrintStatus("Usage: %s [-p <pixsize>] <infile> <outfile>\n",progname);
+    asfPrintStatus("   pixsize  Pixel size for output slant range image\n");
+    asfPrintStatus("   infile   Input ground range file base name\n");
+    asfPrintStatus("   outfile  Output slant range filebase name\n");
+    asfPrintStatus("\n");
+    asfPrintStatus(" If the pixel size is not specified, it is calculated\n");
+    asfPrintStatus(" as follows: (speed of light)/(sample rate * 2*10^6)\n");
+    asfPrintStatus("\n");
+    asfPrintStatus("Version %.2f, ASF Tools\n",VERSION);
+    asfPrintStatus("\n");
+    exit(EXIT_FAILURE);
+}
+
 int main(int argc,char *argv[])
 {
   meta_parameters *inMeta, *outMeta;
@@ -43,37 +59,30 @@ int main(int argc,char *argv[])
   float lfrac[MAX_IMG_SIZE];    /* Lower fraction from gr2sr vector     */
   float srPixSize=0.0; /* output pixel size */
 
-  float *inBuf;         /* Input buffer                 */
-  float *outBuf;        /* Output buffer                */
-  char  infile[256];    /* Input file name              */
-  char  outfile[256];   /* Output file name             */
-  FILE  *fpi, *fpo;     /* File pointers                */
-  int   line;           /* Loop counter                 */
+  float *inBuf;          /* Input buffer                  */
+  float *outBuf;         /* Output buffer                 */
+  char  infile[256];     /* Input file name               */
+  char  outfile[256];    /* Output file name              */
+  FILE  *fpi, *fpo;      /* File pointers                 */
+  int   line;            /* Loop counter                  */
 
-  if (argc != 4 && argc != 3) {
-    asfPrintStatus("\n");
-    asfPrintStatus("Usage: %s <infile> <outfile> [<pixsize>]\n",argv[0]);
-    asfPrintStatus("   infile   Input ground range file base name\n");
-    asfPrintStatus("   outfile  Output slant range filebase name\n");
-    asfPrintStatus("   pixsize  Pixel size for output slant range image "
-		   "(optional)\n");
-    asfPrintStatus("\n");
-    asfPrintStatus(" If the pixel size is not specified, it is calculated\n");
-    asfPrintStatus(" as follows: (speed of light)/(sample rate * 2*10^6)\n");
-    asfPrintStatus("\n");
-    asfPrintStatus("Version %.2f, ASF Tools\n",VERSION);
-    asfPrintStatus("\n");
-    exit(EXIT_FAILURE);
+  if ((argc != 5 && argc != 3) || (argc == 5 && strcmp(argv[1], "-p") != 0)) {
+    usage(argv[0]);
   }
 
-  create_name(infile,argv[1],".img");
-  create_name(outfile,argv[2],".img");
+  if (strcmp(argv[1],"-p") == 0) {
+    create_name(infile,argv[3],".img");
+    create_name(outfile,argv[4],".img");
+  } else {
+    create_name(infile,argv[1],".img");
+    create_name(outfile,argv[2],".img");
+  }
 
   inMeta = meta_read(infile);
 
-  if (argc == 4)
-    srPixSize = atof(argv[3]);
-  else {
+  if (argc == 5) {
+    srPixSize = atof(argv[2]);
+  } else {
     /*
       In an e-mail from Rick:
        Slant Range Pixel Size = C (speed of light) / [SampleRate (sample 
