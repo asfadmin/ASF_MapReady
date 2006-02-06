@@ -27,6 +27,7 @@ BUGS:
 #include "gr2sr.h"
 
 #define VERSION 0.1
+#define CLIGHT   2.997924562e8
 
 int main(int argc,char *argv[])
 {
@@ -49,12 +50,16 @@ int main(int argc,char *argv[])
   FILE  *fpi, *fpo;     /* File pointers                */
   int   line;           /* Loop counter                 */
 
-  if (argc != 4) {
+  if (argc != 4 && argc != 3) {
     asfPrintStatus("\n");
-    asfPrintStatus("Usage: %s <infile> <outfile> <pixsize>\n",argv[0]);
+    asfPrintStatus("Usage: %s <infile> <outfile> [<pixsize>]\n",argv[0]);
     asfPrintStatus("   infile   Input ground range file base name\n");
     asfPrintStatus("   outfile  Output slant range filebase name\n");
-    asfPrintStatus("   pixsize  Pixel size for output slant range image\n");
+    asfPrintStatus("   pixsize  Pixel size for output slant range image "
+		   "(optional)\n");
+    asfPrintStatus("\n");
+    asfPrintStatus(" If the pixel size is not specified, it is calculated\n");
+    asfPrintStatus(" as follows: (speed of light)/(sample rate * 2*10^6)\n");
     asfPrintStatus("\n");
     asfPrintStatus("Version %.2f, ASF Tools\n",VERSION);
     asfPrintStatus("\n");
@@ -63,9 +68,28 @@ int main(int argc,char *argv[])
 
   create_name(infile,argv[1],".img");
   create_name(outfile,argv[2],".img");
-  srPixSize = atof(argv[3]);
 
   inMeta = meta_read(infile);
+
+  if (argc == 4)
+    srPixSize = atof(argv[3]);
+  else {
+    /*
+      In an e-mail from Rick:
+       Slant Range Pixel Size = C (speed of light) / [SampleRate (sample 
+       rate) * 2,000,000.]
+
+       SampleRate can be extracted from the L1 metadata :
+          RNG CMPLX SAMPLE RATE        18.9599991
+
+       The meta->sar->range_sampling_rate is 10^6 times the value above,
+       so we use C/(2*meta->sar->range_sampling_rate)
+    */
+    srPixSize = CLIGHT / (2.0 * inMeta->sar->range_sampling_rate);
+  }
+
+  asfPrintStatus("Using Range Pixel Size: %g\n", srPixSize);
+
   nl = inMeta->general->line_count;
   np = inMeta->general->sample_count;
 
@@ -91,17 +115,16 @@ int main(int argc,char *argv[])
   
   outMeta = meta_copy(inMeta);
   /* FIXME: These are stolen from sr2gr and haven't been updated to be inverse */
-	outMeta->sar->slant_shift += ((inMeta->general->start_sample)
+  outMeta->sar->slant_shift += ((inMeta->general->start_sample)
                                 * inMeta->general->x_pixel_size);
-	outMeta->general->start_sample = 0.0;
+  outMeta->general->start_sample = 0.0;
   outMeta->sar->sample_increment = 1.0;
   outMeta->sar->image_type       = 'S';
-	outMeta->general->x_pixel_size = srPixSize;
-	outMeta->general->sample_count = onp;
+  outMeta->general->x_pixel_size = srPixSize;
+  outMeta->general->sample_count = onp;
 
   asfPrintStatus("Input  lines, samples: %i %i\n",nl,np);
   asfPrintStatus("Output lines, samples: %i %i\n",onl,onp);
-
 
   fpi = FOPEN(infile,"rb");
   fpo = FOPEN(outfile,"wb");
