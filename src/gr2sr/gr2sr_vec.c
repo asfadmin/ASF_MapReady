@@ -67,8 +67,6 @@ PROGRAM HISTORY:
 
 void gr2sr_vec(meta_parameters *meta, float srinc, float *gr2sr)
 {
-  FILE   *fp;
-  char   outfile[40];   /* Output vector file                            */
   int    i;             /* Counter                                       */
   float  r_sc;          /* radius from center of the earth for satellite */
   float  r_earth;       /* radius of the earth                           */
@@ -77,7 +75,6 @@ void gr2sr_vec(meta_parameters *meta, float srinc, float *gr2sr)
   float  a, x, x2, y;   /* temporaries                                   */
   float  grinc;  /* Slant and Ground range pixel spacings         */
   float  rslant;        /* slant range distance to current pixel         */
-  const double speed_of_light = 299792458.0;
 
   /* Radius from the center of the earth to the spacecraft, slant range to
      first pixel, and radius of the earth */
