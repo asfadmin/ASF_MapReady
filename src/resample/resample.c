@@ -24,6 +24,7 @@ EXTERNAL ASSOCIATES:
     NAME:                USAGE:
     ---------------------------------------------------------------
     filter()		 finds a kernel average at a given point
+                           -- moved to libasf_raster in 02/06
 
 PROGRAM HISTORY:
     VERS:   DATE:        PURPOSE:
@@ -42,6 +43,7 @@ PROGRAM HISTORY:
                          cross-dataset capability easier to implement.
     4.5     07/05        Removed DDR dependency and made the tool to work
                          with floating point values
+    5.0     02/06        Moved resampling code to libasf_raster
     
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -110,41 +112,19 @@ AUTHOR:   T. Logan
 #include "asf.h"
 #include "ceos.h"
 #include "asf_meta.h"
+#include "asf_raster.h"
 
-float filter(    /****************************************/
-    float *inbuf, /* input image buffer                   */
-    int    nl,            /* number of lines for inbuf            */
-    int    ns,            /* number of samples per line for inbuf */
-    int    x,             /* sample in desired line               */
-    int    nsk);
- 
-#define VERSION 4.5
+#define VERSION 5.0
 
 int main(argc,argv)
     int      argc;
     char     **argv;
 {
-    FILE            *fpin, *fpout;  /* file pointer                   */
     static   char   infile[255],     /* name of input SAR image file   */
                     outfile[255];    /* name of output RAW file        */
-    float           *inbuf,         /* stripped input buffer          */
-                    *outbuf;        /* stripped output buffer         */
-    meta_parameters *metaIn, *metaOut;
-    int      np, nl,                /* in number of pixels,lines      */
-             onp, onl,              /* out number of pixels,lines     */
-             nsk,                   /* kernel size in samples         */
-	     half,		    /* half of the kernel size        */
-	     n_lines,		    /* number of lines in this kernel */
-	     s_line,		    /* start line for input file      */
-             xi = 0,                /* inbuf int x sample #           */
-             yi = 0,                /* inbuf int y line #             */
-              j;                    /* loop counters                  */
-    int i;
-    float    pixsiz = 0.0,          /* output image pixel size        */
-	     scalfact,              /* scale factor                   */
-             base,                  /* base sample/line               */
-             rate;                  /* # input pixels/output pixel    */
-
+    meta_parameters *metaIn;
+    float   pixsiz = 0.0;           /* output image pixel size        */
+    double  scalfact;               /* scale factor                   */
 
    /*--------  Process Command Line Inputs -------------*/
     if (argc != 4)
@@ -164,71 +144,9 @@ int main(argc,argv)
     strcpy(outfile,argv[2]);
     sscanf(argv[3],"%f",&pixsiz);
 
-    printf("\n\n\nResample: Performing filtering and subsampling..\n\n");
-    printf(" Input image is %s\n",infile);
-    printf(" Output image is %s\n",outfile);
-    printf(" Output pixel size is %f meters\n",pixsiz);
-   
     metaIn = meta_read(infile);
-    metaOut = meta_read(infile);
-    nl = metaIn->general->line_count;
-    np = metaIn->general->sample_count;
     scalfact = 1.0/(pixsiz/metaIn->general->x_pixel_size);
-    nsk = (int) (pixsiz/metaIn->general->x_pixel_size + 0.5);
-    if (nsk%2 == 0) nsk++;              /* Must be odd sized kernel */
-
-    onp = (np) * scalfact;
-    onl = (nl) * scalfact;
-    base = 1.0 / (2.0 * scalfact) - 0.5;
-    rate = 1.0 / scalfact;
-    half = (nsk-1)/2;
-    n_lines = nsk;
- 
-    inbuf= (float *) MALLOC (nsk*np*sizeof(float));
-    outbuf = (float *) MALLOC (onp*sizeof(float));
- 
-   /*----------  Open the Input & Output Files ---------------------*/
-    fpin=fopenImage(infile,"rb");
-    fpout=fopenImage(outfile,"wb");
-
-    /* Write output metadata file */ 
-    metaOut->general->line_count = onl;
-    metaOut->general->sample_count = onp;
-    metaOut->general->data_type = REAL32;
-    metaOut->general->x_pixel_size = pixsiz;
-    metaOut->general->y_pixel_size = pixsiz;
-    meta_write(metaOut, outfile);
-
-  /*--------  Process inbuf to give outbuf ------------------------*/
-    printf("   Scale Factor : %f\n",scalfact);
-    printf("   Kernel Size  : %i\n",nsk);
-    printf("   base-- %f rate-- %f\n\n",base,rate);
-    printf("   Writing image file %i samples by %i lines\n\n",onp,onl);
- 
-    for (i = 0; i < onl; i++)
-      {
-       /*--------- Read next set of lines for kernel ---------------*/
-       yi = i * rate + base + 0.5;
-       s_line = yi-half;
-       if (s_line < 0) s_line = 0;
-       if (nl < nsk+s_line) n_lines = nl-s_line;
-      
-       get_float_lines(fpin, metaIn, s_line, n_lines, inbuf);
-
-       /*--------- Produce the output line and write to disk -------*/ 
-       for (j = 0; j < onp; j++)
-         {
-          xi = j * rate + base + 0.5;
-          outbuf[j] = filter(inbuf,n_lines,np,xi,nsk);
-         }
-       
-       put_float_line(fpout, metaOut, i, outbuf);
-       if (i%500==0) 
-          printf(" Processing Output Line %i\n",i);
-      }
-        
-    FCLOSE(fpin);                 
-    FCLOSE(fpout);
+    resample(infile, outfile, scalfact, scalfact);
 
     return(0);
 }

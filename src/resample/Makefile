@@ -3,20 +3,23 @@
 
 include ../../make_support/system_rules
 
-OLIBS = $(LIBDIR)/asf.a \
+OLIBS = $(LIBDIR)/libasf_raster.a \
+        $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libproj.a \
 	$(LIBDIR)/libasf_reporting.a
-LIBS = $(OLIBS) -lm
-OBJS = 	filter.o 
 
-resample:  resample.c $(OBJS)  $(OLIBS)
+CFLAGS += $(GLIB_CFLAGS)
+
+LIBS = $(OLIBS) -lm
+
+resample:  resample.c $(OLIBS)
 	$(CC) $(CFLAGS) -o resample resample.c $(OBJS) $(LIBS) $(LDFLAGS)
-	rm *.o
+	rm -f *.o
 	mv resample$(BIN_POSTFIX) $(BINDIR)
 	cp resample.1 ../../man/man1/resample.1
 
-filter.o : filter.c
-	$(CC) $(CFLAGS) -c filter.c
+clean:
+	rm -f core* resample.o resample
