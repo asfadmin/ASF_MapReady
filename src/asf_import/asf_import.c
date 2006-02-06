@@ -162,11 +162,10 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "get_ceos_names.h"
 #include "get_stf_names.h"
 #include "asf_reporting.h"
+#include "asf_raster.h"
 #include <ctype.h>
 
 #define REQUIRED_ARGS 2
-
-int resample(char *, char *, double, double);
 
 /* usage - enter here on command-line usage error*/
 void usage(void)

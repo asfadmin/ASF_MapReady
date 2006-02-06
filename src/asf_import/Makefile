@@ -15,7 +15,7 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	-lm
 
-CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) 
+CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS  = aisp_params.o \
 	aisp_write.o \
