@@ -4,7 +4,10 @@
 #include "asf_reporting.h"
 #include <ctype.h>
 #include <string.h>
+
+#ifdef linux
 char *strdup(char *);
+#endif
 
 /* Helpful functions */
 int firstRecordLen(char *ceosName)
