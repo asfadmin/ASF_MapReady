@@ -269,9 +269,8 @@ int main(int argc, char *argv[])
   /* Handle input and output file */
   fpIn = FOPEN(szCrList, "r");
   fpOut = FOPEN(szOut, "w");
-  fprintf(fpOut, "ID\tReference Lat\tReference Lon\tElevation\tReference line"
-	  "\tReference sample\tLine offset [m]\tSample offset [m]\tAbs. error [m]"
-	  "\tLine offset [pix]\tSample offset [pix]\n");
+  fprintf(fpOut, "ID\tReference Lat\tReference Lon\tElevation\tTarget line"
+	  "\tTarget sample\tLine offset [m]\tSample offset [m]\tAbs. error [m]\n");
   
   /* Loop through corner reflector location file */
   while (fgets(buffer, 1000, fpIn))
@@ -289,13 +288,13 @@ int main(int argc, char *argv[])
     if (!(outOfBounds(posX, posY, srcSize)))
       {
 	/* Find peak */ 
-	findPeak(posX+0.5, posY+0.5, szImg, &dy_pix, &dx_pix, chips, text, profile);
+	findPeak(posX, posY, szImg, &dy_pix, &dx_pix, chips, text, profile);
 	dx_m = dx_pix * meta->general->x_pixel_size;
 	dy_m = dy_pix * meta->general->y_pixel_size;
 	magnitude = sqrt(dx_m*dx_m + dy_m*dy_m);
-	fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.0lf\t%10.1f\t%10.1f\t%10.2f\t%10.2f"
-		"\t%10.2f\t%10.2f\t%10.2f\n",
-		crID, lat, lon, elev, posY, posX, dy_m, dx_m, magnitude, dy_pix, dx_pix);
+	fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.0lf\t%10.1f\t%10.1f\t%10.1f\t%10.1f"
+		"\t%10.1f\n",
+		crID, lat, lon, elev, posY+dy_pix, posX+dx_pix, dy_m, dx_m, magnitude);
 	fflush(fpOut);
       }
     else {
