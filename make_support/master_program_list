@@ -179,23 +179,23 @@ PROGRAMS
 			sarsim
 	}
 
-
+#  -- remove this, as it is now built as part of the main build
 # Build this very last since it depends on the plethora of gtk2 libraries, and
 # tends to kill the build
-@src/
-	asf_convert_gui
-	{
-		PROGRAMS
-			asf_convert
-			asf_export
-			asf_import
-			asf_geocode
-		BINS
-			projections/albers_equal_area_conic/
-			projections/lambert_conformal_conic/
-			projections/polar_stereographic/
-			projections/utm/
-	}
+#@src/
+#	asf_convert_gui
+#	{
+#		PROGRAMS
+#			asf_convert
+#			asf_export
+#			asf_import
+#			asf_geocode
+#		BINS
+#			projections/albers_equal_area_conic/
+#			projections/lambert_conformal_conic/
+#			projections/polar_stereographic/
+#			projections/utm/
+#	}
 
 # Stuff we don't really care to build
 #@src/
