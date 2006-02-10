@@ -20,7 +20,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "detect_cr"
 
 #define ASF_USAGE_STRING \
-"[ -chips ] [ -chip_size <value> ] [ -text ] [ -profile ] <image> "\
+"[ -chips ] [ -text ] [ -profile ] <image> "\
 "<corner reflector locations> <peak search file>\n"\
 "\n"\
 "Additional option: -help"
@@ -44,7 +44,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_OPTIONS_STRING \
 "-chips	    Stores the image chip used for determination of amplitude peaks.\n"\
-"-chip_size Defines the size of the chip used for the correlation (default: 128).\n"\
 "-text      Stores the image chip as a tab delimated text file.\n"\
 "-profile   Stores line and sample profiles through the peak in a text file."
 
@@ -117,10 +116,12 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define modX(x) ((x+srcSize)%srcSize)  /* Return x, wrapped to [0..srcSize-1] */
 #define modY(y) ((y+srcSize)%srcSize)  /* Return y, wrapped to [0..srcSize-1] */
 
+#define MAX_OFFSET_SCANSAR 1000   /* 1000 m = 2x geolocation accuracy ScanSAR */
+#define MAX_OFFSET_STANDARD 200   /* 200 m = 2x geolocation accuracy standard beam */
 
 /*Read-only, informational globals:*/
 int lines, samples;	     /* Lines and samples of source images. */
-int srcSize=128;
+int srcSize;                 /* Chip size for analysis */
 
 /* usage - enter here on command-line usage error*/
 void usage(void)
@@ -191,7 +192,7 @@ int main(int argc, char *argv[])
   char szImg[255], buffer[1000], crID[10], szCrList[255], szOut[255], tmp[255];
   char *chips=NULL, *text=NULL, *profile=NULL;
   int ii;
-  float dx_pix, dy_pix, dx_m, dy_m;
+  float dx_pix, dy_pix, dx_m, dy_m, max_dx_pix, max_dy_pix;
   double lat, lon, elev, posX, posY, magnitude;
   FILE *fpIn, *fpOut;
   meta_parameters *meta;
@@ -252,12 +253,6 @@ int main(int argc, char *argv[])
   lines = meta->general->line_count;
   samples = meta->general->sample_count;
 
-  /* Check chip size */ 
-  if (srcSize < 32) {
-    printf("   Chosen chip size too small! Chip size set to minimal chip size of 32");
-    srcSize = 32;
-  }
-
   /* Allocate memory for flags */
   if(flags[f_CHIPS] != FLAG_NOT_SET)
     chips = (char *) MALLOC(255*sizeof(char));
@@ -272,9 +267,22 @@ int main(int argc, char *argv[])
   fprintf(fpOut, "ID\tReference Lat\tReference Lon\tElevation\tTarget line"
 	  "\tTarget sample\tLine offset [m]\tSample offset [m]\tAbs. error [m]\n");
   
+  /* Establish maximum peak offsets */
+  if (meta->sar->image_type=='P') { // ScanSAR imagery
+    if (meta->projection->type==SCANSAR_PROJECTION) {
+      max_dx_pix = MAX_OFFSET_SCANSAR / meta->general->x_pixel_size;
+      max_dy_pix = MAX_OFFSET_SCANSAR / meta->general->y_pixel_size;
+    }
+  }
+  else { // regular standard/finebeam imagery
+      max_dx_pix = MAX_OFFSET_STANDARD / meta->general->x_pixel_size;
+      max_dy_pix = MAX_OFFSET_STANDARD / meta->general->y_pixel_size;
+  }
+
   /* Loop through corner reflector location file */
   while (fgets(buffer, 1000, fpIn))
   {
+    srcSize = 128;
     sscanf(buffer, "%s\t%lf\t%lf\t%lf", crID, &lat, &lon, &elev);
     meta_get_lineSamp(meta, lat, lon, elev, &posY, &posX);
     if (chips)
@@ -292,10 +300,33 @@ int main(int argc, char *argv[])
 	dx_m = dx_pix * meta->general->x_pixel_size;
 	dy_m = dy_pix * meta->general->y_pixel_size;
 	magnitude = sqrt(dx_m*dx_m + dy_m*dy_m);
-	fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.0lf\t%10.1f\t%10.1f\t%10.1f\t%10.1f"
-		"\t%10.1f\n",
-		crID, lat, lon, elev, posY+dy_pix, posX+dx_pix, dy_m, dx_m, magnitude);
-	fflush(fpOut);
+
+	/* Check peak offset */
+	if (fabs(dx_pix) < max_dx_pix || fabs(dy_pix) < max_dy_pix) {
+	  fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t%10.1f\t%10.1f"
+		  "\t%10.1f\n", crID, lat, lon, elev, posY+dy_pix, posX+dx_pix, 
+		  dy_m, dx_m, magnitude);
+	  fflush(fpOut);
+	}
+	else { // Do the analysis on a smaller window
+	  fprintf(fpOut,"**%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t(%10.1f)"
+		  "\t(%10.1f)\t%10.1f\n", crID, lat, lon, elev, posY+dy_pix, 
+		  posX+dx_pix, dy_m, dx_m, magnitude);
+	  fflush(fpOut);
+	  srcSize = max_dx_pix * 2;
+	  printf("   Warning: Corner reflector %s outside the accuracy threshold.\n",
+		 crID);
+	  printf("            Repeating analysis with smaller chip size (%ix%i).\n",
+		 srcSize, srcSize);
+	  findPeak(posX, posY, szImg, &dy_pix, &dx_pix, chips, text, profile);
+	  dx_m = dx_pix * meta->general->x_pixel_size;
+	  dy_m = dy_pix * meta->general->y_pixel_size;
+	  magnitude = sqrt(dx_m*dx_m + dy_m*dy_m);
+	  fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t%10.1f\t%10.1f"
+		  "\t%10.1f\n", crID, lat, lon, elev, posY+dy_pix, posX+dx_pix, 
+		  dy_m, dx_m, magnitude);
+	  fflush(fpOut);
+	}
       }
     else {
       sprintf(tmp, "   WARNING: Corner reflector %s outside the image boundaries!\n", 
