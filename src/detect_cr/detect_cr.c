@@ -118,6 +118,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define MAX_OFFSET_SCANSAR 1000   /* 1000 m = 2x geolocation accuracy ScanSAR */
 #define MAX_OFFSET_STANDARD 200   /* 200 m = 2x geolocation accuracy standard beam */
+#define CHIP_DEFAULT_SIZE 128
 
 /*Read-only, informational globals:*/
 int lines, samples;	     /* Lines and samples of source images. */
@@ -282,7 +283,7 @@ int main(int argc, char *argv[])
   /* Loop through corner reflector location file */
   while (fgets(buffer, 1000, fpIn))
   {
-    srcSize = 128;
+    srcSize = CHIP_DEFAULT_SIZE;
     sscanf(buffer, "%s\t%lf\t%lf\t%lf", crID, &lat, &lon, &elev);
     meta_get_lineSamp(meta, lat, lon, elev, &posY, &posX);
     if (chips)
@@ -382,7 +383,7 @@ bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY,
   readSubset(szImg, srcSize, srcSize, x-srcSize/2+1, y-srcSize/2+1, s);
   
   /* Write out chip if name is given */
-  if (chip) {
+  if (chip && srcSize==CHIP_DEFAULT_SIZE) {
     metaChip = meta_copy(meta);
     metaChip->general->line_count = srcSize;
     metaChip->general->sample_count = srcSize;
@@ -395,7 +396,7 @@ bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY,
   }
 
   /* Write out text file for chip if name is given */
-  if (text) {
+  if (text && srcSize==CHIP_DEFAULT_SIZE) {
     metaText = meta_copy(meta);
     metaText->general->line_count = srcSize;
     metaText->general->sample_count = srcSize;
