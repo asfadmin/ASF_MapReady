@@ -167,14 +167,14 @@ void calculate_plot(char *axis, char *gridFile, char *dataFile, char *maskFile,
     fprintf(fpOut, "\tMin value\tMax value\tMean value\tdB value\tCount"
 	    "\tStandard deviation\n");
     for (ii=0; ii<bins; ii++)
-      fprintf(fpOut, "%10.4f\t%10.4lf\t%10.4lf\t%10.4lf\t%10.4lf\t%10li\t%10.4lf\n", 
+      fprintf(fpOut, "%10.4lf\t%.8lf\t%10.4lf\t%10.4lf\t%10.4lf\t%10li\t%10.4lf\n", 
 	      (min+ii*interval), plot[ii].min, plot[ii].max, plot[ii].mean, 
 	      10*log10(plot[ii].mean), plot[ii].count, plot[ii].stdDev);
   }
   else {
     fprintf(fpOut, "\tMin value\tMax value\tMean value\tCount\tStandard deviation\n");
     for (ii=0; ii<bins; ii++)
-      fprintf(fpOut, "%10.4f\t%10.4lf\t%10.4lf\t%10.4lf\t%10li\t%10.4lf\n", 
+      fprintf(fpOut, "%10.4lf\t%.8lf\t%10.4lf\t%10.4lf\t%10li\t%10.4lf\n", 
 	      (min+ii*interval), plot[ii].min, plot[ii].max,
 	      plot[ii].mean, plot[ii].count, plot[ii].stdDev);
   }

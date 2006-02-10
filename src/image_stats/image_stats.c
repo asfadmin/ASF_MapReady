@@ -21,8 +21,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_USAGE_STRING \
 "-look | -incidence | -range\n"\
-"[ -min <value> ] [ -max <value> ] [ -bins <value> ]\n"\
-"[ -interval <value> ] <infile> <outfile>\n"\
+"   [ -bins <value> ] [ -interval <value> ] <infile> <outfile>\n"\
 "\n"\
 "Additional option: -help"
 
@@ -45,8 +44,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "-look		Plot image values versus look angle.\n"\
 "-incidence	Plot image values versus incidence angle.\n"\
 "-range		Plot image values versus range.\n"\
-"-min		Minimum value to be considered for statistics.\n"\
-"-max		Maximum value to be considered for statistics.\n"\
 "-bins		Number of bins for calculating the statistics (default: 256).\n"\
 "-interval	Size of interval for binning the image values\n"\
 "		(supersedes setting number of bins).\n"
@@ -342,8 +339,8 @@ int main(int argc, char *argv[])
       sample = kk * samples / RES_X;
 
       if (meta->sar->image_type=='P') {
-	px = meta->projection->startX + meta->projection->perX * kk;
-	py = meta->projection->startY + meta->projection->perY * (ii+ll);
+	px = meta->projection->startX + meta->projection->perX * sample;
+	py = meta->projection->startY + meta->projection->perY * line;
 	proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
 		   &latitude, &longitude);
 	latLon2timeSlant(meta, latitude, longitude, &time, &range, &doppler);
@@ -352,9 +349,14 @@ int main(int argc, char *argv[])
 	time = meta_get_time(meta, line, sample);
 
       stVec = meta_get_stVec(meta, time);
-      earth_radius = get_earth_radius(time, stVec, re, rp);
+      if (meta->sar->image_type=='P') {
+	if (meta->projection->type==SCANSAR_PROJECTION) 
+	  earth_radius = meta->projection->param.atct.rlocal;
+      }
+      else
+	earth_radius = get_earth_radius(time, stVec, re, rp);
       satellite_height = get_satellite_height(time, stVec);
-      range = get_slant_range(meta, earth_radius, satellite_height, sample);
+      range = get_slant_range(meta, earth_radius, satellite_height, line, sample);
       look_angle = get_look_angle(earth_radius, satellite_height, range);
       incidence_angle = get_incidence_angle(earth_radius, satellite_height, range);
       
