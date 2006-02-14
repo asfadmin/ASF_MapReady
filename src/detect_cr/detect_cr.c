@@ -20,8 +20,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "detect_cr"
 
 #define ASF_USAGE_STRING \
-"[ -chips ] [ -text ] [ -profile ] <image> "\
-"<corner reflector locations> <peak search file>\n"\
+"[ -chips ] [ -text ] <image> <corner reflector locations> <peak search file>\n"\
 "\n"\
 "Additional option: -help"
 
@@ -44,8 +43,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_OPTIONS_STRING \
 "-chips	    Stores the image chip used for determination of amplitude peaks.\n"\
-"-text      Stores the image chip as a tab delimated text file.\n"\
-"-profile   Stores line and sample profiles through the peak in a text file."
+"-text      Stores the image chip as a tab delimated text file."
 
 #define ASF_EXAMPLES_STRING \
 "detect_cr rsat.img cr.txt reflector.test"
@@ -191,7 +189,7 @@ void help_page()
 int main(int argc, char *argv[])
 {
   char szImg[255], buffer[1000], crID[10], szCrList[255], szOut[255], tmp[255];
-  char *chips=NULL, *text=NULL, *profile=NULL;
+  char *chips=NULL, *text=NULL;
   int ii;
   float dx_pix, dy_pix, dx_m, dy_m, max_dx_pix, max_dy_pix;
   double lat, lon, elev, posX, posY, magnitude;
@@ -209,9 +207,7 @@ int main(int argc, char *argv[])
   if(checkForOption("-help", argc, argv) != -1) /* Most important */
     help_page();
   flags[f_CHIPS] = checkForOption("-chips", argc, argv);
-  flags[f_CHIP_SIZE] = checkForOption("-chip_size", argc, argv);
   flags[f_TEXT] = checkForOption("-text", argc, argv);
-  flags[f_PROFILE] = checkForOption("-profile", argc, argv);
 
   /* Make sure to set log & quiet flags (for use in our libraries) */
   logflag = (flags[f_LOG]!=FLAG_NOT_SET) ? TRUE : FALSE;
@@ -220,9 +216,7 @@ int main(int argc, char *argv[])
   { /* We need to make sure the user specified the proper number of arguments */
     int needed_args = 4;/*command & in_data & in_meta & out_base */
     if(flags[f_CHIPS] != FLAG_NOT_SET) needed_args += 1; /* option */
-    if(flags[f_CHIP_SIZE] != FLAG_NOT_SET) needed_args += 2; /* option */
     if(flags[f_TEXT] != FLAG_NOT_SET) needed_args += 1; /* option */
-    if(flags[f_PROFILE] != FLAG_NOT_SET) needed_args += 1; /* option */
 
     /*Make sure we have enough arguments*/
     if(argc != needed_args)
@@ -231,8 +225,6 @@ int main(int argc, char *argv[])
 
   /* We must be close to good enough at this point...start filling in fields 
      as needed */
-  if (flags[f_CHIP_SIZE] != FLAG_NOT_SET)
-    srcSize = atoi(argv[flags[f_CHIP_SIZE] + 1]);
   if(flags[f_QUIET] == FLAG_NOT_SET)
     /* display splash screen if not quiet */
     print_splash_screen(argc, argv);
@@ -259,8 +251,6 @@ int main(int argc, char *argv[])
     chips = (char *) MALLOC(255*sizeof(char));
   if(flags[f_TEXT] != FLAG_NOT_SET)
     text = (char *) MALLOC(255*sizeof(char));
-  if(flags[f_PROFILE] != FLAG_NOT_SET)
-    profile = (char *) MALLOC(255*sizeof(char));
 
   /* Handle input and output file */
   fpIn = FOPEN(szCrList, "r");
@@ -290,14 +280,12 @@ int main(int argc, char *argv[])
       sprintf(chips, "%s", crID);
     if (text)
       sprintf(text, "%s", crID);
-    if (profile)
-      sprintf(profile, "%s", crID);
 
     /* Check bounds */
     if (!(outOfBounds(posX, posY, srcSize)))
       {
 	/* Find peak */ 
-	findPeak(posX, posY, szImg, &dy_pix, &dx_pix, chips, text, profile);
+	findPeak(posX, posY, szImg, &dy_pix, &dx_pix, chips, text);
 	dx_m = dx_pix * meta->general->x_pixel_size;
 	dy_m = dy_pix * meta->general->y_pixel_size;
 	magnitude = sqrt(dx_m*dx_m + dy_m*dy_m);
@@ -319,7 +307,7 @@ int main(int argc, char *argv[])
 		 crID);
 	  printf("            Repeating analysis with smaller chip size (%ix%i).\n",
 		 srcSize, srcSize);
-	  findPeak(posX, posY, szImg, &dy_pix, &dx_pix, chips, text, profile);
+	  findPeak(posX, posY, szImg, &dy_pix, &dx_pix, chips, text);
 	  dx_m = dx_pix * meta->general->x_pixel_size;
 	  dy_m = dy_pix * meta->general->y_pixel_size;
 	  magnitude = sqrt(dx_m*dx_m + dy_m*dy_m);
@@ -362,13 +350,13 @@ bool outOfBounds(int x, int y, int srcSize)
   whether it is actually the peak for the neighborhood.
 */
 bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY, 
-	      char *chip, char *text, char *profile)
+	      char *chip, char *text)
 {
-  FILE *fpChip, *fpText, *fpProfile;
+  FILE *fpChip, *fpText;
   meta_parameters *meta, *metaChip, *metaText;
   static float *s=NULL;
   float max=-10000000.0;
-  char szChip[255], szText[255], szProfile[255];
+  char szChip[255], szText[255];
   int size, ii, kk, bestX, bestY;
   float bestLocX, bestLocY;
   
@@ -425,20 +413,6 @@ bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY,
   /* Output our guess. */
   *peakX = bestLocX - srcSize/2;
   *peakY = bestLocY - srcSize/2;
-
-  /* Write out text file for line/sample profiles */
-  if (profile) {
-    sprintf(szProfile, "%s_azimuth.txt", profile);
-    fpProfile = FOPEN(szProfile, "w");
-    for (ii=0; ii<srcSize; ii++)
-      fprintf(fpProfile, "%3i\t%12.4f\n", x-srcSize/2+ii, s[ii*srcSize+bestY]);
-    FCLOSE(fpProfile);
-    sprintf(szProfile, "%s_range.txt", profile);
-    fpProfile = FOPEN(szProfile, "w");
-    for (ii=0; ii<srcSize; ii++)
-      fprintf(fpProfile, "%3i\t%12.4f\n", y-srcSize/2+ii, s[bestX*srcSize+ii]);
-    FCLOSE(fpProfile);
-  }
 
   return TRUE;
 }
