@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 			break;/*Break out when no more points.*/
 		seek_x=(int)((seed_x-ss)/xScale);
 		seek_y=(int)((seed_y-sl)/yScale);
-		get_float_line(fdata, meta, seek_x, phase_line);
+		get_float_line(fdata, meta, seek_y, phase_line);
 		phase = phase_line[seek_y];
 		if (phase==0)
 			continue;/*Escher couldn't unwrap this tie point.*/
