@@ -256,7 +256,7 @@ int convert2byte(char *inFile, char *outFile, int nLooks, int nSmooth)
   
   sprintf(options, "-log %s -quiet", logFile);
   sprintf(command, "convert2byte %s -look %dx%d -step %dx%d %s %s", 
-	  options, nLooks, nSmooth, nLooks, nSmooth, inFile, outFile);
+	  options, nLooks, nLooks, nSmooth, nSmooth, inFile, outFile);
   
   printf("\nCommand line: %s\nDate: ", command);
   fLog = FOPEN(logFile, "a");

@@ -104,11 +104,11 @@ main(int argc, char *argv[])
   meta_parameters *meta=NULL;
   FILE *fCorr, *fCoh;
   char configFile[255], cmd[255], path[255], data[255], metadata[255], tmp[255];
-  char format[255], options[255], metaFile[10];
+  char format[255], options[255], metaFile[25];
   char *veryoldBase=NULL, *oldBase=NULL, *newBase=NULL;
   int i, delta, cFlag=0, datatype=0, off=1, nLooks, nl, ns;
   float xshift, yshift, avg;
-  double lat1=0.0, lat2=0.0, lon;
+  double lat1=0.0, lat2=0.0, lon1;
   
   if (argc<2 || argc>3) usage("ips");
   if (strcmp(argv[1], "-c")==0) {
@@ -155,10 +155,10 @@ main(int argc, char *argv[])
     sprintf(cfg->unwrap->qc, "%s_qc.phase", cfg->general->base);
     sprintf(cfg->elevation->dem, "%s_ht.img", cfg->general->base);
     sprintf(cfg->elevation->error, "%s_err_ht.img", cfg->general->base);
-    sprintf(cfg->geocode->dem, "%s_dem.img", cfg->general->base);
-    sprintf(cfg->geocode->amp, "%s_amp.img", cfg->general->base);
-    sprintf(cfg->geocode->error, "%s_error.img", cfg->general->base);
-    sprintf(cfg->geocode->coh, "%s_coh.img", cfg->general->base);
+    sprintf(cfg->geocode->dem, "%s_dem", cfg->general->base);
+    sprintf(cfg->geocode->amp, "%s_amp", cfg->general->base);
+    sprintf(cfg->geocode->error, "%s_error", cfg->general->base);
+    sprintf(cfg->geocode->coh, "%s_coh", cfg->general->base);
     check_return(write_config(configFile, cfg), 
 		 "Could not update configuration file"); 
   }
@@ -558,7 +558,7 @@ main(int argc, char *argv[])
 	sprintf(cmd, "mv a_pwr.img %s_a_pwr.img", cfg->general->base); system(cmd);
 	sprintf(cmd, "mv a_pwr.meta %s_a_pwr.meta", cfg->general->base); system(cmd);
       }
-      sprintf(cmd, "cp a.meta %s.meta", cfg->general->base); system(cmd);
+      // sprintf(cmd, "cp a.meta %s.meta", cfg->general->base); system(cmd);
       
       sprintf(cfg->aisp_master->status, "success");
       check_return(write_config(configFile, cfg), 
@@ -831,7 +831,7 @@ main(int argc, char *argv[])
     }
     if (cfg->igram_coh->ml == 1) {
       sprintf(tmp, "%s_ml", cfg->igram_coh->igram);
-      check_return(multilook(cfg->igram_coh->igram, tmp, "a.meta"), 
+      check_return(multilook(cfg->igram_coh->igram, tmp, "a_cpx.meta"), 
 		   "multilooking interferogram (multilook)");
     }
     
@@ -840,14 +840,10 @@ main(int argc, char *argv[])
 		 "Could not update configuration file");
   }
   
-  sprintf(cmd, "cp a.meta %s.meta", cfg->igram_coh->igram);
-  system(cmd);
+  // sprintf(cmd, "cp a.meta %s.meta", cfg->igram_coh->igram);
+  // system(cmd);
   
-  /* Refine the offset *
-
-// Taking out the offset estimation for the testing.
-// Need to check what's up with it, once I am back.
-
+  /* Refine the offset */
   if (check_status(cfg->offset_match->status)) {
 
     sprintf(tmp, "%s_amp.img", cfg->igram_coh->igram);
@@ -859,11 +855,10 @@ main(int argc, char *argv[])
     check_return(write_config(configFile, cfg), 
 		 "Could not update configuration file");
   }
-  */
   
   /* Simulated phase image and seed points */
   if (check_status(cfg->sim_phase->status)) { 
-    check_return(dem2phase("dem_slant.img", "a.meta", 
+    check_return(dem2phase("dem_slant.img", "a_cpx.meta", 
 			   base2str(0, cfg->general->base), "out_dem_phase.img"), 
 		 "creating simulated phase (dem2phase)");
 
@@ -894,7 +889,7 @@ main(int argc, char *argv[])
     check_return(deramp(cfg->igram_coh->igram, 
 			base2str(0, cfg->general->base), "igramd", 0), 
 		 "deramping interferogram (deramp)");
-    check_return(multilook("igramd", "ml", "a.meta"), 
+    check_return(multilook("igramd", "ml", "a_cpx.meta"), 
 		 "multilooking interferogram (multilook)");
     
     sprintf(cfg->deramp_ml->status, "success");
@@ -1016,8 +1011,8 @@ main(int argc, char *argv[])
 	}
 	else {
 */
-	  meta_get_latLon(meta, cfg->aisp_master->start_offset, 1, 0, &lat1, &lon);
-	  meta_get_latLon(meta, cfg->aisp_master->end_offset, 1, 0, &lat2, &lon);
+	  meta_get_latLon(meta, cfg->aisp_master->start_offset, 1, 0, &lat1, &lon1);
+	  meta_get_latLon(meta, cfg->aisp_master->end_offset, 1, 0, &lat2, &lon1);
 /*	}*/
 	cfg->unwrap->tiles_azimuth = 
 	  (int) (fabs(lat1-lat2)*cfg->unwrap->tiles_per_degree);
@@ -1080,7 +1075,7 @@ main(int argc, char *argv[])
 			"igramd", 0), 
 		 "deramping interferogram with refined baseline (deramp)");
     sprintf(tmp, "%s_ml", cfg->igram_coh->igram);
-    check_return(multilook("igramd", tmp, "a.meta"), 
+    check_return(multilook("igramd", tmp, "a_cpx.meta"), 
 		 "multilooking refined interferogram (multilook)");
     
     sprintf(cfg->refine->status, "success");
@@ -1116,17 +1111,15 @@ main(int argc, char *argv[])
   
   /* Remapping to ground range */
   if (check_status(cfg->ground_range->status)) {
-    check_return(deskew_dem(cfg->elevation->dem, "elevation.dem", "", 1), 
+    check_return(deskew_dem(cfg->elevation->dem, "elevation.img", "", 1), 
 		 "remapping elevation to ground range DEM (deskew_dem)");
-    check_return(deskew_dem("elevation.dem", "amplitude_float.img", 
+    check_return(deskew_dem(cfg->elevation->dem, "amplitude.img", 
 			    "a_amp.img", 1), 
 		 "remapping amplitude to ground range (deskew_dem)");
-    check_return(deskew_dem("elevation.dem", "error.img", 
+    check_return(deskew_dem(cfg->elevation->dem, "error.img", 
 			    cfg->elevation->error, 1), 
 		 "remapping error map to ground range (deskew_dem)");
-    check_return(convert2byte("amplitude_float.img", "amplitude.img", 1, 2),
-		 "converting ground range amplitude to byte (convert2byte)");
-    check_return(deskew_dem("elevation.dem", "coh_gr.img", "coh.img", 0), 
+    check_return(deskew_dem(cfg->elevation->dem, "coh_gr.img", "coh.img", 0), 
 		 "remapping coherence to ground range (deskew_dem)");
     
     sprintf(cfg->ground_range->status, "success");
@@ -1140,25 +1133,31 @@ main(int argc, char *argv[])
        For UTM projection the center longitude can be passed in.
        For Albers Conic Equal Area, Lambert Conformal Conic and Polar Stereographic
        we can use predefined projection files.*/
-    if (!fileExists(cfg->geocode->proj)) 
-      check_return(1, "projection file does not exist");
     if (strcmp(cfg->geocode->name, "utm")==0) {
-      sprintf(tmp, "general.center_longitude:");
-      lon = lzDouble("amplitude.meta", tmp, NULL);
-      sprintf(tmp, "--projection utm --central-meridian %.4f", lon);
+      if (!fileExists(cfg->geocode->proj)) {
+	sprintf(tmp, "--projection utm --resample-method %s", 
+		cfg->geocode->resample);
+      }
+      else {
+	sprintf(tmp, "--read_proj_file %s --resample-method %s",
+		cfg->geocode->proj, cfg->geocode->resample);
+      }
     }
     else if (strcmp(cfg->geocode->name, "albers")==0 ||
 	     strcmp(cfg->geocode->name, "lamcc")==0 ||
-	     strcmp(cfg->geocode->name, "ps")==0)
-    sprintf(tmp, "--read_proj_file %s --resample-method %s",
-	    cfg->geocode->proj, cfg->geocode->resample);
-    check_return(asf_geocode(tmp, "elevation.dem", cfg->geocode->dem), 
+	     strcmp(cfg->geocode->name, "ps")==0) {
+      if (!fileExists(cfg->geocode->proj)) 
+	check_return(1, "projection file does not exist");
+      sprintf(tmp, "--read_proj_file %s --resample-method %s",
+	      cfg->geocode->proj, cfg->geocode->resample);
+    }
+    check_return(asf_geocode(tmp, "elevation", cfg->geocode->dem), 
 		 "geocoding ground range DEM (geocode)");      
-    check_return(asf_geocode(tmp, "amplitude.img", cfg->geocode->amp), 
+    check_return(asf_geocode(tmp, "amplitude", cfg->geocode->amp), 
 		 "geocoding ground range amplitude (geocode)");
-    check_return(asf_geocode(tmp, "error.img", cfg->geocode->error), 
+    check_return(asf_geocode(tmp, "error", cfg->geocode->error), 
 		 "geocoding ground range error map (geocode)");
-    check_return(asf_geocode(tmp, "coh_gr.img", cfg->geocode->coh), 
+    check_return(asf_geocode(tmp, "coh_gr", cfg->geocode->coh), 
 		 "geocoding ground range coherence (geocode)");
     
     sprintf(cfg->geocode->status, "success");
