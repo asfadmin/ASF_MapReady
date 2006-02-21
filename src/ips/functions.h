@@ -55,6 +55,7 @@ int elev(char *phaseFile, char *baseFile, char *outFile, char *seeds);
 int eleverr(char *cohFile, char *baseFile, char *maskFile, char *outFile);
 int deskew_dem(char *inFile1, char *outFile, char *inFile2, int radiometric);
 int asf_geocode(char *options, char *inFile, char *outFile);
+int asf_export(char *options, char *inFile, char *outFile);
 
 #define AISP_VALID_PATCH_LENGTH 3300
 

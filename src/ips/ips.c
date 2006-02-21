@@ -159,8 +159,7 @@ main(int argc, char *argv[])
     sprintf(cfg->geocode->amp, "%s_amp", cfg->general->base);
     sprintf(cfg->geocode->error, "%s_error", cfg->general->base);
     sprintf(cfg->geocode->coh, "%s_coh", cfg->general->base);
-    check_return(write_config(configFile, cfg), 
-		 "Could not update configuration file"); 
+    check_return(write_config(configFile, cfg), "Could not update configuration file"); 
   }
   
   /* Prepare processing */
@@ -840,9 +839,6 @@ main(int argc, char *argv[])
 		 "Could not update configuration file");
   }
   
-  // sprintf(cmd, "cp a.meta %s.meta", cfg->igram_coh->igram);
-  // system(cmd);
-  
   /* Refine the offset */
   if (check_status(cfg->offset_match->status)) {
 
@@ -1069,7 +1065,7 @@ main(int argc, char *argv[])
     if (i==cfg->refine->max) 
       check_return(1, "Baseline iterations failed to converge");
     cfg->refine->iter = i+1; 
-    
+  
     check_return(deramp(cfg->igram_coh->igram, 
 			base2str(cfg->refine->iter, cfg->general->base), 
 			"igramd", 0), 
@@ -1172,6 +1168,40 @@ main(int argc, char *argv[])
 		 "Could not update configuration file"); 
   }
   ****************************************************************************/
+
+  /* Exporting */
+  if (check_status(cfg->export->status)) {
+    if (strcmp(uc(cfg->export->format), "TIFF")==0) {
+      sprintf(format, "tiff");
+    }
+    else if (strcmp(uc(cfg->export->format), "GEOTIFF")==0) {
+      sprintf(format, "geotiff");
+    }
+    else if (strcmp(uc(cfg->export->format), "JPEG")==0) {
+      sprintf(format, "jpeg");
+    }
+    else if (strcmp(uc(cfg->export->format), "PPM")==0) {
+      sprintf(format, "ppm");
+    }
+    else {
+      sprintf(tmp, "export format '%s' not supported", cfg->export->format);
+      check_return(1, tmp);
+    }
+
+    sprintf(tmp, "-format %s", format);
+    check_return(asf_export(tmp, cfg->geocode->dem, cfg->geocode->dem), 
+		 "exporting geocoded DEM (export)");
+    check_return(asf_export(tmp, cfg->geocode->amp, cfg->geocode->amp), 
+		 "exporting geocoded amplitude image (export)");
+    check_return(asf_export(tmp, cfg->geocode->error, cfg->geocode->error), 
+		 "exporting geocoded DEM error map (export)");
+    check_return(asf_export(tmp, cfg->geocode->coh, cfg->geocode->coh), 
+		 "exporting geocoded coherence image (export)");
+    
+    sprintf(cfg->export->status, "success");
+    check_return(write_config(configFile, cfg), 
+		 "Could not update configuration file");
+  }
   
   sprintf(cfg->general->status, "success");
   check_return(write_config(configFile, cfg), "Could not update configuration file");

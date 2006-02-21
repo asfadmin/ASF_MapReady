@@ -729,7 +729,24 @@ int asf_geocode(char *options, char *inFile, char *outFile)
   char command[255];
   int ret;
   
-  sprintf(command, "asf_geocode %s %s %s", options, inFile, outFile);
+  sprintf(command, "asf_geocode %s -log %s -quiet %s %s", options, logFile, inFile, outFile);
+  
+  printf("\nCommand line: %s\nDate: ", command);
+  fLog = FOPEN(logFile, "a");
+  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+  printLog(logbuf);
+  FCLOSE(fLog);
+  ret = system(command);
+  
+  return ret;
+}
+
+int asf_export(char *options, char *inFile, char *outFile)
+{
+  char command[255];
+  int ret;
+  
+  sprintf(command, "asf_export %s -log %s -quiet %s %s", options, logFile, inFile, outFile);
   
   printf("\nCommand line: %s\nDate: ", command);
   fLog = FOPEN(logFile, "a");

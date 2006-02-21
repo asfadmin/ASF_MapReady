@@ -777,6 +777,7 @@ dem_config *read_config(char *configFile, int cFlag)
 
     if (strncmp(line, "[Export]", 8)==0) strcpy(params, "export");
     if (strcmp(params, "export")==0) {
+      test = read_param(line);
       if (strncmp(test, "format", 6)==0)
 	cfg->export->format = read_str(line, "format");
       if (strncmp(test, "status", 6)==0)
