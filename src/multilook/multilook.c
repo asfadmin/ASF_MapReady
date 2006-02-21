@@ -200,6 +200,7 @@ int main(int argc, char *argv[])
 	/* Create new metadata file for the amplitude and phase.*/
 	meta->sar->line_increment *= sl;
 	meta->sar->sample_increment *= ss;
+	meta->sar->azimuth_time_per_pixel *= sl;
 	meta->general->x_pixel_size *= ss;
 	meta->general->y_pixel_size *= sl;
 	create_name(metaIn,argv[currArg],"_amp.meta");
