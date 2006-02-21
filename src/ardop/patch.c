@@ -242,8 +242,9 @@ void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
   metaAmp->general->start_sample = f->skipFile + 1;
   metaAmp->general->x_pixel_size = f->rngpix;
   metaAmp->general->y_pixel_size = f->azpix;
-  metaAmp->sar->line_increment = f->nlooks;
+  metaAmp->sar->line_increment = 1.0;
   metaAmp->sar->sample_increment = 1.0;
+  metaAmp->sar->azimuth_time_per_pixel *= f->nlooks;
   meta_write(metaAmp, f->out_amp);
 
   if (s->imageType.power) {
