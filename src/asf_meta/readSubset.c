@@ -55,3 +55,48 @@ void readSubset(char *fileName, int width, int height, int posX, int posY,
   FREE(buffer);
   meta_free(meta);
 }
+
+/* Function 'readComplexSubset' returning a subset of image. This is the version 
+   of 'readSubset' that handles complex data.
+*/
+void readComplexSubset(char *fileName, int width, int height, int posX, int posY, 
+		       complexFloat *subset)
+{
+  FILE *fp;
+  int ii, kk;
+  complexFloat *buffer;
+  meta_parameters *meta = meta_read(fileName);
+  int lines = meta->general->line_count;
+  int samples = meta->general->sample_count;
+
+  /* Check whether input parameters are feasible */
+  assert (width > 0);
+  assert (height > 0);
+  assert (width < lines);
+  assert (height < samples);
+  assert (posX > 0);
+  assert (posY > 0);
+  assert ((posX+width) < samples);
+  assert ((posY+height) < lines);
+  if (meta->general->data_type < 6)
+    printErr("   ERROR: 'readcomplexSubset' does only work on complex data!\n");
+
+  /* Allocate memory for buffers */
+  buffer = (complexFloat *) MALLOC(height*samples*sizeof(complexFloat));
+
+  /* Open image file */
+  fp = FOPEN(fileName, "rb");
+
+  /* Read the appropriate data chunk */
+  get_complexFloat_lines(fp, meta, posY, height, buffer);
+
+  /* Fill in the subset buffer */
+  for (ii=0; ii<height; ii++) 
+    for (kk=0; kk<width; kk++) 
+      subset[ii*width+kk] = buffer[ii*samples+posX+kk];
+
+  /* Clean up */
+  FCLOSE(fp);
+  FREE(buffer);
+  meta_free(meta);
+}
