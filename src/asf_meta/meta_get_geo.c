@@ -165,10 +165,11 @@ void meta_get_lineSamp(meta_parameters *meta,
 {
 #define DELTA 0.1 /*Number of pixels along which to 
   perform finite difference approximation of the derivative.*/
-	double x=0.0,y=0.0;
-	double x_old=1000,y_old=1000;
+	double x=meta->general->sample_count/2,y=meta->general->line_count/2;
+	double x_old=1000, y_old=1000;
 	int iter=0;
 	lat_lon target;
+
 
 	target.lat = lat;
 	target.lon = lon;
@@ -179,8 +180,8 @@ void meta_get_lineSamp(meta_parameters *meta,
 		double del_y   = (get_error(meta,target,elev,x,y+DELTA)-cur_err)/DELTA;
 		double rad     = fabs(del_x) + fabs(del_y);
 
-		/*printf("   x=%6.1f; y=%6.1f, err=%.6f\n",x,y,cur_err);
-		*/
+		//printf("   x=%6.1f; y=%6.1f, err=%.6f\n",x,y,cur_err);
+	       
 		x_old=x;y_old=y;
 		x=x-(fabs(del_x)/rad)*cur_err/del_x;
 		y=y-(fabs(del_y)/rad)*cur_err/del_y;

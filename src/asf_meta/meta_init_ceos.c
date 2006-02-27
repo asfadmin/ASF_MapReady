@@ -389,7 +389,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    /* A couple parameters for point target analysis */
    meta->sar->azimuth_processing_bandwidth = dssr->bnd_azi;
    meta->sar->chirp_rate = dssr->phas_coef[2];
-   meta->sar->pulse_duration = dssr->rng_length / 1000000;
+   meta->sar->pulse_duration = dssr->rng_length / 10000000;
    meta->sar->range_sampling_rate = dssr->rng_samp_rate * 1000000;
 
  /* Fill meta->state_vectors structure. Call to ceos_init_proj requires that the
