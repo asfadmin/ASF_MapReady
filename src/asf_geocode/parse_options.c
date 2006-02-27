@@ -338,15 +338,16 @@ static void parse_proj_args_file(char * file, project_parameters_t * pps,
     }
     else if (strcmp(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
     {
+      //char area[10];
 	double is_north_pole;
 	*proj_type = POLAR_STEREOGRAPHIC;
 	get_fields(fp,
-		   "First standard parallel", &pps->ps.slat,
+		   "Standard parallel", &pps->ps.slat,
 		   "Standard Parallel", &pps->ps.slat,
 		   "Central Meridian", &pps->ps.slon,
 		   "False Easting", &pps->ps.false_easting,
 		   "False Northing", &pps->ps.false_northing,
-  		   "Northern Projection", &is_north_pole,
+  		   "Hemisphere", &is_north_pole,
 		   NULL);
 	pps->ps.is_north_pole = pps->ps.slat > 0;
     }
@@ -939,6 +940,19 @@ static resample_method_t parse_resample_method_option(int *argc, char **argv[])
   return ret;
 } 
 
+double parse_pixel_size_option(int *argc, char **argv[])
+{
+  char size_str[25];
+  double pixel_size;
+
+  if (extract_string_options(argc, argv, size_str, "--pixel_size", NULL)) {
+    sscanf(size_str, "%lf", &pixel_size);
+    return pixel_size;
+  }
+  else
+    return NAN;
+}
+
 void parse_other_options(int *argc, char **argv[],
 			 double *height, double *pixel_size,
 			 datum_type_t *datum, 
@@ -946,8 +960,9 @@ void parse_other_options(int *argc, char **argv[],
 {
     *datum = parse_datum_option(argc, argv);
     extract_double_options(argc, argv, height, "--height", "-h", NULL);
-    extract_double_options(argc, argv, pixel_size,
-			   "--pixel-size", "-ps", NULL);
+    //extract_double_options(argc, argv, pixel_size,
+    //	   "--pixel-size", "-ps", NULL);
+    *pixel_size = parse_pixel_size_option(argc, argv);
     *resample_method = parse_resample_method_option (argc, argv);
 }
 

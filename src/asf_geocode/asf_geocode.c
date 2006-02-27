@@ -1212,9 +1212,27 @@ main (int argc, char **argv)
   // start with the metadata from the input image and add the
   // geocoding parameters.
   meta_parameters *omd = meta_read (input_meta_data->str);
+  double x_pixel_size = omd->general->x_pixel_size;
+  double y_pixel_size = omd->general->y_pixel_size;
+  double x_scale = pixel_size / x_pixel_size;
+  double y_scale = pixel_size / y_pixel_size;
+  omd->general->x_pixel_size = pixel_size;
+  omd->general->y_pixel_size = pixel_size;
   omd->general->line_count = oiy_max + 1;
   omd->general->sample_count = oix_max + 1;
   omd->sar->image_type = 'P';
+  omd->sar->range_time_per_pixel *= x_scale; 
+  omd->sar->azimuth_time_per_pixel *= y_scale;
+  omd->sar->range_doppler_coefficients[1] *= x_scale;
+  omd->sar->range_doppler_coefficients[2] *= x_scale * x_scale;
+  omd->sar->azimuth_doppler_coefficients[1] *= y_scale;
+  omd->sar->azimuth_doppler_coefficients[2] *= y_scale * y_scale;
+  if (omd->projection) {
+    if (omd->projection->perY > 0)
+      pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
+    else
+      pc_per_y = (int) (omd->projection->perY / y_pixel_size - 0.5) * pixel_size;
+  }
   omd->projection = MALLOC(sizeof(meta_projection));
   memset (omd->projection, 0, sizeof(meta_projection));
   omd->projection->type = projection_type;
