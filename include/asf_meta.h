@@ -26,6 +26,7 @@
 #include "ddr.h"
 #include "geolocate.h"		/* For stateVector.  */
 #include "ceos.h"
+#include "asf_complex.h"
 
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
@@ -639,9 +640,11 @@ stateVector propagate(stateVector source, double sourceSec, double destSec);
  * start at the image start. Make nStVec of them, data_int seconds apart.*/
 void propagate_state(meta_parameters *meta,int nStVec,double data_int);
 
-/* Reads a subset of a non-complex image */
+/* Reads a subset of an image */
 void readSubset(char *fileName, int width, int height, int posX, int posY, 
 		float *subset);
+void readComplexSubset(char *fileName, int width, int height, int posX, int posY, 
+		       complexFloat *subset);
 
 /* Keep track of open meta and ddr structures, so that all updated
  * metadata can be written to the metafile, initialized in meta_init.c Nov '02 */
