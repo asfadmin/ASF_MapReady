@@ -342,12 +342,13 @@ static void parse_proj_args_file(char * file, project_parameters_t * pps,
 	*proj_type = POLAR_STEREOGRAPHIC;
 	get_fields(fp,
 		   "First standard parallel", &pps->ps.slat,
+		   "Standard Parallel", &pps->ps.slat,
 		   "Central Meridian", &pps->ps.slon,
 		   "False Easting", &pps->ps.false_easting,
 		   "False Northing", &pps->ps.false_northing,
   		   "Northern Projection", &is_north_pole,
 		   NULL);
-	pps->ps.is_north_pole = (int) is_north_pole;
+	pps->ps.is_north_pole = pps->ps.slat > 0;
     }
     else if (strcmp(buf, bracketed_projection_name(
 			UNIVERSAL_TRANSVERSE_MERCATOR)) == 0)
