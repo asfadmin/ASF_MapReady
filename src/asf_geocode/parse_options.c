@@ -179,9 +179,10 @@ static void get_fields(FILE * fp, ...)
 		}
 	    }
 
-	    if (!found)
-		asfPrintWarning("Unknown key found in projection file: %s\n",
-				buf);
+//  Changed to ignore fields that aren't understood
+//	    if (!found)
+//		asfPrintWarning("Unknown key found in projection file: %s\n",
+//				buf);
 	}
     }
 }
@@ -940,19 +941,6 @@ static resample_method_t parse_resample_method_option(int *argc, char **argv[])
   return ret;
 } 
 
-double parse_pixel_size_option(int *argc, char **argv[])
-{
-  char size_str[25];
-  double pixel_size;
-
-  if (extract_string_options(argc, argv, size_str, "--pixel_size", NULL)) {
-    sscanf(size_str, "%lf", &pixel_size);
-    return pixel_size;
-  }
-  else
-    return NAN;
-}
-
 void parse_other_options(int *argc, char **argv[],
 			 double *height, double *pixel_size,
 			 datum_type_t *datum, 
@@ -960,10 +948,18 @@ void parse_other_options(int *argc, char **argv[],
 {
     *datum = parse_datum_option(argc, argv);
     extract_double_options(argc, argv, height, "--height", "-h", NULL);
-    //extract_double_options(argc, argv, pixel_size,
-    //	   "--pixel-size", "-ps", NULL);
-    *pixel_size = parse_pixel_size_option(argc, argv);
+    extract_double_options(argc, argv, pixel_size,
+    	   "--pixel-size", "--pixel_size", "-ps", NULL);
     *resample_method = parse_resample_method_option (argc, argv);
+
+    /*******************
+          debug code for printing out the options after parsing ...
+    printf("argc, argv:\n");
+    int i;
+    for (i=0;i<*argc;++i) { printf(" %d: %s\n", i, (*argv)[i]); }
+    printf("pixel size: %g\n", *pixel_size);
+    exit(1);
+    **********************/
 }
 
 project_parameters_t * parse_projection_options(int *argc, char **argv[],
