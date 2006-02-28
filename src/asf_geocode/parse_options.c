@@ -944,13 +944,15 @@ static resample_method_t parse_resample_method_option(int *argc, char **argv[])
 void parse_other_options(int *argc, char **argv[],
 			 double *height, double *pixel_size,
 			 datum_type_t *datum, 
-			 resample_method_t *resample_method)
+			 resample_method_t *resample_method,
+			 int *override_checks)
 {
     *datum = parse_datum_option(argc, argv);
     extract_double_options(argc, argv, height, "--height", "-h", NULL);
     extract_double_options(argc, argv, pixel_size,
     	   "--pixel-size", "--pixel_size", "-ps", NULL);
     *resample_method = parse_resample_method_option (argc, argv);
+    *override_checks = extract_flags(argc, argv, "--force", "-f", NULL);
 
     /*******************
           debug code for printing out the options after parsing ...

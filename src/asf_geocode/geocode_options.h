@@ -60,7 +60,8 @@ project_parameters_t * get_geocode_options(int *argc, char ***argv,
 					   projection_type_t * proj_type,
 					   double *height, double *pixel_size,
 					   datum_type_t *datum,
-					   resample_method_t *resample_method);
+					   resample_method_t *resample_method,
+					   int *override_checks);
 
 /* Might want to make these static... they are called from get_geocode_options
    before it returns. */

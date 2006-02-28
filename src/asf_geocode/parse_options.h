@@ -19,6 +19,8 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 void parse_other_options(int *argc, char **argv[],
 			 double *height, double *pixel_size,
 			 datum_type_t *datum, 
-			 resample_method_t *resample_method);
+			 resample_method_t *resample_method,
+			 int *override_checks);
+
 void parse_log_options(int *argc, char **argv[]);
 #endif

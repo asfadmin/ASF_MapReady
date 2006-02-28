@@ -146,7 +146,17 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          images into projection geometry.  Available choices are:\n"\
 "            nearest_neighbor\n"\
 "            bilinear\n"\
-"	    bicubic "
+"	     bicubic\n"\
+"\n"\
+"     --force\n"\
+"            Override the built-in projection sanity checks.  asf_geocode\n"\
+"            by default will abort with an error if it detects that a\n"\
+"            scene lies in an area where the selected projection is\n"\
+"            going to give poor results.  However, you may still wish\n"\
+"            to do the projection anyway (such as when you will mosaic\n"\
+"            the result a number of other scenes and wish to have them\n"\
+"            all in the same projection), the --force option can be used\n"\
+"            in these situations."
 
 #define ASF_EXAMPLES_STRING \
 "     To map project an image with centerpoint at -147 degrees\n"\
@@ -236,7 +246,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 // Prototype
 void check_parameters(projection_type_t projection_type, 
-		      project_parameters_t *pp, meta_parameters *meta);
+		      project_parameters_t *pp, meta_parameters *meta,
+		      int override_checks);
 
 // Print invocation information.  */
 static void
@@ -535,6 +546,7 @@ main (int argc, char **argv)
   backtrace_action.sa_flags = 0;
   return_code = sigaction (SIGSEGV, &backtrace_action, NULL);  
   g_assert (return_code == 0);
+  int override_checks = FALSE;
 
   // Get the projection parameters from the command line.
   projection_type_t projection_type;
@@ -564,11 +576,13 @@ main (int argc, char **argv)
 
   project_parameters_t *pp 
     = get_geocode_options (&argc, &argv, &projection_type, &average_height, 
-			   &pixel_size, &datum, &resample_method);
+			   &pixel_size, &datum, &resample_method, &override_checks);
+
   // If help was requested, display it.
   if (detect_flag_options(argc, argv, "-help", "--help", NULL)) {
     help_page ();
   }
+
   // Get non-option command line arguments.
   if ( argc != 3 ) {
     fprintf (stderr, "wrong number of arguments\n");
@@ -589,7 +603,6 @@ main (int argc, char **argv)
   if ( imd->sar->image_type == 'S' ) {
     asfPrintError ("Can't handle slant range images (i.e. almost certainly \n"
 		   "left-looking AMM-1 era images) at present.\n");
-    
   }
 
 
@@ -647,7 +660,7 @@ main (int argc, char **argv)
 
   // Check whether projection parameters are valid, dying with an
   // error if they aren't.
-  check_parameters (projection_type, pp, imd);
+  check_parameters (projection_type, pp, imd, override_checks);
 
   // Convert all angle measures in the project_parameters to radians.
   to_radians (projection_type, pp);
