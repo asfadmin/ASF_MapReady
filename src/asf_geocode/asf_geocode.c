@@ -1247,10 +1247,30 @@ main (int argc, char **argv)
   else {
     omd->projection->hem = 'S';
   }
-  const double wgs84_semiminor_axis 
-    = WGS84_SEMIMAJOR * (1 - (1 / WGS84_INV_FLATTENING));
-  omd->projection->re_major = WGS84_SEMIMAJOR;
-  omd->projection->re_minor = wgs84_semiminor_axis;
+
+  /* output the correct earth radii based on the datum that was used
+     to do the projection */
+  if (datum == WGS84_DATUM) {
+    const double wgs84_semiminor_axis 
+      = WGS84_SEMIMAJOR * (1 - (1 / WGS84_INV_FLATTENING));
+    omd->projection->re_major = WGS84_SEMIMAJOR;
+    omd->projection->re_minor = wgs84_semiminor_axis;
+  } else if (datum == NAD27_DATUM) {
+    // NAD27 datum is based on clark 1866 ellipsoid
+    const double nad27_semiminor_axis 
+      = CLARKE1866_SEMIMAJOR * (1 - (1 / CLARKE1866_INV_FLATTENING));
+    omd->projection->re_major = CLARKE1866_SEMIMAJOR;
+    omd->projection->re_minor = nad27_semiminor_axis;
+  } else if (datum == NAD83_DATUM) {
+    // NAD83 datum is based on GRS80 ellipsoid
+    const double nad83_semiminor_axis 
+      = GRS1980_SEMIMAJOR * (1 - (1 / GRS1980_INV_FLATTENING));
+    omd->projection->re_major = GRS1980_SEMIMAJOR;
+    omd->projection->re_minor = nad83_semiminor_axis;
+  } else {
+    asfPrintError("Unsupported datum! %d\n", datum);
+  }
+
   // We need to convert things in this structure back to degrees.
   to_degrees (projection_type, pp);
   omd->projection->param = *pp;
