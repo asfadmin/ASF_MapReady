@@ -9,7 +9,7 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	-lm
 
-OBJS = main.o
+OBJS = main.o geolocate.o
 
 all:	xpix_ypix
 	rm *.o
