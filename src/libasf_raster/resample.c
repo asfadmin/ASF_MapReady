@@ -138,6 +138,12 @@ int resample(char *infile, char *outfile, double xscalfact, double yscalfact)
     metaOut->general->data_type = REAL32;
     metaOut->general->x_pixel_size = xpixsiz;
     metaOut->general->y_pixel_size = ypixsiz;
+    metaOut->sar->range_time_per_pixel /= xscalfact;
+    metaOut->sar->azimuth_time_per_pixel /= yscalfact;
+    metaOut->sar->range_doppler_coefficients[1] /= xscalfact;
+    metaOut->sar->range_doppler_coefficients[2] /= xscalfact / xscalfact;
+    metaOut->sar->azimuth_doppler_coefficients[1] /= yscalfact;
+    metaOut->sar->azimuth_doppler_coefficients[2] /= yscalfact * yscalfact;
     meta_write(metaOut, outfile);
 
   /*--------  Process inbuf to give outbuf ------------------------*/
