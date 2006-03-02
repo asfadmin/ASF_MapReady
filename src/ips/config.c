@@ -317,7 +317,7 @@ dem_config *init_fill_config(char *configFile)
   strcpy(cfg->geocode->proj, "");
   cfg->geocode->resample = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->geocode->resample, "bilinear");
-  cfg->geocode->pixel_spacing = 100;
+  cfg->geocode->pixel_spacing = 20;
   cfg->geocode->status = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->geocode->status, "new");
   

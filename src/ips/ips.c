@@ -1129,6 +1129,13 @@ main(int argc, char *argv[])
        For UTM projection the center longitude can be passed in.
        For Albers Conic Equal Area, Lambert Conformal Conic and Polar Stereographic
        we can use predefined projection files.*/
+    if (cfg->geocode->pixel_spacing < 5) {
+      printf("\n   WARNING: pixel spacing out of range - "
+	     "set to default value of 20\n\n");
+      cfg->geocode->pixel_spacing = 20;
+      check_return(write_config(configFile, cfg), 
+		   "Could not update configuration file"); 
+    }
     if (strcmp(cfg->geocode->name, "utm")==0) {
       if (!fileExists(cfg->geocode->proj)) {
 	sprintf(tmp, "--projection utm --resample-method %s --pixel_size %.1lf", 
