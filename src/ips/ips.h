@@ -117,13 +117,9 @@ typedef struct {
   char *name;		/* name of projection */
   char *proj;		/* name of projection file */
   char *resample;       /* resampling method: nearest neighbor, bilinear, bicubic */
+  double pixel_spacing;	/* pixel spacing */
   char *status;         /* status of processing */	
 } s_geocode;
-
-typedef struct {
-  int pixel_spacing;	/* pixel spacing */
-  char *status;         /* status of processing */
-} s_resample;
 
 typedef struct {
   char *format;         /* export format: geotiff, jpeg etc. */
@@ -154,7 +150,6 @@ typedef struct {
   s_elev *elevation;		/* elevation and elevation error */
   s_status *ground_range;      	/* ground range DEM */
   s_geocode *geocode;		/* geocoding */
-  s_resample *resample;         /* resampling geocoded images */
   s_export *export;             /* export from internal to external format */
 } dem_config;
 

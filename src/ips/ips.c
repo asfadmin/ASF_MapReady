@@ -1131,12 +1131,12 @@ main(int argc, char *argv[])
        we can use predefined projection files.*/
     if (strcmp(cfg->geocode->name, "utm")==0) {
       if (!fileExists(cfg->geocode->proj)) {
-	sprintf(tmp, "--projection utm --resample-method %s", 
-		cfg->geocode->resample);
+	sprintf(tmp, "--projection utm --resample-method %s --pixel_size %.1lf", 
+		cfg->geocode->resample, cfg->geocode->pixel_spacing);
       }
       else {
-	sprintf(tmp, "--read_proj_file %s --resample-method %s",
-		cfg->geocode->proj, cfg->geocode->resample);
+	sprintf(tmp, "--read_proj_file %s --resample-method %s --pixel_size %.1lf",
+		cfg->geocode->proj, cfg->geocode->resample, cfg->geocode->pixel_spacing);
       }
     }
     else if (strcmp(cfg->geocode->name, "albers")==0 ||
@@ -1144,8 +1144,8 @@ main(int argc, char *argv[])
 	     strcmp(cfg->geocode->name, "ps")==0) {
       if (!fileExists(cfg->geocode->proj)) 
 	check_return(1, "projection file does not exist");
-      sprintf(tmp, "--read_proj_file %s --resample-method %s",
-	      cfg->geocode->proj, cfg->geocode->resample);
+      sprintf(tmp, "--read_proj_file %s --resample-method %s --pixel_size %.1lf",
+	      cfg->geocode->proj, cfg->geocode->resample, cfg->geocode->pixel_spacing);
     }
     check_return(asf_geocode(tmp, "elevation", cfg->geocode->dem), 
 		 "geocoding ground range DEM (geocode)");      
@@ -1159,16 +1159,6 @@ main(int argc, char *argv[])
     sprintf(cfg->geocode->status, "success");
   }   
   
-  /* Resampling still needs to be implemented *
-  if (cfg->resample->pixel_spacing < 5 || cfg->resample->pixel_spacing > 500) {
-    printf("\n   WARNING: pixel spacing out of range - "
-	   "set to default value of 20\n\n");
-    cfg->resample->pixel_spacing = 20;
-    check_return(write_config(configFile, cfg), 
-		 "Could not update configuration file"); 
-  }
-  ****************************************************************************/
-
   /* Exporting */
   if (check_status(cfg->export->status)) {
     if (strcmp(uc(cfg->export->format), "TIFF")==0) {

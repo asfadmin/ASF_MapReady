@@ -142,7 +142,6 @@ dem_config *init_fill_config(char *configFile)
   cfg->elevation = newStruct(s_elev);
   cfg->ground_range = newStruct(s_status);
   cfg->geocode = newStruct(s_geocode);
-  cfg->resample = newStruct(s_resample);
   cfg->export = newStruct(s_export);
   
   /* initialize structure */
@@ -318,13 +317,10 @@ dem_config *init_fill_config(char *configFile)
   strcpy(cfg->geocode->proj, "");
   cfg->geocode->resample = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->geocode->resample, "bilinear");
+  cfg->geocode->pixel_spacing = 100;
   cfg->geocode->status = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->geocode->status, "new");
   
-  cfg->resample->pixel_spacing = 100;
-  cfg->resample->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->resample->status, "new");
-
   cfg->export->format = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->export->format, "geotiff");
   cfg->export->status = (char *)MALLOC(sizeof(char)*25);
@@ -386,7 +382,7 @@ dem_config *init_fill_config(char *configFile)
       if (strncmp(test, "resampling method", 17)==0)
 	cfg->geocode->resample = read_str(line, "resampling method");
       if (strncmp(test, "pixel spacing", 13)==0) 
-	cfg->resample->pixel_spacing = read_int(line, "pixel spacing");
+	cfg->geocode->pixel_spacing = read_int(line, "pixel spacing");
     }
     FCLOSE(fDefaults);
   }
@@ -763,18 +759,12 @@ dem_config *read_config(char *configFile, int cFlag)
 	cfg->geocode->proj = read_str(line, "projection file");
       if (strncmp(test, "resampling method", 17)==0)
 	cfg->geocode->resample = read_str(line, "resampling method");
+      if (strncmp(test, "pixel spacing", 13)==0) 
+	cfg->geocode->pixel_spacing = read_double(line, "pixel spacing");
       if (strncmp(test, "status", 6)==0) 
 	cfg->geocode->status = read_str(line, "status");   
     }
     
-    if (strncmp(line, "[Resample]", 10)==0) strcpy(params, "resample");
-    if (strcmp(params, "resample")==0) {
-      if (strncmp(test, "pixel spacing", 13)==0) 
-	cfg->resample->pixel_spacing = read_int(line, "pixel spacing");
-      if (strncmp(test, "status", 6)==0)
-	cfg->resample->status = read_str(line, "status");
-    } 
-
     if (strncmp(line, "[Export]", 8)==0) strcpy(params, "export");
     if (strcmp(params, "export")==0) {
       test = read_param(line);
@@ -975,12 +965,8 @@ int write_config(char *configFile, dem_config *cfg)
     fprintf(fConfig, "projection name = %s\n", cfg->geocode->name);
     fprintf(fConfig, "projection file = %s\n", cfg->geocode->proj);
     fprintf(fConfig, "resampling method = %s\n", cfg->geocode->resample);
+    fprintf(fConfig, "pixel spacing = %.1lf\n", cfg->geocode->pixel_spacing);
     fprintf(fConfig, "status = %s\n\n", cfg->geocode->status);
-    /* Resampling of geocoded images before exporting still to be implemented 
-    fprintf(fConfig, "[Resample]\n");
-    fprintf(fConfig, "pixel spacing = %s\n", cfg->resample->pixel_spacing);
-    fprintf(fConfig, "status = %s\n\n", cfg->resample->status);
-    ***************************************************************************/
     fprintf(fConfig, "[Export]\n");
     fprintf(fConfig, "format = %s\n", cfg->export->format);
     fprintf(fConfig, "status = %s\n\n", cfg->export->status);
