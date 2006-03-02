@@ -144,6 +144,7 @@ PROGRAMS
 	image_stats { }
 	offset_test { }
 	detect_cr { }
+	xpix_ypix { }
 
 
 @src_tc/
