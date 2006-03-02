@@ -24,7 +24,7 @@ void check_parameters(projection_type_t projection_type,
 
   if (override_checks) {
     asfPrintStatus("Since --force was specified, projection errors will be "
-		   "reported as warnings.\n");
+		   "reported as warnings.\n\n");
     report_func = asfPrintWarning;
   } else {
     report_func = asfPrintError;
@@ -118,14 +118,24 @@ void check_parameters(projection_type_t projection_type,
 
       // Distortion test - only areas with a latitude above 60 degrees North or 
       // below -60 degrees South are permitted
-      if (meta->general->center_latitude < 50.0 && pp->ps.is_north_pole)
-        report_func("Geocoding of areas below 60 degrees latitude in the "
+      if (meta->general->center_latitude < 60.0 && pp->ps.is_north_pole) {
+	if (override_checks)
+	  report_func("Geocoding of areas below 60 degrees latitude in the "
+                      "polar stereographic map projection is not advisable.\n");
+	else
+	  report_func("Geocoding of areas below 60 degrees latitude in the "
                       "polar stereographic map projection is not supported "
-                      "by this tool\n");
-      if (meta->general->center_latitude > -60.0 && !pp->ps.is_north_pole)
-        report_func("Geocoding of areas above -60 degrees latitude in the "
+		      "by this tool.\n");
+      }
+      if (meta->general->center_latitude > -60.0 && !pp->ps.is_north_pole) {
+	if (override_checks)
+	  report_func("Geocoding of areas above -60 degrees latitude in the "
+                      "polar stereographic map projection is not advisable.\n");
+	else
+	  report_func("Geocoding of areas above -60 degrees latitude in the "
                       "polar stereographic map projection is not supported "
-                      "by this tool\n");
+		      "by this tool.\n");
+      }
 
       break;
 
@@ -164,13 +174,20 @@ void check_parameters(projection_type_t projection_type,
 	max_lat = pp->albers.std_parallel1 + 30.0;
       }
       if (meta->general->center_latitude > max_lat ||
-	  meta->general->center_latitude < min_lat)
-	report_func("Geocoding of areas with latitudes outside the defined range "
+	  meta->general->center_latitude < min_lat) {
+	if (override_checks)
+	  report_func("Geocoding of areas with latitudes outside the defined range "
+		      "(%.1f deg %.1f deg) in the Albers Equal Area projection with "
+		      "the standard parallels (first: %.1f and second: %.1f ) is "
+		      "not advisable.\n", min_lat, max_lat,
+		      pp->albers.std_parallel1, pp->albers.std_parallel2);
+	else
+	  report_func("Geocoding of areas with latitudes outside the defined range "
 		      "(%.1f deg %.1f deg) in the Albers Equal Area projection with "
 		      "the standard parallels (first: %.1f and second: %.1f ) is "
 		      "not supported by this tool.\n", min_lat, max_lat,
 		      pp->albers.std_parallel1, pp->albers.std_parallel2);
-
+      }
       break;
 
     case LAMBERT_CONFORMAL_CONIC:
@@ -207,12 +224,20 @@ void check_parameters(projection_type_t projection_type,
 	max_lat = pp->lamcc.plat1 + 30.0;
       }
       if (meta->general->center_latitude > max_lat ||
-	  meta->general->center_latitude < min_lat)
-	report_func("Geocoding of areas with latitudes outside the defined range "
+	  meta->general->center_latitude < min_lat) {
+	if (override_checks)
+	  report_func("Geocoding of areas with latitudes outside the defined range "
+		      "(%.1f deg %.1f deg) in the Lambert Conformal Conic "
+		      "projection with the standard parallels (first: %.1f and "
+		      "second: %.1f ) is not advisable.\n", min_lat, 
+		      max_lat, pp->lamcc.plat1, pp->lamcc.plat2);
+	else
+	  report_func("Geocoding of areas with latitudes outside the defined range "
 		      "(%.1f deg %.1f deg) in the Lambert Conformal Conic "
 		      "projection with the standard parallels (first: %.1f and "
 		      "second: %.1f ) is not supported by this tool.\n", min_lat, 
 		      max_lat, pp->lamcc.plat1, pp->lamcc.plat2);
+      }
 
       break;
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
