@@ -192,7 +192,7 @@ void check_parameters(projection_type_t projection_type,
 
     case LAMBERT_CONFORMAL_CONIC:
       // Debugging print
-      printf("Projection: Albert Equal Area Conic\nFirst standard parallel: %.4f\n"
+      printf("Projection: Lambert Conformal Conic\nFirst standard parallel: %.4f\n"
 	     "Second standard parallel: %.4f\nCentral meridian: %.4f\n"
 	     "Latitude of origin: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n",
 	     pp->lamcc.plat1, pp->lamcc.plat2, pp->lamcc.lon0, pp->lamcc.lat0,
