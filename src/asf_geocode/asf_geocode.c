@@ -139,7 +139,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          applies to the target coordinate system.  Supported Datums:\n"\
 "            NAD27  (North American Datum 1927) (Clarke 1866)\n"\
 "            NAD83  (North American Datum 1983) (GRS 1980)\n"\
-"            WGS84  (World Geodetic System 1984) (default).\\n\n"\
+"            WGS84  (World Geodetic System 1984) (default).\n"\
 "\n"\
 "     --resample-method <method>\n"\
 "          Specifies which interpolation method to use when resampling\n"\
@@ -147,6 +147,10 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "            nearest_neighbor\n"\
 "            bilinear\n"\
 "	     bicubic\n"\
+"\n"\
+"     --pixel_size <pixel spacing>\n"\
+"          Specifies the pixel spacing of the geocoded image.  asf_geocode\n"\
+"          by default will preserve the pixel size of the input image.\n"\
 "\n"\
 "     --force\n"\
 "            Override the built-in projection sanity checks.  asf_geocode\n"\
