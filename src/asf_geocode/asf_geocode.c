@@ -839,14 +839,24 @@ main (int argc, char **argv)
     g_free (lats);
   }
 
-  // The pixel size requested by the user better not imply a higher
-  // resolution than is available in the input image.
-  if ( imd->general->x_pixel_size > pixel_size 
-       || imd->general->y_pixel_size > pixel_size ) {
+  // Issue a warning when the chosen pixel size is smaller than the
+  // input pixel size.
+  if ( GSL_MIN(imd->general->x_pixel_size, 
+	       imd->general->y_pixel_size) > pixel_size ) {
+    asfPrintWarning 
+      ("Requested pixel size %lf is smaller then the input image resolution "
+       "(%le meters).\n", pixel_size, 
+       GSL_MIN (imd->general->x_pixel_size, imd->general->y_pixel_size));
+  }
+
+  // The pixel size requested by the user better not oversample by
+  // the factor of 2.
+  if ( GSL_MIN(imd->general->x_pixel_size, 
+	       imd->general->y_pixel_size) > (2*pixel_size) ) {
     asfPrintError 
-      ("Requested pixel size %lf is smaller then the minimum implied by the \n"
-       "input image resolution (%le meters), this is not allowed.\n", 
-       pixel_size, GSL_MAX (imd->general->x_pixel_size, 
+      ("Requested pixel size %lf is smaller then the minimum implied by half \n"
+       "the input image resolution (%le meters), this is not supported.\n", 
+       pixel_size, GSL_MIN (imd->general->x_pixel_size, 
 			    imd->general->y_pixel_size));
   }
 
