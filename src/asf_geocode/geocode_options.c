@@ -24,11 +24,15 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
     /* projection parameters obtained from the command line */
     project_parameters_t * pps;
 
+    /* TRUE if we did a write-proj-file */
+    int did_write_proj_file = FALSE;
+
     /* must pull out logfile first, so we can log projection parsing errors */
     parse_log_options(argc, argv);
 
     /* get the projection params out of the cmd line & remove from cmd line */
-    pps = parse_projection_options(argc, argv, proj_type);
+    pps = parse_projection_options(argc, argv, proj_type,
+				   &did_write_proj_file);
 
     if (pps)
     {
@@ -39,6 +43,13 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 
 	/* here the semantics of the projection parameters are applied */
 	sanity_check(*proj_type, pps);
+    }
+
+    /* Exit now if no input/output files are specified, and the 
+       "write-proj-file" option was specified */
+    if (did_write_proj_file && *argc == 1) {
+      asfPrintStatus("No input files.\n");
+      exit(EXIT_SUCCESS);
     }
 
     return pps;

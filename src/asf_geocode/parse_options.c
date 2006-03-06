@@ -965,7 +965,8 @@ void parse_other_options(int *argc, char **argv[],
 }
 
 project_parameters_t * parse_projection_options(int *argc, char **argv[],
-						projection_type_t * proj_type)
+						projection_type_t * proj_type,
+						int *did_write_proj_file)
 {
     int i;
     project_parameters_t *pps = malloc(sizeof(project_parameters_t));
@@ -1382,7 +1383,11 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 	}
 
 	if (write_file)
+	{
+	    *did_write_proj_file = TRUE;
+	    asfPrintStatus("Projection file \"%s\" written\n", write_file);
 	    write_args(*proj_type, pps, write_file);
+	}
 
 	return pps;
     }
