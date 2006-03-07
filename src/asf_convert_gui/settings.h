@@ -34,6 +34,9 @@ typedef struct
   double height;
   int datum;
   int resample_method;
+
+  /* misc */
+  int keep_files;
 }
 Settings;
 

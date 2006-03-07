@@ -34,7 +34,8 @@ settings_apply_to_gui(const Settings * s)
     *output_format_combobox,
     *scale_checkbutton,
     *output_bytes_checkbutton,
-    *scaling_method_combobox;
+    *scaling_method_combobox,
+    *keep_files_checkbutton;
 
   input_data_type_combobox = 
     glade_xml_get_widget(glade_xml, "input_data_type_combobox");
@@ -50,6 +51,9 @@ settings_apply_to_gui(const Settings * s)
 
   scale_checkbutton = 
     glade_xml_get_widget(glade_xml, "scale_checkbutton");
+
+  keep_files_checkbutton = 
+    glade_xml_get_widget(glade_xml, "keep_files_checkbutton");
 
   set_combo_box_item(input_data_format_combobox, s->input_data_format);
   set_combo_box_item(input_data_type_combobox, s->data_type);
@@ -245,6 +249,9 @@ settings_apply_to_gui(const Settings * s)
 	  set_combo_box_item(resample_option_menu, s->resample_method);
       }
   }
+
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(keep_files_checkbutton),
+			       s->keep_files);
 }
 
 Settings *
@@ -258,7 +265,8 @@ settings_get_from_gui()
     *scale_checkbutton,
     *output_bytes_checkbutton,
     *scaling_method_combobox,
-    *geocode_checkbutton;
+    *geocode_checkbutton,
+    *keep_files_checkbutton;
 
   Settings *ret;
 
@@ -278,6 +286,9 @@ settings_get_from_gui()
 
   scale_checkbutton = 
     glade_xml_get_widget(glade_xml, "scale_checkbutton");
+
+  keep_files_checkbutton = 
+    glade_xml_get_widget(glade_xml, "keep_files_checkbutton");
 
   ret->data_type = get_combo_box_item(input_data_type_combobox);
   ret->input_data_format = get_combo_box_item(input_data_format_combobox);
@@ -456,9 +467,10 @@ settings_get_from_gui()
 
       ret->resample_method =
 	gtk_option_menu_get_history(GTK_OPTION_MENU(resample_option_menu));
-				    
-      
   }
+
+  ret->keep_files = 
+    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(keep_files_checkbutton));
 
   return ret;
 }
@@ -669,7 +681,8 @@ settings_equal(const Settings *s1, const Settings *s2)
 
     if (s1->input_data_format == s2->input_data_format &&
         s1->data_type == s2->data_type &&
-        s1->output_format == s2->output_format)
+        s1->output_format == s2->output_format &&
+        s1->keep_files == s2->keep_files)
     {
         gchar * lat1 =
 	  g_strdup(settings_get_latitude_argument(s1));

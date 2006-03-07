@@ -665,18 +665,21 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
       /* delete temporary .img/.meta pair generated before geocoding,
          they are just eating up space ... */
 
-      gchar * fname;
-      fname = (gchar *) 
+      if (!user_settings->keep_files)
+      {
+	gchar * fname;
+	fname = (gchar *) 
           g_malloc(sizeof(gchar) * 
-              (strlen(before_geocoding_basename) + 10));
+		   (strlen(before_geocoding_basename) + 10));
+	
+	sprintf(fname, "%s.img", before_geocoding_basename);
+	remove(fname);
 
-      sprintf(fname, "%s.img", before_geocoding_basename);
-      remove(fname);
+	sprintf(fname, "%s.meta", before_geocoding_basename);
+	remove(fname);
 
-      sprintf(fname, "%s.meta", before_geocoding_basename);
-      remove(fname);
-
-      g_free(fname);
+	g_free(fname);
+      }
     }
 
     if (!err && settings_get_run_export(user_settings))
@@ -710,6 +713,20 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 	  settings_get_output_format_can_be_thumbnailed(user_settings))
       {
 	  set_thumbnail(iter, out_full);
+      }
+
+      if (!user_settings->keep_files)
+      {
+	gchar * fname = (gchar *) 
+          g_malloc(sizeof(gchar) * (strlen(out_basename) + 10));
+	
+	sprintf(fname, "%s.img", out_basename);
+	remove(fname);
+
+	sprintf(fname, "%s.meta", out_basename);
+	remove(fname);
+
+	g_free(fname);
       }
 
       g_free(cmd_output);
