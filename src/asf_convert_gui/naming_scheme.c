@@ -274,13 +274,10 @@ static void apply_naming_scheme(const NamingScheme * new,
         gchar * old_output_basename;
         gchar * input_file_name;
         gchar * input_basename;
-        gchar * path;
                 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                             COL_DATA_FILE, &input_file_name,
                             COL_OUTPUT_FILE, &current_output_name, -1);
-
-        path = g_path_get_dirname(input_file_name);
         
         input_basename = g_path_get_basename(input_file_name);
         chop_ext(input_basename);
@@ -292,6 +289,8 @@ static void apply_naming_scheme(const NamingScheme * new,
 
         if (strcmp(current_output_basename, old_output_basename) == 0)
         {
+	    gchar * path = g_path_get_dirname(current_output_name);
+
             /* current name is using default scheme - apply */
             gchar * new_output_name;
             gchar * new_output_basename;
@@ -312,6 +311,7 @@ static void apply_naming_scheme(const NamingScheme * new,
 
             g_free(new_output_name);
             g_free(new_output_basename);
+	    g_free(path);
         }
         else
         {
@@ -321,7 +321,6 @@ static void apply_naming_scheme(const NamingScheme * new,
         g_free(old_output_basename);
         g_free(current_output_basename);
         g_free(input_basename);
-        g_free(path);
         g_free(input_file_name);
         g_free(current_output_name);
 
