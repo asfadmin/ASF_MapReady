@@ -145,6 +145,9 @@ const char * geocode_options_string(const Settings * settings)
 	if (settings->specified_height)
 	    sprintf(ret, "%s --height %f ", ret, settings->height);
 
+	if (settings->specified_pixel_size)
+	    sprintf(ret, "%s --pixel_size %f ", ret, settings->pixel_size);
+
 	sprintf(ret, "%s --datum %s ", ret, datum_string(settings->datum));
 
 	sprintf(ret, "%s --resample-method %s ", ret, 
@@ -201,8 +204,10 @@ void geocode_options_changed()
     GtkWidget * false_easting_label;
 
     GtkWidget * average_height_checkbutton;
+    GtkWidget * pixel_size_checkbutton;
 
     GtkWidget * hbox_average_height;
+    GtkWidget * hbox_pixel_size;
 
     GtkWidget * datum_hbox;
 
@@ -211,6 +216,7 @@ void geocode_options_changed()
     gboolean geocode_projection_is_checked;
     gboolean predefined_projection_is_selected;
     gboolean average_height_is_checked;
+    gboolean pixel_size_is_checked;
     gint projection;
 
     gboolean enable_projection_option_menu = FALSE;
@@ -228,6 +234,9 @@ void geocode_options_changed()
 
     gboolean enable_average_height_checkbutton = FALSE;
     gboolean enable_average_height_entry = FALSE;
+
+    gboolean enable_pixel_size_checkbutton = FALSE;
+    gboolean enable_pixel_size_entry = FALSE;
 
     gboolean enable_datum_hbox = FALSE;
 
@@ -247,6 +256,9 @@ void geocode_options_changed()
 
     average_height_checkbutton =
 	glade_xml_get_widget(glade_xml, "average_height_checkbutton");
+
+    pixel_size_checkbutton =
+	glade_xml_get_widget(glade_xml, "pixel_size_checkbutton");
 
     projection_option_menu =
 	glade_xml_get_widget(glade_xml, "projection_option_menu");
@@ -455,6 +467,7 @@ void geocode_options_changed()
 	}
 
 	enable_average_height_checkbutton = TRUE;
+	enable_pixel_size_checkbutton = TRUE;
 	enable_datum_hbox = TRUE;
 	enable_resample_hbox = TRUE;
 
@@ -462,8 +475,15 @@ void geocode_options_changed()
 	    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
 					     average_height_checkbutton));
 
+	pixel_size_is_checked = 
+	    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+					     pixel_size_checkbutton));
+
 	if (average_height_is_checked)
 	    enable_average_height_entry = TRUE;
+
+	if (pixel_size_is_checked)
+	    enable_pixel_size_entry = TRUE;
 
 	set_predefined_projections(projection);
     }
@@ -509,6 +529,9 @@ void geocode_options_changed()
 
     hbox_average_height =
 	glade_xml_get_widget(glade_xml, "hbox_average_height");
+
+    hbox_pixel_size =
+	glade_xml_get_widget(glade_xml, "hbox_pixel_size");
 
     datum_hbox =
 	glade_xml_get_widget(glade_xml, "datum_hbox");
@@ -564,6 +587,12 @@ void geocode_options_changed()
     gtk_widget_set_sensitive(hbox_average_height,
 			     enable_average_height_entry);
 
+    gtk_widget_set_sensitive(pixel_size_checkbutton,
+			     enable_pixel_size_checkbutton);
+
+    gtk_widget_set_sensitive(hbox_pixel_size,
+			     enable_pixel_size_entry);
+
     gtk_widget_set_sensitive(datum_hbox,
 			     enable_datum_hbox);
 
@@ -618,6 +647,12 @@ on_geocode_checkbutton_toggled(GtkWidget * widget)
 
 SIGNAL_CALLBACK void
 on_height_checkbutton_toggled(GtkWidget * widget)
+{
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+on_pixel_size_checkbutton_toggled(GtkWidget * widget)
 {
     geocode_options_changed();
 }

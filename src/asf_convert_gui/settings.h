@@ -32,6 +32,8 @@ typedef struct
 
   int specified_height;
   double height;
+  int specified_pixel_size;
+  double pixel_size;
   int datum;
   int resample_method;
 

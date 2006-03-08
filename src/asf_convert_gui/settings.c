@@ -162,6 +162,7 @@ settings_apply_to_gui(const Settings * s)
 	  GtkWidget * false_northing_entry;
 	  GtkWidget * false_easting_entry;
 	  GtkWidget * average_height_checkbutton;
+	  GtkWidget * pixel_size_checkbutton;
 	  GtkWidget * datum_option_menu;
 	  GtkWidget * resample_option_menu;
 
@@ -236,6 +237,24 @@ settings_apply_to_gui(const Settings * s)
 	      
 	      sprintf(tmp, "%f", s->height);
 	      gtk_entry_set_text(GTK_ENTRY(average_height_entry), tmp);
+	  }
+
+	  pixel_size_checkbutton =
+	      glade_xml_get_widget(glade_xml, "pixel_size_checkbutton");
+
+	  gtk_toggle_button_set_active(
+	      GTK_TOGGLE_BUTTON(pixel_size_checkbutton), 
+	      s->specified_pixel_size);
+
+	  if (s->specified_pixel_size)
+	  {
+	      GtkWidget * pixel_size_entry;
+	      
+	      pixel_size_entry =
+		  glade_xml_get_widget(glade_xml, "pixel_size_entry");
+	      
+	      sprintf(tmp, "%f", s->pixel_size);
+	      gtk_entry_set_text(GTK_ENTRY(pixel_size_entry), tmp);
 	  }
 
 	  datum_option_menu =
@@ -393,6 +412,8 @@ settings_get_from_gui()
 	  *false_easting_entry, 
 	  *average_height_checkbutton,
 	  *average_height_entry,
+	  *pixel_size_checkbutton,
+	  *pixel_size_entry,
 	  *datum_option_menu,
 	  *resample_option_menu;
 
@@ -453,6 +474,22 @@ settings_get_from_gui()
 
 	  ret->height =
 	      atof(gtk_entry_get_text(GTK_ENTRY(average_height_entry)));
+      }
+
+      pixel_size_checkbutton =
+	  glade_xml_get_widget(glade_xml, "pixel_size_checkbutton");
+
+      ret->specified_pixel_size = 
+	  gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+					   pixel_size_checkbutton));
+
+      if (ret->specified_pixel_size)
+      {
+	  pixel_size_entry =
+	      glade_xml_get_widget(glade_xml, "pixel_size_entry");
+
+	  ret->pixel_size =
+	      atof(gtk_entry_get_text(GTK_ENTRY(pixel_size_entry)));
       }
       
       datum_option_menu =
