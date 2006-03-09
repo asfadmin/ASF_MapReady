@@ -20,7 +20,11 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   asf_geocode"
 
 #define ASF_USAGE_STRING \
-"     --help"
+"-p <projection name> <<projection parameters>>\n"\
+"       [--force] [--resample-method <method>] [--height <height>]\n"\
+"       [--datum <datum>] [--pixel-size <pixel size>]\n\n"\
+"   Or \"asf_geocode --help\" for more options on specifying\n"\
+"   projection parameters.\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program takes a map projected or an unprojected (ground\n"\
@@ -589,7 +593,19 @@ main (int argc, char **argv)
 
   // Get non-option command line arguments.
   if ( argc != 3 ) {
-    fprintf (stderr, "wrong number of arguments\n");
+    int ii;
+    int bad_arg = FALSE;
+
+    for (ii = 0; ii < argc; ++ii) {
+      if (argv[ii][0] == '-') {
+	bad_arg = TRUE;
+	asfPrintStatus("Unrecognized argument: %s\n", argv[ii]);
+      }
+    }
+
+    if (!bad_arg)
+      fprintf (stderr, "Wrong number of arguments\n");
+
     usage ();
   }
 
