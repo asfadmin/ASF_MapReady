@@ -1,0 +1,15 @@
+import = 1
+geocoding =1
+export = 1
+intermediates = 0
+input format = CEOS
+radiometry = AMPLITUDE_IMAGE
+look up table = /export/apd/rgens/L1/cis/cis_ice.lut
+projection = /export/home/rgens/svnbuild/asf_tools/share/projections/lambert_conformal_conic/lambert_conformal_conic_cis.proj
+pixel spacing = 250
+height = 0.0
+datum = WGS84
+resampling = BILINEAR
+force = 1
+output format = GEOTIFF
+byte conversion = SIGMA
