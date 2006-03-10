@@ -1,103 +1,57 @@
-#ifndef EXPORT_CEOS_H
-#define EXPORT_CEOS_H
+#ifndef ASF_CONVERT_H
+#define ASF_CONVERT_H
 
 typedef struct
 {
-    char *in_data_name;     /* input data file name */
-    char *in_meta_name;     /* input metadata file name */
-    char *in_format;        /* input format: CEOS, ASF */
-    char *data_type;        /* data type: amplitude, power, sigma, gamma,
-                                beta */
-    char *out_name;         /* output file name */
-    char *out_format;       /* output format: ASF, CEOS, GEOTIFF, ENVI, ESRI, JPEG,
-                                PPM, PNG, LAS */
-    int resample;           /* resampling flag */
-    int browse;             /* browse image flag */
-    char *logFile;          /* log file name */
-    int geocoding;          /* geocoding flag */
-    int batch;              /* batch mode flag */
-    char *batchFile;        /* batch file name */
-    char *units;            /* units as defined in the default values file */
+  char *in_name;          // input file name
+  char *out_name;         // output file name
+  int import;             // import flag
+  int geocoding;          // geocoding flag
+  int export;             // export flag
+  int intermediates;      // flag to keep intermediates
+  char *defaults;         // default values file
+  char *batchFile;        // batch file name
 } s_general;
 
 typedef struct
 {
-    char *projection;       /* projection: POLARSTEREO, UTM, ALBERS,
-                                LAMBERT1, LAMBERT2 */
-    int background;         /* background fill color */
-    double pixel;           /* pixel size for geocoding */
-    double height;          /* average height of the data */
+  char *format;           // input format: CEOS, STF, ASF
+  char *radiometry;       // data type: AMPLITUDE_IMAGE, 
+                          // POWER_IMAGE, 
+                          // SIGMA_IMAGE, 
+                          // GAMMA_IMAGE,
+                          // BETA_IMAGE
+  char *lut;              // look up table file name (CIS only)
+  double lat_begin;       // latitude constraint begin
+  double lat_end;         // latitude constraint end
+  char *prc;              // precision state vector location (to be implemented)
+} s_import;
+
+typedef struct
+{
+  char *projection;       // projection parameters file
+  double pixel;           // pixel size for geocoding
+  double height;          // average height of the data
+  char *datum;            // datum: WGS84, NAD27, NAD83
+  char *resampling;       // resampling method: NEAREST_NEIGHBOR, BILINEAR, BICUBIC
+  int force;              // force flag
 } s_geocoding;
 
 typedef struct
 {
-    int kernel;             /* kernel size for reducing the output image size */
-} s_resampling;
+  char *format;           // output format: ASF, GEOTIFF, JPEG, PPM
+  char *byte;             // conversion to byte: SIGMA, MINMAX, TRUNCATE, 
+                          // HISTOGRAM_EQUALIZE
+} s_export;
 
 typedef struct
 {
-    int datum;              /* datum */
-    double center_lon;      /* center longitude */
-    double center_lat;      /* standard parallel */
-    char *units;            /* units */
-} s_azimuthal;
-
-typedef struct
-{
-    int datum;              /* datum */
-    int zone;               /* UTM zone number */
-    char *units;            /* units */
-} s_utm;
-
-typedef struct
-{
-    int datum;                  /* datum */
-    double first_parallel;      /* first standard parallel */
-    double second_parallel;     /* second standard parallel */
-    double center_meridian;     /* center meridian */
-    double orig_latitude;       /* latitude of projection origin */
-    char *units;                /* units */
-} s_conic;
-
-typedef struct
-{
-    char comment[255];          /* first line for comments */
-    s_general *general;         /* general processing details */
-    s_geocoding *geocoding;     /* geocoding parameters */
-    s_resampling *resampling;   /* resampling parameters */
-    s_azimuthal *polar;         /* parameters for Polarstereo coordinates */
-    s_utm *utm;                 /* parameters for UTM coordinates */
-    s_conic *albers;            /* parameters for Albers coordinates */
-    s_azimuthal *lambert_az;    /* parameters for Lambert Azimuthal Equal Area
-                                    coordinates */
-    s_conic *lambert_cc;        /* parameters for Lambert Conformal Conic
-                                    coordinates */
-} s_config;
-
-typedef enum
-{
-    CEOS=1,
-    ASF,
-    TIFF,
-    GEOTIFF,
-    JPEG,
-    ENVI,
-    ESRI,
-    PPM,
-    PNG,
-    LAS
-} file_format_t;
-
-/* Index keys for all flags used in this program via a 'flags' array */
-typedef enum {
-    f_FORMAT=1,
-    f_SIZE,
-    f_CONFIG,
-    f_CONFIG_INIT,
-    f_LOG,
-    f_QUIET,
-    NUM_FLAGS
-} flag_indices_t;
+  char comment[255];          // first line for comments
+  s_general *general;         // general processing details
+  s_import *import;           // importing parameters
+  s_geocoding *geocoding;     // geocoding parameters
+  s_export *export;           // exporting parameters
+} convert_config;
 
 /* checking return values in the main program */
 void check_return(int ret, char *msg);
@@ -105,17 +59,12 @@ void check_return(int ret, char *msg);
 /* configuration functions */
 int strindex(char s[], char t[]);
 char *read_param(char *line);
-char *read_str(char *line, char *block, char *param);
-int read_int(char *line, char *block, char *param);
-double read_double(char *line, char *block, char *param);
+char *read_str(char *line, char *param);
+int read_int(char *line, char *param);
+double read_double(char *line, char *param);
 int init_config(char *configFile);
-int check_geocode_flag(char *configFile);
-int check_resample_flag(char *configFile);
-int init_projection_config(char *configFile);
-int init_resample_config(char *configFile);
-s_config *init_cfg(void);
-s_config *init_fill_config(char *configFile);
-s_config *read_config(char *configFile);
-int write_config(char *configFile, s_config *cfg);
+convert_config *init_fill_config(char *configFile);
+convert_config *read_config(char *configFile, int cFlag);
+int write_config(char *configFile, convert_config *cfg);
 
 #endif

@@ -5,76 +5,58 @@
 #include "functions.h"
 #include "asf_reporting.h"
 
-int asf_import(char *inFile, char *metaFile, char *type, char *outFile)
+int asf_import(char *inFile, char *outFile, char *format, char *radiometry,
+	       char *prcOrbits, double lat_begin, double lat_end)
 {
-  char command[256];
-  sprintf(command, "asf_import -log %s %s %s %s %s",
-          logFile, type, inFile, metaFile, outFile);
-  asfPrintStatus("\nCommand line:\n %s\n", command);
-  return system(command);
+  char options[255]="", command[1024];
+  int ret;
+
+  sprintf(options, "-log %s -quiet", logFile);
+  if (prcOrbits) sprintf (options, "%s -prc %s", options, prcOrbits); 
+  if (lat_begin!=-99.0 && lat_end!=99.0) 
+    sprintf(options, "%s -lat %lf %lf", options, lat_begin, lat_end);
+  sprintf(options, "%s %s", options, radiometry);
+  sprintf(command, "asf_import -format %s %s %s %s", 
+	  format, options, inFile, outFile);
+  asfPrintStatus("\nCommand line: %s\nDate: ", command);
+  ret = system(command);
+
+  return ret;
 }
 
-int projprm(char *projection, char *projkey, char *outFile, char *options)
+int asf_geocode(char *options, char *inFile, char *outFile)
 {
-  char command[256];
-  sprintf(command, "projprm -log %s %s %s %s %s",
-          logFile, projection, projkey, outFile, options);
-  asfPrintStatus("\nCommand line:\n %s\n", command);
-  return system(command);
+  char command[1024];
+  int ret;
+
+  sprintf(command, "asf_geocode %s -log %s %s %s", options, logFile, inFile, outFile);
+  //asfPrintStatus("\nCommand line: %s\nDate: ", command);
+  ret = system(command);
+
+  return ret;
 }
 
-int geocode(char *inFile, char *projFile, char *projkey, float pix_size,
-            float height, char *outFile)
+int asf_export(char *options, char *inFile, char *outFile)
 {
-  char command[256];
-  sprintf(command, "geocode -p %.2f -h %.3f -log %s %s %s %s %s",
-          pix_size, height, logFile, inFile, projFile, projkey, outFile);
-  asfPrintStatus("\nCommand line:\n %s\n", command);
-  return system(command);
-}
+  char command[1024];
+  int ret;
 
-int corner_coords(char *inFile)
-{
-  char command[256];
-  sprintf(command, "corner_coords %s", inFile);
-  asfPrintStatus("\nCommand line:\n %s\n", command);
-  return system(command);
-}
+  sprintf(command, "asf_export %s %s %s", options, inFile, outFile);
+  asfPrintStatus("\nCommand line: %s\nDate: ", command);
+  ret = system(command);
 
-int filter(char *options, char *inFile, char *outFile)
-{
-  char command[256];
-  sprintf(command, "filter %s -log %s %s %s",options,logFile,inFile,outFile);
-  asfPrintStatus("\nCommand line:\n %s\n", command);
-  return system(command);
-}
-
-int asf_export(int format, char *inFile, char *outFile)
-{
-  char command[256],format_str[10]="";
-  switch (format) 
-    {
-    case CEOS: break;
-    case ASF: break;
-    case TIFF: strcpy(format_str, "tiff "); break;
-    case GEOTIFF: strcpy(format_str,"geotiff "); break;
-    case JPEG: strcpy(format_str,"jpeg "); break;
-    case ENVI: strcpy(format_str,"envi "); break;
-    case ESRI: strcpy(format_str,"esri "); break;
-    case PPM: strcpy(format_str,"ppm "); break;
-    case PNG: break;
-    case LAS: break;
-    }
-  sprintf(command, "asf_export -f %s-o %s %s", format_str, outFile, inFile);
-  asfPrintStatus("\nCommand line:\n %s\n", command);
-  return system(command);
+  return ret;
 }
 
 int asf_convert(char *configFile)
 {
   char command[256];
-  sprintf(command, "asf_convert %s", configFile);
-  return system(command);
+  int ret;
+
+  sprintf(command, "asf_convert %s\n", configFile);
+  ret = system(command);
+
+  return ret;
 }
 
 #endif
