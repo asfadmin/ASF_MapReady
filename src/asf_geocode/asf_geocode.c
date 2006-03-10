@@ -1142,10 +1142,10 @@ main (int argc, char **argv)
     }
   }    
 
+  asfPrintStatus ("\n");
+
   // Done with the input metadata.
   meta_free (imd);
-
-  asfPrintStatus ("\n");
 
   // Now we are ready to produce our output image.  
   asfPrintStatus ("Resampling input image into output image "
@@ -1240,6 +1240,22 @@ main (int argc, char **argv)
 
   float_image_free (iim);
 
+  // Now we need some metadata for the output image.  We will just
+  // start with the metadata from the input image and add the
+  // geocoding parameters.
+  meta_parameters *omd = meta_read (input_meta_data->str);
+  double x_pixel_size = omd->general->x_pixel_size;
+  double y_pixel_size = omd->general->y_pixel_size;
+  double x_scale = pixel_size / x_pixel_size;
+  double y_scale = pixel_size / y_pixel_size;
+
+  // Flip the image if the y pixel size is negative
+  if (y_pixel_size < 0) {
+    asfPrintStatus("Negative y pixel size, flipping output image.\n");
+    float_image_flip_y(oim);
+    y_pixel_size = -y_pixel_size;
+  }
+
   // Store the output image, and free image resources.
   GString *output_data_file = g_string_new (output_image->str);
   g_string_append (output_data_file, ".img");
@@ -1251,14 +1267,7 @@ main (int argc, char **argv)
   float_image_free (oim);
   g_string_free (output_data_file, TRUE);
 
-  // Now we need some metadata for the output image.  We will just
-  // start with the metadata from the input image and add the
-  // geocoding parameters.
-  meta_parameters *omd = meta_read (input_meta_data->str);
-  double x_pixel_size = omd->general->x_pixel_size;
-  double y_pixel_size = omd->general->y_pixel_size;
-  double x_scale = pixel_size / x_pixel_size;
-  double y_scale = pixel_size / y_pixel_size;
+  // Fix up the output metadata to match the user's selected pixel size
   omd->general->x_pixel_size = pixel_size;
   omd->general->y_pixel_size = pixel_size;
   omd->general->line_count = oiy_max + 1;
@@ -1274,7 +1283,7 @@ main (int argc, char **argv)
     if (omd->projection->perY > 0)
       pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
     else
-      pc_per_y = (int) (omd->projection->perY / y_pixel_size - 0.5) * pixel_size;
+      pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
   }
   omd->projection = MALLOC(sizeof(meta_projection));
   memset (omd->projection, 0, sizeof(meta_projection));
