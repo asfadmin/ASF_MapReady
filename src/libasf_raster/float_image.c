@@ -1975,6 +1975,23 @@ float_image_equals (FloatImage *self, FloatImage *other, float epsilon)
   return TRUE;
 }
 
+// Flip an image about a horizontal line through the center of the image
+void
+float_image_flip_y(FloatImage *self)
+{
+  size_t ii, jj;
+
+  for (jj = 0; jj < self->size_y / 2; ++jj) {
+    size_t jj2 = self->size_y - 1 - jj;
+    for (ii = 0; ii < self->size_x; ++ii) {
+      float a = float_image_get_pixel(self, ii, jj);
+      float b = float_image_get_pixel(self, ii, jj2);
+      float_image_set_pixel(self, ii, jj, b);
+      float_image_set_pixel(self, ii, jj2, a);
+    }
+  }
+}
+
 // Bring the tile cache file on the disk fully into sync with the
 // latest image data stored in the memory cache.
 static void
