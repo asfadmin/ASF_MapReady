@@ -94,7 +94,8 @@ int main(int argc,char *argv[])
        The meta->sar->range_sampling_rate is 10^6 times the value above,
        so we use C/(2*meta->sar->range_sampling_rate)
     */
-    srPixSize = CLIGHT / (2.0 * inMeta->sar->range_sampling_rate);
+    srPixSize = CLIGHT / ((2.0 * inMeta->sar->range_sampling_rate) *
+      inMeta->general->sample_count / inMeta->sar->original_sample_count);
   }
 
   asfPrintStatus("Using Range Pixel Size: %g\n", srPixSize);
