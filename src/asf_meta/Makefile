@@ -127,6 +127,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	util3d.o \
 	vector.o \
 	yaw2doppler.o \
+	xpix_ypix.o \
 	$(LAS_OBJS)
 
 all: asf_meta
