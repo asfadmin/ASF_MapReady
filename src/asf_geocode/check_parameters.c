@@ -10,19 +10,19 @@
 int calc_utm_zone(double lon);
 void check_parameters(projection_type_t projection_type, 
 		      project_parameters_t *pp, meta_parameters *meta,
-		      int override_checks);
+		      int force_flag);
 
 // Checking routine for projection parameter input.
 void check_parameters(projection_type_t projection_type, 
 		      project_parameters_t *pp, meta_parameters *meta,
-		      int override_checks)
+		      int force_flag)
 {
   double lat, lon, min_lat, max_lat;
   int zone, min_zone=60, max_zone=1;
 
   void (*report_func) (const char *format, ...);
 
-  if (override_checks) {
+  if (force_flag) {
     asfPrintStatus("Since --force was specified, projection errors will be "
 		   "reported as warnings.\n\n");
     report_func = asfPrintWarning;
@@ -119,7 +119,7 @@ void check_parameters(projection_type_t projection_type,
       // Distortion test - only areas with a latitude above 60 degrees North or 
       // below -60 degrees South are permitted
       if (meta->general->center_latitude < 60.0 && pp->ps.is_north_pole) {
-	if (override_checks)
+	if (force_flag)
 	  report_func("Geocoding of areas below 60 degrees latitude in the "
                       "polar stereographic map projection is not advisable.\n");
 	else
@@ -128,7 +128,7 @@ void check_parameters(projection_type_t projection_type,
 		      "by this tool.\n");
       }
       if (meta->general->center_latitude > -60.0 && !pp->ps.is_north_pole) {
-	if (override_checks)
+	if (force_flag)
 	  report_func("Geocoding of areas above -60 degrees latitude in the "
                       "polar stereographic map projection is not advisable.\n");
 	else
@@ -175,7 +175,7 @@ void check_parameters(projection_type_t projection_type,
       }
       if (meta->general->center_latitude > max_lat ||
 	  meta->general->center_latitude < min_lat) {
-	if (override_checks)
+	if (force_flag)
 	  report_func("Geocoding of areas with latitudes outside the defined range "
 		      "(%.1f deg %.1f deg) in the Albers Equal Area projection with "
 		      "the standard parallels (first: %.1f and second: %.1f ) is "
@@ -225,7 +225,7 @@ void check_parameters(projection_type_t projection_type,
       }
       if (meta->general->center_latitude > max_lat ||
 	  meta->general->center_latitude < min_lat) {
-	if (override_checks)
+	if (force_flag)
 	  report_func("Geocoding of areas with latitudes outside the defined range "
 		      "(%.1f deg %.1f deg) in the Lambert Conformal Conic "
 		      "projection with the standard parallels (first: %.1f and "

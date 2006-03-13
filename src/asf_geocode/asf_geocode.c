@@ -554,7 +554,7 @@ main (int argc, char **argv)
   backtrace_action.sa_flags = 0;
   return_code = sigaction (SIGSEGV, &backtrace_action, NULL);  
   g_assert (return_code == 0);
-  int override_checks = FALSE;
+  int force_flag = FALSE;
 
   // Get the projection parameters from the command line.
   projection_type_t projection_type;
@@ -584,7 +584,8 @@ main (int argc, char **argv)
 
   project_parameters_t *pp 
     = get_geocode_options (&argc, &argv, &projection_type, &average_height, 
-			   &pixel_size, &datum, &resample_method, &override_checks);
+			   &pixel_size, &datum, &resample_method,
+			   &force_flag);
 
   // If help was requested, display it.
   if (detect_flag_options(argc, argv, "-help", "--help", NULL)) {
@@ -675,12 +676,15 @@ main (int argc, char **argv)
     }
   }
 
+  void (*report_func) (const char *format, ...);
+  report_func = force_flag ? asfPrintWarning : asfPrintError;
+
   // Set items in the projection parameters not on command-line
   apply_defaults (projection_type, pp, imd, &average_height, &pixel_size);
 
   // Check whether projection parameters are valid, dying with an
   // error if they aren't.
-  check_parameters (projection_type, pp, imd, override_checks);
+  check_parameters (projection_type, pp, imd, force_flag);
 
   // Convert all angle measures in the project_parameters to radians.
   to_radians (projection_type, pp);
@@ -1093,13 +1097,13 @@ main (int argc, char **argv)
       // problem of large corner errors when none of the intermediate
       // grid points were off by much still seems specific to scansar.
     }
-
+    
     double ul_x, ul_y;
     project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
     double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
     if (fabs (ul_x_pix_approx) > max_corner_error ) {
-      asfPrintError ("Upper left x corner error was too large!  %f > %f\n",
- 		     fabs (ul_x_pix_approx), max_corner_error );
+      report_func("Upper left x corner error was too large!  %f > %f\n",
+		  fabs (ul_x_pix_approx), max_corner_error );
     }
     else {
       asfPrintStatus ("Upper left x corner error: %f\n", 
@@ -1108,8 +1112,8 @@ main (int argc, char **argv)
     
     double ul_y_pix_approx = Y_PIXEL (ul_x, ul_y);
     if (fabs (ul_y_pix_approx) > max_corner_error ) {
-      asfPrintError ("Upper left y corner error was too large! %f > %f\n",
-		     fabs (ul_y_pix_approx), max_corner_error );
+      report_func ("Upper left y corner error was too large! %f > %f\n",
+		   fabs (ul_y_pix_approx), max_corner_error );
     }
     else {
       asfPrintStatus ("Upper left y corner error: %f\n", 
@@ -1125,8 +1129,8 @@ main (int argc, char **argv)
     double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
     double lr_x_corner_error = fabs (lr_x_pix_approx - (ii_size_x - 1));
     if ( lr_x_corner_error > max_corner_error ) {
-      asfPrintError ("Lower right x corner error was too large! %f > %f\n",
-		     lr_x_corner_error, max_corner_error);
+      report_func ("Lower right x corner error was too large! %f > %f\n",
+		   lr_x_corner_error, max_corner_error);
     }
     else {
       asfPrintStatus ("Lower right x corner error: %f\n", lr_x_corner_error); 
@@ -1134,7 +1138,7 @@ main (int argc, char **argv)
     double lr_y_pix_approx = Y_PIXEL (lr_x, lr_y);
     double lr_y_corner_error = fabs (lr_y_pix_approx - (ii_size_y - 1));
     if ( lr_y_corner_error > max_corner_error ) {
-      asfPrintError ("Lower right Y corner error was too large! %f > %f\n",
+      report_func ("Lower right Y corner error was too large! %f > %f\n",
 		     lr_y_corner_error, max_corner_error);
     }
     else {
