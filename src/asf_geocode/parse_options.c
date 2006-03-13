@@ -366,6 +366,9 @@ static void parse_proj_args_file(char * file, project_parameters_t * pps,
 		   "Zone", &zone,
 		   NULL);
 	pps->utm.zone = (int) zone;
+
+	if (pps->utm.zone == 0)
+	  pps->utm.zone = MAGIC_UNSET_INT;
     }
     else
     {
