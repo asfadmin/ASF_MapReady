@@ -106,9 +106,13 @@ main(int argc, char **argv)
     /* Connect signal handlers.  */
     glade_xml_signal_autoconnect (glade_xml);
 
+	/* initial flag settings */
     processing = FALSE;
     settings_on_execute = NULL;
 
+	/* explicit call to the function that refreshes the "summary" */
+	/* section when geocoding options are changed, so get the     */
+	/* settings initially in there                                */
     geocode_options_changed();
 
     gtk_main ();
