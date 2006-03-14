@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <asf_nan.h>
 #include "lex_yacc.h"   /* Must precede y.tab.h include.  */
 #include "y.tab.h"
 
@@ -24,7 +25,8 @@ int meta_yywrap(void)
 
 %option nomain
 
-DOUBLE_STRING      (-?)((([0-9]+)|([0-9]+\.[0-9]*)|(\.[0-9]+))([eE][-+]?[0-9]+)?)|([nN][aA][nN])
+DOUBLE_STRING      (-?)((([0-9]+)|([0-9]+\.[0-9]*)|(\.[0-9]+))([eE][-+]?[0-9]+)?)
+NAN_STRING         ([0][xX][0-9a-fA-F]*)*[nN][aA][nN]([0][xX][0-9a-fA-F]*)*
 ID_STRING          [a-zA-Z]("["|"]"|[-a-zA-Z0-9'>=(),;/_ \t])*[^ \t\n]*
 FIELD_STRING       [^#\n]*[^#\n \t]
 
@@ -36,7 +38,6 @@ FIELD_STRING       [^#\n]*[^#\n \t]
 \#.*        { ; }
 
  /* Eat up trailing blanks and new lines.  */
-
 [ \t\r]*\n    { line_number++; }
 
  /* Name tokens name blocks or fields.  */
@@ -83,6 +84,13 @@ FIELD_STRING       [^#\n]*[^#\n \t]
 <FIELD_STATE>{DOUBLE_STRING}/[ \t]*[#\n]   {
                                  BEGIN INITIAL;
                                  meta_yylval.double_val = strtod(meta_yytext, NULL); 
+                                 return DOUBLE;
+				 }
+
+ /* Return a numeric value.  Cheesy hack to make NaN's work on IRIX.  */
+<FIELD_STATE>{NAN_STRING}/[ \t]*[#\n]   {
+                                 BEGIN INITIAL;
+                                 meta_yylval.double_val = NAN; 
                                  return DOUBLE;
 				 }
 
