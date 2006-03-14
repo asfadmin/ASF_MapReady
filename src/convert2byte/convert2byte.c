@@ -97,36 +97,6 @@ void multilook(FILE *fpin, FILE *fpout,
                int stepLine, int stepSample);
 
 
-static void 
-usage(char *name) {
-  printf("\n"
-	 "USAGE:\n"
-	 "   %s [-multilook] [-look lxs] [-step lxs] [-log log_file] [-quiet]\n"
-	 "                <infile> <outfile>\n",name);
-  printf("\n"
-	 "REQUIRED ARGUMENTS:\n"
-	 "   infile   Image file to be read in(WITH extension)\n"
-	 "              accompanied by a .meta file.\n"
-	 "   outfile  Output image file which will be byte data.\n"
-	 "              (No extension necessary.)\n");
-  printf("\n"
-	 "OPTIONAL ARGUMENTS:\n"
-	 "   -multilook     Multilook the data as it is converted to byte.\n"
-	 "   -look (l)x(s)  Change number of look lines (l) and samples (s).\n"
-	 "                    (-multilook option is implied.)\n"
-	 "   -step (l)x(s)  Change number of step lines (l) and samples (s).\n"
-	 "                    (-multilook option is implied.)\n"
-	 "   -log log_file  Allows the output to be written to a log file\n"
-	 "   -quiet         Suppress terminal output to essential.\n");
-  printf("\n"
-	 "DESCRIPTION:\n"
-	 "   Converts any ASF image into a byte image.\n");
-  printf("\n"
-	 "Version %.2f, ASF SAR Tools\n"
-	 "\n",VERSION);
-  exit(EXIT_FAILURE);
-}
-
 int main(int argc, char **argv)
 {
 	char inFileName[256];           /* Input data file name               */
@@ -228,10 +198,12 @@ int main(int argc, char **argv)
  * it awfully messy, but hey, whachya gonna do? */
 	if (!inMeta->stats) {
 		char command[1024];
-		
-		if (!quietflag)
+
+		if (!quietflag) {
 			printf(" There is no statistics structure in the meta file.\n"
 			       " To fix this the stats program will be run...\n");
+			fflush(NULL);
+		}
 		if (!quietflag && logflag) {
 			fprintf(fLog,
 			       " There is no statistics structure in the meta file.\n"
@@ -243,8 +215,10 @@ int main(int argc, char **argv)
 		if (logflag)   sprintf(command,"%s -log %s",command,logFile);
 		sprintf(command,"%s %s",command,inFileName);
 
-		if (!quietflag)
+		if (!quietflag) {
 			printf(" Running command line:  %s\n",command);
+			fflush(NULL);
+		}
 		if (!quietflag && logflag) {
 			fprintf(fLog," Running command line:  %s\n",command);
 			fflush(fLog);
@@ -256,23 +230,25 @@ int main(int argc, char **argv)
 	}
 
 	/* if a mask was used in prior stats, move them, and get new stats */
-	if (inMeta->stats->mask == inMeta->stats->mask) {
+	if (meta_is_valid_double(inMeta->stats->mask)) {
 		char command[1024];
-		
-		if (!quietflag) 
-			printf(" It appears that a mask was used in prior statisticas calculations\n"
+
+		if (!quietflag) {
+			printf(" It appears that a mask was used in prior statistics calculations\n"
 			       " This program needs statistics without a mask, let's rectify that...\n"
-			       " Moving %s to %s.old...\n",
+			       " Copying %s to %s.old...\n",
 				inMetaFileName, inMetaFileName);
+			fflush(NULL);
+		}
 		if (!quietflag && logflag) {
 			fprintf(fLog,
-			       " It appears that a mask was used in prior statisticas calculations\n"
+			       " It appears that a mask was used in prior statistics calculations\n"
 			       " This program needs statistics without a mask, let's rectify that...\n"
-			       " Moving %s to %s.old...\n",
+			       " Copying %s to %s.old...\n",
 				inMetaFileName, inMetaFileName);
 			fflush(fLog);
 		}
-		sprintf(command,"mv %s %s.old", inMetaFileName, inMetaFileName);
+		sprintf(command,"cp %s %s.old", inMetaFileName, inMetaFileName);
 		system(command);
 
 		sprintf(command,"stats -nostat");
@@ -280,8 +256,10 @@ int main(int argc, char **argv)
 		if (logflag)   sprintf(command,"%s -log %s",command,logFile);
 		sprintf(command,"%s %s",command,inFileName);
 
-		if (!quietflag)
+		if (!quietflag) {
 			printf(" Running command line:  %s\n",command);
+			fflush(NULL);
+		}
 		if (!quietflag && logflag) {
 			fprintf(fLog," Running command line:  %s\n",command);
 			fflush(fLog);
@@ -293,7 +271,7 @@ int main(int argc, char **argv)
 	}
 
 /* Prepare output meta data for processing & writing */
-	outMeta = meta_read(inMetaFileName);
+	outMeta = meta_copy(inMeta);
 	outMeta->general->data_type = BYTE;
 
 /* Figure multilooking parameters if necessary */
@@ -308,11 +286,14 @@ int main(int argc, char **argv)
 			printf( "Bad look_count value in %s. Unable to determine multilooking values.\n"
 				"You can use the -look option to set the number of looks yourself. Exiting.\n" ,
 				inMetaFileName);
+			fflush(NULL);
+
 			if (logflag) {
 			    fprintf( fLog,
 				"Bad look_count value in %s. Unable to determine multilooking values.\n"
 				"You can use the -look option to set the number of looks yourself. Exiting.\n" ,
 				inMetaFileName);
+			    fflush(fLog);
 			}
 			exit(EXIT_FAILURE);
 		    }
@@ -323,9 +304,9 @@ int main(int argc, char **argv)
 		    lookSample = WINDOW_SIZE_MULTIPLIER * stepSample;
 		}
 	    }
-	    outMeta->general->sample_count = 
+	    outMeta->general->sample_count =
 		    inMeta->general->sample_count / stepSample;
-	    outMeta->general->line_count = 
+	    outMeta->general->line_count =
 		    inMeta->general->line_count / stepLine;
 	    outMeta->sar->line_increment *= stepLine;
 	    outMeta->sar->sample_increment *= stepSample;
@@ -355,3 +336,31 @@ int main(int argc, char **argv)
 }
 
 
+void usage(char *name) {
+ printf("\n"
+	"USAGE:\n"
+	"   %s [-multilook] [-look lxs] [-step lxs] [-log log_file] [-quiet]\n"
+	"                <infile> <outfile>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   infile   Image file to be read in(WITH extension)\n"
+	"              accompanied by a .meta file.\n"
+	"   outfile  Output image file which will be byte data.\n"
+	"              (No extension necessary.)\n");
+ printf("\n"
+	"OPTIONAL ARGUMENTS:\n"
+	"   -multilook     Multilook the data as it is converted to byte.\n"
+	"   -look (l)x(s)  Change number of look lines (l) and samples (s).\n"
+	"                    (-multilook option is implied.)\n"
+	"   -step (l)x(s)  Change number of step lines (l) and samples (s).\n"
+	"                    (-multilook option is implied.)\n"
+	"   -log log_file  Allows the output to be written to a log file\n"
+	"   -quiet         Suppress terminal output to essential.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   Converts any ASF image into a byte image.\n");
+ printf("\n"
+	"Version %.2f, ASF SAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
+}
