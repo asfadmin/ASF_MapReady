@@ -11,19 +11,23 @@
  * and will propagate through equations until it's used in a condional
  * statement (which should return False) */
 #ifndef NAN
-
 # if defined (lil_endian)
 #  define __nan_bytes { 0xff, 0xff, 0xbf, 0x7f }
 # else
 #  define __nan_bytes { 0x7f, 0xbf, 0xff, 0xff }
-# endif
-static union { unsigned char __c[4]; float __d; } __nan_union = { __nan_bytes };
+# endif /* defined (lil_endian) */
+  static union { unsigned char __c[4]; float __d; } __nan_union = { __nan_bytes };
 # define NAN __nan_union.__d
-# endif
-# define ISNAN(X) ( ((X)==(X)) ? FALSE : TRUE )
+#endif /* NAN */
 
+/* Specify necessary headers for the isnan() function/macro */
+#if defined (linux)
+# include <math.h>
 #else
+# include <ieeefp.h>
+# include <math.h>
+#endif /* defined (linux) */
 
-# define ISNAN(X) (isnan(X))
+#define ISNAN(X) (isnan(X))
 
-#endif
+#endif /* __ASF_NAN_H*/
