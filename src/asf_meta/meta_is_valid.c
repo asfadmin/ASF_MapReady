@@ -32,9 +32,8 @@ int meta_is_valid_int(int value)
 
 /*******************************************************************************
  * meta_is_valid_double:
- *   tests to see if the value is equal to itself... if not, it is NaN and 
- *   therefore invalid. Returns TRUE for valid, FALSE for invalid */
+ *   tests to see if the value is real (not nan or +/- inf) */
 int meta_is_valid_double(double value)
 {
-	return !(ISNAN(value));
+	return finite(value);
 }
