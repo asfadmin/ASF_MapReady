@@ -53,8 +53,8 @@ int checkForOptionWithArg(char *key, int argc, char *argv[])
     char *eq = strchr(arg, '=');
     if (eq) *eq = '\0';
 
-    /* now check for a match in the usual way */
-    int match = strmatch(key, arg);    
+    /* now check for an exact match */
+    int match = !strcmp(key, arg);    
     free(arg);
     if (match) {
       return ii;

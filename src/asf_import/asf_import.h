@@ -28,6 +28,7 @@ typedef enum {
     f_QUIET,
     f_RANGE_SCALE,
     f_AZIMUTH_SCALE,
+    f_AZIMUTH_SCALE_METAONLY,
     NUM_FLAGS
 } flag_indices_t;
 
