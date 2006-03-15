@@ -89,6 +89,7 @@ BUGS: None known
 #define VERSION 1.0
 
 /* PROTOTYPES */
+void usage(char *name);
 void linear_conversion(FILE *fpin, FILE *fpout, meta_parameters *inMeta,
                        meta_parameters *outMeta);
 void multilook(FILE *fpin, FILE *fpout,
