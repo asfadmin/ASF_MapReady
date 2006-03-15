@@ -104,10 +104,13 @@ void xpyp_getPixSizes(meta_parameters *meta, float *range_pixsiz, float *az_pixs
 void xpyp_getVelocities(meta_parameters *meta, float *pp_velocity,
 						float *corrected_velocity)
 {
+	int loc[2];
+
 	double azSize, azTime, azVel;
 	double t,h,r,c,dt,sc_vel,earth_rad,sc_rad,cos_earth_ang,swath_nr;
-	stateVector scFix,scGEI,ts;
-	vector target1,target2,targVel; double tv,v;
+	stateVector scFix,scGEI;
+	vector target1,target2,targVel;
+        double tv,v;
 //		printf("Azimuth velocity estimation at topleft:\n");
 /* Use meta routines to find target point at time t and t+dt */
 	//meta_get_orig((void *)&sar_ddr,0,sar_ddr.ns/2,&loc[1],&loc[0]);
@@ -158,18 +161,18 @@ r gxMe) */
 	//printf("  PP swath velocity: %.3f m/s = %.3f m/s * (%.3f/%.3f) * %.6f\n",
 	//	swath_nr,sc_vel,earth_rad,sc_rad,cos_earth_ang);
 
-	ts.pos=target1; /* target1 fixed-earth position */
-	ts.vel=scGEI.vel; /* direction: same as spacecraft */
-	vecScale(&ts.vel,swath_nr/vecMagnitude(ts.vel)); /* scale: swath_nr long */
+	//ts.pos=target1; /* target1 fixed-earth position */
+	//ts.vel=scGEI.vel; /* direction: same as spacecraft */
+	//vecScale(&ts.vel,swath_nr/vecMagnitude(ts.vel)); /* scale: swath_nr long */
 
-	gei2fixed(&ts,0.0); /* convert to fixed-earth velocity */
-	v=vecMagnitude(ts.vel);
+	//gei2fixed(&ts,0.0); /* convert to fixed-earth velocity */
+	//v=vecMagnitude(ts.vel);
 	//printf("  Fixed-earth swath magnitude: %.3f m/s (%.2f%% error)\n",v,100.0*(v-tv)/tv);
 	
-	c=vecCosAng(targVel,scGEI.vel);
+	//c=vecCosAng(targVel,scGEI.vel);
 	//printf("  Angle between real swath vel and GEI-derived velocity: %.3f deg, %.3f-%.3f m/s\n",
 	//	acos(c)*180.0/M_PI,v/c,v*c);
-	c=vecCosAng(targVel,ts.vel);
+	//c=vecCosAng(targVel,ts.vel);
 	//printf("  Angle between real swath vel and fixed-earth velocity: %.3f deg, %.3f-%.3f m/s\n",
 	//	acos(c)*180.0/M_PI,v/c,v*c);
 	
