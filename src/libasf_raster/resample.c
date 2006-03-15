@@ -99,8 +99,8 @@ int resample(char *infile, char *outfile, double xscalfact, double yscalfact)
              xrate,yrate;           /* # input pixels/output pixel    */
 
     asfPrintStatus("\n\n\nResample: Performing filtering and subsampling..\n\n");
-    asfPrintStatus(" Input image is %s\n",infile);
-    asfPrintStatus(" Output image is %s\n",outfile);
+    asfPrintStatus("  Input image is %s\n",infile);
+    asfPrintStatus("  Output image is %s\n\n",outfile);
    
     metaIn = meta_read(infile);
     metaOut = meta_read(infile);
@@ -147,12 +147,6 @@ int resample(char *infile, char *outfile, double xscalfact, double yscalfact)
     meta_write(metaOut, outfile);
 
   /*--------  Process inbuf to give outbuf ------------------------*/
-    asfPrintStatus("   Pixel Size   : %f/%f\n",xpixsiz,ypixsiz);
-    asfPrintStatus("   Scale Factor : %f/%f\n",xscalfact,yscalfact);
-    asfPrintStatus("   Kernel Size  : %i/%i\n",xnsk,ynsk);
-    asfPrintStatus("   base-- %f/%f rate-- %f/%f\n\n",xbase,ybase,xrate,yrate);
-    asfPrintStatus("   Writing image file %i samples by %i lines\n\n",onp,onl);
- 
     for (i = 0; i < onl; i++)
       {
        /*--------- Read next set of lines for kernel ---------------*/
@@ -171,10 +165,11 @@ int resample(char *infile, char *outfile, double xscalfact, double yscalfact)
          }
        
        put_float_line(fpout, metaOut, i, outbuf);
-       if (i%500==0) 
-          asfPrintStatus(" Processing Output Line %i\n",i);
+       asfLineMeter(i, onl);
       }
-        
+       
+    asfPrintStatus("Finished.\n");
+
     FCLOSE(fpin);                 
     FCLOSE(fpout);
 
