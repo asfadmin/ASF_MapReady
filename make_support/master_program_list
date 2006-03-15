@@ -235,6 +235,8 @@ CATEGORIES
 		dspddr fftMatch makeddr meta2ddr metadata raster_calc
 		raster_diff remap resample sarout sr2gr trim accum_offset
 		concat concat_dem concatm fit_quadratic idimage projprm
+		2dmap demimg demclip despike greycorr sargeom sarsim rtc_add
+		tpl_mult tpl_search correlate terrcorr
 	}
 
 # Sarview needs to be its own category because of its tcl/tk dependency.
@@ -248,7 +250,5 @@ CATEGORIES
 		create_dem_grid dem2phase dem2seeds deskew_dem reskew_dem
 		deramp elev eleverr escher fit_line fit_plane fit_warp igram
 		multilook p2c phase_filter refine_base refine_offset zeroify
-		2dmap demimg demclip despike greycorr sargeom sarsim rtc_add
-		tpl_mult tpl_search correlate terrcorr
 	}
 }
