@@ -23,7 +23,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "[-amplitude | -sigma | -gamma | -beta | -power]\n"\
 "              [-prc] [-old] [-format <inputFormat>] [-lat <lower> <upper>]\n"\
 "              [-lut <file> ] [-log <logFile>] [-quiet] [-help] \n"\
-"              [-azimuth-scale[=<scale>] | -azimuth-scale-metaonly[=<pixsiz>]] \n"\
+"              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]] \n"\
 "              [-range-scale[=<scale>]]\n"\
 "	       <inBaseName> <outBaseName>"
 
@@ -77,8 +77,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        Apply the provided azimuth scale factor to the imported data.  If\n"\
 "        the option is specified without an argument, a default value of\n"\
 "        %f will be used.  This option cannot be used with\n"\
-"        -azimuth-scale-metaonly\n"\
-"   -azimuth-scale-metaonly[=<pixel-size>]\n"\
+"        -fix-meta-ypix\n"\
+"   --fix-meta-ypix[=<pixel-size>]\n"\
 "        This option is similar to -azimuth-scale, but does not resample the\n"\
 "        input data, it just changes the y pixel size in the metadata.\n"\
 "        This option cannot be used with -azimuth-scale.\n"\
@@ -376,16 +376,14 @@ int main(int argc, char *argv[])
     if (flags[f_AZIMUTH_SCALE] == FLAG_NOT_SET)
         flags[f_AZIMUTH_SCALE] = checkForOptionWithArg("-azimuth_scale", argc, argv);
 
-    flags[f_AZIMUTH_SCALE_METAONLY] = checkForOptionWithArg("-azimuth-scale-metaonly",
-        argc, argv);
-    if (flags[f_AZIMUTH_SCALE_METAONLY] == FLAG_NOT_SET)
-        flags[f_AZIMUTH_SCALE_METAONLY] = checkForOptionWithArg("-azimuth_scale_metaonly",
-        argc, argv);
+    flags[f_FIX_META_YPIX] = checkForOptionWithArg("-fix-meta-ypix", argc, argv);
+    if (flags[f_FIX_META_YPIX] == FLAG_NOT_SET)
+        flags[f_FIX_META_YPIX] = checkForOptionWithArg("-fix_meta_ypix", argc, argv);
 
     do_resample = flags[f_RANGE_SCALE] != FLAG_NOT_SET ||
         flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET;
 
-    do_metadata_fix = flags[f_AZIMUTH_SCALE_METAONLY] != FLAG_NOT_SET;
+    do_metadata_fix = flags[f_FIX_META_YPIX] != FLAG_NOT_SET;
 
     { /*Check for mutually exclusive options: we can only have one of these*/
         int temp = 0;
@@ -401,13 +399,13 @@ int main(int argc, char *argv[])
             usage();
     }
 
-    /* Cannot specify the metaonly & the regular version of azimuth
-    scale options at the same time */
-    if (flags[f_AZIMUTH_SCALE_METAONLY] != FLAG_NOT_SET &&
+    /* Cannot specify the fix-meta-ypix & the resampling of azimuth
+    options at the same time */
+    if (flags[f_FIX_META_YPIX] != FLAG_NOT_SET &&
         flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)
     {
         asfPrintStatus("You cannot specify both -azimuth-scale "
-            "and -azimuth-scale-metaonly.\n");
+            "and -fix-meta-ypix.\n");
         usage();
     }
 
@@ -431,7 +429,7 @@ int main(int argc, char *argv[])
         if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
         if(flags[f_RANGE_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
-        if(flags[f_AZIMUTH_SCALE_METAONLY] != FLAG_NOT_SET)
+        if(flags[f_FIX_META_YPIX] != FLAG_NOT_SET)
             needed_args += 1;/*option*/
 
         /*Make sure we have enough arguments*/
@@ -659,7 +657,7 @@ int main(int argc, char *argv[])
     /* resample, if necessary */
     if (do_resample)
     {
-        double range_scale = flags[f_RANGE_SCALE] == FLAG_NOT_SET ? 1.0 :
+        double range_scale = flags[f_RANGE_SCALE] == FLAG_NOT_SET ? 1.0 : 
         getDoubleOptionArgWithDefault(argv[flags[f_RANGE_SCALE]],
             DEFAULT_RANGE_SCALE);
 
@@ -677,7 +675,7 @@ int main(int argc, char *argv[])
     if (do_metadata_fix)
     {
         double correct_y_pixel_size =
-            getDoubleOptionArgWithDefault(argv[flags[f_AZIMUTH_SCALE_METAONLY]],
+            getDoubleOptionArgWithDefault(argv[flags[f_FIX_META_YPIX]],
             get_default_ypix(outBaseName));
 
         fix_ypix(outBaseName, correct_y_pixel_size);

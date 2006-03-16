@@ -549,7 +549,7 @@ settings_get_latitude_argument(const Settings *s)
 const gchar *
 settings_get_apply_metadata_fix_argument(const Settings *s)
 {
-  return s->apply_metadata_fix ? "-azimuth-scale-metaonly" : "";
+  return s->apply_metadata_fix ? "-fix-meta-ypix" : "";
 }
 
 const gchar *
