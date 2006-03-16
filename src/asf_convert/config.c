@@ -76,6 +76,8 @@ int init_config(char *configFile)
   fprintf(fConfig, "import = < 0 | 1 >\n");
   fprintf(fConfig, "geocoding = < 0 | 1 >\n");
   fprintf(fConfig, "export = < 0 | 1 >\n");
+  fprintf(fConfig, "default values = < name of default values file >\n");
+  fprintf(fConfig, "intermediates = < 0 | 1 >\n");
   fprintf(fConfig, "batch file = < name of batch file >\n\n");
 
   FCLOSE(fConfig);
