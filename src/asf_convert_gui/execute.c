@@ -607,12 +607,13 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
       sprintf(executable, "%s/asf_import", get_asf_bin_dir());
 
       g_snprintf(convert_cmd, sizeof(convert_cmd), 
-    "cd \"%s\"; %s %s -format %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
+    "cd \"%s\"; %s %s -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
 	 cd_dir,
 	 executable,
          settings_get_data_type_arg_string(user_settings),
          settings_get_input_data_format_string(user_settings),
          settings_get_latitude_argument(user_settings),
+	 settings_get_apply_metadata_fix_argument(user_settings),
          log_file,
          basename,
          before_geocoding_basename);

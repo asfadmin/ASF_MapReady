@@ -39,6 +39,7 @@ typedef struct
 
   /* misc */
   int keep_files;
+  int apply_metadata_fix;
 }
 Settings;
 
@@ -48,6 +49,7 @@ Settings * settings_copy(const Settings *);
 int settings_equal(const Settings *, const Settings *);
 const gchar * settings_get_size_argument(const Settings *);
 const gchar * settings_get_latitude_argument(const Settings *);
+const gchar * settings_get_apply_metadata_fix_argument(const Settings *);
 const gchar * settings_get_output_bytes_argument(const Settings *s);
 const gchar * settings_get_data_type_string(const Settings *);
 const gchar * settings_get_data_type_arg_string(const Settings *);

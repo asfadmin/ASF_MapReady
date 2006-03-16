@@ -35,7 +35,8 @@ settings_apply_to_gui(const Settings * s)
     *scale_checkbutton,
     *output_bytes_checkbutton,
     *scaling_method_combobox,
-    *keep_files_checkbutton;
+    *keep_files_checkbutton,
+    *apply_metadata_fix_checkbutton;
 
   input_data_type_combobox = 
     glade_xml_get_widget(glade_xml, "input_data_type_combobox");
@@ -54,6 +55,9 @@ settings_apply_to_gui(const Settings * s)
 
   keep_files_checkbutton = 
     glade_xml_get_widget(glade_xml, "keep_files_checkbutton");
+
+  apply_metadata_fix_checkbutton = 
+    glade_xml_get_widget(glade_xml, "apply_metadta_fix_checkbutton");
 
   set_combo_box_item(input_data_format_combobox, s->input_data_format);
   set_combo_box_item(input_data_type_combobox, s->data_type);
@@ -271,6 +275,10 @@ settings_apply_to_gui(const Settings * s)
 
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(keep_files_checkbutton),
 			       s->keep_files);
+
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(
+				 apply_metadata_fix_checkbutton),
+			       s->apply_metadata_fix);
 }
 
 Settings *
@@ -285,7 +293,8 @@ settings_get_from_gui()
     *output_bytes_checkbutton,
     *scaling_method_combobox,
     *geocode_checkbutton,
-    *keep_files_checkbutton;
+    *keep_files_checkbutton,
+    *apply_metadata_fix_checkbutton;
 
   Settings *ret;
 
@@ -308,6 +317,9 @@ settings_get_from_gui()
 
   keep_files_checkbutton = 
     glade_xml_get_widget(glade_xml, "keep_files_checkbutton");
+
+  apply_metadata_fix_checkbutton = 
+    glade_xml_get_widget(glade_xml, "apply_metadata_fix_checkbutton");
 
   ret->data_type = get_combo_box_item(input_data_type_combobox);
   ret->input_data_format = get_combo_box_item(input_data_format_combobox);
@@ -509,6 +521,10 @@ settings_get_from_gui()
   ret->keep_files = 
     gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(keep_files_checkbutton));
 
+  ret->apply_metadata_fix = 
+    gtk_toggle_button_get_active(
+      GTK_TOGGLE_BUTTON(apply_metadata_fix_checkbutton));
+
   return ret;
 }
 
@@ -528,6 +544,12 @@ settings_get_latitude_argument(const Settings *s)
   }
 
   return latitude_arg;
+}
+
+const gchar *
+settings_get_apply_metadata_fix_argument(const Settings *s)
+{
+  return s->apply_metadata_fix ? "-azimuth-scale-metaonly" : "";
 }
 
 const gchar *
@@ -719,7 +741,8 @@ settings_equal(const Settings *s1, const Settings *s2)
     if (s1->input_data_format == s2->input_data_format &&
         s1->data_type == s2->data_type &&
         s1->output_format == s2->output_format &&
-        s1->keep_files == s2->keep_files)
+        s1->keep_files == s2->keep_files &&
+        s1->apply_metadata_fix == s2->apply_metadata_fix)
     {
         gchar * lat1 =
 	  g_strdup(settings_get_latitude_argument(s1));

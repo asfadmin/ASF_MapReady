@@ -316,6 +316,26 @@
 		      <property name="fill">False</property>
 		    </packing>
 		  </child>
+
+		  <child>
+		    <widget class="GtkCheckButton" id="apply_metadata_fix_checkbutton">
+		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">Images produces by the Precision Processor have a small error in the Y pixel size due to a problem in the calculation of the relative velocity between the satellite and the center of the scene.  If this option is checked, then the metadata for the scene will be adjusted to correct for this error.</property>
+		      <property name="can_focus">True</property>
+		      <property name="label" translatable="yes">Apply Azimuth Pixel Size Metadata Fix</property>
+		      <property name="use_underline">True</property>
+		      <property name="relief">GTK_RELIEF_NORMAL</property>
+		      <property name="focus_on_click">True</property>
+		      <property name="active">True</property>
+		      <property name="inconsistent">False</property>
+		      <property name="draw_indicator">True</property>
+		    </widget>
+		    <packing>
+		      <property name="padding">0</property>
+		      <property name="expand">False</property>
+		      <property name="fill">False</property>
+		    </packing>
+		  </child>
 		</widget>
 		<packing>
 		  <property name="tab_expand">False</property>
