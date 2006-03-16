@@ -150,21 +150,21 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          images into projection geometry.  Available choices are:\n"\
 "            nearest_neighbor\n"\
 "            bilinear\n"\
-"	     bicubic\n"\
+"            bicubic\n"\
 "\n"\
 "     --pixel_size <pixel spacing>\n"\
 "          Specifies the pixel spacing of the geocoded image.  asf_geocode\n"\
 "          by default will preserve the pixel size of the input image.\n"\
 "\n"\
 "     --force\n"\
-"            Override the built-in projection sanity checks.  asf_geocode\n"\
-"            by default will abort with an error if it detects that a\n"\
-"            scene lies in an area where the selected projection is\n"\
-"            going to give poor results.  However, you may still wish\n"\
-"            to do the projection anyway (such as when you will mosaic\n"\
-"            the result a number of other scenes and wish to have them\n"\
-"            all in the same projection), the --force option can be used\n"\
-"            in these situations."
+"          Override the built-in projection sanity checks.  asf_geocode\n"\
+"          by default will abort with an error if it detects that a\n"\
+"          scene lies in an area where the selected projection is\n"\
+"          going to give poor results.  However, you may still wish\n"\
+"          to do the projection anyway (such as when you will mosaic\n"\
+"          the result a number of other scenes and wish to have them\n"\
+"          all in the same projection), the --force option can be used\n"\
+"          in these situations."
 
 #define ASF_EXAMPLES_STRING \
 "     To map project an image with centerpoint at -147 degrees\n"\
@@ -870,10 +870,10 @@ main (int argc, char **argv)
   }
 
   // The pixel size requested by the user better not oversample by
-  // the factor of 2.
-  if ( GSL_MIN(imd->general->x_pixel_size, 
+  // the factor of 2.  Specifying --force will skip this check
+  if (!force_flag && GSL_MIN(imd->general->x_pixel_size, 
 	       imd->general->y_pixel_size) > (2*pixel_size) ) {
-    asfPrintError 
+    report_func 
       ("Requested pixel size %lf is smaller then the minimum implied by half \n"
        "the input image resolution (%le meters), this is not supported.\n", 
        pixel_size, GSL_MIN (imd->general->x_pixel_size, 
@@ -928,18 +928,18 @@ main (int argc, char **argv)
       double lat, lon;
       return_code = unproject (pp, cxproj, cyproj, &lat, &lon);
       if ( !return_code ) {
-	// Details of the error should have already been printed.
-	asfPrintError ("Projection Error!\n");
+	    // Details of the error should have already been printed.
+	    asfPrintError ("Projection Error!\n");
       }
       lat *= RAD_TO_DEG;
       lon *= RAD_TO_DEG;
       // Corresponding pixel indicies in input image.
       double x_pix, y_pix;
       if ( input_projected ) {
-	// Input projection coordinates of the current pixel.
-	double ipcx, ipcy;
-	return_code = project_input (ipp, DEG_TO_RAD * lat, DEG_TO_RAD * lon, 
-				     &ipcx, &ipcy);
+	    // Input projection coordinates of the current pixel.
+	    double ipcx, ipcy;
+	    return_code = project_input (ipp, DEG_TO_RAD * lat, DEG_TO_RAD * lon, 
+				                     &ipcx, &ipcy);
 	if ( return_code == 0 ) {
 	  g_assert_not_reached ();
 	}
@@ -1032,8 +1032,8 @@ main (int argc, char **argv)
     // many pixels or more.
     double max_allowable_error = 1.0;
     if ( largest_error > max_allowable_error ) {
-	asfPrintError("Largest Error was larger than maximum allowed! "
-		      "%f > %f\n", largest_error, max_allowable_error);
+	    report_func("Largest Error was larger than maximum allowed! "
+		            "%f > %f\n", largest_error, max_allowable_error);
     }
     asfPrintStatus ("For the differences between spline model values and "
 		    "projected values\nfor the analytically projected "
