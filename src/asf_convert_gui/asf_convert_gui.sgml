@@ -188,11 +188,38 @@
           data.</para>
       </listitem>
       <listitem>
-	<para>Latitude</para>
-	<para>This option is only available for the "STF" data format.  
+	    <para>Latitude</para>
+	    <para>This option is only available for the "STF" data format.  
           Here you may specify a range of latitudes that is smaller
           than that of the original data.  Please make sure that both
           the Low and Hi values are actually contained in the image.</para>
+      </listitem>
+      <listitem>
+	    <para>Keep Files</para>
+	    <para>With this option checked, the intermediate files generated
+	        during the processing will not be deleted after successful
+	        conversion.  Normally, these files are temporary and are
+	        deleted (since they can be quite large), but if you would
+	        rather keep them around you may by turning on this option.
+	        </para>
+	    <para>If a file fails to process, any intermediate files that
+	        were generated are not deleted.</para>
+      </listitem>
+      <listitem>
+        <para>Apply Azimuth Pixel Size Metadata Fix</para>
+        <para>This option turns on a correction to the Y pixel size value
+            in the metadata, caused by an error in the Precision Processor.
+            </para>
+        <para>The error results from using an incorrect relative velocity
+            between the satellite, and the surface of the Earth at the
+            center of the scene.  The velocity used is the relative velocity
+            between the satellite, and the surface of the Earth directly
+            below the satellite (at nadir).  This leads to pixel sizes
+            that are slightly off - in the azimuth direction.  The size
+            of the error varies with latitude (least at the equator).  In
+            Alaska, it is about 0.5%.</para>
+        <para>If you use data obtained from the PP, then you will probably
+            want to turn this option on.</para>
       </listitem>
     </orderedlist>
   </chapter>
@@ -238,7 +265,7 @@
     <para>There are 5 projections:  UTM, Polar Stereographic, Albers
       Conical Equal Area, Lambert Conformal Conic, and Lambert
       Azimuthal Equal Area.  Each projection requires one or more
-      additional items:</para>
+      additional items.</para>
 
     <para>The geocoding process necessarly involves a resampling of
       the original data.  For each pixel in the geocoded image, the
@@ -252,7 +279,7 @@
     <orderedlist>
       <listitem><para>UTM</para>
  
-	<para>Here the only additional parameter  is the UTM Zone.
+	<para>Here the only additional parameter is the UTM Zone.
           The globe is divided into 60 north and south zones, each
           spanning 6 degrees of longitude.  Zones 1 to 60 are northern
           zones, and -1 to -60 are the southern zones.</para>
@@ -369,6 +396,11 @@
     <para>The options here configure how the conversion from the ASF
       internal format to the output format is done.</para>
 
+    <para>There is a checkbox in front of the "Format" selection that
+        turns off Export.  In this case, processing will stop after
+        converting to the ASF internal format, and geocoding (if you
+        have it selected).</para>
+        
     <orderedlist>
       <listitem><para>Format</para>
 
@@ -378,9 +410,9 @@
 
       </listitem>
 
-      <listitem><para>Output Bytes</para>
+      <listitem><para>Output Data in Byte Format</para>
 
-	<para>When the "Output Bytes" option is turned off, the output
+	<para>When this option is turned off, the output
           image is generated using float-point values for each pixel.
           Some formats (all except GeoTIFF) do not support
           floating-point pixel values, and so you must map the values
@@ -390,7 +422,8 @@
           most systems, the files will be approximately 4 times
           smaller).</para>
 
-	<para>When "Output Bytes" is checked, you'll need to pick how
+	<para>When "Output Data in Byte Format" is checked,
+	      you'll need to pick how
           the mapping from floating point to bytes is done:</para>
 
 	<orderedlist>
