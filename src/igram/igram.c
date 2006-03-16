@@ -3,22 +3,20 @@ NAME: igram
 
 SYNOPSIS:  igram <imageA> <imageB> <outfile>
 
-    <imageA>     complex image file (imageA.cpx, imageA.ddr). 
+    <imageA>     complex image file
                  Igram adds any extension
-    <imageB>     complex image file (imageB.cpx, imageB.ddr).
+    <imageB>     complex image file
                  Igram adds any extension
-    <outfile>    Base name of amplitude and phase file to store interferogram. 
+    <outfile>    Base name of amplitude and phase file to store interferogram.
 
 DESCRIPTION:
-	Create an interferogram from the two input images. inIFMfile1 &
-	inIFMfile2 are the names of the two inout images minus any
-	extensions. The .amp & .phase extensions will be appended. 
+	Create an interferogram from the two input images.
 
 	The output is multiplication of the inIFMfile1 and the complex
 	conjugate of inIFMfile2. The resulting files will be a phase file
-	(.phase) and an amplitude file (.amp). 
+	and an amplitude file.
 
-	The phase image created is not deramped for earth curvature. 
+	The phase image created is not deramped for earth curvature.
 	The program deramp removes this artifact.
 
 EXTERNAL ASSOCIATES:
@@ -35,20 +33,20 @@ PROGRAM HISTORY:
     1.0     10/95        Rob Fatland & M. Shindle - Orig. Development
     1.1      4/96        M. Shindle - changes to user interface
     2.0      8/96        M. Shindle - works with float numbers. Outputs an
-				      amplitude instead of a power file.
-    3.0	     5/97	 T. Logan   - copies ddr file from input.
-     "       7/97        D.Corbett  - updated version number
-    3.1	     6/98	 O. Lawlor  - Read from complex files.
-                                     (saves a c2p during co-registration).
-    3.2	     3/00	 M. Ayers   - Changed the output amplitude image to 
-				      just be the first input's amplitude
-    3.3	     6/00        M. Ayers   - Fixed igram so that it recognizes 
-				      that one file is shorter and stops
+                                      amplitude instead of a power file.
+    3.0      5/97        T. Logan   - copies ddr file from input.
+    3.0      7/97        D.Corbett  - updated version number
+    3.1      6/98        O. Lawlor  - Read from complex files.
+                                      (saves a c2p during co-registration).
+    3.2      3/00        M. Ayers   - Changed the output amplitude image to
+                                      just be the first input's amplitude
+    3.3      6/00        M. Ayers   - Fixed igram so that it recognizes
+                                      that one file is shorter and stops
                                       there without croaking.
-    3.4      10/00	 M. Ayers   - Changed igram back to calculating the
-				      amplitude of interferogram, also removed
-				      the extra square root.
-    3.5      2/04	 R. Gens    - Added log switch
+    3.4      10/00       M. Ayers   - Changed igram back to calculating the
+                                      amplitude of interferogram, also removed
+                                      the extra square root.
+    3.5      2/04        R. Gens    - Added log switch
     3.6      7/05        R. Gens    - Removed DDR dependency. Took care of
                                       endianess issue.
 
@@ -59,15 +57,15 @@ HARDWARE/SOFTWARE LIMITATIONS:
          case; this may be added later, perhaps as an option.
 
 ALGORITHM DESCRIPTION:
- 
+
 ALGORITHM REFERENCES:
 
 BUGS:
 
 ****************************************************************/
-/****************************************************************************
-*								            *
-*   igram -- Program will create an interferogram from the two input images.*
+/******************************************************************************
+*                                                                             *
+*   igram -- Program will create an interferogram from the two input images.  *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -77,20 +75,19 @@ BUGS:
 *                                                                             *
 *       For more information contact us at:                                   *
 *                                                                             *
-*	Alaska Satellite Facility	    	                              *
-*	Geophysical Institute			www.asf.alaska.edu            *
-*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
-*	P.O. Box 757320							      *
-*	Fairbanks, AK 99775-7320					      *
-*									      *
+*       Alaska Satellite Facility                                             *
+*       Geophysical Institute                   www.asf.alaska.edu            *
+*       University of Alaska Fairbanks          uso@asf.alaska.edu            *
+*       P.O. Box 757320                                                       *
+*       Fairbanks, AK 99775-7320                                              *
+*                                                                             *
 ******************************************************************************/
 
 #include "asf.h"
-#include "ddr.h"
 #include "ifm.h"
 #include "asf_meta.h"
 
-/* 
+/*
  *  Buffer Size
  */
 #define BSZ      512
@@ -107,19 +104,18 @@ int main(int argc, char *argv[])
   FILE *inFile1, *inFile2, *outFileAmp, *outFilePhase;
   int ii, x, len, lines;
   float percent=5.0;
-	
+
   complexFloat *in1,*in2;
   float *outAmp,*outPhase;
-  char cmd[256];
 
-  logflag = 0;
+  logflag = FALSE;
   /*
    * in-line usage
    */
   if(argc < 4){
     usage(argv[0]);
   }
-  
+
   while (currArg < (argc-4)) {
     char *key = argv[currArg++];
     if (strmatch(key,"-log")) {
@@ -138,8 +134,8 @@ int main(int argc, char *argv[])
     printLog("Program: igram\n\n");
   }
 
-  /* 
-   * open input files 
+  /*
+   * open input files
    */
   create_name(fnm,argv[currArg++],".img");
   sprintf(master, "%s", fnm);
@@ -151,7 +147,7 @@ int main(int argc, char *argv[])
   create_name(fnm,argv[currArg],"_amp.img");
   sprintf(igram_amp, "%s", fnm);
   outFileAmp=fopenImage(fnm, "wb");
-  
+
   create_name(fnm,argv[currArg],"_phase.img");
   sprintf(igram_phase, "%s", fnm);
   outFilePhase=fopenImage(fnm, "wb");
@@ -166,16 +162,16 @@ int main(int argc, char *argv[])
   meta_write(metaOut, igram_phase);
   lines = metaIn->general->line_count;
 
-  /* 
+  /*
    * establish buffers
    */
   in1=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ*lines);
   in2=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ*lines);
   outAmp=(float *)MALLOC(sizeof(float)*BSZ*lines);
   outPhase=(float *)MALLOC(sizeof(float)*BSZ*lines);
-  
+
   /*
-   * Loop through each chunk of data 
+   * Loop through each chunk of data
    */
   for (ii=0; ii<lines; ii+=BSZ) {
     len = (ii+BSZ < lines) ? BSZ : lines-ii;
@@ -187,9 +183,9 @@ int main(int argc, char *argv[])
     {
     /*Take complex product of img1 and the conjugate of img2.*/
     	double igram_real,igram_imag;
-    	igram_real=in1[x].real*in2[x].real+in1[x].imag*in2[x].imag; 
-    	igram_imag=in1[x].imag*in2[x].real-in1[x].real*in2[x].imag; 
-    	
+    	igram_real=in1[x].real*in2[x].real+in1[x].imag*in2[x].imag;
+    	igram_imag=in1[x].imag*in2[x].real-in1[x].real*in2[x].imag;
+
     	outAmp[x]=sqrt(igram_real*igram_real+igram_imag*igram_imag);
 /*	outAmp[x]=sqrt(sqrt(in1[x].real*in1[x].real+in1[x].imag*in1[x].imag));  calculate the amplitude
 	of the first image only. */
@@ -199,7 +195,7 @@ int main(int argc, char *argv[])
     	else
     		outPhase[x]=0;
     }
-    
+
     put_float_lines(outFileAmp, metaOut, ii, len, outAmp);
     put_float_lines(outFilePhase, metaOut, ii, len, outPhase);
 
@@ -215,28 +211,31 @@ int main(int argc, char *argv[])
   FREE(in1);FREE(in2);
   FREE(outAmp);FREE(outPhase);
   FREE(metaIn);FREE(metaOut);
-  
+
 /*  printf("\nigram:  Ends successfully\n");*/
   if (logflag) {
-     sprintf(logbuf, "   Wrote %ld lines of data\n\n", lines);
+     sprintf(logbuf, "   Wrote %d lines of data\n\n", lines);
      printLog(logbuf);
   }
-  return 0;
+  exit (EXIT_SUCCESS);
 }
 
 void usage(char *name)
 {
-    printf("\nUSAGE:  %s <imageA> <imageB> <outfile>\n\n",name);
-    printf("    <imageA>     complex image file (imageA.cpx, imageA.meta). "
-	   "\n\t         Igram adds any extension\n");
-    printf("    <imageB>     complex image file (imageB.cpx, imageB.meta."
-	   "\n\t         Igram adds any extension\n");
-    printf("    <outfile>    Base name of amplitude and phase file to "
- 	   "store interferogram. \n\n");
-    printf("Program will create an interferogram from the two"
-	   "\ninput images.  <outfile>.amp and <outfile>.phase are the "
-	   "\noutput files.\n\n");
-    printf("Version %.2f, ASF SAR Tools\n\n",VERSION);
-    exit(1);
+  printf("\n"
+         "USAGE:\n"
+         "   %s <imageA> <imageB> <outfile>\n",name);
+  printf("\n"
+         "ARGUMENTS:\n"
+         "   <imageA>   Complex image file\n"
+         "   <imageB>   Complex image file\n"
+         "   <outfile>  Base name of amplitude and phase file to store interferogram.\n");
+  printf("\n"
+         "DESCRIPTION:\n"
+         "   Program will create an interferogram from the two input images.\n");
+  printf("\n"
+         "Version %.2f, ASF SAR Tools\n"
+         "\n",VERSION);
+  exit(EXIT_FAILURE);
 }
 
