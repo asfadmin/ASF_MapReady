@@ -143,7 +143,7 @@ convert_config *init_fill_config(char *configFile)
   cfg->export->format = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->export->format, "GEOTIFF");
   cfg->export->byte = (char *)MALLOC(sizeof(char)*25);
-  cfg->export->byte = "";
+  cfg->export->byte = "SIGMA";
 
   // Check for a default values file
   fConfig = FOPEN(configFile, "r");
