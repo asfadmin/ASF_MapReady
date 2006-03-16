@@ -5,8 +5,6 @@
 #define pi M_PI
 #endif
 
-static double er_target;
-
 static vector latLon2cart(GEOLOCATE_REC *g,double elev,
 			  double deg_lat,double deg_lon)
 {
@@ -77,7 +75,6 @@ static double getPixSize(meta_parameters *meta,int axis,int *loc,
 	g2=meta_make_geolocate(meta,meta_get_time(meta,loc[1],loc[0]),elev);
 	t2=getLocCart(g2,meta_get_slant(meta,loc[1],loc[0]),meta_get_dop(meta,loc[1],loc[0])+dop);
 	loc[axis]-=shift;
-	er_target=vecMagnitude(t1); /* magnitude of target location==earth radius */
 	vecSub(t2,t1,&diff);
 	return vecMagnitude(diff)/shift;
 }
