@@ -61,7 +61,7 @@ LIB = \
 
 CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
-$(TARGET).exe: $(TARGET).c doc
+$(TARGET).exe: $(TARGET).c
 	if [ ! -f $(GTK_DIR)/README.txt ]; then\
 	  for f in $(GTK_ZIP)/*.zip; do( yes| unzip $$f -d $(GTK_DIR) ); done;\
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
@@ -117,7 +117,7 @@ default: $(OBJS) doc
 
 doc: asf_convert_gui.txt
 
-DB2T = $(shell which docbook2tx 2>/dev/null)
+DB2T = $(shell which docbook2txt 2>/dev/null)
 
 asf_convert_gui.txt:
 	if test "X$(DB2T)" = "X"; then \
