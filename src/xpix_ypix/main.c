@@ -106,6 +106,18 @@ double vecCosAng(vector a,vector b)
 	return vecDot(a,b);
 }
 
+void getPixSizes(meta_parameters *meta, float *range_pixsiz, float *az_pixsiz)
+{
+  int sar_x = (int) meta->general->sample_count / 2;
+  int sar_y=  (int) meta->general->line_count / 2;
+
+  int loc[2];
+
+  meta_get_original_line_sample(meta,sar_y,sar_x, &loc[1],&loc[0]);
+
+  *range_pixsiz = getPixSize(meta,0,loc,0,0);
+  *az_pixsiz = getPixSize(meta,1,loc,0,0);
+}
 
 int main(int argc,char *argv[])
 {
