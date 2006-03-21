@@ -100,6 +100,7 @@ convert_config *init_fill_config(char *configFile)
   convert_config *cfg = newStruct(convert_config);
   cfg->general = newStruct(s_general);
   cfg->import = newStruct(s_import);
+  cfg->image_stats = newStruct(s_image_stats);
   cfg->geocoding = newStruct(s_geocoding);
   cfg->export = newStruct(s_export);
 
@@ -111,6 +112,7 @@ convert_config *init_fill_config(char *configFile)
   cfg->general->out_name = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->general->out_name, "");
   cfg->general->import = 0;
+  cfg->general->image_stats = 0;
   cfg->general->geocoding = 0;
   cfg->general->export = 0;
   cfg->general->batchFile = (char *)MALLOC(sizeof(char)*255);
@@ -129,6 +131,11 @@ convert_config *init_fill_config(char *configFile)
   cfg->import->lat_end = -99.0;
   cfg->import->prc = (char *)MALLOC(sizeof(char)*25);
   cfg->import->prc = "";
+
+  cfg->image_stats->values = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->image_stats->values, "LOOK");
+  cfg->image_stats->bins = -99;
+  cfg->image_stats->interval = -99.9;
 
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->geocoding->projection, "");
@@ -164,12 +171,14 @@ convert_config *init_fill_config(char *configFile)
   // Read default values file if there is one
   if (strcmp(cfg->general->defaults, "") != 0) {
     if (!fileExists(cfg->general->defaults)) 
-      check_return(1, "default values file does not exist");
+      check_return(1, "Default values file does not exist\n");
     fDefaults = FOPEN(cfg->general->defaults, "r");
     while (fgets(line, 255, fDefaults) != NULL) {
       test = read_param(line);
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
+      if (strncmp(test, "image stats", 11)==0)
+	cfg->general->image_stats = read_int(line, "image stats");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -182,6 +191,8 @@ convert_config *init_fill_config(char *configFile)
         cfg->import->radiometry = read_str(line, "radiometry");
       if (strncmp(test, "look up table", 13)==0)
         cfg->import->lut = read_str(line, "look up table");
+      if (strncmp(test, "stats values", 12)==0)
+	cfg->image_stats->values = read_str(line, "stats values");
       if (strncmp(test, "projection", 10)==0)
         cfg->geocoding->projection = read_str(line, "projection");
       if (strncmp(test, "pixel spacing", 13)==0)
@@ -217,6 +228,8 @@ convert_config *init_fill_config(char *configFile)
         cfg->general->out_name = read_str(line, "output file");
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
+      if (strncmp(test, "image stats", 11)==0)
+	cfg->general->image_stats = read_int(line, "image stats");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -255,6 +268,8 @@ convert_config *read_config(char *configFile, int cFlag)
         cfg->general->out_name = read_str(line, "output file");
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
+      if (strncmp(test, "image stats", 11)==0)
+	cfg->general->image_stats = read_int(line, "image stats");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -284,6 +299,17 @@ convert_config *read_config(char *configFile, int cFlag)
         cfg->import->prc = read_str(line, "precise");
     }
 
+    if (strncmp(line, "[Image stats]", 13)==0) strcpy(params, "Image stats");
+    if (strncmp(params, "Image stats", 11)==0) {
+      test = read_param(line);
+      if (strncmp(test, "values", 6)==0)
+        cfg->image_stats->values = read_str(line, "values");
+      if (strncmp(test, "bins", 4)==0)
+	cfg->image_stats->bins = read_int(line, "bins");
+      if (strncmp(test, "interval", 8)==0)
+	cfg->image_stats->interval = read_double(line, "interval");
+    }
+ 
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "Geocoding");
     if (strncmp(params, "Geocoding", 9)==0) {
       test = read_param(line);
@@ -331,6 +357,8 @@ int write_config(char *configFile, convert_config *cfg)
     fprintf(fConfig, "input file = %s\n", cfg->general->in_name);
     fprintf(fConfig, "output file = %s\n", cfg->general->out_name);
     fprintf(fConfig, "import = %i\n", cfg->general->import);
+    if (cfg->general->image_stats)
+      fprintf(fConfig, "image stats = %i\n", cfg->general->image_stats);
     fprintf(fConfig, "geocoding = %i\n", cfg->general->geocoding);
     fprintf(fConfig, "export = %i\n", cfg->general->export);
     fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
@@ -346,6 +374,13 @@ int write_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "precise = %s\n\n", cfg->import->prc);
     }
     
+    if (cfg->general->image_stats) {
+      fprintf(fConfig, "[Image stats]\n");
+      fprintf(fConfig, "values = %s\n", cfg->image_stats->values);
+      fprintf(fConfig, "bins = %i\n", cfg->image_stats->bins);
+      fprintf(fConfig, "interval = %.2lf\n", cfg->image_stats->interval);
+    }
+
     if (cfg->general->geocoding) {
       fprintf(fConfig, "[Geocoding]\n");
       fprintf(fConfig, "projection = %s\n", cfg->geocoding->projection);

@@ -6,6 +6,7 @@ typedef struct
   char *in_name;          // input file name
   char *out_name;         // output file name
   int import;             // import flag
+  int image_stats;        // image stats flag
   int geocoding;          // geocoding flag
   int export;             // export flag
   int intermediates;      // flag to keep intermediates
@@ -29,6 +30,13 @@ typedef struct
 
 typedef struct
 {
+  char *values;           // value axis: LOOK, INCIDENCE, RANGE
+  int bins;               // number of bins
+  double interval;        // interval between bins
+} s_image_stats;
+
+typedef struct
+{
   char *projection;       // projection parameters file
   double pixel;           // pixel size for geocoding
   double height;          // average height of the data
@@ -49,6 +57,7 @@ typedef struct
   char comment[255];          // first line for comments
   s_general *general;         // general processing details
   s_import *import;           // importing parameters
+  s_image_stats *image_stats; // image stats parameters
   s_geocoding *geocoding;     // geocoding parameters
   s_export *export;           // exporting parameters
 } convert_config;

@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
   char configFile[255], cmd[1024], options[255], line[255], batchConfig[255];
   char inFile[255], outFile[255], fileName[255];
   char format[255], radiometry[255], projection[255], datum[255], resampling[255];
-  char scale[255];
+  char scale[255], values[255];
   int cFlag=0, pid;
 
   if (argc<2 || argc>3) usage();
@@ -343,6 +343,16 @@ int main(int argc, char *argv[])
 	asfPrintError("Chosen resampling method not supported\n");
     }
 
+    // Check whether everything in the [Image stats] block is reasonable
+    if (cfg->general->geocoding) {
+     
+      // Values
+      if (strncmp(cfg->image_stats->values, "LOOK", 4) != 0 &&
+	  strncmp(cfg->image_stats->values, "INCIDENCE", 9) != 0 &&
+	  strncmp(cfg->image_stats->values, "RANGE", 5) != 0)
+	asfPrintError("Chosen values not supported\n");
+    }
+
     // Check whether everything in the [Export] block is reasonable
     if (cfg->general->export) {
 
@@ -395,7 +405,8 @@ int main(int argc, char *argv[])
 	sprintf(radiometry, "-beta ");
 
       // Pass in command line
-      if (cfg->general->geocoding || cfg->general->export)
+      if (cfg->general->image_stats || cfg->general->geocoding || 
+	  cfg->general->export)
 	sprintf(outFile, "tmp%i_import", pid);
       else
 	sprintf(outFile, "%s", cfg->general->out_name);
@@ -403,10 +414,27 @@ int main(int argc, char *argv[])
 			      radiometry, NULL, cfg->import->lat_begin, 
 			      cfg->import->lat_end), 
 		   "ingesting data file (asf_import)\n");
-      if (!cfg->general->geocoding) {
-	sprintf("cp %s.meta %s.meta", outFile, cfg->general->in_name);
-	system(cmd);
-      }
+    }
+
+    if (cfg->general->image_stats) {
+
+      // Values for statistics
+      if (strncmp(uc(cfg->image_stats->values), "LOOK", 4) == 0)
+	sprintf(values, "-look");
+      else if (strncmp(uc(cfg->image_stats->values), "INCIDENCE", 9) == 0)
+	sprintf(values, "-incidence");
+      else if (strncmp(uc(cfg->image_stats->values), "RANGE", 5) == 0)
+	sprintf(values, "-range");
+
+      // Pass in command line
+      sprintf(inFile, "%s", outFile);
+      if (cfg->general->geocoding || cfg->general->export)
+	sprintf(outFile, "tmp%i_image_stats", pid);
+      else
+	sprintf(outFile, "%s", cfg->general->out_name);
+      check_return(image_stats(inFile, outFile, values, cfg->image_stats->bins, 
+			       cfg->image_stats->interval), 
+		   "running statistics on data file (image_stats)\n");      
     }
 
     if (cfg->general->geocoding) {

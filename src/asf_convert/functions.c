@@ -24,6 +24,20 @@ int asf_import(char *inFile, char *outFile, char *format, char *radiometry,
   return ret;
 }
 
+int image_stats(char *inFile, char *outFile, char *values, int bins, 
+		     double interval)
+{
+  char options[255]="", command[1024];
+  int ret;
+
+  if (bins != -99)
+    sprintf(options, "%i", bins);
+  sprintf(command, "image_stats %s %s %s %s", values, options, inFile, outFile);
+  ret = system(command);
+
+  return ret;
+}
+
 int asf_geocode(char *options, char *inFile, char *outFile)
 {
   char command[1024];
