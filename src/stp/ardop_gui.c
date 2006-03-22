@@ -444,7 +444,7 @@ on_file_selection_dialog_ok_button_clicked(GtkWidget *w)
 }
 
 SIGNAL_CALLBACK void
-on_aisp_main_destroy(GtkWidget *w, gpointer data)
+on_ardop_main_destroy(GtkWidget *w, gpointer data)
 {
     gtk_main_quit();
 }
@@ -550,8 +550,8 @@ set_button_text(int step, const char *file, const char *postfix)
 static void
 set_widget_sensitive(const char * w, gboolean setting)
 {
-    GtkWidget *aisp_main_scrolledwindow = glade_xml_get_widget(glade_xml, w);
-    gtk_widget_set_sensitive(aisp_main_scrolledwindow, setting);
+    GtkWidget *ardop_main_scrolledwindow = glade_xml_get_widget(glade_xml, w);
+    gtk_widget_set_sensitive(ardop_main_scrolledwindow, setting);
 }
 
 const gchar *
@@ -868,10 +868,10 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     char cmd[1024];
 
 #ifdef win32
-    sprintf(cmd, "%s/aisp.exe -p 1 -debug %d %s %s", get_asf_bin_dir(),
+    sprintf(cmd, "%s/ardop.exe -p 1 -debug %d %s %s", get_asf_bin_dir(),
             debug_flag, input_file, output_file);
 #else
-    sprintf(cmd, "%s -p 1 -debug %d %s %s", find_in_path("aisp"),
+    sprintf(cmd, "%s -p 1 -debug %d %s %s", find_in_path("ardop"),
             debug_flag, input_file, output_file);
 #endif
 
@@ -1479,7 +1479,7 @@ main(int argc, char **argv)
 
     gtk_init(&argc, &argv);
 
-    glade_xml_file = (gchar *) find_in_path("aisp_gui.glade");
+    glade_xml_file = (gchar *) find_in_path("ardop_gui.glade");
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
     g_free(glade_xml_file);
@@ -1492,7 +1492,7 @@ main(int argc, char **argv)
     sprintf(title,
             "SAR Training Processor: Version %s", STP_VERSION);
 
-    GtkWidget *widget = glade_xml_get_widget (glade_xml, "aisp_main");
+    GtkWidget *widget = glade_xml_get_widget (glade_xml, "ardop_main");
     gtk_window_set_title(GTK_WINDOW(widget), title);
 
     set_font();

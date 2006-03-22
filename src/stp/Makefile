@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
-TARGET = aisp_gui
-SRCS = aisp_gui.c
+TARGET = ardop_gui
+SRCS = ardop_gui.c
 
 # different procedures for win/unix
 ifeq ($(SYS),win32)

@@ -3,7 +3,7 @@
 
 <glade-interface>
 
-<widget class="GtkWindow" id="aisp_main">
+<widget class="GtkWindow" id="ardop_main">
   <property name="width_request">1024</property>
   <property name="height_request">784</property>
   <property name="visible">True</property>
@@ -18,10 +18,10 @@
   <property name="skip_pager_hint">False</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
-  <signal name="destroy" handler="on_aisp_main_destroy" last_modification_time="Wed, 09 Mar 2005 18:56:06 GMT"/>
+  <signal name="destroy" handler="on_ardop_main_destroy" last_modification_time="Wed, 09 Mar 2005 18:56:06 GMT"/>
 
   <child>
-    <widget class="GtkScrolledWindow" id="aisp_main_scrolledwindow">
+    <widget class="GtkScrolledWindow" id="ardop_main_scrolledwindow">
       <property name="visible">True</property>
       <property name="can_focus">True</property>
       <property name="hscrollbar_policy">GTK_POLICY_ALWAYS</property>
@@ -30,12 +30,12 @@
       <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
 
       <child>
-	<widget class="GtkViewport" id="aisp_main_viewport">
+	<widget class="GtkViewport" id="ardop_main_viewport">
 	  <property name="visible">True</property>
 	  <property name="shadow_type">GTK_SHADOW_IN</property>
 
 	  <child>
-	    <widget class="GtkVBox" id="aisp_main_vbox">
+	    <widget class="GtkVBox" id="ardop_main_vbox">
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
 	      <property name="spacing">0</property>
