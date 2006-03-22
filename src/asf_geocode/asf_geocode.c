@@ -22,7 +22,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_USAGE_STRING \
 "-p <projection name> <<projection parameters>>\n"\
 "       [--force] [--resample-method <method>] [--height <height>]\n"\
-"       [--datum <datum>] [--pixel-size <pixel size>]\n\n"\
+"       [--datum <datum>] [--pixel-size <pixel size>] [--log <file>]\n\n"\
 "   Or \"asf_geocode --help\" for more options on specifying\n"\
 "   projection parameters.\n"
 
@@ -164,7 +164,10 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          to do the projection anyway (such as when you will mosaic\n"\
 "          the result a number of other scenes and wish to have them\n"\
 "          all in the same projection), the --force option can be used\n"\
-"          in these situations."
+"          in these situations.\n"\
+"\n"\
+"     --log <log file>\n"\
+"          Output will be written to a specified log file.\n"
 
 #define ASF_EXAMPLES_STRING \
 "     To map project an image with centerpoint at -147 degrees\n"\
