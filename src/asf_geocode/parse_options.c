@@ -155,6 +155,7 @@ static void get_fields(FILE * fp, ...)
 			break;
 
 		vals[nkeys] = va_arg(ap, double *);
+		*(vals[nkeys]) = MAGIC_UNSET_DOUBLE;
 		++nkeys;
 	}
 	va_end(ap);
@@ -363,9 +364,10 @@ static void parse_proj_args_file(char * file, project_parameters_t * pps,
 			"False Northing", &pps->utm.false_northing,
 			"Zone", &zone,
 			NULL);
+		
 		pps->utm.zone = (int) zone;
 
-		if (pps->utm.zone == 0)
+		if (pps->utm.zone == 0 || ISNAN(zone))
 			pps->utm.zone = MAGIC_UNSET_INT;
 	}
 	else
