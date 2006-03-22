@@ -1,6 +1,6 @@
 /****************************************************************************
 *								            *
-*   aisp_params.h   Parameters needed to run AISP                           *
+*   ardop_params.h   Parameters needed to run ARDOP                           *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -21,7 +21,7 @@
 /*-------------------------------------------------------------------------*/
 /*   This structure contains all of the parameters needed to run asp.c     */
 /*-------------------------------------------------------------------------*/
-struct AISP_PARAMS {
+struct ARDOP_PARAMS {
   char	in1[256];	     /* First input file basename		   */
   char	out[256];	     /* Output File basename                       */
   char	CALPRMS[255];        /* Calibration Parameters file (if desired)   */
@@ -70,6 +70,6 @@ struct AISP_PARAMS {
   float	xmi;		     /* bias value for i values			   */
   float	xmq;		     /* bias value for q values			   */
 };
-void print_params(const char *in,struct AISP_PARAMS *a,const char *sourceProgram);
-void read_params(const char *in,struct AISP_PARAMS *);
+void print_params(const char *in,struct ARDOP_PARAMS *a,const char *sourceProgram);
+void read_params(const char *in,struct ARDOP_PARAMS *);
 
