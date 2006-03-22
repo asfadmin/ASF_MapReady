@@ -15,7 +15,7 @@ RETURN VALUE:0 if all is well, -1 if error opening or reading files
 
 SPECIAL CONSIDERATIONS:
 
-PROGRAM HISTORY: Written by Jeremy Nicoll to support AISP ERS-1,-2 
+PROGRAM HISTORY: Written by Jeremy Nicoll to support ARDOP ERS-1,-2 
 calibration 4-01-02.
 
 ****************************************************************/

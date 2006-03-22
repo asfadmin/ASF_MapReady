@@ -77,7 +77,7 @@ void writeAsfCeosData(int mode, ceosLeader *leader,struct DDR *ddr,
       floatBuf = (float *) MALLOC (ddr->ns*sizeof(float));
 
       /* Scale value for output pixel values */
-      /* JBN (04-01-02) removed this whole structure. Now that AISP is calibrateable,
+      /* JBN (04-01-02) removed this whole structure. Now that ARDOP is calibrateable,
 	 these values can be scaled by an antenna pattern application.
       if (strncmp(meta->info->sensor,"ERS1",4)==0) scale = 3.75;
       else if (strncmp(meta->info->sensor,"ERS2",4)==0) scale = 6.0;

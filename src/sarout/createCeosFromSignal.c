@@ -19,21 +19,21 @@ PROGRAM HISTORY:
 #include "asf.h"
 #include "asf_meta.h"
 #include "sarout.h"
-#include "aisp_params.h"
+#include "ardop_params.h"
 
 void getSignalFormat(char *,int *,int *,float *,float *,char *,float *);
-void createRSR(char *file, struct AISP_PARAMS *asp, struct rng_spec_rec *rsr);
+void createRSR(char *file, struct ARDOP_PARAMS *asp, struct rng_spec_rec *rsr);
 double getSNR(struct rng_spec_rec *);
 void createCeosFromSignal(meta_parameters *meta,char *inImgFile, ceosLeader *leader);
 
 void createCeosFromSignal(meta_parameters *meta,char *inImgFile, ceosLeader *leader)
  {
-   struct AISP_PARAMS a;
+   struct ARDOP_PARAMS a;
    int nbytes; 		/* Number of bytes per line */
    int nhead;		/* Number of header bytes per line */
    float xmi, xmq; 	/* I,Q bias values */
    char  iqflip;	/* IQ flip flag    */
-   char  pfile[256];	/* AISP parameter file name */
+   char  pfile[256];	/* ARDOP parameter file name */
    float dwp;
 
    /* Read .in file 
@@ -84,7 +84,7 @@ double getSNR(struct rng_spec_rec *rsr)
    return((aveSignal-aveNoise)/aveNoise);
  }
 
-void createRSR(char *file, struct AISP_PARAMS *asp, struct rng_spec_rec *rsr)
+void createRSR(char *file, struct ARDOP_PARAMS *asp, struct rng_spec_rec *rsr)
  {
     char cmd[256];
     FILE *fp;
