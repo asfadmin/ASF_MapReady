@@ -56,7 +56,7 @@ BUGS:
 ******************************************************************************/
 
 #include "asf.h"
-#include "aisp_params.h"
+#include "ardop_params.h"
 
 #define VERSION 1.15
 
@@ -91,8 +91,8 @@ int main(int argc, char *argv[])
 	float avg_t1, avg_t2, avg_t3;
 
 	FILE *fptr;
-	struct AISP_PARAMS aisp1;	/* aisp structure to load .in file */
-	struct AISP_PARAMS aisp2;
+	struct ARDOP_PARAMS ardop1;	/* ardop structure to load .in file */
+	struct ARDOP_PARAMS ardop2;
 
 	logflag=0;
 	currArg=1;
@@ -115,13 +115,13 @@ int main(int argc, char *argv[])
 	strcpy(dotInFile2,argv[currArg+1]);
 	strcpy(goingOut,argv[currArg+2]);
 
-/* read first .in file into aisp structure */ 
-	read_params(dotInFile1, &aisp1);
-	read_params(dotInFile2, &aisp2);
+/* read first .in file into ardop structure */ 
+	read_params(dotInFile1, &ardop1);
+	read_params(dotInFile2, &ardop2);
 	
-	avg_t1 = (aisp1.fd + aisp2.fd) / 2;
-	avg_t2 = (aisp1.fdd + aisp2.fdd) / 2;
-	avg_t3 = (aisp1.fddd + aisp2.fddd) / 2;
+	avg_t1 = (ardop1.fd + ardop2.fd) / 2;
+	avg_t2 = (ardop1.fdd + ardop2.fdd) / 2;
+	avg_t3 = (ardop1.fddd + ardop2.fddd) / 2;
 
         system("date");
         printf("Program: avg_in_dop\n\n");
