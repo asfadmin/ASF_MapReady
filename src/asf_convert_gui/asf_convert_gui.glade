@@ -319,7 +319,6 @@
 
 		  <child>
 		    <widget class="GtkCheckButton" id="apply_metadata_fix_checkbutton">
-		      <property name="visible">True</property>
 		      <property name="tooltip" translatable="yes">Images produces by the Precision Processor have a small error in the Y pixel size due to a problem in the calculation of the relative velocity between the satellite and the center of the scene.  If this option is checked, then the metadata for the scene will be adjusted to correct for this error.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label" translatable="yes">Apply Azimuth Pixel Size Metadata Fix</property>
