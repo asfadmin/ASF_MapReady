@@ -192,3 +192,22 @@ void meta_get_lineSamp(meta_parameters *meta,
 	*yLine=y-DELTA/2;
 	*xSamp=x-DELTA/2;
 }
+
+void meta_get_corner_coords(meta_parameters *meta)
+{
+  double lat, lon;
+
+  meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
+  meta->location->lon_start_near_range = lon;
+  meta->location->lat_start_near_range = lat;
+  meta_get_latLon(meta, 0, meta->general->sample_count, 0.0, &lat, &lon);
+  meta->location->lon_start_far_range = lon;
+  meta->location->lat_start_far_range = lat;
+  meta_get_latLon(meta, meta->general->line_count, 0, 0.0, &lat, &lon);
+  meta->location->lon_end_near_range = lon;
+  meta->location->lat_end_near_range = lat;
+  meta_get_latLon(meta, meta->general->line_count, meta->general->sample_count,
+                  0.0, &lat, &lon);
+  meta->location->lon_end_far_range = lon;
+  meta->location->lat_end_far_range = lat;
+}
