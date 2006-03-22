@@ -128,8 +128,8 @@ dem_config *init_fill_config(char *configFile)
   cfg->coreg_p1 = newStruct(s_coreg);
   cfg->coreg_pL = newStruct(s_coreg);
   cfg->doppler_per_patch = newStruct(s_status);
-  cfg->aisp_master = newStruct(s_aisp);
-  cfg->aisp_slave = newStruct(s_aisp);
+  cfg->ardop_master = newStruct(s_ardop);
+  cfg->ardop_slave = newStruct(s_ardop);
   cfg->cpx_autofilter = newStruct(s_status);
   cfg->coreg_slave = newStruct(s_coreg);
   cfg->igram_coh = newStruct(s_igram_coh);
@@ -220,23 +220,23 @@ dem_config *init_fill_config(char *configFile)
   cfg->doppler_per_patch->status = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->doppler_per_patch->status, "new");
   
-  cfg->aisp_master->start_offset = 0;
-  cfg->aisp_master->end_offset = 0;
-  cfg->aisp_master->patches = 1;
-  cfg->aisp_master->power = 1;
-  cfg->aisp_master->power_img = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->aisp_master->power_img, "");
-  cfg->aisp_master->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->aisp_master->status, "new");
+  cfg->ardop_master->start_offset = 0;
+  cfg->ardop_master->end_offset = 0;
+  cfg->ardop_master->patches = 1;
+  cfg->ardop_master->power = 1;
+  cfg->ardop_master->power_img = (char *)MALLOC(sizeof(char)*255);
+  strcpy(cfg->ardop_master->power_img, "");
+  cfg->ardop_master->status = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->ardop_master->status, "new");
   
-  cfg->aisp_slave->start_offset = 0;
-  cfg->aisp_slave->end_offset = 0;
-  cfg->aisp_slave->patches = 1;
-  cfg->aisp_slave->power = 1;
-  cfg->aisp_slave->power_img = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->aisp_slave->power_img, "");
-  cfg->aisp_slave->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->aisp_slave->status, "new");
+  cfg->ardop_slave->start_offset = 0;
+  cfg->ardop_slave->end_offset = 0;
+  cfg->ardop_slave->patches = 1;
+  cfg->ardop_slave->power = 1;
+  cfg->ardop_slave->power_img = (char *)MALLOC(sizeof(char)*255);
+  strcpy(cfg->ardop_slave->power_img, "");
+  cfg->ardop_slave->status = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->ardop_slave->status, "new");
   
   cfg->cpx_autofilter->status = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->cpx_autofilter->status, "new");
@@ -589,38 +589,38 @@ dem_config *read_config(char *configFile, int cFlag)
 	cfg->doppler_per_patch->status = read_str(line, "status");
     }
     
-    if (strncmp(line, "[aisp - Master image]", 21)==0) strcpy(params, "aisp_master");
-    if (strcmp(params, "aisp_master")==0) {
+    if (strncmp(line, "[ardop - Master image]", 22)==0) strcpy(params, "ardop_master");
+    if (strcmp(params, "ardop_master")==0) {
       test = read_param(line);
       if (strncmp(test, "start offset", 12)==0) 
-	cfg->aisp_master->start_offset = read_int(line, "start offset"); 
+	cfg->ardop_master->start_offset = read_int(line, "start offset"); 
       if (strncmp(test, "end offset", 10)==0) 
-	cfg->aisp_master->end_offset = read_int(line, "end offset"); 
+	cfg->ardop_master->end_offset = read_int(line, "end offset"); 
       if (strncmp(test, "patches", 7)==0) 
-	cfg->aisp_master->patches = read_int(line, "patches");
+	cfg->ardop_master->patches = read_int(line, "patches");
       if (strncmp(test, "power flag", 10)==0) 
-	cfg->aisp_master->power = read_int(line, "power flag"); 
+	cfg->ardop_master->power = read_int(line, "power flag"); 
       if (strncmp(test, "power image", 11)==0) 
-	cfg->aisp_master->power_img = read_str(line, "power image"); 
+	cfg->ardop_master->power_img = read_str(line, "power image"); 
       if (strncmp(test, "status", 6)==0) 
-	cfg->aisp_master->status = read_str(line, "status"); 
+	cfg->ardop_master->status = read_str(line, "status"); 
     }	  
     
-    if (strncmp(line, "[aisp - Slave image]", 20)==0) strcpy(params, "aisp_slave");
-    if (strcmp(params, "aisp_slave")==0) {
+    if (strncmp(line, "[ardop - Slave image]", 21)==0) strcpy(params, "ardop_slave");
+    if (strcmp(params, "ardop_slave")==0) {
       test = read_param(line);
       if (strncmp(test, "start offset", 6)==0) 
-	cfg->aisp_slave->start_offset = read_int(line, "start offset"); 
+	cfg->ardop_slave->start_offset = read_int(line, "start offset"); 
       if (strncmp(test, "end offset", 10)==0) 
-	cfg->aisp_slave->end_offset = read_int(line, "end offset"); 
+	cfg->ardop_slave->end_offset = read_int(line, "end offset"); 
       if (strncmp(test, "patches", 7)==0) 
-	cfg->aisp_slave->patches = read_int(line, "patches"); 
+	cfg->ardop_slave->patches = read_int(line, "patches"); 
       if (strncmp(test, "power flag", 10)==0) 
-	cfg->aisp_slave->power = read_int(line, "power flag"); 
+	cfg->ardop_slave->power = read_int(line, "power flag"); 
       if (strncmp(test, "power image", 11)==0) 
-	cfg->aisp_slave->power_img = read_str(line, "power image"); 
+	cfg->ardop_slave->power_img = read_str(line, "power image"); 
       if (strncmp(test, "status", 6)==0) 
-	cfg->aisp_slave->status = read_str(line, "status"); 
+	cfg->ardop_slave->status = read_str(line, "status"); 
     }	  
     
     if (strncmp(line, "[Coregister slave]", 16)==0) strcpy(params, "coreg_slave");
@@ -846,20 +846,20 @@ int write_config(char *configFile, dem_config *cfg)
       fprintf(fConfig, "[doppler_per_patch]\n");
       fprintf(fConfig, "status = %s\n\n", cfg->doppler_per_patch->status);
     }
-    fprintf(fConfig, "[aisp - Master image]\n");
-    fprintf(fConfig, "start offset = %ld\n", cfg->aisp_master->start_offset);
-    fprintf(fConfig, "end offset = %ld\n", cfg->aisp_master->end_offset);
-    fprintf(fConfig, "patches = %d\n", cfg->aisp_master->patches);
-    fprintf(fConfig, "power flag = %d\n", cfg->aisp_master->power);
-    fprintf(fConfig, "power image = %s\n", cfg->aisp_master->power_img);
-    fprintf(fConfig, "status = %s\n\n", cfg->aisp_master->status);
-    fprintf(fConfig, "[aisp - Slave image]\n");
-    fprintf(fConfig, "start offset = %ld\n", cfg->aisp_slave->start_offset);
-    fprintf(fConfig, "end offset = %ld\n", cfg->aisp_slave->end_offset);
-    fprintf(fConfig, "patches = %d\n", cfg->aisp_slave->patches);
-    fprintf(fConfig, "power flag = %d\n", cfg->aisp_slave->power);
-    fprintf(fConfig, "power image = %s\n", cfg->aisp_slave->power_img);
-    fprintf(fConfig, "status = %s\n\n", cfg->aisp_slave->status);
+    fprintf(fConfig, "[ardop - Master image]\n");
+    fprintf(fConfig, "start offset = %ld\n", cfg->ardop_master->start_offset);
+    fprintf(fConfig, "end offset = %ld\n", cfg->ardop_master->end_offset);
+    fprintf(fConfig, "patches = %d\n", cfg->ardop_master->patches);
+    fprintf(fConfig, "power flag = %d\n", cfg->ardop_master->power);
+    fprintf(fConfig, "power image = %s\n", cfg->ardop_master->power_img);
+    fprintf(fConfig, "status = %s\n\n", cfg->ardop_master->status);
+    fprintf(fConfig, "[ardop - Slave image]\n");
+    fprintf(fConfig, "start offset = %ld\n", cfg->ardop_slave->start_offset);
+    fprintf(fConfig, "end offset = %ld\n", cfg->ardop_slave->end_offset);
+    fprintf(fConfig, "patches = %d\n", cfg->ardop_slave->patches);
+    fprintf(fConfig, "power flag = %d\n", cfg->ardop_slave->power);
+    fprintf(fConfig, "power image = %s\n", cfg->ardop_slave->power_img);
+    fprintf(fConfig, "status = %s\n\n", cfg->ardop_slave->status);
   }
   if (strncmp(cfg->general->data_type, "RAW", 3)==0) {
     fprintf(fConfig, "[Ingest]\n");
@@ -890,20 +890,20 @@ int write_config(char *configFile, dem_config *cfg)
       fprintf(fConfig, "[doppler_per_patch]\n");
       fprintf(fConfig, "status = %s\n\n", cfg->doppler_per_patch->status);
     }
-    fprintf(fConfig, "[aisp - Master image]\n");
-    fprintf(fConfig, "start offset = %ld\n", cfg->aisp_master->start_offset);
-    fprintf(fConfig, "end offset = %ld\n", cfg->aisp_master->end_offset);
-    fprintf(fConfig, "patches = %d\n", cfg->aisp_master->patches);
-    fprintf(fConfig, "power flag = %d\n", cfg->aisp_master->power);
-    fprintf(fConfig, "power image = %s\n", cfg->aisp_master->power_img);
-    fprintf(fConfig, "status = %s\n\n", cfg->aisp_master->status);
-    fprintf(fConfig, "[aisp - Slave image]\n");
-    fprintf(fConfig, "start offset = %ld\n", cfg->aisp_slave->start_offset);
-    fprintf(fConfig, "end offset = %ld\n", cfg->aisp_slave->end_offset);
-    fprintf(fConfig, "patches = %d\n", cfg->aisp_slave->patches);
-    fprintf(fConfig, "power flag = %d\n", cfg->aisp_slave->power);
-    fprintf(fConfig, "power image = %s\n", cfg->aisp_slave->power_img);
-    fprintf(fConfig, "status = %s\n\n", cfg->aisp_slave->status);
+    fprintf(fConfig, "[ardop - Master image]\n");
+    fprintf(fConfig, "start offset = %ld\n", cfg->ardop_master->start_offset);
+    fprintf(fConfig, "end offset = %ld\n", cfg->ardop_master->end_offset);
+    fprintf(fConfig, "patches = %d\n", cfg->ardop_master->patches);
+    fprintf(fConfig, "power flag = %d\n", cfg->ardop_master->power);
+    fprintf(fConfig, "power image = %s\n", cfg->ardop_master->power_img);
+    fprintf(fConfig, "status = %s\n\n", cfg->ardop_master->status);
+    fprintf(fConfig, "[ardop - Slave image]\n");
+    fprintf(fConfig, "start offset = %ld\n", cfg->ardop_slave->start_offset);
+    fprintf(fConfig, "end offset = %ld\n", cfg->ardop_slave->end_offset);
+    fprintf(fConfig, "patches = %d\n", cfg->ardop_slave->patches);
+    fprintf(fConfig, "power flag = %d\n", cfg->ardop_slave->power);
+    fprintf(fConfig, "power image = %s\n", cfg->ardop_slave->power_img);
+    fprintf(fConfig, "status = %s\n\n", cfg->ardop_slave->status);
   }
   if (strncmp(cfg->general->data_type, "SLC", 3)==0) {
     fprintf(fConfig, "[Ingest]\n");

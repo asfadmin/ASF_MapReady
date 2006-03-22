@@ -45,7 +45,7 @@ typedef struct {
   int power;		/* switch for power image */
   char *power_img;	/* name of the power image */
   char *status;		/* status of processing */
-} s_aisp;
+} s_ardop;
 
 typedef struct {
   int patches;		/* number of patches */
@@ -136,8 +136,8 @@ typedef struct {
   s_status *doppler_per_patch;	/* updated Doppler processing */
   s_coreg *coreg_p1;		/* coregistration of first patch */
   s_coreg *coreg_pL;		/* coregistration of last patch */
-  s_aisp *aisp_master;		/* processing master image */
-  s_aisp *aisp_slave;		/* processing slave image */
+  s_ardop *ardop_master;	/* processing master image */
+  s_ardop *ardop_slave;		/* processing slave image */
   s_status *cpx_autofilter;	/* filter SLC images */
   s_coreg *coreg_slave;		/* coregistration of SLC slave image */
   s_igram_coh *igram_coh;      	/* interferogram/coherence generation */

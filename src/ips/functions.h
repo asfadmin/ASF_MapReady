@@ -15,8 +15,8 @@ int avg_in_dop(char *inFile1, char *inFile2, char *outFile1);
 int doppler_per_patch(char *parFile1, char *parFile2, char *metaFile1, 
 		      char *metaFile2, char *deltaFile, char *outFile1, 
 		      char *outFile2);
-int aisp(char *option, int startLineNum, int numPatches, char *inFile, 
-	 char *outFile);
+int ardop(char *option, int startLineNum, int numPatches, char *inFile, 
+	  char *outFile);
 int c2p(char *inFile, char *outFile);
 int cpx_autofilter(char *inFile1, char *inFile2, char *outFile1, char *outFile2);
 int coregister_coarse(char *inFile1, char *inFile2, char *outFile, char *maskFile);
@@ -57,6 +57,6 @@ int deskew_dem(char *inFile1, char *outFile, char *inFile2, int radiometric);
 int asf_geocode(char *options, char *inFile, char *outFile);
 int asf_export(char *options, char *inFile, char *outFile);
 
-#define AISP_VALID_PATCH_LENGTH 3300
+#define ARDOP_VALID_PATCH_LENGTH 3300
 
 #endif

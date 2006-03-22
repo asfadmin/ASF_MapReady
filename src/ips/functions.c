@@ -70,14 +70,14 @@ int doppler_per_patch(char *parFile1, char * parFile2, char *metaFile1,
   return ret;
 }
 
-int aisp(char *option, int startLineNum, int numPatches, char *inFile, char *outFile)
+int ardop(char *option, int startLineNum, int numPatches, char *inFile, char *outFile)
 {
   char options[255]="", command[255];
   int ret;
   
   sprintf(options, "-log %s -quiet -p %i -v %i -l %i %s", 
-	  logFile, numPatches, AISP_VALID_PATCH_LENGTH, startLineNum, option);
-  sprintf(command, "aisp %s %s %s", options, inFile, outFile);
+	  logFile, numPatches, ARDOP_VALID_PATCH_LENGTH, startLineNum, option);
+  sprintf(command, "ardop %s %s %s", options, inFile, outFile);
   
   printf("\nCommand line: %s\nDate: ", command);
   fLog = FOPEN(logFile, "a");

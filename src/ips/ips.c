@@ -148,8 +148,8 @@ main(int argc, char *argv[])
   if (strncmp(cfg->general->status, "new", 3)==0) {
     sprintf(cfg->igram_coh->igram, "%s_igram", cfg->general->base);
     sprintf(cfg->igram_coh->coh, "coh.img", cfg->general->base);
-    sprintf(cfg->aisp_master->power_img, "%s_a_pwr.img", cfg->general->base);
-    sprintf(cfg->aisp_slave->power_img, "%s_b_pwr.img", cfg->general->base);
+    sprintf(cfg->ardop_master->power_img, "%s_a_pwr.img", cfg->general->base);
+    sprintf(cfg->ardop_slave->power_img, "%s_b_pwr.img", cfg->general->base);
     sprintf(cfg->sim_phase->seeds, "%s.seeds", cfg->general->base);
     sprintf(cfg->dinsar->igram, "%s_digram.img", cfg->general->base);
     sprintf(cfg->unwrap->qc, "%s_qc.phase", cfg->general->base);
@@ -230,7 +230,7 @@ main(int argc, char *argv[])
   
   /* Ingest the various data types: STF, RAW, or SLC */
   if (datatype==0) {
-   
+    
     /* Ingest of level zero STF data */
     if (check_status(cfg->ingest->status)) {
       if (cfg->general->lat_begin < -90.0 || cfg->general->lat_begin > 90.0) {
@@ -263,20 +263,20 @@ main(int argc, char *argv[])
 		   "ingesting slave image (asf_import)");
       
       strcat(strcpy(metaFile,"a"),".meta");
-      cfg->aisp_master->end_offset = 
+      cfg->ardop_master->end_offset = 
 	lzInt(metaFile, "sar.original_line_count:", NULL);
-      cfg->aisp_master->patches = 
-	(int) ((cfg->aisp_master->end_offset-4096)/AISP_VALID_PATCH_LENGTH) + 2;
+      cfg->ardop_master->patches = 
+	(int) ((cfg->ardop_master->end_offset-4096)/ARDOP_VALID_PATCH_LENGTH) + 2;
       strcat(strcpy(metaFile,"b"),".meta");
-      cfg->aisp_slave->end_offset = 
+      cfg->ardop_slave->end_offset = 
 	lzInt(metaFile, "sar.original_line_count:", NULL);
       
-      if (cfg->aisp_slave->end_offset > cfg->aisp_master->end_offset)
-	cfg->aisp_slave->end_offset = cfg->aisp_master->end_offset;
+      if (cfg->ardop_slave->end_offset > cfg->ardop_master->end_offset)
+	cfg->ardop_slave->end_offset = cfg->ardop_master->end_offset;
       else
-	cfg->aisp_master->end_offset = cfg->aisp_slave->end_offset;
+	cfg->ardop_master->end_offset = cfg->ardop_slave->end_offset;
       
-      cfg->aisp_slave->patches = cfg->aisp_master->patches;
+      cfg->ardop_slave->patches = cfg->ardop_master->patches;
       
       sprintf(cfg->ingest->status, "success");
       check_return(write_config(configFile, cfg), 
@@ -308,20 +308,20 @@ main(int argc, char *argv[])
       
       /* Setting patches and offsets for processing */
       strcat(strcpy(metaFile,"a"),".meta");
-      cfg->aisp_master->end_offset = 
+      cfg->ardop_master->end_offset = 
 	lzInt(metaFile, "sar.original_line_count:", NULL);
-      cfg->aisp_master->patches = 
-	(int) ((cfg->aisp_master->end_offset-4096)/AISP_VALID_PATCH_LENGTH) + 2;
+      cfg->ardop_master->patches = 
+	(int) ((cfg->ardop_master->end_offset-4096)/ARDOP_VALID_PATCH_LENGTH) + 2;
       strcat(strcpy(metaFile,"b"),".meta");
-      cfg->aisp_slave->end_offset = 
+      cfg->ardop_slave->end_offset = 
 	lzInt(metaFile, "sar.original_line_count:", NULL);
       
-      if (cfg->aisp_slave->end_offset > cfg->aisp_master->end_offset)
-	cfg->aisp_slave->end_offset = cfg->aisp_master->end_offset;
+      if (cfg->ardop_slave->end_offset > cfg->ardop_master->end_offset)
+	cfg->ardop_slave->end_offset = cfg->ardop_master->end_offset;
       else
-	cfg->aisp_master->end_offset = cfg->aisp_slave->end_offset;
+	cfg->ardop_master->end_offset = cfg->ardop_slave->end_offset;
       
-      cfg->aisp_slave->patches = cfg->aisp_master->patches;
+      cfg->ardop_slave->patches = cfg->ardop_master->patches;
       
       sprintf(cfg->ingest->status, "success");
       check_return(write_config(configFile, cfg), 
@@ -368,13 +368,13 @@ main(int argc, char *argv[])
 	(strncmp(cfg->general->coreg, "PATCH", 5)==0)) {
       if (cfg->general->deskew == 0) sprintf(tmp, "-debug 1 -c a.dop");
       if (cfg->general->deskew == 1) sprintf(tmp, "-debug 1 -e 1");
-      check_return(aisp(tmp, cfg->coreg_p1->start_master, cfg->coreg_p1->patches , 
-			"a", "reg/a_p1"), 
-		   "processing first patch of master image (aisp)");
+      check_return(ardop(tmp, cfg->coreg_p1->start_master, cfg->coreg_p1->patches , 
+			 "a", "reg/a_p1"), 
+		   "processing first patch of master image (ardop)");
       if (cfg->general->deskew == 0) sprintf(tmp, "-debug 1 -c b.dop");
-      check_return(aisp(tmp, cfg->coreg_p1->start_slave, cfg->coreg_p1->patches , 
-			"b", "reg/b_p1"), 
-		   "processing first patch of slave image (aisp)");
+      check_return(ardop(tmp, cfg->coreg_p1->start_slave, cfg->coreg_p1->patches , 
+			 "b", "reg/b_p1"), 
+		   "processing first patch of slave image (ardop)");
       if (cfg->general->mflag) {
 	strcat(strcpy(metaFile,"a"),".meta");
 	nLooks = lzInt(metaFile, "sar.look_count:", NULL);
@@ -422,20 +422,20 @@ main(int argc, char *argv[])
       
       if ((cfg->coreg_pL->start_master==0) && (cfg->coreg_pL->start_slave==0)) {
 	cfg->coreg_pL->start_master = 
-	  cfg->aisp_master->end_offset - cfg->coreg_pL->patches*4096;
+	  cfg->ardop_master->end_offset - cfg->coreg_pL->patches*4096;
 	cfg->coreg_pL->start_slave = 
-	  cfg->aisp_slave->end_offset - cfg->coreg_pL->patches*4096;
+	  cfg->ardop_slave->end_offset - cfg->coreg_pL->patches*4096;
       }
       
       if (cfg->general->deskew == 0) sprintf(tmp, "-debug 1 -c a.dop");
       if (cfg->general->deskew == 1) sprintf(tmp, "-debug 1 -e 1");
-      check_return(aisp(tmp, cfg->coreg_pL->start_master, cfg->coreg_pL->patches , 
-			"a", "reg/a_pL"), 
-		   "processing last patch of master image (aisp)");
+      check_return(ardop(tmp, cfg->coreg_pL->start_master, cfg->coreg_pL->patches , 
+			 "a", "reg/a_pL"), 
+		   "processing last patch of master image (ardop)");
       if (cfg->general->deskew == 0) sprintf(tmp, "-debug 1 -c b.dop");
-      check_return(aisp(tmp, cfg->coreg_pL->start_slave, cfg->coreg_pL->patches , 
-			"b", "reg/b_pL"), 
-		   "processing last patch of slave image (aisp)");
+      check_return(ardop(tmp, cfg->coreg_pL->start_slave, cfg->coreg_pL->patches , 
+			 "b", "reg/b_pL"), 
+		   "processing last patch of slave image (ardop)");
       
       if (cfg->general->mflag) {
 	strcat(strcpy(metaFile,"a"),".meta");
@@ -537,43 +537,43 @@ main(int argc, char *argv[])
     }
     
     /* Processing the master image */
-    if (check_status(cfg->aisp_master->status)) {
-      if (cfg->aisp_master->power < 0 || cfg->aisp_master->power > 1) {
+    if (check_status(cfg->ardop_master->status)) {
+      if (cfg->ardop_master->power < 0 || cfg->ardop_master->power > 1) {
 	printf("\n   WARNING: power flag set to invalid value - "
 	       "set to value of 1\n\n");
-	cfg->aisp_master->power = 1;
+	cfg->ardop_master->power = 1;
 	check_return(write_config(configFile, cfg), 
 		     "Could not update configuration file"); 
       }
       if (cfg->general->deskew == 0) sprintf(options, "-debug 1 -c a.dop");
       if (cfg->general->deskew == 1) sprintf(options, "-debug 1 -e 1");
-      if (cfg->aisp_master->power == 1) strcat(options, " -power");
+      if (cfg->ardop_master->power == 1) strcat(options, " -power");
       
-      cfg->aisp_master->start_offset = cfg->coreg_p1->start_master;
-      check_return(aisp(options, cfg->aisp_master->start_offset, 
-			cfg->aisp_master->patches, "a", "a"), 
-		   "processing master image (aisp)");
-      if (cfg->aisp_master->power == 1) {
+      cfg->ardop_master->start_offset = cfg->coreg_p1->start_master;
+      check_return(ardop(options, cfg->ardop_master->start_offset, 
+			 cfg->ardop_master->patches, "a", "a"), 
+		   "processing master image (ardop)");
+      if (cfg->ardop_master->power == 1) {
 	sprintf(cmd, "mv a_pwr.img %s_a_pwr.img", cfg->general->base); system(cmd);
 	sprintf(cmd, "mv a_pwr.meta %s_a_pwr.meta", cfg->general->base); system(cmd);
       }
       // sprintf(cmd, "cp a.meta %s.meta", cfg->general->base); system(cmd);
       
-      sprintf(cfg->aisp_master->status, "success");
+      sprintf(cfg->ardop_master->status, "success");
       check_return(write_config(configFile, cfg), 
 		   "Could not update configuration file");
     }
     
     /* Coregister slave image */
-    if (check_status(cfg->aisp_slave->status)) {
+    if (check_status(cfg->ardop_slave->status)) {
       if (strncmp(cfg->general->coreg, "FRAME", 5)==0) { 
 	/* match the whole slave to master */
 	if (cfg->general->deskew == 0) sprintf(options, "-debug 1 -c b.dop");
 	if (cfg->general->deskew == 1) sprintf(options, "-debug 1 -e 1");
-	if (cfg->aisp_slave->power == 1) strcat(options, " -power");
-	check_return(aisp(options, cfg->aisp_slave->start_offset, 
-			  cfg->aisp_slave->patches, "b", "b"), 
-		     "processing slave image (aisp)");
+	if (cfg->ardop_slave->power == 1) strcat(options, " -power");
+	check_return(ardop(options, cfg->ardop_slave->start_offset, 
+			   cfg->ardop_slave->patches, "b", "b"), 
+		     "processing slave image (ardop)");
 	if (cfg->general->mflag) 
 	  check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", 
 				       cfg->general->mask,
@@ -591,25 +591,25 @@ main(int argc, char *argv[])
 	fscanf(fCorr, "%d", &delta);
 	FCLOSE(fCorr);
 	if (delta > 0) {
-	  cfg->aisp_master->patches = (int) 
-	    ((cfg->aisp_master->end_offset-4096-delta)/AISP_VALID_PATCH_LENGTH) + 1;
-	  cfg->aisp_slave->patches = cfg->aisp_master->patches;
-	  cfg->aisp_master->start_offset = delta;
+	  cfg->ardop_master->patches = (int) 
+	    ((cfg->ardop_master->end_offset-4096-delta)/ARDOP_VALID_PATCH_LENGTH) + 1;
+	  cfg->ardop_slave->patches = cfg->ardop_master->patches;
+	  cfg->ardop_master->start_offset = delta;
 	}
 	else {
-	  cfg->aisp_slave->patches = (int) 
-	    ((cfg->aisp_slave->end_offset-4096+delta)/AISP_VALID_PATCH_LENGTH) + 1;
-	  cfg->aisp_master->patches = cfg->aisp_slave->patches;
-	  cfg->aisp_slave->start_offset = -delta;
+	  cfg->ardop_slave->patches = (int) 
+	    ((cfg->ardop_slave->end_offset-4096+delta)/ARDOP_VALID_PATCH_LENGTH) + 1;
+	  cfg->ardop_master->patches = cfg->ardop_slave->patches;
+	  cfg->ardop_slave->start_offset = -delta;
 	}
-	check_return(aisp(options, cfg->aisp_master->start_offset, 
-			  cfg->aisp_master->patches, "a", "a"), 
-		     "processing master image (aisp)");
-	check_return(aisp(options, cfg->aisp_slave->start_offset, 
-			  cfg->aisp_slave->patches, "b", "b"), 
-		     "processing slave image (aisp)");
+	check_return(ardop(options, cfg->ardop_master->start_offset, 
+			   cfg->ardop_master->patches, "a", "a"), 
+		     "processing master image (ardop)");
+	check_return(ardop(options, cfg->ardop_slave->start_offset, 
+			   cfg->ardop_slave->patches, "b", "b"), 
+		     "processing slave image (ardop)");
 	
-	if (cfg->aisp_master->power == 1) {
+	if (cfg->ardop_master->power == 1) {
 	  sprintf(cmd, "mv a_pwr.img %s_a_pwr.img", cfg->general->base); 
 	  system(cmd);
 	  sprintf(cmd, "mv a_pwr.meta %s_a_pwr.meta", cfg->general->base); 
@@ -649,7 +649,7 @@ main(int argc, char *argv[])
 				 cfg->coreg_p1->start_master, "reg/deltas"), 
 		     "conversion of regression coefficients (calc_deltas)");	
 	
-	delta = cfg->coreg_p1->start_master - cfg->aisp_master->start_offset;
+	delta = cfg->coreg_p1->start_master - cfg->ardop_master->start_offset;
 	if(delta != 0)
 	  {
 	    FILE *inFile;
@@ -667,10 +667,10 @@ main(int argc, char *argv[])
 	    FCLOSE(inFile); 
 	  }
 	
-	if (cfg->aisp_slave->power < 0 || cfg->aisp_slave->power > 1) {
+	if (cfg->ardop_slave->power < 0 || cfg->ardop_slave->power > 1) {
 	  printf("\n   WARNING: power flag set to invalid value - "
 		 "set to value of 1\n\n");
-	  cfg->aisp_slave->power = 1;
+	  cfg->ardop_slave->power = 1;
 	  check_return(write_config(configFile, cfg), 
 		       "Could not update configuration file"); 
 	}
@@ -678,22 +678,22 @@ main(int argc, char *argv[])
 	  sprintf(options, "-o reg/deltas -debug 1 -c b.dop");
 	if (cfg->general->deskew == 1) 
 	  sprintf(options, "-o reg/deltas -debug 1 -e 1");
-	if (cfg->aisp_slave->power == 1) 
+	if (cfg->ardop_slave->power == 1) 
 	  strcat(options, " -power");
 	
-	cfg->aisp_slave->start_offset = cfg->coreg_p1->start_slave;
-	check_return(aisp(options, cfg->aisp_slave->start_offset, 
-			  cfg->aisp_slave->patches, "b", "b_corr"), 
-		     "processing slave image (aisp)");
+	cfg->ardop_slave->start_offset = cfg->coreg_p1->start_slave;
+	check_return(ardop(options, cfg->ardop_slave->start_offset, 
+			   cfg->ardop_slave->patches, "b", "b_corr"), 
+		     "processing slave image (ardop)");
       }
-      if (cfg->aisp_slave->power == 1) {
+      if (cfg->ardop_slave->power == 1) {
 	sprintf(cmd, "mv b_corr_pwr.img %s_b_pwr.img", cfg->general->base); 
 	system(cmd);
 	sprintf(cmd, "mv b_corr_pwr.meta %s_b_pwr.meta", cfg->general->base); 
 	system(cmd);
       }
       
-      sprintf(cfg->aisp_slave->status, "success");
+      sprintf(cfg->ardop_slave->status, "success");
       check_return(write_config(configFile, cfg), 
 		   "Could not update configuration file");
     }
@@ -712,18 +712,18 @@ main(int argc, char *argv[])
       if (!fileExists(cfg->slave->meta)) 
 	check_return(1, "slave image metadata file does not exist");
 
-/* Check later !!! Might need some more parameters in ingest block.
-      if ((cfg->trim_slc->length == -99) || (cfg->trim_slc->width == -99)) { 
-	struct IOF_VFDR vfdr1, vfdr2;
-	
-	get_ifiledr(cfg->master->data, &vfdr1);
-	get_ifiledr(cfg->slave->data, &vfdr2);
-	cfg->trim_slc->length = 
-	  (vfdr1.linedata < vfdr2.linedata) ? vfdr1.linedata : vfdr2.linedata;
-	cfg->trim_slc->width = 
-	  (vfdr1.datgroup < vfdr2.datgroup) ? vfdr1.datgroup : vfdr2.datgroup;
-      }
-*/
+      /* Check later !!! Might need some more parameters in ingest block.
+	 if ((cfg->trim_slc->length == -99) || (cfg->trim_slc->width == -99)) { 
+	 struct IOF_VFDR vfdr1, vfdr2;
+	 
+	 get_ifiledr(cfg->master->data, &vfdr1);
+	 get_ifiledr(cfg->slave->data, &vfdr2);
+	 cfg->trim_slc->length = 
+	 (vfdr1.linedata < vfdr2.linedata) ? vfdr1.linedata : vfdr2.linedata;
+	 cfg->trim_slc->width = 
+	 (vfdr1.datgroup < vfdr2.datgroup) ? vfdr1.datgroup : vfdr2.datgroup;
+	 }
+      */
       check_return(asf_import(cfg->master->data, "a_cpx", format,
 			      cfg->ingest->prc_master, 0, -99.0, -99.0), 
 		   "ingesting master image (asf_import)");
@@ -841,12 +841,12 @@ main(int argc, char *argv[])
   
   /* Refine the offset */
   if (check_status(cfg->offset_match->status)) {
-
-    sprintf(tmp, "%s_amp.img", cfg->igram_coh->igram);
+    
+    sprintf(tmp, "%s_ml_amp.img", cfg->igram_coh->igram);
     check_return(asf_check_geolocation(tmp, cfg->general->dem, "offset", 
 				       "dem_sim.img", "dem_slant.img"), 
 		 "refining the geolocation of the SAR image");
-
+    
     sprintf(cfg->offset_match->status, "success");
     check_return(write_config(configFile, cfg), 
 		 "Could not update configuration file");
@@ -857,7 +857,7 @@ main(int argc, char *argv[])
     check_return(dem2phase("dem_slant.img", "a_cpx.meta", 
 			   base2str(0, cfg->general->base), "out_dem_phase.img"), 
 		 "creating simulated phase (dem2phase)");
-
+    
     sprintf(tmp, "%s_amp_byte.img", cfg->igram_coh->igram);
     check_return(dem2seeds("dem_slant.img", tmp, cfg->sim_phase->seeds, 0), 
 		 "creating seed points (dem2seeds)");
@@ -999,16 +999,16 @@ main(int argc, char *argv[])
       FCLOSE(fLog);
       if (cfg->unwrap->tiles_azimuth == 0 || cfg->unwrap->tiles_range == 0) {
 	meta = meta_init("a.meta");
-/* some more old trim_slc stuff to check!!!
-
+	/* some more old trim_slc stuff to check!!!
+	   
 	if (datatype==2) {
-	  meta_get_latLon(meta, cfg->trim_slc->line, 1, 0, &lat1, &lon);
-	  meta_get_latLon(meta, cfg->trim_slc->length, 1, 0, &lat2, &lon);
+	meta_get_latLon(meta, cfg->trim_slc->line, 1, 0, &lat1, &lon);
+	meta_get_latLon(meta, cfg->trim_slc->length, 1, 0, &lat2, &lon);
 	}
 	else {
-*/
-	  meta_get_latLon(meta, cfg->aisp_master->start_offset, 1, 0, &lat1, &lon1);
-	  meta_get_latLon(meta, cfg->aisp_master->end_offset, 1, 0, &lat2, &lon1);
+	*/
+	meta_get_latLon(meta, cfg->ardop_master->start_offset, 1, 0, &lat1, &lon1);
+	meta_get_latLon(meta, cfg->ardop_master->end_offset, 1, 0, &lat2, &lon1);
 /*	}*/
 	cfg->unwrap->tiles_azimuth = 
 	  (int) (fabs(lat1-lat2)*cfg->unwrap->tiles_per_degree);
@@ -1016,14 +1016,14 @@ main(int argc, char *argv[])
       }
       if (cfg->unwrap->flattening==1) 
 	check_return(snaphu(cfg->unwrap->algorithm, "ml_phase.img", "ml_amp.img", 
-			    cfg->aisp_master->power_img, cfg->aisp_slave->power_img, 
+			    cfg->ardop_master->power_img, cfg->ardop_slave->power_img, 
 			    "snaphu.conf", "unwrap_phase.img",
 			    cfg->unwrap->tiles_azimuth, cfg->unwrap->tiles_range, 
 			    cfg->unwrap->overlap_azimuth, cfg->unwrap->overlap_range,
 			    cfg->unwrap->procs, 1), "phase unwrapping (snaphu)");
       else
 	check_return(snaphu(cfg->unwrap->algorithm, "ml_phase.img", "ml_amp.img", 
-			    cfg->aisp_master->power_img, cfg->aisp_slave->power_img, 
+			    cfg->ardop_master->power_img, cfg->ardop_slave->power_img, 
 			    "snaphu.conf", "unwrap_phase.img", 
 			    cfg->unwrap->tiles_azimuth, cfg->unwrap->tiles_range, 
 			    cfg->unwrap->overlap_azimuth, cfg->unwrap->overlap_range,
@@ -1065,7 +1065,7 @@ main(int argc, char *argv[])
     if (i==cfg->refine->max) 
       check_return(1, "Baseline iterations failed to converge");
     cfg->refine->iter = i+1; 
-  
+    
     check_return(deramp(cfg->igram_coh->igram, 
 			base2str(cfg->refine->iter, cfg->general->base), 
 			"igramd", 0), 
@@ -1184,7 +1184,7 @@ main(int argc, char *argv[])
       sprintf(tmp, "export format '%s' not supported", cfg->export->format);
       check_return(1, tmp);
     }
-
+    
     sprintf(tmp, "-format %s", format);
     check_return(asf_export(tmp, cfg->geocode->dem, cfg->geocode->dem), 
 		 "exporting geocoded DEM (export)");
