@@ -724,8 +724,12 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
                 sprintf(fname, "%s.img", out_basename);
                 remove(fname);
 
-                sprintf(fname, "%s.meta", out_basename);
-                remove(fname);
+                // Commented this out, so that the .meta file sticks around,
+                // for use with the "Display ASF Metadata" option, even if the
+                // user doesn't "keep files".
+
+                //sprintf(fname, "%s.meta", out_basename);
+                //remove(fname);
 
                 g_free(fname);
             }
