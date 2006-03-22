@@ -444,28 +444,32 @@ static void execute()
     for (i = 0; i < strlen(cmd); ++i)
         if (cmd[i] == '\\' && cmd[i+1] != ' ') cmd[i] = '/';
 
-    printf("%s\n", cmd);
+    // printf("%s\n", cmd);
 
     int ret = system(cmd);
 
-    printf("ret = %d\n", ret);
-    if (ret != 0) {
-        printf("errno = %d\n", errno);
-        printf("err = %s\n", strerror(errno));
+    // printf("ret = %d\n", ret);
+    if (ret != 0)
+    {
+        printf("Error Calling metadata back-end: \n");
+        printf("  errno = %d\n", errno);
+        printf("  err = %s\n", strerror(errno));
     }
-
-    put_file_in_textview(input_file, "dssr", "data_set_summary");
-    put_file_in_textview(input_file, "mpdr", "map_projection_data");
-    put_file_in_textview(input_file, "ppdr", "platform_position_data");
-    put_file_in_textview(input_file, "atdr", "attitude_data");
-    put_file_in_textview(input_file, "raddr", "radiometric_data");
-    put_file_in_textview(input_file, "dqsr", "data_quality_summary");
-    put_file_in_textview(input_file, "pdhr", "processed_data_histograms");
-    put_file_in_textview(input_file, "sdhr", "signal_data_histograms");
-    put_file_in_textview(input_file, "rsr", "range_spectra");
-    put_file_in_textview(input_file, "facdr", "facility_related_data");
-    put_file_in_textview(input_file, "ifiledr", "image_file_descriptor");
-    put_file_in_textview(input_file, "fdr", "leader_file_descriptor");
+    else
+    {
+        put_file_in_textview(input_file, "dssr", "data_set_summary");
+        put_file_in_textview(input_file, "mpdr", "map_projection_data");
+        put_file_in_textview(input_file, "ppdr", "platform_position_data");
+        put_file_in_textview(input_file, "atdr", "attitude_data");
+        put_file_in_textview(input_file, "raddr", "radiometric_data");
+        put_file_in_textview(input_file, "dqsr", "data_quality_summary");
+        put_file_in_textview(input_file, "pdhr", "processed_data_histograms");
+        put_file_in_textview(input_file, "sdhr", "signal_data_histograms");
+        put_file_in_textview(input_file, "rsr", "range_spectra");
+        put_file_in_textview(input_file, "facdr", "facility_related_data");
+        put_file_in_textview(input_file, "ifiledr", "image_file_descriptor");
+        put_file_in_textview(input_file, "fdr", "leader_file_descriptor");
+    }
 }
 
 static void add_file (const gchar * filename)
