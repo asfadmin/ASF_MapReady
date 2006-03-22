@@ -1,7 +1,7 @@
 /*****************************************************************************
 NAME: dop_prf: Doppler PRF Determination Software
 
-SYNOPSIS: dop_prf: Same parameters as AISP.
+SYNOPSIS: dop_prf: Same parameters as ARDOP.
 
 	Dop_prf attempts to determine the doppler ambiguity
 by "sub-aperture correlation"-- it processes the positive
@@ -36,7 +36,7 @@ PROGRAM HISTORY:
     0.2     2/97   T. Logan     Added read_dopplr & read_offsets
     1.0	    1/98   O. Lawlor	Added ability to process RADARSAT data
     1.1	    5/98   O. Lawlor	Generalized I/O, slight cleaning.
-    2.0	    8/98   O. Lawlor	Globals now confined to aisp_setup.c.
+    2.0	    8/98   O. Lawlor	Globals now confined to ardop_setup.c.
     				Can read image info from .fmt, .replica.
 
 HARDWARE/SOFTWARE LIMITATIONS:
@@ -47,7 +47,7 @@ HARDWARE/SOFTWARE LIMITATIONS:
               where  n_az = number of lines in a patch (azimuth samples)
 		     n_range = number of lines in the azimuth (range samples) 
 
-    n_az is defined is aisp_def.h as 4096, and a full swath of ERS CCSD
+    n_az is defined is ardop_def.h as 4096, and a full swath of ERS CCSD
     data includes 5616 range samples, so size(trans) = 176 Mbytes.  When 
     this is combined with the rest of the storage requirements for the
     program, 200+ Mbytes are needed.
@@ -74,7 +74,7 @@ BUGS:
 
 *****************************************************************************/
 #include "asf.h"
-#include "aisp_defs.h"
+#include "ardop_defs.h"
 /********
 findPeak:
 	Given a 1-D array of floats, finds the maximum value and
@@ -201,14 +201,14 @@ int main (int argc, char *argv [])
 	double pixShift,dopDel,old_dop;
 	int refLen,lineToBeRead;
 	int saved_NLA;
-	struct AISP_PARAMS params,old_params;
+	struct ARDOP_PARAMS params,old_params;
 	meta_parameters *meta;
 	
 	StartWatch();
 	printf("   Doppler Determination:\n");
 	if (logflag) printLog("   Doppler Determination:\n");
 	if (!parse_cla(argc,argv,&params,&meta)) 
-	  printErr("   ERROR: Usage: dop_prf as aisp\n");
+	  printErr("   ERROR: Usage: dop_prf as ardop\n");
 	
 /*Set the initial doppler parameters.*/
 	printf("   Processing to doppler at %f prf...\n",params.fd);
@@ -222,7 +222,7 @@ int main (int argc, char *argv [])
 	refLen=params.fs*params.pulsedur;
 	params.nla=smallestPow2(300+refLen)-refLen;
 	params.na_valid=500;
-	aisp_setup(&params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
+	ardop_setup(&params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
 	
 	if (!quietflag) {
 	  printf("   Processing a %d az by %d range patch...\n",n_az,n_range);

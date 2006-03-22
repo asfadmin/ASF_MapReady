@@ -1,11 +1,11 @@
 
-    NAME: aisp - ASF Sar Processor (SAR Software Correlator)
+    NAME: ardop - ASF Sar Processor (SAR Software Correlator)
 
-    SYNOPSIS:     aisp [options] ifile ofile
+    SYNOPSIS:     ardop [options] ifile ofile
 
               ifile   input ASF CCSD (.D & .L), or raw file (.raw & .in)
                       of raw SAR signal data.
-              ofile   output file name.  AISP will create ofile_amp.img,
+              ofile   output file name.  ARDOP will create ofile_amp.img,
                       a multilooked amplitude image, and ofile.cpx, a 
                       single-look-complex image.
 
@@ -178,7 +178,7 @@
 
     EXAMPLES:
 
-      ex1>  aisp -v 3000 -n 5000 E122361290S0C014 e1
+      ex1>  ardop -v 3000 -n 5000 E122361290S0C014 e1
 
         Process the CCSD file E122361290S0C014.D into complex image e1.cpx,
       and e1_amp.img.  Processing proceeds by running 8 image patches
@@ -189,7 +189,7 @@
       combined output requires 24000*5000*8 + 4800*5000*4 = 1,056 Megs of disk
       space for this run.  This command takes about an hour to run.
 
-      ex2>  aisp -p 1 -l 20000 -f 1000 -n 290 -v 300 E122361290S0C014 e1
+      ex2>  ardop -p 1 -l 20000 -f 1000 -n 290 -v 300 E122361290S0C014 e1
 
 	This example processes the same input data as above, but only extracts
       a tiny piece starting at line 20,000 and sample 1,000.  A 290x300 output
@@ -200,13 +200,13 @@
 
     FILE FORMATS:
     	The input files can be ASF-format CCSD data, or any byte-aligned file
-    format.  For CCSD data, AISP automatically determines the size and 
+    format.  For CCSD data, ARDOP automatically determines the size and 
     characteristics of the file.  
     
     
-	AISP can also process a common, simple, generic format: each sample of
+	ARDOP can also process a common, simple, generic format: each sample of
     SAR data is encoded as two bytes, containing the real and imaginary (I and Q)
-    components of the echo as unsigned bytes.  AISP then expects to find a file with
+    components of the echo as unsigned bytes.  ARDOP then expects to find a file with
     the same base name as the input file, but with extention ".fmt", containing:
     	
     .fmt file:
@@ -228,8 +228,8 @@
 
 
 
-	AISP can also read in a range pulse replica (chirp), or generate
-    a linear FM pulse replica.  If AISP finds a file with the same base name 
+	ARDOP can also read in a range pulse replica (chirp), or generate
+    a linear FM pulse replica.  If ARDOP finds a file with the same base name 
     as the input file, but with extention ".replica", containing:
     
     .replica file:
@@ -243,7 +243,7 @@
     	1.2 0.3
     	...
 
-       then AISP will use this range pulse replica to compress the data.  
+       then ARDOP will use this range pulse replica to compress the data.  
      Otherwise, it will synthesize a linear FM chirp.
 
 
@@ -256,7 +256,7 @@
               where  n_az = number of lines in a patch (azimuth samples)
 		     n_range = number of lines in the azimuth (range samples) 
 
-    n_az is defined is aisp_def.h as 4096, and a full swath of ERS CCSD
+    n_az is defined is ardop_def.h as 4096, and a full swath of ERS CCSD
     data includes 5616 range samples, so size(trans) = 176 Mbytes.  When 
     this is combined with the rest of the storage requirements for the
     program, 200+ Mbytes are needed.

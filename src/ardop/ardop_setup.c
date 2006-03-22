@@ -1,6 +1,6 @@
 /****************************************************************************
 *								            *
-*   aisp_setup.c -- Routines used to set up the parameters for a run        *
+*   ardop_setup.c -- Routines used to set up the parameters for a run        *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -18,11 +18,11 @@
 *									      *
 ******************************************************************************/
 /***********************************************************************
-  aisp_setup.c  -- Routines to calculate input parameters for ASP.
+  ardop_setup.c  -- Routines to calculate input parameters for ASP.
   
      FUNCTIONS INCLUDED IN THIS FILE:
         give_usage	- displays usage for program
-	parse_cla	- parses the cla's, fills parameters in aisp_params.h
+	parse_cla	- parses the cla's, fills parameters in ardop_params.h
 	get_params	- reads from metadata & calculates parameters
 	calc_range_ref  - creates range reference function
 
@@ -32,16 +32,16 @@
 ***********************************************************************/
 #include "asf.h"
 #include "ceos.h"
-#include "aisp_defs.h"
+#include "ardop_defs.h"
 #include "asf_meta.h"
 #include "odl.h"
 #include <math.h>
 
 
 /*-------------------------------------------------------------------------*/
-/*    The following is the list of all parameters needed to run aisp.c      */
+/*    The following is the list of all parameters needed to run ardop.c      */
 /*-------------------------------------------------------------------------*/
-struct AISP_PARAMS g;/*AISP Globals, defined in aisp_params.h*/
+struct ARDOP_PARAMS g;/*ARDOP Globals, defined in ardop_params.h*/
 
 int     n_az;         /* Number of lines in the Azimuth per patch   */
 float azpix,rngpix; /*Size of pixel in azimuth and slant range.*/
@@ -352,7 +352,7 @@ patch *copyPatch(patch *oldPatch)
 
 */
 
-void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_range,
+void ardop_setup(struct ARDOP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_range,
 	satellite **s,rangeRef **r,file **f,getRec **signalGetRec)
 {
 	int az_reflen, skew_lines;
@@ -412,8 +412,8 @@ void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_
 
 	meta->sar->time_shift=(n_az-g.na_valid)/g.prf/2.0;
 
-	/*Write the version of AISP*/
-	sprintf(meta->general->processor,"ASF/AISP/%.2f",VERSION);
+	/*Write the version of ARDOP*/
+	sprintf(meta->general->processor,"ASF/ARDOP/%.2f",VERSION);
 
 	*signalGetRec=fillOutGetRec(g.in1);
 
@@ -432,7 +432,7 @@ void aisp_setup(struct AISP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *N_
         }
 	
 /*Print out the parameters to .in and .meta files*/
-	print_params(g.out,&g,"aisp");
+	print_params(g.out,&g,"ardop");
 	meta->sar->original_line_count = signalGetRec[0]->nLines;
         sprintf(tmpOut, "%s_cpx", g.out);
 	meta_write(meta,tmpOut);

@@ -7,7 +7,7 @@ number (the central doppler freqency), instead of a
 function (quadratic in sample), for the doppler.
 */
 #include "asf.h"
-#include "aisp_defs.h"
+#include "ardop_defs.h"
 
 /*Return the maximum value of given array*/
 float findPeak(float *arr,int len)

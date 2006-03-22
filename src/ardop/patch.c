@@ -22,7 +22,7 @@ BUGS:
 *****************************************************************************/
 #include "asf.h"
 #include <unistd.h>
-#include "aisp_defs.h"
+#include "ardop_defs.h"
 #include "../../include/asf_endian.h"
 
 /* Functions in calibration.c (date: Jan 2003) */
@@ -31,7 +31,7 @@ void calculateRCS(int projectionFlag, meta_parameters *meta, float *DNsquared,
 		  const satellite *s);
 void intensity(int n_range,float *pwrs,float *amps);
 
-extern struct AISP_PARAMS g;/*AISP Globals, defined in aisp_params.h*/
+extern struct ARDOP_PARAMS g;/*ARDOP Globals, defined in ardop_params.h*/
 
 /*
 setPatchLoc: 

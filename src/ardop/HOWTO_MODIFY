@@ -1,11 +1,11 @@
-Modification Instructions for AISP:
+Modification Instructions for ARDOP:
 
 	Our SAR processor is designed to be relatively easy
 to modify-- still, due to the complex technical nature of
-SAR processing, changing AISP is quite challenging.
+SAR processing, changing ARDOP is quite challenging.
 
 	This document describes the general procedure for modifying
-AISP to read a new data format.  Of course, many details of the specific
+ARDOP to read a new data format.  Of course, many details of the specific
 format you wish to read must be found elsewhere.
 
 
@@ -17,7 +17,7 @@ uncompressed outputs of the analog-to-digital converter
 on the SAR satellite for the in-phase and quadrature components.
 
 	If the data is similar to ASF CCSD, you may be
-able to use an AISP input file (.in) to tell AISP the
+able to use an ARDOP input file (.in) to tell ARDOP the
 number of bytes per line.  If so, you may not even have to
 modify any code.
 
@@ -59,7 +59,7 @@ accurate chirp.
 
 Metatdata Routines:
 	In addition to reading the raw I and Q values, you must also supply
-the processor with metadata information.  You can either modify aisp_setup.c's 
+the processor with metadata information.  You can either modify ardop_setup.c's 
 get_params to automatically read in these values, or just create a 
 ".in" file containing the relevant parameters.  
 

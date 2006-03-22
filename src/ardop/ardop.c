@@ -1,11 +1,11 @@
 /*****************************************************************************
-NAME: aisp -- patch mode SAR processor
+NAME: ardop -- patch mode SAR processor
 
-SYNOPSIS:     aisp [options] ifile ofile
+SYNOPSIS:     ardop [options] ifile ofile
 
               ifile   input ASF CCSD (.D & .L), or raw file (.raw & .in)
                       of raw SAR signal data.
-              ofile   output file name.  AISP will create ofile_amp.img,
+              ofile   output file name.  ARDOP will create ofile_amp.img,
                       a multilooked amplitude image, and ofile.cpx, a
                       single-look-complex image.
 DESCRIPTION:
@@ -44,7 +44,7 @@ PROGRAM HISTORY:
     0.2     2/97   T. Logan     Added read_dopplr & read_offsets
     1.0		1/98	O. Lawlor	Added ability to process RADARSAT data
     1.1		5/98	O. Lawlor	Generalized I/O, slight cleaning.
-    2.0		8/98	O. Lawlor	Globals now confined to aisp_setup.c.
+    2.0		8/98	O. Lawlor	Globals now confined to ardop_setup.c.
     					Can read image info from .fmt, .replica.
     2.5		3/99	O. Lawlor	Can now read from .in file just like 
                                         it reads from .L file.
@@ -69,7 +69,7 @@ HARDWARE/SOFTWARE LIMITATIONS:
               where  n_az = number of lines in a patch (azimuth samples)
 		     n_range = number of lines in the azimuth (range samples) 
 
-    n_az is defined is aisp_def.h as 4096, and a full swath of ERS CCSD
+    n_az is defined is ardop_def.h as 4096, and a full swath of ERS CCSD
     data includes 5616 range samples, so size(trans) = 176 Mbytes.  When 
     this is combined with the rest of the storage requirements for the
     program, 200+ Mbytes are needed.
@@ -97,7 +97,7 @@ BUGS:
 *****************************************************************************/
 /******************************************************************************
 *								              *
-*  aisp - ASF Sar Processor (SAR Software Correlator)			      *
+*  ardop - ASF Sar Processor (SAR Software Correlator)			      *
 *  Parts of this code are Copyright Howard Zebker at Stanford University      *
 *  Modifications are Copyright Geophysical Institute, University of Alaska    *
 *  Fairbanks. All rights reserved.                                            *
@@ -118,7 +118,7 @@ BUGS:
 
 
 #include "asf.h"
-#include "aisp_defs.h"
+#include "ardop_defs.h"
 
 /*Usage:*/
 
@@ -227,11 +227,11 @@ main (int argc, char *argv [])
 	int n_az,n_range;/*Region to be processed.*/
 	int patchNo;/*Loop counter.*/
 	int give_usage_action=0;
-	struct AISP_PARAMS params;
+	struct ARDOP_PARAMS params;
 	meta_parameters *meta;
 	
 	system("date");
-	printf("Program: aisp\n\n");
+	printf("Program: ardop\n\n");
 
 	logflag=quietflag=0;
 
@@ -241,9 +241,9 @@ main (int argc, char *argv [])
 
 	if (logflag) {
 	  StartWatchLog(fLog);
-	  printLog("Program: aisp\n\n");
+	  printLog("Program: ardop\n\n");
 	}
-	aisp_setup(&params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
+	ardop_setup(&params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
 	if (!quietflag) {
 	  printf("   Processing %dx %d az by %d range patches...\n",f->nPatches,n_az,n_range);
 	  printf("   Of the %d azimuth lines, only %d are valid.\n",n_az,f->n_az_valid);

@@ -41,7 +41,7 @@ SPECIAL CONSIDERATIONS:
 ****************************************************************/
 #include "asf.h"
 
-#include "aisp_defs.h"
+#include "ardop_defs.h"
 #include "fft.h"
 
 void cfft1d(int n, complexFloat *c, int dir)

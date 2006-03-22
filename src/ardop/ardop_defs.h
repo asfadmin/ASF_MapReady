@@ -1,6 +1,6 @@
 /****************************************************************************
 *								            *
-*   aisp_def.h - Global type, function, and constants definitions            *
+*   ardop_def.h - Global type, function, and constants definitions            *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -168,9 +168,9 @@ typedef struct {
 
 
 /*-------------Initialization:---------------*/
-#include "aisp_params.h"
-int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta_out);
-void aisp_setup(struct AISP_PARAMS *g,meta_parameters *meta,int *N_az,int *N_range,
+#include "ardop_params.h"
+int parse_cla(int argc,char *argv[],struct ARDOP_PARAMS *g,meta_parameters **meta_out);
+void ardop_setup(struct ARDOP_PARAMS *g,meta_parameters *meta,int *N_az,int *N_range,
 	satellite **s,rangeRef **r,file **f,getRec **signalGetRec);
 patch *newPatch(int n_az,int n_range);
 patch *copyPatch(patch *oldPatch);

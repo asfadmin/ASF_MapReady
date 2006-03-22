@@ -5,8 +5,8 @@ SYNOPSIS:
 	Applies calibration to processed image data.
 
 DESCRIPTION:
-	Combines subroutines from aisp_setup.c with new algorithms, all to 
-	calibrate the output of the aisp
+	Combines subroutines from ardop_setup.c with new algorithms, all to 
+	calibrate the output of the ardop
 
 EXTERNAL ASSOCIATES:
 	Called mainly from patch.c
@@ -22,22 +22,22 @@ BUGS:
 *****************************************************************************/
 #include "asf.h"
 #include "ceos.h"
-#include "aisp_defs.h"
+#include "ardop_defs.h"
 #include "asf_meta.h"
 #include "odl.h"
 #include <math.h>
 
-#define RANGEREF 500000   /* Arbitrarily set by Mark Ayers in aisp_setup.c */
+#define RANGEREF 500000   /* Arbitrarily set by Mark Ayers in ardop_setup.c */
 #define PROC_GAIN 64
 #define SIGMA_0 2
 #define GAMMA_0 3
 #define BETA_0 4
 
 /*-------------------------------------------------------------------------*/
-/*    The following is the list of all parameters needed to run aisp.c     */
-/*              These are originally declared in aisp_setup.c              */
+/*    The following is the list of all parameters needed to run ardop.c     */
+/*              These are originally declared in ardop_setup.c              */
 /*-------------------------------------------------------------------------*/
-extern struct AISP_PARAMS g;/*AISP Globals, defined in aisp_params.h*/
+extern struct ARDOP_PARAMS g;/*ARDOP Globals, defined in ardop_params.h*/
 
 /*-------------------------------------------------------------------------
 FUNCTION NAME: multilook - performs amplitude multilook of t1 array
@@ -68,7 +68,7 @@ PROGRAM HISTORY:
  Mark Ayers 8/00
 ****************************************************************/
 #include "asf.h"
-#include "aisp_defs.h"
+#include "ardop_defs.h"
 
 void multilook(complexFloat *patch,int n_range,int nlooks,float *pwrs)
 {
@@ -280,7 +280,7 @@ void writeTable(meta_parameters *meta,const satellite *s,int numSamples)
 	table=(double *)MALLOC(sizeof(double)*tableEntries);
 	indexDelta=numSamples/tableEntries;
 
-	/* Generate the Noise Table and Write it out on the execution of aisp_setup */
+	/* Generate the Noise Table and Write it out on the execution of ardop_setup */
 	for(index=0;index<tableEntries;index++)
 	{
 		table[index]=0;

@@ -1,5 +1,5 @@
 ######################################################################
-# Makefile for 		:  aisp.c 
+# Makefile for 		:  ardop.c 
 # Module Author 	:  Tom Logan
 # Module Version	:  1.0
 ######################################################################
@@ -16,7 +16,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_reporting.a
 LIBC = $(LIBS) -lm 
 
-OBJLIB = aisp_libs.o \
+OBJLIB = ardop_libs.o \
 	 parse_cla.o \
 	 cfft1d_risc.o \
 	 estdop.o \
@@ -24,18 +24,18 @@ OBJLIB = aisp_libs.o \
 	 read_signal.o
 
 ASPLIB = patch.o \
-	 aisp_setup.o \
+	 ardop_setup.o \
 	 rciq.o rmpatch.o acpatch.o calibration.o
 
 # Filter out the ISOC99 FLAGS which causes some problems.
 CFLAGS := $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
 
-all: aisp calc_deltas spectra clean
+all: ardop calc_deltas spectra clean
 
-aisp:	$(ASPLIB) $(OBJLIB) aisp.o $(LIBS)
-	$(CC) $(CFLAGS) -o aisp aisp.o $(ASPLIB) $(OBJLIB) $(LIBC) $(LDFLAGS)
-	mv aisp$(BIN_POSTFIX) $(BINDIR)
-	cp aisp.1 ../../man/cat1/aisp.1 
+ardop:	$(ASPLIB) $(OBJLIB) ardop.o $(LIBS)
+	$(CC) $(CFLAGS) -o ardop ardop.o $(ASPLIB) $(OBJLIB) $(LIBC) $(LDFLAGS)
+	mv ardop$(BIN_POSTFIX) $(BINDIR)
+	cp ardop.1 ../../man/cat1/ardop.1 
 
 calc_deltas: calc_deltas.o yaxb.o $(LIBS)
 	$(CC) $(CFLAGS) calc_deltas.o -o calc_deltas yaxb.o $(LIBC) $(LDFLAGS)

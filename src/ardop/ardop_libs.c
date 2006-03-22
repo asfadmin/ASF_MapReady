@@ -1,6 +1,6 @@
 /****************************************************************************
 *								            *
-*   aisp_libs.c              Miscellaneous routines used by others          *
+*   ardop_libs.c              Miscellaneous routines used by others          *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -46,7 +46,7 @@ PROGRAM HISTORY:  Ver 1.0  T. Logan - Most routines are new
 ****************************************************************************/
 #include "asf.h"
 #include <sys/time.h>
-#include "aisp_defs.h"
+#include "ardop_defs.h"
 #include "las.h"
 #include "locinc.h"
 
