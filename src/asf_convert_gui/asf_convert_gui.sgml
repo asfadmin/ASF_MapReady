@@ -206,6 +206,7 @@
 	        were generated are not deleted, even with this option
                 turned off.</para>
       </listitem>
+<!-- comment this out for 2.1 release
       <listitem>
         <para>Apply Azimuth Pixel Size Metadata Fix</para>
         <para>This option turns on a correction to the Y pixel size value
@@ -222,6 +223,7 @@
         <para>If you use data obtained from the PP, then you will probably
             want to turn this option on.</para>
       </listitem>
+-->
     </orderedlist>
   </chapter>
 <chapter id="radiometry">
