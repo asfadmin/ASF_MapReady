@@ -620,7 +620,7 @@ ceos_description *get_ceos_description(char *fName)
       if (0==strncmp(procStr,"ASP",3)) ceos->processor=ASP;
       else if (0==strncmp(procStr,"SPS",3)) ceos->processor=SPS;
       else if (0==strncmp(procStr,"PREC",3)) ceos->processor=PREC;
-      else if (0==strncmp(procStr,"AISP",4)) ceos->processor=AISP;
+      else if (0==strncmp(procStr,"ARDOP",5)) ceos->processor=ARDOP;
       else if (0==strncmp(procStr,"PP",2)) ceos->processor=PP;
       else if (0==strncmp(procStr,"SP2",3)) ceos->processor=SP2;
       else if (0==strncmp(procStr,"AMM",3)) ceos->processor=AMM;

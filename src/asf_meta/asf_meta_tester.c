@@ -247,7 +247,7 @@ START_TEST(test_meta_read_write_new_format)
 }
 END_TEST
 
-/* Test part of ceos_init and aisp_init from meta_create.  */
+/* Test part of ceos_init and ardop_init from meta_create.  */
 START_TEST(test_meta_create_new_format)
 {
 printf("\nNOT PERFORMING TEST_META_CREATE_NEW_FORMAT()!!\n");

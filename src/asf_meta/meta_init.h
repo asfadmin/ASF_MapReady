@@ -21,7 +21,7 @@ typedef struct {
    enum {unknownFacility,ASF,VEXCEL,ESA,CDPF,EOC} facility;
    enum {unknownSatellite,ERS,JERS,RSAT,ALOS} satellite;
    double version;/*Processor version number, or zero.*/
-   enum {unknownProcessor,ASP,SPS,AISP,PREC,PP,SP2,AMM,LZP,FOCUS,SP3,DPS} processor;
+   enum {unknownProcessor,ASP,SPS,ARDOP,PREC,PP,SP2,AMM,LZP,FOCUS,SP3,DPS} processor;
    enum {unknownProduct,CCSD,RAW,LOW_REZ,HI_REZ,RAMP,SCANSAR,SLC,PRI,SGF,SGI} product;
 } ceos_description;
 
@@ -32,10 +32,10 @@ typedef struct {
 void ceos_init(const char *fName,meta_parameters *sar);
 
 /***************************************
- * aisp_init:
- * Reads additional SAR structure parameters from AISP input file into
+ * ardop_init:
+ * Reads additional SAR structure parameters from ARDOP input file into
  * meta_parameters structure. */
-void aisp_init(const char *fName,meta_parameters *sar);
+void ardop_init(const char *fName,meta_parameters *sar);
 
 /***************************************
  * get_units: in meta_get_util.c

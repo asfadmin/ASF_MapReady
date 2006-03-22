@@ -108,8 +108,8 @@ meta_get_util.c      main API: utility
 read_baseline.c      read an interferometric baseline from a baseline file           
 
 The CEOS-reading routines are below:
-aisp_params.h        read SAR processing parameters from a .in file (header)     
-aisp_params.c        read SAR processing parameters from a .in file        
+ardop_params.h        read SAR processing parameters from a .in file (header)     
+ardop_params.c        read SAR processing parameters from a .in file        
 ceos_io.c            easily read CEOS images     
 code_ceos.c          pack/unpack CEOS structures (use get_ceos.c)       
 endian.c             do byte-order conversions (byte swapping)    
@@ -119,7 +119,7 @@ get_ceos.c           read and unpack a CEOS structure
 meta_create.c        driver: calls subsequent routines         
 meta_init.c          meta_parameters initialization       
 meta_init.h          header for above     
-meta_init_aisp.c     read SAR processing parameters into meta_parameters            
+meta_init_ardop.c     read SAR processing parameters into meta_parameters            
 meta_init_ceos.c     read generic CEOS parameters            
 meta_init_stVec.c    read CEOS state vector             
 set_era.c            determine format of CEOS leader (pre- or post- radarsat)     

@@ -79,7 +79,7 @@ LAS_OBJS = allocbuf.o \
 	squeeze.o
 
 OBJS =  $(LEX_YACC_OBJS) \
-	aisp_params.o \
+	ardop_params.o \
 	ceos_io.o \
 	code_ceos.o \
 	coniFetch.o \
@@ -105,7 +105,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta_get_ifm.o \
 	meta_get_util.o \
 	meta_init.o \
-	meta_init_aisp.o \
+	meta_init_ardop.o \
 	meta_init_ceos.o \
 	meta_init_stVec.o \
 	meta_is_valid.o \

@@ -21,7 +21,7 @@ void meta_new2old(meta_parameters *meta);
 
 /***********************************************************
  * meta_create:
- * Constructs a new meta_parameters record from CEOS, AISP
+ * Constructs a new meta_parameters record from CEOS, ARDOP
  * inputs, etc-- whatever it can find.*/
 meta_parameters *meta_create(const char *fName)
 {
@@ -34,7 +34,7 @@ meta_parameters *meta_create(const char *fName)
 		success=TRUE;
 	}
 	if (extExists(fName,".in")) {
-		aisp_init(fName,meta);
+		ardop_init(fName,meta);
 		success=TRUE;
 	}
 	if (success) meta_new2old(meta);
