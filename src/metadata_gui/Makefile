@@ -15,7 +15,7 @@ GTK_ZIP = ../asf_convert_gui/gtkwin32zip
 GTK_INC = $(GTK_DIR)/include
 GTK_LIB = $(GTK_DIR)/lib
 
-ASF_LIB = ../../lib/win32
+ASF_LIB = ../../lib
 
 INCLUDE = -I$(GTK_INC) -I$(GTK_INC)/glib-2.0 -I$(GTK_INC)/pango-1.0 -I$(GTK_INC)/gtk-2.0 -I$(GTK_INC)/freetype2/freetype -I$(GTK_LIB)/glib-2.0/include -I$(GTK_LIB)/gtk-2.0/include -I$(GTK_INC)/atk-1.0 -I$(GTK_INC)/libglade-2.0 -I$(ASF_INCLUDE_DIR)
 

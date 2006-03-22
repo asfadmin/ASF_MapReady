@@ -41,26 +41,26 @@ static void set_app_font (const char *fontname)
     settings = gtk_settings_get_default();
 
     if (fontname == NULL) {
-	g_object_set(G_OBJECT(settings), "gtk-font-name", appfontname, NULL);
+        g_object_set(G_OBJECT(settings), "gtk-font-name", appfontname, NULL);
     } else {
-	GtkWidget *w;
-	PangoFontDescription *pfd;
-	PangoContext *pc;
-	PangoFont *pfont;
+        GtkWidget *w;
+        PangoFontDescription *pfd;
+        PangoContext *pc;
+        PangoFont *pfont;
 
-	w = gtk_label_new(NULL);
-	pfd = pango_font_description_from_string(fontname);
-	pc = gtk_widget_get_pango_context(w);
-	pfont = pango_context_load_font(pc, pfd);
+        w = gtk_label_new(NULL);
+        pfd = pango_font_description_from_string(fontname);
+        pc = gtk_widget_get_pango_context(w);
+        pfont = pango_context_load_font(pc, pfd);
 
-	if (pfont != NULL) {
-	    strcpy(appfontname, fontname);
-	    g_object_set(G_OBJECT(settings), "gtk-font-name", appfontname,
-			 NULL);
-	}
+        if (pfont != NULL) {
+            strcpy(appfontname, fontname);
+            g_object_set(G_OBJECT(settings), "gtk-font-name", appfontname,
+                NULL);
+        }
 
-	gtk_widget_destroy(w);
-	pango_font_description_free(pfd);
+        gtk_widget_destroy(w);
+        pango_font_description_free(pfd);
     }
 }
 
@@ -73,14 +73,14 @@ char *default_windows_menu_fontspec (void)
     ncm.cbSize = sizeof ncm;
 
     if (SystemParametersInfo(SPI_GETNONCLIENTMETRICS, ncm.cbSize, &ncm, 0)) {
-	HDC screen = GetDC(0);
-	double y_scale = 72.0 / GetDeviceCaps(screen, LOGPIXELSY);
-	int point_size = (int) (ncm.lfMenuFont.lfHeight * y_scale);
+        HDC screen = GetDC(0);
+        double y_scale = 72.0 / GetDeviceCaps(screen, LOGPIXELSY);
+        int point_size = (int) (ncm.lfMenuFont.lfHeight * y_scale);
 
-	if (point_size < 0) point_size = -point_size;
-	fontspec = g_strdup_printf("%s %d", ncm.lfMenuFont.lfFaceName,
-				   point_size);
-	ReleaseDC(0, screen);
+        if (point_size < 0) point_size = -point_size;
+        fontspec = g_strdup_printf("%s %d", ncm.lfMenuFont.lfFaceName,
+            point_size);
+        ReleaseDC(0, screen);
     }
 
     return fontspec;
@@ -91,25 +91,25 @@ static void try_to_get_windows_font (void)
     gchar *fontspec = default_windows_menu_fontspec();
 
     if (fontspec != NULL) {
-	int match = 0;
-	PangoFontDescription *pfd;
-	PangoFont *pfont;
-	PangoContext *pc;
-	GtkWidget *w;
+        int match = 0;
+        PangoFontDescription *pfd;
+        PangoFont *pfont;
+        PangoContext *pc;
+        GtkWidget *w;
 
-	pfd = pango_font_description_from_string(fontspec);
+        pfd = pango_font_description_from_string(fontspec);
 
-	w = gtk_label_new(NULL);
-	pc = gtk_widget_get_pango_context(w);
-	pfont = pango_context_load_font(pc, pfd);
-	match = (pfont != NULL);
+        w = gtk_label_new(NULL);
+        pc = gtk_widget_get_pango_context(w);
+        pfont = pango_context_load_font(pc, pfd);
+        match = (pfont != NULL);
 
-	pango_font_description_free(pfd);
-	g_object_unref(G_OBJECT(pc));
-	gtk_widget_destroy(w);
+        pango_font_description_free(pfd);
+        g_object_unref(G_OBJECT(pc));
+        gtk_widget_destroy(w);
 
-	if (match) set_app_font(fontspec);
-	g_free(fontspec);
+        if (match) set_app_font(fontspec);
+        g_free(fontspec);
     }
 }
 
@@ -143,12 +143,13 @@ const char DIR_SEPARATOR = '/';
 
 GladeXML *glade_xml;
 
+#define ENABLE_FIND_IN_SHARE
 #ifdef ENABLE_FIND_IN_SHARE
 static char *
 find_in_share(const char * filename)
 {
     char * ret = (char *) malloc(sizeof(char) *
-                      (strlen(get_asf_share_dir()) + strlen(filename) + 5));
+        (strlen(get_asf_share_dir()) + strlen(filename) + 5));
     sprintf(ret, "%s/%s", get_asf_share_dir(), filename);
     return ret;
 }
@@ -157,99 +158,101 @@ find_in_share(const char * filename)
 gchar *
 find_in_path(gchar * file)
 {
-  gchar *path, *buf, *name, *p;
-  int len, pathlen;
+    gchar *path, *buf, *name, *p;
+    int len, pathlen;
 
-  path = (gchar *)g_getenv("PATH");
+    path = (gchar *)g_getenv("PATH");
 
-  len = strlen(file) + 1;
-  pathlen = strlen(path);
+    len = strlen(file) + 1;
+    pathlen = strlen(path);
 
-  /* work area */
-  buf = (gchar *) g_malloc( sizeof(gchar) * (pathlen + len + 2) ); 
+    /* work area */
+    buf = (gchar *) g_malloc( sizeof(gchar) * (pathlen + len + 2) ); 
 
-  /* put separator + filename at the end of the buffer */
-  name = buf + pathlen + 1;
-  *name = DIR_SEPARATOR;
-  memcpy(name + 1, file, len);
+    /* put separator + filename at the end of the buffer */
+    name = buf + pathlen + 1;
+    *name = DIR_SEPARATOR;
+    memcpy(name + 1, file, len);
 
-  /* now try each path item, prepended to the filename in the work area */
-  p = path;
-  do
-  {
-    gchar * start;
-    gchar * q = strchr(p + 1, PATH_SEPARATOR);
-
-    /* if separator not found, point to the end */
-    if ( !q ) 
-      q = path + pathlen;
-
-    start = name - (q - p);
-
-    /* copy path portion to the work area */
-    memcpy( start, p, q - p );
-
-    if (g_file_test( start, G_FILE_TEST_EXISTS ))
+    /* now try each path item, prepended to the filename in the work area */
+    p = path;
+    do
     {
-      gchar * ret = g_strdup(start);
-      g_free(buf);
-      return ret; 
-    }
+        gchar * start;
+        gchar * q = strchr(p + 1, PATH_SEPARATOR);
 
-    p = q;
-  } 
-  while (*p++ != '\0');
+        /* if separator not found, point to the end */
+        if ( !q ) 
+            q = path + pathlen;
 
-  /* not found! */ 
-  g_free(buf);
-  return NULL;
+        start = name - (q - p);
+
+        /* copy path portion to the work area */
+        memcpy( start, p, q - p );
+
+        if (g_file_test( start, G_FILE_TEST_EXISTS ))
+        {
+            gchar * ret = g_strdup(start);
+            g_free(buf);
+            return ret; 
+        }
+
+        p = q;
+    } 
+    while (*p++ != '\0');
+
+    /* not found! */ 
+    g_free(buf);
+    return NULL;
 }
+
+static void add_file (const gchar * filename);
 
 SIGNAL_CALLBACK void
 on_browse_button_clicked(GtkWidget *button)
 {
 #if defined(win32)
-  OPENFILENAME of;
-  int retval;
-  char fname[1024];
+    OPENFILENAME of;
+    int retval;
+    char fname[1024];
 
-  fname[0] = '\0';
+    fname[0] = '\0';
 
-  memset(&of, 0, sizeof(of));
+    memset(&of, 0, sizeof(of));
 
 #ifdef OPENFILENAME_SIZE_VERSION_400
-  of.lStructSize = OPENFILENAME_SIZE_VERSION_400;
+    of.lStructSize = OPENFILENAME_SIZE_VERSION_400;
 #else
-  of.lStructSize = sizeof(of);
+    of.lStructSize = sizeof(of);
 #endif
 
-  of.hwndOwner = NULL;
-  of.lpstrFilter = "CEOS Leader File (*.L)\0*.L\0"
-                   "All Files\0*\0";
-  of.lpstrCustomFilter = NULL;
-  of.nFilterIndex = 1;
-  of.lpstrFile = fname;
-  of.nMaxFile = sizeof(fname);
-  of.lpstrFileTitle = NULL;
-  of.lpstrInitialDir = ".";
-  of.lpstrTitle = "Select File";
-  of.lpstrDefExt = NULL;
-  of.Flags = OFN_HIDEREADONLY | OFN_EXPLORER;
-  
-  retval = GetOpenFileName(&of);
-  
-  if (!retval) {
-    if (CommDlgExtendedError())
-      printf("File dialog box error");
-    return;
-  }
+    of.hwndOwner = NULL;
+    of.lpstrFilter = "CEOS Leader File (*.L)\0*.L\0"
+        "All Files\0*\0";
+    of.lpstrCustomFilter = NULL;
+    of.nFilterIndex = 1;
+    of.lpstrFile = fname;
+    of.nMaxFile = sizeof(fname);
+    of.lpstrFileTitle = NULL;
+    of.lpstrInitialDir = ".";
+    of.lpstrTitle = "Select File";
+    of.lpstrDefExt = NULL;
+    of.Flags = OFN_HIDEREADONLY | OFN_EXPLORER;
 
-  add_file(fname);
+    retval = GetOpenFileName(&of);
+
+    if (!retval) {
+        if (CommDlgExtendedError())
+            printf("File dialog box error");
+        return;
+    }
+
+    add_file(fname);
 
 #else
 
     GtkWidget * file_selection_dialog =
-	glade_xml_get_widget (glade_xml, "file_selection_dialog");
+        glade_xml_get_widget (glade_xml, "file_selection_dialog");
 
     gtk_widget_show (file_selection_dialog);
 
@@ -260,8 +263,8 @@ static void
 hide_file_selection_dialog ()
 {
     GtkWidget *file_selection_dialog =
-	glade_xml_get_widget(glade_xml, "file_selection_dialog");
- 
+        glade_xml_get_widget(glade_xml, "file_selection_dialog");
+
     gtk_widget_hide(file_selection_dialog);
 }
 
@@ -303,8 +306,8 @@ static void readline(FILE * f, gchar * buffer, size_t n)
     else
     {
         newline = strrchr(buffer, '\n');
-	if (newline)
-	    *newline = '\0';
+        if (newline)
+            *newline = '\0';
     }
 }
 
@@ -333,16 +336,16 @@ append_output(const gchar * txt, GtkWidget * textview_output)
 {
     GtkTextBuffer * text_buffer;
     GtkTextIter end;
-    
+
     text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
 
     if (gtk_text_buffer_get_char_count(text_buffer) > 0)
     {
-      GtkTextIter b, e;
-     
-      gtk_text_buffer_get_start_iter(text_buffer, &b);
-      gtk_text_buffer_get_end_iter(text_buffer, &e);
-      gtk_text_buffer_delete(text_buffer, &b, &e);
+        GtkTextIter b, e;
+
+        gtk_text_buffer_get_start_iter(text_buffer, &b);
+        gtk_text_buffer_get_end_iter(text_buffer, &e);
+        gtk_text_buffer_delete(text_buffer, &b, &e);
     }
 
     gtk_text_buffer_get_end_iter(text_buffer, &end);
@@ -352,126 +355,125 @@ append_output(const gchar * txt, GtkWidget * textview_output)
 static void
 put_file_in_textview(const char * file, const char * ext, const char * tv)
 {
-  gchar *filename = change_extension(file, ext);
-  FILE * fp = fopen(filename, "rt");
+    gchar *filename = change_extension(file, ext);
+    FILE * fp = fopen(filename, "rt");
 
-  gchar * txt;
+    gchar * txt;
 
-  if (fp)
-  {
-    txt = g_malloc(sizeof(gchar) * 50000);
-    strcpy(txt, "");
-    
-    while (!feof(fp))
+    if (fp)
     {
-      gchar buf[512];
-      readline(fp, buf, 512);
-      strcat(txt, buf);
-      strcat(txt, "\n");
+        txt = g_malloc(sizeof(gchar) * 50000);
+        strcpy(txt, "");
+
+        while (!feof(fp))
+        {
+            gchar buf[512];
+            readline(fp, buf, 512);
+            strcat(txt, buf);
+            strcat(txt, "\n");
+        }
+
+        fclose(fp);
+        unlink(filename);
     }
-    
-    fclose(fp);
-    unlink(filename);
-  }
-  else
-  {
-    txt = (gchar *) g_malloc (sizeof(gchar) * 1024);
-    sprintf(txt, "Error opening file '%s': %s", filename, strerror(errno));
-  }
+    else
+    {
+        txt = (gchar *) g_malloc (sizeof(gchar) * 1024);
+        sprintf(txt, "Error opening file '%s': %s", filename, strerror(errno));
+    }
 
-  g_free(filename);
+    g_free(filename);
 
-  gchar widget_name[128];
-  sprintf(widget_name, "%s_textview", tv);
+    gchar widget_name[128];
+    sprintf(widget_name, "%s_textview", tv);
 
-  GtkWidget * w = glade_xml_get_widget(glade_xml, widget_name);
-  if (!w) { printf("Bad: %s\n", widget_name); return; }
+    GtkWidget * w = glade_xml_get_widget(glade_xml, widget_name);
+    if (!w) { printf("Bad: %s\n", widget_name); return; }
 
-  append_output(txt, w);
+    append_output(txt, w);
 
-  g_free(txt);
+    g_free(txt);
 }
 
 static void
 put_text_in_textview(const char * text, const char * tv)
 {
-  gchar widget_name[128];
-  sprintf(widget_name, "%s_textview", tv);
+    gchar widget_name[128];
+    sprintf(widget_name, "%s_textview", tv);
 
-  GtkWidget * w = glade_xml_get_widget(glade_xml, widget_name);
-  if (!w) { printf("Bad: %s\n", widget_name); return; }
+    GtkWidget * w = glade_xml_get_widget(glade_xml, widget_name);
+    if (!w) { printf("Bad: %s\n", widget_name); return; }
 
-  append_output(text, w);
+    append_output(text, w);
 }
 
 void error(const char * t)
 {
-  put_text_in_textview(t, "data_set_summary");
-  put_text_in_textview(t, "map_projection_data");
-  put_text_in_textview(t, "platform_position_data");
-  put_text_in_textview(t, "attitude_data");
-  put_text_in_textview(t, "radiometric_data");
-  put_text_in_textview(t, "data_quality_summary");
-  put_text_in_textview(t, "processed_data_histograms");
-  put_text_in_textview(t, "signal_data_histograms");
-  put_text_in_textview(t, "range_spectra");
-  put_text_in_textview(t, "facility_related_data");
-  put_text_in_textview(t, "image_file_descriptor");
-  put_text_in_textview(t, "leader_file_descriptor");
+    put_text_in_textview(t, "data_set_summary");
+    put_text_in_textview(t, "map_projection_data");
+    put_text_in_textview(t, "platform_position_data");
+    put_text_in_textview(t, "attitude_data");
+    put_text_in_textview(t, "radiometric_data");
+    put_text_in_textview(t, "data_quality_summary");
+    put_text_in_textview(t, "processed_data_histograms");
+    put_text_in_textview(t, "signal_data_histograms");
+    put_text_in_textview(t, "range_spectra");
+    put_text_in_textview(t, "facility_related_data");
+    put_text_in_textview(t, "image_file_descriptor");
+    put_text_in_textview(t, "leader_file_descriptor");
 }
 
 static void execute()
 {
-  GtkWidget * input_file_entry =
-    glade_xml_get_widget(glade_xml, "input_file_entry");
-  
-  const char * input_file =
-    gtk_entry_get_text(GTK_ENTRY(input_file_entry));
+    GtkWidget * input_file_entry =
+        glade_xml_get_widget(glade_xml, "input_file_entry");
 
-  gchar cmd[1024];
-   
+    const char * input_file =
+        gtk_entry_get_text(GTK_ENTRY(input_file_entry));
+
+    gchar cmd[1024];
+
 #ifdef ENABLE_FIND_IN_SHARE 
-  sprintf(cmd, "%s/metadata -f umlarqphsfib %s", 
-	  get_asf_bin_dir(), input_file);
+    sprintf(cmd, "%s/metadata -f umlarqphsfib %s", 
+        get_asf_bin_dir(), input_file);
 #else
-  sprintf(cmd, "metadata -f umlarqphsfib %s", input_file);
+    sprintf(cmd, "metadata -f umlarqphsfib %s", input_file);
 #endif
- 
-  int i;
-  for (i = 0; i < strlen(cmd); ++i)
-    if (cmd[i] == '\\' && cmd[i+1] != ' ') cmd[i] = '/';
-    
-  printf("%s\n", cmd);
 
-  int ret = system(cmd);
-    
-  printf("ret = %d\n", ret);
-  if (ret != 0) {
-    printf("errno = %d\n", errno);
-    printf("err = %s\n", strerror(errno));
-  }
+    int i;
+    for (i = 0; i < strlen(cmd); ++i)
+        if (cmd[i] == '\\' && cmd[i+1] != ' ') cmd[i] = '/';
 
-  put_file_in_textview(input_file, "dssr", "data_set_summary");
-  put_file_in_textview(input_file, "mpdr", "map_projection_data");
-  put_file_in_textview(input_file, "ppdr", "platform_position_data");
-  put_file_in_textview(input_file, "atdr", "attitude_data");
-  put_file_in_textview(input_file, "raddr", "radiometric_data");
-  put_file_in_textview(input_file, "dqsr", "data_quality_summary");
-  put_file_in_textview(input_file, "pdhr", "processed_data_histograms");
-  put_file_in_textview(input_file, "sdhr", "signal_data_histograms");
-  put_file_in_textview(input_file, "rsr", "range_spectra");
-  put_file_in_textview(input_file, "facdr", "facility_related_data");
-  put_file_in_textview(input_file, "ifiledr", "image_file_descriptor");
-  put_file_in_textview(input_file, "fdr", "leader_file_descriptor");
+    printf("%s\n", cmd);
+
+    int ret = system(cmd);
+
+    printf("ret = %d\n", ret);
+    if (ret != 0) {
+        printf("errno = %d\n", errno);
+        printf("err = %s\n", strerror(errno));
+    }
+
+    put_file_in_textview(input_file, "dssr", "data_set_summary");
+    put_file_in_textview(input_file, "mpdr", "map_projection_data");
+    put_file_in_textview(input_file, "ppdr", "platform_position_data");
+    put_file_in_textview(input_file, "atdr", "attitude_data");
+    put_file_in_textview(input_file, "raddr", "radiometric_data");
+    put_file_in_textview(input_file, "dqsr", "data_quality_summary");
+    put_file_in_textview(input_file, "pdhr", "processed_data_histograms");
+    put_file_in_textview(input_file, "sdhr", "signal_data_histograms");
+    put_file_in_textview(input_file, "rsr", "range_spectra");
+    put_file_in_textview(input_file, "facdr", "facility_related_data");
+    put_file_in_textview(input_file, "ifiledr", "image_file_descriptor");
+    put_file_in_textview(input_file, "fdr", "leader_file_descriptor");
 }
 
-static void
-add_file (const gchar * filename)
+static void add_file (const gchar * filename)
 {
     GtkWidget *input_file_entry;
 
     input_file_entry =
-	glade_xml_get_widget(glade_xml, "input_file_entry");
+        glade_xml_get_widget(glade_xml, "input_file_entry");
 
     gtk_entry_set_text(GTK_ENTRY(input_file_entry), filename);
 
@@ -481,7 +483,7 @@ add_file (const gchar * filename)
 SIGNAL_CALLBACK void
 on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 {
-  execute();
+    execute();
 }
 
 SIGNAL_CALLBACK gboolean
@@ -490,7 +492,7 @@ on_file_selection_dialog_delete_event(GtkWidget *w)
     hide_file_selection_dialog ();
     return TRUE;
 }
- 
+
 SIGNAL_CALLBACK gboolean
 on_file_selection_dialog_destroy_event(GtkWidget *w)
 {
@@ -514,23 +516,38 @@ on_file_selection_dialog_ok_button_clicked(GtkWidget *w)
     gchar **current;
 
     file_selection_dialog =
-	glade_xml_get_widget(glade_xml, "file_selection_dialog");
+        glade_xml_get_widget(glade_xml, "file_selection_dialog");
 
     selections = gtk_file_selection_get_selections(
-	GTK_FILE_SELECTION(file_selection_dialog));
+        GTK_FILE_SELECTION(file_selection_dialog));
 
     current = selections;
-    
+
     while (*current)
     {	
-	add_file(*current);
-	++current;
+        add_file(*current);
+        ++current;
     }
 
     g_strfreev(selections);
     gtk_widget_hide(file_selection_dialog);
 
     execute();
+}
+
+void
+set_app_title()
+{
+    /* add version number to window title */
+    char title [256];
+    GtkWidget *widget;
+
+    sprintf (title,
+	     "Alaska Satellite Facility Metadata Viewer: Version %s",
+	     CONVERT_PACKAGE_VERSION_STRING);
+
+    widget = glade_xml_get_widget (glade_xml, "mdv");
+    gtk_window_set_title(GTK_WINDOW(widget), title);
 }
 
 int
@@ -540,8 +557,8 @@ main(int argc, char **argv)
 
     gtk_init(&argc, &argv);
 
-    glade_xml_file = (gchar *) find_in_path("mdv.glade");
-    printf("%s\n", glade_xml_file);
+    // glade_xml_file = (gchar *) find_in_path("mdv.glade");
+    glade_xml_file = (gchar *) find_in_share("mdv.glade");
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
     g_free(glade_xml_file);
@@ -550,9 +567,10 @@ main(int argc, char **argv)
         add_file(argv[1]);
 
     set_font();
+    set_app_title();
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
-    
+
     exit (EXIT_SUCCESS);
 }
