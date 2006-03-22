@@ -24,11 +24,11 @@ enable_menu_items(GtkMenu * menu, gboolean enable_view_output,
         GtkWidget * item = GTK_WIDGET(iter->data);
 
         if ((n == popup_menu_item_view_output &&
-                !enable_view_output) ||
+            !enable_view_output) ||
             (n == popup_menu_item_display_ceos_metadata &&
-                (!enable_display_ceos_metadata || !use_thumbnails)) ||
+            (!enable_display_ceos_metadata || !use_thumbnails)) ||
             (n == popup_menu_item_display_asf_metadata &&
-                !enable_display_asf_metadata))
+            !enable_display_asf_metadata))
         {
             enable = FALSE;
         }      
@@ -105,9 +105,9 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
                 &path, NULL, NULL, NULL))
             {
                 gchar   * status,
-                        * out_name,
-                        * asf_meta_name,
-                        * ceos_meta_name;
+                    * out_name,
+                    * asf_meta_name,
+                    * ceos_meta_name;
 
                 gboolean show_view_output_menu_item = FALSE,
                     show_display_ceos_metadata_menu_item,

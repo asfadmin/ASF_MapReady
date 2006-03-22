@@ -1,5 +1,5 @@
 /* This program is a simple GUI wrapper around the asf_convert
-   tool.  */
+tool.  */
 
 #include "asf_convert_gui.h"
 #include "asf_version.h"
@@ -37,21 +37,21 @@ main(int argc, char **argv)
 
     if (!use_thumbnails)
     {
-	printf("GTK Version < 2.4 -- output thumbnails disabled.\n");
+        printf("GTK Version < 2.4 -- output thumbnails disabled.\n");
     }
     else
     {
-	// We will want to load thumbnails in other threads.
-	if ( !g_thread_supported () ) {
-	    g_thread_init (NULL);
-	}
+        // We will want to load thumbnails in other threads.
+        if ( !g_thread_supported () ) {
+            g_thread_init (NULL);
+        }
     }
 
     /* add version number to window title */
     char title [256];
     sprintf (title,
-	     "Alaska Satellite Facility Data Conversion Tool: Version %s",
-	     CONVERT_PACKAGE_VERSION_STRING);
+        "Alaska Satellite Facility Data Conversion Tool: Version %s",
+        CONVERT_PACKAGE_VERSION_STRING);
 
     widget = glade_xml_get_widget (glade_xml, "asf_convert");
     gtk_window_set_title(GTK_WINDOW(widget), title);
@@ -91,7 +91,7 @@ main(int argc, char **argv)
     setup_popup_menu();
 
     current_naming_scheme = naming_scheme_default();
-    
+
     /* set initial vpanel setting */
     widget = glade_xml_get_widget(glade_xml, "vertical_pane");
 
@@ -106,13 +106,13 @@ main(int argc, char **argv)
     /* Connect signal handlers.  */
     glade_xml_signal_autoconnect (glade_xml);
 
-	/* initial flag settings */
+    /* initial flag settings */
     processing = FALSE;
     settings_on_execute = NULL;
 
-	/* explicit call to the function that refreshes the "summary" */
-	/* section when geocoding options are changed, so get the     */
-	/* settings initially in there                                */
+    /* explicit call to the function that refreshes the "summary" */
+    /* section when geocoding options are changed, so get the     */
+    /* settings initially in there                                */
     geocode_options_changed();
 
     gtk_main ();

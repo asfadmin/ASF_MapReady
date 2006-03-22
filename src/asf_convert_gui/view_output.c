@@ -8,10 +8,10 @@ void show_output_image(const gchar * filename)
     gchar title[256];
 
     output_image_dialog =
-	glade_xml_get_widget(glade_xml, "output_image_dialog");
-    
+        glade_xml_get_widget(glade_xml, "output_image_dialog");
+
     output_image =
-	glade_xml_get_widget(glade_xml, "output_image");
+        glade_xml_get_widget(glade_xml, "output_image");
 
     gtk_image_set_from_file(GTK_IMAGE(output_image), filename);
 
@@ -23,7 +23,7 @@ void show_output_image(const gchar * filename)
     gtk_widget_show(output_image_dialog);
 
     /* user may have selected "View Output" when the image window
-       window was already opened (for another image) -- bring it to the top */
+    window was already opened (for another image) -- bring it to the top */
     gtk_window_present(GTK_WINDOW(output_image_dialog));
 }
 
@@ -31,8 +31,8 @@ void
 output_image_hide()
 {
     GtkWidget *output_image_dialog =
-	glade_xml_get_widget(glade_xml, "output_image_dialog");
-    
+        glade_xml_get_widget(glade_xml, "output_image_dialog");
+
     gtk_widget_hide(output_image_dialog);
 }
 
@@ -65,13 +65,13 @@ on_output_image_dialog_destroy(GtkWidget *widget)
 
 SIGNAL_CALLBACK gboolean
 on_output_image_dialog_key_press_event(GtkWidget * widget, 
-			       GdkEventKey * event,
-			       GtkWidget * win)
+                                       GdkEventKey * event,
+                                       GtkWidget * win)
 {
     if (event->keyval == GDK_Return)
     {
-	output_image_hide();
-	return TRUE;
+        output_image_hide();
+        return TRUE;
     }
 
     return FALSE;
