@@ -53,7 +53,7 @@ LDLIBS = $(LIBDIR)/asf_meta.a \
 	 $(LIBDIR)/libproj.a \
 	 $(LIBDIR)/libasf_reporting.a \
          $(LIBDIR)/libgslcblas.a \
-	 $(LIBDIR)/libjpeg.a \
+	 $(JPEG_LIBS) \
          $(shell /usr/bin/pkg-config --libs gtk+-2.0) \
 	 $(shell /usr/bin/pkg-config --libs libglade-2.0) \
          $(shell /usr/bin/pkg-config --libs gthread-2.0)
