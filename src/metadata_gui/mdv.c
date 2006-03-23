@@ -551,7 +551,7 @@ set_app_title()
 	     "Alaska Satellite Facility Metadata Viewer: Version %s",
 	     CONVERT_PACKAGE_VERSION_STRING);
 
-    widget = glade_xml_get_widget (glade_xml, "mdv");
+    widget = glade_xml_get_widget (glade_xml, "metadata_viewer");
     gtk_window_set_title(GTK_WINDOW(widget), title);
 }
 
