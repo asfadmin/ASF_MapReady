@@ -73,7 +73,7 @@ int read_int(char *line, char *param);
 double read_double(char *line, char *param);
 int init_config(char *configFile);
 convert_config *init_fill_config(char *configFile);
-convert_config *read_config(char *configFile, int cFlag);
+convert_config *read_config(char *configFile);
 int write_config(char *configFile, convert_config *cfg);
 
 #endif

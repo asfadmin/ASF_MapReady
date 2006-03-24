@@ -67,6 +67,10 @@ int init_config(char *configFile)
 {
   FILE *fConfig;
 
+  if ( fileExists(configFile) ) {
+    asfPrintError("Cannot create file, %s, because it already exists.\n",
+                  configFile);
+  }
   fConfig = FOPEN(configFile, "w");
 
   fprintf(fConfig, "asf_convert configuration file\n\n");
@@ -95,7 +99,7 @@ convert_config *init_fill_config(char *configFile)
   char line[255], params[25];
   char *test=(char *)MALLOC(sizeof(char)*255);
   int i;
-  
+
   // Create structure
   convert_config *cfg = newStruct(convert_config);
   cfg->general = newStruct(s_general);
@@ -162,7 +166,7 @@ convert_config *init_fill_config(char *configFile)
     if (strncmp(line, "[General]", 9)==0) strcpy(params, "general");
     if (strcmp(params, "general")==0) {
       test = read_param(line);
-      if (strncmp(test, "default values", 14)==0) 
+      if (strncmp(test, "default values", 14)==0)
 	cfg->general->defaults = read_str(line, "default values");
     }
   }
@@ -170,7 +174,7 @@ convert_config *init_fill_config(char *configFile)
 
   // Read default values file if there is one
   if (strcmp(cfg->general->defaults, "") != 0) {
-    if (!fileExists(cfg->general->defaults)) 
+    if (!fileExists(cfg->general->defaults))
       check_return(1, "Default values file does not exist\n");
     fDefaults = FOPEN(cfg->general->defaults, "r");
     while (fgets(line, 255, fDefaults) != NULL) {
@@ -247,7 +251,7 @@ convert_config *init_fill_config(char *configFile)
   return cfg;
 }
 
-convert_config *read_config(char *configFile, int cFlag)
+convert_config *read_config(char *configFile)
 {
   FILE *fConfig;
   convert_config *cfg=NULL;
@@ -309,7 +313,7 @@ convert_config *read_config(char *configFile, int cFlag)
       if (strncmp(test, "interval", 8)==0)
 	cfg->image_stats->interval = read_double(line, "interval");
     }
- 
+
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "Geocoding");
     if (strncmp(params, "Geocoding", 9)==0) {
       test = read_param(line);
@@ -352,7 +356,7 @@ int write_config(char *configFile, convert_config *cfg)
 
   if (strcmp(cfg->general->batchFile, "") == 0) {
     fprintf(fConfig, "%s\n", cfg->comment);
-    
+
     fprintf(fConfig, "[General]\n");
     fprintf(fConfig, "input file = %s\n", cfg->general->in_name);
     fprintf(fConfig, "output file = %s\n", cfg->general->out_name);
@@ -363,7 +367,7 @@ int write_config(char *configFile, convert_config *cfg)
     fprintf(fConfig, "export = %i\n", cfg->general->export);
     fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
     fprintf(fConfig, "intermediates = %i\n\n", cfg->general->intermediates);
-    
+
     if (cfg->general->import) {
       fprintf(fConfig, "[Import]\n");
       fprintf(fConfig, "format = %s\n", cfg->import->format);
@@ -373,7 +377,7 @@ int write_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "lat end = %.2f\n", cfg->import->lat_end);
       fprintf(fConfig, "precise = %s\n\n", cfg->import->prc);
     }
-    
+
     if (cfg->general->image_stats) {
       fprintf(fConfig, "[Image stats]\n");
       fprintf(fConfig, "values = %s\n", cfg->image_stats->values);
@@ -390,7 +394,7 @@ int write_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "resampling = %s\n", cfg->geocoding->resampling);
       fprintf(fConfig, "force = %i\n\n", cfg->geocoding->force);
     }
-    
+
     if (cfg->general->export) {
       fprintf(fConfig, "[Export]\n");
       fprintf(fConfig, "format = %s\n", cfg->export->format);
@@ -399,7 +403,7 @@ int write_config(char *configFile, convert_config *cfg)
   }
   else {
     fprintf(fConfig, "%s\n", cfg->comment);
-    
+
     fprintf(fConfig, "[General]\n");
     fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
     fprintf(fConfig, "batch file = %s\n", cfg->general->batchFile);
