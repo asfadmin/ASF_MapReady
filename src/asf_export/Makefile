@@ -13,8 +13,6 @@ include ../../make_support/system_rules
 ###############################################################################
 
 SOURCES := asf_export.c \
-	ceos_util.c \
-	export_as_ceos.c \
 	export_as_envi.c \
 	export_as_esri.c \
 	export_as_geotiff.c \

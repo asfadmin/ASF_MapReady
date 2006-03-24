@@ -122,13 +122,6 @@ void export_as_ppm (const char *metadata_file_name,
                     long max_size,
                     scale_t sample_mapping);
 
-void export_as_ceos (const char *metadata_file_name,
-                     const char *image_data_file_name,
-                     const char *output_file_name,
-                     const char *leader_file_name,
-                     const char *calibration_parameter_file,
-                     const char *calibration_comment);
-
 void export_as_tiff (const char *metadata_file_name,
                      const char *image_data_file_name,
                      const char *output_file_name,
