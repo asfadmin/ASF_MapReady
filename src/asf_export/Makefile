@@ -34,7 +34,14 @@ SOURCES := asf_export.c \
 #
 ###############################################################################
 
-CFLAGS := $(GLIB_CFLAGS) $(CFLAGS)
+CFLAGS := \
+	$(GEOTIFF_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(JPEG_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(GSL_CFLAGS)
+
 
 LIBS  = \
 	$(LIBDIR)/asf_meta.a \
