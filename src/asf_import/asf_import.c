@@ -17,28 +17,29 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 */
 
 #define ASF_NAME_STRING \
-"   asf_import"
+"asf_import"
 
 #define ASF_USAGE_STRING \
-"[-amplitude | -sigma | -gamma | -beta | -power]\n"\
-"              [-prc] [-old] [-format <inputFormat>] [-lat <lower> <upper>]\n"\
-"              [-lut <file> ] [-log <logFile>] [-quiet] [-help] \n"\
-"              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]] \n"\
-"              [-range-scale[=<scale>]]\n"\
-"	       <inBaseName> <outBaseName>"
+"   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\
+"              [-format <inputFormat>] [-lut <file>] [-lat <lower> <upper>]\n"\
+"              [-prc] [-old] [-log <logFile>] [-quiet] [-copyright] [-help]\n"\
+"              <inBaseName> <outBaseName>\n"
+// COMMENT OUT DOCUMENTATION ON SCALING CORRECTIONS
+//"              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
+//"              [-range-scale[=<scale>]]\n"\
 
 #define ASF_DESCRIPTION_STRING \
 "   Ingests all varieties of CEOS and STF data formats and outputs ASF\n"\
 "   internal format metadata and data files. When the calibration\n"\
 "   parameters are applied using the -sigma, -gamma, or the -beta\n"\
-"   option the resulting image will have power scale values."
+"   option the resulting image will have power scale values.\n"
 
 #define ASF_INPUT_STRING \
-"   The format of the input file must be specified as CEOS or STF."
+"   The format of the input file must be specified as CEOS or STF.\n"
 
 #define ASF_OUTPUT_STRING \
 "   Outputs data and metadata files with the user-provided base name and\n"\
-"   appropriate extensions."
+"   appropriate extensions.\n"
 
 #define ASF_OPTIONS_STRING \
 "   -amplitude\n"\
@@ -51,38 +52,45 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        Create a calibrated image (beta power scale values).\n"\
 "   -power\n"\
 "        Create a power image.\n"\
-"   -format\n"\
-"        Force input data to be read as the given format type. Valid options\n"\
-"        are:  ceos and stf. \"ceos\" is the default behavior.\n"\
+"   -db  Output calibrated image in decibles. This can only be used with\n"\
+"        -sigma, -beta, or -gamma.\n"\
+"   -format <inputFormat>\n"\
+"        Force input data to be read as the given format type. Valid formats\n"\
+"        are 'ceos' and 'stf'. 'Ceos' is the default behavior.\n"\
+"   -lut <file>\n"\
+"        Applies a user defined look up table to the data. Look up contains\n"\
+"        incidence angle dependent scaling factor.\n"\
+"   -lat <lower> <upper>\n"\
+"        Specify lower and upper latitude contraints (only available\n"\
+"        for STF). Note that the program is not able to verify whether\n"\
+"        the chosen latitude constraint is within the image.\n"\
+"   -prc Replace the restituted state vectors from the original raw data\n"\
+"        acquired by the ERS satellites with preceision\n"\
+"   -old Output in old style ASF internal format.\n"\
 "   -log <logFile>\n"\
 "        Output will be written to a specified log file.\n"\
 "   -quiet\n"\
 "        Supresses all non-essential output.\n"\
-"   -lat Specify lower and upper latitude contraints (only available\n"\
-"	for STF). Note that the program is not able to verify whether\n"\
-"	the chosen latitude constraint is within the image.\n"\
-"   -old Output in old style ASF internal format.\n"\
-"   -prc Replace the restituted state vectors from the original raw data\n"\
-"        acquired by the ERS satellites with preceision\n"\
-"   -lut Applies a user defined look up table to the data. Look up contains\n"\
-"        incidence angle dependent scaling factor.\n"\
-"\n"\
-"The following options allow correction of scaling errors in the original\n"\
-"data.\n\n"\
-"   -range-scale[=<scale-factor>]\n"\
-"        Apply the provided range scale factor to the imported data.  If\n"\
-"        the option is specified without an argument, a default value of\n"\
-"        %f will be used.\n"\
-"   -azimuth-scale[=<scale-factor>]\n"\
-"        Apply the provided azimuth scale factor to the imported data.  If\n"\
-"        the option is specified without an argument, a default value of\n"\
-"        %f will be used.  This option cannot be used with\n"\
-"        -fix-meta-ypix\n"\
-"   --fix-meta-ypix[=<pixel-size>]\n"\
-"        This option is similar to -azimuth-scale, but does not resample the\n"\
-"        input data, it just changes the y pixel size in the metadata.\n"\
-"        This option cannot be used with -azimuth-scale.\n"\
-"\n"
+"   -copyright\n"\
+"        Print our copyright notice and exit.\n"\
+"   -help\n"\
+"        Print a help page and exit.\n"
+// COMMENT OUT DOCUMENTATION ON SCALING CORRECTIONS
+//"The following options allow correction of scaling errors in the original\n"\
+//"data.\n\n"\
+//"   -range-scale[=<scale-factor>]\n"\
+//"        Apply the provided range scale factor to the imported data.  If\n"\
+//"        the option is specified without an argument, a default value of\n"\
+//"        %f will be used.\n"\
+//"   -azimuth-scale[=<scale-factor>]\n"\
+//"        Apply the provided azimuth scale factor to the imported data.  If\n"\
+//"        the option is specified without an argument, a default value of\n"\
+//"        %f will be used.  This option cannot be used with\n"\
+//"        -fix-meta-ypix\n"\
+//"   --fix-meta-ypix[=<pixel-size>]\n"\
+//"        This option is similar to -azimuth-scale, but does not resample the\n"\
+//"        input data, it just changes the y pixel size in the metadata.\n"\
+//"        This option cannot be used with -azimuth-scale.\n"\
 
 #define ASF_EXAMPLES_STRING \
 "   To import CEOS format to the ASF tools internal format run:\n"\
@@ -90,80 +98,52 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "\n"\
 "   To import a STF fileset (fileSTF.000 & file.000.par) you will need to\n"\
 "   specify the -format option since STF is not the default.\n"\
-"        example> asf_import -format stf fileSTF.000 fileASF\n"\
-"\n"
+"        example> asf_import -format stf fileSTF.000 fileASF\n"
 
 #define ASF_LIMITATIONS_STRING \
 "   CEOS base name issue:\n"\
 "        If you have two or more CEOS filesets ([*.D & *.L], [*.RAW & *.LDR],\n"\
 "        or [dat.* & lea.*]) with the same base name, then this program will\n"\
-"        automatically fetch the first set in the aforementioned list."
+"        automatically fetch the first set in the aforementioned list.\n"
 
 #define ASF_SEE_ALSO_STRING \
-"   asf_convert, asf_export"
+"   asf_convert, asf_export\n"
 
-#define ASF_COPYRIGHT_STRING \
-"Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks\n"\
+#define ASF_BSD_ID 1
+#define ASF_BSD_COPYRIGHT_STRING \
+"\n"\
+"Copyright (c) 2006, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
 "All rights reserved.\n"\
 "\n"\
 "Redistribution and use in source and binary forms, with or without\n"\
 "modification, are permitted provided that the following conditions are met:\n"\
 "\n"\
-"    * Redistributions of source code must retain the above copyright notice,\n"\
-"      this list of conditions and the following disclaimer.\n"\
-"    * Redistributions in binary form must reproduce the above copyright\n"\
-"      notice, this list of conditions and the following disclaimer in the\n"\
-"      documentation and/or other materials provided with the distribution.\n"\
-"    * Neither the name of the Geophysical Institute nor the names of its\n"\
-"      contributors may be used to endorse or promote products derived from\n"\
-"      this software without specific prior written permission.\n"\
+"  * Redistributions of source code must retain the above copyright notice, this\n"\
+"    list of conditions and the following disclaimer.\n"\
+"  * Redistributions in binary form must reproduce the above copyright notice,\n"\
+"    this list of conditions and the following disclaimer in the documentation\n"\
+"    and/or other materials provided with the distribution.\n"\
+"  * Neither the name of the University of Alaska Fairbanks, nor its subunits,\n"\
+"    nor the names of its contributors may be used to endorse or promote products\n"\
+"    derived from this software without specific prior written permission.\n"\
+"  * Redistribution and use of source and binary forms are for noncommercial\n"\
+"    purposes only.\n"\
 "\n"\
-"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\n"\
-"AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\n"\
-"IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\n"\
-"ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE\n"\
-"LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR\n"\
-"CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF\n"\
-"SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\n"\
-"INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN\n"\
-"CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)\n"\
-"ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\n"\
-"POSSIBILITY OF SUCH DAMAGE.\n"\
-"\n"\
-"       For more information contact us at:\n"\
-"\n"\
-"       Alaska Satellite Facility\n"\
-"       Geophysical Institute\n"\
-"       University of Alaska Fairbanks\n"\
-"       P.O. Box 757320\n"\
-"       Fairbanks, AK 99775-7320\n"\
-"\n"\
-"       http://www.asf.alaska.edu\n"\
-"       uso@asf.alaska.edu"
-
-#define ASF_PROGRAM_HISTORY_STRING \
-"    VERS:   DATE:  AUTHOR:     PURPOSE:\n"\
-"    ---------------------------------------------------------------\n"\
-"    0.1    12/03   R. Gens     Combined sarin, calibrate, trim_slc and\n"\
-"                                ceos2raw into one program\n"\
-"    0.2     4/04   P. Denny    Allowed for RSI naming scheme as well as\n"\
-"                                our typical CEOS naming scheme\n"\
-"    0.3     5/04   R. Gens     Added stf2raw and external ESRI and ENVI\n"\
-"                                formats; renamed the tool to import2asf\n"\
-"    0.4     5/04   J. Nicoll   Fixed sign issue when converting 8 bit\n"\
-"                                data to calibrated amplitude data\n"\
-"    0.41    5/04   P. Denny    Made format of input data a required\n"\
-"                                argument (CEOS,STF,ESRI,ENVI)\n"\
-"    0.5     5/04   P. Denny    Added hidden option to write out sprocket\n"\
-"                                style metadata.\n"\
-"    0.6     7/04   G. Short    New command line parsing.\n"\
-"    0.7     7/04   G. Short    New usage/help style.\n"\
-"    1.0     8/04   P. Denny    Create functions to do each of the different\n"\
-"                                filetype imports... ready for release."
+"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\n"\
+"ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\n"\
+"WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\n"\
+"DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\n"\
+"ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n"\
+"(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\n"\
+"LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\n"\
+"ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"\
+"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"\
+"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"\
+"\n"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
-
+#include "asf_contact.h"
 #include "asf_import.h"
 #include "asf_meta.h"
 #include "asf_nan.h"
@@ -182,10 +162,8 @@ void usage(void)
 {
     printf("\n"
         "USAGE:\n"
-        ASF_NAME_STRING
-        " "
         ASF_USAGE_STRING
-        "\n\n");
+        "\n");
     exit (EXIT_FAILURE);
 }
 
@@ -193,39 +171,39 @@ void usage(void)
 void help_page()
 {
     char happy_string[4066];
-    char command[4096];
 
-    /* What to print out for help */
+    // What to print out for help
     sprintf(happy_string,
-        "\n\n\n"
-        "Tool name:\n" ASF_NAME_STRING "\n\n\n"
-        "Usage:\n" ASF_NAME_STRING " " ASF_USAGE_STRING "\n\n\n"
-        "Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
-        "Input:\n" ASF_INPUT_STRING "\n\n\n"
-        "Output:\n"ASF_OUTPUT_STRING "\n\n\n"
-        "Options:\n" ASF_OPTIONS_STRING "\n\n\n"
-        "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
-        "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
-        "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
-        "Version:\n" CONVERT_PACKAGE_VERSION_STRING "\n\n\n"
-        "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n",
-        DEFAULT_RANGE_SCALE, DEFAULT_AZIMUTH_SCALE);
+        "\n"
+        "Tool name:\n   " ASF_NAME_STRING "\n\n"
+        "Usage:\n" ASF_USAGE_STRING "\n"
+        "Description:\n" ASF_DESCRIPTION_STRING "\n"
+        "Input:\n" ASF_INPUT_STRING "\n"
+        "Output:\n"ASF_OUTPUT_STRING "\n"
+        "Options:\n" ASF_OPTIONS_STRING "\n"
+        "Examples:\n" ASF_EXAMPLES_STRING "\n"
+        "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
+        "See also:\n" ASF_SEE_ALSO_STRING "\n"
+        "Contact:\n" ASF_CONTACT_STRING "\n"
+        "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
 
-    /* If we can, use less */
-    sprintf (command, "echo '%s' | less --prompt='Type q to quit help, h for "
-        "help with help browser'", happy_string);
-    if(system(command) == 0)
-        exit(EXIT_SUCCESS);
-
-    /* Hmmm, less didn't work cause we got here, try using more */
-    sprintf(command,"echo '%s' | more",happy_string);
-    if(system(command) == 0)
-        exit(EXIT_SUCCESS);
-
-    /* Okay, neither less or more work (obviously if we made it here),
-    * just print the info straight to stdout and exit */
+    // Print the help... the user can use less or more on their own
     printf(happy_string);
     exit(EXIT_SUCCESS);
+}
+
+// Print our copyright notice
+void print_copyright(int copyright_id)
+{
+        switch (copyright_id) {
+          case ASF_BSD_ID:
+            printf(ASF_BSD_COPYRIGHT_STRING);
+            break;
+          default:
+            printf("Copyright not found.\n");
+            break;
+        }
+        exit(EXIT_SUCCESS);
 }
 
 /*
@@ -236,7 +214,7 @@ the calculations.
 Here is a summary of the fixes as described by Orion Lawlor in an e-mail
 on 3/14/06:
 
-xpix_ypix prints out these values for an AISP image.
+xpix_ypix prints out these values for an ARDoP image.
 > > azimuth pixel size at scene center: 3.9648920 meters   (xpix_ypix)
 > > ASF geolocate azimuth velocity: 6660.144 m/s   (xpix_ypix)
 > > PP swath velocity: 6626.552 m/s = ...
@@ -348,8 +326,13 @@ int main(int argc, char *argv[])
     /* Most importantly, check to see if the help option was specified */
     if (   (checkForOption("--help", argc, argv) != FLAG_NOT_SET)
         || (checkForOption("-h", argc, argv) != FLAG_NOT_SET)
-        || (checkForOption("-help", argc, argv) != FLAG_NOT_SET) )
+        || (checkForOption("-help", argc, argv) != FLAG_NOT_SET) ) {
         help_page();
+    }
+    /* Look to see if the user asked for the copyright notice */
+    if ( checkForOption("-copyright", argc, argv) != FLAG_NOT_SET ) {
+        print_copyright(ASF_BSD_ID);
+    }
     /*Check to see if any options were provided*/
     flags[f_AMP] = checkForOption("-amplitude", argc, argv);
     flags[f_SIGMA] = checkForOption("-sigma", argc, argv);
@@ -360,7 +343,7 @@ int main(int argc, char *argv[])
     flags[f_SPROCKET] = checkForOption("-sprocket", argc, argv);
     flags[f_LUT] = checkForOption("-lut", argc, argv);
     flags[f_LAT_CONSTRAINT] = checkForOption("-lat", argc, argv);
-    flags[f_PRC] = checkForOption("prc", argc, argv);
+    flags[f_PRC] = checkForOption("-prc", argc, argv);
     flags[f_OLD_META] = checkForOption("-old", argc, argv);
     flags[f_METADATA_FILE] = FLAG_NOT_SET;
     /* checkForOption("-metadata", argc, argv); */
@@ -410,7 +393,7 @@ int main(int argc, char *argv[])
     }
 
     { /*We need to make sure the user specified the proper number of arguments*/
-        int needed_args = REQUIRED_ARGS+1;/*command & in_base & out_base*/
+        int needed_args = 1 + REQUIRED_ARGS;    /*command + REQUIRED_ARGS*/
         if(flags[f_AMP] != FLAG_NOT_SET)      needed_args += 1;/*option*/
         if(flags[f_SIGMA] != FLAG_NOT_SET)    needed_args += 1;/*option*/
         if(flags[f_BETA] != FLAG_NOT_SET)     needed_args += 1;/*option*/
@@ -657,7 +640,7 @@ int main(int argc, char *argv[])
     /* resample, if necessary */
     if (do_resample)
     {
-        double range_scale = flags[f_RANGE_SCALE] == FLAG_NOT_SET ? 1.0 : 
+        double range_scale = flags[f_RANGE_SCALE] == FLAG_NOT_SET ? 1.0 :
         getDoubleOptionArgWithDefault(argv[flags[f_RANGE_SCALE]],
             DEFAULT_RANGE_SCALE);
 
