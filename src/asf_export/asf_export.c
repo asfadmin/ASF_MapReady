@@ -17,124 +17,108 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 */
 
 #define ASF_NAME_STRING \
-"   asf_export"
+"asf_export"
 
 #define ASF_USAGE_STRING \
-"[-format <output_format>] [-size <max_dimension>]\n"\
-"              [-lut <leader file> <cal params file> <cal comment>]\n"\
-"              [-byte <sample mapping option> ] [-log <log_file>] [-quiet]\n"\
-"              [-help] <in_base_name> <out_full_name>\n"
+"   "ASF_NAME_STRING" [-format <output_format>] [-size <max_dimension>]\n"\
+"              [-byte <sample mapping option>] [-log <log_file>] [-quiet]\n"\
+"              [-copyright] [-help] <in_base_name> <out_full_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "   This program ingests ASF internal format data and exports said data to a\n"\
-"   number of output formats. If the input data was geocoded and the ouput\n"\
-"   format supports geocoding, that information will be included."
+"   number of imagery formats. If the input data was geocoded and the ouput\n"\
+"   format supports geocoding, that information will be included.\n"
 
 #define ASF_INPUT_STRING \
-"   This must be an ASF internal format data file."
+"   A file set in the ASF internal data format.\n"
 
 #define ASF_OUTPUT_STRING \
-"   The converted data in the output file."
+"   The converted data in the output file.\n"
 
 #define ASF_OPTIONS_STRING \
-"\n"\
 "   -format <format>\n"\
 "        Format to export to. Must be one of the following:\n"\
-"            CEOS    - Committee for Earth Observing Systems format\n"\
 "            tiff    - Tagged Image File Format, with byte valued pixels\n"\
-"            geotiff - GeoTIFF file, with floating point valued pixels\n"\
+"            geotiff - GeoTIFF file, with floating point or byte valued pixels\n"\
 "            jpeg    - Lossy compressed image, with byte valued pixels\n"\
-"            ppm     - portable pixmap image, with byte valued pixels\n"\
-"       \n"\
+"            ppm     - Portable pixmap image, with byte valued pixels\n"\
 "   -size <size>\n"\
-"        Scale image so that its largest dimension is, at most, size.\n"\
-"\n"\
-"   -lut <leader file> <cal params file> <cal comment>\n"\
-"        Updates the original leader file with the calibration parameter\n"\
-"        file and the calibration comment. Exports image into CEOS format.\n"\
-"\n"\
+"        Scale image so that its largest dimension is, at most, <size>.\n"\
 "   -byte <sample mapping option>\n"\
 "        Converts output image to byte using the following options:\n"\
-"             truncate\n"\
-"                  truncates the input values regardless of their value range.\n"\
-"             minmax\n"\
-"                  determines the minimum and maximum values of the input image\n"\
-"                  and maps those values to the byte range of 0 to 255.\n"\
-"             sigma\n"\
-"                  determines the mean and standard deviation of an image and\n"\
-"                  applies a buffer of 2 sigma around the mean value (it\n"\
-"                  adjusts this buffer if the 2 sigma buffer is outside the\n"\
-"                  value range).\n"\
-"             histogram_equalize\n"\
-"                  produces an image with equally distributed brightness levels\n"\
-"                  over the entire brightness scale which increases contrast."
+"            truncate\n"\
+"                truncates the input values regardless of their value range.\n"\
+"            minmax\n"\
+"                determines the minimum and maximum values of the input image\n"\
+"                and linearly maps those values to the byte range of 0 to 255.\n"\
+"            sigma\n"\
+"                determines the mean and standard deviation of an image and\n"\
+"                applies a buffer of 2 sigma around the mean value (it\n"\
+"                adjusts this buffer if the 2 sigma buffer is outside the\n"\
+"                value range).\n"\
+"            histogram_equalize\n"\
+"                produces an image with equally distributed brightness levels\n"\
+"                over the entire brightness scale which increases contrast.\n"\
+"   -log <logFile>\n"\
+"        Output will be written to a specified log file.\n"\
+"   -quiet\n"\
+"        Supresses all non-essential output.\n"\
+"   -copyright\n"\
+"        Print our copyright notice and exit.\n"\
+"   -help\n"\
+"        Print a help page and exit.\n"
 
 #define ASF_EXAMPLES_STRING \
 "   To export to the default geotiff format from file1.img and file1.meta\n"\
-"   to file1.jpg:\n"\
-"\n"\
-"        example> asf_export file1 file1\n"\
+"   to file1.tif:\n"\
+"        example> "ASF_NAME_STRING" file1 file1\n"\
 "\n"\
 "   To export to file2.jpg in the jpeg format:\n"\
-"\n"\
-"        example> asf_export -format jpeg file1 file2\n"\
+"        example> "ASF_NAME_STRING" -format jpeg file1 file2\n"\
 "\n"\
 "   To export file1 to a jpeg called file3.jpg no larger than 800x800:\n"\
-"\n"\
-"        example> asf_export -format jpeg -size 800 file1 file3"
+"        example> "ASF_NAME_STRING" -format jpeg -size 800 file1 file3\n"
 
 #define ASF_LIMITATIONS_STRING \
-"   Currently only supports ingest of ASF format floating point data.\\n\n"\
-"   Floating-point image formats (i.e., geotiff) are not generally\n"\
-"   supported in many image viewing programs."
+"   Currently only supports ingest of ASF format floating point data.\n"\
+"\n"\
+"   Floating-point image formats (i.e., geotiff) are not supported in many\n"\
+"   image viewing programs.\n"
 
 #define ASF_SEE_ALSO_STRING \
-"   asf_convert, asf_import"
+"   asf_convert, asf_import\n"
 
-#define ASF_COPYRIGHT_STRING \
-"Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks\n"\
+#define ASF_BSD_ID 1
+#define ASF_BSD_COPYRIGHT_STRING \
+"\n"\
+"Copyright (c) 2006, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
 "All rights reserved.\n"\
 "\n"\
 "Redistribution and use in source and binary forms, with or without\n"\
 "modification, are permitted provided that the following conditions are met:\n"\
 "\n"\
-"    * Redistributions of source code must retain the above copyright notice,\n"\
-"      this list of conditions and the following disclaimer.\n"\
-"    * Redistributions in binary form must reproduce the above copyright\n"\
-"      notice, this list of conditions and the following disclaimer in the\n"\
-"      documentation and/or other materials provided with the distribution.\n"\
-"    * Neither the name of the Geophysical Institute nor the names of its\n"\
-"      contributors may be used to endorse or promote products derived from\n"\
-"      this software without specific prior written permission.\n"\
+"  * Redistributions of source code must retain the above copyright notice, this\n"\
+"    list of conditions and the following disclaimer.\n"\
+"  * Redistributions in binary form must reproduce the above copyright notice,\n"\
+"    this list of conditions and the following disclaimer in the documentation\n"\
+"    and/or other materials provided with the distribution.\n"\
+"  * Neither the name of the University of Alaska Fairbanks, nor its subunits,\n"\
+"    nor the names of its contributors may be used to endorse or promote products\n"\
+"    derived from this software without specific prior written permission.\n"\
+"  * Redistribution and use of source and binary forms are for noncommercial\n"\
+"    purposes only.\n"\
 "\n"\
-"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\n"\
-"AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\n"\
-"IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\n"\
-"ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE\n"\
-"LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR\n"\
-"CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF\n"\
-"SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\n"\
-"INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN\n"\
-"CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)\n"\
-"ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\n"\
-"POSSIBILITY OF SUCH DAMAGE.\n"\
-"\n"\
-"       For more information contact us at:\n"\
-"\n"\
-"       Alaska Satellite Facility\n"\
-"       Geophysical Institute\n"\
-"       University of Alaska Fairbanks\n"\
-"       P.O. Box 757320\n"\
-"       Fairbanks, AK 99775-7320\n"\
-"\n"\
-"       http://www.asf.alaska.edu\n"\
-"       uso@asf.alaska.edu"
-
-#define ASF_PROGRAM_HISTORY_STRING \
-"   No history."
-
-#define ASF_VERSION_MAJOR_STRING \
-"0.30"
+"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\n"\
+"ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\n"\
+"WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\n"\
+"DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\n"\
+"ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n"\
+"(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\n"\
+"LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\n"\
+"ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"\
+"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"\
+"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"\
+"\n"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
@@ -169,56 +153,56 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include <asf_meta.h>
 #include <asf_export.h>
 #include <asf_reporting.h>
+#include <asf_contact.h>
 
 
-// Print invocation information.
-void usage()
+// usage - enter here on command-line usage error
+void usage(void)
 {
-  printf ("\n"
-    "USAGE:\n"
-    ASF_NAME_STRING
-    " "
-    ASF_USAGE_STRING
-    "\n\n");
-  exit (EXIT_FAILURE);
+    printf("\n"
+        "USAGE:\n"
+        ASF_USAGE_STRING
+        "\n");
+    exit (EXIT_FAILURE);
 }
 
-
+// help_page - go here when the -help option is specified
 void help_page()
 {
-  char happy_string[4066];
-  char command[4096];
+    char happy_string[4066];
 
-  // What to print out for help
-  sprintf(happy_string,
-          "\n\n\n"
-          "Tool name:\n" ASF_NAME_STRING "\n\n\n"
-          "Usage:\n" ASF_NAME_STRING " " ASF_USAGE_STRING "\n\n\n"
-          "Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
-          "Input:\n" ASF_INPUT_STRING "\n\n\n"
-          "Output:\n"ASF_OUTPUT_STRING "\n\n\n"
-          "Options:\n" ASF_OPTIONS_STRING "\n\n\n"
-          "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
-          "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
-          "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
-          "Version:\n" CONVERT_PACKAGE_VERSION_STRING "\n\n\n"
-          "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n");
+    // What to print out for help
+    sprintf(happy_string,
+        "\n"
+        "Tool name:\n   " ASF_NAME_STRING "\n\n"
+        "Usage:\n" ASF_USAGE_STRING "\n"
+        "Description:\n" ASF_DESCRIPTION_STRING "\n"
+        "Input:\n" ASF_INPUT_STRING "\n"
+        "Output:\n"ASF_OUTPUT_STRING "\n"
+        "Options:\n" ASF_OPTIONS_STRING "\n"
+        "Examples:\n" ASF_EXAMPLES_STRING "\n"
+        "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
+        "See also:\n" ASF_SEE_ALSO_STRING "\n"
+        "Contact:\n" ASF_CONTACT_STRING "\n"
+        "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
 
-  // If we can, use less
-  sprintf (command, "echo '%s' | less --prompt='Type q to quit help, h for "
-           "help with help browser'", happy_string);
-  if ( system (command) == 0 )
-    exit (EXIT_SUCCESS);
+    // Print the help... the user can use less or more on their own
+    printf(happy_string);
+    exit(EXIT_SUCCESS);
+}
 
-  // Hmmm, less didn't work cause we got here, try using more
-  sprintf (command,"echo '%s' | more",happy_string);
-  if ( system (command) == 0 )
-    exit (EXIT_SUCCESS);
-
-  // Okay, neither less or more work (obviously if we made it here),
-  // just print the info straight to stdout and exit
-  printf (happy_string);
-  exit (EXIT_SUCCESS);
+// Print our copyright notice
+void print_copyright(int copyright_id)
+{
+        switch (copyright_id) {
+          case ASF_BSD_ID:
+            printf(ASF_BSD_COPYRIGHT_STRING);
+            break;
+          default:
+            printf("Copyright not found.\n");
+            break;
+        }
+        exit(EXIT_SUCCESS);
 }
 
 
@@ -267,21 +251,24 @@ main (int argc, char *argv[])
   strcpy (command_line.cal_comment, "");
   command_line.sample_mapping = 0;
 
-  int formatFlag, sizeFlag, logFlag, quietFlag, lutFlag, byteFlag;
+  int formatFlag, sizeFlag, logFlag, quietFlag, byteFlag;
   int needed_args = 3;  //command & argument & argument
   int ii;
   char sample_mapping_string[25];
 
   //Check to see which options were specified
-  if ( checkForOption ("-help", argc, argv) != -1
-       || checkForOption ("--help", argc, argv) != -1 ) {
-    help_page ();
+  if (   (checkForOption("--help", argc, argv) != FLAG_NOT_SET)
+      || (checkForOption("-h", argc, argv) != FLAG_NOT_SET)
+      || (checkForOption("-help", argc, argv) != FLAG_NOT_SET) ) {
+    help_page();
+  }
+  if ( checkForOption("-copyright", argc, argv) != FLAG_NOT_SET ) {
+    print_copyright(ASF_BSD_ID);
   }
   formatFlag = checkForOption ("-format", argc, argv);
   sizeFlag = checkForOption ("-size", argc, argv);
   logFlag = checkForOption ("-log", argc, argv);
   quietFlag = checkForOption ("-quiet", argc, argv);
-  lutFlag = checkForOption ("-lut", argc, argv);
   byteFlag = checkForOption ("-byte", argc, argv);
 
   if ( formatFlag != FLAG_NOT_SET ) {
@@ -295,9 +282,6 @@ main (int argc, char *argv[])
   }
   if ( logFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
-  }
-  if ( lutFlag != FLAG_NOT_SET ) {
-    needed_args += 4;           // Option & parameters.
   }
   if ( byteFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
@@ -326,12 +310,6 @@ main (int argc, char *argv[])
       usage ();
     }
   }
-  if ( lutFlag != FLAG_NOT_SET ) {
-    if ( argv[lutFlag + 1][0] == '-' || argv[lutFlag + 2][0] == '-' ||
-         argv[lutFlag + 3][0] == '-' || lutFlag >= argc - 5 ) {
-      usage ();
-    }
-  }
   if ( byteFlag != FLAG_NOT_SET ) {
     if ( argv[byteFlag + 1][0] == '-' || byteFlag >= argc -3 ) {
       usage ();
@@ -343,20 +321,14 @@ main (int argc, char *argv[])
     }
   }
 
-  if ( logFlag != FLAG_NOT_SET ) {
-    strcpy (logFile, argv[logFlag + 1]);
-    fLog = fopen (logFile, "a");
-    if ( fLog == NULL ) {
-      logflag = FALSE;
-    }
-    else {
-      logflag = TRUE;
-    }
+  if( logFlag != FLAG_NOT_SET ) {
+    strcpy(logFile, argv[logFlag+1]);
   }
   else {
-    logflag = FALSE;
-    // sprintf (logFile, "tmp%i.log", (int) getpid ());
+    sprintf(logFile, "tmp%i.log", (int)getpid());
   }
+  logflag = TRUE; // Since we always log, set the old school logflag to true
+  fLog = FOPEN (logFile, "a");
 
   // Set old school quiet flag (for use in our libraries)
   quietflag = ( quietFlag != FLAG_NOT_SET ) ? TRUE : FALSE;
@@ -398,13 +370,6 @@ main (int argc, char *argv[])
   else
     command_line.quiet = FALSE;
 
-  if ( lutFlag != FLAG_NOT_SET ) {
-    strcpy(command_line.format, "CEOS");
-    strcpy(command_line.leader_name, argv[lutFlag + 1]);
-    strcpy(command_line.cal_params_file, argv[lutFlag + 2]);
-    strcpy(command_line.cal_comment, argv[lutFlag + 3]);
-  }
-
   // Set scaling mechanism
   if ( byteFlag != FLAG_NOT_SET ) {
     strcpy (sample_mapping_string, argv[byteFlag + 1]);
@@ -443,7 +408,7 @@ main (int argc, char *argv[])
     format = ESRI;
   }
   else if ( strcmp (command_line.format, "GEOTIFF") == 0 ||
-    strcmp (command_line.format, "GEOTIF") == 0) {
+            strcmp (command_line.format, "GEOTIF") == 0) {
     append_ext_if_needed (command_line.output_name, ".tif", ".tiff");
     format = GEOTIFF;
   }
@@ -453,16 +418,13 @@ main (int argc, char *argv[])
     format = TIF;
   }
   else if ( strcmp (command_line.format, "JPEG") == 0 ||
-    strcmp (command_line.format, "JPG") == 0) {
+            strcmp (command_line.format, "JPG") == 0) {
     append_ext_if_needed (command_line.output_name, ".jpg", ".jpeg");
     format = JPEG;
   }
   else if ( strcmp (command_line.format, "PPM") == 0 ) {
     append_ext_if_needed (command_line.output_name, ".ppm", NULL);
     format = PPM;
-  }
-  else if ( strcmp (command_line.format, "CEOS") == 0 ) {
-    format = CEOS;
   }
   else {
     asfPrintError("Unrecognized output format specified");
@@ -478,6 +440,8 @@ main (int argc, char *argv[])
               || md->general->data_type == REAL64,
               "Cannot cope with complex data, exiting...\n");
   meta_free (md);
+
+  // Do that exporting magic!
   if ( format == ENVI ) {
     export_as_envi (command_line.in_meta_name, command_line.in_data_name,
                     command_line.output_name);
@@ -506,12 +470,13 @@ main (int argc, char *argv[])
                    command_line.output_name, command_line.size,
                    command_line.sample_mapping);
   }
-  else if ( format == CEOS ) {
-    export_as_ceos (command_line.in_meta_name, command_line.in_data_name,
-                    command_line.output_name, command_line.leader_name,
-                    command_line.cal_params_file, command_line.cal_comment);
+
+  // If the user didn't ask for a log file then nuke the one that's been kept
+  // since everything has finished successfully
+  if (logFlag == FLAG_NOT_SET) {
+      fclose (fLog);
+      remove(logFile);
   }
 
   exit (EXIT_SUCCESS);
 }
-
