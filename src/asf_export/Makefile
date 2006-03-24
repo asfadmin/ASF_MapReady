@@ -34,7 +34,7 @@ SOURCES := asf_export.c \
 #
 ###############################################################################
 
-CFLAGS := \
+CFLAGS += \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
@@ -75,7 +75,7 @@ OBJS := $(patsubst %.c, %.o, $(SOURCES))
 all: asf_export
 
 $(PROGRAM): $(OBJS)
-	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
 	mv asf_export$(BIN_POSTFIX) $(BINDIR)
 
 .PHONY: clean
