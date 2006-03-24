@@ -41,11 +41,11 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   -format <format>\n"\
 "        Format to export to. Must be one of the following:\n"\
 "            CEOS    - Committee for Earth Observing Systems format\n"\
-"	    tiff    - Tagged Image File Format, with byte valued pixels\n"\
-"	    geotiff - GeoTIFF file, with floating point valued pixels\n"\
-"	    jpeg    - Lossy compressed image, with byte valued pixels\n"\
+"            tiff    - Tagged Image File Format, with byte valued pixels\n"\
+"            geotiff - GeoTIFF file, with floating point valued pixels\n"\
+"            jpeg    - Lossy compressed image, with byte valued pixels\n"\
 "            ppm     - portable pixmap image, with byte valued pixels\n"\
-"	\n"\
+"       \n"\
 "   -size <size>\n"\
 "        Scale image so that its largest dimension is, at most, size.\n"\
 "\n"\
@@ -206,7 +206,7 @@ void help_page()
 
   // If we can, use less
   sprintf (command, "echo '%s' | less --prompt='Type q to quit help, h for "
-	   "help with help browser'", happy_string);
+           "help with help browser'", happy_string);
   if ( system (command) == 0 )
     exit (EXIT_SUCCESS);
 
@@ -285,26 +285,26 @@ main (int argc, char *argv[])
   byteFlag = checkForOption ("-byte", argc, argv);
 
   if ( formatFlag != FLAG_NOT_SET ) {
-    needed_args += 2;		// Option & parameter.
+    needed_args += 2;           // Option & parameter.
   }
   if ( sizeFlag != FLAG_NOT_SET ) {
-    needed_args += 2;		// Option & parameter.
+    needed_args += 2;           // Option & parameter.
   }
   if ( quietFlag != FLAG_NOT_SET ) {
-    needed_args += 1;		// Option & parameter.
+    needed_args += 1;           // Option & parameter.
   }
   if ( logFlag != FLAG_NOT_SET ) {
-    needed_args += 2;		// Option & parameter.
+    needed_args += 2;           // Option & parameter.
   }
   if ( lutFlag != FLAG_NOT_SET ) {
-    needed_args += 4;		// Option & parameters.
+    needed_args += 4;           // Option & parameters.
   }
   if ( byteFlag != FLAG_NOT_SET ) {
-    needed_args += 2;		// Option & parameter.
+    needed_args += 2;           // Option & parameter.
   }
 
   if ( argc != needed_args ) {
-    usage ();			// This exits with a failure.
+    usage ();                   // This exits with a failure.
   }
 
   // We also need to make sure the last three options are close to
@@ -328,7 +328,7 @@ main (int argc, char *argv[])
   }
   if ( lutFlag != FLAG_NOT_SET ) {
     if ( argv[lutFlag + 1][0] == '-' || argv[lutFlag + 2][0] == '-' ||
-	 argv[lutFlag + 3][0] == '-' || lutFlag >= argc - 5 ) {
+         argv[lutFlag + 3][0] == '-' || lutFlag >= argc - 5 ) {
       usage ();
     }
   }
@@ -448,7 +448,7 @@ main (int argc, char *argv[])
     format = GEOTIFF;
   }
   else if ( strcmp (command_line.format, "TIFF") == 0 ||
-	    strcmp (command_line.format, "TIF") == 0) {
+            strcmp (command_line.format, "TIF") == 0) {
     append_ext_if_needed (command_line.output_name, ".tif", ".tiff");
     format = TIF;
   }
@@ -480,31 +480,31 @@ main (int argc, char *argv[])
   meta_free (md);
   if ( format == ENVI ) {
     export_as_envi (command_line.in_meta_name, command_line.in_data_name,
-		    command_line.output_name);
+                    command_line.output_name);
   }
   else if ( format == ESRI ) {
     export_as_esri (command_line.in_meta_name, command_line.in_data_name,
-		    command_line.output_name);
+                    command_line.output_name);
   }
   else if ( format == TIF ) {
     export_as_tiff (command_line.in_meta_name, command_line.in_data_name,
-		    command_line.output_name, command_line.size,
-		    command_line.sample_mapping);
+                    command_line.output_name, command_line.size,
+                    command_line.sample_mapping);
   }
   else if ( format == GEOTIFF ) {
     export_as_geotiff (command_line.in_meta_name, command_line.in_data_name,
-		       command_line.output_name, command_line.size,
-		       command_line.sample_mapping);
+                       command_line.output_name, command_line.size,
+                       command_line.sample_mapping);
   }
   else if ( format == JPEG ) {
     export_as_jpeg (command_line.in_meta_name, command_line.in_data_name,
-		    command_line.output_name, command_line.size,
-		    command_line.sample_mapping);
+                    command_line.output_name, command_line.size,
+                    command_line.sample_mapping);
   }
   else if ( format == PPM ) {
     export_as_ppm (command_line.in_meta_name, command_line.in_data_name,
-		   command_line.output_name, command_line.size,
-		   command_line.sample_mapping);
+                   command_line.output_name, command_line.size,
+                   command_line.sample_mapping);
   }
   else if ( format == CEOS ) {
     export_as_ceos (command_line.in_meta_name, command_line.in_data_name,
