@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
   char configFileName[255], cmd[1024], options[255], line[255], batchConfig[255];
   char inFile[255], outFile[255], fileName[255];
   char format[255], radiometry[255], projection[255], datum[255], resampling[255];
-  char scale[255], values[255];
+  char scale[255], values[255], prefix[30], suffix[30];
   const int pid = getpid();
   int createflag;
   extern int logflag, quietflag;
@@ -303,6 +303,15 @@ int main(int argc, char *argv[])
       fprintf(fConfig, "[General]\n");
       fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
       fprintf(fConfig, "input file = %s\n", fileName);
+      if (strcmp(cfg->general->prefix, "") == 0)
+	sprintf(prefix, "");
+      else
+	sprintf(prefix, "%s_", cfg->general->prefix);
+      if (strcmp(cfg->general->suffix, "") == 0)
+	sprintf(suffix, "");
+      else
+	sprintf(suffix, "_%s", cfg->general->suffix);
+      fprintf(fConfig, "output file = %s%s%s\n", prefix, fileName, suffix);
       FCLOSE(fConfig);
 
       // Run asf_convert for temporary configuration file

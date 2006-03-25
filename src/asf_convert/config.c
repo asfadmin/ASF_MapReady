@@ -3,8 +3,6 @@
 #include "asf_reporting.h"
 #include <ctype.h>
 
-int warnFlag = FALSE;
-
 int strindex(char s[], char t[])
 {
   int i, j, k;
@@ -123,6 +121,10 @@ convert_config *init_fill_config(char *configFile)
   strcpy(cfg->general->batchFile, "");
   cfg->general->defaults = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->general->defaults, "");
+  cfg->general->prefix = (char *)MALLOC(sizeof(char)*255);
+  strcpy(cfg->general->prefix, "");
+  cfg->general->suffix = (char *)MALLOC(sizeof(char)*255);
+  strcpy(cfg->general->suffix, "");
   cfg->general->intermediates = 0;
 
   cfg->import->format = (char *)MALLOC(sizeof(char)*25);
@@ -179,6 +181,7 @@ convert_config *init_fill_config(char *configFile)
     fDefaults = FOPEN(cfg->general->defaults, "r");
     while (fgets(line, 255, fDefaults) != NULL) {
       test = read_param(line);
+      // General
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
       if (strncmp(test, "image stats", 11)==0)
@@ -189,14 +192,21 @@ convert_config *init_fill_config(char *configFile)
         cfg->general->export = read_int(line, "export");
       if (strncmp(test, "intermediates", 13)==0)
 	cfg->general->intermediates = read_int(line, "intermediates");
+      if (strncmp(test, "prefix", 6)==0)
+	cfg->general->prefix = read_str(line, "prefix");
+      if (strncmp(test, "suffix", 6)==0)
+	cfg->general->suffix = read_str(line, "suffix");
+      // Import
       if (strncmp(test, "input format", 12)==0)
         cfg->import->format = read_str(line, "input format");
       if (strncmp(test, "radiometry", 10)==0)
         cfg->import->radiometry = read_str(line, "radiometry");
       if (strncmp(test, "look up table", 13)==0)
         cfg->import->lut = read_str(line, "look up table");
+      // Image stats
       if (strncmp(test, "stats values", 12)==0)
 	cfg->image_stats->values = read_str(line, "stats values");
+      // Geocoding
       if (strncmp(test, "projection", 10)==0)
         cfg->geocoding->projection = read_str(line, "projection");
       if (strncmp(test, "pixel spacing", 13)==0)
@@ -209,6 +219,7 @@ convert_config *init_fill_config(char *configFile)
         cfg->geocoding->resampling = read_str(line, "resampling");
       if (strncmp(test, "force", 5)==0)
         cfg->geocoding->force = read_int(line, "force");
+      // Export
       if (strncmp(test, "output format", 13)==0)
         cfg->export->format = read_str(line, "output format");
       if (strncmp(test, "byte conversion", 15)==0)
@@ -244,6 +255,10 @@ convert_config *init_fill_config(char *configFile)
         cfg->general->export = read_int(line, "intermediates");
       if (strncmp(test, "batch file", 10)==0)
         cfg->general->batchFile = read_str(line, "batch file");
+      if (strncmp(test, "prefix", 6)==0)
+        cfg->general->prefix = read_str(line, "prefix");
+      if (strncmp(test, "suffix", 6)==0)
+        cfg->general->suffix = read_str(line, "suffix");
     }
   }
   FCLOSE(fConfig);
@@ -284,6 +299,10 @@ convert_config *read_config(char *configFile)
         cfg->general->intermediates = read_int(line, "intermediates");
       if (strncmp(test, "batch file", 10)==0)
         cfg->general->batchFile = read_str(line, "batch file");
+      if (strncmp(test, "prefix", 6)==0)
+        cfg->general->prefix = read_str(line, "prefix");
+      if (strncmp(test, "suffix", 6)==0)
+        cfg->general->suffix = read_str(line, "suffix");
     }
 
     if (strncmp(line, "[Import]", 8)==0) strcpy(params, "Import");
@@ -407,6 +426,8 @@ int write_config(char *configFile, convert_config *cfg)
     fprintf(fConfig, "[General]\n");
     fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
     fprintf(fConfig, "batch file = %s\n", cfg->general->batchFile);
+    fprintf(fConfig, "prefix = %s\n", cfg->general->prefix);
+    fprintf(fConfig, "suffix = %s\n", cfg->general->suffix);
   }
 
   FCLOSE(fConfig);

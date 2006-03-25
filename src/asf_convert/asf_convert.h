@@ -12,6 +12,8 @@ typedef struct
   int intermediates;      // flag to keep intermediates
   char *defaults;         // default values file
   char *batchFile;        // batch file name
+  char *prefix;           // prefix for output file naming scheme
+  char *suffix;           // suffix for output file naming scheme
 } s_general;
 
 typedef struct
