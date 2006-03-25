@@ -225,14 +225,16 @@ CATEGORIES
 	asf_export
 	asf_import
 	asf_geocode
+	metadata_gui
+	metadata
   }
 
 # Open - Anybody can get this stuff (BSD license)
 	open
 	{
-		asf_convert asf_export asf_import asf_geocode stats
-		convert2byte convert2geotiff convert2jpeg convert2ppm deskew
-		dspddr fftMatch makeddr meta2ddr metadata raster_calc
+		convert
+		stats convert2byte convert2geotiff convert2jpeg convert2ppm
+		deskew dspddr fftMatch makeddr meta2ddr metadata raster_calc
 		raster_diff remap resample sarout sr2gr trim accum_offset
 		concat concat_dem concatm fit_quadratic idimage projprm
 		2dmap demimg demclip despike greycorr sargeom sarsim rtc_add
