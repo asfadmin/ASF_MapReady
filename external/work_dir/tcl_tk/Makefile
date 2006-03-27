@@ -17,25 +17,31 @@ TK_ZIPFILE := $(TK_UNPACK_DIR).tar.gz
 build: build_tcl_stamp build_tk_stamp
 
 # Create tcl library & necessary components in the proper place for retrieval
+# If zip file not present, skip.
 build_tcl_stamp:
-	gunzip --to-stdout $(TCL_ZIPFILE) | tar xv
-	(   cd $(TCL_UNPACK_DIR)/unix ; \
+	if [ -f $(TCL_ZIPFILE) ]; then \
+	  gunzip --to-stdout $(TCL_ZIPFILE) | tar xv; \
+	  (   cd $(TCL_UNPACK_DIR)/unix ; \
 	    ./configure --enable-gcc --disable-load --prefix=$(ROOT_DIR) ; \
 	    make ; \
 	    make install ; \
-	)
-	touch $@
+	  ); \
+	  touch $@;  \
+	fi
 
 # Create the tk library & necessary parts in the proper place for retrieval
+# If zip file not present, skip.
 build_tk_stamp: build_tcl_stamp
-	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
-	gunzip --to-stdout $(TK_ZIPFILE) | tar xv
-	(   cd $(TK_UNPACK_DIR)/unix ; \
-	    ./configure  --enable-gcc --disable-load --prefix=$(ROOT_DIR) ; \
-	    make ; \
-	    make install ; \
-	)
-	touch $@
+	if [ -f $(TK_ZIPFILE) ]; then \
+	  mkdir -p $(LIB_DIR) $(INCLUDE_DIR); \
+	  gunzip --to-stdout $(TK_ZIPFILE) | tar xv; \
+	  (   cd $(TK_UNPACK_DIR)/unix ; \
+	      ./configure  --enable-gcc --disable-load --prefix=$(ROOT_DIR) ; \
+	      make ; \
+	      make install ; \
+	  ); \
+	  touch $@;  \
+	fi
 
 
 clean:
