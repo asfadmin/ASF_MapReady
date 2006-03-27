@@ -65,12 +65,14 @@ input_data_format_combobox_changed()
         *latitude_low_entry,
         *latitude_hi_label,
         *latitude_hi_entry,
-        *vbox_export;
+        *vbox_export,
+        *vbox_geocode;
 
     gint input_data_format;
     gboolean show_data_type_combobox;
     gboolean show_latitude_spinbuttons;
     gboolean show_export_section;
+    gboolean show_geocode_section;
 
     input_data_format_combobox =
         glade_xml_get_widget(glade_xml, "input_data_format_combobox");
@@ -82,6 +84,7 @@ input_data_format_combobox_changed()
     {
     case INPUT_FORMAT_STF:
         show_export_section = FALSE;
+        show_geocode_section = FALSE;
         show_data_type_combobox = FALSE;
         show_latitude_spinbuttons = TRUE;
         break;
@@ -89,11 +92,13 @@ input_data_format_combobox_changed()
         show_data_type_combobox = FALSE;
         show_latitude_spinbuttons = FALSE;
         show_export_section = FALSE;
+        show_geocode_section = FALSE;
         break;
     case INPUT_FORMAT_CEOS_LEVEL0:
         show_data_type_combobox = FALSE;
         show_latitude_spinbuttons = FALSE;
         show_export_section = FALSE;
+        show_geocode_section = FALSE;
         break;
     default:
     case INPUT_FORMAT_CEOS_LEVEL1:
@@ -102,11 +107,13 @@ input_data_format_combobox_changed()
         show_data_type_combobox = TRUE;
         show_latitude_spinbuttons = FALSE;
         show_export_section = TRUE;
+        show_geocode_section = TRUE;
         break;
     case INPUT_FORMAT_ASF_INTERNAL:
         show_data_type_combobox = FALSE;
         show_latitude_spinbuttons = FALSE;
         show_export_section = TRUE;
+        show_geocode_section = TRUE;
         break;
     }
 
@@ -154,6 +161,13 @@ input_data_format_combobox_changed()
     gtk_widget_set_sensitive(vbox_export, show_export_section);
 
     output_format_combobox_changed();
+
+    vbox_geocode =
+        glade_xml_get_widget(glade_xml, "vbox_geocode");
+
+    gtk_widget_set_sensitive(vbox_geocode, show_geocode_section);
+
+    geocode_options_changed();
 }
 
 void
