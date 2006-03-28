@@ -111,6 +111,29 @@ print_all_reg_vals()
     RegCloseKey(Hkey);
 }
 
+#else
+
+#include <stdio.h>
+#include <stdlib.h>
+
+static int check_for_known_file_in_dir(const char *dir)
+{
+    const char * known_file = "ASF_LICENSE";
+    char * file = (char *)MALLOC(strlen(dir) + strlen(known_file) + 3);
+    sprintf(file, "%s/%s", dir, known_file);
+
+    int found = 0;
+
+    FILE *f = fopen(file, "rt");
+    if (f) {
+      found = 1;
+      fclose(f);
+    }
+
+    FREE(file);
+    return found;	
+}
+
 #endif
 
 const char *
@@ -186,6 +209,64 @@ get_asf_share_dir()
 
     s_share_dir = strdup(ASF_SHARE_DIR);
 
+    /* See if this works - check for a known file which              */
+    /* is in the asf share directory.                                */
+    if (!check_for_known_file_in_dir(s_share_dir))
+    {
+        const char path_sep = ':';
+	char *path, *buf, *share, *p;
+	int found = 0;
+
+        /* kludgery! Must find the location of the share dir the hard  */
+        /* way, which is to search the directories in the user's path, */
+        /* go '../share/asf_tools' relative to that, and check for the */
+        /* known file.                                                 */
+
+        /* first: it might not be share/asf_tools, get what it really is */
+        share = strstr(ASF_SHARE_DIR, "share");
+        if (!share) {
+	    /* this is bad... */
+	    printf("Falling back to default share dir: %s\n", s_share_dir);
+	    return s_share_dir;
+	}
+        --share;
+	
+	path = getenv("PATH");	
+	buf = MALLOC(strlen(path) + strlen(share) + 10);
+
+	p = path;
+	do {
+	    char * q = strchr(p + 1, path_sep);
+	    if (!q) q = path + strlen(path); /* last item in path */
+
+	    int i;
+	    for (i = 0; i < q - p; ++i)
+	        buf[i] = p[i];
+	    buf[i] = '\0';
+
+	    /* only try this one if it ends with 'bin' */
+	    if (strcmp(buf + strlen(buf) - 3, "bin") == 0) {
+	        *(buf + strlen(buf) - 4) = '\0';
+		strcat(buf, share);
+
+		if (check_for_known_file_in_dir(buf))
+		{
+		    free(s_share_dir);
+		    s_share_dir = strdup(buf);
+		    found = 1;
+		    break;
+		}
+	    }
+	    p = q;
+	}
+	while (*p++ != '\0');
+
+	if (!found)
+	    printf("Falling back to default share dir: %s\n", s_share_dir);
+
+	FREE(buf);
+    }
+
 #endif
 
       /* remove trailing path separator, if one is present */
@@ -194,7 +275,7 @@ get_asf_share_dir()
       s_share_dir[strlen(s_share_dir) - 1] = '\0';
     }
   }
-  
+
   return s_share_dir;
 }
 
