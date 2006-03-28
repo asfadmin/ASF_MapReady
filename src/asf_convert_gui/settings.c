@@ -587,7 +587,6 @@ settings_get_output_bytes_argument(const Settings *s)
     if (s->output_bytes)
     {
         gchar * arg;
-	printf("%d!\n", s->scaling_method);
         switch (s->scaling_method)
         {
         default:
