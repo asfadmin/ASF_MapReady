@@ -1668,6 +1668,14 @@
 				  <property name="use_underline">True</property>
 				</widget>
 			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="histogram_equalize">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Histogram Equalize</property>
+				  <property name="use_underline">True</property>
+				</widget>
+			      </child>
 			    </widget>
 			  </child>
 			</widget>

@@ -428,20 +428,25 @@
 
 	<orderedlist>
 	  <listitem>
-	    <para>statistical 2 sigma: determines the mean and
+	    <para>Statistical 2 Sigma: Determines the mean and
               standard deviation of
               the image and applies a buffer of 2 sigma around the
               mean value (it adjusts this buffer if the 2 sigma buffer
               is outside the value range).</para>
 	  </listitem>
 	  <listitem>
-	    <para>minmax: determines the minimum and maximum values of
+	    <para>Minmax: determines the minimum and maximum values of
               the input image and maps those values to the byte range
               of 0 to 255.</para>
 	  </listitem>
 	  <listitem>
-	    <para>truncate: truncates the input values regardless of
+	    <para>Truncate: truncates the input values regardless of
               their value range.</para>
+	  </listitem>
+	  <listitem>
+	    <para>Histogram Equalization: Produces an image with
+              equally distributed brightness levels over the entire
+              brightness scale, which increases contrast.</para>
 	  </listitem>
 	</orderedlist>
 	<para>The default is "sigma".</para>

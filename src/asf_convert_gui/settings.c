@@ -587,7 +587,7 @@ settings_get_output_bytes_argument(const Settings *s)
     if (s->output_bytes)
     {
         gchar * arg;
-
+	printf("%d!\n", s->scaling_method);
         switch (s->scaling_method)
         {
         default:
@@ -601,6 +601,10 @@ settings_get_output_bytes_argument(const Settings *s)
 
         case SCALING_METHOD_TRUNCATE:
             arg = "truncate";
+            break;
+
+        case SCALING_METHOD_HISTOGRAM_EQUALIZE:
+            arg = "histogram_equalize";
             break;
         }
 
