@@ -34,9 +34,9 @@ all: external_libs
 
 install: all
 	mkdir -p @BINDIR@ @prefix@/lib @SHAREDIR@
-	cp bin/* @BINDIR@
+	cp -R bin/* @BINDIR@
 	cp -R lib/* @prefix@/lib
-	cp -R share/* @SHAREDIR@
+	cp -R ASF_LICENSE share/* @SHAREDIR@
 #	chmod 755 @BINDIR@/*
 #	chmod -R 644 @SHAREDIR@/*
 
