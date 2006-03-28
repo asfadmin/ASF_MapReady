@@ -255,7 +255,7 @@ endif
 
 LIBDIR  = ../../lib
 BINDIR  = ../../bin
-SHAREDIR = ../../share
+SHAREDIR = ../../share/asf_tools
 DOCDIR = $(SHAREDIR)/doc
 
 EOF
