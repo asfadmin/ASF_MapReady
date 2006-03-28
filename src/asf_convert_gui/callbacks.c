@@ -160,12 +160,30 @@ input_data_format_combobox_changed()
 
     gtk_widget_set_sensitive(vbox_export, show_export_section);
 
+    if (!show_export_section)
+    {
+        GtkWidget *export_checkbutton =
+            glade_xml_get_widget(glade_xml, "export_checkbutton");
+
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(export_checkbutton),
+            FALSE);
+    }
+
     output_format_combobox_changed();
 
     vbox_geocode =
         glade_xml_get_widget(glade_xml, "vbox_geocode");
 
     gtk_widget_set_sensitive(vbox_geocode, show_geocode_section);
+
+    if (!show_geocode_section)
+    {
+        GtkWidget *geocode_checkbutton =
+            glade_xml_get_widget(glade_xml, "geocode_checkbutton");
+
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(geocode_checkbutton),
+            FALSE);
+    }
 
     geocode_options_changed();
 }
