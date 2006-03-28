@@ -286,9 +286,6 @@ int main(int argc, char *argv[])
     cfg = read_config(configFileName);
   }
 
-  // Update configuration file
-  check_return(write_config(configFileName, cfg), "Could not update configuration file");
-
   // Batch mode processing
   if (strcmp(cfg->general->batchFile, "") != 0) {
     fBatch = FOPEN(cfg->general->batchFile, "r");
@@ -438,10 +435,6 @@ int main(int argc, char *argv[])
       asfPrintError("Nothing to be done\n");
     }
 
-    // Update configuration file
-    check_return(write_config(configFileName, cfg),
-                 "Could not update configuration file");
-
     // Let's finally get to work
     sprintf(outFile, "%s", cfg->general->in_name);
     if (strcmp(cfg->general->out_name, "") == 0) {
@@ -581,10 +574,6 @@ int main(int argc, char *argv[])
       system(cmd);
     }
   }
-
-  // Update status
-  check_return(write_config(configFileName, cfg),
-               "Could not update configuration file");
 
   /* If the user didn't ask for a log file then we can nuke the one that
   we've been keeping since we've finished everything */
