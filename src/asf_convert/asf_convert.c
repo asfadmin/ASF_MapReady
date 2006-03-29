@@ -114,13 +114,25 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define FLAG_NOT_SET -1
 
 
+static int log_f;
+// If the user didn't ask for a log file then we can nuke the one that
+// we've been keeping since we've finished everything */
+static int exit_with_success(void) {
+  if (log_f == FLAG_NOT_SET) {
+    fclose (fLog);
+    remove(logFile);
+  }
+  exit(EXIT_SUCCESS);
+}
+
+
 void usage()
 {
   printf ("\n"
     "USAGE:\n"
     ASF_USAGE_STRING
     "\n");
-  exit (EXIT_FAILURE);
+  exit(EXIT_FAILURE);
 }
 
 
@@ -145,7 +157,7 @@ void help_page()
 
     // Print the help... the user can use less or more on their own
     printf(happy_string);
-    exit(EXIT_SUCCESS);
+    exit_with_success();
 }
 
 
@@ -160,7 +172,7 @@ void print_copyright(int copyright_id)
             printf("Copyright not found.\n");
             break;
         }
-        exit(EXIT_SUCCESS);
+        exit_with_success();
 }
 
 
@@ -210,7 +222,7 @@ int main(int argc, char *argv[])
   const int pid = getpid();
   int createflag;
   extern int logflag, quietflag;
-  int create_f, log_f, quiet_f;
+  int create_f, quiet_f;  /* log_f is a static global */
 
   createflag = logflag = quietflag = FALSE;
   create_f = log_f = quiet_f = FLAG_NOT_SET;
@@ -280,7 +292,7 @@ int main(int argc, char *argv[])
   // If requested, create a config file and exit, otherwise read it
   if ( createflag==TRUE ) {
     init_config(configFileName);
-    exit(EXIT_SUCCESS);
+    exit_with_success();
   }
   else {
     cfg = read_config(configFileName);
@@ -301,11 +313,11 @@ int main(int argc, char *argv[])
       fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
       fprintf(fConfig, "input file = %s\n", fileName);
       if (strcmp(cfg->general->prefix, "") == 0)
-	sprintf(prefix, "");
+	strcpy(prefix, "");
       else
 	sprintf(prefix, "%s_", cfg->general->prefix);
       if (strcmp(cfg->general->suffix, "") == 0)
-	sprintf(suffix, "");
+	strcpy(suffix, "");
       else
 	sprintf(suffix, "_%s", cfg->general->suffix);
       fprintf(fConfig, "output file = %s%s%s\n", prefix, fileName, suffix);
@@ -575,12 +587,5 @@ int main(int argc, char *argv[])
     }
   }
 
-  /* If the user didn't ask for a log file then we can nuke the one that
-  we've been keeping since we've finished everything */
-  if (log_f == FLAG_NOT_SET) {
-      fclose (fLog);
-      remove(logFile);
-  }
-
-  return(0);
+  exit_with_success();
 }
