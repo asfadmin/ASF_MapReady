@@ -118,7 +118,7 @@ static int log_f;
 // If the user didn't ask for a log file then we can nuke the one that
 // we've been keeping since we've finished everything */
 static int exit_with_success(void) {
-  if (log_f == FLAG_NOT_SET) {
+  if ((log_f==FLAG_NOT_SET) && (logflag==TRUE)){
     fclose (fLog);
     remove(logFile);
   }
