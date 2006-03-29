@@ -289,10 +289,19 @@ int main(int argc, char *argv[])
 
   // End command line parsing *************************************************
 
-  // If requested, create a config file and exit, otherwise read it
-  if ( createflag==TRUE ) {
+  // If requested, create a config file and exit (if the file does not exist), 
+  // otherwise read it
+  if ( createflag==TRUE && !fileExists(configFileName) ) {
     init_config(configFileName);
     exit_with_success();
+  }
+  // Extend the configuration file if the file already exist
+  else if ( createflag==TRUE && fileExists(configFileName) ) {
+    cfg = read_config(configFileName);
+    check_return(write_config(configFileName, cfg), "Could not update configuration file");
+    asfPrintStatus("   Initialized complete configuration file\n\n");
+    FCLOSE(fLog);
+    exit(EXIT_SUCCESS);
   }
   else {
     cfg = read_config(configFileName);

@@ -10,6 +10,7 @@ typedef struct
   int geocoding;          // geocoding flag
   int export;             // export flag
   int intermediates;      // flag to keep intermediates
+  int quiet;              // quiet flag
   char *defaults;         // default values file
   char *batchFile;        // batch file name
   char *prefix;           // prefix for output file naming scheme
