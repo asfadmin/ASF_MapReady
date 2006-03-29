@@ -217,6 +217,9 @@ get_asf_share_dir()
 	char *path, *buf, *share, *p;
 	int found = 0;
 
+	// printf("Known file not in config.h's share dir: %s\n", s_share_dir);
+	// printf("Searching the path...\n");
+
         /* kludgery! Must find the location of the share dir the hard  */
         /* way, which is to search the directories in the user's path, */
         /* go '../share/asf_tools' relative to that, and check for the */
@@ -226,6 +229,7 @@ get_asf_share_dir()
         share = strstr(ASF_SHARE_DIR, "share");
         if (!share) {
 	    /* this is bad... */
+	    printf("Bad configure? 'share' not found in default share dir.\n");
 	    printf("Falling back to default share dir: %s\n", s_share_dir);
 	    return s_share_dir;
 	}
@@ -244,6 +248,7 @@ get_asf_share_dir()
 	        buf[i] = p[i];
 	    buf[i] = '\0';
 
+	    // printf("Checking %s ...\n", buf);
 	    /* only try this one if it ends with 'bin' */
 	    if (strcmp(buf + strlen(buf) - 3, "bin") == 0) {
 	        *(buf + strlen(buf) - 4) = '\0';
@@ -254,8 +259,11 @@ get_asf_share_dir()
 		    free(s_share_dir);
 		    s_share_dir = strdup(buf);
 		    found = 1;
+		    // printf("  Found in %s!\n", buf);
 		    break;
 		}
+
+		// printf("  Not found in %s.\n", buf);
 	    }
 	    p = q;
 	}
