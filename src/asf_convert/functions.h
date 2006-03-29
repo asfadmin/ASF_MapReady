@@ -12,7 +12,7 @@ int exit_code;
 char *str2upper(char *string);
 int asf_import(char *inFile, char *outFile, char *format, char *radiometry,
 	       char *prcOrbits, double lat_begin, double lat_end);
-int cimage_stats(char *inFile, char *outFile, char *values, int bins, 
+int image_stats(char *inFile, char *outFile, char *values, int bins, 
 		double interval);
 int asf_geocode(char *options, char *inFile, char *outFile);
 int asf_export(char *options, char *inFile, char *outFile);
