@@ -124,7 +124,7 @@ asf_convert_gui.txt:
 	  echo "No documentation built - docbook2 tools not found."; \
 	else \
 	  docbook2txt asf_convert_gui.sgml; \
-	  cp $(TARGET).txt $(DOCDIR); \
+	  cp $(TARGET).txt $(SHAREDIR); \
 	fi
 
 clean:
