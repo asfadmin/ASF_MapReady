@@ -38,6 +38,23 @@ int image_stats(char *inFile, char *outFile, char *values, int bins,
   return ret;
 }
 
+int detect_cr(char *inFile, char *crFile, char *outFile, int chips, int text)
+{
+  char options[255]="", command[1024];
+  int ret;
+
+  if (chips)
+    sprintf(options, "-chips ");
+  if (text)
+    sprintf(options, "-text ");
+  if (chips && text)
+    sprintf(options, "-chips -text ");
+  sprintf(command, "detect_cr %s%s.img %s %s", options, inFile, crFile, outFile);
+  ret = system(command);
+
+  return ret;
+}
+
 int asf_geocode(char *options, char *inFile, char *outFile)
 {
   char command[1024];

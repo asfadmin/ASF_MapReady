@@ -6,11 +6,13 @@ typedef struct
   char *in_name;          // input file name
   char *out_name;         // output file name
   int import;             // import flag
-  int image_stats;        // image stats flag
+  int image_stats;        // image stats flag (for internal use only)
+  int detect_cr;          // detect corner reflector flag (for internal use only)
   int geocoding;          // geocoding flag
   int export;             // export flag
   int intermediates;      // flag to keep intermediates
   int quiet;              // quiet flag
+  int short_config;       // short configuration file flag;
   char *defaults;         // default values file
   char *batchFile;        // batch file name
   char *prefix;           // prefix for output file naming scheme
@@ -40,6 +42,13 @@ typedef struct
 
 typedef struct
 {
+  char *cr_location;      // file with corner reflector locations
+  int chips;              // flag to save image analysis chips as binary file
+  int text;               // flag to save image analysis chips as text file
+} s_detect_cr;
+
+typedef struct
+{
   char *projection;       // projection parameters file
   double pixel;           // pixel size for geocoding
   double height;          // average height of the data
@@ -61,6 +70,7 @@ typedef struct
   s_general *general;         // general processing details
   s_import *import;           // importing parameters
   s_image_stats *image_stats; // image stats parameters
+  s_detect_cr *detect_cr;     // corner reflector detection parameters
   s_geocoding *geocoding;     // geocoding parameters
   s_export *export;           // exporting parameters
 } convert_config;

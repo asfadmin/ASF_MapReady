@@ -74,10 +74,13 @@ int init_config(char *configFile)
   fprintf(fConfig, "asf_convert configuration file\n\n");
 
   fprintf(fConfig, "[General]\n\n");
+  // input file
   fprintf(fConfig, "# This parameter looks for the basename of the input file\n\n");
   fprintf(fConfig, "input file = \n\n");
+  // output file
   fprintf(fConfig, "# This parameter looks for the basename of the output file\n\n");
   fprintf(fConfig, "output file = \n\n");
+  // import flag
   fprintf(fConfig, "# The import flag indicates whether the data needs to be run through\n"
 	  "# 'asf_import' (1 for running it, 0 for leaving out the import step).\n"
 	  "# For example, setting the import switch to zero assumes that all the data \n"
@@ -86,18 +89,21 @@ int init_config(char *configFile)
 	  "# switched on will generate an [Import] section where you can define further\n"
 	  "# parameters.\n\n");
   fprintf(fConfig, "import = 1\n\n");
+  // geocoding flag
   fprintf(fConfig, "# The geocoding flag indicates whether the data needs to be run through\n"
 	  "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
   fprintf(fConfig, "# Running asf_convert with the -create option and the geocoding flag\n"
 	  "# switched on will generate an [Geocoding] section where you can define further\n"
 	  "# parameters.\n\n");
   fprintf(fConfig, "geocoding = 1\n\n");
+  // export flag
   fprintf(fConfig, "# The export flag indicates whether the data needs to be run through\n"
 	  "# 'asf_export' (1 for running it, 0 for leaving out the export step).\n");
   fprintf(fConfig, "# Running asf_convert with the -create option and the export flag\n"
 	  "# switched on will generate an [Export] section where you can define further\n"
 	  "# parameters.\n\n");
   fprintf(fConfig, "export = 1\n\n");
+  // default values file
   fprintf(fConfig, "# The default values file is used to define the user's preferred parameter\n"
 	  "# settings. In most cases, you will work on a study where your area of interest is\n"
 	  "# geographically well defined. You want the data for the entire project in the same\n"
@@ -105,21 +111,32 @@ int init_config(char *configFile)
   fprintf(fConfig, "# A sample of a default values file can be located in %s.\n\n", 
 	  get_asf_share_dir());
   fprintf(fConfig, "default values = \n\n");
+  // intermediates flag
   fprintf(fConfig, "# The intermediates flag indicates whether the intermediate processing\n"
 	  "# results are kept (1 for keeping them, 0 for deleting them at the end of the\n"
 	  "# processing).\n\n");    
   fprintf(fConfig, "intermediates = 0\n\n");
+  // quiet flag
   fprintf(fConfig, "# The quiet flag determines how much information is reported by the\n"
 	  "# individual tools (1 for keeping reporting to a minimum, 0 for maximum reporting\n\n");
   fprintf(fConfig, "quiet = 1\n\n");
+  // short configuration file flag
+  fprintf(fConfig, "# The short configuration file flag allows the experienced user to generate\n"
+	  "# configuration files without the verbose comments that explain all entries for\n"
+	  "# the parameters in the configuration file (1 for a configuration without comments,\n"
+	  "# 0 for a configuration file with verbose comments)\n\n");
+  fprintf(fConfig, "short configuration file = 0\n\n");
+  // batch file
   fprintf(fConfig, "# This parameter looks for the location of the batch file\n");
   fprintf(fConfig, "# asf_convert can be used in a batch mode to run a large number of data\n"
 	  "# sets through the processing flow with the same processing parameters.\n\n");
   fprintf(fConfig, "batch file = \n\n");
+  // prefix
   fprintf(fConfig, "# A prefix can be added to the outfile name to avoid overwriting\n"
 	  "# files (e.g. when running the same data sets through the processing flow\n"
 	  "# with different map projection parameters\n\n");
   fprintf(fConfig, "prefix = \n\n");
+  // suffix
   fprintf(fConfig, "# A suffix can be added to the outfile name to avoid overwriting\n"
 	  "# files (e.g when running the same data sets through the processing flow\n"
 	  "# with different map projection parameters\n\n");
@@ -146,6 +163,7 @@ convert_config *init_fill_config(char *configFile)
   cfg->general = newStruct(s_general);
   cfg->import = newStruct(s_import);
   cfg->image_stats = newStruct(s_image_stats);
+  cfg->detect_cr = newStruct(s_detect_cr);
   cfg->geocoding = newStruct(s_geocoding);
   cfg->export = newStruct(s_export);
 
@@ -158,6 +176,7 @@ convert_config *init_fill_config(char *configFile)
   strcpy(cfg->general->out_name, "");
   cfg->general->import = 0;
   cfg->general->image_stats = 0;
+  cfg->general->detect_cr = 0;
   cfg->general->geocoding = 0;
   cfg->general->export = 0;
   cfg->general->batchFile = (char *)MALLOC(sizeof(char)*255);
@@ -170,6 +189,7 @@ convert_config *init_fill_config(char *configFile)
   strcpy(cfg->general->suffix, "");
   cfg->general->intermediates = 0;
   cfg->general->quiet = 1;
+  cfg->general->short_config = 0;
 
   cfg->import->format = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->import->format, "CEOS");
@@ -186,6 +206,11 @@ convert_config *init_fill_config(char *configFile)
   strcpy(cfg->image_stats->values, "LOOK");
   cfg->image_stats->bins = -99;
   cfg->image_stats->interval = -99.9;
+
+  cfg->detect_cr->cr_location = (char *)MALLOC(sizeof(char)*255);
+  strcpy(cfg->detect_cr->cr_location, "");
+  cfg->detect_cr->chips = 0;
+  cfg->detect_cr->text = 0;
 
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
   sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj", get_asf_share_dir());
@@ -238,6 +263,8 @@ convert_config *init_fill_config(char *configFile)
 	cfg->general->intermediates = read_int(line, "intermediates");
       if (strncmp(test, "quiet", 5)==0)
 	cfg->general->quiet = read_int(line, "quiet");
+      if (strncmp(test, "short configuration file", 24)==0)
+	cfg->general->short_config = read_int(line, "short configuration file");
       if (strncmp(test, "prefix", 6)==0)
 	cfg->general->prefix = read_str(line, "prefix");
       if (strncmp(test, "suffix", 6)==0)
@@ -252,6 +279,11 @@ convert_config *init_fill_config(char *configFile)
       // Image stats
       if (strncmp(test, "stats values", 12)==0)
 	cfg->image_stats->values = read_str(line, "stats values");
+      // Detect corner reflectors
+      if (strncmp(test, "detect corner reflectors", 24)==0)
+	cfg->general->detect_cr = read_int(line, "detect corner reflectors");
+      if (strncmp(test, "corner reflector locations", 26)==0)
+	cfg->detect_cr->cr_location = read_str(line, "corner reflector locations");
       // Geocoding
       if (strncmp(test, "projection", 10)==0)
         cfg->geocoding->projection = read_str(line, "projection");
@@ -291,6 +323,8 @@ convert_config *init_fill_config(char *configFile)
         cfg->general->import = read_int(line, "import");
       if (strncmp(test, "image stats", 11)==0)
 	cfg->general->image_stats = read_int(line, "image stats");
+      if (strncmp(test, "detect corner reflectors", 24)==0)
+	cfg->general->detect_cr = read_int(line, "detect corner reflectors");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -301,6 +335,8 @@ convert_config *init_fill_config(char *configFile)
         cfg->general->intermediates = read_int(line, "intermediates");
       if (strncmp(test, "quiet", 13)==0)
         cfg->general->quiet = read_int(line, "quiet");
+      if (strncmp(test, "short configuration file", 24)==0)
+	cfg->general->short_config = read_int(line, "short configuration file");
       if (strncmp(test, "batch file", 10)==0)
         cfg->general->batchFile = read_str(line, "batch file");
       if (strncmp(test, "prefix", 6)==0)
@@ -337,6 +373,8 @@ convert_config *read_config(char *configFile)
         cfg->general->import = read_int(line, "import");
       if (strncmp(test, "image stats", 11)==0)
 	cfg->general->image_stats = read_int(line, "image stats");
+      if (strncmp(test, "detect corner reflectors", 24)==0)
+	cfg->general->detect_cr = read_int(line, "detect corner reflectors");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -347,6 +385,8 @@ convert_config *read_config(char *configFile)
         cfg->general->intermediates = read_int(line, "intermediates");
       if (strncmp(test, "quiet", 5)==0)
         cfg->general->quiet = read_int(line, "quiet");
+      if (strncmp(test, "short configuration file", 24)==0)
+	cfg->general->short_config = read_int(line, "short configuration file");
       if (strncmp(test, "batch file", 10)==0)
         cfg->general->batchFile = read_str(line, "batch file");
       if (strncmp(test, "prefix", 6)==0)
@@ -381,6 +421,18 @@ convert_config *read_config(char *configFile)
 	cfg->image_stats->bins = read_int(line, "bins");
       if (strncmp(test, "interval", 8)==0)
 	cfg->image_stats->interval = read_double(line, "interval");
+    }
+
+    if (strncmp(line, "[Detect corner reflectors]", 26)==0) 
+      strcpy(params, "Detect corner reflectors");
+    if (strncmp(params, "Detect corner reflectors", 24)==0) {
+      test = read_param(line);
+      if (strncmp(test, "corner reflector locations", 26)==0)
+	cfg->detect_cr->cr_location = read_str(line, "corner reflector locations");
+      if (strncmp(test, "chips", 5)==0)
+        cfg->detect_cr->chips = read_int(line, "chips");
+      if (strncmp(test, "text", 4)==0)
+	cfg->detect_cr->text = read_int(line, "text");
     }
 
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "Geocoding");
@@ -418,85 +470,119 @@ convert_config *read_config(char *configFile)
 int write_config(char *configFile, convert_config *cfg)
 {
   FILE *fConfig;
+  int shortFlag=FALSE;
 
   if (cfg == NULL)
     check_return(1, "No configuration structure to write.\n");
+  if (cfg->general->short_config)
+    shortFlag = TRUE;
+
   fConfig = FOPEN(configFile, "w");
 
   if (strcmp(cfg->general->batchFile, "") == 0) {
     fprintf(fConfig, "%s\n", cfg->comment);
 
     fprintf(fConfig, "[General]\n");
-    fprintf(fConfig, "\n# This parameter looks for the basename of the input file\n\n");
+    if (!shortFlag)
+      fprintf(fConfig, "\n# This parameter looks for the basename of the input file\n\n");
     fprintf(fConfig, "input file = %s\n", cfg->general->in_name);
-    fprintf(fConfig, "\n# This parameter looks for the basename of the output file\n\n");
+    if (!shortFlag)
+      fprintf(fConfig, "\n# This parameter looks for the basename of the output file\n\n");
     fprintf(fConfig, "output file = %s\n", cfg->general->out_name);
-    fprintf(fConfig, "\n# The import flag indicates whether the data needs to be run through\n"
-	    "# 'asf_import' (1 for running it, 0 for leaving out the import step).\n"
-	    "# For example, setting the import switch to zero assumes that all the data \n"
-	    "# is already in the ASF internal format.\n");
-    fprintf(fConfig, "# Running asf_convert with the -create option and the import flag\n"
-	    "# switched on will generate an [Import] section where you can define further\n"
-	    "# parameters.\n\n");
+    if (!shortFlag) {
+      fprintf(fConfig, "\n# The import flag indicates whether the data needs to be run through\n"
+	      "# 'asf_import' (1 for running it, 0 for leaving out the import step).\n"
+	      "# For example, setting the import switch to zero assumes that all the data \n"
+	      "# is already in the ASF internal format.\n");
+      fprintf(fConfig, "# Running asf_convert with the -create option and the import flag\n"
+	      "# switched on will generate an [Import] section where you can define further\n"
+	      "# parameters.\n\n");
+    }
     fprintf(fConfig, "import = %i\n", cfg->general->import);
     if (cfg->general->image_stats) {
-      fprintf(fConfig, "\n# The image stats flag indicates whether the data needs to be run\n"
-	      "# through 'image_stats' (1 for running it, 0 for level out the image stats\n"
-	      "# step).\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The image stats flag indicates whether the data needs to be run\n"
+		"# through 'image_stats' (1 for running it, 0 for leave out the image stats\n"
+		"# step).\n\n");
       fprintf(fConfig, "image stats = %i\n", cfg->general->image_stats);
     }
-    fprintf(fConfig, "\n# The geocoding flag indicates whether the data needs to be run through\n"
-	    "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
-    fprintf(fConfig, "# Running asf_convert with the -create option and the geocoding flag\n"
-	    "# switched on will generate an [Geocoding] section where you can define further\n"
-	    "# parameters.\n\n");
+    if (cfg->general->detect_cr) {
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The corner reflector detection flag indicates whether the data\n"
+		"# needs to be run through 'detect_cr' (1 for running it, 0 for leave out\n"
+		"# the detect corner reflector step).\n\n");
+      fprintf(fConfig, "detect corner reflectors = %i\n", cfg->general->detect_cr);
+    }
+    if (!shortFlag) {
+      fprintf(fConfig, "\n# The geocoding flag indicates whether the data needs to be run through\n"
+	      "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
+      fprintf(fConfig, "# Running asf_convert with the -create option and the geocoding flag\n"
+	      "# switched on will generate an [Geocoding] section where you can define further\n"
+	      "# parameters.\n\n");
+    }
     fprintf(fConfig, "geocoding = %i\n", cfg->general->geocoding);
-    fprintf(fConfig, "\n# The export flag indicates whether the data needs to be run through\n"
-	    "# 'asf_export' (1 for running it, 0 for leaving out the export step).\n");
-    fprintf(fConfig, "# Running asf_convert with the -create option and the export flag\n"
-	    "# switched on will generate an [Export] section where you can define further\n"
-	    "# parameters.\n\n");
+    if (!shortFlag) {
+      fprintf(fConfig, "\n# The export flag indicates whether the data needs to be run through\n"
+	      "# 'asf_export' (1 for running it, 0 for leaving out the export step).\n");
+      fprintf(fConfig, "# Running asf_convert with the -create option and the export flag\n"
+	      "# switched on will generate an [Export] section where you can define further\n"
+	      "# parameters.\n\n");
+    }
     fprintf(fConfig, "export = %i\n", cfg->general->export);
-    fprintf(fConfig, "\n# The default values file is used to define the user's preferred parameter\n"
-	    "# settings. In most cases, you will work on a study where your area of interest is\n"
-	    "# geographically well defined. You want the data for the entire project in the same\n"
-	    "# projection, with the same pixel spacing and the same output format.\n\n");
-    fprintf(fConfig, "# A sample of a default values file can be located in %s.\n\n", 
-	    get_asf_share_dir());
+    if (!shortFlag) {
+      fprintf(fConfig, "\n# The default values file is used to define the user's preferred parameter\n"
+	      "# settings. In most cases, you will work on a study where your area of interest is\n"
+	      "# geographically well defined. You want the data for the entire project in the same\n"
+	      "# projection, with the same pixel spacing and the same output format.\n\n");
+      fprintf(fConfig, "# A sample of a default values file can be located in %s.\n\n", 
+	      get_asf_share_dir());
+    }
     fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
-    fprintf(fConfig, "\n# The intermediates flag indicates whether the intermediate processing\n"
-	    "# results are kept (1 for keeping them, 0 for deleting them at the end of the\n"
-	    "# processing).\n\n");    
-    fprintf(fConfig, "intermediates = %i\n\n", cfg->general->intermediates);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# The intermediates flag indicates whether the intermediate processing\n"
+	      "# results are kept (1 for keeping them, 0 for deleting them at the end of the\n"
+	      "# processing).\n\n");    
+    fprintf(fConfig, "intermediates = %i\n", cfg->general->intermediates);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# The short configuration file flag allows the experienced user to\n"
+	      "# generate configuration files without the verbose comments that explain all\n"
+	      "# entries for the parameters in the configuration file (1 for a configuration\n"
+	      "# without comments, 0 for a configuration file with verbose comments)\n\n");
+    fprintf(fConfig, "short configuration file = %i\n\n", cfg->general->short_config);
 
     if (cfg->general->import) {
       fprintf(fConfig, "\n[Import]\n");
-      fprintf(fConfig, "\n# The recognized import formats are: ASF, CEOS and STF.\n"
-	      "# Defining ASF, being the internal format, as the import format is\n"
-	      "# just another way of actually skipping the import step.\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The recognized import formats are: ASF, CEOS and STF.\n"
+		"# Defining ASF, being the internal format, as the import format is\n"
+		"# just another way of actually skipping the import step.\n\n");
       fprintf(fConfig, "format = %s\n", cfg->import->format);
-      fprintf(fConfig, "\n# The radiometry can be one of the following: AMPLITUDE_IMAGE,\n"
-	      "# POWER_IMAGE, SIGMA_IMAGE, GAMMA_IMAGE and BETA_IMAGE.\n"
-	      "# The amplitude image is the regularly processed SAR image. The power image\n"
-	      "# represents the magnitude (square of the amplitude) of the SAR image.\n"
-	      "# The sigma, gamma and beta image are different representations of calibrated\n"
-	      "# SAR images. Their values are in power scale.\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The radiometry can be one of the following: AMPLITUDE_IMAGE,\n"
+		"# POWER_IMAGE, SIGMA_IMAGE, GAMMA_IMAGE and BETA_IMAGE.\n"
+		"# The amplitude image is the regularly processed SAR image. The power image\n"
+		"# represents the magnitude (square of the amplitude) of the SAR image.\n"
+		"# The sigma, gamma and beta image are different representations of calibrated\n"
+		"# SAR images. Their values are in power scale.\n\n");
       fprintf(fConfig, "radiometry = %s\n", cfg->import->radiometry);
-      fprintf(fConfig, "\n# The look up table option is primarily used by the Canadian Ice\n"
-	      "# Service (CIS) and scales the amplitude values in range direction. The file\n"
-	      "# parsed in to the import tool is expected to have two columns, the first one\n"
-	      "# indicating the look angle with the corresponding scale factor as the second\n"
-	      "# column.\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The look up table option is primarily used by the Canadian Ice\n"
+		"# Service (CIS) and scales the amplitude values in range direction. The file\n"
+		"# parsed in to the import tool is expected to have two columns, the first one\n"
+		"# indicating the look angle with the corresponding scale factor as the second\n"
+		"# column.\n\n");
       fprintf(fConfig, "look up table = %s\n", cfg->import->lut);
-      fprintf(fConfig, "\n# The latitude constraints (lat begin and lat end) can only be used\n"
-	      "# when importing level zero swath data (STF). This is the most convenient way\n"
-	      "# to cut a subset out of a long image swath.\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The latitude constraints (lat begin and lat end) can only be used\n"
+		"# when importing level zero swath data (STF). This is the most convenient way\n"
+		"# to cut a subset out of a long image swath.\n\n");
       fprintf(fConfig, "lat begin = %.2f\n", cfg->import->lat_begin);
       fprintf(fConfig, "lat end = %.2f\n", cfg->import->lat_end);
-      fprintf(fConfig, "\n# The precise option, currently under development, will allow the use\n"
-	      "# of ERS precision state vector from DLR as a replacement of the restituted\n"
-	      "# state vectors that are provided from the European Space Agency. The parameter\n"
-	      "# required here defines the location of the precision state vectors.\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The precise option, currently under development, will allow the use\n"
+		"# of ERS precision state vector from DLR as a replacement of the restituted\n"
+		"# state vectors that are provided from the European Space Agency. The parameter\n"
+		"# required here defines the location of the precision state vectors.\n\n");
       fprintf(fConfig, "precise = %s\n\n", cfg->import->prc);
     }
 
@@ -507,50 +593,66 @@ int write_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "interval = %.2lf\n", cfg->image_stats->interval);
     }
 
+    if (cfg->general->detect_cr) {
+      fprintf(fConfig, "\n[Detect corner reflectors]\n\n");
+      fprintf(fConfig, "corner reflector locations = %s\n", cfg->detect_cr->cr_location);
+      fprintf(fConfig, "chips = %i\n", cfg->detect_cr->chips);
+      fprintf(fConfig, "text = %i\n", cfg->detect_cr->text);
+    }
+
     if (cfg->general->geocoding) {
       fprintf(fConfig, "\n[Geocoding]\n");
-      fprintf(fConfig, "\n# The geocoding tool currently supports five different map projections:\n"
-	      "# Universal Transverse Mercator (UTM), Polar Stereographic, Albers Equal Area\n"
-	      "# Conic, Lambert Conformal Conic and Lambert Azimuthal Equal Area.\n"
-	      "# For all these map projections a large number of projection parameter files\n"
-	      "# have been predefined for various parts of the world.\n");
-      fprintf(fConfig, "# The projection parameter files are located in %s/projections.\n\n", 
-	      get_asf_share_dir());
+      if (!shortFlag) {
+	fprintf(fConfig, "\n# The geocoding tool currently supports five different map projections:\n"
+		"# Universal Transverse Mercator (UTM), Polar Stereographic, Albers Equal Area\n"
+		"# Conic, Lambert Conformal Conic and Lambert Azimuthal Equal Area.\n"
+		"# For all these map projections a large number of projection parameter files\n"
+		"# have been predefined for various parts of the world.\n");
+	fprintf(fConfig, "# The projection parameter files are located in %s/projections.\n\n", 
+		get_asf_share_dir());
+      }
       fprintf(fConfig, "projection = %s\n", cfg->geocoding->projection);
-      fprintf(fConfig, "\n# The pixel spacing determines the pixel size used for the resulting\n"
-	      "# geocoded image and, therefore, the size of the output image.\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The pixel spacing determines the pixel size used for the resulting\n"
+		"# geocoded image and, therefore, the size of the output image.\n\n");
       fprintf(fConfig, "pixel spacing = %.2f\n", cfg->geocoding->pixel);
-      fprintf(fConfig, "\n# An average height can be defined for the image that is taken into\n"
-	      "#  account and adjusted for during the geocoding process.\n\n");
+      if  (!shortFlag)
+	fprintf(fConfig, "\n# An average height can be defined for the image that is taken into\n"
+		"#  account and adjusted for during the geocoding process.\n\n");
       fprintf(fConfig, "height = %.1f\n", cfg->geocoding->height);
-      fprintf(fConfig, "\n# A vertical datum can be defined for geocoded image. WGS84 is the\n"
-	      "# only currently supported datum. However, NAD27 and NAD83 are planned to be\n"
-	      "# appropriate alternatives.\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# A vertical datum can be defined for geocoded image. WGS84 is the\n"
+		"# only currently supported datum. However, NAD27 and NAD83 are planned to be\n"
+		"# appropriate alternatives.\n\n");
       fprintf(fConfig, "datum = %s\n", cfg->geocoding->datum);
-      fprintf(fConfig, "\n# Three different resampling methods have been implemented as part\n"
-	      "# of the geocoding: NEAREST NEIGHBOR, BILINEAR and BICUBIC. The bilinear\n"
-	      "#  resampling method is the default.\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# Three different resampling methods have been implemented as part\n"
+		"# of the geocoding: NEAREST NEIGHBOR, BILINEAR and BICUBIC. The bilinear\n"
+		"#  resampling method is the default.\n\n");
       fprintf(fConfig, "resampling = %s\n", cfg->geocoding->resampling);
-      fprintf(fConfig, "\n# In order to ensure the proper use of projection parameter files,\n"
-	      "# we have implemented a number of checks that verify whether the map\n"
-	      "# projection parameters are reasonable for the area that is covered by the\n"
-	      "# data. For example, applying a projection parameter file that is defined for\n"
-	      "# South America for a data set that is covering Alaska would lead to huge\n"
-	      "# distortions. These checks can be overwritten by setting the force option.\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# In order to ensure the proper use of projection parameter files,\n"
+		"# we have implemented a number of checks that verify whether the map\n"
+		"# projection parameters are reasonable for the area that is covered by the\n"
+		"# data. For example, applying a projection parameter file that is defined for\n"
+		"# South America for a data set that is covering Alaska would lead to huge\n"
+		"# distortions. These checks can be overwritten by setting the force option.\n\n");
       fprintf(fConfig, "force = %i\n\n", cfg->geocoding->force);
     }
 
     if (cfg->general->export) {
       fprintf(fConfig, "\n[Export]\n");
-      fprintf(fConfig, "\n# The following format are considered valid format: ASF, TIFF, GEOTIFF\n"
-	      "# JPEG and PPM.\n" 
-	      "# In the same way as for the import block, ASF as an export option results in\n"
-	      "# skipping the export step entirely. All other format, with the exception of\n"
-	      "# GeoTIFF, require the scaling of the internal ASF format from floating point\n"
-	      "# to byte. The GeoTIFF supports byte as well as floating point data.\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The following format are considered valid format: ASF, TIFF, GEOTIFF\n"
+		"# JPEG and PPM.\n" 
+		"# In the same way as for the import block, ASF as an export option results in\n"
+		"# skipping the export step entirely. All other format, with the exception of\n"
+		"# GeoTIFF, require the scaling of the internal ASF format from floating point\n"
+		"# to byte. The GeoTIFF supports byte as well as floating point data.\n\n");
       fprintf(fConfig, "format = %s\n", cfg->export->format);
-      fprintf(fConfig, "\n# The byte conversion options are SIGMA, MINMAX, TRUNCATE or\n"
-	      "# HISTOGRAM_EQUALIZE. They scale the floating point values to byte values.\n\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The byte conversion options are SIGMA, MINMAX, TRUNCATE or\n"
+		"# HISTOGRAM_EQUALIZE. They scale the floating point values to byte values.\n\n");
       fprintf(fConfig, "byte conversion = %s\n\n", cfg->export->byte);
     }
   }
@@ -558,19 +660,23 @@ int write_config(char *configFile, convert_config *cfg)
     fprintf(fConfig, "%s\n", cfg->comment);
 
     fprintf(fConfig, "[General]\n\n");
-    fprintf(fConfig, "# The default values file is used to define the user's preferred\n"
-	    "# parameter settings.\n\n");
+    if (!shortFlag)
+      fprintf(fConfig, "# The default values file is used to define the user's preferred\n"
+	      "# parameter settings.\n\n");
     fprintf(fConfig, "default values = %s\n\n", cfg->general->defaults);
-    fprintf(fConfig, "# asf_convert has a batch mode to run a large number of data sets\n"
-	    "# through the processing flow with the same processing parameters\n\n");
+    if (!shortFlag)
+      fprintf(fConfig, "# asf_convert has a batch mode to run a large number of data sets\n"
+	      "# through the processing flow with the same processing parameters\n\n");
     fprintf(fConfig, "batch file = %s\n\n", cfg->general->batchFile);
-    fprintf(fConfig, "# A prefix can be added to the outfile name to avoid overwriting\n"
-	    "# files (e.g. when running the same data sets through the processing flow\n"
-	    "# with different map projection parameters\n\n");
+    if (!shortFlag)
+      fprintf(fConfig, "# A prefix can be added to the outfile name to avoid overwriting\n"
+	      "# files (e.g. when running the same data sets through the processing flow\n"
+	      "# with different map projection parameters\n\n");
     fprintf(fConfig, "prefix = %s\n\n", cfg->general->prefix);
-    fprintf(fConfig, "# A suffix can be added to the outfile name to avoid overwriting\n"
-	    "# files (e.g when running the same data sets through the processing flow\n"
-	    "# with different map projection parameters\n\n");
+    if (!shortFlag)
+      fprintf(fConfig, "# A suffix can be added to the outfile name to avoid overwriting\n"
+	      "# files (e.g when running the same data sets through the processing flow\n"
+	      "# with different map projection parameters\n\n");
     fprintf(fConfig, "suffix = %s\n\n", cfg->general->suffix);
   }
 

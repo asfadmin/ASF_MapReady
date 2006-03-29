@@ -478,8 +478,8 @@ int main(int argc, char *argv[])
       }
 
       // Pass in command line
-      if (cfg->general->image_stats || cfg->general->geocoding ||
-          cfg->general->export) {
+      if (cfg->general->image_stats || cfg->general->detect_cr ||
+	  cfg->general->geocoding || cfg->general->export) {
         sprintf(outFile, "tmp%i_import", pid);
       }
       else {
@@ -513,6 +513,27 @@ int main(int argc, char *argv[])
       check_return(image_stats(inFile, outFile, values, cfg->image_stats->bins,
                                cfg->image_stats->interval),
                    "running statistics on data file (image_stats)\n");
+    }
+
+    if (cfg->general->detect_cr) {
+
+      // Intermediate results
+      if (cfg->general->intermediates) {
+	cfg->detect_cr->chips = 1;
+	cfg->detect_cr->text = 1;
+      }
+
+      // Pass in command line
+      sprintf(inFile, "%s", outFile);
+      if (cfg->general->geocoding || cfg->general->export) {
+	sprintf(outFile, "tmp%i_detect_cr", pid);
+      }
+      else {
+	sprintf(outFile, "%s", cfg->general->out_name);
+      }
+      check_return(detect_cr(inFile, cfg->detect_cr->cr_location, outFile, 
+			     cfg->detect_cr->chips, cfg->detect_cr->text),
+		   "detecting corner reflectors (detect_cr)\n");
     }
 
     if (cfg->general->geocoding) {
