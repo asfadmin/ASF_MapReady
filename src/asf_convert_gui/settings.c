@@ -60,8 +60,18 @@ settings_apply_to_gui(const Settings * s)
         glade_xml_get_widget(glade_xml, "apply_metadta_fix_checkbutton");
 
     set_combo_box_item(input_data_format_combobox, s->input_data_format);
-    set_combo_box_item(input_data_type_combobox, s->data_type);
     set_combo_box_item(output_format_combobox, s->output_format);
+    set_combo_box_item(input_data_type_combobox, s->data_type);
+
+    if (s->output_db)
+    {
+        GtkWidget *checkbutton_db =
+	  glade_xml_get_widget(glade_xml, "checkbutton_db");
+
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_db), TRUE);
+    }
+
+    input_data_type_changed();
 
     if (settings_get_output_format_allows_size(s))
     {
@@ -286,6 +296,7 @@ settings_get_from_gui()
 {
     GtkWidget
         *input_data_type_combobox,
+        *checkbutton_db,
         *input_data_format_combobox,
         *export_checkbutton,
         *output_format_combobox,
@@ -321,9 +332,20 @@ settings_get_from_gui()
     apply_metadata_fix_checkbutton = 
         glade_xml_get_widget(glade_xml, "apply_metadata_fix_checkbutton");
 
+    checkbutton_db =
+        glade_xml_get_widget(glade_xml, "checkbutton_db");
+
     ret->data_type = get_combo_box_item(input_data_type_combobox);
-    ret->input_data_format = get_combo_box_item(input_data_format_combobox);
     ret->output_format = get_combo_box_item(output_format_combobox);
+    ret->input_data_format = get_combo_box_item(input_data_format_combobox);
+
+    ret->output_db =
+        (ret->data_type == INPUT_TYPE_SIGMA ||
+         ret->data_type == INPUT_TYPE_BETA ||
+         ret->data_type == INPUT_TYPE_GAMMA) &&
+        gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbutton_db));
+
+    printf("%d!\n", ret->output_db);
 
     ret->apply_scaling =
         settings_get_output_format_allows_size(ret) &&
@@ -621,7 +643,7 @@ settings_get_output_bytes_argument(const Settings *s)
 const gchar *
 settings_get_data_type_arg_string(const Settings *s)
 {
-    static gchar buf[32];
+    static gchar buf[64];
 
     const gchar * type_arg = settings_get_data_type_string(s);
 
@@ -633,6 +655,11 @@ settings_get_data_type_arg_string(const Settings *s)
     else
     {
         strcpy(buf, "");
+    }
+
+    if (s->output_db)
+    {
+        strcat(buf, " -db");
     }
 
     return buf;
@@ -743,6 +770,7 @@ settings_equal(const Settings *s1, const Settings *s2)
 
     if (s1->input_data_format == s2->input_data_format &&
         s1->data_type == s2->data_type &&
+        s1->output_db == s2->output_db &&
         s1->output_format == s2->output_format &&
         s1->keep_files == s2->keep_files &&
         s1->apply_metadata_fix == s2->apply_metadata_fix)

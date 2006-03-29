@@ -469,3 +469,57 @@ on_export_checkbutton_toggled(GtkWidget *widget)
     update_summary();
 }
 
+void
+input_data_type_changed()
+{
+    GtkWidget *input_data_type_combobox =
+        glade_xml_get_widget(glade_xml, "input_data_type_combobox");
+
+    int input_data_type =
+        gtk_option_menu_get_history(GTK_OPTION_MENU(input_data_type_combobox));
+
+    gboolean checkbutton_db_active =
+        input_data_type == INPUT_TYPE_SIGMA ||
+        input_data_type == INPUT_TYPE_BETA ||
+        input_data_type == INPUT_TYPE_GAMMA;
+
+    GtkWidget *checkbutton_db =
+        glade_xml_get_widget(glade_xml, "checkbutton_db");
+
+    if (!checkbutton_db_active)
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_db), FALSE);
+
+    gtk_widget_set_sensitive(checkbutton_db, checkbutton_db_active);
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_input_data_type_sigma_activate(GtkWidget *widget)
+{
+    input_data_type_changed();
+}
+
+SIGNAL_CALLBACK void
+on_input_data_type_beta_activate(GtkWidget *widget)
+{
+    input_data_type_changed();
+}
+
+SIGNAL_CALLBACK void
+on_input_data_type_amplitude_activate(GtkWidget *widget)
+{
+    input_data_type_changed();
+}
+
+SIGNAL_CALLBACK void
+on_input_data_type_gamma_activate(GtkWidget *widget)
+{
+    input_data_type_changed();
+}
+
+SIGNAL_CALLBACK void
+on_input_data_type_power_activate(GtkWidget *widget)
+{
+    input_data_type_changed();
+}
+

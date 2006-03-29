@@ -251,6 +251,9 @@
 	  image are given by the squares of the amplitude
 	  (backscatter) values. </member>
     </simplelist>
+    <para>When either of sigma, gamma, or beta is selected, you can
+       choose to output the result in decibles (the resulting values
+       are logarithmically scaled).</para>
   </chapter>
   <chapter id="geocode">
     <title>Geocode</title>

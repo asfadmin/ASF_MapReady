@@ -362,100 +362,128 @@
 	      </child>
 
 	      <child>
-		<widget class="GtkTable" id="table_transformations">
+		<widget class="GtkVBox" id="vbox53">
 		  <property name="border_width">4</property>
 		  <property name="visible">True</property>
-		  <property name="n_rows">1</property>
-		  <property name="n_columns">2</property>
 		  <property name="homogeneous">False</property>
-		  <property name="row_spacing">2</property>
-		  <property name="column_spacing">0</property>
+		  <property name="spacing">4</property>
 
 		  <child>
-		    <widget class="GtkOptionMenu" id="input_data_type_combobox">
+		    <widget class="GtkHBox" id="hbox37">
 		      <property name="visible">True</property>
-		      <property name="tooltip" translatable="yes">Radiometry setting for the image.</property>
-		      <property name="can_focus">True</property>
-		      <property name="history">0</property>
-		      <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:52:39 GMT"/>
+		      <property name="homogeneous">False</property>
+		      <property name="spacing">0</property>
 
 		      <child>
-			<widget class="GtkMenu" id="menu2">
+			<widget class="GtkLabel" id="input_data_type_label">
+			  <property name="width_request">84</property>
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Data type: </property>
+			  <property name="use_underline">False</property>
+			  <property name="use_markup">False</property>
+			  <property name="justify">GTK_JUSTIFY_LEFT</property>
+			  <property name="wrap">False</property>
+			  <property name="selectable">False</property>
+			  <property name="xalign">0</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">False</property>
+			  <property name="fill">False</property>
+			</packing>
+		      </child>
+
+		      <child>
+			<widget class="GtkOptionMenu" id="input_data_type_combobox">
+			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Radiometry setting for the image.</property>
+			  <property name="can_focus">True</property>
+			  <property name="history">0</property>
 
 			  <child>
-			    <widget class="GtkMenuItem" id="sigma">
-			      <property name="visible">True</property>
-			      <property name="label" translatable="yes">Sigma</property>
-			      <property name="use_underline">True</property>
-			    </widget>
-			  </child>
+			    <widget class="GtkMenu" id="menu2">
 
-			  <child>
-			    <widget class="GtkMenuItem" id="beta">
-			      <property name="visible">True</property>
-			      <property name="label" translatable="yes">Beta</property>
-			      <property name="use_underline">True</property>
-			    </widget>
-			  </child>
+			      <child>
+				<widget class="GtkMenuItem" id="sigma">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Sigma</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="on_input_data_type_sigma_activate" last_modification_time="Wed, 29 Mar 2006 22:12:24 GMT"/>
+				</widget>
+			      </child>
 
-			  <child>
-			    <widget class="GtkMenuItem" id="gamma">
-			      <property name="visible">True</property>
-			      <property name="label" translatable="yes">Gamma</property>
-			      <property name="use_underline">True</property>
-			    </widget>
-			  </child>
+			      <child>
+				<widget class="GtkMenuItem" id="beta">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Beta</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="on_input_data_type_beta_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
+				</widget>
+			      </child>
 
-			  <child>
-			    <widget class="GtkMenuItem" id="amplitude">
-			      <property name="visible">True</property>
-			      <property name="label" translatable="yes">Amplitude</property>
-			      <property name="use_underline">True</property>
-			    </widget>
-			  </child>
+			      <child>
+				<widget class="GtkMenuItem" id="gamma">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Gamma</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="on_input_data_type_gamma_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
+				</widget>
+			      </child>
 
-			  <child>
-			    <widget class="GtkMenuItem" id="power">
-			      <property name="visible">True</property>
-			      <property name="label" translatable="yes">Power</property>
-			      <property name="use_underline">True</property>
+			      <child>
+				<widget class="GtkMenuItem" id="amplitude">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Amplitude</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="on_input_data_type_amplitude_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
+				</widget>
+			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="power">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Power</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="on_input_data_type_power_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
+				</widget>
+			      </child>
 			    </widget>
 			  </child>
 			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">False</property>
+			  <property name="fill">False</property>
+			</packing>
 		      </child>
 		    </widget>
 		    <packing>
-		      <property name="left_attach">1</property>
-		      <property name="right_attach">2</property>
-		      <property name="top_attach">0</property>
-		      <property name="bottom_attach">1</property>
-		      <property name="x_options">fill</property>
-		      <property name="y_options"></property>
+		      <property name="padding">0</property>
+		      <property name="expand">False</property>
+		      <property name="fill">False</property>
 		    </packing>
 		  </child>
 
 		  <child>
-		    <widget class="GtkLabel" id="input_data_type_label">
-		      <property name="width_request">84</property>
+		    <widget class="GtkCheckButton" id="checkbutton_db">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Data type: </property>
-		      <property name="use_underline">False</property>
-		      <property name="use_markup">False</property>
-		      <property name="justify">GTK_JUSTIFY_LEFT</property>
-		      <property name="wrap">False</property>
-		      <property name="selectable">False</property>
-		      <property name="xalign">0</property>
-		      <property name="yalign">0.5</property>
-		      <property name="xpad">0</property>
-		      <property name="ypad">0</property>
+		      <property name="tooltip" translatable="yes">Output calibrated image in decibles. This can only be used with -sigma, -beta, or -gamma.</property>
+		      <property name="can_focus">True</property>
+		      <property name="label" translatable="yes">Output DB</property>
+		      <property name="use_underline">True</property>
+		      <property name="relief">GTK_RELIEF_NORMAL</property>
+		      <property name="focus_on_click">True</property>
+		      <property name="active">False</property>
+		      <property name="inconsistent">False</property>
+		      <property name="draw_indicator">True</property>
 		    </widget>
 		    <packing>
-		      <property name="left_attach">0</property>
-		      <property name="right_attach">1</property>
-		      <property name="top_attach">0</property>
-		      <property name="bottom_attach">1</property>
-		      <property name="x_options"></property>
-		      <property name="y_options"></property>
+		      <property name="padding">0</property>
+		      <property name="expand">False</property>
+		      <property name="fill">False</property>
 		    </packing>
 		  </child>
 		</widget>
@@ -466,7 +494,7 @@
 	      </child>
 
 	      <child>
-		<widget class="GtkLabel" id="label59">
+		<widget class="GtkLabel" id="label74">
 		  <property name="visible">True</property>
 		  <property name="label" translatable="yes">Radiometry</property>
 		  <property name="use_underline">False</property>

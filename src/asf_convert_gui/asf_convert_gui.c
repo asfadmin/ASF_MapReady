@@ -75,6 +75,7 @@ main(int argc, char **argv)
     /* fire handlers for hiding/showing stuff */
     output_format_combobox_changed();
     input_data_format_combobox_changed();
+    input_data_type_changed();
     show_execute_button(TRUE);
 
     /* build columns in the files section */

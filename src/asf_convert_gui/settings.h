@@ -7,6 +7,7 @@ typedef struct
 
   /* transformations */
   int data_type;
+  int output_db;
   int latitude_checked;
   double latitude_low;
   double latitude_hi;
