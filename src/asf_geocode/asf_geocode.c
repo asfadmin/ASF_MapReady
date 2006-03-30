@@ -17,31 +17,33 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 */
 
 #define ASF_NAME_STRING \
-"   asf_geocode"
+"asf_geocode"
 
 #define ASF_USAGE_STRING \
-"-p <projection name> <<projection parameters>>\n"\
-"       [--force] [--resample-method <method>] [--height <height>]\n"\
-"       [--datum <datum>] [--pixel-size <pixel size>] [--log <file>]\n\n"\
-"   Or \"asf_geocode --help\" for more options on specifying\n"\
-"   projection parameters.\n"
+"   "ASF_NAME_STRING" -p <projection name> <<projection parameters>>\n"\
+"               [-force] [-resample-method <method>] [-height <height>]\n"\
+"               [-datum <datum>] [-pixel-size <pixel size>] [-log <file>]\n"\
+"               [-quiet] [-copyright] [-help]\n"\
+"               <in_base_name> <out_base_name>\n"\
+"\n"\
+"   Use the -help option for more projection parameter controls.\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program takes a map projected or an unprojected (ground\n"\
 "     range) image in the ASF internal format and geocodes it,\n"\
 "     i.e. swizzles it around into one of the standard projections used\n"\
 "     for maps (universal transverse mercator, polar stereo, etc).  The\n"\
-"     output is a new image in ASF internal format.  "
+"     output is a new image in ASF internal format.\n"
 
 #define ASF_INPUT_STRING \
 "     Most of the \"options\" are actually required.  The specification\n"\
 "     of a certain projection type implies that all the parameters\n"\
 "     required to fully specify a projection of that type be included.\n"\
-"     \n"\
-"     This must be an ASF internal format image base name."
+"\n"\
+"     This must be an ASF internal format image base name.\n"
 
 #define ASF_OUTPUT_STRING \
-"     The base name of the geocoded image to produce."
+"     The base name of the geocoded image to produce.\n"
 
 #define ASF_OPTIONS_STRING \
 "     Projection Parameter Options  \n"\
@@ -66,7 +68,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          --zone                      : Zone\n"\
 "          --central-meridian          : Longitude of Central Meridian\n"\
 "          --latitude-of-origin        : Latitude at projection\"s origin\n"\
-"	  \n"\
+"\n"\
 "	  Either the zone or center_longitude must be specified.  The\n"\
 "	  center_longitude may not be an exact multiple of 6 (i.e. may\n"\
 "	  not lie on a UTM zone boundry).\n"\
@@ -117,19 +119,19 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     Using a Projection Parameters File\n"\
 "     ==================================\n"\
 "\n"\
-"     --write-proj-file <file>\n"\
+"     -write-proj-file <file>\n"\
 "          Save the specified projection information to a file with\n"\
 "          the given name.  The file may be used for subsequent projections\n"\
 "          with --read-proj-file.\n"\
 "\n"\
-"     --read-proj-file <file>\n"\
+"     -read-proj-file <file>\n"\
 "          Read projection information from the given file.  The format of\n"\
 "          the file must match what is used with --write-proj-file.\n"\
 "\n"\
 "     Other Options\n"\
 "     =============\n"\
 "\n"\
-"     --height <height> \n"\
+"     -height <height> \n"\
 "          Assume that terrain in the image is <height> meters above\n"\
 "          the reference GEM6 ellipsoid.  Optimal geolocation accuracy\n"\
 "          will then be achieved for pixels on terrain at this height.\n"\
@@ -138,94 +140,94 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          <height>, assuming a satellite look angle 45 degrees from\n"\
 "          horizontal.\n"\
 "\n"\
-"     --datum <datum> \n"\
+"     -datum <datum> \n"\
 "          Specifies the datum that is used when projecting.  The datum\n"\
 "          applies to the target coordinate system.  Supported Datums:\n"\
 "            NAD27  (North American Datum 1927) (Clarke 1866)\n"\
 "            NAD83  (North American Datum 1983) (GRS 1980)\n"\
 "            WGS84  (World Geodetic System 1984) (default).\n"\
 "\n"\
-"     --resample-method <method>\n"\
+"     -resample-method <method>\n"\
 "          Specifies which interpolation method to use when resampling\n"\
 "          images into projection geometry.  Available choices are:\n"\
 "            nearest_neighbor\n"\
 "            bilinear\n"\
 "            bicubic\n"\
 "\n"\
-"     --pixel_size <pixel spacing>\n"\
-"          Specifies the pixel spacing of the geocoded image.  asf_geocode\n"\
+"     -pixel_size <pixel spacing>\n"\
+"          Specifies the pixel spacing of the geocoded image.  "ASF_NAME_STRING"\n"\
 "          by default will preserve the pixel size of the input image.\n"\
 "\n"\
-"     --force\n"\
-"          Override the built-in projection sanity checks.  asf_geocode\n"\
+"     -force\n"\
+"          Override the built-in projection sanity checks.  "ASF_NAME_STRING"\n"\
 "          by default will abort with an error if it detects that a\n"\
 "          scene lies in an area where the selected projection is\n"\
 "          going to give poor results.  However, you may still wish\n"\
 "          to do the projection anyway (such as when you will mosaic\n"\
 "          the result a number of other scenes and wish to have them\n"\
-"          all in the same projection), the --force option can be used\n"\
+"          all in the same projection), the -force option can be used\n"\
 "          in these situations.\n"\
 "\n"\
-"     --log <log file>\n"\
-"          Output will be written to a specified log file.\n"
+"     -log <log file>\n"\
+"          Output will be written to a specified log file.\n"\
+"\n"\
+"     -quiet\n"\
+"          Supresses all non-essential output.\n"\
+"\n"\
+"     -copyright\n"\
+"          Print our copyright notice and exit.\n"\
+"\n"\
+"     -help\n"\
+"        Print a help page and exit.\n"
+
 
 #define ASF_EXAMPLES_STRING \
 "     To map project an image with centerpoint at -147 degrees\n"\
 "     longitude and average height 466 meters into universal transverse\n"\
 "     mercator projection, with one pixel 50 meters on a side:\n"\
 "\n"\
-"     asf_geocode --projection utm --central-meridian -147.0 --height 466\n"\
-"                 input_image output_image\n"\
-""
+"     "ASF_NAME_STRING" --projection utm --central-meridian -147.0 --height 466\n"\
+"                 input_image output_image\n"
+
 
 #define ASF_LIMITATIONS_STRING \
 "     May fail badly if bad projection parameters are supplied for the\n"\
-"     area in the image."
+"     area in the image.\n"
 
 #define ASF_SEE_ALSO_STRING \
-"     asf_import, asf_export"
+"     asf_import, asf_export\n"
 
-#define ASF_COPYRIGHT_STRING \
-"Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks\n"\
+#define ASF_BSD_ID 1
+#define ASF_BSD_COPYRIGHT_STRING \
+"\n"\
+"Copyright (c) 2006, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
 "All rights reserved.\n"\
 "\n"\
 "Redistribution and use in source and binary forms, with or without\n"\
 "modification, are permitted provided that the following conditions are met:\n"\
 "\n"\
-"    * Redistributions of source code must retain the above copyright notice,\n"\
-"      this list of conditions and the following disclaimer.\n"\
-"    * Redistributions in binary form must reproduce the above copyright\n"\
-"      notice, this list of conditions and the following disclaimer in the\n"\
-"      documentation and/or other materials provided with the distribution.\n"\
-"    * Neither the name of the Geophysical Institute nor the names of its\n"\
-"      contributors may be used to endorse or promote products derived from\n"\
-"      this software without specific prior written permission.\n"\
+"  * Redistributions of source code must retain the above copyright notice, this\n"\
+"    list of conditions and the following disclaimer.\n"\
+"  * Redistributions in binary form must reproduce the above copyright notice,\n"\
+"    this list of conditions and the following disclaimer in the documentation\n"\
+"    and/or other materials provided with the distribution.\n"\
+"  * Neither the name of the University of Alaska Fairbanks, nor its subunits,\n"\
+"    nor the names of its contributors may be used to endorse or promote products\n"\
+"    derived from this software without specific prior written permission.\n"\
+"  * Redistribution and use of source and binary forms are for noncommercial\n"\
+"    purposes only.\n"\
 "\n"\
-"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\n"\
-"AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\n"\
-"IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\n"\
-"ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE\n"\
-"LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR\n"\
-"CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF\n"\
-"SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\n"\
-"INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN\n"\
-"CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)\n"\
-"ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\n"\
-"POSSIBILITY OF SUCH DAMAGE.\n"\
-"\n"\
-"       For more information contact us at:\n"\
-"\n"\
-"       Alaska Satellite Facility\n"\
-"       Geophysical Institute\n"\
-"       University of Alaska Fairbanks\n"\
-"       P.O. Box 757320\n"\
-"       Fairbanks, AK 99775-7320\n"\
-"\n"\
-"       http://www.asf.alaska.edu\n"\
-"       uso@asf.alaska.edu"
-
-#define ASF_PROGRAM_HISTORY_STRING \
-"   No history."
+"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\n"\
+"ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\n"\
+"WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\n"\
+"DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\n"\
+"ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n"\
+"(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\n"\
+"LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\n"\
+"ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"\
+"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"\
+"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"\
+"\n"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
@@ -251,70 +253,64 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "float_image.h"
 #include <libasf_proj.h>
 #include <spheroids.h>
+#include <asf_contact.h>
 
 // Headers used by this program.
 #include "geocode_options.h"
 
 // Prototype
-void check_parameters(projection_type_t projection_type, 
+void check_parameters(projection_type_t projection_type,
 		      project_parameters_t *pp, meta_parameters *meta,
 		      int override_checks);
 
-// Print invocation information.  */
-static void
-usage (void)
+
+// Print invocation information.
+static void usage(void)
 {
-  printf ("\n"
-	  "USAGE:\n"
-	  ASF_NAME_STRING
-	  " "
-	  ASF_USAGE_STRING
-	  "\n\n");
-  exit (EXIT_FAILURE);
+    printf("\n"
+        "USAGE:\n"
+        ASF_USAGE_STRING
+        "\n");
+    exit (EXIT_FAILURE);
 }
 
 // Display a manual page using the pager.
-static void
-help_page (void)
+static void help_page(void)
 {
-  // Documentation text to display.
-  GString *documentation = g_string_new ("");
-  // System command to use to display it.
-  GString *command = g_string_new ("");
+    char happy_string[4066];
 
-  /* What to print out for help */
-  g_string_append_printf 
-    (documentation, 
-     "\n\n\n"
-     "Tool name:\n" ASF_NAME_STRING "\n\n\n"
-     "Usage:\n" ASF_NAME_STRING " " ASF_USAGE_STRING "\n\n\n"
-     "Description:\n" ASF_DESCRIPTION_STRING "\n\n\n"
-     "Input:\n" ASF_INPUT_STRING "\n\n\n"
-     "Output:\n"ASF_OUTPUT_STRING "\n\n\n"
-     "Options:\n" ASF_OPTIONS_STRING "\n\n\n"
-     "Examples:\n" ASF_EXAMPLES_STRING "\n\n\n"
-     "Limitations:\n" ASF_LIMITATIONS_STRING "\n\n\n"
-     "See also:\n" ASF_SEE_ALSO_STRING "\n\n\n"
-     "Version:\n" CONVERT_PACKAGE_VERSION_STRING "\n\n\n"
-     "Copyright:\n" ASF_COPYRIGHT_STRING "\n\n\n");
-  
-  // If we can, use less.
-  g_string_append_printf 
-    (command, 
-     "echo '%s' | less --prompt='Type q to quit help, h for help with help "
-     "browser'", documentation->str);
-  if ( system (command->str) == 0 )
-    exit (EXIT_SUCCESS);
+    // What to print out for help
+    sprintf(happy_string,
+        "\n"
+        "Tool name:\n   " ASF_NAME_STRING "\n\n"
+        "Usage:\n" ASF_USAGE_STRING "\n"
+        "Description:\n" ASF_DESCRIPTION_STRING "\n"
+        "Input:\n" ASF_INPUT_STRING "\n"
+        "Output:\n"ASF_OUTPUT_STRING "\n"
+        "Options:\n" ASF_OPTIONS_STRING "\n"
+        "Examples:\n" ASF_EXAMPLES_STRING "\n"
+        "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
+        "See also:\n" ASF_SEE_ALSO_STRING "\n"
+        "Contact:\n" ASF_CONTACT_STRING "\n"
+        "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
 
-  // Hmmm, less didn't work cause we got here, try using more.
-  g_string_append_printf (command, "echo '%s' | more", documentation->str);
-  if ( system (command->str) == 0 )
-    exit (EXIT_SUCCESS);
+    // Print the help... the user can use less or more on their own
+    printf(happy_string);
+    exit(EXIT_SUCCESS);
+}
 
-  // Okay, neither less or more work (obviously if we made it here),
-  // just print the info straight to stdout and exit
-  printf (documentation->str);
-  exit (EXIT_SUCCESS);
+// Print our copyright notice
+static void print_copyright(int copyright_id)
+{
+        switch (copyright_id) {
+          case ASF_BSD_ID:
+            printf(ASF_BSD_COPYRIGHT_STRING);
+            break;
+          default:
+            printf("Copyright not found.\n");
+            break;
+        }
+        exit(EXIT_SUCCESS);
 }
 
 // Factors for going between degrees and radians.
@@ -324,16 +320,16 @@ help_page (void)
 // We want to trap segmentation faults (signal number 11,
 // i.e. SIGSEGV) and try to produce a backtrace.  Here is a signal
 // handler that does that.
-static void 
+static void
 sigsegv_handler (int signal_number)
 {
   g_assert (signal_number == SIGSEGV);
 
 #define MAX_BACKTRACE_CALL_DEPTH 300
-  
+
   // void *array[MAX_BACKTRACE_CALL_DEPTH];
   // size_t size = backtrace (array, MAX_BACKTRACE_CALL_DEPTH);
-  
+
   fprintf (stderr, "SIGSEGV caught.  Backtrace:\n");
   fprintf (stderr, "unfortunately, backtrace functionality doesn't work.\n");
   //  backtrace_symbols_fd (array, size, STDERR_FILENO);
@@ -342,7 +338,7 @@ sigsegv_handler (int signal_number)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// 
+//
 // We want to find natural cubic splines to form approximating
 // functions X and Y st
 //
@@ -350,7 +346,7 @@ sigsegv_handler (int signal_number)
 //      Y(x, y) = input image y pixel coordinate of projection coordinates x, y
 //
 // The basic steps are:
-// 
+//
 //   1.  Find the extent of the input image in projection coordinate
 //       space, i.e. the minimum and maximum x and y projection
 //       coordinates of all the pixels in the input image.
@@ -364,7 +360,7 @@ sigsegv_handler (int signal_number)
 //
 //   4.  For each row in the output image, construct an interpolating
 //       spline over the values which result from evaluating the column
-//       splines at that y position.  
+//       splines at that y position.
 //
 //   5.  Verify that the splines aren't introducing too much error away
 //       from the control points by examing the errors in the spline
@@ -375,8 +371,8 @@ sigsegv_handler (int signal_number)
 // though.
 //
 ///////////////////////////////////////////////////////////////////////////////
-        
-       
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // This is the form of the input data we want to fit splines to.
@@ -407,7 +403,7 @@ struct data_to_fit {
 // usually identical between calls, since when y changes a new spline
 // between splines has to be created.
 static double
-reverse_map_x (struct data_to_fit *dtf, double x, double y) 
+reverse_map_x (struct data_to_fit *dtf, double x, double y)
 {
   // True iff this is our first time through this routine.
   static gboolean first_time_through = TRUE;
@@ -420,7 +416,7 @@ reverse_map_x (struct data_to_fit *dtf, double x, double y)
   static gsl_interp_accel *crnt_accel;
   static gsl_spline *crnt;
   // Value of y for which current interpolator works.
-  static double last_y;	
+  static double last_y;
 
   // Convenience aliases.
   size_t sgs = dtf->sparse_grid_size;
@@ -463,7 +459,7 @@ reverse_map_x (struct data_to_fit *dtf, double x, double y)
     size_t ii;
     for ( ii = 0 ; ii < sgs ; ii++ ) {
       crnt_points[ii] = gsl_spline_eval (y_spline[ii], y, y_accel[ii]);
-    }      
+    }
     gsl_spline_init (crnt, xprojs, crnt_points, sgs);
     g_free (crnt_points);
     last_y = y;
@@ -475,7 +471,7 @@ reverse_map_x (struct data_to_fit *dtf, double x, double y)
 // This routine is analagous to reverse_map_x, including the same
 // caveats and confusing behavior.
 static double
-reverse_map_y (struct data_to_fit *dtf, double x, double y) 
+reverse_map_y (struct data_to_fit *dtf, double x, double y)
 {
   // True iff this is our first time through this routine.
   static gboolean first_time_through = TRUE;
@@ -488,7 +484,7 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
   static gsl_interp_accel *crnt_accel;
   static gsl_spline *crnt;
   // Value of y for which current interpolator works.
-  static double last_y;	
+  static double last_y;
 
   size_t sgs = dtf->sparse_grid_size;
   double *xprojs = dtf->sparse_x_proj;
@@ -500,7 +496,7 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
       // Free the spline from the last line.
       gsl_interp_accel_free (crnt_accel);
       gsl_spline_free (crnt);
-    } else {
+    } else{
       // Its our first time through, so set up the splines for the
       // grid point columns.
       y_accel = g_new (gsl_interp_accel *, sgs);
@@ -532,7 +528,7 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
     size_t ii;
     for ( ii = 0 ; ii < sgs ; ii++ ) {
       crnt_points[ii] = gsl_spline_eval (y_spline[ii], y, y_accel[ii]);
-    }      
+    }
     gsl_spline_init (crnt, xprojs, crnt_points, sgs);
     g_free (crnt_points);
     last_y = y;
@@ -555,7 +551,7 @@ main (int argc, char **argv)
   backtrace_action.sa_handler = sigsegv_handler;
   backtrace_action.sa_mask = sigsegv_mask;
   backtrace_action.sa_flags = 0;
-  return_code = sigaction (SIGSEGV, &backtrace_action, NULL);  
+  return_code = sigaction (SIGSEGV, &backtrace_action, NULL);
   g_assert (return_code == 0);
   int force_flag = FALSE;
 
@@ -585,14 +581,19 @@ main (int argc, char **argv)
 
   asfSplashScreen(argc, argv);
 
-  project_parameters_t *pp 
-    = get_geocode_options (&argc, &argv, &projection_type, &average_height, 
+  project_parameters_t *pp
+    = get_geocode_options (&argc, &argv, &projection_type, &average_height,
 			   &pixel_size, &datum, &resample_method,
 			   &force_flag);
 
   // If help was requested, display it.
   if (detect_flag_options(argc, argv, "-help", "--help", NULL)) {
     help_page ();
+  }
+
+  // If copyright was requested, display it.
+  if (detect_flag_options(argc, argv, "-copyright", "--copyright", NULL)) {
+    print_copyright(ASF_BSD_ID);
   }
 
   // Get non-option command line arguments.
@@ -646,13 +647,13 @@ main (int argc, char **argv)
   int (*project_input) (project_parameters_t *pps, double lat, double lon,
 			double *x, double *y);
   project_input = NULL;		// Silence compiler warnings.
-  int (*unproject_input) (project_parameters_t *pps, double x, double y, 
+  int (*unproject_input) (project_parameters_t *pps, double x, double y,
 			  double *lat, double *lon);
   unproject_input = NULL;	// Silence compiler warnings.
-  if ( imd->sar->image_type == 'P' 
+  if ( imd->sar->image_type == 'P'
        && imd->projection->type != SCANSAR_PROJECTION ) {
     input_projected = TRUE;
-    
+
     switch ( imd->projection->type) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
       project_input = project_utm;
@@ -701,7 +702,7 @@ main (int argc, char **argv)
   int (*project) (project_parameters_t *pps, double lat, double lon, double *x,
 		  double *y);
   int (*project_arr) (project_parameters_t *pps, double *lat, double *lon,
-		      double **projected_x, double **projected_y, 
+		      double **projected_x, double **projected_y,
 		      long length);
   int (*unproject) (project_parameters_t *pps, double x, double y, double *lat,
 		    double *lon);
@@ -709,7 +710,7 @@ main (int argc, char **argv)
   project_arr = NULL;		// Silence compiler warnings.
   unproject = NULL;		// Silence compiler warnings.
   switch ( projection_type ) {
-  case UNIVERSAL_TRANSVERSE_MERCATOR: 
+  case UNIVERSAL_TRANSVERSE_MERCATOR:
     project = project_utm;
     project_arr = project_utm_arr;
     unproject = project_utm_inv;
@@ -745,7 +746,7 @@ main (int argc, char **argv)
 
   // The latitude and longitude of the center of the image.
   double lat_0, lon_0;
-  meta_get_latLon (imd, ii_size_y / 2.0, ii_size_x / 2.0, average_height, 
+  meta_get_latLon (imd, ii_size_y / 2.0, ii_size_x / 2.0, average_height,
 		   &lat_0, &lon_0);
 
   // First we march around the entire outside of the image and compute
@@ -772,14 +773,14 @@ main (int argc, char **argv)
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY - ipb->perY * jj;
-	return_code = unproject_input (ipp, xpc, ypc, 
+	return_code = unproject_input (ipp, xpc, ypc,
 				       &(lats[current_edge_point]),
 				       &(lons[current_edge_point]));
 	g_assert (return_code);
       }
       else {
-	meta_get_latLon (imd, (double)jj, (double)ii, average_height, 
-			 &(lats[current_edge_point]), 
+	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+			 &(lats[current_edge_point]),
 			 &(lons[current_edge_point]));
 	lats[current_edge_point] *= DEG_TO_RAD;
 	lons[current_edge_point] *= DEG_TO_RAD;
@@ -797,7 +798,7 @@ main (int argc, char **argv)
       }
       else {
 	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
-			 &(lats[current_edge_point]), 
+			 &(lats[current_edge_point]),
 			 &(lons[current_edge_point]));
 	lats[current_edge_point] *= DEG_TO_RAD;
 	lons[current_edge_point] *= DEG_TO_RAD;
@@ -815,7 +816,7 @@ main (int argc, char **argv)
       }
       else {
 	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
-			 &(lats[current_edge_point]), 
+			 &(lats[current_edge_point]),
 			 &(lons[current_edge_point]));
 	lats[current_edge_point] *= DEG_TO_RAD;
 	lons[current_edge_point] *= DEG_TO_RAD;
@@ -833,7 +834,7 @@ main (int argc, char **argv)
       }
       else {
 	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
-			 &(lats[current_edge_point]), 
+			 &(lats[current_edge_point]),
 			 &(lons[current_edge_point]));
 	lats[current_edge_point] *= DEG_TO_RAD;
 	lons[current_edge_point] *= DEG_TO_RAD;
@@ -864,22 +865,22 @@ main (int argc, char **argv)
 
   // Issue a warning when the chosen pixel size is smaller than the
   // input pixel size.
-  if ( GSL_MIN(imd->general->x_pixel_size, 
+  if ( GSL_MIN(imd->general->x_pixel_size,
 	       imd->general->y_pixel_size) > pixel_size ) {
-    asfPrintWarning 
+    asfPrintWarning
       ("Requested pixel size %lf is smaller then the input image resolution "
-       "(%le meters).\n", pixel_size, 
+       "(%le meters).\n", pixel_size,
        GSL_MIN (imd->general->x_pixel_size, imd->general->y_pixel_size));
   }
 
   // The pixel size requested by the user better not oversample by
   // the factor of 2.  Specifying --force will skip this check
-  if (!force_flag && GSL_MIN(imd->general->x_pixel_size, 
+  if (!force_flag && GSL_MIN(imd->general->x_pixel_size,
 	       imd->general->y_pixel_size) > (2*pixel_size) ) {
-    report_func 
+    report_func
       ("Requested pixel size %lf is smaller then the minimum implied by half \n"
-       "the input image resolution (%le meters), this is not supported.\n", 
-       pixel_size, GSL_MIN (imd->general->x_pixel_size, 
+       "the input image resolution (%le meters), this is not supported.\n",
+       pixel_size, GSL_MIN (imd->general->x_pixel_size,
 			    imd->general->y_pixel_size));
   }
 
@@ -917,7 +918,7 @@ main (int argc, char **argv)
   double x_spacing = x_range_size / (grid_size - 1);
   double y_spacing = y_range_size / (grid_size - 1);
   // Index into the flattened list of mappings we want to produce.
-  size_t current_mapping = 0;	
+  size_t current_mapping = 0;
   size_t current_sparse_mapping = 0;
   size_t ii;
   for ( ii = 0 ; ii < grid_size ; ii++ ) {
@@ -941,7 +942,7 @@ main (int argc, char **argv)
       if ( input_projected ) {
 	    // Input projection coordinates of the current pixel.
 	    double ipcx, ipcy;
-	    return_code = project_input (ipp, DEG_TO_RAD * lat, DEG_TO_RAD * lon, 
+	    return_code = project_input (ipp, DEG_TO_RAD * lat, DEG_TO_RAD * lon,
 				                     &ipcx, &ipcy);
 	if ( return_code == 0 ) {
 	  g_assert_not_reached ();
@@ -959,8 +960,8 @@ main (int argc, char **argv)
       dtf.y_proj[current_mapping] = cyproj;
       dtf.x_pix[current_mapping] = x_pix;
       dtf.y_pix[current_mapping] = y_pix;
-      
-      if ( ii % sparse_grid_sample_stride == 0 
+
+      if ( ii % sparse_grid_sample_stride == 0
 	   && jj % sparse_grid_sample_stride == 0 ) {
 	dtf.sparse_x_proj[current_sparse_mapping] = cxproj;
 	dtf.sparse_y_proj[current_sparse_mapping] = cyproj;
@@ -975,7 +976,7 @@ main (int argc, char **argv)
   asfPrintStatus ("done.\n\n");
 
   // Here are some convenience macros for the spline model.
-#define X_PIXEL(x, y) reverse_map_x (&dtf, x, y) 
+#define X_PIXEL(x, y) reverse_map_x (&dtf, x, y)
 #define Y_PIXEL(x, y) reverse_map_y (&dtf, x, y)
 
   // Check the health of the our spline model by comparing the input
@@ -1002,15 +1003,15 @@ main (int argc, char **argv)
       gsl_vector_set (model_y_errors, ii, y_error);
       gsl_vector_set (model_errors, ii, error_distance);
     }
-    // Uncomment this line to get an image showing the distribution of 
+    // Uncomment this line to get an image showing the distribution of
     // errors in the approximating grid.
     // float_image_export_as_jpeg (error_map, "error_map.jpeg", grid_size);
     float_image_free (error_map);
-    double mean_error 
-      = gsl_stats_mean (model_errors->data, model_errors->stride, 
+    double mean_error
+      = gsl_stats_mean (model_errors->data, model_errors->stride,
 			model_errors->size);
-    double error_standard_deviation 
-      = gsl_stats_sd_m (model_errors->data, model_errors->stride, 
+    double error_standard_deviation
+      = gsl_stats_sd_m (model_errors->data, model_errors->stride,
 			model_errors->size, mean_error);
     double max_x_error = gsl_vector_max (model_x_errors);
     double min_x_error = gsl_vector_min (model_x_errors);
@@ -1042,7 +1043,7 @@ main (int argc, char **argv)
 		    "projected values\nfor the analytically projected "
 		    "control points:\n");
     asfPrintStatus ("Mean: %g\n", mean_error);
-    asfPrintStatus ("Standard deviation: %g\n", error_standard_deviation); 
+    asfPrintStatus ("Standard deviation: %g\n", error_standard_deviation);
     asfPrintStatus ("Maximum (Worst observed error in pixel index distance): "
 		    "%g\n", largest_error);
     asfPrintStatus ("Maximum x error (worst observed error in x pixel index): "
@@ -1100,7 +1101,7 @@ main (int argc, char **argv)
       // problem of large corner errors when none of the intermediate
       // grid points were off by much still seems specific to scansar.
     }
-    
+
     double ul_x, ul_y;
     project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
     double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
@@ -1109,23 +1110,23 @@ main (int argc, char **argv)
 		  fabs (ul_x_pix_approx), max_corner_error );
     }
     else {
-      asfPrintStatus ("Upper left x corner error: %f\n", 
+      asfPrintStatus ("Upper left x corner error: %f\n",
 		      fabs (ul_x_pix_approx));
     }
-    
+
     double ul_y_pix_approx = Y_PIXEL (ul_x, ul_y);
     if (fabs (ul_y_pix_approx) > max_corner_error ) {
       report_func ("Upper left y corner error was too large! %f > %f\n",
 		   fabs (ul_y_pix_approx), max_corner_error );
     }
     else {
-      asfPrintStatus ("Upper left y corner error: %f\n", 
+      asfPrintStatus ("Upper left y corner error: %f\n",
 		      fabs (ul_y_pix_approx));
     }
-    
+
     // Lower right corner.
     double lr_lat, lr_lon;
-    meta_get_latLon (imd, (float) (ii_size_y - 1), (float) (ii_size_x - 1), 
+    meta_get_latLon (imd, (float) (ii_size_y - 1), (float) (ii_size_x - 1),
 		     average_height, &lr_lat, &lr_lon);
     double lr_x, lr_y;
     project (pp, DEG_TO_RAD * lr_lat, DEG_TO_RAD * lr_lon, &lr_x, &lr_y);
@@ -1136,7 +1137,7 @@ main (int argc, char **argv)
 		   lr_x_corner_error, max_corner_error);
     }
     else {
-      asfPrintStatus ("Lower right x corner error: %f\n", lr_x_corner_error); 
+      asfPrintStatus ("Lower right x corner error: %f\n", lr_x_corner_error);
     }
     double lr_y_pix_approx = Y_PIXEL (lr_x, lr_y);
     double lr_y_corner_error = fabs (lr_y_pix_approx - (ii_size_y - 1));
@@ -1147,14 +1148,14 @@ main (int argc, char **argv)
     else {
       asfPrintStatus ("Lower right Y corner error: %f\n", lr_y_corner_error);
     }
-  }    
+  }
 
   asfPrintStatus ("\n");
 
   // Done with the input metadata.
   meta_free (imd);
 
-  // Now we are ready to produce our output image.  
+  // Now we are ready to produce our output image.
   asfPrintStatus ("Resampling input image into output image "
 		  "coordinate space...\n");
 
@@ -1176,7 +1177,7 @@ main (int argc, char **argv)
   // Input image.
   GString *input_data_file = g_string_new (input_image->str);
   g_string_append (input_data_file, ".img");
-  FloatImage *iim 
+  FloatImage *iim
     = float_image_new_from_file (ii_size_x, ii_size_y, input_data_file->str, 0,
 				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   g_string_free (input_data_file, TRUE);
@@ -1197,10 +1198,10 @@ main (int argc, char **argv)
     float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
     break;
   case RESAMPLE_BILINEAR:
-    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;    
+    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
     break;
   case RESAMPLE_BICUBIC:
-    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;    
+    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
     break;
   default:
     g_assert_not_reached ();
@@ -1210,7 +1211,7 @@ main (int argc, char **argv)
   size_t oix, oiy;		// Output image pixel indicies.
   for ( oiy = 0 ; oiy <= oiy_max ; oiy++ ) {
     for ( oix = 0 ; oix <= oix_max ; oix++ ) {
-      // Projection coordinates for the center of this pixel.    
+      // Projection coordinates for the center of this pixel.
       double oix_pc = ((double) oix / oix_max) * (max_x - min_x) + min_x;
       // We want projection coordinates to increase as we move from
       // the bottom of the image to the top, so that north ends up up.
@@ -1225,17 +1226,17 @@ main (int argc, char **argv)
       const float fill_value = 0.0;
       g_assert (ii_size_x <= SSIZE_MAX);
       g_assert (ii_size_y <= SSIZE_MAX);
-      if (    input_x_pixel < 0 
+      if (    input_x_pixel < 0
 	   || input_x_pixel > (ssize_t) ii_size_x - 1.0
-	   || input_y_pixel < 0 
+	   || input_y_pixel < 0
 	   || input_y_pixel > (ssize_t) ii_size_y - 1.0 ) {
 	SET_PIXEL (oix, oiy, (float) fill_value);
       }
       // Otherwise, set to the value from the appropriate position in
       // the input image.
       else {
-	SET_PIXEL (oix, oiy, 
-		   float_image_sample 
+	SET_PIXEL (oix, oiy,
+		   float_image_sample
 		     (iim, input_x_pixel, input_y_pixel,
 		      float_image_sample_method));
       }
@@ -1280,7 +1281,7 @@ main (int argc, char **argv)
   omd->general->line_count = oiy_max + 1;
   omd->general->sample_count = oix_max + 1;
   omd->sar->image_type = 'P';
-  omd->sar->range_time_per_pixel *= x_scale; 
+  omd->sar->range_time_per_pixel *= x_scale;
   omd->sar->azimuth_time_per_pixel *= y_scale;
   omd->sar->range_doppler_coefficients[1] *= x_scale;
   omd->sar->range_doppler_coefficients[2] *= x_scale * x_scale;
@@ -1310,19 +1311,19 @@ main (int argc, char **argv)
   /* output the correct earth radii based on the datum that was used
      to do the projection */
   if (datum == WGS84_DATUM) {
-    const double wgs84_semiminor_axis 
+    const double wgs84_semiminor_axis
       = WGS84_SEMIMAJOR * (1 - (1 / WGS84_INV_FLATTENING));
     omd->projection->re_major = WGS84_SEMIMAJOR;
     omd->projection->re_minor = wgs84_semiminor_axis;
   } else if (datum == NAD27_DATUM) {
     // NAD27 datum is based on clark 1866 ellipsoid
-    const double nad27_semiminor_axis 
+    const double nad27_semiminor_axis
       = CLARKE1866_SEMIMAJOR * (1 - (1 / CLARKE1866_INV_FLATTENING));
     omd->projection->re_major = CLARKE1866_SEMIMAJOR;
     omd->projection->re_minor = nad27_semiminor_axis;
   } else if (datum == NAD83_DATUM) {
     // NAD83 datum is based on GRS80 ellipsoid
-    const double nad83_semiminor_axis 
+    const double nad83_semiminor_axis
       = GRS1980_SEMIMAJOR * (1 - (1 / GRS1980_INV_FLATTENING));
     omd->projection->re_major = GRS1980_SEMIMAJOR;
     omd->projection->re_minor = nad83_semiminor_axis;

@@ -8,10 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const double DEFAULT_POLAR_STERO_NORTH_CENTRAL_MERIDIAN = -45; 
+static const double DEFAULT_POLAR_STERO_NORTH_CENTRAL_MERIDIAN = -45;
 static const double DEFAULT_POLAR_STERO_SOUTH_CENTRAL_MERIDIAN = -90;
 
-static const double DEFAULT_POLAR_STERO_NORTH_STANDARD_PARALLEL = 70; 
+static const double DEFAULT_POLAR_STERO_NORTH_STANDARD_PARALLEL = 70;
 static const double DEFAULT_POLAR_STERO_SOUTH_STANDARD_PARALLEL = -70;
 
 project_parameters_t * get_geocode_options(int *argc, char **argv[],
@@ -36,16 +36,16 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 
 	if (pps)
 	{
-		/* "other" options include: --height, --pixel-size, --force
-		and --resample_method.  */
-		parse_other_options(argc, argv, height, pixel_size, datum, 
+		/* "other" options include: 'height', 'pixel-size', 'force'
+		and 'resample_method'.  */
+		parse_other_options(argc, argv, height, pixel_size, datum,
 			resample_method, override_checks);
 
 		/* here the semantics of the projection parameters are applied */
 		sanity_check(*proj_type, pps);
 	}
 
-	/* Exit now if no input/output files are specified, and the 
+	/* Exit now if no input/output files are specified, and the
 	"write-proj-file" option was specified */
 	if (did_write_proj_file && *argc == 1) {
 		asfPrintStatus("No input files.\n");
@@ -68,7 +68,7 @@ static void verify_valid_latitude(double lat)
 	if (lat > 90 || lat < -90)
 	{
 		asfPrintWarning("Invalid Latitude: %f\n", lat);
-		lat = NAN; 
+		lat = NAN;
 	}
 }
 
@@ -167,7 +167,7 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 			if ( pps->utm.lon0 / 6.0 - floor (pps->utm.lon0 / 6.0) == 0.0 ) {
 				asfPrintError ("Longitude %.6f lies on a UTM zone boundry, "
 					"(i.e. is ambiguous as to which UTM zone "
-					"should be used for geocoding)\n", 
+					"should be used for geocoding)\n",
 					pps->utm.lon0);
 			}
 			pps->utm.zone = calc_utm_zone(pps->utm.lon0);
@@ -184,8 +184,8 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 		/* SMMI standard values */
 		if (ISNAN(pps->ps.slon))
 			pps->ps.slon = pps->ps.is_north_pole ?
-DEFAULT_POLAR_STERO_NORTH_CENTRAL_MERIDIAN : 
-		DEFAULT_POLAR_STERO_SOUTH_CENTRAL_MERIDIAN; 
+DEFAULT_POLAR_STERO_NORTH_CENTRAL_MERIDIAN :
+		DEFAULT_POLAR_STERO_SOUTH_CENTRAL_MERIDIAN;
 
 		/* default standard parallels are +/- 70 */
 		if (ISNAN(pps->ps.slat))

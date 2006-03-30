@@ -49,20 +49,20 @@ static void no_arg(char * option)
 static void bad_arg(char * option, char * arg)
 {
 	if (print_warn)
-		asfPrintWarning("Bad argument specified for option %s: %s\n", 
+		asfPrintWarning("Bad argument specified for option %s: %s\n",
 		option, arg);
 }
 
 static void pole_arg(void)
 {
 	if (print_warn)
-		asfPrintWarning("Pole specified twice.\n"); 
+		asfPrintWarning("Pole specified twice.\n");
 }
 
 static void double_arg(const char * option)
 {
 	if (print_warn)
-		asfPrintWarning("Option occurs twice: %s\n", option); 
+		asfPrintWarning("Option occurs twice: %s\n", option);
 }
 
 //static void missing_arg(const char * option)
@@ -267,12 +267,12 @@ void write_args(projection_type_t proj_type, project_parameters_t *pps,
 		fprintf(fp, "Latitude of Origin=%.10f\n", pps->lamcc.lat0);
 		fprintf(fp, "False Easting=%.10f\n", pps->lamcc.false_easting);
 		fprintf(fp, "False Northing=%.10f\n", pps->lamcc.false_northing);
-		
+
 		//fprintf(fp, "Scale Factor=%.10f\n",
-		//ISNAN(pps->lamcc.scale_factor) ? 
-		//1.0 : 
+		//ISNAN(pps->lamcc.scale_factor) ?
+		//1.0 :
 		//pps->lamcc.scale_factor);
-		
+
 		break;
 
 	default:
@@ -298,7 +298,7 @@ static void parse_proj_args_file(char * file, project_parameters_t * pps,
 
 	readline(fp, buf, sizeof(buf));
 
-	if (strcmp(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 || 
+	if (strcmp(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
 		strcmp(buf, "[Albers Equal Area Conic]") == 0)
 	{
 		*proj_type = ALBERS_EQUAL_AREA;
@@ -364,7 +364,7 @@ static void parse_proj_args_file(char * file, project_parameters_t * pps,
 			"False Northing", &pps->utm.false_northing,
 			"Zone", &zone,
 			NULL);
-		
+
 		pps->utm.zone = (int) zone;
 
 		if (pps->utm.zone == 0 || ISNAN(zone))
@@ -382,13 +382,17 @@ static void parse_proj_args_file(char * file, project_parameters_t * pps,
 static int matches_write_proj_file(char * param)
 {
 	return
-		strcmp(param, "--write-proj-file") == 0;
+		   strcmp(param, "-wpf") == 0
+		|| strcmp(param, "-write-proj-file") == 0
+		|| strcmp(param, "--write-proj-file") == 0;
 }
 
 static int matches_read_proj_file(char * param)
 {
 	return
-		strcmp(param, "--read-proj-file") == 0;
+		   strcmp(param, "-rpf") == 0
+		|| strcmp(param, "-read-proj-file") == 0
+		|| strcmp(param, "--read-proj-file") == 0;
 }
 
 static int parse_double_option(int *i, int argc, char *argv[], int *specified,
@@ -867,12 +871,12 @@ static int extract_flags(int *argc, char ***argv, ... )
 
 void parse_log_options(int *argc, char **argv[])
 {
-	if (extract_string_options(argc, argv, logFile, "-log", NULL))
+	if (extract_string_options(argc, argv, logFile, "--log", "-log", NULL))
 		logflag = 1;
 	else
 		logflag = 0;
 
-	if (extract_flags(argc, argv, "-quiet", NULL))
+	if (extract_flags(argc, argv, "--quiet", "-quiet", NULL))
 		quietflag = 1;
 	else
 		quietflag = 0;
@@ -883,7 +887,7 @@ static datum_type_t parse_datum_option(int *argc, char **argv[])
 	char datum[1024];
 	datum_type_t the_datum;
 
-	if (extract_string_options(argc, argv, datum, "--datum", NULL))
+	if (extract_string_options(argc, argv, datum, "--datum", "-datum", NULL))
 	{
 		if (g_ascii_strcasecmp(datum, "WGS84") == 0)
 		{
@@ -902,7 +906,7 @@ static datum_type_t parse_datum_option(int *argc, char **argv[])
 		{
 			asfPrintWarning("Unknown Datum: %s.  Using WGS84.\n", datum);
 			the_datum = WGS84_DATUM;
-		}   
+		}
 	}
 	else
 	{
@@ -920,8 +924,8 @@ static resample_method_t parse_resample_method_option(int *argc, char **argv[])
 	/* To be returned (default to bilinear).  */
 	resample_method_t ret = RESAMPLE_BILINEAR;
 
-	if (extract_string_options(argc, argv, resample_method, "--resample-method", 
-		NULL))
+	if (extract_string_options(argc, argv, resample_method, "--resample-method",
+		"-resample-method", NULL))
 	{
 		if (g_ascii_strcasecmp(resample_method, "nearest_neighbor") == 0)
 		{
@@ -942,20 +946,20 @@ static resample_method_t parse_resample_method_option(int *argc, char **argv[])
 	}
 
 	return ret;
-} 
+}
 
 void parse_other_options(int *argc, char **argv[],
 						 double *height, double *pixel_size,
-						 datum_type_t *datum, 
+						 datum_type_t *datum,
 						 resample_method_t *resample_method,
 						 int *override_checks)
 {
 	*datum = parse_datum_option(argc, argv);
-	extract_double_options(argc, argv, height, "--height", "-h", NULL);
+	extract_double_options(argc, argv, height, "--height", "-height", "-h", NULL);
 	extract_double_options(argc, argv, pixel_size,
-		"--pixel-size", "--pixel_size", "-ps", NULL);
+		"--pixel-size", "-pixel-size", "-pix", NULL);
 	*resample_method = parse_resample_method_option (argc, argv);
-	*override_checks = extract_flags(argc, argv, "--force", "-f", NULL);
+	*override_checks = extract_flags(argc, argv, "--force", "-force", "-f", NULL);
 
 	//debug code for printing out the options after parsing ...
 	//printf("argc, argv:\n");

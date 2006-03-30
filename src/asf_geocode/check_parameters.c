@@ -8,12 +8,12 @@
 
 // Prototypes
 int calc_utm_zone(double lon);
-void check_parameters(projection_type_t projection_type, 
+void check_parameters(projection_type_t projection_type,
 		      project_parameters_t *pp, meta_parameters *meta,
 		      int force_flag);
 
 // Checking routine for projection parameter input.
-void check_parameters(projection_type_t projection_type, 
+void check_parameters(projection_type_t projection_type,
 		      project_parameters_t *pp, meta_parameters *meta,
 		      int force_flag)
 {
@@ -23,7 +23,7 @@ void check_parameters(projection_type_t projection_type,
   void (*report_func) (const char *format, ...);
 
   if (force_flag) {
-    asfPrintStatus("Since --force was specified, projection errors will be "
+    asfPrintStatus("Since the 'force' was specified, projection errors will be "
 		   "reported as warnings.\n\n");
     report_func = asfPrintWarning;
   } else {
@@ -36,7 +36,7 @@ void check_parameters(projection_type_t projection_type,
       // Debugging print
       printf("Projection: UTM\nZone: %i\nLatitude of origin: %.4f\n"
 	     "Central meridian: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n"
-	     "Scale: %.4f\n\n", pp->utm.zone, pp->utm.lat0, pp->utm.lon0, 
+	     "Scale: %.4f\n\n", pp->utm.zone, pp->utm.lat0, pp->utm.lon0,
 	     pp->utm.false_easting, pp->utm.false_northing, pp->utm.scale_factor);
 
       // Outside range tests
@@ -49,7 +49,7 @@ void check_parameters(projection_type_t projection_type,
 	report_func("Central meridian '%.4f' outside the defined range "
 		      "(-180 deg to 180 deg)\n", pp->utm.lon0);
       if (!FLOAT_EQUIVALENT(pp->utm.scale_factor, 0.9996))
-	report_func("Scale factor '%.4f' different from default value (0.9996)\n", 
+	report_func("Scale factor '%.4f' different from default value (0.9996)\n",
 		      pp->utm.scale_factor);
       if (meta->general->center_latitude >= 0.0 &&
           !FLOAT_EQUIVALENT(pp->utm.false_easting, 500000))
@@ -80,7 +80,7 @@ void check_parameters(projection_type_t projection_type,
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
-      meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0, &lat, 
+      meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0, &lat,
 		      &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
@@ -96,7 +96,7 @@ void check_parameters(projection_type_t projection_type,
       if (zone > max_zone) max_zone = zone;
       if (pp->utm.zone < min_zone || pp->utm.zone > max_zone + 1) {
         report_func("Zone '%i' outside the range of corresponding image "
-		      "coordinates (%i to %i)\n", pp->utm.zone, min_zone, 
+		      "coordinates (%i to %i)\n", pp->utm.zone, min_zone,
 		      max_zone);
       }
       break;
@@ -116,7 +116,7 @@ void check_parameters(projection_type_t projection_type,
 	report_func("Central meridian '%.4f' outside the defined range "
 		      "(-180 deg to 180 deg)\n", pp->ps.slon);
 
-      // Distortion test - only areas with a latitude above 60 degrees North or 
+      // Distortion test - only areas with a latitude above 60 degrees North or
       // below -60 degrees South are permitted
       if (meta->general->center_latitude < 60.0 && pp->ps.is_north_pole) {
 	if (force_flag)
@@ -144,7 +144,7 @@ void check_parameters(projection_type_t projection_type,
       printf("Projection: Albers Equal Area Conic\nFirst standard parallel: %.4f\n"
 	     "Second standard parallel: %.4f\nCentral meridian: %.4f\n"
 	     "Latitude of origin: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n",
-	     pp->albers.std_parallel1, pp->albers.std_parallel2, 
+	     pp->albers.std_parallel1, pp->albers.std_parallel2,
 	     pp->albers.center_meridian, pp->albers.orig_latitude,
 	     pp->albers.false_easting, pp->albers.false_northing);
 
@@ -211,7 +211,7 @@ void check_parameters(projection_type_t projection_type,
       if (pp->lamcc.lat0 < -90 || pp->lamcc.lat0 > 90)
 	report_func("Latitude of origin '%.4f' outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->lamcc.lat0);
-    
+
       // Distortion test - only areas with a latitude not more than 30 degrees
       // outside the latitude range defined by first and second parallel are
       // permitted.
@@ -229,13 +229,13 @@ void check_parameters(projection_type_t projection_type,
 	  report_func("Geocoding of areas with latitudes outside the defined range "
 		      "(%.1f deg %.1f deg) in the Lambert Conformal Conic "
 		      "projection with the standard parallels (first: %.1f and "
-		      "second: %.1f ) is not advisable.\n", min_lat, 
+		      "second: %.1f ) is not advisable.\n", min_lat,
 		      max_lat, pp->lamcc.plat1, pp->lamcc.plat2);
 	else
 	  report_func("Geocoding of areas with latitudes outside the defined range "
 		      "(%.1f deg %.1f deg) in the Lambert Conformal Conic "
 		      "projection with the standard parallels (first: %.1f and "
-		      "second: %.1f ) is not supported by this tool.\n", min_lat, 
+		      "second: %.1f ) is not supported by this tool.\n", min_lat,
 		      max_lat, pp->lamcc.plat1, pp->lamcc.plat2);
       }
 
@@ -244,7 +244,7 @@ void check_parameters(projection_type_t projection_type,
       // Debugging print
       printf("Projection: Lambert Azimuthal Equal Area\nLatitude of origin: %.4f\n"
 	     "Central meridian: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n",
-	     pp->lamaz.center_lat, pp->lamaz.center_lon, 
+	     pp->lamaz.center_lat, pp->lamaz.center_lon,
 	     pp->utm.false_easting, pp->utm.false_northing);
 
       // Outside range tests
