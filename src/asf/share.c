@@ -116,9 +116,8 @@ print_all_reg_vals()
 #include <stdio.h>
 #include <stdlib.h>
 
-static int check_for_known_file_in_dir(const char *dir)
+static int check_for_known_file_in_dir(const char *dir, const char *known_file)
 {
-    const char * known_file = "ASF_LICENSE";
     char * file = (char *)MALLOC(strlen(dir) + strlen(known_file) + 3);
     sprintf(file, "%s/%s", dir, known_file);
 
@@ -131,7 +130,19 @@ static int check_for_known_file_in_dir(const char *dir)
     }
 
     FREE(file);
-    return found;	
+    return found;
+}
+
+static int check_for_known_file_in_share_dir(const char *dir)
+{
+    const char * known_file = "ASF_LICENSE";
+    return check_for_known_file_in_dir(dir, known_file);
+}
+
+static int check_for_known_file_in_bin_dir(const char *dir)
+{
+    const char * known_file = "asf_import";
+    return check_for_known_file_in_dir(dir, known_file);
 }
 
 #endif
@@ -175,6 +186,52 @@ get_asf_bin_dir()
 
     s_bin_dir = strdup(ASF_BIN_DIR);
 
+    /* See if this works - check for a known file which              */
+    /* is in the asf binaries directory.                             */
+    if (!check_for_known_file_in_bin_dir(s_bin_dir))
+    {
+        const char path_sep = ':';
+	char *path, *buf, *p;
+	int found = 0;
+
+	//printf("Known file not in config.h's bin dir: %s\n", s_bin_dir);
+	//printf("Searching the path...\n");
+
+	path = getenv("PATH");	
+	buf = MALLOC(strlen(path));
+
+	p = path;
+	do {
+	    char * q = strchr(p + 1, path_sep);
+	    if (!q) q = path + strlen(path); /* last item in path */
+
+	    int i;
+	    for (i = 0; i < q - p; ++i)
+	        buf[i] = p[i];
+	    buf[i] = '\0';
+
+	    //printf("Checking %s ...\n", buf);
+
+	    if (check_for_known_file_in_bin_dir(buf))
+	    {
+	        free(s_bin_dir);
+		s_bin_dir = strdup(buf);
+		found = 1;
+		//printf("  Found in %s!\n", buf);
+		break;
+	    }
+
+	    //printf("  Not found in %s.\n", buf);
+	    p = q;
+	}
+	while (*p++ != '\0');
+
+	if (!found)
+	    printf("Falling back to default bin dir: %s\n", s_bin_dir);
+
+	FREE(buf);
+    }
+
 #endif
 
       /* remove trailing path separator, if one is present */
@@ -211,7 +268,7 @@ get_asf_share_dir()
 
     /* See if this works - check for a known file which              */
     /* is in the asf share directory.                                */
-    if (!check_for_known_file_in_dir(s_share_dir))
+    if (!check_for_known_file_in_share_dir(s_share_dir))
     {
         const char path_sep = ':';
 	char *path, *buf, *share, *p;
@@ -254,7 +311,7 @@ get_asf_share_dir()
 	        *(buf + strlen(buf) - 4) = '\0';
 		strcat(buf, share);
 
-		if (check_for_known_file_in_dir(buf))
+		if (check_for_known_file_in_share_dir(buf))
 		{
 		    free(s_share_dir);
 		    s_share_dir = strdup(buf);
