@@ -55,10 +55,10 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     aid recognition, since there is much confusion of map projection\n"\
 "     terminology).\n"\
 "\n"\
-"     --projection, -p : Projection\n"\
+"     -p, -projection: Projection\n"\
 "          Projection to use.  Argument must be one of the following:\n"\
 "               utm    - Universal Transverse Mercator\n"\
-"               ps     - Polar stereo\n"\
+"               ps     - Polar stereographic\n"\
 "               lamcc  - Lambert conformal conic\n"\
 "               lamaz  - Lambert azimuthal equal area\n"\
 "               albers - Albers conical equal area\n"\
@@ -77,8 +77,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     ------------\n"\
 "          --first-standard-parallel    : Latitude of True Scale\n"\
 "          --central-meridian           : Longitude of Central Meridian\n"\
-"          -n, --north-pole             : Center on North Pole (no argument)\n"\
-"          -s, --south-pole             : Center on South Pole (no argument)\n"\
+"          --north-pole                 : Center on North Pole (no argument)\n"\
+"          --south-pole                 : Center on South Pole (no argument)\n"\
 "          --false-easting              : False Easting (optional)\n"\
 "          --false-northing             : False Northing (optional)\n"\
 "\n"\
@@ -178,7 +178,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "          Print our copyright notice and exit.\n"\
 "\n"\
 "     -help\n"\
-"        Print a help page and exit.\n"
+"          Print a help page and exit.\n"
 
 
 #define ASF_EXAMPLES_STRING \
@@ -186,7 +186,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     longitude and average height 466 meters into universal transverse\n"\
 "     mercator projection, with one pixel 50 meters on a side:\n"\
 "\n"\
-"     "ASF_NAME_STRING" --projection utm --central-meridian -147.0 --height 466\n"\
+"     "ASF_NAME_STRING" -p utm --central-meridian -147.0 --height 466\n"\
 "                 input_image output_image\n"
 
 

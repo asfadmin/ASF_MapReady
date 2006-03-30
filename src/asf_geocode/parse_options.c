@@ -990,7 +990,8 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 		}
 
 		else if (strcmp((*argv)[i], "--projection") == 0 ||
-			strcmp((*argv)[i], "-p") == 0)
+			 strcmp((*argv)[i], "-projection") == 0 ||
+			 strcmp((*argv)[i], "-p") == 0)
 		{
 			if (++i == *argc)
 			{
