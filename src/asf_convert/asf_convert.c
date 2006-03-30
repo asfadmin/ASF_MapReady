@@ -393,7 +393,8 @@ int main(int argc, char *argv[])
 
       // Projection file existence check
       if (!fileExists(cfg->geocoding->projection)) {
-        asfPrintError("Projection parameter file does not exist\n");
+        asfPrintError("Projection parameter file '%s' does not exist\n",
+		      cfg->geocoding->projection);
       }
 
       // Check for pixel size smaller than threshold ???
