@@ -345,8 +345,6 @@ settings_get_from_gui()
          ret->data_type == INPUT_TYPE_GAMMA) &&
         gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbutton_db));
 
-    printf("%d!\n", ret->output_db);
-
     ret->apply_scaling =
         settings_get_output_format_allows_size(ret) &&
         gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(scale_checkbutton));

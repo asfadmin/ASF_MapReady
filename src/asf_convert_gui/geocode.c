@@ -51,6 +51,7 @@ const char * geocode_options_string(const Settings * settings)
         gboolean enable_second_standard_parallel = FALSE;
         gboolean enable_false_northing = FALSE;
         gboolean enable_false_easting = FALSE;
+	gboolean enable_pole_switch = FALSE;
 
         switch (settings->projection)
         {
@@ -70,6 +71,7 @@ const char * geocode_options_string(const Settings * settings)
                 entry_has_text("false_northing_entry");
             enable_false_easting =
                 entry_has_text("false_easting_entry");
+	    enable_pole_switch = TRUE;
             break;
 
         case PROJ_LAMCC:
@@ -133,6 +135,10 @@ const char * geocode_options_string(const Settings * settings)
         if (enable_second_standard_parallel)
             sprintf(ret, "%s --second-standard-parallel %f ", 
             ret, settings->plat2);
+
+	if (enable_pole_switch)
+	    sprintf(ret, "%s --%s-pole", ret,
+		    settings->plat1 < 0 ? "south" : "north");
 
         if (enable_false_northing)
             sprintf(ret, "%s --false-northing %f ", ret, 
