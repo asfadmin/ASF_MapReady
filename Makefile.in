@@ -31,7 +31,7 @@ MODULES = \
 
 all: external_libs
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
-	mv ASF_LICENSE share
+	cp ASF_LICENSE share
 
 install: all
 	mkdir -p @BINDIR@ @prefix@/lib @SHAREDIR@
