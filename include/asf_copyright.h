@@ -1,0 +1,7 @@
+#ifndef _ASF_COPYRIGHT_H_
+#define _ASF_COPYRIGHT_H_
+
+#define ASF_COPYRIGHT_YEAR_STRING \
+"2006"
+
+#endif     // _ASF_COPYRIGHT_H_
