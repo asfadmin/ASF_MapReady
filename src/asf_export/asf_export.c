@@ -1,3 +1,6 @@
+#include <asf_contact.h>
+#include <asf_copyright.h>
+#include <asf_license.h>
 /*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
 /*
 ABOUT EDITING THIS DOCUMENTATION:
@@ -22,7 +25,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-format <output_format>] [-size <max_dimension>]\n"\
 "              [-byte <sample mapping option>] [-log <log_file>] [-quiet]\n"\
-"              [-copyright] [-help] <in_base_name> <out_full_name>\n"
+"              [-license] [-version] [-help]\n"\
+"              <in_base_name> <out_full_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "   This program ingests ASF internal format data and exports said data to a\n"\
@@ -63,8 +67,10 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        Output will be written to a specified log file.\n"\
 "   -quiet\n"\
 "        Supresses all non-essential output.\n"\
-"   -copyright\n"\
-"        Print our copyright notice and exit.\n"\
+"   -license\n"\
+"        Print copyright and license for this software then exit.\n"\
+"   -version\n"\
+"        Print version and copyright then exit.\n"\
 "   -help\n"\
 "        Print a help page and exit.\n"
 
@@ -88,37 +94,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_SEE_ALSO_STRING \
 "   asf_convert, asf_import\n"
 
-#define ASF_BSD_ID 1
-#define ASF_BSD_COPYRIGHT_STRING \
-"\n"\
-"Copyright (c) 2006, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
-"All rights reserved.\n"\
-"\n"\
-"Redistribution and use in source and binary forms, with or without\n"\
-"modification, are permitted provided that the following conditions are met:\n"\
-"\n"\
-"  * Redistributions of source code must retain the above copyright notice, this\n"\
-"    list of conditions and the following disclaimer.\n"\
-"  * Redistributions in binary form must reproduce the above copyright notice,\n"\
-"    this list of conditions and the following disclaimer in the documentation\n"\
-"    and/or other materials provided with the distribution.\n"\
-"  * Neither the name of the University of Alaska Fairbanks, nor its subunits,\n"\
-"    nor the names of its contributors may be used to endorse or promote products\n"\
-"    derived from this software without specific prior written permission.\n"\
-"  * Redistribution and use of source and binary forms are for noncommercial\n"\
-"    purposes only.\n"\
-"\n"\
-"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\n"\
-"ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\n"\
-"WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\n"\
-"DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\n"\
-"ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n"\
-"(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\n"\
-"LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\n"\
-"ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"\
-"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"\
-"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"\
-"\n"
+#define ASF_COPYRIGHT_STRING \
+"Copyright (c) "ASF_COPYRIGHT_YEAR_STRING", University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
+"All rights reserved.\n"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
@@ -153,56 +131,60 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include <asf_meta.h>
 #include <asf_export.h>
 #include <asf_reporting.h>
-#include <asf_contact.h>
 
 
-// usage - enter here on command-line usage error
-void usage(void)
+// Print minimalistic usage info & exit
+static void print_usage(void)
 {
-    printf("\n"
-        "USAGE:\n"
-        ASF_USAGE_STRING
-        "\n");
-    exit (EXIT_FAILURE);
+  asfPrintStatus("\n"
+      "Usage:\n"
+      ASF_USAGE_STRING
+      "\n");
+  exit(EXIT_FAILURE);
 }
 
-// help_page - go here when the -help option is specified
-void help_page()
+// Print the help info & exit
+static void print_help(void)
 {
-    char happy_string[4066];
-
-    // What to print out for help
-    sprintf(happy_string,
-        "\n"
-        "Tool name:\n   " ASF_NAME_STRING "\n\n"
-        "Usage:\n" ASF_USAGE_STRING "\n"
-        "Description:\n" ASF_DESCRIPTION_STRING "\n"
-        "Input:\n" ASF_INPUT_STRING "\n"
-        "Output:\n"ASF_OUTPUT_STRING "\n"
-        "Options:\n" ASF_OPTIONS_STRING "\n"
-        "Examples:\n" ASF_EXAMPLES_STRING "\n"
-        "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
-        "See also:\n" ASF_SEE_ALSO_STRING "\n"
-        "Contact:\n" ASF_CONTACT_STRING "\n"
-        "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
-
-    // Print the help... the user can use less or more on their own
-    printf(happy_string);
-    exit(EXIT_SUCCESS);
+  asfPrintStatus(
+      "\n"
+      "Tool name:\n   " ASF_NAME_STRING "\n\n"
+      "Usage:\n" ASF_USAGE_STRING "\n"
+      "Description:\n" ASF_DESCRIPTION_STRING "\n"
+      "Input:\n" ASF_INPUT_STRING "\n"
+      "Output:\n"ASF_OUTPUT_STRING "\n"
+      "Options:\n" ASF_OPTIONS_STRING "\n"
+      "Examples:\n" ASF_EXAMPLES_STRING "\n"
+      "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
+      "See also:\n" ASF_SEE_ALSO_STRING "\n"
+      "Contact:\n" ASF_CONTACT_STRING "\n"
+      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
+  exit(EXIT_SUCCESS);
 }
 
-// Print our copyright notice
-void print_copyright(int copyright_id)
+// Print version and copyright & exit
+static void print_version(void)
 {
-        switch (copyright_id) {
-          case ASF_BSD_ID:
-            printf(ASF_BSD_COPYRIGHT_STRING);
-            break;
-          default:
-            printf("Copyright not found.\n");
-            break;
-        }
-        exit(EXIT_SUCCESS);
+  asfPrintStatus(
+    ASF_NAME_STRING", version "CONVERT_PACKAGE_VERSION_STRING"\n"
+    ASF_COPYRIGHT_STRING);
+  exit(EXIT_SUCCESS);
+}
+
+// Print our copyright and license notice & exit
+static void print_license(int license_id)
+{
+  asfPrintStatus("\n"ASF_COPYRIGHT_STRING"\n");
+
+  switch (license_id) {
+    case ASF_BSD_ID:
+      asfPrintStatus(ASF_BSD_LICENSE_STRING"\n");
+      break;
+    default:
+      printf("License not found.\n");
+      break;
+  }
+  exit(EXIT_SUCCESS);
 }
 
 
@@ -260,10 +242,13 @@ main (int argc, char *argv[])
   if (   (checkForOption("--help", argc, argv) != FLAG_NOT_SET)
       || (checkForOption("-h", argc, argv) != FLAG_NOT_SET)
       || (checkForOption("-help", argc, argv) != FLAG_NOT_SET) ) {
-    help_page();
+      print_help();
   }
-  if ( checkForOption("-copyright", argc, argv) != FLAG_NOT_SET ) {
-    print_copyright(ASF_BSD_ID);
+  if ( checkForOption("-license", argc, argv) != FLAG_NOT_SET ) {
+      print_license(ASF_BSD_ID);
+  }
+  if ( checkForOption("-version", argc, argv) != FLAG_NOT_SET ) {
+      print_version();
   }
   formatFlag = checkForOption ("-format", argc, argv);
   sizeFlag = checkForOption ("-size", argc, argv);
@@ -288,13 +273,13 @@ main (int argc, char *argv[])
   }
 
   if ( argc != needed_args ) {
-    usage ();                   // This exits with a failure.
+    print_usage ();                   // This exits with a failure.
   }
 
   // We also need to make sure the last three options are close to
   // what we expect.
   if ( argv[argc - 1][0] == '-' || argv[argc - 2][0] == '-' ) {
-    usage (); // This exits with a failure.
+    print_usage (); // This exits with a failure.
   }
 
   // Make sure any options that have parameters are followed by
@@ -302,22 +287,22 @@ main (int argc, char *argv[])
   // parameters don't bleed into required arguments.
   if ( formatFlag != FLAG_NOT_SET ) {
     if ( argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3 ) {
-      usage ();
+      print_usage ();
     }
   }
   if ( sizeFlag != FLAG_NOT_SET ) {
     if ( argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3 ) {
-      usage ();
+      print_usage ();
     }
   }
   if ( byteFlag != FLAG_NOT_SET ) {
     if ( argv[byteFlag + 1][0] == '-' || byteFlag >= argc -3 ) {
-      usage ();
+      print_usage ();
     }
   }
   if ( logFlag != FLAG_NOT_SET ) {
     if ( argv[logFlag + 1][0] == '-' || logFlag >= argc - 3 ) {
-      usage ();
+      print_usage ();
     }
   }
 
