@@ -1,3 +1,6 @@
+#include <asf_contact.h>
+#include <asf_copyright.h>
+#include <asf_license.h>
 /*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
 /*
 ABOUT EDITING THIS DOCUMENTATION:
@@ -20,7 +23,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_convert"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-create] [-log <logFile>] [-quiet] [-copyright] [-help]\n"\
+"   "ASF_NAME_STRING" [-create] [-log <logFile>] [-quiet] [-license]\n"\
+"               [-version] [-help]\n"\
 "               <config_file>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -44,8 +48,10 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        log to tmp<processIDnumber>.log\n"\
 "   -quiet\n"\
 "        Suppresses all non-essential output.\n"\
-"   -copyright\n"\
-"        Print our copyright notice and exit.\n"\
+"   -license\n"\
+"        Print copyright and license for this software then exit.\n"\
+"   -version\n"\
+"        Print version and copyright then exit.\n"\
 "   -help\n"\
 "        Print a help page and exit.\n"
 
@@ -64,37 +70,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_SEE_ALSO_STRING \
 "   asf_import, asf_geocode, asf_export\n"
 
-#define ASF_BSD_ID 1
-#define ASF_BSD_COPYRIGHT_STRING \
-"\n"\
-"Copyright (c) 2006, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
-"All rights reserved.\n"\
-"\n"\
-"Redistribution and use in source and binary forms, with or without\n"\
-"modification, are permitted provided that the following conditions are met:\n"\
-"\n"\
-"  * Redistributions of source code must retain the above copyright notice, this\n"\
-"    list of conditions and the following disclaimer.\n"\
-"  * Redistributions in binary form must reproduce the above copyright notice,\n"\
-"    this list of conditions and the following disclaimer in the documentation\n"\
-"    and/or other materials provided with the distribution.\n"\
-"  * Neither the name of the University of Alaska Fairbanks, nor its subunits,\n"\
-"    nor the names of its contributors may be used to endorse or promote products\n"\
-"    derived from this software without specific prior written permission.\n"\
-"  * Redistribution and use of source and binary forms are for noncommercial\n"\
-"    purposes only.\n"\
-"\n"\
-"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\n"\
-"ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\n"\
-"WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\n"\
-"DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\n"\
-"ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n"\
-"(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\n"\
-"LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\n"\
-"ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"\
-"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"\
-"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"\
-"\n"
+#define ASF_COPYRIGHT_STRING \
+"Copyright (c) "ASF_COPYRIGHT_YEAR_STRING", University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
+"All rights reserved.\n"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
@@ -125,54 +103,57 @@ static int exit_with_success(void) {
   exit(EXIT_SUCCESS);
 }
 
-
-void usage()
+// Print minimalistic usage info & exit
+static void print_usage(void)
 {
-  printf ("\n"
-    "USAGE:\n"
-    ASF_USAGE_STRING
-    "\n");
+  asfPrintStatus("\n"
+      "Usage:\n"
+      ASF_USAGE_STRING
+      "\n");
   exit(EXIT_FAILURE);
 }
 
-
-/* help_page - go here when the -help option is specified */
-void help_page()
+// Print the help info & exit
+static void print_help(void)
 {
-    char happy_string[4066];
-
-    // What to print out for help
-    sprintf(happy_string,
-        "\n"
-        "Tool name:\n   " ASF_NAME_STRING "\n\n"
-        "Usage:\n" ASF_USAGE_STRING "\n"
-        "Description:\n" ASF_DESCRIPTION_STRING "\n"
-        "Required Arguments:\n" ASF_REQUIRED_ARGUMENTS_STRING "\n"
-        "Options:\n" ASF_OPTIONS_STRING "\n"
-        "Examples:\n" ASF_EXAMPLES_STRING "\n"
-        "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
-        "See also:\n" ASF_SEE_ALSO_STRING "\n"
-        "Contact:\n" ASF_CONTACT_STRING "\n"
-        "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
-
-    // Print the help... the user can use less or more on their own
-    printf(happy_string);
-    exit_with_success();
+  asfPrintStatus(
+      "\n"
+      "Tool name:\n   " ASF_NAME_STRING "\n\n"
+      "Usage:\n" ASF_USAGE_STRING "\n"
+      "Description:\n" ASF_DESCRIPTION_STRING "\n"
+      "Required Arguments:\n" ASF_REQUIRED_ARGUMENTS_STRING "\n"
+      "Options:\n" ASF_OPTIONS_STRING "\n"
+      "Examples:\n" ASF_EXAMPLES_STRING "\n"
+      "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
+      "See also:\n" ASF_SEE_ALSO_STRING "\n"
+      "Contact:\n" ASF_CONTACT_STRING "\n"
+      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
+  exit(EXIT_SUCCESS);
 }
 
-
-// Print our copyright notice
-void print_copyright(int copyright_id)
+// Print version and copyright & exit
+static void print_version(void)
 {
-        switch (copyright_id) {
-          case ASF_BSD_ID:
-            printf(ASF_BSD_COPYRIGHT_STRING);
-            break;
-          default:
-            printf("Copyright not found.\n");
-            break;
-        }
-        exit_with_success();
+  asfPrintStatus(
+    ASF_NAME_STRING", version "CONVERT_PACKAGE_VERSION_STRING"\n"
+    ASF_COPYRIGHT_STRING);
+  exit(EXIT_SUCCESS);
+}
+
+// Print our copyright and license notice & exit
+static void print_license(int license_id)
+{
+  asfPrintStatus("\n"ASF_COPYRIGHT_STRING"\n");
+
+  switch (license_id) {
+    case ASF_BSD_ID:
+      asfPrintStatus(ASF_BSD_LICENSE_STRING"\n");
+      break;
+    default:
+      printf("License not found.\n");
+      break;
+  }
+  exit(EXIT_SUCCESS);
 }
 
 
@@ -228,17 +209,16 @@ int main(int argc, char *argv[])
   create_f = log_f = quiet_f = FLAG_NOT_SET;
 
   // Begin command line parsing ***********************************************
-
-  // Most importantly, check to see if the help option was specified
   if (   (checkForOption("--help", argc, argv) != FLAG_NOT_SET)
       || (checkForOption("-h", argc, argv) != FLAG_NOT_SET)
       || (checkForOption("-help", argc, argv) != FLAG_NOT_SET) ) {
-      help_page();
+      print_help();
   }
-
-  // Look to see if the user asked for the copyright notice
-  if ( checkForOption("-copyright", argc, argv) != FLAG_NOT_SET ) {
-      print_copyright(ASF_BSD_ID);
+  if ( checkForOption("-license", argc, argv) != FLAG_NOT_SET ) {
+      print_license(ASF_BSD_ID);
+  }
+  if ( checkForOption("-version", argc, argv) != FLAG_NOT_SET ) {
+      print_version();
   }
 
   // Check which options were provided
@@ -254,14 +234,14 @@ int main(int argc, char *argv[])
 
   // Make sure we have the right number of args
   if(argc != needed_args) {
-    usage();
+    print_usage();
   }
 
   // Make sure argument for each flag (that requires an arg) is not another
   // option flag & is not a required argument
   if (log_f != FLAG_NOT_SET) {
     if ( (argv[log_f+1][0]=='-') || (log_f>=(argc-REQUIRED_ARGS)) ) {
-      usage();
+      print_usage();
     }
   }
 
@@ -289,7 +269,7 @@ int main(int argc, char *argv[])
 
   // End command line parsing *************************************************
 
-  // If requested, create a config file and exit (if the file does not exist), 
+  // If requested, create a config file and exit (if the file does not exist),
   // otherwise read it
   if ( createflag==TRUE && !fileExists(configFileName) ) {
     init_config(configFileName);
@@ -532,7 +512,7 @@ int main(int argc, char *argv[])
       else {
 	sprintf(outFile, "%s", cfg->general->out_name);
       }
-      check_return(detect_cr(inFile, cfg->detect_cr->cr_location, outFile, 
+      check_return(detect_cr(inFile, cfg->detect_cr->cr_location, outFile,
 			     cfg->detect_cr->chips, cfg->detect_cr->text),
 		   "detecting corner reflectors (detect_cr)\n");
     }
@@ -619,4 +599,5 @@ int main(int argc, char *argv[])
   }
 
   exit_with_success();
+  return 0; // just to quiet a compiler warning; will never get here
 }
