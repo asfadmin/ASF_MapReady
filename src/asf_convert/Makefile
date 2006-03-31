@@ -15,6 +15,10 @@ all:    asf_convert clean
 asf_convert: $(OBJS)
 	$(CC) $(CFLAGS) -o asf_convert $(OBJS) $(LIBS) $(LDFLAGS)
 	mv asf_convert$(BIN_POSTFIX) $(BINDIR)
+	mkdir -p $(SHAREDIR)/asf_convert
+	cp batch.config $(SHAREDIR)/asf_convert
+	cp default_values $(SHAREDIR)/asf_convert
+	cp asf_convert_cmd.pdf $(SHAREDIR)/asf_convert
 
 clean:
 	rm -f core $(OBJS) *.o
