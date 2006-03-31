@@ -108,7 +108,7 @@ int init_config(char *configFile)
 	  "# settings. In most cases, you will work on a study where your area of interest is\n"
 	  "# geographically well defined. You want the data for the entire project in the same\n"
 	  "# projection, with the same pixel spacing and the same output format.\n");
-  fprintf(fConfig, "# A sample of a default values file can be located in %s.\n\n", 
+  fprintf(fConfig, "# A sample of a default values file can be located in %s/asf_convert.\n\n", 
 	  get_asf_share_dir());
   fprintf(fConfig, "default values = \n\n");
   // intermediates flag
@@ -534,7 +534,7 @@ int write_config(char *configFile, convert_config *cfg)
 	      "# settings. In most cases, you will work on a study where your area of interest is\n"
 	      "# geographically well defined. You want the data for the entire project in the same\n"
 	      "# projection, with the same pixel spacing and the same output format.\n\n");
-      fprintf(fConfig, "# A sample of a default values file can be located in %s.\n\n", 
+      fprintf(fConfig, "# A sample of a default values file can be located in %s/asf_convert.\n\n", 
 	      get_asf_share_dir());
     }
     fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
