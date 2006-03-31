@@ -10,6 +10,8 @@
 # hand, if you want to rebuild just the module you are working on,
 # just do a make in that subdirectory.
 
+include make_support/system_rules
+
 MODULES = \
 	src/asf \
 	src/asf_meta \
@@ -30,8 +32,9 @@ MODULES = \
 
 
 all: external_libs
+	mkdir -p src/asf/$(BINDIR) src/asf/$(SHAREDIR) lib
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
-	cp ASF_LICENSE share
+	cp ASF_LICENSE src/asf/$(SHAREDIR)
 
 install: all
 	mkdir -p @BINDIR@ @prefix@/lib @SHAREDIR@
@@ -49,7 +52,7 @@ external_libs:
 	chmod -R ug+w include
 
 clean:
-	rm -rf bin/* lib/*
+	rm -rf bin/* lib/* share/*
 
 release:
 	cd make_support; make; ./makemake @sys@; cd ..
