@@ -1,3 +1,6 @@
+#include <asf_contact.h>
+#include <asf_copyright.h>
+#include <asf_license.h>
 /*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
 /*
 ABOUT EDITING THIS DOCUMENTATION:
@@ -23,7 +26,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   "ASF_NAME_STRING" -p <projection name> <<projection parameters>>\n"\
 "               [-force] [-resample-method <method>] [-height <height>]\n"\
 "               [-datum <datum>] [-pixel-size <pixel size>] [-log <file>]\n"\
-"               [-quiet] [-copyright] [-help]\n"\
+"               [-quiet] [-license] [-version] [-help]\n"\
 "               <in_base_name> <out_base_name>\n"\
 "\n"\
 "   Use the -help option for more projection parameter controls.\n"
@@ -174,11 +177,14 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     -quiet\n"\
 "          Supresses all non-essential output.\n"\
 "\n"\
-"     -copyright\n"\
-"          Print our copyright notice and exit.\n"\
+"   -license\n"\
+"        Print copyright and license for this software then exit.\n"\
 "\n"\
-"     -help\n"\
-"          Print a help page and exit.\n"
+"   -version\n"\
+"        Print version and copyright then exit.\n"\
+"\n"\
+"   -help\n"\
+"        Print a help page and exit.\n"
 
 
 #define ASF_EXAMPLES_STRING \
@@ -197,37 +203,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_SEE_ALSO_STRING \
 "     asf_import, asf_export\n"
 
-#define ASF_BSD_ID 1
-#define ASF_BSD_COPYRIGHT_STRING \
-"\n"\
-"Copyright (c) 2006, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
-"All rights reserved.\n"\
-"\n"\
-"Redistribution and use in source and binary forms, with or without\n"\
-"modification, are permitted provided that the following conditions are met:\n"\
-"\n"\
-"  * Redistributions of source code must retain the above copyright notice, this\n"\
-"    list of conditions and the following disclaimer.\n"\
-"  * Redistributions in binary form must reproduce the above copyright notice,\n"\
-"    this list of conditions and the following disclaimer in the documentation\n"\
-"    and/or other materials provided with the distribution.\n"\
-"  * Neither the name of the University of Alaska Fairbanks, nor its subunits,\n"\
-"    nor the names of its contributors may be used to endorse or promote products\n"\
-"    derived from this software without specific prior written permission.\n"\
-"  * Redistribution and use of source and binary forms are for noncommercial\n"\
-"    purposes only.\n"\
-"\n"\
-"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\n"\
-"ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\n"\
-"WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\n"\
-"DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\n"\
-"ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n"\
-"(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\n"\
-"LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\n"\
-"ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"\
-"(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"\
-"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"\
-"\n"
+#define ASF_COPYRIGHT_STRING \
+"Copyright (c) "ASF_COPYRIGHT_YEAR_STRING", University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
+"All rights reserved.\n"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
@@ -264,58 +242,60 @@ void check_parameters(projection_type_t projection_type,
 		      int override_checks);
 
 
-// Print invocation information.
-static void usage(void)
+// Print minimalistic usage info & exit
+static void print_usage(void)
 {
-    printf("\n"
-        "USAGE:\n"
-        ASF_USAGE_STRING
-        "\n");
-    exit (EXIT_FAILURE);
+  asfPrintStatus("\n"
+      "Usage:\n"
+      ASF_USAGE_STRING
+      "\n");
+  exit(EXIT_FAILURE);
 }
 
-// Display a manual page using the pager.
-static void help_page(void)
+// Print the help info & exit
+static void print_help(void)
 {
-    char happy_string[4066];
-
-    // What to print out for help
-    sprintf(happy_string,
-        "\n"
-        "Tool name:\n   " ASF_NAME_STRING "\n\n"
-        "Usage:\n" ASF_USAGE_STRING "\n"
-        "Description:\n" ASF_DESCRIPTION_STRING "\n"
-        "Input:\n" ASF_INPUT_STRING "\n"
-        "Output:\n"ASF_OUTPUT_STRING "\n"
-        "Options:\n" ASF_OPTIONS_STRING "\n"
-        "Examples:\n" ASF_EXAMPLES_STRING "\n"
-        "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
-        "See also:\n" ASF_SEE_ALSO_STRING "\n"
-        "Contact:\n" ASF_CONTACT_STRING "\n"
-        "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
-
-    // Print the help... the user can use less or more on their own
-    printf(happy_string);
-    exit(EXIT_SUCCESS);
+  asfPrintStatus(
+      "\n"
+      "Tool name:\n   " ASF_NAME_STRING "\n\n"
+      "Usage:\n" ASF_USAGE_STRING "\n"
+      "Description:\n" ASF_DESCRIPTION_STRING "\n"
+      "Input:\n" ASF_INPUT_STRING "\n"
+      "Output:\n"ASF_OUTPUT_STRING "\n"
+      "Options:\n" ASF_OPTIONS_STRING "\n"
+      "Examples:\n" ASF_EXAMPLES_STRING "\n"
+      "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
+      "See also:\n" ASF_SEE_ALSO_STRING "\n"
+      "Contact:\n" ASF_CONTACT_STRING "\n"
+      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
+  exit(EXIT_SUCCESS);
 }
 
-// Print our copyright notice
-static void print_copyright(int copyright_id)
+// Print version and copyright & exit
+static void print_version(void)
 {
-        switch (copyright_id) {
-          case ASF_BSD_ID:
-            printf(ASF_BSD_COPYRIGHT_STRING);
-            break;
-          default:
-            printf("Copyright not found.\n");
-            break;
-        }
-        exit(EXIT_SUCCESS);
+  asfPrintStatus(
+    ASF_NAME_STRING", version "CONVERT_PACKAGE_VERSION_STRING"\n"
+    ASF_COPYRIGHT_STRING);
+  exit(EXIT_SUCCESS);
 }
 
-// Factors for going between degrees and radians.
-#define RAD_TO_DEG	57.29577951308232
-#define DEG_TO_RAD	0.0174532925199432958
+// Print our copyright and license notice & exit
+static void print_license(int license_id)
+{
+  asfPrintStatus("\n"ASF_COPYRIGHT_STRING"\n");
+
+  switch (license_id) {
+    case ASF_BSD_ID:
+      asfPrintStatus(ASF_BSD_LICENSE_STRING"\n");
+      break;
+    default:
+      printf("License not found.\n");
+      break;
+  }
+  exit(EXIT_SUCCESS);
+}
+
 
 // We want to trap segmentation faults (signal number 11,
 // i.e. SIGSEGV) and try to produce a backtrace.  Here is a signal
@@ -586,14 +566,14 @@ main (int argc, char **argv)
 			   &pixel_size, &datum, &resample_method,
 			   &force_flag);
 
-  // If help was requested, display it.
-  if (detect_flag_options(argc, argv, "-help", "--help", NULL)) {
-    help_page ();
+  if (detect_flag_options(argc, argv, "--help", "-help", "-h", NULL)) {
+    print_help();
   }
-
-  // If copyright was requested, display it.
-  if (detect_flag_options(argc, argv, "-copyright", "--copyright", NULL)) {
-    print_copyright(ASF_BSD_ID);
+  if (detect_flag_options(argc, argv, "--license", "-license", NULL)) {
+    print_license(ASF_BSD_ID);
+  }
+  if (detect_flag_options(argc, argv, "--version", "-version", "-v", NULL)) {
+    print_version();
   }
 
   // Get non-option command line arguments.
@@ -611,7 +591,7 @@ main (int argc, char **argv)
     if (!bad_arg)
       fprintf (stderr, "Wrong number of arguments\n");
 
-    usage ();
+    print_usage ();
   }
 
   GString *input_image = g_string_new (argv[1]);
@@ -782,8 +762,8 @@ main (int argc, char **argv)
 	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
 			 &(lats[current_edge_point]),
 			 &(lons[current_edge_point]));
-	lats[current_edge_point] *= DEG_TO_RAD;
-	lons[current_edge_point] *= DEG_TO_RAD;
+	lats[current_edge_point] *= D2R;
+	lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
     }
@@ -800,8 +780,8 @@ main (int argc, char **argv)
 	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
 			 &(lats[current_edge_point]),
 			 &(lons[current_edge_point]));
-	lats[current_edge_point] *= DEG_TO_RAD;
-	lons[current_edge_point] *= DEG_TO_RAD;
+	lats[current_edge_point] *= D2R;
+	lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
     }
@@ -818,8 +798,8 @@ main (int argc, char **argv)
 	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
 			 &(lats[current_edge_point]),
 			 &(lons[current_edge_point]));
-	lats[current_edge_point] *= DEG_TO_RAD;
-	lons[current_edge_point] *= DEG_TO_RAD;
+	lats[current_edge_point] *= D2R;
+	lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
     }
@@ -836,8 +816,8 @@ main (int argc, char **argv)
 	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
 			 &(lats[current_edge_point]),
 			 &(lons[current_edge_point]));
-	lats[current_edge_point] *= DEG_TO_RAD;
-	lons[current_edge_point] *= DEG_TO_RAD;
+	lats[current_edge_point] *= D2R;
+	lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
     }
@@ -935,14 +915,14 @@ main (int argc, char **argv)
 	    // Details of the error should have already been printed.
 	    asfPrintError ("Projection Error!\n");
       }
-      lat *= RAD_TO_DEG;
-      lon *= RAD_TO_DEG;
+      lat *= R2D;
+      lon *= R2D;
       // Corresponding pixel indicies in input image.
       double x_pix, y_pix;
       if ( input_projected ) {
 	    // Input projection coordinates of the current pixel.
 	    double ipcx, ipcy;
-	    return_code = project_input (ipp, DEG_TO_RAD * lat, DEG_TO_RAD * lon,
+	    return_code = project_input (ipp, D2R * lat, D2R * lon,
 				                     &ipcx, &ipcy);
 	if ( return_code == 0 ) {
 	  g_assert_not_reached ();
@@ -1103,7 +1083,7 @@ main (int argc, char **argv)
     }
 
     double ul_x, ul_y;
-    project (pp, DEG_TO_RAD * ul_lat, DEG_TO_RAD * ul_lon, &ul_x, &ul_y);
+    project (pp, D2R * ul_lat, D2R * ul_lon, &ul_x, &ul_y);
     double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
     if (fabs (ul_x_pix_approx) > max_corner_error ) {
       report_func("Upper left x corner error was too large!  %f > %f\n",
@@ -1129,7 +1109,7 @@ main (int argc, char **argv)
     meta_get_latLon (imd, (float) (ii_size_y - 1), (float) (ii_size_x - 1),
 		     average_height, &lr_lat, &lr_lon);
     double lr_x, lr_y;
-    project (pp, DEG_TO_RAD * lr_lat, DEG_TO_RAD * lr_lon, &lr_x, &lr_y);
+    project (pp, D2R * lr_lat, D2R * lr_lon, &lr_x, &lr_y);
     double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
     double lr_x_corner_error = fabs (lr_x_pix_approx - (ii_size_x - 1));
     if ( lr_x_corner_error > max_corner_error ) {
