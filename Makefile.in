@@ -30,17 +30,19 @@ MODULES = \
 	@ASF_GUI@
 # src_x/sarview
 
+S_SHAREDIR := $(shell echo "$(SHAREDIR)" | perl -p -i -e 's/\.\.\/\.\.\///')
+S_BINDIR := $(shell echo "$(BINDIR)" | perl -p -i -e 's/\.\.\/\.\.\///')
 
 all: external_libs
-	mkdir -p src/asf/$(BINDIR) src/asf/$(SHAREDIR) lib
+	mkdir -p $(S_BINDIR) $(S_SHAREDIR) lib
+	cp ASF_LICENSE $(S_SHAREDIR)
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
-	cp ASF_LICENSE src/asf/$(SHAREDIR)
 
 install: all
 	mkdir -p @BINDIR@ @prefix@/lib @SHAREDIR@
-	cp -R bin/* @BINDIR@
+	cp -R $(S_BINDIR)/* @BINDIR@
 	cp -R lib/* @prefix@/lib
-	cp -R share/* @SHAREDIR@
+	cp -R $(S_SHAREDIR)/* @SHAREDIR@
 #	chmod 755 @BINDIR@/*
 #	chmod -R 644 @SHAREDIR@/*
 
