@@ -327,7 +327,7 @@ if test "${prefix}" = "NONE" ; then
 fi
 AC_DEFINE_UNQUOTED(ASF_INSTALL_PREFIX, "${prefix}")
 
-SHAREDIR="$prefix/share"
+SHAREDIR="$prefix/share/asf_tools"
 AC_SUBST(SHAREDIR)
 
 BINDIR="$prefix/bin"
