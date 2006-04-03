@@ -156,16 +156,20 @@ double get_error(meta_parameters *meta,
 	meta_get_latLon(meta,yLine,xSamp,elev,&new.lat,&new.lon);
 	return get_distance(new,target);
 }
+
 /******************************************************************
  * meta_get_lineSamp:
  * Converts given latitude and longitude back to the original line
  * and sample.*/
-void meta_get_lineSamp(meta_parameters *meta,
-	double lat,double lon,double elev,double *yLine,double *xSamp)
+static int meta_get_lineSamp_imp(meta_parameters *meta,
+				  double x_start, double y_start,
+				  double lat,double lon,double elev,
+				  double *yLine,double *xSamp)
 {
 #define DELTA 0.1 /*Number of pixels along which to 
   perform finite difference approximation of the derivative.*/
-	double x=meta->general->sample_count/2,y=meta->general->line_count/2;
+        double x = x_start;
+        double y = y_start;
 	double x_old=1000, y_old=1000;
 	int iter=0;
 	lat_lon target;
@@ -180,17 +184,73 @@ void meta_get_lineSamp(meta_parameters *meta,
 		double del_y   = (get_error(meta,target,elev,x,y+DELTA)-cur_err)/DELTA;
 		double rad     = fabs(del_x) + fabs(del_y);
 
-		//printf("   x=%6.1f; y=%6.1f, err=%.6f\n",x,y,cur_err);
+		//printf(" %d: x=%6.1f; y=%6.1f, err=%.6f\n",iter,x,y,cur_err);
 	       
 		x_old=x;y_old=y;
 		x=x-(fabs(del_x)/rad)*cur_err/del_x;
 		y=y-(fabs(del_y)/rad)*cur_err/del_y;
 		iter++;
+
+		if (iter>1000) return 0;
 	}
-	/*printf("  %d iterations\n",iter);*/
+	//printf("  %d iterations\n",iter);
  
 	*yLine=y-DELTA/2;
 	*xSamp=x-DELTA/2;
+	return 1;
+}
+
+void meta_get_lineSamp(meta_parameters *meta,
+		       double lat,double lon,double elev,
+		       double *yLine,double *xSamp)
+{
+  double x0, y0;
+  int ret;
+
+  x0 = meta->general->sample_count/2;
+  y0 = meta->general->line_count/2;
+  ret = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+  if (ret) return;
+
+  // First attempt failed to converge... try another starting location,
+  // near one of the corners.  If this corner fails, then we'll try each
+  // of the other corners.
+  //printf("Failed to converge at center point... trying UL corner.\n");
+  x0 = meta->general->sample_count/8;
+  y0 = meta->general->line_count/8;
+  ret = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+  if (ret) return;
+
+  //printf("Failed to converge at UL corner... trying LR corner.\n");
+  x0 = 7*meta->general->sample_count/8;
+  y0 = 7*meta->general->line_count/8;
+  ret = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+  if (ret) return;
+
+  //printf("Failed to converge at LR corner... trying LL corner.\n");
+  x0 = meta->general->sample_count/8;
+  y0 = 7*meta->general->line_count/8;
+  ret = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+  if (ret) return;
+
+  //printf("Failed to converge at LL corner... trying UR corner.\n");
+  x0 = 7*meta->general->sample_count/8;
+  y0 = meta->general->line_count/8;
+  ret = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+  if (ret) return;
+
+  //printf("Failed to converge at LL corner... trying (0,0) ??\n");
+  x0 = y0 = 0.0;
+  ret = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+  if (ret) return;
+
+  // All corners failed... probably we're just doomed.
+  printf("meta_get_lineSamp: Failed to converge for center & all corners.\n");
+  printf("                      %g %g %g\n", lat, lon, elev);
+
+  // Return center point just for something to return...
+  *xSamp = meta->general->sample_count/2;
+  *yLine = meta->general->line_count/2;
 }
 
 void meta_get_corner_coords(meta_parameters *meta)
