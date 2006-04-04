@@ -36,7 +36,7 @@ determine_default_output_file_name(const gchar * data_file_name)
     else
     {
         gchar * tmp = g_path_get_dirname(basename);
-        path = g_malloc( sizeof(gchar) * (strlen(tmp) + 1) );
+        path = g_malloc( sizeof(gchar) * (strlen(tmp) + 4) );
         g_sprintf(path, "%s%c", tmp, DIR_SEPARATOR);
         g_free(tmp);
     }
