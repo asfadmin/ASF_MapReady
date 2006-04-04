@@ -152,7 +152,7 @@ const char * geocode_options_string(const Settings * settings)
             sprintf(ret, "%s --height %f ", ret, settings->height);
 
         if (settings->specified_pixel_size)
-            sprintf(ret, "%s --pixel_size %f ", ret, settings->pixel_size);
+            sprintf(ret, "%s --pixel-size %f ", ret, settings->pixel_size);
 
         sprintf(ret, "%s --datum %s ", ret, datum_string(settings->datum));
 
