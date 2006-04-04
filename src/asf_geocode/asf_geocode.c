@@ -252,6 +252,19 @@ static void print_usage(void)
   exit(EXIT_FAILURE);
 }
 
+// Blurb about what the user can do if projection errors are too
+// large.  Called when we detect this condition.
+static void print_large_error_blurb(int force_flag)
+{
+  if (!force_flag) {
+    asfPrintStatus(
+      "\nLarge projection errors can result if your projection parameters do\n"
+      "not accurately represent the scene you are geocoding.  You can either\n"
+      "re-run geocode using the '--force' option, or adjust your projection\n"
+      "parameters to better reflect the scene.\n");
+  }
+}
+
 // Print the help info & exit
 static void print_help(void)
 {
@@ -1016,6 +1029,7 @@ main (int argc, char **argv)
     // many pixels or more.
     double max_allowable_error = 1.0;
     if ( largest_error > max_allowable_error ) {
+            print_large_error_blurb(force_flag);
 	    report_func("Largest Error was larger than maximum allowed! "
 		            "%f > %f\n", largest_error, max_allowable_error);
     }
@@ -1086,6 +1100,7 @@ main (int argc, char **argv)
     project (pp, D2R * ul_lat, D2R * ul_lon, &ul_x, &ul_y);
     double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
     if (fabs (ul_x_pix_approx) > max_corner_error ) {
+      print_large_error_blurb(force_flag);
       report_func("Upper left x corner error was too large!  %f > %f\n",
 		  fabs (ul_x_pix_approx), max_corner_error );
     }
@@ -1096,6 +1111,7 @@ main (int argc, char **argv)
 
     double ul_y_pix_approx = Y_PIXEL (ul_x, ul_y);
     if (fabs (ul_y_pix_approx) > max_corner_error ) {
+      print_large_error_blurb(force_flag);
       report_func ("Upper left y corner error was too large! %f > %f\n",
 		   fabs (ul_y_pix_approx), max_corner_error );
     }
@@ -1113,6 +1129,7 @@ main (int argc, char **argv)
     double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
     double lr_x_corner_error = fabs (lr_x_pix_approx - (ii_size_x - 1));
     if ( lr_x_corner_error > max_corner_error ) {
+      print_large_error_blurb(force_flag);
       report_func ("Lower right x corner error was too large! %f > %f\n",
 		   lr_x_corner_error, max_corner_error);
     }
@@ -1122,6 +1139,7 @@ main (int argc, char **argv)
     double lr_y_pix_approx = Y_PIXEL (lr_x, lr_y);
     double lr_y_corner_error = fabs (lr_y_pix_approx - (ii_size_y - 1));
     if ( lr_y_corner_error > max_corner_error ) {
+      print_large_error_blurb(force_flag);
       report_func ("Lower right Y corner error was too large! %f > %f\n",
 		     lr_y_corner_error, max_corner_error);
     }

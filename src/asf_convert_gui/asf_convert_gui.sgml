@@ -268,6 +268,16 @@
       either choose one of the built-in parameters specifications, or
       enter them yourself.</para>
 
+    <para>If you use one of the predefined projections, you may
+      get some projection errors that will cause asf_geocode
+      to quit, since asf_geocode uses fairly strict accuracy requirements.
+      If asf_geocode reports that your projection errors are
+      too large, you can either use asf_geocode from the command
+      line and specify the "--force" option, or you can choose
+      a User Defined projection, and adjust the projection
+      parameters so that they better match your area
+      of interest.</para>
+
     <para>There are 5 projections:  UTM, Polar Stereographic, Albers
       Conical Equal Area, Lambert Conformal Conic, and Lambert
       Azimuthal Equal Area.  Each projection requires one or more
