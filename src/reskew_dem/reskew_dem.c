@@ -65,7 +65,7 @@ BUGS:
 #include "deskew.h"
 
 #define VERSION 1.5
-#define NUM_ARGS 3
+#define NUM_ARGS 4
 
 double grPixelSize;
 int gr_ns,sr_ns;
@@ -83,9 +83,10 @@ void usage(char *name)
 {
  printf("\n"
 	"USAGE:\n"
-	"   %s [-log <file>] <inGR_DEM> <outSR_DEM> <outSR_simAmp>\n",name);
+	"   %s [-log <file>] <inMeta> <inGR_DEM> <outSR_DEM> <outSR_simAmp>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
+	"   inMeta        Metadata slant range SAR image.\n"
 	"   inGR_DEM      A lined-up ground-range DEM.\n"
 	"   outSR_DEM     Output slant-range DEM.\n"
 	"   outSR_simAmp  Output simulated amplitude image.\n");
@@ -106,9 +107,9 @@ int main(int argc, char *argv[])
 {
 	float *grDEMline,*srDEMline,*outAmpLine;
 	register int line,nl,percent;
-	char inDEMfile[255],outDEMfile[255],outAmpFile[255];
+	char inMetafile[255],inDEMfile[255],outDEMfile[255],outAmpFile[255];
 	FILE *inDEM,*outDEM,*outAmp;
-	meta_parameters *metaDEM, *metaOut;
+	meta_parameters *metaIn, *metaDem, *metaOut;
 
 	system("date");
 	printf("Program: reskew_dem\n\n");
@@ -129,17 +130,20 @@ int main(int argc, char *argv[])
 		printf("Insufficient arguments.\n");
 		usage(argv[0]);
 	}
-	strcpy(inDEMfile, argv[currArg]);
-	strcpy(outDEMfile,argv[currArg+1]);
-	strcpy(outAmpFile,argv[currArg+2]);
+	strcpy(inMetafile, argv[currArg]);
+	strcpy(inDEMfile, argv[currArg+1]);
+	strcpy(outDEMfile,argv[currArg+2]);
+	strcpy(outAmpFile,argv[currArg+3]);
 
 /* Get metadata */
-	metaDEM = meta_read(inDEMfile);
-	metaOut = meta_copy(metaDEM);
-	nl = metaDEM->general->line_count;
-	gr_ns = metaDEM->general->sample_count;
-	sr_ns = gr_ns-400;      /* The 400 pixels here has to match the extra
-	                         * amount added in the demIFM script.*/
+	metaIn = meta_read(inMetafile);
+	metaDem = meta_read(inDEMfile);
+	meta_write(metaIn, outDEMfile);
+	metaOut = meta_read(outDEMfile);
+	nl = metaIn->general->line_count;
+	gr_ns = metaIn->general->sample_count;
+	sr_ns = gr_ns-400;       /* The 400 pixels here has to match the extra
+	                          * amount added in the demIFM script.*/
 	metaOut->general->sample_count = sr_ns;
 	
 /*Allocate vectors.*/
@@ -173,7 +177,7 @@ int main(int argc, char *argv[])
 		  printf("\r   Completed %3d percent",percent);
 		  percent+=5;
 		}
-		get_float_line(inDEM,metaDEM,line,grDEMline);
+		get_float_line(inDEM,metaIn,line,grDEMline);
 		dem_gr2sr(grDEMline,srDEMline,outAmpLine);
 		put_float_line(outDEM,metaOut,line,srDEMline);
 		put_float_line(outAmp,metaOut,line,outAmpLine);
@@ -189,7 +193,8 @@ int main(int argc, char *argv[])
 	meta_write(metaOut, outAmpFile);
 
 /* Free memory, close files, & exit */
-	meta_free(metaDEM);
+	meta_free(metaIn);
+	meta_free(metaDem);
 	meta_free(metaOut);
 	FREE(slantGR);
 	FREE(groundSR);
