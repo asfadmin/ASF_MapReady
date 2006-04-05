@@ -140,6 +140,8 @@ const char * geocode_options_string(const Settings * settings)
 	    sprintf(ret, "%s --%s-pole", ret,
 		    settings->plat1 < 0 ? "south" : "north");
 
+// Commented out so asf_geocode is not fed bogus false easting/northing values
+// currently these are not made available in the gui anyway
 //        if (enable_false_northing)
 //            sprintf(ret, "%s --false-northing %f ", ret, 
 //            settings->false_northing);
