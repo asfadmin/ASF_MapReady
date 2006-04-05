@@ -140,13 +140,13 @@ const char * geocode_options_string(const Settings * settings)
 	    sprintf(ret, "%s --%s-pole", ret,
 		    settings->plat1 < 0 ? "south" : "north");
 
-        if (enable_false_northing)
-            sprintf(ret, "%s --false-northing %f ", ret, 
-            settings->false_northing);
-
-        if (enable_false_easting)
-            sprintf(ret, "%s --false-easting %f ", ret, 
-            settings->false_northing);
+//        if (enable_false_northing)
+//            sprintf(ret, "%s --false-northing %f ", ret, 
+//            settings->false_northing);
+//
+//        if (enable_false_easting)
+//            sprintf(ret, "%s --false-easting %f ", ret, 
+//            settings->false_northing);
 
         if (settings->specified_height)
             sprintf(ret, "%s --height %f ", ret, settings->height);
