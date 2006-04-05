@@ -46,8 +46,11 @@ install: all
 	cp -R $(S_BINDIR)/* @BINDIR@
 	cp -R lib/* @prefix@/lib
 	cp -R $(S_SHAREDIR)/* @SHAREDIR@
-#	chmod 755 @BINDIR@/*
-#	chmod -R 644 @SHAREDIR@/*
+	chmod 755 @BINDIR@/*
+	chmod -R a+r @SHAREDIR@/*
+	chmod a+x @SHAREDIR@/projections
+	chmod a+x @SHAREDIR@/projections/*
+	chmod a+x @SHAREDIR@/asf_convert
 
 external_libs:
 	$(MAKE) -C external
