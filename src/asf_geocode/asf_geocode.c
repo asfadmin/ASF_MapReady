@@ -1308,6 +1308,7 @@ main (int argc, char **argv)
 
   /* output the correct earth radii based on the datum that was used
      to do the projection */
+  omd->projection->datum = datum;
   if (datum == WGS84_DATUM) {
     const double wgs84_semiminor_axis
       = WGS84_SEMIMAJOR * (1 - (1 / WGS84_INV_FLATTENING));
