@@ -1,16 +1,16 @@
 #include "asf.h"
 #include "lzFetch.h"
 #include "decoder.h"
-#include "aisp_params.h"
+#include "ardop_params.h"
 #include "asf_reporting.h"
 
 /********************************
-AISP Parameter file generator routines.
-These write AISP input files *.in and *.fmt.
+ARDOP Parameter file generator routines.
+These write ARDOP input files *.in and *.fmt.
 */
-void writeAISPparams(bin_state *s,char *outN,double fd, double fdd, double fddd)
+void writeARDOPparams(bin_state *s,char *outN,double fd, double fdd, double fddd)
 {
-  struct AISP_PARAMS g;
+  struct ARDOP_PARAMS g;
   int az_reflen;
   float slantToLast;
   float azpix, rngpix;
@@ -56,7 +56,7 @@ void writeAISPparams(bin_state *s,char *outN,double fd, double fdd, double fddd)
   g.dsloper=g.dinterr=g.dslopea=g.dintera=0.0;
 
   /* Calculate the number of valid patches per line. */
-  /* This calculation comes from aisp_setup() in aisp_setup.c. */
+  /* This calculation comes from ardop_setup() in ardop_setup.c. */
   azpix=(g.vel*g.re/(g.re+g.ht))/g.prf;
   rngpix=speedOfLight/(g.fs*2.0);
 
@@ -73,11 +73,11 @@ void writeAISPparams(bin_state *s,char *outN,double fd, double fdd, double fddd)
   print_params(outN,&g,"import2asf");
 }
 
-void writeAISPformat(bin_state *s,char *outN)
+void writeARDOPformat(bin_state *s,char *outN)
 {
-  char *aispN;
-/*Open & write out start of AISP input format file.*/
-  s->dotFMT=FOPEN(aispN=appendExt(outN,".fmt"),"w");
+  char *ardopN;
+/*Open & write out start of ARDOP input format file.*/
+  s->dotFMT=FOPEN(ardopN=appendExt(outN,".fmt"),"w");
   fprintf(s->dotFMT,
     "%d 0		! Bytes per line, bytes per header.\n"
     "%f %f		! i,q bias\n"
@@ -85,5 +85,5 @@ void writeAISPformat(bin_state *s,char *outN)
     "! Starting line #, Window Shift (pixels), AGC Scaling\n",
     2*s->nSamp,s->I_BIAS,s->Q_BIAS);
 /*s->dotFMT is written to by updateAGC_window, so don't close it yet!*/
-  free(aispN);
+  free(ardopN);
 }

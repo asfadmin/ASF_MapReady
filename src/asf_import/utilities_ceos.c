@@ -70,7 +70,7 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
 
 /******************************************************************************
  * convertMetadata_ceos:
- * Creates AISP .in and .fmt files, as well as determining the number of lines
+ * Creates ARDOP .in and .fmt files, as well as determining the number of lines
  * in the l0 file, by reading the granule (.gran) file.  */
 bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
                                 readPulseFunc *readNextPulse)
@@ -98,10 +98,10 @@ bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
     asfPrintError("Unrecognized satellite '%s'!\n",satName);
   createMeta_ceos(s,&dssr,inN,outN);
 
-/*Write out AISP input parameter files.*/
-  writeAISPparams(s,outN,dssr.crt_dopcen[0],dssr.crt_dopcen[1],
+/*Write out ARDOP input parameter files.*/
+  writeARDOPparams(s,outN,dssr.crt_dopcen[0],dssr.crt_dopcen[1],
                   dssr.crt_dopcen[2]);
-  writeAISPformat(s,outN);
+  writeARDOPformat(s,outN);
 
   *nLines=s->nLines;
 
@@ -140,13 +140,13 @@ signalType *getNextCeosLine(FILE *f, bin_state *s, char *inN, char *outN)
     get_dssr(inN,&dssr);
     createMeta_ceos(s,&dssr,inN,outN);
 
-    /* write out AISP input parameter file */
+    /* write out ARDOP input parameter file */
     if (fabs(dssr.crt_dopcen[0])<15000)
-      writeAISPparams(s,outN,dssr.crt_dopcen[0],dssr.crt_dopcen[1],dssr.crt_dopcen[2]);
+      writeARDOPparams(s,outN,dssr.crt_dopcen[0],dssr.crt_dopcen[1],dssr.crt_dopcen[2]);
     else
-      writeAISPparams(s,outN,0,0,0);
+      writeARDOPparams(s,outN,0,0,0);
 
-    writeAISPformat(s,outN);
+    writeARDOPformat(s,outN);
 
     asfPrintStatus("\n   Wrote %i lines of raw signal data.\n\n",s->nLines);
 

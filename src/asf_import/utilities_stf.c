@@ -132,8 +132,8 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
   meta->sar->azimuth_doppler_coefficients[1] = 0.0;
   meta->sar->azimuth_doppler_coefficients[2] = 0.0;
 
-/*Write out AISP .in parameter file.*/
-  writeAISPparams(s,outN,fd,fdd,fddd);
+/*Write out ARDOP .in parameter file.*/
+  writeARDOPparams(s,outN,fd,fdd,fddd);
 
 /*Write out and free the metadata structure*/
   meta_write(meta,outN);
@@ -142,7 +142,7 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
 
 /******************************************************************************
  * convertMetadata_lz:
- * Creates AISP .in and .fmt files, as well as determining the number of
+ * Creates ARDOP .in and .fmt files, as well as determining the number of
  * lines in the level-0 file, by reading the granule (.gran) file. */
 #include <ctype.h>
 bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
@@ -184,11 +184,11 @@ bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
   *numLines = lzInt(lzName,"prep_block.number_lines:",NULL);
   s->nFrames = lzInt(lzName,"prep_block.number_frames:",NULL);
 
-/*Write out AISP .fmt parameter file. This must be done before processing
+/*Write out ARDOP .fmt parameter file. This must be done before processing
   ** because starting line, window shift, and agc scaling are
   ** perpetually updated via the updateAGC_window function
   ** during processing.*/
-  writeAISPformat(s,outName);
+  writeARDOPformat(s,outName);
 
   return s;
 }

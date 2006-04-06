@@ -1,15 +1,15 @@
 #include "asf.h"
-#include "aisp_params.h"
+#include "ardop_params.h"
 #include "asf_reporting.h"
 
-void print_params(const char *in,struct AISP_PARAMS *a,const char *sourceProgram)
+void print_params(const char *in,struct ARDOP_PARAMS *a,const char *sourceProgram)
 {
  FILE *fp; char out[256];
 
  create_name(out,in,".in");
  fp = FOPEN(out,"w");
 
- fprintf(fp,"AISP3.1 SAR Processing Parameter File (%s)\n",sourceProgram);
+ fprintf(fp,"ARDOP3.1 SAR Processing Parameter File (%s)\n",sourceProgram);
  fprintf(fp,"%i \t\t\t\t\t! Debug Flag                 \n", a->iflag);
  fprintf(fp,"%i \t\t\t\t\t! First line (from 0)        \n", a->ifirstline);
  fprintf(fp,"%i \t\t\t\t\t! Number of patches	       \n", a->npatches);
@@ -44,7 +44,7 @@ void print_params(const char *in,struct AISP_PARAMS *a,const char *sourceProgram
 
 /******************************************************************************
 NAME:	     read_params - Creates input file for the ASF SAR processor
-SYNOPSIS:    read_params(char *pfile,struct AISP_PARAMS *a)
+SYNOPSIS:    read_params(char *pfile,struct ARDOP_PARAMS *a)
 DESCRIPTION: This program fills all of the values in asp_global.h by
              reading an input parameter file.
 EXTERNAL ASSOCIATES: NONE
@@ -54,10 +54,10 @@ PROGRAM HISTORY: 1.0    11/96  T. Logan		New Code for SAR Processor
 
 #define FILL(A,B,C) \
   if (fgets((A),(B),(C))==NULL) \
-    asfPrintError("Unexpected end-of-file, while reading AISP parameter file.\n\n");
+    asfPrintError("Unexpected end-of-file, while reading ARDOP parameter file.\n\n");
 
 
-void read_params(const char *pfile,struct AISP_PARAMS *gbla)
+void read_params(const char *pfile,struct ARDOP_PARAMS *gbla)
 {
   char versionStr[255];
   float version=1.0;
@@ -70,10 +70,10 @@ void read_params(const char *pfile,struct AISP_PARAMS *gbla)
 
 /*Determine file version.*/
   FILL(buf,255,fp); sscanf(buf,"%s", versionStr);
-  if (0==strncmp("AISP",versionStr,4))
+  if (0==strncmp("ARDOP",versionStr,4))
   {
-  	sscanf(versionStr,"AISP%f",&version);
-  	asfPrintStatus("Parsing AISP input file, version %.2f\n",version);
+  	sscanf(versionStr,"ARDOP%f",&version);
+  	asfPrintStatus("Parsing ARDOP input file, version %.2f\n",version);
   	FILL(buf,255,fp);
   }
 

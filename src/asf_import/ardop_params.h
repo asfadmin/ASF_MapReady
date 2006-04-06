@@ -1,6 +1,6 @@
 /****************************************************************************
 *								            *
-*   aisp_params.h   Parameters needed to run AISP                           *
+*   ardop_params.h   Parameters needed to run ARDOP                           *
 *   Copyright (C) 1997  ASF STEP LAB 			   	    	    *
 *									    *
 *   ASF STEP LAB Contacts:						    *
@@ -18,7 +18,7 @@
 /*-------------------------------------------------------------------------*/
 /*   This structure contains all of the parameters needed to run asp.c     */
 /*-------------------------------------------------------------------------*/
-struct AISP_PARAMS {
+struct ARDOP_PARAMS {
   char	in1[256];	     /* First input file basename		   */
   char	out[256];	     /* Output File basename                       */
   int	iflag;		     /* Debugging Flag 	   			   */
@@ -52,6 +52,6 @@ struct AISP_PARAMS {
   float dsloper, dinterr,    /* Delta slope,inter per patch in range       */
 	dslopea, dintera;    /* Delta slope,inter per patch in azimith     */
 };
-void print_params(const char *in,struct AISP_PARAMS *a,const char *sourceProgram);
-void read_params(const char *in,struct AISP_PARAMS *);
+void print_params(const char *in,struct ARDOP_PARAMS *a,const char *sourceProgram);
+void read_params(const char *in,struct ARDOP_PARAMS *);
 

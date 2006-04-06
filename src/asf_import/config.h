@@ -30,9 +30,9 @@ These macros are used by the decoder_* files' *_init() routines.
 	s->estDop=0.0;               /*Estimated doppler (PRF).*/ \
 	s->zeroDopSteered=1;         /*Steered to zero doppler?*/ \
 	s->fs=1.8962468e+07;         /*Range sampling frequency, Hz*/ \
-	s->nValid=4800;              /*# of range samples for AISP to use.*/ \
-	s->nLooks=5;                 /*# of looks for AISP to use.*/ \
-	s->azres=8.0;                /*Azimuth resolution for AISP (m).*/ \
+	s->nValid=4800;              /*# of range samples for ARDOP to use.*/ \
+	s->nLooks=5;                 /*# of looks for ARDOP to use.*/ \
+	s->azres=8.0;                /*Azimuth resolution for ARDOP (m).*/ \
 	s->slope=4.191375e+11;       /*chirp slope, Hz/sec.*/ \
 	s->pulsedur=3.710000E-05;    /*chirp length, in sec.*/ \
 	s->frequency=speedOfLight/0.056565; /*radar wavelength, in m.*/
@@ -44,9 +44,9 @@ These macros are used by the decoder_* files' *_init() routines.
 	s->estDop=0.0;               /*Estimated doppler (PRF).*/ \
 	s->zeroDopSteered=1;         /*Steered to zero doppler?*/ \
 	s->fs=17.076e+06;            /*Range sampling frequency, Hz*/ \
-	s->nValid=5400;              /*# of range samples for AISP to use.*/ \
-	s->nLooks=3;                 /*# of looks for AISP to use.*/ \
-	s->azres=18.0;               /*Azimuth resolution for AISP (m).*/ \
+	s->nValid=5400;              /*# of range samples for ARDOP to use.*/ \
+	s->nLooks=3;                 /*# of looks for ARDOP to use.*/ \
+	s->azres=18.0;               /*Azimuth resolution for ARDOP (m).*/ \
 	s->slope=-4.285714e+11;      /*chirp slope, Hz/sec.*/ \
 	s->pulsedur=3.50000E-05;     /*chirp length, in sec.*/ \
 	s->frequency=1.274086E09;   /*speedOfLight/0.23512941;*/ /*radar wavelength, in m.*/ \

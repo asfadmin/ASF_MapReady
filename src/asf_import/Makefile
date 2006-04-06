@@ -17,8 +17,8 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
-OBJS  = aisp_params.o \
-	aisp_write.o \
+OBJS  = ardop_params.o \
+	ardop_write.o \
 	asf_import.o \
 	aux_ERS.o \
 	aux_JRS.o \

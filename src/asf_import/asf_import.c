@@ -211,12 +211,12 @@ have a pixel spacing of:
 PP spacing * real velocity / PP velocity = real spacing
 12.5 * 6660.144/6626.552 = 12.5633662876 m
 
-An AISP image's pixel spacing is properly computed by xpix_ypix (and
+An ARDOP image's pixel spacing is properly computed by xpix_ypix (and
 not in the "yPix" field of the .meta file!) and multilooked, so the
-AISP image pixel spacing is really:
-3.9648920 m/pix * 5-pixel AISP multilook = 19.8244600 m/pix
+ARDOP image pixel spacing is really:
+3.9648920 m/pix * 5-pixel ARDOP multilook = 19.8244600 m/pix
 
-The expected L1-to-multilooked-AISP image scale factor is just the
+The expected L1-to-multilooked-ARDOP image scale factor is just the
 ratio of the two image's pixel spacings:
 19.8244600 m/pix / 12.5633662876 m/pix = 1.5779576545
 */

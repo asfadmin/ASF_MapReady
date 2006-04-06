@@ -151,9 +151,9 @@ void RSAT_init(bin_state *s)
 	s->nPulseInAir=0; /*Number of pulses in the air at one time.*/
 	s->nSamp=0; /*Number of samples in a line of data.*/
 	s->fs=0; /*Range sampling frequency, Hz*/
-	s->nValid=0; /*# of range samples for AISP to use.*/
-	s->nLooks=0; /*# of looks for AISP to use.*/
-	s->azres=0; /*Azimuth resolution for AISP (m).*/
+	s->nValid=0; /*# of range samples for ARDOP to use.*/
+	s->nLooks=0; /*# of looks for ARDOP to use.*/
+	s->azres=0; /*Azimuth resolution for ARDOP (m).*/
 	s->prf=0;/*Pulse repetition frequency, in Hz.*/
 	s->slope=0.0; /*chirp slope, Hz/sec.*/
 

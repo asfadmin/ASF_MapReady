@@ -112,9 +112,9 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN, int stfFlag);
 void addStateVector(bin_state *s,stateVector *stVec);
 
 
-/*AISP Utilities.*/
-void writeAISPparams(bin_state *s,char *outN, double fd, double fdd, double fddd);
-void writeAISPformat(bin_state *s,char *outN);
+/*ARDOP Utilities.*/
+void writeARDOPparams(bin_state *s,char *outN, double fd, double fdd, double fddd);
+void writeARDOPformat(bin_state *s,char *outN);
 
 
 /********************************* Raw bit-twiddling,decoding utilities.
