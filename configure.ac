@@ -130,7 +130,7 @@ fi
 AC_SUBST(ASF_GLIB)
 
 #### libjpeg check ####
-AC_CHECK_LIB(jpeg,jpeg_read_header,have_jpeg="yes",have_jpeg="no")
+AC_CHECK_LIB(jpeg,jinit_c_codec,have_jpeg="yes",have_jpeg="no")
 if test "$have_jpeg" = "no" ; then
    ASF_LIB_JPEG="${ext_lib_src_dir}/libjpeg"
    JPEG_LIBS="\$(LIBDIR)/libjpeg.a"
