@@ -4,6 +4,7 @@ tool.  */
 #include "asf_convert_gui.h"
 #include "asf_version.h"
 #include "share.h"
+#include "asf.h"
 
 GladeXML *glade_xml;
 GStaticRecMutex list_store_lock = G_STATIC_REC_MUTEX_INIT;
@@ -32,7 +33,15 @@ main(int argc, char **argv)
 #ifdef G_THREADS_ENABLED
     use_thumbnails = gtk_major_version >= 2 && gtk_minor_version >= 4;
 #else
-    use_thumbnails = false;
+    use_thumbnails = FALSE;
+#endif
+
+#ifdef win32
+        // On windows, ensure that our installed sh.exe is the one that is found,
+        // by severely restricting the path.
+        char pathenv[1024];
+        sprintf(pathenv, "PATH=%s", get_asf_bin_dir());
+        putenv(pathenv);
 #endif
 
     if (!use_thumbnails)
