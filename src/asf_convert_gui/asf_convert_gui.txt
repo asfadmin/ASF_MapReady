@@ -1,0 +1,473 @@
+
+The ASF Data Conversion Tool
+     _________________________________________________________
+
+   Table of Contents
+   Obtaining and Installing the Tool
+   Getting Started
+
+        Converting Data to JPG
+        Converting Data to GeoTIFF
+        Converting Data to GeoTIFF, geocoding with an Albers projection
+
+   Choosing Input Files
+   Import Options
+   Radiometry
+   Geocode
+   Export
+   The "Files" Section
+   Execute
+   Right-Click Menu
+   Contacting Us
+     _________________________________________________________
+
+Obtaining and Installing the Tool
+
+   The  latest  ASF  Data Conversion Tool can be downloaded from:
+   https://software.asf.alaska.edu. Select the "Download Page" link for
+   the Convert Tool, and download the latest stable version.
+     _________________________________________________________
+
+Getting Started
+
+   This section is a basic walk through the tool, containing the steps
+   needed to do some common tasks.
+     _________________________________________________________
+
+Converting Data to JPG
+
+   What You Have: .D and .L files.
+   What You Want: JPEG files.
+
+    1. Run the ASF Convert Tool.
+    2. Click the "Browse" button, and find the location of your .D
+       files. You may use ctrl-click or shift-click to select multiple
+       .D files to convert.
+    3. Click "Execute".
+    4. After processing is complete, you can right-click on a file's
+       entry, and select "View Output" to pull up the generated .JPG
+       file. You can do this for any completed file, even if processing
+       is still going on for other files.
+
+   In this example, we didn't have to change any of the options, we
+   were able to go with all of the defaults.
+     _________________________________________________________
+
+Converting Data to GeoTIFF
+
+   What You Have: .D and .L files.
+   What You Want: GeoTIFF files.
+
+    1. Run the ASF Convert Tool.
+    2. Click the "Browse" button, and find the location of your .D
+       files. You may use ctrl-click or shift-click to select multiple
+       .D files to convert.
+    3. Click  on  the "Export" tab, and select "GeoTIFF" from the
+       "Format" dropdown list.
+    4. Click "Execute".
+    5. In this case, the "View Output" option is not available.
+     _________________________________________________________
+
+Converting Data to GeoTIFF, geocoding with an Albers projection
+
+   What You Have: .D and .L files.
+   What You Want: GeoTIFF files, geocoded using an Albers projection.
+
+    1. Run the ASF Convert Tool.
+    2. Click the "Browse" button, and find the location of your .D
+       files. You may use ctrl-click or shift-click to select multiple
+       .D files to convert.
+    3. Click on the "Geocode" tab:
+         a. Check the box to turn on geocoding.
+         b. Select the "Albers" projection from the list of available
+            projections.
+         c. A few predefined projections are available, which use good
+            projection parameters for different parts of the world. If
+            none of the predefined projections suit your needs, you'll
+            need to specify your projection parameters mansually.
+    4. Click  on  the "Export" tab, and select "GeoTIFF" from the
+       "Format" dropdown list.
+    5. Click "Execute".
+     _________________________________________________________
+
+Choosing Input Files
+
+   There several ways you can add files to the utility.
+
+   At this time, your data files must have the same basename as the
+   meta-data  files. So, you won't be specifying the names of the
+   meta-data files -- just the data files. The meta-data files should
+   be located in the same directory as the data file, and use the same
+   base name.
+
+    1. Specify the source files on the command line.
+       When  you  run the utility, you can put a list of files as
+       arguments on the command line. For example:
+       Select the file "file1.D":
+       asf_convert_gui file1.D
+       Select all .D files in the current directory:
+       asf_convert_gui *.D
+       Select all .D files in the "data" directory:
+       asf_convert_gui data/*.D
+    2. Use the "Add" button.
+       After you've run the utility, you can add additional files by
+       typing the name in the textbox next to the "Add" button, and
+       clicking "Add".
+    3. Use the "Browse" button.
+       You can also click "Browse" to pull up a file selection dialog.
+       Use ctrl-click or shift-click to select more than one file.
+     _________________________________________________________
+
+Import Options
+
+   There are 4 tabs of options. The first specifies the options to use
+   during Import, when the data is converted from the source format to
+   an ASF internal format.
+
+    1. Data Format
+       This is where you select the type of data that you have. The
+       default, "CEOS (Level 1)" is the most common format. For the STF
+       format, you have the option of restricting the import to a
+       subset of the latitude range in the source data.
+    2. Latitude
+       This option is only available for the "STF" data format. Here
+       you may specify a range of latitudes that is smaller than that
+       of the original data. Please make sure that both the Low and Hi
+       values are actually contained in the image.
+    3. Keep Files
+       With this option checked, the intermediate files generated
+       during the processing will not be deleted after successful
+       conversion. Normally, these files are temporary and are deleted
+       (since they can be quite large), but if you would rather keep
+       them around you may by turning on this option.
+       If a file fails to process, any intermediate files that were
+       generated are not deleted, even with this option turned off.
+     _________________________________________________________
+
+Radiometry
+
+   The only option here is "Data type":
+
+   amplitude: Create an amplitude image. The pixels of an amplitude
+   image represent radar backscatter intensity values. This is the
+   default behavior.
+   sigma: Create a calibrated image. The pixels of these images are
+   corrected for the gain variability of the radar antenna in the range
+   direction, and normalized with respect to the area per pixel in the
+   ground plane. values).
+   gamma: Create a calibrated image similar to a sigma image (described
+   above), but with pixels normalized with respect to the pixel area in
+   a direction perpendicular to the radar look direction.
+   beta: Create a calibrated image similar to a sigma image (described
+   above), but with pixels normalized with respect to the pixel area in
+   the radar look direction.
+   power: Create a power image. The pixels of a power image are given
+   by the squares of the amplitude (backscatter) values.
+
+   When either of sigma, gamma, or beta is selected, you can choose to
+   output  the  result  in  decibles  (the  resulting  values are
+   logarithmically scaled).
+     _________________________________________________________
+
+Geocode
+
+   Turning Geocoding on will invoke the "asf_geocode" utility before
+   exporting. The checkbox next to the "Projection" selection list will
+   turn on/off geocoding.
+
+   Each projection has a "User Defined" option, where the parameters
+   for the projection are specified manually. Some projections have
+   some built-in parameters selections. You can either choose one of
+   the built-in parameters specifications, or enter them yourself.
+
+   If you use one of the predefined projections, you may get some
+   projection  errors  that will cause asf_geocode to quit, since
+   asf_geocode uses fairly strict accuracy requirements. If asf_geocode
+   reports that your projection errors are too large, you can either
+   use asf_geocode from the command line and specify the "--force"
+   option, or you can choose a User Defined projection, and adjust the
+   projection  parameters  so that they better match your area of
+   interest.
+
+   There are 5 projections: UTM, Polar Stereographic, Albers Conical
+   Equal Area, Lambert Conformal Conic, and Lambert Azimuthal Equal
+   Area. Each projection requires one or more additional items.
+
+   The  geocoding process necessarly involves a resampling of the
+   original data. For each pixel in the geocoded image, the location of
+   that pixel is projected back to a location in the original image.
+   The pixels in the original image nearest to this location are then
+   resampled to produce the value of the pixel in the geocoded image.
+   This resampling is done using the method selected in the "Resampling
+   Method" dropdown list.
+
+    1. UTM
+       Here the only additional parameter is the UTM Zone. The globe is
+       divided into 60 north and south zones, each spanning 6 degrees
+       of longitude. Zones 1 to 60 are northern zones, and -1 to -60
+       are the southern zones.
+       Be sure that your data does lie in (or near) the specified zone
+       -- an error will occur if you've specified a zone that is more
+       than one zone away from the zone in which your data lies.
+       You can leave the zone entry blank, in which the case the tool
+       will automatically choose the appropiate zone for your data.
+    2. Polar Stereographic
+       Here the two parameters are a Central Meridian, and a First
+       Standard Parallel.
+       Central Meridian: This is the longitude that extends vertically
+       down from the center pole.
+       First Standard Parallel: This is the "latitude of true scale".
+       At  this  latitude,  the projection does not introduce any
+       distortion.
+       An error will occur if you try to use this projection for data
+       that is not near either the north or south pole.
+    3. Albers Conical Equal Area
+       This is a conical projection. You must specify two standard
+       parallels, the latitudes at which the projection cone intersects
+       the Earth (and, so, at these latitudes the projection doesn't
+       introduce  any distortion), as well as the location of the
+       projection's origin.
+       You may omit the origin (the image's center will be used as the
+       origin), however the standard parallels are required.
+    4. Lambert Conform Conic
+       This is a conical projection. You must specify two standard
+       parallels, the latitudes at which the projection cone intersects
+       the Earth (and, so, at these latitudes the projection doesn't
+       introduce  any distortion), as well as the location of the
+       projection's origin.
+       You may omit the origin (the image's center will be used as the
+       origin), however the standard parallels are required.
+    5. Lambert Azimuthal Equal Area
+       You may omit the point of tangency (the image's center will be
+       used).
+
+   Also, on this tab:
+
+    1. Specify Height
+       Assume that terrain in the image is the specified height (in
+       meters) above the reference GEM6 ellipsoid. Optimal geolocation
+       accuracy will then be achieved for pixels on terrain at this
+       height. The geolocation of terrain at other heights will be off
+       by about the height difference between the terrain and the given
+       height,  assuming  a  satellite look angle 45 degrees from
+       horizontal.
+    2. Specify Pixel Size
+       Scales the output image such that each pixel is the specified
+       size, in projection coordinates (i.e. meters) on a side.
+       The geocoding process won't work if you select a pixel size that
+       will result in severely oversampled data.
+    3. Datum
+       Specifies the datum that is used when projecting. The datum
+       applies to the target coordinate system.
+    4. Resample
+       Selects the method used to resample the data. In the geocoding
+       process, the pixel values in the geocoded image are determined
+       by  locating  the corresponding point in the original, and
+       resampling the original image pixels closest to this point.
+       "Nearest Neighbor" simply selects the pixel closest to the
+       point, "Bilinear" does linear interpolation between the nearest
+       pixels, and "Bicubic" fits a cubic spline through the nearest
+       pixels. The bicubic method is the most accurate, however it is
+       also the slowest, and can also have the effect of low-pass
+       filtering the image.
+     _________________________________________________________
+
+Export
+
+   The options here configure how the conversion from the ASF internal
+   format to the output format is done.
+
+   There is a checkbox in front of the "Format" selection that turns
+   off Export. In this case, processing will stop after converting to
+   the ASF internal format, and geocoding (if selected).
+
+    1. Format
+       This is the format you want your output data in. The default is
+       JPEG, but you may also select GeoTIFF, TIFF or PPM.
+    2. Output Data in Byte Format
+       When this option is turned off, the output image is generated
+       using float-point values for each pixel. Some formats (all
+       except GeoTIFF) do not support floating-point pixel values, and
+       so you must map the values to bytes (i.e., a 0-255 value for
+       each pixel). Even if you are exporting to GeoTIFF, you may wish
+       to use bytes anyway, since this can result in substantially
+       smaller files (on most systems, the files will be approximately
+       4 times smaller).
+       When "Output Data in Byte Format" is checked, you'll need to
+       pick how the mapping from floating point to bytes is done:
+         a. Statistical 2 Sigma: Determines the mean and standard
+            deviation of the image and applies a buffer of 2 sigma
+            around the mean value (it adjusts this buffer if the 2
+            sigma buffer is outside the value range).
+         b. Minmax: determines the minimum and maximum values of the
+            input image and maps those values to the byte range of 0 to
+            255.
+         c. Truncate: truncates the input values regardless of their
+            value range.
+         d. Histogram Equalization: Produces an image with equally
+            distributed brightness levels over the entire brightness
+            scale, which increases contrast.
+       The default is "sigma".
+    3. Scale output image
+       Will reduce the size of the output image, so that its largest
+       dimension is at most the given size. This option isn't available
+       when exporting to GeoTIFF.
+     _________________________________________________________
+
+The "Files" Section
+
+   This section lists all of the file you've selected (as described
+   above in Section 3).
+
+    1. Thumbnails
+       If possible, thumbnails of the input images are generated and
+       put into the "Input Thumbnail" column. These are generated in
+       the background, so if you have many files it can take some time
+       for the input thumbnails to appear for all input files.
+       If you hover with your mouse over an input thumbnail image,
+       you'll get an enlarged view of the input data.
+       The  output image, for all types except GeoTIFF, will also
+       produce a thumbnail, and you can view an enlarged version by
+       right-clicking and selecting "View Image". Generally the input
+       thumbnail and the output thumbnail won't differ significantly.
+       (However, when geocoding the image will likely be rotated, and
+       if poor projection parameters are chosen some distortion could
+       occur.)
+    2. Change Output Directory
+       By default, the tool stores the generated files in the same
+       directory as the input files. Here you may specify a different
+       directory if you prefer.
+       By default, the output files are put into the same directory as
+       the input files. If this is a read-only directory (such as a
+       CD), you will need to change the output directory!)
+    3. Change Output Naming Scheme
+       This is a useful option if you're going to be generating more
+       than one output file, each using different parameters.
+       For example, you may wish to generate Amplitude and Power images
+       for each of your input files. Or, you may want to project each
+       file into more than one projection.
+       The "Prefix" and "Suffix" strings are applied to each output
+       filename (except those you've changed manually). So, you can
+       process the data once with your first set of settings (e.g.,
+       "Amplitude" selected in the Radiometry section) using the suffix
+       "_amp", and then a second time with another set of settings
+       (i.e., "Power" selected in the Radiometry section) using the
+       suffix "_pwr".
+    4. "Save" and "Load" Buttons
+       If you are processing a large number of files, you may wish to
+       stop processing and resume it later.
+       To do this, you should "Save" after you've processed the first
+       batch of files, and then exit the program.
+       Then, when you are ready to resume processing, click "Load"
+       after running the tool. When you click "Execute", processing
+       will continue from where you left off.
+       Please note that if you change any options, clicking "Execute"
+       will start processing over again from the first file. You can
+       exit without saving if you accidentally change an option, and
+       then re-process any files that were erroneously processed with
+       the new options. (When you select "Process" from the right-click
+       pop-up menu, the file will always be processed even if it has
+       already been marked "Done". In this situation, the word "Done"
+       will appear in gray instead of black.)
+     _________________________________________________________
+
+Execute
+
+   The "Execute" button starts the processing.
+
+   The processing starts with the first file in the list, and processes
+   each in turn until the last file in the list.
+
+   Files marked as "Done" will not be processed again if you click
+   "Stop" and then click "Execute" again. In other words, clicking
+   "Execute" picks up processing from where it left off. However, if
+   you've changed any settings (specifically, anything that appears in
+   the "Summary" section) the processing will again start from the
+   beginning.
+
+   If  you use the right-click menu option to process a file (See
+   Section 10), then the file will always be processed even if it has
+   already been marked "Done".
+
+   Clicking "Stop" will stop processing after the current conversion
+   finishes.
+
+   If any of the output files already exist (i.e., they are shown in
+   red in the files list), you will need to confirm that you don't mind
+   overwriting those files. If you do mind, please change the output
+   file name before starting processing, or rename the original output
+   file.
+
+   As  the  processing  proceeds, the asf_import, asf_geocode (if
+   appropriate), and asf_export tools are invoked for each file. These
+   tools generate output messages which are captured by the tool and
+   placed  in the output window. (On some systems, this window is
+   completely collapsed on startup -- use the mouse to grab the bar
+   right above the row of buttons at the bottom, and move it up to
+   reveal the output window.)
+
+   If an error occurs during the processing of a file, instead of
+   "Done"  in the status column, you'll see "Error". You can then
+   right-click and select "Jump To Log", to read the details of the
+   error.
+     _________________________________________________________
+
+Right-Click Menu
+
+   If you right-click on a row in the files grid, a menu will appear
+   with some options. These options will apply to the file in the row
+   that  is  selected.  Some  options  may  be  disabled, in some
+   circumstances.
+
+    1. Remove
+       This will remove the entry from the files grid. The files on
+       disk are not affected.
+    2. Process
+       This processes the file, just as if you'd click execute with
+       only this file in the grid.
+    3. Rename Output
+       Change  the  name of the output file. You can't change the
+       directory, use the "Change Output Directory" option (see Section
+       8) to do that.
+       You  can  also  change  the  name  of  the  output file by
+       double-clicking on the "Output File" column.
+    4. Jump To Log
+       This option will move the scrollbar in the output messages
+       window (See Section 9) to the messages for the selected row's
+       file.
+    5. Display CEOS Metadata
+       The ASF CEOS Metadata Viewer program will be used to view the
+       metadata for the file. It operates on the CEOS .L file instead
+       of ASF's .meta file.
+       This option is disabled if you don't have the .L file for the
+       data available (such as when you're not working with Level 1
+       CEOS data).
+       This option is also disabled if you don't have the Metadata
+       Viewer  installed. (Starting with ASF Convert 2.1, the two
+       utilities are bundled together.)
+    6. Display ASF Metadata
+       Open  up a new window, containing the ASF Metadata for the
+       selected file. The metadata file is generated by the import
+       procedure,  so  if the file hasn't been processed yet, the
+       metadata file won't have been generated. In this situation, this
+       option will be greyed out.
+    7. View Output
+       Open up a new window, containing the generated output file. This
+       option is not yet able to display GeoTIFF data, so if this
+       Format has been selected, the right-click option will not be
+       available.
+     _________________________________________________________
+
+Contacting Us
+
+   If you have any questions or comments about this software, we would
+   love to hear from you!
+
+         http://www.asf.alaska.edu
+         <uso@asf.alaska.edu>
+
+         Alaska Satellite Facility
+         Geophysical Institute
+         University of Alaska Fairbanks
+         P.O. Box 757320
+         Fairbanks, AK 99775-7320

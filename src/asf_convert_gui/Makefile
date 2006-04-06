@@ -111,6 +111,7 @@ default: $(OBJS)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp $(TARGET).ico $(SHAREDIR)
+	cp $(TARGET).txt $(SHAREDIR)
 
 %.c: %.h
 
