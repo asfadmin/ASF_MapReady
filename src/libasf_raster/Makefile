@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := $(GLIB_CFLAGS) $(CFLAGS)
+CFLAGS := $(JPEG_CFLAGS) $(GLIB_CFLAGS) $(CFLAGS)
 
 OBJS = \
 	interpolate.o \
@@ -22,7 +22,6 @@ LIBS = \
 	$(LIBDIR)/libasf_raster.a \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
-	$(JPEG_LIBS) \
 	$(LDFAGS) \
 	-lm
 
