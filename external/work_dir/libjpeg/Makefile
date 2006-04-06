@@ -16,7 +16,9 @@ build: build_stamp
 build_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
 	gunzip --to-stdout $(ZIPFILE) |	tar xv
+	cp ljpeg-6b.patch jpeg-6b
 	(   cd $(UNPACK_DIR) ; \
+	    patch <ljpeg-6b.patch ; \
 	    ./configure --prefix=$(ROOT_DIR) ; \
 	    make ; \
 	    make install-lib ; \
