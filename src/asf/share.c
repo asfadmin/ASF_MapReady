@@ -196,6 +196,15 @@ get_asf_bin_dir()
  
     get_string_from_registry(s_asf_install_dir_key, str_value);
     for (i = j = 0; i <= strlen(str_value); ++i, ++j) {
+      if (i == 0) {
+        char drive = str_value[0];
+        char colon = str_value[1];
+        char backslash = str_value[2];
+        if (colon == ':' && backslash == '\\') {
+          sprintf(str_value_fixed, "/cygdrive/%c/", tolower(drive));
+          i += 3; j += strlen(str_value_fixed);
+        }
+      }
       switch (str_value[i]) {
         case ' ':
           str_value_fixed[j] = '\\';
@@ -212,7 +221,7 @@ get_asf_bin_dir()
     }
           
     s_bin_dir = strdup(str_value_fixed);
-
+    //printf("bin_dir : %s\n", s_bin_dir);
 #else
 
       /* on UNIX, assume ASF_INSTALL_DIR has been set by the configure */
