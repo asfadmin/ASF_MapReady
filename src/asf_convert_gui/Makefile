@@ -54,8 +54,7 @@ LIB = \
 	$(ASF_LIB)/asf_meta.a \
 	$(ASF_LIB)/asf.a \
 	$(GSL_LIBS) \
-	$(JPEG_LIBS) \
-	$(GLIB_LIBS) \
+	$(GTK_LIB)/libjpeg.dll.a \
 	-lglib-2.0 \
 	-lcomdlg32
 
@@ -67,10 +66,10 @@ $(TARGET).exe: $(TARGET).c
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
 	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
-	mv $(TARGET).exe ../../bin
-	cp $(TARGET).glade ../../bin
-	cp $(TARGET).ico $(BINDIR)
-	cp htmlhelp.chm ../../bin/asf_convert_gui.chm
+	mv $(TARGET).exe $(BINDIR)
+	cp $(TARGET).glade $(SHAREDIR)
+	cp $(TARGET).ico $(SHAREDIR)
+	cp htmlhelp.chm $(SHAREDIR)/asf_convert_gui.chm
 
 doc:
 	xsltproc --nonet /usr/share/docbook-xsl/htmlhelp/htmlhelp.xsl \
