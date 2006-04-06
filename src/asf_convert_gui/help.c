@@ -6,13 +6,50 @@
 
 static const int max_line_len = 2048;
 
+// defined in src/asf/share.c
+long get_string_from_registry_ex(const char *folder, const char * key, char * str_value);
+//const char * get_asf_bin_dir();
+
 SIGNAL_CALLBACK void
 on_help_button_clicked(GtkWidget *widget)
 { 
 #ifdef win32
     if (fork() == 0)
     {
-        system("hh.exe asf_convert_gui.chm");
+        char hh[1024];
+        int ret;
+
+        // First method, get location of help viewer from the standard registry location
+        get_string_from_registry_ex("SOFTWARE\\Classes\\chm.file\\shell\\open\\command", "", hh);
+
+        if (strlen(hh) > 0) {
+            char *p = strstr(hh, "%1");
+            if (p) *p = '\0';
+
+            strcat(hh, "asf_convert_gui.chm");
+            ret = system(hh);
+            if (ret != -1) exit(0);
+        }
+
+        // Failed to find location of hh.exe through registry... try the system directory
+        char *sr = getenv("SYSTEMROOT");
+        if (strlen(sr) > 0) {
+            int i, j = 0;
+            for (i = 0; i < strlen(sr); ++i) {
+                switch(sr[i]) {
+                    case '\\': hh[j] = '\\'; hh[j+1] = '\\'; ++j; break;
+                    default:   hh[j] = sr[i]; break;
+                }
+                ++j;
+            }
+            hh[j] = '\0';
+            strcat(hh, "/hh.exe asf_convert_gui.chm");
+            ret = system(hh);
+            if (ret != -1) exit(0);
+        }
+
+        // Failed, give up.
+        message_box("Couldn't find the help viewer!");
         exit(0);
     }
 #else
@@ -32,7 +69,7 @@ on_help_button_clicked(GtkWidget *widget)
 
     gtk_text_buffer_set_text(text_buffer, "", -1);
 
-    //help_filename = (gchar *)find_in_path("asf_convert_gui.txt");
+    help_filename = "asf_convert_gui.txt";
     //help_file = fopen(help_filename, "rt");
     help_file = fopen_share_file(help_filename, "rt");
     if (help_file)
