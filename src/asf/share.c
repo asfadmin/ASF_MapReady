@@ -33,6 +33,40 @@ static const char * s_asf_install_dir_key = "Install_Dir";
 #define REG_VALUE_SIZE 512
 
 LONG 
+get_string_from_registry_ex(const char *folder, const char * key, char * str_value)
+{
+    HKEY Hkey;
+    unsigned long read_size;
+    LONG rv;
+
+    rv = RegOpenKeyEx(HKEY_LOCAL_MACHINE, folder, 0, KEY_QUERY_VALUE, &Hkey);
+    
+    read_size = 512;
+    rv = RegQueryValueEx(Hkey, key, 0, 0, (BYTE*)str_value, &read_size);
+
+    if (rv == ERROR_PATH_NOT_FOUND || rv == ERROR_FILE_NOT_FOUND ||
+        rv == ERROR_INVALID_HANDLE) {
+      RegCloseKey(Hkey);
+      rv = RegOpenKeyEx(HKEY_CURRENT_USER, folder, 0, KEY_QUERY_VALUE, &Hkey);
+      rv = RegQueryValueEx(Hkey, key, 0, 0, (BYTE*)str_value, &read_size);
+    }
+
+    if (rv != ERROR_SUCCESS) {
+      LPVOID ErrBuf;
+      DWORD dw = GetLastError();
+      FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                    FORMAT_MESSAGE_FROM_SYSTEM,
+                    0, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                    (LPTSTR) &ErrBuf, 0, 0);
+      LocalFree(ErrBuf);
+      strcpy(str_value, "");
+    }
+    RegCloseKey(Hkey);
+
+    return rv;
+}
+
+LONG 
 get_string_from_registry(const char * key, char * str_value)
 {
     HKEY Hkey;
