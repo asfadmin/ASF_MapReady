@@ -54,7 +54,7 @@ LIB = \
 	$(ASF_LIB)/asf_meta.a \
 	$(ASF_LIB)/asf.a \
 	$(GSL_LIBS) \
-	$(GTK_LIB)/libjpeg.dll.a \
+	$(JPEG_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32
 
