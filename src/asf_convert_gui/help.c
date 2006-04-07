@@ -26,7 +26,8 @@ on_help_button_clicked(GtkWidget *widget)
             char *p = strstr(hh, "%1");
             if (p) *p = '\0';
 
-            strcat(hh, "asf_convert_gui.chm");
+            strcat(hh, get_asf_bin_dir());
+            strcat(hh, "/asf_convert_gui.chm");
             ret = system(hh);
             if (ret != -1) exit(0);
         }
