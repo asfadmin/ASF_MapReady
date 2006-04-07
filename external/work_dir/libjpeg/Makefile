@@ -8,7 +8,7 @@ INCLUDE_DIR := $(ROOT_DIR)/include
 
 # These variables specify the jpeg tarball and what it unpacks into.
 UNPACK_DIR := jpeg-6b
-ZIPFILE := jpegsrc.v6b.tar.gz
+ZIPFILE := jpegsrc.v6b.patched.tar.gz
 
 build: build_stamp
 
@@ -16,9 +16,7 @@ build: build_stamp
 build_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
 	gunzip --to-stdout $(ZIPFILE) |	tar xv
-	cp ljpeg-6b.patch jpeg-6b
 	(   cd $(UNPACK_DIR) ; \
-	    patch <ljpeg-6b.patch ; \
 	    ./configure --prefix=$(ROOT_DIR) ; \
 	    make ; \
 	    make install-lib ; \
