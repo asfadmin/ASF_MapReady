@@ -332,7 +332,7 @@ typedef struct {
      is therefore redundant and should be eliminated.  DEPRECATED.         */
 /*  double ecc;           * First eccentricity of earth ellipsoid.         */
   datum_type_t datum;    /* Geodetic datum - height reference system       */
-  param_t param;         /* Projection parameters for each projection.     */
+  project_parameters_t param;   /* Projection parameters for each projection.*/
 } meta_projection;
  /* Compatibility alias.  proj_parameters is DEPRECATED.  */
 typedef meta_projection proj_parameters;
@@ -641,7 +641,7 @@ stateVector propagate(stateVector source, double sourceSec, double destSec);
 void propagate_state(meta_parameters *meta,int nStVec,double data_int);
 
 /* Reads a subset of an image */
-void readSubset(char *fileName, int width, int height, int posX, int posY, 
+void readSubset(char *fileName, int width, int height, int posX, int posY,
 		float *subset);
 void readComplexSubset(char *fileName, int width, int height, int posX, int posY, 
 		       complexFloat *subset);
