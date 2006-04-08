@@ -50,7 +50,6 @@ LIB = \
 	-lgdi32 \
 	-llibgdk-win32-2.0 \
 	$(ASF_LIB)/libasf_raster.a \
-	$(ASF_LIB)/libasf_meta.a \
 	$(ASF_LIB)/asf_meta.a \
 	$(ASF_LIB)/asf.a \
 	$(GSL_LIBS) \
