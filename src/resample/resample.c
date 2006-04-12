@@ -123,8 +123,9 @@ int main(argc,argv)
     static   char   infile[255],     /* name of input SAR image file   */
                     outfile[255];    /* name of output RAW file        */
     meta_parameters *metaIn;
-    float   pixsiz = 0.0;           /* output image pixel size        */
-    double  scalfact;               /* scale factor                   */
+    float   pixsiz = 0.0;           /* output image pixel size         */
+    double  xscalfact;              /* x scale factor                  */
+    double  yscalfact;              /* y scale factor                  */
 
    /*--------  Process Command Line Inputs -------------*/
     if (argc != 4)
@@ -145,8 +146,9 @@ int main(argc,argv)
     sscanf(argv[3],"%f",&pixsiz);
 
     metaIn = meta_read(infile);
-    scalfact = 1.0/(pixsiz/metaIn->general->x_pixel_size);
-    resample(infile, outfile, scalfact, scalfact);
+    xscalfact = 1.0/(pixsiz/metaIn->general->x_pixel_size);
+    yscalfact = 1.0/(pixsiz/metaIn->general->y_pixel_size);
+    resample(infile, outfile, xscalfact, yscalfact);
 
     return(0);
 }
