@@ -206,14 +206,14 @@ get_asf_bin_dir()
         }
       }
       switch (str_value[i]) {
-        case ' ':
-          str_value_fixed[j] = '\\';
-          str_value_fixed[j+1] = ' ';
-          ++j;
-          break;
-        case '\\':
-          str_value_fixed[j] = '/';
-          break;
+        //case ' ':
+        //  str_value_fixed[j] = '\\';
+        //  str_value_fixed[j+1] = ' ';
+        //  ++j;
+        //  break;
+        //case '\\':
+        //  str_value_fixed[j] = '/';
+        //  break;
         default:
           str_value_fixed[j] = str_value[i];
           break;
