@@ -12,6 +12,10 @@
 #include <time.h>
 #include <sys/stat.h>
 
+#ifdef win32
+#include <process.h>
+#endif
+
 #include "asf.h"
 
 static gboolean keep_going = TRUE;
@@ -92,6 +96,90 @@ static gboolean confirm_overwrite()
     }
 }
 
+int do_system_exec(const char *cmd)
+{
+#ifdef win32
+
+#ifndef	HAVE_GNU_LD
+#define	__environ	environ
+#endif
+
+    int pid, save, status;
+    struct sigaction sa, intr, quit;
+
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags = 0;
+    sigemptyset (&sa.sa_mask);
+
+    if (sigaction (SIGINT, &sa, &intr) < 0)
+    {
+        return -1;
+    }
+
+    if (sigaction (SIGQUIT, &sa, &quit) < 0)
+    {
+        save = errno;
+        (void) sigaction (SIGINT, &intr, (struct sigaction *) NULL);
+        errno = save;
+        return -1;
+    }
+
+    pid = fork();
+    if (pid == 0)
+    {
+        char shell_path[512];
+        const char *new_argv[4];
+
+        new_argv[0] = "sh.exe";
+        new_argv[1] = "-c";
+        new_argv[2] = cmd;
+        new_argv[3] = 0;
+
+        (void) sigaction (SIGINT, &intr, (struct sigaction *) NULL);
+        (void) sigaction (SIGQUIT, &quit, (struct sigaction *) NULL);
+
+        sprintf(shell_path, "%s/sh", get_asf_bin_dir());
+        execve(shell_path, (char * const *) new_argv, __environ);
+
+        exit(127);
+    }
+    else if (pid < 0)
+    {
+        /* fork failed */
+        return -1;
+    }
+    else
+    {
+        int n;
+        do 
+        {
+            n = waitpid(pid, &status, 0);
+        }
+        while (n == -1 && errno == EINTR);
+
+        if (n != pid)
+        {
+            status = -1;
+        }
+    }
+
+    save = errno;
+    if (sigaction (SIGINT, &intr, (struct sigaction *) NULL) |
+        sigaction (SIGQUIT, &quit, (struct sigaction *) NULL))
+    {
+        if (errno == ENOSYS)
+            errno = save;
+        else
+            return -1;
+    }
+
+    return status;
+
+#else
+    return system(cmd);
+#endif
+}
+
 gchar *
 do_cmd(gchar *cmd, gchar *log_file_name)
 {
@@ -104,7 +192,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
     {
         int ret;
 
-        ret = system(cmd);
+        ret = do_system_exec(cmd);
         if (ret == -1 || ret > 0)
         {
             int saved_errno;
@@ -125,10 +213,10 @@ do_cmd(gchar *cmd, gchar *log_file_name)
                     if (saved_errno > 0)
                     {
                         fprintf(output,
-                            "*** Error! Could not run command. ***\n"
+                            "*** Error! Could not run command. (%d) ***\n"
                             "Command: %s\n"
-                            "Error: %s\n",
-                            cmd, strerror(saved_errno));
+                            "Error %d: %s\n",
+                            ret, cmd, saved_errno, strerror(saved_errno));
                     }
                     else
                     {
@@ -504,6 +592,16 @@ have_access_to_dir(const gchar * dir, gchar ** err_string)
 }
 
 static void
+build_executable(char *buf, const char *exec_name)
+{
+#ifdef win32
+    sprintf(buf, "\"%s/%s\"", get_asf_bin_dir(), exec_name);
+#else
+    sprintf(buf, "%s/%s", get_asf_bin_dir(), exec_name);    
+#endif
+}
+
+static void
 process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 {
     LSL;
@@ -604,10 +702,9 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
                 strcat(out_basename, "_out");
             }
 
-            sprintf(executable, "%s/asf_import", get_asf_bin_dir());
-
+            build_executable(executable, "asf_import");
             g_snprintf(convert_cmd, sizeof(convert_cmd), 
-                "cd \"%s\"; %s %s -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
+                "cd \"%s\";" "%s %s -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
                 cd_dir,
                 executable,
                 settings_get_data_type_arg_string(user_settings),
@@ -644,11 +741,9 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
             g_snprintf(log_file, sizeof(log_file), "%stmpg%d.log", output_dir, pid);
 
-            g_snprintf(executable, sizeof(executable), 
-                "%s/asf_geocode", get_asf_bin_dir());
-
+            build_executable(executable, "asf_geocode");
             snprintf(convert_cmd, sizeof(convert_cmd),
-                "cd \"%s\"; %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
+                "cd \"%s\";" "%s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
                 cd_dir,
                 executable,
                 settings_get_geocode_options(user_settings),
@@ -691,11 +786,9 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
             gtk_list_store_set(list_store, iter, COL_STATUS, "Exporting...", -1);
 
-            g_snprintf(executable, sizeof(executable), 
-                "%s/asf_export", get_asf_bin_dir());
-
+            build_executable(executable, "asf_export");
             snprintf(convert_cmd, sizeof(convert_cmd),
-                "cd \"%s\"; %s -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
+                "cd \"%s\";" "%s -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
                 cd_dir,
                 executable,
                 settings_get_output_format_string(user_settings),
