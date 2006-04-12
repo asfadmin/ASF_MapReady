@@ -19,7 +19,7 @@ ASF_LIB = ../../lib
 
 INCLUDE = -I$(GTK_INC) -I$(GTK_INC)/glib-2.0 -I$(GTK_INC)/pango-1.0 -I$(GTK_INC)/gtk-2.0 -I$(GTK_INC)/freetype2/freetype -I$(GTK_LIB)/glib-2.0/include -I$(GTK_LIB)/gtk-2.0/include -I$(GTK_INC)/atk-1.0 -I$(GTK_INC)/libglade-2.0 -I$(ASF_INCLUDE_DIR)
 
-LIB = $(LDFLAGS) -L$(GTK_LIB) -L$(GTK_LIB)/glib-2.0 -L$(GTK_LIB)/gtk-2.0 -L$(GTK_LIB)/pango -L$(GTK_LIB)/libglade -llibgthread-2.0 -lpthread -lintl -liconv -lm -lgtk-win32-2.0 -lgobject-2.0 -llibglade-2.0 -llibgdk_pixbuf-2.0 -lpango-1.0 -L/usr/lib/w32api -lgdi32 -llibgdk-win32-2.0 $(ASF_LIB)/libasf_raster.a $(ASF_LIB)/libasf_meta.a $(ASF_LIB)/asf.a $(GSL_LIBS) -lglib-2.0 -lcomdlg32
+LIB = $(LDFLAGS) -L$(GTK_LIB) -L$(GTK_LIB)/glib-2.0 -L$(GTK_LIB)/gtk-2.0 -L$(GTK_LIB)/pango -L$(GTK_LIB)/libglade -llibgthread-2.0 -lpthread -lintl -liconv -lm -lgtk-win32-2.0 -lgobject-2.0 -llibglade-2.0 -llibgdk_pixbuf-2.0 -lpango-1.0 -L/usr/lib/w32api -lgdi32 -llibgdk-win32-2.0 $(ASF_LIB)/libasf_raster.a $(ASF_LIB)/asf.a $(GSL_LIBS) -lglib-2.0 -lcomdlg32
 
 CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
