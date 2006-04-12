@@ -7,8 +7,10 @@ OBJS  = gr2sr_vec.o \
 	gr2sr.o
 
 REQUIRED_LIBS = \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_reporting.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(PROJ_LIBS) \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	-lm
