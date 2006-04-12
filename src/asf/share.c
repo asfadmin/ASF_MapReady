@@ -348,6 +348,10 @@ get_asf_share_dir()
 	        buf[i] = p[i];
 	    buf[i] = '\0';
 
+        // If path item ends with a separator, pop that off
+        if (buf[strlen(buf) - 1] == '/')
+            buf[strlen(buf) - 1] = '\0';
+
 	    // printf("Checking %s ...\n", buf);
 	    /* only try this one if it ends with 'bin' */
 	    if (strcmp(buf + strlen(buf) - 3, "bin") == 0) {
