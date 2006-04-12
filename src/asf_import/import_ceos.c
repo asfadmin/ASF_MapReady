@@ -87,6 +87,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 //    meta->general->data_type = COMPLEX_REAL32;  // FIXME: should we output floats or bytes?
     meta->general->image_data_type = RAW_IMAGE;
     s = convertMetadata_ceos(inMetaName, outMetaName, &trash, &readNextPulse);
+    asfRequire (s->nBeams==1,"Unable to import level 0 ScanSAR data.\n");
     iqBuf = (iqType*)MALLOC(sizeof(iqType)*2*(s->nSamp));
     fpOut = FOPEN(outDataName, "wb");
     getNextCeosLine(s->binary, s, inMetaName, outDataName); /* Skip CEOS header. */

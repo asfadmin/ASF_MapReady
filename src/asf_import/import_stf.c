@@ -111,6 +111,7 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
      well as the number of lines in the image. */
   s=convertMetadata_lz(inDataName,outMetaName,&nTotal,&readNextPulse,
                        flags[f_PRC],prcPath);
+  asfRequire (s->nBeams==1,"Unable to import level 0 ScanSAR data.\n");
   iqBuf=(iqType *)MALLOC(sizeof(iqType)*2*s->nSamp);
   if (imgEnd == 0) imgEnd = nTotal;
 
