@@ -50,11 +50,13 @@ void ll_ac(meta_projection *proj, char look_dir, double lat, double lon, double 
 void ll_lamcc(meta_projection *proj,double lat,double lon,double *x,double *y);
 void ll_ps(meta_projection *proj,double lat, double lon, double *x, double *y);
 void ll_utm(meta_projection *proj,double tlat, double tlon, double *p1, double *p2);
+void ll_alb(meta_projection *proj,double lat, double lon, double *x, double *y);
 
 void ac_ll(meta_projection *proj, char look_dir, double c1, double c2,double *lat_d, double *lon);
 void lamcc_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon);
 void ps_ll(meta_projection *proj,double xx,double yy,double *alat,double *alon);
 void utm_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon);
+void alb_ll(meta_projection *proj,double xx,double yy,double *alat,double *alon);
 
 /*Convert projection units (meters) from geodetic latitude and longitude (degrees).*/
 void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,double *p1,double *p2)
@@ -67,6 +69,7 @@ void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,doub
 		case LAMBERT_CONFORMAL_CONIC: ll_lamcc(proj,lat_d,lon,p1,p2); break;
 		case POLAR_STEREOGRAPHIC: ll_ps(proj,lat_d,lon,p1,p2); break;
 		case UNIVERSAL_TRANSVERSE_MERCATOR: ll_utm(proj,lat_d,lon,p1,p2); break;
+	        case ALBERS_EQUAL_AREA: ll_alb(proj,lat_d,lon,p1,p2); break;
 		default:
 			printf("Unrecognized map projection '%c' passed to ll_to_proj!\n",proj->type);
 			exit(1);
@@ -84,6 +87,7 @@ void proj_to_ll(meta_projection *proj, char look_dir, double p1, double p2, doub
 		case LAMBERT_CONFORMAL_CONIC: lamcc_ll(proj,p1,p2,lat_d,lon); break;
 		case POLAR_STEREOGRAPHIC: ps_ll(proj,p1,p2,lat_d,lon); break;
 		case UNIVERSAL_TRANSVERSE_MERCATOR: utm_ll(proj,p1,p2,lat_d,lon); break;
+	        case ALBERS_EQUAL_AREA: alb_ll(proj,p1,p2,lat_d,lon); break;
 		default:
 			printf("Unrecognized map projection '%c' passed to proj_to_ll!\n",proj->type);
 			exit(1);
@@ -322,6 +326,7 @@ void ps_ll(meta_projection *proj,double x,double y,double *alat,double *alon)
 		while (*alon >   180.0) *alon -= 360.0;
 	}
 }
+
 /**********************UTM Conversion Routines.*******************/
 int UTM_zone(double lon) {return(((180.0+lon)/6.0+1.0));} 
 
@@ -413,6 +418,21 @@ void utm_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon)
 	      + (5.0 - 2.0*c1 + 28.0*t1 - 3.0*c1*c1 + 8.0*epsq + 24.0*t1*t1)
 	             *(d*d*d*d*d)/120.0) )/D2R;
 }
+
+/***************************Azimuth Equal Area Conversion Routines********/
+void ll_alb(meta_projection *proj,double lat, double lon, double *x, double *y)
+{
+  /* Use libasf_proj, wrapper for libproj */
+  project_albers(&(proj->param), lat, lon, x, y);
+}
+
+void alb_ll(meta_projection *proj,double xx,double yy,
+	    double *alat,double *alon)
+{
+  /* Use libasf_proj, wrapper for libproj */
+  project_albers_inv(&(proj->param), xx, yy, alat, alon);
+}
+
 /***************************AT/CT Conversion Routines*********************/
 /*Along-Track/Cross-Track utilities:*/
 void cross(double x1, double y1, double z1, double x2, double y2, double z2,
