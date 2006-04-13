@@ -170,7 +170,7 @@ int main(int argc, char **argv)
 	/* get baseline, write it out. */
 	create_name(meta1, img1, "_amp");
 	create_name(meta2, img2, "_amp");
-	WriteBaseline( szBaseFile, find_baseline(img1,img2) );
+	WriteBaseline( szBaseFile, find_baseline(meta1,meta2) );
 
 	/* write the ctrl file for use with coregister_fine (aka fico) */
 	CreateFicoControl(szCtrlFile,img1,img2,multiLook);
