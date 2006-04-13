@@ -1,3 +1,6 @@
+ 0. You still have to do step (1) of the old procedure, I think.
+    Could be that doing it correctly would avoid KLUDGE #2 ?!?!
+
  1. Update include/asf_version.h
 
     Figure out what the subversion revision number, mention it in the
@@ -58,17 +61,20 @@
 13. Build the rpm:
       rpmbuild -ba asf_convert-X.X.X-1.spec
 
-14. Put the built files on quantum or someplace:
+14. Create tarballs of the rpms.  The binary rpm will also contain the
+    README_rpm.txt file from ../../asf_tools.
+      ./tarrpms
+
+15. Put the built files on quantum or someplace:
       scp RPMS/asf_convert-X.X.X-1.i386.rpm
           'quantum://shares/utd/Releases\ for\ Data\ Quality/Linux'
       scp SRPMS/asf_convert-X.X.X-1.i386.rpm
           'quantum://shares/utd/Releases\ for\ Data\ Quality/Linux'
       cd ../tar/asf_convert
       scp asf_convert.src.tar.gz
-          'quantum://shares/utd/Releases\ for\ Data\ Quality/Source/asf_convert-2.1.3.src.tar.gz'
+          'quantum://shares/utd/Releases\ for\ Data\ Quality/Source/asf_convert-X.X.X.src.tar.gz'
 
-
-15. The windows procedure is the same as described below.
+16. The windows procedure is the same as described below.
 
 Old instructions follow:
 -----------------------------------------------------------------------------
