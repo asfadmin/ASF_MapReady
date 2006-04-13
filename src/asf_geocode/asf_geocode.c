@@ -1027,7 +1027,7 @@ main (int argc, char **argv)
     double largest_error = gsl_vector_max (model_errors);
     // We want to choke if our worst point in the model is off by this
     // many pixels or more.
-    double max_allowable_error = 1.0;
+    double max_allowable_error = 1.25;
     if ( largest_error > max_allowable_error ) {
             print_large_error_blurb(force_flag);
 	    report_func("Largest Error was larger than maximum allowed! "
