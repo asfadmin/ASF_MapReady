@@ -1066,10 +1066,10 @@ main (int argc, char **argv)
     // FIXME: Fix the broken scansar crap *HARD*.
     if (  imd->sar->image_type == 'P' ) {
       g_assert (imd->projection->type == SCANSAR_PROJECTION);
-      max_corner_error = 3.0;
+      max_corner_error = 3 * max_allowable_error;
     }
     else {
-      max_corner_error = 1.0;
+      max_corner_error = max_allowable_error;
     }
 
     // Upper left corner.
