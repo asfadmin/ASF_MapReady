@@ -162,7 +162,7 @@ int read_int(char *line, char *param);
 double read_double(char *line, char *param);
 int init_config(char *configFile);
 dem_config *init_fill_config(char *configFile);
-dem_config *read_config(char *configFile, int cFlag);
+dem_config *read_config(char *configFile);
 int write_config(char *configFile, dem_config *cfg);
 
 #endif

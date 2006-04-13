@@ -1,3 +1,73 @@
+/*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
+/*
+ABOUT EDITING THIS DOCUMENTATION:
+If you wish to edit the documentation for this program, you need to change the
+following defines. For the short ones (like ASF_NAME_STRING) this is no big
+deal. However, for some of the longer ones, such as ASF_COPYRIGHT_STRING, it
+can be a daunting task to get all the newlines in correctly, etc. In order to
+help you with this task, there is a tool, edit_man_header.pl. The tool *only*
+works with this portion of the code, so fear not. It will scan in defines of
+the format #define ASF_<something>_STRING between the two auto-generated
+documentation markers, format them for a text editor, run that editor, allow
+you to edit the text in a clean manner, and then automatically generate these
+defines, formatted appropriately. The only warning is that any text between
+those two markers and not part of one of those defines will not be preserved,
+and that all of this auto-generated code will be at the top of the source
+file. Save yourself the time and trouble, and use edit_man_header.pl. :)
+*/
+
+#define ASF_NAME_STRING \
+"ips"
+
+#define ASF_USAGE_STRING \
+"   "ASF_NAME_STRING" [-create] [-license] [-version] [-help] <config_file>\n\n"
+
+#define ASF_DESCRIPTION_STRING \
+"   "ASF_NAME_STRING" will run the complete SAR interferometric\n"\
+"   processing chain, from ingesting CEOS or STF data\n"\
+"   until the creation and geocoding of the digital elevation model.\n\n"\
+"   Alternatively, ips can run in differential mode and produce \n"\
+"   a differential interferogram (under development).\n\n"\
+"   All the input parameters for the programs are read in from\n"\
+"   a configuration file.\n\n"
+
+#define ASF_REQUIRED_ARGUMENTS_STRING \
+"   config_file\n"\
+"        A configuration file that "ASF_NAME_STRING" uses to find which files to\n"\
+"        use for input and output, what options to use, and how the data should\n"\
+"        be processed. It is either read or created based on whether or not\n"\
+"        the -create option is specified.\n\n"
+
+#define ASF_OPTIONS_STRING \
+"   -create\n"\
+"        Create <config_file> instead of reading it.\n"\
+"   -license\n"\
+"        Print copyright and license for this software then exit.\n"\
+"   -version\n"\
+"        Print version and copyright then exit.\n"\
+"   -help\n"\
+"        Print a help page and exit.\n\n"
+
+#define ASF_EXAMPLES_STRING \
+"   To create an editable configuration file named \"convert.config\" with some\n"\
+"   example values, do this:\n"\
+"      example> "ASF_NAME_STRING" -create convert.config\n"\
+"\n"\
+"   To process level 1 CEOS data using an \"ASF_NAME_STRING\" style configuration\n"\
+"   file named \"config\", do this:\n"\
+"      example> "ASF_NAME_STRING" config\n\n"
+
+#define ASF_LIMITATIONS_STRING \
+"   None known.\\n"
+
+#define ASF_SEE_ALSO_STRING \
+"   All other InSAR tools\\n"
+
+#define ASF_COPYRIGHT_STRING \
+"Copyright (c) "ASF_COPYRIGHT_YEAR_STRING", University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
+"All rights reserved.\n\n"
+
+/*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 /********************************************************************************
 NAME:
 	ips.c
@@ -40,22 +110,79 @@ BUGS:
 #include "ips.h"
 #include "functions.h"
 #include "proj.h"
+#include "asf_reporting.h"
+#include "asf_copyright.h"
+#include "asf_license.h"
+#include "asf_contact.h"
 
-#define VERSION 2.1
+#define FLAG_NOT_SET -1
+#define REQUIRED_ARGS 1
 
-void usage(char *name)
-{	
-  printf("\n    Usage: ips [-c] <configuration file>\n\n");
-  printf("           -c	creates only the configuration file and exits.\n\n");
-  printf("    ips will run the complete SAR interferometric\n");
-  printf(" processing chain, from ingesting CEOS or STF data\n");
-  printf(" until the creation and geocoding of the digital elevation model.\n");
-  printf(" Alternatively, ips can run in differential mode and produce\n"); 
-  printf(" a differential interferogram (under development).\n");
-  printf(" All the input parameters for the programs are read in from\n");
-  printf(" a configuration file.\n\n");
-  printf(" %1.1f, ASF InSAR Tools, 2001\n\n", VERSION);
-  exit(1);
+// Print minimalistic usage info & exit
+static void print_usage(void)
+{
+  asfPrintStatus("\n"
+      "Usage:\n"
+      ASF_USAGE_STRING
+      "\n");
+  exit(EXIT_FAILURE);
+}
+
+// Print the help info & exit
+static void print_help(void)
+{
+  asfPrintStatus(
+      "\n"
+      "Tool name:\n   " ASF_NAME_STRING "\n\n"
+      "Usage:\n" ASF_USAGE_STRING "\n"
+      "Description:\n" ASF_DESCRIPTION_STRING "\n"
+      "Required Arguments:\n" ASF_REQUIRED_ARGUMENTS_STRING "\n"
+      "Options:\n" ASF_OPTIONS_STRING "\n"
+      "Examples:\n" ASF_EXAMPLES_STRING "\n"
+      "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
+      "See also:\n" ASF_SEE_ALSO_STRING "\n"
+      "Contact:\n" ASF_CONTACT_STRING "\n"
+      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
+  exit(EXIT_SUCCESS);
+}
+
+// Print version and copyright & exit
+static void print_version(void)
+{
+  asfPrintStatus(
+    ASF_NAME_STRING", version "CONVERT_PACKAGE_VERSION_STRING"\n"
+    ASF_COPYRIGHT_STRING);
+  exit(EXIT_SUCCESS);
+}
+
+// Print our copyright and license notice & exit
+static void print_license(int license_id)
+{
+  asfPrintStatus("\n"ASF_COPYRIGHT_STRING"\n");
+
+  switch (license_id) {
+    case ASF_BSD_ID:
+      asfPrintStatus(ASF_BSD_LICENSE_STRING"\n");
+      break;
+    default:
+      printf("License not found.\n");
+      break;
+  }
+  exit(EXIT_SUCCESS);
+}
+
+/* Check to see if an option was supplied or not. If it was found, return its
+   argument number. Otherwise, return FLAG_NOT_SET. STOLEN FROM ASF_IMPORT */
+int checkForOption(char* key, int argc, char* argv[])
+{
+  int ii = 0;
+  while(ii < argc)
+  {
+    if(strmatch(key, argv[ii]))
+      return(ii);
+    ++ii;
+  }
+  return(FLAG_NOT_SET);
 }
 
 void check_return(int ret, char *msg)
@@ -106,32 +233,64 @@ main(int argc, char *argv[])
   char configFile[255], cmd[255], path[255], data[255], metadata[255], tmp[255];
   char format[255], options[255], metaFile[25];
   char *veryoldBase=NULL, *oldBase=NULL, *newBase=NULL;
-  int i, delta, cFlag=0, datatype=0, off=1, nLooks, nl, ns;
+  int i, delta, createFlag=FLAG_NOT_SET, datatype=0, off=1, nLooks, nl, ns;
   float xshift, yshift, avg;
   double lat1=0.0, lat2=0.0, lon1;
   
-  if (argc<2 || argc>3) usage("ips");
-  if (strcmp(argv[1], "-c")==0) {
-    cFlag = 1;
-    strcpy(configFile, argv[2]);
+  // Check for all those little helper options
+  if (   (checkForOption("--help", argc, argv) != FLAG_NOT_SET)
+      || (checkForOption("-h", argc, argv) != FLAG_NOT_SET)
+      || (checkForOption("-help", argc, argv) != FLAG_NOT_SET) ) {
+      print_help();
   }
-  else strcpy(configFile, argv[1]);
-  
-  if (argc == 3) printf("\nCommand line: ips -c %s", configFile);
-  else printf("\nCommand line: ips %s", configFile);
-  printf("\nDate: ");
-  system("date");
-  printf("Program: ips\n\n");
-  
-  logflag=quietflag=0;
-  
-  /* Read configuration file */
-  if (!fileExists(configFile)) {
-    check_return(init_config(configFile), 
-		 "basic configuration file could not initialized");
-    exit(0);
+  if ( checkForOption("-license", argc, argv) != FLAG_NOT_SET ) {
+      print_license(ASF_BSD_ID);
   }
-  else cfg = read_config(configFile, cFlag);
+  if ( checkForOption("-version", argc, argv) != FLAG_NOT_SET ) {
+      print_version();
+  }
+
+  // Check which options were provided
+  createFlag = checkForOption("-create", argc, argv);
+
+  // We need to make sure the user specified the proper number of arguments
+  int needed_args = 1 + REQUIRED_ARGS;               // command & REQUIRED_ARGS
+  if (createFlag != FLAG_NOT_SET)  needed_args += 1; // option
+
+  // Make sure we have the right number of args
+  if(argc != needed_args) {
+    print_usage();
+  }
+
+  if (createFlag != FLAG_NOT_SET)
+    createFlag = 1;
+  else
+    createFlag = 0;
+
+  // Fetch required arguments
+  strcpy(configFile, argv[argc-1]);
+
+  // Report the command line
+  asfSplashScreen(argc, argv);
+  
+  // If requested, create a config file and exit (if the file does not exist),
+  // otherwise read it
+  if ( createFlag==TRUE && !fileExists(configFile) ) {
+    init_config(configFile);
+    exit(EXIT_SUCCESS);
+  }
+  // Extend the configuration file if the file already exist
+  else if ( createFlag==TRUE && fileExists(configFile) ) {
+    cfg = read_config(configFile);
+    check_return(write_config(configFile, cfg), 
+		 "Could not update configuration file");
+    asfPrintStatus("   Initialized complete configuration file\n\n");
+    FCLOSE(fLog);
+    exit(EXIT_SUCCESS);
+  }
+  else {
+    cfg = read_config(configFile);
+  }
   
   /* Setup log file */
   sprintf(logFile, "%s.log", cfg->general->base);
@@ -170,7 +329,7 @@ main(int argc, char *argv[])
   sscanf(cfg->master->path, "%s", path);
   sscanf(cfg->master->data, "%s", data);
   sscanf(cfg->master->meta, "%s", metadata);
-  if (strncmp(cfg->general->status, "new", 3)==0 && !cFlag) {
+  if (strncmp(cfg->general->status, "new", 3)==0 && !createFlag) {
     sprintf(tmp, "%s/%s", path, data);
     if (!fileExists(tmp)) check_return(1, "master image data file does not exist");
     sprintf(cmd, "ln -s %s/%s .", path, data); system(cmd);
@@ -182,7 +341,7 @@ main(int argc, char *argv[])
   sscanf(cfg->slave->path, "%s", path);
   sscanf(cfg->slave->data, "%s", data);
   sscanf(cfg->slave->meta, "%s", metadata);
-  if (strncmp(cfg->general->status, "new", 3)==0 && !cFlag) {
+  if (strncmp(cfg->general->status, "new", 3)==0 && !createFlag) {
     sprintf(tmp, "%s/%s", path, data);
     if (!fileExists(tmp)) check_return(1, "slave image data file does not exist");
     sprintf(cmd, "ln -s %s/%s .", path, data); system(cmd);
@@ -194,10 +353,10 @@ main(int argc, char *argv[])
   } 
   
   /* Update configuration file */
-  if (!cFlag) sprintf(cfg->general->status, "progress");
+  if (!createFlag) sprintf(cfg->general->status, "progress");
   check_return(write_config(configFile, cfg), "Could not update configuration file");
   
-  if (cFlag) {
+  if (createFlag) {
     printf("   Initialized complete configuration file\n\n");
     if (logflag) {
       fLog = FOPEN(logFile, "a");
