@@ -494,21 +494,21 @@ main(int argc, char *argv[])
 		     "Could not update configuration file"); 
       }
       if (cfg->general->mflag) {
-	check_return(coregister_fine("reg/a_p1_cpx.img", "reg/b_p1_cpx.img", "reg/ctrl1", 
+	check_return(coregister_fine("reg/a_p1_cpx", "reg/b_p1_cpx", "reg/ctrl1", 
 				     "reg/fico1", "reg/mask1.img", 
 				     cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		     "fine coregistration first patch (coregister_fine)");
-	check_return(coregister_fine("reg/a_pL_cpx.img", "reg/b_pL_cpx.img", "reg/ctrlL", 
+	check_return(coregister_fine("reg/a_pL_cpx", "reg/b_pL_cpx", "reg/ctrlL", 
 				     "reg/ficoL", "reg/maskL.img",
 				     cfg->coreg_pL->grid, cfg->coreg_pL->fft), 
 		     "fine coregistration last patch (coregister_fine)");
       }
       else {
-	check_return(coregister_fine("reg/a_p1_cpx.img", "reg/b_p1_cpx.img", "reg/ctrl1", 
+	check_return(coregister_fine("reg/a_p1_cpx", "reg/b_p1_cpx", "reg/ctrl1", 
 				     "reg/fico1", NULL, 
 				     cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		     "fine coregistration first patch (coregister_fine)");
-	check_return(coregister_fine("reg/a_pL_cpx.img", "reg/b_pL_cpx.img", "reg/ctrlL", 
+	check_return(coregister_fine("reg/a_pL_cpx", "reg/b_pL_cpx", "reg/ctrlL", 
 				     "reg/ficoL", NULL,
 				     cfg->coreg_pL->grid, cfg->coreg_pL->fft), 
 		     "fine coregistration last patch (coregister_fine)");
@@ -575,12 +575,12 @@ main(int argc, char *argv[])
 			   cfg->ardop_slave->patches, "b", "b"), 
 		     "processing slave image (ardop)");
 	if (cfg->general->mflag) 
-	  check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", 
+	  check_return(coregister_fine("a_cpx", "b_cpx", "reg/ctrl", "reg/fico", 
 				       cfg->general->mask,
 				       cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		       "offset estimation slave image (coregister_fine)");
 	else 
-	  check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", 
+	  check_return(coregister_fine("a_cpx", "b_cpx", "reg/ctrl", "reg/fico", 
 				       NULL, cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		       "offset estimation slave image (coregister_fine)");
 	sprintf(cmd, "cp base.00 %s.base.00", cfg->general->base); system(cmd);
@@ -621,18 +621,18 @@ main(int argc, char *argv[])
 	}
 	
 	if (cfg->general->mflag) {
-	  check_return(coregister_coarse("a_cpx.img", "b_cpx.img", "reg/ctrl", 
+	  check_return(coregister_coarse("a_cpx", "b_cpx", "reg/ctrl", 
 					 cfg->general->mask), 
 		       "offset estimation slave image (coregister_coarse)");
-	  check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", 
+	  check_return(coregister_fine("a_cpx", "b_cpx", "reg/ctrl", "reg/fico", 
 				       cfg->general->mask, 
 				       cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		       "fine coregistration slave image (coregister_fine)");
 	}
 	else {
-	  check_return(coregister_coarse("a_cpx.img", "b_cpx.img", "reg/ctrl", NULL), 
+	  check_return(coregister_coarse("a_cpx", "b_cpx", "reg/ctrl", NULL), 
 		       "offset estimation slave image (coregister_coarse)");
-	  check_return(coregister_fine("a_cpx.img", "b+cpx.img", "reg/ctrl", "reg/fico",
+	  check_return(coregister_fine("a_cpx", "b_cpx", "reg/ctrl", "reg/fico",
 				       NULL, cfg->coreg_p1->grid, cfg->coreg_p1->fft), 
 		       "fine coregistration slave image (coregister_fine)");
 	}
@@ -748,18 +748,18 @@ main(int argc, char *argv[])
     /* Coregister slave image */
     if (check_status(cfg->coreg_slave->status)) {
       if (cfg->general->mflag) {
-	check_return(coregister_coarse("a_cpx.img", "b_cpx.img", "reg/ctrl", 
+	check_return(coregister_coarse("a_cpx", "b_cpx", "reg/ctrl", 
 				       cfg->general->mask), 
 		     "offset estimation (coregister_coarse)");
-	check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", 
+	check_return(coregister_fine("a_cpx", "b_cpx", "reg/ctrl", "reg/fico", 
 				     cfg->general->mask, 
 				     cfg->coreg_slave->grid, cfg->coreg_slave->fft), 
 		     "fine coregistration slave image (coregister_fine)");
       }
       else {
-	check_return(coregister_coarse("a_cpx.img", "b_cpx.img", "reg/ctrl", NULL), 
+	check_return(coregister_coarse("a_cpx", "b_cpx", "reg/ctrl", NULL), 
 		     "offset estimation (coregister_coarse)");
-	check_return(coregister_fine("a_cpx.img", "b_cpx.img", "reg/ctrl", "reg/fico", NULL, 
+	check_return(coregister_fine("a_cpx", "b_cpx", "reg/ctrl", "reg/fico", NULL, 
 				     cfg->coreg_slave->grid, cfg->coreg_slave->fft), 
 		     "fine coregistration slave image (coregister_fine)");
       }
