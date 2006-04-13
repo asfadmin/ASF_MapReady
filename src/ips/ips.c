@@ -1136,22 +1136,14 @@ main(int argc, char *argv[])
       check_return(write_config(configFile, cfg), 
 		   "Could not update configuration file"); 
     }
-    if (strcmp(cfg->geocode->name, "utm")==0) {
-      if (!fileExists(cfg->geocode->proj)) {
-	sprintf(tmp, "--projection utm --resample-method %s --pixel_size %.1lf", 
-		cfg->geocode->resample, cfg->geocode->pixel_spacing);
-      }
-      else {
-	sprintf(tmp, "--read_proj_file %s --resample-method %s --pixel_size %.1lf",
-		cfg->geocode->proj, cfg->geocode->resample, cfg->geocode->pixel_spacing);
-      }
-    }
-    else if (strcmp(cfg->geocode->name, "albers")==0 ||
-	     strcmp(cfg->geocode->name, "lamcc")==0 ||
-	     strcmp(cfg->geocode->name, "ps")==0) {
+    if (strcmp(cfg->geocode->name, "utm")==0 ||
+	strcmp(cfg->geocode->name, "albers")==0 ||
+	strcmp(cfg->geocode->name, "lamaz")==0 ||
+	strcmp(cfg->geocode->name, "lamcc")==0 ||
+	strcmp(cfg->geocode->name, "ps")==0) {
       if (!fileExists(cfg->geocode->proj)) 
 	check_return(1, "projection file does not exist");
-      sprintf(tmp, "--read_proj_file %s --resample-method %s --pixel_size %.1lf",
+      sprintf(tmp, "-read-proj-file %s -resample-method %s -pixel-size %.1lf",
 	      cfg->geocode->proj, cfg->geocode->resample, cfg->geocode->pixel_spacing);
     }
     check_return(asf_geocode(tmp, "elevation", cfg->geocode->dem), 

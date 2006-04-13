@@ -314,7 +314,8 @@ dem_config *init_fill_config(char *configFile)
   cfg->geocode->name = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->geocode->name, "utm");
   cfg->geocode->proj = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->proj, "");
+  sprintf(cfg->geocode->proj, "%s/projections/utm/utm.proj", 
+	  get_asf_share_dir());
   cfg->geocode->resample = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->geocode->resample, "bilinear");
   cfg->geocode->pixel_spacing = 20;
