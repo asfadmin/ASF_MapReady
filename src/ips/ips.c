@@ -317,22 +317,46 @@ main(int argc, char *argv[])
   sprintf(logbuf, "Program: ips\n\n"); printLog(logbuf);
   FCLOSE(fLog);
   
-  /* Prepare processing */
-  if (strcmp(cfg->master->data, cfg->slave->data)==0)
-    check_return(1, "master and slave image data file have the same name");
-  if (strcmp(cfg->master->meta, cfg->slave->meta)==0)
-    check_return(1, "master and slave image meta data file have the same name");
+  // Determine datatype
+  if (strncmp(uc(cfg->general->data_type), "STF", 3)==0) {
+    datatype = 0;
+    sprintf(format, "STF");
+  }
+  if (strncmp(uc(cfg->general->data_type), "RAW", 3)==0) {
+    datatype = 1;
+    sprintf(format, "CEOS");
+  }
+  if (strncmp(uc(cfg->general->data_type), "SLC", 3)==0) {
+    datatype = 2;
+    sprintf(format, "CEOS");
+  }
+
+  // Prepare processing
   sscanf(cfg->master->path, "%s", path);
   sscanf(cfg->master->data, "%s", data);
   sscanf(cfg->master->meta, "%s", metadata);
   if (strncmp(cfg->general->status, "new", 3)==0 && !createFlag) {
     sprintf(tmp, "%s/%s", path, data);
     if (!fileExists(tmp)) check_return(1, "master image data file does not exist");
-    sprintf(cmd, "ln -s %s/%s .", path, data); system(cmd);
+    if (datatype==0) {
+      sprintf(cmd, "ln -s %s/%s master.000", path, data);
+      system(cmd);
+    }
+    else {
+      sprintf(cmd, "ln -s %s/%s master.D", path, data);
+      system(cmd);
+    }
     sprintf(tmp, "%s/%s", path, metadata);
     if (!fileExists(tmp)) 
       check_return(1, "master image metadata file does not exist");
-    sprintf(cmd, "ln -s %s/%s .", path, metadata); system(cmd);
+    if (datatype==0) {
+      sprintf(cmd, "ln -s %s/%s master.000.par", path, metadata);
+      system(cmd);
+    }
+    else {
+      sprintf(cmd, "ln -s %s/%s master.L", path, metadata);
+      system(cmd);
+    }
   }
   sscanf(cfg->slave->path, "%s", path);
   sscanf(cfg->slave->data, "%s", data);
@@ -340,11 +364,24 @@ main(int argc, char *argv[])
   if (strncmp(cfg->general->status, "new", 3)==0 && !createFlag) {
     sprintf(tmp, "%s/%s", path, data);
     if (!fileExists(tmp)) check_return(1, "slave image data file does not exist");
-    sprintf(cmd, "ln -s %s/%s .", path, data); system(cmd);
-    sprintf(tmp, "%s/%s", path, metadata);
+    if (datatype==0) {
+      sprintf(cmd, "ln -s %s/%s slave.000", path, data);
+      system(cmd);
+    }
+    else {
+      sprintf(cmd, "ln -s %s/%s slave.D", path, data); system(cmd);
+      sprintf(tmp, "%s/%s", path, metadata);
+    }
     if (!fileExists(tmp)) 
       check_return(1, "slave image metadata file does not exist");
-    sprintf(cmd, "ln -s %s/%s .", path, metadata); system(cmd);
+    if (datatype==0) {
+      sprintf(cmd, "ln -s %s/%s slave.000.par", path, metadata);
+      system(cmd);
+    }
+    else {
+      sprintf(cmd, "ln -s %s/%s slave.L", path, metadata);
+      system(cmd);
+    }
     system("mkdir reg");
   } 
   
@@ -362,7 +399,7 @@ main(int argc, char *argv[])
     exit(0);
   }
   
-  /* Check the data type */
+  // Tell the user what data type and processing mode we found
   printf("   Data type: %s\n   Processing mode: %s\n", 
 	 cfg->general->data_type, cfg->general->mode);
   fLog = FOPEN(logFile, "a");
@@ -370,18 +407,6 @@ main(int argc, char *argv[])
 	  cfg->general->data_type, cfg->general->mode);
   printLog(logbuf);
   FCLOSE(fLog);
-  if (strncmp(uc(cfg->general->data_type), "STF", 3)==0) {
-    datatype = 0;
-    sprintf(format, "STF");
-  }
-  if (strncmp(uc(cfg->general->data_type), "RAW", 3)==0) {
-    datatype = 1;
-    sprintf(format, "CEOS");
-  }
-  if (strncmp(uc(cfg->general->data_type), "SLC", 3)==0) {
-    datatype = 2;
-    sprintf(format, "CEOS");
-  }
   
   /* Ingest the various data types: STF, RAW, or SLC */
   if (datatype==0) {
@@ -400,19 +425,20 @@ main(int argc, char *argv[])
 	check_return(write_config(configFile, cfg), 
 		     "Could not update configuration file"); 
       }
-      if (!fileExists(cfg->master->data)) 
+   
+      if (!fileExists("master.000")) 
 	check_return(1, "master image data file does not exist");
-      if (!fileExists(cfg->master->meta)) 
+      if (!fileExists("master.000.par")) 
 	check_return(1, "master image metadata file does not exist"); 
-      check_return(asf_import(cfg->master->data, "a", format,
+      check_return(asf_import("master", "a", format,
 			      cfg->ingest->prc_master, cfg->ingest->prcflag, 
 			      cfg->general->lat_begin, cfg->general->lat_end), 
 		   "ingesting master image(asf_import)");
-      if (!fileExists(cfg->slave->data)) 
+      if (!fileExists("slave.000")) 
 	check_return(1, "slave image data file does not exist");
-      if (!fileExists(cfg->slave->meta)) 
+      if (!fileExists("slave.000.par")) 
 	check_return(1, "slave image metadata file does not exist"); 
-      check_return(asf_import(cfg->slave->data, "b", format,
+      check_return(asf_import("slave", "b", format,
 			      cfg->ingest->prc_slave, cfg->ingest->prcflag, 
 			      cfg->general->lat_begin, cfg->general->lat_end), 
 		   "ingesting slave image (asf_import)");
@@ -444,19 +470,19 @@ main(int argc, char *argv[])
     
     /* Ingest of CEOS raw data */
     if (check_status(cfg->ingest->status)) {
-      if (!fileExists(cfg->master->data)) 
+      if (!fileExists("master.D")) 
 	check_return(1, "master image data file does not exist");
-      if (!fileExists(cfg->master->meta)) 
+      if (!fileExists("master.L")) 
 	check_return(1, "master image metadata file does not exist");
-      check_return(asf_import(cfg->master->data, "a", format,
+      check_return(asf_import("master", "a", format,
 			      cfg->ingest->prc_master, cfg->ingest->prcflag, 
 			      cfg->general->lat_begin, cfg->general->lat_end), 
 		   "ingesting master image (asf_import)");
-      if (!fileExists(cfg->slave->data)) 
+      if (!fileExists("master.D")) 
 	check_return(1, "slave image data file does not exist");
-      if (!fileExists(cfg->slave->meta)) 
+      if (!fileExists("master.L")) 
 	check_return(1, "slave image metadata file does not exist"); 
-      check_return(asf_import(cfg->slave->data, "b", format,
+      check_return(asf_import("slave", "b", format,
 			      cfg->ingest->prc_master, cfg->ingest->prcflag, 
 			      cfg->general->lat_begin, cfg->general->lat_end), 
 		   "ingesting slave image (asf_import)");
@@ -858,13 +884,13 @@ main(int argc, char *argv[])
     
     /* Ingest CEOS SLC data */
     if (check_status(cfg->ingest->status)) {
-      if (!fileExists(cfg->master->data)) 
+      if (!fileExists("master.D")) 
 	check_return(1, "master image data file does not exist");
-      if (!fileExists(cfg->master->meta)) 
+      if (!fileExists("master.L")) 
 	check_return(1, "master image metadata file does not exist");
-      if (!fileExists(cfg->slave->data)) 
+      if (!fileExists("slave.D")) 
 	check_return(1, "slave image data file does not exist");
-      if (!fileExists(cfg->slave->meta)) 
+      if (!fileExists("slave.L")) 
 	check_return(1, "slave image metadata file does not exist");
 
       /* Check later !!! Might need some more parameters in ingest block.
@@ -879,10 +905,10 @@ main(int argc, char *argv[])
 	 (vfdr1.datgroup < vfdr2.datgroup) ? vfdr1.datgroup : vfdr2.datgroup;
 	 }
       */
-      check_return(asf_import(cfg->master->data, "a_cpx", format,
+      check_return(asf_import("master", "a_cpx", format,
 			      cfg->ingest->prc_master, 0, -99.0, -99.0), 
 		   "ingesting master image (asf_import)");
-      check_return(asf_import(cfg->slave->data, "b_cpx", format,
+      check_return(asf_import("slave", "b_cpx", format,
 			      cfg->ingest->prc_master, 0, -99.0, -99.0), 
  		   "ingesting slave image (asf_import)");
       check_return(c2p("a_cpx", "a"), 
