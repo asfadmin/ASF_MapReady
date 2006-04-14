@@ -456,7 +456,7 @@ dem_config *init_fill_config(char *configFile)
   return cfg;
 }
 
-dem_config *read_config(char *configFile)
+dem_config *read_config(char *configFile, int createFlag)
 {
   FILE *fConfig;
   dem_config *cfg=NULL;
@@ -465,6 +465,7 @@ dem_config *read_config(char *configFile)
   
   cfg = init_fill_config(configFile);
   if (cfg == NULL) check_return(1, "creating configuration structure");
+  if (createFlag) return cfg;
   
   fConfig = FOPEN(configFile, "r");
   while (fgets(line, 255, fConfig) != NULL) {

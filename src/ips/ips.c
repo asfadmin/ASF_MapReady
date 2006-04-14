@@ -281,30 +281,8 @@ main(int argc, char *argv[])
   }
   // Extend the configuration file if the file already exist
   else if ( createFlag==TRUE && fileExists(configFile) ) {
-    cfg = read_config(configFile);
-    check_return(write_config(configFile, cfg), 
-		 "Could not update configuration file");
-    asfPrintStatus("   Initialized complete configuration file\n\n");
-    FCLOSE(fLog);
-    exit(EXIT_SUCCESS);
-  }
-  else {
-    cfg = read_config(configFile);
-  }
-  
-  /* Setup log file */
-  sprintf(logFile, "%s.log", cfg->general->base);
-  if (strncmp(cfg->general->status, "new", 3)==0) fLog = FOPEN(logFile, "w");
-  else fLog = FOPEN(logFile, "a");
-  if (argc == 3) {
-    sprintf(logbuf, "\nCommand line: ips -c %s\n", configFile); printLog(logbuf); }
-  else {
-    sprintf(logbuf, "\nCommand line: ips %s\n", configFile); printLog(logbuf); }
-  sprintf(logbuf, "Program: ips\n\n"); printLog(logbuf);
-  FCLOSE(fLog);
-  
-  /* Names for the results to keep */
-  if (strncmp(cfg->general->status, "new", 3)==0) {
+    cfg = read_config(configFile, createFlag);
+    // Assign names for results to be kept
     sprintf(cfg->igram_coh->igram, "%s_igram", cfg->general->base);
     sprintf(cfg->igram_coh->coh, "coh.img", cfg->general->base);
     sprintf(cfg->ardop_master->power_img, "%s_a_pwr.img", cfg->general->base);
@@ -318,8 +296,26 @@ main(int argc, char *argv[])
     sprintf(cfg->geocode->amp, "%s_amp", cfg->general->base);
     sprintf(cfg->geocode->error, "%s_error", cfg->general->base);
     sprintf(cfg->geocode->coh, "%s_coh", cfg->general->base);
-    check_return(write_config(configFile, cfg), "Could not update configuration file"); 
+    check_return(write_config(configFile, cfg), 
+		 "Could not update configuration file");
+    asfPrintStatus("   Initialized complete configuration file\n\n");
+    FCLOSE(fLog);
+    exit(EXIT_SUCCESS);
   }
+  else {
+    cfg = read_config(configFile, createFlag);
+  }
+  
+  /* Setup log file */
+  sprintf(logFile, "%s.log", cfg->general->base);
+  if (strncmp(cfg->general->status, "new", 3)==0) fLog = FOPEN(logFile, "w");
+  else fLog = FOPEN(logFile, "a");
+  if (argc == 3) {
+    sprintf(logbuf, "\nCommand line: ips -c %s\n", configFile); printLog(logbuf); }
+  else {
+    sprintf(logbuf, "\nCommand line: ips %s\n", configFile); printLog(logbuf); }
+  sprintf(logbuf, "Program: ips\n\n"); printLog(logbuf);
+  FCLOSE(fLog);
   
   /* Prepare processing */
   if (strcmp(cfg->master->data, cfg->slave->data)==0)
