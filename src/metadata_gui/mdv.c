@@ -32,6 +32,92 @@
 
 static char appfontname[128] = "tahoma 8"; /* fallback value */
 
+static int do_system_exec(const char *cmd)
+{
+    printf("Systeming: %s\n", cmd);
+
+#ifdef win32
+
+#ifndef	HAVE_GNU_LD
+#define	__environ	environ
+#endif
+
+    int pid, save, status;
+    struct sigaction sa, intr, quit;
+
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags = 0;
+    sigemptyset (&sa.sa_mask);
+
+    if (sigaction (SIGINT, &sa, &intr) < 0)
+    {
+        return -1;
+    }
+
+    if (sigaction (SIGQUIT, &sa, &quit) < 0)
+    {
+        save = errno;
+        (void) sigaction (SIGINT, &intr, (struct sigaction *) NULL);
+        errno = save;
+        return -1;
+    }
+
+    pid = fork();
+    if (pid == 0)
+    {
+        char shell_path[512];
+        const char *new_argv[4];
+
+        new_argv[0] = "sh.exe";
+        new_argv[1] = "-c";
+        new_argv[2] = cmd;
+        new_argv[3] = 0;
+
+        (void) sigaction (SIGINT, &intr, (struct sigaction *) NULL);
+        (void) sigaction (SIGQUIT, &quit, (struct sigaction *) NULL);
+
+        sprintf(shell_path, "%s/sh", get_asf_bin_dir());
+        execve(shell_path, (char * const *) new_argv, __environ);
+
+        exit(127);
+    }
+    else if (pid < 0)
+    {
+        /* fork failed */
+        return -1;
+    }
+    else
+    {
+        int n;
+        do 
+        {
+            n = waitpid(pid, &status, 0);
+        }
+        while (n == -1 && errno == EINTR);
+
+        if (n != pid)
+        {
+            status = -1;
+        }
+    }
+
+    save = errno;
+    if (sigaction (SIGINT, &intr, (struct sigaction *) NULL) |
+        sigaction (SIGQUIT, &quit, (struct sigaction *) NULL))
+    {
+        if (errno == ENOSYS)
+            errno = save;
+        else
+            return -1;
+    }
+
+    return status;
+
+#else
+    return system(cmd);
+#endif
+}
+
 static void set_app_font (const char *fontname)
 {
     GtkSettings *settings;
@@ -143,17 +229,47 @@ const char DIR_SEPARATOR = '/';
 
 GladeXML *glade_xml;
 
-#define ENABLE_FIND_IN_SHARE
-#ifdef ENABLE_FIND_IN_SHARE
+//static char *
+//find_in_bin(const char * filename)
+//{
+//    char * ret = (char *) malloc(sizeof(char) *
+//        (strlen(get_asf_bin_dir()) + strlen(filename) + 5));
+//    sprintf(ret, "%s/%s", get_asf_bin_dir(), filename);
+//    return ret;
+//}
+
+static char * escapify(const char * s)
+{
+    int i,j;
+    char * ret = MALLOC(2*strlen(s)*sizeof(char));
+    for (i = 0, j = 0; i <= strlen(s); ++i)
+    {
+        switch(s[i])
+        {
+            case '\\':
+                ret[j] = ret[j+1] = s[i];
+                ++j;
+                break;
+            default:
+                ret[j] = s[i];
+                break;
+        }
+        ++j;
+    }
+
+    return ret;
+}
+
 static char *
 find_in_share(const char * filename)
 {
-    char * ret = (char *) malloc(sizeof(char) *
-        (strlen(get_asf_share_dir()) + strlen(filename) + 5));
-    sprintf(ret, "%s/%s", get_asf_share_dir(), filename);
+    char * escaped_dir = escapify(get_asf_share_dir());
+    char * ret = (char *) MALLOC(sizeof(char) *
+        (strlen(escaped_dir) + strlen(filename) + 2));
+    sprintf(ret, "%s/%s", escaped_dir, filename);
+    free(escaped_dir);
     return ret;
 }
-#endif
 
 gchar *
 find_in_path(gchar * file)
@@ -433,25 +549,21 @@ static void execute()
 
     gchar cmd[1024];
 
-#ifdef ENABLE_FIND_IN_SHARE 
-    sprintf(cmd, "%s/metadata -f umlarqphsfib %s", 
+    sprintf(cmd, "\"%s/metadata\" -f umlarqphsfib \"%s\"", 
         get_asf_bin_dir(), input_file);
-#else
-    sprintf(cmd, "metadata -f umlarqphsfib %s", input_file);
-#endif
 
     int i;
     for (i = 0; i < strlen(cmd); ++i)
         if (cmd[i] == '\\' && cmd[i+1] != ' ') cmd[i] = '/';
 
-    // printf("%s\n", cmd);
+    printf("%s\n", cmd);
 
-    int ret = system(cmd);
+    int ret = do_system_exec(cmd);
 
     // printf("ret = %d\n", ret);
     if (ret != 0)
     {
-        printf("Error Calling metadata back-end: \n");
+        printf("Error Calling metadata back-end (%d): \n", ret);
         printf("  errno = %d\n", errno);
         printf("  err = %s\n", strerror(errno));
     }
