@@ -972,6 +972,10 @@ main (int argc, char **argv)
 #define X_PIXEL(x, y) reverse_map_x (&dtf, x, y)
 #define Y_PIXEL(x, y) reverse_map_y (&dtf, x, y)
 
+  // We want to choke if our worst point in the model is off by this
+  // many pixels or more.
+  double max_allowable_error = 1.25;
+
   // Check the health of the our spline model by comparing the input
   // image pixel coordinates predicted by the model for each point
   // with the known values.
@@ -1025,9 +1029,6 @@ main (int argc, char **argv)
       largest_y_error = min_y_error;
     }
     double largest_error = gsl_vector_max (model_errors);
-    // We want to choke if our worst point in the model is off by this
-    // many pixels or more.
-    double max_allowable_error = 1.25;
     if ( largest_error > max_allowable_error ) {
             print_large_error_blurb(force_flag);
 	    report_func("Largest Error was larger than maximum allowed! "
