@@ -198,8 +198,8 @@ int main(int argc, char *argv[])
 	outLen = meta->general->line_count;
   
 	/* Create new metadata file for the amplitude and phase.*/
-	meta->sar->line_increment *= sl;
-	meta->sar->sample_increment *= ss;
+	meta->sar->line_increment = 1;
+	meta->sar->sample_increment = 1;
 	meta->sar->azimuth_time_per_pixel *= sl;
 	meta->general->x_pixel_size *= ss;
 	meta->general->y_pixel_size *= sl;
