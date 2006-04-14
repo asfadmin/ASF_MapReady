@@ -365,7 +365,11 @@ void write_to_file(char *exe, char *rectypes, char *infile)
     }
     if (reqrec > 0)
     {
+#ifdef win32
+      sprintf(cmd,"\"%s\" %c \"%s\" > \"%s\"\n",exe,rectypes[j],name,outfile);
+#else
       sprintf(cmd,"%s %c %s > %s\n",exe,rectypes[j],name,outfile);
+#endif
       if (system(cmd) != 0) {
 	printf("Error calling metadata: %s\n", strerror(errno)); 
 	exit(0);
