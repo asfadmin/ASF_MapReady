@@ -374,9 +374,18 @@ pixel_float2byte(float paf, scale_t sample_mapping,
       pab = (unsigned char)FLOAT_IMAGE_DEFAULT_MASK;
     }
     else {
-      gsl_histogram_find (hist, paf, &hist_bin);
+      if (paf <= gsl_histogram_min(hist)) {
+	hist_bin = 0;
+      }
+      else if (paf >= gsl_histogram_max(hist)) {
+	hist_bin = gsl_histogram_bins(hist) - 1;
+      }
+      else {
+	gsl_histogram_find (hist, paf, &hist_bin);
+      }
+
       double pdf_at_index = gsl_histogram_get ((gsl_histogram*)hist_pdf,
-                                               hist_bin);
+					       hist_bin);
       pab = (unsigned char)(max_brightness * pdf_at_index);
     }
     break;
