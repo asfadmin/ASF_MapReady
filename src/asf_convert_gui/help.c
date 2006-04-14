@@ -10,6 +10,28 @@ static const int max_line_len = 2048;
 long get_string_from_registry_ex(const char *folder, const char * key, char * str_value);
 //const char * get_asf_bin_dir();
 
+char * escapify(const char * s)
+{
+    int i,j;
+    char * ret = MALLOC(2*strlen(s)*sizeof(char));
+    for (i = 0, j = 0; i <= strlen(s); ++i)
+    {
+        switch(s[i])
+        {
+            case '\\':
+                ret[j] = ret[j+1] = s[i];
+                ++j;
+                break;
+            default:
+                ret[j] = s[i];
+                break;
+        }
+        ++j;
+    }
+
+    return ret;
+}
+
 SIGNAL_CALLBACK void
 on_help_button_clicked(GtkWidget *widget)
 { 
@@ -26,9 +48,11 @@ on_help_button_clicked(GtkWidget *widget)
             char *p = strstr(hh, "%1");
             if (p) *p = '\0';
 
-            strcat(hh, get_asf_bin_dir());
+            char * escaped_share_dir = escapify(get_asf_share_dir());
+            strcat(hh, escaped_share_dir);
             strcat(hh, "/asf_convert_gui.chm");
-            ret = system(hh);
+            FREE(escaped_share_dir);
+            ret = do_system_exec(hh);
             if (ret != -1) exit(0);
         }
 

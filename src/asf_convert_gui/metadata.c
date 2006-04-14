@@ -144,9 +144,10 @@ static void mdv_thread (GString *file, gpointer user_data)
 #endif
 
     char buf[1024];
-    sprintf(buf, "%s %s", mdv, file->str);
-    //  printf("%s\n", buf);
-    system(buf);
+    char *escaped_str = escapify(file->str);
+    sprintf(buf, "\"%s\" \"%s\"", mdv, escaped_str);
+    free(escaped_str);
+    do_system_exec(buf);
     g_string_free(file, TRUE);
 }
 #endif
@@ -158,6 +159,8 @@ void show_ceos_meta_data(gchar * out_name)
 #else
     gchar * mdv = find_in_path("mdv");
 #endif
+
+    gchar * ceos_file = build_ceos_metadata_filename(out_name);
 
     // use_thumbnails should always be true here, since
     // we disable the option in the case where it is false
@@ -173,7 +176,7 @@ void show_ceos_meta_data(gchar * out_name)
             ttp = g_thread_pool_new ((GFunc) mdv_thread, NULL, 4, TRUE, &err);
             g_assert(!err);
         }
-        g_thread_pool_push (ttp, g_string_new (out_name), &err);
+        g_thread_pool_push (ttp, g_string_new (ceos_file), &err);
         g_assert(!err);
 #endif
     }
@@ -181,6 +184,8 @@ void show_ceos_meta_data(gchar * out_name)
     {
         message_box("Failed to open external metadata viewer!");
     }
+
+    g_free (ceos_file);
 }
 
 void
