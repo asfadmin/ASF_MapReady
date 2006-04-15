@@ -121,6 +121,12 @@ BUGS:
 #include "get_ceos_names.h"
 #include "metadisplay.h"
 
+#ifdef win32
+#include <unistd.h>
+#include <signal.h>
+#include <process.h>
+#endif
+
 #define VERSION 2.3
 
 int main(int argc, char **argv)
@@ -326,6 +332,89 @@ void usage(char *name)
    exit (1);
 }
 
+static int do_system_exec(const char *cmd)
+{
+#ifdef win32
+
+#ifndef	HAVE_GNU_LD
+#define	__environ	environ
+#endif
+
+    int pid, save, status;
+    struct sigaction sa, intr, quit;
+
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags = 0;
+    sigemptyset (&sa.sa_mask);
+
+    if (sigaction (SIGINT, &sa, &intr) < 0)
+    {
+        return -1;
+    }
+
+    if (sigaction (SIGQUIT, &sa, &quit) < 0)
+    {
+        save = errno;
+        (void) sigaction (SIGINT, &intr, (struct sigaction *) NULL);
+        errno = save;
+        return -1;
+    }
+
+    pid = fork();
+    if (pid == 0)
+    {
+        char shell_path[512];
+        const char *new_argv[4];
+
+        new_argv[0] = "sh.exe";
+        new_argv[1] = "-c";
+        new_argv[2] = cmd;
+        new_argv[3] = 0;
+
+        (void) sigaction (SIGINT, &intr, (struct sigaction *) NULL);
+        (void) sigaction (SIGQUIT, &quit, (struct sigaction *) NULL);
+
+        sprintf(shell_path, "%s/sh", get_asf_bin_dir());
+        execve(shell_path, (char * const *) new_argv, __environ);
+
+        exit(127);
+    }
+    else if (pid < 0)
+    {
+        /* fork failed */
+        return -1;
+    }
+    else
+    {
+        int n;
+        do 
+        {
+            n = waitpid(pid, &status, 0);
+        }
+        while (n == -1 && errno == EINTR);
+
+        if (n != pid)
+        {
+            status = -1;
+        }
+    }
+
+    save = errno;
+    if (sigaction (SIGINT, &intr, (struct sigaction *) NULL) |
+        sigaction (SIGQUIT, &quit, (struct sigaction *) NULL))
+    {
+        if (errno == ENOSYS)
+            errno = save;
+        else
+            return -1;
+    }
+
+    return status;
+
+#else
+    return system(cmd);
+#endif
+}
 
 void write_to_file(char *exe, char *rectypes, char *infile)
 {
@@ -370,7 +459,7 @@ void write_to_file(char *exe, char *rectypes, char *infile)
 #else
       sprintf(cmd,"%s %c %s > %s\n",exe,rectypes[j],name,outfile);
 #endif
-      if (system(cmd) != 0) {
+      if (do_system_exec(cmd) != 0) {
 	printf("Error calling metadata: %s\n", strerror(errno)); 
 	exit(0);
       }
