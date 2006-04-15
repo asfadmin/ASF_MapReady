@@ -114,6 +114,7 @@ enum
 #include "win_font.h"
 #include "projfile.h"
 #include "view_output.h"
+#include "share.h"
 
 extern const char DIR_SEPARATOR;
 extern const char PATH_SEPATATOR;

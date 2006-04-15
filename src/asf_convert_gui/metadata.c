@@ -138,9 +138,9 @@ void show_asf_meta_data(gchar * out_name)
 static void mdv_thread (GString *file, gpointer user_data)
 {
 #ifdef win32
-    gchar * mdv = find_in_path("mdv.exe");
+    gchar * mdv = find_in_bin("mdv.exe");
 #else
-    gchar * mdv = find_in_path("mdv");
+    gchar * mdv = find_in_bin("mdv");
 #endif
 
     char buf[1024];
@@ -155,9 +155,9 @@ static void mdv_thread (GString *file, gpointer user_data)
 void show_ceos_meta_data(gchar * out_name)
 {
 #ifdef win32
-    gchar * mdv = find_in_path("mdv.exe");
+    gchar * mdv = find_in_bin("mdv.exe");
 #else
-    gchar * mdv = find_in_path("mdv");
+    gchar * mdv = find_in_bin("mdv");
 #endif
 
     gchar * ceos_file = build_ceos_metadata_filename(out_name);
