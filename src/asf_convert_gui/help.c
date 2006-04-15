@@ -126,7 +126,6 @@ on_help_button_clicked(GtkWidget *widget)
         g_free(buffer);
     }
 
-    g_free(help_filename);
     gtk_widget_show(help_dialog);
 #endif
 }
