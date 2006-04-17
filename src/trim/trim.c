@@ -154,8 +154,8 @@ int main(int argc, char *argv[])
   metaIn = meta_read(infile);
   inMaxX = metaIn->general->sample_count;
   inMaxY = metaIn->general->line_count;
-  endX = (endX!=-1) ? endX+startX : inMaxX;
-  endY = (endY!=-1) ? endY+startY : inMaxY;
+  //  endX = (endX!=-1) ? endX+startX : inMaxX;
+  //  endY = (endY!=-1) ? endY+startY : inMaxY;
 
   /* Call library function */
   trim(infile, outfile, startX, startY, endX, endY);
