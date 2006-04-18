@@ -1,28 +1,40 @@
 #!/bin/sh
 
-asf_import $1 test
-resample test test_60m 60
-gr2sr test_60m test_sr2_60m
+if [ $# -lt 2 ]
+then
+  echo "Usage: $0 <CEOS-file-basename> <dem-basename>"
+  exit 1
+fi
+
+#asf_import $1 test
+#resample test test_60m 60
+#gr2sr test_60m test_sr2_60m
 
 remap -scale 0.99667767023656 0.63338076567152 test_sr2_60m test_sr2_60m_scaled
 
-create_dem_grid delta_fixed.img test_sr2_60m_scaled.img dem_grid
+create_dem_grid -w 1024 -h 1706 delta_fixed.img test_sr2_60m_scaled.img dem_grid
+#create_dem_grid delta_fixed.img test_sr2_60m.img dem_grid
 
 fit_poly dem_grid 5 dem_poly
 
-remap -translate 0 0 -poly dem_poly -width 1500 -height 1200 -bilinear -float delta_fixed.img dem_big.img
+#remap -translate 0 0 -poly dem_poly -width 1100 -height 1200 -bilinear -float delta_fixed.img dem_big.img
+remap -translate 0 0 -poly dem_poly -width 1021 -height 1081 -bilinear -float delta_fixed.img dem_big.img
 
+#FIXME !!!! please fix reskew_dem!!!!!!!
 reskew_dem test_sr2_60m_scaled.meta dem_big.img dem_slant.img dem_sim_amp.img
+
 exit 1
 
-trim -h 1081 -w 1022 dem_sim_amp.img dem_trimsim_amp.img 0 0
+#trim -h 1081 -w 1021 dem_sim_amp.img dem_trimsim_amp.img 0 0
 
-fftMatch -m dem.corr test_sr2_60m_scaled.img dem_trimsim_amp.img
+fftMatch -m dem.corr test_sr2_60m_scaled.img dem_sim_amp.img
+#fftMatch -m dem.corr test_sr2_60m.img dem_sim_amp.img
 
-trim -h 1081 -w 1022 dem_sim_amp.img dem_trimsim_amp.img 117 0
+trim -h 1081 -w 1021 dem_sim_amp.img dem_trimsim_amp.img 2 -36
 
-fftMatch -m dem.corr2 test_sr2_60m_scaled.img dem_trimsim_amp.img
+fftMatch -m dem.corr2 test_sr2_60m.img dem_trimsim_amp.img
 
-trim -h 1081 -w 1022 dem_slant.img dem_trimmed_slant.img 117 0
+trim -h 1081 -w 1021 dem_slant.img dem_trimmed_slant.img 2 -36
 
-deskew_dem -i test_sr2_60m_scaled.img 0 dem_trimmed_slant.img test_sr2_tc.img
+#deskew_dem -i test_sr2_60m_scaled.img 0 dem_trimmed_slant.img test_sr2_tc.img
+deskew_dem -i test_sr2_60m.img 0 dem_trimmed_slant.img test_sr2_tc.img
