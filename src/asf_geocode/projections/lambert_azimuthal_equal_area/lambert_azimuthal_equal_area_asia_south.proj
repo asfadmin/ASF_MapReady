@@ -2,8 +2,6 @@
 Area = Asia South
 Datum = WGS84
 Spheroid = WGS84
-First standard parallel = 7
-Second standard parallel = -32
 Central meridian = 125
 Latitude of origin = -15
 False easting = 0

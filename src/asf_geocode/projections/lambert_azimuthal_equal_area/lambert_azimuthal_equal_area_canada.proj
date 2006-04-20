@@ -2,8 +2,6 @@
 Area = Canada
 Datum = NAD83
 Spheroid = GRS1980
-First standard parallel = 50
-Second standard parallel = 70
 Central meridian = -96
 Latitude of origin = 40
 False easting = 0

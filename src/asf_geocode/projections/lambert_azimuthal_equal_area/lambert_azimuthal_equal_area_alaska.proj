@@ -2,8 +2,6 @@
 Area = Alaska
 Datum = NAD83
 Spheroid = GRS1980
-First standard parallel = 55
-Second standard parallel = 65
 Central meridian = -154
 Latitude of origin = 50
 False easting = 0

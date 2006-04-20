@@ -2,8 +2,6 @@
 Area = Africa
 Datum = WGS84
 Spheroid = WGS84
-First standard parallel = 20
-Second standard parallel = -23
 Central meridian = 25
 Latitude of origin = 0
 False easting = 0
