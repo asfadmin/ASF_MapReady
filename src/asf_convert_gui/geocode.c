@@ -386,7 +386,7 @@ void geocode_options_changed()
                         GTK_ENTRY(central_meridian_entry),
                         double_to_string(pps->lamaz.center_lon));
                     gtk_entry_set_text(
-                        GTK_ENTRY(first_standard_parallel_entry),
+                        GTK_ENTRY(latitude_of_origin_entry),
                         double_to_string(pps->lamaz.center_lat));
                     gtk_entry_set_text(
                         GTK_ENTRY(false_northing_entry),
