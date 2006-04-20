@@ -39,14 +39,18 @@
  8. Create the source.convert file:
       cd asf_tools/make_support; make; ./makemake; cd -
 
- 9. ** KLUDGE #2 **
+8A. ** KLUDGE #2 ** 
+    Remove tcl/Tk gzips from the archive
+      cd asf_tools/external/work_dir/tcl_tk; rm *.gz; cd -
+
+ 9. ** KLUDGE #3 **
+      cd release/autotar
     Edit release/autotar/source.convert, adding these items:
       external
       src/asf_convert_gui
       src/metadata_gui
 
 10. Run the autotar script:
-      cd release/autotar
       ./tarfile src ~/asf/svn-rXXXX convert
 
 11. Run the rpmprep script:
@@ -74,7 +78,9 @@
       scp asf_convert.src.tar.gz
           'quantum://shares/utd/Releases\ for\ Data\ Quality/Source/asf_convert-X.X.X.src.tar.gz'
 
-16. The windows procedure is the same as described below.
+16. Bump the version in include/asf_version.h, add "-dev" to the end.
+
+17. The windows procedure is the same as described below.
 
 Old instructions follow:
 -----------------------------------------------------------------------------
