@@ -318,10 +318,11 @@ export_as_geotiff (const char *metadata_file_name,
   /* FIXME: this is a terrible hack to deal with scansar crap.  */
   if ( md->sar->image_type == 'P'
        && md->projection->type != SCANSAR_PROJECTION) {
-    /* Tie points for image corners.  There is space for four tie
-       points, each consisting of three raster coordinates, followed
-       by three geospatial coordinates.  */
-    double tie_points[4][6];
+    /* Tie point for image corner.  To avoid problems with for example
+       ArcView, and to escape the fact that the meaning of multiple
+       tie points with constant scale factors in GeoTIFF is horribly
+       ill-defined, we use only a single tie point.  */
+    double tie_point[6];
     double pixel_scale[3];
     short projection_code;
     int max_citation_length = 500;
@@ -359,22 +360,22 @@ export_as_geotiff (const char *metadata_file_name,
 
     /* We will tie down the top left corner of the image (which has
        TIFF raster coordinates 0, 0, 0).  */
-    tie_points[0][0] = 0.0;
-    tie_points[0][1] = 0.0;
-    tie_points[0][2] = 0.0;
+    tie_point[0] = 0.0;
+    tie_point[1] = 0.0;
+    tie_point[2] = 0.0;
     /* FIXME: we should be getting the actual corner of the image
        here, not the center of the corner pixel, and I'm not sure that
        startX and startY are what we want (verify and fix if
        needed.  */
-    tie_points[0][3] = md->projection->startX;
-    tie_points[0][4] = md->projection->startY;
-    tie_points[0][5] = 0.0;
+    tie_point[3] = md->projection->startX;
+    tie_point[4] = md->projection->startY;
+    tie_point[5] = 0.0;
     /* Some applications (e.g., ArcView) won't handle GeoTIFF images
        with more than one tie point pair.  Therefore, only the upper
        left corner is being written to the GeoTIFF file.  In order to
        write all computed tie points to the GeoTIFF, change the 6 to
        size in the line below.  */
-    TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_points);
+    TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_point);
 
     /* Set the scale of the pixels, in projection coordinates.  */
     pixel_scale[0] = md->projection->perX * scale_factor;
@@ -925,6 +926,14 @@ export_as_geotiff (const char *metadata_file_name,
       /* Tie points for image corners.  There is space for four tie
          points, each consisting of three raster coordinates, followed
          by three geospatial coordinates.  */
+      /* FIXME: I suspect this code of being wrong, I think it should
+	 just be a big flat array of 4 * 6 values.  Not sure where the
+	 idea of a multidimensional array got started, couldn't find
+	 any examples of it and the makegeo program that comes with
+	 GeoTIFF uses a flat array.  I'm not changing anything now
+	 since this branch is probably so broken it doesn't really
+	 matter, and GeoTIFF definition of images tied down using this
+	 three tie point style is horribly vauge and unsupported.  */
       double tie_points[4][6];
 
       /* Get the lat/longs of three image corners.  */
