@@ -14,7 +14,8 @@ void dem_sr2gr(float *inBuf,float *outBuf,int ns)
 		outX=(int)sr2gr((float)inX,height);
 		if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
 		{
-			if ((outX-lastOutX<maxBreakLen)&&(lastOutValue!=badDEMht))
+		        /*if ((outX-lastOutX<maxBreakLen)&&(lastOutValue!=badDEMht))*/
+		        if (lastOutValue!=badDEMht)
 			{
 				float curr=lastOutValue;
 				float delt=(height-lastOutValue)/(outX-lastOutX);
