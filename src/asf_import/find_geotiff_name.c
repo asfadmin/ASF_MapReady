@@ -1,5 +1,7 @@
 // Implementation of interface described in find_geotiff_name.h.
 
+#include "find_geotiff_name.h"
+
 GString *
 find_geotiff_name (const char *inBaseName)
 {

@@ -62,7 +62,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        (ie do not use the -db flag if you plan on statistical analysis)\n"\
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
-"        are 'ceos' and 'stf'. 'CEOS' is the default behavior.\n"\
+"        are 'ceos', 'stf', and 'geotiff'. 'CEOS' is the default behavior.\n"\
 "   -lut <file>\n"\
 "        Applies a user defined look up table to the data. Look up contains\n"\
 "        incidence angle dependent scaling factor.\n"\
@@ -128,6 +128,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "asf_nan.h"
 #include "ceos.h"
 #include "decoder.h"
+#include "find_geotiff_name.h"
 #include "get_ceos_names.h"
 #include "get_stf_names.h"
 #include "asf_reporting.h"
@@ -616,6 +617,18 @@ int main(int argc, char *argv[])
         }
         import_stf(inDataName, inMetaName, unscaledBaseName, flags,
             lowerLat, upperLat, prcPath);
+    }
+    else if ( strncmp (format_type, "GEOTIFF", 7) == 0 ) {
+      asfPrintStatus("   Data format: %s\n", format_type);
+      GString *inGeotiffName = find_geotiff_name (inBaseName);
+      // At the moment, we are set up to ingest only a specific
+      // GeoTIFF variant, the Shuttle Radar Topography Mission (SRTM)
+      // data from the USGS seamless system.  Later on we should
+      // probably do intelligent detection of GeoTIFF flavor, perhaps
+      // falling back to a catch-all that tried to ingest arbitrary
+      // GeoTIFF.
+      import_srtm_seamless (inGeotiffName->str, outBaseName);
+      g_string_free (inGeotiffName, TRUE);
     }
     /* Don't recognize this data format; report & quit */
     else {

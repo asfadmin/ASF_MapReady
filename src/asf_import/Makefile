@@ -7,15 +7,29 @@
 include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf_meta.a \
-	$(GSL_LIBS) \
+	$(GLIB_LIBS) \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
 	-lm
 
-CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
+CFLAGS += $(GSL_CFLAGS) \
+	  $(PROJ_CFLAGS) \
+          $(GLIB_CFLAGS) \
+          $(GEOTIFF_CFLAGS) \
+          $(TIFF_CFLAGS)
+
+# These defines enable various debugging behavior and output.  Leaving
+# debugging code in and available is all the rage these days, and is
+# probably even a good idea.  The following defines constitute a sort
+# of catalog of the available debugging features for this program.
+#
+# CFLAGS += -DDEBUG_CREATE_SRTM_SEAMLESS_JPEG_OUTPUT
 
 OBJS  = ardop_params.o \
 	ardop_write.o \
@@ -32,10 +46,12 @@ OBJS  = ardop_params.o \
 	decoder_RSAT.o \
 	decoder_utils.o \
 	fetch_prc_stvec.o \
+	find_geotiff_name.o \
 	frame.o \
 	import_ceos.o \
 	import_envi.o \
 	import_esri.o \
+	import_srtm_seamless.o \
 	import_stf.o \
 	least_squares.o \
 	matrix.o \
