@@ -156,7 +156,7 @@ const char * geocode_options_string(const Settings * settings)
         if (settings->specified_pixel_size)
             sprintf(ret, "%s --pixel-size %f ", ret, settings->pixel_size);
 
-        sprintf(ret, "%s --datum %s ", ret, datum_string(settings->datum));
+//        sprintf(ret, "%s --datum %s ", ret, datum_string(settings->datum));
 
         sprintf(ret, "%s --resample-method %s ", ret, 
             resample_method_string (settings->resample_method));

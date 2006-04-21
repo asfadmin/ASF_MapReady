@@ -1293,7 +1293,6 @@
 
 			      <child>
 				<widget class="GtkHBox" id="datum_hbox">
-				  <property name="visible">True</property>
 				  <property name="homogeneous">False</property>
 				  <property name="spacing">0</property>
 
