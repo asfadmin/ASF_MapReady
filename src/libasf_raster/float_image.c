@@ -1631,10 +1631,6 @@ float_image_statistics_with_mask_interval (FloatImage *self, float *min,
 					   double interval_start, 
 					   double interval_end)
 {
-  // This method is a trivial clone-and-modify of
-  // float_image_statistics, but it is totally untested at the moment.
-  g_assert_not_reached ();
-
   *min = FLT_MAX;
   *max = -FLT_MAX;
 
@@ -2326,9 +2322,6 @@ float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
 					       double interval_start,
 					       double interval_end)
 {
-  // This method is probably fine, but it hasn't been tested yet.
-  g_assert_not_reached ();
-
   size_t scale_factor;          // Scale factor to use for output image.
   if ( self->size_x > self->size_y ) {
     scale_factor = ceil ((double) self->size_x / max_dimension);
