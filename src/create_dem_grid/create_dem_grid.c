@@ -44,6 +44,7 @@ PROGRAM HISTORY:
     1.3      6/05    R. Gens    Implemented the changes that Joe and Orion
                                 came up with.
     1.5      7/05    R. Gens    Removed DDR dependency.
+    1.6      4/06    K.Hogenson Width & height & grid size arguments.
 
 HARDWARE/SOFTWARE LIMITATIONS:
 
@@ -80,25 +81,27 @@ BUGS:
 #include "cproj.h"
 #include "proj.h"
 
-#define VERSION 1.5
-#define gridResX 30
-#define gridResY 30
+#define VERSION 1.6
 
-
-int getNextSarPt(meta_parameters *meta,int gridNo,int *x,int *y);
+int getNextSarPt(meta_parameters *meta,int gridNo,int *x,int *y,
+		 double width, double height, int gridResX, int gridResY);
 
 static
 void usage(char *name)
 {
   printf("\n"
 	 "USAGE:\n"
-	 "   %s [-log <file>] <DEM> <SAR> <out_grid>\n",name);
+	 "   %s [-log <file>] [-w <grid_width>] [-h <grid_height>]\n"
+         "      [-size <gridsize>] <DEM> <SAR> <out_grid>\n",name);
   printf("\n"
 	 "ARGUMENTS:\n"
-	 "   <DEM>       A DEM to create a grid upon.\n"
-	 "   <SAR>       A SAR file for which to create the grid\n"
-	 "   <out_grid>  A mapping grid, for use with fit_plane\n"
-	 "   -log <file> Allows the output to be written to a log file (optional)\n");
+	 "   <DEM>        A DEM to create a grid upon.\n"
+	 "   <SAR>        A SAR file for which to create the grid\n"
+	 "   <out_grid>   A mapping grid, for use with fit_plane\n"
+	 "   -log <file>  Allows the output to be written to a log file (optional)\n");
+	 "   -w <width>   Desired width of the grid (optional)\n");
+	 "   -h <height>  Desired height of the grid (optional)\n");
+	 "   -size <size> Number of points on a grid side (optional)\n");
   printf("\n"
 	 "DESCRIPTION:\n"
 	 "   %s creates a grid which can be used to extract a\n"
@@ -117,7 +120,9 @@ int main(int argc,char *argv[])
   FILE *out;
   meta_parameters *metaSar, *metaDem;
   double elev = 0.0;
-  
+  double width = -1, height = -1;
+  int gridResX = 20, gridResY = 20;
+
   logflag=0;
   
   /* parse command line */
@@ -132,21 +137,35 @@ int main(int argc,char *argv[])
       printLog("Program: create_dem_grid\n\n");
       logflag=1;
     }
+    else if (strmatch(key,"-w")) {
+      CHECK_ARG(1);
+      width = atof(GET_ARG(1));
+    }
+    else if (strmatch(key,"-h")) {
+      CHECK_ARG(1);
+      height = atof(GET_ARG(1));
+    }
+    else if (strmatch(key,"-size")) {
+      CHECK_ARG(1);
+      gridResX = gridResY = atoi(GET_ARG(1));
+    }
     else {printf("\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
   }
   if ((argc-currArg) < 3) {printf("Insufficient arguments.\n"); usage(argv[0]);}
   demName = argv[currArg];
   sarName = argv[currArg+1];
   outName = argv[currArg+2];
-  
+ 
   system("date");
   printf("Program: create_dem_grid\n\n");
-  
+
   out=FOPEN(outName,"w");
   metaSar = meta_read(sarName);
   metaDem = meta_read(demName);  
 
-  metaSar->general->sample_count += 400;
+  if (width < 0) width = metaSar->general->sample_count;
+  if (height < 0) height = metaSar->general->line_count;
+  //  metaSar->general->sample_count += 400;
 
   /* Convert all angles in projection part of metadata into radians -
      latlon_to_proj needs that lateron */
@@ -179,14 +198,23 @@ int main(int argc,char *argv[])
     }
     
   /*Create a grid on the SAR image, and for each grid point:*/
-  for (gridCount=0;getNextSarPt(metaSar,gridCount,&sar_x,&sar_y);gridCount++)
+  for (gridCount=0;
+       getNextSarPt(metaSar,gridCount,&sar_x,&sar_y,
+		    width,height,gridResX,gridResY);
+       gridCount++)
     {
       double dem_x,dem_y; /*This is what we're seeking-- 
 			    the location on the DEM corresponding to the SAR point.*/
       double lat,lon; /*This is how we go between SAR and DEM images.*/
       double demProj_x,demProj_y; /*These are the projection coordinates for the DEM.*/
       int orig_x,orig_y;
-      
+      int grid_x, grid_y;
+
+      getNextSarPt(metaSar,gridCount,&grid_x,&grid_y,
+		   metaSar->general->sample_count,
+		   metaSar->general->line_count,
+		   gridResX, gridResY);
+
       /*Compute the latitude and longitude of this location on the ground.*/
       meta_get_original_line_sample(metaSar, sar_y, sar_x, &orig_y, &orig_x);
       meta_get_latLon(metaSar,(float)orig_y,(float)orig_x,elev,&lat,&lon);
@@ -206,7 +234,7 @@ int main(int argc,char *argv[])
       demProj_x,demProj_y,dem_x,dem_y);
       printf("\tstart( %.2f %.2f )\n", 
       metaDem->projection->startX, metaDem->projection->startY);*/
-      fprintf(out,"%6d %6d %8.5f %8.5f %4.2f\n",sar_x,sar_y,dem_x,dem_y,1.0);
+      fprintf(out,"%6d %6d %8.5f %8.5f %4.2f\n",grid_x,grid_y,dem_x,dem_y,1.0);
     }
   printf("   Created a grid of %ix%i points\n\n",gridResX,gridResY);
   if (logflag) {
@@ -218,7 +246,8 @@ int main(int argc,char *argv[])
 }
 
 /*Return a regular, 30x30 grid of points.*/
-int getNextSarPt(meta_parameters *meta,int gridNo,int *x,int *y)
+int getNextSarPt(meta_parameters *meta,int gridNo,int *x,int *y,
+		 double width, double height, int gridResX, int gridResY)
 {
   int xtmp, ytmp;
   
@@ -227,9 +256,9 @@ int getNextSarPt(meta_parameters *meta,int gridNo,int *x,int *y)
   
   xtmp = gridNo % gridResX;
   ytmp = gridNo / gridResX;
-  
-  *x = 1 + (float) xtmp / (float) (gridResX-1) * (meta->general->sample_count);
-  *y = 1 + (float) ytmp / (float) (gridResY-1) * (meta->general->line_count);
+
+  *x = 1 + (float) xtmp / (float) (gridResX-1) * (width+400);
+  *y = 1 + (float) ytmp / (float) (gridResY-1) * (height);
   
   return 1;
 }
