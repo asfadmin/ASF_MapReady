@@ -621,6 +621,11 @@ int main(int argc, char *argv[])
     else if ( strncmp (format_type, "GEOTIFF", 7) == 0 ) {
       asfPrintStatus("   Data format: %s\n", format_type);
       GString *inGeotiffName = find_geotiff_name (inBaseName);
+      if ( inGeotiffName == NULL ) {
+	asfPrintError ("Couldn't find a GeoTIFF file (i.e. a file with "
+		       "extension '.tif', '.tiff', '.TIF', or '.TIFF') "
+		       "corresponding to specified inBaseName");
+      }
       // At the moment, we are set up to ingest only a specific
       // GeoTIFF variant, the Shuttle Radar Topography Mission (SRTM)
       // data from the USGS seamless system.  Later on we should
