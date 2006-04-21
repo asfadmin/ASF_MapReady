@@ -510,6 +510,8 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->type = STATE_PLANE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "SCANSAR_PROJECTION") )
         MPROJ->type = SCANSAR_PROJECTION;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAT_LONG_PSEUDO_PROJECTION") )
+	MPROJ->type = LAT_LONG_PSEUDO_PROJECTION;
       else {
         warning_message("Bad value: type = '%s'.",VALP_AS_CHAR_POINTER);
       }

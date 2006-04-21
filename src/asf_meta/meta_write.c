@@ -288,6 +288,10 @@ void meta_write(meta_parameters *meta, const char *file_name)
       case SCANSAR_PROJECTION:
 	meta_put_string(fp,"type:","SCANSAR_PROJECTION","Projection Type");
 	break;
+      case LAT_LONG_PSEUDO_PROJECTION:
+	meta_put_string (fp, "type:", "LAT_LONG_PSEUDO_PROJECTION",
+			 "Projection Type");
+	break;
     }
     meta_put_double(fp,"startX:",meta->projection->startX,
 		    "Projection Coordinate at top-left, X direction");

@@ -103,7 +103,12 @@ typedef enum {
   LAMBERT_CONFORMAL_CONIC,
   LAMBERT_AZIMUTHAL_EQUAL_AREA,
   STATE_PLANE,
-  SCANSAR_PROJECTION, /* along-track/across-track is ScanSAR specific projection */
+ /* along-track/across-track is ScanSAR specific projection */
+  SCANSAR_PROJECTION,
+  /* A simple "projection" in which the image pixels are arranged such
+     that latitude and longitude lines form an regular rectangular
+     grid over the image.  */
+  LAT_LONG_PSEUDO_PROJECTION
 } projection_type_t;
 
 typedef enum {
@@ -308,6 +313,9 @@ typedef struct {
   typedef struct {
     int zone;
   } proj_state;
+/* For lat long pseudo projected images, no additional parameters are
+   required, so they don't have their own structure type.  */
+
  /* Projection parameters for the projection in use.  */
   typedef union {
     proj_albers   albers;   /* Albers Conical Equal Area     */
@@ -323,7 +331,7 @@ typedef struct {
   projection_type_t type;  /* Projection types */
   double startX,startY;  /* Projection coordinates of top, lefthand corner.*/
   double perX,perY;      /* Projection coordinates per X and Y pixel.      */
-  char units[12];        /* Units of projection (meters, arcsec)           */
+  char units[12];        /* Units of projection (meters, arcsec, or degrees) */
   char hem;              /* Hemisphere Code: 'S'->southern; other northern.*/
   spheroid_type_t spheroid; /* Spheroid - will replace re_major and re_minor */
   double re_major;       /* Semimajor axis length (equator) (meters).      */
@@ -489,6 +497,7 @@ meta_sar *meta_sar_init(void);
 meta_projection *meta_projection_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
 meta_stats *meta_stats_init(void);
+meta_location *meta_location_init(void);
 meta_parameters *raw_init(void);
 
 /* Create meta struct from a CEOS file */
