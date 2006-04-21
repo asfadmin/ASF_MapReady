@@ -380,12 +380,14 @@
         <para>The geocoding process won't work if you select a pixel
           size that will result in severely oversampled data.</para>
       </listitem>
+<!-- comment this out for 2.1 release
       <listitem><para>Datum</para>
 
 	<para>Specifies the datum that is used when projecting.  The
           datum applies to the target coordinate system.</para>
 
       </listitem>
+-->
       <listitem><para>Resample</para>
 
 	<para>Selects the method used to resample the data.  In the
