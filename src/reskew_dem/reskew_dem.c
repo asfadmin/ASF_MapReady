@@ -64,20 +64,15 @@ BUGS:
 ******************************************************************************/
 #include "deskew.h"
 
-#define VERSION 1.5
+#define VERSION 1.6
 #define NUM_ARGS 4
-
-double grPixelSize;
+//#define FALSE 1
+//#define TRUE 0
+double earth_radius; /* current earth radius, meters (FIXME: update with azimuth, range) */
+double satHt; /* satellite height from center of earth, meters */
+double slant_to_first, slant_per; /* slant ranges, meters (FIXME: split out DEM and SAR slant ranges) */
 int gr_ns,sr_ns;
 
-double *slantGR;/*Slant range pixel #*/
-double *heightShiftGR;
-double *heightShiftSR;
-double *groundSR;/*Ground range pixel #*/
-double *slantPixel;
-double *groundRange;
-double *slantRangeSqr,*slantRange,*heightShift;
-double *incidAng,*sinIncidAng,*cosIncidAng;
 
 void usage(char *name)
 {
@@ -103,19 +98,23 @@ void usage(char *name)
  exit(EXIT_FAILURE);
 }
 
+
 int main(int argc, char *argv[])
 {
 	float *grDEMline,*srDEMline,*outAmpLine;
 	register int line,nl,percent;
-	char inMetafile[255],inDEMfile[255],outDEMfile[255],outAmpFile[255];
+	char inDEMfile[255],outDEMfile[255],outAmpFile[255],inMetafile[255];
 	FILE *inDEM,*outDEM,*outAmp;
-	meta_parameters *metaIn, *metaDem, *metaOut;
+	meta_parameters *metaIn, *metaDEM;
+//	struct DDR ddrDEM,outddr,inddr;
 
 	system("date");
 	printf("Program: reskew_dem\n\n");
 	
 /* parse commandline arguments */
 	logflag=FALSE;
+/* FIXME: WTF? */
+currArg=1;
 	while (currArg < (argc-NUM_ARGS)) {
 		char *key = argv[currArg++];
 		if (strmatch(key,"-log")) {
@@ -135,29 +134,33 @@ int main(int argc, char *argv[])
 	strcpy(outDEMfile,argv[currArg+2]);
 	strcpy(outAmpFile,argv[currArg+3]);
 
+/*Extract DDRs*/
+	//c_getddr(inDEMfile,&ddrDEM);
+	//outddr=ddrDEM;
+	//nl=ddrDEM.nl;
+	//gr_ns=ddrDEM.ns;
+	//sr_ns=gr_ns; 
+	/*sr_ns=gr_ns-400;*/  /* The 400 pixels here has to match the 
+	  extra amount added in the demIFM script.*/
+	//outddr.ns=sr_ns;
+	//c_putddr(outDEMfile,&outddr);
+	//c_putddr(outAmpFile,&outddr);
+
 /* Get metadata */
 	metaIn = meta_read(inMetafile);
-	metaDem = meta_read(inDEMfile);
-	meta_write(metaIn, outDEMfile);
-	metaOut = meta_read(outDEMfile);
-	nl = metaIn->general->line_count;
-	gr_ns = metaIn->general->sample_count;
-	sr_ns = gr_ns-400;       /* The 400 pixels here has to match the extra
-	                          * amount added in the demIFM script.*/
-	metaOut->general->sample_count = sr_ns;
+	metaDEM = meta_read(inDEMfile);
+	nl = metaDEM->general->line_count;
+	gr_ns = metaDEM->general->sample_count;
+	sr_ns = metaIn->general->sample_count;
+/* The 400 pixels here has to match theextra
+	                         * amount added in the demIFM script.*/
+	//metaOut->general->sample_count = sr_ns;
 	
-/*Allocate vectors.*/
-	slantGR       = (double *)MALLOC(sizeof(double)*gr_ns);
-	groundSR      = (double *)MALLOC(sizeof(double)*sr_ns);
-	heightShiftSR = (double *)MALLOC(sizeof(double)*sr_ns);
-	heightShiftGR = (double *)MALLOC(sizeof(double)*gr_ns);
-	slantRange    = (double *)MALLOC(sizeof(double)*sr_ns);
-	slantRangeSqr = (double *)MALLOC(sizeof(double)*sr_ns);
-	incidAng      = (double *)MALLOC(sizeof(double)*sr_ns);
-	sinIncidAng   = (double *)MALLOC(sizeof(double)*sr_ns);
-	cosIncidAng   = (double *)MALLOC(sizeof(double)*sr_ns);
+	earth_radius = meta_get_earth_radius(metaIn, nl/2, 0);
+	satHt = meta_get_sat_height(metaIn, nl/2, 0);
+	meta_get_slants(metaIn, &slant_to_first, &slant_per);
 
-	grPixelSize = calc_ranges(metaOut);
+	
 
 /*Open files.*/
 	inDEM  = fopenImage(inDEMfile,"rb");
@@ -177,34 +180,31 @@ int main(int argc, char *argv[])
 		  printf("\r   Completed %3d percent",percent);
 		  percent+=5;
 		}
-		get_float_line(inDEM,metaIn,line,grDEMline);
+#if 0
+		getFloatLine(inDEM,&ddrDEM,line,grDEMline);
 		dem_gr2sr(grDEMline,srDEMline,outAmpLine);
-		put_float_line(outDEM,metaOut,line,srDEMline);
-		put_float_line(outAmp,metaOut,line,outAmpLine);
+		putFloatLine(outDEM,&outddr,line,srDEMline);
+		putFloatLine(outAmp,&outddr,line,outAmpLine);
+#else
+		get_float_line(inDEM,metaDEM,line,grDEMline);
+		dem_gr2sr(grDEMline,srDEMline,outAmpLine);
+		put_float_line(outDEM,metaIn,line,srDEMline);
+		put_float_line(outAmp,metaIn,line,outAmpLine);
+#endif
 	}
 	printf("\r   Completed 100 percent\n\n");
 
 	sprintf(logbuf,"   Converted %d lines from ground range to slant range.\n\n", nl);
 	printf("%s", logbuf);
-	if (logflag) { printLog(logbuf); }
+	// if (logflag) { printLog(logbuf); }
 
 /* Write meta files */
-	meta_write(metaOut, outDEMfile);
-	meta_write(metaOut, outAmpFile);
+	meta_write(metaIn, outDEMfile);
+	meta_write(metaIn, outAmpFile);
 
 /* Free memory, close files, & exit */
+	meta_free(metaDEM);
 	meta_free(metaIn);
-	meta_free(metaDem);
-	meta_free(metaOut);
-	FREE(slantGR);
-	FREE(groundSR);
-	FREE(heightShiftSR);
-	FREE(heightShiftGR);
-	FREE(slantRange);
-	FREE(slantRangeSqr);
-	FREE(incidAng);
-	FREE(sinIncidAng);
-	FREE(cosIncidAng);
 	FREE(grDEMline);
 	FREE(srDEMline);
 	FREE(outAmpLine);
@@ -216,44 +216,22 @@ int main(int argc, char *argv[])
 }
 
 
-#if 1
-/*Use linearized arrays to do conversion.*/
-float sr2gr(float srX,float height)
-{
-	double dx,srXSeaLevel=srX-height*heightShiftSR[(int)srX];
-	int ix;
-	if (srXSeaLevel<0) srXSeaLevel=0;
-	if (srXSeaLevel>=sr_ns-1) srXSeaLevel=sr_ns-1;
-	ix=(int)srXSeaLevel;
-	dx=srXSeaLevel-ix;
-/*Linear interpolation on groundSR array*/
-	return groundSR[ix]+dx*(groundSR[ix+1]-groundSR[ix]);
-}
-float gr2sr(float grX,float height)
-{
-	double dx,grXSeaLevel=grX-height*heightShiftGR[(int)grX];
-	int ix;
-	if (grXSeaLevel<0) grXSeaLevel=0;
-	if (grXSeaLevel>=gr_ns-1) grXSeaLevel=gr_ns-1;
-	ix=(int)grXSeaLevel;
-	dx=grXSeaLevel-ix;
-/*Linear interpolation on slantGR array*/
-	return slantGR[ix]+dx*(slantGR[ix+1]-slantGR[ix]);
-}
-#else
-/*Use fundamental equations to do conversion.*/
-float sr2gr(float srX,float height)
-{
-	double slant=slantFirst+srX*slantPer;
-	double phi=acos((satHt*satHt+(er+height)*(er+height)-slant*slant)/
-		(2.0*satHt*(er+height)));
-	return phi2grX(phi);
-}
-float gr2sr(float grX,float height)
-{
-	double phi=grX2phi(x);
-	double slant=sqrt(satHt*satHt+(er+height)*(er+height)-cos(phi)*
-		(2.0*satHt*(er+height)));
-	return (slant-slantFirst)/slantPer;
-}
-#endif
+
+float srE2srH(float srEpix,float height)
+{ /* {{{ */
+	double er;
+	double srE;
+	double cosPhi;
+	double srH;
+	er = earth_radius;
+	srE=slant_to_first+slant_per*srEpix;
+	/* Calculate ground angle to this slant range */
+	cosPhi=(satHt*satHt + er*er - srE*srE)/(2*satHt*er);
+	/* Calculate slant range with new earth height */
+	er+=height;
+	srH=sqrt(satHt*satHt + er*er - 2 * satHt * er * cosPhi);
+	return (srH-slant_to_first)/slant_per;
+} /* }}} */
+
+
+//#endif

@@ -56,7 +56,7 @@ Convert each grX to an srX.  Update amplitude and height images.*/
 	{
 		double height=grDEM[grX];
 	/*srX: float slant range pixel position.*/
-		double srX=gr2sr(grX,height);
+		double srX=srE2srH(grX,height);
 		int sriX=(int)srX;
 		if ((height!=badDEMht)&&(srX>=0)&&(srX<sr_ns))
 		{
