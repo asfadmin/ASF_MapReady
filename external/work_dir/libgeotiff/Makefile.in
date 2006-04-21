@@ -10,7 +10,7 @@ LIB_DIR := $(ROOT_DIR)/lib
 INCLUDE_DIR := $(ROOT_DIR)/include
 
 # These variables specify the geotiff tarball and what it unpacks into.
-UNPACK_DIR := libgeotiff-1.2.2
+UNPACK_DIR := libgeotiff-1.2.3
 ZIPFILE := $(UNPACK_DIR).tar.gz
 
 build: build_stamp
