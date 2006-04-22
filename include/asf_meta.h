@@ -136,6 +136,11 @@ typedef enum {
   WGS84_DATUM    /* World Geodetic System 1984 (WGS84) */
 } datum_type_t;
 
+/* Return the spheroid associated with a given datum.  This function
+   fails if given a datum it hasn't been taught about yet.  */
+spheroid_type_t
+datum_spheroid (datum_type_t datum);
+
 /********************************************************************
  * meta_general: General RAdio Detection And Ranging parameters
  */
