@@ -84,6 +84,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	code_ceos.o \
 	coniFetch.o \
 	dateUtil.o \
+	datum_spheroid.o \
 	earth_radius2datum.o \
 	err_die.o \
 	fixed2gei.o \
