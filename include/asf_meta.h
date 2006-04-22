@@ -141,6 +141,11 @@ typedef enum {
 spheroid_type_t
 datum_spheroid (datum_type_t datum);
 
+/* Return the semimajor and semiminor axes lengths of spheroid in
+   meters.  Fails for spheroids it hasn't been taught about yet.  */
+void
+spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor);
+
 /********************************************************************
  * meta_general: General RAdio Detection And Ranging parameters
  */

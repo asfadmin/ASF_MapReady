@@ -76,6 +76,7 @@ LAS_OBJS = allocbuf.o \
 	doopen.o \
 	lasIO.o  \
 	packed_deg.o \
+	spheroid_axes_lengths.o \
 	squeeze.o
 
 OBJS =  $(LEX_YACC_OBJS) \
