@@ -678,6 +678,11 @@ void fill_structure_field(char *field_name, void *valp)
       { (*MPARAM).state.zone = VALP_AS_INT; return; }
   }
 
+  /* Note that the projection-specific param data block associated
+     with LAT_LONG_PSEUDO_PROJECTION type files is empty, since all
+     the parameters required for that projection are stored in the
+     main block.  */
+
   /* Fields which normally go in the statistics block of the metadata file. */
   if ( !strcmp(stack_top->block_name, "stats") ) {
     if ( !strcmp(field_name, "min") )
