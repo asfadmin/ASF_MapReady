@@ -7,19 +7,22 @@ then
 fi
 
 asf_import $1 test
-resample test test_60m 60
+cp test.img test_60m.img
+cp test.meta test_60m.meta
+
+#resample test test_60m 60
 gr2sr test_60m test_sr2_60m
 
 remap -scale 0.99667767023656 0.63338076567152 test_sr2_60m test_sr2_60m_scaled
 
-create_dem_grid -w 1024 -h 1706 delta_fixed.img test_sr2_60m_scaled.img dem_grid
+create_dem_grid -w 4922 -h 8192 delta_fixed.img test_sr2_60m_scaled.img dem_grid
 fit_poly dem_grid 5 dem_poly
 
-remap -translate 0 0 -poly dem_poly -width 1421 -height 1081 -bilinear -float delta_fixed.img dem_big.img
+remap -translate 0 0 -poly dem_poly -width 5589 -height 4906 -bilinear -float $2 dem_big.img
 
 reskew_dem test_sr2_60m_scaled.meta dem_big.img dem_slant.img dem_sim_amp.img
 
-trim -h 1081 -w 1021 dem_sim_amp.img dem_trimsim_amp.img 0 0
+trim -h 5189 -w 4906 dem_sim_amp.img dem_trimsim_amp.img 0 0
 
 fftMatch -m dem.corr test_sr2_60m_scaled.img dem_trimsim_amp.img
 
@@ -38,10 +41,10 @@ dx=`cut -f1 <dem.corr`
 dy=`cut -f2 <dem.corr`
 
 
-trim -h 1081 -w 1021 dem_sim_amp.img dem_trimsim_amp.img `neg ${dy}` `neg ${dx}`
+trim -h 5189 -w 4906 dem_sim_amp.img dem_trimsim_amp.img `neg ${dy}` `neg ${dx}`
 fftMatch -m dem.corr2 test_sr2_60m_scaled.img dem_trimsim_amp.img
 
-trim -h 1081 -w 1021 dem_slant.img dem_trimmed_slant.img `neg ${dy}` `neg ${dx}`
+trim -h 5189 -w 4906 dem_slant.img dem_trimmed_slant.img `neg ${dy}` `neg ${dx}`
 deskew_dem -i test_sr2_60m_scaled.img 0 dem_trimmed_slant.img test_sr2_tc.img
 
 asf_geocode -p utm test_sr2_tc test_sr2_tc_utm
