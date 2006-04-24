@@ -98,9 +98,9 @@ void usage(char *name)
 	 "   <DEM>        A DEM to create a grid upon.\n"
 	 "   <SAR>        A SAR file for which to create the grid\n"
 	 "   <out_grid>   A mapping grid, for use with fit_plane\n"
-	 "   -log <file>  Allows the output to be written to a log file (optional)\n");
-	 "   -w <width>   Desired width of the grid (optional)\n");
-	 "   -h <height>  Desired height of the grid (optional)\n");
+	 "   -log <file>  Allows the output to be written to a log file (optional)\n"
+	 "   -w <width>   Desired width of the grid (optional)\n"
+	 "   -h <height>  Desired height of the grid (optional)\n"
 	 "   -size <size> Number of points on a grid side (optional)\n");
   printf("\n"
 	 "DESCRIPTION:\n"
