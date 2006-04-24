@@ -150,6 +150,13 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "            bilinear\n"\
 "            bicubic\n"\
 "\n"\
+"     -datum <datum> \n"\
+"          Specifies the datum that is used when projecting.  The datum\n"\
+"          applies to the target coordinate system.  Supported Datums:\n"\
+"            NAD27  (North American Datum 1927) (Clarke 1866)\n"\
+"            NAD83  (North American Datum 1983) (GRS 1980)\n"\
+"            WGS84  (World Geodetic System 1984) (default).\n"\
+"\n"\
 "     -pixel_size <pixel spacing>\n"\
 "          Specifies the pixel spacing of the geocoded image.  "ASF_NAME_STRING"\n"\
 "          by default will preserve the pixel size of the input image.\n"\
@@ -178,16 +185,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "\n"\
 "   -help\n"\
 "        Print a help page and exit.\n"
-/*  COMMENT OUT DATUM SELECTION -- PUT BACK ABOVE PIXEL_SIZE WHEN WE
-    WANT THIS BACK.
-"     -datum <datum> \n"\
-"          Specifies the datum that is used when projecting.  The datum\n"\
-"          applies to the target coordinate system.  Supported Datums:\n"\
-"            NAD27  (North American Datum 1927) (Clarke 1866)\n"\
-"            NAD83  (North American Datum 1983) (GRS 1980)\n"\
-"            WGS84  (World Geodetic System 1984) (default).\n"\
-"\n"\
-*/
 
 #define ASF_EXAMPLES_STRING \
 "     To map project an image with centerpoint at -147 degrees\n"\
