@@ -142,6 +142,19 @@ Import Options
        them around you may by turning on this option.
        If a file fails to process, any intermediate files that were
        generated are not deleted, even with this option turned off.
+    4. Apply Azimuth Pixel Size Metadata Fix
+       This option turns on a correction to the Y pixel size value in
+       the metadata, caused by an error in the Precision Processor.
+       The error results from using an incorrect relative velocity
+       between the satellite, and the surface of the Earth at the
+       center of the scene. The velocity used is the relative velocity
+       between the satellite, and the surface of the Earth directly
+       below the satellite (at nadir). This leads to pixel sizes that
+       are slightly off in the azimuth direction. The size of the error
+       varies with latitude (least at the equator). In Alaska, it is
+       about 0.5%.
+       If you use data obtained from the PP, then you will probably
+       want to turn this option on.
      _________________________________________________________
 
 Radiometry
