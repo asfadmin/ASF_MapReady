@@ -240,7 +240,6 @@ void check_parameters(projection_type_t projection_type,
 		      project_parameters_t *pp, meta_parameters *meta,
 		      int override_checks);
 
-
 // Print minimalistic usage info & exit
 static void print_usage(void)
 {
@@ -327,6 +326,36 @@ sigsegv_handler (int signal_number)
   //  backtrace_symbols_fd (array, size, STDERR_FILENO);
 
   abort ();
+}
+
+// Since our normal approach is to pass the datum from the input image
+// on through to the (re)projected output image, reprojecting a pixel
+// from a lat long pseudoprojected image requires us to do exactly
+// nothing.  But we still need these functions to use when we need to
+// use a function pointer to perform a generic operation.
+static int 
+project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
+			 double *x, double *y)
+{
+  /* Silence compiler warning about unused argument.  */
+  pps = pps;		
+
+  *x = lat;
+  *y = lon;
+
+  return TRUE;
+}
+static int
+project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y, 
+			     double *lat, double *lon)
+{
+  /* Silence compiler warning about unused argument.  */
+  pps = pps;
+
+  *lat = x;
+  *lon = y;
+
+  return TRUE;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -626,24 +655,21 @@ main (int argc, char **argv)
   // If we have an already projected image as input, we will need to
   // be able to unproject its coordinates back to lat long before we
   // can reproject them into the desired projection, so here we select
-  // a fnction that can do that.
+  // a function that can do that.
 
-  // Flag true iff input image not map projected.
+  // Flag true iff input image not map projected or pseudoprojected.
   gboolean input_projected = FALSE;
   // Convenience alias (valid iff input_projected).
   meta_projection *ipb = imd->projection;
   project_parameters_t *ipp = &imd->projection->param;
-  // FIXME: remove this compiler reassurance:
-  ipb = ipb;
-  ipp = ipp;
   int (*project_input) (project_parameters_t *pps, double lat, double lon,
 			double *x, double *y);
   project_input = NULL;		// Silence compiler warnings.
   int (*unproject_input) (project_parameters_t *pps, double x, double y,
 			  double *lat, double *lon);
   unproject_input = NULL;	// Silence compiler warnings.
-  if ( imd->sar->image_type == 'P'
-       && imd->projection->type != SCANSAR_PROJECTION ) {
+  if ( (imd->sar->image_type == 'P' || imd->general->image_data_type == DEM)
+       && imd->projection->type != SCANSAR_PROJECTION && imd->projection ) {
     input_projected = TRUE;
 
     switch ( imd->projection->type) {
@@ -667,6 +693,9 @@ main (int argc, char **argv)
       project_input = project_lamaz;
       unproject_input = project_lamaz_inv;
       break;
+    case LAT_LONG_PSEUDO_PROJECTION:
+      project_input = project_lat_long_pseudo;
+      unproject_input = project_lat_long_pseudo_inv;
     default:
       g_assert_not_reached ();
     }
@@ -1050,7 +1079,7 @@ main (int argc, char **argv)
   }
 
   // If we don't have a projected image, we are basing things on
-  // meta_get_lineSampe, god help us.  Check correctness of reverse
+  // meta_get_lineSamp, god help us.  Check correctness of reverse
   // mappings of some corners, as an extra paranoid check.  We insist
   // on the model being within this many pixels for reverse
   // transformations of the projection coordinates of the corners of
