@@ -26,11 +26,10 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\
 "              [-format <inputFormat>] [-lut <file>] [-lat <lower> <upper>]\n"\
 "              [-prc] [-old] [-log <logFile>] [-quiet] [-license] [-version]\n"\
+"              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
+"              [-range-scale[=<scale>]\n"\
 "              [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
-// COMMENT OUT DOCUMENTATION ON SCALING CORRECTIONS
-//"              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
-//"              [-range-scale[=<scale>]]\n"\
 
 #define ASF_DESCRIPTION_STRING \
 "   Ingests all varieties of CEOS and STF data formats and outputs ASF\n"\
@@ -82,23 +81,22 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "   -version\n"\
 "        Print version and copyright then exit.\n"\
 "   -help\n"\
-"        Print a help page and exit.\n"
-// COMMENT OUT DOCUMENTATION ON SCALING CORRECTIONS
-//"The following options allow correction of scaling errors in the original\n"\
-//"data.\n\n"\
-//"   -range-scale[=<scale-factor>]\n"\
-//"        Apply the provided range scale factor to the imported data.  If\n"\
-//"        the option is specified without an argument, a default value of\n"\
-//"        %f will be used.\n"\
-//"   -azimuth-scale[=<scale-factor>]\n"\
-//"        Apply the provided azimuth scale factor to the imported data.  If\n"\
-//"        the option is specified without an argument, a default value of\n"\
-//"        %f will be used.  This option cannot be used with\n"\
-//"        -fix-meta-ypix\n"\
-//"   --fix-meta-ypix[=<pixel-size>]\n"\
-//"        This option is similar to -azimuth-scale, but does not resample the\n"\
-//"        input data, it just changes the y pixel size in the metadata.\n"\
-//"        This option cannot be used with -azimuth-scale.\n"\
+"        Print a help page and exit.\n\n"\
+"The following options allow correction of scaling errors in the original\n"\
+"data.\n\n"\
+"   -range-scale[=<scale-factor>]\n"\
+"        Apply the provided range scale factor to the imported data.  If\n"\
+"        the option is specified without an argument, a default value of\n"\
+"        %f will be used.\n"\
+"   -azimuth-scale[=<scale-factor>]\n"\
+"        Apply the provided azimuth scale factor to the imported data.  If\n"\
+"        the option is specified without an argument, a default value of\n"\
+"        %f will be used.  This option cannot be used with\n"\
+"        -fix-meta-ypix\n"\
+"   --fix-meta-ypix[=<pixel-size>]\n"\
+"        This option is similar to -azimuth-scale, but does not resample the\n"\
+"        input data, it just changes the y pixel size in the metadata.\n"\
+"        This option cannot be used with -azimuth-scale.\n"\
 
 #define ASF_EXAMPLES_STRING \
 "   To import CEOS format to the ASF tools internal format run:\n"\
