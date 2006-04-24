@@ -62,7 +62,7 @@ FIELD_STRING       [^#\n]*[^#\n \t]
                          }
 
  /* Gobble up spaces that are not already part of field or block id */
- /* strings (recall rules are tried in order.  */
+ /* strings (recall rules are tried in order).  */
 [ \t]*      { ; }
 
  /* Eat up spaces after field seperator , go to field state and return 
