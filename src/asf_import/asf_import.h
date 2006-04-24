@@ -52,5 +52,8 @@ void import_envi(char *inDataName,char *inMetaName,char *outBaseName,int flags[]
 void import_esri(char *inDataName,char *inMetaName,char *outBaseName,int flags[]);
 void import_stf (char *inDataName,char *inMetaName,char *outBaseName,int flags[],
                  double lowerLat, double upperLat, char *prcPath);/*this last line of parameters are extra from the rest of the import_*() functions */
+void
+import_srtm_seamless (const char *inFileName, const char *outBaseName,
+		      int flag[]);
 
 #endif

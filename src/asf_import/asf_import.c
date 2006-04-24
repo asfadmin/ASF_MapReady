@@ -1,6 +1,7 @@
 #include <asf_contact.h>
 #include <asf_copyright.h>
 #include <asf_license.h>
+#include "geotiff_flavors.h"
 /*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
 /*
 ABOUT EDITING THIS DOCUMENTATION:
@@ -630,7 +631,18 @@ int main(int argc, char *argv[])
       // probably do intelligent detection of GeoTIFF flavor, perhaps
       // falling back to a catch-all that tried to ingest arbitrary
       // GeoTIFF.
-      import_srtm_seamless (inGeotiffName->str, outBaseName);
+      geotiff_importer importer = detect_geotiff_flavor (inGeotiffName->str);
+      if ( importer != NULL ) {
+	importer (inGeotiffName->str, outBaseName, flags);
+      } else {
+	asfPrintWarning ("Couldn't identify the flavor of the GeoTIFF, "
+			 "falling back to the generic GeoTIFF importer (cross "
+			 "fingers)... \n");
+	// Haven't written import-generic_geotiff yet...
+	asfPrintError ("Tried to import a GeoTIFF of unrecognized flavor, "
+		       "but the code to do so isn't written yet");
+	// import_generic_geotiff (inGeotiffName->str, outBaseName, flags);
+      }
       g_string_free (inGeotiffName, TRUE);
     }
     /* Don't recognize this data format; report & quit */

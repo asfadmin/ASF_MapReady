@@ -34,7 +34,8 @@ normalized_longitude (double longitude)
 // Import a shuttle radar topography mission (SRTM) digital elevation
 // model (a GeoTIFF flavor) into our own ASF Tools format.
 void
-import_srtm_seamless (char *inFileName, char *outBaseName, int flag[])
+import_srtm_seamless (const char *inFileName, const char *outBaseName,
+		      int flag[])
 {
   // Let the user know what format we are working on.
   asfPrintStatus
@@ -87,12 +88,12 @@ import_srtm_seamless (char *inFileName, char *outBaseName, int flag[])
 
   // Ensure that the model type is as expected for this type of product.
   short model_type;
-  int read_count 
-    = GTIFKeyGet (input_gtif, GTModelTypeGeoKey, &model_type, 0, 1); 
-  asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
-  asfRequire (model_type == ModelTypeGeographic,
-	      "Input GeoTIFF key ModelTypeGeoKey does not have the value "
-	      "'ModelTypeGeographic' expected for this input file type.\n"); 
+  int read_count
+    = GTIFKeyGet (input_gtif, GTModelTypeGeoKey, &model_type, 0, 1);
+  asfRequire (read_count == 1, "GTIFKeyGet failed.\n");  
+  asfRequire (model_type == ModelTypeGeographic, "Input GeoTIFF key "
+	      "GTModelTypeGeoKey does not have the value "
+	      "'ModelTypeGeographic' expected for this input file type.\n");
 
   // It seem the SRTM people have chosen to set GTRasterTypeGeoKey to
   // RasterPixelIsArea.  This is probably reasonable since the
@@ -114,14 +115,26 @@ import_srtm_seamless (char *inFileName, char *outBaseName, int flag[])
   // Ensure the citation is at least eventually terminated somewhere.
   citation[max_citation_length] = '\0';
 
-  // Essentially, get the earth model on whith the lat/long are defined.
+  // Essentially, get the earth model on which the lat/long are defined.
   short geographic_type;
   read_count 
     = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geographic_type, 0, 1);
   asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
-  asfRequire (geographic_type == GCS_WGS_84, "Input GeoTIFF key "
-	      "GeographicTypeGeoKey does not have the value 'GCS_WGS_84 "
-	      "expected for this input file type.\n");
+
+  datum_type_t datum;
+  switch ( geographic_type ) {
+  case GCS_WGS_84:
+    datum = WGS84_DATUM;
+    break;
+  case GCS_NAD27:
+    datum = NAD27_DATUM;
+    break;
+  case GCS_NAD83:
+    datum = NAD83_DATUM;
+    break;
+  }
+
+  spheroid_type_t spheroid = datum_spheroid (datum);
   
   // Get the angular units in which other metadata parameters are specified.
   short angular_units;
@@ -144,11 +157,6 @@ import_srtm_seamless (char *inFileName, char *outBaseName, int flag[])
 
   // Allocate a buffer for a line of pixels.
   tdata_t buf = _TIFFmalloc (TIFFScanlineSize (input_tiff));
-
-  // Allocate another buffer that we are sure consists of floats (who
-  // knows, maybe the input file is in doubles.  FIXME: insert a bits
-  // per sample test or something to ensure that this is not the case.
-  float *float_buf = malloc (width * sizeof (float));
 
   uint32 current_row;
   for ( current_row = 0 ; current_row < height ; current_row++ ) {
@@ -228,6 +236,8 @@ import_srtm_seamless (char *inFileName, char *outBaseName, int flag[])
   mg->average_height = mean;
 
   // We confirmed above that the GEOID model used is WGS84.
+  spheroid_axes_lengths (spheroid, &mg->re_major, &mg->re_minor);
+
   mg->re_major = WGS84_SEMIMAJOR;
   mg->re_minor
     = WGS84_SEMIMAJOR - (1.0 / WGS84_INV_FLATTENING) * WGS84_SEMIMAJOR;
@@ -247,7 +257,7 @@ import_srtm_seamless (char *inFileName, char *outBaseName, int flag[])
   mp->hem = normalized_longitude (mg->center_longitude) > 0.0 ? 'N' : 'S';
 
   // We confirmed above that the product is on the WGS84_SPHEROID.
-  mp->spheroid = WGS84_SPHEROID;
+  mp->spheroid = spheroid;
 
   // These fields should be the same as the ones in the general block.
   mp->re_major = mg->re_major;
@@ -291,7 +301,6 @@ import_srtm_seamless (char *inFileName, char *outBaseName, int flag[])
 
   // Write the metadata to a file.
   meta_write (meta_out, out_meta_file->str);
-
   // Done with the metadata and the file name we wanted to write it in.
   g_string_free (out_meta_file, TRUE);
   meta_free (meta_out);
@@ -299,6 +308,7 @@ import_srtm_seamless (char *inFileName, char *outBaseName, int flag[])
   // Write the data file itself.
   int return_code = float_image_store (image, out_data_file->str,
 				       FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  assert (return_code == 0);
 
 #ifdef DEBUG_IMPORT_SRTM_SEAMLESS_JPEG_OUTPUT
   {
@@ -312,6 +322,8 @@ import_srtm_seamless (char *inFileName, char *outBaseName, int flag[])
 
     GString *out_data_file_jpeg = g_string_append (g_string_new (outBaseName),
 						   "_debug.jpeg");
+    g_print ("Making JPEG of output image named %s for debugging...\n",
+	     out_data_file_jpeg->str);
     float_image_export_as_jpeg_with_mask_interval 
       (image, out_data_file_jpeg->str, width > height ? width : height,
        -FLT_MAX, -1e16);
