@@ -264,7 +264,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
   }
 
 /* Projection parameters block, if appropriate.  */
-  if ( meta->sar->image_type == 'P' && meta->projection ) {
+  if ( (meta->sar->image_type == 'P' || meta->general->image_data_type == DEM)
+       && meta->projection ) {
     meta_put_string(fp,"projection {","","Map Projection parameters");
     switch (meta->projection->type) {
       case UNIVERSAL_TRANSVERSE_MERCATOR:
@@ -487,6 +488,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"state {","","Begin State Plane Coordinates Projection");
       meta_put_int   (fp,"zone:",meta->projection->param.state.zone,"Zone Code");
       meta_put_string(fp,"}","","End state");
+      break;
+    case LAT_LONG_PSEUDO_PROJECTION:
+      /* This projection type doesn't need its own parameter block,
+	 since all its values are specified in the main projection
+	 structure.  */
       break;
       /*
     default:
