@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include <asf_meta.h>
 
 /* Return the spheroid associated with a given datum.  This function
@@ -11,6 +13,9 @@ datum_spheroid (datum_type_t datum)
     break;
   case NAD83_DATUM:
     return GRS1980_SPHEROID;
+    break;
+  case WGS84_DATUM:
+    return WGS84_SPHEROID;
     break;
   default:
     assert (0);

@@ -1,6 +1,9 @@
+#include <assert.h>
+
 #include <asf_meta.h>
 #include <spheroids.h>
 
+// Fill in major and minor with the axes lenghts of spheroid.
 void
 spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor)
 {
