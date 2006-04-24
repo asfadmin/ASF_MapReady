@@ -26,10 +26,17 @@ CFLAGS += $(GSL_CFLAGS) \
 
 # These defines enable various debugging behavior and output.  Leaving
 # debugging code in and available is all the rage these days, and is
-# probably even a good idea.  The following defines constitute a sort
-# of catalog of the available debugging features for this program.
+# probably even a good idea.  The following stuff constitute a sort of
+# catalog of the available debugging features for this program, which
+# acronymish things you might choose to enable from the command line
+# that invokes make (e.g. make DISSJO=nonemptystring) so you don't
+# forget to remove them before release.
 #
-# CFLAGS += -DDEBUG_CREATE_SRTM_SEAMLESS_JPEG_OUTPUT
+DISSJO =
+ifdef DISSJO
+  DEBUG_FEATURES += -DDEBUG_IMPORT_SRTM_SEAMLESS_JPEG_OUTPUT
+endif
+CFLAGS += $(DEBUG_FEATURES)
 
 OBJS  = ardop_params.o \
 	ardop_write.o \
@@ -48,6 +55,7 @@ OBJS  = ardop_params.o \
 	fetch_prc_stvec.o \
 	find_geotiff_name.o \
 	frame.o \
+	geotiff_flavors.o \
 	import_ceos.o \
 	import_envi.o \
 	import_esri.o \
