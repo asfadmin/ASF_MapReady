@@ -16,6 +16,8 @@
 #include <asf_copyright.h>
 #include <asf_license.h>
 
+#define CLIGHT   2.997924562e8
+
 int
 int_rnd(double x)
 {
@@ -119,11 +121,22 @@ main (int argc, char *argv[])
   } else {
     resampleFile = strdup(inFile);
   }
+
+  float xp, yp;
+  xpyp_getPixSizes(metaSAR, &xp, &yp);
   
+  double sr_x_ps = CLIGHT / ((2.0 * metaSAR->sar->range_sampling_rate) *
+      metaSAR->general->sample_count / metaSAR->sar->original_sample_count);
+  printf("Calculated Slant Range x pixel size: %g\n", sr_x_ps);
+
   //gr2sr test_60m test_sr2_60m
   if (metaSAR->sar->image_type != 'S') {
     srFileUnscaled = appendSuffix(resampleFile, "_usr");
-    sprintf(cmd, "gr2sr %s %s\n", resampleFile, srFileUnscaled);
+    double sr_pixel_size = metaSAR->general->x_pixel_size *
+          sin(meta_look(metaSAR, metaSAR->general->line_count/2,
+		    metaSAR->general->sample_count/2 ));
+    sprintf(cmd, "gr2sr -p %g %s %s\n", sr_pixel_size, resampleFile,
+	    srFileUnscaled);
     do_system(cmd);
 
     meta_free(metaSAR);
@@ -134,14 +147,16 @@ main (int argc, char *argv[])
 
   //remap -scale 0.99667767023656 0.63338076567152 test_sr2_60m
   //       test_sr2_60m_scaled
+
   srFile = appendSuffix(resampleFile, "_sr");
-  //azScale = 1.0;
-  azScale = metaSAR->general->x_pixel_size / metaSAR->general->y_pixel_size;
+  azScale = 1;// sr_x_ps / metaSAR->general->y_pixel_size;
   sprintf(cmd, "remap -scale 1 %.15lf %s %s", azScale, srFileUnscaled, srFile);
   do_system(cmd);
 
-  meta_free(metaSAR);
-  metaSAR = meta_read(srFile);
+  //metaSAR->general->x_pixel_size = metaSAR->general->y_pixel_size;
+  metaSAR->general->y_pixel_size = metaSAR->general->x_pixel_size;
+  metaSAR->sar->azimuth_time_per_pixel *= azScale;
+  meta_write(metaSAR, srFile);
 
   //create_dem_grid -w 1024 -h 1706 delta_fixed.img test_sr2_60m_scaled.img 
   //                dem_grid
