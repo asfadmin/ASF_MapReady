@@ -97,8 +97,6 @@ int main(int argc,char *argv[])
       inMeta->general->sample_count / inMeta->sar->original_sample_count);
   }
 
-  asfPrintStatus("Using Range Pixel Size: %g\n", srPixSize);
-
   nl = inMeta->general->line_count;
   np = inMeta->general->sample_count;
 
@@ -123,7 +121,6 @@ int main(int argc,char *argv[])
   }
   
   outMeta = meta_copy(inMeta);
-  /* FIXME: These are stolen from sr2gr and haven't been updated to be inverse */
   outMeta->sar->slant_shift += ((inMeta->general->start_sample)
                                 * inMeta->general->x_pixel_size);
   outMeta->general->start_sample = 0.0;

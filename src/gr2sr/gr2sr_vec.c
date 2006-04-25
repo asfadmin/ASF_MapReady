@@ -85,10 +85,6 @@ void gr2sr_vec(meta_parameters *meta, float srinc, float *gr2sr)
   /* Set the ground range and slant range increments */
   grinc = meta->general->x_pixel_size;
 
-  printf("r_sc = %f; r_close = %f\n",r_sc,r_close);
-  printf("r_earth = %f\n",r_earth);
-  printf("grinc = %f; srinc = %f\n",grinc,srinc);
-
   /* calculate ground range to first point */
   a = (r_sc-r_earth)/r_earth;
   x = 1.0+a;
