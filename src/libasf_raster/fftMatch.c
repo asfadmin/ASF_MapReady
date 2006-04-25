@@ -2,7 +2,6 @@
 #include <math.h>
 #include "fft.h"
 #include "fft2d.h"
-#include "ddr.h"
 
 #define VERSION 1.5
 #define MINI(a,b) ( ((a)<(b)) ? (a) : (b) )
@@ -32,7 +31,6 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile)
   float bestLocX,bestLocY,doubt;
   float *corrImage=NULL;
   FILE *corrF=NULL,*descF,*in1F,*in2F;
-  struct DDR inDDR1,inDDR2,outDDR;
   meta_parameters *metaMaster, *metaSlave, *metaOut;
   extern int optind;            /* argv index of the next argument */
   extern char *optarg;          /* current argv[] */
@@ -87,7 +85,7 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile)
   /*Optionally write out correlation image.*/
   if (corrFile) {
     int outY=0;
-    float *outBuf=(float*)MALLOC(sizeof(float)*outDDR.ns);
+    float *outBuf=(float*)MALLOC(sizeof(float)*metaOut->general->sample_count);
     for (y=chipY-searchY;y<chipY+searchY;y++) {
       int index=ns*modY(y);
       int outX=0;
@@ -95,6 +93,7 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile)
 	outBuf[outX++]=corrImage[index+modX(x)];
       put_float_line(corrF,metaOut,outY++,outBuf);
     }
+    meta_write(metaOut, corrFile);
     FREE(outBuf);
   }
 
@@ -187,7 +186,7 @@ void topOffPeak(float *peaks,int i,int j,int maxI,float *di,float *dj)
 }
 
 
-/* las_readImg: reads the image file given by in & ddr
+/* readImg: reads the image file given by in
    into the (nl x ns) float array dest.  Reads a total of
    (delY x delX) pixels into topleft corner of dest, starting
    at (startY , startX) in the input file.
