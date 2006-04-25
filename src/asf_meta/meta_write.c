@@ -303,7 +303,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_double(fp,"perY:",meta->projection->perY,
 		    "Projection Coordinate per pixel, Y direction");
     meta_put_string(fp,"units:",meta->projection->units,
-		    "Units of projection [meters, seconds]");
+		    "Units of projection [meters, seconds, degrees]");
     meta_put_char  (fp,"hem:",meta->projection->hem,
 		    "Hemisphere: [N=northern hemisphere; S=southern hemisphere]");
     if (META_VERSION >= 1.3) {
