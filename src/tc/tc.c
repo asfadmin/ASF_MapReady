@@ -185,7 +185,7 @@ main (int argc, char *argv[])
   meta_parameters *metaSAR, *metaDEM;
   double dx, dy, azScale;
   int currArg, idx, idy;
-  int polyOrder = 5, clean_files = 1;
+  int polyOrder = 5, clean_files = TRUE, do_resample = TRUE;
 
   currArg = 1;
 
@@ -201,7 +201,10 @@ main (int argc, char *argv[])
       quietflag = TRUE;
     }
     else if (strmatches(key,"-keep","--keep","-k",NULL)) {
-      clean_files = 0;
+      clean_files = FALSE;
+    }
+    else if (strmatches(key,"-no-resample",NULL)) {
+      do_resample = FALSE;
     }
     else {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
@@ -226,10 +229,11 @@ main (int argc, char *argv[])
 
   demRes = metaDEM->general->x_pixel_size;
   sarRes = metaSAR->general->x_pixel_size;
-
+    
   //resample
   asfPrintStatus("DEM Resolution: %g, SAR Resolution: %g\n", demRes, sarRes);
-  if (demRes > 1.5 * sarRes) {
+  if (do_resample && demRes > 1.5 * sarRes) {
+    asfPrintStatus("Resampling SAR image to match DEM resolution.\n");
     resampleFile = appendSuffix(inFile, "_rsmpl");
     resample_to_square_pixsiz(inFile, resampleFile, demRes);
     meta_free(metaSAR);
@@ -237,10 +241,6 @@ main (int argc, char *argv[])
   } else {
     resampleFile = strdup(inFile);
   }
-
-  double sr_x_ps = SPD_LIGHT / ((2.0 * metaSAR->sar->range_sampling_rate) *
-      metaSAR->general->sample_count / metaSAR->sar->original_sample_count);
-  asfPrintStatus("Calculated Slant Range x pixel size: %g\n", sr_x_ps);
 
   //gr2sr
   if (metaSAR->sar->image_type != 'S') {
