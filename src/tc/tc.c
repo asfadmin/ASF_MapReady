@@ -281,12 +281,11 @@ main (int argc, char *argv[])
 
   //trim
   demTrimSimAmp = appendSuffix(demFile, "_sim_amp_trim");
-  asfSystem("trim -h %d -w %d %s %s 0 0", demHeight,
-	  metaSAR->general->sample_count, demSimAmp, demTrimSimAmp);
+  trim(demSimAmp, demTrimSimAmp, 0, 0, metaSAR->general->sample_count,
+       demHeight);
 
   //fftMatch
   corrFile = appendSuffix(inFile, "_corr");
-  //asfSystem("fftMatch -m %s %s %s", corrFile, srFile, demTrimSimAmp);
   fftMatch(srFile, demTrimSimAmp, NULL, corrFile);
 
   read_corr(corrFile, &dx, &dy);
@@ -295,21 +294,18 @@ main (int argc, char *argv[])
   idy = - int_rnd(dy);
 
   //trim
-  asfSystem("trim -h %d -w %d %s %s %d %d", demHeight,
-	  metaSAR->general->sample_count, demSimAmp, demTrimSimAmp,
-	  idy, idx);
+  trim(demSimAmp, demTrimSimAmp, idx, idy, metaSAR->general->sample_count,
+       demHeight);
 
   //fftMatch
   corrFile2 = appendSuffix(inFile, "_corr2");
-  //asfSystem("fftMatch -m %s %s %s", corrFile2, srFile, demTrimSimAmp);
   fftMatch(srFile, demTrimSimAmp, NULL, corrFile2);
 
   //trim
   demTrimSlant = appendSuffix(demFile, "_slant_trim");
-  asfSystem("trim -h %d -w %d %s %s %d %d", demHeight,
-	  metaSAR->general->sample_count, demSlant, demTrimSlant,
-	  idy, idx);
-	  
+  trim(demSlant, demTrimSlant, idx, idy, metaSAR->general->sample_count,
+       demHeight);
+
   //deskew_dem
   ensure_ext(&demTrimSlant, "img");
   ensure_ext(&srFile, "img");
