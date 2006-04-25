@@ -7,22 +7,25 @@
 include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf_meta.a \
-	$(GLIB_LIBS) \
-	$(GEOTIFF_LIBS) \
-	$(TIFF_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
-	$(PROJ_LIBS) \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf.a \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
+	$(JPEG_LIBS) \
+	$(PROJ_LIBS) \
+	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
-	-lm
+	-lz
 
-CFLAGS += $(GSL_CFLAGS) \
-	  $(PROJ_CFLAGS) \
-          $(GLIB_CFLAGS) \
-          $(GEOTIFF_CFLAGS) \
-          $(TIFF_CFLAGS)
+CFLAGS += \
+	$(GEOTIFF_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(JPEG_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(GSL_CFLAGS)
 
 # These defines enable various debugging behavior and output.  Leaving
 # debugging code in and available is all the rage these days, and is
