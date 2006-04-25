@@ -112,7 +112,6 @@ void usage(char *name);
 
 int main(int argc, char *argv[])
 {
-  meta_parameters *metaIn;
   long long startX,startY,endX=-1,endY=-1,inMaxX,inMaxY;
   char *infile,*outfile;
 
@@ -142,20 +141,20 @@ int main(int argc, char *argv[])
       StartWatchLog(fLog);
       printLog("Program: trim\n\n");
     }
-    else {printf("   *****Unrecognized option keyword:  %s\n",argv[currArg-1]);usage(argv[0]);}
+    else {
+      printf("   *****Unrecognized option keyword:  %s\n",argv[currArg-1]);
+      usage(argv[0]);
+    }
   }
-  if ((argc-currArg) < 4) {printf("   Insufficient arguments.\n"); usage(argv[0]);}
+  if ((argc-currArg) < 4) {
+    printf("   Insufficient arguments.\n"); usage(argv[0]);
+  }
 
  /*Compute filenames*/
   infile=argv[currArg];
   outfile=argv[currArg+1];
   startX=atoi(argv[currArg+3]);
   startY=atoi(argv[currArg+2]);
-  metaIn = meta_read(infile);
-  inMaxX = metaIn->general->sample_count;
-  inMaxY = metaIn->general->line_count;
-  //  endX = (endX!=-1) ? endX+startX : inMaxX;
-  //  endY = (endY!=-1) ? endY+startY : inMaxY;
 
   /* Call library function */
   trim(infile, outfile, startX, startY, endX, endY);
