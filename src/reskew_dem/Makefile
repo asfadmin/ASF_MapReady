@@ -7,25 +7,21 @@ include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libproj.a \
-	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
+	$(PROJ_LIBS) \
+	$(GSL_LIBS) \
 	-lm
 
-#	$(LIBDIR)/asf_las.a
+OBJS  = dem_gr2sr.o \
+	reskew_dem.o
 
-OBJS=\
-     dem_gr2sr.o \
-     reskew_dem.o
+all: reskew_dem clean
 
-all: reskew_dem
-	rm *.o
-
-reskew_dem:	$(OBJS)
-	${CC} ${CFLAGS} ${LDFLAGS} -o reskew_dem $(OBJS) ${LIBS}
+reskew_dem: $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o reskew_dem $(OBJS) $(LIBS)
 	mv reskew_dem$(BIN_POSTFIX) $(BINDIR)
-	cp reskew_dem.man ../../man/cat1/reskew_dem.1
+	cp reskew_dem.1 ../../man/cat1/.
 
 clean:
-	rm -f core ${OBJS} *.o
+	rm -f core $(OBJS) *.o
