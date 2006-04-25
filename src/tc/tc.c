@@ -131,23 +131,34 @@ main (int argc, char *argv[])
 
   //gr2sr test_60m test_sr2_60m
   if (metaSAR->sar->image_type != 'S') {
-    srFileUnscaled = appendSuffix(resampleFile, "_usr");
-    double sr_pixel_size = metaSAR->general->x_pixel_size *
-          sin(meta_look(metaSAR, metaSAR->general->line_count/2,
-		    metaSAR->general->sample_count/2 ));
-    sprintf(cmd, "gr2sr -p %g %s %s\n", sr_pixel_size, resampleFile,
-	    srFileUnscaled);
+    //    srFileUnscaled = appendSuffix(resampleFile, "_usr");
+    srFile = appendSuffix(resampleFile, "_sr");
+    double sr_pixel_size = 
+      (meta_get_slant(metaSAR,0,metaSAR->general->sample_count) -
+       meta_get_slant(metaSAR,0,0)) / metaSAR->general->sample_count;
+    sprintf(cmd, "gr2sr -p %.8f %s %s\n", sr_pixel_size, resampleFile,
+	    srFile);
     do_system(cmd);
 
+    /*
     meta_free(metaSAR);
-    metaSAR = meta_read(srFileUnscaled);
+    metaSAR = meta_read(srFile);
+    metaSAR->sar->range_time_per_pixel /= 
+      metaSAR->general->y_pixel_size / metaSAR->general->x_pixel_size;
+    printf("xpix: %g, ypix: %g\n", metaSAR->general->y_pixel_size, 
+	   metaSAR->general->x_pixel_size);
+    metaSAR->general->x_pixel_size = metaSAR->general->y_pixel_size;
+    */
+    meta_write(metaSAR, srFile);
+    //meta_free(metaSAR);
+    //metaSAR = meta_read(srFileUnscaled);
   } else {
-    srFileUnscaled = strdup(resampleFile);
+    srFile = strdup(resampleFile);
   }
 
   //remap -scale 0.99667767023656 0.63338076567152 test_sr2_60m
   //       test_sr2_60m_scaled
-
+  /*
   srFile = appendSuffix(resampleFile, "_sr");
   azScale = 1;// sr_x_ps / metaSAR->general->y_pixel_size;
   sprintf(cmd, "remap -scale 1 %.15lf %s %s", azScale, srFileUnscaled, srFile);
@@ -157,6 +168,7 @@ main (int argc, char *argv[])
   metaSAR->general->y_pixel_size = metaSAR->general->x_pixel_size;
   metaSAR->sar->azimuth_time_per_pixel *= azScale;
   meta_write(metaSAR, srFile);
+  */
 
   //create_dem_grid -w 1024 -h 1706 delta_fixed.img test_sr2_60m_scaled.img 
   //                dem_grid
@@ -231,8 +243,11 @@ main (int argc, char *argv[])
   ensure_ext(&srFile, "img");
   sprintf(cmd, "deskew_dem -i %s 0 %s %s", srFile, demTrimSlant, outFile);
   do_system(cmd);
+  meta_write(metaSAR, outFile);
 
   //asf_geocode -p utm test_sr2_tc test_sr2_tc_utm
+  sprintf(cmd, "asf_geocode -p utm %s %s_utm", outFile, outFile);
+  do_system(cmd);
 
   asfPrintStatus("Terrain Correction Complete!\n");
 
