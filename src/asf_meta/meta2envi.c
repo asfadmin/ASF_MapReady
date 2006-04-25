@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "asf_meta.h"
 #include "envi.h"
 #include "asf_nan.h"
@@ -103,6 +105,10 @@ envi_header* meta2envi(meta_parameters *meta)
 	break;
       case STATE_PLANE: 
       case SCANSAR_PROJECTION: break;
+      case LAT_LONG_PSEUDO_PROJECTION:
+	// I haven't tested this at all.
+	assert (0);
+	break;
       }
     envi->ref_pixel_x = 1;
     envi->ref_pixel_y = 1;
