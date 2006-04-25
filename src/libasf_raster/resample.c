@@ -76,6 +76,27 @@ static float filter(      /****************************************/
     return (kersum);
 }
 
+int resample_to_square_pixsiz(char *infile, char *outfile, double pixsiz)
+{
+  resample_to_pixsiz(infile, outfile, pixsiz, pixsiz);
+}
+
+int resample_to_pixsiz(char *infile, char *outfile,
+		       double xpixsiz, double ypixsiz)
+{
+    meta_parameters *metaIn;
+    double xscalfact, yscalfact;
+
+    metaIn = meta_read(infile);
+
+    xscalfact = metaIn->general->x_pixel_size/xpixsiz;
+    yscalfact = metaIn->general->y_pixel_size/ypixsiz;
+
+    resample(infile, outfile, xscalfact, yscalfact);
+
+    meta_free(metaIn);
+}
+
 int resample(char *infile, char *outfile, double xscalfact, double yscalfact)
 {
     FILE            *fpin, *fpout;  /* file pointer                   */
