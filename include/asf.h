@@ -41,6 +41,8 @@
 
 #define EXTENSION_SEPARATOR '.'
 
+/* Speed of light */
+#define SPD_LIGHT 2.997924562e8
 
 /* Print an error with printf-style formatting codes and args, then die.  */
 void bail(const char *message, ...)/* ; is coming, don't worry.  */
