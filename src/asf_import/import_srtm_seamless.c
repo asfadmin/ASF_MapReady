@@ -1,3 +1,6 @@
+// Import a shuttle radar topography mission (SRTM) digital elevation
+// model (a GeoTIFF flavor) into our own ASF Tools format.
+
 #include <assert.h>
 
 #include <geokeys.h>
@@ -15,6 +18,8 @@
 #include "asf.h"
 #include "asf_import.h"
 #include "asf_reporting.h"
+
+#include "tiff_to_float_image.h"
 
 // Given a potentially non-normalized longitude argument, return
 // longitude normalized into the range [-90, 90].  Note that
@@ -69,7 +74,7 @@ import_srtm_seamless (const char *inFileName, const char *outBaseName,
   // Get the tie point which defines the mapping between raster
   // coordinate space and geographic coordinate space.  Although
   // geotiff theoretically supports multiple tie points, we don't
-  // (rational: ArcView currently doesn't either, and multiple tie
+  // (rationale: ArcView currently doesn't either, and multiple tie
   // points don't make sense with the pixel scale option, which we
   // need).
   double *tie_point;
@@ -145,32 +150,10 @@ import_srtm_seamless (const char *inFileName, const char *outBaseName,
 	      "GeogAngularUnitsGeoKey does not have the value 'Angular_Degree "
 	      "expected for this input file type.\n");
 
+  FloatImage *image = tiff_to_float_image (input_tiff);
+
   // Get the raster width and height of the image.
-  uint32 width, height;
-  TIFFGetField(input_tiff, TIFFTAG_IMAGEWIDTH, &width);
-  TIFFGetField(input_tiff, TIFFTAG_IMAGELENGTH, &height);
-
-  // Pull the actual image data out of the TIFF and store it as a
-  // float_image.
-
-  FloatImage *image = float_image_new (width, height);
-
-  // Allocate a buffer for a line of pixels.
-  tdata_t buf = _TIFFmalloc (TIFFScanlineSize (input_tiff));
-
-  uint32 current_row;
-  for ( current_row = 0 ; current_row < height ; current_row++ ) {
-    // FIXME: last argument is irrelevant unless PlanarConfiguration
-    // is equal to 2, but need to add a check to ensure this not the case.
-    TIFFReadScanline (input_tiff, buf, current_row, 0);
-    uint32 current_column;
-    for ( current_column = 0 ; current_column < width ; current_column++ ) {
-      // FIXME: make sure this buf cruf from libTIFF really points floats.
-      float_image_set_pixel (image, current_column, current_row, 
-			     ((float *) buf)[current_column]);
-    }
-    asfLineMeter (current_row, height);
-  }
+  uint32 width = image->size_x, height = image->size_y;
 
   // Create a new metadata file for the image.
   meta_parameters *meta_out = raw_init ();
@@ -237,10 +220,6 @@ import_srtm_seamless (const char *inFileName, const char *outBaseName,
 
   // We confirmed above that the GEOID model used is WGS84.
   spheroid_axes_lengths (spheroid, &mg->re_major, &mg->re_minor);
-
-  mg->re_major = WGS84_SEMIMAJOR;
-  mg->re_minor
-    = WGS84_SEMIMAJOR - (1.0 / WGS84_INV_FLATTENING) * WGS84_SEMIMAJOR;
 
   meta_projection *mp = meta_out->projection; // Convenience alias.
 
@@ -334,4 +313,6 @@ import_srtm_seamless (const char *inFileName, const char *outBaseName,
   // Done with the data file's name and its FloatImage incarnation.
   g_string_free (out_data_file, TRUE);
   float_image_free (image);
+
+  FREE (citation);
 }
