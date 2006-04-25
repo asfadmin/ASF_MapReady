@@ -229,7 +229,7 @@ main (int argc, char *argv[])
 
   //resample
   asfPrintStatus("DEM Resolution: %g, SAR Resolution: %g\n", demRes, sarRes);
-  if (demRes > sarRes) {
+  if (demRes > 1.5 * sarRes) {
     resampleFile = appendSuffix(inFile, "_rsmpl");
     resample_to_square_pixsiz(inFile, resampleFile, demRes);
     meta_free(metaSAR);
@@ -240,7 +240,7 @@ main (int argc, char *argv[])
 
   double sr_x_ps = SPD_LIGHT / ((2.0 * metaSAR->sar->range_sampling_rate) *
       metaSAR->general->sample_count / metaSAR->sar->original_sample_count);
-  printf("Calculated Slant Range x pixel size: %g\n", sr_x_ps);
+  asfPrintStatus("Calculated Slant Range x pixel size: %g\n", sr_x_ps);
 
   //gr2sr
   if (metaSAR->sar->image_type != 'S') {
@@ -314,7 +314,6 @@ main (int argc, char *argv[])
   ensure_ext(&demTrimSlant, "img");
   ensure_ext(&srFile, "img");
   asfSystem("deskew_dem -i %s 0 %s %s", srFile, demTrimSlant, outFile);
-  meta_write(metaSAR, outFile);
 
   if (clean_files) {
     clean(resampleFile);
