@@ -1,5 +1,8 @@
 // Implementation of the interface described in geotiff_flavors.h.
 
+#include <assert.h>
+#include <regex.h>
+
 #include <geokeys.h>
 #include <geo_tiffp.h>
 #include <geo_keyp.h>
@@ -41,6 +44,27 @@ detect_geotiff_flavor (const char *file)
     if ( model_type == ModelTypeGeographic ) {
       return import_srtm_seamless;
     }
+  }
+
+  // Test for a particular flavor.
+  GTIFKeyGet (gtif, PCSCitationGeoKey, citation, 0, max_citation_length);
+  // Ensure the citation is at least eventually terminated somewhere.
+  citation[max_citation_length] = '\0';
+  regex_t asf_utm_citation_regex;
+  /*
+  int return_code 
+    = regcomp (&asf_utm_citation_regex, 
+	       "UTM zone ? projected GeoTIFF on WGS84 ellipsoid datum written "
+	       "by Alaska Satellite Facility tools.", REG_NOSUB);
+  */
+  int return_code 
+    = regcomp (&asf_utm_citation_regex, 
+	       "UTM zone [[:digit:]]+ [NS]", REG_EXTENDED | REG_NOSUB);
+  //[[:digit:]]+ [NS]
+  assert (return_code == 0);
+  return_code = regexec (&asf_utm_citation_regex, citation, 0, NULL, 0);
+  if ( return_code == 0 ) {
+    return import_asf_utm_geotiff;
   }
 
   // Couldn't determine any flavor we know.

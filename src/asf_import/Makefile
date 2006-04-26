@@ -39,6 +39,10 @@ DISSJO =
 ifdef DISSJO
   DEBUG_FEATURES += -DDEBUG_IMPORT_SRTM_SEAMLESS_JPEG_OUTPUT
 endif
+DIAUG =
+ifdef DIAUG
+  DEBUG_FEATURES += -DDEBUG_IMPORT_ASF_UTM_GEOTIFF_JPEG_OUTPUT
+endif
 CFLAGS += $(DEBUG_FEATURES)
 
 OBJS  = ardop_params.o \
@@ -59,6 +63,7 @@ OBJS  = ardop_params.o \
 	find_geotiff_name.o \
 	frame.o \
 	geotiff_flavors.o \
+	import_asf_utm_geotiff.o \
 	import_ceos.o \
 	import_envi.o \
 	import_esri.o \
@@ -67,11 +72,14 @@ OBJS  = ardop_params.o \
 	least_squares.o \
 	matrix.o \
 	missing.o \
+	projected_image_import.o \
 	sprocket_layers.o \
+        tiff_to_float_image.o \
 	unpack.o \
 	utilities.o \
 	utilities_ceos.o \
-	utilities_stf.o
+	utilities_stf.o \
+	write_meta_and_img.o
 
 all: asf_import
 	-rm *.o

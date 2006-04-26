@@ -55,5 +55,8 @@ void import_stf (char *inDataName,char *inMetaName,char *outBaseName,int flags[]
 void
 import_srtm_seamless (const char *inFileName, const char *outBaseName,
 		      int flag[]);
+void
+import_asf_utm_geotiff (const char *inFileName, const char *outBaseName,
+			int flag[]);
 
 #endif
