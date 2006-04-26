@@ -5,7 +5,8 @@ include ../../make_support/system_rules
 CFLAGS := -Wall $(CFLAGS)
 
 OBJS = \
-	gr2sr.o
+	gr2sr.o \
+	reskew_dem.o
 
 LIBS = \
 	$(LIBDIR)/asf.a \
