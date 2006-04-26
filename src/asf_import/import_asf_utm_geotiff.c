@@ -16,6 +16,7 @@
 #include <spheroids.h>
 
 #include "asf.h"
+#include "asf_nan.h"
 #include "asf_import.h"
 #include "asf_reporting.h"
 #include "projected_image_import.h"
