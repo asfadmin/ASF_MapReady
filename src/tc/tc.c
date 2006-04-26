@@ -311,7 +311,7 @@ main (int argc, char *argv[])
   // Generate a slant range DEM and a simulated amplitude image.
   demSlant = appendSuffix(demFile, "_slant");
   demSimAmp = appendSuffix(demFile, "_sim_amp");
-  asfSystem("reskew_dem %s %s %s %s", srFile, demClipped, demSlant, demSimAmp);
+  reskew_dem(srFile, demClipped, demSlant, demSimAmp);
 
   // Resize the simulated amplitude to match the slant range SAR image.
   demTrimSimAmp = appendSuffix(demFile, "_sim_amp_trim");
