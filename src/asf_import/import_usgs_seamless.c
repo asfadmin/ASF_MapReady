@@ -1,5 +1,6 @@
-// Import a shuttle radar topography mission (SRTM) digital elevation
-// model (a GeoTIFF flavor) into our own ASF Tools format.
+// Import a Unites States Geological Survey (USGS) digital elevation
+// model (a pseudoprojected GeoTIFF flavor) into our own ASF Tools
+// format.
 
 #include <assert.h>
 
@@ -37,15 +38,16 @@ normalized_longitude (double longitude)
   return longitude;
 }
 
-// Import a shuttle radar topography mission (SRTM) digital elevation
-// model (a GeoTIFF flavor) into our own ASF Tools format.
+// Import a USGS seamless server digital elevation model (a
+// pseudoprojected GeoTIFF flavor) into our own ASF Tools format.
 void
-import_srtm_seamless (const char *inFileName, const char *outBaseName,
+import_usgs_seamless (const char *inFileName, const char *outBaseName,
 		      int flag[])
 {
   // Let the user know what format we are working on.
   asfPrintStatus
-    ("   Input data type: GeoTIFF (SRTM pseudoprojected DEM flavor)\n");
+    ("   Input data type: GeoTIFF (USGS seamless pseudoprojected DEM "
+     "flavor)\n");
   asfPrintStatus
     ("   Output data type: float-valued pseudoprojected DEM in ASF format\n");
 
@@ -101,14 +103,14 @@ import_srtm_seamless (const char *inFileName, const char *outBaseName,
 	      "GTModelTypeGeoKey does not have the value "
 	      "'ModelTypeGeographic' expected for this input file type.\n");
 
-  // It seem the SRTM people have chosen to set GTRasterTypeGeoKey to
-  // RasterPixelIsArea.  This is probably reasonable since the
-  // elevation is interferometry-derived (rather than coming from,
-  // say, laser altimitry, which would definately suggest
-  // RasterPixelIsPoint).  However, this isn't how people usually
-  // think of elevation postings, so I don't trust it not to get
-  // changed at some point, and it doesn't matter much, so I ignore
-  // this tag.
+  // It seem the USGS people have (possibly accidently through ESRI)
+  // chosen to set GTRasterTypeGeoKey to RasterPixelIsArea.  This is
+  // probably reasonable since the elevation is interferometry-derived
+  // (rather than coming from, say, laser altimitry, which would
+  // definately suggest RasterPixelIsPoint).  However, this isn't how
+  // people usually think of elevation postings, so I don't trust it
+  // not to get changed at some point, and it doesn't matter much, so
+  // I ignore this tag.
 
   // So far as I can tell, the GeoTIFF spec doesn't give us a way to
   // determine the maximum citation length, so we just use a really
@@ -272,7 +274,7 @@ import_srtm_seamless (const char *inFileName, const char *outBaseName,
   asfRequire (return_code == 0, 
 	      "Failed to write new '.meta' and '.img' files.");
 
-#ifdef DEBUG_IMPORT_SRTM_SEAMLESS_JPEG_OUTPUT
+#ifdef DEBUG_IMPORT_USGS_SEAMLESS_JPEG_OUTPUT
   {
     // Take a look at a jpeg version of the image.  These DEMs seem to
     // use a huge negative value for no data points, so we mask those

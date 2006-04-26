@@ -42,7 +42,7 @@ detect_geotiff_flavor (const char *file)
       = GTIFKeyGet (gtif, GTModelTypeGeoKey, &model_type, 0, 1);
     asfRequire (read_count == 1, "GTIFKeyGet failed.\n");  
     if ( model_type == ModelTypeGeographic ) {
-      return import_srtm_seamless;
+      return import_usgs_seamless;
     }
   }
 

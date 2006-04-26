@@ -625,12 +625,17 @@ int main(int argc, char *argv[])
 		       "extension '.tif', '.tiff', '.TIF', or '.TIFF') "
 		       "corresponding to specified inBaseName");
       }
-      // At the moment, we are set up to ingest only a specific
-      // GeoTIFF variant, the Shuttle Radar Topography Mission (SRTM)
-      // data from the USGS seamless system.  Later on we should
-      // probably do intelligent detection of GeoTIFF flavor, perhaps
-      // falling back to a catch-all that tried to ingest arbitrary
-      // GeoTIFF.
+      // At the moment, we are set up to ingest only a GeoTIFF
+      // variants, and no general GeoTIFF handler is implemented
+      // (rationale: it would stand an excellent chance of not working
+      // on a random flavor we haven't tested).  The idea is to keep
+      // adding flavors as needed by teaching detect_geotiff_flavor
+      // about them and adding a specialized inport functions capable
+      // of ingesting them.  Eventually we might feel comfortable
+      // taking a crack at a catch-all importer, but I think its
+      // probably better just to have a few generalized detectable
+      // flavors at the end of detect_geotiff_flavor, and for the
+      // really weird stuff go ahead and throw an exception.
       geotiff_importer importer = detect_geotiff_flavor (inGeotiffName->str);
       if ( importer != NULL ) {
 	importer (inGeotiffName->str, outBaseName, flags);

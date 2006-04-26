@@ -36,8 +36,8 @@ CFLAGS += \
 # forget to remove them before release.
 #
 DISSJO =
-ifdef DISSJO
-  DEBUG_FEATURES += -DDEBUG_IMPORT_SRTM_SEAMLESS_JPEG_OUTPUT
+ifdef DIUSJO
+  DEBUG_FEATURES += -DDEBUG_IMPORT_USGS_SEAMLESS_JPEG_OUTPUT
 endif
 DIAUG =
 ifdef DIAUG
@@ -67,7 +67,7 @@ OBJS  = ardop_params.o \
 	import_ceos.o \
 	import_envi.o \
 	import_esri.o \
-	import_srtm_seamless.o \
+	import_usgs_seamless.o \
 	import_stf.o \
 	least_squares.o \
 	matrix.o \
