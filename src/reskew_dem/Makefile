@@ -5,18 +5,17 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf_meta.a \
+LIBS  = \
+	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_reporting.a \
-	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	-lm
 
-OBJS  = dem_gr2sr.o \
-	reskew_dem.o
-
-all: reskew_dem clean
+OBJS= reskew_dem.o
 
 reskew_dem: $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o reskew_dem $(OBJS) $(LIBS)
