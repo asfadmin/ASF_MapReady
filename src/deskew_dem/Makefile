@@ -3,7 +3,9 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf_meta.a \
+LIBS  = \
+	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_proj.a \
@@ -11,12 +13,7 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
-OBJS  = calc_ranges.o \
-	dem_interp_col.o \
-	dem_sr2gr.o \
-	deskew_dem.o \
-	geo_compensate.o \
-	radio_compensate.o
+OBJS  = deskew_dem.o
 
 all: deskew_dem clean
 
@@ -26,4 +23,4 @@ deskew_dem: $(OBJS)
 	cp deskew_dem.1 ../../man/cat1
 
 clean:
-	rm -f core *.o
+	rm -f core *.o *~
