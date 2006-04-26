@@ -361,7 +361,7 @@ main (int argc, char *argv[])
   // of the values.
   ensure_ext(&demTrimSlant, "img");
   ensure_ext(&srFile, "img");
-  asfSystem("deskew_dem -i %s 0 %s %s", srFile, demTrimSlant, outFile);
+  deskew_dem(demTrimSlant, outFile, srFile, 0);
 
   if (clean_files) {
     clean(resampleFile);
