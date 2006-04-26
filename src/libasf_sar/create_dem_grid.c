@@ -117,7 +117,10 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
   meta_parameters *metaSar, *metaDem;
   double elev = 0.0;
   double width = w, height = h;
-  int gridResX = size, gridResY = size;
+  int gridResX, gridResY;
+
+  gridResX = size;
+  gridResY = size;
 
   out=FOPEN(outName,"w");
   metaSar = meta_read(sarName);
@@ -192,6 +195,7 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
       fprintf(out,"%6d %6d %8.5f %8.5f %4.2f\n",grid_x,grid_y,dem_x,dem_y,1.0);
     }
   asfPrintStatus("   Created a grid of %ix%i points\n\n",gridResX,gridResY);
+  FCLOSE(out);
   return TRUE;
 }
 
