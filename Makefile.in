@@ -21,6 +21,7 @@ MODULES = \
 	src/asf_fft \
 	src/libasf_proj \
 	src/libasf_raster \
+	src/libasf_sar \
 	src/libasf_reporting \
 	src/asf_export \
 	src/asf_import \
