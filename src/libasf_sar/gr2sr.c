@@ -65,6 +65,20 @@ static void gr2sr_vec(meta_parameters *meta, float srinc, float *gr2sr)
   }
 }
 
+static char * replExt(const char *filename, const char *ext)
+{
+  char *ret = MALLOC(sizeof(char)*(strlen(filename)+strlen(ext)+5));
+  strcpy(ret, filename);
+
+  char *p = strrchr(ret, '.');
+  if (p) *p = '\0';
+
+  if (ext[0] != '.') strcat(ret, ".");
+  strcat(ret, ext);
+
+  return ret;
+}
+
 int gr2sr(const char *infile, const char *outfile)
 {
   return gr2sr_pixsiz(infile, outfile, -1);
@@ -87,7 +101,9 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
   float *outBuf;         /* Output buffer                 */
   FILE  *fpi, *fpo;      /* File pointers                 */
   int   line;            /* Loop counter                  */
-
+  char  *iimgfile;       /* .img input file               */
+  char  *oimgfile;       /* .img output file              */
+ 
   inMeta = meta_read(infile);
 
   if (srPixSize < 0) {
@@ -105,8 +121,6 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
     srPixSize = SPD_LIGHT / ((2.0 * inMeta->sar->range_sampling_rate) *
       inMeta->general->sample_count / inMeta->sar->original_sample_count);
   }
-
-  asfPrintStatus("You are using the library version of gr2sr!\n");
 
   nl = inMeta->general->line_count;
   np = inMeta->general->sample_count;
@@ -140,11 +154,11 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
   outMeta->general->x_pixel_size = srPixSize;
   outMeta->general->sample_count = onp;
 
-  asfPrintStatus("Input  lines, samples: %i %i\n",nl,np);
-  asfPrintStatus("Output lines, samples: %i %i\n",onl,onp);
+  iimgfile = replExt(infile, "img");
+  oimgfile = replExt(outfile, "img");
 
-  fpi = FOPEN(infile,"rb");
-  fpo = FOPEN(outfile,"wb");
+  fpi = FOPEN(iimgfile,"rb");
+  fpo = FOPEN(oimgfile,"wb");
   inBuf = (float *) MALLOC (np*sizeof(float));
   outBuf = (float *) MALLOC (onp*sizeof(float));
 
@@ -164,6 +178,8 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
   FREE(outBuf);
   FCLOSE(fpi);
   FCLOSE(fpo);
+  FREE(iimgfile);
+  FREE(oimgfile);
 
   return TRUE;
 }
