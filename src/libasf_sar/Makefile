@@ -6,7 +6,8 @@ CFLAGS := -Wall $(CFLAGS)
 
 OBJS = \
 	gr2sr.o \
-	reskew_dem.o
+	reskew_dem.o \
+	deskew_dem.o
 
 LIBS = \
 	$(LIBDIR)/asf.a \
@@ -27,4 +28,4 @@ build_only: $(OBJS)
 $(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h)
 
 clean:
-	rm -rf $(OBJS) libasf_sar.a
+	rm -rf $(OBJS) libasf_sar.a *~
