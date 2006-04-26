@@ -151,6 +151,7 @@ void usage(const char *name)
 {
   printf("Usage: %s [-log <logfile>] [-quiet] [-keep] [-no-resample]\n"
          "          [-no-verify-fftMatch] [-pixel-size <size>]\n"
+         "          [-dem-grid-size <size>]\n"
          "          <inFile> <demFile> <outFile>\n", name);
   exit(EXIT_FAILURE);
 }
@@ -185,7 +186,7 @@ main (int argc, char *argv[])
   double demRes, sarRes;
   int demWidth, demHeight;
   meta_parameters *metaSAR, *metaDEM;
-  double dx, dy, azScale, pixel_size = -1;
+  double dx, dy, azScale, pixel_size = -1, dem_grid_size = 20;
   int currArg, idx, idy;
   int polyOrder = 5, clean_files = TRUE, do_resample = TRUE,
     do_fftMatch_verification = TRUE;
@@ -215,6 +216,10 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
       CHECK_ARG(1);
       pixel_size = atof(GET_ARG(1));
+    }
+    else if (strmatches(key,"-dem-grid-size","--dem-grid-size",NULL)) {
+      CHECK_ARG(1);
+      dem_grid_size = atof(GET_ARG(1));
     }
     else {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
@@ -288,9 +293,10 @@ main (int argc, char *argv[])
   // There is a buffer of 400 pixels in far range added to have enough
   // DEM around when we get to correcting the terrain.
   demGridFile = appendSuffix(inFile, "_demgrid");
-  asfSystem("create_dem_grid -w %d -h %d %s %s %s",
-	    metaSAR->general->sample_count, metaSAR->general->line_count,
-	    demFile, srFile, demGridFile);
+  create_dem_grid_ext(demFile, srFile, demGridFile,
+		      metaSAR->general->sample_count,
+		      metaSAR->general->line_count, dem_grid_size);
+
 
   // Fit a fifth order polynomial to the grid points.
   // This polynomial is then used to extract a subset out of the reference 
