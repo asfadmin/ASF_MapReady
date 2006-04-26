@@ -230,11 +230,14 @@ main (int argc, char *argv[])
   demRes = metaDEM->general->x_pixel_size;
   sarRes = metaSAR->general->x_pixel_size;
     
-  //resample
+  // Downsample the SAR image closer to the reference DEM if needed.
+  // Otherwise, the quality of the resulting terrain corrected SAR image 
+  // suffers. We put in a threshold of 1.5 times the resolution of the SAR
+  // image. The -no-resample option overwrites this default behavior.
   asfPrintStatus("DEM Resolution: %g, SAR Resolution: %g\n", demRes, sarRes);
   if (do_resample && demRes > 1.5 * sarRes) {
     asfPrintStatus("Resampling SAR image to match DEM resolution.\n");
-    resampleFile = appendSuffix(inFile, "_rsmpl");
+    resampleFile = appendSuffix(inFile, "_resample");
     resample_to_square_pixsiz(inFile, resampleFile, demRes);
     meta_free(metaSAR);
     metaSAR = meta_read(resampleFile);
@@ -242,7 +245,9 @@ main (int argc, char *argv[])
     resampleFile = strdup(inFile);
   }
 
-  //gr2sr
+  // Calculate the slant range pixel size to pass into the ground range to
+  // slant range conversion. This ensures that we have square pixels in the
+  // output and don't need to scale the image afterwards.
   if (metaSAR->sar->image_type != 'S') {
     srFile = appendSuffix(inFile, "_slant");
     double sr_pixel_size = 
@@ -256,35 +261,44 @@ main (int argc, char *argv[])
     srFile = strdup(resampleFile);
   }
 
-  //create_dem_grid
+  // Generate a point grid for the DEM extraction.
+  // The width and height of the grid is defined in slant range image
+  // coordinates, while the grid is actually calculated in DEM space.
+  // There is a buffer of 400 pixels in far range added to have enough
+  // DEM around when we get to correcting the terrain.
   demGridFile = appendSuffix(inFile, "_demgrid");
   asfSystem("create_dem_grid -w %d -h %d %s %s %s",
-	  metaSAR->general->sample_count, metaSAR->general->line_count,
-	  demFile, srFile, demGridFile);
+	    metaSAR->general->sample_count, metaSAR->general->line_count,
+	    demFile, srFile, demGridFile);
 
-  //fit_poly
+  // Fit a fifth order polynomial to the grid points.
+  // This polynomial is then used to extract a subset out of the reference 
+  // DEM.
   demPolyFile = appendSuffix(inFile, "_dempoly");
   asfSystem("fit_poly %s %d %s", demGridFile, polyOrder, demPolyFile);
 
-  //remap
+  // Here is the actual work done for cutting out the DEM.
+  // The adjustment of the DEM width by 400 pixels (originated in
+  // create_dem_grid) needs to be factored in.
   demClipped = appendSuffix(demFile, "_clip");
   demWidth = metaSAR->general->sample_count + 400;
   demHeight = metaSAR->general->line_count;
   asfSystem("remap -translate 0 0 -poly %s -width %d -height %d "
-	  "-bilinear -float %s %s", demPolyFile, demWidth, demHeight,
-	  demFile, demClipped);
+	    "-bilinear -float %s %s", demPolyFile, demWidth, demHeight,
+	    demFile, demClipped);
 
-  //reskew_dem
+  // Generate a slant range DEM and a simulated amplitude image.
   demSlant = appendSuffix(demFile, "_slant");
   demSimAmp = appendSuffix(demFile, "_sim_amp");
   asfSystem("reskew_dem %s %s %s %s", srFile, demClipped, demSlant, demSimAmp);
 
-  //trim
+  // Resize the simulated amplitude to match the slant range SAR image.
   demTrimSimAmp = appendSuffix(demFile, "_sim_amp_trim");
   trim(demSimAmp, demTrimSimAmp, 0, 0, metaSAR->general->sample_count,
        demHeight);
 
-  //fftMatch
+  // Match the real and simulated SAR image to determine the offset.
+  // Read the offset out of the offset file.
   corrFile = appendSuffix(inFile, "_corr");
   fftMatch(srFile, demTrimSimAmp, NULL, corrFile);
 
@@ -293,20 +307,22 @@ main (int argc, char *argv[])
   idx = - int_rnd(dx);
   idy = - int_rnd(dy);
 
-  //trim
+  // Apply the offset to the simulated amplitude image.
   trim(demSimAmp, demTrimSimAmp, idx, idy, metaSAR->general->sample_count,
        demHeight);
 
-  //fftMatch
+  // Verify that the applied offset in fact does the trick.
   corrFile2 = appendSuffix(inFile, "_corr2");
   fftMatch(srFile, demTrimSimAmp, NULL, corrFile2);
 
-  //trim
+  // Apply the offset to the slant range DEM.
   demTrimSlant = appendSuffix(demFile, "_slant_trim");
   trim(demSlant, demTrimSlant, idx, idy, metaSAR->general->sample_count,
        demHeight);
 
-  //deskew_dem
+  // Terrain correct the slant range image while bringing it back to
+  // ground range geometry. This is done without radiometric correction
+  // of the values.
   ensure_ext(&demTrimSlant, "img");
   ensure_ext(&srFile, "img");
   asfSystem("deskew_dem -i %s 0 %s %s", srFile, demTrimSlant, outFile);
