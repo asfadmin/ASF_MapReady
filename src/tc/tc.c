@@ -18,7 +18,7 @@
 #include <asf_contact.h>
 #include <asf_copyright.h>
 #include <asf_license.h>
-
+#include <asf_sar.h>
 
 int
 int_rnd(double x)
@@ -149,7 +149,9 @@ void clean(const char *file)
 #define NUM_ARGS 3
 void usage(const char *name)
 {
-  printf("Usage: %s <inFile> <demFile> <outFile>\n", name);
+  printf("Usage: %s [-log <logfile>] [-quiet] [-keep] [-no-resample]\n"
+         "          [-no-verify-fftMatch] [-pixel-size <size>]\n"
+         "          <inFile> <demFile> <outFile>\n", name);
   exit(EXIT_FAILURE);
 }
 
@@ -183,9 +185,10 @@ main (int argc, char *argv[])
   double demRes, sarRes;
   int demWidth, demHeight;
   meta_parameters *metaSAR, *metaDEM;
-  double dx, dy, azScale;
+  double dx, dy, azScale, pixel_size = -1;
   int currArg, idx, idy;
-  int polyOrder = 5, clean_files = TRUE, do_resample = TRUE;
+  int polyOrder = 5, clean_files = TRUE, do_resample = TRUE,
+    do_fftMatch_verification = TRUE;
 
   currArg = 1;
 
@@ -203,8 +206,15 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-keep","--keep","-k",NULL)) {
       clean_files = FALSE;
     }
-    else if (strmatches(key,"-no-resample",NULL)) {
+    else if (strmatches(key,"-no-resample","--no-resample",NULL)) {
       do_resample = FALSE;
+    }
+    else if (strmatches(key,"-no-verify-match","--no-verify-match",NULL)) {
+      do_fftMatch_verification = FALSE;
+    }
+    else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
+      CHECK_ARG(1);
+      pixel_size = atof(GET_ARG(1));
     }
     else {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
@@ -235,10 +245,18 @@ main (int argc, char *argv[])
   // suffers. We put in a threshold of 1.5 times the resolution of the SAR
   // image. The -no-resample option overwrites this default behavior.
   asfPrintStatus("DEM Resolution: %g, SAR Resolution: %g\n", demRes, sarRes);
-  if (do_resample && demRes > 1.5 * sarRes) {
-    asfPrintStatus("Resampling SAR image to match DEM resolution.\n");
+  if (do_resample && (demRes > 1.5 * sarRes || pixel_size > 0)) {
+    if (pixel_size < 0)
+    {
+      asfPrintStatus(
+	"DEM resolution is significantly higher than SAR resolution.\n");
+      pixel_size = demRes;
+    }
+
+    asfPrintStatus("Resampling SAR image to pixel size of %g.\n", pixel_size);
+
     resampleFile = appendSuffix(inFile, "_resample");
-    resample_to_square_pixsiz(inFile, resampleFile, demRes);
+    resample_to_square_pixsiz(inFile, resampleFile, pixel_size);
     meta_free(metaSAR);
     metaSAR = meta_read(resampleFile);
   } else {
@@ -253,7 +271,10 @@ main (int argc, char *argv[])
     double sr_pixel_size = 
       (meta_get_slant(metaSAR,0,metaSAR->general->sample_count) -
        meta_get_slant(metaSAR,0,0)) / metaSAR->general->sample_count;
-    asfSystem("gr2sr -p %.8f %s %s\n", sr_pixel_size, resampleFile, srFile);
+    asfPrintStatus("Converting to Slant Range\n");
+
+    gr2sr_pixsiz(resampleFile, srFile, sr_pixel_size);
+    //asfSystem("gr2sr -p %.8f %s %s\n", sr_pixel_size, resampleFile, srFile);
 
     meta_free(metaSAR);
     metaSAR = meta_read(srFile);
@@ -312,8 +333,23 @@ main (int argc, char *argv[])
        demHeight);
 
   // Verify that the applied offset in fact does the trick.
-  corrFile2 = appendSuffix(inFile, "_corr2");
-  fftMatch(srFile, demTrimSimAmp, NULL, corrFile2);
+  if (do_fftMatch_verification) {
+    double dx2, dy2;
+
+    corrFile2 = appendSuffix(inFile, "_corr2");
+    fftMatch(srFile, demTrimSimAmp, NULL, corrFile2);
+
+    read_corr(corrFile2, &dx2, &dy2);
+    asfPrintStatus("Correlation after shift: dx=%g dy=%g\n", dx2, dy2);
+
+    double match_tolerance = 1.0;
+    if (sqrt(dx2*dx2 + dy2*dy2) > match_tolerance) {
+      asfPrintError("Correlated images failed to match!\n"
+		    " Original fftMatch offset: (dx,dy) = %14.9lf,%14.9lf\n"
+		    "   After shift, offset is: (dx,dy) = %14.9lf,%14.9lf\n",
+		    dx, dy, dx2, dy2);
+    }
+  }
 
   // Apply the offset to the slant range DEM.
   demTrimSlant = appendSuffix(demFile, "_slant_trim");
