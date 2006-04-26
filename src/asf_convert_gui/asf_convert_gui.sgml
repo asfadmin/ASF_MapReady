@@ -399,6 +399,20 @@
           filtering the image.</para>
 
       </listitem>
+      <listitem><para>Ignore projection errors</para>
+
+        <para>Force the geocode calculations to continue even
+          if the detected errors are larger than would normally
+          be allowed.</para>
+
+        <para>Normally, asf_geocode will not permit you to
+          geocode regions where the projection is likely to
+          produce poor results.  Also, if asf_geocode detects
+          large projection errors in the scene then it will
+          stop processing with an error.  If you wish to process
+          in spite of these, you can do so by selecting this
+          option.</para>
+       </listitem>
     </orderedlist>
   </chapter>
   <chapter id="export">

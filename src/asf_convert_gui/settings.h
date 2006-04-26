@@ -37,6 +37,7 @@ typedef struct
   double pixel_size;
   int datum;
   int resample_method;
+  int geocode_force;
 
   /* misc */
   int keep_files;

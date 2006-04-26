@@ -179,6 +179,7 @@ settings_apply_to_gui(const Settings * s)
             GtkWidget * pixel_size_checkbutton;
             GtkWidget * datum_option_menu;
             GtkWidget * resample_option_menu;
+            GtkWidget * force_checkbutton;
 
             projection_option_menu =
                 glade_xml_get_widget(glade_xml, "projection_option_menu");
@@ -280,6 +281,13 @@ settings_apply_to_gui(const Settings * s)
                 glade_xml_get_widget(glade_xml, "resample_option_menu");
 
             set_combo_box_item(resample_option_menu, s->resample_method);
+
+	    force_checkbutton =
+	        glade_xml_get_widget(glade_xml, "force_checkbutton");
+
+	    gtk_toggle_button_set_active(
+	        GTK_TOGGLE_BUTTON(force_checkbutton),
+		s->geocode_force);
         }
     }
 
@@ -447,7 +455,8 @@ settings_get_from_gui()
             *pixel_size_checkbutton,
             *pixel_size_entry,
             *datum_option_menu,
-            *resample_option_menu;
+	    *resample_option_menu,
+            *force_checkbutton;
 
         projection_option_menu =
             glade_xml_get_widget(glade_xml, "projection_option_menu");
@@ -536,6 +545,13 @@ settings_get_from_gui()
 
         ret->resample_method =
             gtk_option_menu_get_history(GTK_OPTION_MENU(resample_option_menu));
+
+	force_checkbutton =
+	    glade_xml_get_widget(glade_xml, "force_checkbutton");
+
+	ret->geocode_force =
+	    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+					   force_checkbutton));
     }
 
     ret->keep_files = 

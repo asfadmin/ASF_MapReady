@@ -160,6 +160,9 @@ const char * geocode_options_string(const Settings * settings)
 
         sprintf(ret, "%s --resample-method %s ", ret, 
             resample_method_string (settings->resample_method));
+
+	if (settings->geocode_force)
+	  sprintf(ret, "%s --force ", ret);
     }
     else
     {
@@ -220,6 +223,7 @@ void geocode_options_changed()
     GtkWidget * datum_hbox;
 
     GtkWidget * resample_hbox;
+    GtkWidget * force_checkbutton;
 
     gboolean geocode_projection_is_checked;
     gboolean predefined_projection_is_selected;
@@ -249,6 +253,8 @@ void geocode_options_changed()
     gboolean enable_datum_hbox = FALSE;
 
     gboolean enable_resample_hbox = FALSE;
+
+    gboolean enable_force_checkbutton = FALSE;
 
     table_utm_projection_options =
         glade_xml_get_widget(glade_xml, "table_utm_projection_options");
@@ -478,6 +484,7 @@ void geocode_options_changed()
         enable_pixel_size_checkbutton = TRUE;
         enable_datum_hbox = TRUE;
         enable_resample_hbox = TRUE;
+	enable_force_checkbutton = TRUE;
 
         average_height_is_checked = 
             gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
@@ -547,6 +554,9 @@ void geocode_options_changed()
     resample_hbox =
         glade_xml_get_widget(glade_xml, "resample_hbox");
 
+    force_checkbutton =
+        glade_xml_get_widget(glade_xml, "force_checkbutton");
+
     gtk_widget_set_sensitive(utm_zone_entry,
         enable_utm_zone);
 
@@ -606,6 +616,9 @@ void geocode_options_changed()
 
     gtk_widget_set_sensitive(resample_hbox,
         enable_resample_hbox);
+
+    gtk_widget_set_sensitive(force_checkbutton,
+        enable_force_checkbutton);
 
     /* Turn off False Easting & Northing, as they seem to not really
     be very useful. */
