@@ -7,7 +7,8 @@ CFLAGS := -Wall $(CFLAGS)
 OBJS = \
 	gr2sr.o \
 	reskew_dem.o \
-	deskew_dem.o
+	deskew_dem.o \
+	create_dem_grid.o
 
 LIBS = \
 	$(LIBDIR)/asf.a \
