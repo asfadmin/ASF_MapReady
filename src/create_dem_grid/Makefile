@@ -2,7 +2,9 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
+	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
@@ -11,6 +13,8 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_reporting.a \
 	-lm
 OBJS = create_dem_grid.o
+
+CFLAGS += -Wall
 
 all: create_dem_grid
 	rm *.o

@@ -76,15 +76,12 @@ BUGS:
 *									      *
 ******************************************************************************/
 
-#include "asf.h"
+#include "asf_sar.h"
 #include "asf_meta.h"
 #include "cproj.h"
 #include "proj.h"
 
-#define VERSION 1.6
-
-int getNextSarPt(meta_parameters *meta,int gridNo,int *x,int *y,
-		 double width, double height, int gridResX, int gridResY);
+#define VERSION 1.7
 
 static
 void usage(char *name)
@@ -114,12 +111,7 @@ void usage(char *name)
 
 int main(int argc,char *argv[])
 {
-  int iflg=0;
-  int gridCount,sar_x,sar_y,line_count,sample_count;
-  char *demName,*sarName,*ceos,*outName;
-  FILE *out;
-  meta_parameters *metaSar, *metaDem;
-  double elev = 0.0;
+  char *demName,*sarName,*outName;
   double width = -1, height = -1;
   int gridResX = 20, gridResY = 20;
 
@@ -155,110 +147,11 @@ int main(int argc,char *argv[])
   demName = argv[currArg];
   sarName = argv[currArg+1];
   outName = argv[currArg+2];
- 
+
   system("date");
   printf("Program: create_dem_grid\n\n");
 
-  out=FOPEN(outName,"w");
-  metaSar = meta_read(sarName);
-  metaDem = meta_read(demName);  
+  create_dem_grid_ext(demName, sarName, outName, width, height, gridResX);
 
-  if (width < 0) width = metaSar->general->sample_count;
-  if (height < 0) height = metaSar->general->line_count;
-  //  metaSar->general->sample_count += 400;
-
-  /* Convert all angles in projection part of metadata into radians -
-     latlon_to_proj needs that lateron */
-  switch (metaDem->projection->type) 
-    {
-    case UNIVERSAL_TRANSVERSE_MERCATOR:
-      metaDem->projection->param.utm.lat0 *= D2R;
-      metaDem->projection->param.utm.lon0 *= D2R;
-      break;
-    case POLAR_STEREOGRAPHIC:
-      metaDem->projection->param.ps.slat *= D2R;
-      metaDem->projection->param.ps.slon *= D2R;
-      break;
-    case ALBERS_EQUAL_AREA:
-      metaDem->projection->param.albers.std_parallel1 *= D2R;
-      metaDem->projection->param.albers.std_parallel2 *= D2R;
-      metaDem->projection->param.albers.center_meridian *= D2R;
-      metaDem->projection->param.albers.orig_latitude *= D2R;
-      break;
-    case LAMBERT_CONFORMAL_CONIC:
-      metaDem->projection->param.lamcc.plat1 *= D2R;
-      metaDem->projection->param.lamcc.plat2 *= D2R;
-      metaDem->projection->param.lamcc.lat0 *= D2R;
-      metaDem->projection->param.lamcc.lon0 *= D2R;
-      break;
-    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      metaDem->projection->param.lamaz.center_lon *= D2R;
-      metaDem->projection->param.lamaz.center_lat *= D2R;
-      break;
-    }
-    
-  /*Create a grid on the SAR image, and for each grid point:*/
-  for (gridCount=0;
-       getNextSarPt(metaSar,gridCount,&sar_x,&sar_y,
-		    width,height,gridResX,gridResY);
-       gridCount++)
-    {
-      double dem_x,dem_y; /*This is what we're seeking-- 
-			    the location on the DEM corresponding to the SAR point.*/
-      double lat,lon; /*This is how we go between SAR and DEM images.*/
-      double demProj_x,demProj_y; /*These are the projection coordinates for the DEM.*/
-      int orig_x,orig_y;
-      int grid_x, grid_y;
-
-      getNextSarPt(metaSar,gridCount,&grid_x,&grid_y,
-		   metaSar->general->sample_count,
-		   metaSar->general->line_count,
-		   gridResX, gridResY);
-
-      /*Compute the latitude and longitude of this location on the ground.*/
-      meta_get_original_line_sample(metaSar, sar_y, sar_x, &orig_y, &orig_x);
-      meta_get_latLon(metaSar,(float)orig_y,(float)orig_x,elev,&lat,&lon);
-      
-      /*Compute the projection coordinates of this location in the DEM.*/
-      latlon_to_proj(metaDem->projection, metaSar->sar->look_direction, 
-		     lat*D2R, lon*D2R, &demProj_x, &demProj_y);
-      
-      /*Compute the line,sample coordinates of this location in the DEM.*/
-      dem_x = (demProj_x - metaDem->projection->startX) / metaDem->projection->perX;
-      dem_y = (demProj_y - metaDem->projection->startY) / metaDem->projection->perY;
-
-      /*Now output the points! 
-      printf("Pt %4i :Sar( %i %i );Orig ( %i %i );Deg( %.2f %.2f );\n",
-      gridCount,sar_x,sar_y,orig_x,orig_y,lat,lon);
-      printf("\tproj( %.2f %.2f );dem( %.2f %.2f )\n",
-      demProj_x,demProj_y,dem_x,dem_y);
-      printf("\tstart( %.2f %.2f )\n", 
-      metaDem->projection->startX, metaDem->projection->startY);*/
-      fprintf(out,"%6d %6d %8.5f %8.5f %4.2f\n",grid_x,grid_y,dem_x,dem_y,1.0);
-    }
-  printf("   Created a grid of %ix%i points\n\n",gridResX,gridResY);
-  if (logflag) {
-    sprintf(logbuf,"   Created a grid of %ix%i points\n\n",gridResX,gridResY);
-    printLog(logbuf);
-    FCLOSE(fLog);
-  }
   return (0);
-}
-
-/*Return a regular, 30x30 grid of points.*/
-int getNextSarPt(meta_parameters *meta,int gridNo,int *x,int *y,
-		 double width, double height, int gridResX, int gridResY)
-{
-  int xtmp, ytmp;
-  
-  if (gridNo>=gridResX*gridResY)
-    return 0;
-  
-  xtmp = gridNo % gridResX;
-  ytmp = gridNo / gridResX;
-
-  *x = 1 + (float) xtmp / (float) (gridResX-1) * (width+400);
-  *y = 1 + (float) ytmp / (float) (gridResY-1) * (height);
-  
-  return 1;
 }
