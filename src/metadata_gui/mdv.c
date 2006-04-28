@@ -143,99 +143,6 @@ const char DIR_SEPARATOR = '/';
 
 GladeXML *glade_xml;
 
-static int do_system_exec(const char *cmd)
-{
-#ifdef win32
-
-#ifndef	HAVE_GNU_LD
-#define	__environ	environ
-#endif
-
-    int pid, save, status;
-    struct sigaction sa, intr, quit;
-
-    sa.sa_handler = SIG_IGN;
-    sa.sa_flags = 0;
-    sigemptyset (&sa.sa_mask);
-
-    if (sigaction (SIGINT, &sa, &intr) < 0)
-    {
-        return -1;
-    }
-
-    if (sigaction (SIGQUIT, &sa, &quit) < 0)
-    {
-        save = errno;
-        (void) sigaction (SIGINT, &intr, (struct sigaction *) NULL);
-        errno = save;
-        return -1;
-    }
-
-    pid = fork();
-    if (pid == 0)
-    {
-        char shell_path[512];
-        const char *new_argv[4];
-
-        new_argv[0] = "sh.exe";
-        new_argv[1] = "-c";
-        new_argv[2] = cmd;
-        new_argv[3] = 0;
-
-        (void) sigaction (SIGINT, &intr, (struct sigaction *) NULL);
-        (void) sigaction (SIGQUIT, &quit, (struct sigaction *) NULL);
-
-        sprintf(shell_path, "%s/sh", get_asf_bin_dir());
-        execve(shell_path, (char * const *) new_argv, __environ);
-
-        exit(127);
-    }
-    else if (pid < 0)
-    {
-        /* fork failed */
-        return -1;
-    }
-    else
-    {
-        int n;
-        do 
-        {
-            n = waitpid(pid, &status, 0);
-        }
-        while (n == -1 && errno == EINTR);
-
-        if (n != pid)
-        {
-            status = -1;
-        }
-    }
-
-    save = errno;
-    if (sigaction (SIGINT, &intr, (struct sigaction *) NULL) |
-        sigaction (SIGQUIT, &quit, (struct sigaction *) NULL))
-    {
-        if (errno == ENOSYS)
-            errno = save;
-        else
-            return -1;
-    }
-
-    return status;
-
-#else
-    return system(cmd);
-#endif
-}
-
-//static char *
-//find_in_bin(const char * filename)
-//{
-//    char * ret = (char *) malloc(sizeof(char) *
-//        (strlen(get_asf_bin_dir()) + strlen(filename) + 5));
-//    sprintf(ret, "%s/%s", get_asf_bin_dir(), filename);
-//    return ret;
-//}
-
 static char * escapify(const char * s)
 {
     int i,j;
@@ -554,9 +461,7 @@ static void execute()
     for (i = 0; i < strlen(cmd); ++i)
         if (cmd[i] == '\\' && cmd[i+1] != ' ') cmd[i] = '/';
 
-    printf("%s\n", cmd);
-
-    int ret = do_system_exec(cmd);
+    int ret = asfSystem(cmd);
 
     // printf("ret = %d\n", ret);
     if (ret != 0)
