@@ -52,7 +52,7 @@ on_help_button_clicked(GtkWidget *widget)
             strcat(hh, escaped_share_dir);
             strcat(hh, "/asf_convert_gui.chm");
             FREE(escaped_share_dir);
-            ret = do_system_exec(hh);
+            ret = asfSystem(hh);
             if (ret != -1) exit(0);
         }
 

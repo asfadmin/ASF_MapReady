@@ -1,4 +1,5 @@
 #include "asf_convert_gui.h"
+#include "asf.h"
 #include <gdk/gdkkeysyms.h>
 
 static const int max_line_len = 2048;
@@ -147,7 +148,7 @@ static void mdv_thread (GString *file, gpointer user_data)
     char *escaped_str = escapify(file->str);
     sprintf(buf, "\"%s\" \"%s\"", mdv, escaped_str);
     free(escaped_str);
-    do_system_exec(buf);
+    asfSystem(buf);
     g_string_free(file, TRUE);
 }
 #endif
