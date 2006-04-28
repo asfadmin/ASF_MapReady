@@ -17,7 +17,7 @@ asfSystem(const char *format, ...)
   va_start(ap, format);
   vsprintf(cmd, format, ap);
 
-  asfPrintStatus("Running system commamd: %s\n", cmd);
+  //printf("Running system commamd: %s\n", cmd);
 
 #ifdef win32
 
@@ -101,7 +101,7 @@ asfSystem(const char *format, ...)
 #endif
 
   if (ret != 0) {
-    asfPrintError("Error running command %d: %s\n", errno, strerror(errno));
+    printf("Error running command %d: %s\n", errno, strerror(errno));
   }
   return ret;
 }
