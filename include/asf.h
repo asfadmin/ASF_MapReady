@@ -82,7 +82,7 @@ char* date_time_stamp(void);
 /* Return a pointer into string name pointing to the dot ('.')
    character in the trailing dot extension, or a NULL pointer if name
    doesn't include any dots.  */
-char *findExt(char *name);
+char *findExt(const char *name);
 /* The maximum allowable length in characters (not including trailing
    null character) of result strings from the appendExt routine.  */
 #define MAX_APPENDEXT_RESULT_STRING_LENGTH 255
