@@ -26,7 +26,7 @@ char *findExt(char *name)
 {
   int i;
   i = strlen(name) -1;		/* Start at end of name.  */
-  while ( (i>0) && (name[i] != '.') && (name[i] != '/') ) {
+  while ( (i>0) && (name[i] != '.') && (name[i] != DIR_SEPARATOR) ) {
     /* Work backwards until we hit a directory separator or extension
        separator.*/
     i--;
