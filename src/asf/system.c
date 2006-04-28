@@ -3,6 +3,8 @@
 
 #ifdef win32
 #include <process.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 int
@@ -10,6 +12,7 @@ asfSystem(const char *format, ...)
 {
   va_list ap;
   char cmd[4096];
+  int ret;
 
   va_start(ap, format);
   vsprintf(cmd, format, ap);
@@ -94,7 +97,7 @@ asfSystem(const char *format, ...)
     return status;
 
 #else
-  int ret = system(cmd);
+  ret = system(cmd);
 #endif
 
   if (ret != 0) {
