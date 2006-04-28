@@ -22,7 +22,7 @@ int fileExists(const char *name)
   return 1;
 }
 
-char *findExt(char *name)
+char *findExt(const char *name)
 {
   int i;
   i = strlen(name) -1;		/* Start at end of name.  */
