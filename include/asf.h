@@ -171,4 +171,8 @@ const char * get_asf_share_dir(void);
 const char * get_asf_bin_dir(void);
 FILE * fopen_share_file(const char * filename, const char * mode);
 
+/***************************************************************************
+ * Wrapper for system() that is more portable, plus uses varargs */
+int asfSystem(const char *format, ...);
+
 #endif
