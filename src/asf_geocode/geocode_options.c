@@ -240,7 +240,7 @@ DEFAULT_POLAR_STERO_NORTH_STANDARD_PARALLEL :
 		break;
 
 	default:
-		asfPrintError("apply_defaults: illegal projection type!");
+		asfPrintError("apply_defaults: illegal projection type!\n");
 	}
 }
 

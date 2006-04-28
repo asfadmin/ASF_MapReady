@@ -1020,8 +1020,8 @@ main (int argc, char **argv)
 
     h = average_height;
     int gridsz=8;
-    for (iii = 0; iii <= gridsz; ++iii) {
-      for (jjj = 0; jjj <= gridsz; ++jjj) {
+    for (jjj = 0; jjj <= gridsz; ++jjj) {
+      for (iii = 0; iii <= gridsz; ++iii) {
 
 	//double line1 = iii* ((double)ii_size_y)/((double)gridsz-1);
 	//double samp1 = jjj* ((double)ii_size_x)/((double)gridsz-1);
@@ -1167,7 +1167,6 @@ main (int argc, char **argv)
     g_free(lines);
 
     asfPrintStatus("Done\n\n");
-    exit(1);
   }
 
   // We want to choke if our worst point in the model is off by this
