@@ -84,8 +84,8 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 		   available, we should use them for the pixel
 		   sizes.  */
 		if ( meta->projection->type != SCANSAR_PROJECTION ) {
-		  ddr->pdist_x = meta->projection->perX;
-		  ddr->pdist_y = meta->projection->perY;
+		  ddr->pdist_x = fabs(meta->projection->perX);
+		  ddr->pdist_y = fabs(meta->projection->perY);
 		}
 
 	/* Projection type; int
