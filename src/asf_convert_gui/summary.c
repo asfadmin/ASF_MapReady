@@ -70,6 +70,30 @@ void update_summary()
         break;
     }
 
+    sprintf(text, "%s\nTerrain Correction: %s",
+	   text, s->terrcorr_is_checked ? "Yes" : "No");
+
+    if (s->terrcorr_is_checked)
+    {
+        GtkWidget *dem_entry;
+	char *dem;
+
+	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
+	dem = strdup(gtk_entry_get_text(GTK_ENTRY(dem_entry)));
+
+	if (!dem || strlen(dem) == 0)
+	{
+	    strcat(text, "\n   DEM: <none>");
+	}
+	else
+	{
+	    char *p = strrchr(dem, DIR_SEPARATOR);
+	    sprintf(text, "%s\n   DEM: %s", text, p ? p+1 : dem);
+	}
+
+	free(dem);
+    }
+
     strcat(text, "\nGeocoding: ");
 
     if (s->geocode_is_checked)

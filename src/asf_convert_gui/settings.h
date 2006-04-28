@@ -39,6 +39,10 @@ typedef struct
   int resample_method;
   int geocode_force;
 
+  /* terrcorr options */
+  int terrcorr_is_checked;
+  char dem_file[2048];
+
   /* misc */
   int keep_files;
   int apply_metadata_fix;
@@ -59,10 +63,12 @@ const gchar * settings_get_input_data_format_string(const Settings *);
 const gchar * settings_get_output_format_extension(const Settings *);
 const gchar * settings_get_output_format_string(const Settings *);
 const gchar * settings_get_geocode_options(const Settings *);
+const gchar * settings_get_terrcorr_options(const Settings *);
 const gchar * settings_get_projection_abbrev(const Settings *);
 int settings_get_run_import(const Settings *);
 int settings_get_run_export(const Settings *);
 int settings_get_run_geocode(const Settings *);
+int settings_get_run_terrcorr(const Settings *);
 int  settings_get_output_format_can_be_thumbnailed(const Settings *s);
 void settings_delete(Settings *);
 

@@ -36,7 +36,8 @@ settings_apply_to_gui(const Settings * s)
         *output_bytes_checkbutton,
         *scaling_method_combobox,
         *keep_files_checkbutton,
-        *apply_metadata_fix_checkbutton;
+        *apply_metadata_fix_checkbutton,
+        *terrcorr_checkbutton;
 
     input_data_type_combobox = 
         glade_xml_get_widget(glade_xml, "input_data_type_combobox");
@@ -291,6 +292,25 @@ settings_apply_to_gui(const Settings * s)
         }
     }
 
+    terrcorr_checkbutton =
+        glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
+
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(terrcorr_checkbutton),
+				 s->terrcorr_is_checked);
+
+    if (s->terrcorr_is_checked)
+    {
+        GtkWidget *dem_entry;
+	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
+	gtk_entry_set_text(GTK_ENTRY(dem_entry), s->dem_file);
+    }
+    else
+    {
+        GtkWidget *dem_entry;
+	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
+	gtk_entry_set_text(GTK_ENTRY(dem_entry), "");
+    }
+
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(keep_files_checkbutton),
         s->keep_files);
 
@@ -313,7 +333,8 @@ settings_get_from_gui()
         *scaling_method_combobox,
         *geocode_checkbutton,
         *keep_files_checkbutton,
-        *apply_metadata_fix_checkbutton;
+        *apply_metadata_fix_checkbutton,
+        *terrcorr_checkbutton;
 
     Settings *ret;
 
@@ -561,6 +582,20 @@ settings_get_from_gui()
         gtk_toggle_button_get_active(
         GTK_TOGGLE_BUTTON(apply_metadata_fix_checkbutton));
 
+    terrcorr_checkbutton =
+        glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
+
+    ret->terrcorr_is_checked =
+        gtk_toggle_button_get_active(
+	  GTK_TOGGLE_BUTTON(terrcorr_checkbutton));
+
+    if (ret->terrcorr_is_checked)
+    {
+        GtkWidget *dem_entry;
+	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
+	strcpy(ret->dem_file, gtk_entry_get_text(GTK_ENTRY(dem_entry)));
+    }
+
     return ret;
 }
 
@@ -787,6 +822,7 @@ settings_equal(const Settings *s1, const Settings *s2)
         s1->output_db == s2->output_db &&
         s1->output_format == s2->output_format &&
         s1->keep_files == s2->keep_files &&
+	s1->terrcorr_is_checked == s2->terrcorr_is_checked &&
         s1->apply_metadata_fix == s2->apply_metadata_fix)
     {
         gchar * lat1 =
@@ -820,7 +856,16 @@ settings_equal(const Settings *s1, const Settings *s2)
                         g_strdup(settings_get_geocode_options(s2));
 
                     if (0 == strcmp(geo1, geo2))
-                        equal = TRUE;
+		    {
+		        if (s1->terrcorr_is_checked)
+		        {
+			  if (s1->dem_file && s2->dem_file &&
+			      strcmp(s1->dem_file, s2->dem_file) == 0)
+			  {
+			    equal = TRUE;
+			  }
+			}
+		    }
 
                     g_free(geo1);
                     g_free(geo2);
@@ -951,6 +996,12 @@ settings_get_geocode_options(const Settings *s)
 }
 
 const gchar *
+settings_get_terrcorr_options(const Settings *s)
+{
+    return terrcorr_options_string(s);
+}
+
+const gchar *
 settings_get_projection_abbrev(const Settings *s)
 {
     switch(s->projection)
@@ -974,6 +1025,12 @@ int
 settings_get_run_geocode(const Settings *s)
 {
     return s->geocode_is_checked;
+}
+
+int
+settings_get_run_terrcorr(const Settings *s)
+{
+    return s->terrcorr_is_checked;
 }
 
 int

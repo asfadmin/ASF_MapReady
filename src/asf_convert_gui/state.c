@@ -4,10 +4,12 @@
 /* for now use a hard-coded file */
 const gchar *save_name = "asf_convert_gui.sav";
 const int save_major_ver = 2;
-const int save_minor_ver = 3;
+const int save_minor_ver = 4;
 
 /* Save file version history                  */
 
+/*   2.4: Added "force"                       */
+/*        Added terrcorr options              */
 /*   2.3: Added "output db"                   */
 /*   2.2: Added pixel size                    */
 /*        Added keep intermediate files       */
@@ -66,6 +68,8 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
                "UseLat=%d\nLatLo=%lf\nLatHi=%lf\n\n",
         s->data_type, s->output_db, s->latitude_checked,
         s->latitude_low, s->latitude_hi);
+    fprintf(f, "[TerrCorr]\nTerrCorr=%d\nDEMFile=%s\n\n",
+	s->terrcorr_is_checked, s->dem_file);
     fprintf(f, "[Geocode]\nGeocode=%d\nProjection=%d\nLat1=%lf\nLat2=%lf\n"
         "Lat0=%lf\nLon0=%lf\nFalseEasting=%lf\nFalseNorthing=%lf\n"
         "UseHeight=%d\nHeight=%lf\nUsePixelSize=%d\nPixelSize=%lf\n"
@@ -685,6 +689,79 @@ static void read_ver_2_3(FILE *f)
     LSU;
 }
 
+static void read_ver_2_4(FILE *f)
+{
+    LSL;
+
+    Settings s;
+    gchar line[1024];
+    gchar *prefix, *suffix, *scheme;
+
+    fscanf(f, "[Import]\nFormat=%d\n\n", &s.input_data_format);
+    fscanf(f, "[Transformations]\nType=%d\nDB=%d\n"
+              "UseLat=%d\nLatLo=%lf\nLatHi=%lf\n\n",
+        &s.data_type, &s.output_db, &s.latitude_checked,
+        &s.latitude_low, &s.latitude_hi);
+    fscanf(f, "[TerrCorr]\nTerrCorr=%d\nDEMFile=%s\n\n",
+	   &s.terrcorr_is_checked, s.dem_file);
+    fscanf(f, "[Geocode]\nGeocode=%d\nProjection=%d\nLat1=%lf\nLat2=%lf\n"
+        "Lat0=%lf\nLon0=%lf\nFalseEasting=%lf\nFalseNorthing=%lf\n"
+        "UseHeight=%d\nHeight=%lf\nUsePixelSize=%d\nPixelSize=%lf\n"
+        "Zone=%d\nDatum=%d\nKeepFiles=%d\n\n",
+        &s.geocode_is_checked, &s.projection, &s.plat1, &s.plat2,
+        &s.lat0, &s.lon0, &s.false_easting, &s.false_northing,
+        &s.specified_height, &s.height, &s.specified_pixel_size,
+        &s.pixel_size, &s.zone, &s.datum, &s.keep_files);
+    fscanf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n"
+        "OutputBytes=%d\nScalingMethod=%d\nResampleMethod=%d\n\n",
+        &s.output_format, &s.apply_scaling, &s.longest_dimension,
+        &s.output_bytes, &s.scaling_method, &s.resample_method);
+
+    settings_apply_to_gui(&s);
+    settings_on_execute = settings_copy(&s);
+
+    /* read naming scheme */
+    fscanf(f, "[NamingScheme]\nPrefix=");
+    readline(f, line, sizeof(line));
+    prefix = g_strdup(line);
+
+    fscanf(f, "Suffix=");
+    readline(f, line, sizeof(line));
+    suffix = g_strdup(line);
+
+    fscanf(f, "Scheme=");
+    readline(f, line, sizeof(line));
+    scheme = g_strdup(line);
+
+    if (current_naming_scheme)
+        naming_scheme_delete(current_naming_scheme);
+
+    current_naming_scheme = naming_scheme_new(prefix, suffix, scheme);
+
+    g_free(prefix);
+    g_free(suffix);
+    g_free(scheme);
+
+    /* output directory */
+    if (output_directory)
+        g_free(output_directory);
+
+    fscanf(f, "\n[OutputDirectory]\nDir=");
+    readline(f, line, sizeof(line));
+    output_directory = g_strdup(line);
+
+    if (strcmp(output_directory, "(null)") == 0)
+    {
+        g_free(output_directory);
+        output_directory = NULL;
+    }
+
+    fscanf(f, "\n");
+    read_files_v2(f);
+
+    LSU;
+}
+
 SIGNAL_CALLBACK void
 on_load_button_clicked(GtkWidget *w, gpointer data)
 {
@@ -727,6 +804,10 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
     else if (major_ver == 2 && minor_ver == 3)
     {
         read_ver_2_3(f);
+    }
+    else if (major_ver == 2 && minor_ver == 4)
+    {
+        read_ver_2_4(f);
     }
     else
     {

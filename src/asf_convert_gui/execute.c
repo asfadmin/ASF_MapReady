@@ -337,6 +337,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
     {
         /* Log file existed, but had immediate EOF */
         /* This is most likely caused by a "Disk Full" situation... */
+        /*  ... or a segmentation fault! */
         the_output = g_strdup("Error Opening Log File: Disk Full?\n");
     }
 
@@ -620,8 +621,10 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
     if (strcmp(status, "Done") != 0 || !skip_done)
     {
-        gchar *basename, *before_geocoding_basename, *output_dir,
-            *out_basename, *p, *done, *err_string, *cd_dir;
+        gchar *basename, *before_terrcorr_basename, 
+	  *before_geocoding_basename, *output_dir,
+	  *out_basename, *p, *done, *err_string, *cd_dir;
+
         gchar convert_cmd[4096];
         gchar executable[256];
         gchar log_file[1024];
@@ -675,12 +678,24 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
             before_geocoding_basename =
                 (gchar *)g_malloc(sizeof(gchar) * (strlen(out_basename) + 10));
 
-            sprintf(before_geocoding_basename, "%s_tmp", out_basename);
+            sprintf(before_geocoding_basename, "%s_tmp2", out_basename);
         }
         else
         {
             before_geocoding_basename = g_strdup(out_basename);
         }
+
+	if (settings_get_run_terrcorr(user_settings))
+	{
+	    before_terrcorr_basename =
+	        (gchar *)g_malloc(sizeof(gchar) * (strlen(out_basename) + 10));
+
+	    sprintf(before_terrcorr_basename, "%s_tmp1", out_basename);
+	}
+	else
+	{
+	    before_terrcorr_basename = g_strdup(before_geocoding_basename);
+	}
 
         gtk_list_store_set(list_store, iter, COL_STATUS, "Processing...", -1);
         append_begin_processing_tag(in_data);
@@ -713,7 +728,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
                 settings_get_apply_metadata_fix_argument(user_settings),
                 log_file,
                 basename,
-                before_geocoding_basename);
+                before_terrcorr_basename);
 
             cmd_output = do_cmd(convert_cmd, log_file);
             err = check_for_error(cmd_output);
@@ -721,7 +736,8 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
             append_output(cmd_output);
 
             if (!settings_get_run_export(user_settings) &&
-                !settings_get_run_geocode(user_settings))
+                !settings_get_run_geocode(user_settings) &&
+                !settings_get_run_terrcorr(user_settings))
             {
                 done = err ? "Error" : "Done";
                 gtk_list_store_set(list_store, iter, COL_STATUS, done, -1);
@@ -729,6 +745,57 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
             g_free(cmd_output);
         }
+
+        while (gtk_events_pending())
+            gtk_main_iteration();
+
+	if (!err && settings_get_run_terrcorr(user_settings))
+	{
+            gchar * cmd_output;
+
+            gtk_list_store_set(list_store, iter, COL_STATUS,
+			       "Terrain Correcting...", -1);
+
+            g_snprintf(log_file, sizeof(log_file), "%stmpt%d.log", 
+		       output_dir, pid);
+
+            build_executable(executable, "tc");
+            snprintf(convert_cmd, sizeof(convert_cmd),
+                "cd \"%s\";" "%s %s -log \"%s\" \"%s\" \"%s\" \"%s\" 2>&1",
+                cd_dir,
+                executable,
+		settings_get_terrcorr_options(user_settings),
+                log_file,
+                before_terrcorr_basename,
+		user_settings->dem_file,
+                before_geocoding_basename);
+
+            cmd_output = do_cmd(convert_cmd, log_file);
+            err = check_for_error(cmd_output);
+
+            append_output(cmd_output);
+
+            g_free(cmd_output);
+
+            /* delete temporary .img/.meta pair generated before terrcorr,
+            they are just eating up space ... */
+
+            if (!user_settings->keep_files)
+            {
+                gchar * fname;
+                fname = (gchar *) 
+                    g_malloc(sizeof(gchar) * 
+                    (strlen(before_terrcorr_basename) + 10));
+
+                sprintf(fname, "%s.img", before_terrcorr_basename);
+                remove(fname);
+
+                sprintf(fname, "%s.meta", before_terrcorr_basename);
+                remove(fname);
+
+                g_free(fname);
+            }
+	}
 
         while (gtk_events_pending())
             gtk_main_iteration();

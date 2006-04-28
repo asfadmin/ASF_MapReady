@@ -116,6 +116,10 @@ enum
 #include "view_output.h"
 #include "share.h"
 
+/* terrcorr.c */
+void terrcorr_options_changed();
+const char * terrcorr_options_string(const Settings *settings);
+
 extern const char DIR_SEPARATOR;
 extern const char PATH_SEPATATOR;
 

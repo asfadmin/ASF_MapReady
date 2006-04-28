@@ -124,6 +124,7 @@ main(int argc, char **argv)
     /* section when geocoding options are changed, so get the     */
     /* settings initially in there                                */
     geocode_options_changed();
+    terrcorr_options_changed();
 
     gtk_main ();
 
