@@ -6,8 +6,10 @@ typedef struct
   char *in_name;          // input file name
   char *out_name;         // output file name
   int import;             // import flag
+  int sar_processing;     // SAR processing flag
   int image_stats;        // image stats flag (for internal use only)
   int detect_cr;          // detect corner reflector flag (for internal use only)
+  int terrain_correct;    // terrain correction flag
   int geocoding;          // geocoding flag
   int export;             // export flag
   int intermediates;      // flag to keep intermediates
@@ -35,6 +37,11 @@ typedef struct
 
 typedef struct
 {
+  
+} s_sar_processing;
+
+typedef struct
+{
   char *values;           // value axis: LOOK, INCIDENCE, RANGE
   int bins;               // number of bins
   double interval;        // interval between bins
@@ -49,8 +56,14 @@ typedef struct
 
 typedef struct
 {
+  double pixel;           // pixel size for terrain corrected product
+  char *dem;              // reference DEM file name
+} s_terrain_correct;
+
+typedef struct
+{
   char *projection;       // projection parameters file
-  double pixel;           // pixel size for geocoding
+  double pixel;           // pixel size for geocoded product
   double height;          // average height of the data
   char *datum;            // datum: WGS84, NAD27, NAD83
   char *resampling;       // resampling method: NEAREST_NEIGHBOR, BILINEAR, BICUBIC
@@ -66,13 +79,15 @@ typedef struct
 
 typedef struct
 {
-  char comment[255];          // first line for comments
-  s_general *general;         // general processing details
-  s_import *import;           // importing parameters
-  s_image_stats *image_stats; // image stats parameters
-  s_detect_cr *detect_cr;     // corner reflector detection parameters
-  s_geocoding *geocoding;     // geocoding parameters
-  s_export *export;           // exporting parameters
+  char comment[255];                   // first line for comments
+  s_general *general;                  // general processing details
+  s_import *import;                    // importing parameters
+  s_sar_processing *sar_processing;    // SAR processing parameters
+  s_image_stats *image_stats;          // image stats parameters
+  s_detect_cr *detect_cr;              // corner reflector detection parameters
+  s_terrain_correct *terrain_correct;  // terrain correction parameters
+  s_geocoding *geocoding;              // geocoding parameters
+  s_export *export;                    // exporting parameters
 } convert_config;
 
 /* checking return values in the main program */

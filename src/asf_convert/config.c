@@ -89,6 +89,15 @@ int init_config(char *configFile)
 	  "# switched on will generate an [Import] section where you can define further\n"
 	  "# parameters.\n\n");
   fprintf(fConfig, "import = 1\n\n");
+  // SAR processing flag
+  // terrain correction flag
+  fprintf(fConfig, "# The terrain correction flag indicates whether the data needs be run\n"
+	  "# through 'asf_terrcorr' (1 for running it, 0 for leaving out the terrain\n"
+	  "# correction step).\n");
+  fprintf(fConfig, "# Running asf_convert with the -create option and the terrain correction\n"
+	  "# flag switched on will generate an [Terrain correction] section where you\n"
+	  "# can define further parameters.\n\n");
+  fprintf(fConfig, "terrain correction = 1\n\n");
   // geocoding flag
   fprintf(fConfig, "# The geocoding flag indicates whether the data needs to be run through\n"
 	  "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
@@ -162,8 +171,10 @@ convert_config *init_fill_config(char *configFile)
   convert_config *cfg = newStruct(convert_config);
   cfg->general = newStruct(s_general);
   cfg->import = newStruct(s_import);
+  cfg->sar_processing = newStruct(s_sar_processing);
   cfg->image_stats = newStruct(s_image_stats);
   cfg->detect_cr = newStruct(s_detect_cr);
+  cfg->terrain_correct = newStruct(s_terrain_correct);
   cfg->geocoding = newStruct(s_geocoding);
   cfg->export = newStruct(s_export);
 
@@ -202,6 +213,8 @@ convert_config *init_fill_config(char *configFile)
   cfg->import->prc = (char *)MALLOC(sizeof(char)*25);
   cfg->import->prc = "";
 
+  // here goes the SAR processing
+
   cfg->image_stats->values = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->image_stats->values, "LOOK");
   cfg->image_stats->bins = -99;
@@ -211,6 +224,10 @@ convert_config *init_fill_config(char *configFile)
   strcpy(cfg->detect_cr->cr_location, "");
   cfg->detect_cr->chips = 0;
   cfg->detect_cr->text = 0;
+  
+  cfg->terrain_correct->pixel = -99;
+  cfg->terrain_correct->dem = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->terrain_correct->dem, "");
 
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
   sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj", get_asf_share_dir());
@@ -276,6 +293,7 @@ convert_config *init_fill_config(char *configFile)
         cfg->import->radiometry = read_str(line, "radiometry");
       if (strncmp(test, "look up table", 13)==0)
         cfg->import->lut = read_str(line, "look up table");
+      // SAR processing
       // Image stats
       if (strncmp(test, "stats values", 12)==0)
 	cfg->image_stats->values = read_str(line, "stats values");
@@ -284,6 +302,11 @@ convert_config *init_fill_config(char *configFile)
 	cfg->general->detect_cr = read_int(line, "detect corner reflectors");
       if (strncmp(test, "corner reflector locations", 26)==0)
 	cfg->detect_cr->cr_location = read_str(line, "corner reflector locations");
+      // Terrain correction
+      if (strncmp(test, "pixel spacng", 13)==0)
+	cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
+      if (strncmp(test, "digital elevation model", 23)==0)
+	cfg->terrain_correct->dem = read_str(line, "digital elevation model");      
       // Geocoding
       if (strncmp(test, "projection", 10)==0)
         cfg->geocoding->projection = read_str(line, "projection");
@@ -321,10 +344,14 @@ convert_config *init_fill_config(char *configFile)
         cfg->general->out_name = read_str(line, "output file");
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
+      if (strncmp(test, "sar processing", 14)==0)
+        cfg->general->sar_processing = read_int(line, "sar processing");
       if (strncmp(test, "image stats", 11)==0)
 	cfg->general->image_stats = read_int(line, "image stats");
       if (strncmp(test, "detect corner reflectors", 24)==0)
 	cfg->general->detect_cr = read_int(line, "detect corner reflectors");
+      if (strncmp(test, "terrain correction", 18)==0)
+        cfg->general->terrain_correct = read_int(line, "terrain correction");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -371,10 +398,14 @@ convert_config *read_config(char *configFile)
         cfg->general->out_name = read_str(line, "output file");
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
+      if (strncmp(test, "sar processing", 14)==0)
+        cfg->general->sar_processing = read_int(line, "sar processing");
       if (strncmp(test, "image stats", 11)==0)
 	cfg->general->image_stats = read_int(line, "image stats");
       if (strncmp(test, "detect corner reflectors", 24)==0)
 	cfg->general->detect_cr = read_int(line, "detect corner reflectors");
+      if (strncmp(test, "terrain correction", 18)==0)
+        cfg->general->terrain_correct = read_int(line, "terrain correction");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -412,6 +443,11 @@ convert_config *read_config(char *configFile)
         cfg->import->prc = read_str(line, "precise");
     }
 
+    if (strncmp(line, "[SAR processing]", 16)==0) strcpy(params, "SAR processing");
+    if (strncmp(params, "SAR processing", 14)==0) {
+
+    }
+
     if (strncmp(line, "[Image stats]", 13)==0) strcpy(params, "Image stats");
     if (strncmp(params, "Image stats", 11)==0) {
       test = read_param(line);
@@ -433,6 +469,16 @@ convert_config *read_config(char *configFile)
         cfg->detect_cr->chips = read_int(line, "chips");
       if (strncmp(test, "text", 4)==0)
 	cfg->detect_cr->text = read_int(line, "text");
+    }
+
+    if (strncmp(line, "[Terrain correction]", 20)==0) 
+      strcpy(params, "Terrain correction");
+    if (strncmp(params, "Terrain correction", 18)==0) {
+      test = read_param(line);
+      if (strncmp(test, "pixel spacing", 13)==0)
+	cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
+      if (strncmp(test, "digital elevation model", 23)==0)
+	cfg->terrain_correct->dem = read_str(line, "digital elevation model");            
     }
 
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "Geocoding");
@@ -482,6 +528,7 @@ int write_config(char *configFile, convert_config *cfg)
   if (strcmp(cfg->general->batchFile, "") == 0) {
     fprintf(fConfig, "%s\n", cfg->comment);
 
+    // General
     fprintf(fConfig, "[General]\n");
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter looks for the basename of the input file\n\n");
@@ -513,6 +560,15 @@ int write_config(char *configFile, convert_config *cfg)
 		"# the detect corner reflector step).\n\n");
       fprintf(fConfig, "detect corner reflectors = %i\n", cfg->general->detect_cr);
     }
+    if (!shortFlag) {
+      fprintf(fConfig, "\n# The terrain correction flag indicates whether the data needs be run\n"
+	      "# through 'asf_terrcorr' (1 for running it, 0 for leaving out the terrain\n"
+	      "# correction step).\n");
+      fprintf(fConfig, "# Running asf_convert with the -create option and the terrain correction\n"
+	      "# flag switched on will generate an [Terrain correction] section where you\n"
+	      "# can define further parameters.\n\n");
+    }
+    fprintf(fConfig, "terrain correction = 1\n");
     if (!shortFlag) {
       fprintf(fConfig, "\n# The geocoding flag indicates whether the data needs to be run through\n"
 	      "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
@@ -549,7 +605,7 @@ int write_config(char *configFile, convert_config *cfg)
 	      "# entries for the parameters in the configuration file (1 for a configuration\n"
 	      "# without comments, 0 for a configuration file with verbose comments)\n\n");
     fprintf(fConfig, "short configuration file = %i\n\n", cfg->general->short_config);
-
+    // Import
     if (cfg->general->import) {
       fprintf(fConfig, "\n[Import]\n");
       if (!shortFlag)
@@ -585,21 +641,37 @@ int write_config(char *configFile, convert_config *cfg)
 		"# required here defines the location of the precision state vectors.\n\n");
       fprintf(fConfig, "precise = %s\n\n", cfg->import->prc);
     }
-
+    // SAR processing
+    // Image stats
     if (cfg->general->image_stats) {
       fprintf(fConfig, "\n[Image stats]\n\n");
       fprintf(fConfig, "values = %s\n", cfg->image_stats->values);
       fprintf(fConfig, "bins = %i\n", cfg->image_stats->bins);
       fprintf(fConfig, "interval = %.2lf\n", cfg->image_stats->interval);
     }
-
+    // Detect corner reflectors
     if (cfg->general->detect_cr) {
       fprintf(fConfig, "\n[Detect corner reflectors]\n\n");
       fprintf(fConfig, "corner reflector locations = %s\n", cfg->detect_cr->cr_location);
       fprintf(fConfig, "chips = %i\n", cfg->detect_cr->chips);
       fprintf(fConfig, "text = %i\n", cfg->detect_cr->text);
     }
-
+    // Terrain correction
+    if (cfg->general->terrain_correct) {
+      fprintf(fConfig, "\n[Terrain correction]\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# This parameter defines the output size of the terrain corrected\n"
+		"# image. If set to -99 this parameter will be ignored and the 'asf_terrcorr' will\n"
+		"# deal with the issues that might occur when using different pixel spacings in\n"
+		"# the SAR image and the reference DEM\n\n");
+      fprintf(fConfig, "pixel spacing = %.2lf\n", cfg->terrain_correct->pixel);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The heights of the reference DEM are used to correct the SAR image\n"
+		"# for terrain effects. The quality and resolution of the reference DEM determines\n"
+		"# the quality of the resulting terrain corrected product\n\n");
+      fprintf(fConfig, "digital elevation model = %s\n\n", cfg->terrain_correct->dem);
+    }
+    // Geocoding
     if (cfg->general->geocoding) {
       fprintf(fConfig, "\n[Geocoding]\n");
       if (!shortFlag) {
@@ -639,7 +711,7 @@ int write_config(char *configFile, convert_config *cfg)
 		"# distortions. These checks can be overwritten by setting the force option.\n\n");
       fprintf(fConfig, "force = %i\n\n", cfg->geocoding->force);
     }
-
+    // Export
     if (cfg->general->export) {
       fprintf(fConfig, "\n[Export]\n");
       if (!shortFlag)

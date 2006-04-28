@@ -433,7 +433,9 @@ int main(int argc, char *argv[])
       }
     }
 
-    if (!cfg->general->import && !cfg->general->geocoding && !cfg->general->export) {
+    if (!cfg->general->import && !cfg->general->sar_processing &&
+	!cfg->general->terrain_correct && !cfg->general->geocoding && 
+	!cfg->general->export) {
       asfPrintError("Nothing to be done\n");
     }
 
@@ -460,6 +462,7 @@ int main(int argc, char *argv[])
 
       // Pass in command line
       if (cfg->general->image_stats || cfg->general->detect_cr ||
+	  cfg->general->sar_processing || cfg->general->terrain_correct ||
 	  cfg->general->geocoding || cfg->general->export) {
         sprintf(outFile, "tmp%i_import", pid);
       }
@@ -517,23 +520,40 @@ int main(int argc, char *argv[])
 		   "detecting corner reflectors (detect_cr)\n");
     }
 
+    if (cfg->general->terrain_correct) {
+      
+      // Pixel size
+      if (cfg->terrain_correct->pixel > 0)
+	sprintf(options, "-log %s -quiet -pixel-size %.2lf", logFile,
+		cfg->terrain_correct->pixel);
+      else
+	sprintf(options, "-log %s -quiet", logFile);
+
+      // Pass in command line
+      sprintf(inFile, "%s", outFile);
+      sprintf(outFile, "tmp%i_terrain_correct", pid);
+      check_return(asf_terrcorr(options, inFile, cfg->terrain_correct->dem,
+				outFile),
+		   "terrain correcting data file (asf_terrcorr)\n");
+    }
+
     if (cfg->general->geocoding) {
 
       // Projection
-      sprintf(projection, "--read-proj-file %s", cfg->geocoding->projection);
+      sprintf(projection, "-read-proj-file %s", cfg->geocoding->projection);
 
       // Datum
-      sprintf(datum, "--datum %s", uc(cfg->geocoding->datum));
+      sprintf(datum, "-datum %s", uc(cfg->geocoding->datum));
 
       // Resampling method
       if (strncmp(uc(cfg->geocoding->resampling), "NEAREST_NEIGHBOR", 16) == 0) {
-        sprintf(resampling, "--resample-method nearest_neighbor");
+        sprintf(resampling, "-resample-method nearest_neighbor");
       }
       if (strncmp(uc(cfg->geocoding->resampling), "BILINEAR", 8) == 0) {
-        sprintf(resampling, "--resample-method bilinear");
+        sprintf(resampling, "-resample-method bilinear");
       }
       if (strncmp(uc(cfg->geocoding->resampling), "BICUBIC", 7) == 0) {
-        sprintf(resampling, "--resample-method bicubic");
+        sprintf(resampling, "-resample-method bicubic");
       }
 
       // Pass in command line
@@ -545,12 +565,12 @@ int main(int argc, char *argv[])
         sprintf(outFile, "%s", cfg->general->out_name);
       }
       if (cfg->geocoding->force) {
-        sprintf(options, "--height %.1lf --pixel-size %.2lf %s %s %s --force",
+        sprintf(options, "-height %.1lf -pixel-size %.2lf %s %s %s --force",
                 cfg->geocoding->height, cfg->geocoding->pixel,
                 projection, datum, resampling);
       }
       else {
-        sprintf(options, "--height %.1lf --pixel-size %.2lf %s %s %s",
+        sprintf(options, "-height %.1lf -pixel-size %.2lf %s %s %s",
                 cfg->geocoding->height, cfg->geocoding->pixel,
                 projection, datum, resampling);
       }
