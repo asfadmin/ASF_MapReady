@@ -26,26 +26,6 @@ int_rnd(double x)
   return (int)floor(x+0.5);
 }
 
-int
-asfSystem(const char *format, ...)
-{
-  va_list ap;
-  char cmd[4096];
-
-  va_start(ap, format);
-  vsprintf(cmd, format, ap);
-
-  asfPrintStatus("Running system commamd: %s\n", cmd);
-
-  int ret = system(cmd);
-  
-  if (ret != 0) {
-    printf("Error running command %d: %s\n", errno, strerror(errno));
-    exit(ret);
-  }
-  return ret;
-}
-
 char * change_extension(const char * file, const char * ext)
 {
   char * replaced = (char *)
