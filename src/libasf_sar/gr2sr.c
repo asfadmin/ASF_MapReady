@@ -70,7 +70,7 @@ static char * replExt(const char *filename, const char *ext)
   char *ret = MALLOC(sizeof(char)*(strlen(filename)+strlen(ext)+5));
   strcpy(ret, filename);
 
-  char *p = strrchr(ret, '.');
+  char *p = findExt(ret);
   if (p) *p = '\0';
 
   if (ext[0] != '.') strcat(ret, ".");
