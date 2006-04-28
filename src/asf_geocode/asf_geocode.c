@@ -575,6 +575,7 @@ main (int argc, char **argv)
   return_code = sigaction (SIGSEGV, &backtrace_action, NULL);
   g_assert (return_code == 0);
   int force_flag = FALSE;
+  int debug_dump = FALSE;
 
   // Get the projection parameters from the command line.
   projection_type_t projection_type;
@@ -607,6 +608,9 @@ main (int argc, char **argv)
 			   &pixel_size, &datum, &resample_method,
 			   &force_flag);
 
+  // The argument at which the filenames start
+  int arg_num = 1;
+
   if (detect_flag_options(argc, argv, "--help", "-help", "-h", NULL)) {
     print_help();
   }
@@ -616,9 +620,13 @@ main (int argc, char **argv)
   if (detect_flag_options(argc, argv, "--version", "-version", "-v", NULL)) {
     print_version();
   }
-
+  if (detect_flag_options(argc, argv, "-debug", NULL)) {
+    debug_dump=TRUE;
+    ++arg_num;
+  }
+  
   // Get non-option command line arguments.
-  if ( argc != 3 ) {
+  if ( argc != 3 && !debug_dump ) {
     int ii;
     int bad_arg = FALSE;
 
@@ -635,10 +643,10 @@ main (int argc, char **argv)
     print_usage ();
   }
 
-  GString *input_image = g_string_new (argv[1]);
+  GString *input_image = g_string_new (argv[arg_num]);
   GString *input_meta_data = g_string_new (input_image->str);
   g_string_append (input_meta_data, ".meta");
-  GString *output_image = g_string_new (argv[2]);
+  GString *output_image = g_string_new (argv[arg_num + 1]);
   GString *output_meta_data = g_string_new (output_image->str);
   g_string_append (output_meta_data, ".meta");
 
@@ -1000,6 +1008,168 @@ main (int argc, char **argv)
 #define X_PIXEL(x, y) reverse_map_x (&dtf, x, y)
 #define Y_PIXEL(x, y) reverse_map_y (&dtf, x, y)
 
+  if (debug_dump) {
+    asfPrintStatus("Dumping debug 8x8 projection information grid...\n");
+
+    const char *grid_filename = "grid_dump.txt";
+    FILE *g4r = FOPEN(grid_filename, "wt");
+    double lat, lon, proj_x, proj_y, h;
+    // double lat2, lon2;
+    int iii, jjj;
+    // double line2, samp2;
+
+    h = average_height;
+    int gridsz=8;
+    for (iii = 0; iii <= gridsz; ++iii) {
+      for (jjj = 0; jjj <= gridsz; ++jjj) {
+
+	//double line1 = iii* ((double)ii_size_y)/((double)gridsz-1);
+	//double samp1 = jjj* ((double)ii_size_x)/((double)gridsz-1);
+
+	double samp1 = 1024*iii;
+	double line1 = 1024*jjj;
+
+	meta_get_latLon(imd, line1, samp1, h, &lat, &lon);
+	project(pp, lat*D2R, lon*D2R, &proj_x, &proj_y);
+	//unproject(pp, proj_x, proj_y, &lat2, &lon2);
+	//lat2 *= R2D; lon2 *= R2D;
+	//meta_get_lineSamp(imd, lat2, lon2, h, &samp2, &line2);
+
+	double line3 = Y_PIXEL(proj_x, proj_y);
+	double samp3 = X_PIXEL(proj_x, proj_y);
+
+	double lat3,lon3;
+	meta_get_latLon(imd, line3, samp3, h, &lat3, &lon3);
+/*
+	fprintf(g4r,
+	      "%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,"
+	      "%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,"
+	      "%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,%.10lf\n",
+	      line1, samp1, lat, lon, proj_x, proj_y, lat2, lon2, line2, samp2,
+		fabs(line1-line2),fabs(samp1-samp2),line3,
+		samp3,lat3,lon3,fabs(line1-line3),fabs(samp1-samp3),
+		fabs(lat2-lat3),fabs(lon2-lon3));
+*/
+
+	fprintf(g4r, "%.10lf %.10lf %d %d\n",
+		lat3, lon3, (int)samp1, (int)line1);
+      }
+    }
+
+    fclose(g4r);
+
+    const char *edge_filename = "edge_dump.txt";
+    g4r = FOPEN(edge_filename, "wt");
+
+    // dump the edges of the image
+    int edge_point_count = 2 * (gridsz+1) + 2 * (gridsz+1) - 4;
+    double *lats = g_new (double, edge_point_count);
+    double *lons = g_new (double, edge_point_count);
+    int *lines = g_new (int, edge_point_count);
+    int *samps = g_new (int, edge_point_count);
+    int current_edge_point = 0;
+    double xsamp = 0, yline = 0;
+
+    iii = 0;
+    jjj = 0;
+
+    for ( ; iii < gridsz; ++iii) {
+      xsamp = ((double)iii* (double)ii_size_y - 1)/(double)(gridsz);
+      yline = ((double)jjj* (double)ii_size_x - 1)/(double)(gridsz);
+      lines[current_edge_point] = (int)(yline+.5);
+      samps[current_edge_point] = (int)(xsamp+.5);
+      printf("%d %d %d %d %g %g\n", iii, jjj, samps[current_edge_point],
+	     lines[current_edge_point], xsamp, yline);
+      meta_get_latLon (imd, 
+		       (double)lines[current_edge_point],
+		       (double)samps[current_edge_point],
+		       average_height,
+		       &(lats[current_edge_point]),
+		       &(lons[current_edge_point]));
+      current_edge_point++;
+    }
+    for ( ; jjj < gridsz ; ++jjj ) {
+      xsamp = ((double)iii* (double)ii_size_y - 1)/(double)(gridsz);
+      yline = ((double)jjj* (double)ii_size_x - 1)/(double)(gridsz);
+      lines[current_edge_point] = (int)(yline+.5);
+      samps[current_edge_point] = (int)(xsamp+.5);
+      printf("%d %d %d %d %g %g\n", iii, jjj, samps[current_edge_point],
+	     lines[current_edge_point], xsamp, yline);
+      meta_get_latLon (imd, 
+		       (double)lines[current_edge_point],
+		       (double)samps[current_edge_point],
+		       average_height,
+		       &(lats[current_edge_point]),
+		       &(lons[current_edge_point]));
+      current_edge_point++;
+    }
+    for ( ; iii > 0 ; iii-- ) {
+      xsamp = ((double)iii* (double)ii_size_y - 1)/(double)(gridsz);
+      yline = ((double)jjj* (double)ii_size_x - 1)/(double)(gridsz);
+      lines[current_edge_point] = (int)(yline+.5);
+      samps[current_edge_point] = (int)(xsamp+.5);
+      printf("%d %d %d %d %g %g\n", iii, jjj, samps[current_edge_point],
+	     lines[current_edge_point], xsamp, yline);
+      meta_get_latLon (imd, 
+		       (double)lines[current_edge_point],
+		       (double)samps[current_edge_point],
+		       average_height,
+		       &(lats[current_edge_point]),
+		       &(lons[current_edge_point]));
+      current_edge_point++;
+    }
+    for ( ; jjj > 0 ; jjj-- ) {
+      xsamp = ((double)iii* (double)ii_size_y - 1)/(double)(gridsz);
+      yline = ((double)jjj* (double)ii_size_x - 1)/(double)(gridsz);
+      lines[current_edge_point] = (int)(yline+.5);
+      samps[current_edge_point] = (int)(xsamp+.5);
+      printf("%d %d %d %d %g %g\n", iii, jjj, samps[current_edge_point],
+	     lines[current_edge_point], xsamp, yline);
+      meta_get_latLon (imd, 
+		       (double)lines[current_edge_point],
+		       (double)samps[current_edge_point],
+		       average_height,
+		       &(lats[current_edge_point]),
+		       &(lons[current_edge_point]));
+      current_edge_point++;
+    }
+    g_assert (current_edge_point == edge_point_count);
+
+    for (iii = 0; iii < edge_point_count; ++iii) {
+      lats[iii] *= D2R;
+      lons[iii] *= D2R;
+    }
+
+    // Pointers to arrays of projected coordinates to be filled in.
+    // The projection function will allocate this memory itself.
+    double *x = NULL, *y = NULL;
+    x = y = NULL;
+    // Project all the edge pixels.
+    return_code = project_arr (pp, lats, lons, &x, &y, edge_point_count);
+    g_assert (return_code == TRUE);
+
+    // Reverse map all the edge pixels
+    for (iii = 0; iii < edge_point_count; ++iii) {
+      meta_get_latLon(imd, Y_PIXEL(x[iii], y[iii]), X_PIXEL(x[iii], y[iii]),
+		      average_height,
+		      &(lats[iii]), &(lons[iii]));
+    }
+
+    for (iii = 0; iii < edge_point_count; ++iii) {
+      fprintf(g4r, "%.10lf %.10lf %d %d\n",
+	      lats[iii], lons[iii], samps[iii], lines[iii]);
+    }
+    fclose(g4r);
+
+    g_free(lats);
+    g_free(lons);
+    g_free(samps);
+    g_free(lines);
+
+    asfPrintStatus("Done\n\n");
+    exit(1);
+  }
+
   // We want to choke if our worst point in the model is off by this
   // many pixels or more.
   double max_allowable_error = 1.25;
@@ -1173,14 +1343,11 @@ main (int argc, char **argv)
 		     lr_y_corner_error, max_corner_error);
     }
     else {
-      asfPrintStatus ("Lower right Y corner error: %f\n", lr_y_corner_error);
+      asfPrintStatus ("Lower right y corner error: %f\n", lr_y_corner_error);
     }
   }
 
   asfPrintStatus ("\n");
-
-  // Done with the input metadata.
-  meta_free (imd);
 
   // Now we are ready to produce our output image.
   asfPrintStatus ("Resampling input image into output image "
@@ -1267,13 +1434,17 @@ main (int argc, char **argv)
 		     (iim, input_x_pixel, input_y_pixel,
 		      float_image_sample_method));
       }
+
     }
     asfLineMeter(oiy, oiy_max + 1 );
   }
 
   asfPrintStatus ("\nDone resampling image.\n\n");
-
+  
   float_image_free (iim);
+
+  // Done with the input metadata.
+  meta_free (imd);
 
   // Now we need some metadata for the output image.  We will just
   // start with the metadata from the input image and add the
