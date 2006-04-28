@@ -24,4 +24,5 @@ tc: $(OBJS)
 	mv tc$(BIN_POSTFIX) $(BINDIR)
 
 clean:
-	rm -f core $(OBJS) *.o
+	rm -f core $(OBJS) *.o *tctmp*
+

@@ -46,6 +46,23 @@ asfSystem(const char *format, ...)
   return ret;
 }
 
+char * change_extension(const char * file, const char * ext)
+{
+  char * replaced = (char *)
+    MALLOC(sizeof(char) * (strlen(file) + strlen(ext) + 10));
+  
+  strcpy(replaced, file);
+  char * p = findExt(file);
+  
+  if (p)
+    *p = '\0';
+  
+  strcat(replaced, ".");
+  strcat(replaced, ext);
+  
+  return replaced;
+}
+
 char * appendSuffix(const char *inFile, const char *suffix)
 {
   char *suffix_pid = MALLOC(sizeof(char)*(strlen(suffix)+25));
@@ -53,13 +70,15 @@ char * appendSuffix(const char *inFile, const char *suffix)
 
   char *ret = MALLOC(sizeof(char)*(strlen(inFile)+strlen(suffix_pid)+5));
   strcpy(ret, inFile);
-  char *p = strrchr(ret, '.');
-  if (p) {
-    *p = '\0';
-    ++p;
+  char *p = findExt(ret);
+  if (p && p != ret) {
+    char *ext;
+    *p++ = '\0';
+    ext = strdup(p);
     strcat(ret, suffix_pid);
     strcat(ret, ".");
-    strcat(ret, p);
+    strcat(ret, ext);
+    free(ext);
   } else {
     strcat(ret, suffix_pid);
   }
@@ -74,7 +93,7 @@ void ensure_ext(char **filename, const char *ext)
   strcpy(ret, *filename);
 
   // blow away current extension if necessary
-  char *p = strrchr(ret, '.');
+  char *p = findExt(ret);
   if (p) *p = '\0';
 
   if (ext[0] != '.') strcat(ret, ".");
@@ -94,23 +113,6 @@ void read_corr(const char *corrFile, double *dx, double *dy)
     *dx = *dy = 0;
   }
   fclose(cf);
-}
-
-char * change_extension(const char * file, const char * ext)
-{
-  char * replaced = (char *)
-    MALLOC(sizeof(char) * (strlen(file) + strlen(ext) + 10));
-  
-  strcpy(replaced, file);
-  char * p = strrchr(replaced, '.');
-  
-  if (p)
-    *p = '\0';
-  
-  strcat(replaced, ".");
-  strcat(replaced, ext);
-  
-  return replaced;
 }
 
 int file_exists(const char * file)
@@ -383,7 +385,7 @@ main (int argc, char *argv[])
     clean(demSlant);
   }
 
-  asfPrintStatus("\n\nTerrain Correction Complete!\n");
+  asfPrintStatus("\nTerrain Correction Complete!\n");
 
   free(resampleFile);
   free(srFile);
