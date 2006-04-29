@@ -3,12 +3,22 @@
 #include <string.h>
 #include <math.h>
 #include "asf_meta.h"
+#include "asf_reporting.h"
 #include "proj.h"
 #include "earth_radius2datum.h"
 
 
 void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 {
+  // I looked through this method and added a smidgen of code (to
+  // avoid filling in projection information for pseudoprojected
+  // images) so that it will probably work, but it isn't tested at
+  // all.
+  asfRequire (!meta->projection 
+	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
+	      "Creating DDRs from LAT_LONG_PSEUDO_PROJECTION images is not "
+	      "tested yet.\n");
+
 	int ii;
 	int proj_invalid = 0;
 
@@ -73,7 +83,8 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 	                ? VALID : INVAL;
 
 /* Projection dependent stuff */
-	if (meta->sar->image_type=='P') {
+	if (meta->sar->image_type=='P' 
+	    && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
 		meta_projection *proj = meta->projection;
 	/* UTM zone code or 62 if n/a; int */
 		ddr->zone_code = (proj->type==UNIVERSAL_TRANSVERSE_MERCATOR) ? 

@@ -43,6 +43,8 @@ c*/
 
 #include "asf.h"
 
+#include <asf_reporting.h>
+
 #include "earthloc.h"
 #include "asf_meta.h"
 
@@ -111,6 +113,13 @@ void getLatLongMeta(const stateVector stVec,meta_parameters *meta,
 	double range,double doppler,double elev,
 	double *targLat, double *targLon, double *targRadius)
 {
+  // No effort has been made to make this routine work with
+  // pseudoprojected images.
+  asfRequire (meta->projection == NULL
+	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
+	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
+	      __func__);
+
 	double lat,lon;
 	
 /*Set up globals.*/

@@ -17,12 +17,21 @@ FUNCTION HISTORY:
 #include "ceos.h"
 #include "asf_nan.h"
 #include "asf_meta.h"
+#include "asf_reporting.h"
 #include "metadata.h"
 
 
 void meta_write_sprocket(const char *sprocketName, meta_parameters *meta,
                          struct dataset_sum_rec *dssr)
 {
+  // This method is untested and unthought-about for this type of
+  // image (actually the type was added after the method, at which
+  // time this assertion was also added).
+  asfRequire (meta->projection == NULL
+	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
+	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
+	      __func__);
+
   FILE *fp = FOPEN(sprocketName,"wb");
   int numLines = meta->general->line_count;
   int numSamples = meta->general->sample_count;

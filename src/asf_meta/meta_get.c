@@ -17,6 +17,7 @@ PROGRAM HISTORY:
 ****************************************************************/
 #include "asf.h"
 #include "asf_meta.h"
+#include <asf_reporting.h>
 
 #ifndef SQR
 # define SQR(x) ((x)*(x))
@@ -49,6 +50,13 @@ char *meta_get_system(void)
  * and meters.*/
 double meta_get_time(meta_parameters *meta,double yLine, double xSample)
 {
+  // No effort has been made to make this routine work with
+  // pseudoprojected images.
+  asfRequire (meta->projection == NULL
+	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
+	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
+	      __func__);
+
     /*Slant or ground range -- easy.*/
 	if (meta->sar->image_type=='S' || meta->sar->image_type=='G')
 		return yLine*meta->sar->azimuth_time_per_pixel+meta->sar->time_shift;
@@ -69,6 +77,14 @@ double meta_get_time(meta_parameters *meta,double yLine, double xSample)
 }
 double meta_get_slant(meta_parameters *meta,double yLine, double xSample)
 {
+  // No effort has been made to make this routine work with
+  // pseudoprojected images.
+  asfRequire (meta->projection == NULL
+	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
+	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
+	      __func__);
+
+
 	if (meta->sar->image_type=='S')/*Slant range is easy.*/
 		return meta->sar->slant_range_first_pixel
 			+ xSample * meta->general->x_pixel_size
@@ -105,6 +121,11 @@ double meta_get_slant(meta_parameters *meta,double yLine, double xSample)
  * that location. Returns Hz. Only works for SR & GR. */
 double meta_get_dop(meta_parameters *meta,double yLine, double xSample)
 {
+  asfRequire (meta->sar && (meta->sar->image_type == 'S'
+			    || meta->sar->image_type == 'G'),
+	      "Method %s only works on slant range or ground range images\n",
+	      __func__);
+
 	return meta->sar->range_doppler_coefficients[0]+
 	       meta->sar->range_doppler_coefficients[1]*xSample+
 	       meta->sar->range_doppler_coefficients[2]*xSample*xSample+
@@ -120,6 +141,13 @@ double meta_get_dop(meta_parameters *meta,double yLine, double xSample)
  * right pair.*/
 stateVector meta_get_stVec(meta_parameters *meta,double time)
 {
+  // No effort has been made to make this routine work with
+  // pseudoprojected images.
+  asfRequire (meta->projection == NULL
+	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
+	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
+	      __func__);
+
 	int stVecNo;
 	stateVector ret;
 	if (meta->state_vectors==NULL)
@@ -155,6 +183,13 @@ stateVector meta_get_stVec(meta_parameters *meta,double time)
  * up and the satellite. Returns radians.*/
 double meta_incid(meta_parameters *meta,double y,double x)
 {
+  // No effort has been made to make this routine work with
+  // pseudoprojected images.
+  asfRequire (meta->projection == NULL
+	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
+	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
+	      __func__);
+
 	double sr = meta_get_slant(meta,y,x);
 	double er = meta_get_earth_radius(meta,y,x);
 	double ht = meta_get_sat_height(meta,y,x);
@@ -167,6 +202,13 @@ double meta_incid(meta_parameters *meta,double y,double x)
  * earth's center and the target point x. Returns radians*/
 double meta_look(meta_parameters *meta,double y,double x)
 {
+  // No effort has been made to make this routine work with
+  // pseudoprojected images.
+  asfRequire (meta->projection == NULL
+	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
+	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
+	      __func__);
+
 	double sr = meta_get_slant(meta,y,x);
 	double er = meta_get_earth_radius(meta,y,x);
 	double ht = meta_get_sat_height(meta,y,x);
