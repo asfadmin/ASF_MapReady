@@ -108,10 +108,8 @@ double meta_get_k(meta_parameters *meta)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	return 2*PI/meta->sar->wavelength;
 }
@@ -119,10 +117,8 @@ double meta_scene_frac(meta_parameters *meta,int y)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	return (double)(y - meta->sar->original_line_count/2)
 			/ (double)meta->sar->original_line_count;
@@ -131,10 +127,8 @@ void meta_interp_baseline(meta_parameters *meta,const baseline base,int y,double
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	double frac=meta_scene_frac(meta,y);
 	*Bn_y = base.Bn + base.dBn*frac;
@@ -144,10 +138,8 @@ double meta_flat(meta_parameters *meta,double y,double x)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL 
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	return meta_look(meta,y,x) - meta_look(meta, 0, meta->sar->original_sample_count/2);
 }
@@ -155,10 +147,8 @@ double meta_flat_phase(meta_parameters *meta,const baseline base,int y,int x)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	   || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	double flat=meta_flat(meta,y,x);
 	double Bn_y,Bp_y;
@@ -169,10 +159,8 @@ double meta_phase_rate(meta_parameters *meta,const baseline base,int y,int x)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	double sr=meta_get_slant(meta,y,x);
 	double flat=meta_flat(meta,y,x);
