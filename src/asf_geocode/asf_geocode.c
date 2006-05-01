@@ -1,6 +1,3 @@
-#include <asf_contact.h>
-#include <asf_copyright.h>
-#include <asf_license.h>
 /*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
 /*
 ABOUT EDITING THIS DOCUMENTATION:
@@ -23,30 +20,30 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "asf_geocode"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" -p <projection name> <<projection parameters>>\n"\
+"   \"ASF_NAME_STRING\" -p <projection name> <<projection parameters>>\n"\
 "               [-force] [-resample-method <method>] [-height <height>]\n"\
 "               [-datum <datum>] [-pixel-size <pixel size>] [-log <file>]\n"\
 "               [-quiet] [-license] [-version] [-help]\n"\
 "               <in_base_name> <out_base_name>\n"\
 "\n"\
-"   Use the -help option for more projection parameter controls.\n"
+"   Use the -help option for more projection parameter controls.\\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program takes a map projected or an unprojected (ground\n"\
 "     range) image in the ASF internal format and geocodes it,\n"\
 "     i.e. swizzles it around into one of the standard projections used\n"\
 "     for maps (universal transverse mercator, polar stereo, etc).  The\n"\
-"     output is a new image in ASF internal format.\n"
+"     output is a new image in ASF internal format.\\n"
 
 #define ASF_INPUT_STRING \
 "     Most of the \"options\" are actually required.  The specification\n"\
 "     of a certain projection type implies that all the parameters\n"\
 "     required to fully specify a projection of that type be included.\n"\
 "\n"\
-"     This must be an ASF internal format image base name.\n"
+"     This must be an ASF internal format image base name.\\n"
 
 #define ASF_OUTPUT_STRING \
-"     The base name of the geocoded image to produce.\n"
+"     The base name of the geocoded image to produce.\\n"
 
 #define ASF_OPTIONS_STRING \
 "     Projection Parameter Options  \n"\
@@ -130,6 +127,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "     -read-proj-file <file>\n"\
 "          Read projection information from the given file.  The format of\n"\
 "          the file must match what is used with --write-proj-file.\n"\
+"          This option may not be used together with any other\n"\
+"          projection options.\n"\
 "\n"\
 "     Other Options\n"\
 "     =============\n"\
@@ -158,11 +157,11 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "            WGS84  (World Geodetic System 1984) (default).\n"\
 "\n"\
 "     -pixel_size <pixel spacing>\n"\
-"          Specifies the pixel spacing of the geocoded image.  "ASF_NAME_STRING"\n"\
+"          Specifies the pixel spacing of the geocoded image.  \"ASF_NAME_STRING\"\n"\
 "          by default will preserve the pixel size of the input image.\n"\
 "\n"\
 "     -force\n"\
-"          Override the built-in projection sanity checks.  "ASF_NAME_STRING"\n"\
+"          Override the built-in projection sanity checks.  \"ASF_NAME_STRING\"\n"\
 "          by default will abort with an error if it detects that a\n"\
 "          scene lies in an area where the selected projection is\n"\
 "          going to give poor results.  However, you may still wish\n"\
@@ -184,29 +183,31 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "        Print version and copyright then exit.\n"\
 "\n"\
 "   -help\n"\
-"        Print a help page and exit.\n"
+"        Print a help page and exit.\\n"
 
 #define ASF_EXAMPLES_STRING \
 "     To map project an image with centerpoint at -147 degrees\n"\
 "     longitude and average height 466 meters into universal transverse\n"\
 "     mercator projection, with one pixel 50 meters on a side:\n"\
 "\n"\
-"     "ASF_NAME_STRING" -p utm --central-meridian -147.0 --height 466\n"\
-"                 input_image output_image\n"
-
+"     \"ASF_NAME_STRING\" -p utm --central-meridian -147.0 --height 466\n"\
+"                 input_image output_image\\n"
 
 #define ASF_LIMITATIONS_STRING \
 "     May fail badly if bad projection parameters are supplied for the\n"\
-"     area in the image.\n"
+"     area in the image.\\n"
 
 #define ASF_SEE_ALSO_STRING \
-"     asf_import, asf_export\n"
+"     asf_import, asf_export\\n"
 
 #define ASF_COPYRIGHT_STRING \
-"Copyright (c) "ASF_COPYRIGHT_YEAR_STRING", University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
-"All rights reserved.\n"
+"Copyright (c) \"ASF_COPYRIGHT_YEAR_STRING\", University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
+"All rights reserved.\\n"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
+#include <asf_contact.h>
+#include <asf_copyright.h>
+#include <asf_license.h>
 
 // Standard libraries.
 #include <math.h>
@@ -1287,7 +1288,8 @@ main (int argc, char **argv)
       meta_get_lineSamp (imd, st_lat, st_lon, average_height, &strx, &stry);
       // We will insist that the results are symmetric to within this
       // fraction after transforming out and back.
-      // const double sym_th = 0.001;   // Symmetry threshold.
+      // printf ("DEBUG: symmetry testing latLong vs. linsSamp...\n");
+      // const double sym_th = 0.1;   // Symmetry threshold.
       // g_assert (fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th);
       // Hmm, looke like they are all pretty bad.  Oh well, the
       // problem of large corner errors when none of the intermediate
