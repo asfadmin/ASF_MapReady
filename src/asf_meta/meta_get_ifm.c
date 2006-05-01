@@ -12,9 +12,9 @@ SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY:
   1.0 - O. Lawlor.  9/10/98.  CEOS Independance.
 ****************************************************************/
+#include <assert.h>
 #include "asf.h"
 #include "asf_meta.h"
-#include "asf_reporting.h"
 #include "asf_nan.h"
 
 /*Interferometry calls:*/
@@ -27,10 +27,8 @@ double meta_get_sat_height(meta_parameters *meta, long line, long sample)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	double sat_height = MAGIC_UNSET_DOUBLE;
 	
@@ -62,10 +60,8 @@ double meta_get_earth_radius(meta_parameters *meta, long line, long sample)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	double earth_rad = MAGIC_UNSET_DOUBLE;
 
@@ -101,10 +97,8 @@ void meta_get_slants(meta_parameters *meta,double *slantFirst, double *slantPer)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	*slantFirst = meta->sar->slant_range_first_pixel;
 	*slantPer   = meta->general->x_pixel_size;

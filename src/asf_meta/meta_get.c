@@ -15,9 +15,9 @@ PROGRAM HISTORY:
   1.5 - P. Denny    08/02     Update to new metadate structs
   1.6 - P. Denny    01/03     Added meta_get_system
 ****************************************************************/
+#include <assert.h>
 #include "asf.h"
 #include "asf_meta.h"
-#include <asf_reporting.h>
 
 #ifndef SQR
 # define SQR(x) ((x)*(x))
@@ -52,10 +52,8 @@ double meta_get_time(meta_parameters *meta,double yLine, double xSample)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
     /*Slant or ground range -- easy.*/
 	if (meta->sar->image_type=='S' || meta->sar->image_type=='G')
@@ -79,11 +77,8 @@ double meta_get_slant(meta_parameters *meta,double yLine, double xSample)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
-
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	if (meta->sar->image_type=='S')/*Slant range is easy.*/
 		return meta->sar->slant_range_first_pixel
@@ -121,10 +116,8 @@ double meta_get_slant(meta_parameters *meta,double yLine, double xSample)
  * that location. Returns Hz. Only works for SR & GR. */
 double meta_get_dop(meta_parameters *meta,double yLine, double xSample)
 {
-  asfRequire (meta->sar && (meta->sar->image_type == 'S'
-			    || meta->sar->image_type == 'G'),
-	      "Method %s only works on slant range or ground range images\n",
-	      __func__);
+  assert (meta->sar && (meta->sar->image_type == 'S'
+			|| meta->sar->image_type == 'G'));
 
 	return meta->sar->range_doppler_coefficients[0]+
 	       meta->sar->range_doppler_coefficients[1]*xSample+
@@ -143,10 +136,8 @@ stateVector meta_get_stVec(meta_parameters *meta,double time)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	int stVecNo;
 	stateVector ret;
@@ -185,10 +176,8 @@ double meta_incid(meta_parameters *meta,double y,double x)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	double sr = meta_get_slant(meta,y,x);
 	double er = meta_get_earth_radius(meta,y,x);
@@ -204,10 +193,8 @@ double meta_look(meta_parameters *meta,double y,double x)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	double sr = meta_get_slant(meta,y,x);
 	double er = meta_get_earth_radius(meta,y,x);

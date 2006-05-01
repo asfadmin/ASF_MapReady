@@ -1,6 +1,6 @@
+#include <assert.h>
 #include "asf.h"
 #include "asf_meta.h"
-#include <asf_reporting.h>
 #include "jpl_proj.h"
 
 /* TOOL PARAMETERS*/
@@ -25,10 +25,8 @@ void latLon2timeSlant(meta_parameters *meta,
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	double t,r,dt=1.0;
 	stateVector sat,targ;

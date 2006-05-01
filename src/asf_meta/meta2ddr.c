@@ -1,9 +1,9 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include "asf_meta.h"
-#include "asf_reporting.h"
 #include "proj.h"
 #include "earth_radius2datum.h"
 
@@ -14,10 +14,8 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
   // avoid filling in projection information for pseudoprojected
   // images) so that it will probably work, but it isn't tested at
   // all.
-  asfRequire (!meta->projection 
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Creating DDRs from LAT_LONG_PSEUDO_PROJECTION images is not "
-	      "tested yet.\n");
+  assert (!meta->projection 
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	int ii;
 	int proj_invalid = 0;

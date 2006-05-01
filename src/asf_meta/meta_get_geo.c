@@ -13,9 +13,9 @@ SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY:
   1.0 - O. Lawlor.  9/10/98.  CEOS Independance.
 ****************************************************************/
+#include <assert.h>
 #include "asf.h"
 #include "asf_meta.h"
-#include <asf_reporting.h>
 #include "jpl_proj.h"
 
 /*Geolocation Calls:*/
@@ -32,10 +32,8 @@ void meta_get_original_line_sample(meta_parameters *meta,
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
   *original_line   = line   * meta->sar->line_increment
 				+ meta->general->start_line;
@@ -63,10 +61,8 @@ void meta_get_latLon(meta_parameters *meta,
   // It should be totally easy to make this work (since pixels
   // correspond to lat/long values) No effort has been made to make
   // this routine work with pseudoprojected images yet though.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	if (meta->sar->image_type=='S'||meta->sar->image_type=='G')
 	{ /*Slant or ground range.  Use state vectors and doppler.*/
@@ -101,10 +97,8 @@ void meta_timeSlantDop2latLon(meta_parameters *meta,
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	double ignored;
 	stateVector stVec;
@@ -124,10 +118,8 @@ void meta_get_timeSlantDop(meta_parameters *meta,
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	if (meta->sar->image_type=='S'||meta->sar->image_type=='G')
 	{ /*Slant or ground range.  These are easy.*/
@@ -237,10 +229,8 @@ void meta_get_lineSamp(meta_parameters *meta,
   // It should be totally easy to make this work (since pixels
   // correspond to lat/long values) No effort has been made to make
   // this routine work with pseudoprojected images yet though.
-  asfRequire (meta->projection == NULL
-	      || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION,
-	      "Method %s doesn't work on LAT_LONG_PSEUDO_PROJECTION images",
-	      __func__);
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
   double x0, y0;
   int ret;
