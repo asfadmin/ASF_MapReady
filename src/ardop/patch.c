@@ -107,16 +107,16 @@ void debugWritePatch(const patch *p,char *basename)
   
   FCLOSE(fp);
   sprintf(cmd,"c2p %s %s\n", name, outname);
-  system(cmd);
+  asfSystem(cmd);
   sprintf(multilookname, "%s_ml.img", outname);
   sprintf(cmd,"multilook -look 2x2 -step 2x2 %s %s\n", 
 	  outname, multilookname);
-  system(cmd);
+  asfSystem(cmd);
   sprintf(exportname, "%s_ml_rgb.img", outname);
   sprintf(cmd,"convert2jpeg %s %s\n", exportname, outname);
-  system(cmd);
+  asfSystem(cmd);
   sprintf(cmd, "rm %s_* %s.meta %s.img\n", outname, outname, outname);
-  system(cmd);
+  asfSystem(cmd);
   
   meta_free(meta);
 }
@@ -225,6 +225,10 @@ void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
   metaCpx->general->image_data_type = COMPLEX_IMAGE;
   metaCpx->general->line_count = f->n_az_valid * patchNo;
   metaCpx->general->sample_count = p->n_range;
+  meta_get_latLon(metaCpx, metaCpx->general->line_count/2, 
+		  metaCpx->general->sample_count/2, 0.0,
+		  &(metaCpx->general->center_latitude),
+		  &(metaCpx->general->center_longitude));
   metaCpx->general->start_line = f->firstLineToProcess + s->dop_precomp + 1;
   metaCpx->general->start_sample = f->skipFile + 1;
   metaCpx->general->x_pixel_size = f->rngpix;
@@ -238,6 +242,10 @@ void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
   metaAmp->general->image_data_type = AMPLITUDE_IMAGE;
   metaAmp->general->line_count = f->n_az_valid / f->nlooks * patchNo;
   metaAmp->general->sample_count = p->n_range;
+  meta_get_latLon(metaAmp, metaAmp->general->line_count/2, 
+		  metaAmp->general->sample_count/2, 0.0,
+		  &(metaAmp->general->center_latitude),
+		  &(metaAmp->general->center_longitude));
   metaAmp->general->start_line = f->firstLineToProcess + s->dop_precomp + 1;
   metaAmp->general->start_sample = f->skipFile + 1;
   metaAmp->general->x_pixel_size = f->rngpix;
