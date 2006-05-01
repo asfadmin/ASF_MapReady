@@ -378,8 +378,8 @@ export_as_geotiff (const char *metadata_file_name,
     TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_point);
 
     /* Set the scale of the pixels, in projection coordinates.  */
-    pixel_scale[0] = md->projection->perX * scale_factor;
-    pixel_scale[1] = md->projection->perY * scale_factor;
+    pixel_scale[0] = fabs(md->projection->perX) * scale_factor;
+    pixel_scale[1] = fabs(md->projection->perY) * scale_factor;
     pixel_scale[2] = 0;
     TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
