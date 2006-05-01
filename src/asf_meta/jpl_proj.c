@@ -32,7 +32,6 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "jpl_proj.h"
-#include "libasf_proj.h"
 
 #define SQR(A)	((A)*(A))
 #define mag(x,y,z) sqrt(SQR(x)+SQR(y)+SQR(z))
