@@ -361,9 +361,10 @@ int main(int argc, char *argv[])
         create_name(inFile, cfg->general->in_name, ".img");
         cfg->general->import = 0; // does not need import
       }
-      else {
+      else if (strcmp(uc(cfg->import->format), "CEOS") == 0)
         create_name(inFile, cfg->general->in_name, ".D");
-      }
+      else if (strcmp(uc(cfg->import->format), "STF") == 0)
+	strcpy(inFile, cfg->general->in_name);
 
       // Data file existence check
       if (!fileExists(inFile))
@@ -534,7 +535,8 @@ int main(int argc, char *argv[])
 	else {
 	  sprintf(outFile, "%s", cfg->general->out_name);
 	}
-	sprintf(options, "-quiet -log %s %s -e 1", logFile, radiometry);
+	sprintf(options, "-quiet -log %s %s", logFile, radiometry);
+	//	sprintf(options, "-quiet -log %s %s -e 1", logFile, radiometry);
 	check_return(ardop(options, inFile, outFile),
 		     "SAR processing data file (ardop)\n");
 	if (strcmp(radiometry, "") == 0)
