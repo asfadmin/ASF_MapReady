@@ -42,62 +42,147 @@
 
 #define VERSION 1.0
 
+void read_proj_file(char * file, project_parameters_t * pps,
+		    projection_type_t * proj_type);
+
 static
 void usage(char *name)
 {
   printf("\n"
 	 "USAGE:\n"
-	 "   %s <file>\n",name);
-  printf("\n"
-	 "REQUIRED ARGUMENTS:\n"
-	 "   name   Base name of image file.");
+	 "   %s <lat> <lon> <projection parameter file> |\n"
+	 "      -list <coordinate list> <projection parameter file>",name);
   printf("\n"
 	 "DESCRIPTION:\n"
-	 "   %s writes the geographic corner coordinates to a file.\n",
-	 name);
+	 "   %s converts geographic coordinates into map projected coordinates\n"
+	 "   using predefined map projection parameter files\n",name);
   printf("\n"
 	 "Version %.2f, ASF SAR Tools\n"
 	 "\n",VERSION);
   exit(EXIT_FAILURE);
 }
 
+int strmatches(const char *key, ...)
+{
+  va_list ap;
+  char *arg = NULL;
+  int found = FALSE;
+
+  va_start(ap, key);
+  do {
+    arg = va_arg(ap, char *);
+    if (arg) {
+      if (strcmp(key, arg) == 0) {
+	found = TRUE;
+	break;
+      }
+    }
+  } while (arg);
+
+  return found;
+}
+
+void fill_in_utm(double lat, double lon, project_parameters_t *pps)
+{
+  pps->utm.zone = (int) ((lon + 180.0) / 6.0 + 1.0);
+  pps->utm.scale_factor = 0.9996;
+  pps->utm.lon0 = (double) (pps->utm.zone - 1) * 6.0 - 177.0;
+  pps->utm.lat0 = 0.0;
+  pps->utm.false_easting = 500000.0;
+  if (lat > 0.0)
+    pps->utm.false_northing = 0.0;
+  else
+    pps->utm.false_northing = 10000000.0;
+}
+
 int main(int argc, char **argv)
 {
-  char meta_name[255], out_name[255];
-  meta_parameters *meta=NULL;
+  char *listFile, *projFile, *key, line[255];
   FILE *fp;
-  double lat, lon;
+  project_parameters_t pps;
+  projection_type_t proj_type;
+  meta_projection *meta_proj;
+  double lat, lon, projX, projY;
+  int listFlag = FALSE;
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */
 
-  /* Parse command line args */
-  if ((argc-currArg) < 1) {
+  currArg = 1;
+
+  if (argc < 4) {
     printf("Insufficient arguments.\n"); 
     usage(argv[0]);
   }
 
-  create_name(meta_name, argv[currArg], ".meta");
-  create_name(out_name, argv[currArg], ".corners");
+  key = argv[currArg];
+  if (strmatches(key,"-list","--list",NULL)) {
+    currArg++;
+    CHECK_ARG(1);
+    listFile = GET_ARG(1);
+    projFile = argv[currArg];
+    listFlag = TRUE;
+  }
+  else {
+    lat = atof(argv[currArg++]);
+    lon = atof(argv[currArg++]);
+    projFile = argv[currArg];
+  }
 
   system("date");
-  printf("Program: corner_coords\n\n");
-  
-  meta = meta_read(meta_name);
-  fp = FOPEN(out_name, "w");
-  meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
-  printf("   UL: lat = %.4f, lon = %.4f\n", lat, lon);
-  fprintf(fp, "UL: lat = %.4f, lon = %.4f\n", lat, lon);
-  meta_get_latLon(meta, 0, meta->general->sample_count, 0.0, &lat, &lon);
-  printf("   UR: lat = %.4f, lon = %.4f\n", lat, lon);
-  fprintf(fp, "UR: lat = %.4f, lon = %.4f\n", lat, lon);
-  meta_get_latLon(meta, meta->general->line_count, 0, 0.0, &lat, &lon);
-  printf("   LL: lat = %.4f, lon = %.4f\n", lat, lon);
-  fprintf(fp, "LL: lat = %.4f, lon = %.4f\n", lat, lon);
-  meta_get_latLon(meta, meta->general->line_count, meta->general->sample_count,
-                  0.0, &lat, &lon);
-  printf("   LR: lat = %.4f, lon = %.4f\n\n", lat, lon);
-  fprintf(fp, "LR: lat = %.4f, lon = %.4f\n", lat, lon);
-  FCLOSE(fp);
+  printf("Program: latLon2proj\n\n");
 
+  // Read projection file
+  read_proj_file(projFile, &pps, &proj_type);
+
+  // Report the conversion type
+  switch(proj_type) 
+    {
+    case ALBERS_EQUAL_AREA:
+      printf("Lat/Lon to Albers Equal Area\n\n");
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      printf("Lat/Lon to Lambert Azimuthal Equal Area\n\n");
+      break;
+    case LAMBERT_CONFORMAL_CONIC:
+      printf("Lat/Lon to Lambert Conformal Conic\n\n");
+      break;
+    case POLAR_STEREOGRAPHIC:
+      printf("Lat/Lon to Polar Stereographic\n\n");
+      break;
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      printf("Lat/Lon to UTM\n\n");
+      break;
+    }
+
+  // Initialize meta_projection block
+  meta_proj = meta_projection_init();
+  meta_proj->type = proj_type;
+  meta_proj->datum = WGS84_DATUM;
+
+  // Read lat/lon from list if needed and convert to map coordinates
+  if (listFlag) {
+    fp = FOPEN(listFile, "r");
+    while (fgets(line, 255, fp) != NULL) {
+      if (strlen(line) > 1) {
+	sscanf(line, "%lf %lf", &lat, &lon);   
+	if (proj_type == UNIVERSAL_TRANSVERSE_MERCATOR)
+	  fill_in_utm(lat, lon, &meta_proj->param);
+	else
+	  meta_proj->param = pps;
+	latlon_to_proj(meta_proj, 'R', lat*D2R, lon*D2R, &projX, &projY);
+	printf("%.4lf\t%.4lf\t%.3lf\t%.3lf\n", lat, lon, projX, projY);
+      }
+    }
+    FCLOSE(fp);
+  }
+  else {
+    if (proj_type == UNIVERSAL_TRANSVERSE_MERCATOR)
+      fill_in_utm(lat, lon, &meta_proj->param);
+    else
+      meta_proj->param = pps;
+    latlon_to_proj(meta_proj, 'R', lat*D2R, lon*D2R, &projX, &projY);
+    printf("%.4lf\t%.4lf\t%.3lf\t%.3lf\n", lat, lon, projX, projY);
+  }
+
+  printf("\n");
   return 0;
 }
-
