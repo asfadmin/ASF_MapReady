@@ -196,6 +196,7 @@ int main(int argc, char *argv[])
 {
   FILE *fBatch, *fConfig;
   convert_config *cfg;
+  meta_parameters *meta;
   char configFileName[255], cmd[1024], options[255], line[255], batchConfig[255];
   char inFile[255], outFile[255], fileName[255];
   char format[255], radiometry[255], projection[255], datum[255], resampling[255];
@@ -278,7 +279,8 @@ int main(int argc, char *argv[])
   // Extend the configuration file if the file already exist
   else if ( createflag==TRUE && fileExists(configFileName) ) {
     cfg = read_config(configFileName);
-    check_return(write_config(configFileName, cfg), "Could not update configuration file");
+    check_return(write_config(configFileName, cfg), 
+		 "Could not update configuration file");
     asfPrintStatus("   Initialized complete configuration file\n\n");
     FCLOSE(fLog);
     exit(EXIT_SUCCESS);
@@ -368,6 +370,46 @@ int main(int argc, char *argv[])
         asfPrintError("Import data file does not exist\n");
     }
 
+    // Check whether everything in the [SAR processing] block is reasonable
+    if (cfg->general->sar_processing) {
+      
+      // Radiometry
+      if (strncmp(uc(cfg->sar_processing->radiometry), "AMPLITUDE_IMAGE", 15) != 0 &&
+          strncmp(uc(cfg->sar_processing->radiometry), "POWER_IMAGE", 11) != 0 &&
+          strncmp(uc(cfg->sar_processing->radiometry), "SIGMA_IMAGE", 11) != 0 &&
+          strncmp(uc(cfg->sar_processing->radiometry), "GAMMA_IMAGE", 11) != 0 &&
+          strncmp(uc(cfg->sar_processing->radiometry), "BETA_IMAGE", 10) != 0) {
+        asfPrintError("Chosen radiometry not supported\n");
+      }
+
+    }
+
+    // Check whether everything in the [Image stats] block is reasonable
+    if (cfg->general->image_stats) {
+
+      // Values
+      if (strncmp(cfg->image_stats->values, "LOOK", 4) != 0 &&
+          strncmp(cfg->image_stats->values, "INCIDENCE", 9) != 0 &&
+          strncmp(cfg->image_stats->values, "RANGE", 5) != 0) {
+        asfPrintError("Chosen values not supported\n");
+      }
+    }
+
+    // Check whether everything in the [Terrain correction] block is
+    // reasonable
+    if (cfg->general->terrain_correct) {
+
+      // Reference DEM file existence check
+      if (!fileExists(cfg->terrain_correct->dem)) {
+        asfPrintError("Reference DEM file '%s' does not exist\n",
+		      cfg->terrain_correct->dem);
+      }
+
+      // Check for pixel size smaller than threshold ???
+
+    }
+
+
     // Check whether everything in the [Geocoding] block is reasonable
     if (cfg->general->geocoding) {
 
@@ -391,17 +433,6 @@ int main(int argc, char *argv[])
           strncmp(cfg->geocoding->resampling, "BILINEAR", 8) != 0 &&
           strncmp(cfg->geocoding->resampling, "BICUBIC", 7) != 0) {
         asfPrintError("Chosen resampling method not supported\n");
-      }
-    }
-
-    // Check whether everything in the [Image stats] block is reasonable
-    if (cfg->general->geocoding) {
-
-      // Values
-      if (strncmp(cfg->image_stats->values, "LOOK", 4) != 0 &&
-          strncmp(cfg->image_stats->values, "INCIDENCE", 9) != 0 &&
-          strncmp(cfg->image_stats->values, "RANGE", 5) != 0) {
-        asfPrintError("Chosen values not supported\n");
       }
     }
 
@@ -475,6 +506,54 @@ int main(int argc, char *argv[])
                    "ingesting data file (asf_import)\n");
     }
 
+    if (cfg->general->sar_processing) {
+
+      // Check whether the input file is a raw image. If not, skip the SAR processing step
+      meta = meta_read(outFile);
+      if (meta->general->image_data_type == RAW_IMAGE) {
+
+	// Radiometry
+	if (strncmp(uc(cfg->sar_processing->radiometry), "POWER_IMAGE", 11) == 0) {
+	  sprintf(radiometry, "-power");
+	} else if (strncmp(uc(cfg->sar_processing->radiometry), "SIGMA_IMAGE", 11) == 0) {
+	  sprintf(radiometry, "-sigma");
+	} else if (strncmp(uc(cfg->sar_processing->radiometry), "GAMMA_IMAGE", 11) == 0) {
+	  sprintf(radiometry, "-gamma");
+	} else if (strncmp(uc(cfg->sar_processing->radiometry), "BETA_IMAGE", 10) == 0) {
+	  sprintf(radiometry, "-beta");
+	} else 
+	  sprintf(radiometry, "");
+	
+	// Pass in command line
+	sprintf(inFile, "%s", outFile);
+	if (cfg->general->image_stats || cfg->general->detect_cr ||
+	    cfg->general->sar_processing || cfg->general->terrain_correct ||
+	    cfg->general->geocoding || cfg->general->export) {
+	  sprintf(outFile, "tmp%i_sar_processing", pid);
+	}
+	else {
+	  sprintf(outFile, "%s", cfg->general->out_name);
+	}
+	sprintf(options, "-quiet -log %s %s -e 1", logFile, radiometry);
+	check_return(ardop(options, inFile, outFile),
+		     "SAR processing data file (ardop)\n");
+	if (strcmp(radiometry, "") == 0)
+	  sprintf(outFile, "tmp%i_sar_processing_amp", pid);
+	else if (strcmp(radiometry, "-power") == 0)
+	  sprintf(outFile, "tmp%i_sar_processing_power", pid);
+	else if (strcmp(radiometry, "-sigma") == 0)
+	  sprintf(outFile, "tmp%i_sar_processing_sigma", pid);
+	else if (strcmp(radiometry, "-gamma") == 0)
+	  sprintf(outFile, "tmp%i_sar_processing_gamma", pid);
+	else if (strcmp(radiometry, "-beta") == 0)
+	  sprintf(outFile, "tmp%i_sar_processing_beta", pid);
+      }
+      else {
+	meta_free(meta);
+	asfPrintStatus("Image has already been processed - skipping SAR processing step");
+      }
+    }
+    
     if (cfg->general->image_stats) {
 
       // Values for statistics

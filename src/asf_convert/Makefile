@@ -4,7 +4,11 @@
 include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/libasf_reporting.a \
-	$(LIBDIR)/asf.a
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf.a \
+	$(LIBDIR)/libgsl.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libproj.a
 
 OBJS  = asf_convert.o \
 	config.o \

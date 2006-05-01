@@ -37,7 +37,11 @@ typedef struct
 
 typedef struct
 {
-  
+  char *radiometry;       // data type: AMPLITUDE_IMAGE,
+                          // POWER_IMAGE,
+                          // SIGMA_IMAGE,
+                          // GAMMA_IMAGE,
+                          // BETA_IMAGE
 } s_sar_processing;
 
 typedef struct

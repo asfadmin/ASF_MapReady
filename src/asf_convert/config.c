@@ -90,8 +90,14 @@ int init_config(char *configFile)
 	  "# parameters.\n\n");
   fprintf(fConfig, "import = 1\n\n");
   // SAR processing flag
+  fprintf(fConfig, "# The SAR processing flag indicates whether the data needs to be run\n"
+	  "# through 'ardop' (1 for running it, 0 for leaving out the SAR processing step).\n");
+  fprintf(fConfig, "# Running asf_convert with the -create option and the SAR processing \n"
+	  "# flag switched on will generate a [SAR processing] section where you can define\n"
+	  "# further parameters.\n\n");
+  fprintf(fConfig, "sar processing = 0\n\n");
   // terrain correction flag
-  fprintf(fConfig, "# The terrain correction flag indicates whether the data needs be run\n"
+  fprintf(fConfig, "# The terrain correction flag indicates whether the data needs to be run\n"
 	  "# through 'asf_terrcorr' (1 for running it, 0 for leaving out the terrain\n"
 	  "# correction step).\n");
   fprintf(fConfig, "# Running asf_convert with the -create option and the terrain correction\n"
@@ -186,8 +192,10 @@ convert_config *init_fill_config(char *configFile)
   cfg->general->out_name = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->general->out_name, "");
   cfg->general->import = 0;
+  cfg->general->sar_processing = 0;
   cfg->general->image_stats = 0;
   cfg->general->detect_cr = 0;
+  cfg->general->terrain_correct = 0;
   cfg->general->geocoding = 0;
   cfg->general->export = 0;
   cfg->general->batchFile = (char *)MALLOC(sizeof(char)*255);
@@ -213,7 +221,8 @@ convert_config *init_fill_config(char *configFile)
   cfg->import->prc = (char *)MALLOC(sizeof(char)*25);
   cfg->import->prc = "";
 
-  // here goes the SAR processing
+  cfg->sar_processing->radiometry = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE");
 
   cfg->image_stats->values = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->image_stats->values, "LOOK");
@@ -270,8 +279,14 @@ convert_config *init_fill_config(char *configFile)
       // General
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
+      if (strncmp(test, "sar processing", 14)==0)
+        cfg->general->sar_processing = read_int(line, "sar processing");
       if (strncmp(test, "image stats", 11)==0)
 	cfg->general->image_stats = read_int(line, "image stats");
+      if (strncmp(test, "detect corner reflectors", 24)==0)
+	cfg->general->detect_cr = read_int(line, "detect corner reflectors");
+      if (strncmp(test, "terrain correct", 15)==0)
+        cfg->general->import = read_int(line, "terrain correct");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -294,6 +309,8 @@ convert_config *init_fill_config(char *configFile)
       if (strncmp(test, "look up table", 13)==0)
         cfg->import->lut = read_str(line, "look up table");
       // SAR processing
+      if (strncmp(test, "radiometry", 10)==0)
+	cfg->sar_processing->radiometry = read_str(line, "radiometry");
       // Image stats
       if (strncmp(test, "stats values", 12)==0)
 	cfg->image_stats->values = read_str(line, "stats values");
@@ -445,7 +462,8 @@ convert_config *read_config(char *configFile)
 
     if (strncmp(line, "[SAR processing]", 16)==0) strcpy(params, "SAR processing");
     if (strncmp(params, "SAR processing", 14)==0) {
-
+      if (strncmp(test, "radiometry", 10)==0)
+        cfg->sar_processing->radiometry = read_str(line, "radiometry");
     }
 
     if (strncmp(line, "[Image stats]", 13)==0) strcpy(params, "Image stats");
@@ -546,6 +564,16 @@ int write_config(char *configFile, convert_config *cfg)
 	      "# parameters.\n\n");
     }
     fprintf(fConfig, "import = %i\n", cfg->general->import);
+    // General - SAR processing
+    if (!shortFlag) {
+      fprintf(fConfig, "\n# The SAR processing flag indicates whether the data needs to be run\n"
+	      "# through 'ardop' (1 for running it, 0 for leaving out the SAR processing step).\n");
+      fprintf(fConfig, "# Running asf_convert with the -create option and the SAR processing \n"
+	      "# flag switched on will generate a [SAR processing] section where you can define\n"
+	      "# further parameters.\n\n");
+    }
+    fprintf(fConfig, "sar processing = %i\n", cfg->general->sar_processing);
+    // General - Image stats
     if (cfg->general->image_stats) {
       if (!shortFlag)
 	fprintf(fConfig, "\n# The image stats flag indicates whether the data needs to be run\n"
@@ -553,6 +581,7 @@ int write_config(char *configFile, convert_config *cfg)
 		"# step).\n\n");
       fprintf(fConfig, "image stats = %i\n", cfg->general->image_stats);
     }
+    // General - Detect corner reflectors
     if (cfg->general->detect_cr) {
       if (!shortFlag)
 	fprintf(fConfig, "\n# The corner reflector detection flag indicates whether the data\n"
@@ -560,6 +589,7 @@ int write_config(char *configFile, convert_config *cfg)
 		"# the detect corner reflector step).\n\n");
       fprintf(fConfig, "detect corner reflectors = %i\n", cfg->general->detect_cr);
     }
+    // General - Terrain correction
     if (!shortFlag) {
       fprintf(fConfig, "\n# The terrain correction flag indicates whether the data needs be run\n"
 	      "# through 'asf_terrcorr' (1 for running it, 0 for leaving out the terrain\n"
@@ -568,7 +598,8 @@ int write_config(char *configFile, convert_config *cfg)
 	      "# flag switched on will generate an [Terrain correction] section where you\n"
 	      "# can define further parameters.\n\n");
     }
-    fprintf(fConfig, "terrain correction = 1\n");
+    fprintf(fConfig, "terrain correction = %i\n", cfg->general->terrain_correct);
+    // General - Geocoding
     if (!shortFlag) {
       fprintf(fConfig, "\n# The geocoding flag indicates whether the data needs to be run through\n"
 	      "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
@@ -577,6 +608,7 @@ int write_config(char *configFile, convert_config *cfg)
 	      "# parameters.\n\n");
     }
     fprintf(fConfig, "geocoding = %i\n", cfg->general->geocoding);
+    // General - Export
     if (!shortFlag) {
       fprintf(fConfig, "\n# The export flag indicates whether the data needs to be run through\n"
 	      "# 'asf_export' (1 for running it, 0 for leaving out the export step).\n");
@@ -585,6 +617,7 @@ int write_config(char *configFile, convert_config *cfg)
 	      "# parameters.\n\n");
     }
     fprintf(fConfig, "export = %i\n", cfg->general->export);
+    // General - Default values
     if (!shortFlag) {
       fprintf(fConfig, "\n# The default values file is used to define the user's preferred parameter\n"
 	      "# settings. In most cases, you will work on a study where your area of interest is\n"
@@ -594,6 +627,7 @@ int write_config(char *configFile, convert_config *cfg)
 	      get_asf_share_dir());
     }
     fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
+    // General - Intermediates
     if (!shortFlag)
       fprintf(fConfig, "\n# The intermediates flag indicates whether the intermediate processing\n"
 	      "# results are kept (1 for keeping them, 0 for deleting them at the end of the\n"
@@ -642,6 +676,17 @@ int write_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "precise = %s\n\n", cfg->import->prc);
     }
     // SAR processing
+    if (cfg->general->sar_processing) {
+      fprintf(fConfig, "\n[SAR processing]\n");
+      if (!shortFlag)
+	fprintf(fConfig, "\n# The radiometry can be one of the following: AMPLITUDE_IMAGE,\n"
+		"# POWER_IMAGE, SIGMA_IMAGE, GAMMA_IMAGE and BETA_IMAGE.\n"
+		"# The amplitude image is the regularly processed SAR image. The power image\n"
+		"# represents the magnitude (square of the amplitude) of the SAR image.\n"
+		"# The sigma, gamma and beta image are different representations of calibrated\n"
+		"# SAR images. Their values are in power scale.\n\n");
+	fprintf(fConfig, "radiometry = %s\n\n", cfg->sar_processing->radiometry);
+    }
     // Image stats
     if (cfg->general->image_stats) {
       fprintf(fConfig, "\n[Image stats]\n\n");
