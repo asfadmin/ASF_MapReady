@@ -267,7 +267,7 @@ void meta_get_lineSamp(meta_parameters *meta,
   ret = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
   if (ret) return;
 
-  //printf("Failed to converge at LL corner... trying (0,0) ??\n");
+  //printf("Failed to converge at UR corner... trying (0,0) ??\n");
   x0 = y0 = 0.0;
   ret = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
   if (ret) return;
