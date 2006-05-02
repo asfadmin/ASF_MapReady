@@ -19,6 +19,7 @@
 #include <asf_copyright.h>
 #include <asf_license.h>
 #include <asf_sar.h>
+#include <poly.h>
 
 int
 int_rnd(double x)
@@ -106,7 +107,7 @@ int file_exists(const char * file)
 void remove_file(const char * file)
 {
   if (file_exists(file)) {
-    asfPrintStatus("Removing intermediate file: %s\n", file);
+    // asfPrintStatus("Removing intermediate file: %s\n", file);
     unlink(file);
   }
 }
@@ -156,6 +157,14 @@ int strmatches(const char *key, ...)
   } while (arg);
 
   return found;
+}
+
+void fftMatchQ(char *file1, char *file2, char *out1, char *out2)
+{
+  int qf_saved = quietflag;
+  quietflag = 1;
+  fftMatch(file1, file2, out1, out2);
+  quietflag = qf_saved;
 }
 
 // Main program body.
@@ -217,21 +226,24 @@ main (int argc, char *argv[])
   demFile = argv[currArg+1];
   outFile = argv[currArg+2];
 
-  asfPrintStatus("Input File: %s\n", inFile);
-  asfPrintStatus("DEM File: %s\n", demFile);
-  asfPrintStatus("Output File: %s\n", outFile);
-
+  asfPrintStatus("Reading metadata...\n");
   metaSAR = meta_read(inFile);
   metaDEM = meta_read(demFile);
 
   demRes = metaDEM->general->x_pixel_size;
   sarRes = metaSAR->general->x_pixel_size;
     
+  asfPrintStatus("SAR Image is %dx%d, %gm pixels.\n",
+		 metaSAR->general->line_count, metaSAR->general->sample_count,
+		 sarRes);
+  asfPrintStatus("DEM Image is %dx%d, %gm pixels.\n",
+		 metaDEM->general->line_count, metaDEM->general->sample_count,
+		 demRes);
+
   // Downsample the SAR image closer to the reference DEM if needed.
   // Otherwise, the quality of the resulting terrain corrected SAR image 
   // suffers. We put in a threshold of 1.5 times the resolution of the SAR
   // image. The -no-resample option overwrites this default behavior.
-  asfPrintStatus("DEM Resolution: %g, SAR Resolution: %g\n", demRes, sarRes);
   if (do_resample && (demRes > 1.5 * sarRes || pixel_size > 0)) {
     if (pixel_size < 0)
     {
@@ -240,12 +252,18 @@ main (int argc, char *argv[])
       pixel_size = demRes;
     }
 
-    asfPrintStatus("Resampling SAR image to pixel size of %g.\n", pixel_size);
+    asfPrintStatus("Resampling SAR image to pixel size of %g meters.\n",
+		   pixel_size);
 
     resampleFile = appendSuffix(inFile, "_resample");
     resample_to_square_pixsiz(inFile, resampleFile, pixel_size);
     meta_free(metaSAR);
     metaSAR = meta_read(resampleFile);
+
+    asfPrintStatus("After resmapling, SAR Image is %dx%d, %gm pixels.\n",
+		   metaSAR->general->line_count,
+		   metaSAR->general->sample_count,
+		   metaSAR->general->x_pixel_size);
   } else {
     resampleFile = strdup(inFile);
   }
@@ -258,13 +276,18 @@ main (int argc, char *argv[])
     double sr_pixel_size = 
       (meta_get_slant(metaSAR,0,metaSAR->general->sample_count) -
        meta_get_slant(metaSAR,0,0)) / metaSAR->general->sample_count;
-    asfPrintStatus("Converting to Slant Range\n");
+    asfPrintStatus("Converting to Slant Range...\n");
 
     gr2sr_pixsiz(resampleFile, srFile, sr_pixel_size);
     //asfSystem("gr2sr -p %.8f %s %s\n", sr_pixel_size, resampleFile, srFile);
 
     meta_free(metaSAR);
     metaSAR = meta_read(srFile);
+
+    asfPrintStatus("In slant range, SAR Image is %dx%d, %gm pixels.\n",
+		   metaSAR->general->line_count,
+		   metaSAR->general->sample_count,
+		   metaSAR->general->x_pixel_size);
   } else {
     srFile = strdup(resampleFile);
   }
@@ -274,6 +297,8 @@ main (int argc, char *argv[])
   // coordinates, while the grid is actually calculated in DEM space.
   // There is a buffer of 400 pixels in far range added to have enough
   // DEM around when we get to correcting the terrain.
+  asfPrintStatus("Generating %dx%d DEM grid...\n",
+		 (int)dem_grid_size, (int)dem_grid_size);
   demGridFile = appendSuffix(inFile, "_demgrid");
   create_dem_grid_ext(demFile, srFile, demGridFile,
 		      metaSAR->general->sample_count,
@@ -283,33 +308,60 @@ main (int argc, char *argv[])
   // Fit a fifth order polynomial to the grid points.
   // This polynomial is then used to extract a subset out of the reference 
   // DEM.
-  demPolyFile = appendSuffix(inFile, "_dempoly");
-  asfSystem("fit_poly %s %d %s", demGridFile, polyOrder, demPolyFile);
+  asfPrintStatus("Fitting order %d polynomial to DEM...\n", polyOrder);
+  double maxErr;
+  poly_2d *fwX, *fwY, *bwX, *bwY;
+  fit_poly(demGridFile, polyOrder, &maxErr, &fwX, &fwY, &bwX, &bwY);
+  asfPrintStatus("Maximum error in polynomial fit: %g.\n", maxErr);
+
+  int delete_this_old_crap = 0;
+  char *demPolyFileOld;
+  if (delete_this_old_crap) {
+    demPolyFileOld = appendSuffix(inFile, "_dempoly_old");
+    asfSystem("fit_poly %s %d %s", demGridFile, polyOrder, demPolyFileOld);
+  }
 
   // Here is the actual work done for cutting out the DEM.
   // The adjustment of the DEM width by 400 pixels (originated in
   // create_dem_grid) needs to be factored in.
+
   demClipped = appendSuffix(demFile, "_clip");
   demWidth = metaSAR->general->sample_count + 400;
   demHeight = metaSAR->general->line_count;
-  asfSystem("remap -translate 0 0 -poly %s -width %d -height %d "
-	    "-bilinear -float %s %s", demPolyFile, demWidth, demHeight,
-	    demFile, demClipped);
+
+  if (delete_this_old_crap) {
+    char *demClippedOld = appendSuffix(demFile, "_clip_old");
+    asfSystem("remap -translate 0 0 -poly %s -width %d -height %d "
+	      "-bilinear -float %s %s", demPolyFileOld, demWidth, demHeight,
+	      demFile, demClippedOld);
+  }
+
+  asfPrintStatus("Clipping DEM to %dx%d LxS using polynomial fit...\n",
+		 demHeight, demWidth);
+  remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped);
+  poly_delete(fwX);
+  poly_delete(fwY);
+  poly_delete(bwX);
+  poly_delete(bwY);
 
   // Generate a slant range DEM and a simulated amplitude image.
+  asfPrintStatus("Generating slant range DEM and simulated sar image...\n");
   demSlant = appendSuffix(demFile, "_slant");
   demSimAmp = appendSuffix(demFile, "_sim_amp");
   reskew_dem(srFile, demClipped, demSlant, demSimAmp);
 
   // Resize the simulated amplitude to match the slant range SAR image.
+  asfPrintStatus("Resizing simulated sar image...\n");
   demTrimSimAmp = appendSuffix(demFile, "_sim_amp_trim");
   trim(demSimAmp, demTrimSimAmp, 0, 0, metaSAR->general->sample_count,
        demHeight);
 
   // Match the real and simulated SAR image to determine the offset.
   // Read the offset out of the offset file.
+  asfPrintStatus("Determining image offsets...\n");
+
   corrFile = appendSuffix(inFile, "_corr");
-  fftMatch(srFile, demTrimSimAmp, NULL, corrFile);
+  fftMatchQ(srFile, demTrimSimAmp, NULL, corrFile);
 
   read_corr(corrFile, &dx, &dy);
   asfPrintStatus("Correlation: dx=%g dy=%g\n", dx, dy);
@@ -317,6 +369,7 @@ main (int argc, char *argv[])
   idy = - int_rnd(dy);
 
   // Apply the offset to the simulated amplitude image.
+  asfPrintStatus("Applying offsets to simulated sar image...\n");
   trim(demSimAmp, demTrimSimAmp, idx, idy, metaSAR->general->sample_count,
        demHeight);
 
@@ -324,8 +377,9 @@ main (int argc, char *argv[])
   if (do_fftMatch_verification) {
     double dx2, dy2;
 
+    asfPrintStatus("Verifying offsets are now close to zero...\n");
     corrFile2 = appendSuffix(inFile, "_corr2");
-    fftMatch(srFile, demTrimSimAmp, NULL, corrFile2);
+    fftMatchQ(srFile, demTrimSimAmp, NULL, corrFile2);
 
     read_corr(corrFile2, &dx2, &dy2);
     asfPrintStatus("Correlation after shift: dx=%g dy=%g\n", dx2, dy2);
@@ -340,6 +394,7 @@ main (int argc, char *argv[])
   }
 
   // Apply the offset to the slant range DEM.
+  asfPrintStatus("Applying offsets to slant range DEM...\n");
   demTrimSlant = appendSuffix(demFile, "_slant_trim");
   trim(demSlant, demTrimSlant, idx, idy, metaSAR->general->sample_count,
        demHeight);
@@ -349,13 +404,15 @@ main (int argc, char *argv[])
   // of the values.
   ensure_ext(&demTrimSlant, "img");
   ensure_ext(&srFile, "img");
+  asfPrintStatus("Terrain correcting slant range image...\n");
   deskew_dem(demTrimSlant, outFile, srFile, 0);
 
   if (clean_files) {
+    asfPrintStatus("Removing intermediate files...\n");
     clean(resampleFile);
     clean(srFile);
     clean(demClipped);
-    clean(demPolyFile);
+    //clean(demPolyFile);
     clean(demGridFile);
     clean(demTrimSlant);
     clean(demTrimSimAmp);
@@ -365,12 +422,12 @@ main (int argc, char *argv[])
     clean(demSlant);
   }
 
-  asfPrintStatus("\nTerrain Correction Complete!\n");
+  asfPrintStatus("Terrain Correction Complete!\n");
 
   free(resampleFile);
   free(srFile);
   free(demClipped);
-  free(demPolyFile);
+  //free(demPolyFile);
   free(demGridFile);
   free(demTrimSlant);
   free(demTrimSimAmp);
