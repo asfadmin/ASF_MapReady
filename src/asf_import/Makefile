@@ -84,7 +84,10 @@ OBJS  = ardop_params.o \
 all: asf_import
 	-rm *.o
 
+# It looks like linking against efence triggers a bug in libgeotiff on
+# solaris, so we forbid that.
 asf_import: $(OBJS)
+	perl -e 'exit("$(SYS)" eq "solaris" and "$(LDFLAGS)" =~ m/-lefence/);'
 	$(CC) $(CFLAGS) -o asf_import $(OBJS) $(LIBS) $(LDFLAGS)
 	mv asf_import$(BIN_POSTFIX) $(BINDIR)
 
