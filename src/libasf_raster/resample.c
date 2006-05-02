@@ -119,9 +119,9 @@ int resample(char *infile, char *outfile, double xscalfact, double yscalfact)
              xbase,ybase,           /* base sample/line               */
              xrate,yrate;           /* # input pixels/output pixel    */
 
-    asfPrintStatus("\n\n\nResample: Performing filtering and subsampling..\n\n");
-    asfPrintStatus("  Input image is %s\n",infile);
-    asfPrintStatus("  Output image is %s\n\n",outfile);
+    //asfPrintStatus("\n\n\nResample: Performing filtering and subsampling..\n\n");
+    //asfPrintStatus("  Input image is %s\n",infile);
+    //asfPrintStatus("  Output image is %s\n\n",outfile);
    
     metaIn = meta_read(infile);
     metaOut = meta_read(infile);
@@ -186,10 +186,10 @@ int resample(char *infile, char *outfile, double xscalfact, double yscalfact)
          }
        
        put_float_line(fpout, metaOut, i, outbuf);
-       asfLineMeter(i, onl);
+       //asfLineMeter(i, onl);
       }
        
-    asfPrintStatus("Finished.\n");
+    //asfPrintStatus("Finished.\n");
 
     FCLOSE(fpin);                 
     FCLOSE(fpout);

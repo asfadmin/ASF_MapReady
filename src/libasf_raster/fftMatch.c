@@ -100,8 +100,9 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile)
   /*Search correlation image for a peak.*/
   findPeak(corrImage,&bestLocX,&bestLocY,&doubt);
   
-  printf("   Offset slave image: dx = %f, dy = %f\n"
-	 "   Certainty: %f%%\n",bestLocX,bestLocY,100*(1-doubt));
+  if (!quietflag)
+    printf("   Offset slave image: dx = %f, dy = %f\n"
+	   "   Certainty: %f%%\n",bestLocX,bestLocY,100*(1-doubt));
   if (logflag) {
     sprintf(logbuf,"   Offset slave image: dx = %f, dy = %f\n"
 	    "   Certainty: %f%%\n",bestLocX,bestLocY,100*(1-doubt));

@@ -101,7 +101,7 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
     if (y==outMaxY) printf("   Filled zeros after writing output image\n");
   }
 
-  printf("   Wrote %lld lines of data\n\n", outMaxY);
+  //printf("   Wrote %lld lines of data\n\n", outMaxY);
   if (logflag) {
     sprintf(logbuf, "   Wrote %lld lines of data\n\n", outMaxY);
     printLog(logbuf);
