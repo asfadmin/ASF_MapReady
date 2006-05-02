@@ -379,7 +379,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	}
 	numLines = inDemMeta->general->line_count;
 	numSamples = inDemMeta->general->sample_count;
-  	asfPrintStatus("   Images are %i lines by %i samples.\n",
+  	asfPrintStatus("Images are %i lines by %i samples.\n",
 		       numLines,numSamples);
 
 /*Allocate vectors.*/
@@ -407,14 +407,14 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 /* Blather at user about what is going on */
 	strcpy(msg,"");
 	if (dem_is_ground_range)
-	  sprintf(msg,"%s   DEM is in ground range.\n",msg);
+	  sprintf(msg,"%sDEM is in ground range.\n",msg);
 	else
-	  sprintf(msg,"%s   DEM in slant range, but will be corrected.\n",msg);
+	  sprintf(msg,"%sDEM in slant range, but will be corrected.\n",msg);
 
 	if (inSarFlag)
-	  sprintf(msg,"%s   Correcting image",msg);
+	  sprintf(msg,"%sCorrecting image",msg);
 	else
-	  sprintf(msg,"%s   Correcting DEM",msg);
+	  sprintf(msg,"%sCorrecting DEM",msg);
 
 	if (doRadiometric)
 	  sprintf(msg,"%s geometrically and radiometrically.\n",msg);
@@ -477,7 +477,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 			put_float_line(outFp,outMeta,y,&grDEM[y*numSamples]);
 	}
 
-	asfPrintStatus("\n   Wrote %lld bytes of data\n\n",
+	asfPrintStatus("Wrote %lld bytes of data\n",
 		       (long long)(numLines*numSamples*4));
 
 /* Clean up & skidattle */

@@ -216,7 +216,7 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	       char *outAmpFile)
 {
 	float *grDEMline,*srDEMline,*outAmpLine;
-	register int line,nl,percent;
+	register int line,nl;
 	FILE *inDEM,*outDEM,*outAmp;
 	meta_parameters *metaIn, *metaDEM;
 
@@ -242,23 +242,13 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	outAmpLine = (float *)MALLOC(sizeof(float)*sr_ns);
 	
 /* Read deskewed data, write out reskewed data */
-	percent = 0;
 	for (line=0; line<nl; line++)
 	{
-		if ((line*100/nl)==percent) {
-		  printf("\r   Completed %3d percent",percent);
-		  percent+=5;
-		}
 		get_float_line(inDEM,metaDEM,line,grDEMline);
 		dem_gr2sr(grDEMline,srDEMline,outAmpLine);
 		put_float_line(outDEM,metaIn,line,srDEMline);
 		put_float_line(outAmp,metaIn,line,outAmpLine);
 	}
-	printf("\r   Completed 100 percent\n\n");
-
-	sprintf(logbuf,"   Converted %d lines from ground range to slant range.\n\n", nl);
-	printf("%s", logbuf);
-	if (logflag) { printLog(logbuf); }
 
 /* Write meta files */
 	meta_write(metaIn, outDEMfile);
