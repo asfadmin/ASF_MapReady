@@ -3,6 +3,9 @@
 
 #define MAX_IMG_SIZE 100000
 
+#include <stdio.h>
+#include "poly.h"
+
 /* Prototypes from gr2sr.c */
 int gr2sr(const char *infile, const char *outfile);
 int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize);
@@ -20,5 +23,13 @@ int create_dem_grid(const char *demName, const char *sarName,
 		    const char *outName);
 int create_dem_grid_ext(const char *demName, const char *sarName,
 			const char *outName, int w, int h, int size);
+
+/* Prototypes from remap_poly.c */
+int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
+	       int outWidth, int outHeight, char *infile, char *outfile);
+
+/* Prototypes from fit_poly.c */
+int fit_poly(char * gridFile, int degree, double *maxErr,
+	     poly_2d **fwX, poly_2d **fwY, poly_2d **bwX, poly_2d **bwY);
 
 #endif
