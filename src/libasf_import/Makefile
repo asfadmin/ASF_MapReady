@@ -1,10 +1,8 @@
-# asf_import
+# Makefile for libasf_import library
 
 include ../../make_support/system_rules
 
-LIBS  = \
-	$(LIBDIR)/libasf_import.a \
-	$(LIBDIR)/asf_meta.a \
+LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libasf_raster.a \
@@ -43,17 +41,52 @@ ifdef DIAUG
 endif
 CFLAGS += $(DEBUG_FEATURES)
 
-OBJS  = asf_import.o
+OBJS  = ardop_params.o \
+	ardop_write.o \
+	asf_import.o \
+	aux_ERS.o \
+	aux_JRS.o \
+	aux_JRS_PCM.o \
+	aux_RSAT.o \
+	bin_state.o \
+	cal_params.o \
+	createSubset.o \
+	decoder_ERS.o \
+	decoder_JRS.o \
+	decoder_RSAT.o \
+	decoder_utils.o \
+	fetch_prc_stvec.o \
+	find_geotiff_name.o \
+	frame.o \
+	geotiff_flavors.o \
+	import_asf_utm_geotiff.o \
+	import_ceos.o \
+	import_envi.o \
+	import_esri.o \
+	import_usgs_seamless.o \
+	import_stf.o \
+	least_squares.o \
+	matrix.o \
+	missing.o \
+	projected_image_import.o \
+	sprocket_layers.o \
+        tiff_to_float_image.o \
+	unpack.o \
+	utilities.o \
+	utilities_ceos.o \
+	utilities_stf.o \
+	write_meta_and_img.o
 
-all: asf_import
-	-rm *.o
+all: build_only
+	cp libasf_import.a $(LIBDIR)
+	cp asf_import.h $(ASF_INCLUDE_DIR)
 
-# It looks like linking against efence triggers a bug in libgeotiff on
-# solaris, so we forbid that.
-asf_import: $(OBJS)
-	perl -e 'exit("$(SYS)" eq "solaris" and "$(LDFLAGS)" =~ m/-lefence/);'
-	$(CC) $(CFLAGS) -o asf_import $(OBJS) $(LIBS) $(LDFLAGS)
-	mv asf_import$(BIN_POSTFIX) $(BINDIR)
+build_only: $(OBJS)
+	rm -f libasf_import.a
+	ar r libasf_import.a $(OBJS)
+	$(RANLIB) libasf_import.a
+
+$(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*h)
 
 clean:
 	rm -f core $(OBJS) *.o

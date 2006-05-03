@@ -264,24 +264,6 @@ float get_default_ypix(const char *outBaseName)
     return az_pixsiz;
 }
 
-void fix_ypix(const char *outBaseName, double correct_y_pixel_size)
-{
-    asfPrintStatus("Applying y pixel size correction to the metadata...\n");
-
-    char outMetaName[256];
-    sprintf(outMetaName, "%s%s", outBaseName, TOOLS_META_EXT);
-
-    meta_parameters *omd = meta_read(outMetaName);
-
-    asfPrintStatus("Original y pixel size: %g\n",
-        omd->general->y_pixel_size);
-    asfPrintStatus("            corrected: %g\n",
-        correct_y_pixel_size);
-
-    omd->general->y_pixel_size = correct_y_pixel_size;
-    meta_write(omd, outMetaName);
-    meta_free(omd);
-}
 
 /******************************************************************************
 * Lets rock 'n roll!
@@ -298,6 +280,7 @@ int main(int argc, char *argv[])
     int ii;
     int flags[NUM_FLAGS];
     double lowerLat=NAN, upperLat=NAN;
+    double range_scale=NAN, azimuth_scale=NAN, correct_y_pixel_size=NAN;
     int do_resample;
     int do_metadata_fix;
 
@@ -351,7 +334,25 @@ int main(int argc, char *argv[])
     do_resample = flags[f_RANGE_SCALE] != FLAG_NOT_SET ||
         flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET;
 
+    if (do_resample)
+    {
+        range_scale = flags[f_RANGE_SCALE] == FLAG_NOT_SET ? 1.0 :
+        getDoubleOptionArgWithDefault(argv[flags[f_RANGE_SCALE]],
+            DEFAULT_RANGE_SCALE);
+
+        azimuth_scale = flags[f_AZIMUTH_SCALE] == FLAG_NOT_SET ? 1.0 :
+        getDoubleOptionArgWithDefault(argv[flags[f_AZIMUTH_SCALE]],
+            get_default_azimuth_scale(unscaledBaseName));
+    }
+
     do_metadata_fix = flags[f_FIX_META_YPIX] != FLAG_NOT_SET;
+
+    if (do_metadata_fix)
+    {
+        correct_y_pixel_size =
+            getDoubleOptionArgWithDefault(argv[flags[f_FIX_META_YPIX]],
+            get_default_ypix(outBaseName));
+    }
 
     { /*Check for mutually exclusive options: we can only have one of these*/
         int temp = 0;
@@ -577,123 +578,9 @@ int main(int argc, char *argv[])
         printLog("Program: asf_import\n\n");
     }
 
-    strcpy(unscaledBaseName, outBaseName);
-    if (do_resample) {
-        strcat(unscaledBaseName, "_unscaled");
-    }
-
-    /* Ingest all sorts of flavors of CEOS data */
-    if (strncmp(format_type, "CEOS", 4) == 0) {
-        asfPrintStatus("   Data format: %s\n", format_type);
-        if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
-            require_ceos_pair(inBaseName, inDataName, inMetaName);
-        else {
-            /* Allow the base name to be different for data & meta */
-            require_ceos_data(inBaseName, inDataName);
-            require_ceos_metadata(inMetaNameOption, inMetaName);
-        }
-        import_ceos(inDataName, inMetaName, lutName, unscaledBaseName, flags);
-    }
-    /* Ingest ENVI format data */
-    else if (strncmp(format_type, "ENVI", 4) == 0) {
-        asfPrintStatus("   Data format: %s\n", format_type);
-        import_envi(inDataName, inMetaName, unscaledBaseName, flags);
-    }
-    /* Ingest ESRI format data */
-    else if (strncmp(format_type, "ESRI", 4) == 0) {
-        asfPrintStatus("   Data format: %s\n", format_type);
-        import_esri(inDataName, inMetaName, unscaledBaseName, flags);
-    }
-    /* Ingest Vexcel Sky Telemetry Format (STF) data */
-    else if (strncmp(format_type, "STF", 3) == 0) {
-        asfPrintStatus("   Data format: %s\n", format_type);
-        if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
-            require_stf_pair(inBaseName, inDataName, inMetaName);
-        else {
-            /* Allow the base name to be different for data & meta */
-            require_stf_data(inBaseName, inDataName);
-            require_stf_metadata(inMetaNameOption, inMetaName);
-        }
-        import_stf(inDataName, inMetaName, unscaledBaseName, flags,
-            lowerLat, upperLat, prcPath);
-    }
-    else if ( strncmp (format_type, "GEOTIFF", 7) == 0 ) {
-      asfPrintStatus("   Data format: %s\n", format_type);
-      GString *inGeotiffName = find_geotiff_name (inBaseName);
-      if ( inGeotiffName == NULL ) {
-	asfPrintError ("Couldn't find a GeoTIFF file (i.e. a file with "
-		       "extension '.tif', '.tiff', '.TIF', or '.TIFF') "
-		       "corresponding to specified inBaseName");
-      }
-      // At the moment, we are set up to ingest only a GeoTIFF
-      // variants, and no general GeoTIFF handler is implemented
-      // (rationale: it would stand an excellent chance of not working
-      // on a random flavor we haven't tested).  The idea is to keep
-      // adding flavors as needed by teaching detect_geotiff_flavor
-      // about them and adding a specialized inport functions capable
-      // of ingesting them.  Eventually we might feel comfortable
-      // taking a crack at a catch-all importer, but I think its
-      // probably better just to have a few generalized detectable
-      // flavors at the end of detect_geotiff_flavor, and for the
-      // really weird stuff go ahead and throw an exception.
-      geotiff_importer importer = detect_geotiff_flavor (inGeotiffName->str);
-      if ( importer != NULL ) {
-	importer (inGeotiffName->str, outBaseName, flags);
-      } else {
-	asfPrintWarning ("Couldn't identify the flavor of the GeoTIFF, "
-			 "falling back to the generic GeoTIFF importer (cross "
-			 "fingers)... \n");
-	// Haven't written import-generic_geotiff yet...
-	asfPrintError ("Tried to import a GeoTIFF of unrecognized flavor, "
-		       "but the code to do so isn't written yet");
-	// import_generic_geotiff (inGeotiffName->str, outBaseName, flags);
-      }
-      g_string_free (inGeotiffName, TRUE);
-    }
-    /* Don't recognize this data format; report & quit */
-    else {
-        asfPrintError("Unrecognized data format: '%s'",format_type);
-    }
-
-    /* resample, if necessary */
-    if (do_resample)
-    {
-        double range_scale = flags[f_RANGE_SCALE] == FLAG_NOT_SET ? 1.0 :
-        getDoubleOptionArgWithDefault(argv[flags[f_RANGE_SCALE]],
-            DEFAULT_RANGE_SCALE);
-
-        double azimuth_scale = flags[f_AZIMUTH_SCALE] == FLAG_NOT_SET ? 1.0 :
-        getDoubleOptionArgWithDefault(argv[flags[f_AZIMUTH_SCALE]],
-            get_default_azimuth_scale(unscaledBaseName));
-
-        asfPrintStatus("Resampling with scale factors: %g range, %g azimuth.\n",
-            range_scale, azimuth_scale);
-
-        resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
-    }
-
-    /* metadata pixel size fix, if necessary */
-    if (do_metadata_fix)
-    {
-        double correct_y_pixel_size =
-            getDoubleOptionArgWithDefault(argv[flags[f_FIX_META_YPIX]],
-            get_default_ypix(outBaseName));
-
-        fix_ypix(outBaseName, correct_y_pixel_size);
-    }
-
-    /* If the user asked for sprocket layers, create sprocket data layers
-    now that we've got asf tools format data */
-    if (flags[f_SPROCKET] != FLAG_NOT_SET) {
-        create_sprocket_layers(outBaseName, inMetaName);
-    }
-
-    /* If the user didn't ask for a log file then we can nuke the one that
-    we've been keeping since we've finished everything */
-    if (flags[f_LOG] == FLAG_NOT_SET) {
-        fclose (fLog);
-        remove(logFile);
-    }
+    asf_import(flags, format_type, lutName, prcPath, lowerLat, upperLat, 
+	       range_scale, azimuth_scale, correct_y_pixel_size,
+	       inBaseName, outBaseName);
 
     exit(EXIT_SUCCESS);
 }
