@@ -94,6 +94,8 @@ bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
   }
   else if (0==strncmp(satName,"R",1))
     s=RSAT_ceos_decoder_init(inN,outN,readNextPulse);
+  else if (0==strncmp(satName,"A",1))
+    s=ALOS_ceos_decoder_init(inN,outN,readNextPulse);
   else
     asfPrintError("Unrecognized satellite '%s'!\n",satName);
   createMeta_ceos(s,&dssr,inN,outN);

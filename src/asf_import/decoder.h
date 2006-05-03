@@ -92,6 +92,7 @@ bin_state *ERS_decoder_init(char *inN,char *outN,readPulseFunc *reader);
 bin_state *RSAT_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader);
 bin_state *JRS_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader);
 bin_state *ERS_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader);
+bin_state *ALOS_ceos_decoder_init(char *inN,char *outN,readPulseFunc *reader);
 
 
 /******************************** Metadata-type utilities

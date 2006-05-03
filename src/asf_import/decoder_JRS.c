@@ -165,3 +165,62 @@ bin_state *JRS_ceos_decoder_init(char *inName, char *outName,
 
 	return s;
 }
+
+
+/*********************************
+ * ALOS_readNextCeosPulse
+ * CEOS ALOS Pulse reader - no unpacking required, so heavily simplified  */
+void ALOS_readNextCeosPulse(bin_state *s, iqType *iqBuf, char *inName,
+			    char *outName)
+{
+  int i;
+  signalType *sig=NULL;
+  JRS_raw_aux raux;
+  JRS_aux aux;
+  sig=getNextCeosLine(s->binary, s, inName, outName);
+  //FREAD(iqBuf, sizeof(iqType), s->nSamp*2, s->binary);
+  for (i=0;i<2*samplesPerFrame;i++)
+    iqBuf[i]=125+sig[datPerAux+i];
+    
+  JRS_auxCeosUnpack(sig,&raux);
+  JRS_auxDecode(&raux,&aux);
+  JRS_auxAGC_window(s,&aux);
+  JRS_stcCompensate(s,JRS_auxStc(&aux),samplesPerFrame,iqBuf);
+}
+
+/*********************************
+ * ALOS_init:
+ * Satellite hardcoded parameters routine.  */
+void ALOS_init(bin_state *s)
+{
+  strcpy(s->satName,"ALOS");
+  CONF_ALOS_fields(s);
+  s->bytesPerFrame=JRS_bytesPerFrame;
+  
+  /*I include reasonable defaults in case no state vector is available*/
+  s->re=6363490.0; /*approximate earth radius at scene center.*/
+  s->vel=7716.989; /*satellite velocity, m/s->*/
+  s->ht=714433.0; /*satellite height above earth, m.*/
+}
+
+bin_state *ALOS_ceos_decoder_init(char *inName, char *outName,
+				  readPulseFunc *reader)
+{
+  bin_state *s=new_bin_state();
+  signalType *sig=NULL;
+  JRS_raw_aux raux;
+  JRS_aux aux;
+  asfPrintStatus("   Initializing ALOS CEOS decoder...\n");
+  *reader=ALOS_readNextCeosPulse;
+  
+  ALOS_init(s);
+  
+  s->binary=openCeos(inName, outName, s);
+  sig=getNextCeosLine(s->binary, s, inName, outName);
+  JRS_auxCeosUnpack(sig,&raux);
+  JRS_auxDecode(&raux,&aux);
+  JRS_auxUpdate(&aux,s);
+  FSEEK64(s->binary,0,0);
+  
+  return s;
+}

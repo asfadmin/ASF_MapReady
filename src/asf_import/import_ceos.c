@@ -46,6 +46,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   nl = meta->general->line_count;
   ns = meta->general->sample_count;
 
+
   /************************* BEGIN RAW DATA SECTION **************************/
   if (meta->general->data_type==COMPLEX_BYTE) {
     int trash;
@@ -93,10 +94,10 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     getNextCeosLine(s->binary, s, inMetaName, outDataName); /* Skip CEOS header. */
     s->nLines = 0;
     for (ii=0; ii<nl; ii++) {
-      readNextPulse(s, iqBuf, inDataName, outDataName); /* I think outDataName is just a place holder... at least for now */
+      readNextPulse(s, iqBuf, inDataName, outDataName);
       FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
       asfLineMeter(ii,nl);
-     s->nLines++;
+      s->nLines++;
     }
     updateMeta(s,meta,NULL,0);
   }
@@ -170,6 +171,74 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       asfLineMeter(ii,nl);
     }
   }
+
+  else if (meta->general->data_type==COMPLEX_REAL32) {
+    float *cpx_buf=NULL;
+    complexFloat *out_cpx_buf;
+
+    /* Let the user know what format we are working on */
+    asfPrintStatus("   Input data type: single look complex\n"
+                   "   Output data type: single look complex\n");
+
+    /* Make sure that none of the detected level one flags are set */
+    strcpy(logbuf,"");
+    if (flags[f_AMP] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; }
+    if (flags[f_SIGMA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; }
+    if (flags[f_BETA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; }
+    if (flags[f_GAMMA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; }
+    if (flags[f_POWER] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; }
+    if (tempFlag) {
+      asfPrintStatus(
+        "Warning:\n"
+        "  The following flags will be ignored since this is a complex data set:\n"
+        "  %s\n", logbuf);
+    }
+
+    /* Deal with metadata */
+    meta->general->data_type=COMPLEX_REAL32;
+    meta->general->image_data_type=COMPLEX_IMAGE;
+
+    /* Take care of image files and memory */
+    strcat(outDataName,TOOLS_COMPLEX_EXT);
+    fpIn  = fopenImage(inDataName,"rb");
+    fpOut = fopenImage(outDataName,"wb");
+    cpx_buf = (float *) MALLOC(2*ns * sizeof(float));
+    out_cpx_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat));
+
+    /* Read single look complex data */
+    get_ifiledr(inDataName,&image_fdr);
+    /* file + line header *
+       Same change as for regular imagery. To be tested. */
+    leftFill = image_fdr.lbrdrpxl;
+    rightFill = image_fdr.rbrdrpxl;
+    headerBytes = firstRecordLen(inDataName)
+                  + (image_fdr.reclen - (ns + leftFill + rightFill)
+		     * image_fdr.bytgroup);
+    /*
+    headerBytes = firstRecordLen(inDataName)
+                  + (image_fdr.reclen - ns * image_fdr.bytgroup);
+    */
+    for (ii=0; ii<nl; ii++) {
+      offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
+      FSEEK64(fpIn, offset, SEEK_SET);
+      FREAD(cpx_buf, sizeof(float), 2*ns, fpIn);
+      for (kk=0; kk<ns; kk++) {
+        /* Put read in data in proper endian format */
+        big32(cpx_buf[kk*2]);
+        big32(cpx_buf[kk*2+1]);
+        /* Now do our stuff */
+        out_cpx_buf[kk].real=cpx_buf[kk*2];
+        out_cpx_buf[kk].imag=cpx_buf[kk*2+1];
+      }
+      put_complexFloat_line(fpOut, meta, ii, out_cpx_buf);
+      asfLineMeter(ii,nl);
+    }
+  }
   /******************* END COMPLEX (level 1) DATA SECTION ********************/
 
   /*********************** BEGIN DETECTED DATA SECTION ***********************/
@@ -189,7 +258,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     /* Let the user know what format we are working on */
     if (meta->projection!=NULL && meta->projection->type!=MAGIC_UNSET_CHAR) {
       /* This must be ScanSAR */
-      if (meta->projection->type!=SCANSAR_PROJECTION) {
+      if (meta->projection->type != SCANSAR_PROJECTION &&
+	  strcmp(meta->general->sensor, "RSAT") == 0) {
         /* This is actually geocoded.  We don't trust any
            already-geocoded products other than polar stereo in the
            northern hemisphere (because of the RGPS Ice tracking
@@ -207,6 +277,12 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
                 "   Output data type: geocoded amplitude image\n\n");
         meta->general->image_data_type = GEOCODED_IMAGE;
       }
+      else if (strcmp(meta->general->sensor, "ALOS") == 0) {
+	sprintf(logbuf,
+		"   Input data type: level two data\n"
+		"   Output data type: geocoded apmplitude image\n\n");
+        meta->general->image_data_type = GEOCODED_IMAGE;
+      }
       else {
         sprintf(logbuf,
                 "   Input data type: level one data\n"
@@ -214,7 +290,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         meta->general->image_data_type = AMPLITUDE_IMAGE;
       }
     }
-    if (flags[f_AMP] != FLAG_NOT_SET) {
+    else if (flags[f_AMP] != FLAG_NOT_SET) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: amplitude image\n\n");

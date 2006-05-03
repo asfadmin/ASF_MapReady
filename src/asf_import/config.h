@@ -57,7 +57,21 @@ These macros are used by the decoder_* files' *_init() routines.
 	s->zeroDopSteered=0;		/*Steered to zero doppler? (no)*/ \
 	s->frequency=5.300432E09; /*speedOfLight/0.056565;*/ /*radar wavelength, in m.*/
 
-
+// Need some ALOS numbers
+#define CONF_ALOS_fields(s) \
+	s->nPulseInAir=7;            /*Number of pulses in the air at one time.*/ \
+	s->nSamp=6144;               /*Number of samples in a line of data.*/ \
+	s->I_BIAS=s->Q_BIAS=15.5;    /*DC bias for I and Q channels->*/ \
+	s->estDop=0.0;               /*Estimated doppler (PRF).*/ \
+	s->zeroDopSteered=0;         /*Steered to zero doppler?*/ \
+	s->fs=17.076e+06;            /*Range sampling frequency, Hz*/ \
+	s->nValid=5040;              /*# of range samples for ARDOP to use.*/ \
+	s->nLooks=2;                 /*# of looks for ARDOP to use.*/ \
+	s->azres=18.0;               /*Azimuth resolution for ARDOP (m).*/ \
+	s->slope=-4.285714e+11;      /*chirp slope, Hz/sec.*/ \
+	s->pulsedur=27E-06;     /*chirp length, in sec.*/ \
+	s->frequency=speedOfLight/0.2360571; /*radar wavelength, in m.*/ \
+//        s->prf=2159827.2138229; \
 
 /***********************************************
 Satellite auxiliary parameters, used by aux_* routines.
