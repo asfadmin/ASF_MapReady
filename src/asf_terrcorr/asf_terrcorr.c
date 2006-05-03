@@ -279,7 +279,6 @@ main (int argc, char *argv[])
     asfPrintStatus("Converting to Slant Range...\n");
 
     gr2sr_pixsiz(resampleFile, srFile, sr_pixel_size);
-    //asfSystem("gr2sr -p %.8f %s %s\n", sr_pixel_size, resampleFile, srFile);
 
     meta_free(metaSAR);
     metaSAR = meta_read(srFile);
@@ -324,17 +323,9 @@ main (int argc, char *argv[])
   // Here is the actual work done for cutting out the DEM.
   // The adjustment of the DEM width by 400 pixels (originated in
   // create_dem_grid) needs to be factored in.
-
   demClipped = appendSuffix(demFile, "_clip");
   demWidth = metaSAR->general->sample_count + 400;
   demHeight = metaSAR->general->line_count;
-
-  if (delete_this_old_crap) {
-    char *demClippedOld = appendSuffix(demFile, "_clip_old");
-    asfSystem("remap -translate 0 0 -poly %s -width %d -height %d "
-	      "-bilinear -float %s %s", demPolyFileOld, demWidth, demHeight,
-	      demFile, demClippedOld);
-  }
 
   asfPrintStatus("Clipping DEM to %dx%d LxS using polynomial fit...\n",
 		 demHeight, demWidth);
@@ -412,7 +403,6 @@ main (int argc, char *argv[])
     clean(resampleFile);
     clean(srFile);
     clean(demClipped);
-    //clean(demPolyFile);
     clean(demGridFile);
     clean(demTrimSlant);
     clean(demTrimSimAmp);
@@ -427,7 +417,6 @@ main (int argc, char *argv[])
   free(resampleFile);
   free(srFile);
   free(demClipped);
-  //free(demPolyFile);
   free(demGridFile);
   free(demTrimSlant);
   free(demTrimSimAmp);
