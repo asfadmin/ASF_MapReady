@@ -212,6 +212,15 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
     self->tile_size--;
   }
 
+  // If we end up with a tile size of 0, it means we tried to create a
+  // truly gigantic image (compared to the size of the tile cache at
+  // least.  Really, if we end up with a sufficiently small tile size,
+  // there probably isn't much point in going on.  Picking an
+  // arbitrary tile size to call too small is tricky, but we do it
+  // anyway :).
+  const size_t minimum_tile_size = 4;
+  g_assert (self->tile_size >= minimum_tile_size);
+
   // Area of tiles, in pixels.
   self->tile_area = (size_t) pow (self->tile_size, 2.0);
 
