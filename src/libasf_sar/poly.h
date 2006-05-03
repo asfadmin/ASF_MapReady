@@ -1,3 +1,6 @@
+#ifndef _POLY_H
+#define _POLY_H
+
 /***************************************
 Include file for: Polynomial 2D functions.
 
@@ -60,3 +63,4 @@ poly_2d *poly_allocate(int degree);
 /* Delete this polynomial */
 void poly_delete(poly_2d *c);
 
+#endif
