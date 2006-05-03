@@ -4,14 +4,14 @@
 #include "remap.h"
 #include <assert.h>
 
-void poly_doMap(polyMapRec * map, fPoint  in, fPoint  *out)
+static void poly_doMap(polyMapRec * map, fPoint  in, fPoint  *out)
 {
   out->x=poly_eval(map->outToInX,in.x,in.y);
   out->y=poly_eval(map->outToInY,in.x,in.y);
 }
 
-polyMapRec * createPolyMap(poly_2d *fwX, poly_2d *fwY,
-			   poly_2d *bwX, poly_2d *bwY)
+static polyMapRec * createPolyMap(poly_2d *fwX, poly_2d *fwY,
+				  poly_2d *bwX, poly_2d *bwY)
 {
   polyMapRec *q=(polyMapRec *)MALLOC(sizeof(polyMapRec));
   q->doMap=(mappingFunc)poly_doMap;
@@ -23,7 +23,7 @@ polyMapRec * createPolyMap(poly_2d *fwX, poly_2d *fwY,
 }
 
 /*grow: Increases the size of an axis-aligned box defined by two points min and max.*/
-void grow(fPoint *min,fPoint *max,fPoint addThis)
+static void grow(fPoint *min,fPoint *max,fPoint addThis)
 {
 	if (addThis.x<min->x)
 		min->x=addThis.x;
@@ -35,7 +35,7 @@ void grow(fPoint *min,fPoint *max,fPoint addThis)
 		max->y=addThis.y;
 }
 
-fPoint makePoint(float x,float y)
+static fPoint makePoint(float x,float y)
 {
 	fPoint ret;
 	ret.x=x;
@@ -43,14 +43,14 @@ fPoint makePoint(float x,float y)
 	return ret;
 }
 
-void forwardPolyMap(polyMapRec *map, fPoint in, fPoint *out)
+static void forwardPolyMap(polyMapRec *map, fPoint in, fPoint *out)
 {
   out->x=poly_eval(map->inToOutX,in.x,in.y);
   out->y=poly_eval(map->inToOutY,in.x,in.y);
 }
 
-void calc_extents(polyMapRec *map, meta_parameters *in_meta,
-		  int *lines, int *samples)
+static void calc_extents(polyMapRec *map, meta_parameters *in_meta,
+			 int *lines, int *samples)
 {
 /*Depending on the mapping function, we'll calculate the output
   extents differently.  In general, we're going to make the output
@@ -78,7 +78,7 @@ void calc_extents(polyMapRec *map, meta_parameters *in_meta,
   *samples = (int)ceil(max.x);
 }
 
-float bilinear_doSamp(pixelFetcher *getRec,fPoint inPt)
+static float bilinear_doSamp(pixelFetcher *getRec,fPoint inPt)
 {
   /*ix and iy used to be computed as floor(inPt); but this is 
     much faster and gives the same results for inPt>-9*/
@@ -104,9 +104,9 @@ float bilinear_doSamp(pixelFetcher *getRec,fPoint inPt)
     Hence, to generate a correct Complex image, you have to call perform_mapping twice--
       once to remap the real fields, and again to remap the imaginary fields.
 */
-void perform_mapping(FILE *in, meta_parameters *meta_in,
-		     FILE *out, meta_parameters *meta_out,
-		     polyMapRec *map)
+static void perform_mapping(FILE *in, meta_parameters *meta_in,
+			    FILE *out, meta_parameters *meta_out,
+			    polyMapRec *map)
 {
   int x,y;
   int maxOutX,maxOutY;
@@ -147,7 +147,8 @@ void perform_mapping(FILE *in, meta_parameters *meta_in,
 to find the projection coordinate of the given (pixel) point (x,y).
 If val==0, Northing coordinates are returned.  
 If val==1, Easting coordinates are returned.*/
-float getProjection(float x,float y,cornerCoords *cc,int val,int ns, int nl)
+static float
+getProjection(float x,float y,cornerCoords *cc,int val,int ns, int nl)
 {
 	float dx=x/ns,dy=y/nl;
 	float upint=cc->upleft[val]+(cc->upright[val]-cc->upleft[val])*dx;
@@ -161,8 +162,8 @@ DDR.  It does so by reverse-projecting the corners of the new, output DDR
 into the old, trusted, input DDR space.  The coordinates of the corners of the
 output DDR are computed in input space using getProjection.	
 */
-void update_projection(meta_parameters *in_meta, polyMapRec *map,
-		       meta_parameters *out_meta)
+static void update_projection(meta_parameters *in_meta, polyMapRec *map,
+			      meta_parameters *out_meta)
 {
   cornerCoords in, out;
   int ns, nl;
