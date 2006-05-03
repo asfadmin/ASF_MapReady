@@ -23,10 +23,12 @@ MODULES = \
 	src/libasf_raster \
 	src/libasf_sar \
 	src/libasf_reporting \
+	src/libasf_terrcorr \
 	src/asf_export \
 	src/asf_import \
 	src/asf_geocode \
 	src/asf_convert \
+	src/asf_terrcorr \
         src/metadata \
 	@ASF_GUI@
 # src_x/sarview
