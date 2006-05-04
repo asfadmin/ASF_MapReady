@@ -1,9 +1,11 @@
-#include "asf_geocode.h"
+#include "geocode_options.h"
+#include "parse_options.h"
 #include "asf_nan.h"
 #include "asf_meta.h"
 #include "asf_reporting.h"
 #include "proj_api.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,6 +54,34 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 	}
 
 	return pps;
+}
+
+static double
+local_earth_radius (spheroid_type_t spheroid, double geodetic_lat)
+{
+  double a, b;
+  spheroid_axes_lengths (spheroid, &a, &b);
+  
+  double e2 = 1 - (pow (b, 2.0) / pow (a, 2.0));
+  
+  // Geocentric latitude.
+  double gcl = atan (tan (geodetic_lat) * (1 - e2));
+  
+  return (a * b) / sqrt (pow (b * cos (gcl), 2.0) + pow (a * sin (gcl), 2.0));
+}
+
+// Return the arc length of an arc covering angle at geodetic_lat on
+// spheroid, assuming a constant radius of curvature approximation
+// over the arc.
+static double
+arc_length_at_latitude (spheroid_type_t spheroid, double geodetic_lat,
+			double angle)
+{
+  assert (angle < 2 * M_PI);
+
+  double er = local_earth_radius (spheroid, geodetic_lat);
+
+  return angle * er;
 }
 
 int calc_utm_zone(double lon)
@@ -143,11 +173,25 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 					meta_parameters * meta, double * average_height,
 					double * pixel_size)
 {
-	if (ISNAN(*average_height))
+	if ( ISNAN (*average_height) )
 		*average_height = 0.0;
 
-	if (ISNAN(*pixel_size))
-		*pixel_size = meta->general->x_pixel_size;
+	if ( ISNAN (*pixel_size) ) {
+	  // If the input image is pseudoprojected, we use the arc
+	  // length between pixels at the image center as the
+	  // approximate pixel size.  There are comments relating to
+	  // pixel size in the import_usgs_seamless.c file that should
+	  // change if this approach is changed.
+	  if ( meta->projection != NULL 
+	       && meta->projection->type == LAT_LONG_PSEUDO_PROJECTION ) {
+	    *pixel_size 
+	      = arc_length_at_latitude (meta->projection->spheroid,
+					meta->general->center_latitude,
+					meta->general->y_pixel_size * D2R);
+	  } else {
+	    *pixel_size = meta->general->x_pixel_size;
+	  }
+	}
 
 	switch (pt)
 	{
@@ -239,7 +283,7 @@ DEFAULT_POLAR_STERO_NORTH_STANDARD_PARALLEL :
 		break;
 
 	default:
-		asfPrintError("apply_defaults: illegal projection type!\n");
+		asfPrintError("apply_defaults: illegal projection type!");
 	}
 }
 
