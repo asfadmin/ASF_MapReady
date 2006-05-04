@@ -2,7 +2,6 @@
 #define FUNCTIONS_C
 
 #include "asf.h"
-#include "functions.h"
 #include "asf_reporting.h"
 
 int asf_import(char *inFile, char *outFile, char *format, char *radiometry,
@@ -101,7 +100,7 @@ int asf_export(char *options, char *inFile, char *outFile)
   return ret;
 }
 
-int asf_convert(char *configFile)
+int call_asf_convert(char *configFile)
 {
   char command[256];
   int ret;

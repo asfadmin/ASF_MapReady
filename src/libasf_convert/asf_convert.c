@@ -2,7 +2,6 @@
 #include "ceos.h"
 #include "asf_meta.h"
 #include "asf_convert.h"
-#include "functions.h"
 #include "proj.h"
 #include "asf_reporting.h"
 #include "asf_contact.h"
@@ -42,7 +41,7 @@ int asf_convert(int createflag, char *configFileName)
   // otherwise read it
   if ( createflag==TRUE && !fileExists(configFileName) ) {
     init_convert_config(configFileName);
-    exit_with_success();
+    return(EXIT_SUCCESS);
   }
   // Extend the configuration file if the file already exist
   else if ( createflag==TRUE && fileExists(configFileName) ) {
@@ -51,7 +50,7 @@ int asf_convert(int createflag, char *configFileName)
 		 "Could not update configuration file");
     asfPrintStatus("   Initialized complete configuration file\n\n");
     FCLOSE(fLog);
-    exit(EXIT_SUCCESS);
+    return(EXIT_SUCCESS);
   }
   else {
     cfg = read_convert_config(configFileName);
@@ -89,7 +88,7 @@ int asf_convert(int createflag, char *configFileName)
 
       // Clean up
       sprintf(cmd, "rm -f %s", batchConfig);
-      system(cmd);
+      asfSystem(cmd);
     }
   }
   // Regular processing
@@ -466,7 +465,5 @@ int asf_convert(int createflag, char *configFileName)
       system(cmd);
     }
   }
-
-  exit_with_success();
-  return 0; // just to quiet a compiler warning; will never get here
+  return(EXIT_SUCCESS);
 }
