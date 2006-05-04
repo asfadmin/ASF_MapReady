@@ -1,28 +1,24 @@
-#	asf_convert
-#	by Rudi Gens, ASF, 2004
+# Makefile for asf_convert - now just a wrapper to call library
+# function in libasf_convert
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/libasf_reporting.a \
+LIBS  = \
+	$(LIBDIR)/libasf_convert.a \
+	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libproj.a
 
-OBJS  = asf_convert.o \
-	config.o \
-	functions.o
+OBJS  = asf_convert.o
 
 all:    asf_convert clean
 
 asf_convert: $(OBJS)
 	$(CC) $(CFLAGS) -o asf_convert $(OBJS) $(LIBS) $(LDFLAGS)
 	mv asf_convert$(BIN_POSTFIX) $(BINDIR)
-	mkdir -p $(SHAREDIR)/asf_convert
-	cp batch.config $(SHAREDIR)/asf_convert
-	cp default_values $(SHAREDIR)/asf_convert
-	cp asf_convert_cmd.pdf $(SHAREDIR)/asf_convert
 
 clean:
-	rm -f core $(OBJS) *.o
+	rm -f core $(OBJS) *.o *~
