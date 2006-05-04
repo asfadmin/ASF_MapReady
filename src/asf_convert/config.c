@@ -61,7 +61,7 @@ double read_double(char *line, char *param)
   return value;
 }
 
-int init_config(char *configFile)
+int init_convert_config(char *configFile)
 {
   FILE *fConfig;
 
@@ -164,7 +164,7 @@ int init_config(char *configFile)
   return(0);
 }
 
-convert_config *init_fill_config(char *configFile)
+convert_config *init_fill_convert_config(char *configFile)
 {
 #define newStruct(type) (type *)MALLOC(sizeof(type))
 
@@ -239,7 +239,8 @@ convert_config *init_fill_config(char *configFile)
   strcpy(cfg->terrain_correct->dem, "");
 
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
-  sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj", get_asf_share_dir());
+  sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj", 
+	  get_asf_share_dir());
   cfg->geocoding->pixel = 100;
   cfg->geocoding->height = 0.0;
   cfg->geocoding->datum = (char *)MALLOC(sizeof(char)*25);
@@ -394,14 +395,14 @@ convert_config *init_fill_config(char *configFile)
   return cfg;
 }
 
-convert_config *read_config(char *configFile)
+convert_config *read_convert_config(char *configFile)
 {
   FILE *fConfig;
   convert_config *cfg=NULL;
   char line[255], params[50];
   char *test=(char *)MALLOC(sizeof(char)*255);
 
-  cfg = init_fill_config(configFile);
+  cfg = init_fill_convert_config(configFile);
   if (cfg == NULL) check_return(1, "Creating configuration structure.\n");
   fConfig = FOPEN(configFile, "r");
   while (fgets(line, 255, fConfig) != NULL) {
@@ -531,7 +532,7 @@ convert_config *read_config(char *configFile)
   return cfg;
 }
 
-int write_config(char *configFile, convert_config *cfg)
+int write_convert_config(char *configFile, convert_config *cfg)
 {
   FILE *fConfig;
   int shortFlag=FALSE;

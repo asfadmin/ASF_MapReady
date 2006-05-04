@@ -94,18 +94,18 @@ typedef struct
   s_export *export;                    // exporting parameters
 } convert_config;
 
-/* checking return values in the main program */
+// checking return values in the main program
 void check_return(int ret, char *msg);
 
-/* configuration functions */
+// configuration functions
 int strindex(char s[], char t[]);
 char *read_param(char *line);
 char *read_str(char *line, char *param);
 int read_int(char *line, char *param);
 double read_double(char *line, char *param);
-int init_config(char *configFile);
-convert_config *init_fill_config(char *configFile);
-convert_config *read_config(char *configFile);
-int write_config(char *configFile, convert_config *cfg);
+int init_convert_config(char *configFile);
+convert_config *init_fill_convert_config(char *configFile);
+convert_config *read_convert_config(char *configFile);
+int write_convert_config(char *configFile, convert_config *cfg);
 
 #endif

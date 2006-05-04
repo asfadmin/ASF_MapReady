@@ -19,6 +19,6 @@ int detect_cr(char *inFile, char *crFile, char *outFile, int chips, int text);
 int asf_terrcorr(char *options, char *inFile, char *demFile, char *outFile);
 int asf_geocode(char *options, char *inFile, char *outFile);
 int asf_export(char *options, char *inFile, char *outFile);
-int asf_convert(char *configFile);
+int call_asf_convert(char *configFile);
 
 #endif
