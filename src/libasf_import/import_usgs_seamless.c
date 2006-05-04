@@ -203,6 +203,14 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
   mg->x_pixel_size = pixel_scale[0];
   mg->y_pixel_size = pixel_scale[1];
 
+  // For now we are going to insist that the degrees per pixel in the
+  // X and Y directions are identical(ish).  I believe asf_geocode at
+  // least would work for non-square pixel dimensions, with the
+  // caveats that output pixels would still be square, and would have
+  // default size derived solely from the input pixel size (arc length
+  // between pixels) in the latitude direction.
+  assert (gsl_fcmp (mg->x_pixel_size, mg->y_pixel_size, 0.0001));
+
   // Image raster coordinates of tie point.
   double raster_tp_x = tie_point[0];
   double raster_tp_y = tie_point[1];
