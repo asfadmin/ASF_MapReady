@@ -50,11 +50,11 @@ void usage(char *name)
 {
   printf("\n"
 	 "USAGE:\n"
-	 "   %s <projX> <projY> <proj parameters input> <proj parameter output> |\n"
+	 "   %s <projX> <projY> <projection parameters file> |\n"
 	 "      -list <coordinate list> <projection parameter file>",name);
   printf("\n"
 	 "DESCRIPTION:\n"
-	 "   %s converts coordinates from one map projection to another\n"
+	 "   %s converts map projected coordinates into geographic coordinates\n"
 	 "   using predefined map projection parameter files\n",name);
   printf("\n"
 	 "Version %.2f, ASF SAR Tools\n"
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
   }
 
   system("date");
-  printf("Program: proj2proj\n\n");
+  printf("Program: proj2latLon\n\n");
 
   // Read projection file
   read_proj_file(projFile, &pps, &proj_type);
