@@ -282,8 +282,8 @@ void write_args(projection_type_t proj_type, project_parameters_t *pps,
 	fclose(fp);
 }
 
-static void parse_proj_args_file(char * file, project_parameters_t * pps,
-								 projection_type_t * proj_type)
+void parse_proj_args_file(char * file, project_parameters_t * pps,
+			  projection_type_t * proj_type)
 {
 	FILE * fp;
 	char buf[256];

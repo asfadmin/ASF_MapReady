@@ -84,6 +84,9 @@ project_parameters_t * get_geocode_options(int *argc, char ***argv,
                                            resample_method_t *resample_method,
                                            int *override_checks);
 
+void parse_proj_args_file(char * file, project_parameters_t * pps,
+			  projection_type_t * proj_type);
+
 /* Might want to make these static... they are called from get_geocode_options
    before it returns. */
 void sanity_check(projection_type_t proj_type, project_parameters_t * pps);
