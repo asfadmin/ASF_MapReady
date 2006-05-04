@@ -209,7 +209,11 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
   // caveats that output pixels would still be square, and would have
   // default size derived solely from the input pixel size (arc length
   // between pixels) in the latitude direction.
-  assert (gsl_fcmp (mg->x_pixel_size, mg->y_pixel_size, 0.0001));
+  assert (fabs (mg->x_pixel_size - mg->y_pixel_size) < 0.0001);
+  // Better to use gsl_fcmp, but it probably adds a library
+  // dependency, which is extra bad now that asf_import is itself a
+  // library.
+  //  assert (gsl_fcmp (mg->x_pixel_size, mg->y_pixel_size, 0.0001));
 
   // Image raster coordinates of tie point.
   double raster_tp_x = tie_point[0];
