@@ -76,8 +76,8 @@ project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
   /* Silence compiler warning about unused argument.  */
   pps = pps;		
 
-  *x = lat;
-  *y = lon;
+  *x = lon * R2D;
+  *y = lat * R2D;
 
   return TRUE;
 }
@@ -88,8 +88,8 @@ project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
   /* Silence compiler warning about unused argument.  */
   pps = pps;
 
-  *lat = x;
-  *lon = y;
+  *lat = y * D2R;
+  *lon = x * D2R;
 
   return TRUE;
 }
@@ -376,6 +376,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     case LAT_LONG_PSEUDO_PROJECTION:
       project_input = project_lat_long_pseudo;
       unproject_input = project_lat_long_pseudo_inv;
+      break;
     default:
       g_assert_not_reached ();
     }
