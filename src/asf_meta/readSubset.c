@@ -18,6 +18,7 @@ void readSubset(char *fileName, int width, int height, int posX, int posY,
 		float *subset)
 {
   FILE *fp;
+  char dataFileName[255];
   int ii, kk;
   float *buffer;
   meta_parameters *meta = meta_read(fileName);
@@ -40,7 +41,8 @@ void readSubset(char *fileName, int width, int height, int posX, int posY,
   buffer = (float *) MALLOC(height*samples*sizeof(float));
 
   /* Open image file */
-  fp = FOPEN(fileName, "rb");
+  create_name(dataFileName, fileName, ".img");
+  fp = FOPEN(dataFileName, "rb");
 
   /* Read the appropriate data chunk */
   get_float_lines(fp, meta, posY, height, buffer);
