@@ -58,34 +58,32 @@ void meta_get_orig(void *fake_ddr, int y, int x,int *yOrig,int *xOrig)
 void meta_get_latLon(meta_parameters *meta,
 	double yLine, double xSample,double elev,double *lat,double *lon)
 {
-  // It should be totally easy to make this work (since pixels
-  // correspond to lat/long values) No effort has been made to make
-  // this routine work with pseudoprojected images yet though.
-  assert (meta->projection == NULL
-	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
-
-	if (meta->sar->image_type=='S'||meta->sar->image_type=='G')
-	{ /*Slant or ground range.  Use state vectors and doppler.*/
-		double slant,doppler,time;
-		meta_get_timeSlantDop(meta,yLine,xSample,
-			&time,&slant,&doppler);
-		meta_timeSlantDop2latLon(meta,
-			time,slant,doppler,elev,
-			lat,lon);
-	} else if (meta->sar->image_type=='P')
-	{ /*Map-Projected. Use projection information to calculate lat & lon.*/
-		double px,py;
-		px = meta->projection->startX + meta->projection->perX * xSample;
-		py = meta->projection->startY + meta->projection->perY * yLine;
-		proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
-			       lat,lon);
-	} else
-	{ /*Bogus image type.*/
-		printf("Error! Invalid image type '%c' passed to meta_get_latLon!\n",
-			meta->sar->image_type);
-		exit(1);
-	}
+  if ( meta->projection != NULL 
+       && meta->projection->type == LAT_LONG_PSEUDO_PROJECTION ) {
+    *lon = meta->projection->startX + xSample * meta->projection->perX;
+    *lat = meta->projection->startY - yLine * meta->projection->perY;
+  } else if (meta->sar->image_type=='S' || meta->sar->image_type=='G') { 
+    /*Slant or ground range.  Use state vectors and doppler.*/
+    double slant,doppler,time;
+    meta_get_timeSlantDop(meta,yLine,xSample,
+			  &time,&slant,&doppler);
+    meta_timeSlantDop2latLon(meta,
+			     time,slant,doppler,elev,
+			     lat,lon);
+  } else if (meta->sar->image_type=='P') {
+    /*Map-Projected. Use projection information to calculate lat & lon.*/
+    double px,py;
+    px = meta->projection->startX + meta->projection->perX * xSample;
+    py = meta->projection->startY + meta->projection->perY * yLine;
+    proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
+	       lat,lon);
+  } else { /*Bogus image type.*/
+    printf("Error! Invalid image type '%c' passed to meta_get_latLon!\n",
+	   meta->sar->image_type);
+    exit(1);
+  }
 }
+
 
 /*******************************************************************
  * meta_timeSlantDop2latLon:
