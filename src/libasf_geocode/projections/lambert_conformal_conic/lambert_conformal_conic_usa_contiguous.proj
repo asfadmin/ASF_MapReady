@@ -1,0 +1,10 @@
+[Lambert Conformal Conic]
+Area =  USA Contiguous
+Datum = NAD83
+Spheroid = GRS1980
+First standard parallel = 33
+Second standard parallel = 45
+Central meridian = -96
+Latitude of origin = 39
+False easting = 0
+False northing = 0

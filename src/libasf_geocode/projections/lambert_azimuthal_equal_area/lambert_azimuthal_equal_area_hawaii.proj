@@ -1,0 +1,8 @@
+[Lambert Azimuthal Equal Area]
+Area = Hawaii
+Datum = NAD83
+Spheroid = GRS1980
+Central meridian = -157
+Latitude of origin = 13
+False easting = 0
+False northing = 0

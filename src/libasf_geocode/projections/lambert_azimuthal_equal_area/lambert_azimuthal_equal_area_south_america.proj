@@ -1,0 +1,8 @@
+[Lambert Azimuthal Equal Area]
+Area = South America
+Datum = SAD69
+Spheroid = GRS1967
+Central meridian = -60
+Latitude of origin = -32
+False easting = 0
+False northing = 0

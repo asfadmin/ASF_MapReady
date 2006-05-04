@@ -1,0 +1,8 @@
+[Lambert Azimuthal Equal Area]
+Area = Europe
+Datum = ED50
+Spheroid = International1924
+Central meridian = 10
+Latitude of origin = 30
+False easting = 0
+False northing = 0
