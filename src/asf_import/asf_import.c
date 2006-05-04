@@ -1,7 +1,6 @@
 #include <asf_contact.h>
 #include <asf_copyright.h>
 #include <asf_license.h>
-#include "geotiff_flavors.h"
 /*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
 /*
 ABOUT EDITING THIS DOCUMENTATION:
@@ -126,8 +125,6 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #include "asf_meta.h"
 #include "asf_nan.h"
 #include "ceos.h"
-#include "decoder.h"
-#include "find_geotiff_name.h"
 #include "get_ceos_names.h"
 #include "get_stf_names.h"
 #include "asf_reporting.h"
