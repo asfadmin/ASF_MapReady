@@ -285,8 +285,8 @@ convert_config *init_fill_config(char *configFile)
 	cfg->general->image_stats = read_int(line, "image stats");
       if (strncmp(test, "detect corner reflectors", 24)==0)
 	cfg->general->detect_cr = read_int(line, "detect corner reflectors");
-      if (strncmp(test, "terrain correct", 15)==0)
-        cfg->general->import = read_int(line, "terrain correct");
+      if (strncmp(test, "terrain correction", 18)==0)
+        cfg->general->import = read_int(line, "terrain correction");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
