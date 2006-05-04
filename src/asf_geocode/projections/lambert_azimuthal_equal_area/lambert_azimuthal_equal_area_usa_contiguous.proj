@@ -1,8 +1,0 @@
-[Lambert Azimuthal Equal Area]
-Area =  USA Contiguous
-Datum = NAD83
-Spheroid = GRS1980
-Central meridian = -96
-Latitude of origin = 37.5
-False easting = 0
-Flase northing = 0

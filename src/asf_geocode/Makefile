@@ -41,7 +41,9 @@ CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) \
 	-Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
 	-Wwrite-strings -Wnested-externs -fno-common
 
-LIBS :=	$(LIBDIR)/libasf_reporting.a \
+LIBS :=	\
+	$(LIBDIR)/libasf_geocode.a \
+	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
