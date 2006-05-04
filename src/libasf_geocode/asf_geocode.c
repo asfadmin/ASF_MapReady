@@ -23,7 +23,6 @@
 #include <asf_contact.h>
 
 // Headers used by this program.
-#include "geocode_options.h"
 #include "asf_geocode.h"
 
 

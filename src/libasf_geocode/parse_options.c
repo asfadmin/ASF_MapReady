@@ -1,5 +1,4 @@
-#include "parse_options.h"
-#include "geocode_options.h"
+#include "asf_geocode.h"
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_meta.h"
