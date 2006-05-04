@@ -28,6 +28,7 @@ MODULES = \
 	src/asf_import \
 	src/libasf_geocode \
 	src/asf_geocode \
+	src/libasf_convert \
 	src/asf_convert \
 	src/libasf_terrcorr \
 	src/asf_terrcorr \
