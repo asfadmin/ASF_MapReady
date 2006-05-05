@@ -1,6 +1,3 @@
-#include <asf_contact.h>
-#include <asf_copyright.h>
-#include <asf_license.h>
 /*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
 /*
 ABOUT EDITING THIS DOCUMENTATION:
@@ -114,17 +111,9 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #include <cla.h>
 #include <envi.h>
 #include <esri.h>
-#include <geokeys.h>
-#include <geotiff.h>
-#include <geotiffio.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_statistics.h>
-#include <jpeglib.h>
-#include <proj_api.h>
-#include <tiff.h>
-#include <tiffio.h>
-#include <xtiffio.h>
 
 #include <asf.h>
 #include <asf_endian.h>
@@ -132,6 +121,9 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #include <asf_export.h>
 #include <asf_reporting.h>
 
+#include <asf_contact.h>
+#include <asf_copyright.h>
+#include <asf_license.h>
 
 // Print minimalistic usage info & exit
 static void print_usage(void)
@@ -428,7 +420,7 @@ main (int argc, char *argv[])
   meta_free (md);
 
   // Do that exporting magic!
-  asf_export(command_line.format, command_line.size, 
+  asf_export(format, command_line.size, 
 	     command_line.sample_mapping, in_base_name,
 	     command_line.output_name);
 
