@@ -161,12 +161,12 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
   // of our own that still lets things work somewhat (assuming the bad
   // data values are rare at least).
   const float bad_data_ceiling = -10e10;
-  const float new_bad_magic_number = -999.0;
+  const float new_bad_data_magic_number = -999.0;
   size_t ii, jj;
   for ( ii = 0 ; ii < image->size_y ; ii++ ) {
     for ( jj = 0 ; jj < image->size_x ; jj++ ) {
       if ( float_image_get_pixel (image, jj, ii) < bad_data_ceiling ) {
-	float_image_set_pixel (image, jj, ii, new_bad_magic_number);
+	float_image_set_pixel (image, jj, ii, new_bad_data_magic_number);
       }
     }
   }
