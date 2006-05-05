@@ -1,6 +1,9 @@
 PROGRAM := asf_export
 
+DEBUG_BUILD = 1
+
 include ../../make_support/system_rules
+
 
 ###############################################################################
 #
@@ -12,14 +15,7 @@ include ../../make_support/system_rules
 #
 ###############################################################################
 
-SOURCES := asf_export.c \
-	export_as_envi.c \
-	export_as_esri.c \
-	export_as_geotiff.c \
-	export_as_jpeg.c \
-	export_as_ppm.c \
-	export_as_tiff.c \
-	util.c
+SOURCES := asf_export.c
 
 ###############################################################################
 #
@@ -42,6 +38,7 @@ CFLAGS += \
 
 
 LIBS  = \
+	$(LIBDIR)/libasf_export.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_reporting.a \

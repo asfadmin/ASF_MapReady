@@ -217,6 +217,9 @@ main (int argc, char *argv[])
 {
   output_format_t format = 0;
   meta_parameters *md;
+  char *in_base_name;
+
+  in_base_name = (char *) MALLOC(sizeof(char)*255);
 
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
   // Command line input goes in it's own structure.
@@ -374,15 +377,13 @@ main (int argc, char *argv[])
                     sample_mapping_string);
   }
 
-  //Grab/construct the data file name
-  strcpy (command_line.in_data_name, argv[argc - 2]);
-  strcat (command_line.in_data_name, ".img");
-  //Grab/construct the meta file name
-  strcpy (command_line.in_meta_name, argv[argc - 2]);
-  strcat (command_line.in_meta_name, ".meta");
+  //Grab the input name
+  strcpy (in_base_name, argv[argc - 2]);
+  strcpy (command_line.in_meta_name, in_base_name);
   //Grab the output name
   strcpy (command_line.output_name, argv[argc - 1]);
-
+  printf("in_base_name: %s\n", in_base_name);
+  printf("output_name: %s\n", command_line.output_name);
 
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
@@ -427,34 +428,9 @@ main (int argc, char *argv[])
   meta_free (md);
 
   // Do that exporting magic!
-  if ( format == ENVI ) {
-    export_as_envi (command_line.in_meta_name, command_line.in_data_name,
-                    command_line.output_name);
-  }
-  else if ( format == ESRI ) {
-    export_as_esri (command_line.in_meta_name, command_line.in_data_name,
-                    command_line.output_name);
-  }
-  else if ( format == TIF ) {
-    export_as_tiff (command_line.in_meta_name, command_line.in_data_name,
-                    command_line.output_name, command_line.size,
-                    command_line.sample_mapping);
-  }
-  else if ( format == GEOTIFF ) {
-    export_as_geotiff (command_line.in_meta_name, command_line.in_data_name,
-                       command_line.output_name, command_line.size,
-                       command_line.sample_mapping);
-  }
-  else if ( format == JPEG ) {
-    export_as_jpeg (command_line.in_meta_name, command_line.in_data_name,
-                    command_line.output_name, command_line.size,
-                    command_line.sample_mapping);
-  }
-  else if ( format == PPM ) {
-    export_as_ppm (command_line.in_meta_name, command_line.in_data_name,
-                   command_line.output_name, command_line.size,
-                   command_line.sample_mapping);
-  }
+  asf_export(command_line.format, command_line.size, 
+	     command_line.sample_mapping, in_base_name,
+	     command_line.output_name);
 
   // If the user didn't ask for a log file then nuke the one that's been kept
   // since everything has finished successfully
