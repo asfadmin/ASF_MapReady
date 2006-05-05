@@ -74,6 +74,9 @@ typedef struct {
 } command_line_parameters_t;
 
 /* Prototypes */
+int asf_export(output_format_t format, long size, scale_t sample_mapping, 
+	       char *in_base_name, char *output_name);
+
 void usage();
 void help_page();
 int checkForOption (char *key, int argc, char *argv[]);
