@@ -5,12 +5,23 @@ include ../../make_support/system_rules
 
 LIBS  = \
 	$(LIBDIR)/libasf_convert.a \
+	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_export.a \
+	$(LIBDIR)/libasf_geocode.a \
+	$(LIBDIR)/libasf_terrcorr.a \
 	$(LIBDIR)/libasf_reporting.a \
+	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libproj.a
+	$(LIBDIR)/libproj.a \
+	$(LIBDIR)/asf_fft.a \
+	$(JPEG_LIBS) \
+	$(GLIB_LIBS) \
+	$(TIFF_LIBS) \
+	$(GEOTIFF_LIBS)
 
 OBJS  = asf_convert.o
 

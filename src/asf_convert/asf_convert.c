@@ -158,7 +158,7 @@ static void print_license(int license_id)
 
 /* Check to see if an option was supplied or not. If it was found, return its
    argument number. Otherwise, return FLAG_NOT_SET. STOLEN FROM ASF_IMPORT */
-int checkForOption(char* key, int argc, char* argv[])
+static int checkForOption(char* key, int argc, char* argv[])
 {
   int ii = 0;
   while(ii < argc)
