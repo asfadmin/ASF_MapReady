@@ -65,7 +65,7 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
 all: build_only
-	cp libasf_geocode.a $(LIBDIR)
+	mv libasf_geocode.a $(LIBDIR)
 	cp asf_geocode.h $(ASF_INCLUDE_DIR)
 	rm -rf $(SHAREDIR)/projections
 	cp -R projections/ $(SHAREDIR)

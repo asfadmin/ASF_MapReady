@@ -70,7 +70,7 @@ LIBS  = \
 OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
 all: build_only
-	cp libasf_export.a $(LIBDIR)
+	mv libasf_export.a $(LIBDIR)
 	cp asf_export.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)

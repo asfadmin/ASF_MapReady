@@ -78,7 +78,7 @@ OBJS  = ardop_params.o \
 	write_meta_and_img.o
 
 all: build_only
-	cp libasf_import.a $(LIBDIR)
+	mv libasf_import.a $(LIBDIR)
 	cp asf_import.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)

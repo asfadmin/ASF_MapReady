@@ -21,7 +21,7 @@ LIBS  = \
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 all: build_only
-	cp libasf_terrcorr.a $(LIBDIR)
+	mv libasf_terrcorr.a $(LIBDIR)
 	cp asf_terrcorr.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
