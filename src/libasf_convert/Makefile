@@ -2,7 +2,11 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/libasf_reporting.a \
+LIBS  = \
+	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_export.a \
+	$(LIBDIR)/libasf_geocode.a \
+	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libgsl.a \

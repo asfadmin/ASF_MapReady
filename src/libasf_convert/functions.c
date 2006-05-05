@@ -3,7 +3,7 @@
 
 #include "asf.h"
 #include "asf_reporting.h"
-
+/*
 int asf_import(char *inFile, char *outFile, char *format, char *radiometry,
 	       char *prcOrbits, double lat_begin, double lat_end)
 {
@@ -22,6 +22,7 @@ int asf_import(char *inFile, char *outFile, char *format, char *radiometry,
 
   return ret;
 }
+*/
 
 int ardop(char *options, char *inFile, char *outFile)
 {
@@ -64,7 +65,7 @@ int detect_cr(char *inFile, char *crFile, char *outFile, int chips, int text)
 
   return ret;
 }
-
+/*
 int asf_terrcorr(char *options, char *inFile, char *demFile, char *outFile) 
 {
   char command[1024];
@@ -75,7 +76,8 @@ int asf_terrcorr(char *options, char *inFile, char *demFile, char *outFile)
 
   return ret;
 }
-
+*/
+/*
 int asf_geocode(char *options, char *inFile, char *outFile)
 {
   char command[1024];
@@ -87,7 +89,8 @@ int asf_geocode(char *options, char *inFile, char *outFile)
 
   return ret;
 }
-
+*/
+/*
 int asf_export(char *options, char *inFile, char *outFile)
 {
   char command[1024];
@@ -99,6 +102,7 @@ int asf_export(char *options, char *inFile, char *outFile)
 
   return ret;
 }
+*/
 
 int call_asf_convert(char *configFile)
 {

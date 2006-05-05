@@ -3,8 +3,11 @@
 #include "asf_meta.h"
 #include "asf_convert.h"
 #include "proj.h"
+#include "asf_import.h"
 #include "asf_reporting.h"
 #include "asf_contact.h"
+#include "asf_import.h"
+#include "asf_terrcorr.h"
 #include <unistd.h>
 
 void check_return(int ret, char *msg)
@@ -36,6 +39,7 @@ int asf_convert(int createflag, char *configFileName)
   const int pid = getpid();
   extern int logflag, quietflag;
   int create_f, quiet_f;  /* log_f is a static global */
+  int i;
 
   // If requested, create a config file and exit (if the file does not exist),
   // otherwise read it
@@ -246,20 +250,28 @@ int asf_convert(int createflag, char *configFileName)
 
     if (cfg->general->import) {
 
+      int flags[NUM_IMPORT_FLAGS];
+      for (i = 0; i < NUM_IMPORT_FLAGS; ++i)
+	flags[i] = FLAG_NOT_SET;
+
       // Radiometry
       if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) == 0) {
-        sprintf(radiometry, "-amplitude ");
+	flags[f_AMP] = FLAG_SET;
       } else if (strncmp(uc(cfg->import->radiometry), "POWER_IMAGE", 11) == 0) {
-        sprintf(radiometry, "-power ");
+	flags[f_POWER] = FLAG_SET;
       } else if (strncmp(uc(cfg->import->radiometry), "SIGMA_IMAGE", 11) == 0) {
-        sprintf(radiometry, "-sigma ");
+	flags[f_SIGMA] = FLAG_SET;
       } else if (strncmp(uc(cfg->import->radiometry), "GAMMA_IMAGE", 11) == 0) {
-        sprintf(radiometry, "-gamma ");
+	flags[f_GAMMA] = FLAG_SET;
       } else if (strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) == 0) {
-        sprintf(radiometry, "-beta ");
+	flags[f_BETA] = FLAG_SET;
       }
 
-      // Pass in command line
+      // LUT
+      if (strlen(cfg->import->lut) > 0)
+	flags[f_LUT] = FLAG_SET;
+
+      // Generate a temporary output filename
       if (cfg->general->image_stats || cfg->general->detect_cr ||
 	  cfg->general->sar_processing || cfg->general->terrain_correct ||
 	  cfg->general->geocoding || cfg->general->export) {
@@ -268,10 +280,14 @@ int asf_convert(int createflag, char *configFileName)
       else {
         sprintf(outFile, "%s", cfg->general->out_name);
       }
-      check_return(asf_import(cfg->general->in_name, outFile, cfg->import->format,
-                              radiometry, NULL, cfg->import->lat_begin,
-                              cfg->import->lat_end),
-                   "ingesting data file (asf_import)\n");
+
+      // Call asf_import!
+      check_return(asf_import(flags, cfg->import->format,
+			      cfg->import->lut, cfg->import->prc,
+			      cfg->import->lat_begin, cfg->import->lat_end,
+			      1.0, 1.0, 0.0, /* FIXME: Should be in cfg file */
+			      cfg->general->in_name, outFile),
+		   "ingesting data file (asf_import)\n");
     }
 
     if (cfg->general->sar_processing) {
@@ -369,19 +385,13 @@ int asf_convert(int createflag, char *configFileName)
     }
 
     if (cfg->general->terrain_correct) {
-      
-      // Pixel size
-      if (cfg->terrain_correct->pixel > 0)
-	sprintf(options, "-log %s -quiet -pixel-size %.2lf", logFile,
-		cfg->terrain_correct->pixel);
-      else
-	sprintf(options, "-log %s -quiet", logFile);
-
-      // Pass in command line
+      // Generate filenames
       sprintf(inFile, "%s", outFile);
       sprintf(outFile, "tmp%i_terrain_correct", pid);
-      check_return(asf_terrcorr(options, inFile, cfg->terrain_correct->dem,
-				outFile),
+
+      // Call asf_terrcorr!
+      check_return(asf_terrcorr(inFile, cfg->terrain_correct->dem,
+				outFile, cfg->terrain_correct->pixel),
 		   "terrain correcting data file (asf_terrcorr)\n");
     }
 
