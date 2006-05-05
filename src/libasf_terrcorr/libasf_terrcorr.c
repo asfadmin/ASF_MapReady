@@ -185,7 +185,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   // suffers. We put in a threshold of 1.5 times the resolution of the SAR
   // image. The -no-resample option overwrites this default behavior.
   if (do_resample && (demRes > 1.5 * sarRes || pixel_size > 0)) {
-    if (pixel_size < 0)
+    if (pixel_size <= 0)
     {
       asfPrintStatus(
 	"DEM resolution is significantly higher than SAR resolution.\n");
