@@ -76,7 +76,6 @@ int asf_import(int flags[NUM_FLAGS], char *format_type, char *lutName,
     char inDataName[256]="", inMetaName[256]="";
     char unscaledBaseName[256]="";
     char inMetaNameOption[256];
-    int ii;
     int do_resample;
     int do_metadata_fix;
 
