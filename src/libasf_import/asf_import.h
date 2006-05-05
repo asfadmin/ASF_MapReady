@@ -45,6 +45,13 @@ void pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName);
 /* Prototypes from sprocket_layers.c */
 void create_sprocket_layers(const char *asfName, const char *importName);
 
+/* Import function itself.  */
+int asf_import(int flags[NUM_FLAGS], char *format_type, char *lutName, 
+	       char *prcPath, double lowerLat, double upperLat, 
+	       double range_scale, double azimuth_scale, 
+	       double correct_y_pixel_size,
+	       char *inBaseName, char *outBaseName);
+
 /* import_*() function prototypes */
 void import_ceos(char *inDataName,char *inMetaName,char *lutName,
                  char *outBaseName,int flags[]);
