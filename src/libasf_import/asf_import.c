@@ -67,7 +67,7 @@ void fix_ypix(const char *outBaseName, double correct_y_pixel_size)
 /******************************************************************************
 * Lets rock 'n roll!
 *****************************************************************************/
-int asf_import(int flags[NUM_FLAGS], char *format_type, char *lutName, 
+int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type, char *lutName, 
 	       char *prcPath, double lowerLat, double upperLat, 
 	       double range_scale, double azimuth_scale, 
 	       double correct_y_pixel_size,

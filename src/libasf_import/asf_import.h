@@ -29,11 +29,22 @@ typedef enum {
     f_RANGE_SCALE,
     f_AZIMUTH_SCALE,
     f_FIX_META_YPIX,
-    NUM_FLAGS
-} flag_indices_t;
+    NUM_IMPORT_FLAGS
+} import_flag_indices_t;
 
 #define DEFAULT_RANGE_SCALE 1.00343642612
 #define DEFAULT_AZIMUTH_SCALE 1.003333505
+
+/* This is the external interface to asf_import */
+int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type, char *lutName, 
+	       char *prcPath, double lowerLat, double upperLat, 
+	       double range_scale, double azimuth_scale, 
+	       double correct_y_pixel_size,
+	       char *inBaseName, char *outBaseName);
+
+
+/*********************************************************************/
+/* The rest of these are private implementation functions for import */
 
 /* Prototypes from utilities.c */
 int firstRecordLen(char *ceosName);
