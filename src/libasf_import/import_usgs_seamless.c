@@ -155,6 +155,22 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
 
   FloatImage *image = tiff_to_float_image (input_tiff);
 
+  // DEMs of this flavor tend to be full of bad data values that make
+  // the statistics hopeless, saturate output, etc.  For now we deal
+  // with this by mapping these values to a less negative magic number
+  // of our own that still lets things work somewhat (assuming the bad
+  // data values are rare at least).
+  const float bad_data_ceiling = -10e10;
+  const float new_bad_magic_number = -999.0;
+  size_t ii, jj;
+  for ( ii = 0 ; ii < image->size_y ; ii++ ) {
+    for ( jj = 0 ; jj < image->size_x ; jj++ ) {
+      if ( float_image_get_pixel (image, jj, ii) < bad_data_ceiling ) {
+	float_image_set_pixel (image, jj, ii, new_bad_magic_number);
+      }
+    }
+  }
+
   // Get the raster width and height of the image.
   uint32 width = image->size_x, height = image->size_y;
 
