@@ -268,7 +268,7 @@ float get_default_ypix(const char *outBaseName)
 int main(int argc, char *argv[])
 {
     char inBaseName[256]="";
-    char inDataName[256]="", inMetaName[256]="";
+    char inMetaName[256]="";
     char outBaseName[256]="";
     char unscaledBaseName[256]="";
     char inMetaNameOption[256], prcPath[256]="";
