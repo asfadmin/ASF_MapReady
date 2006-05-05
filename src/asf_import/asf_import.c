@@ -275,14 +275,14 @@ int main(int argc, char *argv[])
     char *lutName=NULL;
     char format_type[256]="";
     int ii;
-    int flags[NUM_FLAGS];
+    int flags[NUM_IMPORT_FLAGS];
     double lowerLat=NAN, upperLat=NAN;
     double range_scale=NAN, azimuth_scale=NAN, correct_y_pixel_size=NAN;
     int do_resample;
     int do_metadata_fix;
 
     /* Set all flags to 'not set' */
-    for (ii=0; ii<NUM_FLAGS; ii++) {
+    for (ii=0; ii<NUM_IMPORT_FLAGS; ii++) {
         flags[ii] = FLAG_NOT_SET;
     }
 
