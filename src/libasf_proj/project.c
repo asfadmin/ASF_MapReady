@@ -23,6 +23,13 @@ round (double arg)
 #endif /* #ifndef win32 */
 #endif /* #ifndef linux */
 
+// The default as advertised in the interface.
+static datum_type_t input_spheroid = GEM6_SPHEROID;
+void project_set_input_spheroid(spheroid_type_t spheroid)
+{
+  input_spheroid = spheroid;
+}
+
 static datum_type_t sDatum = MAGIC_UNSET_INT;
 void project_set_datum(datum_type_t datum)
 {
@@ -135,8 +142,11 @@ static int project_worker_arr(char * projection_description,
       py[i] = lat[i];
   }
 
-  sprintf(latlon_projection, "+proj=latlong +a=%lf +rf=%lf",
-	  (double) GEM6_SEMIMAJOR, (double) GEM6_INV_FLATTENING);
+  double spheroid_a, spheroid_b;
+  spheroid_axes_lengths (input_spheroid, &spheroid_a, &spheroid_b);
+
+  sprintf(latlon_projection, "+proj=latlong +a=%lf +b=%lf", spheroid_a,
+	  spheroid_b);
 
   geographic_projection = pj_init_plus ( latlon_projection );
   
@@ -232,8 +242,11 @@ static int project_worker_arr_inv(char * projection_description,
       plon[i] = y[i];
   }
 
-  sprintf(latlon_projection, "+proj=latlong +a=%lf +rf=%lf",
-	  (double) GEM6_SEMIMAJOR, (double) GEM6_INV_FLATTENING);
+  double spheroid_a, spheroid_b;
+  spheroid_axes_lengths (input_spheroid, &spheroid_a, &spheroid_b);
+
+  sprintf(latlon_projection, "+proj=latlong +a=%lf +b=%lf", spheroid_a,
+	  spheroid_b);
 
   geographic_projection = pj_init_plus ( latlon_projection );
   

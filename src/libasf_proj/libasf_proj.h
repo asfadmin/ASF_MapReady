@@ -15,10 +15,20 @@ int project_poly(double phi_deg, double lam_deg, double * xx, double *yy);
 void project_set_avg_height(double height);
 
 /**************************************************************************
+   project_set_input_spheroid
+
+   The spheroid to which the geodetic lat/long pairs used as the input
+   to a forware projection are relative.  If this is not called prior
+   to projecting, a GEM6 spheroid will be used.
+****************************************************************************/
+void project_set_input_spheroid(spheroid_type_t spheroid);
+
+/**************************************************************************
    project_set_datum
 
-   The datum parameter for the projection.  If this is not called prior
-   to projecting, an WGS84 ellipsoidal datum will be used.
+   The datum parameter for the target map projection.  If this is not
+   called prior to projecting, an WGS84 ellipsoidal datum will be
+   used.
 ****************************************************************************/
 void project_set_datum(datum_type_t datum);
 
