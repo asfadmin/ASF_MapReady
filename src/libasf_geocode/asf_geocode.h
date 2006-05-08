@@ -109,8 +109,12 @@ void set_options_testing(int is_testing);
 
 
 // Prototype from asf_geocode.c
+int asf_geocode_from_proj_file (const char *projection_file,
+		 int force_flag, resample_method_t resample_method, 
+		 double average_height, datum_type_t datum, double pixel_size,
+		 char *in_base_name, char *out_base_name);
 int asf_geocode (project_parameters_t *pp, projection_type_t projection_type, 
 		 int force_flag, resample_method_t resample_method, 
-		 double average_height, double datum, double pixel_size,
+		 double average_height, datum_type_t datum, double pixel_size,
 		 char *in_base_name, char *out_base_name);
 void sigsegv_handler (int signal_number);

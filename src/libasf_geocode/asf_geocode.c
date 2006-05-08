@@ -295,9 +295,24 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
 }
 
 
+int asf_geocode_from_proj_file(const char *projection_file,
+		 int force_flag, resample_method_t resample_method, 
+		 double average_height, datum_type_t datum, double pixel_size,
+		 char *in_base_name, char *out_base_name)
+{
+  project_parameters_t pp;
+  projection_type_t projection_type;
+
+  parse_proj_args_file(projection_file, &pp, &projection_type);
+
+  return asf_geocode(&pp, projection_type, force_flag, resample_method,
+		     average_height, datum, pixel_size, in_base_name,
+		     out_base_name);
+}
+
 int asf_geocode (project_parameters_t *pp, projection_type_t projection_type, 
 		 int force_flag, resample_method_t resample_method, 
-		 double average_height, double datum, double pixel_size,
+		 double average_height, datum_type_t datum, double pixel_size,
 		 char *in_base_name, char *out_base_name)
 {
   // Install handler to trap segmentation faults and print a backtrace.
@@ -1268,5 +1283,5 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   g_string_free (output_meta_data, TRUE);
   g_string_free (output_image, TRUE);
 
-  return (EXIT_SUCCESS);
+  return 0;
 }
