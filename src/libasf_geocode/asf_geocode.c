@@ -418,11 +418,11 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     project_set_input_spheroid (imd->projection->spheroid);
   }
 
-  // Set Projection Datum & Average Height FIXME: we don't want to do
-  // this, since we need to set the datum differently for dealing with
-  // the input and output datums.
-  g_assert (0);
-  //  project_set_datum (datum);
+  // Note that we can't get away with using a single datum for all
+  // projection and unprojection calls, since the input and output
+  // image might both be projected and might use different datums.
+  // Therefore, we make a project_set_datum() call before each project
+  // or unproject call.
 
   // Note that the average height isn't used at the moment, since for
   // simplicity and lack of immediate need, we don't allow
@@ -1037,7 +1037,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     meta_get_latLon (imd, (float) (ii_size_y - 1), (float) (ii_size_x - 1),
 		     average_height, &lr_lat, &lr_lon);
     double lr_x, lr_y;
-    project_set_datum (project);
+    project_set_datum (datum);
     project (pp, D2R * lr_lat, D2R * lr_lon, &lr_x, &lr_y);
     double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
     double lr_x_corner_error = fabs (lr_x_pix_approx - (ii_size_x - 1));
