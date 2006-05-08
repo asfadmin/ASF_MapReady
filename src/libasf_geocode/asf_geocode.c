@@ -418,8 +418,12 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     project_set_input_spheroid (imd->projection->spheroid);
   }
 
-  // Set Projection Datum & Average Height
-  project_set_datum (datum);
+  // Set Projection Datum & Average Height FIXME: we don't want to do
+  // this, since we need to set the datum differently for dealing with
+  // the input and output datums.
+  g_assert (0);
+  //  project_set_datum (datum);
+
   // Note that the average height isn't used at the moment, since for
   // simplicity and lack of immediate need, we don't allow
   // reprojection of DEMs to change the underlying datum.
@@ -501,6 +505,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY - ipb->perY * jj;
+	project_set_datum (imd->projection->datum);
 	return_code = unproject_input (ipp, xpc, ypc,
 				       &(lats[current_edge_point]),
 				       &(lons[current_edge_point]));
@@ -519,6 +524,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY - ipb->perY * jj;
+	project_set_datum (imd->projection->datum);
 	return_code = unproject_input (ipp, xpc, ypc,
 				       &(lats[current_edge_point]),
 				       &(lons[current_edge_point]));
@@ -537,6 +543,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY - ipb->perY * jj;
+	project_set_datum (imd->projection->datum);
 	return_code = unproject_input (ipp, xpc, ypc,
 				       &(lats[current_edge_point]),
 				       &(lons[current_edge_point]));
@@ -555,6 +562,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY - ipb->perY * jj;
+	project_set_datum (imd->projection->datum);
 	return_code = unproject_input (ipp, xpc, ypc,
 				       &(lats[current_edge_point]),
 				       &(lons[current_edge_point]));
@@ -575,6 +583,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     double *x = NULL, *y = NULL;
     x = y = NULL;
     // Project all the edge pixels.
+    project_set_datum (datum);
     return_code = project_arr (pp, lats, lons, &x, &y, edge_point_count);
     g_assert (return_code == TRUE);
     // Find the extents of the image in projection coordinates.
@@ -658,6 +667,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       double cyproj = min_y + y_spacing * ii;
       // Corresponding latitude and longitude.
       double lat, lon;
+      project_set_datum (datum);
       return_code = unproject (pp, cxproj, cyproj, &lat, &lon);
       if ( !return_code ) {
 	// Details of the error should have already been printed.
@@ -670,6 +680,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       if ( input_projected ) {
 	    // Input projection coordinates of the current pixel.
 	    double ipcx, ipcy;
+	    project_set_datum (imd->projection->datum);
 	    return_code = project_input (ipp, D2R * lat, D2R * lon,
 				                     &ipcx, &ipcy);
 	if ( return_code == 0 ) {
@@ -729,6 +740,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 	double line1 = 1024*jjj;
 
 	meta_get_latLon(imd, line1, samp1, h, &lat, &lon);
+	project_set_datum (datum);
 	project(pp, lat*D2R, lon*D2R, &proj_x, &proj_y);
 	//unproject(pp, proj_x, proj_y, &lat2, &lon2);
 	//lat2 *= R2D; lon2 *= R2D;
@@ -844,6 +856,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     double *x = NULL, *y = NULL;
     x = y = NULL;
     // Project all the edge pixels.
+    project_set_datum (datum);
     return_code = project_arr (pp, lats, lons, &x, &y, edge_point_count);
     g_assert (return_code == TRUE);
 
@@ -995,6 +1008,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     }
 
     double ul_x, ul_y;
+    project_set_datum (datum);
     project (pp, D2R * ul_lat, D2R * ul_lon, &ul_x, &ul_y);
     double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
     if (fabs (ul_x_pix_approx) > max_corner_error ) {
@@ -1023,6 +1037,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     meta_get_latLon (imd, (float) (ii_size_y - 1), (float) (ii_size_x - 1),
 		     average_height, &lr_lat, &lr_lon);
     double lr_x, lr_y;
+    project_set_datum (project);
     project (pp, D2R * lr_lat, D2R * lr_lon, &lr_x, &lr_y);
     double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
     double lr_x_corner_error = fabs (lr_x_pix_approx - (ii_size_x - 1));
