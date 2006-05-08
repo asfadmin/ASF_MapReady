@@ -8,6 +8,7 @@
 #include "asf_contact.h"
 #include "asf_import.h"
 #include "asf_terrcorr.h"
+#include "asf_geocode.h"
 #include "asf_export.h"
 #include <unistd.h>
 
@@ -92,8 +93,7 @@ int asf_convert(int createflag, char *configFileName)
                    "Processing image in batch mode (asf_convert).\n");
 
       // Clean up
-      sprintf(cmd, "rm -f %s", batchConfig);
-      asfSystem(cmd);
+      unlink(batchConfig);
     }
   }
   // Regular processing
@@ -398,21 +398,35 @@ int asf_convert(int createflag, char *configFileName)
 
     if (cfg->general->geocoding) {
 
+      int force_flag = cfg->geocoding->force;
+      resample_method_t resample_method = RESAMPLE_BILINEAR;
+      double average_height = cfg->geocoding->height;
+      datum_type_t datum;
+      double pixel_size = cfg->geocoding->pixel;
+
       // Projection
       sprintf(projection, "-read-proj-file %s", cfg->geocoding->projection);
 
       // Datum
-      sprintf(datum, "-datum %s", uc(cfg->geocoding->datum));
+      if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) == 0) {
+	datum = WGS84_DATUM;
+      }
+      if (strncmp(uc(cfg->geocoding->datum), "NAD27", 5) == 0) {
+	datum = NAD27_DATUM;
+      }
+      if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0) {
+	datum = NAD83_DATUM;
+      }
 
       // Resampling method
       if (strncmp(uc(cfg->geocoding->resampling), "NEAREST_NEIGHBOR", 16) == 0) {
-        sprintf(resampling, "-resample-method nearest_neighbor");
+	resample_method = RESAMPLE_NEAREST_NEIGHBOR;
       }
       if (strncmp(uc(cfg->geocoding->resampling), "BILINEAR", 8) == 0) {
-        sprintf(resampling, "-resample-method bilinear");
+	resample_method = RESAMPLE_BILINEAR;
       }
       if (strncmp(uc(cfg->geocoding->resampling), "BICUBIC", 7) == 0) {
-        sprintf(resampling, "-resample-method bicubic");
+	resample_method = RESAMPLE_BICUBIC;
       }
 
       // Pass in command line
@@ -423,20 +437,19 @@ int asf_convert(int createflag, char *configFileName)
       else {
         sprintf(outFile, "%s", cfg->general->out_name);
       }
-      if (cfg->geocoding->force) {
-        sprintf(options, "-height %.1lf -pixel-size %.2lf %s %s %s --force",
-                cfg->geocoding->height, cfg->geocoding->pixel,
-                projection, datum, resampling);
-      }
-      else {
-        sprintf(options, "-height %.1lf -pixel-size %.2lf %s %s %s",
-                cfg->geocoding->height, cfg->geocoding->pixel,
-                projection, datum, resampling);
-      }
-      check_return(asf_geocode(options, inFile, outFile),
+
+      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+					      force_flag, resample_method,
+					      average_height, datum,
+					      pixel_size, inFile, outFile),
                    "geocoding data file (asf_geocode)\n");
-      sprintf(cmd, "cp %s.meta %s.meta", outFile, cfg->general->in_name);
-      system(cmd);
+
+      // Move the .meta file to be ready for export
+      char tmp1[1024];
+      char tmp2[1024];
+      sprintf(tmp1, "%s.meta", outFile);
+      sprintf(tmp2, "%s.meta", cfg->general->in_name);
+      fileCopy(tmp1, tmp2);
     }
 
     if (cfg->general->export) {
