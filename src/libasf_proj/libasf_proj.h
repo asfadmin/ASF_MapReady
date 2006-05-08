@@ -18,8 +18,9 @@ void project_set_avg_height(double height);
    project_set_input_spheroid
 
    The spheroid to which the geodetic lat/long pairs used as the input
-   to a forware projection are relative.  If this is not called prior
-   to projecting, a GEM6 spheroid will be used.
+   to a forward projection or output of reverse projection are
+   relative.  If this is not called prior to projecting, a GEM6
+   spheroid will be used.
 ****************************************************************************/
 void project_set_input_spheroid(spheroid_type_t spheroid);
 
