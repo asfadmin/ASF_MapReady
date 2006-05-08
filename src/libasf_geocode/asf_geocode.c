@@ -423,7 +423,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   // When working with an map projected input, it doesn't really
   // matter what spheroid is used for the lat/longs since they are
   // only intermediate values.  When working with pseudoprojected
-  // imagess (e.g. USGS seamless stuff), the lat/longs are computed
+  // images (e.g. USGS seamless stuff), the lat/longs are computed
   // directly from the pixel coordinates by the conversion function,
   // so what matters is that we set libasf_proj's notion of the
   // spheroid correctly (to whatever the pseudoprojected image uses).
