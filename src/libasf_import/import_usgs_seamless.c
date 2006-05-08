@@ -23,21 +23,6 @@
 #include "tiff_to_float_image.h"
 #include "write_meta_and_img.h"
 
-// Given a potentially non-normalized longitude argument, return
-// longitude normalized into the range [-90, 90].  Note that
-// normalizing some longitudes implies that the associated latitude
-// must also be changed in order to get the same geographic point,
-// e.g. normalized_longitude (100) == 10, but at a latitude 180
-// degrees from the original latitude.
-static double
-normalized_longitude (double longitude)
-{
-  if ( fabs (longitude) > 90 )
-    longitude = R2D * asin (sin (D2R * longitude));
-
-  return longitude;
-}
-
 // Import a USGS seamless server digital elevation model (a
 // pseudoprojected GeoTIFF flavor) into our own ASF Tools format.
 void
@@ -263,7 +248,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
   
   strcpy (mp->units, "degrees");
 
-  mp->hem = normalized_longitude (mg->center_longitude) > 0.0 ? 'N' : 'S';
+  mp->hem = mg->center_latitude > 0.0 ? 'N' : 'S';
 
   mp->spheroid = spheroid;
 
