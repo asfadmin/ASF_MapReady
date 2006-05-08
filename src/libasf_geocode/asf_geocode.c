@@ -331,6 +331,16 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 		     "left-looking AMM-1 era images) at present.\n");
   }
 
+  // We don't allow reprojection of a DEM (including from
+  // pseudoprojected form) to change the underlying datum, since this
+  // changes all the height values in a position-dependent way, making
+  // it a bit of a pain to implement.  We have no immediate need for
+  // this functionality.
+  if ( (imd->sar->image_type == 'P' || imd->general->image_data_type == DEM)
+       && imd->projection != NULL ) {
+    asfRequire (datum == imd->projection->datum, "For input images of type "
+		"DEM, changing the datum is not supported.\n");
+  }
 
   // If we have an already projected image as input, we will need to
   // be able to unproject its coordinates back to lat long before we
@@ -395,8 +405,24 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   // Convert all angle measures in the project_parameters to radians.
   to_radians (projection_type, pp);
 
+  // When working with an map projected input, it doesn't really
+  // matter what spheroid is used for the lat/longs since they are
+  // only intermediate values.  When working with pseudoprojected
+  // imagess (e.g. USGS seamless stuff), the lat/longs are computed
+  // directly from the pixel coordinates by the conversion function,
+  // so what matters is that we set libasf_proj's notion of the
+  // spheroid correctly (to whatever the pseudoprojected image uses).
+  // Bleah.
+  if (imd->projection != NULL 
+      && imd->projection->type == LAT_LONG_PSEUDO_PROJECTION ) {
+    project_set_input_spheroid (imd->projection->spheroid);
+  }
+
   // Set Projection Datum & Average Height
   project_set_datum (datum);
+  // Note that the average height isn't used at the moment, since for
+  // simplicity and lack of immediate need, we don't allow
+  // reprojection of DEMs to change the underlying datum.
   project_set_avg_height (average_height);
 
   // Assign our transformation function pointers to point to the
@@ -616,7 +642,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   dtf.sparse_y_proj = g_new0 (double, sparse_mapping_count);
   dtf.sparse_x_pix = g_new0 (double, sparse_mapping_count);
   dtf.sparse_y_pix = g_new0 (double, sparse_mapping_count);
-  // Spacing between grid points, in projection coordinates.
+  // Spacing between grid points, in output projection coordinates.
   double x_spacing = x_range_size / (grid_size - 1);
   double y_spacing = y_range_size / (grid_size - 1);
   // Index into the flattened list of mappings we want to produce.
@@ -634,8 +660,8 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       double lat, lon;
       return_code = unproject (pp, cxproj, cyproj, &lat, &lon);
       if ( !return_code ) {
-	    // Details of the error should have already been printed.
-	    asfPrintError ("Projection Error!\n");
+	// Details of the error should have already been printed.
+	asfPrintError ("Projection Error!\n");
       }
       lat *= R2D;
       lon *= R2D;
