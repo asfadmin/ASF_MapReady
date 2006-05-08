@@ -8,6 +8,7 @@
 #include "asf_contact.h"
 #include "asf_import.h"
 #include "asf_terrcorr.h"
+#include "asf_export.h"
 #include <unistd.h>
 
 void check_return(int ret, char *msg)
@@ -440,39 +441,43 @@ int asf_convert(int createflag, char *configFileName)
 
     if (cfg->general->export) {
 
+      output_format_t format = JPEG;
+      long size = -1;
+      scale_t scale = SIGMA;
+
       // Format
       if (strncmp(uc(cfg->export->format), "TIFF", 4) == 0) {
-        sprintf(format, "-format tiff");
+	format = TIF;
       } else if (strncmp(uc(cfg->export->format), "GEOTIFF", 7) == 0) {
-        sprintf(format, "-format geotiff");
+	format = GEOTIFF;
       } else if (strncmp(uc(cfg->export->format), "JPEG", 4) == 0) {
-        sprintf(format, "-format jpeg");
+	format = JPEG;
       } else if (strncmp(uc(cfg->export->format), "PPM", 3) == 0) {
-        sprintf(format, "-format ppm");
+	format = PPM;
       }
 
       // Byte scaling
       if (strncmp(uc(cfg->export->byte), "TRUNCATE", 8) == 0) {
-        sprintf(scale, "-byte truncate");
+	scale = TRUNCATE;
       } else if (strncmp(uc(cfg->export->byte), "MINMAX", 6) == 0) {
-        sprintf(scale, "-byte minmax");
+	scale = MINMAX;
       } else if (strncmp(uc(cfg->export->byte), "SIGMA", 5) == 0) {
-        sprintf(scale, "-byte sigma");
+	scale = SIGMA;
       } else if (strncmp(uc(cfg->export->byte), "HISTOGRAM_EQUALIZE", 18) == 0) {
-        sprintf(scale, "-byte histogram_equalize");
+	scale = HISTOGRAM_EQUALIZE;
       }
 
       // Pass in command line
       sprintf(inFile, "%s", outFile);
       sprintf(outFile, "%s", cfg->general->out_name);
-      sprintf(options, "%s %s", format, scale);
-      check_return(asf_export(options, inFile, outFile),
+
+      check_return(asf_export(format, size, scale, inFile, outFile),
                    "exporting data file (asf_export)\n");
     }
 
     if (!cfg->general->intermediates) {
       sprintf(cmd, "rm -f tmp%i*", pid);
-      system(cmd);
+      asfSystem(cmd);
     }
   }
   return(EXIT_SUCCESS);

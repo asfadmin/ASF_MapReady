@@ -17,8 +17,10 @@ OBJS  = asf_convert.o \
 	config.o \
 	functions.o
 
+CFLAGS += $(GLIB_CFLAGS)
+
 all: build_only
-	cp libasf_convert.a $(LIBDIR)
+	mv libasf_convert.a $(LIBDIR)
 	cp asf_convert.h $(ASF_INCLUDE_DIR)
 	mkdir -p $(SHAREDIR)/asf_convert
 	cp batch.config $(SHAREDIR)/asf_convert
