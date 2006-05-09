@@ -1,3 +1,4 @@
+#include "projects.h"
 #include "libasf_proj.h"
 #include "asf.h"
 #include "asf_nan.h"
@@ -7,7 +8,6 @@
 #include <assert.h>
 #include <math.h>
 
-#include "projects.h"
 #include "proj_api.h"
 #include "spheroids.h"
 
@@ -27,8 +27,9 @@ round (double arg)
 // a cut-and-paste implementation of a function defined in asf_meta.h,
 // that we can't actually use here because we don't actually link
 // against that library (only include the header).
-void
-spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor)
+static void
+project_spheroid_axes_lengths (spheroid_type_t spheroid, double *major,
+			       double *minor)
 {
   switch ( spheroid ) {
   case BESSEL_SPHEROID:
@@ -197,7 +198,7 @@ static int project_worker_arr(char * projection_description,
   }
 
   double spheroid_a, spheroid_b;
-  spheroid_axes_lengths (input_spheroid, &spheroid_a, &spheroid_b);
+  project_spheroid_axes_lengths (input_spheroid, &spheroid_a, &spheroid_b);
 
   sprintf(latlon_projection, "+proj=latlong +a=%lf +b=%lf", spheroid_a,
 	  spheroid_b);
@@ -297,7 +298,7 @@ static int project_worker_arr_inv(char * projection_description,
   }
 
   double spheroid_a, spheroid_b;
-  spheroid_axes_lengths (input_spheroid, &spheroid_a, &spheroid_b);
+  project_spheroid_axes_lengths (input_spheroid, &spheroid_a, &spheroid_b);
 
   sprintf(latlon_projection, "+proj=latlong +a=%lf +b=%lf", spheroid_a,
 	  spheroid_b);
