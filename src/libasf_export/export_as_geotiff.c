@@ -111,9 +111,10 @@ export_as_geotiff (const char *metadata_file_name,
      different places in our metadata, we want the projected one if
      its available, otherwise the one from general.  */
   double re_major, re_minor;
-  /* Nail down which ellipsoid we are on exactly.  The ASF metadata
-     doesn't specify this though, so we take a look at the major and
-     minor axis values and try to find a matching ellipsoid.  */
+  /* Nail down which ellipsoid we are on exactly.  Old ASF metadata
+     versions don't specify this though, so we may want to take a look
+     at the major and minor axis values and try to find a matching
+     ellipsoid.  */
   asf_export_ellipsoid_t ellipsoid;
   const double clarke1866_major_axis = 6378206.4;
   const double clarke1866_minor_axis = 6356583.8;
@@ -198,9 +199,9 @@ export_as_geotiff (const char *metadata_file_name,
   if (sample_mapping != NONE) {
     /* We might someday want to mask out certain valus for some type of
        images, so they don't corrupt the statistics used for mapping
-       floats to JSAMPLEs.  Enabling this will require changes to the
+       floats to integers.  Enabling this will require changes to the
        statistics routines and the code that does the mapping from
-       floats to JSAMPLEs.  */
+       floats to integers.  */
     /*
      * double mask;
      * if ( md->general->image_data_type == SIGMA_IMAGE
@@ -262,11 +263,11 @@ export_as_geotiff (const char *metadata_file_name,
   /* Set the GeoTIFF extension image tags.  */
 
   /* Calling the observations from which SAR image pixels are derived
-     may seem a bit weird.  However, nobody seems to know exactly how
-     observation pixels relate to the geolocation information
-     associated with the image anyway, and using PixelIsPoint will let
-     scaling work right when we average together blocks of pixels with
-     the first block at pixel 0,0.  */
+     "points" may seem a bit weird.  However, nobody seems to know
+     exactly how observation pixels relate to the geolocation
+     information associated with the image anyway, and using
+     PixelIsPoint will let scaling work right when we average together
+     blocks of pixels with the first block at pixel 0,0.  */
   GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsPoint);
 
   if ( md->sar->image_type == 'P' ) {
@@ -373,8 +374,8 @@ export_as_geotiff (const char *metadata_file_name,
     /* Some applications (e.g., ArcView) won't handle GeoTIFF images
        with more than one tie point pair.  Therefore, only the upper
        left corner is being written to the GeoTIFF file.  In order to
-       write all computed tie points to the GeoTIFF, change the 6 to
-       size in the line below.  */
+       write all computed tie points to the GeoTIFF, change the 6 in
+       the line below.  */
     TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_point);
 
     /* Set the scale of the pixels, in projection coordinates.  */
@@ -391,57 +392,64 @@ export_as_geotiff (const char *metadata_file_name,
 
     case UNIVERSAL_TRANSVERSE_MERCATOR:
       {
-        /* For now we only handle UTM data that is referenced to the
-           WGS84 ellipsoid.  */
-        asfRequire(ellipsoid == WGS84,
-                   "UTM data must be relative to the WGS84 ellipsoid.\n");
+	/* If we're using a WGS84 ellipsoid, life is easy, we can just
+	   use a single GeoTIFF tag to express everything about the
+	   coordinates system.  */
+	if ( ellipsoid == WGS84 ) {
 
-        /* This weird paranoid assertion is because I remember once when
-           we couln't figure out how to set some datum code right, we
-           set it to -1.  */
-        asfRequire(md->projection->param.utm.zone != -1,"Unknown UTM zone.\n");
+	  /* Here we use some funky arithmetic to get the correct
+	     geotiff coordinate system type key from our zone code.
+	     Here are a few assertions to try to ensure that the
+	     convention used for the libgeotiff constants is as
+	     expected.  Also note that we have already verified that
+	     we are on a WGS84 ellipsoid.  */
+	  asfRequire(PCS_WGS84_UTM_zone_60N - PCS_WGS84_UTM_zone_1N == 59,
+		     "Unable to create geotiff tags to accepted "
+		     "convention.\n");
+	  asfRequire(PCS_WGS84_UTM_zone_60S - PCS_WGS84_UTM_zone_1S == 59,
+		     "Unable to create geotiff tags to accepted "
+		     "convention.\n");
 
-        /* Here we use some funky arithmetic to get the correct
-           geotiff coordinate system type key from our zone code.
-           Here are a few assertions to try to ensure that the
-           convention used for the libgeotiff constants is as
-           expected.  Also note that we have already verified that we
-           are on a WGS84 ellipsoid.  */
-        asfRequire(PCS_WGS84_UTM_zone_60N - PCS_WGS84_UTM_zone_1N == 59,
-                   "Unable to create geotiff tags to accepted convention.\n");
-        asfRequire(PCS_WGS84_UTM_zone_60S - PCS_WGS84_UTM_zone_1S == 59,
-                   "Unable to create geotiff tags to accepted convention.\n");
+	  if ( md->projection->hem == 'N' ) {
+	    const int northern_utm_zone_base = PCS_WGS84_UTM_zone_1N - 1;
+	    projection_code = northern_utm_zone_base;
+	  }
+	  else if ( md->projection->hem == 'S' ) {
+	    const int southern_utm_zone_base = PCS_WGS84_UTM_zone_1S - 1;
+	    projection_code = southern_utm_zone_base;
+	  }
+	  else {               /* Shouldn't be here.  */
+	    asfPrintError("You are not in the northern or southern "
+			  "hemisphere;\nyou are now in the twighlight zone");
+	  }
+	  projection_code += md->projection->param.utm.zone;
+	  
+	  GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
+		      projection_code);
+	  GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1,
+		      Linear_Meter);
+	  citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+	  citation_length
+	    = snprintf (citation, max_citation_length + 1,
+			"UTM zone %d %c projected GeoTIFF on WGS84 ellipsoid "
+			"datum written by Alaska Satellite Facility tools.",
+			md->projection->param.utm.zone,
+			md->projection->hem);
+	  asfRequire((citation_length >= 0)
+		     && (citation_length <= max_citation_length),
+		     "geotiff citation too long" );
+	  GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+	  free (citation);
+	  break;
+	}
 
-        if ( md->projection->hem == 'N' ) {
-          const int northern_utm_zone_base = PCS_WGS84_UTM_zone_1N - 1;
-          projection_code = northern_utm_zone_base;
-        }
-        else if ( md->projection->hem == 'S' ) {
-          const int southern_utm_zone_base = PCS_WGS84_UTM_zone_1S - 1;
-          projection_code = southern_utm_zone_base;
-        }
-        else {               /* Shouldn't be here.  */
-          asfPrintError("You are not in the northern or southern hemisphere;\n"
-                        "you are now in the twighlight zone");
-        }
-        projection_code += md->projection->param.utm.zone;
-
-        GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
-                    projection_code);
-        GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
-        citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-        citation_length
-          = snprintf (citation, max_citation_length + 1,
-                      "UTM zone %d %c projected GeoTIFF on WGS84 ellipsoid "
-                      "datum written by Alaska Satellite Facility tools.",
-                      md->projection->param.utm.zone,
-                      md->projection->hem);
-        asfRequire((citation_length >= 0)
-                   && (citation_length <= max_citation_length),
-                   "geotiff citation too long" );
-        GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
-        free (citation);
-        break;
+	/* Not so lucky as to be using WGS84.  Try to set up other datum.  */
+	else {
+	  /* For now we only handle UTM data that is referenced to the
+	     WGS84 ellipsoid.  */
+	  asfRequire(ellipsoid == WGS84,
+		     "UTM data must be relative to the WGS84 ellipsoid.\n");
+	}
       }
     case POLAR_STEREOGRAPHIC:
       {
