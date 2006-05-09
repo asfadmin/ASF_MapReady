@@ -3888,7 +3888,7 @@ fi
 
 if test "$have_tiff" = "no" ; then
    ASF_LIB_TIFF="${ext_lib_src_dir}/libtiff"
-   TIFF_LIBS="\$(LIBDIR)/libtiff.a"
+   TIFF_LIBS="\$(LIBDIR)/libtiff.a -lz"
    LIBTIFF_LOCATION="-with-libtiff=../../.."
 else
    TIFF_LIBS="-ltiff"
