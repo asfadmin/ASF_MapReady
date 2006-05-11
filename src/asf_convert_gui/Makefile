@@ -96,10 +96,10 @@ LDLIBS = $(LIBDIR)/asf_meta.a \
          $(LIBDIR)/libasf_raster.a \
 	 $(LIBDIR)/libgsl.a \
 	 $(LIBDIR)/libasf_proj.a \
-	 $(LIBDIR)/libproj.a \
 	 $(LIBDIR)/libasf_reporting.a \
          $(LIBDIR)/libgslcblas.a \
 	 $(JPEG_LIBS) \
+	 $(PROJ_LIBS) \
          $(shell /usr/bin/pkg-config --libs gtk+-2.0) \
 	 $(shell /usr/bin/pkg-config --libs libglade-2.0) \
          $(shell /usr/bin/pkg-config --libs gthread-2.0)
