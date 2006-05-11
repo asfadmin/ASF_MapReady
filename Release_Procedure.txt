@@ -80,7 +80,14 @@
 
 16. Bump the version in include/asf_version.h, add "-dev" to the end.
 
-17. The windows procedure is the same as described below.
+17. The windows procedure is the same as described below.  Notes:
+
+  A. When checking out the windows version, you might have to manually
+     edit make_support/system_rules (after running configure) to make
+     sure it has:
+           JPEG_LIBS = $(LIBDIR)/libjpeg.a
+     and NOT
+           JPEG_LIBS = -ljpeg
 
 Old instructions follow:
 -----------------------------------------------------------------------------
