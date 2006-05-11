@@ -191,7 +191,9 @@ input_data_format_combobox_changed()
 void
 scale_checkbutton_toggle()
 {
-    GtkWidget *longest_dimension_label,
+    GtkWidget
+        *longest_dimension_label,
+        *longest_dimension_label2,
         *longest_dimension_spinbutton,
         *scale_checkbutton;
 
@@ -199,6 +201,9 @@ scale_checkbutton_toggle()
 
     longest_dimension_label =
         glade_xml_get_widget(glade_xml, "longest_dimension_label");
+
+    longest_dimension_label2 =
+        glade_xml_get_widget(glade_xml, "longest_dimension_label2");
 
     longest_dimension_spinbutton =
         glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
@@ -210,6 +215,7 @@ scale_checkbutton_toggle()
         gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(scale_checkbutton));
 
     gtk_widget_set_sensitive(longest_dimension_label, is_checked);
+    gtk_widget_set_sensitive(longest_dimension_label2, is_checked);
     gtk_widget_set_sensitive(longest_dimension_spinbutton, is_checked);
 }
 
@@ -253,6 +259,7 @@ export_checkbutton_toggle()
     GtkWidget *export_checkbutton,
         *output_format_combobox,
         *longest_dimension_label,
+        *longest_dimension_label2,
         *longest_dimension_spinbutton,
         *scale_checkbutton,
         *output_bytes_checkbutton,
@@ -274,6 +281,9 @@ export_checkbutton_toggle()
 
     longest_dimension_label =
         glade_xml_get_widget(glade_xml, "longest_dimension_label");
+
+    longest_dimension_label2 =
+        glade_xml_get_widget(glade_xml, "longest_dimension_label2");
 
     longest_dimension_spinbutton =
         glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
@@ -302,9 +312,9 @@ export_checkbutton_toggle()
         case OUTPUT_FORMAT_JPEG:
         case OUTPUT_FORMAT_PPM:
         case OUTPUT_FORMAT_TIFF:
-        case OUTPUT_FORMAT_GEOTIFF:
             show = TRUE;
             break;
+        case OUTPUT_FORMAT_GEOTIFF:
         case OUTPUT_FORMAT_ASF_INTERNAL:
         case OUTPUT_FORMAT_CEOS:  
             show = FALSE;
@@ -342,6 +352,10 @@ export_checkbutton_toggle()
                 GTK_TOGGLE_BUTTON(output_bytes_checkbutton), FALSE);
 
             output_bytes_checkbutton_toggle();
+
+	    gtk_toggle_button_set_active(
+	      GTK_TOGGLE_BUTTON(scale_checkbutton), FALSE);
+
             break;
         }
     }
