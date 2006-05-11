@@ -180,7 +180,7 @@ static const gchar * double_to_string(double value)
     if (ISNAN(value))
         return "";
 
-    sprintf(buf, "%lf", value);
+    snprintf(buf, sizeof(buf), "%lf", value);
     return buf;
 }
 
@@ -379,12 +379,6 @@ void geocode_options_changed()
                     gtk_entry_set_text(
                         GTK_ENTRY(latitude_of_origin_entry),
                         double_to_string(pps->lamcc.lat0));
-                    gtk_entry_set_text(
-                        GTK_ENTRY(false_northing_entry),
-                        double_to_string(pps->lamcc.false_northing));
-                    gtk_entry_set_text(
-                        GTK_ENTRY(false_easting_entry),
-                        double_to_string(pps->lamcc.false_easting));
                     break;
 
                 case PROJ_LAMAZ:
@@ -394,12 +388,6 @@ void geocode_options_changed()
                     gtk_entry_set_text(
                         GTK_ENTRY(latitude_of_origin_entry),
                         double_to_string(pps->lamaz.center_lat));
-                    gtk_entry_set_text(
-                        GTK_ENTRY(false_northing_entry),
-                        double_to_string(pps->lamaz.false_northing));
-                    gtk_entry_set_text(
-                        GTK_ENTRY(false_easting_entry),
-                        double_to_string(pps->lamaz.false_easting));
                     break;
 
                 case PROJ_ALBERS:
@@ -415,14 +403,10 @@ void geocode_options_changed()
                     gtk_entry_set_text(
                         GTK_ENTRY(latitude_of_origin_entry),
                         double_to_string(pps->albers.orig_latitude));
-                    gtk_entry_set_text(
-                        GTK_ENTRY(false_northing_entry),
-                        double_to_string(pps->albers.false_northing));
-                    gtk_entry_set_text(
-                        GTK_ENTRY(false_easting_entry),
-                        double_to_string(pps->albers.false_easting));
                     break;
                 }
+
+		g_free(pps);
             }
         }
 
