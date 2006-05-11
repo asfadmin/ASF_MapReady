@@ -88,28 +88,32 @@ else
 
 ### Begin Unix Section
 
-CFLAGS = -Wall -O0 -g $(shell /usr/bin/pkg-config --cflags gtk+-2.0) \
-         $(shell /usr/bin/pkg-config --cflags libglade-2.0) \
-         -I$(ASF_INCLUDE_DIR)
+CFLAGS += \
+	$(GSL_CFLAGS) \
+	$(JPEG_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GTK_CFLAGS) \
+	$(shell /usr/bin/pkg-config --cflags libglade-2.0) \
+	$(shell /usr/bin/pkg-config --cflags gthread-2.0)
 
-LDLIBS = $(LIBDIR)/asf_meta.a \
-         $(LIBDIR)/libasf_raster.a \
-	 $(LIBDIR)/libgsl.a \
-	 $(LIBDIR)/libasf_proj.a \
-	 $(LIBDIR)/libasf_reporting.a \
-         $(LIBDIR)/libgslcblas.a \
-	 $(JPEG_LIBS) \
-	 $(PROJ_LIBS) \
-         $(shell /usr/bin/pkg-config --libs gtk+-2.0) \
-	 $(shell /usr/bin/pkg-config --libs libglade-2.0) \
-         $(shell /usr/bin/pkg-config --libs gthread-2.0)
+LDLIBS = \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libasf_reporting.a \
+	$(GSL_LIBS) \
+	$(JPEG_LIBS) \
+	$(PROJ_LIBS) \
+	$(GTK_LIBS) \
+	$(shell /usr/bin/pkg-config --libs libglade-2.0) \
+	$(shell /usr/bin/pkg-config --libs gthread-2.0)
 
 LDFLAGS = -Wl,--export-dynamic
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 
-default: $(OBJS)
-	gcc $(OBJS) $(LDLIBS) $(LDFLAGS) -o $(TARGET)
+default: doc $(OBJS)
+	$(CC) $(OBJS) $(LDLIBS) $(LDFLAGS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp $(TARGET).ico $(SHAREDIR)
@@ -130,7 +134,7 @@ asf_convert_gui.txt:
 	fi
 
 clean:
-	rm -f *.o $(BINDIR)/$(TARGET)* $(TARGET).txt \
+	rm -f *.o $(BINDIR)/$(TARGET)* \
 	    $(SHAREDIR)/$(TARGET)* $(DOCDIR)/$(TARGET)*
 
 ### End Unix Section
