@@ -16,8 +16,8 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libproj.a \
 	$(LIBDIR)/asf_fft.a \
+	$(PROJ_LIBS) \
 	$(JPEG_LIBS) \
 	$(GLIB_LIBS) \
 	$(TIFF_LIBS) \
