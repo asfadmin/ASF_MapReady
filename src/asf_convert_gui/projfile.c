@@ -181,6 +181,8 @@ static GtkWidget * populate_predefined_projections(int projection)
                 }
             }
 
+	    g_dir_close(dir);
+
             qsort(names, n, sizeof(char *), my_strcmp);
             for (i = 0; i < n; ++i)
             {
@@ -194,9 +196,10 @@ static GtkWidget * populate_predefined_projections(int projection)
                 gtk_widget_show(item);
             }
         }
-
-        g_free(proj_dir);
     }
+
+    if (proj_dir)
+        g_free(proj_dir);
 
     return m;
 }
@@ -566,6 +569,7 @@ load_selected_predefined_projection_parameters(int projection)
 
         sprintf(tmp, "Error opening .proj file: %s\n", path_and_filename); 
         message_box(tmp);
+	g_free(tmp);
 
         return NULL;
     }
