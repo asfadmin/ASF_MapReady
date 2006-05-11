@@ -220,4 +220,6 @@ void update_summary()
         glade_xml_get_widget(glade_xml, "summary_label");
 
     gtk_label_set_text(GTK_LABEL(summary_label), text);
+
+    settings_delete(s);
 }
