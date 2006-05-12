@@ -182,11 +182,14 @@ int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type, char *lutName,
     }
 
     /* If the user didn't ask for a log file then we can nuke the one that
-    we've been keeping since we've finished everything */
-    if (flags[f_LOG] == FLAG_NOT_SET) {
-        fclose (fLog);
-        remove(logFile);
-    }
+    we've been keeping since we've finished everything 
 
-    return(EXIT_SUCCESS);
+      FIXME: Do we still need this code?? Taking it out for now  */
+    
+//    if (flags[f_LOG] == FLAG_NOT_SET) {
+//        fclose (fLog);
+//        remove(logFile);
+//    }
+
+    return 0;
 }
