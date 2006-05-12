@@ -493,6 +493,7 @@ do_convert(int pid, GtkTreeIter *iter, const char *cfg_file)
         /* child */
         logflag = TRUE;
         fLog = fopen(logFile, "a");
+
         asfPrintStatus("Running convert with configuration file: %s\n",
 		       cfg_file);
     
@@ -615,6 +616,8 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
             return;
         }
+
+	set_asf_tmp_dir(output_dir);
 
 	config_file =
 	  settings_to_config_file(user_settings, in_basename, out_basename,

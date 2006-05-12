@@ -1113,7 +1113,6 @@ settings_to_config_file(const Settings *s,
 	  fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
       }
       fclose(pf);
-      free(tmp_projfile);
     }
 
     tmp_cfgfile = malloc(sizeof(char) * (strlen(output_path) + 24));
@@ -1186,5 +1185,7 @@ settings_to_config_file(const Settings *s,
 
     fclose(cf);
     free(tmp_statfile);
+    if (tmp_projfile)
+      free(tmp_projfile);
     return tmp_cfgfile;
 }
