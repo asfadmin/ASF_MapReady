@@ -23,6 +23,7 @@ typedef struct
   char *batchFile;        // batch file name
   char *prefix;           // prefix for output file naming scheme
   char *suffix;           // suffix for output file naming scheme
+  char *status_file;      // file in which we should dump status info
 } s_general;
 
 typedef struct

@@ -29,6 +29,21 @@ char *uc(char *string)
   return out;
 }
 
+update_status(convert_config *cfg, const char *format, ...)
+{
+  if (cfg->general->status_file && strlen(cfg->general->status_file) > 0)
+  {
+    FILE *fStat = FOPEN(cfg->general->status_file, "wt");
+    if (fStat) {
+      va_list ap;
+      va_start(ap, format);
+      vfprintf(fStat, format, ap);
+      va_end(ap);
+      fclose(fStat);
+    }
+  }
+}
+
 int asf_convert(int createflag, char *configFileName)
 {
   FILE *fBatch, *fConfig;
@@ -99,9 +114,11 @@ int asf_convert(int createflag, char *configFileName)
   // Regular processing
   else {
 
+    update_status(cfg, "Processing...");
+
     // Check whether everything in the [Import] block is reasonable
     if (cfg->general->import) {
-
+ 
       // Import format: ASF, CEOS or STF
       if (strncmp(uc(cfg->import->format), "ASF", 3) != 0 &&
           strncmp(uc(cfg->import->format), "CEOS", 4) != 0 &&
@@ -251,6 +268,8 @@ int asf_convert(int createflag, char *configFileName)
 
     if (cfg->general->import) {
 
+      update_status(cfg, "Importing...");
+
       int flags[NUM_IMPORT_FLAGS];
       for (i = 0; i < NUM_IMPORT_FLAGS; ++i)
 	flags[i] = FLAG_NOT_SET;
@@ -283,7 +302,7 @@ int asf_convert(int createflag, char *configFileName)
       }
 
       // Call asf_import!
-      check_return(asf_import(flags, cfg->import->format,
+      check_return(asf_import(flags, uc(cfg->import->format),
 			      cfg->import->lut, cfg->import->prc,
 			      cfg->import->lat_begin, cfg->import->lat_end,
 			      1.0, 1.0, 0.0, /* FIXME: Should be in cfg file */
@@ -292,6 +311,8 @@ int asf_convert(int createflag, char *configFileName)
     }
 
     if (cfg->general->sar_processing) {
+
+      update_status(cfg, "Running ArDop...");
 
       // Check whether the input file is a raw image. If not, skip the SAR processing step
       meta = meta_read(outFile);
@@ -342,6 +363,8 @@ int asf_convert(int createflag, char *configFileName)
     
     if (cfg->general->image_stats) {
 
+      update_status(cfg, "Running Image Stats...");
+
       // Values for statistics
       if (strncmp(uc(cfg->image_stats->values), "LOOK", 4) == 0) {
         sprintf(values, "-look");
@@ -366,6 +389,8 @@ int asf_convert(int createflag, char *configFileName)
 
     if (cfg->general->detect_cr) {
 
+      update_status(cfg, "Detecting Corner Reflectors...");
+
       // Intermediate results
       if (cfg->general->intermediates) {
 	cfg->detect_cr->chips = 1;
@@ -386,6 +411,9 @@ int asf_convert(int createflag, char *configFileName)
     }
 
     if (cfg->general->terrain_correct) {
+
+      update_status(cfg, "Terrain Correcting...");
+
       // Generate filenames
       sprintf(inFile, "%s", outFile);
       sprintf(outFile, "tmp%i_terrain_correct", pid);
@@ -397,6 +425,8 @@ int asf_convert(int createflag, char *configFileName)
     }
 
     if (cfg->general->geocoding) {
+
+      update_status(cfg, "Geocoding...");
 
       int force_flag = cfg->geocoding->force;
       resample_method_t resample_method = RESAMPLE_BILINEAR;
@@ -453,6 +483,8 @@ int asf_convert(int createflag, char *configFileName)
     }
 
     if (cfg->general->export) {
+
+      update_status(cfg, "Exporting...");
 
       output_format_t format = JPEG;
       long size = -1;

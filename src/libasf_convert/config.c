@@ -25,7 +25,7 @@ char *read_param(char *line)
   i=strindex(line, "]");
   k=strindex(line, "=");
   if (i>0) strncpy(value, line, i+1);
-  if (k>0) strncpy(value, line, k-1);
+  if (k>0) strncpy(value, line, k);
   return value;
 }
 
@@ -202,6 +202,8 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->general->batchFile, "");
   cfg->general->defaults = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->general->defaults, "");
+  cfg->general->status_file = (char *)MALLOC(sizeof(char)*1024);
+  strcpy(cfg->general->status_file, "");
   cfg->general->prefix = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->general->prefix, "");
   cfg->general->suffix = (char *)MALLOC(sizeof(char)*255);
@@ -298,6 +300,8 @@ convert_config *init_fill_convert_config(char *configFile)
 	cfg->general->quiet = read_int(line, "quiet");
       if (strncmp(test, "short configuration file", 24)==0)
 	cfg->general->short_config = read_int(line, "short configuration file");
+      if (strncmp(test, "status file", 11)==0)
+	cfg->general->status_file = read_str(line, "status file");
       if (strncmp(test, "prefix", 6)==0)
 	cfg->general->prefix = read_str(line, "prefix");
       if (strncmp(test, "suffix", 6)==0)
@@ -382,6 +386,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->general->quiet = read_int(line, "quiet");
       if (strncmp(test, "short configuration file", 24)==0)
 	cfg->general->short_config = read_int(line, "short configuration file");
+      if (strncmp(test, "status file", 11)==0)
+	cfg->general->status_file = read_str(line, "status file");
       if (strncmp(test, "batch file", 10)==0)
         cfg->general->batchFile = read_str(line, "batch file");
       if (strncmp(test, "prefix", 6)==0)
@@ -436,6 +442,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->general->quiet = read_int(line, "quiet");
       if (strncmp(test, "short configuration file", 24)==0)
 	cfg->general->short_config = read_int(line, "short configuration file");
+      if (strncmp(test, "status file", 11)==0)
+	cfg->general->status_file = read_str(line, "status file");
       if (strncmp(test, "batch file", 10)==0)
         cfg->general->batchFile = read_str(line, "batch file");
       if (strncmp(test, "prefix", 6)==0)
@@ -721,7 +729,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (cfg->general->geocoding) {
       fprintf(fConfig, "\n[Geocoding]\n");
       if (!shortFlag) {
-	fprintf(fConfig, "\n# The geocoding tool currently supports five different map projections:\n"
+	fprintf(fConfig, "\n# The geocoding tool currently supports five different map projections:\n",
 		"# Universal Transverse Mercator (UTM), Polar Stereographic, Albers Equal Area\n"
 		"# Conic, Lambert Conformal Conic and Lambert Azimuthal Equal Area.\n"
 		"# For all these map projections a large number of projection parameter files\n"
