@@ -20,10 +20,11 @@ void check_return(int ret, char *msg)
 
 char *uc(char *string)
 {
-  char *out=(char *)MALLOC(sizeof(char)*(1+strlen(string)));
+  static out[1024];
   int i;
 
-  for (i=0; i<strlen(string); i++) out[i]=toupper(string[i]);
+  for (i=0; i<strlen(string); i++)
+    out[i]=toupper(string[i]);
   out[i]='\0';
 
   return out;
@@ -212,16 +213,16 @@ int asf_convert(int createflag, char *configFileName)
       // Check for pixel size smaller than threshold ???
 
       // Datum
-      if (strncmp(cfg->geocoding->datum, "WGS84", 5) != 0 &&
-          strncmp(cfg->geocoding->datum, "NAD27", 5) != 0 &&
-          strncmp(cfg->geocoding->datum, "NAD83", 5) != 0) {
+      if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) != 0 &&
+          strncmp(uc(cfg->geocoding->datum), "NAD27", 5) != 0 &&
+          strncmp(uc(cfg->geocoding->datum), "NAD83", 5) != 0) {
         asfPrintError("Chosen datum not supported\n");
       }
 
       // Resampling
-      if (strncmp(cfg->geocoding->resampling, "NEAREST NEIGHBOR", 16) != 0 &&
-          strncmp(cfg->geocoding->resampling, "BILINEAR", 8) != 0 &&
-          strncmp(cfg->geocoding->resampling, "BICUBIC", 7) != 0) {
+      if (strncmp(uc(cfg->geocoding->resampling), "NEAREST NEIGHBOR", 16) != 0 &&
+          strncmp(uc(cfg->geocoding->resampling), "BILINEAR", 8) != 0 &&
+          strncmp(uc(cfg->geocoding->resampling), "BICUBIC", 7) != 0) {
         asfPrintError("Chosen resampling method not supported\n");
       }
     }
