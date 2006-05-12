@@ -179,4 +179,11 @@ FILE * fopen_share_file(const char * filename, const char * mode);
  * Wrapper for system() that is more portable, plus uses varargs */
 int asfSystem(const char *format, ...);
 
+/***************************************************************************
+ * Get the location of the temporary directory (this is where log files,
+ * etc should be put).  The application is in charge of setting this!     */
+void set_asf_tmp_dir(const char *tmp_dir);
+const char * get_asf_tmp_dir();
+FILE * fopen_tmp_file(const char * filename, const char * mode);
+
 #endif
