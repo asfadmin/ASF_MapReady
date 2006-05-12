@@ -372,5 +372,5 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   meta_free(metaSAR);
   meta_free(metaDEM);
 
-  return TRUE;
+  return 0;
 }
