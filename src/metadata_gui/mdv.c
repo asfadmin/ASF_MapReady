@@ -583,11 +583,11 @@ main(int argc, char **argv)
 
     g_free(glade_xml_file);
 
+    set_app_title();
+    set_font();
+
     if (argc > 1)
         add_file(argv[1]);
-
-    set_font();
-    set_app_title();
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
