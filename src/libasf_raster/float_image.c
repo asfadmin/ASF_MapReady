@@ -22,6 +22,7 @@
 
 #include <jpeglib.h>
 #include "float_image.h"
+#include "asf.h"
 
 #ifndef linux
 #ifndef win32
@@ -72,7 +73,7 @@ initialize_tile_cache_file (void)
   // filled in in different ways depending on which creation routine
   // we are using.
   GString *tile_file_name = g_string_new ("");
-  gchar *current_dir = g_get_current_dir ();
+  //gchar *current_dir = g_get_current_dir ();
 
   // Here we do a slightly weird thing: if the current directory is
   // writable, we create a temporary file in the current directory.
@@ -86,10 +87,10 @@ initialize_tile_cache_file (void)
   G_LOCK (current_tile_file_number);
   g_assert (sizeof (long) >= sizeof (pid_t));
   g_string_append_printf (tile_file_name,
-                          "%s/.float_image_tile_file_uNiQuIfY_nAmE_%ld_%lu",
-                          current_dir, (long) getpid (),
+                          ".float_image_tile_file_uNiQuIfY_nAmE_%ld_%lu",
+                          (long) getpid (),
                           current_tile_file_number);
-  g_free (current_dir);
+  //g_free (current_dir);
   // This hard coded limit on the current number used to uniqueify
   // file names limits us to creating no more than ULONG_MAX instances
   // during a process.
@@ -110,11 +111,11 @@ initialize_tile_cache_file (void)
   // FIXME?: It might be faster to use file descriptor based I/O
   // everywhere, or at least for the big transfers.  I'm not sure its
   // worth the trouble though.
-  FILE *tile_file = fopen (tile_file_name->str, "w+");
+  FILE *tile_file = fopen_tmp_file (tile_file_name->str, "w+");
   if ( tile_file == NULL ) {
     if ( errno != EACCES ) {
-      g_warning ("couldn't create file in current directory, and it wasn't"
-                 "just a permissions problem");
+      g_warning ("couldn't create file in tmp directory (%s), and it wasn't"
+                 "just a permissions problem", get_asf_tmp_dir());
     }
     else {
       // Couldn't open in current directory, so try using tmpfile,
