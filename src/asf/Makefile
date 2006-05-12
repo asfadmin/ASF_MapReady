@@ -20,7 +20,8 @@ OBJS  = caplib.o \
 	log.o \
 	stopwatch.o \
 	share.o \
-	system.o
+	system.o \
+	tmpdir.o
 
 all: build_only
 	mv asf.a $(LIBDIR)
