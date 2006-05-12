@@ -39,6 +39,16 @@ char *findExt(const char *name)
     return NULL;
 }
 
+/* Returns newly allocated string that is the input string with
+   any extension removed */
+char *stripExt(const char *in)
+{
+  char *out = strdup(in);
+  char *ext = findExt(out);
+  if (ext) *ext = '\0';
+  return out;
+}
+
 char *appendExt(const char *name, const char *newExt)
 {
   char *ret = (char *) MALLOC (sizeof(char)

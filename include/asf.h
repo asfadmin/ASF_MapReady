@@ -104,6 +104,10 @@ int extExists(const char *name,const char *newExt);
 void append_ext_if_needed(char *file_name, const char *newExt, 
                           const char *alsoAllowedExt);
 
+/* Remove the extension from the name, if any.
+   Returns a newly allocated string. */
+char *stripExt(const char *in);
+
 /* Creates name out by clipping off the rightmost dot extension, if
    any, of in, and then appending newExt.  out must point to existing
    memory large enough to store the result.  */
