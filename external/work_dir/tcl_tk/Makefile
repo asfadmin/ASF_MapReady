@@ -22,12 +22,14 @@ build_tcl_stamp:
 	if [ -f $(TCL_ZIPFILE) ]; then \
 	  gunzip --to-stdout $(TCL_ZIPFILE) | tar xv; \
 	  (   cd $(TCL_UNPACK_DIR)/unix ; \
-	    ./configure --enable-gcc --disable-load --prefix=$(ROOT_DIR) ; \
-	    make ; \
-	    make install ; \
-	  ); \
-	  touch $@;  \
+	      ./configure --enable-gcc --disable-load --prefix=$(ROOT_DIR) ; \
+	      make ; \
+	      make install ; \
+	  ) && touch $@; \
 	fi
+
+
+
 
 # Create the tk library & necessary parts in the proper place for retrieval
 # If zip file not present, skip.
@@ -39,8 +41,7 @@ build_tk_stamp: build_tcl_stamp
 	      ./configure  --enable-gcc --disable-load --prefix=$(ROOT_DIR) ; \
 	      make ; \
 	      make install ; \
-	  ); \
-	  touch $@;  \
+	  ) && touch $@; \
 	fi
 
 
