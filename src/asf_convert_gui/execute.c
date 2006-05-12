@@ -1,6 +1,7 @@
 
 #include <unistd.h>
 #include "asf_convert_gui.h"
+#include <asf.h>
 
 /*
 #include <fcntl.h>
@@ -260,65 +261,6 @@ do_cmd(gchar *cmd, gchar *log_file_name)
     return the_output;
 }
 
-/*
-void
-do_cmd_does_not_work(char *cmd)
-{
-FILE *f;
-char buffer[4096];
-int fd;
-
-f = popen(cmd, "r");
-fd = fileno(f);
-
-fd_set rfds;
-struct timeval tv;
-int retval;
-
-FD_ZERO(&rfds);
-FD_SET(fd, &rfds);
-
-while (waitpid(-1, NULL, WNOHANG) == 0)
-{
-tv.tv_sec = 1;
-tv.tv_usec = 0;
-
-retval = select(fd + 1, &rfds, NULL, NULL, &tv);
-
-if (retval == -1)
-perror(NULL);
-else if (retval)
-{
-int count = read(fd, buffer, 4096);
-
-if (count == -1 && errno != EAGAIN)
-{
-perror(NULL);
-break;
-}
-
-buffer[count] = '\0';
-
-printf("%s\n", buffer);
-
-if (count == 0)
-break;
-}
-else
-{
-/ * no data * /
-
-}
-
-while (gtk_events_pending())
-gtk_main_iteration();
-
-}
-
-pclose(f); 
-}
-*/
-
 gboolean check_for_error(gchar * txt)
 {
     /* kludge */
@@ -518,16 +460,132 @@ build_executable(char *buf, const char *exec_name)
 #endif
 }
 
+static char *
+getPath(const char *in)
+{
+  char *dir = malloc(sizeof(char)*(strlen(in) + 2));
+  char *file = malloc(sizeof(char)*(strlen(in) + 2));
+
+  split_dir_and_file(in, dir, file);
+  free(file);
+
+  if (dir[strlen(dir) - 1] == DIR_SEPARATOR)
+      dir[strlen(dir) - 1] = '\0';
+
+  return dir;
+}
+
+static char *
+do_convert(int pid, GtkTreeIter *iter, const char *cfg_file)
+{
+    extern int logflag;
+    extern FILE *fLog;
+
+    gchar *the_output;
+    FILE *output;
+    char logFile[256];
+
+    snprintf(logFile, sizeof(logFile), "tmp%d.log", pid);
+
+    pid = fork();    
+    if (pid == 0)
+    {
+        /* child */
+        logflag = TRUE;
+        fLog = fopen(logFile, "a");
+        asfPrintStatus("Running convert with configuration file: %s\n",
+		       cfg_file);
+    
+	asf_convert(FALSE, cfg_file);
+	
+	FCLOSE(fLog);
+	exit(EXIT_SUCCESS);
+    }
+    else
+    {
+        /* parent */
+        int counter = 1;
+	char *statFile = appendExt(logFile, ".status");
+	
+        while (waitpid(-1, NULL, WNOHANG) == 0)
+	{
+	    while (gtk_events_pending())
+	      gtk_main_iteration();    
+
+            g_usleep(50);
+
+	    if (++counter % 10 == 0)
+	    {
+	        /* check status file */
+	        char buf[256];
+		FILE *fStat = fopen(statFile, "rt");
+		if (fStat)
+		{
+		    fgets(buf, sizeof(buf), fStat);
+		    fclose(fStat);
+
+		    gtk_list_store_set(list_store, iter, COL_STATUS, buf, -1);
+		}
+	    }
+        }
+    }
+
+    the_output = NULL;
+
+    output = fopen(logFile, "rt");
+
+    if (!output)
+    {
+        the_output = (gchar *)g_malloc(512);
+        sprintf(the_output, "Error Opening Log File: %s\n", strerror(errno));
+    }
+    else
+    {
+        while (!feof(output))
+        {
+            gchar buffer[4096];
+            gchar *p = fgets(buffer, sizeof(buffer), output);
+            if (p && !g_str_has_prefix(p, "Processing "))
+            {
+                if (the_output)
+                {
+                    the_output = (gchar *)g_realloc(the_output, sizeof(gchar) *
+                        (strlen(the_output) + strlen(buffer) + 1));
+
+                    strcat(the_output, buffer);
+                }
+                else
+                {
+                    the_output = (gchar *)
+		      g_malloc(sizeof(gchar) * (strlen(buffer) + 1));
+
+                    strcpy(the_output, buffer);
+                }
+            }
+        }
+        fclose(output);
+        remove(logFile);
+    }
+
+    if (!the_output)
+    {
+        /* Log file existed, but had immediate EOF */
+        /* This is most likely caused by a "Disk Full" situation... */
+        /*  ... or a segmentation fault! */
+        the_output = g_strdup("Error Opening Log File: Disk Full?\n");
+    }
+
+    return the_output;
+}
+
 static void
 process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 {
     LSL;
     gchar *in_data, *out_full, *status;
-    int pid;
-    /* time_t s; */
+    int pid, err;
 
     pid = getpid();
-    /* s = time(NULL); */
 
     gtk_tree_model_get(GTK_TREE_MODEL(list_store), iter, 
         COL_DATA_FILE, &in_data,
@@ -537,43 +595,12 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
     if (strcmp(status, "Done") != 0 || !skip_done)
     {
-        gchar *basename, *before_terrcorr_basename, 
-	  *before_geocoding_basename, *output_dir,
-	  *out_basename, *p, *done, *err_string, *cd_dir;
-
-        gchar convert_cmd[4096];
-        gchar executable[256];
-        gchar log_file[1024];
-        gboolean err;
-
-        basename = g_strdup(in_data);
-        p = strrchr(basename, '.');
-        if (p)
-            *p = '\0';
-
-        out_basename = g_strdup(out_full);
-        p = strrchr(out_basename, '.');
-        if (p)
-            *p = '\0';
-
-        output_dir = g_strdup(out_basename);
-        p = strrchr(output_dir, DIR_SEPARATOR);
-        if (p)
-            *(p+1) = '\0';
-        else
-            output_dir[0] = '\0';
-
-        if (strlen(output_dir) == 0)
-        {
-            cd_dir = g_strdup(".");
-        }
-        else
-        {
-            cd_dir = g_strdup(output_dir);
-            p = strrchr(cd_dir, DIR_SEPARATOR);
-            if (p && p != cd_dir)
-                *p = '\0';
-        }
+        char *in_basename = stripExt(in_data);
+	char *out_basename = stripExt(out_full);
+	char *output_dir = getPath(out_full);
+	char *config_file, *cmd_output;
+	gchar *err_string;
+	int err;
 
         /* Ensure we have access to the output directory */
         if (!have_access_to_dir(output_dir, &err_string))
@@ -582,246 +609,35 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
             gtk_list_store_set(list_store, iter, COL_STATUS, err_string, -1);
 
             g_free(err_string);
-            g_free(basename);
-            g_free(out_basename);
-            g_free(output_dir);
+            free(in_basename);
+            free(out_basename);
+            free(output_dir);
 
             return;
         }
 
-        if (settings_get_run_geocode(user_settings))
-        {
-            before_geocoding_basename =
-                (gchar *)g_malloc(sizeof(gchar) * (strlen(out_basename) + 10));
+	config_file =
+	  settings_to_config_file(user_settings, in_basename, out_basename,
+				  output_dir, pid);
 
-            sprintf(before_geocoding_basename, "%s_tmp2", out_basename);
-        }
-        else
-        {
-            before_geocoding_basename = g_strdup(out_basename);
-        }
+	cmd_output = do_convert(pid, iter, config_file);
+	err = check_for_error(cmd_output);
+	append_output(cmd_output);
 
-	if (settings_get_run_terrcorr(user_settings))
+	free(config_file);
+	free(output_dir);
+	free(out_basename);
+	free(in_basename);
+	g_free(cmd_output);
+	
+	if (use_thumbnails &&
+	    settings_get_output_format_can_be_thumbnailed(user_settings))
 	{
-	    before_terrcorr_basename =
-	        (gchar *)g_malloc(sizeof(gchar) * (strlen(out_basename) + 10));
-
-	    sprintf(before_terrcorr_basename, "%s_tmp1", out_basename);
-	}
-	else
-	{
-	    before_terrcorr_basename = g_strdup(before_geocoding_basename);
-	}
-
-        gtk_list_store_set(list_store, iter, COL_STATUS, "Processing...", -1);
-        append_begin_processing_tag(in_data);
-
-        while (gtk_events_pending())
-            gtk_main_iteration();
-
-        if (settings_get_run_import(user_settings))
-        {
-            gchar * cmd_output;
-
-            gtk_list_store_set(list_store, iter, COL_STATUS, "Importing...", -1);
-            g_snprintf(log_file, sizeof(log_file), "%stmpi%d.log", output_dir, pid);
-
-            if (user_settings->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 &&
-                strcasecmp(in_data, out_full) == 0)
-            {
-                /* should be enough room -- we chopped the extension */
-                strcat(out_basename, "_out");
-            }
-
-            build_executable(executable, "asf_import");
-            g_snprintf(convert_cmd, sizeof(convert_cmd), 
-                "cd \"%s\";" "%s %s -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
-                cd_dir,
-                executable,
-                settings_get_data_type_arg_string(user_settings),
-                settings_get_input_data_format_string(user_settings),
-                settings_get_latitude_argument(user_settings),
-                settings_get_apply_metadata_fix_argument(user_settings),
-                log_file,
-                basename,
-                before_terrcorr_basename);
-
-            cmd_output = do_cmd(convert_cmd, log_file);
-            err = check_for_error(cmd_output);
-
-            append_output(cmd_output);
-
-            if (!settings_get_run_export(user_settings) &&
-                !settings_get_run_geocode(user_settings) &&
-                !settings_get_run_terrcorr(user_settings))
-            {
-                done = err ? "Error" : "Done";
-                gtk_list_store_set(list_store, iter, COL_STATUS, done, -1);
-            }
-
-            g_free(cmd_output);
-        }
-
-        while (gtk_events_pending())
-            gtk_main_iteration();
-
-	if (!err && settings_get_run_terrcorr(user_settings))
-	{
-            gchar * cmd_output;
-
-            gtk_list_store_set(list_store, iter, COL_STATUS,
-			       "Terrain Correcting...", -1);
-
-            g_snprintf(log_file, sizeof(log_file), "%stmpt%d.log", 
-		       output_dir, pid);
-
-            build_executable(executable, "tc");
-            snprintf(convert_cmd, sizeof(convert_cmd),
-                "cd \"%s\";" "%s %s -log \"%s\" \"%s\" \"%s\" \"%s\" 2>&1",
-                cd_dir,
-                executable,
-		settings_get_terrcorr_options(user_settings),
-                log_file,
-                before_terrcorr_basename,
-		user_settings->dem_file,
-                before_geocoding_basename);
-
-            cmd_output = do_cmd(convert_cmd, log_file);
-            err = check_for_error(cmd_output);
-
-            append_output(cmd_output);
-
-            g_free(cmd_output);
-
-            /* delete temporary .img/.meta pair generated before terrcorr,
-            they are just eating up space ... */
-
-            if (!user_settings->keep_files)
-            {
-                gchar * fname;
-                fname = (gchar *) 
-                    g_malloc(sizeof(gchar) * 
-                    (strlen(before_terrcorr_basename) + 10));
-
-                sprintf(fname, "%s.img", before_terrcorr_basename);
-                remove(fname);
-
-                sprintf(fname, "%s.meta", before_terrcorr_basename);
-                remove(fname);
-
-                g_free(fname);
-            }
-	}
-
-        while (gtk_events_pending())
-            gtk_main_iteration();
-
-        if (!err && settings_get_run_geocode(user_settings))
-        {
-            gchar * cmd_output;
-
-            gtk_list_store_set(list_store, iter, COL_STATUS, "Geocoding...", -1);
-
-            g_snprintf(log_file, sizeof(log_file), "%stmpg%d.log", output_dir, pid);
-
-            build_executable(executable, "asf_geocode");
-            snprintf(convert_cmd, sizeof(convert_cmd),
-                "cd \"%s\";" "%s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
-                cd_dir,
-                executable,
-                settings_get_geocode_options(user_settings),
-                log_file,
-                before_geocoding_basename,
-                out_basename);
-
-            cmd_output = do_cmd(convert_cmd, log_file);
-            err = check_for_error(cmd_output);
-
-            append_output(cmd_output);
-
-            g_free(cmd_output);
-
-            /* delete temporary .img/.meta pair generated before geocoding,
-            they are just eating up space ... */
-
-            if (!user_settings->keep_files)
-            {
-                gchar * fname;
-                fname = (gchar *) 
-                    g_malloc(sizeof(gchar) * 
-                    (strlen(before_geocoding_basename) + 10));
-
-                sprintf(fname, "%s.img", before_geocoding_basename);
-                remove(fname);
-
-                sprintf(fname, "%s.meta", before_geocoding_basename);
-                remove(fname);
-
-                g_free(fname);
-            }
-        }
-
-        if (!err && settings_get_run_export(user_settings))
-        {
-            gchar * cmd_output;
-
-            g_snprintf(log_file, sizeof(log_file), "%stmpe%d.log", output_dir, pid);
-
-            gtk_list_store_set(list_store, iter, COL_STATUS, "Exporting...", -1);
-
-            build_executable(executable, "asf_export");
-            snprintf(convert_cmd, sizeof(convert_cmd),
-                "cd \"%s\";" "%s -format %s %s %s -log \"%s\" \"%s\" \"%s\" 2>&1",
-                cd_dir,
-                executable,
-                settings_get_output_format_string(user_settings),
-                settings_get_size_argument(user_settings),
-                settings_get_output_bytes_argument(user_settings),
-                log_file,
-                out_basename,
-                out_full);
-
-            cmd_output = do_cmd(convert_cmd, log_file);
-            err = check_for_error(cmd_output);
-
-            append_output(cmd_output);
-
-            if (use_thumbnails &&
-                settings_get_output_format_can_be_thumbnailed(user_settings))
-            {
-                set_thumbnail(iter, out_full);
-            }
-
-            if (!user_settings->keep_files)
-            {
-                gchar * fname = (gchar *) 
-                    g_malloc(sizeof(gchar) * (strlen(out_basename) + 10));
-
-                sprintf(fname, "%s.img", out_basename);
-                remove(fname);
-
-                // Commented this out, so that the .meta file sticks around,
-                // for use with the "Display ASF Metadata" option, even if the
-                // user doesn't "keep files".
-
-                //sprintf(fname, "%s.meta", out_basename);
-                //remove(fname);
-
-                g_free(fname);
-            }
-
-            g_free(cmd_output);
-
-        }
-
-        done = err ? "Error" : "Done"; 
-        gtk_list_store_set(list_store, iter, COL_STATUS, done, -1);
-
-        g_free(basename);
-        g_free(before_geocoding_basename);
-        g_free(out_basename);
-        g_free(output_dir);
-        g_free(cd_dir);
+	  set_thumbnail(iter, out_full);
+	}	
+	    
+	char *done = err ? "Error" : "Done"; 
+	gtk_list_store_set(list_store, iter, COL_STATUS, done, -1);
     }
 
     g_free(status);

@@ -42,6 +42,8 @@ typedef struct
   /* terrcorr options */
   int terrcorr_is_checked;
   char dem_file[2048];
+  int specified_tc_pixel_size;
+  double tc_pixel_size;
 
   /* misc */
   int keep_files;
@@ -71,4 +73,6 @@ int settings_get_run_geocode(const Settings *);
 int settings_get_run_terrcorr(const Settings *);
 int  settings_get_output_format_can_be_thumbnailed(const Settings *s);
 void settings_delete(Settings *);
-
+char * settings_to_config_file(const Settings *s,
+			     const gchar *input_file, const gchar *output_file,
+			     const gchar *output_path, int pid);

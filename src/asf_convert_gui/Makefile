@@ -97,13 +97,23 @@ CFLAGS += \
 	$(shell /usr/bin/pkg-config --cflags gthread-2.0)
 
 LDLIBS = \
-	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_convert.a \
+	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_export.a \
+	$(LIBDIR)/libasf_geocode.a \
+	$(LIBDIR)/libasf_terrcorr.a \
+	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libasf_reporting.a \
+	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf_fft.a \
+	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(JPEG_LIBS) \
-	$(PROJ_LIBS) \
+	$(GLIB_LIBS) \
+	$(TIFF_LIBS) \
+	$(GEOTIFF_LIBS) \
 	$(GTK_LIBS) \
 	$(shell /usr/bin/pkg-config --libs libglade-2.0) \
 	$(shell /usr/bin/pkg-config --libs gthread-2.0)
