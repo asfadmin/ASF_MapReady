@@ -408,6 +408,7 @@ convert_config *read_convert_config(char *configFile)
   char line[255], params[50];
   char *test=(char *)MALLOC(sizeof(char)*255);
 
+  strcpy(params, "");
   cfg = init_fill_convert_config(configFile);
   if (cfg == NULL) check_return(1, "Creating configuration structure.\n");
   fConfig = FOPEN(configFile, "r");

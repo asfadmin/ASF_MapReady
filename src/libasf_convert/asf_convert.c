@@ -20,7 +20,7 @@ void check_return(int ret, char *msg)
 
 char *uc(char *string)
 {
-  char *out=(char *)MALLOC(sizeof(char)*strlen(string));
+  char *out=(char *)MALLOC(sizeof(char)*(1+strlen(string)));
   int i;
 
   for (i=0; i<strlen(string); i++) out[i]=toupper(string[i]);
