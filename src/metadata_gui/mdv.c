@@ -356,9 +356,13 @@ void
 append_output(const gchar * txt, GtkWidget * textview_output)
 {
     GtkTextBuffer * text_buffer;
-    GtkTextIter end;
+    GtkTextIter begin, end;
+    GtkTextTag *tt = NULL;
 
     text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
+
+    tt = gtk_text_buffer_create_tag(text_buffer, "mono", 
+				    "font", "Mono", NULL);
 
     if (gtk_text_buffer_get_char_count(text_buffer) > 0)
     {
@@ -370,7 +374,7 @@ append_output(const gchar * txt, GtkWidget * textview_output)
     }
 
     gtk_text_buffer_get_end_iter(text_buffer, &end);
-    gtk_text_buffer_insert(text_buffer, &end, txt, -1);
+    gtk_text_buffer_insert_with_tags(text_buffer, &end, txt, -1, tt, NULL);
 }
 
 static void
