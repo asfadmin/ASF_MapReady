@@ -30,7 +30,7 @@ char *uc(char *string)
   return out;
 }
 
-update_status(convert_config *cfg, const char *format, ...)
+void update_status(convert_config *cfg, const char *format, ...)
 {
   if (cfg->general->status_file && strlen(cfg->general->status_file) > 0)
   {

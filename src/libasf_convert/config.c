@@ -31,11 +31,21 @@ char *read_param(char *line)
 
 char *read_str(char *line, char *param)
 {
-  char tmp[255], *start;
   char *value=(char *)MALLOC(sizeof(char)*255);
+  char *p = strchr(line, '=');
 
-  start = strchr(line, '=');
-  sscanf(start, "%s %s", tmp, value);
+  // skip past the '=' sign, and eat up any whitespace
+  ++p;
+  while (isspace(*p))
+      ++p;
+
+  strcpy(value, p);
+
+  // eat up trailing whitespace, too
+  p = value + strlen(value) - 1;
+  while (isspace(*p))
+      *p-- = '\0';
+
   return value;
 }
 
