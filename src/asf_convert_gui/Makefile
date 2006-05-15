@@ -49,13 +49,23 @@ LIB = \
 	-L/usr/lib/w32api \
 	-lgdi32 \
 	-llibgdk-win32-2.0 \
-	$(ASF_LIB)/libasf_raster.a \
+	$(ASF_LIB)/libasf_convert.a \
+	$(ASF_LIB)/libasf_import.a \
+	$(ASF_LIB)/libasf_export.a \
+	$(ASF_LIB)/libasf_geocode.a \
+	$(ASF_LIB)/libasf_terrcorr.a \
+	$(ASF_LIB)/libasf_proj.a \
+	$(ASF_LIB)/libasf_sar.a \
 	$(ASF_LIB)/asf_meta.a \
 	$(ASF_LIB)/asf.a \
 	$(ASF_LIB)/libasf_proj.a \
 	$(ASF_LIB)/libasf_reporting.a \
+	$(ASF_LIB)/libasf_raster.a \
+	$(ASF_LIB)/asf_fft.a \
 	$(GSL_LIBS) \
 	$(JPEG_LIBS) \
+	$(TIFF_LIBS) \
+	$(GEOTIFF_LIBS) \
 	$(PROJ_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32
