@@ -20,7 +20,7 @@ void check_return(int ret, char *msg)
 
 char *uc(char *string)
 {
-  static out[1024];
+  static char out[1024];
   int i;
 
   for (i=0; i<strlen(string); i++)
