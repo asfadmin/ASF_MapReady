@@ -1,0 +1,50 @@
+
+NAME:
+	quicklook
+
+SYNOPSIS:
+	quicklook [-k <nLooks>] [-q <quality>] [-a <aspect ratio>]
+	          <input signal> <output image>
+
+DESCRIPTION:
+	Quicklook is a SAR Processor, like ardop.  Quicklook runs much more
+	quickly than ardop, but generates a smaller, grainer output image. You
+	can make the image slightly less grainy by using more looks (-k); and
+	make the image bigger by using -q.
+	
+	Quicklook can read the signal format ardop reads -- raw data (.raw &
+	.in).  Quicklook  does a poor job on satellites that aren't steered to
+	zero doppler (RADARSAT).
+
+OPTIONS:
+	-k  controls the number of range looks taken on the data. More looks
+	    takes more time, but generates a smoother output image (less
+	    speckle).  The default is 4 looks.
+
+	-q  controls the size of the FFTs quicklook uses.  Increasing q by 1
+	    approximately double each dimension of the output image, but
+	    quadruples the amount of time quicklook takes.  The default is 1,
+	    which produces a 1300 sample by 800 line output image from a
+	    full-frame of ERS signal data.
+
+	-a  controls the aspect ratio of the output image.  This is the ratio of
+	    the range FFT size to the azimuth FFT size.  Larger aspect ratios
+	    make shorter, fatter images.  The default is 2, which produces only
+	    slightly vertically stretched ERS-1 images.  The aspect ratio must
+	    be a power of 2: 0.25,0.5,1,2,4,8,...
+
+EXAMPLE:
+	To produce a 1300x800 full-frame floating-point amplitude image
+	e1_quick.img in about one minute, taking 4 radiometric looks, do:
+
+	    > quicklook E122175287S0C006 e1_quick
+
+SEE ALSO:
+	ardop, estavedop
+
+AUTHOR:
+	O. Lawlor, 11/98
+
+CONTACT:
+	uso@asf.alaska.edu
+	http://www.asf.alaska.edu

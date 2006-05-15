@@ -23,6 +23,13 @@ OBJLIB = ardop_libs.o \
 	 fft_dop.o \
 	 read_signal.o
 
+SPECLIB = \
+	specan.o \
+	specan_ml.o \
+	specan_patch.o \
+	specan_file.o \
+	quicklook.o
+
 ASPLIB = patch.o \
 	 ardop_setup.o \
 	 rciq.o rmpatch.o acpatch.o calibration.o
@@ -46,6 +53,11 @@ spectra: spectra.o $(OBJLIB)
 	$(CC) $(CFLAGS) spectra.o $(OBJLIB) -o spectra $(LIBC) $(LDFLAGS)
 	mv spectra$(BIN_POSTFIX) $(BINDIR)
 	cp spectra.1 ../../man/cat1/spectra.1
+
+quicklook: $(SPECLIB) $(OBJLIB)
+	$(CC) $(CFLAGS) $(SPECLIB) $(OBJLIB) -o quicklook $(LIBC) $(LDFLAGS)
+	mv quicklook$(BIN_POSTFIX) $(BINDIR)
+	cp quicklook.man ../../man/cat1/quicklook.1
 
 # Note: signal2amp is a tiny program which generates
 # a (very blurry!) image of raw signal data-- it's useful

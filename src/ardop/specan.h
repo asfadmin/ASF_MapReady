@@ -17,6 +17,7 @@ It's a pretty efficient approach in general, but is
 especially nice for quick-look processing (e.g., to
 generate lo-res browse images).
 */
+#include "read_signal.h"
 
 #define SPECAN_MAXFFT 2048 /*Longest possible FFT for SPECAN.*/
 typedef struct {
