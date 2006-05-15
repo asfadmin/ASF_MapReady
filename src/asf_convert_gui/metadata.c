@@ -77,6 +77,7 @@ void show_asf_meta_data(gchar * out_name)
     FILE * metadata_file;
     gchar * metadata_filename;
     gchar * label_text;
+    const int use_fixed_width = TRUE;
 
     metadata_dialog =
         glade_xml_get_widget(glade_xml, "metadata_dialog");
@@ -112,6 +113,28 @@ void show_asf_meta_data(gchar * out_name)
 
         fclose(metadata_file);
         g_free(buffer);
+
+        /* change to a fixed-width font in the window */
+        if (use_fixed_width)
+        {
+            GtkTextIter start, end;
+            GtkTextTag *tt;
+
+#ifdef win32
+            const char *fnt = "Courier";
+#else
+            const char *fnt = "Mono";
+#endif
+
+            gtk_text_buffer_get_start_iter(text_buffer, &start);
+            gtk_text_buffer_get_end_iter(text_buffer, &end);
+
+            tt = gtk_text_buffer_create_tag(text_buffer, "mono",
+                "font", fnt,
+                NULL);
+
+            gtk_text_buffer_apply_tag(text_buffer, tt, &start, &end);    
+        }
 
         metadata_label =
             glade_xml_get_widget(glade_xml, "metadata_label");
