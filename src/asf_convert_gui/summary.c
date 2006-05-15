@@ -101,8 +101,15 @@ void update_summary()
         switch (s->projection)
         {
         case PROJ_UTM:
-            sprintf(text, "%sUTM\n   Zone: %d\n",
-                text, s->zone);
+	    if (s->zone != 0)
+	    {
+                sprintf(text, "%sUTM\n   Zone: %d\n",
+                    text, s->zone);
+	    }
+	    else
+	    {
+                sprintf(text, "%sUTM\n   Zone: <from metadata>\n", text);
+	    }
             break;
 
         case PROJ_PS:
