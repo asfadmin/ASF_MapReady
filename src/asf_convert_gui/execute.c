@@ -620,7 +620,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 	set_asf_tmp_dir(output_dir);
 
 	config_file =
-	  settings_to_config_file(user_settings, in_basename, out_basename,
+	  settings_to_config_file(user_settings, in_basename, out_full,
 				  output_dir, pid);
 
 	cmd_output = do_convert(pid, iter, config_file);

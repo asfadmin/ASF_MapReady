@@ -163,6 +163,10 @@ rename_selected_output_filename()
 
         gtk_widget_show(change_output_name_dialog);
     }
+    else
+    {
+        show_please_select_message();
+    }
 
     LSU;
 

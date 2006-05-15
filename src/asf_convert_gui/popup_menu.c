@@ -6,6 +6,15 @@ static const int popup_menu_item_display_ceos_metadata = 4;
 static const int popup_menu_item_display_asf_metadata = 5;
 static const int popup_menu_item_view_output = 6;
 
+void
+show_please_select_message()
+{
+    static const char *msg = 
+      "Please select a file first!\n";
+
+    message_box(msg);
+}
+
 static void
 enable_menu_items(GtkMenu * menu, gboolean enable_view_output,
                   gboolean enable_display_ceos_metadata,
@@ -43,7 +52,36 @@ enable_menu_items(GtkMenu * menu, gboolean enable_view_output,
 }
 
 static void
-disable_for_multiple_selected(GtkMenu * menu)
+enable_toolbar_buttons(gboolean enable_view_output,
+		       gboolean enable_display_ceos_metadata,
+		       gboolean enable_display_asf_metadata)
+{
+    GtkWidget *rename_button;
+    GtkWidget *jump_button;
+    GtkWidget *display_ceos_button;
+    GtkWidget *display_asf_button;
+    GtkWidget *view_output_button;
+
+    rename_button =
+      glade_xml_get_widget(glade_xml, "rename_button");
+    jump_button =
+      glade_xml_get_widget(glade_xml, "jump_button");
+    display_ceos_button =
+      glade_xml_get_widget(glade_xml, "display_ceos_button");
+    display_asf_button =
+      glade_xml_get_widget(glade_xml, "display_asf_button");
+    view_output_button =
+      glade_xml_get_widget(glade_xml, "view_output_button");
+
+    gtk_widget_set_sensitive(view_output_button, TRUE);
+    gtk_widget_set_sensitive(view_output_button, TRUE);
+    gtk_widget_set_sensitive(view_output_button, enable_view_output);
+    gtk_widget_set_sensitive(display_asf_button, enable_display_asf_metadata);
+    gtk_widget_set_sensitive(display_ceos_button, enable_display_ceos_metadata);
+}
+
+static void
+disable_popups_for_multiple_selected(GtkMenu *menu)
 {
     GList * children;
     GList * iter;
@@ -65,6 +103,40 @@ disable_for_multiple_selected(GtkMenu * menu)
     }
 
     g_list_free(children);
+}
+
+static void
+disable_toolbar_buttons_for_multiple_selected()
+{
+    GtkWidget *rename_button;
+    GtkWidget *jump_button;
+    GtkWidget *display_ceos_button;
+    GtkWidget *display_asf_button;
+    GtkWidget *view_output_button;
+
+    rename_button =
+      glade_xml_get_widget(glade_xml, "rename_button");
+    jump_button =
+      glade_xml_get_widget(glade_xml, "jump_button");
+    display_ceos_button =
+      glade_xml_get_widget(glade_xml, "display_ceos_button");
+    display_asf_button =
+      glade_xml_get_widget(glade_xml, "display_asf_button");
+    view_output_button =
+      glade_xml_get_widget(glade_xml, "view_output_button");
+
+    gtk_widget_set_sensitive(rename_button, FALSE);
+    gtk_widget_set_sensitive(jump_button, FALSE);
+    gtk_widget_set_sensitive(display_asf_button, FALSE);
+    gtk_widget_set_sensitive(display_ceos_button, FALSE);
+    gtk_widget_set_sensitive(view_output_button, FALSE);
+}
+
+static void
+disable_for_multiple_selected(GtkMenu * menu)
+{
+    disable_popups_for_multiple_selected(menu);
+    // disable_toolbar_buttons_for_multiple_selected();
 }
 
 gint
@@ -156,6 +228,10 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
                     show_display_ceos_metadata_menu_item,
                     show_display_asf_metadata_menu_item);
 
+		//enable_toolbar_buttons(show_view_output_menu_item,
+                //    show_display_ceos_metadata_menu_item,
+                //    show_display_asf_metadata_menu_item);
+
                 g_free(ceos_meta_name);
                 g_free(asf_meta_name);
             }
@@ -207,8 +283,8 @@ static gboolean confirm_overwrite()
     return ret;
 }
 
-SIGNAL_CALLBACK gint
-popup_menu_remove(GtkWidget *widget, GdkEvent *event)
+static int
+handle_remove()
 {
     LSL;
 
@@ -227,6 +303,13 @@ popup_menu_remove(GtkWidget *widget, GdkEvent *event)
 
     refs = NULL;
     i = selected_rows;
+
+    if (!selected_rows)
+    {
+        LSU;
+	show_please_select_message();
+	return FALSE;
+    }
 
     while (i)
     {
@@ -270,10 +353,12 @@ popup_menu_remove(GtkWidget *widget, GdkEvent *event)
 gboolean
 get_iter_to_first_selected_row(GtkWidget * files_list, GtkTreeIter * iter)
 {
-    LSL;
     GList * selected_rows;
     GtkTreeModel *model;
     GtkTreeSelection *selection;
+    gboolean found;
+
+    LSL;
 
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
     model = GTK_TREE_MODEL(list_store);
@@ -289,18 +374,19 @@ get_iter_to_first_selected_row(GtkWidget * files_list, GtkTreeIter * iter)
         g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
         g_list_free(selected_rows);
 
-        LSU;
-        return TRUE;
+        found = TRUE;
     }
     else
     {
-        LSU;
-        return FALSE;
+        found = FALSE;
     }
+
+    LSU;
+    return found;
 }
 
-SIGNAL_CALLBACK gint
-popup_menu_jump(GtkWidget *widget, GdkEvent *event)
+static int
+handle_jump()
 {
     LSL;
 
@@ -333,13 +419,17 @@ popup_menu_jump(GtkWidget *widget, GdkEvent *event)
             message_box("No log information available for that file.");
         }
     }
+    else
+    {
+        show_please_select_message();
+    }
 
     LSU;
     return TRUE;
 }
 
-SIGNAL_CALLBACK gint
-popup_menu_ceos_metadata(GtkWidget *widget, GdkEvent *event)
+static int
+handle_display_ceos_metadata()
 {
     LSL;
     GtkWidget *files_list;
@@ -356,13 +446,17 @@ popup_menu_ceos_metadata(GtkWidget *widget, GdkEvent *event)
 
         show_ceos_meta_data(out_name);
     }
+    else
+    {
+        show_please_select_message();
+    }
 
     LSU;
     return TRUE;
 }
 
-SIGNAL_CALLBACK gint
-popup_menu_asf_metadata(GtkWidget *widget, GdkEvent *event)
+static int
+handle_display_asf_metadata()
 {
     LSL;
     GtkWidget *files_list;
@@ -379,13 +473,17 @@ popup_menu_asf_metadata(GtkWidget *widget, GdkEvent *event)
 
         show_asf_meta_data(out_name);
     }
+    else
+    {
+        show_please_select_message();
+    }
 
     LSU;
     return TRUE;
 }
 
-SIGNAL_CALLBACK gint
-popup_menu_process(GtkWidget *widget, GdkEvent *event)
+static int
+handle_process()
 {
     LSL;
     GtkWidget *files_list;
@@ -407,6 +505,13 @@ popup_menu_process(GtkWidget *widget, GdkEvent *event)
     model = GTK_TREE_MODEL(list_store);
 
     selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+
+    if (!selected_rows)
+    {
+        LSU;
+        show_please_select_message();
+	return FALSE;
+    }
 
     refs = NULL;
     i = selected_rows;
@@ -452,14 +557,14 @@ popup_menu_process(GtkWidget *widget, GdkEvent *event)
     return TRUE;
 }
 
-SIGNAL_CALLBACK gint
-popup_menu_rename(GtkWidget *widget, GdkEvent *event)
+static int
+handle_rename()
 {
-    return (gint) rename_selected_output_filename();
+  return rename_selected_output_filename();
 }
 
-SIGNAL_CALLBACK gint
-popup_menu_view_output(GtkWidget *widget, GdkEvent *event)
+static int
+handle_view_output()
 {
     LSL;
 
@@ -475,11 +580,109 @@ popup_menu_view_output(GtkWidget *widget, GdkEvent *event)
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
             COL_OUTPUT_FILE, &out_name, -1);
 
-        show_output_image(out_name);
+	if (g_file_test(out_name, G_FILE_TEST_EXISTS))
+	{
+	    show_output_image(out_name);
+	}
+	else
+	{
+	    char msg[2048];
+	    sprintf(msg, "The output image file was not found:\n"
+		         "   %s\n", out_name);
+	    message_box(msg);
+	}
+    }
+    else
+    {
+        show_please_select_message();
     }
 
     LSU;
     return TRUE;
+}
+
+SIGNAL_CALLBACK void
+on_remove_button_clicked(GtkWidget *widget)
+{
+  handle_remove();
+}
+
+SIGNAL_CALLBACK void
+on_process_button_clicked(GtkWidget *widget)
+{
+  handle_process();
+}
+
+SIGNAL_CALLBACK void
+on_rename_button_clicked(GtkWidget *widget)
+{
+  handle_rename();
+}
+
+SIGNAL_CALLBACK void
+on_jump_button_clicked(GtkWidget *widget)
+{
+  handle_jump();
+}
+
+SIGNAL_CALLBACK void
+on_display_ceos_button_clicked(GtkWidget *widget)
+{
+  handle_display_ceos_metadata();
+}
+
+SIGNAL_CALLBACK void
+on_display_asf_button_clicked(GtkWidget *widget)
+{
+  handle_display_asf_metadata();
+}
+
+SIGNAL_CALLBACK void
+on_view_output_button_clicked(GtkWidget *widget)
+{
+  handle_view_output();
+}
+
+SIGNAL_CALLBACK gint
+popup_menu_jump(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_jump();
+}
+
+SIGNAL_CALLBACK gint
+popup_menu_ceos_metadata(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_display_ceos_metadata();
+}
+
+SIGNAL_CALLBACK gint
+popup_menu_asf_metadata(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_display_asf_metadata();
+}
+
+SIGNAL_CALLBACK gint
+popup_menu_remove(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_remove();
+}
+
+SIGNAL_CALLBACK gint
+popup_menu_process(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_process();
+}
+
+SIGNAL_CALLBACK gint
+popup_menu_rename(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_rename();
+}
+
+SIGNAL_CALLBACK gint
+popup_menu_view_output(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_view_output();
 }
 
 void
