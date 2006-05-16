@@ -460,7 +460,7 @@ build_executable(char *buf, const char *exec_name)
 #endif
 }
 
-static char *
+char *
 getPath(const char *in)
 {
   char *dir = malloc(sizeof(char)*(strlen(in) + 2));

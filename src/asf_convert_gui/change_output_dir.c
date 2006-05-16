@@ -240,4 +240,85 @@ on_change_output_directory_dialog_key_press_event(GtkWidget * widget,
     return FALSE;
 }
 
+SIGNAL_CALLBACK void
+on_browse_output_directory_button_clicked(GtkWidget *widget)
+{
+    GtkWidget *output_directory_selection_dialog =
+        glade_xml_get_widget(glade_xml, "output_directory_selection");
 
+    gtk_widget_show(output_directory_selection_dialog);
+}
+
+void
+hide_output_directory_selection_dialog()
+{
+    GtkWidget *output_directory_selection_dialog =
+        glade_xml_get_widget(glade_xml, "output_directory_selection");
+
+    gtk_widget_hide(output_directory_selection_dialog);
+}
+
+SIGNAL_CALLBACK void
+on_output_directory_selection_ok_button_clicked(GtkWidget *widget)
+{
+    GtkWidget *output_directory_selection_dialog;
+    gchar **selections;
+    gchar **current;
+    int i, n;
+
+    output_directory_selection_dialog =
+        glade_xml_get_widget(glade_xml, "output_directory_selection");
+
+    selections = gtk_file_selection_get_selections(
+        GTK_FILE_SELECTION(output_directory_selection_dialog));
+
+    current = selections;
+    i = n = 0;
+
+    while (*current)
+    {
+        GtkWidget *entry_new_output_directory;
+
+	entry_new_output_directory =
+	  glade_xml_get_widget(glade_xml, "entry_new_output_directory");
+
+	if (g_file_test(*current, G_FILE_TEST_IS_DIR)) {
+	  gtk_entry_set_text(GTK_ENTRY(entry_new_output_directory), *current);
+	} else {
+	  char *dir = getPath(*current);
+	  gtk_entry_set_text(GTK_ENTRY(entry_new_output_directory), dir);
+	  free(dir);
+	}
+	break;
+    }
+
+    g_strfreev(selections);
+    gtk_widget_hide(output_directory_selection_dialog);
+}
+
+SIGNAL_CALLBACK void
+on_output_directory_selection_cancel_button_clicked(GtkWidget *widget)
+{
+    hide_output_directory_selection_dialog();
+}
+
+SIGNAL_CALLBACK gboolean
+on_output_directory_selection_delete_event(GtkWidget *w)
+{
+    hide_output_directory_selection_dialog();
+    return TRUE;
+}
+
+SIGNAL_CALLBACK gboolean
+on_output_directory_selection_destroy_event(GtkWidget *w)
+{
+    hide_output_directory_selection_dialog();
+    return TRUE;
+}
+
+SIGNAL_CALLBACK gboolean
+on_output_directory_selection_destroy(GtkWidget *w)
+{
+    hide_output_directory_selection_dialog();
+    return TRUE;
+}
