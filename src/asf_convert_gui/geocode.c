@@ -425,7 +425,7 @@ void geocode_options_changed()
                 enable_false_easting = TRUE;
 
                 gtk_entry_set_text(
-                    GTK_ENTRY(first_standard_parallel_entry), "");
+                    GTK_ENTRY(latitude_of_origin_entry), "");
                 gtk_entry_set_text(
                     GTK_ENTRY(second_standard_parallel_entry), "");
 
