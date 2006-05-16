@@ -93,6 +93,9 @@ char *findExt(const char *name);
    copy of name with the rightmost dot extension, if present, replaced
    with newExt.  If no dot extension exists originally, the new
    extension is appended.  */
+/* 5/06: No longer a buffer overrun risk - we can preallocate the proper
+   amount of memory!  Only suggested change would now be a name
+   change to "changeExt" as that is much more indicative of its function. */
 char *appendExt(const char *name,const char *newExt);
 /* Return true iff file name exists and is readable.  */
 int fileExists(const char *name);

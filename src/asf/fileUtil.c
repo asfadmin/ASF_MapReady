@@ -51,11 +51,13 @@ char *stripExt(const char *in)
 
 char *appendExt(const char *name, const char *newExt)
 {
-  char *ret = (char *) MALLOC (sizeof(char)
-			       * (MAX_APPENDEXT_RESULT_STRING_LENGTH + 1));
-  char *ext;
+  char *ret, *ext;
+  int l_name, l_newExt;
 
-  assert (strlen (name) <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
+  l_name = strlen(name);
+  l_newExt = newExt ? strlen(newExt) : 0;
+
+  ret = (char *) MALLOC (sizeof(char) * (l_name + l_newExt + 2));
   strcpy (ret, name);
 
   ext = findExt (ret);
@@ -71,8 +73,6 @@ char *appendExt(const char *name, const char *newExt)
     *ext = '\0';
 
   /* Put new extension on the end.  */
-  assert (strlen (ret) + strlen (newExt)
-	  <= MAX_APPENDEXT_RESULT_STRING_LENGTH);
   strcat (ret, newExt);
 
   return ret;
@@ -269,7 +269,8 @@ FILE *fopenImage(const char *fName,const char *access)
 }
 
 
-#define BUFFER_SIZE 16777216 /* 16 megabyte buffer */
+//#define BUFFER_SIZE 16777216 /* 16 megabyte buffer */
+#define BUFFER_SIZE 1048576 /* 1 megabyte buffer */
 /******************************************************************************
  * fileCopy:
  * Copy the file specified by "src" to the file specified by "dst". Error
@@ -285,9 +286,9 @@ void fileCopy(const char *src, const char *dst)
    dstFp = FOPEN( dst, "wb" );
 
    do {
-      amount = FREAD( buffer, sizeof(char), BUFFER_SIZE, srcFp );
+      amount = fread( buffer, sizeof(char), BUFFER_SIZE, srcFp );
       if (amount) {
-         FWRITE( buffer, sizeof(char), amount, dstFp );
+         fwrite( buffer, sizeof(char), amount, dstFp );
       }
    /* when amount read is < BUFSZ, copy is done */
    } while (amount == BUFFER_SIZE);
