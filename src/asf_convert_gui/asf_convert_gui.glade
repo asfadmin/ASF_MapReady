@@ -3924,6 +3924,7 @@ If you proceed, they will be overwritten.</property>
 </widget>
 
 <widget class="GtkDialog" id="metadata_dialog">
+  <property name="width_request">800</property>
   <property name="title" translatable="yes">Meta Data</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
