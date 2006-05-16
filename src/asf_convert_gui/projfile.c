@@ -10,7 +10,7 @@ static GtkWidget * lamaz_menu = NULL;
 
 static char * projection_directory(int projection)
 {
-    char * location, * ret;
+    char * location = NULL, * ret;
 
     switch (projection)
     {
@@ -245,7 +245,7 @@ void release_predefined_projections()
 void set_predefined_projections(int projection)
 {
     GtkWidget * predefined_projection_option_menu;
-    GtkWidget * menu;
+    GtkWidget * menu = NULL;
 
     /* looking through all the files can be slow, skip it if we can */
     if (projection == previous_projection)
@@ -302,6 +302,8 @@ void set_predefined_projections(int projection)
         menu = albers_menu;
         break;
     }
+
+    g_assert(menu);
 
     previous_projection = projection;
     gtk_option_menu_set_menu(

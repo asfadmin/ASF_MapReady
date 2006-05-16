@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include "asf_convert_gui.h"
 #include <asf.h>
+#include <asf_reporting.h>
+#include <asf_convert.h>
 
 /*
 #include <fcntl.h>
@@ -450,15 +452,15 @@ have_access_to_dir(const gchar * dir, gchar ** err_string)
     return TRUE;
 }
 
-static void
-build_executable(char *buf, const char *exec_name)
-{
-#ifdef win32
-    sprintf(buf, "\"%s/%s\"", get_asf_bin_dir(), exec_name);
-#else
-    sprintf(buf, "%s/%s", get_asf_bin_dir(), exec_name);    
-#endif
-}
+//static void
+//build_executable(char *buf, const char *exec_name)
+//{
+//#ifdef win32
+//    sprintf(buf, "\"%s/%s\"", get_asf_bin_dir(), exec_name);
+//#else
+//    sprintf(buf, "%s/%s", get_asf_bin_dir(), exec_name);    
+//#endif
+//}
 
 char *
 getPath(const char *in)
@@ -476,7 +478,7 @@ getPath(const char *in)
 }
 
 static char *
-do_convert(int pid, GtkTreeIter *iter, const char *cfg_file)
+do_convert(int pid, GtkTreeIter *iter, char *cfg_file)
 {
     extern int logflag;
     extern FILE *fLog;
@@ -584,7 +586,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 {
     LSL;
     gchar *in_data, *out_full, *status;
-    int pid, err;
+    int pid;
 
     pid = getpid();
 
@@ -623,6 +625,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 	  settings_to_config_file(user_settings, in_basename, out_full,
 				  output_dir, pid);
 
+	append_begin_processing_tag(in_data);
 	cmd_output = do_convert(pid, iter, config_file);
 	err = check_for_error(cmd_output);
 	append_output(cmd_output);

@@ -98,7 +98,7 @@ else
 
 ### Begin Unix Section
 
-CFLAGS += \
+CFLAGS += -Wall -Werror \
 	$(GSL_CFLAGS) \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \

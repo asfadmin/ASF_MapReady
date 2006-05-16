@@ -1,7 +1,9 @@
 #include <unistd.h>
+#include <strings.h>
 
 #include "asf_convert_gui.h"
 #include "ceos_thumbnail.h"
+#include "asf.h"
 
 int COL_DATA_FILE;
 int COL_INPUT_THUMBNAIL;
@@ -68,12 +70,12 @@ determine_default_output_file_name(const gchar * data_file_name)
 
 gboolean is_L_file(const gchar * data_file)
 {
-    gchar * p = strrchr(data_file, '.');
+    char *p = findExt(data_file);
 
     if (!p)
         return FALSE;
     else
-        return strcasecmp(p + 1, "L") == 0;
+        return strcasecmp(p, "L") == 0;
 }
 
 static gboolean file_is_valid(const gchar * data_file)
@@ -533,7 +535,7 @@ thumbnail_region (GtkWidget *widget, GdkEventMotion *event)
 
     /* If over the input image thumbnail, return the input thumbnail
     region,  */
-    GtkTreeViewColumn *tc;	/* Thumbnail column we are over.  */
+    GtkTreeViewColumn *tc = NULL;	/* Thumbnail column we are over.  */
     if ( in_input_thumbnail (widget, event) ) {
         tc = input_thumbnail_column (widget, event);
     }

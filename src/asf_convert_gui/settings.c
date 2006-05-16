@@ -906,6 +906,7 @@ settings_get_output_format_extension(const Settings *s)
 
     switch (s->input_data_format)
     {
+    default:
     case INPUT_FORMAT_CEOS_LEVEL1:
         if (s->export_is_checked)
         {

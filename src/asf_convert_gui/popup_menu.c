@@ -51,7 +51,7 @@ enable_menu_items(GtkMenu * menu, gboolean enable_view_output,
     g_list_free(children);
 }
 
-static void
+/* static */ void
 enable_toolbar_buttons(gboolean enable_view_output,
 		       gboolean enable_display_ceos_metadata,
 		       gboolean enable_display_asf_metadata)
@@ -105,7 +105,7 @@ disable_popups_for_multiple_selected(GtkMenu *menu)
     g_list_free(children);
 }
 
-static void
+/* static */ void
 disable_toolbar_buttons_for_multiple_selected()
 {
     GtkWidget *rename_button;
