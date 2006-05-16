@@ -45,6 +45,16 @@ void update_status(convert_config *cfg, const char *format, ...)
   }
 }
 
+/* Make a copy of the metdata file. */
+static void copy_meta(char *src, char *dest)
+{
+  char *tmp1 = appendExt(src, ".meta");
+  char *tmp2 = appendExt(dest, ".meta");
+  fileCopy(tmp1, tmp2);
+  free(tmp1);
+  free(tmp2);
+}
+
 int asf_convert(int createflag, char *configFileName)
 {
   FILE *fBatch, *fConfig;
@@ -476,11 +486,7 @@ int asf_convert(int createflag, char *configFileName)
                    "geocoding data file (asf_geocode)\n");
 
       // Move the .meta file to be ready for export
-      char tmp1[1024];
-      char tmp2[1024];
-      sprintf(tmp1, "%s.meta", outFile);
-      sprintf(tmp2, "%s.meta", cfg->general->in_name);
-      fileCopy(tmp1, tmp2);
+      copy_meta(outFile, cfg->general->in_name);
     }
 
     if (cfg->general->export) {
@@ -519,6 +525,9 @@ int asf_convert(int createflag, char *configFileName)
 
       check_return(asf_export(format, size, scale, inFile, outFile),
                    "exporting data file (asf_export)\n");
+
+      // Move the .meta file out of temporary status: <out basename>.meta
+      copy_meta(inFile, outFile);
     }
 
     if (!cfg->general->intermediates) {
