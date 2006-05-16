@@ -1188,7 +1188,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   // Flip the non-reprojected image if the y pixel size is negative.
   if ( y_pixel_size < 0 && omd->projection == NULL ) {
     asfPrintStatus ("Negative y pixel size, flipping output image.\n");
-    assert (0); 		/* Shouldn't be here.  */
+    g_assert (0); 		/* Shouldn't be here.  */
     float_image_flip_y (oim);
     y_pixel_size = -y_pixel_size;
   }
@@ -1217,9 +1217,10 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   omd->sar->azimuth_doppler_coefficients[1] *= y_scale;
   omd->sar->azimuth_doppler_coefficients[2] *= y_scale * y_scale;
   if (omd->projection) {
-    if (omd->projection->perY > 0)
-      assert (0);		/* Shouldn't happen.  */
+    if (omd->projection->perY > 0) {
+      g_assert (0);		/* Shouldn't happen.  */
       pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
+    }
     else
       pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
   }
