@@ -353,8 +353,9 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   // this functionality.
   if ( (imd->sar->image_type == 'P' || imd->general->image_data_type == DEM)
        && imd->projection != NULL ) {
+    // FIXME: revive this assertion or fix the underlying problem.
     asfRequire (datum == imd->projection->datum, "For input images of type "
-		"DEM, changing the datum is not supported.\n");
+    		"DEM, changing the datum is not supported.\n");
   }
 
   // If we have an already projected image as input, we will need to
@@ -693,11 +694,11 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       // Corresponding pixel indicies in input image.
       double x_pix, y_pix;
       if ( input_projected ) {
-	    // Input projection coordinates of the current pixel.
-	    double ipcx, ipcy;
-	    project_set_datum (imd->projection->datum);
-	    return_code = project_input (ipp, D2R * lat, D2R * lon,
-				                     &ipcx, &ipcy);
+	// Input projection coordinates of the current pixel.
+	double ipcx, ipcy;
+	project_set_datum (imd->projection->datum);
+	return_code = project_input (ipp, D2R * lat, D2R * lon, &ipcx, 
+				     &ipcy);
 	if ( return_code == 0 ) {
 	  g_assert_not_reached ();
 	}
@@ -1184,10 +1185,11 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   double x_scale = pixel_size / x_pixel_size;
   double y_scale = pixel_size / y_pixel_size;
 
-  // Flip the image if the y pixel size is negative
-  if (y_pixel_size < 0) {
-    asfPrintStatus("Negative y pixel size, flipping output image.\n");
-    float_image_flip_y(oim);
+  // Flip the non-reprojected image if the y pixel size is negative.
+  if ( y_pixel_size < 0 && omd->projection == NULL ) {
+    asfPrintStatus ("Negative y pixel size, flipping output image.\n");
+    assert (0); 		/* Shouldn't be here.  */
+    float_image_flip_y (oim);
     y_pixel_size = -y_pixel_size;
   }
 
@@ -1216,6 +1218,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   omd->sar->azimuth_doppler_coefficients[2] *= y_scale * y_scale;
   if (omd->projection) {
     if (omd->projection->perY > 0)
+      assert (0);		/* Shouldn't happen.  */
       pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
     else
       pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
