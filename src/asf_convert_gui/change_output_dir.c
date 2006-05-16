@@ -1,6 +1,18 @@
-#include "asf_convert_gui.h"
 #include <ctype.h>
 #include <gdk/gdkkeysyms.h>
+
+#ifdef win32
+
+#define BYTE __byte
+#include "asf_convert_gui.h"
+#undef BYTE
+
+#include <windows.h>
+#include <shlobj.h>
+
+#else
+#include "asf_convert_gui.h"
+#endif
 
 static void
 change_output_output_directory_hide()
@@ -243,10 +255,29 @@ on_change_output_directory_dialog_key_press_event(GtkWidget * widget,
 SIGNAL_CALLBACK void
 on_browse_output_directory_button_clicked(GtkWidget *widget)
 {
+#ifdef win32
+    GtkWidget *entry_new_output_directory;
+
+    entry_new_output_directory =
+        glade_xml_get_widget(glade_xml, "entry_new_output_directory");
+    
+    BROWSEINFO bi = { 0 };
+    bi.lpszTitle = "Select Output Directory";
+    LPITEMIDLIST pidl = SHBrowseForFolder ( &bi );
+    if ( pidl != 0 )
+    {
+        TCHAR path[MAX_PATH];
+        if ( SHGetPathFromIDList ( pidl, path ) )
+        {
+            gtk_entry_set_text(GTK_ENTRY(entry_new_output_directory), path);
+        }
+    }
+#else
     GtkWidget *output_directory_selection_dialog =
         glade_xml_get_widget(glade_xml, "output_directory_selection");
 
     gtk_widget_show(output_directory_selection_dialog);
+#endif
 }
 
 void
@@ -279,17 +310,21 @@ on_output_directory_selection_ok_button_clicked(GtkWidget *widget)
     {
         GtkWidget *entry_new_output_directory;
 
-	entry_new_output_directory =
-	  glade_xml_get_widget(glade_xml, "entry_new_output_directory");
+	    entry_new_output_directory =
+	        glade_xml_get_widget(glade_xml, "entry_new_output_directory");
 
-	if (g_file_test(*current, G_FILE_TEST_IS_DIR)) {
-	  gtk_entry_set_text(GTK_ENTRY(entry_new_output_directory), *current);
-	} else {
-	  char *dir = getPath(*current);
-	  gtk_entry_set_text(GTK_ENTRY(entry_new_output_directory), dir);
-	  free(dir);
-	}
-	break;
+        if (g_file_test(*current, G_FILE_TEST_IS_DIR))
+        {
+            gtk_entry_set_text(GTK_ENTRY(entry_new_output_directory), *current);
+        } 
+        else
+        {
+            char *dir = getPath(*current);
+            gtk_entry_set_text(GTK_ENTRY(entry_new_output_directory), dir);
+            free(dir);
+        }
+
+        break;
     }
 
     g_strfreev(selections);
