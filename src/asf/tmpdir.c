@@ -29,23 +29,40 @@ get_asf_tmp_dir()
   return s_tmp_dir;
 }
 
-
-FILE * 
-fopen_tmp_file(const char * filename, const char * mode)
+static char * full_tmp_name (const char *filename)
 {
   char * full_name;
   const char * tmp_dir;
-  FILE * fp;
 
   tmp_dir = get_asf_tmp_dir();
   full_name = (char *) malloc (sizeof(char) *
                                 (strlen(filename) + strlen(tmp_dir) + 10));
 
   sprintf(full_name, "%s%c%s", tmp_dir, DIR_SEPARATOR, filename);
+}
 
+FILE * 
+fopen_tmp_file(const char * filename, const char * mode)
+{
+  FILE * fp;
+  char * full_name;
+
+  full_name = full_tmp_name (filename);
   fp = FOPEN(full_name, mode);
 
   free(full_name);
   return fp;
 }
 
+int
+unlink_tmp_file(const char *filename)
+{
+  char * full_name;
+  int ret;
+
+  full_name = full_tmp_name (filename);
+  ret = unlink (full_name);
+  free(full_name);
+
+  return ret;
+}

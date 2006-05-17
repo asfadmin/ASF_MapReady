@@ -188,5 +188,6 @@ int asfSystem(const char *format, ...);
 void set_asf_tmp_dir(const char *tmp_dir);
 const char * get_asf_tmp_dir(void);
 FILE * fopen_tmp_file(const char * filename, const char * mode);
+int unlink_tmp_file(const char *filename);
 
 #endif
