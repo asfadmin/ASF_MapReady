@@ -50,24 +50,6 @@ gchar * build_ceos_metadata_filename(gchar * name)
     }
 }
 
-//static gchar *
-//change_extension(const gchar * file, const gchar * ext)
-//{
-//    gchar * replaced = (gchar *)
-//        g_malloc(sizeof(gchar) * (strlen(file) + strlen(ext) + 10));
-//
-//    strcpy(replaced, file);
-//    char * p = strrchr(replaced, '.');
-//
-//    if (p)
-//        *p = '\0';
-//
-//    strcat(replaced, ".");
-//    strcat(replaced, ext);
-//
-//    return replaced;
-//}
-
 void show_asf_meta_data(gchar * out_name)
 {
     GtkWidget *metadata_dialog;
@@ -180,7 +162,7 @@ static void mdv_thread (GString *file, gpointer user_data)
 }
 #endif
 
-void show_ceos_meta_data(gchar * out_name)
+void show_ceos_meta_data(gchar * in_name)
 {
 #ifdef win32
     gchar * mdv = find_in_bin("mdv.exe");
@@ -188,7 +170,7 @@ void show_ceos_meta_data(gchar * out_name)
     gchar * mdv = find_in_bin("mdv");
 #endif
 
-    gchar * ceos_file = build_ceos_metadata_filename(out_name);
+    gchar * ceos_file = build_ceos_metadata_filename(in_name);
 
     // use_thumbnails should always be true here, since
     // we disable the option in the case where it is false

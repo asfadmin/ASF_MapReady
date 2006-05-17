@@ -193,7 +193,7 @@ int  settings_get_output_format_can_be_thumbnailed(const Settings *s);
 void settings_delete(Settings *);
 char * settings_to_config_file(const Settings *s,
 			     const gchar *input_file, const gchar *output_file,
-			     const gchar *output_path, int pid);
+			     const gchar *output_path);
 
 /* find_in_path.c */
 gchar *find_in_path(gchar * file);
@@ -203,7 +203,6 @@ gchar *find_dir_in_path(gchar * file);
 int do_system_exec(const char *cmd);
 void process_items_from_list(GList *, gboolean);
 void append_output(const gchar *text);
-char *getPath(const char *);
 
 /* callbacks.c */
 void output_format_combobox_changed();
@@ -217,6 +216,7 @@ void set_combo_box_item(GtkWidget *, gint);
 gint get_combo_box_item(GtkWidget *);
 void message_box(const gchar *);
 gchar * meta_file_name(const gchar *);
+char *getPath(const char *);
 
 /* dnd.c */
 void setup_dnd();

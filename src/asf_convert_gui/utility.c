@@ -77,3 +77,18 @@ meta_file_name(const gchar * data_file_name)
 
     return g_strdup("");
 }
+
+char *
+getPath(const char *in)
+{
+  char *dir = malloc(sizeof(char)*(strlen(in) + 2));
+  char *file = malloc(sizeof(char)*(strlen(in) + 2));
+
+  split_dir_and_file(in, dir, file);
+  free(file);
+
+  if (dir[strlen(dir) - 1] == DIR_SEPARATOR)
+      dir[strlen(dir) - 1] = '\0';
+
+  return dir;
+}

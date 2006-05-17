@@ -1063,7 +1063,7 @@ settings_delete(Settings * s)
 char *
 settings_to_config_file(const Settings *s,
 			const gchar *input_file, const gchar *output_file,
-			const gchar *output_path, int pid)
+			const gchar *output_path)
 {
     char *tmp_projfile = NULL;
     char *tmp_cfgfile;
@@ -1071,9 +1071,7 @@ settings_to_config_file(const Settings *s,
 
     if (s->geocode_is_checked) {
 
-      tmp_projfile = malloc(sizeof(char) * (strlen(output_path) + 24));
-      sprintf(tmp_projfile, "%s%ctmp%d.proj", output_path, DIR_SEPARATOR,
-	      pid);
+      tmp_projfile = appendExt(output_file, ".proj");
 
       FILE * pf = fopen(tmp_projfile, "wt");
       if (!pf) return NULL; /* FIXME, need better error handling here */
@@ -1116,10 +1114,7 @@ settings_to_config_file(const Settings *s,
       fclose(pf);
     }
 
-    tmp_cfgfile = malloc(sizeof(char) * (strlen(output_path) + 24));
-    sprintf(tmp_cfgfile, "%s%ctmp%d.cfg", output_path, DIR_SEPARATOR,
-	    pid);
-
+    tmp_cfgfile = appendExt(output_file, ".cfg");
     tmp_statfile = appendExt(tmp_cfgfile, ".status");
 
     FILE * cf = fopen(tmp_cfgfile, "wt");

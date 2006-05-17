@@ -462,23 +462,8 @@ have_access_to_dir(const gchar * dir, gchar ** err_string)
 //#endif
 //}
 
-char *
-getPath(const char *in)
-{
-  char *dir = malloc(sizeof(char)*(strlen(in) + 2));
-  char *file = malloc(sizeof(char)*(strlen(in) + 2));
-
-  split_dir_and_file(in, dir, file);
-  free(file);
-
-  if (dir[strlen(dir) - 1] == DIR_SEPARATOR)
-      dir[strlen(dir) - 1] = '\0';
-
-  return dir;
-}
-
 static char *
-do_convert(int pid, GtkTreeIter *iter, char *cfg_file)
+do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int keep_files)
 {
     extern int logflag;
     extern FILE *fLog;
@@ -508,8 +493,9 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file)
     {
         /* parent */
         int counter = 1;
-	char *statFile = appendExt(logFile, ".status");
-	
+	char *statFile = appendExt(cfg_file, ".status");	
+	char *projFile = appendExt(cfg_file, ".proj");	
+
         while (waitpid(-1, NULL, WNOHANG) == 0)
 	{
 	    while (gtk_events_pending())
@@ -531,6 +517,14 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file)
 		}
 	    }
         }
+
+	unlink(statFile);
+
+	if (!keep_files)
+	{
+	    unlink(cfg_file);
+	    unlink(projFile);
+	}
     }
 
     the_output = NULL;
@@ -567,7 +561,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file)
             }
         }
         fclose(output);
-        remove(logFile);
+        unlink(logFile);
     }
 
     if (!the_output)
@@ -623,10 +617,11 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 
 	config_file =
 	  settings_to_config_file(user_settings, in_basename, out_full,
-				  output_dir, pid);
+				  output_dir);
 
 	append_begin_processing_tag(in_data);
-	cmd_output = do_convert(pid, iter, config_file);
+	cmd_output = do_convert(pid, iter, config_file,
+				user_settings->keep_files);
 	err = check_for_error(cmd_output);
 	append_output(cmd_output);
 

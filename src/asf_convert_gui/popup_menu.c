@@ -441,12 +441,12 @@ handle_display_ceos_metadata()
 
     if (get_iter_to_first_selected_row(files_list, &iter))
     {
-        gchar * out_name;
+        gchar * in_name;
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-            COL_OUTPUT_FILE, &out_name, -1);
+            COL_DATA_FILE, &in_name, -1);
 
-        show_ceos_meta_data(out_name);
+        show_ceos_meta_data(in_name);
     }
     else
     {
