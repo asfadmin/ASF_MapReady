@@ -234,7 +234,7 @@ $html_file = "$source_file.html";
     print SOURCE_FILE "following defines. For the short ones (like ASF_NAME_STRING) this is no big\n";
     print SOURCE_FILE "deal. However, for some of the longer ones, such as ASF_COPYRIGHT_STRING, it\n";
     print SOURCE_FILE "can be a daunting task to get all the newlines in correctly, etc. In order to\n";
-    print SOURCE_FILE "help you with this task, there is a tool, edit_man_header.pl. The tool *only*\n";
+    print SOURCE_FILE "help you with this task, there is a tool, edit_man_header. The tool *only*\n";
     print SOURCE_FILE "works with this portion of the code, so fear not. It will scan in defines of\n";
     print SOURCE_FILE "the format #define ASF_<something>_STRING between the two auto-generated\n";
     print SOURCE_FILE "documentation markers, format them for a text editor, run that editor, allow\n";
@@ -242,7 +242,7 @@ $html_file = "$source_file.html";
     print SOURCE_FILE "defines, formatted appropriately. The only warning is that any text between\n";
     print SOURCE_FILE "those two markers and not part of one of those defines will not be preserved,\n";
     print SOURCE_FILE "and that all of this auto-generated code will be at the top of the source\n";
-    print SOURCE_FILE "file. Save yourself the time and trouble, and use edit_man_header.pl. :)\n";
+    print SOURCE_FILE "file. Save yourself the time and trouble, and use edit_man_header. :)\n";
     print SOURCE_FILE "*/\n\n";
 
     #Prep the html help file
