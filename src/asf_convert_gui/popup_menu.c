@@ -176,8 +176,9 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
                 event_button->x, event_button->y,
                 &path, NULL, NULL, NULL))
             {
-                gchar   * status,
+                gchar * status,
                     * out_name,
+                    * in_name,
                     * asf_meta_name,
                     * ceos_meta_name;
 
@@ -191,7 +192,8 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
                     &iter, path);
 
                 gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-                    COL_STATUS, &status, 
+                    COL_STATUS, &status,
+		    COL_DATA_FILE, &in_name,
                     COL_OUTPUT_FILE, &out_name, -1);
 
                 gtk_tree_path_free(path);
@@ -214,7 +216,7 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
                 }
 
                 /* check if we should disable "Display CEOS Metadata" */
-                ceos_meta_name = build_ceos_metadata_filename(out_name);
+                ceos_meta_name = build_ceos_metadata_filename(in_name);
                 show_display_ceos_metadata_menu_item =
                     g_file_test(ceos_meta_name, G_FILE_TEST_EXISTS);
 

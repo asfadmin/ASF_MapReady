@@ -1,11 +1,11 @@
-#include "find_in_path.h"
+#include "asf_convert_gui.h"
 
 #ifdef win32
 const char PATH_SEPARATOR = ';';
-const char DIR_SEPARATOR = '\\';
+//const char DIR_SEPARATOR = '\\';
 #else
 const char PATH_SEPARATOR = ':';
-const char DIR_SEPARATOR = '/';
+//const char DIR_SEPARATOR = '/';
 #endif
 
 /* used g_find_program_in_path from glib as a starting */

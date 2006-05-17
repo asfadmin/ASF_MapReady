@@ -3,8 +3,6 @@ tool.  */
 
 #include "asf_convert_gui.h"
 #include "asf_version.h"
-#include "share.h"
-#include "asf.h"
 
 GladeXML *glade_xml;
 GStaticRecMutex list_store_lock = G_STATIC_REC_MUTEX_INIT;
