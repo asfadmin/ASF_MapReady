@@ -127,7 +127,7 @@ initialize_tile_cache_file (void)
     }
   }
   else {
-    return_code = unlink (tile_file_name->str);
+    return_code = unlink_tmp_file (tile_file_name->str);
     g_assert (return_code == 0);
   }
   g_assert (tile_file != NULL);
