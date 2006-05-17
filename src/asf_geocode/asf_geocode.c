@@ -1,19 +1,21 @@
 /*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
 /*
-ABOUT EDITING THIS DOCUMENTATION:
-If you wish to edit the documentation for this program, you need to change the
-following defines. For the short ones (like ASF_NAME_STRING) this is no big
-deal. However, for some of the longer ones, such as ASF_COPYRIGHT_STRING, it
-can be a daunting task to get all the newlines in correctly, etc. In order to
-help you with this task, there is a tool, edit_man_header.pl. The tool *only*
-works with this portion of the code, so fear not. It will scan in defines of
-the format #define ASF_<something>_STRING between the two auto-generated
-documentation markers, format them for a text editor, run that editor, allow
-you to edit the text in a clean manner, and then automatically generate these
-defines, formatted appropriately. The only warning is that any text between
-those two markers and not part of one of those defines will not be preserved,
-and that all of this auto-generated code will be at the top of the source
-file. Save yourself the time and trouble, and use edit_man_header.pl. :)
+ABOUT EDITING THIS DOCUMENTATION: 
+If you wish to edit the documentation for this program, you need to
+change the following defines. For the short ones (like
+ASF_NAME_STRING) this is no big deal. However, for some of the longer
+ones, such as ASF_COPYRIGHT_STRING, it can be a daunting task to get
+all the newlines in correctly, etc. In order to help you with this
+task, there is a tool, edit_man_header. The tool *only* works with
+this portion of the code, so fear not. It will scan in defines of the
+format #define ASF_<something>_STRING between the two auto-generated
+documentation markers, format them for a text editor, run that editor,
+allow you to edit the text in a clean manner, and then automatically
+generate these defines, formatted appropriately. The only warning is
+that any text between those two markers and not part of one of those
+defines will not be preserved, and that all of this auto-generated
+code will be at the top of the source file. Save yourself the time and
+trouble, and use edit_man_header. :)
 */
 
 #define ASF_NAME_STRING \
