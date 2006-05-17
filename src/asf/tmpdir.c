@@ -2,8 +2,11 @@
 
 char * strdup(const char *);
 
+/* static var for holding the temporary directory        */
+/* use the get/set methods instead of accessing directly */
 static char * s_tmp_dir = 0;
 
+/* Setting the temporary directory */
 void
 set_asf_tmp_dir(const char *tmp_dir)
 {
@@ -16,6 +19,8 @@ set_asf_tmp_dir(const char *tmp_dir)
 
 }
 
+/* Getting the temporary directory.                    */
+/* You may want to use fopen_tmp_file instead, though. */
 const char *
 get_asf_tmp_dir()
 {
@@ -29,6 +34,8 @@ get_asf_tmp_dir()
   return s_tmp_dir;
 }
 
+// internal function, prepending tmp dir to a filename
+// caller must free returned memory
 static char * full_tmp_name (const char *filename)
 {
   char * full_name;
@@ -39,8 +46,12 @@ static char * full_tmp_name (const char *filename)
                                 (strlen(filename) + strlen(tmp_dir) + 10));
 
   sprintf(full_name, "%s%c%s", tmp_dir, DIR_SEPARATOR, filename);
+  return full_name;
 }
 
+
+/* return a file pointer to a file opened in the temporary dir */
+/* pass in just the name of the file, with no path info        */
 FILE * 
 fopen_tmp_file(const char * filename, const char * mode)
 {
@@ -54,6 +65,7 @@ fopen_tmp_file(const char * filename, const char * mode)
   return fp;
 }
 
+/* remove a file from the temporary dir */
 int
 unlink_tmp_file(const char *filename)
 {
