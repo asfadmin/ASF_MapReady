@@ -173,6 +173,7 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
 			    the location on the DEM corresponding to the SAR point.*/
       double lat,lon; /*This is how we go between SAR and DEM images.*/
       double demProj_x,demProj_y; /*These are the projection coordinates for the DEM.*/
+      double demProj_z;
       int orig_x,orig_y;
       int grid_x, grid_y;
 
@@ -187,7 +188,8 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
       
       /*Compute the projection coordinates of this location in the DEM.*/
       latlon_to_proj(metaDem->projection, metaSar->sar->look_direction, 
-		     lat*D2R, lon*D2R, &demProj_x, &demProj_y);
+		     lat*D2R, lon*D2R, elev, &demProj_x, &demProj_y,
+		     &demProj_z);
       
       /*Compute the line,sample coordinates of this location in the DEM.*/
       dem_x = (demProj_x - metaDem->projection->startX) / metaDem->projection->perX;
