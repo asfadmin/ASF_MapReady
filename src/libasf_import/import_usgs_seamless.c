@@ -140,6 +140,10 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
 
   FloatImage *image = tiff_to_float_image (input_tiff);
 
+  float_image_export_as_jpeg 
+    (image, "pre_bad_data_remap.jpeg",
+     image->size_x > image->size_y ? image->size_x : image->size_y, NAN);
+
   // DEMs of this flavor tend to be full of bad data values that make
   // the statistics hopeless, saturate output, etc.  For now we deal
   // with this by mapping these values to a less negative magic number
@@ -225,9 +229,9 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
   double tp_lat = tie_point[4];
 
   mg->center_latitude 
-    = (width / 2.0 - raster_tp_y) * mg->y_pixel_size + tp_lat;
+    = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
   mg->center_longitude
-    = (height / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
+    = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
 
   float min, max, mean, standard_deviation;
   float_image_statistics (image, &min, &max, &mean, &standard_deviation,
@@ -241,10 +245,10 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
   mp->type = LAT_LONG_PSEUDO_PROJECTION;
 
   mp->startX = (0.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
-  mp->startY = (0.0 - raster_tp_y) * mg->y_pixel_size + tp_lat;
+  mp->startY = (0.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
 
   mp->perX = mg->x_pixel_size;
-  mp->perY = mg->y_pixel_size;
+  mp->perY = -mg->y_pixel_size;
   
   strcpy (mp->units, "degrees");
 
