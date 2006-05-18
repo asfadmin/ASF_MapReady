@@ -11,7 +11,12 @@ include ../../make_support/system_rules
 #
 ###############################################################################
 
-SOURCES := geocode_options.c parse_options.c check_parameters.c asf_geocode.c
+SOURCES := geocode_options.c \
+	   geocode_dem.c \
+	   set_projection_functions.c \
+           parse_options.c \
+           check_parameters.c \
+           asf_geocode.c
 
 ###############################################################################
 #

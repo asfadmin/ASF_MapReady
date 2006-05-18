@@ -17,12 +17,12 @@
 #include <asf_meta.h>
 #include <asf_raster.h>
 #include <asf_reporting.h>
-#include "float_image.h"
+#include <float_image.h>
 #include <libasf_proj.h>
 #include <spheroids.h>
 #include <asf_contact.h>
 
-// Headers used by this program.
+// Headers defined by this library.
 #include "asf_geocode.h"
 
 
@@ -100,6 +100,11 @@ project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+//
+// This comment block describes the general procedure for geocoding
+// images stored in a SAR geometry.  For map projecting or
+// reprojecting other things (notably DEMs) a seperate code thread
+// using a different procedure is used.
 //
 // We want to find natural cubic splines to form approximating
 // functions X and Y st
@@ -446,8 +451,9 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   // or unproject call.
 
   // Note that the average height isn't used at the moment, since for
-  // simplicity and lack of immediate need, we don't allow
-  // reprojection of DEMs to change the underlying datum.
+  // SAR images there is no height information, and for DEMs we try to
+  // do better and use the height values from the DEM for each pixel
+  // we transform.
   project_set_avg_height (average_height);
 
   // Assign our transformation function pointers to point to the
@@ -492,6 +498,18 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     g_assert_not_reached ();
     break;
   }
+
+  // Projecting or reprojecting DEMs with a potential datum change is
+  // an intrinsicly three dimension operation, and is handled in its
+  // own specialized function.
+  if ( imd->general->image_data_type == DEM ) {
+    return geocode_dem (projection_type, pp, datum, pixel_size,
+			resample_method, input_image, imd, output_image);
+  }
+  else {
+    // Do what we have always done (the whole remainder of this file
+    // :) We don't maintain the indentation for this else, the
+    // remainder of this routine should probably be made a function.
 
   // Input image dimensions in pixels in x and y directions.
   size_t ii_size_x = imd->general->sample_count;
@@ -1299,4 +1317,5 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   g_string_free (output_image, TRUE);
 
   return 0;
+  }
 }
