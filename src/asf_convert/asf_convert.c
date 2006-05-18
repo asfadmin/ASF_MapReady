@@ -1,6 +1,8 @@
 #include <asf_contact.h>
 #include <asf_copyright.h>
 #include <asf_license.h>
+
+#include <asf_convert.h>
 /*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
 /*
 ABOUT EDITING THIS DOCUMENTATION:
