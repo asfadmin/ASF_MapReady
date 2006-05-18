@@ -81,16 +81,6 @@ BUGS:
 
 #define VERSION 1.5
 
-/**  Can get rid of all this, yes? 
-int nl,ns;
-int mX,mY;                   /*Invariant: 2^mX=ns; 2^mY=nl.*/
-#define modX(x) ((x+ns)%ns)  /*Return x, wrapped to [0..ns-1]*/
-#define modY(y) ((y+nl)%nl)  /*Return y, wrapped to [0..nl-1]*/
-int chipX, chipY,            /*Chip location (top left corner) in second image*/
-    chipDX,chipDY;           /*Chip size in second image.*/
-int searchX,searchY;         /*Maximum distance to search for peak*/
-**/
-
 /**** PROTOTYPES ****/
 void usage(char *name);
 
@@ -161,7 +151,7 @@ int main(int argc,char **argv)
   fftMatch(inFile1, inFile2, corrFile, &bestLocX, &bestLocY, &certainty);
 
   if (descFile) {
-    descF=FOPEN(descFile,"w");
+    FILE *descF=FOPEN(descFile,"w");
     fprintf(descF,"%f\t%f\t%f\n",bestLocX,bestLocY,100*certainty);
     FCLOSE(descF);
   }
