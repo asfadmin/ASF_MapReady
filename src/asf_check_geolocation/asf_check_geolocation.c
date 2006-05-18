@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
     printf("\n   Determining initial offset\n");
     if (logflag)
       printLog("\n   Determining initial offset\n");
-    fftMatch(sarByteName, simByteName, NULL, offsetName);
+    fftMatch_withOffsetFile(sarByteName, simByteName, NULL, offsetName);
 
     // Applying height correction
     printf("\n   Applying height correction\n");
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
     printf("\n   Determining final offset\n");
     if (logflag)
       printLog("\n   Determining final offset\n");
-    fftMatch(sarByteName, simByteName, NULL, offsetName);
+    fftMatch_withOffsetFile(sarByteName, simByteName, NULL, offsetName);
 
     // Determine height for metadata
     metaSAR = meta_read(sarName);
@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
     // Determine the offset
     printf("   Determining offset\n");
     printLog("   Determining offset\n");
-    fftMatch(sarByteName, simByteName, NULL, offsetName);
+    fftMatch_withOffsetFile(sarByteName, simByteName, NULL, offsetName);
 
     // Refine geolocation
     if (refine_flag) {

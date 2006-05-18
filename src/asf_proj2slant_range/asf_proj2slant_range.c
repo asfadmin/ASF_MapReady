@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
   meta_free(metaSAR);
 
   // Determine the offset to evaluate quality 
-  fftMatch(sarByteName, simByteName, NULL, "offset");
+  fftMatch_withOffsetFile(sarByteName, simByteName, NULL, "offset");
 
   exit(0);
 }

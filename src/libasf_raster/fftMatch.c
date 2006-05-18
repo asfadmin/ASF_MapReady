@@ -138,7 +138,7 @@ static void fftProd(FILE *in1F,meta_parameters *metaMaster,
   *outReal=in2;
   
   /*Read image 2 (chip)*/
-  if (!quietflag) asfPrintStatus("Reading Image 2");
+  if (!quietflag) asfPrintStatus("Reading Image 2\n");
   readImage(in2F,metaSlave,
 	    chipX,chipY,chipDX,chipDY,
 	    0.0,&aveChip,in2,nl,ns);
@@ -154,22 +154,22 @@ static void fftProd(FILE *in1F,meta_parameters *metaMaster,
   }
 
   /*FFT image 2 */
-  if (!quietflag) asfPrintStatus("FFT Image 2");
+  if (!quietflag) asfPrintStatus("FFT Image 2\n");
   rfft2d(in2,mY,mX);
 
   /*Read image 1: Much easier, now that we know the average brightness. */
-  if (!quietflag) asfPrintStatus("Reading Image 1");
+  if (!quietflag) asfPrintStatus("Reading Image 1\n");
   readImage(in1F,metaMaster,
 	    0,0,MINI(metaMaster->general->sample_count,ns),
 	    MINI(metaMaster->general->line_count,nl),
 	    aveChip,NULL,in1,nl,ns);
 
   /*FFT Image 1 */
-  if (!quietflag) asfPrintStatus("FFT Image 1");
+  if (!quietflag) asfPrintStatus("FFT Image 1\n");
   rfft2d(in1,mY,mX);
 
   /*Conjugate in2.*/
-  if (!quietflag) asfPrintStatus("Conjugate Image 2");
+  if (!quietflag) asfPrintStatus("Conjugate Image 2\n");
   for (y=0;y<nl;y++) {
     l=ns*y;
     if (y<2) x=1; else x=0;
@@ -178,11 +178,11 @@ static void fftProd(FILE *in1F,meta_parameters *metaMaster,
   }
 
   /*Take complex product of in1 and in2 into out.*/
-  if (!quietflag) asfPrintStatus("Complex Product");
+  if (!quietflag) asfPrintStatus("Complex Product\n");
   rspect2dprod(in1,in2,out,nl,ns);
 
   /*Zero out the low frequencies of the correlation image.*/
-  if (!quietflag) asfPrintStatus("Zero low frequencies.");
+  if (!quietflag) asfPrintStatus("Zero low frequencies.\n");
   for (y=0;y<4;y++) {
     l=ns*y;
     for (x=0;x<8;x++)
@@ -193,13 +193,14 @@ static void fftProd(FILE *in1F,meta_parameters *metaMaster,
   }
 
   /*Inverse-fft the product*/
-  if (!quietflag) asfPrintStatus("I-FFT");
+  if (!quietflag) asfPrintStatus("I-FFT\n");
   rifft2d(out,mY,mX);
 
   FREE(in1);/*Note: in2 shouldn't be freed, because we return it.*/
 }
 
-void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile)
+void fftMatch(char *inFile1, char *inFile2, char *corrFile,
+	      float *bestLocX, float *bestLocY, float *certainty)
 {
   int nl,ns;
   int mX,mY;               /*Invariant: 2^mX=ns; 2^mY=nl.*/
@@ -208,7 +209,7 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile)
   int searchX,searchY;     /*Maximum distance to search for peak*/
 
   int x,y;
-  float bestLocX,bestLocY,doubt;
+  float doubt;
   float *corrImage=NULL;
   FILE *corrF=NULL,*descF,*in1F,*in2F;
   meta_parameters *metaMaster, *metaSlave, *metaOut;
@@ -222,7 +223,7 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile)
   in2F = fopenImage(inFile2,"rb");
   metaMaster = meta_read(inFile1);
   metaSlave = meta_read(inFile2);
-  
+
   /*Round to find nearest power of 2 for FFT size.*/
   mX = (int)(log((float)(metaMaster->general->sample_count))/log(2.0)+0.5);
   mY = (int)(log((float)(metaMaster->general->line_count))/log(2.0)+0.5);
@@ -232,13 +233,7 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile)
   if (mY > 15) mY = 15;
   ns = 1<<mX;
   nl = 1<<mY;
-  fft2dInit(mY, mX);
-  
-  if (!quietflag) printf("   FFT Size: %d samples by %d lines\n",ns,nl);
-  if (!quietflag && (ns*nl*2*sizeof(float)>20*1024*1024))
-    printf("   WARNING: These images will take %d megabytes of memory to match.\n"
-	   "   You may want to try smaller images.\n",ns*nl*2*sizeof(float)/(1024*1024));
-  
+      
   /*Set up search chip size.*/
   chipDX=MINI(metaSlave->general->sample_count,ns)*3/4;
   chipDY=MINI(metaSlave->general->line_count,nl)*3/4;
@@ -246,8 +241,17 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile)
   chipY=MINI(metaSlave->general->line_count,nl)/8;
   searchX=MINI(metaSlave->general->sample_count,ns)*3/8;
   searchY=MINI(metaSlave->general->line_count,nl)*3/8;
-  
-  if (!quietflag) printf("\tChip at %dx%d, size=%dx%d\n",chipX,chipY,chipDX,chipDY);
+
+  fft2dInit(mY, mX);
+
+  asfPrintStatus("   FFT Size: %d samples by %d lines\n",1<<mX,1<<mY);
+  if (ns*nl*2*sizeof(float)>20*1024*1024)
+    asfPrintStatus("   WARNING: These images will take %d megabytes of "
+		   "memory to match.\n"
+		   "   You may want to try smaller images.\n",
+		   ns*nl*2*sizeof(float)/(1024*1024));
+
+  asfPrintStatus("\tChip at %dx%d, size=%dx%d\n", chipX,chipY,chipDX,chipDY);
   
   /*Optionally open the correlation image file.*/
   if (corrFile) {
@@ -279,20 +283,32 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile)
   }
 
   /*Search correlation image for a peak.*/
-  findPeak(corrImage,&bestLocX,&bestLocY,&doubt,nl,ns,
+  findPeak(corrImage,bestLocX,bestLocY,&doubt,nl,ns,
 	   chipX,chipY,searchX,searchY);
-  
+  *certainty = 1-doubt;
+
+  FREE(corrImage);
   if (!quietflag)
     printf("   Offset slave image: dx = %f, dy = %f\n"
-	   "   Certainty: %f%%\n",bestLocX,bestLocY,100*(1-doubt));
+	   "   Certainty: %f%%\n",*bestLocX,*bestLocY,100*(1-doubt));
   if (logflag) {
     sprintf(logbuf,"   Offset slave image: dx = %f, dy = %f\n"
-	    "   Certainty: %f%%\n",bestLocX,bestLocY,100*(1-doubt));
+	    "   Certainty: %f%%\n",*bestLocX,*bestLocY,100*(1-doubt));
     printLog(logbuf);
   }
-  if (descFile) {
-    descF=FOPEN(descFile,"w");
-    fprintf(descF,"%f\t%f\t%f\n",bestLocX,bestLocY,100*(1-doubt));
+}
+
+/* This method is here to match the old interface of fftMatch.  Old code
+   that we don't want to mess with, but still want to work, should just call
+   this method instead of the redone fftMatch */
+void fftMatch_withOffsetFile(char *inFile1, char *inFile2, char *corrFile,
+			     char *offsetFileName)
+{
+  float dx, dy, cert;
+  fftMatch(inFile1, inFile2, corrFile, &dx, &dy, &cert);
+  if (offsetFileName) {
+    FILE *descF=FOPEN(offsetFileName,"w");
+    fprintf(descF,"%f\t%f\t%f\n",dx,dy,100*cert);
     FCLOSE(descF);
   }
 }

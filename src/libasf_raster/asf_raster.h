@@ -83,7 +83,10 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
           long long endX, long long endY);
 
 /* Prototypes from fftMatch.c ************************************************/
-void fftMatch(char *inFile1, char *inFile2, char *corrFile, char *descFile);
+void fftMatch(char *inFile1, char *inFile2, char *corrFile,
+	      float *dx, float *dy, float *certainty);
+void fftMatch_withOffsetFile(char *inFile1, char *inFile2, char *corrFile,
+			     char *offsetFileName);
 
 /* Prototypes from shaded_relief.c *******************************************/
 void shaded_relief(char *inFile, char *outFile, int addSpeckle);

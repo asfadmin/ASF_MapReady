@@ -85,18 +85,6 @@ static void ensure_ext(char **filename, const char *ext)
   *filename = ret;
 }
 
-static void read_corr(const char *corrFile, double *dx, double *dy)
-{
-  FILE *cf = FOPEN(corrFile, "rt");
-  if (cf) {
-    fscanf(cf, "%lf %lf", dx, dy);
-  } else {
-    asfPrintError("Couldn't open fftMatch correlation file: %s!\n", corrFile);
-    *dx = *dy = 0;
-  }
-  fclose(cf);
-}
-
 static int file_exists(const char * file)
 {
   int fd = open(file, 0);
@@ -130,11 +118,12 @@ static void clean(const char *file)
   free(ddr_file);
 }
 
-static void fftMatchQ(char *file1, char *file2, char *out1, char *out2)
+static void fftMatchQ(char *file1, char *file2, float *dx, float *dy)
 {
+  float cert;
   int qf_saved = quietflag;
   quietflag = 1;
-  fftMatch(file1, file2, out1, out2);
+  fftMatch(file1, file2, NULL, dx, dy, &cert);
   quietflag = qf_saved;
 }
 
@@ -158,11 +147,11 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 {
   char *resampleFile, *srFile;
   char *demGridFile, *demClipped, *demSlant, *demSimAmp;
-  char *demTrimSimAmp, *corrFile, *demTrimSlant;
+  char *demTrimSimAmp, *demTrimSlant;
   double demRes, sarRes;
   int demWidth, demHeight;
   meta_parameters *metaSAR, *metaDEM;
-  double dx, dy;
+  float dx, dy;
   int idx, idy;
   int polyOrder = 5;
 
@@ -290,12 +279,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   // Match the real and simulated SAR image to determine the offset.
   // Read the offset out of the offset file.
   asfPrintStatus("Determining image offsets...\n");
-
-  corrFile = appendSuffix(sarFile, "_corr");
-  fftMatchQ(srFile, demTrimSimAmp, NULL, corrFile);
-
-  read_corr(corrFile, &dx, &dy);
-  asfPrintStatus("Correlation: dx=%g dy=%g\n", dx, dy);
+  fftMatchQ(srFile, demTrimSimAmp, &dx, &dy);
+  asfPrintStatus("Correlation: dx=%f dy=%f\n", dx, dy);
   idx = - int_rnd(dx);
   idy = - int_rnd(dy);
 
@@ -306,27 +291,19 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 
   // Verify that the applied offset in fact does the trick.
   if (do_fftMatch_verification) {
-    double dx2, dy2;
-    char *corrFile2;
+    float dx2, dy2;
 
     asfPrintStatus("Verifying offsets are now close to zero...\n");
-    corrFile2 = appendSuffix(sarFile, "_corr2");
-    fftMatchQ(srFile, demTrimSimAmp, NULL, corrFile2);
+    fftMatchQ(srFile, demTrimSimAmp, &dx2, &dy2);
 
-    read_corr(corrFile2, &dx2, &dy2);
-    asfPrintStatus("Correlation after shift: dx=%g dy=%g\n", dx2, dy2);
+    asfPrintStatus("Correlation after shift: dx=%f dy=%f\n", dx2, dy2);
 
     double match_tolerance = 1.0;
     if (sqrt(dx2*dx2 + dy2*dy2) > match_tolerance) {
       asfPrintError("Correlated images failed to match!\n"
-		    " Original fftMatch offset: (dx,dy) = %14.9lf,%14.9lf\n"
-		    "   After shift, offset is: (dx,dy) = %14.9lf,%14.9lf\n",
+		    " Original fftMatch offset: (dx,dy) = %14.9f,%14.9f\n"
+		    "   After shift, offset is: (dx,dy) = %14.9f,%14.9f\n",
 		    dx, dy, dx2, dy2);
-
-      if (clean_files)
-	clean(corrFile2);
-
-      free(corrFile2);
     }
   }
 
@@ -352,7 +329,6 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     clean(demGridFile);
     clean(demTrimSlant);
     clean(demTrimSimAmp);
-    clean(corrFile);
     clean(demSimAmp);
     clean(demSlant);
   }
@@ -365,7 +341,6 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   free(demGridFile);
   free(demTrimSlant);
   free(demTrimSimAmp);
-  free(corrFile);
   free(demSimAmp);
   free(demSlant);
 
