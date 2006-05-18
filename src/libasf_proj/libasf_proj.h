@@ -9,10 +9,16 @@ int project_poly(double phi_deg, double lam_deg, double * xx, double *yy);
 /**************************************************************************
    project_set_avg_height
 
-   The height parameter for the projection.  If this is not called prior
-   to projecting, the average height will be 0.
+   The height parameter to use for projection or inverse projection,
+   if height data is not passed.  If this is not called prior to
+   projecting, the average height will be 0.  The average height is
+   always overridden by the actual height if supplied (i.e. if
+   approximately ASF_PROJ_NO_HEIGHT is not used for an
+   individual point or NULL not passed for an array transformation).
 ****************************************************************************/
 void project_set_avg_height(double height);
+
+#define ASF_PROJ_NO_HEIGHT -100000.0
 
 /**************************************************************************
    project_set_input_spheroid
@@ -45,7 +51,11 @@ void project_set_datum(datum_type_t datum);
          populated with the "zone" to use.
 
    lat, lon : Latitude, Longitude of point to transform (radians)
-   x, y : Projected point [output]
+   height : Height above the input spheroid of the point to transform (meters)
+   x, y, z : Projected point [output] and height (z)
+
+   If z information is not required, ASF_PROJ_NO_HEIGHT may be passed
+   for height, and NULL for z.
 
    return value: TRUE if point projected ok, FALSE if not.
                  In this situation, *x and *y will be HUGE_VAL
@@ -53,7 +63,7 @@ void project_set_datum(datum_type_t datum);
    Please see project.t.c for usage examples
 */
 int project_utm(project_parameters_t * pps, double lat, double lon,
-                double *x, double *y);
+		double height, double *x, double *y, double *z);
 
 /*--------------------------------------------------------------------------
    project_utm_arr
@@ -62,14 +72,20 @@ int project_utm(project_parameters_t * pps, double lat, double lon,
          populated with the "zone" to use.
 
    lat, lon : Array of points to transform (radians).
-   projected_x, projected_y : the projected points.
+   height: Heights above the input spheroid of the points to
+           transforms (meters)
+   projected_x, projected_y, projected_z : the projected points.
 
-      NOTE: If these (projected_x and projected_y) are NULL, they
-            will be allocated and the caller must free.  If non-null,
-            it is assumed that the caller has pre-allocated enough
-            storage to hold the projected points.
+      NOTE: If these (projected_x, projected_y, and projected_z) are
+            NULL, they will be allocated and the caller must free.  If
+            non-null, it is assumed that the caller has pre-allocated
+            enough storage to hold the projected points.
 
-   length : Number of points in the arrays.
+   length : Number of points in the arrays of points to be transformed.
+
+   If z information is not required, NULL may be passed for both
+   height and projected_z (in which case no space will be allocated to
+   hold returned z values).
 
    return value: TRUE if point projected ok, FALSE if not.
 
@@ -77,9 +93,9 @@ int project_utm(project_parameters_t * pps, double lat, double lon,
 */
 
 int project_utm_arr (project_parameters_t * pps,
-                     double *lat, double *lon,
-                     double **projected_x, double **projected_y,
-                     long length);
+                     double *lat, double *lon, double *height,
+                     double **projected_x, double **projected_y, 
+		     double **projected_z, long length);
 
 /*--------------------------------------------------------------------------
    project_utm_inv
@@ -88,15 +104,20 @@ int project_utm_arr (project_parameters_t * pps,
          populated with the "zone" to use.
 
    x, y: Point to (inverse) project
+   z: height above projection datum of point to transform (meters)
    lat, lon: (Inverse) projected point [output] (radians)
+   height: height above input spheroid (meters)
+
+   If height information is not required, ASF_PROJ_NO_HEIGHT may be
+   passed for z, and NULL for height.
 
    return value: TRUE if point projected ok, FALSE if not.
                  In this situation, *lat and *lon will be HUGE_VAL
 
    Please see project.t.c for usage examples
 */
-int project_utm_inv (project_parameters_t * pps, double x, double y,
-                     double *lat, double *lon);
+int project_utm_inv (project_parameters_t * pps, double x, double y, double z,
+                     double *lat, double *lon, double *height);
 
 /*--------------------------------------------------------------------------
    project_utm_arr_inv
@@ -105,20 +126,28 @@ int project_utm_inv (project_parameters_t * pps, double x, double y,
          populated with the "zone" to use.
 
    x, y: Array of points to (inverse) project
+   z: heights above projection datum of points to transform (meters)
    lat, lon: (Inverse) projected points [output] (radians)
+   height: heights above input shperoid (meters)
 
-      NOTE: If these (lat and lon) are NULL, they
+      NOTE: If these (lat, lon, and height) are NULL, they
             will be allocated and the caller must free.  If non-null,
             it is assumed that the caller has pre-allocated enough
             storage to hold the projected points.
+
+   length : Number of points in the arrays of points to be transformed.
+
+   If height information is not required, NULL may be passed for both
+   z and height (in which case no space will be allocated to hold
+   returned z values).
 
    return value: TRUE if point projected ok, FALSE if not.
 
    Please see project.t.c for usage examples
 */
 int project_utm_arr_inv (project_parameters_t * pps,
-                         double *x, double *y,
-                         double **lat, double **lon,
+                         double *x, double *y, double *z,
+                         double **lat, double **lon, double **height,
                          long length);
 
 /****************************************************************************
@@ -137,7 +166,11 @@ int project_utm_arr_inv (project_parameters_t * pps,
 
    lat : latitude of point to project (radians)
    lon : longitude of point to project (radians)
-   x, y: Projected point [output]
+   height: height of point to project above input spheroid (meters)
+   x, y, z: Projected point [output]
+
+   If z information is not required, ASF_PROJ_NO_HEIGHT may be passed
+   for height, and NULL for z.
 
    return value: TRUE if point projected ok, FALSE if not.
                  In this situation, *x and *y will be HUGE_VAL
@@ -145,8 +178,8 @@ int project_utm_arr_inv (project_parameters_t * pps,
    Please see project.t.c for usage examples
 */
 int project_ps(project_parameters_t * pps,
-               double lat, double lon,
-               double *x, double *y);
+               double lat, double lon, double height,
+               double *x, double *y, double *z);
 
 /*--------------------------------------------------------------------------
    project_ps_arr
@@ -158,23 +191,28 @@ int project_ps(project_parameters_t * pps,
          the south pole.
 
    lat, lon : Array of points to transform.  Radians.
-   projected_x, projected_y : Projected points.
+   heights: heights of points to transform above input spheroid (meters)
+   projected_x, projected_y, projected_z : Projected points.
 
-      NOTE: If these (projected_x and projected_y) are NULL, they
-            will be allocated and the caller must free.  If non-null,
-            it is assumed that the caller has pre-allocated enough
-            storage to hold the projected points.
+      NOTE: If these (projected_x, projected_y, and projected_z) are
+            NULL, they will be allocated and the caller must free.  If
+            non-null, it is assumed that the caller has pre-allocated
+            enough storage to hold the projected points.
 
-   len : Number of points in the x, y arrays.
+   length : Number of points in the arrays of points to be transformed.
+
+   If z information is not required, NULL may be passed for both
+   height and projected_z (in which case no space will be allocated to
+   hold returned z values).
 
    return value: TRUE if point projected ok, FALSE if not.
 
    Please see project.t.c for usage examples
 */
 int project_ps_arr(project_parameters_t * pps,
-                   double *lat, double *lon,
+                   double *lat, double *lon, double *height,
                    double **projected_x, double **projected_y,
-                   long length);
+		   double **projected_z, long length);
 
 /*--------------------------------------------------------------------------
    project_ps_inv
@@ -186,14 +224,19 @@ int project_ps_arr(project_parameters_t * pps,
          the south pole.
 
    x, y: Point to (inverse) project
+   z: height above projection datum of point to transform (meters)
    lat, lon: (Inverse) projected point [output] (radians)
+   height: height above input spheroid of inverse projected point (meters)
+
+   If height information is not required, ASF_PROJ_NO_HEIGHT may be
+   passed for z, and NULL for height.
 
    return value: TRUE if point projected ok, FALSE if not.
 
    Please see project.t.c for usage examples
 */
-int project_ps_inv(project_parameters_t * pps,
-                   double x, double y, double *lat, double *lon);
+int project_ps_inv(project_parameters_t * pps, double x, double y, double z,
+		   double *lat, double *lon, double *height);
 
 /*--------------------------------------------------------------------------
    project_ps_arr_inv
@@ -202,22 +245,27 @@ int project_ps_inv(project_parameters_t * pps,
    lon_0 : Longitude at natural origin (radians)
    is_north_pole: 1 if projecting from North Pole, 0 if South Pole
 
-   x, y: Array of points to (inverse) project.  On output, latitude
-         is in x, longitude in y, both in radians.
+   x, y: Array of points to (inverse) project.
+   z: heights above projection datum of points to transform (meters)
    lat, lon: (Inverse) projected points [output] (radians)
+   height: heights above input shperoid (meters)
 
-      NOTE: If these (lat and lon) are NULL, they
-            will be allocated and the caller must free.  If non-null,
-            it is assumed that the caller has pre-allocated enough
-            storage to hold the projected points.
+      NOTE: If these (lat, lon, and height) are NULL, they will be
+            allocated and the caller must free.  If non-null, it is
+            assumed that the caller has pre-allocated enough storage
+            to hold the projected points.
 
-   len : Number of points in the arrays.
+   length : Number of points in the arrays of points to be transformed.
+
+   If height information is not required, NULL may be passed for both
+   z and height (in which case no space will be allocated to hold
+   returned z values).
 
    Please see project.t.c for usage examples
 */
 int project_ps_arr_inv(project_parameters_t * pps,
-                       double *x, double *y,
-                       double **lat, double **lon,
+                       double *x, double *y, double *z,
+                       double **lat, double **lon, double **height,
                        long length);
 
 /****************************************************************************
@@ -225,16 +273,18 @@ int project_ps_arr_inv(project_parameters_t * pps,
   www.remotesensing.org/geotiff/proj_list/lambert_azimuthal_equal_area.html
 ****************************************************************************/
 int project_lamaz(project_parameters_t * pps,
-                    double lat, double lon, double *x, double *y);
-int project_lamaz_arr(project_parameters_t * pps,
-                      double * lat, double * lon,
-                      double ** projected_x, double ** projected_y,
-                      long length);
+		  double lat, double lon, double height, 
+		  double *x, double *y, double *z);
+int project_lamaz_arr(project_parameters_t *pps,
+                      double *lat, double *lon, double *height,
+                      double **projected_x, double **projected_y,
+		      double **projected_z, long length);
 int project_lamaz_inv(project_parameters_t * pps,
-                      double x, double y, double *lat, double *lon);
+                      double x, double y, double z, double *lat, double *lon,
+		      double *height);
 int project_lamaz_arr_inv(project_parameters_t * pps,
-                          double * x, double * y,
-                          double ** lat, double ** lon,
+                          double *x, double *y, double *z,
+                          double **lat, double **lon, double **height,
                           long length);
 
 /****************************************************************************
@@ -242,33 +292,37 @@ int project_lamaz_arr_inv(project_parameters_t * pps,
   www.remotesensing.org/geotiff/proj_list/lambert_conic_conformal_2sp.html
 ****************************************************************************/
 int project_lamcc(project_parameters_t * pps,
-                  double lat, double lon, double *x, double *y);
-int project_lamcc_arr(project_parameters_t * pps,
-                      double * lat, double * lon,
-                      double ** projected_x, double ** projected_y,
-                      long length);
+                  double lat, double lon, double height, 
+		  double *x, double *y, double *z);
+int project_lamcc_arr(project_parameters_t *pps,
+                      double *lat, double *lon, double *height,
+                      double **projected_x, double **projected_y,
+		      double **projected_z, long length);
 int project_lamcc_inv(project_parameters_t * pps,
-                      double x, double y, double *lat, double *lon);
-int project_lamcc_arr_inv(project_parameters_t * pps,
-                          double * x, double * y,
-                          double ** lat, double ** lon,
+                      double x, double y, double z,
+		      double *lat, double *lon, double *height);
+int project_lamcc_arr_inv(project_parameters_t *pps,
+                          double *x, double *y, double *z,
+                          double **lat, double **lon, double **height,
                           long length);
 
 /****************************************************************************
   Albers Equal-Area Conic
   www.remotesensing.org/geotiff/proj_list/albers_equal_area_conic.html
 ****************************************************************************/
-int project_albers(project_parameters_t * pps,
-                   double lat, double lon, double *x, double *y);
-int project_albers_arr(project_parameters_t * pps,
-                       double * lat, double * lon,
-                       double ** projected_x, double ** projected_y,
-                       long length);
-int project_albers_inv(project_parameters_t * pps,
-                       double x, double y, double *lat, double *lon);
-int project_albers_arr_inv(project_parameters_t * pps,
-                           double * x, double * y,
-                           double ** lat, double ** lon,
+int project_albers(project_parameters_t *pps,
+                   double lat, double lon, double height,
+		   double *x, double *y, double *z);
+int project_albers_arr(project_parameters_t *pps,
+                       double *lat, double *lon, double *height,
+                       double **projected_x, double **projected_y,
+		       double **projected_z, long length);
+int project_albers_inv(project_parameters_t *pps,
+                       double x, double y, double z,
+		       double *lat, double *lon, double *height);
+int project_albers_arr_inv(project_parameters_t *pps,
+                           double *x, double *y, double *z,
+                           double **lat, double **lon, double **height,
                            long length);
 
 
@@ -276,10 +330,12 @@ int project_albers_arr_inv(project_parameters_t * pps,
   General conversion functions between projection coordinates and geographic
   coordinates.
 ***************************************************************************/
-void proj_to_latlon(meta_projection *proj, char look_dir, double x, double y,
-                    double *lat, double *lon);
-void latlon_to_proj(meta_projection *proj, char look_dir, double lat, double lon,
-                    double *x,double *y);
+void proj_to_latlon(meta_projection *proj, char look_dir,
+		    double x, double y, double z,
+		    double *lat, double *lon, double *height);
+void latlon_to_proj(meta_projection *proj, char look_dir,
+		    double lat, double lon, double height,
+                    double *x, double *y, double *z);
 
 
 #endif
