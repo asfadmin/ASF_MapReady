@@ -162,6 +162,47 @@ struct data_to_fit {
   double *sparse_y_pix;
 };
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Hold your nose...
+//
+// These used to be function scoped statics in reverse_map_x and
+// reverse_map_y routines, but that broke horribly when this program
+// got converted into a library function because they never got reset
+// between calls, so now these are globals so that we can reset them
+// all to their initial state when we get to the end of the function.
+// The little '_rmx' and '_rmy' suffixes help remind us that these
+// globals go with the reverse_map_x and reverse_map_y routines,
+// repsectively.
+
+  // True iff this is our first time through this routine.
+  static gboolean first_time_through_rmx = TRUE;
+  // Accelerators and interpolators for the all the vertical columns
+  // of sample points.  Filled in first time through routine.
+  static gsl_interp_accel **y_accel_rmx;
+  static gsl_spline **y_spline_rmx;
+  // Current accelerator and interpolator.  Updated when y argument is
+  // different between calls.
+  static gsl_interp_accel *crnt_accel_rmx;
+  static gsl_spline *crnt_rmx;
+  // Value of y for which current interpolator works.
+  static double last_y_rmx;
+
+  // True iff this is our first time through this routine.
+  static gboolean first_time_through_rmy = TRUE;
+  // Accelerators and interpolators for the all the vertical columns
+  // of sample points.  Filled in first time through routine.
+  static gsl_interp_accel **y_accel_rmy;
+  static gsl_spline **y_spline_rmy;
+  // Current accelerator and interpolator.  Updated when y argument is
+  // different between calls.
+  static gsl_interp_accel *crnt_accel_rmy;
+  static gsl_spline *crnt_rmy;
+  // Value of y for which current interpolator works.
+  static double last_y_rmy;
+
+///////////////////////////////////////////////////////////////////////////////
+
 // Reverse map from projection coordinates x, y to input pixel
 // coordinate X.  This function looks at the data to fit on the first
 // time through, in order to set up vertical splines, after which this
@@ -172,35 +213,22 @@ struct data_to_fit {
 static double
 reverse_map_x (struct data_to_fit *dtf, double x, double y)
 {
-  // True iff this is our first time through this routine.
-  static gboolean first_time_through = TRUE;
-  // Accelerators and interpolators for the all the vertical columns
-  // of sample points.  Filled in first time through routine.
-  static gsl_interp_accel **y_accel;
-  static gsl_spline **y_spline;
-  // Current accelerator and interpolator.  Updated when y argument is
-  // different between calls.
-  static gsl_interp_accel *crnt_accel;
-  static gsl_spline *crnt;
-  // Value of y for which current interpolator works.
-  static double last_y;
-
   // Convenience aliases.
   size_t sgs = dtf->sparse_grid_size;
   double *xprojs = dtf->sparse_x_proj;
   double *yprojs = dtf->sparse_y_proj;
   double *xpixs = dtf->sparse_x_pix;
 
-  if ( G_UNLIKELY (first_time_through || y != last_y) ) {
-    if ( !first_time_through ) {
+  if ( G_UNLIKELY (first_time_through_rmx || y != last_y_rmx) ) {
+    if ( !first_time_through_rmx ) {
       // Free the spline from the last line.
-      gsl_interp_accel_free (crnt_accel);
-      gsl_spline_free (crnt);
+      gsl_interp_accel_free (crnt_accel_rmx);
+      gsl_spline_free (crnt_rmx);
     } else {
       // Its our first time through, so set up the splines for the
       // grid point columns.
-      y_accel = g_new (gsl_interp_accel *, sgs);
-      y_spline = g_new (gsl_spline *, sgs);
+      y_accel_rmx = g_new (gsl_interp_accel *, sgs);
+      y_spline_rmx = g_new (gsl_spline *, sgs);
       size_t ii;
       for ( ii = 0 ; ii < sgs ; ii++ ) {
 	gsl_vector *cypv = gsl_vector_alloc (sgs);
@@ -210,29 +238,29 @@ reverse_map_x (struct data_to_fit *dtf, double x, double y)
 	  gsl_vector_set (cypv, jj, yprojs[jj * sgs + ii]);
 	  gsl_vector_set (cxpixv, jj, xpixs[jj * sgs + ii]);
 	}
-	y_accel[ii] = gsl_interp_accel_alloc ();
-	y_spline[ii] = gsl_spline_alloc (gsl_interp_cspline, sgs);
-	gsl_spline_init (y_spline[ii], cypv->data, cxpixv->data, sgs);
+	y_accel_rmx[ii] = gsl_interp_accel_alloc ();
+	y_spline_rmx[ii] = gsl_spline_alloc (gsl_interp_cspline, sgs);
+	gsl_spline_init (y_spline_rmx[ii], cypv->data, cxpixv->data, sgs);
 	gsl_vector_free (cxpixv);
 	gsl_vector_free (cypv);
       }
-      first_time_through = FALSE;
+      first_time_through_rmx = FALSE;
     }
     // Set up the spline that runs horizontally, between the column
     // splines.
-    crnt_accel = gsl_interp_accel_alloc ();
-    crnt = gsl_spline_alloc (gsl_interp_cspline, sgs);
+    crnt_accel_rmx = gsl_interp_accel_alloc ();
+    crnt_rmx = gsl_spline_alloc (gsl_interp_cspline, sgs);
     double *crnt_points = g_new (double, sgs);
     size_t ii;
     for ( ii = 0 ; ii < sgs ; ii++ ) {
-      crnt_points[ii] = gsl_spline_eval (y_spline[ii], y, y_accel[ii]);
+      crnt_points[ii] = gsl_spline_eval (y_spline_rmx[ii], y, y_accel_rmx[ii]);
     }
-    gsl_spline_init (crnt, xprojs, crnt_points, sgs);
+    gsl_spline_init (crnt_rmx, xprojs, crnt_points, sgs);
     g_free (crnt_points);
-    last_y = y;
+    last_y_rmx = y;
   }
 
-  return gsl_spline_eval (crnt, x, crnt_accel);
+  return gsl_spline_eval (crnt_rmx, x, crnt_accel_rmx);
 }
 
 // This routine is analagous to reverse_map_x, including the same
@@ -240,34 +268,21 @@ reverse_map_x (struct data_to_fit *dtf, double x, double y)
 static double
 reverse_map_y (struct data_to_fit *dtf, double x, double y)
 {
-  // True iff this is our first time through this routine.
-  static gboolean first_time_through = TRUE;
-  // Accelerators and interpolators for the all the vertical columns
-  // of sample points.  Filled in first time through routine.
-  static gsl_interp_accel **y_accel;
-  static gsl_spline **y_spline;
-  // Current accelerator and interpolator.  Updated when y argument is
-  // different between calls.
-  static gsl_interp_accel *crnt_accel;
-  static gsl_spline *crnt;
-  // Value of y for which current interpolator works.
-  static double last_y;
-
   size_t sgs = dtf->sparse_grid_size;
   double *xprojs = dtf->sparse_x_proj;
   double *yprojs = dtf->sparse_y_proj;
   double *ypixs = dtf->sparse_y_pix;
 
-  if ( G_UNLIKELY (first_time_through || y != last_y) ) {
-    if ( !first_time_through ) {
+  if ( G_UNLIKELY (first_time_through_rmy || y != last_y_rmy) ) {
+    if ( !first_time_through_rmy ) {
       // Free the spline from the last line.
-      gsl_interp_accel_free (crnt_accel);
-      gsl_spline_free (crnt);
-    } else{
+      gsl_interp_accel_free (crnt_accel_rmy);
+      gsl_spline_free (crnt_rmy);
+    } else {
       // Its our first time through, so set up the splines for the
       // grid point columns.
-      y_accel = g_new (gsl_interp_accel *, sgs);
-      y_spline = g_new (gsl_spline *, sgs);
+      y_accel_rmy = g_new (gsl_interp_accel *, sgs);
+      y_spline_rmy = g_new (gsl_spline *, sgs);
       size_t ii;
       for ( ii = 0 ; ii < sgs ; ii++ ) {
 	// Current y projection value.
@@ -279,29 +294,29 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
 	  gsl_vector_set (cypv, jj, yprojs[jj * sgs + ii]);
 	  gsl_vector_set (cypixv, jj, ypixs[jj * sgs + ii]);
 	}
-	y_accel[ii] = gsl_interp_accel_alloc ();
-	y_spline[ii] = gsl_spline_alloc (gsl_interp_cspline, sgs);
-	gsl_spline_init (y_spline[ii], cypv->data, cypixv->data, sgs);
+	y_accel_rmy[ii] = gsl_interp_accel_alloc ();
+	y_spline_rmy[ii] = gsl_spline_alloc (gsl_interp_cspline, sgs);
+	gsl_spline_init (y_spline_rmy[ii], cypv->data, cypixv->data, sgs);
 	gsl_vector_free (cypixv);
 	gsl_vector_free (cypv);
       }
-      first_time_through = FALSE;
+      first_time_through_rmy = FALSE;
     }
     // Set up the spline that runs horizontally, between the column
     // splines.
-    crnt_accel = gsl_interp_accel_alloc ();
-    crnt = gsl_spline_alloc (gsl_interp_cspline, sgs);
+    crnt_accel_rmy = gsl_interp_accel_alloc ();
+    crnt_rmy = gsl_spline_alloc (gsl_interp_cspline, sgs);
     double *crnt_points = g_new (double, sgs);
     size_t ii;
     for ( ii = 0 ; ii < sgs ; ii++ ) {
-      crnt_points[ii] = gsl_spline_eval (y_spline[ii], y, y_accel[ii]);
+      crnt_points[ii] = gsl_spline_eval (y_spline_rmy[ii], y, y_accel_rmy[ii]);
     }
-    gsl_spline_init (crnt, xprojs, crnt_points, sgs);
+    gsl_spline_init (crnt_rmy, xprojs, crnt_points, sgs);
     g_free (crnt_points);
-    last_y = y;
+    last_y_rmy = y;
   }
 
-  return gsl_spline_eval (crnt, x, crnt_accel);
+  return gsl_spline_eval (crnt_rmy, x, crnt_accel_rmy);
 }
 
 
@@ -1298,9 +1313,35 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   meta_write (omd, output_meta_data->str);
   meta_free (omd);
 
-  // Done with the data being modeled.  Can't call revers_map_*
-  // functions anymore after this (so can't use *_PIXEL macros
-  // either).
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  // Clear out all the persistent spline memory goop used by the
+  // reverse_map_x and reverse_map_y routines (see comments near the
+  // declarations of these variables).
+  //
+
+  size_t sgs = dtf.sparse_grid_size; // Convenience alias.
+
+  first_time_through_rmx = TRUE;
+  first_time_through_rmy = TRUE;
+  for ( ii = 0 ; ii < sgs ; ii++ ) {
+    gsl_interp_accel_free (y_accel_rmx[ii]);
+    gsl_interp_accel_free (y_accel_rmy[ii]);
+    gsl_spline_free (y_spline_rmx[ii]);
+    gsl_spline_free (y_spline_rmy[ii]);
+  }
+  g_free (y_accel_rmx);
+  g_free (y_accel_rmy);
+  g_free (y_spline_rmx);
+  g_free (y_spline_rmy);
+  gsl_interp_accel_free (crnt_accel_rmx);
+  gsl_interp_accel_free (crnt_accel_rmy);
+  gsl_spline_free (crnt_rmx);
+  gsl_spline_free (crnt_rmy);
+
+  /////////////////////////////////////////////////////////////////////////////
+
+  // Done with the data being modeled.
   g_free (dtf.sparse_y_pix);
   g_free (dtf.sparse_x_pix);
   g_free (dtf.sparse_y_proj);
