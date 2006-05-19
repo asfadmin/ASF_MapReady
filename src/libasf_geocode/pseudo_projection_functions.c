@@ -4,13 +4,19 @@
 // degrees to radians.  FIXME: they should do datum transformations
 // and should be moved into libasf_proj proper.
 
+#include <asf.h>
+#include <asf_meta.h>
+#include <libasf_proj.h>
+
+#include "asf_geocode.h"
+
 int 
 project_pseudo (project_parameters_t *pps, double lat, double lon,
 		double height, double *x, double *y, double *z)
 {
   // At the moment we don't honor all the stuff in libasf_proj that
   // lets the clients signal that they don't care about heights.
-  g_assert (z != ASF_PROJ_NO_HEIGHT && height != NULL);
+  g_assert (height != ASF_PROJ_NO_HEIGHT && z != NULL);
 
   /* Silence compiler warning about unused argument.  */
   pps = pps;		
@@ -74,9 +80,9 @@ project_pseudo_arr (project_parameters_t *pps, double *lat, double *lon,
 }
 
 int
-project_pseudo_inv_arr (project_parameters_t *pps, double *x, double *y,
+project_pseudo_arr_inv (project_parameters_t *pps, double *x, double *y,
 			double *z, double **lat, double **lon,
-			double **height)
+			double **height, long length)
 {
   // At the moment we don't honor all the stuff in libasf_proj that
   // lets the clients signal that they don't care about heights.
