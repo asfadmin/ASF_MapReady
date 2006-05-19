@@ -107,5 +107,8 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
   FREE(buffer);
   FCLOSE(in);
   FCLOSE(out);
+
+  meta_free(metaIn);
+  meta_free(metaOut);
 }
 

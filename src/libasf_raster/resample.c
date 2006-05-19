@@ -191,6 +191,9 @@ int resample(char *infile, char *outfile, double xscalfact, double yscalfact)
        
     //asfPrintStatus("Finished.\n");
 
+    meta_free(metaOut);
+    meta_free(metaIn);
+
     FCLOSE(fpin);                 
     FCLOSE(fpout);
 

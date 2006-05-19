@@ -197,6 +197,9 @@ fftMatch_atCorners(char *sar, char *dem, const int size)
   asfPrintStatus("Suggested scale factors: %14.10lf range\n", rsf);
   asfPrintStatus("                         %14.10lf azimuth\n\n", asf);
 
+  meta_free(meta_sar);
+  meta_free(meta_dem);
+
   clean(chopped_sar);
   clean(chopped_dem);
   free(chopped_sar);

@@ -264,6 +264,7 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile,
     metaOut->general->sample_count = 2*searchX;
     corrF=fopenImage(corrFile,"w");
     meta_write(metaOut, corrFile);
+    meta_free(metaOut);
   }
   
   /*Perform the correlation.*/
@@ -294,6 +295,9 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile,
   if (!quietflag)
     asfPrintStatus("   Offset slave image: dx = %f, dy = %f\n"
 		   "   Certainty: %f%%\n",*bestLocX,*bestLocY,100*(1-doubt));
+
+  meta_free(metaSlave);
+  meta_free(metaMaster);
 }
 
 /* This method is here to match the old interface of fftMatch.  Old code
