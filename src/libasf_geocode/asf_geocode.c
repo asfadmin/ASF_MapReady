@@ -686,7 +686,18 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 		  "distributed\nsubset of input image pixels... ");
   fflush (stdout);
   double x_range_size = max_x - min_x, y_range_size = max_y - min_y;
-  const size_t grid_size = 131;
+  // This grid size seems to work pretty well in general for our
+  // products (good accuracy everywhere, decent speed).
+  size_t grid_size = 131;
+  // However, there isn't much point in using as many grid points as
+  // we have pixels, so for small tiles, we set this to about 10
+  // percent of larger image dimension in pixels.
+  if ( ii_size_x / grid_size < 10 && ii_size_y / grid_size < 10 ) {
+    grid_size = GSL_MAX (ii_size_x, ii_size_y) / 10;
+    if ( grid_size % 2 != 1 ) {
+      grid_size++;
+    }
+  }
   g_assert (grid_size % 2 == 1);
   size_t mapping_count = pow ((double) grid_size, 2.0);
   struct data_to_fit dtf;
