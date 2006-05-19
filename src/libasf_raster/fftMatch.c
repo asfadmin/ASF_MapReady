@@ -87,8 +87,9 @@ static void findPeak(float *corrImage,float *dx,float *dy,float *doubt,
   float bestMatch=-100000000000.0;
   float bestLocX=delX,bestLocY=delY;
   if (!quietflag) 
-    printf("   Searching for Peak (largest offset=%d lines & %d samples)\n",
-	   searchY,searchX);
+    asfPrintStatus(
+      "   Searching for Peak (largest offset=%d lines & %d samples)\n",
+      searchY,searchX);
   for (y=chipY-searchY;y<chipY+searchY;y++)
     for (x=chipX-searchX;x<chipX+searchX;x++) {
       int index=ns*modY(y,nl)+modX(x,ns);
@@ -244,14 +245,16 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile,
 
   fft2dInit(mY, mX);
 
-  asfPrintStatus("   FFT Size: %d samples by %d lines\n",1<<mX,1<<mY);
-  if (ns*nl*2*sizeof(float)>20*1024*1024)
+  if (!quietflag)
+    asfPrintStatus("   FFT Size: %d samples by %d lines\n",1<<mX,1<<mY);
+  if (!quietflag && ns*nl*2*sizeof(float)>20*1024*1024)
     asfPrintStatus("   WARNING: These images will take %d megabytes of "
 		   "memory to match.\n"
 		   "   You may want to try smaller images.\n",
 		   ns*nl*2*sizeof(float)/(1024*1024));
 
-  asfPrintStatus("\tChip at %dx%d, size=%dx%d\n", chipX,chipY,chipDX,chipDY);
+  if (!quietflag)
+    asfPrintStatus("\tChip at %dx%d, size=%dx%d\n", chipX,chipY,chipDX,chipDY);
   
   /*Optionally open the correlation image file.*/
   if (corrFile) {
@@ -289,13 +292,8 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile,
 
   FREE(corrImage);
   if (!quietflag)
-    printf("   Offset slave image: dx = %f, dy = %f\n"
-	   "   Certainty: %f%%\n",*bestLocX,*bestLocY,100*(1-doubt));
-  if (logflag) {
-    sprintf(logbuf,"   Offset slave image: dx = %f, dy = %f\n"
-	    "   Certainty: %f%%\n",*bestLocX,*bestLocY,100*(1-doubt));
-    printLog(logbuf);
-  }
+    asfPrintStatus("   Offset slave image: dx = %f, dy = %f\n"
+		   "   Certainty: %f%%\n",*bestLocX,*bestLocY,100*(1-doubt));
 }
 
 /* This method is here to match the old interface of fftMatch.  Old code

@@ -69,7 +69,8 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
     buffer[x]=0;
   for (y=0;y<-startY && y<outMaxY;y++) {
     FWRITE(buffer,pixelSize,outMaxX,out);
-    if (y==0) printf("   Filling zeros at beginning of output image\n");
+    if (y==0)
+      asfPrintStatus("   Filling zeros at beginning of output image\n");
   }
 
   /* Do some calculations on where we should read.*/
@@ -85,7 +86,7 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
     
     offset=pixelSize*(inputY*inMaxX+inputX);
     
-    if (y==lastReadY) printf("   Writing output image\n");
+    if (y==lastReadY) asfPrintStatus("   Writing output image\n");
     
     FSEEK64(in,offset,SEEK_SET);
     
@@ -98,13 +99,8 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
     buffer[x]=0;
   for (;y<outMaxY;y++) {
     FWRITE(buffer,pixelSize,outMaxX,out);
-    if (y==outMaxY) printf("   Filled zeros after writing output image\n");
-  }
-
-  //printf("   Wrote %lld lines of data\n\n", outMaxY);
-  if (logflag) {
-    sprintf(logbuf, "   Wrote %lld lines of data\n\n", outMaxY);
-    printLog(logbuf);
+    if (y==outMaxY)
+      asfPrintStatus("   Filled zeros after writing output image\n");
   }
 
   /* Now close the files & free memory 'cause we're done.*/
