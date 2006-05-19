@@ -579,5 +579,12 @@ int main(int argc, char *argv[])
 	       range_scale, azimuth_scale, correct_y_pixel_size,
 	       inBaseName, outBaseName);
 
+    /* If the user didn't ask for a log file then we can nuke the one that
+       we've been keeping since we've finished everything  */
+    if (flags[f_LOG] == FLAG_NOT_SET) {
+        fclose (fLog);
+        remove(logFile);
+    }
+
     exit(EXIT_SUCCESS);
 }
