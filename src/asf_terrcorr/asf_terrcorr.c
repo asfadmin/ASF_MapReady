@@ -7,8 +7,8 @@
 void usage(const char *name)
 {
   printf("Usage: %s [-log <logfile>] [-quiet] [-keep] [-no-resample]\n"
-         "          [-no-verify-fftMatch] [-pixel-size <size>]\n"
-         "          [-dem-grid-size <size>]\n"
+         "          [-no-verify-fftMatch] [-no-corner-match]\n"
+         "          [-pixel-size <size>] [-dem-grid-size <size>]\n"
          "          <inFile> <demFile> <outFile>\n", name);
   exit(EXIT_FAILURE);
 }
@@ -47,7 +47,7 @@ main (int argc, char *argv[])
   int dem_grid_size = 20;
   int currArg, idx, idy;
   int polyOrder = 5, clean_files = TRUE, do_resample = TRUE,
-    do_fftMatch_verification = TRUE;
+    do_fftMatch_verification = TRUE, do_corner_matching = TRUE;
 
   currArg = 1;
 
@@ -69,6 +69,9 @@ main (int argc, char *argv[])
       do_resample = FALSE;
     }
     else if (strmatches(key,"-no-verify-match","--no-verify-match",NULL)) {
+      do_fftMatch_verification = FALSE;
+    }
+    else if (strmatches(key,"-no-corner-match","--no-corner-match",NULL)) {
       do_fftMatch_verification = FALSE;
     }
     else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
@@ -94,7 +97,7 @@ main (int argc, char *argv[])
   outFile = argv[currArg+2];
 
   int ret = asf_terrcorr_ext(inFile, demFile, outFile, pixel_size, clean_files,
-			     do_resample, do_fftMatch_verification,
-			     dem_grid_size);
+			     do_resample, do_corner_matching,
+			     do_fftMatch_verification, dem_grid_size);
   return ret ? EXIT_SUCCESS : EXIT_FAILURE;
 }

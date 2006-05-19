@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <limits.h>
+#include <fcntl.h>
 
 #include <asf.h>
 #include <asf_endian.h>
@@ -22,6 +23,8 @@
 #include <poly.h>
 
 #include <asf_terrcorr.h>
+
+char *strdup(const char *);
 
 static int int_rnd(double x)
 {
@@ -118,39 +121,114 @@ static void clean(const char *file)
   free(ddr_file);
 }
 
-static void fftMatch_atCornersQ(char *srFile, char *demTrimSimAmp)
+static void 
+fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert)
 {
   int qf_saved = quietflag;
   quietflag = 1;
-  fftMatch_atCorners(srFile, demTrimSimAmp);  
+  fftMatch(file1, file2, NULL, dx, dy, cert);
   quietflag = qf_saved;
 }
 
-static void fftMatchQ(char *file1, char *file2, float *dx, float *dy)
+static int mini(int a, int b)
 {
+  return a < b ? a : b;
+}
+
+static void 
+fftMatch_atCorners(char *sar, char *dem, const int size)
+{
+  float dx_ur, dy_ur; 
+  float dx_ul, dy_ul; 
+  float dx_lr, dy_lr; 
+  float dx_ll, dy_ll; 
   float cert;
-  int qf_saved = quietflag;
-  quietflag = 1;
-  fftMatch(file1, file2, NULL, dx, dy, &cert);
-  quietflag = qf_saved;
+  double rsf, asf;
+
+  char *chopped_sar, *chopped_dem;
+  int nl, ns;
+  meta_parameters *meta_sar, *meta_dem;
+  long long lsz = (long long)size;
+
+  meta_sar = meta_read(sar);
+  meta_dem = meta_read(dem);
+
+  chopped_sar = appendSuffix(sar, "_chip");
+  chopped_dem = appendSuffix(dem, "_chip");
+
+  nl = mini(meta_sar->general->line_count, meta_dem->general->line_count);
+  ns = mini(meta_sar->general->sample_count, meta_dem->general->sample_count);
+
+  // Require the image be 4x the chip size in each direction, otherwise
+  // the corner matching isn't really that meaningful
+  if (nl < 4*size || ns < 4*size) {
+    asfPrintStatus("Image is too small, skipping corner matching.\n");
+    return;
+  }
+
+  trim(sar, chopped_sar, (long long)0, (long long)0, lsz, lsz);
+  trim(dem, chopped_dem, (long long)0, (long long)0, lsz, lsz);
+
+  fftMatchQ(chopped_sar, chopped_dem, &dx_ur, &dy_ur, &cert);
+  asfPrintStatus("UR: %14.10f %14.10f %14.10f\n", dx_ur, dy_ur, cert);
+
+  trim(sar, chopped_sar, (long long)(ns-size), (long long)0, lsz, lsz);
+  trim(dem, chopped_dem, (long long)(ns-size), (long long)0, lsz, lsz);
+
+  fftMatchQ(chopped_sar, chopped_dem, &dx_ul, &dy_ul, &cert);
+  asfPrintStatus("UL: %14.10f %14.10f %14.10f\n", dx_ul, dy_ul, cert);
+
+  trim(sar, chopped_sar, (long long)0, (long long)(nl-size), lsz, lsz);
+  trim(dem, chopped_dem, (long long)0, (long long)(nl-size), lsz, lsz);
+
+  fftMatchQ(chopped_sar, chopped_dem, &dx_lr, &dy_lr, &cert);
+  asfPrintStatus("LR: %14.10f %14.10f %14.10f\n", dx_lr, dy_lr, cert);
+
+  trim(sar, chopped_sar, (long long)(ns-size), (long long)(nl-size),
+       lsz, lsz);
+  trim(dem, chopped_dem, (long long)(ns-size), (long long)(nl-size),
+       lsz, lsz);
+
+  fftMatchQ(chopped_sar, chopped_dem, &dx_ll, &dy_ll, &cert);
+  asfPrintStatus("LL: %14.10f %14.10f %14.10f\n", dx_ll, dy_ll, cert);
+
+  asfPrintStatus("Range shift: %14.10lf top\n", (double)(dx_ul-dx_ur));
+  asfPrintStatus("             %14.10lf bottom\n", (double)(dx_ll-dx_lr));
+  asfPrintStatus("   Az shift: %14.10lf left\n", (double)(dx_ul-dx_ll));
+  asfPrintStatus("             %14.10lf right\n\n", (double)(dx_ur-dx_lr));
+
+  nl = meta_sar->general->line_count;
+  ns = meta_sar->general->sample_count;
+
+  rsf = 1 - (fabs((double)(dx_ul-dx_ur)) + fabs((double)(dx_ll-dx_lr)))/ns/2;
+  asf = 1 - (fabs((double)(dx_ul-dx_ll)) + fabs((double)(dx_ur-dx_lr)))/nl/2;
+
+  asfPrintStatus("Suggested scale factors: %14.10lf range\n", rsf);
+  asfPrintStatus("                         %14.10lf azimuth\n\n", asf);
+
+  clean(chopped_sar);
+  clean(chopped_dem);
+  free(chopped_sar);
+  free(chopped_dem);
 }
 
 int asf_terrcorr(char *sarFile, char *demFile,
 		 char *outFile, double pixel_size)
 {
   int do_fftMatch_verification = TRUE;
+  int do_corner_matching = TRUE;
   int do_resample = TRUE;
   int clean_files = TRUE;
   int dem_grid_size = 20;
   
   return asf_terrcorr_ext(sarFile, demFile, outFile, pixel_size,
-			  clean_files, do_resample, do_fftMatch_verification,
-			  dem_grid_size);
+			  clean_files, do_resample, do_corner_matching,
+			  do_fftMatch_verification, dem_grid_size);
 }
 
 int asf_terrcorr_ext(char *sarFile, char *demFile,
-		     char *outFile, double pixel_size,
-		     int clean_files, int do_resample,
+		     char *outFile, double pixel_size, int clean_files,
+		     int do_resample, int do_corner_matching,
 		     int do_fftMatch_verification, int dem_grid_size)
 {
   char *resampleFile, *srFile;
@@ -159,7 +237,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   double demRes, sarRes;
   int demWidth, demHeight;
   meta_parameters *metaSAR, *metaDEM;
-  float dx, dy;
+  float dx, dy, cert;
   int idx, idy;
   int polyOrder = 5;
 
@@ -287,14 +365,20 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   // Match the real and simulated SAR image to determine the offset.
   // Read the offset out of the offset file.
   asfPrintStatus("Determining image offsets...\n");
-  fftMatchQ(srFile, demTrimSimAmp, &dx, &dy);
-  asfPrintStatus("Correlation: dx=%f dy=%f\n", dx, dy);
+  fftMatchQ(srFile, demTrimSimAmp, &dx, &dy, &cert);
+  asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f dy=%f\n",
+		 100*cert, dx, dy);
+
   idx = - int_rnd(dx);
   idy = - int_rnd(dy);
 
   // Corner test
-  asfPrintStatus("Doing corner fftMatching...\n");
-  fftMatch_atCornersQ(srFile, demTrimSimAmp);
+  if (do_corner_matching) {
+    int chipsz = 256;
+    asfPrintStatus("Doing corner fftMatching... (using %dx%d chips)\n",
+		   chipsz, chipsz);
+    fftMatch_atCorners(srFile, demTrimSimAmp, chipsz);
+  }
 
   // Apply the offset to the simulated amplitude image.
   asfPrintStatus("Applying offsets to simulated sar image...\n");
@@ -306,9 +390,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     float dx2, dy2;
 
     asfPrintStatus("Verifying offsets are now close to zero...\n");
-    fftMatchQ(srFile, demTrimSimAmp, &dx2, &dy2);
+    fftMatchQ(srFile, demTrimSimAmp, &dx2, &dy2, &cert);
 
-    asfPrintStatus("Correlation after shift: dx=%f dy=%f\n", dx2, dy2);
+    asfPrintStatus("Correlation after shift (cert=%5.2f%%): dx=%f dy=%f\n", 
+		   100*cert, dx2, dy2);
 
     double match_tolerance = 1.0;
     if (sqrt(dx2*dx2 + dy2*dy2) > match_tolerance) {
