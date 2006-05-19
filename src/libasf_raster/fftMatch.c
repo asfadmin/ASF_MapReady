@@ -312,3 +312,93 @@ void fftMatch_withOffsetFile(char *inFile1, char *inFile2, char *corrFile,
     FCLOSE(descF);
   }
 }
+
+static char * appendSuffix(const char *inFile, const char *suffix)
+{
+  char *ret = MALLOC(sizeof(char)*(strlen(inFile)+strlen(suffix)+5));
+  strcpy(ret, inFile);
+  char *p = findExt(ret);
+  if (p && p != ret) {
+    char *ext;
+    *p++ = '\0';
+    ext = strdup(p);
+    strcat(ret, suffix);
+    strcat(ret, ".");
+    strcat(ret, ext);
+    free(ext);
+  } else {
+    strcat(ret, suffix);
+  }
+
+  return ret;
+}
+
+void fftMatch_atCorners(char *inFile1, char *inFile2)
+{
+  float dx_ur, dy_ur; 
+  float dx_ul, dy_ul; 
+  float dx_lr, dy_lr; 
+  float dx_ll, dy_ll; 
+  float cert;
+  double rsf, asf;
+
+  char *choppedFile1, *choppedFile2;
+  int nl, ns;
+  const int size = 256;
+  meta_parameters *meta1, *meta2;
+  long long lsz = (long long)size;
+
+  meta1 = meta_read(inFile1);
+  meta2 = meta_read(inFile2);
+
+  choppedFile1 = appendSuffix(inFile1, "_chip");
+  choppedFile2 = appendSuffix(inFile2, "_chip");
+
+  nl = MINI(meta1->general->line_count, meta2->general->line_count);
+  ns = MINI(meta1->general->sample_count, meta2->general->sample_count);
+
+  trim(inFile1, choppedFile1, (long long)0, (long long)0, lsz, lsz);
+  trim(inFile2, choppedFile2, (long long)0, (long long)0, lsz, lsz);
+
+  fftMatch(choppedFile1, choppedFile2, NULL, &dx_ur, &dy_ur, &cert);
+  printf("UR: %14.10f %14.10f %14.10f\n", dx_ur, dy_ur, cert);
+
+  trim(inFile1, choppedFile1, (long long)(ns-size), (long long)0, lsz, lsz);
+  trim(inFile2, choppedFile2, (long long)(ns-size), (long long)0, lsz, lsz);
+
+  fftMatch(choppedFile1, choppedFile2, NULL, &dx_ul, &dy_ul, &cert);
+  printf("UL: %14.10f %14.10f %14.10f\n", dx_ul, dy_ul, cert);
+
+  trim(inFile1, choppedFile1, (long long)0, (long long)(nl-size), lsz, lsz);
+  trim(inFile2, choppedFile2, (long long)0, (long long)(nl-size), lsz, lsz);
+
+  fftMatch(choppedFile1, choppedFile2, NULL, &dx_lr, &dy_lr, &cert);
+  printf("LR: %14.10f %14.10f %14.10f\n", dx_lr, dy_lr, cert);
+
+  trim(inFile1, choppedFile1, (long long)(ns-size), (long long)(nl-size),
+       lsz, lsz);
+  trim(inFile2, choppedFile2, (long long)(ns-size), (long long)(nl-size),
+       lsz, lsz);
+
+  fftMatch(choppedFile1, choppedFile2, NULL, &dx_ll, &dy_ll, &cert);
+  printf("LL: %14.10f %14.10f %14.10f\n", dx_ll, dy_ll, cert);
+
+  printf("Range shift: %14.10lf top\n", (double)(dx_ul-dx_ur));
+  printf("             %14.10lf bottom\n", (double)(dx_ll-dx_lr));
+  printf("   Az shift: %14.10lf left\n", (double)(dx_ul-dx_ll));
+  printf("             %14.10lf right\n\n", (double)(dx_ur-dx_lr));
+
+  nl = meta1->general->line_count;
+  ns = meta1->general->sample_count;
+
+  rsf = 1 - (fabs((double)(dx_ul-dx_ur)) + fabs((double)(dx_ll-dx_lr)))/ns/2;
+  asf = 1 - (fabs((double)(dx_ul-dx_ll)) + fabs((double)(dx_ur-dx_lr)))/nl/2;
+
+  printf("Suggested scale factors: %14.10lf range\n", rsf);
+  printf("                         %14.10lf azimuth\n\n", asf);
+
+  unlink(choppedFile1);
+  unlink(choppedFile2);
+  free(choppedFile1);
+  free(choppedFile2);
+}

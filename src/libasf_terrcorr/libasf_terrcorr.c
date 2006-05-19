@@ -118,6 +118,14 @@ static void clean(const char *file)
   free(ddr_file);
 }
 
+static void fftMatch_atCornersQ(char *srFile, char *demTrimSimAmp)
+{
+  int qf_saved = quietflag;
+  quietflag = 1;
+  fftMatch_atCorners(srFile, demTrimSimAmp);  
+  quietflag = qf_saved;
+}
+
 static void fftMatchQ(char *file1, char *file2, float *dx, float *dy)
 {
   float cert;
@@ -283,6 +291,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   asfPrintStatus("Correlation: dx=%f dy=%f\n", dx, dy);
   idx = - int_rnd(dx);
   idy = - int_rnd(dy);
+
+  // Corner test
+  asfPrintStatus("Doing corner fftMatching...\n");
+  fftMatch_atCornersQ(srFile, demTrimSimAmp);
 
   // Apply the offset to the simulated amplitude image.
   asfPrintStatus("Applying offsets to simulated sar image...\n");
