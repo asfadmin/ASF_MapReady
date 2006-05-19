@@ -32,6 +32,7 @@ void g_assert_warning(const char *s1, const char *s2, const int i1,
                     const char *s3, const char *s4)
 {
   printf("Warning: %s %s %d %s %s\n", s1, s2, i1, s3, s4);
+  exit(EXIT_FAILURE);
 }
 #endif
 
