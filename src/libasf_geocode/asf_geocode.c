@@ -1328,7 +1328,8 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     asfPrintError("Unsupported datum! %d\n", datum);
   }
 
-  // We need to convert things in this structure back to degrees.
+  // We need to convert things in this structure back to degrees
+  // before storing the metadata (according to file format).
   to_degrees (projection_type, pp);
   omd->projection->param = *pp;
   meta_write (omd, output_meta_data->str);
