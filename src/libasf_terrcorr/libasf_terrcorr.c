@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <limits.h>
-#include <fcntl.h>
 
 #include <asf.h>
 #include <asf_endian.h>
@@ -88,17 +87,9 @@ static void ensure_ext(char **filename, const char *ext)
   *filename = ret;
 }
 
-static int file_exists(const char * file)
-{
-  int fd = open(file, 0);
-  int stat = fd >= 3;
-  close(fd);
-  return stat;
-}
-
 static void remove_file(const char * file)
 {
-  if (file_exists(file)) {
+  if (fileExists(file)) {
     // asfPrintStatus("Removing intermediate file: %s\n", file);
     unlink(file);
   }
