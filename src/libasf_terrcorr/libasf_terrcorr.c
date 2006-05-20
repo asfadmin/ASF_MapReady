@@ -150,6 +150,8 @@ fftMatch_atCorners(char *sar, char *dem, const int size)
   nl = mini(meta_sar->general->line_count, meta_dem->general->line_count);
   ns = mini(meta_sar->general->sample_count, meta_dem->general->sample_count);
 
+  meta_free(meta_dem);
+
   // Require the image be 4x the chip size in each direction, otherwise
   // the corner matching isn't really that meaningful
   if (nl < 4*size || ns < 4*size) {
@@ -185,20 +187,19 @@ fftMatch_atCorners(char *sar, char *dem, const int size)
 
   asfPrintStatus("Range shift: %14.10lf top\n", (double)(dx_ul-dx_ur));
   asfPrintStatus("             %14.10lf bottom\n", (double)(dx_ll-dx_lr));
-  asfPrintStatus("   Az shift: %14.10lf left\n", (double)(dx_ul-dx_ll));
-  asfPrintStatus("             %14.10lf right\n\n", (double)(dx_ur-dx_lr));
+  asfPrintStatus("   Az shift: %14.10lf left\n", (double)(dy_ul-dy_ll));
+  asfPrintStatus("             %14.10lf right\n\n", (double)(dy_ur-dy_lr));
 
   nl = meta_sar->general->line_count;
   ns = meta_sar->general->sample_count;
 
   rsf = 1 - (fabs((double)(dx_ul-dx_ur)) + fabs((double)(dx_ll-dx_lr)))/ns/2;
-  asf = 1 - (fabs((double)(dx_ul-dx_ll)) + fabs((double)(dx_ur-dx_lr)))/nl/2;
+  asf = 1 - (fabs((double)(dy_ul-dy_ll)) + fabs((double)(dy_ur-dy_lr)))/nl/2;
 
   asfPrintStatus("Suggested scale factors: %14.10lf range\n", rsf);
   asfPrintStatus("                         %14.10lf azimuth\n\n", asf);
 
   meta_free(meta_sar);
-  meta_free(meta_dem);
 
   clean(chopped_sar);
   clean(chopped_dem);

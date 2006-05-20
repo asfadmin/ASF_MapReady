@@ -198,6 +198,8 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
     }
   //asfPrintStatus("   Created a grid of %ix%i points\n\n",gridResX,gridResY);
   FCLOSE(out);
+  meta_free(metaDem);
+  meta_free(metaSar);
   return TRUE;
 }
 

@@ -367,9 +367,9 @@ int asf_convert(int createflag, char *configFileName)
 	  sprintf(outFile, "tmp%i_sar_processing_beta", pid);
       }
       else {
-	meta_free(meta);
 	asfPrintStatus("Image has already been processed - skipping SAR processing step");
       }
+      meta_free(meta);
     }
     
     if (cfg->general->image_stats) {

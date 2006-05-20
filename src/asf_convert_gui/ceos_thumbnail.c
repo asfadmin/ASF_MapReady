@@ -75,6 +75,7 @@ make_input_image_thumbnail (const char *input_metadata, const char *input_data,
         ti->size_x : ti->size_y), NAN);
 
     float_image_free (ti);
+    meta_free(imd);
 
     return TRUE;
 }

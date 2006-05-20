@@ -92,9 +92,10 @@ int resample_to_pixsiz(char *infile, char *outfile,
     xscalfact = metaIn->general->x_pixel_size/xpixsiz;
     yscalfact = metaIn->general->y_pixel_size/ypixsiz;
 
+    meta_free(metaIn);
+
     resample(infile, outfile, xscalfact, yscalfact);
 
-    meta_free(metaIn);
 }
 
 int resample(char *infile, char *outfile, double xscalfact, double yscalfact)

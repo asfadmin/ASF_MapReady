@@ -165,4 +165,5 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   meta->general->center_latitude = lat;
   meta->general->center_longitude = lon;
   meta_write(meta, outMetaName);
+  meta_free(meta);
 }

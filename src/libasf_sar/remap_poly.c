@@ -251,5 +251,7 @@ int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
 
   perform_mapping(in, meta_in, out, meta_out, map);
   FCLOSE(out);
+  meta_free(meta_in);
+  meta_free(meta_out);
   return 1;
 }
