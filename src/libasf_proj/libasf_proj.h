@@ -325,6 +325,34 @@ int project_albers_arr_inv(project_parameters_t *pps,
                            double **lat, double **lon, double **height,
                            long length);
 
+/******************************************************************************
+  Pseudo Projection
+
+  Why would you ever translate between lat/longs on an an input
+  spheroid and "pseudoprojected" lat/longs with respect to a datum?
+  Possibly to perform a datum translation.  Or possibly just to allow
+  higher level code that wants to handle pseudoprojections together
+  with projections to work properly.
+
+  Note that although these functions take a project_parameters_t
+  pointer argument for signature compatability with other functions in
+  this library, they don't use it (since pseudoprojected images don't
+  need any projection parameters).
+******************************************************************************/
+
+int project_pseudo (project_parameters_t *pps, double lat, double lon,
+		    double height, double *x, double *y, double *z);
+
+int project_pseudo_inv (project_parameters_t *pps, double x, double y,
+			double z, double *lat, double *lon, double *height);
+
+int project_pseudo_arr (project_parameters_t *pps, double *lat, double *lon,
+			double *height, double **x, double **y, double **z,
+			long length);
+
+int project_pseudo_arr_inv (project_parameters_t *pps, double *x, double *y,
+			    double *z, double **lat, double **lon,
+			    double **height, long length);
 
 /***************************************************************************
   General conversion functions between projection coordinates and geographic

@@ -90,6 +90,15 @@ void project_set_datum(datum_type_t datum)
 {
     sDatum = datum;
 }
+static datum_type_t datum_type(void)
+{
+  if ( sDatum == MAGIC_UNSET_INT ) {
+    return WGS84_DATUM;
+  }
+  else {
+    return sDatum;
+  }
+}
 
 static const char * datum(project_parameters_t * pps)
 {
@@ -269,7 +278,7 @@ static int project_worker_arr(char * projection_description,
   sprintf(latlon_projection, "+proj=latlong +a=%lf +b=%lf", spheroid_a,
 	  spheroid_b);
 
-  geographic_projection = pj_init_plus ( latlon_projection );
+  geographic_projection = pj_init_plus (latlon_projection);
   
 /*
   printf("projection description: %s %s\n", latlon_projection,
@@ -801,6 +810,58 @@ project_albers_arr_inv(project_parameters_t *pps,
 				  lat, lon, height, length);
 }
 
+/******************************************************************************
+  Pseudo Projection
+******************************************************************************/
+
+static char * pseudo_projection_description(void)
+{
+  static char pseudo_projection_description[128];
+
+  // Spheroid semimajor and semiminor axes associated with current datum.
+  double spheroid_a, spheroid_b;
+  spheroid_axes_lengths (datum_spheroid (datum_type ()), &spheroid_a,
+			 &spheroid_b);
+
+
+  sprintf(pseudo_projection_description,
+	  "+proj=latlong +a=%lf +b=%lf", spheroid_a, spheroid_b);
+
+  return pseudo_projection_description;
+}
+
+int
+project_pseudo (project_parameters_t *pps, double lat, double lon,
+		double height, double *x, double *y, double *z)
+{
+  return project_worker_arr(pseudo_projection_description (),
+			    &lat, &lon, &height, &x, &y, &z, 1);
+}
+
+int
+project_pseudo_inv (project_parameters_t *pps, double x, double y,
+		    double z, double *lat, double *lon, double *height)
+{
+  return project_worker_arr_inv(pseudo_projection_description (), &x, &y, &z,
+				&lat, &lon, &height, 1);
+}
+
+int
+project_pseudo_arr (project_parameters_t *pps, double *lat, double *lon,
+		    double *height, double **x, double **y, double **z,
+		    long length)
+{
+  return project_worker_arr(pseudo_projection_description (),
+			    lat, lon, height, x, y, z, length);
+}
+
+int project_pseudo_arr_inv (project_parameters_t *pps, double *x, double *y,
+			    double *z, double **lat, double **lon,
+			    double **height, long length)
+{
+  return project_worker_arr_inv(pseudo_projection_description (),
+				x, y, z, lat, lon, height, length);
+}
 
 /*Convert projection units (meters) to geodetic latitude and longitude (degrees).*/
 void proj_to_latlon(meta_projection *proj, char look_dir,
