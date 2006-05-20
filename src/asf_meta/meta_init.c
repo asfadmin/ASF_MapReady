@@ -352,7 +352,10 @@ void meta_free(meta_parameters *meta)
 
     for (ii=0; ii<NUM_META_DDR_STRUCTS; ii++) {
       if (meta_ddr_structs[ii].meta == meta)
-        { meta_ddr_structs[ii].meta = NULL; }
+        { 
+	  meta_ddr_structs[ii].meta = NULL; 
+	  strcpy(meta_ddr_structs[ii].base_name, "");
+	}
     }
     FREE(meta);
     meta = NULL;
