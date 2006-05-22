@@ -134,21 +134,23 @@ resample_impl(char *infile, char *outfile,
     fpin=fopenImage(infile,"rb");
     fpout=fopenImage(outfile,"wb");
 
-    /* Write output metadata file */ 
-    metaOut->general->line_count = onl;
-    metaOut->general->sample_count = onp;
-    metaOut->general->data_type = REAL32;
-    metaOut->general->x_pixel_size = xpixsiz;
-    metaOut->general->y_pixel_size = ypixsiz;
-    metaOut->sar->range_time_per_pixel /= xscalfact;
-    metaOut->sar->azimuth_time_per_pixel /= yscalfact;
-    metaOut->sar->range_doppler_coefficients[1] /= xscalfact;
-    metaOut->sar->range_doppler_coefficients[2] /= xscalfact / xscalfact;
-    metaOut->sar->azimuth_doppler_coefficients[1] /= yscalfact;
-    metaOut->sar->azimuth_doppler_coefficients[2] /= yscalfact * yscalfact;
-
     if (update_meta)
-      meta_write(metaOut, outfile);
+    {
+      /* Write output metadata file */ 
+      metaOut->general->line_count = onl;
+      metaOut->general->sample_count = onp;
+      metaOut->general->data_type = REAL32;
+      metaOut->general->x_pixel_size = xpixsiz;
+      metaOut->general->y_pixel_size = ypixsiz;
+      metaOut->sar->range_time_per_pixel /= xscalfact;
+      metaOut->sar->azimuth_time_per_pixel /= yscalfact;
+      metaOut->sar->range_doppler_coefficients[1] /= xscalfact;
+      metaOut->sar->range_doppler_coefficients[2] /= xscalfact / xscalfact;
+      metaOut->sar->azimuth_doppler_coefficients[1] /= yscalfact;
+      metaOut->sar->azimuth_doppler_coefficients[2] /= yscalfact * yscalfact;
+    }
+
+    meta_write(metaOut, outfile);
 
   /*--------  Process inbuf to give outbuf ------------------------*/
     for (i = 0; i < onl; i++)
