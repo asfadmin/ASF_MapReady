@@ -87,12 +87,16 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   -range-scale[=<scale-factor>]\n"\
 "        Apply the provided range scale factor to the imported data.  If\n"\
 "        the option is specified without an argument, a default value of\n"\
-"        %f will be used.\n"\
+"        %f will be used.\n\n"\
+"        The metadata will not be updated after scaling - this option is\n"\
+"        intended to be used to correct errors in the data.\n\n"\
 "   -azimuth-scale[=<scale-factor>]\n"\
 "        Apply the provided azimuth scale factor to the imported data.  If\n"\
-"        the option is specified without an argument, a default value of\n"\
-"        %f will be used.  This option cannot be used with\n"\
-"        -fix-meta-ypix\n"\
+"        the option is specified without an argument, a default value will\n"\
+"        be calculated from the metadata.\n\n"\
+"        This option cannot be used with -fix-meta-ypix\n\n"\
+"        The metadata will not be updated after scaling - this option is\n"\
+"        intended to be used to correct errors in the data.\n\n"\
 "   --fix-meta-ypix[=<pixel-size>]\n"\
 "        This option is similar to -azimuth-scale, but does not resample the\n"\
 "        input data, it just changes the y pixel size in the metadata.\n"\
@@ -158,7 +162,8 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
+      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n",
+      DEFAULT_RANGE_SCALE);
   exit(EXIT_SUCCESS);
 }
 

@@ -168,7 +168,8 @@ int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type, char *lutName,
         asfPrintStatus("Resampling with scale factors: %g range, %g azimuth.\n",
             range_scale, azimuth_scale);
 
-        resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
+        resample_nometa(unscaledBaseName, outBaseName,
+			range_scale, azimuth_scale);
     }
 
     /* metadata pixel size fix, if necessary */

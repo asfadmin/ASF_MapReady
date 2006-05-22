@@ -93,6 +93,8 @@ void shaded_relief(char *inFile, char *outFile, int addSpeckle);
 
 /* Prototypes from resample.c ************************************************/
 int resample(char *infile, char *outfile, double xscalfact, double yscalfact);
+int resample_nometa(char *infile, char *outfile,
+		    double xscalfact, double yscalfact);
 int resample_to_pixsiz(char *infile, char *outfile,
 		       double xpixsiz, double ypixsiz);
 int resample_to_square_pixsiz(char *infile, char *outfile, double pixsiz);
