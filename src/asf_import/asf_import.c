@@ -243,6 +243,7 @@ float get_default_azimuth_scale(const char *outBaseName)
     float scale = az_pixsiz / real_spacing;
 
     asfPrintStatus("             Scale: %g\n\n", scale);
+    meta_free(omd);
 
     return scale;
 }
