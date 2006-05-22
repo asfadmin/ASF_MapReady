@@ -15,7 +15,6 @@ SOURCES := geocode_options.c \
 	   geocode_dem.c \
 	   set_projection_functions.c \
            parse_options.c \
-	   pseudo_projection_functions.c \
            check_parameters.c \
            asf_geocode.c
 

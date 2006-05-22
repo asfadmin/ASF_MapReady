@@ -46,30 +46,8 @@ typedef int (*array_projector_t) (project_parameters_t *ppd, double *xi,
 				  double *yi, double *zi, double **xo,
 				  double **yo, double **zo, long length);
 
-///////////////////////////////////////////////////////////////////////////////
-//
-// Pseudoprojection Transformation Functions
-//
-// These aren't in libasf_proj yet so we have these stand-ins.  They
-// don't do datum transformation though (see elsewhere).
-//
-///////////////////////////////////////////////////////////////////////////////
-
-int 
-project_pseudo (project_parameters_t *pps, double lat, double lon,
-		double height, double *x, double *y, double *z);
-int
-project_pseudo_inv (project_parameters_t *pps, double x, double y,
-		    double z, double *lat, double *lon, double *height);
-int 
-project_pseudo_arr (project_parameters_t *pps, double *lat, double *lon,
-		    double *height, double **x, double **y, double **z,
-		    long length);
-int
-project_pseudo_arr_inv (project_parameters_t *pps, double *x, double *y,
-			double *z, double **lat, double **lon,
-			double **height, long length);
-
+// Select the appropriate projection and unprojection routines for
+// projection_type from libasf_proj.
 void set_projection_functions (projection_type_t projection_type, 
 			       projector_t *project, projector_t *unproject,
 			       array_projector_t *array_project,
