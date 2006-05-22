@@ -820,8 +820,8 @@ static char * pseudo_projection_description(void)
 
   // Spheroid semimajor and semiminor axes associated with current datum.
   double spheroid_a, spheroid_b;
-  spheroid_axes_lengths (datum_spheroid (datum_type ()), &spheroid_a,
-			 &spheroid_b);
+  project_spheroid_axes_lengths (datum_spheroid (datum_type ()), &spheroid_a,
+				 &spheroid_b);
 
 
   sprintf(pseudo_projection_description,
