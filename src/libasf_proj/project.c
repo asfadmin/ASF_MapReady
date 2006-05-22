@@ -23,6 +23,30 @@ round (double arg)
 #endif /* #ifndef win32 */
 #endif /* #ifndef linux */
 
+// Return the spheroid associated with a given datum.  This function
+// fails if given a datum it hasn't been taught about yet.  This is a
+// cut-and-paste implementation of a function defined in asf_meta.h,
+// that we can't actually use here because we don't actually link
+// against that library (only include the header).
+spheroid_type_t
+project_datum_spheroid (datum_type_t datum)
+{
+  switch ( datum ) {
+  case NAD27_DATUM:
+    return CLARKE1866_SPHEROID;
+    break;
+  case NAD83_DATUM:
+    return GRS1980_SPHEROID;
+    break;
+  case WGS84_DATUM:
+    return WGS84_SPHEROID;
+    break;
+  default:
+    assert (0);
+    break;
+  }
+}
+
 // Fill in major and minor with the axes lenghts of spheroid.  This is
 // a cut-and-paste implementation of a function defined in asf_meta.h,
 // that we can't actually use here because we don't actually link
@@ -820,8 +844,8 @@ static char * pseudo_projection_description(void)
 
   // Spheroid semimajor and semiminor axes associated with current datum.
   double spheroid_a, spheroid_b;
-  project_spheroid_axes_lengths (datum_spheroid (datum_type ()), &spheroid_a,
-				 &spheroid_b);
+  project_spheroid_axes_lengths (project_datum_spheroid (datum_type ()),
+				 &spheroid_a, &spheroid_b);
 
 
   sprintf(pseudo_projection_description,
