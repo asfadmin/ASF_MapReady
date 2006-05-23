@@ -184,6 +184,7 @@ convert_config *init_fill_convert_config(char *configFile)
   int i;
 
   // Create structure
+  strcpy(params, "");
   convert_config *cfg = newStruct(convert_config);
   cfg->general = newStruct(s_general);
   cfg->import = newStruct(s_import);
@@ -278,6 +279,7 @@ convert_config *init_fill_convert_config(char *configFile)
       test = read_param(line);
       if (strncmp(test, "default values", 14)==0)
 	cfg->general->defaults = read_str(line, "default values");
+      FREE(test);
     }
   }
   FCLOSE(fConfig);
@@ -357,6 +359,7 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->export->format = read_str(line, "output format");
       if (strncmp(test, "byte conversion", 15)==0)
         cfg->export->byte = read_str(line, "byte conversion");
+      FREE(test);
     }
   }
 
@@ -404,6 +407,7 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->general->prefix = read_str(line, "prefix");
       if (strncmp(test, "suffix", 6)==0)
         cfg->general->suffix = read_str(line, "suffix");
+      FREE(test);
     }
   }
   FCLOSE(fConfig);
@@ -416,7 +420,7 @@ convert_config *read_convert_config(char *configFile)
   FILE *fConfig;
   convert_config *cfg=NULL;
   char line[255], params[50];
-  char *test=(char *)MALLOC(sizeof(char)*255);
+  char *test;
 
   strcpy(params, "");
   cfg = init_fill_convert_config(configFile);
@@ -461,6 +465,7 @@ convert_config *read_convert_config(char *configFile)
         cfg->general->prefix = read_str(line, "prefix");
       if (strncmp(test, "suffix", 6)==0)
         cfg->general->suffix = read_str(line, "suffix");
+      FREE(test);
     }
 
     if (strncmp(line, "[Import]", 8)==0) strcpy(params, "Import");
@@ -478,6 +483,7 @@ convert_config *read_convert_config(char *configFile)
         cfg->import->lat_end = read_double(line, "lat end");
       if (strncmp(test, "precise", 7)==0)
         cfg->import->prc = read_str(line, "precise");
+      FREE(test);
     }
 
     if (strncmp(line, "[SAR processing]", 16)==0) strcpy(params, "SAR processing");
@@ -495,6 +501,7 @@ convert_config *read_convert_config(char *configFile)
 	cfg->image_stats->bins = read_int(line, "bins");
       if (strncmp(test, "interval", 8)==0)
 	cfg->image_stats->interval = read_double(line, "interval");
+      FREE(test);
     }
 
     if (strncmp(line, "[Detect corner reflectors]", 26)==0) 
@@ -507,6 +514,7 @@ convert_config *read_convert_config(char *configFile)
         cfg->detect_cr->chips = read_int(line, "chips");
       if (strncmp(test, "text", 4)==0)
 	cfg->detect_cr->text = read_int(line, "text");
+      FREE(test);
     }
 
     if (strncmp(line, "[Terrain correction]", 20)==0) 
@@ -516,7 +524,8 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "pixel spacing", 13)==0)
 	cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
       if (strncmp(test, "digital elevation model", 23)==0)
-	cfg->terrain_correct->dem = read_str(line, "digital elevation model");            
+	cfg->terrain_correct->dem = read_str(line, "digital elevation model");
+      FREE(test);
     }
 
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "Geocoding");
@@ -534,6 +543,7 @@ convert_config *read_convert_config(char *configFile)
         cfg->geocoding->resampling = read_str(line, "resampling");
       if (strncmp(test, "force", 5)==0)
         cfg->geocoding->force = read_int(line, "force");
+      FREE(test);
     }
 
     if (strncmp(line, "[Export]", 8)==0) strcpy(params, "Export");
@@ -543,6 +553,7 @@ convert_config *read_convert_config(char *configFile)
         cfg->export->format = read_str(line, "format");
       if (strncmp(test, "byte conversion", 15)==0)
         cfg->export->byte = read_str(line, "byte conversion");
+      FREE(test);
     }
   }
 

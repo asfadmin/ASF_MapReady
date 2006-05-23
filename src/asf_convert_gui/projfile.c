@@ -98,7 +98,7 @@ static char * fudge_the_name(int projection, const char * name)
 
     if (projection == PROJ_UTM)
     {
-        return strdup(name);
+        strcpy(buf, name);
     }
     else
     {

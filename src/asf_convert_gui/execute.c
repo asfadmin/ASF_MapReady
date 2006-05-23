@@ -525,6 +525,9 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int keep_files)
 	    unlink(cfg_file);
 	    unlink(projFile);
 	}
+
+	free(projFile);
+	free(statFile);
     }
 
     the_output = NULL;
@@ -742,6 +745,7 @@ on_execute_button_clicked (GtkWidget *button)
         }
 
         process_items_from_list(rows, TRUE);
+	settings_delete(user_settings);
     }
 
     LSU;

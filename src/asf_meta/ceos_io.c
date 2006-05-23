@@ -66,7 +66,7 @@ void readCeosLine(int *dest,int y,CEOS_FILE *c)
 			"from image file %s!\n",c->ddr.dtype,c->name);
 		exit(1);
 	}
-		
+	FREE(buf);
 }
 
 void closeCeos(CEOS_FILE *in)

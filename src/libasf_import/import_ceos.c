@@ -695,6 +695,9 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         asfLineMeter(ii,nl);
       }
     }
+
+    if (out_buf)
+      FREE(out_buf);
   }
   /************************ END DETECTED DATA SECTION ************************/
 
@@ -715,6 +718,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   if (fpIn) /* CEOS L0 doesn't set fpIn, will still be NULL */
     FCLOSE(fpIn);
   FCLOSE(fpOut);
-
+  
   asfPrintStatus("Finished.\n\n");
 }

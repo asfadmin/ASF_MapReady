@@ -194,6 +194,10 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
       /*Compute the line,sample coordinates of this location in the DEM.*/
       dem_x = (demProj_x - metaDem->projection->startX) / metaDem->projection->perX;
       dem_y = (demProj_y - metaDem->projection->startY) / metaDem->projection->perY;
+
+      //printf("--> %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f\n",demProj_x, metaDem->projection->startX, metaDem->projection->perX, demProj_y, metaDem->projection->startY, metaDem->projection->perY);
+      //printf("%6d %6d %8.5f %8.5f %4.2f <--\n",grid_x,grid_y,dem_x,dem_y,1.0);
+
       fprintf(out,"%6d %6d %8.5f %8.5f %4.2f\n",grid_x,grid_y,dem_x,dem_y,1.0);
     }
   //asfPrintStatus("   Created a grid of %ix%i points\n\n",gridResX,gridResY);

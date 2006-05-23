@@ -182,6 +182,9 @@ resample_impl(char *infile, char *outfile,
     FCLOSE(fpin);                 
     FCLOSE(fpout);
 
+    FREE(inbuf);
+    FREE(outbuf);
+
     return(0);
 }
 

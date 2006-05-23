@@ -213,6 +213,7 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
                     {
                         show_view_output_menu_item = TRUE;
                     }
+		    settings_delete(s);
                 }
 
                 /* check if we should disable "Display CEOS Metadata" */

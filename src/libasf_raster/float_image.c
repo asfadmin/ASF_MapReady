@@ -2303,6 +2303,8 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
     }
   }
 
+  gsl_matrix_float_free(averaging_kernel);
+
   // Write the jpeg, one row at a time.
   const int rows_to_write = 1;
   JSAMPROW *row_pointer = g_new (JSAMPROW, rows_to_write);

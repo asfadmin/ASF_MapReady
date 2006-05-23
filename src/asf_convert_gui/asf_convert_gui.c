@@ -109,7 +109,7 @@ main(int argc, char **argv)
     printf("%d\n", p);
     gtk_paned_set_position(GTK_PANED(widget), p);
     */
-    gtk_paned_set_position(GTK_PANED(widget), 360);
+    gtk_paned_set_position(GTK_PANED(widget), 180);
 
     /* Connect signal handlers.  */
     glade_xml_signal_autoconnect (glade_xml);
