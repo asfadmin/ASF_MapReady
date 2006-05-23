@@ -1920,7 +1920,6 @@
 
 		  <child>
 		    <widget class="GtkCheckButton" id="scale_checkbutton">
-		      <property name="visible">True</property>
 		      <property name="tooltip" translatable="yes">Scale the image so that the largest dimension is at most the given size.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label" translatable="yes">Scale output image</property>
@@ -1941,7 +1940,6 @@
 
 		  <child>
 		    <widget class="GtkHBox" id="hbox15">
-		      <property name="visible">True</property>
 		      <property name="homogeneous">False</property>
 		      <property name="spacing">0</property>
 

@@ -329,10 +329,6 @@ Export
             distributed brightness levels over the entire brightness
             scale, which increases contrast.
        The default is "sigma".
-    3. Scale output image
-       Will reduce the size of the output image, so that its largest
-       dimension is at most the given size. This option isn't available
-       when exporting to GeoTIFF.
      _________________________________________________________
 
 The "Files" Section

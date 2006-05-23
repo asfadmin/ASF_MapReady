@@ -477,6 +477,7 @@
 	<para>The default is "sigma".</para>
 
       </listitem>
+<!-- take this out for 3.0, probably can be removed permanently
       <listitem>
 	<para>Scale output image</para>
 
@@ -484,6 +485,7 @@
           largest dimension is at most the given size.  This option
           isn't available when exporting to GeoTIFF.</para>
       </listitem>
+-->
     </orderedlist>
   </chapter>
   <chapter id="files">
