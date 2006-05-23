@@ -432,9 +432,9 @@ static int project_worker_arr_inv(char * projection_description,
 
   for (i = 0; i < length; ++i)
   {
-    plat[i] = x[i];
-    plon[i] = y[i];
-    
+    plat[i] = y[i];
+    plon[i] = x[i];
+
     // If user passed z values, use those, otherwise, use the
     // average height or the default average height.
     if ( !dcah ) {
@@ -481,7 +481,7 @@ static int project_worker_arr_inv(char * projection_description,
 	  assert (output_projection != NULL);
 	  
 	  pj_transform (output_projection, geographic_projection, length, 1, 
-			plat, plon, pheight);
+			plon, plat, pheight);
 	  	  
 	  if (pj_errno != 0)
 	  {
@@ -489,16 +489,6 @@ static int project_worker_arr_inv(char * projection_description,
 	      ok = FALSE;
 	  }
 	  
-	  if (ok)
-	  {	  
-	      for (i = 0; i < length; ++i)
-	      {
-		  double t = plat[i];
-		  plat[i] = plon[i];
-		  plon[i] = t;
-	      }
-	  }
-
 	  pj_free(output_projection);
       }
 

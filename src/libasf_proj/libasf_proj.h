@@ -334,10 +334,18 @@ int project_albers_arr_inv(project_parameters_t *pps,
   higher level code that wants to handle pseudoprojections together
   with projections to work properly.
 
+  IMPORTANT: In keeping with the tradition of used for pseudoprojected
+  images which want north to be up, the x, y, and z coordinates refer
+  to lon, lat, height and height, respectively.  Note that this order
+  is different than the order used for the lat/longs on the other side
+  of the transformation.  The pseudoprojected coordinates are still in
+  radians, not degrees.
+
   Note that although these functions take a project_parameters_t
   pointer argument for signature compatability with other functions in
   this library, they don't use it (since pseudoprojected images don't
   need any projection parameters).
+
 ******************************************************************************/
 
 int project_pseudo (project_parameters_t *pps, double lat, double lon,
