@@ -97,7 +97,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        This option cannot be used with -fix-meta-ypix\n\n"\
 "        The metadata will not be updated after scaling - this option is\n"\
 "        intended to be used to correct errors in the data.\n\n"\
-"   --fix-meta-ypix[=<pixel-size>]\n"\
+"   -fix-meta-ypix[=<pixel-size>]\n"\
 "        This option is similar to -azimuth-scale, but does not resample the\n"\
 "        input data, it just changes the y pixel size in the metadata.\n"\
 "        This option cannot be used with -azimuth-scale.\n"\
