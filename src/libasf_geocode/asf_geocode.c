@@ -381,18 +381,6 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 		     "left-looking AMM-1 era images) at present.\n");
   }
 
-  // We don't allow reprojection of a DEM (including from
-  // pseudoprojected form) to change the underlying datum, since this
-  // changes all the height values in a position-dependent way, making
-  // it a bit of a pain to implement.  We have no immediate need for
-  // this functionality.
-  if ( (imd->sar->image_type == 'P' || imd->general->image_data_type == DEM)
-       && imd->projection != NULL ) {
-    // FIXME: revive this assertion or fix the underlying problem.
-    asfRequire (datum == imd->projection->datum, "For input images of type "
-    		"DEM, changing the datum is not supported.\n");
-  }
-
   // If we have an already projected image as input, we will need to
   // be able to unproject its coordinates back to lat long before we
   // can reproject them into the desired projection, so here we select
