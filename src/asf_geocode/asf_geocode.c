@@ -386,7 +386,7 @@ main (int argc, char **argv)
   strcpy (out_base_name, argv[arg_num + 1]);
 
   // Call library function that does the actual work
-  asf_geocode(pp, projection_type, force_flag, resample_method, average_height, 
+  asf_geocode(pp, projection_type, force_flag, resample_method, average_height,
 	      datum, pixel_size, in_base_name, out_base_name);
 
   // Close Log, if needed
