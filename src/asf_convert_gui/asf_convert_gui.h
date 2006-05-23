@@ -291,7 +291,13 @@ void print_share_dir();
 void terrcorr_options_changed();
 const char * terrcorr_options_string(const Settings *settings);
 
-// extern const char DIR_SEPARATOR;
+#ifdef win32
+#ifdef DIR_SEPARATOR
+#undef DIR_SEPARATOR
+#endif
+extern const char DIR_SEPARATOR;
+#endif
+
 extern const char PATH_SEPATATOR;
 
 /* these are our global variables ... */

@@ -2,7 +2,7 @@
 
 #ifdef win32
 const char PATH_SEPARATOR = ';';
-//const char DIR_SEPARATOR = '\\';
+const char DIR_SEPARATOR = '\\';
 #else
 const char PATH_SEPARATOR = ':';
 //const char DIR_SEPARATOR = '/';
