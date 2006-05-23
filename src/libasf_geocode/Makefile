@@ -56,6 +56,24 @@ LIBS :=	$(LIBDIR)/libasf_reporting.a \
 	$(GLIB_LIBS) \
 	-lm
 
+# These defines enable various debugging behavior and output.  Leaving
+# debugging code in and available is all the rage these days, and is
+# probably even a good idea.  The following stuff constitute a sort of
+# catalog of the available debugging features for this program, which
+# acronymish things you might choose to enable from the command line
+# that invokes make (e.g. make DISSJO=nonemptystring) so you don't
+# forget to remove them before release.
+#
+DGDZCIAJ =
+ifdef DGDZCIAJ
+  DEBUG_FEATURES += -DDEBUG_GEOCODE_DEM_Z_COORDS_IMAGE_AS_JPEG
+endif
+DGDOIAJ =
+ifdef DGDOIAJ
+  DEBUG_FEATURES += -DDEBUG_GEOCODE_DEM_OUTPUT_IMAGE_AS_JPEG
+endif
+CFLAGS += $(DEBUG_FEATURES)
+
 ###############################################################################
 #
 # Automaticly Computed Stuff
