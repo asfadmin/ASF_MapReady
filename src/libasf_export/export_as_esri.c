@@ -160,6 +160,14 @@ export_as_esri (const char *metadata_file_name,
       strcpy(semimajor,"6378160");
       strcpy(flattening,"298.25");
       break;
+    case GEM6_SPHEROID:
+      asfPrintError ("Exporting in ESRI format using GEM6 spheroid is not "
+		     "implemented.");
+      break;
+    case GEM10C_SPHEROID:
+      asfPrintError ("Exporting in ESRI format using the GEM10C spheroid is "
+		     "not implemented.");
+      break;
     }
 
     switch (md->projection->type) {
@@ -437,10 +445,20 @@ export_as_esri (const char *metadata_file_name,
       FCLOSE(fp);
       break;
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      asfPrintError ("Exporting pseudoprojected images in ESRI format is not "
+		     "implemented.");
       break;
     case STATE_PLANE:
+      asfPrintError ("Exporting state plane images in ESRI format is not "
+		     "implemented.");
       break;
     case SCANSAR_PROJECTION:
+      asfPrintError ("Exporting scansar projected images probably doesn't "
+		     "make sense and isn't supported.");
+      break;
+    case LAT_LONG_PSEUDO_PROJECTION:
+      asfPrintError ("Exporting pseudoprojected images in ESRI format is not "
+		     "implemented.");
       break;
     }
   }

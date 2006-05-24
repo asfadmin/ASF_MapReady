@@ -136,9 +136,17 @@ export_as_envi (const char *metadata_file_name,
               envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
               envi->center_lon, envi->projection);
       break;
+    case LAT_LONG_PSEUDO_PROJECTION:
+      asfPrintError ("Exporting pseudoprojected images in ENVI format is not "
+		     "implemented.");
+      break;
     case STATE_PLANE:
+      asfPrintError ("Exporting state plane images in ENVI format is not "
+		     "implemented.");
       break;
     case SCANSAR_PROJECTION:
+      asfPrintError ("Exporting scansar projected images probably doesn't "
+		     "make sense and isn't supported.");
       break;
     }
   }
