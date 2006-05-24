@@ -236,7 +236,7 @@ cat <<'EOF' >>system_rules
 ASF_INCLUDE_DIR = ../../include
 INCLUDE = -I. -I$(ASF_INCLUDE_DIR)
 # Flags to support large (> 2GB) files.  These must precede all include options.
-LARGEFILE_FLAGS = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+LARGEFILE_FLAGS = -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 FLAGS   = -D_ISOC99_SOURCE $(LARGEFILE_FLAGS) $(INCLUDE) $(OPTFLAG) -D$(SYS) $(ENDIAN_FLAGS)
 # If compiler is gcc we're going to add some debugging flags/libraries
 #   if <make 'DEBUG_BUILD=1'>  apply debugging tags and show all compiler warnings
