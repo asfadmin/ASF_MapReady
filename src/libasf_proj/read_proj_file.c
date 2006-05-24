@@ -8,7 +8,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#include "glib.h"
+#include <glib.h>
 
 static void readline(FILE * f, char * buffer, size_t n)
 {
