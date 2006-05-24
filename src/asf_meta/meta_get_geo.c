@@ -60,12 +60,15 @@ void meta_get_latLon(meta_parameters *meta,
 {
   if ( meta->projection != NULL 
        && meta->projection->type == LAT_LONG_PSEUDO_PROJECTION ) {
-    *lon = meta->projection->startX + xSample * meta->projection->perX;
-    *lat = meta->projection->startY - yLine * meta->projection->perY;
+    *lon = meta->projection->startX + ((xSample + meta->general->start_sample)
+				       * meta->projection->perX);
+    *lat = meta->projection->startY + ((yLine + meta->general->start_line) 
+				       * meta->projection->perY);
   } else if (meta->sar->image_type=='S' || meta->sar->image_type=='G') { 
     /*Slant or ground range.  Use state vectors and doppler.*/
     double slant,doppler,time;
-    meta_get_timeSlantDop(meta,yLine,xSample,
+    meta_get_timeSlantDop(meta,yLine + meta->general->start_line,
+			  xSample, + meta->general->start_sample,
 			  &time,&slant,&doppler);
     meta_timeSlantDop2latLon(meta,
 			     time,slant,doppler,elev,
@@ -73,8 +76,10 @@ void meta_get_latLon(meta_parameters *meta,
   } else if (meta->sar->image_type=='P') {
     /*Map-Projected. Use projection information to calculate lat & lon.*/
     double px,py;
-    px = meta->projection->startX + meta->projection->perX * xSample;
-    py = meta->projection->startY + meta->projection->perY * yLine;
+    px = meta->projection->startX + ((xSample + meta->general->start_sample)
+				     * meta->projection->perX);
+    py = meta->projection->startY + ((yLine + meta->general->start_line)
+				     * meta->projection->perY);
     proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
 	       lat,lon);
   } else { /*Bogus image type.*/
