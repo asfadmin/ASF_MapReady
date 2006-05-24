@@ -1,10 +1,15 @@
 # Makefile for detect_cr
 # Module Author: Rudi Gens (sliced and diced from coregister_fine,
-#	                    coregister_coarse and fftMatch)
+#	                    coregister_coarse and fftMatch) 
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+CFLAGS += -O0 $(GLIB_CFLAGS)
+
+LIBS  = \
+	$(LIBDIR)/libasf_geocode.a \
+	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libasf_proj.a \
@@ -12,7 +17,8 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/asf_fft.a \
-	-lm
+	$(GLIB_LIBS) \
+	$(JPEG_LIBS)
 
 OBJS  = detect_cr.o \
 	utilities.o

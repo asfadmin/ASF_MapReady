@@ -20,7 +20,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "detect_cr"
 
 #define ASF_USAGE_STRING \
-"[ -chips ] [ -text ] <image> <corner reflector locations> <peak search file>\n"\
+"[ -chips ] [ -text ] [ -geocode <projection parameter file> ]\n"\
+"    <image basename> <corner reflector locations> <peak search file>\n"\
 "\n"\
 "Additional option: -help"
 
@@ -43,7 +44,9 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_OPTIONS_STRING \
 "-chips	    Stores the image chip used for determination of amplitude peaks.\n"\
-"-text      Stores the image chip as a tab delimated text file."
+"-text      Stores the image chip as a tab delimated text file.\n"\
+"-geocode   Geocodes the individual image chips to evaluate whether the\n"\
+"           point targets are in the correct location\n"\
 
 #define ASF_EXAMPLES_STRING \
 "detect_cr rsat.img cr.txt reflector.test"
@@ -98,12 +101,14 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
+#include "asf_nan.h"
 #include "asf.h"
 #include "ifm.h"
 #include "asf_meta.h"
 #include "fft.h"
 #include "fft2d.h"
 #include "detect_cr.h"
+#include "asf_geocode.h"
 
 #define borderX 80	/* Distances from edge of image to start correlating.*/
 #define borderY 80
@@ -123,7 +128,7 @@ int lines, samples;	     /* Lines and samples of source images. */
 int srcSize;                 /* Chip size for analysis */
 
 /* usage - enter here on command-line usage error*/
-void usage(void)
+void usage(char *name)
 {
   printf("\n"
          "USAGE:\n"
@@ -189,12 +194,14 @@ void help_page()
 int main(int argc, char *argv[])
 {
   char szImg[255], buffer[1000], crID[10], szCrList[255], szOut[255], tmp[255];
-  char *chips=NULL, *text=NULL;
+  char *chips=NULL, *text=NULL, *projFile=NULL;
   int ii;
   float dx_pix, dy_pix, dx_m, dy_m, max_dx_pix, max_dy_pix;
   double lat, lon, elev, posX, posY, magnitude;
   FILE *fpIn, *fpOut;
-  meta_parameters *meta;
+  meta_parameters *meta, *metaChip;
+  project_parameters_t pps;
+  projection_type_t proj_type;
   flag_indices_t flags[NUM_FLAGS];
 
   /* Set all flags to 'not set' */
@@ -208,6 +215,7 @@ int main(int argc, char *argv[])
     help_page();
   flags[f_CHIPS] = checkForOption("-chips", argc, argv);
   flags[f_TEXT] = checkForOption("-text", argc, argv);
+  flags[f_GEOCODE] = checkForOption("-geocode", argc, argv);
 
   /* Make sure to set log & quiet flags (for use in our libraries) */
   logflag = (flags[f_LOG]!=FLAG_NOT_SET) ? TRUE : FALSE;
@@ -217,14 +225,19 @@ int main(int argc, char *argv[])
     int needed_args = 4;/*command & in_data & in_meta & out_base */
     if(flags[f_CHIPS] != FLAG_NOT_SET) needed_args += 1; /* option */
     if(flags[f_TEXT] != FLAG_NOT_SET) needed_args += 1; /* option */
+    if(flags[f_GEOCODE] != FLAG_NOT_SET) needed_args += 2; //option & argument
 
     /*Make sure we have enough arguments*/
     if(argc != needed_args)
-      usage();/*This exits with a failure*/
+      usage(argv[0]);/*This exits with a failure*/
   }
 
   /* We must be close to good enough at this point...start filling in fields 
      as needed */
+  if(flags[f_GEOCODE] != FLAG_NOT_SET) {
+    projFile = (char *) MALLOC(1024*sizeof(char));
+    strcpy(projFile, argv[flags[f_GEOCODE] + 1]);
+  }
   if(flags[f_QUIET] == FLAG_NOT_SET)
     /* display splash screen if not quiet */
     print_splash_screen(argc, argv);
@@ -247,7 +260,8 @@ int main(int argc, char *argv[])
   samples = meta->general->sample_count;
 
   /* Allocate memory for flags */
-  if(flags[f_CHIPS] != FLAG_NOT_SET)
+  if(flags[f_CHIPS] != FLAG_NOT_SET ||
+     flags[f_GEOCODE] != FLAG_NOT_SET)
     chips = (char *) MALLOC(255*sizeof(char));
   if(flags[f_TEXT] != FLAG_NOT_SET)
     text = (char *) MALLOC(255*sizeof(char));
@@ -255,20 +269,50 @@ int main(int argc, char *argv[])
   /* Handle input and output file */
   fpIn = FOPEN(szCrList, "r");
   fpOut = FOPEN(szOut, "w");
-  fprintf(fpOut, "ID\tReference Lat\tReference Lon\tElevation\tTarget line"
-	  "\tTarget sample\tLine offset [m]\tSample offset [m]\tAbs. error [m]\n");
+  if (projFile)
+    fprintf(fpOut, "ID\tReference Lat\tReference Lon\tElevation\tLine\tSample\t"
+	    "Reference x [m]\tReference y [m]\tTarget x [m]\tTarget y [m]\t"
+	    "Abs. error [m]\n");
+  else
+    fprintf(fpOut, "ID\tReference Lat\tReference Lon\tElevation\tLine\tSample\t"
+	    "Target line\tTarget sample\tLine offset [m]\tSample offset [m]\t"
+	    "Abs. error [m]\n");
   
   /* Establish maximum peak offsets */
-  if (meta->sar->image_type=='P') { // ScanSAR imagery
-    if (meta->projection->type==SCANSAR_PROJECTION) {
-      max_dx_pix = MAX_OFFSET_SCANSAR / meta->general->x_pixel_size;
-      max_dy_pix = MAX_OFFSET_SCANSAR / meta->general->y_pixel_size;
+  if (projFile) { // chips that need to be geocoded
+    if (meta->sar->image_type=='P') { // ScanSAR imagery
+      if (meta->projection->type==SCANSAR_PROJECTION) {
+	max_dx_pix = MAX_OFFSET_SCANSAR;
+	max_dy_pix = MAX_OFFSET_SCANSAR;
+      }
+      else { // regular standard/finebeam imagery
+	max_dx_pix = MAX_OFFSET_STANDARD;
+	max_dy_pix = MAX_OFFSET_STANDARD;
+      }
+    }
+    else { // regular standard/finebeam imagery
+      max_dx_pix = MAX_OFFSET_STANDARD;
+      max_dy_pix = MAX_OFFSET_STANDARD;
     }
   }
-  else { // regular standard/finebeam imagery
-      max_dx_pix = MAX_OFFSET_STANDARD / meta->general->x_pixel_size;
-      max_dy_pix = MAX_OFFSET_STANDARD / meta->general->y_pixel_size;
+  else { // regular case without geocoding
+    if (meta->sar->image_type=='P') { // ScanSAR imagery
+      if (meta->projection->type==SCANSAR_PROJECTION) {
+	max_dx_pix = MAX_OFFSET_SCANSAR / meta->general->x_pixel_size;
+	max_dy_pix = MAX_OFFSET_SCANSAR / meta->general->y_pixel_size;
+      }
+      else { // regular standard/finebeam imagery
+	max_dx_pix = MAX_OFFSET_STANDARD / meta->general->x_pixel_size;
+	max_dy_pix = MAX_OFFSET_STANDARD / meta->general->y_pixel_size;
+      }
+    }
+    else { // regular standard/finebeam imagery
+      max_dx_pix = MAX_OFFSET_STANDARD;
+      max_dy_pix = MAX_OFFSET_STANDARD;
+    }
   }
+
+  printf ("Going through the list of point targets ...\n\n");
 
   /* Loop through corner reflector location file */
   while (fgets(buffer, 1000, fpIn))
@@ -276,49 +320,85 @@ int main(int argc, char *argv[])
     srcSize = CHIP_DEFAULT_SIZE;
     sscanf(buffer, "%s\t%lf\t%lf\t%lf", crID, &lat, &lon, &elev);
     meta_get_lineSamp(meta, lat, lon, elev, &posY, &posX);
-    if (chips)
-      sprintf(chips, "%s", crID);
+    if (chips || projFile)
+      sprintf(chips, "%s_%s", szImg, crID);
     if (text)
-      sprintf(text, "%s", crID);
+      sprintf(text, "%s_%s", szImg, crID);
 
     /* Check bounds */
     if (!(outOfBounds(posX, posY, srcSize)))
       {
-	/* Find peak */ 
-	findPeak(posX, posY, szImg, &dy_pix, &dx_pix, chips, text);
-	dx_m = dx_pix * meta->general->x_pixel_size;
-	dy_m = dy_pix * meta->general->y_pixel_size;
-	magnitude = sqrt(dx_m*dx_m + dy_m*dy_m);
+	// Find peak
+	printf("Checking corner reflector %s ...\n", crID);
+	findPeak(posX, posY, elev, szImg, &dy_pix, &dx_pix, chips, text, projFile);
+	if (projFile) { // chips that needed geocoding
+	  latLon2proj(lat, lon, elev, projFile, &posX, &posY);
+	  dx_m = dx_pix;
+	  dy_m = dy_pix;
+	  magnitude = sqrt((posX-dx_m)*(posX-dx_m) + (posY-dy_m)*(posY-dy_m));
 
-	/* Check peak offset */
-	if (fabs(dx_pix) < max_dx_pix || fabs(dy_pix) < max_dy_pix) {
-	  fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t%10.1f\t%10.1f"
-		  "\t%10.1f\n", crID, lat, lon, elev, posY+dy_pix, posX+dx_pix, 
-		  dy_m, dx_m, magnitude);
-	  fflush(fpOut);
+	  // Check peak offset
+	  if (fabs(posX-dx_m) < max_dx_pix || fabs(posY-dy_m) < max_dy_pix) {
+	    fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t%10.1f"
+		    "\t%10.1f\t%10.1f\t%10.1f\t%10.1f\n", crID, lat, lon, elev, 
+		    posX, posY, dx_m, dy_m, posX-dx_m, posY-dy_m, magnitude);
+	    fflush(fpOut);
+	  }
+	  else { // Do the analysis on a smaller window
+	    fprintf(fpOut,"**%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t(%10.1f)"
+		    "\t(%10.1f)\t%10.1f\t%10.1f\t%10.1f\n", crID, lat, lon, elev, 
+		    posX, posY, dx_m, dy_m, posX-dx_m, posY-dy_m, magnitude);
+	    fflush(fpOut);
+	    srcSize = max_dx_pix * 2;
+	    printf("   Warning: Corner reflector %s outside the accuracy "
+		   "threshold.\n", crID);
+	    printf("            Repeating analysis with smaller chip size "
+		   "(%ix%i).\n", srcSize, srcSize);
+	    findPeak(posX, posY, elev, szImg, &dy_m, &dx_m, chips, text, 
+		     projFile);
+	    magnitude = sqrt((posX-dx_m)*(posX-dx_m) + (posY-dy_m)*(posY-dy_m));
+	    fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t%10.1f"
+		    "\t%10.1f\t%10.1f\t%10.1f\t%10.1f\n", crID, lat, lon, elev, 
+		    posX, posY, dx_m, dy_m, posX-dx_m, posY-dy_m, magnitude);
+	    fflush(fpOut);
+	  }
 	}
-	else { // Do the analysis on a smaller window
-	  fprintf(fpOut,"**%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t(%10.1f)"
-		  "\t(%10.1f)\t%10.1f\n", crID, lat, lon, elev, posY+dy_pix, 
-		  posX+dx_pix, dy_m, dx_m, magnitude);
-	  fflush(fpOut);
-	  srcSize = max_dx_pix * 2;
-	  printf("   Warning: Corner reflector %s outside the accuracy threshold.\n",
-		 crID);
-	  printf("            Repeating analysis with smaller chip size (%ix%i).\n",
-		 srcSize, srcSize);
-	  findPeak(posX, posY, szImg, &dy_pix, &dx_pix, chips, text);
+	else { // chips without geocoding
 	  dx_m = dx_pix * meta->general->x_pixel_size;
 	  dy_m = dy_pix * meta->general->y_pixel_size;
 	  magnitude = sqrt(dx_m*dx_m + dy_m*dy_m);
-	  fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t%10.1f\t%10.1f"
-		  "\t%10.1f\n", crID, lat, lon, elev, posY+dy_pix, posX+dx_pix, 
-		  dy_m, dx_m, magnitude);
-	  fflush(fpOut);
+	  
+	  // Check peak offset
+	  if (fabs(dx_pix) < max_dx_pix || fabs(dy_pix) < max_dy_pix) {
+	    fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t%10.1f"
+		    "\t%10.1f\t%10.1f\t%10.1f\t%10.1f\n", crID, lat, lon, elev, 
+		    posY, posX, posY+dy_pix, posX+dx_pix, dy_m, dx_m, magnitude);
+	    fflush(fpOut);
+	  }
+	  else { // Do the analysis on a smaller window
+	    fprintf(fpOut,"**%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t(%10.1f)"
+		    "\t(%10.1f)\t%10.1f\t%10.1f\t%10.1f\n", crID, lat, lon, elev, 
+		    posY, posX, posY+dy_pix, posX+dx_pix, dy_m, dx_m, magnitude);
+	    fflush(fpOut);
+	    srcSize = max_dx_pix * 2;
+	    printf("   Warning: Corner reflector %s outside the accuracy "
+		   "threshold.\n", crID);
+	    printf("            Repeating analysis with smaller chip size "
+		   "(%ix%i).\n", srcSize, srcSize);
+	    findPeak(posX, posY, elev, szImg, &dy_pix, &dx_pix, chips, text, 
+		     projFile);
+	    dx_m = dx_pix * meta->general->x_pixel_size;
+	    dy_m = dy_pix * meta->general->y_pixel_size;
+	    magnitude = sqrt(dx_m*dx_m + dy_m*dy_m);
+	    fprintf(fpOut,"%s\t%10.4lf\t%10.4lf\t%8.1lf\t%10.1f\t%10.1f\t%10.1f"
+		    "\t%10.1f\t%10.1f\t%10.1f\t%10.1f\n", crID, lat, lon, elev, 
+		    posY, posX, posY+dy_pix, posX+dx_pix, dy_m, dx_m, magnitude);
+	    fflush(fpOut);
+	  }
 	}
       }
     else {
-      sprintf(tmp, "   WARNING: Corner reflector %s outside the image boundaries!\n", 
+      sprintf(tmp, "   WARNING: Corner reflector %s outside the image boundaries!\n",
 	      crID);
       printf(tmp);
       fprintf(fpOut, tmp);
@@ -330,7 +410,7 @@ int main(int argc, char *argv[])
 
   /* Clean up */
   sprintf(tmp, "rm -rf tmp*");
-  system(tmp);
+  asfSystem(tmp);
 
   return(0);
 }
@@ -349,16 +429,19 @@ bool outOfBounds(int x, int y, int srcSize)
   This version of findPeak just determines the maxium amplitude value and checks
   whether it is actually the peak for the neighborhood.
 */
-bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY, 
-	      char *chip, char *text)
+bool findPeak(int x, int y, float elev, char *szImg, float *peakX, float *peakY, 
+	      char *chip, char *text, char *projFile)
 {
   FILE *fpChip, *fpText;
   meta_parameters *meta, *metaChip, *metaText;
+  project_parameters_t pps;
+  projection_type_t proj_type;
   static float *s=NULL;
   float max=-10000000.0;
-  char szChip[255], szText[255];
-  int size, ii, kk, bestX, bestY;
+  char szChip[255], szText[255], szChipGeo[255];
+  int ii, kk, bestX, bestY, lines, samples;
   float bestLocX, bestLocY;
+  double lat, lon;
   
   meta = meta_read(szImg); 
 
@@ -369,25 +452,40 @@ bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY,
 
   /* At each corner reflector location read in a chunk of the image */
   readSubset(szImg, srcSize, srcSize, x-srcSize/2+1, y-srcSize/2+1, s);
-  
+  lines = srcSize;
+  samples = srcSize;
+
   /* Write out chip if name is given */
   if (chip && srcSize==CHIP_DEFAULT_SIZE) {
-    metaChip = meta_copy(meta);
-    metaChip->general->line_count = srcSize;
-    metaChip->general->sample_count = srcSize;
+    metaChip = meta_read(szImg);
+    metaChip->general->line_count = lines;
+    metaChip->general->sample_count = samples;
+    metaChip->general->start_line = y-srcSize/2+1;
+    metaChip->general->start_sample = x-srcSize/2+1;
+    meta_get_latLon(metaChip, lines/2, samples/2, elev, &lat, &lon);
+    metaChip->general->center_latitude = lat;
+    metaChip->general->center_longitude = lon;
+    
     meta_write(metaChip, chip);
     sprintf(szChip, "%s.img", chip);
     fpChip = FOPEN(szChip, "wb");
-    size = srcSize*srcSize*sizeof(float);
-    put_float_lines(fpChip, metaChip, 0, srcSize, s);
+    put_float_lines(fpChip, metaChip, 0, lines, s);
     FCLOSE(fpChip);
+    meta_free(metaChip);
+    printf("Wrote '%s' to disk\n", szChip);
   }
 
   /* Write out text file for chip if name is given */
   if (text && srcSize==CHIP_DEFAULT_SIZE) {
-    metaText = meta_copy(meta);
-    metaText->general->line_count = srcSize;
-    metaText->general->sample_count = srcSize;
+    metaText = meta_read(szImg);
+    metaText->general->line_count = lines;
+    metaText->general->sample_count = samples;
+    metaText->general->start_line = y-srcSize/2+1;
+    metaText->general->start_sample = x-srcSize/2+1;
+    meta_get_latLon(metaText, lines/2, samples/2, elev, &lat, &lon);
+    metaText->general->center_latitude = lat;
+    metaText->general->center_longitude = lon;
+
     meta_write(metaText, text);
     sprintf(szText, "%s_chip.txt", text);
     fpText = FOPEN(szText, "w");
@@ -397,22 +495,57 @@ bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY,
       fprintf(fpText, "\n");
     }
     FCLOSE(fpText);
+    meta_free(metaText);
+    printf("Wrote '%s' to disk\n", szText);
+  }
+
+  // Geocode to the height of the point target before analyzing when projection 
+  // parameter file is passed in. Geocoded chip needs to be read in again.
+  if (projFile) {
+    FREE(s);
+    s = NULL;
+    sprintf(szChipGeo, "%s_geo", chip);
+    metaChip = meta_read(chip);
+    parse_proj_args_file(projFile, &pps, &proj_type);
+    // Note: Datum hardwired in here. Might want to consider to pass the entire
+    // projection block into the function. Projection parameter files include
+    // information about datum and spheroid. Certainly required for datum 
+    // conversions.
+    asf_geocode (&pps, proj_type, 0, RESAMPLE_BILINEAR, elev, WGS84_DATUM,
+		 metaChip->general->x_pixel_size, chip, szChipGeo);
+    meta = meta_read(szChipGeo);
+    lines = meta->general->line_count;
+    samples= meta->general->sample_count;
+    s = (float *)(MALLOC(lines*samples*sizeof(float)));
+    sprintf(szChipGeo, "%s_geo.img", chip);    
+    fpChip = FOPEN(szChipGeo, "rb");
+    get_float_lines(fpChip, metaChip, 0, lines, s);
+    FCLOSE(fpChip);
+    meta_free(metaChip);
   }
 
   /* Search for the amplitude peak */
-  for (ii=0; ii<srcSize; ii++)
-    for (kk=0; kk<srcSize; kk++)
-      if (s[ii*srcSize+kk] > max) {
+  for (ii=0; ii<lines; ii++)
+    for (kk=0; kk<samples; kk++)
+      if (s[ii*samples+kk] > max) {
 	bestX = ii;
 	bestY = kk;
-	max = s[ii*srcSize+kk];
+	max = s[ii*samples+kk];
       }
   
-  topOffPeak(s,bestX,bestY,srcSize,&bestLocX,&bestLocY);
-  
-  /* Output our guess. */
-  *peakX = bestLocX - srcSize/2;
-  *peakY = bestLocY - srcSize/2;
+  topOffPeak(s,bestX,bestY,lines,&bestLocX,&bestLocY);
+  if (projFile) {
+    metaChip = meta_read(szChipGeo);
+    *peakX = metaChip->projection->startY +
+      metaChip->projection->perY * bestLocX;
+    *peakY = metaChip->projection->startX + 
+      metaChip->projection->perX * bestLocY;
+    meta_free(metaChip);
+  }
+  else {
+    *peakX = bestLocX - srcSize/2;
+    *peakY = bestLocY - srcSize/2;
+  }
 
   return TRUE;
 }

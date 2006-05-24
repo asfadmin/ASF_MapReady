@@ -11,13 +11,14 @@ typedef enum {
   f_CHIP_SIZE,
   f_TEXT,
   f_PROFILE,
+  f_GEOCODE,
   f_LOG,
   f_QUIET,
   NUM_FLAGS
 } flag_indices_t;
 
 /* Prototypes from utilities.c */
-void usage(void);
+void usage(char *name);
 void help_page();
 int firstRecordLen(char *ceosName);
 char *uc(char *string);
@@ -30,8 +31,8 @@ void pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName);
 
 /* Prototypes */
 void topOffPeak(float *peaks, int i, int j, int maxI, float *di, float *dj);
-bool findPeak(int x, int y, char *szImg, float *peakX, float *peakY, 
-	      char *chip, char *text);
+bool findPeak(int x, int y, float elev, char *szImg, float *peakX, float *peakY, 
+	      char *chip, char *text, char *projFile);
 bool outOfBounds(int x, int y, int srcSize);
 
 #endif
