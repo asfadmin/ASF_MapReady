@@ -229,7 +229,7 @@ void fill_structure_field(char *field_name, void *valp)
   /* Fields which normally go in the general block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "general") ) {
     if ( !strcmp(field_name, "sensor") )
-      { !strcpy(MGENERAL->sensor, VALP_AS_CHAR_POINTER); return; }
+      { strcpy(MGENERAL->sensor, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "mode") ) {
       if ( strlen(VALP_AS_CHAR_POINTER) > MODE_FIELD_STRING_MAX - 1 ) {
                                           /* (-1 for trailing null)  */
