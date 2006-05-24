@@ -317,7 +317,7 @@ export_as_geotiff (const char *metadata_file_name,
   /* If we have a map projected image, write the projection
      information into the GeoTIFF.  */
   /* FIXME: this is a terrible hack to deal with scansar crap.  */
-  if ( md->sar->image_type == 'P'
+  if ( md->sar->image_type == 'P' && md->projection != NULL
        && md->projection->type != SCANSAR_PROJECTION) {
     /* Tie point for image corner.  To avoid problems with for example
        ArcView, and to escape the fact that the meaning of multiple
@@ -379,8 +379,10 @@ export_as_geotiff (const char *metadata_file_name,
     TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_point);
 
     /* Set the scale of the pixels, in projection coordinates.  */
-    pixel_scale[0] = fabs(md->projection->perX) * scale_factor;
-    pixel_scale[1] = fabs(md->projection->perY) * scale_factor;
+    asfRequire (md->projection->perX > 0.0, "unexpected non-positive perX");
+    pixel_scale[0] = md->projection->perX * scale_factor;
+    asfRequire (md->projection->perY < 0.0, "unexpected non-negative perY");
+    pixel_scale[1] = -md->projection->perY * scale_factor;
     pixel_scale[2] = 0;
     TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
