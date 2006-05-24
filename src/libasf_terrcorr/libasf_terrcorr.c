@@ -235,18 +235,36 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   float dx, dy, cert;
   int idx, idy;
   int polyOrder = 5;
+  int force_resample = FALSE;
 
   asfPrintStatus("Reading metadata...\n");
   metaSAR = meta_read(sarFile);
   metaDEM = meta_read(demFile);
 
+  if (metaSAR->general->x_pixel_size != metaSAR->general->y_pixel_size) {
+    asfPrintStatus("SAR image does not have square pixels! xps=%gm, yps=%gm.\n",
+	metaSAR->general->x_pixel_size, metaSAR->general->y_pixel_size);
+    if (do_resample) {
+      asfPrintStatus("Will resample SAR image to square pixels.\n");
+      force_resample = TRUE;
+    } else {
+      asfPrintStatus("Terrain Correction results may not be as expected.\n");
+    }
+  }
+  
+  if (metaDEM->general->x_pixel_size != metaDEM->general->y_pixel_size) {
+    asfPrintStatus("DEM does not have square pixels! xps=%gm, yps=%gm.\n",
+	metaDEM->general->x_pixel_size, metaDEM->general->y_pixel_size);
+    asfPrintStatus("Terrain Correction results may not be as expected.\n");
+  }
+
   demRes = metaDEM->general->x_pixel_size;
   sarRes = metaSAR->general->x_pixel_size;
     
-  asfPrintStatus("SAR Image is %dx%d, %gm pixels.\n",
+  asfPrintStatus("SAR Image is %dx%d LxS, %gm pixels.\n",
 		 metaSAR->general->line_count, metaSAR->general->sample_count,
 		 sarRes);
-  asfPrintStatus("DEM Image is %dx%d, %gm pixels.\n",
+  asfPrintStatus("DEM Image is %dx%d LxS, %gm pixels.\n",
 		 metaDEM->general->line_count, metaDEM->general->sample_count,
 		 demRes);
 
@@ -254,7 +272,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   // Otherwise, the quality of the resulting terrain corrected SAR image 
   // suffers. We put in a threshold of 1.5 times the resolution of the SAR
   // image. The -no-resample option overwrites this default behavior.
-  if (do_resample && (demRes > 1.5 * sarRes || pixel_size > 0)) {
+  if (do_resample && 
+      (force_resample || demRes > 1.5 * sarRes || pixel_size > 0)) 
+  {
     if (pixel_size <= 0)
     {
       asfPrintStatus(
@@ -270,7 +290,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     meta_free(metaSAR);
     metaSAR = meta_read(resampleFile);
 
-    asfPrintStatus("After resmapling, SAR Image is %dx%d, %gm pixels.\n",
+    asfPrintStatus("After resmapling, SAR Image is %dx%d LxS, %gm pixels.\n",
 		   metaSAR->general->line_count,
 		   metaSAR->general->sample_count,
 		   metaSAR->general->x_pixel_size);
@@ -293,7 +313,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     meta_free(metaSAR);
     metaSAR = meta_read(srFile);
 
-    asfPrintStatus("In slant range, SAR Image is %dx%d, %gm pixels.\n",
+    asfPrintStatus("In slant range, SAR Image is %dx%d LxS, %gm pixels.\n",
 		   metaSAR->general->line_count,
 		   metaSAR->general->sample_count,
 		   metaSAR->general->x_pixel_size);
@@ -322,13 +342,6 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   poly_2d *fwX, *fwY, *bwX, *bwY;
   fit_poly(demGridFile, polyOrder, &maxErr, &fwX, &fwY, &bwX, &bwY);
   asfPrintStatus("Maximum error in polynomial fit: %g.\n", maxErr);
-
-  int delete_this_old_crap = 0;
-  char *demPolyFileOld;
-  if (delete_this_old_crap) {
-    demPolyFileOld = appendSuffix(sarFile, "_dempoly_old");
-    asfSystem("fit_poly %s %d %s", demGridFile, polyOrder, demPolyFileOld);
-  }
 
   // Here is the actual work done for cutting out the DEM.
   // The adjustment of the DEM width by 400 pixels (originated in
