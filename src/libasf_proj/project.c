@@ -996,6 +996,21 @@ void latLon2proj(double lat, double lon, double elev, char *projFile,
     case UNIVERSAL_TRANSVERSE_MERCATOR:
       printf("Lat/Lon to UTM\n\n");
       break;
+    case STATE_PLANE:
+      // Not implemented.
+      assert (0);
+      break;
+    case SCANSAR_PROJECTION:
+      // Not implemented.
+      assert (0);
+      break;
+    case LAT_LONG_PSEUDO_PROJECTION:
+      // Not implemented.
+      assert (0);
+      break;
+    default:
+      assert (0);		// Shouldn't be here.
+      break;
     }
 
   // Initialize meta_projection block
