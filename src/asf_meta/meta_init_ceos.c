@@ -15,6 +15,8 @@ PROGRAM HISTORY:
   2.0  - P. Denny / R. Gens   9/03   ASF facility Data Record independence
                                       And merged this with meta_init_asf.c
 *******************************************************************************/
+#include <assert.h>
+
 #include "asf.h"
 #include "asf_nan.h"
 #include <ctype.h>
@@ -259,6 +261,12 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
          else
             meta->sar->look_count = 1; /* FN1-FN5 */
          break;
+      case unknownSatellite:
+	assert (0);
+	break;
+      default:
+	assert (0);
+	break;
    }
    if (asf_facdr) {
       if (toupper(asf_facdr->deskewf[0])=='Y')
