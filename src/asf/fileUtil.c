@@ -5,6 +5,22 @@
 
 #include "asf.h"
 
+static char *
+strdup (const char *s)
+{
+  char *result = malloc (sizeof (char) * (strlen (s) + 1));
+
+  int idx = 0;
+  while ( s[idx] != '\0') {
+    result[idx] = s[idx];
+    idx++;
+  }
+
+  result[idx] = '\0';
+
+  return result;
+}
+
 int extExists(const char *name, const char *newExt)
 {
   char *fName = appendExt (name,newExt);
