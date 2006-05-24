@@ -145,6 +145,7 @@ PROGRAMS
 	offset_test { }
 	detect_cr { }
 	xpix_ypix { }
+	meta_check { }
 
 
 @src_tc/
