@@ -373,5 +373,13 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
 		    double lat, double lon, double height,
                     double *x, double *y, double *z);
 
+void latLon2proj(double lat, double lon, double elev, char *projFile, 
+		 double *projX, double *projY);
+
+/***************************************************************************
+  Functions for dealing with projection parameter files.
+***************************************************************************/
+void read_proj_file(char * file, project_parameters_t * pps,
+		    projection_type_t * proj_type);
 
 #endif

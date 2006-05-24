@@ -2,12 +2,15 @@
 
 include ../../make_support/system_rules
 
+CFLAGS += $(GLIB_CFLAGS)
+
 LIBS =	$(PROJ_LIBS) \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
 	-lm
 
-OBJS =  project.o
+OBJS =  read_proj_file.o \
+	project.o
 
 #CC := /home/bkerin/local/my_gcc/bin/gcc
 #CC := gcc

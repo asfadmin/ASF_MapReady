@@ -1,6 +1,7 @@
 #include "projects.h"
 #include "libasf_proj.h"
 #include "asf.h"
+#include "jpl_proj.h"
 #include "asf_nan.h"
 #include "asf_reporting.h"
 
@@ -951,4 +952,61 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
 	     proj->type);
       exit(1);
     }
+}
+
+void fill_in_utm(double lat, double lon, project_parameters_t *pps)
+{
+  pps->utm.zone = (int) ((lon + 180.0) / 6.0 + 1.0);
+  pps->utm.scale_factor = 0.9996;
+  pps->utm.lon0 = (double) (pps->utm.zone - 1) * 6.0 - 177.0;
+  pps->utm.lat0 = 0.0;
+  pps->utm.false_easting = 500000.0;
+  if (lat > 0.0)
+    pps->utm.false_northing = 0.0;
+  else
+    pps->utm.false_northing = 10000000.0;
+}
+
+void latLon2proj(double lat, double lon, double elev, char *projFile, 
+		 double *projX, double *projY)
+{
+  project_parameters_t pps;
+  projection_type_t proj_type;
+  meta_projection *meta_proj;
+  double projZ;
+
+  // Read projection file
+  read_proj_file(projFile, &pps, &proj_type);
+
+  // Report the conversion type
+  switch(proj_type) 
+    {
+    case ALBERS_EQUAL_AREA:
+      printf("Lat/Lon to Albers Equal Area\n\n");
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      printf("Lat/Lon to Lambert Azimuthal Equal Area\n\n");
+      break;
+    case LAMBERT_CONFORMAL_CONIC:
+      printf("Lat/Lon to Lambert Conformal Conic\n\n");
+      break;
+    case POLAR_STEREOGRAPHIC:
+      printf("Lat/Lon to Polar Stereographic\n\n");
+      break;
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      printf("Lat/Lon to UTM\n\n");
+      break;
+    }
+
+  // Initialize meta_projection block
+  meta_proj = meta_projection_init();
+  meta_proj->type = proj_type;
+  meta_proj->datum = WGS84_DATUM;
+
+  if (proj_type == UNIVERSAL_TRANSVERSE_MERCATOR)
+    fill_in_utm(lat, lon, &meta_proj->param);
+  else
+    meta_proj->param = pps;
+  latlon_to_proj(meta_proj, 'R', lat*D2R, lon*D2R, elev, projX, projY, &projZ);
+
 }
