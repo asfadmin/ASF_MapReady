@@ -212,8 +212,13 @@ stf_data_ext_t require_stf_data(const char *stfName, char *dataName)
 stf_file_pairs_t get_stf_names(const char *stfName, char *dataName,
                                  char *metaName)
 {
-    printf("stfName = %s, get_stf_metadata_name = %s, metaName = %s\n",
-	   stfName, get_stf_metadata_name(stfName, metaName), metaName);
+  printf ("stfName = %s, metaName = %s\n", stfName, metaName);
+  // FIXME: there used to be this printf, but get_stf_metadata_name
+  // returns an enumerated type these days.  I don't this print
+  // statement was very important anyway, and I'm not sure offhand
+  // exactly how to fix it.
+  //    printf("stfName = %s, get_stf_metadata_name = %s, metaName = %s\n",
+  //	   stfName, get_stf_metadata_name(stfName, metaName), metaName);
 
   if (   get_stf_data_name(stfName, dataName)     == STF_BLANK
       && get_stf_metadata_name(stfName, metaName) == STF_PAR)
