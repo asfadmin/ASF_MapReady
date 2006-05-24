@@ -1,5 +1,7 @@
 include ../../make_support/system_rules
 
+CFLAGS += $(GLIBS_CFLAGS)
+
 LIBS  = \
 	$(LIBDIR)/libasf_terrcorr.a \
 	$(LIBDIR)/libasf_raster.a \
@@ -8,9 +10,10 @@ LIBS  = \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/libasf_reporting.a \
+	$(GSL_LIBS) \
+	$(GLIB_LIBS) \
 	-lm
 
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
