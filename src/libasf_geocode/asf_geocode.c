@@ -556,7 +556,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     for ( ; ii < ii_size_x - 1 ; ii++ ) {
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
-	double ypc = ipb->startY - ipb->perY * jj;
+	double ypc = ipb->startY + ipb->perY * jj;
 	project_set_datum (imd->projection->datum);
 	return_code = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
 				       &(lats[current_edge_point]),
@@ -575,7 +575,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     for ( ; jj < ii_size_y - 1 ; jj++ ) {
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
-	double ypc = ipb->startY - ipb->perY * jj;
+	double ypc = ipb->startY + ipb->perY * jj;
 	project_set_datum (imd->projection->datum);
 	return_code = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
 				       &(lats[current_edge_point]),
@@ -594,7 +594,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     for ( ; ii > 0 ; ii-- ) {
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
-	double ypc = ipb->startY - ipb->perY * jj;
+	double ypc = ipb->startY + ipb->perY * jj;
 	project_set_datum (imd->projection->datum);
 	return_code = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
 				       &(lats[current_edge_point]),
@@ -613,7 +613,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     for ( ; jj > 0 ; jj-- ) {
       if ( input_projected ) {
 	double xpc = ipb->startX + ipb->perX * ii;
-	double ypc = ipb->startY - ipb->perY * jj;
+	double ypc = ipb->startY + ipb->perY * jj;
 	project_set_datum (imd->projection->datum); 
 	return_code = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
 				       &(lats[current_edge_point]),
@@ -755,7 +755,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 	// Find the input image pixel indicies corresponding to input
 	// projection coordinates.
 	x_pix = (ipcx - ipb->startX) / ipb->perX;
-	y_pix = (-ipcy + ipb->startY) / ipb->perY;
+	y_pix = (ipcy - ipb->startY) / ipb->perY;
       }
       else {
 	meta_get_lineSamp (imd, lat, lon, average_height, &y_pix, &x_pix);
@@ -1066,9 +1066,10 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       meta_get_lineSamp (imd, st_lat, st_lon, average_height, &strx, &stry);
       // We will insist that the results are symmetric to within this
       // fraction after transforming out and back.
-      // printf ("DEBUG: symmetry testing latLong vs. linsSamp...\n");
-      // const double sym_th = 0.1;   // Symmetry threshold.
-      // g_assert (fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th);
+      printf ("Symmetry testing latLong vs. linsSamp... ");
+      const double sym_th = 0.1;   // Symmetry threshold.
+      g_assert (fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th);
+      printf ("good to within %lf pixels.\n", sym_th);
       // Hmm, looke like they are all pretty bad.  Oh well, the
       // problem of large corner errors when none of the intermediate
       // grid points were off by much still seems specific to scansar.
@@ -1283,7 +1284,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   omd->projection->startX = min_x;
   omd->projection->startY = max_y;
   omd->projection->perX = pc_per_x;
-  omd->projection->perY = pc_per_y;
+  omd->projection->perY = -pc_per_y;
   strcpy (omd->projection->units, "meters");
   if ( lat_0 > 0.0 ) {
     omd->projection->hem = 'N';
