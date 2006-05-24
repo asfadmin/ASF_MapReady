@@ -68,7 +68,7 @@ void meta_get_latLon(meta_parameters *meta,
     /*Slant or ground range.  Use state vectors and doppler.*/
     double slant,doppler,time;
     meta_get_timeSlantDop(meta,yLine + meta->general->start_line,
-			  xSample, + meta->general->start_sample,
+			  xSample + meta->general->start_sample,
 			  &time,&slant,&doppler);
     meta_timeSlantDop2latLon(meta,
 			     time,slant,doppler,elev,
