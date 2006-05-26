@@ -653,6 +653,8 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     g_free (lats);
   }
 
+  asfPrintStatus ("done.\n\n");
+
   // Issue a warning when the chosen pixel size is smaller than the
   // input pixel size.
   if ( GSL_MIN(imd->general->x_pixel_size,
@@ -673,8 +675,6 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
        pixel_size, GSL_MIN (imd->general->x_pixel_size,
 			    imd->general->y_pixel_size));
   }
-
-  asfPrintStatus ("done.\n\n");
 
   // Generate some mappings between output image projection
   // coordinates and input image pixel coordinates, using proj.  We
