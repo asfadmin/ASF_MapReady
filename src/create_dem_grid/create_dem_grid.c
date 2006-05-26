@@ -114,6 +114,7 @@ int main(int argc,char *argv[])
   char *demName,*sarName,*outName;
   double width = -1, height = -1;
   int gridResX = 20, gridResY = 20;
+  double pct;
 
   logflag=0;
   
@@ -151,6 +152,8 @@ int main(int argc,char *argv[])
   system("date");
   printf("Program: create_dem_grid\n\n");
 
-  create_dem_grid_ext(demName, sarName, outName, width, height, gridResX, 0.);
+  create_dem_grid_ext(demName, sarName, outName, width, height,
+		      gridResX, 0., &pct);
+
   return (0);
 }

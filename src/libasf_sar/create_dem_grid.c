@@ -106,12 +106,12 @@ static int getNextSarPt(meta_parameters *meta,int gridNo,int *x,int *y,
 int create_dem_grid(const char *demName, const char *sarName,
 		    const char *outName)
 {
-  return create_dem_grid_ext(demName, sarName, outName, -1, -1, -1, 0.0);
+  return create_dem_grid_ext(demName, sarName, outName, -1, -1, -1, 0.0, NULL);
 }
 
 int create_dem_grid_ext(const char *demName, const char *sarName,
 			const char *outName, int w, int h, int size,
-			float delta_y)
+			float delta_y, double *coverage_pct)
 {
   int gridCount,sar_x,sar_y;
   FILE *out;
@@ -119,6 +119,7 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
   double elev = 0.0;
   double width = w, height = h;
   int gridResX, gridResY;
+  int pixels_in_dem, pixels_out_dem;
 
   gridResX = size;
   gridResY = size;
@@ -164,6 +165,8 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
       break; /* do nothing, though perhaps we should error out? */
     }
     
+  pixels_in_dem = pixels_out_dem = 0;
+
   /*Create a grid on the SAR image, and for each grid point:*/
   for (gridCount=0;
        getNextSarPt(metaSar,gridCount,&sar_x,&sar_y,
@@ -197,12 +200,27 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
       /*Compute the line,sample coordinates of this location in the DEM.*/
       dem_x = (demProj_x - metaDem->projection->startX) / metaDem->projection->perX;
       dem_y = (demProj_y - metaDem->projection->startY) / metaDem->projection->perY;
+      if (dem_x > 0 && dem_y > 0 && 
+	  dem_x < metaDem->general->sample_count &&
+	  dem_y < metaDem->general->line_count)
+	++pixels_in_dem;
+      else
+	++pixels_out_dem;
 
       //printf("--> %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f\n",demProj_x, metaDem->projection->startX, metaDem->projection->perX, demProj_y, metaDem->projection->startY, metaDem->projection->perY);
       //printf("%6d %6d %8.5f %8.5f %4.2f <--\n",grid_x,grid_y,dem_x,dem_y,1.0);
 
       fprintf(out,"%6d %6d %8.5f %8.5f %4.2f\n",grid_x,grid_y,dem_x,dem_y,1.0);
     }
+
+  if (coverage_pct) {
+    *coverage_pct = ((double)pixels_in_dem * 100.) / 
+                     (pixels_in_dem + pixels_out_dem);
+
+    asfPrintStatus("DEM Coverage: %.2lf%% (%d out of %d pixels)\n",
+		   *coverage_pct, pixels_in_dem, pixels_out_dem+pixels_in_dem);
+  }
+
   //asfPrintStatus("   Created a grid of %ix%i points\n\n",gridResX,gridResY);
   FCLOSE(out);
   meta_free(metaDem);

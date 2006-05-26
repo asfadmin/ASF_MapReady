@@ -176,22 +176,6 @@ fftMatch_atCorners(char *sar, char *dem, const int size)
   free(chopped_dem);
 }
 
-static void rename_img_and_meta(char *f1, char *f2)
-{
-  char * img_file1 = appendExt(f1, ".img");
-  char * meta_file1 = appendExt(f1, ".meta");
-  char * img_file2 = appendExt(f2, ".img");
-  char * meta_file2 = appendExt(f2, ".meta");
- 
-  asfSystem("mv %s %s", img_file1, img_file2);
-  asfSystem("mv %s %s", meta_file1, meta_file2);
-
-  free(img_file1);
-  free(meta_file1);
-  free(img_file2);
-  free(meta_file2);
-}
-
 int asf_terrcorr(char *sarFile, char *demFile,
 		 char *outFile, double pixel_size)
 {
@@ -224,6 +208,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   int loop_count = 0;
   const float required_vertical_match = 3.5;
   float vertical_fudge = 0.0;
+  double coverage_pct;
 
   asfPrintStatus("Reading metadata...\n");
   metaSAR = meta_read(sarFile);
@@ -339,8 +324,18 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       create_dem_grid_ext(demFile, srFile, demGridFile,
 			  metaSAR->general->sample_count,
 			  metaSAR->general->line_count, dem_grid_size,
-			  vertical_fudge);
+			  vertical_fudge, &coverage_pct);
       
+      if (coverage_pct <= 0) {
+	asfPrintError("DEM and SAR images do not overlap!\n");
+      } else if (coverage_pct <= 25) {
+	asfPrintError("Insufficient DEM coverage!\n");
+      } else if (coverage_pct <= 99) {
+	asfPrintWarning(
+	  "Incomplete DEM coverage, your result will be clipped in the\n"
+	  "areas where no DEM data is available.\n");
+      }
+
       // Fit a fifth order polynomial to the grid points.
       // This polynomial is then used to extract a subset out of the reference 
       // DEM.
@@ -411,7 +406,6 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 	      vertical_fudge = -dy;
 	  }
       }
-
   } while (fabs(dy) > required_vertical_match);
 
   // Corner test
