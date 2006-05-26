@@ -296,8 +296,6 @@ asfPrintStatus("Preprocessing the SAR image\n");
         execute(cmd);
 
         asfPrintStatus("\n");
-        sprintf(cmd,"rm -f %s*\n",SAR);
-        if (system(cmd)==-1) bye();
       }
     else if (pixsizSAR == pixsiz)
       {
