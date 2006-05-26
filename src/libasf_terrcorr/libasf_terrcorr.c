@@ -30,23 +30,6 @@ static int int_rnd(double x)
   return (int)floor(x+0.5);
 }
 
-static char * change_extension(const char * file, const char * ext)
-{
-  char * replaced = (char *)
-    MALLOC(sizeof(char) * (strlen(file) + strlen(ext) + 10));
-  
-  strcpy(replaced, file);
-  char * p = findExt(file);
-  
-  if (p)
-    *p = '\0';
-  
-  strcat(replaced, ".");
-  strcat(replaced, ext);
-  
-  return replaced;
-}
-
 static char * appendSuffix(const char *inFile, const char *suffix)
 {
   char *suffix_pid = MALLOC(sizeof(char)*(strlen(suffix)+25));
@@ -90,7 +73,6 @@ static void ensure_ext(char **filename, const char *ext)
 static void remove_file(const char * file)
 {
   if (fileExists(file)) {
-    // asfPrintStatus("Removing intermediate file: %s\n", file);
     unlink(file);
   }
 }
@@ -98,9 +80,9 @@ static void remove_file(const char * file)
 // attempt to remove "<file>.img" and "<file>.meta", etc files
 static void clean(const char *file)
 {
-  char * img_file = change_extension(file, "img");
-  char * meta_file = change_extension(file, "meta");
-  char * ddr_file = change_extension(file, "ddr");
+  char * img_file = appendExt(file, ".img");
+  char * meta_file = appendExt(file, ".meta");
+  char * ddr_file = appendExt(file, ".ddr");
 
   remove_file(img_file);
   remove_file(meta_file);
@@ -207,6 +189,22 @@ fftMatch_atCorners(char *sar, char *dem, const int size)
   free(chopped_dem);
 }
 
+static void rename_img_and_meta(char *f1, char *f2)
+{
+  char * img_file1 = appendExt(f1, ".img");
+  char * meta_file1 = appendExt(f1, ".meta");
+  char * img_file2 = appendExt(f2, ".img");
+  char * meta_file2 = appendExt(f2, ".meta");
+ 
+  asfSystem("mv %s %s", img_file1, img_file2);
+  asfSystem("mv %s %s", meta_file1, meta_file2);
+
+  free(img_file1);
+  free(meta_file1);
+  free(img_file2);
+  free(meta_file2);
+}
+
 int asf_terrcorr(char *sarFile, char *demFile,
 		 char *outFile, double pixel_size)
 {
@@ -236,13 +234,18 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   int idx, idy;
   int polyOrder = 5;
   int force_resample = FALSE;
+  int loop_count = 0;
+  const float required_vertical_match = 3.5;
+  float vertical_fudge = 0.0;
 
   asfPrintStatus("Reading metadata...\n");
   metaSAR = meta_read(sarFile);
   metaDEM = meta_read(demFile);
 
+  // some checks for square pixels, as the algorithm assumes it
   if (metaSAR->general->x_pixel_size != metaSAR->general->y_pixel_size) {
-    asfPrintStatus("SAR image does not have square pixels! xps=%gm, yps=%gm.\n",
+    asfPrintStatus("SAR image does not have square pixels!\n"
+		   "x pixel size = %gm, y pixel size = %gm.\n",
 	metaSAR->general->x_pixel_size, metaSAR->general->y_pixel_size);
     if (do_resample) {
       asfPrintStatus("Will resample SAR image to square pixels.\n");
@@ -253,13 +256,23 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   }
   
   if (metaDEM->general->x_pixel_size != metaDEM->general->y_pixel_size) {
-    asfPrintStatus("DEM does not have square pixels! xps=%gm, yps=%gm.\n",
+    asfPrintStatus("DEM does not have square pixels!\n"
+		   "x pixel size = %gm, y pixel size = %gm.\n",
 	metaDEM->general->x_pixel_size, metaDEM->general->y_pixel_size);
     asfPrintStatus("Terrain Correction results may not be as expected.\n");
   }
 
   demRes = metaDEM->general->x_pixel_size;
   sarRes = metaSAR->general->x_pixel_size;
+
+  // Check if the user requested a pixel size that requires
+  // too much oversampling.
+  if (pixel_size > 0 && pixel_size < sarRes / 2) {
+      asfPrintWarning(
+	"The requested a pixel size could result in a significantly\n"
+        "oversampled image.  Current pixel size is %g, you requested %g.\n",
+	sarRes, pixel_size);
+  }
     
   asfPrintStatus("SAR Image is %dx%d LxS, %gm pixels.\n",
 		 metaSAR->general->line_count, metaSAR->general->sample_count,
@@ -271,7 +284,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   // Downsample the SAR image closer to the reference DEM if needed.
   // Otherwise, the quality of the resulting terrain corrected SAR image 
   // suffers. We put in a threshold of 1.5 times the resolution of the SAR
-  // image. The -no-resample option overwrites this default behavior.
+  // image. The -no-resample option overrides this default behavior.
   if (do_resample && 
       (force_resample || demRes > 1.5 * sarRes || pixel_size > 0)) 
   {
@@ -321,64 +334,98 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     srFile = strdup(resampleFile);
   }
 
-  // Generate a point grid for the DEM extraction.
-  // The width and height of the grid is defined in slant range image
-  // coordinates, while the grid is actually calculated in DEM space.
-  // There is a buffer of 400 pixels in far range added to have enough
-  // DEM around when we get to correcting the terrain.
-  asfPrintStatus("Generating %dx%d DEM grid...\n",
-		 dem_grid_size, dem_grid_size);
-  demGridFile = appendSuffix(sarFile, "_demgrid");
-  create_dem_grid_ext(demFile, srFile, demGridFile,
-		      metaSAR->general->sample_count,
-		      metaSAR->general->line_count, dem_grid_size);
+  // do-while that will repeat the dem grid generation and the fftMatch
+  // of the sar & simulated sar, until the fftMatch doesn't turn up a
+  // big vertical offset.
+  do
+  {
+      ++loop_count;
 
+      // Generate a point grid for the DEM extraction.
+      // The width and height of the grid is defined in slant range image
+      // coordinates, while the grid is actually calculated in DEM space.
+      // There is a buffer of 400 pixels in far range added to have enough
+      // DEM around when we get to correcting the terrain.
+      asfPrintStatus("Generating %dx%d DEM grid...\n",
+		     dem_grid_size, dem_grid_size);
+      demGridFile = appendSuffix(sarFile, "_demgrid");
+      create_dem_grid_ext(demFile, srFile, demGridFile,
+			  metaSAR->general->sample_count,
+			  metaSAR->general->line_count, dem_grid_size,
+			  vertical_fudge);
+      
+      // Fit a fifth order polynomial to the grid points.
+      // This polynomial is then used to extract a subset out of the reference 
+      // DEM.
+      asfPrintStatus("Fitting order %d polynomial to DEM...\n", polyOrder);
+      double maxErr;
+      poly_2d *fwX, *fwY, *bwX, *bwY;
+      fit_poly(demGridFile, polyOrder, &maxErr, &fwX, &fwY, &bwX, &bwY);
+      asfPrintStatus("Maximum error in polynomial fit: %g.\n", maxErr);
 
-  // Fit a fifth order polynomial to the grid points.
-  // This polynomial is then used to extract a subset out of the reference 
-  // DEM.
-  asfPrintStatus("Fitting order %d polynomial to DEM...\n", polyOrder);
-  double maxErr;
-  poly_2d *fwX, *fwY, *bwX, *bwY;
-  fit_poly(demGridFile, polyOrder, &maxErr, &fwX, &fwY, &bwX, &bwY);
-  asfPrintStatus("Maximum error in polynomial fit: %g.\n", maxErr);
+      // Here is the actual work done for cutting out the DEM.
+      // The adjustment of the DEM width by 400 pixels (originated in
+      // create_dem_grid) needs to be factored in.
+      demClipped = appendSuffix(demFile, "_clip");
+      demWidth = metaSAR->general->sample_count + 400;
+      demHeight = metaSAR->general->line_count;
+      
+      asfPrintStatus("Clipping DEM to %dx%d LxS using polynomial fit...\n",
+		     demHeight, demWidth);
+      remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped);
+      poly_delete(fwX);
+      poly_delete(fwY);
+      poly_delete(bwX);
+      poly_delete(bwY);
+      
+      // Generate a slant range DEM and a simulated amplitude image.
+      asfPrintStatus("Generating slant range DEM and "
+		     "simulated sar image...\n");
+      demSlant = appendSuffix(demFile, "_slant");
+      demSimAmp = appendSuffix(demFile, "_sim_amp");
+      reskew_dem(srFile, demClipped, demSlant, demSimAmp);
 
-  // Here is the actual work done for cutting out the DEM.
-  // The adjustment of the DEM width by 400 pixels (originated in
-  // create_dem_grid) needs to be factored in.
-  demClipped = appendSuffix(demFile, "_clip");
-  demWidth = metaSAR->general->sample_count + 400;
-  demHeight = metaSAR->general->line_count;
+      // Resize the simulated amplitude to match the slant range SAR image.
+      asfPrintStatus("Resizing simulated sar image...\n");
+      demTrimSimAmp = appendSuffix(demFile, "_sim_amp_trim");
+      trim(demSimAmp, demTrimSimAmp, 0, 0, metaSAR->general->sample_count,
+	   demHeight);
 
-  asfPrintStatus("Clipping DEM to %dx%d LxS using polynomial fit...\n",
-		 demHeight, demWidth);
-  remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped);
-  poly_delete(fwX);
-  poly_delete(fwY);
-  poly_delete(bwX);
-  poly_delete(bwY);
+      // Match the real and simulated SAR image to determine the offset.
+      // Read the offset out of the offset file.
+      asfPrintStatus("Determining image offsets...\n");
+      fftMatchQ(srFile, demTrimSimAmp, &dx, &dy, &cert);
+      asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f dy=%f\n",
+		     100*cert, dx, dy);
 
-  // Generate a slant range DEM and a simulated amplitude image.
-  asfPrintStatus("Generating slant range DEM and simulated sar image...\n");
-  demSlant = appendSuffix(demFile, "_slant");
-  demSimAmp = appendSuffix(demFile, "_sim_amp");
-  reskew_dem(srFile, demClipped, demSlant, demSimAmp);
+      idx = - int_rnd(dx);
+      idy = - int_rnd(dy);
 
-  // Resize the simulated amplitude to match the slant range SAR image.
-  asfPrintStatus("Resizing simulated sar image...\n");
-  demTrimSimAmp = appendSuffix(demFile, "_sim_amp_trim");
-  trim(demSimAmp, demTrimSimAmp, 0, 0, metaSAR->general->sample_count,
-       demHeight);
+      if (fabs(dy) > required_vertical_match)
+      {
+	  // The fftMatch resulted in a large vertical offset!
+	  // This means we very likely did not clip the right portion of
+	  // the DEM.  So, shift the slant range image and re-clip.
 
-  // Match the real and simulated SAR image to determine the offset.
-  // Read the offset out of the offset file.
-  asfPrintStatus("Determining image offsets...\n");
-  fftMatchQ(srFile, demTrimSimAmp, &dx, &dy, &cert);
-  asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f dy=%f\n",
-		 100*cert, dx, dy);
+	  if (loop_count >= 3)
+	  {
+	      asfPrintWarning(
+		"Could not resolve vertical offset!\n"
+		"Continuing, however your terrain correction result may\n"
+		"be incomplete and/or incorrect.\n");
+	      break;
+	  }
+	  else
+	  {
+	      asfPrintStatus("Found a large vertical offset (%d pixels)\n"
+			     "Adjusting SAR image and re-clipping DEM.\n",
+			     idy);
 
-  idx = - int_rnd(dx);
-  idy = - int_rnd(dy);
+	      vertical_fudge = -dy;
+	  }
+      }
+
+  } while (fabs(dy) > required_vertical_match);
 
   // Corner test
   if (do_corner_matching) {
