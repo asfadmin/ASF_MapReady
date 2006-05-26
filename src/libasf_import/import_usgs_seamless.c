@@ -206,6 +206,9 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
   mg->line_count = height;
   mg->sample_count = width;
 
+  mg->start_line = 0;
+  mg->start_sample = 0;
+
   mg->x_pixel_size = pixel_scale[0];
   mg->y_pixel_size = pixel_scale[1];
 
