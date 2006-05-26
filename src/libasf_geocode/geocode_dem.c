@@ -400,14 +400,12 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
 						 -FLT_MAX, -100);
 #endif
 
-  // Store the output image, and free image resources.
+  // Store the output image.
   GString *output_data_file = g_string_new (output_image->str);
   g_string_append (output_data_file, ".img");
   return_code = float_image_store (oim, output_data_file->str,
 				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   g_assert (return_code == 0);
-  float_image_free (oim);
-  g_string_free (output_data_file, TRUE);
 
   // Now we need some metadata for the output image.  We will just
   // start with the metadata from the input image and add the
@@ -483,7 +481,12 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   to_degrees (projection_type, pp);
   omd->projection->param = *pp;
   meta_write (omd, output_meta_file->str);
+
+  float_image_free (oim);
+  g_string_free (output_data_file, TRUE);
   meta_free (omd);
+  g_string_free (input_meta_file, TRUE);
+  g_string_free (output_meta_file, TRUE);
 
   return 0;
 }
