@@ -8,7 +8,46 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#include <glib.h>
+// To avoid having to change link flags around or link against glib we
+// have this compatability function.
+static char *
+static_strdup (const char *s)
+{
+  char *result = malloc (sizeof (char) * (strlen (s) + 1));
+
+  int idx = 0;
+  while ( s[idx] != '\0') {
+    result[idx] = s[idx];
+    idx++;
+  }
+
+  result[idx] = '\0';
+
+  return result;
+}
+
+
+// To avoid having to change link flags around or link against glib we
+// have this function.  Its like strcasecmp but only returns true or
+// false (true if strings are not equal disregarding case, false
+// otherwise).
+static int
+static_strcaseneq (const char *s1, const char *s2)
+{
+  size_t len = strlen (s1);
+  if ( strlen (s2) != strlen (s1) ) {
+    return 1;
+  }
+
+  size_t ii;
+  for ( ii = 0 ; ii < len ; ii++ ) {
+    if ( tolower (s1[ii]) != tolower(s2[ii]) ) {
+      return 1;
+    }
+  }
+
+  return 0;
+}
 
 static void readline(FILE * f, char * buffer, size_t n)
 {
@@ -47,7 +86,7 @@ static int parse_val(char * inbuf, char * key, double * val)
   char * p, * eq, * buf;
   int match = FALSE;
   
-  buf = g_strdup(inbuf);
+  buf = static_strdup(inbuf);
   
   p = eq = strchr(buf, '=');
   if (!eq)
@@ -59,7 +98,7 @@ static int parse_val(char * inbuf, char * key, double * val)
   while (isspace((int)(*p)))
     *p-- = '\0';
   
-  if (g_ascii_strcasecmp(buf, key) == 0)
+  if (static_strcaseneq(buf, key) == 0)
     {
       p = eq + 1;
       while (isspace((int)(*p)))
