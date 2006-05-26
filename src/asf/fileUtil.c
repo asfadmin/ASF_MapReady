@@ -6,7 +6,7 @@
 #include "asf.h"
 
 static char *
-strdup (const char *s)
+static_strdup (const char *s)
 {
   char *result = malloc (sizeof (char) * (strlen (s) + 1));
 
@@ -59,7 +59,7 @@ char *findExt(const char *name)
    any extension removed */
 char *stripExt(const char *in)
 {
-  char *out = strdup(in);
+  char *out = static_strdup(in);
   char *ext = findExt(out);
   if (ext) *ext = '\0';
   return out;
