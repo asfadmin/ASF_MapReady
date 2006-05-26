@@ -103,6 +103,10 @@ int fileExists(const char *name);
    true, but without the memory leak fileExists(appendExt(name,
    newExt)) would produce. */
 int extExists(const char *name,const char *newExt);
+/* Add a string to the end of the filename's basename.  For example, if
+   if filename is "file.ext" and suffix is "_2" then "file_2.ext" is
+   returned.  The return value must be freed by the caller. */
+char * appendToBasename(const char *filename, const char *suffix);
 
 void append_ext_if_needed(char *file_name, const char *newExt, 
                           const char *alsoAllowedExt);
