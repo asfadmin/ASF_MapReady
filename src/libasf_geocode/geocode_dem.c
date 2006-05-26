@@ -127,7 +127,7 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   // This lets us determine the exact extent of the DEM in
   // output projection coordinates.
   asfPrintStatus ("Determining input image extent in projection coordinate "
-		  "space... \n");
+		  "space... ");
 
   double min_x = DBL_MAX;
   double max_x = -DBL_MAX;
@@ -195,13 +195,43 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
     g_free (lats);
   }
 
-  // Open the input image data file.
+  asfPrintStatus ("done.\n\n");
+
+  // Issue a warning when the chosen pixel size is smaller than the
+  // input pixel size.  FIXME: this condition will really never fire
+  // for pseudoprojected image, since the pixels size of the input is
+  // tiny (degrees per pixel) and the pixel_size has already been
+  // computed in asf_geocode function itself as an arc length on the
+  // ground.
+  if ( GSL_MIN(imd->general->x_pixel_size,
+	       imd->general->y_pixel_size) > pixel_size ) {
+    asfPrintWarning
+      ("Requested pixel size %lf is smaller then the input image resolution "
+       "(%le meters).\n", pixel_size,
+       GSL_MIN (imd->general->x_pixel_size, imd->general->y_pixel_size));
+  }
+
+  // The pixel size requested by the user better not oversample by the
+  // factor of 2.  Specifying --force will skip this check.  FIXME:
+  // same essential problem as the above condition, but in this case
+  // it always goes off.
+  //  if (!force_flag && GSL_MIN(imd->general->x_pixel_size,
+  //	       imd->general->y_pixel_size) > (2*pixel_size) ) {
+  //    report_func
+  //      ("Requested pixel size %lf is smaller then the minimum implied by half \n"
+  //       "the input image resolution (%le meters), this is not supported.\n",
+  //       pixel_size, GSL_MIN (imd->general->x_pixel_size,
+  //			    imd->general->y_pixel_size));
+  //  }
+
+  asfPrintStatus ("Opening input DEM image... ");
   GString *input_data_file = g_string_new (input_image->str);
   g_string_append (input_data_file, ".img");
   FloatImage *iim
     = float_image_new_from_file (ii_size_x, ii_size_y, input_data_file->str, 0,
 				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   g_string_free (input_data_file, TRUE);
+  asfPrintStatus ("done.\n\n");
 
   // Maximum pixel indicies in output image.
   size_t oix_max = ceil ((max_x - min_x) / pixel_size);
@@ -254,6 +284,9 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   double *lon = g_new0 (double, chunk_pixels);
   double *height = g_new0 (double, chunk_pixels);
 
+  asfPrintStatus ("Determining Z coordinates of input pixels in output "
+		  "projection space... ");
+
   // Transform all the chunks, storing results in the z coordinate image.
   size_t ii, jj, kk;		// Index variables.
   for ( ii = 0 ; ii < ii_size_y ; ) {
@@ -299,6 +332,8 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
     ii += rows_to_load;
   }
 
+  asfPrintStatus ("done.\n\n");
+
 #ifdef DEBUG_GEOCODE_DEM_Z_COORDS_IMAGE_AS_JPEG
   // Take a look at the z_coordinate image (for debugging).
   float_image_export_as_jpeg_with_mask_interval (z_coords, "z_coords.jpg", 
@@ -331,6 +366,9 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   lon = g_new0 (double, chunk_pixels);
   // We don't have height information in this direction, nor do we care.
   height = NULL;
+
+  asfPrintStatus ("Sampling Z coordinates to form pixels in output projection "
+		  "space... ");
 
   // Transform all the chunks, using the results to form the output image.
   for ( ii = 0 ; ii < oi_size_y ; ) {
@@ -387,6 +425,8 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
     ii += rows_to_load;
   }
 
+  asfPrintStatus ("done.\n\n");
+
   g_free (chunk_x);
   g_free (chunk_y);
   g_free (lat);
@@ -401,11 +441,13 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
 #endif
 
   // Store the output image.
+  asfPrintStatus ("Storing output image... ");
   GString *output_data_file = g_string_new (output_image->str);
   g_string_append (output_data_file, ".img");
   return_code = float_image_store (oim, output_data_file->str,
 				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   g_assert (return_code == 0);
+  asfPrintStatus ("done.\n\n");
 
   // Now we need some metadata for the output image.  We will just
   // start with the metadata from the input image and add the
