@@ -392,20 +392,22 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * file)
         GError * err = NULL;
         GdkPixbuf * pb;
 
-#ifdef THUMBNAILS	
-        pb = gdk_pixbuf_new_from_file_at_size(file, THUMB_SIZE, THUMB_SIZE, 
-            &err);
-#endif
+	if (g_file_test(file, G_FILE_TEST_EXISTS))
+	{
+           pb = gdk_pixbuf_new_from_file_at_size(file, THUMB_SIZE, 
+						 THUMB_SIZE, &err);
 
-        if (!err)
-        {
-            gtk_list_store_set(list_store, iter, COL_OUTPUT_THUMBNAIL, pb, -1);
-        }
-        else
-        {
-            g_warning("Couldn't load image '%s': %s\n", file, err->message);
-            g_error_free(err);
-        }
+	   if (!err)
+	   {
+	       gtk_list_store_set(list_store, iter, COL_OUTPUT_THUMBNAIL,
+				  pb, -1);
+	   }
+	   else
+	   {
+	       g_warning("Couldn't load image '%s': %s\n", file, err->message);
+	       g_error_free(err);
+	   }
+	}
 
         LSU;
     }
