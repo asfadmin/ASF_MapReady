@@ -14,8 +14,10 @@ void asf_print_to_log_only(const char *format, ...)
 {
   va_list ap;
   va_start(ap, format);
-  if (logflag)
+  if (logflag) {
     vfprintf(fLog, format, ap);
+    fflush (fLog);
+  }
   va_end(ap);
 }
 
@@ -41,8 +43,10 @@ void asfForcePrintStatus(const char *format, ...)
   va_list ap;
   va_start(ap, format);
   vprintf(format, ap);
-  if (logflag)
+  if (logflag) {
     vfprintf(fLog, format, ap);
+    fflush (fLog);
+  }
   va_end(ap);
 }
 
@@ -57,16 +61,23 @@ void asfPrintWarning(const char *format, ...)
   sprintf(warningEnd,"** End of warning **\n\n");
 
   printf(warningBegin);
-  if (logflag) fprintf(fLog, warningBegin);
+  if (logflag) {
+    fprintf(fLog, warningBegin);
+  }
 
   va_start(ap, format);
   vprintf(format, ap);
-  if (logflag)
+  if (logflag) {
     vfprintf(fLog, format, ap);
+  }
   va_end(ap);
 
   printf(warningEnd);
-  if (logflag) fprintf(fLog, warningEnd);
+  fflush (stdout);
+  if (logflag) {
+    fprintf(fLog, warningEnd);
+    fflush (fLog);
+  }
 }
 
 
@@ -95,6 +106,10 @@ void asfPrintError(const char *format, ...)
     fprintf(fLog, errorEnd);
     FCLOSE(fLog);
   }
+
+  // Note that we don't have to worry about flushing output in this
+  // function since its fatal and the operating system will therefore
+  // presumably do it for us.
 
   exit(EXIT_FAILURE);
 }
