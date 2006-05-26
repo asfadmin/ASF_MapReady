@@ -151,7 +151,6 @@ int main(int argc,char *argv[])
   system("date");
   printf("Program: create_dem_grid\n\n");
 
-  create_dem_grid_ext(demName, sarName, outName, width, height, gridResX);
-
+  create_dem_grid_ext(demName, sarName, outName, width, height, gridResX, 0.);
   return (0);
 }
