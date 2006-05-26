@@ -94,6 +94,32 @@ char *appendExt(const char *name, const char *newExt)
   return ret;
 }
 
+char * appendToBasename(const char *inFile, const char *suffix)
+{
+  char *ret = MALLOC(sizeof(char)*(strlen(inFile)+strlen(suffix)+5));
+  strcpy(ret, inFile);
+
+  /* find the extension */
+  char *p = findExt(ret);
+
+  if (p && p != ret) {
+    /* we have an extension - make a copy of it, then add the
+       suffix, then add back on the extension again */
+    char *ext;
+    *p++ = '\0';
+    ext = strdup(p);
+    strcat(ret, suffix);
+    strcat(ret, ".");
+    strcat(ret, ext);
+    free(ext);
+  } else {
+    /* no extension found - just add the suffix */
+    strcat(ret, suffix);
+  }
+
+  return ret;
+}
+
 void create_name(char *out,const char *in,const char *newExt)
 {
   char *ext;
