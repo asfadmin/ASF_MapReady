@@ -24,10 +24,14 @@ void asfPrintStatus(const char *format, ...)
 {
   va_list ap;
   va_start(ap, format);
-  if (!quietflag)
+  if (!quietflag) {
     vprintf(format, ap);
-  if (logflag)
+    fflush (stdout);
+  }
+  if (logflag) {
     vfprintf(fLog, format, ap);
+    fflush (fLog);
+  }
   va_end(ap);
 }
 
