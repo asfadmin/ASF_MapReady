@@ -126,10 +126,13 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
   case GCS_NAD83:
     datum = NAD83_DATUM;
     break;
+  default:
+    asfPrintError ("Unsupported GeographicTypeGeoKey value in GeoTIFF file");
+    break;
   }
 
   spheroid_type_t spheroid = datum_spheroid (datum);
-  
+
   // Get the angular units in which other metadata parameters are specified.
   short angular_units;
   read_count
