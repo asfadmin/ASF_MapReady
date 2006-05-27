@@ -100,20 +100,22 @@ void show_asf_meta_data(gchar * out_name)
         if (use_fixed_width)
         {
             GtkTextIter start, end;
-            GtkTextTag *tt;
+            static GtkTextTag *tt = NULL;
 
+	    if (!tt)
+	    {
 #ifdef win32
-            const char *fnt = "Courier";
+	        const char *fnt = "Courier";
 #else
-            const char *fnt = "Mono";
+		const char *fnt = "Mono";
 #endif
+
+		tt = gtk_text_buffer_create_tag(text_buffer, "mono",
+						"font", fnt, NULL);
+	    }
 
             gtk_text_buffer_get_start_iter(text_buffer, &start);
             gtk_text_buffer_get_end_iter(text_buffer, &end);
-
-            tt = gtk_text_buffer_create_tag(text_buffer, "mono",
-                "font", fnt,
-                NULL);
 
             gtk_text_buffer_apply_tag(text_buffer, tt, &start, &end);    
         }
