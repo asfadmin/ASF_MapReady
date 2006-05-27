@@ -357,17 +357,26 @@ append_output(const gchar * txt, GtkWidget * textview_output)
 {
     GtkTextBuffer * text_buffer;
     GtkTextIter end;
-    GtkTextTag *tt = NULL;
-#ifdef win32
-    const char *fnt = "Courier";
-#else
-    const char *fnt = "Mono";
-#endif
+    GtkTextTag *tt;
+    GtkTextTagTable *tt_table;
 
     text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
+    tt_table = gtk_text_buffer_get_tag_table(text_buffer);    
+    tt = gtk_text_tag_table_lookup(tt_table, "mono");
 
-    tt = gtk_text_buffer_create_tag(text_buffer, "mono", 
-				    "font", fnt, NULL);
+    if (!tt)
+    {
+
+#ifdef win32
+        const char *fnt = "Courier";
+#else
+	const char *fnt = "Mono";
+#endif
+
+
+	tt = gtk_text_buffer_create_tag(text_buffer, "mono", 
+					"font", fnt, NULL);
+    }
 
     if (gtk_text_buffer_get_char_count(text_buffer) > 0)
     {
