@@ -82,19 +82,6 @@ int strmatches(const char *key, ...)
   return found;
 }
 
-void fill_in_utm(double lat, double lon, project_parameters_t *pps)
-{
-  pps->utm.zone = (int) ((lon + 180.0) / 6.0 + 1.0);
-  pps->utm.scale_factor = 0.9996;
-  pps->utm.lon0 = (double) (pps->utm.zone - 1) * 6.0 - 177.0;
-  pps->utm.lat0 = 0.0;
-  pps->utm.false_easting = 500000.0;
-  if (lat > 0.0)
-    pps->utm.false_northing = 0.0;
-  else
-    pps->utm.false_northing = 10000000.0;
-}
-
 int main(int argc, char **argv)
 {
   char *listFile, *projFile, *key, line[255];
@@ -102,7 +89,7 @@ int main(int argc, char **argv)
   project_parameters_t pps;
   projection_type_t proj_type;
   meta_projection *meta_proj;
-  double lat, lon, projX, projY;
+  double lat, lon, projX, projY, projZ;
   int listFlag = FALSE;
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */
 
@@ -133,53 +120,20 @@ int main(int argc, char **argv)
   // Read projection file
   read_proj_file(projFile, &pps, &proj_type);
 
-  // Report the conversion type
-  switch(proj_type) 
-    {
-    case ALBERS_EQUAL_AREA:
-      printf("Lat/Lon to Albers Equal Area\n\n");
-      break;
-    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      printf("Lat/Lon to Lambert Azimuthal Equal Area\n\n");
-      break;
-    case LAMBERT_CONFORMAL_CONIC:
-      printf("Lat/Lon to Lambert Conformal Conic\n\n");
-      break;
-    case POLAR_STEREOGRAPHIC:
-      printf("Lat/Lon to Polar Stereographic\n\n");
-      break;
-    case UNIVERSAL_TRANSVERSE_MERCATOR:
-      printf("Lat/Lon to UTM\n\n");
-      break;
-    }
-
-  // Initialize meta_projection block
-  meta_proj = meta_projection_init();
-  meta_proj->type = proj_type;
-  meta_proj->datum = WGS84_DATUM;
-
   // Read lat/lon from list if needed and convert to map coordinates
   if (listFlag) {
     fp = FOPEN(listFile, "r");
     while (fgets(line, 255, fp) != NULL) {
       if (strlen(line) > 1) {
 	sscanf(line, "%lf %lf", &lat, &lon);   
-	if (proj_type == UNIVERSAL_TRANSVERSE_MERCATOR)
-	  fill_in_utm(lat, lon, &meta_proj->param);
-	else
-	  meta_proj->param = pps;
-	latlon_to_proj(meta_proj, 'R', lat*D2R, lon*D2R, &projX, &projY);
+	latLon2proj(lat, lon, 0.0, projFile, &projX, &projY, &projZ);
 	printf("%.4lf\t%.4lf\t%.3lf\t%.3lf\n", lat, lon, projX, projY);
       }
     }
     FCLOSE(fp);
   }
   else {
-    if (proj_type == UNIVERSAL_TRANSVERSE_MERCATOR)
-      fill_in_utm(lat, lon, &meta_proj->param);
-    else
-      meta_proj->param = pps;
-    latlon_to_proj(meta_proj, 'R', lat*D2R, lon*D2R, &projX, &projY);
+    latLon2proj(lat, lon, 0.0, projFile, &projX, &projY, &projZ);
     printf("%.4lf\t%.4lf\t%.3lf\t%.3lf\n", lat, lon, projX, projY);
   }
 

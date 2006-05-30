@@ -14,18 +14,16 @@ LIBS  = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(GLIB_LIBS) \
+	$(GSL_LIBS) \
 	-lm
 
 OBJS = corner_coords.o
 
-OBJS2 = read_proj_file.o \
-	latLon2proj.o
+OBJS2 = latLon2proj.o
 
-OBJS3 =	read_proj_file.o \
-	proj2latLon.o
+OBJS3 =	proj2latLon.o
 
-OBJS4 = read_proj_file.o \
-	proj2proj.o
+OBJS4 = proj2proj.o
 
 all: corner_coords latLon2proj proj2latLon proj2proj clean
 
