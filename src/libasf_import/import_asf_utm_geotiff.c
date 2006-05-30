@@ -185,9 +185,6 @@ import_asf_utm_geotiff (const char *inFileName, const char *outBaseName,
   mg->center_latitude = MAGIC_UNSET_DOUBLE;
   mg->center_longitude = MAGIC_UNSET_DOUBLE;
 
-  // No way to tell.
-  mg->average_height = MAGIC_UNSET_DOUBLE;
-  
   // We confirmed above that the GEOID model used is WGS84.
   spheroid_axes_lengths (WGS84_SPHEROID, &mg->re_major, &mg->re_minor);  
 
@@ -213,6 +210,9 @@ import_asf_utm_geotiff (const char *inFileName, const char *outBaseName,
 
   mp->datum = WGS84_DATUM;
 
+  // No way to tell.
+  mp->height = MAGIC_UNSET_DOUBLE;
+  
   mp->param.utm.zone = zone_number;
   mp->param.utm.false_easting = 500000.0;
   if ( hemisphere_code == 'N' ) {

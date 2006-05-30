@@ -243,8 +243,6 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
   float min, max, mean, standard_deviation;
   float_image_statistics (image, &min, &max, &mean, &standard_deviation,
 			  FLOAT_IMAGE_DEFAULT_MASK);
-  mg->average_height = mean;
-
   spheroid_axes_lengths (spheroid, &mg->re_major, &mg->re_minor);
 
   meta_projection *mp = meta_out->projection; // Convenience alias.
@@ -268,6 +266,8 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
   mp->re_minor = mg->re_minor;
 
   mp->datum = datum;
+
+  mp->height = mean;
 
   // Note that the pseudoprojection "projection" doesn't need a
   // special project_parameters structure, since all the details about
