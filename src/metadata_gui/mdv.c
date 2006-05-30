@@ -396,20 +396,28 @@ put_file_in_textview(const char * file, const char * ext, const char * tv)
 {
     gchar *filename = change_extension(file, ext);
     FILE * fp = fopen(filename, "rt");
+    const int maxchars = 50000;
 
     gchar * txt;
 
     if (fp)
     {
-        txt = g_malloc(sizeof(gchar) * 50000);
+        txt = g_malloc(sizeof(gchar) * maxchars);
         strcpy(txt, "");
 
         while (!feof(fp))
         {
             gchar buf[512];
             readline(fp, buf, 512);
-            strcat(txt, buf);
-            strcat(txt, "\n");
+
+	    // guard against buffer overrun
+	    if (strlen(txt) + strlen(buf) > maxchars - 50) {
+	      strcat(txt, "(truncated)\n");
+	      break;
+	    } else {
+	      strcat(txt, buf);
+	      strcat(txt, "\n");
+	    }
         }
 
         fclose(fp);
