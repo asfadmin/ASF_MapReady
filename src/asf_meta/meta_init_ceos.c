@@ -215,7 +215,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    meta->general->center_latitude  = dssr->pro_lat;
    meta->general->center_longitude = dssr->pro_long;
    // Average height of the scene is determined later
-   meta->projection->height = 0.0;
+   if (meta->projection)
+     meta->projection->height = 0.0;
 
    /* Calculate ASF frame number from latitude considering the orbit direction */
    meta->general->frame =
