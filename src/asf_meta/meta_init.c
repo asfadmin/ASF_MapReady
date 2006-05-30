@@ -54,7 +54,6 @@ meta_general *meta_general_init(void)
   general->y_pixel_size = MAGIC_UNSET_DOUBLE;
   general->center_latitude = MAGIC_UNSET_DOUBLE;
   general->center_longitude = MAGIC_UNSET_DOUBLE;
-  general->average_height = MAGIC_UNSET_DOUBLE;
   general->re_major = MAGIC_UNSET_DOUBLE;
   general->re_minor = MAGIC_UNSET_DOUBLE;
   general->bit_error_rate = MAGIC_UNSET_DOUBLE;
@@ -117,6 +116,7 @@ meta_projection *meta_projection_init(void)
   projection->hem = MAGIC_UNSET_CHAR;
   projection->re_major = MAGIC_UNSET_DOUBLE;
   projection->re_minor = MAGIC_UNSET_DOUBLE;
+  projection->height = 0.0;
 /*  projection->ecc = MAGIC_UNSET_DOUBLE;        * DEPRECATED */
 /* Can't really initalize projection->param to a dummy value, so just leave it.*/
   return projection;

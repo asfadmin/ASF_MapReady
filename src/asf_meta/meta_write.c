@@ -152,9 +152,6 @@ void meta_write(meta_parameters *meta, const char *file_name)
 		  "Approximate image center latitude");
   meta_put_double(fp,"center_longitude:", meta->general->center_longitude,
 		  "Approximate image center longitude");
-  if (META_VERSION >= 1.6)
-    meta_put_double(fp, "average_height:", meta->general->average_height,
-		    "Average height [m]");
   meta_put_double(fp,"re_major:", meta->general->re_major,
 		  "Major (equator) Axis of earth [m]");
   meta_put_double(fp,"re_minor:", meta->general->re_minor,
@@ -375,6 +372,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	break;
       }
     }
+    if (META_VERSION >= 1.6)
+      meta_put_double(fp, "height:", meta->projection->height,
+		      "Height [m]");
     meta_put_string(fp,"param {","","Projection specific parameters");
     switch ( meta->projection->type ) {
     case SCANSAR_PROJECTION: /* Along-track/cross-track projection.  */

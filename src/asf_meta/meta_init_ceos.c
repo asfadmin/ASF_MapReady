@@ -166,6 +166,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       case 4:  meta->general->data_type = INTEGER32;         break;
       case 6:  meta->general->data_type = COMPLEX_BYTE;      break;
       case 7:  meta->general->data_type = COMPLEX_INTEGER16; break;
+      case 9:  meta->general->data_type = COMPLEX_REAL32;    break;
       default: meta->general->data_type = BYTE;              break;
    }
    strcpy(meta->general->system, meta_get_system());
@@ -214,7 +215,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    meta->general->center_latitude  = dssr->pro_lat;
    meta->general->center_longitude = dssr->pro_long;
    // Average height of the scene is determined later
-   meta->general->average_height = 0.0;
+   meta->projection->height = 0.0;
 
    /* Calculate ASF frame number from latitude considering the orbit direction */
    meta->general->frame =
@@ -310,7 +311,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
    else {
       firstTime = get_firstTime(dataName);
-      if (esa_facdr && (ceos->facility != VEXCEL)) {
+      if (esa_facdr && ceos->facility != VEXCEL) {
         date_dssr2time(dssr->az_time_first, &time);
         firstTime = date_hms2sec(&time);
       }
@@ -421,6 +422,11 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
  * }
  */
 
+   /* Initialize map projection for projected images */
+   if (meta->sar->image_type=='P') {
+      ceos_init_proj(meta, dssr, mpdr);
+   }
+
    /* Let's get the earth radius and satellite height straightened out */
    if (asf_facdr) {     /* Get earth radius & satellite height if we can */
       meta->sar->earth_radius = asf_facdr->eradcntr*1000.0;
@@ -436,13 +442,10 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 						       meta->general->sample_count/2);
    }
 
-   /* Initialize map projection for projected images */
-   if (meta->sar->image_type=='P') {
-      ceos_init_proj(meta, dssr, mpdr);
-   }
-
    /* Propagate state vectors if they are covering more than frame size in case
     * you have raw or complex data. */
+   if (ceos->satellite != ALOS) // HACK: We currently don't have enough timing
+                                //       information to do this.
    if ((ceos->facility==ASF && ceos->processor!=PREC) || ceos->facility!=ASF) {
       int vector_count=3;
       double data_int = meta->sar->original_line_count / 2
@@ -539,7 +542,12 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
    }
    else if (strncmp(mpdr->mpdesig, "UTM", 3) == 0) {
       projection->type=UNIVERSAL_TRANSVERSE_MERCATOR;/*Universal Transverse Mercator*/
-      projection->param.utm.zone=UTM_zone(mpdr->utmpara1);
+      projection->param.utm.zone=atoi(mpdr->utmzone);
+      projection->param.utm.false_easting=mpdr->utmeast;
+      projection->param.utm.false_northing=mpdr->utmnorth;
+      projection->param.utm.lat0=mpdr->utmlat;
+      projection->param.utm.lon0=mpdr->utmlong;
+      projection->param.utm.scale_factor=mpdr->utmscale;
    }
    else {
       printf("Cannot match projection '%s',\n"
@@ -566,6 +574,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                            / mpdr->npixels;
    }
    else {
+     // might need to have a check for ALOS coordinates - look like km, not m
       projection->startY = mpdr->tlcnorth;
       projection->startX = mpdr->tlceast;
       projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth)
@@ -583,6 +592,46 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
    projection->re_minor = dssr->ellip_min*1000;
 }
 
+/* Parts that need to come out of jpl_proj.c, once we have sorted out all other
+   dependencies.
+
+// atct_init:
+// calculates alpha1, alpha2, and alpha3, which are some sort of coordinate
+// rotation amounts, in degrees.  This creates a latitude/longitude-style
+// coordinate system centered under the satellite at the start of imaging.
+// You must pass it a state vector from the start of imaging.           
+void atct_init(meta_projection *proj,stateVector st)
+{
+	vector up={0.0,0.0,1.0};
+	vector z_orbit, y_axis, a, nd;
+	double alpha3_sign;
+	double alpha1,alpha2,alpha3;
+	
+	vecCross(st.pos,st.vel,&z_orbit);vecNormalize(&z_orbit);
+	
+	vecCross(z_orbit,up,&y_axis);vecNormalize(&y_axis);
+	
+	vecCross(y_axis,z_orbit,&a);vecNormalize(&a);
+	
+	alpha1 = atan2_check(a.y,a.x)*R2D;
+	alpha2 = -1.0 * asind(a.z);
+	if (z_orbit.z < 0.0) 
+	{
+		alpha1 +=  180.0;
+		alpha2 = -1.0*(180.0-fabs(alpha2));
+	}
+	
+	vecCross(a,st.pos,&nd);vecNormalize(&nd);
+	alpha3_sign = vecDot(nd,z_orbit);
+	alpha3 = acosd(vecDot(a,st.pos)/vecMagnitude(st.pos));
+	if (alpha3_sign<0.0) 
+		alpha3 *= -1.0;
+	
+	proj->param.atct.alpha1=alpha1;
+	proj->param.atct.alpha2=alpha2;
+	proj->param.atct.alpha3=alpha3;
+}
+*/
 
 /*******************************************************************************
  * get_ceos_description:
@@ -599,6 +648,7 @@ ceos_description *get_ceos_description(char *fName)
 
 /*Determine the sensor.*/
    satStr=ceos->dssr.mission_id;
+
    if (0==strncmp(satStr,"E",1)) ceos->satellite=ERS;
    else if (0==strncmp(satStr,"J",1)) ceos->satellite=JERS;
    else if (0==strncmp(satStr,"R",1)) ceos->satellite=RSAT;
@@ -719,6 +769,9 @@ ceos_description *get_ceos_description(char *fName)
    else if (0==strncmp(ceos->dssr.fac_id,"EOC",3)) {
      printf("   Data set processed by EOC\n");
      ceos->facility=EOC;
+     if (0==strncmp(ceos->dssr.lev_code, "1.0", 3)) ceos->product=RAW;
+     else if (0==strncmp(ceos->dssr.lev_code, "1.1", 3)) ceos->product=SLC; 
+     else if (0==strncmp(prodStr, "STANDARD GEOCODED IMAGE",23)) ceos->product=SGI;
    }
    else {
       printf( "****************************************\n"
