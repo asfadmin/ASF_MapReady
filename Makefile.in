@@ -61,10 +61,10 @@ install: all
 
 external_libs:
 	$(MAKE) -C external
-	cp -R external/lib/* lib
-	chmod -R ug+w lib
-	cp -R external/include/* include
-	chmod -R ug+w include
+	-cp -R external/lib/* lib
+	-chmod -R ug+w lib
+	-cp -R external/include/* include
+	-chmod -R ug+w include
 
 clean:
 	rm -rf bin/* lib/* share/*
