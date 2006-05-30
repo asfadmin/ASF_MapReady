@@ -210,7 +210,6 @@ typedef struct {
   double y_pixel_size;       /* Azimuth pixel size, in meters              */
   double center_latitude;    /* Approximate image center latitude.         */
   double center_longitude;   /* Approximage image center longitude.        */
-  double average_height;     /* Average height of the scene                */
   double re_major;           /* Semimajor axis length (equator) (meters).  */
   double re_minor;           /* Semiminor axis length (poles) (meters).    */
   double bit_error_rate;     /* Fraction of bits which are in error.       */
@@ -358,6 +357,7 @@ typedef struct {
      is therefore redundant and should be eliminated.  DEPRECATED.         */
 /*  double ecc;           * First eccentricity of earth ellipsoid.         */
   datum_type_t datum;    /* Geodetic datum - height reference system       */
+  double height;         /* Height of the image is geocoded to             */
   project_parameters_t param;   /* Projection parameters for each projection.*/
 } meta_projection;
  /* Compatibility alias.  proj_parameters is DEPRECATED.  */
@@ -613,6 +613,10 @@ void getLatLongMeta(const stateVector stVec,meta_parameters *meta,
 
 /* This low-level routine is used internally by asf_meta.  */
 GEOLOCATE_REC *init_geolocate_meta(const stateVector *stVec,meta_parameters *meta);
+
+/* Determines the geographic corner coordinates and popluates the location block */
+void meta_get_corner_coords(meta_parameters *meta);
+
 
 /************* Interferometry *******************
 Interferometry Calls: in meta_get_ifm.c*/
