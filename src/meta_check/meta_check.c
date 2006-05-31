@@ -20,7 +20,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "meta_check"
 
 #define ASF_USAGE_STRING \
-"[ -log <file> ] <reference metadata> <test metadata>\n"\
+"[ -log <file> ] [ -list ] <reference metadata> <test metadata>\n"\
 "\n"\
 "Additional option: -help"
 
@@ -30,15 +30,19 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 
 #define ASF_INPUT_STRING \
 "<reference metadata>\n"\
-"Reference metadata file to be tested against.\n"\
+"Reference metadata file to be tested against. This is a single metadata\n"\
+"file unless the -list option is chosen. Then this is a list of metadata\n"\
+"to be tested against.\n"\
 "<test metadata>\n"\
-"Metadata file to be tested."
+"Metadata file to be tested. This is a single metadata file unless the -list\n"\
+"option is chosen. Then this is a list of metadata to be tested.\n"
 
 #define ASF_OUTPUT_STRING \
 ""
 
 #define ASF_OPTIONS_STRING \
 "-log	Keeps a log file in case things are run in batch mode.\n"\
+"-list  Reads a list for reference and target metadata files.\n"
 
 #define ASF_EXAMPLES_STRING \
 "meta_check -log test.log fn1_old.meta fn1_new.meta"
@@ -184,41 +188,10 @@ int strmatches(const char *key, ...)
   return found;
 }
 
-/* Start of main progam */
-int main(int argc, char *argv[])
+void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
 {
-  char szMetaReference[255], szMetaTarget[255];
-  meta_parameters *metaRef, *metaTest;
-  int currArg=1;
   int ii, vectors, errors=FALSE;
-  
-  while (currArg < (argc-NUM_ARGS)) {
-    char *key = argv[currArg++];
-    if (strmatches(key,"-log","--log",NULL)) {
-      CHECK_ARG(1);
-      strcpy(logFile,GET_ARG(1));
-      fLog = FOPEN(logFile, "a");
-      logflag = TRUE;
-    }
-    else if (strmatches(key,"-help","--help",NULL))
-      help_page();
-    else {
-      printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
-      usage(argv[0]);
-    }
-  }
-  if ((argc-currArg) < NUM_ARGS) {
-    printf("Insufficient arguments.\n");
-    usage(argv[0]);
-  }
-  
-  // Fetch required arguments
-  strcpy(szMetaReference,argv[argc - 2]);
-  strcpy(szMetaTarget,argv[argc - 1]);
-
-  // Read metadata
-  metaRef = meta_read(szMetaReference);
-  metaTest = meta_read(szMetaTarget);
+  double delta;
 
   // Check sensor
   if (strcmp(metaRef->general->sensor, metaTest->general->sensor) != 0) {
@@ -304,16 +277,18 @@ int main(int argc, char *argv[])
   // Check center latitude/longitude
   if (!FLOAT_EQUIVALENT(metaRef->general->center_latitude, 
 			metaTest->general->center_latitude)) {
-    asfPrintStatus("   Center latitude differs - Delta: %.5lf\n",
-		   fabs(metaRef->general->center_latitude - 
-			metaTest->general->center_latitude));
+    delta = metaRef->general->center_latitude - metaTest->general->center_latitude;
+    asfPrintStatus("   Center latitude differs - Reference latitude: %.4lf, "
+		   "delta: %.5lf\n", metaRef->general->center_latitude, delta);
+
     errors = TRUE;
   }
   if (!FLOAT_EQUIVALENT(metaRef->general->center_longitude, 
 			metaTest->general->center_longitude)) {
-    asfPrintStatus("   Center longitude differs - Delta: %.5lf\n",
-		   fabs(metaRef->general->center_longitude - 
-			metaTest->general->center_longitude));
+    delta = metaRef->general->center_longitude - 
+      metaTest->general->center_longitude;
+    asfPrintStatus("   Center longitude differs - Reference longitude: %.4lf, "
+		   "delta: %.5lf\n", metaRef->general->center_longitude, delta);
     errors = TRUE;
   }
   // Check slant range to first pixel
@@ -413,10 +388,142 @@ int main(int argc, char *argv[])
   // Report success
   if (!errors)
     asfPrintStatus("   No differences found!\n");
+}
 
-  // Clean up
-  meta_free(metaRef);
-  meta_free(metaTest);
+/* Start of main progam */
+int main(int argc, char *argv[])
+{
+  FILE *fpReference, *fpTest, *fpMeta;
+  char szMetaReference[255], szMetaTarget[255], szListMetaReference[255];
+  char szListMetaTarget[255], line[1024], *metaFile[255];
+  char **testFile, **testSensor, **testMode;
+  meta_parameters *metaRef, *metaTest;
+  int currArg=1;
+  int logFlag=FALSE, listFlag=FALSE, found=FALSE;
+  int ii, targets=0, *testOrbit, *testFrame;
+  
+  while (currArg < (argc-NUM_ARGS)) {
+    char *key = argv[currArg++];
+    if (strmatches(key,"-log","--log",NULL)) {
+      CHECK_ARG(1);
+      strcpy(logFile,GET_ARG(1));
+      fLog = FOPEN(logFile, "a");
+      logflag = TRUE;
+    }
+    else if (strmatches(key,"-list","--list",NULL)) {
+      listFlag = TRUE;
+    }
+    else if (strmatches(key,"-help","--help",NULL))
+      help_page();
+    else {
+      printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
+      usage(argv[0]);
+    }
+  }
+  if ((argc-currArg) < NUM_ARGS) {
+    printf("Insufficient arguments.\n");
+    usage(argv[0]);
+  }
+  
+  // Fetch required arguments
+  strcpy(szMetaReference,argv[argc - 2]);
+  strcpy(szMetaTarget,argv[argc - 1]);
+
+  if (listFlag) {
+    // Assign list file names
+    strcpy(szListMetaReference, szMetaReference);
+    strcpy(szListMetaTarget, szMetaTarget);
+
+    // Determine number of target metadata files
+    fpTest = FOPEN(szListMetaTarget, "r");
+    while (fgets(line, 1024, fpTest))
+      targets++;
+    FCLOSE(fpTest);
+
+    // Reading essential target information in arrays
+    testFile = (char **) MALLOC(sizeof(char)*targets);
+    testSensor = (char **) MALLOC(sizeof(char)*targets);
+    testMode = (char **) MALLOC(sizeof(char)*targets);
+    for (ii=0; ii<targets; ii++) {
+      testFile[ii] = MALLOC(sizeof(char)*512);
+      testSensor[ii] = MALLOC(sizeof(char)*10);
+      testMode[ii] = MALLOC(sizeof(char)*10);
+    }
+    testOrbit = (int *) MALLOC(sizeof(int)*targets);
+    testFrame = (int *) MALLOC(sizeof(int)*targets);
+
+    fpTest = FOPEN(szListMetaTarget, "r");
+    for (ii=0; ii<targets; ii++) {
+      fgets(line, 1024, fpTest);
+      metaTest = meta_read(line);
+      strcpy(testFile[ii], line);
+      strcpy(testSensor[ii], metaTest->general->sensor);
+      strcpy(testMode[ii], metaTest->general->mode);
+      testOrbit[ii] = metaTest->general->orbit;
+      testFrame[ii] = metaTest->general->frame;
+    }
+    FCLOSE(fpTest);
+
+    // Open reference list files and match them up with target files
+    fpReference = FOPEN(szListMetaReference, "r");
+    while (fgets(line, 1024, fpReference)) {
+      strcpy(szMetaReference, line);
+      metaRef = meta_read(szMetaReference);
+      for (ii=0; ii<targets; ii++) {
+	if (strcmp(metaRef->general->sensor, testSensor[ii]) == 0 &&
+	    strcmp(metaRef->general->mode, testMode[ii]) == 0 &&
+	    metaRef->general->orbit == testOrbit[ii] &&
+	    metaRef->general->frame == testFrame[ii]) {
+	  found = TRUE;
+	  break;
+	}
+      }
+      if (found) {
+	// Report on which files we are actually working
+	asfPrintStatus("\n   Reference: %s", szMetaReference);
+	asfPrintStatus("   Target: %s\n", testFile[ii]);
+    
+	// Read the metadata from target file and check things out
+	fpTest = FOPEN(szListMetaTarget, "r");
+	while (fgets(line, 1024, fpTest))
+	  if (strcmp(testFile[ii], line) == 0) {
+	    metaTest = meta_read(line);
+	    check_metadata(metaRef, metaTest);
+	    meta_free(metaRef);
+	    meta_free(metaTest);
+	  }
+      }
+      else {
+	asfPrintStatus("   Could not find a match for '%s'\n\n", line);
+	meta_free(metaRef);
+      }
+      FCLOSE(fpTest);
+    }
+    
+
+
+    // Clean up
+    FCLOSE(fpReference);
+    FCLOSE(fpTest);
+    meta_free(metaRef);
+    meta_free(metaTest);
+  }
+  else {
+    // Report on which files we are actually working
+    asfPrintStatus("\n   Reference: %s\n", szMetaReference);
+    asfPrintStatus("   Target: %s\n\n", szMetaTarget);
+    
+    // Read metadata
+    metaRef = meta_read(szMetaReference);
+    metaTest = meta_read(szMetaTarget);
+
+    // Check metadata
+    check_metadata(metaRef, metaTest);
+    
+    // Clean up
+    meta_free(metaRef);
+    meta_free(metaTest);
+  }
 
   return(0);
 }
