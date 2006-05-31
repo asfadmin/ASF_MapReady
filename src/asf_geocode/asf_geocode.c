@@ -22,7 +22,7 @@ trouble, and use edit_man_header. :)
 "asf_geocode"
 
 #define ASF_USAGE_STRING \
-"   \"ASF_NAME_STRING\" -p <projection name> <<projection parameters>>\n"\
+"   "ASF_NAME_STRING" -p <projection name> <<projection parameters>>\n"\
 "               [-force] [-resample-method <method>] [-height <height>]\n"\
 "               [-datum <datum>] [-pixel-size <pixel size>] [-log <file>]\n"\
 "               [-quiet] [-license] [-version] [-help]\n"\
