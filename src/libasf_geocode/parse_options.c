@@ -134,7 +134,7 @@ static int parse_val(char * inbuf, char * key, double * val)
 		}
 	}
 
-	free(buf);
+	g_free(buf);
 	return match;
 }
 
