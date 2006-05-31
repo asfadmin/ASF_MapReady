@@ -134,12 +134,13 @@ resample_impl(char *infile, char *outfile,
     fpin=fopenImage(infile,"rb");
     fpout=fopenImage(outfile,"wb");
 
+    metaOut->general->line_count = onl;
+    metaOut->general->sample_count = onp;
+    metaOut->general->data_type = REAL32;
+
     if (update_meta)
     {
       /* Write output metadata file */ 
-      metaOut->general->line_count = onl;
-      metaOut->general->sample_count = onp;
-      metaOut->general->data_type = REAL32;
       metaOut->general->x_pixel_size = xpixsiz;
       metaOut->general->y_pixel_size = ypixsiz;
       metaOut->sar->range_time_per_pixel /= xscalfact;
