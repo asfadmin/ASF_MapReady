@@ -13,22 +13,9 @@
 static char * appendSuffix(const char *inFile, const char *suffix)
 {
   char *suffix_pid = MALLOC(sizeof(char)*(strlen(suffix)+25));
-  sprintf(suffix_pid, "%s_tctmp%d", suffix, (int)getpid());
+  sprintf(suffix_pid, "%s_tmp%d", suffix, (int)getpid());
 
-  char *ret = MALLOC(sizeof(char)*(strlen(inFile)+strlen(suffix_pid)+5));
-  strcpy(ret, inFile);
-  char *p = findExt(ret);
-  if (p && p != ret) {
-    char *ext;
-    *p++ = '\0';
-    ext = strdup(p);
-    strcat(ret, suffix_pid);
-    strcat(ret, ".");
-    strcat(ret, ext);
-    free(ext);
-  } else {
-    strcat(ret, suffix_pid);
-  }
+  char * ret = appendToBasename(inFile, suffix_pid);
 
   free(suffix_pid);
   return ret;
