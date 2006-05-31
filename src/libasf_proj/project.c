@@ -602,11 +602,10 @@ static char * ps_projection_desc(project_parameters_t * pps)
   /* Establish description of output projection. */
   sprintf(ps_wgs84_projection_description,
 	  "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f "
-	  "+x_0=%f +y_0=%f +k_0=%f +datum=%s",
+      "+k_0=%f +datum=%s",
 	  pps->ps.is_north_pole ? "90" : "-90",
 	  pps->ps.slat * RAD_TO_DEG,
 	  pps->ps.slon * RAD_TO_DEG,
-	  pps->ps.false_easting, pps->ps.false_northing,
 	  1.0 /* pps->ps.scale_factor */,
 	  datum(pps));
 
@@ -659,11 +658,10 @@ static char * lamaz_projection_desc(project_parameters_t * pps)
 
   /* Establish description of output projection. */
   sprintf(lamaz_projection_description,
-	  "+proj=laea +lat_0=%f +lon_0=%f +x_0=%f +y_0=%f +datum=%s",
+	  "+proj=laea +lat_0=%f +lon_0=%f "
+      "+datum=%s",
 	  pps->lamaz.center_lat * RAD_TO_DEG,
 	  pps->lamaz.center_lon * RAD_TO_DEG,
-	  pps->lamaz.false_easting,
-	  pps->lamaz.false_northing,
 	  datum(pps));
 
   return lamaz_projection_description;
@@ -716,13 +714,11 @@ static char * lamcc_projection_desc(project_parameters_t * pps)
   /* Establish description of output projection. */
   sprintf(lamcc_projection_description,
 	  "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f "
-	  "+x_0=%f +y_0=%f +datum=%s",
+      "+datum=%s",
 	  pps->lamcc.plat1 * RAD_TO_DEG,
 	  pps->lamcc.plat2 * RAD_TO_DEG,
 	  pps->lamcc.lat0 * RAD_TO_DEG,
 	  pps->lamcc.lon0 * RAD_TO_DEG,
-	  pps->lamcc.false_easting,
-	  pps->lamcc.false_northing,
 	  datum(pps));
 
   return lamcc_projection_description;
@@ -775,13 +771,11 @@ static char * albers_projection_desc(project_parameters_t * pps)
   /* Establish description of output projection. */
   sprintf(albers_projection_description,
 	  "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f "
-	  "+x_0=%f +y_0=%f +datum=%s",
+      "+datum=%s",
 	  pps->albers.std_parallel1 * RAD_TO_DEG,
 	  pps->albers.std_parallel2 * RAD_TO_DEG,
 	  pps->albers.orig_latitude * RAD_TO_DEG,
 	  pps->albers.center_meridian * RAD_TO_DEG,
-	  pps->albers.false_easting,
-	  pps->albers.false_northing,
 	  datum(pps));
 
   return albers_projection_description;
