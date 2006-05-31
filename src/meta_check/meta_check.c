@@ -219,14 +219,14 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
   }
   // Check earth radius
   if (!FLOAT_EQUIVALENT(metaRef->sar->earth_radius, metaTest->sar->earth_radius)) {
-    asfPrintStatus("   Earth radius differs - Delta: %.4lf\n",
+    asfPrintStatus("   Earth radius differs - Delta: %.4lf m\n",
 		   fabs(metaRef->sar->earth_radius - metaTest->sar->earth_radius));
     errors = TRUE;
   }
   // Check satellite height
   if (!FLOAT_EQUIVALENT(metaRef->sar->satellite_height, 
 			metaTest->sar->satellite_height)) {
-    asfPrintStatus("   Satellite height differs - Delta: %.4lf\n",
+    asfPrintStatus("   Satellite height differs - Delta: %.4lf m\n",
 		   fabs(metaRef->sar->satellite_height -
 			metaTest->sar->satellite_height));
     errors = TRUE;
@@ -234,42 +234,44 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
   // Check Doppler values
   if (!FLOAT_EQUIVALENT(metaRef->sar->range_doppler_coefficients[0],
 			metaTest->sar->range_doppler_coefficients[0])) {
-    asfPrintStatus("   Range Doppler centroid differs - Delta: %.4lf\n",
+    asfPrintStatus("   Range Doppler centroid differs - Delta: %.4lf Hz\n",
 		   fabs(metaRef->sar->range_doppler_coefficients[0] -
 			metaTest->sar->range_doppler_coefficients[0]));
     errors = TRUE;
   }
   if (!FLOAT_EQUIVALENT(metaRef->sar->range_doppler_coefficients[1],
 			metaTest->sar->range_doppler_coefficients[1])) {
-    asfPrintStatus("   Range Doppler per pixel differs - Delta: %g\n",
+    asfPrintStatus("   Range Doppler per pixel differs - Delta: %g Hz/pixel\n",
 		   fabs(metaRef->sar->range_doppler_coefficients[1] -
 			metaTest->sar->range_doppler_coefficients[1]));
     errors = TRUE;
   }
   if (!FLOAT_EQUIVALENT(metaRef->sar->range_doppler_coefficients[2],
 			metaTest->sar->range_doppler_coefficients[2])) {
-    asfPrintStatus("   Range Doppler per pixel squared differs - Delta: %g\n",
+    asfPrintStatus("   Range Doppler per pixel squared differs - Delta: %g Hz/"
+		   "pixel^2\n",
 		   fabs(metaRef->sar->range_doppler_coefficients[2] -
 			metaTest->sar->range_doppler_coefficients[2]));
     errors = TRUE;
   }
   if (!FLOAT_EQUIVALENT(metaRef->sar->azimuth_doppler_coefficients[0],
 			metaTest->sar->azimuth_doppler_coefficients[0])) {
-    asfPrintStatus("   Azimuth Doppler centroid differs - Delta: %.4lf\n",
+    asfPrintStatus("   Azimuth Doppler centroid differs - Delta: %.4lf Hz\n",
 		   fabs(metaRef->sar->azimuth_doppler_coefficients[0] -
 			metaTest->sar->azimuth_doppler_coefficients[0]));
     errors = TRUE;
   }
   if (!FLOAT_EQUIVALENT(metaRef->sar->azimuth_doppler_coefficients[1],
 			metaTest->sar->azimuth_doppler_coefficients[1])) {
-    asfPrintStatus("   Azimuth Doppler per pixel differs - Delta: %g\n",
+    asfPrintStatus("   Azimuth Doppler per pixel differs - Delta: %g Hz/pixel\n",
 		   fabs(metaRef->sar->azimuth_doppler_coefficients[1] -
 			metaTest->sar->azimuth_doppler_coefficients[1]));
     errors = TRUE;
   }
   if (!FLOAT_EQUIVALENT(metaRef->sar->azimuth_doppler_coefficients[2],
 			metaTest->sar->azimuth_doppler_coefficients[2])) {
-    asfPrintStatus("   Azimuth Doppler per pixel squared differs - Delta: %g\n",
+    asfPrintStatus("   Azimuth Doppler per pixel squared differs - Delta: %g"
+		   "Hz/pixel^2\n",
 		   fabs(metaRef->sar->azimuth_doppler_coefficients[2] -
 			metaTest->sar->azimuth_doppler_coefficients[2]));
     errors = TRUE;
@@ -279,7 +281,8 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
 			metaTest->general->center_latitude)) {
     delta = metaRef->general->center_latitude - metaTest->general->center_latitude;
     asfPrintStatus("   Center latitude differs - Reference latitude: %.4lf, "
-		   "delta: %.5lf\n", metaRef->general->center_latitude, delta);
+		   "delta: %.5lf degrees\n", metaRef->general->center_latitude, 
+		   delta);
 
     errors = TRUE;
   }
@@ -288,13 +291,14 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
     delta = metaRef->general->center_longitude - 
       metaTest->general->center_longitude;
     asfPrintStatus("   Center longitude differs - Reference longitude: %.4lf, "
-		   "delta: %.5lf\n", metaRef->general->center_longitude, delta);
+		   "delta: %.5lf degrees\n", metaRef->general->center_longitude, 
+		   delta);
     errors = TRUE;
   }
   // Check slant range to first pixel
   if (!FLOAT_EQUIVALENT(metaRef->sar->slant_range_first_pixel,
 			metaTest->sar->slant_range_first_pixel)) {
-    asfPrintStatus("   Slant range to first pixel differs - Delta: %.4lf\n",
+    asfPrintStatus("   Slant range to first pixel differs - Delta: %.4lf m\n",
 		   fabs(metaRef->sar->slant_range_first_pixel -
 			metaTest->sar->slant_range_first_pixel));
     errors = TRUE;
@@ -315,8 +319,8 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
   if (!FLOAT_EQUIVALENT(metaRef->state_vectors->second, 
 			metaTest->state_vectors->second)) {
     asfPrintStatus("   Seconds of day for first state vector differs - "
-		   "Delta: %.6lf\n", fabs(metaRef->state_vectors->second -
-					  metaTest->state_vectors->second));
+		   "Delta: %.6lf s\n", fabs(metaRef->state_vectors->second -
+					    metaTest->state_vectors->second));
     errors = TRUE;
   }
   if (metaRef->state_vectors->vector_count != 
@@ -330,7 +334,7 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
   for (ii=0; ii<vectors; ii++) {
     if (!FLOAT_EQUIVALENT(metaRef->state_vectors->vecs[ii].time,
 			  metaTest->state_vectors->vecs[ii].time)) {
-      asfPrintStatus("   Time for state vector %i differs - Delta: %.4lf\n", ii+1,
+      asfPrintStatus("   Time for state vector %i differs - Delta: %.4lf s\n", ii+1,
 		     fabs(metaRef->state_vectors->vecs[ii].time -
 			  metaTest->state_vectors->vecs[ii].time));
       errors = TRUE;
@@ -338,7 +342,7 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
     if (!FLOAT_EQUIVALENT(metaRef->state_vectors->vecs[ii].vec.pos.x,
 			  metaTest->state_vectors->vecs[ii].vec.pos.x)) {
       asfPrintStatus("   Position in x for state vector %i differs - Delta: "
-		     "%.4lf\n", ii+1, 
+		     "%.4lf m\n", ii+1, 
 		     fabs(metaRef->state_vectors->vecs[ii].vec.pos.x -
 			  metaTest->state_vectors->vecs[ii].vec.pos.x));
       errors = TRUE;
@@ -346,7 +350,7 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
     if (!FLOAT_EQUIVALENT(metaRef->state_vectors->vecs[ii].vec.pos.y,
 			  metaTest->state_vectors->vecs[ii].vec.pos.y)) {
       asfPrintStatus("   Position in y for state vector %i differs - Delta: "
-		     "%.4lf\n", ii+1, 
+		     "%.4lf m\n", ii+1, 
 		     fabs(metaRef->state_vectors->vecs[ii].vec.pos.y -
 			  metaTest->state_vectors->vecs[ii].vec.pos.y));
       errors = TRUE;
@@ -354,7 +358,7 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
     if (!FLOAT_EQUIVALENT(metaRef->state_vectors->vecs[ii].vec.pos.z,
 			  metaTest->state_vectors->vecs[ii].vec.pos.z)) {
       asfPrintStatus("   Position in z for state vector %i differs - Delta: "
-		     "%.4lf\n", ii+1, 
+		     "%.4lf m\n", ii+1, 
 		     fabs(metaRef->state_vectors->vecs[ii].vec.pos.z -
 			  metaTest->state_vectors->vecs[ii].vec.pos.z));
       errors = TRUE;
@@ -362,7 +366,7 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
     if (!FLOAT_EQUIVALENT(metaRef->state_vectors->vecs[ii].vec.vel.x,
 			  metaTest->state_vectors->vecs[ii].vec.vel.x)) {
       asfPrintStatus("   Velocity in x for state vector %i differs - Delta: "
-		     "%.4lf\n", ii+1, 
+		     "%.4lf m/s\n", ii+1, 
 		     fabs(metaRef->state_vectors->vecs[ii].vec.vel.x -
 			  metaTest->state_vectors->vecs[ii].vec.vel.x));
       errors = TRUE;
@@ -370,7 +374,7 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
     if (!FLOAT_EQUIVALENT(metaRef->state_vectors->vecs[ii].vec.vel.y,
 			  metaTest->state_vectors->vecs[ii].vec.vel.y)) {
       asfPrintStatus("   Velocity in y for state vector %i differs - Delta: "
-		     "%.4lf\n", ii+1, 
+		     "%.4lf m/s\n", ii+1, 
 		     fabs(metaRef->state_vectors->vecs[ii].vec.vel.y -
 			  metaTest->state_vectors->vecs[ii].vec.vel.y));
       errors = TRUE;
@@ -378,7 +382,7 @@ void check_metadata(meta_parameters *metaRef, meta_parameters *metaTest)
     if (!FLOAT_EQUIVALENT(metaRef->state_vectors->vecs[ii].vec.vel.z,
 			  metaTest->state_vectors->vecs[ii].vec.vel.z)) {
       asfPrintStatus("   Velocity in z for state vector %i differs - Delta: "
-		     "%.4lf\n", ii+1, 
+		     "%.4lf m/s\n", ii+1, 
 		     fabs(metaRef->state_vectors->vecs[ii].vec.vel.z -
 			  metaTest->state_vectors->vecs[ii].vec.vel.z));
       errors = TRUE;
