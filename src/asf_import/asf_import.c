@@ -192,82 +192,6 @@ static void print_license(int license_id)
   exit(EXIT_SUCCESS);
 }
 
-/*
-These next few functions are used to fix scaling errors in the data that
-result from the PP using an incorrect swath velocity during some of
-the calculations.
-
-Here is a summary of the fixes as described by Orion Lawlor in an e-mail
-on 3/14/06:
-
-xpix_ypix prints out these values for an ARDoP image.
-> > azimuth pixel size at scene center: 3.9648920 meters   (xpix_ypix)
-> > ASF geolocate azimuth velocity: 6660.144 m/s   (xpix_ypix)
-> > PP swath velocity: 6626.552 m/s = ...
-The velocities should be about the same for the corresponding
-L1 image.
-
-The PP L1 pixel spacing is supposed to always be 12.5m.
-But because the PP miscalulates the swath velocity, L1 images actually
-have a pixel spacing of:
-PP spacing * real velocity / PP velocity = real spacing
-12.5 * 6660.144/6626.552 = 12.5633662876 m
-
-An ARDOP image's pixel spacing is properly computed by xpix_ypix (and
-not in the "yPix" field of the .meta file!) and multilooked, so the
-ARDOP image pixel spacing is really:
-3.9648920 m/pix * 5-pixel ARDOP multilook = 19.8244600 m/pix
-
-The expected L1-to-multilooked-ARDOP image scale factor is just the
-ratio of the two image's pixel spacings:
-19.8244600 m/pix / 12.5633662876 m/pix = 1.5779576545
-*/
-float get_default_azimuth_scale(const char *outBaseName)
-{
-    char outMetaName[256];
-    sprintf(outMetaName, "%s%s", outBaseName, TOOLS_META_EXT);
-
-    meta_parameters *omd = meta_read(outMetaName);
-
-    float pp_velocity, corrected_velocity;
-    xpyp_getVelocities(omd, &pp_velocity, &corrected_velocity);
-
-    asfPrintStatus("       PP Velocity: %g\n", pp_velocity);
-    asfPrintStatus("Corrected Velocity: %g\n", corrected_velocity);
-
-    float qua, az_pixsiz;
-    xpyp_getPixSizes(omd, &qua, &az_pixsiz);
-
-    asfPrintStatus("      y pixel size: %g (xpix_ypix)\n", az_pixsiz);
-    asfPrintStatus("      y pixel size: %g (metadata)\n",
-        omd->general->y_pixel_size);
-
-    float real_spacing =
-        omd->general->y_pixel_size * corrected_velocity / pp_velocity;
-
-    float scale = az_pixsiz / real_spacing;
-
-    asfPrintStatus("             Scale: %g\n\n", scale);
-    meta_free(omd);
-
-    return scale;
-}
-
-float get_default_ypix(const char *outBaseName)
-{
-    char outMetaName[256];
-    sprintf(outMetaName, "%s%s", outBaseName, TOOLS_META_EXT);
-
-    meta_parameters *omd = meta_read(outMetaName);
-
-    float qua, az_pixsiz;
-    xpyp_getPixSizes(omd, &qua, &az_pixsiz);
-    meta_free(omd);
-
-    return az_pixsiz;
-}
-
-
 /******************************************************************************
 * Lets rock 'n roll!
 *****************************************************************************/
@@ -340,12 +264,10 @@ int main(int argc, char *argv[])
     if (do_resample)
     {
         range_scale = flags[f_RANGE_SCALE] == FLAG_NOT_SET ? 1.0 :
-        getDoubleOptionArgWithDefault(argv[flags[f_RANGE_SCALE]],
-            DEFAULT_RANGE_SCALE);
+	  getDoubleOptionArgWithDefault(argv[flags[f_RANGE_SCALE]], -1);
 
         azimuth_scale = flags[f_AZIMUTH_SCALE] == FLAG_NOT_SET ? 1.0 :
-        getDoubleOptionArgWithDefault(argv[flags[f_AZIMUTH_SCALE]],
-            get_default_azimuth_scale(unscaledBaseName));
+	  getDoubleOptionArgWithDefault(argv[flags[f_AZIMUTH_SCALE]], -1);
     }
 
     do_metadata_fix = flags[f_FIX_META_YPIX] != FLAG_NOT_SET;
@@ -353,8 +275,7 @@ int main(int argc, char *argv[])
     if (do_metadata_fix)
     {
         correct_y_pixel_size =
-            getDoubleOptionArgWithDefault(argv[flags[f_FIX_META_YPIX]],
-            get_default_ypix(outBaseName));
+	  getDoubleOptionArgWithDefault(argv[flags[f_FIX_META_YPIX]], -1);
     }
 
     { /*Check for mutually exclusive options: we can only have one of these*/
