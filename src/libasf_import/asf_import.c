@@ -64,6 +64,51 @@ void fix_ypix(const char *outBaseName, double correct_y_pixel_size)
     meta_free(omd);
 }
 
+float get_default_azimuth_scale(const char *outBaseName)
+{
+    char outMetaName[256];
+    sprintf(outMetaName, "%s%s", outBaseName, TOOLS_META_EXT);
+
+    meta_parameters *omd = meta_read(outMetaName);
+
+    float pp_velocity, corrected_velocity;
+    xpyp_getVelocities(omd, &pp_velocity, &corrected_velocity);
+
+    asfPrintStatus("       PP Velocity: %g\n", pp_velocity);
+    asfPrintStatus("Corrected Velocity: %g\n", corrected_velocity);
+
+    float qua, az_pixsiz;
+    xpyp_getPixSizes(omd, &qua, &az_pixsiz);
+
+    asfPrintStatus("      y pixel size: %g (xpix_ypix)\n", az_pixsiz);
+    asfPrintStatus("      y pixel size: %g (metadata)\n",
+        omd->general->y_pixel_size);
+
+    float real_spacing =
+        omd->general->y_pixel_size * corrected_velocity / pp_velocity;
+
+    float scale = az_pixsiz / real_spacing;
+
+    asfPrintStatus("             Scale: %g\n\n", scale);
+    meta_free(omd);
+
+    return scale;
+}
+
+float get_default_ypix(const char *outBaseName)
+{
+    char outMetaName[256];
+    sprintf(outMetaName, "%s%s", outBaseName, TOOLS_META_EXT);
+
+    meta_parameters *omd = meta_read(outMetaName);
+
+    float qua, az_pixsiz;
+    xpyp_getPixSizes(omd, &qua, &az_pixsiz);
+    meta_free(omd);
+
+    return az_pixsiz;
+}
+
 /******************************************************************************
 * Lets rock 'n roll!
 *****************************************************************************/
@@ -165,16 +210,30 @@ int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type, char *lutName,
     /* resample, if necessary */
     if (do_resample)
     {
-        asfPrintStatus("Resampling with scale factors: %g range, %g azimuth.\n",
+        if (range_scale < 0)
+	    range_scale = DEFAULT_RANGE_SCALE;
+
+        if (azimuth_scale < 0)
+	    azimuth_scale = get_default_azimuth_scale(unscaledBaseName);
+
+        asfPrintStatus("Resampling with scale factors: "
+		       "%lf range, %lf azimuth.\n",
             range_scale, azimuth_scale);
 
         resample_nometa(unscaledBaseName, outBaseName,
 			range_scale, azimuth_scale);
+
+	asfPrintStatus("Done.\n");
     }
 
     /* metadata pixel size fix, if necessary */
     if (do_metadata_fix)
+    {
+        if (correct_y_pixel_size < 0)
+	    correct_y_pixel_size = get_default_ypix(outBaseName);
+
         fix_ypix(outBaseName, correct_y_pixel_size);
+    }
 
     /* If the user asked for sprocket layers, create sprocket data layers
     now that we've got asf tools format data */
