@@ -91,11 +91,11 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
   int   np, nl;         /* in number of pixels,lines      */
   int   onp, onl;       /* out number of pixels,lines     */
   int   ii;
-  float gr2sr[MAX_IMG_SIZE];    /* GR 2 SR resampling vector for Range  */
-  int   lower[MAX_IMG_SIZE];    /* floor of gr2sr vector                */
-  int   upper[MAX_IMG_SIZE];    /* ceiling of gr2sr vector              */
-  float ufrac[MAX_IMG_SIZE];    /* Upper fraction from gr2sr vector     */
-  float lfrac[MAX_IMG_SIZE];    /* Lower fraction from gr2sr vector     */
+  float *gr2sr;    /* GR 2 SR resampling vector for Range  */
+  int   *lower;    /* floor of gr2sr vector                */
+  int   *upper;    /* ceiling of gr2sr vector              */
+  float *ufrac;    /* Upper fraction from gr2sr vector     */
+  float *lfrac;    /* Lower fraction from gr2sr vector     */
 
   float *inBuf;          /* Input buffer                  */
   float *outBuf;         /* Output buffer                 */
@@ -104,6 +104,12 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
   char  *iimgfile;       /* .img input file               */
   char  *oimgfile;       /* .img output file              */
  
+  gr2sr = (float *) MALLOC(sizeof(float) * MAX_IMG_SIZE);
+  upper = (int *) MALLOC(sizeof(int) * MAX_IMG_SIZE);
+  lower = (int *) MALLOC(sizeof(int) * MAX_IMG_SIZE);
+  ufrac = (float *) MALLOC(sizeof(float) * MAX_IMG_SIZE);
+  lfrac = (float *) MALLOC(sizeof(float) * MAX_IMG_SIZE);
+
   inMeta = meta_read(infile);
 
   if (srPixSize < 0) {
@@ -145,7 +151,8 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
      if (upper[ii]>=np) upper[ii]=np-1; /* range clip */
   }
   
-  outMeta = meta_copy(inMeta);
+  //outMeta = meta_copy(inMeta);
+  outMeta = meta_read(infile);
   outMeta->sar->slant_shift += ((inMeta->general->start_sample)
                                 * inMeta->general->x_pixel_size);
   outMeta->general->start_sample = 0.0;
@@ -173,6 +180,12 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
   meta_write(outMeta, outfile);
   meta_free(inMeta);
   meta_free(outMeta);
+
+  FREE(ufrac);
+  FREE(lfrac);
+  FREE(gr2sr);
+  FREE(upper);
+  FREE(lower);
 
   FREE(inBuf);
   FREE(outBuf);
