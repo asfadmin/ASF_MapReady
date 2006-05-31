@@ -34,7 +34,7 @@ float *createSpeckle(void)
 /* The function was implemented using the documentation of the LAS tool picshade */
 void shaded_relief(char *inFile, char *outFile, int addSpeckle)
 {
-  meta_parameters *meta;
+  meta_parameters *metaIn, *metaOut;
   FILE *fpIn, *fpOut;
   int ii, kk, line_count, sample_count;
   float *dem, *relief;
@@ -53,11 +53,14 @@ void shaded_relief(char *inFile, char *outFile, int addSpeckle)
     speckle=createSpeckle();
   
   // Read and write metadata
-  meta = meta_read(inFile);
-  line_count = meta->general->line_count;
-  sample_count = meta->general->sample_count;
-  pixel_size = meta->general->y_pixel_size;
-  meta_write(meta, outFile);
+  metaIn = meta_read(inFile);
+  metaOut = meta_read(inFile);
+  line_count = metaIn->general->line_count;
+  sample_count = metaIn->general->sample_count;
+  pixel_size = metaIn->general->y_pixel_size;
+
+  metaOut->general->data_type = REAL32;
+  meta_write(metaOut, outFile);
 
   // Allocate memory for DEM and shaded relief
   dem = (float *) MALLOC(sizeof(double)*3*sample_count);
@@ -74,14 +77,14 @@ void shaded_relief(char *inFile, char *outFile, int addSpeckle)
   // Take care of first line and last line of the shaded relief.
   for (ii=0; ii<sample_count; ii++)
     relief[ii] = 0.0;
-  put_float_line(fpOut, meta, 0, relief);
-  put_float_line(fpOut, meta, line_count-1, relief);
+  put_float_line(fpOut, metaOut, 0, relief);
+  put_float_line(fpOut, metaOut, line_count-1, relief);
 
   // Go through DEM line by line
   for (ii=1; ii<line_count-2; ii++) {
     
     // Read in three lines of DEM at a time
-    get_float_lines(fpIn, meta, ii-1, 3, dem);
+    get_float_lines(fpIn, metaIn, ii-1, 3, dem);
     
     for (kk=1; kk<sample_count-1; kk++) {
       /* Calculate gradients in x and y
@@ -125,7 +128,7 @@ void shaded_relief(char *inFile, char *outFile, int addSpeckle)
     }
 
     // Write out shaded relief
-    put_float_line(fpOut, meta, ii, relief);
+    put_float_line(fpOut, metaOut, ii, relief);
   }
 
   FCLOSE(fpIn);
