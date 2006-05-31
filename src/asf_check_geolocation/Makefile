@@ -4,22 +4,21 @@
 
 include ../../make_support/system_rules
 
-OBJS  = asf_check_geolocation.o \
-	create_dem_grid.o \
-	fit_plane.o \
-	fit_poly.o \
-	reskew_dem.o
+CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) -Wall
 
-LIBS = $(LIBDIR)/asf.a \
-	$(LIBDIR)/asf_meta.a \
+OBJS  = asf_check_geolocation.o
+
+LIBS = \
 	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/asf.a \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
+	$(GLIB_LIBS) \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/libasf_reporting.a
-
-CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 all: asf_check_geolocation
 	-rm *.o
