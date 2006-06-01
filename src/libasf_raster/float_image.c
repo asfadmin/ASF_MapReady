@@ -519,12 +519,18 @@ float_image_new_from_memory (ssize_t size_x, ssize_t size_y, float *buffer)
 {
   g_assert (size_x > 0 && size_y > 0);
 
-  g_assert_not_reached ();      // Stubbed out for now.
-  // Compiler reassurance.
-  size_x = size_x;
-  size_y = size_y;
-  buffer = buffer;
-  return NULL;
+  // FIXME: this is an inefficient implementation.
+
+  FloatImage *self = float_image_new (size_x, size_y);
+
+  ssize_t ii, jj;
+  for ( ii = 0 ; ii < size_x ; ii++ ) {
+    for ( jj = 0 ; jj < size_y ; jj++ ) {
+      float_image_set_pixel (self, ii, jj, buffer[jj * size_x + ii]);
+    }
+  }
+
+  return self;
 }
 
 FloatImage *
@@ -2091,7 +2097,7 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
       write_count = fwrite (buffer, sizeof (float), self->tile_area, fp);
       g_assert (write_count == self->tile_area);
     }
-    return_code == fseeko (self->tile_file, tmp, SEEK_SET);
+    return_code = fseeko (self->tile_file, tmp, SEEK_SET);
     g_assert (return_code == 0);
     g_free (buffer);
   }
