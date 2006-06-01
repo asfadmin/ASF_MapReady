@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB ASF_LIB_JPEG ASF_LIB_TIFF LIBTIFF_LOCATION ASF_LIB_GEOTIFF ASF_LIB_TCL_TK GTK_CFLAGS GTK_LIBS LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI SHAREDIR BINDIR LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PACKAGE VERSION CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LEX LEXLIB LEX_OUTPUT_ROOT YACC sys CPP EGREP ASF_LIB_GSL ASF_LIB_PROJ PKG_CONFIG GLIB_CFLAGS GLIB_LIBS ASF_GLIB ASF_LIB_JPEG ASF_LIB_TIFF LIBTIFF_LOCATION ASF_LIB_GEOTIFF ASF_LIB_SHAPELIB ASF_LIB_TCL_TK GTK_CFLAGS GTK_LIBS LIBGLADE_CFLAGS LIBGLADE_LIBS ASF_GUI SHAREDIR BINDIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1319,6 +1319,7 @@ have_jpeg="no"
 have_tiff="no"
 have_geotiff="no"
 have_tcl_tk="no"
+have_shp="no"
 try_gtk="yes"
 have_gtk="no"
 
@@ -3888,7 +3889,7 @@ fi
 
 if test "$have_tiff" = "no" ; then
    ASF_LIB_TIFF="${ext_lib_src_dir}/libtiff"
-   TIFF_LIBS="\$(LIBDIR)/libtiff.a -lz"
+   TIFF_LIBS="\$(LIBDIR)/libtiff.a"
    LIBTIFF_LOCATION="-with-libtiff=../../.."
 else
    TIFF_LIBS="-ltiff"
@@ -3967,6 +3968,79 @@ if test "$have_geotiff" = "no" ; then
    GEOTIFF_LIBS="\$(LIBDIR)/libgeotiff.a"
 else
    GEOTIFF_LIBS="-lgeotiff"
+fi
+
+
+#### libshp check ####
+echo "$as_me:$LINENO: checking for main in -lshp" >&5
+echo $ECHO_N "checking for main in -lshp... $ECHO_C" >&6
+if test "${ac_cv_lib_shp_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lshp  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_shp_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_shp_main=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_shp_main" >&5
+echo "${ECHO_T}$ac_cv_lib_shp_main" >&6
+if test $ac_cv_lib_shp_main = yes; then
+  have_shp="yes"
+else
+  have_shp="no"
+fi
+
+if test "$have_shp" = "no" ; then
+   ASF_LIB_SHAPELIB="${ext_lib_src_dir}/shapelib"
+   SHAPELIB_LIBS="\$(LIBDIR)/libshp.a"
+else
+   SHAPELIB_LIBS="-lshp"
 fi
 
 
@@ -4364,7 +4438,7 @@ cat <<'EOF' >>system_rules
 ASF_INCLUDE_DIR = ../../include
 INCLUDE = -I. -I$(ASF_INCLUDE_DIR)
 # Flags to support large (> 2GB) files.  These must precede all include options.
-LARGEFILE_FLAGS = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+LARGEFILE_FLAGS = -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 FLAGS   = -D_ISOC99_SOURCE $(LARGEFILE_FLAGS) $(INCLUDE) $(OPTFLAG) -D$(SYS) $(ENDIAN_FLAGS)
 # If compiler is gcc we're going to add some debugging flags/libraries
 #   if <make 'DEBUG_BUILD=1'>  apply debugging tags and show all compiler warnings
@@ -4411,6 +4485,9 @@ TIFF_CFLAGS = $TIFF_CFLAGS
 
 GEOTIFF_LIBS = $GEOTIFF_LIBS
 GEOTIFF_CFLAGS = $GEOTIFF_CFLAGS
+
+SHAPELIB_LIBS = $SHAPELIB_LIBS
+SHAPELIB_CFLAGS = $SHAPELIB_CFLAGS
 
 TCL_TK_LIBS = $TCL_TK_LIBS
 TCL_TK_CFLAGS = $TCL_TK_CFLAGS
@@ -5128,6 +5205,7 @@ s,@ASF_LIB_JPEG@,$ASF_LIB_JPEG,;t t
 s,@ASF_LIB_TIFF@,$ASF_LIB_TIFF,;t t
 s,@LIBTIFF_LOCATION@,$LIBTIFF_LOCATION,;t t
 s,@ASF_LIB_GEOTIFF@,$ASF_LIB_GEOTIFF,;t t
+s,@ASF_LIB_SHAPELIB@,$ASF_LIB_SHAPELIB,;t t
 s,@ASF_LIB_TCL_TK@,$ASF_LIB_TCL_TK,;t t
 s,@GTK_CFLAGS@,$GTK_CFLAGS,;t t
 s,@GTK_LIBS@,$GTK_LIBS,;t t

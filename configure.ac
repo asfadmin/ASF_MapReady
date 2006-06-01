@@ -25,6 +25,7 @@ have_jpeg="no"
 have_tiff="no"
 have_geotiff="no"
 have_tcl_tk="no"
+have_shp="no"
 try_gtk="yes"
 have_gtk="no"
 
@@ -162,6 +163,16 @@ else
 fi
 AC_SUBST(ASF_LIB_GEOTIFF)
 
+#### libshp check ####
+AC_CHECK_LIB(shp,main,have_shp="yes",have_shp="no")
+if test "$have_shp" = "no" ; then
+   ASF_LIB_SHAPELIB="${ext_lib_src_dir}/shapelib"
+   SHAPELIB_LIBS="\$(LIBDIR)/libshp.a"
+else
+   SHAPELIB_LIBS="-lshp"
+fi
+AC_SUBST(ASF_LIB_SHAPELIB)
+
 #### TCL/TK check ####
 AC_CHECK_LIB(tcl8.1,main)
 AC_CHECK_LIB(tk8.1,main,have_tcl_tk="yes",have_tcl_tk="no")
@@ -283,6 +294,9 @@ TIFF_CFLAGS = $TIFF_CFLAGS
 
 GEOTIFF_LIBS = $GEOTIFF_LIBS
 GEOTIFF_CFLAGS = $GEOTIFF_CFLAGS
+
+SHAPELIB_LIBS = $SHAPELIB_LIBS
+SHAPELIB_CFLAGS = $SHAPELIB_CFLAGS
 
 TCL_TK_LIBS = $TCL_TK_LIBS
 TCL_TK_CFLAGS = $TCL_TK_CFLAGS
