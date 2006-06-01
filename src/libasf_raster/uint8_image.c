@@ -1736,7 +1736,7 @@ uint8_image_freeze (UInt8Image *self, FILE *file_pointer)
       write_count = fwrite (buffer, sizeof (uint8_t), self->tile_area, fp);
       g_assert (write_count == self->tile_area);
     }
-    return_code == fseeko (self->tile_file, tmp, SEEK_SET);
+    return_code = fseeko (self->tile_file, tmp, SEEK_SET);
     g_assert (return_code == 0);
     g_free (buffer);
   }
