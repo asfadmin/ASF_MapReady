@@ -1178,9 +1178,12 @@ settings_to_config_file(const Settings *s,
     if (s->export_is_checked) {
       fprintf(cf, "[Export]\n");
       fprintf(cf, "format = %s\n", settings_get_output_format_string(s));
-      if (s->output_bytes)
-	fprintf(cf, "byte conversion = %s\n",
-		scaling_method_string(s->scaling_method));
+      if (s->output_bytes) {
+          fprintf(cf, "byte conversion = %s\n", 
+            scaling_method_string(s->scaling_method));
+      } else {
+          fprintf(cf, "byte conversion = none\n");
+      }
       fprintf(cf, "\n");
       fprintf(cf, "\n");
     }
