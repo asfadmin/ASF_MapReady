@@ -41,6 +41,7 @@ typedef struct {
   float **tile_addresses;	// Addresss of individual tiles in the cache.
   GQueue *tile_queue;		// Queue of tile offsets kept in load order.
   FILE *tile_file;              // File with tiles stored contiguously.
+  int reference_count;		// For optional reference counting.
 } FloatImage;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -442,11 +443,19 @@ float_image_set_cache_size (FloatImage *self, size_t size);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Freeing Instances
+// Reference Counting or Freeing Instances
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Destroy self.
+// Increment reference count.  Return pointer to self for convenience.
+FloatImage *
+float_image_ref (FloatImage *self);
+
+// Decrement reference count, freeing instance if count falls to 0.
+void
+float_image_unref (FloatImage *self);
+
+// Destroy self, regardless of reference count.
 void
 float_image_free (FloatImage *self);
 

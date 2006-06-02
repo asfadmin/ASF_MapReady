@@ -182,6 +182,9 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
     // used.
     self->tile_file = NULL;
 
+    // Objects are born with one reference.
+    self->reference_count = 1;
+
     return self;
   }
 
@@ -278,7 +281,7 @@ float_image_thaw (FILE *file_pointer)
 
   g_assert (file_pointer != NULL);
 
-  FloatImage *self = g_new (FloatImage, 1);
+  FloatImage *self = g_new0 (FloatImage, 1);
 
   size_t read_count = fread (&(self->size_x), sizeof (size_t), 1, fp);
   g_assert (read_count == 1);
@@ -364,6 +367,11 @@ float_image_thaw (FILE *file_pointer)
     }
     g_free (buffer);
   }
+
+  // We didn't call initialize_float_image_structure directly or
+  // indirectly for this creation method, so we still have to set the
+  // reference count appropriately.
+  self->reference_count = 1;
 
   return self;
 }
@@ -536,6 +544,8 @@ float_image_new_from_memory (ssize_t size_x, ssize_t size_y, float *buffer)
 FloatImage *
 float_image_copy (FloatImage *model)
 {
+  g_assert (model->reference_count > 0); // Harden against missed ref=1 in new
+
   // FIXME: this could obviously be optimized a lot by copying the
   // existed tile file, etc.
   FloatImage *self = float_image_new (model->size_x, model->size_y);
@@ -567,6 +577,8 @@ bilinear_interpolate (double delta_x, double delta_y, float ul, float ur,
 FloatImage *
 float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor)
 {
+  g_assert (model->reference_count > 0); // Harden against missed ref=1 in new
+
   g_assert (model->size_x > 0 && model->size_y > 0);
 
   g_assert (scale_factor > 0);
@@ -607,6 +619,8 @@ FloatImage *
 float_image_new_subimage (FloatImage *model, ssize_t x, ssize_t y,
 			  ssize_t size_x, ssize_t size_y)
 {
+  g_assert (model->reference_count > 0); // Harden against missed ref=1 in new
+
   // Upper left corner must be in model.
   g_assert (x >= 0 && y >= 0);
 
@@ -1540,6 +1554,8 @@ void
 float_image_get_region (FloatImage *self, ssize_t x, ssize_t y, ssize_t size_x,
                         ssize_t size_y, float *buffer)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   g_assert (size_x >= 0);
   g_assert (x >= 0);
   g_assert ((size_t) x + (size_t) size_x - 1 < self->size_x);
@@ -1598,6 +1614,8 @@ void
 float_image_statistics (FloatImage *self, float *min, float *max,
                         float *mean, float *standard_deviation, float mask)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   *min = FLT_MAX;
   *max = -FLT_MAX;
 
@@ -1647,6 +1665,8 @@ float_image_statistics_with_mask_interval (FloatImage *self, float *min,
 					   double interval_start, 
 					   double interval_end)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   *min = FLT_MAX;
   *max = -FLT_MAX;
 
@@ -1784,6 +1804,8 @@ gsl_histogram *
 float_image_gsl_histogram (FloatImage *self, float min, float max,
                            size_t num_bins)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   // Initialize the histogram.
   gsl_histogram *hist = gsl_histogram_alloc (num_bins);
   gsl_histogram_set_ranges_uniform (hist, min, max);
@@ -1810,6 +1832,8 @@ float
 float_image_apply_kernel (FloatImage *self, ssize_t x, ssize_t y,
                           gsl_matrix_float *kernel)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   g_assert (x >= 0 && (size_t) x < self->size_x);
   g_assert (y >= 0 && (size_t) y < self->size_y);
   g_assert (kernel->size2 % 2 == 1);
@@ -1961,6 +1985,8 @@ float_image_sample (FloatImage *self, float x, float y,
 gboolean
 float_image_equals (FloatImage *self, FloatImage *other, float epsilon)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   // Compare image sizes.
   if ( self->size_x != other->size_x ) {
     return FALSE;
@@ -1991,6 +2017,8 @@ float_image_equals (FloatImage *self, FloatImage *other, float epsilon)
 void
 float_image_flip_y(FloatImage *self)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   size_t ii, jj;
 
   for (jj = 0; jj < self->size_y / 2; ++jj) {
@@ -2024,6 +2052,8 @@ synchronize_tile_file_with_memory_cache (FloatImage *self)
 void
 float_image_freeze (FloatImage *self, FILE *file_pointer)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   FILE *fp = file_pointer;	// Convenience alias.
 
   g_assert (file_pointer != NULL);
@@ -2107,6 +2137,8 @@ int
 float_image_store (FloatImage *self, const char *file,
                    float_image_byte_order_t byte_order)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   // Open the file to write to.
   FILE *fp = fopen (file, "w");
   // FIXME: we need some error handling and propagation here.
@@ -2165,6 +2197,8 @@ int
 float_image_export_as_jpeg (FloatImage *self, const char *file,
                             size_t max_dimension, double mask)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   size_t scale_factor;          // Scale factor to use for output image.
   if ( self->size_x > self->size_y ) {
     scale_factor = ceil ((double) self->size_x / max_dimension);
@@ -2340,6 +2374,8 @@ float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
 					       double interval_start,
 					       double interval_end)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   size_t scale_factor;          // Scale factor to use for output image.
   if ( self->size_x > self->size_y ) {
     scale_factor = ceil ((double) self->size_x / max_dimension);
@@ -2508,6 +2544,8 @@ float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
 int
 float_image_export_as_csv (FloatImage *self, const char * filename)
 {
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
   size_t ii, jj;
 
   g_assert (self->size_x < 256);
@@ -2545,6 +2583,26 @@ float_image_set_cache_size (FloatImage *self, size_t size)
   g_assert_not_reached ();      // Stubbed out for now.
   // Compiler reassurance.
   self = self; size = size;
+}
+
+FloatImage *
+float_image_ref (FloatImage *self)
+{
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
+  self->reference_count++;
+
+  return self;
+}
+
+void
+float_image_unref (FloatImage *self)
+{
+  self->reference_count--;
+
+  if ( self->reference_count == 0 ) {
+    float_image_free (self);
+  }
 }
 
 void
