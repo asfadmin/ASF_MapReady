@@ -19,6 +19,7 @@ MODULES = \
 	src/asf_geolib \
 	src/asf_odl \
 	src/asf_fft \
+	src/libasf_vector \
 	src/libasf_proj \
 	src/libasf_raster \
 	src/libasf_sar \
