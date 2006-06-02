@@ -256,7 +256,8 @@ int asf_convert(int createflag, char *configFileName)
 
       // Scaling method for floating point GeoTIFFs
       if (strncmp(uc(cfg->export->format), "GEOTIFF", 7) == 0) {
-        if (strncmp(uc(cfg->export->byte), "SIGMA", 5) != 0 &&
+        if (strncmp(uc(cfg->export->byte), "NONE", 4) != 0 &&
+            strncmp(uc(cfg->export->byte), "SIGMA", 5) != 0 &&
             strncmp(uc(cfg->export->byte), "MINMAX", 6) != 0 &&
             strncmp(uc(cfg->export->byte), "TRUNCATE", 8) != 0 &&
             strncmp(uc(cfg->export->byte), "HISTOGRAM_EQUALIZE", 18) != 0) {
@@ -438,7 +439,6 @@ int asf_convert(int createflag, char *configFileName)
     if (cfg->general->geocoding) {
 
       update_status(cfg, "Geocoding...");
-
       int force_flag = cfg->geocoding->force;
       resample_method_t resample_method = RESAMPLE_BILINEAR;
       double average_height = cfg->geocoding->height;
@@ -506,7 +506,7 @@ int asf_convert(int createflag, char *configFileName)
 	format = JPEG;
       } else if (strncmp(uc(cfg->export->format), "PPM", 3) == 0) {
 	format = PPM;
-      }
+      } 
 
       // Byte scaling
       if (strncmp(uc(cfg->export->byte), "TRUNCATE", 8) == 0) {
@@ -517,6 +517,8 @@ int asf_convert(int createflag, char *configFileName)
 	scale = SIGMA;
       } else if (strncmp(uc(cfg->export->byte), "HISTOGRAM_EQUALIZE", 18) == 0) {
 	scale = HISTOGRAM_EQUALIZE;
+      } else if (strncmp(uc(cfg->export->byte), "NONE", 4) == 0) {
+	scale = NONE;
       }
 
       // Pass in command line
