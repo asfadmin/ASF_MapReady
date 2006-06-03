@@ -271,6 +271,9 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
   // Get a new empty tile cache file pointer.
   self->tile_file = initialize_tile_cache_file ();
 
+  // Objects are born with one reference.
+  self->reference_count = 1;
+
   return self;
 }
 
