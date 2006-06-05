@@ -27,10 +27,10 @@ $(TARGET).exe: $(TARGET).c
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
 	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
-	mv $(TARGET).exe ../../bin
-	cp $(TARGET).glade ../../bin
-	cp *.png ../../share
-	cp *.gif ../../share
+	mv $(TARGET).exe $(BINDIR)
+	cp $(TARGET).glade $(SHAREDIR)
+	cp *.png $(SHAREDIR)
+	cp *.gif $(SHAREDIR)
 #	cp $(TARGET).ico $(BINDIR)
 
 clean:
@@ -52,9 +52,9 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 default: $(OBJS)
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)
-	cp $(TARGET).glade $(BINDIR)
-	cp *.png ../../share
-	cp *.gif ../../share
+	cp $(TARGET).glade $(SHAREDIR)
+	cp *.png $(SHAREDIR)
+	cp *.gif $(SHAREDIR)
 #	cp $(TARGET).ico $(BINDIR)
 
 clean:

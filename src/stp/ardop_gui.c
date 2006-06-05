@@ -9,6 +9,7 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <sys/wait.h>
+#include <asf.h>
 
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
@@ -19,6 +20,8 @@
 #  endif
 #endif
 
+#define STP_VERSION "1.0.4"
+
 /* for win32, set the font to the standard windows one */
 #if defined(win32)
 #include <pango/pango.h>
@@ -28,8 +31,6 @@
 #undef BYTE
 #include <Windows.h>
 #undef DIR_SEPARATOR
-
-#define STP_VERSION "1.0.3"
 
 static char appfontname[128] = "tahoma 8"; /* fallback value */
 
@@ -142,7 +143,6 @@ const char DIR_SEPARATOR = '/';
 GladeXML *glade_xml;
 gboolean user_modified_output_file = FALSE;
 
-/*
 static char *
 find_in_bin(const char * filename)
 {
@@ -160,15 +160,16 @@ find_in_share(const char * filename)
     sprintf(ret, "%s/%s", get_asf_share_dir(), filename);
     return ret;
 }
-*/
 
+
+/*
 gchar *
 find_in_path(gchar * file)
 {
   gchar *path, *buf, *name, *p;
   int len, pathlen;
 
-  /* first see if file is in current directory */
+  // first see if file is in current directory
   if (g_file_test(file, G_FILE_TEST_EXISTS))
   {
     return g_strdup(file);
@@ -179,28 +180,28 @@ find_in_path(gchar * file)
   len = strlen(file) + 1;
   pathlen = strlen(path);
 
-  /* work area */
+  // work area
   buf = (gchar *) g_malloc( sizeof(gchar) * (pathlen + len + 2) ); 
 
-  /* put separator + filename at the end of the buffer */
+  // put separator + filename at the end of the buffer
   name = buf + pathlen + 1;
   *name = DIR_SEPARATOR;
   memcpy(name + 1, file, len);
 
-  /* now try each path item, prepended to the filename in the work area */
+  // now try each path item, prepended to the filename in the work area
   p = path;
   do
   {
     gchar * start;
     gchar * q = strchr(p + 1, PATH_SEPARATOR);
 
-    /* if separator not found, point to the end */
+    // if separator not found, point to the end
     if ( !q ) 
       q = path + pathlen;
 
     start = name - (q - p);
 
-    /* copy path portion to the work area */
+    // copy path portion to the work area
     memcpy( start, p, q - p );
 
     if (g_file_test( start, G_FILE_TEST_EXISTS ))
@@ -214,16 +215,17 @@ find_in_path(gchar * file)
   } 
   while (*p++ != '\0');
 
-  /* not found! */ 
+  // not found!
   g_free(buf);
   return NULL;
 }
+*/
 
 /* danger: returns pointer to static data!! */
 static const char * imgloc(char * file)
 {
     static char loc[1024];
-    gchar * tmp = find_in_path(file);
+    gchar * tmp = find_in_share(file);
     if (tmp) {
       strcpy(loc, tmp);
       g_free(tmp);
@@ -871,7 +873,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     sprintf(cmd, "%s/ardop.exe -p 1 -debug %d %s %s", get_asf_bin_dir(),
             debug_flag, input_file, output_file);
 #else
-    sprintf(cmd, "%s -p 1 -debug %d %s %s", find_in_path("ardop"),
+    sprintf(cmd, "%s -p 1 -debug %d %s %s", find_in_bin("ardop"),
             debug_flag, input_file, output_file);
 #endif
 
@@ -1479,7 +1481,7 @@ main(int argc, char **argv)
 
     gtk_init(&argc, &argv);
 
-    glade_xml_file = (gchar *) find_in_path("ardop_gui.glade");
+    glade_xml_file = (gchar *) find_in_share("ardop_gui.glade");
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
     g_free(glade_xml_file);
