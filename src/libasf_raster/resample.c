@@ -127,7 +127,7 @@ resample_impl(char *infile, char *outfile,
     yhalf = (ynsk-1)/2;
     n_lines = ynsk;
  
-    inbuf= (float *) MALLOC (xnsk*np*sizeof(float));
+    inbuf= (float *) MALLOC (ynsk*np*sizeof(float));
     outbuf = (float *) MALLOC (onp*sizeof(float));
  
    /*----------  Open the Input & Output Files ---------------------*/
