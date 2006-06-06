@@ -320,6 +320,10 @@ float_image_equals (FloatImage *self, FloatImage *other, float epsilon);
 void
 float_image_flip_y(FloatImage *self);
 
+// Flip an image about a vertical line through the center of the image
+void
+float_image_flip_x(FloatImage *self);
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Storing Images in Files

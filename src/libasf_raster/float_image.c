@@ -2035,6 +2035,25 @@ float_image_flip_y(FloatImage *self)
   }
 }
 
+// Flip an image about a vertical line through the center of the image
+void
+float_image_flip_x(FloatImage *self)
+{
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
+  size_t ii, jj;
+
+  for (ii = 0; ii < self->size_x / 2; ++ii) {
+    size_t ii2 = self->size_x - 1 - ii;
+    for (jj = 0; jj < self->size_y; ++jj) {
+      float a = float_image_get_pixel(self, ii, jj);
+      float b = float_image_get_pixel(self, ii2, jj);
+      float_image_set_pixel(self, ii, jj, b);
+      float_image_set_pixel(self, ii2, jj, a);
+    }
+  }
+}
+
 // Bring the tile cache file on the disk fully into sync with the
 // latest image data stored in the memory cache.
 static void
