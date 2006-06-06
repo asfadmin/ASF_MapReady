@@ -100,8 +100,10 @@ BUGS:
 #include "asf.h"
 #include "ardop_defs.h"
 
-int ardop(struct ARDOP_PARAMS * params, meta_parameters *meta)
+int ardop(struct ARDOP_PARAMS * params)
 {
+        meta_parameters *meta;
+
 /*Structures: these are passed to the sub-routines which need them.*/
 	patch *p;
 	satellite *s;
@@ -118,6 +120,7 @@ int ardop(struct ARDOP_PARAMS * params, meta_parameters *meta)
 	  printf("   Of the %d azimuth lines, only %d are valid.\n",n_az,f->n_az_valid);
 	}
 	
+        meta = meta_read(params->in1);
 /*
 Create "patch" of data.  This patch is re-used to process
 all of the input data.

@@ -137,5 +137,5 @@ main (int argc, char *argv [])
     printLog("Program: ardop\n\n");
   }
 
-  return ardop(&params, meta);
+  return ardop(&params);
 }
