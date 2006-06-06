@@ -1,12 +1,7 @@
-######################################################################
-# Makefile for 		:  ardop.c 
-# Module Author 	:  Tom Logan
-# Module Version	:  1.0
-######################################################################
-
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
+	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/asf_fft.a \
@@ -17,11 +12,11 @@ LIBS  = $(LIBDIR)/asf.a \
 LIBC = $(LIBS) -lm 
 
 OBJLIB = ardop_libs.o \
-	 parse_cla.o \
 	 cfft1d_risc.o \
 	 estdop.o \
 	 fft_dop.o \
-	 read_signal.o
+	 read_signal.o \
+	 ardop.o
 
 SPECLIB = \
 	specan.o \
@@ -37,52 +32,15 @@ ASPLIB = patch.o \
 # Filter out the ISOC99 FLAGS which causes some problems.
 CFLAGS := $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
 
-all: ardop calc_deltas spectra clean
+all: build_only
+	mv libasf_ardop.a $(LIBDIR)
+	cp ardop_defs.h $(ASF_INCLUDE_DIR)
+	cp read_signal.h $(ASF_INCLUDE_DIR)
 
-ardop:	$(ASPLIB) $(OBJLIB) ardop.o $(LIBS)
-	$(CC) $(CFLAGS) -o ardop ardop.o $(ASPLIB) $(OBJLIB) $(LIBC) $(LDFLAGS)
-	mv ardop$(BIN_POSTFIX) $(BINDIR)
-	cp ardop.1 ../../man/cat1/ardop.1 
-
-calc_deltas: calc_deltas.o yaxb.o $(LIBS)
-	$(CC) $(CFLAGS) calc_deltas.o -o calc_deltas yaxb.o $(LIBC) $(LDFLAGS)
-	mv calc_deltas$(BIN_POSTFIX) $(BINDIR)
-	cp calc_deltas.1 ../../man/cat1/calc_deltas.1
-
-spectra: spectra.o $(OBJLIB)
-	$(CC) $(CFLAGS) spectra.o $(OBJLIB) -o spectra $(LIBC) $(LDFLAGS)
-	mv spectra$(BIN_POSTFIX) $(BINDIR)
-	cp spectra.1 ../../man/cat1/spectra.1
-
-quicklook: $(SPECLIB) $(OBJLIB)
-	$(CC) $(CFLAGS) $(SPECLIB) $(OBJLIB) -o quicklook $(LIBC) $(LDFLAGS)
-	mv quicklook$(BIN_POSTFIX) $(BINDIR)
-	cp quicklook.man ../../man/cat1/quicklook.1
-
-# Note: signal2amp is a tiny program which generates
-# a (very blurry!) image of raw signal data-- it's useful
-# for testing the signal-data reading routines.
-#  Since it is only useful for development, we don't ship it.
-
-signal2amp: signal2amp.o $(OBJLIB)
-	$(CC) $(CFLAGS) signal2amp.o $(OBJLIB) -o signal2amp $(LIBC) $(LDFLAGS)
-	mv signal2amp$(BIN_POSTFIX) $(BINDIR)
-
-sig_sum: sig_sum.o $(OBJLIB)
-	$(CC) $(CFLAGS) sig_sum.o $(OBJLIB) -o sig_sum $(LIBC) $(LDFLAGS)
-	mv sig_sum$(BIN_POSTFIX) $(BINDIR)
-
-sig_hist: sig_hist.o $(OBJLIB)
-	$(CC) $(CFLAGS) sig_hist.o $(OBJLIB) -o sig_hist $(LIBC)
-	mv sig_hist$(BIN_POSTFIX) $(BINDIR)
-
-chirp_spectra: chirp_spectra.o $(OBJLIB)
-	$(CC) $(CFLAGS) chirp_spectra.o $(OBJLIB) -o chirp_spectra $(LIBC) $(LDFLAGS)
-	mv chirp_spectra$(BIN_POSTFIX) $(BINDIR)
-
-dop_prf: $(ASPLIB) $(OBJLIB) dop_prf.c $(LIBS) $(LDFLAGS)
-	$(CC) $(CFLAGS) -o dop_prf dop_prf.c $(ASPLIB) $(OBJLIB) $(LIBC)
-	mv dop_prf$(BIN_POSTFIX) $(BINDIR)
+build_only: $(OBJLIB) $(ASPLIB)
+	rm -f libasf_ardop.a
+	ar r libasf_ardop.a $(OBJLIB) $(ASPLIB)
+	$(RANLIB) libasf_ardop.a
 
 clean:
-	rm -f core *.o
+	rm -f core* $(OBJLIB) *.o
