@@ -10,6 +10,7 @@
 #include <glib/gprintf.h>
 #include <sys/wait.h>
 #include <asf.h>
+#include "ardop_defs.h"
 
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
@@ -867,27 +868,18 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 	sprintf(output_file, "%s%s", input_file, "_cpx");
     }
 
-    char cmd[1024];
-
-#ifdef win32
-    sprintf(cmd, "%s/ardop.exe -p 1 -debug %d %s %s", get_asf_bin_dir(),
-            debug_flag, input_file, output_file);
-#else
-    sprintf(cmd, "%s -p 1 -debug %d %s %s", find_in_bin("ardop"),
-            debug_flag, input_file, output_file);
-#endif
-
-    int i;
-    for (i = 0; i < strlen(cmd); ++i)
-      if (cmd[i] == '\\' && cmd[i+1] != ' ') cmd[i] = '/';
-
-    printf("cmd: %s\n", cmd);
-
     int pid = fork();
 
     if (pid == 0)
     {
-      system(cmd);
+      struct ARDOP_PARAMS p;
+      strcpy(p.in1, input_file);
+      strcpy(p.out, output_file);
+      p.iflag = debug_flag;
+      p.npatches = 1;
+
+      ardop(&p);
+
       exit(EXIT_SUCCESS);
     }
     else
