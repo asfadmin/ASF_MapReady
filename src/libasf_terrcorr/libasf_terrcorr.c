@@ -215,17 +215,18 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   metaDEM = meta_read(demFile);
 
   // some checks for square pixels, as the algorithm assumes it
-  if (metaSAR->general->x_pixel_size != metaSAR->general->y_pixel_size) {
-    asfPrintStatus("SAR image does not have square pixels!\n"
-		   "x pixel size = %gm, y pixel size = %gm.\n",
-	metaSAR->general->x_pixel_size, metaSAR->general->y_pixel_size);
-    if (do_resample) {
-      asfPrintStatus("Will resample SAR image to square pixels.\n");
-      force_resample = TRUE;
-    } else {
-      asfPrintStatus("Terrain Correction results may not be as expected.\n");
-    }
-  }
+  // taking this out... I don't think the algorithm assumes this.
+//  if (metaSAR->general->x_pixel_size != metaSAR->general->y_pixel_size) {
+//    asfPrintStatus("SAR image does not have square pixels!\n"
+//		   "x pixel size = %gm, y pixel size = %gm.\n",
+//	metaSAR->general->x_pixel_size, metaSAR->general->y_pixel_size);
+//    if (do_resample) {
+//      asfPrintStatus("Will resample SAR image to square pixels.\n");
+//      force_resample = TRUE;
+//    } else {
+//      asfPrintStatus("Terrain Correction results may not be as expected.\n");
+//    }
+//  }
   
   if (metaDEM->general->x_pixel_size != metaDEM->general->y_pixel_size) {
     asfPrintStatus("DEM does not have square pixels!\n"
