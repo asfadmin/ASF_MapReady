@@ -113,7 +113,8 @@ PROGRAMS
 	fit_quadratic { }
 	idimage { BINS idtable }
 	projprm { }
-	ardop { BINS calc_deltas spectra }
+	libasf_ardop { }
+	ardop { BINS calc_deltas spectra libasf_ardop }
 	asf_check_geolocation { }
 	avg_in_dop { }
 	c2p { }
@@ -146,7 +147,7 @@ PROGRAMS
 	detect_cr { }
 	xpix_ypix { }
 	meta_check { }
-
+	stp { BINS ardop }
 
 @src_tc/
 	2dmap { }
