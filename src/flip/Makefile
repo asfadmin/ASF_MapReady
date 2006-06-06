@@ -1,8 +1,3 @@
-#	reskew_dem
-#	by Orion Lawlor, ASF, 1997
-#	Reskew will remap a ground range DEM into a slant-range
-#       DEM.
-
 include ../../make_support/system_rules
 
 LIBS :=	$(LIBDIR)/asf_meta.a \
@@ -18,14 +13,14 @@ LIBS :=	$(LIBDIR)/asf_meta.a \
 
 CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
-OBJS  = flipv.o
+OBJS  = flip.o
 
-all: flipv
+all: flip
 	rm *.o
 
-flipv:	$(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LIBS) $(LDFLAGS) -o flipv 
-	mv flipv$(BIN_POSTFIX) $(BINDIR)
+flip:	$(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) $(LIBS) $(LDFLAGS) -o flip
+	mv flip$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f core $(OBJS) *.o
