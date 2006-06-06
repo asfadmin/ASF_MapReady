@@ -144,14 +144,14 @@ const char DIR_SEPARATOR = '/';
 GladeXML *glade_xml;
 gboolean user_modified_output_file = FALSE;
 
-static char *
-find_in_bin(const char * filename)
-{
-    char * ret = (char *) malloc(sizeof(char) *
-                      (strlen(get_asf_bin_dir()) + strlen(filename) + 5));
-    sprintf(ret, "%s/%s", get_asf_bin_dir(), filename);
-    return ret;
-}
+//static char *
+//find_in_bin(const char * filename)
+//{
+//    char * ret = (char *) malloc(sizeof(char) *
+//                      (strlen(get_asf_bin_dir()) + strlen(filename) + 5));
+//    sprintf(ret, "%s/%s", get_asf_bin_dir(), filename);
+//    return ret;
+//}
 
 static char *
 find_in_share(const char * filename)
@@ -872,13 +872,13 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
     if (pid == 0)
     {
-      struct ARDOP_PARAMS p;
-      strcpy(p.in1, input_file);
-      strcpy(p.out, output_file);
-      p.iflag = debug_flag;
-      p.npatches = 1;
+      struct ARDOP_PARAMS params;
+      strcpy(params.in1, input_file);
+      strcpy(params.out, output_file);
+      params.iflag = debug_flag;
+      params.npatches = 1;
 
-      ardop(&p);
+      ardop(&params);
 
       exit(EXIT_SUCCESS);
     }
@@ -887,10 +887,10 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
       while (waitpid(-1, NULL, WNOHANG) == 0)
       {
 	while (gtk_events_pending())
-	  gtk_main_iteration();
+          gtk_main_iteration();
 
 	g_usleep(50);
-      }
+      }     
     }
     
     free(output_file);
