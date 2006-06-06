@@ -110,17 +110,18 @@ int ardop(struct ARDOP_PARAMS * params)
 	rangeRef *r;
 	getRec *signalGetRec;
 	file *f;
+
 /*Variables.*/
 	int n_az,n_range;/*Region to be processed.*/
 	int patchNo;/*Loop counter.*/
 
-	ardop_setup(&params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
+        meta = meta_read(params->in1);
+	ardop_setup(params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
 	if (!quietflag) {
 	  printf("   Processing %dx %d az by %d range patches...\n",f->nPatches,n_az,n_range);
 	  printf("   Of the %d azimuth lines, only %d are valid.\n",n_az,f->n_az_valid);
 	}
 	
-        meta = meta_read(params->in1);
 /*
 Create "patch" of data.  This patch is re-used to process
 all of the input data.
