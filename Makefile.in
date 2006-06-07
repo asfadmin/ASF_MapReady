@@ -24,6 +24,8 @@ MODULES = \
 	src/libasf_raster \
 	src/libasf_sar \
 	src/libasf_reporting \
+	src/libasf_ardop \
+	src/ardop \
 	src/libasf_export \
 	src/asf_export \
 	src/libasf_import \
