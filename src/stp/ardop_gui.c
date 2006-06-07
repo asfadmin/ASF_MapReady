@@ -260,9 +260,9 @@ static void set_images()
 	glade_xml_get_widget(glade_xml, "azimuth_compression_image");
 
     gtk_image_set_from_file(GTK_IMAGE(range_compression_image),
-			    imgloc("rc.png"));
+			    imgloc("rc.gif"));
     gtk_image_set_from_file(GTK_IMAGE(azimuth_compression_image),
-			    imgloc("ac.png"));
+			    imgloc("ac.gif"));
 
     GtkWidget * flowchart_image;
 
