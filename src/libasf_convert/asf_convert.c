@@ -352,7 +352,9 @@ int asf_convert(int createflag, char *configFileName)
 	else {
 	  sprintf(outFile, "%s", cfg->general->out_name);
 	}
-	sprintf(options, "-quiet -log %s %s", logFile, radiometry);
+        // When terrain correcting, add the deskew flag
+	sprintf(options, "-quiet -log %s %s %s", logFile, radiometry,
+                cfg->general->terrain_correct ? "-e 1 " : "");
 	//	sprintf(options, "-quiet -log %s %s -e 1", logFile, radiometry);
 	check_return(ardop(options, inFile, outFile),
 		     "SAR processing data file (ardop)\n");
