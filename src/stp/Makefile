@@ -41,7 +41,6 @@ $(TARGET).exe: $(TARGET).c
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
-	cp *.png $(SHAREDIR)
 	cp *.gif $(SHAREDIR)
 #	cp $(TARGET).ico $(BINDIR)
 
@@ -65,7 +64,6 @@ default: $(OBJS)
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
-	cp *.png $(SHAREDIR)
 	cp *.gif $(SHAREDIR)
 #	cp $(TARGET).ico $(BINDIR)
 
