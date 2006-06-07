@@ -220,11 +220,18 @@ MODULES = \
 	src/asf_meta \
 	src/asf_odl \
 	src/asf_fft \
+        src/libifm \
+        src/libasf_meta \
 	src/libasf_proj \
 	src/libasf_ardop \
 	src/libasf_reporting  \
 	src/ardop \
-	src/stp
+	src/stp \
+        src/multilook \
+        src/c2p \
+        src/convert2jpeg \
+        src/convert_meta \
+        src/stats
 
     Get rid of the 'projections' stuff in the install target.
 
@@ -243,10 +250,17 @@ MODULES = \
  9. ** KLUDGE #3 **
       cd release/autotar
     Edit release/autotar/source.stp, adding these items:
-      external
-      src/stp
-      src/ardop
-      src/libasf_ardop
+external
+src/stp
+src/ardop
+src/libasf_ardop
+src/libasf_meta
+src/libifm
+src/multilook
+src/c2p
+src/convert2jpeg
+src/convert_meta
+src/stats
 
 10. Run the autotar script:
       ./tarfile src ~/asf/svn-rXXXX stp
