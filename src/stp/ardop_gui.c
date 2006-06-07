@@ -873,8 +873,11 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     if (pid == 0)
     {
       struct ARDOP_PARAMS params;
+      fill_default_ardop_params(&params);
+
       strcpy(params.in1, input_file);
       strcpy(params.out, output_file);
+
       params.iflag = debug_flag;
       params.npatches = 1;
 
