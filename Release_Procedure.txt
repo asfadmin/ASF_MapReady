@@ -188,3 +188,87 @@ installed.
 
     Now be sure to tell the web monkey (currently Charley Slater) that
     its there and waiting for him!
+
+-------------------------------------------------------------------------------
+STP Instructions!
+
+ 0. You still have to do step (1) of the old procedure, I think.
+    Could be that doing it correctly would avoid KLUDGE #2 ?!?!
+
+ 1. Update STP_VERSION in ardop_gui.c
+
+ 2. Tag the repository:
+      svn copy https://lindon/svn/repos/asf_tools/trunk
+               https://lindon/svn/repos/asf_tools/tags/stp_vX-X-X
+
+ 3. Create a clean directory, for example:
+      mkdir ~/asf/svn-rXXXX
+      cd ~/asf/svn-rXXXX
+
+ 4. Update this line in ~/.rpmmacros
+      %_topdir        %(echo $HOME)/asf/svn-rXXXX/release
+
+ 5. Export the tagged repository:
+      svn export
+      https://lindon/svn/repos/asf_tools/tags/stp_vX-X-X asf_tools
+
+ 6. ** KLUDGE #1 **
+    Edit asf_tools/Makefile.in, the MODULES section should be changed to:
+
+MODULES = \
+	src/asf \
+	src/asf_meta \
+	src/asf_odl \
+	src/asf_fft \
+	src/libasf_proj \
+	src/libasf_ardop \
+	src/libasf_reporting  \
+	src/ardop \
+	src/stp
+
+    Get rid of the 'projections' stuff in the install target.
+
+ 7. Check out the important parts of the release directory:
+      svn co https://lindon/svn/repos/release/trunk/autotar release/autotar
+      svn co https://lindon/svn/repos/release/trunk/rpmbuild release/rpmbuild
+      mkdir -p release/tar_filelist release/tar/stp
+
+ 8. Create the source.stp file:
+      cd asf_tools/make_support; make; ./makemake; cd -
+
+8A. ** KLUDGE #2 ** 
+    Remove tcl/Tk gzips from the archive
+      cd asf_tools/external/work_dir/tcl_tk; rm *.gz; cd -
+
+ 9. ** KLUDGE #3 **
+      cd release/autotar
+    Edit release/autotar/source.stp, adding these items:
+      external
+      src/stp
+      src/ardop
+      src/libasf_ardop
+
+10. Run the autotar script:
+      ./tarfile src ~/asf/svn-rXXXX stp
+
+11. **SKIP**
+
+12. Edit the .spec file in ../rpmbuild to use the correct version,
+    then rename the file to match.
+      cd ../rpmbuild
+      vi stp-1.0.0-1.spec
+      mv stp-1.0.0-1.spec stp-X.X.X-1.spec
+
+13. Build the rpm:
+      rpmbuild -ba stp-X.X.X-1.spec
+
+
+17. The windows procedure is the same as described below.  Notes:
+
+  A. When checking out the windows version, you might have to manually
+     edit make_support/system_rules (after running configure) to make
+     sure it has:
+           JPEG_LIBS = $(LIBDIR)/libjpeg.a
+     and NOT
+           JPEG_LIBS = -ljpeg
+
