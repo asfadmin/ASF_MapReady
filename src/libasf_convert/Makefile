@@ -4,6 +4,7 @@ include ../../make_support/system_rules
 
 LIBS  = \
 	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_ardop.a \
 	$(LIBDIR)/libasf_export.a \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_reporting.a \

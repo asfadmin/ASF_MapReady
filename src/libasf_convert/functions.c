@@ -24,6 +24,7 @@ int asf_import(char *inFile, char *outFile, char *format, char *radiometry,
 }
 */
 
+/*
 int ardop(char *options, char *inFile, char *outFile)
 {
   char command[1024];
@@ -34,6 +35,7 @@ int ardop(char *options, char *inFile, char *outFile)
 
   return ret;
 }
+*/
 
 int image_stats(char *inFile, char *outFile, char *values, int bins, 
 		     double interval)

@@ -119,7 +119,7 @@ int exit_code;
 char *str2upper(char *string);
 //int asf_import(char *inFile, char *outFile, char *format, char *radiometry,
 //               char *prcOrbits, double lat_begin, double lat_end);
-int ardop(char *options, char *inFile, char *outFile);
+//int ardop(char *options, char *inFile, char *outFile);
 int image_stats(char *inFile, char *outFile, char *values, int bins, 
                 double interval);
 int detect_cr(char *inFile, char *crFile, char *outFile, int chips, int text);

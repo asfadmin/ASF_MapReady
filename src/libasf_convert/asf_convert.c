@@ -10,6 +10,7 @@
 #include "asf_terrcorr.h"
 #include "asf_geocode.h"
 #include "asf_export.h"
+#include "ardop_defs.h"
 #include <unistd.h>
 
 void check_return(int ret, char *msg)
@@ -330,15 +331,22 @@ int asf_convert(int createflag, char *configFileName)
       meta = meta_read(outFile);
       if (meta->general->image_data_type == RAW_IMAGE) {
 
+          struct ARDOP_PARAMS params;
+          fill_default_ardop_params(&params);
+
 	// Radiometry
 	if (strncmp(uc(cfg->sar_processing->radiometry), "POWER_IMAGE", 11) == 0) {
-	  sprintf(radiometry, "-power");
+            //sprintf(radiometry, "-power");
+            params.pwrFlag = 1;
 	} else if (strncmp(uc(cfg->sar_processing->radiometry), "SIGMA_IMAGE", 11) == 0) {
-	  sprintf(radiometry, "-sigma");
+            //sprintf(radiometry, "-sigma");
+            params.sigmaFlag = 1;
 	} else if (strncmp(uc(cfg->sar_processing->radiometry), "GAMMA_IMAGE", 11) == 0) {
-	  sprintf(radiometry, "-gamma");
+            //sprintf(radiometry, "-gamma");
+            params.gammaFlag = 1;
 	} else if (strncmp(uc(cfg->sar_processing->radiometry), "BETA_IMAGE", 10) == 0) {
-	  sprintf(radiometry, "-beta");
+            //sprintf(radiometry, "-beta");
+            params.betaFlag = 1;
 	} else 
 	  sprintf(radiometry, "");
 	
@@ -352,12 +360,22 @@ int asf_convert(int createflag, char *configFileName)
 	else {
 	  sprintf(outFile, "%s", cfg->general->out_name);
 	}
+
         // When terrain correcting, add the deskew flag
-	sprintf(options, "-quiet -log %s %s %s", logFile, radiometry,
-                cfg->general->terrain_correct ? "-e 1 " : "");
-	//	sprintf(options, "-quiet -log %s %s -e 1", logFile, radiometry);
-	check_return(ardop(options, inFile, outFile),
-		     "SAR processing data file (ardop)\n");
+        if (cfg->general->terrain_correct)
+            params.deskew = 1;
+
+	//sprintf(options, "-quiet -log %s %s %s", logFile, radiometry,
+        //        cfg->general->terrain_correct ? "-e 1 " : "");
+
+        strcpy(params.in1, inFile);
+        strcpy(params.out, outFile);
+
+        ardop(&params);
+
+	//check_return(ardop(options, inFile, outFile),
+	//	     "SAR processing data file (ardop)\n");
+
 	if (strcmp(radiometry, "") == 0)
 	  sprintf(outFile, "tmp%i_sar_processing_amp", pid);
 	else if (strcmp(radiometry, "-power") == 0)
