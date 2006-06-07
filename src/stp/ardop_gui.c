@@ -9,8 +9,6 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <sys/wait.h>
-#include <asf.h>
-#include "ardop_defs.h"
 
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
@@ -132,6 +130,8 @@ void set_font ()
 void set_font () {}
 
 #endif /* defined(win32) */
+
+#include "ardop_defs.h"
 
 #ifdef win32
 const char PATH_SEPARATOR = ';';
