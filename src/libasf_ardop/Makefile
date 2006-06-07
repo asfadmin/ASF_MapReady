@@ -16,7 +16,8 @@ OBJLIB = ardop_libs.o \
 	 estdop.o \
 	 fft_dop.o \
 	 read_signal.o \
-	 ardop.o
+	 ardop.o \
+	 get_params.o
 
 SPECLIB = \
 	specan.o \

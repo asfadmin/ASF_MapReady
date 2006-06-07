@@ -170,8 +170,11 @@ void save_meta(meta_parameters *meta, const char *fname,
 	int nl,int ns,int sl,int ss,
 	double pdx,double pdy, int li);
 
+/*-------------Populating ARDOP_PARAMS and the metadata---------------*/
+void get_params(char *,struct ARDOP_PARAMS *,meta_parameters **);
+void fill_default_ardop_params(struct ARDOP_PARAMS *g);
+
 /*-------------Initialization:---------------*/
-int parse_cla(int argc,char *argv[],struct ARDOP_PARAMS *g,meta_parameters **meta_out);
 void ardop_setup(struct ARDOP_PARAMS *g,meta_parameters *meta,int *N_az,int *N_range,
 	satellite **s,rangeRef **r,file **f,getRec **signalGetRec);
 patch *newPatch(int n_az,int n_range);
