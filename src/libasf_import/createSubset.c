@@ -22,7 +22,8 @@ time_range2Doppler:
   the two-dimensional Doppler function given in the par file
 */
 
-void yax2bxc(float x_vec[],float y_vec[],int n,float *a,float *b,float *c)
+static void
+yax2bxc(float x_vec[],float y_vec[],int n,float *a,float *b,float *c)
 {
   double x1, x2, x3, x4;         /* Sum of x, x^2, x^3, x^4 */
   double y1, yx, yx2;            /* Sum of y, y*x, y*x^2    */
