@@ -61,13 +61,11 @@ int asf_convert(int createflag, char *configFileName)
   FILE *fBatch, *fConfig;
   convert_config *cfg;
   meta_parameters *meta;
-  char cmd[1024], options[255], line[255], batchConfig[255];
+  char cmd[1024], line[255], batchConfig[255];
   char inFile[255], outFile[255], fileName[255];
-  char format[255], radiometry[255], projection[255], datum[255], resampling[255];
-  char scale[255], values[255], prefix[30], suffix[30];
+  char radiometry[255], projection[255];
+  char values[255], prefix[30], suffix[30];
   const int pid = getpid();
-  extern int logflag, quietflag;
-  int create_f, quiet_f;  /* log_f is a static global */
   int i;
 
   // If requested, create a config file and exit (if the file does not exist),
@@ -462,7 +460,7 @@ int asf_convert(int createflag, char *configFileName)
       int force_flag = cfg->geocoding->force;
       resample_method_t resample_method = RESAMPLE_BILINEAR;
       double average_height = cfg->geocoding->height;
-      datum_type_t datum;
+      datum_type_t datum = WGS84_DATUM;
       double pixel_size = cfg->geocoding->pixel;
 
       // Projection
