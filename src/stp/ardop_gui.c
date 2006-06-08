@@ -19,7 +19,7 @@
 #  endif
 #endif
 
-#define STP_VERSION "1.0.5"
+#define STP_VERSION "1.0.6"
 
 /* for win32, set the font to the standard windows one */
 #if defined(win32)
@@ -845,8 +845,13 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     GtkWidget * input_file_entry =
 	glade_xml_get_widget(glade_xml, "input_file_entry");
 
-    const char * input_file =
+    const char * input_file_c =
 	gtk_entry_get_text(GTK_ENTRY(input_file_entry));
+
+	/* make a copy for ourselves - on Windows, after fork we can't */
+	/* access pointers to GTK-owned data (like input_file_c)       */
+    char *input_file = MALLOC(sizeof(char)*(strlen(input_file_c)+2));
+	strcpy(input_file, input_file_c);
 
     /* check that we have all the required files */
     if (!check_files(input_file))
