@@ -214,7 +214,6 @@ all of the input data.
 	    sprintf(logbuf,"\n   Processed %d patches.\n\n", f->nPatches);
 	    printLog(logbuf);
 	  }
-	  StopWatchLog(fLog);
 	}
 
 	return(0);
