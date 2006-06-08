@@ -69,13 +69,19 @@ void read_params(const char *pfile,struct ARDOP_PARAMS *gbla)
   
 /*Determine file version.*/
   FILL(buf,255,fp); sscanf(buf,"%s", versionStr);
-  if (0==strncmp("ARDOP",versionStr,4))
+  if (0==strncmp("ARDOP",versionStr,5))
   {
   	sscanf(versionStr,"ARDOP%f",&version);
 /*  	if (!quietflag) printf("   Parsing ARDOP input file, version %.2f\n",version);*/
-  	FILL(buf,255,fp);
   }
-  
+  else if (0==strncmp("AISP",versionStr,4))    // handle old-style .in files
+  {
+    sscanf(versionStr,"AISP%f", &version);
+/*  	if (!quietflag) printf("   Parsing ARDOP input file, version %.2f\n",version);*/
+  }
+
+  FILL(buf,255,fp);
+
 /*Read in parameters.*/
   if (version<2.2)
   {/*File has encoded input and output names*/
