@@ -195,7 +195,7 @@ STP Instructions!
  0. You still have to do step (1) of the old procedure, I think.
     Could be that doing it correctly would avoid KLUDGE #2 ?!?!
 
- 1. Update STP_VERSION in ardop_gui.c
+ 1. Update STP_VERSION in src/stp/ardop_gui.c
 
  2. Tag the repository:
       svn copy https://lindon/svn/repos/asf_tools/trunk
@@ -220,11 +220,11 @@ MODULES = \
 	src/asf_meta \
 	src/asf_odl \
 	src/asf_fft \
+	src/libasf_reporting  \
         src/libifm \
         src/libasf_meta \
 	src/libasf_proj \
 	src/libasf_ardop \
-	src/libasf_reporting  \
 	src/ardop \
 	src/stp \
         src/multilook \
@@ -251,7 +251,6 @@ MODULES = \
       cd release/autotar
     Edit release/autotar/source.stp, adding these items:
 external
-src/stp
 src/ardop
 src/libasf_ardop
 src/libasf_meta
