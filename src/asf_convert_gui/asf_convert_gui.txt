@@ -129,12 +129,18 @@ Import Options
        default, "CEOS (Level 1)" is the most common format. For the STF
        format, you have the option of restricting the import to a
        subset of the latitude range in the source data.
-    2. Latitude
+    2. Process to Level 1
+       Level 0 data needs to be processed to Level 1 before any terrain
+       correction, geocoding, or exporting may be done. Checking this
+       option  will  use the ASF SAR processor (ARDoP) to do this
+       processing. If you don't process to level 1, then the terrain
+       correction, geocode, and export sections will be disabled.
+    3. Latitude
        This option is only available for the "STF" data format. Here
        you may specify a range of latitudes that is smaller than that
        of the original data. Please make sure that both the Low and Hi
        values are actually contained in the image.
-    3. Keep Files
+    4. Keep Files
        With this option checked, the intermediate files generated
        during the processing will not be deleted after successful
        conversion. Normally, these files are temporary and are deleted
@@ -142,7 +148,7 @@ Import Options
        them around you may by turning on this option.
        If a file fails to process, any intermediate files that were
        generated are not deleted, even with this option turned off.
-    4. Apply Azimuth Pixel Size Metadata Fix
+    5. Apply Azimuth Pixel Size Metadata Fix
        This option turns on a correction to the Y pixel size value in
        the metadata, caused by an error in the Precision Processor.
        The error results from using an incorrect relative velocity

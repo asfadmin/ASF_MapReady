@@ -188,6 +188,16 @@
           data.</para>
       </listitem>
       <listitem>
+	    <para>Process to Level 1</para>
+	    <para>Level 0 data needs to be processed to Level 1 before
+                  any terrain correction, geocoding, or exporting may
+                  be done.  Checking this option will use the ASF SAR
+                  processor (ARDoP) to do this processing.  If you
+	          don't process to level 1, then the terrain
+	          correction, geocode, and export sections will be
+                  disabled.</para>
+      </listitem>
+      <listitem>
 	    <para>Latitude</para>
 	    <para>This option is only available for the "STF" data format.  
           Here you may specify a range of latitudes that is smaller
