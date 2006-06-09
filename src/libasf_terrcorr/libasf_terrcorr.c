@@ -177,7 +177,7 @@ fftMatch_atCorners(char *sar, char *dem, const int size)
 }
 
 int asf_terrcorr(char *sarFile, char *demFile,
-		 char *outFile, double pixel_size)
+                 char *outFile, double pixel_size)
 {
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = TRUE;
@@ -186,14 +186,14 @@ int asf_terrcorr(char *sarFile, char *demFile,
   int dem_grid_size = 20;
   
   return asf_terrcorr_ext(sarFile, demFile, outFile, pixel_size,
-			  clean_files, do_resample, do_corner_matching,
-			  do_fftMatch_verification, dem_grid_size);
+                          clean_files, do_resample, do_corner_matching,
+                          do_fftMatch_verification, dem_grid_size);
 }
 
 int asf_terrcorr_ext(char *sarFile, char *demFile,
-		     char *outFile, double pixel_size, int clean_files,
-		     int do_resample, int do_corner_matching,
-		     int do_fftMatch_verification, int dem_grid_size)
+                     char *outFile, double pixel_size, int clean_files,
+                     int do_resample, int do_corner_matching,
+                     int do_fftMatch_verification, int dem_grid_size)
 {
   char *resampleFile, *srFile;
   char *demGridFile, *demClipped, *demSlant, *demSimAmp;
@@ -218,8 +218,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   // taking this out... I don't think the algorithm assumes this.
 //  if (metaSAR->general->x_pixel_size != metaSAR->general->y_pixel_size) {
 //    asfPrintStatus("SAR image does not have square pixels!\n"
-//		   "x pixel size = %gm, y pixel size = %gm.\n",
-//	metaSAR->general->x_pixel_size, metaSAR->general->y_pixel_size);
+//                 "x pixel size = %gm, y pixel size = %gm.\n",
+//      metaSAR->general->x_pixel_size, metaSAR->general->y_pixel_size);
 //    if (do_resample) {
 //      asfPrintStatus("Will resample SAR image to square pixels.\n");
 //      force_resample = TRUE;
@@ -230,8 +230,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   
   if (metaDEM->general->x_pixel_size != metaDEM->general->y_pixel_size) {
     asfPrintStatus("DEM does not have square pixels!\n"
-		   "x pixel size = %gm, y pixel size = %gm.\n",
-	metaDEM->general->x_pixel_size, metaDEM->general->y_pixel_size);
+                   "x pixel size = %gm, y pixel size = %gm.\n",
+        metaDEM->general->x_pixel_size, metaDEM->general->y_pixel_size);
     asfPrintStatus("Terrain Correction results may not be as expected.\n");
   }
 
@@ -242,17 +242,17 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   // too much oversampling.
   if (pixel_size > 0 && pixel_size < sarRes / 2) {
       asfPrintWarning(
-	"The requested a pixel size could result in a significantly\n"
+        "The requested a pixel size could result in a significantly\n"
         "oversampled image.  Current pixel size is %g, you requested %g.\n",
-	sarRes, pixel_size);
+        sarRes, pixel_size);
   }
     
   asfPrintStatus("SAR Image is %dx%d LxS, %gm pixels.\n",
-		 metaSAR->general->line_count, metaSAR->general->sample_count,
-		 sarRes);
+                 metaSAR->general->line_count, metaSAR->general->sample_count,
+                 sarRes);
   asfPrintStatus("DEM Image is %dx%d LxS, %gm pixels.\n",
-		 metaDEM->general->line_count, metaDEM->general->sample_count,
-		 demRes);
+                 metaDEM->general->line_count, metaDEM->general->sample_count,
+                 demRes);
 
   // Downsample the SAR image closer to the reference DEM if needed.
   // Otherwise, the quality of the resulting terrain corrected SAR image 
@@ -264,12 +264,12 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     if (pixel_size <= 0)
     {
       asfPrintStatus(
-	"DEM resolution is significantly higher than SAR resolution.\n");
+        "DEM resolution is significantly higher than SAR resolution.\n");
       pixel_size = demRes;
     }
 
     asfPrintStatus("Resampling SAR image to pixel size of %g meters.\n",
-		   pixel_size);
+                   pixel_size);
 
     resampleFile = appendSuffix(sarFile, "_resample");
     resample_to_square_pixsiz(sarFile, resampleFile, pixel_size);
@@ -277,9 +277,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     metaSAR = meta_read(resampleFile);
 
     asfPrintStatus("After resmapling, SAR Image is %dx%d LxS, %gm pixels.\n",
-		   metaSAR->general->line_count,
-		   metaSAR->general->sample_count,
-		   metaSAR->general->x_pixel_size);
+                   metaSAR->general->line_count,
+                   metaSAR->general->sample_count,
+                   metaSAR->general->x_pixel_size);
   } else {
     resampleFile = strdup(sarFile);
   }
@@ -300,9 +300,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     metaSAR = meta_read(srFile);
 
     asfPrintStatus("In slant range, SAR Image is %dx%d LxS, %gm pixels.\n",
-		   metaSAR->general->line_count,
-		   metaSAR->general->sample_count,
-		   metaSAR->general->x_pixel_size);
+                   metaSAR->general->line_count,
+                   metaSAR->general->sample_count,
+                   metaSAR->general->x_pixel_size);
   } else {
     srFile = strdup(resampleFile);
   }
@@ -320,21 +320,21 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       // There is a buffer of 400 pixels in far range added to have enough
       // DEM around when we get to correcting the terrain.
       asfPrintStatus("Generating %dx%d DEM grid...\n",
-		     dem_grid_size, dem_grid_size);
+                     dem_grid_size, dem_grid_size);
       demGridFile = appendSuffix(sarFile, "_demgrid");
       create_dem_grid_ext(demFile, srFile, demGridFile,
-			  metaSAR->general->sample_count,
-			  metaSAR->general->line_count, dem_grid_size,
-			  vertical_fudge, &coverage_pct);
+                          metaSAR->general->sample_count,
+                          metaSAR->general->line_count, dem_grid_size,
+                          vertical_fudge, &coverage_pct);
       
       if (coverage_pct <= 0) {
-	asfPrintError("DEM and SAR images do not overlap!\n");
+        asfPrintError("DEM and SAR images do not overlap!\n");
       } else if (coverage_pct <= 25) {
-	asfPrintError("Insufficient DEM coverage!\n");
+        asfPrintError("Insufficient DEM coverage!\n");
       } else if (coverage_pct <= 99) {
-	asfPrintWarning(
-	  "Incomplete DEM coverage, your result will be clipped in the\n"
-	  "areas where no DEM data is available.\n");
+        asfPrintWarning(
+          "Incomplete DEM coverage, your result will be clipped in the\n"
+          "areas where no DEM data is available.\n");
       }
 
       // Fit a fifth order polynomial to the grid points.
@@ -354,7 +354,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       demHeight = metaSAR->general->line_count;
       
       asfPrintStatus("Clipping DEM to %dx%d LxS using polynomial fit...\n",
-		     demHeight, demWidth);
+                     demHeight, demWidth);
       remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped);
       poly_delete(fwX);
       poly_delete(fwY);
@@ -363,7 +363,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       
       // Generate a slant range DEM and a simulated amplitude image.
       asfPrintStatus("Generating slant range DEM and "
-		     "simulated sar image...\n");
+                     "simulated sar image...\n");
       demSlant = appendSuffix(demFile, "_slant");
       demSimAmp = appendSuffix(demFile, "_sim_amp");
       reskew_dem(srFile, demClipped, demSlant, demSimAmp);
@@ -372,40 +372,40 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       asfPrintStatus("Resizing simulated sar image...\n");
       demTrimSimAmp = appendSuffix(demFile, "_sim_amp_trim");
       trim(demSimAmp, demTrimSimAmp, 0, 0, metaSAR->general->sample_count,
-	   demHeight);
+           demHeight);
 
       // Match the real and simulated SAR image to determine the offset.
       // Read the offset out of the offset file.
       asfPrintStatus("Determining image offsets...\n");
       fftMatchQ(srFile, demTrimSimAmp, &dx, &dy, &cert);
       asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f dy=%f\n",
-		     100*cert, dx, dy);
+                     100*cert, dx, dy);
 
       idx = - int_rnd(dx);
       idy = - int_rnd(dy);
 
       if (fabs(dy) > required_vertical_match)
       {
-	  // The fftMatch resulted in a large vertical offset!
-	  // This means we very likely did not clip the right portion of
-	  // the DEM.  So, shift the slant range image and re-clip.
+          // The fftMatch resulted in a large vertical offset!
+          // This means we very likely did not clip the right portion of
+          // the DEM.  So, shift the slant range image and re-clip.
 
-	  if (loop_count >= 3)
-	  {
-	      asfPrintWarning(
-		"Could not resolve vertical offset!\n"
-		"Continuing, however your terrain correction result may\n"
-		"be incomplete and/or incorrect.\n");
-	      break;
-	  }
-	  else
-	  {
-	      asfPrintStatus("Found a large vertical offset (%d pixels)\n"
-			     "Adjusting SAR image and re-clipping DEM.\n",
-			     idy);
+          if (loop_count >= 3)
+          {
+              asfPrintWarning(
+                "Could not resolve vertical offset!\n"
+                "Continuing, however your terrain correction result may\n"
+                "be incomplete and/or incorrect.\n");
+              break;
+          }
+          else
+          {
+              asfPrintStatus("Found a large vertical offset (%d pixels)\n"
+                             "Adjusting SAR image and re-clipping DEM.\n",
+                             idy);
 
-	      vertical_fudge = -dy;
-	  }
+              vertical_fudge = -dy;
+          }
       }
   } while (fabs(dy) > required_vertical_match);
 
@@ -413,7 +413,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   if (do_corner_matching) {
     int chipsz = 256;
     asfPrintStatus("Doing corner fftMatching... (using %dx%d chips)\n",
-		   chipsz, chipsz);
+                   chipsz, chipsz);
     fftMatch_atCorners(srFile, demTrimSimAmp, chipsz);
   }
 
@@ -430,14 +430,14 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     fftMatchQ(srFile, demTrimSimAmp, &dx2, &dy2, &cert);
 
     asfPrintStatus("Correlation after shift (cert=%5.2f%%): dx=%f dy=%f\n", 
-		   100*cert, dx2, dy2);
+                   100*cert, dx2, dy2);
 
     double match_tolerance = 1.0;
     if (sqrt(dx2*dx2 + dy2*dy2) > match_tolerance) {
       asfPrintError("Correlated images failed to match!\n"
-		    " Original fftMatch offset: (dx,dy) = %14.9f,%14.9f\n"
-		    "   After shift, offset is: (dx,dy) = %14.9f,%14.9f\n",
-		    dx, dy, dx2, dy2);
+                    " Original fftMatch offset: (dx,dy) = %14.9f,%14.9f\n"
+                    "   After shift, offset is: (dx,dy) = %14.9f,%14.9f\n",
+                    dx, dy, dx2, dy2);
     }
   }
 
