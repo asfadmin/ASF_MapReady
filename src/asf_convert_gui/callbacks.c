@@ -83,66 +83,55 @@ input_data_format_combobox_changed()
         *latitude_low_entry,
         *latitude_hi_label,
         *latitude_hi_entry,
+        *process_to_level1_checkbutton,
         *vbox_export,
+        *vbox_terrain_correction,
         *vbox_geocode;
 
     gint input_data_format;
     gboolean show_data_type_combobox;
     gboolean show_latitude_spinbuttons;
     gboolean show_export_section;
+    gboolean show_terrain_correction_section;
     gboolean show_geocode_section;
+    gboolean show_process_to_level1_checkbutton;
 
     input_data_format_combobox =
         glade_xml_get_widget(glade_xml, "input_data_format_combobox");
 
     input_data_format =
         gtk_option_menu_get_history(GTK_OPTION_MENU(input_data_format_combobox));
-
     switch (input_data_format)
     {
-    case INPUT_FORMAT_STF:
-        show_export_section = FALSE;
-        show_geocode_section = FALSE;
-        show_data_type_combobox = FALSE;
-        show_latitude_spinbuttons = TRUE;
-        break;
-    case INPUT_FORMAT_COMPLEX:
-        show_data_type_combobox = FALSE;
-        show_latitude_spinbuttons = FALSE;
-        show_export_section = FALSE;
-        show_geocode_section = FALSE;
-        break;
-    case INPUT_FORMAT_CEOS_LEVEL0:
-        show_data_type_combobox = FALSE;
-        show_latitude_spinbuttons = FALSE;
-        show_export_section = FALSE;
-        show_geocode_section = FALSE;
-        break;
-    default:
-    case INPUT_FORMAT_CEOS_LEVEL1:
-    case INPUT_FORMAT_ESRI:
-    case INPUT_FORMAT_ENVI:
-        show_data_type_combobox = TRUE;
-        show_latitude_spinbuttons = FALSE;
-        show_export_section = TRUE;
-        show_geocode_section = TRUE;
-        break;
-    case INPUT_FORMAT_ASF_INTERNAL:
-        show_data_type_combobox = FALSE;
-        show_latitude_spinbuttons = FALSE;
-        show_export_section = TRUE;
-        show_geocode_section = TRUE;
-        break;
+        case INPUT_FORMAT_STF:
+            show_data_type_combobox = FALSE;
+            show_latitude_spinbuttons = TRUE;
+            show_process_to_level1_checkbutton = FALSE;
+            break;
+        case INPUT_FORMAT_COMPLEX:
+            show_data_type_combobox = FALSE;
+            show_latitude_spinbuttons = FALSE;
+            show_process_to_level1_checkbutton = FALSE;
+            break;
+        case INPUT_FORMAT_CEOS_LEVEL0:
+            show_data_type_combobox = FALSE;
+            show_latitude_spinbuttons = FALSE;
+            show_process_to_level1_checkbutton = TRUE;
+            break;
+        default:
+        case INPUT_FORMAT_CEOS_LEVEL1:
+        case INPUT_FORMAT_ESRI:
+        case INPUT_FORMAT_ENVI:
+            show_data_type_combobox = TRUE;
+            show_latitude_spinbuttons = FALSE;
+            show_process_to_level1_checkbutton = FALSE;
+            break;
+        case INPUT_FORMAT_ASF_INTERNAL:
+            show_data_type_combobox = FALSE;
+            show_latitude_spinbuttons = FALSE;
+            show_process_to_level1_checkbutton = FALSE;
+            break;
     }
-
-    input_data_type_combobox =
-        glade_xml_get_widget(glade_xml, "input_data_type_combobox");
-
-    input_data_type_label =
-        glade_xml_get_widget(glade_xml, "input_data_type_label");
-
-    gtk_widget_set_sensitive(input_data_type_combobox, show_data_type_combobox);
-    gtk_widget_set_sensitive(input_data_type_label, show_data_type_combobox);
 
     latitude_checkbutton =
         glade_xml_get_widget(glade_xml, "latitude_checkbutton");
@@ -159,11 +148,53 @@ input_data_format_combobox_changed()
     latitude_hi_entry =
         glade_xml_get_widget(glade_xml, "latitude_hi_entry");
 
+    process_to_level1_checkbutton =
+        glade_xml_get_widget(glade_xml, "process_to_level1_checkbutton");
+
     gtk_widget_set_sensitive(latitude_checkbutton, show_latitude_spinbuttons);
     gtk_widget_set_sensitive(latitude_low_label, show_latitude_spinbuttons);
     gtk_widget_set_sensitive(latitude_low_entry, show_latitude_spinbuttons);
     gtk_widget_set_sensitive(latitude_hi_label, show_latitude_spinbuttons);
     gtk_widget_set_sensitive(latitude_hi_entry, show_latitude_spinbuttons);
+    gtk_widget_set_sensitive(process_to_level1_checkbutton,
+                             show_process_to_level1_checkbutton);
+
+    show_export_section = TRUE;
+    show_geocode_section = TRUE;
+    show_terrain_correction_section = TRUE;
+
+    if (show_process_to_level1_checkbutton) 
+    {
+        gboolean process_to_level1_checkbutton_is_checked =
+            gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(process_to_level1_checkbutton));
+
+        if (!process_to_level1_checkbutton_is_checked)
+        {
+            show_export_section = FALSE;
+            show_geocode_section = FALSE;
+            show_terrain_correction_section = FALSE;
+        }
+        else
+        {
+            show_data_type_combobox = TRUE;
+        }
+    }
+    else
+    {
+        gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(process_to_level1_checkbutton), FALSE);
+    }
+
+    input_data_type_combobox =
+        glade_xml_get_widget(glade_xml, "input_data_type_combobox");
+
+    input_data_type_label =
+        glade_xml_get_widget(glade_xml, "input_data_type_label");
+
+    gtk_widget_set_sensitive(input_data_type_combobox, show_data_type_combobox);
+    gtk_widget_set_sensitive(input_data_type_label, show_data_type_combobox);
+
 
     if (!show_latitude_spinbuttons)
     {
@@ -185,6 +216,21 @@ input_data_format_combobox_changed()
 
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(export_checkbutton),
             FALSE);
+    }
+
+    vbox_terrain_correction =
+        glade_xml_get_widget(glade_xml, "vbox_terrain_correction");
+
+    gtk_widget_set_sensitive(vbox_terrain_correction, 
+                             show_terrain_correction_section);
+
+    if (!show_terrain_correction_section)
+    {
+        GtkWidget *terrcorr_checkbutton =
+            glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
+
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(terrcorr_checkbutton),
+                                     FALSE);
     }
 
     output_format_combobox_changed();
@@ -433,6 +479,13 @@ on_complex_activate(GtkWidget *widget)
     update_summary();
 }
 #endif
+
+SIGNAL_CALLBACK void
+on_process_to_level1_checkbutton_toggled(GtkWidget *widget)
+{
+    input_data_format_combobox_changed();
+    update_summary();
+}
 
 #ifndef USE_GTK_22
 SIGNAL_CALLBACK void

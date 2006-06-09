@@ -101,6 +101,7 @@ typedef struct
 {
   /* import */
   int input_data_format;
+  int process_to_level1;
 
   /* transformations */
   int data_type;

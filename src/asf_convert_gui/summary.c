@@ -22,8 +22,22 @@ void update_summary()
     switch (s->input_data_format)
     {
     case INPUT_FORMAT_CEOS_LEVEL0:
+    {
+        GtkWidget *process_to_level1_checkbutton =
+            glade_xml_get_widget(glade_xml, "process_to_level1_checkbutton");
+
+        gboolean process_to_level1_is_checked =
+            gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(process_to_level1_checkbutton));
+
         strcat(text, "CEOS Level Zero");
-        break;
+
+        if (process_to_level1_is_checked)
+        {
+            strcat(text, "\n   Process to Level 1");
+        }
+    }    
+    break;
 
     default:
     case INPUT_FORMAT_CEOS_LEVEL1:

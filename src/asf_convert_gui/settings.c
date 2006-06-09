@@ -65,6 +65,16 @@ settings_apply_to_gui(const Settings * s)
     set_combo_box_item(output_format_combobox, s->output_format);
     set_combo_box_item(input_data_type_combobox, s->data_type);
 
+    if (s->process_to_level1)
+    {
+        GtkWidget *process_to_level1_checkbutton =
+            glade_xml_get_widget(glade_xml, "process_to_level1_checkbutton");
+
+        gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(process_to_level1_checkbutton),
+            s->process_to_level1);
+    }
+
     if (s->output_db)
     {
         GtkWidget *checkbutton_db =
@@ -327,6 +337,7 @@ settings_get_from_gui()
         *input_data_type_combobox,
         *checkbutton_db,
         *input_data_format_combobox,
+        *process_to_level1_checkbutton,
         *export_checkbutton,
         *output_format_combobox,
         *scale_checkbutton,
@@ -365,6 +376,9 @@ settings_get_from_gui()
     checkbutton_db =
         glade_xml_get_widget(glade_xml, "checkbutton_db");
 
+    process_to_level1_checkbutton =
+        glade_xml_get_widget(glade_xml, "process_to_level1_checkbutton");
+
     ret->data_type = get_combo_box_item(input_data_type_combobox);
     ret->output_format = get_combo_box_item(output_format_combobox);
     ret->input_data_format = get_combo_box_item(input_data_format_combobox);
@@ -374,6 +388,11 @@ settings_get_from_gui()
          ret->data_type == INPUT_TYPE_BETA ||
          ret->data_type == INPUT_TYPE_GAMMA) &&
         gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbutton_db));
+
+    ret->process_to_level1 =
+        ret->data_type == INPUT_FORMAT_CEOS_LEVEL0 &&
+        gtk_toggle_button_get_active(
+            GTK_TOGGLE_BUTTON(process_to_level1_checkbutton));
 
     ret->apply_scaling =
         settings_get_output_format_allows_size(ret) &&
@@ -1130,7 +1149,7 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "input file = %s\n", input_file);
     fprintf(cf, "output file = %s\n", output_file);
     fprintf(cf, "import = 1\n");
-    // fprintf(cf, "sar processing=0\n");
+    fprintf(cf, "sar processing = %d\n", s->process_to_level1);
     // fprintf(cf, "image stats=0\n");
     // fprintf(cf, "detect corner reflectors = 0\n");
     fprintf(cf, "terrain correction = %d\n", s->terrcorr_is_checked);
@@ -1152,6 +1171,13 @@ settings_to_config_file(const Settings *s,
     }
     // fprintf(cf, "precise =\n");
     fprintf(cf, "\n");
+
+    if (s->process_to_level1) {
+        fprintf(cf, "[SAR processing]\n");
+        fprintf(cf, "radiometry = %s_image\n", 
+                settings_get_data_type_string(s));
+        fprintf(cf, "\n");
+    }
 
     if (s->terrcorr_is_checked) {
       fprintf(cf, "[Terrain correction]\n");
