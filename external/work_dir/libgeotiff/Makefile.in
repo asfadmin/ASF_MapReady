@@ -21,9 +21,9 @@ build_stamp:
 	gunzip --to-stdout $(ZIPFILE) |	tar xv
 	(   cd $(UNPACK_DIR) ; \
 	    ./configure --prefix=$(ROOT_DIR) @LIBTIFF_LOCATION@ ; \
+	    cat ../Makefile.addendum >> ./Makefile ; \
 	    make libgeotiff.a ; \
-	    touch bin/listgeo$(BIN_POSTFIX) bin/geotifcp$(BIN_POSTFIX) ; \
-	    make install ; \
+	    make asf_install ; \
 	)
 	touch $@
 
