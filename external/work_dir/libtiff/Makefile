@@ -17,7 +17,7 @@ build_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
 	gunzip --to-stdout $(ZIPFILE) |	tar xv
 	(   cd $(UNPACK_DIR) ; \
-	    ./configure --prefix=$(ROOT_DIR) ; \
+	    ./configure --prefix=$(ROOT_DIR) --disable-zlib --disable-shared; \
 	    make ; \
 	    make install ; \
 	)
