@@ -147,7 +147,6 @@ PROGRAMS
 	detect_cr { }
 	xpix_ypix { }
 	meta_check { }
-	stp { BINS ardop }
 
 @src_tc/
 	2dmap { }
