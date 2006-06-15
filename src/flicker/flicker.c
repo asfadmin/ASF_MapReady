@@ -151,9 +151,11 @@ GladeXML *glade_xml;
 typedef struct fis
 {
     GdkPixbuf *i1, *i2;
+    char *file1, *file2;
 } FlickerItems;
 
 FlickerItems flicker_items;
+int keep_going = TRUE;
 
 static char * escapify(const char * s)
 {
@@ -240,13 +242,16 @@ find_in_path(gchar * file)
 }
 
 void
-set_app_title()
+set_app_title(char *file)
 {
     /* add version number to window title */
     char title [256];
     GtkWidget *widget;
 
-    sprintf (title, "Flicker: Version %s", VERSION_STRING);
+    if (file)
+        sprintf (title, "Flicker: Version %s - %s", VERSION_STRING, file);
+    else
+        sprintf (title, "Flicker: Version %s", VERSION_STRING);
 
     widget = glade_xml_get_widget (glade_xml, "flicker_window");
     gtk_window_set_title(GTK_WINDOW(widget), title);
@@ -258,7 +263,8 @@ static void quit()
         unlink("tmp1.jpg");
     if (fileExists("tmp2.jpg"))
         unlink("tmp2.jpg");
-    gtk_main_quit();
+    keep_going = FALSE;
+    //gtk_main_quit();
 }
 
 SIGNAL_CALLBACK void
@@ -280,6 +286,15 @@ on_flicker_window_delete_event(GtkWidget *w, gpointer data)
 }
 
 static int imx(int a, int b) { return a>b?a:b; }
+
+static char * get_basename(const char *name)
+{
+    char dirName[255];
+    char fileName[255];
+    split_dir_and_file(name, dirName, fileName);
+
+    return strdup(fileName);
+}
 
 static void load_images(const char *f1, const char *f2)
 {
@@ -320,6 +335,27 @@ static void load_images(const char *f1, const char *f2)
     flicker_items.i2 = gdk_pixbuf_new_from_file("tmp2.jpg", &err);
     if (!flicker_items.i1)
         g_error("Failed to load tmp2.jpg: %s\n", err->message);
+
+    flicker_items.file1 = get_basename(f1);
+    flicker_items.file2 = get_basename(f2);
+}
+
+static void do_wait(double secs)
+{
+    double micro_secs = 100000 * secs;
+    int interval = 100;
+    int count = 0;
+
+    while (count < micro_secs) {
+        while (gtk_events_pending())
+            gtk_main_iteration();
+
+        if (!keep_going)
+            break;
+
+        g_usleep(interval);
+        count += interval;
+    }
 }
 
 static void flicker_thread(FlickerItems *f_items, gpointer user_data)
@@ -328,14 +364,26 @@ static void flicker_thread(FlickerItems *f_items, gpointer user_data)
 
     while (1) {
         gtk_image_set_from_pixbuf(GTK_IMAGE(img), f_items->i1);
-        g_usleep(1500000);
+        set_app_title(f_items->file1);
+
+        do_wait(1);
+
+        if (!keep_going) break;
+
         gtk_image_set_from_pixbuf(GTK_IMAGE(img), f_items->i2);
-        g_usleep(1500000);
+        set_app_title(f_items->file2);
+
+        do_wait(1);
+
+        if (!keep_going) break;
     }
 }
 
 static void start_flicker()
 {
+    flicker_thread(&flicker_items, NULL);
+    return;
+
     assert(flicker_items.i1);
     assert(flicker_items.i2);
 
@@ -376,13 +424,15 @@ main(int argc, char **argv)
 
     g_free(glade_xml_file);
 
-    set_app_title();
+    set_app_title(NULL);
     set_font();
     load_images(argv[1], argv[2]);
-    start_flicker();
 
     glade_xml_signal_autoconnect(glade_xml);
-    gtk_main ();
+    start_flicker();
+
+    if (keep_going)
+        gtk_main ();
 
     exit (EXIT_SUCCESS);
 }
