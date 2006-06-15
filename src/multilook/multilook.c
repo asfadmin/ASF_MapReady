@@ -207,19 +207,21 @@ int main(int argc, char *argv[])
 	meta_write(meta, metaIn);
 	create_name(metaIn,argv[currArg],"_phase.meta");
 	meta_write(meta, metaIn);
-  
+
+        meta_parameters *meta09 = meta_read(fnm2);
+        asf_meta1x_to_meta09(meta, "1.3", meta09, &newddr);
+
 	/* Create 3-band image's DDR.
 	   Currently metadata file don't know anything about multiband imagery.
 	   We will need to convert the current version for single band amplitude
-	   image back to metadata version 0.9 and change a couple of values *
+	   image back to metadata version 0.9 and change a couple of values 
 	sprintf(cmd, "convert_meta %s 1.3 %s 0.9", metaIn, metaOut);
-	system(cmd);
-
-	c_getddr(imgfile, &newddr);
+	asfSystem(cmd);
+        */
+	
 	newddr.dtype=EBYTE;
 	newddr.nbands=3;
 	c_putddr(imgfile,&newddr);
-	*/
   
 	fiamp = fopenImage(fnm1,"rb");
 	fiphase = fopenImage(fnm2,"rb");
@@ -334,7 +336,7 @@ int main(int argc, char *argv[])
 			printf("   Completed %3.0f percent\n", percent);
 			percent+=5.0;
 		}
-		/*
+		
 		for (i=0;i<outWid;i++)
 		{
 			redPtr[i] = imgData[i].red;
@@ -352,13 +354,13 @@ int main(int argc, char *argv[])
 		FSEEK64(flas,blu_offset,SEEK_SET);
 		FWRITE(bluPtr,1,outWid,flas);
     
-		* reposition data for next read *
+		/* reposition data for next read */
 		for (i=0;i<nitems;i++)
 		{
 			ampIn[i] = ampIn[i + newitems];
 			phaseIn[i] = phaseIn[i + newitems];
 		}
-		*/
+		
 	}
   
 	/* 
