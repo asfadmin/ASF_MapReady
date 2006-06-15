@@ -303,6 +303,8 @@ file *newFile(void)
 	f->azpix=azpix;
 	f->rngpix=rngpix;
 	f->firstLineToProcess=g.ifirstline;
+        if (f->firstLineToProcess > 0)
+            printf("   First line to process: %d\n", f->firstLineToProcess);
 	f->skipFile=g.ifirst+g.isave;
 
 	f->firstOutputLine = (n_az-g.na_valid)/2;

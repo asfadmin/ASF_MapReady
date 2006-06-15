@@ -853,6 +853,12 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     char *input_file = MALLOC(sizeof(char)*(strlen(input_file_c)+2));
 	strcpy(input_file, input_file_c);
 
+    GtkWidget * start_line_entry =
+	glade_xml_get_widget(glade_xml, "start_line_entry");
+
+    int ifirstline =
+        atoi(gtk_entry_get_text(GTK_ENTRY(start_line_entry)));
+
     /* check that we have all the required files */
     if (!check_files(input_file))
         return;
@@ -883,6 +889,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
       int npatches = 1;
       params_in->iflag = &debug_flag;
       params_in->npatches = &npatches;
+      params_in->ifirstline = &ifirstline;
 
       ardop(params_in);
 
