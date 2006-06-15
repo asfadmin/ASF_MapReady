@@ -96,14 +96,14 @@ static int mini(int a, int b)
 }
 
 static void 
-fftMatch_atCorners(char *sar, char *dem, const int size)
+fftMatch_atCorners(char *sar, char *dem, const int size,
+                   double *rsf, double *asf)
 {
   float dx_ur, dy_ur; 
   float dx_ul, dy_ul; 
   float dx_lr, dy_lr; 
   float dx_ll, dy_ll; 
   float cert;
-  double rsf, asf;
 
   char *chopped_sar, *chopped_dem;
   int nl, ns;
@@ -162,11 +162,11 @@ fftMatch_atCorners(char *sar, char *dem, const int size)
   nl = meta_sar->general->line_count;
   ns = meta_sar->general->sample_count;
 
-  rsf = 1 - (fabs((double)(dx_ul-dx_ur)) + fabs((double)(dx_ll-dx_lr)))/ns/2;
-  asf = 1 - (fabs((double)(dy_ul-dy_ll)) + fabs((double)(dy_ur-dy_lr)))/nl/2;
+  *rsf = 1 - (fabs((double)(dx_ul-dx_ur)) + fabs((double)(dx_ll-dx_lr)))/ns/2;
+  *asf = 1 - (fabs((double)(dy_ul-dy_ll)) + fabs((double)(dy_ur-dy_lr)))/nl/2;
 
-  asfPrintStatus("Suggested scale factors: %14.10lf range\n", rsf);
-  asfPrintStatus("                         %14.10lf azimuth\n\n", asf);
+  asfPrintStatus("Suggested scale factors: %14.10lf range\n", *rsf);
+  asfPrintStatus("                         %14.10lf azimuth\n\n", *asf);
 
   meta_free(meta_sar);
 
@@ -181,20 +181,24 @@ int asf_terrcorr(char *sarFile, char *demFile,
 {
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = TRUE;
+  int do_sar_rescale = TRUE;
   int do_resample = TRUE;
   int clean_files = TRUE;
   int dem_grid_size = 20;
   
   return asf_terrcorr_ext(sarFile, demFile, outFile, pixel_size,
                           clean_files, do_resample, do_corner_matching,
-                          do_fftMatch_verification, dem_grid_size);
+                          do_sar_rescale, do_fftMatch_verification,
+                          dem_grid_size);
 }
 
-int asf_terrcorr_ext(char *sarFile, char *demFile,
-                     char *outFile, double pixel_size, int clean_files,
+int asf_terrcorr_ext(char *inSarFile, char *inDemFile,
+                     char *outFile, double in_pixel_size, int clean_files,
                      int do_resample, int do_corner_matching,
-                     int do_fftMatch_verification, int dem_grid_size)
+                     int do_sar_rescale, int do_fftMatch_verification,
+                     int dem_grid_size)
 {
+  char *sarFile, *demFile;
   char *resampleFile, *srFile;
   char *demGridFile, *demClipped, *demSlant, *demSimAmp;
   char *demTrimSimAmp, *demTrimSlant;
@@ -209,6 +213,16 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   const float required_vertical_match = 3.5;
   float vertical_fudge = 0.0;
   double coverage_pct;
+  double pixel_size;
+
+  sarFile = strdup(inSarFile);
+  demFile = strdup(inDemFile);
+
+redo_after_rescale:
+
+  pixel_size = in_pixel_size;
+  vertical_fudge = 0.0;
+  loop_count = 0;
 
   asfPrintStatus("Reading metadata...\n");
   metaSAR = meta_read(sarFile);
@@ -408,13 +422,35 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
           }
       }
   } while (fabs(dy) > required_vertical_match);
-
-  // Corner test
+  
+  // Corner test and resample of the real slntrng SAR image
   if (do_corner_matching) {
     int chipsz = 256;
+    double range_sf=1.0, azi_sf=1.0;
     asfPrintStatus("Doing corner fftMatching... (using %dx%d chips)\n",
                    chipsz, chipsz);
-    fftMatch_atCorners(srFile, demTrimSimAmp, chipsz);
+    fftMatch_atCorners(srFile, demTrimSimAmp, chipsz, &range_sf, &azi_sf);
+    if (do_sar_rescale) {
+      char *sarRescaledFile = appendSuffix(sarFile, "_rescale");
+      asfPrintStatus("Rescaling SAR image based on corner match range factor %f\n",
+                     range_sf);
+      resample(sarFile, sarRescaledFile, range_sf, 1.0);
+      meta_parameters *meta_sar = meta_read(sarFile);
+      meta_parameters *meta_rsc = meta_read(sarRescaledFile);
+      meta_sar->general->line_count = meta_rsc->general->line_count;
+      meta_sar->general->sample_count = meta_rsc->general->sample_count;
+      meta_write(meta_sar, sarRescaledFile);
+      meta_free(meta_sar);
+      meta_free(meta_rsc);
+      meta_free(metaSAR);
+      meta_free(metaDEM);
+      FREE(sarFile);
+      sarFile = strdup(sarRescaledFile);
+      FREE(sarRescaledFile);
+      do_sar_rescale = FALSE;
+      asfPrintStatus("Restarting terrain correction with newly scaled SAR image...\n");
+      goto redo_after_rescale;
+    }
   }
 
   // Apply the offset to the simulated amplitude image.
@@ -457,6 +493,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 
   if (clean_files) {
     asfPrintStatus("Removing intermediate files...\n");
+    if (strcmp(sarFile,inSarFile) != 0) {
+      clean(sarFile);
+    }
     clean(resampleFile);
     clean(srFile);
     clean(demClipped);
