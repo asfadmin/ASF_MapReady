@@ -70,6 +70,43 @@ struct ARDOP_PARAMS {
   float	xmi;		     /* bias value for i values			   */
   float	xmq;		     /* bias value for q values			   */
 };
+
+struct INPUT_ARDOP_PARAMS {
+  char	in1[256];
+  char	out[256];
+  char	CALPRMS[255];
+  int *pwrFlag;
+  int *sigmaFlag;
+  int *gammaFlag;
+  int *betaFlag;
+  int *hamFlag;
+  int *kaiFlag;
+  int *ifirstline;
+  int *npatches;
+  int *isave;
+  int *ifirst;
+  int *nla;
+  float *azres;
+  int *deskew;
+  int *na_valid;
+  float *sloper;
+  float *interr;
+  float *slopea;
+  float *intera;
+  float *dsloper;
+  float *dinterr;
+  float *dslopea;
+  float *dintera;
+  float *fd;
+  float *fdd;
+  float *fddd;
+  int *iflag;
+};
+
+struct INPUT_ARDOP_PARAMS *get_input_ardop_params_struct(char *in1, char *out);
+void apply_in_ardop_params_to_ardop_params(struct INPUT_ARDOP_PARAMS *in,
+                                           struct ARDOP_PARAMS *a);
+
 void print_params(const char *in,struct ARDOP_PARAMS *a,const char *sourceProgram);
 void read_params(const char *in,struct ARDOP_PARAMS *);
 
