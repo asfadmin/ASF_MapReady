@@ -1,6 +1,86 @@
 #include "asf.h"
 #include "ardop_params.h"
 
+struct INPUT_ARDOP_PARAMS *get_input_ardop_params_struct(char *in1, char *out)
+{
+    struct INPUT_ARDOP_PARAMS *ret;
+    ret = MALLOC(sizeof(struct INPUT_ARDOP_PARAMS));
+
+    strcpy(ret->in1, in1);
+    strcpy(ret->out, out);
+    strcpy(ret->CALPRMS, "NO");
+
+    ret->pwrFlag = NULL;
+    ret->sigmaFlag = NULL;
+    ret->gammaFlag = NULL;
+    ret->betaFlag = NULL;
+    ret->hamFlag = NULL;
+    ret->kaiFlag = NULL;
+    ret->ifirstline = NULL;
+    ret->npatches = NULL;
+    ret->isave = NULL;
+    ret->ifirst = NULL;
+    ret->nla = NULL;
+    ret->azres = NULL;
+    ret->deskew = NULL;
+    ret->na_valid = NULL;
+    ret->sloper = NULL;
+    ret->interr = NULL;
+    ret->slopea = NULL;
+    ret->intera = NULL;
+    ret->dsloper = NULL;
+    ret->dinterr = NULL;
+    ret->dslopea = NULL;
+    ret->dintera = NULL;
+    ret->fd = NULL;
+    ret->fdd = NULL;
+    ret->fddd = NULL;
+    ret->iflag = NULL;
+
+    return ret;
+}
+
+void apply_in_ardop_params_to_ardop_params(struct INPUT_ARDOP_PARAMS *in,
+                                           struct ARDOP_PARAMS *a)
+{
+    strcpy(a->in1, in->in1);
+    strcpy(a->out, in->out);
+
+    if (in->CALPRMS)
+        strcpy(a->CALPRMS, in->CALPRMS);
+
+#define ApplyField(field) if (in->field) a->field = *(in->field);
+
+    ApplyField(pwrFlag);
+    ApplyField(sigmaFlag);
+    ApplyField(gammaFlag);
+    ApplyField(betaFlag);
+    ApplyField(hamFlag);
+    ApplyField(kaiFlag);
+    ApplyField(ifirstline);
+    ApplyField(npatches);
+    ApplyField(isave);
+    ApplyField(ifirst);
+    ApplyField(nla);
+    ApplyField(azres);
+    ApplyField(deskew);
+    ApplyField(na_valid);
+    ApplyField(sloper);
+    ApplyField(interr);
+    ApplyField(slopea);
+    ApplyField(intera);
+    ApplyField(dsloper);
+    ApplyField(dinterr);
+    ApplyField(dslopea);
+    ApplyField(dintera);
+    ApplyField(fd);
+    ApplyField(fdd);
+    ApplyField(fddd);
+    ApplyField(iflag);
+
+#undef ApplyField
+}
+
 void print_params(const char *in,struct ARDOP_PARAMS *a,const char *sourceProgram)
 {
  FILE *fp; char out[256];

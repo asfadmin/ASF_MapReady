@@ -100,9 +100,12 @@ BUGS:
 #include "asf.h"
 #include "ardop_defs.h"
 
-int ardop(struct ARDOP_PARAMS * params)
+int ardop(struct INPUT_ARDOP_PARAMS * params_in)
 {
         meta_parameters *meta;
+        struct ARDOP_PARAMS params;
+
+        fill_default_ardop_params(&params);
 
 /*Structures: these are passed to the sub-routines which need them.*/
 	patch *p;
@@ -117,50 +120,54 @@ int ardop(struct ARDOP_PARAMS * params)
 
 /*Setup metadata*/
 	/*Create ARDOP_PARAMS struct as well as meta_parameters.*/
-	if (extExists(params->in1,".in"))
+	if (extExists(params_in->in1,".in"))
 	{/*Read parameters from ARDOP parameter file*/
-		read_params(params->in1,params);
-		if (extExists(params->in1,".meta")) {
+		read_params(params_in->in1,&params);
+		if (extExists(params_in->in1,".meta")) {
                         /*Input file has .meta attached: read it*/
-			meta=meta_read(params->in1);
+			meta=meta_read(params_in->in1);
 		} else {
                         /*No .meta exists--fabricate one*/
 			meta=raw_init();
                 }
 	}
 	else    /*Read parameters & .meta from CEOS.*/ {
-		get_params(params->in1,params,&meta);
+		get_params(params_in->in1,&params,&meta);
         }
 
-	if (params->fdd==-99.0)
+/*Apply user-overridden parameters*/
+        apply_in_ardop_params_to_ardop_params(params_in, &params);
+
+/*Doppler*/
+	if (params.fdd==-99.0)
 	{
-		double old_dop=params->fd;
+		double old_dop=params.fd;
 	/*Estimate Doppler in scene center.*/
-		estdop(params->in1, 1000,
-                       &params->fd, &params->fdd, &params->fddd);
+		estdop(params.in1, 1000,
+                       &params.fd, &params.fdd, &params.fddd);
 
 	/*De-ambiguify doppler based on old value*/
-		while (params->fd-old_dop<-0.5) params->fd+=1.0;
-		while (params->fd-old_dop> 0.5) params->fd-=1.0;
+		while (params.fd-old_dop<-0.5) params.fd+=1.0;
+		while (params.fd-old_dop> 0.5) params.fd-=1.0;
 	}
 
 /*Copy fields from ARDOP_PARAMS struct to meta_parameters struct.*/
 	meta->sar->image_type              = 'S';        /*Slant range image*/
-	meta->sar->look_count              = params->nlooks;
-	meta->sar->deskewed                = params->deskew;
-	meta->sar->range_time_per_pixel    = 1.0/params->fs;
-	meta->sar->azimuth_time_per_pixel  = 1.0/params->prf;
-	meta->sar->slant_shift             = params->slantOff;
-	meta->sar->time_shift              = params->timeOff;
-	meta->sar->slant_range_first_pixel = params->r00;
-	meta->sar->wavelength              = params->wavl;
-	meta->sar->prf                     = params->prf;
-	meta->sar->earth_radius            = params->re;
-	meta->sar->satellite_height        = params->re+params->ht;
-	meta->sar->range_doppler_coefficients[0] = params->fd*params->prf;
-	meta->sar->range_doppler_coefficients[1] = params->fdd*params->prf;
-	meta->sar->range_doppler_coefficients[2] = params->fddd*params->prf;
-	meta->sar->azimuth_doppler_coefficients[0] = params->fd*params->prf;
+	meta->sar->look_count              = params.nlooks;
+	meta->sar->deskewed                = params.deskew;
+	meta->sar->range_time_per_pixel    = 1.0/params.fs;
+	meta->sar->azimuth_time_per_pixel  = 1.0/params.prf;
+	meta->sar->slant_shift             = params.slantOff;
+	meta->sar->time_shift              = params.timeOff;
+	meta->sar->slant_range_first_pixel = params.r00;
+	meta->sar->wavelength              = params.wavl;
+	meta->sar->prf                     = params.prf;
+	meta->sar->earth_radius            = params.re;
+	meta->sar->satellite_height        = params.re+params.ht;
+	meta->sar->range_doppler_coefficients[0] = params.fd*params.prf;
+	meta->sar->range_doppler_coefficients[1] = params.fdd*params.prf;
+	meta->sar->range_doppler_coefficients[2] = params.fddd*params.prf;
+	meta->sar->azimuth_doppler_coefficients[0] = params.fd*params.prf;
 	meta->sar->azimuth_doppler_coefficients[1] = 0.0;
 	meta->sar->azimuth_doppler_coefficients[2] = 0.0;
 
@@ -170,9 +177,9 @@ int ardop(struct ARDOP_PARAMS * params)
 	meta->general->x_pixel_size = meta->sar->range_time_per_pixel
                                        * (speedOfLight/2.0);
 	meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel
-                                       * params->vel * (params->re/params->ht);
+                                       * params.vel * (params.re/params.ht);
 
-	ardop_setup(params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
+	ardop_setup(&params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
 	if (!quietflag) {
 	  printf("   Processing %dx %d az by %d range patches...\n",f->nPatches,n_az,n_range);
 	  printf("   Of the %d azimuth lines, only %d are valid.\n",n_az,f->n_az_valid);

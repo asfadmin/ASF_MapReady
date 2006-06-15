@@ -160,7 +160,7 @@ typedef struct {
 /*--------------*/
 /*  Prototypes: */
 /*--------------*/
-int ardop(struct ARDOP_PARAMS * params);
+int ardop(struct INPUT_ARDOP_PARAMS * params);
 double fftEstDop(getRec *inFile,int startLine,int xStride,int nLines);
 void estdop(char file[], int nDopLines, float *a, float *b,float *c);
 void calc_range_ref(complexFloat *range_ref, int rangeFFT, int refLen);

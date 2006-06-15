@@ -362,9 +362,6 @@ void ardop_setup(struct ARDOP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *
 /*Set parameters*/
 	g=*g_in;
 
-	
-
-	
 /*Compute a few bizarre numbers.*/
 	n_az = default_n_az;      /* number of azimuth output lines per patch */
 	

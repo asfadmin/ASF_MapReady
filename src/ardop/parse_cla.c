@@ -52,8 +52,21 @@ for this scene.
 
 ******************************************/
 
+static int* intParm(int i)
+{
+    int *ret = MALLOC(sizeof(int));
+    *ret = i;
+    return ret;
+}
 
-int parse_cla(int argc,char *argv[], struct ARDOP_PARAMS *g)
+static float *floatParm(float f)
+{
+    float *ret = MALLOC(sizeof(float));
+    *ret = f;
+    return ret;
+}
+
+int parse_cla(int argc,char *argv[], struct INPUT_ARDOP_PARAMS *g)
 {
 	int read_offset = 0,   /* Flag - Read resampling offsets from file?   */
 	    read_dopplr = 0;   /* Flag - Read doppler constant from file?     */
@@ -62,10 +75,6 @@ int parse_cla(int argc,char *argv[], struct ARDOP_PARAMS *g)
 	char fName_slope[256], /* Input slope,intercept (offsets) file        */
 	   fName_doppler[256]; /* Input doppler constant file                 */
 	FILE  *fp;
-	
-	/* Preset Optional Command Line Parameters
-	   ---------------------------------------------------------*/
-        fill_default_ardop_params(g);
 
 	/* Process the Command Line Arguments
 	   ------------------------------------*/
@@ -80,26 +89,26 @@ int parse_cla(int argc,char *argv[], struct ARDOP_PARAMS *g)
 						  logflag = 1; fLog = FOPEN(logFile, "a");}
 		else if (strmatch(key,"-debug")) {
 			CHK_ARG_ASP(1);
-			g->iflag    = atoi(GET_ARG(1)); 
-			if (g->iflag==0) return debug_help; }
+			g->iflag    = intParm(atoi(GET_ARG(1))); 
+			if (*(g->iflag)==0) return debug_help; }
 		else if (strmatch(key,"-quiet")) {quietflag = 1;}
-		else if (strmatch(key,"-power")) {g->pwrFlag=1;}
-		else if (strmatch(key,"-sigma")) {g->sigmaFlag=1; cal_check=1;}
-		else if (strmatch(key,"-gamma")) {g->gammaFlag=1; cal_check=1;}
-		else if (strmatch(key,"-beta" )) {g->betaFlag=1; cal_check=1;}
-		else if (strmatch(key,"-hamming")) {g->hamFlag = 1;}
-		else if (strmatch(key,"-kaiser"))  {g->kaiFlag = 1;}
-		else if (strmatch(key,"-l")) {CHK_ARG_ASP(1); g->ifirstline = atoi(GET_ARG(1));}
-		else if (strmatch(key,"-p")) {CHK_ARG_ASP(1); g->npatches = atoi(GET_ARG(1));}
+		else if (strmatch(key,"-power")) {g->pwrFlag=intParm(1);}
+		else if (strmatch(key,"-sigma")) {g->sigmaFlag=intParm(1); cal_check=1;}
+		else if (strmatch(key,"-gamma")) {g->gammaFlag=intParm(1); cal_check=1;}
+		else if (strmatch(key,"-beta" )) {g->betaFlag=intParm(1); cal_check=1;}
+		else if (strmatch(key,"-hamming")) {g->hamFlag = intParm(1);}
+		else if (strmatch(key,"-kaiser"))  {g->kaiFlag = intParm(1);}
+		else if (strmatch(key,"-l")) {CHK_ARG_ASP(1); g->ifirstline = intParm(atoi(GET_ARG(1)));}
+		else if (strmatch(key,"-p")) {CHK_ARG_ASP(1); g->npatches = intParm(atoi(GET_ARG(1)));}
 		else if (strmatch(key,"-f")) {CHK_ARG_ASP(1); g->isave   += atoi(GET_ARG(1));}
 		else if (strmatch(key,"-s")) {CHK_ARG_ASP(1); g->ifirst  += atoi(GET_ARG(1));}
-		else if (strmatch(key,"-n")) {CHK_ARG_ASP(1); g->nla      = atoi(GET_ARG(1));}
-		else if (strmatch(key,"-r")) {CHK_ARG_ASP(1); g->azres    = atof(GET_ARG(1));}
-		else if (strmatch(key,"-e")) {CHK_ARG_ASP(1); g->deskew   = atoi(GET_ARG(1));
-		 			      g->na_valid =-99;}
+		else if (strmatch(key,"-n")) {CHK_ARG_ASP(1); g->nla      = intParm(atoi(GET_ARG(1)));}
+		else if (strmatch(key,"-r")) {CHK_ARG_ASP(1); g->azres    = floatParm(atof(GET_ARG(1)));}
+		else if (strmatch(key,"-e")) {CHK_ARG_ASP(1); g->deskew   = intParm(atoi(GET_ARG(1)));
+		 			      g->na_valid = intParm(-99);}
 	/* If you use the -e flag, then a deskew wedge in the data will need to be removed. Override  
 	internal measurement of the number of valid azimuth lines with the -v option flag */
-		else if (strmatch(key,"-v")) {CHK_ARG_ASP(1); g->na_valid = atoi(GET_ARG(1));}
+		else if (strmatch(key,"-v")) {CHK_ARG_ASP(1); g->na_valid = intParm(atoi(GET_ARG(1)));}
 		else if (strmatch(key,"-o")) {CHK_ARG_ASP(1); strcpy(fName_slope,GET_ARG(1));
 						read_offset = 1;}
 		else if (strmatch(key,"-c")) {CHK_ARG_ASP(1); strcpy(fName_doppler,GET_ARG(1));
@@ -111,21 +120,34 @@ int parse_cla(int argc,char *argv[], struct ARDOP_PARAMS *g)
 	{
 		printf("   You can only use -sigma, -beta, or -gamma in conjunction with -m\n");
 		printf("   I will proceed, ignoring the option.\n");
-		g->sigmaFlag=0;
-		g->gammaFlag=0;
-		g->betaFlag=0;
+		g->sigmaFlag=intParm(0);
+		g->gammaFlag=intParm(0);
+		g->betaFlag=intParm(0);
 	}
 
 	if (read_offset) {
+                float sloper, interr, slopea, intera;
+                float dsloper, dinterr, dslopea, dintera;
 		fp=FOPEN(fName_slope,"r");
-		fscanf(fp,"%f %f %f %f",&g->sloper,&g->interr,&g->slopea,&g->intera);
+		fscanf(fp,"%f %f %f %f",&sloper,&interr,&slopea,&intera);
+                g->sloper = floatParm(sloper);
+                g->interr = floatParm(interr);
+                g->slopea = floatParm(slopea);
+                g->intera = floatParm(intera);
 		fscanf(fp,"%g %g %g %g",&g->dsloper,&g->dinterr,&g->dslopea,&g->dintera);
+                g->dsloper = floatParm(dsloper);
+                g->dinterr = floatParm(dinterr);
+                g->dslopea = floatParm(dslopea);
+                g->dintera = floatParm(dintera);
 		FCLOSE(fp);
 	}
 	if (read_dopplr) {
+                float fd, fdd, fddd;
 		fp=FOPEN(fName_doppler,"r");
-		g->fd=g->fdd=g->fddd=0.0;
-		fscanf(fp,"%f %f %f", &g->fd,&g->fdd,&g->fddd);
+		fscanf(fp,"%f %f %f", &fd,&fdd,&fddd);
+                g->fd = floatParm(fd);
+                g->fdd = floatParm(fdd);
+                g->fddd = floatParm(fddd);
 		FCLOSE(fp);
 	}
 
