@@ -41,8 +41,7 @@ ifdef DIAUG
 endif
 CFLAGS += $(DEBUG_FEATURES)
 
-OBJS  = ardop_params.o \
-	ardop_write.o \
+OBJS  = ardop_write.o \
 	asf_import.o \
 	aux_ERS.o \
 	aux_JRS.o \
