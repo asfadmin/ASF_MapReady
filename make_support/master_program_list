@@ -68,6 +68,7 @@ LIBS
 	libasf_raster
 	libasf_reporting
 	libifm
+	libasf_meta
 @src_tc/
 	sarmodel
 	tcobj
