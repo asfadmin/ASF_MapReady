@@ -240,6 +240,10 @@ MODULES = \
       svn co https://lindon/svn/repos/release/trunk/rpmbuild release/rpmbuild
       mkdir -p release/tar_filelist release/tar/stp
 
+7A. You may need to manually add
+      stp { BINS ardop }
+    to the master_program_list at the end of the PROGRAMS section.
+
  8. Create the source.stp file:
       cd asf_tools/make_support; make; ./makemake; cd -
 
