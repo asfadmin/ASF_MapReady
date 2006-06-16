@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
-TARGET = ardop_gui
-SRCS = ardop_gui.c
+TARGET = stp
+SRCS = stp.c
 
 LIBS  = \
 	$(LIBDIR)/libasf_ardop.a \

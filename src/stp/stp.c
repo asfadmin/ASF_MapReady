@@ -19,7 +19,7 @@
 #  endif
 #endif
 
-#define STP_VERSION "1.0.6"
+#define STP_VERSION "1.0.7"
 
 /* for win32, set the font to the standard windows one */
 #if defined(win32)
@@ -1512,7 +1512,7 @@ main(int argc, char **argv)
 
     gtk_init(&argc, &argv);
 
-    glade_xml_file = (gchar *) find_in_share("ardop_gui.glade");
+    glade_xml_file = (gchar *) find_in_share("stp.glade");
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
     g_free(glade_xml_file);
