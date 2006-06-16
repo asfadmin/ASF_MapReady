@@ -848,10 +848,19 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     const char * input_file_c =
 	gtk_entry_get_text(GTK_ENTRY(input_file_entry));
 
+    GtkWidget * output_file_entry =
+	glade_xml_get_widget(glade_xml, "output_file_entry");
+
+    const char * output_file_c =
+	gtk_entry_get_text(GTK_ENTRY(output_file_entry));
+
 	/* make a copy for ourselves - on Windows, after fork we can't */
 	/* access pointers to GTK-owned data (like input_file_c)       */
     char *input_file = MALLOC(sizeof(char)*(strlen(input_file_c)+2));
-	strcpy(input_file, input_file_c);
+    strcpy(input_file, input_file_c);
+
+    char *output_file = MALLOC(sizeof(char)*(strlen(output_file_c)+2));
+    strcpy(output_file, output_file_c);
 
     GtkWidget * start_line_entry =
 	glade_xml_get_widget(glade_xml, "start_line_entry");
@@ -863,21 +872,32 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     if (!check_files(input_file))
         return;
 
-    char * p = strrchr(input_file, '.');
+    if (!output_file || strlen(output_file) == 0) {
+        char * p = strrchr(input_file, '.');
 
-    char * output_file =
-	(char *) malloc(sizeof(char) * (strlen(input_file) + 20));
+        output_file =
+            (char *) malloc(sizeof(char) * (strlen(input_file) + 20));
 
-    if (p) {
-	char * ext = strdup(p + 1);
-	strcpy(output_file, input_file);
-	*(output_file + (p - input_file)) = '\0';
-	strcat(output_file, "_cpx");
-	//strcat(output_file, ext);
-	free(ext);
-    } else {
-	sprintf(output_file, "%s%s", input_file, "_cpx");
+        if (p) {
+            char * ext = strdup(p + 1);
+            strcpy(output_file, input_file);
+            *(output_file + (p - input_file)) = '\0';
+            strcat(output_file, "_cpx");
+            //strcat(output_file, ext);
+            free(ext);
+        } else {
+            sprintf(output_file, "%s%s", input_file, "_cpx");
+        }
     }
+
+    // strip off the output file extension, ardop expects it that way
+    char *output_file_ext = findExt(output_file);
+    if (output_file_ext) *output_file_ext = '\0';
+
+    GtkWidget *ardop_main =
+        glade_xml_get_widget(glade_xml, "ardop_main");
+
+    gtk_widget_hide(ardop_main);
 
     int pid = fork();
 
@@ -907,6 +927,12 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     }
     
     free(output_file);
+
+#if 1
+    gtk_widget_show(ardop_main);
+#else
+    gtk_main_quit();
+#endif
 }
 
 void
