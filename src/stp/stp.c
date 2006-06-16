@@ -900,7 +900,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     GtkWidget *execute_button =
         glade_xml_get_widget(glade_xml, "execute_button");
 
-    gtk_button_set_label(GTK_BUTTON(execute_button), "Processing...");
+    gtk_button_set_label(GTK_BUTTON(execute_button), "Processing ...");
     gtk_widget_set_sensitive(execute_button, FALSE);
 
 //    gtk_widget_hide(ardop_main);
@@ -934,15 +934,8 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     
     free(output_file);
 
-#if 1
-    gtk_widget_show(ardop_main);
-#else
-    gtk_main_quit();
-#endif
-
     gtk_button_set_label(GTK_BUTTON(execute_button), "Execute");
     gtk_widget_set_sensitive(execute_button, TRUE);
-
 }
 
 void
