@@ -1319,7 +1319,7 @@ struct FPREC {
         char blank[3];          /* Blanks */
         short nr;               /* Referenced file number */
         char name[17];          /* Referenced file name */
-        char class[29];         /* Referenced file class */
+        char file_class[29];    /* Referenced file class */
         char class_code[5];     /* Referenced file class code */
         char data_type[29];     /* Referenced file data type */
         char type_code[5];      /* Referenced file data type code */

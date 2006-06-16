@@ -945,7 +945,7 @@ void Code_LFPR(unsigned char *bf, struct FPREC *q, codingDir dir)
     strV(blank,off,3);
     shrtV(nr,off,4);
     strV(name,off,17);
-    strV(class,off,29);
+    strV(file_class,off,29);
     strV(class_code,off,5);
     strV(data_type,off,29);
     strV(type_code,off,5);
@@ -969,7 +969,7 @@ void Code_DFPR(unsigned char *bf, struct FPREC *q, codingDir dir)
     strV(blank,off,3);
     shrtV(nr,off,4);
     strV(name,off,17);
-    strV(class,off,29);
+    strV(file_class,off,29);
     strV(class_code,off,5);
     strV(data_type,off,29);
     strV(type_code,off,5);
