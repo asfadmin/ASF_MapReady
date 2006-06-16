@@ -897,7 +897,13 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     GtkWidget *ardop_main =
         glade_xml_get_widget(glade_xml, "ardop_main");
 
-    gtk_widget_hide(ardop_main);
+    GtkWidget *execute_button =
+        glade_xml_get_widget(glade_xml, "execute_button");
+
+    gtk_button_set_label(GTK_BUTTON(execute_button), "Processing...");
+    gtk_widget_set_sensitive(execute_button, FALSE);
+
+//    gtk_widget_hide(ardop_main);
 
     int pid = fork();
 
@@ -933,6 +939,10 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 #else
     gtk_main_quit();
 #endif
+
+    gtk_button_set_label(GTK_BUTTON(execute_button), "Execute");
+    gtk_widget_set_sensitive(execute_button, TRUE);
+
 }
 
 void
@@ -1251,6 +1261,27 @@ SIGNAL_CALLBACK void
 on_step12_help_button_clicked(GtkWidget *button, gpointer user_data)
 {
   help_text(12);
+}
+
+static void
+select_button(int step)
+{
+    char button_id[32];
+
+    sprintf(button_id, "step%d_togglebutton", step);
+
+    GtkWidget * button =
+	glade_xml_get_widget(glade_xml, button_id);
+
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), TRUE);
+}
+
+SIGNAL_CALLBACK void
+on_button_select_all_clicked(GtkWidget *button, gpointer user_data)
+{
+    int i;
+    for (i = 1; i <= 12; ++i)
+        select_button(i);
 }
 
 static void
