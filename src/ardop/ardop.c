@@ -123,12 +123,11 @@ main (int argc, char *argv [])
   struct INPUT_ARDOP_PARAMS *params_in;
   meta_parameters *meta;	
 
+  logflag=quietflag=0;
   params_in = get_input_ardop_params_struct("", "");
   give_usage_action=parse_cla(argc,argv,params_in,&meta);
   if (give_usage_action==0) give_usage(argv[0]);
   if (give_usage_action==-1) give_debug_usage();
-
-  logflag=quietflag=0;
 
   system("date");
   printf("Program: ardop\n\n");
