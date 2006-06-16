@@ -120,10 +120,11 @@ main (int argc, char *argv [])
 {
   int give_usage_action = 0;
 
-  struct INPUT_ARDOP_PARAMS params_in;
+  struct INPUT_ARDOP_PARAMS *params_in;
   meta_parameters *meta;	
 
-  give_usage_action=parse_cla(argc,argv,&params_in,&meta);
+  params_in = get_input_ardop_params_struct("", "");
+  give_usage_action=parse_cla(argc,argv,params_in,&meta);
   if (give_usage_action==0) give_usage(argv[0]);
   if (give_usage_action==-1) give_debug_usage();
 
@@ -137,5 +138,5 @@ main (int argc, char *argv [])
     printLog("Program: ardop\n\n");
   }
 
-  return ardop(&params_in);
+  return ardop(params_in);
 }
