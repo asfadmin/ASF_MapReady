@@ -432,8 +432,9 @@ redo_after_rescale:
     fftMatch_atCorners(srFile, demTrimSimAmp, chipsz, &range_sf, &azi_sf);
     if (do_sar_rescale) {
       char *sarRescaledFile = appendSuffix(sarFile, "_rescale");
-      asfPrintStatus("Rescaling SAR image based on corner match range factor %f\n",
-                     range_sf);
+      asfPrintStatus(
+                 "Rescaling SAR image based on corner match range factor %f\n",
+                 range_sf);
       resample(sarFile, sarRescaledFile, range_sf, 1.0);
       meta_parameters *meta_sar = meta_read(sarFile);
       meta_parameters *meta_rsc = meta_read(sarRescaledFile);
@@ -448,7 +449,8 @@ redo_after_rescale:
       sarFile = strdup(sarRescaledFile);
       FREE(sarRescaledFile);
       do_sar_rescale = FALSE;
-      asfPrintStatus("Restarting terrain correction with newly scaled SAR image...\n");
+      asfPrintStatus("\n"
+             "Restarting terrain correction with newly scaled SAR image...\n");
       goto redo_after_rescale;
     }
   }
@@ -508,6 +510,9 @@ redo_after_rescale:
 
   asfPrintStatus("Terrain Correction Complete!\n");
 
+  if (strcmp(sarFile,inSarFile) != 0) {
+    free(sarFile);
+  }
   free(resampleFile);
   free(srFile);
   free(demClipped);
