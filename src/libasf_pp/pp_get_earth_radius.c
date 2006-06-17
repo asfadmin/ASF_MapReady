@@ -1,5 +1,6 @@
 #include "asf.h"
 #include "ceos.h"
+#include "asf_reporting.h"
 
 #include <stdio.h>
 #include <gsl/gsl_errno.h>
@@ -14,7 +15,7 @@ struct pp_erfin_params {
     double nominal_pixsize_range;        
 };
 
-double getObjective(double R, void *params)
+static double getObjective(double R, void *params)
 {
     struct pp_erfin_params *p =
         (struct pp_erfin_params *)params;
@@ -35,7 +36,7 @@ double getObjective(double R, void *params)
 double pp_get_earth_radius(char *sarName)
 {
     int status;
-    int iter = 0, max_iter = 50000;
+    int iter = 0, max_iter = 100;
     const gsl_root_fsolver_type *T;
     gsl_root_fsolver *s;
     gsl_function F;
@@ -71,23 +72,34 @@ double pp_get_earth_radius(char *sarName)
         ++iter;
         status = gsl_root_fsolver_iterate(s);
         pp_earth_radius = gsl_root_fsolver_root(s);
-        //double lo = gsl_root_fsolver_x_lower(s);
-        //double hi = gsl_root_fsolver_x_upper(s);
         status = gsl_root_test_residual(
             getObjective(pp_earth_radius, (void*)&params), 1.0e-4);
-        //status = gsl_root_test_interval(lo, hi, 0, 1.0e-4);
-        if (status == GSL_SUCCESS) break;
     } while (status == GSL_CONTINUE && iter < max_iter);
 
-  printf("Converged after iter: %d\n", iter);
-  printf("PP Earth Radius: %.3f m\n",pp_earth_radius);
-  printf("   (for comparison) Nadir Earth Radius: %.3f m\n",nadir_radius);
-    
-    /* Find the PP's per-second azimuth pixel spacing */
+    if (status == GSL_SUCCESS) {
+        //printf("Converged after %d iterations.\n", iter);
+        //printf("PP Earth Radius: %.3f m\n",pp_earth_radius);
+        //printf("   (for comparison) Nadir Earth Radius: %.3f m\n",nadir_radius);
+        return pp_earth_radius;
+    } else {
+        asfPrintWarning("Failed to determine PP earth radius!\n"
+                        "iter: %d, pp_earth_radius=%.3f, res=%.5f\n"
+                        "Using nadir radius: %.3f m\n",
+                        iter, pp_earth_radius, 
+                        getObjective(pp_earth_radius, (void*)&params),
+                        nadir_radius);
+        return nadir_radius;
+    }
+}
+
+/* not using this ... yet
+double pp_get_azimuth_pixel_spacing(char *sarName)
+{ 
+    // Find the PP's per-second azimuth pixel spacing
     seconds_per_azimuth_line=nominal_pixsize_azimuth/facdr.swathvel;
-  printf("PP seconds per azimuth line: %.9f s/line\n",seconds_per_azimuth_line);
-  printf("   (for comparison) PP interpolated lines per second: %.3f lines/s\n",1.0/seconds_per_azimuth_line);
-  printf("   (for comparison) FACDR swath velocity: %.3f m/s\n",facdr.swathvel);
+    //printf("PP seconds per azimuth line: %.9f s/line\n",seconds_per_azimuth_line);
+    //printf("   (for comparison) PP interpolated lines per second: %.3f lines/s\n",1.0/seconds_per_azimuth_line);
+    //printf("   (for comparison) FACDR swath velocity: %.3f m/s\n",facdr.swathvel);
     
     double R=pp_earth_radius;
     double H=params.satellite_height;
@@ -97,7 +109,8 @@ double pp_get_earth_radius(char *sarName)
     double vs=sqrt(facdr.scxvel*facdr.scxvel + facdr.scyvel*facdr.scyvel + facdr.sczvel*facdr.sczvel);
     double vsg = vs * pp_earth_radius/params.satellite_height*cos(rg_center/pp_earth_radius);
     
-  printf("   (for comparison) PP-style recalc velocity: %.3f m/s\n",vsg);
-    
-    return pp_earth_radius;
+    //printf("   (for comparison) PP-style recalc velocity: %.3f m/s\n",vsg);
+
+    return seconds_per_azimuth_line;  
 }
+*/
