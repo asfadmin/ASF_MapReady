@@ -3,7 +3,7 @@
 
 include ../../make_support/system_rules
 
-OBJS = pp_get_earth_radius.o
+OBJS = pp_corrected_vals.o
 
 all:	libasf_pp
 
