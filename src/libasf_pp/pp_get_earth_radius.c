@@ -33,7 +33,8 @@ static double getObjective(double R, void *params)
     return slant_last_R-p->slant_last;   
 }
 
-double pp_get_earth_radius(char *sarName)
+void pp_get_corrected_values(char *sarName, double *corrected_earth_radius,
+                             double *corrected_azimuth_time_per_pixel)
 {
     int status;
     int iter = 0, max_iter = 100;
@@ -80,21 +81,17 @@ double pp_get_earth_radius(char *sarName)
         //printf("Converged after %d iterations.\n", iter);
         //printf("PP Earth Radius: %.3f m\n",pp_earth_radius);
         //printf("   (for comparison) Nadir Earth Radius: %.3f m\n",nadir_radius);
-        return pp_earth_radius;
+        *corrected_earth_radius = pp_earth_radius;
     } else {
         asfPrintWarning("Failed to determine PP earth radius!\n"
                         "iter: %d, pp_earth_radius=%.3f, res=%.5f\n"
-                        "Using nadir radius: %.3f m\n",
+                        "Proceeding using the nadir radius: %.3f m\n",
                         iter, pp_earth_radius, 
                         getObjective(pp_earth_radius, (void*)&params),
                         nadir_radius);
-        return nadir_radius;
+        *corrected_earth_radius = nadir_radius;
     }
-}
 
-/* not using this ... yet
-double pp_get_azimuth_pixel_spacing(char *sarName)
-{ 
     // Find the PP's per-second azimuth pixel spacing
     seconds_per_azimuth_line=nominal_pixsize_azimuth/facdr.swathvel;
     //printf("PP seconds per azimuth line: %.9f s/line\n",seconds_per_azimuth_line);
@@ -111,6 +108,5 @@ double pp_get_azimuth_pixel_spacing(char *sarName)
     
     //printf("   (for comparison) PP-style recalc velocity: %.3f m/s\n",vsg);
 
-    return seconds_per_azimuth_line;  
+    *corrected_azimuth_time_per_pixel = seconds_per_azimuth_line;  
 }
-*/

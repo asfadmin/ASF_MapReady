@@ -3,6 +3,11 @@
 
 #include "asf_meta.h"
 
-double pp_get_earth_radius(char *sarName);
+/** Determine the actual values used during PP processing for a
+    couple fields that aren't put into the metadata.  
+*/
+void pp_get_corrected_values(char *sarName,
+                             double *corrected_earth_radius,
+                             double *corrected_azimuth_time_per_pixel);
 
 #endif
