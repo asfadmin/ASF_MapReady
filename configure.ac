@@ -237,7 +237,6 @@ CC      = $CC
 RANLIB  = $ranlib
 OPTFLAG = $optFlag
 
-CFLAGS = $CFLAGS
 LDFLAGS = $LDFLAGS
 
 EOF
@@ -252,6 +251,7 @@ FLAGS   = -D_ISOC99_SOURCE $(LARGEFILE_FLAGS) $(INCLUDE) $(OPTFLAG) -D$(SYS) $(E
 # If compiler is gcc we're going to add some debugging flags/libraries
 #   if <make 'DEBUG_BUILD=1'>  apply debugging tags and show all compiler warnings
 #   if <make 'DEBUG_BUILD=2'>  do the same and add the electric fence library
+OPTFLAG = -O4
 ifeq ($(CC),gcc)
   ifeq ($(DEBUG_BUILD),1)
     OPTFLAG    =
