@@ -46,6 +46,12 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   nl = meta->general->line_count;
   ns = meta->general->sample_count;
 
+  /*PP Earth Radius Kludge*/
+  {
+    double pp_er, pp_atpp;
+    pp_get_corrected_vals(inMetaName, &pp_er, &pp_atpp);
+    if (meta->sar) meta->sar->earth_radius_pp = pp_er;
+  }
 
   /************************* BEGIN RAW DATA SECTION **************************/
   if (meta->general->data_type==COMPLEX_BYTE) {
@@ -713,11 +719,17 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     meta_write_old(meta, outMetaName);
   }
   else meta_write(meta,outMetaName);
+
+  asfPrintStatus("\nPP Earth Radius: %.3lf\n", meta->sar->earth_radius_pp);
+  asfPrintStatus("   (for comparison) Scene Center Earth Radius: %.3lf\n\n",
+                 meta->sar->earth_radius);
+
   meta_free(meta);
 
   if (fpIn) /* CEOS L0 doesn't set fpIn, will still be NULL */
     FCLOSE(fpIn);
   FCLOSE(fpOut);
-  
+
+
   asfPrintStatus("Finished.\n\n");
 }
