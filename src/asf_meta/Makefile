@@ -130,6 +130,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	vector.o \
 	yaw2doppler.o \
 	xpix_ypix.o \
+	pp_corrected_vals.o \
 	$(LAS_OBJS)
 
 all: asf_meta
