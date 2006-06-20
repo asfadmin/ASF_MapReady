@@ -40,9 +40,11 @@ main (int argc, char *argv[])
   char *inFile, *demFile, *outFile;
   double pixel_size = -1;
   int dem_grid_size = 20;
-  int clean_files = TRUE, do_resample = TRUE, do_fftMatch_verification = TRUE;
-  int do_corner_matching = TRUE, do_sr_sar_resample = TRUE;   
-  extern int currArg;
+  int currArg = 1;
+  int clean_files = TRUE;
+  int do_resample = TRUE;
+  int do_fftMatch_verification = TRUE;
+  int do_corner_matching = TRUE;
 
   while (currArg < (argc-NUM_ARGS)) {
     char *key = argv[currArg++];
@@ -65,8 +67,7 @@ main (int argc, char *argv[])
       do_fftMatch_verification = FALSE;
     }
     else if (strmatches(key,"-no-corner-match","--no-corner-match",NULL)) {
-      do_corner_matching = FALSE;
-      do_sr_sar_resample = FALSE;  // for now, doing the corner match implies this
+      do_fftMatch_verification = FALSE;
     }
     else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
       CHECK_ARG(1);
@@ -92,7 +93,6 @@ main (int argc, char *argv[])
 
   int ret = asf_terrcorr_ext(inFile, demFile, outFile, pixel_size, clean_files,
 			     do_resample, do_corner_matching,
-			     do_sr_sar_resample, do_fftMatch_verification,
-			     dem_grid_size);
+			     do_fftMatch_verification, dem_grid_size);
   return ret ? EXIT_SUCCESS : EXIT_FAILURE;
 }
