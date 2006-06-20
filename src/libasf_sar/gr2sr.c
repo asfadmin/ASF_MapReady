@@ -43,8 +43,8 @@ static void gr2sr_vec(meta_parameters *meta, float srinc, float *gr2sr)
   /* Radius from the center of the earth to the spacecraft, slant range to
      first pixel, and radius of the earth */
   r_sc = meta_get_sat_height(meta, 0, 0);
-  r_close = meta_get_slant(meta,0,0);
-  r_earth = meta_get_earth_radius(meta, 0, 0);
+  r_close = meta_get_slant(meta,0,0);  
+  r_earth = meta_get_earth_radius_pp(meta);
 
   /* Set the ground range and slant range increments */
   grinc = meta->general->x_pixel_size;
