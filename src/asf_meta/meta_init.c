@@ -87,6 +87,7 @@ meta_sar *meta_sar_init(void)
   sar->wavelength = MAGIC_UNSET_DOUBLE;
   sar->prf = MAGIC_UNSET_DOUBLE;
   sar->earth_radius = MAGIC_UNSET_DOUBLE;
+  sar->earth_radius_pp = MAGIC_UNSET_DOUBLE;
   sar->satellite_height = MAGIC_UNSET_DOUBLE;
   strcpy(sar->satellite_binary_time, MAGIC_UNSET_STRING);
   strcpy(sar->satellite_clock_time, MAGIC_UNSET_STRING);

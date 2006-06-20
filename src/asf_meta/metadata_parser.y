@@ -424,6 +424,8 @@ void fill_structure_field(char *field_name, void *valp)
       { MSAR->prf = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "earth_radius") )
       { MSAR->earth_radius = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "earth_radius_pp") )
+      { MSAR->earth_radius_pp = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "satellite_height") )
       { MSAR->satellite_height = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "satellite_binary_time") )

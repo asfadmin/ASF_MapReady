@@ -93,6 +93,17 @@ double meta_get_earth_radius(meta_parameters *meta, long line, long sample)
 	return earth_rad;
 }
 
+double meta_get_earth_radius_pp(meta_parameters *meta)
+{
+    if (meta->sar && meta_is_valid_double(meta->sar->earth_radius_pp)) {
+        return meta->sar->earth_radius_pp;
+    } else {
+        /* perhaps we should return MAGIC_UNSET? */
+        /* return MAGIC_UNSET_DOUBLE; */
+        return meta_get_earth_radius(meta, 0, 0);
+    }
+}
+
 void meta_get_slants(meta_parameters *meta,double *slantFirst, double *slantPer)
 {
   // No effort has been made to make this routine work with

@@ -238,6 +238,8 @@ typedef struct {
   double wavelength;              /* SAR carrier wavelength, in meters.     */
   double prf;                     /* Pulse Repition Frequency.              */
   double earth_radius;            /* Earth radius at scene center.          */
+  double earth_radius_pp;         /* Earth radius at scene center,          */
+                                  /* as used by the PP.                     */
   double satellite_height;        /* Satellite height from earth's center.  */
   char satellite_binary_time[FIELD_STRING_MAX];  /* Satellite binary time   */
   char satellite_clock_time[FIELD_STRING_MAX];   /* Satellite UTC clock time*/
@@ -626,6 +628,12 @@ double meta_get_sat_height(meta_parameters *meta, long line, long sample);
 
 /*Return earth radius at scene center.*/
 double meta_get_earth_radius(meta_parameters *meta, long line, long sample);
+
+/*Return the earth radius we estimate to have been used by the PP
+  during L0 processing.  If the data was not processed by the PP,
+  or this esimation has not yet been done (pp_get_corrected_vals),
+  then this just forwards the call to meta_get_earth_radius(meta, 0, 0) */
+double meta_get_earth_radius_pp(meta_parameters *meta);
 
 /*Return slant range to first (leftmost) pixel, and slant range per pixel.*/
 void meta_get_slants(meta_parameters *sar,double *slantFirst, double *slantPer);

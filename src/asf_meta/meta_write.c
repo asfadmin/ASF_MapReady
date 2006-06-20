@@ -195,6 +195,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
   meta_put_double(fp,"prf:",meta->sar->prf,"Pulse Repetition Frequency [Hz]");
   meta_put_double(fp,"earth_radius:",meta->sar->earth_radius,
 		  "Earth radius at scene center [m]");
+  meta_put_double(fp,"earth_radius_pp:",meta->sar->earth_radius_pp,
+		  "Earth radius used by the PP during L0 processsing. [m]");
   meta_put_double(fp,"satellite_height:",meta->sar->satellite_height,
 		  "Satellite height from earth's center [m]");
   meta_put_string(fp,"satellite_binary_time:",meta->sar->satellite_binary_time,
