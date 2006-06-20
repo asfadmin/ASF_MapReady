@@ -144,15 +144,6 @@ const char DIR_SEPARATOR = '/';
 GladeXML *glade_xml;
 gboolean user_modified_output_file = FALSE;
 
-//static char *
-//find_in_bin(const char * filename)
-//{
-//    char * ret = (char *) malloc(sizeof(char) *
-//                      (strlen(get_asf_bin_dir()) + strlen(filename) + 5));
-//    sprintf(ret, "%s/%s", get_asf_bin_dir(), filename);
-//    return ret;
-//}
-
 static char *
 find_in_share(const char * filename)
 {
@@ -162,65 +153,6 @@ find_in_share(const char * filename)
     return ret;
 }
 
-
-/*
-gchar *
-find_in_path(gchar * file)
-{
-  gchar *path, *buf, *name, *p;
-  int len, pathlen;
-
-  // first see if file is in current directory
-  if (g_file_test(file, G_FILE_TEST_EXISTS))
-  {
-    return g_strdup(file);
-  }
-
-  path = (gchar *)g_getenv("PATH");
-
-  len = strlen(file) + 1;
-  pathlen = strlen(path);
-
-  // work area
-  buf = (gchar *) g_malloc( sizeof(gchar) * (pathlen + len + 2) ); 
-
-  // put separator + filename at the end of the buffer
-  name = buf + pathlen + 1;
-  *name = DIR_SEPARATOR;
-  memcpy(name + 1, file, len);
-
-  // now try each path item, prepended to the filename in the work area
-  p = path;
-  do
-  {
-    gchar * start;
-    gchar * q = strchr(p + 1, PATH_SEPARATOR);
-
-    // if separator not found, point to the end
-    if ( !q ) 
-      q = path + pathlen;
-
-    start = name - (q - p);
-
-    // copy path portion to the work area
-    memcpy( start, p, q - p );
-
-    if (g_file_test( start, G_FILE_TEST_EXISTS ))
-    {
-      gchar * ret = g_strdup(start);
-      g_free(buf);
-      return ret; 
-    }
-
-    p = q;
-  } 
-  while (*p++ != '\0');
-
-  // not found!
-  g_free(buf);
-  return NULL;
-}
-*/
 
 /* danger: returns pointer to static data!! */
 static const char * imgloc(char * file)
@@ -349,30 +281,6 @@ on_input_file_browse_button_clicked(GtkWidget *button)
   }
 
   add_file(fname);
-
-  /* leaving this code for multiple filenames here ... 
-    we may wish to use it again at some point 
-
-  // the returned "fname" has the following form:            
-  //   <directory>\0<first file>\0<second file>\0<third ...  
-  char * dir = strdup(fname);
-  char * p = fname + strlen(dir) + 1;
-
-  if (*p) { 
-    while (*p) {
-      char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
-      sprintf(dir_and_file, "%s/%s", dir, p);
-      printf("Adding: %s\n", dir_and_file);
-      add_file(dir_and_file);
-      p += strlen(p) + 1;
-      free(dir_and_file);
-    }
-  } else {
-    add_file(dir);
-  }
-
-  free(dir);
-  */
 
 #else
 
@@ -593,6 +501,39 @@ update_output_filename(const gchar * input_file_and_path)
     return output_file_and_path;
 }
 
+static const char * suffix_for_step(int step)
+{
+    switch (step)
+    {
+        case 1:
+            return "_range_raw_t";
+        case 2:
+            return "_range_raw_f";
+        case 3:
+            return "_range_ref_t";
+        case 4:
+            return "_range_ref_f";
+        case 5:
+            return "_range_X_f";
+        case 6:
+            return "_az_raw_t";
+        case 7:
+            return "_az_raw_f";
+        case 8:
+            return "_az_mig_f";
+        case 9:
+            return "_az_ref_t";
+        case 10:
+            return "_az_ref_f";
+        case 11:
+            return "_az_X_f";
+        case 12:
+            return "_az_X_t";
+        default:
+            return "";
+    }
+}
+
 void
 update_buttons()
 {
@@ -623,18 +564,18 @@ update_buttons()
 	    *p = '\0';
     }
 
-    set_button_text(1, input_file, "_range_raw_t");
-    set_button_text(2, input_file, "_range_raw_f");
-    set_button_text(3, "", "range_ref_t");
-    set_button_text(4, "", "range_ref_f");
-    set_button_text(5, input_file, "_range_X_f");
-    set_button_text(6, input_file, "_az_raw_t");
-    set_button_text(7, input_file, "_az_raw_f");
-    set_button_text(8, input_file, "_az_mig_f");
-    set_button_text(9, input_file, "_az_ref_t");
-    set_button_text(10, input_file, "_az_ref_f");
-    set_button_text(11, input_file, "_az_X_f");
-    set_button_text(12, input_file, "_az_X_t");
+    set_button_text(1, input_file, suffix_for_step(1));
+    set_button_text(2, input_file, suffix_for_step(2));
+    set_button_text(3, "", suffix_for_step(3));
+    set_button_text(4, "", suffix_for_step(4));
+    set_button_text(5, input_file, suffix_for_step(5));
+    set_button_text(6, input_file, suffix_for_step(6));
+    set_button_text(7, input_file, suffix_for_step(7));
+    set_button_text(8, input_file, suffix_for_step(8));
+    set_button_text(9, input_file, suffix_for_step(9));
+    set_button_text(10, input_file, suffix_for_step(10));
+    set_button_text(11, input_file, suffix_for_step(11));
+    set_button_text(12, input_file, suffix_for_step(12));
 
     g_free(input_file);
 }
@@ -894,16 +835,11 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     char *output_file_ext = findExt(output_file);
     if (output_file_ext) *output_file_ext = '\0';
 
-    GtkWidget *ardop_main =
-        glade_xml_get_widget(glade_xml, "ardop_main");
-
     GtkWidget *execute_button =
         glade_xml_get_widget(glade_xml, "execute_button");
 
     gtk_button_set_label(GTK_BUTTON(execute_button), "Processing ...");
     gtk_widget_set_sensitive(execute_button, FALSE);
-
-//    gtk_widget_hide(ardop_main);
 
     int pid = fork();
 
@@ -974,6 +910,36 @@ set_toggles()
     int i;
     for (i = 1; i <= 12; ++i)
 	set_underlines_off(i);
+}
+
+void
+switch_on_help(int on)
+{
+    GtkWidget *flowchart_image;
+    GtkWidget *output_image;
+    GtkWidget *label_view_output;
+    GtkWidget *help_label;
+
+    flowchart_image =
+        glade_xml_get_widget(glade_xml, "flowchart_image");
+    output_image = 
+        glade_xml_get_widget(glade_xml, "output_image");
+    label_view_output =
+        glade_xml_get_widget(glade_xml, "label_view_output");
+    help_label = 
+        glade_xml_get_widget(glade_xml, "help_label");
+
+    if (on) {
+        gtk_widget_show(flowchart_image);
+        gtk_widget_show(help_label);
+        gtk_widget_hide(output_image);
+        gtk_widget_hide(label_view_output);
+    } else {
+        gtk_widget_hide(flowchart_image);
+        gtk_widget_hide(help_label);
+        gtk_widget_show(output_image);
+        gtk_widget_show(label_view_output);
+    }
 }
 
 void
@@ -1182,6 +1148,8 @@ help_text(int step)
   sprintf(image_file, "step%d.gif", step);
 
   gtk_image_set_from_file(GTK_IMAGE(flowchart_image), imgloc(image_file));
+
+  switch_on_help(TRUE);
 }
 
 SIGNAL_CALLBACK void
@@ -1275,6 +1243,125 @@ on_button_select_all_clicked(GtkWidget *button, gpointer user_data)
     int i;
     for (i = 1; i <= 12; ++i)
         select_button(i);
+}
+
+static void view_debug_image(int step)
+{
+    GtkWidget * output_image =
+        glade_xml_get_widget(glade_xml, "output_image");
+    
+    GtkWidget * output_file_entry =
+        glade_xml_get_widget(glade_xml, "output_file_entry");
+
+    GdkPixbuf *pb;
+
+    switch_on_help(FALSE);
+
+    const gchar *filename = 
+        gtk_entry_get_text(GTK_ENTRY(output_file_entry));
+
+    char * ext = findExt(filename);
+    if (ext) *ext = '\0';
+
+    char image_file[128];
+    sprintf(image_file, "%s%s.jpg", filename, suffix_for_step(step));
+
+    char lbl[256];
+    
+    if (g_file_test(image_file, G_FILE_TEST_EXISTS))
+    {
+        GError *err = NULL;
+        pb = gdk_pixbuf_new_from_file_at_size(image_file, 380, 720, &err);
+
+        if (err) {
+            sprintf(lbl, "Error loading image: %s\n", err->message);
+        } else {
+            gtk_image_set_from_pixbuf(GTK_IMAGE(output_image), pb);
+            g_object_unref(pb);
+
+            sprintf(lbl, "Output of Step %d", step);
+        }
+    }
+    else
+    {
+        sprintf(lbl, "File not found: %s", image_file);
+    }
+
+    GtkWidget * label_view_output =
+        glade_xml_get_widget(glade_xml, "label_view_output");
+    gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
+}
+
+SIGNAL_CALLBACK void
+on_step1_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(1);
+}
+
+SIGNAL_CALLBACK void
+on_step2_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(2);
+}
+
+SIGNAL_CALLBACK void
+on_step3_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(3);
+}
+
+SIGNAL_CALLBACK void
+on_step4_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(4);
+}
+
+SIGNAL_CALLBACK void
+on_step5_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(5);
+}
+
+SIGNAL_CALLBACK void
+on_step6_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(6);
+}
+
+SIGNAL_CALLBACK void
+on_step7_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(7);
+}
+
+SIGNAL_CALLBACK void
+on_step8_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(8);
+}
+
+SIGNAL_CALLBACK void
+on_step9_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(9);
+}
+
+SIGNAL_CALLBACK void
+on_step10_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(10);
+}
+
+SIGNAL_CALLBACK void
+on_step11_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(11);
+}
+
+SIGNAL_CALLBACK void
+on_step12_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+  view_debug_image(12);
 }
 
 static void
