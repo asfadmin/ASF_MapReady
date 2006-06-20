@@ -19,7 +19,7 @@
 #  endif
 #endif
 
-#define STP_VERSION "1.0.7"
+#define STP_VERSION "1.0.8"
 
 /* for win32, set the font to the standard windows one */
 #if defined(win32)
@@ -1279,7 +1279,7 @@ static void view_debug_image(int step)
             gtk_image_set_from_pixbuf(GTK_IMAGE(output_image), pb);
             g_object_unref(pb);
 
-            sprintf(lbl, "Output of Step %d", step);
+            sprintf(lbl, " Output of Step %d", step);
         }
     }
     else
