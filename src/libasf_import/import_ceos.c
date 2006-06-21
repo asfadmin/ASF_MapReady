@@ -11,6 +11,11 @@
 void meta_new2old(meta_parameters *meta);
 void meta_write_old(meta_parameters *meta, const char *file_name);
 
+static int isPP(meta_parameters *meta)
+{
+    return strstr(meta->general->processor, "PREC") != NULL;
+}
+
 /* Prototype in ceos2raw.c */
 bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
                                 readPulseFunc *readNextPulse);
@@ -47,6 +52,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   ns = meta->general->sample_count;
 
   /*PP Earth Radius Kludge*/
+  if (isPP(meta))
   {
     double pp_er, pp_atpp;
     pp_get_corrected_vals(inMetaName, &pp_er, &pp_atpp);
@@ -720,9 +726,12 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   }
   else meta_write(meta,outMetaName);
 
-  asfPrintStatus("\nPP Earth Radius: %.3lf\n", meta->sar->earth_radius_pp);
-  asfPrintStatus("   (for comparison) Scene Center Earth Radius: %.3lf\n\n",
-                 meta->sar->earth_radius);
+  if (isPP(meta))
+  {
+      asfPrintStatus("\nPP Earth Radius: %.3lf\n", meta->sar->earth_radius_pp);
+      asfPrintStatus("  (for comparison) Scene Center Earth Radius: %.3lf\n\n",
+                     meta->sar->earth_radius);
+  }
 
   meta_free(meta);
 
