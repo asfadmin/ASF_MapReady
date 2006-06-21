@@ -115,8 +115,8 @@ void debugWritePatch(const patch *p,char *basename)
   sprintf(exportname, "%s_ml_rgb.img", outname);
   sprintf(cmd,"convert2jpeg \"%s\" \"%s\"\n", exportname, outname);
   asfSystem(cmd);
-  sprintf(cmd, "rm \"%s_*\" \"%s.meta\" \"%s.img\"\n", outname, outname, outname);
-  asfSystem(cmd);
+  //sprintf(cmd, "rm \"%s_*\" \"%s.meta\" \"%s.img\"\n", outname, outname, outname);
+  //asfSystem(cmd);
   
   meta_free(meta);
 }
