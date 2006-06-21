@@ -41,13 +41,14 @@ void pp_get_corrected_vals(char *sarName, double *corrected_earth_radius,
     const gsl_root_fsolver_type *T;
     gsl_root_fsolver *s;
     gsl_function F;
+    gsl_error_handler_t *prev;
     struct pp_erfin_params params;
 
     double nominal_pixsize_azimuth;
     double nadir_radius; /* earth radius at nadir */
     double pp_earth_radius; /* f'd up PP Earth radius from start of swath */
     double seconds_per_azimuth_line; /* PP's real azimuth resolution */
-
+    double lo, hi;  /* starting points for the bisection algorithm */
     struct VFDRECV facdr;
 
     get_asf_facdr(sarName, &facdr);
@@ -64,10 +65,15 @@ void pp_get_corrected_vals(char *sarName, double *corrected_earth_radius,
     params.satellite_height=1.0e3*(facdr.scalt+facdr.eradnadr);
     params.slant_first=1.0e3*facdr.sltrngfp;
     params.slant_last=1.0e3*facdr.sltrnglp;
-    
+
+    prev = gsl_set_error_handler_off();
+
+    lo = nadir_radius - 2000;
+    hi = nadir_radius + 2000;
+
     T = gsl_root_fsolver_brent;
     s = gsl_root_fsolver_alloc (T);
-    gsl_root_fsolver_set (s, &F, nadir_radius-1000, nadir_radius+1000.0);
+    gsl_root_fsolver_set (s, &F, lo, hi);
 
     do {
         ++iter;
@@ -85,12 +91,18 @@ void pp_get_corrected_vals(char *sarName, double *corrected_earth_radius,
     } else {
         asfPrintWarning("Failed to determine PP earth radius!\n"
                         "iter: %d, pp_earth_radius=%.3f, res=%.5f\n"
-                        "Proceeding using the nadir radius: %.3f m\n",
+                        "Proceeding using the nadir radius: %.3f m\n"
+                        "Starting points were: lo: %.3f -> %.4f\n"
+                        "                      hi: %.3f -> %.4f\n",
                         iter, pp_earth_radius, 
                         getObjective(pp_earth_radius, (void*)&params),
-                        nadir_radius);
+                        nadir_radius,
+                        lo, getObjective(lo, (void*)&params),
+                        hi, getObjective(hi, (void*)&params));
         *corrected_earth_radius = nadir_radius;
     }
+
+    gsl_set_error_handler(prev);
 
     // Find the PP's per-second azimuth pixel spacing
     seconds_per_azimuth_line=nominal_pixsize_azimuth/facdr.swathvel;
