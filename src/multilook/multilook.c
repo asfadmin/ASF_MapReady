@@ -260,8 +260,8 @@ int main(int argc, char *argv[])
         if (meta_stat->stats)
           avg = meta_stat->stats->mean;
         else {
-          sprintf(cmd, "stats -overmeta -overstat %s\n", fnm1);
-          system(cmd);
+          sprintf(cmd, "stats -overmeta -overstat \"%s\"\n", fnm1);
+          asfSystem(cmd);
           meta_stat = meta_read(fnm1);
           avg = meta_stat->stats->mean;
         }

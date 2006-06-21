@@ -1275,6 +1275,7 @@ static void view_debug_image(int step)
 
         if (err) {
             sprintf(lbl, "Error loading image: %s\n", err->message);
+	    gtk_widget_hide(output_image);
         } else {
             gtk_image_set_from_pixbuf(GTK_IMAGE(output_image), pb);
             g_object_unref(pb);
@@ -1285,6 +1286,7 @@ static void view_debug_image(int step)
     else
     {
         sprintf(lbl, "File not found: %s", image_file);
+	gtk_widget_hide(output_image);
     }
 
     GtkWidget * label_view_output =

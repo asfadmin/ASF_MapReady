@@ -106,17 +106,17 @@ void debugWritePatch(const patch *p,char *basename)
   put_complexFloat_lines(fp, meta, 0, p->n_range, p->trans);
   
   FCLOSE(fp);
-  sprintf(cmd,"c2p %s %s\n", name, outname);
+  sprintf(cmd,"c2p \"%s\" \"%s\"\n", name, outname);
   asfSystem(cmd);
   sprintf(multilookname, "%s_ml.img", outname);
-  sprintf(cmd,"multilook -look 2x2 -step 2x2 %s %s\n", 
+  sprintf(cmd,"multilook -look 2x2 -step 2x2 \"%s\" \"%s\"\n", 
 	  outname, multilookname);
   asfSystem(cmd);
   sprintf(exportname, "%s_ml_rgb.img", outname);
-  sprintf(cmd,"convert2jpeg %s %s\n", exportname, outname);
+  sprintf(cmd,"convert2jpeg \"%s\" \"%s\"\n", exportname, outname);
   asfSystem(cmd);
-  sprintf(cmd, "rm %s_* %s.meta %s.img\n", outname, outname, outname);
-  //asfSystem(cmd);
+  sprintf(cmd, "rm \"%s_*\" \"%s.meta\" \"%s.img\"\n", outname, outname, outname);
+  asfSystem(cmd);
   
   meta_free(meta);
 }
