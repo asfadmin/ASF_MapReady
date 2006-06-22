@@ -1163,13 +1163,16 @@ settings_to_config_file(const Settings *s,
 
     fprintf(cf, "[Import]\n");
     fprintf(cf, "format = %s\n", settings_get_input_data_format_string(s));
-    fprintf(cf, "radiometry = %s_image\n", settings_get_data_type_string(s));
+    if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
+        fprintf(cf, "radiometry = %s_image\n", 
+                settings_get_data_type_string(s));
     // fprintf(cf, "look up table = \n");
     if (settings_get_input_data_format_allows_latitude(s)) {
       fprintf(cf, "lat begin = %.2f\n", s->latitude_low);
       fprintf(cf, "lat end = %.2f\n", s->latitude_hi);
     }
     // fprintf(cf, "precise =\n");
+    fprintf(cf, "output db = %d\n", s->output_db);
     fprintf(cf, "\n");
 
     if (s->process_to_level1) {
