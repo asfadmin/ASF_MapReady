@@ -1081,13 +1081,20 @@ settings_delete(Settings * s)
 
 char *
 settings_to_config_file(const Settings *s,
-			const gchar *input_file, const gchar *output_file,
+			const gchar *input_file, const gchar *output_full,
 			const gchar *output_path)
 {
     char *tmp_projfile = NULL;
     char *tmp_cfgfile;
     char *tmp_statfile;
     char *dts;
+    char *output_file;
+
+    if (s->export_is_checked) {
+        output_file = strdup(output_full);
+    } else {
+        output_file = stripExt(output_full);
+    }
 
     if (s->geocode_is_checked) {
 
@@ -1224,5 +1231,6 @@ settings_to_config_file(const Settings *s,
     free(tmp_statfile);
     if (tmp_projfile)
       free(tmp_projfile);
+    free(output_file);
     return tmp_cfgfile;
 }
