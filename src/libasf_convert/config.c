@@ -233,6 +233,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->lat_end = -99.0;
   cfg->import->prc = (char *)MALLOC(sizeof(char)*25);
   cfg->import->prc = "";
+  cfg->import->output_db = 0;
 
   cfg->sar_processing->radiometry = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE");
@@ -325,6 +326,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->import->radiometry = read_str(line, "radiometry");
       if (strncmp(test, "look up table", 13)==0)
         cfg->import->lut = read_str(line, "look up table");
+      if (strncmp(test, "output db", 9)==0)
+        cfg->import->output_db = read_int(line, "output db");
       // SAR processing
       if (strncmp(test, "radiometry", 10)==0)
 	cfg->sar_processing->radiometry = read_str(line, "radiometry");
@@ -483,6 +486,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->import->lat_end = read_double(line, "lat end");
       if (strncmp(test, "precise", 7)==0)
         cfg->import->prc = read_str(line, "precise");
+      if (strncmp(test, "output db", 9)==0)
+        cfg->import->output_db = read_int(line, "output db");
       FREE(test);
     }
 
@@ -704,7 +709,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
 		"# of ERS precision state vector from DLR as a replacement of the restituted\n"
 		"# state vectors that are provided from the European Space Agency. The parameter\n"
 		"# required here defines the location of the precision state vectors.\n\n");
-      fprintf(fConfig, "precise = %s\n\n", cfg->import->prc);
+      fprintf(fConfig, "precise = %s\n", cfg->import->prc);
+      if (!shortFlag)
+          fprintf(fConfig, "\n# When the output db flag is non-zero, the calibrated image\n"
+                  "is output in decibels.  It only applies when the radiometry is sigma,\n"
+                  "gamma or beta.\n\n");
+      fprintf(fConfig, "output db = %d\n\n", cfg->import->output_db);
     }
     // SAR processing
     if (cfg->general->sar_processing) {

@@ -37,7 +37,10 @@ typedef struct
   char *lut;              // look up table file name (CIS only)
   double lat_begin;       // latitude constraint begin
   double lat_end;         // latitude constraint end
-  char *prc;              // precision state vector location (to be implemented)
+  char *prc;              // precision state vector location (to be 
+                          //        implemented)
+  int output_db;          // TRUE if the output is db.  Only applies to
+                          //        SIGMA, GAMMA, BETA radiometries.
 } s_import;
 
 typedef struct

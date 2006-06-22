@@ -302,6 +302,9 @@ int asf_convert(int createflag, char *configFileName)
       if (strlen(cfg->import->lut) > 0)
 	flags[f_LUT] = FLAG_SET;
 
+      if (cfg->import->output_db)
+        flags[f_DB] = FLAG_SET;
+
       // Generate a temporary output filename
       if (cfg->general->image_stats || cfg->general->detect_cr ||
 	  cfg->general->sar_processing || cfg->general->terrain_correct ||
