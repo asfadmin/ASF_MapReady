@@ -32,6 +32,7 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "jpl_proj.h"
+#include "libasf_proj.h"
 
 #define SQR(A)	((A)*(A))
 #define mag(x,y,z) sqrt(SQR(x)+SQR(y)+SQR(z))
@@ -422,14 +423,16 @@ void utm_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon)
 void ll_alb(meta_projection *proj,double lat, double lon, double *x, double *y)
 {
   /* Use libasf_proj, wrapper for libproj */
-  project_albers(&(proj->param), lat, lon, x, y);
+  double z;
+  project_albers(&(proj->param), lat, lon, 0, x, y, &z);
 }
 
 void alb_ll(meta_projection *proj,double xx,double yy,
 	    double *alat,double *alon)
 {
   /* Use libasf_proj, wrapper for libproj */
-  project_albers_inv(&(proj->param), xx, yy, alat, alon);
+  double h;
+  project_albers_inv(&(proj->param), xx, yy, 0, alat, alon, &h);
 }
 
 /***************************AT/CT Conversion Routines*********************/
