@@ -424,7 +424,13 @@ void ll_alb(meta_projection *proj,double lat, double lon, double *x, double *y)
 {
   /* Use libasf_proj, wrapper for libproj */
   double z;
-  project_albers(&(proj->param), lat, lon, 0, x, y, &z);
+  project_parameters_t pps;
+  pps.albers.std_parallel1 = proj->param.albers.std_parallel1 * D2R;
+  pps.albers.std_parallel2 = proj->param.albers.std_parallel2 * D2R;
+  pps.albers.center_meridian = proj->param.albers.center_meridian * D2R;
+  pps.albers.orig_latitude = proj->param.albers.orig_latitude * D2R;
+  pps.albers.false_easting = pps.albers.false_northing = 0;
+  project_albers(&pps, lat*D2R, lon*D2R, 0, x, y, &z);
 }
 
 void alb_ll(meta_projection *proj,double xx,double yy,
@@ -432,7 +438,15 @@ void alb_ll(meta_projection *proj,double xx,double yy,
 {
   /* Use libasf_proj, wrapper for libproj */
   double h;
-  project_albers_inv(&(proj->param), xx, yy, 0, alat, alon, &h);
+  project_parameters_t pps;
+  pps.albers.std_parallel1 = proj->param.albers.std_parallel1 * D2R;
+  pps.albers.std_parallel2 = proj->param.albers.std_parallel2 * D2R;
+  pps.albers.center_meridian = proj->param.albers.center_meridian * D2R;
+  pps.albers.orig_latitude = proj->param.albers.orig_latitude * D2R;
+  pps.albers.false_easting = pps.albers.false_northing = 0;
+  project_albers_inv(&pps, xx, yy, 0, alat, alon, &h);
+  *alat *= R2D;
+  *alon *= R2D;
 }
 
 /***************************AT/CT Conversion Routines*********************/
