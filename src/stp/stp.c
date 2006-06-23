@@ -19,7 +19,7 @@
 #  endif
 #endif
 
-#define STP_VERSION "1.0.8"
+#define STP_VERSION "1.0.9"
 
 /* for win32, set the font to the standard windows one */
 #if defined(win32)
@@ -1522,36 +1522,6 @@ generate_org_file_if_needed()
     g_free(org_filename);
 }
 
-void
-write_doppler_parameters(const gchar * filename, float constant,
-			 float linear, float quadratic)
-{
-    gchar * org_filename = generate_org_filename(filename);
- 
-    FILE * ifp = fopen(org_filename, "rt");
-    FILE * ofp = fopen(filename, "wt");
-
-    while (ifp && !feof(ifp))
-    {
-        gchar buf[256];
-        readline(ifp, buf, 256);
-
-	char * p = strstr(buf, "Dopp quad coefs(Hz/prf)");
-	if (p)
-	{
-	    fprintf(ofp, "%f %f %f\t\t! Dopp quad coefs(Hz/prf)\n",
-		    constant, linear, quadratic); 
-	}
-	else
-	{
-	    fprintf(ofp, "%s\n", buf);
-	}
-    }
-
-    if (ifp) fclose(ifp);
-    if (ofp) fclose(ofp);
-}
-
 static void
 set_entry_with_float_value(const gchar * entry_name, float value)
 {
@@ -1630,7 +1600,6 @@ SIGNAL_CALLBACK void
 on_doppler_parameters_dialog_restore_button_clicked(GtkWidget *w)
 {
     gchar * in_file = get_in_file_name();
-    //gchar * org_file = generate_org_filename(in_file);
     
     float constant, linear, quadratic;
     read_doppler_parameters(in_file, &constant, &linear, &quadratic);
@@ -1640,7 +1609,6 @@ on_doppler_parameters_dialog_restore_button_clicked(GtkWidget *w)
     set_entry_with_float_value("quadratic_entry", quadratic);
 
     g_free(in_file);
-    //g_free(org_file);
 }
 
 int
