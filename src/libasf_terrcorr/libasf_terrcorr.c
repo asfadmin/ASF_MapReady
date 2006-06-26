@@ -64,6 +64,35 @@ static char * appendSuffix(const char *inFile, const char *suffix)
   return ret;
 }
 
+static char *outputName(const char *dir, const char *base, const char *suffix)
+{
+    int dirlen = strlen(dir);
+    int baselen = strlen(base);
+    int len = dirlen > baselen ? dirlen : baselen;
+
+    char *fil = MALLOC(sizeof(char)*(dirlen+baselen+strlen(suffix)));
+    char *dirTmp = MALLOC(sizeof(char) * len);
+    char *fileTmp = MALLOC(sizeof(char) * len);
+
+    split_dir_and_file(dir, dirTmp, fileTmp);
+    strcpy(fil, dirTmp);
+
+    split_dir_and_file(base, dirTmp, fileTmp);
+    strcat(fil, fileTmp);
+
+    char *ret = appendSuffix(fil, suffix);
+
+    free(fil);
+    free(dirTmp);
+    free(fileTmp);
+
+    printf("Generating output name: %s %s %s\n"
+           "                     -> %s\n", 
+           dir, base, suffix, ret);
+
+    return ret;
+}
+
 // attempt to remove "<file>.img" and "<file>.meta", etc files
 static void clean(const char *file)
 {
@@ -96,7 +125,7 @@ static int mini(int a, int b)
 }
 
 static void 
-fftMatch_atCorners(char *sar, char *dem, const int size)
+fftMatch_atCorners(char *output_dir, char *sar, char *dem, const int size)
 {
   float dx_ur, dy_ur; 
   float dx_ul, dy_ul; 
@@ -113,8 +142,8 @@ fftMatch_atCorners(char *sar, char *dem, const int size)
   meta_sar = meta_read(sar);
   meta_dem = meta_read(dem);
 
-  chopped_sar = appendSuffix(sar, "_chip");
-  chopped_dem = appendSuffix(dem, "_chip");
+  chopped_sar = outputName(output_dir, sar, "_chip");
+  chopped_dem = outputName(output_dir, dem, "_chip");
 
   nl = mini(meta_sar->general->line_count, meta_dem->general->line_count);
   ns = mini(meta_sar->general->sample_count, meta_dem->general->sample_count);
@@ -190,6 +219,15 @@ int asf_terrcorr(char *sarFile, char *demFile,
 			  do_fftMatch_verification, dem_grid_size);
 }
 
+static char * getOutputDir(char *outFile)
+{
+    char *d = MALLOC(sizeof(char) * strlen(outFile));
+    char *f = MALLOC(sizeof(char) * strlen(outFile));
+    split_dir_and_file(outFile, d, f);
+    free(f);
+    return d;
+}
+
 int asf_terrcorr_ext(char *sarFile, char *demFile,
 		     char *outFile, double pixel_size, int clean_files,
 		     int do_resample, int do_corner_matching,
@@ -198,6 +236,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   char *resampleFile, *srFile;
   char *demGridFile, *demClipped, *demSlant, *demSimAmp;
   char *demTrimSimAmp, *demTrimSlant;
+  char *output_dir;
   double demRes, sarRes;
   int demWidth, demHeight;
   meta_parameters *metaSAR, *metaDEM;
@@ -213,6 +252,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   asfPrintStatus("Reading metadata...\n");
   metaSAR = meta_read(sarFile);
   metaDEM = meta_read(demFile);
+
+  output_dir = getOutputDir(outFile);
 
   // some checks for square pixels, as the algorithm assumes it
   // taking this out... I don't think the algorithm assumes this.
@@ -271,7 +312,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     asfPrintStatus("Resampling SAR image to pixel size of %g meters.\n",
 		   pixel_size);
 
-    resampleFile = appendSuffix(sarFile, "_resample");
+    resampleFile = outputName(output_dir, sarFile, "_resample");
     resample_to_square_pixsiz(sarFile, resampleFile, pixel_size);
     meta_free(metaSAR);
     metaSAR = meta_read(resampleFile);
@@ -321,7 +362,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       // DEM around when we get to correcting the terrain.
       asfPrintStatus("Generating %dx%d DEM grid...\n",
 		     dem_grid_size, dem_grid_size);
-      demGridFile = appendSuffix(sarFile, "_demgrid");
+      demGridFile = outputName(output_dir, sarFile, "_demgrid");
       create_dem_grid_ext(demFile, srFile, demGridFile,
 			  metaSAR->general->sample_count,
 			  metaSAR->general->line_count, dem_grid_size,
@@ -364,13 +405,13 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       // Generate a slant range DEM and a simulated amplitude image.
       asfPrintStatus("Generating slant range DEM and "
 		     "simulated sar image...\n");
-      demSlant = appendSuffix(demFile, "_slant");
-      demSimAmp = appendSuffix(demFile, "_sim_amp");
+      demSlant = outputName(output_dir, demFile, "_slant");
+      demSimAmp = outputName(output_dir, demFile, "_sim_amp");
       reskew_dem(srFile, demClipped, demSlant, demSimAmp);
 
       // Resize the simulated amplitude to match the slant range SAR image.
       asfPrintStatus("Resizing simulated sar image...\n");
-      demTrimSimAmp = appendSuffix(demFile, "_sim_amp_trim");
+      demTrimSimAmp = outputName(output_dir, demFile, "_sim_amp_trim");
       trim(demSimAmp, demTrimSimAmp, 0, 0, metaSAR->general->sample_count,
 	   demHeight);
 
@@ -414,7 +455,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     int chipsz = 256;
     asfPrintStatus("Doing corner fftMatching... (using %dx%d chips)\n",
 		   chipsz, chipsz);
-    fftMatch_atCorners(srFile, demTrimSimAmp, chipsz);
+    fftMatch_atCorners(output_dir, srFile, demTrimSimAmp, chipsz);
   }
 
   // Apply the offset to the simulated amplitude image.
@@ -443,7 +484,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 
   // Apply the offset to the slant range DEM.
   asfPrintStatus("Applying offsets to slant range DEM...\n");
-  demTrimSlant = appendSuffix(demFile, "_slant_trim");
+  demTrimSlant = outputName(output_dir, demFile, "_slant_trim");
   trim(demSlant, demTrimSlant, idx, idy, metaSAR->general->sample_count,
        demHeight);
 
@@ -480,6 +521,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 
   meta_free(metaSAR);
   meta_free(metaDEM);
+
+  free(output_dir);
 
   return 0;
 }
