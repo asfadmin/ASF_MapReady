@@ -9,7 +9,6 @@ LIBS    = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/libasf_reporting.a \
-	-lgslcblas \
 	$(LIBDIR)/asf.a -lm
 
 OBJLIB	= config.o \
