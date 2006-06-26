@@ -69,7 +69,7 @@ int main(int argc,char *argv[])
 
   if (argc == 5) {
     srPixSize = atof(argv[2]);
-    gr2sr_pixsiz(infile, outfile, srPixSize);
+    gr2sr_sr_pixsiz(infile, outfile, srPixSize);
   }
   else {
     gr2sr(infile, outfile);

@@ -197,7 +197,11 @@ static double calc_ranges(meta_parameters *meta)
 	int ns = meta->general->sample_count;
 
 	meta_get_slants(meta,&slantFirst,&slantPer);
-	slantFirst+=slantPer*meta->general->start_sample+1;
+//  FIXME! Had to take this out. We need to match the values used in gr2sr,
+//  where we carefully fudged the slant range pixel size so that we could
+//  get our desired ground range pixel size. But we couldn't account for
+//  the start_sample value obtained after shifting the image...
+//	slantFirst+=slantPer*meta->general->start_sample+1;
 	slantPer*=meta->sar->sample_increment;
 	er2her2=er*er-satHt*satHt;
 	minPhi=acos((satHt*satHt+er*er-slantFirst*slantFirst)/(2.0*satHt*er));

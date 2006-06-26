@@ -26,6 +26,11 @@ BUGS:
 #include <asf.h>
 #include <asf_meta.h>
 #include <asf_reporting.h>
+#include <assert.h>
+
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_roots.h>
 
 #define VERSION 0.1
 
@@ -79,12 +84,115 @@ static char * replExt(const char *filename, const char *ext)
   return ret;
 }
 
-int gr2sr(const char *infile, const char *outfile)
+/* Utility struct for iterate_sr_pixel_size */
+struct sr_pixel_size_params {
+        meta_parameters *meta;
+        double target_gr_pixel_size;
+        int onp;
+};
+
+/* The function we minimize in iterate_sr_pixel_size -- returns 0 when
+   we have the slant range pixel size that results in the desired gr
+   pixel size */
+static double getObjective(double slantPer, void *params)
 {
-  return gr2sr_pixsiz(infile, outfile, -1);
+    struct sr_pixel_size_params *p =
+        (struct sr_pixel_size_params *)params;
+
+    meta_parameters *meta = p->meta;
+
+    int ns = p->onp; // meta->general->sample_count;
+    int nl = meta->general->line_count;
+
+    double er = meta_get_earth_radius(meta, nl/2, ns/2);
+    double satHt = meta_get_sat_height(meta, nl/2, ns/2);
+
+    double slantFirst, slantPer_ignore, slantLast;
+    meta_get_slants(meta, &slantFirst, &slantPer_ignore);
+
+//  Had to take this out... see comment for corresponding line in deskew_dem
+//    slantFirst += slantPer*meta->general->start_sample+1;
+    slantPer *= meta->sar->sample_increment;
+    slantLast = slantFirst + (ns-1)*slantPer;
+
+    double minPhi = acos((satHt*satHt+er*er - slantFirst*slantFirst)/
+                         (2.0*satHt*er));
+    double maxPhi = acos((satHt*satHt+er*er - slantLast*slantLast)/
+                         (2.0*satHt*er));
+    double phiMul=(ns-1)/(maxPhi-minPhi);
+    double grPixelSize = er/phiMul;
+
+    return grPixelSize - p->target_gr_pixel_size;
 }
 
-int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
+/* Uses a gsl root finder to locate the slant range pixel size that
+   we need to use that will result in the user's desired ground range
+   pixel size */
+static double iterate_sr_pixel_size(meta_parameters *meta, double pixel_size,
+                                    double start_sr_pixel_size, int output_ns)
+{
+    int status;
+    int iter = 0, max_iter = 100;
+    const gsl_root_fsolver_type *T;
+    gsl_root_fsolver *s;
+    gsl_function F;
+    gsl_error_handler_t *prev;
+    struct sr_pixel_size_params params;
+    double lo, hi;
+    double sr_pixel_size;
+
+    F.function = &getObjective;
+    F.params = &params;
+
+    params.meta = meta;
+    params.target_gr_pixel_size = pixel_size;
+    params.onp = output_ns;
+
+    prev = gsl_set_error_handler_off();
+
+    lo = 0;
+    hi = pixel_size;
+
+    T = gsl_root_fsolver_brent;
+    s = gsl_root_fsolver_alloc (T);
+    gsl_root_fsolver_set (s, &F, lo, hi);
+
+    do {
+        ++iter;
+        status = gsl_root_fsolver_iterate(s);
+        sr_pixel_size = gsl_root_fsolver_root(s);
+        status = gsl_root_test_residual(
+            getObjective(sr_pixel_size, (void*)&params), 1.0e-7);
+    } while (status == GSL_CONTINUE && iter < max_iter);
+
+    if (status == GSL_SUCCESS) {
+        printf("Converged after %d iterations.\n", iter);
+        printf("SR Pixel Size: %.3f m\n",sr_pixel_size);
+        printf("   (for comparison) Original Pixel Size: %.3f m\n",
+               start_sr_pixel_size);
+        printf("   GR with this Target: %.3f m\n",
+               getObjective(sr_pixel_size, (void*)&params) + pixel_size);
+    } else {
+        asfPrintWarning("Failed to determine slant range pixel size!\n"
+                        "iter: %d, sr_pixel_size=%.3f, res=%.5f\n"
+                        "Proceeding using the starting estimate: %.3f m\n"
+                        "Starting points were: lo: %.3f -> %.4f\n"
+                        "                      hi: %.3f -> %.4f\n",
+                        iter, sr_pixel_size, 
+                        getObjective(sr_pixel_size, (void*)&params),
+                        start_sr_pixel_size,
+                        lo, getObjective(lo, (void*)&params),
+                        hi, getObjective(hi, (void*)&params));
+        sr_pixel_size = start_sr_pixel_size;
+    }
+
+    gsl_set_error_handler(prev);
+    return sr_pixel_size;
+}
+
+static int 
+gr2sr_pixsiz_imp(const char *infile, const char *outfile, float srPixSize,
+                 float targetGrPixelSize)
 {
   meta_parameters *inMeta, *outMeta;
 
@@ -112,7 +220,13 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
 
   inMeta = meta_read(infile);
 
-  if (srPixSize < 0) {
+  nl = inMeta->general->line_count;
+  np = inMeta->general->sample_count;
+
+  /* If srPixSize < 0, calculate the proper pixel size.
+     If targetGrPixelSize > 0, we'll need this value as well, to
+         seed the search for the desired pixel size */
+  if (srPixSize < 0 || targetGrPixelSize > 0) {
     /*
       In an e-mail from Rick:
        Slant Range Pixel Size = C (speed of light) / [SampleRate (sample 
@@ -128,9 +242,6 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
       inMeta->general->sample_count / inMeta->sar->original_sample_count);
   }
 
-  nl = inMeta->general->line_count;
-  np = inMeta->general->sample_count;
-
   onl=nl;
   gr2sr_vec(inMeta, srPixSize, gr2sr);
   
@@ -140,7 +251,14 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
      if (gr2sr[ii]<np) onp=ii; /* gr input still in range-- keep output */
      else break; /* gr input is off end of image-- stop sr output */
   }
-  
+
+  /* If the user wants us to target a specified ground range pixel size,
+     we do an iterative search to find the right slant range pixel size */
+  if (targetGrPixelSize > 0) {
+      srPixSize = (float)iterate_sr_pixel_size(inMeta, targetGrPixelSize,
+                                               srPixSize, onp);
+  }
+
   /* Split gr2sr into resampling coefficients */
   for (ii=0; ii<onp; ii++) {
      lower[ii] = (int) gr2sr[ii];
@@ -197,3 +315,34 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
   return TRUE;
 }
 
+/**
+  Converts to slant range using the specified slant range pixel size.
+
+  If srPixSize<0, then an appropriate slant range pixel size will be
+  calculated from the metadata.
+*/
+int 
+gr2sr_sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
+{
+    gr2sr_pixsiz_imp(infile, outfile, srPixSize, -1);
+}
+
+/**
+  Converts to slant range, so that when the image is converted back to
+  ground range, it will have the specified ground range pixel size.
+*/
+int 
+gr2sr_gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
+{
+    
+    gr2sr_pixsiz_imp(infile, outfile, -1, grPixSize);
+}
+
+/**
+  Converts to slant range, using an appropriate slant range pixel size
+  calculated from the metadata.
+*/
+int gr2sr(const char *infile, const char *outfile)
+{
+  return gr2sr_sr_pixsiz(infile, outfile, -1);
+}

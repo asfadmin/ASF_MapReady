@@ -86,10 +86,6 @@ static char *outputName(const char *dir, const char *base, const char *suffix)
     free(dirTmp);
     free(fileTmp);
 
-    printf("Generating output name: %s %s %s\n"
-           "                     -> %s\n", 
-           dir, base, suffix, ret);
-
     return ret;
 }
 
@@ -227,6 +223,46 @@ static char * getOutputDir(char *outFile)
     free(f);
     return d;
 }
+/*
+static int isPP(meta_parameters *meta)
+{
+    return strstr(meta->general->processor, "PREC") != NULL;
+}
+
+static int require_range_scale_fix(meta_parameters *meta)
+{
+    // We require the PP range scale fix for ground range data from the PP
+    return isPP(meta) && meta->sar->image_type != 'S';
+
+}
+
+static double range_scale_fix(meta_parameters *meta, double pixel_size)
+{
+    int ns = meta->general->sample_count;
+    int nl = meta->general->line_count;
+
+    double er = meta_get_earth_radius_pp(meta);
+    double satHt = meta_get_sat_height(meta, nl/2, ns/2);
+
+    double slantFirst, slantPer, slantLast;
+    meta_get_slants(meta, &slantFirst, &slantPer);
+
+    slantFirst+=slantPer*meta->general->start_sample+1;
+    slantPer*=meta->sar->sample_increment;
+    slantLast = slantFirst + (ns-1)*slantPer;
+
+    double er2her2 = er*er - satHt*satHt;
+    double minPhi = acos((satHt*satHt+er*er - slantFirst*slantFirst)/
+                         (2.0*satHt*er));
+    double maxPhi = acos((satHt*satHt+er*er - slantLast*slantLast)/
+                         (2.0*satHt*er));
+    double phiMul=(ns-1)/(maxPhi-minPhi);
+    double grPixelSize = er/phiMul;
+
+    double er2 = meta_get_earth_radius(meta, nl/2, ns/2);
+    return pixel_size; // * er2/er;
+}
+*/
 
 int asf_terrcorr_ext(char *sarFile, char *demFile,
 		     char *outFile, double pixel_size, int clean_files,
@@ -309,11 +345,17 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       pixel_size = demRes;
     }
 
+    double x_pixel_size = pixel_size;
+    double y_pixel_size = pixel_size;
+
+//    if (require_range_scale_fix(metaSAR))
+//        x_pixel_size = range_scale_fix(metaSAR, pixel_size);
+
     asfPrintStatus("Resampling SAR image to pixel size of %g meters.\n",
 		   pixel_size);
 
     resampleFile = outputName(output_dir, sarFile, "_resample");
-    resample_to_square_pixsiz(sarFile, resampleFile, pixel_size);
+    resample_to_pixsiz(sarFile, resampleFile, x_pixel_size, y_pixel_size);
     meta_free(metaSAR);
     metaSAR = meta_read(resampleFile);
 
@@ -323,6 +365,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 		   metaSAR->general->x_pixel_size);
   } else {
     resampleFile = strdup(sarFile);
+    pixel_size = sarRes;
   }
 
   // Calculate the slant range pixel size to pass into the ground range to
@@ -330,12 +373,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   // output and don't need to scale the image afterwards.
   if (metaSAR->sar->image_type != 'S') {
     srFile = appendSuffix(sarFile, "_slant");
-    double sr_pixel_size = 
-      (meta_get_slant(metaSAR,0,metaSAR->general->sample_count) -
-       meta_get_slant(metaSAR,0,0)) / metaSAR->general->sample_count;
     asfPrintStatus("Converting to Slant Range...\n");
-
-    gr2sr_pixsiz(resampleFile, srFile, sr_pixel_size);
+    gr2sr_gr_pixsiz(resampleFile, srFile, pixel_size);
 
     meta_free(metaSAR);
     metaSAR = meta_read(srFile);
