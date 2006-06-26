@@ -10,9 +10,9 @@ LIBS  = \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
-	$(LIBDIR)/libgsl.a \
+	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libproj.a
+	$(PROJ_LIBS)
 
 OBJS  = asf_convert.o \
 	config.o \

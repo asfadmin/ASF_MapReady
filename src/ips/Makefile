@@ -5,11 +5,11 @@
 include ../../make_support/system_rules
 
 LIBS    = $(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libgsl.a \
+	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libproj.a \
+	$(PROJ_LIBS) \
 	$(LIBDIR)/libasf_reporting.a \
-	$(LIBDIR)/libgslcblas.a \
+	-lgslcblas \
 	$(LIBDIR)/asf.a -lm
 
 OBJLIB	= config.o \

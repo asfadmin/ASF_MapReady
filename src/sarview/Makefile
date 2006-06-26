@@ -14,7 +14,7 @@ REQUIRED_LIBS = \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libproj.a \
+	$(PROJ_LIBS) \
 	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(JPEG_LIBS) \
