@@ -88,21 +88,10 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "asf_contact.h"
 #include <unistd.h>
 
-
 #define REQUIRED_ARGS 1
 #define FLAG_NOT_SET -1
 
-
 static int log_f;
-// If the user didn't ask for a log file then we can nuke the one that
-// we've been keeping since we've finished everything */
-static int exit_with_success(void) {
-  if ((log_f==FLAG_NOT_SET) && (logflag==TRUE)){
-    fclose (fLog);
-    remove(logFile);
-  }
-  exit(EXIT_SUCCESS);
-}
 
 // Print minimalistic usage info & exit
 static void print_usage(void)
@@ -176,13 +165,7 @@ static int checkForOption(char* key, int argc, char* argv[])
 
 int main(int argc, char *argv[])
 {
-  FILE *fBatch, *fConfig;
-  convert_config *cfg;
-  meta_parameters *meta;
-  char configFileName[255], cmd[1024], options[255], line[255], batchConfig[255];
-  char inFile[255], outFile[255], fileName[255];
-  char format[255], radiometry[255], projection[255], datum[255], resampling[255];
-  char scale[255], values[255], prefix[30], suffix[30];
+  char configFileName[255];
   const int pid = getpid();
   int createflag;
   extern int logflag, quietflag;
