@@ -23,6 +23,9 @@
 #include "asf.h"
 #include "ardop_defs.h"
 
+/* defined in parse_cla.c */
+int parse_cla(int argc,char *argv[], struct INPUT_ARDOP_PARAMS *g);
+
 void give_usage(char *name)
 {
  printf("\n"
@@ -116,16 +119,15 @@ void give_debug_usage(void)
 	exit(EXIT_FAILURE);
 }
 
-main (int argc, char *argv [])
+int main (int argc, char *argv [])
 {
   int give_usage_action = 0;
 
   struct INPUT_ARDOP_PARAMS *params_in;
-  meta_parameters *meta;	
 
   logflag=quietflag=0;
   params_in = get_input_ardop_params_struct("", "");
-  give_usage_action=parse_cla(argc,argv,params_in,&meta);
+  give_usage_action=parse_cla(argc,argv,params_in);
   if (give_usage_action==0) give_usage(argv[0]);
   if (give_usage_action==-1) give_debug_usage();
 
