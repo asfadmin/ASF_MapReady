@@ -23,7 +23,7 @@ LIBS = \
 	-lm
 
 all: build_only
-	cp libasf_vector.a $(LIBDIR)
+	mv libasf_vector.a $(LIBDIR)
 	cp asf_vector.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
