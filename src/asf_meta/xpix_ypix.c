@@ -5,26 +5,6 @@
 #define pi M_PI
 #endif
 
-static vector latLon2cart(GEOLOCATE_REC *g,double elev,
-			  double deg_lat,double deg_lon)
-{
-/*Convert latitude and longitude to radians */
-	double lat=deg_lat*D2R;
-	double lon=deg_lon*D2R;
-	/* e2==Earth eccentricity, squared */
-	double e2=1.0-(g->rp*g->rp)/(g->re*g->re);
-	double cosLat=cos(lat), sinLat=sin(lat);
-	/* "prime vertical radius of curvature" at our latitude */
-	double N=g->re/sqrt(1-e2*sinLat*sinLat);
-	vector ret;
-	/* Cartesian to spherical, in a coordinate system stretched along Z by (1-e2) */
-	ret.x=(N+elev)*cosLat*cos(lon);
-	ret.y=(N+elev)*cosLat*sin(lon);
-	ret.z=(N*(1-e2)+elev)*sinLat;
-	return ret;
-}
-
-
 /************ SAR Geolocation Algorithm ************/
 
 static vector getLocCart(GEOLOCATE_REC *g,double range,double dop)
@@ -34,22 +14,6 @@ static vector getLocCart(GEOLOCATE_REC *g,double range,double dop)
 	getLookYaw(g,range,dop,&look,&yaw);
 	getDoppler(g,look,yaw,NULL,NULL,&target,NULL);
 	return target;
-}
-
-static void getLatLon(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
-		      double *out_lat,double *out_lon,double *earthRadius) /*Outputs.*/
-{
-	double lat,lon;
-	cart2sph(getLocCart(g,range,dop),earthRadius,&lat,&lon);
-	
-/*Convert longitude to (-pi, pi].*/
-	if (lon < -pi)
-		lon += 2*pi;
-	
-/*Convert latitude to geodetic, from geocentric.*/
-	lat=atan(tan(lat)*(g->re/g->rp)*(g->re/g->rp));
-	if (out_lon) *out_lon = lon*R2D;
-	if (out_lat) *out_lat = lat*R2D;
 }
 
 static GEOLOCATE_REC * meta_make_geolocate(meta_parameters *meta,
@@ -107,7 +71,7 @@ void xpyp_getVelocities(meta_parameters *meta, float *pp_velocity,
 	double t,h,r,c,dt,sc_vel,earth_rad,sc_rad,cos_earth_ang,swath_nr;
 	stateVector scFix,scGEI;
 	vector target1,target2,targVel;
-        double tv,v;
+        double tv;
 //		printf("Azimuth velocity estimation at topleft:\n");
 /* Use meta routines to find target point at time t and t+dt */
 	//meta_get_orig((void *)&sar_ddr,0,sar_ddr.ns/2,&loc[1],&loc[0]);

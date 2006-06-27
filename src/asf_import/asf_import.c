@@ -200,7 +200,6 @@ int main(int argc, char *argv[])
     char inBaseName[256]="";
     char inMetaName[256]="";
     char outBaseName[256]="";
-    char unscaledBaseName[256]="";
     char inMetaNameOption[256], prcPath[256]="";
     char *lutName=NULL;
     char format_type[256]="";

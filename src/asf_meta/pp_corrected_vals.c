@@ -110,13 +110,13 @@ void pp_get_corrected_vals(char *sarName, double *corrected_earth_radius,
     //printf("   (for comparison) PP interpolated lines per second: %.3f lines/s\n",1.0/seconds_per_azimuth_line);
     //printf("   (for comparison) FACDR swath velocity: %.3f m/s\n",facdr.swathvel);
     
-    double R=pp_earth_radius;
-    double H=params.satellite_height;
-    double HHRR=H*H + R*R;
-    double slant=0.5*(params.slant_first+params.slant_last);
-    double rg_center=R*acos( (HHRR - slant*slant) / (2*H*R)); 
-    double vs=sqrt(facdr.scxvel*facdr.scxvel + facdr.scyvel*facdr.scyvel + facdr.sczvel*facdr.sczvel);
-    double vsg = vs * pp_earth_radius/params.satellite_height*cos(rg_center/pp_earth_radius);
+    //double R=pp_earth_radius;
+    //double H=params.satellite_height;
+    //double HHRR=H*H + R*R;
+    //double slant=0.5*(params.slant_first+params.slant_last);
+    //double rg_center=R*acos( (HHRR - slant*slant) / (2*H*R)); 
+    //double vs=sqrt(facdr.scxvel*facdr.scxvel + facdr.scyvel*facdr.scyvel + facdr.sczvel*facdr.sczvel);
+    //double vsg = vs * pp_earth_radius/params.satellite_height*cos(rg_center/pp_earth_radius);
     
     //printf("   (for comparison) PP-style recalc velocity: %.3f m/s\n",vsg);
 

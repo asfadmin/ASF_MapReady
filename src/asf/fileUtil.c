@@ -49,7 +49,7 @@ char *findExt(const char *name)
   }
   if ( (i>0) && (name[i]=='.') )
     /* We found an extension!  */
-    return &name[i];
+    return (char *) &name[i];
   else
     /* We couldn't find an extension.  */
     return NULL;
@@ -107,7 +107,7 @@ char * appendToBasename(const char *inFile, const char *suffix)
        suffix, then add back on the extension again */
     char *ext;
     *p++ = '\0';
-    ext = strdup(p);
+    ext = static_strdup(p);
     strcat(ret, suffix);
     strcat(ret, ".");
     strcat(ret, ext);
