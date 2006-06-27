@@ -191,10 +191,16 @@ resample_impl(char *infile, char *outfile,
 
 /*********************** External methods ***********************************/
 
+// Resample- specify scale factors (in both directions)
+int resample(char *infile, char *outfile, double xscalfact, double yscalfact)
+{
+  return resample_impl(infile, outfile, xscalfact, yscalfact, TRUE);
+}
+
 // Resample- specify a square pixel size
 int resample_to_square_pixsiz(char *infile, char *outfile, double pixsiz)
 {
-  resample_to_pixsiz(infile, outfile, pixsiz, pixsiz);
+  return resample_to_pixsiz(infile, outfile, pixsiz, pixsiz);
 }
 
 // Resample- specify pixel size (in both directions)
@@ -211,20 +217,13 @@ int resample_to_pixsiz(char *infile, char *outfile,
 
     meta_free(metaIn);
 
-    resample(infile, outfile, xscalfact, yscalfact);
-
+    return resample(infile, outfile, xscalfact, yscalfact);
 }
 
 // Resample- specify scale factors, but don't update the metadata!
 int resample_nometa(char *infile, char *outfile,
 		    double xscalfact, double yscalfact)
 {
-  resample_impl(infile, outfile, xscalfact, yscalfact, FALSE);
-}
-
-// Resample- specify scale factors (in both directions)
-int resample(char *infile, char *outfile, double xscalfact, double yscalfact)
-{
-  resample_impl(infile, outfile, xscalfact, yscalfact, TRUE);
+  return resample_impl(infile, outfile, xscalfact, yscalfact, FALSE);
 }
 

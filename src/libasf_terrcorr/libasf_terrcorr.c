@@ -223,53 +223,13 @@ static char * getOutputDir(char *outFile)
     free(f);
     return d;
 }
-/*
-static int isPP(meta_parameters *meta)
-{
-    return strstr(meta->general->processor, "PREC") != NULL;
-}
-
-static int require_range_scale_fix(meta_parameters *meta)
-{
-    // We require the PP range scale fix for ground range data from the PP
-    return isPP(meta) && meta->sar->image_type != 'S';
-
-}
-
-static double range_scale_fix(meta_parameters *meta, double pixel_size)
-{
-    int ns = meta->general->sample_count;
-    int nl = meta->general->line_count;
-
-    double er = meta_get_earth_radius_pp(meta);
-    double satHt = meta_get_sat_height(meta, nl/2, ns/2);
-
-    double slantFirst, slantPer, slantLast;
-    meta_get_slants(meta, &slantFirst, &slantPer);
-
-    slantFirst+=slantPer*meta->general->start_sample+1;
-    slantPer*=meta->sar->sample_increment;
-    slantLast = slantFirst + (ns-1)*slantPer;
-
-    double er2her2 = er*er - satHt*satHt;
-    double minPhi = acos((satHt*satHt+er*er - slantFirst*slantFirst)/
-                         (2.0*satHt*er));
-    double maxPhi = acos((satHt*satHt+er*er - slantLast*slantLast)/
-                         (2.0*satHt*er));
-    double phiMul=(ns-1)/(maxPhi-minPhi);
-    double grPixelSize = er/phiMul;
-
-    double er2 = meta_get_earth_radius(meta, nl/2, ns/2);
-    return pixel_size; // * er2/er;
-}
-*/
 
 int asf_terrcorr_ext(char *sarFile, char *demFile,
 		     char *outFile, double pixel_size, int clean_files,
 		     int do_resample, int do_corner_matching,
 		     int do_fftMatch_verification, int dem_grid_size)
 {
-  char *resampleFile, *srFile;
+  char *resampleFile, *srFile, *resampleFile_2;
   char *demGridFile, *demClipped, *demSlant, *demSimAmp;
   char *demTrimSimAmp, *demTrimSlant;
   char *output_dir;
@@ -345,17 +305,11 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       pixel_size = demRes;
     }
 
-    double x_pixel_size = pixel_size;
-    double y_pixel_size = pixel_size;
-
-//    if (require_range_scale_fix(metaSAR))
-//        x_pixel_size = range_scale_fix(metaSAR, pixel_size);
-
     asfPrintStatus("Resampling SAR image to pixel size of %g meters.\n",
 		   pixel_size);
 
     resampleFile = outputName(output_dir, sarFile, "_resample");
-    resample_to_pixsiz(sarFile, resampleFile, x_pixel_size, y_pixel_size);
+    resample_to_square_pixsiz(sarFile, resampleFile, pixel_size);
     meta_free(metaSAR);
     metaSAR = meta_read(resampleFile);
 
@@ -364,8 +318,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 		   metaSAR->general->sample_count,
 		   metaSAR->general->x_pixel_size);
   } else {
-    resampleFile = strdup(sarFile);
     pixel_size = sarRes;
+    resampleFile = strdup(sarFile);
   }
 
   // Calculate the slant range pixel size to pass into the ground range to
@@ -373,8 +327,12 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   // output and don't need to scale the image afterwards.
   if (metaSAR->sar->image_type != 'S') {
     srFile = appendSuffix(sarFile, "_slant");
+    double sr_pixel_size = 
+      (meta_get_slant(metaSAR,0,metaSAR->general->sample_count) -
+       meta_get_slant(metaSAR,0,0)) / metaSAR->general->sample_count;
     asfPrintStatus("Converting to Slant Range...\n");
-    gr2sr_gr_pixsiz(resampleFile, srFile, pixel_size);
+
+    gr2sr_pixsiz(resampleFile, srFile, sr_pixel_size);
 
     meta_free(metaSAR);
     metaSAR = meta_read(srFile);
@@ -535,6 +493,20 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   asfPrintStatus("Terrain correcting slant range image...\n");
   deskew_dem(demTrimSlant, outFile, srFile, 0);
 
+  // Because of the PP earth radius sr->gr fix, we may not have ended
+  // up with the same x pixel size that the user requested.  So we will
+  // just resample to the size that was requested.
+  meta_free(metaSAR);
+  metaSAR = meta_read(outFile);
+  if (fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01) {
+      asfPrintStatus("Resampling to proper range pixel size...\n");
+      resampleFile_2 = outputName(output_dir, outFile, "_resample");
+      renameImgAndMeta(outFile, resampleFile_2);
+      resample_to_square_pixsiz(resampleFile_2, outFile, pixel_size);
+  } else {
+      resampleFile_2 = NULL;
+  }
+
   if (clean_files) {
     asfPrintStatus("Removing intermediate files...\n");
     clean(resampleFile);
@@ -545,6 +517,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     clean(demTrimSimAmp);
     clean(demSimAmp);
     clean(demSlant);
+    if (resampleFile_2)
+        clean(resampleFile_2);
   }
 
   asfPrintStatus("Terrain Correction Complete!\n");
@@ -557,6 +531,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   free(demTrimSimAmp);
   free(demSimAmp);
   free(demSlant);
+  if (resampleFile_2)
+      free(resampleFile_2);
 
   meta_free(metaSAR);
   meta_free(metaDEM);

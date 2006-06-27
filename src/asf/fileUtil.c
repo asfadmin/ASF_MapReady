@@ -338,3 +338,28 @@ void fileCopy(const char *src, const char *dst)
    FCLOSE(srcFp);
    FCLOSE(dstFp);
 }
+
+void fileRename(const char *src, const char *dst)
+{
+    // FIXME
+    // asfSystem("mv %s %s", src, dst);
+    rename(src, dst);
+}
+
+void renameImgAndMeta(const char *src, const char *dst)
+{
+    char * src_meta_file = appendExt(src, ".meta");
+    char * src_img_file = appendExt(src, ".img");
+
+    char * dst_meta_file = appendExt(dst, ".meta");
+    char * dst_img_file = appendExt(dst, ".img");
+
+    fileRename(src_meta_file, dst_meta_file);
+    fileRename(src_img_file, dst_img_file);
+
+    free(src_meta_file);
+    free(src_img_file);
+
+    free(dst_meta_file);
+    free(dst_img_file);
+}

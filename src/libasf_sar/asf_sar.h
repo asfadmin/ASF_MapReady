@@ -8,8 +8,7 @@
 
 /* Prototypes from gr2sr.c */
 int gr2sr(const char *infile, const char *outfile);
-int gr2sr_sr_pixsiz(const char *infile, const char *outfile, float srPixSize);
-int gr2sr_gr_pixsiz(const char *infile, const char *outfile, float grPixSize);
+int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize);
 
 /* Prototypes from reskew_dem.c */
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
