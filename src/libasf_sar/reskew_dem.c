@@ -65,6 +65,11 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 
+#define MASK_NORMAL 1.0
+#define MASK_LAYOVER 200.0
+#define MASK_SHADOW 100.0
+#define MASK_NO_DEM_DATA -1.0
+
 /* current earth radius, meters (FIXME: update with azimuth, range) */
 static double earth_radius;
 
@@ -126,82 +131,97 @@ static float *createSpeckle(void)
 
 /*dem_gr2sr: map one line of a ground range DEM into
 one line of a slant range DEM && one line of simulated amplitude image.*/
-static void dem_gr2sr(float *grDEM, float *srDEM,float *amp)
+static void dem_gr2sr(float *grDEM, float *srDEM,float *amp,float *mask)
 {
-	int x,grX;
-	double lastSrX=-1;/*Slant range pixels up to (and including) here have been filled.*/
-	float lastOutValue=badDEMht;
-	static float *speckle=NULL;
-	int specklePtr=rand();
-	if (speckle==NULL)
-		speckle=createSpeckle();
+    int x,grX;
+    double lastSrX=-1;/*Slant range pixels up to (and including) here 
+                        have been filled.*/
+
+    float lastOutValue=badDEMht;
+
+    static float *speckle=NULL;
+    int specklePtr=rand();
+    if (speckle==NULL)
+        speckle=createSpeckle();
 	
 /*Initialize amplitude to zero, and DEM to -1.*/
-	for (x=0;x<sr_ns;x++)
-	{
-		amp[x]=0;
-		srDEM[x]=unInitDEM;
-	}
+    for (x=0;x<sr_ns;x++)
+    {
+        amp[x]=0;
+        srDEM[x]=unInitDEM;
+        mask[x]=MASK_NORMAL;
+    }
 
+    int n=0;
 /*Step through the ground range line using grX.
 Convert each grX to an srX.  Update amplitude and height images.*/
-	for (grX=1;grX<gr_ns;grX++)
-	{
-		double height=grDEM[grX];
+    for (grX=1;grX<gr_ns;grX++)
+    {
+        double height=grDEM[grX];
 	/*srX: float slant range pixel position.*/
-		double srX=srE2srH(grX,height);
-		int sriX=(int)srX;
-		if ((height!=badDEMht)&&(srX>=0)&&(srX<sr_ns))
-		{
-			double runLen=srX-lastSrX;
-			int intRun=(int)runLen;
-			if ((runLen<maxBreakLen)&&(lastOutValue!=badDEMht))
-			{
-				double currAmp;
-			/*Update the amplitude image.*/
-			    	if (runLen<0) 
-			    		runLen=-runLen;
-			    	currAmp=50.0/(runLen*runLen*5+0.1);
-				for (x=lastSrX+1;x<=sriX;x++)
-					amp[x]+=currAmp*getSpeckle;
-			/*Then, update the height image.*/
-				if (intRun!=0)
-				{
-					float curr=lastOutValue;
-					float delt=(height-lastOutValue)/intRun;
-					curr+=delt;
-					for (x=lastSrX+1;x<=sriX;x++)
-					{
-						if (srDEM[x]==unInitDEM)
-							srDEM[x]=curr;/*Only write on fresh pixels.*/
-					/*	else
-							srDEM[x]=badDEMht; Black out layover regions.*/
-						curr+=delt;
-					}
-				} else 
-					if (srDEM[(int)lastSrX+1]==unInitDEM)
-						srDEM[(int)lastSrX+1]=height;
-			} else {
-				for (x=lastSrX+1;x<=sriX;x++)
-					srDEM[x]=badDEMht;
-			}
-			lastOutValue=height;
-			lastSrX=srX;
-		}
-	}
+        double srX=srE2srH(grX,height);
+        int sriX=(int)srX;
+        if ((height!=badDEMht)&&(srX>=0)&&(srX<sr_ns))
+        {
+            double runLen=srX-lastSrX;
+            int intRun=(int)runLen;
+            float mask_val = runLen > 0 ? MASK_LAYOVER : MASK_SHADOW;
+            if ((runLen<maxBreakLen)&&(lastOutValue!=badDEMht))
+            {
+                double currAmp;
+                /*Update the amplitude image.*/
+                if (runLen<0) 
+                    runLen=-runLen;
+                currAmp=50.0/(runLen*runLen*5+0.1);
+                for (x=lastSrX+1;x<=sriX;x++)
+                    amp[x]+=currAmp*getSpeckle;
+                /*Then, update the height image.*/
+                if (intRun!=0)
+                {
+                    float curr=lastOutValue;
+                    float delt=(height-lastOutValue)/intRun;
+                    float maxval=height>lastOutValue ? height : lastOutValue;
+                    curr+=delt;
+                    for (x=lastSrX+1;x<=sriX;x++)
+                    {
+                        if (srDEM[x]==unInitDEM) {
+                            /*Only write on fresh pixels.*/
+                            //srDEM[x]=curr;
+                            srDEM[x]=maxval;
+                        } else {
+                            /*Hit this pixel a 2nd time ==> layover*/
+                            mask[x] = mask_val;
+                            ++n;
+                        }
+                        curr+=delt;
+                    }
+                } else {
+                    if (srDEM[(int)lastSrX+1]==unInitDEM) {
+                        srDEM[(int)lastSrX+1]=height;
+                    }
+                }
+            } else {
+                for (x=lastSrX+1;x<=sriX;x++) {
+                    srDEM[x]=badDEMht;
+                }
+            }
+            lastOutValue=height;
+            lastSrX=srX;
+        }
+    }
 /*Fill to end of line with zeros.*/
-	for (x=lastSrX+1;x<sr_ns;x++)
-		srDEM[x]=badDEMht;
+    for (x=lastSrX+1;x<sr_ns;x++)
+        srDEM[x]=badDEMht;
 /* Just plug all the holes and see what happens */
 /*Attempt to plug one-pixel holes, by interpolating over them.*/
-	for (x=1;x<(sr_ns-1);x++)
-	{
-		if (srDEM[x]==badDEMht)
-		   /* &&
-		    srDEM[x-1]!=badDEMht &&
-		    srDEM[x+1]!=badDEMht)*/
-			srDEM[x]=(srDEM[x-1]+srDEM[x+1])/2;
-	}
+    for (x=1;x<(sr_ns-1);x++)
+    {
+        if (srDEM[x]==badDEMht)
+            /* &&
+               srDEM[x-1]!=badDEMht &&
+               srDEM[x+1]!=badDEMht)*/
+            srDEM[x]=(srDEM[x-1]+srDEM[x+1])/2;
+    }
 }
 
 /*
@@ -215,10 +235,12 @@ Diffuse (lambertian) reflection:
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	       char *outAmpFile)
 {
-	float *grDEMline,*srDEMline,*outAmpLine;
+	float *grDEMline,*srDEMline,*outAmpLine,*outMaskLine;
 	register int line,nl;
-	FILE *inDEM,*outDEM,*outAmp;
+	FILE *inDEM,*outDEM,*outAmp,*outMask;
 	meta_parameters *metaIn, *metaDEM;
+
+        char *outMaskFile = "mask";
 
 /* Get metadata */
 	metaIn = meta_read(inMetafile);
@@ -226,7 +248,6 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	nl = metaDEM->general->line_count;
 	gr_ns = metaDEM->general->sample_count;
 	sr_ns = metaIn->general->sample_count;
-	
 	earth_radius = meta_get_earth_radius(metaIn, nl/2, 0);
 	satHt = meta_get_sat_height(metaIn, nl/2, 0);
 	meta_get_slants(metaIn, &slant_to_first, &slant_per);
@@ -235,24 +256,28 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	inDEM  = fopenImage(inDEMfile,"rb");
 	outDEM = fopenImage(outDEMfile,"wb");
 	outAmp = fopenImage(outAmpFile,"wb");
+        outMask = fopenImage(outMaskFile,"wb");
 
 /*Allocate more memory (this time for data lines*/
 	grDEMline  = (float *)MALLOC(sizeof(float)*gr_ns);
 	srDEMline  = (float *)MALLOC(sizeof(float)*sr_ns);
 	outAmpLine = (float *)MALLOC(sizeof(float)*sr_ns);
-	
+	outMaskLine= (float *)MALLOC(sizeof(float)*sr_ns);
+
 /* Read deskewed data, write out reskewed data */
 	for (line=0; line<nl; line++)
 	{
 		get_float_line(inDEM,metaDEM,line,grDEMline);
-		dem_gr2sr(grDEMline,srDEMline,outAmpLine);
+		dem_gr2sr(grDEMline,srDEMline,outAmpLine,outMaskLine);
 		put_float_line(outDEM,metaIn,line,srDEMline);
 		put_float_line(outAmp,metaIn,line,outAmpLine);
+		put_float_line(outMask,metaIn,line,outMaskLine);
 	}
 
 /* Write meta files */
 	meta_write(metaIn, outDEMfile);
 	meta_write(metaIn, outAmpFile);
+	meta_write(metaIn, outMaskFile);
 
 /* Free memory, close files, & exit */
 	meta_free(metaDEM);
@@ -260,9 +285,11 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	FREE(grDEMline);
 	FREE(srDEMline);
 	FREE(outAmpLine);
+        FREE(outMaskLine);
 	FCLOSE(inDEM);
 	FCLOSE(outDEM);
 	FCLOSE(outAmp);
+        FCLOSE(outMask);
 
 	return TRUE;
 }
