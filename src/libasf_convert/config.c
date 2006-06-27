@@ -761,7 +761,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (cfg->general->geocoding) {
       fprintf(fConfig, "\n[Geocoding]\n");
       if (!shortFlag) {
-	fprintf(fConfig, "\n# The geocoding tool currently supports five different map projections:\n",
+	fprintf(fConfig, "\n# The geocoding tool currently supports five different map projections:\n"
 		"# Universal Transverse Mercator (UTM), Polar Stereographic, Albers Equal Area\n"
 		"# Conic, Lambert Conformal Conic and Lambert Azimuthal Equal Area.\n"
 		"# For all these map projections a large number of projection parameter files\n"

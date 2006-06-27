@@ -12,6 +12,7 @@
 #include "asf_export.h"
 #include "ardop_defs.h"
 #include <unistd.h>
+#include <ctype.h>
 
 void check_return(int ret, char *msg)
 {
@@ -332,47 +333,36 @@ int asf_convert(int createflag, char *configFileName)
       meta = meta_read(outFile);
       if (meta->general->image_data_type == RAW_IMAGE) {
 
-          struct ARDOP_PARAMS params;
-          fill_default_ardop_params(&params);
+          sprintf(inFile, "%s", outFile);
+          if (cfg->general->image_stats || cfg->general->detect_cr ||
+              cfg->general->sar_processing || cfg->general->terrain_correct ||
+              cfg->general->geocoding || cfg->general->export) {
+              sprintf(outFile, "tmp%i_sar_processing", pid);
+          }
+          else {
+              sprintf(outFile, "%s", cfg->general->out_name);
+          }
+
+          struct INPUT_ARDOP_PARAMS *params_in;
+          params_in = get_input_ardop_params_struct(inFile, outFile);
+          int one = 1;
 
 	// Radiometry
 	if (strncmp(uc(cfg->sar_processing->radiometry), "POWER_IMAGE", 11) == 0) {
-            //sprintf(radiometry, "-power");
-            params.pwrFlag = 1;
+            params_in->pwrFlag = &one;
 	} else if (strncmp(uc(cfg->sar_processing->radiometry), "SIGMA_IMAGE", 11) == 0) {
-            //sprintf(radiometry, "-sigma");
-            params.sigmaFlag = 1;
+            params_in->sigmaFlag = &one;
 	} else if (strncmp(uc(cfg->sar_processing->radiometry), "GAMMA_IMAGE", 11) == 0) {
-            //sprintf(radiometry, "-gamma");
-            params.gammaFlag = 1;
+            params_in->gammaFlag = &one;
 	} else if (strncmp(uc(cfg->sar_processing->radiometry), "BETA_IMAGE", 10) == 0) {
-            //sprintf(radiometry, "-beta");
-            params.betaFlag = 1;
-	} else 
-	  sprintf(radiometry, "");
+            params_in->betaFlag = &one;
+	}
 	
-	// Pass in command line
-	sprintf(inFile, "%s", outFile);
-	if (cfg->general->image_stats || cfg->general->detect_cr ||
-	    cfg->general->sar_processing || cfg->general->terrain_correct ||
-	    cfg->general->geocoding || cfg->general->export) {
-	  sprintf(outFile, "tmp%i_sar_processing", pid);
-	}
-	else {
-	  sprintf(outFile, "%s", cfg->general->out_name);
-	}
-
         // When terrain correcting, add the deskew flag
         if (cfg->general->terrain_correct)
-            params.deskew = 1;
+            params_in->deskew = &one;
 
-	//sprintf(options, "-quiet -log %s %s %s", logFile, radiometry,
-        //        cfg->general->terrain_correct ? "-e 1 " : "");
-
-        strcpy(params.in1, inFile);
-        strcpy(params.out, outFile);
-
-        ardop(&params);
+        ardop(params_in);
 
 	//check_return(ardop(options, inFile, outFile),
 	//	     "SAR processing data file (ardop)\n");
