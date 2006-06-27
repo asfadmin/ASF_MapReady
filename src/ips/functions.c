@@ -452,7 +452,7 @@ int asf_check_geolocation(char *sarName, char *mapDemName, char *offset,
   int ret;
 
   sprintf(options, "-log %s", logFile);
-  sprintf(command, "asf_check_geolocation -refine %s %s %s %s %s %s",
+  sprintf(command, "asf_check_geolocation %s %s %s %s %s %s",
 	  options, sarName, mapDemName, offset, simAmpName, sarDemName);
 
   printf("\nCommand line: %s\nDate: ", command);

@@ -18,6 +18,7 @@ typedef struct {
   char *mask;		/* name of the mask image */
   char *def_val;       	/* file with default values */
   int test;		/* processing in test mode */
+  int short_config;     /* flag for short configuration file */
   char *status;		/* status of processing */
 } s_general;
 
