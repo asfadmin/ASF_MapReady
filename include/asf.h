@@ -194,4 +194,7 @@ const char * get_asf_tmp_dir(void);
 FILE * fopen_tmp_file(const char * filename, const char * mode);
 int unlink_tmp_file(const char *filename);
 
+void fileRename(const char *src, const char *dst);
+void renameImgAndMeta(const char *src, const char *dst);
+
 #endif
