@@ -63,7 +63,7 @@ void usage(char *name)
 
 int main(int argc, char *argv[])
 {
-  char *demGridFile, *demClipped, *demSlant, *demSimAmp, *demTrimSimAmp, *maskFile;
+  char *demGridFile, *demClipped, *demSlant, *demSimAmp, *demTrimSimAmp;
   int order, gridSize, demWidth, demHeight;
   float dx, dy, cert;
   double maxErr;
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
   // Simulate an amplitude image
   asfPrintStatus("   Generating slant range DEM and simulating amplitude image "
 		 "...\n");
-  reskew_dem(sarFile, demClipped, demSlant, demSimAmp, maskFile);
+  reskew_dem(sarFile, demClipped, demSlant, demSimAmp, NULL);
   
   /*
   // Determine offset 
