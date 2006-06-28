@@ -685,6 +685,10 @@ void readSubset(char *fileName, int width, int height, int posX, int posY,
 void readComplexSubset(char *fileName, int width, int height, int posX, int posY, 
 		       complexFloat *subset);
 
+/* From pp_corrected_vals.c */
+void pp_get_corrected_vals(char *sarName, double *corrected_earth_radius,
+                           double *corrected_azimuth_time_per_pixel);
+
 /* Keep track of open meta and ddr structures, so that all updated
  * metadata can be written to the metafile, initialized in meta_init.c Nov '02 */
 typedef struct {
