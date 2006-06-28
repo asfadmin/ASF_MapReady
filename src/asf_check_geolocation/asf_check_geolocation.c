@@ -63,8 +63,8 @@ void usage(char *name)
 
 int main(int argc, char *argv[])
 {
-  char *demGridFile, *demClipped, *demSlant, *demSimAmp, *demTrimSimAmp;
-  int order, demWidth, demHeight;
+  char *demGridFile, *demClipped, *demSlant, *demSimAmp, *demTrimSimAmp, *maskFile;
+  int order, gridSize, demWidth, demHeight;
   float dx, dy, cert;
   double maxErr;
   poly_2d *fwX, *fwY, *bwX, *bwY;
@@ -91,6 +91,7 @@ int main(int argc, char *argv[])
   if ((argc-currArg) < 5) {printf("   Insufficient arguments.\n"); usage(argv[0]);}
   
   order = 5;
+  gridSize = 30;
 
   // Fetch required arguments
   char *sarFile, *demFile, *offsetFile;
@@ -113,9 +114,9 @@ int main(int argc, char *argv[])
     asfPrintStatus("   Detected ground range SAR image\n");
   
   // Create a grid of points to map DEM into slant range
-  asfPrintStatus("   Generating %dx%d DEM grid ...\n");
+  asfPrintStatus("   Generating %dx%d DEM grid ...\n", gridSize, gridSize);
   demGridFile = appendSuffix(sarFile, "_grid");
-  create_dem_grid(demFile, sarFile, demGridFile);
+  create_dem_grid_ext(demFile, sarFile, demGridFile, -1, -1, gridSize, 0.0, NULL);
     
   // Fit a fifth order polynomial to the grid points.
   // This polynomial is then used to extract a subset out of the reference
@@ -128,7 +129,8 @@ int main(int argc, char *argv[])
   demClipped = appendSuffix(demFile, "_clip");
   demWidth = metaSAR->general->sample_count + 400;
   demHeight = metaSAR->general->line_count;
-  asfPrintStatus("   Clipping DEM to %dx%d LxS using polynomial fit ...\n");
+  asfPrintStatus("   Clipping DEM to %dx%d LxS using polynomial fit ...\n", 
+		 demHeight, demWidth);
   remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped);
   poly_delete(fwX);
   poly_delete(fwY);
@@ -138,15 +140,16 @@ int main(int argc, char *argv[])
   // Simulate an amplitude image
   asfPrintStatus("   Generating slant range DEM and simulating amplitude image "
 		 "...\n");
-  reskew_dem(sarFile, demClipped, demSlant, demSimAmp);
+  reskew_dem(sarFile, demClipped, demSlant, demSimAmp, maskFile);
   
+  /*
   // Determine offset 
   asfPrintStatus("\n   Determining offset ...");
   fftMatch(sarFile, demTrimSimAmp, NULL, &dx, &dy, &cert);
   asfPrintStatus("   Correlation (cert=%5.2f%%): dx = %f, dy = %f\n\n");
   
   // Still need to apply the offset
-  
+  */
   meta_free(metaSAR);
   
   exit(0);
