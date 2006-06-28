@@ -370,7 +370,7 @@ int main(int argc, char *argv[])
     else /*default behavior: log to tmp<pid>.log*/
         sprintf(logFile, "tmp%i.log", (int)getpid());
     logflag = TRUE; /* Since we always log, set the old school logflag to true */
-    fLog = fopen (logFile, "w");
+    fLog = fopen (logFile, "a");
     if ( fLog == NULL ) {
         logflag = FALSE;
     }
