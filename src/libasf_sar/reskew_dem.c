@@ -64,10 +64,11 @@ BUGS:
 ******************************************************************************/
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_reporting.h"
 
 #define MASK_NORMAL 1.0
-#define MASK_LAYOVER 200.0
-#define MASK_SHADOW 100.0
+#define MASK_LAYOVER 100.0
+#define MASK_SHADOW 200.0
 #define MASK_NO_DEM_DATA -1.0
 
 /* current earth radius, meters (FIXME: update with azimuth, range) */
@@ -84,6 +85,9 @@ static int gr_ns,sr_ns;
 static float badDEMht=0.0;
 static float unInitDEM=-1.0;
 static int maxBreakLen=20;
+
+static int n_lay;
+static int n_shad;
 
 static float srE2srH(float srEpix,float height)
 {
@@ -152,8 +156,6 @@ static void dem_gr2sr(float *grDEM, float *srDEM,float *amp,float *mask)
         mask[x]=MASK_NORMAL;
     }
 
-    int n_lay=0;
-    int n_shad=0;
 /*Step through the ground range line using grX.
 Convert each grX to an srX.  Update amplitude and height images.*/
     for (grX=1;grX<gr_ns;grX++)
@@ -258,6 +260,8 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	satHt = meta_get_sat_height(metaIn, nl/2, 0);
 	meta_get_slants(metaIn, &slant_to_first, &slant_per);
 
+        n_lay = n_shad = 0;
+
 /*Open files.*/
 	inDEM  = fopenImage(inDEMfile,"rb");
 	outDEM = fopenImage(outDEMfile,"wb");
@@ -281,6 +285,12 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
                 if (outMaskFile)
                     put_float_line(outMask,metaIn,line,outMaskLine);
 	}
+
+        int p = nl*sr_ns;
+        asfPrintStatus("Layover pixels: %4d/%d (%f%%)\n",
+                       n_lay, p, (float)n_lay/p);
+        asfPrintStatus(" Shadow pixels: %4d/%d (%f%%)\n",
+                       n_shad, p, (float)n_shad/p);
 
 /* Write meta files */
 	meta_write(metaIn, outDEMfile);
