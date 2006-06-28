@@ -122,6 +122,6 @@ currArg=1;
 	strcpy(outDEMfile,argv[currArg+2]);
 	strcpy(outAmpFile,argv[currArg+3]);
 
-	reskew_dem(inMetafile, inDEMfile, outDEMfile, outAmpFile);
+	reskew_dem(inMetafile, inDEMfile, outDEMfile, outAmpFile, NULL);
 	exit(EXIT_SUCCESS);
 }

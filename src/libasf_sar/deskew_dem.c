@@ -244,7 +244,8 @@ static double calc_ranges(meta_parameters *meta)
 	return er/phiMul;
 }
 
-static void geo_compensate(float *grDEM,float *in,float *out,int ns)
+static void geo_compensate(float *grDEM, float *in, float *out,
+                           int ns, int doInterp)
 {
 	int outX;
 	for (outX=0;outX<ns;outX++)
@@ -255,8 +256,14 @@ static void geo_compensate(float *grDEM,float *in,float *out,int ns)
 		if ((height!=badDEMht)&&(inX>=0)&&(inX<(ns-1)))
 		{
 			int x=floor(inX);
-			double dx=inX-x;
-			out[outX]=(1-dx)*in[x]+dx*in[x+1];
+                        double dx=inX-x;
+                        if (doInterp) {
+                            /* bilinear interp */
+                            out[outX]=(1-dx)*in[x]+dx*in[x+1];
+                        } else {
+                            /* nearest neighbor */
+                            out[outX]= dx <= 0.5 ? in[x] : in[x+1];
+                        }
 		}
 		else
 			out[outX]=0.0;
@@ -334,22 +341,28 @@ Here's what it looked like before optimization:
 
 
 /* inSarName can be NULL, in this case doRadiometric is ignored */
+/* inMaskName can be NULL, in this case outMaskName is ignored */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,
-	       int doRadiometric)
+	       int doRadiometric, char *inMaskName, char *outMaskName)
 {
 	float *srDEMline,*grDEM,*grDEMline,*grDEMlast,*inSarLine,*outLine;
 	char *ext=NULL;
-	FILE *inDemFp,*inSarFp,*outFp;
-	meta_parameters *inDemMeta, *outMeta, *inSarMeta;
+	FILE *inDemFp,*inSarFp,*outFp,*inMaskFp,*outMaskFp;
+	meta_parameters *inDemMeta, *outMeta, *inSarMeta, *inMaskMeta;
 	char msg[256];
 	int inSarFlag=FALSE;
+        int inMaskFlag=FALSE;
 	int dem_is_ground_range=FALSE;
 	register int x,y;
 
 	inSarFlag = inSarName != NULL;
+        inMaskFlag = inMaskName != NULL;
 
 	inSarFp = NULL;
 	inSarMeta = NULL;
+
+        inMaskFp = NULL;
+        outMaskFp = NULL;
 
 	ext=findExt(inDemName);
 	if (0==strcmp(ext,".dem"))
@@ -403,6 +416,18 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	inDemFp = fopenImage(inDemName,"rb");
 	outFp   = fopenImage(outName,"wb");
 	if (inSarFlag) inSarFp = fopenImage(inSarName,"rb");
+        if (inMaskFlag) {
+            if (!inSarFlag)
+                asfPrintError("Cannot produce a mask without a SAR!\n");
+            inMaskMeta = meta_read(inMaskName);
+            if ((inSarMeta->general->line_count != inMaskMeta->general->line_count) &&
+                (inSarMeta->general->sample_count != inMaskMeta->general->sample_count))
+            {
+                asfPrintError("ERROR: The mask and the SAR image must be the same size.\n");
+            }
+            inMaskFp = fopenImage(inMaskName,"rb");
+            outMaskFp = fopenImage(outMaskName,"wb");
+        }
 
 /* Blather at user about what is going on */
 	strcpy(msg,"");
@@ -452,29 +477,35 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 /*Rectify data.*/
 	for (y=0;y<numLines;y++) {
 		if (inSarFlag) {
-			/*Read in DEM line-by-line (keeping two lines buffered)*/
-			if (dem_is_ground_range) {
-				float *tmp=srDEMline;
-				srDEMline=grDEM;
-				grDEM=tmp;
-				get_float_line(inDemFp,inDemMeta,y,grDEM);
-				grDEMline=grDEM;
-				grDEMlast=srDEMline;
-			}
-			/*Fetch the appropriate lines from the big buffer.*/
-			else {
-				grDEMline=&grDEM[y*numSamples];
-				grDEMlast=&grDEM[(y-1)*numSamples];
-			}
-			get_float_line(inSarFp,inSarMeta,y,inSarLine);
-			geo_compensate(grDEMline,inSarLine,outLine,numSamples);
-			if (y>0&&doRadiometric)
-				radio_compensate(grDEMline,grDEMlast,outLine,
-				                 numSamples);
-			put_float_line(outFp,outMeta,y,outLine);
+                    /*Read in DEM line-by-line (keeping two lines buffered)*/
+                    if (dem_is_ground_range) {
+                        float *tmp=srDEMline;
+                        srDEMline=grDEM;
+                        grDEM=tmp;
+                        get_float_line(inDemFp,inDemMeta,y,grDEM);
+                        grDEMline=grDEM;
+                        grDEMlast=srDEMline;
+                    }
+                    /*Fetch the appropriate lines from the big buffer.*/
+                    else {
+                        grDEMline=&grDEM[y*numSamples];
+                        grDEMlast=&grDEM[(y-1)*numSamples];
+                    }
+                    get_float_line(inSarFp,inSarMeta,y,inSarLine);
+                    geo_compensate(grDEMline,inSarLine,outLine,numSamples,1);
+                    if (y>0&&doRadiometric)
+                        radio_compensate(grDEMline,grDEMlast,outLine,
+                                         numSamples);
+                    put_float_line(outFp,outMeta,y,outLine);
+
+                    if (inMaskFp) {
+                        get_float_line(inMaskFp,inMaskMeta,y,inSarLine);
+                        geo_compensate(grDEMline,inSarLine,outLine,numSamples,0);
+                        put_float_line(outMaskFp,outMeta,y,outLine);
+                    }
 		}
 		else
-			put_float_line(outFp,outMeta,y,&grDEM[y*numSamples]);
+                    put_float_line(outFp,outMeta,y,&grDEM[y*numSamples]);
 	}
 
 	asfPrintStatus("Wrote %lld bytes of data\n",
@@ -486,6 +517,12 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	   FCLOSE(inSarFp);
 	   meta_free(inSarMeta);
 	}
+        if (inMaskFlag) {
+            FCLOSE(inMaskFp);
+            FCLOSE(outMaskFp);
+            meta_write(outMeta, outMaskName);
+            meta_free(inMaskMeta);
+        }
 	FREE(srDEMline);
 	FREE(outLine);
 	FCLOSE(inDemFp);

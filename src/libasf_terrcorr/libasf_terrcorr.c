@@ -86,6 +86,9 @@ static char *outputName(const char *dir, const char *base, const char *suffix)
     free(dirTmp);
     free(fileTmp);
 
+//    printf("Output name: %s %s %s\n"
+//           "          -> %s\n", dir, base, suffix, ret);
+
     return ret;
 }
 
@@ -232,6 +235,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   char *resampleFile, *srFile, *resampleFile_2;
   char *demGridFile, *demClipped, *demSlant, *demSimAmp;
   char *demTrimSimAmp, *demTrimSlant;
+  char *maskFile, *outMaskFile;
   char *output_dir;
   double demRes, sarRes;
   int demWidth, demHeight;
@@ -301,7 +305,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     if (pixel_size <= 0)
     {
       asfPrintStatus(
-	"DEM resolution is significantly higher than SAR resolution.\n");
+	"DEM resolution is significantly lower than SAR resolution.\n");
       pixel_size = demRes;
     }
 
@@ -344,6 +348,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   } else {
     srFile = strdup(resampleFile);
   }
+
+  maskFile = outputName(output_dir, outFile, "_mask_slant");
+  outMaskFile = appendToBasename(outFile, "_mask");
 
   // do-while that will repeat the dem grid generation and the fftMatch
   // of the sar & simulated sar, until the fftMatch doesn't turn up a
@@ -404,7 +411,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 		     "simulated sar image...\n");
       demSlant = outputName(output_dir, demFile, "_slant");
       demSimAmp = outputName(output_dir, demFile, "_sim_amp");
-      reskew_dem(srFile, demClipped, demSlant, demSimAmp);
+      reskew_dem(srFile, demClipped, demSlant, demSimAmp, maskFile);
 
       // Resize the simulated amplitude to match the slant range SAR image.
       asfPrintStatus("Resizing simulated sar image...\n");
@@ -491,7 +498,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   ensure_ext(&demTrimSlant, "img");
   ensure_ext(&srFile, "img");
   asfPrintStatus("Terrain correcting slant range image...\n");
-  deskew_dem(demTrimSlant, outFile, srFile, 0);
+  deskew_dem(demTrimSlant, outFile, srFile, 0, maskFile, outMaskFile);
 
   // Because of the PP earth radius sr->gr fix, we may not have ended
   // up with the same x pixel size that the user requested.  So we will
@@ -517,6 +524,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     clean(demTrimSimAmp);
     clean(demSimAmp);
     clean(demSlant);
+    clean(maskFile);
     if (resampleFile_2)
         clean(resampleFile_2);
   }
@@ -531,6 +539,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   free(demTrimSimAmp);
   free(demSimAmp);
   free(demSlant);
+  free(maskFile);
+  free(outMaskFile);
   if (resampleFile_2)
       free(resampleFile_2);
 

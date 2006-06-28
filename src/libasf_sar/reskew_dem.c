@@ -233,14 +233,12 @@ Diffuse (lambertian) reflection:
 */
 
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
-	       char *outAmpFile)
+	       char *outAmpFile, char *outMaskFile)
 {
 	float *grDEMline,*srDEMline,*outAmpLine,*outMaskLine;
 	register int line,nl;
 	FILE *inDEM,*outDEM,*outAmp,*outMask;
 	meta_parameters *metaIn, *metaDEM;
-
-        char *outMaskFile = "mask";
 
 /* Get metadata */
 	metaIn = meta_read(inMetafile);
@@ -256,7 +254,8 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	inDEM  = fopenImage(inDEMfile,"rb");
 	outDEM = fopenImage(outDEMfile,"wb");
 	outAmp = fopenImage(outAmpFile,"wb");
-        outMask = fopenImage(outMaskFile,"wb");
+        if (outMaskFile)
+            outMask = fopenImage(outMaskFile,"wb");
 
 /*Allocate more memory (this time for data lines*/
 	grDEMline  = (float *)MALLOC(sizeof(float)*gr_ns);
@@ -271,13 +270,15 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 		dem_gr2sr(grDEMline,srDEMline,outAmpLine,outMaskLine);
 		put_float_line(outDEM,metaIn,line,srDEMline);
 		put_float_line(outAmp,metaIn,line,outAmpLine);
-		put_float_line(outMask,metaIn,line,outMaskLine);
+                if (outMaskFile)
+                    put_float_line(outMask,metaIn,line,outMaskLine);
 	}
 
 /* Write meta files */
 	meta_write(metaIn, outDEMfile);
 	meta_write(metaIn, outAmpFile);
-	meta_write(metaIn, outMaskFile);
+        if (outMaskFile)
+            meta_write(metaIn, outMaskFile);
 
 /* Free memory, close files, & exit */
 	meta_free(metaDEM);
@@ -289,10 +290,8 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	FCLOSE(inDEM);
 	FCLOSE(outDEM);
 	FCLOSE(outAmp);
-        FCLOSE(outMask);
+        if (outMaskFile)
+            FCLOSE(outMask);
 
 	return TRUE;
 }
-
-
-
