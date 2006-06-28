@@ -152,7 +152,8 @@ static void dem_gr2sr(float *grDEM, float *srDEM,float *amp,float *mask)
         mask[x]=MASK_NORMAL;
     }
 
-    int n=0;
+    int n_lay=0;
+    int n_shad=0;
 /*Step through the ground range line using grX.
 Convert each grX to an srX.  Update amplitude and height images.*/
     for (grX=1;grX<gr_ns;grX++)
@@ -165,7 +166,6 @@ Convert each grX to an srX.  Update amplitude and height images.*/
         {
             double runLen=srX-lastSrX;
             int intRun=(int)runLen;
-            float mask_val = runLen > 0 ? MASK_LAYOVER : MASK_SHADOW;
             if ((runLen<maxBreakLen)&&(lastOutValue!=badDEMht))
             {
                 double currAmp;
@@ -190,10 +190,17 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                             srDEM[x]=maxval;
                         } else {
                             /*Hit this pixel a 2nd time ==> layover*/
-                            mask[x] = mask_val;
-                            ++n;
+                            mask[x] = MASK_LAYOVER;
+                            ++n_lay;
                         }
                         curr+=delt;
+                    }
+                    /* jumping backwards => shadow */
+                    if (sriX < lastSrX-1) {
+                        for (x=sriX;x<=lastSrX;++x) {
+                            mask[x] = MASK_SHADOW;
+                            ++n_shad;
+                        }
                     }
                 } else {
                     if (srDEM[(int)lastSrX+1]==unInitDEM) {
@@ -203,6 +210,7 @@ Convert each grX to an srX.  Update amplitude and height images.*/
             } else {
                 for (x=lastSrX+1;x<=sriX;x++) {
                     srDEM[x]=badDEMht;
+                    mask[x]=MASK_NO_DEM_DATA;
                 }
             }
             lastOutValue=height;
