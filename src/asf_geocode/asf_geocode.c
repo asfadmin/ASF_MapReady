@@ -332,7 +332,7 @@ main (int argc, char **argv)
   // Detect & Process logging arguments
   if ((logflag = detect_string_options(argc, argv, logFile,
 				      "-log", "--log", NULL))) {
-      fLog = fopen (logFile, "w");
+      fLog = fopen (logFile, "a");
       if ( fLog == NULL ) {
 	// Couldn't open the log file, so just don't do logging.
 	logflag = FALSE;
@@ -384,6 +384,8 @@ main (int argc, char **argv)
 
   strcpy (in_base_name, argv[arg_num]);
   strcpy (out_base_name, argv[arg_num + 1]);
+
+  asfSplashScreen(argc, argv);
 
   // Call library function that does the actual work
   asf_geocode(pp, projection_type, force_flag, resample_method, average_height,
