@@ -134,7 +134,7 @@ int parse_cla(int argc,char *argv[], struct INPUT_ARDOP_PARAMS *g)
                 g->interr = floatParm(interr);
                 g->slopea = floatParm(slopea);
                 g->intera = floatParm(intera);
-		fscanf(fp,"%f %f %f %f",g->dsloper,g->dinterr,g->dslopea,g->dintera);
+		fscanf(fp,"%f %f %f %f",&dsloper,&dinterr,&dslopea,&dintera);
                 g->dsloper = floatParm(dsloper);
                 g->dinterr = floatParm(dinterr);
                 g->dslopea = floatParm(dslopea);
