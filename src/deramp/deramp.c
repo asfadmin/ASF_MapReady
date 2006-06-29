@@ -3,7 +3,7 @@ NAME:  deramp.c
 
 SYNOPSIS:  
 
-   deramp [-backward] [-log <file>] <inphase> <meta> <baseline> <outphase>
+   deramp [-backward] [-log <file>] <inphase> <baseline> <outphase>
 
 DESCRIPTION:
 	Deramp removes the phase signal imposed on the  interfero-
@@ -219,11 +219,10 @@ void usage(char *name)
 {
  printf("\n"
 	"USAGE:\n"
-	"   %s [-backward] [-log <file>] <in.phase> <meta> <base> <out>\n",name);
+	"   %s [-backward] [-log <file>] <in.phase> <base> <out>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
 	"   <in.phase> :  The .phase input file.\n" 
-	"   <meta>     :  The .meta file for the interferogram.\n"
 	"   <base>     :  The baseline file.\n"
 	"   <out>      :  The deramped output phase file.\n");
  printf("\n"
