@@ -77,6 +77,7 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_reporting.h"
+#include "asf_sar.h"
 
 static int numLines, numSamples;
 static double grPixelSize;
@@ -89,7 +90,8 @@ static double *slantRangeSqr,*slantRange;
 static double *incidAng,*sinIncidAng,*cosIncidAng;
 static double minPhi, maxPhi, phiMul;
 static float badDEMht=0.0;
-static int maxBreakLen=20;
+//static int maxBreakLen=20;
+static int maxBreakLen=5;
 
 #define phi2grX(phi) (((phi)-minPhi)*phiMul)
 #define grX2phi(gr) (minPhi+(gr)/phiMul)
@@ -107,7 +109,7 @@ static float sr2gr(float srX,float height)
 	return groundSR[ix]+dx*(groundSR[ix+1]-groundSR[ix]);
 }
 
-static float gr2sr(float grX,float height)
+static float dem_gr2sr(float grX,float height)
 {
 	double dx,grXSeaLevel=grX-height*heightShiftGR[(int)grX];
 	int ix;
@@ -131,23 +133,22 @@ static void dem_sr2gr(float *inBuf,float *outBuf,int ns)
 		outX=(int)sr2gr((float)inX,height);
 		if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
 		{
-		        /*if ((outX-lastOutX<maxBreakLen)&&(lastOutValue!=badDEMht))*/
-		        if (lastOutValue!=badDEMht)
-			{
-				float curr=lastOutValue;
-				float delt=(height-lastOutValue)/(outX-lastOutX);
-				curr+=delt;
-				for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
-				{
-					outBuf[xInterp]=curr;
-					curr+=delt;
-				}
-			} else {
-				for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
-					outBuf[xInterp]=badDEMht;
-			}
-			lastOutValue=height;
-			lastOutX=outX;
+                    if ((outX-lastOutX<maxBreakLen)&&(lastOutValue!=badDEMht))
+                    {
+                        float curr=lastOutValue;
+                        float delt=(height-lastOutValue)/(outX-lastOutX);
+                        curr+=delt;
+                        for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
+                        {
+                            outBuf[xInterp]=curr;
+                            curr+=delt;
+                        }
+                    } else {
+                        for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
+                            outBuf[xInterp]=badDEMht;
+                    }
+                    lastOutValue=height;
+                    lastOutX=outX;
 		}
 	}
 	for (outX=lastOutX+1;outX<ns;outX++)
@@ -245,13 +246,14 @@ static double calc_ranges(meta_parameters *meta)
 }
 
 static void geo_compensate(float *grDEM, float *in, float *out,
-                           int ns, int doInterp)
+                           int ns, int doInterp, float *mask)
 {
 	int outX;
+        int StartLayoverFlag=0;
 	for (outX=0;outX<ns;outX++)
 	{
 		double height=grDEM[outX];
-		double inX=gr2sr(outX,height);
+		double inX=dem_gr2sr(outX,height);
 		
 		if ((height!=badDEMht)&&(inX>=0)&&(inX<(ns-1)))
 		{
@@ -264,9 +266,13 @@ static void geo_compensate(float *grDEM, float *in, float *out,
                             /* nearest neighbor */
                             out[outX]= dx <= 0.5 ? in[x] : in[x+1];
                         }
+                        StartLayoverFlag=1;
 		}
-		else
-			out[outX]=0.0;
+		else {
+                    out[outX]=0.0;
+                    if (mask && StartLayoverFlag)
+                        mask[outX] = MASK_LAYOVER;
+                }
 	}
 }
 
@@ -346,6 +352,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	       int doRadiometric, char *inMaskName, char *outMaskName)
 {
 	float *srDEMline,*grDEM,*grDEMline,*grDEMlast,*inSarLine,*outLine;
+        float *inMaskLine,*outMaskLine;
 	char *ext=NULL;
 	FILE *inDemFp,*inSarFp,*outFp,*inMaskFp,*outMaskFp;
 	meta_parameters *inDemMeta, *outMeta, *inSarMeta, *inMaskMeta;
@@ -354,6 +361,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
         int inMaskFlag=FALSE;
 	int dem_is_ground_range=FALSE;
 	register int x,y;
+        int burnInMask = FALSE;
 
 	inSarFlag = inSarName != NULL;
         inMaskFlag = inMaskName != NULL;
@@ -449,10 +457,13 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	asfPrintStatus(msg);
 
 /*Allocate input buffers.*/
-	if (inSarFlag) 
+	if (inSarFlag) {
 	   inSarLine = (float *)MALLOC(sizeof(float)*numSamples);
-	else
-	   inSarLine = NULL;
+	   inMaskLine = (float *)MALLOC(sizeof(float)*numSamples);
+	   outMaskLine = (float *)MALLOC(sizeof(float)*numSamples);
+        } else {
+	   inSarLine = inMaskLine = NULL;
+        }
 	outLine   = (float *)MALLOC(sizeof(float)*numSamples);
 	srDEMline = (float *)MALLOC(sizeof(float)*numSamples);
 
@@ -492,17 +503,37 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                         grDEMlast=&grDEM[(y-1)*numSamples];
                     }
                     get_float_line(inSarFp,inSarMeta,y,inSarLine);
-                    geo_compensate(grDEMline,inSarLine,outLine,numSamples,1);
+                    get_float_line(inMaskFp,inMaskMeta,y,inMaskLine);
+
+                    if (inMaskFlag) {
+                        geo_compensate(grDEMline,inMaskLine,outMaskLine,
+                                       numSamples,0,NULL);
+                    }
+
+                    geo_compensate(grDEMline,inSarLine,outLine,numSamples,1,
+                                   outMaskLine);
+
+                    if (inMaskFlag) {
+                        put_float_line(outMaskFp,outMeta,y,outMaskLine);
+                    }
+
                     if (y>0&&doRadiometric)
                         radio_compensate(grDEMline,grDEMlast,outLine,
                                          numSamples);
-                    put_float_line(outFp,outMeta,y,outLine);
 
-                    if (inMaskFp) {
-                        get_float_line(inMaskFp,inMaskMeta,y,inSarLine);
-                        geo_compensate(grDEMline,inSarLine,outLine,numSamples,0);
-                        put_float_line(outMaskFp,outMeta,y,outLine);
+                    if (inMaskFlag && burnInMask) {
+                        int x,hitvalid=0;
+                        float maxval = 15;
+                        for (x=0; x<numSamples; ++x) {
+                            if (hitvalid && (outMaskLine[x] == MASK_LAYOVER ||
+                                             outMaskLine[x] == MASK_SHADOW))
+                                outLine[x] = maxval;
+                            if (outMaskLine[x] == MASK_NORMAL)
+                                hitvalid=1;
+                        }
                     }
+
+                    put_float_line(outFp,outMeta,y,outLine);
 		}
 		else
                     put_float_line(outFp,outMeta,y,&grDEM[y*numSamples]);
@@ -517,16 +548,18 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	   FCLOSE(inSarFp);
 	   meta_free(inSarMeta);
 	}
-        if (inMaskFlag) {
-            FCLOSE(inMaskFp);
-            FCLOSE(outMaskFp);
-            meta_write(outMeta, outMaskName);
-            meta_free(inMaskMeta);
-        }
 	FREE(srDEMline);
 	FREE(outLine);
 	FCLOSE(inDemFp);
 	FCLOSE(outFp);
+        if (inMaskFlag) {
+            FCLOSE(inMaskFp);
+            FCLOSE(outMaskFp);
+            FREE(inMaskLine);
+            FREE(outMaskLine);
+            meta_write(outMeta, outMaskName);
+            meta_free(inMaskMeta);
+        }
 	meta_free(inDemMeta);
 	meta_free(outMeta);
 	FREE(slantGR);
