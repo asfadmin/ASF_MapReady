@@ -1039,7 +1039,7 @@ main(int argc, char *argv[])
 			   base2str(0, cfg->general->base), "out_dem_phase.img"), 
 		 "creating simulated phase (dem2phase)");
     
-    sprintf(tmp, "%s_ml_amp_byte.img", cfg->igram_coh->igram);
+    sprintf(tmp, "%s_ml_amp.img", cfg->igram_coh->igram);
     check_return(dem2seeds("dem_slant.img", tmp, cfg->sim_phase->seeds, 0), 
 		 "creating seed points (dem2seeds)");
     
