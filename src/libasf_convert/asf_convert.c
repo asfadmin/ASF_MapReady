@@ -442,9 +442,12 @@ int asf_convert(int createflag, char *configFileName)
       sprintf(outFile, "tmp%i_terrain_correct", pid);
 
       // Call asf_terrcorr!
-      check_return(asf_terrcorr(inFile, cfg->terrain_correct->dem,
-				outFile, cfg->terrain_correct->pixel),
-		   "terrain correcting data file (asf_terrcorr)\n");
+      check_return(
+          asf_terrcorr_ext(inFile, cfg->terrain_correct->dem, outFile, 
+                           cfg->terrain_correct->pixel,
+                           !cfg->general->intermediates,
+                           TRUE, FALSE, TRUE, 20),
+          "terrain correcting data file (asf_terrcorr)\n");
     }
 
     if (cfg->general->geocoding) {
