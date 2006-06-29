@@ -65,11 +65,7 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_reporting.h"
-
-#define MASK_NORMAL 1.0
-#define MASK_LAYOVER 100.0
-#define MASK_SHADOW 200.0
-#define MASK_NO_DEM_DATA -1.0
+#include "asf_sar.h"
 
 /* current earth radius, meters (FIXME: update with azimuth, range) */
 static double earth_radius;
@@ -177,7 +173,7 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                 currAmp=50.0/(runLen*runLen*5+0.1);
                 for (x=lastSrX+1;x<=sriX;x++)
                     amp[x]+=currAmp*getSpeckle;
-                /*Then, update the height image.*/
+                /*Then, update the height and mask images.*/
                 if (intRun!=0)
                 {
                     float curr=lastOutValue;
@@ -188,10 +184,11 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                     {
                         if (srDEM[x]==unInitDEM) {
                             /*Only write on fresh pixels.*/
-                            //srDEM[x]=curr;
                             srDEM[x]=maxval;
+                            //srDEM[x]=curr;
                         } else {
                             /*Hit this pixel a 2nd time ==> layover*/
+                            if (maxval > srDEM[x]) srDEM[x] = maxval;
                             mask[x] = MASK_LAYOVER;
                             ++n_lay;
                         }
@@ -199,7 +196,7 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                     }
                     /* jumping backwards => shadow */
                     if (sriX < lastSrX-1) {
-                        for (x=sriX;x<=lastSrX;++x) {
+                        for (x=sriX;x<lastSrX;++x) {
                             mask[x] = MASK_SHADOW;
                             ++n_shad;
                         }
@@ -231,6 +228,9 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                srDEM[x-1]!=badDEMht &&
                srDEM[x+1]!=badDEMht)*/
             srDEM[x]=(srDEM[x-1]+srDEM[x+1])/2;
+
+        if (mask[x-1] == mask[x+1])
+            mask[x] = mask[x-1];
     }
 }
 
@@ -286,11 +286,11 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
                     put_float_line(outMask,metaIn,line,outMaskLine);
 	}
 
-        int p = nl*sr_ns;
-        asfPrintStatus("Layover pixels: %4d/%d (%f%%)\n",
-                       n_lay, p, (float)n_lay/p);
-        asfPrintStatus(" Shadow pixels: %4d/%d (%f%%)\n",
-                       n_shad, p, (float)n_shad/p);
+        int total_pixels = nl * sr_ns;
+        asfPrintStatus("Layover pixels: %7d/%d (%f%%)\n",
+                       n_lay, total_pixels, 100*(float)n_lay/total_pixels);
+        asfPrintStatus(" Shadow pixels: %7d/%d (%f%%)\n",
+                       n_shad, total_pixels, 100*(float)n_shad/total_pixels);
 
 /* Write meta files */
 	meta_write(metaIn, outDEMfile);

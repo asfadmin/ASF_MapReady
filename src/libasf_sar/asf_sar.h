@@ -3,6 +3,12 @@
 
 #define MAX_IMG_SIZE 100000
 
+/* values for the layover/shadow mask*/
+#define MASK_NORMAL 1.0
+#define MASK_LAYOVER 100.0
+#define MASK_SHADOW 200.0
+#define MASK_NO_DEM_DATA -1.0
+
 #include <stdio.h>
 #include "poly.h"
 
