@@ -46,6 +46,8 @@ main (int argc, char *argv[])
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = TRUE;
 
+  asfSplashScreen(argc, argv);
+
   while (currArg < (argc-NUM_ARGS)) {
     char *key = argv[currArg++];
     if (strmatches(key,"-log","--log",NULL)) {
@@ -67,7 +69,7 @@ main (int argc, char *argv[])
       do_fftMatch_verification = FALSE;
     }
     else if (strmatches(key,"-no-corner-match","--no-corner-match",NULL)) {
-      do_fftMatch_verification = FALSE;
+      do_corner_matching = FALSE;
     }
     else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
       CHECK_ARG(1);
