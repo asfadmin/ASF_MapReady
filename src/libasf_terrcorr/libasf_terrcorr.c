@@ -304,20 +304,21 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   {
     if (pixel_size <= 0)
     {
-      asfPrintStatus(
-	"DEM resolution is significantly lower than SAR resolution.\n");
+      asfPrintStatus("DEM resolution is significantly lower than SAR resolution.\n");
+      asfPrintStatus("Resampling (Downsampling) SAR image to pixel size of %g meters.\n", pixel_size);
       pixel_size = demRes;
     }
-
-    asfPrintStatus("Resampling SAR image to pixel size of %g meters.\n",
-		   pixel_size);
-
+    else
+    {
+	    asfPrintStatus("Resampling (Oversampling) SAR image to pixel size of %g meters.\n",
+			   pixel_size);
+    }
     resampleFile = outputName(output_dir, sarFile, "_resample");
     resample_to_square_pixsiz(sarFile, resampleFile, pixel_size);
     meta_free(metaSAR);
     metaSAR = meta_read(resampleFile);
 
-    asfPrintStatus("After resmapling, SAR Image is %dx%d LxS, %gm pixels.\n",
+    asfPrintStatus("After resampling, SAR Image is %dx%d LxS, %gm pixels.\n",
 		   metaSAR->general->line_count,
 		   metaSAR->general->sample_count,
 		   metaSAR->general->x_pixel_size);
