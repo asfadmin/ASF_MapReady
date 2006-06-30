@@ -70,15 +70,20 @@ static char *outputName(const char *dir, const char *base, const char *suffix)
     int baselen = strlen(base);
     int len = dirlen > baselen ? dirlen : baselen;
 
-    char *fil = MALLOC(sizeof(char)*(dirlen+baselen+strlen(suffix)));
-    char *dirTmp = MALLOC(sizeof(char) * len);
-    char *fileTmp = MALLOC(sizeof(char) * len);
+    char *fil = MALLOC(sizeof(char)*(dirlen+baselen+strlen(suffix)+10));
+    char *dirTmp = MALLOC(sizeof(char) * (len+10));
+    char *fileTmp = MALLOC(sizeof(char) * (len+10));
 
     split_dir_and_file(dir, dirTmp, fileTmp);
     strcpy(fil, dirTmp);
 
+//    printf("dir=%s dirTmp=%s fileTmp=%s\n", dir, dirTmp, fileTmp);
+
     split_dir_and_file(base, dirTmp, fileTmp);
     strcat(fil, fileTmp);
+
+//    printf("base=%s dirTmp=%s fileTmp=%s\n", base, dirTmp, fileTmp);
+//    printf("fil=%s\n", fil);
 
     char *ret = appendSuffix(fil, suffix);
 
