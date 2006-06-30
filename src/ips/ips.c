@@ -188,8 +188,7 @@ int checkForOption(char* key, int argc, char* argv[])
 void check_return(int ret, char *msg)
 {
   if (ret!=0) {
-    sprintf(errbuf, "\n   ERROR: %s\n\n", msg);
-    printErr(errbuf);
+    asfPrintError("%s\n", msg);
   }
 }
 
