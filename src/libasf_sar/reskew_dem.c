@@ -221,7 +221,7 @@ Convert each grX to an srX.  Update amplitude and height images.*/
         srDEM[x]=badDEMht;
 /* Just plug all the holes and see what happens */
 /*Attempt to plug one-pixel holes, by interpolating over them.*/
-    for (x=1;x<(sr_ns-1);x++)
+    for (x=1;x<(sr_ns-2);x++)
     {
         if (srDEM[x]==badDEMht)
             /* &&
