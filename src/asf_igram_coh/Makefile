@@ -2,8 +2,6 @@
 
 include ../../make_support/system_rules
 
-DEBUG_BUILD = 2
-
 CFLAGS += $(GLIB_CFLAGS)
 
 LIBS  = $(LIBDIR)/libasf_igram_coh.a \

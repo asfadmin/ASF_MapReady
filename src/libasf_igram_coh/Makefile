@@ -2,8 +2,6 @@
 
 include ../../make_support/system_rules
 
-DEBUG_BUILD = 2
-
 LIBS  = $(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
