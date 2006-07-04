@@ -8,17 +8,12 @@ baseline read_baseline(char *fName)
 	FILE *fbase;
 	fbase = FOPEN(fName,"r");
 
-	if (4!=fscanf(fbase, "%lf %lf %lf %lf", &b.Bn, &b.dBn,
-									 &b.Bp, &b.dBp))
+	if (5!=fscanf(fbase, "%lf %lf %lf %lf %lf", &b.Bn, &b.dBn, &b.Bp, &b.dBp,
+	              &b.temporal))
 	{
-		sprintf(errbuf,"   ERROR: Couldn't read 4 baseline components\n"
-			"from baseline file named '%s'!\n",fName);
+		sprintf(errbuf,"   ERROR: Couldn't read five baseline components\n"
+			"         from baseline file named '%s'!\n",fName);
 		printErr(errbuf);
-	}
-	if (1!=fscanf(fbase,"%lf",&b.temporal))
-	{
-		printf("   Assuming 1-day temporal baseline...\n");
-		b.temporal=1.0;
 	}
 	fclose(fbase);
 	printf("   Baseline:   Normal: %f, delta: %f\n",b.Bn,b.dBn);

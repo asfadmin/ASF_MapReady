@@ -1,7 +1,7 @@
 /******************************************************************************
 NAME: bp
 
-SYNOPSIS: bp <matrix> <vector> <newbase>
+SYNOPSIS: bp <matrix> <vector> <oldbase> <newbase>
 
 DESCRIPTION:
         Bp is called by refine_base, and only refine_base.
@@ -59,7 +59,7 @@ BUGS:
 /* local function declaration */
 int get_matrix_rows(char *, char *);
 
-int bp(char *matfile, char *vecfile, char *newbase)
+int bp(char *matfile, char *vecfile, char *oldbase, char *newbase)
 {
   int i, j=0;
   int m, n = 4;   /* m and n are rows and columns of matrix A */
@@ -72,7 +72,8 @@ int bp(char *matfile, char *vecfile, char *newbase)
   float *b, *bT, *db, *x, *dx, *x0;
   float *Utb, *SiUtb, *VSiUtb;
   float **UUt, **VVt, **VtV, **US, **SVt, **USVt;
-  FILE *fp;
+  float bperp, dbperp, bpar, dbpar, btemp;
+  FILE *fp, *fpNew, *fpOld;
 
   /* 
    * Part I:  Singular Value Decomposition of matrix A 
@@ -255,19 +256,24 @@ int bp(char *matfile, char *vecfile, char *newbase)
   if (!quietflag) printf("   RMS of b-reconstructed and b = %f\n\n", rms);
 
   /* test for sign of deltas */
+  fpOld = FOPEN(oldbase,"r");
+  fscanf(fpOld, "%f %f %f %f %f", &bperp, &dbperp, &bpar, &dbpar, &btemp);
+  fclose(fpOld);
   
   printf("   New Baseline:  Normal: %f, delta: %f\n"
-         "                  Parallel: %f, delta: %f\n\n", x0[1], x0[2], x0[3], x0[4]);
+         "                  Parallel: %f, delta: %f\n"
+         "                  Temporal: %f days\n\n", x0[1], x0[2], x0[3], x0[4], btemp);
   if (logflag) {
     sprintf(logbuf,"   New Baseline:  Normal: %f, delta: %f\n"
-                   "                  Parallel: %f, delta: %f\n\n", x0[1], x0[2], x0[3], x0[4]);
+                   "                  Parallel: %f, delta: %f\n"
+                   "                  Temporal: %f days\n\n", x0[1], x0[2], x0[3], x0[4], btemp);
     printLog(logbuf);
   }
 
-  fp = FOPEN(newbase,"w");
-  fprintf(fp, "%14.7f  %14.7f  %14.7f  %14.7f\n", 
-    x0[1], x0[2], x0[3], x0[4]);
-  fclose(fp);
+  fpNew = FOPEN(newbase,"w");
+  fprintf(fpNew, "%14.7f  %14.7f  %14.7f  %14.7f %14.7f\n", 
+    x0[1], x0[2], x0[3], x0[4], btemp);
+  fclose(fpNew);
 
   /* free memory */
   free_vector(b,1,m);

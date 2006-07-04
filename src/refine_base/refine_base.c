@@ -87,7 +87,7 @@ BUGS:
 int getphase(char *phasein, char *tiept, char *outfile);
 int genab(char *datafile, char *basefile, char *metaName, char *matfile,
           char *vecfile);
-int bp(char *matfile, char *vecfile, char *newbase);
+int bp(char *matfile, char *vecfile, char *oldbase, char *newbase);
 int test_base(char *basefile, char *matfile, char *vecfile);
 
 static
@@ -170,7 +170,7 @@ int main(int argc,char *argv[])
   genab(ctrlpt_file, oldbase_file, phase_file, matrix_file, vec_file);
  
   /* create baseline and test it */
-  bp(matrix_file, vec_file, newbase_file);
+  bp(matrix_file, vec_file, oldbase_file, newbase_file);
   test_base(newbase_file, matrix_file, vec_file);
 
   /* remove intermediate files unless requested not to */
