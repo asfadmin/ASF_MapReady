@@ -274,6 +274,27 @@ static void geo_compensate(float *grDEM, float *in, float *out,
                         mask[outX] = MASK_LAYOVER;
                 }
 	}
+
+        if (doInterp && mask) {
+            for (outX = 0; outX<ns; ++outX) {
+                if (mask[outX] == MASK_LAYOVER || mask[outX] == MASK_SHADOW) {
+                    int x,prevX = outX-1;
+                    float prevVal = out[outX];
+                    while (mask[outX] == MASK_LAYOVER && outX<ns-1) ++outX;
+                    float nextVal = out[outX];
+                    float delta = (nextVal-prevVal) / (float)(outX-prevX);
+                    for (x = prevX + 1; x < outX; ++x) {
+                        /** code for INTERPOLATING between the endpoints */
+                        out[x] = prevVal + (x-prevX)*delta;
+                        /** code for ASSINGING THE MAX between endpoints */
+                        // out[x] = prevVal > nextVal ? prevVal : nextVal;
+                        /** code for LEAVING THE AREAS BLANK (black holes)*/
+                        // ;   /* i.e., do nothing! */
+                    }
+                    ++outX;
+                }
+            }
+        }
 }
 
 static void radio_compensate(float *grDEM, float *grDEMprev,float *inout,
@@ -353,7 +374,6 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 {
 	float *srDEMline,*grDEM,*grDEMline,*grDEMlast,*inSarLine,*outLine;
         float *inMaskLine,*outMaskLine;
-	char *ext=NULL;
 	FILE *inDemFp,*inSarFp,*outFp,*inMaskFp,*outMaskFp;
 	meta_parameters *inDemMeta, *outMeta, *inSarMeta, *inMaskMeta;
 	char msg[256];
@@ -372,13 +392,17 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
         inMaskFp = NULL;
         outMaskFp = NULL;
 
-	ext=findExt(inDemName);
-	if (0==strcmp(ext,".dem"))
-	   dem_is_ground_range=TRUE;
-
 /*Extract metadata*/
 	inDemMeta = meta_read(inDemName);
 	outMeta = meta_read(inDemName);
+
+//	if (inDemMeta->general->image_data_type != DEM) {
+//            asfPrintError("DEM is not a DEM!\n");
+//            return FALSE;
+//        }
+
+        if (inDemMeta->sar->image_type == 'G')
+	   dem_is_ground_range=TRUE;
 
 	if (inDemMeta->sar->image_type=='P') {
 		asfPrintError("DEM cannot be map projected for this program to work!\n");
@@ -503,9 +527,9 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                         grDEMlast=&grDEM[(y-1)*numSamples];
                     }
                     get_float_line(inSarFp,inSarMeta,y,inSarLine);
-                    get_float_line(inMaskFp,inMaskMeta,y,inMaskLine);
 
                     if (inMaskFlag) {
+                        get_float_line(inMaskFp,inMaskMeta,y,inMaskLine);
                         geo_compensate(grDEMline,inMaskLine,outMaskLine,
                                        numSamples,0,NULL);
                     }
