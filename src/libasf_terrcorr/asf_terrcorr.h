@@ -26,6 +26,6 @@ int asf_terrcorr(char *sarFile, char *demFile,
 
 int asf_terrcorr_ext(char *sarFile, char *demFile,
 		     char *outFile, double pixel_size, int clean_files,
-		     int do_resample, int do_corner_matching,
+		     int do_resample, int do_corner_matching, int do_interp,
 		     int do_fftMatch_verification,
 		     int dem_grid_size);

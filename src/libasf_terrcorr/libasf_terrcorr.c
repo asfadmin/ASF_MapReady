@@ -215,12 +215,14 @@ int asf_terrcorr(char *sarFile, char *demFile,
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = TRUE;
   int do_resample = TRUE;
+  int do_interp = FALSE;
   int clean_files = TRUE;
   int dem_grid_size = 20;
   
   return asf_terrcorr_ext(sarFile, demFile, outFile, pixel_size,
 			  clean_files, do_resample, do_corner_matching,
-			  do_fftMatch_verification, dem_grid_size);
+                          do_interp, do_fftMatch_verification,
+                          dem_grid_size);
 }
 
 static char * getOutputDir(char *outFile)
@@ -234,7 +236,7 @@ static char * getOutputDir(char *outFile)
 
 int asf_terrcorr_ext(char *sarFile, char *demFile,
 		     char *outFile, double pixel_size, int clean_files,
-		     int do_resample, int do_corner_matching,
+		     int do_resample, int do_corner_matching, int do_interp,
 		     int do_fftMatch_verification, int dem_grid_size)
 {
   char *resampleFile, *srFile, *resampleFile_2;
@@ -504,7 +506,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   ensure_ext(&demTrimSlant, "img");
   ensure_ext(&srFile, "img");
   asfPrintStatus("Terrain correcting slant range image...\n");
-  deskew_dem(demTrimSlant, outFile, srFile, 0, maskFile, outMaskFile);
+  deskew_dem(demTrimSlant, outFile, srFile, 0, maskFile, outMaskFile, 
+             do_interp);
 
   // Because of the PP earth radius sr->gr fix, we may not have ended
   // up with the same x pixel size that the user requested.  So we will

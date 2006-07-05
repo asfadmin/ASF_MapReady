@@ -122,7 +122,7 @@ static float dem_gr2sr(float grX,float height)
 	return slantGR[ix]+dx*(slantGR[ix+1]-slantGR[ix]);
 }
 
-static void dem_sr2gr(float *inBuf,float *outBuf,int ns)
+static void dem_sr2gr(float *inBuf,float *outBuf,int ns, int fill_holes)
 {
 	int outX=0,inX,xInterp;
 	int lastOutX=-1;
@@ -133,7 +133,14 @@ static void dem_sr2gr(float *inBuf,float *outBuf,int ns)
 		outX=(int)sr2gr((float)inX,height);
 		if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
 		{
-                    if ((outX-lastOutX<maxBreakLen)&&(lastOutValue!=badDEMht))
+                    int cond;
+                    if (fill_holes)
+                        cond = lastOutValue!=badDEMht;
+                    else
+                        cond = outX-lastOutX<maxBreakLen && 
+                               lastOutValue!=badDEMht;
+
+                    if (cond)
                     {
                         float curr=lastOutValue;
                         float delt=(height-lastOutValue)/(outX-lastOutX);
@@ -370,7 +377,8 @@ Here's what it looked like before optimization:
 /* inSarName can be NULL, in this case doRadiometric is ignored */
 /* inMaskName can be NULL, in this case outMaskName is ignored */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,
-	       int doRadiometric, char *inMaskName, char *outMaskName)
+	       int doRadiometric, char *inMaskName, char *outMaskName,
+               int fill_holes)
 {
 	float *srDEMline,*grDEM,*grDEMline,*grDEMlast,*inSarLine,*outLine;
         float *inMaskLine,*outMaskLine;
@@ -502,7 +510,8 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 		for (y=0;y<numLines;y++)
 		{
 			get_float_line(inDemFp,inDemMeta,y,srDEMline);
-			dem_sr2gr(srDEMline,&grDEM[y*numSamples],numSamples);
+			dem_sr2gr(srDEMline,&grDEM[y*numSamples],numSamples,
+                                  fill_holes);
 		}
 		/*Close gaps in y direction.*/
 		for (x=0;x<numSamples;x++)

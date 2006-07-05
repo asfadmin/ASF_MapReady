@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
 
 	logflag=FALSE;
 	inSarName = NULL;
+        int do_interp = TRUE;
 
 /* parse commandline arguments */
 	while (currArg < (argc-REQ_ARGS)) {
@@ -113,6 +114,9 @@ int main(int argc, char *argv[])
 			fLog = FOPEN(logFile, "a");
 			logflag = TRUE;
 		}
+                else if (strmatch(key,"-no-interp")) {
+                        do_interp = FALSE;
+                }
 		else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
 	}
 	if ((argc-currArg) < REQ_ARGS) {printf("Insufficient arguments.\n"); usage(argv[0]);}
@@ -124,7 +128,8 @@ int main(int argc, char *argv[])
 	   printLog("Program: deskew_dem\n\n");
 	}
 
-	deskew_dem(inDemName, outName, inSarName, doRadiometric, NULL, NULL);
+	deskew_dem(inDemName, outName, inSarName, doRadiometric, NULL, NULL,
+                   do_interp);
 	exit(EXIT_SUCCESS);
 }
 
@@ -132,7 +137,7 @@ void usage(char *name)
 {
  printf("\n"
 	"USAGE:\n"
-	"   %s [-i <inSARfile> <bit>] [-log <file>]\n"
+	"   %s [-i <inSARfile> <bit>] [-no-interp] [-log <file>]\n"
 	"              <inDEMfile> <outfile>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
@@ -143,7 +148,9 @@ void usage(char *name)
 	"   -i	  The <inSARfile> is the image to be rectified (include the extention). If <bit>\n"
 	"	     is 1 both radiometric and geometric rectification are performed; if <bit> is\n"
 	"	     0 then only geometric rectification is performed.\n"
-	"   -log  Allows the output to be written to a log <file>.\n");
+	"   -log  Allows the output to be written to a log <file>.\n"
+        "   -no-interp  Layover regions are interpolated by default, this\n"
+        "            will turn off the interpolation, leaving 0-filled holes.\n");
  printf("\n"
 	"DESCRIPTION:\n"
 	"   This program removes incidence-angle skew and maps from slant range to\n"

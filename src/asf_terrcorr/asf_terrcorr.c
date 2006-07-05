@@ -7,7 +7,7 @@
 void usage(const char *name)
 {
   printf("Usage: %s [-log <logfile>] [-quiet] [-keep] [-no-resample]\n"
-         "          [-no-verify-fftMatch] [-no-corner-match]\n"
+         "          [-no-verify-fftMatch] [-no-corner-match] [-do-interp]\n"
          "          [-pixel-size <size>] [-dem-grid-size <size>]\n"
          "          <inFile> <demFile> <outFile>\n", name);
   exit(EXIT_FAILURE);
@@ -43,6 +43,7 @@ main (int argc, char *argv[])
   int currArg = 1;
   int clean_files = TRUE;
   int do_resample = TRUE;
+  int do_interp = FALSE;
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = TRUE;
 
@@ -71,6 +72,9 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-no-corner-match","--no-corner-match",NULL)) {
       do_corner_matching = FALSE;
     }
+    else if (strmatches(key,"-do-interp","--do-interp",NULL)) {
+      do_interp = TRUE;
+    }
     else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
       CHECK_ARG(1);
       pixel_size = atof(GET_ARG(1));
@@ -94,7 +98,8 @@ main (int argc, char *argv[])
   outFile = argv[currArg+2];
 
   int ret = asf_terrcorr_ext(inFile, demFile, outFile, pixel_size, clean_files,
-			     do_resample, do_corner_matching,
+			     do_resample, do_corner_matching, do_interp,
 			     do_fftMatch_verification, dem_grid_size);
+
   return ret ? EXIT_SUCCESS : EXIT_FAILURE;
 }
