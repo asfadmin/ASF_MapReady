@@ -285,11 +285,11 @@ static void geo_compensate(float *grDEM, float *in, float *out,
                     float delta = (nextVal-prevVal) / (float)(outX-prevX);
                     for (x = prevX + 1; x < outX; ++x) {
                         /** code for INTERPOLATING between the endpoints */
-                        out[x] = prevVal + (x-prevX)*delta;
+                        // out[x] = prevVal + (x-prevX)*delta;
                         /** code for ASSINGING THE MAX between endpoints */
                         // out[x] = prevVal > nextVal ? prevVal : nextVal;
                         /** code for LEAVING THE AREAS BLANK (black holes)*/
-                        // ;   /* i.e., do nothing! */
+                        ;   /* i.e., do nothing! */
                     }
                     ++outX;
                 }
