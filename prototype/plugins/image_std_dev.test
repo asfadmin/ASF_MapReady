@@ -4,7 +4,7 @@
 #  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
 #
 
-image_input_las filename="image_std_dev.img";
+image_input_las filename="grey.img";
 image_std_dev src=@image_input_las.dest radius=1;
 image_output_binary 
 	src=@image_std_dev.dest 
