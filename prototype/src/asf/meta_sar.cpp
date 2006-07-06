@@ -16,19 +16,20 @@ double asf::metadata_sar::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t 
 	metadata_source &meta=*this;
 	switch (v) {
 	case SLANT_RANGE:
-		return meta3D(SLANT_TIME_DOPPLER,loc).x;
+		return meta(SLANT_TIME_DOPPLER,loc).x;
 	case TIME_SINCE_START:
-		return meta3D(SLANT_TIME_DOPPLER,loc).y;
+		return meta(SLANT_TIME_DOPPLER,loc).y;
 	case DOPPLER:
-		return meta3D(SLANT_TIME_DOPPLER,loc).z;
+		return meta(SLANT_TIME_DOPPLER,loc).z;
 	case DOPPLER_RATE:
-		FIXME
+		asf::die("FIXME: compute doppler rate in meta1D...\n");
+		return 0.0;
 	/* PRF is a bedrock field */
 	/* wavelength is a bedrock field */
 	case FREQUENCY: 
-		return SPEED_OF_LIGHT/meta1D(WAVELENGTH);
+		return SPEED_OF_LIGHT/meta1D(WAVELENGTH,loc);
 	case WAVENUMBER:
-		return 2*M_PI/meta1D(WAVELENGTH);
+		return 2*M_PI/meta1D(WAVELENGTH,loc);
 	/* everything else is fundamental */
 	
 	case INTERFEROMETRIC_REFERENCE_LOOK_RADIANS: {
@@ -63,11 +64,11 @@ double asf::metadata_sar::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t 
 	}
 }
 
-double asf::metadata_sar::meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc)
+asf::meta2D_t asf::metadata_sar::meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc)
 {
-	return super::meta1D(v,loc);
+	return super::meta2D(v,loc);
 }
-double asf::metadata_sar::meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc)
+asf::meta3D_t asf::metadata_sar::meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc)
 {
 	metadata_source &meta=*this;
 	switch (v) {
@@ -75,11 +76,11 @@ double asf::metadata_sar::meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t 
 	  (slant range, time, doppler, and a state vector) to a position.
 	*/
 	case TARGET_POSITION: {
-		meta3D_t std=meta3D(SLANT_TIME_DOPPLER,loc);
+		meta3D_t std=meta(SLANT_TIME_DOPPLER,loc);
 		double range=std.x, time=std.y, doppler=std.z, elev=loc.z;
-		meta_state_t sat=meta_state(SATELLITE_FROM_TIME,time);
-		double re=meta1D(ELLIPSOID_EQUATORIAL,loc);
-		double rp=meta1D(ELLIPSOID_POLAR,loc);
+		meta_state_t sat=meta(SATELLITE_FROM_TIME,asf::meta3D_t(time,0,0));
+		double re=meta(ELLIPSOID_EQUATORIAL,loc);
+		double rp=meta(ELLIPSOID_POLAR,loc);
 		
 		/**
 		If millimeter-scale geolocations are needed, adjust for different
@@ -91,11 +92,12 @@ double asf::metadata_sar::meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t 
 		*/
 		re+=elev; rp+=elev;
 		
-		... copy in geolocate.c routines here ... 	
+		asf::die("meta_sar.cpp: ... copy in geolocate.c routines here ... \n");
+		return *(asf::meta3D_t *)0;
 	}
 	
 	default:
-		return super::meta1D(v,loc);
+		return super::meta3D(v,loc);
 	}
 }
 

@@ -37,9 +37,10 @@ typedef osl::Vector3d meta3D_t;
 typedef std::string meta_string_t;
 /** A "glob" is a user-defined struct */
 typedef const void *meta_glob_t;
+typedef int meta_int_t;
 
 /** State vector: the position and velocity of some object; typically a satellite. */
-ASF_COREDLL class meta_state_t {
+class ASF_COREDLL meta_state_t {
 public:
 	/** Position of object in 3D space (meters) */
 	meta3D_t pos;
@@ -389,7 +390,7 @@ typedef osl::Vector3d metaCoord_t;
 /**
  Get metadata values.  This interface class is extended by all sources of metadata.
 */
-ASF_COREDLL class metadata_source {
+class ASF_COREDLL metadata_source {
 public:
 	virtual ~metadata_source();
 
@@ -436,7 +437,7 @@ public:
  Get metadata values based on a simple image-to-image transform 
  from another metadata source.
 */
-ASF_COREDLL class metadata_transform : public metadata_source {
+class ASF_COREDLL metadata_transform : public metadata_source {
 public:
 	metadata_transform(metadata_source *source_meta_);
 	
@@ -471,7 +472,7 @@ ASF_COREDLL void metadata_missing(int field_enum,metadata_source &fromClass);
  Note that if the ASF tools end up being used off-planet a lot (e.g., Mars), 
  these should be pulled out into a "planet_parameters" object.
 */
-ASF_COREDLL class metadata_earth : public metadata_source {
+class ASF_COREDLL metadata_earth : public metadata_source {
 public:
 	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc);
 	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc);
@@ -494,19 +495,15 @@ public:
  You should inherit from this class and override meta1D and meta_state
  to provide at least these values.
 
- These implementations respond to unknown fields by calling "metadata_missing",
- except meta_glob which returns NULL.
+ These implementations respond to unknown fields by calling the metadata_earth
+ routines.
 */
-ASF_COREDLL class metadata_sar : public metadata_earth {
+class ASF_COREDLL metadata_sar : public metadata_earth {
 	typedef asf::metadata_earth super;
 public:
 	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc);
 	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc);
 	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc);
-	virtual asf::meta_state_t meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc);
-	virtual int meta_int(asf::metadata_int_enum v);
-	virtual asf::meta_string_t meta_string(asf::metadata_string_enum v);
-	virtual asf::meta_glob_t meta_glob(asf::metadata_glob_enum v);
 };
 
 

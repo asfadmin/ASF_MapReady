@@ -1,0 +1,3 @@
+#!/bin/sh
+#  Fake command-line compiler, used to record build pattern for Windows.
+echo "cl $@" >> $MAKE_MAKE_OUT_FILE

@@ -138,5 +138,28 @@ Bogus input colorspace
 Ah.  You get this error message if you incorrectly set "num_components" instead of "input_components".  Fixed.  Can now read and write JPEG images with libjpeg.
 
 --------------------------
-2006/06/08: 
+2006/07/06:
+The thing seems to work in Windows, which is pretty cool.  I'm getting some weird error from wine while trying to *write* files: Access denied.  I'll have to try this in real Windows.
+
+With the Intel compiler icc, I'm getting an error from checksum:
+
+------------------ Test: image_blur.test -------------------
+  image_blur.test passed test (compare to good output)
+------------------ Test: image_checksum.test -------------------
+FATAL ERROR: asf::parameter_float_image::pixel_pointat asked to point at pixels not inside source image!
+
+ rectangle(192,0) to(256,100) size(64,100)
+ rectangle(0,0) to(64,100) size(64,100)
+make: *** [test_plugins] Error 1
+olawlor@dellawlor:~/dev/asf/prototype> cd plugins/
+
+../bin/clui -v30 image_checksum.test
+
+image_testpattern: execute_plugin>  rendering tile (0,0)
+image_testpattern: execute_plugin>  render_inputs {  region(rect (0-64, 0-100), zoom 0)
+image_testpattern: execute_plugin>  } render_inputs
+ rectangle(192,0) to(256,100) size(64,100)
+ rectangle(0,0) to(64,100) size(64,100)
+FATAL ERROR: asf::parameter_float_image::pixel_pointat asked to point at pixels not inside source image!
+
 

@@ -1,8 +1,23 @@
 This is the ASF C++ Prototype, a tile-based, dynamically loaded,
 next-generation implementation of the ASF tools.
 
+To build and test everything on a Linux box, just do
+	make
+
+To build Doxygen documentation in doc/html/index.html, do
+	make docs
+
+To build in Windows, use
+	make.bat
+
 ---------------------- v0.7 (2006/07/06) --------------
 Rudimentary metadata support.
+
+For the Windows version:
+	copy build\compile.arch.win32 build\compile.arch
+	make
+	copy lib\asf_coredll.dll bin\
+(that way Windows can find asf_coredll.dll)
 
 ---------------------- v0.6 (2006/05/11) --------------
 Now includes image I/O.  See plugins/image_*.

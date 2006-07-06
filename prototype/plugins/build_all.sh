@@ -7,6 +7,10 @@ do
 	then
 		cmd="$compile $f -o $out"
 		echo "$cmd"
-		$cmd || exit 1
+		$cmd 
+		if [ $? -ne 0 ]
+		then
+			grep "$f" "compile_errors_ok.txt" || exit 1
+		fi
 	fi
 done

@@ -15,7 +15,7 @@ using namespace asf; /* <- avoid having to type asf:: everywhere... */
 const static double tropical_year_length_earth=365.24218967;
 
 /** The rotation rate of the Earth relative to inertial coordinates (radians/second) */
-ASF_COREDLL const double asf::sidereal_rotation_rate_radians_earth=
+const double asf::sidereal_rotation_rate_radians_earth=
 	(2 * M_PI/(24*60*60))*(1 + 1.0/tropical_year_length_earth);
 
 /** Given a Julian Day, return the yearly-smoothed Earth rotation 

@@ -3,6 +3,7 @@
 #include "asf/image.h"
 #include <math.h>
 #include <vector>
+#include <algorithm> /* for std::sort */
 
 /* Plugin name */
 #define self plugin_image_median
