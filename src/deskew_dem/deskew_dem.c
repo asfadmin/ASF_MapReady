@@ -74,7 +74,9 @@ BUGS:
 *									      *
 ******************************************************************************/
 
-#include "deskew_dem.h"
+#include "asf_sar.h"
+#include "asf.h"
+#include "asf_meta.h"
 
 void usage(char *name);
 
@@ -108,7 +110,7 @@ int main(int argc, char *argv[])
                             sprintf(tmp,"%s.img",inSarName);
                             if (fileExists(tmp)) ext=".img";
                         }
-			if (((0!=strcmp(ext,".amp")) && (0!=strcmp(ext,".img"))))
+			if (!ext || ((0!=strcmp(ext,".amp")) && (0!=strcmp(ext,".img"))))
 			  {printf("**ERROR: <inSARfile> must have a \".amp\" or \".img\" extention.\n");usage(argv[0]);}
 			doRadiometric = atoi(GET_ARG(1));
 			if ((doRadiometric != 0) && (doRadiometric != 1))
@@ -152,8 +154,8 @@ void usage(char *name)
  printf("\n"
 	"OPTIONAL ARGUMENTS:\n"
 	"   -i	  The <inSARfile> is the image to be rectified (include the extention). If <bit>\n"
-	"	     is 1 both radiometric and geometric rectification are performed; if <bit> is\n"
-	"	     0 then only geometric rectification is performed.\n"
+	"            is 1 both radiometric and geometric rectification are performed; if <bit> is\n"
+	"            0 then only geometric rectification is performed.\n"
 	"   -log  Allows the output to be written to a log <file>.\n"
         "   -no-interp  Layover regions are interpolated by default, this will turn off the\n"
         "            interpolation, leaving zero-filled holes.\n");
