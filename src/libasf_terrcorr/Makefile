@@ -4,7 +4,7 @@ include ../../make_support/system_rules
 
 CFLAGS := -Wall $(CFLAGS)
 
-OBJS = libasf_terrcorr.o
+OBJS = asf_terrcorr.o
 
 LIBS  = \
 	$(LIBDIR)/libasf_raster.a \
