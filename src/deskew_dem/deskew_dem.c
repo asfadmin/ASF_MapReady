@@ -102,7 +102,13 @@ int main(int argc, char *argv[])
 			strcpy(tmp,GET_ARG(2));
 			inSarName = strdup(tmp);
 			ext=findExt(inSarName);
-			if ((0!=strcmp(ext,".amp")) && (0!=strcmp(ext,".img")))
+                        if (!ext) {
+                            sprintf(tmp,"%s.amp",inSarName);
+                            if (fileExists(tmp)) ext=".amp";
+                            sprintf(tmp,"%s.img",inSarName);
+                            if (fileExists(tmp)) ext=".img";
+                        }
+			if (((0!=strcmp(ext,".amp")) && (0!=strcmp(ext,".img"))))
 			  {printf("**ERROR: <inSARfile> must have a \".amp\" or \".img\" extention.\n");usage(argv[0]);}
 			doRadiometric = atoi(GET_ARG(1));
 			if ((doRadiometric != 0) && (doRadiometric != 1))
@@ -149,8 +155,8 @@ void usage(char *name)
 	"	     is 1 both radiometric and geometric rectification are performed; if <bit> is\n"
 	"	     0 then only geometric rectification is performed.\n"
 	"   -log  Allows the output to be written to a log <file>.\n"
-        "   -no-interp  Layover regions are interpolated by default, this\n"
-        "            will turn off the interpolation, leaving 0-filled holes.\n");
+        "   -no-interp  Layover regions are interpolated by default, this will turn off the\n"
+        "            interpolation, leaving zero-filled holes.\n");
  printf("\n"
 	"DESCRIPTION:\n"
 	"   This program removes incidence-angle skew and maps from slant range to\n"
