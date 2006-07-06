@@ -1,0 +1,28 @@
+Reading LAS DDR files:
+	Orion Sky Lawlor, olawlor@acm.org, 2006/05/10 (ASF)
+
+In the original code, LAS c_getddr.c calls c_lsread to read
+"DDRINT" and "DDRDUB" sections of a DDR.
+
+Looking at c_lsread and the data, a DDR file seems to consist of a fixed-size ASCII header of HDRL (32) bytes, which c_lsread seems to parse.  Following the header are a bunch of character data, and then big-endian ints (line, sample, nbands, dtype).
+
+So overall the DDR contains:
+
+- 32-byte ASCII header: "47/72        I4 DDRINT         ^@"
+- 47 bytes of character data: system through last_used_time
+   c_lsread implicitly adds nul termination after data.
+- 72 bytes of big-endian 4-byte ints: nl through spare
+
+- 32-byte ASCII header: "216          R8 DDRDUB         ^@"
+- 216 bytes of double-precision data: proj_coef through sample_inc
+
+Per band:
+- 32-byte ASCII header: "151/16       R8 BAND1          ^@"
+- 151 bytes of character data: ??
+   c_lsread implicitly adds nul termination after data.
+- 16 bytes of double-precision data: data range
+
+
+The ints always seem to be big-endian.  The doubles are written with the endianness of the host system: little-endian when written on a little-endian system; big-endian when written on a big-endian system.  The char buffers are nul-terminated in the file, but also are nul-terminated on read for paranoia.
+
+It's easy enough to duplicate the read process using no LAS code.

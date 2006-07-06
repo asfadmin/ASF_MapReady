@@ -1,0 +1,4 @@
+#!/bin/sh
+CXX="g++"
+CFLAGS_ARCH="-Wall -rdynamic -I$ASFTOP/compat"
+SHARED="-shared -fpic"

@@ -1,0 +1,52 @@
+
+Good resources:
+http://fortran-2000.com/ArnaudRecipes/sharedlib.html
+http://www.stat.uiowa.edu/~luke/xls/projects/dlbasics/dlbasics.html
+
+LINUX:
+
+Build a shared library by compiling with "-shared":
+
+MUST pass a path & extension (e.g., "./foo.so") to dlopen;
+just plain "foo.so" doesn't work (searches LD_LIBRARY_PATH),
+and just "./foo" doesn't work (no extension).
+
+gcc -shared test_dll_server.cpp -o foo/test_server.so
+g++ test_dll.cpp -I. -ldl && ./a.out
+
+Checking everything in LD_LIBRARY_PATH (loading, doing 
+a single ldsym) takes about half a second!
+
+
+Windows:
+	http://tinyurl.com/j0r0
+Need a "__declspec(dllexport)" before the routine
+return type, or the routine name *isn't* exported.  Grrr.
+Can also write a ".def" file that lists:
+	LIBRARY <foo>.dll
+	EXPORTS
+	<routine name>
+	<routine name>
+
+
+Idea: find symbols with either
+	nm test_dll_sub.obj
+or Microsoft
+	dumpbin /SYMBOLS test_dll_sub.obj
+
+Now write a .def file containing all symbols.
+
+CANNOT pass ./ as a path to dlopen.  But "foo/bar.dll" is OK.
+CANNOT access symbols in "main", even with /link /FORCE:UNRESOLVED
+
+Compile with
+	cl /I. /DWIN32=1 osl/test_dll_sub.cpp /LD
+	cl /I. /DWIN32=1 osl/test_dll_server.cpp /LD test_dll_sub.lib
+	cl /I. /DWIN32=1 osl/test_dll.cpp
+
+MacOS X:
+MacOS 10.3 and on have dlopen; earlier versions are stuck
+with "NSAddImage".
+gcc -dynamiclib test_dll_server.cpp -o foo/test_server.so
+
+

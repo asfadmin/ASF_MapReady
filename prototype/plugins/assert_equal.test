@@ -1,0 +1,7 @@
+#!../bin/clui
+#  ASF plugin self-test script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/09/15
+#
+assert_equal a=int 17 b=int 17;
+assert_equal a=real 1.47 b=real 1.47;
+assert_equal a=string "Foo" b=string "Foo";

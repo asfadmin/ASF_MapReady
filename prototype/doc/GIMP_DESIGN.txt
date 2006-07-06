@@ -1,0 +1,44 @@
+A gimp plugin has:
+	http://developer.gimp.org/writing-a-plug-in/1/
+
+A really nice set of tools for compilation:
+	gimptool --install foo.c
+
+Plugins have to:
+	- Register themselves (query routine)
+	- Process data (run method): 
+		create, modify, or save raster data
+
+Design choices:
+	+ Plugin can have arbitrary set of input and output values
+	+ Arbitrary (even user-defined?) data types supported
+	  (GIMP_PDB_STATUS, etc.)
+	+ Plugin has a well-defined "progress" interface
+	- Inputs and outputs are in argv number-style, not named.
+	- Type checking is the responsability of the plugin.
+	- Only 8-bit pixels currently supported by GimpDrawable,
+	  not floating-point!
+	  http://developer.gimp.org/api/2.0/libgimp/libgimp-gimpdrawable.html
+
+Pixel access is either:
+	gimp_pixel_rgn_get_pixel/gimp_pixel_rgn_set_pixel 
+	gimp_pixel_rgn_get_row/gimp_pixel_rgn_set_row (100x faster!)
+Internally all access goes through a "tile cache" of fixed-size
+(hardcoded to 64x64 pixel?) tiles.  Can set the tile cache size 
+with gimp_tile_cache_ntiles.  
+
+A plugin looks like:
+
+#include <libgimp/gimp.h>
+
+/* global variable, located from outside by dlsym */
+      GimpPlugInInfo PLUG_IN_INFO = {
+        0, /* init (on load) function, rarely used */
+        0, /* quit (on exit) function, rarely used */
+        query, /* a registration routine */
+        run /* execute routine */
+      };
+
+MAIN() /* macro */
+
+

@@ -1,0 +1,16 @@
+echo: 
+array_generic:
+! ASF parameter array of length:
+ 3
+ 3
+ 'i' 'n' 't'
+! ASF Parameter
+ 14
+ 3
+ 'i' 'n' 't'
+! ASF Parameter
+ 16
+ 3
+ 'i' 'n' 't'
+! ASF Parameter
+ 18

@@ -1,0 +1,9 @@
+#!../bin/clui
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/09/15
+#
+for min=14 max=19 step=2 {
+	array_push_back value=@for.index;
+}
+;
+echo generic=@array_push_back.array;

@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# Microsoft Visual C++ Compiler "cl"
+#
+CXX="cl /nologo /GR /EHsc /DWIN32=1"
+CFLAGS_ARCH=""
+DLL_PREP="sed -e 's/\.dll/.lib/g'"   # Link with .lib file, not .dll file.
+SHARED="/LD /link"
+LIBFLAG=""
+OUTFLAG="/o "
+OUTSUFFIX=".exe"
+RPATHS=""
+OPT_O="/GB"
+OPT_G="/RTC1 /Zi /Yd "
+LIBS=""
+
+# Visual C++ spits out a ".obj" file in the current directory.
+Clean() {
+	if [ "$OPT" != "$OPT_G" ]
+	then
+	# Remove temporary .obj files
+		OBJFILES=`echo $SOURCEFILES | sed -e 'sX[^ ]*/XXg' | sed -e 's/\.cpp/.obj/g'`
+		Do rm $OBJFILES
+	fi
+}
+
+# Convert .dll to .lib for linking:
+DllToLink() {
+	echo "$1" | sed -e "s/.dll/.lib/g"
+}
+DllToOutput() {
+	echo "-o$1"
+}

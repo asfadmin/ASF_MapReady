@@ -1,0 +1,8 @@
+#!../bin/clui
+#
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
+#
+
+image_testpattern w=512 h=256 type=3 scale=100.0 value=10.0;
+image_output_binary src=@image_testpattern.dest filename="image_output_binary.test.img";

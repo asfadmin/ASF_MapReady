@@ -1,0 +1,11 @@
+#!/test/home/olawlor/prototype/bin/clui
+#
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
+#
+
+image_input_las filename="image_std_dev.img";
+image_std_dev src=@image_input_las.dest radius=1;
+image_output_binary 
+	src=@image_std_dev.dest 
+	filename="image_std_dev.test.img";

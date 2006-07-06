@@ -1,0 +1,142 @@
+Debugging log, ASF Tile prototype
+
+
+------------------ 2006/01/29
+Working:
+	- Single tile
+Backwards but non-crashing:
+	- One row of tiles--meta coordinates seem backwards
+Crashing
+	- Multiple rows of tiles
+
+image_testpattern w=256 h=64 type=3 scale=100.0 value=10.0;
+image_clamp min=0.5 max=5.0 src=@image_testpattern.dest;
+image_output_binary 
+	src=@image_clamp.dest 
+	filename="image_clamp_row.test.img";
+
+For some reason, image_clamp doesn't do tiles; but
+image_testpattern does.
+
+gdb ../clui/clui
+break main
+r -v100 image_clamp_row.test
+break execute_plugin::render
+c
+c
+	-> Fixed pixel_viewport from and to (were switched).
+	   Now everything (tile, row, image) appears to work!
+
+------------------
+2006/04: (olawlor)
+Non-round row files currently crash:
+
+image_testpattern w=600 h=80 type=3 scale=100.0 value=10.0;
+image_clamp min=3.0 max=5.0 src=@image_testpattern.dest;
+image_output_binary 
+	src=@image_clamp.dest 
+	filename="image_clamp.test.img";
+
+FATAL ERROR: asf::parameter_pixel_image::pixel_setsize asked to access pixels not inside our meta bounds!
+
+(cd ..;make clui/clui) && ../clui/clui -v10 image_clamp.test ; sarview image_clamp.test.img
+
+OK.  Just needed more rectangle intersections.  Now 
+arbitrary image sizes work!
+
+---------------------
+2006/05/01: (olawlor)
+For the Windows port, I have to move everything needed by the plugins
+into a plugin itself.  Since there's no equivalent of RTLD_GLOBAL for Windows;
+a DLL can only depend on other DLLs, *not* on an EXE.
+
+This complicates the situation on UNIX, since the clui binary has to 
+find asf_core.dll, and then asf_core.dll loads the plugins.
+On Linux, soname allows you to avoid having to set LD_LIBRARY_PATH,
+but you've now got to set *BOTH* LD_LIBRARY_PATH (or worse, LD_LIBRARYN32_PATH
+on IRIX) and ASF_LIBRARY_PATH, which is silly and redundant.
+
+If an environment variable is needed, it should be LD_LIBRARY_PATH.
+This might make it easier to define a plugin that depends on other
+plugins.
+
+-----------------------------
+Windows shared libraries:
+	- Gotta have asf_core.dll in same directory as clui.exe.
+
+Under WINE:
+MUST use a relative path for ASF_LIBRARY_PATH, or get "dll open failed" (?),
+which results in "no such plugin 'system'" errors.
+
+export ASF_LIBRARY_PATH="../lib"
+../bin/clui.exe -- -v10 -l image_clamp_lil.test
+  -> works fine!
+
+But still dies in echo test-- seems to be something about RTTI.  
+
+OK-- fixed.  Gotta compile with the /GR flag to get RTTI info, or any code that calls RTTI will just segfault.  Weird.
+
+
+---------------------
+2006/05/11: (olawlor)
+Added DDR I/O and image_input_las module.
+
+Seems to be exactly 2x zoomed-out: I only get valid pixels at X's:
+
+X  n  X  n
+n  n  n  n 
+X  n  X  n
+n  n  n  n 
+
+OK--zoom seems to be getting inexplicably set to 1,
+somewhere between execute_image::render and execute_plugin::render:
+image_input_las: execute_image> image render  region(rect (0-67, 0-64), zoom 0)
+image_input_las: execute_image> image allocated with (67,64) meta pixels
+image_input_las: execute_plugin> render {   region(rect (0-67, 0-64), zoom 1)
+
+Looking closer, "zoom" might not ever be initialized.  Checking valgrind:
+
+valgrind ../bin/clui image_input_las.test 
+
+==29551== Conditional jump or move depends on uninitialised value(s)
+==29551==    at 0x409E7BB: plugin_image_clamp::execute() (image_clamp.cpp:30)
+==29551==    by 0x406ABCC: execute_plugin::render(render_request const&) (plugin_execute.cpp:644)
+
+Yup!  Uninitialized data.
+
+One silly fix is just to set zoom in execute_image constructor.
+Wait--this doesn't fix it.  OK-- got it.  Scanline constraint had
+a bug where "oz" was a *scaling* (and hence 1), not the new weird 
+log-base-2 thing (and hence 0). Fixed.  Now valgrind runs clean.
+
+-------------------------
+2006/06/06:
+
+Added an image checksum plugin, to actually test out cross-platform stuff.
+
+Sadly, it's not actually running--
+	textfile_out (the sink) does a non-image run, and asks its inputs.
+	image_checksum does a render, but immediately (incorrectly) returns.
+
+This looks like another plugin_execute bug.  OK-- problem seems to be the big request rectangle passed by non-image plugins.  Specifically, calling
+	rect_tiling tiles(req.rect,p->tile);
+with a wide-open rectangle gives *zero* tiles, which is wrong.
+
+OK.  Fixed--add more rectangle intersections in execute_plugin::render:
+	pixel_rectangle rect=req.rect.getIntersect(ei->Aimg->total_meta_bounds());
+
+That is, we just need to clip down requests to the area we actually cover.
+
+--------------------------
+2006/06/07:
+
+Trying to get JPEG output working.  I don't know what order the routines are supposed to be called in.
+
+crap_bad_init.dll> Loaded plugin
+Bogus input colorspace
+
+Ah.  You get this error message if you incorrectly set "num_components" instead of "input_components".  Fixed.  Can now read and write JPEG images with libjpeg.
+
+--------------------------
+2006/06/08: 
+

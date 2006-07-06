@@ -1,0 +1,451 @@
+------------------ 06/2006 ----------------------
+Really need to be able to stick together existing tools:
+	- Start with AISP
+	- Terrain-correct
+	- Map project
+
+To do this, need "tags" or something on:
+	- Inputs and outputs (where to go)
+	- Per-tool input and outputs
+
+For example, need to describe:
+	- Data value
+		- Amplitude, power
+		- sigma-naught, beta, etc.
+			- dB, unit
+		- Elevation
+			- Meters, feet
+			- Datum: WGS84, NAD27, NAD83
+		- Phase
+			- Radians wrapped; or Radians unwrapped
+		- Complex phasor
+			- Signal data or processed
+		- Mask: water, shadow, etc. (flags?)
+		- Signal data: compressed, uncompressed, etc.
+	
+	- Map projection
+		- Slant range
+		- Ground range
+		- ASF L1 "ground range"
+		- "Real" projection: UTM, PS, etc.
+
+An automated tool (like "make") could stick this data together
+to figure out how to generate a desired output from known inputs.
+For example:
+	AISP takes signal data to processed complex image
+	igram takes coregistered complex images to phase
+	Snaphu takes wrapped phase to unwrapped phase
+
+
+-- Alternate flow control
+Have parameter values keep track of when they get created/written/output.
+Change plugins to just watch their parameters (via a callback) and execute
+when all their parameters are ready.
+
+
+-- Plotting
+	MS Excel (CSV)
+	gnuplot (line graphs, scatterplots)
+	GRI (raster, contour, etc.)	http://gri.sourceforge.net/gridoc/html/
+	NCAR Graphics (contours)	http://ngwww.ucar.edu/
+
+
+-- GIMP Integration
+
+Our plugin architecture is pretty much isomorphic to the GIMP's.  The only differences are:
+	- Pixel data type is always byte in the GIMP--float pixels aren't supported (for now).
+	- The GIMP doesn't do metadata. 
+	- GIMP plugins can have their own GTK user interfaces.  Ours can't.
+
+Interesting stuff we could do:
+
+Write an adaptor that makes ASF plugins usable in the GIMP.  This could make ASF plugins easier to use by non-specialists, since the GIMP has a nice front end, and provides features we don't (e.g., magic wand tool).
+
+Write an adaptor that allows GIMP plugins to be called by ASF tools.  This greatly expands the list of stuff our tools can do:
+	- Read and write any popular format: JPEG, PNG, ..... (32 formats)
+	- Swizzle, twirl, blur, sharpen, etc.  Probably not very useful.
+
+Other pluggable languages:
+	- VTK: C++, object oriented, bloated, but complete
+	- Browser plugins: http://en.wikipedia.org/wiki/NPAPI
+	- Firefox XUL.  JavaScript horror. 
+
+
+-- GUI
+Write an image_display plugin that shows incoming pixel tiles using OpenGL. Each tile's pixels can be uploaded into an OpenGL texture.
+
+The coolest part about this would be that we could rotate, translate, zoom, colorize, distort, etc. right on the graphics card.  For example, we could have a "map projections" dropdown that *instantly* updated the displayed image when changed--it's just a 2D operation, man!
+
+
+Problems:
+	- OpenGL requires libraries and setup.  It's single-threaded.  Probably need a front end anyway--could either add this to the front end, or have the front end spawn a new process and talk to it via sockets (perhaps as a web service?).
+	- OpenGL floating-point textures don't work very well right now--they're big, slow, and can only be used with nearest-neighbor filtering.  Should probably quantize to byte values before uploading onto the card, although an intermediate solution would be to quantize to 16-bit values, and then scale.
+	- Overlapping bilinear-filtered textures without a visible seam is tricky.  One cool trick is to set the texture wrap mode to GL_CLAMP_TO_BORDER_ARB--this causes the textures to droop away to black on their boundaries.  You can then sum together several one-pixel-overlapping textures to get continuous seamless coverage.
+
+
+-------------
+-- CLUI Missing features:
+- Subroutines
+I'd like to be able to write subroutines in CLUI.  I'm finding myself writing the same stuff over and over again for testing.
+
+One possible syntax:
+
+subroutine foo (input string a,input int b,optional real c,output int d) {
+	image_input_las filename=@a;
+	image_blur 
+}
+
+This is loosely modeled after IDL or F90, with "input" and "output" specifiers.  It is a little funny to have named input and output variables.
+
+Another way to do subroutines would be as macros; essentially make all subroutines inline by default.  I'd like to be able to do some sort of closure-like function pointers too; a first-class "function" type would be one way to do this.
+
+
+- Sane parsing of variables. Local & global variables. Simpler syntax for pipeline-type operations.  I'd like to be able to use a functional syntax like perl, say:
+	float_image i=image_blur(1,image_input_las("bar")));
+
+I should be able to infer that "1" corresponds to radius, since that's the only int parameter; and that the image corresponds to "src", the only input image parameter.  For disambiguation, "-variable=>value" like perl would be useful.
+
+The YACC grammar for C I found might be pretty close to what I need here.
+
+---------------------------
+-- Metadata
+
+Our goals for metadata handling include:
+	- Easy metadata lookup interface
+	- Sensible and early handling of missing metadata fields--don't use bogus values (like -999999), and don't segfault.
+	- "Nested" metadata storage, so a resampled image just points to the original's metadata
+	- Easy addition of new custom user-defined metadata types
+	- Fast lookups, even for funkily varying stuff like Earth radius.
+
+One nice internal abstraction could be identifying each metadata field with an enum, and then provide routines to look up or calculate a whole extensible set of metadata fields.  This allows some fields to be stored, others to be calculated, and others to not be there at all.  This is also nice because it doesn't tie us to one particular metadata struct format, and makes it easy to add tons of different available metadata values while keeping the metadata interface small and clean.
+
+The trickiest part about the metadata interface is figuring out how to use type information.  From a metadata producer's point of view, you'd like to have *one* routine that an image can define to handle all metadata requests--a single routine means you know exactly where to look to find each field, and there's only one set of coordinate transforms needed.
+
+The problem is the many sorts of input and output parameters to that "look up or calculate metadata" routine:
+- Input coordinates:
+	- Usually integer image pixels from a small tile.
+	- Occasionally sub-pixel (e.g., during a remap).
+	- Occasionally lat/lon/elevation, time/slant/doppler, or just time.  These are pretty rare, though--maybe rare enough to handle with a different interface.
+- Output values:
+	- Integers (orbit number)
+	- Strings (sensor type, processor parameters)
+	- 1D values (slant range, time, doppler, ellipsoid radii)
+	- 2D values (map projection coords, lat/lon)
+	- 3D values (lat/long/elevation, time/slant/doppler)
+	- State Vectors (position and velocity)
+It's also possible a given output value is not available--if this just indicates an error, aborting is fine.  If the caller might be able to work around the missing value, you want to return a flag or error code.  One compromise might be to throw an exception upon hitting a missing value, which could then result in an abort or a catch.
+
+The variety of input parameters can all be represented fairly naturally by a single 3D vector.
+The output parameters are tougher to bring together.  As I see it, the implementation options are:
+	(A) A big return struct, where the supplier leaves most of the values unused (this could be checked in debugging mode by writing a text pattern into unused fields), and the consumer only accesses the used value (this can't be checked easily).
+	(B) A "void *" return value.  This can't ever be typechecked, on either end.
+	(C) Give up on the the one-routine idea and provide a separate metadata access routine for each output type.  This is by far the best way for metadata consumer, which can be statically type checked.  But it's rather annoying for metadata providers because you've got to provide six different accessor routines, each of which may need to do coordinate transforms, etc.
+
+--------- Sample implementation of option (A) ----------
+typedef enum {
+	META_NOT_AVAILABLE=0, // that metadata item does not exist or could not be calculated.
+	META_1D, META_2D, META_3D, META_STATE, META_INT, META_STRING
+} meta_return_type;
+struct meta_return_struct {
+	double v1; meta2D_t v2; meta3D_t v3; meta_state_t state; int i; std::string s; 
+};
+
+class meta_parent_class
+protected:
+	/* Implemented by subclasses */
+	virtual meta_return_type meta_generic(const asf::image_location &loc,asf::metadata_1D_enum v,meta_return_struct *ret) =0;
+public:
+	/// Return the value of field v at location l
+	inline double meta1D(asf::metadata_1D_enum v,const asf::meta3D_t &l)
+	{
+		meta_return_struct s;
+		if (META_1D==meta_generic(l,v,&s)) return s.v1;
+		else asf::die("Missing metadata field!!!\n");
+	}
+	/// Return true if field v exists at location l
+	inline bool meta_exists(asf::metadata_1D_enum v,const asf::meta3D_t &l)
+	{
+		meta_return_struct s;
+		return META_NOT_AVAILABLE!=meta_generic(l,v,&s);
+	}
+};
+
+Compared to (C), this has high overhead--every call creates and destroys a std::string.  The whole notion of covariant return types is ugly.  However, handling missing fields is safe and easy; and meta_generic can have a simple structure:
+	- Do any needed coordinate transform
+	- Switch on v, and:
+		case FOOBAR: ret->v1=3; return META_1D; // error prone!
+	- If not handled yet, call superclass, or return META_NOT_AVAILABLE.
+This still isn't as clean as below.
+
+---------- Sample implementation of option (C) ----------------
+I think the best way is to have separate accessors for each output type.
+
+Metadata handling could then just be a chain of objects that include virtual methods--for example,
+	// Look up the real-valued 1D field "v" at image location "loc".
+	virtual double meta1D(const asf::image_location &loc) =0;
+	// Look up the 2D vector field "v" at location "loc".
+	virtual meta2D_t meta2D(const asf::image_location &loc,asf::metadata_2D_enum v) =0;
+	// Look up the 3D vector field "v" at location "loc".
+	virtual meta3D_t meta3D(const asf::image_location &loc,asf::metadata_3D_enum v) =0;
+	// Look up the state vector field "v" at location "loc".
+	virtual meta_state_t meta_state(const asf::image_location &loc,asf::metadata_state_enum v) =0;
+	// Fetch an integer field.
+	virtual int meta_int(const asf::image_location &loc,asf::metadata_int_enum v) =0;	
+	// Fetch a string metadata field.
+	virtual std::string meta_string(const asf::image_location &loc,asf::metadata_string_enum v) =0;
+
+The big advantage here is that the datatypes of possible metadata fields could then be listed in separate enums, which means everything on the consumer side gets statically typechecked.
+
+typedef enum {
+	METADATA_1D_FIRST=1000, ///< Start of metadata field IDs
+	SLANT_RANGE, ///< Slant range to target (meters)
+	TIME_SINCE_START, ///< Time of image aquisition relative to frame start (seconds)
+	DOPPLER_PROCESSING, ///< Actual central radar doppler shift used while processing (Hz)
+	DOPPLER_GEOCODING, ///< Radar doppler shift for geocoding (Hz)
+	ELLIPSOID_LOCAL, ///< Local ellipsoid radius (meters)
+	ELLIPSOID_POLAR, ///< Polar radius (meters)
+	ELLIPSOID_EQUATORIAL, ///< Equatorial radius (meters)
+	ELLIPSOID_FLATTENING, ///< Ellipse flattening (pure number)
+	ELLIPSOID_ECCENTRICITY, ///< First eccentricity (pure number)
+	METADATA_1D_LAST ///< Last field
+} metadata_1D_enum;
+
+typedef enum {
+	LATITUDE_LONGITUDE_DEGREES, ///< Location of target on planet surface (decimal degrees)
+	LATITUDE_LONGITUDE_RADIANS, ///< Location of target on planet surface (radians)
+	PROJECTION_COORDINATES, ///< Map projection coordinates, or slant/time (meters)
+} metadata_2D_enum;
+
+typedef enum {
+	LATITUDE_LONGITUDE_ELEVATION_RADIANS, ///< Location of target on planet surface (degrees,degrees,meters from ellipsoid)
+	TIME_SLANT_DOPPLER, ///< Time, slant range, and doppler (seconds,meters,Hz)
+	TSD2LLE, ///< Input is TIME_SLANT_DOPPLER.  Output is LATITUDE_LONGITUDE_ELEVATION_RADIANS.
+	LLE2TSD, ///< Input is LATITUDE_LONGITUDE_ELEVATION_RADIANS.  Output is TIME_SLANT_DOPPLER.
+	TARGET_POSITION, ///< Location of target in 3D body-fixed coordinates (meters)
+	SATELLITE_POSITION, ///< Location of satellite in 3D body-fixed coordinates (meters)
+	
+} metadata_3D_enum;
+
+/** State vectors.   Suffixes give the coordinate system:
+	_BODYFIXED: earth-body-fixed (corotating) coordinate system.
+	_GEI: Geocentric Equatorial Inertial equinox-aligned coordinate system.
+	_GEI0: Like GEI, but assuming a Greenwich Hour Angle (GHA) of 0 degrees.
+*/
+typedef enum {
+	SATELLITE_BODYFIXED, ///< Satellite state vector, body-fixed coordinates
+	SATELLITE_GEI,  ///< Satellite state vector, geocentric equatorial inertial coordinates
+	SATELLITE_GEI0, ///< Satellite state vector, GEI-0 coordinates
+	TARGET_BODYFIXED, ///< Target point state vector, body-fixed coordinates
+	TARGET_GEI,  ///< Target point state vector, geocentric equatorial inertial coordinates
+	TARGET_GEI0, ///< Target point state vector, GEI-0 coordinates
+	TIME2SATELLITE, ///< Input: x coordinate is time since image start, seconds.  Output is SATELLITE_BODYFIXED.
+} metadata_state_enum;
+
+typedef enum {
+	SENSOR, ///< Short name of aquiring sensor, e.g. "ERS1".
+	MODE, ///< Short name of sensor mode, e.g. "FN1".
+	PROCESSOR, ///< Short name of image processing software, e.g., "ASF/AISP/3.4"
+} metadata_string_enum;
+
+
+Actually, the more I think about this, the less I like the idea of doing coordinate transforms as part of the meta lookup call.  The problems are:
+	- Some calls take funky input coordinate systems, like lat/lon/elev.  So you can't blindly transform the XYZ input coordinates; you'd have to check the coordinate system, and then transform appropriately.
+	-You'd often like to recursively call a meta routine *without* repeatedly transforming coordinate systems, like this: 
+		case INCIDENCE_DEGREES: return meta1D(INDICENCE_RADIANS,loc)*rad2deg;
+
+So I think keeping coordinate (image-to-image) transforms totally separate from the actual metadata call is a good thing.  One way to factor this out would be to have a separate virtual routine "image_from_user" that spits out 2D image coordinates based on user coordinates.  This would have the additional benefit of allowing image manipulators to only override one routine, instead of six.  It does stink if you want to override only *some* of the metadata (e.g., just the map projection lookups) and leave the rest unchanged--which coordinate system should your single "image_from_user" routine return?
+
+
+
+
+One cool trick might be to define an error tolerance for each request (e.g., distances
+default to 1mm tolerance), and then fit a function to match the requests in a given tile
+to within the error tolerance.  For example, one could fit functions of the form
+	a	(constant)
+	a + bx + cy	(linear)
+	a + bx + cy +dxy  (bilinear)
+	a + bx + cy +dxy + ex^2 + fy^2 (quadratic)
+	a + bx + cy +dxy + ex^2 + fy^2 +gxy^2 + hy^2x + i x^2 y^2 (biquadratic)
+or if none of these are accurate enough, the raw function could be evaluated at each point.
+
+
+-- Arrays
+We need arrays of:
+	- Tie points (e.g., baseline refinement, permanent scatterrers)
+	- Images (e.g., mosaicking)
+
+I'd really like to support 
+	parameter_vector<parameter_float_image *>
+somehow.  The easiest way to do it is to have a non-templated "parameter_vector_generic" class that gets registered, and then add a thin template layer for typechecking at runtime.  To make the registration stuff work right, I think the generic class would have to keep all the data members; the template can only add (inline) subroutines.  This lets the registration stuff create a new object with
+	parameter *p=new parameter_vector_generic();
+which then gets assigned to a
+	parameter_vector<parameter_int *> *myInts;
+but everything works because parameter_vector is just a type wrapper around parameter_vector_generic.
+
+This seems a little easier than trying to figure out how to runtime-instantiate a template for a class you've never heard of.
+	-> Implemented 2006/06/09 as "parameter_array_generic".	 Also see the "array_push_back" plugin.
+
+
+-- Error checking
+To cheaply compare output images at various resolutions, 
+can take integer checksums (SHA-1, or cheaper?) at various scales.
+For example, could round to integers, and check (same +-0.5).
+Then round to 10ths, and check (same +-0.05).
+Then round to 100ths, and check (same +-0.005).
+Could do this on a log scale, to give *relative* error, not absolute.
+Also should keep min, max, mean, std. dev. of pixel values.
+	-> Implemented 2006/06/06 as "image_checksum".
+
+
+------------------ 05/2005 -----------------------
+------------------------------- CLASSSES --------------
+type: descriptor of anything that has been written.
+str getName, str getDescription, str getAuthors, double getVersion
+type getParent
+This is really just a very simple type system:
+   - Static type name and version matching
+   - Small amount of extra metadata
+   - Single inheritance (via getParent)
+
+--------------- Parameter ------------------
+parameter: abstract superclass of all "data" types.  PUP::able. Has a type.
+Methods: pup (pure virtual), read, write.
+Can also have arbitrarily complicated virtual methods,
+caching, and local data.
+
+get/setSource (plugin that created the parameter) ?
+
+Subclasses:
+	parameter_image_tile
+	parameter_int
+	parameter_real
+	parameter_vector
+	parameter_map_projection
+	parameter_sar_geometry
+	parameter_baseline
+	parameter_tiepoint_list
+
+See also:
+http://xparam.sourceforge.net/guide/user.html
+Probably a nicer serialization interface...
+
+-------------- Plugin ------------------
+plugin: tile processor.  works on parameters. Has a type.
+Methods:
+-constructor: takes plugin_parameters
+	parameter getParameter(string); (ick)
+ooh!  How about a C++ey templated getParameter, that asks
+the parameter what its name/version/etc is:
+	p.get(string name,parameter *p);
+
+-execute method:
+Read some parameters, write some parameters.
+
+Hmmmm... for a plugin, it'd be simplest to ask for parameters inside 
+"execute".  But this means string lookups at runtime, and no preflighting.
+*Can* get preflighting via something like this in the constructor
+(or execute method):
+	input(param,"image",inTile);
+	input(param,"foo",myFoo);
+	optional(param,"bar",myBar);
+	output(param,"baz",outTile);
+	if (param.preflight_only()) return;
+but this is a fairly ugly hack.  I'm almost tempted to make 
+the "inTile" (& co) some sort of templated "parameter_handle"
+class, but this is getting too C++ey.
+
+Parameter parsing in constructor:
+	+ No string lookups in "execute" method.
+	+ Clean initialization/finalization separation.
+	+ Easy for a plugin to build (expensive) derived data.
+	+ For plugin inheritance, you're likely to require a superset of your parent's parameters, but may want to totally replace his execute method.
+Parameter parsing in execute method:
+	+ Only one routine to write.
+	+ Output parameters can be passed *after* they have a value.
+	   (But this means we're stuck with plugin's choice of class,
+	    which is OK for map_projection but bad for image_tile.)
+	+ Fewer class variables, more local variables.
+Static list-of-offsets:
+	+ Easy to statically check types.
+	+ Decoupled from code entirely (table, file, etc.)
+	+ Easy to specify complex optional entries.
+
+-destructor: no parameters.
+Deallocate memory, close files, etc.
+Should be able to work even if constructor bailed out early
+("preflight").
+
+-registration routine: register plugins & parameters
+
+---------------- Image processing -----------------
+The image processing class heirarchy now looks like:
+
+asf::parameter_float_image
+    Actually stores image pixels for a (possible subset of)
+a big image.  Has a fully-inlined "at" method for accessing
+pixel data, like:
+        img->at(x,y,b)=1.0;
+This is the class that most simple pixel-pushing plugins can
+use.  Inherits from pixel_image, which inherits from
+interpolated_image.
+
+asf::parameter_pixel_image
+    Superclass; doesn't store any image data itself, but   
+does know how many pixels exist and provides virtual methods
+to access them (getPixel and setPixel).  This class provides
+the interface to read or write, e.g., a tiled image when you
+can't just work on one tile at a time.
+
+asf::parameter_interpolated_image
+    Most generic superclass; doesn't admit the existence of
+pixels, but will provide a (possibly interpolated) lookup on
+some image source:
+        virtual float interpolate(double x,double y,int band) const
+This class exists to provide uniform access to, e.g., a
+geocoded image, where his pixels don't match yours in any
+way.  It could even be used to create a totally synthetic
+image source; like a Mandelbrot set viewer, ray tracer,
+or test pattern generator.
+
+The two big pieces remaining before the prototype is
+basically finished are:   
+    
+  - Implicit type conversion, where "the system" inserts   
+plugins to convert between incompatible types, like
+rasterizing a generic paramter_interpolated_image into a
+parameter_float_image, or converting a parameter_byte_image 
+into a parameter_float_image.
+
+  - Tile & metadata handling, where the plugins operate on
+one little piece of the image at a time.  It's not clear
+whether tile & metadata information should be *part* of the
+image data class (parameter_*_image), or go in alongside the
+image data.  I can see arguments for both...
+
+
+---------------------------- CONTROL FLOW ---------------------
+Processing starts with *input*.  You read metadata, determine input
+image sizes, and propagate this size information down the chain.
+This requires geometric relationship between each input and output
+image, until sizes are all known.
+
+Then process begins at *output*: you want to display/save one output tile.
+The handler then walks back along the chain of plugins (recursively?) 
+to determine which input tiles it'll need.  The walk goes all the 
+way back to plugins that have all their inputs (e.g., an input plugin,
+or an image synthesis plugin, or a plugin with a cached value).
+Plugins are then executed to generate the image tiles needed.
+
+Example designs:
+  - Joe Lovick's "Intelligent Objects": 
+      - Hook up inputs to outputs
+      - Let *plugins* decide when they want to run, and how.
+      Advantages:
+        + No hardcoded interaction styles
+	+ Plugins can design arbitrary communication protocols
+	- Plugins are doing lots of work; but should be simple
+	- Not clear how to make parallel (other than by threads)
+
+  - My "outer design":
+      - Magic outside process walks list of plugins
+      - Magic connects inputs to outputs, decides tile sizes, etc.

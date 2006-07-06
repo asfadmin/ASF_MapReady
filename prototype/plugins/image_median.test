@@ -1,0 +1,9 @@
+#!../bin/clui
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
+
+image_input_las filename="grey.img";
+image_median src=@image_input_las.dest radius=4;
+image_output_binary 
+	src=@image_median.dest 
+	filename="image_median.test.img";

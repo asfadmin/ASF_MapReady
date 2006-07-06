@@ -1,0 +1,8 @@
+#!../bin/clui
+#
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/09/15
+#
+for min=0 max=3 {
+	echo string="This should print three times: i=" int=@for.index;
+}

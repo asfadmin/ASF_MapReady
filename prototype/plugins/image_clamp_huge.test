@@ -1,0 +1,11 @@
+#!../bin/clui
+#
+#  ASF Plugin script, v0.1
+#  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
+#
+
+image_testpattern w=1200 h=1800 type=3 scale=80.0 value=10.0;
+image_clamp min=1.0 max=9.0 src=@image_testpattern.dest;
+image_output_binary 
+	src=@image_clamp.dest 
+	filename="image_clamp_huge.test.img";

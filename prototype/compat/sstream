@@ -1,0 +1,14 @@
+/**
+ Fake sstream header, for compilers missing it.
+ 
+ Orion Sky Lawlor, olawlor@acm.org, 2006/05/11 (Public domain)
+*/
+#ifndef __FAKE_SSTREAM_H
+#define __FAKE_SSTREAM_H
+
+#include <strstream>
+
+/** A std::istringstream is basically the same as a strstream */
+#define istringstream strstream
+
+#endif
