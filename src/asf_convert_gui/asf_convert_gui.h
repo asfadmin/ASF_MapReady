@@ -88,7 +88,7 @@ enum
 };
   
 
-/* for win32, need __declspec(dllexport) on all signal handlers */
+/* for win32, need __declspec(dllexport) on all signal handlers. */
 #if !defined(SIGNAL_CALLBACK)
 #  if defined(win32)
 #    define SIGNAL_CALLBACK __declspec(dllexport)
