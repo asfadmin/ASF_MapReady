@@ -1,0 +1,4 @@
+#!/bin/sh
+CXX="g++"
+CFLAGS_ARCH="-Wall -rdynamic"
+SHARED="-shared -fpic"
