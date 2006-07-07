@@ -153,6 +153,7 @@ enum metadata_1D_enum {
 	ELLIPSOID_ECCENTRICITY, ///< First eccentricity e=sqrt(1-EQUATORIAL^2/POLAR^2) (pure number)
 	
 	SIDEREAL_ROTATION_RATE_RADIANS, ///< Rotation rate of planet, relative to inertial coordinates (radians/second)
+	G_TIMES_MASS_PLANET, ///< Gravitational constant times mass of planet (newtons/meters^2)
 	GHA_DEGREES, ///< Greenwich Hour Angle--location of longitude 0 relative to inertial (degrees)
 	GHA_DEGREES_FROM_TIME, ///< Input: time in seconds past image start.  Output: Greenwich Hour Angle (degrees)
 	
@@ -164,7 +165,7 @@ enum metadata_1D_enum {
 	DOPPLER, ///< Actual central radar doppler shift used while processing (Hz)
 	DOPPLER_RATE, ///< Time-rate-of-change of doppler while processing (Hz/second)
 	PRF, ///< Azimuth pulse repetition frequency (Hz).
-	WAVELENGTH, ///< Radar mean wavelength (meters per cycle).
+	WAVELENGTH, ///< Radar mean wavelength, or lambda (meters per cycle).
 	FREQUENCY, ///< Radar mean carrier frequency (Hz, cycles per second).
 	WAVENUMBER, ///< Radar mean wavenumber = 2*pi/wavelength (radians of phase/meter).
 	AZIMUTH_PROCESSING_BANDWIDTH, ///< Doppler bandwidth passed by processor (Hz)
@@ -396,40 +397,40 @@ public:
 
 /** Virtual methods that subclasses can override */
 	/// Look up the real-valued 1D field "v" at image location "loc".
-	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) =0;
+	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const =0;
 	
 	/// Look up the 2D vector field "v" at location "loc".
-	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) =0;
+	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const =0;
 	
 	/// Look up the 3D vector field "v" at location "loc".
-	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) =0;
+	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const =0;
 	
 	/// Look up the state vector field "v" at location "loc".
-	virtual asf::meta_state_t meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc) =0;
+	virtual asf::meta_state_t meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc) const =0;
 	
 	/// Look up the integer field "v".
-	virtual int meta_int(asf::metadata_int_enum v) =0;
+	virtual int meta_int(asf::metadata_int_enum v) const =0;
 	
 	/// Look up the string field "v".
-	virtual asf::meta_string_t meta_string(asf::metadata_string_enum v) =0;
+	virtual asf::meta_string_t meta_string(asf::metadata_string_enum v) const =0;
 	
 	/// Look up the user-defined type field "v".  Returns NULL if none exists.
-	virtual asf::meta_glob_t meta_glob(asf::metadata_glob_enum v) =0;
+	virtual asf::meta_glob_t meta_glob(asf::metadata_glob_enum v) const =0;
 	
 /** Convenience wrapper routines-- use like "double d=someMetaObject(SLANT_RANGE,imageLoc);" */
-	inline double operator() (asf::metadata_1D_enum v,const asf::metaCoord_t &loc) 
+	inline double operator() (asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const 
 		{return meta1D(v,loc);}
-	inline meta2D_t operator() (asf::metadata_2D_enum v,const asf::metaCoord_t &loc)
+	inline meta2D_t operator() (asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const
 		{return meta2D(v,loc);}
-	inline meta3D_t operator() (asf::metadata_3D_enum v,const asf::metaCoord_t &loc)
+	inline meta3D_t operator() (asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const
 		{return meta3D(v,loc);}
-	inline meta_state_t operator() (asf::metadata_state_enum v,const asf::metaCoord_t &loc)
+	inline meta_state_t operator() (asf::metadata_state_enum v,const asf::metaCoord_t &loc) const
 		{return meta_state(v,loc);}
-	inline int operator() (asf::metadata_int_enum v)
+	inline int operator() (asf::metadata_int_enum v) const
 		{return meta_int(v);}
-	inline std::string operator() (asf::metadata_string_enum v)
+	inline std::string operator() (asf::metadata_string_enum v) const
 		{return meta_string(v);}
-	inline asf::meta_glob_t operator() (asf::metadata_glob_enum v)
+	inline asf::meta_glob_t operator() (asf::metadata_glob_enum v) const
 		{return meta_glob(v);}
 };
 
@@ -439,32 +440,32 @@ public:
 */
 class ASF_COREDLL metadata_transform : public metadata_source {
 public:
-	metadata_transform(metadata_source *source_meta_);
+	metadata_transform(const metadata_source *source_meta_);
 	
 	/// These implementations all transform coordinates with "source_from_user"
 	///   when needed, and then call source_meta to get the actual values.
-	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc);
-	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc);
-	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc);
-	virtual asf::meta_state_t meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc);
-	virtual int meta_int(asf::metadata_int_enum v);
-	virtual asf::meta_string_t meta_string(asf::metadata_string_enum v);
-	virtual asf::meta_glob_t meta_glob(asf::metadata_glob_enum v);
+	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta_state_t meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc) const;
+	virtual int meta_int(asf::metadata_int_enum v) const;
+	virtual asf::meta_string_t meta_string(asf::metadata_string_enum v) const;
+	virtual asf::meta_glob_t meta_glob(asf::metadata_glob_enum v) const;
 protected:
 	/// Return source image coordinates given user image coordinates.
 	///   Subclasses must implement this routine.
-	virtual asf::metaCoord_t source_from_user(int v,const asf::metaCoord_t &user) =0;
+	virtual asf::metaCoord_t source_from_user(int v,const asf::metaCoord_t &user) const =0;
 	
 	/// Return user image coordinates given source image coordinates.
 	///   Subclasses must implement this routine.
-	virtual asf::metaCoord_t user_from_source(int v,const asf::metaCoord_t &source) =0;
+	virtual asf::metaCoord_t user_from_source(int v,const asf::metaCoord_t &source) const =0;
 	
 	/// This is the source of all our metadata values.
-	metadata_source *source_meta;
+	const metadata_source *source_meta;
 };
 
 /** This metadata field is missing--throw an exception. */
-ASF_COREDLL void metadata_missing(int field_enum,metadata_source &fromClass);
+ASF_COREDLL void metadata_missing(int field_enum,const metadata_source &fromClass);
 
 /**
  Compute metadata values based on the known features of the planet Earth.
@@ -474,13 +475,13 @@ ASF_COREDLL void metadata_missing(int field_enum,metadata_source &fromClass);
 */
 class ASF_COREDLL metadata_earth : public metadata_source {
 public:
-	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc);
-	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc);
-	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc);
-	virtual asf::meta_state_t meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc);
-	virtual int meta_int(asf::metadata_int_enum v);
-	virtual asf::meta_string_t meta_string(asf::metadata_string_enum v);
-	virtual asf::meta_glob_t meta_glob(asf::metadata_glob_enum v);
+	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta_state_t meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc) const;
+	virtual int meta_int(asf::metadata_int_enum v) const;
+	virtual asf::meta_string_t meta_string(asf::metadata_string_enum v) const;
+	virtual asf::meta_glob_t meta_glob(asf::metadata_glob_enum v) const;
 };
 
 /**
@@ -501,9 +502,9 @@ public:
 class ASF_COREDLL metadata_sar : public metadata_earth {
 	typedef asf::metadata_earth super;
 public:
-	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc);
-	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc);
-	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc);
+	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const;
 };
 
 

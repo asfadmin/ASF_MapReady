@@ -50,5 +50,6 @@ docs:
 	doxygen doc/doxygen.cfg
 
 clean:
-	-rm $(CORE) $(CLUI) */*.exe */*.dll */*.lib */*.o so_locations plugins/so_locations
+	-rm $(CORE) $(CLUI) */*.exe */*.dll */*.lib */*.o */*.obj \
+		so_locations plugins/so_locations
 	-cd plugins; make clean
