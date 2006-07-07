@@ -245,7 +245,8 @@ void asf::parameter_pixel_image::meta_setsize(int nBands_,const pixel_rectangle 
 void asf::parameter_pixel_image::pixel_setsize(const pixel_rectangle &pixel_rect,int zoom)
 {
 	if (!m_meta_bounds.contains(pixel_rect)) {
-		asf::print(m_meta_bounds); asf::print(pixel_rect);
+		printf("Our meta bounds: "); asf::print(m_meta_bounds); 
+		printf("Requested pixel rect: "); asf::print(pixel_rect);
 		asf::die("asf::parameter_pixel_image::pixel_setsize asked to access pixels not inside our meta bounds!\n");
 	}
 	if (zoom<0) asf::die("asf::parameter_pixel_image::pixel_setsize zoom factor cannot be negative!\n");
@@ -337,7 +338,8 @@ void asf::parameter_float_image::pixel_pointat(parameter_pixel_image *src_p,cons
 		asf::die("asf::parameter_float_image::pixel_pointat called with a non-float image.  You can only point at an image of the same type!\n");
 	}
 	if (!src->pixel_meta_bounds().contains(pixel_meta)) {
-		asf::print(src->pixel_meta_bounds()); asf::print(pixel_meta);
+		printf("Source image pixel bounds: "); asf::print(src->pixel_meta_bounds()); 
+		printf("Requested pixel bounds: "); asf::print(pixel_meta);
 		asf::die("asf::parameter_float_image::pixel_pointat asked to point at pixels not inside source image!\n");
 	}
 	super::pixel_setsize(pixel_meta,zoom_meta);

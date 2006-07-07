@@ -162,4 +162,4 @@ image_testpattern: execute_plugin>  } render_inputs
  rectangle(0,0) to(64,100) size(64,100)
 FATAL ERROR: asf::parameter_float_image::pixel_pointat asked to point at pixels not inside source image!
 
-
+OK--added a few debugging statements, and traced this to a bogus dependency structure.  The problem is the "creator" multi_map traversal in execute_block::add_input used "find" as the starting point of the traverse, and "end" as the end point, traversing tons of stuff unrelated to the search target!  Man, STL is error-prone.  Fixed using equal_range.

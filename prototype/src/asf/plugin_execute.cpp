@@ -399,6 +399,8 @@ void execute_block::add_output(execute_plugin *creator,parameter *pa,parameter_c
 		img->add_plugin(creator,constraint,false);
 	}
 	
+	creator->pl->log(ex_loglevel+5,"execute_block::add_output> I create parameter %p (%s)\n",pa,pa->get_type()->name());
+	
 	creators.insert(std::make_pair(pa,creator));
 	if (master)
 		outer->add_output(master,pa,constraint); /* seen from outside, master creates this parameter */
@@ -413,10 +415,14 @@ execute_image *execute_block::add_input(execute_plugin *reader,parameter *pa,par
 		img->add_plugin(reader,constraint,true);
 	}
 	
-	for (creators_t::iterator it=creators.find(pa);it!=creators.end();++it)
+	creators_t::iterator start=creators.equal_range(pa).first;
+	creators_t::iterator end=creators.equal_range(pa).second;
+	for (creators_t::iterator it=start;it!=end;++it)
 	{/* Somebody we know creates that input */
 		execute_plugin *creator=(*it).second;
 		if (creator!=reader && img==NULL) {
+			reader->pl->log(ex_loglevel+5,"execute_block::add_input> I depend on plugin %s via parameter %p (%s)\n",creator->pl->get_type()->name(),pa,pa->get_type()->name());
+				
 			reader->in_dep.push_back(creator); /* he goes in our input dependency list */
 			creator->out_dep.push_back(reader); /* we go in his output dependency list */
 		}
@@ -463,8 +469,10 @@ static asf::pixel_rectangle empty_rect(0,0,0,0);
 
 void execute_block::render(const render_request &req) {
 	asf::log(ex_loglevel,"execute_block> render { \n");
-	for (unsigned int i=0;i<sink_plugins.size();i++)
+	for (unsigned int i=0;i<sink_plugins.size();i++) {
+		asf::log(ex_loglevel+3,"   execute_block> rendering next sink\n");
 		sink_plugins[i]->sink_render(req); /* will recursively prep all required inputs */
+	}
 	asf::log(ex_loglevel,"execute_block> } render \n");
 }
 
@@ -652,8 +660,10 @@ void execute_plugin::render_inputs(const render_request &req) {
 	state=state_busy; /* busy computing input requirements */
 	
 	/* Make sure each non-image input plugin is ready */
-	for (i=0;i<in_dep.size();i++)
+	for (i=0;i<in_dep.size();i++) {
+		pl->log(ex_loglevel+3,"execute_plugin>    rendering non-image input %d\n",i);
 		in_dep[i]->render(req); /* FIXME: same request OK? */
+	}
 	
 	/* Make sure each input image is ready */
 	for (i=0;i<in_img.size();i++) {

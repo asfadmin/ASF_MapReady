@@ -13,6 +13,8 @@ CORE_SRC=src/asf/plugin.cpp src/asf/plugin_loader.cpp src/asf/plugin_execute.cpp
 	src/pup/pup.cpp \
 	src/osl/dll.cpp src/osl/dir.cpp
 CORE=lib/asf_core.dll
+# Helps src/asf/plugin_loader.cpp find our plugins.
+TOPDIR_FLAG=-DASF_COREDLL_TOPDIR='"'`pwd`'"'
 
 all: test
 
@@ -31,7 +33,7 @@ core: $(CORE)
 
 $(CORE): $(CORE_SRC)
 	build/compile -Isrc $(CORE_SRC) -o $@ $(OPTS) \
-		-DASF_BUILD_COREDLL=1 -DASF_COREDLL_TOPDIR='"'`pwd`'"'
+		-DASF_BUILD_COREDLL=1 $(TOPDIR_FLAG)
 
 clui: $(CLUI)
 

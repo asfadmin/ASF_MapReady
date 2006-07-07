@@ -1,6 +1,6 @@
-rem ASF C++ Prototype Build Script: generated Thu Jul 6 15:17:17 AKDT 2006 by make_make.bat.sh
-cl /nologo /GR /EHsc /DWIN32=1 src/asf/plugin.cpp src/asf/plugin_loader.cpp src/asf/plugin_execute.cpp src/asf/image.cpp src/asf/clui.cpp src/asf/ddr.cpp src/asf/util.cpp src/asf/meta.cpp src/asf/meta_earth.cpp src/asf/meta_sar.cpp src/pup/pup.cpp src/osl/dll.cpp src/osl/dir.cpp -olib/asf_core.dll /RTC1 /Zi /Yd -I. -I.. -Ibuild/.. -Isrc -DASF_BUILD_COREDLL=1 -DASF_COREDLL_TOPDIR="/home/olawlor/dev/asf/prototype" /LD /link
+rem ASF C++ Prototype Build Script: generated Thu Jul 6 18:18:52 AKDT 2006 by make_make.bat.sh
 cl /nologo /GR /EHsc /DWIN32=1 src/asf/clui_cli.cpp lib/asf_core.lib /o bin/clui.exe /RTC1 /Zi /Yd -I. -I.. -Ibuild/.. -Isrc
+cd plugins
 cl /nologo /GR /EHsc /DWIN32=1 array_push_back.cpp ../lib/asf_core.lib -o../lib/array_push_back.cpp.dll /RTC1 /Zi /Yd -I. -I.. -I../build/.. -I../src /LD /link
 cl /nologo /GR /EHsc /DWIN32=1 assert_equal.cpp ../lib/asf_core.lib -o../lib/assert_equal.cpp.dll /RTC1 /Zi /Yd -I. -I.. -I../build/.. -I../src /LD /link
 cl /nologo /GR /EHsc /DWIN32=1 echo.cpp ../lib/asf_core.lib -o../lib/echo.cpp.dll /RTC1 /Zi /Yd -I. -I.. -I../build/.. -I../src /LD /link
@@ -18,6 +18,7 @@ cl /nologo /GR /EHsc /DWIN32=1 string.cpp ../lib/asf_core.lib -o../lib/string.cp
 cl /nologo /GR /EHsc /DWIN32=1 string_out.cpp ../lib/asf_core.lib -o../lib/string_out.cpp.dll /RTC1 /Zi /Yd -I. -I.. -I../build/.. -I../src /LD /link
 cl /nologo /GR /EHsc /DWIN32=1 system.cpp ../lib/asf_core.lib -o../lib/system.cpp.dll /RTC1 /Zi /Yd -I. -I.. -I../build/.. -I../src /LD /link
 cl /nologo /GR /EHsc /DWIN32=1 textfile_write.cpp ../lib/asf_core.lib -o../lib/textfile_write.cpp.dll /RTC1 /Zi /Yd -I. -I.. -I../build/.. -I../src /LD /link
-copy 'lib\asf_coredll.dll' bin
+cd ..
+copy 'lib\asf_core.dll' bin
 echo "All ASF tools built!  Now cd plugins and run"
 echo "    ..\bin\clui.exe image_checksum.test"
