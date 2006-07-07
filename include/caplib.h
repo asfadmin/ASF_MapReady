@@ -11,6 +11,13 @@
 
 #include "asf.h"
 
+typedef enum {
+    BEHAVIOR_ON_ERROR_ABORT,
+    BEHAVIOR_ON_ERROR_CONTINUE
+} behavior_on_error_t;
+
+extern behavior_on_error_t caplib_behavior_on_error;
+
 void *MALLOC(size_t size);
 void FREE(void *ptr);
 FILE *FOPEN(const char *file,const char *mode);

@@ -134,41 +134,45 @@ static void
 thumbnail_thread (GString *file, gpointer user_data)
 {
     gchar *metadata_file = meta_file_name (file->str);
+    if (metadata_file && strlen(metadata_file) > 0) {
 
-    /* Find the element of the list store having the file name we are
-    trying to add a thumbnail of.  */
-    GtkTreeIter iter;
-    gboolean valid;
-    /* Get the first iter in the list */
-    LSL;
-    valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (list_store), &iter);
-    while ( valid ) {
-        /* Walk through the list, reading each row */
-        gchar *data_file;
-
-        gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter, 
-            COL_DATA_FILE, &data_file, -1);
-
-        if ( strcmp (data_file, file->str) == 0 ) {
-            /* We found it, so load the thumbnail.  */
-            set_input_image_thumbnail (&iter, metadata_file, data_file);
-            g_free (metadata_file);
-            /* We just happen to know that this string got allocated in the
-            arguments to this routing.  */
-            g_string_free (file, TRUE);
-            LSU;
-            return;
+        /* Find the element of the list store having the file name we are
+           trying to add a thumbnail of.  */
+        GtkTreeIter iter;
+        gboolean valid;
+        /* Get the first iter in the list */
+        LSL;
+        valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (list_store), 
+                                               &iter);
+        while ( valid ) {
+            /* Walk through the list, reading each row */
+            gchar *data_file;
+            
+            gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter, 
+                                COL_DATA_FILE, &data_file, -1);
+            
+            if ( strcmp (data_file, file->str) == 0 ) {
+                /* We found it, so load the thumbnail.  */
+                set_input_image_thumbnail (&iter, metadata_file, data_file);
+                g_free (metadata_file);
+                /* We just happen to know that this string got allocated in the
+                   arguments to this routing.  */
+                g_string_free (file, TRUE);
+                LSU;
+                return;
+            }
+            
+            valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (list_store),
+                                              &iter);
         }
-
-        valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (list_store), &iter);
-    }
-    LSU;
+        LSU;
 
     /* The data file must have gotten removed from the list before we
     got a chance to draw it's thumbnail.  Oh well.  */
 
     g_free (metadata_file);
     g_string_free (file, TRUE);
+    }
 }
 
 #endif

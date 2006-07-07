@@ -54,6 +54,9 @@ main(int argc, char **argv)
         }
     }
 
+    /* allow FOPEN, FREAD, FWRITE to fail without aborting */
+    caplib_behavior_on_error = BEHAVIOR_ON_ERROR_CONTINUE;
+
     /* add version number to window title */
     char title [256];
     sprintf (title,

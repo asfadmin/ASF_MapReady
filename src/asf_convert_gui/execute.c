@@ -485,7 +485,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int keep_files)
 
         asfPrintStatus("Running convert with configuration file: %s\n",
 		       cfg_file);
-    
+
 	asf_convert(FALSE, cfg_file);
 	
 	FCLOSE(fLog);

@@ -12,6 +12,12 @@ make_input_image_thumbnail (const char *input_metadata, const char *input_data,
                             size_t max_thumbnail_dimension, 
                             const char *output_jpeg)
 {
+    /* This can happen if we don't get around to drawing the thumbnail
+       until the file has already been processes & cleaned up, don't want
+       to crash in that case. */
+    if (!fileExists(input_metadata))
+        return FALSE;
+
     meta_parameters *imd = meta_create (input_metadata); // Input metadata.
     /* Make a copy of one of the arguments so the compilers doesn't
     complain about us ignoring the const qualifier when we pass it fo
@@ -32,6 +38,12 @@ make_input_image_thumbnail (const char *input_metadata, const char *input_data,
     CEOS_FILE *id = fopenCeos (tmp); // Input data file.
     g_free (tmp);
 
+    if (!id->f_in) {
+        // failed for some reason, just quit without thumbnailing
+        meta_free(imd);
+        return FALSE;
+    }
+
     // Vertical and horizontal scale factors required to meet the
     // max_thumbnail_dimension part of the interface contract.
     int vsf = ceil (imd->general->line_count / max_thumbnail_dimension);
@@ -51,7 +63,7 @@ make_input_image_thumbnail (const char *input_metadata, const char *input_data,
     size_t ii;
     int *line = g_new (int, imd->general->sample_count);
     for ( ii = 0 ; ii < tsy ; ii++ ) {
-        readCeosLine(line, ii * sf, id);
+        readCeosLine (line, ii * sf, id);
         size_t jj;
         for ( jj = 0 ; jj < tsx ; jj++ ) {
             // Current sampled value.  We will average a couple pixels together.

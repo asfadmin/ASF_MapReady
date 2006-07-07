@@ -19,6 +19,8 @@ possible.
 #include "caplib.h"
 #include "log.h"
 
+behavior_on_error_t caplib_behavior_on_error = BEHAVIOR_ON_ERROR_ABORT;
+
 void programmer_error(char *mess)
 {
 	char error_message[1024];
@@ -36,6 +38,7 @@ void programmer_error(char *mess)
 	if (fLog!=NULL)
 	  fprintf(fLog,error_message);
 
+        /* always abort for programmer error */
 	exit(199);
 }
 
@@ -63,9 +66,11 @@ void bail(const char *mess, ...)
     fprintf(fLog, "**     Program terminating...\n");
   }
 
+  /* bail ignores behavior_on_error, always aborts */
   exit(198);
 }
 
+/* MALLOC ignores behavior_on_error -- if out of memory, we should quit */
 size_t bytes_mallocked=0;
 void *MALLOC(size_t size)
 {
@@ -92,7 +97,7 @@ void *MALLOC(size_t size)
 			if (fLog!=NULL)
 			  fprintf(fLog,error_message);
 
-			exit(200);
+                        exit(200);
 		}
 #endif
 #ifdef EAGAIN
@@ -116,7 +121,7 @@ void *MALLOC(size_t size)
 				if (fLog!=NULL)
 				  fprintf(fLog,error_message);
 
-			exit(201);
+                                exit(201);
 			}
 			else return ret;
 		}
@@ -136,7 +141,7 @@ void *MALLOC(size_t size)
 		if (fLog!=NULL)
 		  fprintf(fLog,error_message);
 
-		exit(202);
+                exit(202);
 	}
 	return ret;
 }
@@ -193,7 +198,8 @@ FILE *FOPEN(const char *file,const char *mode)
 		fprintf(stderr,error_message);
 		if (fLog!=NULL) fprintf(fLog,error_message);
 
-		exit(203);
+                if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
+                    exit(203);
 	}
 	return ret;
 }
@@ -243,7 +249,8 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
 		fprintf(stderr,error_message);
 		if (fLog!=NULL) fprintf(fLog,error_message);
 		
-		exit(205);
+                if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
+                    exit(205);
 	}
 	return ret;
 }
@@ -280,7 +287,8 @@ size_t FWRITE(const void *ptr,size_t size,size_t nitems,FILE *stream)
 		if (fLog!=NULL)
 		  fprintf(fLog,error_message);
 
-		exit(206);
+                if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
+                    exit(206);
 	}
 	return ret;
 }
