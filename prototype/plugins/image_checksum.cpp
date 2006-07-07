@@ -40,7 +40,7 @@ public:
 			"Checksum %d 10^0 unit: 0x%08x\n"
 			"Checksum %d 10^-3 milli: 0x%08x\n"
 			"Checksum %d 10^-6 micro: 0x%08x\n"
-			"Checksum %d 10^-9 nano: 0x%08x\n",
+			/*"Checksum %d 10^-9 nano: 0x%08x\n"*/,
 			bandNo,stat.size(),stat.get_min(),stat.get_max(),stat.getMean(),stat.getStddev(),
 			bandNo,checksum[0],
 			bandNo,checksum[1],

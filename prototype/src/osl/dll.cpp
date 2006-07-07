@@ -36,6 +36,7 @@ Note: MacOS 10.3 and later can just use the dlopen version...
 Link with "gcc -dynamiclib foo.cpp -o foo.so"
 */ 
 #include <mach-o/dyld.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 

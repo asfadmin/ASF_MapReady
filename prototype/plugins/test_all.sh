@@ -8,8 +8,12 @@ do
 	if [ $? -ne 0 ]
 	then
 	# Testing program died
-		cat $f.cur
-		exit 1
+		grep "$f" compile_errors_ok.txt 
+		if [ $? -ne 0 ]
+		then
+			cat $f.cur
+			exit 1
+		fi
 	fi
 	
 	if [ -r $f.good ]
