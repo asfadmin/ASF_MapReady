@@ -64,7 +64,7 @@ int asf_convert(int createflag, char *configFileName)
   meta_parameters *meta;
   char cmd[1024], line[255], batchConfig[255];
   char inFile[255], outFile[255], fileName[255];
-  char radiometry[255], projection[255];
+  char projection[255];
   char values[255], prefix[30], suffix[30];
   const int pid = getpid();
   int i;
@@ -161,14 +161,18 @@ int asf_convert(int createflag, char *configFileName)
         create_name(inFile, cfg->general->in_name, ".img");
         cfg->general->import = 0; // does not need import
       }
-      else if (strcmp(uc(cfg->import->format), "CEOS") == 0)
+      else if (strcmp(uc(cfg->import->format), "CEOS") == 0) {
         create_name(inFile, cfg->general->in_name, ".D");
+        if (!fileExists(inFile)) {
+            create_name(inFile, cfg->general->in_name, ".RAW");
+        }
+      }
       else if (strcmp(uc(cfg->import->format), "STF") == 0)
 	strcpy(inFile, cfg->general->in_name);
 
       // Data file existence check
       if (!fileExists(inFile))
-        asfPrintError("Import data file does not exist\n");
+          asfPrintError("Import data file '%s' does not exist!\n", inFile);
     }
 
     // Check whether everything in the [SAR processing] block is reasonable
@@ -287,16 +291,18 @@ int asf_convert(int createflag, char *configFileName)
 	flags[i] = FLAG_NOT_SET;
 
       // Radiometry
-      if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) == 0) {
-	flags[f_AMP] = FLAG_SET;
-      } else if (strncmp(uc(cfg->import->radiometry), "POWER_IMAGE", 11) == 0) {
-	flags[f_POWER] = FLAG_SET;
-      } else if (strncmp(uc(cfg->import->radiometry), "SIGMA_IMAGE", 11) == 0) {
-	flags[f_SIGMA] = FLAG_SET;
-      } else if (strncmp(uc(cfg->import->radiometry), "GAMMA_IMAGE", 11) == 0) {
-	flags[f_GAMMA] = FLAG_SET;
-      } else if (strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) == 0) {
-	flags[f_BETA] = FLAG_SET;
+      if (!cfg->general->sar_processing) {
+          if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) == 0) {
+              flags[f_AMP] = FLAG_SET;
+          } else if (strncmp(uc(cfg->import->radiometry), "POWER_IMAGE", 11) == 0) {
+              flags[f_POWER] = FLAG_SET;
+          } else if (strncmp(uc(cfg->import->radiometry), "SIGMA_IMAGE", 11) == 0) {
+              flags[f_SIGMA] = FLAG_SET;
+          } else if (strncmp(uc(cfg->import->radiometry), "GAMMA_IMAGE", 11) == 0) {
+              flags[f_GAMMA] = FLAG_SET;
+          } else if (strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) == 0) {
+              flags[f_BETA] = FLAG_SET;
+          }
       }
 
       // LUT
@@ -364,19 +370,19 @@ int asf_convert(int createflag, char *configFileName)
 
         ardop(params_in);
 
-	//check_return(ardop(options, inFile, outFile),
-	//	     "SAR processing data file (ardop)\n");
-
-	if (strcmp(radiometry, "") == 0)
+	if (strcmp(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE") == 0)
 	  sprintf(outFile, "tmp%i_sar_processing_amp", pid);
-	else if (strcmp(radiometry, "-power") == 0)
+	else if (strcmp(cfg->sar_processing->radiometry, "POWER_IMAGE") == 0)
 	  sprintf(outFile, "tmp%i_sar_processing_power", pid);
-	else if (strcmp(radiometry, "-sigma") == 0)
+	else if (strcmp(cfg->sar_processing->radiometry, "SIGMA_IMAGE") == 0)
 	  sprintf(outFile, "tmp%i_sar_processing_sigma", pid);
-	else if (strcmp(radiometry, "-gamma") == 0)
+	else if (strcmp(cfg->sar_processing->radiometry, "GAMMA_IMAGE") == 0)
 	  sprintf(outFile, "tmp%i_sar_processing_gamma", pid);
-	else if (strcmp(radiometry, "-beta") == 0)
+	else if (strcmp(cfg->sar_processing->radiometry, "BETA_IMAGE") == 0)
 	  sprintf(outFile, "tmp%i_sar_processing_beta", pid);
+        else
+            asfPrintError("Unexpected radiometry: %s\n", 
+                          cfg->sar_processing->radiometry);
       }
       else {
 	asfPrintStatus("Image has already been processed - skipping SAR processing step");

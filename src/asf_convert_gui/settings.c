@@ -390,7 +390,7 @@ settings_get_from_gui()
         gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(checkbutton_db));
 
     ret->process_to_level1 =
-        ret->data_type == INPUT_FORMAT_CEOS_LEVEL0 &&
+        ret->input_data_format == INPUT_FORMAT_CEOS_LEVEL0 &&
         gtk_toggle_button_get_active(
             GTK_TOGGLE_BUTTON(process_to_level1_checkbutton));
 
