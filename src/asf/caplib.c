@@ -191,12 +191,17 @@ FILE *FOPEN(const char *file,const char *mode)
 			if (fLog!=NULL) fprintf(fLog,error_message);
 		}
 
-		sprintf(error_message,
-			"* This file does not exist or cannot be opened.\n"
-			"* Please check the file name and try again.\n"
-			"**    Program terminating... Cannot open file.\n");
-		fprintf(stderr,error_message);
-		if (fLog!=NULL) fprintf(fLog,error_message);
+                sprintf(error_message,
+                        "* This file does not exist or cannot be opened.\n");
+
+                if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT) {
+                    strcat(error_message,
+                            "* Please check the file name and try again.\n"
+                            "**   Program terminating... Cannot open file.\n");
+                }
+
+                fprintf(stderr,error_message);
+                if (fLog!=NULL) fprintf(fLog,error_message);
 
                 if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
                     exit(203);
@@ -225,12 +230,20 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
 				"*    This program tried to read %i bytes past\n"
 				"* the end of file stream 0x%x.  You might want to\n"
 				"* check any image-size related parameters you passed\n"
-				"* to the program.\n"
-				"**    Program terminating... Attempted read past end of file.\n",
+				"* to the program.\n",
 				(int)size*nitems,(int)stream);
+
+                        if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
+                            strcat(error_message,
+                                   "**    Program terminating... Attempted read past end of file.\n");
+
 			fprintf(stderr,error_message);
 			if (fLog!=NULL)  fprintf(fLog,error_message);
-			exit(204);
+
+                        if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
+                            exit(204);
+                        else
+                            return ret;
 		}
 		
 		sprintf(error_message,
@@ -243,9 +256,14 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
 		if (fLog!=NULL) fprintf(fLog,error_message);
 
 		perror(NULL);
+
 		sprintf(error_message,
-			"* Note that this was NOT a read-past end of file error.\n"
-			"**   Program terminating... Error encounter while reading.\n");
+			"* Note that this was NOT a read-past end of file error.\n");
+
+                if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
+                    strcat(error_message,
+                           "**   Program terminating... Error encounter while reading.\n");
+
 		fprintf(stderr,error_message);
 		if (fLog!=NULL) fprintf(fLog,error_message);
 		
@@ -287,8 +305,8 @@ size_t FWRITE(const void *ptr,size_t size,size_t nitems,FILE *stream)
 		if (fLog!=NULL)
 		  fprintf(fLog,error_message);
 
-                if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
-                    exit(206);
+                /* write errors we will still make fatal */
+                exit(206);
 	}
 	return ret;
 }
