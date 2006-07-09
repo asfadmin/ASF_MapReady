@@ -2,17 +2,28 @@
 #
 # Microsoft Visual C++ Compiler "cl"
 #
-CXX="cl /nologo /GR /EHsc /DWIN32=1"
+#  Flag translations:
+#   /EHsc: Make C++ exception handling (and hence standard library) work
+#   /GR: Make C++ dynamic_cast work (instead of segfaulting)
+#   /MD: Link with MSVCRT.LIB, which prevents bizarre crashes in "fseek" when called from DLL.
+#   /DWIN32=1: Add a #define for "WIN32".  This is used to isolate windows-specific code.
+CXX="cl /nologo /EHsc /GR /MD /DWIN32=1"
+
+# /O2: Optimize heavily; /Ox: do sensible stuff; /GB: blended processor model
+OPT_O="/O2 /Ox /GB"
+
+# /RTC1: Runtime checks; /Z7: old debug info; /Zi: bloated .ilk/.pdb files; /Yd: bloated .obj files (nonfunctional!)
+# OPT_G="/RTC1 /Z7 /Zi /Yd "
+OPT_G="/RTC1"
+
 CFLAGS_ARCH=""
-DLL_PREP="sed -e 's/\.dll/.lib/g'"   # Link with .lib file, not .dll file.
 SHARED="/LD /link"
 LIBFLAG=""
 OUTFLAG="/o "
 OUTSUFFIX=".exe"
 RPATHS=""
-OPT_O="/GB"
-OPT_G="/RTC1 /Zi /Yd "
 LIBS=""
+DLL_PREP="sed -e 's/\.dll/.lib/g'"   # Link with .lib file, not .dll file.
 
 # Visual C++ spits out a ".obj" file in the current directory.
 Clean() {
@@ -20,7 +31,7 @@ Clean() {
 	then
 	# Remove temporary .obj files
 		OBJFILES=`echo $SOURCEFILES | sed -e 'sX[^ ]*/XXg' | sed -e 's/\.cpp/.obj/g'`
-		Do rm $OBJFILES
+#		Do rm $OBJFILES
 	fi
 }
 
