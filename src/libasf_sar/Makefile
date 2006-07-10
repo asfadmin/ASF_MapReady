@@ -6,6 +6,7 @@ CFLAGS := -Wall $(CFLAGS)
 
 OBJS = \
 	gr2sr.o \
+	sr2gr.o \
 	reskew_dem.o \
 	deskew_dem.o \
 	create_dem_grid.o \

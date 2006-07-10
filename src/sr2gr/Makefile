@@ -4,7 +4,8 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = $(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
@@ -12,8 +13,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
-OBJS  = sr2gr.o \
-	sr2gr_vec.o 
+OBJS  = sr2gr.o
 
 all: sr2gr clean
 

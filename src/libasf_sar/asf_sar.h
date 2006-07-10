@@ -9,12 +9,20 @@
 #define MASK_SHADOW 200.0
 #define MASK_NO_DEM_DATA -1.0
 
+/* Number of pixels added by create_dem_grid at the right edge of the 
+   image, to allow for height differences */
+#define DEM_GRID_RHS_PADDING 600
+
 #include <stdio.h>
 #include "poly.h"
 
 /* Prototypes from gr2sr.c */
 int gr2sr(const char *infile, const char *outfile);
 int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize);
+
+/* Prototypes from sr2gr.c */
+int sr2gr(const char *infile, const char *outfile);
+int sr2gr_pixsiz(const char *infile, const char *outfile, float srPixSize);
 
 /* Prototypes from reskew_dem.c */
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
