@@ -96,7 +96,7 @@ static int maxBreakLen=5;
 #define phi2grX(phi) (((phi)-minPhi)*phiMul)
 #define grX2phi(gr) (minPhi+(gr)/phiMul)
 
-static float sr2gr(float srX,float height)
+static float SR2GR(float srX,float height)
 {
 	double dx,srXSeaLevel=srX-height*heightShiftSR[(int)srX];
 	int ix;
@@ -130,7 +130,7 @@ static void dem_sr2gr(float *inBuf,float *outBuf,int ns, int fill_holes)
 	for (inX=0;inX<ns;inX++)
 	{
 		float height=inBuf[inX];
-		outX=(int)sr2gr((float)inX,height);
+		outX=(int)SR2GR((float)inX,height);
 		if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
 		{
                     int cond;
