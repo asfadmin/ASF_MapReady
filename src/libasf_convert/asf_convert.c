@@ -335,7 +335,8 @@ int asf_convert(int createflag, char *configFileName)
 
       update_status(cfg, "Running ArDop...");
 
-      // Check whether the input file is a raw image. If not, skip the SAR processing step
+      // Check whether the input file is a raw image.
+      // If not, skip the SAR processing step
       meta = meta_read(outFile);
       if (meta->general->image_data_type == RAW_IMAGE) {
 
@@ -383,6 +384,17 @@ int asf_convert(int createflag, char *configFileName)
         else
             asfPrintError("Unexpected radiometry: %s\n", 
                           cfg->sar_processing->radiometry);
+
+        // If we are not going to be terrain correcting, get the output
+        // from ardop into ground range (terrain correction would do that
+        // for us).
+        if (!cfg->general->terrain_correct)
+        {
+            asfPrintStatus("Converting to ground range.\n");
+            sprintf(inFile, "%s", outFile);
+            sprintf(outFile, "%s_gr", inFile);
+            sr2gr(inFile, outFile);
+        }
       }
       else {
 	asfPrintStatus("Image has already been processed - skipping SAR processing step");
