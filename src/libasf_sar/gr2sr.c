@@ -29,7 +29,8 @@ BUGS:
 
 #define VERSION 0.1
 
-static void gr2sr_vec(meta_parameters *meta, float srinc, float *gr2sr)
+static void gr2sr_vec(meta_parameters *meta, float srinc, float *gr2sr,
+                      int apply_pp_earth_radius_fix)
 {
   int    i;             /* Counter                                       */
   float  r_sc;          /* radius from center of the earth for satellite */
@@ -43,8 +44,12 @@ static void gr2sr_vec(meta_parameters *meta, float srinc, float *gr2sr)
   /* Radius from the center of the earth to the spacecraft, slant range to
      first pixel, and radius of the earth */
   r_sc = meta_get_sat_height(meta, 0, 0);
-  r_close = meta_get_slant(meta,0,0);  
-  r_earth = meta_get_earth_radius_pp(meta);
+  r_close = meta_get_slant(meta,0,0);
+
+  if (apply_pp_earth_radius_fix)
+      r_earth = meta_get_earth_radius_pp(meta);
+  else
+      r_earth = meta_get_earth_radius(meta,0,0);
 
   /* Set the ground range and slant range increments */
   grinc = meta->general->x_pixel_size;
@@ -79,12 +84,8 @@ static char * replExt(const char *filename, const char *ext)
   return ret;
 }
 
-int gr2sr(const char *infile, const char *outfile)
-{
-  return gr2sr_pixsiz(infile, outfile, -1);
-}
-
-int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
+static int gr2sr_pixsiz_imp(const char *infile, const char *outfile,
+                            float srPixSize, int apply_pp_earth_radius_fix)
 {
   meta_parameters *inMeta, *outMeta;
 
@@ -132,7 +133,7 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
   np = inMeta->general->sample_count;
 
   onl=nl;
-  gr2sr_vec(inMeta, srPixSize, gr2sr);
+  gr2sr_vec(inMeta, srPixSize, gr2sr, apply_pp_earth_radius_fix);
   
   /* Determine the output image size */
   onp = 0;
@@ -195,5 +196,22 @@ int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize)
   FREE(oimgfile);
 
   return TRUE;
+}
+
+int gr2sr(const char *infile, const char *outfile)
+{
+  return gr2sr_pixsiz(infile, outfile, -1);
+}
+
+int gr2sr_pixsiz(const char *infile, const char *outfile,
+                 float srPixSize)
+{
+    return gr2sr_pixsiz_imp(infile, outfile, srPixSize, FALSE);
+}
+
+int gr2sr_pixsiz_pp(const char *infile, const char *outfile,
+                    float srPixSize)
+{
+    return gr2sr_pixsiz_imp(infile, outfile, srPixSize, TRUE);
 }
 

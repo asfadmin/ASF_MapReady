@@ -321,7 +321,17 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 			   pixel_size);
     }
     resampleFile = outputName(output_dir, sarFile, "_resample");
-    resample_to_square_pixsiz(sarFile, resampleFile, pixel_size);
+
+    // In slant range, must scale based on azimuth.
+    // In ground range, can resample directly to the proper pixel size
+    if (metaSAR->sar->image_type == 'S') {
+        double scalfact;
+        scalfact = metaSAR->general->y_pixel_size/pixel_size;
+        resample(sarFile, resampleFile, scalfact, scalfact);
+    } else {
+        resample_to_square_pixsiz(sarFile, resampleFile, pixel_size);
+    }
+
     meta_free(metaSAR);
     metaSAR = meta_read(resampleFile);
 
@@ -344,7 +354,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
        meta_get_slant(metaSAR,0,0)) / metaSAR->general->sample_count;
     asfPrintStatus("Converting to Slant Range...\n");
 
-    gr2sr_pixsiz(resampleFile, srFile, sr_pixel_size);
+    gr2sr_pixsiz_pp(resampleFile, srFile, sr_pixel_size);
 
     meta_free(metaSAR);
     metaSAR = meta_read(srFile);
@@ -403,11 +413,12 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       // The adjustment of the DEM width by 400 pixels (originated in
       // create_dem_grid) needs to be factored in.
       demClipped = appendSuffix(demFile, "_clip");
-      demWidth = metaSAR->general->sample_count + 400;
+      demWidth = metaSAR->general->sample_count + DEM_GRID_RHS_PADDING;
       demHeight = metaSAR->general->line_count;
       
       asfPrintStatus("Clipping DEM to %dx%d LxS using polynomial fit...\n",
 		     demHeight, demWidth);
+
       remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped);
       poly_delete(fwX);
       poly_delete(fwY);

@@ -11,7 +11,7 @@
 
 /* Number of pixels added by create_dem_grid at the right edge of the 
    image, to allow for height differences */
-#define DEM_GRID_RHS_PADDING 600
+#define DEM_GRID_RHS_PADDING 400
 
 #include <stdio.h>
 #include "poly.h"
@@ -19,6 +19,8 @@
 /* Prototypes from gr2sr.c */
 int gr2sr(const char *infile, const char *outfile);
 int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize);
+int gr2sr_pixsiz_pp(const char *infile, const char *outfile,
+                    float srPixSize);
 
 /* Prototypes from sr2gr.c */
 int sr2gr(const char *infile, const char *outfile);

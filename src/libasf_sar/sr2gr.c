@@ -139,8 +139,6 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
             asfPrintError("sr2gr only works with slant range images!\n");
 	}
 
-        asfPrintStatus("Converting from Slant to Ground range...\n");
-
       	oldX = in_meta->general->x_pixel_size * in_meta->sar->sample_increment;
 	oldY = in_meta->general->y_pixel_size * in_meta->sar->line_increment;
 
@@ -150,9 +148,9 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
             grPixSize = oldY;
 
 	/*Update metadata for new pixel size*/
-	out_meta->sar->time_shift  += ((in_meta->general->start_line+1)
+	out_meta->sar->time_shift  += ((in_meta->general->start_line)
 				* in_meta->sar->azimuth_time_per_pixel);
-	out_meta->sar->slant_shift += ((in_meta->general->start_sample+1)
+	out_meta->sar->slant_shift -= ((in_meta->general->start_sample)
 				* in_meta->general->x_pixel_size);
 	out_meta->general->start_line   = 0.0;
 	out_meta->general->start_sample = 0.0;
@@ -188,11 +186,6 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 	
 	fpi = fopenImage(infile_name,"rb");
 	fpo = fopenImage(outfile_name,"wb");
-	
-	asfPrintStatus(" Input image is %s\n",infile_name);
-	asfPrintStatus(" Input  lines, samples: %i %i\n",in_nl,in_np);
-	asfPrintStatus(" Output image is %s\n",outfile_name);
-        asfPrintStatus(" Output lines, samples: %i %i\n\n",out_nl,out_np);
 	
 	for (ii=0; ii<MAX_IMG_SIZE; ii++)
 	{
@@ -246,7 +239,6 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float grPixSize)
 	FCLOSE(fpi);
 	FCLOSE(fpo);
 	
-	asfPrintStatus("\rFinished. Wrote %i lines.\n\n",line);
         return TRUE;
 }
 

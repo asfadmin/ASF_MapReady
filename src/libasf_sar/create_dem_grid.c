@@ -97,7 +97,7 @@ static int getNextSarPt(meta_parameters *meta,int gridNo,int *x,int *y,
   xtmp = gridNo % gridResX;
   ytmp = gridNo / gridResX;
 
-  *x = 1 + (float) xtmp / (float) (gridResX-1) * (width+400);
+  *x = 1 + (float) xtmp / (float) (gridResX-1) * (width+DEM_GRID_RHS_PADDING);
   *y = 1 + (float) ytmp / (float) (gridResY-1) * (height);
   
   return 1;
