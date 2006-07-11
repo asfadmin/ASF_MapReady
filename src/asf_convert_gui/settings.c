@@ -926,6 +926,14 @@ settings_get_output_format_extension(const Settings *s)
     switch (s->input_data_format)
     {
     default:
+    case INPUT_FORMAT_CEOS_LEVEL0:
+        if (!s->process_to_level1) 
+        {
+            out_extension = "raw";
+            break;
+        }
+        /* else, fall through */
+
     case INPUT_FORMAT_CEOS_LEVEL1:
         if (s->export_is_checked)
         {
@@ -965,7 +973,6 @@ settings_get_output_format_extension(const Settings *s)
         break;
 
     case INPUT_FORMAT_STF:
-    case INPUT_FORMAT_CEOS_LEVEL0:
         out_extension = "raw";
         break;
     }
