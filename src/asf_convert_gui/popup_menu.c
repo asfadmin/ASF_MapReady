@@ -1,10 +1,14 @@
 #include "asf_convert_gui.h"
+#include <unistd.h>
+#include <asf.h>
+#include <asf_meta.h>
 
 static const int popup_menu_item_remove = 0;
 static const int popup_menu_item_process = 1;
 static const int popup_menu_item_display_ceos_metadata = 4;
 static const int popup_menu_item_display_asf_metadata = 5;
 static const int popup_menu_item_view_output = 6;
+static const int popup_menu_item_google_earth = 7;
 
 void
 show_please_select_message()
@@ -61,6 +65,7 @@ enable_toolbar_buttons(gboolean enable_view_output,
     GtkWidget *display_ceos_button;
     GtkWidget *display_asf_button;
     GtkWidget *view_output_button;
+    GtkWidget *google_earth_button;
 
     rename_button =
       glade_xml_get_widget(glade_xml, "rename_button");
@@ -72,12 +77,15 @@ enable_toolbar_buttons(gboolean enable_view_output,
       glade_xml_get_widget(glade_xml, "display_asf_button");
     view_output_button =
       glade_xml_get_widget(glade_xml, "view_output_button");
+    google_earth_button =
+      glade_xml_get_widget(glade_xml, "google_earth_button");
 
-    gtk_widget_set_sensitive(view_output_button, TRUE);
-    gtk_widget_set_sensitive(view_output_button, TRUE);
+    gtk_widget_set_sensitive(rename_button, TRUE);
+    gtk_widget_set_sensitive(jump_button, TRUE);
     gtk_widget_set_sensitive(view_output_button, enable_view_output);
     gtk_widget_set_sensitive(display_asf_button, enable_display_asf_metadata);
     gtk_widget_set_sensitive(display_ceos_button, enable_display_ceos_metadata);
+    gtk_widget_set_sensitive(google_earth_button, TRUE);
 }
 
 static void
@@ -113,6 +121,7 @@ disable_toolbar_buttons_for_multiple_selected()
     GtkWidget *display_ceos_button;
     GtkWidget *display_asf_button;
     GtkWidget *view_output_button;
+    GtkWidget *google_earth_button;
 
     rename_button =
       glade_xml_get_widget(glade_xml, "rename_button");
@@ -124,12 +133,15 @@ disable_toolbar_buttons_for_multiple_selected()
       glade_xml_get_widget(glade_xml, "display_asf_button");
     view_output_button =
       glade_xml_get_widget(glade_xml, "view_output_button");
+    google_earth_button =
+      glade_xml_get_widget(glade_xml, "google_earth_button");
 
     gtk_widget_set_sensitive(rename_button, FALSE);
     gtk_widget_set_sensitive(jump_button, FALSE);
     gtk_widget_set_sensitive(display_asf_button, FALSE);
     gtk_widget_set_sensitive(display_ceos_button, FALSE);
     gtk_widget_set_sensitive(view_output_button, FALSE);
+    gtk_widget_set_sensitive(google_earth_button, FALSE);
 }
 
 static void
@@ -604,6 +616,173 @@ handle_view_output()
     return TRUE;
 }
 
+static char *
+get_basename(const char *in)
+{
+   char *dir = MALLOC(sizeof(char)*strlen(in));
+   char *file = MALLOC(sizeof(char)*strlen(in));
+   split_dir_and_file(in,dir,file);
+   free(dir);
+   char *ext=findExt(file);
+   if (ext) *ext = '\0';
+   return file;
+}
+
+static int
+handle_google_earth()
+{
+    GtkWidget *files_list;
+    GtkTreeModel * model;
+    GtkTreeSelection *selection;
+    GList * selected_rows, * i;
+    GList * refs;
+    FILE *kml_file;
+    char kml_filename[256];
+    int pid;
+    gchar *ge;
+
+    ge = find_in_path("googleearth");
+    if (!ge)
+    {
+       message_box("Couldn't find path to googleearth!");
+       return FALSE;
+    }
+
+    LSL;
+    files_list = glade_xml_get_widget(glade_xml, "files_list");
+    selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+    model = GTK_TREE_MODEL(list_store);
+
+    selected_rows = gtk_tree_selection_get_selected_rows(
+        selection, &model);
+
+    refs = NULL;
+    i = selected_rows;
+
+    if (!selected_rows)
+    {
+        LSU;
+	show_please_select_message();
+	return FALSE;
+    }
+
+    while (i)
+    {
+        GtkTreePath * path;
+        GtkTreeRowReference * ref;
+
+        path = (GtkTreePath *) i->data;
+        ref = gtk_tree_row_reference_new(GTK_TREE_MODEL(list_store), path);
+
+        refs = g_list_append(refs, ref);
+
+        i = g_list_next(i);
+    }
+
+    i = refs;
+
+    pid = getpid();
+    sprintf(kml_filename, "tmp%d.kml", pid);
+    kml_file = fopen_tmp_file(kml_filename, "wt");
+    fprintf(kml_file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    fprintf(kml_file, "<kml xmlns=\"http://earth.google.com/kml/2.0\">\n");
+
+    while (i)
+    {
+        GtkTreePath * path;
+        GtkTreeIter iter;
+        GtkTreeRowReference * ref;
+        gchar * out_name;
+	gchar * metadata_name;
+	char * base_output_name;
+	meta_parameters *meta;
+	int nl, ns;
+        double lat, lon;
+
+        ref = (GtkTreeRowReference *) i->data;
+        path = gtk_tree_row_reference_get_path(ref);
+        gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path);
+        gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
+            COL_OUTPUT_FILE, &out_name, -1);
+
+	metadata_name = build_asf_metadata_filename(out_name);
+	base_output_name = get_basename(out_name);
+
+	meta = meta_read(metadata_name);
+
+	nl = meta->general->line_count;
+	ns = meta->general->sample_count;
+
+	fprintf(kml_file, "<Placemark>\n");
+	fprintf(kml_file, "  <description>\n");
+	fprintf(kml_file, "    sensor/mode: %s/%s\n",
+		meta->general->sensor, meta->general->mode);
+        fprintf(kml_file, "    orbit/frame: %d/%d\n",
+		meta->general->orbit, meta->general->frame);
+        fprintf(kml_file, "  </description>\n");
+	fprintf(kml_file, "  <name>%s</name>\n", base_output_name);
+        fprintf(kml_file, "  <LookAt>\n");
+        fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
+		meta->general->center_longitude);
+        fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
+		meta->general->center_latitude);
+        fprintf(kml_file, "    <range>400000</range>\n");
+        fprintf(kml_file, "    <tilt>45</tilt>\n");
+        fprintf(kml_file, "    <heading>50</heading>\n");
+        fprintf(kml_file, "  </LookAt>\n");
+        fprintf(kml_file, "  <visibility>1</visibility>\n");
+        fprintf(kml_file, "  <open>1</open>\n");
+        fprintf(kml_file, "  <Style>\n");
+        fprintf(kml_file, "    <LineStyle>\n");
+        fprintf(kml_file, "      <color>ff00ffff</color>\n");
+        fprintf(kml_file, "    </LineStyle>\n");
+        fprintf(kml_file, "    <PolyStyle>\n");
+        fprintf(kml_file, "      <color>7f00ff00</color>\n");
+        fprintf(kml_file, "    </PolyStyle>\n");
+        fprintf(kml_file, "  </Style>\n");
+        fprintf(kml_file, "  <LineString>\n");
+        fprintf(kml_file, "    <extrude>1</extrude>\n");
+        fprintf(kml_file, "    <tessellate>1</tessellate>\n");
+        fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
+        fprintf(kml_file, "    <coordinates>\n");
+
+	meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
+	fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
+	meta_get_latLon(meta, nl, 0, 0, &lat, &lon);
+	fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
+	meta_get_latLon(meta, nl, ns, 0, &lat, &lon);
+	fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
+	meta_get_latLon(meta, 0, ns, 0, &lat, &lon);
+	fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
+	meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
+	fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
+
+        fprintf(kml_file, "    </coordinates>\n");
+        fprintf(kml_file, "  </LineString>\n");
+        fprintf(kml_file, "</Placemark>\n");
+
+	meta_free(meta);
+	free(base_output_name);
+	g_free(metadata_name);
+        i = g_list_next(i);
+    }
+
+    fprintf(kml_file, "</kml>\n");
+    fclose(kml_file);
+
+    asfSystem("%s %s/%s", ge, get_asf_tmp_dir(), kml_filename);
+
+    g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
+    g_list_free(selected_rows);
+
+    g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
+    g_list_free(refs);
+
+    unlink_tmp_file(kml_filename);
+    LSU;
+    return TRUE;
+}
+
 SIGNAL_CALLBACK void
 on_remove_button_clicked(GtkWidget *widget)
 {
@@ -646,6 +825,12 @@ on_view_output_button_clicked(GtkWidget *widget)
   handle_view_output();
 }
 
+SIGNAL_CALLBACK void
+on_google_earth_button_clicked(GtkWidget *widget)
+{
+  handle_google_earth();
+}
+
 SIGNAL_CALLBACK gint
 popup_menu_jump(GtkWidget *widget, GdkEvent *event)
 {
@@ -686,6 +871,12 @@ SIGNAL_CALLBACK gint
 popup_menu_view_output(GtkWidget *widget, GdkEvent *event)
 {
   return handle_view_output();
+}
+
+SIGNAL_CALLBACK gint
+popup_menu_google_earth(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_google_earth();
 }
 
 void
@@ -738,6 +929,12 @@ setup_popup_menu()
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_view_output), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View With Google Earth");
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+        G_CALLBACK(popup_menu_google_earth), NULL);
     gtk_widget_show(item);
 
     gtk_widget_show(menu);
