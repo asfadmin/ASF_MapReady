@@ -638,13 +638,15 @@ handle_google_earth()
     GList * refs;
     FILE *kml_file;
     char kml_filename[256];
-    int pid;
+    int pid, first = TRUE;
     gchar *ge;
+    int n_ok = 0;
+    int n_bad = 0;
 
     ge = find_in_path("googleearth");
     if (!ge)
     {
-       message_box("Couldn't find path to googleearth!");
+       message_box("Couldn't find path to googleearth!  Is it installed?");
        return FALSE;
     }
 
@@ -680,12 +682,7 @@ handle_google_earth()
     }
 
     i = refs;
-
     pid = getpid();
-    sprintf(kml_filename, "tmp%d.kml", pid);
-    kml_file = fopen_tmp_file(kml_filename, "wt");
-    fprintf(kml_file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    fprintf(kml_file, "<kml xmlns=\"http://earth.google.com/kml/2.0\">\n");
 
     while (i)
     {
@@ -694,10 +691,8 @@ handle_google_earth()
         GtkTreeRowReference * ref;
         gchar * out_name;
 	gchar * metadata_name;
-	char * base_output_name;
 	meta_parameters *meta;
 	int nl, ns;
-        double lat, lon;
 
         ref = (GtkTreeRowReference *) i->data;
         path = gtk_tree_row_reference_get_path(ref);
@@ -705,80 +700,135 @@ handle_google_earth()
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
             COL_OUTPUT_FILE, &out_name, -1);
 
+        if (first)
+        {
+            char *output_dir = MALLOC(sizeof(char) * (strlen(out_name) + 1));
+            char *tmp = MALLOC(sizeof(char) * (strlen(out_name) + 1));
+            split_dir_and_file(out_name, output_dir, tmp);
+            free(tmp);
+
+            sprintf(kml_filename, "%stmp%d.kml", output_dir, pid);
+            printf("kml file: %s\n", kml_filename);
+            kml_file = fopen(kml_filename, "wt");
+            if (!kml_file)
+            {
+                message_box("Couldn't open kml file!");
+
+                g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
+                g_list_free(selected_rows);
+                
+                g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
+                g_list_free(refs);
+                
+                LSU;
+                return FALSE;
+            }
+
+            fprintf(kml_file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            fprintf(kml_file,
+                    "<kml xmlns=\"http://earth.google.com/kml/2.0\">\n");
+            fprintf(kml_file, "<Document>\n");
+
+            first = FALSE;
+        }
+
 	metadata_name = build_asf_metadata_filename(out_name);
-	base_output_name = get_basename(out_name);
+        
+        if (fileExists(metadata_name)) 
+        {
+            double lat, lon;
+            char *base_output_name = get_basename(out_name);
 
-	meta = meta_read(metadata_name);
+            meta = meta_read(metadata_name);
+            
+            nl = meta->general->line_count;
+            ns = meta->general->sample_count;
+            
+            fprintf(kml_file, "<Placemark>\n");
+            fprintf(kml_file, "  <description>\n");
+            fprintf(kml_file, "    sensor/mode: %s/%s\n",
+                    meta->general->sensor, meta->general->mode);
+            fprintf(kml_file, "    orbit/frame: %d/%d\n",
+                    meta->general->orbit, meta->general->frame);
+            fprintf(kml_file, "  </description>\n");
+            fprintf(kml_file, "  <name>%s</name>\n", base_output_name);
+            fprintf(kml_file, "  <LookAt>\n");
+            fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
+                    meta->general->center_longitude);
+            fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
+                    meta->general->center_latitude);
+            fprintf(kml_file, "    <range>400000</range>\n");
+            fprintf(kml_file, "    <tilt>45</tilt>\n");
+            fprintf(kml_file, "    <heading>50</heading>\n");
+            fprintf(kml_file, "  </LookAt>\n");
+            fprintf(kml_file, "  <visibility>1</visibility>\n");
+            fprintf(kml_file, "  <open>1</open>\n");
+            fprintf(kml_file, "  <Style>\n");
+            fprintf(kml_file, "    <LineStyle>\n");
+            fprintf(kml_file, "      <color>ff00ffff</color>\n");
+            fprintf(kml_file, "    </LineStyle>\n");
+            fprintf(kml_file, "    <PolyStyle>\n");
+            fprintf(kml_file, "      <color>7f00ff00</color>\n");
+            fprintf(kml_file, "    </PolyStyle>\n");
+            fprintf(kml_file, "  </Style>\n");
+            fprintf(kml_file, "  <LineString>\n");
+            fprintf(kml_file, "    <extrude>1</extrude>\n");
+            fprintf(kml_file, "    <tessellate>1</tessellate>\n");
+            fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
+            fprintf(kml_file, "    <coordinates>\n");
+            
+            meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
+            fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
+            meta_get_latLon(meta, nl, 0, 0, &lat, &lon);
+            fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
+            meta_get_latLon(meta, nl, ns, 0, &lat, &lon);
+            fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
+            meta_get_latLon(meta, 0, ns, 0, &lat, &lon);
+            fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
+            meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
+            fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
+            
+            fprintf(kml_file, "    </coordinates>\n");
+            fprintf(kml_file, "  </LineString>\n");
+            fprintf(kml_file, "</Placemark>\n");
+            
+            meta_free(meta);
+            free(base_output_name);
 
-	nl = meta->general->line_count;
-	ns = meta->general->sample_count;
+            ++n_ok;
+        }
+        else
+        {
+            ++n_bad;
+        }
 
-	fprintf(kml_file, "<Placemark>\n");
-	fprintf(kml_file, "  <description>\n");
-	fprintf(kml_file, "    sensor/mode: %s/%s\n",
-		meta->general->sensor, meta->general->mode);
-        fprintf(kml_file, "    orbit/frame: %d/%d\n",
-		meta->general->orbit, meta->general->frame);
-        fprintf(kml_file, "  </description>\n");
-	fprintf(kml_file, "  <name>%s</name>\n", base_output_name);
-        fprintf(kml_file, "  <LookAt>\n");
-        fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
-		meta->general->center_longitude);
-        fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
-		meta->general->center_latitude);
-        fprintf(kml_file, "    <range>400000</range>\n");
-        fprintf(kml_file, "    <tilt>45</tilt>\n");
-        fprintf(kml_file, "    <heading>50</heading>\n");
-        fprintf(kml_file, "  </LookAt>\n");
-        fprintf(kml_file, "  <visibility>1</visibility>\n");
-        fprintf(kml_file, "  <open>1</open>\n");
-        fprintf(kml_file, "  <Style>\n");
-        fprintf(kml_file, "    <LineStyle>\n");
-        fprintf(kml_file, "      <color>ff00ffff</color>\n");
-        fprintf(kml_file, "    </LineStyle>\n");
-        fprintf(kml_file, "    <PolyStyle>\n");
-        fprintf(kml_file, "      <color>7f00ff00</color>\n");
-        fprintf(kml_file, "    </PolyStyle>\n");
-        fprintf(kml_file, "  </Style>\n");
-        fprintf(kml_file, "  <LineString>\n");
-        fprintf(kml_file, "    <extrude>1</extrude>\n");
-        fprintf(kml_file, "    <tessellate>1</tessellate>\n");
-        fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
-        fprintf(kml_file, "    <coordinates>\n");
-
-	meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
-	fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
-	meta_get_latLon(meta, nl, 0, 0, &lat, &lon);
-	fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
-	meta_get_latLon(meta, nl, ns, 0, &lat, &lon);
-	fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
-	meta_get_latLon(meta, 0, ns, 0, &lat, &lon);
-	fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
-	meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
-	fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
-
-        fprintf(kml_file, "    </coordinates>\n");
-        fprintf(kml_file, "  </LineString>\n");
-        fprintf(kml_file, "</Placemark>\n");
-
-	meta_free(meta);
-	free(base_output_name);
 	g_free(metadata_name);
         i = g_list_next(i);
     }
 
+    fprintf(kml_file, "</Document>\n");
     fprintf(kml_file, "</kml>\n");
     fclose(kml_file);
 
-    asfSystem("%s %s/%s", ge, get_asf_tmp_dir(), kml_filename);
+    if (n_bad > 0)
+    {
+        message_box("Not all of the selected images had metadata\n"
+                    "files available.  To view in Google Earth, the\n"
+                    "data needs to be imported first.");
+    }
 
+    if (n_ok > 0)
+    {
+        asfSystem("%s %s", ge, kml_filename);
+    }
+    
     g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
     g_list_free(selected_rows);
 
     g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
     g_list_free(refs);
 
-    unlink_tmp_file(kml_filename);
+    //unlink(kml_filename);
     LSU;
     return TRUE;
 }
