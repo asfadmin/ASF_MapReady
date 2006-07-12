@@ -79,50 +79,54 @@ BUGS:
 #include "asf_reporting.h"
 #include "asf_sar.h"
 
-static int numLines, numSamples;
-static double grPixelSize;
+struct deskew_dem_data {
+        int numLines, numSamples;
+        double grPixelSize;
+        double *slantGR;/*Slant range pixel #*/
+        double *heightShiftGR;
+        double *heightShiftSR;
+        double *groundSR;/*Ground range pixel #*/
+        double *slantRangeSqr,*slantRange;
+        double *incidAng,*sinIncidAng,*cosIncidAng;
+        double minPhi, maxPhi, phiMul;
+	double *cosineScale;
+};
 
-static double *slantGR;/*Slant range pixel #*/
-static double *heightShiftGR;
-static double *heightShiftSR;
-static double *groundSR;/*Ground range pixel #*/
-static double *slantRangeSqr,*slantRange;
-static double *incidAng,*sinIncidAng,*cosIncidAng;
-static double minPhi, maxPhi, phiMul;
-static float badDEMht=0.0;
+static const float badDEMht=0.0;
 //static int maxBreakLen=20;
-static int maxBreakLen=5;
+static const int maxBreakLen=5;
 
-#define phi2grX(phi) (((phi)-minPhi)*phiMul)
-#define grX2phi(gr) (minPhi+(gr)/phiMul)
+#define phi2grX(phi) (((phi)-d->minPhi)*d->phiMul)
+#define grX2phi(gr) (d->minPhi+(gr)/d->phiMul)
 
-static float SR2GR(float srX,float height)
+static float SR2GR(struct deskew_dem_data *d, float srX, float height)
 {
-	double dx,srXSeaLevel=srX-height*heightShiftSR[(int)srX];
+	double dx,srXSeaLevel=srX-height*d->heightShiftSR[(int)srX];
 	int ix;
     /*Prevent ix index (and ix+1) from leaving the bounds of allotted memory*/
 	if (srXSeaLevel<0) srXSeaLevel=0;
-	if (srXSeaLevel>=numSamples-1)  srXSeaLevel=numSamples-2;
+	if (srXSeaLevel>=d->numSamples-1)  srXSeaLevel=d->numSamples-2;
 	ix=(int)srXSeaLevel;
 	dx=srXSeaLevel-ix;
     /*Linear interpolation on groundSR array*/
-	return groundSR[ix]+dx*(groundSR[ix+1]-groundSR[ix]);
+	return d->groundSR[ix]+dx*(d->groundSR[ix+1]-d->groundSR[ix]);
 }
 
-static float dem_gr2sr(float grX,float height)
+static float dem_gr2sr(struct deskew_dem_data *d,float grX,float height)
 {
-	double dx,grXSeaLevel=grX-height*heightShiftGR[(int)grX];
+	double dx,grXSeaLevel=grX-height*d->heightShiftGR[(int)grX];
 	int ix;
     /*Prevent ix index (and ix+1) from leaving the bounds of allotted memory*/
 	if (grXSeaLevel<0) grXSeaLevel=0;
-	if (grXSeaLevel>=numSamples-1)  grXSeaLevel=numSamples-2;
+	if (grXSeaLevel>=d->numSamples-1)  grXSeaLevel=d->numSamples-2;
 	ix=(int)grXSeaLevel;
 	dx=grXSeaLevel-ix;
     /*Linear interpolation on slantGR array*/
-	return slantGR[ix]+dx*(slantGR[ix+1]-slantGR[ix]);
+	return d->slantGR[ix]+dx*(d->slantGR[ix+1]-d->slantGR[ix]);
 }
 
-static void dem_sr2gr(float *inBuf,float *outBuf,int ns, int fill_holes)
+static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
+                      int ns, int fill_holes)
 {
 	int outX=0,inX,xInterp;
 	int lastOutX=-1;
@@ -130,7 +134,7 @@ static void dem_sr2gr(float *inBuf,float *outBuf,int ns, int fill_holes)
 	for (inX=0;inX<ns;inX++)
 	{
 		float height=inBuf[inX];
-		outX=(int)SR2GR((float)inX,height);
+		outX=(int)SR2GR(d,(float)inX,height);
 		if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
 		{
                     int cond;
@@ -194,11 +198,12 @@ static void dem_interp_col(float *demLine,int ns,int nl)
 #undef buf
 }
 
-static double calc_ranges(meta_parameters *meta)
+static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
 {
 	int x;
 	double slantFirst,slantPer;
 	double er=meta_get_earth_radius(meta, meta->general->line_count/2, meta->general->sample_count/2);
+	//double er=meta_get_earth_radius_pp(meta);
 	double satHt=meta_get_sat_height(meta, meta->general->line_count/2, meta->general->sample_count/2);
 	double saved_ER=er;
 	double er2her2,phi,phiAtSeaLevel,slantRng;
@@ -208,22 +213,25 @@ static double calc_ranges(meta_parameters *meta)
 	slantFirst+=slantPer*meta->general->start_sample+1;
 	slantPer*=meta->sar->sample_increment;
 	er2her2=er*er-satHt*satHt;
-	minPhi=acos((satHt*satHt+er*er-slantFirst*slantFirst)/(2.0*satHt*er));
+	d->minPhi=acos((satHt*satHt+er*er-slantFirst*slantFirst)/
+                       (2.0*satHt*er));
 
 /*Compute arrays indexed by slant range pixel:*/
 	for (x=0;x<ns;x++)
 	{
 	/*Precompute slant range for SR pixel x.*/
-		slantRange[x]=slantFirst+x*slantPer;
-		slantRangeSqr[x]=slantRange[x]*slantRange[x];
+		d->slantRange[x]=slantFirst+x*slantPer;
+		d->slantRangeSqr[x]=d->slantRange[x]*d->slantRange[x];
 	/*Compute incidence angle for SR pixel x.*/
-		incidAng[x]=M_PI-acos((slantRangeSqr[x]+er2her2)/(2.0*er*slantRange[x]));
-		sinIncidAng[x]=sin(incidAng[x]);
-		cosIncidAng[x]=cos(incidAng[x]);
+		d->incidAng[x]=M_PI-acos((d->slantRangeSqr[x]+er2her2)/
+                                         (2.0*er*d->slantRange[x]));
+		d->sinIncidAng[x]=sin(d->incidAng[x]);
+		d->cosIncidAng[x]=cos(d->incidAng[x]);
 	}
 
-	maxPhi=acos((satHt*satHt+er*er-slantRangeSqr[ns-1])/(2.0*satHt*er));
-	phiMul=(ns-1)/(maxPhi-minPhi);
+	d->maxPhi=acos((satHt*satHt+er*er-d->slantRangeSqr[ns-1])/
+                       (2.0*satHt*er));
+	d->phiMul=(ns-1)/(d->maxPhi-d->minPhi);
 
 /*Compute arrays indexed by ground range pixel: slantGR and heightShiftGR*/
 	for (x=0;x<ns;x++)
@@ -231,36 +239,35 @@ static double calc_ranges(meta_parameters *meta)
 		er=saved_ER;
 		phiAtSeaLevel=grX2phi(x);
 		slantRng=sqrt(satHt*satHt+er*er-2.0*satHt*er*cos(phiAtSeaLevel));
-		slantGR[x]=(slantRng-slantFirst)/slantPer;
+		d->slantGR[x]=(slantRng-slantFirst)/slantPer;
 		er+=1000.0;
 		phi=acos((satHt*satHt+er*er-slantRng*slantRng)/(2*satHt*er));
-
-		heightShiftGR[x]=(phi2grX(phi)-x)/1000.0;
+		d->heightShiftGR[x]=(phi2grX(phi)-x)/1000.0;
 	}
 /*Compute arrays indexed by slant range pixel: groundSR and heightShiftSR*/
 	for (x=0;x<ns;x++)
 	{
 		er=saved_ER;
-		phiAtSeaLevel=acos((satHt*satHt+er*er-slantRangeSqr[x])/(2*satHt*er));
-		groundSR[x]=phi2grX(phiAtSeaLevel);
+		phiAtSeaLevel=acos((satHt*satHt+er*er-d->slantRangeSqr[x])/
+                                      (2*satHt*er));
+		d->groundSR[x]=phi2grX(phiAtSeaLevel);
 		er+=1000.0;
 		slantRng=sqrt(satHt*satHt+er*er-2.0*satHt*er*cos(phiAtSeaLevel));
-
-		heightShiftSR[x]=((slantRng-slantFirst)/slantPer-x)/1000.0;
+		d->heightShiftSR[x]=((slantRng-slantFirst)/slantPer-x)/1000.0;
 	}
 	er=saved_ER;
-	return er/phiMul;
+	return er/d->phiMul;
 }
 
-static void geo_compensate(float *grDEM, float *in, float *out,
-                           int ns, int doInterp, float *mask)
+static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
+                           float *out,int ns, int doInterp, float *mask)
 {
 	int outX;
         int StartLayoverFlag=0;
 	for (outX=0;outX<ns;outX++)
 	{
 		double height=grDEM[outX];
-		double inX=dem_gr2sr(outX,height);
+		double inX=dem_gr2sr(d,outX,height);
 		
 		if ((height!=badDEMht)&&(inX>=0)&&(inX<(ns-1)))
 		{
@@ -282,30 +289,30 @@ static void geo_compensate(float *grDEM, float *in, float *out,
                 }
 	}
 
-        if (doInterp && mask) {
-            for (outX = 0; outX<ns; ++outX) {
-                if (mask[outX] == MASK_LAYOVER || mask[outX] == MASK_SHADOW) {
-                    int x,prevX = outX-1;
-                    float prevVal = out[outX];
-                    while (mask[outX] == MASK_LAYOVER && outX<ns-1) ++outX;
-                    float nextVal = out[outX];
-                    float delta = (nextVal-prevVal) / (float)(outX-prevX);
-                    for (x = prevX + 1; x < outX; ++x) {
-                        /** code for INTERPOLATING between the endpoints */
-                        // out[x] = prevVal + (x-prevX)*delta;
-                        /** code for ASSINGING THE MAX between endpoints */
-                        // out[x] = prevVal > nextVal ? prevVal : nextVal;
-                        /** code for LEAVING THE AREAS BLANK (black holes)*/
-                        ;   /* i.e., do nothing! */
-                    }
-                    ++outX;
-                }
-            }
-        }
+//        if (doInterp && mask) {
+//            for (outX = 0; outX<ns; ++outX) {
+//                if (mask[outX]==MASK_LAYOVER || mask[outX]==MASK_SHADOW) {
+//                    int x,prevX = outX-1;
+//                    float prevVal = out[outX];
+//                    while (mask[outX] == MASK_LAYOVER && outX<ns-1) ++outX;
+//                    float nextVal = out[outX];
+//                    float delta = (nextVal-prevVal) / (float)(outX-prevX);
+//                    for (x = prevX + 1; x < outX; ++x) {
+//                        /** code for INTERPOLATING between the endpoints */
+//                        // out[x] = prevVal + (x-prevX)*delta;
+//                        /** code for ASSINGING THE MAX between endpoints */
+//                        // out[x] = prevVal > nextVal ? prevVal : nextVal;
+//                        /** code for LEAVING THE AREAS BLANK (black holes)*/
+//                        ;   /* i.e., do nothing! */
+//                   }
+//                    ++outX;
+//                }
+//            }
+//        }
 }
 
-static void radio_compensate(float *grDEM, float *grDEMprev,float *inout,
-			     int ns)
+static void radio_compensate(struct deskew_dem_data *d,float *grDEM,
+                             float *grDEMprev,float *inout,int ns)
 {
 
 /*
@@ -340,17 +347,16 @@ Here's what it looked like before optimization:
 
 */
 
-	static double *cosineScale=NULL;
 	int x;
-	if (cosineScale==NULL)
+	if (d->cosineScale==NULL)
 	{
 		int i;
 		double cosAng;
-		cosineScale=(double *)MALLOC(sizeof(double)*512);
+		d->cosineScale=(double *)MALLOC(sizeof(double)*512);
 		for (i=0;i<512;i++)
 		{
 			cosAng=i/511.0;
-			cosineScale[(int)(cosAng*511)]=1.00-0.70*pow(cosAng,7.0);
+			d->cosineScale[(int)(cosAng*511)]=1.00-0.70*pow(cosAng,7.0);
 		}
 	}
 	for (x=1;x<ns;x++)
@@ -362,14 +368,14 @@ Here's what it looked like before optimization:
 		    (grDEMprev[x]==badDEMht)||
 		    (grDEM[x-1]==badDEMht)) 
 			{inout[x]=0;continue;}
-		dx=(grX-grDEM[x-1])/grPixelSize;
-		dy=(grDEMprev[x]-grX)/grPixelSize;
+		dx=(grX-grDEM[x-1])/d->grPixelSize;
+		dy=(grDEMprev[x]-grX)/d->grPixelSize;
 	  /*Make the normal a unit vector.*/
 		vecLen=sqrt(dx*dx+dy*dy+1);
 	  /*Take dot product of this vector and the incidence vector.*/
-		cosAng=(dx*sinIncidAng[x]+cosIncidAng[x])/vecLen;
+		cosAng=(dx*d->sinIncidAng[x]+d->cosIncidAng[x])/vecLen;
 		if (cosAng>0)/* Ordinary diffuse radar reflection */
-			inout[x]*=cosineScale[(int)(cosAng*511)];/*=cosScaled*255;*/
+			inout[x]*=d->cosineScale[(int)(cosAng*511)];/*=cosScaled*255;*/
 	}
 }
 
@@ -390,6 +396,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	int dem_is_ground_range=FALSE;
 	register int x,y;
         int burnInMask = FALSE;
+        struct deskew_dem_data d;
 
 	inSarFlag = inSarName != NULL;
         inMaskFlag = inMaskName != NULL;
@@ -423,33 +430,27 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	      return FALSE;
 	   }
 	   outMeta->general->data_type = inSarMeta->general->data_type;
-
-	   if ((inSarMeta->general->line_count != inDemMeta->general->line_count) &&
-	       (inSarMeta->general->sample_count != inDemMeta->general->sample_count))
-	   {
-	      asfPrintError("ERROR: The DEM and the SAR image must be the same size.\n");
-	   }
-	}
-	numLines = inDemMeta->general->line_count;
-	numSamples = inDemMeta->general->sample_count;
-  	asfPrintStatus("Images are %i lines by %i samples.\n",
-		       numLines,numSamples);
+        }
+        
+        d.numLines = inDemMeta->general->line_count;
+        d.numSamples = inDemMeta->general->sample_count;
 
 /*Allocate vectors.*/
-	slantGR       = (double*)MALLOC(sizeof(double)*numSamples);
-	groundSR      = (double*)MALLOC(sizeof(double)*numSamples);
-	heightShiftSR = (double*)MALLOC(sizeof(double)*numSamples);
-	heightShiftGR = (double*)MALLOC(sizeof(double)*numSamples);
-	slantRange    = (double*)MALLOC(sizeof(double)*numSamples);
-	slantRangeSqr = (double*)MALLOC(sizeof(double)*numSamples);
-	incidAng      = (double*)MALLOC(sizeof(double)*numSamples);
-	sinIncidAng   = (double*)MALLOC(sizeof(double)*numSamples);
-	cosIncidAng   = (double*)MALLOC(sizeof(double)*numSamples);
+	d.slantGR       = (double*)MALLOC(sizeof(double)*d.numSamples);
+	d.groundSR      = (double*)MALLOC(sizeof(double)*d.numSamples);
+	d.heightShiftSR = (double*)MALLOC(sizeof(double)*d.numSamples);
+	d.heightShiftGR = (double*)MALLOC(sizeof(double)*d.numSamples);
+	d.slantRange    = (double*)MALLOC(sizeof(double)*d.numSamples);
+	d.slantRangeSqr = (double*)MALLOC(sizeof(double)*d.numSamples);
+	d.incidAng      = (double*)MALLOC(sizeof(double)*d.numSamples);
+	d.sinIncidAng   = (double*)MALLOC(sizeof(double)*d.numSamples);
+	d.cosIncidAng   = (double*)MALLOC(sizeof(double)*d.numSamples);
+        d.cosineScale   = NULL;
 
 /*Set up the output meta file.*/
-	grPixelSize = calc_ranges(inDemMeta);
+	d.grPixelSize = calc_ranges(&d,inDemMeta);
 	outMeta->sar->image_type='G';
-	outMeta->general->x_pixel_size = grPixelSize;
+	outMeta->general->x_pixel_size = d.grPixelSize;
 	meta_write(outMeta, outName);
 
 /*Open files.*/
@@ -490,36 +491,36 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 
 /*Allocate input buffers.*/
 	if (inSarFlag) {
-	   inSarLine = (float *)MALLOC(sizeof(float)*numSamples);
-	   inMaskLine = (float *)MALLOC(sizeof(float)*numSamples);
-	   outMaskLine = (float *)MALLOC(sizeof(float)*numSamples);
+	   inSarLine = (float *)MALLOC(sizeof(float)*d.numSamples);
+	   inMaskLine = (float *)MALLOC(sizeof(float)*d.numSamples);
+	   outMaskLine = (float *)MALLOC(sizeof(float)*d.numSamples);
         } else {
 	   inSarLine = inMaskLine = NULL;
         }
-	outLine   = (float *)MALLOC(sizeof(float)*numSamples);
-	srDEMline = (float *)MALLOC(sizeof(float)*numSamples);
+	outLine   = (float *)MALLOC(sizeof(float)*d.numSamples);
+	srDEMline = (float *)MALLOC(sizeof(float)*d.numSamples);
 
 /*Map DEM to ground range if necessary.*/
 	/*It's much simpler if the DEM is already in ground range.*/
 	if (dem_is_ground_range)
-		grDEM=(float *)MALLOC(sizeof(float)*numSamples);
+		grDEM=(float *)MALLOC(sizeof(float)*d.numSamples);
 	/*If the dem is slant range, then we need to map it to ground range,
 	 *all at once-- we have to read it ALL in to interpolate the columns.*/
 	else {
-		grDEM=(float *)MALLOC(sizeof(float)*numSamples*numLines);
-		for (y=0;y<numLines;y++)
+		grDEM=(float *)MALLOC(sizeof(float)*d.numSamples*d.numLines);
+		for (y=0;y<d.numLines;y++)
 		{
 			get_float_line(inDemFp,inDemMeta,y,srDEMline);
-			dem_sr2gr(srDEMline,&grDEM[y*numSamples],numSamples,
-                                  fill_holes);
+			dem_sr2gr(&d,srDEMline,&grDEM[y*d.numSamples],
+                                  d.numSamples,fill_holes);
 		}
 		/*Close gaps in y direction.*/
-		for (x=0;x<numSamples;x++)
-			dem_interp_col(&grDEM[x],numSamples,numLines);
+		for (x=0;x<d.numSamples;x++)
+			dem_interp_col(&grDEM[x],d.numSamples,d.numLines);
 	}
 
 /*Rectify data.*/
-	for (y=0;y<numLines;y++) {
+	for (y=0;y<d.numLines;y++) {
 		if (inSarFlag) {
                     /*Read in DEM line-by-line (keeping two lines buffered)*/
                     if (dem_is_ground_range) {
@@ -532,32 +533,32 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                     }
                     /*Fetch the appropriate lines from the big buffer.*/
                     else {
-                        grDEMline=&grDEM[y*numSamples];
-                        grDEMlast=&grDEM[(y-1)*numSamples];
+                        grDEMline=&grDEM[y*d.numSamples];
+                        grDEMlast=&grDEM[(y-1)*d.numSamples];
                     }
                     get_float_line(inSarFp,inSarMeta,y,inSarLine);
 
                     if (inMaskFlag) {
                         get_float_line(inMaskFp,inMaskMeta,y,inMaskLine);
-                        geo_compensate(grDEMline,inMaskLine,outMaskLine,
-                                       numSamples,0,NULL);
+                        geo_compensate(&d,grDEMline,inMaskLine,outMaskLine,
+                                       d.numSamples,0,NULL);
                     }
 
-                    geo_compensate(grDEMline,inSarLine,outLine,numSamples,1,
-                                   outMaskLine);
+                    geo_compensate(&d,grDEMline,inSarLine,outLine,d.numSamples,
+                                   1,outMaskLine);
 
                     if (inMaskFlag) {
                         put_float_line(outMaskFp,outMeta,y,outMaskLine);
                     }
 
                     if (y>0&&doRadiometric)
-                        radio_compensate(grDEMline,grDEMlast,outLine,
-                                         numSamples);
+                        radio_compensate(&d,grDEMline,grDEMlast,outLine,
+                                         d.numSamples);
 
                     if (inMaskFlag && burnInMask) {
                         int x,hitvalid=0;
                         float maxval = 15;
-                        for (x=0; x<numSamples; ++x) {
+                        for (x=0; x<d.numSamples; ++x) {
                             if (hitvalid && (outMaskLine[x] == MASK_LAYOVER ||
                                              outMaskLine[x] == MASK_SHADOW))
                                 outLine[x] = maxval;
@@ -569,11 +570,11 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                     put_float_line(outFp,outMeta,y,outLine);
 		}
 		else
-                    put_float_line(outFp,outMeta,y,&grDEM[y*numSamples]);
+                    put_float_line(outFp,outMeta,y,&grDEM[y*d.numSamples]);
 	}
 
-	asfPrintStatus("Wrote %lld bytes of data\n",
-		       (long long)(numLines*numSamples*4));
+//	asfPrintStatus("Wrote %lld bytes of data\n",
+//		       (long long)(d.numLines*d.numSamples*4));
 
 /* Clean up & skidattle */
 	if (inSarFlag) {
@@ -595,15 +596,16 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
         }
 	meta_free(inDemMeta);
 	meta_free(outMeta);
-	FREE(slantGR);
-	FREE(groundSR);
-	FREE(heightShiftSR);
-	FREE(heightShiftGR);
-	FREE(slantRange);
-	FREE(slantRangeSqr);
-	FREE(incidAng);
-	FREE(sinIncidAng);
-	FREE(cosIncidAng);
+	FREE(d.slantGR);
+	FREE(d.groundSR);
+	FREE(d.heightShiftSR);
+	FREE(d.heightShiftGR);
+	FREE(d.slantRange);
+	FREE(d.slantRangeSqr);
+	FREE(d.incidAng);
+	FREE(d.sinIncidAng);
+	FREE(d.cosIncidAng);
+        if (d.cosineScale) FREE(d.cosineScale);
 
 	return TRUE;
 }

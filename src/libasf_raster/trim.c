@@ -112,3 +112,35 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
   meta_free(metaOut);
 }
 
+void trim_zeros(char *infile, char *outfile, int * startX, int * endX)
+{
+  meta_parameters *metaIn;
+  FILE *in;
+  int i,nl,ns;
+  float *buf;
+
+  in = fopenImage(infile,"rb");
+  metaIn = meta_read(infile);
+  ns = metaIn->general->sample_count;
+  nl = metaIn->general->line_count;
+  
+  *startX = ns-1;
+  *endX = 0;
+
+  buf = (float*)MALLOC(sizeof(float)*ns);
+  for (i=0; i<nl; ++i) {
+      int left = 0, right = ns-1;
+      get_float_line(in, metaIn, i, buf);
+      while (buf[left] == 0.0) ++left;
+      while (buf[right] == 0.0) --right;
+      if (left < *startX) *startX = left;
+      if (right > *endX) *endX = right;
+  }
+
+  *endX = *endX - *startX;
+
+  free(buf);
+  meta_free(metaIn);
+
+  trim(infile, outfile, (long long)(*startX), 0, (long long)(*endX), nl);
+}

@@ -242,7 +242,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   char *resampleFile, *srFile, *resampleFile_2;
   char *demGridFile, *demClipped, *demSlant, *demSimAmp;
   char *demTrimSimAmp, *demTrimSlant;
-  char *maskFile, *outMaskFile;
+  char *maskFile, *outMaskFile, *padFile;
+  char *deskewDemFile, *deskewDemMask;
   char *output_dir;
   double demRes, sarRes;
   int demWidth, demHeight;
@@ -255,6 +256,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   const float required_vertical_match = 5;
   float vertical_fudge = 0.0;
   double coverage_pct;
+  const int PAD = 200;
 
   asfPrintStatus("Reading metadata...\n");
   metaSAR = meta_read(sarFile);
@@ -508,7 +510,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   // Apply the offset to the slant range DEM.
   asfPrintStatus("Applying offsets to slant range DEM...\n");
   demTrimSlant = outputName(output_dir, demFile, "_slant_trim");
-  trim(demSlant, demTrimSlant, idx, idy, metaSAR->general->sample_count,
+  trim(demSlant, demTrimSlant, idx, idy, metaSAR->general->sample_count + PAD,
        demHeight);
 
   // Terrain correct the slant range image while bringing it back to
@@ -517,8 +519,22 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   ensure_ext(&demTrimSlant, "img");
   ensure_ext(&srFile, "img");
   asfPrintStatus("Terrain correcting slant range image...\n");
-  deskew_dem(demTrimSlant, outFile, srFile, 0, maskFile, outMaskFile, 
+  padFile = outputName(output_dir, srFile, "_pad");
+  deskewDemFile = outputName(output_dir, srFile, "_dd");
+  deskewDemMask = outputName(output_dir, srFile, "_ddm");
+  trim(srFile, padFile, 0, 0, metaSAR->general->sample_count + PAD,
+       metaSAR->general->line_count);
+  deskew_dem(demTrimSlant, deskewDemFile, padFile, 0, maskFile, deskewDemMask, 
              do_interp);
+
+  // After deskew_dem, there will likely be zeros on the left & right edges
+  // of the image, we trim those off before finishing up.
+  int startx, endx;
+  trim_zeros(deskewDemFile, outFile, &startx, &endx);
+  trim(deskewDemMask,outMaskFile,startx,0,endx,metaSAR->general->line_count);
+  clean(padFile);
+  clean(deskewDemFile);
+  clean(deskewDemMask);
 
   // Because of the PP earth radius sr->gr fix, we may not have ended
   // up with the same x pixel size that the user requested.  So we will
@@ -544,6 +560,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     clean(demTrimSimAmp);
     clean(demSimAmp);
     clean(demSlant);
+    clean(padFile);
     clean(maskFile);
     if (resampleFile_2)
         clean(resampleFile_2);
@@ -560,6 +577,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   free(demSimAmp);
   free(demSlant);
   free(maskFile);
+  free(padFile);
+  free(deskewDemFile);
+  free(deskewDemMask);
   free(outMaskFile);
   if (resampleFile_2)
       free(resampleFile_2);
