@@ -195,6 +195,8 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 			projection->type = LAMBERT_CONFORMAL_CONIC;
 		else if ( !strcmp(projection_type, "A") ) 
 			projection->type = SCANSAR_PROJECTION;
+		else if ( !strcmp(projection_type, "G") ) 
+			projection->type = LAT_LONG_PSEUDO_PROJECTION;
 		else  projection->type = -1;
 		coniIO_double(coni,"geo.proj.","startX:",&projection->startX,"Projection Coordinate at top-left, X direction");
 		coniIO_double(coni,"geo.proj.","startY:",&projection->startY,"Projection Coordinate at top-left, Y direction");
@@ -230,9 +232,13 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 		case UNIVERSAL_TRANSVERSE_MERCATOR:
 		  coniIO_int(coni,"geo.proj.","utm_zone:",&projection->param.utm.zone,"UTM Zone Code");
 		  break;
+		case LAT_LONG_PSEUDO_PROJECTION:
+		  break;
+		/*
 		default:
 		  printf("ERROR! Unrecognized map projection code '%c!'\n",projection->type);
 		  exit(1);
+		*/
 		}
 		coniIO_structClose(coni,"end proj");
 	}
@@ -337,10 +343,12 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 
 /* Fields not yet filled */
 	general->orbit_direction  = MAGIC_UNSET_CHAR;
-	if (meta->state_vectors->vecs[0].vec.vel.z > 0)
-		general->orbit_direction  = 'A';
-	else if (meta->state_vectors->vecs[0].vec.vel.z < 0)
-		general->orbit_direction  = 'D';
+	if (meta->state_vectors) {
+		if (meta->state_vectors->vecs[0].vec.vel.z > 0)
+			general->orbit_direction  = 'A';
+		else if (meta->state_vectors->vecs[0].vec.vel.z < 0)
+			general->orbit_direction  = 'D';
+	}
 	general->re_major = (meta->projection) ? meta->projection->re_major : 6378144.0;
 	general->re_minor = (meta->projection) ? meta->projection->re_minor : 6356754.9;
 	

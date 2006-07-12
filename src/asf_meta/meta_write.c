@@ -576,10 +576,9 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
 		"Image type: [S=slant range; G=ground range; P=map projected]");
   if (geo->type=='P')
   {/*Projection Parameters.*/
+    char oldproj=0;
     proj_parameters *proj=meta->geo->proj;
     meta_put_string(fp,"proj {","","Map Projection parameters");
-    meta_put_char(fp,"type:",proj->type,
-		  "Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]");
     meta_put_double(fp,"startX:",proj->startX,
 		    "Projection Coordinate at top-left, X direction");
     meta_put_double(fp,"startY:",proj->startY,
@@ -596,8 +595,9 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
 		    "Minor (polar) Axis of earth (meters)");
     switch(proj->type)
     {
-      case 'A':/*Along-track/cross-track projection.*/
-        meta_put_double(fp,"rlocal:",proj->param.atct.rlocal,"Local earth radius [m]");
+      case SCANSAR_PROJECTION:/*Along-track/cross-track projection.*/
+        oldproj='A';
+	meta_put_double(fp,"rlocal:",proj->param.atct.rlocal,"Local earth radius [m]");
         meta_put_double(fp,"atct_alpha1:",proj->param.atct.alpha1,
 			"at/ct projection parameter");
         meta_put_double(fp,"atct_alpha2:",proj->param.atct.alpha2,
@@ -605,7 +605,8 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
         meta_put_double(fp,"atct_alpha3:",proj->param.atct.alpha3,
 			"at/ct projection parameter");
         break;
-      case 'L':/*Lambert Conformal Conic projection.*/
+      case LAMBERT_CONFORMAL_CONIC:/*Lambert Conformal Conic projection.*/
+        oldproj='L';
         meta_put_double(fp,"lam_plat1:",proj->param.lamcc.plat1,
 			"Lambert first standard parallel");
         meta_put_double(fp,"lam_plat2:",proj->param.lamcc.plat2,
@@ -615,19 +616,29 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
         meta_put_double(fp,"lam_lon:",proj->param.lamcc.lon0,
 			"Lambert original longitude");
         break;
-      case 'P':/*Polar Stereographic Projection.*/
+      case POLAR_STEREOGRAPHIC:/*Polar Stereographic Projection.*/
+        oldproj='P';
         meta_put_double(fp,"ps_lat:",proj->param.ps.slat,
 			"Polar Stereographic reference Latitude");
         meta_put_double(fp,"ps_lon:",proj->param.ps.slon,
 			"Polar Stereographic reference Longitude");
         break;
-      case 'U':/*Universal Trasnverse Mercator Projection.*/
+      case UNIVERSAL_TRANSVERSE_MERCATOR:/*Universal Trasnverse Mercator Projection.*/
+        oldproj='U';
         meta_put_int(fp,"utm_zone:",proj->param.utm.zone,"UTM Zone Code");
         break;
-      default:
+      case LAT_LONG_PSEUDO_PROJECTION:/*Geographic coordinates.*/
+        oldproj='G';
+        break;
+      default: ; /* Don't worry about missing projection types--just leave field blank */
+      /* 
         printf("ERROR! Unrecognized map projection code '%c' in function '%s'; program exitting.\n",
                 proj->type, "meta_write_old");
-        exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);*/
+    }
+    if (oldproj) {
+      meta_put_char(fp,"type:",oldproj,
+		  "Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]");
     }
     meta_put_string(fp,"}","","end proj");
   }

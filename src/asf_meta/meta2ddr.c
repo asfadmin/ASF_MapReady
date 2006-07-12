@@ -10,13 +10,6 @@
 
 void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 {
-  // I looked through this method and added a smidgen of code (to
-  // avoid filling in projection information for pseudoprojected
-  // images) so that it will probably work, but it isn't tested at
-  // all.
-  assert (!meta->projection 
-	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
-
 	int ii;
 	int proj_invalid = 0;
 
@@ -81,8 +74,7 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 	                ? VALID : INVAL;
 
 /* Projection dependent stuff */
-	if (meta->sar->image_type=='P' 
-	    && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
+	if (meta->sar->image_type=='P') {
 		meta_projection *proj = meta->projection;
 	/* UTM zone code or 62 if n/a; int */
 		ddr->zone_code = (proj->type==UNIVERSAL_TRANSVERSE_MERCATOR) ? 
@@ -156,6 +148,11 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 			ddr->proj_coef[1] = meta->general->center_longitude;/*any latitude in proj*/
 			ddr->valid[DDPPV] = VALID; /* Validity of proj_coef array */
 			break;
+		    case LAT_LONG_PSEUDO_PROJECTION: /* Geographic */
+		        ddr->proj_code = GEO;
+			ddr->valid[DDPCV] = VALID;
+			
+		        break;
 		    default:/*Der?*/
 			printf("Unrecognized map projection type '%c' passed to meta2ddr!\n",proj->type);
 			printf("Continuing...\n");

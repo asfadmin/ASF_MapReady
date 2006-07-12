@@ -70,6 +70,7 @@ void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,doub
 		case POLAR_STEREOGRAPHIC: ll_ps(proj,lat_d,lon,p1,p2); break;
 		case UNIVERSAL_TRANSVERSE_MERCATOR: ll_utm(proj,lat_d,lon,p1,p2); break;
 	        case ALBERS_EQUAL_AREA: ll_alb(proj,lat_d,lon,p1,p2); break;
+	        case LAT_LONG_PSEUDO_PROJECTION: *p2=lat_d; *p1=lon; break;
 		default:
 			printf("Unrecognized map projection '%c' passed to ll_to_proj!\n",proj->type);
 			exit(1);
@@ -88,6 +89,7 @@ void proj_to_ll(meta_projection *proj, char look_dir, double p1, double p2, doub
 		case POLAR_STEREOGRAPHIC: ps_ll(proj,p1,p2,lat_d,lon); break;
 		case UNIVERSAL_TRANSVERSE_MERCATOR: utm_ll(proj,p1,p2,lat_d,lon); break;
 	        case ALBERS_EQUAL_AREA: alb_ll(proj,p1,p2,lat_d,lon); break;
+	        case LAT_LONG_PSEUDO_PROJECTION: *lat_d=p2; *lon=p1; break;
 		default:
 			printf("Unrecognized map projection '%c' passed to proj_to_ll!\n",proj->type);
 			exit(1);

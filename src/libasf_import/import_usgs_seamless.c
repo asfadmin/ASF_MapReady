@@ -185,7 +185,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
   
   meta_general *mg = meta_out->general;	// Convenience alias.
 
-  char *sensor_string = "Shuttle Radar Topography Mission";
+  char *sensor_string = "USGS Seamless data (e.g., NED, SRTM)";
   assert (strlen (sensor_string) < FIELD_STRING_MAX);
   strcpy (mg->sensor, sensor_string);
 
@@ -247,6 +247,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName,
 
   meta_projection *mp = meta_out->projection; // Convenience alias.
 
+  meta_out->sar->image_type = 'P';
   mp->type = LAT_LONG_PSEUDO_PROJECTION;
 
   mp->startX = (0.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;

@@ -30,11 +30,6 @@ void meta_get_original_line_sample(meta_parameters *meta,
 				int line, int sample,
 				int *original_line, int *original_sample)
 {
-  // No effort has been made to make this routine work with
-  // pseudoprojected images.
-  assert (meta->projection == NULL
-	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
-
   *original_line   = line   * meta->sar->line_increment
 				+ meta->general->start_line;
   *original_sample = sample * meta->sar->sample_increment
@@ -58,13 +53,7 @@ void meta_get_orig(void *fake_ddr, int y, int x,int *yOrig,int *xOrig)
 void meta_get_latLon(meta_parameters *meta,
 	double yLine, double xSample,double elev,double *lat,double *lon)
 {
-  if ( meta->projection != NULL 
-       && meta->projection->type == LAT_LONG_PSEUDO_PROJECTION ) {
-    *lon = meta->projection->startX + ((xSample + meta->general->start_sample)
-				       * meta->projection->perX);
-    *lat = meta->projection->startY + ((yLine + meta->general->start_line) 
-				       * meta->projection->perY);
-  } else if (meta->sar->image_type=='S' || meta->sar->image_type=='G') { 
+  if (meta->sar->image_type=='S' || meta->sar->image_type=='G') { 
     /*Slant or ground range.  Use state vectors and doppler.*/
     double slant,doppler,time;
     meta_get_timeSlantDop(meta,yLine + meta->general->start_line,
@@ -98,11 +87,6 @@ void meta_timeSlantDop2latLon(meta_parameters *meta,
 	double time, double slant,double dop,double elev,
 	double *lat,double *lon)
 {
-  // No effort has been made to make this routine work with
-  // pseudoprojected images.
-  assert (meta->projection == NULL
-	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
-
 	double ignored;
 	stateVector stVec;
 	stVec=meta_get_stVec(meta,time);
