@@ -16,23 +16,46 @@
 
 void terrcorr_options_changed()
 {
-  GtkWidget *terrcorr_hbox;
+  GtkWidget *terrcorr_vbox;
   GtkWidget *terrcorr_checkbutton;
   gboolean terrcorr_is_checked;
 
-  terrcorr_hbox = glade_xml_get_widget(glade_xml, "terrcorr_hbox");
+  terrcorr_vbox = glade_xml_get_widget(glade_xml, "terrcorr_vbox");
   terrcorr_checkbutton =
     glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
 
   terrcorr_is_checked =
     gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(terrcorr_checkbutton));
 
-  gtk_widget_set_sensitive(terrcorr_hbox, terrcorr_is_checked);
+  gtk_widget_set_sensitive(terrcorr_vbox, terrcorr_is_checked);
 
+  if (terrcorr_is_checked) {
+      GtkWidget *tc_pixel_size_checkbutton;
+      GtkWidget *hbox_tc_pixel_size;
+      gboolean tc_pixel_size_is_checked;
+
+      tc_pixel_size_checkbutton =
+          glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
+      hbox_tc_pixel_size =
+          glade_xml_get_widget(glade_xml, "hbox_tc_pixel_size");
+
+      tc_pixel_size_is_checked =
+          gtk_toggle_button_get_active(
+              GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton));
+
+      gtk_widget_set_sensitive(hbox_tc_pixel_size, tc_pixel_size_is_checked);
+  }
 }
 
 SIGNAL_CALLBACK void
 on_terrcorr_checkbutton_toggled(GtkWidget * widget)
+{
+    terrcorr_options_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_tc_pixel_size_checkbutton_toggled(GtkWidget *widget)
 {
     terrcorr_options_changed();
     update_summary();

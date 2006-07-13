@@ -19,6 +19,30 @@ void update_summary()
 
     strcpy(text, "Import: ");
 
+    switch (s->data_type)
+    {
+        case INPUT_TYPE_SIGMA:
+            type = "Sigma";
+            break;
+            
+        case INPUT_TYPE_BETA:
+            type = "Beta";
+            break;
+            
+        case INPUT_TYPE_GAMMA:
+            type = "Gamma";
+            break;
+            
+        default:
+        case INPUT_TYPE_AMP:
+            type = "Amplitude";
+            break;
+            
+        case INPUT_TYPE_POWER:
+            type = "Power";
+            break;
+    }
+    
     switch (s->input_data_format)
     {
     case INPUT_FORMAT_CEOS_LEVEL0:
@@ -34,37 +58,14 @@ void update_summary()
 
         if (process_to_level1_is_checked)
         {
-            strcat(text, "\n   Process to Level 1");
+            sprintf(text, "%s\n   Process to Level 1\nData Type: %s",
+                    text, type);
         }
     }    
     break;
 
     default:
     case INPUT_FORMAT_CEOS_LEVEL1:
-        switch (s->data_type)
-        {
-        case INPUT_TYPE_SIGMA:
-            type = "Sigma";
-            break;
-
-        case INPUT_TYPE_BETA:
-            type = "Beta";
-            break;
-
-        case INPUT_TYPE_GAMMA:
-            type = "Gamma";
-            break;
-
-        default:
-        case INPUT_TYPE_AMP:
-            type = "Amplitude";
-            break;
-
-        case INPUT_TYPE_POWER:
-            type = "Power";
-            break;
-        }
-
         sprintf(text, "%sCEOS Level One\nData type: %s",
             text, type);
 
@@ -106,6 +107,16 @@ void update_summary()
 	}
 
 	free(dem);
+
+        if (s->specified_tc_pixel_size)
+        {
+            sprintf(text, "%s\n   Pixel Size: %f m", text, s->tc_pixel_size);
+        }
+        else if (s->specified_pixel_size)
+        {
+            sprintf(text, "%s\n   Pixel Size: %f m (from geocode)",
+                    text, s->pixel_size);
+        }
     }
 
     strcat(text, "\nGeocoding: ");
@@ -159,7 +170,7 @@ void update_summary()
             sprintf(text, "%s   Height: %f\n", text, s->height);
 
         if (s->specified_pixel_size)
-            sprintf(text, "%s   Pixel Size: %f\n", text, s->pixel_size);
+            sprintf(text, "%s   Pixel Size: %f m\n", text, s->pixel_size);
 
         sprintf(text, "%s   Datum: %s\n", text, datum_string(s->datum));
 
@@ -234,7 +245,7 @@ void update_summary()
             strcat(text, "Truncate");
             break;
         }
-        strcat(text, "\n");
+        //strcat(text, "\n");
     }
 
     summary_label =

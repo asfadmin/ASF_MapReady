@@ -312,8 +312,34 @@ settings_apply_to_gui(const Settings * s)
     if (s->terrcorr_is_checked)
     {
         GtkWidget *dem_entry;
+        GtkWidget *tc_pixel_size_checkbutton;
+        GtkWidget *tc_pixel_size_entry;
+
 	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
+
 	gtk_entry_set_text(GTK_ENTRY(dem_entry), s->dem_file);
+
+	tc_pixel_size_checkbutton =
+            glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
+
+        gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton),
+            s->specified_tc_pixel_size);
+
+        tc_pixel_size_entry =
+            glade_xml_get_widget(glade_xml, "tc_pixel_size_entry");
+
+        if (s->specified_pixel_size)
+        {
+            gchar tmp[32];
+            sprintf(tmp, "%f", s->tc_pixel_size);
+            gtk_entry_set_text(GTK_ENTRY(tc_pixel_size_entry), tmp);
+        }
+        else
+        {
+            gtk_entry_set_text(GTK_ENTRY(tc_pixel_size_entry), "");
+        }
+                                     
     }
     else
     {
@@ -612,8 +638,27 @@ settings_get_from_gui()
     if (ret->terrcorr_is_checked)
     {
         GtkWidget *dem_entry;
+        GtkWidget *tc_pixel_size_checkbutton;
+        GtkWidget *tc_pixel_size_entry;
+
 	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
 	strcpy(ret->dem_file, gtk_entry_get_text(GTK_ENTRY(dem_entry)));
+
+	tc_pixel_size_checkbutton =
+            glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
+
+        ret->specified_tc_pixel_size =
+            gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton));
+
+        if (ret->specified_tc_pixel_size)
+        {
+            tc_pixel_size_entry =
+                glade_xml_get_widget(glade_xml, "tc_pixel_size_entry");
+
+            ret->tc_pixel_size =
+                atof(gtk_entry_get_text(GTK_ENTRY(tc_pixel_size_entry)));
+        }
     }
 
     return ret;
