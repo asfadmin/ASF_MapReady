@@ -1200,6 +1200,8 @@ settings_to_config_file(const Settings *s,
       fprintf(cf, "[Terrain correction]\n");
       if (s->specified_tc_pixel_size)
 	fprintf(cf, "pixel spacing = %.2lf\n", s->tc_pixel_size);
+      else if (s->specified_pixel_size)
+        fprintf(cf, "pixel spacing = %.2lf\n", s->pixel_size);
       fprintf(cf, "digital elevation model = %s\n", s->dem_file);
       fprintf(cf, "\n");
     }
