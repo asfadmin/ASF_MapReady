@@ -1,0 +1,180 @@
+Grab seamless elevation data from USGS site:
+	http://seamless.usgs.gov/
+
+
+How to reverse engineer their network protocol:
+	1.) Navigate to USGS site and prepare to download some data.
+	2.) Start a packet sniffer like Ethereal, begin sniffing network traffic.
+	3.) Click "Download".  You don't have to wait for the download to finish.
+	4.) Back to Ethereal, click on "POST" traffic to port 80.
+	5.) "Copy" packet data, and paste into a file.
+	6.) Run unhex_lines on packet data to get plain text
+	7.) Request portion is last part of packet (after blank lines)
+
+---------------- Alaska 2 arc-second NED -------
+siz=1&key=NAK&ras=1&rsp=1&pfm=GeoTIFF&imsurl=-1&ms=-1&att=-1&lay=-1&fid=-1&dlpre=&lft=-146.51880587552827&rgt=-146.46989204760837&top=63.33330737109731&bot=63.25993662921746&wmd=1&mur=http%3A%2F%2Fextract.cr.usgs.gov%2Fdistmeta%2Fservlet%2Fgov.usgs.edc.MetaBuilder&mcd=NED&mdf=HTML&arc=ZIP&sde=ned.ak_ned&msd=NED.CONUS_NED_METADATA&zun=METERS&prj=0&csx=5.55555555556E-4&csy=5.55555555556E-4&bnd=&bndnm=
+
+----------------- SRTM 1 arc-second ------
+siz=17&key=SM3&ras=1&rsp=1&pfm=GeoTIFF&imsurl=-1&ms=-1&att=-1&lay=-1&fid=-1&dlpre=&lft=-122.6119070954484&rgt=-121.98077640418373&top=37.88035613196588&bot=37.36397647547669&wmd=1&mur=http%3A%2F%2Fextract.cr.usgs.gov%2Fdistmeta%2Fservlet%2Fgov.usgs.edc.MetaBuilder&mcd=SRTM1FIN&mdf=HTML&arc=ZIP&sde=SRTM.C_US_1_ELEVATION&msd=SRTM.c_national_1_elevation_meta&zun=&prj=0&csx=2.777777778000001E-4&csy=2.777777778000001E-4&bnd=&bndnm=
+
+
+----------------- NED 1 arc-second ------
+siz=16&key=NED&ras=1&rsp=1&pfm=GeoTIFF&imsurl=-1&ms=-1&att=-1&lay=-1&fid=-1&dlpre=NED_&lft=-122.59866659143584&rgt=-122.0028439108713&top=37.88035613196588&bot=37.38163048082675&wmd=1&mur=http%3A%2F%2Fextract.cr.usgs.gov%2Fdistmeta%2Fservlet%2Fgov.usgs.edc.MetaBuilder&mcd=NED&mdf=HTML&arc=ZIP&sde=NED.conus_ned&msd=NED.CONUS_NED_METADATA&zun=METERS&prj=0&csx=2.777777777999431E-4&csy=2.777777777999431E-4&bnd=&bndnm=
+
+
+
+
+------------------- Reverse Engineering Notes ---------------
+For Alaska, dragging out a download rectangle invokes:
+
+extract == 152.61.133.18
+
+GET http://extract.cr.usgs.gov/Website/distreq/RequestSummary.jsp?AL=63.113195145457745,63.02351979427125,-144.34214053309256,-146.58402431275482&PL=NAK01HZ, 
+It does have a cookie too: ForeseeLoyalty_MID_AgQ, with a session ID.
+
+Default download: ArcGrid format.
+"Modify" window brings up RequestOptions.jsp page, which forwards to:
+
+GET http://extract.cr.usgs.gov/Website/distreq/RequestSummary.jsp?AL=63.24363201991082,62.91753983377812,-146.2416275173155,-146.63293814067472&PR=0&PL=NAK02HZ
+Download in GeoTIFF format.
+
+And underneath it asks for a little preview from
+152.61.133.1 (ims.cr.usgs.gov)
+via a GET request to:
+http://ims.cr.usgs.gov/servlet/com.esri.wms.Esrimap?servicename=USGS_EDC_Elev_NED&Version=1.1.1&SERVICE=WMS&request=map&layers=Alaska_NED_Shaded_Relief&bbox=-146.51880587552827,63.25993662921746,-146.46989204760837,63.33330737109731&reaspect=false&width=26&height=40&format=JPEG&SRS=EPSG:4326 
+
+And now "Download" button brings up a new window:
+http://extract.cr.usgs.gov/diststatus/servlet/gov.usgs.edc.RequestStatus?zid=20060711.151531536.137229029113
+
+I think everything else can be skipped up to here.
+
+
+
+Finally, the request data is actually sent (at 18 seconds in) as a big old POST request to extract.cr.usgs.gov/diststatus/servlet/gov.usgs.edc.RequestStatus.
+
+POST /diststatus/servlet/gov.usgs.edc.RequestStatus HTTP/1.1
+Host: extract.cr.usgs.gov
+User-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.0.4) Gecko/20060508 Firefox/1.5.0.4
+Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+Accept-Language: en-us,en;q=0.5
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Keep-Alive: 300
+Connection: keep-alive
+Referer: http://extract.cr.usgs.gov/Website/distreq/RequestSummary.jsp?AL=63.33330737109731,63.25993662921746,-146.46989204760837,-146.51880587552827&PR=0&PL=NAK02HZ
+Cookie: ForeseeLoyalty_MID_AgQ9cl8sAc=2; JSESSIONID=9FFCD5DD83E5EE45CE434D839F47B370.Extractor_Server_A
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 402
+
+siz=1&key=NAK&ras=1&rsp=1&pfm=GeoTIFF&imsurl=-1&ms=-1&att=-1&lay=-1&fid=-1&dlpre=&lft=-146.51880587552827&rgt=-146.46989204760837&top=63.33330737109731&bot=63.25993662921746&wmd=1&mur=http%3A%2F%2Fextract.cr.usgs.gov%2Fdistmeta%2Fservlet%2Fgov.usgs.edc.MetaBuilder&mcd=NED&mdf=HTML&arc=ZIP&sde=ned.ak_ned&msd=NED.CONUS_NED_METADATA&zun=METERS&prj=0&csx=5.55555555556E-4&csy=5.55555555556E-4&bnd=&bndnm=
+
+
+
+The RequestStatus window reloads a few times, and then (at 41 seconds in) hits a 302 which points a GET request at extract.cr.usgs.gov/Extractor_Output/17954530.zip
+
+
+So the overall algorithm is:
+POST RequestStatus with request area
+Returns a Refresh: tag with RequestStatus URL to call.
+
+while (1) {
+	wait 10 seconds
+	GET RequestStatus
+	if get a 200 (OK) back, continue asking.
+	if get a 302 (Moved Temporarily) back, then
+		Location: points to the extractor output
+		GET zip file from extractor server
+		return
+}
+
+I don't know if the cookie is really needed, but it should be pretty easy to add.
+
+
+------------------- Test run with wget ----------------
+wget -S -O test_1_post --post-data='siz=1&key=NAK&ras=1&rsp=1&pfm=GeoTIFF&imsurl=-1&ms=-1&att=-1&lay=-1&fid=-1&dlpre=&lft=-146.51880587552827&rgt=-146.46989204760837&top=63.33330737109731&bot=63.25993662921746&wmd=1&mur=http%3A%2F%2Fextract.cr.usgs.gov%2Fdistmeta%2Fservlet%2Fgov.usgs.edc.MetaBuilder&mcd=NED&mdf=HTML&arc=ZIP&sde=ned.ak_ned&msd=NED.CONUS_NED_METADATA&zun=METERS&prj=0&csx=5.55555555556E-4&csy=5.55555555556E-4&bnd=&bndnm=' http://extract.cr.usgs.gov/diststatus/servlet/gov.usgs.edc.RequestStatus
+
+So here, 
+	lft, rgt: longitude range (lo to hi)
+	top, bot: latitude range (lo to hi)
+	csx, csy: x and y resolutions, in degrees per pixel
+	zun: elevation (Z) units
+	sde: source of data?
+	pfm: package format?
+
+HTTP request sent, awaiting response... 
+ 1 HTTP/1.1 200 OK
+ 2 Connection: keep-alive
+ 3 Date: Tue, 11 Jul 2006 21:12:15 GMT
+ 4 Server: Microsoft-IIS/6.0
+ 5 X-Powered-By: ASP.NET
+ 6 Pragma: no-cache
+ 7 Cache-Control: no-store
+ 8 Expires: Fri, 30 Oct 1998 14:19:41 GMT
+ 9 Refresh: 10; URL=/diststatus/servlet/gov.usgs.edc.RequestStatus?zid=20060711.161215902.137229029113
+10 Content-Type: text/html;charset=ISO-8859-1
+11 Content-Length: 1549
+
+Works!  So the cookie isn't even needed.  Returns "Adding your request to the queue...".
+
+From the server headers, all you seem to need is the "Refresh:" tag, which gives you another URL to page on for status.
+
+wget -S -O test_2_status 'http://extract.cr.usgs.gov/diststatus/servlet/gov.usgs.edc.RequestStatus?zid=20060711.161215902.137229029113'
+
+Doesn't work the first time (and gives the same Refresh URL with a shorter timeout), but then
+
+wget -S -O test_3_status 'http://extract.cr.usgs.gov/diststatus/servlet/gov.usgs.edc.RequestStatus?zid=20060711.161215902.137229029113'
+
+does a 302 redirect to the .zip file:
+Connecting to extract.cr.usgs.gov[152.61.133.18]:80... connected.
+HTTP request sent, awaiting response... 
+ 1 HTTP/1.1 302 Moved Temporarily
+ 2 Connection: keep-alive
+ 3 Date: Tue, 11 Jul 2006 21:13:45 GMT
+ 4 Server: Microsoft-IIS/6.0
+ 5 X-Powered-By: ASP.NET
+ 6 Location: http://extract.cr.usgs.gov:80/Extractor_Output/51438096.zip
+ 7 Content-Length: 0
+Location: http://extract.cr.usgs.gov:80/Extractor_Output/51438096.zip [following]
+--13:13:47--  http://extract.cr.usgs.gov/Extractor_Output/51438096.zip
+           => `test_3_status'
+Connecting to extract.cr.usgs.gov[152.61.133.18]:80... connected.
+HTTP request sent, awaiting response... 
+ 1 HTTP/1.1 200 OK
+ 2 Content-Length: 145296
+ 3 Content-Type: application/x-zip-compressed
+ 4 Last-Modified: Tue, 11 Jul 2006 21:12:24 GMT
+ 5 Accept-Ranges: bytes
+ 6 ETag: "4662f9b42ea5c61:b5c"
+ 7 Server: Microsoft-IIS/6.0
+ 8 X-Powered-By: ASP.NET
+ 9 Date: Tue, 11 Jul 2006 21:13:45 GMT
+10 Connection: keep-alive
+
+100%[===============================================>] 145,296      139.78K/s             
+13:13:48 (139.58 KB/s) - `test_3_status' saved [145296/145296]
+
+
+Awesome.  So it works fine with wget.
+
+----------------- Experimental -------------
+OK-- verified that I *can* grab big chunks of the 2" Alaska DEMs:
+
+0.01 degree sections:
+g++ akdem_grab.cpp -I. && ./a.out 63.0 63.01 -146.00 -145.99
+	-> works.  0.012MB of data.
+
+0.1 degree sections:
+g++ akdem_grab.cpp -I. && ./a.out 63.0 63.1 -146.0 -145.9
+	-> works.  0.3MB of data.
+
+Half a degree sections:
+g++ akdem_grab.cpp -I. && ./a.out 63.0 63.5 -146.0 -145.5
+	-> works.  2.6MB of data.
+
+1.0 degree sections:
+g++ akdem_grab.cpp -I. && ./a.out 63.0 64.0 -146.0 -145.0
+	-> works.  10MB of data.
+
+2.0 degree sections:
+g++ -Wall akdem_grab.cpp -I. && ./a.out 64.0 66.0 -148.0 -146.0
+	-> works.  37MB of data.

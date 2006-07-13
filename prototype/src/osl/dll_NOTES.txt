@@ -38,11 +38,15 @@ Now write a .def file containing all symbols.
 
 CANNOT pass ./ as a path to dlopen.  But "foo/bar.dll" is OK.
 CANNOT access symbols in "main", even with /link /FORCE:UNRESOLVED
+So your DLLs must depend on some other main DLL.
 
 Compile with
-	cl /I. /DWIN32=1 osl/test_dll_sub.cpp /LD
-	cl /I. /DWIN32=1 osl/test_dll_server.cpp /LD test_dll_sub.lib
-	cl /I. /DWIN32=1 osl/test_dll.cpp
+	cl /MD /I. /DWIN32=1 osl/test_dll_sub.cpp /LD
+	cl /MD /I. /DWIN32=1 osl/test_dll_server.cpp /LD test_dll_sub.lib
+	cl /MD /I. /DWIN32=1 osl/test_dll.cpp
+
+WARNING: to use stdio in DLLs, you MUST compile ALL code with /MD!
+
 
 ----------- MacOS X:
 MacOS 10.3 and on have dlopen; earlier versions are stuck
