@@ -70,6 +70,8 @@ typedef struct
 {
   double pixel;           // pixel size for terrain corrected product
   char *dem;              // reference DEM file name
+  int interp;             // TRUE if we should interpolate layover/shadow
+                          // regions, FALSE if those regions should be blank
 } s_terrain_correct;
 
 typedef struct

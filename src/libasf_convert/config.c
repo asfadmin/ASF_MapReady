@@ -251,6 +251,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->pixel = -99;
   cfg->terrain_correct->dem = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->terrain_correct->dem, "");
+  cfg->terrain_correct->interp = 1;
 
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
   sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj", 
@@ -340,10 +341,13 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "corner reflector locations", 26)==0)
 	cfg->detect_cr->cr_location = read_str(line, "corner reflector locations");
       // Terrain correction
-      if (strncmp(test, "pixel spacng", 13)==0)
+      if (strncmp(test, "pixel spacing", 13)==0)
 	cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
       if (strncmp(test, "digital elevation model", 23)==0)
 	cfg->terrain_correct->dem = read_str(line, "digital elevation model");      
+      if (strncmp(test, "interpolate", 11)==0)
+	cfg->terrain_correct->interp = read_int(line, "interpolate");
+
       // Geocoding
       if (strncmp(test, "projection", 10)==0)
         cfg->geocoding->projection = read_str(line, "projection");
@@ -530,6 +534,8 @@ convert_config *read_convert_config(char *configFile)
 	cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
       if (strncmp(test, "digital elevation model", 23)==0)
 	cfg->terrain_correct->dem = read_str(line, "digital elevation model");
+      if (strncmp(test, "interpolate", 11)==0)
+	cfg->terrain_correct->interp = read_int(line, "interpolate");
       FREE(test);
     }
 
@@ -756,6 +762,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
 		"# for terrain effects. The quality and resolution of the reference DEM determines\n"
 		"# the quality of the resulting terrain corrected product\n\n");
       fprintf(fConfig, "digital elevation model = %s\n\n", cfg->terrain_correct->dem);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# Layover/shadow regions can either be left black (resulting in better\n"
+		"# image statistics in the remainder of the image), or they may be interpolated over\n"
+		"# (resulting in a nicer-looking image).  Setting this parameter to 1 indicates that\n"
+                "# these regions should be interpolated over.\n\n");
+      fprintf(fConfig, "interpolate = %d\n\n", cfg->terrain_correct->interp);
     }
     // Geocoding
     if (cfg->general->geocoding) {
