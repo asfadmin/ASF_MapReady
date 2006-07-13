@@ -7,46 +7,9 @@ This includes:
 
 Orion Sky Lawlor, olawlor@acm.org, 2006/06/20
 */
-#include "asf/meta.h"
+#include "asf_meta/metadata.h"
 #include "asf/units.h"
 using namespace asf;
-
-vector asf::vecNew(double x,double y,double z) {return vector(x,y,z);}
-void asf::vecAdd(const vector a,const vector b, vector *c) {*c=a+b;}
-void asf::vecSub(const vector a,const vector b, vector *c) {*c=a-b;}
-void asf::vecScale(vector *v,double scale) {*v *= scale;}
-double asf::vecMagnitude(const vector v) {return v.mag();}
-void asf::vecNormalize(vector *v) {v->normalize();}
-double asf::vecDot(const vector a,const vector b) {return a.dot(b);}
-void asf::vecCross(const vector a,const vector b,vector *aXb) {*aXb=a.cross(b);}
-void asf::vecMul(const vector *matrix,const vector src,vector *dest) {
-	*dest=
-		src.x*matrix[0]+
-		src.y*matrix[1]+
-		src.z*matrix[2];
-}
-
-double asf::atan2_check(double y, double x)
-{
-	if (y==0.0 && x==0.0)
-		return 0;
-	else
-		return atan2(y,x);
-}
-
-void asf::cart2sph(const vector v,double *r,double *theta,double *phi)
-{
-       *r=sqrt(v.x*v.x+v.y*v.y+v.z*v.z);     
-       *theta=asin(v.z/(*r));          
-       *phi=atan2_check(v.y,v.x);
-}
-void asf::sph2cart(double r,double theta,double phi,vector *v)
-{
-       v->x=r*cos(theta)*cos(phi);     
-       v->y=r*cos(theta)*sin(phi);          
-       v->z=r*sin(theta);
-}
-
 
 namespace sar_geolocate {
 

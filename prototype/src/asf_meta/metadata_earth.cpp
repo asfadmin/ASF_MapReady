@@ -2,11 +2,11 @@
 Meta.h routines specific to the planet Earth.
 This is a suprisingly small amount of stuff:
 	- Rotation rates
-	- The horribly involved UT1 and GHA calculations
+	- The horribly involved UT1/UTC/TAI and GHA calculations
 
 Orion Sky Lawlor, olawlor@acm.org, 2006/06/19
 */
-#include "asf/meta.h"
+#include "asf_meta/metadata.h"
 #include "asf/units.h"
 
 using namespace asf; /* <- avoid having to type asf:: everywhere... */

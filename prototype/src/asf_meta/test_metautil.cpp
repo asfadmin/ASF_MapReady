@@ -3,7 +3,7 @@ Verify meta.h routines against known values.
 
 Orion Sky Lawlor, olawlor@acm.org, 2006/06/12
 */
-#include "asf/meta.h"
+#include "asf_meta/util.h"
 
 using namespace asf;
 

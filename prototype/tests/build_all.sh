@@ -1,6 +1,6 @@
 #!/bin/sh
 
-for dir in src/asf src/pup
+for dir in src/asf src/asf_meta src/pup 
 do
 
 for f in `echo ../$dir/test_*.cpp`

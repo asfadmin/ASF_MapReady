@@ -7,9 +7,13 @@ OPTS=-g
 CLUI_SRC=src/asf/clui_cli.cpp
 CLUI=bin/clui
 
-CORE_SRC=src/asf/plugin.cpp src/asf/plugin_loader.cpp src/asf/plugin_execute.cpp \
+CORE_SRC= \
+	src/asf_meta/util.cpp \
+	src/asf_meta/metadata.cpp \
+	src/asf_meta/metadata_earth.cpp \
+	src/asf_meta/metadata_sar.cpp \
+	src/asf/plugin.cpp src/asf/plugin_loader.cpp src/asf/plugin_execute.cpp \
 	src/asf/image.cpp src/asf/clui.cpp src/asf/ddr.cpp src/asf/util.cpp \
-	src/asf/meta.cpp src/asf/meta_earth.cpp src/asf/meta_sar.cpp \
 	src/pup/pup.cpp \
 	src/osl/dll.cpp src/osl/dir.cpp
 CORE=lib/asf_core.dll
