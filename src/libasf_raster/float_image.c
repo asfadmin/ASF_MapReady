@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <setjmp.h>
 
 #include <glib.h>
 #if GLIB_CHECK_VERSION (2, 6, 0)
@@ -2214,6 +2215,44 @@ float_image_store (FloatImage *self, const char *file,
   // Return success code.
   return 0;
 }
+/*
+ * JPEG ERROR HANDLING:
+ *
+ * Override the "error_exit" method so that control is returned to the 
+ * library's caller when a fatal error occurs, rather than calling exit() 
+ * as the standard error_exit method does.
+ *
+ * We use C's setjmp/longjmp facility to return control.  This means that the
+ * routine which calls the JPEG library must first execute a setjmp() call to
+ * establish the return point.  We want the replacement error_exit to do a
+ * longjmp().  But we need to make the setjmp buffer accessible to the
+ * error_exit routine.  To do this, we make a private extension of the
+ * standard JPEG error handler object.  (If we were using C++, we'd say we
+ * were making a subclass of the regular error handler.)
+ *
+ * Here's the extended error handler struct:
+ */
+struct my_error_mgr {
+  struct jpeg_error_mgr pub;	/* "public" fields */
+
+  jmp_buf setjmp_buffer;	/* for return to caller */
+};
+
+typedef struct my_error_mgr * my_error_ptr;
+
+METHODDEF(void)
+my_error_exit (j_common_ptr cinfo)
+{
+  /* cinfo->err really points to a my_error_mgr struct, so coerce pointer */
+  my_error_ptr myerr = (my_error_ptr) cinfo->err;
+
+  /* Always display the message. */
+  /* We could postpone this until after returning, if we chose. */
+  (*cinfo->err->output_message) (cinfo);
+
+  /* Return control to the setjmp point */
+  longjmp(myerr->setjmp_buffer, 1);
+}
 
 int
 float_image_export_as_jpeg (FloatImage *self, const char *file,
@@ -2256,20 +2295,30 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
 
   // Stuff needed by libjpeg.
   struct jpeg_compress_struct cinfo;
-  struct jpeg_error_mgr jerr;
-  cinfo.err = jpeg_std_error (&jerr);
+  struct my_error_mgr jerr;
+  //cinfo.err = jpeg_std_error (&jerr);
   jpeg_create_compress (&cinfo);
 
   // Open output file.
   FILE *fp = fopen (file, "w");
   if ( fp == NULL ) {
-    printf("Attempting to open file: %s\n", file);
-    perror ("error opening file");
+    printf("Error opening file %s: %s\n", file, strerror(errno));
+    return FALSE;
   }
 
-  // FIXME: we need some error handling and propagation here.
-  g_assert (fp != NULL);
-
+  /* We set up the normal JPEG error routines, then override error_exit. */
+  cinfo.err = jpeg_std_error(&jerr.pub.error_exit);
+  jerr.pub.error_exit = my_error_exit;
+  /* Establish the setjmp return context for my_error_exit to use. */
+  if (setjmp(jerr.setjmp_buffer)) {
+    /* If we get here, the JPEG code has signaled an error.
+     * We need to clean up the JPEG object, close the input file, and return.
+     */
+    jpeg_destroy_compress(&cinfo);
+	g_free(pixels);
+    fclose(fp);
+    return 1;
+  }
   // Connect jpeg output to the output file to be used.
   jpeg_stdio_dest (&cinfo, fp);
 
@@ -2366,7 +2415,6 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   }
 
   gsl_matrix_float_free(averaging_kernel);
-
   // Write the jpeg, one row at a time.
   const int rows_to_write = 1;
   JSAMPROW *row_pointer = g_new (JSAMPROW, rows_to_write);

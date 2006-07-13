@@ -1,5 +1,6 @@
-#include "asf_convert_gui.h"
+
 #include <unistd.h>
+#include "asf_convert_gui.h"
 #include <asf.h>
 #include <asf_meta.h>
 
@@ -643,12 +644,17 @@ handle_google_earth()
     int n_ok = 0;
     int n_bad = 0;
 
+#ifdef win32
+    ge = "/cygdrive/c/Program\\ Files/Google/Google\\ Earth/googleearth.exe";
+#else
     ge = find_in_path("googleearth");
+
     if (!ge)
     {
        message_box("Couldn't find path to googleearth!  Is it installed?");
        return FALSE;
     }
+#endif
 
     LSL;
     files_list = glade_xml_get_widget(glade_xml, "files_list");
@@ -819,7 +825,7 @@ handle_google_earth()
 
     if (n_ok > 0)
     {
-        asfSystem("%s %s", ge, kml_filename);
+        asfSystem("%s \"%s\"", ge, kml_filename);
     }
     
     g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);

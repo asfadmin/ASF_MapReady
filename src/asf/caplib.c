@@ -317,7 +317,7 @@ int FSEEK(FILE *stream,int offset,int ptrname)
 	if (stream==NULL)
 		programmer_error("NULL file pointer passed to FSEEK.\n");
 	ret=fseek(stream,offset,ptrname);
-	if (ret==-1)
+	if (ret==-1) 
 		programmer_error("Stream passed to FSEEK is not seekable.\n");
 	return ret;
 }
@@ -342,7 +342,14 @@ int FSEEK64(FILE *stream,long long offset,int ptrname)
 		fprintf(stderr, "The file offset passed is: %lli\n", offset);
 		if (fLog!=NULL)
 		   fprintf(fLog, "The file offset passed is: %lli\n", offset);
-		programmer_error("Stream passed to FSEEK64 is not seekable.\n");
+
+                if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
+		    programmer_error("Stream passed to FSEEK64 is not seekable.\n");
+                else {
+                    fprintf(stderr, "Stream passed to FSEEK64 is not seekable.\n");
+		    if (fLog!=NULL)
+		        fprintf(fLog, "Stream passed to FSEEK64 is not seekable.\n");
+                }
 	}
 	return ret;
 }

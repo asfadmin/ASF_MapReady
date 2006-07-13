@@ -203,7 +203,6 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
         gtk_list_store_set(list_store, iter_p,
             COL_DATA_FILE, data_file,
             COL_STATUS, "-", -1);
-        LSU;
 
 #ifdef THUMBNAILS
         if (use_thumbnails)
@@ -242,6 +241,7 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
 	    gtk_tree_selection_select_all(selection);
 	}
 
+        LSU;
         return TRUE;
     }
     else

@@ -84,7 +84,7 @@ make_input_image_thumbnail (const char *input_metadata, const char *input_data,
     // currently in the image as the max dimension for the image to
     // generate.
     float_image_export_as_jpeg (ti, output_jpeg, (ti->size_x > ti->size_y ? 
-        ti->size_x : ti->size_y), NAN);
+            ti->size_x : ti->size_y), NAN);
 
     float_image_free (ti);
     meta_free(imd);
