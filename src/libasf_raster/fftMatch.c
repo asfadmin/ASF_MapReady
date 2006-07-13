@@ -257,8 +257,6 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile,
     metaOut->general->line_count = 2*searchY;
     metaOut->general->sample_count = 2*searchX;
     corrF=fopenImage(corrFile,"w");
-    meta_write(metaOut, corrFile);
-    meta_free(metaOut);
   }
   
   /*Perform the correlation.*/
@@ -277,6 +275,7 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile,
       put_float_line(corrF,metaOut,outY++,outBuf);
     }
     meta_write(metaOut, corrFile);
+    meta_free(metaOut);
     FREE(outBuf);
   }
 
