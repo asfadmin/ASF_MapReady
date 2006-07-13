@@ -11,22 +11,46 @@ Orion Sky Lawlor, olawlor@acm.org, 2006/06/20
 #include "asf/units.h"
 using namespace asf;
 
-namespace sar_geolocate {
-
-inline vector vecNew(double x,double y,double z) {return vector(x,y,z);}
-inline void vecAdd(const vector a,const vector b, vector *c) {*c=a+b;}
-inline void vecSub(const vector a,const vector b, vector *c) {*c=a-b;}
-inline void vecScale(vector *v,double scale) {*v *= scale;}
-inline double vecMagnitude(const vector v) {return v.mag();}
-inline void vecNormalize(vector *v) {v->normalize();}
-inline double vecDot(const vector a,const vector b) {return a.dot(b);}
-inline void vecCross(const vector a,const vector b,vector *aXb) {*aXb=a.cross(b);}
-inline void vecMul(const vector *matrix,const vector src,vector *dest) {
+vector asf::vecNew(double x,double y,double z) {return vector(x,y,z);}
+void asf::vecAdd(const vector a,const vector b, vector *c) {*c=a+b;}
+void asf::vecSub(const vector a,const vector b, vector *c) {*c=a-b;}
+void asf::vecScale(vector *v,double scale) {*v *= scale;}
+double asf::vecMagnitude(const vector v) {return v.mag();}
+void asf::vecNormalize(vector *v) {v->normalize();}
+double asf::vecDot(const vector a,const vector b) {return a.dot(b);}
+void asf::vecCross(const vector a,const vector b,vector *aXb) {*aXb=a.cross(b);}
+void asf::vecMul(const vector *matrix,const vector src,vector *dest) {
 	*dest=
 		src.x*matrix[0]+
 		src.y*matrix[1]+
 		src.z*matrix[2];
 }
+
+double asf::atan2_check(double y, double x)
+{
+	if (y==0.0 && x==0.0)
+		return 0;
+	else
+		return atan2(y,x);
+}
+
+void asf::cart2sph(const vector v,double *r,double *theta,double *phi)
+{
+       *r=sqrt(v.x*v.x+v.y*v.y+v.z*v.z);     
+       *theta=asin(v.z/(*r));          
+       *phi=atan2_check(v.y,v.x);
+}
+void asf::sph2cart(double r,double theta,double phi,vector *v)
+{
+       v->x=r*cos(theta)*cos(phi);     
+       v->y=r*cos(theta)*sin(phi);          
+       v->z=r*sin(theta);
+}
+
+
+namespace sar_geolocate {
+
+
 
 /************** Big Routines *****************
 	The below routines form the bulk of the geolocation
@@ -597,7 +621,6 @@ asf::meta3D_t asf::metadata_sar::meta3D(asf::metadata_3D_enum v,const asf::metaC
 		sar_geolocate::init_geolocate(meta,
 			meta(SATELLITE_FROM_TIME,asf::meta3D_t(time,0,0)),
 			loc.z,&g);
-		double doppler_rate;
 		return getLocCart(&g,slant,doppler,0);
 	}
 	default:

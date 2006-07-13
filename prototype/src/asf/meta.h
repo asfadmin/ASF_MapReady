@@ -58,10 +58,33 @@ public:
 	meta_state_t rotate_coriolis(double phi,double omega) const;
 };
 
-/** Backward compatability with old "geolocate.h" header. */
+/** Backward compatability with old "geolocate.h" header routines. */
 typedef meta3D_t vector;
 typedef meta_state_t stateVector;
 
+ASF_COREDLL vector vecNew(double x,double y,double z);
+ASF_COREDLL void vecAdd(const vector a,const vector b, vector *c);
+ASF_COREDLL void vecSub(const vector a,const vector b, vector *c);
+ASF_COREDLL void vecScale(vector *v,double scale);
+ASF_COREDLL double vecMagnitude(const vector v);
+ASF_COREDLL void vecNormalize(vector *v);
+ASF_COREDLL double vecDot(const vector a,const vector b);
+ASF_COREDLL void vecCross(const vector a,const vector b,vector *aXb);
+ASF_COREDLL void vecMul(const vector *matrix,const vector src,vector *dest);
+
+ASF_COREDLL double atan2_check(double y, double x);
+ASF_COREDLL void cart2sph(const vector v,double *r_out,double *theta,double *phi);
+ASF_COREDLL void sph2cart(double r,double theta,double phi,vector *v);
+
+
+
+/** Interpolate state vectors A and B, which are at times 
+(in seconds) timeA and timeB, to state vector OUT, at time timeOut.
+*/
+ASF_COREDLL void interp_stVec(
+		const stateVector *A,double timeA, 
+		const stateVector *B, double timeB,
+		      stateVector *OUT,double timeOut);
 
 /** Date utility routines */
 

@@ -46,8 +46,8 @@ public:
 			bandNo,checksum[1],
 			bandNo,checksum[2],
 			bandNo,checksum[3],
-			bandNo,checksum[4],
-			bandNo,checksum[5]
+			bandNo,checksum[4]
+			/*bandNo,checksum[5]*/
 		);
 		 
 		return buf;

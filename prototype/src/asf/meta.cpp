@@ -32,6 +32,47 @@ asf::meta_state_t asf::meta_state_t::rotate_coriolis(double phi_deg,double omega
 	return ret;
 }
 
+
+/** Interpolate state vectors A and B, which are at times 
+(in seconds) timeA and timeB, to state vector OUT, at time timeOut.
+*/
+void asf::interp_stVec(const stateVector *st1,double time1, 
+				const stateVector *st2, double time2,
+				stateVector *stOut,double timeOut)
+{
+	int i;
+	double deltaT=time2-time1; /* We scale the time between input vectors to 1.0 */
+	double t=(timeOut-time1)/deltaT;
+	double t2=t*t;  /* t squared */
+	double t3=t2*t; /* t cubed */
+	for (i=0;i<3;i++)
+	{
+	/*For each coordinate axis, set up a cubic position interpolation function r(t)
+	such that r(0.0)=st1.pos, r(1.0)=st2.pos, r'(0.0)=st1.vel, and r'(1.0)=st2.vel.
+	Velocities are quadratically interpolated consistent with positions.
+	FIXME: better results might be possible by fixing the acceleration vector
+	  to always point downward (toward the Earth's center of mass)
+	*/
+		double A,B,Av,Bv;
+		/* Scaled inputs to function fit */
+		A=st1->pos[i];
+		B=st2->pos[i];
+		Av=st1->vel[i]*deltaT;
+		Bv=st2->vel[i]*deltaT;
+		/* Coefficients of cubic position function */
+		double coef0=A;
+		double coef1=Av;
+		double coef2=3*B-3*A-2*Av-Bv;
+		double coef3=2*A-2*B+Av+Bv;
+		/* Evaluate position function */
+		stOut->pos[i]=coef0+coef1*t+coef2*t2+coef3*t3;
+		/* Evaluate velocity as derivative of position function */
+		stOut->vel[i]=(coef1+2.0*coef2*t+3.0*coef3*t2)/deltaT;
+	}
+}
+
+
+
 /*********** metadata_source **********/
 asf::metadata_source::~metadata_source() {}
 
@@ -239,16 +280,6 @@ static int month_from_day_of_year(int year,int day_of_year) {
 
 static int day_of_month_from_day_of_year(int year,int day_of_year) {
 	return -1; // FIXME!
-}
-
-
-/** Convert a 2D XY-plane vector to an angle CCW from X axis.  Takes the origin as angle 0 */
-double atan2_check(double y, double x)
-{
-	if (y==0.0 && x==0.0)
-		return 0;
-	else
-		return atan2(y,x);
 }
 
 /** A type wrapper around a latitude/longitude/elevation (radians) meta3D value */

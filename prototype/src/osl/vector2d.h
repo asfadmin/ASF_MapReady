@@ -71,7 +71,7 @@ T/vector is meaningless (and we'd want a*b/b==a for b!=0),
 ditto for vector&vector (dot?), vector|vector (projection?), 
 vector^vector (cross?),T+vector, vector+=T, etc.
 */
-	this_t &operator=(const this_t &b) {x=b.x;y=b.y;return *this;}
+	Child &operator=(const this_t &b) {x=b.x;y=b.y;return *(Child *)this;}
 	int operator==(const this_t &b) const {return (x==b.x)&&(y==b.y);}
 	int operator!=(const this_t &b) const {return (x!=b.x)||(y!=b.y);}
 	Child operator+(const this_t &b) const {return Child(x+b.x,y+b.y);}
@@ -108,6 +108,17 @@ vector^vector (cross?),T+vector, vector+=T, etc.
 		return a.x*b.y-a.y*b.x;
 	}
 	
+	/// Return this vector scaled by that
+	Child &scale(const this_t &b) {x*=b.x;y*=b.y;return *(Child *)this;}
+
+	/// Return the magnitude (length) of this vector
+	double mag(void) const {return sqrt(magSqr());}
+	
+	/// Return the distance to the vector b
+	double dist(const this_t &b) const {return sqrt(distSqr(b));}
+	
+	/// Return the dot product of this vector and b
+	double dot(const this_t &b) const {return x*b.x+y*b.y;}
 	/// Return the largest coordinate in this vector
 	T max(void) const {return (x>y)?x:y;}
 	/// Make each of this vector's coordinates at least as big
@@ -115,9 +126,11 @@ vector^vector (cross?),T+vector, vector+=T, etc.
 	void enlarge(const this_t &by)
 	{if (by.x>x) x=by.x; if (by.y>y) y=by.y;}
 	
-	/// Set coordinates so we are less, on each axis, than this value:
-	void shrink(const this_t &by) 
-	{if (x>by.x) x=by.x; if (y>by.y) y=by.y; }
+	/// Swap coordinates so we are less, on each axis, than this value:
+	void lessThan(this_t &p) {
+		if (x>p.x) {T t=x; x=p.x; p.x=t;}
+		if (y>p.y) {T t=y; y=p.y; p.y=t;}
+	}
 };
 
 /// Vector2d is a cartesian vector in 2-space-- an x and y.
@@ -141,22 +154,11 @@ public:
 	{x=p.r*cos(p.theta);y=p.r*sin(p.theta);}
 
 //Vector-specific operations
-	/// Return the magnitude (length) of this vector
-	double mag(void) const {return sqrt(magSqr());}
-	
-	/// Return the distance to the vector b
-	double dist(const Vector2d &b) const {return sqrt(distSqr(b));}
-	
-	/// Return the dot product of this vector and b
-	double dot(const Vector2d &b) const {return x*b.x+y*b.y;}
 	/// Return the cosine of the angle between this vector and b
 	double cosAng(const Vector2d &b) const {return dot(b)/(mag()*b.mag());}
 	
 	/// Return the "direction" (unit vector) of this vector
 	Vector2d dir(void) const {return (*this)/mag();}
-
-	/// Return this vector scaled by that
-	Vector2d &scale(const Vector2d &b) {x*=b.x;y*=b.y;return *this;}
 
 	/// Return the counterclockwise angle this vector makes 
 	///  from the x axis, in radians.
@@ -164,6 +166,15 @@ public:
 	
 	void io(osl::io::Serializer &s);
 };
+
+/// Vector2f is a cartesian vector in 2-space-- an x and y.
+class Vector2f : public Vector2dT<float,Vector2f> {
+public:
+	Vector2f(void) {}//Default consructor
+	/// 2-value constructor
+	Vector2f(const double Nx,const double Ny) {x=Nx;y=Ny;}
+};
+
 
 /// Allows "3.0*vector2d" to work.
 inline Vector2d operator*(const double scale,const Vector2d &v)

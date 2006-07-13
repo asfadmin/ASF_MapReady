@@ -1,3 +1,70 @@
+----------------- 07/2006 ------------------
+I'm trying to figure out how to read metadata.
+I've got to be able to read at least:
+	- ASF (and preferably other) CEOS
+	- Old-style 0.9 .meta/.ddr files
+	- New-style 1.x .meta files
+	- Plain LAS .ddrs
+	- LZP .par files
+
+I really really don't want to reinvent the wheel here.
+The stuff in asf_meta seems fairly reasonable;
+although there's a heck of a lot of code to do stuff
+this simple.
+
+meta_init.c:meta_init calls meta_read or meta_create.
+meta_create.c:meta_create calls ceos_init or ardop_init.
+meta_read.c:meta_read reads a .meta file:
+	- if no meta file, but has DDR, meta_read_only_ddr
+	- meta_read_old (coniIO) to *read* old metadata
+	- parse_metadata (Yacc) to read new metadata
+
+meta_read.c:meta_new2old copies the new metadata fields onto the old ones.
+
+asf_meta/meta_get_geo.c:meta_get_latLon calls proj_to_ll, in jpl_proj.
+
+
+
+My options are:
+	- svn/src/asf_meta: *unused* lex/yacc.
+	- svn/src/libasf_meta: printf/scanf-style conversion interface
+	- asf_tools/src_lib/asf_meta: coniFetch (the original pup idea!)
+
+I'm of course partial to the small clean CONI interface.
+Whatever I choose must remain backward compatible to:
+	.meta files:  
+ifm {                            # begin interferometry-related parameters
+    er: 6361397.5                    # Local earth radius [m]
+    ht: 7155412.5                    # Satellite height, from center of earth [m]
+    nLooks: 5                        # Number of looks to take from SLC
+    orig_lines: 36394                # Number of lines in original image
+    orig_samples: 5616               # Number of samples in original image
+}                                # end ifm
+
+	.par files:
+    missing_data {
+        start_frame: 5996591 
+        start_line: 206779 
+        start_byte: 1535067904 
+        missing_bytes: 7424 
+        missing_frames: 29 
+        missing_lines: 1 
+        missing_data_indicator: OTHER 
+    } 
+
+	.odl files:   
+ OBJECT = COMMON_HEADER
+  MSG_TYPE = "AUXILIARY_FILE"
+  TIME = 2006-172T19:52:05
+  DESTINATION = "CP"
+  SOURCE = "DS5"
+  NUMBER_OF_RECORDS = 1
+ END_OBJECT = COMMON_HEADER
+
+
+I think all these could be unified with the proper architecture.
+In particular, .par and .meta are identical.
+
 ------------------ 06/2006 ----------------------
 Really need to be able to stick together existing tools:
 	- Start with AISP
