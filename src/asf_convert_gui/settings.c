@@ -314,6 +314,7 @@ settings_apply_to_gui(const Settings * s)
         GtkWidget *dem_entry;
         GtkWidget *tc_pixel_size_checkbutton;
         GtkWidget *tc_pixel_size_entry;
+        GtkWidget *interpolate_checkbutton;
 
 	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
 
@@ -339,7 +340,12 @@ settings_apply_to_gui(const Settings * s)
         {
             gtk_entry_set_text(GTK_ENTRY(tc_pixel_size_entry), "");
         }
-                                     
+
+        interpolate_checkbutton =
+            glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
+
+        gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(interpolate_checkbutton), s->interp);
     }
     else
     {
@@ -639,7 +645,7 @@ settings_get_from_gui()
     {
         GtkWidget *dem_entry;
         GtkWidget *tc_pixel_size_checkbutton;
-        GtkWidget *tc_pixel_size_entry;
+        GtkWidget *interpolate_checkbutton;
 
 	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
 	strcpy(ret->dem_file, gtk_entry_get_text(GTK_ENTRY(dem_entry)));
@@ -653,12 +659,21 @@ settings_get_from_gui()
 
         if (ret->specified_tc_pixel_size)
         {
+            GtkWidget *tc_pixel_size_entry;
+            
             tc_pixel_size_entry =
                 glade_xml_get_widget(glade_xml, "tc_pixel_size_entry");
 
             ret->tc_pixel_size =
                 atof(gtk_entry_get_text(GTK_ENTRY(tc_pixel_size_entry)));
         }
+
+        interpolate_checkbutton =
+            glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
+
+        ret->interp =
+            gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(interpolate_checkbutton));
     }
 
     return ret;
@@ -1248,6 +1263,7 @@ settings_to_config_file(const Settings *s,
       else if (s->specified_pixel_size)
         fprintf(cf, "pixel spacing = %.2lf\n", s->pixel_size);
       fprintf(cf, "digital elevation model = %s\n", s->dem_file);
+      fprintf(cf, "interpolate = %d\n", s->interp);
       fprintf(cf, "\n");
     }
 

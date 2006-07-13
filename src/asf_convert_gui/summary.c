@@ -117,6 +117,9 @@ void update_summary()
             sprintf(text, "%s\n   Pixel Size: %f m (from geocode)",
                     text, s->pixel_size);
         }
+
+        sprintf(text, "%s\n   Interpolate Layover: %s", text,
+                s->interp ? "Yes" : "No");
     }
 
     strcat(text, "\nGeocoding: ");

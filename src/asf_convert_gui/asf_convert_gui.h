@@ -142,6 +142,7 @@ typedef struct
   char dem_file[2048];
   int specified_tc_pixel_size;
   double tc_pixel_size;
+  int interp;
 
   /* misc */
   int keep_files;
