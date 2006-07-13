@@ -319,8 +319,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     }
     else
     {
-	    asfPrintStatus("Resampling (Oversampling) SAR image to pixel size of %g meters.\n",
-			   pixel_size);
+        asfPrintStatus("Resampling (%s) SAR image to requested pixel size "
+                       "of %g meter%s.\n",
+                       pixel_size > sarRes ? "Downsampling" : "Oversampling",
+                       pixel_size, pixel_size==1 ? "" : "s");
     }
     resampleFile = outputName(output_dir, sarFile, "_resample");
 
