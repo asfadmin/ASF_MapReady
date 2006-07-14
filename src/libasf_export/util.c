@@ -289,27 +289,27 @@ void
 get_statistics (FloatImage *si, scale_t sample_mapping, int sampling_stride,
                 float *mean, float *standard_deviation,
                 float *min_sample, float *max_sample,
-                float *omin, float *omax, gsl_histogram **hist)
+                float *omin, float *omax, gsl_histogram **hist,
+                float no_data)
 {
 
   if ( sample_mapping == SIGMA ) {
     float_image_approximate_statistics (si, sampling_stride, mean,
-                                        standard_deviation,
-                                        FLOAT_IMAGE_DEFAULT_MASK);
+                                        standard_deviation, no_data);
     *omin = *mean - 2 * (*standard_deviation);
     *omax = *mean + 2 * (*standard_deviation);
   }
 
   else if ( sample_mapping == MINMAX ) {
     float_image_statistics (si, min_sample, max_sample, mean,
-                            standard_deviation, FLOAT_IMAGE_DEFAULT_MASK);
+                            standard_deviation, no_data);
     *omin = *min_sample;
     *omax = *max_sample;
   }
 
   else if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
     float_image_statistics (si, min_sample, max_sample, mean,
-                            standard_deviation, FLOAT_IMAGE_DEFAULT_MASK);
+                            standard_deviation, no_data);
     // Add a little bit of tail padding on the histgram to avoid problems
     // when searching for image min or max in the histogram (gsl histogram
     // limitation)
@@ -335,12 +335,16 @@ round (double arg)
 unsigned char
 pixel_float2byte(float paf, scale_t sample_mapping,
                  float omin, float omax, gsl_histogram *hist,
-                 gsl_histogram_pdf *hist_pdf)
+                 gsl_histogram_pdf *hist_pdf, float no_data_value)
 {
   const unsigned char min_brightness=0;          // Minimum brightess via byte
   const unsigned char max_brightness=UCHAR_MAX;  // Maximum brightess via byte
   unsigned char pab;                             // Pixel As Byte.
   size_t hist_bin;                       // histogram bin for given float value
+
+  // This case is easy -- always map the "no data" value to 0.
+  if (paf == no_data_value)
+      return 0;
 
   switch ( sample_mapping ) {
   case TRUNCATE:

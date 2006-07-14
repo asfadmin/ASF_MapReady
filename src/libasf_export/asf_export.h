@@ -94,10 +94,11 @@ void get_statistics (FloatImage *si, scale_t sample_mapping, \
                     int sampling_stride, float *mean, \
                     float *standard_deviation, float *min_sample, \
                     float *max_sample, float *omin, float *omax, \
-                    gsl_histogram **hist);
+                    gsl_histogram **hist, float no_data);
 unsigned char pixel_float2byte (float paf, scale_t sample_mapping, float omin,\
                                 float omax, gsl_histogram *hist, \
-                                gsl_histogram_pdf *my_hist_pdf);
+                                gsl_histogram_pdf *my_hist_pdf,
+                                float no_data_value);
 
 void export_as_envi (const char *metadata_file_name,
                      const char *image_data_file_name,

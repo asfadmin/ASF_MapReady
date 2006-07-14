@@ -230,7 +230,7 @@ export_as_geotiff (const char *metadata_file_name,
     asfPrintStatus("Gathering image statistics...\n");
     get_statistics (si, sample_mapping, sampling_stride, &mean,
                     &standard_deviation, &min_sample, &max_sample, &omin,
-                    &omax, &my_hist);
+                    &omax, &my_hist, md->general->no_data);
 
     /* Its a byte image, so the sample_size is one.  */
     sample_size = 1;
@@ -1013,7 +1013,8 @@ export_as_geotiff (const char *metadata_file_name,
       for ( jj = 0 ; jj < si->size_x ; jj++ ) {
         float paf = float_image_get_pixel (si, jj, ii);     // Pixel as float.
         byte_line_buffer[jj] = pixel_float2byte(paf, sample_mapping, omin,
-                                                omax, my_hist, my_hist_pdf);
+                                                omax, my_hist, my_hist_pdf,
+                                                md->general->no_data);
       }
       if ( TIFFWriteScanline (otif, byte_line_buffer, ii, 0) < 0 ) {
         asfPrintError("Error writing to output geotiff file %s",

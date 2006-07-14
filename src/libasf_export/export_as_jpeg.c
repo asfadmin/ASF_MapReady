@@ -133,7 +133,7 @@ export_as_jpeg (const char *metadata_file_name,
   gsl_histogram *my_hist = NULL;
   get_statistics (si, sample_mapping, sampling_stride, &mean,
                   &standard_deviation, &min_sample, &max_sample, &omin, &omax,
-                  &my_hist);
+                  &my_hist, md->general->no_data);
 
   asfPrintStatus("Writing Output File...\n");
 
@@ -179,7 +179,8 @@ export_as_jpeg (const char *metadata_file_name,
     for ( jj = 0 ; jj < si->size_x ; jj++ ) {
       jsample_row[jj] = (JSAMPLE) pixel_float2byte(float_row[jj],
                                                    sample_mapping, omin, omax,
-                                                   my_hist, my_hist_pdf);
+                                                   my_hist, my_hist_pdf,
+                                                   md->general->no_data);
     }
     row_pointer[0] = jsample_row;
     rows_written = jpeg_write_scanlines (&cinfo, row_pointer, rows_to_write);

@@ -91,7 +91,7 @@ export_as_tiff (const char *metadata_file_name,
   gsl_histogram *my_hist = NULL;
   get_statistics (si, sample_mapping, sampling_stride, &mean,
                   &standard_deviation, &min_sample, &max_sample, &omin, &omax,
-                  &my_hist);
+                  &my_hist, md->general->no_data);
 
   /* We might someday want to mask out certain valus for some type of
      images, so they don't corrupt the statistics used for mapping
@@ -153,7 +153,8 @@ export_as_tiff (const char *metadata_file_name,
     float_image_get_row (si, ii, float_row);
     for ( jj = 0 ; jj < si->size_x ; jj++ ) {
       byte_row[jj] = pixel_float2byte(float_row[jj], sample_mapping, omin,
-                                      omax, my_hist, my_hist_pdf);
+                                      omax, my_hist, my_hist_pdf,
+                                      md->general->no_data);
     }
     if ( TIFFWriteScanline (otif, byte_row, ii, 0) < 0 ) {
       asfPrintError ("Error writing to output tiff file %s", output_file_name);

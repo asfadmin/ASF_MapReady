@@ -115,7 +115,7 @@ export_as_ppm (const char *metadata_file_name,
   float omin, omax;
   get_statistics (si, sample_mapping, sampling_stride, &mean,
                   &standard_deviation, &min_sample, &max_sample, &omin, &omax,
-                  &my_hist);
+                  &my_hist, md->general->no_data);
   asfPrintStatus ("Writing output file...\n");
 
   /* Open the output file to be used.  */
@@ -149,7 +149,8 @@ export_as_ppm (const char *metadata_file_name,
     for ( jj = 0 ; jj < si->size_x ; jj++ ) {
       double paf = float_image_get_pixel (si, jj, ii); /* Pixels as float.  */
       unsigned char pab = pixel_float2byte(paf, sample_mapping, omin, omax,
-                                           my_hist, my_hist_pdf);
+                                           my_hist, my_hist_pdf,
+                                           md->general->no_data);
       /* Write red, green, and blue the same to get grey scale.  */
       fwrite (&pab, 1, 1, ofp);
       fwrite (&pab, 1, 1, ofp);
