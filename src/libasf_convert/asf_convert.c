@@ -477,6 +477,7 @@ int asf_convert(int createflag, char *configFileName)
       double average_height = cfg->geocoding->height;
       datum_type_t datum = WGS84_DATUM;
       double pixel_size = cfg->geocoding->pixel;
+      float background_val = cfg->geocoding->background;
 
       // Projection
       sprintf(projection, "-read-proj-file %s", cfg->geocoding->projection);
@@ -515,7 +516,8 @@ int asf_convert(int createflag, char *configFileName)
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
 					      force_flag, resample_method,
 					      average_height, datum,
-					      pixel_size, inFile, outFile),
+					      pixel_size, inFile, outFile,
+                                              background_val),
                    "geocoding data file (asf_geocode)\n");
 
       // Move the .meta file to be ready for export

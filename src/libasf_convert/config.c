@@ -263,6 +263,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->geocoding->resampling = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->geocoding->resampling, "BILINEAR");
   cfg->geocoding->force = 0;
+  cfg->geocoding->background = 0;
 
   cfg->export->format = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->export->format, "GEOTIFF");
@@ -359,6 +360,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->geocoding->datum = read_str(line, "datum");
       if (strncmp(test, "resampling", 10)==0)
         cfg->geocoding->resampling = read_str(line, "resampling");
+      if (strncmp(test, "background", 10)==0)
+        cfg->geocoding->background = read_int(line, "background");
       if (strncmp(test, "force", 5)==0)
         cfg->geocoding->force = read_int(line, "force");
       // Export
@@ -552,6 +555,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->geocoding->datum = read_str(line, "datum");
       if (strncmp(test, "resampling", 10)==0)
         cfg->geocoding->resampling = read_str(line, "resampling");
+      if (strncmp(test, "background", 10)==0)
+        cfg->geocoding->background = read_int(line, "background");
       if (strncmp(test, "force", 5)==0)
         cfg->geocoding->force = read_int(line, "force");
       FREE(test);
@@ -798,8 +803,13 @@ int write_convert_config(char *configFile, convert_config *cfg)
       if (!shortFlag)
 	fprintf(fConfig, "\n# Three different resampling methods have been implemented as part\n"
 		"# of the geocoding: NEAREST NEIGHBOR, BILINEAR and BICUBIC. The bilinear\n"
-		"#  resampling method is the default.\n\n");
+		"# resampling method is the default.\n\n");
       fprintf(fConfig, "resampling = %s\n", cfg->geocoding->resampling);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# After geocoding, a fill value is required for the regions outside\n"
+		"# of the geocoded image.  By default this value is 0, but may be set to a\n"
+		"# different value here.\n\n");
+      fprintf(fConfig, "background = %s\n", cfg->geocoding->background);
       if (!shortFlag)
 	fprintf(fConfig, "\n# In order to ensure the proper use of projection parameter files,\n"
 		"# we have implemented a number of checks that verify whether the map\n"

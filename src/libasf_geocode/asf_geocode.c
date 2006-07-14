@@ -333,7 +333,7 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
 int asf_geocode_from_proj_file(const char *projection_file,
 		 int force_flag, resample_method_t resample_method, 
 		 double average_height, datum_type_t datum, double pixel_size,
-		 char *in_base_name, char *out_base_name)
+		 char *in_base_name, char *out_base_name, float background_val)
 {
   project_parameters_t pp;
   projection_type_t projection_type;
@@ -342,13 +342,13 @@ int asf_geocode_from_proj_file(const char *projection_file,
 
   return asf_geocode(&pp, projection_type, force_flag, resample_method,
 		     average_height, datum, pixel_size, in_base_name,
-		     out_base_name);
+		     out_base_name, background_val);
 }
 
 int asf_geocode (project_parameters_t *pp, projection_type_t projection_type, 
 		 int force_flag, resample_method_t resample_method, 
 		 double average_height, datum_type_t datum, double pixel_size,
-		 char *in_base_name, char *out_base_name)
+		 char *in_base_name, char *out_base_name, float background_val)
 {
   // Install handler to trap segmentation faults and print a backtrace.
   sigset_t sigsegv_mask;
@@ -1072,10 +1072,15 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
           printf("\nFailed symmetry test: x- |%.5f-%.5f| = %.5f\n"
                    "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
                  strx,stpx,fabs(strx-stpx),stry,stpy,fabs(stry-stpy),sym_th);
+
+          // Abort if the error is "horrible" (more than a pixel)
+          if (fabs (strx-stpx) > 10*sym_th || fabs (stry-stpy) > 10*sym_th) {
+              asfPrintError("Aborting... symmetry testing error too large.");
+          }
       } else {
           printf ("good to within %lf pixels.\n", sym_th);
       }
-      // Hmm, looke like they are all pretty bad.  Oh well, the
+      // Hmm, looks like they are all pretty bad.  Oh well, the
       // problem of large corner errors when none of the intermediate
       // grid points were off by much still seems specific to scansar.
     }
@@ -1206,7 +1211,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
       // If we are outside the extent of the input image, set to the
       // fill value.  FIXME: user should be able to specify fill value?
-      const float fill_value = 0.0;
+      float fill_value = background_val;
       g_assert (ii_size_x <= SSIZE_MAX);
       g_assert (ii_size_y <= SSIZE_MAX);
       if (    input_x_pixel < 0

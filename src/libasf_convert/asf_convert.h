@@ -82,6 +82,7 @@ typedef struct
   char *datum;            // datum: WGS84, NAD27, NAD83
   char *resampling;       // resampling method: NEAREST_NEIGHBOR, BILINEAR, BICUBIC
   int force;              // force flag
+  float background;       // value to use for pixels outside the image
 } s_geocoding;
 
 typedef struct

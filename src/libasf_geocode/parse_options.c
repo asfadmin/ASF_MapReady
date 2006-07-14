@@ -705,8 +705,7 @@ static void extract_double_option(int *argc, char **argv[], double *val,
 	}
 }
 
-static void extract_double_options(int *argc, char **argv[],
-								   double *val, ... )
+void extract_double_options(int *argc, char **argv[], double *val, ... )
 {
 	va_list ap;
 	char * arg = NULL;

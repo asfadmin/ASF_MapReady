@@ -12,6 +12,7 @@ typedef enum {
 
 int detect_string_options(int argc, char *argv[], char *val, ... );
 int detect_flag_options(int argc, char **argv, ...);
+void extract_double_options(int *argc, char **argv[], double *val, ... );
 
 void set_options_testing(int is_testing);
 project_parameters_t * parse_projection_options(int *argc, char **argv[],
@@ -153,9 +154,11 @@ void set_options_testing(int is_testing);
 int asf_geocode_from_proj_file (const char *projection_file,
 		 int force_flag, resample_method_t resample_method, 
 		 double average_height, datum_type_t datum, double pixel_size,
-		 char *in_base_name, char *out_base_name);
+		 char *in_base_name, char *out_base_name,
+                 float background_val);
 int asf_geocode (project_parameters_t *pp, projection_type_t projection_type, 
 		 int force_flag, resample_method_t resample_method, 
 		 double average_height, datum_type_t datum, double pixel_size,
-		 char *in_base_name, char *out_base_name);
+		 char *in_base_name, char *out_base_name,
+                 float background_val);
 void sigsegv_handler (int signal_number);

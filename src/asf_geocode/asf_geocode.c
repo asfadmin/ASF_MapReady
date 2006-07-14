@@ -25,7 +25,7 @@ trouble, and use edit_man_header. :)
 "   "ASF_NAME_STRING" -p <projection name> <<projection parameters>>\n"\
 "               [-force] [-resample-method <method>] [-height <height>]\n"\
 "               [-datum <datum>] [-pixel-size <pixel size>] [-log <file>]\n"\
-"               [-quiet] [-license] [-version] [-help]\n"\
+"               [-background <val>] [-quiet] [-license] [-version] [-help]\n"\
 "               <in_base_name> <out_base_name>\n"\
 "\n"\
 "   Use the -help option for more projection parameter controls.\n"
@@ -159,11 +159,15 @@ trouble, and use edit_man_header. :)
 "            WGS84  (World Geodetic System 1984) (default).\n"\
 "\n"\
 "     -pixel_size <pixel spacing>\n"\
-"          Specifies the pixel spacing of the geocoded image.  \"ASF_NAME_STRING\"\n"\
+"          Specifies the pixel spacing of the geocoded image.  "ASF_NAME_STRING"\n"\
 "          by default will preserve the pixel size of the input image.\n"\
 "\n"\
+"     -background <background fill value>\n"\
+"          Value to use for pixels that fall outside of the scene.  "ASF_NAME_STRING"\n"\
+"          by default will fill the outside with zeroes.\n"\
+"\n"\
 "     -force\n"\
-"          Override the built-in projection sanity checks.  \"ASF_NAME_STRING\"\n"\
+"          Override the built-in projection sanity checks.  "ASF_NAME_STRING"\n"\
 "          by default will abort with an error if it detects that a\n"\
 "          scene lies in an area where the selected projection is\n"\
 "          going to give poor results.  However, you may still wish\n"\
@@ -328,6 +332,8 @@ main (int argc, char **argv)
   datum_type_t datum;
   // Method to use to resample images.
   resample_method_t resample_method;
+  // Value to put in the region outside the image
+  double background_val = 0.0;
 
   // Detect & Process logging arguments
   if ((logflag = detect_string_options(argc, argv, logFile,
@@ -363,6 +369,9 @@ main (int argc, char **argv)
     debug_dump=TRUE;
     ++arg_num;
   }
+
+  extract_double_options(&argc, &argv, &background_val, "--background",
+                         "-background", NULL);
   
   // Get non-option command line arguments.
   if ( argc != 3 && !debug_dump ) {
@@ -389,7 +398,8 @@ main (int argc, char **argv)
 
   // Call library function that does the actual work
   asf_geocode(pp, projection_type, force_flag, resample_method, average_height,
-	      datum, pixel_size, in_base_name, out_base_name);
+	      datum, pixel_size, in_base_name, out_base_name,
+              (float)background_val);
 
   // Close Log, if needed
   if (logflag)
