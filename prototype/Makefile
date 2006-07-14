@@ -8,6 +8,8 @@ CLUI_SRC=src/asf/clui_cli.cpp
 CLUI=bin/clui
 
 CORE_SRC= \
+	src/asf_meta/coniFetch.cpp \
+	src/asf_meta/meta_parameters.cpp \
 	src/asf_meta/util.cpp \
 	src/asf_meta/metadata.cpp \
 	src/asf_meta/metadata_earth.cpp \

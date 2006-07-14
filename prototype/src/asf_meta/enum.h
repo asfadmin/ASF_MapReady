@@ -63,7 +63,7 @@ typedef enum {
   ALBERS_EQUAL_AREA, /**< Complicated but portable map projection. */
   LAMBERT_CONFORMAL_CONIC, /**< The common "Lambert" projection. */
   LAMBERT_AZIMUTHAL_EQUAL_AREA, /**< Rarely used variant of Lambert projection. */
-  STATE_PLANE_PROJECTION, /**< Each US state legally defines its own separate projection */
+  STATE_PLANE, /**< Each US state legally defines its own separate projection */
   SCANSAR_PROJECTION, /**< Along-track/across-track is a ScanSAR-specific, JPL-defined projection */
   LAT_LONG_PSEUDO_PROJECTION, /**< X is proportional to longitude; Y is proportional to latitude.  Used heavily by USGS. */
   SLANT_RANGE_PROJECTION, /**< "Slant range" SAR image: x axis is distance from satellite, y axis is time. */
