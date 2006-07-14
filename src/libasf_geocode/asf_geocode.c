@@ -1249,6 +1249,9 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   double x_scale = pixel_size / x_pixel_size;
   double y_scale = pixel_size / y_pixel_size;
 
+  // Update no data value
+  omd->general->no_data = background_val;
+
   // Flip the non-reprojected image if the y pixel size is negative.
   if ( y_pixel_size < 0 && omd->projection == NULL ) {
     asfPrintStatus ("Negative y pixel size, flipping output image.\n");

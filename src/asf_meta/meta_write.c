@@ -160,6 +160,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
 		  "Fraction of bits which are in error");
   meta_put_int   (fp,"missing_lines:", meta->general->missing_lines,
 		  "Number of missing lines in data take");
+  meta_put_double(fp,"no_data:", meta->general->no_data,
+		  "Value indicating no data for a pixel");
   meta_put_string(fp,"}", "","End general");
 
 /* SAR block.  */

@@ -354,6 +354,8 @@ void fill_structure_field(char *field_name, void *valp)
       { MGENERAL->bit_error_rate = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "missing_lines") )
       { MGENERAL->missing_lines = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "no_data") )
+      { MGENERAL->no_data = (float) VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which normally go in the sar block of the metadata file.  */

@@ -65,6 +65,9 @@ baseline read_baseline(char *fName);
    so short for some good reason.  */
 #define MODE_FIELD_STRING_MAX 5
 
+/* Default value of a pixel which indicates "NO DATA" */
+#define DEFAULT_NO_DATA_VALUE 0
+
 /* general->data_type values */
 typedef enum {
   BYTE=1,
@@ -214,6 +217,7 @@ typedef struct {
   double re_minor;           /* Semiminor axis length (poles) (meters).    */
   double bit_error_rate;     /* Fraction of bits which are in error.       */
   int missing_lines;         /* Number of missing lines in data take       */
+  float no_data;             /* Value indicating no data for this pixel    */
 } meta_general;
 
 

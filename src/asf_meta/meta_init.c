@@ -58,7 +58,7 @@ meta_general *meta_general_init(void)
   general->re_minor = MAGIC_UNSET_DOUBLE;
   general->bit_error_rate = MAGIC_UNSET_DOUBLE;
   general->missing_lines = MAGIC_UNSET_INT;
-
+  general->no_data = DEFAULT_NO_DATA_VALUE;
   return general;
 }
 

@@ -231,6 +231,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    else if (esa_facdr) meta->general->bit_error_rate = esa_facdr->ber;
    else                meta->general->bit_error_rate = 0.0;
 
+   meta->general->no_data = DEFAULT_NO_DATA_VALUE;
+
  /* Fill meta->sar structure */
    if (mpdr) {
       meta->sar->image_type = 'P';
