@@ -1068,8 +1068,13 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       // fraction after transforming out and back.
       printf ("Symmetry testing latLong vs. linsSamp... ");
       const double sym_th = 0.1;   // Symmetry threshold.
-      g_assert (fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th);
-      printf ("good to within %lf pixels.\n", sym_th);
+      if (!(fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th)) {
+          printf("\nFailed symmetry test: x- |%.5f-%.5f| = %.5f\n"
+                   "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
+                 strx,stpx,fabs(strx-stpx),stry,stpy,fabs(stry-stpy),sym_th);
+      } else {
+          printf ("good to within %lf pixels.\n", sym_th);
+      }
       // Hmm, looke like they are all pretty bad.  Oh well, the
       // problem of large corner errors when none of the intermediate
       // grid points were off by much still seems specific to scansar.
