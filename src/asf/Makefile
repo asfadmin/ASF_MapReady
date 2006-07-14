@@ -25,8 +25,6 @@ OBJS  = caplib.o \
 
 all: build_only
 	mv asf.a $(LIBDIR)
-	# Make a link obeying the usual naming convention.
-	ln -s -f $(LIBDIR)/asf.a $(LIBDIR)/libasf.a
 	rm *.o
 
 build_only: $(OBJS)
