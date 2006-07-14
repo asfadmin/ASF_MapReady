@@ -28,24 +28,24 @@ trouble, and use edit_man_header. :)
 "               [-quiet] [-license] [-version] [-help]\n"\
 "               <in_base_name> <out_base_name>\n"\
 "\n"\
-"   Use the -help option for more projection parameter controls.\\n"
+"   Use the -help option for more projection parameter controls.\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program takes a map projected or an unprojected (ground\n"\
 "     range) image in the ASF internal format and geocodes it,\n"\
 "     i.e. swizzles it around into one of the standard projections used\n"\
 "     for maps (universal transverse mercator, polar stereo, etc).  The\n"\
-"     output is a new image in ASF internal format.\\n"
+"     output is a new image in ASF internal format.\n"
 
 #define ASF_INPUT_STRING \
 "     Most of the \"options\" are actually required.  The specification\n"\
 "     of a certain projection type implies that all the parameters\n"\
 "     required to fully specify a projection of that type be included.\n"\
 "\n"\
-"     This must be an ASF internal format image base name.\\n"
+"     This must be an ASF internal format image base name.\n"
 
 #define ASF_OUTPUT_STRING \
-"     The base name of the geocoded image to produce.\\n"
+"     The base name of the geocoded image to produce.\n"
 
 #define ASF_OPTIONS_STRING \
 "     Projection Parameter Options  \n"\
@@ -185,26 +185,26 @@ trouble, and use edit_man_header. :)
 "        Print version and copyright then exit.\n"\
 "\n"\
 "   -help\n"\
-"        Print a help page and exit.\\n"
+"        Print a help page and exit.\n"
 
 #define ASF_EXAMPLES_STRING \
 "     To map project an image with centerpoint at -147 degrees\n"\
 "     longitude and average height 466 meters into universal transverse\n"\
 "     mercator projection, with one pixel 50 meters on a side:\n"\
 "\n"\
-"     \"ASF_NAME_STRING\" -p utm --central-meridian -147.0 --height 466\n"\
-"                 input_image output_image\\n"
+"     "ASF_NAME_STRING" -p utm --central-meridian -147.0 --height 466\n"\
+"                 input_image output_image\n"
 
 #define ASF_LIMITATIONS_STRING \
 "     May fail badly if bad projection parameters are supplied for the\n"\
-"     area in the image.\\n"
+"     area in the image.\n"
 
 #define ASF_SEE_ALSO_STRING \
-"     asf_import, asf_export\\n"
+"     asf_import, asf_export\n"
 
 #define ASF_COPYRIGHT_STRING \
 "Copyright (c) \"ASF_COPYRIGHT_YEAR_STRING\", University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
-"All rights reserved.\\n"
+"All rights reserved.\n"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 #include <asf_contact.h>
