@@ -19,7 +19,7 @@ build_stamp:
 	(   cd $(UNPACK_DIR) ; \
 	    cat Makefile ../Makefile.addendum > Makefile.2 ; \
 	    mv Makefile.2 Makefile ; \
-	    make libshp.a ; \
+	    $(MAKE) libshp.a ; \
 	    cp libshp.a $(LIB_DIR) ; \
 	    cp shapefil.h $(INCLUDE_DIR) ; \
 	)

@@ -30,8 +30,8 @@ build_stamp:
 	(   cd $(UNPACK_DIR) ; \
 	    perl -p -i -e 's{\(\);}{(void);}' src/proj_api.h ; \
 	    CFLAGS="$(PROJ_CFLAGS)" ./configure --prefix=$(ROOT_DIR) ; \
-	    make ; \
-	    make install ; \
+	    $(MAKE) ; \
+	    $(MAKE) install ; \
 	)
 	touch $@
 

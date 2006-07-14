@@ -23,8 +23,8 @@ build_tcl_stamp:
 	  gunzip --to-stdout $(TCL_ZIPFILE) | tar xv; \
 	  (   cd $(TCL_UNPACK_DIR)/unix ; \
 	      ./configure --enable-gcc --disable-load --prefix=$(ROOT_DIR) ; \
-	      make ; \
-	      make install ; \
+	      $(MAKE) ; \
+	      $(MAKE) install ; \
 	  ) && touch $@; \
 	fi
 
@@ -39,8 +39,8 @@ build_tk_stamp: build_tcl_stamp
 	  gunzip --to-stdout $(TK_ZIPFILE) | tar xv; \
 	  (   cd $(TK_UNPACK_DIR)/unix ; \
 	      ./configure  --enable-gcc --disable-load --prefix=$(ROOT_DIR) ; \
-	      make ; \
-	      make install ; \
+	      $(MAKE) ; \
+	      $(MAKE) install ; \
 	  ) && touch $@; \
 	fi
 

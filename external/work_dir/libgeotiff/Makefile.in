@@ -22,8 +22,8 @@ build_stamp:
 	(   cd $(UNPACK_DIR) ; \
 	    ./configure --prefix=$(ROOT_DIR) @LIBTIFF_LOCATION@ ; \
 	    cat ../Makefile.addendum >> ./Makefile ; \
-	    make libgeotiff.a ; \
-	    make asf_install ; \
+	    $(MAKE) libgeotiff.a ; \
+	    $(MAKE) asf_install ; \
 	)
 	touch $@
 
