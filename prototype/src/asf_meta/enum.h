@@ -120,8 +120,8 @@ typedef enum {
 /** 1D metadata fields, accessed with metadata_source::meta1D */
 typedef enum {
 	METADATA_1D_FIRST=1000, /**<  Start of metadata enum */
-	TIME_SINCE_START, /**<  Time of this point's aquisition relative to image start (seconds) */
-	TIME_SECONDS_OF_DAY, /**<  Time of this point since midnight UTC (seconds).  This value will not jump around across midnight, which I claim is what you want! */
+	TIME_SINCE_START, /**<  Time of this point's aquisition relative to image start (seconds).  Computed from SLANT_TIME_DOPPLER in metadata_sar.cpp. */
+	TIME_SECONDS_OF_DAY, /**<  Time of this point since midnight UTC (seconds).  This value will not jump around across midnight, which I claim is what you want!  Computed from IMAGE_START_SECONDS_OF_DAY and TIME_SINCE_START in metadata.cpp. */
 	IMAGE_START_SECONDS_OF_DAY, /**<  Time of start of image since midnight UTC (seconds). */
 	
 	ELLIPSOID_LOCAL, /**<  Local ellipsoid radius (meters) */
@@ -160,9 +160,7 @@ typedef enum {
 	
 	BIT_ERROR_RATE, /**<  Fraction of downlinked bits which are in error (fraction). */
 	
-	// See the PROJECTION_ZONE and PROJECTION_PARAMETER_GLOB for other projection parameters.
-	FALSE_EASTING, /**<  Value to subtract from X coordinates to get to plain projection (meters) */
-	FALSE_NORTHING, /**<  Value to subtract from Y coordinates to get to plain projection (meters) */
+	// See the PROJECTION_PARAMETER_GLOB for other projection parameters.
 	GEOCODING_HEIGHT, /**<  Fake elevation that's been used for geocoding (meters) */
 	
 	INTERFEROMETRIC_REFERENCE_LOOK_RADIANS, /**<  Reference look angle used for baseline (radians of look angle) */
@@ -176,9 +174,7 @@ typedef enum {
 /** 2D metadata fields, accessed with metadata_source::meta2D */
 typedef enum {
 	METADATA_2D_FIRST=2000, /**<  Start of metadata enum */
-	LATITUDE_LONGITUDE_DEGREES, /**<  Location of target on planet surface (decimal degrees) */
-	LATITUDE_LONGITUDE_RADIANS, /**<  Location of target on planet surface (radians) */
-	PROJECTION_COORDINATES, /**<  Map projection coordinates (meters) */
+	LONGITUDE_LATITUDE_DEGREES, /**<  Location of target on planet surface (decimal degrees) */
 	INTERFEROMETRIC_BASELINE, /**<  Interferometric baseline: x=parallel, y=normal (meters of baseline) */
 	METADATA_2D_LAST
 } metadata_2D_enum;
@@ -186,7 +182,7 @@ typedef enum {
 /** 3D metadata fields, accessed with metadata_source::meta3D */
 typedef enum {
 	METADATA_3D_FIRST=3000, /**<  Start of metadata enum */
-	TARGET_POSITION, /**<  Location of target in 3D body-fixed coordinates (meters) */
+	/* Direction vectors.  All these vectors are in the 3D body-fixed XYZ coordinate system. */
 	TARGET_SATELLITE_DIRECTION, /**<  From target, unit vector pointing to satellite (unit vector) */
 	TARGET_UP_DIRECTION, /**<  From target, unit vector pointing upward (unit vector) */
 	TARGET_NORTH_DIRECTION, /**<  From target, unit vector pointing north (unit vector) */
@@ -200,13 +196,23 @@ typedef enum {
 	SATELLITE_DOWN_DIRECTION, /**<  From satellite, unit vector pointing downward (unit vector) */
 	SATELLITE_FLIGHT_DIRECTION, /**<  From satellite, unit vector pointing along body-fixed velocity vector (unit vector) */
 	
-	LATITUDE_LONGITUDE_ELEVATION_DEGREES, /**<  Location of target on planet surface (degrees,degrees,meters from ellipsoid) */
-	LATITUDE_LONGITUDE_ELEVATION_RADIANS, /**<  Location of target on planet surface (radians,radians,meters from ellipsoid) */
-	SLANT_TIME_DOPPLER, /**<  Slant range (x), time (y), and doppler (z) at this image point (meters,seconds,Hz) */
+	/* Coordinate spaces (other than image pixels) */
+	TARGET_POSITION, /**<  Location of target in 3D body-fixed XYZ coordinates (meters).  Also XYZ_FROM_IMAGE */
+	LONGITUDE_LATITUDE_ELEVATION_DEGREES, /**<  Location of target on planet surface (degrees,degrees,meters from ellipsoid).  Also LLE_FROM_IMAGE */
+	SLANT_TIME_DOPPLER, /**<  Slant range (x), time (y), and doppler (z) at this image point (meters,seconds,Hz). Also STD_FROM_IMAGE */
+	MAP_COORDINATES, /**< Return map projection coordinates in XY and elevation in Z (units vary; but normally all meters).  Also MAP_FROM_IMAGE */
 	
-	LLE_FROM_STD, /**<  Input is SLANT_TIME_DOPPLER.  Output is LATITUDE_LONGITUDE_ELEVATION_DEGREES. */
-	STD_FROM_LLE, /**<  Input is LATITUDE_LONGITUDE_ELEVATION_DEGREES.  Output is SLANT_TIME_DOPPLER. */
-	IMAGE_FROM_LLE, /**<  Input is LATITUDE_LONGITUDE_ELEVATION_DEGREES.  Output is image pixels. */
+	/* Bizarre coordinate space transforms: */
+	IMAGE_FROM_XYZ, /**<  Input is TARGET_POSITION.  Output is image pixels. */
+	IMAGE_FROM_LLE, /**<  Input is LONGITUDE_LATITUDE_ELEVATION_DEGREES.  Output is image pixels. */
+	IMAGE_FROM_STD, /**<  Input is SLANT_TIME_DOPPLER.  Output is image pixels. */
+	IMAGE_FROM_MAP, /**<  Input is MAP_COORDINATES.  Output is image pixels. */
+	LLE_FROM_MAP, /**<  Input is MAP_COORDINATES.  Output is LONGITUDE_LATITUDE_ELEVATION_DEGREES. (see meta_parameters.cpp) */
+	MAP_FROM_LLE, /**<  Input is LONGITUDE_LATITUDE_ELEVATION_DEGREES.  Output is MAP_COORDINATES. (see meta_parameters.cpp) */
+	LLE_FROM_XYZ, /**<  Input is TARGET_POSITION.  Output is LONGITUDE_LATITUDE_ELEVATION_DEGREES. (see metadata.cpp) */
+	XYZ_FROM_LLE, /**<  Input is LONGITUDE_LATITUDE_ELEVATION_DEGREES.  Output is TARGET_POSITION. (see metadata.cpp) */
+	STD_FROM_XYZ, /**<  Input is TARGET_POSITION.  Output is SLANT_TIME_DOPPLER. (see metadata_sar.cpp) */
+	XYZ_FROM_STD, /**<  Input is SLANT_TIME_DOPPLER.  Output is TARGET_POSITION. (see metadata_sar.cpp)  */
 	METADATA_3D_LAST
 } metadata_3D_enum;
 
@@ -231,16 +237,19 @@ typedef enum {
 /** String metadata fields, accessed with metadata_source::meta_string */
 typedef enum {
 	METADATA_STRING_FIRST=6000, /**<  Start of metadata enum */
-	SENSOR, /**<  Short name of aquiring sensor, e.g. "ERS1". */
-	MODE, /**<  Short name of sensor mode, e.g. "FN1". */
-	PROCESSOR, /**<  Short name of image processing software, e.g., "ASF/AISP/3.4" */
+	METADATA_SENSOR, /**<  Short name of aquiring sensor, e.g. "ERS1". */
+	METADATA_SENSOR_MODE, /**<  Short name of sensor mode, e.g. "FN1". */
+	METADATA_PROCESSOR, /**<  Short name of image processing software, e.g., "ASF/AISP/3.4" */
 	METADATA_STRING_LAST
 } metadata_string_enum;
 
-/** Big allocated objects with complicated types, returned by pointer from metadata_source::meta_glob */
+/** Big allocated objects with complicated types, returned by pointer from metadata_source::meta_glob.
+  WARNING: Any of these can be NULL, and should not be assumed to exist.
+*/
 typedef enum {
 	METADATA_GLOB_FIRST=9000, /**<  Start of metadata enum */
-	PROJECTION_PARAMETER_GLOB, /**<  Map projection information (meta_projection struct) */
+	META_PARAMETER_GLOB, /**<  Stored metadata, as a meta_parameters struct (see asf_meta/meta_parameters.h) */
+	PROJECTION_PARAMETER_GLOB, /**<  Map projection information, as a meta_projection struct */
 	CALIBRATION_DATA_GLOB, /**<  Antenna gain and noise profile (to be determined) */
 	METADATA_GLOB_LAST
 } metadata_glob_enum;
@@ -250,9 +259,8 @@ typedef enum {
 	METADATA_INT_FIRST=5000, /**<  Start of metadata enum */
 	IMAGE_DATA_TYPE, /**<  image_data_type_t for what this image represents (see below: signal data, phase image, etc.) */
 	PROJECTION_TYPE, /**<  projection_type_t of this image (see below) */
-	PROJECTION_ZONE, /**<  Zone code for UTM and state plane projected images (zone number) */
 	SPHEROID_TYPE, /**<  The spheroid in use: see spheroid_type_t below. */
-	DATUM_TYPE, /**<  The horizontal datum in use: see datum_type_t below. */
+	DATUM_TYPE, /**<  The vertical datum in use: see datum_type_t below. */
 	
 	TIME_DAY_OF_YEAR, /**<  Day of year of image start; 1 on January 1 (days) */
 	TIME_YEAR, /**<  Year of image start (years AD) */
@@ -280,14 +288,17 @@ struct enum_value_description_t {
 
 /** Look up this enum value's description.  Aborts if not found. */
 ASF_COREDLL const enum_value_description_t *lookup_enum_value(int value,const enum_value_description_t *table);
+/** Look up this enum value's description.  Returns NULL if not found. */
+ASF_COREDLL const enum_value_description_t *lookup_enum_value_NULL(int value,const enum_value_description_t *table);
 
 /** Look up this value's description by name.  Aborts if not found. */
 ASF_COREDLL const enum_value_description_t *lookup_enum_name(const char *name,const enum_value_description_t *table);
-
 /** Look up this value's description by name.  Returns NULL if not found. */
 ASF_COREDLL const enum_value_description_t *lookup_enum_name_NULL(const char *name,const enum_value_description_t *table);
 
-/* Tables for all the enums above.  Defined in enum_table.cpp, generated from this header by enum_parse.pl */
+/* Tables for all the enums above.  Defined in enum_table.cpp, generated from this header by enum_parse.pl.
+  Stores the string name and description of each possible enum value.
+*/
 ASF_COREDLL extern const enum_value_description_t data_type_t_table[];
 ASF_COREDLL extern const enum_value_description_t image_data_type_t_table[];
 ASF_COREDLL extern const enum_value_description_t projection_type_t_table[];

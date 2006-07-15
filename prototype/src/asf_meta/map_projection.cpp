@@ -4,35 +4,35 @@ NAME:JPL_proj
 SYNOPSIS:
 	A set of map projection routines from JPL. Includes
 	Along-Track/Cross-Track (AT/CT), Universal Transverse Mercator, Polar
-	Sterographic, and Lambert Conformal Conic.
+	Sterographic, Albers Equal Area, and Lambert Conformal Conic.
 
-DESCRIPTION:
-
-EXTERNAL ASSOCIATES:
-    NAME:               USAGE:
-    ---------------------------------------------------------------
-
-FILE REFERENCES:
-    NAME:               USAGE:
-    ---------------------------------------------------------------
-
-PROGRAM HISTORY:
-    VERS:   DATE:  AUTHOR:      PURPOSE:
-    ---------------------------------------------------------------
-    1.0	
-
-HARDWARE/SOFTWARE LIMITATIONS:
-
-ALGORITHM DESCRIPTION:
-
-ALGORITHM REFERENCES:
-BUGS:
 
 ******************************************************************************/
-#include "asf.h"
-#include "asf_meta.h"
-#include "jpl_proj.h"
-#include "libasf_proj.h"
+#include "map_projection.h"
+#include "asf/units.h"
+
+using namespace asf;
+
+/*
+These now live in the proj_parameters structure:
+#define RE 	6378144.0   GEM-06 Ellipsoid.
+#define ecc_e	8.1827385e-2 GEM-06 Eccentricity
+#define ecc2	SQR(ecc_e)
+*/
+#define cspeed	299.792458e6
+#define omega_e 7.29211585e-5
+#define D2R RADIANS_FROM_DEGREES
+#define R2D DEGREES_FROM_RADIANS
+
+/* Degree versions of (normally radian) trancendental operations */
+#define sind(x) sin((x)*D2R)
+#define cosd(x) cos((x)*D2R)
+#define tand(x) tan((x)*D2R)
+#define asind(x) (asin(x)*R2D)
+#define acosd(x) (acos(x)*R2D)
+#define atand(x) (atan(x)*R2D)
+#define atan2d(y,x) (atan2(y,x)*R2D)
+
 
 #define SQR(A)	((A)*(A))
 #define mag(x,y,z) sqrt(SQR(x)+SQR(y)+SQR(z))
@@ -62,7 +62,7 @@ void alb_ll(meta_projection *proj,double xx,double yy,double *alat,double *alon)
 void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,double *p1,double *p2)
 {
 	if (proj==NULL)
-		bail("NULL projection parameter structure passed to ll_to_proj!\n");
+		asf::die("NULL projection parameter structure passed to ll_to_proj!\n");
 	switch (proj->type)
 	{
 		case SCANSAR_PROJECTION: ll_ac(proj,look_dir,lat_d,lon,p2,p1); break;
@@ -81,7 +81,7 @@ void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,doub
 void proj_to_ll(meta_projection *proj, char look_dir, double p1, double p2, double *lat_d, double *lon)
 {
 	if (proj==NULL)
-		bail("NULL projection parameter structure passed to proj_to_ll!\n");
+		asf::die("NULL projection parameter structure passed to proj_to_ll!\n");
 	switch(proj->type)
 	{
 		case SCANSAR_PROJECTION: ac_ll(proj,look_dir,p2,p1,lat_d,lon); break;
@@ -330,7 +330,7 @@ void ps_ll(meta_projection *proj,double x,double y,double *alat,double *alon)
 }
 
 /**********************UTM Conversion Routines.*******************/
-int UTM_zone(double lon) {return(((180.0+lon)/6.0+1.0));} 
+int UTM_zone(double lon) {return (int)floor(((180.0+lon)/6.0+1.0));} 
 
 void ll_utm(meta_projection *proj,double tlat, double tlon, double *p1, double *p2)
 {
@@ -421,40 +421,310 @@ void utm_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon)
 	             *(d*d*d*d*d)/120.0) )/D2R;
 }
 
-/***************************Azimuth Equal Area Conversion Routines********/
+/***************************Azimuth Equal Area Conversion Routines*******
+Copied from the LAS routine asf_geolib/alberfor.c, which has the comment:
+
+PROGRAMMER              DATE
+----------              ----
+T. Mittan,              Feb, 1992
+
+ALGORITHM REFERENCES
+
+1.  Snyder, John P., "Map Projections--A Working Manual", U.S. Geological
+    Survey Professional Paper 1395 (Supersedes USGS Bulletin 1532), United
+    State Government Printing Office, Washington D.C., 1987.
+
+2.  Snyder, John P. and Voxland, Philip M., "An Album of Map Projections",
+    U.S. Geological Survey Professional Paper 1453 , United State Government
+    Printing Office, Washington D.C., 1989.
+*/
+
+#define EPSLN 1.0e-8
+
+/* Function to calculate the sine and cosine in one call.  Some computer
+   systems have implemented this function, resulting in a faster implementation
+   than calling each function separately.  It is provided here for those
+   computer systems which don`t implement this function
+  ----------------------------------------------------*/
+#if !defined(sunos)
+void sincos(double val,double *sin_val,double *cos_val)
+{
+	*sin_val = sin(val);
+	*cos_val = cos(val);
+	return;
+}
+#endif
+
+/* Function to adjust a longitude angle to range from -PI to PI radians
+   added if statments 
+  -----------------------------------------------------------------------*/
+double adjust_lon(double x)		/* Angle in radians			*/
+{
+	while (x>M_PI) x-=2*M_PI;
+	while (x<=-M_PI) x+=2*M_PI;
+
+	return(x);
+}
+/* Function to eliminate roundoff errors in asin
+----------------------------------------------*/
+double asinz (double con)
+{
+	if (fabs(con) > 1.0)
+	{
+		if (con > 1.0)
+			con = 1.0;
+		else
+			con = -1.0;
+	}
+	return(asin(con));
+}
+
+/* Function to compute the constant small m which is the radius of
+   a parallel of latitude, phi, divided by the semimajor axis.
+---------------------------------------------------------------*/
+double msfnz (double eccent,double sinphi,double cosphi)
+{
+	double con;
+
+	con = eccent * sinphi;
+	return((cosphi / (sqrt (1.0 - con * con))));
+}
+
+/* Function to compute constant small q which is the radius of a 
+   parallel of latitude, phi, divided by the semimajor axis. 
+------------------------------------------------------------*/
+double qsfnz (double eccent,double sinphi,double cosphi)
+{
+	double con;
+
+	if (eccent > 1.0e-7)
+	{
+		con = eccent * sinphi;
+		return (( 1.0- eccent * eccent) * (sinphi /(1.0 - con * con) - (.5/eccent)*
+		    log((1.0 - con)/(1.0 + con))));
+	}
+	else
+		return(2.0 * sinphi);
+}
+
+/* Function to compute phi1, the latitude for the inverse of the
+   Albers Conical Equal-Area projection.
+-------------------------------------------*/
+double phi1z (double eccent,double qs,int  *flag)
+{
+	double eccnts;
+	double dphi;
+	double con;
+	double com;
+	double sinpi;
+	double cospi;
+	double phi;
+	int i;
+
+	phi = asinz(.5 * qs);
+	if (eccent < EPSLN)
+		return(phi);
+	eccnts = eccent * eccent;
+	for (i = 1; i <= 25; i++)
+	{
+		sincos(phi,&sinpi,&cospi);
+		con = eccent * sinpi;
+		com = 1.0 - con * con;
+		dphi = .5 * com * com / cospi * (qs / (1.0 - eccnts) - sinpi / com + 
+		    .5 / eccent * log ((1.0 - con) / (1.0 + con)));
+		phi = phi + dphi;
+		if (fabs(dphi) <= 1e-7)
+			return(phi);
+	}
+	asf::die("Albers Projection Convergence error");
+	return(-1);
+}
+
+class alber_proj {
+public:
+	/* Variables common to forward and inverse transforms
+	  -----------------------------------------------------*/
+	double r_major;        /* major axis			       */
+	double r_minor;        /* minor axis			       */
+	double c;	       /* constant c			       */
+	double e3;	       /* eccentricity  		       */
+	double es;		/* eccentricity squared			*/
+	double rh;	       /* heigth above elipsoid 	       */
+	double ns0;	       /* ratio between meridians	       */
+	double lon_center;     /* center longitude		       */
+	double false_easting;  /* x offset in meters		       */
+	double false_northing; /* y offset in meters		       */
+
+	/* Initialize the Albers projection
+	  -------------------------------*/
+	alber_proj(
+	    double r_maj,			/* major axis				*/
+	    double r_min,			/* minor axis				*/
+	double lat1,			/* first standard parallel		*/
+	double lat2,			/* second standard parallel		*/
+	double lon0,			/* center longitude			*/
+	double lat0,			/* center lattitude			*/
+	double false_east,		/* x offset in meters			*/
+	double false_north		/* y offset in meters			*/
+	)
+	{
+		double sin_po,cos_po;		/* sin and cos values			*/
+		double con;			/* temporary variable			*/
+		double temp;			/* eccentricity squared and temp var	*/
+		double ms1;			/* small m 1				*/
+		double ms2;			/* small m 2				*/
+		double qs0;			/* small q 0				*/
+		double qs1;			/* small q 1				*/
+		double qs2;			/* small q 2				*/
+
+		false_easting = false_east;
+		false_northing = false_north;
+		lon_center = lon0;
+		if (fabs(lat1 + lat2) < EPSLN)
+		{
+			asf::die("jpl_proj.c> Albers projeciton: Equal latitudes for St. Parallels on opposite sides of equator");
+		}
+		r_major = r_maj;
+		r_minor = r_min;
+		temp = r_minor / r_major;
+		es = 1.0 - temp*temp;
+		e3 = sqrt(es);
+
+		sincos(lat1, &sin_po, &cos_po);
+		con = sin_po;
+
+		ms1 = msfnz(e3,sin_po,cos_po);
+		qs1 = qsfnz(e3,sin_po,cos_po);
+
+		sincos(lat2,&sin_po,&cos_po);
+
+		ms2 = msfnz(e3,sin_po,cos_po);
+		qs2 = qsfnz(e3,sin_po,cos_po);
+
+		sincos(lat0,&sin_po,&cos_po);
+
+		qs0 = qsfnz(e3,sin_po,cos_po);
+
+		if (fabs(lat1 - lat2) > EPSLN)
+			ns0 = (ms1 * ms1 - ms2 *ms2)/ (qs2 - qs1);
+		else
+			ns0 = con;
+		c = ms1 * ms1 + ns0 * qs1;
+		rh = r_major * sqrt(c - ns0 * qs0)/ns0;
+	}
+
+
+	/* Albers Conical Equal Area forward equations--mapping lat,long to x,y
+double lon;	  (I) Longitude (radians)	       
+double lat;	  (I) Latitude (radians)	       
+double *x;	  (O) X projection coordinate (meters) 
+double *y;	  (O) Y projection coordinate (meters) 
+  -------------------------------------------------------------------*/
+	void xy_from_ll(double lon, double lat,double *x, double *y)
+	{
+		double sin_phi,cos_phi;		/* sine and cos values		*/
+		double qs;			/* small q			*/
+		double theta;			/* angle			*/
+
+		double rh1;			/* height above ellipsoid	*/
+
+		sincos(lat,&sin_phi,&cos_phi);
+		qs = qsfnz(e3,sin_phi,cos_phi);
+		rh1 = r_major * sqrt(c - ns0 * qs)/ns0;
+		theta = ns0 * adjust_lon(lon - lon_center);
+		*x = rh1 * sin(theta) + false_easting;
+		*y = rh - rh1 * cos(theta) + false_northing;
+
+	}
+
+	/* Albers Conical Equal Area inverse equations--mapping x,y to lat/long
+double x;	  (I) X projection coordinate (meters) 
+double y;	  (I) Y projection coordinate (meters) 
+double *lon;	  (O) Longitude (radians)	       
+double *lat;	  (O) Latitude (radians)	       
+  -------------------------------------------------------------------*/
+	void ll_from_xy(double x, double y, double *lon, double *lat)
+	{
+		double rh1;			/* height above ellipsoid	*/
+		double qs;			/* function q			*/
+		double con;			/* temporary sign value		*/
+		double theta;			/* angle			*/
+		int   flag;			/* error flag;			*/
+
+
+		flag = 0;
+		x -= false_easting;
+		y = rh - y + false_northing;
+		;
+		if (ns0 >= 0)
+		{
+			rh1 = sqrt(x * x + y * y);
+			con = 1.0;
+		}
+		else
+		{
+			rh1 = -sqrt(x * x + y * y);
+			con = -1.0;
+		}
+		theta = 0.0;
+		if (rh1 != 0.0)
+			theta = atan2(con * x, con * y);
+		con = rh1 * ns0 / r_major;
+		qs = (c - con * con) / ns0;
+		if (e3 >= 1e-10)
+		{
+			con = 1 - .5 * (1.0 - es) * log((1.0 - e3) / 1.0 + e3)/e3;
+			if (fabs(fabs(con) - fabs(qs)) > .0000000001 )
+			{
+				*lat = phi1z(e3,qs,&flag);
+			}
+			else
+			{
+				if (qs >= 0)
+					*lat = .5 * M_PI;
+				else
+					*lat = -.5 * M_PI;
+			}
+		}
+		else
+		{
+			*lat = phi1z(e3,qs,&flag);
+		}
+
+		*lon = adjust_lon(theta/ns0 + lon_center);
+
+	}
+};
+
+alber_proj make_alber(meta_projection *proj) {
+	return alber_proj(RE,RP,
+		proj->param.albers.std_parallel1 * D2R,
+		proj->param.albers.std_parallel2 * D2R,
+		proj->param.albers.center_meridian * D2R,
+		proj->param.albers.orig_latitude * D2R,
+		proj->param.albers.false_easting,proj->param.albers.false_northing);
+}
+
 void ll_alb(meta_projection *proj,double lat, double lon, double *x, double *y)
 {
-  /* Use libasf_proj, wrapper for libproj */
-  double z;
-  project_parameters_t pps;
-  pps.albers.std_parallel1 = proj->param.albers.std_parallel1 * D2R;
-  pps.albers.std_parallel2 = proj->param.albers.std_parallel2 * D2R;
-  pps.albers.center_meridian = proj->param.albers.center_meridian * D2R;
-  pps.albers.orig_latitude = proj->param.albers.orig_latitude * D2R;
-  pps.albers.false_easting = pps.albers.false_northing = 0;
-  project_albers(&pps, lat*D2R, lon*D2R, 0, x, y, &z);
+	alber_proj p=make_alber(proj);
+	p.xy_from_ll(lat,lon,x,y);
 }
 
 void alb_ll(meta_projection *proj,double xx,double yy,
 	    double *alat,double *alon)
 {
-  /* Use libasf_proj, wrapper for libproj */
-  double h;
-  project_parameters_t pps;
-  pps.albers.std_parallel1 = proj->param.albers.std_parallel1 * D2R;
-  pps.albers.std_parallel2 = proj->param.albers.std_parallel2 * D2R;
-  pps.albers.center_meridian = proj->param.albers.center_meridian * D2R;
-  pps.albers.orig_latitude = proj->param.albers.orig_latitude * D2R;
-  pps.albers.false_easting = pps.albers.false_northing = 0;
-  project_albers_inv(&pps, xx, yy, 0, alat, alon, &h);
-  *alat *= R2D;
-  *alon *= R2D;
+	alber_proj p=make_alber(proj);
+	p.ll_from_xy(xx,yy,alat,alon);
+	*alat *= R2D;
+	*alon *= R2D;
 }
 
 /***************************AT/CT Conversion Routines*********************/
 /*Along-Track/Cross-Track utilities:*/
-void cross(double x1, double y1, double z1, double x2, double y2, double z2,
-      double *u1, double *u2, double *u3)
+void cross(double x1, double y1, double z1, 
+	double x2, double y2, double z2,
+	double *u1, double *u2, double *u3)
 {
   double r, t1, t2, t3;
   t1=y1*z2-z1*y2; t2=z1*x2-x1*z2; t3=x1*y2-y1*x2;
@@ -462,8 +732,24 @@ void cross(double x1, double y1, double z1, double x2, double y2, double z2,
   *u1=t1/r; *u2=t2/r; *u3=t3/r;
 }
 
-void rotate_z(vector *v,double theta);
-void rotate_y(vector *v,double theta);
+void rotate_z(vector *v,double theta)
+{
+	double xNew,yNew;
+	
+	xNew = v->x*cosd(theta)+v->y*sind(theta);
+	yNew = -v->x*sind(theta)+v->y*cosd(theta);
+	v->x = xNew; v->y = yNew;
+}
+
+void rotate_y(vector *v,double theta)
+{
+	double xNew,zNew;
+	
+	zNew = v->z*cosd(theta)+v->x*sind(theta);
+	xNew = -v->z*sind(theta)+v->x*cosd(theta);
+	v->x = xNew; v->z = zNew;
+}
+
 
 /**************************************************************************
  * atct_init:
@@ -471,9 +757,10 @@ void rotate_y(vector *v,double theta);
  * rotation amounts, in degrees.  This creates a latitude/longitude-style
  * coordinate system centered under the satellite at the start of imaging.
  * You must pass it a state vector from the start of imaging.            */
+ 
 void atct_init(meta_projection *proj,stateVector st)
 {
-	vector up={0.0,0.0,1.0};
+	vector up(0.0,0.0,1.0);
 	vector z_orbit, y_axis, a, nd;
 	double alpha3_sign;
 	double alpha1,alpha2,alpha3;
@@ -550,22 +837,4 @@ void ll_ac(meta_projection *proj, char look_dir, double lat_d, double lon, doubl
 		*c2 = -1.0*qlat*proj->param.atct.rlocal;  /* right looking */
 	else
 		*c2 = qlat * proj->param.atct.rlocal;   /* left looking */
-}
-
-void rotate_z(vector *v,double theta)
-{
-	double xNew,yNew;
-	
-	xNew = v->x*cosd(theta)+v->y*sind(theta);
-	yNew = -v->x*sind(theta)+v->y*cosd(theta);
-	v->x = xNew; v->y = yNew;
-}
-
-void rotate_y(vector *v,double theta)
-{
-	double xNew,zNew;
-	
-	zNew = v->z*cosd(theta)+v->x*sind(theta);
-	xNew = -v->z*sind(theta)+v->x*cosd(theta);
-	v->x = xNew; v->z = zNew;
 }

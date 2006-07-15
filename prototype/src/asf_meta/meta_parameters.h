@@ -9,6 +9,7 @@ Orion Sky Lawlor, olawlor@acm.org, 2006/07/13 (ASF)
 #define __ASF_META_META_PARAMETERS_H__
 
 #include "asf_meta/util.h"
+#include "asf_meta/metadata.h"
 
 namespace asf {
 
@@ -363,6 +364,9 @@ ASF_COREDLL meta_parameters *meta_raw_init(void);
 
 /** Read a brand new metadata structure from this .meta file */
 ASF_COREDLL meta_parameters *meta_read(const char *inName);
+
+/** Read a brand new metadata source from this .meta file */
+ASF_COREDLL metadata_source *meta_read_source(const char *inName);
 
 /** Write this meta_parameters object to a .meta file. */
 ASF_COREDLL void meta_write(meta_parameters *meta,const char *outName);

@@ -98,20 +98,39 @@ double getHeading(const stateVector *stVec);
 
 /********************** Setup ************************/
 
+/*
+	MakeMatrix:
+Constructs 3x3 matrix which rotates spacecraft-
+centered coordinates to earth-centered coordinates.
+*/
+
+void makeMatrix(GEOLOCATE_REC *g)
+{
+	vector v,ax,ay,az;
+	az=g->stVec.pos;
+	v=g->stVec.vel;
+	vecNormalize(&az);
+	vecNormalize(&v);
+	vecCross(az,v,&ay);
+	vecCross(ay,az,&ax);
+	g->look_matrix[0] = ax;
+	g->look_matrix[1] = ay;
+	g->look_matrix[2] = az;
+}
+
 void init_geolocate(const asf::metadata_source &meta,
 	const asf::meta_state_t &fixed_stVec,double elev,GEOLOCATE_REC *g)
 {
 /* Read fields straight out of meta */
 	asf::metaCoord_t loc(0,0,0); /**< Simple sample location--none of these fields are location-dependent */
 	g->stVec=fixed_stVec;
+	
 	g->lambda=meta(WAVELENGTH,loc);
 	g->side=meta(IS_RIGHT_LOOKING)?'R':'L';
 	g->re=meta(ELLIPSOID_EQUATORIAL,loc);
 	g->rp=meta(ELLIPSOID_POLAR,loc);
 	g->angularVelocity=meta(SIDEREAL_ROTATION_RATE_RADIANS,loc);
 	g->gxMe=meta(G_TIMES_MASS_PLANET,loc);
-	/* Convert velocity to inertial from fixed-earth */
-	g->stVec.rotate_coriolis(0,g->angularVelocity);
 	
 /* Compensate for elevation */
 	/**
@@ -124,6 +143,10 @@ void init_geolocate(const asf::metadata_source &meta,
 	this has an error of about 1mm/km elevation at 45 degrees latitude.
 	*/
 	g->re+=elev; g->rp+=elev;
+	
+/* Convert state vector velocity to inertial from fixed-earth */
+	g->stVec=g->stVec.rotate_coriolis(0,g->angularVelocity);
+	makeMatrix(g);
 }
 
 void init_geolocate(const asf::metadata_source &meta,
@@ -344,26 +367,6 @@ double getLook(GEOLOCATE_REC *g,double range,double yaw)
 }
 
 /*
-	MakeMatrix:
-Constructs 3x3 matrix which rotates spacecraft-
-centered coordinates to earth-centered coordinates.
-*/
-
-void makeMatrix(GEOLOCATE_REC *g)
-{
-	vector v,ax,ay,az;
-	az=g->stVec.pos;
-	v=g->stVec.vel;
-	vecNormalize(&az);
-	vecNormalize(&v);
-	vecCross(az,v,&ay);
-	vecCross(ay,az,&ax);
-	g->look_matrix[0] = ax;
-	g->look_matrix[1] = ay;
-	g->look_matrix[2] = az;
-}
-
-/*
 double calcRange(GEOLOCATE_REC *g, double look, double yaw);
 	Calculates the slant range, at the given look and yaw angle,
 	from the given satellite's position to the earth's surface.
@@ -507,6 +510,7 @@ c*/
 double asf::metadata_sar::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const
 {
 	const metadata_source &meta=*this;
+	metasource_watcher watcher(v,"metadata_sar::meta1D",*this);
 	switch (v) {
 	case SLANT_RANGE:
 		return meta(SLANT_TIME_DOPPLER,loc).x;
@@ -571,20 +575,31 @@ asf::meta2D_t asf::metadata_sar::meta2D(asf::metadata_2D_enum v,const asf::metaC
 }
 asf::meta3D_t asf::metadata_sar::meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const
 {
-	const metadata_source &meta=*this;
+	metasource_watcher watcher(v,"metadata_sar::meta3D",*this);
 	switch (v) {
 	/* The only actual geolocation call we support. Convert SAR parameters
 	  (slant range, time, doppler, and a state vector) to a position.
 	  Latitudes and longitudes are computed from here.
 	*/
 	case TARGET_POSITION:  {
+		meta3D_t std=meta3D(SLANT_TIME_DOPPLER,loc);
+		double slant=std.x, time=std.y, doppler=std.z, elev=loc.z;
 		sar_geolocate::GEOLOCATE_REC g;
-		meta3D_t std=meta(SLANT_TIME_DOPPLER,loc);
-		double slant=std.x, time=std.y, doppler=std.z;
-		sar_geolocate::init_geolocate(meta,
-			meta(SATELLITE_FROM_TIME,asf::meta3D_t(time,0,0)),
-			loc.z,&g);
+		sar_geolocate::init_geolocate(*this,
+			meta_state(SATELLITE_FROM_TIME,asf::meta3D_t(time,0,0)),
+			elev,&g);
 		return getLocCart(&g,slant,doppler,0);
+	}
+	case IMAGE_FROM_XYZ: {
+		return meta3D(IMAGE_FROM_STD, /* <- implemented by child */
+		        meta3D(STD_FROM_XYZ, /* <- below */
+			 loc));
+	}
+	case XYZ_FROM_STD: { /* Compute body-fixed location from slant/time/doppler */
+		asf::die("FIXME in metadata_sar::meta3D: XYZ_FROM_STD not implemented");
+	}
+	case STD_FROM_XYZ: { /* FIXME: implement this, probably with an iterative search */
+		asf::die("FIXME in metadata_sar::meta3D: STD_FROM_XYZ not implemented");
 	}
 	default:
 		return super::meta3D(v,loc);

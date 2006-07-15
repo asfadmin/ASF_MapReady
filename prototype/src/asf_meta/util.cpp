@@ -174,14 +174,22 @@ For online converters and snarky commentary, see
 /** Look up this enum value's description.  Aborts if not found. */
 const enum_value_description_t *asf::lookup_enum_value(int value,const enum_value_description_t *table)
 {
+	const enum_value_description_t *ret=lookup_enum_value_NULL(value,table);
+	if (!ret) { /* hit end of table */
+		char buf[40];
+		sprintf(buf,"%d",value);
+		asf::die("Can't locate enum name for enum value "+std::string(buf));
+	}
+	return ret;
+}
+
+/** Look up this enum value's description. Returns NULL if not found. */
+const enum_value_description_t *asf::lookup_enum_value_NULL(int value,const enum_value_description_t *table)
+{
 	int i=0;
 	while (value!=table[i].value) {
 		i++; /* Keep on looking */
-		if (-1==table[i].value) { /* hit end of table */
-			char buf[40];
-			sprintf(buf,"%d",value);
-			asf::die("Can't locate enum name for enum value "+std::string(buf));
-		}
+		if (-1==table[i].value) return NULL; /* hit end of table */
 	}
 	return &table[i];
 }

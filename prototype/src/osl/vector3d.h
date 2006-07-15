@@ -35,12 +35,12 @@ public:
 	/// Simple 1-value constructors
 	explicit Vector3dT(int init) {x=y=z=(real)init;}
 	explicit Vector3dT(float init) {x=y=z=(real)init;}
-	explicit Vector3dT(double init) {x=y=z=(real)init;}
+	Vector3dT(double init) {x=y=z=(real)init;}
 	
 	/// 3-value constructor
 	Vector3dT(const real Nx,const real Ny,const real Nz) {x=Nx;y=Ny;z=Nz;}
 	/// real array constructor
-	Vector3dT(const real *arr) {x=arr[0];y=arr[1];z=arr[2];}
+	explicit Vector3dT(const real *arr) {x=arr[0];y=arr[1];z=arr[2];}
 
 	/// Constructors from other types of Vector:
 	Vector3dT(const Vector3dT<float> &src) 

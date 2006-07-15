@@ -52,6 +52,7 @@ read or write, depending on coniOpen's direction.
 The comment fields can be NULL, indicating no comment.*/
 void coniIO_structOpen (coniStruct *coni,const char *name,const char *comment);
 void coniIO_structClose(coniStruct *coni,const char *name,const char *comment);
+int  coniIO_structProbe(coniStruct *coni,const char *name);
 void coniIO_str    (coniStruct *coni,const char *name,char *value,int valueSize,const char *comment);
 
 /** This macro lets you use coniIO with a fixed-size "char buf[n]" */

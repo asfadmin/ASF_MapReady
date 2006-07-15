@@ -4,6 +4,7 @@ Verify meta.h routines against known values.
 Orion Sky Lawlor, olawlor@acm.org, 2006/06/12
 */
 #include "asf_meta/util.h"
+#include "asf_meta/meta_parameters.h"
 
 using namespace asf;
 
@@ -121,6 +122,7 @@ void test_statevecs(void) {
 	diff("old gei2fixed(fixed2gei) state vector",a,co);
 }
 
+/******** Date and GHA handling ****************/
 void test_dates(void) {
 	vassert("1999",false==gregorian_leap_year(1999));
 	vassert("2000",true==gregorian_leap_year(2000));
@@ -158,10 +160,34 @@ void test_dates(void) {
 }
 
 
+/************** Geolocation *******************/
+void test_geolocations(void) {
+	asf::metadata_source &m1=*asf::meta_read_source("../test_data/delta_1.meta");
+	/* This is the location of corner reflector DJ1 in this image */
+	double elev=452.1;
+	asf::meta3D_t img(2238,12465,  elev);
+	
+	asf::meta3D_t std=m1(asf::SLANT_TIME_DOPPLER,img);
+	asf::meta3D_t std_good(855186.9809,7.4200757940396,312.6913);
+	diff("delta_1 DJ1 STD",std_good,std,1.0e-7);
+	
+	asf::meta3D_t xyz=m1(asf::TARGET_POSITION,img);
+	asf::meta3D_t xyz_good(-2312667.89, -1618876.50, 5700719.17);
+	diff("delta_1 DJ1 XYZ",xyz_good,xyz,2.0e-6); /* <- ellipsoids are slightly different (why?) */
+	
+	asf::meta3D_t lle=m1(asf::LONGITUDE_LATITUDE_ELEVATION_DEGREES,img);
+	asf::meta3D_t lle_good(-145.00790111, 63.80828389, elev);
+	diff("delta_1 DJ1 elevation",lle_good.z,lle.z,1.0e-2);
+	lle.z=lle_good.z; /* 1mm elevation roundoff screws up relative error */
+	diff("delta_1 DJ1 position",lle_good,lle,3.0e-7);
+}
+
+
 
 ASF_PLUGIN_EXPORT int main() {
 	test_statevecs();
 	test_dates();
+	test_geolocations();
 	
 	printf("All meta tests passed.  Good.\n");
 }

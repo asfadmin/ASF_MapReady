@@ -5,9 +5,12 @@
 Orion Sky Lawlor, olawlor@acm.org, 2006/07/13 (ASF)
 */
 #include "asf_meta/meta_parameters.h"
+#include "asf_meta/metadata.h"
 #include "asf/caplib.h"
 #include "asf/util.h"
-#include "coniFetch.h"
+#include "coniFetch.h" /* for .meta file I/O */
+#include "asf/units.h"
+#include "map_projection.h"
 using namespace asf;
 
 
@@ -401,7 +404,16 @@ void coniIO_meta (coniStruct *coni,meta_parameters *meta)
   coniIO_structClose(coni,"sar","End sar\n");
 
 /* State block.  */
-  if (meta->state_vectors) {
+  int do_stVec=0;
+  if (coniIsUnpacking(coni)) { /* reading */
+  	if (coniIO_structProbe(coni,"state")) do_stVec=1; /* read state vectors */
+  } else { /* writing */
+  	if (meta->state_vectors) do_stVec=1; /* write state vectors */
+  }
+  
+  if (do_stVec) {
+    coniIO_structOpen(coni,"state",
+		    "Begin list of state vectors for satellite, over image");
     int count=0;
     if (meta->state_vectors)
     	count=meta->state_vectors->vector_count;
@@ -409,8 +421,6 @@ void coniIO_meta (coniStruct *coni,meta_parameters *meta)
 		    "Number of state vectors below");
     if (!meta->state_vectors) 
     	meta->state_vectors=meta_state_vectors_init(count);
-    coniIO_structOpen(coni,"state",
-		    "Begin list of state vectors for satellite, over image");
     coniIO_int   (coni,"year",meta->state_vectors->year,"Year of image start");
     coniIO_int   (coni,"julDay",meta->state_vectors->julDay,
 		    "Julian day of the year for image start");
@@ -641,5 +651,296 @@ void coniIO_meta (coniStruct *coni,meta_parameters *meta)
   */
 }
 
+/****************** meta_parameters -> metadata_source interface **************/
+
+class metadata_from_parameters : public asf::metadata_sar {
+public:
+	typedef asf::metadata_sar super;
+
+	asf::meta_parameters *m;
+	metadata_from_parameters(asf::meta_parameters *m_) :m(m_) {}
+	virtual ~metadata_from_parameters() {
+		meta_free(m); m=0;
+	}
+	
+	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta_state_t meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc) const;
+	virtual int meta_int(asf::metadata_int_enum v) const;
+	virtual asf::meta_string_t meta_string(asf::metadata_string_enum v) const;
+	virtual asf::meta_glob_t meta_glob(asf::metadata_glob_enum v) const;
+};
+
+/**
+ The 1D fields are pretty easy-- just extract the value from meta_parameters.
+ The only problem is if the meta_parameters struct is NULL, or the value
+ is -9999999...
+*/
+double metadata_from_parameters::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const
+{
+	metasource_watcher watcher(v,"metadata_from_parameters::meta1D",*this);
+#define CHECK_AND_RETURN(struct,value) \
+		if (struct!=NULL) { \
+			if (struct->value!=MAGIC_UNSET_DOUBLE) \
+				return v; \
+			else /* unset value */ \
+				return super::meta1D(v,loc); \
+		} else /* NULL struct */ \
+			return super::meta1D(v,loc);
+	
+	switch (v) {
+	case IMAGE_START_SECONDS_OF_DAY: 	CHECK_AND_RETURN(m->state_vectors,second);
+	case ELLIPSOID_EQUATORIAL: 	return m->general->re_major;
+	case ELLIPSOID_POLAR: 	return m->general->re_minor;
+	case PRF: 	return m->sar->prf;
+	case WAVELENGTH: 	return m->sar->wavelength;
+	case AZIMUTH_PROCESSING_BANDWIDTH: 	CHECK_AND_RETURN(m->sar,azimuth_processing_bandwidth);
+	case CHIRP_RATE: 	CHECK_AND_RETURN(m->sar,chirp_rate);
+	case PULSE_DURATION: 	CHECK_AND_RETURN(m->sar,pulse_duration);
+	case RANGE_SAMPLING_RATE: 	CHECK_AND_RETURN(m->sar,range_sampling_rate);
+	case CLOUD_COVER: 	CHECK_AND_RETURN(m->optical,cloud_pct);
+	case BIT_ERROR_RATE: 	CHECK_AND_RETURN(m->general,bit_error_rate);
+	case GEOCODING_HEIGHT: 	CHECK_AND_RETURN(m->projection,height);
+	default:
+		return super::meta1D(v,loc);
+	}
+	
+#undef CHECK_AND_RETURN
+}
+asf::meta2D_t metadata_from_parameters::meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const
+{
+	switch (v) {
+	default:
+		return super::meta2D(v,loc);
+	}
+}
+
+/**
+  These 3D coordinate transforms are just about the only interesting thing that happens in this file.
+  It'd be nice to split this part into separate classes for:
+  	- Slant or ground range images, which deal with Slant/time/doppler and XYZ positions.
+	- Map projected images, which deal with map projection coordinates.
+*/
+asf::meta3D_t metadata_from_parameters::meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const
+{
+	metasource_watcher watcher(v,"metadata_from_parameters::meta3D",*this);
+	switch (v) {
+/* Slant range interface */
+	case SLANT_TIME_DOPPLER:
+		if (!m->state_vectors) /* without state vectors, STD is not useful... */
+			return super::meta3D(v,loc);
+		if (m->sar->image_type=='S') 
+		{ /* Slant range image */
+			asf::meta3D_t std(
+				/* Slant range: from X */
+				m->sar->slant_range_first_pixel+
+				m->sar->slant_shift+
+					loc.x*m->sar->range_time_per_pixel*(SPEED_OF_LIGHT*0.5),
+				/* Time: from Y */
+				m->sar->time_shift+
+					loc.y*m->sar->azimuth_time_per_pixel,
+				/* Doppler: from X and Y */
+				m->sar->range_doppler_coefficients[0]+
+				loc.x*(m->sar->range_doppler_coefficients[1]+
+				       loc.x*m->sar->range_doppler_coefficients[2])+
+				loc.y*(m->sar->azimuth_doppler_coefficients[1]+
+				       loc.y*m->sar->azimuth_doppler_coefficients[2])
+			);
+			return std;
+		}
+		else if (m->sar->image_type=='G')
+		{ /* ASF Precision Processor (?) ground-range image */
+#ifndef SQR
+#  define SQR(x) ((x)*(x))
+#endif
+			double ht=m->sar->satellite_height,er=m->sar->earth_radius_pp;
+			double minPhi=acos((SQR(ht)+SQR(er)-SQR(m->sar->slant_range_first_pixel))/
+				(2.0*ht*er));
+			double phi=minPhi+loc.x*(m->general->x_pixel_size/er);
+			double slantRng=sqrt(SQR(ht)+SQR(er)-2.0*ht*er*cos(phi));
+			asf::meta3D_t std(
+				/* Slant range: from X */
+				slantRng,
+				/* Time: from Y */
+				m->sar->time_shift+
+					loc.y*m->sar->azimuth_time_per_pixel,
+				/* Doppler: from X and Y */
+				m->sar->range_doppler_coefficients[0]+
+				loc.x*(m->sar->range_doppler_coefficients[1]+
+				       loc.x*m->sar->range_doppler_coefficients[2])+
+				loc.y*(m->sar->azimuth_doppler_coefficients[1]+
+				       loc.y*m->sar->azimuth_doppler_coefficients[2])
+			);
+			return std;
+		}
+		else { /* If it's anything, this is a map-projected image */
+			return meta3D(STD_FROM_XYZ,
+			        meta3D(XYZ_FROM_LLE,
+				 meta3D(LONGITUDE_LATITUDE_ELEVATION_DEGREES,
+				  loc)));
+		}
+	case IMAGE_FROM_STD: /* FIXME: compute pixels from STD.  Just the inverse of SLANT_TIME_DOPPLER above. */
+		asf::die("FIXME in meta_parameters.cpp: IMAGE_FROM_STD not defined");
+
+/* Map projection interface */
+	case LONGITUDE_LATITUDE_ELEVATION_DEGREES:
+		if (m->projection) 
+			return meta3D(LLE_FROM_MAP,meta3D(MAP_COORDINATES,loc));
+		else /* default SAR computation will work fine */
+			return super::meta3D(v,loc);
+	case TARGET_POSITION:
+		if (m->projection)
+			return meta3D(XYZ_FROM_LLE,meta3D(LONGITUDE_LATITUDE_ELEVATION_DEGREES,loc));
+		else /* for non-map images, compute target using SAR equations */
+			return super::meta3D(v,loc);
+	case IMAGE_FROM_LLE:
+		if (m->projection) 
+			return meta3D(IMAGE_FROM_MAP,meta3D(MAP_FROM_LLE,loc));
+		else
+			return super::meta3D(v,loc);
+	case MAP_COORDINATES: 
+		if (m->projection) {
+			double mapX=m->projection->startX+loc.x*m->projection->perX;
+			double mapY=m->projection->startY+loc.y*m->projection->perY;
+			return meta3D_t(mapX,mapY,loc.z);
+		}
+		else return super::meta3D(v,loc);
+	case IMAGE_FROM_MAP:
+		if (m->projection) {
+			double mapX=loc.x,mapY=loc.y;
+			double imgX=(mapX-m->projection->startX)/m->projection->perX;
+			double imgY=(mapY-m->projection->startY)/m->projection->perY;
+			return meta3D_t(imgX,imgY,loc.z);
+		}
+		else return super::meta3D(v,loc);
+	case LLE_FROM_MAP:
+		if (m->projection) 
+		{
+			double mapX=loc.x,mapY=loc.y;
+			double lat_deg=0.0,lon_deg=0.0;
+			proj_to_ll(m->projection,m->sar->look_direction,mapX,mapY,&lat_deg,&lon_deg);
+			return meta3D_t(lon_deg,lat_deg,loc.z);
+		} 
+		else return super::meta3D(v,loc);
+	case MAP_FROM_LLE:
+		if (m->projection) 
+		{
+			double mapX=0.0, mapY=0.0;
+			double lat_deg=loc.y, lon_deg=loc.x;
+			ll_to_proj(m->projection,m->sar->look_direction,lat_deg,lon_deg,&mapX,&mapY);
+			return meta3D_t(lon_deg,lat_deg,loc.z);
+		} 
+		else return super::meta3D(v,loc);
+	
+	default:
+		return super::meta3D(v,loc);
+	}
+}
+
+/** Interpolate this list of state vectors to this image time (seconds) */
+asf::meta_state_t interpolate_stVec(asf::meta_state_vectors *v,double time) {
+	int i=0;
+	while (i<v->vector_count-2
+		&& v->vecs[i+1].time<time)
+		i++;
+	asf::meta_state_t ret;
+	interp_stVec(
+		&v->vecs[i].vec,v->vecs[i].time,
+		&v->vecs[i+1].vec,v->vecs[i+1].time,
+		&ret,time);
+	return ret;
+}
+asf::meta_state_t metadata_from_parameters::meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc) const
+{
+	metasource_watcher watcher(v,"metadata_from_parameters::meta_state",*this);
+	switch (v) {
+	case SATELLITE_FROM_TIME: {
+		if (!m->state_vectors) return super::meta_state(v,loc);
+		return interpolate_stVec(m->state_vectors,loc.x);
+	}
+	default:
+		return super::meta_state(v,loc);
+	}
+}
+
+int meta2int(int val,asf::metadata_int_enum v,const metadata_source *src) 
+{
+	if (val==MAGIC_UNSET_INT)
+		metadata_missing(v,*src);
+	/* else */
+	return val;
+}
+int metadata_from_parameters::meta_int(asf::metadata_int_enum v) const
+{
+	metasource_watcher watcher(v,"metadata_from_parameters::meta_int",*this);
+	switch (v) {
+	case IMAGE_DATA_TYPE: return meta2int(m->general->image_data_type,v,this);
+	case PROJECTION_TYPE: 
+		if (m->sar->image_type=='P' && m->projection)
+			return meta2int(m->projection->type,v,this);
+		else return super::meta_int(v);
+
+#define CHECK_AND_RETURN(struct,value) \
+		if (struct!=NULL) { \
+			return meta2int(struct->value,v,this); \
+		} else return super::meta_int(v);
+	
+	case SPHEROID_TYPE: CHECK_AND_RETURN(m->projection,spheroid);
+	case DATUM_TYPE: CHECK_AND_RETURN(m->projection,datum);
+	case TIME_DAY_OF_YEAR: CHECK_AND_RETURN(m->state_vectors,julDay);
+	case TIME_YEAR: CHECK_AND_RETURN(m->state_vectors,year);
+	case ORBIT: CHECK_AND_RETURN(m->general,orbit);
+	case FRAME: CHECK_AND_RETURN(m->general,frame);
+	case IS_RIGHT_LOOKING: {
+		if (m->sar && m->sar->look_direction=='L') return 0;
+		else return 1;
+	}
+	case IS_DESKEWED: {
+		if (m->sar && m->sar->deskewed) return 1;
+		else return 0;
+	}
+	case MISSING_LINES: CHECK_AND_RETURN(m->general,missing_lines);	
+	default:
+		return super::meta_int(v);
+	}
+#undef CHECK_AND_RETURN
+}
+
+asf::meta_string_t meta2string(const char *str,asf::metadata_string_enum v,const metadata_source *src) 
+{
+	if (0==strcmp(str,MAGIC_UNSET_STRING))
+		metadata_missing(v,*src);
+	/* else */
+	return str;
+}
+asf::meta_string_t metadata_from_parameters::meta_string(asf::metadata_string_enum v) const
+{
+	metasource_watcher watcher(v,"metadata_from_parameters::meta_string",*this);
+	switch (v) {
+	case METADATA_SENSOR: return meta2string(m->general->sensor,v,this);
+	case METADATA_SENSOR_MODE: return meta2string(m->general->mode,v,this);
+	case METADATA_PROCESSOR: return meta2string(m->general->processor,v,this);
+	default:
+		return super::meta_string(v);
+	}
+}
+asf::meta_glob_t metadata_from_parameters::meta_glob(asf::metadata_glob_enum v) const
+{
+	metasource_watcher watcher(v,"metadata_from_parameters::meta_glob",*this);
+	switch (v) {
+	case META_PARAMETER_GLOB:
+		return m;
+	case PROJECTION_PARAMETER_GLOB:
+		return m->projection;
+	default:
+		return super::meta_glob(v);
+	}
+}
 
 
+/** Read a brand new metadata source from this .meta file */
+ASF_COREDLL metadata_source *asf::meta_read_source(const char *inName)
+{
+	return new metadata_from_parameters(meta_read(inName));
+}

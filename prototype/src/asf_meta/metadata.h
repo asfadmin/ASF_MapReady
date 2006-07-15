@@ -17,8 +17,8 @@ and everything that might be profitably used in more than one place.
 
 Orion Sky Lawlor, olawlor@acm.org, 2006/06/12
 */
-#ifndef __ASF_META_METASOURCE_H
-#define __ASF_META_METASOURCE_H
+#ifndef __ASF_META_METADATA_H
+#define __ASF_META_METADATA_H
 
 #include "asf/plugin.h"
 #include "asf_meta/util.h"
@@ -35,6 +35,22 @@ like latitude/longitude/elevation, or time/slantrange/doppler,
 or just "time", and so on.
 */
 typedef osl::Vector3d metaCoord_t;
+
+class metadata_source; /* Forward declaration of class */
+
+/** This metadata field is missing--throw an exception. */
+ASF_COREDLL void metadata_missing(int field_enum,const metadata_source &fromClass);
+
+/** Describes a metadata value, based on its enum value "v" (e.g., SLANT_RANGE) */
+void metadata_field_describe(int v);
+
+/** This debugging class traces accesses to the metasource classes. */
+class ASF_COREDLL metasource_watcher {
+public:
+	metasource_watcher(int field_enum,const char *fromWhere,const metadata_source &fromClass);
+	~metasource_watcher();
+};
+
 
 /**
  Get metadata values.  This interface class is extended by all sources of metadata.
@@ -112,9 +128,6 @@ protected:
 	const metadata_source *source_meta;
 };
 
-/** This metadata field is missing--throw an exception. */
-ASF_COREDLL void metadata_missing(int field_enum,const metadata_source &fromClass);
-
 /**
  Compute metadata values based on the known features of the planet Earth.
  This includes radii, rotation rate, and the features of the moon and sun.
@@ -153,6 +166,14 @@ public:
 	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const;
 	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const;
 	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const;
+	virtual asf::meta_state_t meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc) const
+		{return super::meta_state(v,loc);}
+	virtual int meta_int(asf::metadata_int_enum v) const
+		{return super::meta_int(v);}
+	virtual asf::meta_string_t meta_string(asf::metadata_string_enum v) const
+		{return super::meta_string(v);}
+	virtual asf::meta_glob_t meta_glob(asf::metadata_glob_enum v) const
+		{return super::meta_glob(v);}
 };
 
 

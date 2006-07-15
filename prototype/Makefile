@@ -11,6 +11,7 @@ CORE_SRC= \
 	src/asf_meta/coniFetch.cpp \
 	src/asf_meta/meta_parameters.cpp \
 	src/asf_meta/util.cpp \
+	src/asf_meta/map_projection.cpp \
 	src/asf_meta/metadata.cpp \
 	src/asf_meta/metadata_earth.cpp \
 	src/asf_meta/metadata_sar.cpp \

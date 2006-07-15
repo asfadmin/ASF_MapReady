@@ -48,7 +48,6 @@ void coniInit(coniStruct *coni,const char *fName,coniDir dir)
 	coni->lineNo=0;
 	strcpy(coni->fName,fName);
 	coni->dir=dir;
-	coni->loc="";
 	
 /*Open coni file.*/
 	coni->fp=fopen(coni->fName,coni->dir==asciiIn?"r":"w");
@@ -65,6 +64,7 @@ coniStruct *coniOpen(const char *fName,coniDir dir)
 /*Allocate coni structure.*/
 	coniStruct *coni=new coniStruct;
 /*Initialize and return.*/
+	coni->loc="";
 	coniInit(coni,fName,dir);
 	return (coniStruct *)coni;
 }
@@ -168,7 +168,11 @@ void coniPop(coniStruct *coni)
 		exit(1);
 	}
 }
-char *coniStr_priv(coniStruct *coni,const char *desiredParam)
+enum searchMode {
+	findStruct=1, // Look up a bare struct name; return argument
+	findValue=2 // Look up a fully-qualified field name; return heap-allocated
+};
+char *coniStr_priv(coniStruct *coni,const char *desired,searchMode mode)
 {
 	char line[255];/*Input buffer.*/
 /*Loop through all lines in input file, looking for desiredParam.*/
@@ -187,18 +191,20 @@ char *coniStr_priv(coniStruct *coni,const char *desiredParam)
 			strcat(newStruct,newBase);/*Append the new base name.*/
 			strcat(newStruct,".");/*Append a period.*/
 			coniPush(coni,newStruct);/*Push the resulting name.*/
+			if (mode==findStruct && 0==strcmp(newBase,desired)) 
+				return (char *)desired;
 		} 
 		else if (strchr(line,'}')!=NULL)
 		/* A structure closed, so we just do a "pop", restoring the old structure.*/
 			coniPop(coni);
-		else
+		else if (mode==findValue)
 		{ /* This line just describes a parameter.*/
 			char thisBase[255];/*This parameter base name.*/
 			char thisParam[255];/*Fully qualified struct name.*/
 			sscanf(line,"%s",thisBase);
 			strcpy(thisParam,coniPeek(coni));
 			strcat(thisParam,thisBase);
-			if (0==strcmp(thisParam,desiredParam))
+			if (0==strcmp(thisParam,desired))
 			{/*We found the desired parameter!*/
 				int end;
 				char *start;
@@ -213,7 +219,8 @@ char *coniStr_priv(coniStruct *coni,const char *desiredParam)
 			}
 		}
 	}
-/*If we haven't returned by now, the specified field isn't there.*/
+/*If we haven't returned by now, the specified field isn't there.  Reset the file to the start. */
+	coniReopen(coni);
 	return NULL;
 }
 
@@ -228,13 +235,12 @@ char * coniStr(coniStruct *coni,const char *desiredParam,int *err)
 		*err=CONI_OK;
 
 /*First, run down the remainder of the file.*/
-	ret=coniStr_priv(coni,desiredParam);
+	ret=coniStr_priv(coni,desiredParam,findValue);
 	if (ret) return ret;
 
 /*If we didn't find it the first time, seek back to the beginning of the file
-	and try again-- the field could be near the beginning of the file.*/
-	coniReopen(coni);
-	ret=coniStr_priv(coni,desiredParam);
+	and try one more time-- the field could be near the beginning of the file.*/
+	ret=coniStr_priv(coni,desiredParam,findValue);
 	if (ret) return ret;
 	
 /*If we haven't returned by now, the specified field isn't in the file.*/
@@ -324,11 +330,15 @@ void coniIO_str(coniStruct *coni,const char *name,char *value,int valueSize,cons
 		free((void *)inStr);
 	}
 }
+int coniIO_structProbe(coniStruct *coni,const char *name) {
+	return coniStr_priv(coni,name,findStruct)?1:0;
+}
 void coniIO_structOpen(coniStruct *coni,const char *name,const char *comment)
 {
 	if (coni->dir==asciiOut) {
 		coniWrite(coni,(std::string(name)+" {").c_str(),0,comment);
 	}
+	
 	/* Append this struct's name to our location */
 	coni->locLength[coni->depth]=coni->loc.size();
 	coni->depth++;

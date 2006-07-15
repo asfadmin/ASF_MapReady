@@ -8,6 +8,56 @@ Orion Sky Lawlor, olawlor@acm.org, 2006/06/12
 
 using namespace asf; /* <- avoid having to type asf:: everywhere... */
 
+
+void asf::metadata_missing(int field_enum,const asf::metadata_source &fromClass)
+{
+	metadata_field_describe(field_enum);
+	asf::die("Program requested missing metadata field.  This usually indicates bad input or an inappropriate plugin.");
+}
+
+/** Describes a metadata value, based on its enum value "v" (e.g., SLANT_RANGE) */
+void asf::metadata_field_describe(int v) {
+	const char *kind;
+	const enum_value_description_t *d=0;
+	if (NULL!=(d=lookup_enum_value_NULL(v,metadata_1D_enum_table))) kind="1D";
+	else if (NULL!=(d=lookup_enum_value_NULL(v,metadata_2D_enum_table))) kind="2D";
+	else if (NULL!=(d=lookup_enum_value_NULL(v,metadata_3D_enum_table))) kind="3D";
+	else if (NULL!=(d=lookup_enum_value_NULL(v,metadata_state_enum_table))) kind="state";
+	else if (NULL!=(d=lookup_enum_value_NULL(v,metadata_string_enum_table))) kind="string";
+	else if (NULL!=(d=lookup_enum_value_NULL(v,metadata_int_enum_table))) kind="int";
+	else if (NULL!=(d=lookup_enum_value_NULL(v,metadata_glob_enum_table))) kind="glob";
+	else { /* description not found! */
+		printf("Unidentified and invalid metadata value %d",v);
+	}
+	printf("enum %s (meta_%s, integer value %d)",d->name,kind,v);
+}
+
+/** Counts number of nested metadata_source calls, to track infinite loops... */
+static int metasource_nest=0, metasource_printcount=-100000;
+asf::metasource_watcher::metasource_watcher(int v,const char *fromWhere,const metadata_source &fromClass)
+{
+	metasource_nest++;
+	enum {maxNest=100}; /* start printing after this many nested calls */
+	enum {maxPrint=10}; /* keep printing for this many calls */
+	if (metasource_nest==maxNest) 
+	{
+		printf("Infinite loop detected--over %d nested calls to metasource access routines!\n",metasource_nest);
+		metasource_printcount=1;
+	}
+	if (metasource_printcount) {
+		printf("Infinite loop calls:  %s::",fromWhere);
+		metadata_field_describe(v);
+		printf("\n");
+		if (metasource_printcount++>=maxPrint) asf::die("Infinite loop in metadata_source calls--fix your metadata_source objects");
+	}
+}
+
+asf::metasource_watcher::~metasource_watcher()
+{
+	metasource_nest--;
+}
+
+
 /*********** metadata_source **********/
 asf::metadata_source::~metadata_source() {}
 
@@ -20,6 +70,7 @@ asf::metadata_transform::metadata_transform(const asf::metadata_source *source_m
 ///   when needed, and then call source_meta to get the actual values.
 double asf::metadata_transform::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const
 {
+	metasource_watcher watcher(v,"metadata_transform::meta1D",*this);
 	switch (v) { 
 	/* Don't transform coordinates for known non-image inputs: */
 	case GHA_DEGREES_FROM_TIME: /* loc is just a time */
@@ -35,6 +86,7 @@ double asf::metadata_transform::meta1D(asf::metadata_1D_enum v,const asf::metaCo
 
 asf::meta2D_t asf::metadata_transform::meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const
 {
+	metasource_watcher watcher(v,"metadata_transform::meta2D",*this);
 	switch (v) { 
 	/* Don't transform coordinates for known non-image inputs: */
 	/* none yet */
@@ -46,16 +98,27 @@ asf::meta2D_t asf::metadata_transform::meta2D(asf::metadata_2D_enum v,const asf:
 }
 asf::meta3D_t asf::metadata_transform::meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const
 {
+	metasource_watcher watcher(v,"metadata_transform::meta3D",*this);
 	switch (v) { 
-	/* Don't transform coordinates for known non-image inputs: */
-	case asf::LLE_FROM_STD: /* input is slant/time/doppler */
-	case asf::STD_FROM_LLE: /* input is lat/long/elevation */
+	/* special: inputs and outputs are non-image */
+	case asf::LLE_FROM_MAP:
+	case asf::MAP_FROM_LLE:
+	case asf::LLE_FROM_XYZ:
+	case asf::XYZ_FROM_LLE:
+	case asf::STD_FROM_XYZ:
+	case asf::XYZ_FROM_STD:
 		return source_meta->meta3D(v,loc);
-	case asf::IMAGE_FROM_LLE: { /* input is lat/long/elevation ; output is image coordinates */
+	 /* special: output is image coordinates */
+	case asf::IMAGE_FROM_XYZ: 
+	case asf::IMAGE_FROM_LLE: 
+	case asf::IMAGE_FROM_STD: 
+	case asf::IMAGE_FROM_MAP: 
+	{
 		asf::metaCoord_t source_loc=source_meta->meta3D(v,loc);
 		return user_from_source(v,source_loc);
 	}
-	default: { /* normal case: image input coordinates */
+	/* normal case: input in image coordinates */
+	default: { 
 		asf::metaCoord_t source_loc=source_from_user(v,loc);
 		return source_meta->meta3D(v,source_loc);
 	}
@@ -90,12 +153,6 @@ asf::meta_glob_t asf::metadata_transform::meta_glob(asf::metadata_glob_enum v) c
 
 /***************************** metadata_earth *****************************/
 
-ASF_COREDLL void asf::metadata_missing(int field_enum,const asf::metadata_source &fromClass)
-{
-	/* FIXME: throw an exception here instead of barfing */
-	fprintf(stderr,"Program requested missing metadata field %d.  This usually indicates bad input or an inappropriate plugin.\n",field_enum);
-	abort();
-}
 
 
 /* Utility routines (probably should be listed in util.h) */
@@ -137,9 +194,9 @@ double geodetic_from_geocentric_radians(double lat,const asf::metadata_source &m
 	return atan(tan(lat)*(rerp*rerp));
 }
 
-/** Return the radius of the earth at this geodetic lat/lon/elevation (radians) */
-double earth_radius_from_lle_radians(const asf::meta3D_t &lle,const asf::metadata_source &meta) {
-	double lat_cen=geocentric_from_geodetic_radians(lle.x,meta);
+/** Return the radius of the earth at this geodetic lon/lat/elevation (degrees) */
+double earth_radius_from_lle(const asf::meta3D_t &lle,const asf::metadata_source &meta) {
+	double lat_cen=geocentric_from_geodetic_radians(RADIANS_FROM_DEGREES*lle.y,meta);
 	double cos_lat=cos(lat_cen);
 	double a=meta(ELLIPSOID_EQUATORIAL,0), b=meta(ELLIPSOID_POLAR,0);
 	/* see http://en.wikipedia.org/wiki/Earth_radius */
@@ -155,9 +212,9 @@ static int day_of_month_from_day_of_year(int year,int day_of_year) {
 	return -1; // FIXME!
 }
 
-/** A type wrapper around a latitude/longitude/elevation (radians) meta3D value */
-class meta3D_lle_radians : public meta3D_t {
-public: meta3D_lle_radians(const meta3D_t &m) :meta3D_t(m) {}
+/** A type wrapper around a longitude/latitude/elevation (degrees/meters) meta3D value */
+class meta3D_lle_degrees : public meta3D_t {
+public: meta3D_lle_degrees(const meta3D_t &m) :meta3D_t(m) {}
 };
 
 /** A type wrapper around a body-fixed meta3D value */
@@ -168,12 +225,12 @@ public: meta3D_bodyfixed(const meta3D_t &m) :meta3D_t(m) {}
 /** A geocentric position.  Geocentric coordinates are measured from the center of the Earth. */
 class geocentric_radians {
 public:
-	double lat_cen; /* Geocentric latitude (radians) */
 	double lon; /* XY longitude (radians) */
+	double lat_cen; /* Geocentric latitude (radians) */
 	double r; /* distance to center of earth (meters) */
 	
-	/** Create from lat/lon/elevation (radians) */
-	geocentric_radians(const meta3D_lle_radians &lle,const metadata_source &meta);
+	/** Create from lon/lat/elevation (degrees) */
+	geocentric_radians(const meta3D_lle_degrees &lle,const metadata_source &meta);
 	
 	/** Create from a 3D body-fixed position */
 	geocentric_radians(const meta3D_bodyfixed &bodyfixed);
@@ -186,12 +243,12 @@ public:
 		return geodetic_from_geocentric_radians(lat_cen,meta);
 	}
 };
-geocentric_radians::geocentric_radians(const meta3D_lle_radians &lle,const metadata_source &meta)
+geocentric_radians::geocentric_radians(const meta3D_lle_degrees &lle,const metadata_source &meta)
 { 
 /* FIXME: to be centimeter-accurate on mountains, need real geocentric/geodetic here... */
-	lat_cen=geodetic_from_geocentric_radians(lle.x,meta);
-	lon=lle.y;
-	r=earth_radius_from_lle_radians(lle,meta)+lle.z;
+	lon=RADIANS_FROM_DEGREES*lle.x;
+	lat_cen=geodetic_from_geocentric_radians(RADIANS_FROM_DEGREES*lle.y,meta);
+	r=earth_radius_from_lle(lle,meta)+lle.z;
 }
 geocentric_radians::geocentric_radians(const meta3D_bodyfixed &v)
 {
@@ -209,19 +266,25 @@ asf::meta3D_t geocentric_radians::get_cartesian(void) const
 }
 
 /** A geodetic position--normal lat/lon/elevation.  Geodetic positions are measured
-relative to the local normal. */
+relative to the *local* normal, which due to the non-spherical nature of Earth,
+isn't the same as the direction toward the Earth center. */
 class geodetic_radians {
 public:
-	double lat; /* geodetic latitude (radians) */
 	double lon; /* XY longitude (radians) */
+	double lat; /* geodetic latitude (radians) */
 	double elev; /* distance from local surface (meters) */
 	
-	/** Create from lat/lon/elevation (radians) */
-	geodetic_radians(const meta3D_lle_radians &lle)
-		:lat(lle.x), lon(lle.y), elev(lle.z) {}
+	/** Create from lat/lon/elevation (degrees) */
+	geodetic_radians(const meta3D_lle_degrees &lle)
+		:lon(RADIANS_FROM_DEGREES*lle.x), 
+		 lat(RADIANS_FROM_DEGREES*lle.y), 
+		 elev(lle.z) {}
 	
 	/** Create from a 3D body-fixed position */
 	geodetic_radians(const meta3D_bodyfixed &bodyfixed,const metadata_source &meta);
+	
+	/** Convert us to a lon/lat/elevation (degrees) */
+	meta3D_lle_degrees get_lle(void) const;
 	
 	/** Convert us to a 3D body-fixed position */
 	asf::meta3D_t get_cartesian(const metadata_source &meta) const;
@@ -234,28 +297,35 @@ geodetic_radians::geodetic_radians(const meta3D_bodyfixed &bodyfixed,const metad
 	geocentric_radians cen(bodyfixed);
 	lat=cen.geodetic_latitude(meta);
 	lon=cen.lon;
-	elev=cen.r-earth_radius_from_lle_radians(asf::meta3D_t(lat,lon,0),meta);
+	elev=cen.r-earth_radius_from_lle(get_lle(),meta);
+}
+
+/** Convert us to a lon/lat/elevation (degrees) */
+meta3D_lle_degrees geodetic_radians::get_lle(void) const
+{
+	meta3D_t m3(DEGREES_FROM_RADIANS*lon,DEGREES_FROM_RADIANS*lat,elev);
+	meta3D_lle_degrees lle(m3);
+	return lle;
 }
 
 /** Convert us to a 3D body-fixed position */
 asf::meta3D_t geodetic_radians::get_cartesian(const metadata_source &meta) const
 {
-	meta3D_t m3(lat,lon,elev);
-	meta3D_lle_radians lle(m3);
-	geocentric_radians cen(lle,meta);
+	geocentric_radians cen(get_lle(),meta);
 	return cen.get_cartesian();
 }
 
 double asf::metadata_earth::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const
 {
 	const metadata_source &meta=*this;
+	metasource_watcher watcher(v,"metadata_earth::meta1D",meta);
 	switch (v) {
 	/* TIME_SINCE_START is fundamental */
 	case TIME_SECONDS_OF_DAY: 
 		return meta1D(IMAGE_START_SECONDS_OF_DAY,0)+meta1D(TIME_SINCE_START,loc);
 	case ELLIPSOID_LOCAL: { /* calculate from lat/lon/elevation */
-		metaCoord_t lle=meta3D(LATITUDE_LONGITUDE_ELEVATION_RADIANS,loc);
-		return earth_radius_from_lle_radians(lle,meta);
+		metaCoord_t lle=meta3D(LONGITUDE_LATITUDE_ELEVATION_DEGREES,loc);
+		return earth_radius_from_lle(lle,meta);
 		};
 	case ELLIPSOID_EQUATORIAL: return 6378137.0; /* WGS-84 ellipsoid (by default) */
 	case ELLIPSOID_POLAR: return 6356752.3; /* WGS-84 ellipsoid (by default) */
@@ -303,10 +373,6 @@ double asf::metadata_earth::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_
 		));
 	
 	/* CLOUD_COVER and BIT_ERROR_RATE are fundamental */
-	case FALSE_EASTING: 
-		return 0.0; /* false easting disabled by default */
-	case FALSE_NORTHING: 
-		return 0.0; /* false northing disabled by default */
 	case GEOCODING_HEIGHT:
 		return 0.0; /* geocode images to ellipsoid by default */
 	/* interferometry fields handled below */
@@ -319,11 +385,10 @@ double asf::metadata_earth::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_
 asf::meta2D_t asf::metadata_earth::meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const
 {
 	const metadata_source &meta=*this;
+	metasource_watcher watcher(v,"metadata_earth::meta2D",meta);
 	switch (v) {
-	case LATITUDE_LONGITUDE_DEGREES:
-		return DEGREES_FROM_RADIANS*meta2D(LATITUDE_LONGITUDE_RADIANS,loc);
-	case LATITUDE_LONGITUDE_RADIANS: {
-		meta3D_t lle=meta3D(LATITUDE_LONGITUDE_ELEVATION_RADIANS,loc);
+	case LONGITUDE_LATITUDE_DEGREES: {
+		meta3D_t lle=meta3D(LONGITUDE_LATITUDE_ELEVATION_DEGREES,loc);
 		return meta2D_t(lle.x,lle.y);
 	}
 	/* PROJECTION_COORDINATES is fundamental */
@@ -337,15 +402,13 @@ asf::meta2D_t asf::metadata_earth::meta2D(asf::metadata_2D_enum v,const asf::met
 asf::meta3D_t asf::metadata_earth::meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const
 {
 	const metadata_source &meta=*this;
+	metasource_watcher watcher(v,"metadata_earth::meta3D",meta);
 	switch(v) {
 	case TARGET_POSITION: { /* FIXME: infinite mutual recursion is possible here, if a subclass fails to override *any* of the geolocation calls. */
-		meta3D_lle_radians lle=meta3D(LATITUDE_LONGITUDE_ELEVATION_RADIANS,loc);	
-		return geocentric_radians(lle,meta).get_cartesian();
+		return meta3D(XYZ_FROM_LLE,meta3D(LONGITUDE_LATITUDE_ELEVATION_DEGREES,loc));
 	}
 	case TARGET_SATELLITE_DIRECTION:
 		return (meta3D(SATELLITE_POSITION,loc)-meta3D(TARGET_POSITION,loc)).dir();
-
-
 
 /*
   SUBTLE: "up" means along the gravitational gradient.  It doesn't mean away
@@ -353,20 +416,23 @@ asf::meta3D_t asf::metadata_earth::meta3D(asf::metadata_3D_enum v,const asf::met
   away from center can be as much as 0.2 degrees apart (at +-45 degrees latitude).
 */
 #define step_dir(step_code) { \
-		meta3D_lle_radians lle=meta3D(LATITUDE_LONGITUDE_ELEVATION_RADIANS,loc); \
+		meta3D_lle_degrees lle=meta3D(LONGITUDE_LATITUDE_ELEVATION_DEGREES,loc); \
 		geocentric_radians g_lo(lle,meta); \
 		step_code; \
 		geocentric_radians g_hi(lle,meta); \
 		return (g_hi.get_cartesian()-g_hi.get_cartesian()).dir(); \
 	}
 	case TARGET_UP_DIRECTION: step_dir(lle.z+=1.0e3); /* Raise elevation by 1km */
-	case TARGET_NORTH_DIRECTION: step_dir(lle.x+=1.0e-6); /* Go north a tiny bit (careful around north pole!) */
-	case TARGET_EAST_DIRECTION: step_dir(lle.y+=1.0e-6); /* Go east a tiny bit */
+	case TARGET_NORTH_DIRECTION: step_dir(lle.y+=1.0e-4; /* Go north a tiny bit */
+		if (lle.y>=90.0) /* Went past the north pole--give up. */
+			return meta3D_t(0);
+		);
+	case TARGET_EAST_DIRECTION: step_dir(lle.x+=1.0e-4); /* Go east a tiny bit */
 	
 	/*
 	  FIXME: implement TARGET_SUN_DIRECTION and TARGET_MOON_DIRECTION.
 	  Code exists on the net for this.  Really only need accuracy to a degree
-	  or so for accurate elevation...
+	  or so for accurate optical shading/shadowing...
 	*/
 	case SATELLITE_POSITION:
 		return meta_state(SATELLITE_BODYFIXED,loc).pos;
@@ -383,18 +449,22 @@ asf::meta3D_t asf::metadata_earth::meta3D(asf::metadata_3D_enum v,const asf::met
 	}
 	case SATELLITE_FLIGHT_DIRECTION:
 		return meta_state(SATELLITE_BODYFIXED,loc).vel.dir();
-	case LATITUDE_LONGITUDE_ELEVATION_DEGREES: {
-		meta3D_t lle=meta3D(LATITUDE_LONGITUDE_ELEVATION_RADIANS,loc);
-		return meta3D_t(DEGREES_FROM_RADIANS*lle.x,DEGREES_FROM_RADIANS*lle.y,/*meters*/lle.z);
+	case LONGITUDE_LATITUDE_ELEVATION_DEGREES: { 
+		/* Danger!  Mutual recursion with TARGET_POSITION! You MUST override one or the other! */
+		return meta3D(LLE_FROM_XYZ,meta3D(TARGET_POSITION,loc));
 	}
-	case LATITUDE_LONGITUDE_ELEVATION_RADIANS: { 
-		/* Danger!  Mutual recursion with TARGET_POSITION! Override one or the other! */
-		meta3D_bodyfixed target=meta3D(TARGET_POSITION,loc);
-		geodetic_radians lle(target,meta);
-		return meta3D_t(lle.lat,lle.lon,lle.elev);
+	case LLE_FROM_XYZ: {
+		meta3D_bodyfixed target=loc;
+		geodetic_radians geodetic(target,meta);
+		return geodetic.get_lle();
 	}
-	/* TIME_SLANT_DOPPLER, LLE_FROM_TSD are handled in SAR stuff below */
-	/* FIXME: implement IMAGE_FROM_LLE.  This is probably an iterative search. */
+	case XYZ_FROM_LLE: {
+		meta3D_lle_degrees lle=loc;
+		geodetic_radians geodetic(lle);
+		return geodetic.get_cartesian(meta);
+	}
+	
+	/* TIME_SLANT_DOPPLER and LLE_FROM_TSD are handled in metadata_sar.cpp */
 	default:
 		metadata_missing(v,meta);
 		return meta3D_t(-999999.0,-999999.0,-999999.0); /* never executed */
@@ -404,6 +474,7 @@ asf::meta3D_t asf::metadata_earth::meta3D(asf::metadata_3D_enum v,const asf::met
 asf::meta_state_t asf::metadata_earth::meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc) const
 {
 	const metadata_source &meta=*this;
+	metasource_watcher watcher(v,"metadata_earth::meta_state",meta);
 	switch(v) {
 	case SATELLITE_BODYFIXED:
 		return meta_state(SATELLITE_FROM_TIME,meta3D_t(meta1D(TIME_SINCE_START,loc),0,0));
@@ -433,6 +504,7 @@ asf::meta_state_t asf::metadata_earth::meta_state(asf::metadata_state_enum v,con
 
 int asf::metadata_earth::meta_int(asf::metadata_int_enum v) const {
 	const metadata_source &meta=*this;
+	metasource_watcher watcher(v,"metadata_earth::meta_int",meta);
 	switch(v) {
 	case SPHEROID_TYPE:
 		return WGS84_SPHEROID; /* default values in meta1D(ELLIPSOID_...) */
@@ -451,6 +523,7 @@ int asf::metadata_earth::meta_int(asf::metadata_int_enum v) const {
 asf::meta_string_t asf::metadata_earth::meta_string(asf::metadata_string_enum v) const
 {
 	const metadata_source &meta=*this;
+	metasource_watcher watcher(v,"metadata_earth::meta_string",meta);
 	switch(v) {
 	/* SENSOR, MODE, and PROCESSOR are all fundamental */
 	default:
@@ -461,6 +534,7 @@ asf::meta_string_t asf::metadata_earth::meta_string(asf::metadata_string_enum v)
 asf::meta_glob_t asf::metadata_earth::meta_glob(asf::metadata_glob_enum v) const 
 {
 	const metadata_source &meta=*this;
+	metasource_watcher watcher(v,"metadata_earth::meta_glob",meta);
 	switch(v) {
 	/* all globs are fundamental */
 	default:
