@@ -137,10 +137,10 @@ void trim_zeros(char *infile, char *outfile, int * startX, int * endX)
       if (right > *endX) *endX = right;
   }
 
-  *endX = *endX - *startX;
+  *endX -= *startX;
 
   free(buf);
   meta_free(metaIn);
 
-  trim(infile, outfile, (long long)(*startX), 0, (long long)(*endX), nl);
+  trim(infile, outfile, *startX, 0, *endX, nl);
 }

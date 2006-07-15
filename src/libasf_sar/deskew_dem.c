@@ -137,14 +137,8 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
 		outX=(int)SR2GR(d,(float)inX,height);
 		if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
 		{
-                    int cond;
-                    if (fill_holes)
-                        cond = lastOutValue!=badDEMht;
-                    else
-                        cond = outX-lastOutX<maxBreakLen && 
-                               lastOutValue!=badDEMht;
-
-                    if (cond)
+                    if (lastOutValue!=badDEMht &&
+                        (fill_holes || outX-lastOutX<maxBreakLen))
                     {
                         float curr=lastOutValue;
                         float delt=(height-lastOutValue)/(outX-lastOutX);
@@ -387,15 +381,14 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                int fill_holes)
 {
 	float *srDEMline,*grDEM,*grDEMline,*grDEMlast,*inSarLine,*outLine;
-        float *inMaskLine,*outMaskLine;
-	FILE *inDemFp,*inSarFp,*outFp,*inMaskFp,*outMaskFp;
+        float *mask;
+	FILE *inDemFp,*inSarFp,*outFp,*maskFp;
 	meta_parameters *inDemMeta, *outMeta, *inSarMeta, *inMaskMeta;
 	char msg[256];
 	int inSarFlag=FALSE;
         int inMaskFlag=FALSE;
 	int dem_is_ground_range=FALSE;
 	register int x,y;
-        int burnInMask = FALSE;
         struct deskew_dem_data d;
 
 	inSarFlag = inSarName != NULL;
@@ -403,9 +396,6 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 
 	inSarFp = NULL;
 	inSarMeta = NULL;
-
-        inMaskFp = NULL;
-        outMaskFp = NULL;
 
 /*Extract metadata*/
 	inDemMeta = meta_read(inDemName);
@@ -466,8 +456,6 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             {
                 asfPrintError("ERROR: The mask and the SAR image must be the same size.\n");
             }
-            inMaskFp = fopenImage(inMaskName,"rb");
-            outMaskFp = fopenImage(outMaskName,"wb");
         }
 
 /* Blather at user about what is going on */
@@ -492,10 +480,9 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 /*Allocate input buffers.*/
 	if (inSarFlag) {
 	   inSarLine = (float *)MALLOC(sizeof(float)*d.numSamples);
-	   inMaskLine = (float *)MALLOC(sizeof(float)*d.numSamples);
-	   outMaskLine = (float *)MALLOC(sizeof(float)*d.numSamples);
+	   mask = (float *)MALLOC(sizeof(float)*d.numSamples*d.numLines);
         } else {
-	   inSarLine = inMaskLine = NULL;
+	   inSarLine = mask = NULL;
         }
 	outLine   = (float *)MALLOC(sizeof(float)*d.numSamples);
 	srDEMline = (float *)MALLOC(sizeof(float)*d.numSamples);
@@ -519,6 +506,14 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 			dem_interp_col(&grDEM[x],d.numSamples,d.numLines);
 	}
 
+/*Read in the entire mask*/
+        if (inMaskFlag) {
+            maskFp = fopenImage(inMaskName, "rb");
+            for (y=0;y<d.numLines;y++)
+                get_float_line(maskFp,inMaskMeta,y,mask+y*d.numSamples);
+            FCLOSE(maskFp);
+        }
+
 /*Rectify data.*/
 	for (y=0;y<d.numLines;y++) {
 		if (inSarFlag) {
@@ -539,33 +534,18 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                     get_float_line(inSarFp,inSarMeta,y,inSarLine);
 
                     if (inMaskFlag) {
-                        get_float_line(inMaskFp,inMaskMeta,y,inMaskLine);
-                        geo_compensate(&d,grDEMline,inMaskLine,outMaskLine,
-                                       d.numSamples,0,NULL);
+                        geo_compensate(&d,grDEMline,mask+y*d.numSamples,
+                                       outLine,d.numSamples,0,NULL);
+                        for (x=0; x<d.numSamples; ++x)
+                            mask[y*d.numSamples+x] = outLine[x];
                     }
 
                     geo_compensate(&d,grDEMline,inSarLine,outLine,d.numSamples,
-                                   1,outMaskLine);
-
-                    if (inMaskFlag) {
-                        put_float_line(outMaskFp,outMeta,y,outMaskLine);
-                    }
+                                   1,mask+y*d.numSamples);
 
                     if (y>0&&doRadiometric)
                         radio_compensate(&d,grDEMline,grDEMlast,outLine,
                                          d.numSamples);
-
-                    if (inMaskFlag && burnInMask) {
-                        int x,hitvalid=0;
-                        float maxval = 15;
-                        for (x=0; x<d.numSamples; ++x) {
-                            if (hitvalid && (outMaskLine[x] == MASK_LAYOVER ||
-                                             outMaskLine[x] == MASK_SHADOW))
-                                outLine[x] = maxval;
-                            if (outMaskLine[x] == MASK_NORMAL)
-                                hitvalid=1;
-                        }
-                    }
 
                     put_float_line(outFp,outMeta,y,outLine);
 		}
@@ -573,10 +553,16 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                     put_float_line(outFp,outMeta,y,&grDEM[y*d.numSamples]);
 	}
 
-//	asfPrintStatus("Wrote %lld bytes of data\n",
-//		       (long long)(d.numLines*d.numSamples*4));
+/*Write the updated mask*/
+        if (inMaskFlag) {
+            maskFp = fopenImage(outMaskName, "wb");
+            for (y=0;y<d.numLines;y++)
+                put_float_line(maskFp,outMeta,y,mask+y*d.numSamples);
+            FCLOSE(maskFp);
+        }
 
 /* Clean up & skidattle */
+        FREE(grDEM);
 	if (inSarFlag) {
 	   FREE(inSarLine);
 	   FCLOSE(inSarFp);
@@ -587,10 +573,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	FCLOSE(inDemFp);
 	FCLOSE(outFp);
         if (inMaskFlag) {
-            FCLOSE(inMaskFp);
-            FCLOSE(outMaskFp);
-            FREE(inMaskLine);
-            FREE(outMaskLine);
+            FREE(mask);
             meta_write(outMeta, outMaskName);
             meta_free(inMaskMeta);
         }

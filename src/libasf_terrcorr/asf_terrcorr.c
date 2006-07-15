@@ -548,6 +548,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       resampleFile_2 = outputName(output_dir, outFile, "_resample");
       renameImgAndMeta(outFile, resampleFile_2);
       resample_to_square_pixsiz(resampleFile_2, outFile, pixel_size);
+      char *outMaskFile_2 = outputName(output_dir, outMaskFile, "_resample");
+      renameImgAndMeta(outMaskFile, outMaskFile_2);
+      resample_to_square_pixsiz(outMaskFile_2, outMaskFile, pixel_size);
   } else {
       resampleFile_2 = NULL;
   }
