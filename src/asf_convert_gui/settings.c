@@ -1233,6 +1233,12 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "intermediates = %d\n", s->keep_files);
     fprintf(cf, "status file = %s\n", tmp_statfile);
     fprintf(cf, "short configuration file = 0\n");
+    FILE *fpDefs = fopen_share_file("asf_convert/asf_convert.defaults", "rt");
+    if (fpDefs) {
+        fprintf(cf, "default values = %s/%s\n", get_asf_share_dir(),
+                "asf_convert/asf_convert.defaults");
+        FCLOSE(fpDefs);
+    }
     fprintf(cf, "\n");
 
     fprintf(cf, "[Import]\n");
