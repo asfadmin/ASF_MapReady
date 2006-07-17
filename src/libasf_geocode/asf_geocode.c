@@ -655,6 +655,13 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 
   asfPrintStatus ("done.\n\n");
 
+  if (pixel_size < 0)
+  {
+      asfPrintStatus("No pixel size specified, using azimuth pixel size from "
+                     "metadata: %f\n", imd->general->y_pixel_size);
+      pixel_size = imd->general->y_pixel_size;
+  }
+
   // Issue a warning when the chosen pixel size is smaller than the
   // input pixel size.
   if ( GSL_MIN(imd->general->x_pixel_size,

@@ -256,7 +256,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
   sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj", 
 	  get_asf_share_dir());
-  cfg->geocoding->pixel = 100;
+  cfg->geocoding->pixel = -99;
   cfg->geocoding->height = 0.0;
   cfg->geocoding->datum = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->geocoding->datum, "WGS84");
