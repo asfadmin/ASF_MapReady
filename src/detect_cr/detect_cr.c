@@ -512,7 +512,7 @@ bool findPeak(int x, int y, float elev, char *szImg, float *peakX, float *peakY,
     // information about datum and spheroid. Certainly required for datum 
     // conversions.
     asf_geocode (&pps, proj_type, 0, RESAMPLE_BILINEAR, elev, WGS84_DATUM,
-		 metaChip->general->x_pixel_size, chip, szChipGeo);
+		 metaChip->general->x_pixel_size, chip, szChipGeo, 0.0);
     meta = meta_read(szChipGeo);
     lines = meta->general->line_count;
     samples= meta->general->sample_count;
