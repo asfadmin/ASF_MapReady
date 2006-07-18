@@ -196,5 +196,6 @@ int unlink_tmp_file(const char *filename);
 
 void fileRename(const char *src, const char *dst);
 void renameImgAndMeta(const char *src, const char *dst);
+char *get_basename(const char *filename);
 
 #endif

@@ -7,7 +7,8 @@ CFLAGS := $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) $(CFLAGS)
 OBJS = \
 	write_shape.o \
 	read_shape.o \
-	mask.o
+	mask.o \
+	kml.o
 
 LIBS = \
 	$(LIBDIR)/libasf_vector.a \

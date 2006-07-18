@@ -363,3 +363,17 @@ void renameImgAndMeta(const char *src, const char *dst)
     free(dst_meta_file);
     free(dst_img_file);
 }
+
+/* returns a newly allocated string, strips off any extension
+   and directory info */
+char *
+get_basename(const char *in)
+{
+   char *dir = MALLOC(sizeof(char)*strlen(in));
+   char *file = MALLOC(sizeof(char)*strlen(in));
+   split_dir_and_file(in,dir,file);
+   free(dir);
+   char *ext=findExt(file);
+   if (ext) *ext = '\0';
+   return file;
+}

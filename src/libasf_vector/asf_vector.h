@@ -25,4 +25,11 @@ int read_shapefile (char *baseFile, char *pointFile);
 int create_mask(char *imageFile, char *shapeFile, char *maskFile);
 void invert_mask(char *maskInFile, char *maskOutFile);
 
+// Prototypes from kml.c
+void kml_header(FILE *kml_file);
+void kml_entry(FILE *kml_file, meta_parameters *meta, char *name);
+void kml_footer(FILE *kml_file);
+void write_kml(char *filename);
+void meta2kml(char *kml_filename, meta_parameters *meta);
+
 #endif
