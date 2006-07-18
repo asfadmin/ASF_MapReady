@@ -78,7 +78,7 @@ int create_mask(char *imageFile, char *shapeFile, char *maskFile)
   for (i=0; i<lines; i++) {
     for (k=0; k<samples; k++)
       if (pointInPolygon(nPoints, line, sample, i, k))
-	imageBuf[i*samples+k] = 255;
+	imageBuf[i*samples+k] = 1;
     if (i % 2000 == 0)
       printf("Line %d\n", i);
   }
@@ -121,4 +121,22 @@ void invert_mask(char *maskInFile, char *maskOutFile)
   FCLOSE(fpIn);
   FCLOSE(fpOut);
   FREE(mask);
+}
+
+// Function to read a given mask
+void read_mask(char *maskFile, unsigned char *mask, meta_parameters *meta)
+{
+  FILE *fp;
+  int lines, samples;
+
+  // Read the metadata file and allocate appropriate memory
+  meta = meta_read(maskFile);
+  lines = meta->general->line_count;
+  samples = meta->general->sample_count;
+  mask = (unsigned char *) MALLOC(sizeof(char)*lines*samples);
+
+  // Read the mask
+  fp = FOPEN(maskFile, "rb");
+  FREAD(mask, lines*samples, 1, fp);
+  FCLOSE(fp);
 }

@@ -24,6 +24,7 @@ int read_shapefile (char *baseFile, char *pointFile);
 // Prototypes from mask.c
 int create_mask(char *imageFile, char *shapeFile, char *maskFile);
 void invert_mask(char *maskInFile, char *maskOutFile);
+void read_mask(char *maskFile, unsigned char *mask, meta_parameters *meta);
 
 // Prototypes from kml.c
 void kml_header(FILE *kml_file);

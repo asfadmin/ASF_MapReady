@@ -44,6 +44,28 @@ void read_antenna_shapefile()
   FCLOSE(fp);
 }
 
+void cook_inlet_polygon()
+{
+  FILE *fp;
+  double lat[4], lon[4];
+  int i;
+
+  // Assign some numbers
+  lat[0]=62.5;lat[1]=62.5;lat[2]=56.0;lat[3]=56.0;
+  lon[0]=-156.5;lon[1]=-148.5;lon[2]=-148.5;lon[3]=-156.5;
+
+  //  Generate point file
+  fp = FOPEN("cook_inlet.txt", "w");
+  for (i=0; i<4; i++) {
+    fprintf(fp, "%d\t%.4lf\t%.4lf\n", i+1, lat[i], lon[i]);
+    printf("%d %.4lf %.4lf\n", i+1, lat[i], lon[i]);
+  }
+  FCLOSE(fp);
+
+  // Create shapefile
+  write_polygon_shapefile("cook_inlet", "cook_inlet.txt", "Cook Inlet polygon");
+}
+
 void delta_test_polygon()
 {
   FILE *fp;
@@ -110,6 +132,8 @@ int main(int argc, char * argv [])
   create_delta_mask();
   printf("\nInverting mask file for Delta ...\n");
   invert_delta_mask();
+  printf("\nGenerating Cook Inlet polygon shapefile ...\n");
+  cook_inlet_polygon();
 
   printf("\n*** Test completed ****\n\n");
 
