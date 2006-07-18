@@ -88,10 +88,13 @@ void meta2kml(char *filename, meta_parameters *meta)
     if (!meta)
         meta = meta_read(filename);
 
+    char *kml_filename = appendExt(filename, ".kml");
+    printf("kml filename: %s\n", kml_filename);
     char *basename = get_basename(filename);
-    FILE *kml_file = FOPEN(filename, "wt");
+    FILE *kml_file = FOPEN(kml_filename, "wt");
     kml_header(kml_file);
     kml_entry(kml_file, meta, basename);
     kml_footer(kml_file);
     FREE(basename);
+    FREE(kml_filename);
 }
