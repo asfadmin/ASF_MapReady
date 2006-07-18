@@ -2,6 +2,8 @@
 # Makefile author: Orion Lawlor
 # Makefile date: 6/17/98
 
+CC=gcc
+
 CFLAGS=$(FLAGS)
 OBJS=makemake.o
 
