@@ -55,20 +55,33 @@ LIBS
 #	libtiff
 #	libgeotiff
 #	tcl_tk
+# asf_meta depends on libasf_proj .h files
+# libasf_convert depends on asf_import.h asf_terrcorr.h asf_geocode.h asf_export.h
+# libasf_elevation depends on libasf_sar (asf_sar.h)
+# libasf_igram_coh depends on libasf_raster (asf_raster.h)
 @src/
 	asf
-	regex_wrapper
-	asf_meta
 	asf_concat
-	asf_lt
-	asf_geolib
-	asf_odl
 	asf_fft
+	asf_geolib
+	asf_lt
 	libasf_proj
-	libasf_raster
-	libasf_reporting
-	libifm
+	asf_meta
 	libasf_meta
+	asf_odl
+	libasf_sar
+	libasf_elevation
+	libasf_raster
+	libasf_igram_coh
+	libasf_reporting
+	libasf_vector
+	libifm
+	libasf_import
+	libasf_ardop
+	libasf_terrcorr
+	libasf_geocode
+	libasf_export
+	libasf_convert
 @src_tc/
 	sarmodel
 	tcobj
