@@ -199,14 +199,15 @@ void asf_elevation(char *logFile, char *unwrapped_phase, char *phase_mask,
 
   // Transform all the slant range products into ground range
   printf("   Generating ground range elevation ...\n");
-  deskew_dem(slant_elevation, ground_elevation, NULL, 0, NULL, NULL);
+  deskew_dem(slant_elevation, ground_elevation, NULL, 0, NULL, NULL, TRUE);
   printf("   Generating ground range amplitude image ...\n");
-  deskew_dem(slant_elevation, ground_amplitude, slant_amplitude, 1, NULL, NULL);
+  deskew_dem(slant_elevation, ground_amplitude, slant_amplitude, 1, NULL, NULL,
+             TRUE);
   printf("   Generating ground range elevation error ...\n");
   deskew_dem(slant_elevation, ground_elevation_error, slant_elevation_error, 1,
-             NULL, NULL);
+             NULL, NULL, TRUE);
   printf("   Generating ground range coherence image ...\n\n");
-  deskew_dem(slant_elevation, ground_coherence, slant_coherence, 0, NULL, NULL);
+  deskew_dem(slant_elevation, ground_coherence, slant_coherence, 0, NULL, NULL,
+             TRUE);
 
 }
-
