@@ -73,8 +73,8 @@ clean:
 	rm -rf bin/* lib/* share/*
 
 release:
-	cd make_support; make; ./makemake @sys@; cd ..
+	cd make_support; $(MAKE); ./makemake @sys@; cd ..
 
 oldtools:
-	cd make_support; make; ./makemake @sys@; cd ..
-	make --makefile=Makefile.old
+	cd make_support; $(MAKE); ./makemake @sys@; cd ..
+	$(MAKE) --makefile=Makefile.old
