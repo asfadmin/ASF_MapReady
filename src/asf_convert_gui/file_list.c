@@ -98,7 +98,7 @@ static gboolean file_is_valid(const gchar * data_file)
     {
         ++p;
         if (strcasecmp(p, "D") == 0 ||
-            strcasecmp(p, "img") == 0 ||
+            /*strcasecmp(p, "img") == 0 ||*/
             /*strcasecmp(p, "L") == 0 ||*/
             /*strcasecmp(p, "meta") == 0 ||*/
             strcasecmp(p, "raw") == 0 ||
