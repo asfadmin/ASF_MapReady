@@ -51,8 +51,8 @@ void cook_inlet_polygon()
   int i;
 
   // Assign some numbers
-  lat[0]=62.5;lat[1]=62.5;lat[2]=56.0;lat[3]=56.0;
-  lon[0]=-156.5;lon[1]=-148.5;lon[2]=-148.5;lon[3]=-156.5;
+  lat[0]=62.5;lat[1]=62.5;lat[2]=55.0;lat[3]=55.0;
+  lon[0]=-160.0;lon[1]=-147.5;lon[2]=-147.5;lon[3]=-160.0;
 
   //  Generate point file
   fp = FOPEN("cook_inlet.txt", "w");

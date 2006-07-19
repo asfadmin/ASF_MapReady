@@ -8,7 +8,8 @@ OBJS = \
 	write_shape.o \
 	read_shape.o \
 	mask.o \
-	kml.o
+	kml.o \
+	meta2shape.o
 
 LIBS = \
 	$(LIBDIR)/libasf_vector.a \
