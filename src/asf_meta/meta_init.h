@@ -53,4 +53,5 @@ void ardop_init(const char *fName,meta_parameters *sar);
 #define EXPECTED_RANGEGATE 0.0054 /*Expected range gate delay, in s.*/
 #define EXPECTED_WAVELEN 0.056 /*Expected radar wavelength, in m.*/
 #define EXPECTED_RSR 18.96 /* Expected range sampling rate, in MHz */
+#define EXPECTED_PRF 1700 // Expected PRF, in Hz
 double get_units(double value, double expectedValue);

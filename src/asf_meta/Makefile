@@ -10,7 +10,7 @@ include ../../make_support/system_rules
 # objects from this library to save user having to link against all
 # libraries used by this library and give some semblance of modularity
 # to this benighted C language.
-LIBS = asf.a
+LIBS = asf.a libasf_reporting.a libasf_ardop.a
 
 # Things used/needed by make's implicit rules for lex and yacc.
 # Need the GNU flex and bison, others are broken in variety of ways.

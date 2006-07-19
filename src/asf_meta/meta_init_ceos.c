@@ -30,6 +30,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr);
 ceos_description *get_ceos_description(char *fName);
 double get_firstTime(char *fName);
+void get_polarization (char *fName, char *polarization);
 
 /* Prototypes from meta_init_stVec.c */
 void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *sar);
@@ -122,7 +123,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
      strcpy(meta->general->mode, "???");
    }
    else if (strncmp(dssr->sensor_id,"RSAT-1",6)==0) {
-/* probably need to check incidence angle to figure out what is going on */
+     /* probably need to check incidence angle to figure out what is going on */
       char beamname[32];
       int ii;
       for (ii=0; ii<32; ii++) { beamname[ii] = '\0'; }
@@ -171,7 +172,22 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
    strcpy(meta->general->system, meta_get_system());
    meta->general->orbit = atoi(dssr->revolution);
-
+   // Radarsat data include the frame number in the product ID
+   if (strcmp(meta->general->sensor, "RSAT-1") == 0) {
+     char buf[100];
+     strncpy(buf, &dssr->product_id[7], 3);
+     buf[3]=0;
+     sscanf(buf, "%d", &meta->general->frame);
+   }
+   get_polarization(dataName, meta->sar->polarization);
+   
+   // ALOS data include the frame number in the product ID
+   if (strcmp(meta->general->sensor, "ALOS") == 0) {
+     char buf[100];
+     strncpy(buf, &dssr->product_id[11], 4);
+     buf[4]=0;
+     sscanf(buf, "%d", &meta->general->frame);
+   }
    meta->general->band_number      = 0;
    meta->general->orbit_direction  = dssr->asc_des[0];
    if (meta->general->orbit_direction==' ')
@@ -212,6 +228,30 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       if (asf_facdr->azpixspc > 0.0)
          meta->general->y_pixel_size = asf_facdr->azpixspc;
    }
+   // ALOS L1.1 products have no pixel spacing information (yet)
+   // Requires some backwards engineering looking at the polarization
+   if (strcmp(meta->general->sensor, "ALOS") == 0 &&
+       meta->general->data_type == COMPLEX_REAL32) {
+     meta->sar->range_sampling_rate = dssr->rng_samp_rate * 1000;
+     meta->general->x_pixel_size = SPD_LIGHT * 2.0 /
+       (meta->sar->range_sampling_rate * meta->general->sample_count);
+     if (strstr(meta->sar->polarization, "single") == 0) {
+       // Little ambiguous since there is 12.5m version out there - need more data
+       meta->general->y_pixel_size = 3.125;
+       meta->sar->look_count = 2;
+     }
+     else if (strstr(meta->sar->polarization, "dual") == 0) {
+       //meta->general->x_pixel_size = 12.5;
+       meta->general->y_pixel_size = 3.125;
+       meta->sar->look_count = 4;
+     }
+     else if (strstr(meta->sar->polarization, "quad") == 0) {
+       //meta->general->x_pixel_size = 12.5;
+       meta->general->y_pixel_size = 3.125;
+       meta->sar->look_count = 4;
+     }
+   }
+
    meta->general->center_latitude  = dssr->pro_lat;
    meta->general->center_longitude = dssr->pro_long;
    // Average height of the scene is determined later
@@ -219,9 +259,10 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
      meta->projection->height = 0.0;
 
    /* Calculate ASF frame number from latitude considering the orbit direction */
-   meta->general->frame =
-     asf_frame_calc(meta->general->sensor, meta->general->center_latitude, 
-		    meta->general->orbit_direction);
+   if (meta->general->frame < 0)
+     meta->general->frame =
+       asf_frame_calc(meta->general->sensor, meta->general->center_latitude, 
+		      meta->general->orbit_direction);
 
    meta->general->re_major = (dssr->ellip_maj < 10000.0) ? 
      dssr->ellip_maj*1000.0 : dssr->ellip_maj;
@@ -256,7 +297,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    switch (ceos->satellite) {
       case  ERS: meta->sar->look_count = 5; break;
       case JERS: meta->sar->look_count = 3; break;
-      case ALOS: meta->sar->look_count = 4; break;
       case RSAT:
          dssr->rng_samp_rate *= get_units(dssr->rng_samp_rate,EXPECTED_RSR);
          dssr->rng_gate *= get_units(dssr->rng_gate,EXPECTED_RANGEGATE);
@@ -265,6 +305,10 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
          else
             meta->sar->look_count = 1; /* FN1-FN5 */
          break;
+      case ALOS: 
+	if (mpdr) // geocoded image have look count information
+	  meta->sar->look_count = (int) (dssr->n_rnglok + 0.5);
+	break;
       case unknownSatellite:
 	assert (0);
 	break;
@@ -311,19 +355,20 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    if (asf_facdr) {
       meta->sar->azimuth_time_per_pixel = meta->general->y_pixel_size
                                           / asf_facdr->swathvel;
-   }
+    }
    else {
       firstTime = get_firstTime(dataName);
-      if (esa_facdr && ceos->facility != VEXCEL) {
+      if (ceos->facility == ESA) {
         date_dssr2time(dssr->az_time_first, &time);
         firstTime = date_hms2sec(&time);
       }
       date_dssr2date(dssr->inp_sctim, &date, &time);
       centerTime = date_hms2sec(&time);
-      /* Crude hack for ALOS testing */
-      if (ceos->facility == EOC) 
-	firstTime += centerTime + 7.5;
-      /******************************/
+      // The timestamp in the line header of ALOS L1.5 data is currently not
+      // completely filled. Because the time of the day is missing I cannot
+      // find an alternative way to determine another time other than the center
+      // time. This way the azimuth time per pixel will be bogus but we are
+      // talking about geocoded images anyway (SAR geometry is not valid).
       meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
                                           / (meta->sar->original_line_count/2);
    }
@@ -357,7 +402,8 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
    meta->sar->wavelength = dssr->wave_length * 
      get_units(dssr->wave_length,EXPECTED_WAVELEN);
-   meta->sar->prf = dssr->prf;
+   meta->sar->prf = dssr->prf *
+     get_units(dssr->prf,EXPECTED_PRF);
    /* needed to move the earth radius and satellite height to the send 
       since the alternative calcuation requires state vectors */
    if (ceos->facility==CDPF) {
@@ -401,7 +447,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    /* A couple parameters for point target analysis */
    meta->sar->azimuth_processing_bandwidth = dssr->bnd_azi;
    meta->sar->chirp_rate = dssr->phas_coef[2];
-   meta->sar->pulse_duration = dssr->rng_length / 10000000;
+   meta->sar->pulse_duration = dssr->rng_length / 1000000;
    meta->sar->range_sampling_rate = dssr->rng_samp_rate * 1000000;
 
  /* Fill meta->state_vectors structure. Call to ceos_init_proj requires that the
@@ -447,14 +493,12 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
 
    /* Propagate state vectors if they are covering more than frame size in case
     * you have raw or complex data. */
-   if (ceos->satellite != ALOS) // HACK: We currently don't have enough timing
-                                //       information to do this.
    if ((ceos->facility==ASF && ceos->processor!=PREC) || ceos->facility!=ASF) {
       int vector_count=3;
       double data_int = meta->sar->original_line_count / 2
                          * fabs(meta->sar->azimuth_time_per_pixel);
       meta->state_vectors->vecs[0].time = get_timeDelta(ceos, ppdr, meta);
-      if (ceos->processor != PREC) {
+      if (ceos->processor != PREC && data_int < 360) {
         while (fabs(data_int) > 15.0) {
           data_int /= 2;
           vector_count = vector_count*2-1;
@@ -578,11 +622,11 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
    }
    else {
      // might need to have a check for ALOS coordinates - look like km, not m
-      projection->startY = mpdr->tlcnorth;
-      projection->startX = mpdr->tlceast;
-      projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth)
+      projection->startY = mpdr->tlcnorth*1000;
+      projection->startX = mpdr->tlceast*1000;
+      projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth)*1000
                            / mpdr->nlines;
-      projection->perX   = (mpdr->trceast - mpdr->tlceast)
+      projection->perX   = (mpdr->trceast - mpdr->tlceast)*1000
                            / mpdr->npixels;
    }
 
@@ -810,4 +854,47 @@ double get_firstTime (char *fName)
    FCLOSE(fp);
 
    return (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0;
+}
+
+// function to figure out beam mode, pixel size and polarization
+void get_polarization (char *fName, char *polarization)
+{
+   FILE *fp;
+   struct HEADER hdr;
+   struct RHEADER linehdr;
+   int length;
+   char buff[25600];
+
+   fp = FOPEN(fName, "r");
+   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
+   length = bigInt32(hdr.recsiz) - (sizeof(struct RHEADER)
+            + sizeof(struct HEADER));
+   FREAD (buff, length, 1, fp);
+   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
+   FCLOSE(fp);
+
+   // check transmitted and received polarization
+   if (linehdr.tran_polar == 0)
+     polarization[0] = 'H';
+   else if (linehdr.tran_polar == 1)
+     polarization[0] = 'V';
+   else
+     polarization[0] = '_';
+   if (linehdr.recv_polar == 0)
+     polarization[1] = 'H';
+   else if (linehdr.recv_polar == 1)
+     polarization[1] = 'V';
+   else
+     polarization[1] = '_';
+
+   // check for single, dual or quad pol
+   // somebody messed up the spec again - looks like single and dual are mixed up
+   if (linehdr.sar_cib == 1)
+     strcat(polarization, " dual"); // as per specs: single
+   else if (linehdr.sar_cib == 2)
+     strcat(polarization, " single"); // as per specs: dual
+   else if (linehdr.sar_cib == 4)
+     strcat(polarization, " quad");
 }

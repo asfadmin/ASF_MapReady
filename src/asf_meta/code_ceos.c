@@ -473,13 +473,54 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
 	    strV(decode_version,1952,16);
 	  }
 	}
-	if (strncmp(q->fac_id, "ES", 2)==0 || strncmp(q->fac_id, "D-PAF", 5)==0) {
+	else if (strncmp(q->fac_id, "ES", 2)==0 || 
+		 strncmp(q->fac_id, "D-PAF", 5)==0 ||
+		 strncmp(q->fac_id, "I-PAF", 5)==0){
 	  int i;
 	  for (i=0; i<3; i++) fltV(rng_time[i],1766+i*16,16);
 	  strV(az_time_first,1814,24);
 	  strV(az_time_center,1838,24);
 	  strV(az_time_last,1862,24);
 	}
+	/* Coded up the ALOS spec as I had it - does not seem to match 
+	   the data though. Left things here just in case.
+	  
+	else if (strncmp(q->mission_id, "ALOS", 4)==0) {
+	  strV(scene_start_time,1734,32);
+	  strV(scene_center_time,1766,32);
+	  strV(scene_end_time,1798,32);
+	  strV(vexcel_id,1886,8);
+	  strV(vexcel_ver,1894,8);
+	  int i;
+	  for (i=0; i<5; i++) sngV(ant_elev_pattern[i],1902+i*20,20);
+	  strV(ant_pattern_file,2018,128);
+	  sngV(processing_gain,2178,16);
+	  for (i=0; i<5; i++) {
+	    intV(beam_num_doppler[i],2194+i*241,1);
+	    sngV(range_ref_doppler[i],2195+i*241,16);
+	    strV(time_ref_doppler[i],2211+i*241,32);
+	    sngV(doppler_centroid_2d[0][i],2243+i*241,16);
+	    sngV(doppler_centroid_2d[1][i],2259+i*241,16);
+	    sngV(doppler_centroid_2d[2][i],2275+i*241,16);
+	    sngV(doppler_centroid_2d[3][i],2291+i*241,16);
+	    sngV(doppler_centroid_2d[4][i],2307+i*241,16);
+	    sngV(doppler_centroid_2d[5][i],2323+i*241,16);
+	    sngV(doppler_centroid_2d[6][i],2339+i*241,16);
+	    sngV(doppler_centroid_2d[7][i],2355+i*241,16);
+	    sngV(doppler_centroid_2d[8][i],2371+i*241,16);
+	    sngV(doppler_centroid_2d[9][i],2387+i*241,16);
+	    sngV(doppler_centroid_2d[10][i],2403+i*241,16);
+	    sngV(doppler_centroid_2d[11][i],2419+i*241,16);
+	    intV(beam_num_velocity[i],3399+i*113,1);
+	    sngV(range_ref_velocity[i],3400+i*113,16);
+	    strV(time_ref_velocity[i],3416+i*113,32);
+	    sngV(velocity_2d[0][i],3464+i*113,16);
+	    sngV(velocity_2d[1][i],3480+i*113,16);
+	    sngV(velocity_2d[2][i],3496+i*113,16);
+	    sngV(velocity_2d[3][i],3512+i*113,16);
+	  }
+	}
+	*/
 }
 
 void Code_PPDR (unsigned char *bf, struct pos_data_rec* q, codingDir dir)
