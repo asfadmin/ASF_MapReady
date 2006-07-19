@@ -636,7 +636,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
 	free(in_basename);
 	g_free(cmd_output);
 	
-	if (use_thumbnails &&
+	if (use_thumbnails && user_settings->export_is_checked &&
 	    settings_get_output_format_can_be_thumbnailed(user_settings))
 	{
 	  set_thumbnail(iter, out_full);
