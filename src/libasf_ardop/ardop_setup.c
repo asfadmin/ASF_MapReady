@@ -490,12 +490,16 @@ void calc_range_ref(complexFloat *ref,int rangeFFT,int chirpSamples)
 /*Output the reference function (for debugging)*/
 	if (g.iflag & RANGE_REF_T)
 	{
-		refFP=FOPEN("range_ref_t","w");
+                char *tmp = appendToBasename(g.in1, "_range_ref_t");
+                char *filename = appendExt(tmp, ".txt");
+		refFP=FOPEN(filename,"w");
 		for (i=0;i<chirpSamples;i++)
 			fprintf(refFP,"%i  %f %f  %f %f\n",i,Cabs(ref[i]),
                                 atan2(ref[i].imag,ref[i].real),
                                 ref[i].real, ref[i].imag);
 		fclose(refFP);
+                free(tmp);
+                free(filename);
 	}
 	
 /*Now forward-fft the reference function.*/
@@ -523,11 +527,15 @@ void calc_range_ref(complexFloat *ref,int rangeFFT,int chirpSamples)
 /*Output the FFT'd reference function (for debugging)*/
 	if (g.iflag & RANGE_REF_F)
 	{
-		refFP=FOPEN("range_ref_f","w");
+                char *tmp = appendToBasename(g.in1, "_range_ref_f");
+                char *filename = appendExt(tmp, ".txt");
+		refFP=FOPEN(filename,"w");
 		for (i=0;i<rangeFFT;i++)
 			fprintf(refFP,"%i  %f %f  %f %f\n",i,Cabs(ref[i]),
                             atan2(ref[i].imag, ref[i].real),
 			    ref[i].real, ref[i].imag);
 		fclose(refFP);
+                free(tmp);
+                free(filename);
 	}
 }

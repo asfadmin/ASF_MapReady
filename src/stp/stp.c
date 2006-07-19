@@ -567,8 +567,10 @@ update_buttons()
 
     set_button_text(1, input_file, suffix_for_step(1));
     set_button_text(2, input_file, suffix_for_step(2));
-    set_button_text(3, "", suffix_for_step(3));
-    set_button_text(4, "", suffix_for_step(4));
+//    set_button_text(3, "", suffix_for_step(3));
+//    set_button_text(4, "", suffix_for_step(4));
+    set_button_text(3, input_file, suffix_for_step(3));
+    set_button_text(4, input_file, suffix_for_step(4));
     set_button_text(5, input_file, suffix_for_step(5));
     set_button_text(6, input_file, suffix_for_step(6));
     set_button_text(7, input_file, suffix_for_step(7));
