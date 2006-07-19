@@ -243,7 +243,7 @@ typedef struct {
   double prf;                     /* Pulse Repition Frequency.              */
   double earth_radius;            /* Earth radius at scene center.          */
   double earth_radius_pp;         /* Earth radius at scene center,          */
-                                  /* as used by the PP.                     */
+                                  /* as used by the PP. - version 1.7       */
   double satellite_height;        /* Satellite height from earth's center.  */
   char satellite_binary_time[FIELD_STRING_MAX];  /* Satellite binary time   */
   char satellite_clock_time[FIELD_STRING_MAX];   /* Satellite UTC clock time*/
@@ -255,6 +255,7 @@ typedef struct {
   double chirp_rate;                   /* version 1.4 */
   double pulse_duration;               /* version 1.4 */
   double range_sampling_rate;          /* version 1.4 */
+  char polarization[15];               /* version 1.7 */
 } meta_sar;
 
 
