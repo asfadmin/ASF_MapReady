@@ -169,17 +169,17 @@ void test_geolocations(void) {
 	
 	asf::meta3D_t std=m1(asf::SLANT_TIME_DOPPLER,img);
 	asf::meta3D_t std_good(855186.9809,7.4200757940396,312.6913);
-	diff("delta_1 DJ1 STD",std_good,std,1.0e-7);
+	diff("delta_1 DJ1 STD (meters,seconds,Hz)",std_good,std,1.0e-7);
 	
 	asf::meta3D_t xyz=m1(asf::TARGET_POSITION,img);
 	asf::meta3D_t xyz_good(-2312667.89, -1618876.50, 5700719.17);
-	diff("delta_1 DJ1 XYZ",xyz_good,xyz,2.0e-6); /* <- ellipsoids are slightly different (why?) */
+	diff("delta_1 DJ1 XYZ (meters)",xyz_good,xyz,2.0e-6); /* <- ellipsoids are slightly different (why?) */
 	
-	asf::meta3D_t lle=m1(asf::LONGITUDE_LATITUDE_ELEVATION_DEGREES,img);
+	asf::meta3D_t lle=m1(asf::LONGITUDE_LATITUDE_DEGREES,img);
 	asf::meta3D_t lle_good(-145.00790111, 63.80828389, elev);
-	diff("delta_1 DJ1 elevation",lle_good.z,lle.z,1.0e-2);
+	diff("delta_1 DJ1 elevation (meters)",lle_good.z,lle.z,1.0e-2);
 	lle.z=lle_good.z; /* 1mm elevation roundoff screws up relative error */
-	diff("delta_1 DJ1 position",lle_good,lle,3.0e-7);
+	diff("delta_1 DJ1 position (degrees lat/lon)",lle_good,lle,3.0e-7);
 }
 
 

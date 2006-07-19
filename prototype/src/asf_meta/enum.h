@@ -2,9 +2,9 @@
 Enumerated constants used in metadata handling.
 
 The formatting of this file is specially designed so that:
-	- Humans can read it.
 	- It's valid C.  This means no // comments, and "typedef enum {...} foo" instead of just "enum foo {".
 	- It's valid C++.  This is easy if it's already C.
+	- Humans can read it.
 	- Doxygen can parse the comments.  This is why the comments start with two asterixes.
 	- The "enum_parse.pl" script can turn these enum names and values 
 	  into a string table.  This requires every enum definition to occupy just one line.
@@ -174,15 +174,23 @@ typedef enum {
 /** 2D metadata fields, accessed with metadata_source::meta2D */
 typedef enum {
 	METADATA_2D_FIRST=2000, /**<  Start of metadata enum */
-	LONGITUDE_LATITUDE_DEGREES, /**<  Location of target on planet surface (decimal degrees) */
-	INTERFEROMETRIC_BASELINE, /**<  Interferometric baseline: x=parallel, y=normal (meters of baseline) */
+	INTERFEROMETRIC_BASELINE, /**<  Interferometric baseline along this row: x=parallel, y=normal (meters of baseline) */
 	METADATA_2D_LAST
 } metadata_2D_enum;
 
-/** 3D metadata fields, accessed with metadata_source::meta3D */
+/** 3D metadata coordinate systems, accessed with metadata_source::meta3D or transform */
 typedef enum {
 	METADATA_3D_FIRST=3000, /**<  Start of metadata enum */
-	/* Direction vectors.  All these vectors are in the 3D body-fixed XYZ coordinate system. */
+	
+	/* Coordinate spaces */
+	IMAGE_PIXELS, /**< XY meta image pixels (measured in meta pixels).  Z can be used as elevation. */
+	LONGITUDE_LATITUDE_DEGREES, /**<  Longitude (x), geodetic latitude (y), and elevation (z) of target on planet surface (degrees,degrees,meters from ellipsoid). */
+	LATITUDE_LONGITUDE_DEGREES, /**<  Geodetic latitude (x), longitude (y), and elevation (z) of target on planet surface (degrees,degrees,meters from ellipsoid). */
+	TARGET_POSITION, /**<  Location of dirt on planet surface in 3D body-fixed XYZ coordinates (meters). */
+	SLANT_TIME_DOPPLER, /**<  Slant range (x), time (y), and doppler (z) at this image point (meters,seconds,Hz). */
+	MAP_COORDINATES, /**< Return map projection coordinates in XY; elevation in Z (units vary; but normally all meters). */
+	
+	/* Output-only direction vectors.  All these vectors are in the 3D body-fixed XYZ coordinate system. */
 	TARGET_SATELLITE_DIRECTION, /**<  From target, unit vector pointing to satellite (unit vector) */
 	TARGET_UP_DIRECTION, /**<  From target, unit vector pointing upward (unit vector) */
 	TARGET_NORTH_DIRECTION, /**<  From target, unit vector pointing north (unit vector) */
@@ -195,24 +203,6 @@ typedef enum {
 	SATELLITE_TARGET_DIRECTION, /**<  From satellite, unit vector pointing to target (unit vector) */
 	SATELLITE_DOWN_DIRECTION, /**<  From satellite, unit vector pointing downward (unit vector) */
 	SATELLITE_FLIGHT_DIRECTION, /**<  From satellite, unit vector pointing along body-fixed velocity vector (unit vector) */
-	
-	/* Coordinate spaces (other than image pixels) */
-	TARGET_POSITION, /**<  Location of target in 3D body-fixed XYZ coordinates (meters).  Also XYZ_FROM_IMAGE */
-	LONGITUDE_LATITUDE_ELEVATION_DEGREES, /**<  Location of target on planet surface (degrees,degrees,meters from ellipsoid).  Also LLE_FROM_IMAGE */
-	SLANT_TIME_DOPPLER, /**<  Slant range (x), time (y), and doppler (z) at this image point (meters,seconds,Hz). Also STD_FROM_IMAGE */
-	MAP_COORDINATES, /**< Return map projection coordinates in XY and elevation in Z (units vary; but normally all meters).  Also MAP_FROM_IMAGE */
-	
-	/* Bizarre coordinate space transforms: */
-	IMAGE_FROM_XYZ, /**<  Input is TARGET_POSITION.  Output is image pixels. */
-	IMAGE_FROM_LLE, /**<  Input is LONGITUDE_LATITUDE_ELEVATION_DEGREES.  Output is image pixels. */
-	IMAGE_FROM_STD, /**<  Input is SLANT_TIME_DOPPLER.  Output is image pixels. */
-	IMAGE_FROM_MAP, /**<  Input is MAP_COORDINATES.  Output is image pixels. */
-	LLE_FROM_MAP, /**<  Input is MAP_COORDINATES.  Output is LONGITUDE_LATITUDE_ELEVATION_DEGREES. (see meta_parameters.cpp) */
-	MAP_FROM_LLE, /**<  Input is LONGITUDE_LATITUDE_ELEVATION_DEGREES.  Output is MAP_COORDINATES. (see meta_parameters.cpp) */
-	LLE_FROM_XYZ, /**<  Input is TARGET_POSITION.  Output is LONGITUDE_LATITUDE_ELEVATION_DEGREES. (see metadata.cpp) */
-	XYZ_FROM_LLE, /**<  Input is LONGITUDE_LATITUDE_ELEVATION_DEGREES.  Output is TARGET_POSITION. (see metadata.cpp) */
-	STD_FROM_XYZ, /**<  Input is TARGET_POSITION.  Output is SLANT_TIME_DOPPLER. (see metadata_sar.cpp) */
-	XYZ_FROM_STD, /**<  Input is SLANT_TIME_DOPPLER.  Output is TARGET_POSITION. (see metadata_sar.cpp)  */
 	METADATA_3D_LAST
 } metadata_3D_enum;
 

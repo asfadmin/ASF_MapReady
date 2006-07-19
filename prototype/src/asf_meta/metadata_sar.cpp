@@ -68,7 +68,7 @@ struct GEOLOCATE_REC {
 
 /// Build a GEOLOCATE_REC from this metadata source.
 void init_geolocate(const asf::metadata_source &meta,
-	const asf::metaCoord_t &loc,GEOLOCATE_REC *g);
+	const asf::meta_coord_t &loc,GEOLOCATE_REC *g);
 
 /// Build a GEOLOCATE_REC from this fixed-earth state vector.
 void init_geolocate(const asf::metadata_source &meta,
@@ -122,7 +122,7 @@ void init_geolocate(const asf::metadata_source &meta,
 	const asf::meta_state_t &fixed_stVec,double elev,GEOLOCATE_REC *g)
 {
 /* Read fields straight out of meta */
-	asf::metaCoord_t loc(0,0,0); /**< Simple sample location--none of these fields are location-dependent */
+	asf::meta_coord_t loc(0,0,0); /**< Simple sample location--none of these fields are location-dependent */
 	g->stVec=fixed_stVec;
 	
 	g->lambda=meta(WAVELENGTH,loc);
@@ -150,7 +150,7 @@ void init_geolocate(const asf::metadata_source &meta,
 }
 
 void init_geolocate(const asf::metadata_source &meta,
-	const asf::metaCoord_t &loc,GEOLOCATE_REC *g)
+	const asf::meta_coord_t &loc,GEOLOCATE_REC *g)
 {
 	meta3D_t std=meta(SLANT_TIME_DOPPLER,loc);
 	double time=std.y;
@@ -507,7 +507,7 @@ c*/
 
 /*************** Apply these routine to the meta interface ***********/
 
-double asf::metadata_sar::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const
+double asf::metadata_sar::meta1D(asf::metadata_1D_enum v,const asf::meta_coord_t &loc) const
 {
 	const metadata_source &meta=*this;
 	metasource_watcher watcher(v,"metadata_sar::meta1D",*this);
@@ -561,7 +561,18 @@ double asf::metadata_sar::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t 
 		/* This is the derivative of INTERFEROMETRIC_FLAT_PHASE with respect to "flat" */
 		double deriv=2.0*meta1D(WAVENUMBER,loc)*(-base.x*sin(flat)+base.y*cos(flat));
 		/* "sr*sin(incid)" is our lever arm length.  "deriv" converts look angle to phase difference */
-		/* FIXME: there's a nonlinear version of this.  I just don't know what it is... */
+		/* FIXME: there's a more complicated nonlinear version of this:
+			L: look angle to ellipsoid
+			A: look deviation angle, measured via interferometric phase
+			r: slant range to target
+			a: altitude of satellite above Earth center
+			e: local height of ellipsoid from Earth center (assuming sphere)
+			h: altitude of arget above ellipsoid
+		  Then the law of cosines gives
+		  	r*r + a*a - 2*r*a*cos(L+A) = (e+h)*(e+h)
+		  and so
+		  	h=sqrt(r*r + a*a - 2*r*a*cos(L+A))-e
+		*/
 		return (sr*sin(incid))/deriv;
 	}
 	default:
@@ -569,40 +580,29 @@ double asf::metadata_sar::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t 
 	}
 }
 
-asf::meta2D_t asf::metadata_sar::meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const
+asf::meta2D_t asf::metadata_sar::meta2D(asf::metadata_2D_enum v,const asf::meta_coord_t &loc) const
 {
 	return super::meta2D(v,loc);
 }
-asf::meta3D_t asf::metadata_sar::meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const
+
+// meta_coordinate_transformer coordinate transform functions:
+//  Just the SAR geolocation algorithm.  That's all we are.
+static asf::meta_coord_t xyz_from_std(const asf::metadata_source &meta,const asf::meta_coord_t &src,double elev)
 {
-	metasource_watcher watcher(v,"metadata_sar::meta3D",*this);
-	switch (v) {
-	/* The only actual geolocation call we support. Convert SAR parameters
-	  (slant range, time, doppler, and a state vector) to a position.
-	  Latitudes and longitudes are computed from here.
-	*/
-	case TARGET_POSITION:  {
-		meta3D_t std=meta3D(SLANT_TIME_DOPPLER,loc);
-		double slant=std.x, time=std.y, doppler=std.z, elev=loc.z;
-		sar_geolocate::GEOLOCATE_REC g;
-		sar_geolocate::init_geolocate(*this,
-			meta_state(SATELLITE_FROM_TIME,asf::meta3D_t(time,0,0)),
-			elev,&g);
-		return getLocCart(&g,slant,doppler,0);
-	}
-	case IMAGE_FROM_XYZ: {
-		return meta3D(IMAGE_FROM_STD, /* <- implemented by child */
-		        meta3D(STD_FROM_XYZ, /* <- below */
-			 loc));
-	}
-	case XYZ_FROM_STD: { /* Compute body-fixed location from slant/time/doppler */
-		asf::die("FIXME in metadata_sar::meta3D: XYZ_FROM_STD not implemented");
-	}
-	case STD_FROM_XYZ: { /* FIXME: implement this, probably with an iterative search */
-		asf::die("FIXME in metadata_sar::meta3D: STD_FROM_XYZ not implemented");
-	}
-	default:
-		return super::meta3D(v,loc);
-	}
+	double slant=src.x, time=src.y, doppler=src.z;
+	sar_geolocate::GEOLOCATE_REC g;
+	sar_geolocate::init_geolocate(meta,
+		meta.meta_state(SATELLITE_FROM_TIME,asf::meta3D_t(time,0,0)),
+	 	 elev,&g);
+	return getLocCart(&g,slant,doppler,0);
 }
 
+const meta_coordinate_transformer &asf::metadata_sar::get_transformer(void) const {
+	static meta_coordinate_transformer *trans=0;
+	if (trans==0) { /* Add our transforms to those of our superclass */
+		meta_coordinate_transformer *t=new meta_coordinate_transformer(super::get_transformer());
+		t->add(TARGET_POSITION,xyz_from_std,SLANT_TIME_DOPPLER,2000.0); /* expensive because of iterative search */
+		trans=t;
+	}
+	return *trans;
+}

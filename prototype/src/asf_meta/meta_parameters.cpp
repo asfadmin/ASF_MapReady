@@ -663,10 +663,10 @@ public:
 		meta_free(m); m=0;
 	}
 	
-	virtual double meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const;
-	virtual asf::meta2D_t meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const;
-	virtual asf::meta3D_t meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const;
-	virtual asf::meta_state_t meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc) const;
+	virtual double meta1D(asf::metadata_1D_enum v,const asf::meta_coord_t &loc) const;
+	virtual const meta_coordinate_transformer &get_transformer(void) const;
+	
+	virtual asf::meta_state_t meta_state(asf::metadata_state_enum v,const asf::meta_coord_t &loc) const;
 	virtual int meta_int(asf::metadata_int_enum v) const;
 	virtual asf::meta_string_t meta_string(asf::metadata_string_enum v) const;
 	virtual asf::meta_glob_t meta_glob(asf::metadata_glob_enum v) const;
@@ -677,7 +677,7 @@ public:
  The only problem is if the meta_parameters struct is NULL, or the value
  is -9999999...
 */
-double metadata_from_parameters::meta1D(asf::metadata_1D_enum v,const asf::metaCoord_t &loc) const
+double metadata_from_parameters::meta1D(asf::metadata_1D_enum v,const asf::meta_coord_t &loc) const
 {
 	metasource_watcher watcher(v,"metadata_from_parameters::meta1D",*this);
 #define CHECK_AND_RETURN(struct,value) \
@@ -708,135 +708,140 @@ double metadata_from_parameters::meta1D(asf::metadata_1D_enum v,const asf::metaC
 	
 #undef CHECK_AND_RETURN
 }
-asf::meta2D_t metadata_from_parameters::meta2D(asf::metadata_2D_enum v,const asf::metaCoord_t &loc) const
-{
-	switch (v) {
-	default:
-		return super::meta2D(v,loc);
-	}
+
+
+/******* Coordinate transforms *******/
+
+/* Return the doppler (in Hz) given an image coordinates location */
+double meta_get_doppler(const meta_sar *ms,const asf::meta_coord_t &loc) {
+	return  ms->range_doppler_coefficients[0]+
+		loc.x*(ms->range_doppler_coefficients[1]+
+		       loc.x*ms->range_doppler_coefficients[2])+
+		loc.y*(ms->azimuth_doppler_coefficients[1]+
+		       loc.y*ms->azimuth_doppler_coefficients[2]);
 }
 
-/**
-  These 3D coordinate transforms are just about the only interesting thing that happens in this file.
-  It'd be nice to split this part into separate classes for:
-  	- Slant or ground range images, which deal with Slant/time/doppler and XYZ positions.
-	- Map projected images, which deal with map projection coordinates.
-*/
-asf::meta3D_t metadata_from_parameters::meta3D(asf::metadata_3D_enum v,const asf::metaCoord_t &loc) const
+/* Slant range, time, and doppler from slant-range image pixels */
+static asf::meta_coord_t std_from_img_sr(const metadata_from_parameters &meta,const asf::meta_coord_t &loc,double elev)
 {
-	metasource_watcher watcher(v,"metadata_from_parameters::meta3D",*this);
-	switch (v) {
-/* Slant range interface */
-	case SLANT_TIME_DOPPLER:
-		if (!m->state_vectors) /* without state vectors, STD is not useful... */
-			return super::meta3D(v,loc);
-		if (m->sar->image_type=='S') 
-		{ /* Slant range image */
-			asf::meta3D_t std(
-				/* Slant range: from X */
-				m->sar->slant_range_first_pixel+
-				m->sar->slant_shift+
-					loc.x*m->sar->range_time_per_pixel*(SPEED_OF_LIGHT*0.5),
-				/* Time: from Y */
-				m->sar->time_shift+
-					loc.y*m->sar->azimuth_time_per_pixel,
-				/* Doppler: from X and Y */
-				m->sar->range_doppler_coefficients[0]+
-				loc.x*(m->sar->range_doppler_coefficients[1]+
-				       loc.x*m->sar->range_doppler_coefficients[2])+
-				loc.y*(m->sar->azimuth_doppler_coefficients[1]+
-				       loc.y*m->sar->azimuth_doppler_coefficients[2])
-			);
-			return std;
-		}
-		else if (m->sar->image_type=='G')
-		{ /* ASF Precision Processor (?) ground-range image */
+	const meta_sar *ms=meta.m->sar;
+	asf::meta3D_t std(
+		/* Slant range: from X */
+		ms->slant_range_first_pixel+
+		ms->slant_shift+
+			loc.x*ms->range_time_per_pixel*(SPEED_OF_LIGHT*0.5),
+		/* Time: from Y */
+		ms->time_shift+loc.y*ms->azimuth_time_per_pixel,
+		meta_get_doppler(ms,loc)
+	);
+	return std;
+}
+/* Slant range, time, and doppler from ground-range image pixels */
+static asf::meta_coord_t std_from_img_gr(const metadata_from_parameters &meta,const asf::meta_coord_t &loc,double elev)
+{
+	/* ASF Precision Processor (?) ground-range image */
 #ifndef SQR
 #  define SQR(x) ((x)*(x))
 #endif
-			double ht=m->sar->satellite_height,er=m->sar->earth_radius_pp;
-			double minPhi=acos((SQR(ht)+SQR(er)-SQR(m->sar->slant_range_first_pixel))/
-				(2.0*ht*er));
-			double phi=minPhi+loc.x*(m->general->x_pixel_size/er);
-			double slantRng=sqrt(SQR(ht)+SQR(er)-2.0*ht*er*cos(phi));
-			asf::meta3D_t std(
-				/* Slant range: from X */
-				slantRng,
-				/* Time: from Y */
-				m->sar->time_shift+
-					loc.y*m->sar->azimuth_time_per_pixel,
-				/* Doppler: from X and Y */
-				m->sar->range_doppler_coefficients[0]+
-				loc.x*(m->sar->range_doppler_coefficients[1]+
-				       loc.x*m->sar->range_doppler_coefficients[2])+
-				loc.y*(m->sar->azimuth_doppler_coefficients[1]+
-				       loc.y*m->sar->azimuth_doppler_coefficients[2])
-			);
-			return std;
-		}
-		else { /* If it's anything, this is a map-projected image */
-			return meta3D(STD_FROM_XYZ,
-			        meta3D(XYZ_FROM_LLE,
-				 meta3D(LONGITUDE_LATITUDE_ELEVATION_DEGREES,
-				  loc)));
-		}
-	case IMAGE_FROM_STD: /* FIXME: compute pixels from STD.  Just the inverse of SLANT_TIME_DOPPLER above. */
-		asf::die("FIXME in meta_parameters.cpp: IMAGE_FROM_STD not defined");
-
-/* Map projection interface */
-	case LONGITUDE_LATITUDE_ELEVATION_DEGREES:
-		if (m->projection) 
-			return meta3D(LLE_FROM_MAP,meta3D(MAP_COORDINATES,loc));
-		else /* default SAR computation will work fine */
-			return super::meta3D(v,loc);
-	case TARGET_POSITION:
-		if (m->projection)
-			return meta3D(XYZ_FROM_LLE,meta3D(LONGITUDE_LATITUDE_ELEVATION_DEGREES,loc));
-		else /* for non-map images, compute target using SAR equations */
-			return super::meta3D(v,loc);
-	case IMAGE_FROM_LLE:
-		if (m->projection) 
-			return meta3D(IMAGE_FROM_MAP,meta3D(MAP_FROM_LLE,loc));
-		else
-			return super::meta3D(v,loc);
-	case MAP_COORDINATES: 
-		if (m->projection) {
-			double mapX=m->projection->startX+loc.x*m->projection->perX;
-			double mapY=m->projection->startY+loc.y*m->projection->perY;
-			return meta3D_t(mapX,mapY,loc.z);
-		}
-		else return super::meta3D(v,loc);
-	case IMAGE_FROM_MAP:
-		if (m->projection) {
-			double mapX=loc.x,mapY=loc.y;
-			double imgX=(mapX-m->projection->startX)/m->projection->perX;
-			double imgY=(mapY-m->projection->startY)/m->projection->perY;
-			return meta3D_t(imgX,imgY,loc.z);
-		}
-		else return super::meta3D(v,loc);
-	case LLE_FROM_MAP:
-		if (m->projection) 
-		{
-			double mapX=loc.x,mapY=loc.y;
-			double lat_deg=0.0,lon_deg=0.0;
-			proj_to_ll(m->projection,m->sar->look_direction,mapX,mapY,&lat_deg,&lon_deg);
-			return meta3D_t(lon_deg,lat_deg,loc.z);
-		} 
-		else return super::meta3D(v,loc);
-	case MAP_FROM_LLE:
-		if (m->projection) 
-		{
-			double mapX=0.0, mapY=0.0;
-			double lat_deg=loc.y, lon_deg=loc.x;
-			ll_to_proj(m->projection,m->sar->look_direction,lat_deg,lon_deg,&mapX,&mapY);
-			return meta3D_t(lon_deg,lat_deg,loc.z);
-		} 
-		else return super::meta3D(v,loc);
-	
-	default:
-		return super::meta3D(v,loc);
-	}
+	const meta_sar *ms=meta.m->sar;
+	double ht=ms->satellite_height,er=ms->earth_radius_pp;
+	double minPhi=acos((SQR(ht)+SQR(er)-SQR(ms->slant_range_first_pixel))/
+		(2.0*ht*er));
+	double phi=minPhi+loc.x*(meta.m->general->x_pixel_size/er);
+	double slantRng=sqrt(SQR(ht)+SQR(er)-2.0*ht*er*cos(phi));
+	asf::meta3D_t std(
+		/* Slant range: from X */
+		slantRng,
+		/* Time: from Y */
+		ms->time_shift+loc.y*ms->azimuth_time_per_pixel,
+		meta_get_doppler(ms,loc)
+	);
+	return std;
 }
+
+static asf::meta_coord_t map_from_image(const metadata_from_parameters &meta,const asf::meta_coord_t &loc,double elev)
+{
+	const meta_projection *mp=meta.m->projection;
+	double mapX=mp->startX+loc.x*mp->perX;
+	double mapY=mp->startY+loc.y*mp->perY;
+	return meta3D_t(mapX,mapY,loc.z);
+}
+static asf::meta_coord_t image_from_map(const metadata_from_parameters &meta,const asf::meta_coord_t &loc,double elev)
+{
+	const meta_projection *mp=meta.m->projection;
+	double mapX=loc.x,mapY=loc.y;
+	double imgX=(mapX-mp->startX)/mp->perX;
+	double imgY=(mapY-mp->startY)/mp->perY;
+	return meta3D_t(imgX,imgY,loc.z);
+}
+
+char lookDir(const meta_parameters *m) {
+	if (m->sar && m->sar->look_direction!='?')
+		return m->sar->look_direction;
+	else
+		return 'R'; /* just assume right-looking */
+}
+static asf::meta_coord_t lle_from_map(const metadata_from_parameters &meta,const asf::meta_coord_t &loc,double elev)
+{
+	const meta_projection *mp=meta.m->projection;
+	double mapX=loc.x,mapY=loc.y;
+	double lat_deg=0.0,lon_deg=0.0;
+	proj_to_ll((meta_projection *)mp,lookDir(meta.m),mapX,mapY,&lat_deg,&lon_deg);
+	return meta3D_t(lon_deg,lat_deg,loc.z);
+} 
+static asf::meta_coord_t map_from_lle(const metadata_from_parameters &meta,const asf::meta_coord_t &loc,double elev)
+{
+	const meta_projection *mp=meta.m->projection;
+	double mapX=0.0, mapY=0.0;
+	double lat_deg=loc.y, lon_deg=loc.x;
+	ll_to_proj((meta_projection *)mp,lookDir(meta.m),lat_deg,lon_deg,&mapX,&mapY);
+	return meta3D_t(lon_deg,lat_deg,loc.z);
+} 
+
+/** Return a coordinate transformer object that will work with our image */
+const meta_coordinate_transformer &metadata_from_parameters::get_transformer(void) const {
+	if (m->projection) { /* Map-centric image */
+		static meta_coordinate_transformer *trans=0;
+		if (trans==0) {
+			meta_coordinate_transformer *t=new meta_coordinate_transformer(super::get_transformer());
+			t->add(MAP_COORDINATES,(meta_coordinate_transformer::fn_t)
+				map_from_image,IMAGE_PIXELS, 4.0);
+			t->add(IMAGE_PIXELS,(meta_coordinate_transformer::fn_t)
+				image_from_map,MAP_COORDINATES, 20.0); /* divides are expensive */
+			t->add(LONGITUDE_LATITUDE_DEGREES,(meta_coordinate_transformer::fn_t)
+				lle_from_map,MAP_COORDINATES,1000.0);  /* map projections are really expensive */
+			t->add(MAP_COORDINATES,(meta_coordinate_transformer::fn_t)
+				map_from_lle,LONGITUDE_LATITUDE_DEGREES,1000.0); 
+			trans=t;
+		}
+		return *trans;
+	}
+	else if (m->state_vectors) { /* SAR-centric image */
+		if (m->sar->image_type=='S') { /* Slant range */
+			static meta_coordinate_transformer *trans=0;
+			if (trans==0) {
+				meta_coordinate_transformer *t=new meta_coordinate_transformer(super::get_transformer());
+				t->add(SLANT_TIME_DOPPLER,(meta_coordinate_transformer::fn_t)
+					std_from_img_sr,IMAGE_PIXELS,10.0);
+				trans=t;
+			}
+			return *trans;
+		}
+		if (m->sar->image_type=='G') { /* Ground range */
+			static meta_coordinate_transformer *trans=0;
+			if (trans==0) {
+				meta_coordinate_transformer *t=new meta_coordinate_transformer(super::get_transformer());
+				t->add(SLANT_TIME_DOPPLER,(meta_coordinate_transformer::fn_t)
+					std_from_img_gr,IMAGE_PIXELS,100.0);
+				trans=t;
+			}
+			return *trans;
+		}
+	}
+	/* Else just a generic image--none of our transforms apply */
+	return super::get_transformer();
+}
+
 
 /** Interpolate this list of state vectors to this image time (seconds) */
 asf::meta_state_t interpolate_stVec(asf::meta_state_vectors *v,double time) {
@@ -851,7 +856,7 @@ asf::meta_state_t interpolate_stVec(asf::meta_state_vectors *v,double time) {
 		&ret,time);
 	return ret;
 }
-asf::meta_state_t metadata_from_parameters::meta_state(asf::metadata_state_enum v,const asf::metaCoord_t &loc) const
+asf::meta_state_t metadata_from_parameters::meta_state(asf::metadata_state_enum v,const asf::meta_coord_t &loc) const
 {
 	metasource_watcher watcher(v,"metadata_from_parameters::meta_state",*this);
 	switch (v) {
