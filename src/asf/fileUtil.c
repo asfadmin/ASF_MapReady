@@ -369,8 +369,8 @@ void renameImgAndMeta(const char *src, const char *dst)
 char *
 get_basename(const char *in)
 {
-   char *dir = MALLOC(sizeof(char)*strlen(in));
-   char *file = MALLOC(sizeof(char)*strlen(in));
+   char *dir = MALLOC(sizeof(char)*(strlen(in)+2));
+   char *file = MALLOC(sizeof(char)*(strlen(in)+2));
    split_dir_and_file(in,dir,file);
    free(dir);
    char *ext=findExt(file);

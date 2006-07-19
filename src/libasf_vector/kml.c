@@ -85,16 +85,26 @@ void write_kml(char *filename)
 
 void meta2kml(char *filename, meta_parameters *meta)
 {
-    if (!meta)
+    int call_meta_free = FALSE;
+
+    if (!meta) {
         meta = meta_read(filename);
+        call_meta_free = TRUE;
+    }
 
     char *kml_filename = appendExt(filename, ".kml");
     char *basename = get_basename(filename);
+
     FILE *kml_file = FOPEN(kml_filename, "wt");
+
     kml_header(kml_file);
     kml_entry(kml_file, meta, basename);
     kml_footer(kml_file);
+
     FCLOSE(kml_file);
     FREE(basename);
     FREE(kml_filename);
+
+    if (call_meta_free)
+        meta_free(meta);
 }
