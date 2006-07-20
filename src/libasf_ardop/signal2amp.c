@@ -41,5 +41,7 @@ main(int argc,char **argv)
 		}
 		FWRITE(outBuf,sizeof(float),mlSamples,outF);
 	}
+        FREE(inBuf);
+        FREE(outBuf);
 	return 0;
 }

@@ -342,6 +342,7 @@ void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
 	  multilook(mlBuf,p->n_range,f->nlooks,pwrs);
 	  intensity(p->n_range,pwrs,amps);
 	  
+          meta_free(metaAmp);
 	  metaAmp = meta_read(f->out_amp);
 	  put_float_line(fp_amp, metaAmp, outLine/f->nlooks+off_ml, amps);
 	  
@@ -396,6 +397,10 @@ void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
   FREE((void *)amps);
   FREE((void *)pwrs);
   FREE((void *)outputBuf);
+  FREE((void *)mlBuf);
+  meta_free(metaIn);
+  meta_free(metaAmp);
+  meta_free(metaCpx);
   if (!quietflag) elapse(1);
 }
 

@@ -298,4 +298,5 @@ void writeTable(meta_parameters *meta,const satellite *s,int numSamples)
 		fprintf(noisePtr,"%f\n",table[index]);
 
 	FCLOSE(noisePtr);
+        FREE(table);
 }

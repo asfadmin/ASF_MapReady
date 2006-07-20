@@ -124,6 +124,7 @@ double amp_corr(patch *p1,patch *p2,file *f)
 	float scale=1.0/fftLen;
 	complexFloat *amp1,*amp2;
 	float *corr;
+        double ret;
 	amp1=(complexFloat *)MALLOC(sizeof(complexFloat)*fftLen);
 	amp2=(complexFloat *)MALLOC(sizeof(complexFloat)*fftLen);
 	corr=(float *)MALLOC(sizeof(float)*(fftLen+overlap));
@@ -182,7 +183,11 @@ double amp_corr(patch *p1,patch *p2,file *f)
 		}
 	}
 	FCLOSE(fout);
-	return dop_findPeak(corr,fftLen-overlap,2*overlap)-fftLen;
+        FREE(amp1);
+        FREE(amp2);
+	ret = dop_findPeak(corr,fftLen-overlap,2*overlap)-fftLen;
+        FREE(corr);
+        return ret;
 }
 
 extern int ac_direction;

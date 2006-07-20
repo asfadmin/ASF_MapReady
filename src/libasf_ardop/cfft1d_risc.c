@@ -46,14 +46,20 @@ SPECIAL CONSIDERATIONS:
 
 void cfft1d(int n, complexFloat *c, int dir)
 {
+    static int did_init = 0;
  	int m=(int)(log(n)/log(2.0)+0.5);
 	if (dir == 0)
 	{
+            if (did_init == 0) {
 		int ret=fftInit(m);
 		if (ret!=0) {
 		  sprintf(errbuf,"   ERROR: Problem %d in FFT!\n",ret);
 		  printErr(errbuf);
 		}
+                did_init = 1;
+            } else {
+                printf("Already initialized FFT.\n");
+            }
 	}
 	if (dir > 0)  iffts((float *)c,m,1);
 	if (dir < 0)  ffts((float *)c,m, 1);
