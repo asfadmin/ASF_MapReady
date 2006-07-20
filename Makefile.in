@@ -15,6 +15,7 @@ include make_support/system_rules
 MODULES = \
 	src/asf \
 	src/libasf_proj \
+	src/libasf_ardop \
 	src/asf_meta \
 	src/asf_lt \
 	src/asf_geolib \
@@ -23,7 +24,6 @@ MODULES = \
 	src/libasf_vector \
 	src/libasf_raster \
 	src/libasf_sar \
-	src/libasf_ardop \
 	src/ardop \
 	src/libasf_export \
 	src/asf_export \
