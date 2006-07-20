@@ -2,7 +2,6 @@
 #include <math.h>
 #include "fft.h"
 #include "fft2d.h"
-#include "asf_reporting.h"
 
 #define MINI(a,b) ( ((a)<(b)) ? (a) : (b) )
 

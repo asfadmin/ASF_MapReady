@@ -10,12 +10,11 @@ LDFLAGS := -L$(XHOME) $(LDFLAGS)
  # ldl, lsocket, and lnsl are necessary for Solaris, but break sarview on irix
 SOLARIS_LIBS = -ldl -lsocket -lnsl
 REQUIRED_LIBS = \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_geolib.a \
 	$(JPEG_LIBS) \
 	$(TCL_TK_LIBS) \
@@ -28,7 +27,7 @@ LIBS = \
 		echo $(REQUIRED_LIBS) ; \
 	fi \
 	)
-	
+
 OBJS = \
 	cproc.o cproc_desc.o cproc_hist.o \
 	hist.o sel.o \

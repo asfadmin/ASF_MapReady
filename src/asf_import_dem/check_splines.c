@@ -1,12 +1,7 @@
-
 #include <glib.h>
 #include <gsl/gsl_statistics_double.h>
-
-#include <asf_reporting.h>
 #include <asf_raster.h>
-
 #include "asf_import_dem.h"
-
 
 // Check the health of the our spline model by comparing the input
 // image pixel coordinates predicted by the model for each point

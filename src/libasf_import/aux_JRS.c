@@ -2,7 +2,6 @@
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
-#include "asf_reporting.h"
 
 
 /***********************************************

@@ -32,7 +32,6 @@ BUGS:
 #include "prc_stvecs.h"
 #include "dateUtil.h"
 #include "asf_meta.h"
-#include "asf_reporting.h"
 #include <sys/stat.h>
 #include <dirent.h>
 

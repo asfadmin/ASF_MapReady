@@ -29,7 +29,6 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include <asf_export.h>
-#include <asf_reporting.h>
 
 int asf_export(output_format_t format, long size, scale_t sample_mapping, 
 	       char *in_base_name, char *output_name)

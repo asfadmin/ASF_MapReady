@@ -6,7 +6,6 @@
 #include <ddr.h>
 #include <libasf_proj.h>
 #include "map_projected_dem.h"
-#include <asf_reporting.h>
 
 MapProjectedDEM *
 map_projected_dem_new_from_las (const char *las_header_file,

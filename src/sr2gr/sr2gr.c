@@ -129,7 +129,6 @@ BUGS:
 #include "asf.h"
 
 #include <stdio.h>
-#include <asf_reporting.h>
 #include <stdlib.h>
 
 #define VERSION 4.5

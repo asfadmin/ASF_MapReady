@@ -1,6 +1,5 @@
 #include "asf.h"
 #include "ceos.h"
-#include "asf_reporting.h"
 
 #include <stdio.h>
 #include <gsl/gsl_errno.h>

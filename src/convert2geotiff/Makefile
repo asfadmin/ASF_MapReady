@@ -5,11 +5,11 @@
 include ../../make_support/system_rules
 
 
-LIBS =	$(LIBDIR)/asf.a \
+LIBS =	\
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
+	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(JPEG_LIBS) \
 	$(TIFF_LIBS) \

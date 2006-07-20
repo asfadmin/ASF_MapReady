@@ -11,7 +11,6 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
 OBJS  = aisp_write.o \

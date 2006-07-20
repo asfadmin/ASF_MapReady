@@ -8,7 +8,6 @@ This file ingests VEXCEL Level-0 products from the JERS satellite.
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
-#include "asf_reporting.h"
 
 
 /*Satellite-specific Parameters:*/

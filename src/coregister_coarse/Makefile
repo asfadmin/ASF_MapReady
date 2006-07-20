@@ -3,12 +3,12 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf_meta.a \
+LIBS  = \
+	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
 OBJS  = coregister_coarse.o \

@@ -10,7 +10,6 @@ LIBS  = \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
 OBJS  = deskew_dem.o

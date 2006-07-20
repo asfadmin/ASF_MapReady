@@ -16,7 +16,6 @@ LIBS = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libshp.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \

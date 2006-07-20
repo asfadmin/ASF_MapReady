@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 #define ASF_COPYRIGHT_STRING \
 "Copyright (c) %d, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
@@ -24,7 +25,7 @@ static void print_license(int license_id)
   print_copyright();
   switch (license_id) {
     case ASF_BSD_ID:
-      asfPrintStatus(ASF_BSD_LICENSE_STRING"\n");
+      printf(ASF_BSD_LICENSE_STRING"\n");
       break;
     default:
       printf("License not found.\n");

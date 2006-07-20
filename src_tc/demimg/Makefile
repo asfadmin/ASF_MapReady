@@ -4,12 +4,12 @@
  
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
 	$(LIBDIR)/sarmodel.a \
 	$(LIBDIR)/tcobj.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libasf_reporting.a \
+	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	-lm

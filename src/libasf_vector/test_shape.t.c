@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "asf.h"
 #include "asf_vector.h"
-#include "asf_reporting.h"
 
 void gi_antenna_shapefile()
 {

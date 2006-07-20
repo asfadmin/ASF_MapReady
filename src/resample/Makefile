@@ -4,12 +4,11 @@
 include ../../make_support/system_rules
 
 OLIBS = $(LIBDIR)/libasf_raster.a \
-        $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
-	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a
+        $(LIBDIR)/asf.a \
+	$(PROJ_LIBS)
 
 CFLAGS += $(GLIB_CFLAGS)
 

@@ -5,7 +5,7 @@ niftiness to make it possible to explain things to the user
 
 #include <stdlib.h>
 
-#include "asf_reporting.h"
+#include "asf.h"
 
 
 void require_function (const char *file, int line, int condition,

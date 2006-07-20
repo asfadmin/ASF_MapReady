@@ -69,7 +69,6 @@
 #define REQUIRED_ARGS 2
 
 #include "asf.h"
-#include "asf_reporting.h"
 #include "asf_meta.h"
 
 

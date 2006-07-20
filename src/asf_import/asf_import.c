@@ -126,7 +126,6 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #include "ceos.h"
 #include "get_ceos_names.h"
 #include "get_stf_names.h"
-#include "asf_reporting.h"
 #include "asf_raster.h"
 #include <ctype.h>
 

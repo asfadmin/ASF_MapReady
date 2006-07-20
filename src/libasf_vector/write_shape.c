@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "asf.h"
-#include "asf_reporting.h"
 #include "shapefil.h"
 
 #define maxPoints 1000

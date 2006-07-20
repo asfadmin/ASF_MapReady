@@ -5,12 +5,12 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
 OBJS  = open_dem.o \

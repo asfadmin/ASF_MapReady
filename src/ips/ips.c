@@ -106,7 +106,6 @@ BUGS:
 #include "ips.h"
 #include "functions.h"
 #include "proj.h"
-#include "asf_reporting.h"
 #include "asf_license.h"
 #include "asf_contact.h"
 

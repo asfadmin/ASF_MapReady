@@ -6,8 +6,6 @@ DESCRIPTION:
  Wrappers for consistant reporting to the terminal & log file
 ******************************************************************************/
 #include "asf.h"
-#include "log.h"
-
 
 /* Do not print to the terminal, only report to the log file */
 void asf_print_to_log_only(const char *format, ...)

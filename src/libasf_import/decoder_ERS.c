@@ -8,8 +8,6 @@ This file ingests VEXCEL Level-0 products from the ERS satellite.
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
-#include "asf_reporting.h"
-
 
 /********************************
  * ERS_readNextPulse:

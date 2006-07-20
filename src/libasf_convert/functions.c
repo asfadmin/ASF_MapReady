@@ -2,7 +2,7 @@
 #define FUNCTIONS_C
 
 #include "asf.h"
-#include "asf_reporting.h"
+
 /*
 int asf_import(char *inFile, char *outFile, char *format, char *radiometry,
 	       char *prcOrbits, double lat_begin, double lat_end)

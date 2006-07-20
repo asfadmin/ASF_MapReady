@@ -262,6 +262,7 @@ int main(int argc, char *argv[])
         else {
           sprintf(cmd, "stats -overmeta -overstat \"%s\"\n", fnm1);
           asfSystem(cmd);
+          meta_free(meta_stat);
           meta_stat = meta_read(fnm1);
           avg = meta_stat->stats->mean;
         }
@@ -383,6 +384,7 @@ int main(int argc, char *argv[])
 	FREE(ampIn);
 	FREE(phaseIn);
 	FREE(ampOut);
+        FREE(ampBuf);
 	FREE(phaseOut);
 	FREE(table);
 	FCLOSE(fiamp);
@@ -396,6 +398,11 @@ int main(int argc, char *argv[])
 	FREE(bluPtr);
 	FREE(imgData);
 	FCLOSE(flas);
+
+        meta_free(meta);
+        meta_free(meta_stat);
+        meta_free(meta_old);
+        meta_free(meta09);
 
 	return 0;
 }

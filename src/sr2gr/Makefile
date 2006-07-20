@@ -10,7 +10,6 @@ LIBS  = $(LIBDIR)/libasf_sar.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
 OBJS  = sr2gr.o

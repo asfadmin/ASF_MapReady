@@ -22,10 +22,15 @@ OBJS  = caplib.o \
 	share.o \
 	system.o \
 	tmpdir.o \
-	license.o
+	license.o \
+	splash_screen.o \
+	progress_meters.o \
+	print_alerts.o \
+	diagnostics.o
 
 all: build_only
 	mv asf.a $(LIBDIR)
+	cp asf.h $(ASF_INCLUDE_DIR)
 	rm *.o
 
 build_only: $(OBJS)

@@ -7,7 +7,6 @@ calibrate.*/
 #include "asf.h"
 #include "ceos.h"
 #include "calibrate.h"
-#include "asf_reporting.h"
 
 /**Harcodings to fix calibration of ASF data***
  --------------------------------------------

@@ -9,8 +9,7 @@
 #include <tiffio.h>
 #include <xtiffio.h>
 
-#include <asf_reporting.h>
-
+#include "asf.h"
 #include "projected_image_import.h"
 
 double

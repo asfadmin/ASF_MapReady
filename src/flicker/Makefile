@@ -53,7 +53,6 @@ LDLIBS = \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(JPEG_LIBS) \

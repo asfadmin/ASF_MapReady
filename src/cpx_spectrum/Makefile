@@ -9,7 +9,6 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 OBJS  = cpx_spectrum.o \
 	cfft1d_risc.o
@@ -19,4 +18,4 @@ cpx_spectrum: $(OBJS)
 	mv cpx_spectrum $(BIN_POSTFIX) $(BINDIR)
 	rm *.o
 	cp *.1 ../../man/cat1
-	
+

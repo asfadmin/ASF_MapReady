@@ -10,7 +10,6 @@ LIBS  = \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	$(GLIB_LIBS)
 
 OBJS  = meta_check.o

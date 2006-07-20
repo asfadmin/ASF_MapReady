@@ -1,6 +1,4 @@
 #include "asf.h"
-#include "log.h"
-#include "asf_reporting.h"
 
 /* Default splash screen
    This function should be called as soon as the log & quiet flags have been

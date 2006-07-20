@@ -10,7 +10,6 @@ OLIBS = $(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libifm.a
 LIBS = $(OLIBS) -lm
 

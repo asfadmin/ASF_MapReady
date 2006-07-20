@@ -5,7 +5,6 @@
 
 #include <asf.h>
 #include <asf_meta.h>
-#include <asf_reporting.h>
 
 /**
  Compute a resampling vector gr2sr such that:

@@ -39,11 +39,10 @@ CFLAGS += \
 
 LIBS  = \
 	$(LIBDIR)/libasf_export.a \
-	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
+	$(LIBDIR)/libasf_proj.a \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \

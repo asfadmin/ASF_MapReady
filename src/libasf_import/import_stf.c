@@ -2,7 +2,6 @@
 #include "dateUtil.h"
 #include "decoder.h"
 #include "lzFetch.h"
-#include "asf_reporting.h"
 
 /* Prototypes */
 void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart,

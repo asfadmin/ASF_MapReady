@@ -1,7 +1,6 @@
 #include "asf.h"
 #include "ddr.h"
 #include "hdr.h"
-#include "asf_reporting.h"
 
 void ddr2hdr(struct DDR *ddr, jpl_header *hdr)
 {

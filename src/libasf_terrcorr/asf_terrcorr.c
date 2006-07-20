@@ -14,7 +14,6 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include <asf_raster.h>
-#include <asf_reporting.h>
 #include <asf_contact.h>
 #include <asf_license.h>
 #include <asf_sar.h>

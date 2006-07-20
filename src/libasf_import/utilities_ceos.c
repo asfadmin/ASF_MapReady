@@ -5,7 +5,6 @@
 #include "decoder.h"
 #include "dateUtil.h"
 #include "get_ceos_names.h"
-#include "asf_reporting.h"
 
 /*Internal Metadata creation routine prototype*/
 void ceos_init(const char *in_fName,meta_parameters *sar);

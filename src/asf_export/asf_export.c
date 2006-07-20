@@ -115,8 +115,6 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include <asf_export.h>
-#include <asf_reporting.h>
-
 #include <asf_contact.h>
 #include <asf_license.h>
 

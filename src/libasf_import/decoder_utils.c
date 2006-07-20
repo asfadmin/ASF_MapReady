@@ -4,7 +4,6 @@ Contains bit-shift routines, as well as
 metadata handling.
 */
 #include "decoder.h"
-#include "asf_reporting.h"
 
 /********************************
 Check_sync:

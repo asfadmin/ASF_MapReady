@@ -6,7 +6,6 @@ DEBUG_BUILD = 2
 
 LIBS  = $(LIBDIR)/libasf_elevation.a \
 	$(LIBDIR)/libasf_sar.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \

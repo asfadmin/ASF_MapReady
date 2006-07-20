@@ -3,12 +3,12 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
-	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a
+	$(LIBDIR)/asf.a \
+	$(PROJ_LIBS)
 
 TOBJS = idtable.o 
 IOBJS = idimage.o

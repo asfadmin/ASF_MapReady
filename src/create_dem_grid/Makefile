@@ -10,7 +10,6 @@ LIBS  = \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 OBJS = create_dem_grid.o
 

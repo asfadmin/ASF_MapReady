@@ -1,6 +1,5 @@
 #include "asf.h"
 #include "asf_import.h"
-#include "asf_reporting.h"
 #include "esri.h"
 #include <ctype.h>
 

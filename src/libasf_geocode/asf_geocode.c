@@ -16,7 +16,6 @@
 #include <asf.h>
 #include <asf_meta.h>
 #include <asf_raster.h>
-#include <asf_reporting.h>
 #include <float_image.h>
 #include <libasf_proj.h>
 #include <spheroids.h>

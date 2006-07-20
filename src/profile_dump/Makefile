@@ -8,7 +8,6 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 OBJS = profile_dump.o 
 
@@ -16,4 +15,4 @@ c2p: $(OBJS)
 	$(CC) -g $(CFLAGS) -o profile_dump $(OBJS) $(LIBS) $(LDFLAGS)
 	rm *.o
 	mv profile_dump$(BIN_POSTFIX) $(BINDIR)
-	
+

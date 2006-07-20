@@ -11,7 +11,6 @@ LIBS  = \
 	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	$(GSL_LIBS) \
 	-lm
 

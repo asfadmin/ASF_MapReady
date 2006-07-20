@@ -2,9 +2,9 @@
 #include <math.h>
 
 // libraries developed by ASF
+#include <asf.h>
 #include <asf_meta.h>
 #include <asf_raster.h>
-#include <asf_reporting.h>
 
 // Prototypes
 int calc_utm_zone(double lon);

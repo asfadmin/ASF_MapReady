@@ -13,7 +13,6 @@ DESCRIPTION:
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_sar.h"
-#include "asf_reporting.h"
 
 #define FUDGE_FACTOR 2
 

@@ -1,7 +1,6 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_endian.h"
-#include "asf_reporting.h"
 #include "asf_sar.h"
 
 #define FLOAT_EQUALS_ZERO(X) (X<0.000000000001 && X>-0.000000000001)

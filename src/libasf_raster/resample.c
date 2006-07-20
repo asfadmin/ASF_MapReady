@@ -43,7 +43,6 @@ ALGORITHM DESCRIPTION:
 *******************************************************************/
 #include "asf.h"
 #include "asf_endian.h"
-#include "asf_reporting.h"
 
 static float filter(      /****************************************/
     float *inbuf,         /* input image buffer                   */

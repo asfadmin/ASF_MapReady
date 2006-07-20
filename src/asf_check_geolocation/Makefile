@@ -18,7 +18,6 @@ LIBS = \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
 	$(LIBDIR)/asf_fft.a \
-	$(LIBDIR)/libasf_reporting.a
 
 all: asf_check_geolocation
 	-rm *.o

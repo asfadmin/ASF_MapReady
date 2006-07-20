@@ -8,8 +8,7 @@ LIBS =	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
-	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a
+	$(PROJ_LIBS)
 
 OBJS =  calibrate.o \
 	cal_params.o

@@ -9,7 +9,6 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	-L$(LIBDIR) -lgsl -lgslcblas -lm
 
 OBJS_M2E = meta2esri.o

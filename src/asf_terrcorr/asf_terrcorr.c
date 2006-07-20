@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <asf.h>
-#include <asf_reporting.h>
 #include <asf_terrcorr.h>
 
 #define ASF_NAME_STRING "asf_terrcorr"

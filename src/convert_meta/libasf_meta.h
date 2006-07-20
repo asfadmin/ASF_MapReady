@@ -15,7 +15,7 @@
 
 ****************************************************/
 
-#include "asf_reporting.h"
+#include "asf.h"
 #include "geolocate.h"		/* For stateVector.  */
 #include "ceos.h"
 #include "las.h"

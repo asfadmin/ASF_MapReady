@@ -1,6 +1,5 @@
 #include <asf.h>
 #include <asf_meta.h>
-#include <asf_reporting.h>
 #include <libasf_proj.h>
 #include <asf_raster.h>
 #include <spheroids.h>

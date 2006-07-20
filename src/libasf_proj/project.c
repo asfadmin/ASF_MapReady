@@ -3,7 +3,6 @@
 #include "asf.h"
 #include "jpl_proj.h"
 #include "asf_nan.h"
-#include "asf_reporting.h"
 
 #include <stdio.h>
 #include <assert.h>

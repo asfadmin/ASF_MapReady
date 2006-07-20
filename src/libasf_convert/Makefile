@@ -7,7 +7,6 @@ LIBS  = \
 	$(LIBDIR)/libasf_ardop.a \
 	$(LIBDIR)/libasf_export.a \
 	$(LIBDIR)/libasf_geocode.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \

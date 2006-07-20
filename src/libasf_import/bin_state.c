@@ -37,7 +37,6 @@ PROGRAM HISTORY:
 #include "missing.h"
 #include "lzFetch.h"
 #include "get_stf_names.h"
-#include "asf_reporting.h"
 
 /*********************************************************************
  * new_bin_state:

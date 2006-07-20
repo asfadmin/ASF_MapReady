@@ -6,7 +6,6 @@ DEBUG_BUILD = 2
 include ../../make_support/system_rules
 
 LIBS = $(LIBDIR)/libasf_meta.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a -lm
 
 OBJS = convert_meta.o 

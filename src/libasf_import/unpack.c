@@ -5,7 +5,6 @@ data into (byte-packed) I/Q samples.
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
-#include "asf_reporting.h"
 
 /**************************************
 Bit fiddling:

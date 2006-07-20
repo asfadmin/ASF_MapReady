@@ -4,12 +4,12 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libproj.a \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
 tpl_search: tpl_search.c

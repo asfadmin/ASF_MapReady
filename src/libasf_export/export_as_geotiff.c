@@ -14,7 +14,6 @@
 #include <asf.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
-#include <asf_reporting.h>
 #include <asf_export.h>
 #include <float_image.h>
 

@@ -8,7 +8,6 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_fft.a -lm
 
 CPXOBJS = cpx_filter.o \

@@ -12,8 +12,7 @@ LIBS  = $(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a
+	$(PROJ_LIBS)
 LIBC = $(LIBS) -lm 
 
 ASPLIB = atdp_setup.o read_signal.o parse_cla.o

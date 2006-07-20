@@ -5,7 +5,6 @@ include ../../make_support/system_rules
 CFLAGS += $(GLIB_CFLAGS)
 
 LIBS =	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf.a \
 	-lm
 

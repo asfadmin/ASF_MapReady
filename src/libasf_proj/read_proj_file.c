@@ -1,7 +1,6 @@
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_meta.h"
-#include "asf_reporting.h"
 
 #include <stdlib.h>
 #include <string.h>

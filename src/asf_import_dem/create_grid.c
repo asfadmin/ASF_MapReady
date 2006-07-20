@@ -2,11 +2,9 @@
 #include <glib.h>
 
 //#include <libasf_proj.h>
-#include <asf_reporting.h>
 
 #include "asf_import_dem.h"
 #include "seamless_meta.h"
-
 
 // Generate some mappings between output image projection
 // coordinates and input image pixel coordinates, using proj.  We

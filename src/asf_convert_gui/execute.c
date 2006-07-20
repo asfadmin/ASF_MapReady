@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include "asf_convert_gui.h"
 #include <asf.h>
-#include <asf_reporting.h>
 #include <asf_convert.h>
 
 /*

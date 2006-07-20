@@ -8,7 +8,6 @@ LIBS :=	$(LIBDIR)/asf_meta.a \
 	$(JPEG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
 CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)

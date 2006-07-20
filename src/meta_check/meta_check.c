@@ -101,7 +101,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
-#include "asf_reporting.h"
 
 #define NUM_ARGS 2
 

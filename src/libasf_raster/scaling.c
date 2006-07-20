@@ -1,5 +1,4 @@
-#include <asf_reporting.h>
-
+#include "asf.h"
 #include "asf_nan.h"
 #include "asf_raster.h"
 

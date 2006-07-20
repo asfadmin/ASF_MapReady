@@ -5,7 +5,6 @@
 include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/asf_fft.a \
         $(LIBDIR)/asf.a \
 	-lm

@@ -23,7 +23,6 @@ MODULES = \
 	src/libasf_vector \
 	src/libasf_raster \
 	src/libasf_sar \
-	src/libasf_reporting \
 	src/libasf_ardop \
 	src/ardop \
 	src/libasf_export \
@@ -36,6 +35,8 @@ MODULES = \
 	src/asf_terrcorr \
 	src/libasf_convert \
 	src/asf_convert \
+	src/sr2gr \
+	src/gr2sr \
         src/metadata \
 	@ASF_GUI@
 # src_x/sarview

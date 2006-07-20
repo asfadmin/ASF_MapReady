@@ -39,7 +39,6 @@
 
 #include "asf.h"
 #include "asf_meta.h"
-#include "asf_reporting.h"
 #include "ddr.h"
 #include "hdr.h"
 

@@ -1,6 +1,5 @@
 #include "asf.h"
 #include "asf_convert.h"
-#include "asf_reporting.h"
 #include <ctype.h>
 
 int strindex(char s[], char t[])

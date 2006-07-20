@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "asf.h"
-#include "asf_reporting.h"
 #include "shapefil.h"
 
 // Reading a shapefile assuming that the lat/lon information that are used

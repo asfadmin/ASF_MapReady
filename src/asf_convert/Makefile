@@ -10,7 +10,6 @@ LIBS  = \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_terrcorr.a \
 	$(LIBDIR)/libasf_ardop.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf_meta.a \

@@ -5,12 +5,12 @@ DEBUG_BUILD = 2
 
 include ../../make_support/system_rules
 
-OLIBS = $(LIBDIR)/asf.a \
+OLIBS = \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
-	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a
+	$(LIBDIR)/asf.a \
+	$(PROJ_LIBS)
 
 LIBS  = $(OLIBS) \
 	-lm

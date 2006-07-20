@@ -9,7 +9,6 @@
 #include "find_geotiff_name.h"
 #include "get_ceos_names.h"
 #include "get_stf_names.h"
-#include "asf_reporting.h"
 #include "asf_raster.h"
 #include <ctype.h>
 

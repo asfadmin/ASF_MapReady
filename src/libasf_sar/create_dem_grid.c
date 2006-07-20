@@ -81,7 +81,6 @@ BUGS:
 #include "cproj.h"
 #include "proj.h"
 #include "libasf_proj.h"
-#include "asf_reporting.h"
 #include "asf_sar.h"
 
 /*Return a regular, 30x30 grid of points.*/

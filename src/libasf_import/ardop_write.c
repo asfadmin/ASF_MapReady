@@ -2,7 +2,6 @@
 #include "lzFetch.h"
 #include "decoder.h"
 #include "ardop_params.h"
-#include "asf_reporting.h"
 
 /********************************
 ARDOP Parameter file generator routines.

@@ -9,7 +9,6 @@ This file ingests VEXCEL Level-0 products from the RADARSAT satellite.
 #include "lzFetch.h"
 #include "decoder.h"
 #include "auxiliary.h"
-#include "asf_reporting.h"
 
 
 /*Satellite-specific Parameters:*/

@@ -79,7 +79,6 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "asf_meta.h"
 #include "asf_convert.h"
 #include "proj.h"
-#include "asf_reporting.h"
 #include "asf_contact.h"
 #include <unistd.h>
 

@@ -5,8 +5,8 @@
 #include <xtiffio.h>
 
 #include <asf_endian.h>
+#include <asf.h>
 #include <asf_meta.h>
-#include <asf_reporting.h>
 #include <asf_raster.h>
 #include <asf_export.h>
 

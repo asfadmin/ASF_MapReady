@@ -25,13 +25,9 @@
 #include <asf.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
-#include <asf_reporting.h>
 #include <asf_export.h>
-#include <asf_reporting.h>
-
 
 #define PPM_MAGIC_NUMBER "P6"
-
 
 void
 export_as_ppm (const char *metadata_file_name,

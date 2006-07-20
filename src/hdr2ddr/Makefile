@@ -4,7 +4,6 @@
 include ../../make_support/system_rules
 
 LIBS  = $(LIBDIR)/asf.a \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
 DDR_OBJS = \

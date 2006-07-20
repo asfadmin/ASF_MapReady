@@ -11,7 +11,6 @@ createSubset.c
 #include "string.h"
 #include "ctype.h"
 #include "get_stf_names.h"
-#include "asf_reporting.h"
 
 stateVector propagate(stateVector source,double sourceSec,double destSec);
 

@@ -3,7 +3,6 @@
 #include "asf_meta.h"
 #include "calibrate.h"
 #include "decoder.h"
-#include "asf_reporting.h"
 
 #define MAX_tableRes 512
 

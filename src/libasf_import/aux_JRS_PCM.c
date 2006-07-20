@@ -53,7 +53,6 @@ ASF-STEP Level-Zero Data Quality Tool
 #include "asf.h"
 #include "decoder.h"
 #include "auxiliary.h"
-#include "asf_reporting.h"
 
 JRS_PCM *new_JRS_PCM(int maxFrames)
 {

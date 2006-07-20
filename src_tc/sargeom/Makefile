@@ -4,14 +4,14 @@
  
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
 	$(LIBDIR)/sarmodel.a \
 	$(LIBDIR)/tcobj.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libgsl.a \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libproj.a \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
  
 sargeom : sargeom.c

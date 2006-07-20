@@ -1,6 +1,5 @@
 #include "asf.h"
 #include "asf_import.h"
-#include "asf_reporting.h"
 #include "envi.h"
 
 #define ENVI_UTM     3

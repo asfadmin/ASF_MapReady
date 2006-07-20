@@ -4,7 +4,6 @@ Implementation file for C matrix subroutines.
 Orion Sky Lawlor 3/99
 */
 #include "asf.h"
-#include "asf_reporting.h"
 #include "matrix.h"
 
 

@@ -22,7 +22,6 @@ PROGRAM HISTORY:
 #include "least_squares.h"
 #include "calibrate.h"
 #include "get_ceos_names.h"
-#include "asf_reporting.h"
 
 #ifndef PI
 # define PI 3.14159265358979323846

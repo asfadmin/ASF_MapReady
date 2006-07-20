@@ -62,7 +62,6 @@ LIB = \
 	$(ASF_LIB)/asf_odl.a \
 	$(ASF_LIB)/asf.a \
 	$(ASF_LIB)/libasf_proj.a \
-	$(ASF_LIB)/libasf_reporting.a \
 	$(ASF_LIB)/libasf_raster.a \
 	$(ASF_LIB)/asf_fft.a \
 	$(GSL_LIBS) \
@@ -116,7 +115,6 @@ LDLIBS = \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_terrcorr.a \
 	$(LIBDIR)/libasf_ardop.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_sar.a \

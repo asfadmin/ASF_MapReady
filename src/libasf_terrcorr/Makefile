@@ -15,7 +15,6 @@ LIBS  = \
 	$(LIBDIR)/libasf_proj.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libasf_reporting.a \
 	-lm
 
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)

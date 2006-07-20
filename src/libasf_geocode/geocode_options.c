@@ -1,7 +1,6 @@
 #include "asf_geocode.h"
 #include "asf_nan.h"
 #include "asf_meta.h"
-#include "asf_reporting.h"
 #include "proj_api.h"
 
 #include <assert.h>

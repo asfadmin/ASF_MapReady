@@ -13,7 +13,6 @@
 #include <xtiffio.h>
 
 #include <asf.h>
-#include <asf_reporting.h>
 #include "asf_import.h"
 #include "geotiff_flavors.h"
 

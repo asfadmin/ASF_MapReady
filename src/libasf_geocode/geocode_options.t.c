@@ -1,7 +1,6 @@
 #include "asf_geocode.h"
 #include "asf_nan.h"
 #include "asf_meta.h"
-#include "asf_reporting.h"
 #include "log.h"
 
 static int noisy = 0;

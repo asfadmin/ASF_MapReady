@@ -10,7 +10,6 @@ LIBS  = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	-lm

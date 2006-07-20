@@ -38,4 +38,4 @@ distclean:
 # Build tester program
 test: build_only
 	$(CC) $(CFLAGS) test_meta.c -o test_meta $(LIBDIR)/libasf_meta.a \
-		$(LIBDIR)/asf.a $(LIBDIR)/libasf_reporting.a -lm
+		$(LIBDIR)/asf.a -lm

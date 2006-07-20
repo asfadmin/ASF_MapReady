@@ -27,8 +27,6 @@
 #include <asf_endian.h>
 #include <asf_meta.h>
 #include <asf_export.h>
-#include <asf_reporting.h>
-
 
 void
 export_as_esri (const char *metadata_file_name,

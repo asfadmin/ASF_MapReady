@@ -16,8 +16,7 @@ LIBS = $(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
-	$(LIBDIR)/asf_fft.a \
-	$(LIBDIR)/libasf_reporting.a
+	$(LIBDIR)/asf_fft.a
 
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 

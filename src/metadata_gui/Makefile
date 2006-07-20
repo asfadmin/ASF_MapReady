@@ -50,10 +50,10 @@ CFLAGS += \
 	$(JPEG_CFLAGS)
 
 LDLIBS = \
+	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libasf_reporting.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(JPEG_LIBS) \

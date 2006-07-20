@@ -4,7 +4,6 @@
 #include "asf_convert.h"
 #include "proj.h"
 #include "asf_import.h"
-#include "asf_reporting.h"
 #include "asf_contact.h"
 #include "asf_import.h"
 #include "asf_terrcorr.h"

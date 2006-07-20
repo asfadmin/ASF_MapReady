@@ -2,7 +2,6 @@
 #include <string.h>
 #include "asf.h"
 #include "asf_meta.h"
-#include "asf_reporting.h"
 #include "dateUtil.h"
 #include "shapefil.h"
 

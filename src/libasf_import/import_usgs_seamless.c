@@ -19,7 +19,6 @@
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_import.h"
-#include "asf_reporting.h"
 
 #include "tiff_to_float_image.h"
 #include "write_meta_and_img.h"

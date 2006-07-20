@@ -25,9 +25,9 @@ BUGS:
 
 ******************************************************************************/
 #include "asf_sar.h"
+#include "asf.h"
 
 #include <stdio.h>
-#include <asf_reporting.h>
 #include <stdlib.h>
 
 #define VERSION 0.2
