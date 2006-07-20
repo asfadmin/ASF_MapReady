@@ -258,9 +258,11 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 {
 	int outX;
         int StartLayoverFlag=0;
+	
+	int rpoint = d->numSamples - (2*DEM_GRID_RHS_PADDING); // ugly hack to say right edge is 400 pixels from right of image
 	for (outX=0;outX<ns;outX++)
 	{
-		double height=grDEM[outX];
+		double height=grDEM[outX];	
 		double inX=dem_gr2sr(d,outX,height);
 		
 		if ((height!=badDEMht)&&(inX>=0)&&(inX<(ns-1)))
@@ -278,11 +280,41 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 		}
 		else {
                     out[outX]=0.0;
-                    if (mask && StartLayoverFlag)
-                        mask[outX] = MASK_LAYOVER;
+		    if (mask)
+		    {
+			if ( (height==badDEMht && !StartLayoverFlag) ||
+						   ( inX > rpoint) )
+						  
+			{
+				     	mask[outX] = MASK_INVALID_DATA;
+			}
+			else
+			{
+			if (StartLayoverFlag) 
+					mask[outX] = MASK_LAYOVER;
+			}
+		    }
                 }
 	}
-
+	// now have a bit of code that goes back and unsets extra MASK_INVALID_DATA
+	if (mask)
+	{
+	int set = 1;
+	for (outX=rpoint;outX<ns; outX++)
+		{
+			int pos = rpoint+ (ns-outX);
+			if (mask[pos] != MASK_INVALID_DATA)
+			{ // ok so we have left ths comfortable region
+					set = -1;
+				}
+			else if  (set == -1)
+					{ 
+						mask[pos] = MASK_LAYOVER;
+					}
+				}
+	}
+	// end unsetting code
+	
 //        if (doInterp && mask) {
 //            for (outX = 0; outX<ns; ++outX) {
 //                if (mask[outX]==MASK_LAYOVER || mask[outX]==MASK_SHADOW) {
@@ -534,14 +566,14 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                     get_float_line(inSarFp,inSarMeta,y,inSarLine);
 
                     if (inMaskFlag) {
-                        geo_compensate(&d,grDEMline,mask+y*d.numSamples,
-                                       outLine,d.numSamples,0,NULL);
+			    geo_compensate(&d,grDEMline,mask+y*d.numSamples,
+					    outLine,d.numSamples,0,NULL);
                         for (x=0; x<d.numSamples; ++x)
                             mask[y*d.numSamples+x] = outLine[x];
                     }
 
                     geo_compensate(&d,grDEMline,inSarLine,outLine,d.numSamples,
-                                   1,mask+y*d.numSamples);
+				    1,mask+y*d.numSamples);
 
                     if (y>0&&doRadiometric)
                         radio_compensate(&d,grDEMline,grDEMlast,outLine,
