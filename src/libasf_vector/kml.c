@@ -1,5 +1,6 @@
 #include "asf_vector.h"
 #include "asf.h"
+#include "dateUtil.h"
 #include <stdio.h>
 
 /* 
@@ -19,17 +20,34 @@ void kml_header(FILE *kml_file)
 
 void kml_entry(FILE *kml_file, meta_parameters *meta, char *name)
 {
+    julian_date jdate;
+    ymd_date ymd;  
     int nl = meta->general->line_count;
     int ns = meta->general->sample_count;
     double lat, lon;
+    char *mon[13]={"", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+		   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    jdate.year = meta->state_vectors->year;
+    jdate.jd = meta->state_vectors->julDay;
+    date_jd2ymd(&jdate, &ymd);
 
     fprintf(kml_file, "<Placemark>\n");
-    fprintf(kml_file, "  <description>\n");
-    fprintf(kml_file, "    sensor/mode: %s/%s\n",
-            meta->general->sensor, meta->general->mode);
-    fprintf(kml_file, "    orbit/frame: %d/%d\n",
-            meta->general->orbit, meta->general->frame);
-    fprintf(kml_file, "  </description>\n");
+    fprintf(kml_file, "  <description><![CDATA[\n");
+    fprintf(kml_file, "<strong>Sensor</strong>: %s<br>\n", meta->general->sensor);
+    fprintf(kml_file, "<strong>Beam mode</strong>: %s<br>\n", meta->general->mode);
+    fprintf(kml_file, "<strong>Orbit</strong>: %d<br>\n", meta->general->orbit);
+    fprintf(kml_file, "<strong>Frame</strong>: %d<br>\n", meta->general->frame);
+    fprintf(kml_file, "<strong>Acquisition date</strong>: %d-%s-%d<br>\n", 
+	    ymd.day, mon[ymd.month], ymd.year);
+    if (meta->general->orbit_direction == 'D')
+      fprintf(kml_file, "<strong>Orbit direction</strong>: Descending<br>\n");
+    else if (meta->general->orbit_direction == 'A')
+      fprintf(kml_file, "<strong>Orbit direction</strong>: Ascending<br>\n");
+    fprintf(kml_file, "<strong>Center latitude</strong>: %9.4lf<br>\n", 
+	    meta->general->center_latitude);
+    fprintf(kml_file, "<strong>Center longitude</strong>: %9.4lf<br>\n", 
+	    meta->general->center_longitude);
+    fprintf(kml_file, "  ]]></description>\n");
     fprintf(kml_file, "  <name>%s</name>\n", name);
     fprintf(kml_file, "  <LookAt>\n");
     fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
@@ -107,4 +125,30 @@ void meta2kml(char *filename, meta_parameters *meta)
 
     if (call_meta_free)
         meta_free(meta);
+}
+
+void meta2kml_list(char *list, char *filename)
+{
+  FILE *fp;
+  meta_parameters *meta;
+  char metaFile[1024];
+
+  char *kml_filename = appendExt(filename, ".kml");
+  char *basename = get_basename(filename);
+  
+  FILE *kml_file = FOPEN(kml_filename, "wt");
+  kml_header(kml_file);
+  
+  fp = FOPEN(list, "r");
+  while (fgets(metaFile, 1024, fp)) {
+    meta = meta_read(metaFile);
+    kml_entry(kml_file, meta, basename);
+    meta_free(meta);
+  }
+
+  kml_footer(kml_file);
+  FCLOSE(kml_file);
+  FCLOSE(fp);
+  FREE(basename);
+  FREE(kml_filename);
 }

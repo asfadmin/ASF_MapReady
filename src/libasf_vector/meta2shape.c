@@ -138,6 +138,7 @@ void meta2shape(char *metaFile, char *shapeFile)
 
   // Close shapefile
   SHPClose(shape);
+  meta_free(meta);
 }
 
 // Write corner coordinates for a list of frames into a shapefile
@@ -149,7 +150,7 @@ void meta2shape_list(char *list, char *shapeFile)
   meta_parameters *meta;
   int n=0;
   char dbaseFile[255], metaFile[1024];
-  double lat[1000], lon[1000];
+  double lat[5], lon[5];
 
   // Initialize database and shapefile
   sprintf(dbaseFile, "%s.dbf", shapeFile);
@@ -182,6 +183,7 @@ void meta2shape_list(char *list, char *shapeFile)
     SHPDestroyObject(shapeObject);  
     SHPClose(shape);
 
+    meta_free(meta);
     n++;
   }
   FCLOSE(fp);

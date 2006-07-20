@@ -32,6 +32,7 @@ void kml_entry(FILE *kml_file, meta_parameters *meta, char *name);
 void kml_footer(FILE *kml_file);
 void write_kml(char *filename);
 void meta2kml(char *kml_filename, meta_parameters *meta);
+void meta2kml_list(char *list, char *filename);
 
 // Prototypes from meta2shape.c
 void meta2shape(char *metaFile, char *shapeFile);
