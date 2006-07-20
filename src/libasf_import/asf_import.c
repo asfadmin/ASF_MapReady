@@ -1,5 +1,4 @@
 #include <asf_contact.h>
-#include <asf_copyright.h>
 #include <asf_license.h>
 #include "geotiff_flavors.h"
 #include "asf_import.h"

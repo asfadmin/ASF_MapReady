@@ -3,6 +3,8 @@
 #include <asf_reporting.h>
 #include <asf_terrcorr.h>
 
+#define ASF_NAME_STRING "asf_terrcorr"
+
 #define NUM_ARGS 3
 void usage(const char *name)
 {
@@ -47,6 +49,7 @@ main (int argc, char *argv[])
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = TRUE;
 
+  handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
 
   while (currArg < (argc-NUM_ARGS)) {

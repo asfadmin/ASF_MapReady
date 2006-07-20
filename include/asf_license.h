@@ -31,5 +31,10 @@ enum {
 "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n"\
 "SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"\
 
+/* If either of -license or -version are given, print the appropriate info
+   and then exit. */
+void handle_license_and_version_args(int argc, char *argv[],
+                                     const char *program_name);
+
 #endif   // _ASF_LICENSE_H_
 

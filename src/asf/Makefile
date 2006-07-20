@@ -21,7 +21,8 @@ OBJS  = caplib.o \
 	stopwatch.o \
 	share.o \
 	system.o \
-	tmpdir.o
+	tmpdir.o \
+	license.o
 
 all: build_only
 	mv asf.a $(LIBDIR)

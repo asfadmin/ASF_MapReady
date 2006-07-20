@@ -203,13 +203,8 @@ trouble, and use edit_man_header. :)
 #define ASF_SEE_ALSO_STRING \
 "     asf_import, asf_export\n"
 
-#define ASF_COPYRIGHT_STRING \
-"Copyright (c) \"ASF_COPYRIGHT_YEAR_STRING\", University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
-"All rights reserved.\n"
-
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 #include <asf_contact.h>
-#include <asf_copyright.h>
 #include <asf_license.h>
 
 // Standard libraries.
@@ -268,32 +263,6 @@ static void print_help(void)
   exit(EXIT_SUCCESS);
 }
 
-// Print version and copyright & exit
-static void print_version(void)
-{
-  asfPrintStatus(
-    ASF_NAME_STRING", version "CONVERT_PACKAGE_VERSION_STRING"\n"
-    ASF_COPYRIGHT_STRING);
-  exit(EXIT_SUCCESS);
-}
-
-// Print our copyright and license notice & exit
-static void print_license(int license_id)
-{
-  asfPrintStatus("\n"ASF_COPYRIGHT_STRING"\n");
-
-  switch (license_id) {
-    case ASF_BSD_ID:
-      asfPrintStatus(ASF_BSD_LICENSE_STRING"\n");
-      break;
-    default:
-      printf("License not found.\n");
-      break;
-  }
-  exit(EXIT_SUCCESS);
-}
-
-
 // Main routine.
 int
 main (int argc, char **argv)
@@ -343,6 +312,8 @@ main (int argc, char **argv)
   }
   quietflag = detect_flag_options(argc, argv, "-quiet", "--quiet", NULL);
 
+  handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
+
   asfSplashScreen(argc, argv);
 
   project_parameters_t *pp
@@ -356,12 +327,7 @@ main (int argc, char **argv)
   if (detect_flag_options(argc, argv, "--help", "-help", "-h", NULL)) {
     print_help();
   }
-  if (detect_flag_options(argc, argv, "--license", "-license", NULL)) {
-    print_license(ASF_BSD_ID);
-  }
-  if (detect_flag_options(argc, argv, "--version", "-version", "-v", NULL)) {
-    print_version();
-  }
+
   if (detect_flag_options(argc, argv, "-debug", NULL)) {
     debug_dump=TRUE;
     ++arg_num;

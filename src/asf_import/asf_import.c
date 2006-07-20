@@ -1,5 +1,4 @@
 #include <asf_contact.h>
-#include <asf_copyright.h>
 #include <asf_license.h>
 /*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
 /*
@@ -119,10 +118,6 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #define ASF_SEE_ALSO_STRING \
 "   asf_convert, asf_export\n"
 
-#define ASF_COPYRIGHT_STRING \
-"Copyright (c) "ASF_COPYRIGHT_YEAR_STRING", University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
-"All rights reserved.\n"
-
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
 #include "asf_import.h"
@@ -167,31 +162,6 @@ static void print_help(void)
   exit(EXIT_SUCCESS);
 }
 
-// Print version and copyright & exit
-static void print_version(void)
-{
-  asfPrintStatus(
-    ASF_NAME_STRING", version "CONVERT_PACKAGE_VERSION_STRING"\n"
-    ASF_COPYRIGHT_STRING);
-  exit(EXIT_SUCCESS);
-}
-
-// Print our copyright and license notice & exit
-static void print_license(int license_id)
-{
-  asfPrintStatus("\n"ASF_COPYRIGHT_STRING"\n");
-
-  switch (license_id) {
-    case ASF_BSD_ID:
-      asfPrintStatus(ASF_BSD_LICENSE_STRING"\n");
-      break;
-    default:
-      printf("License not found.\n");
-      break;
-  }
-  exit(EXIT_SUCCESS);
-}
-
 /******************************************************************************
 * Lets rock 'n roll!
 *****************************************************************************/
@@ -221,12 +191,8 @@ int main(int argc, char *argv[])
         || (checkForOption("-help", argc, argv) != FLAG_NOT_SET) ) {
         print_help();
     }
-    if ( checkForOption("-license", argc, argv) != FLAG_NOT_SET ) {
-        print_license(ASF_BSD_ID);
-    }
-    if ( checkForOption("-version", argc, argv) != FLAG_NOT_SET ) {
-        print_version();
-    }
+    handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
+
     /*Check to see if any options were provided*/
     flags[f_AMP] = checkForOption("-amplitude", argc, argv);
     flags[f_SIGMA] = checkForOption("-sigma", argc, argv);
