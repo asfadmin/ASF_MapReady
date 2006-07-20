@@ -150,7 +150,7 @@ clean:
 
 check: asf_meta_tester.c build_only
 	$(CC) $(CFLAGS) $< asf_meta.a \
-		$(LIBDIR)/libasf_proj.a $(LIBDIR)/libasf_reporting.a \
+		$(LIBDIR)/libasf_proj.a \
 		$(LIBDIR)/asf.a $(GSL_LIBS) $(PROJ_LIBS) -lcheck $(LDFLAGS) \
 		-o asf_meta_tester
 	./asf_meta_tester

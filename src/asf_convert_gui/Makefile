@@ -122,6 +122,7 @@ LDLIBS = \
 	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/asf_fft.a \
+	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(JPEG_LIBS) \

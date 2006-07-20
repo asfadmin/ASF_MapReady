@@ -5,8 +5,11 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
+	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	-lm
 

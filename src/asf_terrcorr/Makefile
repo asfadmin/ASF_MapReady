@@ -6,10 +6,10 @@ LIBS  = \
 	$(LIBDIR)/libasf_terrcorr.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
-	$(LIBDIR)/asf.a \
-	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
