@@ -67,13 +67,10 @@ trouble, and use edit_man_header. :)
 "\n"\
 "     UTM\n"\
 "     ---\n"\
-"          --zone                      : Zone\n"\
-"          --central-meridian          : Longitude of Central Meridian\n"\
-"          --latitude-of-origin        : Latitude at projection\"s origin\n"\
+"          --zone                      : Zone (optional)\n"\
 "\n"\
-"	  Either the zone or center_longitude must be specified.  The\n"\
-"	  center_longitude may not be an exact multiple of 6 (i.e. may\n"\
-"	  not lie on a UTM zone boundry).\n"\
+"	  If a zone is not specified, it will be determined from the\n"\
+"         scene's metadata.\n\n"\
 "\n"\
 "     POLAR STEREO\n"\
 "     ------------\n"\
