@@ -81,6 +81,7 @@ static int gr_ns,sr_ns;
 static float badDEMht=0.0;
 static float unInitDEM=-1.0;
 static int maxBreakLen=20;
+static int presentationMode;
 
 static int n_lay;
 static int n_shad;
@@ -149,9 +150,9 @@ static void dem_gr2sr(float *grDEM, float *srDEM,float *amp,float *mask)
     {
         amp[x]=0;
         srDEM[x]=unInitDEM;
-        mask[x]=MASK_NORMAL;
+	mask[x]=MASK_NORMAL;
     }
-
+   
 /*Step through the ground range line using grX.
 Convert each grX to an srX.  Update amplitude and height images.*/
     for (grX=1;grX<gr_ns;grX++)
@@ -172,7 +173,8 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                     runLen=-runLen;
                 currAmp=50.0/(runLen*runLen*5+0.1);
                 for (x=lastSrX+1;x<=sriX;x++)
-                    amp[x]+=currAmp*getSpeckle;
+		            	amp[x]+=currAmp*getSpeckle;
+		
                 /*Then, update the height and mask images.*/
                 if (intRun!=0)
                 {
@@ -185,11 +187,20 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                         if (srDEM[x]==unInitDEM) {
                             /*Only write on fresh pixels.*/
                             srDEM[x]=maxval;
+			   // mask[x]=MASK_NORMAL;
                             //srDEM[x]=curr;
                         } else {
                             /*Hit this pixel a 2nd time ==> layover*/
-                            if (maxval > srDEM[x]) srDEM[x] = maxval;
-                            mask[x] = MASK_LAYOVER;
+				if (maxval > srDEM[x]) 
+					{
+					srDEM[x] = maxval;
+					}
+					
+					
+			    mask[x] = MASK_LAYOVER;
+			    
+			    //    if(presentationMode == 1) srDEM[x]+=curr*getSpeckle; 
+					
                             ++n_lay;
                         }
                         curr+=delt;
@@ -209,7 +220,8 @@ Convert each grX to an srX.  Update amplitude and height images.*/
             } else {
                 for (x=lastSrX+1;x<=sriX;x++) {
                     srDEM[x]=badDEMht;
-                    mask[x]=MASK_NO_DEM_DATA;
+                    mask[x]=MASK_INVALID_DATA;
+		    
                 }
             }
             lastOutValue=height;
@@ -218,7 +230,10 @@ Convert each grX to an srX.  Update amplitude and height images.*/
     }
 /*Fill to end of line with zeros.*/
     for (x=lastSrX+1;x<sr_ns;x++)
+    	{
         srDEM[x]=badDEMht;
+	mask[x]=MASK_INVALID_DATA;
+	}
 /* Just plug all the holes and see what happens */
 /*Attempt to plug one-pixel holes, by interpolating over them.*/
     for (x=1;x<(sr_ns-2);x++)
@@ -254,12 +269,12 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	metaIn = meta_read(inMetafile);
 	metaDEM = meta_read(inDEMfile);
 	nl = metaDEM->general->line_count;
-	gr_ns = metaDEM->general->sample_count;
+	gr_ns = metaDEM->general->sample_count+400;
 	sr_ns = metaIn->general->sample_count;
 	earth_radius = meta_get_earth_radius(metaIn, nl/2, 0);
 	satHt = meta_get_sat_height(metaIn, nl/2, 0);
 	meta_get_slants(metaIn, &slant_to_first, &slant_per);
-
+	presentationMode = 1;
         n_lay = n_shad = 0;
 
 /*Open files.*/
