@@ -1,16 +1,6 @@
-# asf_meta: a library to fetch metadata from disparate sources.
-# Includes facilities to geolocate, extract critical angles from,
-# and do interferometric processing on SAR images.
-#   Now incorporates asf_ceos library, as well.
+# Makefile for asf_meta library
 
 include ../../make_support/system_rules
-
-# Static libraries used by this library.  These get pulled out of the
-# library repository and expanded, then recombined together with the
-# objects from this library to save user having to link against all
-# libraries used by this library and give some semblance of modularity
-# to this benighted C language.
-LIBS = asf.a libasf_reporting.a libasf_ardop.a
 
 # Things used/needed by make's implicit rules for lex and yacc.
 # Need the GNU flex and bison, others are broken in variety of ways.
@@ -137,22 +127,11 @@ all: asf_meta
 
 asf_meta: build_only
 	mv asf_meta.a $(LIBDIR)
-	# Make a link obeying the usual naming convention.
-#	ln -s -f $(LIBDIR)/asf_meta.a $(LIBDIR)/libasf_meta.a
 
-build_only: $(OBJS) cook_libs
-	rm -rf asf_meta.a	# Get rid of all stale symbols.
-	ar r asf_meta.a $(OBJS) $(wildcard ./library_cooking_pot/*.o)
+build_only: $(OBJS)
+	rm -f asf_meta.a
+	ar r asf_meta.a $(OBJS)
 	$(RANLIB) asf_meta.a
-
-cook_libs: $(addprefix $(LIBDIR)/, $(LIBS)) library_cooking_pot
-	cd library_cooking_pot; \
-	for lib in $(LIBS); do \
-	  ar x ../$(LIBDIR)/$$lib; \
-	done
-
-library_cooking_pot:
-	mkdir library_cooking_pot
 
 # Rebuild everything if makefile or any local or ASF header or library
 # or any lex or yacc file has changed.  The line commented out uses a
@@ -162,16 +141,18 @@ library_cooking_pot:
 # list.
 #$(OBJS): LOCAL_HEADERS = $(subst y.tab.h, , $(wildcard *.h))
 $(OBJS): Makefile $(LOCAL_HEADERS) $(wildcard ../../include/*.h) \
-	$(YACC_SOURCES) $(LEX_SOURCES) $(addprefix $(LIBDIR)/, $(LIBS))
+	$(YACC_SOURCES) $(LEX_SOURCES)
 
 clean:
 	rm -rf $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
 	$(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
-	library_cooking_pot asf_meta_tester meta_update asf_meta.a
+	asf_meta_tester meta_update asf_meta.a
 
 check: asf_meta_tester.c build_only
-	$(CC) $(CFLAGS) $< asf_meta.a -lm -L$(HOME)/local/lib -lgsl \
-              -lgslcblas -lcheck $(LDFLAGS) -o asf_meta_tester
+	$(CC) $(CFLAGS) $< asf_meta.a \
+		$(LIBDIR)/libasf_proj.a $(LIBDIR)/libasf_reporting.a \
+		$(LIBDIR)/asf.a $(GSL_LIBS) $(PROJ_LIBS) -lcheck $(LDFLAGS) \
+		-o asf_meta_tester
 	./asf_meta_tester
 
 meta_update: meta_update.c build_only
