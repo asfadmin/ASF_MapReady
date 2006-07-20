@@ -81,7 +81,7 @@ static int gr_ns,sr_ns;
 static float badDEMht=0.0;
 static float unInitDEM=-1.0;
 static int maxBreakLen=20;
-static int presentationMode;
+
 
 static int n_lay;
 static int n_shad;
@@ -269,12 +269,12 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	metaIn = meta_read(inMetafile);
 	metaDEM = meta_read(inDEMfile);
 	nl = metaDEM->general->line_count;
-	gr_ns = metaDEM->general->sample_count+400;
+	gr_ns = metaDEM->general->sample_count;
 	sr_ns = metaIn->general->sample_count;
 	earth_radius = meta_get_earth_radius(metaIn, nl/2, 0);
 	satHt = meta_get_sat_height(metaIn, nl/2, 0);
 	meta_get_slants(metaIn, &slant_to_first, &slant_per);
-	presentationMode = 1;
+
         n_lay = n_shad = 0;
 
 /*Open files.*/
