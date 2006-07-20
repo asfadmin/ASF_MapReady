@@ -9,10 +9,10 @@ CFLAGS += -O0 $(GLIB_CFLAGS)
 LIBS  = \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_raster.a \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/asf_fft.a \

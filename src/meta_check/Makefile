@@ -5,10 +5,10 @@ include ../../make_support/system_rules
 CFLAGS += $(GLIB_CFLAGS)
 
 LIBS  = \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS)
 
