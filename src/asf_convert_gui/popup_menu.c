@@ -630,6 +630,7 @@ handle_google_earth()
     char kml_filename[256];
     int pid, first = TRUE;
     gchar *ge;
+    char *output_dir = NULL;
     int n_ok = 0;
     int n_bad = 0;
 
@@ -684,6 +685,7 @@ handle_google_earth()
         GtkTreePath * path;
         GtkTreeIter iter;
         GtkTreeRowReference * ref;
+        gchar * input_name;
         gchar * out_name;
 	gchar * metadata_name;
 	meta_parameters *meta;
@@ -692,11 +694,13 @@ handle_google_earth()
         path = gtk_tree_row_reference_get_path(ref);
         gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path);
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-            COL_OUTPUT_FILE, &out_name, -1);
+            COL_DATA_FILE, &input_name, 
+            COL_OUTPUT_FILE, &out_name,
+            -1);
 
         if (first)
         {
-            char *output_dir = MALLOC(sizeof(char) * (strlen(out_name) + 1));
+            output_dir = MALLOC(sizeof(char) * (strlen(out_name) + 1));
             char *tmp = MALLOC(sizeof(char) * (strlen(out_name) + 1));
             split_dir_and_file(out_name, output_dir, tmp);
             free(tmp);
@@ -729,8 +733,10 @@ handle_google_earth()
         {
             char *base_output_name = get_basename(out_name);
 
-            meta = meta_read(metadata_name);            
-            kml_entry(kml_file, meta, base_output_name);
+            meta = meta_read(metadata_name);    
+            printf("input_name: %s\n", input_name);
+            kml_entry_with_overlay(kml_file, meta, base_output_name, 
+                                   input_name, output_dir);
             meta_free(meta);
             free(base_output_name);
 
@@ -765,6 +771,7 @@ handle_google_earth()
 
     g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
     g_list_free(refs);
+    free(output_dir);
 
     //unlink(kml_filename);
     LSU;

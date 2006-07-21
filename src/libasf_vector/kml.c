@@ -1,7 +1,11 @@
 #include "asf_vector.h"
 #include "asf.h"
 #include "dateUtil.h"
+#include "float_image.h"
+#include "ceos_io.h"
+#include "libasf_proj.h"
 #include <stdio.h>
+#include <math.h>
 
 /* 
    When invoking google earth from the command line, you can put a kml
@@ -18,13 +22,114 @@ void kml_header(FILE *kml_file)
     fprintf(kml_file, "<Document>\n");
 }
 
-void kml_entry(FILE *kml_file, meta_parameters *meta, char *name)
+static void
+update_latlon_maxes(double lat, double lon, double *max_lat, double *min_lat,
+                    double *max_lon, double *min_lon)
+{
+    if (lat>*max_lat) *max_lat = lat;
+    if (lat<*min_lat) *min_lat = lat;
+
+    if (lon>*max_lon) *max_lon = lon;
+    if (lon<*min_lon) *min_lon = lon;
+}
+
+static int
+make_input_image_thumbnail (meta_parameters *imd, const char *input_data,
+                            size_t max_thumbnail_dimension,
+                            const char *output_jpeg)
+{
+    /* Make a copy of one of the arguments so the compilers doesn't
+    complain about us ignoring the const qualifier when we pass it fo
+    fopenCeos().  */
+
+    if (imd->general->data_type != BYTE &&
+        imd->general->data_type != INTEGER16 &&
+        imd->general->data_type != INTEGER32 &&
+        imd->general->data_type != REAL32 &&
+        imd->general->data_type != REAL64)
+    {
+        /* don't know how to make a thumbnail for this type ... */
+        return FALSE;
+    }
+
+    CEOS_FILE *id = fopenCeos ((char*)input_data); // Input data file.
+
+    if (!id->f_in) {
+        // failed for some reason, just quit without thumbnailing
+        return FALSE;
+    }
+
+    // Vertical and horizontal scale factors required to meet the
+    // max_thumbnail_dimension part of the interface contract.
+    int vsf = ceil (imd->general->line_count / max_thumbnail_dimension);
+    int hsf = ceil (imd->general->sample_count / max_thumbnail_dimension);
+    // Overall scale factor to use is the greater of vsf and hsf.
+    int sf = (hsf > vsf ? hsf : vsf);
+
+    // Thumbnail image sizes.
+    size_t tsx = imd->general->sample_count / sf;
+    size_t tsy = imd->general->line_count / sf;
+
+    // Thumbnail image.
+    FloatImage *ti = float_image_new (tsx, tsy);
+
+    // Form the thumbnail image by grabbing individual pixels.  FIXME:
+    // Might be better to do some averaging or interpolating.
+    size_t ii;
+    int *line = MALLOC (sizeof(int) * imd->general->sample_count);
+    for ( ii = 0 ; ii < tsy ; ii++ ) {
+        readCeosLine (line, ii * sf, id);
+        size_t jj;
+        for ( jj = 0 ; jj < tsx ; jj++ ) {
+            // Current sampled value.  We will average a couple pixels together.
+            int csv;
+            if ( jj * sf < imd->general->line_count - 1 ) {
+                csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
+            }
+            else {
+                csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
+            }
+            float_image_set_pixel (ti, jj, ii, (float)csv);
+        }
+    }
+    free (line);
+
+    // Export as jpeg image as promised.  We don't want to reduce the
+    // image resolution anymore, so we use the largest dimension
+    // currently in the image as the max dimension for the image to
+    // generate.
+    float_image_export_as_jpeg (ti, output_jpeg, (ti->size_x > ti->size_y ?
+            ti->size_x : ti->size_y), NAN);
+
+    float_image_free (ti);
+    FCLOSE(id->f_in);
+    free(id);
+
+    return TRUE;
+}
+
+static void rotate(double y_in, double x_in, double y0, double x0, double ang,
+                   double *yr, double *xr)
+{
+    double x = x_in - x0;
+    double y = y_in - y0;
+
+    *xr = x0 + sin(ang)*x + cos(ang)*y;
+    *yr = y0 + cos(ang)*x - sin(ang)*y;
+}
+
+static void kml_entry_impl(FILE *kml_file, meta_parameters *meta, 
+                           char *name, char *ceos_filename, char *dir)
 {
     julian_date jdate;
     ymd_date ymd;  
     int nl = meta->general->line_count;
     int ns = meta->general->sample_count;
-    double lat, lon;
+    double lat_UL, lon_UL;
+    double lat_UR, lon_UR;
+    double lat_LL, lon_LL;
+    double lat_LR, lon_LR;
+    double max_lat = -90, max_lon = -180, min_lat = 90, min_lon = 180;
     char *mon[13]={"", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
 		   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
     jdate.year = meta->state_vectors->year;
@@ -74,20 +179,102 @@ void kml_entry(FILE *kml_file, meta_parameters *meta, char *name)
     fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
     fprintf(kml_file, "    <coordinates>\n");
     
-    meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
-    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
-    meta_get_latLon(meta, nl, 0, 0, &lat, &lon);
-    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
-    meta_get_latLon(meta, nl, ns, 0, &lat, &lon);
-    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
-    meta_get_latLon(meta, 0, ns, 0, &lat, &lon);
-    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
-    meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
-    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon, lat);
+    meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
+    meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
+    meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
+    meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
+
+    update_latlon_maxes(lat_UL, lon_UL, &max_lat, &min_lat, &max_lon, &min_lon);
+    update_latlon_maxes(lat_LL, lon_LL, &max_lat, &min_lat, &max_lon, &min_lon);
+    update_latlon_maxes(lat_LR, lon_LR, &max_lat, &min_lat, &max_lon, &min_lon);
+    update_latlon_maxes(lat_UR, lon_UR, &max_lat, &min_lat, &max_lon, &min_lon);
+
+    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UL, lat_UL);
+    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_LL, lat_LL);
+    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_LR, lat_LR);
+    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UR, lat_UR);
+    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UL, lat_UL);
     
     fprintf(kml_file, "    </coordinates>\n");
     fprintf(kml_file, "  </LineString>\n");
     fprintf(kml_file, "</Placemark>\n");
+
+    if (ceos_filename)
+    {
+        printf("ceos filename: %s\n", ceos_filename);
+
+        if (!dir)
+            asfPrintError("Must pass in a directory for the overlay files!\n");
+
+        char *jpeg_basename = get_basename(ceos_filename);
+        char *output_jpeg = MALLOC(sizeof(char)*(strlen(jpeg_basename)+
+						strlen(dir)+10));
+        sprintf(output_jpeg, "%s%s.jpg", dir, jpeg_basename);
+        if (make_input_image_thumbnail(meta, ceos_filename, 512, output_jpeg))
+        {
+            double clat = meta->general->center_latitude;
+            double clon = meta->general->center_longitude;
+
+            double box_top_lat = (lat_UL + lat_UR)/2;
+            double box_bot_lat = (lat_LL + lat_LR)/2;
+            double box_left_lon = (lon_UL + lon_LL)/2;
+            double box_right_lon = (lon_UR + lon_LR)/2;
+            double ul_x, ul_y, ur_x, ur_y;
+
+            latLon2proj(lat_UL, lon_UL, 0.0, NULL, &ul_x, &ul_y);
+            latLon2proj(lat_UR, lon_UR, 0.0, NULL, &ur_x, &ur_y);
+
+            double ang = atan2(ul_y-ur_y, ul_x-ur_x);
+            printf("UL: %lf,%lf\n", ul_x,ul_y);
+            printf("UR: %lf,%lf\n", ur_x,ur_y);
+            printf("angle= %lf\n", ang*R2D);
+
+            fprintf(kml_file, "<GroundOverlay>\n");
+            //fprintf(kml_file, "  <description>\n");
+            //fprintf(kml_file, "    sensor/mode: %s/%s\n",
+            //        meta->general->sensor, meta->general->mode);
+            //fprintf(kml_file, "    orbit/frame: %d/%d\n",
+            //        meta->general->orbit, meta->general->frame);
+            //fprintf(kml_file, "  </description>\n");
+            fprintf(kml_file, "  <name>%s</name>\n", name);
+            fprintf(kml_file, "  <LookAt>\n");
+            fprintf(kml_file, "    <longitude>%.10f</longitude>\n", clon);
+            fprintf(kml_file, "    <latitude>%.10f</latitude>\n", clat);
+            fprintf(kml_file, "    <range>400000</range>\n");
+            fprintf(kml_file, "    <tilt>45</tilt>\n");
+            fprintf(kml_file, "    <heading>50</heading>\n");
+            fprintf(kml_file, "  </LookAt>\n");
+            fprintf(kml_file, "  <color>9effffff</color>\n");
+            fprintf(kml_file, "  <Icon>\n");
+            fprintf(kml_file, "      <href>%s</href>\n", output_jpeg);
+            fprintf(kml_file, "  </Icon>\n");
+            fprintf(kml_file, "  <LatLonBox>\n");
+            fprintf(kml_file, "      <north>%.12f</north>\n", box_top_lat);
+            fprintf(kml_file, "      <south>%.12f</south>\n", box_bot_lat);
+            fprintf(kml_file, "      <east>%.12f</east>\n", box_left_lon);
+            fprintf(kml_file, "      <west>%.12f</west>\n", box_right_lon);
+            fprintf(kml_file, "      <rotation>%.12f</rotation>\n", ang*R2D);
+            fprintf(kml_file, "  </LatLonBox>\n");
+            fprintf(kml_file, "</GroundOverlay>\n");
+        } else {
+            printf("Failed to generate overlay for: %s\n", ceos_filename);
+        }
+
+        free(output_jpeg);
+        free(jpeg_basename);
+    }
+
+}
+
+void kml_entry(FILE *kml_file, meta_parameters *meta, char *name)
+{
+   kml_entry_impl(kml_file, meta, name, NULL, NULL);
+}
+
+void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta, char *name,
+                            char *ceos_filename, char *jpeg_dir)
+{
+   kml_entry_impl(kml_file, meta, name, ceos_filename, jpeg_dir);
 }
 
 void kml_footer(FILE *kml_file)

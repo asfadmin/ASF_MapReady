@@ -28,6 +28,9 @@ void read_mask(char *maskFile, unsigned char *mask, meta_parameters *meta);
 
 // Prototypes from kml.c
 void kml_header(FILE *kml_file);
+void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta, 
+                            char *name, char *ceos_fileame,
+                            char *jpeg_dir);
 void kml_entry(FILE *kml_file, meta_parameters *meta, char *name);
 void kml_footer(FILE *kml_file);
 void write_kml(char *filename);
