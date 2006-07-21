@@ -2,14 +2,17 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/libasf_vector.a \
+LIBS  = \
+	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libshp.a \
-	$(LIBDIR)/libasf_reporting.a \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
+	$(GLIB_LIBS) \
+	$(JPEG_LIBS) \
 	-lm
 OBJS  = convert2vector.o
 
@@ -20,4 +23,4 @@ convert2vector: $(OBJS)
 	mv convert2vector$(BIN_POSTFIX) $(BINDIR)
 
 clean:
-	rm *.o
+	rm -f *.o

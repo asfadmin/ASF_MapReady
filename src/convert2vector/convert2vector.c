@@ -1,6 +1,9 @@
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_vector.h"
 #include "asf_endian.h"
+#include <stdio.h>
+#include <ctype.h>
 
 #define VERSION 1.0
 
