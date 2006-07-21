@@ -83,7 +83,7 @@ $(TARGET).exe: $(TARGET).c
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp $(TARGET).ico $(SHAREDIR)
-	cp htmlhelp.chm $(SHAREDIR)/asf_convert_gui.chm
+	-cp htmlhelp.chm $(SHAREDIR)/asf_convert_gui.chm
 
 doc:
 	xsltproc --nonet /usr/share/docbook-xsl/htmlhelp/htmlhelp.xsl \
