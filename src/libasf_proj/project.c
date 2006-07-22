@@ -947,9 +947,15 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
     }
 }
 
+int utm_zone(double lon)
+{
+    double lon_nudged = utm_nudge(lon);
+    return (int) ((lon_nudged + 180.0) / 6.0 + 1.0);
+}
+
 void fill_in_utm(double lat, double lon, project_parameters_t *pps)
 {
-  pps->utm.zone = (int) ((lon + 180.0) / 6.0 + 1.0);
+  pps->utm.zone = utm_zone(lon);
   pps->utm.scale_factor = 0.9996;
   pps->utm.lon0 = (double) (pps->utm.zone - 1) * 6.0 - 177.0;
   pps->utm.lat0 = 0.0;
@@ -1032,11 +1038,61 @@ void latLon2UTM(double lat, double lon, double elev,
     latLon2proj_imp(lat, lon, elev, NULL, projX, projY);
 }
 
+void latLon2UTM_zone(double lat, double lon, double elev, int zone,
+                double *projX, double *projY)
+{
+  project_parameters_t pps;
+  meta_projection *meta_proj;
+  double projZ;
+
+  // Initialize meta_projection block
+  meta_proj = meta_projection_init();
+  meta_proj->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+  meta_proj->datum = WGS84_DATUM;
+  pps.utm.zone = zone;
+  pps.utm.scale_factor = 0.9996;
+  pps.utm.lon0 = (double) (zone - 1) * 6.0 - 177.0;
+  pps.utm.lat0 = 0.0;
+  pps.utm.false_easting = 500000.0;
+  pps.utm.false_northing = lat>0 ? 0.0 : 10000000.0;
+  meta_proj->param = pps;
+  latlon_to_proj(meta_proj, 'R', lat*D2R, lon*D2R, elev, projX, projY, &projZ);
+}
+
 void latLon2proj(double lat, double lon, double elev, char *projFile, 
 		 double *projX, double *projY)
 {
     asfRequire(projFile != NULL);
     latLon2proj_imp(lat, lon, elev, projFile, projX, projY);
+}
+
+void UTM2latLon(double projX, double projY, double elev, int zone,
+                double *lat, double *lon)
+{
+  project_parameters_t pps;
+  projection_type_t proj_type;
+  meta_projection *meta_proj;
+  double h;
+
+  proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
+
+  pps.utm.zone = zone;
+  pps.utm.scale_factor = 0.9996;
+  pps.utm.lon0 = (double) (zone - 1) * 6.0 - 177.0;
+  pps.utm.lat0 = 0.0;
+  pps.utm.false_easting = 500000.0;
+  pps.utm.false_northing = lat>0 ? 0.0 : 10000000.0;
+
+  // Initialize meta_projection block
+  meta_proj = meta_projection_init();
+  meta_proj->type = proj_type;
+  meta_proj->datum = WGS84_DATUM;
+  meta_proj->param = pps;
+  
+  proj_to_latlon(meta_proj, 'R', projX, projY, elev, lat, lon, &h);
+
+  *lat *= R2D;
+  *lon *= R2D;
 }
 
 

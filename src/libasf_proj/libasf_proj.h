@@ -375,8 +375,14 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
 
 void latLon2proj(double lat, double lon, double elev, char *projFile, 
 		 double *projX, double *projY);
+
+int utm_zone(double lon);
 void latLon2UTM(double lat, double lon, double elev,
                 double *projX, double *projY);
+void latLon2UTM_zone(double lat, double lon, double elev, int zone,
+                     double *projX, double *projY);
+void UTM2latLon(double projX, double projY, double elev, int zone,
+                double *lat, double *lon);
 
 /***************************************************************************
   Functions for dealing with projection parameter files.
