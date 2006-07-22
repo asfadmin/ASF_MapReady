@@ -108,14 +108,11 @@ make_input_image_thumbnail (meta_parameters *imd, const char *input_data,
     return TRUE;
 }
 
-static void rotate(double y_in, double x_in, double y0, double x0, double ang,
-                   double *yr, double *xr)
+static void swap(double *x, double *y)
 {
-    double x = x_in - x0;
-    double y = y_in - y0;
-
-    *xr = x0 + sin(ang)*x + cos(ang)*y;
-    *yr = y0 + cos(ang)*x - sin(ang)*y;
+    double tmp = *x;
+    *x = *y;
+    *y = tmp;
 }
 
 static void kml_entry_impl(FILE *kml_file, meta_parameters *meta, 
@@ -215,19 +212,23 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             double clat = meta->general->center_latitude;
             double clon = meta->general->center_longitude;
 
-            double box_top_lat = (lat_UL + lat_UR)/2;
-            double box_bot_lat = (lat_LL + lat_LR)/2;
-            double box_left_lon = (lon_UL + lon_LL)/2;
-            double box_right_lon = (lon_UR + lon_LR)/2;
             double ul_x, ul_y, ur_x, ur_y;
 
-            latLon2proj(lat_UL, lon_UL, 0.0, NULL, &ul_x, &ul_y);
-            latLon2proj(lat_UR, lon_UR, 0.0, NULL, &ur_x, &ur_y);
+            latLon2UTM(lat_UL, lon_UL, 0.0, &ul_x, &ul_y);
+            latLon2UTM(lat_UR, lon_UR, 0.0, &ur_x, &ur_y);
 
             double ang = atan2(ul_y-ur_y, ul_x-ur_x);
             printf("UL: %lf,%lf\n", ul_x,ul_y);
             printf("UR: %lf,%lf\n", ur_x,ur_y);
             printf("angle= %lf\n", ang*R2D);
+
+            double box_north_lat = (lat_UL + lat_UR)/2;
+            double box_south_lat = (lat_LL + lat_LR)/2;
+            double box_east_lon = (lon_UL + lon_LL)/2;
+            double box_west_lon = (lon_UR + lon_LR)/2;
+            
+            if (box_south_lat > box_north_lat) swap(&box_south_lat, &box_north_lat);
+            if (box_east_lon > box_west_lon) swap(&box_east_lon, &box_west_lon);
 
             fprintf(kml_file, "<GroundOverlay>\n");
             //fprintf(kml_file, "  <description>\n");
@@ -244,15 +245,15 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             fprintf(kml_file, "    <tilt>45</tilt>\n");
             fprintf(kml_file, "    <heading>50</heading>\n");
             fprintf(kml_file, "  </LookAt>\n");
-            fprintf(kml_file, "  <color>9effffff</color>\n");
+            fprintf(kml_file, "  <color>ffffffff</color>\n");
             fprintf(kml_file, "  <Icon>\n");
             fprintf(kml_file, "      <href>%s</href>\n", output_jpeg);
             fprintf(kml_file, "  </Icon>\n");
             fprintf(kml_file, "  <LatLonBox>\n");
-            fprintf(kml_file, "      <north>%.12f</north>\n", box_top_lat);
-            fprintf(kml_file, "      <south>%.12f</south>\n", box_bot_lat);
-            fprintf(kml_file, "      <east>%.12f</east>\n", box_left_lon);
-            fprintf(kml_file, "      <west>%.12f</west>\n", box_right_lon);
+            fprintf(kml_file, "      <north>%.12f</north>\n", box_north_lat);
+            fprintf(kml_file, "      <south>%.12f</south>\n", box_south_lat);
+            fprintf(kml_file, "      <east>%.12f</east>\n", box_east_lon);
+            fprintf(kml_file, "      <west>%.12f</west>\n", box_west_lon);
             fprintf(kml_file, "      <rotation>%.12f</rotation>\n", ang*R2D);
             fprintf(kml_file, "  </LatLonBox>\n");
             fprintf(kml_file, "</GroundOverlay>\n");
