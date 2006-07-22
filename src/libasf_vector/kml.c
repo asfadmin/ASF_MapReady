@@ -115,6 +115,16 @@ static void swap(double *x, double *y)
     *y = tmp;
 }
 
+static void rotate(double x_in, double y_in, double x0, double y0, double ang,
+                   double *xr, double *yr)
+{
+    double x = x_in - x0;
+    double y = y_in - y0;
+
+    *xr = x0 + sin(ang)*x + cos(ang)*y;
+    *yr = y0 + cos(ang)*x - sin(ang)*y;
+}
+
 static void kml_entry_impl(FILE *kml_file, meta_parameters *meta, 
                            char *name, char *ceos_filename, char *dir)
 {
@@ -209,26 +219,70 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         sprintf(output_jpeg, "%s%s.jpg", dir, jpeg_basename);
         if (make_input_image_thumbnail(meta, ceos_filename, 512, output_jpeg))
         {
+            double h = 0.0;
+
             double clat = meta->general->center_latitude;
             double clon = meta->general->center_longitude;
 
-            double ul_x, ul_y, ur_x, ur_y;
+            double ul_x, ul_y, ur_x, ur_y, ll_x, ll_y, lr_x, lr_y,
+                ctr_x, ctr_y;
+            double ul_x_rot, ul_y_rot, ur_x_rot, ur_y_rot,
+                ll_x_rot, ll_y_rot, lr_x_rot, lr_y_rot;
+            double lat_UL_rot, lon_UL_rot;
+            double lat_UR_rot, lon_UR_rot;
+            double lat_LR_rot, lon_LR_rot;
+            double lat_LL_rot, lon_LL_rot;
 
-            latLon2UTM(lat_UL, lon_UL, 0.0, &ul_x, &ul_y);
-            latLon2UTM(lat_UR, lon_UR, 0.0, &ur_x, &ur_y);
+            int zone = utm_zone(clon);
+            
+            latLon2UTM_zone(lat_UL, lon_UL, h, zone, &ul_x, &ul_y);
+            latLon2UTM_zone(lat_UR, lon_UR, h, zone, &ur_x, &ur_y);
+            latLon2UTM_zone(lat_LR, lon_LR, h, zone, &lr_x, &lr_y);
+            latLon2UTM_zone(lat_LL, lon_LL, h, zone, &ll_x, &ll_y);
+            latLon2UTM_zone(clat, clon, h, zone, &ctr_x, &ctr_y);
 
-            double ang = atan2(ul_y-ur_y, ul_x-ur_x);
+            double ang1 = atan2(ul_y-ur_y, ul_x-ur_x);
+            double ang2 = atan2(ll_y-lr_y, ll_x-lr_x);
+            double ang = -(ang1+ang2)/2;
+
             printf("UL: %lf,%lf\n", ul_x,ul_y);
             printf("UR: %lf,%lf\n", ur_x,ur_y);
-            printf("angle= %lf\n", ang*R2D);
+            printf("LL: %lf,%lf\n", ll_x,ll_y);
+            printf("LR: %lf,%lf\n", lr_x,lr_y);
+            printf("angle= %lf %lf %lf\n", ang1*R2D, ang2*R2D, ang*R2D);
 
-            double box_north_lat = (lat_UL + lat_UR)/2;
-            double box_south_lat = (lat_LL + lat_LR)/2;
-            double box_east_lon = (lon_UL + lon_LL)/2;
-            double box_west_lon = (lon_UR + lon_LR)/2;
+            rotate(ul_x, ul_y, ctr_x, ctr_y, ang, &ul_x_rot, &ul_y_rot);
+            rotate(ur_x, ur_y, ctr_x, ctr_y, ang, &ur_x_rot, &ur_y_rot);
+            rotate(ll_x, ll_y, ctr_x, ctr_y, ang, &ll_x_rot, &ll_y_rot);
+            rotate(lr_x, lr_y, ctr_x, ctr_y, ang, &lr_x_rot, &lr_y_rot);
+
+            printf("Rotated UL: %lf,%lf\n", ul_x_rot,ul_y_rot);
+            printf("Rotated UR: %lf,%lf\n", ur_x_rot,ur_y_rot);
+            printf("Rotated LL: %lf,%lf\n", ll_x_rot,ll_y_rot);
+            printf("Rotated LR: %lf,%lf\n", lr_x_rot,lr_y_rot);
+
+            UTM2latLon(ul_x_rot, ul_y_rot, h, zone, &lat_UL_rot, &lon_UL_rot);
+            UTM2latLon(ur_x_rot, ur_y_rot, h, zone, &lat_UR_rot, &lon_UR_rot);
+            UTM2latLon(ll_x_rot, ll_y_rot, h, zone, &lat_LL_rot, &lon_LL_rot);
+            UTM2latLon(lr_x_rot, lr_y_rot, h, zone, &lat_LR_rot, &lon_LR_rot);
+
+            //double box_north_lat = (lat_UL_rot + lat_UR_rot)/2;
+            //double box_south_lat = (lat_LL_rot + lat_LR_rot)/2;
+            //double box_east_lon = (lon_UL_rot + lon_LL_rot)/2;
+            //double box_west_lon = (lon_UR_rot + lon_LR_rot)/2;
+
+            double box_north_lat = lat_UL_rot;
+            double box_south_lat = lat_LR_rot;
+            double box_east_lon = lon_UL_rot;
+            double box_west_lon = lon_LR_rot;
             
-            if (box_south_lat > box_north_lat) swap(&box_south_lat, &box_north_lat);
-            if (box_east_lon > box_west_lon) swap(&box_east_lon, &box_west_lon);
+            if (box_south_lat > box_north_lat)
+                swap(&box_south_lat, &box_north_lat);
+            if (box_east_lon > box_west_lon)
+                swap(&box_east_lon, &box_west_lon);
+
+            if (meta->general->orbit_direction == 'D')
+                swap(&box_south_lat, &box_north_lat);
 
             fprintf(kml_file, "<GroundOverlay>\n");
             //fprintf(kml_file, "  <description>\n");
@@ -254,8 +308,9 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             fprintf(kml_file, "      <south>%.12f</south>\n", box_south_lat);
             fprintf(kml_file, "      <east>%.12f</east>\n", box_east_lon);
             fprintf(kml_file, "      <west>%.12f</west>\n", box_west_lon);
-            fprintf(kml_file, "      <rotation>%.12f</rotation>\n", ang*R2D);
+            fprintf(kml_file, "      <rotation>%.12f</rotation>\n", -ang*R2D);
             fprintf(kml_file, "  </LatLonBox>\n");
+
             fprintf(kml_file, "</GroundOverlay>\n");
         } else {
             printf("Failed to generate overlay for: %s\n", ceos_filename);
