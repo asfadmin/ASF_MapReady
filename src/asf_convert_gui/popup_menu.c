@@ -763,7 +763,12 @@ handle_google_earth()
 
     if (n_ok > 0)
     {
-        asfSystem("%s \"%s\"", ge, kml_filename);
+        int pid = fork();
+        if (pid == 0) {
+            asfSystem("%s \"%s\"", ge, kml_filename);
+            //unlink(kml_filename);
+            exit(EXIT_SUCCESS);
+        }
     }
     
     g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
@@ -773,7 +778,6 @@ handle_google_earth()
     g_list_free(refs);
     free(output_dir);
 
-    //unlink(kml_filename);
     LSU;
     return TRUE;
 }
