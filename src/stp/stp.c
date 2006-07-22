@@ -19,7 +19,7 @@
 #  endif
 #endif
 
-#define STP_VERSION "1.0.10"
+#define STP_VERSION "1.0.11"
 
 /* for win32, set the font to the standard windows one */
 #if defined(win32)
@@ -567,8 +567,6 @@ update_buttons()
 
     set_button_text(1, input_file, suffix_for_step(1));
     set_button_text(2, input_file, suffix_for_step(2));
-//    set_button_text(3, "", suffix_for_step(3));
-//    set_button_text(4, "", suffix_for_step(4));
     set_button_text(3, input_file, suffix_for_step(3));
     set_button_text(4, input_file, suffix_for_step(4));
     set_button_text(5, input_file, suffix_for_step(5));
@@ -1462,18 +1460,6 @@ read_doppler_parameters(const gchar * filename, float *constant,
 }
 
 static gchar *
-generate_org_filename(const gchar * filename)
-{
-    gchar * org_filename = (gchar *)
-        g_malloc(sizeof(gchar) * (strlen(filename) + 5));
-
-    strcpy(org_filename, filename);
-    strcat(org_filename, ".org");
-
-    return org_filename;
-}
-
-static gchar *
 get_in_file_name()
 {
     GtkWidget * input_file_entry =
@@ -1485,43 +1471,6 @@ get_in_file_name()
     gchar * in_file = change_extension(input_file, "in");
 
     return in_file;
-}
-
-static void
-generate_org_file_if_needed()
-{
-    const gchar * filename = get_in_file_name();
-
-    gchar * org_filename = generate_org_filename(filename);
-
-    if (!g_file_test(org_filename, G_FILE_TEST_EXISTS ))
-    {
-        gchar buf[1024];
-#ifdef win32
-	/* on windows, we seem to have to brute force the file copy */
-	FILE * in = fopen(filename, "rt");
-	FILE * out = fopen(org_filename, "wt");
-
-	if (!in || !out) {
-	  printf("Error creating .org file.\n");
-	}
-	else
-	{
-	  while (!feof(in)) {
-	    readline(in, buf, 1024);
-	    fprintf(out, "%s\n", buf);
-	  }
-	}
-
-	if (in) fclose(in);
-	if (out) fclose(out);
-#else
-	sprintf(buf, "cp \"%s\" \"%s\"", filename, org_filename);
-	system(buf);
-#endif
-    }
-
-    g_free(org_filename);
 }
 
 static void
@@ -1572,8 +1521,6 @@ get_entry_with_float_value(const char * entry_name, float * value)
 SIGNAL_CALLBACK void
 on_doppler_parameters_dialog_ok_button_clicked(GtkWidget *w)
 {
-    generate_org_file_if_needed();
-
     float constant, linear, quadratic;
     get_entry_with_float_value("constant_entry", &constant);
     get_entry_with_float_value("linear_entry", &linear);
