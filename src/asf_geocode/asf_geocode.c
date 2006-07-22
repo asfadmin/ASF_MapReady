@@ -223,6 +223,7 @@ trouble, and use edit_man_header. :)
 
 // Libraries developed at ASF.
 #include <asf.h>
+#include <asf_nan.h>
 #include <asf_meta.h>
 #include <asf_raster.h>
 #include "float_image.h"
@@ -334,7 +335,8 @@ main (int argc, char **argv)
 
   extract_double_options(&argc, &argv, &background_val, "--background",
                          "-background", NULL);
-  
+  if (ISNAN(background_val)) background_val = DEFAULT_NO_DATA_VALUE;
+
   // Get non-option command line arguments.
   if ( argc != 3 && !debug_dump ) {
     int ii;
