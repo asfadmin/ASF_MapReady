@@ -960,8 +960,8 @@ void fill_in_utm(double lat, double lon, project_parameters_t *pps)
     pps->utm.false_northing = 10000000.0;
 }
 
-void latLon2proj(double lat, double lon, double elev, char *projFile, 
-		 double *projX, double *projY)
+static void latLon2proj_imp(double lat, double lon, double elev, 
+                            char *projFile, double *projX, double *projY)
 {
   project_parameters_t pps;
   projection_type_t proj_type;
@@ -1010,7 +1010,6 @@ void latLon2proj(double lat, double lon, double elev, char *projFile,
   }
   else
   {
-      printf("Using default UTM projection.\n\n");
       proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
   }
 
@@ -1026,3 +1025,18 @@ void latLon2proj(double lat, double lon, double elev, char *projFile,
   latlon_to_proj(meta_proj, 'R', lat*D2R, lon*D2R, elev, projX, projY, &projZ);
 
 }
+
+void latLon2UTM(double lat, double lon, double elev,
+                double *projX, double *projY)
+{
+    latLon2proj_imp(lat, lon, elev, NULL, projX, projY);
+}
+
+void latLon2proj(double lat, double lon, double elev, char *projFile, 
+		 double *projX, double *projY)
+{
+    asfRequire(projFile != NULL);
+    latLon2proj_imp(lat, lon, elev, projFile, projX, projY);
+}
+
+
