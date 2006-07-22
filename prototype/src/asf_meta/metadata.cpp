@@ -32,8 +32,10 @@ void asf::metadata_field_describe(int v) {
 	printf("enum %s (meta_%s, integer value %d)",d->name,kind,v);
 }
 
-/** Counts number of nested metadata_source calls, to track infinite loops... */
-static int metasource_nest=0, metasource_printcount=-100000;
+/** Counts number of nested metadata_source calls, to track infinite loops. 
+ FIXME: not threadsafe.  Probably a bad idea in general.
+*/
+static int metasource_nest=0, metasource_printcount=-100;
 asf::metasource_watcher::metasource_watcher(int v,const char *fromWhere,const metadata_source &fromClass)
 {
 	metasource_nest++;
@@ -45,7 +47,7 @@ asf::metasource_watcher::metasource_watcher(int v,const char *fromWhere,const me
 		metasource_printcount=1;
 	}
 	if (metasource_printcount) {
-		printf("Infinite loop calls:  %s::",fromWhere);
+		printf(" metasource_watcher:  %s::",fromWhere);
 		metadata_field_describe(v);
 		printf("\n");
 		if (metasource_printcount++>=maxPrint) asf::die("Infinite loop in metadata_source calls--fix your metadata_source objects");

@@ -37,6 +37,7 @@ struct coniStruct {
 	std::string loc;
 	/** The length of the "loc" string before entering this level */
 	int locLength[maxDepth];
+	int locDepth;
 };
 
 /*Private initialization routine*/
@@ -65,6 +66,8 @@ coniStruct *coniOpen(const char *fName,coniDir dir)
 	coniStruct *coni=new coniStruct;
 /*Initialize and return.*/
 	coni->loc="";
+	coni->locDepth=0;
+	coni->locLength[coni->locDepth]=0;
 	coniInit(coni,fName,dir);
 	return (coniStruct *)coni;
 }
@@ -340,15 +343,15 @@ void coniIO_structOpen(coniStruct *coni,const char *name,const char *comment)
 	}
 	
 	/* Append this struct's name to our location */
-	coni->locLength[coni->depth]=coni->loc.size();
-	coni->depth++;
+	coni->locLength[coni->locDepth]=coni->loc.size();
+	coni->locDepth++;
 	coni->loc+=name;
 	coni->loc+=".";
 }
 void coniIO_structClose(coniStruct *coni,const char *name,const char *comment)
 {
-	coni->depth--;
-	int len=coni->locLength[coni->depth]; /* length of remaining substring */
+	coni->locDepth--;
+	int len=coni->locLength[coni->locDepth]; /* length of remaining substring */
 	std::string lastName=coni->loc.substr(len,coni->loc.size()-1-len);
 	if (lastName!=name) {
 		printf("coniIO_structClose mismatch!  Expected end of struct '%s', but got end of struct '%s'!\n",

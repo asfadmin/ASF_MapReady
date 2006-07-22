@@ -48,12 +48,14 @@ These now live in the proj_parameters structure:
 /*Projection Prototypes;*/
 void ll_ac(meta_projection *proj, char look_dir, double lat, double lon, double *c1, double *c2);
 void ll_lamcc(meta_projection *proj,double lat,double lon,double *x,double *y);
+void ll_lamaz(meta_projection *proj,double lat,double lon,double *x,double *y);
 void ll_ps(meta_projection *proj,double lat, double lon, double *x, double *y);
 void ll_utm(meta_projection *proj,double tlat, double tlon, double *p1, double *p2);
 void ll_alb(meta_projection *proj,double lat, double lon, double *x, double *y);
 
 void ac_ll(meta_projection *proj, char look_dir, double c1, double c2,double *lat_d, double *lon);
 void lamcc_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon);
+void lamaz_ll(meta_projection *proj,double lat,double lon,double *x,double *y);
 void ps_ll(meta_projection *proj,double xx,double yy,double *alat,double *alon);
 void utm_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon);
 void alb_ll(meta_projection *proj,double xx,double yy,double *alat,double *alon);
@@ -67,12 +69,13 @@ void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,doub
 	{
 		case SCANSAR_PROJECTION: ll_ac(proj,look_dir,lat_d,lon,p2,p1); break;
 		case LAMBERT_CONFORMAL_CONIC: ll_lamcc(proj,lat_d,lon,p1,p2); break;
+		case LAMBERT_AZIMUTHAL_EQUAL_AREA: ll_lamaz(proj,lat_d,lon,p1,p2); break;
 		case POLAR_STEREOGRAPHIC: ll_ps(proj,lat_d,lon,p1,p2); break;
 		case UNIVERSAL_TRANSVERSE_MERCATOR: ll_utm(proj,lat_d,lon,p1,p2); break;
 	        case ALBERS_EQUAL_AREA: ll_alb(proj,lat_d,lon,p1,p2); break;
 	        case LAT_LONG_PSEUDO_PROJECTION: *p2=lat_d; *p1=lon; break;
 		default:
-			printf("Unrecognized map projection '%c' passed to ll_to_proj!\n",proj->type);
+			printf("Unrecognized map projection '%d' passed to ll_to_proj!\n",proj->type);
 			exit(1);
 	}
 }
@@ -86,12 +89,13 @@ void proj_to_ll(meta_projection *proj, char look_dir, double p1, double p2, doub
 	{
 		case SCANSAR_PROJECTION: ac_ll(proj,look_dir,p2,p1,lat_d,lon); break;
 		case LAMBERT_CONFORMAL_CONIC: lamcc_ll(proj,p1,p2,lat_d,lon); break;
+		case LAMBERT_AZIMUTHAL_EQUAL_AREA: lamaz_ll(proj,p1,p2,lat_d,lon); break;
 		case POLAR_STEREOGRAPHIC: ps_ll(proj,p1,p2,lat_d,lon); break;
 		case UNIVERSAL_TRANSVERSE_MERCATOR: utm_ll(proj,p1,p2,lat_d,lon); break;
 	        case ALBERS_EQUAL_AREA: alb_ll(proj,p1,p2,lat_d,lon); break;
 	        case LAT_LONG_PSEUDO_PROJECTION: *lat_d=p2; *lon=p1; break;
 		default:
-			printf("Unrecognized map projection '%c' passed to proj_to_ll!\n",proj->type);
+			printf("Unrecognized map projection '%d' passed to proj_to_ll!\n",proj->type);
 			exit(1);
 	}
 }
@@ -440,6 +444,7 @@ ALGORITHM REFERENCES
 */
 
 #define EPSLN 1.0e-8
+#define HALF_PI (M_PI*0.5)
 
 /* Function to calculate the sine and cosine in one call.  Some computer
    systems have implemented this function, resulting in a faster implementation
@@ -540,7 +545,220 @@ double phi1z (double eccent,double qs,int  *flag)
 	return(-1);
 }
 
-class alber_proj {
+/** Silly local map projection class */
+class map_proj {
+public:
+	/** Convert lat/lon (in radians) to x,y projection coordinates (in meters) */
+	virtual void xy_from_ll(double lat, double lon,double *x, double *y) const =0;
+	/** Convert x,y projection coordinates (in meters) to lat/lon (in radians) */
+	virtual void ll_from_xy(double x, double y, double *lat, double *lon) const =0;
+};
+
+/** Lambert Azimuthal Equal-Area
+http://mathworld.wolfram.com/LambertAzimuthalEqual-AreaProjection.html
+http://www.3dsoftware.com/Cartography/USGS/MapProjections/Azimuthal/LambertAzimuthal/
+*/
+class lamaz_proj : public map_proj {
+public:
+	double lon_center;	 /* Center longitude (projection center) */
+	double lat_center;	 /* Center latitude (projection center)  */
+	double R;		 /* Radius of the earth (sphere)	 */
+	double sin_lat_o;	 /* Sine of the center latitude 	 */
+	double cos_lat_o;	 /* Cosine of the center latitude	 */
+	double false_easting;	 /* x offset in meters  		 */
+	double false_northing;   /* y offset in meters  		 */
+
+	lamaz_proj(
+		double r, 			/* (I) Radius of the earth (sphere) 	*/
+		double center_long,		/* (I) Center longitude 		*/
+		double center_lat,		/* (I) Center latitude 			*/
+		double false_east,		/* x offset in meters			*/
+		double false_north		/* y offset in meters			*/
+		)
+	{
+		R = r;
+		lon_center = center_long;
+		lat_center = center_lat;
+		false_easting = false_east;
+		false_northing = false_north;
+		sincos(center_lat, &sin_lat_o, &cos_lat_o);
+	}
+	
+	/** Convert lat/lon (in radians) to x,y projection coordinates (in meters) */
+	void xy_from_ll(double lat, double lon,double *x, double *y) const {
+		double delta_lon;	/* Delta longitude (Given longitude - center 	*/
+		double sin_delta_lon;	/* Sine of the delta longitude 			*/
+		double cos_delta_lon;	/* Cosine of the delta longitude 		*/
+		double sin_lat;		/* Sine of the given latitude 			*/
+		double cos_lat;		/* Cosine of the given latitude 		*/
+		double g;		/* temporary varialbe				*/
+		double ksp;		/* heigth above elipsiod			*/
+
+		/* Forward equations
+		  -----------------*/
+		delta_lon = adjust_lon(lon - lon_center);
+		sincos(lat, &sin_lat, &cos_lat);
+		sincos(delta_lon, &sin_delta_lon, &cos_delta_lon);
+		g = sin_lat_o * sin_lat + cos_lat_o * cos_lat * cos_delta_lon;
+		if (g == -1.0) 
+			asf::die("Lamaz point projects to invalid circle");/* of radius = %f\n", 2.0 * R);*/
+		ksp = R * sqrt(2.0 / (1.0 + g));
+		*x = ksp * cos_lat * sin_delta_lon + false_easting;
+		*y = ksp * (cos_lat_o * sin_lat - sin_lat_o * cos_lat * cos_delta_lon) + 
+			false_northing;
+	}
+	/** Convert x,y projection coordinates (in meters) to lat/lon (in radians) */
+	void ll_from_xy(double x, double y, double *lat, double *lon) const {
+		double Rh;
+		double z;		/* Great circle dist from proj center to given point */
+		double sin_z;		/* Sine of z */
+		double cos_z;		/* Cosine of z */
+		double temp;		/* Re-used temporary variable */
+
+		/* Inverse equations
+		  -----------------*/
+		x -= false_easting;
+		y -= false_northing;
+		Rh = sqrt(x * x + y * y);
+		temp = Rh / (2.0 * R);
+		if (temp > 1) 
+			asf::die("Lamaz invalid point");
+		z = 2.0 * asin(temp);
+		sincos(z, &sin_z, &cos_z);
+		*lon = lon_center;
+		if (fabs(Rh) > EPSLN)
+		   {
+		   *lat = asin(sin_lat_o * cos_z + cos_lat_o * sin_z * y / Rh);
+		   temp = fabs(lat_center) - HALF_PI;
+		   if (fabs(temp) > EPSLN)
+		      {
+		      temp = cos_z - sin_lat_o * sin(*lat);
+		      if(temp!=0.0)*lon=adjust_lon(lon_center+atan2(x*sin_z*cos_lat_o,temp*Rh));
+		      }
+		   else if (lat_center < 0.0) *lon = adjust_lon(lon_center - atan2(-x, y));
+		   else *lon = adjust_lon(lon_center + atan2(x, -y));
+		   }
+		else *lat = lat_center;
+	}
+};
+
+inline double sqr(double x) {return x*x;}
+
+
+/** 
+Determine the Earth ellipsoid radius at this geodetic latitude, in degrees.  
+Several possibilities from
+	http://www.gmat.unsw.edu.au/snap/gps/clynch_pdfs/radiigeo.pdf
+	http://mathforum.org/library/drmath/view/51788.html
+
+
+For comparison, the version above reads:
+	delta_lon = adjust_lon(lon - lon_center);
+	sincos(lat, &sin_lat, &cos_lat);
+	sincos(delta_lon, &sin_delta_lon, &cos_delta_lon);
+	g = sin_lat_o * sin_lat + cos_lat_o * cos_lat * cos_delta_lon;
+	ksp = R * sqrt(2.0 / (1.0 + g));
+	*x = ksp * cos_lat * sin_delta_lon + false_easting;
+	*y = ksp * (cos_lat_o * sin_lat - sin_lat_o * cos_lat * cos_delta_lon) + 
+		false_northing;
+Here "R" is the value we need to calculate.
+
+The libproj source theoretically describes this, in
+	proj-4.4.8/src/PJ_laea.c
+but the code is macro-heavy, comment-free, and pretty close to gibberish.
+The oblique (normal) forward transform seems to read:
+	coslam = cos(lp.lam);
+	sinlam = sin(lp.lam); // Longitude
+	sinphi = sin(lp.phi); // Latitude 
+	q = pj_qsfn(sinphi, P->e, P->one_es); // "determine small q".  OK!  Great!  WTF!?!?
+	sinb = q / P->qp;
+	cosb = sqrt(1. - sinb * sinb);
+	b = 1. + P->sinb1 * sinb + P->cosb1 * cosb * coslam; // g below +1
+	b = sqrt(2. / b);
+	xy.x = P->xmf * b * cosb * sinlam;
+	xy.y = P->ymf * b * (P->cosb1 * sinb - P->sinb1 * cosb * coslam);
+Looks like P->xmf/P->ymf play the role of R here.  
+
+xmf/ymf are computed later in the file as:
+	e = sqrt(es); // eccentricity?
+	qp = pj_qsfn(1., e, one_es);
+	rq = sqrt(.5 * qp);
+	sinphi = sin(phi0); // Center latitude
+	sinb1 = pj_qsfn(sinphi, e, one_es) / qp;
+	cosb1 = sqrt(1. - sinb1 * sinb1);
+	dd = cos(phi0) / (sqrt(1. - es * sinphi * sinphi) * rq * cosb1);
+	ymf = (xmf = rq) / dd;
+	xmf *= dd;
+	
+This can be translated as:
+static double pj_qsfn(double sinphi, double e, double one_es) {
+	double con = e * sinphi;
+	return (one_es * (sinphi / (1. - con * con) -
+		 (.5 / e) * log ((1. - con) / (1. + con))));
+}
+	double es=sqrt(e);
+	double one_es=1.0-es;
+	double lat=lat_deg*D2R;
+	double qp = pj_qsfn(1., e, one_es);
+	double rq = sqrt(.5 * qp);
+	double sinphi = sin(lat); // Center latitude
+	double sinb1 = pj_qsfn(sinphi, e, one_es) / qp;
+	double cosb1 = sqrt(1. - sinb1 * sinb1);
+	double dd = cos(lat) / (sqrt(1. - es * sinphi * sinphi) * rq * cosb1);
+	double xmf;
+	double ymf = (xmf = rq) / dd;
+	xmf *= dd;
+	out_radii[0]=a*xmf; out_radii[1]=a*ymf;
+and this runs, but it doesn't give the same results as libproj.
+
+I can't find any documentation on libproj's scaling, and I'm not convinced
+it's even right.  Hence I'm sticking with the asf_libgeocode version for now.
+*/
+
+double lamaz_radius(double lat_deg,double re,double rp) {
+	
+/* Sensible but not-matching-libproj options from:
+	http://www.gmat.unsw.edu.au/snap/gps/clynch_pdfs/radiigeo.pdf
+	http://mathforum.org/library/drmath/view/51788.html
+
+	double a=re, b=rp;
+	double e=(sqr(a)-sqr(b))/sqr(a);
+	double lat=lat_deg*D2R;	
+	double r1= a*sqrt((sqr(1-sqr(e))*sqr(sin(lat))+sqr(cos(lat)))/(1-sqr(e*sin(lat)))); // radius of ellipsoid
+	double r2= a*(1-sqr(e))*pow(1-sqr(e*sin(lat)),-1.5); // radius of curvature
+	printf("Radius 1: %f    Radius 2: %f\n",r1,r2);
+*/
+	return re;
+}
+
+
+lamaz_proj make_lamaz(meta_projection *proj) {
+	return lamaz_proj(
+		lamaz_radius(proj->param.lamaz.center_lat,RE,RP),
+		proj->param.lamaz.center_lon * D2R,
+		proj->param.lamaz.center_lat * D2R,
+		proj->param.lamaz.false_easting,proj->param.lamaz.false_northing);
+}
+
+void ll_lamaz(meta_projection *proj,double lat, double lon, double *x, double *y)
+{
+	lamaz_proj p=make_lamaz(proj);
+	p.xy_from_ll(lat*D2R,lon*D2R,x,y);
+}
+
+void lamaz_ll(meta_projection *proj,double xx,double yy,
+	    double *alat,double *alon)
+{
+	lamaz_proj p=make_lamaz(proj);
+	p.ll_from_xy(xx,yy,alat,alon);
+	*alat *= R2D;
+	*alon *= R2D;
+}
+
+
+/*******************************
+ Albers equal-area projection */
+class alber_proj : public map_proj {
 public:
 	/* Variables common to forward and inverse transforms
 	  -----------------------------------------------------*/
@@ -615,12 +833,12 @@ public:
 
 
 	/* Albers Conical Equal Area forward equations--mapping lat,long to x,y
-double lon;	  (I) Longitude (radians)	       
 double lat;	  (I) Latitude (radians)	       
+double lon;	  (I) Longitude (radians)	       
 double *x;	  (O) X projection coordinate (meters) 
 double *y;	  (O) Y projection coordinate (meters) 
   -------------------------------------------------------------------*/
-	void xy_from_ll(double lon, double lat,double *x, double *y)
+	void xy_from_ll(double lat, double lon,double *x, double *y) const
 	{
 		double sin_phi,cos_phi;		/* sine and cos values		*/
 		double qs;			/* small q			*/
@@ -640,10 +858,10 @@ double *y;	  (O) Y projection coordinate (meters)
 	/* Albers Conical Equal Area inverse equations--mapping x,y to lat/long
 double x;	  (I) X projection coordinate (meters) 
 double y;	  (I) Y projection coordinate (meters) 
-double *lon;	  (O) Longitude (radians)	       
 double *lat;	  (O) Latitude (radians)	       
+double *lon;	  (O) Longitude (radians)	       
   -------------------------------------------------------------------*/
-	void ll_from_xy(double x, double y, double *lon, double *lat)
+	void ll_from_xy(double x, double y, double *lat, double *lon) const
 	{
 		double rh1;			/* height above ellipsoid	*/
 		double qs;			/* function q			*/
@@ -708,7 +926,7 @@ alber_proj make_alber(meta_projection *proj) {
 void ll_alb(meta_projection *proj,double lat, double lon, double *x, double *y)
 {
 	alber_proj p=make_alber(proj);
-	p.xy_from_ll(lat,lon,x,y);
+	p.xy_from_ll(lat*D2R,lon*D2R,x,y);
 }
 
 void alb_ll(meta_projection *proj,double xx,double yy,

@@ -16,9 +16,9 @@ void diff(std::string what,double a,double b,double tol=1.0e-10) {
 	double reldiff=absdiff/(0.5*(fabs(a)+fabs(b)));
 	if (verbose) printf("  difference in %s: %g relative, %g absolute\n",
 		what.c_str(),reldiff,absdiff);
-	if (reldiff>tol) {
-		fprintf(stderr,"ERROR in %s test!  Expected (%.18g), but got (%.18g), which has a relative difference of %g!\n",
-			what.c_str(), a,b,reldiff);
+	if (absdiff>tol) {
+		fprintf(stderr,"ERROR in %s test!  Expected (%.18g), but got (%.18g), which has an absolute difference of %g!\n",
+			what.c_str(), a,b,absdiff);
 		abort();
 	}
 }
@@ -27,9 +27,9 @@ void diff(std::string what,asf::meta3D_t a,asf::meta3D_t b,double tol=1.0e-10) {
 	double reldiff=absdiff/(0.5*(a.mag()+b.mag()));
 	if (verbose) printf("   difference in %s: %g relative, %g absolute\n",
 		what.c_str(),reldiff,absdiff);
-	if (reldiff>tol) {
-		fprintf(stderr,"ERROR in %s test!  Expected (%f,%f,%f), but got (%f,%f,%f), which has a relative difference of %g!\n",
-			what.c_str(), a.x,a.y,a.z, b.x,b.y,b.z,reldiff);
+	if (absdiff>tol) {
+		fprintf(stderr,"ERROR in %s test!  Expected (%f,%f,%f), but got (%f,%f,%f), which has a absolute difference of %g!\n",
+			what.c_str(), a.x,a.y,a.z, b.x,b.y,b.z,absdiff);
 		abort();
 	}
 }
@@ -114,12 +114,12 @@ void test_statevecs(void) {
 	double gha=123.0;
 	bn=a; fixed2gei(&bn,gha);
 	bo=a; fixed2gei(&bo,gha);
-	diff("fixed2gei state vector",bo,bn);
+	diff("fixed2gei state vector",bo,bn,1.0e-3);
 	cn=bn; gei2fixed(&cn,gha);
 	co=bo; gei2fixed(&co,gha);
-	diff("gei2fixed state vector",co,cn);
-	diff("new gei2fixed(fixed2gei) state vector",a,cn);
-	diff("old gei2fixed(fixed2gei) state vector",a,co);
+	diff("gei2fixed state vector",co,cn,1.0e-3);
+	diff("new gei2fixed(fixed2gei) state vector",a,cn,1.0e-6);
+	diff("old gei2fixed(fixed2gei) state vector",a,co,1.0e-6);
 }
 
 /******** Date and GHA handling ****************/
@@ -140,7 +140,7 @@ void test_dates(void) {
 	/* UT1 at Midnight, January 1, 2003 was -.2892390 seconds */
 	double UTC=0.0;
 	double UT1=UT1_from_UTC(2003,1,0.0);
-	diff("UT1 from UTC on 2003",-.2892390,UT1-UTC,1.0e-3);
+	diff("UT1 from UTC on 2003",-.2892390,UT1-UTC,1.0e-6);
 	
 	/* TAI was 33 seconds ahead of UTC starting January 1 2006 */
 	double base=12345.6;
@@ -161,7 +161,38 @@ void test_dates(void) {
 
 
 /************** Geolocation *******************/
+
+double meter_to_latlon=1.0e-5; /* lat/lon degrees per meter */
+
+/** Perform a geolocation test on this .meta file, where (x,y) corresponds
+to this lat/lon. */
+void image_match(std::string metaName, int x,int y, double lat,double lon,double elev,double ll_tol=100.0*meter_to_latlon)
+{
+	asf::metadata_source *m=asf::meta_read_source(metaName.c_str());
+	asf::meta3D_t img(x,y,elev);
+	asf::meta3D_t lle=m->transform(asf::LONGITUDE_LATITUDE_DEGREES,img);
+	asf::meta3D_t lle_good(lon,lat,elev);
+	
+	// Check the output elevation
+	diff(metaName + " z (meters)",elev,lle.z,1.0e-2);
+	// Check the output lat/lon
+	diff(metaName + " lat/lon (degrees)",lle_good,lle,ll_tol);
+	
+	// Translate lat/lon and image pixels back to map coords
+	asf::meta3D_t map_img=m->transform(asf::MAP_COORDINATES,img,asf::IMAGE_PIXELS);
+	asf::meta3D_t map_lle=m->transform(asf::MAP_COORDINATES,lle,asf::LONGITUDE_LATITUDE_DEGREES);
+	diff(metaName + " projection roundtrip (map meters)",map_img,map_lle,0.2);
+	
+	// Translate lat/lon back to pixels
+	asf::meta3D_t img_back=m->transform(asf::IMAGE_PIXELS,lle,asf::LONGITUDE_LATITUDE_DEGREES);
+	diff(metaName + " lat/lon roundtrip (pixels)",img,img_back,0.01);
+	
+}
+
+
 void test_geolocations(void) {
+	
+/* Test SAR image geolocations */
 	asf::metadata_source &m1=*asf::meta_read_source("../test_data/delta_1.meta");
 	/* This is the location of corner reflector DJ1 in this image */
 	double elev=452.1;
@@ -169,17 +200,39 @@ void test_geolocations(void) {
 	
 	asf::meta3D_t std=m1(asf::SLANT_TIME_DOPPLER,img);
 	asf::meta3D_t std_good(855186.9809,7.4200757940396,312.6913);
-	diff("delta_1 DJ1 STD (meters,seconds,Hz)",std_good,std,1.0e-7);
+	diff("delta_1 DJ1 STD (meters,seconds,Hz)",std_good,std,1.0e-3);
 	
 	asf::meta3D_t xyz=m1(asf::TARGET_POSITION,img);
 	asf::meta3D_t xyz_good(-2312667.89, -1618876.50, 5700719.17);
-	diff("delta_1 DJ1 XYZ (meters)",xyz_good,xyz,2.0e-6); /* <- ellipsoids are slightly different (why?) */
+	diff("delta_1 DJ1 XYZ (meters)",xyz_good,xyz,10.0); /* <- ellipsoids are slightly different (why?) */
 	
 	asf::meta3D_t lle=m1(asf::LONGITUDE_LATITUDE_DEGREES,img);
 	asf::meta3D_t lle_good(-145.00790111, 63.80828389, elev);
-	diff("delta_1 DJ1 elevation (meters)",lle_good.z,lle.z,1.0e-2);
+	diff("delta_1 DJ1 elevation (meters)",lle_good.z,lle.z,0.1);
 	lle.z=lle_good.z; /* 1mm elevation roundoff screws up relative error */
-	diff("delta_1 DJ1 position (degrees lat/lon)",lle_good,lle,3.0e-7);
+	diff("delta_1 DJ1 position (degrees lat/lon)",lle_good,lle,10*meter_to_latlon);
+
+/* Test map-projected image geolocations */
+	/* Geographic coordinates */
+	if (1) {
+	asf::metadata_source &mf=*asf::meta_read_source("../test_data/sf_ned1.meta");
+	asf::meta3D_t imgf(123,234,0.0);
+	asf::meta3D_t llf=mf(asf::LONGITUDE_LATITUDE_DEGREES,imgf);
+	asf::meta3D_t llf_good(-122.513333+imgf.x*0.00027777777,
+	                         37.836944-imgf.y*0.00027777777,0);
+	diff("sf_ned1 position (degrees lat/lon)",llf_good,llf,1.0e-5);
+	}
+	
+	if (1) /* Try out all map projections */
+	{
+	image_match("../test_data/map/akned_geo.meta", 75,57, 63.068333,-145.957778,892.0);
+	double lat=63.066240, lon=-145.958271, elev=771.0; 
+	image_match("../test_data/map/akned_utm.meta", 35,58, lat,lon,elev);
+	image_match("../test_data/map/akned_ps.meta", 46,61, lat,lon,elev,200*meter_to_latlon);
+	image_match("../test_data/map/akned_lamaz.meta", 46,61, lat,lon,elev,2000*meter_to_latlon); /* FIXME: libproj and map_projection.cpp disagree on the definition of lamaz by about 1.4km.  I don't know which one's right.  */
+	image_match("../test_data/map/akned_lamcc.meta", 46,61, lat,lon,elev);
+	image_match("../test_data/map/akned_albers.meta", 46,61, lat,lon,elev);
+	}
 }
 
 

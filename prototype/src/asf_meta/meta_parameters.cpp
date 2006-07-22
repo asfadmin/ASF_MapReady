@@ -558,7 +558,7 @@ void coniIO_meta (coniStruct *coni,meta_parameters *meta)
 			meta->projection->param.lamcc.scale_factor,
 			"Scaling factor");
       }
-      coniIO_structClose(coni,"lamacc","End lamcc");
+      coniIO_structClose(coni,"lamcc","End lamcc");
       break;
     case POLAR_STEREOGRAPHIC:/*Polar stereographic projection.*/
       coniIO_structOpen(coni,"ps","Begin Polar Stereographic Projection");
@@ -795,7 +795,7 @@ static asf::meta_coord_t map_from_lle(const metadata_from_parameters &meta,const
 	double mapX=0.0, mapY=0.0;
 	double lat_deg=loc.y, lon_deg=loc.x;
 	ll_to_proj((meta_projection *)mp,lookDir(meta.m),lat_deg,lon_deg,&mapX,&mapY);
-	return meta3D_t(lon_deg,lat_deg,loc.z);
+	return meta3D_t(mapX,mapY,loc.z);
 } 
 
 /** Return a coordinate transformer object that will work with our image */
