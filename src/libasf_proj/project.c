@@ -968,43 +968,51 @@ void latLon2proj(double lat, double lon, double elev, char *projFile,
   meta_projection *meta_proj;
   double projZ;
 
-  // Read projection file
-  read_proj_file(projFile, &pps, &proj_type);
-
-  // Report the conversion type
-  switch(proj_type) 
-    {
-    case ALBERS_EQUAL_AREA:
-      printf("Lat/Lon to Albers Equal Area\n\n");
-      break;
-    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      printf("Lat/Lon to Lambert Azimuthal Equal Area\n\n");
-      break;
-    case LAMBERT_CONFORMAL_CONIC:
-      printf("Lat/Lon to Lambert Conformal Conic\n\n");
-      break;
-    case POLAR_STEREOGRAPHIC:
-      printf("Lat/Lon to Polar Stereographic\n\n");
-      break;
-    case UNIVERSAL_TRANSVERSE_MERCATOR:
-      printf("Lat/Lon to UTM\n\n");
-      break;
-    case STATE_PLANE:
-      // Not implemented.
-      assert (0);
-      break;
-    case SCANSAR_PROJECTION:
-      // Not implemented.
-      assert (0);
-      break;
-    case LAT_LONG_PSEUDO_PROJECTION:
-      // Not implemented.
-      assert (0);
-      break;
-    default:
-      assert (0);		// Shouldn't be here.
-      break;
-    }
+  if (projFile)
+  {
+      // Read projection file
+      read_proj_file(projFile, &pps, &proj_type);
+      
+      // Report the conversion type
+      switch(proj_type) 
+      {
+          case ALBERS_EQUAL_AREA:
+              printf("Lat/Lon to Albers Equal Area\n\n");
+              break;
+          case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+              printf("Lat/Lon to Lambert Azimuthal Equal Area\n\n");
+              break;
+          case LAMBERT_CONFORMAL_CONIC:
+              printf("Lat/Lon to Lambert Conformal Conic\n\n");
+              break;
+          case POLAR_STEREOGRAPHIC:
+              printf("Lat/Lon to Polar Stereographic\n\n");
+              break;
+          case UNIVERSAL_TRANSVERSE_MERCATOR:
+              printf("Lat/Lon to UTM\n\n");
+              break;
+          case STATE_PLANE:
+              // Not implemented.
+              assert (0);
+              break;
+          case SCANSAR_PROJECTION:
+              // Not implemented.
+              assert (0);
+              break;
+          case LAT_LONG_PSEUDO_PROJECTION:
+              // Not implemented.
+              assert (0);
+              break;
+          default:
+              assert (0);		// Shouldn't be here.
+              break;
+      }
+  }
+  else
+  {
+      printf("Using default UTM projection.\n\n");
+      proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
+  }
 
   // Initialize meta_projection block
   meta_proj = meta_projection_init();
