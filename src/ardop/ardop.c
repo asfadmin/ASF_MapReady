@@ -131,13 +131,14 @@ int main (int argc, char *argv [])
   if (give_usage_action==0) give_usage(argv[0]);
   if (give_usage_action==-1) give_debug_usage();
 
-  system("date");
-  printf("Program: ardop\n\n");
+  asfSplashScreen(argc, argv);
 
   if (logflag) {
     StartWatchLog(fLog);
     printLog("Program: ardop\n\n");
   }
 
-  return ardop(params_in);
+  ardop(params_in);
+  free(params_in);
+  exit(EXIT_SUCCESS);
 }

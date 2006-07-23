@@ -849,16 +849,20 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
       struct INPUT_ARDOP_PARAMS *params_in;
       params_in = get_input_ardop_params_struct(input_file, output_file);
 
+      // make copies of the doppler data, so threads can't collide
+      float l_fd, l_fdd, l_fddd;
+      if (g_fd)   { l_fd = *g_fd;     params_in->fd = &l_fd;     }
+      if (g_fdd)  { l_fdd = *g_fdd;   params_in->fdd = &l_fdd;   }
+      if (g_fddd) { l_fddd = *g_fddd; params_in->fddd = &l_fddd; }
+
+      // this stuff shouldn't cause collisions, local stack variables      
       int npatches = 1;
       params_in->iflag = &debug_flag;
       params_in->npatches = &npatches;
       params_in->ifirstline = &ifirstline;
 
-      if (g_fd) params_in->fd = g_fd;
-      if (g_fdd) params_in->fdd = g_fdd;
-      if (g_fddd) params_in->fddd = g_fddd;
-
       ardop(params_in);
+      free(params_in);
 
       exit(EXIT_SUCCESS);
     }
