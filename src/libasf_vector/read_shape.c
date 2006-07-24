@@ -14,7 +14,8 @@ int read_shapefile (char *baseFile, char *pointFile)
   DBFFieldType dbaseType;
   SHPHandle shape;
   SHPObject *shapeObject;
-  int i, k, nRecords, nFields, nPoints, nWidth, nDecimals, nValue, pointType;
+  int i, k, nRecords, nFields, nWidth, nDecimals, nValue, pointType;
+  int nEntities;
   double fValue;
   char dbaseFile[255], shapeFile[255], fieldName[20], str[10];
   const char *sValue;
@@ -27,20 +28,26 @@ int read_shapefile (char *baseFile, char *pointFile)
   shape = SHPOpen(shapeFile, "rb");
 
   // Get general information out of the shapefile
-  SHPGetInfo(shape, NULL, &pointType, NULL, NULL);
+  SHPGetInfo(shape, &nEntities, &pointType, NULL, NULL);
 
   if (pointType == SHPT_POLYGON) {
 
-    // We assume the simple case of one polygon in the shapefile.
-    // Might want to extend this later
-    shapeObject = SHPReadObject(shape, 0);
-
-    // Write the lat/lon coordinates out of the object into a point file
     fpShape = FOPEN(pointFile, "w");
-    for (i=0; i<shapeObject->nVertices-1; i++)
-      fprintf(fpShape, "%d\t%.4lf\t%.4lf\n", i+1, shapeObject->padfY[i], 
-	      shapeObject->padfX[i]);
+    for (k=0; k<nEntities-1; k++) {
+      // Read a shape object
+      shapeObject = SHPReadObject(shape, k);
+      fprintf(fpShape, "%d\n", shapeObject->nVertices);
+
+      // Write the lat/lon coordinates out of the object into a point file
+      for (i=0; i<shapeObject->nVertices-1; i++)
+	fprintf(fpShape, "%d\t%.4lf\t%.4lf\n", i+1, shapeObject->padfY[i], 
+		shapeObject->padfX[i]);
+
+      SHPDestroyObject(shapeObject);
+    }
+    fprintf(fpShape, "end\n");
     FCLOSE(fpShape);
+    SHPClose(shape);
 
   }
   else if (pointType == SHPT_POINT) {
@@ -91,8 +98,5 @@ int read_shapefile (char *baseFile, char *pointFile)
 
   }    
   
-  SHPDestroyObject(shapeObject);
-  SHPClose(shape);
-
   return(0);
 }

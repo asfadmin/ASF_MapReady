@@ -2,6 +2,7 @@
 #include <string.h>
 #include "asf.h"
 #include "shapefil.h"
+#include "asf_vector.h"
 
 #define maxPoints 1000
 
@@ -40,7 +41,7 @@ int write_shapefile (char *dbaseFile, char *shapeFile, char *pointFile,
   DBFHandle dbase;
   SHPHandle shape;
   SHPObject *shapeObject=NULL;
-  int n=0, nRecords, nFields, nPoints=0;
+  int n=0, nPoints=0;
   double lat[maxPoints], lon[maxPoints];
   char line[1024], id[maxPoints][255];
 

@@ -1,5 +1,6 @@
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_vector.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -32,8 +33,7 @@ int create_mask(char *imageFile, char *shapeFile, char *maskFile)
   meta_parameters *metaIn, *metaOut;
   FILE *fp;
   int i, k, nPoints=0, lines, samples;
-  double lat[maxPoints], lon[maxPoints], line[maxPoints], sample[maxPoints];
-  double tlat, tlon;
+  double *lat, *lon, *line, *sample;
   char pointFile[255], maskFileName[255], id[25], buf[1024];
   unsigned char *imageBuf;
 
@@ -48,43 +48,58 @@ int create_mask(char *imageFile, char *shapeFile, char *maskFile)
   sprintf(pointFile, "%s.txt", shapeFile);
   read_shapefile(shapeFile, pointFile);
 
-  // Read point file into lat/lon arrays
-  fp = FOPEN(pointFile, "r");
-  while (fgets(buf, 1024, fp) != NULL) {
-    sscanf(buf, "%s\t%lf\t%lf", id, &lat[nPoints], &lon[nPoints]);
-    nPoints++;
-  }
-  FCLOSE(fp);
-
-  // Convert lat/lon into line/sample pairs
-  for (i=0; i<nPoints; i++) {
-    meta_get_lineSamp(metaIn, lat[i], lon[i], 0.0, &line[i], &sample[i]);
-    printf("ID: %d, lat: %.4lf, lon: %.4lf, line: %.4lf, sample: %.4lf\n",
-   	   i, lat[i], lon[i], line[i], sample[i]);
-  }
-
-  // Allocate memory and open mask file
+  // Allocate memory and open files
   imageBuf = (unsigned char *) MALLOC(sizeof(char)*lines*samples);
   sprintf(maskFileName, "%s.img", maskFile);
   fp = FOPEN(maskFileName, "wb");
+  fp = FOPEN(pointFile, "r");
 
   // Initialize the mask image with zeros
   for (i=0; i<lines; i++) 
     for (k=0; k<samples; k++)
       imageBuf[i*samples+k] = 0;
 
-  // Walk through the image, check whether line/sample is within the predefined
-  // polygon and write mask away line by line
-  for (i=0; i<lines; i++) {
-    for (k=0; k<samples; k++)
-      if (pointInPolygon(nPoints, line, sample, i, k))
-	imageBuf[i*samples+k] = 1;
-    if (i % 2000 == 0)
-      printf("Line %d\n", i);
-  }
-  FWRITE(imageBuf, lines*samples, 1, fp);
+  // Determine the number of points in the shape object
+  while (fgets(buf, 1024, fp)) {
+    if (strncmp(buf, "end", 3) != 0) {
+      sscanf(buf, "%d", &nPoints);
+      
+      // Allocate memory for lat/lon and line/sample arrays
+      lat = (double *) MALLOC(sizeof(double)*nPoints);
+      lon = (double *) MALLOC(sizeof(double)*nPoints);
+      line = (double *) MALLOC(sizeof(double)*nPoints);
+      sample = (double *) MALLOC(sizeof(double)*nPoints);
+      
+      // Read lat/lon out of the point file
+      for (i=0; i<nPoints; i++) {
+	fgets(buf, 1024, fp);
+	sscanf(buf, "%s\t%lf\t%lf", id, &lat[i], &lon[i]);
+      }
+      
+      // Convert lat/lon into line/sample pairs
+      for (i=0; i<nPoints; i++) {
+	meta_get_lineSamp(metaIn, lat[i], lon[i], 0.0, &line[i], &sample[i]);
+	printf("ID: %d, lat: %.4lf, lon: %.4lf, line: %.4lf, sample: %.4lf\n",
+	       i, lat[i], lon[i], line[i], sample[i]);
+      }
+      
+      // Walk through the image, check whether line/sample is within the predefined
+      // polygon line by line
+      for (i=0; i<lines; i++)
+	for (k=0; k<samples; k++)
+	  if (pointInPolygon(nPoints, line, sample, i, k))
+	    imageBuf[i*samples+k] = 1;
 
-  // Write metadata file
+      // Free up allocated memory
+      FREE(lat);
+      FREE(lon);
+      FREE(line);
+      FREE(sample);
+    }
+  }
+   
+  // Write mask file and metadata file
+  FWRITE(imageBuf, lines*samples, 1, fp);
   meta_write(metaOut, maskFile);
 
   FCLOSE(fp);

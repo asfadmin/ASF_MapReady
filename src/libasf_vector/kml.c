@@ -14,6 +14,12 @@
    files' location to be fully specified, e.g.:
     googleearth /export/home/user/files/the/dir/here/the_file.kml
 */
+static void swap(double *x, double *y)
+{
+    double tmp = *x;
+    *x = *y;
+    *y = tmp;
+}
 
 void kml_header(FILE *kml_file)
 {
