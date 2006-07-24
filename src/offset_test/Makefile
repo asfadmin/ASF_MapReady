@@ -11,6 +11,8 @@ LIBS  = \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
+	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/asf_fft.a \
 	-lm

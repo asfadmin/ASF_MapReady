@@ -20,7 +20,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "offset_test"
 
 #define ASF_USAGE_STRING \
-"<file1> <file2> <out>\n"\
+"[ -mask <maskFile ] <file1> <file2> <out>\n"\
 "\n"\
 "Additional option: -help"
 
@@ -41,7 +41,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "Text file reporting the individual correlations."
 
 #define ASF_OPTIONS_STRING \
-"None."
+"-mask\n"\
+"Mask file defining where matches should be attempted."
 
 #define ASF_EXAMPLES_STRING \
 "offset_test test_old test_new test.out"
@@ -104,6 +105,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "ifm.h"
 #include "offset_test.h"
 
+#define NUM_ARGS 3
+
 /*Read-only, informational globals:*/
 int lines, samples;		/* Lines and samples of source images. */
 int srcSize=64, trgSize=64;
@@ -126,10 +129,10 @@ bool findPeak(int x1,int y1, char *szImg1, int x2, int y2, char *szImg2,
 float getFFTCorrelation(complexFloat *igram,int sizeX,int sizeY);
 void getPeak(int x1,int y1,char *szImg1,int x2,int y2,char *szImg2,
 	     float *peakX,float *peakY, float *snr);
-bool outOfBounds(int x1, int y1, int srcSize);
+bool outOfBounds(int x1, int y1, int srcSize, char *maskFile);
 
 /* usage - enter here on command-line usage error*/
-void usage(void)
+void usage(char *name)
 {
   printf("\n"
          "USAGE:\n"
@@ -191,67 +194,74 @@ void help_page()
   exit(EXIT_SUCCESS);
 }
 
+int strmatches(const char *key, ...)
+{
+  va_list ap;
+  char *arg = NULL;
+  int found = FALSE;
+
+  va_start(ap, key);
+  do {
+    arg = va_arg(ap, char *);
+    if (arg) {
+      if (strcmp(key, arg) == 0) {
+        found = TRUE;
+        break;
+      }
+    }
+  } while (arg);
+
+  return found;
+}
 
 /* Start of main progam */
 int main(int argc, char *argv[])
 {
-  char szOut[255], szImg1[255], szImg2[255];
-  int x1, x2, y1, y2, ii;
+  char szOut[255], szImg1[255], szImg2[255], *maskFile;
+  int x1, x2, y1, y2;
   int goodPoints=0, attemptedPoints=0;
   FILE *fp_output;
   meta_parameters *masterMeta, *slaveMeta;
-  int ampFlag=TRUE;
+  int logflag=FALSE, ampFlag=TRUE, currArg=1;
   
-  flag_indices_t flags[NUM_FLAGS];
-
-  /* Set all flags to 'not set' */
-  for (ii=0; ii<NUM_FLAGS; ii++) {
-    flags[ii] = FLAG_NOT_SET;
+  while (currArg < (argc-NUM_ARGS)) {
+    char *key = argv[currArg++];
+    if (strmatches(key,"-log","--log",NULL)) {
+      CHECK_ARG(1);
+      strcpy(logFile,GET_ARG(1));
+      fLog = FOPEN(logFile, "a");
+      logflag = TRUE;
+    }
+    else if (strmatches(key,"-mask","--mask",NULL)) {
+      CHECK_ARG(1);
+      maskFile = GET_ARG(1);
+    }
+    else {
+      printf("\n**Invalid option: %s\n", argv[currArg-1]);
+      usage(argv[0]);
+    }
   }
-  
-/**********************BEGIN COMMAND LINE PARSING STUFF**********************/
-  /* Check to see if any options were provided */
-  if (checkForOption("-help", argc, argv) != -1) /* Most important */
-    help_page();
+  if ((argc-currArg) < NUM_ARGS) {
+    printf("Insufficient arguments.\n");
+    usage(argv[0]);
+  }
 
-  if (argc != 4) usage();
-
-  /* Make sure to set log & quiet flags (for use in our libraries) */
-  logflag = (flags[f_LOG]!=FLAG_NOT_SET) ? TRUE : FALSE;
-  quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
-
-  if (flags[f_QUIET] == FLAG_NOT_SET)
-    /* display splash screen if not quiet */
-    print_splash_screen(argc, argv);
-  if (flags[f_LOG] != FLAG_NOT_SET)
-    strcpy(logFile, argv[flags[f_LOG] + 1]);
-  else
-    /* default behavior: log to tmp<pid>.log */
-    sprintf(logFile, "tmp%i.log", (int)getpid());
-  fLog = FOPEN(logFile, "a");
-
-  /* Fetch required arguments */
+  // Fetch required arguments 
   strcpy(szImg1,argv[argc - 3]);
   strcpy(szImg2,argv[argc - 2]);
   strcpy(szOut, argv[argc - 1]);
-/***********************END COMMAND LINE PARSING STUFF***********************/
 
   /* Read metadata */
   masterMeta = meta_read(szImg1);
   slaveMeta = meta_read(szImg2);
   if (masterMeta->general->line_count != slaveMeta->general->line_count ||
-      masterMeta->general->sample_count != slaveMeta->general->sample_count) {
-    printf("\n   WARNING: Input images have different dimension!\n\n");
-  }
-  else if (masterMeta->general->data_type != slaveMeta->general->data_type) {
-    printf("\n   ERROR: Input image have different data type!\n\n");
-    exit(0);
-  }
+      masterMeta->general->sample_count != slaveMeta->general->sample_count)
+    asfPrintWarning("Input images have different dimension!\n");
+  else if (masterMeta->general->data_type != slaveMeta->general->data_type)
+    asfPrintError("Input image have different data type!\n");
   else if (masterMeta->general->data_type > 5 &&
-	   masterMeta->general->data_type != COMPLEX_REAL32) {
-    printf("\n   ERROR: Cannot compare raw images for offsets!\n\n");
-    exit(0);
-  }
+	   masterMeta->general->data_type != COMPLEX_REAL32)
+    asfPrintError("Cannot compare raw images for offsets!\n");
   lines = masterMeta->general->line_count;
   samples = masterMeta->general->sample_count;
   if (masterMeta->general->data_type == COMPLEX_REAL32) {
@@ -269,8 +279,8 @@ int main(int argc, char *argv[])
 	float dx, dy, snr, dxFW, dyFW, snrFW, dxBW, dyBW, snrBW;
 	attemptedPoints++;
 
-        /* Check bounds */
-	if (!(outOfBounds(x1, y1, srcSize)))
+        // Check bounds and mask
+	if (!(outOfBounds(x1, y1, srcSize, maskFile)))
 	{
 	  /* ...check forward correlation... */
 	  if (ampFlag) {
@@ -326,12 +336,17 @@ int main(int argc, char *argv[])
 }
 
 
-bool outOfBounds(int x1, int y1, int srcSize)
+bool outOfBounds(int x1, int y1, int srcSize, char *maskFile)
 {
+  meta_parameters *meta;
   if (x1 - srcSize/2 + 1 < 0) return TRUE;
   if (y1 - srcSize/2 + 1 < 0) return TRUE;
   if (x1 + srcSize/2  >= samples) return TRUE;
   if (y1 + srcSize/2  >= lines) return TRUE;
+  if (maskFile) {
+    meta = meta_read(maskFile);
+    if (!maskFile[x1+meta->general->sample_count*y1]) return TRUE;
+  }
   return FALSE;
 }
 
