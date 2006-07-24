@@ -7,6 +7,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \

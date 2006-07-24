@@ -27,7 +27,7 @@ void usage(char *name)
 	name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
-	"    input format:  Input format: srf, meta, leader\n"
+	"    input format:  Input format: point, meta, leader\n"
 	"    output format: Output format: shape, kml\n"
 	"    input file:    Name of the input file\n"
 	"    output file:   Basename of the output file.\n");
@@ -78,26 +78,62 @@ int main(int argc, char **argv)
   // Call library functions that get the work done
   if (listflag) {
     if (strcmp(uc(informat), "META")==0 && strcmp(uc(outformat), "SHAPE")==0) {
-      asfPrintStatus("   Converting list of metadata files into shape files"
+      asfPrintStatus("   Converting list of metadata files into a shape file"
 		     " ...\n\n");
       meta2shape_list(infile, outfile);
     }
     else if (strcmp(uc(informat), "META")==0 && strcmp(uc(outformat), "KML")==0) {
-      asfPrintStatus("   Converting list of metadata files into kml files"
+      asfPrintStatus("   Converting list of metadata files into a kml file"
 		     " ...\n\n");
       meta2kml_list(infile, outfile);
     }
+    else if 
+      (strcmp(uc(informat), "LEADER")==0 && strcmp(uc(outformat), "SHAPE")==0) {
+      asfPrintStatus("   Converting list of leader files into a shape file"
+		     " ...\n\n");
+      leader2shape_list(infile, outfile);
+    }
+    else if 
+      (strcmp(uc(informat), "LEADER")==0 && strcmp(uc(outformat), "KML")==0) {
+      asfPrintStatus("   Converting list of leader files into a kml file"
+		     " ...\n\n");
+      leader2kml_list(infile, outfile);
+    }
+    else if 
+      (strcmp(uc(informat), "POINT")==0 && strcmp(uc(outformat), "SHAPE")==0) {
+      asfPrintStatus("   Converting list of points into a shape file ...\n\n");
+      write_point_shapefile(outfile, infile);
+    }
+    else if 
+      (strcmp(uc(informat), "POINT")==0 && strcmp(uc(outformat), "KML")==0) {
+      asfPrintStatus("   Converting list of points into a kml file ...\n\n");
+      point2kml_list(infile, outfile);
+    }
+    else
+      asfPrintStatus("   Unsupported conversion\n\n");
   }
   else {
     if (strcmp(uc(informat), "META")==0 && strcmp(uc(outformat), "SHAPE")==0) {
-      asfPrintStatus("   Converting metadata file into shape file ...\n\n");
+      asfPrintStatus("   Converting a metadata file into a shape file ...\n\n");
       meta2shape(infile, outfile);
     }
     else if (strcmp(uc(informat), "META")==0 && strcmp(uc(outformat), "KML")==0) {
-      asfPrintStatus("   Converting metadata file into kml file ...\n\n");
+      asfPrintStatus("   Converting a metadata file into a kml file ...\n\n");
       meta = meta_read(infile);
       meta2kml(outfile, meta);
     }
+    else if 
+      (strcmp(uc(informat), "LEADER")==0 && strcmp(uc(outformat), "SHAPE")==0) {
+      asfPrintStatus("   Converting a leader file into a shape file ...\n\n");
+      leader2shape(infile, outfile);
+    }
+    else if 
+      (strcmp(uc(informat), "LEADER")==0 && strcmp(uc(outformat), "KML")==0) {
+      asfPrintStatus("   Converting a leader file into a kml file ...\n\n");
+      leader2kml(infile, outfile);
+    }
+    else 
+      asfPrintStatus("   Unsupported conversion\n\n");
   }
 
   return(0);
