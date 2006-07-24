@@ -5,7 +5,7 @@
 #include "dateUtil.h"
 #include "shapefil.h"
 
-#define maxPoints 1000
+#define maxFrames 1000
 
 // Determine the corner coordinates from the metadata, passing back values of
 // latitude and longitude in pre-allocated arrays
@@ -125,7 +125,7 @@ void meta2shape(char *metaFile, char *shapeFile)
   // Open shapefile for writing polygon
   shape = SHPOpen(shapeFile, "r+b");
   if (shape == NULL)
-    asfPrintError("Could not open shapefile '%s\n");
+    asfPrintError("Could not open shapefile '%s'\n");
 
   // Adding attributes to the database
   meta2dbase(meta, dbaseFile, 0);
@@ -160,8 +160,8 @@ void meta2shape_list(char *list, char *shapeFile)
   fp = FOPEN(list, "r");
   while (fgets(metaFile, 1024, fp)) {
  
-    if (n > 200) // arbitrary number
-      asfPrintError("Cannot handle more than 200 frames at a time!\n");
+    if (n > maxFrames) // arbitrary number
+      asfPrintError("Cannot handle more than %d frames at a time!\n", maxFrames);
 
     // Read metadata and determine corner coordinates
     meta = meta_read(metaFile);
@@ -175,7 +175,97 @@ void meta2shape_list(char *list, char *shapeFile)
     // Add the frame to the shape
     shape = SHPOpen(shapeFile, "r+b");
     if (shape == NULL)
-      asfPrintError("Could not open shapefile '%s\n");
+      asfPrintError("Could not open shapefile '%s'\n");
+    shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, 5, lon, lat, NULL);
+    SHPGetInfo(shape, NULL, NULL, NULL, NULL);
+    SHPWriteObject(shape, -1, shapeObject);
+    SHPDestroyObject(shapeObject);  
+    SHPClose(shape);
+
+    meta_free(meta);
+    n++;
+  }
+  FCLOSE(fp);
+
+}
+
+// Generate a metadata file from a leader file and write corner coordinates to
+// a shape file
+void leader2shape(char *leaderFile, char *shapeFile)
+{  
+  SHPHandle shape;
+  SHPObject *shapeObject=NULL;
+  meta_parameters *meta;
+  char dbaseFile[255];
+  double lat[5], lon[5];
+
+  // Initialize database and shapefile
+  sprintf(dbaseFile, "%s.dbf", shapeFile);
+  dbase_init(dbaseFile);
+  shape_init(shapeFile);
+
+  // Read metadata and determine corner coordinates
+  meta = meta_create(leaderFile);
+  corner_coords(meta, lat, lon);
+  lat[4] = lat[0];
+  lon[4] = lon[0];	
+
+  // Open shapefile for writing polygon
+  shape = SHPOpen(shapeFile, "r+b");
+  if (shape == NULL)
+    asfPrintError("Could not open shapefile '%s'\n");
+
+  // Adding attributes to the database
+  meta2dbase(meta, dbaseFile, 0);
+
+  // Create shapefile object
+  shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, 5, lon, lat, NULL);
+  SHPWriteObject(shape, -1, shapeObject);
+  SHPDestroyObject(shapeObject);
+
+  // Close shapefile
+  SHPClose(shape);
+  meta_free(meta);
+}
+
+// Generate metadata files from a list of leader files and write corner coordinates 
+// to a shape file
+void leader2shape_list(char *list, char *shapeFile)
+{
+  FILE *fp;
+  SHPHandle shape;
+  SHPObject *shapeObject=NULL;
+  meta_parameters *meta;
+  int n=0;
+  char dbaseFile[255], leaderFile[255];
+  double lat[5], lon[5];
+
+  // Initialize database and shapefile
+  sprintf(dbaseFile, "%s.dbf", shapeFile);
+  dbase_init(dbaseFile);
+  shape_init(shapeFile);
+
+  // Open list and keep reading file names
+  fp = FOPEN(list, "r");
+  while (fgets(leaderFile, 255, fp)) {
+ 
+    if (n > maxFrames) // arbitrary number
+      asfPrintError("Cannot handle more than %d frames at a time!\n", maxFrames);
+
+    // Read metadata and determine corner coordinates
+    leaderFile[strlen(leaderFile)-1]='\0';
+    meta = meta_create(leaderFile);
+    corner_coords(meta, lat, lon);
+    lat[4] = lat[0];
+    lon[4] = lon[0];	
+    
+    // Adding attributes to the database
+    meta2dbase(meta, dbaseFile, n);
+    
+    // Add the frame to the shape
+    shape = SHPOpen(shapeFile, "r+b");
+    if (shape == NULL)
+      asfPrintError("Could not open shapefile '%s'\n");
     shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, 5, lon, lat, NULL);
     SHPGetInfo(shape, NULL, NULL, NULL, NULL);
     SHPWriteObject(shape, -1, shapeObject);
