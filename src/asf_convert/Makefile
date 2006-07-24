@@ -10,14 +10,15 @@ LIBS  = \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_terrcorr.a \
 	$(LIBDIR)/libasf_ardop.a \
+	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/asf.a \
-	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf_fft.a \
+	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(JPEG_LIBS) \
 	$(GLIB_LIBS) \
