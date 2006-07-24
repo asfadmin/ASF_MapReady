@@ -367,6 +367,9 @@ main (int argc, char *argv[])
     append_ext_if_needed (command_line.output_name, ".ppm", NULL);
     format = PPM;
   }
+  else if ( strcmp (command_line.format, "KML") == 0 ) {
+    format = KML;
+  }
   else {
     asfPrintError("Unrecognized output format specified");
   }

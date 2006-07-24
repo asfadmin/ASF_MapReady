@@ -39,7 +39,8 @@ typedef enum {
   TIF,                          /* Tiff. */
   JPEG,                         /* Joint Photographic Experts Group.  */
   PPM,                          /* Portable PixMap.  */
-  CEOS                          /* CEOS format */
+  CEOS,                         /* CEOS format */
+  KML                           // JPEG with GoogleEarth overlay file
 } output_format_t;
 
 /* Ellipsoid used for the data.  */
