@@ -9,12 +9,12 @@ extern double min, max, interval;
 void calculate_plot(char *axis, char *gridFile, char *dataFile, char *maskFile, 
 		    char *outFile, meta_parameters *meta, float xConstant)
 {
-  FILE *fpIn=NULL, *fpImg=NULL, *fpOut=NULL, *fpMask=NULL, *fpComp=NULL;
+  FILE *fpIn=NULL, *fpImg=NULL, *fpOut=NULL, *fpMask=NULL;
   quadratic_2d q;
   plot_t *plot;
   int maskFlag=FALSE, ii, kk, ll, size=BUFSIZE, points=0, x, y, index;
-  char cmd[255], inLine[255], *mask=NULL; 
-  float *bufImage=NULL, *bufRef=NULL, *bufComp=NULL, temp;
+  char inLine[255], *mask=NULL; 
+  float *bufImage=NULL;
   double xValue, slope, offset, *l, *s, *value;
   
   /* Prepare mask image for reading */
@@ -26,23 +26,25 @@ void calculate_plot(char *axis, char *gridFile, char *dataFile, char *maskFile,
     FCLOSE(fpMask);
   }
   
-  /* Set things up for least square calculation */
-  value=(double *)MALLOC(sizeof(double)*MAX_PTS);
-  l=(double *)MALLOC(sizeof(double)*MAX_PTS);
-  s=(double *)MALLOC(sizeof(double)*MAX_PTS);
-  
-  /* Read xValue grid points and estimate parameter for xValue calculation 
-     using least squares approach */
-  points = 0;
-  fpIn = FOPEN(gridFile, "r");
-  while (NULL!=(fgets(inLine, 255, fpIn))) {
-    sscanf(inLine,"%lf%lf%lf", &value[points], &l[points], &s[points]); 
-    points++;
-  }
-  FCLOSE(fpIn);
-  
-  q = find_quadratic(value, l, s, points);
-  q.A = xConstant; 
+  if (gridFile) {
+    /* Set things up for least square calculation */
+    value=(double *)MALLOC(sizeof(double)*MAX_PTS);
+    l=(double *)MALLOC(sizeof(double)*MAX_PTS);
+    s=(double *)MALLOC(sizeof(double)*MAX_PTS);
+    
+    /* Read xValue grid points and estimate parameter for xValue calculation 
+       using least squares approach */
+    points = 0;
+    fpIn = FOPEN(gridFile, "r");
+    while (NULL!=(fgets(inLine, 255, fpIn))) {
+      sscanf(inLine,"%lf%lf%lf", &value[points], &l[points], &s[points]); 
+      points++;
+    }
+    FCLOSE(fpIn);
+    
+    q = find_quadratic(value, l, s, points);
+    q.A = xConstant; 
+  }  
   
   /* Determine minimum and maximum xValue for binning */
   min = 100000000;
@@ -51,9 +53,15 @@ void calculate_plot(char *axis, char *gridFile, char *dataFile, char *maskFile,
     for (kk=0; kk<samples; kk++) {
       x = ii;
       y = kk;
-      xValue = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y;
-      xValue += q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y;
-      xValue += q.J*x*x*x + q.K*y*y*y;
+      if (gridFile) {
+	xValue = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y;
+	xValue += q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y;
+	xValue += q.J*x*x*x + q.K*y*y*y;
+      }
+      else if (strcmp(axis, "Sample") == 0)
+	xValue = y;
+      else if (strcmp(axis, "Line") == 0)
+	xValue = x;
       if (maskFlag) {
 	if ((xValue > max) && mask[ii*samples+kk]) max = xValue;
 	if ((xValue < min) && mask[ii*samples+kk]) min = xValue;
@@ -96,9 +104,15 @@ void calculate_plot(char *axis, char *gridFile, char *dataFile, char *maskFile,
       for (kk=0; kk<samples; kk++) {
 	x = ii + ll;
 	y = kk;
-	xValue = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y;
-	xValue += q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y;
-	xValue += q.J*x*x*x + q.K*y*y*y;
+	if (gridFile) {
+	  xValue = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y;
+	  xValue += q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y;
+	  xValue += q.J*x*x*x + q.K*y*y*y;
+	}
+	else if (strcmp(axis, "Sample") == 0)
+	  xValue = y;
+	else if (strcmp(axis, "Line") == 0)
+	  xValue = x;
 	index = (int) (slope*xValue + offset);
 
 	if (maskFlag) {
@@ -136,9 +150,15 @@ void calculate_plot(char *axis, char *gridFile, char *dataFile, char *maskFile,
       for (kk=0; kk<samples; kk++) {
 	x = ii + ll;
 	y = kk;
-	xValue = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y;
-	xValue += q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y;
-	xValue += q.J*x*x*x + q.K*y*y*y;
+	if (gridFile) {
+	  xValue = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y;
+	  xValue += q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y;
+	  xValue += q.J*x*x*x + q.K*y*y*y;
+	}
+	else if (strcmp(axis, "Sample") == 0)
+	  xValue = y;
+	else if (strcmp(axis, "Line") == 0)
+	  xValue = x;
 	index = (int) (slope*xValue + offset);
 
 	if (maskFlag) {

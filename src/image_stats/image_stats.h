@@ -27,6 +27,8 @@ typedef enum {
   f_LOOK=1,
   f_INCIDENCE,
   f_RANGE,
+  f_LINE,
+  f_SAMPLE,
   f_MIN,
   f_MAX,
   f_BINS,

@@ -20,7 +20,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "image_stats"
 
 #define ASF_USAGE_STRING \
-"-look | -incidence | -range\n"\
+"-look | -incidence | -range | line | sample\n"\
 "   [ -bins <value> ] [ -interval <value> ] <infile> <outfile>\n"\
 "\n"\
 "Additional option: -help"
@@ -44,6 +44,8 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 "-look		Plot image values versus look angle.\n"\
 "-incidence	Plot image values versus incidence angle.\n"\
 "-range		Plot image values versus range.\n"\
+"-line          Plot image values versus line.\n"\
+"-sample        Plot image values versus sample.\n"\
 "-bins		Number of bins for calculating the statistics (default: 256).\n"\
 "-interval	Size of interval for binning the image values\n"\
 "		(supersedes setting number of bins).\n"
@@ -182,9 +184,9 @@ void help_page()
 int main(int argc, char *argv[])
 {
   FILE *fpLook=NULL, *fpIncid=NULL, *fpRange=NULL, *fpIn=NULL, *fpMask=NULL;
-  meta_parameters *meta, *metaMask;
+  meta_parameters *meta;
   stateVector stVec;
-  int ii, kk, ll, size;
+  int ii, kk, ll;
   char inFile[255], metaFile[255], dataFile[255], outLook[255], *outIncid=NULL;
   char outRange[255], outBase[255], outFile[255], *maskFile=NULL; 
   char cmd[255], *bufMask=NULL;
@@ -207,6 +209,8 @@ int main(int argc, char *argv[])
   flags[f_LOOK] = checkForOption("-look", argc, argv);
   flags[f_INCIDENCE] = checkForOption("-incidence", argc, argv);
   flags[f_RANGE] = checkForOption("-range", argc, argv);
+  flags[f_LINE] = checkForOption("-line", argc, argv);
+  flags[f_SAMPLE] = checkForOption("-sample", argc, argv);
   flags[f_MIN] = checkForOption("-min", argc, argv);
   flags[f_MAX] = checkForOption("-max", argc, argv);
   flags[f_BINS] = checkForOption("-bins", argc, argv);
@@ -289,6 +293,17 @@ int main(int argc, char *argv[])
     case BETA_IMAGE:
       printf("beta image ...\n");
       break;
+    case RAW_IMAGE:
+    case COMPLEX_IMAGE:
+    case PHASE_IMAGE:
+    case POWER_IMAGE:
+    case COHERENCE_IMAGE:
+    case GEOCODED_IMAGE:
+    case LUT_IMAGE:
+    case ELEVATION:
+    case DEM:
+    case IMAGE:
+      break;
     }
 
   /* Create a mask file for background fill - required only for ScanSAR */
@@ -332,49 +347,52 @@ int main(int argc, char *argv[])
     sprintf(outRange, "tmp%i.range", (int)getpid());
     fpRange = FOPEN(outRange, "w");
   }
-  
-  for (ll=0; ll<=RES_X; ll++)
-    for (kk=0; kk<=RES_Y; kk++) {
-      line = ll * lines / RES_Y;
-      sample = kk * samples / RES_X;
 
-      if (meta->sar->image_type=='P') {
-	px = meta->projection->startX + meta->projection->perX * sample;
-	py = meta->projection->startY + meta->projection->perY * line;
-	proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
-		   &latitude, &longitude);
-	latLon2timeSlant(meta, latitude, longitude, &time, &range, &doppler);
+  if (flags[f_LOOK] != FLAG_NOT_SET || flags[f_INCIDENCE] != FLAG_NOT_SET ||
+      flags[f_RANGE] != FLAG_NOT_SET) {
+    for (ll=0; ll<=RES_X; ll++)
+      for (kk=0; kk<=RES_Y; kk++) {
+	line = ll * lines / RES_Y;
+	sample = kk * samples / RES_X;
+	
+	if (meta->sar->image_type=='P') {
+	  px = meta->projection->startX + meta->projection->perX * sample;
+	  py = meta->projection->startY + meta->projection->perY * line;
+	  proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
+		     &latitude, &longitude);
+	  latLon2timeSlant(meta, latitude, longitude, &time, &range, &doppler);
+	}
+	else
+	  time = meta_get_time(meta, line, sample);
+	
+	stVec = meta_get_stVec(meta, time);
+	if (meta->sar->image_type=='P') {
+	  if (meta->projection->type==SCANSAR_PROJECTION) 
+	    earth_radius = meta->projection->param.atct.rlocal;
+	}
+	else
+	  earth_radius = get_earth_radius(time, stVec, re, rp);
+	satellite_height = get_satellite_height(time, stVec);
+	range = get_slant_range(meta, earth_radius, satellite_height, line, sample);
+	look_angle = get_look_angle(earth_radius, satellite_height, range);
+	incidence_angle = get_incidence_angle(earth_radius, satellite_height, range);
+	
+	if (ll==0 && kk==0) {
+	  firstLook = look_angle * R2D;
+	  firstIncid = incidence_angle * R2D;
+	  firstRange = range;
+	}
+	
+	if (flags[f_LOOK] != FLAG_NOT_SET)
+	  fprintf(fpLook, "%.18f %.12f %.12f\n", (float)look_angle*R2D, 
+		  line, sample);
+	if (flags[f_INCIDENCE] != FLAG_NOT_SET)
+	  fprintf(fpIncid, "%.18f %.12f %.12f\n", (float)incidence_angle*R2D, 
+		  line, sample);
+	if (flags[f_RANGE] != FLAG_NOT_SET) 
+	  fprintf(fpRange, "%.18f %.12f %.12f\n", (float)range, line, sample);
       }
-      else
-	time = meta_get_time(meta, line, sample);
-
-      stVec = meta_get_stVec(meta, time);
-      if (meta->sar->image_type=='P') {
-	if (meta->projection->type==SCANSAR_PROJECTION) 
-	  earth_radius = meta->projection->param.atct.rlocal;
-      }
-      else
-	earth_radius = get_earth_radius(time, stVec, re, rp);
-      satellite_height = get_satellite_height(time, stVec);
-      range = get_slant_range(meta, earth_radius, satellite_height, line, sample);
-      look_angle = get_look_angle(earth_radius, satellite_height, range);
-      incidence_angle = get_incidence_angle(earth_radius, satellite_height, range);
-      
-      if (ll==0 && kk==0) {
-	firstLook = look_angle * R2D;
-	firstIncid = incidence_angle * R2D;
-	firstRange = range;
-      }
-      
-      if (flags[f_LOOK] != FLAG_NOT_SET)
-	fprintf(fpLook, "%.18f %.12f %.12f\n", (float)look_angle*R2D, 
-		line, sample);
-      if (flags[f_INCIDENCE] != FLAG_NOT_SET)
-	fprintf(fpIncid, "%.18f %.12f %.12f\n", (float)incidence_angle*R2D, 
-		line, sample);
-      if (flags[f_RANGE] != FLAG_NOT_SET) 
-	fprintf(fpRange, "%.18f %.12f %.12f\n", (float)range, line, sample);
-    }
+  }
   
   /* Close files for now */
   if (flags[f_LOOK] != FLAG_NOT_SET) {
@@ -405,6 +423,16 @@ int main(int argc, char *argv[])
     create_name(outFile, outBase, "_range.plot");
     calculate_plot("Range", outRange, dataFile, maskFile, outFile, 
 		   meta, firstRange);
+  }
+  if (flags[f_LINE] != FLAG_NOT_SET) {
+    create_name(outFile, outBase, "_line.plot");
+    calculate_plot("Line", NULL, dataFile, maskFile, outFile, 
+		   meta, 0.0);
+  }
+  if (flags[f_SAMPLE] != FLAG_NOT_SET) {
+    create_name(outFile, outBase, "_sample.plot");
+    calculate_plot("Sample", NULL, dataFile, maskFile, outFile, 
+		   meta, 0.0);
   }
   
   /* Clean up */
