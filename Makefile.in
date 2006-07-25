@@ -21,8 +21,8 @@ MODULES = \
 	src/asf_geolib \
 	src/asf_odl \
 	src/asf_fft \
-	src/libasf_vector \
 	src/libasf_raster \
+	src/libasf_vector \
 	src/libasf_sar \
 	src/ardop \
 	src/libasf_export \
