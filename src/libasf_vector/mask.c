@@ -139,10 +139,12 @@ void invert_mask(char *maskInFile, char *maskOutFile)
 }
 
 // Function to read a given mask
-void read_mask(char *maskFile, unsigned char *mask, meta_parameters *meta)
+void read_mask(char *maskFile, unsigned char **p_mask, meta_parameters **p_meta)
 {
   FILE *fp;
   int lines, samples;
+  meta_parameters *meta = *p_meta;
+  unsigned char *mask = *p_mask;
 
   // Read the metadata file and allocate appropriate memory
   meta = meta_read(maskFile);
