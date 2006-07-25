@@ -88,12 +88,14 @@ void debugWritePatch(const patch *p,char *basename)
   char cmd[512],name[320],outname[256],multilookname[320],exportname[320];
   /*	meta_parameters *meta = raw_init();*/
   meta_parameters *meta;
-  
+  int i;
+ 
   strcpy(outname,g.out);
   strcat(strcat(outname,"_"),basename);
   printf("   Outputting Debugging image '%s'...\n",outname);
   strcat(strcpy(name,outname),".img");
-  
+ 
+ 
   meta = meta_read(g.in1);
   meta->general->line_count = p->n_range;
   meta->general->sample_count = p->n_az;
@@ -103,7 +105,8 @@ void debugWritePatch(const patch *p,char *basename)
   
   fp = fopenImage(name,"wb");
   
-  put_complexFloat_lines(fp, meta, 0, p->n_range, p->trans);
+  for (i=0; i<p->n_range; ++i)
+    put_complexFloat_line(fp, meta, i, p->trans);
   
   FCLOSE(fp);
   sprintf(cmd,"c2p \"%s\" \"%s\"\n", name, outname);
