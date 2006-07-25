@@ -33,7 +33,7 @@ int read_shapefile (char *baseFile, char *pointFile)
   if (pointType == SHPT_POLYGON) {
 
     fpShape = FOPEN(pointFile, "w");
-    for (k=0; k<nEntities-1; k++) {
+    for (k=0; k<nEntities; k++) {
       // Read a shape object
       shapeObject = SHPReadObject(shape, k);
       fprintf(fpShape, "%d\n", shapeObject->nVertices);
