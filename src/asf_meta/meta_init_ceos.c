@@ -509,7 +509,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
 
    /* Lets fill in the location block */
-   if (asf_facdr) {
+   if (asf_facdr && meta->location) {
      meta->location->lat_start_near_range = asf_facdr->nearslat;
      meta->location->lon_start_near_range = asf_facdr->nearslon;
      meta->location->lat_start_far_range = asf_facdr->farslat;

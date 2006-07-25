@@ -203,7 +203,8 @@ meta_parameters *raw_init(void)
   meta->projection      = NULL;  /* Allocated later if geocoded */
   meta->stats           = NULL;
   meta->state_vectors   = NULL;  /* Allocated upon discovery of state vectors */
-  meta->location        = meta_location_init();  
+  //meta->location        = meta_location_init();  
+  meta->location        = NULL;
 
   meta->meta_version = META_VERSION;
 
@@ -341,10 +342,8 @@ void meta_free(meta_parameters *meta)
     meta->stats = NULL;
     FREE(meta->state_vectors);
     meta->state_vectors = NULL;
-    /*
     FREE(meta->location);
     meta->location = NULL;
-    */
 
     FREE(meta->geo);
     meta->geo = NULL;
