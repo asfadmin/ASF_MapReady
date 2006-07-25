@@ -110,6 +110,10 @@ void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 		areInertial=1;/*Listed as Inertial-- believe it.*/
 	if (0==strncmp(ppdr.ref_coord,"EARTH CENTERED ROT",18))
 		areInertial=0;/*Listed as rotating-- believe it.*/
+	else if (0 == strncmp(ppdr.ref_coord, "ECR", 3)) {
+	  areInertial = 0;
+	  //areInertialVelocity = 1;
+	}
 	if (ppdr.hr_angle<=-99.0)
 		areInertial=0;/*Bogus GHA-- must be fixed-earth*/
 	
