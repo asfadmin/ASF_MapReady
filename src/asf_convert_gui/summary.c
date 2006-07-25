@@ -232,7 +232,7 @@ void update_summary()
 
     if (s->output_bytes)
     {
-        strcat(text, "   Scaling Method: ");
+        strcat(text, "   Byte Scaling Method: ");
         switch (s->scaling_method)
         {
         default:
@@ -246,6 +246,10 @@ void update_summary()
 
         case SCALING_METHOD_TRUNCATE:
             strcat(text, "Truncate");
+            break;
+
+        case SCALING_METHOD_HISTOGRAM_EQUALIZE:
+            strcat(text, "Histogram Equalize");
             break;
         }
         //strcat(text, "\n");
