@@ -223,6 +223,9 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
 
             double clat = meta->general->center_latitude;
             double clon = meta->general->center_longitude;
+            printf("1) Estimated center lat, lon:  %lf, %lf\n", clat, clon);
+            meta_get_latLon(meta, nl/2, ns/2, h, &clat, &clon);
+            printf("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
 
             double ul_x, ul_y, ur_x, ur_y, ll_x, ll_y, lr_x, lr_y,
                 ctr_x, ctr_y;
@@ -249,7 +252,8 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             printf("UR: %lf,%lf\n", ur_x,ur_y);
             printf("LL: %lf,%lf\n", ll_x,ll_y);
             printf("LR: %lf,%lf\n", lr_x,lr_y);
-            printf("angle= %lf %lf %lf\n", ang1*R2D, ang2*R2D, ang*R2D);
+            printf("angle= %lf %lf %lf\n", ang1*R2D, ang2*R2D,
+                   ang*R2D);
 
             rotate(ul_x, ul_y, ctr_x, ctr_y, ang, &ul_x_rot, &ul_y_rot);
             rotate(ur_x, ur_y, ctr_x, ctr_y, ang, &ur_x_rot, &ur_y_rot);
