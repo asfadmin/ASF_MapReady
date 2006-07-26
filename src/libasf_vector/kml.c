@@ -568,7 +568,7 @@ void point2kml_list(char *list, char *filename)
 {
   FILE *fp;
   float lat, lon;
-  char point[1024], id[255];
+  char point[1024], *p;
   
   char *kml_filename = appendExt(filename, ".kml");
   
@@ -577,8 +577,12 @@ void point2kml_list(char *list, char *filename)
 
   fp = FOPEN(list, "r");
   while (fgets(point, 1024, fp)) {
-    sscanf(point, "%s\t%f\t%f\n", id, &lat, &lon);
-    kml_point_entry(kml_file, id, lat, lon);
+    p = strchr(point, ',');
+    if (p) {
+      sscanf(p+1, "%f,%f", &lat, &lon);
+      *p = '\0';
+    }
+    kml_point_entry(kml_file, point, lat, lon);
   }
 
   kml_footer(kml_file);
