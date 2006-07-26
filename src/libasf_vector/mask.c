@@ -156,4 +156,8 @@ void read_mask(char *maskFile, unsigned char **p_mask, meta_parameters **p_meta)
   fp = FOPEN(maskFile, "rb");
   FREAD(mask, lines*samples, 1, fp);
   FCLOSE(fp);
+
+  // Set caller's pointers
+  *p_meta = meta;
+  *p_mask = mask;
 }
