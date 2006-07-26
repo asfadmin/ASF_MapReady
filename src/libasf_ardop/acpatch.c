@@ -70,12 +70,8 @@ void acpatch(patch *p,const satellite *s)
 	complexFloat cZero=Czero();
 	float pixel2time=1.0/s->prf;
 	float *win;
-	patch *d_t=NULL, *d_f=NULL, *d_x=NULL;
 	/*float alpha;*/
 
-	if (s->debugFlag & AZ_REF_F) d_f=copyPatch(p);
-	if (s->debugFlag & AZ_REF_T) d_t=copyPatch(p);
-	if (s->debugFlag & AZ_X_F) d_x=copyPatch(p);
 	
 	if (sinCosTable==NULL)
 	{
@@ -185,12 +181,16 @@ void acpatch(patch *p,const satellite *s)
                                 free(win);
                 } */
 
-		if (d_t) {for (k = 0; k<p->n_az; k++) d_t->trans[lineOffset+k] = ref[k];}
+                if (s->debugFlag & AZ_REF_T)
+                    debugWritePatch_Line(lineNo, ref, "az_ref_t", p->n_range,
+                                         p->n_az);
 		
 		/* forward transform the reference */
 		cfft1d(p->n_az,ref,-1);
 		
-		if (d_f) {for (k = 0; k<p->n_az; k++) d_f->trans[lineOffset+k] = ref[k];}
+		if (s->debugFlag & AZ_REF_F)
+                    debugWritePatch_Line(lineNo, ref, "az_ref_f", p->n_range,
+                                         p->n_az);
 		
 		/* multiply the reference by the data */
 		if (!(s->debugFlag & NO_AZIMUTH))
@@ -215,16 +215,15 @@ void acpatch(patch *p,const satellite *s)
 				phase -= y;
 			}
 		}
-		if (d_x) {for (k = 0; k<p->n_az; k++) d_x->trans[lineOffset+k] = p->trans[lineOffset+k];}
+                if (s->debugFlag & AZ_X_F)
+                    debugWritePatch_Line(lineNo, &(p->trans[lineOffset+k]),
+                                         "az_X_f", p->n_range, p->n_az);
 		/* inverse transform the product */
 		cfft1d(p->n_az,&(p->trans[lineOffset]),1);
 
 		if (!quietflag && (lineNo%1024 == 0)) printf("   ...Processing Line %i\n",lineNo);
 	}
 	FREE((void *)ref);
-	if (d_t) {debugWritePatch(d_t,"az_ref_t"); destroyPatch(d_t);}
-	if (d_f) {debugWritePatch(d_f,"az_ref_f"); destroyPatch(d_f);}
-	if (d_x) {debugWritePatch(d_x,"az_X_f"); destroyPatch(d_x);}
 	if (s->debugFlag & AZ_X_T) debugWritePatch(p,"az_X_t");
 }
 

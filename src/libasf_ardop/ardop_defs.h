@@ -184,6 +184,8 @@ double getDopplerRate(double r,double f0,GEOLOCATE_REC *g);
 /*---------Global-free Patch Routines:--------*/
 void setPatchLoc(patch *p,satellite *s,meta_parameters *meta,int leftFile,int leftSamp,int top);
 void debugWritePatch(const patch *p,char *basename);
+void debugWritePatch_Line(int lineNo, complexFloat *line, char *basename,
+                          int n_range, int n_az);
 void processPatch(patch *p,const getRec *signalGetRec,
 	const rangeRef *r,const satellite *s);
 void writePatch(const patch *p,const satellite *s,const file *f,int patchNo);

@@ -77,6 +77,58 @@ void setPatchLoc(patch *p,satellite *s,meta_parameters *meta,int leftFile,int le
 
 
 meta_parameters *raw_init(void);
+
+static void patchToJpeg(char *outname)
+{
+  char cmd[512],name[320],multilookname[320],exportname[320];
+  strcat(strcpy(name,outname),".img");
+  sprintf(cmd,"c2p \"%s\" \"%s\"\n", name, outname);
+  asfSystem(cmd);
+  sprintf(multilookname, "%s_ml.img", outname);
+  sprintf(cmd,"multilook -look 2x2 -step 2x2 \"%s\" \"%s\"\n", 
+	  outname, multilookname);
+  asfSystem(cmd);
+  sprintf(exportname, "%s_ml_rgb.img", outname);
+  sprintf(cmd,"convert2jpeg \"%s\" \"%s\"\n", exportname, outname);
+  asfSystem(cmd);
+  //sprintf(cmd, "rm \"%s_*\" \"%s.meta\" \"%s.img\"\n", outname, outname, outname);
+  //asfSystem(cmd);  
+}
+
+void debugWritePatch_Line(int lineNo, complexFloat *line, char *basename,
+                          int n_range, int n_az)
+{
+  FILE *fp;
+  meta_parameters *meta;
+  char outname[320],name[320];
+  char *mode;
+
+  strcpy(outname,g.out);
+  strcat(strcat(outname,"_"),basename);
+  strcat(strcpy(name,outname),".img");
+
+  if (lineNo == 0) {
+      meta = meta_read(g.in1);
+      meta->general->line_count = n_range;
+      meta->general->sample_count = n_az;
+      meta->general->data_type = COMPLEX_REAL32;
+      meta->general->image_data_type = COMPLEX_IMAGE;
+      meta_write(meta, name);
+  } else {
+      meta = meta_read(name);
+  }
+
+  mode = lineNo == 0 ? "wb" : "ab";
+  fp = fopenImage(name,mode);
+  put_complexFloat_line(fp, meta, lineNo, line);
+  FCLOSE(fp);
+
+  if (lineNo == meta->general->line_count - 1)
+      patchToJpeg(outname);
+
+  meta_free(meta);
+}
+
 /*
   DebugWritePatch:
   Outputs the current patch trans array, and
@@ -85,8 +137,7 @@ meta_parameters *raw_init(void);
 void debugWritePatch(const patch *p,char *basename)
 {
   FILE *fp;
-  char cmd[512],name[320],outname[256],multilookname[320],exportname[320];
-  /*	meta_parameters *meta = raw_init();*/
+  char name[320],outname[256];
   meta_parameters *meta;
   int i;
  
@@ -102,26 +153,16 @@ void debugWritePatch(const patch *p,char *basename)
   meta->general->data_type = COMPLEX_REAL32;
   meta->general->image_data_type = COMPLEX_IMAGE;
   meta_write(meta, name);
-  
+
   fp = fopenImage(name,"wb");
   
   for (i=0; i<p->n_range; ++i)
-    put_complexFloat_line(fp, meta, i, p->trans);
+    put_complexFloat_line(fp, meta, i, p->trans+i*p->n_az);
   
   FCLOSE(fp);
-  sprintf(cmd,"c2p \"%s\" \"%s\"\n", name, outname);
-  asfSystem(cmd);
-  sprintf(multilookname, "%s_ml.img", outname);
-  sprintf(cmd,"multilook -look 2x2 -step 2x2 \"%s\" \"%s\"\n", 
-	  outname, multilookname);
-  asfSystem(cmd);
-  sprintf(exportname, "%s_ml_rgb.img", outname);
-  sprintf(cmd,"convert2jpeg \"%s\" \"%s\"\n", exportname, outname);
-  asfSystem(cmd);
-  //sprintf(cmd, "rm \"%s_*\" \"%s.meta\" \"%s.img\"\n", outname, outname, outname);
-  //asfSystem(cmd);
-  
   meta_free(meta);
+
+  patchToJpeg(outname);
 }
 
 /*
