@@ -581,8 +581,8 @@ void point2kml_list(char *list, char *filename)
     if (p) {
       sscanf(p+1, "%f,%f", &lat, &lon);
       *p = '\0';
+      kml_point_entry(kml_file, point, lat, lon);
     }
-    kml_point_entry(kml_file, point, lat, lon);
   }
 
   kml_footer(kml_file);
