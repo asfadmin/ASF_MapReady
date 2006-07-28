@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include "poly.h"
+#include "asf_meta.h"
 
 /* Prototypes from gr2sr.c */
 int gr2sr(const char *infile, const char *outfile);
@@ -49,5 +50,9 @@ int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
 /* Prototypes from fit_poly.c */
 int fit_poly(char * gridFile, int degree, double *maxErr,
 	     poly_2d **fwX, poly_2d **fwY, poly_2d **bwX, poly_2d **bwY);
+
+/* Prototypes from refine_offset.c */
+void refine_offset(double x_off, double y_off, meta_parameters *meta,
+                   double *out_t, double *out_x);
 
 #endif

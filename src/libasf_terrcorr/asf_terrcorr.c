@@ -251,7 +251,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   int polyOrder = 5;
   int force_resample = FALSE;
   int loop_count = 0;
-  const float required_vertical_match = 5;
+  const float required_match = 2.5;
   float vertical_fudge = 0.0;
   double coverage_pct;
   const int PAD = 200;
@@ -372,6 +372,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   maskFile = outputName(output_dir, outFile, "_mask_slant");
   outMaskFile = appendToBasename(outFile, "_mask");
 
+  int redo_clipping;
+
   // do-while that will repeat the dem grid generation and the fftMatch
   // of the sar & simulated sar, until the fftMatch doesn't turn up a
   // big vertical offset.
@@ -450,7 +452,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       idx = - int_rnd(dx);
       idy = - int_rnd(dy);
 
-      if (fabs(dy) > required_vertical_match)
+      redo_clipping = FALSE;
+      if (fabs(dy) > required_match || fabs(dx) > required_match)
       {
 	  // The fftMatch resulted in a large vertical offset!
 	  // This means we very likely did not clip the right portion of
@@ -470,10 +473,27 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 			     "Adjusting SAR image and re-clipping DEM.\n",
 			     idy);
 
-	      vertical_fudge = -dy;
+	      //vertical_fudge = -dy;
+              
+              // Correct the metadata of the SAR image for the offsets 
+              // that we found
+              double t_offset, x_offset;
+              asfPrintStatus("Adjusting metadata to account for offsets...\n");
+              refine_offset(dx, dy, metaSAR, &t_offset, &x_offset);
+              asfPrintStatus("  Time Shift: %f -> %f\n"
+                             "  Slant Shift: %f -> %f\n",
+                             metaSAR->sar->time_shift,
+                             metaSAR->sar->time_shift + t_offset,
+                             metaSAR->sar->slant_shift,
+                             metaSAR->sar->slant_shift + x_offset);
+              metaSAR->sar->time_shift += t_offset;
+              metaSAR->sar->slant_shift += x_offset;
+              meta_write(metaSAR, srFile);
+
+              redo_clipping = TRUE;
 	  }
       }
-  } while (fabs(dy) > required_vertical_match);
+  } while (redo_clipping);
 
   // Corner test
   if (do_corner_matching) {

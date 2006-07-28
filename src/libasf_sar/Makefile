@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall $(CFLAGS)
+CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS)
 
 OBJS = \
 	gr2sr.o \
@@ -14,13 +14,15 @@ OBJS = \
 	poly.o \
 	fit_poly.o \
 	fetcher.o \
-	remap_poly.o
+	remap_poly.o \
+	refine_offset.o
 
 LIBS = \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_sar.a \
-	$(LDFAGS) \
+	$(LDFLAGS) \
+	$(GSL_LIBS) \
 	-lm
 
 all: build_only
