@@ -37,6 +37,7 @@ void asf_meta1x_to_meta09(meta_parameters *meta1x, char *version,
   meta09->geo->dopAz[2] = meta1x->sar->azimuth_doppler_coefficients[2];
 
   /* Fill ifm_parameters structure */
+  if (!meta09->ifm) meta09->ifm = MALLOC(sizeof(ifm_parameters));
   meta09->ifm->ht = meta1x->sar->satellite_height;
   meta09->ifm->er = meta1x->sar->earth_radius;
   meta09->ifm->nLooks = meta1x->sar->look_count;
@@ -55,7 +56,6 @@ void asf_meta1x_to_meta09(meta_parameters *meta1x, char *version,
   strcpy(meta09->info->satBinTime, meta1x->sar->satellite_binary_time);
   strcpy(meta09->info->satClkTime, meta1x->sar->satellite_clock_time);
   meta09->info->prf = meta1x->sar->prf;
-
 
   /************************************
    * Fill in the DDR structure 
