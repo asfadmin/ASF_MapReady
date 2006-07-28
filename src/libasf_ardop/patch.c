@@ -80,6 +80,7 @@ meta_parameters *raw_init(void);
 
 static void patchToJpeg(char *outname)
 {
+  printf("   Outputting Debugging image '%s'...\n",outname);
   char cmd[512],name[320],multilookname[320],exportname[320];
   strcat(strcpy(name,outname),".img");
   sprintf(cmd,"c2p \"%s\" \"%s\"\n", name, outname);
@@ -143,7 +144,6 @@ void debugWritePatch(const patch *p,char *basename)
  
   strcpy(outname,g.out);
   strcat(strcat(outname,"_"),basename);
-  printf("   Outputting Debugging image '%s'...\n",outname);
   strcat(strcpy(name,outname),".img");
  
  
