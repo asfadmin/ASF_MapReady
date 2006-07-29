@@ -462,10 +462,6 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   // Therefore, we make a project_set_datum() call before each project
   // or unproject call.
 
-  // Note that the average height isn't used at the moment, since for
-  // SAR images there is no height information, and for DEMs we try to
-  // do better and use the height values from the DEM for each pixel
-  // we transform.
   project_set_avg_height (average_height);
 
   // Assign our transformation function pointers to point to the
@@ -697,7 +693,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   // we have pixels, so for small tiles, we set this to about 10
   // percent of larger image dimension in pixels.
   if ( ii_size_x / grid_size < 10 && ii_size_y / grid_size < 10 ) {
-    grid_size = GSL_MAX (ii_size_x, ii_size_y) / 10;
+    grid_size = GSL_MAX (ii_size_x, ii_size_y / 10;
     if ( grid_size % 2 != 1 ) {
       grid_size++;
     }
