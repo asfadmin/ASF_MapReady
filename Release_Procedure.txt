@@ -217,20 +217,18 @@ STP Instructions!
 
 MODULES = \
 	src/asf \
+	src/libasf_proj \
 	src/asf_meta \
 	src/asf_odl \
 	src/asf_fft \
-	src/libasf_reporting  \
         src/libifm \
         src/libasf_meta \
-	src/libasf_proj \
 	src/libasf_ardop \
 	src/ardop \
 	src/stp \
         src/multilook \
         src/c2p \
         src/convert2jpeg \
-        src/convert_meta \
         src/stats
 
     Get rid of the 'projections' stuff in the install target.
