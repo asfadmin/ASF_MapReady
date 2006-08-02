@@ -286,7 +286,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     asfPrintStatus("DEM does not have square pixels!\n"
 		   "x pixel size = %gm, y pixel size = %gm.\n",
 	metaDEM->general->x_pixel_size, metaDEM->general->y_pixel_size);
-    asfPrintStatus("Terrain Correction results may not be as expected.\n");
+    asfPrintStatus("Results may not be as expected.\n");
   }
 
   demRes = metaDEM->general->x_pixel_size;
@@ -405,9 +405,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       } else if (coverage_pct <= 25) {
 	asfPrintError("Insufficient DEM coverage!\n");
       } else if (coverage_pct <= 99) {
-	asfPrintWarning(
-	  "Incomplete DEM coverage, your result will be clipped in the\n"
-	  "areas where no DEM data is available.\n");
+        asfPrintWarning("Incomplete DEM coverage!\n");
       }
 
       // Fit a fifth order polynomial to the grid points.
@@ -509,35 +507,35 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     fftMatch_atCorners(output_dir, srFile, demTrimSimAmp, chipsz);
   }
 
-  if (do_terrain_correction)
-  {
-      // Apply the offset to the simulated amplitude image.
-      asfPrintStatus("Applying offsets to simulated sar image...\n");
-      trim(demSimAmp, demTrimSimAmp, idx, idy, metaSAR->general->sample_count,
-           demHeight);
+  // Apply the offset to the simulated amplitude image.
+  asfPrintStatus("Applying offsets to simulated sar image...\n");
+  trim(demSimAmp, demTrimSimAmp, idx, idy, metaSAR->general->sample_count,
+       demHeight);
+  
+  // Verify that the applied offset in fact does the trick.
+  if (do_fftMatch_verification) {
+      float dx2, dy2;
       
-      // Verify that the applied offset in fact does the trick.
-      if (do_fftMatch_verification) {
-          float dx2, dy2;
-          
-          asfPrintStatus("Verifying offsets are now close to zero...\n");
-          fftMatchQ(srFile, demTrimSimAmp, &dx2, &dy2, &cert);
-          
-          asfPrintStatus("Correlation after shift (cert=%5.2f%%): "
-                         "dx=%f dy=%f\n", 
-                         100*cert, dx2, dy2);
-          
-          double match_tolerance = 1.0;
-          if (sqrt(dx2*dx2 + dy2*dy2) > match_tolerance) {
-              asfPrintError("Correlated images failed to match!\n"
-                            " Original fftMatch offset: "
-                            "(dx,dy) = %14.9f,%14.9f\n"
-                            "   After shift, offset is: "
+      asfPrintStatus("Verifying offsets are now close to zero...\n");
+      fftMatchQ(srFile, demTrimSimAmp, &dx2, &dy2, &cert);
+      
+      asfPrintStatus("Correlation after shift (cert=%5.2f%%): "
+                     "dx=%f dy=%f\n", 
+                     100*cert, dx2, dy2);
+      
+      double match_tolerance = 1.0;
+      if (sqrt(dx2*dx2 + dy2*dy2) > match_tolerance) {
+          asfPrintError("Correlated images failed to match!\n"
+                        " Original fftMatch offset: "
+                        "(dx,dy) = %14.9f,%14.9f\n"
+                        "   After shift, offset is: "
                             "(dx,dy) = %14.9f,%14.9f\n",
-                            dx, dy, dx2, dy2);
-          }
+                        dx, dy, dx2, dy2);
       }
-      
+  }
+
+  if (do_terrain_correction)
+  {      
       // Apply the offset to the slant range DEM.
       asfPrintStatus("Applying offsets to slant range DEM...\n");
       demTrimSlant = outputName(output_dir, demFile, "_slant_trim");
@@ -612,7 +610,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     clean(resampleFile_2);
   }
 
-  asfPrintStatus("Terrain Correction Complete!\n");
+  asfPrintStatus("Done!\n");
 
   FREE(resampleFile);
   FREE(srFile);

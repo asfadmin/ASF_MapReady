@@ -43,7 +43,7 @@ main (int argc, char *argv[])
   int clean_files = TRUE;
   int do_resample = TRUE;
   int do_interp = FALSE;
-  int do_fftMatch_verification = FALSE;
+  int do_fftMatch_verification = TRUE;
   int do_corner_matching = FALSE;
   int do_terrain_correction = FALSE;
 
