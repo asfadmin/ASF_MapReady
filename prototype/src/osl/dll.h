@@ -5,6 +5,9 @@ Orion Sky Lawlor, olawlor@acm.org, 2005/8/5 (Public Domain)
 */
 #ifndef __OSL_DLL_H
 #define __OSL_DLL_H
+#ifndef OSL_DLL /* used for Windows DLL generation */
+#  define OSL_DLL /* empty */
+#endif
 
 #ifdef __cplusplus
 extern "C" {
