@@ -98,18 +98,21 @@ static char *outputName(const char *dir, const char *base, const char *suffix)
 // attempt to remove "<file>.img" and "<file>.meta", etc files
 static void clean(const char *file)
 {
-  char * img_file = appendExt(file, ".img");
-  char * meta_file = appendExt(file, ".meta");
-  char * ddr_file = appendExt(file, ".ddr");
-
-  remove_file(img_file);
-  remove_file(meta_file);
-  remove_file(ddr_file);
-  remove_file(file);
-
-  free(img_file);
-  free(meta_file);
-  free(ddr_file);
+    if (file)
+    {
+        char * img_file = appendExt(file, ".img");
+        char * meta_file = appendExt(file, ".meta");
+        char * ddr_file = appendExt(file, ".ddr");
+        
+        remove_file(img_file);
+        remove_file(meta_file);
+        remove_file(ddr_file);
+        remove_file(file);
+        
+        free(img_file);
+        free(meta_file);
+        free(ddr_file);
+    }
 }
 
 static void 
@@ -216,11 +219,12 @@ int asf_terrcorr(char *sarFile, char *demFile,
   int do_interp = FALSE;
   int clean_files = TRUE;
   int dem_grid_size = 20;
-  
+  int do_terrain_correction = TRUE;
+
   return asf_terrcorr_ext(sarFile, demFile, outFile, pixel_size,
 			  clean_files, do_resample, do_corner_matching,
                           do_interp, do_fftMatch_verification,
-                          dem_grid_size);
+                          dem_grid_size, do_terrain_correction);
 }
 
 static char * getOutputDir(char *outFile)
@@ -235,13 +239,14 @@ static char * getOutputDir(char *outFile)
 int asf_terrcorr_ext(char *sarFile, char *demFile,
 		     char *outFile, double pixel_size, int clean_files,
 		     int do_resample, int do_corner_matching, int do_interp,
-		     int do_fftMatch_verification, int dem_grid_size)
+		     int do_fftMatch_verification, int dem_grid_size,
+                     int do_terrain_correction)
 {
-  char *resampleFile, *srFile, *resampleFile_2;
-  char *demGridFile, *demClipped, *demSlant, *demSimAmp;
-  char *demTrimSimAmp, *demTrimSlant;
-  char *maskFile, *outMaskFile, *padFile;
-  char *deskewDemFile, *deskewDemMask;
+  char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
+  char *demGridFile = NULL, *demClipped = NULL, *demSlant = NULL;
+  char *demSimAmp = NULL, *demTrimSimAmp = NULL, *demTrimSlant = NULL;
+  char *maskFile = NULL, *outMaskFile = NULL, *padFile = NULL;
+  char *deskewDemFile = NULL, *deskewDemMask = NULL;
   char *output_dir;
   double demRes, sarRes;
   int demWidth, demHeight;
@@ -255,6 +260,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
   float vertical_fudge = 0.0;
   double coverage_pct;
   const int PAD = 200;
+  double t_offset = 0, x_offset = 0;
 
   asfPrintStatus("Reading metadata...\n");
   metaSAR = meta_read(sarFile);
@@ -453,7 +459,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
       idy = - int_rnd(dy);
 
       redo_clipping = FALSE;
-      if (fabs(dy) > required_match || fabs(dx) > required_match)
+      if (fabs(dy) > required_match || fabs(dx) > required_match || 
+          !do_terrain_correction)
       {
 	  // The fftMatch resulted in a large vertical offset!
 	  // This means we very likely did not clip the right portion of
@@ -469,15 +476,13 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 	  }
 	  else
 	  {
-	      asfPrintStatus("Found a large vertical offset (%d pixels)\n"
-			     "Adjusting SAR image and re-clipping DEM.\n",
-			     idy);
+              if (do_terrain_correction)
+                  asfPrintStatus("Found a large offset (%dx%d LxS pixels)\n"
+                                 "Adjusting SAR image and re-clipping DEM.\n",
+                                 idy, idx);
 
-	      //vertical_fudge = -dy;
-              
               // Correct the metadata of the SAR image for the offsets 
               // that we found
-              double t_offset, x_offset;
               asfPrintStatus("Adjusting metadata to account for offsets...\n");
               refine_offset(dx, dy, metaSAR, &t_offset, &x_offset);
               asfPrintStatus("  Time Shift: %f -> %f\n"
@@ -490,7 +495,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
               metaSAR->sar->slant_shift += x_offset;
               meta_write(metaSAR, srFile);
 
-              redo_clipping = TRUE;
+              if (do_terrain_correction)
+                  redo_clipping = TRUE;
 	  }
       }
   } while (redo_clipping);
@@ -503,74 +509,93 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     fftMatch_atCorners(output_dir, srFile, demTrimSimAmp, chipsz);
   }
 
-  // Apply the offset to the simulated amplitude image.
-  asfPrintStatus("Applying offsets to simulated sar image...\n");
-  trim(demSimAmp, demTrimSimAmp, idx, idy, metaSAR->general->sample_count,
-       demHeight);
+  if (do_terrain_correction)
+  {
+      // Apply the offset to the simulated amplitude image.
+      asfPrintStatus("Applying offsets to simulated sar image...\n");
+      trim(demSimAmp, demTrimSimAmp, idx, idy, metaSAR->general->sample_count,
+           demHeight);
+      
+      // Verify that the applied offset in fact does the trick.
+      if (do_fftMatch_verification) {
+          float dx2, dy2;
+          
+          asfPrintStatus("Verifying offsets are now close to zero...\n");
+          fftMatchQ(srFile, demTrimSimAmp, &dx2, &dy2, &cert);
+          
+          asfPrintStatus("Correlation after shift (cert=%5.2f%%): "
+                         "dx=%f dy=%f\n", 
+                         100*cert, dx2, dy2);
+          
+          double match_tolerance = 1.0;
+          if (sqrt(dx2*dx2 + dy2*dy2) > match_tolerance) {
+              asfPrintError("Correlated images failed to match!\n"
+                            " Original fftMatch offset: "
+                            "(dx,dy) = %14.9f,%14.9f\n"
+                            "   After shift, offset is: "
+                            "(dx,dy) = %14.9f,%14.9f\n",
+                            dx, dy, dx2, dy2);
+          }
+      }
+      
+      // Apply the offset to the slant range DEM.
+      asfPrintStatus("Applying offsets to slant range DEM...\n");
+      demTrimSlant = outputName(output_dir, demFile, "_slant_trim");
+      trim(demSlant, demTrimSlant, idx, idy, 
+           metaSAR->general->sample_count + PAD, demHeight);
+      
+      // Terrain correct the slant range image while bringing it back to
+      // ground range geometry. This is done without radiometric correction
+      // of the values.
+      ensure_ext(&demTrimSlant, "img");
+      ensure_ext(&srFile, "img");
+      asfPrintStatus("Terrain correcting slant range image...\n");
+      padFile = outputName(output_dir, srFile, "_pad");
+      deskewDemFile = outputName(output_dir, srFile, "_dd");
+      deskewDemMask = outputName(output_dir, srFile, "_ddm");
+      trim(srFile, padFile, 0, 0, metaSAR->general->sample_count + PAD,
+           metaSAR->general->line_count);
+      deskew_dem(demTrimSlant, deskewDemFile, padFile, 0, maskFile,
+                 deskewDemMask, do_interp);
+      
+      // After deskew_dem, there will likely be zeros on the left & right edges
+      // of the image, we trim those off before finishing up.
+      int startx, endx;
+      trim_zeros(deskewDemFile, outFile, &startx, &endx);
+      trim(deskewDemMask, outMaskFile, startx, 0, endx,
+           metaSAR->general->line_count);
+      clean(padFile);
+      clean(deskewDemFile);
+      clean(deskewDemMask);
 
-  // Verify that the applied offset in fact does the trick.
-  if (do_fftMatch_verification) {
-    float dx2, dy2;
-
-    asfPrintStatus("Verifying offsets are now close to zero...\n");
-    fftMatchQ(srFile, demTrimSimAmp, &dx2, &dy2, &cert);
-
-    asfPrintStatus("Correlation after shift (cert=%5.2f%%): dx=%f dy=%f\n", 
-		   100*cert, dx2, dy2);
-
-    double match_tolerance = 1.0;
-    if (sqrt(dx2*dx2 + dy2*dy2) > match_tolerance) {
-      asfPrintError("Correlated images failed to match!\n"
-		    " Original fftMatch offset: (dx,dy) = %14.9f,%14.9f\n"
-		    "   After shift, offset is: (dx,dy) = %14.9f,%14.9f\n",
-		    dx, dy, dx2, dy2);
-    }
+      // Because of the PP earth radius sr->gr fix, we may not have ended
+      // up with the same x pixel size that the user requested.  So we will
+      // just resample to the size that was requested.
+      meta_free(metaSAR);
+      metaSAR = meta_read(outFile);
+      if (fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01) {
+          asfPrintStatus("Resampling to proper range pixel size...\n");
+          resampleFile_2 = outputName(output_dir, outFile, "_resample");
+          renameImgAndMeta(outFile, resampleFile_2);
+          resample_to_square_pixsiz(resampleFile_2, outFile, pixel_size);
+          char *outMaskFile_2 = 
+              outputName(output_dir, outMaskFile, "_resample");
+          renameImgAndMeta(outMaskFile, outMaskFile_2);
+          resample_to_square_pixsiz(outMaskFile_2, outMaskFile, pixel_size);
+          clean(outMaskFile_2);
+      } else {
+          resampleFile_2 = NULL;
+      }
   }
+  else
+  {
+      // Just need to update the original metadata
+      meta_free(metaSAR);
 
-  // Apply the offset to the slant range DEM.
-  asfPrintStatus("Applying offsets to slant range DEM...\n");
-  demTrimSlant = outputName(output_dir, demFile, "_slant_trim");
-  trim(demSlant, demTrimSlant, idx, idy, metaSAR->general->sample_count + PAD,
-       demHeight);
-
-  // Terrain correct the slant range image while bringing it back to
-  // ground range geometry. This is done without radiometric correction
-  // of the values.
-  ensure_ext(&demTrimSlant, "img");
-  ensure_ext(&srFile, "img");
-  asfPrintStatus("Terrain correcting slant range image...\n");
-  padFile = outputName(output_dir, srFile, "_pad");
-  deskewDemFile = outputName(output_dir, srFile, "_dd");
-  deskewDemMask = outputName(output_dir, srFile, "_ddm");
-  trim(srFile, padFile, 0, 0, metaSAR->general->sample_count + PAD,
-       metaSAR->general->line_count);
-  deskew_dem(demTrimSlant, deskewDemFile, padFile, 0, maskFile, deskewDemMask, 
-             do_interp);
-
-  // After deskew_dem, there will likely be zeros on the left & right edges
-  // of the image, we trim those off before finishing up.
-  int startx, endx;
-  trim_zeros(deskewDemFile, outFile, &startx, &endx);
-  trim(deskewDemMask,outMaskFile,startx,0,endx,metaSAR->general->line_count);
-  clean(padFile);
-  clean(deskewDemFile);
-  clean(deskewDemMask);
-
-  // Because of the PP earth radius sr->gr fix, we may not have ended
-  // up with the same x pixel size that the user requested.  So we will
-  // just resample to the size that was requested.
-  meta_free(metaSAR);
-  metaSAR = meta_read(outFile);
-  if (fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01) {
-      asfPrintStatus("Resampling to proper range pixel size...\n");
-      resampleFile_2 = outputName(output_dir, outFile, "_resample");
-      renameImgAndMeta(outFile, resampleFile_2);
-      resample_to_square_pixsiz(resampleFile_2, outFile, pixel_size);
-      char *outMaskFile_2 = outputName(output_dir, outMaskFile, "_resample");
-      renameImgAndMeta(outMaskFile, outMaskFile_2);
-      resample_to_square_pixsiz(outMaskFile_2, outMaskFile, pixel_size);
-  } else {
-      resampleFile_2 = NULL;
+      metaSAR = meta_read(sarFile);
+      metaSAR->sar->time_shift += t_offset;
+      metaSAR->sar->slant_shift += x_offset;
+      meta_write(metaSAR, outFile);
   }
 
   if (clean_files) {
@@ -583,29 +608,26 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
     clean(demTrimSimAmp);
     clean(demSimAmp);
     clean(demSlant);
-    clean(padFile);
     clean(maskFile);
-    if (resampleFile_2)
-        clean(resampleFile_2);
+    clean(resampleFile_2);
   }
 
   asfPrintStatus("Terrain Correction Complete!\n");
 
-  free(resampleFile);
-  free(srFile);
-  free(demClipped);
-  free(demGridFile);
-  free(demTrimSlant);
-  free(demTrimSimAmp);
-  free(demSimAmp);
-  free(demSlant);
-  free(maskFile);
-  free(padFile);
-  free(deskewDemFile);
-  free(deskewDemMask);
-  free(outMaskFile);
-  if (resampleFile_2)
-      free(resampleFile_2);
+  FREE(resampleFile);
+  FREE(srFile);
+  FREE(demClipped);
+  FREE(demGridFile);
+  FREE(demTrimSlant);
+  FREE(demTrimSimAmp);
+  FREE(demSimAmp);
+  FREE(demSlant);
+  FREE(maskFile);
+  FREE(padFile);
+  FREE(deskewDemFile);
+  FREE(deskewDemMask);
+  FREE(outMaskFile);
+  FREE(resampleFile_2);
 
   meta_free(metaSAR);
   meta_free(metaDEM);

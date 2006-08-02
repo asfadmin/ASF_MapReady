@@ -2,14 +2,12 @@
 #include <asf.h>
 #include <asf_terrcorr.h>
 
-#define ASF_NAME_STRING "asf_terrcorr"
+#define ASF_NAME_STRING "refine_geolocation"
 
 #define NUM_ARGS 3
 void usage(const char *name)
 {
-  printf("Usage: %s [-log <logfile>] [-quiet] [-keep] [-no-resample]\n"
-         "          [-no-verify-fftMatch] [-no-corner-match] [-no-interp]\n"
-         "          [-pixel-size <size>] [-dem-grid-size <size>]\n"
+  printf("Usage: %s [-log <logfile>] [-quiet] \n"
          "          <inFile> <demFile> <outFile>\n", name);
   exit(EXIT_FAILURE);
 }
@@ -44,9 +42,10 @@ main (int argc, char *argv[])
   int currArg = 1;
   int clean_files = TRUE;
   int do_resample = TRUE;
-  int do_interp = TRUE;
-  int do_fftMatch_verification = TRUE;
-  int do_corner_matching = TRUE;
+  int do_interp = FALSE;
+  int do_fftMatch_verification = FALSE;
+  int do_corner_matching = FALSE;
+  int do_terrain_correction = FALSE;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -61,29 +60,6 @@ main (int argc, char *argv[])
     }
     else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
       quietflag = TRUE;
-    }
-    else if (strmatches(key,"-keep","--keep","-k",NULL)) {
-      clean_files = FALSE;
-    }
-    else if (strmatches(key,"-no-resample","--no-resample",NULL)) {
-      do_resample = FALSE;
-    }
-    else if (strmatches(key,"-no-verify-match","--no-verify-match",NULL)) {
-      do_fftMatch_verification = FALSE;
-    }
-    else if (strmatches(key,"-no-corner-match","--no-corner-match",NULL)) {
-      do_corner_matching = FALSE;
-    }
-    else if (strmatches(key,"-no-interp","--no-interp",NULL)) {
-      do_interp = FALSE;
-    }
-    else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
-      CHECK_ARG(1);
-      pixel_size = atof(GET_ARG(1));
-    }
-    else if (strmatches(key,"-dem-grid-size","--dem-grid-size",NULL)) {
-      CHECK_ARG(1);
-      dem_grid_size = atoi(GET_ARG(1));
     }
     else {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
@@ -101,7 +77,8 @@ main (int argc, char *argv[])
 
   int ret = asf_terrcorr_ext(inFile, demFile, outFile, pixel_size, clean_files,
 			     do_resample, do_corner_matching, do_interp,
-			     do_fftMatch_verification, dem_grid_size, TRUE);
+			     do_fftMatch_verification, dem_grid_size,
+                             do_terrain_correction);
 
   return ret ? EXIT_SUCCESS : EXIT_FAILURE;
 }
