@@ -4,10 +4,9 @@
 
 #define ASF_NAME_STRING "refine_geolocation"
 
-#define NUM_ARGS 3
 void usage(const char *name)
 {
-  printf("Usage: %s [-log <logfile>] [-quiet] \n"
+  printf("Usage: %s [-log <logfile>] [-quiet] [-update] \n"
          "          <inFile> <demFile> <outFile>\n", name);
   exit(EXIT_FAILURE);
 }
@@ -37,15 +36,9 @@ int
 main (int argc, char *argv[])
 {
   char *inFile, *demFile, *outFile;
-  double pixel_size = -1;
-  int dem_grid_size = 20;
   int currArg = 1;
-  int clean_files = TRUE;
-  int do_resample = TRUE;
-  int do_interp = FALSE;
-  int do_fftMatch_verification = TRUE;
-  int do_corner_matching = FALSE;
-  int do_terrain_correction = FALSE;
+  int update_flag = FALSE;
+  int NUM_ARGS = 2;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -61,11 +54,15 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
       quietflag = TRUE;
     }
+    else if (strmatches(key,"-update","--update","-u",NULL)) {
+      update_flag = TRUE;
+    }
     else {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
       usage(argv[0]);
     }
   }
+  if (!update_flag) ++NUM_ARGS;
   if ((argc-currArg) < NUM_ARGS) {
     printf("Insufficient arguments.\n");
     usage(argv[0]);
@@ -73,12 +70,20 @@ main (int argc, char *argv[])
 
   inFile = argv[currArg];
   demFile = argv[currArg+1];
-  outFile = argv[currArg+2];
+  if (update_flag) {
+      outFile = appendToBasename(inFile, "_tmp");      
+  } else {
+      outFile = argv[currArg+2];
+  }
 
-  int ret = asf_terrcorr_ext(inFile, demFile, outFile, pixel_size, clean_files,
-			     do_resample, do_corner_matching, do_interp,
-			     do_fftMatch_verification, dem_grid_size,
-                             do_terrain_correction);
+  int ret = refine_geolocation(inFile, demFile, outFile, update_flag);
+
+  if (update_flag) {
+      char *meta = appendExt(outFile, ".meta");
+      remove(meta);
+      FREE(meta);
+      FREE(outFile);
+  }
 
   return ret ? EXIT_SUCCESS : EXIT_FAILURE;
 }

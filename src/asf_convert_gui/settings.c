@@ -1278,7 +1278,8 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "sar processing = %d\n", s->process_to_level1);
     // fprintf(cf, "image stats=0\n");
     // fprintf(cf, "detect corner reflectors = 0\n");
-    fprintf(cf, "terrain correction = %d\n", s->terrcorr_is_checked);
+    fprintf(cf, "terrain correction = %d\n", 
+            s->terrcorr_is_checked || s->refine_geolocation_is_checked);
     fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
     fprintf(cf, "export = %d\n", s->export_is_checked);
     // fprintf(cf, "default values =\n");
@@ -1327,7 +1328,7 @@ settings_to_config_file(const Settings *s,
     } else if (s->refine_geolocation_is_checked) {
       fprintf(cf, "[Terrain correction]\n");
       fprintf(cf, "digital elevation model = %s\n", s->dem_file);
-      fprintf(cf, "refine geolocaiton only = 1\n\n");
+      fprintf(cf, "refine geolocation only = 1\n\n");
     }
 
     if (s->geocode_is_checked) {

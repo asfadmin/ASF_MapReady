@@ -227,7 +227,8 @@ int asf_terrcorr(char *sarFile, char *demFile,
                           dem_grid_size, do_terrain_correction);
 }
 
-int refine_geolocation(char *sarFile, char *demFile, char *outFile)
+int refine_geolocation(char *sarFile, char *demFile, char *outFile,
+                       int update_flag)
 {
   double pixel_size = -1;
   int dem_grid_size = 20;
@@ -237,11 +238,38 @@ int refine_geolocation(char *sarFile, char *demFile, char *outFile)
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = FALSE;
   int do_terrain_correction = FALSE;
+  int ret;
 
-  return asf_terrcorr_ext(sarFile, demFile, outFile, pixel_size, clean_files,
-                          do_resample, do_corner_matching, do_interp,
-                          do_fftMatch_verification, dem_grid_size,
-                          do_terrain_correction);
+  ret = asf_terrcorr_ext(sarFile, demFile, outFile, pixel_size, clean_files,
+                         do_resample, do_corner_matching, do_interp,
+                         do_fftMatch_verification, dem_grid_size,
+                         do_terrain_correction);
+
+  if (ret)
+  {
+      // asf_terrcorr_ext with do_terrain_correction turned off just 
+      // creates a metadata file - the actual image file is unchanged.
+      if (update_flag) {
+          // If the user issued the "update" flag, then we need to move
+          // the new metadata file over the old metadata file.  (ie., we
+          // are "updating" the existing metadata with the new shift values
+          char *inMetaFile = appendExt(sarFile, ".meta");
+          char *outMetaFile = appendExt(outFile, ".meta");
+          fileCopy(outMetaFile, inMetaFile);
+          clean(outFile);
+          FREE(inMetaFile);
+          FREE(outMetaFile);
+      } else {
+          // Otherwise, make a copy of the original image with the new name
+          char *inImgFile = appendExt(sarFile, ".img");
+          char *outImgFile = appendExt(outFile, ".img");
+          fileCopy(inImgFile, outImgFile);
+          FREE(inImgFile);
+          FREE(outImgFile);
+      }
+  }
+
+  return ret;
 }
 
 static char * getOutputDir(char *outFile)
@@ -649,5 +677,5 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 
   free(output_dir);
 
-  return 0;
+  return TRUE;
 }

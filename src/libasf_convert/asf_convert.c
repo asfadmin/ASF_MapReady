@@ -452,19 +452,20 @@ int asf_convert(int createflag, char *configFileName)
 
     if (cfg->general->terrain_correct) {
 
-      update_status(cfg, "Terrain Correcting...");
-
       // Generate filenames
       sprintf(inFile, "%s", outFile);
       sprintf(outFile, "tmp%i_terrain_correct", pid);
 
       // Call asf_terrcorr!  Or refine_geolocation!
       if (cfg->terrain_correct->refine_geolocation_only) {
+          update_status(cfg, "Refining Geolocation...");
           check_return(
-              refine_geolocation(inFile, cfg->terrain_correct->dem, outFile),
+              refine_geolocation(inFile, cfg->terrain_correct->dem,
+                                 outFile, FALSE),
               "refining geolocation of the data file (refine_geolocation)\n");
       }
       else {
+          update_status(cfg, "Terrain Correcting...");
           check_return(
               asf_terrcorr_ext(inFile, cfg->terrain_correct->dem, outFile, 
                                cfg->terrain_correct->pixel,
