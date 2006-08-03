@@ -250,6 +250,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->pixel = -99;
   cfg->terrain_correct->dem = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->terrain_correct->dem, "");
+  cfg->terrain_correct->refine_geolocation_only = 0;
   cfg->terrain_correct->interp = 1;
 
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
@@ -345,6 +346,8 @@ convert_config *init_fill_convert_config(char *configFile)
 	cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
       if (strncmp(test, "digital elevation model", 23)==0)
 	cfg->terrain_correct->dem = read_str(line, "digital elevation model");      
+      if (strncmp(test, "refine geolocation only", 23)==0)
+	cfg->terrain_correct->refine_geolocation_only = read_int(line, "refine_geolocation_only");
       if (strncmp(test, "interpolate", 11)==0)
 	cfg->terrain_correct->interp = read_int(line, "interpolate");
 
@@ -536,6 +539,8 @@ convert_config *read_convert_config(char *configFile)
 	cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
       if (strncmp(test, "digital elevation model", 23)==0)
 	cfg->terrain_correct->dem = read_str(line, "digital elevation model");
+      if (strncmp(test, "refine geolocation only", 23)==0)
+	cfg->terrain_correct->refine_geolocation_only = read_int(line, "refine_geolocation_only");
       if (strncmp(test, "interpolate", 11)==0)
 	cfg->terrain_correct->interp = read_int(line, "interpolate");
       FREE(test);
@@ -766,6 +771,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
 		"# for terrain effects. The quality and resolution of the reference DEM determines\n"
 		"# the quality of the resulting terrain corrected product\n\n");
       fprintf(fConfig, "digital elevation model = %s\n\n", cfg->terrain_correct->dem);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# Even if you don't want to change the image via terrain correction,\n"
+                "# you may still wish to use the DEM to refine the geolocation of the SAR image.\n"
+                "# If this flag is set, terrain correction is NOT performed.\n\n");
+      fprintf(fConfig, "refine geolocation only = %d\n\n", cfg->terrain_correct->refine_geolocation_only);
+
       if (!shortFlag)
 	fprintf(fConfig, "\n# Layover/shadow regions can either be left black (resulting in better\n"
 		"# image statistics in the remainder of the image), or they may be interpolated over\n"

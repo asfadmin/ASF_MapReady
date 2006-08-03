@@ -227,6 +227,23 @@ int asf_terrcorr(char *sarFile, char *demFile,
                           dem_grid_size, do_terrain_correction);
 }
 
+int refine_geolocation(char *sarFile, char *demFile, char *outFile)
+{
+  double pixel_size = -1;
+  int dem_grid_size = 20;
+  int clean_files = TRUE;
+  int do_resample = TRUE;
+  int do_interp = FALSE;
+  int do_fftMatch_verification = TRUE;
+  int do_corner_matching = FALSE;
+  int do_terrain_correction = FALSE;
+
+  return asf_terrcorr_ext(sarFile, demFile, outFile, pixel_size, clean_files,
+                          do_resample, do_corner_matching, do_interp,
+                          do_fftMatch_verification, dem_grid_size,
+                          do_terrain_correction);
+}
+
 static char * getOutputDir(char *outFile)
 {
     char *d = MALLOC(sizeof(char) * strlen(outFile));

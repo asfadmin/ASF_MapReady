@@ -70,6 +70,8 @@ typedef struct
 {
   double pixel;           // pixel size for terrain corrected product
   char *dem;              // reference DEM file name
+  int refine_geolocation_only; // If TRUE, we don't actually do any terrain
+                          // correction, just refine the geolocation w/ the DEM
   int interp;             // TRUE if we should interpolate layover/shadow
                           // regions, FALSE if those regions should be blank
 } s_terrain_correct;

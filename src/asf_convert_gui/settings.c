@@ -1321,8 +1321,13 @@ settings_to_config_file(const Settings *s,
       else if (s->specified_pixel_size)
         fprintf(cf, "pixel spacing = %.2lf\n", s->pixel_size);
       fprintf(cf, "digital elevation model = %s\n", s->dem_file);
+      fprintf(cf, "refine geolocaiton only = 0\n");
       fprintf(cf, "interpolate = %d\n", s->interp);
       fprintf(cf, "\n");
+    } else if (s->refine_geolocation_is_checked) {
+      fprintf(cf, "[Terrain correction]\n");
+      fprintf(cf, "digital elevation model = %s\n", s->dem_file);
+      fprintf(cf, "refine geolocaiton only = 1\n\n");
     }
 
     if (s->geocode_is_checked) {
