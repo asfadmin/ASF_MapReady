@@ -132,6 +132,16 @@ int main(int argc, char **argv)
       asfPrintStatus("   Converting a leader file into a kml file ...\n\n");
       leader2kml(infile, outfile);
     }
+    else if 
+      (strcmp(uc(informat), "SHAPE")==0 && strcmp(uc(outformat), "POINT")==0) {
+      asfPrintStatus("   Converting a shape file into a point file ...\n\n");
+      read_shapefile(infile, outfile);
+    }
+    else if 
+      (strcmp(uc(informat), "POINT")==0 && strcmp(uc(outformat), "SHAPE")==0) {
+      asfPrintStatus("   Converting a point file into a shape file ...\n\n");
+      write_polygon_shapefile(outfile, infile, "");
+    }
     else 
       asfPrintStatus("   Unsupported conversion\n\n");
   }
