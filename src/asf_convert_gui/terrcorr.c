@@ -17,38 +17,94 @@
 void terrcorr_options_changed()
 {
   GtkWidget *terrcorr_vbox;
+  GtkWidget *dem_checkbutton;
+
   GtkWidget *terrcorr_checkbutton;
-  gboolean terrcorr_is_checked;
+  GtkWidget *tc_pixel_size_checkbutton;
+  GtkWidget *refine_geolocation_checkbutton;
+  GtkWidget *interpolate_checkbutton;
+
+  gboolean dem_is_checked;
 
   terrcorr_vbox = glade_xml_get_widget(glade_xml, "terrcorr_vbox");
+  dem_checkbutton =
+    glade_xml_get_widget(glade_xml, "dem_checkbutton");
+
+  dem_is_checked =
+    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(dem_checkbutton));
+
+  gtk_widget_set_sensitive(terrcorr_vbox, dem_is_checked);
+
   terrcorr_checkbutton =
-    glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
+      glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
+  tc_pixel_size_checkbutton =
+      glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
+  refine_geolocation_checkbutton =
+      glade_xml_get_widget(glade_xml, "refine_geolocation_checkbutton");
+  interpolate_checkbutton =
+      glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
 
-  terrcorr_is_checked =
-    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(terrcorr_checkbutton));
-
-  gtk_widget_set_sensitive(terrcorr_vbox, terrcorr_is_checked);
-
-  if (terrcorr_is_checked) {
-      GtkWidget *tc_pixel_size_checkbutton;
+  if (dem_is_checked) {
       GtkWidget *hbox_tc_pixel_size;
       gboolean tc_pixel_size_is_checked;
+      gboolean terrcorr_is_checked;
 
-      tc_pixel_size_checkbutton =
-          glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
-      hbox_tc_pixel_size =
-          glade_xml_get_widget(glade_xml, "hbox_tc_pixel_size");
+      terrcorr_is_checked =
+          gtk_toggle_button_get_active(
+              GTK_TOGGLE_BUTTON(terrcorr_checkbutton));
 
-      tc_pixel_size_is_checked =
+      gtk_widget_set_sensitive(tc_pixel_size_checkbutton, terrcorr_is_checked);
+
+      tc_pixel_size_is_checked = terrcorr_is_checked &&
           gtk_toggle_button_get_active(
               GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton));
 
+      hbox_tc_pixel_size =
+          glade_xml_get_widget(glade_xml, "hbox_tc_pixel_size");
+
       gtk_widget_set_sensitive(hbox_tc_pixel_size, tc_pixel_size_is_checked);
+
+      gtk_widget_set_sensitive(interpolate_checkbutton,
+                               terrcorr_is_checked);
+      gtk_toggle_button_set_active(
+          GTK_TOGGLE_BUTTON(interpolate_checkbutton), terrcorr_is_checked);
+
+      gtk_widget_set_sensitive(refine_geolocation_checkbutton,
+                               !terrcorr_is_checked);
+      if (terrcorr_is_checked)
+          gtk_toggle_button_set_active(
+              GTK_TOGGLE_BUTTON(refine_geolocation_checkbutton), TRUE);
   }
+  else
+  {
+      gtk_toggle_button_set_active(
+          GTK_TOGGLE_BUTTON(terrcorr_checkbutton), FALSE);
+      gtk_toggle_button_set_active(
+          GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton), FALSE);
+      gtk_toggle_button_set_active(
+          GTK_TOGGLE_BUTTON(refine_geolocation_checkbutton), FALSE);
+      gtk_toggle_button_set_active(
+          GTK_TOGGLE_BUTTON(interpolate_checkbutton), FALSE);
+  }
+
+}
+
+SIGNAL_CALLBACK void
+on_dem_checkbutton_toggled(GtkWidget * widget)
+{
+    terrcorr_options_changed();
+    update_summary();
 }
 
 SIGNAL_CALLBACK void
 on_terrcorr_checkbutton_toggled(GtkWidget * widget)
+{
+    terrcorr_options_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_refine_geolocation_checkbutton_toggled(GtkWidget * widget)
 {
     terrcorr_options_changed();
     update_summary();

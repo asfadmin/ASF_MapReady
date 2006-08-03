@@ -37,8 +37,7 @@ settings_apply_to_gui(const Settings * s)
         *output_bytes_checkbutton,
         *scaling_method_combobox,
         *keep_files_checkbutton,
-        *apply_metadata_fix_checkbutton,
-        *terrcorr_checkbutton;
+        *apply_metadata_fix_checkbutton;
 
     input_data_type_combobox = 
         glade_xml_get_widget(glade_xml, "input_data_type_combobox");
@@ -303,55 +302,80 @@ settings_apply_to_gui(const Settings * s)
         }
     }
 
-    terrcorr_checkbutton =
-        glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
-
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(terrcorr_checkbutton),
-				 s->terrcorr_is_checked);
-
-    if (s->terrcorr_is_checked)
+    if (s->terrcorr_is_checked || s->refine_geolocation_is_checked)
     {
+        GtkWidget *dem_checkbutton;
         GtkWidget *dem_entry;
         GtkWidget *tc_pixel_size_checkbutton;
         GtkWidget *tc_pixel_size_entry;
         GtkWidget *interpolate_checkbutton;
+        GtkWidget *terrcorr_checkbutton;
+        GtkWidget *refine_geolocation_checkbutton;
+
+        dem_checkbutton = glade_xml_get_widget(glade_xml, "dem_checkbutton");
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dem_checkbutton), TRUE);
 
 	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
-
 	gtk_entry_set_text(GTK_ENTRY(dem_entry), s->dem_file);
 
-	tc_pixel_size_checkbutton =
-            glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
+        terrcorr_checkbutton =
+            glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
+        refine_geolocation_checkbutton =
+            glade_xml_get_widget(glade_xml, "refine_geolocation_checkbutton");
 
         gtk_toggle_button_set_active(
-            GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton),
-            s->specified_tc_pixel_size);
+            GTK_TOGGLE_BUTTON(refine_geolocation_checkbutton), TRUE);
 
-        tc_pixel_size_entry =
-            glade_xml_get_widget(glade_xml, "tc_pixel_size_entry");
-
-        if (s->specified_pixel_size)
+        if (s->terrcorr_is_checked)
         {
-            gchar tmp[32];
-            sprintf(tmp, "%f", s->tc_pixel_size);
-            gtk_entry_set_text(GTK_ENTRY(tc_pixel_size_entry), tmp);
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(terrcorr_checkbutton), TRUE);
+
+            tc_pixel_size_checkbutton =
+                glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
+
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton),
+                s->specified_tc_pixel_size);
+
+            tc_pixel_size_entry =
+                glade_xml_get_widget(glade_xml, "tc_pixel_size_entry");
+
+            if (s->specified_pixel_size)
+            {
+                gchar tmp[32];
+                sprintf(tmp, "%f", s->tc_pixel_size);
+                gtk_entry_set_text(GTK_ENTRY(tc_pixel_size_entry), tmp);
+            }
+            else
+            {
+                gtk_entry_set_text(GTK_ENTRY(tc_pixel_size_entry), "");
+            }
+            
+            interpolate_checkbutton =
+                glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
+            
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(interpolate_checkbutton), s->interp);
         }
         else
         {
-            gtk_entry_set_text(GTK_ENTRY(tc_pixel_size_entry), "");
+            // here, s->refine_geolocation_is_checked==TRUE
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(terrcorr_checkbutton), FALSE);
         }
-
-        interpolate_checkbutton =
-            glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
-
-        gtk_toggle_button_set_active(
-            GTK_TOGGLE_BUTTON(interpolate_checkbutton), s->interp);
     }
     else
     {
         GtkWidget *dem_entry;
+        GtkWidget *dem_checkbutton;
+
 	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
 	gtk_entry_set_text(GTK_ENTRY(dem_entry), "");
+
+        dem_checkbutton = glade_xml_get_widget(glade_xml, "dem_checkbutton");
+        gtk_toggle_button_set_active(
+            GTK_TOGGLE_BUTTON(dem_checkbutton), FALSE);
     }
 
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(keep_files_checkbutton),
@@ -378,7 +402,7 @@ settings_get_from_gui()
         *geocode_checkbutton,
         *keep_files_checkbutton,
         *apply_metadata_fix_checkbutton,
-        *terrcorr_checkbutton;
+        *dem_checkbutton;
 
     Settings *ret;
 
@@ -634,48 +658,76 @@ settings_get_from_gui()
         gtk_toggle_button_get_active(
         GTK_TOGGLE_BUTTON(apply_metadata_fix_checkbutton));
 
-    terrcorr_checkbutton =
-        glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
+    dem_checkbutton =
+        glade_xml_get_widget(glade_xml, "dem_checkbutton");
 
-    ret->terrcorr_is_checked =
-        gtk_toggle_button_get_active(
-	  GTK_TOGGLE_BUTTON(terrcorr_checkbutton));
-
-    if (ret->terrcorr_is_checked)
-    {
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(dem_checkbutton)))
+    {        
+        GtkWidget *terrcorr_checkbutton;
         GtkWidget *dem_entry;
         GtkWidget *tc_pixel_size_checkbutton;
         GtkWidget *interpolate_checkbutton;
 
-	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
-	strcpy(ret->dem_file, gtk_entry_get_text(GTK_ENTRY(dem_entry)));
+        terrcorr_checkbutton =
+            glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
 
-	tc_pixel_size_checkbutton =
-            glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
-
-        ret->specified_tc_pixel_size =
+        ret->terrcorr_is_checked =
             gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton));
+                GTK_TOGGLE_BUTTON(terrcorr_checkbutton));
 
-        if (ret->specified_tc_pixel_size)
+        dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
+        strcpy(ret->dem_file, gtk_entry_get_text(GTK_ENTRY(dem_entry)));
+
+        if (ret->terrcorr_is_checked)
         {
-            GtkWidget *tc_pixel_size_entry;
+            tc_pixel_size_checkbutton =
+                glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
+
+            ret->specified_tc_pixel_size =
+                gtk_toggle_button_get_active(
+                    GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton));
+
+            if (ret->specified_tc_pixel_size)
+            {
+                GtkWidget *tc_pixel_size_entry;
+                
+                tc_pixel_size_entry =
+                    glade_xml_get_widget(glade_xml, "tc_pixel_size_entry");
+                
+                ret->tc_pixel_size =
+                    atof(gtk_entry_get_text(GTK_ENTRY(tc_pixel_size_entry)));
+            }
             
-            tc_pixel_size_entry =
-                glade_xml_get_widget(glade_xml, "tc_pixel_size_entry");
+            interpolate_checkbutton =
+                glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
 
-            ret->tc_pixel_size =
-                atof(gtk_entry_get_text(GTK_ENTRY(tc_pixel_size_entry)));
+            ret->interp =
+                gtk_toggle_button_get_active(
+                    GTK_TOGGLE_BUTTON(interpolate_checkbutton));
+
+            // it doesn't matter what we set this to - when terrain
+            // correcting, the refine geolocation code is mandatory
+            ret->refine_geolocation_is_checked = TRUE;
         }
+        else
+        {
+            GtkWidget *refine_geolocation_checkbutton;
 
-        interpolate_checkbutton =
-            glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
+            refine_geolocation_checkbutton =
+                glade_xml_get_widget(glade_xml, 
+                                     "refine_geolocation_checkbutton");
 
-        ret->interp =
-            gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(interpolate_checkbutton));
+            ret->refine_geolocation_is_checked =
+                gtk_toggle_button_get_active(
+                    GTK_TOGGLE_BUTTON(refine_geolocation_checkbutton));
+        }
     }
-
+    else 
+    {
+        ret->terrcorr_is_checked = FALSE;
+        ret->refine_geolocation_is_checked = FALSE;
+    }
+    
     return ret;
 }
 

@@ -85,13 +85,15 @@ void update_summary()
         break;
     }
 
-    sprintf(text, "%s\nTerrain Correction: %s",
-	   text, s->terrcorr_is_checked ? "Yes" : "No");
-
-    if (s->terrcorr_is_checked)
+    if (s->terrcorr_is_checked || s->refine_geolocation_is_checked)
     {
         GtkWidget *dem_entry;
 	char *dem;
+
+        if (s->terrcorr_is_checked)
+            strcat(text, "\nTerrain Correction: Yes");
+        else
+            strcat(text, "\nRefine Geolocation: Yes");
 
 	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
 	dem = strdup(gtk_entry_get_text(GTK_ENTRY(dem_entry)));
@@ -108,18 +110,26 @@ void update_summary()
 
 	free(dem);
 
-        if (s->specified_tc_pixel_size)
+        if (s->terrcorr_is_checked)
         {
-            sprintf(text, "%s\n   Pixel Size: %f m", text, s->tc_pixel_size);
-        }
-        else if (s->specified_pixel_size)
-        {
-            sprintf(text, "%s\n   Pixel Size: %f m (from geocode)",
-                    text, s->pixel_size);
-        }
+            if (s->specified_tc_pixel_size)
+            {
+                sprintf(text, "%s\n   Pixel Size: %f m", text,
+                        s->tc_pixel_size);
+            }
+            else if (s->specified_pixel_size)
+            {
+                sprintf(text, "%s\n   Pixel Size: %f m (from geocode)",
+                        text, s->pixel_size);
+            }
 
-        sprintf(text, "%s\n   Interpolate Layover: %s", text,
-                s->interp ? "Yes" : "No");
+            sprintf(text, "%s\n   Interpolate Layover: %s", text,
+                    s->interp ? "Yes" : "No");
+        }
+    }
+    else
+    {
+        strcat(text, "\nTerrain Correction: No");
     }
 
     strcat(text, "\nGeocoding: ");

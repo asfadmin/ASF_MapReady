@@ -139,6 +139,7 @@ typedef struct
 
   /* terrcorr options */
   int terrcorr_is_checked;
+  int refine_geolocation_is_checked;
   char dem_file[2048];
   int specified_tc_pixel_size;
   double tc_pixel_size;

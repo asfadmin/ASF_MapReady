@@ -591,17 +591,17 @@
 			  <property name="spacing">0</property>
 
 			  <child>
-			    <widget class="GtkCheckButton" id="terrcorr_checkbutton">
+			    <widget class="GtkCheckButton" id="dem_checkbutton">
 			      <property name="visible">True</property>
 			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes"> Apply Terrain Correction</property>
+			      <property name="label" translatable="yes">Digital Elevation Model (DEM) available</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
 			      <property name="active">False</property>
 			      <property name="inconsistent">False</property>
 			      <property name="draw_indicator">True</property>
-			      <signal name="toggled" handler="on_terrcorr_checkbutton_toggled" last_modification_time="Thu, 27 Apr 2006 01:01:15 GMT"/>
+			      <signal name="toggled" handler="on_dem_checkbutton_toggled" last_modification_time="Wed, 02 Aug 2006 22:17:58 GMT"/>
 			    </widget>
 			    <packing>
 			      <property name="padding">8</property>
@@ -687,6 +687,46 @@
 				  <property name="padding">0</property>
 				  <property name="expand">False</property>
 				  <property name="fill">True</property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkCheckButton" id="terrcorr_checkbutton">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">Apply Terrain Correction</property>
+				  <property name="use_underline">True</property>
+				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <property name="focus_on_click">True</property>
+				  <property name="active">False</property>
+				  <property name="inconsistent">False</property>
+				  <property name="draw_indicator">True</property>
+				  <signal name="toggled" handler="on_terrcorr_checkbutton_toggled" last_modification_time="Thu, 27 Apr 2006 01:01:15 GMT"/>
+				</widget>
+				<packing>
+				  <property name="padding">0</property>
+				  <property name="expand">False</property>
+				  <property name="fill">False</property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkCheckButton" id="refine_geolocation_checkbutton">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">Refine SAR geolocation using DEM</property>
+				  <property name="use_underline">True</property>
+				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <property name="focus_on_click">True</property>
+				  <property name="active">False</property>
+				  <property name="inconsistent">False</property>
+				  <property name="draw_indicator">True</property>
+				  <signal name="toggled" handler="on_refine_geolocation_checkbutton_toggled" last_modification_time="Thu, 03 Aug 2006 18:32:20 GMT"/>
+				</widget>
+				<packing>
+				  <property name="padding">0</property>
+				  <property name="expand">False</property>
+				  <property name="fill">False</property>
 				</packing>
 			      </child>
 
@@ -795,7 +835,7 @@
 				  <property name="use_underline">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
 				  <property name="focus_on_click">True</property>
-				  <property name="active">True</property>
+				  <property name="active">False</property>
 				  <property name="inconsistent">False</property>
 				  <property name="draw_indicator">True</property>
 				  <signal name="toggled" handler="update_summary" last_modification_time="Thu, 13 Jul 2006 22:50:50 GMT"/>
@@ -837,7 +877,7 @@
 	      <child>
 		<widget class="GtkLabel" id="label75">
 		  <property name="visible">True</property>
-		  <property name="label" translatable="yes">Terrain Correction</property>
+		  <property name="label" translatable="yes">DEM</property>
 		  <property name="use_underline">False</property>
 		  <property name="use_markup">False</property>
 		  <property name="justify">GTK_JUSTIFY_LEFT</property>
