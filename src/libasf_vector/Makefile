@@ -14,9 +14,9 @@ OBJS = \
 LIBS = \
 	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \

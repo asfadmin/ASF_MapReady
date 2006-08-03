@@ -57,7 +57,7 @@ int write_shapefile (char *dbaseFile, char *shapeFile, char *pointFile,
   // Read lat/lon pairs of vertices in
   fpPoint = FOPEN(pointFile, "r");
   while (fgets(line, 1024, fpPoint)) {
-    sscanf(line, "%s %lf %lf", id[n], &lat[n], &lon[n]);
+    sscanf(line, "%s\t%lf\t%lf", id[n], &lat[n], &lon[n]);
     n++;
   }
   if (pointType == SHPT_POLYGON) {
@@ -75,8 +75,8 @@ int write_shapefile (char *dbaseFile, char *shapeFile, char *pointFile,
   switch (pointType) 
     {
     case SHPT_POLYGON:
-      if (DBFAddField(dbase, "Comment", FTString, 255, 0) == -1)
-	asfPrintError("Could not add comment field to database file\n");
+      if (DBFAddField(dbase, "Mask", FTInteger, 4, 0) == -1)
+	asfPrintError("Could not add mask field to database file\n");
       break;
     case SHPT_POINT:
       if (DBFAddField(dbase, "ID", FTString, 255, 0) == -1)
@@ -99,7 +99,7 @@ int write_shapefile (char *dbaseFile, char *shapeFile, char *pointFile,
   switch (pointType) 
     {
     case SHPT_POLYGON:
-      DBFWriteStringAttribute(dbase, 0, 0, comment);
+      DBFWriteIntegerAttribute(dbase, 0, 0, 1);
       break;
     case SHPT_POINT:
       for (n=0; n<nPoints; n++) {

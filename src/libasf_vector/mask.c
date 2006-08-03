@@ -32,7 +32,8 @@ int create_mask(char *imageFile, char *shapeFile, char *maskFile)
 {
   meta_parameters *metaIn, *metaOut;
   FILE *fp;
-  int i, k, nPoints=0, lines, samples;
+  int i, k, nPoints=0, lines, samples, nShapes=0;
+  int minLine, maxLine, minSample, maxSample;
   double *lat, *lon, *line, *sample;
   char pointFile[255], maskFileName[255], id[25], buf[1024];
   unsigned char *imageBuf;
@@ -48,10 +49,9 @@ int create_mask(char *imageFile, char *shapeFile, char *maskFile)
   sprintf(pointFile, "%s.txt", shapeFile);
   read_shapefile(shapeFile, pointFile);
 
-  // Allocate memory and open files
+  // Allocate memory and open point file
   imageBuf = (unsigned char *) MALLOC(sizeof(char)*lines*samples);
   sprintf(maskFileName, "%s.img", maskFile);
-  fp = FOPEN(maskFileName, "wb");
   fp = FOPEN(pointFile, "r");
 
   // Initialize the mask image with zeros
@@ -60,9 +60,12 @@ int create_mask(char *imageFile, char *shapeFile, char *maskFile)
       imageBuf[i*samples+k] = 0;
 
   // Determine the number of points in the shape object
+  asfPrintStatus("   Calculating mask ...\n");
   while (fgets(buf, 1024, fp)) {
     if (strncmp(buf, "end", 3) != 0) {
       sscanf(buf, "%d", &nPoints);
+      nShapes++;
+      asfPrintStatus("   Part %d with %d vertices...\n", nShapes, nPoints);
       
       // Allocate memory for lat/lon and line/sample arrays
       lat = (double *) MALLOC(sizeof(double)*nPoints);
@@ -76,19 +79,38 @@ int create_mask(char *imageFile, char *shapeFile, char *maskFile)
 	sscanf(buf, "%s\t%lf\t%lf", id, &lat[i], &lon[i]);
       }
       
-      // Convert lat/lon into line/sample pairs
+      // Convert lat/lon into line/sample pairs and determine coverage
+      minLine = lines;
+      maxLine = 0;
+      minSample = samples;
+      maxSample = 0;
       for (i=0; i<nPoints; i++) {
 	meta_get_lineSamp(metaIn, lat[i], lon[i], 0.0, &line[i], &sample[i]);
-	printf("ID: %d, lat: %.4lf, lon: %.4lf, line: %.4lf, sample: %.4lf\n",
-	       i, lat[i], lon[i], line[i], sample[i]);
+	if (line[i] < minLine) minLine = line[i];
+	if (line[i] > maxLine) maxLine = line[i];
+	if (sample[i] < minSample) minSample = sample[i];
+	if (sample[i] > maxSample) maxSample = sample[i];
+	//printf("ID: %d, lat: %.4lf, lon: %.4lf, line: %.4lf, sample: %.4lf\n",
+	//       i, lat[i], lon[i], line[i], sample[i]);
       }
       
+      // Make sure coverage limits are in the image
+      if (minLine < 0) minLine = 0;
+      if (maxLine > lines) maxLine = lines;
+      if (minSample < 0) minSample = 0;
+      if (maxSample > samples) maxSample = samples;
+      printf("minLine: %d, maxLine: %d, minSample: %d, maxSample: %d\n",
+	     minLine, maxLine, minSample, maxSample);
+
       // Walk through the image, check whether line/sample is within the predefined
       // polygon line by line
-      for (i=0; i<lines; i++)
-	for (k=0; k<samples; k++)
+      for (i=minLine; i<maxLine; i++) {
+	if (nPoints > 1000 && (i-minLine)%50 == 0)
+	  printf("Checking line: %d\n", i);
+	for (k=minSample; k<maxSample; k++) 
 	  if (pointInPolygon(nPoints, line, sample, i, k))
 	    imageBuf[i*samples+k] = 1;
+      }
 
       // Free up allocated memory
       FREE(lat);
@@ -97,11 +119,12 @@ int create_mask(char *imageFile, char *shapeFile, char *maskFile)
       FREE(sample);
     }
   }
+  FCLOSE(fp);
    
   // Write mask file and metadata file
+  fp = FOPEN(maskFileName, "wb");
   FWRITE(imageBuf, lines*samples, 1, fp);
   meta_write(metaOut, maskFile);
-
   FCLOSE(fp);
 
   return(0);
