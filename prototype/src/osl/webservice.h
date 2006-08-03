@@ -7,7 +7,7 @@
 #ifndef __OSL_WEBSERVICE_H
 #define __OSL_WEBSERVICE_H
 
-#include "osl/dll.h"
+#include "osl/osl_dll.h"
 #include "osl/socket.h"
 #include <string>
 #include <map>
