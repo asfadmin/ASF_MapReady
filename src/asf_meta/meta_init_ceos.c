@@ -217,6 +217,16 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       -iof->lbrdrpxl    // left border pixels
       -iof->rbrdrpxl;   // right border pixels
 
+   /* simple parameters used below */
+   meta->sar->wavelength = dssr->wave_length * 
+     get_units(dssr->wave_length,EXPECTED_WAVELEN);
+   meta->sar->prf = dssr->prf *
+     get_units(dssr->prf,EXPECTED_PRF);
+   meta->sar->azimuth_processing_bandwidth = dssr->bnd_azi;
+   meta->sar->chirp_rate = dssr->phas_coef[2];
+   meta->sar->pulse_duration = dssr->rng_length / 1000000;
+   meta->sar->range_sampling_rate = dssr->rng_samp_rate * 1000000;
+   
    meta->general->start_line       = 0;
    meta->general->start_sample     = 0;
    meta->general->x_pixel_size     = dssr->pixel_spacing;
@@ -232,9 +242,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    // Requires some backwards engineering looking at the polarization
    if (strcmp(meta->general->sensor, "ALOS") == 0 &&
        meta->general->data_type == COMPLEX_REAL32) {
-     meta->sar->range_sampling_rate = dssr->rng_samp_rate * 1000;
-     meta->general->x_pixel_size = SPD_LIGHT * 2.0 /
-       (meta->sar->range_sampling_rate * meta->general->sample_count);
+     meta->general->x_pixel_size = SPD_LIGHT / (2.0*meta->sar->range_sampling_rate);
      if (strstr(meta->sar->polarization, "single") == 0) {
        // Little ambiguous since there is 12.5m version out there - need more data
        meta->general->y_pixel_size = 3.125;
@@ -400,10 +408,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
       meta->sar->slant_range_first_pixel = dssr->rng_gate
 	     * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
    }
-   meta->sar->wavelength = dssr->wave_length * 
-     get_units(dssr->wave_length,EXPECTED_WAVELEN);
-   meta->sar->prf = dssr->prf *
-     get_units(dssr->prf,EXPECTED_PRF);
    /* needed to move the earth radius and satellite height to the send 
       since the alternative calcuation requires state vectors */
    if (ceos->facility==CDPF) {
@@ -443,12 +447,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    strtok(meta->sar->satellite_binary_time," ");/*Remove spaces from field*/
    strcpy(meta->sar->satellite_clock_time, dssr->sat_clktim);
    strtok(meta->sar->satellite_clock_time, " ");/*Remove spaces from field*/
-   
-   /* A couple parameters for point target analysis */
-   meta->sar->azimuth_processing_bandwidth = dssr->bnd_azi;
-   meta->sar->chirp_rate = dssr->phas_coef[2];
-   meta->sar->pulse_duration = dssr->rng_length / 1000000;
-   meta->sar->range_sampling_rate = dssr->rng_samp_rate * 1000000;
 
  /* Fill meta->state_vectors structure. Call to ceos_init_proj requires that the
   * meta->state_vectors structure be filled */

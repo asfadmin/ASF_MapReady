@@ -60,17 +60,30 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,meta_param
 	date_sec2hms(ppdr->gmt_sec,&stTime);
 	stSec=date2sec(&stJD,&stTime);
 
-/*Read time of *center* of image from DSSR*/
+/*Compute the *scene* start time from the CEOS DSSR: */
+	/* begin with scene center time */
 	date_dssr2date(ceos->dssr.inp_sctim,&imgDate,&imgTime);
 	date_ymd2jd(&imgDate,&imgJD);
 	imgSec=date2sec(&imgJD,&imgTime);
 
-/*Convert scene center time to scene *start* time, by
-subtracting off the center line # * the time/line */
-	if (!(ceos->facility==VEXCEL && ceos->product==CCSD))
+	if (ceos->facility==VEXCEL && ceos->product==CCSD) {
+		/* do nothing-- dssr "inp_sctim" already gives scene start time */
+	}
+	else if (0!=strcmp(ceos->dssr.az_time_first,"")) 
+	{ /* e.g., ESA data.  "az_time_first" field gives start of image */
+		date_dssr2date(ceos->dssr.az_time_first,&imgDate,&imgTime);
+		date_ymd2jd(&imgDate,&imgJD);
+		imgSec=date2sec(&imgJD,&imgTime);
+	}
+	else if (ceos->facility==EOC) 
+	{ /* EOC CEOS BUG FIX: center *line* number is stored in sc_pix */
+		imgSec-=ceos->dssr.sc_pix*fabs(meta->sar->azimuth_time_per_pixel);
+	}
+	else {/*Convert scene center time to scene *start* time, by
+	   subtracting off the center line # * the time/line */
 		imgSec-=ceos->dssr.sc_lin*fabs(meta->sar->azimuth_time_per_pixel);
-	
-/*Convert scene center # of seconds back to date/time*/
+	}
+	/*Convert scene center # of seconds back to date/time*/
 	sec2date(imgSec,&imgJD,&imgTime);
 
 /*Write image time to meta->state_vectors structure*/
@@ -122,19 +135,19 @@ void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 		areInertial=0,areInertialVelocity=1;
 
 /*Fill output record with inital time.*/
-	if (ceos->facility==VEXCEL && ceos->product==CCSD)
-	{/*VEXCEL CCSD's state vectors don't necessarily start
-	at the same time as the image.*/
-		timeStart=get_timeDelta(ceos,&ppdr,meta);
-	}
-	else
-	{/*Most Images' state vectors start at the 
+	if (ceos->facility==ASF)
+	{/* ASF's state vectors start at the 
 	same time as the images themselves.*/
 		timeStart = 0.0;
 		s->year   = (int) ppdr.year;
 		s->julDay = (int) ppdr.gmt_day;
 		s->second = ppdr.gmt_sec;
 	} 
+	else
+	{/*Most facility's state vectors don't necessarily start
+	at the same time as the image.*/
+		timeStart=get_timeDelta(ceos,&ppdr,meta);
+	}
 
 /*Fill ouput record with state vectors.*/
 	for (i=0;i<s->vector_count;i++)
