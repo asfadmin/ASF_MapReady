@@ -43,7 +43,7 @@ int write_shapefile (char *dbaseFile, char *shapeFile, char *pointFile,
   SHPObject *shapeObject=NULL;
   int n=0, nPoints=0;
   double lat[maxPoints], lon[maxPoints];
-  char line[1024], id[maxPoints][255];
+  char line[1024], id[maxPoints][255], *p;
 
   // Read polygon file with all vertices in lat/lon
   // Determine number of vertices
@@ -57,7 +57,12 @@ int write_shapefile (char *dbaseFile, char *shapeFile, char *pointFile,
   // Read lat/lon pairs of vertices in
   fpPoint = FOPEN(pointFile, "r");
   while (fgets(line, 1024, fpPoint)) {
-    sscanf(line, "%s\t%lf\t%lf", id[n], &lat[n], &lon[n]);
+    p = strchr(line, ',');
+    if (p) {
+      sscanf(p+1, "%lf,%lf", &lat[n], &lon[n]);
+      *p = '\0';
+      sprintf(id[n], "%s", line);
+    }
     n++;
   }
   if (pointType == SHPT_POLYGON) {
@@ -75,8 +80,8 @@ int write_shapefile (char *dbaseFile, char *shapeFile, char *pointFile,
   switch (pointType) 
     {
     case SHPT_POLYGON:
-      if (DBFAddField(dbase, "Mask", FTInteger, 4, 0) == -1)
-	asfPrintError("Could not add mask field to database file\n");
+      if (DBFAddField(dbase, "Comment", FTString, 255, 0) == -1)
+	asfPrintError("Could not add comment field to database file\n");
       break;
     case SHPT_POINT:
       if (DBFAddField(dbase, "ID", FTString, 255, 0) == -1)
@@ -99,13 +104,14 @@ int write_shapefile (char *dbaseFile, char *shapeFile, char *pointFile,
   switch (pointType) 
     {
     case SHPT_POLYGON:
-      DBFWriteIntegerAttribute(dbase, 0, 0, 1);
+      DBFWriteStringAttribute(dbase, 0, 0, comment);
       break;
     case SHPT_POINT:
       for (n=0; n<nPoints; n++) {
 	DBFWriteStringAttribute(dbase, n, 0, id[n]);
 	DBFWriteDoubleAttribute(dbase, n, 1, lat[n]);
 	DBFWriteDoubleAttribute(dbase, n, 2, lon[n]);
+	//	printf("ID: %s, Lat: %lf, Lon: %lf\n", id[n], lat[n], lon[n]);
       }
       break;
     }
@@ -136,13 +142,17 @@ int write_shapefile (char *dbaseFile, char *shapeFile, char *pointFile,
     {
     case SHPT_POLYGON:
       shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, nPoints+1, lon, lat, NULL);
+      SHPWriteObject(shape, -1, shapeObject);
+      SHPDestroyObject(shapeObject);
       break;
     case SHPT_POINT:
-      shapeObject = SHPCreateSimpleObject(SHPT_POINT, nPoints, lon, lat, NULL);
+      for (n=0; n<nPoints; n++) {
+	shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1, &lon[n], &lat[n], NULL);
+	SHPWriteObject(shape, -1, shapeObject);
+	SHPDestroyObject(shapeObject);
+      }
       break;
     }
-  SHPWriteObject(shape, -1, shapeObject);
-  SHPDestroyObject(shapeObject);
   SHPClose(shape);
 
   return(0);
