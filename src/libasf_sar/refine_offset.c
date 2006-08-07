@@ -138,13 +138,13 @@ void generate_start(struct refine_offset_params *params,
     double extent_t_min = -5;
     double extent_t_max = 5;
 
-    double extent_x_min = -500;
-    double extent_x_max = 500;
+    double extent_x_min = -1500;
+    double extent_x_max = 1500;
 
     double t_range = extent_t_max - extent_t_min;
     double x_range = extent_x_max - extent_x_min;
 
-    for (i = 0; i < 10; ++i)
+    for (i = 0; i < 12; ++i)
     {
         coarse_search(extent_t_min, extent_t_max, extent_x_min, extent_x_max,
                       start_t, start_x, params);
