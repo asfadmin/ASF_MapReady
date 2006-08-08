@@ -85,5 +85,5 @@ main (int argc, char *argv[])
       FREE(outFile);
   }
 
-  return ret ? EXIT_SUCCESS : EXIT_FAILURE;
+  return ret==0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

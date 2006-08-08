@@ -677,5 +677,5 @@ int asf_terrcorr_ext(char *sarFile, char *demFile,
 
   free(output_dir);
 
-  return TRUE;
+  return FALSE;
 }

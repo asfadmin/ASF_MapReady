@@ -103,5 +103,5 @@ main (int argc, char *argv[])
 			     do_resample, do_corner_matching, do_interp,
 			     do_fftMatch_verification, dem_grid_size, TRUE);
 
-  return ret ? EXIT_SUCCESS : EXIT_FAILURE;
+  return ret==0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }
