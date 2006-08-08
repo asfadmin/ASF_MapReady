@@ -58,13 +58,16 @@ main (int argc, char *argv[])
       update_flag = TRUE;
     }
     else {
-      printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
-      usage(argv[0]);
+        --currArg;
+        break;
     }
   }
   if (!update_flag) ++NUM_ARGS;
   if ((argc-currArg) < NUM_ARGS) {
     printf("Insufficient arguments.\n");
+    usage(argv[0]);
+  } else if ((argc-currArg) > NUM_ARGS) {
+    printf("Unknown argument: %s\n", argv[currArg]);
     usage(argv[0]);
   }
 
