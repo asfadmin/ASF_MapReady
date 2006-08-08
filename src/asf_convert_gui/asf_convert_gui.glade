@@ -835,7 +835,7 @@
 				  <property name="use_underline">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
 				  <property name="focus_on_click">True</property>
-				  <property name="active">False</property>
+				  <property name="active">True</property>
 				  <property name="inconsistent">False</property>
 				  <property name="draw_indicator">True</property>
 				  <signal name="toggled" handler="update_summary" last_modification_time="Thu, 13 Jul 2006 22:50:50 GMT"/>

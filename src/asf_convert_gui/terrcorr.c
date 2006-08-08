@@ -66,8 +66,6 @@ void terrcorr_options_changed()
 
       gtk_widget_set_sensitive(interpolate_checkbutton,
                                terrcorr_is_checked);
-      gtk_toggle_button_set_active(
-          GTK_TOGGLE_BUTTON(interpolate_checkbutton), terrcorr_is_checked);
 
       gtk_widget_set_sensitive(refine_geolocation_checkbutton,
                                !terrcorr_is_checked);
@@ -101,6 +99,22 @@ on_terrcorr_checkbutton_toggled(GtkWidget * widget)
 {
     terrcorr_options_changed();
     update_summary();
+
+    GtkWidget *terrcorr_checkbutton;
+    GtkWidget *interpolate_checkbutton;
+    gboolean terrcorr_is_checked;
+
+    terrcorr_checkbutton =
+        glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
+    interpolate_checkbutton =
+        glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
+
+    terrcorr_is_checked =
+        gtk_toggle_button_get_active(
+            GTK_TOGGLE_BUTTON(terrcorr_checkbutton));
+
+    gtk_toggle_button_set_active(
+        GTK_TOGGLE_BUTTON(interpolate_checkbutton), terrcorr_is_checked);
 }
 
 SIGNAL_CALLBACK void
