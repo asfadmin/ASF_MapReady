@@ -245,7 +245,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *outFile,
                          do_fftMatch_verification, dem_grid_size,
                          do_terrain_correction);
 
-  if (ret)
+  if (ret==0)
   {
       // asf_terrcorr_ext with do_terrain_correction turned off just 
       // creates a metadata file - the actual image file is unchanged.
