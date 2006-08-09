@@ -209,7 +209,6 @@ trouble, and use edit_man_header. :)
 
 // Standard libraries.
 #include <math.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -267,18 +266,7 @@ static void print_help(void)
 int
 main (int argc, char **argv)
 {
-  // Install handler to trap segmentation faults and print a backtrace.
-  sigset_t sigsegv_mask;
-  int return_code = sigemptyset(&sigsegv_mask);
-  g_assert (return_code == 0);
-  return_code = sigaddset(&sigsegv_mask, SIGSEGV);
-  g_assert (return_code == 0);
-  struct sigaction backtrace_action;
-  backtrace_action.sa_handler = sigsegv_handler;
-  backtrace_action.sa_mask = sigsegv_mask;
-  backtrace_action.sa_flags = 0;
-  return_code = sigaction (SIGSEGV, &backtrace_action, NULL);
-  g_assert (return_code == 0);
+  int return_code;
   int force_flag = FALSE;
   int debug_dump = FALSE;
   char *in_base_name, *out_base_name;

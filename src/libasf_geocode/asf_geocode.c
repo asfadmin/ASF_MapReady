@@ -1,6 +1,5 @@
 // Standard libraries.
 #include <math.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,26 +50,6 @@ static void print_large_error_blurb(int force_flag)
       "re-run geocode using the '--force' option, or adjust your projection\n"
       "parameters to better reflect the scene.\n");
   }
-}
-
-// We want to trap segmentation faults (signal number 11,
-// i.e. SIGSEGV) and try to produce a backtrace.  Here is a signal
-// handler that does that.
-void
-sigsegv_handler (int signal_number)
-{
-  g_assert (signal_number == SIGSEGV);
-
-#define MAX_BACKTRACE_CALL_DEPTH 300
-
-  // void *array[MAX_BACKTRACE_CALL_DEPTH];
-  // size_t size = backtrace (array, MAX_BACKTRACE_CALL_DEPTH);
-
-  fprintf (stderr, "SIGSEGV caught.  Backtrace:\n");
-  fprintf (stderr, "unfortunately, backtrace functionality doesn't work.\n");
-  //  backtrace_symbols_fd (array, size, STDERR_FILENO);
-
-  abort ();
 }
 
 // Since our normal approach is to pass the datum from the input image
@@ -349,21 +328,9 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 		 double average_height, datum_type_t datum, double pixel_size,
 		 char *in_base_name, char *out_base_name, float background_val)
 {
-  // Install handler to trap segmentation faults and print a backtrace.
-  sigset_t sigsegv_mask;
-  int return_code = sigemptyset(&sigsegv_mask);
-  g_assert (return_code == 0);
-  return_code = sigaddset(&sigsegv_mask, SIGSEGV);
-  g_assert (return_code == 0);
-  struct sigaction backtrace_action;
-  backtrace_action.sa_handler = sigsegv_handler;
-  backtrace_action.sa_mask = sigsegv_mask;
-  backtrace_action.sa_flags = 0;
-  return_code = sigaction (SIGSEGV, &backtrace_action, NULL);
-  g_assert (return_code == 0);
-  int debug_dump = FALSE;
+  int return_code;
 
-  // Asssign various filenames
+  // Assign various filenames
   GString *input_image = g_string_new (in_base_name);
   GString *input_meta_data = g_string_new (input_image->str);
   g_string_append (input_meta_data, ".meta");
@@ -773,171 +740,6 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 #define X_PIXEL(x, y) reverse_map_x (&dtf, x, y)
 #define Y_PIXEL(x, y) reverse_map_y (&dtf, x, y)
 
-  if (debug_dump) {
-    asfPrintStatus("Dumping debug 8x8 projection information grid...\n");
-
-    const char *grid_filename = "grid_dump.txt";
-    FILE *g4r = FOPEN(grid_filename, "wt");
-    double lat, lon, proj_x, proj_y, h;
-    // double lat2, lon2;
-    int iii, jjj;
-    // double line2, samp2;
-
-    h = average_height;
-    int gridsz=8;
-    for (jjj = 0; jjj <= gridsz; ++jjj) {
-      for (iii = 0; iii <= gridsz; ++iii) {
-
-	//double line1 = iii* ((double)ii_size_y)/((double)gridsz-1);
-	//double samp1 = jjj* ((double)ii_size_x)/((double)gridsz-1);
-
-	double samp1 = 1024*iii;
-	double line1 = 1024*jjj;
-
-	meta_get_latLon(imd, line1, samp1, h, &lat, &lon);
-	project_set_datum (datum);
-	project (pp, lat*D2R, lon*D2R, ASF_PROJ_NO_HEIGHT,
-		 &proj_x, &proj_y, NULL);
-	//unproject(pp, proj_x, proj_y, &lat2, &lon2);
-	//lat2 *= R2D; lon2 *= R2D;
-	//meta_get_lineSamp(imd, lat2, lon2, h, &samp2, &line2);
-
-	double line3 = Y_PIXEL(proj_x, proj_y);
-	double samp3 = X_PIXEL(proj_x, proj_y);
-
-	double lat3,lon3;
-	meta_get_latLon(imd, line3, samp3, h, &lat3, &lon3);
-/*
-	fprintf(g4r,
-	      "%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,"
-	      "%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,"
-	      "%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,%.10lf,%.10lf\n",
-	      line1, samp1, lat, lon, proj_x, proj_y, lat2, lon2, line2, samp2,
-		fabs(line1-line2),fabs(samp1-samp2),line3,
-		samp3,lat3,lon3,fabs(line1-line3),fabs(samp1-samp3),
-		fabs(lat2-lat3),fabs(lon2-lon3));
-*/
-
-	fprintf(g4r, "%.10lf %.10lf %d %d\n",
-		lat3, lon3, (int)samp1, (int)line1);
-      }
-    }
-
-    fclose(g4r);
-
-    const char *edge_filename = "edge_dump.txt";
-    g4r = FOPEN(edge_filename, "wt");
-
-    // dump the edges of the image
-    int edge_point_count = 2 * (gridsz+1) + 2 * (gridsz+1) - 4;
-    double *lats = g_new (double, edge_point_count);
-    double *lons = g_new (double, edge_point_count);
-    int *lines = g_new (int, edge_point_count);
-    int *samps = g_new (int, edge_point_count);
-    int current_edge_point = 0;
-    double xsamp = 0, yline = 0;
-
-    iii = 0;
-    jjj = 0;
-
-    for ( ; iii < gridsz; ++iii) {
-      xsamp = ((double)iii* (double)ii_size_y - 1)/(double)(gridsz);
-      yline = ((double)jjj* (double)ii_size_x - 1)/(double)(gridsz);
-      lines[current_edge_point] = (int)(yline+.5);
-      samps[current_edge_point] = (int)(xsamp+.5);
-      printf("%d %d %d %d %g %g\n", iii, jjj, samps[current_edge_point],
-	     lines[current_edge_point], xsamp, yline);
-      meta_get_latLon (imd, 
-		       (double)lines[current_edge_point],
-		       (double)samps[current_edge_point],
-		       average_height,
-		       &(lats[current_edge_point]),
-		       &(lons[current_edge_point]));
-      current_edge_point++;
-    }
-    for ( ; jjj < gridsz ; ++jjj ) {
-      xsamp = ((double)iii* (double)ii_size_y - 1)/(double)(gridsz);
-      yline = ((double)jjj* (double)ii_size_x - 1)/(double)(gridsz);
-      lines[current_edge_point] = (int)(yline+.5);
-      samps[current_edge_point] = (int)(xsamp+.5);
-      printf("%d %d %d %d %g %g\n", iii, jjj, samps[current_edge_point],
-	     lines[current_edge_point], xsamp, yline);
-      meta_get_latLon (imd, 
-		       (double)lines[current_edge_point],
-		       (double)samps[current_edge_point],
-		       average_height,
-		       &(lats[current_edge_point]),
-		       &(lons[current_edge_point]));
-      current_edge_point++;
-    }
-    for ( ; iii > 0 ; iii-- ) {
-      xsamp = ((double)iii* (double)ii_size_y - 1)/(double)(gridsz);
-      yline = ((double)jjj* (double)ii_size_x - 1)/(double)(gridsz);
-      lines[current_edge_point] = (int)(yline+.5);
-      samps[current_edge_point] = (int)(xsamp+.5);
-      printf("%d %d %d %d %g %g\n", iii, jjj, samps[current_edge_point],
-	     lines[current_edge_point], xsamp, yline);
-      meta_get_latLon (imd, 
-		       (double)lines[current_edge_point],
-		       (double)samps[current_edge_point],
-		       average_height,
-		       &(lats[current_edge_point]),
-		       &(lons[current_edge_point]));
-      current_edge_point++;
-    }
-    for ( ; jjj > 0 ; jjj-- ) {
-      xsamp = ((double)iii* (double)ii_size_y - 1)/(double)(gridsz);
-      yline = ((double)jjj* (double)ii_size_x - 1)/(double)(gridsz);
-      lines[current_edge_point] = (int)(yline+.5);
-      samps[current_edge_point] = (int)(xsamp+.5);
-      printf("%d %d %d %d %g %g\n", iii, jjj, samps[current_edge_point],
-	     lines[current_edge_point], xsamp, yline);
-      meta_get_latLon (imd, 
-		       (double)lines[current_edge_point],
-		       (double)samps[current_edge_point],
-		       average_height,
-		       &(lats[current_edge_point]),
-		       &(lons[current_edge_point]));
-      current_edge_point++;
-    }
-    g_assert (current_edge_point == edge_point_count);
-
-    for (iii = 0; iii < edge_point_count; ++iii) {
-      lats[iii] *= D2R;
-      lons[iii] *= D2R;
-    }
-
-    // Pointers to arrays of projected coordinates to be filled in.
-    // The projection function will allocate this memory itself.
-    double *x = NULL, *y = NULL;
-    x = y = NULL;
-    // Project all the edge pixels.
-    project_set_datum (datum);
-    return_code = project_arr (pp, lats, lons, NULL, &x, &y, NULL,
-			       edge_point_count);
-    g_assert (return_code == TRUE);
-
-    // Reverse map all the edge pixels
-    for (iii = 0; iii < edge_point_count; ++iii) {
-      meta_get_latLon(imd, Y_PIXEL(x[iii], y[iii]), X_PIXEL(x[iii], y[iii]),
-		      average_height,
-		      &(lats[iii]), &(lons[iii]));
-    }
-
-    for (iii = 0; iii < edge_point_count; ++iii) {
-      fprintf(g4r, "%.10lf %.10lf %d %d\n",
-	      lats[iii], lons[iii], samps[iii], lines[iii]);
-    }
-    fclose(g4r);
-
-    g_free(lats);
-    g_free(lons);
-    g_free(samps);
-    g_free(lines);
-
-    asfPrintStatus("Done\n\n");
-  }
-
   // We want to choke if our worst point in the model is off by this
   // many pixels or more.
   double max_allowable_error = 1.25;
@@ -1295,12 +1097,13 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
                                          float_image_sample_method);
 
           // If we are reprojecting a DEM, need to account for the height
-          // difference between the NAVD83 vertical datum and our WGS84 
-          // ellipsoid
+          // difference between the vertical datum (NGVD27) and our WGS84 
+          // ellipsoid. Since geoid heights closely match vertical datum
+          // heights, this will work for SAR imagery
           if ( imd->general->image_data_type == DEM ) {
               double lat, lon;
               meta_get_latLon(omd, oiy, oix, average_height, &lat, &lon);
-              val -= (float) get_geoid_height(lat, lon);
+              val -= get_geoid_height(lat, lon);
           }
 
           SET_PIXEL (oix, oiy, val);
