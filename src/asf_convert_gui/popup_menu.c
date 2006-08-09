@@ -626,7 +626,7 @@ handle_google_earth()
     GtkTreeSelection *selection;
     GList * selected_rows, * i;
     GList * refs;
-    FILE *kml_file;
+    FILE *kml_file = NULL;
     char kml_filename[256];
     int pid, first = TRUE;
     gchar *ge;

@@ -137,7 +137,7 @@ LDFLAGS = -Wl,--export-dynamic
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 
-default: doc $(OBJS)
+default: clean doc $(OBJS)
 	$(CC) $(OBJS) $(LDLIBS) $(LDFLAGS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
