@@ -89,7 +89,7 @@ project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
 
   *x = lon * R2D;
   *y = lat * R2D;
-  *z = height;
+  if (z) *z = height;
 
   return TRUE;
 }
@@ -103,7 +103,7 @@ project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
 
   *lat = y * D2R;
   *lon = x * D2R;
-  *height = z;
+  if (height) *height = z;
 
   return TRUE;
 }
@@ -506,18 +506,6 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     g_assert_not_reached ();
     break;
   }
-
-  // Projecting or reprojecting DEMs with a potential datum change is
-  // an intrinsicly three dimension operation, and is handled in its
-  // own specialized function.
-  if ( imd->general->image_data_type == DEM ) {
-    return geocode_dem (projection_type, pp, datum, pixel_size,
-			resample_method, input_image, imd, output_image);
-  }
-  else {
-    // Do what we have always done (the whole remainder of this file
-    // :) We don't maintain the indentation for this else, the
-    // remainder of this routine should probably be made a function.
 
   // Input image dimensions in pixels in x and y directions.
   size_t ii_size_x = imd->general->sample_count;
@@ -1197,51 +1185,6 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     g_assert_not_reached ();
   }
 
-  // Set the pixels of the output image.
-  size_t oix, oiy;		// Output image pixel indicies.
-  for ( oiy = 0 ; oiy <= oiy_max ; oiy++ ) {
-    for ( oix = 0 ; oix <= oix_max ; oix++ ) {
-      // Projection coordinates for the center of this pixel.
-      double oix_pc = ((double) oix / oix_max) * (max_x - min_x) + min_x;
-      // We want projection coordinates to increase as we move from
-      // the bottom of the image to the top, so that north ends up up.
-      double oiy_pc = (1.0 - (double) oiy / oiy_max) * (max_y - min_y) + min_y;
-      // Determine pixel of interest in input image.  The fractional
-      // part is desired, we will use some sampling method to
-      // interpolate between pixel values.
-      double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
-      double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
-      // If we are outside the extent of the input image, set to the
-      // fill value.  FIXME: user should be able to specify fill value?
-      float fill_value = background_val;
-      g_assert (ii_size_x <= SSIZE_MAX);
-      g_assert (ii_size_y <= SSIZE_MAX);
-      if (    input_x_pixel < 0
-	   || input_x_pixel > (ssize_t) ii_size_x - 1.0
-	   || input_y_pixel < 0
-	   || input_y_pixel > (ssize_t) ii_size_y - 1.0 ) {
-	SET_PIXEL (oix, oiy, (float) fill_value);
-      }
-      // Otherwise, set to the value from the appropriate position in
-      // the input image.
-      else {
-	SET_PIXEL (oix, oiy,
-		   float_image_sample
-		     (iim, input_x_pixel, input_y_pixel,
-		      float_image_sample_method));
-      }
-
-    }
-    asfLineMeter(oiy, oiy_max + 1 );
-  }
-
-  asfPrintStatus ("\nDone resampling image.\n\n");
-  
-  float_image_free (iim);
-
-  // Done with the input metadata.
-  meta_free (imd);
-
   // Now we need some metadata for the output image.  We will just
   // start with the metadata from the input image and add the
   // geocoding parameters.
@@ -1253,25 +1196,6 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 
   // Update no data value
   omd->general->no_data = background_val;
-
-  // Flip the non-reprojected image if the y pixel size is negative.
-  if ( y_pixel_size < 0 && omd->projection == NULL ) {
-    asfPrintStatus ("Negative y pixel size, flipping output image.\n");
-    g_assert (0); 		/* Shouldn't be here.  */
-    float_image_flip_y (oim);
-    y_pixel_size = -y_pixel_size;
-  }
-
-  // Store the output image, and free image resources.
-  GString *output_data_file = g_string_new (output_image->str);
-  g_string_append (output_data_file, ".img");
-  asfPrintStatus ("Storing geocoded image...\n");
-  return_code = float_image_store (oim, output_data_file->str,
-				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  asfPrintStatus ("\nDone storing geocoded image.\n\n");
-  asfRequire (return_code == 0, "Error saving image.\n");
-  float_image_free (oim);
-  g_string_free (output_data_file, TRUE);
 
   // Fix up the output metadata to match the user's selected pixel size
   omd->general->x_pixel_size = pixel_size;
@@ -1337,6 +1261,80 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   to_degrees (projection_type, pp);
   omd->projection->param = *pp;
   meta_write (omd, output_meta_data->str);
+
+  // Set the pixels of the output image.
+  size_t oix, oiy;		// Output image pixel indicies.
+  for ( oiy = 0 ; oiy <= oiy_max ; oiy++ ) {
+    for ( oix = 0 ; oix <= oix_max ; oix++ ) {
+      // Projection coordinates for the center of this pixel.
+      double oix_pc = ((double) oix / oix_max) * (max_x - min_x) + min_x;
+      // We want projection coordinates to increase as we move from
+      // the bottom of the image to the top, so that north ends up up.
+      double oiy_pc = (1.0 - (double) oiy / oiy_max) * (max_y - min_y) + min_y;
+      // Determine pixel of interest in input image.  The fractional
+      // part is desired, we will use some sampling method to
+      // interpolate between pixel values.
+      double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
+      double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
+      // If we are outside the extent of the input image, set to the
+      // fill value.
+      float fill_value = background_val;
+      g_assert (ii_size_x <= SSIZE_MAX);
+      g_assert (ii_size_y <= SSIZE_MAX);
+      if (    input_x_pixel < 0
+	   || input_x_pixel > (ssize_t) ii_size_x - 1.0
+	   || input_y_pixel < 0
+	   || input_y_pixel > (ssize_t) ii_size_y - 1.0 ) {
+	SET_PIXEL (oix, oiy, (float) fill_value);
+      }
+      // Otherwise, set to the value from the appropriate position in
+      // the input image.
+      else {
+
+          float val = float_image_sample(iim, input_x_pixel, input_y_pixel,
+                                         float_image_sample_method);
+
+          // If we are reprojecting a DEM, need to account for the height
+          // difference between the NAVD83 vertical datum and our WGS84 
+          // ellipsoid
+          if ( imd->general->image_data_type == DEM ) {
+              double lat, lon;
+              meta_get_latLon(omd, oiy, oix, average_height, &lat, &lon);
+              val -= (float) get_geoid_height(lat, lon);
+          }
+
+          SET_PIXEL (oix, oiy, val);
+      }
+
+    }
+    asfLineMeter(oiy, oiy_max + 1 );
+  }
+
+  asfPrintStatus ("\nDone resampling image.\n\n");
+
+  // Flip the non-reprojected image if the y pixel size is negative.
+  if ( y_pixel_size < 0 && omd->projection == NULL ) {
+    asfPrintStatus ("Negative y pixel size, flipping output image.\n");
+    g_assert (0); 		/* Shouldn't be here.  */
+    float_image_flip_y (oim);
+    y_pixel_size = -y_pixel_size;
+  }
+
+  // Store the output image, and free image resources.
+  GString *output_data_file = g_string_new (output_image->str);
+  g_string_append (output_data_file, ".img");
+  asfPrintStatus ("Storing geocoded image...\n");
+  return_code = float_image_store (oim, output_data_file->str,
+				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  asfPrintStatus ("\nDone storing geocoded image.\n\n");
+  asfRequire (return_code == 0, "Error saving image.\n");
+  float_image_free (oim);
+  g_string_free (output_data_file, TRUE);
+
+  float_image_free (iim);
+
+  // Done with the metadata.
+  meta_free (imd);
   meta_free (omd);
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1384,5 +1382,4 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   g_string_free (output_image, TRUE);
 
   return 0;
-  }
 }

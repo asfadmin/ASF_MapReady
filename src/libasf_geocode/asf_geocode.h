@@ -162,3 +162,6 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 		 char *in_base_name, char *out_base_name,
                  float background_val);
 void sigsegv_handler (int signal_number);
+
+// Prototypes from geoid.c
+float get_geoid_height(double lat, double lon);

@@ -16,7 +16,8 @@ SOURCES := geocode_options.c \
 	   set_projection_functions.c \
            parse_options.c \
            check_parameters.c \
-           asf_geocode.c
+           asf_geocode.c \
+	   geoid.c
 
 ###############################################################################
 #
@@ -92,6 +93,7 @@ all: build_only
 	cp asf_geocode.h $(ASF_INCLUDE_DIR)
 	rm -rf $(SHAREDIR)/projections
 	cp -R projections/ $(SHAREDIR)
+	cp WW15MGH.DAC $(SHAREDIR)
 
 build_only: $(OBJS)
 	rm -f libasf_geocode.a
