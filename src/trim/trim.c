@@ -112,7 +112,7 @@ void usage(char *name);
 
 int main(int argc, char *argv[])
 {
-  long long startX,startY,endX=-1,endY=-1,inMaxX,inMaxY;
+  long long startX,startY,sizeX=-1,sizeY=-1;
   char *infile,*outfile;
 
   logflag=0;
@@ -126,11 +126,11 @@ int main(int argc, char *argv[])
     char *key=argv[currArg++];
     if (strmatch(key,"-w")) {
       CHECK_ARG(1) /*one integer argument: width */
-      endX=atoi(GET_ARG(1));
+      sizeX=atoi(GET_ARG(1));
     } 
     else if (strmatch(key,"-h")) {
       CHECK_ARG(1) /*one integer argument: height */
-      endY=atoi(GET_ARG(1));
+      sizeY=atoi(GET_ARG(1));
     } 
     else if (strmatch(key,"-log")) {
       CHECK_ARG(1) /*one string argument: logfile name */
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
   startY=atoi(argv[currArg+2]);
 
   /* Call library function */
-  trim(infile, outfile, startX, startY, endX, endY);
+  trim(infile, outfile, startX, startY, sizeX, sizeY);
 
   return(0);
 }

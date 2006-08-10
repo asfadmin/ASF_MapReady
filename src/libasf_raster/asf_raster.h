@@ -80,7 +80,7 @@ float interpolate(interpolate_type_t interpolation, FloatImage *inbuf, float yLi
 
 /* Prototypes from trim.c ****************************************************/
 void trim(char *infile, char *outfile, long long startX, long long startY,
-          long long endX, long long endY);
+          long long sizeX, long long sizeY);
 void trim_zeros(char *infile, char *outfile, int *startX, int *endX);
 
 /* Prototypes from fftMatch.c ************************************************/

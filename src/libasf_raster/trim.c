@@ -7,7 +7,7 @@
 #define MAXI(a,b) (((a)>(b))?(a):(b))
 
 void trim(char *infile, char *outfile, long long startX, long long startY,
-	  long long endX, long long endY)
+	  long long sizeX, long long sizeY)
 {
   meta_parameters *metaIn, *metaOut;
   int isComplex;
@@ -32,11 +32,11 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
   inMaxX = metaIn->general->sample_count;
   inMaxY = metaIn->general->line_count;
 
-  endX = (endX!=-1) ? endX+startX : inMaxX;
-  endY = (endY!=-1) ? endY+startY : inMaxY;
+  sizeX = (sizeX!=-1) ? sizeX+startX : inMaxX;
+  sizeY = (sizeY!=-1) ? sizeY+startY : inMaxY;
 
-  outMaxX=endX-startX;
-  outMaxY=endY-startY;
+  outMaxX=sizeX-startX;
+  outMaxY=sizeY-startY;
 
   /* Write out metadata */
   metaOut = meta_read(infile);
