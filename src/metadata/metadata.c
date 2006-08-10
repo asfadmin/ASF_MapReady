@@ -334,18 +334,20 @@ void usage(char *name)
 
 void write_to_file(char *exe, char *rectypes, char *infile)
 {
-  int i,j, nrecs, reqrec;
-  char cmd[256];
-  char name[256],outfile[256];
+  int j, nrecs, reqrec;
+  char cmd[1024];
+  char *outfile, *name;
+
+  outfile = MALLOC(sizeof(char)*(strlen(infile)+10));
+  name = MALLOC(sizeof(char)*(strlen(infile)+10));
 
   nrecs = (int) strlen(rectypes);
   for (j = 0; j < nrecs; j++)
   {
-    strcpy(name,infile);
-    strtok(name,".");
-    i=(int)strlen(name);
-    name[i]='\0';
-    strcpy(outfile,name);
+    strcpy(outfile,infile);
+    char * ext = findExt(outfile);
+    if (ext) *ext = '\0';
+    strcpy(name,outfile);
     switch(rectypes[j]) {
       case ('u') : reqrec =  10; strcat(outfile,".dssr");    break;
       case ('m') : reqrec =  20; strcat(outfile,".mpdr");    break;
@@ -381,5 +383,7 @@ void write_to_file(char *exe, char *rectypes, char *infile)
       }
     }
   }
+  free(outfile);
+  free(name);
   exit(0);
 }
