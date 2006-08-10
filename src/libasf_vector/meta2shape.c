@@ -57,16 +57,33 @@ void dbase_init(char *dbaseFile)
     asfPrintError("Could not add acquisition date field to database file\n");
   if (DBFAddField(dbase, "Direction", FTString, 15, 0) == -1)
     asfPrintError("Could not add orbit direction field to database file\n");
-  if (DBFAddField(dbase, "Latitude", FTDouble, 9, 4) == -1)
+  if (DBFAddField(dbase, "Center Lat", FTDouble, 9, 4) == -1)
+    asfPrintError("Could not add center latitude field to database file\n");
+  if (DBFAddField(dbase, "Center Lon", FTDouble, 9, 4) == -1)
+	asfPrintError("Could not add center longitude field to database file\n");
+  if (DBFAddField(dbase, "Lat1", FTDouble, 9, 4) == -1)
     asfPrintError("Could not add latitude field to database file\n");
-  if (DBFAddField(dbase, "Longitude", FTDouble, 9, 4) == -1)
+  if (DBFAddField(dbase, "Lon1", FTDouble, 9, 4) == -1)
+	asfPrintError("Could not add longitude field to database file\n");
+  if (DBFAddField(dbase, "Lat2", FTDouble, 9, 4) == -1)
+    asfPrintError("Could not add latitude field to database file\n");
+  if (DBFAddField(dbase, "Lon2", FTDouble, 9, 4) == -1)
+	asfPrintError("Could not add longitude field to database file\n");
+  if (DBFAddField(dbase, "Lat3", FTDouble, 9, 4) == -1)
+    asfPrintError("Could not add latitude field to database file\n");
+  if (DBFAddField(dbase, "Lon3", FTDouble, 9, 4) == -1)
+	asfPrintError("Could not add longitude field to database file\n");
+  if (DBFAddField(dbase, "Lat4", FTDouble, 9, 4) == -1)
+    asfPrintError("Could not add latitude field to database file\n");
+  if (DBFAddField(dbase, "Lon4", FTDouble, 9, 4) == -1)
 	asfPrintError("Could not add longitude field to database file\n");
 
   // Close the database
   DBFClose(dbase);
 }
 
-void meta2dbase(meta_parameters *meta, char *dbaseFile, int n)
+void meta2dbase(meta_parameters *meta, char *dbaseFile, double *lat, double *lon,
+		int n)
 {
   DBFHandle dbase;
   julian_date jdate;
@@ -97,6 +114,14 @@ void meta2dbase(meta_parameters *meta, char *dbaseFile, int n)
     DBFWriteStringAttribute(dbase, n, 5, "Ascending");
   DBFWriteDoubleAttribute(dbase, n, 6, meta->general->center_latitude);
   DBFWriteDoubleAttribute(dbase, n, 7, meta->general->center_longitude);
+  DBFWriteDoubleAttribute(dbase, n, 8, lat[0]);
+  DBFWriteDoubleAttribute(dbase, n, 9, lon[0]);
+  DBFWriteDoubleAttribute(dbase, n, 10, lat[1]);
+  DBFWriteDoubleAttribute(dbase, n, 11, lon[1]);
+  DBFWriteDoubleAttribute(dbase, n, 12, lat[2]);
+  DBFWriteDoubleAttribute(dbase, n, 13, lon[2]);
+  DBFWriteDoubleAttribute(dbase, n, 14, lat[3]);
+  DBFWriteDoubleAttribute(dbase, n, 15, lon[3]);
 
   // Close database
   DBFClose(dbase);
@@ -128,7 +153,7 @@ void meta2shape(char *metaFile, char *shapeFile)
     asfPrintError("Could not open shapefile '%s'\n");
 
   // Adding attributes to the database
-  meta2dbase(meta, dbaseFile, 0);
+  meta2dbase(meta, dbaseFile, lat, lon, 0);
 
   // Create shapefile object
   shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, 5, lon, lat, NULL);
@@ -170,7 +195,7 @@ void meta2shape_list(char *list, char *shapeFile)
     lon[4] = lon[0];	
     
     // Adding attributes to the database
-    meta2dbase(meta, dbaseFile, n);
+    meta2dbase(meta, dbaseFile, lat, lon, n);
     
     // Add the frame to the shape
     shape = SHPOpen(shapeFile, "r+b");
@@ -216,7 +241,7 @@ void leader2shape(char *leaderFile, char *shapeFile)
     asfPrintError("Could not open shapefile '%s'\n");
 
   // Adding attributes to the database
-  meta2dbase(meta, dbaseFile, 0);
+  meta2dbase(meta, dbaseFile, lat, lon, 0);
 
   // Create shapefile object
   shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, 5, lon, lat, NULL);
@@ -260,7 +285,7 @@ void leader2shape_list(char *list, char *shapeFile)
     lon[4] = lon[0];	
     
     // Adding attributes to the database
-    meta2dbase(meta, dbaseFile, n);
+    meta2dbase(meta, dbaseFile, lat, lon, n);
     
     // Add the frame to the shape
     shape = SHPOpen(shapeFile, "r+b");
