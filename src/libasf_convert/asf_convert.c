@@ -467,7 +467,7 @@ int asf_convert(int createflag, char *configFileName)
       else {
           update_status(cfg, "Terrain Correcting...");
           check_return(
-              asf_terrcorr_ext(inFile, cfg->terrain_correct->dem, outFile, 
+		asf_terrcorr_ext(inFile, cfg->terrain_correct->dem,"Mask.img", outFile, 
                                cfg->terrain_correct->pixel,
                                !cfg->general->intermediates,
                                TRUE, FALSE, cfg->terrain_correct->interp, 
