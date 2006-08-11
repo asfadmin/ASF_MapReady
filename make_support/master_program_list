@@ -128,7 +128,6 @@ PROGRAMS
 	projprm { }
 	libasf_ardop { }
 	ardop { BINS calc_deltas spectra libasf_ardop }
-	asf_check_geolocation { }
 	avg_in_dop { }
 	c2p { }
 	coh { }
