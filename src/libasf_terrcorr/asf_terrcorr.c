@@ -228,7 +228,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *inMaskFile,
                           dem_grid_size, do_terrain_correction);
 }
 
-int refine_geolocation(char *sarFile, char *demFile, char *outFile,
+int refine_geolocation(char *sarFile, char *demFile, char *inMaskFile, char *outFile,
                        int update_flag)
 {
   double pixel_size = -1;
@@ -241,7 +241,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *outFile,
   int do_terrain_correction = FALSE;
   int ret;
 
-  ret = asf_terrcorr_ext(sarFile, demFile, outFile, pixel_size, clean_files,
+  ret = asf_terrcorr_ext(sarFile, demFile, inMaskFile, outFile, pixel_size, clean_files,
                          do_resample, do_corner_matching, do_interp,
                          do_fftMatch_verification, dem_grid_size,
                          do_terrain_correction);
