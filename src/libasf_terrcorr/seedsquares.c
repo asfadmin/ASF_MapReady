@@ -6,35 +6,8 @@
 	
 */
 
-/*  technique................
-do a divide a divide an conqur approach
-take image starting point
-
-	divide into 5 initial 16 by 16 squares, around that point
-	---- ----
-	| 1 | 2 |
-	|  -|-  |
-	--| 3|--
-	--|  |--
-	|  -|-  |
-	| 4 | 5 |
-	---- ----
-	
-   |->>>	for each see if we have too much mask.... and throw them onto discard list
-   | 	  	see if middle-square has 4 neigbours around the outside that are good.... 
-   |     	if good
-   |			add to good list
-   |		else
-   |		add onto discard list
-   |		increase size to x*2
-   |	
-   |---<<< 	repeat if good
-		
-*/
 #include <stdio.h>
 #include <stdlib.h>
-
-#define POS(x,y,ns) ((y*ns)+x)
 
 void seed_points(int **x, int **y,int ns, int nl)
 { // generates new random location seed points to start from
