@@ -252,6 +252,19 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
 	return er/d->phiMul;
 }
 
+static void mask_float_line(int ns, float *in, float *inMask)
+{
+	int x;
+	for(x=0;x<ns;x++)
+	{
+		if(inMask[x] == MASK_USER_MASK)
+		{
+			in[x] = 0;
+		}
+	}
+	return;
+}
+
 static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                            float *out,int ns, int doInterp, float *mask)
 {
@@ -577,7 +590,11 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                     if (y>0&&doRadiometric)
                         radio_compensate(&d,grDEMline,grDEMlast,outLine,
                                          d.numSamples);
-
+		    
+		    mask_float_line(d.numSamples,outLine,mask+y*d.numSamples); // subtract away the masked region
+		   
+		  
+		    
                     put_float_line(outFp,outMeta,y,outLine);
 		}
 		else
