@@ -11,7 +11,7 @@
 int asf_terrcorr(char *sarFile, char *demFile,char *inMaskFile,
 		 char *outFile, double pixel_size);
 
-int refine_geolocation(char *sarFile, char *demFile, char *outFile,
+int refine_geolocation(char *sarFile, char *demFile,char *inMaskFile, char *outFile,
                        int update_etadata_flag);
 
 
