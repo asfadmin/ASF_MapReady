@@ -4,7 +4,8 @@ include ../../make_support/system_rules
 
 CFLAGS := -Wall $(CFLAGS)
 
-OBJS = asf_terrcorr.o
+OBJS =  seedsquares.o \
+	asf_terrcorr.o
 
 LIBS  = \
 	$(LIBDIR)/libasf_raster.a \
@@ -21,7 +22,7 @@ CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 all: build_only
 	mv libasf_terrcorr.a $(LIBDIR)
-	cp asf_terrcorr.h $(ASF_INCLUDE_DIR)
+	cp asf_terrcorr.h seedsquares.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f libasf_terrcorr.a
