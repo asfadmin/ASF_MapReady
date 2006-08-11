@@ -7,6 +7,7 @@
 #define MASK_NORMAL 1.0
 #define MASK_LAYOVER 64.0
 #define MASK_SHADOW 128.0
+#define MASK_USER_MASK 192.0
 #define MASK_INVALID_DATA 255
 
 /* Number of pixels added by create_dem_grid at the right edge of the 
@@ -29,7 +30,7 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float srPixSize);
 
 /* Prototypes from reskew_dem.c */
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
-	       char *outAmpFile, char *outMaskFile);
+	       char *outAmpFile, char *outMaskFile, char *inMaskFile);
 
 /* Prototypes from deskew_dem.c */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,
