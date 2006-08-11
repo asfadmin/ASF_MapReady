@@ -9,7 +9,7 @@ void usage(const char *name)
 {
   printf("Usage: %s [-log <logfile>] [-quiet] [-keep] [-no-resample]\n"
          "          [-no-verify-fftMatch] [-no-corner-match] [-no-interp]\n"
-         "          [-pixel-size <size>] [-dem-grid-size <size>]\n"
+	 "          [-pixel-size <size>] [-dem-grid-size <size>] [-Mask-File <filename>]\n"
          "          <inFile> <demFile> <outFile>\n", name);
   exit(EXIT_FAILURE);
 }
@@ -38,7 +38,7 @@ int strmatches(const char *key, ...)
 int
 main (int argc, char *argv[])
 {
-  char *inFile, *demFile, *outFile;
+  char *inFile, *demFile, *inMaskFile, *outFile;
   double pixel_size = -1;
   int dem_grid_size = 20;
   int currArg = 1;
@@ -50,7 +50,8 @@ main (int argc, char *argv[])
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
-
+  inMaskFile = NULL;
+  
   while (currArg < (argc-NUM_ARGS)) {
     char *key = argv[currArg++];
     if (strmatches(key,"-log","--log",NULL)) {
@@ -85,6 +86,10 @@ main (int argc, char *argv[])
       CHECK_ARG(1);
       dem_grid_size = atoi(GET_ARG(1));
     }
+    else if (strmatches(key,"-mask-file","--mask-file",NULL)) {
+	     	    CHECK_ARG(1);
+	     	    inMaskFile = GET_ARG(1);
+    }
     else {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
       usage(argv[0]);
@@ -99,7 +104,7 @@ main (int argc, char *argv[])
   demFile = argv[currArg+1];
   outFile = argv[currArg+2];
 
-  int ret = asf_terrcorr_ext(inFile, demFile, outFile, pixel_size, clean_files,
+  int ret = asf_terrcorr_ext(inFile, demFile,inMaskFile,outFile, pixel_size, clean_files,
 			     do_resample, do_corner_matching, do_interp,
 			     do_fftMatch_verification, dem_grid_size, TRUE);
 
