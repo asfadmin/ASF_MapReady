@@ -10,6 +10,8 @@ LIBS  = \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(LIBDIR)/libasf_vector.a \
+ 	$(LIBDIR)/libshp.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
