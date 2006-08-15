@@ -106,7 +106,7 @@ main (int argc, char *argv[])
 
   int ret = asf_terrcorr_ext(inFile, demFile,inMaskFile,outFile, pixel_size, clean_files,
 			     do_resample, do_corner_matching, do_interp,
-			     do_fftMatch_verification, dem_grid_size, TRUE);
+			     do_fftMatch_verification, dem_grid_size, TRUE, 2);
 
   return ret==0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

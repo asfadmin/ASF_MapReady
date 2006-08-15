@@ -471,7 +471,7 @@ int asf_convert(int createflag, char *configFileName)
                                cfg->terrain_correct->pixel,
                                !cfg->general->intermediates,
                                TRUE, FALSE, cfg->terrain_correct->interp, 
-                               TRUE, 20, TRUE),
+                               TRUE, 20, TRUE,1),
               "terrain correcting data file (asf_terrcorr)\n");
       }
     }

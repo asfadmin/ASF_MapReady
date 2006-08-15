@@ -252,14 +252,17 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
 	return er/d->phiMul;
 }
 
-static void mask_float_line(int ns, float *in, float *inMask)
+static void mask_float_line(int ns, int maskfill, float *in, float *inMask)
 {
 	int x;
 	for(x=0;x<ns;x++)
 	{
 		if(inMask[x] == MASK_USER_MASK)
 		{
-			in[x] = 0;
+			if (maskfill < 0) // negative values indicate that it should be a different fill value
+				in[x] = abs(maskfill);
+			else
+				in[x] = 0;
 		}
 	}
 	return;
@@ -422,7 +425,7 @@ Here's what it looked like before optimization:
 /* inMaskName can be NULL, in this case outMaskName is ignored */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	       int doRadiometric, char *inMaskName, char *outMaskName,
-               int fill_holes)
+               int fill_holes, int maskfill)
 {
 	float *srDEMline,*grDEM,*grDEMline,*grDEMlast,*inSarLine,*outLine;
         float *mask;
@@ -591,8 +594,10 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                         radio_compensate(&d,grDEMline,grDEMlast,outLine,
                                          d.numSamples);
 		    
-		    mask_float_line(d.numSamples,outLine,mask+y*d.numSamples); // subtract away the masked region
-		   
+		    if (maskfill != 1) // 1 indicates mask should not be seen
+			    mask_float_line(d.numSamples,maskfill,outLine,mask+y*d.numSamples); // subtract away the masked region
+		    // > 1 indicates to leave a black 0 hole in the image
+		    // negative mask fill values means plug in this value instead 
 		  
 		    
                     put_float_line(outFp,outMeta,y,outLine);

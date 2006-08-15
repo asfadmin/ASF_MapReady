@@ -106,7 +106,7 @@ void lay_seeds(int num_seeds, float *mask,long ns, long nl, int **x_pos_list, in
 			seed_points(&pxl[x],&pyl[x], ns,nl);
 			psl[x] = 4;
 	}
-	
+	printf(" searching for suitable seed points, this may take some time \n ");
 	for(x=1;x<num_seeds;x++)
 	{
 		size = 4;
@@ -116,16 +116,18 @@ void lay_seeds(int num_seeds, float *mask,long ns, long nl, int **x_pos_list, in
 				check_square(size,pxl[x],pyl[x], mask,ns,nl, &masked_pixels, &good_pixels);
 				ppl[x] = (good_pixels + masked_pixels);
 				good =((double) good_pixels )/((double) (good_pixels + masked_pixels));
-				printf(" seed %d good %ld  bad %ld  .... ratio of %f and pixels %d  size %d \n "
-								,x,good_pixels,masked_pixels,good,ppl[x],size);
+			//	printf(" seed %d good %ld  bad %ld  .... ratio of %f and pixels %d  size %d \n "
+			//					,x,good_pixels,masked_pixels,good,ppl[x],size);
 				if ( good > 0.8)
 					{
 						psl[x] = size;
 						if (size > 4096) 
+						{
 								leave=1;
-							else
+								printf("\n found %d \n",x);
+						}else{
 								size=size*2;
-						
+						}
 					}
 				 else
 					{
@@ -133,15 +135,18 @@ void lay_seeds(int num_seeds, float *mask,long ns, long nl, int **x_pos_list, in
 						{
 						 size = 4;
 						 seed_points(&pxl[x],&pyl[x], ns,nl);
-						 printf(" seed point quality failed  trying again \n");
+						 printf(".");
+				//		 printf(" seed point quality failed  trying again \n");
 						} else
 						{
+							printf("\n found %d \n",x);
 							leave = 1;
 						}
 				 	}	 
 			}
 			
 	}
+	printf(" found all seed points \n");
 	for(x=1;x<num_seeds;++x)
 		printf(" seed %d positions %d %d  and size  %d (total pixels) \n ",x,pxl[x],pyl[x],ppl[x]);
 	*x_pos_list = pxl;

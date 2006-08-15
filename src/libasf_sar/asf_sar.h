@@ -35,7 +35,7 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 /* Prototypes from deskew_dem.c */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	       int doRadiometric, char *inMaskName, char *outMaskName,
-               int fill_holes);
+	       int fill_holes, int maskfill);
 
 /* Prototypes from create_dem_grid.c */
 int create_dem_grid(const char *demName, const char *sarName,
