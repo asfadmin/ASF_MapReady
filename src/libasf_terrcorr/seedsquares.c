@@ -101,13 +101,13 @@ void lay_seeds(int num_seeds, float *mask,long ns, long nl, int **x_pos_list, in
 	srand(seed);		/*initialize random number generator*/
 
 
-	for (x=0;x<num_seeds; x++)
+	for (x=1;x<num_seeds; x++)
 	{ // put the seed points onto the map
 			seed_points(&pxl[x],&pyl[x], ns,nl);
 			psl[x] = 4;
 	}
 	
-	for(x=0;x<num_seeds;x++)
+	for(x=1;x<num_seeds;x++)
 	{
 		size = 4;
 		leave  = 0;
@@ -116,20 +116,20 @@ void lay_seeds(int num_seeds, float *mask,long ns, long nl, int **x_pos_list, in
 				check_square(size,pxl[x],pyl[x], mask,ns,nl, &masked_pixels, &good_pixels);
 				ppl[x] = (good_pixels + masked_pixels);
 				good =((double) good_pixels )/((double) (good_pixels + masked_pixels));
-				printf(" seed %d good %ld  bad %ld  .... ratio of %f and pixels %d  \n "
-						,x,good_pixels,masked_pixels,good,ppl[x]);
+				printf(" seed %d good %ld  bad %ld  .... ratio of %f and pixels %d  size %d \n "
+								,x,good_pixels,masked_pixels,good,ppl[x],size);
 				if ( good > 0.8)
 					{
-						psl[x] = size*2;
+						psl[x] = size;
 						if (size > 4096) 
 								leave=1;
-						else
-							size=size*2;
+							else
+								size=size*2;
 						
 					}
 				 else
 					{
-						if (size <= 256)
+						if (size <= 512)
 						{
 						 size = 4;
 						 seed_points(&pxl[x],&pyl[x], ns,nl);
@@ -142,8 +142,8 @@ void lay_seeds(int num_seeds, float *mask,long ns, long nl, int **x_pos_list, in
 			}
 			
 	}
-	for(x=0;x<num_seeds;++x)
-		printf(" seed %d positions %d %d  and size %d \n ",x,pxl[x],pyl[x],psl[x]);
+	for(x=1;x<num_seeds;++x)
+		printf(" seed %d positions %d %d  and size  %d (total pixels) \n ",x,pxl[x],pyl[x],ppl[x]);
 	*x_pos_list = pxl;
 	*y_pos_list = pyl;
 	*size_list = psl;
