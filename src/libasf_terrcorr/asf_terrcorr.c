@@ -22,6 +22,8 @@
 
 #include <asf_terrcorr.h>
 
+#define MASK_SEED_POINTS 20
+
 char *strdup(const char *);
 
 static int int_rnd(double x)
@@ -519,10 +521,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
 		can be fftMatched without running into the mask.
 		then we average them all back together. to get the offset
       		*/
-		int x_pos_list[20];
-		int y_pos_list[20];
-		int size_list[20];
-		long clipped_pixels[20];
+		int x_pos_list[MASK_SEED_POINTS];
+		int y_pos_list[MASK_SEED_POINTS];
+		int size_list[MASK_SEED_POINTS];
+		long clipped_pixels[MASK_SEED_POINTS];
 		int y;
 		long long xpltl,ypltl,szl,xplbr,yplbr,mx,my;
 		FILE *inseedmask;
@@ -531,14 +533,14 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
 		float *mask;
 		inseedmask = fopenImage(maskClipped,"rb");
 		maskmeta = meta_read(maskClipped);
-		mask = (float *)MALLOC(sizeof(float)*demWidth * demHeight);
+		mask = (float *)MALLOC(sizeof(float)*metaSAR->general->sample_count * demHeight);
 		for (y=0;y<demHeight;y++) // read in the whole mask image
-			get_float_line(inseedmask,maskmeta,y,mask+y*demWidth);
+			get_float_line(inseedmask,maskmeta,y,mask+y*metaSAR->general->sample_count);
 		FCLOSE(inseedmask);
-		lay_seeds(20,mask,demWidth, demHeight, &x_pos_list, &y_pos_list, &size_list, &clipped_pixels);
+		lay_seeds(MASK_SEED_POINTS,mask,metaSAR->general->sample_count, demHeight, &x_pos_list, &y_pos_list, &size_list, &clipped_pixels);
 		FREE(mask);
 		szl = 0;
-		for(y=1;y<20;++y)
+		for(y=1;y<MASK_SEED_POINTS;y++)
 			{
 				if ( abs(clipped_pixels[y]) > szl)
 					{
@@ -553,15 +555,15 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
 					}
 			}
 		
-			if (xpltl < 0 ) xpltl = 0;if (xpltl > demWidth ) xpltl = demWidth-1;
-			if (ypltl < 0 ) ypltl = 0;if (ypltl > demHeight ) ypltl = demHeight-1;			
-			if (xplbr < 0 ) xplbr = 0;if (xplbr > demWidth ) xplbr = demWidth-1;
-			if (yplbr < 0 ) yplbr = 0;if (yplbr > demHeight ) yplbr = demHeight-1;			
-			
-			printf( " clipping region is %lld %lld %lld %lld \n"
-				" which means it is %lld wide by %lld high \n"
-				" mid point %lld %lld size %lld",
-			xpltl,ypltl,xplbr,yplbr,xplbr-xpltl,yplbr-ypltl,mx,my,szl/2 );	
+		if (xpltl < 0 ) xpltl = 0;if (xpltl >= metaSAR->general->sample_count ) xpltl = metaSAR->general->sample_count-1;
+		if (ypltl < 0 ) ypltl = 0;if (ypltl >= demHeight ) ypltl = demHeight-1;			
+		if (xplbr < 0 ) xplbr = 0;if (xplbr >= metaSAR->general->sample_count ) xplbr = metaSAR->general->sample_count-1;
+		if (yplbr < 0 ) yplbr = 0;if (yplbr >= demHeight ) yplbr = demHeight-1;			
+		
+		printf( " clipping region is %lld %lld %lld %lld \n"
+			" which means it is %lld wide by %lld high \n"
+			" with a mid point %lld %lld size %lld (clipped pixels) \n",
+			xpltl,ypltl,xplbr,yplbr,xplbr-xpltl,yplbr-ypltl,mx,my,szl );	
 		
 		demTrimSimAmp_ffft = outputName(output_dir, demFile, "_sim_amp_trim_for_fft");
 		srTrimSimAmp = outputName(output_dir, srFile, "_src_trim_for_fft");
@@ -571,6 +573,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
 		trim(srFile, srTrimSimAmp, xpltl, ypltl,  xplbr-xpltl, yplbr-ypltl);
 		asfPrintStatus(" passed in %lld %lld %lld %lld \n",xpltl, ypltl,xplbr-xpltl, yplbr-ypltl);
 		fftMatchQ(srTrimSimAmp, demTrimSimAmp_ffft, &dx, &dy, &cert);
+		meta_free(maskmeta);
 	}
 	else
 	{
