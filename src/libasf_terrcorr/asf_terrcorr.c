@@ -478,7 +478,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
       // The adjustment of the DEM width by 400 pixels (originated in
       // create_dem_grid) needs to be factored in.
       demClipped = appendSuffix(demFile, "_clip");
-      maskClipped = appendSuffix(inMaskFile, "_clip");
+      if (inMaskFile)
+          maskClipped = appendSuffix(inMaskFile, "_clip");
       
       demWidth = metaSAR->general->sample_count + DEM_GRID_RHS_PADDING;
       demHeight = metaSAR->general->line_count;
