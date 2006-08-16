@@ -136,8 +136,9 @@ int main(int argc, char *argv[])
 	   printLog("Program: deskew_dem\n\n");
 	}
 
+	int maskfill=1;
 	deskew_dem(inDemName, outName, inSarName, doRadiometric, NULL, NULL,
-                   do_interp);
+                   do_interp, maskfill);
 	exit(EXIT_SUCCESS);
 }
 
