@@ -66,7 +66,7 @@ void acpatch(patch *p,const satellite *s)
 	float  phase, az_resamp;
 	float  dop_deskew;
 	int    n, nfc, nf0;
-	int    lineNo, j, k;
+	int    lineNo, j;
 	complexFloat cZero=Czero();
 	float pixel2time=1.0/s->prf;
 	float *win;
@@ -195,7 +195,7 @@ void acpatch(patch *p,const satellite *s)
 		/* multiply the reference by the data */
 		if (!(s->debugFlag & NO_AZIMUTH))
 		{
-	
+                        int k;
 			n = NINT(f0/s->prf);
 			nf0 = p->n_az*(f0-n*s->prf)/s->prf;
 			nfc = nf0 + p->n_az/2;
@@ -216,7 +216,7 @@ void acpatch(patch *p,const satellite *s)
 			}
 		}
                 if (s->debugFlag & AZ_X_F)
-                    debugWritePatch_Line(lineNo, &(p->trans[lineOffset+k]),
+                    debugWritePatch_Line(lineNo, &(p->trans[lineOffset]),
                                          "az_X_f", p->n_range, p->n_az);
 		/* inverse transform the product */
 		cfft1d(p->n_az,&(p->trans[lineOffset]),1);
