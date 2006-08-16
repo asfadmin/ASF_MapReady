@@ -19,7 +19,7 @@
 #  endif
 #endif
 
-#define STP_VERSION "1.0.11"
+#define STP_VERSION "1.0.12"
 
 /* for win32, set the font to the standard windows one */
 #if defined(win32)
