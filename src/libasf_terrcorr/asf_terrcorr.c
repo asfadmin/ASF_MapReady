@@ -279,8 +279,8 @@ int refine_geolocation(char *sarFile, char *demFile, char *inMaskFile, char *out
 
 static char * getOutputDir(char *outFile)
 {
-    char *d = MALLOC(sizeof(char) * strlen(outFile));
-    char *f = MALLOC(sizeof(char) * strlen(outFile));
+    char *d = MALLOC(sizeof(char) * (strlen(outFile)+2));
+    char *f = MALLOC(sizeof(char) * (strlen(outFile)+2));
     split_dir_and_file(outFile, d, f);
     free(f);
     return d;
@@ -540,11 +540,11 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
 		float *mask;
 		inseedmask = fopenImage(maskClipped,"rb");
 		maskmeta = meta_read(maskClipped);
-		mask = (float *)MALLOC(sizeof(float)*metaSAR->general->sample_count * demHeight);
+		mask = (float *)MALLOC(sizeof(float)*(metaSAR->general->sample_count * demHeight));
 		for (y=0;y<demHeight;y++) // read in the whole mask image
 			get_float_line(inseedmask,maskmeta,y,mask+y*metaSAR->general->sample_count);
 		FCLOSE(inseedmask);
-		lay_seeds(MASK_SEED_POINTS,mask,metaSAR->general->sample_count, demHeight, &x_pos_list, &y_pos_list, &size_list, &clipped_pixels);
+		lay_seeds(MASK_SEED_POINTS,mask,metaSAR->general->sample_count, demHeight, x_pos_list, y_pos_list, size_list, clipped_pixels);
 		FREE(mask);
 		szl = 0;
 		for(y=1;y<MASK_SEED_POINTS;y++)

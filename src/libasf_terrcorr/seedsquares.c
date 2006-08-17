@@ -8,31 +8,23 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
-void seed_points(int **x, int **y,int ns, int nl)
+void seed_points(int *x, int *y, int ns, int nl)
 { // generates new random location seed points to start from
-	double r;
-	int *px=x, *py=y;
-	
-	r = (   (double)rand() / ((double)(RAND_MAX)+(double)(1)) );
-	r = r * ns;
-	px = (int) r ;
-	r = (   (double)rand() / ((double)(RAND_MAX)+(double)(1)) );
-	r = r * nl;
-	py = (int) r ;
-	*x = px;
-	*y = py;
+
+    *x = ns * (double)rand() / ((double)(RAND_MAX) + 1.0);
+    *y = nl * (double)rand() / ((double)(RAND_MAX) + 1.0);
 }
 
-
-void check_square(int size,int x_pos, int y_pos, float  *mask, int ns, int nl, long **masked_pixels, long **good_pixels)
+void check_square(int size,int x_pos, int y_pos, float  *mask, int ns, int nl, long *masked_pixels, long *good_pixels)
 { // go to the mask and work out the number of good and bad pixels within a square
 	long loc;
 	int TLx,BLx,TRx,BRx;
 	int TLy,BLy,TRy,BRy;
 	int x,y;
-	long *pmp=masked_pixels;
-	long *gmp=good_pixels;
+	long pmp;
+        long gmp;
 	TLx = x_pos - size;
 	BLx = x_pos - size;
 	TRx = x_pos + size;
@@ -76,7 +68,7 @@ void check_square(int size,int x_pos, int y_pos, float  *mask, int ns, int nl, l
 	return;
 }
 
-void lay_seeds(int num_seeds, float *mask,long ns, long nl, int **x_pos_list, int **y_pos_list, int **size_list, long **clipped_pixels)
+void lay_seeds(int num_seeds, float *mask,long ns, long nl, int *x_pos_list, int *y_pos_list, int *size_list, long *clipped_pixels)
 		/* 
 		int num_seeds, number of random seed points to generate
 		 float *mask, the mask image
@@ -148,9 +140,9 @@ void lay_seeds(int num_seeds, float *mask,long ns, long nl, int **x_pos_list, in
 	}
 	printf(" found all seed points \n");
 	for(x=1;x<num_seeds;++x)
-		printf(" seed %d positions %d %d  and size  %d (total pixels) \n ",x,pxl[x],pyl[x],ppl[x]);
-	*x_pos_list = pxl;
-	*y_pos_list = pyl;
-	*size_list = psl;
-	*clipped_pixels = ppl;
+		printf(" seed %d positions %d %d  and size  %ld (total pixels) \n ",x,pxl[x],pyl[x],ppl[x]);
+	//*x_pos_list = pxl;
+	//*y_pos_list = pyl;
+	//*size_list = psl;
+	//*clipped_pixels = ppl;
 }
