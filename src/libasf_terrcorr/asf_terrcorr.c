@@ -311,6 +311,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
   const int PAD = 200;
   double t_offset = 0, x_offset = 0;
 
+  // we want passing in an empty string for the mask to mean "no mask"
+  if (inMaskFile && strlen(inMaskFile) == 0)
+      inMaskFile = NULL;
+
   asfPrintStatus("Reading metadata...\n");
   metaSAR = meta_read(sarFile);
   metaDEM = meta_read(demFile);
