@@ -57,7 +57,8 @@ static void remove_file(const char * file)
 static char * appendSuffix(const char *inFile, const char *suffix)
 {
   char *suffix_pid = MALLOC(sizeof(char)*(strlen(suffix)+25));
-  sprintf(suffix_pid, "%s_tctmp%d", suffix, (int)getpid());
+  //sprintf(suffix_pid, "%s_tctmp%d", suffix, (int)getpid());
+  sprintf(suffix_pid, "%s", suffix);
 
   char * ret = appendToBasename(inFile, suffix_pid);
 
@@ -481,9 +482,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
       // Here is the actual work done for cutting out the DEM.
       // The adjustment of the DEM width by 400 pixels (originated in
       // create_dem_grid) needs to be factored in.
-      demClipped = appendSuffix(demFile, "_clip");
+      demClipped = outputName(output_dir, demFile, "_clip");
       if (inMaskFile)
-          maskClipped = appendSuffix(inMaskFile, "_clip");
+          maskClipped = outputName(output_dir, inMaskFile, "_clip");
       
       demWidth = metaSAR->general->sample_count + DEM_GRID_RHS_PADDING;
       demHeight = metaSAR->general->line_count;

@@ -59,7 +59,7 @@ static void copy_meta(char *src, char *dest)
 int asf_convert(int createflag, char *configFileName)
 {
   FILE *fBatch, *fConfig;
-  convert_config *cfg;
+  convert_config *cfg, *tmp_cfg;
   meta_parameters *meta;
   char cmd[1024], line[255], batchConfig[255];
   char inFile[255], outFile[255], fileName[255];
@@ -112,6 +112,14 @@ int asf_convert(int createflag, char *configFileName)
       fprintf(fConfig, "output file = %s%s%s\n", prefix, fileName, suffix);
       FCLOSE(fConfig);
 
+      // Extend the temporary configuration file
+      tmp_cfg = read_convert_config(batchConfig);
+      check_return(write_convert_config(batchConfig, tmp_cfg), 
+		   "Could not update configuration file");
+      FREE(tmp_cfg);
+      //      check_return(write_convert_config(fileName, cfg), 
+      //	   "Could not update configuration file");
+
       // Run asf_convert for temporary configuration file
       asfPrintStatus("\nProcessing %s ...\n", fileName);
       check_return(call_asf_convert(batchConfig),
@@ -124,6 +132,9 @@ int asf_convert(int createflag, char *configFileName)
   // Regular processing
   else {
 
+    sprintf(cfg->general->time_stamp, "%s", time_stamp_dir());
+    sprintf(cmd, "mkdir %s", cfg->general->time_stamp);
+    asfSystem(cmd);
     update_status(cfg, "Processing...");
 
     // Check whether everything in the [Import] block is reasonable
@@ -315,7 +326,7 @@ int asf_convert(int createflag, char *configFileName)
       if (cfg->general->image_stats || cfg->general->detect_cr ||
 	  cfg->general->sar_processing || cfg->general->terrain_correct ||
 	  cfg->general->geocoding || cfg->general->export) {
-        sprintf(outFile, "tmp%i_import", pid);
+        sprintf(outFile, "%s/import", cfg->general->time_stamp);
       }
       else {
         sprintf(outFile, "%s", cfg->general->out_name);
@@ -343,7 +354,7 @@ int asf_convert(int createflag, char *configFileName)
           if (cfg->general->image_stats || cfg->general->detect_cr ||
               cfg->general->sar_processing || cfg->general->terrain_correct ||
               cfg->general->geocoding || cfg->general->export) {
-              sprintf(outFile, "tmp%i_sar_processing", pid);
+              sprintf(outFile, "%s/sar_processing", cfg->general->time_stamp);
           }
           else {
               sprintf(outFile, "%s", cfg->general->out_name);
@@ -371,15 +382,15 @@ int asf_convert(int createflag, char *configFileName)
         ardop(params_in);
 
 	if (strcmp(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE") == 0)
-	  sprintf(outFile, "tmp%i_sar_processing_amp", pid);
+	  sprintf(outFile, "%s/sar_processing_amp", cfg->general->time_stamp);
 	else if (strcmp(cfg->sar_processing->radiometry, "POWER_IMAGE") == 0)
-	  sprintf(outFile, "tmp%i_sar_processing_power", pid);
+	  sprintf(outFile, "%s/sar_processing_power", cfg->general->time_stamp);
 	else if (strcmp(cfg->sar_processing->radiometry, "SIGMA_IMAGE") == 0)
-	  sprintf(outFile, "tmp%i_sar_processing_sigma", pid);
+	  sprintf(outFile, "%s/sar_processing_sigma", cfg->general->time_stamp);
 	else if (strcmp(cfg->sar_processing->radiometry, "GAMMA_IMAGE") == 0)
-	  sprintf(outFile, "tmp%i_sar_processing_gamma", pid);
+	  sprintf(outFile, "%s/sar_processing_gamma", cfg->general->time_stamp);
 	else if (strcmp(cfg->sar_processing->radiometry, "BETA_IMAGE") == 0)
-	  sprintf(outFile, "tmp%i_sar_processing_beta", pid);
+	  sprintf(outFile, "%s/sar_processing_beta", cfg->general->time_stamp);
         else
             asfPrintError("Unexpected radiometry: %s\n", 
                           cfg->sar_processing->radiometry);
@@ -440,7 +451,7 @@ int asf_convert(int createflag, char *configFileName)
       // Pass in command line
       sprintf(inFile, "%s", outFile);
       if (cfg->general->geocoding || cfg->general->export) {
-	sprintf(outFile, "tmp%i_detect_cr", pid);
+	sprintf(outFile, "%s/detect_cr", cfg->general->time_stamp);
       }
       else {
 	sprintf(outFile, "%s", cfg->general->out_name);
@@ -454,25 +465,27 @@ int asf_convert(int createflag, char *configFileName)
 
       // Generate filenames
       sprintf(inFile, "%s", outFile);
-      sprintf(outFile, "tmp%i_terrain_correct", pid);
+      sprintf(outFile, "%s/terrain_correct", cfg->general->time_stamp);
 
       // Call asf_terrcorr!  Or refine_geolocation!
       if (cfg->terrain_correct->refine_geolocation_only) {
           update_status(cfg, "Refining Geolocation...");
           check_return(
-			  refine_geolocation(inFile, cfg->terrain_correct->dem,NULL,
-                                 outFile, FALSE),
-              "refining geolocation of the data file (refine_geolocation)\n");
+	    refine_geolocation(inFile, cfg->terrain_correct->dem,
+			       cfg->terrain_correct->mask,
+			       outFile, FALSE),
+	    "refining geolocation of the data file (refine_geolocation)\n");
       }
       else {
           update_status(cfg, "Terrain Correcting...");
           check_return(
-			  asf_terrcorr_ext(inFile, cfg->terrain_correct->dem,NULL, outFile, 
-                               cfg->terrain_correct->pixel,
-                               !cfg->general->intermediates,
-                               TRUE, FALSE, cfg->terrain_correct->interp, 
-                               TRUE, 20, TRUE,1),
-              "terrain correcting data file (asf_terrcorr)\n");
+            asf_terrcorr_ext(inFile, cfg->terrain_correct->dem,
+			     cfg->terrain_correct->mask, outFile, 
+			     cfg->terrain_correct->pixel,
+			     !cfg->general->intermediates,
+			     TRUE, FALSE, cfg->terrain_correct->interp, 
+			     TRUE, 20, TRUE, 2),
+	    "terrain correcting data file (asf_terrcorr)\n");
       }
     }
 
@@ -514,7 +527,7 @@ int asf_convert(int createflag, char *configFileName)
       // Pass in command line
       sprintf(inFile, "%s", outFile);
       if (cfg->general->export) {
-        sprintf(outFile, "tmp%i_geocoding", pid);
+        sprintf(outFile, "%s/geocoding", cfg->general->time_stamp);
       }
       else {
         sprintf(outFile, "%s", cfg->general->out_name);
@@ -575,7 +588,7 @@ int asf_convert(int createflag, char *configFileName)
     }
 
     if (!cfg->general->intermediates) {
-      sprintf(cmd, "rm -f tmp%i*", pid);
+      sprintf(cmd, "rm -rf %s", cfg->general->time_stamp);
       asfSystem(cmd);
     }
   }

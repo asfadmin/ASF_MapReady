@@ -23,6 +23,7 @@ typedef struct
   char *batchFile;        // batch file name
   char *prefix;           // prefix for output file naming scheme
   char *suffix;           // suffix for output file naming scheme
+  char *time_stamp;       // string that can be used to passing along a time stamp
   char *status_file;      // file in which we should dump status info
 } s_general;
 
@@ -70,6 +71,7 @@ typedef struct
 {
   double pixel;           // pixel size for terrain corrected product
   char *dem;              // reference DEM file name
+  char *mask;             // mask file name
   int refine_geolocation_only; // If TRUE, we don't actually do any terrain
                           // correction, just refine the geolocation w/ the DEM
   int interp;             // TRUE if we should interpolate layover/shadow

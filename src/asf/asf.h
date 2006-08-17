@@ -77,6 +77,7 @@ void StartWatchLog(FILE *log_fp);
 void StopWatchLog(FILE *log_fp);
 char* date_stamp(void);
 char* date_time_stamp(void);
+char* time_stamp_dir(void);
 
 /******************************************************************************
  * FileUtil:

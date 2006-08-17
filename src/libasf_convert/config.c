@@ -221,6 +221,8 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->general->intermediates = 0;
   cfg->general->quiet = 1;
   cfg->general->short_config = 0;
+  cfg->general->time_stamp = (char *)MALLOC(sizeof(char)*255);
+  sprintf(cfg->general->time_stamp, "%s", time_stamp_dir());
 
   cfg->import->format = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->import->format, "CEOS");
@@ -248,8 +250,10 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->detect_cr->text = 0;
   
   cfg->terrain_correct->pixel = -99;
-  cfg->terrain_correct->dem = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->terrain_correct->dem, "");
+  cfg->terrain_correct->dem = (char *)MALLOC(sizeof(char)*255);
+  sprintf(cfg->terrain_correct->dem, "");
+  cfg->terrain_correct->mask = (char *)MALLOC(sizeof(char)*255);
+  sprintf(cfg->terrain_correct->mask, "");
   cfg->terrain_correct->refine_geolocation_only = 0;
   cfg->terrain_correct->interp = 1;
 
@@ -346,8 +350,11 @@ convert_config *init_fill_convert_config(char *configFile)
 	cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
       if (strncmp(test, "digital elevation model", 23)==0)
 	cfg->terrain_correct->dem = read_str(line, "digital elevation model");      
+      if (strncmp(test, "mask", 4)==0)
+	cfg->terrain_correct->mask = read_str(line, "mask");      
       if (strncmp(test, "refine geolocation only", 23)==0)
-	cfg->terrain_correct->refine_geolocation_only = read_int(line, "refine_geolocation_only");
+	cfg->terrain_correct->refine_geolocation_only = 
+	  read_int(line, "refine_geolocation_only");
       if (strncmp(test, "interpolate", 11)==0)
 	cfg->terrain_correct->interp = read_int(line, "interpolate");
 
@@ -539,6 +546,8 @@ convert_config *read_convert_config(char *configFile)
 	cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
       if (strncmp(test, "digital elevation model", 23)==0)
 	cfg->terrain_correct->dem = read_str(line, "digital elevation model");
+      if (strncmp(test, "mask", 4)==0)
+	cfg->terrain_correct->mask = read_str(line, "mask");      
       if (strncmp(test, "refine geolocation only", 23)==0)
 	cfg->terrain_correct->refine_geolocation_only = read_int(line, "refine_geolocation_only");
       if (strncmp(test, "interpolate", 11)==0)
@@ -770,13 +779,18 @@ int write_convert_config(char *configFile, convert_config *cfg)
 	fprintf(fConfig, "\n# The heights of the reference DEM are used to correct the SAR image\n"
 		"# for terrain effects. The quality and resolution of the reference DEM determines\n"
 		"# the quality of the resulting terrain corrected product\n\n");
-      fprintf(fConfig, "digital elevation model = %s\n\n", cfg->terrain_correct->dem);
+      fprintf(fConfig, "digital elevation model = %s\n", cfg->terrain_correct->dem);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# In some case parts of the images are known to be moving (e.g. water,\n"
+		"# glaciers etc.). This can cause severe problems in matching the SAR image with\n"
+		"# the simulated SAR image derived from the reference. Providing a mask defines the\n"
+		"# areas that are stable and can be used for the matching process.\n\n");
+      fprintf(fConfig, "mask = %s\n", cfg->terrain_correct->mask);
       if (!shortFlag)
         fprintf(fConfig, "\n# Even if you don't want to change the image via terrain correction,\n"
                 "# you may still wish to use the DEM to refine the geolocation of the SAR image.\n"
                 "# If this flag is set, terrain correction is NOT performed.\n\n");
-      fprintf(fConfig, "refine geolocation only = %d\n\n", cfg->terrain_correct->refine_geolocation_only);
-
+      fprintf(fConfig, "refine geolocation only = %d\n", cfg->terrain_correct->refine_geolocation_only);
       if (!shortFlag)
 	fprintf(fConfig, "\n# Layover/shadow regions can either be left black (resulting in better\n"
 		"# image statistics in the remainder of the image), or they may be interpolated over\n"
@@ -819,7 +833,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
 	fprintf(fConfig, "\n# After geocoding, a fill value is required for the regions outside\n"
 		"# of the geocoded image.  By default this value is 0, but may be set to a\n"
 		"# different value here.\n\n");
-      fprintf(fConfig, "background = %s\n", cfg->geocoding->background);
+      fprintf(fConfig, "background = %.2f\n", cfg->geocoding->background);
       if (!shortFlag)
 	fprintf(fConfig, "\n# In order to ensure the proper use of projection parameter files,\n"
 		"# we have implemented a number of checks that verify whether the map\n"

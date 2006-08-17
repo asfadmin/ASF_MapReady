@@ -78,3 +78,14 @@ char* date_stamp(void)
   return t_stamp;
 }
 
+char* time_stamp_dir(void)
+{
+  time_t t;
+  char *t_stamp;
+
+  t_stamp = (char*) MALLOC(25*sizeof(char));
+  t = time(NULL);
+  strftime(t_stamp, 21, "%d-%b-%Y_%H:%M:%S", localtime(&t));
+
+  return t_stamp;
+}
