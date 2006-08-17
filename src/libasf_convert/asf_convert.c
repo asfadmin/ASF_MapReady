@@ -133,8 +133,7 @@ int asf_convert(int createflag, char *configFileName)
   else {
 
     sprintf(cfg->general->time_stamp, "%s", time_stamp_dir());
-    sprintf(cmd, "mkdir %s", cfg->general->time_stamp);
-    asfSystem(cmd);
+    create_dir(cfg->general->time_stamp);
     update_status(cfg, "Processing...");
 
     // Check whether everything in the [Import] block is reasonable
@@ -588,8 +587,7 @@ int asf_convert(int createflag, char *configFileName)
     }
 
     if (!cfg->general->intermediates) {
-      sprintf(cmd, "rm -rf %s", cfg->general->time_stamp);
-      asfSystem(cmd);
+        remove_dir(cfg->general->time_stamp);
     }
   }
   return(EXIT_SUCCESS);

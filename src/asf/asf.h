@@ -147,6 +147,9 @@ FILE *fopenImage(const char *name,const char *accessType);
 /* Copy the file specified by "src" to the file specified by "dst". */
 void fileCopy(const char *src, const char *dst);
 
+/* Create & remove directories, these return 0 on success */
+int create_dir(const char *dir);
+int remove_dir(const char *dir);
 
 /******************************************************************************
  * ioLine: Grab any data type and fill a buffer of _type_ data.

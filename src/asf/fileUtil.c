@@ -377,3 +377,23 @@ get_basename(const char *in)
    if (ext) *ext = '\0';
    return file;
 }
+
+/* create a directory */
+int
+create_dir(const char *dir)
+{
+    char cmd[1024];
+    sprintf(cmd, "mkdir %s", dir);
+    asfSystem(cmd);
+    return 0;
+}
+
+/* remove a directory, and everything in it */
+int
+remove_dir(const char *dir)
+{
+    char cmd[1024];
+    sprintf(cmd, "rm -rf %s", dir);
+    asfSystem(cmd);
+    return 0;
+}
