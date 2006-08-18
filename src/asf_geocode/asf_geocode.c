@@ -129,6 +129,9 @@ trouble, and use edit_man_header. :)
 "          This option may not be used together with any other\n"\
 "          projection options.\n"\
 "\n"\
+"          You cannot specify a projection (with --projection), and\n"\
+"          --read-proj-file at the same time.\n"\
+"\n"\
 "     Other Options\n"\
 "     =============\n"\
 "\n"\
