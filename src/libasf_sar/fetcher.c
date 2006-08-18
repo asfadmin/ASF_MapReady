@@ -251,7 +251,7 @@ void killFetchRec(pixelFetcher *inGetRec)
 	
 /*Free (& delete) block store*/
 	FCLOSE(g->blockIn);
-	unlink(g->blockName);
+	unlink_tmp_file(g->blockName);
 	
 /*Free fetch rec*/
 	FREE(g);g=NULL;
