@@ -9,7 +9,7 @@
 class self : public asf::plugin {
 	asf::parameter_filename *filename; /**< Image filename */
 	FILE *f; /**< Image file handle */
-	asf::parameter_float_image *dest; /**< Image to read */
+	asf::parameter_float_image *out; /**< Image to read */
 	
 public:
 	ASF_plugin_class(self)
@@ -17,7 +17,7 @@ public:
 		:asf::plugin(param), f(0)
 	{
 		asf::input(param,"filename",&filename);
-		//asf::output(param,"dest",&dest,asf::parameter_scanline_constraint::instance());
+		//asf::output(param,"out",&out,asf::parameter_scanline_constraint::instance());
 	}
 	void meta_execute(void) {
 		log(1,"Creating blank .meta structure\n");
@@ -30,7 +30,7 @@ public:
 	void execute(void) { 
 		printf("Put code here...\n");
 	 	if (0)
-		for (int b=0;b<dest->bands();b++) 
+		for (int b=0;b<out->bands();b++) 
 		{ /* LAS images are stored in "Band sequential" order on disk,
 		   so it's easiest to just read one band at a time. */
 			read_band(b);

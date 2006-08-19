@@ -55,7 +55,7 @@ public:
 };
 
 class self : public asf::plugin {
-	asf::parameter_float_image *src; /**< Input image to checksum */
+	asf::parameter_float_image *in; /**< Input image to checksum */
 	bandInfo *bands; /**< Accumulated information about bands of image */
 	asf::parameter_string *checksum; /**< Output checksum */
 public:
@@ -63,24 +63,24 @@ public:
 	self(asf::plugin_parameters &param) 
 		:asf::plugin(param), bands(0)
 	{
-		asf::input(param,"src",&src);
+		asf::input(param,"in",&in);
 		asf::output(param,"checksum",&checksum);
 	}
 	void meta_execute(void) {
 		// Reset pixel statistics
 		delete[] bands;bands=0;
-		bands=new bandInfo[src->bands()];
+		bands=new bandInfo[in->bands()];
 	}
 	void execute(void) { 
-		for (int b=0;b<src->bands();b++) {
-			ASF_FOR_PIXELS(x,y,src->pixels()) {
-				bands[b].add(src->at(x,y,b));
+		for (int b=0;b<in->bands();b++) {
+			ASF_FOR_PIXELS(x,y,in->pixels()) {
+				bands[b].add(in->at(x,y,b));
 			}
 		}
-		if ((double)bands[0].stat.size()==src->total_meta_bounds().area())
+		if ((double)bands[0].stat.size()==in->total_meta_bounds().area())
 		{ /* Finally got all the pixels-- write out stats */
 			std::string sum="";
-			for (int b=0;b<src->bands();b++) sum+=bands[b].print(b);
+			for (int b=0;b<in->bands();b++) sum+=bands[b].print(b);
 			*checksum=sum;
 			log("%s",sum.c_str());
 		}

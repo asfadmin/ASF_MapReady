@@ -21,19 +21,19 @@ public:
 		int r=*radius; /* Radius of kernel */
 		int w=r+1+r; /* total width of kernel: r on the left, center, r on the right */
 		/* Loop over output pixels */
-		for (int b=0;b<dest->bands();b++) {
-		  ASF_FOR_PIXELS(x,y,dest->pixels()) {
+		for (int b=0;b<out->bands();b++) {
+		  ASF_FOR_PIXELS(x,y,out->pixels()) {
 			osl::statistics::Sample s;
 			/* Loop over input pixels. 
-			  Note that dest->at(x,y,b) is really src->at(x+r,y+r,b)
+			  Note that out->at(x,y,b) is really in->at(x+r,y+r,b)
 			*/
 			for (int dy=0;dy<w;dy++)
 			for (int dx=0;dx<w;dx++) {
-				s+=src->at(x+dx,y+dy,b);
+				s+=in->at(x+dx,y+dy,b);
 			}
 			/* Coefficient of variation: std. dev. over mean */
 			double coef_vari=s.getStddev()/s.getMean();
-			dest->at(x,y,b)=coef_vari;
+			out->at(x,y,b)=coef_vari;
 		  }
 		}
 	}

@@ -5,7 +5,7 @@
 #
 
 image_input_las filename="grey.img";
-image_std_dev src=@image_input_las.dest radius=1;
+image_std_dev in=@image_input_las.out radius=1;
 image_output_binary 
-	src=@image_std_dev.dest 
+	in=@image_std_dev.out 
 	filename="image_std_dev.test.img";

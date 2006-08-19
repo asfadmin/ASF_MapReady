@@ -3,10 +3,10 @@
 #  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
 
 image_input_las filename="grey.img";
-image_blur src=@image_input_las.dest radius=10;
+image_blur in=@image_input_las.out radius=10;
 image_output_binary 
-	src=@image_blur.dest 
+	in=@image_blur.out 
 	filename="image_blur.test.img";
 
-image_checksum src=@image_blur.dest;
+image_checksum in=@image_blur.out;
 echo string=@image_checksum.checksum;

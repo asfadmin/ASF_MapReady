@@ -3,8 +3,8 @@
 #  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
 
 image_testpattern w=64 h=64 type=3 scale=10.0 value=10.0;
-image_clamp min=3.0 max=5.0 src=@image_testpattern.dest;
+image_clamp min=3.0 max=5.0 in=@image_testpattern.out;
 image_output_binary 
-	src=@image_clamp.dest 
+	in=@image_clamp.out 
 	filename="image_clamp_lil.test.img";
 

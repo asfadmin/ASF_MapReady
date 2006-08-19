@@ -3,7 +3,7 @@
 #  Orion Sky Lawlor, olawlor@acm.org, 2005/10/12
 
 image_input_las filename="grey.img";
-image_clamp min=100.0 max=200.0 src=@image_input_las.dest;
+image_clamp min=100.0 max=200.0 in=@image_input_las.out;
 image_output_binary 
-	src=@image_clamp.dest 
+	in=@image_clamp.out 
 	filename="image_input_las.test.img";

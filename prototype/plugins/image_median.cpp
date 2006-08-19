@@ -31,17 +31,17 @@ public:
 		neigh.resize(nNeigh);
 		
 		/* Loop over output pixels */
-		for (int b=0;b<dest->bands();b++) {
-		  ASF_FOR_PIXELS(x,y,dest->pixels()) {
+		for (int b=0;b<out->bands();b++) {
+		  ASF_FOR_PIXELS(x,y,out->pixels()) {
 			/* Loop over input pixels. 
-			  Note that dest->at(x,y,b) is really src->at(x+r,y+r,b)
+			  Note that out->at(x,y,b) is really in->at(x+r,y+r,b)
 			*/
 			for (int dy=0;dy<w;dy++)
 			for (int dx=0;dx<w;dx++) {
-				neigh[dy*w+dx]=src->at(x+dx,y+dy,b);
+				neigh[dy*w+dx]=in->at(x+dx,y+dy,b);
 			}
 			std::sort(&neigh[0],&neigh[nNeigh]);
-			dest->at(x,y,b)=neigh[outNeigh];
+			out->at(x,y,b)=neigh[outNeigh];
 		  }
 		}
 	}

@@ -1,0 +1,110 @@
+Benchmarking and performance optimization notes:
+
+
+----------------- 2006/08/18 ---------------
+make OPTS="-O3 -msse -pg -g" clean all
+
+gdb ../../bin/clui 
+r stream_clamp1.clu
+
+
+First suprise: checksumming with image_checksum is actually 3x
+*slower* than just outputting an image--3MPix/s rather than about 10MPix/s.
+
+Second suprise: you can call "execute" with 1 *pixel* images, and it ain't much slower than huge tiles.  Ah--this is just an artifact of using single 
+
+Stupid language bug:
+image_clamp min=1.2 max=9.8 in=@image_input_las.out;
+image_clamp mul=2.2 add=0.8 in=@image_clamp.out;
+The second clamp actually tries to read from its *own* output, rather than the *previous* call's output.  This is caused by the "for scoping" bug fix.
+
+Here's the 1-megapixel image results:
+
+Creating test file on disk...
+Trying 0 passes for various tile sizes...
+0 pass, tilesize 4  >real 0.10
+0 pass, tilesize 16  >real 0.10
+0 pass, tilesize 64  >real 0.10
+0 pass, tilesize 256  >real 0.10
+0 pass, tilesize 1024  >real 0.11
+0 pass, tilesize 4096  >real 0.11
+0 pass, tilesize 16000  >real 0.11
+0 pass, tilesize 100000  >real 0.11
+Trying 1 passes for various tile sizes...
+1 pass, tilesize 4  >real 0.11
+1 pass, tilesize 16  >real 0.11
+1 pass, tilesize 64  >real 0.11
+1 pass, tilesize 256  >real 0.12
+1 pass, tilesize 1024  >real 0.13
+1 pass, tilesize 4096  >real 0.13
+1 pass, tilesize 16000  >real 0.13
+1 pass, tilesize 100000  >real 0.13
+Trying 2 passes for various tile sizes...
+2 pass, tilesize 4  >real 0.23
+2 pass, tilesize 16  >real 0.13
+2 pass, tilesize 64  >real 0.13
+2 pass, tilesize 256  >real 0.13
+2 pass, tilesize 1024  >real 0.15
+2 pass, tilesize 4096  >real 0.14
+2 pass, tilesize 16000  >real 0.14
+2 pass, tilesize 100000  >real 0.14
+Trying 10 passes for various tile sizes...
+10 pass, tilesize 4  >real 1.54
+10 pass, tilesize 16  >real 0.31
+10 pass, tilesize 64  >real 0.24
+10 pass, tilesize 256  >real 0.24
+10 pass, tilesize 1024  >real 0.28
+10 pass, tilesize 4096  >real 0.28
+10 pass, tilesize 16000  >real 0.28
+10 pass, tilesize 100000  >real 0.28
+
+
+-> Input or output costs 50ns/pixel.  That's huge.
+
+-> Each additional plugin pass costs about 14ns/pixel.  That's still pretty big--way bigger than like an SSE instruction (1-2ns), or a GPU instruction.
+
+
+-- Why's I/O so slow? --
+50ns/pixel is 20 million pixels per second.  Pixels are 4-byte floats.  That's 80MB/s, which is pretty fast for user/kernel communication.
+
+
+-- Why's computation so slow? --
+objdump --disassemble lib/image_clamp.cpp.dll
+objdump --disassemble lib/image_fma.cpp.dll
+Shows no subroutine calls for a simple "read, process, write" pixel loop.  Excellent!  I figured there'd be at least a few non-inlined subroutine calls.
+
+
+Here's what "v=v*m+a" turns into:
+    1350:       8b 55 c8                mov    0xffffffc8(%ebp),%edx
+    1353:       89 f9                   mov    %edi,%ecx
+    1355:       d9 c1                   fld    %st(1)
+    1357:       8b 42 60                mov    0x60(%edx),%eax
+    135a:       0f af c8                imul   %eax,%ecx
+    135d:       8b 45 cc                mov    0xffffffcc(%ebp),%eax
+    1360:       0f af 42 64             imul   0x64(%edx),%eax
+    1364:       01 c1                   add    %eax,%ecx
+    1366:       8b 45 d0                mov    0xffffffd0(%ebp),%eax
+    1369:       01 c1                   add    %eax,%ecx
+    136b:       8b 42 5c                mov    0x5c(%edx),%eax
+    136e:       89 45 b4                mov    %eax,0xffffffb4(%ebp)
+    1371:       89 fa                   mov    %edi,%edx
+    1373:       8b 46 60                mov    0x60(%esi),%eax
+    1376:       47                      inc    %edi
+    1377:       0f af d0                imul   %eax,%edx
+    137a:       8b 45 cc                mov    0xffffffcc(%ebp),%eax
+    137d:       0f af 46 64             imul   0x64(%esi),%eax
+    1381:       01 c2                   add    %eax,%edx
+    1383:       8b 45 d0                mov    0xffffffd0(%ebp),%eax
+    1386:       01 c2                   add    %eax,%edx
+    1388:       8b 45 b4                mov    0xffffffb4(%ebp),%eax
+    138b:       3b 7d c4                cmp    0xffffffc4(%ebp),%edi
+    138e:       d8 0c 88                fmuls  (%eax,%ecx,4)
+    1391:       8b 46 5c                mov    0x5c(%esi),%eax
+    1394:       d8 c1                   fadd   %st(1),%st
+    1396:       d9 1c 90                fstps  (%eax,%edx,4)
+    1399:       7c b5                   jl     1350 <_ZN16plugin_image_fma7executeEv+0xa0>
+
+
+That's a heck of a lot of imul's: 4 of them--2 each in x and y.  This is needed because the compiler's scared of "xd" and "yd" changing during a run, and hence won't incrementalize them.  Maybe it'd be cheaper to require continuous per-band image storage, which would fix xd==1 and additionally possibly allow the compiler to induct away the yd multiplications.  This would mean giving up on band-interleaved images internally, however, which might be too big a price to pay.
+
+Some sort of super-badass SSE-capable code generator would be the ideal thing here--it'd be able to get rid of everything but the "fmuls/fadd" above, by fusing together the arithmetic across a whole set of plugins.  It'd just be nasty, however, to write the plugins like this--you'd have to somehow abstractly define what you want done to the input pixels.  Perhaps a wacko-C++ trick like the "lambda" class, or "Sh" metaprogramming might help here...

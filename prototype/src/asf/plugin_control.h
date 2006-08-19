@@ -56,7 +56,7 @@ private:
  Execute the plugins in this list in some sensible order,
  creating tiles as needed, and pruning useless branches.
 */
-void ASF_COREDLL execute_list(const asf::parameter_control_list &list);
+void ASF_COREDLL execute_list(const asf::parameter_control_list &list,int tile_size=0);
 
 /**
 Superclass of all control-flow managing plugins

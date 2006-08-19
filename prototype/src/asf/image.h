@@ -768,13 +768,13 @@ public:
 /**
  A "pixel_filter" plugin--a plugin that doesn't change the location
  of pixels; only their values.  Subclasses just need to implement
- the "execute" method to compute the "dest" image pixels as a function
- of the "src" image pixels.
+ the "execute" method to compute the "out" image pixels as a function
+ of the "in" image pixels.
 */
 class ASF_COREDLL plugin_pixel_filter : public asf::plugin {
 public:
-	asf::parameter_float_image *src; /* Image to read from (input image) */
-	asf::parameter_float_image *dest; /* Image to write to (output image) */
+	asf::parameter_float_image *in; /* Image to read from (input image) */
+	asf::parameter_float_image *out; /* Image to write to (output image) */
 	
 	plugin_pixel_filter(asf::plugin_parameters &param);
 	

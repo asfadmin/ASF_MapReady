@@ -7,32 +7,32 @@
 class self : public asf::plugin {
 	asf::parameter_filename *filename; /* Output filename */
 	FILE *f;
-	asf::parameter_float_image *src; /* Image to write */
+	asf::parameter_float_image *in; /* Image to write */
 public:
 	ASF_plugin_class(self)
 	self(asf::plugin_parameters &param) 
 		:asf::plugin(param), f(0)
 	{
 		asf::input(param,"filename",&filename);
-		asf::input(param,"src",&src,asf::parameter_scanline_constraint::instance());
+		asf::input(param,"in",&in,asf::parameter_scanline_constraint::instance());
 	}
 	void meta_execute(void) {
 		f=fopen(filename->c_str(),"wb");
 		if (f==NULL) asf::die("Couldn't create file "+(std::string)*filename);
 		// Try running makeddr, just for kicks
 		char cmd[1024];
-		asf::pixel_size sz=src->total_meta_bounds().size();
+		asf::pixel_size sz=in->total_meta_bounds().size();
 		sprintf(cmd,"makeddr '%s' %d %d float > /dev/null\n",
 			filename->c_str(),sz.y,sz.x);
 		system(cmd);
 	}
 	void execute(void) { 
-		asf::pixel_rectangle p=src->pixel_meta_bounds();
-		asf::pixel_rectangle m=src->total_meta_bounds();
+		asf::pixel_rectangle p=in->pixel_meta_bounds();
+		asf::pixel_rectangle m=in->total_meta_bounds();
 		long pixel_no=(p.lo_x-m.lo_x)+(p.lo_y-m.lo_y)*m.width();
 		fseek(f,sizeof(float)*pixel_no,SEEK_SET);
-		ASF_FOR_PIXELS(x,y,src->pixels()) {
-			fwrite(&src->at(x,y,0),sizeof(float),1,f); /* FIXME: multiband? */
+		ASF_FOR_PIXELS(x,y,in->pixels()) {
+			fwrite(&in->at(x,y,0),sizeof(float),1,f); /* FIXME: multiband? */
 		}
 	}
 	~self() {

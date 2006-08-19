@@ -463,8 +463,8 @@ singleton_static_instance(asf::parameter_wholeimage_constraint)
 asf::plugin_pixel_filter::plugin_pixel_filter(asf::plugin_parameters &param)
 	:asf::plugin(param)
 {
-	asf::input(param,"src",&src);
-	asf::output(param,"dest",&dest);
+	asf::input(param,"in",&in);
+	asf::output(param,"out",&out);
 }
 
 /**
@@ -473,7 +473,7 @@ asf::plugin_pixel_filter::plugin_pixel_filter(asf::plugin_parameters &param)
 */
 void asf::plugin_pixel_filter::meta_execute(void)
 {
-	dest->meta_setsize(src->bands(),src->total_meta_bounds());
+	out->meta_setsize(in->bands(),in->total_meta_bounds());
 }
 
 /**
@@ -505,14 +505,14 @@ asf::plugin_pixel_kernel::plugin_pixel_kernel(asf::plugin_parameters &param)
 void asf::plugin_pixel_kernel::meta_execute(void)
 {
 	kernel_geometry g=get_kernel_geometry();
-	asf::pixel_rectangle in=src->total_meta_bounds(),out;
+	asf::pixel_rectangle inR=in->total_meta_bounds(),outR;
 	/* Scale the pixel rectangle by our scale factor,
 	  rounded to an integral number of whole pixels. */
-	out.lo_x=(int) ceil((in.lo_x-g.neighborhood.lo_x)/g.scale.x);
-	out.lo_y=(int) ceil((in.lo_y-g.neighborhood.lo_y)/g.scale.y);
-	out.hi_x=(int)floor((in.hi_x-g.neighborhood.hi_x)/g.scale.x);
-	out.hi_y=(int)floor((in.hi_y-g.neighborhood.hi_y)/g.scale.y);
-	dest->meta_setsize(src->bands(),out);
+	outR.lo_x=(int) ceil((inR.lo_x-g.neighborhood.lo_x)/g.scale.x);
+	outR.lo_y=(int) ceil((inR.lo_y-g.neighborhood.lo_y)/g.scale.y);
+	outR.hi_x=(int)floor((inR.hi_x-g.neighborhood.hi_x)/g.scale.x);
+	outR.hi_y=(int)floor((inR.hi_y-g.neighborhood.hi_y)/g.scale.y);
+	out->meta_setsize(in->bands(),outR);
 }
 
 

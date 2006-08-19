@@ -34,6 +34,7 @@ void usage(std::string why) {
 int main(int argc,const char *argv[]) {
 	int argi=1;
 	int verbosity=0;
+	int tile_size=0; // default tile size
 	while (argi<argc) {
 		if (argv[argi][0]=='-') {
 			switch(argv[argi][1]) {
@@ -46,6 +47,9 @@ int main(int argc,const char *argv[]) {
 			} break;
 			case 'l': { /* DLL Loader debugging */
 				asf::plugin_load_verbose=1;
+			} break;
+			case 't': { /* Tile size */
+				tile_size=atoi(argv[++argi]);
 			} break;
 			default:
 				usage("Unknown argument "+std::string(argv[argi]));
@@ -69,7 +73,7 @@ int main(int argc,const char *argv[]) {
 	asf::parameter_control_list *list=parser.parse_file(inFile);
 	
 	if (verbosity>0) printf("clui> Executing plugins from '%s'\n",inFile);
-	asf::execute_list(*list);
+	asf::execute_list(*list,tile_size);
 	if (verbosity>0) printf("clui> Done executing plugins\n");
 	return 0;
 }

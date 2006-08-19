@@ -4,18 +4,18 @@
 
 image_input_las filename="grey.img";
 image_output_jpeg
-	src=@image_input_las.dest 
+	in=@image_input_las.out 
 	quality=90
 	filename="image_output_jpeg.test_good.jpg";
 
 image_output_jpeg
-	src=@image_input_las.dest 
+	in=@image_input_las.out 
 	quality=40
 	filename="image_output_jpeg.test_crap.jpg";
 
 image_input_jpeg filename="colorbars.jpg";
 image_output_jpeg
-	src=@image_input_jpeg.dest 
+	in=@image_input_jpeg.out 
 	quality=50
 	filename="image_output_jpeg.test_color.jpg";
 

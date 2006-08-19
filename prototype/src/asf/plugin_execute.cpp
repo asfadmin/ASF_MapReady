@@ -798,7 +798,7 @@ void execute_plugin_control::render(const render_request &req)
  Execute the plugins in this list in some sensible order,
  creating tiles as needed, and pruning useless branches.
 */
-void asf::execute_list(const asf::parameter_control_list &list)
+void asf::execute_list(const asf::parameter_control_list &list,int tile_size)
 {
 /**
 Call the plugin's meta_execute routines.  Since meta_execute
@@ -823,7 +823,8 @@ Figure out how big our image tiles should be at each stage of processing.
 */
 	asf::log(ex_loglevel-1,"plugin_execute> Finding tile sizes\n");
 	set_size_param preferred;
-	preferred.size=pixel_size(64,64);
+	if (tile_size==0) tile_size=64; /* Default tile size */
+	preferred.size=pixel_size(tile_size,tile_size);
 	preferred.zoom=0;
 	r.set_size(preferred); /* find processed tile sizes */
 

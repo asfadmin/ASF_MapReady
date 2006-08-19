@@ -1,6 +1,6 @@
 #!../bin/clui
 
 image_testpattern w=200 h=100 type=1;
-image_checksum src=@image_testpattern.dest;
+image_checksum in=@image_testpattern.out;
 string_out filename="image_checksum.test.out" string=@image_checksum.checksum;
 echo string=@image_checksum.checksum;

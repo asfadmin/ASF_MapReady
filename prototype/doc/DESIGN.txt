@@ -1,4 +1,42 @@
+Orion's random design notes for the C++ Prototype
+
+----------------- 08/2006 ------------------
+I'm trying to figure out how to do a concat-like operation.
+This would be useful for:
+	1.) Mosaicing SAR images/swaths/etc, or panoramic photos.
+	2.) Combining patches from a deramp-FFT sar processor (SPECAN).
+		http://www.ee.iitb.ac.in/~icvgip/PAPERS/167.pdf
+	3.) Weighted combination of DEMs, etc. with outlier removal.
+
+In all three cases, the combination is weighted.
+	1.) Weights are used for feathering.  Composition function is basically an alpha blend, which is a non-commutative association.
+	2.) Weights are used for spectrum filtering.  Composition function is just addition.
+	3.) Weights are known from a priori coherence and phase unwrapping, but then adjusted based on height agreement.
+
+So it's clear there are several things that need to be factored out here:
+	- The source of the data (photo, SAR image, FFT'd patch).  This is just a pixel producer, like parameter_float_image.
+	- The weighting function; although closely associated with the data source.  This is a float image, although it's often possible to just calculate weights from scratch.
+	- The combination function.  This reduces a set of pixels and weights to a single output pixel (possibly of many bands).
+	
+There's also a bit of infrastructure that sticks the three together.
+
+
+One way to abstract out the data source is a (now missing) interface like:
+
+/**
+  Generate a float image.  This is the interface used to drive
+plugin execution.
+*/
+class image_generator {
+public:
+	virtual parameter_float_image *render(image_request &req) =0;
+};
+
+
+
 ----------------- 07/2006 ------------------
+(Resolved: use asf_import--don't rewrite it.)
+
 I'm trying to figure out how to read metadata.
 I've got to be able to read at least:
 	- ASF (and preferably other) CEOS
@@ -26,7 +64,7 @@ asf_meta/meta_get_geo.c:meta_get_latLon calls proj_to_ll, in jpl_proj.
 
 
 My options are:
-	- svn/src/asf_meta: *unused* lex/yacc.
+	- svn/src/asf_meta: lex/yacc reads; printf writes.
 	- svn/src/libasf_meta: printf/scanf-style conversion interface
 	- asf_tools/src_lib/asf_meta: coniFetch (the original pup idea!)
 
@@ -102,6 +140,7 @@ For example:
 	AISP takes signal data to processed complex image
 	igram takes coregistered complex images to phase
 	Snaphu takes wrapped phase to unwrapped phase
+
 
 
 -- Alternate flow control

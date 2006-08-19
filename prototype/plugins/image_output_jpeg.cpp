@@ -18,14 +18,14 @@ class self : public asf::plugin {
 	int file_y; /**< Row that will be written next to the JPEG file */
 	unsigned char *buf; /**< One line of image data */
 	
-	asf::parameter_float_image *src; /**< Image to write */
+	asf::parameter_float_image *in; /**< Image to write */
 public:
 	ASF_plugin_class(self)
 	self(asf::plugin_parameters &param) 
 		:asf::plugin(param), f(0), w(0), h(0),bands(0),buf(0)
 	{
 		asf::input(param,"filename",&filename);
-		asf::input(param,"src",&src,
+		asf::input(param,"in",&in,
 			asf::parameter_scanline_constraint::instance());
 		asf::optional(param,"quality",&quality);
 	}
@@ -39,9 +39,9 @@ public:
 		jpeg_create_compress(&cinfo);
 		jpeg_stdio_dest(&cinfo, f);
 		
-		w=cinfo.image_width=src->total_meta_bounds().width();
-		h=cinfo.image_height=src->total_meta_bounds().height();
-		bands=cinfo.input_components=src->bands();
+		w=cinfo.image_width=in->total_meta_bounds().width();
+		h=cinfo.image_height=in->total_meta_bounds().height();
+		bands=cinfo.input_components=in->bands();
 		switch (bands) {
 		case 1: /* fine--greyscale. */ 
 			cinfo.in_color_space=JCS_GRAYSCALE; 
@@ -71,22 +71,22 @@ public:
 	/** Write a few more rows from the file */
 	void execute(void) { 
 		/** We'll read a block of pm.height() rows of our image. */
-		asf::pixel_rectangle pm=src->pixel_meta_bounds();
+		asf::pixel_rectangle pm=in->pixel_meta_bounds();
 		
 		/* Check if we need to seek the file to get to our target */
 		log(11,"Write JPEG file (now at line %d) lines %d-%d\n",file_y,pm.lo_y,pm.hi_y-1);
 		if (pm.lo_y!=file_y) asf::die("Logic error!  Must write JPEG image in-order, top-down!\n");
 		
-		asf::pixel_rectangle p=src->pixels();
+		asf::pixel_rectangle p=in->pixels();
 		
 		/** Keep reading rows until we've got all the pixels we need. */
 		for (int y=p.lo_y;y<p.hi_y;y++) {
-			/* Copy row of JPEG data into our destination image */
+			/* Copy row of JPEG data into our outination image */
 			unsigned char *s=buf;
 			for (int x=p.lo_x;x<p.hi_x;x++) {
 				for (int b=0;b<bands;b++) {
 					/* Clip output value and write out */
-					float val=src->at(x,y,b);
+					float val=in->at(x,y,b);
 					unsigned char v;
 					if (val<0) v=0;
 					else if (val>255) v=255;

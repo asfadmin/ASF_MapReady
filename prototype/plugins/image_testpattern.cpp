@@ -10,7 +10,7 @@ class self : public asf::plugin {
 	asf::parameter_int *type; /* Kind of test pattern to make */
 	asf::parameter_real *scale; /* Scale of features in test pattern (default 20 pixels) */
 	asf::parameter_real *value; /* Value at which features wrap around (default 1.0) */
-	asf::parameter_float_image *dest; /* Image to fill with test pattern */
+	asf::parameter_float_image *out; /* Image to fill with test pattern */
 public:
 	ASF_plugin_class(self)
 	self(asf::plugin_parameters &param) 
@@ -21,10 +21,10 @@ public:
 		asf::optional(param,"type",&type);
 		asf::optional(param,"scale",&scale);
 		asf::optional(param,"value",&value);
-		asf::output(param,"dest",&dest);
+		asf::output(param,"out",&out);
 	}
 	void meta_execute(void) {
-		dest->meta_setsize(1,asf::pixel_rectangle(*w,*h));
+		out->meta_setsize(1,asf::pixel_rectangle(*w,*h));
 	}
 	void execute(void) { 
 		int t=0; if (type) t=*type;
@@ -35,9 +35,9 @@ public:
 		double val=1.0; if (value) val=*value;
 		
 		int xc=*w/2, yc=*h/2; // center coordinate (meta pixels)
-		ASF_FOR_PIXELS(x,y,dest->pixels()) {
+		ASF_FOR_PIXELS(x,y,out->pixels()) {
 			double v=0.0;
-			asf::meta_pixel_location m=dest->
+			asf::meta_pixel_location m=out->
 				meta_from_pixel(asf::pixel_location(x,y));
 			int cx=m.x-xc, cy=m.y-yc;
 			double r=sqrt((double)(cx*cx+cy*cy));
@@ -51,7 +51,7 @@ public:
 			default:
 				asf::die("Unrecognized test pattern type");
 			}
-			dest->at(x,y,0)=v*val; // v*(hi-lo)+lo;
+			out->at(x,y,0)=v*val; // v*(hi-lo)+lo;
 		}
 	}
 };

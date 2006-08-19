@@ -17,14 +17,14 @@ class self : public asf::plugin {
 	int file_y; /**< Row that will be read next from the JPEG file */
 	unsigned char *buf; /**< One line of image data */
 	
-	asf::parameter_float_image *dest; /**< Image to read */
+	asf::parameter_float_image *out; /**< Image to read */
 public:
 	ASF_plugin_class(self)
 	self(asf::plugin_parameters &param) 
 		:asf::plugin(param), f(0), w(0), h(0),bands(0),buf(0)
 	{
 		asf::input(param,"filename",&filename);
-		asf::output(param,"dest",&dest,asf::parameter_scanline_constraint::instance());
+		asf::output(param,"out",&out,asf::parameter_scanline_constraint::instance());
 	}
 	void meta_execute(void) {
 		begin_read();
@@ -45,7 +45,7 @@ public:
 		*/
 		w=cinfo.image_width, h=cinfo.image_height;
 		bands=cinfo.num_components;
-		dest->meta_setsize(bands,asf::pixel_rectangle(w,h));
+		out->meta_setsize(bands,asf::pixel_rectangle(w,h));
 		
 		jpeg_start_decompress(&cinfo);
 		buf=new unsigned char[3*w]; /* one scanline of data */
@@ -56,7 +56,7 @@ public:
 	/** Read a few more rows from the file */
 	void execute(void) { 
 		/** We'll read a block of pm.height() rows of our image. */
-		asf::pixel_rectangle pm=dest->pixel_meta_bounds();
+		asf::pixel_rectangle pm=out->pixel_meta_bounds();
 		
 		/* Check if we need to seek the file to get to our target */
 		log(11,"Reading JPEG file (now at line %d) lines %d-%d\n",file_y,pm.lo_y,pm.hi_y-1);
@@ -69,7 +69,7 @@ public:
 			for (;file_y<pm.lo_y;file_y++) jpeg_read_scanlines(&cinfo,&buf,1);
 		}
 		
-		asf::pixel_rectangle p=dest->pixels();
+		asf::pixel_rectangle p=out->pixels();
 		if (!(file_y==pm.lo_y)) asf::die("Logic error in JPEG line maintainance!");
 		if (!(p.lo_x==0 && p.hi_x==w)) asf::die("Logic error in JPEG row size!");
 		
@@ -78,11 +78,11 @@ public:
 			int nRead=jpeg_read_scanlines(&cinfo,&buf,1);
 			if (nRead!=1) asf::die("Error reading JPEG image "+(std::string)*filename);
 			file_y++;
-			/* Copy row of JPEG data into our destination image */
+			/* Copy row of JPEG data into our outination image */
 			unsigned char *s=buf;
 			for (int x=p.lo_x;x<p.hi_x;x++) {
 				for (int b=0;b<bands;b++) {
-					dest->at(x,y,b)=*s++; 
+					out->at(x,y,b)=*s++; 
 				}
 		 	}
 		}

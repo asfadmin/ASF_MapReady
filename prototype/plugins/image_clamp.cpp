@@ -21,12 +21,12 @@ public:
 	void execute(void) { 
 		double lo=-1.0e99; if (min) lo=*min;
 		double hi=+1.0e99; if (max) hi=*max;
-		for (int b=0;b<src->bands();b++) {
-			ASF_FOR_PIXELS(x,y,src->pixels()) {
-				double v=src->at(x,y,b);
+		for (int b=0;b<in->bands();b++) {
+			ASF_FOR_PIXELS(x,y,in->pixels()) {
+				double v=in->at(x,y,b);
 				if (v<lo) v=lo;
 				if (v>hi) v=hi;
-				dest->at(x,y,b)=v;
+				out->at(x,y,b)=v;
 			}
 		}
 	}

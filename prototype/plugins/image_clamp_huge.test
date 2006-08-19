@@ -5,7 +5,7 @@
 #
 
 image_testpattern w=1200 h=1800 type=3 scale=80.0 value=10.0;
-image_clamp min=1.0 max=9.0 src=@image_testpattern.dest;
+image_clamp min=1.0 max=9.0 in=@image_testpattern.out;
 image_output_binary 
-	src=@image_clamp.dest 
+	in=@image_clamp.out 
 	filename="image_clamp_huge.test.img";
