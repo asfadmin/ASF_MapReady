@@ -12,6 +12,35 @@ static const int popup_menu_item_display_asf_metadata = 5;
 static const int popup_menu_item_view_output = 6;
 static const int popup_menu_item_google_earth = 7;
 
+/* danger: returns pointer to static data!! */
+static const char * imgloc(char * file)
+{
+    static char loc[1024];
+    gchar * tmp = find_in_share(file);
+    if (tmp) {
+      strcpy(loc, tmp);
+      g_free(tmp);
+    } else {
+      strcpy(loc, file);
+    }
+
+    return loc;
+}
+
+void set_toolbar_images()
+{
+    GtkWidget * w =
+      glade_xml_get_widget(glade_xml, "google_earth_toolbar_image");
+
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("earth2.gif"));
+
+    w = glade_xml_get_widget(glade_xml, "ceos_metadata_toolbar_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("information_icon.gif"));
+
+    w = glade_xml_get_widget(glade_xml, "asf_metadata_toolbar_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("information_icon.gif"));
+}
+
 void
 show_please_select_message()
 {

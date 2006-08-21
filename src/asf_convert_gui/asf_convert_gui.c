@@ -13,29 +13,6 @@ gchar * output_directory = NULL;
 NamingScheme * current_naming_scheme = NULL;
 gboolean use_thumbnails = FALSE;
 
-/* danger: returns pointer to static data!! */
-static const char * imgloc(char * file)
-{
-    static char loc[1024];
-    gchar * tmp = find_in_share(file);
-    if (tmp) {
-      strcpy(loc, tmp);
-      g_free(tmp);
-    } else {
-      strcpy(loc, file);
-    }
-
-    return loc;
-}
-
-static void set_toolbar_images()
-{
-    GtkWidget * w =
-      glade_xml_get_widget(glade_xml, "google_earth_toolbar_image");
-
-    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("earth2.gif"));
-}
-
 int
 main(int argc, char **argv)
 {

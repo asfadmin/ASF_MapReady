@@ -224,6 +224,7 @@ void setup_dnd();
 gboolean get_iter_to_first_selected_row();
 void setup_popup_menu();
 void show_please_select_message();
+void set_toolbar_images();
 
 /* file_list.c */
 void setup_files_list(int, char **);

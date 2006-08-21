@@ -2605,7 +2605,7 @@ Export: JPEG (size 1000)
 			  <signal name="clicked" handler="on_display_ceos_button_clicked" last_modification_time="Fri, 12 May 2006 23:14:29 GMT"/>
 
 			  <child>
-			    <widget class="GtkImage" id="image7">
+			    <widget class="GtkImage" id="ceos_metadata_toolbar_image">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-dialog-info</property>
 			      <property name="icon_size">4</property>
@@ -2633,7 +2633,7 @@ Export: JPEG (size 1000)
 			  <signal name="clicked" handler="on_display_asf_button_clicked" last_modification_time="Fri, 12 May 2006 23:14:34 GMT"/>
 
 			  <child>
-			    <widget class="GtkImage" id="image8">
+			    <widget class="GtkImage" id="asf_metadata_toolbar_image">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-convert</property>
 			      <property name="icon_size">4</property>
@@ -2682,6 +2682,7 @@ Export: JPEG (size 1000)
 		      <child>
 			<widget class="GtkButton" id="google_earth_button">
 			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Display in Google Earth</property>
 			  <property name="can_focus">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
 			  <property name="focus_on_click">True</property>
