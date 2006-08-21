@@ -2688,7 +2688,7 @@ Export: JPEG (size 1000)
 			  <signal name="clicked" handler="on_google_earth_button_clicked" last_modification_time="Tue, 11 Jul 2006 06:08:15 GMT"/>
 
 			  <child>
-			    <widget class="GtkImage" id="image10">
+			    <widget class="GtkImage" id="google_earth_toolbar_image">
 			      <property name="visible">True</property>
 			      <property name="stock">gtk-dialog-warning</property>
 			      <property name="icon_size">4</property>

@@ -83,6 +83,7 @@ $(TARGET).exe: $(TARGET).c
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp $(TARGET).ico $(SHAREDIR)
+	cp earth2.gif $(SHAREDIR)
 	-cp htmlhelp.chm $(SHAREDIR)/asf_convert_gui.chm
 
 doc:
@@ -142,6 +143,7 @@ default: clean doc $(OBJS)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp $(TARGET).ico $(SHAREDIR)
+	cp earth2.gif $(SHAREDIR)
 	cp $(TARGET).txt $(SHAREDIR)
 
 %.c: %.h
