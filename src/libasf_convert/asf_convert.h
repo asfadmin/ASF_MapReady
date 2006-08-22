@@ -23,7 +23,7 @@ typedef struct
   char *batchFile;        // batch file name
   char *prefix;           // prefix for output file naming scheme
   char *suffix;           // suffix for output file naming scheme
-  char *time_stamp;       // string that can be used to passing along a time stamp
+  char *tmp_dir;          // name of the directory for intermediate files
   char *status_file;      // file in which we should dump status info
 } s_general;
 
@@ -113,11 +113,6 @@ typedef struct
 void check_return(int ret, char *msg);
 
 // configuration functions
-int strindex(char s[], char t[]);
-char *read_param(char *line);
-char *read_str(char *line, char *param);
-int read_int(char *line, char *param);
-double read_double(char *line, char *param);
 int init_convert_config(char *configFile);
 convert_config *init_fill_convert_config(char *configFile);
 convert_config *read_convert_config(char *configFile);

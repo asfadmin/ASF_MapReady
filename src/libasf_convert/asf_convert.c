@@ -5,6 +5,7 @@
 #include "proj.h"
 #include "asf_import.h"
 #include "asf_contact.h"
+#include "asf_sar.h"
 #include "asf_import.h"
 #include "asf_terrcorr.h"
 #include "asf_geocode.h"
@@ -61,9 +62,8 @@ int asf_convert(int createflag, char *configFileName)
   FILE *fBatch, *fConfig;
   convert_config *cfg, *tmp_cfg;
   meta_parameters *meta;
-  char cmd[1024], line[255], batchConfig[255];
+  char line[255], batchConfig[255];
   char inFile[255], outFile[255], fileName[255];
-  char projection[255];
   char values[255], prefix[30], suffix[30];
   const int pid = getpid();
   int i;
@@ -132,8 +132,13 @@ int asf_convert(int createflag, char *configFileName)
   // Regular processing
   else {
 
-    sprintf(cfg->general->time_stamp, "%s", time_stamp_dir());
-    create_dir(cfg->general->time_stamp);
+    // If user didn't specify a temporary directory, we will
+    // use a time stamp as the name of the temporary directory
+    if (strlen(cfg->general->tmp_dir) == 0) {
+        sprintf(cfg->general->tmp_dir, "%s", time_stamp_dir());
+    }
+
+    create_dir(cfg->general->tmp_dir);
     update_status(cfg, "Processing...");
 
     // Check whether everything in the [Import] block is reasonable
@@ -325,7 +330,7 @@ int asf_convert(int createflag, char *configFileName)
       if (cfg->general->image_stats || cfg->general->detect_cr ||
 	  cfg->general->sar_processing || cfg->general->terrain_correct ||
 	  cfg->general->geocoding || cfg->general->export) {
-        sprintf(outFile, "%s/import", cfg->general->time_stamp);
+        sprintf(outFile, "%s/import", cfg->general->tmp_dir);
       }
       else {
         sprintf(outFile, "%s", cfg->general->out_name);
@@ -353,7 +358,7 @@ int asf_convert(int createflag, char *configFileName)
           if (cfg->general->image_stats || cfg->general->detect_cr ||
               cfg->general->sar_processing || cfg->general->terrain_correct ||
               cfg->general->geocoding || cfg->general->export) {
-              sprintf(outFile, "%s/sar_processing", cfg->general->time_stamp);
+              sprintf(outFile, "%s/sar_processing", cfg->general->tmp_dir);
           }
           else {
               sprintf(outFile, "%s", cfg->general->out_name);
@@ -381,15 +386,15 @@ int asf_convert(int createflag, char *configFileName)
         ardop(params_in);
 
 	if (strcmp(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE") == 0)
-	  sprintf(outFile, "%s/sar_processing_amp", cfg->general->time_stamp);
+	  sprintf(outFile, "%s/sar_processing_amp", cfg->general->tmp_dir);
 	else if (strcmp(cfg->sar_processing->radiometry, "POWER_IMAGE") == 0)
-	  sprintf(outFile, "%s/sar_processing_power", cfg->general->time_stamp);
+	  sprintf(outFile, "%s/sar_processing_power", cfg->general->tmp_dir);
 	else if (strcmp(cfg->sar_processing->radiometry, "SIGMA_IMAGE") == 0)
-	  sprintf(outFile, "%s/sar_processing_sigma", cfg->general->time_stamp);
+	  sprintf(outFile, "%s/sar_processing_sigma", cfg->general->tmp_dir);
 	else if (strcmp(cfg->sar_processing->radiometry, "GAMMA_IMAGE") == 0)
-	  sprintf(outFile, "%s/sar_processing_gamma", cfg->general->time_stamp);
+	  sprintf(outFile, "%s/sar_processing_gamma", cfg->general->tmp_dir);
 	else if (strcmp(cfg->sar_processing->radiometry, "BETA_IMAGE") == 0)
-	  sprintf(outFile, "%s/sar_processing_beta", cfg->general->time_stamp);
+	  sprintf(outFile, "%s/sar_processing_beta", cfg->general->tmp_dir);
         else
             asfPrintError("Unexpected radiometry: %s\n", 
                           cfg->sar_processing->radiometry);
@@ -450,7 +455,7 @@ int asf_convert(int createflag, char *configFileName)
       // Pass in command line
       sprintf(inFile, "%s", outFile);
       if (cfg->general->geocoding || cfg->general->export) {
-	sprintf(outFile, "%s/detect_cr", cfg->general->time_stamp);
+	sprintf(outFile, "%s/detect_cr", cfg->general->tmp_dir);
       }
       else {
 	sprintf(outFile, "%s", cfg->general->out_name);
@@ -464,7 +469,7 @@ int asf_convert(int createflag, char *configFileName)
 
       // Generate filenames
       sprintf(inFile, "%s", outFile);
-      sprintf(outFile, "%s/terrain_correct", cfg->general->time_stamp);
+      sprintf(outFile, "%s/terrain_correct", cfg->general->tmp_dir);
 
       // Call asf_terrcorr!  Or refine_geolocation!
       if (cfg->terrain_correct->refine_geolocation_only) {
@@ -498,9 +503,6 @@ int asf_convert(int createflag, char *configFileName)
       double pixel_size = cfg->geocoding->pixel;
       float background_val = cfg->geocoding->background;
 
-      // Projection
-      sprintf(projection, "-read-proj-file %s", cfg->geocoding->projection);
-
       // Datum
       if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) == 0) {
 	datum = WGS84_DATUM;
@@ -526,7 +528,7 @@ int asf_convert(int createflag, char *configFileName)
       // Pass in command line
       sprintf(inFile, "%s", outFile);
       if (cfg->general->export) {
-        sprintf(outFile, "%s/geocoding", cfg->general->time_stamp);
+        sprintf(outFile, "%s/geocoding", cfg->general->tmp_dir);
       }
       else {
         sprintf(outFile, "%s", cfg->general->out_name);
@@ -587,7 +589,7 @@ int asf_convert(int createflag, char *configFileName)
     }
 
     if (!cfg->general->intermediates) {
-        remove_dir(cfg->general->time_stamp);
+        remove_dir(cfg->general->tmp_dir);
     }
   }
   return(EXIT_SUCCESS);
