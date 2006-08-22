@@ -149,6 +149,7 @@ void fileCopy(const char *src, const char *dst);
 
 /* Create & remove directories, these return 0 on success */
 int create_dir(const char *dir);
+int create_clean_dir(const char *dir);
 int remove_dir(const char *dir);
 
 /******************************************************************************

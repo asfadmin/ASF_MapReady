@@ -383,9 +383,17 @@ int
 create_dir(const char *dir)
 {
     char cmd[1024];
-    sprintf(cmd, "mkdir %s", dir);
+    sprintf(cmd, "mkdir -p %s", dir);
     asfSystem(cmd);
     return 0;
+}
+
+/* create a directory - deleting any existing one first */
+int
+create_clean_dir(const char *dir)
+{
+    remove_dir(dir);
+    return create_dir(dir);
 }
 
 /* remove a directory, and everything in it */

@@ -138,7 +138,7 @@ int asf_convert(int createflag, char *configFileName)
         sprintf(cfg->general->tmp_dir, "%s", time_stamp_dir());
     }
 
-    create_dir(cfg->general->tmp_dir);
+    create_clean_dir(cfg->general->tmp_dir);
     update_status(cfg, "Processing...");
 
     // Check whether everything in the [Import] block is reasonable
@@ -586,6 +586,35 @@ int asf_convert(int createflag, char *configFileName)
 
       // Move the .meta file out of temporary status: <out basename>.meta
       copy_meta(inFile, outFile);
+    }
+
+    // Generate a small thumbnail if requested.
+    if (cfg->general->thumbnail) {
+        asfPrintStatus("Generating Thumbnail image...\n");
+        
+        output_format_t format = JPEG;
+        long size = 48;
+        scale_t scale = SIGMA;
+        
+        // Pass in command line
+        if (!cfg->general->export)
+            sprintf(inFile, "%s", outFile);
+        
+        // Put the thumbnail in the intermediates directory, if it is
+        // being kept, otherwise in the output directory.
+        char *basename = get_basename(cfg->general->out_name);
+
+        if (cfg->general->intermediates) {
+            sprintf(outFile, "%s/%s_thumb.jpg",
+                    cfg->general->tmp_dir, basename);
+        } else {
+            char *tmp = appendToBasename(cfg->general->out_name, "_thumb");
+            strcpy(outFile, tmp);
+            free(tmp);
+        }
+
+        check_return(asf_export(format, size, scale, inFile, outFile),
+                     "exporting thumbnail data file (asf_export)\n");
     }
 
     if (!cfg->general->intermediates) {

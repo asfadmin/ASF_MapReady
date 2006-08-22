@@ -223,6 +223,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->general->short_config = 0;
   cfg->general->tmp_dir = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->general->tmp_dir, "");
+  cfg->general->thumbnail = 0;
 
   cfg->import->format = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->import->format, "CEOS");
@@ -327,6 +328,8 @@ convert_config *init_fill_convert_config(char *configFile)
 	strcpy(cfg->general->prefix, read_str(line, "prefix"));
       if (strncmp(test, "suffix", 6)==0)
 	strcpy(cfg->general->suffix, read_str(line, "suffix"));
+      if (strncmp(test, "thumbnail", 9)==0)
+	cfg->general->thumbnail = read_int(line, "thumbnail");
       // Import
       if (strncmp(test, "input format", 12)==0)
         strcpy(cfg->import->format, read_str(line, "input format"));
@@ -432,6 +435,8 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->general->prefix, read_str(line, "prefix"));
       if (strncmp(test, "suffix", 6)==0)
         strcpy(cfg->general->suffix, read_str(line, "suffix"));
+      if (strncmp(test, "thumbnail", 9)==0)
+	cfg->general->thumbnail = read_int(line, "thumbnail");
       FREE(test);
     }
   }
@@ -490,6 +495,8 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->general->prefix, read_str(line, "prefix"));
       if (strncmp(test, "suffix", 6)==0)
         strcpy(cfg->general->suffix, read_str(line, "suffix"));
+      if (strncmp(test, "thumbnail", 9)==0)
+	cfg->general->thumbnail = read_int(line, "thumbnail");
       FREE(test);
     }
 

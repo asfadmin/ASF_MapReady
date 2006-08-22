@@ -25,6 +25,8 @@ typedef struct
   char *suffix;           // suffix for output file naming scheme
   char *tmp_dir;          // name of the directory for intermediate files
   char *status_file;      // file in which we should dump status info
+  int thumbnail;          // if true, a 48x48 jpeg thumbnail of the output
+                          // image is generated in the intermediates directory
 } s_general;
 
 typedef struct
