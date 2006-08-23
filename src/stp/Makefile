@@ -57,10 +57,12 @@ LDLIBS = $(LIBS) \
 	 $(shell /usr/bin/pkg-config --libs libglade-2.0) \
          $(shell /usr/bin/pkg-config --libs gthread-2.0)
 
+LDFLAGS = -Wl,--export-dynamic
+
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 default: $(OBJS)
-	gcc $(OBJS) $(LDLIBS) -o $(TARGET)
+	gcc $(OBJS) $(LDLIBS) -o $(TARGET) $(LDFLAGS)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp *.gif $(SHAREDIR)
