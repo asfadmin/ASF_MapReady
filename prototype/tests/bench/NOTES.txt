@@ -108,3 +108,56 @@ Here's what "v=v*m+a" turns into:
 That's a heck of a lot of imul's: 4 of them--2 each in x and y.  This is needed because the compiler's scared of "xd" and "yd" changing during a run, and hence won't incrementalize them.  Maybe it'd be cheaper to require continuous per-band image storage, which would fix xd==1 and additionally possibly allow the compiler to induct away the yd multiplications.  This would mean giving up on band-interleaved images internally, however, which might be too big a price to pay.
 
 Some sort of super-badass SSE-capable code generator would be the ideal thing here--it'd be able to get rid of everything but the "fmuls/fadd" above, by fusing together the arithmetic across a whole set of plugins.  It'd just be nasty, however, to write the plugins like this--you'd have to somehow abstractly define what you want done to the input pixels.  Perhaps a wacko-C++ trick like the "lambda" class, or "Sh" metaprogramming might help here...
+
+
+
+-------------------
+Test runs on lawlor.asf.alaska.edu, an Opteron 144 (1.7GHz, 1MB cache, 1GB RAM)
+
+Per-pass cost is 10-20ns/pixel, per I/O cost is 60+ns/pixel
+for a range of image sizes.  This implies a 3x-6x speedup due
+to not reading and writing the images for each pass.
+
+Benchmark size: 1000 x 1000
+  Creating test file on disk... 180.00 ns/pixel
+  Trying 0 passes for various tile sizes...
+    bts.sh: 0 passes, 1000 image, 4 tile,  120.00 ns/pixel
+    bts.sh: 0 passes, 1000 image, 16 tile,  120.00 ns/pixel
+    bts.sh: 0 passes, 1000 image, 64 tile,  120.00 ns/pixel
+    bts.sh: 0 passes, 1000 image, 256 tile,  120.00 ns/pixel
+    bts.sh: 0 passes, 1000 image, 1024 tile,  130.00 ns/pixel
+    bts.sh: 0 passes, 1000 image, 4096 tile,  140.00 ns/pixel
+    bts.sh: 0 passes, 1000 image, 16000 tile,  140.00 ns/pixel
+    bts.sh: 0 passes, 1000 image, 100000 tile,  140.00 ns/pixel
+  Trying 10 passes for various tile sizes...
+    bts.sh: 10 passes, 1000 image, 4 tile,  950.00 ns/pixel
+    bts.sh: 10 passes, 1000 image, 16 tile,  290.00 ns/pixel
+    bts.sh: 10 passes, 1000 image, 64 tile,  250.00 ns/pixel
+    bts.sh: 10 passes, 1000 image, 256 tile,  250.00 ns/pixel
+    bts.sh: 10 passes, 1000 image, 1024 tile,  320.00 ns/pixel
+    bts.sh: 10 passes, 1000 image, 4096 tile,  320.00 ns/pixel
+    bts.sh: 10 passes, 1000 image, 16000 tile,  310.00 ns/pixel
+    bts.sh: 10 passes, 1000 image, 100000 tile,  320.00 ns/pixel
+     -> About a 10% performance benefit from tiling for small images
+
+Benchmark size: 4000 x 4000
+  Creating test file on disk... 163.12 ns/pixel
+  Trying 0 passes for various tile sizes...
+    bts.sh: 0 passes, 4000 image, 4 tile,  98.12 ns/pixel
+    bts.sh: 0 passes, 4000 image, 16 tile,  95.00 ns/pixel
+    bts.sh: 0 passes, 4000 image, 64 tile,  92.50 ns/pixel
+    bts.sh: 0 passes, 4000 image, 256 tile,  94.38 ns/pixel
+    bts.sh: 0 passes, 4000 image, 1024 tile,  100.62 ns/pixel
+    bts.sh: 0 passes, 4000 image, 4096 tile,  113.75 ns/pixel
+    bts.sh: 0 passes, 4000 image, 16000 tile,  107.50 ns/pixel
+    bts.sh: 0 passes, 4000 image, 100000 tile,  106.25 ns/pixel
+  Trying 10 passes for various tile sizes...
+    bts.sh: 10 passes, 4000 image, 4 tile,  920.62 ns/pixel
+    bts.sh: 10 passes, 4000 image, 16 tile,  271.25 ns/pixel
+    bts.sh: 10 passes, 4000 image, 64 tile,  223.75 ns/pixel
+    bts.sh: 10 passes, 4000 image, 256 tile,  305.00 ns/pixel
+    bts.sh: 10 passes, 4000 image, 1024 tile,  318.12 ns/pixel
+    bts.sh: 10 passes, 4000 image, 4096 tile,  532.50 ns/pixel
+    bts.sh: 10 passes, 4000 image, 16000 tile,  412.50 ns/pixel
+    bts.sh: 10 passes, 4000 image, 100000 tile,  425.62 ns/pixel
+     -> About a 2x performance benefit from tiling for large images.
