@@ -31,7 +31,8 @@ void asfLineMeter(int currentLine, int totalLines)
   }
 
   /* Report to the log as well */
-  if (logflag) {
+  /* Only on the last line */
+  if (logflag && currentLine==totalLines) {
     sprintf(logbuf,"%s%c",logbuf,'\n');
     printLog(logbuf);
   }
@@ -67,7 +68,8 @@ void asfPercentMeter(double inPercent)
     inPercent++;
   }
   /* Report to the log as well */
-  if (logflag) {
+  /* Only on the last line */
+  if (logflag && newPercent==100) {
     sprintf(logbuf,"%s%c",logbuf,'\n');
     printLog(logbuf);
   }
