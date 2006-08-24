@@ -1103,7 +1103,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
           if ( imd->general->image_data_type == DEM ) {
               double lat, lon;
               meta_get_latLon(omd, oiy, oix, average_height, &lat, &lon);
-              val -= get_geoid_height(lat, lon);
+              val += get_geoid_height(lat, lon);
           }
 
           SET_PIXEL (oix, oiy, val);

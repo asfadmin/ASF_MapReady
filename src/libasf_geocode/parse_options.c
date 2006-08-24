@@ -213,7 +213,7 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
 static
 #endif
 void write_args(projection_type_t proj_type, project_parameters_t *pps,
-				char * file)
+                char * file)
 {
 	FILE * fp = FOPEN(file, "wt");
 
@@ -395,7 +395,7 @@ static int matches_read_proj_file(char * param)
 }
 
 static int parse_double_option(int *i, int argc, char *argv[], int *specified,
-							   double *value)
+                               double *value)
 {
 	double val;
 	int ok;
@@ -430,7 +430,7 @@ static int parse_double_option(int *i, int argc, char *argv[], int *specified,
 }
 
 static int parse_string_option(int *i, int argc, char *argv[], int *specified,
-							   char *value)
+                               char *value)
 {
 	int ok;
 
@@ -456,7 +456,7 @@ static int parse_string_option(int *i, int argc, char *argv[], int *specified,
 }
 
 static int parse_int_option(int *i, int argc, char *argv[], int *specified,
-							int *value)
+                            int *value)
 {
 	int val;
 	int ok;
@@ -491,8 +491,8 @@ static int parse_int_option(int *i, int argc, char *argv[], int *specified,
 }
 
 static int parse_zone_option(int *i, int argc,
-							 char *argv[], int *specified,
-							 int *value, int *ok)
+                             char *argv[], int *specified,
+                             int *value, int *ok)
 {
 	if (strcmp(argv[*i], "--zone") == 0 ||
 		strcmp(argv[*i], "-z") == 0)
@@ -507,8 +507,8 @@ static int parse_zone_option(int *i, int argc,
 }
 
 static int parse_first_standard_parallel_option(int *i, int argc,
-												char *argv[], int *specified,
-												double *value, int *ok)
+                                                char *argv[], int *specified,
+                                                double *value, int *ok)
 {
 	if (strcmp(argv[*i], "--first-standard-parallel") == 0)
 	{
@@ -522,8 +522,8 @@ static int parse_first_standard_parallel_option(int *i, int argc,
 }
 
 static int parse_second_standard_parallel_option(int *i, int argc,
-												 char *argv[], int *specified,
-												 double *value, int *ok)
+                                                 char *argv[], int *specified,
+                                                 double *value, int *ok)
 {
 	if (strcmp(argv[*i], "--second-standard-parallel") == 0)
 	{
@@ -537,8 +537,8 @@ static int parse_second_standard_parallel_option(int *i, int argc,
 }
 
 static int parse_center_latitude_option(int *i, int argc,
-										char *argv[], int *specified,
-										double *value, int *ok)
+                                        char *argv[], int *specified,
+                                        double *value, int *ok)
 {
 	if (strcmp(argv[*i], "--center-latitude") == 0 ||
 		strcmp(argv[*i], "--latitude-of-origin") == 0)
@@ -553,8 +553,8 @@ static int parse_center_latitude_option(int *i, int argc,
 }
 
 static int parse_central_meridian_option(int *i, int argc,
-										 char *argv[], int *specified,
-										 double *value, int *ok)
+                                         char *argv[], int *specified,
+                                         double *value, int *ok)
 {
 	if (strcmp(argv[*i], "--central-meridian") == 0)
 	{
@@ -568,8 +568,8 @@ static int parse_central_meridian_option(int *i, int argc,
 }
 
 static int parse_false_easting_option(int *i, int argc,
-									  char *argv[], int *specified,
-									  double *value, int *ok)
+                                      char *argv[], int *specified,
+                                      double *value, int *ok)
 {
 	if (strcmp(argv[*i], "--false-easting") == 0)
 	{
@@ -583,8 +583,8 @@ static int parse_false_easting_option(int *i, int argc,
 }
 
 static int parse_false_northing_option(int *i, int argc,
-									   char *argv[], int *specified,
-									   double *value, int *ok)
+                                       char *argv[], int *specified,
+                                       double *value, int *ok)
 {
 	if (strcmp(argv[*i], "--false-northing") == 0)
 	{
@@ -613,7 +613,7 @@ static int parse_false_northing_option(int *i, int argc,
 //}
 
 static int parse_write_proj_file_option(int *i, int argc, char *argv[],
-										char **write_file, int *ok)
+                                        char **write_file, int *ok)
 {
 	if (matches_write_proj_file(argv[*i]))
 	{
@@ -639,8 +639,8 @@ static int parse_write_proj_file_option(int *i, int argc, char *argv[],
 }
 
 static int parse_read_proj_file_option(int *i, int argc, char *argv[],
-									   projection_type_t *proj_type,
-									   project_parameters_t *pps, int *ok)
+                                       projection_type_t *proj_type,
+                                       project_parameters_t *pps, int *ok)
 {
 	if (matches_read_proj_file(argv[*i]))
 	{
@@ -688,7 +688,7 @@ static void remove_args(int start, int end, int *argc, char **argv[])
 }
 
 static void extract_double_option(int *argc, char **argv[], double *val,
-								  char *arg, int *found)
+                                  char *arg, int *found)
 {
 	int i;
 
@@ -724,7 +724,7 @@ void extract_double_options(int *argc, char **argv[], double *val, ... )
 }
 
 static void handle_string_option(int *argc, char **argv[], char *val,
-								 char *arg, int *found, int remove_arg)
+                                 char *arg, int *found, int remove_arg)
 {
 	int i;
 
@@ -744,20 +744,19 @@ static void handle_string_option(int *argc, char **argv[], char *val,
 }
 
 static void detect_string_option(int argc, char *argv[], char *val,
-								 char *arg, int *found)
+                                 char *arg, int *found)
 {
 	handle_string_option(&argc, &argv, val, arg, found, FALSE);
 }
 
 static void extract_string_option(int *argc, char **argv[], char *val,
-								  char *arg, int *found)
+                                  char *arg, int *found)
 {
 	handle_string_option(argc, argv, val, arg, found, TRUE);
 }
 
 /* assumes the space has been allocated by caller */
-static int extract_string_options(int *argc, char **argv[],
-								  char *val, ... )
+static int extract_string_options(int *argc, char **argv[], char *val, ... )
 {
 	va_list ap;
 	char * arg = NULL;
@@ -801,7 +800,7 @@ int detect_string_options(int argc, char *argv[], char *val, ... )
 }
 
 static void extract_flag(int *argc, char **argv[],
-						 char *arg, int *found)
+                         char *arg, int *found)
 {
 	int i;
 
@@ -947,10 +946,10 @@ static resample_method_t parse_resample_method_option(int *argc, char **argv[])
 }
 
 void parse_other_options(int *argc, char **argv[],
-						 double *height, double *pixel_size,
-						 datum_type_t *datum,
-						 resample_method_t *resample_method,
-						 int *override_checks)
+                         double *height, double *pixel_size,
+                         datum_type_t *datum,
+                         resample_method_t *resample_method,
+                         int *override_checks)
 {
 	*datum = parse_datum_option(argc, argv);
 	extract_double_options(argc, argv, height, "--height", "-height", "-h", NULL);
@@ -968,8 +967,8 @@ void parse_other_options(int *argc, char **argv[],
 }
 
 project_parameters_t * parse_projection_options(int *argc, char **argv[],
-												projection_type_t * proj_type,
-												int *did_write_proj_file)
+                                                projection_type_t * proj_type,
+                                                int *did_write_proj_file)
 {
 	int i;
 	project_parameters_t *pps = malloc(sizeof(project_parameters_t));
