@@ -382,29 +382,49 @@ invalidate_progress()
     LSU;
 }
 
-static void set_thumbnail(GtkTreeIter *iter, const gchar * file)
+static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
+                          const gchar *out_full)
 {
     if (use_thumbnails)
     {
+        int scaling_required = FALSE;
+
+        char *basename = get_basename(out_full);
+        char *thumbnail_name =
+            MALLOC(sizeof(char)*(strlen(tmp_dir)+strlen(basename)+32));
+        sprintf(thumbnail_name, "%s/%s_thumb.jpg", tmp_dir, basename);
+
+        if (!fileExists(thumbnail_name)) {
+            if (strcmp(findExt(out_full), ".jpg") == 0) {
+                scaling_required = TRUE;
+                strcpy(thumbnail_name, out_full);
+            }
+        }
+
         LSL;
 
         GError * err = NULL;
         GdkPixbuf * pb;
 
-	if (g_file_test(file, G_FILE_TEST_EXISTS))
+	if (g_file_test(thumbnail_name, G_FILE_TEST_EXISTS))
 	{
-           pb = gdk_pixbuf_new_from_file_at_size(file, THUMB_SIZE, 
-						 THUMB_SIZE, &err);
+            if (scaling_required)
+                pb = gdk_pixbuf_new_from_file_at_size(thumbnail_name, 
+                                                      THUMB_SIZE, THUMB_SIZE,
+                                                      &err);
+            else
+                pb = gdk_pixbuf_new_from_file(thumbnail_name, &err);
 
-	   if (!err)
-	   {
-	       gtk_list_store_set(list_store, iter, COL_OUTPUT_THUMBNAIL,
-				  pb, -1);
-	   }
-	   else
-	   {
-	       g_warning("Couldn't load image '%s': %s\n", file, err->message);
-	       g_error_free(err);
+            if (!err)
+            {
+                gtk_list_store_set(list_store, iter, COL_OUTPUT_THUMBNAIL,
+                                   pb, -1);
+            }
+            else
+            {
+                g_warning("Error loading image '%s': %s\n",
+                          thumbnail_name, err->message);
+                g_error_free(err);
 	   }
 	}
 
@@ -464,7 +484,7 @@ have_access_to_dir(const gchar * dir, gchar ** err_string)
 //}
 
 static char *
-do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int keep_files)
+do_convert(int pid, GtkTreeIter *iter, char *cfg_file)
 {
     extern int logflag;
     extern FILE *fLog;
@@ -520,12 +540,6 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int keep_files)
         }
 
 	unlink(statFile);
-
-	if (!keep_files)
-	{
-	    unlink(cfg_file);
-	    unlink(projFile);
-	}
 
 	free(projFile);
 	free(statFile);
@@ -599,7 +613,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
         char *in_basename = stripExt(in_data);
 	char *out_basename = stripExt(out_full);
 	char *output_dir = getPath(out_full);
-	char *config_file, *cmd_output;
+	char *config_file, *cmd_output, *tmp_dir;
 	gchar *err_string;
 	int err;
 
@@ -617,32 +631,41 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
             return;
         }
 
-	set_asf_tmp_dir(output_dir);
+        tmp_dir = MALLOC(sizeof(char)*(strlen(output_dir)+32));
+        sprintf(tmp_dir, "%s/convert-%s", output_dir, time_stamp_dir());
+
+        create_clean_dir(tmp_dir);
+	set_asf_tmp_dir(tmp_dir);
 
 	config_file =
 	  settings_to_config_file(user_settings, in_basename, out_full,
-				  output_dir);
+				  output_dir, tmp_dir);
+        if (!config_file) {
+            message_box("Error creating configuration file.\n");
+            return;
+        }
 
 	append_begin_processing_tag(in_data);
-	cmd_output = do_convert(pid, iter, config_file,
-				user_settings->keep_files);
+	cmd_output = do_convert(pid, iter, config_file);
 	err = check_for_error(cmd_output);
 	append_output(cmd_output);
 
 	free(config_file);
-	free(output_dir);
 	free(out_basename);
+	free(output_dir);
 	free(in_basename);
 	g_free(cmd_output);
 	
-	if (use_thumbnails && user_settings->export_is_checked &&
-	    settings_get_output_format_can_be_thumbnailed(user_settings))
+	if (use_thumbnails)
 	{
-	  set_thumbnail(iter, out_full);
+            set_thumbnail(iter, tmp_dir, out_full);
 	}	
 	    
 	char *done = err ? "Error" : "Done"; 
 	gtk_list_store_set(list_store, iter, COL_STATUS, done, -1);
+
+        if (!user_settings->keep_files)
+            remove_dir(tmp_dir);
     }
 
     g_free(status);

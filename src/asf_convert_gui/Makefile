@@ -118,12 +118,12 @@ LDLIBS = \
 	$(LIBDIR)/libasf_terrcorr.a \
 	$(LIBDIR)/libasf_ardop.a \
 	$(LIBDIR)/libasf_raster.a \
-	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_sar.a \
-	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/asf_fft.a \
+	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \

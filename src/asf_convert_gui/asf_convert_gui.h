@@ -192,7 +192,7 @@ int  settings_get_output_format_can_be_thumbnailed(const Settings *s);
 void settings_delete(Settings *);
 char * settings_to_config_file(const Settings *s,
 			     const gchar *input_file, const gchar *output_file,
-			     const gchar *output_path);
+			     const gchar *output_path, const gchar *tmp_dir);
 
 /* find_in_path.c */
 gchar *find_in_path(gchar * file);

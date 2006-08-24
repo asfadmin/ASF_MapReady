@@ -1201,13 +1201,14 @@ settings_delete(Settings * s)
 char *
 settings_to_config_file(const Settings *s,
 			const gchar *input_file, const gchar *output_full,
-			const gchar *output_path)
+			const gchar *output_path, const gchar *tmp_dir)
 {
     char *tmp_projfile = NULL;
     char *tmp_cfgfile;
     char *tmp_statfile;
     char *dts;
     char *output_file;
+    char *basename;
 
     if (s->export_is_checked) {
         output_file = strdup(output_full);
@@ -1215,9 +1216,12 @@ settings_to_config_file(const Settings *s,
         output_file = stripExt(output_full);
     }
 
+    basename = get_basename(output_file);
+
     if (s->geocode_is_checked) {
 
-      tmp_projfile = appendExt(output_file, ".proj");
+      tmp_projfile = MALLOC(sizeof(char)*(32+strlen(tmp_dir)));
+      sprintf(tmp_projfile, "%s/%s.proj", tmp_dir, basename);
 
       FILE * pf = fopen(tmp_projfile, "wt");
       if (!pf) return NULL; /* FIXME, need better error handling here */
@@ -1260,7 +1264,8 @@ settings_to_config_file(const Settings *s,
       fclose(pf);
     }
 
-    tmp_cfgfile = appendExt(output_file, ".cfg");
+    tmp_cfgfile = MALLOC(sizeof(char)*(32+strlen(tmp_dir)));
+    sprintf(tmp_cfgfile, "%s/%s.cfg", tmp_dir, basename);
     tmp_statfile = appendExt(tmp_cfgfile, ".status");
 
     FILE * cf = fopen(tmp_cfgfile, "wt");
@@ -1283,7 +1288,7 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
     fprintf(cf, "export = %d\n", s->export_is_checked);
     // fprintf(cf, "default values =\n");
-    fprintf(cf, "intermediates = %d\n", s->keep_files);
+    fprintf(cf, "intermediates = 1\n"); //, s->keep_files);
     fprintf(cf, "status file = %s\n", tmp_statfile);
     fprintf(cf, "short configuration file = 0\n");
     FILE *fpDefs = fopen_share_file("asf_convert/asf_convert.defaults", "rt");
@@ -1292,6 +1297,9 @@ settings_to_config_file(const Settings *s,
                 "asf_convert/asf_convert.defaults");
         FCLOSE(fpDefs);
     }
+    fprintf(cf, "tmp dir = %s\n", tmp_dir);
+    fprintf(cf, "thumbnail = %d\n", 
+            s->output_format == OUTPUT_FORMAT_GEOTIFF ? 1 : 0);
     fprintf(cf, "\n");
 
     fprintf(cf, "[Import]\n");
@@ -1358,13 +1366,11 @@ settings_to_config_file(const Settings *s,
       fprintf(cf, "\n");
     }
 
-    fprintf(cf, "\n");
-    fprintf(cf, "\n");
-
     fclose(cf);
     free(tmp_statfile);
     if (tmp_projfile)
       free(tmp_projfile);
     free(output_file);
+    free(basename);
     return tmp_cfgfile;
 }

@@ -83,6 +83,11 @@ int asf_convert(int createflag, char *configFileName)
     FCLOSE(fLog);
     return(EXIT_SUCCESS);
   }
+  else if (!fileExists(configFileName)) {
+    asfPrintStatus("Couldn't find config file: %s\n", configFileName);
+    FCLOSE(fLog);
+    return EXIT_FAILURE;
+  } 
   else {
     cfg = read_convert_config(configFileName);
   }
@@ -136,9 +141,9 @@ int asf_convert(int createflag, char *configFileName)
     // use a time stamp as the name of the temporary directory
     if (strlen(cfg->general->tmp_dir) == 0) {
         sprintf(cfg->general->tmp_dir, "%s", time_stamp_dir());
+        create_clean_dir(cfg->general->tmp_dir);
     }
 
-    create_clean_dir(cfg->general->tmp_dir);
     update_status(cfg, "Processing...");
 
     // Check whether everything in the [Import] block is reasonable
