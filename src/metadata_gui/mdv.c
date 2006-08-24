@@ -332,24 +332,21 @@ static void readline(FILE * f, gchar * buffer, size_t n)
     }
 }
 
-gchar *
+static gchar *
 change_extension(const gchar * file, const gchar * ext)
 {
-    gchar * replaced = (gchar *)
-        g_malloc(sizeof(gchar) * (strlen(file) + strlen(ext) + 10));
-
-    strcpy(replaced, file);
-    char * p = strrchr(replaced, '.');
-
-    if (p)
+    if (ext[0] != '.')
     {
-        *p = '\0';
+        char *buf = MALLOC(sizeof(char)*(strlen(ext)+3));
+        sprintf(buf, ".%s", ext);
+        char *ret = appendExt(file, buf);
+        free(buf);
+        return ret;
     }
-
-    strcat(replaced, ".");
-    strcat(replaced, ext);
-
-    return replaced;
+    else
+    {
+        return appendExt(file, ext);
+    }
 }
 
 void
@@ -429,7 +426,7 @@ put_file_in_textview(const char * file, const char * ext, const char * tv)
         sprintf(txt, "Error opening file '%s': %s", filename, strerror(errno));
     }
 
-    g_free(filename);
+    free(filename);
 
     gchar widget_name[128];
     sprintf(widget_name, "%s_textview", tv);
