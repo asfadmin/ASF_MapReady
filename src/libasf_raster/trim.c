@@ -12,9 +12,7 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
   meta_parameters *metaIn, *metaOut;
   int isComplex;
   long long pixelSize, offset;
-  long long x,y,
-            inMaxX,inMaxY,outMaxX,outMaxY,
-            lastReadY,firstReadX,numInX;
+  long long x,y,inMaxX,inMaxY,lastReadY,firstReadX,numInX;
   FILE *in,*out;
   char *buffer;
 
@@ -32,16 +30,13 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
   inMaxX = metaIn->general->sample_count;
   inMaxY = metaIn->general->line_count;
 
-  sizeX = (sizeX!=-1) ? sizeX+startX : inMaxX;
-  sizeY = (sizeY!=-1) ? sizeY+startY : inMaxY;
-
-  outMaxX=sizeX-startX;
-  outMaxY=sizeY-startY;
+  if (sizeX < 0) sizeX = inMaxX - startX;
+  if (sizeY < 0) sizeY = inMaxY - startY;
 
   /* Write out metadata */
   metaOut = meta_read(infile);
-  metaOut->general->line_count = outMaxY;
-  metaOut->general->sample_count = outMaxX;
+  metaOut->general->line_count = sizeY;
+  metaOut->general->sample_count = sizeX;
   metaOut->general->start_line += startY * metaOut->sar->line_increment;
   metaOut->general->start_sample += startX * metaOut->sar->sample_increment;
 
@@ -61,22 +56,22 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
 
   /* If everything's OK, then allocate a buffer big enough for one line of 
      output data.*/
-  buffer= (char *)MALLOC(pixelSize*(outMaxX));
+  buffer= (char *)MALLOC(pixelSize*(sizeX));
 
   /* If necessary, fill the top of the output with zeros, by loading up a 
      buffer and writing.*/
-  for (x=0;x<outMaxX*pixelSize;x++)
+  for (x=0;x<sizeX*pixelSize;x++)
     buffer[x]=0;
-  for (y=0;y<-startY && y<outMaxY;y++) {
-    FWRITE(buffer,pixelSize,outMaxX,out);
+  for (y=0;y<-startY && y<sizeY;y++) {
+    FWRITE(buffer,pixelSize,sizeX,out);
     if (y==0)
       asfPrintStatus("   Filling zeros at beginning of output image\n");
   }
 
   /* Do some calculations on where we should read.*/
   firstReadX=MAXI(0,-startX);
-  numInX=MINI(MINI(outMaxX,inMaxX-(firstReadX+startX)),outMaxX-firstReadX);
-  lastReadY=MINI(outMaxY,inMaxY-startY);
+  numInX=MINI(MINI(sizeX,inMaxX-(firstReadX+startX)),sizeX-firstReadX);
+  lastReadY=MINI(sizeY,inMaxY-startY);
   offset=0;
 
   for (;y<lastReadY;y++) {
@@ -91,15 +86,15 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
     FSEEK64(in,offset,SEEK_SET);
     
     FREAD(buffer+outputX*pixelSize,pixelSize,numInX,in);
-    FWRITE(buffer,pixelSize,outMaxX,out);
+    FWRITE(buffer,pixelSize,sizeX,out);
   }
 
   /* Reset buffer to zeros and fill remaining pixels.*/
-  for (x=0;x<outMaxX*pixelSize;x++)
+  for (x=0;x<sizeX*pixelSize;x++)
     buffer[x]=0;
-  for (;y<outMaxY;y++) {
-    FWRITE(buffer,pixelSize,outMaxX,out);
-    if (y==outMaxY)
+  for (;y<sizeY;y++) {
+    FWRITE(buffer,pixelSize,sizeX,out);
+    if (y==sizeY)
       asfPrintStatus("   Filled zeros after writing output image\n");
   }
 
