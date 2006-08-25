@@ -855,10 +855,6 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
       if (g_fdd)  { l_fdd = *g_fdd;   params_in->fdd = &l_fdd;   }
       if (g_fddd) { l_fddd = *g_fddd; params_in->fddd = &l_fddd; }
 
-      if (g_fd) printf("Setting constant: %lf\n", *g_fd);
-      if (g_fdd) printf("Setting linear: %lf\n", *g_fdd);
-      if (g_fddd) printf("Setting quadratic: %lf\n", *g_fddd);
-
       // this stuff shouldn't cause collisions, local stack variables      
       int npatches = 1;
       params_in->iflag = &debug_flag;
