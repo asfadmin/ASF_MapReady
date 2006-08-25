@@ -855,6 +855,10 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
       if (g_fdd)  { l_fdd = *g_fdd;   params_in->fdd = &l_fdd;   }
       if (g_fddd) { l_fddd = *g_fddd; params_in->fddd = &l_fddd; }
 
+      if (g_fd) printf("Setting constant: %lf\n", *g_fd);
+      if (g_fdd) printf("Setting linear: %lf\n", *g_fdd);
+      if (g_fddd) printf("Setting quadratic: %lf\n", *g_fddd);
+
       // this stuff shouldn't cause collisions, local stack variables      
       int npatches = 1;
       params_in->iflag = &debug_flag;
@@ -1472,7 +1476,12 @@ get_in_file_name()
     const gchar * input_file =
         gtk_entry_get_text(GTK_ENTRY(input_file_entry));
 
-    gchar * in_file = change_extension(input_file, "in");
+    gchar * in_file;
+
+    if (strlen(input_file) > 0)
+        in_file = change_extension(input_file, "in");
+    else
+        in_file = g_strdup("");
 
     return in_file;
 }
@@ -1481,37 +1490,55 @@ static void
 set_entry_with_float_value(const gchar * entry_name, float value)
 {
     gchar s[64];
-    sprintf(s, "%f", value);
-
     GtkWidget * w = glade_xml_get_widget (glade_xml, entry_name);
+
+    if (value == -99) {
+        strcpy(s, "");
+    } else {
+        sprintf(s, "%f", value);
+    }
+        
     gtk_entry_set_text(GTK_ENTRY(w), s);
 }
 
 SIGNAL_CALLBACK void
 on_edit_doppler_parameters_button_clicked(GtkWidget *w)
 {
-    GtkWidget * doppler_parameters_dialog =
-	glade_xml_get_widget (glade_xml, "doppler_parameters_dialog");
-
-    gtk_widget_show (doppler_parameters_dialog);
-
     gchar * in_file = get_in_file_name();
 
-    float constant, linear, quadratic;
+    if (in_file && strlen(in_file) > 0)
+    {
+        GtkWidget * doppler_parameters_dialog =
+            glade_xml_get_widget (glade_xml, "doppler_parameters_dialog");
 
-    if (g_fd && g_fdd && g_fddd) {
-        constant = *g_fd;
-        linear = *g_fdd;
-        quadratic = *g_fddd;
-    } else {
-        read_doppler_parameters(in_file, &constant, &linear, &quadratic);
+        gtk_widget_show (doppler_parameters_dialog);
+
+        float constant, linear, quadratic;
+
+        if (g_fd && g_fdd && g_fddd) {
+            constant = *g_fd;
+            linear = *g_fdd;
+            quadratic = *g_fddd;
+        } else {
+            // not all were set by the user - re-read the file, and override
+            // the ones that the user did set.
+            read_doppler_parameters(in_file, &constant, &linear, &quadratic);
+
+            if (g_fd) constant = *g_fd;
+            if (g_fdd) linear = *g_fdd;
+            if (g_fddd) quadratic = *g_fddd;
+        }
+        
+        set_entry_with_float_value("constant_entry", constant);
+        set_entry_with_float_value("linear_entry", linear);
+        set_entry_with_float_value("quadratic_entry", quadratic);
+
+        g_free(in_file);
     }
-
-    set_entry_with_float_value("constant_entry", constant);
-    set_entry_with_float_value("linear_entry", linear);
-    set_entry_with_float_value("quadratic_entry", quadratic);
-
-    g_free(in_file);
+    else
+    {
+        message_box("Please choose a file first.");
+    }
 }
 
 static void
@@ -1519,7 +1546,10 @@ get_entry_with_float_value(const char * entry_name, float * value)
 {
     GtkWidget * w = glade_xml_get_widget (glade_xml, entry_name);
     const gchar * s = gtk_entry_get_text(GTK_ENTRY(w));
-    sscanf(s, "%f", value);
+    if (strlen(s) == 0)
+        *value = -99;
+    else
+        sscanf(s, "%f", value);
 }
 
 SIGNAL_CALLBACK void
@@ -1534,14 +1564,35 @@ on_doppler_parameters_dialog_ok_button_clicked(GtkWidget *w)
     if (g_fdd) FREE(g_fdd);
     if (g_fddd) FREE(g_fddd);
 
-    g_fd = MALLOC(sizeof(float));
-    *g_fd = constant;
+    if (constant == -99)
+    {
+        g_fd = NULL;
+    }
+    else
+    {
+        g_fd = MALLOC(sizeof(float));
+        *g_fd = constant;
+    }
 
-    g_fdd = MALLOC(sizeof(float));
-    *g_fdd = linear;
+    if (linear == -99)
+    {
+        g_fdd = NULL;
+    }
+    else 
+    {
+        g_fdd = MALLOC(sizeof(float));
+        *g_fdd = linear;
+    }
 
-    g_fddd = MALLOC(sizeof(float));
-    *g_fddd = quadratic;
+    if (quadratic == -99)
+    {
+        g_fddd = NULL;
+    }
+    else
+    {
+        g_fddd = MALLOC(sizeof(float));
+        *g_fddd = quadratic;
+    }
 
     //const gchar * filename = get_in_file_name();
     //write_doppler_parameters(filename, constant, linear, quadratic);
