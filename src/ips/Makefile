@@ -4,14 +4,33 @@
 
 include ../../make_support/system_rules
 
-CFLAGS += $(GLIB_CLAGS)
+CFLAGS += \
+	$(GSL_CLAGS) \
+	$(GEOTIFF_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(JPEG_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS)
 
-LIBS    = $(LIBDIR)/asf_meta.a \
-	$(GSL_LIBS) \
+LIBS = 	\
+	$(LIBDIR)/libasf_export.a \
+	$(LIBDIR)/libasf_geocode.a \
+	$(LIBDIR)/libasf_terrcorr.a \
+	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/asf_fft.a \
+	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(PROJ_LIBS) \
+	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
-	$(GLIB_LIBS) -lm
+	$(GSL_LIBS) \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
+	$(JPEG_LIBS) \
+	$(PROJ_LIBS) \
+	$(GLIB_LIBS) \
+	-lm -lz
 
 OBJLIB	= config.o \
 	functions.o \

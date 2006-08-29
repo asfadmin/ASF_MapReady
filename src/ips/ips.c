@@ -100,14 +100,7 @@ BUGS:
 
 *********************************************************************************/
 
-#include "asf.h"
-#include "ceos.h"
-#include "asf_meta.h"
 #include "ips.h"
-#include "functions.h"
-#include "proj.h"
-#include "asf_license.h"
-#include "asf_contact.h"
 
 #define FLAG_NOT_SET -1
 #define REQUIRED_ARGS 1
@@ -192,7 +185,7 @@ char *uc(char *string)
   return out;
 }
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   
   dem_config *cfg;
@@ -201,9 +194,17 @@ main(int argc, char *argv[])
   char configFile[255], cmd[255], path[255], data[255], metadata[255], tmp[255];
   char format[255], options[255], metaFile[25];
   char *veryoldBase=NULL, *oldBase=NULL, *newBase=NULL;
-  int i, delta, createFlag=FLAG_NOT_SET, datatype=0, off=1, nLooks, nl, ns;
-  float xshift, yshift, avg;
+  int i, delta, createFlag=FLAG_NOT_SET, datatype=0, nLooks, nl, ns;
+  float avg;
   double lat1=0.0, lat2=0.0, lon1;
+  resample_method_t resample_method;
+  datum_type_t datum=WGS84_DATUM;
+  int geocode_force_flag=1;
+  double average_height=0.0;
+  float background_value=0;
+  output_format_t out_format;
+  scale_t sample_mapping=SIGMA;
+  long size;
   
   // Check for all those little helper options
   if (   (checkForOption("--help", argc, argv) != FLAG_NOT_SET)
@@ -247,7 +248,7 @@ main(int argc, char *argv[])
     cfg = read_config(configFile, createFlag);
     // Assign names for results to be kept
     sprintf(cfg->igram_coh->igram, "%s_igram", cfg->general->base);
-    sprintf(cfg->igram_coh->coh, "coh.img", cfg->general->base);
+    sprintf(cfg->igram_coh->coh, "%s_coh.img", cfg->general->base);
     sprintf(cfg->ardop_master->power_img, "%s_a_pwr.img", cfg->general->base);
     sprintf(cfg->ardop_slave->power_img, "%s_b_pwr.img", cfg->general->base);
     sprintf(cfg->sim_phase->seeds, "%s.seeds", cfg->general->base);
@@ -525,9 +526,13 @@ main(int argc, char *argv[])
 	strcat(strcpy(metaFile,"reg/a_p1_cpx"),".meta");
 	nl = lzInt(metaFile, "general.line_count:", NULL);
 	ns = lzInt(metaFile, "general.sample_count:", NULL);
+	/*
 	check_return(trim(cfg->general->mask, "reg/mask1", 
 			  cfg->coreg_p1->start_master/nLooks, 0,
 			  nl/nLooks, ns), "mask for first patch (trim)");
+	*/
+	trim(cfg->general->mask, "reg/mask1", cfg->coreg_p1->start_master/nLooks, 0,
+	     nl/nLooks, ns);
 	check_return(coregister_coarse("reg/a_p1", "reg/b_p1", 
 				       "reg/ctrl1", "reg/mask1"), 
 		     "offset estimation first patch (coregister_coarse)");
@@ -587,9 +592,13 @@ main(int argc, char *argv[])
 	strcat(strcpy(metaFile,"reg/a_pL_cpx"),".meta");
 	nl = lzInt(metaFile, "general.line_count:", NULL);
 	ns = lzInt(metaFile, "general.sample_count:", NULL);
+	/*
 	check_return(trim(cfg->general->mask, "reg/maskL", 
 			  cfg->coreg_pL->start_master/nLooks, 0, 
 			  nl/nLooks, ns), "mask for last patch (trim)");
+	*/
+	trim(cfg->general->mask, "reg/maskL", cfg->coreg_pL->start_master/nLooks, 
+	     0, nl/nLooks, ns);
 	check_return(coregister_coarse("reg/a_pL", "reg/b_pL", 
 				       "reg/ctrlL", "reg/maskL"), 
 		     "offset estimation last patch (coregister_coarse)");
@@ -952,7 +961,8 @@ main(int argc, char *argv[])
     }
     check_return(coh("a_cpx.img", "b_corr_cpx.img", cfg->igram_coh->coh), 
 		 "generating coherence image (coh)");
-    if (fCoh = FOPEN(logFile, "r")) {
+    fCoh = FOPEN(logFile, "r");
+    if (fCoh) {
       while (fgets(tmp, 255, fCoh) != NULL) {
 	if (strncmp(tmp, "   Average Coherence:", 21)==0) 
 	  sscanf(tmp, "%s %s %f", tmp, tmp, &avg);
@@ -987,7 +997,7 @@ main(int argc, char *argv[])
   if (check_status(cfg->offset_match->status)) {
     
     sprintf(tmp, "%s_ml_amp.img", cfg->igram_coh->igram);
-    check_return(asf_check_geolocation(tmp, cfg->general->dem, "offset", 
+    check_return(asf_check_geolocation(tmp, cfg->general->dem, NULL, 
 				       "dem_sim.img", "dem_slant.img"), 
 		 "refining the geolocation of the SAR image");
     
@@ -1287,49 +1297,70 @@ main(int argc, char *argv[])
 	strcmp(cfg->geocode->name, "ps")==0) {
       if (!fileExists(cfg->geocode->proj)) 
 	check_return(1, "projection file does not exist");
-      sprintf(tmp, "-read-proj-file %s -resample-method %s -pixel-size %.1lf",
-	      cfg->geocode->proj, cfg->geocode->resample, cfg->geocode->pixel_spacing);
     }
-    check_return(asf_geocode(tmp, "elevation", cfg->geocode->dem), 
-		 "geocoding ground range DEM (geocode)");      
-    check_return(asf_geocode(tmp, "amplitude", cfg->geocode->amp), 
-		 "geocoding ground range amplitude (geocode)");
-    check_return(asf_geocode(tmp, "error", cfg->geocode->error), 
-		 "geocoding ground range error map (geocode)");
-    check_return(asf_geocode(tmp, "coh_gr", cfg->geocode->coh), 
-		 "geocoding ground range coherence (geocode)");
+    if (strcmp(cfg->geocode->resample, "nearest neighbor") == 0)
+      resample_method = RESAMPLE_NEAREST_NEIGHBOR;
+    else if (strcmp(cfg->geocode->resample, "bilinear") == 0)
+      resample_method = RESAMPLE_BILINEAR;
+    else if (strcmp(cfg->geocode->resample, "bicubic") == 0)
+      resample_method = RESAMPLE_BICUBIC;
+    else
+      check_return(1, "unsupported resampling method (asf_geocode)");
+    check_return(asf_geocode_from_proj_file(cfg->geocode->proj, geocode_force_flag,
+					    resample_method, average_height,
+					    datum, cfg->geocode->pixel_spacing, 
+					    "elevation", cfg->geocode->dem,
+					    background_value), 
+		 "geocoding ground range DEM (asf_geocode)");      
+    check_return(asf_geocode_from_proj_file(cfg->geocode->proj, geocode_force_flag,
+					    resample_method, average_height,
+					    datum, cfg->geocode->pixel_spacing, 
+					    "amplitude", cfg->geocode->amp,
+					    background_value), 
+		 "geocoding ground range amplitude (asf_geocode)");
+    check_return(asf_geocode_from_proj_file(cfg->geocode->proj, geocode_force_flag,
+					    resample_method, average_height,
+					    datum, cfg->geocode->pixel_spacing, 
+					    "error", cfg->geocode->error,
+					    background_value), 
+		 "geocoding ground range error map (asf_geocode)");
+    check_return(asf_geocode_from_proj_file(cfg->geocode->proj, geocode_force_flag,
+					    resample_method, average_height,
+					    datum, cfg->geocode->pixel_spacing, 
+					    "coh_gr", cfg->geocode->coh,
+					    background_value), 
+		 "geocoding ground range coherence (asf_geocode)");
     
     sprintf(cfg->geocode->status, "success");
   }   
   
   /* Exporting */
   if (check_status(cfg->export->status)) {
-    if (strcmp(uc(cfg->export->format), "TIFF")==0) {
-      sprintf(format, "tiff");
-    }
-    else if (strcmp(uc(cfg->export->format), "GEOTIFF")==0) {
-      sprintf(format, "geotiff");
-    }
-    else if (strcmp(uc(cfg->export->format), "JPEG")==0) {
-      sprintf(format, "jpeg");
-    }
-    else if (strcmp(uc(cfg->export->format), "PPM")==0) {
-      sprintf(format, "ppm");
-    }
+    if (strcmp(uc(cfg->export->format), "TIFF")==0) 
+      out_format = TIF;
+    else if (strcmp(uc(cfg->export->format), "GEOTIFF")==0)
+      out_format = GEOTIFF;
+    else if (strcmp(uc(cfg->export->format), "JPEG")==0)
+      out_format = JPEG;
+    else if (strcmp(uc(cfg->export->format), "PPM")==0)
+      out_format = PPM;
     else {
       sprintf(tmp, "export format '%s' not supported", cfg->export->format);
       check_return(1, tmp);
     }
     
-    sprintf(tmp, "-format %s", format);
-    check_return(asf_export(tmp, cfg->geocode->dem, cfg->geocode->dem), 
-		 "exporting geocoded DEM (export)");
-    check_return(asf_export(tmp, cfg->geocode->amp, cfg->geocode->amp), 
-		 "exporting geocoded amplitude image (export)");
-    check_return(asf_export(tmp, cfg->geocode->error, cfg->geocode->error), 
-		 "exporting geocoded DEM error map (export)");
-    check_return(asf_export(tmp, cfg->geocode->coh, cfg->geocode->coh), 
-		 "exporting geocoded coherence image (export)");
+    check_return(asf_export(out_format, size, sample_mapping, cfg->geocode->dem, 
+			    cfg->geocode->dem), 
+		 "exporting geocoded DEM (asf_export)");
+    check_return(asf_export(out_format, size, sample_mapping, cfg->geocode->amp, 
+			    cfg->geocode->amp), 
+		 "exporting geocoded amplitude image (asf_export)");
+    check_return(asf_export(out_format, size, sample_mapping, cfg->geocode->error, 
+			    cfg->geocode->error), 
+		 "exporting geocoded DEM error map (asf_export)");
+    check_return(asf_export(out_format, size, sample_mapping, cfg->geocode->coh, 
+			    cfg->geocode->coh), 
+		 "exporting geocoded coherence image (asf_export)");
     
     sprintf(cfg->export->status, "success");
     check_return(write_config(configFile, cfg), 

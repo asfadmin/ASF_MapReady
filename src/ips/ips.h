@@ -1,7 +1,21 @@
 #ifndef IPS_H
 #define IPS_H
 
+#include "functions.h"
+#include "ceos.h"
+#include "asf.h"
+#include "asf_meta.h"
+#include "proj.h"
+#include "asf_license.h"
+#include "asf_contact.h"
+#include <ctype.h>
 #include <time.h>
+#include "lzFetch.h"
+#include "asf_terrcorr.h"
+#include "asf_raster.h"
+#include "asf_vector.h"
+#include "asf_export.h"
+#include "asf_geocode.h"
 
 typedef struct {
   char *mode;		/* processing mode: DEM or DINSAR */
@@ -165,5 +179,10 @@ int init_config(char *configFile);
 dem_config *init_fill_config(char *configFile);
 dem_config *read_config(char *configFile, int createFlag);
 int write_config(char *configFile, dem_config *cfg);
+
+// Prototypes
+int check_refinement(char *base1, char *base2, char *base3);
+void check_return(int ret, char *msg);
+
 
 #endif

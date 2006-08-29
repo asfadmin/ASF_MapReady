@@ -6,26 +6,26 @@
 #include "functions.h"
 
 int asf_import(char *inFile, char *outFile, char *format,
-               char *prcOrbits, int prcFlag, 
-	       double lat_begin, double lat_end)
+               char *prcOrbits, int prcFlag,
+               double lat_begin, double lat_end)
 {
   char options[255]="", command[255];
   int ret;
-  
+
   sprintf(options, "-log %s -quiet", logFile);
-  if (prcFlag) sprintf (options, "%s -prc %s", options, prcOrbits); 
-  if (lat_begin!=-99.0 && lat_end!=99.0) 
+  if (prcFlag) sprintf (options, "%s -prc %s", options, prcOrbits);
+  if (lat_begin!=-99.0 && lat_end!=99.0)
     sprintf(options, "%s -lat %lf %lf", options, lat_begin, lat_end);
-  sprintf(command, "asf_import -format %s %s %s %s", 
-	  format, options, inFile, outFile);
-  
+  sprintf(command, "asf_import -format %s %s %s %s",
+          format, options, inFile, outFile);
+
   printf("\nCommand line: %s\nDate: ", command);
   fLog = FOPEN(logFile, "a");
   sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
-  
+
   return ret;
 }
 
@@ -70,7 +70,8 @@ int doppler_per_patch(char *parFile1, char * parFile2, char *metaFile1,
   return ret;
 }
 
-int ardop(char *option, int startLineNum, int numPatches, char *inFile, char *outFile)
+int ardop(char *option, int startLineNum, int numPatches, char *inFile, 
+	  char *outFile)
 {
   char options[255]="", command[255];
   int ret;
@@ -268,27 +269,6 @@ int convert2byte(char *inFile, char *outFile, int nLooks, int nSmooth)
   return ret;
 }
 
-/*
-int create_dem_grid(char *demFile, char *sarFile, char *ceosFile, char *gridFile)
-{
-        char options[255]="", command[255];
-        int ret;
-
-	sprintf(options, "-log %s", logFile);
-        sprintf(command, "create_dem_grid %s %s %s %s %s", 
-		options, demFile, sarFile, ceosFile, gridFile);
-
-	printf("\nCommand line: %s\nDate: ", command);
-	fLog = FOPEN(logFile, "a");
-	sprintf(logbuf,"\nCommand line: %s\n", command);
-	printLog(logbuf);
-	FCLOSE(fLog);
-        ret = system(command);
-          
-        return ret;
-}
-*/
-
 int fit_plane(char *inFile, char *outFile, double fraction)
 {
         char options[255]="", command[255];
@@ -307,27 +287,6 @@ int fit_plane(char *inFile, char *outFile, double fraction)
         return ret;
 }       
 
-/*
-int fit_poly(char *inFile, char *outFile, int degree)
-{       
-  char options[255]="", command[255];
-  int ret;
-        
-	// Keep log file extension for later. Need first something that works.
-        sprintf(options, "-log %s -k %.1lf", logFile);
-        sprintf(command, "fit_poly %s %i %s", inFile, degree, outFile);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-        fLog = FOPEN(logFile, "a");
-        sprintf(logbuf,"\nCommand line: %s\n", command);
-        printLog(logbuf);
-        FCLOSE(fLog);
-        ret = system(command);
-        
-        return ret;
-}       
-*/
-        
 int fit_warp(char *inFile1, char *inFile2, char *outFile)
 {
         char command[255];
@@ -361,108 +320,6 @@ int remap(char *inFile, char *outFile, char *options)
         ret = system(command);
  
         return ret;
-}
-
-/*
-int make_ddr(char *outFile, int nl, int ns, char *type)
-{
-        char options[255]="", command[255];
-        int ret;
-
-	sprintf(options, "-log %s", logFile);
-        sprintf(command, "makeddr %s %s %d %d %s", options, outFile, nl, ns, type);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-	fLog = FOPEN(logFile, "a");
-	sprintf(logbuf,"\nCommand line: %s\n", command);
-	printLog(logbuf);
-	FCLOSE(fLog);
-        ret = system(command);
-        
-        return ret;
-}
-
-int reskew_dem(char *metaFile, char *demFile, char *outFile1, char *outFile2)
-{       
-        char options[255]="", command[255];
-        int ret;
-                            
-	sprintf(options, "-log %s", logFile);
-        sprintf(command, "reskew_dem %s %s %s %s %s", 
-		options, metaFile, demFile, outFile1, outFile2);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-	fLog = FOPEN(logFile, "a");
-	sprintf(logbuf,"\nCommand line: %s\n", command);
-	printLog(logbuf);
-	FCLOSE(fLog);
-        ret = system(command);
-        
-        return ret;
-}         
-*/
-
-int trim(char *inFile, char *outFile, int sX, int sY, int nl, int ns)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "trim %s -h %d -w %d %s %s %i %i", 
-	  options, nl, ns, inFile, outFile, sX, sY);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}       
-
-/*
-  int fftMatch(char *inFile1, char *inFile2, char *outFile)
-  {       
-        char options[255]="", command[255];
-        int ret;
-        
-	sprintf(options, "-log %s -quiet", logFile);
-        sprintf(command, "fftMatch %s -m %s %s %s", 
-		options, outFile, inFile1, inFile2);
-        
-        printf("\nCommand line: %s\nDate: ", command);
-	system("date");
-	printf("Program: fftMatch\n\n");
-	fLog = FOPEN(logFile, "a");
-	sprintf(logbuf,"\nCommand line: %s\n", command);
-	printLog(logbuf);
-	printLog("Program: fftMatch\n\n");
-	FCLOSE(fLog);
-        ret = system(command);
-        
-        return ret;
-}
-*/
-
-int asf_check_geolocation(char *sarName, char *mapDemName, char *offset, 
-			  char *simAmpName, char *sarDemName) 
-{
-  char options[255]="", command[255];
-  int ret;
-
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "asf_check_geolocation %s %s %s %s %s %s",
-	  options, sarName, mapDemName, offset, simAmpName, sarDemName);
-
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf, "\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-
-  return ret;
 }
 
 int dem2phase(char *demFile, char *metaFile, char *baseFile, char *phaseFile)
@@ -713,40 +570,6 @@ int deskew_dem(char *inFile1, char *outFile, char *inFile2, int radiometric)
     sprintf(options, "-i %s %d", inFile2, radiometric); 
   sprintf(command, "deskew_dem %s %s %s", 
 	  options, inFile1, outFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int asf_geocode(char *options, char *inFile, char *outFile)
-{
-  char command[255];
-  int ret;
-  
-  sprintf(command, "asf_geocode %s -log %s -quiet %s %s", options, logFile, inFile, outFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int asf_export(char *options, char *inFile, char *outFile)
-{
-  char command[255];
-  int ret;
-  
-  sprintf(command, "asf_export %s -log %s -quiet %s %s", options, logFile, inFile, outFile);
   
   printf("\nCommand line: %s\nDate: ", command);
   fLog = FOPEN(logFile, "a");

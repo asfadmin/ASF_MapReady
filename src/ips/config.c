@@ -1061,7 +1061,7 @@ int write_config(char *configFile, dem_config *cfg)
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
               "# grid that is used for the FFT match\n\n");	  
-    fprintf(fConfig, "grid = %ld\n", cfg->coreg_p1->grid);
+    fprintf(fConfig, "grid = %d\n", cfg->coreg_p1->grid);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
 	      "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
@@ -1102,7 +1102,7 @@ int write_config(char *configFile, dem_config *cfg)
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
               "# grid that is used for the FFT match\n\n");	  
-    fprintf(fConfig, "grid = %ld\n", cfg->coreg_pL->grid);
+    fprintf(fConfig, "grid = %d\n", cfg->coreg_pL->grid);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
 	      "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
@@ -1233,7 +1233,7 @@ int write_config(char *configFile, dem_config *cfg)
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
               "# grid that is used for the FFT match\n\n");	  
-    fprintf(fConfig, "grid = %ld\n", cfg->coreg_p1->grid);
+    fprintf(fConfig, "grid = %d\n", cfg->coreg_p1->grid);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
 	      "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
@@ -1274,7 +1274,7 @@ int write_config(char *configFile, dem_config *cfg)
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
               "# grid that is used for the FFT match\n\n");	  
-    fprintf(fConfig, "grid = %ld\n", cfg->coreg_pL->grid);
+    fprintf(fConfig, "grid = %d\n", cfg->coreg_pL->grid);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
 	      "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
@@ -1372,7 +1372,7 @@ int write_config(char *configFile, dem_config *cfg)
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
               "# grid that is used for the FFT match\n\n");	  
-    fprintf(fConfig, "grid = %ld\n", cfg->coreg_slave->grid);
+    fprintf(fConfig, "grid = %d\n", cfg->coreg_slave->grid);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
 	      "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
