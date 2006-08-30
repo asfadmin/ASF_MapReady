@@ -173,6 +173,16 @@ else
 fi
 AC_SUBST(ASF_LIB_SHAPELIB)
 
+#### libfftw check ####
+AC_CHECK_LIB(fftw,main,have_fftw="yes",have_fftw="no")
+if test "$have_fftw" = "no" ; then
+   ASF_LIB_FFTW="${ext_lib_src_dir}/libfftw"
+   FFTW_LIBS="\$(LIBDIR)/libfftw.a"
+else
+   FFTW_LIBS="-lfftw"
+fi
+AC_SUBST(ASF_LIB_FFTW)
+
 #### TCL/TK check ####
 AC_CHECK_LIB(tcl8.1,main)
 AC_CHECK_LIB(tk8.1,main,have_tcl_tk="yes",have_tcl_tk="no")
