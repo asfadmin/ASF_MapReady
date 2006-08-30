@@ -19,7 +19,7 @@ build_stamp:
 	(	cd $(UNPACK_DIR) ; \
 		LDFLAGS="-L$(LIB_DIR)" \
 		CFLAGS="-I$(INCLUDE_DIR)" \
-		./configure --enable-static=yes --enable-shared=no  \
+		./configure --enable-float -C  \
 			--prefix=$(ROOT_DIR) ; \
 		make ; \
 		make install ; \
