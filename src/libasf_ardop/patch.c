@@ -90,7 +90,7 @@ static void patchToJpeg(char *outname)
 	  outname, multilookname);
   asfSystem(cmd);
   sprintf(exportname, "%s_ml_rgb.img", outname);
-  sprintf(cmd,"convert2jpeg \"%s\" \"%s\"\n", exportname, outname);
+  sprintf(cmd,"convert2jpeg -brighten \"%s\" \"%s\"\n", exportname, outname);
   asfSystem(cmd);
   //sprintf(cmd, "rm \"%s_*\" \"%s.meta\" \"%s.img\"\n", outname, outname, outname);
   //asfSystem(cmd);  
