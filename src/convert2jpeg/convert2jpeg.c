@@ -102,6 +102,15 @@ BUGS:
 #define zWRITE    0x10
 
 
+unsigned char no_change(unsigned char x)
+{
+    return x;
+}
+
+unsigned char brighten(unsigned char x)
+{
+    return (unsigned char) (sqrt((double)x/255.0)*255.0);
+}
 
 
 int main (int argc, char *argv[])
@@ -119,6 +128,8 @@ int main (int argc, char *argv[])
   int x,y;
   meta_parameters *meta;
   struct stat fileInfo;
+  unsigned char (*scale) (unsigned char);
+  scale = no_change;
 
   /* Start time keeping*/
   StartWatch();
@@ -129,6 +140,9 @@ int main (int argc, char *argv[])
      if (strmatch(key,"-mask")) {
        mask_colortable(table);
        flags |= zMASK;
+     }
+     else if (strmatch(key,"-brighten")) {
+       scale = brighten;
      }
      else if (strmatch(key,"-pal")) {
 	CHECK_ARG(1);
@@ -172,7 +186,7 @@ int main (int argc, char *argv[])
     for (cnt=0; cnt<3; cnt++) {
       for (y=0;y<len;y++)
          for (x=0;x<wid;x++)
- 	    out[(y*wid+x)*3+cnt] = band[cnt*wid*len+y*wid+x];
+             out[(y*wid+x)*3+cnt] = scale(band[cnt*wid*len+y*wid+x]);
     }
   }
   /* 1 band (Grayscale or apply a colortable to it) */
@@ -211,6 +225,7 @@ void usage(char *name)
 	"   outfile  A JPEG/JFIF image file.\n");
  printf("\n"
 	"OPTIONAL ARGUMENTS:\n"
+	"   -brighten    Apply a simple brightening filter.\n"
 	"   -mask        Input file is an unwrapped mask file.\n"
 	"   -pal <file>  Apply palfile to input byte file.\n");
  printf("\n"
