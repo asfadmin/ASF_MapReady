@@ -12,7 +12,7 @@ float version=0.1;
 #define BUF		256
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
-
+#define MASK_VALUE 	1
 
 void usage();
 char mask_expression(int op, float value1, float value2, float value3);
@@ -42,22 +42,22 @@ char mask_expression(int op, float value1, float lower, float higher)
 	switch (op)
 	{
 		case 0: // greater than or equal
-		if (value1 >= lower) me = 1;
+			if (value1 >= lower) me = MASK_VALUE;
 		break;
 		case  1: // greater than
-		if (value1 > lower) me = 1;
+			if (value1 > lower) me = MASK_VALUE;
 		break;
 		case 2: // less than or equal
-		if (value1 <= lower) me = 1;
+			if (value1 <= lower) me = MASK_VALUE;
 		break;
 		case 3: // less than
-		if (value1 < lower) me = 1;
+			if (value1 < lower) me = MASK_VALUE;
 		break;
 		case 4:		// equal
-		if (value1 == lower) me = 1;
+			if (value1 == lower) me = MASK_VALUE;
 		break;
 		case 5: // value range
-		if (( value1 >= lower) && ( value1 <= higher)) me = 1;
+			if (( value1 >= lower) && ( value1 <= higher)) me = MASK_VALUE;
 		break;
 		default: // unkown op code
 		me = 0;
