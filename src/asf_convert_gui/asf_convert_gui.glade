@@ -162,7 +162,6 @@
 
 		      <child>
 			<widget class="GtkCheckButton" id="process_to_level1_checkbutton">
-			  <property name="visible">True</property>
 			  <property name="tooltip" translatable="yes">Use the ASF Sar Processor (ARDoP) to process the Level 0 data to Level 1.  Doing this will allow you to terrain correct, geocode, and export the data.</property>
 			  <property name="can_focus">True</property>
 			  <property name="label" translatable="yes">Process to Level 1</property>
