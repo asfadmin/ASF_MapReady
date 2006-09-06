@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" >
+<book>
+  <bookinfo>
+    <date>2006-09-09</date>
+    <title>The ASF SAR Training Processor</title>
+  </bookinfo>
+  <toc></toc>
+  <chapter id="obtaining">
+    <title>Obtaining and Installing the Tool</title>
+    <para>The latest ASF SAR Training Processor can be downloaded from
+       the ASF web site, at http://www.asf.alaska.edu.  On that page,
+       select the option to "Get SAR Tools".  This page lists all of
+       the tools currently supported by ASF, and you'll see the SAR
+       Training Processor (STP) listed there with a link to download
+       the tool.  Before downloading, you'll be asked on which
+       operating system you intend to run STP.
+    </para>
+    <para>How you install the tool depends on which operating system
+       you selected.  Windows packages come with an installer, Linux
+       packages come as an RPM, and Source packages contain source
+       code with an autoconf-style configure script.</para>
+    <sect1 id="Windows">
+      <title>Windows Installation</title>
+      <para>The Windows package contains just a single file, the
+        installer.</para>
+    </sect1>
+  </chapter>
+  <chapter id="contacting-us">
+    <title>Contacting Us</title>
+
+    <para>If you have any questions or comments about this software,
+      we would love to hear from you!</para>
+
+    <address>
+      http://www.asf.alaska.edu
+      <email>uso@asf.alaska.edu</email>
+    </address>
+
+    <address>
+      Alaska Satellite Facility
+      Geophysical Institute
+      University of Alaska Fairbanks
+      P.O. Box 757320
+      Fairbanks, AK 99775-7320
+    </address>
+
+  </chapter>
+</book>
