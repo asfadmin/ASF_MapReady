@@ -328,7 +328,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 		 double average_height, datum_type_t datum, double pixel_size,
 		 char *in_base_name, char *out_base_name, float background_val)
 {
-  int return_code;
+  int ret;
 
   // Assign various filenames
   GString *input_image = g_string_new (in_base_name);
@@ -480,8 +480,9 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 
   // The latitude and longitude of the center of the image.
   double lat_0, lon_0;
-  meta_get_latLon (imd, ii_size_y / 2.0, ii_size_x / 2.0, average_height,
-		   &lat_0, &lon_0);
+  ret = meta_get_latLon (imd, ii_size_y / 2.0, ii_size_x / 2.0, average_height,
+                         &lat_0, &lon_0);
+  g_assert(ret == 0);
 
   // First we march around the entire outside of the image and compute
   // projection coordinates for every pixel, keeping track of the
@@ -508,15 +509,16 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY + ipb->perY * jj;
 	project_set_datum (imd->projection->datum);
-	return_code = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
-				       &(lats[current_edge_point]),
-				       &(lons[current_edge_point]), NULL);
-	g_assert (return_code);
+	ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
+                               &(lats[current_edge_point]),
+                               &(lons[current_edge_point]), NULL);
+	g_assert (ret);
       }
       else {
-	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
-			 &(lats[current_edge_point]),
-			 &(lons[current_edge_point]));
+	ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+                               &(lats[current_edge_point]),
+                               &(lons[current_edge_point]));
+        g_assert (ret == 0);
 	lats[current_edge_point] *= D2R;
 	lons[current_edge_point] *= D2R;
       }
@@ -527,15 +529,16 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY + ipb->perY * jj;
 	project_set_datum (imd->projection->datum);
-	return_code = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
-				       &(lats[current_edge_point]),
-				       &(lons[current_edge_point]), NULL);
-	g_assert (return_code);
+	ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
+                               &(lats[current_edge_point]),
+                               &(lons[current_edge_point]), NULL);
+	g_assert (ret);
       }
       else {
-	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
-			 &(lats[current_edge_point]),
-			 &(lons[current_edge_point]));
+	ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+                               &(lats[current_edge_point]),
+                               &(lons[current_edge_point]));
+        g_assert (ret == 0);
 	lats[current_edge_point] *= D2R;
 	lons[current_edge_point] *= D2R;
       }
@@ -546,15 +549,16 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY + ipb->perY * jj;
 	project_set_datum (imd->projection->datum);
-	return_code = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
-				       &(lats[current_edge_point]),
-				       &(lons[current_edge_point]), NULL);
-	g_assert (return_code);
+	ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
+                               &(lats[current_edge_point]),
+                               &(lons[current_edge_point]), NULL);
+	g_assert (ret);
       }
       else {
-	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
-			 &(lats[current_edge_point]),
-			 &(lons[current_edge_point]));
+	ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+                               &(lats[current_edge_point]),
+                               &(lons[current_edge_point]));
+        g_assert (ret == 0);
 	lats[current_edge_point] *= D2R;
 	lons[current_edge_point] *= D2R;
       }
@@ -565,15 +569,16 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 	double xpc = ipb->startX + ipb->perX * ii;
 	double ypc = ipb->startY + ipb->perY * jj;
 	project_set_datum (imd->projection->datum); 
-	return_code = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
-				       &(lats[current_edge_point]),
-				       &(lons[current_edge_point]), NULL);
-	g_assert (return_code);
+	ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
+                               &(lats[current_edge_point]),
+                               &(lons[current_edge_point]), NULL);
+	g_assert (ret);
       }
       else {
-	meta_get_latLon (imd, (double)jj, (double)ii, average_height,
-			 &(lats[current_edge_point]),
-			 &(lons[current_edge_point]));
+	ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+                               &(lats[current_edge_point]),
+                               &(lons[current_edge_point]));
+        g_assert (ret == 0);
 	lats[current_edge_point] *= D2R;
 	lons[current_edge_point] *= D2R;
       }
@@ -586,9 +591,9 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     x = y = NULL;
     // Project all the edge pixels.
     project_set_datum (datum);
-    return_code = project_arr (pp, lats, lons, NULL, &x, &y, NULL,
-			       edge_point_count);
-    g_assert (return_code == TRUE);
+    ret = project_arr (pp, lats, lons, NULL, &x, &y, NULL,
+                       edge_point_count);
+    g_assert (ret == TRUE);
     // Find the extents of the image in projection coordinates.
     for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
       if ( x[ii] < min_x ) { min_x = x[ii]; }
@@ -689,9 +694,9 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       // Corresponding latitude and longitude.
       double lat, lon;
       project_set_datum (datum);
-      return_code = unproject (pp, cxproj, cyproj, ASF_PROJ_NO_HEIGHT,
-			       &lat, &lon, NULL);
-      if ( !return_code ) {
+      ret = unproject (pp, cxproj, cyproj, ASF_PROJ_NO_HEIGHT,
+                       &lat, &lon, NULL);
+      if ( !ret ) {
 	// Details of the error should have already been printed.
 	asfPrintError ("Projection Error!\n");
       }
@@ -703,19 +708,21 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 	// Input projection coordinates of the current pixel.
 	double ipcx, ipcy;
 	project_set_datum (imd->projection->datum);
-	return_code = project_input (ipp, D2R * lat, D2R * lon,
-				     ASF_PROJ_NO_HEIGHT, &ipcx, &ipcy, NULL);
-	if ( return_code == 0 ) {
+	ret = project_input (ipp, D2R * lat, D2R * lon,
+                             ASF_PROJ_NO_HEIGHT, &ipcx, &ipcy, NULL);
+	if ( ret == 0 ) {
 	  g_assert_not_reached ();
 	}
-	g_assert (return_code);
+	g_assert (ret);
 	// Find the input image pixel indicies corresponding to input
 	// projection coordinates.
 	x_pix = (ipcx - ipb->startX) / ipb->perX;
 	y_pix = (ipcy - ipb->startY) / ipb->perY;
       }
       else {
-	meta_get_lineSamp (imd, lat, lon, average_height, &y_pix, &x_pix);
+	ret = meta_get_lineSamp (imd, lat, lon, average_height,
+                                 &y_pix, &x_pix);
+        g_assert (ret == 0);
       }
       dtf.x_proj[current_mapping] = cxproj;
       dtf.y_proj[current_mapping] = cyproj;
@@ -843,7 +850,8 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 
     // Upper left corner.
     double ul_lat, ul_lon;
-    meta_get_latLon (imd, 0.0, 0.0, average_height, &ul_lat, &ul_lon);
+    ret = meta_get_latLon (imd, 0.0, 0.0, average_height, &ul_lat, &ul_lon);
+    g_assert (ret == 0);
 
     // Test the symmetry of meta_get_latLon/meta_get_lineSamp.  I
     // believe it is pretty good for everything but scansar projected
@@ -851,15 +859,24 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     // this error check just a bit outside of a pixel.  But if the
     // problem is somewhere else I want to know.
     if (  imd->sar->image_type != 'P' ) {
+      int ret1, ret2;
       const double stpx = 1.0, stpy = 1.0;   // Symmetry test pixel indicies.
       double st_lat, st_lon;   // Symmetry test lat and long values.
-      meta_get_latLon (imd, stpx, stpy, average_height, &st_lat, &st_lon);
+      ret1 = meta_get_latLon (imd, stpx, stpy, average_height,
+                              &st_lat, &st_lon);
       double strx, stry;       // Symmetry test result values.
-      meta_get_lineSamp (imd, st_lat, st_lon, average_height, &strx, &stry);
+      ret2 = meta_get_lineSamp (imd, st_lat, st_lon, average_height, 
+                                &strx, &stry);
+
       // We will insist that the results are symmetric to within this
       // fraction after transforming out and back.
       printf ("Symmetry testing latLong vs. linsSamp... ");
       const double sym_th = 0.1;   // Symmetry threshold.
+      if (ret1 || ret2) {
+          asfPrintError("Symmetry test failed! %s %s.\n",
+                        ret1 ? "meta_get_latLon returned error" : "",
+                        ret2 ? "meta_get_lineSamp returned error" : "");
+      }
       if (!(fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th)) {
           printf("\nFailed symmetry test: x- |%.5f-%.5f| = %.5f\n"
                    "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
@@ -905,8 +922,11 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 
     // Lower right corner.
     double lr_lat, lr_lon;
-    meta_get_latLon (imd, (float) (ii_size_y - 1), (float) (ii_size_x - 1),
-		     average_height, &lr_lat, &lr_lon);
+    ret = meta_get_latLon (imd, (float) (ii_size_y - 1), 
+                           (float) (ii_size_x - 1),
+                           average_height, &lr_lat, &lr_lon);
+    g_assert (ret == 0);
+
     double lr_x, lr_y;
     project_set_datum (datum);
     project (pp, D2R * lr_lat, D2R * lr_lon, ASF_PROJ_NO_HEIGHT,
@@ -1102,7 +1122,8 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
           // heights, this will work for SAR imagery
           if ( imd->general->image_data_type == DEM ) {
               double lat, lon;
-              meta_get_latLon(omd, oiy, oix, average_height, &lat, &lon);
+              ret = meta_get_latLon(omd, oiy, oix, average_height, &lat, &lon);
+              g_assert(ret == 0);
               val += get_geoid_height(lat, lon);
           }
 
@@ -1127,10 +1148,10 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   GString *output_data_file = g_string_new (output_image->str);
   g_string_append (output_data_file, ".img");
   asfPrintStatus ("Storing geocoded image...\n");
-  return_code = float_image_store (oim, output_data_file->str,
-				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  ret = float_image_store (oim, output_data_file->str,
+                           FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   asfPrintStatus ("\nDone storing geocoded image.\n\n");
-  asfRequire (return_code == 0, "Error saving image.\n");
+  asfRequire (ret == 0, "Error saving image.\n");
   float_image_free (oim);
   g_string_free (output_data_file, TRUE);
 
