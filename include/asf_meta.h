@@ -587,13 +587,15 @@ void meta_get_orig(void *ddr,
 /* Converts given line and sample to geodetic
 latitude and longitude.  Works with all image types.
 */
-void meta_get_latLon(meta_parameters *sar,
-	double yLine, double xSample,double elev,double *lat,double *lon);
+int meta_get_latLon(meta_parameters *sar,
+                    double yLine, double xSample,double elev,
+                    double *lat,double *lon);
 
 /* Finds line and sample corresponding to given
 latitude and longitude. */
-void meta_get_lineSamp(meta_parameters *meta,
-	double lat,double lon,double elev,double *yLine,double *xSample);
+int meta_get_lineSamp(meta_parameters *meta,
+                      double lat,double lon,double elev,
+                      double *yLine,double *xSample);
 
 /* Converts a given line and sample in image into time,
 slant-range, and doppler.  Works with all image types.
@@ -604,7 +606,7 @@ void meta_get_timeSlantDop(meta_parameters *sar,
 
 /*Converts the given time, slant range, doppler, and elevation
 off earth's surface into a latitude and longitude.*/
-void meta_timeSlantDop2latLon(meta_parameters *sar,
+int meta_timeSlantDop2latLon(meta_parameters *sar,
 	double time_arg, double slant,double dop,double elev,
 	double *lat,double *lon);
 
@@ -614,9 +616,9 @@ void latLon2timeSlant(meta_parameters *sar,
 	double lat,double lon,
 	double *time_arg,double *slant,double *dop);
 
-void getLatLongMeta(const stateVector stVec,meta_parameters *meta,
-	double range,double doppler,double elev,
-	double *targLat, double *targLon, double *targRadius);
+int getLatLongMeta(const stateVector stVec,meta_parameters *meta,
+                   double range,double doppler,double elev,
+                   double *targLat, double *targLon, double *targRadius);
 
 /* This low-level routine is used internally by asf_meta.  */
 GEOLOCATE_REC *init_geolocate_meta(const stateVector *stVec,meta_parameters *meta);

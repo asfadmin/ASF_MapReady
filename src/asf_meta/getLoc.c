@@ -37,41 +37,48 @@ Converted from Howard Zebker's getloc.f Fortran code.
 
 double calcRange(GEOLOCATE_REC *g,double look,double yaw);
 
-void getLoc(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
-			double *latitude,double *phi,double *earthRadius) /*Outputs.*/
+int getLoc(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
+           double *latitude,double *phi,double *earthRadius) /*Outputs.*/
 {
+        int err;
 	double yaw=0,look=0;
 	vector target;
-	getLookYaw(g,range,dop,&look,&yaw);
+	err = getLookYaw(g,range,dop,&look,&yaw);
+        if (err) return err;
 	getDoppler(g,look,yaw,NULL,NULL,&target,NULL);
 	cart2sph(target,earthRadius,latitude,phi);
+        return 0;
 }
 
-void getLookYaw(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
-			double *out_look,double *out_yaw)/* Outputs, in radians.*/
+int getLookYaw(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
+               double *out_look,double *out_yaw)/* Outputs, in radians.*/
 {
-	int iterations;
+	int iterations=0,err=0,max_iter=100;
 	double yaw=0,deltaAz;
 	double look=0;
 	double dopGuess,dopDotGuess,deltaDop;
 	vector target,vRel;
 	
-	for (iterations=0;iterations<100;iterations++)
+        while (1)
 	{
 		double relativeVelocity;
-/*DEBUGF("GetLoc: Iteration %i, doppler=%f, yaw=%20.18f, look=%20.18f.\n",iterations,dopGuess,yaw*180/M_PI,look*180/M_PI);*/
-		look=getLook(g,range,yaw);
+                //if (iterations>10) printf("GetLoc: Iteration %i, doppler=%f, yaw=%20.18f, look=%20.18f.\n",iterations,dopGuess,yaw*180/M_PI,look*180/M_PI);
+		err=getLook(g,range,yaw,&look);
+                if (err) break;
 		getDoppler(g,look,yaw,&dopGuess,&dopDotGuess,&target,&vRel);
 		deltaDop=dop-dopGuess;
 		relativeVelocity=vecMagnitude(vRel);
 		deltaAz=deltaDop*(g->lambda/(2*relativeVelocity)); 
-		if (fabs(deltaAz*range)<0.1)/*Require decimeter
-convergence*/
+		if (fabs(deltaAz*range)<0.1)/*Require decimeter convergence*/
 			break;
 		yaw+=deltaAz;
+                if (++iterations>max_iter) { /* Failed to converge */
+                    err=1; break; 
+                }
 	}
 	*out_look=look;
 	*out_yaw=yaw;
+        return err;
 }
 
 /*	getlook.c: part of JPL's earthloc software.
@@ -115,7 +122,7 @@ c
 c                                         
 c*/
 
-double getLook(GEOLOCATE_REC *g,double range,double yaw)
+int getLook(GEOLOCATE_REC *g,double range,double yaw,double *plook)
 {
   double ht,delta_range,look;
   int iter;
@@ -123,10 +130,15 @@ double getLook(GEOLOCATE_REC *g,double range,double yaw)
   /* Look angle in y'z' plane, Yaw angle in z''x' plane.
      First guess at a look angle-- a simple spherical guess: */
   ht=vecMagnitude(g->stVec.pos);
-  if (range < (ht-g->rp)) 
-    bail("getLook(): Range vector does not reach earth!\n");
-  if (ht < g->rp)  
-    bail("getLook(): orbit is below earth's surface!\n");
+  if (range < (ht-g->rp)) {
+      asfPrintWarning("getLook(): Range vector does not reach earth!\n");
+      return 1;
+  }
+  if (ht < g->rp) {
+      asfPrintWarning("getLook(): orbit is below earth's surface!\n");
+      return 1;
+  }
+
   look= acos((ht*ht+range*range-g->rp*g->rp)/(2.0*range*ht));
 	
   /* For a left-looking SAR, we define the look angle to be negative.*/
@@ -138,7 +150,8 @@ double getLook(GEOLOCATE_REC *g,double range,double yaw)
     delta_range = range - calcRange(g,look,yaw);
     /* Require decimeter convergence.  */
     if (abs(delta_range) < 0.1) {
-      return look;
+      *plook = look;
+      return 0;
     } else { /* Havn't converged yet, so update look angle.  */
       sininc = (ht/g->rp)*sin(look);   /* sin of inci. angle(approx) */
       taninc = sininc/sqrt(1-sininc*sininc);   /* tan of inci. angle */
@@ -149,8 +162,19 @@ double getLook(GEOLOCATE_REC *g,double range,double yaw)
   }
 
   /*If we get here, our look iteration hasn't converged.*/
-  bail("Error in getLook(): look iteration didn't converge.\n");
-  return 0; /*only here to keep compiler from complaining*/
+  asfPrintWarning("Error in getLook(): look iteration didn't converge.\n");
+  return 1;
+}
+
+/* Provide a wrapper with the old interface */
+double getLook_abort(GEOLOCATE_REC *g,double range,double yaw)
+{
+    double look;
+    int err;
+    err = getLook(g,range,yaw,&look);
+    if (err)
+        bail("getLook(): Aborting...\n");
+    return look;
 }
 
 /*
@@ -212,9 +236,9 @@ c
 c       aug 88 made double precision 
 c*/
 
-void getDoppler(GEOLOCATE_REC *g,double look,double yaw,
-	double *fd, double *fdot,
-	vector *out_targPos,vector *out_relVel)
+int getDoppler(GEOLOCATE_REC *g,double look,double yaw,
+               double *fd, double *fdot,
+               vector *out_targPos,vector *out_relVel)
 {
 	vector relPos, /*Vector from spacecraft to targPos.*/
 		sarPos, /*Position of spacecraft*/
@@ -276,4 +300,7 @@ c*/
 		*fd=-2.0/(g->lambda*range)*vecDot(relPos,relVel);
 	if (fdot)
 		*fdot=-2.0/(g->lambda*range)*(vecDot(relVel,relVel)+vecDot(relPos,relAcc));
+
+        /* success */
+        return 0;
 }

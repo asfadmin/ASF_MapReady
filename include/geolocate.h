@@ -112,17 +112,18 @@ typedef struct {
 GEOLOCATE_REC *init_geolocate(const stateVector *stVec); 
 void free_geolocate(GEOLOCATE_REC *g);
 
-double getLook(GEOLOCATE_REC *g,double range,double yaw);
+int getLook(GEOLOCATE_REC *g,double range,double yaw, /* Inputs */
+            double *look);                            /* Outputs */
 
-void getLoc(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
-			double *latitude,double *phi,double *earthRadius); /*Outputs.*/
+int getLoc(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
+           double *latitude,double *phi,double *earthRadius); /*Outputs.*/
 
-void getLookYaw(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
-			double *out_look,double *out_yaw);/* Outputs, in radians.*/
+int getLookYaw(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
+               double *out_look,double *out_yaw);/* Outputs, in radians.*/
 
-void getDoppler(GEOLOCATE_REC *g,double look,double yaw,
-	double *fd, double *fdot,
-	vector *targPos,vector *relVel);
+int getDoppler(GEOLOCATE_REC *g,double look,double yaw,
+               double *fd, double *fdot,
+               vector *targPos,vector *relVel);
 
 double yaw2doppler(GEOLOCATE_REC *g,double slantRange,double yawAngleDeg);
 

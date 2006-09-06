@@ -176,7 +176,10 @@ image, better quality.*/
 	else {  /*Find doppler rate (Hz/sec) <=> azimuth chirp slope*/
 		double dopRate,yaw=0.0;
 		GEOLOCATE_REC *g=init_geolocate_meta(&meta->stVec->vecs[0].vec,meta);
-		double look=getLook(g,meta->geo->slantFirst,yaw);
+		double look;
+                int ret;
+                ret=getLook(g,meta->geo->slantFirst,yaw,&look);
+                assert(ret==0);
 		getDoppler(g,look,yaw,NULL,&dopRate,NULL,NULL);
 		az.chirpSlope=dopRate;
 		free_geolocate(g);

@@ -107,9 +107,9 @@ void free_geolocate(GEOLOCATE_REC *g)
 	FREE((void *)g);
 }
 
-void getLatLongMeta(const stateVector stVec,meta_parameters *meta,
-	double range,double doppler,double elev,
-	double *targLat, double *targLon, double *targRadius)
+int getLatLongMeta(const stateVector stVec,meta_parameters *meta,
+                   double range,double doppler,double elev,
+                   double *targLat, double *targLon, double *targRadius)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
@@ -117,26 +117,31 @@ void getLatLongMeta(const stateVector stVec,meta_parameters *meta,
 	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	double lat,lon;
-	
+	int err;
+
 /*Set up globals.*/
 	GEOLOCATE_REC *g=init_geolocate_meta(&stVec,meta);
 	g->re+=elev;
 	g->rp+=elev;
 
 /*Refine look and yaw angles over spheroid to correct doppler*/
-	getLoc(g,range,doppler,&lat,&lon,targRadius);
+	err=getLoc(g,range,doppler,&lat,&lon,targRadius);
+        if (!err) {
 
 /*Convert longitude to (-pi, pi].*/
-	if (lon < -pi)
+            if (lon < -pi)
 		lon += 2*pi;
 /*Convert latitude to geodetic, from geocentric.*/
-	lat=atan(tan(lat)*(g->re/g->rp)*(g->re/g->rp));
-	*targLon = lon*R2D;
-	*targLat = lat*R2D;
+            lat=atan(tan(lat)*(g->re/g->rp)*(g->re/g->rp));
+            *targLon = lon*R2D;
+            *targLat = lat*R2D;
 	
-	g->re-=elev;
-	g->rp-=elev;
+            g->re-=elev;
+            g->rp-=elev;
+        }
+
 	free_geolocate(g);
+        return err;
 }
 
 
