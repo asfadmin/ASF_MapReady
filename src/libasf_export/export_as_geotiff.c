@@ -129,8 +129,6 @@ export_as_geotiff (const char *metadata_file_name,
      this tolerance.  */
   double axis_tolerance = 0.2;
 
-  asfRequire (md->general->data_type == REAL32,
-              "Can only ingest ASF format floating point data.");
   asfRequire (sizeof (unsigned short) == 2,
               "Unsigned short integer data type size is different than "
               "expected.\n");
@@ -356,6 +354,11 @@ export_as_geotiff (const char *metadata_file_name,
                        "being used from ellipsoid axis dimensions in "
                        "metadata, assuming WGS84 ellipsoid\n");
       ellipsoid = WGS84;
+
+      // Since we're assuming wgs84, might as well use those values
+      // in the projection parameters
+      re_major = wgs84_major_axis;
+      re_minor = wgs84_minor_axis;
     }
 
     /* We will tie down the top left corner of the image (which has
@@ -378,10 +381,17 @@ export_as_geotiff (const char *metadata_file_name,
     TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_point);
 
     /* Set the scale of the pixels, in projection coordinates.  */
-    asfRequire (md->projection->perX > 0.0, "unexpected non-positive perX");
-    pixel_scale[0] = md->projection->perX * scale_factor;
-    asfRequire (md->projection->perY < 0.0, "unexpected non-negative perY");
-    pixel_scale[1] = -md->projection->perY * scale_factor;
+    if (md->projection->perX < 0.0)
+        asfPrintWarning("Unexpected non-positive perX in the "
+                        "projection block.\n");
+
+    pixel_scale[0] = fabs(md->projection->perX) * scale_factor;
+
+    if (md->projection->perY > 0.0)
+        asfPrintWarning("Unexpected non-negative perY in the "
+                        "projection block.\n");
+
+    pixel_scale[1] = fabs(md->projection->perY) * scale_factor;
     pixel_scale[2] = 0;
     TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
@@ -421,7 +431,7 @@ export_as_geotiff (const char *metadata_file_name,
 	  }
 	  else {               /* Shouldn't be here.  */
 	    asfPrintError("You are not in the northern or southern "
-			  "hemisphere;\nyou are now in the twighlight zone");
+			  "hemisphere;\nyou are now in the twilight zone");
 	  }
 	  projection_code += md->projection->param.utm.zone;
 	  
