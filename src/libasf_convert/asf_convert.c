@@ -258,6 +258,14 @@ int asf_convert(int createflag, char *configFileName)
           strncmp(uc(cfg->geocoding->resampling), "BICUBIC", 7) != 0) {
         asfPrintError("Chosen resampling method not supported\n");
       }
+
+      // Check that the user didn't specify an average height, and
+      // also is doing terrain correction
+      if (cfg->general->terrain_correct && cfg->geocoding->height != 0) {
+          asfPrintWarning("Since terrain correction is being applied, "
+                          "asf_geocode will ignore the\nspecified "
+                          "average height.\n");
+      }
     }
 
     // Check whether everything in the [Export] block is reasonable
@@ -507,6 +515,14 @@ int asf_convert(int createflag, char *configFileName)
       datum_type_t datum = WGS84_DATUM;
       double pixel_size = cfg->geocoding->pixel;
       float background_val = cfg->geocoding->background;
+
+      // When terrain correcting, ignore average height -- the height
+      // has already been corrected for.
+      if (cfg->general->terrain_correct && cfg->geocoding->height != 0) {
+          asfPrintWarning("Since terrain correction was applied, ignoring "
+                          "average height specification\nfor geocoding.\n");
+          average_height = 0.0;
+      }
 
       // Datum
       if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) == 0) {
