@@ -25,6 +25,71 @@
       <title>Windows Installation</title>
       <para>The Windows package contains just a single file, the
         installer.</para>
+      <para>To install, you just need to open up the archive file that
+        you downloaded (double-clicking on it will open it), and then
+        run the installer program contained within.</para>
+      <para>After installation, you will have a start-menu shortcut
+        that you can use to run the SAR Training Processor.</para>
+    </sect1>
+    <sect1 id="Linux">
+      <title>Linux Installation</title>
+      <para>To install the RPM, you need to have root access.  If you
+        don't, you'll need to persurade your system administrator to
+        install the package for you.  If that isn't feasible or you
+        don't want to, you can instead download the Source package,
+        and compile the tools yourself, where you can install them
+        in your own home directory without requiring root
+        privileges.</para>
+      <para>To install the package: (Do this as root)</para>
+      <simplelist><member>rpm -i stp-X.X.X.rpm</member></simplelist>
+      <para>(Or course you need to replace the X's with whatever
+        version you downloaded, for example: "rpm -i stp-1.0.13-1.rpm")
+      </para>
+      <para>After the package is installed, you can find out where it
+        was put by using this rpm command, which does not require root
+        access:</para>
+      <simplelist><member>rpm -ql stp | grep stp</member></simplelist>
+      <para>You should see something like the following:</para>
+      <simplelist><member>/usr/local/bin/stp</member></simplelist>
+      <para>which tells you that the package has been installed in
+        /usr/local, which is the default.</para>
+      <para>This directory needs to be added to your path, in order to
+        run the tools.  Exactly how you do this depends on which UNIX
+        shell you are using.</para>
+      <para>For example, suppose you've installed the software in
+        /opt/asf_tools.  For bash or the like, add these lines to your
+        ~/.profile or ~/.bashrc file:</para>
+      <simplelist>
+        <member>export PATH=/opt/asf_tools/bin:$PATH</member>
+      </simplelist>
+      <para>For csh or the like, add this line to your ~/.cshrc
+      file:</para>
+      <simplelist>
+        <member>setenv PATH /opt/asf_tools/bin:$PATH</member>
+      </simplelist>
+      <para>If you've gone with the default installation location of
+        /usr/local, you may already have /usr/local/bin in your path,
+        in which case you don't need to do anything.</para>
+    </sect1>
+    <sect1 id="Source">
+      <title>Source Installation</title>
+      <para>After you've downloaded and extracted the archive, you
+      need to compile the tools before they can be installed. To do
+      this, make sure you're in the asf_tools directory, then:</para>
+      <simplelist>
+        <member>./configure --prefix=[[installation location]]</member>
+        <member>make</member>
+        <member>make install</member>
+      </simplelist>
+      <para>You will need permissions to put files into
+        [[installation location]]!  The default is /usr/local.</para>
+      <para>For example, to install the tools in "asf_tools" folder of
+        your home directory:</para>
+      <simplelist>
+        <member>./configure --prefix=~/asf_tools</member>
+        <member>make</member>
+        <member>make install</member>
+      </simplelist>
     </sect1>
   </chapter>
   <chapter id="contacting-us">
