@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" >
+<book>
+  <bookinfo>
+    <date>2006-09-09</date>
+    <title>The ASF SAR Training Processor: Usage Guide</title>
+  </bookinfo>
+  <toc></toc>
+  <chapter id="usage">
+    <title>Using the SAR Training Processor</title>
+    <para>Ahh, the SAR Training processor, a paragon of awesomeness.</para>
+  </chapter>
+  <chapter id="contacting-us">
+    <title>Contacting Us</title>
+    <para>If you have any questions or comments about this software,
+      we would love to hear from you!</para>
+    <address>
+      http://www.asf.alaska.edu
+      <email>uso@asf.alaska.edu</email>
+    </address>
+    <address>
+      Alaska Satellite Facility
+      Geophysical Institute
+      University of Alaska Fairbanks
+      P.O. Box 757320
+      Fairbanks, AK 99775-7320
+    </address>
+  </chapter>
+</book>
