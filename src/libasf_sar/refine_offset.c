@@ -83,12 +83,14 @@ getObjective(const gsl_vector *x, void *params, gsl_vector *f)
     return GSL_SUCCESS;
 }
 
+/*
 static void print_state(int iter, gsl_multiroot_fsolver *s)
 {
     printf("iter = %3d   x = (%.3f %.3f)   f(x) = %.8f\n", iter,
            gsl_vector_get(s->x, 0), gsl_vector_get(s->x, 1),
            gsl_vector_get(s->f, 0));
 }
+*/
 
 void coarse_search(double t_extent_min, double t_extent_max,
                    double x_extent_min, double x_extent_max,
@@ -102,18 +104,18 @@ void coarse_search(double t_extent_min, double t_extent_max,
     double x_extent = x_extent_max - x_extent_min;
     gsl_vector *v = gsl_vector_alloc(2);
     gsl_vector *u = gsl_vector_alloc(2);
-    printf("           ");
-    for (j = 0; j <= k; ++j) {
-        double x = x_extent_min + ((double)j)/k*x_extent;
-        printf("%9.3f ", x);
-    }
-    printf("\n           ");
-    for (j = 0; j <= k; ++j)
-        printf("--------- ");
-    printf("\n");
+    //printf("           ");
+    //for (j = 0; j <= k; ++j) {
+    //    double x = x_extent_min + ((double)j)/k*x_extent;
+    //    printf("%9.3f ", x);
+    //}
+    //printf("\n           ");
+    //for (j = 0; j <= k; ++j)
+    //    printf("--------- ");
+    //printf("\n");
     for (i = 0; i <= k; ++i) {
         double t = t_extent_min + ((double)i)/k*t_extent;
-        printf("%9.3f | ", t);
+        //printf("%9.3f | ", t);
 
         for (j = 0; j <= k; ++j) {
             double x = x_extent_min + ((double)j)/k*x_extent;
@@ -122,14 +124,14 @@ void coarse_search(double t_extent_min, double t_extent_max,
             gsl_vector_set(v, 1, x);
             getObjective(v,(void*)params, u);
             double n = gsl_vector_get(u,0);
-            printf("%9.3f ", n);
+            //printf("%9.3f ", n);
             if (n<the_min) { 
                 the_min=n;
                 min_t=gsl_vector_get(v,0);
                 min_x=gsl_vector_get(v,1);
             }
         }
-        printf("\n");
+        //printf("\n");
     }
 
     *t_min = min_t;
@@ -167,10 +169,10 @@ void generate_start(struct refine_offset_params *params,
         extent_x_min = *start_x - x_range/2;
         extent_x_max = *start_x + x_range/2;
 
-        printf("refining search to region: (%9.3f,%9.3f)\n"
-               "                           (%9.3f,%9.3f)\n",
-               extent_t_min, extent_t_max,
-               extent_x_min, extent_x_max);
+        //printf("refining search to region: (%9.3f,%9.3f)\n"
+        //       "                           (%9.3f,%9.3f)\n",
+        //       extent_t_min, extent_t_max,
+        //       extent_x_min, extent_x_max);
     }
 
 }
@@ -182,7 +184,7 @@ void refine_offset(double x_off, double y_off, meta_parameters *meta,
     int iter = 0, max_iter = 1000;
     const gsl_multiroot_fsolver_type *T;
     gsl_multiroot_fsolver *s;
-    //gsl_error_handler_t *prev;
+    gsl_error_handler_t *prev;
     struct refine_offset_params params;
     const size_t n = 2;
 
@@ -204,13 +206,13 @@ void refine_offset(double x_off, double y_off, meta_parameters *meta,
     s = gsl_multiroot_fsolver_alloc(T, n);
     gsl_multiroot_fsolver_set(s, &F, x);
 
-    //prev = gsl_set_error_handler_off();
+    prev = gsl_set_error_handler_off();
 
     do {
         ++iter;
         status = gsl_multiroot_fsolver_iterate(s);
 
-        print_state(iter, s);
+        //print_state(iter, s);
 
         // abort if stuck
         if (status) break;
@@ -233,5 +235,5 @@ void refine_offset(double x_off, double y_off, meta_parameters *meta,
 
     gsl_multiroot_fsolver_free(s);
     gsl_vector_free(x);
-    //gsl_set_error_handler(prev);
+    gsl_set_error_handler(prev);
 }
