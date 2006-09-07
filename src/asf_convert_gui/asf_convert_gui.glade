@@ -1524,7 +1524,7 @@
 			      <child>
 				<widget class="GtkCheckButton" id="average_height_checkbutton">
 				  <property name="visible">True</property>
-				  <property name="tooltip" translatable="yes">Projection calculations can be more accurate if you know the average height of the projected area.</property>
+				  <property name="tooltip" translatable="yes">Projection calculations can be more accurate if you know the average height of the projected area.  (This option is disabled when terrain correcting, as the height correction will have already been applied.)</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">Specify Height</property>
 				  <property name="use_underline">True</property>

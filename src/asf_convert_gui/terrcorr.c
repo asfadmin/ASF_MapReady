@@ -85,6 +85,9 @@ void terrcorr_options_changed()
           GTK_TOGGLE_BUTTON(interpolate_checkbutton), FALSE);
   }
 
+  // must now update the geocode settings as well, since the average
+  // height checkbutton is disabled by terrain correction
+  geocode_options_changed();
 }
 
 SIGNAL_CALLBACK void

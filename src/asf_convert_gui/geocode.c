@@ -464,15 +464,33 @@ void geocode_options_changed()
             }
         }
 
-        enable_average_height_checkbutton = TRUE;
         enable_pixel_size_checkbutton = TRUE;
         enable_datum_hbox = TRUE;
         enable_resample_hbox = TRUE;
 	enable_force_checkbutton = TRUE;
 
-        average_height_is_checked = 
-            gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
-            average_height_checkbutton));
+        // turn off the average height checkbutton if terrain correction
+        // is selected
+        GtkWidget * terrcorr_checkbutton = glade_xml_get_widget(
+            glade_xml, "terrcorr_checkbutton");
+
+        if (gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(terrcorr_checkbutton)))
+        {
+            enable_average_height_checkbutton = FALSE;
+            average_height_is_checked = FALSE;
+
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(average_height_checkbutton), FALSE);
+        }
+        else
+        {
+            enable_average_height_checkbutton = TRUE;
+
+            average_height_is_checked = 
+                gtk_toggle_button_get_active(
+                    GTK_TOGGLE_BUTTON(average_height_checkbutton));
+        }
 
         pixel_size_is_checked = 
             gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
