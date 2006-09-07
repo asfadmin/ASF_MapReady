@@ -98,13 +98,15 @@ int init_convert_config(char *configFile)
 	  "# switched on will generate an [Import] section where you can define further\n"
 	  "# parameters.\n\n");
   fprintf(fConfig, "import = 1\n\n");
-  // SAR processing flag
-  fprintf(fConfig, "# The SAR processing flag indicates whether the data needs to be run\n"
-	  "# through 'ardop' (1 for running it, 0 for leaving out the SAR processing step).\n");
-  fprintf(fConfig, "# Running asf_convert with the -create option and the SAR processing \n"
-	  "# flag switched on will generate a [SAR processing] section where you can define\n"
-	  "# further parameters.\n\n");
-  fprintf(fConfig, "sar processing = 0\n\n");
+
+  // SAR processing flag -- removed for 3.0!
+//  fprintf(fConfig, "# The SAR processing flag indicates whether the data needs to be run\n"
+//	  "# through 'ardop' (1 for running it, 0 for leaving out the SAR processing step).\n");
+//  fprintf(fConfig, "# Running asf_convert with the -create option and the SAR processing \n"
+//	  "# flag switched on will generate a [SAR processing] section where you can define\n"
+//	  "# further parameters.\n\n");
+//  fprintf(fConfig, "sar processing = 0\n\n");
+
   // terrain correction flag
   fprintf(fConfig, "# The terrain correction flag indicates whether the data needs to be run\n"
 	  "# through 'asf_terrcorr' (1 for running it, 0 for leaving out the terrain\n"
@@ -117,7 +119,7 @@ int init_convert_config(char *configFile)
   fprintf(fConfig, "# The geocoding flag indicates whether the data needs to be run through\n"
 	  "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
   fprintf(fConfig, "# Running asf_convert with the -create option and the geocoding flag\n"
-	  "# switched on will generate an [Geocoding] section where you can define further\n"
+	  "# switched on will generate a [Geocoding] section where you can define further\n"
 	  "# parameters.\n\n");
   fprintf(fConfig, "geocoding = 1\n\n");
   // export flag
@@ -639,14 +641,18 @@ int write_convert_config(char *configFile, convert_config *cfg)
     }
     fprintf(fConfig, "import = %i\n", cfg->general->import);
     // General - SAR processing
-    if (!shortFlag) {
-      fprintf(fConfig, "\n# The SAR processing flag indicates whether the data needs to be run\n"
-	      "# through 'ardop' (1 for running it, 0 for leaving out the SAR processing step).\n");
-      fprintf(fConfig, "# Running asf_convert with the -create option and the SAR processing \n"
-	      "# flag switched on will generate a [SAR processing] section where you can define\n"
-	      "# further parameters.\n\n");
+    // In 3.0, only write this out if the flag is actually set.
+    // For 3.5 or 4.0 or ?, we should be able to remove the outer if block here.
+    if (cfg->general->sar_processing) {
+        if (!shortFlag) {
+            fprintf(fConfig, "\n# The SAR processing flag indicates whether the data needs to be run\n"
+                    "# through 'ardop' (1 for running it, 0 for leaving out the SAR processing step).\n");
+            fprintf(fConfig, "# Running asf_convert with the -create option and the SAR processing \n"
+                    "# flag switched on will generate a [SAR processing] section where you can define\n"
+                    "# further parameters.\n\n");
+        }
+        fprintf(fConfig, "sar processing = %i\n", cfg->general->sar_processing);
     }
-    fprintf(fConfig, "sar processing = %i\n", cfg->general->sar_processing);
     // General - Image stats
     if (cfg->general->image_stats) {
       if (!shortFlag)

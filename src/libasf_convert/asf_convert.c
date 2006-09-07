@@ -196,7 +196,12 @@ int asf_convert(int createflag, char *configFileName)
 
     // Check whether everything in the [SAR processing] block is reasonable
     if (cfg->general->sar_processing) {
-      
+
+        // ADDED FOR 3.0 -- DO NOT SUPPORT L0 PROCESSING!
+        // We actually think this is working in many cases, but it hasn't
+        // been fully tested yet for all satellites/beams.
+        asfPrintWarning("Processing from level 0 is not fully tested yet!\n");
+        
       // Radiometry
       if (strncmp(uc(cfg->sar_processing->radiometry), "AMPLITUDE_IMAGE", 15) != 0 &&
           strncmp(uc(cfg->sar_processing->radiometry), "POWER_IMAGE", 11) != 0 &&
