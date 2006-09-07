@@ -108,19 +108,23 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
        (strncmp(dssr->mission_id,"ERS1",4)==0)) {
       strcpy(meta->general->sensor,"ERS1");
       strcpy(meta->general->mode, "STD");
+      sprintf(meta->sar->polarization, "VV");
    }
    else if ((strncmp(dssr->sensor_id,"ERS-2",5)==0) || 
 	    (strncmp(dssr->mission_id,"ERS2",4)==0)) {
       strcpy(meta->general->sensor,"ERS2");
       strcpy(meta->general->mode, "STD");
+      sprintf(meta->sar->polarization, "VV");
    }
    else if (strncmp(dssr->sensor_id,"JERS-1",6)==0) {
       strcpy(meta->general->sensor,"JERS1");
       strcpy(meta->general->mode, "STD");
+      sprintf(meta->sar->polarization, "HH");
    }
    else if (strncmp(dssr->sensor_id,"ALOS",4)==0) {
      strcpy(meta->general->sensor,"ALOS");
      strcpy(meta->general->mode, "???");
+     get_polarization(dataName, meta->sar->polarization);
    }
    else if (strncmp(dssr->sensor_id,"RSAT-1",6)==0) {
      /* probably need to check incidence angle to figure out what is going on */
@@ -152,7 +156,10 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
         strcpy(beamname, ppr->beam_type);
       }
       strcpy(meta->general->mode, beamname);
+      sprintf(meta->sar->polarization, "HH");
    }
+
+
    strcpy(fac,dssr->fac_id);strtok(fac," ");/*Remove spaces from field*/
    strcpy(sys,dssr->sys_id);strtok(sys," ");/*Remove spaces from field*/
    strcpy(ver,dssr->ver_id);strtok(ver," ");/*Remove spaces from field*/
@@ -179,7 +186,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
      buf[3]=0;
      sscanf(buf, "%d", &meta->general->frame);
    }
-   get_polarization(dataName, meta->sar->polarization);
    
    // ALOS data include the frame number in the product ID
    if (strcmp(meta->general->sensor, "ALOS") == 0) {

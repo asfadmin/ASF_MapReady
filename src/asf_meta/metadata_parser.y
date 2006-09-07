@@ -360,6 +360,8 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields which normally go in the sar block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "sar") ) {
+    if ( !strcmp(field_name, "polarization") )
+      { strcpy(MSAR->polarization, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "image_type") ) {
       if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) {
         MSAR->image_type = 'S';

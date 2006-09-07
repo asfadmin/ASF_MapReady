@@ -166,6 +166,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
 
 /* SAR block.  */
   meta_put_string(fp,"sar {","","Begin parameters used specifically in SAR imaging");
+  meta_put_string(fp,"polarization:",meta->sar->polarization, 
+		  "Signal polarization");
   meta_put_char  (fp,"image_type:", meta->sar->image_type,
 		  "[S=slant range; G=ground range; P=map projected]");
   meta_put_char  (fp,"look_direction:",meta->sar->look_direction,
