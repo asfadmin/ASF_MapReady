@@ -84,6 +84,8 @@ make_input_image_thumbnail (meta_parameters *imd, const char *input_data,
     // Might be better to do some averaging or interpolating.
     size_t ii;
     int *line = MALLOC (sizeof(int) * imd->general->sample_count);
+    asfRequire(imd->general->sample_count == id->ddr.ns,
+               "metadata size appears not to match the ceos image size\n");
     for ( ii = 0 ; ii < tsy ; ii++ ) {
         readCeosLine (line, ii * sf, id);
         size_t jj;
