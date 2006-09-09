@@ -296,6 +296,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char inMaskFile,
   int clean_files = 1;
   int dem_grid_size = 20;
   char output_dir[255];
+  double t_off, x_off;
   meta_parameters *metaSAR;
   sprintf(output_dir, "");
 
@@ -303,7 +304,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char inMaskFile,
   match_dem(metaSAR, sarFile, demFile, sarFile, output_dir, inMaskFile, NULL, 
 	    simAmpFile, demSlant, dem_grid_size, do_corner_matching, 
 	    do_fftMatch_verification, do_terrain_correction, clean_files, 
-	    NULL, NULL);
+	    &t_off, &x_off);
 
   return FALSE;
 }

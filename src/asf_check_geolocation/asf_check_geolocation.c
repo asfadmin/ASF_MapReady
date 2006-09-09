@@ -62,9 +62,8 @@ void usage(char *name)
 
 int main(int argc, char *argv[])
 {
-  char *demGridFile, *demClipped, *demSlant, *demSimAmp, *demTrimSimAmp;
+  char *demGridFile, *demClipped, *demSlant, *demSimAmp;
   int order, gridSize, demWidth, demHeight;
-  float dx, dy, cert;
   double maxErr;
   poly_2d *fwX, *fwY, *bwX, *bwY;
   meta_parameters *metaSAR;
@@ -139,7 +138,7 @@ int main(int argc, char *argv[])
   // Simulate an amplitude image
   asfPrintStatus("   Generating slant range DEM and simulating amplitude image "
 		 "...\n");
-  reskew_dem(sarFile, demClipped, demSlant, demSimAmp, NULL);
+  reskew_dem(sarFile, demClipped, demSlant, demSimAmp, NULL, NULL);
   
   /*
   // Determine offset 
