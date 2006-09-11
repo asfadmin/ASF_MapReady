@@ -28,6 +28,10 @@
       the "Execute" button.</para>
     <para>When the processing completes, the "Execute" button reverts
       back, and you will have produced a level 1 product.</para>
+    <para>Please note that the SAR Training Processor only processes
+      the first patch of data.  If you are interested in studying
+      a feature not in the first patch, you can use the "Start Line"
+      option described below in the "Other Capabilities" section. </para>
   </chapter>
   <chapter id="intermediates">
     <title>SAR Processing Intermediate Products</title>
