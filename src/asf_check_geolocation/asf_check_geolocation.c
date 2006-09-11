@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
   // Create a grid of points to map DEM into slant range
   asfPrintStatus("   Generating %dx%d DEM grid ...\n", gridSize, gridSize);
   demGridFile = appendSuffix(sarFile, "_grid");
-  create_dem_grid_ext(demFile, sarFile, demGridFile, -1, -1, gridSize, 0.0, NULL);
+  create_dem_grid_ext(demFile, sarFile, demGridFile, -1, -1, gridSize, NULL);
     
   // Fit a fifth order polynomial to the grid points.
   // This polynomial is then used to extract a subset out of the reference
