@@ -22,7 +22,7 @@ CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 all: build_only
 	mv libasf_terrcorr.a $(LIBDIR)
-	cp asf_terrcorr.h seedsquares.h $(ASF_INCLUDE_DIR)
+	cp asf_terrcorr.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f libasf_terrcorr.a
