@@ -105,12 +105,12 @@ static int getNextSarPt(meta_parameters *meta,int gridNo,int *x,int *y,
 int create_dem_grid(const char *demName, const char *sarName,
 		    const char *outName)
 {
-  return create_dem_grid_ext(demName, sarName, outName, -1, -1, -1, 0.0, NULL);
+  return create_dem_grid_ext(demName, sarName, outName, -1, -1, -1, NULL);
 }
 
 int create_dem_grid_ext(const char *demName, const char *sarName,
 			const char *outName, int w, int h, int size,
-			float delta_y, double *coverage_pct)
+			double *coverage_pct)
 {
   int gridCount,sar_x,sar_y;
   FILE *out;
@@ -184,8 +184,6 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
 		   metaSar->general->sample_count,
 		   metaSar->general->line_count,
 		   gridResX, gridResY);
-
-      sar_y += delta_y;
 
       /*Compute the latitude and longitude of this location on the ground.*/
       meta_get_original_line_sample(metaSar, sar_y, sar_x, &orig_y, &orig_x);

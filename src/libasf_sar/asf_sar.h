@@ -42,7 +42,7 @@ int create_dem_grid(const char *demName, const char *sarName,
 		    const char *outName);
 int create_dem_grid_ext(const char *demName, const char *sarName,
 			const char *outName, int w, int h, int size,
-			float delta_y, double *coverage_pct);
+			double *coverage_pct);
 
 /* Prototypes from remap_poly.c */
 int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,

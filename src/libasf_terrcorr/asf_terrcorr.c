@@ -298,7 +298,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *inMaskFile,
   double t_offset, x_offset;
   char output_dir[255];
   meta_parameters *metaSAR;
-  sprintf(output_dir, "");
+  strcpy(output_dir, "");
 
   metaSAR = meta_read(sarFile);
   match_dem(metaSAR, sarFile, demFile, sarFile, output_dir, inMaskFile, NULL, 
@@ -320,7 +320,6 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
   char *demSimAmp = NULL, *maskClipped = NULL;
   int loop_count = 0;
   const float required_match = 2.5;
-  float vertical_fudge = 0.0;
   double coverage_pct, t_off, x_off;
   int demWidth, demHeight;
   int redo_clipping;
@@ -348,7 +347,7 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
     create_dem_grid_ext(demFile, srFile, demGridFile,
 			metaSAR->general->sample_count,
 			metaSAR->general->line_count, dem_grid_size,
-			vertical_fudge, &coverage_pct);
+			&coverage_pct);
   
     if (coverage_pct <= 0) {
       asfPrintError("DEM and SAR images do not overlap!\n");
@@ -671,8 +670,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
   if (inMaskFile)
   	{
   	asfPrintStatus("usermask Image is %dx%d LxS, %gm pixels.\n",
-		 metamask->general->line_count, metamask->general->sample_count,
-		 maskRes);
+                       metamask->general->line_count,
+                       metamask->general->sample_count, maskRes);
 	}
   // Downsample the SAR image closer to the reference DEM if needed.
   // Otherwise, the quality of the resulting terrain corrected SAR image 
