@@ -287,7 +287,7 @@ static char * getOutputDir(char *outFile)
     return d;
 }
 
-int asf_check_geolocation(char *sarFile, char *demFile, char inMaskFile,
+int asf_check_geolocation(char *sarFile, char *demFile, char *inMaskFile,
 			  char *simAmpFile, char *demSlant)
 {
   int do_corner_matching = 1;
@@ -295,8 +295,8 @@ int asf_check_geolocation(char *sarFile, char *demFile, char inMaskFile,
   int do_terrain_correction = 1;
   int clean_files = 1;
   int dem_grid_size = 20;
+  double t_offset, x_offset;
   char output_dir[255];
-  double t_off, x_off;
   meta_parameters *metaSAR;
   sprintf(output_dir, "");
 
@@ -304,7 +304,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char inMaskFile,
   match_dem(metaSAR, sarFile, demFile, sarFile, output_dir, inMaskFile, NULL, 
 	    simAmpFile, demSlant, dem_grid_size, do_corner_matching, 
 	    do_fftMatch_verification, do_terrain_correction, clean_files, 
-	    &t_off, &x_off);
+	    &t_offset, &x_offset);
 
   return FALSE;
 }
@@ -321,7 +321,7 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
   int loop_count = 0;
   const float required_match = 2.5;
   float vertical_fudge = 0.0;
-  double coverage_pct;
+  double coverage_pct, t_off, x_off;
   int demWidth, demHeight;
   int redo_clipping;
   int polyOrder = 5;
@@ -336,6 +336,7 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
 
     ++loop_count;
     
+    asfPrintStatus("\n\nUsing '%s' for refining the geolocation ...\n\n", demFile);
     // Generate a point grid for the DEM extraction.
     // The width and height of the grid is defined in slant range image
     // coordinates, while the grid is actually calculated in DEM space.
@@ -517,15 +518,15 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
 	    // Correct the metadata of the SAR image for the offsets 
 	    // that we found
 	    asfPrintStatus("Adjusting metadata to account for offsets...\n");
-	    refine_offset(dx, dy, metaSAR, t_offset, x_offset);
+	    refine_offset(dx, dy, metaSAR, &t_off, &x_off);
 	    asfPrintStatus("  Time Shift: %f -> %f\n"
 			   "  Slant Shift: %f -> %f\n",
 			   metaSAR->sar->time_shift,
-			   metaSAR->sar->time_shift + *t_offset,
+			   metaSAR->sar->time_shift + t_off,
 			   metaSAR->sar->slant_shift,
-			   metaSAR->sar->slant_shift + *x_offset);
-	    metaSAR->sar->time_shift += *t_offset;
-	    metaSAR->sar->slant_shift += *x_offset;
+			   metaSAR->sar->slant_shift + x_off);
+	    metaSAR->sar->time_shift += t_off;
+	    metaSAR->sar->slant_shift += x_off;
 	    meta_write(metaSAR, srFile);
 	    
 	    if (do_terrain_correction)
@@ -591,6 +592,9 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
   FREE(demSlant);
   if (maskClipped)
     FREE(maskClipped);
+
+  *t_offset = t_off;
+  *x_offset = x_off;
 
   return FALSE;
 

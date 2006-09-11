@@ -14,8 +14,15 @@ int asf_terrcorr(char *sarFile, char *demFile,char *inMaskFile,
 int refine_geolocation(char *sarFile, char *demFile,char *inMaskFile, char *outFile,
                        int update_etadata_flag);
 
-int asf_check_geolocation(char *sarFile, char *demFile, char inMaskFile,
+int asf_check_geolocation(char *sarFile, char *demFile, char *inMaskFile,
 			  char *simAmpFile, char *demSlant);
+
+int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile, 
+	      char *srFile, char *output_dir, char *inMaskFile, char *maskFile, 
+	      char *demTrimSimAmp, char *demTrimSlant, int dem_grid_size, 
+	      int do_corner_matching, int do_fftMatch_verification, 
+	      int do_terrain_correction, int clean_files, double *t_offset, 
+	      double *x_offset);
 
 /**
    asf_terrcorr_ext
