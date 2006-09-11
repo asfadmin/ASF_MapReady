@@ -153,7 +153,7 @@ int main(int argc,char *argv[])
   printf("Program: create_dem_grid\n\n");
 
   create_dem_grid_ext(demName, sarName, outName, width, height,
-		      gridResX, 0., &pct);
+		      gridResX, &pct);
 
   return (0);
 }
