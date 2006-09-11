@@ -129,7 +129,111 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #include "asf_raster.h"
 #include <ctype.h>
 
+#ifdef linux
+char *strdup(char *);
+#endif
+
 #define REQUIRED_ARGS 2
+
+#define FLAG_SET 1
+#define FLAG_NOT_SET -1
+
+/* Index keys for all flags used in this program via a 'flags' array */
+typedef enum {
+    f_AMP=1,
+    f_SIGMA,
+    f_BETA,
+    f_GAMMA,
+    f_POWER,
+    f_DB,
+    f_SPROCKET,
+    f_LUT,
+    f_LAT_CONSTRAINT,
+    f_PRC,
+    f_FORMAT,
+    f_OLD_META,
+    f_METADATA_FILE,
+    f_LOG,
+    f_QUIET,
+    f_RANGE_SCALE,
+    f_AZIMUTH_SCALE,
+    f_FIX_META_YPIX,
+    NUM_IMPORT_FLAGS
+} import_flag_indices_t;
+
+/* Helpful functions */
+
+/* Check to see if an option was supplied or not
+   If it was found, return its argument number
+   Otherwise, return FLAG_NOT_SET */
+static int checkForOption(char* key, int argc, char* argv[])
+{
+  int ii = 0;
+  while(ii < argc)
+  {
+    if(strmatch(key, argv[ii]))
+      return(ii);
+    ++ii;
+  }
+  return(FLAG_NOT_SET);
+}
+
+/* Check to see if an option with (or without) an argument
+   was supplied.  If it was found, return its argument
+   number.  otherwise return FLAG_NOT_SET.
+
+   The argument is assumed to be of the form "<key>[=value]"
+   The [=value] part is optional. */
+static int checkForOptionWithArg(char *key, int argc, char *argv[])
+{
+  int ii = 0;
+  while (ii < argc)
+  {
+    /* make a copy of the arg, and remove anything past the "=" */
+    char *arg = strdup(argv[ii]);
+    char *eq = strchr(arg, '=');
+    if (eq) *eq = '\0';
+
+    /* now check for an exact match */
+    int match = !strcmp(key, arg);    
+    free(arg);
+    if (match) {
+      return ii;
+    }
+    ++ii;
+  }
+  return FLAG_NOT_SET;
+}
+
+static double getDoubleOptionArgWithDefault(char *arg, double def)
+{
+  double val = def;
+  char *arg_cpy = strdup(arg);
+  char *eq = strchr(arg_cpy, '=');
+  if (eq) {
+    ++eq;
+    char *endptr;
+    double d = strtod(eq, &endptr);
+    if (endptr != eq) val = d;
+  }
+  free(arg_cpy);
+
+  return val;
+}
+
+static void 
+pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName)
+{
+  if (*flag_count==0)
+    strcat(flags_used, flagName);
+  else if (*flag_count==1)
+    strcat(strcat(flags_used, " and "), flagName);
+  else if (*flag_count>1)
+    strcat(strcat(flags_used, ", and "), flagName);
+  else
+    asfPrintError("Programmer error dealing with the %s flag.\n", flagName);
+  (*flag_count)++;
+}
 
 // Print minimalistic usage info & exit
 static void print_usage(void)
@@ -169,8 +273,9 @@ int main(int argc, char *argv[])
     char inBaseName[256]="";
     char inMetaName[256]="";
     char outBaseName[256]="";
-    char inMetaNameOption[256], prcPath[256]="";
+    char *inMetaNameOption=NULL;
     char *lutName=NULL;
+    char *prcPath=NULL;
     char format_type[256]="";
     int ii;
     int flags[NUM_IMPORT_FLAGS];
@@ -224,6 +329,9 @@ int main(int argc, char *argv[])
 
     do_resample = flags[f_RANGE_SCALE] != FLAG_NOT_SET ||
         flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET;
+
+    if (flags[f_SPROCKET] != FLAG_NOT_SET)
+        asfPrintError("At this point, sprocket layers are not ... working.\n");
 
     if (do_resample)
     {
@@ -346,8 +454,10 @@ int main(int argc, char *argv[])
     Report what was retrieved at the command line */
     asfSplashScreen(argc, argv);
 
-    if(flags[f_PRC] != FLAG_NOT_SET)
+    if(flags[f_PRC] != FLAG_NOT_SET) {
+        prcPath = (char *)MALLOC(sizeof(char)*256);
         strcpy(prcPath, argv[flags[f_PRC] + 1]);
+    }
 
     if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
         lowerLat = strtod(argv[flags[f_LAT_CONSTRAINT] + 2],NULL);
@@ -408,6 +518,7 @@ int main(int argc, char *argv[])
     /* Get the input metadata name if the flag was specified (probably for a meta
     * name with a different base name than the data name) */
     if(flags[f_METADATA_FILE] != FLAG_NOT_SET) {
+        inMetaNameOption=(char *)MALLOC(sizeof(char)*256);
         strcpy(inMetaNameOption, argv[flags[f_METADATA_FILE] + 1]);
     }
 
@@ -466,9 +577,38 @@ int main(int argc, char *argv[])
         printLog("Program: asf_import\n\n");
     }
 
-    asf_import(flags, format_type, lutName, prcPath, lowerLat, upperLat, 
-	       range_scale, azimuth_scale, correct_y_pixel_size,
-	       inBaseName, outBaseName);
+    { // scoping block
+        int db_flag = flags[f_DB] != FLAG_NOT_SET;
+
+        double *p_correct_y_pixel_size = NULL;
+        if (do_metadata_fix)
+            p_correct_y_pixel_size = &correct_y_pixel_size;
+
+        double *p_range_scale = NULL;
+        if (flags[f_RANGE_SCALE] != FLAG_NOT_SET)
+            p_range_scale = &range_scale;
+
+        double *p_azimuth_scale = NULL;
+        if (flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)
+            p_azimuth_scale = &azimuth_scale;
+
+        radiometry_t radiometry;
+        if(flags[f_AMP] != FLAG_NOT_SET)      radiometry = r_AMP;
+        if(flags[f_SIGMA] != FLAG_NOT_SET)    radiometry = r_SIGMA;
+        if(flags[f_BETA] != FLAG_NOT_SET)     radiometry = r_BETA;
+        if(flags[f_GAMMA] != FLAG_NOT_SET)    radiometry = r_GAMMA;
+        if(flags[f_POWER] != FLAG_NOT_SET)    radiometry = r_POWER;
+        
+        asf_import(radiometry, db_flag, format_type, lutName, prcPath,
+                   lowerLat, upperLat, p_range_scale, p_azimuth_scale,
+                   p_correct_y_pixel_size, inMetaNameOption,
+                   inBaseName, outBaseName);
+    }
+
+    if (lutName)
+        free(lutName);
+    if (prcPath)
+        free(prcPath);
 
     /* If the user didn't ask for a log file then we can nuke the one that
        we've been keeping since we've finished everything  */

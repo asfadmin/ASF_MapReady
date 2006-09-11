@@ -70,7 +70,6 @@ OBJS  = ardop_write.o \
 	sprocket_layers.o \
         tiff_to_float_image.o \
 	unpack.o \
-	utilities.o \
 	utilities_ceos.o \
 	utilities_stf.o \
 	write_meta_and_img.o

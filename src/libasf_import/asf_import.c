@@ -110,22 +110,30 @@ float get_default_ypix(const char *outBaseName)
 /******************************************************************************
 * Lets rock 'n roll!
 *****************************************************************************/
-int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type, char *lutName, 
+// Convenience wrapper, without the kludgey "flags" array
+int asf_import(radiometry_t radiometry, int db_flag,
+               char *format_type, char *lutName, 
 	       char *prcPath, double lowerLat, double upperLat, 
-	       double range_scale, double azimuth_scale, 
-	       double correct_y_pixel_size,
+	       double *p_range_scale, double *p_azimuth_scale, 
+	       double *p_correct_y_pixel_size, char *inMetaNameOption,
 	       char *inBaseName, char *outBaseName)
 {
     char inDataName[256]="", inMetaName[256]="";
     char unscaledBaseName[256]="";
-    char inMetaNameOption[256];
     int do_resample;
     int do_metadata_fix;
+    double range_scale = -1, azimuth_scale = -1, correct_y_pixel_size = 0;
 
     // Determine some flags
-    do_resample = flags[f_RANGE_SCALE] != FLAG_NOT_SET ||
-        flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET;
-    do_metadata_fix = flags[f_FIX_META_YPIX] != FLAG_NOT_SET;
+    do_resample = p_range_scale != NULL && p_azimuth_scale != NULL;
+    do_metadata_fix = p_correct_y_pixel_size != NULL;
+
+    if (p_range_scale)
+        range_scale = *p_range_scale;
+    if (p_azimuth_scale)
+        azimuth_scale = *p_azimuth_scale;
+    if (p_correct_y_pixel_size)
+        correct_y_pixel_size = *p_correct_y_pixel_size;
 
     strcpy(unscaledBaseName, outBaseName);
     if (do_resample) {
@@ -135,37 +143,39 @@ int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type, char *lutName,
     /* Ingest all sorts of flavors of CEOS data */
     if (strncmp(format_type, "CEOS", 4) == 0) {
         asfPrintStatus("   Data format: %s\n", format_type);
-        if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
+        if (inMetaNameOption == NULL)
             require_ceos_pair(inBaseName, inDataName, inMetaName);
         else {
             /* Allow the base name to be different for data & meta */
             require_ceos_data(inBaseName, inDataName);
             require_ceos_metadata(inMetaNameOption, inMetaName);
         }
-        import_ceos(inDataName, inMetaName, lutName, unscaledBaseName, flags);
+        import_ceos(inDataName, inMetaName, lutName, unscaledBaseName,
+                    radiometry, db_flag);
     }
     /* Ingest ENVI format data */
     else if (strncmp(format_type, "ENVI", 4) == 0) {
         asfPrintStatus("   Data format: %s\n", format_type);
-        import_envi(inDataName, inMetaName, unscaledBaseName, flags);
+        import_envi(inDataName, inMetaName, unscaledBaseName);
     }
     /* Ingest ESRI format data */
     else if (strncmp(format_type, "ESRI", 4) == 0) {
         asfPrintStatus("   Data format: %s\n", format_type);
-        import_esri(inDataName, inMetaName, unscaledBaseName, flags);
+        import_esri(inDataName, inMetaName, unscaledBaseName);
     }
     /* Ingest Vexcel Sky Telemetry Format (STF) data */
     else if (strncmp(format_type, "STF", 3) == 0) {
         asfPrintStatus("   Data format: %s\n", format_type);
-        if (flags[f_METADATA_FILE] == FLAG_NOT_SET)
+        if (inMetaNameOption == NULL)
             require_stf_pair(inBaseName, inDataName, inMetaName);
         else {
             /* Allow the base name to be different for data & meta */
             require_stf_data(inBaseName, inDataName);
             require_stf_metadata(inMetaNameOption, inMetaName);
         }
-        import_stf(inDataName, inMetaName, unscaledBaseName, flags,
-            lowerLat, upperLat, prcPath);
+        int lat_constrained = upperLat != -99 && lowerLat != -99;
+        import_stf(inDataName, inMetaName, unscaledBaseName, radiometry,
+                   lat_constrained, lowerLat, upperLat, prcPath);
     }
     else if ( strncmp (format_type, "GEOTIFF", 7) == 0 ) {
       asfPrintStatus("   Data format: %s\n", format_type);
@@ -188,7 +198,7 @@ int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type, char *lutName,
       // really weird stuff go ahead and throw an exception.
       geotiff_importer importer = detect_geotiff_flavor (inGeotiffName->str);
       if ( importer != NULL ) {
-	importer (inGeotiffName->str, outBaseName, flags);
+	importer (inGeotiffName->str, outBaseName);
       } else {
 	asfPrintWarning ("Couldn't identify the flavor of the GeoTIFF, "
 			 "falling back to the generic GeoTIFF importer (cross "
@@ -196,7 +206,7 @@ int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type, char *lutName,
 	// Haven't written import-generic_geotiff yet...
 	asfPrintError ("Tried to import a GeoTIFF of unrecognized flavor, "
 		       "but the code to do so isn't written yet");
-	// import_generic_geotiff (inGeotiffName->str, outBaseName, flags);
+	//import_generic_geotiff (inGeotiffName->str, outBaseName);
       }
       g_string_free (inGeotiffName, TRUE);
     }
@@ -235,9 +245,9 @@ int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type, char *lutName,
 
     /* If the user asked for sprocket layers, create sprocket data layers
     now that we've got asf tools format data */
-    if (flags[f_SPROCKET] != FLAG_NOT_SET) {
-        create_sprocket_layers(outBaseName, inMetaName);
-    }
+    //if (flags[f_SPROCKET] != FLAG_NOT_SET) {
+    //    create_sprocket_layers(outBaseName, inMetaName);
+    //}
     
     return 0;
 }

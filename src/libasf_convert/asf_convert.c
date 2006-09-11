@@ -66,7 +66,6 @@ int asf_convert(int createflag, char *configFileName)
   char inFile[255], outFile[255], fileName[255];
   char values[255], prefix[30], suffix[30];
   const int pid = getpid();
-  int i;
 
   // If requested, create a config file and exit (if the file does not exist),
   // otherwise read it
@@ -318,31 +317,31 @@ int asf_convert(int createflag, char *configFileName)
 
       update_status(cfg, "Importing...");
 
-      int flags[NUM_IMPORT_FLAGS];
-      for (i = 0; i < NUM_IMPORT_FLAGS; ++i)
-	flags[i] = FLAG_NOT_SET;
+      radiometry_t radiometry;
+      int db_flag = FALSE;
+      int lut_flag = FALSE;
 
       // Radiometry
       if (!cfg->general->sar_processing) {
           if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) == 0) {
-              flags[f_AMP] = FLAG_SET;
+              radiometry = r_AMP;
           } else if (strncmp(uc(cfg->import->radiometry), "POWER_IMAGE", 11) == 0) {
-              flags[f_POWER] = FLAG_SET;
+              radiometry = r_POWER;
           } else if (strncmp(uc(cfg->import->radiometry), "SIGMA_IMAGE", 11) == 0) {
-              flags[f_SIGMA] = FLAG_SET;
+              radiometry = r_SIGMA;
           } else if (strncmp(uc(cfg->import->radiometry), "GAMMA_IMAGE", 11) == 0) {
-              flags[f_GAMMA] = FLAG_SET;
+              radiometry = r_GAMMA;
           } else if (strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) == 0) {
-              flags[f_BETA] = FLAG_SET;
+              radiometry = r_BETA;
           }
       }
 
       // LUT
       if (strlen(cfg->import->lut) > 0)
-	flags[f_LUT] = FLAG_SET;
+          lut_flag = TRUE;
 
       if (cfg->import->output_db)
-        flags[f_DB] = FLAG_SET;
+          db_flag = TRUE;
 
       // Generate a temporary output filename
       if (cfg->general->image_stats || cfg->general->detect_cr ||
@@ -355,10 +354,11 @@ int asf_convert(int createflag, char *configFileName)
       }
 
       // Call asf_import!
-      check_return(asf_import(flags, uc(cfg->import->format),
+      check_return(asf_import(radiometry, db_flag,
+                              uc(cfg->import->format),
 			      cfg->import->lut, cfg->import->prc,
 			      cfg->import->lat_begin, cfg->import->lat_end,
-			      1.0, 1.0, 0.0, /* FIXME: Should be in cfg file */
+			      NULL, NULL, NULL, NULL,
 			      cfg->general->in_name, outFile),
 		   "ingesting data file (asf_import)\n");
     }

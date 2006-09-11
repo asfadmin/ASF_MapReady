@@ -33,6 +33,8 @@ detect_geotiff_flavor (const char *file)
   // Ensure the citation is at least eventually terminated somewhere.
   citation[max_citation_length] = '\0';
 
+  printf("citation: %s:::\n", citation);
+
   // Test for a particular flavor.
   const char *tmp = "IMAGINE GeoTIFF Support";
   if ( strncmp (citation, tmp, strlen (tmp)) == 0 ) {
@@ -40,6 +42,8 @@ detect_geotiff_flavor (const char *file)
     int read_count
       = GTIFKeyGet (gtif, GTModelTypeGeoKey, &model_type, 0, 1);
     asfRequire (read_count == 1, "GTIFKeyGet failed.\n");  
+    printf("model_type: %d\n", model_type);
+    printf("ModelTypeGeographic: %d\n", ModelTypeGeographic);
     if ( model_type == ModelTypeGeographic ) {
       return import_usgs_seamless;
     }
