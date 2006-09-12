@@ -287,38 +287,28 @@ static char * getOutputDir(char *outFile)
     return d;
 }
 
-int asf_check_geolocation(char *sarFile, char *demFile, char *inMaskFile,
-			  char *simAmpFile, char *demSlant)
-{
-  int do_corner_matching = 1;
-  int do_fftMatch_verification = 1;
-  int do_terrain_correction = 1;
-  int clean_files = 1;
-  int dem_grid_size = 20;
-  double t_offset, x_offset;
-  char output_dir[255];
-  meta_parameters *metaSAR;
-  strcpy(output_dir, "");
-
-  metaSAR = meta_read(sarFile);
-  match_dem(metaSAR, sarFile, demFile, sarFile, output_dir, inMaskFile, NULL, 
-	    simAmpFile, demSlant, dem_grid_size, do_corner_matching, 
-	    do_fftMatch_verification, do_terrain_correction, clean_files, 
-	    &t_offset, &x_offset);
-
-  return FALSE;
-}
-
-int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile, 
-	      char *srFile, char *output_dir, char *inMaskFile, char *maskFile, 
-	      char *demTrimSimAmp, char *demTrimSlant, int dem_grid_size, 
-	      int do_corner_matching, int do_fftMatch_verification, 
-	      int do_terrain_correction, int clean_files, double *t_offset, 
+static int match_dem(meta_parameters *metaSAR,
+              char *sarFile,
+              char *demFile, 
+	      char *srFile,
+              char *output_dir,
+              char *inMaskFile,
+              char *maskFile,
+	      char *demTrimSimAmp,
+              char *demTrimSlant,
+              int dem_grid_size, 
+	      int do_corner_matching,
+              int do_fftMatch_verification, 
+              int do_refine_geolocation,
+              int do_trim_slant_range_dem,
+	      int apply_dem_padding,
+              int clean_files,
+              double *t_offset, 
 	      double *x_offset)
 {
   char *demGridFile = NULL, *demClipped = NULL, *demSlant = NULL;
   char *demSimAmp = NULL, *maskClipped = NULL;
-  int loop_count = 0;
+  int num_attempts = 0;
   const float required_match = 2.5;
   double coverage_pct, t_off, x_off;
   int demWidth, demHeight;
@@ -329,13 +319,13 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
 
   // do-while that will repeat the dem grid generation and the fftMatch
   // of the sar & simulated sar, until the fftMatch doesn't turn up a
-  // big vertical offset.
+  // big offset.
   do
   {
 
-    ++loop_count;
-    
-    asfPrintStatus("\n\nUsing '%s' for refining the geolocation ...\n\n", demFile);
+    ++num_attempts;    
+    asfPrintStatus("Using '%s' for refining the geolocation ...\n", demFile);
+
     // Generate a point grid for the DEM extraction.
     // The width and height of the grid is defined in slant range image
     // coordinates, while the grid is actually calculated in DEM space.
@@ -382,13 +372,14 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
     remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped);
     // now do the same thing for the maskFile
     if (inMaskFile) {
-      asfPrintStatus("Clipping usermask to %dx%d LxS using polynomial fit...\n",
+      asfPrintStatus("Clipping usermask to %dx%d LxS using "
+                     "polynomial fit...\n",
 		     demHeight, demWidth);
-      remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, inMaskFile, maskClipped);
+      remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, inMaskFile,
+                 maskClipped);
     }
     
-    // finished with maskFile
-    
+    // finished with polynomials
     poly_delete(fwX);
     poly_delete(fwY);
     poly_delete(bwX);
@@ -493,27 +484,31 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
     
     redo_clipping = FALSE;
     if (fabs(dy) > required_match || fabs(dx) > required_match || 
-	!do_terrain_correction)
-      {
-	// The fftMatch resulted in a large vertical offset!
+	do_refine_geolocation)
+    {
+	// The fftMatch resulted in a large offset!
 	// This means we very likely did not clip the right portion of
 	// the DEM.  So, shift the slant range image and re-clip.
-	
-	if (loop_count >= 3)
-	  {
-	    asfPrintWarning(
-			    "Could not resolve vertical offset!\n"
-			    "Continuing, however your terrain correction result may\n"
-			    "be incomplete and/or incorrect.\n");
+
+	if (num_attempts >= 3)
+        {
+            // After 3 tries, we must not be getting good results from
+            // fftMatch, since the offsets are clearly bogus.
+	    asfPrintWarning("Could not resolve offset!\n"
+			    "Continuing ... however your result may "
+                            "be incomplete and/or incorrect.\n");
+
+            if (cert<.5) {
+                asfPrintStatus("You may get better results by supplying "
+                               "a mask file, to mask out regions\n"
+                               "which provide poor matching, such as "
+                               "water or glaciers.\n");
+            }
+
 	    break;
-	  }
+        }
 	else
-	  {
-	    if (do_terrain_correction)
-	      asfPrintStatus("Found a large offset (%dx%d LxS pixels)\n"
-			     "Adjusting SAR image and re-clipping DEM.\n",
-			     idy, idx);
-	    
+        {
 	    // Correct the metadata of the SAR image for the offsets 
 	    // that we found
 	    asfPrintStatus("Adjusting metadata to account for offsets...\n");
@@ -528,10 +523,15 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
 	    metaSAR->sar->slant_shift += x_off;
 	    meta_write(metaSAR, srFile);
 	    
-	    if (do_terrain_correction)
+	    if (!do_refine_geolocation) {
+	      asfPrintStatus("Found a large offset (%dx%d LxS pixels)\n"
+			     "Adjusting SAR image and re-clipping DEM.\n",
+			     idy, idx);
+
 	      redo_clipping = TRUE;
-	  }
-      }
+            }
+        }
+    }
     
   } while (redo_clipping);
   
@@ -570,12 +570,16 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
       }
   }
 
-  if (do_terrain_correction)
+  if (do_trim_slant_range_dem)
   {      
       // Apply the offset to the slant range DEM.
       asfPrintStatus("Applying offsets to slant range DEM...\n");
-      trim(demSlant, demTrimSlant, idx, idy, 
-           metaSAR->general->sample_count + PAD, demHeight);
+
+      int width = metaSAR->general->sample_count;
+      if (apply_dem_padding)
+          width += PAD;
+
+      trim(demSlant, demTrimSlant, idx, idy, width, demHeight);
   }
 
   if (clean_files) {
@@ -597,6 +601,31 @@ int match_dem(meta_parameters *metaSAR, char *sarFile, char *demFile,
 
   return FALSE;
 
+}
+
+int asf_check_geolocation(char *sarFile, char *demFile, char *inMaskFile,
+			  char *simAmpFile, char *demSlant)
+{
+  int do_corner_matching = TRUE;
+  int do_fftMatch_verification = TRUE;
+  int do_refine_geolocation = TRUE;
+  int do_trim_slant_range_dem = TRUE;
+  int apply_dem_padding = FALSE;
+  int clean_files = TRUE;
+  int dem_grid_size = 20;
+  double t_offset, x_offset;
+  char output_dir[255];
+  meta_parameters *metaSAR;
+  strcpy(output_dir, "");
+
+  metaSAR = meta_read(sarFile);
+  match_dem(metaSAR, sarFile, demFile, sarFile, output_dir, inMaskFile, NULL, 
+	    simAmpFile, demSlant, dem_grid_size, do_corner_matching, 
+	    do_fftMatch_verification, do_refine_geolocation,
+            do_trim_slant_range_dem, apply_dem_padding, clean_files, 
+	    &t_offset, &x_offset);
+
+  return FALSE;
 }
 
 int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
@@ -746,10 +775,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
   // Assign a couple of file names and match the DEM
   demTrimSimAmp = outputName(output_dir, demFile, "_sim_amp_trim");
   demTrimSlant = outputName(output_dir, demFile, "_slant_trim");
-  match_dem(metaSAR, sarFile, demFile, srFile, output_dir, inMaskFile, maskFile, 
-	    demTrimSimAmp, demTrimSlant, dem_grid_size, do_corner_matching, 
-	    do_fftMatch_verification, do_terrain_correction, clean_files, 
-	    &t_offset, &x_offset);
+  match_dem(metaSAR, sarFile, demFile, srFile, output_dir, inMaskFile,
+            maskFile, demTrimSimAmp, demTrimSlant, dem_grid_size,
+            do_corner_matching, do_fftMatch_verification,
+            FALSE, TRUE, TRUE, clean_files, &t_offset, &x_offset);
 
   if (do_terrain_correction)
   {            
