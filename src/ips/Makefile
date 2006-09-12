@@ -40,7 +40,7 @@ all:    ips clean
 
 ips: ips.c $(OBJLIB)
 	${CC} ${CFLAGS} ${LDFLAGS} -o ips ips.c $(OBJLIB) ${LIBS}
-	cp ips $(BINDIR)
+	mv ips $(BINDIR)
 #	cp ips.1 ../../man/cat1
 clean:
 	rm -f core ${OBJS} *.o

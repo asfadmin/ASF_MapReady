@@ -25,7 +25,7 @@ all: offset_test clean
 
 offset_test: $(OBJS)
 	$(CC) $(CFLAGS) -o offset_test $(OBJS) $(LIBS) $(LDFLAGS)
-	cp offset_test$(BIN_POSTFIX) $(BINDIR)
+	mv offset_test$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f core *.o

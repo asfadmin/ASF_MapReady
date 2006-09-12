@@ -21,7 +21,7 @@ all: image_stats clean
 
 image_stats: $(OBJS) image_stats.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o image_stats image_stats.c $(OBJS) $(LIBS)
-	cp image_stats$(BIN_POSTFIX) $(BINDIR)
+	mv image_stats$(BIN_POSTFIX) $(BINDIR)
 #	cp image_layers.1 ../../man/cat1/
 
 clean:
