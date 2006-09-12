@@ -222,7 +222,6 @@ MODULES = \
 	src/asf_odl \
 	src/asf_fft \
         src/libifm \
-        src/libasf_meta \
 	src/libasf_ardop \
 	src/ardop \
 	src/stp \
@@ -255,7 +254,6 @@ MODULES = \
 external
 src/ardop
 src/libasf_ardop
-src/libasf_meta
 src/libifm
 src/multilook
 src/c2p
