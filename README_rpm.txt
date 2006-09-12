@@ -18,7 +18,7 @@ To install the package:  (Do this as root)
 
   rpm -i asf_convert-X.X.X-X.i386.rpm
 
-(Or course you need to replace the X's with whatever version you
+(Of course you need to replace the X's with whatever version you
 downloaded, for example: "rpm -i asf_convert-2.1.5-1.i386.rpm")
 
 After the package is installed, you can find out where it was
