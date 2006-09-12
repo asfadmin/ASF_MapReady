@@ -230,7 +230,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
      get_units(dssr->prf,EXPECTED_PRF);
    meta->sar->azimuth_processing_bandwidth = dssr->bnd_azi;
    meta->sar->chirp_rate = dssr->phas_coef[2];
-   meta->sar->pulse_duration = dssr->rng_length / 1000000;
+   meta->sar->pulse_duration = dssr->rng_length / 10000000;
    meta->sar->range_sampling_rate = dssr->rng_samp_rate * 1000000;
    
    meta->general->start_line       = 0;
