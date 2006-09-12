@@ -227,8 +227,9 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                         }
                     }
                 } else {
-                    if (srDEM[(int)lastSrX+1]==unInitDEM) {
-                        srDEM[(int)lastSrX+1]=height;
+                    int ind = (int)lastSrX+1;
+                    if (ind < sr_ns && srDEM[ind]==unInitDEM) {
+                        srDEM[ind]=height;
                     }
                 }
             } else {
@@ -307,7 +308,6 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 		 		asfPrintStatus(" Opened  Mask file for output %s \n",outMaskFile);
 		}
 	int i;
-	long j=0;
 	inMaskLine = (float *)MALLOC(sizeof(float)*gr_ns);
 	if (inMaskFile)
 		{

@@ -301,55 +301,35 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 						   ( inX > rpoint) )
 						  
 			{
-				     	mask[outX] = MASK_INVALID_DATA;
+                            mask[outX] = MASK_INVALID_DATA;
 			}
 			else
 			{
-			if (StartLayoverFlag) 
-					mask[outX] = MASK_LAYOVER;
+                            if (StartLayoverFlag) 
+                                mask[outX] = MASK_LAYOVER;
 			}
 		    }
                 }
 	}
-	// now have a bit of code that goes back and unsets extra MASK_INVALID_DATA
+
+	// now have a bit of code that goes back and unsets 
+        // extra MASK_INVALID_DATA
 	if (mask)
 	{
-	int set = 1;
-	for (outX=rpoint;outX<ns; outX++)
-		{
-			int pos = rpoint+ (ns-outX);
-			if (mask[pos] != MASK_INVALID_DATA)
-			{ // ok so we have left ths comfortable region
-					set = -1;
-				}
-			else if  (set == -1)
-					{ 
-						mask[pos] = MASK_LAYOVER;
-					}
-				}
+            int set = 1;
+            for (outX = ns-1; outX >= rpoint; --outX)
+            {
+                if (mask[outX] != MASK_INVALID_DATA)
+                {   // ok so we have left ths comfortable region
+                    set = -1;
+                }
+                else if  (set == -1)
+                { 
+                    mask[outX] = MASK_LAYOVER;
+                }
+            }
 	}
 	// end unsetting code
-	
-//        if (doInterp && mask) {
-//            for (outX = 0; outX<ns; ++outX) {
-//                if (mask[outX]==MASK_LAYOVER || mask[outX]==MASK_SHADOW) {
-//                    int x,prevX = outX-1;
-//                    float prevVal = out[outX];
-//                    while (mask[outX] == MASK_LAYOVER && outX<ns-1) ++outX;
-//                    float nextVal = out[outX];
-//                    float delta = (nextVal-prevVal) / (float)(outX-prevX);
-//                    for (x = prevX + 1; x < outX; ++x) {
-//                        /** code for INTERPOLATING between the endpoints */
-//                        // out[x] = prevVal + (x-prevX)*delta;
-//                        /** code for ASSINGING THE MAX between endpoints */
-//                        // out[x] = prevVal > nextVal ? prevVal : nextVal;
-//                        /** code for LEAVING THE AREAS BLANK (black holes)*/
-//                        ;   /* i.e., do nothing! */
-//                   }
-//                    ++outX;
-//                }
-//            }
-//        }
 }
 
 static void radio_compensate(struct deskew_dem_data *d,float *grDEM,
