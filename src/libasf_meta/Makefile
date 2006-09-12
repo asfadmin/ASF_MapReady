@@ -30,7 +30,7 @@ build_only: $(OBJS)
 $(OBJS): Makefile $(wildcard ../../include/*.h)
 
 clean:
-	rm -rf $(OBJS)
+	rm -rf $(OBJS) test_meta
 
 distclean:
 	rm -f core *~ TAGS gdb_init.com
