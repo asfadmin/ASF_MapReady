@@ -77,7 +77,7 @@ int asf_convert(int createflag, char *configFileName)
   else if ( createflag==TRUE && fileExists(configFileName) ) {
     cfg = read_convert_config(configFileName);
     check_return(write_convert_config(configFileName, cfg), 
-		 "Could not update configuration file");
+                 "Could not update configuration file");
     asfPrintStatus("   Initialized complete configuration file\n\n");
     FCLOSE(fLog);
     return(EXIT_SUCCESS);
@@ -106,23 +106,23 @@ int asf_convert(int createflag, char *configFileName)
       fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
       fprintf(fConfig, "input file = %s\n", fileName);
       if (strcmp(cfg->general->prefix, "") == 0)
-	strcpy(prefix, "");
+        strcpy(prefix, "");
       else
-	sprintf(prefix, "%s_", cfg->general->prefix);
+        sprintf(prefix, "%s_", cfg->general->prefix);
       if (strcmp(cfg->general->suffix, "") == 0)
-	strcpy(suffix, "");
+        strcpy(suffix, "");
       else
-	sprintf(suffix, "_%s", cfg->general->suffix);
+        sprintf(suffix, "_%s", cfg->general->suffix);
       fprintf(fConfig, "output file = %s%s%s\n", prefix, fileName, suffix);
       FCLOSE(fConfig);
 
       // Extend the temporary configuration file
       tmp_cfg = read_convert_config(batchConfig);
       check_return(write_convert_config(batchConfig, tmp_cfg), 
-		   "Could not update configuration file");
+                   "Could not update configuration file");
       FREE(tmp_cfg);
       //      check_return(write_convert_config(fileName, cfg), 
-      //	   "Could not update configuration file");
+      //           "Could not update configuration file");
 
       // Run asf_convert for temporary configuration file
       asfPrintStatus("\nProcessing %s ...\n", fileName);
@@ -186,7 +186,7 @@ int asf_convert(int createflag, char *configFileName)
         }
       }
       else if (strcmp(uc(cfg->import->format), "STF") == 0)
-	strcpy(inFile, cfg->general->in_name);
+        strcpy(inFile, cfg->general->in_name);
 
       // Data file existence check
       if (!fileExists(inFile))
@@ -230,7 +230,7 @@ int asf_convert(int createflag, char *configFileName)
       // Reference DEM file existence check
       if (!fileExists(cfg->terrain_correct->dem)) {
         asfPrintError("Reference DEM file '%s' does not exist\n",
-		      cfg->terrain_correct->dem);
+                      cfg->terrain_correct->dem);
       }
 
       // Check for pixel size smaller than threshold ???
@@ -244,7 +244,7 @@ int asf_convert(int createflag, char *configFileName)
       // Projection file existence check
       if (!fileExists(cfg->geocoding->projection)) {
         asfPrintError("Projection parameter file '%s' does not exist\n",
-		      cfg->geocoding->projection);
+                      cfg->geocoding->projection);
       }
 
       // Check for pixel size smaller than threshold ???
@@ -302,8 +302,8 @@ int asf_convert(int createflag, char *configFileName)
     }
 
     if (!cfg->general->import && !cfg->general->sar_processing &&
-	!cfg->general->terrain_correct && !cfg->general->geocoding && 
-	!cfg->general->export) {
+        !cfg->general->terrain_correct && !cfg->general->geocoding && 
+        !cfg->general->export) {
       asfPrintError("Nothing to be done\n");
     }
 
@@ -345,8 +345,8 @@ int asf_convert(int createflag, char *configFileName)
 
       // Generate a temporary output filename
       if (cfg->general->image_stats || cfg->general->detect_cr ||
-	  cfg->general->sar_processing || cfg->general->terrain_correct ||
-	  cfg->general->geocoding || cfg->general->export) {
+          cfg->general->sar_processing || cfg->general->terrain_correct ||
+          cfg->general->geocoding || cfg->general->export) {
         sprintf(outFile, "%s/import", cfg->general->tmp_dir);
       }
       else {
@@ -356,11 +356,11 @@ int asf_convert(int createflag, char *configFileName)
       // Call asf_import!
       check_return(asf_import(radiometry, db_flag,
                               uc(cfg->import->format),
-			      cfg->import->lut, cfg->import->prc,
-			      cfg->import->lat_begin, cfg->import->lat_end,
-			      NULL, NULL, NULL, NULL,
-			      cfg->general->in_name, outFile),
-		   "ingesting data file (asf_import)\n");
+                              cfg->import->lut, cfg->import->prc,
+                              cfg->import->lat_begin, cfg->import->lat_end,
+                              NULL, NULL, NULL, NULL,
+                              cfg->general->in_name, outFile),
+                   "ingesting data file (asf_import)\n");
     }
 
     if (cfg->general->sar_processing) {
@@ -386,33 +386,33 @@ int asf_convert(int createflag, char *configFileName)
           params_in = get_input_ardop_params_struct(inFile, outFile);
           int one = 1;
 
-	// Radiometry
-	if (strncmp(uc(cfg->sar_processing->radiometry), "POWER_IMAGE", 11) == 0) {
+        // Radiometry
+        if (strncmp(uc(cfg->sar_processing->radiometry), "POWER_IMAGE", 11) == 0) {
             params_in->pwrFlag = &one;
-	} else if (strncmp(uc(cfg->sar_processing->radiometry), "SIGMA_IMAGE", 11) == 0) {
+        } else if (strncmp(uc(cfg->sar_processing->radiometry), "SIGMA_IMAGE", 11) == 0) {
             params_in->sigmaFlag = &one;
-	} else if (strncmp(uc(cfg->sar_processing->radiometry), "GAMMA_IMAGE", 11) == 0) {
+        } else if (strncmp(uc(cfg->sar_processing->radiometry), "GAMMA_IMAGE", 11) == 0) {
             params_in->gammaFlag = &one;
-	} else if (strncmp(uc(cfg->sar_processing->radiometry), "BETA_IMAGE", 10) == 0) {
+        } else if (strncmp(uc(cfg->sar_processing->radiometry), "BETA_IMAGE", 10) == 0) {
             params_in->betaFlag = &one;
-	}
-	
+        }
+        
         // When terrain correcting, add the deskew flag
         if (cfg->general->terrain_correct)
             params_in->deskew = &one;
 
         ardop(params_in);
 
-	if (strcmp(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE") == 0)
-	  sprintf(outFile, "%s/sar_processing_amp", cfg->general->tmp_dir);
-	else if (strcmp(cfg->sar_processing->radiometry, "POWER_IMAGE") == 0)
-	  sprintf(outFile, "%s/sar_processing_power", cfg->general->tmp_dir);
-	else if (strcmp(cfg->sar_processing->radiometry, "SIGMA_IMAGE") == 0)
-	  sprintf(outFile, "%s/sar_processing_sigma", cfg->general->tmp_dir);
-	else if (strcmp(cfg->sar_processing->radiometry, "GAMMA_IMAGE") == 0)
-	  sprintf(outFile, "%s/sar_processing_gamma", cfg->general->tmp_dir);
-	else if (strcmp(cfg->sar_processing->radiometry, "BETA_IMAGE") == 0)
-	  sprintf(outFile, "%s/sar_processing_beta", cfg->general->tmp_dir);
+        if (strcmp(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE") == 0)
+          sprintf(outFile, "%s/sar_processing_amp", cfg->general->tmp_dir);
+        else if (strcmp(cfg->sar_processing->radiometry, "POWER_IMAGE") == 0)
+          sprintf(outFile, "%s/sar_processing_power", cfg->general->tmp_dir);
+        else if (strcmp(cfg->sar_processing->radiometry, "SIGMA_IMAGE") == 0)
+          sprintf(outFile, "%s/sar_processing_sigma", cfg->general->tmp_dir);
+        else if (strcmp(cfg->sar_processing->radiometry, "GAMMA_IMAGE") == 0)
+          sprintf(outFile, "%s/sar_processing_gamma", cfg->general->tmp_dir);
+        else if (strcmp(cfg->sar_processing->radiometry, "BETA_IMAGE") == 0)
+          sprintf(outFile, "%s/sar_processing_beta", cfg->general->tmp_dir);
         else
             asfPrintError("Unexpected radiometry: %s\n", 
                           cfg->sar_processing->radiometry);
@@ -429,7 +429,7 @@ int asf_convert(int createflag, char *configFileName)
         }
       }
       else {
-	asfPrintStatus("Image has already been processed - skipping SAR processing step");
+        asfPrintStatus("Image has already been processed - skipping SAR processing step");
       }
       meta_free(meta);
     }
@@ -466,21 +466,21 @@ int asf_convert(int createflag, char *configFileName)
 
       // Intermediate results
       if (cfg->general->intermediates) {
-	cfg->detect_cr->chips = 1;
-	cfg->detect_cr->text = 1;
+        cfg->detect_cr->chips = 1;
+        cfg->detect_cr->text = 1;
       }
 
       // Pass in command line
       sprintf(inFile, "%s", outFile);
       if (cfg->general->geocoding || cfg->general->export) {
-	sprintf(outFile, "%s/detect_cr", cfg->general->tmp_dir);
+        sprintf(outFile, "%s/detect_cr", cfg->general->tmp_dir);
       }
       else {
-	sprintf(outFile, "%s", cfg->general->out_name);
+        sprintf(outFile, "%s", cfg->general->out_name);
       }
       check_return(detect_cr(inFile, cfg->detect_cr->cr_location, outFile,
-			     cfg->detect_cr->chips, cfg->detect_cr->text),
-		   "detecting corner reflectors (detect_cr)\n");
+                             cfg->detect_cr->chips, cfg->detect_cr->text),
+                   "detecting corner reflectors (detect_cr)\n");
     }
 
     if (cfg->general->terrain_correct) {
@@ -493,21 +493,21 @@ int asf_convert(int createflag, char *configFileName)
       if (cfg->terrain_correct->refine_geolocation_only) {
           update_status(cfg, "Refining Geolocation...");
           check_return(
-	    refine_geolocation(inFile, cfg->terrain_correct->dem,
-			       cfg->terrain_correct->mask,
-			       outFile, FALSE),
-	    "refining geolocation of the data file (refine_geolocation)\n");
+            refine_geolocation(inFile, cfg->terrain_correct->dem,
+                               cfg->terrain_correct->mask,
+                               outFile, FALSE),
+            "refining geolocation of the data file (refine_geolocation)\n");
       }
       else {
           update_status(cfg, "Terrain Correcting...");
           check_return(
             asf_terrcorr_ext(inFile, cfg->terrain_correct->dem,
-			     cfg->terrain_correct->mask, outFile, 
-			     cfg->terrain_correct->pixel,
-			     !cfg->general->intermediates,
-			     TRUE, FALSE, cfg->terrain_correct->interp, 
-			     TRUE, 20, TRUE, 2),
-	    "terrain correcting data file (asf_terrcorr)\n");
+                             cfg->terrain_correct->mask, outFile, 
+                             cfg->terrain_correct->pixel,
+                             !cfg->general->intermediates,
+                             TRUE, FALSE, cfg->terrain_correct->interp, 
+                             TRUE, 20, TRUE, 2),
+            "terrain correcting data file (asf_terrcorr)\n");
       }
     }
 
@@ -531,24 +531,24 @@ int asf_convert(int createflag, char *configFileName)
 
       // Datum
       if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) == 0) {
-	datum = WGS84_DATUM;
+        datum = WGS84_DATUM;
       }
       if (strncmp(uc(cfg->geocoding->datum), "NAD27", 5) == 0) {
-	datum = NAD27_DATUM;
+        datum = NAD27_DATUM;
       }
       if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0) {
-	datum = NAD83_DATUM;
+        datum = NAD83_DATUM;
       }
 
       // Resampling method
       if (strncmp(uc(cfg->geocoding->resampling), "NEAREST_NEIGHBOR", 16) == 0) {
-	resample_method = RESAMPLE_NEAREST_NEIGHBOR;
+        resample_method = RESAMPLE_NEAREST_NEIGHBOR;
       }
       if (strncmp(uc(cfg->geocoding->resampling), "BILINEAR", 8) == 0) {
-	resample_method = RESAMPLE_BILINEAR;
+        resample_method = RESAMPLE_BILINEAR;
       }
       if (strncmp(uc(cfg->geocoding->resampling), "BICUBIC", 7) == 0) {
-	resample_method = RESAMPLE_BICUBIC;
+        resample_method = RESAMPLE_BICUBIC;
       }
 
       // Pass in command line
@@ -561,9 +561,9 @@ int asf_convert(int createflag, char *configFileName)
       }
 
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-					      force_flag, resample_method,
-					      average_height, datum,
-					      pixel_size, inFile, outFile,
+                                              force_flag, resample_method,
+                                              average_height, datum,
+                                              pixel_size, inFile, outFile,
                                               background_val),
                    "geocoding data file (asf_geocode)\n");
 
@@ -581,26 +581,26 @@ int asf_convert(int createflag, char *configFileName)
 
       // Format
       if (strncmp(uc(cfg->export->format), "TIFF", 4) == 0) {
-	format = TIF;
+        format = TIF;
       } else if (strncmp(uc(cfg->export->format), "GEOTIFF", 7) == 0) {
-	format = GEOTIFF;
+        format = GEOTIFF;
       } else if (strncmp(uc(cfg->export->format), "JPEG", 4) == 0) {
-	format = JPEG;
+        format = JPEG;
       } else if (strncmp(uc(cfg->export->format), "PPM", 3) == 0) {
-	format = PPM;
+        format = PPM;
       } 
 
       // Byte scaling
       if (strncmp(uc(cfg->export->byte), "TRUNCATE", 8) == 0) {
-	scale = TRUNCATE;
+        scale = TRUNCATE;
       } else if (strncmp(uc(cfg->export->byte), "MINMAX", 6) == 0) {
-	scale = MINMAX;
+        scale = MINMAX;
       } else if (strncmp(uc(cfg->export->byte), "SIGMA", 5) == 0) {
-	scale = SIGMA;
+        scale = SIGMA;
       } else if (strncmp(uc(cfg->export->byte), "HISTOGRAM_EQUALIZE", 18) == 0) {
-	scale = HISTOGRAM_EQUALIZE;
+        scale = HISTOGRAM_EQUALIZE;
       } else if (strncmp(uc(cfg->export->byte), "NONE", 4) == 0) {
-	scale = NONE;
+        scale = NONE;
       }
 
       // Pass in command line
