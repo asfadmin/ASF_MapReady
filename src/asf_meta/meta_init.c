@@ -71,6 +71,7 @@ meta_sar *meta_sar_init(void)
   meta_sar *sar = (meta_sar *)MALLOC(sizeof(meta_sar));
 
   /* Fill with ludicrous values.  */
+  strcpy(sar->polarization, MAGIC_UNSET_STRING);
   sar->image_type = MAGIC_UNSET_CHAR; 
   sar->look_direction = MAGIC_UNSET_CHAR;
   sar->look_count = MAGIC_UNSET_INT;
