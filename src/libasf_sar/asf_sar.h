@@ -30,7 +30,7 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float srPixSize);
 
 /* Prototypes from reskew_dem.c */
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
-	       char *outAmpFile, char *outMaskFile, char *inMaskFile);
+	       char *outAmpFile, char *inMaskFile);
 
 /* Prototypes from deskew_dem.c */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,

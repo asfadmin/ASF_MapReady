@@ -484,14 +484,14 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	FILE *inDemFp,*inSarFp,*outFp,*maskFp;
 	meta_parameters *inDemMeta, *outMeta, *inSarMeta, *inMaskMeta;
 	char msg[256];
-	int inSarFlag=FALSE;
-        int inMaskFlag=FALSE;
+	int inSarFlag,inMaskFlag,outMaskFlag;
 	int dem_is_ground_range=FALSE;
 	register int x,y;
         struct deskew_dem_data d;
 
 	inSarFlag = inSarName != NULL;
         inMaskFlag = inMaskName != NULL;
+        outMaskFlag = outMaskName != NULL;
 
 	inSarFp = NULL;
 	inSarMeta = NULL;
@@ -662,11 +662,12 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	}
 
 /*Write the updated mask*/
-        if (inMaskFlag) {
+        if (outMaskFlag) {
             maskFp = fopenImage(outMaskName, "wb");
             for (y=0;y<d.numLines;y++)
                 put_float_line(maskFp,outMeta,y,mask+y*d.numSamples);
             FCLOSE(maskFp);
+            meta_write(outMeta, outMaskName);
         }
 
 /* Clean up & skidattle */
@@ -682,7 +683,6 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	FCLOSE(outFp);
         if (inMaskFlag) {
             FREE(mask);
-            meta_write(outMeta, outMaskName);
             meta_free(inMaskMeta);
         }
 	meta_free(inDemMeta);

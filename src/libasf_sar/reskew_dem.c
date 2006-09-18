@@ -82,11 +82,6 @@ static float badDEMht=0.0;
 static float unInitDEM=-1.0;
 static int maxBreakLen=20;
 
-static int n_lay;
-static int n_shad;
-static int n_usermask;
-static int n_invalid;
-
 static float srE2srH(float srEpix,float height)
 {
 	double er;
@@ -133,8 +128,7 @@ static float *createSpeckle(void)
 
 /*dem_gr2sr: map one line of a ground range DEM into
 one line of a slant range DEM && one line of simulated amplitude image.*/
-static void dem_gr2sr(float *grDEM, float *srDEM,float *amp,
-                      float *outmask, float *inMask)
+static void dem_gr2sr(float *grDEM, float *srDEM, float *amp, float *inMask)
 {
     int x,grX;
     double lastSrX=-1;/*Slant range pixels up to (and including) here 
@@ -142,12 +136,15 @@ static void dem_gr2sr(float *grDEM, float *srDEM,float *amp,
     int OsriX;
     int iX;
     float lastOutValue=badDEMht;
+    int *outmask;
 
     static float *speckle=NULL;
     int specklePtr=rand();
     if (speckle==NULL)
         speckle=createSpeckle();
-	
+
+    outmask=MALLOC(sizeof(int)*sr_ns);
+
 /*Initialize amplitude to zero, and DEM to -1.*/
     for (x=0;x<sr_ns;x++)
     {
@@ -167,7 +164,6 @@ Convert each grX to an srX.  Update amplitude and height images.*/
 	if ((inMask[grX] != 0 ) && (srX>=0)&&(srX<sr_ns))
         {
             //	height = badDEMht; // simple check for mask
-            ++n_usermask;
             for (iX=OsriX; iX <= sriX; iX++)
                 outmask[iX] = MASK_USER_MASK;
             OsriX = sriX;
@@ -188,7 +184,7 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                     if (outmask[x]!=MASK_USER_MASK)
                         amp[x]+=currAmp*getSpeckle;
 		
-                /*Then, update the height and mask images.*/
+                /*Then, update the height image.*/
                 if (intRun!=0)
                 {
                     float curr=lastOutValue;
@@ -206,22 +202,8 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                             /*Hit this pixel a 2nd time ==> layover*/
                             if (maxval > srDEM[x]) 
                                 srDEM[x] = maxval;
-                            
-                            if (outmask[x]==MASK_NORMAL)	
-                                outmask[x] = MASK_LAYOVER;
-
-                            ++n_lay;
                         }
                         curr+=delt;
-                    }
-
-                    /* jumping forwards a good bit => shadow */
-                    if (sriX-lastSrX > 4) {
-                        for (x=lastSrX; x<sriX; ++x) {
-                            if (outmask[x]==MASK_NORMAL)
-                                outmask[x] = MASK_SHADOW;
-                            ++n_shad;
-                        }
                     }
                 } else {
                     int ind = (int)lastSrX+1;
@@ -231,23 +213,14 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                 }
             } else {
                 for (x=lastSrX+1;x<=sriX;x++) {
-                    srDEM[x]=badDEMht;
-		    if (outmask[x]==MASK_NORMAL)
-                        outmask[x]=MASK_INVALID_DATA;
-		    
+                    srDEM[x]=badDEMht;		    
                 }
             }
             lastOutValue=height;
             lastSrX=srX;
         }
     }
-/*Fill to end of line with zeros.*/
-    for (x=lastSrX+1;x<sr_ns;x++)
-    {
-        srDEM[x]=badDEMht;
-	if (outmask[x]==MASK_NORMAL)
-            outmask[x]=MASK_INVALID_DATA;
-    }
+
 /* Just plug all the holes and see what happens */
 /*Attempt to plug one-pixel holes, by interpolating over them.*/
     for (x=1;x<(sr_ns-2);x++)
@@ -257,10 +230,9 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                srDEM[x-1]!=badDEMht &&
                srDEM[x+1]!=badDEMht)*/
             srDEM[x]=(srDEM[x-1]+srDEM[x+1])/2;
-        
-        if (outmask[x-1] == outmask[x+1])
-            outmask[x] = outmask[x-1];
     }
+
+    FREE(outmask);
 }
 
 /*
@@ -272,12 +244,12 @@ Diffuse (lambertian) reflection:
 */
 
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
-	       char *outAmpFile,  char *outMaskFile, char *inMaskFile)
+	       char *outAmpFile,  char *inMaskFile)
 {
-	float *grDEMline,*srDEMline,*outAmpLine,*outMaskLine,*inMaskLine;
+	float *grDEMline,*srDEMline,*outAmpLine,*inMaskLine;
 	register int line,nl;
-	FILE *inDEM,*outDEM,*outAmp,*inMask,*outMask;
-	meta_parameters *metaIn, *metaDEM, *metaInMask;;
+	FILE *inDEM,*outDEM,*outAmp,*inMask;
+	meta_parameters *metaIn, *metaDEM, *metaInMask;
 
 /* Get metadata */
 	metaIn = meta_read(inMetafile);
@@ -289,42 +261,34 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	satHt = meta_get_sat_height(metaIn, nl/2, 0);
 	meta_get_slants(metaIn, &slant_to_first, &slant_per);
 
-        n_lay = n_shad = 0;
-	n_usermask =0;
-	n_invalid = 0;
-	
 /*Open files.*/
 	inDEM  = fopenImage(inDEMfile,"rb");
 	outDEM = fopenImage(outDEMfile,"wb");
 	outAmp = fopenImage(outAmpFile,"wb");
 	
-        if (outMaskFile)
-            	{
-		 		outMask = fopenImage(outMaskFile,"wb");
-		 		asfPrintStatus(" Opened  Mask file for output %s \n",outMaskFile);
-		}
 	int i;
 	inMaskLine = (float *)MALLOC(sizeof(float)*gr_ns);
 	if (inMaskFile)
-		{
-			// read_mask(inMaskFile,&inMask,&metaInMask); for byte masks
-			metaInMask = meta_read(inMaskFile);
-			asfPrintStatus(" Read in User Maskfile: %s   %d x %d lines/samples  needed %d x %d \n\n",
-			inMaskFile, metaInMask->general->line_count,metaInMask->general->sample_count,nl,gr_ns);
-			inMask = fopenImage(inMaskFile,"rb");
-		}
-		else
-		{
-		for (i=0; i<gr_ns; i++)
-				inMaskLine[i] = 0; // put our mask pointer into right place
-		}
-			// make a blank mask
+        {
+            // read_mask(inMaskFile,&inMask,&metaInMask); for byte masks
+            metaInMask = meta_read(inMaskFile);
+            asfPrintStatus(" Read in User Maskfile: %s  "
+                           "%d x %d lines/samples  needed %d x %d \n\n",
+                           inMaskFile, metaInMask->general->line_count,
+                           metaInMask->general->sample_count,nl,gr_ns);
+            inMask = fopenImage(inMaskFile,"rb");
+        }
+        else
+        {
+            // make a blank mask
+            for (i=0; i<gr_ns; i++)
+                inMaskLine[i] = 0; // put our mask pointer into right place
+        }
 					
 /*Allocate more memory (this time for data lines*/
 	grDEMline  = (float *)MALLOC(sizeof(float)*gr_ns);
 	srDEMline  = (float *)MALLOC(sizeof(float)*sr_ns);
 	outAmpLine = (float *)MALLOC(sizeof(float)*sr_ns);
-	outMaskLine= (float *)MALLOC(sizeof(float)*sr_ns);
 
 /* Read deskewed data, write out reskewed data */
 	for (line=0; line<nl; line++)
@@ -333,30 +297,14 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 		if (inMaskFile)
 			get_float_line(inMask,metaInMask,line,inMaskLine);
 		
-		dem_gr2sr(grDEMline,srDEMline,outAmpLine,outMaskLine,inMaskLine);
+		dem_gr2sr(grDEMline,srDEMline,outAmpLine,inMaskLine);
 		put_float_line(outDEM,metaIn,line,srDEMline);
-		put_float_line(outAmp,metaIn,line,outAmpLine);
-                if (outMaskFile)
-                    put_float_line(outMask,metaIn,line,outMaskLine);
-	
+		put_float_line(outAmp,metaIn,line,outAmpLine);	
 	}
-
-        int total_pixels = nl * sr_ns;
-	asfPrintStatus("Approximate Mask Statistics \n");
-        asfPrintStatus("Layover pixels: %7d/%d (%f%%)\n",
-                       n_lay, total_pixels, 100*(float)n_lay/total_pixels);
-        asfPrintStatus(" Shadow pixels: %7d/%d (%f%%)\n",
-                       n_shad, total_pixels, 100*(float)n_shad/total_pixels);
-	asfPrintStatus("  Invalid Data pixels : %7d/%d (%f%%)\n",
-		      n_invalid, total_pixels, 100*(float)n_invalid/total_pixels);
-	asfPrintStatus("   User Masked pixels : %7d/%d (%f%%)\n",
-		      n_usermask, total_pixels, 100*(float)n_usermask/total_pixels);
 
 /* Write meta files */
 	meta_write(metaIn, outDEMfile);
 	meta_write(metaIn, outAmpFile);
-        if (outMaskFile)
-            meta_write(metaIn, outMaskFile);
 
 /* Free memory, close files, & exit */
 	meta_free(metaDEM);
@@ -364,18 +312,14 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	FREE(grDEMline);
 	FREE(srDEMline);
 	FREE(outAmpLine);
-        FREE(outMaskLine);
 	FREE(inMaskLine);
 	FCLOSE(inDEM);
 	FCLOSE(outDEM);
 	FCLOSE(outAmp);
-        if (outMaskFile)
-            FCLOSE(outMask);
 	if (inMaskFile)
 	{
-		FCLOSE(inMask);
-		meta_free(metaInMask);
-		//FREE(inMaskLine);
+            FCLOSE(inMask);
+            meta_free(metaInMask);
 	}
 	return TRUE;
 }

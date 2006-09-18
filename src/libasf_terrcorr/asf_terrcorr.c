@@ -58,7 +58,6 @@ static void remove_file(const char * file)
 static char * appendSuffix(const char *inFile, const char *suffix)
 {
   char *suffix_pid = MALLOC(sizeof(char)*(strlen(suffix)+25));
-  //sprintf(suffix_pid, "%s_tctmp%d", suffix, (int)getpid());
   sprintf(suffix_pid, "%s", suffix);
 
   char * ret = appendToBasename(inFile, suffix_pid);
@@ -80,22 +79,14 @@ static char *outputName(const char *dir, const char *base, const char *suffix)
     split_dir_and_file(dir, dirTmp, fileTmp);
     strcpy(fil, dirTmp);
 
-//    printf("dir=%s dirTmp=%s fileTmp=%s\n", dir, dirTmp, fileTmp);
-
     split_dir_and_file(base, dirTmp, fileTmp);
     strcat(fil, fileTmp);
-
-//    printf("base=%s dirTmp=%s fileTmp=%s\n", base, dirTmp, fileTmp);
-//    printf("fil=%s\n", fil);
 
     char *ret = appendSuffix(fil, suffix);
 
     free(fil);
     free(dirTmp);
     free(fileTmp);
-
-//    printf("Output name: %s %s %s\n"
-//           "          -> %s\n", dir, base, suffix, ret);
 
     return ret;
 }
@@ -233,8 +224,8 @@ int asf_terrcorr(char *sarFile, char *demFile, char *inMaskFile,
                           dem_grid_size, do_terrain_correction, maskfill);
 }
 
-int refine_geolocation(char *sarFile, char *demFile, char *inMaskFile, char *outFile,
-                       int update_flag)
+int refine_geolocation(char *sarFile, char *demFile, char *inMaskFile, 
+                       char *outFile, int update_flag)
 {
   double pixel_size = -1;
   int dem_grid_size = 20;
@@ -246,9 +237,9 @@ int refine_geolocation(char *sarFile, char *demFile, char *inMaskFile, char *out
   int do_terrain_correction = FALSE;
   int ret;
   int maskfill = 2;
-  ret = asf_terrcorr_ext(sarFile, demFile, inMaskFile, outFile, pixel_size, clean_files,
-                         do_resample, do_corner_matching, do_interp,
-                         do_fftMatch_verification, dem_grid_size,
+  ret = asf_terrcorr_ext(sarFile, demFile, inMaskFile, outFile, pixel_size,
+                         clean_files, do_resample, do_corner_matching,
+                         do_interp, do_fftMatch_verification, dem_grid_size,
                          do_terrain_correction, maskfill);
 
   if (ret==0)
@@ -287,13 +278,13 @@ static char * getOutputDir(char *outFile)
     return d;
 }
 
-static int match_dem(meta_parameters *metaSAR,
+static 
+int match_dem(meta_parameters *metaSAR,
               char *sarFile,
               char *demFile, 
 	      char *srFile,
               char *output_dir,
               char *inMaskFile,
-              char *maskFile,
 	      char *demTrimSimAmp,
               char *demTrimSlant,
               int dem_grid_size, 
@@ -390,7 +381,7 @@ static int match_dem(meta_parameters *metaSAR,
 		   "simulated sar image...\n");
     demSlant = outputName(output_dir, demFile, "_slant");
     demSimAmp = outputName(output_dir, demFile, "_sim_amp");
-    reskew_dem(srFile, demClipped, demSlant, demSimAmp, maskFile, maskClipped);
+    reskew_dem(srFile, demClipped, demSlant, demSimAmp, maskClipped);
     
     // Resize the simulated amplitude to match the slant range SAR image.
     asfPrintStatus("Resizing simulated sar image...\n");
@@ -619,7 +610,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *inMaskFile,
   strcpy(output_dir, "");
 
   metaSAR = meta_read(sarFile);
-  match_dem(metaSAR, sarFile, demFile, sarFile, output_dir, inMaskFile, NULL, 
+  match_dem(metaSAR, sarFile, demFile, sarFile, output_dir, inMaskFile, 
 	    simAmpFile, demSlant, dem_grid_size, do_corner_matching, 
 	    do_fftMatch_verification, do_refine_geolocation,
             do_trim_slant_range_dem, apply_dem_padding, clean_files, 
@@ -652,7 +643,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
   metaSAR = meta_read(sarFile);
   metaDEM = meta_read(demFile);
   if (inMaskFile)
-	  metamask = meta_read(inMaskFile);
+      metamask = meta_read(inMaskFile);
   
   output_dir = getOutputDir(outFile);
 
@@ -697,11 +688,12 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
 		 metaDEM->general->line_count, metaDEM->general->sample_count,
 		 demRes);
   if (inMaskFile)
-  	{
+  {
   	asfPrintStatus("usermask Image is %dx%d LxS, %gm pixels.\n",
                        metamask->general->line_count,
                        metamask->general->sample_count, maskRes);
-	}
+  }
+
   // Downsample the SAR image closer to the reference DEM if needed.
   // Otherwise, the quality of the resulting terrain corrected SAR image 
   // suffers. We put in a threshold of 1.5 times the resolution of the SAR
@@ -711,9 +703,12 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
   {
     if (pixel_size <= 0)
     {
-      asfPrintStatus("DEM resolution is significantly lower than SAR resolution.\n");
+      asfPrintStatus("DEM resolution is significantly lower than "
+                     "SAR resolution.\n");
       pixel_size = demRes;
-      asfPrintStatus("Resampling (Downsampling) SAR image to pixel size of %g meters.\n", pixel_size);
+      asfPrintStatus("Resampling (Downsampling) SAR image to pixel size "
+                     "of %g meter%s.\n", pixel_size,
+                     pixel_size==1 ? "" : "s");
     }
     else
     {
@@ -769,14 +764,13 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
     srFile = strdup(resampleFile);
   }
 
-  maskFile = outputName(output_dir, outFile, "_mask_slant");
   outMaskFile = appendToBasename(outFile, "_mask");
 
   // Assign a couple of file names and match the DEM
   demTrimSimAmp = outputName(output_dir, demFile, "_sim_amp_trim");
   demTrimSlant = outputName(output_dir, demFile, "_slant_trim");
   match_dem(metaSAR, sarFile, demFile, srFile, output_dir, inMaskFile,
-            maskFile, demTrimSimAmp, demTrimSlant, dem_grid_size,
+            demTrimSimAmp, demTrimSlant, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
             FALSE, TRUE, TRUE, clean_files, &t_offset, &x_offset);
 
@@ -793,7 +787,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
       deskewDemMask = outputName(output_dir, srFile, "_ddm");
       trim(srFile, padFile, 0, 0, metaSAR->general->sample_count + PAD,
            metaSAR->general->line_count);
-      deskew_dem(demTrimSlant, deskewDemFile, padFile, 0, maskFile,
+      deskew_dem(demTrimSlant, deskewDemFile, padFile, 0, inMaskFile,
 		 deskewDemMask, do_interp, maskfill);
       
       // After deskew_dem, there will likely be zeros on the left & right edges
@@ -802,9 +796,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
       trim_zeros(deskewDemFile, outFile, &startx, &endx);
       trim(deskewDemMask, outMaskFile, startx, 0, endx,
            metaSAR->general->line_count);
-      clean(padFile);
-      clean(deskewDemFile);
-      clean(deskewDemMask);
+      //clean(padFile);
+      //clean(deskewDemFile);
+      //clean(deskewDemMask);
 
       // Because of the PP earth radius sr->gr fix, we may not have ended
       // up with the same x pixel size that the user requested.  So we will
@@ -820,7 +814,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
               outputName(output_dir, outMaskFile, "_resample");
           renameImgAndMeta(outMaskFile, outMaskFile_2);
           resample_to_square_pixsiz(outMaskFile_2, outMaskFile, pixel_size);
-          clean(outMaskFile_2);
+          //clean(outMaskFile_2);
       } else {
           resampleFile_2 = NULL;
       }
