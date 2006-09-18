@@ -126,8 +126,8 @@ void trim_zeros(char *infile, char *outfile, int * startX, int * endX)
   for (i=0; i<nl; ++i) {
       int left = 0, right = ns-1;
       get_float_line(in, metaIn, i, buf);
-      while (buf[left] == 0.0) ++left;
-      while (buf[right] == 0.0) --right;
+      while (buf[left] == 0.0 && left<ns-1) ++left;
+      while (buf[right] == 0.0 && right>0) --right;
       if (left < *startX) *startX = left;
       if (right > *endX) *endX = right;
   }
