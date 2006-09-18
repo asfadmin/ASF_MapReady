@@ -96,6 +96,10 @@ static const float badDEMht=0.0;
 //static int maxBreakLen=20;
 static const int maxBreakLen=5;
 
+static int n_layover=0;
+static int n_shadow=0;
+static int n_user=0;
+
 #define phi2grX(phi) (((phi)-d->minPhi)*d->phiMul)
 #define grX2phi(gr) (d->minPhi+(gr)/d->phiMul)
 
@@ -260,7 +264,11 @@ static void mask_float_line(int ns, int maskfill, float *in, float *inMask)
     {
         if(inMask[x] == MASK_USER_MASK)
         {
-            if (maskfill < 0) // negative values indicate that it should be a different fill value
+            ++n_user;
+
+            // negative values indicate that it should be a 
+            // different fill value
+            if (maskfill < 0) 
                 in[x] = abs(maskfill);
             else
                 in[x] = 0;
@@ -325,10 +333,14 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                 if (is_layover) {
                     // mask all pixels that landed here (at x) as layover
                     for (i=0; i<num_hits_required_for_layover; ++i) {
-                        mask[sr_hits[i*ns+x]] = MASK_LAYOVER;
+                        if (mask[sr_hits[i*ns+x]] == MASK_NORMAL) {
+                            ++n_layover;
+                            mask[sr_hits[i*ns+x]] = MASK_LAYOVER;
+                        }
                     }
                     // including the current one
                     mask[grX] = MASK_LAYOVER;
+                    ++n_layover;
                 }
             }
         }
@@ -343,8 +355,13 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                 }
                 else
                 {
-                    if (StartLayoverFlag) 
+                    if (StartLayoverFlag) {
+                        if (mask[grX] == MASK_NORMAL ||
+                            mask[grX] == MASK_INVALID_DATA)
+                            ++n_layover;
+
                         mask[grX] = MASK_LAYOVER;
+                    }
                 }
             }
         }
@@ -375,6 +392,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 
                 // does ray hit the terrain?  if so => shadow
                 if (grDEM[x] > ray_ht) {
+                    ++n_shadow;
                     mask[grX] = MASK_SHADOW;
                     break;
                 }
@@ -397,7 +415,10 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             }
             else if  (set == -1)
             { 
-                mask[grX] = MASK_LAYOVER;
+                if (mask[grX] == MASK_NORMAL) {
+                    ++n_layover;
+                    mask[grX] = MASK_LAYOVER;
+                }
             }
         }
     }
@@ -616,6 +637,8 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             FCLOSE(maskFp);
         }
 
+        n_layover = n_shadow = n_user = 0;
+
 /*Rectify data.*/
 	for (y=0;y<d.numLines;y++) {
 		if (inSarFlag) {
@@ -650,7 +673,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                                          d.numSamples);
 		    
 		    if (maskfill != 1) // 1 indicates mask should not be seen
-			    mask_float_line(d.numSamples,maskfill,outLine,mask+y*d.numSamples); // subtract away the masked region
+                        mask_float_line(d.numSamples,maskfill,outLine,mask+y*d.numSamples); // subtract away the masked region
 		    // > 1 indicates to leave a black 0 hole in the image
 		    // negative mask fill values means plug in this value instead 
 		  
@@ -668,6 +691,15 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                 put_float_line(maskFp,outMeta,y,mask+y*d.numSamples);
             FCLOSE(maskFp);
             meta_write(outMeta, outMaskName);
+
+            int tot=d.numSamples*d.numLines;
+            printf("Mask Statistics:\n"
+                   "    Layover Pixels:  %7d/%d (%f%%)\n"
+                   "     Shadow Pixels:  %7d/%d (%f%%)\n"
+                   "User Masked Pixels:  %7d/%d (%f%%)\n",
+                   n_layover, tot, (float)n_layover/tot, 
+                   n_shadow, tot, (float)n_shadow/tot,
+                   n_user, tot, (float)n_user/tot);
         }
 
 /* Clean up & skidattle */
