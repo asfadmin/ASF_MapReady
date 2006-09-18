@@ -721,6 +721,21 @@ settings_get_from_gui()
                 gtk_toggle_button_get_active(
                     GTK_TOGGLE_BUTTON(refine_geolocation_checkbutton));
         }
+
+        GtkWidget *mask_checkbutton;
+        mask_checkbutton = glade_xml_get_widget(glade_xml, "mask_checkbutton");
+        if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mask_checkbutton)))
+        {
+            GtkWidget *mask_entry;
+            mask_entry = glade_xml_get_widget(glade_xml, "mask_entry");
+            strcpy(ret->mask_file, gtk_entry_get_text(GTK_ENTRY(mask_entry)));
+            ret->mask_is_checked = TRUE;
+        }
+        else
+        {
+            ret->mask_is_checked = FALSE;
+            strcpy(ret->mask_file, "");
+        }
     }
     else 
     {
@@ -1330,12 +1345,17 @@ settings_to_config_file(const Settings *s,
       else if (s->specified_pixel_size)
         fprintf(cf, "pixel spacing = %.2lf\n", s->pixel_size);
       fprintf(cf, "digital elevation model = %s\n", s->dem_file);
+      if (s->mask_is_checked) {
+          fprintf(cf, "mask = %s\n", s->mask_file);
+      }
       fprintf(cf, "refine geolocaiton only = 0\n");
-      fprintf(cf, "interpolate = %d\n", s->interp);
-      fprintf(cf, "\n");
+      fprintf(cf, "interpolate = %d\n\n", s->interp);
     } else if (s->refine_geolocation_is_checked) {
       fprintf(cf, "[Terrain correction]\n");
       fprintf(cf, "digital elevation model = %s\n", s->dem_file);
+      if (s->mask_is_checked) {
+          fprintf(cf, "mask = %s\n", s->mask_file);
+      }
       fprintf(cf, "refine geolocation only = 1\n\n");
     }
 

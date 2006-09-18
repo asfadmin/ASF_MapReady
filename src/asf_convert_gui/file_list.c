@@ -224,20 +224,17 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
 #endif
 
         out_name_full = determine_default_output_file_name(data_file);
-
         set_output_name(iter_p, out_name_full);
-
         g_free(out_name_full);
 
 	/* New: select the file automatically if this is the first
                 file that was added (this makes the toolbar buttons
-                immediately useful                                    */
+                immediately useful)                                   */
 	if (1 == gtk_tree_model_iter_n_children(GTK_TREE_MODEL(list_store), 
 						NULL))
 	{
-	    GtkTreeSelection *selection;
-	
-	    selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+	    GtkTreeSelection *selection =
+                gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
 	    gtk_tree_selection_select_all(selection);
 	}
 

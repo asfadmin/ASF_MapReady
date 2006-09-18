@@ -126,6 +126,25 @@ void update_summary()
             sprintf(text, "%s\n   Interpolate Layover: %s", text,
                     s->interp ? "Yes" : "No");
         }
+
+        if (s->mask_is_checked)
+        {
+            GtkWidget *mask_entry;
+            char *mask;
+
+            mask_entry = glade_xml_get_widget(glade_xml, "mask_entry");
+            mask = strdup(gtk_entry_get_text(GTK_ENTRY(mask_entry)));
+
+            if (!mask || strlen(mask) == 0)
+            {
+                strcat(text, "\n   Mask: <none>");
+            }
+            else
+            {
+                char *p = strrchr(mask, DIR_SEPARATOR);
+                sprintf(text, "%s\n   Mask: %s", text, p ? p+1 : mask);
+            }
+        }
     }
     else
     {

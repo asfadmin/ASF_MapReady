@@ -140,6 +140,8 @@ typedef struct
   int specified_tc_pixel_size;
   double tc_pixel_size;
   int interp;
+  int mask_is_checked;
+  char mask_file[2048];
 
   /* misc */
   int keep_files;

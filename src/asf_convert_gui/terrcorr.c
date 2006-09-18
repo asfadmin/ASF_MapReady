@@ -18,6 +18,8 @@ void terrcorr_options_changed()
 {
   GtkWidget *terrcorr_vbox;
   GtkWidget *dem_checkbutton;
+  GtkWidget *mask_checkbutton;
+  GtkWidget *mask_entry;
 
   GtkWidget *terrcorr_checkbutton;
   GtkWidget *tc_pixel_size_checkbutton;
@@ -35,6 +37,10 @@ void terrcorr_options_changed()
 
   gtk_widget_set_sensitive(terrcorr_vbox, dem_is_checked);
 
+  mask_checkbutton =
+      glade_xml_get_widget(glade_xml, "mask_checkbutton");
+  mask_entry =
+      glade_xml_get_widget(glade_xml, "mask_entry");
   terrcorr_checkbutton =
       glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
   tc_pixel_size_checkbutton =
@@ -48,10 +54,15 @@ void terrcorr_options_changed()
       GtkWidget *hbox_tc_pixel_size;
       gboolean tc_pixel_size_is_checked;
       gboolean terrcorr_is_checked;
+      gboolean mask_is_checked;
 
       terrcorr_is_checked =
           gtk_toggle_button_get_active(
               GTK_TOGGLE_BUTTON(terrcorr_checkbutton));
+
+      mask_is_checked =
+          gtk_toggle_button_get_active(
+              GTK_TOGGLE_BUTTON(mask_checkbutton));
 
       gtk_widget_set_sensitive(tc_pixel_size_checkbutton, terrcorr_is_checked);
 
@@ -63,15 +74,14 @@ void terrcorr_options_changed()
           glade_xml_get_widget(glade_xml, "hbox_tc_pixel_size");
 
       gtk_widget_set_sensitive(hbox_tc_pixel_size, tc_pixel_size_is_checked);
-
-      gtk_widget_set_sensitive(interpolate_checkbutton,
-                               terrcorr_is_checked);
-
+      gtk_widget_set_sensitive(interpolate_checkbutton, terrcorr_is_checked);
+      gtk_widget_set_sensitive(mask_entry, mask_is_checked);
       gtk_widget_set_sensitive(refine_geolocation_checkbutton,
                                !terrcorr_is_checked);
       if (terrcorr_is_checked)
           gtk_toggle_button_set_active(
               GTK_TOGGLE_BUTTON(refine_geolocation_checkbutton), TRUE);
+
   }
   else
   {
@@ -83,6 +93,8 @@ void terrcorr_options_changed()
           GTK_TOGGLE_BUTTON(refine_geolocation_checkbutton), FALSE);
       gtk_toggle_button_set_active(
           GTK_TOGGLE_BUTTON(interpolate_checkbutton), FALSE);
+      gtk_toggle_button_set_active(
+          GTK_TOGGLE_BUTTON(mask_checkbutton), FALSE);
   }
 
   // must now update the geocode settings as well, since the average
@@ -92,6 +104,13 @@ void terrcorr_options_changed()
 
 SIGNAL_CALLBACK void
 on_dem_checkbutton_toggled(GtkWidget * widget)
+{
+    terrcorr_options_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_mask_checkbutton_toggled(GtkWidget * widget)
 {
     terrcorr_options_changed();
     update_summary();
@@ -139,6 +158,14 @@ int set_dem_file(const char *file)
     GtkWidget *dem_entry;
     dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
     gtk_entry_set_text(GTK_ENTRY(dem_entry), file);
+    return TRUE;
+}
+
+int set_mask_file(const char *file)
+{
+    GtkWidget *mask_entry;
+    mask_entry = glade_xml_get_widget(glade_xml, "mask_entry");
+    gtk_entry_set_text(GTK_ENTRY(mask_entry), file);
     return TRUE;
 }
 
@@ -270,18 +297,6 @@ on_dem_file_selection_ok_button_clicked(GtkWidget *widget)
         ++n;
     }
 
-    if (i != n)
-    {
-        if (n == 1 || i == 0)
-        {
-            message_box("Error: Unrecognized extension.");
-        }
-        else
-        {
-            message_box("Some of the files were not added -- unknown extensions.");
-        }
-    }
-
     g_strfreev(selections);
     gtk_widget_hide(file_selection_dialog);
 }
@@ -353,16 +368,206 @@ on_dem_file_chooser_ok_button_clicked(GtkWidget *widget)
         g_free(file);
     }
 
-    if (i != n)
+    g_slist_free(selections);
+    gtk_widget_hide(file_chooser_dialog);
+}
+
+SIGNAL_CALLBACK void
+on_mask_browse_button_clicked(GtkWidget *widget)
+{
+#ifdef win32
+    OPENFILENAME of;
+    int retval;
+    char fname[1024];
+
+    fname[0] = '\0';
+
+    memset(&of, 0, sizeof(of));
+
+#ifdef OPENFILENAME_SIZE_VERSION_400
+    of.lStructSize = OPENFILENAME_SIZE_VERSION_400;
+#else
+    of.lStructSize = sizeof(of);
+#endif
+
+    of.hwndOwner = NULL;
+    of.lpstrFilter = "Mask Files (*.img)\0*.img\0"
+        "All Files\0*\0";
+    of.lpstrCustomFilter = NULL;
+    of.nFilterIndex = 1;
+    of.lpstrFile = fname;
+    of.nMaxFile = sizeof(fname);
+    of.lpstrFileTitle = NULL;
+    of.lpstrInitialDir = ".";
+    of.lpstrTitle = "Select File";
+    of.lpstrDefExt = NULL;
+    of.Flags = OFN_HIDEREADONLY | OFN_ALLOWMULTISELECT | OFN_EXPLORER;
+
+    retval = GetOpenFileName(&of);
+
+    if (!retval) {
+        if (CommDlgExtendedError())
+            message_box("File dialog box error");
+        return;
+    }
+
+    /* the returned "fname" has the following form:            */
+    /*   <directory>\0<first file>\0<second file>\0<third ...  */ 
+    char * dir = strdup(fname);
+    char * p = fname + strlen(dir) + 1;
+
+    if (*p) { 
+        while (*p) {
+            char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
+            sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
+            set_mask_file(dir_and_file);
+            p += strlen(p) + 1;
+            free(dir_and_file);
+        }
+    } else {
+        set_mask_file(dir);
+    }
+
+    free(dir);
+
+#else
+    GtkWidget *file_selection_dialog =
+        glade_xml_get_widget(glade_xml, "mask_file_selection");
+
+    gtk_widget_show(file_selection_dialog);
+#endif
+}
+
+static void
+hide_mask_file_selection_dialog()
+{
+    GtkWidget *file_selection_dialog =
+        glade_xml_get_widget(glade_xml, "mask_file_selection");
+
+    gtk_widget_hide(file_selection_dialog);
+}
+
+SIGNAL_CALLBACK void
+on_mask_file_selection_cancel_button_clicked(GtkWidget *widget)
+{
+    hide_mask_file_selection_dialog();
+}
+
+SIGNAL_CALLBACK gboolean
+on_mask_file_selection_delete_event(GtkWidget *w)
+{
+    hide_mask_file_selection_dialog();
+    return TRUE;
+}
+
+SIGNAL_CALLBACK gboolean
+on_mask_file_selection_destroy_event(GtkWidget *w)
+{
+    hide_mask_file_selection_dialog();
+    return TRUE;
+}
+
+SIGNAL_CALLBACK gboolean
+on_mask_file_selection_destroy(GtkWidget *w)
+{
+    hide_mask_file_selection_dialog();
+    return TRUE;
+}
+
+SIGNAL_CALLBACK void
+on_mask_file_selection_ok_button_clicked(GtkWidget *widget)
+{
+    GtkWidget *file_selection_dialog;
+    gchar **selections;
+    gchar **current;
+    int i, n;
+
+    file_selection_dialog =
+        glade_xml_get_widget(glade_xml, "mask_file_selection");
+
+    selections = gtk_file_selection_get_selections(
+        GTK_FILE_SELECTION(file_selection_dialog));
+
+    current = selections;
+    i = n = 0;
+
+    while (*current)
     {
-        if (n == 1 || i == 0)
-        {
-            message_box("Error: Unrecognized extension.");
-        }
-        else
-        {
-            message_box("Some of the files were not added -- unknown extensions.");
-        }
+        if (set_mask_file(*current))
+            ++i;
+
+        ++current;
+        ++n;
+    }
+
+    g_strfreev(selections);
+    gtk_widget_hide(file_selection_dialog);
+}
+
+void
+hide_mask_file_chooser_dialog()
+{
+    GtkWidget *file_selection_dialog =
+        glade_xml_get_widget(glade_xml, "mask_file_chooser");
+
+    gtk_widget_hide(file_selection_dialog);
+}
+
+SIGNAL_CALLBACK void
+on_mask_file_chooser_cancel_button_clicked(GtkWidget *widget)
+{
+    hide_mask_file_chooser_dialog();
+}
+
+SIGNAL_CALLBACK gboolean
+on_mask_file_chooser_delete_event(GtkWidget *w)
+{
+    hide_mask_file_chooser_dialog();
+    return TRUE;
+}
+
+SIGNAL_CALLBACK gboolean
+on_mask_file_chooser_destroy_event(GtkWidget *w)
+{
+    hide_mask_file_chooser_dialog();
+    return TRUE;
+}
+
+SIGNAL_CALLBACK gboolean
+on_mask_file_chooser_destroy(GtkWidget *w)
+{
+    hide_mask_file_chooser_dialog();
+    return TRUE;
+}
+
+SIGNAL_CALLBACK void
+on_mask_file_chooser_ok_button_clicked(GtkWidget *widget)
+{
+    GtkWidget *file_chooser_dialog;
+    GSList *selections;
+    GSList *current;
+    int i, n;
+
+    file_chooser_dialog =
+        glade_xml_get_widget(glade_xml, "mask_file_chooser");
+
+    selections =
+        gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(file_chooser_dialog));
+
+    current = selections;
+    i = n = 0;
+
+    while (current)
+    {
+        gchar * file = (gchar *) current->data;
+
+        if (set_mask_file(file))
+            ++i;
+
+        current = g_slist_next(current);
+        ++n;
+
+        g_free(file);
     }
 
     g_slist_free(selections);
