@@ -5,9 +5,9 @@
 
 /* values for the layover/shadow mask*/
 #define MASK_NORMAL 1.0
-#define MASK_LAYOVER 64.0
+#define MASK_USER_MASK 64.0
 #define MASK_SHADOW 128.0
-#define MASK_USER_MASK 192.0
+#define MASK_LAYOVER 192.0
 #define MASK_INVALID_DATA 255
 
 /* Number of pixels added by create_dem_grid at the right edge of the 

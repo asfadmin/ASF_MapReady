@@ -89,6 +89,7 @@ struct deskew_dem_data {
         double *incidAng,*sinIncidAng,*cosIncidAng;
         double minPhi, maxPhi, phiMul;
 	double *cosineScale;
+        meta_parameters *meta;
 };
 
 static const float badDEMht=0.0;
@@ -127,36 +128,36 @@ static float dem_gr2sr(struct deskew_dem_data *d,float grX,float height)
 static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
                       int ns, int fill_holes)
 {
-	int outX=0,inX,xInterp;
-	int lastOutX=-1;
-	float lastOutValue=badDEMht;
-	for (inX=0;inX<ns;inX++)
-	{
-		float height=inBuf[inX];
-		outX=(int)SR2GR(d,(float)inX,height);
-		if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
-		{
-                    if (lastOutValue!=badDEMht &&
-                        (fill_holes || outX-lastOutX<maxBreakLen))
-                    {
-                        float curr=lastOutValue;
-                        float delt=(height-lastOutValue)/(outX-lastOutX);
-                        curr+=delt;
-                        for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
-                        {
-                            outBuf[xInterp]=curr;
-                            curr+=delt;
-                        }
-                    } else {
-                        for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
-                            outBuf[xInterp]=badDEMht;
-                    }
-                    lastOutValue=height;
-                    lastOutX=outX;
-		}
-	}
-	for (outX=lastOutX+1;outX<ns;outX++)
-		outBuf[outX]=badDEMht;
+    int outX=0,inX,xInterp;
+    int lastOutX=-1;
+    float lastOutValue=badDEMht;
+    for (inX=0;inX<ns;inX++)
+    {
+        float height=inBuf[inX];
+        outX=(int)SR2GR(d,(float)inX,height);
+        if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
+        {
+            if (lastOutValue!=badDEMht &&
+                (fill_holes || outX-lastOutX<maxBreakLen))
+            {
+                float curr=lastOutValue;
+                float delt=(height-lastOutValue)/(outX-lastOutX);
+                curr+=delt;
+                for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
+                {
+                    outBuf[xInterp]=curr;
+                    curr+=delt;
+                }
+            } else {
+                for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
+                    outBuf[xInterp]=badDEMht;
+            }
+            lastOutValue=height;
+            lastOutX=outX;
+        }
+    }
+    for (outX=lastOutX+1;outX<ns;outX++)
+        outBuf[outX]=badDEMht;
 }
 
 static void dem_interp_col(float *demLine,int ns,int nl)
@@ -166,170 +167,241 @@ static void dem_interp_col(float *demLine,int ns,int nl)
   float lastOutVal=badDEMht;
   for (y=0;y<nl;y++)
   {
-    float height=buf(y);
-    if (height!=badDEMht)
-     {
-	if (lastOutY!=(y-1))
+      float height=buf(y);
+      if (height!=badDEMht)
+      {
+          if (lastOutY!=(y-1))
   	  {
-	   int yInterp;
-	   if (lastOutY&&(y-lastOutY<maxBreakLen))
-	     {
-	        float curr=lastOutVal;
-		float delt=(height-lastOutVal)/(y-lastOutY);
-		curr+=delt;
-		for (yInterp=lastOutY+1;yInterp<=y;yInterp++)
-	 	 {
-		   buf(yInterp)=curr;
-		   curr+=delt;
-		 }
-	     }	
-	   }
-	lastOutY=y;
-	lastOutVal=height;
-     }
+              int yInterp;
+              if (lastOutY&&(y-lastOutY<maxBreakLen))
+              {
+                  float curr=lastOutVal;
+                  float delt=(height-lastOutVal)/(y-lastOutY);
+                  curr+=delt;
+                  for (yInterp=lastOutY+1;yInterp<=y;yInterp++)
+                  {
+                      buf(yInterp)=curr;
+                      curr+=delt;
+                  }
+              }	
+          }
+          lastOutY=y;
+          lastOutVal=height;
+      }
   }
 #undef buf
 }
 
 static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
 {
-	int x;
-	double slantFirst,slantPer;
-	double er=meta_get_earth_radius(meta, meta->general->line_count/2, meta->general->sample_count/2);
-	//double er=meta_get_earth_radius_pp(meta);
-	double satHt=meta_get_sat_height(meta, meta->general->line_count/2, meta->general->sample_count/2);
-	double saved_ER=er;
-	double er2her2,phi,phiAtSeaLevel,slantRng;
-	int ns = meta->general->sample_count;
-
-	meta_get_slants(meta,&slantFirst,&slantPer);
-	slantFirst+=slantPer*meta->general->start_sample+1;
-	slantPer*=meta->sar->sample_increment;
-	er2her2=er*er-satHt*satHt;
-	d->minPhi=acos((satHt*satHt+er*er-slantFirst*slantFirst)/
-                       (2.0*satHt*er));
-
+    int x;
+    double slantFirst,slantPer;
+    double er=meta_get_earth_radius(meta, meta->general->line_count/2, meta->general->sample_count/2);
+    //double er=meta_get_earth_radius_pp(meta);
+    double satHt=meta_get_sat_height(meta, meta->general->line_count/2, meta->general->sample_count/2);
+    double saved_ER=er;
+    double er2her2,phi,phiAtSeaLevel,slantRng;
+    int ns = meta->general->sample_count;
+    
+    meta_get_slants(meta,&slantFirst,&slantPer);
+    slantFirst+=slantPer*meta->general->start_sample+1;
+    slantPer*=meta->sar->sample_increment;
+    er2her2=er*er-satHt*satHt;
+    d->minPhi=acos((satHt*satHt+er*er-slantFirst*slantFirst)/
+                   (2.0*satHt*er));
+    
 /*Compute arrays indexed by slant range pixel:*/
-	for (x=0;x<ns;x++)
-	{
+    for (x=0;x<ns;x++)
+    {
 	/*Precompute slant range for SR pixel x.*/
-		d->slantRange[x]=slantFirst+x*slantPer;
-		d->slantRangeSqr[x]=d->slantRange[x]*d->slantRange[x];
+        d->slantRange[x]=slantFirst+x*slantPer;
+        d->slantRangeSqr[x]=d->slantRange[x]*d->slantRange[x];
 	/*Compute incidence angle for SR pixel x.*/
-		d->incidAng[x]=M_PI-acos((d->slantRangeSqr[x]+er2her2)/
-                                         (2.0*er*d->slantRange[x]));
-		d->sinIncidAng[x]=sin(d->incidAng[x]);
-		d->cosIncidAng[x]=cos(d->incidAng[x]);
-	}
-
-	d->maxPhi=acos((satHt*satHt+er*er-d->slantRangeSqr[ns-1])/
-                       (2.0*satHt*er));
-	d->phiMul=(ns-1)/(d->maxPhi-d->minPhi);
-
+        d->incidAng[x]=M_PI-acos((d->slantRangeSqr[x]+er2her2)/
+                                 (2.0*er*d->slantRange[x]));
+        d->sinIncidAng[x]=sin(d->incidAng[x]);
+        d->cosIncidAng[x]=cos(d->incidAng[x]);
+    }
+    
+    d->maxPhi=acos((satHt*satHt+er*er-d->slantRangeSqr[ns-1])/
+                   (2.0*satHt*er));
+    d->phiMul=(ns-1)/(d->maxPhi-d->minPhi);
+    
 /*Compute arrays indexed by ground range pixel: slantGR and heightShiftGR*/
-	for (x=0;x<ns;x++)
-	{
-		er=saved_ER;
-		phiAtSeaLevel=grX2phi(x);
-		slantRng=sqrt(satHt*satHt+er*er-2.0*satHt*er*cos(phiAtSeaLevel));
-		d->slantGR[x]=(slantRng-slantFirst)/slantPer;
-		er+=1000.0;
-		phi=acos((satHt*satHt+er*er-slantRng*slantRng)/(2*satHt*er));
-		d->heightShiftGR[x]=(phi2grX(phi)-x)/1000.0;
-	}
+    for (x=0;x<ns;x++)
+    {
+        er=saved_ER;
+        phiAtSeaLevel=grX2phi(x);
+        slantRng=sqrt(satHt*satHt+er*er-2.0*satHt*er*cos(phiAtSeaLevel));
+        d->slantGR[x]=(slantRng-slantFirst)/slantPer;
+        er+=1000.0;
+        phi=acos((satHt*satHt+er*er-slantRng*slantRng)/(2*satHt*er));
+        d->heightShiftGR[x]=(phi2grX(phi)-x)/1000.0;
+    }
 /*Compute arrays indexed by slant range pixel: groundSR and heightShiftSR*/
-	for (x=0;x<ns;x++)
-	{
-		er=saved_ER;
-		phiAtSeaLevel=acos((satHt*satHt+er*er-d->slantRangeSqr[x])/
-                                      (2*satHt*er));
-		d->groundSR[x]=phi2grX(phiAtSeaLevel);
-		er+=1000.0;
-		slantRng=sqrt(satHt*satHt+er*er-2.0*satHt*er*cos(phiAtSeaLevel));
-		d->heightShiftSR[x]=((slantRng-slantFirst)/slantPer-x)/1000.0;
-	}
-	er=saved_ER;
-	return er/d->phiMul;
+    for (x=0;x<ns;x++)
+    {
+        er=saved_ER;
+        phiAtSeaLevel=acos((satHt*satHt+er*er-d->slantRangeSqr[x])/
+                           (2*satHt*er));
+        d->groundSR[x]=phi2grX(phiAtSeaLevel);
+        er+=1000.0;
+        slantRng=sqrt(satHt*satHt+er*er-2.0*satHt*er*cos(phiAtSeaLevel));
+        d->heightShiftSR[x]=((slantRng-slantFirst)/slantPer-x)/1000.0;
+    }
+    er=saved_ER;
+    return er/d->phiMul;
 }
 
 static void mask_float_line(int ns, int maskfill, float *in, float *inMask)
 {
-	int x;
-	for(x=0;x<ns;x++)
-	{
-		if(inMask[x] == MASK_USER_MASK)
-		{
-			if (maskfill < 0) // negative values indicate that it should be a different fill value
-				in[x] = abs(maskfill);
-			else
-				in[x] = 0;
-		}
-	}
-	return;
+    int x;
+    for(x=0;x<ns;x++)
+    {
+        if(inMask[x] == MASK_USER_MASK)
+        {
+            if (maskfill < 0) // negative values indicate that it should be a different fill value
+                in[x] = abs(maskfill);
+            else
+                in[x] = 0;
+        }
+    }
+    return;
 }
 
 static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                            float *out,int ns, int doInterp, float *mask)
 {
-	int outX;
-        int StartLayoverFlag=0;
-	
-	int rpoint = d->numSamples - (2*DEM_GRID_RHS_PADDING); // ugly hack to say right edge is 400 pixels from right of image
-	for (outX=0;outX<ns;outX++)
-	{
-		double height=grDEM[outX];	
-		double inX=dem_gr2sr(d,outX,height);
-		
-		if ((height!=badDEMht)&&(inX>=0)&&(inX<(ns-1)))
-		{
-			int x=floor(inX);
-                        double dx=inX-x;
-                        if (doInterp) {
-                            /* bilinear interp */
-                            out[outX]=(1-dx)*in[x]+dx*in[x+1];
-                        } else {
-                            /* nearest neighbor */
-                            out[outX]= dx <= 0.5 ? in[x] : in[x+1];
-                        }
-                        StartLayoverFlag=1;
-		}
-		else {
-                    out[outX]=0.0;
-		    if (mask)
-		    {
-			if ( (height==badDEMht && !StartLayoverFlag) ||
-						   ( inX > rpoint) )
-						  
-			{
-                            mask[outX] = MASK_INVALID_DATA;
-			}
-			else
-			{
-                            if (StartLayoverFlag) 
-                                mask[outX] = MASK_LAYOVER;
-			}
-		    }
-                }
-	}
+    int i,grX;
+    int StartLayoverFlag=0;
+    int num_hits_required_for_layover=3;
+    int *sr_hits=NULL;
+    float max_height=grDEM[0];
 
-	// now have a bit of code that goes back and unsets 
-        // extra MASK_INVALID_DATA
-	if (mask)
-	{
-            int set = 1;
-            for (outX = ns-1; outX >= rpoint; --outX)
-            {
-                if (mask[outX] != MASK_INVALID_DATA)
-                {   // ok so we have left ths comfortable region
-                    set = -1;
+    if (mask) {
+        sr_hits=(int*)MALLOC(sizeof(int)*ns*num_hits_required_for_layover);
+        for (grX=0; grX<ns; ++grX) { 
+            mask[grX] = MASK_NORMAL;
+
+            for (i=0; i<num_hits_required_for_layover; ++i)
+                sr_hits[i*ns+grX] = -1; 
+        }
+    }
+
+    // ugly hack to say right edge is 400 pixels from right of image
+    int rpoint = d->numSamples - (2*DEM_GRID_RHS_PADDING); 
+
+    for (grX=0;grX<ns;grX++)
+    {
+        double height=grDEM[grX];	
+        double srX=dem_gr2sr(d,grX,height);
+     
+        if (grDEM[grX] > max_height) max_height = grDEM[grX];
+
+        if ((height!=badDEMht)&&(srX>=0)&&(srX<(ns-1)))
+        {
+            int x=floor(srX);
+            double dx=srX-x;
+            if (doInterp) {
+                /* bilinear interp */
+                out[grX]=(1-dx)*in[x] + dx*in[x+1];
+            } else {
+                /* nearest neighbor */
+                out[grX]= dx <= 0.5 ? in[x] : in[x+1];
+            }
+            StartLayoverFlag=1;
+
+            if (sr_hits) {
+                int is_layover = TRUE; // until we learn otherwise
+                for (i=0; i<num_hits_required_for_layover; ++i) {
+                    if (sr_hits[i*ns+x] == -1) {
+                        // i'th time we hit this pixel, save the grX that
+                        // led us here for later
+                        sr_hits[i*ns+x] = grX;
+                        is_layover = FALSE;
+                        break;
+                    }
                 }
-                else if  (set == -1)
-                { 
-                    mask[outX] = MASK_LAYOVER;
+                if (is_layover) {
+                    // mask all pixels that landed here (at x) as layover
+                    for (i=0; i<num_hits_required_for_layover; ++i) {
+                        mask[sr_hits[i*ns+x]] = MASK_LAYOVER;
+                    }
+                    // including the current one
+                    mask[grX] = MASK_LAYOVER;
                 }
             }
-	}
-	// end unsetting code
+        }
+        else {
+            out[grX]=0.0;
+            if (mask)
+            {
+                if ( (height==badDEMht && !StartLayoverFlag) ||
+                     ( srX > rpoint) )                    
+                {
+                    mask[grX] = MASK_INVALID_DATA;
+                }
+                else
+                {
+                    if (StartLayoverFlag) 
+                        mask[grX] = MASK_LAYOVER;
+                }
+            }
+        }
+
+        // determine if this pixel is in shadow, by tracing back to the sat
+        if (mask && d->meta && height>0) 
+        {
+            double slantFirst, slantPer;
+            meta_get_slants(d->meta, &slantFirst, &slantPer);
+
+            double sr_0 = slantFirst + grX*slantPer;
+            double sh = meta_get_sat_height(d->meta, 0, (long)grX) -
+                        meta_get_earth_radius(d->meta, 0, (long)grX);
+            double nd_0 = sqrt(sr_0*sr_0 - sh*sh);
+
+            int x = grX - 1;
+            while (x > 0) {
+                double sr = slantFirst + x*slantPer;
+                double nd = sqrt(sr*sr - sh*sh);
+
+                // height of the ray from grX back to satellite
+                // using similar triangles
+                double ray_ht = (nd_0-nd) * sh/nd_0 + grDEM[grX];
+
+                // can stop if the ray we're tracing is already higher than
+                // height point seen so far, but add some padding just in case
+                if (ray_ht > max_height + 100) break;
+
+                // does ray hit the terrain?  if so => shadow
+                if (grDEM[x] > ray_ht) {
+                    mask[grX] = MASK_SHADOW;
+                    break;
+                }
+
+                --x;
+            }
+        }
+    }
+    
+    // now have a bit of code that goes back and unsets 
+    // extra MASK_INVALID_DATA
+    if (mask)
+    {
+        int set = 1;
+        for (grX = ns-1; grX >= rpoint; --grX)
+        {
+            if (mask[grX] != MASK_INVALID_DATA)
+            {   // ok so we have left ths comfortable region
+                set = -1;
+            }
+            else if  (set == -1)
+            { 
+                mask[grX] = MASK_LAYOVER;
+            }
+        }
+    }
+    // end unsetting code
 }
 
 static void radio_compensate(struct deskew_dem_data *d,float *grDEM,
@@ -442,13 +514,16 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	}
 	if (inSarFlag) {
 	   inSarMeta = meta_read(inSarName);
+           d.meta = inSarMeta;
 	   if (inSarMeta->sar->image_type=='P') {
 	      asfPrintError("SAR image cannot be map projected for this program to work!\n");
 	      return FALSE;
 	   }
 	   outMeta->general->data_type = inSarMeta->general->data_type;
+        } else {
+            d.meta = NULL;
         }
-        
+
         d.numLines = inDemMeta->general->line_count;
         d.numSamples = inDemMeta->general->sample_count;
 

@@ -228,7 +228,7 @@ void refine_offset(double x_off, double y_off, meta_parameters *meta,
     gsl_vector_set(retrofit, 1, *out_x);
     gsl_vector *output = gsl_vector_alloc(n);
     getObjective(retrofit, (void*)&params, output);
-    double val= gsl_vector_get(output,0);
+    //double val= gsl_vector_get(output,0);
     //printf("GSL Result: %f at (%f,%f)\n", val, *out_t, *out_x);
     gsl_vector_free(retrofit);
     gsl_vector_free(output);
