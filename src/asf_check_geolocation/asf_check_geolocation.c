@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
   // Simulate an amplitude image
   asfPrintStatus("   Generating slant range DEM and simulating amplitude image "
 		 "...\n");
-  reskew_dem(sarFile, demClipped, demSlant, demSimAmp, NULL, NULL);
+  reskew_dem(sarFile, demClipped, demSlant, demSimAmp, NULL);
   
   /*
   // Determine offset 
