@@ -174,48 +174,42 @@ add_to_files_list(const gchar * data_file)
     return ret;
 }
 
-static char *files[255];
+#define QUEUE_SIZE 255
+static char *files[QUEUE_SIZE];
 static void queue_thumbnail(const gchar * data_file)
 {
-	int i;
-	for (i=0; i<255; ++i) {
-		if (!files[i]) {
-			files[i] = g_strdup(data_file);
-			break;
-		}
-	}
+    int i;
+    for (i = 0; i < QUEUE_SIZE; ++i) {
+        if (!files[i]) {
+            files[i] = g_strdup(data_file);
+            break;
+        }
+    }
 }
 
 void
 show_queued_thumbnails()
 {
-	static int n=0;
-	++n;
-	int i;
-	for (i=0; i<255; ++i) {
-		if (files[i]) {
-			// do a gtk main loop iteration
-			while (gtk_events_pending())
-				gtk_main_iteration();    
-
-			// must check files[i]!=NULL again
-			// since gtk_main_iteration could have
-			// processed a "Browse..." event and
-			// thus already processed this item.
-			// The alternative would be to move the
-			// above while() loop below the statements
-			// below, however that makes the app feel
-			// a little less responsive.
-			if (files[i]) {
-				printf("Doing: %d-%2d %s\n", n, i, files[i]);
-				do_thumbnail(files[i]);
-
-				g_free(files[i]);
-				files[i] = NULL;
-			}
-		}
-	}
-	--n;
+    int i;
+    for (i = 0; i < QUEUE_SIZE; ++i) {
+        if (files[i]) {
+            // do a gtk main loop iteration
+            while (gtk_events_pending())
+                gtk_main_iteration();    
+            
+            // must check files[i]!=NULL again, since gtk_main_iteration could
+            // have processed a "Browse..." event and thus already processed 
+            // this item.  The alternative would be to move the above while()
+            // loop below the statements below, however that makes the app feel
+            // a little less responsive.
+            if (files[i]) {
+                do_thumbnail(files[i]);
+                
+                g_free(files[i]);
+                files[i] = NULL;
+            }
+        }
+    }
 }
 
 gboolean
