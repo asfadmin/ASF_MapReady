@@ -7,10 +7,14 @@
 #include <asf_nan.h>
 #include "ceos_thumbnail.h"
 
-gboolean
-make_input_image_thumbnail (const char *input_metadata, const char *input_data,
-                            size_t max_thumbnail_dimension, 
-                            const char *output_jpeg)
+void destroy_pixbuf_data(guchar *pixels, gpointer data)
+{
+	g_free(pixels);
+}
+
+GdkPixbuf *
+make_input_image_thumbnail_pixbuf (const char *input_metadata, const char *input_data,
+								   size_t max_thumbnail_dimension)
 {
     /* This can happen if we don't get around to drawing the thumbnail
        until the file has already been processes & cleaned up, don't want
@@ -44,10 +48,14 @@ make_input_image_thumbnail (const char *input_metadata, const char *input_data,
         return FALSE;
     }
 
+	// use a larger dimension at first, for our crude scaling.  We will
+	// use a better scaling method later, from GdbPixbuf
+	int larger_dim = 256;
+
     // Vertical and horizontal scale factors required to meet the
     // max_thumbnail_dimension part of the interface contract.
-    int vsf = ceil (imd->general->line_count / max_thumbnail_dimension);
-    int hsf = ceil (imd->general->sample_count / max_thumbnail_dimension);
+    int vsf = ceil (imd->general->line_count / larger_dim);
+    int hsf = ceil (imd->general->sample_count / larger_dim);
     // Overall scale factor to use is the greater of vsf and hsf.
     int sf = (hsf > vsf ? hsf : vsf);
 
@@ -56,106 +64,84 @@ make_input_image_thumbnail (const char *input_metadata, const char *input_data,
     size_t tsy = imd->general->line_count / sf;
 
     // Thumbnail image.
-    FloatImage *ti = float_image_new (tsx, tsy);
+	int *idata = g_new(int, tsx*tsy);
+	guchar *data = g_new(guchar, 3*tsx*tsy);
 
     // Form the thumbnail image by grabbing individual pixels.  FIXME:
     // Might be better to do some averaging or interpolating.
     size_t ii;
     int *line = g_new (int, imd->general->sample_count);
+	double max = -999999, min = 999999;
+	double avg=0;
     for ( ii = 0 ; ii < tsy ; ii++ ) {
         readCeosLine (line, ii * sf, id);
         size_t jj;
         for ( jj = 0 ; jj < tsx ; jj++ ) {
             // Current sampled value.  We will average a couple pixels together.
-            int csv;		
+            double csv;		
             if ( jj * sf < imd->general->line_count - 1 ) {
                 csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
             }
             else {
                 csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
             }
-            float_image_set_pixel (ti, jj, ii, csv);
+
+			idata[ii*tsx + jj] = (int)csv;
+
+			if (csv > max) max = csv;
+			if (csv < min) min = csv;
+			avg += csv;
         }
     }
     g_free (line);
+	closeCeos(id);
 
-    // Export as jpeg image as promised.  We don't want to reduce the
-    // image resolution anymore, so we use the largest dimension
-    // currently in the image as the max dimension for the image to
-    // generate.
-    float_image_export_as_jpeg (ti, output_jpeg, (ti->size_x > ti->size_y ? 
-            ti->size_x : ti->size_y), NAN);
+	avg /= tsx*tsy;
 
-    float_image_free (ti);
-    meta_free(imd);
-    FCLOSE(id->f_in);
-    free(id);
+	double stddev = 0;
+	for (ii = 0; ii < tsx*tsy; ++ii)
+		stddev += ((double)idata[ii] - avg)*((double)idata[ii] - avg);
+	stddev = sqrt(stddev / (tsx*tsy));
 
-    return TRUE;
-}
+	double lmin = avg - 2*stddev;
+	double lmax = avg + 2*stddev;
 
-GdkPixbuf *
-make_input_image_thumbnail_pixbuf (const char *input_metadata,
-                                   const char *input_data,
-                                   size_t max_thumbnail_dimension)
-{
-    GError *err = NULL;
+	for (ii = 0; ii < tsx*tsy; ++ii) {
+		int n = 3*ii;
+		int val = idata[ii];
+		guchar uval;
+		if (val < lmin)
+			uval = 0;
+		else if (val > lmax)
+			uval = 255;
+		else
+			uval = (guchar) round(((val - lmin) / (lmax - lmin)) * 255);
 
-    gchar *tfn;			/* Temporary file name.  */
-    gint tfd = g_file_open_tmp ("thumbnail_jpg-XXXXXX", &tfn, &err);
-    if ( err != NULL ) {
-        g_error ("Couldn't open temporary thumbnail image: %s\n", err->message);
-    }
-    g_assert (err == NULL);
-    int return_code = close (tfd);
+		data[n] = uval;
+		data[n+1] = uval;
+		data[n+2] = uval;
+	}
 
-#ifndef win32
-    /* for some reason, this assert fails on windows... errno reveals
-    a "Bad file descriptor" error when doing the above close.  Removing
-    for now, this should be investigated.  Not sure what problems, if
-    any, are caused by ignoring this error. */
-    g_assert (return_code == 0);  
-#endif
+	g_free(idata);
 
-    /* This is about the size needed for the thumbnail code in
-    make_input_image_thumbnail to behave decently.  We will let the
-    code in gdk_pixbuf_new_from_file_at_size do the remaining
-    resizing if any, since it probably does a better job.  */
-    const size_t decent_sampled_thumbnail_size = 256;
-    gboolean ok;
+	GdkPixbuf *pb = gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE, 
+		8, tsy, tsx, tsx*3, destroy_pixbuf_data, NULL);
 
-    if ( max_thumbnail_dimension < decent_sampled_thumbnail_size ) {
-        ok = make_input_image_thumbnail (input_metadata, input_data, 
-            decent_sampled_thumbnail_size, tfn);    
-    }
-    else {
-        ok = make_input_image_thumbnail (input_metadata, input_data, 
-            max_thumbnail_dimension, tfn);
-    }
+	if (!pb) {
+		printf("Failed to allocate thumbnail pixbuf.\n");
+        meta_free(imd);
+		return FALSE;
+	}
 
-    GdkPixbuf *result = NULL;
+	GdkPixbuf *pb_s = gdk_pixbuf_scale_simple(pb, max_thumbnail_dimension, 
+		max_thumbnail_dimension, GDK_INTERP_BILINEAR);
+	gdk_pixbuf_unref(pb);
 
-    if (ok)
-    {
+	if (!pb_s) {
+		printf("Failed to allocate scaled thumbnail pixbuf.\n");
+        meta_free(imd);
+		return FALSE;
+	}
 
-        // This coude shouldn't ever run if we don't have this version (so
-        // that thumbnails are enabled.  So here we put it in an ifdef so
-        // everything will still compile on older versions.
-#if ( GDK_PIXBUF_MAJOR >= 2 && GDK_PIXBUF_MINOR >= 4 )
-        result = gdk_pixbuf_new_from_file_at_size (tfn, max_thumbnail_dimension,
-            max_thumbnail_dimension, &err);
-#endif
-
-        return_code = unlink (tfn);
-        g_assert (return_code == 0);
-
-        if ( err != NULL ) {
-            g_error ("Couldn't load thumbnail popup image '%s': %s", tfn, 
-                err->message);
-        }
-    }
-
-    g_free (tfn);
-
-    return result;
+    return pb_s;
 }

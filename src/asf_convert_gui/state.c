@@ -204,6 +204,8 @@ static void read_files_v2(FILE *f)
             }
         }
     }
+
+	show_queued_thumbnails();
 }
 
 static void read_ver_1_0(FILE *f)

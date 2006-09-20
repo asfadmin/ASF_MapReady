@@ -55,6 +55,7 @@ target_drag_data_received(GtkWidget *widget,
     }
 
     g_strfreev(list);
+	show_queued_thumbnails();
 }
 
 static GtkTargetEntry target_table[] = {

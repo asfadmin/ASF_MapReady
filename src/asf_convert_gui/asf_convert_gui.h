@@ -235,6 +235,7 @@ gboolean add_to_files_list_iter(const gchar *, GtkTreeIter *);
 void update_all_extensions();
 void set_output_name(GtkTreeIter *, const gchar *);
 gboolean is_L_file(const gchar *);
+void show_queued_thumbnails();
 
 /* help.c */
 char * escapify(const char * s);
@@ -312,8 +313,10 @@ extern GladeXML *glade_xml;
    thumbnails they should be loading into which treeview rows.  */
 extern GStaticRecMutex list_store_lock;
 /* Convenience macros for locking the list_store.  */
-#define LSL g_static_rec_mutex_lock (&list_store_lock)
-#define LSU g_static_rec_mutex_unlock (&list_store_lock)
+//#define LSL g_static_rec_mutex_lock (&list_store_lock)
+//#define LSU g_static_rec_mutex_unlock (&list_store_lock)
+#define LSL
+#define LSU
 extern GtkListStore *list_store;
 
 /* TRUE during processing */

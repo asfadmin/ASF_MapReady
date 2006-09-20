@@ -8,7 +8,7 @@ ifeq ($(SYS),win32)
 
 ### Begin Windows Section
 
-GCC = gcc
+GCC =gcc 
 GTK_DIR = gtkwin32
 GTK_ZIP = gtkwin32zip
 

@@ -15,58 +15,6 @@
 #include "asf_convert_gui.h"
 
 SIGNAL_CALLBACK void
-on_add_button_clicked(GtkWidget *widget)
-{
-    GtkWidget *input_entry;
-    G_CONST_RETURN gchar *in_data;
-    gboolean result;
-
-    input_entry = 
-        glade_xml_get_widget(glade_xml, "input_entry");
-
-    in_data =
-        gtk_entry_get_text(GTK_ENTRY(input_entry));
-
-    if (strlen(in_data) == 0)
-    {
-        message_box("Enter the name of a data file to add to the list.");
-        return;
-    }
-
-    if (!g_file_test(in_data, G_FILE_TEST_EXISTS))
-    {
-        gchar * message =
-            (gchar *) g_malloc(sizeof(gchar) * (strlen(in_data) + 256));
-
-        g_sprintf(message, "Error: Couldn't find the file \"%s\".", in_data);
-        message_box(message);
-        return;
-    }
-
-    /* add file to the list */
-    result = add_to_files_list(in_data);
-
-    if (!result)
-    {
-        gchar * ext;
-        gchar * message =
-            (gchar *) g_malloc(sizeof(gchar) * (strlen(in_data) + 256));
-
-        ext = strrchr(in_data, '.');
-        if (!ext)
-        {
-            message_box("Error: Unknown file type, did not have extension.");
-        }
-        else
-        {
-            ++ext;
-            g_sprintf(message, "Error: Unknown file type: %s!", ext);
-            message_box(message);
-        }
-    }
-}
-
-SIGNAL_CALLBACK void
 on_browse_input_files_button_clicked(GtkWidget *widget)
 {
 #ifdef win32
@@ -117,7 +65,6 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
         while (*p) {
             char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
             sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
-            printf("Adding: %s\n", dir_and_file);
             add_to_files_list(dir_and_file);
             p += strlen(p) + 1;
             free(dir_and_file);
@@ -127,6 +74,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
     }
 
     free(dir);
+	show_queued_thumbnails();
 
 #else
     GtkWidget *file_selection_dialog =
@@ -213,4 +161,6 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
 
     g_strfreev(selections);
     gtk_widget_hide(file_selection_dialog);
+
+	show_queued_thumbnails();
 }

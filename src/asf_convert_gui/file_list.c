@@ -131,9 +131,9 @@ static void set_input_image_thumbnail(GtkTreeIter *iter,
 }
 
 static void
-thumbnail_thread (GString *file, gpointer user_data)
+do_thumbnail (const gchar *file)
 {
-    gchar *metadata_file = meta_file_name (file->str);
+    gchar *metadata_file = meta_file_name (file);
     if (metadata_file && strlen(metadata_file) > 0) {
 
         /* Find the element of the list store having the file name we are
@@ -151,13 +151,10 @@ thumbnail_thread (GString *file, gpointer user_data)
             gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter, 
                                 COL_DATA_FILE, &data_file, -1);
             
-            if ( strcmp (data_file, file->str) == 0 ) {
+            if ( strcmp (data_file, file) == 0 ) {
                 /* We found it, so load the thumbnail.  */
                 set_input_image_thumbnail (&iter, metadata_file, data_file);
                 g_free (metadata_file);
-                /* We just happen to know that this string got allocated in the
-                   arguments to this routing.  */
-                g_string_free (file, TRUE);
                 LSU;
                 return;
             }
@@ -170,8 +167,7 @@ thumbnail_thread (GString *file, gpointer user_data)
     /* The data file must have gotten removed from the list before we
     got a chance to draw it's thumbnail.  Oh well.  */
 
-    g_free (metadata_file);
-    g_string_free (file, TRUE);
+        g_free (metadata_file);
     }
 }
 
@@ -185,66 +181,93 @@ add_to_files_list(const gchar * data_file)
     return ret;
 }
 
+static char *files[255];
+static void queue_thumbnail(const gchar * data_file)
+{
+	int i;
+	for (i=0; i<255; ++i) {
+		if (!files[i]) {
+			files[i] = g_strdup(data_file);
+			break;
+		}
+	}
+}
+
+void
+show_queued_thumbnails()
+{
+	static int n=0;
+	++n;
+	int i;
+	for (i=0; i<255; ++i) {
+		if (files[i]) {
+			// do a gtk main loop iteration
+			while (gtk_events_pending())
+				gtk_main_iteration();    
+
+			// must check files[i]!=NULL again
+			// since gtk_main_iteration could have
+			// processed a "Browse..." event and
+			// thus already processed this item.
+			// The alternative would be to move the
+			// above while() loop below the statements
+			// below, however that makes the app feel
+			// a little less responsive.
+			if (files[i]) {
+				printf("Doing: %d-%2d %s\n", n, i, files[i]);
+				do_thumbnail(files[i]);
+
+				g_free(files[i]);
+				files[i] = NULL;
+			}
+		}
+	}
+	--n;
+}
+
 gboolean
 add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
 {
-    if (file_is_valid(data_file))
-    {
-        GtkWidget *files_list;
-        //        GtkTreeIter iter = *iter_p;
-        gchar * out_name_full;
-
-        files_list =
-            glade_xml_get_widget(glade_xml, "files_list");
-
-        LSL;
-        gtk_list_store_append(list_store, iter_p);
-
-        gtk_list_store_set(list_store, iter_p,
-            COL_DATA_FILE, data_file,
-            COL_STATUS, "-", -1);
-
-#ifdef THUMBNAILS
-        if (use_thumbnails)
-        {
-            /* Thumbnail thread pool.  */
-            static GThreadPool *ttp = NULL;
-            GError *err = NULL;
-            /* Size of the threadpool we will use.  */
-            const gint max_thumbnail_threads = 4;
-            if ( ttp == NULL ) {
-                if (!g_thread_supported ()) g_thread_init (NULL);
-                ttp = g_thread_pool_new ((GFunc) thumbnail_thread, NULL,
-                    max_thumbnail_threads, TRUE, &err);
-                g_assert (err == NULL);
-            }
-            g_thread_pool_push (ttp, g_string_new (data_file), &err);
-            g_assert (err == NULL);
-        }
-#endif
-
-        out_name_full = determine_default_output_file_name(data_file);
-        set_output_name(iter_p, out_name_full);
-        g_free(out_name_full);
-
-	/* New: select the file automatically if this is the first
-                file that was added (this makes the toolbar buttons
-                immediately useful)                                   */
-	if (1 == gtk_tree_model_iter_n_children(GTK_TREE_MODEL(list_store), 
-						NULL))
+	if (file_is_valid(data_file))
 	{
-	    GtkTreeSelection *selection =
-                gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
-	    gtk_tree_selection_select_all(selection);
-	}
+		GtkWidget *files_list;
+		//        GtkTreeIter iter = *iter_p;
+		gchar * out_name_full;
 
-        LSU;
-        return TRUE;
-    }
-    else
-    {
-        return FALSE;
-    }
+		files_list =
+			glade_xml_get_widget(glade_xml, "files_list");
+
+		LSL;
+		gtk_list_store_append(list_store, iter_p);
+
+		gtk_list_store_set(list_store, iter_p,
+			COL_DATA_FILE, data_file,
+			COL_STATUS, "-", -1);
+
+		out_name_full = determine_default_output_file_name(data_file);
+		set_output_name(iter_p, out_name_full);
+		g_free(out_name_full);
+
+		queue_thumbnail(data_file);
+
+		/* New: select the file automatically if this is the first
+		        file that was added (this makes the toolbar buttons
+		        immediately useful)                                 */
+		if (1 == gtk_tree_model_iter_n_children(GTK_TREE_MODEL(list_store), 
+			NULL))
+		{
+			GtkTreeSelection *selection =
+				gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+			gtk_tree_selection_select_all(selection);
+		}
+
+		LSU;
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
 }
 
 void
@@ -492,8 +515,7 @@ in_output_thumbnail (GtkWidget *widget, GdkEventMotion *event)
     gtk_tree_view_get_cell_area (GTK_TREE_VIEW (widget), tp, otc, &otnc_rect);
     /* Here we depend on the fact that the output thumbnail is packed at
     the beginning of the cell horizontally, and centered in the cell
-    vertically (FIXME: find a way to verify this with
-    assertions).  */
+    vertically (FIXME: find a way to verify this with assertions).  */
     GdkRectangle otn_rect;	/* Input thumbnail rectangle.  */
     /* FIXME: fix this border hackery to be precise.  */
     otn_rect.x = otnc_rect.x + 2;	/* There is probably a small border so +2.  */
@@ -666,7 +688,7 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
 
     char *metadata_file = meta_file_name (data_file);
 
-    make_input_image_thumbnail (metadata_file, data_file, 256, "test_256.jpg");
+    //make_input_image_thumbnail (metadata_file, data_file, 256, "test_256.jpg");
 
     GdkPixbuf *popup_image_pixbuf 
         = make_input_image_thumbnail_pixbuf (metadata_file, data_file, 256);
@@ -986,6 +1008,7 @@ setup_files_list(int argc, char *argv[])
 
     for (i = 1; i < argc; ++i)
         add_to_files_list(argv[i]);
+	show_queued_thumbnails();
 
     files_list =
         glade_xml_get_widget(glade_xml, "files_list");
