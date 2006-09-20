@@ -138,7 +138,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     // Create the pixbuf
     GdkPixbuf *pb =
         gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE, 
-                                 8, tsy, tsx, tsx*3, destroy_pb_data, NULL);
+                                 8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
     
     if (!pb) {
         printf("Failed to create the thumbnail pixbuf: %s\n", input_data);
