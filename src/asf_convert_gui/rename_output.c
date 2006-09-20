@@ -102,8 +102,6 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
 void
 do_rename_selected(const gchar *new_name)
 {
-    LSL;
-
     GtkWidget * files_list;
     GtkTreeIter iter;
 
@@ -113,15 +111,11 @@ do_rename_selected(const gchar *new_name)
     {
         do_rename(GTK_TREE_MODEL(list_store), &iter, new_name);
     }
-
-    LSU;
 }
 
 gboolean
 rename_selected_output_filename()
 {
-    LSL;
-
     GtkWidget *files_list;
     GtkTreeIter iter;
 
@@ -167,8 +161,6 @@ rename_selected_output_filename()
     {
         show_please_select_message();
     }
-
-    LSU;
 
     return TRUE;
 }

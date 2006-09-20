@@ -254,8 +254,6 @@ static void prepare_dialog_cons()
 static void apply_naming_scheme(const NamingScheme * new,
                                 const NamingScheme * old)
 {
-    LSL;
-
     gboolean valid;
     GtkTreeIter iter;
     Settings * user_settings;
@@ -328,8 +326,6 @@ static void apply_naming_scheme(const NamingScheme * new,
     }
 
     settings_delete(user_settings);
-
-    LSU;
 }
 
 SIGNAL_CALLBACK void

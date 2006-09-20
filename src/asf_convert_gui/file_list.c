@@ -119,12 +119,8 @@ static void set_input_image_thumbnail(GtkTreeIter *iter,
                                       const gchar *metadata_file,
                                       const gchar *data_file)
 {
-    LSU;
-
     GdkPixbuf *pb = make_input_image_thumbnail_pixbuf (
         metadata_file, data_file, THUMB_SIZE);
-
-    LSL;
 
     if (pb)
         gtk_list_store_set (list_store, iter, COL_INPUT_THUMBNAIL, pb, -1);
@@ -141,7 +137,6 @@ do_thumbnail (const gchar *file)
         GtkTreeIter iter;
         gboolean valid;
         /* Get the first iter in the list */
-        LSL;
         valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (list_store), 
                                                &iter);
         while ( valid ) {
@@ -155,14 +150,12 @@ do_thumbnail (const gchar *file)
                 /* We found it, so load the thumbnail.  */
                 set_input_image_thumbnail (&iter, metadata_file, data_file);
                 g_free (metadata_file);
-                LSU;
                 return;
             }
             
             valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (list_store),
                                               &iter);
         }
-        LSU;
 
     /* The data file must have gotten removed from the list before we
     got a chance to draw it's thumbnail.  Oh well.  */
@@ -237,7 +230,6 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
 		files_list =
 			glade_xml_get_widget(glade_xml, "files_list");
 
-		LSL;
 		gtk_list_store_append(list_store, iter_p);
 
 		gtk_list_store_set(list_store, iter_p,
@@ -261,7 +253,6 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
 			gtk_tree_selection_select_all(selection);
 		}
 
-		LSU;
 		return TRUE;
 	}
 	else
@@ -278,7 +269,6 @@ update_all_extensions()
     gboolean valid;
     GtkTreeIter iter;
 
-    LSL;
     if (list_store)
     {
         user_settings = settings_get_from_gui();
@@ -317,7 +307,6 @@ update_all_extensions()
 
         settings_delete(user_settings);
     }
-    LSU;
 }
 
 void
@@ -777,9 +766,7 @@ maybe_clear_popup_image (GtkWidget *widget, GdkEventMotion *event,
         /* Update the popup process to reflect the current position of the
         pointer (i.e. deal with the event that got us in this
         handler.  */
-        LSL;
         update_thumbnail_popup_process (widget, event);
-        LSU;
 
         /* Unblock the handler for motion events on the files list.  */
         gulong unblock_count 
@@ -973,8 +960,6 @@ setup_files_list(int argc, char *argv[])
     GtkCellRenderer *renderer;
     GValue val = {0,};
 
-    LSL;
-
     if (use_thumbnails)
     {
         list_store = gtk_list_store_new(5, 
@@ -1003,8 +988,6 @@ setup_files_list(int argc, char *argv[])
         COL_OUTPUT_THUMBNAIL = -999;
         COL_STATUS = 2;
     }
-
-    LSU;
 
     for (i = 1; i < argc; ++i)
         add_to_files_list(argv[i]);
@@ -1098,10 +1081,8 @@ setup_files_list(int argc, char *argv[])
     gtk_tree_view_column_set_cell_data_func(col, renderer,
         render_status, NULL, NULL);
 
-    LSL;				
     gtk_tree_view_set_model(GTK_TREE_VIEW(files_list), 
         GTK_TREE_MODEL(list_store));  
-    LSU;
 
     g_object_unref(list_store);
 

@@ -95,7 +95,6 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
 
     /* next is the files & their statuses */
     fprintf(f, "[Files]\n");
-    LSL;
     if (list_store)
     {
         gboolean valid;
@@ -131,7 +130,6 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
             valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
         }
     }
-    LSU;
 
     fprintf(f, "[End]\n");
     fclose(f);
@@ -210,8 +208,6 @@ static void read_files_v2(FILE *f)
 
 static void read_ver_1_0(FILE *f)
 {
-    LSL;
-
     Settings s;
     GtkTreeIter iter;
 
@@ -311,14 +307,10 @@ static void read_ver_1_0(FILE *f)
 
     naming_scheme_delete(current_naming_scheme);
     current_naming_scheme = naming_scheme_default();
-
-    LSU;
 }
 
 static void read_ver_1_1(FILE *f)
 {
-    LSL;
-
     Settings s;
     gchar line[1024];
     gchar *prefix, *suffix, *scheme;
@@ -366,14 +358,10 @@ static void read_ver_1_1(FILE *f)
 
     fscanf(f, "\n");
     read_files_v2(f);
-
-    LSU;
 }
 
 static void read_ver_1_2(FILE *f)
 {
-    LSL;
-
     Settings s;
     gchar line[1024];
     gchar *prefix, *suffix, *scheme;
@@ -421,14 +409,10 @@ static void read_ver_1_2(FILE *f)
 
     fscanf(f, "\n");
     read_files_v2(f);
-
-    LSU;
 }
 
 static void read_ver_2_0(FILE *f)
 {
-    LSL;
-
     Settings s;
     gchar line[1024];
     gchar *prefix, *suffix, *scheme;
@@ -482,14 +466,10 @@ static void read_ver_2_0(FILE *f)
 
     fscanf(f, "\n");
     read_files_v2(f);
-
-    LSU;
 }
 
 static void read_ver_2_1(FILE *f)
 {
-    LSL;
-
     Settings s;
     gchar line[1024];
     gchar *prefix, *suffix, *scheme;
@@ -549,14 +529,10 @@ static void read_ver_2_1(FILE *f)
 
     fscanf(f, "\n");
     read_files_v2(f);
-
-    LSU;
 }
 
 static void read_ver_2_2(FILE *f)
 {
-    LSL;
-
     Settings s;
     gchar line[1024];
     gchar *prefix, *suffix, *scheme;
@@ -618,14 +594,10 @@ static void read_ver_2_2(FILE *f)
 
     fscanf(f, "\n");
     read_files_v2(f);
-
-    LSU;
 }
 
 static void read_ver_2_3(FILE *f)
 {
-    LSL;
-
     Settings s;
     gchar line[1024];
     gchar *prefix, *suffix, *scheme;
@@ -689,14 +661,10 @@ static void read_ver_2_3(FILE *f)
 
     fscanf(f, "\n");
     read_files_v2(f);
-
-    LSU;
 }
 
 static void read_ver_2_4(FILE *f)
 {
-    LSL;
-
     Settings s;
     gchar line[1024];
     gchar *prefix, *suffix, *scheme;
@@ -762,14 +730,10 @@ static void read_ver_2_4(FILE *f)
 
     fscanf(f, "\n");
     read_files_v2(f);
-
-    LSU;
 }
 
 static void read_ver_2_5(FILE *f)
 {
-    LSL;
-
     Settings s;
     gchar line[1024];
     gchar *prefix, *suffix, *scheme;
@@ -836,8 +800,6 @@ static void read_ver_2_5(FILE *f)
 
     fscanf(f, "\n");
     read_files_v2(f);
-
-    LSU;
 }
 
 SIGNAL_CALLBACK void

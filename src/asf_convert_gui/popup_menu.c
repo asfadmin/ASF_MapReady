@@ -1,4 +1,3 @@
-
 #include <unistd.h>
 #include "asf_convert_gui.h"
 #include <asf.h>
@@ -185,8 +184,6 @@ disable_for_multiple_selected(GtkMenu * menu)
 gint
 popup_handler(GtkWidget *widget, GdkEvent *event)
 {
-    LSL;
-
     GtkMenu *menu;
     GdkEventButton *event_button;
     GtkTreeSelection *selection;
@@ -244,7 +241,6 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
                 if (strstr(status, "...") != NULL)
                 {
                     /* right-clicked on what is currently being processed */
-                    LSU;
                     return FALSE;
                 }
 
@@ -285,7 +281,6 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
             {
                 /* nothing selected, and nothing was under mouse when
                 clicked */
-                LSU;
                 return FALSE;
             }
         }
@@ -297,10 +292,8 @@ popup_handler(GtkWidget *widget, GdkEvent *event)
 
         gtk_menu_popup(menu, NULL, NULL, NULL, NULL,
             event_button->button, event_button->time);
-        LSU;
         return TRUE;
     }
-    LSU;
     return FALSE;
 }
 
@@ -332,8 +325,6 @@ static gboolean confirm_overwrite()
 static int
 handle_remove()
 {
-    LSL;
-
     GtkWidget *files_list;
     GtkTreeModel * model;
     GtkTreeSelection *selection;
@@ -352,9 +343,8 @@ handle_remove()
 
     if (!selected_rows)
     {
-        LSU;
-	show_please_select_message();
-	return FALSE;
+        show_please_select_message();
+        return FALSE;
     }
 
     while (i)
@@ -392,7 +382,6 @@ handle_remove()
     g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
     g_list_free(refs);
 
-    LSU;
     return TRUE;
 }
 
@@ -403,8 +392,6 @@ get_iter_to_first_selected_row(GtkWidget * files_list, GtkTreeIter * iter)
     GtkTreeModel *model;
     GtkTreeSelection *selection;
     gboolean found;
-
-    LSL;
 
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
     model = GTK_TREE_MODEL(list_store);
@@ -427,15 +414,12 @@ get_iter_to_first_selected_row(GtkWidget * files_list, GtkTreeIter * iter)
         found = FALSE;
     }
 
-    LSU;
     return found;
 }
 
 static int
 handle_jump()
 {
-    LSL;
-
     GtkWidget *files_list;
     GtkWidget * textview_output;
     GtkTreeIter iter;
@@ -470,14 +454,12 @@ handle_jump()
         show_please_select_message();
     }
 
-    LSU;
     return TRUE;
 }
 
 static int
 handle_display_ceos_metadata()
 {
-    LSL;
     GtkWidget *files_list;
     GtkTreeIter iter;
 
@@ -497,14 +479,12 @@ handle_display_ceos_metadata()
         show_please_select_message();
     }
 
-    LSU;
     return TRUE;
 }
 
 static int
 handle_display_asf_metadata()
 {
-    LSL;
     GtkWidget *files_list;
     GtkTreeIter iter;
 
@@ -524,14 +504,12 @@ handle_display_asf_metadata()
         show_please_select_message();
     }
 
-    LSU;
     return TRUE;
 }
 
 static int
 handle_process()
 {
-    LSL;
     GtkWidget *files_list;
     GtkTreeIter iter;
     GtkTreeModel * model;
@@ -542,7 +520,6 @@ handle_process()
 
     /* gui should prevent this from happening */
     if (processing) {
-        LSU;
         return TRUE;
     }
 
@@ -554,9 +531,8 @@ handle_process()
 
     if (!selected_rows)
     {
-        LSU;
         show_please_select_message();
-	return FALSE;
+		return FALSE;
     }
 
     refs = NULL;
@@ -599,7 +575,6 @@ handle_process()
     g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
     g_list_free(selected_rows);
 
-    LSU;
     return TRUE;
 }
 
@@ -612,8 +587,6 @@ handle_rename()
 static int
 handle_view_output()
 {
-    LSL;
-
     GtkWidget *files_list;
     GtkTreeIter iter;
 
@@ -643,7 +616,6 @@ handle_view_output()
         show_please_select_message();
     }
 
-    LSU;
     return TRUE;
 }
 
@@ -675,7 +647,6 @@ handle_google_earth()
     }
 #endif
 
-    LSL;
     files_list = glade_xml_get_widget(glade_xml, "files_list");
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
     model = GTK_TREE_MODEL(list_store);
@@ -688,9 +659,8 @@ handle_google_earth()
 
     if (!selected_rows)
     {
-        LSU;
-	show_please_select_message();
-	return FALSE;
+        show_please_select_message();
+        return FALSE;
     }
 
     while (i)
@@ -747,7 +717,6 @@ handle_google_earth()
                 g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
                 g_list_free(refs);
                 
-                LSU;
                 return FALSE;
             }
 
@@ -807,7 +776,6 @@ handle_google_earth()
     g_list_free(refs);
     free(output_dir);
 
-    LSU;
     return TRUE;
 }
 
