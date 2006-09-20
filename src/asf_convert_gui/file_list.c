@@ -174,14 +174,31 @@ add_to_files_list(const gchar * data_file)
     return ret;
 }
 
+// The thumbnailing works like this: When a user adds a file, or a bunch of
+// files, the file names are added immediately to the list, and each data
+// file name is added to this global thumbnailing queue.  (It isn't really
+// a queue, it is just an array of char* pointers.)  After all the files have
+// been added to the list, and queue_thumbnail has been called for each one,
+// we call show_queued_thumbnails(), which runs through the list of saved
+// names, and populates the thumbnails for each.  So it appears as though
+// we are still threading but everything occurs sequentially.  The only
+// tricky thing is that show_queued_thumbnails periodically processes the
+// gtk events, to keep the app from seeming unresponsive.  This isn't a
+// problem, except that one possible event is removing files that were
+// added, another is adding even more files, which will queue up more
+// thumbnails, which means show_queued_thumbnails can recurse.  This isn't
+// really a problem if we keep in mind that the gtk_main_iteration() call
+// in show_queued_thumbnails() can result in the thumb_files[] array
+// changing on us (sort of as if we were doing threading).
+
 #define QUEUE_SIZE 255
-static char *files[QUEUE_SIZE];
+static char *thumb_files[QUEUE_SIZE];
 static void queue_thumbnail(const gchar * data_file)
 {
     int i;
     for (i = 0; i < QUEUE_SIZE; ++i) {
-        if (!files[i]) {
-            files[i] = g_strdup(data_file);
+        if (!thumb_files[i]) {
+            thumb_files[i] = g_strdup(data_file);
             break;
         }
     }
@@ -192,7 +209,7 @@ show_queued_thumbnails()
 {
     int i;
     for (i = 0; i < QUEUE_SIZE; ++i) {
-        if (files[i]) {
+        if (thumb_files[i]) {
             // do a gtk main loop iteration
             while (gtk_events_pending())
                 gtk_main_iteration();    
@@ -202,11 +219,11 @@ show_queued_thumbnails()
             // this item.  The alternative would be to move the above while()
             // loop below the statements below, however that makes the app feel
             // a little less responsive.
-            if (files[i]) {
-                do_thumbnail(files[i]);
+            if (thumb_files[i]) {
+                do_thumbnail(thumb_files[i]);
                 
-                g_free(files[i]);
-                files[i] = NULL;
+                g_free(thumb_files[i]);
+                thumb_files[i] = NULL;
             }
         }
     }
@@ -215,44 +232,39 @@ show_queued_thumbnails()
 gboolean
 add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
 {
-	if (file_is_valid(data_file))
-	{
-		GtkWidget *files_list;
-		//        GtkTreeIter iter = *iter_p;
-		gchar * out_name_full;
+    gboolean valid = file_is_valid(data_file);
 
-		files_list =
-			glade_xml_get_widget(glade_xml, "files_list");
+    if (valid)
+    {
+        GtkWidget *files_list;
+        gchar * out_name_full;
+        
+        files_list = glade_xml_get_widget(glade_xml, "files_list");
+        
+        gtk_list_store_append(list_store, iter_p);
+        gtk_list_store_set(list_store, iter_p,
+                           COL_DATA_FILE, data_file,
+                           COL_STATUS, "-", -1);
+        
+        out_name_full = determine_default_output_file_name(data_file);
+        set_output_name(iter_p, out_name_full);
+        g_free(out_name_full);
+        
+        queue_thumbnail(data_file);
+        
+        /* Select the file automatically if this is the first
+           file that was added (this makes the toolbar buttons
+           immediately useful)                                 */
+        if (1 == gtk_tree_model_iter_n_children(GTK_TREE_MODEL(list_store), 
+                                                NULL))
+        {
+            GtkTreeSelection *selection =
+                gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+            gtk_tree_selection_select_all(selection);
+        }
+    }
 
-		gtk_list_store_append(list_store, iter_p);
-
-		gtk_list_store_set(list_store, iter_p,
-			COL_DATA_FILE, data_file,
-			COL_STATUS, "-", -1);
-
-		out_name_full = determine_default_output_file_name(data_file);
-		set_output_name(iter_p, out_name_full);
-		g_free(out_name_full);
-
-		queue_thumbnail(data_file);
-
-		/* New: select the file automatically if this is the first
-		        file that was added (this makes the toolbar buttons
-		        immediately useful)                                 */
-		if (1 == gtk_tree_model_iter_n_children(GTK_TREE_MODEL(list_store), 
-			NULL))
-		{
-			GtkTreeSelection *selection =
-				gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
-			gtk_tree_selection_select_all(selection);
-		}
-
-		return TRUE;
-	}
-	else
-	{
-		return FALSE;
-	}
+    return valid;
 }
 
 void
@@ -260,7 +272,7 @@ update_all_extensions()
 {
     Settings * user_settings;
     const gchar * ext;
-    gboolean valid;
+    gboolean ok;
     GtkTreeIter iter;
 
     if (list_store)
@@ -268,8 +280,8 @@ update_all_extensions()
         user_settings = settings_get_from_gui();
         ext = settings_get_output_format_extension(user_settings);
 
-        valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
-        while (valid)
+        ok = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+        while (ok)
         {
             gchar * current_output_name;
             gchar * new_output_name;
@@ -296,7 +308,7 @@ update_all_extensions()
             g_free(new_output_name);
             g_free(current_output_name);
 
-            valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
+            ok = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
         }
 
         settings_delete(user_settings);
@@ -670,8 +682,6 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
         &data_file, -1);
 
     char *metadata_file = meta_file_name (data_file);
-
-    //make_input_image_thumbnail (metadata_file, data_file, 256, "test_256.jpg");
 
     GdkPixbuf *popup_image_pixbuf 
         = make_input_image_thumbnail_pixbuf (metadata_file, data_file, 256);

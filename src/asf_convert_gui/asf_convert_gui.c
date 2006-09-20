@@ -5,7 +5,6 @@ tool.  */
 #include "asf_version.h"
 
 GladeXML *glade_xml;
-GStaticRecMutex list_store_lock = G_STATIC_REC_MUTEX_INIT;
 GtkListStore *list_store = NULL;
 gboolean processing;
 Settings *settings_on_execute;
@@ -27,7 +26,7 @@ main(int argc, char **argv)
 
     g_free(glade_xml_file);
 
-    /* thumbnails supported in GTK 2.4 or greater, also require threading */
+    /* thumbnails supported in GTK 2.4 or greater */
 #ifdef G_THREADS_ENABLED
     use_thumbnails = gtk_major_version >= 2 && gtk_minor_version >= 4;
 #else
@@ -106,13 +105,6 @@ main(int argc, char **argv)
 
     /* set initial vpanel setting */
     widget = glade_xml_get_widget(glade_xml, "vertical_pane");
-
-    /* not sure why this doesn't work
-    gtk_widget_style_get_property(widget, "max-position", &val);
-    p = (gint) floor (0.75 * (double) ((gint) g_value_get_uint(&val)));
-    printf("%d\n", p);
-    gtk_paned_set_position(GTK_PANED(widget), p);
-    */
     gtk_paned_set_position(GTK_PANED(widget), 240);
 
     /* Connect signal handlers.  */
