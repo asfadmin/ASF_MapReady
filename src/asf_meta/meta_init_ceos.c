@@ -374,13 +374,13 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
         firstTime = date_hms2sec(&time);
         date_dssr2time(dssr->az_time_center, &time);
         centerTime = date_hms2sec(&time);
-	printf("firstTime: %s\n", firstTime);
-	printf("centerTime: %s\n", centerTime);
+	printf("firstTime: %lf\n", firstTime);
+	printf("centerTime: %lf\n", centerTime);
       }
       date_dssr2date(dssr->inp_sctim, &date, &time);
       centerTime = date_hms2sec(&time);
-      printf("firstTime: %s\n", firstTime);
-      printf("centerTime: %s\n", centerTime);
+      printf("firstTime: %lf\n", firstTime);
+      printf("centerTime: %lf\n", centerTime);
 
       // The timestamp in the line header of ALOS L1.5 data is currently not
       // completely filled. Because the time of the day is missing I cannot
