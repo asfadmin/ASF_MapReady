@@ -2,7 +2,7 @@
 FUNCTION NAME:  meta_init_ceos
 
 DESCRIPTION:
-   Extract relevant parameters from CEOS.
+   Exixel_tract relevant parameters from CEOS.
    Internal-only routine.
 
 RETURN VALUE:
@@ -237,13 +237,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    meta->general->start_sample     = 0;
    meta->general->x_pixel_size     = dssr->pixel_spacing;
    meta->general->y_pixel_size     = dssr->line_spacing;
-   if (asf_facdr && ceos->product!=CCSD) {
-   /* For ASF SLC, the spacings are incorrect in the ASFFACDR - Tom Logan 3/01*/
-      if (asf_facdr->rapixspc > 0.0)
-         meta->general->x_pixel_size = asf_facdr->rapixspc;
-      if (asf_facdr->azpixspc > 0.0)
-         meta->general->y_pixel_size = asf_facdr->azpixspc;
-   }
+
    // ALOS L1.1 products have no pixel spacing information (yet)
    // Requires some backwards engineering looking at the polarization
    if (strcmp(meta->general->sensor, "ALOS") == 0 &&
@@ -309,7 +303,10 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    }
    meta->sar->look_direction = (dssr->clock_ang>=0.0) ? 'R' : 'L';
    switch (ceos->satellite) {
-      case  ERS: meta->sar->look_count = 5; break;
+      case  ERS: 
+         dssr->rng_samp_rate *= get_units(dssr->rng_samp_rate,EXPECTED_RSR);
+	 meta->sar->look_count = 5; 
+	 break;
       case JERS: meta->sar->look_count = 3; break;
       case RSAT:
          dssr->rng_samp_rate *= get_units(dssr->rng_samp_rate,EXPECTED_RSR);
@@ -372,12 +369,19 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
     }
    else {
       firstTime = get_firstTime(dataName);
-      if (ceos->facility == ESA) {
+      if (ceos->facility == ESA || ceos->processor == FOCUS) {
         date_dssr2time(dssr->az_time_first, &time);
         firstTime = date_hms2sec(&time);
+        date_dssr2time(dssr->az_time_center, &time);
+        centerTime = date_hms2sec(&time);
+	printf("firstTime: %s\n", firstTime);
+	printf("centerTime: %s\n", centerTime);
       }
       date_dssr2date(dssr->inp_sctim, &date, &time);
       centerTime = date_hms2sec(&time);
+      printf("firstTime: %s\n", firstTime);
+      printf("centerTime: %s\n", centerTime);
+
       // The timestamp in the line header of ALOS L1.5 data is currently not
       // completely filled. Because the time of the day is missing I cannot
       // find an alternative way to determine another time other than the center
