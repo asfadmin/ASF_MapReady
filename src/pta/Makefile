@@ -1,26 +1,31 @@
 # Makefile for pslr
 # Module Author: Rudi Gens
 
-DEBUG_BUILD = 2
-
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
-	$(LIBDIR)/asf_meta.a \
-	$(GSL_LIBS) \
-	$(LIBDIR)/libasf_proj.a \
-	$(PROJ_LIBS) \
-	$(LIBDIR)/libifm.a \
+CFLAGS += \
+	$(GSL_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS)
+
+LIBS  = \
 	$(LIBDIR)/asf_fft.a \
-	-lm
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
+	$(PROJ_LIBS) \
+	$(GLIB_LIBS) \
+	$(FFT_LIBS)
 
 OBJS  = pta.o \
+	fftw.o \
 	utilities.o
 
 all: pta clean
 
 pta: $(OBJS)
-	$(CC) $(CFLAGS) -o pta $(OBJS) $(LIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o pta $(OBJS) $(LIBS)
 	cp pta$(BIN_POSTFIX) $(BINDIR)
 
 clean:
