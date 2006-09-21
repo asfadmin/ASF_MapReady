@@ -278,6 +278,99 @@ static char * getOutputDir(char *outFile)
     return d;
 }
 
+static void
+clip_dem(meta_parameters *metaSAR,
+         char *srFile,
+         char *demFile,   // we call this the DEM, but it could be a mask
+         char *demClipped,
+         char *what,      // "DEM" or "User Mask" probably
+         char *otherFile, // file same size/projection as DEM to clip, or NULL
+         char *otherClipped,
+         char *otherWhat, // "User Mask" probably, or NULL
+         char *output_dir,
+         int dem_grid_size,
+         int clean_files,
+         int *p_demHeight)
+{
+    char *demGridFile = NULL;
+    int polyOrder = 5;
+    double coverage_pct;
+    int demWidth, demHeight;
+
+    asfPrintStatus("Now clipping %s: %s\n", what, demFile);
+
+    // Generate a point grid for the DEM extraction.
+    // The width and height of the grid is defined in slant range image
+    // coordinates, while the grid is actually calculated in DEM space.
+    // There is a buffer of 400 pixels in far range added to have enough
+    // DEM around when we get to correcting the terrain.
+    asfPrintStatus("Generating %dx%d %s grid...\n",
+		   dem_grid_size, dem_grid_size, what);
+
+    demGridFile = outputName(output_dir, srFile, "_demgrid");
+    create_dem_grid_ext(demFile, srFile, demGridFile,
+			metaSAR->general->sample_count,
+			metaSAR->general->line_count, dem_grid_size,
+			&coverage_pct);
+  
+    if (coverage_pct <= 0) {
+      asfPrintError("%s and SAR images do not overlap!\n", what);
+    } else if (coverage_pct <= 25) {
+      asfPrintError("Insufficient %s coverage!\n", what);
+    } else if (coverage_pct <= 99) {
+      asfPrintWarning("Incomplete %s coverage!\n", what);
+    }
+    
+    // Fit a fifth order polynomial to the grid points.
+    // This polynomial is then used to extract a subset out of the reference 
+    // DEM.
+    asfPrintStatus("Fitting order %d polynomial to DEM...\n", polyOrder);
+    double maxErr;
+    poly_2d *fwX, *fwY, *bwX, *bwY;
+    fit_poly(demGridFile, polyOrder, &maxErr, &fwX, &fwY, &bwX, &bwY);
+    asfPrintStatus("Maximum error in polynomial fit: %g.\n", maxErr);
+    
+    // Here is the actual work done for cutting out the DEM.
+    // The adjustment of the DEM width by 400 pixels (originated in
+    // create_dem_grid) needs to be factored in.
+    
+    demWidth = metaSAR->general->sample_count + DEM_GRID_RHS_PADDING;
+    demHeight = metaSAR->general->line_count;
+    
+    asfPrintStatus("Clipping %s to %dx%d LxS using polynomial fit...\n",
+		   what, demHeight, demWidth);
+    
+    remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped);
+
+    if (otherFile) {
+        asfRequire(otherClipped && otherWhat, "required arguments were NULL");
+
+        asfPrintStatus("Clipping %s using same clipping parameters as %s.\n",
+                       otherWhat, what);
+        asfPrintStatus("%s file: %s\n", otherWhat, otherFile);
+        asfPrintStatus("Clipping %s to %dx%d LxS using polynomial fit...\n",
+                       otherWhat, demHeight, demWidth);
+
+        remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, otherFile,
+                   otherClipped);
+    }
+
+    // finished with polynomials
+    poly_delete(fwX);
+    poly_delete(fwY);
+    poly_delete(bwX);
+    poly_delete(bwY);
+
+    if (clean_files) {
+        clean(demGridFile);
+    }
+
+    if (p_demHeight)
+        *p_demHeight = demHeight;
+
+    FREE(demGridFile);
+}
+
 static 
 int match_dem(meta_parameters *metaSAR,
               char *sarFile,
@@ -293,18 +386,18 @@ int match_dem(meta_parameters *metaSAR,
               int do_refine_geolocation,
               int do_trim_slant_range_dem,
 	      int apply_dem_padding,
+              int mask_dem_same_size_and_projection,
               int clean_files,
               double *t_offset, 
 	      double *x_offset)
 {
-  char *demGridFile = NULL, *demClipped = NULL, *demSlant = NULL;
-  char *demSimAmp = NULL, *maskClipped = NULL;
+  char *demClipped = NULL, *demSlant = NULL;
+  char *demSimAmp = NULL, *userMaskClipped = NULL;
   int num_attempts = 0;
   const float required_match = 2.5;
-  double coverage_pct, t_off, x_off;
-  int demWidth, demHeight;
+  double t_off, x_off;
   int redo_clipping;
-  int polyOrder = 5;
+  int demHeight;
   float dx, dy, cert;
   int idx, idy;
 
@@ -317,71 +410,40 @@ int match_dem(meta_parameters *metaSAR,
     ++num_attempts;    
     asfPrintStatus("Using DEM '%s' for refining geolocation ...\n", demFile);
 
-    // Generate a point grid for the DEM extraction.
-    // The width and height of the grid is defined in slant range image
-    // coordinates, while the grid is actually calculated in DEM space.
-    // There is a buffer of 400 pixels in far range added to have enough
-    // DEM around when we get to correcting the terrain.
-    asfPrintStatus("Generating %dx%d DEM grid...\n",
-		   dem_grid_size, dem_grid_size);
-    demGridFile = outputName(output_dir, sarFile, "_demgrid");
-    create_dem_grid_ext(demFile, srFile, demGridFile,
-			metaSAR->general->sample_count,
-			metaSAR->general->line_count, dem_grid_size,
-			&coverage_pct);
-  
-    if (coverage_pct <= 0) {
-      asfPrintError("DEM and SAR images do not overlap!\n");
-    } else if (coverage_pct <= 25) {
-      asfPrintError("Insufficient DEM coverage!\n");
-    } else if (coverage_pct <= 99) {
-      asfPrintWarning("Incomplete DEM coverage!\n");
-    }
-    
-    // Fit a fifth order polynomial to the grid points.
-    // This polynomial is then used to extract a subset out of the reference 
-    // DEM.
-    asfPrintStatus("Fitting order %d polynomial to DEM...\n", polyOrder);
-    double maxErr;
-    poly_2d *fwX, *fwY, *bwX, *bwY;
-    fit_poly(demGridFile, polyOrder, &maxErr, &fwX, &fwY, &bwX, &bwY);
-    asfPrintStatus("Maximum error in polynomial fit: %g.\n", maxErr);
-    
-    // Here is the actual work done for cutting out the DEM.
-    // The adjustment of the DEM width by 400 pixels (originated in
-    // create_dem_grid) needs to be factored in.
     demClipped = outputName(output_dir, demFile, "_clip");
-    if (userMaskFile)
-      maskClipped = outputName(output_dir, userMaskFile, "_clip");
-    
-    demWidth = metaSAR->general->sample_count + DEM_GRID_RHS_PADDING;
-    demHeight = metaSAR->general->line_count;
-    
-    asfPrintStatus("Clipping DEM to %dx%d LxS using polynomial fit...\n",
-		   demHeight, demWidth);
-    
-    remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped);
-    // now do the same thing for the maskFile
+
+    // Clip the DEM to the same size as the SAR image.  If a user mask was
+    // provided, we must clip that one, too.
     if (userMaskFile) {
-      asfPrintStatus("Clipping usermask to %dx%d LxS using "
-                     "polynomial fit...\n",
-		     demHeight, demWidth);
-      remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, userMaskFile,
-                 maskClipped);
+        userMaskClipped = outputName(output_dir, userMaskFile, "_clip");
+        if (mask_dem_same_size_and_projection) {
+            // clip DEM & Mask at the same time, they'll use the same
+            // clipping parameters
+            clip_dem(metaSAR, srFile, demFile, demClipped, "DEM",
+                     userMaskFile, userMaskClipped, "User Mask",
+                     output_dir, dem_grid_size, clean_files, &demHeight);
+        } else {
+            // clip DEM & Mask separately
+            clip_dem(metaSAR, srFile, demFile, demClipped, "DEM",
+                     NULL, NULL, NULL, output_dir, dem_grid_size,
+                     clean_files, &demHeight);
+            clip_dem(metaSAR, srFile, userMaskFile, userMaskClipped,
+                     "User Mask", NULL, NULL, NULL, output_dir, dem_grid_size, 
+                     clean_files, NULL);
+        }
+    } else {
+        // no user mask - just clip the DEM and we're good
+        clip_dem(metaSAR, srFile, demFile, demClipped, "DEM",
+                 NULL, NULL, NULL, output_dir, dem_grid_size, clean_files,
+                 &demHeight);
     }
-    
-    // finished with polynomials
-    poly_delete(fwX);
-    poly_delete(fwY);
-    poly_delete(bwX);
-    poly_delete(bwY);
     
     // Generate a slant range DEM and a simulated amplitude image.
     asfPrintStatus("Generating slant range DEM and "
 		   "simulated sar image...\n");
     demSlant = outputName(output_dir, demFile, "_slant");
     demSimAmp = outputName(output_dir, demFile, "_sim_amp");
-    reskew_dem(srFile, demClipped, demSlant, demSimAmp, maskClipped);
+    reskew_dem(srFile, demClipped, demSlant, demSimAmp, userMaskClipped);
     
     // Resize the simulated amplitude to match the slant range SAR image.
     asfPrintStatus("Resizing simulated sar image...\n");
@@ -404,12 +466,13 @@ int match_dem(meta_parameters *metaSAR,
       meta_parameters *maskmeta;
       char *demTrimSimAmp_ffft=NULL,  *srTrimSimAmp=NULL;
       float *mask;
-      inseedmask = fopenImage(maskClipped,"rb");
-      maskmeta = meta_read(maskClipped);
+      inseedmask = fopenImage(userMaskClipped,"rb");
+      maskmeta = meta_read(userMaskClipped);
       mask = (float *) MALLOC(sizeof(float) * metaSAR->general->sample_count 
 			      * demHeight);
       for (y=0;y<demHeight;y++) // read in the whole mask image
-	get_float_line(inseedmask,maskmeta,y,mask+y*metaSAR->general->sample_count);
+	get_float_line(inseedmask, maskmeta, y,
+                       mask + y * metaSAR->general->sample_count);
       FCLOSE(inseedmask);
       lay_seeds(MASK_SEED_POINTS,mask,metaSAR->general->sample_count, 
                 demHeight, x_pos_list, y_pos_list, size_list, clipped_pixels);
@@ -577,17 +640,15 @@ int match_dem(meta_parameters *metaSAR,
 
   if (clean_files) {
     clean(demClipped);
-    clean(demGridFile);
     clean(demSimAmp);
     clean(demSlant);
   }
 
   FREE(demClipped);
-  FREE(demGridFile);
   FREE(demSimAmp);
   FREE(demSlant);
-  if (maskClipped)
-    FREE(maskClipped);
+  if (userMaskClipped)
+    FREE(userMaskClipped);
 
   *t_offset = t_off;
   *x_offset = x_off;
@@ -605,6 +666,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int do_trim_slant_range_dem = TRUE;
   int apply_dem_padding = FALSE;
   int clean_files = TRUE;
+  int madssap = FALSE; // mask and dem same size and projection
   int dem_grid_size = 20;
   double t_offset, x_offset;
   char output_dir[255];
@@ -615,8 +677,8 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   match_dem(metaSAR, sarFile, demFile, sarFile, output_dir, userMaskFile, 
 	    simAmpFile, demSlant, dem_grid_size, do_corner_matching, 
 	    do_fftMatch_verification, do_refine_geolocation,
-            do_trim_slant_range_dem, apply_dem_padding, clean_files, 
-	    &t_offset, &x_offset);
+            do_trim_slant_range_dem, apply_dem_padding, madssap,
+            clean_files, &t_offset, &x_offset);
 
   return 0;
 }
@@ -636,6 +698,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   meta_parameters *metaSAR, *metaDEM, *metamask;
   int force_resample = FALSE;
   double t_offset, x_offset;
+  int madssap = FALSE; // mask and dem same size and projection
 
   // we want passing in an empty string for the mask to mean "no mask"
   if (userMaskFile && strlen(userMaskFile) == 0)
@@ -763,7 +826,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   match_dem(metaSAR, sarFile, demFile, srFile, output_dir, userMaskFile,
             demTrimSimAmp, demTrimSlant, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
-            FALSE, TRUE, TRUE, clean_files, &t_offset, &x_offset);
+            FALSE, TRUE, TRUE, madssap, clean_files, &t_offset, &x_offset);
 
   if (do_terrain_correction)
   {            
@@ -787,9 +850,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       trim_zeros(deskewDemFile, outFile, &startx, &endx);
       trim(deskewDemMask, lsMaskFile, startx, 0, endx,
            metaSAR->general->line_count);
-      clean(padFile);
-      clean(deskewDemFile);
-      clean(deskewDemMask);
+      //clean(padFile);
+      //clean(deskewDemFile);
+      //clean(deskewDemMask);
 
       // Because of the PP earth radius sr->gr fix, we may not have ended
       // up with the same x pixel size that the user requested.  So we will
@@ -805,7 +868,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
               outputName(output_dir, lsMaskFile, "_resample");
           renameImgAndMeta(lsMaskFile, lsMaskFile_2);
           resample_to_square_pixsiz(lsMaskFile_2, lsMaskFile, pixel_size);
-          clean(lsMaskFile_2);
+          //clean(lsMaskFile_2);
       } else {
           resampleFile_2 = NULL;
       }
