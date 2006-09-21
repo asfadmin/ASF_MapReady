@@ -139,7 +139,8 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
     {
         float height=inBuf[inX];
         outX=(int)SR2GR(d,(float)inX,height);
-        if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
+
+        if ((height!=badDEMht)&&(height!=-1)&&(outX>=0)&&(outX<ns))
         {
             if (lastOutValue!=badDEMht &&
                 (fill_holes || outX-lastOutX<maxBreakLen))
@@ -160,8 +161,9 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
             lastOutX=outX;
         }
     }
-    for (outX=lastOutX+1;outX<ns;outX++)
+    for (outX=lastOutX+1;outX<ns;outX++) {
         outBuf[outX]=badDEMht;
+    }
 }
 
 static void dem_interp_col(float *demLine,int ns,int nl)
@@ -493,7 +495,6 @@ Here's what it looked like before optimization:
 	}
 }
 
-
 /* inSarName can be NULL, in this case doRadiometric is ignored */
 /* inMaskName can be NULL, in this case outMaskName is ignored */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,
@@ -641,6 +642,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 
 /*Rectify data.*/
 	for (y=0;y<d.numLines;y++) {
+
 		if (inSarFlag) {
                     /*Read in DEM line-by-line (keeping two lines buffered)*/
                     if (dem_is_ground_range) {
