@@ -131,7 +131,7 @@ fi
 AC_SUBST(ASF_GLIB)
 
 #### libjpeg check ####
-#AC_CHECK_LIB(jpeg,jinit_c_codec,have_jpeg="yes",have_jpeg="no")
+AC_CHECK_LIB(jpeg,jinit_c_codec,have_jpeg="yes",have_jpeg="no")
 if test "$have_jpeg" = "no" ; then
    ASF_LIB_JPEG="${ext_lib_src_dir}/libjpeg"
    JPEG_LIBS="\$(LIBDIR)/libjpeg.a"
@@ -177,7 +177,7 @@ AC_SUBST(ASF_LIB_SHAPELIB)
 AC_CHECK_LIB(fftw,main,have_fftw="yes",have_fftw="no")
 if test "$have_fftw" = "no" ; then
    ASF_LIB_FFTW="${ext_lib_src_dir}/libfftw"
-   FFTW_LIBS="\$(LIBDIR)/libfftw.a"
+   FFTW_LIBS="\$(LIBDIR)/libfftw3f.a"
 else
    FFTW_LIBS="-lfftw"
 fi
@@ -302,6 +302,9 @@ JPEG_CFLAGS = $JPEG_CFLAGS
 TIFF_LIBS = $TIFF_LIBS
 TIFF_CFLAGS = $TIFF_CFLAGS
 
+FFT_LIBS = $FFTW_LIBS
+FFT_CLFAGS = $FFTW_CFLAGS
+
 GEOTIFF_LIBS = $GEOTIFF_LIBS
 GEOTIFF_CFLAGS = $GEOTIFF_CFLAGS
 
@@ -315,9 +318,6 @@ EOF
 
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
 cat <<'EOF' >>system_rules
-
-FFT_LIBS = $(LIBDIR)/libfftw3f.a
-FFT_CLFAGS =
 
 CFLAGS  := $(CFLAGS) $(FLAGS) $(DEBUGFLAGS)
 LDFLAGS := $(LDFLAGS) $(DEBUGLIBS) -lm
