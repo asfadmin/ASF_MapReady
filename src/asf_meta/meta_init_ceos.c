@@ -30,7 +30,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr);
 ceos_description *get_ceos_description(char *fName);
 double get_firstTime(char *fName);
-void get_polarization (char *fName, char *polarization);
+void get_polarization (char *fName, char *polarization, double *chirp);
 
 /* Prototypes from meta_init_stVec.c */
 void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *sar);
@@ -124,7 +124,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    else if (strncmp(dssr->sensor_id,"ALOS",4)==0) {
      strcpy(meta->general->sensor,"ALOS");
      strcpy(meta->general->mode, "???");
-     get_polarization(dataName, meta->sar->polarization);
+     get_polarization(dataName, meta->sar->polarization, &meta->sar->chirp_rate);
    }
    else if (strncmp(dssr->sensor_id,"RSAT-1",6)==0) {
      /* probably need to check incidence angle to figure out what is going on */
@@ -229,7 +229,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    meta->sar->prf = dssr->prf *
      get_units(dssr->prf,EXPECTED_PRF);
    meta->sar->azimuth_processing_bandwidth = dssr->bnd_azi;
-   meta->sar->chirp_rate = dssr->phas_coef[2];
+   //   meta->sar->chirp_rate = dssr->phas_coef[2];
    meta->sar->pulse_duration = dssr->rng_length / 10000000;
    meta->sar->range_sampling_rate = dssr->rng_samp_rate * 1000000;
    
@@ -865,22 +865,23 @@ double get_firstTime (char *fName)
 }
 
 // function to figure out beam mode, pixel size and polarization
-void get_polarization (char *fName, char *polarization)
+void get_polarization (char *fName, char *polarization, double *chirp)
 {
    FILE *fp;
    struct HEADER hdr;
-   struct RHEADER linehdr;
+   struct SHEADER linehdr;
    int length;
    char buff[25600];
+   double chirp_rate;
 
    fp = FOPEN(fName, "r");
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-   FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
-   length = bigInt32(hdr.recsiz) - (sizeof(struct RHEADER)
+   FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
+   length = bigInt32(hdr.recsiz) - (sizeof(struct SHEADER)
             + sizeof(struct HEADER));
    FREAD (buff, length, 1, fp);
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-   FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
+   FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
    FCLOSE(fp);
 
    // check transmitted and received polarization
@@ -905,4 +906,8 @@ void get_polarization (char *fName, char *polarization)
      strcat(polarization, " single"); // as per specs: dual
    else if (linehdr.sar_cib == 4)
      strcat(polarization, " quad");
+
+   // determine chirp rate
+   chirp_rate = linehdr.chirp_linear * 1000.0;
+   *chirp = chirp_rate;
 }

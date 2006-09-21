@@ -132,6 +132,58 @@ struct RHEADER {
   double        spare_5;
 };
 
+// signal data record: ALOS comes with this
+struct SHEADER {
+  int           line_num,
+                rec_num,
+                n_left_pixel,
+                n_data_pixel,
+                n_right_pixel,
+                sensor_updf,
+                acq_year,
+                acq_day,
+                acq_msec;
+  short int     sar_cib,
+                sar_chan_code,
+                tran_polar,
+                recv_polar;
+  int           prf,
+                scan_id;
+  short int     comp_flag,
+                pulse_chirp;
+  int           chirp_length,
+                chirp_const,
+                chirp_linear,
+                chirp_quad,
+                spare1,
+                spare2,
+                recv_gain,
+                nought_flag,
+                squint_angle,
+                elev_nadir,
+                squint_angle2,
+                elev_nadir2,
+                sr_first,
+                win_pos,
+                spare3,
+                plat_pos,
+                lat,
+                lon,
+                alt,
+                gr_speed,
+                vel_x,
+                vel_y,
+                vel_z,
+                acc_x,
+                acc_y,
+                acc_z,
+                track_angle1,
+                track_angle2,
+                pitch,
+                roll,
+                yaw;
+};
+
 
 /* Radiometric Data Record */
 struct RADDR {
