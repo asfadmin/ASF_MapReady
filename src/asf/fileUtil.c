@@ -378,14 +378,38 @@ get_basename(const char *in)
    return file;
 }
 
-/* create a directory */
+#include <sys/stat.h>
+// create a directory. acts like 'mkdir -p'. return 0 on success, -1 on fail.
 int
 create_dir(const char *dir)
 {
-    char cmd[1024];
-    sprintf(cmd, "mkdir -p %s", dir);
-    asfSystem(cmd);
-    return 0;
+  int keep_going=TRUE;
+  int ret=-1;
+  char *ptr1, *ptr2;
+  char *dir_tmp = (char*)MALLOC((strlen(dir)+1)*sizeof(char));
+
+  // big list of S_*'s equivalent to mode = 0777
+  int mode =   S_IRUSR | S_IWUSR | S_IXUSR
+             | S_IRGRP | S_IWGRP | S_IXGRP
+             | S_IROTH | S_IWOTH | S_IXOTH;
+
+  ptr1 = strcpy(dir_tmp, dir);
+
+  do {
+    if ((ptr2=strchr(ptr1,DIR_SEPARATOR)) != NULL) {
+      *ptr2 = '\0';
+      ptr1 = ptr2+1;
+    }
+    else {
+      keep_going = FALSE;
+    }
+    ret = mkdir(dir_tmp, mode);
+    if (keep_going) {
+      *ptr2 = DIR_SEPARATOR;
+    }
+  } while (keep_going);
+
+  return ret;
 }
 
 /* create a directory - deleting any existing one first */
@@ -396,12 +420,50 @@ create_clean_dir(const char *dir)
     return create_dir(dir);
 }
 
-/* remove a directory, and everything in it */
-int
-remove_dir(const char *dir)
+#include <dirent.h>
+/* dirwalk:
+ * from "The C Programming Language" 2nd edition by Kernigan & Ritchie. pg. 182
+ * Apply fcn to all files in dir */
+static void dirwalk(const char *dir, int (*fcn)(const char*))
 {
-    char cmd[1024];
-    sprintf(cmd, "rm -rf %s", dir);
-    asfSystem(cmd);
-    return 0;
+  char name[1024];
+  struct dirent *dp;
+  DIR *dfd;
+  
+  if ((dfd = opendir(dir)) == NULL) {
+    asfPrintWarning("dirwalk: cannot open %s\n",dir);
+    return;
+  }
+  while ((dp = readdir(dfd)) != NULL) {
+    if (strcmp(dp->d_name, ".")==0 || strcmp(dp->d_name, "..")==0) {
+      continue;
+    }
+    if (strlen(dir)+strlen(dp->d_name)+2 > sizeof(name)) {
+      asfPrintWarning("dirwalk: name %s/%s exceeds buffersize.\n",
+                      dir, dp->d_name);
+      return;
+    }
+    else {
+      sprintf(name, "%s/%s", dir, dp->d_name);
+      (*fcn)(name);
+    }
+  }
+  closedir(dfd);
 }
+
+// remove a directory, and everything in it (return 0 on success, -1 on fail)
+int
+remove_dir(const char *name)
+{
+  struct stat stbuf;
+  
+  if (stat(name, &stbuf) == -1) {
+    asfPrintWarning("remove_dir: cannot access %s\n", name);
+    return -1; // error
+  }
+  if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
+    dirwalk(name, remove_dir);
+  }
+  return remove(name);
+}
+
