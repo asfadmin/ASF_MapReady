@@ -9,7 +9,8 @@ void usage(const char *name)
 {
   printf("Usage: %s [-log <logfile>] [-quiet] [-keep] [-no-resample]\n"
          "          [-no-verify-fftMatch] [-no-corner-match] [-no-interp]\n"
-	 "          [-pixel-size <size>] [-dem-grid-size <size>] [-Mask-File <filename>]\n"
+	 "          [-pixel-size <size>] [-dem-grid-size <size>]\n"
+         "          [-mask-file <filename>] [-mask-matches-dem]\n"
          "          <inFile> <demFile> <outFile>\n", name);
   exit(EXIT_FAILURE);
 }
@@ -47,6 +48,7 @@ main (int argc, char *argv[])
   int do_interp = TRUE;
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = TRUE;
+  int madassap = FALSE; // mask and dem are same size and projection
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -87,8 +89,11 @@ main (int argc, char *argv[])
       dem_grid_size = atoi(GET_ARG(1));
     }
     else if (strmatches(key,"-mask-file","--mask-file",NULL)) {
-	     	    CHECK_ARG(1);
-	     	    inMaskFile = GET_ARG(1);
+        CHECK_ARG(1);
+        inMaskFile = GET_ARG(1);
+    }
+    else if (strmatches(key,"-mask-matches-dem","--mask-matches-dem",NULL)) {
+        madassap = TRUE;
     }
     else {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
@@ -104,9 +109,10 @@ main (int argc, char *argv[])
   demFile = argv[currArg+1];
   outFile = argv[currArg+2];
 
-  int ret = asf_terrcorr_ext(inFile, demFile,inMaskFile,outFile, pixel_size, clean_files,
-			     do_resample, do_corner_matching, do_interp,
-			     do_fftMatch_verification, dem_grid_size, TRUE, 2);
+  int ret =  asf_terrcorr_ext(inFile, demFile,inMaskFile,outFile, pixel_size,
+                              clean_files, do_resample, do_corner_matching,
+                              do_interp, do_fftMatch_verification,
+                              dem_grid_size, TRUE, 2, madassap);
 
   return ret==0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

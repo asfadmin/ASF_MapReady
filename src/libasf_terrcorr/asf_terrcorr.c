@@ -216,12 +216,14 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int clean_files = TRUE;
   int dem_grid_size = 20;
   int do_terrain_correction = TRUE;
+  int madassap = FALSE; // mask and dem are same size and projection
   int maskfill = 2;
 
   return asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
 			  clean_files, do_resample, do_corner_matching,
                           do_interp, do_fftMatch_verification,
-                          dem_grid_size, do_terrain_correction, maskfill);
+                          dem_grid_size, do_terrain_correction, maskfill,
+                          madassap);
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile, 
@@ -235,12 +237,13 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = FALSE;
   int do_terrain_correction = FALSE;
+  int madassap = FALSE; // mask and dem are same size and projection
   int ret;
   int maskfill = 2;
   ret = asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
                          clean_files, do_resample, do_corner_matching,
                          do_interp, do_fftMatch_verification, dem_grid_size,
-                         do_terrain_correction, maskfill);
+                         do_terrain_correction, maskfill, madassap);
 
   if (ret==0)
   {
@@ -687,7 +690,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		     char *outFile, double pixel_size, int clean_files,
 		     int do_resample, int do_corner_matching, int do_interp,
 		     int do_fftMatch_verification, int dem_grid_size,
-		     int do_terrain_correction, int maskfill)
+		     int do_terrain_correction, int maskfill,
+                     int mask_and_dem_are_same_size_and_projection)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimAmp = NULL, *demTrimSlant = NULL;
