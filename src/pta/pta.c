@@ -98,10 +98,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
 #include "asf.h"
-#include "ifm.h"
 #include "asf_meta.h"
-#include "fft.h"
-#include "fft2d.h"
 #include "pta.h"
 
 #define VERSION 1.0
@@ -193,12 +190,12 @@ int main(int argc, char *argv[])
   static complexFloat *s, *t;
   double lat, lon, elev, posX, posY, look_angle;
   FILE *fpIn, *fpOut, *fp, *fpText;
-  meta_parameters *meta, *meta_debug, *metaText;
+  meta_parameters *meta, *meta_debug;
   float *original_amplitude, *amplitude, *phase;
   fcpx *src_fft, *trg_fft;
   int debug=FALSE;
   char *text=NULL;
-  int overwrite=TRUE;
+  int overwrite=FALSE;
 
   if(argc != 4)
     usage();/*This exits with a failure*/
@@ -220,7 +217,6 @@ int main(int argc, char *argv[])
   meta = meta_read(szImage);
   lines = meta->general->line_count;
   samples = meta->general->sample_count;
-  //printf("line_count = %d, sample_count = %d\n", lines, samples);
   text = (char *) MALLOC(255*sizeof(char));
 
   // Handle input and output file
@@ -284,8 +280,8 @@ int main(int argc, char *argv[])
 
 	// Cut out the subset again around the peak to make sure we have data for
 	// the analysis
-	readComplexSubset(szImage, srcSize, srcSize, posX-srcSize+srcPeakX, 
-			  posY-srcSize+srcPeakY, s);
+	readComplexSubset(szImage, srcSize, srcSize, posX-srcSize+srcPeakY, 
+			  posY-srcSize+srcPeakX, s);
 	complex2polar(s, srcSize, srcSize, original_amplitude, phase);
 	FREE(phase);
 	findPeak(original_amplitude, srcSize, &srcPeakX, &srcPeakY);
@@ -369,15 +365,6 @@ int main(int argc, char *argv[])
 	peak_sample = (int)(bigPeakY + 0.5);
 
 	// Write text version of oversampled image
-	metaText = meta_read(szImage);
-	metaText->general->line_count = 64;
-	metaText->general->sample_count = 64;
-	metaText->general->start_line = posY-srcSize/2+1;
-	metaText->general->start_sample = posX-srcSize/2+1;
-	metaText->general->center_latitude = lat;
-	metaText->general->center_longitude = lon;
-	sprintf(text, "%s_%s", szImg, crID);
-	meta_write(metaText, text);
 	sprintf(text, "%s_%s_chip.txt", szImg, crID);
 	fpText = FOPEN(text, "w");
 	for (ii=peak_line-32; ii<peak_line+32; ii++) {
@@ -386,7 +373,6 @@ int main(int argc, char *argv[])
 	  fprintf(fpText, "\n");
 	}
 	FCLOSE(fpText);
-	meta_free(metaText);
 
 	// EXTRACTING PROFILES IN AZIMUTH AND RANGE THROUGH PEAK
 	for (ii=0; ii<bigSize; ii++) {
@@ -525,11 +511,11 @@ int main(int argc, char *argv[])
 	FREE(original_amplitude);
 
 	// Write values in output files
-	fprintf(fpOut, "%s\t%.4lf\t%.4lf\t%.1lf\t%.4lf\t%.3f\t%.3f\t"
+	fprintf(fpOut, "%s\t%.4lf\t%.4lf\t%.1lf\t%.1lf\t%.1f\t%.3f\t"
 		"%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n",
-		crID, lat, lon, elev, srcPeakY, srcPeakX, look_angle*R2D, 
-		azimuth_resolution, range_resolution, azimuth_pslr, range_pslr, 
-		scr);
+		crID, lat, lon, elev, posX-srcSize+srcPeakY, posY-srcSize+srcPeakX,
+		look_angle*R2D, azimuth_resolution, range_resolution, azimuth_pslr, 
+		range_pslr, scr);
 
       SKIP: continue;
       }
