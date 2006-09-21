@@ -302,9 +302,6 @@ JPEG_CFLAGS = $JPEG_CFLAGS
 TIFF_LIBS = $TIFF_LIBS
 TIFF_CFLAGS = $TIFF_CFLAGS
 
-FFT_LIBS = $(LIBDIR)/libfftw3f.a
-FFT_CLFAGS =
-
 GEOTIFF_LIBS = $GEOTIFF_LIBS
 GEOTIFF_CFLAGS = $GEOTIFF_CFLAGS
 
@@ -318,6 +315,9 @@ EOF
 
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
 cat <<'EOF' >>system_rules
+
+FFT_LIBS = $(LIBDIR)/libfftw3f.a
+FFT_CLFAGS =
 
 CFLAGS  := $(CFLAGS) $(FLAGS) $(DEBUGFLAGS)
 LDFLAGS := $(LDFLAGS) $(DEBUGLIBS) -lm
