@@ -1,6 +1,7 @@
 #ifndef __ASF_COMPLEX_H
 #define __ASF_COMPLEX_H
 
+#include <fftw3.h>
 /*-------------------------
  * define complex variables
  *-----------------------*/
@@ -29,6 +30,7 @@ typedef struct {
    double imag;
 } complexDouble;
 
+typedef fftwf_complex fcpx;
 
 /******************************************************************************/
 /* Depricated structs. Kept for compilability until they've been obliterated  */
