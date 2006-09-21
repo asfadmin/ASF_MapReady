@@ -432,7 +432,7 @@ static void dirwalk(const char *dir, int (*fcn)(const char*))
   
   if ((dfd = opendir(dir)) == NULL) {
     asfPrintWarning("dirwalk: cannot open %s\n",dir);
-    return;
+    return; // error
   }
   while ((dp = readdir(dfd)) != NULL) {
     if (strcmp(dp->d_name, ".")==0 || strcmp(dp->d_name, "..")==0) {
@@ -441,7 +441,7 @@ static void dirwalk(const char *dir, int (*fcn)(const char*))
     if (strlen(dir)+strlen(dp->d_name)+2 > sizeof(name)) {
       asfPrintWarning("dirwalk: name %s/%s exceeds buffersize.\n",
                       dir, dp->d_name);
-      return;
+      return; // error
     }
     else {
       sprintf(name, "%s/%s", dir, dp->d_name);
@@ -458,7 +458,7 @@ remove_dir(const char *name)
   struct stat stbuf;
   
   if (stat(name, &stbuf) == -1) {
-    asfPrintWarning("remove_dir: cannot access %s\n", name);
+//    asfPrintWarning("remove_dir: cannot access %s\n", name);
     return -1; // error
   }
   if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
