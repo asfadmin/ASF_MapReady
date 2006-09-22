@@ -77,6 +77,7 @@ int main (int argc, char *argv[])
   float *ampBuf, *aP, *phsBuf, *pP;       /* Output data buffers              */
   complexFloat *cpxBuf, *cP;              /* Input data buffers               */
   meta_parameters *inMeta, *outMeta;      /* In/Out meta structs              */
+  int i, phaseImage=FALSE;
 
 /* Make sure there are the correct number of args in the command line */
   if (argc < 3) { usage(argv[0]); }
@@ -92,6 +93,14 @@ int main (int argc, char *argv[])
   create_name (phsName,argv[1],".phase"); 
   create_name (cpxName,argv[2],".cpx");
   
+  // Check whether phase image actually exists. If it does not exist, we will 
+  // generate a phase image with a constant value on the fly.
+  if (fileExists(phsName))
+    phaseImage = TRUE;
+  else
+    printf("\nCould not find phase image! Generating constant phase image on "
+	   "the fly ...\n");
+
 /* Read the meta data. Write output meta with COMPLEX_* data type. */
   inMeta = meta_read(argv[1]);
   outMeta = meta_read(argv[1]);
@@ -120,12 +129,18 @@ int main (int argc, char *argv[])
       fflush(NULL);
     }
     ampBlockSize = get_float_lines(fdAmp,inMeta,line,CHUNK_OF_LINES,ampBuf);
-    phsBlockSize = get_float_lines(pdPhs,inMeta,line,CHUNK_OF_LINES,phsBuf);
-    if (ampBlockSize != phsBlockSize) {
-      printf("\n");
-      printf("p2c: Failed to get the same number of samples from amplitude and phase files.\n");
-      printf("p2c: Exiting...\n\n");
-      exit(EXIT_FAILURE);
+    if (phaseImage) {
+      phsBlockSize = get_float_lines(pdPhs,inMeta,line,CHUNK_OF_LINES,phsBuf);
+      if (ampBlockSize != phsBlockSize) {
+	printf("\n");
+	printf("p2c: Failed to get the same number of samples from amplitude and phase files.\n");
+	printf("p2c: Exiting...\n\n");
+	exit(EXIT_FAILURE);
+      }
+    }
+    else {
+      for (i=0; i<inMeta->general->sample_count*CHUNK_OF_LINES; i++)
+	phsBlockSize = 0.0;
     }
     cP = cpxBuf;
     aP = ampBuf;
