@@ -737,7 +737,6 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   {
   	maskRes = metamask->general->x_pixel_size; 
         userMaskClipped = outputName(output_dir, userMaskFile, "_clip");
-        printf("userMaskClipped 1: %s\n", userMaskClipped);
   }
 
   // Check if the user requested a pixel size that requires
@@ -837,12 +836,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   // Assign a couple of file names and match the DEM
   demTrimSimAmp = outputName(output_dir, demFile, "_sim_amp_trim");
   demTrimSlant = outputName(output_dir, demFile, "_slant_trim");
-  printf("userMaskClipped 2: %s\n", userMaskClipped);
   match_dem(metaSAR, sarFile, demFile, srFile, output_dir, userMaskFile,
             demTrimSimAmp, demTrimSlant, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
             FALSE, TRUE, TRUE, madssap, clean_files, &t_offset, &x_offset);
-  printf("userMaskClipped 3: %s\n", userMaskClipped);
 
   if (do_terrain_correction)
   {            
@@ -857,7 +854,6 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       deskewDemMask = outputName(output_dir, srFile, "_ddm");
       trim(srFile, padFile, 0, 0, metaSAR->general->sample_count + PAD,
            metaSAR->general->line_count);
-      printf("userMaskClipped 4: %s\n", userMaskClipped);
       deskew_dem(demTrimSlant, deskewDemFile, padFile, 0, userMaskClipped,
 		 deskewDemMask, do_interp, maskfill);
       

@@ -646,15 +646,12 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                 get_float_line(maskFp,inMaskMeta,y,mask+y*d.numSamples);
                 for (x=0;x<d.numLines;++x) {
                     if (mask[x+y*d.numSamples]>=1.0) {
-                        ++n_user;
                         mask[x+y*d.numSamples] = MASK_USER_MASK;
                     }
                 }
             }
             FCLOSE(maskFp);
         }
-        printf("Found %d user masked pixels\n", n_user);
-        n_user = 0;
 
 /*Rectify data.*/
 	for (y=0;y<d.numLines;y++) {
