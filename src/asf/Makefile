@@ -28,6 +28,8 @@ OBJS  = caplib.o \
 	print_alerts.o \
 	diagnostics.o
 
+CFLAGS += -D_XOPEN_SOURCE=600
+
 all: build_only
 	mv asf.a $(LIBDIR)
 	cp asf.h $(ASF_INCLUDE_DIR)
