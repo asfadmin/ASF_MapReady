@@ -9,6 +9,7 @@ CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) -Wall
 OBJS  = asf_check_geolocation.o
 
 LIBS = \
+	$(LIBDIR)/libasf_terrcorr.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf_meta.a \
