@@ -266,17 +266,16 @@ static void mask_float_line(int ns, int maskfill, float *in, float *inMask)
     {
         if(inMask[x] == MASK_USER_MASK)
         {
-            ++n_user;
-
             // negative values indicate that it should be a 
             // different fill value
             if (maskfill < 0) 
                 in[x] = abs(maskfill);
             else
                 in[x] = 0;
+
+            ++n_user;
         }
     }
-    return;
 }
 
 static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
@@ -290,8 +289,9 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 
     if (mask) {
         sr_hits=(int*)MALLOC(sizeof(int)*ns*num_hits_required_for_layover);
-        for (grX=0; grX<ns; ++grX) { 
-            mask[grX] = MASK_NORMAL;
+        for (grX=0; grX<ns; ++grX) {
+            if (mask[grX] != MASK_USER_MASK)
+                mask[grX] = MASK_NORMAL;
 
             for (i=0; i<num_hits_required_for_layover; ++i)
                 sr_hits[i*ns+grX] = -1; 
@@ -578,6 +578,13 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             if ((inSarMeta->general->line_count != inMaskMeta->general->line_count) &&
                 (inSarMeta->general->sample_count != inMaskMeta->general->sample_count))
             {
+                asfPrintStatus(" SAR Image: %dx%d LxS.\n"
+                               "Mask Image: %dx%d LxS.\n",
+                               inSarMeta->general->line_count,
+                               inSarMeta->general->sample_count,
+                               inMaskMeta->general->line_count,
+                               inMaskMeta->general->sample_count);
+
                 asfPrintError("ERROR: The mask and the SAR image must be the same size.\n");
             }
         }
@@ -630,15 +637,24 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 			dem_interp_col(&grDEM[x],d.numSamples,d.numLines);
 	}
 
+        n_layover = n_shadow = n_user = 0;
+
 /*Read in the entire mask*/
         if (inMaskFlag) {
             maskFp = fopenImage(inMaskName, "rb");
-            for (y=0;y<d.numLines;y++)
+            for (y=0;y<d.numLines;y++) {
                 get_float_line(maskFp,inMaskMeta,y,mask+y*d.numSamples);
+                for (x=0;x<d.numLines;++x) {
+                    if (mask[x+y*d.numSamples]>=1.0) {
+                        ++n_user;
+                        mask[x+y*d.numSamples] = MASK_USER_MASK;
+                    }
+                }
+            }
             FCLOSE(maskFp);
         }
-
-        n_layover = n_shadow = n_user = 0;
+        printf("Found %d user masked pixels\n", n_user);
+        n_user = 0;
 
 /*Rectify data.*/
 	for (y=0;y<d.numLines;y++) {
@@ -696,12 +712,12 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 
             int tot=d.numSamples*d.numLines;
             printf("Mask Statistics:\n"
-                   "    Layover Pixels:  %7d/%d (%f%%)\n"
-                   "     Shadow Pixels:  %7d/%d (%f%%)\n"
-                   "User Masked Pixels:  %7d/%d (%f%%)\n",
-                   n_layover, tot, (float)n_layover/tot, 
-                   n_shadow, tot, (float)n_shadow/tot,
-                   n_user, tot, (float)n_user/tot);
+                   "    Layover Pixels: %9d/%d (%f%%)\n"
+                   "     Shadow Pixels: %9d/%d (%f%%)\n"
+                   "User Masked Pixels: %9d/%d (%f%%)\n",
+                   n_layover, tot, 100*(float)n_layover/tot, 
+                   n_shadow, tot, 100*(float)n_shadow/tot,
+                   n_user, tot, 100*(float)n_user/tot);
         }
 
 /* Clean up & skidattle */

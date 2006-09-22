@@ -214,7 +214,7 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
     *coverage_pct = ((double)pixels_in_dem * 100.) / 
                      (pixels_in_dem + pixels_out_dem);
 
-    asfPrintStatus("DEM Coverage: %.2lf%% (%d out of %d pixels)\n",
+    asfPrintStatus("Coverage: %.2lf%% (%d out of %d pixels)\n",
 		   *coverage_pct, pixels_in_dem, pixels_out_dem+pixels_in_dem);
   }
 

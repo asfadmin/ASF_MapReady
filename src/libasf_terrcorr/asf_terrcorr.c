@@ -327,7 +327,7 @@ clip_dem(meta_parameters *metaSAR,
     // Fit a fifth order polynomial to the grid points.
     // This polynomial is then used to extract a subset out of the reference 
     // DEM.
-    asfPrintStatus("Fitting order %d polynomial to DEM...\n", polyOrder);
+    asfPrintStatus("Fitting order %d polynomial to %s...\n", polyOrder, what);
     double maxErr;
     poly_2d *fwX, *fwY, *bwX, *bwY;
     fit_poly(demGridFile, polyOrder, &maxErr, &fwX, &fwY, &bwX, &bwY);
@@ -350,7 +350,8 @@ clip_dem(meta_parameters *metaSAR,
 
         asfPrintStatus("Clipping %s using same clipping parameters as %s.\n",
                        otherWhat, what);
-        asfPrintStatus("%s file: %s\n", otherWhat, otherFile);
+        asfPrintStatus("%s file: %s -> %s\n", otherWhat, otherFile,
+                       otherClipped);
         asfPrintStatus("Clipping %s to %dx%d LxS using polynomial fit...\n",
                        otherWhat, demHeight, demWidth);
 
@@ -383,6 +384,7 @@ int match_dem(meta_parameters *metaSAR,
               char *userMaskFile,
 	      char *demTrimSimAmp,
               char *demTrimSlant,
+              char *userMaskClipped,
               int dem_grid_size, 
 	      int do_corner_matching,
               int do_fftMatch_verification, 
@@ -395,7 +397,7 @@ int match_dem(meta_parameters *metaSAR,
 	      double *x_offset)
 {
   char *demClipped = NULL, *demSlant = NULL;
-  char *demSimAmp = NULL, *userMaskClipped = NULL;
+  char *demSimAmp = NULL;
   int num_attempts = 0;
   const float required_match = 2.5;
   double t_off, x_off;
@@ -418,7 +420,6 @@ int match_dem(meta_parameters *metaSAR,
     // Clip the DEM to the same size as the SAR image.  If a user mask was
     // provided, we must clip that one, too.
     if (userMaskFile) {
-        userMaskClipped = outputName(output_dir, userMaskFile, "_clip");
         if (mask_dem_same_size_and_projection) {
             // clip DEM & Mask at the same time, they'll use the same
             // clipping parameters
@@ -650,8 +651,6 @@ int match_dem(meta_parameters *metaSAR,
   FREE(demClipped);
   FREE(demSimAmp);
   FREE(demSlant);
-  if (userMaskClipped)
-    FREE(userMaskClipped);
 
   *t_offset = t_off;
   *x_offset = x_off;
@@ -673,15 +672,22 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int dem_grid_size = 20;
   double t_offset, x_offset;
   char output_dir[255];
+  char *userMaskClipped = NULL;
   meta_parameters *metaSAR;
   strcpy(output_dir, "");
 
+  if (userMaskFile)
+      userMaskClipped = outputName("", userMaskFile, "_clip");
+
   metaSAR = meta_read(sarFile);
   match_dem(metaSAR, sarFile, demFile, sarFile, output_dir, userMaskFile, 
-	    simAmpFile, demSlant, dem_grid_size, do_corner_matching, 
-	    do_fftMatch_verification, do_refine_geolocation,
-            do_trim_slant_range_dem, apply_dem_padding, madssap,
-            clean_files, &t_offset, &x_offset);
+	    simAmpFile, demSlant, userMaskClipped, dem_grid_size,
+            do_corner_matching, do_fftMatch_verification,
+            do_refine_geolocation, do_trim_slant_range_dem, apply_dem_padding,
+            madssap, clean_files, &t_offset, &x_offset);
+
+  if (clean_files)
+      clean(userMaskClipped);
 
   return 0;
 }
@@ -695,14 +701,14 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimAmp = NULL, *demTrimSlant = NULL;
-  char *lsMaskFile, *padFile = NULL;
+  char *lsMaskFile, *padFile = NULL, *userMaskClipped = NULL;
   char *deskewDemFile = NULL, *deskewDemMask = NULL;
   char *output_dir;
   double demRes, sarRes, maskRes;
   meta_parameters *metaSAR, *metaDEM, *metamask;
   int force_resample = FALSE;
   double t_offset, x_offset;
-  int madssap = FALSE; // mask and dem same size and projection
+  int madssap = mask_and_dem_are_same_size_and_projection;
 
   // we want passing in an empty string for the mask to mean "no mask"
   if (userMaskFile && strlen(userMaskFile) == 0)
@@ -728,7 +734,11 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   demRes = metaDEM->general->x_pixel_size;
   sarRes = metaSAR->general->x_pixel_size;
   if (userMaskFile)
+  {
   	maskRes = metamask->general->x_pixel_size; 
+        userMaskClipped = outputName(output_dir, userMaskFile, "_clip");
+        printf("userMaskClipped 1: %s\n", userMaskClipped);
+  }
 
   // Check if the user requested a pixel size that requires
   // too much oversampling.
@@ -827,10 +837,12 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   // Assign a couple of file names and match the DEM
   demTrimSimAmp = outputName(output_dir, demFile, "_sim_amp_trim");
   demTrimSlant = outputName(output_dir, demFile, "_slant_trim");
+  printf("userMaskClipped 2: %s\n", userMaskClipped);
   match_dem(metaSAR, sarFile, demFile, srFile, output_dir, userMaskFile,
-            demTrimSimAmp, demTrimSlant, dem_grid_size,
+            demTrimSimAmp, demTrimSlant, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
             FALSE, TRUE, TRUE, madssap, clean_files, &t_offset, &x_offset);
+  printf("userMaskClipped 3: %s\n", userMaskClipped);
 
   if (do_terrain_correction)
   {            
@@ -845,7 +857,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       deskewDemMask = outputName(output_dir, srFile, "_ddm");
       trim(srFile, padFile, 0, 0, metaSAR->general->sample_count + PAD,
            metaSAR->general->line_count);
-      deskew_dem(demTrimSlant, deskewDemFile, padFile, 0, userMaskFile,
+      printf("userMaskClipped 4: %s\n", userMaskClipped);
+      deskew_dem(demTrimSlant, deskewDemFile, padFile, 0, userMaskClipped,
 		 deskewDemMask, do_interp, maskfill);
       
       // After deskew_dem, there will likely be zeros on the left & right edges
@@ -906,6 +919,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   FREE(deskewDemMask);
   FREE(lsMaskFile);
   FREE(resampleFile_2);
+  FREE(userMaskClipped);
 
   meta_free(metaSAR);
   meta_free(metaDEM);
