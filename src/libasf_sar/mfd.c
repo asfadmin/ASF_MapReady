@@ -4,6 +4,9 @@
    automatically.
 */
 
+#include "asf.h"
+#include "asf_meta.h"
+
 int
 dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
 {
@@ -15,8 +18,8 @@ dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
     float *maskbuffer = MALLOC(sizeof(float) * x_size);
     float *floatbuffer = MALLOC (sizeof(float) * x_size);
 
-    FILE *in = fopenImage(infile, "rb");
-    FILE *out = fopenImage(outfile, "wb");
+    FILE *in = fopenImage(inDemFile, "rb");
+    FILE *out = fopenImage(outMaskFile, "wb");
 
     int line;
     for (line=0; line <= y_size ; line++) 
@@ -27,7 +30,7 @@ dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
         for (x=0; x < x_size; x++)            
             maskbuffer[x] = floatbuffer[x] < cutoff ? 1 : 0;
 
-        put_float_line(out,outMeta,line,maskbuffer);
+        put_float_line(out,inDemMeta,line,maskbuffer);
     }
 
     FCLOSE(in);

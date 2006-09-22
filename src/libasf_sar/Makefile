@@ -15,6 +15,7 @@ OBJS = \
 	fit_poly.o \
 	fetcher.o \
 	remap_poly.o \
+	mfd.o \
 	refine_offset.o
 
 LIBS = \
@@ -22,7 +23,7 @@ LIBS = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_vector.a \
- 	$(LIBDIR)/libshp.a \
+	$(LIBDIR)/libshp.a \
 	$(LDFLAGS) \
 	$(GSL_LIBS) \
 	-lm
