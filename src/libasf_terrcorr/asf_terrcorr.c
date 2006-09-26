@@ -402,6 +402,7 @@ int match_dem(meta_parameters *metaSAR,
   int demHeight;
   float dx, dy, cert=0;
   int idx, idy;
+  const float cert_cutoff = 0.4; // is this a good cutoff !?
 
   // do-while that will repeat the dem grid generation and the fftMatch
   // of the sar & simulated sar, until the fftMatch doesn't turn up a
@@ -476,15 +477,16 @@ int match_dem(meta_parameters *metaSAR,
 	get_float_line(inseedmask, maskmeta, ii,
                        mask + ii * metaSAR->general->sample_count);
       FCLOSE(inseedmask);
-      err = lay_seeds(MASK_SEED_POINTS,mask,metaSAR->general->sample_count, 
+      err = lay_seeds(MASK_SEED_POINTS, mask, metaSAR->general->sample_count, 
                       demHeight, x_tl_list, y_tl_list, x_br_list, 
                       y_br_list, good_pct_list);
       FREE(mask);
 
       if (err==0) {
           int n_attempt = 0;
-          const float cert_cutoff = 0.6; // is this a good cutoff !?
-          while (cert < cert_cutoff) {
+          
+          do  // matches "while (cert < cert_cutoff)"
+          {
               if (++n_attempt > MASK_SEED_POINTS-2) {
                   // couldn't find a seed region that matches well
                   err=1; break;
@@ -493,21 +495,26 @@ int match_dem(meta_parameters *metaSAR,
               printf("Attempt #%d to find a good seed region.\n", n_attempt);
 
               int ii_chosen = -1;
-              float good_pct = 0;
-              if (n_attempt == 1)
-                  printf("Region results:\n");
+              long good_num = 0;
+              //if (n_attempt == 1)
+              //    printf("Region results:\n");
  
-              for(ii=0; ii<MASK_SEED_POINTS; ii++)
+              for (ii=0; ii<MASK_SEED_POINTS; ii++)
               {
-                  if (n_attempt == 1)
-                      printf("Region %d: [%d,%d]-[%d,%d]: %f%%\n", ii,
-                             x_tl_list[ii], y_tl_list[ii],
-                             x_br_list[ii], y_br_list[ii],
-                             good_pct_list[ii]*100);
+                  long region_size = (y_br_list[ii]-y_tl_list[ii])*
+                                     (x_br_list[ii]-x_tl_list[ii]);
 
-                  if (good_pct_list[ii] > good_pct) {
+                  //if (n_attempt == 1)
+                  //    printf("Region %d: [%d,%d]-[%d,%d] (%ld): "
+                  //           "%f%% -> %ld\n", ii+1,
+                  //           x_tl_list[ii], y_tl_list[ii],
+                  //           x_br_list[ii], y_br_list[ii], region_size,
+                  //           good_pct_list[ii]*100,
+                  //           (long)(region_size*good_pct_list[ii]));
+
+                  if (good_pct_list[ii] * region_size > good_num) {
                       ii_chosen = ii;
-                      good_pct = good_pct_list[ii];
+                      good_num = (long) (good_pct_list[ii] * region_size);
                   }
               }
 
@@ -520,9 +527,9 @@ int match_dem(meta_parameters *metaSAR,
               int xbr = x_br_list[ii_chosen];
               int ybr = y_br_list[ii_chosen];
 
-              asfPrintStatus("Chose region #%d.\n", ii_chosen);
-              printf("Clipping region is [%d,%d] [%d,%d]\n",
-                     xtl, ytl, xbr, ybr);
+              asfPrintStatus("Chose region #%d.\n", ii_chosen+1);
+              //printf("Clipping region is [%d,%d] [%d,%d]\n",
+              //       xtl, ytl, xbr, ybr);
 
               demTrimSimAmp_ffft = outputName(output_dir, demFile,
                                               "_sim_amp_trim_for_fft");
@@ -533,16 +540,17 @@ int match_dem(meta_parameters *metaSAR,
               //               demTrimSimAmp_ffft, srTrimSimAmp);
               trim(demTrimSimAmp, demTrimSimAmp_ffft,xtl,ytl,xbr-xtl,ybr-ytl);
               trim(srFile, srTrimSimAmp, xtl, ytl, xbr-xtl, ybr-ytl);
-              asfPrintStatus(" passed in %d %d %d %d\n",
-                             xtl, ytl, xbr-xtl, ybr-ytl);
+              //asfPrintStatus(" passed in %d %d %d %d\n",
+              //               xtl, ytl, xbr-xtl, ybr-ytl);
               fftMatchQ(srTrimSimAmp, demTrimSimAmp_ffft, &dx, &dy, &cert);
-              printf("Match: %.2f%% certainty. (%f,%f)\n", 100*cert, dx, dy);
+              //printf("Match: %.2f%% certainty. (%f,%f)\n", 100*cert, dx, dy);
               if (cert < cert_cutoff) {
-                  asfPrintStatus("Certainty fails to meet minimum: %.1f%%\n",
-                                 100*cert_cutoff);
-                  asfPrintStatus("Matching using another seed point.\n");
+                  asfPrintStatus("Match: %.2f%% certainty. (%f,%f)\n"
+                                 "Certainty fails to meet minimum: %.1f%%\n"
+                                 "Matching using another seed point.\n",
+                                 100*cert, dx, dy, 100*cert_cutoff);
               }
-          }
+          } while (cert < cert_cutoff);
       }
 
       if (err==1) {
@@ -590,7 +598,7 @@ int match_dem(meta_parameters *metaSAR,
 			    "Continuing ... however your result may "
                             "be incomplete and/or incorrect.\n");
 
-            if (cert<.5 && userMaskFile == NULL) {
+            if (cert<cert_cutoff && userMaskFile == NULL) {
                 asfPrintStatus("You may get better results by supplying "
                                "a mask file, to mask out regions\n"
                                "which provide poor matching, such as "

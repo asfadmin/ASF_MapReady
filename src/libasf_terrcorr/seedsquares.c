@@ -58,6 +58,16 @@ void check_square(int size,int x_pos, int y_pos, float  *mask,
     *good_pct = ((float)gmp)/(*total_pixels);
 }
 
+static int grab_more(int size, int nl, int ns)
+{
+    if (size < 1000)
+        return size * 2;
+    else if (size < 10000)
+        return size + 1000;
+    else
+        return size + 2000;
+}
+
 // puts the seeds onto the mask and see if they can grow
 int lay_seeds(int num_seeds, float *mask, long ns, long nl,
               int *x_tl_list, int *y_tl_list, 
@@ -70,8 +80,7 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
     seed =(int)time(0);		/* choose a seed value */
     srand(seed);		/* initialize random number generator */
 
-    asfPrintStatus("Searching for suitable seed points... "
-                   /* "This may take some time.\n" */);
+    asfPrintStatus("Searching for suitable seed points...\n");
     
     // Minimum size we require for the seed regions.  This is an emprical
     // number, based on how big we're required to be to have a chance at
@@ -108,7 +117,7 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
             float good;
 
             // check a larger square
-            int next_size = size*2;
+            int next_size = grab_more(size, nl, ns);
             check_square(next_size, center_x, center_y, mask, ns, nl,
                          &total_pixels, &good);
             
@@ -161,7 +170,9 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
                 else
                 {
                     // new seed point needed
-                    if (++n_try > 50) return 1; // too many failures--quit
+                    if (++n_try > 50)
+                        return 1; // too many failures--quit
+
                     size = 4;
                     seed_points(&center_x, &center_y, ns, nl);
                     prev_total_pixels = 0;
@@ -171,6 +182,6 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
         }
     }
 
-    asfPrintStatus("Found all seed points \n");    
+    asfPrintStatus("Found all %d seed points \n", num_seeds);
     return 0;
 }

@@ -272,8 +272,8 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
         {
             // read_mask(inMaskFile,&inMask,&metaInMask); for byte masks
             metaInMask = meta_read(inMaskFile);
-            asfPrintStatus(" Read in User Maskfile: %s  "
-                           "%d x %d lines/samples  needed %d x %d \n\n",
+            asfPrintStatus("Read in User Maskfile: %s "
+                           "%dx%d LxS (needed %dx%d)\n",
                            inMaskFile, metaInMask->general->line_count,
                            metaInMask->general->sample_count,nl,gr_ns);
             inMask = fopenImage(inMaskFile,"rb");
