@@ -2,22 +2,11 @@
 
 include ../../make_support/system_rules
 
-LIBS  = \
-	$(LIBDIR)/libasf_import.a \
-	$(LIBDIR)/libasf_ardop.a \
-	$(LIBDIR)/libasf_export.a \
-	$(LIBDIR)/libasf_geocode.a \
-	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf.a \
-	$(GSL_LIBS) \
-	$(LIBDIR)/libasf_proj.a \
-	$(PROJ_LIBS)
-
 OBJS  = asf_convert.o \
 	config.o \
 	functions.o
 
-CFLAGS += $(GLIB_CFLAGS)
+CFLAGS += $(GLIB_CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS)
 
 all: build_only
 	mv libasf_convert.a $(LIBDIR)
