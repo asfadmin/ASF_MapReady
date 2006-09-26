@@ -2,6 +2,10 @@
    naming.  */
 
 #include <assert.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
 
 #include "asf.h"
 
@@ -40,16 +44,16 @@ int fileExists(const char *name)
 
 char *findExt(const char *name)
 {
-  int i;
-  i = strlen(name) -1;		/* Start at end of name.  */
-  while ( (i>0) && (name[i] != '.') && (name[i] != DIR_SEPARATOR) ) {
+  int ii;
+  ii = strlen(name) - 1;		/* Start at end of name.  */
+  while ( (ii>0) && (name[ii] != '.') && !IS_DIR_SEPARATOR(name[ii]) ) {
     /* Work backwards until we hit a directory separator or extension
        separator.*/
-    i--;
+    ii--;
   }
-  if ( (i>0) && (name[i]=='.') )
+  if ( (ii>0) && (name[ii]=='.') )
     /* We found an extension!  */
-    return (char *) &name[i];
+    return (char *) &name[ii];
   else
     /* We couldn't find an extension.  */
     return NULL;
@@ -169,11 +173,11 @@ void split_dir_and_file(const char *inString, char *dirName, char *fileName)
   ii = strlen(inString) - 1;
 
   /* Work backwards until we hit a directory separator. */
-  while ((ii>0) && (inString[ii]!=DIR_SEPARATOR)) {
+  while ((ii>0) && !IS_DIR_SEPARATOR(inString[ii])) {
     ii--;
   }
 
-  if (inString[ii]==DIR_SEPARATOR) {
+  if (IS_DIR_SEPARATOR(inString[ii])) {
     ii++;
   }
 
@@ -378,7 +382,6 @@ get_basename(const char *in)
    return file;
 }
 
-#include <sys/stat.h>
 // create a directory. acts like 'mkdir -p'. return 0 on success, -1 on fail.
 int
 create_dir(const char *dir)
@@ -396,7 +399,7 @@ create_dir(const char *dir)
   ptr1 = strcpy(dir_tmp, dir);
 
   do {
-    if ((ptr2=strchr(ptr1,DIR_SEPARATOR)) != NULL) {
+    if ((ptr2=strpbrk(ptr1,DIR_SEPARATOR_STR)) != NULL) {
       *ptr2 = '\0';
       ptr1 = ptr2+1;
     }
@@ -420,7 +423,6 @@ create_clean_dir(const char *dir)
     return create_dir(dir);
 }
 
-#include <dirent.h>
 /* dirwalk:
  * from "The C Programming Language" 2nd edition by Kernigan & Ritchie. pg. 182
  * Apply fcn to all files in dir */
