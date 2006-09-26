@@ -73,7 +73,9 @@ typedef struct
 {
   double pixel;           // pixel size for terrain corrected product
   char *dem;              // reference DEM file name
-  char *mask;             // mask file name
+  char *mask;             // mask file name (should==NULL if auto_mask_water)
+  int auto_mask_water;    // TRUE if we should automatically generate a mask
+                          // image from the DEM which masks out water regions
   int refine_geolocation_only; // If TRUE, we don't actually do any terrain
                           // correction, just refine the geolocation w/ the DEM
   int interp;             // TRUE if we should interpolate layover/shadow

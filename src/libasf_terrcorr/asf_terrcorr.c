@@ -216,14 +216,14 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int clean_files = TRUE;
   int dem_grid_size = 20;
   int do_terrain_correction = TRUE;
-  int madassap = FALSE; // mask and dem are same size and projection
+  int generate_water_mask = FALSE;
   int maskfill = 2;
 
   return asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
 			  clean_files, do_resample, do_corner_matching,
                           do_interp, do_fftMatch_verification,
                           dem_grid_size, do_terrain_correction, maskfill,
-                          madassap);
+                          generate_water_mask);
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile, 
@@ -237,13 +237,13 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = FALSE;
   int do_terrain_correction = FALSE;
-  int madassap = FALSE; // mask and dem are same size and projection
+  int generate_water_mask = FALSE;
   int ret;
   int maskfill = 2;
   ret = asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
                          clean_files, do_resample, do_corner_matching,
                          do_interp, do_fftMatch_verification, dem_grid_size,
-                         do_terrain_correction, maskfill, madassap);
+                         do_terrain_correction, maskfill, generate_water_mask);
 
   if (ret==0)
   {
@@ -350,8 +350,6 @@ clip_dem(meta_parameters *metaSAR,
 
         asfPrintStatus("Clipping %s using same clipping parameters as %s.\n",
                        otherWhat, what);
-        asfPrintStatus("%s file: %s -> %s\n", otherWhat, otherFile,
-                       otherClipped);
         asfPrintStatus("Clipping %s to %dx%d LxS using polynomial fit...\n",
                        otherWhat, demHeight, demWidth);
 
@@ -403,7 +401,7 @@ int match_dem(meta_parameters *metaSAR,
   double t_off, x_off;
   int redo_clipping;
   int demHeight;
-  float dx, dy, cert;
+  float dx, dy, cert=0;
   int idx, idy;
 
   // do-while that will repeat the dem grid generation and the fftMatch
@@ -448,84 +446,119 @@ int match_dem(meta_parameters *metaSAR,
     demSlant = outputName(output_dir, demFile, "_slant");
     demSimAmp = outputName(output_dir, demFile, "_sim_amp");
     reskew_dem(srFile, demClipped, demSlant, demSimAmp, userMaskClipped);
-    
+
     // Resize the simulated amplitude to match the slant range SAR image.
     asfPrintStatus("Resizing simulated sar image...\n");
     trim(demSimAmp, demTrimSimAmp, 0, 0, metaSAR->general->sample_count,
 	 demHeight);
-    
+
     asfPrintStatus("Determining image offsets...\n");
     if (userMaskFile) {
       /* OK now if we have a mask we need to find square patches that 
 	 can be fftMatched without running into the mask.
 	 then we average them all back together. to get the offset
       */
-      int x_pos_list[MASK_SEED_POINTS];
-      int y_pos_list[MASK_SEED_POINTS];
-      int size_list[MASK_SEED_POINTS];
-      long clipped_pixels[MASK_SEED_POINTS];
-      int y;
-      long long xpltl,ypltl,szl,xplbr,yplbr,mx,my;
+      int x_tl_list[MASK_SEED_POINTS];   // top left corner
+      int y_tl_list[MASK_SEED_POINTS];   //    of seed regions
+      int x_br_list[MASK_SEED_POINTS];   // bottom right corner
+      int y_br_list[MASK_SEED_POINTS];   //    of seed regions
+      float good_pct_list[MASK_SEED_POINTS];  // pct of non-masked pixels
+
+      int ii,err;
       FILE *inseedmask;
       meta_parameters *maskmeta;
-      char *demTrimSimAmp_ffft=NULL,  *srTrimSimAmp=NULL;
+      char *demTrimSimAmp_ffft=NULL, *srTrimSimAmp=NULL;
       float *mask;
       inseedmask = fopenImage(userMaskClipped,"rb");
       maskmeta = meta_read(userMaskClipped);
       mask = (float *) MALLOC(sizeof(float) * metaSAR->general->sample_count 
 			      * demHeight);
-      for (y=0;y<demHeight;y++) // read in the whole mask image
-	get_float_line(inseedmask, maskmeta, y,
-                       mask + y * metaSAR->general->sample_count);
+      for (ii=0;ii<demHeight;ii++) // read in the whole mask image
+	get_float_line(inseedmask, maskmeta, ii,
+                       mask + ii * metaSAR->general->sample_count);
       FCLOSE(inseedmask);
-      lay_seeds(MASK_SEED_POINTS,mask,metaSAR->general->sample_count, 
-                demHeight, x_pos_list, y_pos_list, size_list, clipped_pixels);
+      err = lay_seeds(MASK_SEED_POINTS,mask,metaSAR->general->sample_count, 
+                      demHeight, x_tl_list, y_tl_list, x_br_list, 
+                      y_br_list, good_pct_list);
       FREE(mask);
-      szl = 0;
-      for(y=1;y<MASK_SEED_POINTS;y++)
-	{
-	  if ( abs(clipped_pixels[y]) > szl)
-	    {
-	      szl = abs(clipped_pixels[y]);
-	      mx = x_pos_list[y];
-	      my = y_pos_list[y];
-	      xpltl = x_pos_list[y]-(size_list[y]);
-	      ypltl = y_pos_list[y]-(size_list[y]);
-	      xplbr = x_pos_list[y]+(size_list[y]);
-	      yplbr = y_pos_list[y]+(size_list[y]);
-	      
-	    }
-	}
-      
-      if (xpltl < 0 ) xpltl = 0;
-      if (xpltl >= metaSAR->general->sample_count ) 
-	xpltl = metaSAR->general->sample_count-1;
-      if (ypltl < 0 ) ypltl = 0;
-      if (ypltl >= demHeight ) 
-	ypltl = demHeight-1;			
-      if (xplbr < 0 ) xplbr = 0;
-      if (xplbr >= metaSAR->general->sample_count ) 
-	xplbr = metaSAR->general->sample_count-1;
-      if (yplbr < 0 ) yplbr = 0;
-      if (yplbr >= demHeight ) 
-	yplbr = demHeight-1;			
-      
-      printf( " clipping region is %lld %lld %lld %lld \n"
-	      " which means it is %lld wide by %lld high \n"
-	      " with a mid point %lld %lld size %lld (clipped pixels) \n",
-	      xpltl,ypltl,xplbr,yplbr,xplbr-xpltl,yplbr-ypltl,mx,my,szl );	
-      
-      demTrimSimAmp_ffft = outputName(output_dir, demFile, "_sim_amp_trim_for_fft");
-      srTrimSimAmp = outputName(output_dir, srFile, "_src_trim_for_fft");
-      
-      asfPrintStatus(" creating trimmed regions \n %s \n %s \n ", 
-		     demTrimSimAmp_ffft, srTrimSimAmp);
-      trim(demTrimSimAmp, demTrimSimAmp_ffft,xpltl, ypltl,  xplbr-xpltl, 
-	   yplbr-ypltl) ;
-      trim(srFile, srTrimSimAmp, xpltl, ypltl,  xplbr-xpltl, yplbr-ypltl);
-      asfPrintStatus(" passed in %lld %lld %lld %lld \n",
-		     xpltl, ypltl,xplbr-xpltl, yplbr-ypltl);
-      fftMatchQ(srTrimSimAmp, demTrimSimAmp_ffft, &dx, &dy, &cert);
+
+      if (err==0) {
+          int n_attempt = 0;
+          const float cert_cutoff = 0.6; // is this a good cutoff !?
+          while (cert < cert_cutoff) {
+              if (++n_attempt > MASK_SEED_POINTS-2) {
+                  // couldn't find a seed region that matches well
+                  err=1; break;
+              }
+
+              printf("Attempt #%d to find a good seed region.\n", n_attempt);
+
+              int ii_chosen = -1;
+              float good_pct = 0;
+              //if (n_attempt == 1)
+              //    printf("Region results:\n");
+ 
+              for(ii=0; ii<MASK_SEED_POINTS; ii++)
+              {
+                  //if (n_attempt == 1)
+                  //    printf("Region %d: [%d,%d]-[%d,%d]: %f%%\n", ii,
+                  //           x_tl_list[ii], y_tl_list[ii],
+                  //           x_br_list[ii], y_br_list[ii],
+                  //           good_pct_list[ii]*100);
+
+                  if (good_pct_list[ii] > good_pct) {
+                      ii_chosen = ii;
+                      good_pct = good_pct_list[ii];
+                  }
+              }
+
+              asfRequire (ii_chosen >= 0 && ii_chosen < MASK_SEED_POINTS,
+                          "Impossible! chosen=%d\n", ii_chosen);
+              good_pct_list[ii_chosen] = 0; // prevent future selection
+
+              int xtl = x_tl_list[ii_chosen];
+              int ytl = y_tl_list[ii_chosen];
+              int xbr = x_br_list[ii_chosen];
+              int ybr = y_br_list[ii_chosen];
+
+              asfPrintStatus("Chose region #%d.\n", ii_chosen);
+              printf("Clipping region is [%d,%d] [%d,%d]\n",
+                     xtl, ytl, xbr, ybr);
+
+              demTrimSimAmp_ffft = outputName(output_dir, demFile,
+                                              "_sim_amp_trim_for_fft");
+              srTrimSimAmp = outputName(output_dir, srFile,
+                                        "_src_trim_for_fft");
+
+              //asfPrintStatus(" creating trimmed regions \n %s \n %s \n ", 
+              //               demTrimSimAmp_ffft, srTrimSimAmp);
+              trim(demTrimSimAmp, demTrimSimAmp_ffft,xtl,ytl,xbr-xtl,ybr-ytl);
+              trim(srFile, srTrimSimAmp, xtl, ytl, xbr-xtl, ybr-ytl);
+              asfPrintStatus(" passed in %d %d %d %d\n",
+                             xtl, ytl, xbr-xtl, ybr-ytl);
+              fftMatchQ(srTrimSimAmp, demTrimSimAmp_ffft, &dx, &dy, &cert);
+              printf("Match: %.2f%% certainty. (%f,%f)\n", 100*cert, dx, dy);
+              if (cert < cert_cutoff) {
+                  asfPrintStatus("Certainty fails to meet minimum: %.1f%%\n",
+                                 100*cert_cutoff);
+                  asfPrintStatus("Matching using another seed point.\n");
+              }
+          }
+      }
+
+      if (err==1) {
+          // failed to find a good seed region
+          asfPrintWarning("Failed to find an adequate seed region to perform "
+                          "an fftMatch.\nIt is likely that your mask covers "
+                          "too much of the image, leaving an\ninsufficiently "
+                          "large region to correct the geolocation.\n"
+                          "Proceeding anyway, however your results may not "
+                          "be particularly good.\n");
+
+          // set the offsets to 0 -- with 0% certainty.
+          dx = dy = cert = 0;
+      }
+
       meta_free(maskmeta);
     }
     else {
@@ -533,7 +566,7 @@ int match_dem(meta_parameters *metaSAR,
       // Read the offset out of the offset file.
       fftMatchQ(srFile, demTrimSimAmp, &dx, &dy, &cert);
     }
-    
+
     asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f dy=%f\n",
 		   100*cert, dx, dy);
     
@@ -558,7 +591,7 @@ int match_dem(meta_parameters *metaSAR,
 			    "Continuing ... however your result may "
                             "be incomplete and/or incorrect.\n");
 
-            if (cert<.5) {
+            if (cert<.5 && userMaskFile == NULL) {
                 asfPrintStatus("You may get better results by supplying "
                                "a mask file, to mask out regions\n"
                                "which provide poor matching, such as "
@@ -620,7 +653,7 @@ int match_dem(meta_parameters *metaSAR,
                      100*cert, dx2, dy2);
       
       double match_tolerance = 1.0;
-      if (sqrt(dx2*dx2 + dy2*dy2) > match_tolerance) {
+      if (fabs(dy2) > required_match || fabs(dx2) > required_match) {
           asfPrintError("Correlated images failed to match!\n"
                         " Original fftMatch offset: "
                         "(dx,dy) = %14.9f,%14.9f\n"
@@ -697,7 +730,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		     int do_resample, int do_corner_matching, int do_interp,
 		     int do_fftMatch_verification, int dem_grid_size,
 		     int do_terrain_correction, int maskfill,
-                     int mask_and_dem_are_same_size_and_projection)
+                     int generate_water_mask)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimAmp = NULL, *demTrimSlant = NULL;
@@ -708,20 +741,43 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   meta_parameters *metaSAR, *metaDEM, *metamask;
   int force_resample = FALSE;
   double t_offset, x_offset;
-  int madssap = mask_and_dem_are_same_size_and_projection;
+  int madssap = FALSE; // mask and dem same size and projection
 
   // we want passing in an empty string for the mask to mean "no mask"
   if (userMaskFile && strlen(userMaskFile) == 0)
       userMaskFile = NULL;
 
+  if (generate_water_mask && userMaskFile) {
+      asfPrintWarning("A User Mask was specified, yet generate_water_mask "
+                      "was set to TRUE.\nIgnoring generate_water_mask.\n");
+      generate_water_mask = FALSE;
+  }
+
+  // all temporary files are going to be placed in the output directory
+  output_dir = getOutputDir(outFile);
+
   asfPrintStatus("Reading metadata...\n");
   metaSAR = meta_read(sarFile);
   metaDEM = meta_read(demFile);
+
+  // generate a water mask if asked to do so
+  if (generate_water_mask) {
+      userMaskFile = outputName(output_dir, demFile, "_water_mask");
+
+      float cutoff = 1.000001; // FIXME: this ok?
+      asfPrintStatus("Generating a Water Mask from DEM: %s\n", demFile);
+      asfPrintStatus("Height cutoff: %5.2f\n", cutoff);
+
+      dem_to_mask(demFile, userMaskFile, cutoff);
+
+      // setting this to true allows the clipping code to apply the same
+      // clipping parameters to the dem and the mask.
+      madssap = TRUE;
+  }
+
   if (userMaskFile)
       metamask = meta_read(userMaskFile);
   
-  output_dir = getOutputDir(outFile);
-
   // Warning regarding square pixels in the DEM.  Still not sure
   // exactly what effects this could have
   if (metaDEM->general->x_pixel_size != metaDEM->general->y_pixel_size) {
@@ -906,7 +962,12 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
     clean(resampleFile_2);
   }
 
-  asfPrintStatus("Done!\n");
+  // if we generated the mask, we should clean it up
+  if (generate_water_mask) {
+      if (clean_files)
+          clean(userMaskFile);
+      FREE(userMaskFile);
+  }
 
   FREE(resampleFile);
   FREE(srFile);
@@ -922,5 +983,6 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 
   free(output_dir);
 
+  asfPrintStatus("Done!\n");
   return FALSE;
 }

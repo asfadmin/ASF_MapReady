@@ -256,6 +256,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->dem = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->terrain_correct->dem, "");
   cfg->terrain_correct->mask = (char *)MALLOC(sizeof(char)*255);
+  cfg->terrain_correct->auto_mask_water = 0;
   strcpy(cfg->terrain_correct->mask, "");
   cfg->terrain_correct->refine_geolocation_only = 0;
   cfg->terrain_correct->interp = 1;
@@ -361,6 +362,8 @@ convert_config *init_fill_convert_config(char *configFile)
                read_str(line, "digital elevation model"));
       if (strncmp(test, "mask", 4)==0)
 	strcpy(cfg->terrain_correct->mask, read_str(line, "mask"));
+      if (strncmp(test, "auto mask water", 15)==0)
+	cfg->terrain_correct->auto_mask_water = read_int(line, "auto mask water");
       if (strncmp(test, "refine geolocation only", 23)==0)
 	cfg->terrain_correct->refine_geolocation_only = 
 	  read_int(line, "refine_geolocation_only");
@@ -564,6 +567,8 @@ convert_config *read_convert_config(char *configFile)
                read_str(line, "digital elevation model"));
       if (strncmp(test, "mask", 4)==0)
 	strcpy(cfg->terrain_correct->mask, read_str(line, "mask"));
+      if (strncmp(test, "auto mask water", 15)==0)
+	cfg->terrain_correct->auto_mask_water = read_int(line, "auto mask water");
       if (strncmp(test, "refine geolocation only", 23)==0)
 	cfg->terrain_correct->refine_geolocation_only = read_int(line, "refine_geolocation_only");
       if (strncmp(test, "interpolate", 11)==0)
@@ -807,6 +812,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
 		"# areas that are stable and can be used for the matching process.\n\n");
       fprintf(fConfig, "mask = %s\n", cfg->terrain_correct->mask);
       if (!shortFlag)
+	fprintf(fConfig, "\n# Instead of creating a mask, you can have terrain correction\n"
+                "# automatically generate a mask for you, based on the DEM, which attempts to mask\n"
+                "# the regions of your scene that are water (these regions provide a poor match).\n"
+                "# Specifically, all DEM values <1m are masked.\n\n");
+      fprintf(fConfig, "auto mask water = %d\n\n", cfg->terrain_correct->auto_mask_water);
+      if (!shortFlag)
         fprintf(fConfig, "\n# Even if you don't want to change the image via terrain correction,\n"
                 "# you may still wish to use the DEM to refine the geolocation of the SAR image.\n"
                 "# If this flag is set, terrain correction is NOT performed.\n\n");
@@ -818,6 +829,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# these regions should be interpolated over.\n\n");
       fprintf(fConfig, "interpolate = %d\n\n", cfg->terrain_correct->interp);
     }
+
     // Geocoding
     if (cfg->general->geocoding) {
       fprintf(fConfig, "\n[Geocoding]\n");

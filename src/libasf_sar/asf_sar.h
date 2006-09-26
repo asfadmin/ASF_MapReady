@@ -56,4 +56,7 @@ int fit_poly(char * gridFile, int degree, double *maxErr,
 void refine_offset(double x_off, double y_off, meta_parameters *meta,
                    double *out_t, double *out_x);
 
+/* Prototypes from mfd.c */
+int dem_to_mask(char *inDem, char *outMask, float cutoff);
+
 #endif

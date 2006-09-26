@@ -1,5 +1,5 @@
 
-void seed_points(int *x, int *y, int ns, int nl);
-void check_square(int size,int x_pos, int y_pos, float  *mask, int ns, int nl, long *masked_pixels, long *good_pixels);
-void lay_seeds(int num_seeds, float *mask, long ns, long nl, int *x_pos_list, int *y_pos_list, int *size_list, long *clipped_pixels);
-
+int lay_seeds(int num_seeds, float *mask, long ns, long nl,
+              int *x_tl_list, int *y_tl_list, 
+              int *x_br_list, int *y_br_list,
+              float *good_pct_list);

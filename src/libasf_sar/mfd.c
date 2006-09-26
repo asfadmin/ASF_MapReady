@@ -16,21 +16,21 @@ dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
     long y_size = inDemMeta->general->line_count;
     
     float *maskbuffer = MALLOC(sizeof(float) * x_size);
-    float *floatbuffer = MALLOC (sizeof(float) * x_size);
+    float *floatbuffer = MALLOC(sizeof(float) * x_size);
 
     FILE *in = fopenImage(inDemFile, "rb");
     FILE *out = fopenImage(outMaskFile, "wb");
 
-    int line;
-    for (line=0; line <= y_size ; line++) 
+    int y;
+    for (y=0; y < y_size ; y++) 
     {
-        get_float_line(in,inDemMeta,line,floatbuffer);
+        get_float_line(in, inDemMeta, y, floatbuffer);
 
         int x;
         for (x=0; x < x_size; x++)            
-            maskbuffer[x] = floatbuffer[x] < cutoff ? 1 : 0;
+            maskbuffer[x] = floatbuffer[x] <= cutoff ? 1.0 : 0.0;
 
-        put_float_line(out,inDemMeta,line,maskbuffer);
+        put_float_line(out, inDemMeta, y, maskbuffer);
     }
 
     FCLOSE(in);
