@@ -143,6 +143,8 @@ void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 		s->julDay = (int) ppdr.gmt_day;
 		s->second = ppdr.gmt_sec;
 	} 
+	else if (ceos->facility==RSI)
+	  areInertialVelocity = 1;
 	else
 	{/*Most facility's state vectors don't necessarily start
 	at the same time as the image.*/

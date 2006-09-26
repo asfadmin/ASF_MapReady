@@ -161,7 +161,8 @@ spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor);
  * meta_general: General RAdio Detection And Ranging parameters
  */
 typedef struct {
-  char sensor[FIELD_STRING_MAX];    /* Name of imaging sensor.             */
+  char sensor[FIELD_STRING_MAX];    /* Name of sensor - satellite really   */
+  char sensor_name[FIELD_STRING_MAX]; // Name of the sensor
   char mode[MODE_FIELD_STRING_MAX]; /* Mode of imaging sensor.             */
   char processor[FIELD_STRING_MAX]; /* Name and version of SAR processor.  */
   data_type_t data_type;            /* Type of samples (e.g. "REAL4").     */

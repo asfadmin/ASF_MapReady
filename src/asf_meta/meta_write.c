@@ -37,7 +37,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
 
 /* General block.  */
   meta_put_string(fp,"general {", "","Begin parameters generally used in remote sensing");
-  meta_put_string(fp,"sensor:", meta->general->sensor, "Imaging sensor");
+  meta_put_string(fp,"sensor:", meta->general->sensor, "Imaging satellite");
+  meta_put_string(fp,"sensor_name:", meta->general->sensor_name, "Imaging sensor");
   meta_put_string(fp,"mode:",meta->general->mode,"Imaging mode");
   meta_put_string(fp,"processor:", meta->general->processor,"Name and Version of Processor");
   strcpy(comment,"Type of samples (e.g. REAL64)");

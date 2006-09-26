@@ -18,11 +18,63 @@ DESCRIPTION:
 /* Useful stuff for meta initialization from CEOS metadata */
 typedef struct {
    struct dataset_sum_rec dssr;
-   enum {unknownFacility,ASF,VEXCEL,ESA,CDPF,EOC} facility;
-   enum {unknownSatellite,ERS,JERS,RSAT,ALOS} satellite;
-   double version;/*Processor version number, or zero.*/
-   enum {unknownProcessor,ASP,SPS,ARDOP,PREC,PP,SP2,AMM,LZP,FOCUS,SP3,DPS} processor;
-   enum {unknownProduct,CCSD,RAW,LOW_REZ,HI_REZ,RAMP,SCANSAR,SLC,PRI,SGF,SGI} product;
+  struct scene_header_rec shr;
+  enum {
+    unknownFacility,
+    ASF,
+    VEXCEL,
+    ESA,
+    CDPF,
+    EOC,
+    RSI
+  } facility;
+  enum {
+    unknownSatellite,
+    ERS,
+    JERS,
+    RSAT,
+    ALOS
+  } satellite;
+  enum {
+    unknownSensor,
+    SAR,
+    PALSAR,
+    AVNIR,
+    PRISM
+  } sensor;
+  double version;/*Processor version number, or zero.*/
+  enum {
+    unknownProcessor,
+    ASP,
+    SPS,
+    ARDOP,
+    PREC,
+    PP,
+    SP2,
+    AMM,
+    LZP,
+    FOCUS,
+    SP3,
+    DPS,
+    MSSAR
+  } processor;
+  enum {
+    unknownProduct,
+    CCSD,
+    RAW,
+    LOW_REZ,
+    HI_REZ,
+    RAMP,
+    SCANSAR,
+    SLC,
+    PRI,
+    SGF,
+    SGI,
+    SCN,
+    LEVEL_1A,
+    LEVEL_1B1,
+    LEVEL_1B2
+  } product;
 } ceos_description;
 
 /***************************************

@@ -59,6 +59,7 @@ VERSION         DATE   AUTHOR
 #define TR        10021
 /* Null volume file */
 #define NVDR      10022
+#define SHR       10023
 
 /*** RECORD SIZES ***/
 #define H_SZ    12
@@ -1404,6 +1405,71 @@ struct TREC {
         char spare2[105];       /* Spares */
 };
 
+// Scene Header Record - ALOS
+struct scene_header_rec {
+  char product_id[17];        // Product ID
+  char uncorr_sc_id[17];      // Uncorrected scene ID
+  double sc_lat;              // Level 1A and 1B1 scene latiude
+  double sc_lon;              // Level 1A and 1B1 scene longitude
+  double sc_line;             // Line number of level 1A and 1B1 scene center
+  double sc_sample;           // Sample number of level 1A and 1B1 scene center
+  char sc_time[33];           // Scene center time
+  int time_off;               // Time offset from nominal RSP center
+  char sc_shift[17];          // RSP ID
+  int orbit_cycle;            // Orbits per cycle
+  char sc_id[17];             // Level 1B2 scene ID
+  double sc_lat2;             // Level 1B2 scene center latitude
+  double sc_lon2;             // Level 1b2 scene center longitude
+  double sc_line2;            // Line number for level 1B2 scene center
+  double sc_sample2;          // Sample number for level 1B2 scene center
+  char orient_angle[17];      // Orientation angle
+  char inc_angle[17];         // Incidence angle
+  char mission_id[17];        // Mission ID
+  char sensor_id[17];         // Sensor ID
+  int orbit;                  // Calculated orbit number
+  char orbit_dir[17];         // Orbit direction
+  char off_nadir_angle[17];   // Off-nadir mirror pointing angle
+  char blank2[13];
+  char acq_date[9];           // Acquisition date
+  char center_loc[18];        // Latitude and longitude of scene center
+  char blank3[18];
+  char sensor_type[11];       // Type of sensor and spectrum identification
+  char sun_angle[15];         // Sun angle at product scene center
+  char proc_code[13];         // Processing code
+  char project[13];           // Identification of component agent and project
+  char work_scene_id[17];     // Scene ID of work order
+  char blank4[907];
+  int no_bands;               // Number of effective bands in image
+  int samples;                // Number of pixels per line in image
+  int lines;                  // Number of scene lines in image
+  char blank5[33];
+  int radio_res;              // Radiometric resolution
+  char blank6[17];
+  char level_opt[17];         // Level 1B2 option
+  char resample[17];          // Resampling method
+  char map_proj[17];          // Map projection
+  char corr_level[17];        // Correction level
+  int proj_recs;              // Number of map projection ancillary records
+  int radio_recs;             // Number of radiometric ancillary records
+  char blank7[33];
+  int eff_bands;              // Effective band (CCD)
+  char img_format[17];        // Image format
+  double lat_ul;               // Latitude of scene left upper corner
+  double lon_ul;               // Longitude of scene left upper corner
+  double lat_ur;               // Latitude of scene right upper corner
+  double lon_ur;               // Longitude of scene right upper corner
+  double lat_ll;               // Latitude of scene left lower corner
+  double lon_ll;               // Longitude of scene left lower corner
+  double lat_lr;               // Latitude of scene right lower corner
+  double lon_lr;               // Longitude of scene right lower corner
+  char time_sys_status[3];    // Time system status
+  char abs_nav_status[3];     // Absolute navigation status
+  char att_det_flag[3];       // Attitude determination flag
+  char acc_orbit[3];          // Accuracy of used orbit data
+  char acc_att[3];            // Accuracy of used attitude data
+  char yaw_flag[3];           // Yaw steering flag
+};
+
 
 /*Prototypes for converting character buffers to records, and back again.*/
 typedef enum {toASCII,fromASCII} codingDir;
@@ -1424,6 +1490,7 @@ void   Code_RSR(unsigned char *bf, struct rng_spec_rec *q, codingDir dir);
 void   Code_ASF_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir);
 void   Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir);
 void   Code_PPR(unsigned char *bf, struct PPREC *q, codingDir dir);
+void   Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir);
 
 void   Code_VDR(unsigned char *bf, struct VDREC *q, codingDir dir);
 void   Code_LFPR(unsigned char *bf, struct FPREC *q, codingDir dir);
@@ -1451,6 +1518,7 @@ int get_rsr(char *filename,struct rng_spec_rec *rec);
 int get_ifiledr(char *filename,struct IOF_VFDR *vfdr);
 int get_fdr(char *filename,struct FDR *rec);
 int get_ppr(char *filename,struct PPREC *rec);
+int get_shr(char *filename, struct scene_header_rec *shr);
 
 int get_vdr(char *filename,struct VDREC *rec);
 int get_lfpr(char *filename,struct FPREC *rec);

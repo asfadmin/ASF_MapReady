@@ -172,6 +172,7 @@ SYNTAX:
   Code_ASF_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir)
   Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
   Code_PPR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
+  Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir)
 
   Code_VDR(unsigned char *bf, struct VDR *q, codingDir dir)
   Code_LFPR(unsigned char *bf, struct FPR *q, codingDir dir)
@@ -1039,4 +1040,71 @@ void Code_TR(unsigned char *bf, struct TREC *q, codingDir dir)
     strV(scene_loc,off,41);
     strV(spare1,off,21);
     strV(spare2,off,105);
+}
+
+void Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir)
+{
+  int off=20;
+
+  strV(product_id,off,16);
+  strV(uncorr_sc_id,off,16);
+  fltV(sc_lat,off,16);
+  fltV(sc_lon,off,16);
+  fltV(sc_line,off,16);
+  fltV(sc_sample,off,16);
+  strV(sc_time,off,32);
+  intV(time_off,off,16);
+  strV(sc_shift,off,16);
+  intV(orbit_cycle,off,16);
+  strV(sc_id,off,16);
+  fltV(sc_lat2,off,16);
+  fltV(sc_lon2,off,16);
+  fltV(sc_line2,off,16);
+  fltV(sc_sample2,off,16);
+  strV(orient_angle,off,16);
+  strV(inc_angle,off,16);
+  strV(mission_id,off,16);
+  strV(sensor_id,off,16);
+  intV(orbit,off,16);
+  strV(orbit_dir,off,16);
+  strV(off_nadir_angle,off,16);
+  strV(blank2,off,12);
+  strV(acq_date,off,8);
+  strV(center_loc,off,17);
+  strV(blank3,off,17);
+  strV(sensor_type,off,10);
+  strV(sun_angle,off,14);
+  strV(proc_code,off,12);
+  strV(project,off,12);
+  strV(work_scene_id,off,16);
+  strV(blank4,off,906);
+  intV(no_bands,off,16);
+  intV(samples,off,16);
+  intV(lines,off,16);
+  strV(blank5,off,32);
+  intV(radio_res,off,16);
+  strV(blank6,off,16);
+  strV(level_opt,off,16);
+  strV(resample,off,16);
+  strV(map_proj,off,16);
+  strV(corr_level,off,16);
+  intV(proj_recs,off,16);
+  intV(radio_recs,off,16);
+  strV(blank7,off,32);
+  intV(eff_bands,off,64);
+  strV(img_format,off,16);
+  fltV(lat_ul,off,16);
+  fltV(lon_ul,off,16);
+  fltV(lat_ur,off,16);
+  fltV(lon_ur,off,16);
+  fltV(lat_ll,off,16);
+  fltV(lon_ll,off,16);
+  fltV(lat_lr,off,16);
+  fltV(lon_lr,off,16);
+  strV(time_sys_status,off,2);
+  strV(abs_nav_status,off,2);
+  strV(att_det_flag,off,2);
+  strV(acc_orbit,off,2);
+  strV(acc_att,off,2);
+  strV(yaw_flag,off,2);
 }

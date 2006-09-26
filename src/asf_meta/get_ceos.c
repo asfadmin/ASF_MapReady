@@ -28,6 +28,7 @@ typedef enum {
 	CEOS_IFILEDR=192,     /* Imagery options file.*/
 	CEOS_FDR=300,         /* File Descriptor Record.*/
 	CEOS_PPR=120,         /* Processing Parameter Record - CDPF defined.*/
+	CEOS_SHR=18,          // Scene Header Record - ALOS
 	CEOS_FAKE=51
 } CEOS_RECORD_TYPE;
 
@@ -245,6 +246,17 @@ int get_ppr(char *filename,struct PPREC *ppr)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_PPR,1,&buff)) != -1) {
 		Code_PPR(buff,ppr,fromASCII);
+		FREE(buff);
+	}
+	return(era);
+}
+
+int get_shr(char *filename, struct scene_header_rec *shr)
+{
+	unsigned char *buff;
+	int era;
+	if ( (era = getCeosRecord(filename,CEOS_SHR,1,&buff)) != -1) {
+		Code_SHR(buff,shr,fromASCII);
 		FREE(buff);
 	}
 	return(era);
