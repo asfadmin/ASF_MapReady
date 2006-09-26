@@ -37,10 +37,16 @@
 # define TRUE (!FALSE)
 #endif
 
+// In windows (cygwin) apparently the directory separator can be either
+// back slash or forward slash
 #if defined(win32)
 #define DIR_SEPARATOR '\\'
+#define DIR_SEPARATOR_STR "/\\"
+#define IS_DIR_SEPARATOR(character) ((character == '\\') || (character == '/'))
 #else
 #define DIR_SEPARATOR '/'
+#define DIR_SEPARATOR_STR "/"
+#define IS_DIR_SEPARATOR(character) (character == '/')
 #endif
 
 #define EXTENSION_SEPARATOR '.'
