@@ -272,7 +272,7 @@ int asf_convert(int createflag, char *configFileName)
       }
     }
 
-    // Check whether everything in the [Terrain Correct[ block is reasonable
+    // Check whether everything in the [Terrain Correct] block is reasonable
     if (cfg->general->terrain_correct) {
 
         // specified a mask and asked for an auto-mask
