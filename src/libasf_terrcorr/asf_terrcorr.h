@@ -36,3 +36,13 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
 		     int do_fftMatch_verification, int dem_grid_size, 
                      int do_terrain_correction, int maskfill,
                      int generate_water_mask);
+
+/**
+   Functions private to terrain correction, not meant for general use.
+**/
+
+/* Prototypes from seedsquares.c */
+int lay_seeds(int num_seeds, float *mask, long ns, long nl,
+              int *x_tl_list, int *y_tl_list, 
+              int *x_br_list, int *y_br_list,
+              float *good_pct_list);

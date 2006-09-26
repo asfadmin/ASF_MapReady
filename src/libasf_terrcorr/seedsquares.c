@@ -19,7 +19,7 @@ static void seed_points(int *x, int *y, int ns, int nl)
 
 static 
 void check_square(int size,int x_pos, int y_pos, float  *mask,
-                  int ns, int nl, long *masked_pixels, long *good_pixels)
+                  int ns, int nl, long *total_pixels, float *good_pct)
 { 
     // go to the mask and work out the number of good and bad pixels 
     // within a square
@@ -53,10 +53,9 @@ void check_square(int size,int x_pos, int y_pos, float  *mask,
                 gmp++;
             }
         }
-    
-    //printf(" -- size: %d: good %ld bad %ld \n",size,gmp,pmp);
-    *masked_pixels = pmp;
-    *good_pixels = gmp;
+
+    *total_pixels = gmp + pmp;
+    *good_pct = ((float)gmp)/(*total_pixels);
 }
 
 // puts the seeds onto the mask and see if they can grow
@@ -65,23 +64,27 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
               int *x_br_list, int *y_br_list,
               float *good_pct_list)
 {
-    int ii,seed,size_cutoff;
-    long masked_pixels, good_pixels, pixels_cutoff;
-    const int size_min = 512;
+    int ii,seed;
+    long pixels_cutoff;
 
     seed =(int)time(0);		/* choose a seed value */
     srand(seed);		/* initialize random number generator */
 
-    asfPrintStatus("Searching for suitable seed points. "
-                   "This may take some time.\n");
+    asfPrintStatus("Searching for suitable seed points... "
+                   /* "This may take some time.\n" */);
     
-    size_cutoff = size_min; // minimum size we require for the seed regions
-    if (size_cutoff*size_cutoff > nl*ns) // image not big enough?
+    // Minimum size we require for the seed regions.  This is an emprical
+    // number, based on how big we're required to be to have a chance at
+    // a reasonable fft match.
+    const int size_cutoff = 512; 
+
+    // Percentage of pixels in a square that we require to be "good" --
+    // i.e., actual data (not masked).
+    const float good_cutoff = 0.8;
+
+    // image not big enough?
+    if (size_cutoff*size_cutoff > nl*ns) 
         return 1;
-    
-    // Try to make the chips bigger, if we can.
-    while (size_cutoff*size_cutoff < nl*ns/64.0)
-        size_cutoff *= 2;
     
     pixels_cutoff = size_cutoff*size_cutoff;
     asfPrintStatus("Seed region size cutoff: %d pixels.\n",
@@ -90,37 +93,47 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
 
     for (ii=0; ii<num_seeds; ii++)
     {
-        int n_attempt = 0;
-
         // note that "size" here is really half of a side
         int size = 4;
 
-        // determine an initial point and go!
+        // determine an initial point, it is ok if it isn't good
         int center_x, center_y;
         seed_points(&center_x, &center_y, ns, nl);
 
+        int n_try = 0;
+        long prev_total_pixels = 0;
         while (TRUE)
         {
-            if (++n_attempt > 50) {
-                // 50 tries max before we give up
-                return 1;
-            }
+            long total_pixels;
+            float good;
+
+            // check a larger square
+            int next_size = size*2;
+            check_square(next_size, center_x, center_y, mask, ns, nl,
+                         &total_pixels, &good);
             
-            check_square(size, center_x, center_y, mask, ns, nl,
-                         &masked_pixels, &good_pixels);
+            //printf("Seed %d -- ratio of %f and pixels %ld  size %d \n",
+            //       ii, good, total_pixels, next_size);
 
-            long total_pixels = good_pixels + masked_pixels;
-            float good = ((float)good_pixels)/total_pixels;
-
-            //printf("Seed %d -- good %ld  bad %ld  .... ratio of %f "
-            //       "and pixels %ld  size %d \n",
-            //       ii,good_pixels,masked_pixels,good,total_pixels,size);
-
-            if (good > 0.8)
+            if (good >= good_cutoff && total_pixels < (long)nl*ns)
             {
-                if (total_pixels > pixels_cutoff) 
+                // this square meets the requirement
+                // but be greedy -- try to get a bigger square
+                size = next_size;
+                prev_total_pixels = total_pixels;
+                //printf("      -- enlarging\n");
+            }
+            else
+            {
+                //printf("      -- didn't meet.  prev_pixels=%ld, "
+                //       "pixels_cutoff=%ld\n",
+                //       prev_total_pixels, pixels_cutoff);
+
+                // this square didn't meet the requirement
+                // if previous square did, and is large enough, we'll take it
+                if (prev_total_pixels > pixels_cutoff)
                 {
-                    // found a good region!  Save this info.
+                    // We found a good region!  Save this info.
 
                     // convert from center-based to corner-based info
                     x_tl_list[ii] = center_x - size;
@@ -140,24 +153,24 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
                     // the "good" pct correctly reflects the clipped area
                     good_pct_list[ii] = good;
 
-                    //printf("\n found %d \n",ii);
+                    //printf("Found %d: %d %d %ld %d\n",
+                    //       ii,center_x,center_y,prev_total_pixels,size);
+
                     break;
-                } else {
-                    size*=2;
+                } 
+                else
+                {
+                    // new seed point needed
+                    if (++n_try > 50) return 1; // too many failures--quit
+                    size = 4;
+                    seed_points(&center_x, &center_y, ns, nl);
+                    prev_total_pixels = 0;
+                    //printf("New seed point needed.\n");
                 }
             }
-            else
-            {
-                // new seed point needed
-                size = 4;
-                seed_points(&center_x, &center_y, ns, nl);
-                //printf(".");
-                //printf(" pct=%f seed point quality failed trying again \n",
-                //       good);
-            }	 
         }
     }
 
-    printf("Found all seed points \n");    
+    asfPrintStatus("Found all seed points \n");    
     return 0;
 }

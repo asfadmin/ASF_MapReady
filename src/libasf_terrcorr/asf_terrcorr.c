@@ -18,7 +18,6 @@
 #include <asf_license.h>
 #include <asf_sar.h>
 #include <poly.h>
-#include <seedsquares.h>
 
 #include <asf_terrcorr.h>
 
@@ -495,16 +494,16 @@ int match_dem(meta_parameters *metaSAR,
 
               int ii_chosen = -1;
               float good_pct = 0;
-              //if (n_attempt == 1)
-              //    printf("Region results:\n");
+              if (n_attempt == 1)
+                  printf("Region results:\n");
  
               for(ii=0; ii<MASK_SEED_POINTS; ii++)
               {
-                  //if (n_attempt == 1)
-                  //    printf("Region %d: [%d,%d]-[%d,%d]: %f%%\n", ii,
-                  //           x_tl_list[ii], y_tl_list[ii],
-                  //           x_br_list[ii], y_br_list[ii],
-                  //           good_pct_list[ii]*100);
+                  if (n_attempt == 1)
+                      printf("Region %d: [%d,%d]-[%d,%d]: %f%%\n", ii,
+                             x_tl_list[ii], y_tl_list[ii],
+                             x_br_list[ii], y_br_list[ii],
+                             good_pct_list[ii]*100);
 
                   if (good_pct_list[ii] > good_pct) {
                       ii_chosen = ii;
@@ -652,7 +651,6 @@ int match_dem(meta_parameters *metaSAR,
                      "dx=%f dy=%f\n", 
                      100*cert, dx2, dy2);
       
-      double match_tolerance = 1.0;
       if (fabs(dy2) > required_match || fabs(dx2) > required_match) {
           asfPrintError("Correlated images failed to match!\n"
                         " Original fftMatch offset: "
@@ -764,9 +762,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   if (generate_water_mask) {
       userMaskFile = outputName(output_dir, demFile, "_water_mask");
 
-      float cutoff = 1.000001; // FIXME: this ok?
+      float cutoff = 1.00001; // FIXME: this ok?
       asfPrintStatus("Generating a Water Mask from DEM: %s\n", demFile);
-      asfPrintStatus("Height cutoff: %5.2f\n", cutoff);
+      asfPrintStatus("Height cutoff: %5.2fm\n", cutoff);
 
       dem_to_mask(demFile, userMaskFile, cutoff);
 
