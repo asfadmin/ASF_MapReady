@@ -551,8 +551,7 @@ thumbnail_region (GtkWidget *widget, GdkEventMotion *event)
     /* Rectangle of region to be returned.  */
     GdkRectangle tn_rect;
 
-    /* If over the input image thumbnail, return the input thumbnail
-    region,  */
+    /* If over the input image thumbnail, return the input thumbnail region, */
     GtkTreeViewColumn *tc = NULL;	/* Thumbnail column we are over.  */
     if ( in_input_thumbnail (widget, event) ) {
         tc = input_thumbnail_column (widget, event);
@@ -563,10 +562,10 @@ thumbnail_region (GtkWidget *widget, GdkEventMotion *event)
     }
 
     gtk_tree_view_get_cell_area (GTK_TREE_VIEW (widget), tp, tc, &tn_rect);
+
     /* Here we depend on the fact that the thumbnails are packed at the
     beginning of the cell horizontally, and centered in the cell
-    vertically (FIXME: find a way to verify this with
-    assertions).  */
+    vertically (FIXME: find a way to verify this with assertions).  */
     GdkRectangle itn_rect;		/* Image thumbnail rectangle.  */
     /* FIXME: fix this border hackery to be precise somehow.  */
     itn_rect.x = tn_rect.x + 1;	/* There is probably a small border so +1.  */

@@ -11,6 +11,7 @@ ifeq ($(SYS),win32)
 GCC =gcc 
 GTK_DIR = gtkwin32
 GTK_ZIP = gtkwin32zip
+GTK_ZIP_LOC = ../../../support/gtk/win32
 
 GTK_INC = $(GTK_DIR)/include
 GTK_LIB = $(GTK_DIR)/lib
@@ -76,6 +77,8 @@ CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
 $(TARGET).exe: $(TARGET).c
 	if [ ! -f $(GTK_DIR)/README.txt ]; then\
+	  rm -rf $(GTK_ZIP); \
+	  cp $(GTK_ZIP_LOC)/*.zip $(GTK_ZIP); \
 	  for f in $(GTK_ZIP)/*.zip; do( yes| unzip $$f -d $(GTK_DIR) ); done;\
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
 	fi
@@ -102,7 +105,7 @@ else
 
 ### Begin Unix Section
 
-CFLAGS += -Wall \
+CFLAGS += -Wall -Werror \
 	$(GSL_CFLAGS) \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \
