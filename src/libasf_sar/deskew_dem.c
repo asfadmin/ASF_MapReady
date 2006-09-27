@@ -262,18 +262,20 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
 static void mask_float_line(int ns, int maskfill, float *in, float *inMask)
 {
     int x;
-    for(x=0;x<ns;x++)
+    for (x=0; x<ns; x++)
     {
-        if(inMask[x] == MASK_USER_MASK)
+        if (inMask[x] == MASK_USER_MASK)
         {
+            ++n_user;
+
             // negative values indicate that it should be a 
             // different fill value
             if (maskfill < 0) 
                 in[x] = abs(maskfill);
-            else
+            else if (maskfill == 2) // normal mask value, 0.
                 in[x] = 0;
 
-            ++n_user;
+            // maskfill==1 indicates mask should not be seen -- do nothing
         }
     }
 }
@@ -308,42 +310,48 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
      
         if (grDEM[grX] > max_height) max_height = grDEM[grX];
 
-        if ((height!=badDEMht)&&(srX>=0)&&(srX<(ns-1)))
-        {
-            int x=floor(srX);
-            double dx=srX-x;
-            if (doInterp) {
-                /* bilinear interp */
-                out[grX]=(1-dx)*in[x] + dx*in[x+1];
-            } else {
-                /* nearest neighbor */
-                out[grX]= dx <= 0.5 ? in[x] : in[x+1];
-            }
-            StartLayoverFlag=1;
-
-            if (sr_hits) {
-                int is_layover = TRUE; // until we learn otherwise
-                for (i=0; i<num_hits_required_for_layover; ++i) {
-                    if (sr_hits[i*ns+x] == -1) {
-                        // i'th time we hit this pixel, save the grX that
-                        // led us here for later
-                        sr_hits[i*ns+x] = grX;
-                        is_layover = FALSE;
-                        break;
-                    }
+        if (srX >= 0 && srX < ns-1) {
+            if (height!=badDEMht)
+            {
+                int x=floor(srX);
+                double dx=srX-x;
+                if (doInterp) {
+                    /* bilinear interp */
+                    out[grX]=(1-dx)*in[x] + dx*in[x+1];
+                } else {
+                    /* nearest neighbor */
+                    out[grX]= dx <= 0.5 ? in[x] : in[x+1];
                 }
-                if (is_layover) {
-                    // mask all pixels that landed here (at x) as layover
+                StartLayoverFlag=1;
+                
+                if (sr_hits) {
+                    int is_layover = TRUE; // until we learn otherwise
                     for (i=0; i<num_hits_required_for_layover; ++i) {
-                        if (mask[sr_hits[i*ns+x]] == MASK_NORMAL) {
-                            ++n_layover;
-                            mask[sr_hits[i*ns+x]] = MASK_LAYOVER;
+                        if (sr_hits[i*ns+x] == -1) {
+                            // i'th time we hit this pixel, save the grX that
+                            // led us here for later
+                            sr_hits[i*ns+x] = grX;
+                            is_layover = FALSE;
+                            break;
                         }
                     }
-                    // including the current one
-                    mask[grX] = MASK_LAYOVER;
-                    ++n_layover;
+                    if (is_layover) {
+                        // mask all pixels that landed here (at x) as layover
+                        for (i=0; i<num_hits_required_for_layover; ++i) {
+                            if (mask[sr_hits[i*ns+x]] == MASK_NORMAL) {
+                                ++n_layover;
+                                mask[sr_hits[i*ns+x]] = MASK_LAYOVER;
+                            }
+                        }
+                        // including the current one
+                        mask[grX] = MASK_LAYOVER;
+                        ++n_layover;
+                    }
                 }
+            } 
+            else {
+                // just copy the pixel over -- user can mask if desired
+                out[grX] = in[(int)(srX+.5)];
             }
         }
         else {
@@ -361,7 +369,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                         if (mask[grX] == MASK_NORMAL ||
                             mask[grX] == MASK_INVALID_DATA)
                             ++n_layover;
-
+                        
                         mask[grX] = MASK_LAYOVER;
                     }
                 }
@@ -686,13 +694,11 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                     if (y>0&&doRadiometric)
                         radio_compensate(&d,grDEMline,grDEMlast,outLine,
                                          d.numSamples);
-		    
-		    if (maskfill != 1) // 1 indicates mask should not be seen
-                        mask_float_line(d.numSamples,maskfill,outLine,mask+y*d.numSamples); // subtract away the masked region
-		    // > 1 indicates to leave a black 0 hole in the image
-		    // negative mask fill values means plug in this value instead 
-		  
-		    
+
+		    // subtract away the masked region
+                    mask_float_line(d.numSamples,maskfill,outLine,
+                                    mask+y*d.numSamples);
+
                     put_float_line(outFp,outMeta,y,outLine);
 		}
 		else

@@ -516,6 +516,11 @@ int match_dem(meta_parameters *metaSAR,
                   }
               }
 
+              if (ii_chosen < 0) {
+                  // failed to find a seed point that works!
+                  err=1; break;
+              }
+
               asfRequire (ii_chosen >= 0 && ii_chosen < MASK_SEED_POINTS,
                           "Impossible! chosen=%d\n", ii_chosen);
 
