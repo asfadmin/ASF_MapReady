@@ -46,7 +46,7 @@ S_BINDIR := $(shell echo "$(BINDIR)" | perl -p -i -e 's/\.\.\/\.\.\///')
 
 all: external_libs
 	mkdir -p $(S_BINDIR) $(S_SHAREDIR) lib
-	cp ASF_LICENSE $(S_SHAREDIR)
+	cp LICENSE.txt $(S_SHAREDIR)
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX All ASF Tools Compiled Successfully! XXXXXXXXXXX"
