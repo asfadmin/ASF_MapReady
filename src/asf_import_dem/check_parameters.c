@@ -1,1 +1,0 @@
-../libasf_geocode/check_parameters.c
