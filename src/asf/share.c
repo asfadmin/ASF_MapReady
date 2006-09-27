@@ -169,7 +169,7 @@ static int check_for_known_file_in_dir(const char *dir, const char *known_file)
 
 static int check_for_known_file_in_share_dir(const char *dir)
 {
-    const char * known_file = "ASF_LICENSE";
+    const char * known_file = "LICENSE.txt";
     return check_for_known_file_in_dir(dir, known_file);
 }
 
