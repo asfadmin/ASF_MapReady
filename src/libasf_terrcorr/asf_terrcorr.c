@@ -492,13 +492,11 @@ int match_dem(meta_parameters *metaSAR,
                   err=1; break;
               }
 
-              printf("Attempt #%d to find a good seed region.\n", n_attempt);
-
               int ii_chosen = -1;
               long good_num = 0;
               //if (n_attempt == 1)
               //    printf("Region results:\n");
- 
+
               for (ii=0; ii<MASK_SEED_POINTS; ii++)
               {
                   long region_size = (y_br_list[ii]-y_tl_list[ii])*
@@ -506,7 +504,7 @@ int match_dem(meta_parameters *metaSAR,
 
                   //if (n_attempt == 1)
                   //    printf("Region %d: [%d,%d]-[%d,%d] (%ld): "
-                  //           "%f%% -> %ld\n", ii+1,
+                  //           "%.1f%% -> %ld\n", ii+1,
                   //           x_tl_list[ii], y_tl_list[ii],
                   //           x_br_list[ii], y_br_list[ii], region_size,
                   //           good_pct_list[ii]*100,
@@ -520,16 +518,19 @@ int match_dem(meta_parameters *metaSAR,
 
               asfRequire (ii_chosen >= 0 && ii_chosen < MASK_SEED_POINTS,
                           "Impossible! chosen=%d\n", ii_chosen);
-              good_pct_list[ii_chosen] = 0; // prevent future selection
 
               int xtl = x_tl_list[ii_chosen];
               int ytl = y_tl_list[ii_chosen];
               int xbr = x_br_list[ii_chosen];
               int ybr = y_br_list[ii_chosen];
 
-              asfPrintStatus("Chose region #%d.\n", ii_chosen+1);
-              //printf("Clipping region is [%d,%d] [%d,%d]\n",
-              //       xtl, ytl, xbr, ybr);
+              asfPrintStatus("Chose seed region #%d: S:[%d,%d]"
+                             " - L:[%d,%d] (%ld pixels, %.1f%% masked)\n",
+                             ii_chosen+1, xtl, ytl, xbr, ybr,
+                             (long)((ybr-ytl)*(xbr-xtl)),
+                             100 * (1 - good_pct_list[ii_chosen]));
+
+              good_pct_list[ii_chosen] = 0; // prevent future selection
 
               demTrimSimAmp_ffft = outputName(output_dir, demFile,
                                               "_sim_amp_trim_for_fft");
@@ -540,10 +541,8 @@ int match_dem(meta_parameters *metaSAR,
               //               demTrimSimAmp_ffft, srTrimSimAmp);
               trim(demTrimSimAmp, demTrimSimAmp_ffft,xtl,ytl,xbr-xtl,ybr-ytl);
               trim(srFile, srTrimSimAmp, xtl, ytl, xbr-xtl, ybr-ytl);
-              //asfPrintStatus(" passed in %d %d %d %d\n",
-              //               xtl, ytl, xbr-xtl, ybr-ytl);
               fftMatchQ(srTrimSimAmp, demTrimSimAmp_ffft, &dx, &dy, &cert);
-              //printf("Match: %.2f%% certainty. (%f,%f)\n", 100*cert, dx, dy);
+
               if (cert < cert_cutoff) {
                   asfPrintStatus("Match: %.2f%% certainty. (%f,%f)\n"
                                  "Certainty fails to meet minimum: %.1f%%\n"
@@ -576,10 +575,10 @@ int match_dem(meta_parameters *metaSAR,
 
     asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f dy=%f\n",
 		   100*cert, dx, dy);
-    
+
     idx = - int_rnd(dx);
     idy = - int_rnd(dy);
-    
+
     redo_clipping = FALSE;
 
     if (fabs(dy) > required_match || fabs(dx) > required_match || 
@@ -622,7 +621,7 @@ int match_dem(meta_parameters *metaSAR,
 	    metaSAR->sar->time_shift += t_off;
 	    metaSAR->sar->slant_shift += x_off;
 	    meta_write(metaSAR, srFile);
-	    
+
 	    if (!do_refine_geolocation) {
 	      asfPrintStatus("Found a large offset (%dx%d LxS pixels)\n"
 			     "Adjusting SAR image and re-clipping DEM.\n",
@@ -632,7 +631,6 @@ int match_dem(meta_parameters *metaSAR,
             }
         }
     }
-    
   } while (redo_clipping);
   
   // Corner test
@@ -918,16 +916,16 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
            metaSAR->general->line_count);
       deskew_dem(demTrimSlant, deskewDemFile, padFile, 0, userMaskClipped,
 		 deskewDemMask, do_interp, maskfill);
-      
+
       // After deskew_dem, there will likely be zeros on the left & right edges
       // of the image, we trim those off before finishing up.
       int startx, endx;
       trim_zeros(deskewDemFile, outFile, &startx, &endx);
       trim(deskewDemMask, lsMaskFile, startx, 0, endx,
            metaSAR->general->line_count);
-      //clean(padFile);
-      //clean(deskewDemFile);
-      //clean(deskewDemMask);
+      clean(padFile);
+      clean(deskewDemFile);
+      clean(deskewDemMask);
 
       // Because of the PP earth radius sr->gr fix, we may not have ended
       // up with the same x pixel size that the user requested.  So we will
@@ -943,7 +941,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
               outputName(output_dir, lsMaskFile, "_resample");
           renameImgAndMeta(lsMaskFile, lsMaskFile_2);
           resample_to_square_pixsiz(lsMaskFile_2, lsMaskFile, pixel_size);
-          //clean(lsMaskFile_2);
+          clean(lsMaskFile_2);
       } else {
           resampleFile_2 = NULL;
       }
