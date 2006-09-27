@@ -1,5 +1,6 @@
 #include "asf.h"
 #include "asf_convert.h"
+#include "asf_sar.h"
 #include <ctype.h>
 
 static int strindex(char s[], char t[])
@@ -826,7 +827,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
 	fprintf(fConfig, "\n# When applying a mask during terrain correction, you can choose\n"
                 "# how the regions covered by the mask are filled in the final terrain corrected\n"
                 "# result.  You can either specify a (non-negative) value of your choosing,or\n"
-                "# if you'd like the SAR data to be kept then use -1 as the fill value.\n\n");
+                "# if you'd like the SAR data to be kept then use %d as the fill value.\n\n", LEAVE_MASK);
       fprintf(fConfig, "maskfill = %d\n\n", cfg->terrain_correct->maskfill);
       if (!shortFlag)
         fprintf(fConfig, "\n# Even if you don't want to change the image via terrain correction,\n"
