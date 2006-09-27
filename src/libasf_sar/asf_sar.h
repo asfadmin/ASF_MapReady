@@ -10,9 +10,13 @@
 #define MASK_LAYOVER 192.0
 #define MASK_INVALID_DATA 255
 
+
 /* Number of pixels added by create_dem_grid at the right edge of the 
    image, to allow for height differences */
 #define DEM_GRID_RHS_PADDING 400
+
+/** The value of "maskfill" that means "leave masked out data as-is" */
+#define LEAVE_MASK -1
 
 #include <stdio.h>
 #include "poly.h"

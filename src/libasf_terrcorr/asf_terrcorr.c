@@ -216,7 +216,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int dem_grid_size = 20;
   int do_terrain_correction = TRUE;
   int generate_water_mask = FALSE;
-  int maskfill = 2;
+  int maskfill = 0;
 
   return asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
 			  clean_files, do_resample, do_corner_matching,
@@ -238,7 +238,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int do_terrain_correction = FALSE;
   int generate_water_mask = FALSE;
   int ret;
-  int maskfill = 2;
+  int maskfill = 0;
   ret = asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
                          clean_files, do_resample, do_corner_matching,
                          do_interp, do_fftMatch_verification, dem_grid_size,

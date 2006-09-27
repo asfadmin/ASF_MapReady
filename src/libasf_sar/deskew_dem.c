@@ -268,14 +268,10 @@ static void mask_float_line(int ns, int maskfill, float *in, float *inMask)
         {
             ++n_user;
 
-            // negative values indicate that it should be a 
-            // different fill value
-            if (maskfill < 0) 
-                in[x] = abs(maskfill);
-            else if (maskfill == 2) // normal mask value, 0.
-                in[x] = 0;
-
-            // maskfill==1 indicates mask should not be seen -- do nothing
+            // a -1 indicates leave the actual data.
+            // other values are user specified values that should be put in
+            if (maskfill != LEAVE_MASK)
+                in[x] = maskfill;
         }
     }
 }

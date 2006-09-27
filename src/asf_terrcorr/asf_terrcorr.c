@@ -50,7 +50,9 @@ main (int argc, char *argv[])
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = TRUE;
   int generate_water_mask = FALSE;
-  int maskfill = 2; // 1= no masking, 2= set to 0
+
+  // -1 -> no masking, other values mean fill it with that value
+  int maskfill = 0; 
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -99,11 +101,13 @@ main (int argc, char *argv[])
     }
     else if (strmatches(key,"-fill","--fill",NULL)) {
         CHECK_ARG(1);
-        maskfill = -atoi(GET_ARG(1)); // user requested a specific fill value
+        maskfill = atoi(GET_ARG(1)); // user requested a specific fill value
     }
     else if (strmatches(key,"-no-fill","--no-fill",NULL)) {
         CHECK_ARG(1);
-        maskfill = 1; // leave masked regions alone - fill with sar data
+
+        // leave masked regions alone - fill with sar data
+        maskfill = LEAVE_MASK; 
     }
     else {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);

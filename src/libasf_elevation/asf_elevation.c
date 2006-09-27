@@ -198,7 +198,7 @@ void asf_elevation(char *logFile, char *unwrapped_phase, char *phase_mask,
   FCLOSE(fmask);
 
 
-  int maskfill=1;
+  int maskfill=-1;
   // Transform all the slant range products into ground range
   printf("   Generating ground range elevation ...\n");
   deskew_dem(slant_elevation, ground_elevation, NULL, 0, NULL, NULL, TRUE,
