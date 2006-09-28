@@ -85,9 +85,9 @@ static void findPeak(float *corrImage,float *dx,float *dy,float *doubt,
   int x,y,bestX,bestY;
   float bestMatch=-100000000000.0;
   float bestLocX=delX,bestLocY=delY;
-  asfPrintStatus("   Searching for Peak (largest offset=%d lines "
-                 "& %d samples)\n",
-                 searchY,searchX);
+  //asfPrintStatus("   Searching for Peak (largest offset=%d lines "
+  //               "& %d samples)\n",
+  //               searchY,searchX);
   for (y=chipY-searchY;y<chipY+searchY;y++)
     for (x=chipX-searchX;x<chipX+searchX;x++) {
       int index=ns*modY(y,nl)+modX(x,ns);
@@ -137,7 +137,7 @@ static void fftProd(FILE *in1F,meta_parameters *metaMaster,
   *outReal=in2;
   
   /*Read image 2 (chip)*/
-  asfPrintStatus("Reading Image 2\n");
+  //asfPrintStatus("Reading Image 2\n");
   readImage(in2F,metaSlave,
 	    chipX,chipY,chipDX,chipDY,
 	    0.0,&aveChip,in2,nl,ns);
@@ -153,22 +153,22 @@ static void fftProd(FILE *in1F,meta_parameters *metaMaster,
   }
 
   /*FFT image 2 */
-  asfPrintStatus("FFT Image 2\n");
+  //asfPrintStatus("FFT Image 2\n");
   rfft2d(in2,mY,mX);
 
   /*Read image 1: Much easier, now that we know the average brightness. */
-  asfPrintStatus("Reading Image 1\n");
+  //asfPrintStatus("Reading Image 1\n");
   readImage(in1F,metaMaster,
 	    0,0,MINI(metaMaster->general->sample_count,ns),
 	    MINI(metaMaster->general->line_count,nl),
 	    aveChip,NULL,in1,nl,ns);
 
   /*FFT Image 1 */
-  asfPrintStatus("FFT Image 1\n");
+  //asfPrintStatus("FFT Image 1\n");
   rfft2d(in1,mY,mX);
 
   /*Conjugate in2.*/
-  asfPrintStatus("Conjugate Image 2\n");
+  //asfPrintStatus("Conjugate Image 2\n");
   for (y=0;y<nl;y++) {
     l=ns*y;
     if (y<2) x=1; else x=0;
@@ -177,11 +177,11 @@ static void fftProd(FILE *in1F,meta_parameters *metaMaster,
   }
 
   /*Take complex product of in1 and in2 into out.*/
-  asfPrintStatus("Complex Product\n");
+  //asfPrintStatus("Complex Product\n");
   rspect2dprod(in1,in2,out,nl,ns);
 
   /*Zero out the low frequencies of the correlation image.*/
-  asfPrintStatus("Zero low frequencies.\n");
+  //asfPrintStatus("Zero low frequencies.\n");
   for (y=0;y<4;y++) {
     l=ns*y;
     for (x=0;x<8;x++)
@@ -192,7 +192,7 @@ static void fftProd(FILE *in1F,meta_parameters *metaMaster,
   }
 
   /*Inverse-fft the product*/
-  asfPrintStatus("I-FFT\n");
+  //asfPrintStatus("I-FFT\n");
   rifft2d(out,mY,mX);
 
   FREE(in1);/*Note: in2 shouldn't be freed, because we return it.*/
