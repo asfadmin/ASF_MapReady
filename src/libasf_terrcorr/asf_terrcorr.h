@@ -1,8 +1,6 @@
 #ifndef ASF_TERRCORR_H
 #define ASF_TERRCORR_H
 
-#include "asf_sar.h" /* For LEAVE_MASK */
-
 /**
    asf_terrcorr
 
