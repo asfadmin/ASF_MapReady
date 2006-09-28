@@ -22,7 +22,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #define ASF_USAGE_STRING \
 "<image> <corner reflector locations> <point target analyis file>\n"\
 "\n"\
-"Additional option: -help"
+"Additional options: -help -overwrite"
 
 #define ASF_DESCRIPTION_STRING \
 "Detect_cr takes the geolocation information of corner reflectors and\n"\
@@ -197,7 +197,14 @@ int main(int argc, char *argv[])
   char *text=NULL;
   int overwrite=FALSE;
 
-  if(argc != 4)
+  if (argc==1) usage();
+  if (strcmp(argv[1],"-help")==0) help_page(); /* exits program */
+  if (strcmp(argv[1],"-overwrite")==0) overwrite=TRUE;
+
+  int required_args = 4;
+  if (overwrite) ++required_args;
+
+  if(argc != required_args)
     usage();/*This exits with a failure*/
   
   /* Fetch required arguments */
