@@ -52,7 +52,7 @@ main (int argc, char *argv[])
   int generate_water_mask = FALSE;
 
   // -1 -> no masking, other values mean fill it with that value
-  int maskfill = 0; 
+  int fill_value = 0; 
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -101,13 +101,13 @@ main (int argc, char *argv[])
     }
     else if (strmatches(key,"-fill","--fill",NULL)) {
         CHECK_ARG(1);
-        maskfill = atoi(GET_ARG(1)); // user requested a specific fill value
+        fill_value = atoi(GET_ARG(1)); // user requested a specific fill value
     }
     else if (strmatches(key,"-no-fill","--no-fill",NULL)) {
         CHECK_ARG(1);
 
         // leave masked regions alone - fill with sar data
-        maskfill = LEAVE_MASK; 
+        fill_value = LEAVE_MASK; 
     }
     else {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
@@ -126,7 +126,7 @@ main (int argc, char *argv[])
   int ret =  asf_terrcorr_ext(inFile, demFile,inMaskFile,outFile, pixel_size,
                               clean_files, do_resample, do_corner_matching,
                               do_interp, do_fftMatch_verification,
-                              dem_grid_size, TRUE, maskfill, 
+                              dem_grid_size, TRUE, fill_value, 
                               generate_water_mask);
 
   return ret==0 ? EXIT_SUCCESS : EXIT_FAILURE;

@@ -216,12 +216,12 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int dem_grid_size = 20;
   int do_terrain_correction = TRUE;
   int generate_water_mask = FALSE;
-  int maskfill = 0;
+  int fill_value = 0;
 
   return asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
 			  clean_files, do_resample, do_corner_matching,
                           do_interp, do_fftMatch_verification,
-                          dem_grid_size, do_terrain_correction, maskfill,
+                          dem_grid_size, do_terrain_correction, fill_value,
                           generate_water_mask);
 }
 
@@ -238,11 +238,11 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int do_terrain_correction = FALSE;
   int generate_water_mask = FALSE;
   int ret;
-  int maskfill = 0;
+  int fill_value = 0;
   ret = asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
                          clean_files, do_resample, do_corner_matching,
                          do_interp, do_fftMatch_verification, dem_grid_size,
-                         do_terrain_correction, maskfill, generate_water_mask);
+                         do_terrain_correction, fill_value, generate_water_mask);
 
   if (ret==0)
   {
@@ -738,7 +738,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		     char *outFile, double pixel_size, int clean_files,
 		     int do_resample, int do_corner_matching, int do_interp,
 		     int do_fftMatch_verification, int dem_grid_size,
-		     int do_terrain_correction, int maskfill,
+		     int do_terrain_correction, int fill_value,
                      int generate_water_mask)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
@@ -920,7 +920,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       trim(srFile, padFile, 0, 0, metaSAR->general->sample_count + PAD,
            metaSAR->general->line_count);
       deskew_dem(demTrimSlant, deskewDemFile, padFile, 0, userMaskClipped,
-		 deskewDemMask, do_interp, maskfill);
+		 deskewDemMask, do_interp, fill_value);
 
       // After deskew_dem, there will likely be zeros on the left & right edges
       // of the image, we trim those off before finishing up.

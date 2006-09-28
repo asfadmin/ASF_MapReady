@@ -80,7 +80,7 @@ typedef struct
                           // correction, just refine the geolocation w/ the DEM
   int interp;             // TRUE if we should interpolate layover/shadow
                           // regions, FALSE if those regions should be blank
-  int maskfill;           // a fill value if >=0.  -1 means use sar data
+  int fill_value;         // a fill value if >=0. LEAVE_MASK means use sar data
 } s_terrain_correct;
 
 typedef struct

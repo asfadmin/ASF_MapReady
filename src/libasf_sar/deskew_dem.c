@@ -259,7 +259,7 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
     return er/d->phiMul;
 }
 
-static void mask_float_line(int ns, int maskfill, float *in, float *inMask)
+static void mask_float_line(int ns, int fill_value, float *in, float *inMask)
 {
     int x;
     for (x=0; x<ns; x++)
@@ -270,8 +270,8 @@ static void mask_float_line(int ns, int maskfill, float *in, float *inMask)
 
             // a -1 indicates leave the actual data.
             // other values are user specified values that should be put in
-            if (maskfill != LEAVE_MASK)
-                in[x] = maskfill;
+            if (fill_value != LEAVE_MASK)
+                in[x] = fill_value;
         }
     }
 }
@@ -503,7 +503,7 @@ Here's what it looked like before optimization:
 /* inMaskName can be NULL, in this case outMaskName is ignored */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	       int doRadiometric, char *inMaskName, char *outMaskName,
-               int fill_holes, int maskfill)
+               int fill_holes, int fill_value)
 {
 	float *srDEMline,*grDEM,*grDEMline,*grDEMlast,*inSarLine,*outLine;
         float *mask;
@@ -692,7 +692,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                                          d.numSamples);
 
 		    // subtract away the masked region
-                    mask_float_line(d.numSamples,maskfill,outLine,
+                    mask_float_line(d.numSamples,fill_value,outLine,
                                     mask+y*d.numSamples);
 
                     put_float_line(outFp,outMeta,y,outLine);

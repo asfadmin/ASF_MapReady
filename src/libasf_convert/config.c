@@ -258,7 +258,7 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->terrain_correct->dem, "");
   cfg->terrain_correct->mask = (char *)MALLOC(sizeof(char)*255);
   cfg->terrain_correct->auto_mask_water = 0;
-  cfg->terrain_correct->maskfill = 0;
+  cfg->terrain_correct->fill_value = 0;
   strcpy(cfg->terrain_correct->mask, "");
   cfg->terrain_correct->refine_geolocation_only = 0;
   cfg->terrain_correct->interp = 1;
@@ -366,8 +366,8 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->terrain_correct->mask, read_str(line, "mask"));
       if (strncmp(test, "auto mask water", 15)==0)
         cfg->terrain_correct->auto_mask_water = read_int(line, "auto mask water");
-      if (strncmp(test, "maskfill", 8)==0)
-        cfg->terrain_correct->maskfill = read_int(line, "maskfill");
+      if (strncmp(test, "fill value", 8)==0)
+        cfg->terrain_correct->fill_value = read_int(line, "fill value");
       if (strncmp(test, "refine geolocation only", 23)==0)
         cfg->terrain_correct->refine_geolocation_only = 
           read_int(line, "refine_geolocation_only");
@@ -573,8 +573,8 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->terrain_correct->mask, read_str(line, "mask"));
       if (strncmp(test, "auto mask water", 15)==0)
         cfg->terrain_correct->auto_mask_water = read_int(line, "auto mask water");
-      if (strncmp(test, "maskfill", 8)==0)
-        cfg->terrain_correct->maskfill = read_int(line, "maskfill");
+      if (strncmp(test, "fill value", 8)==0)
+        cfg->terrain_correct->fill_value = read_int(line, "fill value");
       if (strncmp(test, "refine geolocation only", 23)==0)
         cfg->terrain_correct->refine_geolocation_only = read_int(line, "refine_geolocation_only");
       if (strncmp(test, "interpolate", 11)==0)
@@ -828,7 +828,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# how the regions covered by the mask are filled in the final terrain corrected\n"
                 "# result.  You can either specify a (non-negative) value of your choosing,or\n"
                 "# if you'd like the SAR data to be kept then use %d as the fill value.\n\n", LEAVE_MASK);
-      fprintf(fConfig, "maskfill = %d\n\n", cfg->terrain_correct->maskfill);
+      fprintf(fConfig, "fill value = %d\n\n", cfg->terrain_correct->fill_value);
       if (!shortFlag)
         fprintf(fConfig, "\n# Even if you don't want to change the image via terrain correction,\n"
                 "# you may still wish to use the DEM to refine the geolocation of the SAR image.\n"

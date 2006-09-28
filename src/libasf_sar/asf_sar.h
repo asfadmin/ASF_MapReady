@@ -15,7 +15,7 @@
    image, to allow for height differences */
 #define DEM_GRID_RHS_PADDING 400
 
-/** The value of "maskfill" that means "leave masked out data as-is" */
+/** The value of "fill_value" that means "leave masked out data as-is" */
 #define LEAVE_MASK -1
 
 #include <stdio.h>
@@ -39,7 +39,7 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 /* Prototypes from deskew_dem.c */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	       int doRadiometric, char *inMaskName, char *outMaskName,
-	       int fill_holes, int maskfill);
+	       int fill_holes, int fill_value);
 
 /* Prototypes from create_dem_grid.c */
 int create_dem_grid(const char *demName, const char *sarName,

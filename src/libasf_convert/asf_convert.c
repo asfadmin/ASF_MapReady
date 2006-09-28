@@ -280,10 +280,13 @@ int asf_convert(int createflag, char *configFileName)
             strlen(cfg->terrain_correct->mask) > 0;
 
         if (have_mask && cfg->terrain_correct->auto_mask_water) {
+            asfPrintStatus("Mask File: %s\n", cfg->terrain_correct->mask);
+            asfPrintStatus("Auto Water Mask: %d\n", 
+                           cfg->terrain_correct->auto_mask_water);
             asfPrintWarning("You cannot specify a mask for terrain correction "
-                            "and also request a mask be automatically generated.\n"
-                            "Ignoring auto water mask -- will use the mask "
-                            "provided.\n");
+                          "and also request an automatically generated mask.\n"
+                          "Ignoring auto water mask -- will use the mask "
+                          "provided.\n");
         }
 
     }
@@ -522,7 +525,7 @@ int asf_convert(int createflag, char *configFileName)
                              cfg->terrain_correct->pixel,
                              !cfg->general->intermediates,
                              TRUE, FALSE, cfg->terrain_correct->interp, 
-                             TRUE, 20, TRUE, cfg->terrain_correct->maskfill,
+                             TRUE, 20, TRUE, cfg->terrain_correct->fill_value,
                              cfg->terrain_correct->auto_mask_water),
             "terrain correcting data file (asf_terrcorr)\n");
       }
