@@ -280,7 +280,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                            float *out,int ns, int doInterp, float *mask)
 {
     int i,grX;
-    int StartLayoverFlag=0;
+    int valid_data_yet=0;
     int num_hits_required_for_layover=3;
     int *sr_hits=NULL;
     float max_height=grDEM[0];
@@ -318,7 +318,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                     /* nearest neighbor */
                     out[grX]= dx <= 0.5 ? in[x] : in[x+1];
                 }
-                StartLayoverFlag=1;
+                valid_data_yet=1;
                 
                 if (sr_hits) {
                     int is_layover = TRUE; // until we learn otherwise
@@ -344,24 +344,32 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                         ++n_layover;
                     }
                 }
-            } 
+            }
             else {
                 // just copy the pixel over -- user can mask if desired
-                out[grX] = in[(int)(srX+.5)];
+                // if we haven't hit valid data yet, just put in 0.
+                if (valid_data_yet) {
+                    out[grX] = in[(int)(srX+.5)];
+                } else {
+                    out[grX] = 0;
+                }
+
+                if (mask)
+                    mask[grX] = MASK_INVALID_DATA;
             }
         }
         else {
             out[grX]=0.0;
             if (mask)
             {
-                if ( (height==badDEMht && !StartLayoverFlag) ||
+                if ( (height==badDEMht && !valid_data_yet) ||
                      ( srX > rpoint) )                    
                 {
                     mask[grX] = MASK_INVALID_DATA;
                 }
                 else
                 {
-                    if (StartLayoverFlag) {
+                    if (valid_data_yet) {
                         if (mask[grX] == MASK_NORMAL ||
                             mask[grX] == MASK_INVALID_DATA)
                             ++n_layover;

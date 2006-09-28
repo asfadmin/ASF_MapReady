@@ -237,12 +237,13 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int do_corner_matching = FALSE;
   int do_terrain_correction = FALSE;
   int generate_water_mask = FALSE;
-  int ret;
   int fill_value = 0;
-  ret = asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
-                         clean_files, do_resample, do_corner_matching,
-                         do_interp, do_fftMatch_verification, dem_grid_size,
-                         do_terrain_correction, fill_value, generate_water_mask);
+
+  int ret =
+      asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
+                       clean_files, do_resample, do_corner_matching,
+                       do_interp, do_fftMatch_verification, dem_grid_size,
+                       do_terrain_correction, fill_value, generate_water_mask);
 
   if (ret==0)
   {
@@ -471,11 +472,12 @@ int match_dem(meta_parameters *metaSAR,
       float *mask;
       inseedmask = fopenImage(userMaskClipped,"rb");
       maskmeta = meta_read(userMaskClipped);
-      mask = (float *) MALLOC(sizeof(float) * metaSAR->general->sample_count 
+      asfRequire(maskmeta->general->line_count==demHeight, "Bad heights.\n");
+      mask = (float *) MALLOC(sizeof(float) * maskmeta->general->sample_count 
 			      * demHeight);
       for (ii=0;ii<demHeight;ii++) // read in the whole mask image
 	get_float_line(inseedmask, maskmeta, ii,
-                       mask + ii * metaSAR->general->sample_count);
+                       mask + ii * maskmeta->general->sample_count);
       FCLOSE(inseedmask);
       err = lay_seeds(MASK_SEED_POINTS, mask, metaSAR->general->sample_count, 
                       demHeight, x_tl_list, y_tl_list, x_br_list, 
@@ -800,8 +802,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   sarRes = metaSAR->general->x_pixel_size;
   if (userMaskFile)
   {
-  	maskRes = metamask->general->x_pixel_size; 
-        userMaskClipped = outputName(output_dir, userMaskFile, "_clip");
+      maskRes = metamask->general->x_pixel_size; 
+      userMaskClipped = outputName(output_dir, userMaskFile, "_clip");
   }
 
   // Check if the user requested a pixel size that requires
@@ -821,9 +823,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		 demRes);
   if (userMaskFile)
   {
-  	asfPrintStatus("User Mask Image is %dx%d LxS, %gm pixels.\n",
-                       metamask->general->line_count,
-                       metamask->general->sample_count, maskRes);
+      asfPrintStatus("User Mask Image is %dx%d LxS, %gm pixels.\n",
+                     metamask->general->line_count,
+                     metamask->general->sample_count, maskRes);
   }
 
   // Downsample the SAR image closer to the reference DEM if needed.
