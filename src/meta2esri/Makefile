@@ -5,11 +5,14 @@ DEBUG_BUILD = 2
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
-	-L$(LIBDIR) -lgsl -lgslcblas -lm
+
+CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS)
 
 OBJS_M2E = meta2esri.o
 OBJS_E2M = esri2meta.o

@@ -4,18 +4,18 @@
 
 include ../../make_support/system_rules
 
-CFLAGS += -O0 $(GLIB_CFLAGS)
+CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) $(JPEG_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
-	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
-	$(PROJ_LIBS) \
 	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/asf_fft.a \
+	$(GSL_LIBS) \
+	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(JPEG_LIBS)
 
