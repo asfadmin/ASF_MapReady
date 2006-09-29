@@ -8,7 +8,6 @@
   on the direction you're translating.  Hence, the below routines just
   provide the mapping between the two formats.
 **************************************************************************/
-#define uc (unsigned char *)
 #define fltV(qFld,bfOf,bfSz) flt2asc(&(q->qFld),&bf[bfOf],bfSz,dir);off+=bfSz;
 #define sngV(qFld,bfOf,bfSz) sng2asc(&(q->qFld),&bf[bfOf],bfSz,dir);off+=bfSz;
 #define shrtV(qFld,bfOf,bfSz) shrt2asc(&(q->qFld),&bf[bfOf],bfSz,dir);off+=bfSz;
