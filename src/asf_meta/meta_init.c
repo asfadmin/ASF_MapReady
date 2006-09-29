@@ -37,6 +37,7 @@ meta_general *meta_general_init(void)
 
   /* Fill with ludicrous values.  */
   strcpy(general->sensor, MAGIC_UNSET_STRING);
+  strcpy(general->sensor_name, MAGIC_UNSET_STRING);
   strcpy(general->mode, MAGIC_UNSET_STRING);
   strcpy(general->processor, MAGIC_UNSET_STRING);
   general->data_type = MAGIC_UNSET_INT;
