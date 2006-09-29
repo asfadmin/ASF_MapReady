@@ -20,6 +20,7 @@ OBJS  = caplib.o \
 	log.o \
 	stopwatch.o \
 	share.o \
+	strUtil.o \
 	system.o \
 	tmpdir.o \
 	license.o \
