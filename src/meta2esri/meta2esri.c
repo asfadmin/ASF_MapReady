@@ -46,6 +46,27 @@
 
 #define VERSION 1.0
 
+
+void usage(char *name)
+{
+  printf("\n"
+	 "USAGE:\n"
+	 "   %s [ -log <logFile> ] <meta_name> <esri_name>\n",name);
+  printf("\n"
+	 "REQUIRED ARGUMENTS:\n"
+	 "   meta_name   Base name of the new style meta data.\n"
+	 "   esri_name   Base name of the ESRI style header file.");
+  printf("\n"
+	 "DESCRIPTION:\n"
+	 "   %s converts new ASF style metadata to an ESRI header file.\n",
+	 name);
+  printf("\n"
+	 "Version %.2f, ASF SAR Tools\n"
+	 "\n",VERSION);
+  exit(EXIT_FAILURE);
+}
+
+
 int main(int argc, char **argv)
 {
   char meta_name[255];
@@ -127,24 +148,4 @@ int main(int argc, char **argv)
   }
   
   return 0;
-}
-
-
-void usage(char *name)
-{
-  printf("\n"
-	 "USAGE:\n"
-	 "   %s [ -log <logFile> ] <meta_name> <esri_name>\n",name);
-  printf("\n"
-	 "REQUIRED ARGUMENTS:\n"
-	 "   meta_name   Base name of the new style meta data.\n"
-	 "   esri_name   Base name of the ESRI style header file.");
-  printf("\n"
-	 "DESCRIPTION:\n"
-	 "   %s converts new ASF style metadata to an ESRI header file.\n",
-	 name);
-  printf("\n"
-	 "Version %.2f, ASF SAR Tools\n"
-	 "\n",VERSION);
-  exit(EXIT_FAILURE);
 }

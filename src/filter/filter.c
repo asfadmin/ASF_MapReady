@@ -58,17 +58,6 @@ DESCRIPTION:
 #define REQUIRED_ARGS 2
 #define BROWSE 512
 
-char *uc(char *string)
-{
-  char *out=(char *)MALLOC(sizeof(char)*strlen(string));
-  int i;
-
-  for (i=0; i<strlen(string); i++) out[i]=toupper(string[i]);
-  out[i]='\0';
-
-  return out;
-}
-
 /* usage - enter here on command-line usage error*/
 static
 void usage(char *name)

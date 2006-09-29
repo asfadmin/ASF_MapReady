@@ -111,17 +111,6 @@ char *base2str(int baseNo, char *base)
 	return baseStr;
 }
 
-char *uc(char *string)
-{
-	char *out=(char *)MALLOC(sizeof(char)*strlen(string));
-	int i;
-
-	for (i=0; i<strlen(string); i++) out[i]=toupper(string[i]);
-	out[i]='\0';
-
-	return out;
-}
-
 int main(int argc, char *argv[])
 {
 

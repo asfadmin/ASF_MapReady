@@ -15,17 +15,6 @@ int firstRecordLen(char *ceosName)
   return bigInt32(h.recsiz); /*put recsiz in proper endian format & return*/
 }
 
-char *uc(char *string)
-{
-  char *out=(char *)MALLOC(sizeof(char)*strlen(string));
-  int i;
-
-  for (i=0; i<strlen(string); i++) out[i]=toupper(string[i]);
-  out[i]='\0';
-
-  return out;
-}
-
 /* Default splash screen, the same for all the tools
    This function should be called first in the "we're good enough" part of command line parsing */
 void print_splash_screen(int argc, char* argv[])

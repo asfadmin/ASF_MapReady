@@ -48,7 +48,6 @@ typedef struct {
 
 /* Prototypes out of utilities.c */
 int firstRecordLen(char *ceosName);
-char *uc(char *string);
 void print_splash_screen(int argc, char* argv[]);
 void print_progress(int current_line, int total_lines);
 int checkForOption(char* key, int argc, char* argv[]);

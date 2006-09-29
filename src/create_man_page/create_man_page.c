@@ -43,16 +43,22 @@
 
 #define VERSION 1.0
 
-/* Change string into upper case */
-char *uc(char *string)
+
+void usage(char *name)
 {
-  char *out=(char *)MALLOC(sizeof(char)*255);
-  int i;
-  
-  for (i=0; i<strlen(string); i++) out[i]=toupper(string[i]);
-  out[i]='\0';
-  
-  return out;
+  printf("\n"
+	 "USAGE:\n"
+	 "   %s  <file_name>\n",name);
+  printf("\n"
+	 "REQUIRED ARGUMENTS:\n"
+	 "   file_name     Base name of the data file.\n");
+  printf("\n"
+	 "DESCRIPTION:\n"
+	 "   %s extracts the man page out of source code file", name);
+  printf("\n\n"
+	 "Version %.2f, ASF SAR Tools\n"
+	 "\n",VERSION);
+  exit(EXIT_FAILURE);
 }
 
 /* Change the special characters for a correct output in HTML */
@@ -60,7 +66,7 @@ char* change_special_characters(char *in)
 {
   int i,j=0;
   char *out=(char *)MALLOC(sizeof(char)*512);
-  *out = NULL;
+  *out = '\0';
 
   for (i=0; i<255; i++) {
     if (in[i]=='&') { 
@@ -305,20 +311,3 @@ int main(int argc, char **argv)
   return 0;
 }
 
-
-void usage(char *name)
-{
-  printf("\n"
-	 "USAGE:\n"
-	 "   %s  <file_name>\n",name);
-  printf("\n"
-	 "REQUIRED ARGUMENTS:\n"
-	 "   file_name     Base name of the data file.\n");
-  printf("\n"
-	 "DESCRIPTION:\n"
-	 "   %s extracts the man page out of source code file", name);
-  printf("\n\n"
-	 "Version %.2f, ASF SAR Tools\n"
-	 "\n",VERSION);
-  exit(EXIT_FAILURE);
-}

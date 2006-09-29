@@ -7,17 +7,6 @@
 
 #define VERSION 1.0
 
-char *uc(char *string)
-{
-  char *out=(char *)MALLOC(sizeof(char)*strlen(string));
-  int i;
-  
-  for (i=0; i<strlen(string); i++) out[i]=toupper(string[i]);
-  out[i]='\0';
-  
-  return out;
-}
-
 static
 void usage(char *name)
 {

@@ -21,7 +21,6 @@ typedef enum {
 void usage(char *name);
 void help_page();
 int firstRecordLen(char *ceosName);
-char *uc(char *string);
 void print_splash_screen(int argc, char* argv[]);
 void print_progress(int current_line, int total_lines);
 int checkForOption(char* key, int argc, char* argv[]);

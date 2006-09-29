@@ -46,16 +46,26 @@
 
 #define VERSION 1.0
 
-char *uc(char *string)
+
+void usage(char *name)
 {
-  char *out=(char *)MALLOC(sizeof(char)*strlen(string));
-  int i;
-
-  for (i=0; i<strlen(string); i++) out[i]=toupper(string[i]);
-  out[i]='\0';
-
-  return out;
+  printf("\n"
+	 "USAGE:\n"
+	 "   %s [ -log <logFile> ] <envi_name> <meta_name>\n",name);
+  printf("\n"
+	 "REQUIRED ARGUMENTS:\n"
+	 "   envi_name   Base name of the ENVI header file.\n"
+	 "   meta_name   Base name of the new style meta data.");
+  printf("\n"
+	 "DESCRIPTION:\n"
+	 "   %s converts an ENVI header file to a new style metadata.\n",
+	 name);
+  printf("\n"
+	 "Version %.2f, ASF SAR Tools\n"
+	 "\n",VERSION);
+  exit(EXIT_FAILURE);
 }
+
 
 int main(int argc, char **argv)
 {
@@ -242,24 +252,4 @@ int main(int argc, char **argv)
   }
   
   return 0;
-}
-
-
-void usage(char *name)
-{
-  printf("\n"
-	 "USAGE:\n"
-	 "   %s [ -log <logFile> ] <envi_name> <meta_name>\n",name);
-  printf("\n"
-	 "REQUIRED ARGUMENTS:\n"
-	 "   envi_name   Base name of the ENVI header file.\n"
-	 "   meta_name   Base name of the new style meta data.");
-  printf("\n"
-	 "DESCRIPTION:\n"
-	 "   %s converts an ENVI header file to a new style metadata.\n",
-	 name);
-  printf("\n"
-	 "Version %.2f, ASF SAR Tools\n"
-	 "\n",VERSION);
-  exit(EXIT_FAILURE);
 }
