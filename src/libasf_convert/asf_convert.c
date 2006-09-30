@@ -20,18 +20,6 @@ void check_return(int ret, char *msg)
     asfPrintError(msg);
 }
 
-char *uc(char *string)
-{
-  static char out[1024];
-  int i;
-
-  for (i=0; i<strlen(string); i++)
-    out[i]=toupper(string[i]);
-  out[i]='\0';
-
-  return out;
-}
-
 void update_status(convert_config *cfg, const char *format, ...)
 {
   if (cfg->general->status_file && strlen(cfg->general->status_file) > 0)
@@ -47,6 +35,24 @@ void update_status(convert_config *cfg, const char *format, ...)
   }
 }
 
+// If a temporary directory has not been specified, create one using the time
+// stamp as the name of the temporary directory
+static void create_and_set_tmp_dir(char *tmp_dir)
+{
+  int empty_name = (strlen(tmp_dir)==0) ? TRUE : FALSE;
+
+  if (!empty_name && (opendir(tmp_dir)==NULL) ) {
+    create_clean_dir(tmp_dir);
+    set_asf_tmp_dir(tmp_dir);
+  }
+
+  if (empty_name) {
+    sprintf(tmp_dir, "%s", time_stamp_dir());
+    create_clean_dir(tmp_dir);
+    set_asf_tmp_dir(tmp_dir);
+  }
+}
+
 /* Make a copy of the metdata file. */
 static void copy_meta(char *src, char *dest)
 {
@@ -59,12 +65,8 @@ static void copy_meta(char *src, char *dest)
 
 int asf_convert(int createflag, char *configFileName)
 {
-  FILE *fBatch, *fConfig;
-  convert_config *cfg, *tmp_cfg;
-  meta_parameters *meta;
-  char line[255], batchConfig[255];
-  char inFile[255], outFile[255], fileName[255];
-  char values[255], prefix[30], suffix[30];
+  convert_config *cfg;
+  char inFile[255], outFile[255];
   const int pid = getpid();
 
   // If requested, create a config file and exit (if the file does not exist),
@@ -86,64 +88,61 @@ int asf_convert(int createflag, char *configFileName)
     asfPrintStatus("Couldn't find config file: %s\n", configFileName);
     FCLOSE(fLog);
     return EXIT_FAILURE;
-  } 
+  }
   else {
     cfg = read_convert_config(configFileName);
   }
 
   // Batch mode processing
   if (strcmp(cfg->general->batchFile, "") != 0) {
-    fBatch = FOPEN(cfg->general->batchFile, "r");
-    while (fgets(line, 255, fBatch) != NULL)
-    {
-      sscanf(line, "%s", fileName);
+    convert_config *tmp_cfg=NULL;
+    char tmp_dir[255];
+    char tmpCfgName[255];
+    char line[255];
+    FILE *fBatch = FOPEN(cfg->general->batchFile, "r");
 
+    strcpy(tmp_dir, cfg->general->tmp_dir);
+    while (fgets(line, 255, fBatch) != NULL) {
+      char batchItem[255], fileName[255], batchPreDir[255];
+      FILE *fConfig;
+
+      create_and_set_tmp_dir(tmp_dir);
+
+      sscanf(line, "%s", batchItem);
+      split_dir_and_file(batchItem, batchPreDir, fileName);
       // Create temporary configuration file
-      sprintf(batchConfig, "%s.config", fileName);
-      fConfig = FOPEN(batchConfig, "w");
+      sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
+      fConfig = FOPEN(tmpCfgName, "w");
       fprintf(fConfig, "asf_convert temporary configuration file\n\n");
       fprintf(fConfig, "[General]\n");
       fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
-      fprintf(fConfig, "input file = %s\n", fileName);
-      if (strcmp(cfg->general->prefix, "") == 0)
-        strcpy(prefix, "");
-      else
-        sprintf(prefix, "%s_", cfg->general->prefix);
-      if (strcmp(cfg->general->suffix, "") == 0)
-        strcpy(suffix, "");
-      else
-        sprintf(suffix, "_%s", cfg->general->suffix);
-      fprintf(fConfig, "output file = %s%s%s\n", prefix, fileName, suffix);
+      fprintf(fConfig, "input file = %s\n", batchItem);
+      fprintf(fConfig, "output file = %s%s%s\n", cfg->general->prefix,
+                                                 fileName,
+                                                 cfg->general->suffix);
+      fprintf(fConfig, "tmp dir = %s\n", tmp_dir);
       FCLOSE(fConfig);
 
       // Extend the temporary configuration file
-      tmp_cfg = read_convert_config(batchConfig);
-      check_return(write_convert_config(batchConfig, tmp_cfg), 
+      tmp_cfg = read_convert_config(tmpCfgName);
+      check_return(write_convert_config(tmpCfgName, tmp_cfg), 
                    "Could not update configuration file");
       FREE(tmp_cfg);
-      //      check_return(write_convert_config(fileName, cfg), 
-      //           "Could not update configuration file");
 
       // Run asf_convert for temporary configuration file
-      asfPrintStatus("\nProcessing %s ...\n", fileName);
-      check_return(call_asf_convert(batchConfig),
+      asfPrintStatus("\nProcessing %s ...\n", batchItem);
+      check_return(asf_convert(FALSE, tmpCfgName),
                    "Processing image in batch mode (asf_convert).\n");
-
-      // Clean up
-      unlink(batchConfig);
+      strcpy(tmp_dir, cfg->general->tmp_dir);
     }
+    FCLOSE(fBatch);
   }
   // Regular processing
   else {
 
-    // If user didn't specify a temporary directory, we will
-    // use a time stamp as the name of the temporary directory
-    if (strlen(cfg->general->tmp_dir) == 0) {
-        sprintf(cfg->general->tmp_dir, "%s", time_stamp_dir());
-        create_clean_dir(cfg->general->tmp_dir);
-    }
-
     update_status(cfg, "Processing...");
+    
+    create_and_set_tmp_dir(cfg->general->tmp_dir);
 
     // Check whether everything in the [Import] block is reasonable
     if (cfg->general->import) {
@@ -383,6 +382,7 @@ int asf_convert(int createflag, char *configFileName)
     }
 
     if (cfg->general->sar_processing) {
+      meta_parameters *meta;
 
       update_status(cfg, "Running ArDop...");
 
@@ -454,6 +454,7 @@ int asf_convert(int createflag, char *configFileName)
     }
     
     if (cfg->general->image_stats) {
+      char values[255];
 
       update_status(cfg, "Running Image Stats...");
 
