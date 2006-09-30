@@ -314,7 +314,7 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "detect corner reflectors", 24)==0)
         cfg->general->detect_cr = read_int(line, "detect corner reflectors");
       if (strncmp(test, "terrain correction", 18)==0)
-        cfg->general->import = read_int(line, "terrain correction");
+        cfg->general->terrain_correct = read_int(line, "terrain correction");
       if (strncmp(test, "geocoding", 9)==0)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
@@ -496,6 +496,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->general->quiet = read_int(line, "quiet");
       if (strncmp(test, "short configuration file", 24)==0)
         cfg->general->short_config = read_int(line, "short configuration file");
+      if (strncmp(test, "tmp dir", 7)==0)
+        strcpy(cfg->general->tmp_dir, read_str(line, "tmp dir"));
       if (strncmp(test, "status file", 11)==0)
         strcpy(cfg->general->status_file, read_str(line, "status file"));
       if (strncmp(test, "batch file", 10)==0)
@@ -729,10 +731,16 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# generate configuration files without the verbose comments that explain all\n"
               "# entries for the parameters in the configuration file (1 for a configuration\n"
               "# without comments, 0 for a configuration file with verbose comments)\n\n");
-    fprintf(fConfig, "short configuration file = %i\n\n", cfg->general->short_config);
+    fprintf(fConfig, "short configuration file = %i\n", cfg->general->short_config);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# The tmp dir is where temporary files used during processing will\n"
+              "# be kept until processing is completed. Then the entire directory and its\n"
+              "# contents will be deleted.\n\n");
+    fprintf(fConfig, "tmp dir = %s\n", cfg->general->tmp_dir);
+
     // Import
     if (cfg->general->import) {
-      fprintf(fConfig, "\n[Import]\n");
+      fprintf(fConfig, "\n\n[Import]\n");
       if (!shortFlag)
         fprintf(fConfig, "\n# The recognized import formats are: ASF, CEOS and STF.\n"
                 "# Defining ASF, being the internal format, as the import format is\n"
@@ -822,13 +830,13 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# automatically generate a mask for you, based on the DEM, which attempts to mask\n"
                 "# the regions of your scene that are water (these regions provide a poor match).\n"
                 "# Specifically, all DEM values <1m are masked.\n\n");
-      fprintf(fConfig, "auto mask water = %d\n\n", cfg->terrain_correct->auto_mask_water);
+      fprintf(fConfig, "auto mask water = %d\n", cfg->terrain_correct->auto_mask_water);
       if (!shortFlag)
         fprintf(fConfig, "\n# When applying a mask during terrain correction, you can choose\n"
                 "# how the regions covered by the mask are filled in the final terrain corrected\n"
                 "# result.  You can either specify a (non-negative) value of your choosing,or\n"
                 "# if you'd like the SAR data to be kept then use %d as the fill value.\n\n", LEAVE_MASK);
-      fprintf(fConfig, "fill value = %d\n\n", cfg->terrain_correct->fill_value);
+      fprintf(fConfig, "fill value = %d\n", cfg->terrain_correct->fill_value);
       if (!shortFlag)
         fprintf(fConfig, "\n# Even if you don't want to change the image via terrain correction,\n"
                 "# you may still wish to use the DEM to refine the geolocation of the SAR image.\n"
@@ -894,7 +902,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
         fprintf(fConfig, "\n# The following format are considered valid format: ASF, TIFF, GEOTIFF\n"
                 "# JPEG and PPM.\n" 
                 "# In the same way as for the import block, ASF as an export option results in\n"
-                "# skipping the export step entirely. All other format, with the exception of\n"
+                "# skipping the export step entirely. All other formats, with the exception of\n"
                 "# GeoTIFF, require the scaling of the internal ASF format from floating point\n"
                 "# to byte. The GeoTIFF supports byte as well as floating point data.\n\n");
       fprintf(fConfig, "format = %s\n", cfg->export->format);
