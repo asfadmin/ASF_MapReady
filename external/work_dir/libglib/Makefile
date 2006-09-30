@@ -28,6 +28,7 @@ build_glib_stamp:
 	cp glib/lib/libiconv.a $(LIB_DIR);
 	cp -r glib/include/glib-2.0 $(INCLUDE_DIR);
 	cp glib/lib/glib-2.0/include/*.h $(INCLUDE_DIR)/glib-2.0;
+	touch build_glib_stamp
 
 else
 
