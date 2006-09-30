@@ -1,3 +1,5 @@
+#include <ctype.h>
+
 #include <asf.h>
 
 char *uc (const char *string)
