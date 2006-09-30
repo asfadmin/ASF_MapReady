@@ -90,7 +90,8 @@ char* time_stamp_dir(void);
  * A collection of string manipulation utilities. */
 
 /* Return a static pointer to a variation of the given string in upper case.
-   Do not allocate or free memory for this string, only point at it.  */
+   Do not allocate or free memory for this string, only point at it.
+   This function is case insensitive. */
 char *uc (const char *string);
 
 /******************************************************************************
