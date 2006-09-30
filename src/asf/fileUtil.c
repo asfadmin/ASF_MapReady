@@ -136,29 +136,39 @@ void create_name(char *out,const char *in,const char *newExt)
   strcat (out, newExt);
 }
 
+/* Append an extension if it's not already there. Case insensitive. */
 void append_ext_if_needed(char *file_name, const char *newExt, 
-			  const char *alsoAllowedExt)
+                          const char *alsoAllowedExt)
 {
-  /* modifies the given file_name string in-place */
+  char *ext, extuc[1024];
+  char new1uc[1024], new2uc[1024];
+  int ext_exists;
+  int new1_exists, new2_exists;
 
-  char *ext;
+  new1_exists = (new1uc) ? TRUE : FALSE;
+  new2_exists = (new2uc) ? TRUE : FALSE;
+
   ext = findExt(file_name);
+  ext_exists = (ext) ? TRUE : FALSE;
+  if (ext_exists)
+    strcpy(extuc, uc(ext));
 
-  if (!ext || 
-      (strcmp(ext, newExt) != 0 && 
-       (!alsoAllowedExt || strcmp(ext, alsoAllowedExt) != 0)))
-  {
-    /* no current extension, or the extension is not what we would add 
-       -- so add ours */
-    strcat(file_name, newExt);
+  if (ext_exists) {
+    if (new1_exists) {
+      strcpy(new1uc,uc(newExt));
+      if (strcmp(extuc, new1uc)==0) {
+        return;
+      }
+    }
+    if (new2_exists) {
+      strcpy(new2uc,uc(alsoAllowedExt));
+      if (strcmp(extuc, new2uc)==0) {
+        return;
+      }
+    }
   }
-  else
-  {
-    /* already has correct extension (or the alternate) 
-       -- nothing to be done */    
-  }
-
-  return;
+  // If we haven't returned yet, we need to apply the extension
+  strcat(file_name, newExt);
 }
 
 /****************************************************************************
