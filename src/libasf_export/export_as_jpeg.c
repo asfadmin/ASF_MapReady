@@ -1,29 +1,11 @@
-#include <ctype.h>
-#include <errno.h>
-#include <setjmp.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <limits.h>
-
-#include <cla.h>
-#include <envi.h>
-#include <esri.h>
-#include <geokeys.h>
-#include <geotiff.h>
-#include <geotiffio.h>
-#include <gsl/gsl_math.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_statistics.h>
-#include <jpeglib.h>
 
 #include <asf.h>
-#include <asf_endian.h>
-#include <asf_meta.h>
 #include <asf_export.h>
-#include <asf_raster.h>
+
+#include <jpeglib.h>
+
+#include <gsl/gsl_math.h>
+
 
 void
 export_as_jpeg (const char *metadata_file_name,

@@ -10,8 +10,6 @@
 #include <asf_raster.h>
 #include <asf_export.h>
 
-#define ASF_NAME_STRING "asf_export"
-
 
 void
 export_as_tiff (const char *metadata_file_name,
