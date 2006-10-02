@@ -13,6 +13,8 @@
 #include "ardop_defs.h"
 #include <unistd.h>
 #include <ctype.h>
+#include <sys/types.h> /* 'DIR' structure (for opendir) */
+#include <dirent.h>    /* for opendir itself            */
 
 void check_return(int ret, char *msg)
 {
@@ -24,7 +26,7 @@ void update_status(convert_config *cfg, const char *format, ...)
 {
   if (cfg->general->status_file && strlen(cfg->general->status_file) > 0)
   {
-    FILE *fStat = FOPEN(cfg->general->status_file, "wt");
+    FILE *fStat = fopen(cfg->general->status_file, "wt");
     if (fStat) {
       va_list ap;
       va_start(ap, format);
