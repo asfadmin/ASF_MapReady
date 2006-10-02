@@ -226,7 +226,7 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile, 
-                       char *outFile, int update_flag)
+                       char *outFile, int update_flag, int auto_water_mask)
 {
   double pixel_size = -1;
   int dem_grid_size = 20;
@@ -236,14 +236,13 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = FALSE;
   int do_terrain_correction = FALSE;
-  int generate_water_mask = FALSE;
   int fill_value = 0;
 
   int ret =
       asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
                        clean_files, do_resample, do_corner_matching,
                        do_interp, do_fftMatch_verification, dem_grid_size,
-                       do_terrain_correction, fill_value, generate_water_mask);
+                       do_terrain_correction, fill_value, auto_water_mask);
 
   if (ret==0)
   {
@@ -570,6 +569,10 @@ int match_dem(meta_parameters *metaSAR,
 
           // set the offsets to 0 -- with 0% certainty.
           dx = dy = cert = 0;
+
+          // skip some additional fftMatches that we may be doing
+          do_fftMatch_verification = FALSE;
+          do_corner_matching = FALSE;
       }
 
       meta_free(maskmeta);

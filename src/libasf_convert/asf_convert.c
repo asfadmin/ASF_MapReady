@@ -517,7 +517,8 @@ int asf_convert(int createflag, char *configFileName)
           check_return(
             refine_geolocation(inFile, cfg->terrain_correct->dem,
                                cfg->terrain_correct->mask,
-                               outFile, FALSE),
+                               outFile, FALSE,
+                               cfg->terrain_correct->auto_mask_water),
             "refining geolocation of the data file (refine_geolocation)\n");
       }
       else {
