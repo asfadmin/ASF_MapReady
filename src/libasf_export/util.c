@@ -35,6 +35,7 @@ get_sample_size (meta_parameters *metadata)
   default:
     /* Other types aren't handled.  */
     asfPrintError ("This program can handle byte, int16, int32, real32, and real64 data types.\n");
+    sample_size = 0; // not reached
   }
 
   return sample_size;
@@ -375,7 +376,7 @@ pixel_float2byte(float paf, scale_t sample_mapping,
     }
     break;
   default:
-    g_assert_not_reached ();
+    asfPrintError("Impossible: sample_mapping=%d\n", sample_mapping);
     break;
   }
   return pab;

@@ -35,17 +35,7 @@ round (double arg)
 #endif // #ifndef win32
 #endif // #ifndef linux
 
-/* work-around for a bug in the windows version of glib */
-#ifdef win32
-#ifdef g_assert
-#undef g_assert
-#define g_assert (void) 
-#endif
-#ifdef g_assert_not_reached
-#undef g_assert_not_reached
-#define g_assert_not_reached() exit(1)
-#endif
-#endif
+#include "asf_glib.h"
 
 // Default cache size to use is 16 megabytes.
 static const size_t default_cache_size = 16 * 1048576;

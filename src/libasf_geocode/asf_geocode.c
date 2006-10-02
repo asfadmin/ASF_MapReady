@@ -19,6 +19,7 @@
 #include <libasf_proj.h>
 #include <spheroids.h>
 #include <asf_contact.h>
+#include <asf_glib.h>
 
 // Headers defined by this library.
 #include "asf_geocode.h"
