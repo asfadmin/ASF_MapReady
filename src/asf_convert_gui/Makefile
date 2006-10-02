@@ -78,6 +78,7 @@ CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 $(TARGET).exe: $(TARGET).c
 	if [ ! -f $(GTK_DIR)/README.txt ]; then\
 	  rm -rf $(GTK_ZIP); \
+	  mkdir $(GTK_ZIP); \
 	  cp $(GTK_ZIP_LOC)/*.zip $(GTK_ZIP); \
 	  for f in $(GTK_ZIP)/*.zip; do( yes| unzip $$f -d $(GTK_DIR) ); done;\
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
