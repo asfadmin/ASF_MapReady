@@ -35,6 +35,7 @@ MODULES = \
 	src/asf_terrcorr \
 	src/libasf_convert \
 	src/asf_convert \
+	src/refine_geolocation \
 	src/sr2gr \
 	src/gr2sr \
         src/metadata \
