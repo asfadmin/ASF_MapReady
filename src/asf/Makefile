@@ -33,7 +33,7 @@ CFLAGS += -D_XOPEN_SOURCE=600
 
 all: build_only
 	mv asf.a $(LIBDIR)
-	cp asf.h $(ASF_INCLUDE_DIR)
+	cp asf.h asf_glib.h $(ASF_INCLUDE_DIR)
 	rm *.o
 
 build_only: $(OBJS)
