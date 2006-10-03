@@ -478,7 +478,7 @@ int match_dem(meta_parameters *metaSAR,
 	get_float_line(inseedmask, maskmeta, ii,
                        mask + ii * maskmeta->general->sample_count);
       FCLOSE(inseedmask);
-      err = lay_seeds(MASK_SEED_POINTS, mask, metaSAR->general->sample_count, 
+      err = lay_seeds(MASK_SEED_POINTS, mask, maskmeta->general->sample_count, 
                       demHeight, x_tl_list, y_tl_list, x_br_list, 
                       y_br_list, good_pct_list);
       FREE(mask);

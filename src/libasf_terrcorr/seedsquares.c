@@ -77,7 +77,7 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
     int ii,seed;
     long pixels_cutoff;
 
-    seed =(int)time(0);		/* choose a seed value */
+    seed = (int)time(0);	/* choose a seed value */
     srand(seed);		/* initialize random number generator */
 
     asfPrintStatus("Searching for suitable seed points...\n");
@@ -185,7 +185,7 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
                 else
                 {
                     // new seed point needed
-                    if (++n_try > 250) {
+                    if (++n_try > 2500) {
                         // too many failures -- return success (0) if we found
                         // at least one possible seed region, otherwise fail.
                         if (ii>0)
