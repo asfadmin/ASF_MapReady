@@ -20,11 +20,13 @@ void terrcorr_options_changed()
   GtkWidget *dem_checkbutton;
   GtkWidget *mask_checkbutton;
   GtkWidget *mask_entry;
-
-  GtkWidget *terrcorr_checkbutton;
+  GtkWidget *rb_terrcorr, *rb_refine_geolocation;
   GtkWidget *tc_pixel_size_checkbutton;
-  GtkWidget *refine_geolocation_checkbutton;
   GtkWidget *interpolate_checkbutton;
+  GtkWidget *hbox_terrcorr_items;
+
+  hbox_terrcorr_items =
+      glade_xml_get_widget(glade_xml, "hbox_terrcorr_items");
 
   gboolean dem_is_checked;
 
@@ -41,30 +43,46 @@ void terrcorr_options_changed()
       glade_xml_get_widget(glade_xml, "mask_checkbutton");
   mask_entry =
       glade_xml_get_widget(glade_xml, "mask_entry");
-  terrcorr_checkbutton =
-      glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
+  rb_terrcorr =
+      glade_xml_get_widget(glade_xml, "rb_terrcorr");
   tc_pixel_size_checkbutton =
       glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
-  refine_geolocation_checkbutton =
-      glade_xml_get_widget(glade_xml, "refine_geolocation_checkbutton");
+  rb_refine_geolocation =
+      glade_xml_get_widget(glade_xml, "rb_refine_geolocation");
   interpolate_checkbutton =
       glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
 
   if (dem_is_checked) {
       GtkWidget *hbox_tc_pixel_size;
+      GtkWidget *rb_mask_file, *rb_auto_water_mask;
+      GtkWidget *tc_pixel_size_checkbutton;
+      GtkWidget *interpolate_checkbutton;
+      GtkWidget *layover_mask_checkbutton;
+      GtkWidget *save_dem_checkbutton;
+
       gboolean tc_pixel_size_is_checked;
       gboolean terrcorr_is_checked;
-      gboolean mask_is_checked;
+      gboolean mask_is_checked, mask_file_is_checked;
+
+      gtk_widget_set_sensitive(hbox_terrcorr_items, TRUE);
 
       terrcorr_is_checked =
-          gtk_toggle_button_get_active(
-              GTK_TOGGLE_BUTTON(terrcorr_checkbutton));
+          gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_terrcorr));
+
+      rb_mask_file =
+          glade_xml_get_widget(glade_xml, "rb_mask_file");
+      rb_auto_water_mask =
+          glade_xml_get_widget(glade_xml, "rb_auto_water_mask");
 
       mask_is_checked =
-          gtk_toggle_button_get_active(
-              GTK_TOGGLE_BUTTON(mask_checkbutton));
+          gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mask_checkbutton));
 
-      gtk_widget_set_sensitive(tc_pixel_size_checkbutton, terrcorr_is_checked);
+      mask_file_is_checked = mask_is_checked &&
+          gtk_toggle_button_get_active(
+              GTK_TOGGLE_BUTTON(rb_mask_file));
+
+      tc_pixel_size_checkbutton =
+          glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
 
       tc_pixel_size_is_checked = terrcorr_is_checked &&
           gtk_toggle_button_get_active(
@@ -74,27 +92,26 @@ void terrcorr_options_changed()
           glade_xml_get_widget(glade_xml, "hbox_tc_pixel_size");
 
       gtk_widget_set_sensitive(hbox_tc_pixel_size, tc_pixel_size_is_checked);
-      gtk_widget_set_sensitive(interpolate_checkbutton, terrcorr_is_checked);
-      gtk_widget_set_sensitive(mask_entry, mask_is_checked);
-      gtk_widget_set_sensitive(refine_geolocation_checkbutton,
-                               !terrcorr_is_checked);
-      if (terrcorr_is_checked)
-          gtk_toggle_button_set_active(
-              GTK_TOGGLE_BUTTON(refine_geolocation_checkbutton), TRUE);
+      gtk_widget_set_sensitive(mask_entry, mask_file_is_checked);
+      //gtk_widget_set_sensitive(hbox_terrcorr_items, terrcorr_is_checked);
+      gtk_widget_set_sensitive(rb_auto_water_mask, mask_is_checked);
+      gtk_widget_set_sensitive(rb_mask_file, mask_is_checked);
 
+      interpolate_checkbutton =
+          glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
+      layover_mask_checkbutton =
+          glade_xml_get_widget(glade_xml, "layover_mask_checkbutton");
+      save_dem_checkbutton =
+          glade_xml_get_widget(glade_xml, "save_dem_checkbutton");
+
+      gtk_widget_set_sensitive(tc_pixel_size_checkbutton, terrcorr_is_checked);
+      gtk_widget_set_sensitive(interpolate_checkbutton, terrcorr_is_checked);
+      gtk_widget_set_sensitive(layover_mask_checkbutton, terrcorr_is_checked);
+      gtk_widget_set_sensitive(save_dem_checkbutton, terrcorr_is_checked);
   }
   else
   {
-      gtk_toggle_button_set_active(
-          GTK_TOGGLE_BUTTON(terrcorr_checkbutton), FALSE);
-      gtk_toggle_button_set_active(
-          GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton), FALSE);
-      gtk_toggle_button_set_active(
-          GTK_TOGGLE_BUTTON(refine_geolocation_checkbutton), FALSE);
-      gtk_toggle_button_set_active(
-          GTK_TOGGLE_BUTTON(interpolate_checkbutton), FALSE);
-      gtk_toggle_button_set_active(
-          GTK_TOGGLE_BUTTON(mask_checkbutton), FALSE);
+      gtk_widget_set_sensitive(hbox_terrcorr_items, FALSE);
   }
 
   // must now update the geocode settings as well, since the average
@@ -114,29 +131,6 @@ on_mask_checkbutton_toggled(GtkWidget * widget)
 {
     terrcorr_options_changed();
     update_summary();
-}
-
-SIGNAL_CALLBACK void
-on_terrcorr_checkbutton_toggled(GtkWidget * widget)
-{
-    terrcorr_options_changed();
-    update_summary();
-
-    GtkWidget *terrcorr_checkbutton;
-    GtkWidget *interpolate_checkbutton;
-    gboolean terrcorr_is_checked;
-
-    terrcorr_checkbutton =
-        glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
-    interpolate_checkbutton =
-        glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
-
-    terrcorr_is_checked =
-        gtk_toggle_button_get_active(
-            GTK_TOGGLE_BUTTON(terrcorr_checkbutton));
-
-    gtk_toggle_button_set_active(
-        GTK_TOGGLE_BUTTON(interpolate_checkbutton), terrcorr_is_checked);
 }
 
 SIGNAL_CALLBACK void
@@ -578,3 +572,32 @@ const char * terrcorr_options_string(const Settings *settings)
 {
     return "";
 }
+
+SIGNAL_CALLBACK void
+on_rb_refine_geolocation_toggled(GtkWidget *widget)
+{
+    terrcorr_options_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_terrcorr_toggled(GtkWidget *widget)
+{
+    terrcorr_options_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_auto_water_mask_toggled(GtkWidget *widget)
+{
+    terrcorr_options_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_mask_file_toggled(GtkWidget *widget)
+{
+    terrcorr_options_changed();
+    update_summary();
+}
+

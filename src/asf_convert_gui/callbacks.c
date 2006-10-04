@@ -226,10 +226,10 @@ input_data_format_combobox_changed()
 
     if (!show_terrain_correction_section)
     {
-        GtkWidget *terrcorr_checkbutton =
-            glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
+        GtkWidget *dem_checkbutton =
+            glade_xml_get_widget(glade_xml, "dem_checkbutton");
 
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(terrcorr_checkbutton),
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dem_checkbutton),
                                      FALSE);
     }
 

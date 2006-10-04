@@ -140,8 +140,11 @@ typedef struct
   int specified_tc_pixel_size;
   double tc_pixel_size;
   int interp;
-  int mask_is_checked;
+  int auto_water_mask_is_checked;
+  int mask_file_is_checked;
   char mask_file[2048];
+  int generate_layover_mask;
+  int generate_dem;
 
   /* misc */
   int keep_files;

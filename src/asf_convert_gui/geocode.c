@@ -471,11 +471,11 @@ void geocode_options_changed()
 
         // turn off the average height checkbutton if terrain correction
         // is selected
-        GtkWidget * terrcorr_checkbutton = glade_xml_get_widget(
-            glade_xml, "terrcorr_checkbutton");
+        GtkWidget * rb_terrcorr = glade_xml_get_widget(
+            glade_xml, "rb_terrcorr");
 
         if (gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(terrcorr_checkbutton)))
+                GTK_TOGGLE_BUTTON(rb_terrcorr)))
         {
             enable_average_height_checkbutton = FALSE;
             average_height_is_checked = FALSE;

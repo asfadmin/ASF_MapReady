@@ -127,7 +127,7 @@ void update_summary()
                     s->interp ? "Yes" : "No");
         }
 
-        if (s->mask_is_checked)
+        if (s->mask_file_is_checked)
         {
             GtkWidget *mask_entry;
             char *mask;
@@ -144,6 +144,23 @@ void update_summary()
                 char *p = strrchr(mask, DIR_SEPARATOR);
                 sprintf(text, "%s\n   Mask: %s", text, p ? p+1 : mask);
             }
+        }
+        else if (s->auto_water_mask_is_checked)
+        {
+            strcat(text, "\n   Automatic Mask");
+        }
+
+        if (s->generate_dem && s->generate_layover_mask)
+        {
+            strcat(text, "\n   Save DEM & Layover Mask");
+        }
+        else if (s->generate_dem)
+        {
+            strcat(text, "\n   Save DEM");
+        }
+        else if (s->generate_layover_mask)
+        {
+            strcat(text, "\n   Save Layover Mask");
         }
     }
     else

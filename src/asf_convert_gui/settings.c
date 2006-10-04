@@ -309,8 +309,8 @@ settings_apply_to_gui(const Settings * s)
         GtkWidget *tc_pixel_size_checkbutton;
         GtkWidget *tc_pixel_size_entry;
         GtkWidget *interpolate_checkbutton;
-        GtkWidget *terrcorr_checkbutton;
-        GtkWidget *refine_geolocation_checkbutton;
+        GtkWidget *rb_terrcorr;
+        GtkWidget *rb_refine_geolocation;
 
         dem_checkbutton = glade_xml_get_widget(glade_xml, "dem_checkbutton");
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dem_checkbutton), TRUE);
@@ -318,18 +318,23 @@ settings_apply_to_gui(const Settings * s)
 	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
 	gtk_entry_set_text(GTK_ENTRY(dem_entry), s->dem_file);
 
-        terrcorr_checkbutton =
-            glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
-        refine_geolocation_checkbutton =
-            glade_xml_get_widget(glade_xml, "refine_geolocation_checkbutton");
+        rb_terrcorr =
+            glade_xml_get_widget(glade_xml, "rb_terrcorr");
+        rb_refine_geolocation =
+            glade_xml_get_widget(glade_xml, "rb_refine_geolocation");
 
-        gtk_toggle_button_set_active(
-            GTK_TOGGLE_BUTTON(refine_geolocation_checkbutton), TRUE);
+        if (s->refine_geolocation_is_checked)
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(rb_refine_geolocation), TRUE);
+        else if (s->terrcorr_is_checked)
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(rb_terrcorr), TRUE);
 
         if (s->terrcorr_is_checked)
         {
-            gtk_toggle_button_set_active(
-                GTK_TOGGLE_BUTTON(terrcorr_checkbutton), TRUE);
+            GtkWidget *rb_auto_water_mask, *rb_mask_file;
+            GtkWidget *save_dem_checkbutton;
+            GtkWidget *layover_mask_checkbutton;
 
             tc_pixel_size_checkbutton =
                 glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
@@ -357,12 +362,33 @@ settings_apply_to_gui(const Settings * s)
             
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(interpolate_checkbutton), s->interp);
-        }
-        else
-        {
-            // here, s->refine_geolocation_is_checked==TRUE
+
+            save_dem_checkbutton =
+                glade_xml_get_widget(glade_xml, "save_dem_checkbutton");
+
             gtk_toggle_button_set_active(
-                GTK_TOGGLE_BUTTON(terrcorr_checkbutton), FALSE);
+                GTK_TOGGLE_BUTTON(save_dem_checkbutton), s->generate_dem);
+
+            layover_mask_checkbutton =
+                glade_xml_get_widget(glade_xml, "layover_mask_checkbutton");
+
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(layover_mask_checkbutton),
+                s->generate_layover_mask);
+
+            rb_auto_water_mask =
+                glade_xml_get_widget(glade_xml, "rb_auto_water_mask");
+
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(rb_auto_water_mask), 
+                s->auto_water_mask_is_checked);
+
+            rb_mask_file =
+                glade_xml_get_widget(glade_xml, "rb_mask_file");
+
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(rb_mask_file), 
+                s->mask_file_is_checked);
         }
     }
     else
@@ -479,7 +505,8 @@ settings_get_from_gui()
             glade_xml_get_widget(glade_xml, "latitude_checkbutton");
 
         ret->latitude_checked =
-            gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(latitude_checkbutton));
+            gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(latitude_checkbutton));
 
         if (ret->latitude_checked)
         {
@@ -652,7 +679,8 @@ settings_get_from_gui()
     }
 
     ret->keep_files = 
-        gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(keep_files_checkbutton));
+        gtk_toggle_button_get_active(
+            GTK_TOGGLE_BUTTON(keep_files_checkbutton));
 
     ret->apply_metadata_fix = 
         gtk_toggle_button_get_active(
@@ -663,17 +691,22 @@ settings_get_from_gui()
 
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(dem_checkbutton)))
     {        
-        GtkWidget *terrcorr_checkbutton;
+        GtkWidget *rb_terrcorr, *rb_refine_geolocation;
+        GtkWidget *rb_auto_water_mask, *rb_mask_file;
         GtkWidget *dem_entry;
         GtkWidget *tc_pixel_size_checkbutton;
         GtkWidget *interpolate_checkbutton;
+        GtkWidget *layover_mask_checkbutton;
+        GtkWidget *save_dem_checkbutton;
 
-        terrcorr_checkbutton =
-            glade_xml_get_widget(glade_xml, "terrcorr_checkbutton");
+        rb_terrcorr =
+            glade_xml_get_widget(glade_xml, "rb_terrcorr");
+        rb_refine_geolocation =
+            glade_xml_get_widget(glade_xml, "rb_refine_geolocation");
 
         ret->terrcorr_is_checked =
             gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(terrcorr_checkbutton));
+                GTK_TOGGLE_BUTTON(rb_terrcorr));
 
         dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
         strcpy(ret->dem_file, gtk_entry_get_text(GTK_ENTRY(dem_entry)));
@@ -708,33 +741,66 @@ settings_get_from_gui()
             // it doesn't matter what we set this to - when terrain
             // correcting, the refine geolocation code is mandatory
             ret->refine_geolocation_is_checked = TRUE;
+            
+            save_dem_checkbutton =
+                glade_xml_get_widget(glade_xml, "save_dem_checkbutton");
+            
+            ret->generate_dem =
+                gtk_toggle_button_get_active(
+                    GTK_TOGGLE_BUTTON(save_dem_checkbutton));
+            
+            layover_mask_checkbutton =
+                glade_xml_get_widget(glade_xml, "layover_mask_checkbutton");
+            
+            ret->generate_layover_mask =
+                gtk_toggle_button_get_active(
+                    GTK_TOGGLE_BUTTON(layover_mask_checkbutton));
         }
         else
         {
-            GtkWidget *refine_geolocation_checkbutton;
+            GtkWidget *rb_refine_geolocation;
 
-            refine_geolocation_checkbutton =
-                glade_xml_get_widget(glade_xml, 
-                                     "refine_geolocation_checkbutton");
+            rb_refine_geolocation =
+                glade_xml_get_widget(glade_xml, "rb_refine_geolocation");
 
             ret->refine_geolocation_is_checked =
                 gtk_toggle_button_get_active(
-                    GTK_TOGGLE_BUTTON(refine_geolocation_checkbutton));
+                    GTK_TOGGLE_BUTTON(rb_refine_geolocation));
         }
 
+        rb_auto_water_mask =
+            glade_xml_get_widget(glade_xml, "rb_auto_water_mask");
+        rb_mask_file =
+            glade_xml_get_widget(glade_xml, "rb_mask_file");
+        
         GtkWidget *mask_checkbutton;
-        mask_checkbutton = glade_xml_get_widget(glade_xml, "mask_checkbutton");
-        if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mask_checkbutton)))
+        mask_checkbutton = glade_xml_get_widget(glade_xml, 
+                                                "mask_checkbutton");
+        if (gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(mask_checkbutton)))
         {
-            GtkWidget *mask_entry;
-            mask_entry = glade_xml_get_widget(glade_xml, "mask_entry");
-            strcpy(ret->mask_file, gtk_entry_get_text(GTK_ENTRY(mask_entry)));
-            ret->mask_is_checked = TRUE;
+            if (gtk_toggle_button_get_active(
+                    GTK_TOGGLE_BUTTON(rb_mask_file)))
+            {
+                GtkWidget *mask_entry;
+                mask_entry = glade_xml_get_widget(glade_xml, "mask_entry");
+                strcpy(ret->mask_file, 
+                       gtk_entry_get_text(GTK_ENTRY(mask_entry)));
+                ret->mask_file_is_checked = TRUE;
+                ret->auto_water_mask_is_checked = FALSE;
+            }
+            else    // auto water mask
+            {
+                ret->mask_file_is_checked = FALSE;
+                ret->auto_water_mask_is_checked = TRUE;
+                strcpy(ret->mask_file, "");
+            }
         }
         else
         {
-            ret->mask_is_checked = FALSE;
-            strcpy(ret->mask_file, "");
+            ret->mask_file_is_checked = FALSE;
+            ret->auto_water_mask_is_checked = FALSE;
+                strcpy(ret->mask_file, "");
         }
     }
     else 
@@ -1345,18 +1411,20 @@ settings_to_config_file(const Settings *s,
       else if (s->specified_pixel_size)
         fprintf(cf, "pixel spacing = %.2lf\n", s->pixel_size);
       fprintf(cf, "digital elevation model = %s\n", s->dem_file);
-      if (s->mask_is_checked) {
+      if (s->mask_file_is_checked) {
           fprintf(cf, "mask = %s\n", s->mask_file);
       }
       fprintf(cf, "refine geolocaiton only = 0\n");
-      fprintf(cf, "interpolate = %d\n\n", s->interp);
+      fprintf(cf, "interpolate = %d\n", s->interp);
+      fprintf(cf, "auto mask water = %d\n", s->auto_water_mask_is_checked);
     } else if (s->refine_geolocation_is_checked) {
       fprintf(cf, "[Terrain correction]\n");
       fprintf(cf, "digital elevation model = %s\n", s->dem_file);
-      if (s->mask_is_checked) {
+      if (s->mask_file_is_checked) {
           fprintf(cf, "mask = %s\n", s->mask_file);
       }
-      fprintf(cf, "refine geolocation only = 1\n\n");
+      fprintf(cf, "refine geolocation only = 1\n");
+      fprintf(cf, "auto mask water = %d\n", s->auto_water_mask_is_checked);
     }
 
     if (s->geocode_is_checked) {
