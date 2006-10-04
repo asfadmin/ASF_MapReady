@@ -756,6 +756,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   int force_resample = FALSE;
   double t_offset, x_offset;
   int madssap = FALSE; // mask and dem same size and projection
+  int clean_resample_file = TRUE;
 
   // we want passing in an empty string for the mask to mean "no mask"
   if (userMaskFile && strlen(userMaskFile) == 0)
@@ -876,6 +877,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   } else {
     pixel_size = sarRes;
     resampleFile = strdup(sarFile);
+    clean_resample_file = FALSE; // don't want to delete the user's image! :)
   }
 
   // Calculate the slant range pixel size to pass into the ground range to
@@ -971,7 +973,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
     asfPrintStatus("Removing intermediate files...\n");
     clean(demTrimSlant);
     clean(demTrimSimAmp);
-    clean(resampleFile);
+    if (clean_resample_file)
+        clean(resampleFile);
     clean(srFile);
     clean(resampleFile_2);
   }
