@@ -31,6 +31,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta);
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr);
 ceos_description *get_ceos_description(char *fName);
+ceos_description *get_sensor(char *fName);
 double get_firstTime(char *fName);
 void get_polarization (char *fName, char *polarization, double *chirp);
 
@@ -57,7 +58,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    ceos_description *ceos=NULL;
 
    require_ceos_pair(in_fName, dataName, leaderName);
-   ceos = get_ceos_description(leaderName);
+   ceos = get_sensor(leaderName);
 
    if (ceos->sensor == SAR || ceos->sensor == PALSAR)
      ceos_init_sar(in_fName, meta);
@@ -1018,6 +1019,62 @@ ceos_description *get_ceos_description(char *fName)
   
   return ceos;
 }
+
+// Determine sensor to see which initialization function to call
+ceos_description *get_sensor(char *fName)
+{
+  int sar_image;
+  char *satStr, *sensorStr;
+  ceos_description *ceos=(ceos_description *)MALLOC(sizeof(ceos_description));
+  
+  // Try to read dataset summary record for SAR image. 
+  // Otherwise try scene header record.
+  sar_image = get_dssr(fName,&ceos->dssr);
+  if (sar_image == -1)
+    get_shr(fName,&ceos->shr);
+  
+  if (sar_image == 1) {
+    
+    // Determine the satellite
+    satStr=ceos->dssr.mission_id;
+    
+    if (0==strncmp(satStr,"E",1)) ceos->satellite=ERS;
+    else if (0==strncmp(satStr,"J",1)) ceos->satellite=JERS;
+    else if (0==strncmp(satStr,"R",1)) ceos->satellite=RSAT;
+    else if (0==strncmp(satStr,"A",1)) ceos->satellite=ALOS;
+    else {
+      printf("get_ceos_description Warning! Unknown satellite '%s'!\n",satStr);
+      ceos->satellite=unknownSatellite;
+    }
+
+    // Determine the sensor
+    if (ceos->satellite == ALOS)
+      ceos->sensor = PALSAR;
+    else
+      ceos->sensor = SAR;
+  }
+  else {
+    // Determine satellite
+    satStr = ceos->shr.mission_id;
+    if (0==strncmp(satStr,"A",1)) ceos->satellite = ALOS;
+    else {
+      printf("get_ceos_description Warning! Unknown satellite '%s'!\n",satStr);
+      ceos->satellite = unknownSatellite;
+    }
+
+    // Determine sensor
+    sensorStr = ceos->shr.sensor_id;
+    if (ceos->satellite == ALOS) {
+      if (0==strncmp(sensorStr,"AVNIR",5)) ceos->sensor = AVNIR;
+      else if (0==strncmp(sensorStr, "PRISM",5)) ceos->sensor = PRISM;
+      else {
+	printf("Get_ceos_description Warning! Unknown sensor '%s'!\n", sensorStr);
+	ceos->sensor = unknownSensor;
+      }
+    }
+  }
+  return ceos;
+}    
 
 /*---------------------------------
 function extracts the acquisition time of the first line
