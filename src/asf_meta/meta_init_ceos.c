@@ -59,7 +59,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
    require_ceos_pair(in_fName, dataName, leaderName);
    ceos = get_ceos_description(leaderName);
 
-   if (ceos->sensor == SAR)
+   if (ceos->sensor == SAR || ceos->sensor == PALSAR)
      ceos_init_sar(in_fName, meta);
    else if (ceos->sensor == AVNIR || ceos->sensor == PRISM)
      ceos_init_optical(in_fName, meta);
