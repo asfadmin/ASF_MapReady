@@ -48,7 +48,7 @@ clean:
 
 else
 
-CFLAGS = -Wall -O0 -g $(shell /usr/bin/pkg-config --cflags gtk+-2.0) \
+CFLAGS += -Wall -g $(shell /usr/bin/pkg-config --cflags gtk+-2.0) \
          $(shell /usr/bin/pkg-config --cflags libglade-2.0) \
          -I$(ASF_INCLUDE_DIR)
 
