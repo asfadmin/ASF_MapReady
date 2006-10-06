@@ -609,10 +609,10 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 	      if (cal_param->output_type==beta_naught)
 		incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
 	      if (db_flag) {
-		out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
+		out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)short_buf[kk]);
 	      }
 	      else {
-		out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)short_buf[kk]);
+		out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
 	      }
 	    }
             else
@@ -660,10 +660,10 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
               if (cal_param->output_type==beta_naught)
                 incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
               if (db_flag) {
-                out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)byte_buf[kk]);
+                out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)byte_buf[kk]);
               }
               else {
-                out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)byte_buf[kk]);
+                out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)byte_buf[kk]);
               }
             }
             else
