@@ -11,7 +11,7 @@ ifeq ($(SYS),win32)
 GCC =gcc 
 GTK_DIR = gtkwin32
 GTK_ZIP = gtkwin32zip
-GTK_ZIP_LOC = ../../../support/gtk/win32
+GTK_ZIP_LOC = ../../../support/win32/gtk
 
 GTK_INC = $(GTK_DIR)/include
 GTK_LIB = $(GTK_DIR)/lib
@@ -98,7 +98,7 @@ doc:
 
 
 clean:
-	rm -rf $(GTK_DIR) $(TARGET).exe core.* *.html *.hhc *.hhp *.chm
+	rm -rf $(GTK_DIR) $(TARGET).exe core.* *.html *.hhc *.hhp *.chm $(GTK_ZIP)
 
 ### End Windows Section
 
