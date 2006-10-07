@@ -37,8 +37,9 @@ int main(int argc, char *argv[])
     printf("  Center point: (%d,%d)\n", line, samp);
     printf("  Radius: %d\n", radius);
     printf("  Height: %f\n", height);
-    printf("    Note that the height value is **added** to the existing "
-           "terrain height.\n\n");
+    if (type!=2)
+        printf("    Note that the height value is **added** to the existing "
+               "terrain height.\n\n");
 
     printf("  Input file: %s\n", in);
     printf("  Output file: %s\n", out);
@@ -76,7 +77,7 @@ int main(int argc, char *argv[])
                         demLine[i] += height * sin(x)/x;
                     }
                 } else if (type==2) { // pole
-                    demLine[i] += height;
+                    demLine[i] = height;
                 } else if (type==3) { // pyr
                     demLine[i] += height * (radius-x)/radius;
                 } else {
