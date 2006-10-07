@@ -71,6 +71,10 @@ default: $(OBJS)
 clean:
 	rm -f *.o $(BINDIR)/$(TARGET)*
 
+doc:
+	docbook2html -u stp_install.sgml
+	docbook2html -u stp_usage.sgml
+
 endif
 
 %.c: %.h
