@@ -81,6 +81,8 @@ typedef struct
   int interp;             // TRUE if we should interpolate layover/shadow
                           // regions, FALSE if those regions should be blank
   int fill_value;         // a fill value if >=0. LEAVE_MASK means use sar data
+  int save_terrcorr_dem;  // if TRUE, save the clipped DEM for the user
+  int save_terrcorr_layover_mask; // if TRUE, save the layover/shadow mask
 } s_terrain_correct;
 
 typedef struct

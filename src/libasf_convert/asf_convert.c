@@ -11,7 +11,6 @@
 #include "asf_geocode.h"
 #include "asf_export.h"
 #include "ardop_defs.h"
-#include <unistd.h>
 #include <ctype.h>
 #include <sys/types.h> /* 'DIR' structure (for opendir) */
 #include <dirent.h>    /* for opendir itself            */
@@ -530,10 +529,13 @@ int asf_convert(int createflag, char *configFileName)
                              !cfg->general->intermediates,
                              TRUE, FALSE, cfg->terrain_correct->interp, 
                              TRUE, 20, TRUE, cfg->terrain_correct->fill_value,
-                             cfg->terrain_correct->auto_mask_water),
+                             cfg->terrain_correct->auto_mask_water,
+                             cfg->terrain_correct->save_terrcorr_dem),
             "terrain correcting data file (asf_terrcorr)\n");
       }
     }
+
+    datum_type_t datum = WGS84_DATUM;
 
     if (cfg->general->geocoding) {
 
@@ -541,7 +543,6 @@ int asf_convert(int createflag, char *configFileName)
       int force_flag = cfg->geocoding->force;
       resample_method_t resample_method = RESAMPLE_BILINEAR;
       double average_height = cfg->geocoding->height;
-      datum_type_t datum = WGS84_DATUM;
       double pixel_size = cfg->geocoding->pixel;
       float background_val = cfg->geocoding->background;
 
@@ -595,13 +596,13 @@ int asf_convert(int createflag, char *configFileName)
       copy_meta(outFile, cfg->general->in_name);
     }
 
+    output_format_t format = JPEG;
+    long size = -1;
+
     if (cfg->general->export) {
 
-      update_status(cfg, "Exporting...");
-
-      output_format_t format = JPEG;
-      long size = -1;
       scale_t scale = SIGMA;
+      update_status(cfg, "Exporting...");
 
       // Format
       if (strncmp(uc(cfg->export->format), "TIFF", 4) == 0) {
@@ -665,6 +666,59 @@ int asf_convert(int createflag, char *configFileName)
 
         check_return(asf_export(format, size, scale, inFile, outFile),
                      "exporting thumbnail data file (asf_export)\n");
+    }
+
+    // Process the clipped DEM if requested
+    if (cfg->terrain_correct->save_terrcorr_dem) {
+        if (cfg->general->geocoding) {
+            update_status(cfg, "Geocoding clipped DEM...");
+            char *tmp = appendToBasename(cfg->terrain_correct->dem, "_clip");
+            char *tmp2 = stripExt(tmp);
+            sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp2);
+            free(tmp); free(tmp2);
+            sprintf(outFile, "%s/dem_geocoded", cfg->general->tmp_dir);
+            check_return(
+                asf_geocode_from_proj_file(
+                    cfg->geocoding->projection, cfg->geocoding->force,
+                    RESAMPLE_NEAREST_NEIGHBOR, cfg->geocoding->height,
+                    datum, cfg->geocoding->pixel, inFile, outFile,
+                    cfg->geocoding->background),
+                "geocoding clipped DEM (asf_geocode)\n");
+        }
+
+        if (cfg->general->export) {
+            update_status(cfg, "Exporting clipped DEM...");
+            sprintf(inFile, "%s", outFile);
+            sprintf(outFile, "%s_dem", cfg->general->out_name);
+            check_return(
+                asf_export(format, size, TRUNCATE, inFile, outFile),
+                "exporting clipped dem (asf_export)\n");
+        }
+    }
+
+    // Process the layover/shadow mask if requested
+    if (cfg->terrain_correct->save_terrcorr_layover_mask) {
+        if (cfg->general->geocoding) {
+            update_status(cfg, "Geocoding layover mask...");
+            sprintf(inFile, "%s/terrain_correct_mask",cfg->general->tmp_dir);
+            sprintf(outFile, "%s/layover_mask_geocoded",cfg->general->tmp_dir);
+            check_return(
+                asf_geocode_from_proj_file(
+                    cfg->geocoding->projection, cfg->geocoding->force,
+                    RESAMPLE_NEAREST_NEIGHBOR, cfg->geocoding->height,
+                    datum, cfg->geocoding->pixel, inFile, outFile,
+                    cfg->geocoding->background),
+                "geocoding clipped DEM (asf_geocode)\n");
+        }
+
+        if (cfg->general->export) {
+            update_status(cfg, "Exporting layover mask...");
+            sprintf(inFile, "%s", outFile);
+            sprintf(outFile, "%s_layover_mask", cfg->general->out_name);
+            check_return(
+                asf_export(format, size, TRUNCATE, inFile, outFile),
+                "exporting layover mask (asf_export)\n");
+        }
     }
 
     if (!cfg->general->intermediates) {

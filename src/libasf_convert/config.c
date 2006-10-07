@@ -259,6 +259,8 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->mask = (char *)MALLOC(sizeof(char)*255);
   cfg->terrain_correct->auto_mask_water = 0;
   cfg->terrain_correct->fill_value = 0;
+  cfg->terrain_correct->save_terrcorr_dem = 0;
+  cfg->terrain_correct->save_terrcorr_layover_mask = 0;
   strcpy(cfg->terrain_correct->mask, "");
   cfg->terrain_correct->refine_geolocation_only = 0;
   cfg->terrain_correct->interp = 1;
@@ -368,6 +370,12 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->terrain_correct->auto_mask_water = read_int(line, "auto mask water");
       if (strncmp(test, "fill value", 8)==0)
         cfg->terrain_correct->fill_value = read_int(line, "fill value");
+      if (strncmp(test, "save terrcorr dem", 17)==0)
+        cfg->terrain_correct->save_terrcorr_dem = 
+            read_int(line, "save terrcorr dem");
+      if (strncmp(test, "save_terrcorr_layover_mask", 26)==0)
+        cfg->terrain_correct->save_terrcorr_layover_mask = 
+            read_int(line, "save_terrcorr_layover_mask");
       if (strncmp(test, "refine geolocation only", 23)==0)
         cfg->terrain_correct->refine_geolocation_only = 
           read_int(line, "refine_geolocation_only");
@@ -577,8 +585,15 @@ convert_config *read_convert_config(char *configFile)
         cfg->terrain_correct->auto_mask_water = read_int(line, "auto mask water");
       if (strncmp(test, "fill value", 8)==0)
         cfg->terrain_correct->fill_value = read_int(line, "fill value");
+      if (strncmp(test, "save terrcorr dem", 17)==0)
+        cfg->terrain_correct->save_terrcorr_dem = 
+            read_int(line, "save terrcorr dem");
+      if (strncmp(test, "save_terrcorr_layover_mask", 26)==0)
+        cfg->terrain_correct->save_terrcorr_layover_mask = 
+            read_int(line, "save_terrcorr_layover_mask");
       if (strncmp(test, "refine geolocation only", 23)==0)
-        cfg->terrain_correct->refine_geolocation_only = read_int(line, "refine_geolocation_only");
+        cfg->terrain_correct->refine_geolocation_only =
+            read_int(line, "refine_geolocation_only");
       if (strncmp(test, "interpolate", 11)==0)
         cfg->terrain_correct->interp = read_int(line, "interpolate");
       FREE(test);
@@ -848,6 +863,21 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# (resulting in a nicer-looking image).  Setting this parameter to 1 indicates that\n"
                 "# these regions should be interpolated over.\n\n");
       fprintf(fConfig, "interpolate = %d\n\n", cfg->terrain_correct->interp);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# The DEM that is provided is clipped to match the scene.  Normally this\n"
+                "# clipped DEM is removed along with the other temporary files, however if you are \n"
+                "# interested you can turn this option on (set it to 1), which will keep the clipped \n"
+                "# DEM, as well as geocode (if you've elected to geocode) and export it (if you've \n"
+                "# elected to export, though the DEM is always exported as floating point data even \n"
+                "# when you exporting your SAR data as bytes).  The clipped DEM will be slightly\n"
+                "# larger than the SAR image, usually, since a larger region must be clipped to\n"
+                "# allow for the height variations.\n\n");
+      fprintf(fConfig, "save terrcorr dem = %d\n\n", cfg->terrain_correct->save_terrcorr_dem);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# This option determines if a file marking the regions of layover and \n"
+                "# shadow should be created along with the output image.  It is geocoded using the\n"
+                "# the same parameters as your SAR image, and exported as byte data.\n\n");
+      fprintf(fConfig, "save terrcorr layover mask = %d\n\n", cfg->terrain_correct->save_terrcorr_layover_mask);
     }
 
     // Geocoding
