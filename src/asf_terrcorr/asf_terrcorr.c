@@ -2,6 +2,7 @@
 #include <asf.h>
 #include <asf_sar.h>
 #include <asf_terrcorr.h>
+#include <asf_license.h>
 
 #define ASF_NAME_STRING "asf_terrcorr"
 
@@ -51,6 +52,7 @@ main (int argc, char *argv[])
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = TRUE;
   int generate_water_mask = FALSE;
+  int save_clipped_dem = FALSE;
 
   // -1 -> no masking, other values mean fill it with that value
   int fill_value = 0; 
@@ -128,7 +130,7 @@ main (int argc, char *argv[])
                               clean_files, do_resample, do_corner_matching,
                               do_interp, do_fftMatch_verification,
                               dem_grid_size, TRUE, fill_value, 
-                              generate_water_mask);
+                              generate_water_mask, save_clipped_dem);
 
   return ret==0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

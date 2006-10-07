@@ -216,13 +216,14 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int dem_grid_size = 20;
   int do_terrain_correction = TRUE;
   int generate_water_mask = FALSE;
+  int save_clipped_dem = FALSE;
   int fill_value = 0;
 
   return asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
 			  clean_files, do_resample, do_corner_matching,
                           do_interp, do_fftMatch_verification,
                           dem_grid_size, do_terrain_correction, fill_value,
-                          generate_water_mask);
+                          generate_water_mask, save_clipped_dem);
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile, 
@@ -236,13 +237,15 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int do_fftMatch_verification = TRUE;
   int do_corner_matching = FALSE;
   int do_terrain_correction = FALSE;
+  int save_clipped_dem = FALSE;
   int fill_value = 0;
 
   int ret =
       asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
                        clean_files, do_resample, do_corner_matching,
                        do_interp, do_fftMatch_verification, dem_grid_size,
-                       do_terrain_correction, fill_value, auto_water_mask);
+                       do_terrain_correction, fill_value, auto_water_mask,
+                       save_clipped_dem);
 
   if (ret==0)
   {
@@ -390,6 +393,7 @@ int match_dem(meta_parameters *metaSAR,
 	      int apply_dem_padding,
               int mask_dem_same_size_and_projection,
               int clean_files,
+              int save_clipped_dem,
               double *t_offset, 
 	      double *x_offset)
 {
@@ -532,7 +536,7 @@ int match_dem(meta_parameters *metaSAR,
 
               asfPrintStatus("Chose seed region #%d: S:[%d,%d]"
                              " - L:[%d,%d] (%ld pixels, %.1f%% masked)\n",
-                             ii_chosen+1, xtl, ytl, xbr, ybr,
+                             ii_chosen+1, xtl, xbr, ytl, ybr,
                              (long)((ybr-ytl)*(xbr-xtl)),
                              100 * (1 - good_pct_list[ii_chosen]));
 
@@ -690,9 +694,10 @@ int match_dem(meta_parameters *metaSAR,
   }
 
   if (clean_files) {
-    clean(demClipped);
-    clean(demSimAmp);
-    clean(demSlant);
+      if (!save_clipped_dem)
+          clean(demClipped);
+      clean(demSimAmp);
+      clean(demSlant);
   }
 
   FREE(demClipped);
@@ -716,6 +721,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int apply_dem_padding = FALSE;
   int clean_files = TRUE;
   int madssap = FALSE; // mask and dem same size and projection
+  int save_clipped_dem = FALSE;
   int dem_grid_size = 20;
   double t_offset, x_offset;
   char output_dir[255];
@@ -731,7 +737,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
 	    simAmpFile, demSlant, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
             do_refine_geolocation, do_trim_slant_range_dem, apply_dem_padding,
-            madssap, clean_files, &t_offset, &x_offset);
+            madssap, clean_files, save_clipped_dem, &t_offset, &x_offset);
 
   if (clean_files)
       clean(userMaskClipped);
@@ -744,7 +750,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		     int do_resample, int do_corner_matching, int do_interp,
 		     int do_fftMatch_verification, int dem_grid_size,
 		     int do_terrain_correction, int fill_value,
-                     int generate_water_mask)
+                     int generate_water_mask, int save_clipped_dem)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimAmp = NULL, *demTrimSlant = NULL;
@@ -911,7 +917,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   match_dem(metaSAR, sarFile, demFile, srFile, output_dir, userMaskFile,
             demTrimSimAmp, demTrimSlant, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
-            FALSE, TRUE, TRUE, madssap, clean_files, &t_offset, &x_offset);
+            FALSE, TRUE, TRUE, madssap, clean_files, save_clipped_dem,
+            &t_offset, &x_offset);
 
   if (do_terrain_correction)
   {            

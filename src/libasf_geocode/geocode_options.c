@@ -194,10 +194,26 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 	switch (pt)
 	{
 	case UNIVERSAL_TRANSVERSE_MERCATOR:
-		if (ISNAN(pps->utm.lon0))
-			pps->utm.lon0 = meta->general->center_longitude;
-		if (ISNAN(pps->utm.lat0))
-			pps->utm.lat0 = meta->general->center_latitude;
+            if (ISNAN(pps->utm.lon0)) {
+                if (ISNAN(meta->general->center_longitude)) {
+                    double lat, lon;
+                    meta_get_latLon(meta, meta->general->line_count/2,
+                                    meta->general->sample_count/2, 0,
+                                    &lat, &lon);
+                    meta->general->center_longitude = lon;
+                }
+                pps->utm.lon0 = meta->general->center_longitude;
+            }
+            if (ISNAN(pps->utm.lat0)) {
+                if (ISNAN(meta->general->center_latitude)) {
+                    double lat, lon;
+                    meta_get_latLon(meta, meta->general->line_count/2,
+                                    meta->general->sample_count/2, 0,
+                                    &lat, &lon);
+                    meta->general->center_latitude = lat;
+                }
+                pps->utm.lat0 = meta->general->center_latitude;
+            }
 
 		/* set the zone based on the specified longitude */
 		if (pps->utm.zone == MAGIC_UNSET_INT) {

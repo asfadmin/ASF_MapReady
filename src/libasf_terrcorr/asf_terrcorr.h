@@ -39,7 +39,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
 		     int do_resample, int do_corner_matching, int do_interp,
 		     int do_fftMatch_verification, int dem_grid_size, 
                      int do_terrain_correction, int fill_value,
-                     int generate_water_mask);
+                     int generate_water_mask, int save_clipped_dem);
 
 /**
    Functions private to terrain correction, not meant for general use.
