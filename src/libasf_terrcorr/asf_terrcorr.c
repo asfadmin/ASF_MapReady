@@ -750,7 +750,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		     int do_resample, int do_corner_matching, int do_interp,
 		     int do_fftMatch_verification, int dem_grid_size,
 		     int do_terrain_correction, int fill_value,
-                     int generate_water_mask, int save_clipped_dem)
+             int generate_water_mask, int save_clipped_dem)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimAmp = NULL, *demTrimSlant = NULL;
@@ -840,16 +840,21 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 
   // Downsample the SAR image closer to the reference DEM if needed.
   // Otherwise, the quality of the resulting terrain corrected SAR image 
-  // suffers. We put in a threshold of 1.5 times the resolution of the SAR
+  // suffers. We put in a threshold of twice the resolution of the SAR
   // image. The -no-resample option overrides this default behavior.
   if (do_resample && 
-      (force_resample || demRes > 1.5 * sarRes || pixel_size > 0)) 
+      (force_resample || demRes > 2 * sarRes || pixel_size > 0)) 
   {
     if (pixel_size <= 0)
     {
       asfPrintStatus("DEM resolution is significantly lower than "
                      "SAR resolution.\n");
-      pixel_size = demRes;
+
+      // change the behavior here --- we used to downsample to match the
+      // DEM resolution but we can probably get good results with twice
+      // the DEM res, so let's use that.
+      pixel_size = demRes / 2.0;
+
       asfPrintStatus("Resampling (Downsampling) SAR image to pixel size "
                      "of %g meter%s.\n", pixel_size,
                      pixel_size==1 ? "" : "s");
@@ -987,11 +992,12 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   }
 
   // if we generated the mask, we should clean it up
-  if (generate_water_mask) {
-      if (clean_files)
-          clean(userMaskFile);
-      FREE(userMaskFile);
-  }
+  //  ... actually, keep the auto-generated mask.  If user is using
+  //      asf_convert or the gui it will be deleted with the temporary
+  //      files, unless they've elected to keep it (and in that case,
+  //      we definitely don't want to have deleted it!)
+  if (generate_water_mask)
+    FREE(userMaskFile);
 
   FREE(resampleFile);
   FREE(srFile);
