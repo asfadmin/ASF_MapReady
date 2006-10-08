@@ -47,7 +47,8 @@ or just under 7 minutes, a 100x speed increase.
 
 #define IMAGE_SLOP 4 /*# of input image widths to pad with zeros in the cache*/
 #define CACHE_SLOP 20 /*# of extra cache blocks to allocate*/
-#define backgroundFill 0
+
+static int backgroundFill=0;
 
 typedef struct {
 /*Original Image Info:*/
@@ -84,7 +85,6 @@ void read_line(fetchRec *g,int y,float *destBuf,int destLen);
 void createBlockingStore(fetchRec *g);
 float *readBlock(fetchRec *g,int imgX,int imgY);
 float *cacheMiss(fetchRec *g,int imgX,int imgY);
-
 
 /************ Internal Utilities:*************/
 /*Read_line: reads given line of the given input file,
@@ -195,6 +195,15 @@ float *cacheMiss(fetchRec *g,int imgX,int imgY)
 		return readBlock(g,imgX,imgY);
 }
 
+
+/************ External Entry Point:
+set_background:
+    Sets the value used when a remapped pixel falls outside the original image.*/
+void set_background(int v)
+{
+
+    backgroundFill = v;
+}
 
 /************ External Entry Point:
 CreateFetchRec:

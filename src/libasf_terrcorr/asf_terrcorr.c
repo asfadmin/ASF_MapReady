@@ -333,7 +333,7 @@ clip_dem(meta_parameters *metaSAR,
     double maxErr;
     poly_2d *fwX, *fwY, *bwX, *bwY;
     fit_poly(demGridFile, polyOrder, &maxErr, &fwX, &fwY, &bwX, &bwY);
-    asfPrintStatus("Maximum error in polynomial fit: %g.\n", maxErr);
+    asfPrintStatus("Maximum error in polynomial fit: %.2f.\n", maxErr);
     
     // Here is the actual work done for cutting out the DEM.
     // The adjustment of the DEM width by 400 pixels (originated in
@@ -345,7 +345,10 @@ clip_dem(meta_parameters *metaSAR,
     asfPrintStatus("Clipping %s to %dx%d LxS using polynomial fit...\n",
 		   what, demHeight, demWidth);
     
-    remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped);
+    // DEMs get a background value of 0 -- User Masks get 1 (masked).
+    int background_value = strcmp(what, "DEM") == 0 ? 1 : 0;
+    remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped,
+            background_value);
 
     if (otherFile) {
         asfRequire(otherClipped && otherWhat, "required arguments were NULL");
@@ -355,8 +358,9 @@ clip_dem(meta_parameters *metaSAR,
         asfPrintStatus("Clipping %s to %dx%d LxS using polynomial fit...\n",
                        otherWhat, demHeight, demWidth);
 
+        background_value = 1; // is a mask-- outside areas should be masked
         remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, otherFile,
-                   otherClipped);
+                   otherClipped, background_value);
     }
 
     // finished with polynomials

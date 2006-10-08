@@ -50,7 +50,8 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
 
 /* Prototypes from remap_poly.c */
 int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
-	       int outWidth, int outHeight, char *infile, char *outfile);
+	       int outWidth, int outHeight, char *infile, char *outfile,
+           int background_value);
 
 /* Prototypes from fit_poly.c */
 int fit_poly(char * gridFile, int degree, double *maxErr,

@@ -223,13 +223,15 @@ static void update_projection(meta_parameters *in_meta, polyMapRec *map,
 }
 
 int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
-	       int outWidth, int outHeight, char *infile, char *outfile)
+	       int outWidth, int outHeight, char *infile, char *outfile,
+           int background_value)
 {
   FILE *in,*out=NULL;
   meta_parameters *meta_in, *meta_out;
   polyMapRec *map;
   int out_lines, out_samps;
 
+  set_background(background_value);
   map = createPolyMap(fwX, fwY, bwX, bwY);
 
   in = fopenImage(infile,"rb");
