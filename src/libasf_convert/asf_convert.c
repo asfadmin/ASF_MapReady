@@ -40,18 +40,21 @@ void update_status(convert_config *cfg, const char *format, ...)
 // stamp as the name of the temporary directory
 static void create_and_set_tmp_dir(char *tmp_dir)
 {
-  int empty_name = (strlen(tmp_dir)==0) ? TRUE : FALSE;
-
-  if (!empty_name && (opendir(tmp_dir)==NULL) ) {
-    create_clean_dir(tmp_dir);
-    set_asf_tmp_dir(tmp_dir);
-  }
+  int empty_name = strlen(tmp_dir)==0;
 
   if (empty_name) {
-    sprintf(tmp_dir, "%s", time_stamp_dir());
+    strcpy(tmp_dir, time_stamp_dir());
     create_clean_dir(tmp_dir);
-    set_asf_tmp_dir(tmp_dir);
   }
+  else {
+    DIR *dirp = opendir(tmp_dir);
+    if (!dirp)
+      create_clean_dir(tmp_dir);
+    else
+      closedir(dirp);
+  }
+
+  set_asf_tmp_dir(tmp_dir);
 }
 
 /* Make a copy of the metdata file. */
