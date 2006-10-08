@@ -326,6 +326,7 @@ int asf_convert(int createflag, char *configFileName)
       asfPrintError("Nothing to be done\n");
     }
 
+    //---------------------------------------------------------------
     // Let's finally get to work
     sprintf(outFile, "%s", cfg->general->in_name);
     if (strcmp(cfg->general->out_name, "") == 0) {
@@ -639,6 +640,10 @@ int asf_convert(int createflag, char *configFileName)
       copy_meta(inFile, outFile);
     }
 
+    //---------------------------------------------------------------------
+    // At this point the processing of the SAR image is done.
+    // We'll now do some of the extra stuff the user may have asked for.
+
     // Generate a small thumbnail if requested.
     if (cfg->general->thumbnail) {
         asfPrintStatus("Generating Thumbnail image...\n");
@@ -670,21 +675,26 @@ int asf_convert(int createflag, char *configFileName)
 
     // Process the clipped DEM if requested
     if (cfg->terrain_correct->save_terrcorr_dem) {
-        if (cfg->general->geocoding) {
-            update_status(cfg, "Geocoding clipped DEM...");
-            char *tmp = appendToBasename(cfg->terrain_correct->dem, "_clip");
-            char *tmp2 = stripExt(tmp);
-            sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp2);
-            free(tmp); free(tmp2);
-            sprintf(outFile, "%s/dem_geocoded", cfg->general->tmp_dir);
-            check_return(
-                asf_geocode_from_proj_file(
-                    cfg->geocoding->projection, cfg->geocoding->force,
-                    RESAMPLE_NEAREST_NEIGHBOR, cfg->geocoding->height,
-                    datum, cfg->geocoding->pixel, inFile, outFile,
-                    cfg->geocoding->background),
-                "geocoding clipped DEM (asf_geocode)\n");
-        }
+        //Commenting this section out for now --- we won't geocode the DEM
+        //  ... we'll assume it has already been geocoded in the user's
+        // favored projection, or that they'll be content to let the GIS
+        // software handle any differences.
+
+        //if (cfg->general->geocoding) {
+        //    update_status(cfg, "Geocoding clipped DEM...");
+        //    char *tmp = appendToBasename(cfg->terrain_correct->dem, "_clip");
+        //    char *tmp2 = stripExt(tmp);
+        //    sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp2);
+        //    free(tmp); free(tmp2);
+        //    sprintf(outFile, "%s/dem_geocoded", cfg->general->tmp_dir);
+        //    check_return(
+        //        asf_geocode_from_proj_file(
+        //            cfg->geocoding->projection, cfg->geocoding->force,
+        //            RESAMPLE_NEAREST_NEIGHBOR, cfg->geocoding->height,
+        //            datum, cfg->geocoding->pixel, inFile, outFile,
+        //            cfg->geocoding->background),
+        //        "geocoding clipped DEM (asf_geocode)\n");
+        //}
 
         if (cfg->general->export) {
             update_status(cfg, "Exporting clipped DEM...");
