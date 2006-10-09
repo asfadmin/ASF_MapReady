@@ -22,7 +22,8 @@
 #include <asf_terrcorr.h>
 
 #define MASK_SEED_POINTS 20
-#define PAD 200
+
+static const int PAD = DEM_GRID_RHS_PADDING;
 
 char *strdup(const char *);
 
@@ -538,10 +539,10 @@ int match_dem(meta_parameters *metaSAR,
               int xbr = x_br_list[ii_chosen];
               int ybr = y_br_list[ii_chosen];
 
-              asfPrintStatus("Chose seed region #%d: S:[%d,%d]"
-                             " - L:[%d,%d] (%ld pixels, %.1f%% masked)\n",
-                             ii_chosen+1, xtl, xbr, ytl, ybr,
-                             (long)((ybr-ytl)*(xbr-xtl)),
+              asfPrintStatus("Chose seed region #%d: L:[%d,%d] - S:[%d,%d] "
+                             "(%dx%d LxS, %ld pixels, %.1f%% masked)\n",
+                             ii_chosen+1, ytl, ybr, xtl, xbr, ybr-ytl,
+                             xbr-xtl, (long)((ybr-ytl)*(xbr-xtl)),
                              100 * (1 - good_pct_list[ii_chosen]));
 
               good_pct_list[ii_chosen] = 0; // prevent future selection
@@ -712,7 +713,6 @@ int match_dem(meta_parameters *metaSAR,
   *x_offset = x_off;
 
   return 0;
-
 }
 
 int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
@@ -754,7 +754,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		     int do_resample, int do_corner_matching, int do_interp,
 		     int do_fftMatch_verification, int dem_grid_size,
 		     int do_terrain_correction, int fill_value,
-             int generate_water_mask, int save_clipped_dem)
+                     int generate_water_mask, int save_clipped_dem)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimAmp = NULL, *demTrimSlant = NULL;
@@ -784,6 +784,11 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   asfPrintStatus("Reading metadata...\n");
   metaSAR = meta_read(sarFile);
   metaDEM = meta_read(demFile);
+
+  if (metaDEM->general->image_data_type != DEM) {
+      metaDEM->general->image_data_type = DEM;
+      meta_write(metaDEM, demFile);
+  }
 
   // generate a water mask if asked to do so
   if (generate_water_mask) {

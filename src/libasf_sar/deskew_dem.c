@@ -589,7 +589,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             if (!inSarFlag)
                 asfPrintError("Cannot produce a mask without a SAR!\n");
             inMaskMeta = meta_read(inMaskName);
-            if ((inSarMeta->general->line_count != inMaskMeta->general->line_count) &&
+            if ((inSarMeta->general->line_count != inMaskMeta->general->line_count) ||
                 (inSarMeta->general->sample_count != inMaskMeta->general->sample_count))
             {
                 asfPrintStatus(" SAR Image: %dx%d LxS.\n"
