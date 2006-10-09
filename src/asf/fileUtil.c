@@ -80,16 +80,15 @@ char *appendExt(const char *name, const char *newExt)
   ret = (char *) MALLOC (sizeof(char) * (l_name + l_newExt + 2));
   strcpy (ret, name);
 
-  ext = findExt (ret);
-
   /* Weird semantics: if newExt is NULL, we just return a copy of name
      without any clipping.  If nothing uses this it should be removed.  */
   if ( newExt == NULL )
     return ret;
 
+  ext = findExt (ret);
   if ( ext != NULL )
     /* We found an existing dot extension, clip it off (the dot itself
-       it clipped).  */
+       is clipped).  */
     *ext = '\0';
 
   /* Put new extension on the end.  */
