@@ -337,8 +337,6 @@ main (int argc, char *argv[])
   strcpy (command_line.in_meta_name, in_base_name);
   //Grab the output name
   strcpy (command_line.output_name, argv[argc - 1]);
-  printf("in_base_name: %s\n", in_base_name);
-  printf("output_name: %s\n", command_line.output_name);
 
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
