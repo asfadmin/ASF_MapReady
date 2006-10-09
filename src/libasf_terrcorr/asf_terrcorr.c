@@ -303,7 +303,7 @@ clip_dem(meta_parameters *metaSAR,
     double coverage_pct;
     int demWidth, demHeight;
 
-    asfPrintStatus("Now clipping %s: %s\n", what, demFile);
+    asfPrintStatus("Now clipping %s: %s.\n", what, demFile);
 
     // Generate a point grid for the DEM extraction.
     // The width and height of the grid is defined in slant range image
@@ -418,7 +418,6 @@ int match_dem(meta_parameters *metaSAR,
   // big offset.
   do
   {
-
     ++num_attempts;    
     asfPrintStatus("Using DEM '%s' for refining geolocation ...\n", demFile);
 
@@ -467,22 +466,19 @@ int match_dem(meta_parameters *metaSAR,
 	 can be fftMatched without running into the mask.
 	 then we average them all back together. to get the offset
       */
-      int x_tl_list[MASK_SEED_POINTS];   // top left corner
-      int y_tl_list[MASK_SEED_POINTS];   //    of seed regions
-      int x_br_list[MASK_SEED_POINTS];   // bottom right corner
-      int y_br_list[MASK_SEED_POINTS];   //    of seed regions
+      int x_tl_list[MASK_SEED_POINTS];        // top left corner
+      int y_tl_list[MASK_SEED_POINTS];        //     of seed regions
+      int x_br_list[MASK_SEED_POINTS];        // bottom right corner
+      int y_br_list[MASK_SEED_POINTS];        //     of seed regions
       float good_pct_list[MASK_SEED_POINTS];  // pct of non-masked pixels
-
       int ii,err;
-      FILE *inseedmask;
-      meta_parameters *maskmeta;
       char *demTrimSimAmp_ffft=NULL, *srTrimSimAmp=NULL;
-      float *mask;
-      inseedmask = fopenImage(userMaskClipped,"rb");
-      maskmeta = meta_read(userMaskClipped);
+
+      FILE *inseedmask = fopenImage(userMaskClipped,"rb");
+      meta_parameters *maskmeta = meta_read(userMaskClipped);
       asfRequire(maskmeta->general->line_count==demHeight, "Bad heights.\n");
-      mask = (float *) MALLOC(sizeof(float) * maskmeta->general->sample_count 
-			      * demHeight);
+      float *mask = MALLOC(sizeof(float) * maskmeta->general->sample_count 
+                           * demHeight);
       for (ii=0;ii<demHeight;ii++) // read in the whole mask image
 	get_float_line(inseedmask, maskmeta, ii,
                        mask + ii * maskmeta->general->sample_count);
@@ -493,14 +489,13 @@ int match_dem(meta_parameters *metaSAR,
       FREE(mask);
 
       if (err==0) {
-          int n_attempt = 0;
-          
+          //int n_attempt = 0;
           do  // matches "while (cert < cert_cutoff)"
           {
-              if (++n_attempt > MASK_SEED_POINTS-2) {
+              //if (++n_attempt > MASK_SEED_POINTS-2) {
                   // couldn't find a seed region that matches well
-                  err=1; break;
-              }
+                  //err=1; break;
+              //}
 
               int ii_chosen = -1;
               long good_num = 0;
@@ -540,10 +535,9 @@ int match_dem(meta_parameters *metaSAR,
               int ybr = y_br_list[ii_chosen];
 
               asfPrintStatus("Chose seed region #%d: L:[%d,%d] - S:[%d,%d] "
-                             "(%dx%d LxS, %ld pixels, %.1f%% masked)\n",
+                             "(%dx%d LxS, %.1f%% masked).\n",
                              ii_chosen+1, ytl, ybr, xtl, xbr, ybr-ytl,
-                             xbr-xtl, (long)((ybr-ytl)*(xbr-xtl)),
-                             100 * (1 - good_pct_list[ii_chosen]));
+                             xbr-xtl, 100*(1 - good_pct_list[ii_chosen]));
 
               good_pct_list[ii_chosen] = 0; // prevent future selection
 
@@ -592,7 +586,7 @@ int match_dem(meta_parameters *metaSAR,
       fftMatchQ(srFile, demTrimSimAmp, &dx, &dy, &cert);
     }
 
-    asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f dy=%f\n",
+    asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f, dy=%f.\n",
 		   100*cert, dx, dy);
 
     idx = - int_rnd(dx);
@@ -642,7 +636,7 @@ int match_dem(meta_parameters *metaSAR,
 	    meta_write(metaSAR, srFile);
 
 	    if (!do_refine_geolocation) {
-	      asfPrintStatus("Found a large offset (%dx%d LxS pixels)\n"
+	      asfPrintStatus("Found a large offset (%dx%d LxS pixels).\n"
 			     "Adjusting SAR image and re-clipping DEM.\n",
 			     idy, idx);
 
@@ -673,7 +667,7 @@ int match_dem(meta_parameters *metaSAR,
       fftMatchQ(srFile, demTrimSimAmp, &dx2, &dy2, &cert);
       
       asfPrintStatus("Correlation after shift (cert=%5.2f%%): "
-                     "dx=%f dy=%f\n", 
+                     "dx=%f, dy=%f.\n", 
                      100*cert, dx2, dy2);
       
       if (fabs(dy2) > required_match || fabs(dx2) > required_match) {
@@ -794,9 +788,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   if (generate_water_mask) {
       userMaskFile = outputName(output_dir, demFile, "_water_mask");
 
-      float cutoff = 1.00001; // FIXME: this ok?
-      asfPrintStatus("Generating a Water Mask from DEM: %s\n", demFile);
-      asfPrintStatus("Height cutoff: %5.2fm\n", cutoff);
+      const float cutoff = 1.00001; // FIXME: this ok?
+      asfPrintStatus("Generating a Water Mask from DEM: %s.\n", demFile);
+      asfPrintStatus("Height cutoff: %.2fm.\n", cutoff);
 
       dem_to_mask(demFile, userMaskFile, cutoff);
 

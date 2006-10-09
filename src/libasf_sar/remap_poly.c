@@ -136,6 +136,8 @@ static void perform_mapping(FILE *in, meta_parameters *meta_in,
 	
     put_float_line(out,meta_out,y,thisLine);
     //writePixelLine(out,outDDR,y,bandNo,thisLine,outBuf);
+
+    asfLineMeter(y,maxOutY);
   }
 
   killFetchRec(getRec);

@@ -1,9 +1,8 @@
 /*
-	ok so the point of these functions is to find the largest n^2 squares within an image with no more than certain % overlay
-	of mask.
+	ok so the point of these functions is to find the largest n^2
+        squares within an image with no more than certain % overlay of mask.
 	
 	ideally squares should not overlap, but well worry about this later
-	
 */
 
 #include <stdio.h>
@@ -205,6 +204,6 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
         }
     }
 
-    asfPrintStatus("Found %d seed points \n", num_seeds);
+    asfPrintStatus("Found %d seed points.\n", num_seeds);
     return 0;
 }

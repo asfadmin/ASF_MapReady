@@ -80,7 +80,7 @@ static int gr_ns,sr_ns;
 
 static float badDEMht=0.0;
 static float unInitDEM=-1.0;
-static int maxBreakLen=20;
+static int maxBreakLen=2000;
 
 static float srE2srH(float srEpix,float height)
 {
@@ -213,7 +213,7 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                 }
             } else {
                 for (x=lastSrX+1;x<=sriX;x++) {
-                    srDEM[x]=badDEMht;		    
+                    srDEM[x]=badDEMht;
                 }
             }
             lastOutValue=height;
@@ -273,7 +273,7 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
             // read_mask(inMaskFile,&inMask,&metaInMask); for byte masks
             metaInMask = meta_read(inMaskFile);
             asfPrintStatus("Read in User Maskfile: %s "
-                           "%dx%d LxS (needed %dx%d)\n",
+                           "%dx%d LxS (needed %dx%d).\n",
                            inMaskFile, metaInMask->general->line_count,
                            metaInMask->general->sample_count,nl,gr_ns);
             inMask = fopenImage(inMaskFile,"rb");

@@ -107,8 +107,6 @@ main (int argc, char *argv[])
         fill_value = atoi(GET_ARG(1)); // user requested a specific fill value
     }
     else if (strmatches(key,"-no-fill","--no-fill",NULL)) {
-        CHECK_ARG(1);
-
         // leave masked regions alone - fill with sar data
         fill_value = LEAVE_MASK; 
     }

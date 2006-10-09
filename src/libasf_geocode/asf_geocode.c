@@ -860,7 +860,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 
       // We will insist that the results are symmetric to within this
       // fraction after transforming out and back.
-      printf ("Symmetry testing latLong vs. linsSamp... ");
+      printf ("Symmetry testing latLong vs. lineSamp... ");
       const double sym_th = 0.1;   // Symmetry threshold.
       if (ret1 || ret2) {
           asfPrintError("Symmetry test failed! %s %s.\n",
