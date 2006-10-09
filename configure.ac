@@ -132,11 +132,14 @@ AC_SUBST(ASF_GLIB)
 
 #### libjpeg check ####
 AC_CHECK_LIB(jpeg,jpeg_read_header,have_jpeg="yes",have_jpeg="no")
+if test "$sys" = "win32" ; then
+  have_jpeg="no"
+fi
 if test "$have_jpeg" = "no" ; then
-   ASF_LIB_JPEG="${ext_lib_src_dir}/libjpeg"
-   JPEG_LIBS="\$(LIBDIR)/libjpeg.a"
+  ASF_LIB_JPEG="${ext_lib_src_dir}/libjpeg"
+  JPEG_LIBS="\$(LIBDIR)/libjpeg.a"
 else
-   JPEG_LIBS="-ljpeg"
+  JPEG_LIBS="-ljpeg"
 fi
 AC_SUBST(ASF_LIB_JPEG)
 
