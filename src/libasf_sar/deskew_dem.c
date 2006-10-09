@@ -276,8 +276,6 @@ static void mask_float_line(int ns, int fill_value, float *in, float *inMask)
     }
 }
 
-static int verb=0;
-
 static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                            float *out,int ns, int doInterp, float *mask)
 {
@@ -303,9 +301,6 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 
     for (grX=0;grX<ns;grX++)
     {
-        int verb2=0;
-        if (verb && grX>1200 && grX<1500) verb2=1;
-
         double height=grDEM[grX];	
         double srX=dem_gr2sr(d,grX,height);
      
@@ -396,8 +391,6 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                         meta_get_earth_radius(d->meta, 0, (long)grX);
             double nd_0 = sqrt(sr_0*sr_0 - sh*sh);
 
-            if (verb2) printf("Shad: Pixel=%d\n", grX);
-
             int x = grX - 1;
             while (x > 0) {
                 double sr = slantFirst + x*slantPer;
@@ -407,12 +400,9 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                 // using similar triangles
                 double ray_ht = (nd_0-nd) * sh/nd_0 + grDEM[grX];
 
-                if (verb2) printf("Shad: %f > %f ?\n", ray_ht, grDEM[x]);
-
                 // can stop if the ray we're tracing is already higher than
                 // height point seen so far, but add some padding just in case
                 if (ray_ht > max_height + 100) {
-                    if (verb2) printf("Shad: No.\n");
                     break;
                 }
 
@@ -420,7 +410,6 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                 if (grDEM[x] > ray_ht) {
                     ++n_shadow;
                     mask[grX] = MASK_SHADOW;
-                    if (verb2) printf("Shad: YES!\n");
                     break;
                 }
 
@@ -704,9 +693,6 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                         for (x=0; x<d.numSamples; ++x)
                             mask[y*d.numSamples+x] = outLine[x];
                     }
-
-                    verb = y>1700 && y<1720;
-                    if (verb) printf("---> Line: %d\n", y);
 
                     geo_compensate(&d,grDEMline,inSarLine,outLine,d.numSamples,
 				    1,mask+y*d.numSamples);
