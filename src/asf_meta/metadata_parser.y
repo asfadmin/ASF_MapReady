@@ -728,7 +728,9 @@ void fill_structure_field(char *field_name, void *valp)
   }
 
   /* Got an unknown field name, so report & choke */
-  fprintf (stderr, "Warning: Unknown field name: %s\n", field_name);
+  /* During testing it makes sense to have this warning, but for the release
+     let's just comment it out... very annoying */
+  // fprintf (stderr, "Warning: Unknown field name: %s\n", field_name);
   return;
   // error_message("Unknown field name: %s", field_name);
 }
