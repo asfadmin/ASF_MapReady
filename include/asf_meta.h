@@ -697,6 +697,12 @@ void readComplexSubset(char *fileName, int width, int height, int posX, int posY
 void pp_get_corrected_vals(char *sarName, double *corrected_earth_radius,
                            double *corrected_azimuth_time_per_pixel);
 
+/* From xpix_ypix.c */
+void xpyp_getPixSizes(meta_parameters *meta, float *range_pixsiz,
+                      float *az_pixsiz);
+void xpyp_getVelocities(meta_parameters *meta, float *pp_velocity,
+                        float *corrected_velocity);
+
 /* Keep track of open meta and ddr structures, so that all updated
  * metadata can be written to the metafile, initialized in meta_init.c Nov '02 */
 typedef struct {
