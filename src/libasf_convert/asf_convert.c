@@ -740,5 +740,6 @@ int asf_convert(int createflag, char *configFileName)
         remove_dir(cfg->general->tmp_dir);
     }
   }
+
   return(EXIT_SUCCESS);
 }

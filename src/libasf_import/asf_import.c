@@ -124,6 +124,8 @@ int asf_import(radiometry_t radiometry, int db_flag,
     int do_metadata_fix;
     double range_scale = -1, azimuth_scale = -1, correct_y_pixel_size = 0;
 
+    asfPrintStatus("Importing: %s\n", inBaseName);
+
     // Determine some flags
     do_resample = p_range_scale != NULL && p_azimuth_scale != NULL;
     do_metadata_fix = p_correct_y_pixel_size != NULL;

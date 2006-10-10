@@ -13,6 +13,8 @@ int asf_export(output_format_t format, long size, scale_t sample_mapping,
   sprintf(in_meta_name, "%s.meta", in_base_name);
   strcpy(out_name, output_name);
 
+  asfPrintStatus("Exporting: %s\n", output_name);
+
   // Do that exporting magic!
   if ( format == ENVI ) {
     export_as_envi (in_meta_name, in_data_name, out_name);
@@ -45,5 +47,6 @@ int asf_export(output_format_t format, long size, scale_t sample_mapping,
     write_kml_overlay (in_data_name);
   }
 
+  asfPrintStatus("Export successful!\n");
   return (EXIT_SUCCESS);
 }

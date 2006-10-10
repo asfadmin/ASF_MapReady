@@ -739,8 +739,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
   if (isPP(meta))
   {
-      asfPrintStatus("\nPP Earth Radius: %.3lf\n", meta->sar->earth_radius_pp);
-      asfPrintStatus("  (for comparison) Scene Center Earth Radius: %.3lf\n\n",
+      asfPrintStatus("PP Earth Radius: %.3lf\n", meta->sar->earth_radius_pp);
+      asfPrintStatus("  (for comparison) Scene Center Earth Radius: %.3lf\n",
                      meta->sar->earth_radius);
   }
 

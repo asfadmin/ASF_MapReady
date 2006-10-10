@@ -328,6 +328,8 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   GString *output_meta_data = g_string_new (output_image->str);
   g_string_append (output_meta_data, ".meta");
 
+  asfPrintStatus("Geocoding...\n");
+
   // Input metadata.
   meta_parameters *imd = meta_read (input_meta_data->str);
   // We can't handle slant range images at the moment.  Happily, there
@@ -598,7 +600,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     g_free (lats);
   }
 
-  asfPrintStatus ("done.\n\n");
+  asfPrintStatus ("done.\n");
 
   if (pixel_size < 0)
   {
@@ -731,7 +733,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     }
   }
 
-  asfPrintStatus ("done.\n\n");
+  asfPrintStatus ("done.\n");
 
   // Here are some convenience macros for the spline model.
 #define X_PIXEL(x, y) reverse_map_x (&dtf, x, y)
@@ -943,8 +945,6 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     }
   }
 
-  asfPrintStatus ("\n");
-
   // Now we are ready to produce our output image.
   asfPrintStatus ("Resampling input image into output image "
 		  "coordinate space...\n");
@@ -1124,7 +1124,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     asfLineMeter(oiy, oiy_max + 1 );
   }
 
-  asfPrintStatus ("\nDone resampling image.\n\n");
+  asfPrintStatus ("Done resampling image.\n");
 
   // Flip the non-reprojected image if the y pixel size is negative.
   if ( y_pixel_size < 0 && omd->projection == NULL ) {
@@ -1140,7 +1140,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   asfPrintStatus ("Storing geocoded image...\n");
   ret = float_image_store (oim, output_data_file->str,
                            FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  asfPrintStatus ("\nDone storing geocoded image.\n\n");
+  asfPrintStatus ("Done storing geocoded image.\n");
   asfRequire (ret == 0, "Error saving image.\n");
   float_image_free (oim);
   g_string_free (output_data_file, TRUE);
@@ -1195,5 +1195,6 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   g_string_free (output_meta_data, TRUE);
   g_string_free (output_image, TRUE);
 
+  asfPrintStatus("Geocoding complete.\n\n");
   return 0;
 }

@@ -34,10 +34,11 @@ void check_parameters(projection_type_t projection_type,
     {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
       // Debugging print
-      printf("Projection: UTM\nZone: %i\nLatitude of origin: %.4f\n"
-	     "Central meridian: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n"
-	     "Scale: %.4f\n\n", pp->utm.zone, pp->utm.lat0, pp->utm.lon0,
-	     pp->utm.false_easting, pp->utm.false_northing, pp->utm.scale_factor);
+//      printf("Projection: UTM\nZone: %i\nLatitude of origin: %.4f\n"
+//	     "Central meridian: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n"
+//	     "Scale: %.4f\n\n", pp->utm.zone, pp->utm.lat0, pp->utm.lon0,
+//	     pp->utm.false_easting, pp->utm.false_northing, pp->utm.scale_factor);
+        asfPrintStatus("Projection: UTM\nZone: %d\n\n", pp->utm.zone);
 
       // Outside range tests
       if (pp->utm.zone < 1 || pp->utm.zone > 60)
@@ -102,11 +103,12 @@ void check_parameters(projection_type_t projection_type,
       break;
 
     case POLAR_STEREOGRAPHIC:
-      // Debugging print
-      printf("Projection: Polar Stereographic\nStandard parallel: %.4f\n"
-	     "Central meridian: %.4f\nHemisphere: %i\nFalse easting: %.0f\n"
-	     "False northing: %.0f\n", pp->ps.slat, pp->ps.slon, pp->ps.is_north_pole,
-	     pp->ps.false_easting, pp->ps.false_northing);
+      asfPrintStatus(
+          "Projection: Polar Stereographic\n"
+          "Standard parallel: %.4f\n"
+          "Central meridian: %.4f\n"
+          "Hemisphere: %c\n\n", 
+          pp->ps.slat, pp->ps.slon, pp->ps.is_north_pole ? 'N' : 'S');
 
       // Outside range tests
       if (pp->ps.slat < -90 || pp->ps.slat > 90)
@@ -140,13 +142,14 @@ void check_parameters(projection_type_t projection_type,
       break;
 
     case ALBERS_EQUAL_AREA:
-      // Debugging print
-      printf("Projection: Albers Equal Area Conic\nFirst standard parallel: %.4f\n"
-	     "Second standard parallel: %.4f\nCentral meridian: %.4f\n"
-	     "Latitude of origin: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n",
-	     pp->albers.std_parallel1, pp->albers.std_parallel2,
-	     pp->albers.center_meridian, pp->albers.orig_latitude,
-	     pp->albers.false_easting, pp->albers.false_northing);
+      asfPrintStatus(
+          "Projection: Albers Equal Area Conic\n"
+          "First standard parallel: %.4f\n"
+          "Second standard parallel: %.4f\n"
+          "Central meridian: %.4f\n"
+          "Latitude of origin: %.4f\n\n",
+          pp->albers.std_parallel1, pp->albers.std_parallel2,
+          pp->albers.center_meridian, pp->albers.orig_latitude);
 
       // Outside range tests
       if (pp->albers.std_parallel1 < -90 || pp->albers.std_parallel1 > 90)
@@ -191,12 +194,13 @@ void check_parameters(projection_type_t projection_type,
       break;
 
     case LAMBERT_CONFORMAL_CONIC:
-      // Debugging print
-      printf("Projection: Lambert Conformal Conic\nFirst standard parallel: %.4f\n"
-	     "Second standard parallel: %.4f\nCentral meridian: %.4f\n"
-	     "Latitude of origin: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n",
-	     pp->lamcc.plat1, pp->lamcc.plat2, pp->lamcc.lon0, pp->lamcc.lat0,
-	     pp->lamcc.false_easting, pp->lamcc.false_northing);
+      asfPrintStatus(
+          "Projection: Lambert Conformal Conic\n"
+          "First standard parallel: %.4f\n"
+          "Second standard parallel: %.4f\n"
+          "Central meridian: %.4f\n"
+          "Latitude of origin: %.4f\n\n",
+          pp->lamcc.plat1, pp->lamcc.plat2, pp->lamcc.lon0, pp->lamcc.lat0);
 
       // Outside range tests
       if (pp->lamcc.plat1 < -90 || pp->lamcc.plat1 > 90)
@@ -241,11 +245,11 @@ void check_parameters(projection_type_t projection_type,
 
       break;
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      // Debugging print
-      printf("Projection: Lambert Azimuthal Equal Area\nLatitude of origin: %.4f\n"
-	     "Central meridian: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n",
-	     pp->lamaz.center_lat, pp->lamaz.center_lon,
-	     pp->utm.false_easting, pp->utm.false_northing);
+      asfPrintStatus(
+          "Projection: Lambert Azimuthal Equal Area\n"
+          "Latitude of origin: %.4f\n"
+          "Central meridian: %.4f\n\n",
+          pp->lamaz.center_lat, pp->lamaz.center_lon);
 
       // Outside range tests
       if (pp->lamaz.center_lon < -180 || pp->lamaz.center_lon > 180)
