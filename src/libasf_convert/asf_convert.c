@@ -597,7 +597,9 @@ int asf_convert(int createflag, char *configFileName)
                    "geocoding data file (asf_geocode)\n");
 
       // Move the .meta file to be ready for export
-      copy_meta(outFile, cfg->general->in_name);
+      //   ... I don't think we need this now ??  causes problems if
+      //       input file is on a read-only filesystem.
+      //copy_meta(outFile, cfg->general->in_name);
     }
 
     output_format_t format = JPEG;
