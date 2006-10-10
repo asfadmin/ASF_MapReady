@@ -780,8 +780,18 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   metaDEM = meta_read(demFile);
 
   if (metaDEM->general->image_data_type != DEM) {
-      metaDEM->general->image_data_type = DEM;
-      meta_write(metaDEM, demFile);
+      // not a DEM?
+      if (metaDEM->general->image_data_type == MAGIC_UNSET_INT ||
+          metaDEM->general->image_data_type == 0) {
+          // unknown image type -- probably came directly from a .ddr
+          // write a metadata file with the proper image_data_type.
+          metaDEM->general->image_data_type = DEM;
+          meta_write(metaDEM, demFile);
+      } else {
+          // possibly the user got the command-line args wrong?
+          asfPrintError("Unexpected image type for DEM '%s': %d\n",
+                        demFile, metaDEM->general->image_data_type);
+      }
   }
 
   // generate a water mask if asked to do so
