@@ -67,6 +67,18 @@ static void copy_meta(char *src, char *dest)
   free(tmp2);
 }
 
+/* Returns TRUE if the filename has a TIFF extension */
+static int has_tiff_ext(const char *f)
+{
+    char *ext = findExt(f);
+
+    return
+        strcmp(ext, ".tif") == 0 ||
+        strcmp(ext, ".tiff") == 0 ||
+        strcmp(ext, ".TIF") == 0 ||
+        strcmp(ext, ".TIFF") == 0;
+}
+
 int asf_convert(int createflag, char *configFileName)
 {
   convert_config *cfg;
@@ -509,6 +521,31 @@ int asf_convert(int createflag, char *configFileName)
     }
 
     if (cfg->general->terrain_correct) {
+
+      // If the DEM is a GeoTIFF, we need to import it, and geocode it.
+      if (has_tiff_ext(cfg->terrain_correct->dem)) {
+          char *tiff_basename, imported_dem[255], geocoded_dem[255];
+          tiff_basename = stripExt(cfg->terrain_correct->dem);
+          sprintf(imported_dem, "%s/imported_dem", cfg->general->tmp_dir);
+          sprintf(geocoded_dem, "%s/geocoded_dem", cfg->general->tmp_dir);
+
+          update_status(cfg, "Importing DEM...");
+          check_return(
+              asf_import(r_AMP, FALSE, "GEOTIFF", NULL, NULL, 0, 0,
+                         NULL, NULL, NULL, NULL, tiff_basename, imported_dem),
+              "ingesting Geotiff DEM (asf_import)\n");
+
+          update_status(cfg, "Geocoding DEM...");
+          check_return(
+              asf_geocode_from_proj_file(
+                  cfg->geocoding->projection, cfg->geocoding->force,
+                  RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM, NAN,
+                  imported_dem, geocoded_dem, cfg->geocoding->background),
+              "geocoding Geotiff DEM (asf_geocode)\n");
+
+          strcpy(cfg->terrain_correct->dem, geocoded_dem);
+          free(tiff_basename);
+      }
 
       // Generate filenames
       sprintf(inFile, "%s", outFile);
