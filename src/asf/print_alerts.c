@@ -23,16 +23,18 @@ void asf_print_to_log_only(const char *format, ...)
 void asfPrintStatus(const char *format, ...)
 {
   va_list ap;
-  va_start(ap, format);
   if (!quietflag) {
+  va_start(ap, format);
     vprintf(format, ap);
     fflush (stdout);
+  va_end(ap);
   }
   if (logflag) {
+  va_start(ap, format);
     vfprintf(fLog, format, ap);
     fflush (fLog);
-  }
   va_end(ap);
+  }
 }
 
 /* Basically a printf that pays attention to log flag but NOT the quiet flag */
