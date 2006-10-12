@@ -297,6 +297,22 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
   return gsl_spline_eval (crnt_rmy, x, crnt_accel_rmy);
 }
 
+int asf_geocode_utm(resample_method_t resample_method, double average_height,
+                    datum_type_t datum, double pixel_size,
+                    char *in_base_name, char *out_base_name,
+                    float background_val)
+{
+  project_parameters_t pp;
+  projection_type_t projection_type = UNIVERSAL_TRANSVERSE_MERCATOR;
+
+  // force calculation of these values
+  pp.utm.zone = MAGIC_UNSET_INT;
+  pp.utm.lon0 = MAGIC_UNSET_DOUBLE;
+
+  return asf_geocode(&pp, projection_type, FALSE, resample_method,
+		     average_height, datum, pixel_size, in_base_name,
+		     out_base_name, background_val);
+}
 
 int asf_geocode_from_proj_file(const char *projection_file,
 		 int force_flag, resample_method_t resample_method, 

@@ -536,12 +536,21 @@ int asf_convert(int createflag, char *configFileName)
               "ingesting Geotiff DEM (asf_import)\n");
 
           update_status(cfg, "Geocoding DEM...");
-          check_return(
-              asf_geocode_from_proj_file(
-                  cfg->geocoding->projection, cfg->geocoding->force,
-                  RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM, NAN,
-                  imported_dem, geocoded_dem, cfg->geocoding->background),
-              "geocoding Geotiff DEM (asf_geocode)\n");
+          if (cfg->general->geocoding) {
+              // use the user's projection, if we have it
+              check_return(
+                  asf_geocode_from_proj_file(
+                      cfg->geocoding->projection, cfg->geocoding->force,
+                      RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM, NAN,
+                      imported_dem, geocoded_dem, cfg->geocoding->background),
+                  "geocoding geotiff DEM (asf_geocode)\n");
+          } else {
+              // use UTM if no geocoding specified
+              check_return(
+                  asf_geocode_utm(RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM,
+                                  NAN, imported_dem, geocoded_dem, 0.0),
+                  "geocoding geotiff DEM (asf_geocode)\n");
+          }
 
           strcpy(cfg->terrain_correct->dem, geocoded_dem);
           free(tiff_basename);

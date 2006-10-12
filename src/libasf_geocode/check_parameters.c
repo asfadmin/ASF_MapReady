@@ -39,7 +39,7 @@ void check_parameters(projection_type_t projection_type,
 //	     "Scale: %.4f\n\n", pp->utm.zone, pp->utm.lat0, pp->utm.lon0,
 //	     pp->utm.false_easting, pp->utm.false_northing, pp->utm.scale_factor);
         asfPrintStatus("Projection: UTM\nZone: %d\n\n", pp->utm.zone);
-
+        
       // Outside range tests
       if (pp->utm.zone < 1 || pp->utm.zone > 60)
 	report_func("Zone '%i' outside the defined range (1 to 60)\n", pp->utm.zone);
