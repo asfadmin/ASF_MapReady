@@ -68,14 +68,14 @@ make_input_image_thumbnail (meta_parameters *imd, const char *input_data,
 
     // Vertical and horizontal scale factors required to meet the
     // max_thumbnail_dimension part of the interface contract.
-    int vsf = ceil (imd->general->line_count / max_thumbnail_dimension);
-    int hsf = ceil (imd->general->sample_count / max_thumbnail_dimension);
+    int vsf = ceil (id->ddr.nl / max_thumbnail_dimension);
+    int hsf = ceil (id->ddr.ns / max_thumbnail_dimension);
     // Overall scale factor to use is the greater of vsf and hsf.
     int sf = (hsf > vsf ? hsf : vsf);
 
     // Thumbnail image sizes.
-    size_t tsx = imd->general->sample_count / sf;
-    size_t tsy = imd->general->line_count / sf;
+    size_t tsx = id->ddr.ns / sf;
+    size_t tsy = id->ddr.nl / sf;
 
     // Thumbnail image.
     FloatImage *ti = float_image_new (tsx, tsy);
@@ -83,16 +83,14 @@ make_input_image_thumbnail (meta_parameters *imd, const char *input_data,
     // Form the thumbnail image by grabbing individual pixels.  FIXME:
     // Might be better to do some averaging or interpolating.
     size_t ii;
-    int *line = MALLOC (sizeof(int) * imd->general->sample_count);
-    asfRequire(imd->general->sample_count == id->ddr.ns,
-               "metadata size appears not to match the ceos image size\n");
+    int *line = MALLOC (sizeof(int) * id->ddr.ns);
     for ( ii = 0 ; ii < tsy ; ii++ ) {
         readCeosLine (line, ii * sf, id);
         size_t jj;
         for ( jj = 0 ; jj < tsx ; jj++ ) {
             // Current sampled value.  We will average a couple pixels together.
             int csv;
-            if ( jj * sf < imd->general->line_count - 1 ) {
+            if ( jj * sf < id->ddr.nl - 1 ) {
                 csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
             }
             else {
