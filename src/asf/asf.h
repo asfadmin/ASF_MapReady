@@ -221,6 +221,7 @@ int unlink_tmp_file(const char *filename);
 void fileRename(const char *src, const char *dst);
 void renameImgAndMeta(const char *src, const char *dst);
 char *get_basename(const char *filename);
+char *get_dirname(const char *in);
 
 /* Prototypes from progress_meters.c *****************************************/
 void asfLineMeter(int currentLine, int totalLines);

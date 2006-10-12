@@ -391,6 +391,20 @@ get_basename(const char *in)
    return file;
 }
 
+/* returns a newly allocated string, returns just the directory portion.
+   returns an empty string if no directory info is present.
+   the returned string will be terminated with the directory separator */
+char *
+get_dirname(const char *in)
+{
+   char *dir = MALLOC(sizeof(char)*(strlen(in)+2));
+   char *file = MALLOC(sizeof(char)*(strlen(in)+2));
+   split_dir_and_file(in,dir,file);
+   free(file);
+   return dir;
+}
+
+
 // create a directory. acts like 'mkdir -p'. return 0 on success, -1 on fail.
 int
 create_dir(const char *dir)
