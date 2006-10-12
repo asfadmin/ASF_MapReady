@@ -709,6 +709,8 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 		}
 		else
                     put_float_line(outFp,outMeta,y,&grDEM[y*d.numSamples]);
+
+                asfLineMeter(y,d.numLines);
 	}
 
 /*Write the updated mask*/
