@@ -20,6 +20,7 @@
 #include <spheroids.h>
 #include <asf_contact.h>
 #include <asf_glib.h>
+#include <asf_nan.h>
 
 // Headers defined by this library.
 #include "asf_geocode.h"
