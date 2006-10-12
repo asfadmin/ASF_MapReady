@@ -24,16 +24,17 @@ void asfPrintStatus(const char *format, ...)
 {
   va_list ap;
   if (!quietflag) {
-  va_start(ap, format);
+    va_start(ap, format);
     vprintf(format, ap);
     fflush (stdout);
-  va_end(ap);
+    va_end(ap);
   }
   if (logflag) {
-  va_start(ap, format);
+    va_start(ap, format);
     vfprintf(fLog, format, ap);
+    va_end(ap);
+
     fflush (fLog);
-  va_end(ap);
   }
 }
 
@@ -41,13 +42,18 @@ void asfPrintStatus(const char *format, ...)
 void asfForcePrintStatus(const char *format, ...)
 {
   va_list ap;
+
   va_start(ap, format);
   vprintf(format, ap);
+  va_end(ap);
+
   if (logflag) {
+    va_start(ap, format);
     vfprintf(fLog, format, ap);
+    va_end(ap);
+
     fflush (fLog);
   }
-  va_end(ap);
 }
 
 /* Report warning to user & log file, then continue the program  */
@@ -67,10 +73,13 @@ void asfPrintWarning(const char *format, ...)
 
   va_start(ap, format);
   vprintf(format, ap);
-  if (logflag) {
-    vfprintf(fLog, format, ap);
-  }
   va_end(ap);
+
+  if (logflag) {
+    va_start(ap, format);
+    vfprintf(fLog, format, ap);
+    va_end(ap);
+  }
 
   printf(warningEnd);
   fflush (stdout);
@@ -96,9 +105,13 @@ void asfPrintError(const char *format, ...)
 
   va_start(ap, format);
   vprintf(format, ap);
-  if (logflag)
-    vfprintf(fLog, format, ap);
   va_end(ap);
+
+  if (logflag) {
+    va_start(ap, format);
+    vfprintf(fLog, format, ap);
+    va_end(ap);
+  }
 
   printf(errorEnd);
 
