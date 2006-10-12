@@ -10,6 +10,7 @@
 #include "asf_terrcorr.h"
 #include "asf_geocode.h"
 #include "asf_export.h"
+#include "asf_nan.h"
 #include "ardop_defs.h"
 #include <ctype.h>
 #include <sys/types.h> /* 'DIR' structure (for opendir) */
@@ -79,7 +80,7 @@ static int has_tiff_ext(const char *f)
         strcmp(ext, ".TIFF") == 0;
 }
 
-int asf_convert(int createflag, char *configFileName)
+int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 {
   convert_config *cfg;
   char inFile[255], outFile[255];
@@ -527,7 +528,17 @@ int asf_convert(int createflag, char *configFileName)
           char *tiff_basename, imported_dem[255], geocoded_dem[255];
           tiff_basename = stripExt(cfg->terrain_correct->dem);
           sprintf(imported_dem, "%s/imported_dem", cfg->general->tmp_dir);
-          sprintf(geocoded_dem, "%s/geocoded_dem", cfg->general->tmp_dir);
+
+          // if user wants to save the converted DEM, do so, otherwise we
+          // put it into the temporary directory along with everything else
+          if (saveDEM) {
+              char *outfileDir = get_dirname(cfg->general->out_name);
+              char *dem_basename = get_basename(tiff_basename);
+              sprintf(geocoded_dem, "%s%s", outfileDir, dem_basename);
+          }
+          else {
+              sprintf(geocoded_dem, "%s/geocoded_dem", cfg->general->tmp_dir);
+          }
 
           update_status(cfg, "Importing DEM...");
           check_return(
@@ -544,7 +555,8 @@ int asf_convert(int createflag, char *configFileName)
                       RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM, NAN,
                       imported_dem, geocoded_dem, cfg->geocoding->background),
                   "geocoding geotiff DEM (asf_geocode)\n");
-          } else {
+          }
+          else {
               // use UTM if no geocoding specified
               check_return(
                   asf_geocode_utm(RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM,
@@ -788,4 +800,9 @@ int asf_convert(int createflag, char *configFileName)
   }
 
   return(EXIT_SUCCESS);
+}
+
+int asf_convert(int createflag, char *configFileName)
+{
+    return asf_convert_ext(createflag, configFileName, FALSE);
 }
