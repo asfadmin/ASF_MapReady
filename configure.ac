@@ -167,7 +167,9 @@ fi
 AC_SUBST(ASF_LIB_GEOTIFF)
 
 #### libshp check ####
-AC_CHECK_LIB(shp,main,have_shp="yes",have_shp="no")
+##### --> always use our own shapelib because different versions
+#####     the user may have installed are not necessarily compatible
+#AC_CHECK_LIB(shp,main,have_shp="yes",have_shp="no")
 if test "$have_shp" = "no" ; then
    ASF_LIB_SHAPELIB="${ext_lib_src_dir}/shapelib"
    SHAPELIB_LIBS="\$(LIBDIR)/libshp.a"
