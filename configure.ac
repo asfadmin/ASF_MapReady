@@ -28,6 +28,7 @@ have_tcl_tk="no"
 have_shp="no"
 try_gtk="yes"
 have_gtk="no"
+have_fftw="no"
 
 AC_PROG_CC
 AC_PROG_LEX

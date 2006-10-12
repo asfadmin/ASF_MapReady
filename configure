@@ -1322,6 +1322,7 @@ have_tcl_tk="no"
 have_shp="no"
 try_gtk="yes"
 have_gtk="no"
+have_fftw="no"
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
