@@ -1010,19 +1010,6 @@ int main(int argc, char *argv[])
 		 "Could not update configuration file");
   }
   
-  /* Calculate differential interferogram */
-  
-  if (strncmp(cfg->general->mode, "DINSAR", 6)==0) {
-    sprintf(tmp, "\'(a-b)%%6.2831853-3.14159265\' %s_ml_phase.img "
-	    "out_dem_phase.img", cfg->igram_coh->igram);
-    check_return(raster_calc("dinsar.phase", tmp), 
-		 "calculating differential interferogram (raster_calc)");
-    sprintf(cfg->dinsar->status, "success");
-    check_return(write_config(configFile, cfg), 
-		 "Could not update configuration file");
-    exit(0);
-  }
-  
   /* Deramping and multilooking interferogram */
   if (check_status(cfg->deramp_ml->status)) {
     check_return(deramp(cfg->igram_coh->igram, 
@@ -1034,6 +1021,18 @@ int main(int argc, char *argv[])
     sprintf(cfg->deramp_ml->status, "success");
     check_return(write_config(configFile, cfg), 
 		 "Could not update configuration file");
+  }
+  
+  /* Calculate differential interferogram */
+  if (strncmp(cfg->general->mode, "DINSAR", 6)==0) {
+    sprintf(tmp, "\'(a-b)%%6.2831853-3.14159265\' ml_phase.img "
+	    "out_dem_phase.img");
+    check_return(raster_calc("dinsar_phase.img", tmp), 
+		 "calculating differential interferogram (raster_calc)");
+    sprintf(cfg->dinsar->status, "success");
+    check_return(write_config(configFile, cfg), 
+		 "Could not update configuration file");
+    exit(0);
   }
   
   /* Phase unwrapping */
