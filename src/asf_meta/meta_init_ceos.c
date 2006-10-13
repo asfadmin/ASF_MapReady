@@ -813,7 +813,8 @@ ceos_description *get_ceos_description(char *fName)
   char *versPtr,*satStr;
   char *sensorStr,*prodStr,*procStr;
   ceos_description *ceos=(ceos_description *)MALLOC(sizeof(ceos_description));
-  
+  memset(ceos,0,sizeof(ceos_description));
+
   // Get dataset summary record for SAR image. Otherwise try scene header record.
   sar_image = get_dssr(fName,&ceos->dssr);
   if (sar_image == -1)
