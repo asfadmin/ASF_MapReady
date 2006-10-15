@@ -719,7 +719,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
 	 projection->perX   = (mpdr->trcnorth-mpdr->tlcnorth)
 	   / mpdr->npixels;
        }
-     else {
+     else if(strcmp(meta->general->sensor, "ALOS") == 0){
        // might need to have a check for ALOS coordinates - look like km, not m
        projection->startY = mpdr->tlcnorth*1000;
        projection->startX = mpdr->tlceast*1000;
@@ -727,6 +727,13 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
 	 / mpdr->nlines;
        projection->perX   = (mpdr->trceast - mpdr->tlceast)*1000
 	 / mpdr->npixels;
+     }
+     else {
+       // map projected ScanSAR images - mostly RGPS
+       projection->startY = mpdr->tlcnorth;
+       projection->startX = mpdr->tlceast;
+       projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth) / mpdr->nlines;
+       projection->perX   = (mpdr->trceast - mpdr->tlceast) / mpdr->npixels;
      }
      
      /* Default the units to meters */
