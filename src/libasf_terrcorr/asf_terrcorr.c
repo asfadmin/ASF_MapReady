@@ -761,6 +761,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   double t_offset, x_offset;
   int madssap = FALSE; // mask and dem same size and projection
   int clean_resample_file = TRUE;
+  int image_was_ground_range = TRUE;
 
   // we want passing in an empty string for the mask to mean "no mask"
   if (userMaskFile && strlen(userMaskFile) == 0)
@@ -924,7 +925,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		   metaSAR->general->sample_count,
 		   metaSAR->general->x_pixel_size);
   } else {
+    // image already in slant range - no action necessary
     srFile = strdup(resampleFile);
+    image_was_ground_range = FALSE;
   }
 
   lsMaskFile = appendToBasename(outFile, "_mask");
@@ -964,12 +967,16 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       clean(deskewDemFile);
       clean(deskewDemMask);
 
-      // Because of the PP earth radius sr->gr fix, we may not have ended
-      // up with the same x pixel size that the user requested.  So we will
-      // just resample to the size that was requested.
       meta_free(metaSAR);
       metaSAR = meta_read(outFile);
-      if (fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01) {
+
+      // Because of the PP earth radius sr->gr fix, we may not have ended
+      // up with the same x pixel size that the user requested.  So we will
+      // just resample to the size that was requested.  This correction is
+      // not necessary if the given image was in slant range.
+      if (image_was_ground_range &&
+          fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01)
+      {
           asfPrintStatus("Resampling to proper range pixel size...\n");
           resampleFile_2 = outputName(output_dir, outFile, "_resample");
           renameImgAndMeta(outFile, resampleFile_2);
