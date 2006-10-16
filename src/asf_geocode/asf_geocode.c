@@ -269,7 +269,6 @@ static void print_help(void)
 int
 main (int argc, char **argv)
 {
-  int return_code;
   int force_flag = FALSE;
   int debug_dump = FALSE;
   char *in_base_name, *out_base_name;
@@ -311,6 +310,11 @@ main (int argc, char **argv)
     = get_geocode_options (&argc, &argv, &projection_type, &average_height,
 			   &pixel_size, &datum, &resample_method,
 			   &force_flag);
+
+  if (!pp) {
+      asfPrintError("Use the -help option information on specifying "
+                    "a projection.\n");
+  }
 
   // The argument at which the filenames start
   int arg_num = 1;
