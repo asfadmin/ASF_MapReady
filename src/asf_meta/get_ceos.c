@@ -29,7 +29,7 @@ typedef enum {
 	CEOS_FDR=300,         /* File Descriptor Record.*/
 	CEOS_PPR=120,         /* Processing Parameter Record - CDPF defined.*/
 	CEOS_SHR=18,          // Scene Header Record - ALOS
-	CEOS_FAKE=51
+	CEOS_RCDR=51          // Radiometric Compensation Data Record - RSI
 } CEOS_RECORD_TYPE;
 
 int getCeosRecord(char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
@@ -246,6 +246,17 @@ int get_ppr(char *filename,struct PPREC *ppr)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_PPR,1,&buff)) != -1) {
 		Code_PPR(buff,ppr,fromASCII);
+		FREE(buff);
+	}
+	return(era);
+}
+
+int get_rcdr(char *filename, struct radio_comp_data_rec *rcdr)
+{
+	unsigned char *buff;
+	int era;
+	if ( (era = getCeosRecord(filename,CEOS_RCDR,1,&buff)) != -1) {
+		Code_RCDR(buff,rcdr,fromASCII);
 		FREE(buff);
 	}
 	return(era);

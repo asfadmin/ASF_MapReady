@@ -1107,3 +1107,26 @@ void Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir)
   strV(acc_att,off,2);
   strV(yaw_flag,off,2);
 }
+
+void Code_RCDR(unsigned char *bf, struct radio_comp_data_rec *q, codingDir dir)
+{
+  int i, off=12;
+
+  shrtV(seq_num,off,4);
+  shrtV(sar_channel,off,4);
+  intV(num_rec,off,8);
+  intV(data_size,off,8);
+  for (i=0; i<q->num_rec; i++) {
+    strV(data_desig[i],off,8);
+    strV(data_descr[i],off,32);
+    shrtV(num_comp_rec[i],off,4);
+    shrtV(rec_seq_num[i],off,4);
+    intV(beam_tab_size[i],off,8);
+    //for (k=0; k<256; k++)
+    //  fltV(beam_tab[k][i],off,17);
+    off = 4201+i*4200;
+    strV(beam_type[i],off,3);
+    fltV(look_angle[i],off,16);
+    fltV(beam_tab_inc[i],off,16);
+  }
+}

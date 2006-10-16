@@ -60,6 +60,7 @@ VERSION         DATE   AUTHOR
 /* Null volume file */
 #define NVDR      10022
 #define SHR       10023
+#define RCDR      10024
 
 /*** RECORD SIZES ***/
 #define H_SZ    12
@@ -1405,6 +1406,23 @@ struct TREC {
         char spare2[105];       /* Spares */
 };
 
+// Radiometric Compensation Data Record
+struct radio_comp_data_rec {
+  short seq_num;              // Record sequence number
+  short sar_channel;          // SAR channel indicator
+  int num_rec;                // Number of data sets in record
+  int data_size;              // Compensation data set size
+  char data_desig[9][4];        // Compensation data designator
+  char data_descr[33][4];       // Compensation data descriptor
+  short num_comp_rec[4];        // Number of compensation records
+  short rec_seq_num[4];         // Record sequence number
+  int beam_tab_size[4];         // Number of beam table entries
+  double beam_tab[256][4];       // Elevation gain beam profile
+  char beam_type[17][4];        // Beam type
+  double look_angle[4];           // Look angle of beam table centre
+  double beam_tab_inc[4];         // Increment between beam table entries
+};
+
 // Scene Header Record - ALOS
 struct scene_header_rec {
   char product_id[17];        // Product ID
@@ -1490,6 +1508,7 @@ void   Code_RSR(unsigned char *bf, struct rng_spec_rec *q, codingDir dir);
 void   Code_ASF_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir);
 void   Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir);
 void   Code_PPR(unsigned char *bf, struct PPREC *q, codingDir dir);
+void   Code_RCDR(unsigned char *bf, struct radio_comp_data_rec *q, codingDir dir);
 void   Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir);
 
 void   Code_VDR(unsigned char *bf, struct VDREC *q, codingDir dir);
@@ -1518,6 +1537,7 @@ int get_rsr(char *filename,struct rng_spec_rec *rec);
 int get_ifiledr(char *filename,struct IOF_VFDR *vfdr);
 int get_fdr(char *filename,struct FDR *rec);
 int get_ppr(char *filename,struct PPREC *rec);
+int get_rcdr(char *filename,struct radio_comp_data_rec *rcdr);
 int get_shr(char *filename, struct scene_header_rec *shr);
 
 int get_vdr(char *filename,struct VDREC *rec);
