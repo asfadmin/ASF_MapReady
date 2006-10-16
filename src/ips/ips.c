@@ -252,7 +252,6 @@ int main(int argc, char *argv[])
     check_return(write_config(configFile, cfg), 
 		 "Could not update configuration file");
     asfPrintStatus("   Initialized complete configuration file\n\n");
-    FCLOSE(fLog);
     exit(EXIT_SUCCESS);
   }
   else {
