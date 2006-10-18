@@ -9,12 +9,12 @@
 #define NUM_ARGS 3
 void usage(const char *name)
 {
-  printf("Usage: %s [-log <logfile>] [-quiet] [-keep] [-no-resample]\n"
-         "          [-no-verify-fftMatch] [-no-corner-match] [-no-interp]\n"
-	 "          [-pixel-size <size>] [-dem-grid-size <size>]\n"
-         "          [-mask-file <filename> | -auto-water-mask]\n"
-         "          [-fill <fill value> | -no-fill]\n"
-         "          <inFile> <demFile> <outFile>\n", name);
+  printf("Usage: %s [-log <logfile>] [-quiet] [-keep (-k)] [-no-resample]\n"
+     "          [-no-verify-fftMatch] [-no-corner-match] [-no-interp]\n"
+     "          [-pixel-size <size>] [-dem-grid-size <size>]\n"
+     "          [-mask-file <filename> | -auto-water-mask]\n"
+     "          [-fill <fill value> | -no-fill] [-update-original-meta (-u)]\n"
+     "          <inFile> <demFile> <outFile>\n", name);
   exit(EXIT_FAILURE);
 }
 
@@ -53,6 +53,7 @@ main (int argc, char *argv[])
   int do_corner_matching = TRUE;
   int generate_water_mask = FALSE;
   int save_clipped_dem = FALSE;
+  int update_original_metadata_with_offsets = FALSE;
 
   // -1 -> no masking, other values mean fill it with that value
   int fill_value = 0; 
@@ -102,6 +103,11 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-auto-water-mask","--auto-water-mask",NULL)) {
         generate_water_mask = TRUE;
     }
+    else if (strmatches(key, "-u", "-update-original-meta",
+                        "--update-original-meta", NULL))
+    {
+        update_original_metadata_with_offsets = TRUE;
+    }
     else if (strmatches(key,"-fill","--fill",NULL)) {
         CHECK_ARG(1);
         fill_value = atoi(GET_ARG(1)); // user requested a specific fill value
@@ -128,7 +134,8 @@ main (int argc, char *argv[])
                               clean_files, do_resample, do_corner_matching,
                               do_interp, do_fftMatch_verification,
                               dem_grid_size, TRUE, fill_value, 
-                              generate_water_mask, save_clipped_dem);
+                              generate_water_mask, save_clipped_dem,
+                              update_original_metadata_with_offsets);
 
   return ret==0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

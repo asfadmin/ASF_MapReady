@@ -594,7 +594,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                              TRUE, FALSE, cfg->terrain_correct->interp, 
                              TRUE, 20, TRUE, cfg->terrain_correct->fill_value,
                              cfg->terrain_correct->auto_mask_water,
-                             cfg->terrain_correct->save_terrcorr_dem),
+                             cfg->terrain_correct->save_terrcorr_dem, FALSE),
             "terrain correcting data file (asf_terrcorr)\n");
       }
     }
