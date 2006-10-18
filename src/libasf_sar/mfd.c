@@ -12,9 +12,9 @@ dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
 {
     meta_parameters *inDemMeta = meta_read(inDemFile);
 
-    long x_size = inDemMeta->general->sample_count;
-    long y_size = inDemMeta->general->line_count;
-    
+    int x_size = inDemMeta->general->sample_count;
+    int y_size = inDemMeta->general->line_count;
+
     float *maskbuffer = MALLOC(sizeof(float) * x_size);
     float *floatbuffer = MALLOC(sizeof(float) * x_size);
 
@@ -22,7 +22,7 @@ dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
     FILE *out = fopenImage(outMaskFile, "wb");
 
     int y;
-    for (y=0; y < y_size ; y++) 
+    for (y=0; y < y_size; y++) 
     {
         get_float_line(in, inDemMeta, y, floatbuffer);
 
@@ -31,6 +31,8 @@ dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
             maskbuffer[x] = floatbuffer[x] <= cutoff ? 1.0 : 0.0;
 
         put_float_line(out, inDemMeta, y, maskbuffer);
+
+        asfLineMeter(y, y_size);
     }
 
     FCLOSE(in);
@@ -41,6 +43,9 @@ dem_to_mask(char *inDemFile, char *outMaskFile, float cutoff)
 
     meta_write(inDemMeta, outMaskFile);
     meta_free(inDemMeta);
+
+    asfPrintStatus("Created Mask file '%s' from DEM '%s'.\n",
+                   outMaskFile, inDemFile);
 
     return 0;
 }

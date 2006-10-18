@@ -359,7 +359,7 @@ clip_dem(meta_parameters *metaSAR,
         asfPrintStatus("Clipping %s to %dx%d LxS using polynomial fit...\n",
                        otherWhat, demHeight, demWidth);
 
-        background_value = 1; // is a mask-- outside areas should be masked
+        background_value = 2; // is a mask-- outside areas should be masked
         remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, otherFile,
                    otherClipped, background_value);
     }

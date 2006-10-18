@@ -281,14 +281,14 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 {
     int i,grX;
     int valid_data_yet=0;
-    int num_hits_required_for_layover=3;
+    const int num_hits_required_for_layover=3;
     int *sr_hits=NULL;
     float max_height=grDEM[0];
 
     if (mask) {
         sr_hits=(int*)MALLOC(sizeof(int)*ns*num_hits_required_for_layover);
         for (grX=0; grX<ns; ++grX) {
-            if (mask[grX] != MASK_USER_MASK)
+            if (mask[grX] != MASK_USER_MASK && mask[grX] != MASK_INVALID_DATA)
                 mask[grX] = MASK_NORMAL;
 
             for (i=0; i<num_hits_required_for_layover; ++i)
@@ -361,7 +361,9 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
         else {
             out[grX]=0.0;
             if (mask)
-            {
+                mask[grX] = MASK_INVALID_DATA;
+
+/*                
                 if ( (height==badDEMht && !valid_data_yet) ||
                      ( srX > rpoint) )                    
                 {
@@ -377,7 +379,8 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                         mask[grX] = MASK_LAYOVER;
                     }
                 }
-            }
+*/
+            
         }
 
         // determine if this pixel is in shadow, by tracing back to the sat
@@ -417,7 +420,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             }
         }
     }
-    
+
     // now have a bit of code that goes back and unsets 
     // extra MASK_INVALID_DATA
     if (mask)
@@ -599,7 +602,8 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                                inMaskMeta->general->line_count,
                                inMaskMeta->general->sample_count);
 
-                asfPrintError("ERROR: The mask and the SAR image must be the same size.\n");
+                asfPrintError("The mask and the SAR image must be the "
+                              "same size.\n");
             }
         }
 
@@ -659,7 +663,10 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             for (y=0;y<d.numLines;y++) {
                 get_float_line(maskFp,inMaskMeta,y,mask+y*d.numSamples);
                 for (x=0;x<d.numLines;++x) {
-                    if (mask[x+y*d.numSamples]>=1.0) {
+                    if (mask[x+y*d.numSamples]==2.0) {
+                        mask[x+y*d.numSamples] = MASK_INVALID_DATA;
+                    }
+                    else if (mask[x+y*d.numSamples]>=1.0) {
                         mask[x+y*d.numSamples] = MASK_USER_MASK;
                     }
                 }
