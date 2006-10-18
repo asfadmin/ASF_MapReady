@@ -535,6 +535,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               char *outfileDir = get_dirname(cfg->general->out_name);
               char *dem_basename = get_basename(tiff_basename);
               sprintf(geocoded_dem, "%s%s", outfileDir, dem_basename);
+              free(outfileDir);
+              free(dem_basename);
           }
           else {
               sprintf(geocoded_dem, "%s/geocoded_dem", cfg->general->tmp_dir);
