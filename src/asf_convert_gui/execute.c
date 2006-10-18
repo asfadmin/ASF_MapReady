@@ -474,7 +474,7 @@ have_access_to_dir(const gchar * dir, gchar ** err_string)
 //}
 
 static char *
-do_convert(int pid, GtkTreeIter *iter, char *cfg_file)
+do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem)
 {
     extern int logflag;
     extern FILE *fLog;
@@ -495,7 +495,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file)
         asfPrintStatus("Running convert with configuration file: %s\n",
 		       cfg_file);
 
-	asf_convert(FALSE, cfg_file);
+	asf_convert_ext(FALSE, cfg_file, save_dem);
 	
 	FCLOSE(fLog);
 	exit(EXIT_SUCCESS);
@@ -584,7 +584,8 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file)
 }
 
 static void
-process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
+process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
+             int is_first)
 {
     gchar *in_data, *out_full, *status;
     int pid;
@@ -626,6 +627,8 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
         create_clean_dir(tmp_dir);
 	set_asf_tmp_dir(tmp_dir);
 
+        settings_update_dem(user_settings, output_dir, is_first);
+
 	config_file =
 	  settings_to_config_file(user_settings, in_basename, out_full,
 				  output_dir, tmp_dir);
@@ -635,7 +638,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done)
         }
 
 	append_begin_processing_tag(in_data);
-	cmd_output = do_convert(pid, iter, config_file);
+	cmd_output = do_convert(pid, iter, config_file, TRUE);
 	err = check_for_error(cmd_output);
 	append_output(cmd_output);
 
@@ -668,6 +671,7 @@ process_items_from_list(GList * list_of_row_refs, gboolean skip_done)
     GList * i;
     Settings * user_settings;
     GtkTreeIter iter;
+    int is_first = TRUE;
 
     processing = TRUE;
     keep_going = TRUE;
@@ -686,7 +690,7 @@ process_items_from_list(GList * list_of_row_refs, gboolean skip_done)
 
         gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store), &iter, path);
 
-        process_item(&iter, user_settings, skip_done);
+        process_item(&iter, user_settings, skip_done, is_first);
 
         while (gtk_events_pending())
             gtk_main_iteration();
@@ -695,6 +699,7 @@ process_items_from_list(GList * list_of_row_refs, gboolean skip_done)
             append_output("Processing stopped by user.\n");
 
         i = g_list_next(i);
+        is_first = FALSE;
     }
 
     processing = FALSE;

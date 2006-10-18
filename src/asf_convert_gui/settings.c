@@ -1279,6 +1279,34 @@ settings_delete(Settings * s)
     g_free(s);
 }
 
+/* Returns TRUE if the filename has a TIFF extension */
+static int has_tiff_ext(const char *f)
+{
+    char *ext = findExt(f);
+
+    return
+        strcmp(ext, ".tif") == 0 ||
+        strcmp(ext, ".tiff") == 0 ||
+        strcmp(ext, ".TIF") == 0 ||
+        strcmp(ext, ".TIFF") == 0;
+}
+
+void
+settings_update_dem(Settings *s, const char *output_path, int is_first)
+{
+    // If this is the second or later file in a list of files,
+    // AND the user has specified a .TIFF dem ...
+    if (!is_first &&
+        (s->terrcorr_is_checked || s->refine_geolocation_is_checked) &&
+        has_tiff_ext(s->dem_file))
+    {
+        // ... we point to the saved DEM instead of the TIFF
+        char *file = get_basename(s->dem_file);
+        sprintf(s->dem_file, "%s%s", output_path, file);
+        free(file);
+    }
+}
+
 char *
 settings_to_config_file(const Settings *s,
 			const gchar *input_file, const gchar *output_full,
