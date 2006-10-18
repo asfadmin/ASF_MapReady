@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
   meta_parameters *meta;
   stateVector stVec;
   int ii, kk, ll;
-  char inFile[255], metaFile[255], dataFile[255], outLook[255], *outIncid=NULL;
+  char inFile[255], metaFile[255], dataFile[255], outLook[255], outIncid[255];
   char outRange[255], outBase[255], outFile[255], *maskFile=NULL; 
   char cmd[255], *bufMask=NULL;
   float *bufImage=NULL, *bufLook=NULL, *bufIncid=NULL, *bufRange=NULL;
