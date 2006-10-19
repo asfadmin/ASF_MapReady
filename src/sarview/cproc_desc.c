@@ -150,8 +150,11 @@ void image_describePixel(char *dest,double x,double y)
 				print_dms(1,lat,latBuf),print_dms(0,lon,lonBuf));
 		}
                 /* Incidence angle */
-                sprintf(&dest[strlen(dest)],
-                        "Incid: %f (deg), Look: %f (deg)\n",
-                        R2D*meta_incid(meta, y, x), R2D*meta_look(meta, y, x));
+                if (meta && meta->state_vectors) {
+                    sprintf(&dest[strlen(dest)],
+                            "Incid: %f (deg), Look: %f (deg)\n",
+                            R2D*meta_incid(meta, y, x), 
+                            R2D*meta_look(meta, y, x));
+                }
 	}
 }
