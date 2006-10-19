@@ -9,24 +9,103 @@ Orion Sky Lawlor, 3/99
 
 /*Return the value of the i'th term of this polynomial.
   E.g., term 2 is y; term 4 is x*y, etc.
- Degree  TermNo     Reduced    Value
- 0       0	    0	       1
- 1       1 2	    0 1        x    y
- 2       3 4 5      0 1 2      x^2  x*y    y^2
- 3       6 7 8 9    0 1 2 3    x^3  x^2*y  x*y^2  y^3
+ Degree TermNo            Reduced     Value
+ 0      0	          0	      1
+ 1      1 2	          0 1         x    y
+ 2      3 4 5             0 1 2       x^2  x*y    y^2
+ 3      6 7 8 9           0 1 2 3     x^3  x^2*y  x*y^2    y^3
+ 4      10 11 12 13 14    0 1 2 3 4   x^4  x^3*y  x^2*y^2  x*y^3    y^4
+ 5      15 16 17 18 19 20 0 1 2 3 4 5 x^5  x^4*y  x^3*y^2  x^2*y^3  x*y^4  y^5
  ...
 */
 double poly_term(int termNo,double x,double y)
 {
-	int degree=0;
-	int reduced=termNo;
-	/* Search to find the term's degree */
-	while (reduced>degree) {
+    // profiling reveals this as a bottle-neck, so optimze.
+
+    // attempt to optimze some of the more-easily calculated terms
+    // do up to degree 5, as that is what we generally use
+
+    // formerly this function was just the "default" case, below.
+
+    switch (termNo) {
+        case 0:
+            return 1;
+        case 1:
+            return x;
+        case 2:
+            return y;
+        case 3:
+            return x*x;
+        case 4:
+            return x*y;
+        case 5:
+            return y*y;
+        case 6:
+            return x*x*x;
+        case 7:
+            return x*x*y;
+        case 8:
+            return x*y*y;
+        case 9:
+            return y*y*y;
+        case 10:
+        {
+            // I'd hope that the compiler would do this for us if we just put:
+            //   return x*x*x*x;
+            // but we're here to optimze!
+            double x2=x*x;
+            return x2*x2;
+        }
+        case 11:
+            return x*x*x*y;
+        case 12:
+            return x*x*y*y;
+        case 13:
+            return x*y*y*y;
+        case 14:
+        {
+            double y2=y*y;
+            return y2*y2;
+        }
+        case 15:
+        {
+            double x2=x*x;
+            return x2*x2*x;
+        }
+        case 16:
+        {
+            double x2=x*x;
+            return x2*x2*y;
+        }
+        case 17:
+            return x*x*x*y*y;
+        case 18:
+            return x*x*y*y*y;
+        case 19:
+        {
+            double y2=y*y;
+            return x*y2*y2;
+        }
+        case 20:
+        {
+            double y2=y*y;
+            return y*y2*y2;
+        }
+        default:
+        {
+            // For terrain correction, we should never hit this code
+            // asfPrintError("Yoicks!");
+            int degree=0;
+            int reduced=termNo;
+            /* Search to find the term's degree */
+            while (reduced>degree) {
 		degree++;
 		reduced-=degree;
-	}
-	/* TermNo now gives number within row */
-	return pow(x,degree-reduced)*pow(y,reduced);
+            }
+            /* TermNo now gives number within row */
+            return pow(x,degree-reduced)*pow(y,reduced);
+        }
+    }        
 }
 
 
